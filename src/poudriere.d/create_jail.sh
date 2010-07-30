@@ -130,6 +130,9 @@ Arch: $ARCH
 EOF
 
 cat > $JAILBASE/etc/rc.conf << EOF
+sendmail_submit_enable="NO"
+sendmail_outbound_enable="NO"
+sendmail_msp_queue_enable="NO"
 sendmail_enable="NO"
 cron_enable="NO"
 EOF
