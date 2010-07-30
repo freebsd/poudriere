@@ -71,59 +71,63 @@ fi
 # Test if a jail with this name already exists
 zfs list -r $ZPOOL/poudriere/$NAME >/dev/null 2>&1 && err 2 "The jail $NAME already exists"
 
+JAILBASE=${BASEFS:=/usr/local/poudriere}/jails/$NAME
 # Create the jail FS
 echo -n "====> Creating $NAME fs:"
-zfs create -o mountpoint=${BASEFS:=/usr/local/poudriere}/$NAME $ZPOOL/poudriere/$NAME >/dev/null 2>&1 || err 1 " Fail" && echo " done"
+zfs create -o mountpoint=${JAILBASE} $ZPOOL/poudriere/$NAME >/dev/null 2>&1 || err 1 " Fail" && echo " done"
+
 
 #We need to fetch base and src (for drivers)
 echo "====> Fetching base sets for FreeBSD $VERSION $ARCH"
 PKGS=`echo "ls base*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/$ARCH/$VERSION/base/ | awk '{print $NF}'`
-mkdir $BASEFS/$NAME/fromftp
+mkdir $JAILBASE/fromftp
 for pkg in $PKGS; do
 # Let's retry at least one time
-	fetch -o $BASEFS/$NAME/fromftp/$pkg ftp://${FTPHOST}/pub/FreeBSD/releases/$ARCH/$VERSION/base/$pkg || fetch -o $BASEFS/$NAME/fromftp/$pkg ftp://${FTPHOST}/pub/FreeBSD/releases/$ARCH/$VERSION/base/$pkg
+	fetch -o $JAILBASE/fromftp/$pkg ftp://${FTPHOST}/pub/FreeBSD/releases/$ARCH/$VERSION/base/$pkg || fetch -o $JAILBASE/fromftp/$pkg ftp://${FTPHOST}/pub/FreeBSD/releases/$ARCH/$VERSION/base/$pkg
 done
 echo -n "====> Extracting base:"
-cat $BASEFS/$NAME/fromftp/base.* | tar --unlink -xpzf - -C $BASEFS/$NAME/ || err 1 " Fail" && echo " done"
+cat $JAILBASE/fromftp/base.* | tar --unlink -xpzf - -C $JAILBASE/ || err 1 " Fail" && echo " done"
 echo -n "====> Cleaning Up base sets:"
-rm $BASEFS/$NAME/fromftp/*
+rm $JAILBASE/fromftp/*
 echo " done"
 
 echo "====> Fetching ssys sets"
 PKGS=`echo "ls ssys*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/$ARCH/$VERSION/src/ | awk '{print $NF}'`
-mkdir $BASEFS/$NAME/fromftp
 for pkg in $PKGS; do
 # Let's retry at least one time
-	fetch -o $BASEFS/$NAME/fromftp/$pkg ftp://${FTPHOST}/pub/FreeBSD/releases/$ARCH/$VERSION/src/$pkg || fetch -o $BASEFS/$NAME/fromftp/$pkg ftp://${FTPHOST}/pub/FreeBSD/releases/$ARCH/$VERSION/src/$pkg
+	fetch -o $JAILBASE/fromftp/$pkg ftp://${FTPHOST}/pub/FreeBSD/releases/$ARCH/$VERSION/src/$pkg || fetch -o $JAILBASE/fromftp/$pkg ftp://${FTPHOST}/pub/FreeBSD/releases/$ARCH/$VERSION/src/$pkg
 done
-echo -n "====> Extracting ssyss:"
-cat $BASEFS/$NAME/fromftp/ssys.* | tar --unlink -xpzf - -C $BASEFS/$NAME/ || err 1 " Fail" && echo " done"
-echo -n "====> Cleaning Up srcs sets:"
-rm $BASEFS/$NAME/fromftp/*
+echo -n "====> Extracting ssys:"
+cat $JAILBASE/fromftp/ssys.* | tar --unlink -xpzf - -C $JAILBASE/ || err 1 " Fail" && echo " done"
+echo -n "====> Cleaning Up ssys sets:"
+rm $JAILBASE/fromftp/*
 echo " done"
 
-OSVERSION=`awk '/\#define __FreeBSD_version/ { print $3 }' $BASEFS/$NAME/usr/include/sys/param.h`
+rmdir $JAILBASE/fromftp
+
+OSVERSION=`awk '/\#define __FreeBSD_version/ { print $3 }' $JAILBASE/usr/include/sys/param.h`
 
 LOGIN_ENV=",UNAME_r=$VERSION,UNAME_v=FreeBSD $VERSION,OSVERSION=$OSVERSION"
 
 if [ "$ARCH" = "i386" -a `uname -m` = "amd64" ];then
 LOGIN_ENV="$LOGIN_ENV,UNAME_p=i386,UNAME_m=i386"
-cat >  $BASEFS/$NAME/etc/make.conf << EOF
+cat >  $JAILBASE/etc/make.conf << EOF
 MACHINE=i386
 MACHINE_ARCH=i386
 EOF
 
 fi
 
-sed -i .back -e "s/:\(setenv.*\):/:\1$LOGIN_ENV:/" $BASEFS/$NAME/etc/login.conf
-cap_mkdb $BASEFS/$NAME/etc/login.conf
+sed -i .back -e "s/:\(setenv.*\):/:\1$LOGIN_ENV:/" $JAILBASE/etc/login.conf
+cap_mkdb $JAILBASE/etc/login.conf
+pwd_mkdb -d $JAILBASE/etc/ -p $JAILBASE/etc/master.passwd
 
-cat > $BASEFS/$NAME/poudriere-jail.conf << EOF
+cat > $JAILBASE/poudriere-jail.conf << EOF
 Version: $VERSION
 Arch: $ARCH
 EOF
 
-cat > $BASEFS/$NAME/etc/rc.conf << EOF
+cat > $JAILBASE/etc/rc.conf << EOF
 sendmail_enable="NO"
 cron_enable="NO"
 EOF
