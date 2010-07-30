@@ -4,7 +4,6 @@ usage() {
 	echo "pourdriere createJail -n name -v version [-a architecture] [-z zfs] -m [FTP|NONE] "
 	echo "by default architecture is the same as the host (amd64 can create i386 jails)"
 	echo "by default a new zfs filesystem will be created in the dedicated pool"
-	echo "by default the next IP available in the pourdriere pool will be used"
 	echo "by default the FTP method is used but you can add you home made jail with NONE -v and -a will be ignored in that case"
 	exit 1
 }
@@ -46,11 +45,13 @@ while getopts "n:v:a:z:i:m:" FLAG; do
 		VERSION=$OPTARG
 		;;
 		a)
+		if [ `uname -m` != "amd64" ]; then
+			err 1 "Only amd64 host can choose another architecture"
+		fi
 		ARCH=$OPTARG
 		;;
 		z)
-		FS=$
-		;;
+		FS=$OPTARG
 		;;
 		m)
 		METHOD=$OPTARG
@@ -101,13 +102,31 @@ echo -n "====> Cleaning Up srcs sets:"
 rm $BASEFS/$NAME/fromftp/*
 echo " done"
 
+OSVERSION=`awk '/\#define __FreeBSD_version/ { print $3 }' $BASEFS/$NAME/usr/include/sys/param.h`
+
+LOGIN_ENV=",UNAME_r=$VERSION,UNAME_v=FreeBSD $VERSION,OSVERSION=$OSVERSION"
+
 if [ "$ARCH" = "i386" -a `uname -m` = "amd64" ];then
-#TODO
+LOGIN_ENV="$LOGIN_ENV,UNAME_p=i386,UNAME_m=i386"
+cat >  $BASEFS/$NAME/etc/make.conf << EOF
+MACHINE=i386
+MACHINE_ARCH=i386
+EOF
+
 fi
+
+sed -i .back -e "s/:\(setenv.*\):/:\1$LOGIN_ENV:/" $BASEFS/$NAME/etc/login.conf
+cap_mkdb $BASEFS/$NAME/etc/login.conf
 
 cat > $BASEFS/$NAME/poudriere-jail.conf << EOF
 Version: $VERSION
 Arch: $ARCH
 EOF
+
+cat > $BASEFS/$NAME/etc/rc.conf << EOF
+sendmail_enable="NO"
+cron_enable="NO"
+EOF
+
 zfs snapshot $ZPOOL/poudriere/$NAME@clean
 echo "====> Jail $NAME $VERSION $ARCH is ready to be used"
