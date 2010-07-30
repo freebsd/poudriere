@@ -122,6 +122,8 @@ sed -i .back -e "s/:\(setenv.*\):/:\1$LOGIN_ENV:/" $JAILBASE/etc/login.conf
 cap_mkdb $JAILBASE/etc/login.conf
 pwd_mkdb -d $JAILBASE/etc/ -p $JAILBASE/etc/master.passwd
 
+cp /etc/resolv.conf $JAILBASE/etc
+
 cat > $JAILBASE/poudriere-jail.conf << EOF
 Version: $VERSION
 Arch: $ARCH
