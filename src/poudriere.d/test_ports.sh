@@ -61,7 +61,8 @@ EOF
 	for pkg in `jexec -U root $jailname make -C ${PORTDIRECTORY} build-depends-list run-depends-list`; do
 		PKGS="$PKGS $pkg"
 	done
-	script /tmp/$jailname.depends.log jexec -U root $jailname /usr/local/sbin/portmaster -Gg $PKGS
+#	script /tmp/$jailname.depends.log jexec -U root $jailname /usr/local/sbin/portmaster -Gg $PKGS
+	jexec -U root $jailname /usr/local/sbin/portmaster -Gg $PKGS 2>&1 | tee /tmp/$jailname.depends.log 
 
 cat << EOF >> ${MNT}/testports.sh
 #!/bin/sh
@@ -136,7 +137,7 @@ echo "===> Done."
 exit 0
 EOF
 
-	script /tmp/${jailname}.build.log jexec -U root $jailname /bin/sh /testports.sh
+	jexec -U root $jailname /bin/sh /testports.sh 2>&1 | tee /tmp/${jailname}.build.log
 
 	umount ${PORTDIRECTORY}
 	umount ${MNT}/usr/ports/packages
