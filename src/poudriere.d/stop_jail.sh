@@ -44,3 +44,4 @@ echo "====> Uounting devfs"
 umount -f ${MNT}/dev
 echo "====> Removing IP alias"
 ifconfig $ETH inet $IP -alias
+zfs rollback $ZPOOL/poudriere/${NAME}@clean
