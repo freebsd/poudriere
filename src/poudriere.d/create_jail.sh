@@ -8,14 +8,6 @@ usage() {
 	exit 1
 }
 
-err() {
-	if [ $# -ne 2 ]; then
-		err 1 "err expects 2 arguments: exit_number \"message\""
-	fi
-	echo "$2"
-	exit $1
-}
-
 create_base_fs() {
 	echo -n "===> Creating basefs:"
 	zfs create -o mountpoint=${BASEFS:=/usr/local/poudriere} $ZPOOL/poudriere >/dev/null 2>&1 || err 1 " Fail" && echo " done"
@@ -24,14 +16,9 @@ create_base_fs() {
 ARCH=`uname -m`
 METHOD="FTP"
 
-test -f /usr/local/etc/poudriere.conf || err 1 "Unable to find /usr/local/etc/poudriere.conf"
-
-. /usr/local/etc/poudriere.conf
-
-test -z $ZPOOL && err 1 "ZPOOL variable is not set"
-
-# Test if spool exists
-zpool list $ZPOOL >/dev/null 2>&1 || err 1 "No such zpool : $ZPOOL"
+SCRIPTPATH=`realpath $0`
+SCRIPTPREFIX=`dirname $SCRIPTPATH`
+. ${SCRIPTPREFIX}/common.sh
 
 #Test if the default FS for pourdriere exists if not creates it
 zfs list $ZPOOL/poudriere >/dev/null 2>&1 || create_base_fs
