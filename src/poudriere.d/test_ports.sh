@@ -1,7 +1,8 @@
 #!/bin/sh
 
 usage() {
-	echo "poudriere testPort -d directory"
+	echo "poudriere testPort -d directory [-c]"
+	echo "-c run make config for the given ports"
 	exit 1
 }
 
@@ -21,8 +22,11 @@ test -z $ZPOOL && err 1 "ZPOOL variable is not set"
 
 zpool list $ZPOOL >/dev/null 2>&1 || err 1 "No such zpool : $ZPOOL"
 
-while getopts "d:" FLAG; do
+while getopts "d:c" FLAG; do
 	case "$FLAG" in
+		c)
+		TESTFLAGS=" ${TESTFLAGS} -c"
+		;;
 		d)
 		PORTDIRECTORY=$OPTARG
 		;;
@@ -70,6 +74,14 @@ cat << EOF >> ${MNT}/testports.sh
 export BATCH=yes
 cd ${PORTDIRECTORY}
 
+while getopts "c" FLAG; do
+	case "$FLAG" in
+		c)
+		CONFIGSTR="make config"
+		;;
+	esac
+done
+
 PKGNAME=\`make -V PKGNAME\` 
 PKG_DBDIR=\`mktemp -d -t pkg_db\` || exit 1
 
@@ -81,6 +93,8 @@ PORT_FLAGS="PREFIX=\${PREFIX} PKG_DBDIR=\${PKG_DBDIR} NO_DEPENDS=yes\$*"
 echo "===> Building with flags: \${PORT_FLAGS}"
 echo "===> Cleaning workspace"
 make clean
+
+\$CONFIGSTR
 
 if [ -d \${PREFIX} ]; then
 	echo "===> Removing existing \${PREFIX}"
