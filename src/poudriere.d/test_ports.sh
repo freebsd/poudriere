@@ -28,7 +28,7 @@ test -z $PORTDIRECTORY && usage
 
 for jailname in `zfs list -rH system/poudriere | awk '/^'$ZPOOL'\/poudriere\// { sub(/^'$ZPOOL'\/poudriere\//, "", $1); print $1 }'`; do
 	MNT=`zfs list -H ${ZPOOL}/poudriere/${jailname} | awk '{ print $NF}'`
-	./start_jail.sh -n $jailname
+	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -n $jailname
 	mkdir -p ${MNT}/usr/ports
 	mount -t nullfs ${PORTSDIR} ${MNT}/usr/ports
 	mkdir -p ${POUDRIERE_DATA}/packages/$jailname
@@ -144,6 +144,6 @@ EOF
 	umount ${PORTDIRECTORY}
 	umount ${MNT}/usr/ports/packages
 	umount ${MNT}/usr/ports
-	./stop_jail.sh -n $jailname
+	/bin/sh ${SCRIPTPREFIX}/stop_jail.sh -n $jailname
 done
 
