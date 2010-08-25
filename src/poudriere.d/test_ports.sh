@@ -25,7 +25,7 @@ while getopts "d:c" FLAG; do
 done
 
 test -z $PORTDIRECTORY && usage
-
+PORTNAME=`make -C $PORTDIRECTORY -VPKGNAME`
 for jailname in `zfs list -rH system/poudriere | awk '/^'$ZPOOL'\/poudriere\// { sub(/^'$ZPOOL'\/poudriere\//, "", $1); print $1 }'`; do
 	MNT=`zfs list -H ${ZPOOL}/poudriere/${jailname} | awk '{ print $NF}'`
 	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -n $jailname
@@ -54,7 +54,7 @@ EOF
 		PKGS="$PKGS $pkg"
 	done
 #	script /tmp/$jailname.depends.log jexec -U root $jailname /usr/local/sbin/portmaster -Gg $PKGS
-	jexec -U root $jailname /usr/local/sbin/portmaster -Gg $PKGS 2>&1 | tee /tmp/$jailname.depends.log 
+	jexec -U root $jailname /usr/local/sbin/portmaster -Gg $PKGS 2>&1 | tee /tmp/$PORTNAME-$jailname.depends.log
 
 cat << EOF >> ${MNT}/testports.sh
 #!/bin/sh
@@ -139,7 +139,7 @@ echo "===> Done."
 exit 0
 EOF
 
-	jexec -U root $jailname /bin/sh /testports.sh 2>&1 | tee /tmp/${jailname}.build.log
+	jexec -U root $jailname /bin/sh /testports.sh 2>&1 | tee /tmp/$PORTNAME-${jailname}.build.log
 
 	umount ${PORTDIRECTORY}
 	umount ${MNT}/usr/ports/packages

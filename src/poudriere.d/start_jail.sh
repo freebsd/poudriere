@@ -7,6 +7,7 @@ usage() {
 
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname $SCRIPTPATH`
+. ${SCRIPTPREFIX}/common.sh
 
 . /etc/rc.subr
 . /etc/defaults/rc.conf
