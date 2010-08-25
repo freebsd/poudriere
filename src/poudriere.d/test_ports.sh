@@ -10,6 +10,9 @@ SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname $SCRIPTPATH`
 . ${SCRIPTPREFIX}/common.sh
 
+LOGS="${POUDRIERE_DATA}/logs"
+mkdir -p ${LOGS}
+
 while getopts "d:c" FLAG; do
 	case "$FLAG" in
 		c)
@@ -53,8 +56,7 @@ EOF
 	for pkg in `jexec -U root $jailname make -C ${PORTDIRECTORY} build-depends-list run-depends-list`; do
 		PKGS="$PKGS $pkg"
 	done
-#	script /tmp/$jailname.depends.log jexec -U root $jailname /usr/local/sbin/portmaster -Gg $PKGS
-	jexec -U root $jailname /usr/local/sbin/portmaster -Gg $PKGS 2>&1 | tee /tmp/$PORTNAME-$jailname.depends.log
+	jexec -U root $jailname /usr/local/sbin/portmaster -Gg $PKGS 2>&1 | tee ${LOGS}/$PORTNAME-$jailname.depends.log
 
 cat << EOF >> ${MNT}/testports.sh
 #!/bin/sh
@@ -139,7 +141,7 @@ echo "===> Done."
 exit 0
 EOF
 
-	jexec -U root $jailname /bin/sh /testports.sh 2>&1 | tee /tmp/$PORTNAME-${jailname}.build.log
+	jexec -U root $jailname /bin/sh /testports.sh 2>&1 | tee ${LOGS}/$PORTNAME-${jailname}.build.log
 
 	umount ${PORTDIRECTORY}
 	umount ${MNT}/usr/ports/packages
