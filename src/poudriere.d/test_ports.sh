@@ -29,7 +29,7 @@ done
 
 test -z $PORTDIRECTORY && usage
 PORTNAME=`make -C $PORTDIRECTORY -VPKGNAME`
-for jailname in `zfs list -rH system/poudriere | awk '/^'$ZPOOL'\/poudriere\// { sub(/^'$ZPOOL'\/poudriere\//, "", $1); print $1 }'`; do
+for jailname in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'$ZPOOL'\/poudriere\// { sub(/^'$ZPOOL'\/poudriere\//, "", $1); print $1 }'`; do
 	MNT=`zfs list -H ${ZPOOL}/poudriere/${jailname} | awk '{ print $NF}'`
 	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -n $jailname
 	mkdir -p ${MNT}/usr/ports
