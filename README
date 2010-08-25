@@ -1,0 +1,22 @@
+To use poudriere:
+
+first you need a configuration file ${PREFIX}/etc/poudriere.conf
+
+Have a look at the conf/poudriere.conf.sample for more informations
+
+Then in root user:
+1/ create the wanted jails:
+
+for example:
+	poudriere createjail -v 8.1-RELEASE -a amd64 -n 81amd64
+
+
+Be carefull the version -v should be a valid version available in your
+${FTP_HOST}/pub/FreeBSD/releases/${ARCH}/
+
+The architecture isn't mandatory by default it uses the same architecture as 
+the host one. On amd64 you will be able to choose between i386 and amd64
+
+-n is the name of the jail which will also be the name of the zfs filesystem
+be carefull to respects the names supported by jail(8):
+"This is an arbitrary string that identifies a jail (except it may not contain a ‘.’)"

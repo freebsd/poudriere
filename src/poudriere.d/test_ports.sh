@@ -1,7 +1,7 @@
 #!/bin/sh
 
 usage() {
-	echo "poudriere testPort -d directory [-c]"
+	echo "poudriere testport -d directory [-c]"
 	echo "-c run make config for the given ports"
 	exit 1
 }
