@@ -20,3 +20,5 @@ the host one. On amd64 you will be able to choose between i386 and amd64
 -n is the name of the jail which will also be the name of the zfs filesystem
 be carefull to respects the names supported by jail(8):
 "This is an arbitrary string that identifies a jail (except it may not contain a ‘.’)"
+be also carefull to not begin the name of the jail by a number if you are not in -stable or current:
+http://svn.freebsd.org/viewvc/base?view=revision&revision=209820

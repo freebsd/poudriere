@@ -1,7 +1,7 @@
 #!/bin/sh
 
 usage() {
-	echo "poudriere stopJail -n name"
+	echo "poudriere stopjail -n name"
 	exit 1
 }
 
@@ -14,7 +14,7 @@ SCRIPTPREFIX=`dirname $SCRIPTPATH`
 
 
 while getopts "n:" FLAG; do
-	case "$FLAG" in 
+	case "$FLAG" in
 		n)
 		NAME=$OPTARG
 		;;
