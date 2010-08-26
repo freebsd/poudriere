@@ -1,3 +1,4 @@
+#!/bin/sh
 
 err() {
 	if [ $# -ne 2 ]; then

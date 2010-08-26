@@ -1,7 +1,7 @@
 #!/bin/sh
 
 usage() {
-	echo "poudriere startJail -n name"
+	echo "poudriere startjail -n name"
 	exit 1
 }
 

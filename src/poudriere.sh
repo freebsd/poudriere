@@ -5,7 +5,9 @@ usage() {
 	echo 
 	echo "cmd can be:"
 	echo "- createjail: create a new jail to test ports"
-	echo "- testport: launch a test on a given ports"
+	echo "-  startjail: start the jail whose name is given to the -n option"
+	echo "-   stopjail: stop the jail whose name is given to the -n option"
+	echo "-   testport: launch a test on a given ports"
 	exit 1
 }
 
@@ -17,6 +19,14 @@ case $1 in
 	createjail)
 		shift
 		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/create_jail.sh $@
+	;;
+	startjail)
+		shift
+		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/start_jail.sh $@
+	;;
+	stopjail)
+		shift
+		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/stop_jail.sh $@
 	;;
 	testport)
 		shift

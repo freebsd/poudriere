@@ -4,7 +4,7 @@ usage() {
 	echo "pourdriere createjail -n name -v version [-a architecture] [-z zfs] -m [FTP|NONE] "
 	echo "by default architecture is the same as the host (amd64 can create i386 jails)"
 	echo "by default a new zfs filesystem will be created in the dedicated pool"
-	echo "by default the FTP method is used but you can add you home made jail with NONE -v and -a will be ignored in that case"
+	echo "by default the FTP method is used but you can add your home made jail with NONE -v and -a will be ignored in that case"
 	exit 1
 }
 
@@ -23,7 +23,7 @@ SCRIPTPREFIX=`dirname $SCRIPTPATH`
 #Test if the default FS for pourdriere exists if not creates it
 zfs list $ZPOOL/poudriere >/dev/null 2>&1 || create_base_fs
 
-while getopts "n:v:a:z:i:m:" FLAG; do
+while getopts "n:v:a:z:m:" FLAG; do
 	case "$FLAG" in
 		n)
 		NAME=$OPTARG
