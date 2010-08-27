@@ -16,7 +16,7 @@ mkdir -p ${LOGS}
 while getopts "d:c" FLAG; do
 	case "$FLAG" in
 		c)
-		TESTFLAGS=" ${TESTFLAGS} -c"
+		CONFIGSTR="make config"
 		;;
 		d)
 		PORTDIRECTORY=$OPTARG
@@ -64,14 +64,6 @@ cat << EOF >> ${MNT}/testports.sh
 export BATCH=yes
 cd ${PORTDIRECTORY}
 
-while getopts "c" FLAG; do
-	case "$FLAG" in
-		c)
-		CONFIGSTR="make config"
-		;;
-	esac
-done
-
 PKGNAME=\`make -V PKGNAME\` 
 PKG_DBDIR=\`mktemp -d -t pkg_db\` || exit 1
 
@@ -84,7 +76,7 @@ echo "===> Building with flags: \${PORT_FLAGS}"
 echo "===> Cleaning workspace"
 make clean
 
-\$CONFIGSTR
+$CONFIGSTR
 
 if [ -d \${PREFIX} ]; then
 	echo "===> Removing existing \${PREFIX}"
