@@ -6,6 +6,13 @@ usage() {
 	exit 1
 }
 
+outside_portsdir() {
+	PORTROOT=`dirname $1`
+	PORTROOT=`dirname ${PORTROOT}`
+	test "${PORTROOT}" = `realpath ${PORTSDIR}` && return 1
+	return 0
+}
+
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname $SCRIPTPATH`
 . ${SCRIPTPREFIX}/common.sh
@@ -19,7 +26,7 @@ while getopts "d:c" FLAG; do
 		CONFIGSTR="make config"
 		;;
 		d)
-		PORTDIRECTORY=$OPTARG
+		PORTDIRECTORY=`realpath $OPTARG`
 		;;
 		*)
 		usage
@@ -28,7 +35,7 @@ while getopts "d:c" FLAG; do
 done
 
 test -z $PORTDIRECTORY && usage
-PORTNAME=`make -C $PORTDIRECTORY -VPKGNAME`
+PORTNAME=`make -C ${PORTDIRECTORY} -VPKGNAME`
 for jailname in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'$ZPOOL'\/poudriere\// { sub(/^'$ZPOOL'\/poudriere\//, "", $1); print $1 }'`; do
 	MNT=`zfs list -H ${ZPOOL}/poudriere/${jailname} | awk '{ print $NF}'`
 	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -n $jailname
@@ -36,8 +43,11 @@ for jailname in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'$ZPOOL'\/poudriere\//
 	mount -t nullfs ${PORTSDIR} ${MNT}/usr/ports
 	mkdir -p ${POUDRIERE_DATA}/packages/$jailname
 	mount -t nullfs ${POUDRIERE_DATA}/packages/$jailname ${MNT}/usr/ports/packages
-	mkdir -p ${MNT}/${PORTDIRECTORY}
-	mount -t nullfs ${PORTDIRECTORY} ${MNT}/${PORTDIRECTORY}
+
+	if outside_portsdir ${PORTDIRECTORY}; then
+		mkdir -p ${MNT}/${PORTDIRECTORY}
+		mount -t nullfs ${PORTDIRECTORY} ${MNT}/${PORTDIRECTORY}
+	fi
 
 	mkdir -p ${MNT}/usr/local/etc/
 cat << EOF >> ${MNT}/usr/local/etc/portmaster.rc
@@ -135,7 +145,7 @@ EOF
 
 	jexec -U root $jailname /bin/sh /testports.sh 2>&1 | tee ${LOGS}/$PORTNAME-${jailname}.build.log
 
-	umount ${PORTDIRECTORY}
+	outside_portsdir ${PORTDIRECTORY} && umount ${PORTDIRECTORY}
 	umount ${MNT}/usr/ports/packages
 	umount ${MNT}/usr/ports
 	/bin/sh ${SCRIPTPREFIX}/stop_jail.sh -n $jailname
