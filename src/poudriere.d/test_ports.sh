@@ -14,19 +14,19 @@ outside_portsdir() {
 }
 
 SCRIPTPATH=`realpath $0`
-SCRIPTPREFIX=`dirname $SCRIPTPATH`
+SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
 
 LOGS="${POUDRIERE_DATA}/logs"
 mkdir -p ${LOGS}
 
 while getopts "d:c" FLAG; do
-	case "$FLAG" in
+	case "${FLAG}" in
 		c)
 		CONFIGSTR="make config"
 		;;
 		d)
-		PORTDIRECTORY=`realpath $OPTARG`
+		PORTDIRECTORY=`realpath ${OPTARG}`
 		;;
 		*)
 		usage
@@ -34,15 +34,15 @@ while getopts "d:c" FLAG; do
 	esac
 done
 
-test -z $PORTDIRECTORY && usage
+test -z ${PORTDIRECTORY} && usage
 PORTNAME=`make -C ${PORTDIRECTORY} -VPKGNAME`
-for jailname in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'$ZPOOL'\/poudriere\// { sub(/^'$ZPOOL'\/poudriere\//, "", $1); print $1 }'`; do
+for jailname in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }'`; do
 	MNT=`zfs list -H ${ZPOOL}/poudriere/${jailname} | awk '{ print $NF}'`
-	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -n $jailname
+	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -n ${jailname}
 	mkdir -p ${MNT}/usr/ports
 	mount -t nullfs ${PORTSDIR} ${MNT}/usr/ports
-	mkdir -p ${POUDRIERE_DATA}/packages/$jailname
-	mount -t nullfs ${POUDRIERE_DATA}/packages/$jailname ${MNT}/usr/ports/packages
+	mkdir -p ${POUDRIERE_DATA}/packages/${jailname}
+	mount -t nullfs ${POUDRIERE_DATA}/packages/${jailname} ${MNT}/usr/ports/packages
 
 	if outside_portsdir ${PORTDIRECTORY}; then
 		mkdir -p ${MNT}/${PORTDIRECTORY}
@@ -61,12 +61,12 @@ PM_NO_CONFIRM=pm_no_confirm
 PM_DEL_BUILD_ONLY=pm_dbo
 EOF
 
-	jexec -U root $jailname /usr/bin/env BATCH=yes make -C /usr/ports/ports-mgmt/portmaster install clean
-	jexec -U root $jailname make -C ${PORTDIRECTORY} clean
-	for pkg in `jexec -U root $jailname make -C ${PORTDIRECTORY} build-depends-list run-depends-list`; do
-		PKGS="$PKGS $pkg"
+	jexec -U root ${jailname} /usr/bin/env BATCH=yes make -C /usr/ports/ports-mgmt/portmaster install clean
+	jexec -U root ${jailname} make -C ${PORTDIRECTORY} clean
+	for pkg in `jexec -U root ${jailname} make -C ${PORTDIRECTORY} build-depends-list run-depends-list`; do
+		PKGS="${PKGS} ${pkg}"
 	done
-	jexec -U root $jailname /usr/local/sbin/portmaster -Gg $PKGS 2>&1 | tee ${LOGS}/$PORTNAME-$jailname.depends.log
+	jexec -U root ${jailname} /usr/local/sbin/portmaster -Gg ${PKGS} 2>&1 | tee ${LOGS}/${PORTNAME}-${jailname}.depends.log
 
 cat << EOF >> ${MNT}/testports.sh
 #!/bin/sh
@@ -143,11 +143,11 @@ echo "===> Done."
 exit 0
 EOF
 
-	jexec -U root $jailname /bin/sh /testports.sh 2>&1 | tee ${LOGS}/$PORTNAME-${jailname}.build.log
+	jexec -U root ${jailname} /bin/sh /testports.sh 2>&1 | tee ${LOGS}/${PORTNAME}-${jailname}.build.log
 
 	outside_portsdir ${PORTDIRECTORY} && umount ${PORTDIRECTORY}
 	umount ${MNT}/usr/ports/packages
 	umount ${MNT}/usr/ports
-	/bin/sh ${SCRIPTPREFIX}/stop_jail.sh -n $jailname
+	/bin/sh ${SCRIPTPREFIX}/stop_jail.sh -n ${jailname}
 done
 

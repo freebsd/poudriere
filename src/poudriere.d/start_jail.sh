@@ -6,16 +6,16 @@ usage() {
 }
 
 SCRIPTPATH=`realpath $0`
-SCRIPTPREFIX=`dirname $SCRIPTPATH`
+SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
 
 . /etc/rc.subr
 . /etc/defaults/rc.conf
 
 while getopts "n:" FLAG; do
-	case "$FLAG" in 
+	case "${FLAG}" in 
 		n)
-		NAME=$OPTARG
+		NAME=${OPTARG}
 		;;
 		*)
 		usage
@@ -23,12 +23,12 @@ while getopts "n:" FLAG; do
 	esac
 done
 
-test -z $NAME && usage
+test -z ${NAME} && usage
 
-zfs list $ZPOOL/poudriere/$NAME >/dev/null 2>&1 || err 1 "No such jail"
+zfs list ${ZPOOL}/poudriere/${NAME} >/dev/null 2>&1 || err 1 "No such jail"
 
-test -z $IP && err 1 "No IP defined for poudriere"
-test -z $ETH && err 1 "No ethernet device defined for poudriere"
+test -z ${IP} && err 1 "No IP defined for poudriere"
+test -z ${ETH} && err 1 "No ethernet device defined for poudriere"
 
 MNT=`zfs list -H ${ZPOOL}/poudriere/${NAME} | awk '{ print $NF}'`
 echo "====> Mounting devfs"

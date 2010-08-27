@@ -6,7 +6,7 @@ usage() {
 }
 
 SCRIPTPATH=`realpath $0`
-SCRIPTPREFIX=`dirname $SCRIPTPATH`
+SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
 
 . /etc/rc.subr
@@ -14,9 +14,9 @@ SCRIPTPREFIX=`dirname $SCRIPTPATH`
 
 
 while getopts "n:" FLAG; do
-	case "$FLAG" in
+	case "${FLAG}" in
 		n)
-		NAME=$OPTARG
+		NAME=${OPTARG}
 		;;
 		*)
 		usage
@@ -24,15 +24,15 @@ while getopts "n:" FLAG; do
 	esac
 done
 
-test -z $NAME && usage
+test -z ${NAME} && usage
 
-jls -j $NAME >/dev/null 2>&1 || err 1 "No such jail: $NAME"
+jls -j ${NAME} >/dev/null 2>&1 || err 1 "No such jail: ${NAME}"
 
-MNT=`zfs list -H $ZPOOL/poudriere/$NAME | awk '{ print $NF}'`
+MNT=`zfs list -H ${ZPOOL}/poudriere/${NAME} | awk '{ print $NF}'`
 echo "====> Stopping jail"
-jail -r $NAME
-echo "====> Uounting devfs"
+jail -r ${NAME}
+echo "====> Unmounting devfs"
 umount -f ${MNT}/dev
 echo "====> Removing IP alias"
-ifconfig $ETH inet $IP -alias
-zfs rollback $ZPOOL/poudriere/${NAME}@clean
+ifconfig ${ETH} inet ${IP} -alias
+zfs rollback ${ZPOOL}/poudriere/${NAME}@clean
