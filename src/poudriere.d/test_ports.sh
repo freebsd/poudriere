@@ -2,7 +2,7 @@
 
 usage() {
 	echo "poudriere testport -d directory [-c]"
-	echo "-c run make config for the given ports"
+	echo "-c run make config for the given port"
 	exit 1
 }
 
