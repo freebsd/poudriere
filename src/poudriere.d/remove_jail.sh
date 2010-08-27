@@ -22,8 +22,10 @@ done
 
 test -z ${NAME} && usage
 
-zfs list ${ZPOOL}/poudriere/${NAME} >/dev/null 2>&1 || err 1 "No such jail"
+zfs list ${ZPOOL}/poudriere/${NAME} >/dev/null 2>&1 || err 1 "No such jail: ${NAME}"
+JAILBASE=`zfs list -H ${ZPOOL}/poudriere/${NAME} | awk '{ print $NF}'`
 
 zfs destroy -r ${ZPOOL}/poudriere/${NAME}
+rmdir ${JAILBASE}
 rm -rf ${POUDRIERE_DATA}/packages/${NAME}
 rm -f ${POUDRIERE_DATA}/logs/*-${NAME}*.log
