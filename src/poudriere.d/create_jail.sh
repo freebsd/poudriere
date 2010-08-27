@@ -111,10 +111,5 @@ pwd_mkdb -d ${JAILBASE}/etc/ -p ${JAILBASE}/etc/master.passwd
 
 cp /etc/resolv.conf ${JAILBASE}/etc
 
-cat > ${JAILBASE}/poudriere-jail.conf << EOF
-Version: $VERSION
-Arch: $ARCH
-EOF
-
 zfs snapshot ${ZPOOL}/poudriere/${NAME}@clean
 echo "====> Jail ${NAME} ${VERSION} ${ARCH} is ready to be used"
