@@ -13,14 +13,18 @@ outside_portsdir() {
 	return 0
 }
 
+cleanup() {
+	outside_portsdir ${PORTDIRECTORY} && umount ${PORTDIRECTORY}
+	umount ${MNT}/usr/ports/packages
+	umount ${MNT}/usr/ports
+	/bin/sh ${SCRIPTPREFIX}/stop_jail.sh -n ${jailname}
+}
+
 sig_handler() {
 	if [ ${STATUS} -eq 1 ]; then
 
-		echo "====> Killed captured, cleaning up and exiting"
-		outside_portsdir ${PORTDIRECTORY} && umount ${PORTDIRECTORY}
-		umount ${MNT}/usr/ports/packages
-		umount ${MNT}/usr/ports
-		/bin/sh ${SCRIPTPREFIX}/stop_jail.sh -n ${jailname}
+		echo "====> Signal caught, cleaning up and exiting"
+		cleanup
 		exit 0
 	fi
 }
@@ -48,9 +52,7 @@ done
 
 STATUS=0 # out of jail #
 
-trap sig_handler SIGINT
-trap sig_handler SIGTERM
-trap sig_handler SIGKILL
+trap sig_handler SIGINT SIGTERM SIGKILL
 
 test -z ${PORTDIRECTORY} && usage
 PORTNAME=`make -C ${PORTDIRECTORY} -VPKGNAME`
@@ -160,10 +162,7 @@ EOF
 
 	jexec -U root ${jailname} /bin/sh /testports.sh 2>&1 | tee ${LOGS}/${PORTNAME}-${jailname}.build.log
 
-	outside_portsdir ${PORTDIRECTORY} && umount ${PORTDIRECTORY}
-	umount ${MNT}/usr/ports/packages
-	umount ${MNT}/usr/ports
-	/bin/sh ${SCRIPTPREFIX}/stop_jail.sh -n ${jailname}
+	cleanup
 	STATUS=0 #injail
 done
 
