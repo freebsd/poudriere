@@ -127,7 +127,7 @@ do
 			grep '=>' | awk '{print \$3;}' | sort -u
 		fi
 	fi
-	make \${PORT_FLAGS} \${PHASE}
+	make \${PORT_FLAGS} \${PHASE} PKGREPOSITORY=/tmp
 	if [ \$? -gt 0 ]; then
 		echo "===> Error running make \${PHASE}"
 		if [ "\${PHASE}" = "package" ]; then
