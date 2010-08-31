@@ -82,7 +82,7 @@ EOF
 	jexec -U root ${jailname} make -C ${PORTDIRECTORY} depends
 	for pkg in `jexec -U root ${jailname} make -C ${PORTDIRECTORY} all-depends-list`;do
 		pkgname=`jexec -U root ${jailname} make -C ${pkg} package-name`
-		test -f ${POUDRIERE_DATA}/packages/${jailname}/All/${pkgname}.tbz || jexec -U root ${jailname} /usr/sbin/pkg_create -b ${pkgname} /usr/local/All/${pkgname}.tbz
+		test -f ${POUDRIERE_DATA}/packages/${jailname}/All/${pkgname}.tbz || jexec -U root ${jailname} /usr/sbin/pkg_create -b ${pkgname} /usr/ports/packages/All/${pkgname}.tbz
 	done
 	) | tee ${LOGS}/${PORTNAME}-${jailname}.depends.log
 
