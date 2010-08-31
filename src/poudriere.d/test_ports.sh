@@ -70,8 +70,9 @@ for jailname in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 		mount -t nullfs ${PORTDIRECTORY} ${MNT}/${PORTDIRECTORY}
 	fi
 
+	jexec -U root ${jailname} /usr/sbin/mtree -U  -f /usr/ports/Templates/BSD.local.dist -d -e -p /usr/local
+
 cat << EOF >> ${MNT}/etc/make.conf
-PACKAGES_BUILDING=yes
 USE_PACKAGE_DEPENDS=yes
 BATCH=yes
 EOF
@@ -81,7 +82,7 @@ EOF
 	jexec -U root ${jailname} make -C ${PORTDIRECTORY} depends
 	for pkg in `jexec -U root ${jailname} make -C ${PORTDIRECTORY} all-depends-list`;do
 		pkgname=`jexec -U root ${jailname} make -C ${pkg} package-name`
-		test -f ${POUDRIERE_DATA}/packages/${jailname}/All/${pkgname}.tbz || jexec -U root ${jailname} make -C ${pkg} package
+		test -f ${POUDRIERE_DATA}/packages/${jailname}/All/${pkgname}.tbz || jexec -U root ${jailname} /usr/sbin/pkg_create -b ${pkgname} /usr/local/All/${pkgname}.tbz
 	done
 	) | tee ${LOGS}/${PORTNAME}-${jailname}.depends.log
 
