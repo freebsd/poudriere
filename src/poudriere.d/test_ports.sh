@@ -49,24 +49,20 @@ for jailname in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 		mount -t nullfs ${PORTDIRECTORY} ${MNT}/${PORTDIRECTORY}
 	fi
 
-	mkdir -p ${MNT}/usr/local/etc/
-cat << EOF >> ${MNT}/usr/local/etc/portmaster.rc
-LOCAL_PACKAGEDIR=/usr/ports/packages
-NO_BACKUP=Bopt
-NO_RECURSIVE_CONFIG=Gopt
-RECURSE_THOROUGH=topt
-ALWAYS_SCRUB_DISTFILES=dopt
-PM_PACKAGES=first
-PM_NO_CONFIRM=pm_no_confirm
-PM_DEL_BUILD_ONLY=pm_dbo
+cat << EOF >> ${MNT}/etc/make.conf
+PACKAGES_BUILDING=yes
+USE_PACKAGE_DEPENDS=yes
+BATCH=yes
 EOF
 
-	jexec -U root ${jailname} /usr/bin/env BATCH=yes make -C /usr/ports/ports-mgmt/portmaster install clean
+	(
 	jexec -U root ${jailname} make -C ${PORTDIRECTORY} clean
-	for pkg in `jexec -U root ${jailname} make -C ${PORTDIRECTORY} build-depends-list run-depends-list`; do
-		PKGS="${PKGS} ${pkg}"
+	jexec -U root ${jailname} make -C ${PORTDIRECTORY} depends
+	for pkg in `jexec -U root ${jailname} make -C ${PORTDIRECTORY} all-depends-list`;do
+		pkgname=`jexec -U root ${jailname} make -C ${pkg} package-name`
+		test -f ${POUDRIERE_DATA}/packages/${jailname}/All/${pkgname}.tbz || jexec -U root ${jailname} make -C ${pkg} package
 	done
-	jexec -U root ${jailname} /usr/local/sbin/portmaster -Gg ${PKGS} 2>&1 | tee ${LOGS}/${PORTNAME}-${jailname}.depends.log
+	) | tee ${LOGS}/${PORTNAME}-${jailname}.depends.log
 
 cat << EOF >> ${MNT}/testports.sh
 #!/bin/sh
@@ -113,7 +109,7 @@ do
 	if [ \$? -gt 0 ]; then
 		echo "===> Error running make \${PHASE}"
 		if [ "\${PHASE}" = "package" ]; then
-			echo "===> Files currently installd in PREFIX"
+			echo "===> Files currently installed in PREFIX"
 			test -d \${PREFIX} && find \${PREFIX} ! -type d | \
 			egrep -v "\${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)"  | \
 			sed -e "s,^\${PREFIX}/,,"
