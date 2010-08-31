@@ -79,8 +79,8 @@ EOF
 
 	(
 	jexec -U root ${jailname} make -C ${PORTDIRECTORY} clean
-	jexec -U root ${jailname} make -C ${PORTDIRECTORY} depends
-	for pkg in `jexec -U root ${jailname} make -C ${PORTDIRECTORY} all-depends-list`;do
+	jexec -U root ${jailname} make -C ${PORTDIRECTORY} extract-depends fetch-depends patch-depends build-depends lib-depends
+	for pkg in `jexec -U root ${jailname} make -C ${PORTDIRECTORY} build-depends-list`;do
 		pkgname=`jexec -U root ${jailname} make -C ${pkg} package-name`
 		test -f ${POUDRIERE_DATA}/packages/${jailname}/All/${pkgname}.tbz || jexec -U root ${jailname} /usr/sbin/pkg_create -b ${pkgname} /usr/ports/packages/All/${pkgname}.tbz
 	done
