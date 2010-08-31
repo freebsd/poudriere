@@ -13,6 +13,18 @@ outside_portsdir() {
 	return 0
 }
 
+sig_handler() {
+	if [ ${STATUS} -eq 1 ]; then
+
+		echo "====> Killed captured, cleaning up and exiting"
+		outside_portsdir ${PORTDIRECTORY} && umount ${PORTDIRECTORY}
+		umount ${MNT}/usr/ports/packages
+		umount ${MNT}/usr/ports
+		/bin/sh ${SCRIPTPREFIX}/stop_jail.sh -n ${jailname}
+		exit 0
+	fi
+}
+
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
@@ -34,11 +46,18 @@ while getopts "d:c" FLAG; do
 	esac
 done
 
+STATUS=0 # out of jail #
+
+trap sig_handler SIGINT
+trap sig_handler SIGTERM
+trap sig_handler SIGKILL
+
 test -z ${PORTDIRECTORY} && usage
 PORTNAME=`make -C ${PORTDIRECTORY} -VPKGNAME`
 for jailname in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }'`; do
 	MNT=`zfs list -H ${ZPOOL}/poudriere/${jailname} | awk '{ print $NF}'`
 	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -n ${jailname}
+	STATUS=1 #injail
 	mkdir -p ${MNT}/usr/ports
 	mount -t nullfs ${PORTSDIR} ${MNT}/usr/ports
 	mkdir -p ${POUDRIERE_DATA}/packages/${jailname}
@@ -145,5 +164,6 @@ EOF
 	umount ${MNT}/usr/ports/packages
 	umount ${MNT}/usr/ports
 	/bin/sh ${SCRIPTPREFIX}/stop_jail.sh -n ${jailname}
+	STATUS=0 #injail
 done
 
