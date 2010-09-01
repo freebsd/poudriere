@@ -62,7 +62,7 @@ for jailname in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 	STATUS=1 #injail
 	mkdir -p ${MNT}/usr/ports
 	mount -t nullfs ${PORTSDIR} ${MNT}/usr/ports
-	mkdir -p ${POUDRIERE_DATA}/packages/${jailname}
+	mkdir -p ${POUDRIERE_DATA}/packages/${jailname}/All
 	mount -t nullfs ${POUDRIERE_DATA}/packages/${jailname} ${MNT}/usr/ports/packages
 
 	if outside_portsdir ${PORTDIRECTORY}; then
