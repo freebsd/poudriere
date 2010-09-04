@@ -85,7 +85,7 @@ for pkg in ${PKGS}; do
 	fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/${pkg} || fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/${pkg}
 done
 echo -n "====> Extracting ssys:"
-cat ${JAILBASE}/fromftp/ssys.* | tar --unlink -xpzf - -C ${JAILBASE}/ || err 1 " Fail" && echo " done"
+cat ${JAILBASE}/fromftp/ssys.* | tar --unlink -xpzf - -C ${JAILBASE}/usr/src || err 1 " Fail" && echo " done"
 echo -n "====> Cleaning Up ssys sets:"
 rm ${JAILBASE}/fromftp/*
 echo " done"
