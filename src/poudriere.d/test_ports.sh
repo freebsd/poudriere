@@ -80,9 +80,10 @@ EOF
 	(
 	jexec -U root ${jailname} make -C ${PORTDIRECTORY} clean
 	jexec -U root ${jailname} make -C ${PORTDIRECTORY} extract-depends fetch-depends patch-depends build-depends lib-depends
-	for pkg in `jexec -U root ${jailname} make -C ${PORTDIRECTORY} build-depends-list`;do
-		pkgname=`jexec -U root ${jailname} make -C ${pkg} package-name`
-		test -f ${POUDRIERE_DATA}/packages/${jailname}/All/${pkgname}.tbz || jexec -U root ${jailname} /usr/sbin/pkg_create -b ${pkgname} /usr/ports/packages/All/${pkgname}.tbz
+# Package all newly build ports
+	DEPLIST=`jexec -U root ${jailname} make -C ${PORTDIRECTORY} build-depends-list`
+	for pkg in `jexec -U root ${jailname} /usr/sbin/pkg_info | awk '{ print $1}'`; do
+		test -f ${POUDRIERE_DATA}/packages/${jailname}/All/${pkg}.tbz || jexec -U root ${jailname} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
 	done
 	) | tee ${LOGS}/${PORTNAME}-${jailname}.depends.log
 
