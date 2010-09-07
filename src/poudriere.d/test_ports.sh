@@ -29,6 +29,41 @@ sig_handler() {
 	fi
 }
 
+build_port() {
+	echo "===> Building ${PKGNAME}"
+	for PHASE in build install package deinstall
+	do
+		if [ "${PHASE}" = "deinstall" ]; then
+			echo "===> Checking pkg_info"
+			PKG_DBDIR=${PKG_DBDIR} jexec -U root ${jailname} /usr/sbin/pkg_info ${PKGNAME}
+			PLIST="${PKG_DBDIR}/${PKGNAME}/+CONTENTS"
+			if [ -r ${MNT}${PLIST} ]; then
+				echo "===> Checking shared library dependencies"
+				grep -v "^@" ${MNT}${PLIST} | \
+				sed -e "s,^,${PREFIX}/," | \
+				xargs jexec -U root ${jailname} ldd 2>&1 | \
+				grep -v "not a dynamic executable" | \
+				grep '=>' | awk '{ print $3;}' | sort -u
+			fi
+		fi
+		jexec -U root ${jailname} make -C ${PORTDIRECTORY} ${PORT_FLAGS} ${PHASE} PKGREPOSITORY=/tmp PACKAGES=/tmp
+		if [ $? -gt 0 ]; then
+			echo "===> Error running make ${PHASE}"
+			if [ "${PHASE}" = "package" ]; then
+				echo "===> Files currently installed in PREFIX"
+				test -d ${MNT}${PREFIX} && find ${MNT}${PREFIX} ! - type d | \
+				egrep -v "${MNT}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
+				sed -e "s,^${MNT}${PREFIX}/,,"
+			fi
+			echo "===> Cleaning up"
+			[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${MNT}${PREFIX}
+			rm -rf ${MNT}${PKG_DBDIR}
+			return 1
+		fi
+	done
+	return 0
+}
+
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
@@ -87,82 +122,42 @@ EOF
 	done
 	) | tee ${LOGS}/${PORTNAME}-${jailname}.depends.log
 
-cat << EOF >> ${MNT}/testports.sh
-#!/bin/sh
+	(
+	PKGNAME=`jexec -U root ${jailname} make -C ${PORTDIRECTORY} -VPKGNAME`
+	PKG_DBDIR=`jexec -U root ${jailname} mktemp -d -t pkg_db`
+	LOCALBASE=`jexec -U root ${jailname} make -C ${PORTDIRECTORY} -VLOCALBASE`
+	PREFIX="${BUILDROOT:-/tmp}/`echo ${PKGNAME} | tr '[,+]' _`"
+	PORT_FLAGS="PREFIX=${PREFIX} PKG_DBDIR=${PKG_DBDIR} NO_DEPENDS=yes"
+	echo "===> Building with flags: ${PORT_FLAGS}"
+	echo "===> Cleaning workspace"
+	jexec -U root ${jailname} make -C ${PORTDIRECTORY} clean
+	test -z $CONFIGSTR && jexec -U root ${jailname} make -C ${PORTDIRECTORY} config
 
-export BATCH=yes
-cd ${PORTDIRECTORY}
-
-PKGNAME=\`make -V PKGNAME\` 
-PKG_DBDIR=\`mktemp -d -t pkg_db\` || exit 1
-
-LOCALBASE=\`make -VLOCALBASE\`
-PREFIX="\${BUILDROOT:-/tmp}/\`echo \${PKGNAME} | tr  '[,+]' _\`"
-
-PORT_FLAGS="PREFIX=\${PREFIX} PKG_DBDIR=\${PKG_DBDIR} NO_DEPENDS=yes\$*"
-
-echo "===> Building with flags: \${PORT_FLAGS}"
-echo "===> Cleaning workspace"
-make clean
-
-$CONFIGSTR
-
-if [ -d \${PREFIX} ]; then
-	echo "===> Removing existing \${PREFIX}"
-	[ "\${PREFIX}" != "\${LOCALBASE}" ] && rm -rf \${PREFIX}
-fi
-
-echo "===> Building \${PKGNAME}"
-for PHASE in build install package deinstall
-do
-	if [ "\${PHASE}" = "deinstall" ]; then
-		echo "===> Checking pkg_info"
-		PKG_DBDIR=\${PKG_DBDIR} pkg_info | grep \${PKGNAME}
-		PLIST="\${PKG_DBDIR}/\${PKGNAME}/+CONTENTS"
-		if [ -r \${PLIST} ]; then
-			echo "===> Checking shared library dependencies"
-			grep -v "^@" \${PLIST} | \
-			sed -e "s,^,\${PREFIX}/," | \
-			xargs ldd 2>&1 | \
-			grep -v "not a dynamic executable" | \
-			grep '=>' | awk '{print \$3;}' | sort -u
-		fi
+	if [ -d ${MNT}${PREFIX} ]; then
+		echo "===> Removing existing ${PREFIX}"
+		[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${MNT}${PREFIX}
 	fi
-	make \${PORT_FLAGS} \${PHASE} PKGREPOSITORY=/tmp PACKAGES=/tmp
-	if [ \$? -gt 0 ]; then
-		echo "===> Error running make \${PHASE}"
-		if [ "\${PHASE}" = "package" ]; then
-			echo "===> Files currently installed in PREFIX"
-			test -d \${PREFIX} && find \${PREFIX} ! -type d | \
-			egrep -v "\${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)"  | \
-			sed -e "s,^\${PREFIX}/,,"
-		fi
-		echo "===> Cleaning up"
-		[ "\${PREFIX}" != "\${LOCALBASE}" ] && rm -rf \${PREFIX}
-		rm -rf \${PKG_DBDIR}
-		exit 1
+
+	build_port
+	if [ $? -eq 0 ]; then
+		echo "===> Extra files and directories check"
+		find ${MNT}${PREFIX} ! -type d | \
+		egrep -v "${MNT}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
+		set -e "s,^${MNT}${PREFIX}/,,"
+
+		find ${MNT}${LOCALBASE}/ -type d | sed "s,^${MNT}${LOCALBASE}/,," | sort > ${MNT}${PREFIX}.PLIST_DIRS.before
+		find ${MNT}${PREFIX}/ -type d | sed "s,^${MNT}${PREFIX}/,," | sort > ${MNT}${PREFIX}.PLIST_DIRS.after
+		comm -13 ${MNT}${PREFIX}.PLIST_DIRS.before ${MNT}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
 	fi
-done
 
-echo "===> Extra files and directories check"
-find \${PREFIX} ! -type d | \
-egrep -v "\${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)"  | \
-sed -e "s,^\${PREFIX}/,,"
-find \${LOCALBASE}/ -type d | sed "s,^\${LOCALBASE}/,," | sort > \${PREFIX}.PLIST_DIRS.before
-find \${PREFIX}/ -type d | sed "s,^\${PREFIX}/,," | sort > \${PREFIX}.PLIST_DIRS.after
-comm -13 \${PREFIX}.PLIST_DIRS.before \${PREFIX}.PLIST_DIRS.after | sort -r | awk '{print "@dirrmtry "\$1}'
+	echo "===> Cleaning up"
+	jexec -U root ${jailname} make -C ${PORTDIRECTORY} clean
 
-echo "===> Cleaning up"
-make clean
+	echo "===> Removing existing ${PREFIX} dir"
+	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${MNT}${PREFIX} ${MNT}${PREFIX}.PLIST_DIRS.before ${MNT}${PREFIX}.PLIST_DIRS.after
+	rm -rf ${MNT}${PKG_DBDIR}
 
-echo "===>  Removing existing \${PREFIX} dir"
- [ "\${PREFIX}" != "\${LOCALBASE}" ] && rm -rf \${PREFIX} \${PREFIX}.PLIST_DIRS.before \${PREFIX}.PLIST_DIRS.after
- rm -rf \${PKG_DBDIR}
-echo "===> Done."
-exit 0
-EOF
-
-	jexec -U root ${jailname} /bin/sh /testports.sh 2>&1 | tee ${LOGS}/${PORTNAME}-${jailname}.build.log
+	) | tee  ${LOGS}/${PORTNAME}-${jailname}.build.log
 
 	cleanup
 	STATUS=0 #injail
