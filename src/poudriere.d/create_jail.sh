@@ -60,7 +60,7 @@ zfs list -r ${ZPOOL}/poudriere/${NAME} >/dev/null 2>&1 && err 2 "The jail ${NAME
 
 JAILBASE=${BASEFS:=/usr/local/poudriere}/jails/${NAME}
 # Create the jail FS
-echo -n "====> Creating ${NAME} fs:"
+echo -n "====> Creating ${NAME} fs..."
 zfs create -o mountpoint=${JAILBASE} ${ZPOOL}/poudriere/${NAME} >/dev/null 2>&1 || err 1 " Fail" && echo " done"
 
 
@@ -72,21 +72,21 @@ for pkg in ${PKGS}; do
 # Let's retry at least one time
 	fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/${pkg} || fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/${pkg}
 done
-echo -n "====> Extracting base:"
+echo -n "====> Extracting base..."
 cat ${JAILBASE}/fromftp/base.* | tar --unlink -xpzf - -C ${JAILBASE}/ || err 1 " Fail" && echo " done"
-echo -n "====> Cleaning Up base sets:"
+echo -n "====> Cleaning Up base sets..."
 rm ${JAILBASE}/fromftp/*
 echo " done"
 
-echo "====> Fetching ssys sets"
+echo "====> Fetching ssys sets..."
 PKGS=`echo "ls ssys*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/ | awk '{print $NF}'`
 for pkg in ${PKGS}; do
 # Let's retry at least one time
 	fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/${pkg} || fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/${pkg}
 done
-echo -n "====> Extracting ssys:"
+echo -n "====> Extracting ssys..."
 cat ${JAILBASE}/fromftp/ssys.* | tar --unlink -xpzf - -C ${JAILBASE}/usr/src || err 1 " Fail" && echo " done"
-echo -n "====> Cleaning Up ssys sets:"
+echo -n "====> Cleaning Up ssys sets..."
 rm ${JAILBASE}/fromftp/*
 echo " done"
 
@@ -98,7 +98,7 @@ LOGIN_ENV=",UNAME_r=${VERSION},UNAME_v=FreeBSD ${VERSION},OSVERSION=${OSVERSION}
 
 if [ "${ARCH}" = "i386" -a `uname -m` = "amd64" ];then
 LOGIN_ENV="${LOGIN_ENV},UNAME_p=i386,UNAME_m=i386"
-cat >  ${JAILBASE}/etc/make.conf << EOF
+cat > ${JAILBASE}/etc/make.conf << EOF
 MACHINE=i386
 MACHINE_ARCH=i386
 EOF
@@ -108,6 +108,15 @@ fi
 sed -i .back -e "s/:\(setenv.*\):/:\1${LOGIN_ENV}:/" ${JAILBASE}/etc/login.conf
 cap_mkdb ${JAILBASE}/etc/login.conf
 pwd_mkdb -d ${JAILBASE}/etc/ -p ${JAILBASE}/etc/master.passwd
+
+cat >> ${JAILBASE}/etc/make.conf << EOF
+USE_PACKAGE_DEPENDS=yes
+BATCH=yes
+EOF
+
+mkdir -p ${JAILBASE}/usr/ports
+mkdir -p ${POUDRIERE_DATA}/packages/${NAME}/All
+mkdir -p ${POUDRIERE_DATA}/logs
 
 cp /etc/resolv.conf ${JAILBASE}/etc
 

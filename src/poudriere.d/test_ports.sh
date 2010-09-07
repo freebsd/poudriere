@@ -69,7 +69,6 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
 
 LOGS="${POUDRIERE_DATA}/logs"
-mkdir -p ${LOGS}
 
 while getopts "d:c" FLAG; do
 	case "${FLAG}" in
@@ -95,9 +94,7 @@ for JAILNAME in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 	MNT=`zfs list -H ${ZPOOL}/poudriere/${JAILNAME} | awk '{ print $NF}'`
 	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -n ${JAILNAME}
 	STATUS=1 #injail
-	mkdir -p ${MNT}/usr/ports
 	mount -t nullfs ${PORTSDIR} ${MNT}/usr/ports
-	mkdir -p ${POUDRIERE_DATA}/packages/${JAILNAME}/All
 	mount -t nullfs ${POUDRIERE_DATA}/packages/${JAILNAME} ${MNT}/usr/ports/packages
 
 	if outside_portsdir ${PORTDIRECTORY}; then
@@ -106,11 +103,6 @@ for JAILNAME in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 	fi
 
 	jexec -U root ${JAILNAME} /usr/sbin/mtree -U  -f /usr/ports/Templates/BSD.local.dist -d -e -p /usr/local
-
-cat << EOF >> ${MNT}/etc/make.conf
-USE_PACKAGE_DEPENDS=yes
-BATCH=yes
-EOF
 
 	(
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
