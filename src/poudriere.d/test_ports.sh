@@ -74,7 +74,7 @@ mkdir -p ${LOGS}
 while getopts "d:c" FLAG; do
 	case "${FLAG}" in
 		c)
-		CONFIGSTR="make config"
+		CONFIGSTR=1
 		;;
 		d)
 		PORTDIRECTORY=`realpath ${OPTARG}`
@@ -131,7 +131,7 @@ EOF
 	echo "===> Building with flags: ${PORT_FLAGS}"
 	echo "===> Cleaning workspace"
 	jexec -U root ${jailname} make -C ${PORTDIRECTORY} clean
-	test -n $CONFIGSTR && jexec -U root ${jailname} make -C ${PORTDIRECTORY} config
+	[ $CONFIGSTR -eq 1 ] && jexec -U root ${jailname} make -C ${PORTDIRECTORY} config
 
 	if [ -d ${MNT}${PREFIX} ]; then
 		echo "===> Removing existing ${PREFIX}"
