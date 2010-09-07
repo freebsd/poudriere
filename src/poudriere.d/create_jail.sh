@@ -66,7 +66,7 @@ zfs create -o mountpoint=${JAILBASE} ${ZPOOL}/poudriere/${NAME} >/dev/null 2>&1 
 
 #We need to fetch base and src (for drivers)
 echo "====> Fetching base sets for FreeBSD $VERSION $ARCH"
-PKGS=`echo "ls base*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/ | awk '{print $NF}'`
+PKGS=`echo "ls base*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/ | awk '{print $NF}' | grep base`
 mkdir ${JAILBASE}/fromftp
 for pkg in ${PKGS}; do
 # Let's retry at least one time
@@ -79,7 +79,7 @@ rm ${JAILBASE}/fromftp/*
 echo " done"
 
 echo "====> Fetching ssys sets..."
-PKGS=`echo "ls ssys*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/ | awk '{print $NF}'`
+PKGS=`echo "ls ssys*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/ | awk '{print $NF}' | grep ssys`
 for pkg in ${PKGS}; do
 # Let's retry at least one time
 	fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/${pkg} || fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/${pkg}
