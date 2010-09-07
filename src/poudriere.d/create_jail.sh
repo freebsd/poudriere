@@ -112,9 +112,11 @@ pwd_mkdb -d ${JAILBASE}/etc/ -p ${JAILBASE}/etc/master.passwd
 cat >> ${JAILBASE}/etc/make.conf << EOF
 USE_PACKAGE_DEPENDS=yes
 BATCH=yes
+WRKDIRPREFIX=/wrkdirs
 EOF
 
 mkdir -p ${JAILBASE}/usr/ports
+mkdir -p ${JAILBASE}/wrkdirs
 mkdir -p ${POUDRIERE_DATA}/packages/${NAME}/All
 mkdir -p ${POUDRIERE_DATA}/logs
 
