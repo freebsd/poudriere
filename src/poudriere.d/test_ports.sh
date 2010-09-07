@@ -131,7 +131,7 @@ EOF
 	echo "===> Building with flags: ${PORT_FLAGS}"
 	echo "===> Cleaning workspace"
 	jexec -U root ${jailname} make -C ${PORTDIRECTORY} clean
-	test -z $CONFIGSTR && jexec -U root ${jailname} make -C ${PORTDIRECTORY} config
+	test -n $CONFIGSTR && jexec -U root ${jailname} make -C ${PORTDIRECTORY} config
 
 	if [ -d ${MNT}${PREFIX} ]; then
 		echo "===> Removing existing ${PREFIX}"
