@@ -27,7 +27,7 @@ while getopts "n:clp" FLAG; do
 		CLEANLOGS=1
 		;;
 		c)
-		CLEALLOGS=1
+		CLEANLOGS=1
 		CLEANPKGS=1
 		;;
 		*)
