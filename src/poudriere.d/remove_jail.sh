@@ -1,7 +1,10 @@
 #!/bin/sh
 
 usage() {
-	echo "poudriere removejail -n name"
+	echo "poudriere removejail [-clp] -n name"
+	echo "-l: clean logs"
+	echo "-p: clean packages"
+	echo "-c: clean all"
 	exit 1
 }
 
@@ -9,10 +12,23 @@ SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "n:" FLAG; do
+CLEANLOGS=0
+CLEANPKGS=0
+
+while getopts "n:clp" FLAG; do
 	case "${FLAG}" in 
 		n)
 		NAME=${OPTARG}
+		;;
+		p)
+		CLEANPKGS=1
+		;;
+		l)
+		CLEANLOGS=1
+		;;
+		c)
+		CLEALLOGS=1
+		CLEANPKGS=1
 		;;
 		*)
 		usage
@@ -28,6 +44,8 @@ JAILBASE=`zfs list -H ${ZPOOL}/poudriere/${NAME} | awk '{ print $NF}'`
 echo -n "====> Removing ${NAME} jail..."
 zfs destroy -r ${ZPOOL}/poudriere/${NAME}
 rmdir ${JAILBASE}
-rm -rf ${POUDRIERE_DATA}/packages/${NAME}
-rm -f ${POUDRIERE_DATA}/logs/*-${NAME}*.log
+
+[ ${CLEANPKGS} -eq 1 ] && rm -rf ${POUDRIERE_DATA}/packages/${NAME}
+[ ${CLEANLOGS} -eq 1 ] && rm -f ${POUDRIERE_DATA}/logs/*-${NAME}*.log
+
 echo " done"
