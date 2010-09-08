@@ -112,7 +112,7 @@ for JAILNAME in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 	for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1}'`; do
 		test -f ${POUDRIERE_DATA}/packages/${JAILNAME}/All/${pkg}.tbz || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
 	done
-	) | tee ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log
+	) 2>&1 | tee ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log
 
 	(
 	PKGNAME=`jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VPKGNAME`
@@ -149,7 +149,7 @@ for JAILNAME in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${MNT}${PREFIX} ${MNT}${PREFIX}.PLIST_DIRS.before ${MNT}${PREFIX}.PLIST_DIRS.after
 	rm -rf ${MNT}${PKG_DBDIR}
 
-	) | tee  ${LOGS}/${PORTNAME}-${JAILNAME}.build.log
+	) 2>&1 | tee  ${LOGS}/${PORTNAME}-${JAILNAME}.build.log
 
 	cleanup
 	STATUS=0 #injail
