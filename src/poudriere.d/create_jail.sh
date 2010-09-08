@@ -1,10 +1,11 @@
 #!/bin/sh
 
 usage() {
-	echo "pourdriere createjail -n name -v version [-a architecture] [-z zfs] -m [FTP|NONE] "
+	echo "pourdriere createjail -n name -v version [-a architecture] [-z zfs] -m [FTP|NONE] -s"
 	echo "by default architecture is the same as the host (amd64 can create i386 jails)"
 	echo "by default a new zfs filesystem will be created in the dedicated pool"
 	echo "by default the FTP method is used but you can add your home made jail with NONE -v and -a will be ignored in that case"
+	echo "-s: install the whole sources some ports my need it (only kernel sources are installed by default)"
 	exit 1
 }
 
@@ -23,7 +24,10 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 #Test if the default FS for pourdriere exists if not creates it
 zfs list ${ZPOOL}/poudriere >/dev/null 2>&1 || create_base_fs
 
-while getopts "n:v:a:z:m:" FLAG; do
+SRCS="ssys*"
+SRCSNAME="ssys"
+
+while getopts "n:v:a:z:m:s" FLAG; do
 	case "${FLAG}" in
 		n)
 		NAME=${OPTARG}
@@ -42,6 +46,10 @@ while getopts "n:v:a:z:m:" FLAG; do
 		;;
 		m)
 		METHOD=${OPTARG}
+		;;
+		s)
+		SRCS="s*"
+		SRCSNAME="sources"
 		;;
 		*)
 			usage
@@ -66,7 +74,7 @@ zfs create -o mountpoint=${JAILBASE} ${ZPOOL}/poudriere/${NAME} >/dev/null 2>&1 
 
 #We need to fetch base and src (for drivers)
 echo "====> Fetching base sets for FreeBSD $VERSION $ARCH"
-PKGS=`echo "ls base*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/ | awk '/base/ {print $NF}'`
+PKGS=`echo "ls base*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/ | awk '/-r.*/ {print $NF}'`
 mkdir ${JAILBASE}/fromftp
 for pkg in ${PKGS}; do
 # Let's retry at least one time
@@ -78,15 +86,19 @@ echo -n "====> Cleaning Up base sets..."
 rm ${JAILBASE}/fromftp/*
 echo " done"
 
-echo "====> Fetching ssys sets..."
-PKGS=`echo "ls ssys*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/ | awk '/ssys/ {print $NF}'`
+echo "====> Fetching ${SRCSNAME} sets..."
+PKGS=`echo "ls ${SRCS}"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/ | awk '/-r.*/ {print $NF}'`
 for pkg in ${PKGS}; do
 # Let's retry at least one time
 	fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/${pkg} || fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/${pkg}
 done
-echo -n "====> Extracting ssys..."
-cat ${JAILBASE}/fromftp/ssys.* | tar --unlink -xpzf - -C ${JAILBASE}/usr/src || err 1 " Fail" && echo " done"
-echo -n "====> Cleaning Up ssys sets..."
+echo "====> Extracting ${SRCSNAME}:"
+for SETS in ${JAILBASE}/fromftp/*.aa; do
+	SET=`basename $SETS .aa`
+	echo -e "\t- $SET...\c"
+	cat ${JAILBASE}/fromftp/${SET}.* | tar --unlink -xpzf - -C ${JAILBASE}/usr/src || err 1 " Fail" && echo " done"
+done
+echo -n "====> Cleaning Up ${SRCSNAME} sets..."
 rm ${JAILBASE}/fromftp/*
 echo " done"
 
@@ -101,9 +113,6 @@ LOGIN_ENV="${LOGIN_ENV},UNAME_p=i386,UNAME_m=i386"
 cat > ${JAILBASE}/etc/make.conf << EOF
 MACHINE=i386
 MACHINE_ARCH=i386
-USE_PACKAGE_DEPENDS=yes
-BATCH=yes
-WRKDIRPREFIX=/wrkdirs
 EOF
 
 fi
@@ -111,6 +120,12 @@ fi
 sed -i .back -e "s/:\(setenv.*\):/:\1${LOGIN_ENV}:/" ${JAILBASE}/etc/login.conf
 cap_mkdb ${JAILBASE}/etc/login.conf
 pwd_mkdb -d ${JAILBASE}/etc/ -p ${JAILBASE}/etc/master.passwd
+
+cat >> ${JAILBASE}/etc/make.conf << EOF
+USE_PACKAGE_DEPENDS=yes
+BATCH=yes
+WRKDIRPREFIX=/wrkdirs
+EOF
 
 mkdir -p ${JAILBASE}/usr/ports
 mkdir -p ${JAILBASE}/wrkdirs
