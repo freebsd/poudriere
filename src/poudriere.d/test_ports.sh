@@ -102,7 +102,8 @@ for JAILNAME in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 		mount -t nullfs ${PORTDIRECTORY} ${MNT}/${PORTDIRECTORY}
 	fi
 
-	jexec -U root ${JAILNAME} /usr/sbin/mtree -U  -f /usr/ports/Templates/BSD.local.dist -d -e -p /usr/local
+	echo "===> Populating LOCALBASE"
+	jexec -U root ${JAILNAME} /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p /usr/local >/dev/null
 
 	(
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
@@ -135,7 +136,7 @@ for JAILNAME in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 		echo "===> Extra files and directories check"
 		find ${MNT}${PREFIX} ! -type d | \
 		egrep -v "${MNT}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
-		set -e "s,^${MNT}${PREFIX}/,,"
+		sed -e "s,^${MNT}${PREFIX}/,,"
 
 		find ${MNT}${LOCALBASE}/ -type d | sed "s,^${MNT}${LOCALBASE}/,," | sort > ${MNT}${PREFIX}.PLIST_DIRS.before
 		find ${MNT}${PREFIX}/ -type d | sed "s,^${MNT}${PREFIX}/,," | sort > ${MNT}${PREFIX}.PLIST_DIRS.after
