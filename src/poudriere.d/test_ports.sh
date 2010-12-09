@@ -17,7 +17,11 @@ cleanup() {
 	outside_portsdir ${PORTDIRECTORY} && umount ${PORTDIRECTORY}
 	umount ${MNT}/usr/ports/packages
 	umount ${MNT}/usr/ports
-	test -n ${MFSSIZE} && umount ${MNT}/${WRKDIRPREFIX}
+	test -n ${MFSSIZE} && { 
+		MDUNIT=`mount | egrep "${MNT}/*${WRKDIRPREFIX}" | awk '{ print $1 }' | sed -e "s,/dev/md,,g"`
+		umount ${MNT}/${WRKDIRPREFIX}
+		mdconfig -d -u ${MDUNIT}
+	}
 	/bin/sh ${SCRIPTPREFIX}/stop_jail.sh -n ${JAILNAME}
 }
 
@@ -104,7 +108,7 @@ for JAILNAME in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 	test -n "${MFSSIZE}" && mdmfs -M -S -o async -s ${MFSSIZE} md ${MNT}/${WRKDIRPREFIX}
 
 	echo "WRKDIRPREFIX=${WRKDIRPREFIX}" >> ${MNT}/etc/make.conf
-	if [ -n ${CUSTOMCONFIG} ]; then
+	if [ -n "${CUSTOMCONFIG}" ]; then
 		test -f ${CUSTOMCONFIG} && cat ${CUSTOMCONFIG} >> ${MNT}/etc/make.conf
 	fi
 
@@ -153,6 +157,11 @@ for JAILNAME in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 		find ${MNT}${PREFIX}/ -type d | sed "s,^${MNT}${PREFIX}/,," | sort > ${MNT}${PREFIX}.PLIST_DIRS.after
 		comm -13 ${MNT}${PREFIX}.PLIST_DIRS.before ${MNT}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
 	fi
+
+	echo "===> Installing from package"
+	PKG_DBDIR=${PKG_DBDIR} jexec -U root ${JAILNAME} pkg_add /tmp/${PKGNAME}.tbz
+	echo "===> Deinstalling package"
+	PKG_DBDIR=${PKG_DBDIR} jexec -U root ${JAILNAME} pkg_delete ${PKGNAME}
 
 	echo "===> Cleaning up"
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
