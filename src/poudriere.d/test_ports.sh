@@ -17,6 +17,7 @@ cleanup() {
 	outside_portsdir ${PORTDIRECTORY} && umount ${PORTDIRECTORY}
 	umount ${MNT}/usr/ports/packages
 	umount ${MNT}/usr/ports
+	test -n ${MFSSIZE} && umount ${MNT}/${WRKDIRPREFIX}
 	/bin/sh ${SCRIPTPREFIX}/stop_jail.sh -n ${JAILNAME}
 }
 
@@ -97,6 +98,15 @@ for JAILNAME in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 	STATUS=1 #injail
 	mount -t nullfs ${PORTSDIR} ${MNT}/usr/ports
 	mount -t nullfs ${POUDRIERE_DATA}/packages/${JAILNAME} ${MNT}/usr/ports/packages
+
+	WRKDIRPREFIX=${WRKDIRPREFIX:-/tmp/build}
+	mkdir -p ${MNT}/${WRKDIRPREFIX}
+	test -n "${MFSSIZE}" && mdmfs -M -S -o async -s ${MFSSIZE} md ${MNT}/${WRKDIRPREFIX}
+
+	echo "WRKDIRPREFIX=${WRKDIRPREFIX}" >> ${MNT}/etc/make.conf
+	if [ -n ${CUSTOMCONFIG} ]; then
+		test -f ${CUSTOMCONFIG} && cat ${CUSTOMCONFIG} >> ${MNT}/etc/make.conf
+	fi
 
 	if outside_portsdir ${PORTDIRECTORY}; then
 		mkdir -p ${MNT}/${PORTDIRECTORY}

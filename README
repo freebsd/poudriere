@@ -65,6 +65,9 @@ IP=192.168.1.1 #the ip of the jail so that it can access internet (fetch distfil
 ETH=nfe0 # the network interface linked to the jail
 PORTSDIR=/usr/ports # the portstree that will be mounted into the jails
 POUDRIERE_DATA=/usr/local/poudriere_data # the directory where poudriere will store packages and logs
+WRKDIRPREFIX=/path/to/workdir #specify a custom path to WORKDIRPREFIX by default /tmp/build
+MFSSIZE=1024m # if set WORKDIRPREFIX will be mdmfs at the given size
+CUSTOMCONFIG=/path/to/custom/make.conf # path to files to be appended to the jail make.conf
 
 NOTE:
 
