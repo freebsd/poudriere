@@ -17,9 +17,9 @@ cleanup() {
 	outside_portsdir ${PORTDIRECTORY} && umount ${PORTDIRECTORY}
 	umount ${MNT}/usr/ports/packages
 	umount ${MNT}/usr/ports
-	test -n ${MFSSIZE} && { 
-		MDUNIT=`mount | egrep "${MNT}/*${WRKDIRPREFIX}" | awk '{ print $1 }' | sed -e "s,/dev/md,,g"`
-		umount ${MNT}/${WRKDIRPREFIX}
+	test -n "${MFSSIZE}" && {
+		MDUNIT=`mount | egrep "${MNT}/*/wrkdirs" | awk '{ print $1 }' | sed -e "s,/dev/md,,g"`
+		umount ${MNT}/wrkdirs
 		mdconfig -d -u ${MDUNIT}
 	}
 	/bin/sh ${SCRIPTPREFIX}/stop_jail.sh -n ${JAILNAME}
@@ -103,11 +103,8 @@ for JAILNAME in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 	mount -t nullfs ${PORTSDIR} ${MNT}/usr/ports
 	mount -t nullfs ${POUDRIERE_DATA}/packages/${JAILNAME} ${MNT}/usr/ports/packages
 
-	WRKDIRPREFIX=${WRKDIRPREFIX:-/tmp/build}
-	mkdir -p ${MNT}/${WRKDIRPREFIX}
-	test -n "${MFSSIZE}" && mdmfs -M -S -o async -s ${MFSSIZE} md ${MNT}/${WRKDIRPREFIX}
+	test -n "${MFSSIZE}" && mdmfs -M -S -o async -s ${MFSSIZE} md ${MNT}/wrkdirs
 
-	echo "WRKDIRPREFIX=${WRKDIRPREFIX}" >> ${MNT}/etc/make.conf
 	if [ -n "${CUSTOMCONFIG}" ]; then
 		test -f ${CUSTOMCONFIG} && cat ${CUSTOMCONFIG} >> ${MNT}/etc/make.conf
 	fi
