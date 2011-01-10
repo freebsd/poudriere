@@ -31,9 +31,9 @@ test -z ${IP} && err 1 "No IP defined for poudriere"
 test -z ${ETH} && err 1 "No ethernet device defined for poudriere"
 
 MNT=`zfs list -H ${ZPOOL}/poudriere/${NAME} | awk '{ print $NF}'`
-echo "====> Mounting devfs"
+echo "====>> Mounting devfs"
 devfs_mount_jail "${MNT}/dev"
-echo "====> Adding IP alias"
+echo "====>> Adding IP alias"
 ifconfig ${ETH} inet ${IP} alias
-echo "====> Starting jail"
+echo "====>> Starting jail"
 jail -c persist name=${NAME} path=${MNT} host.hostname=${NAME} ip4.addr=${IP}

@@ -28,22 +28,22 @@ cleanup() {
 sig_handler() {
 	if [ ${STATUS} -eq 1 ]; then
 
-		echo "====> Signal caught, cleaning up and exiting"
+		echo "====>> Signal caught, cleaning up and exiting"
 		cleanup
 		exit 0
 	fi
 }
 
 build_port() {
-	echo "===> Building ${PKGNAME}"
+	echo "===>> Building ${PKGNAME}"
 	for PHASE in build install package deinstall
 	do
 		if [ "${PHASE}" = "deinstall" ]; then
-			echo "===> Checking pkg_info"
+			echo "===>> Checking pkg_info"
 			PKG_DBDIR=${PKG_DBDIR} jexec -U root ${JAILNAME} /usr/sbin/pkg_info ${PKGNAME}
 			PLIST="${PKG_DBDIR}/${PKGNAME}/+CONTENTS"
 			if [ -r ${MNT}${PLIST} ]; then
-				echo "===> Checking shared library dependencies"
+				echo "===>> Checking shared library dependencies"
 				grep -v "^@" ${MNT}${PLIST} | \
 				sed -e "s,^,${PREFIX}/," | \
 				xargs jexec -U root ${JAILNAME} ldd 2>&1 | \
@@ -53,14 +53,14 @@ build_port() {
 		fi
 		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} ${PORT_FLAGS} ${PHASE} PKGREPOSITORY=/tmp PACKAGES=/tmp
 		if [ $? -gt 0 ]; then
-			echo "===> Error running make ${PHASE}"
+			echo "===>> Error running make ${PHASE}"
 			if [ "${PHASE}" = "package" ]; then
-				echo "===> Files currently installed in PREFIX"
+				echo "===>> Files currently installed in PREFIX"
 				test -d ${MNT}${PREFIX} && find ${MNT}${PREFIX} ! - type d | \
 				egrep -v "${MNT}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
 				sed -e "s,^${MNT}${PREFIX}/,,"
 			fi
-			echo "===> Cleaning up"
+			echo "===>> Cleaning up"
 			[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${MNT}${PREFIX}
 			rm -rf ${MNT}${PKG_DBDIR}
 			return 1
@@ -114,7 +114,7 @@ for JAILNAME in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 		mount -t nullfs ${PORTDIRECTORY} ${MNT}/${PORTDIRECTORY}
 	fi
 
-	echo "===> Populating LOCALBASE"
+	echo "===>> Populating LOCALBASE"
 	jexec -U root ${JAILNAME} /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p /usr/local >/dev/null
 
 	(
@@ -133,19 +133,19 @@ for JAILNAME in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 	LOCALBASE=`jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VLOCALBASE`
 	PREFIX="${BUILDROOT:-/tmp}/`echo ${PKGNAME} | tr '[,+]' _`"
 	PORT_FLAGS="PREFIX=${PREFIX} PKG_DBDIR=${PKG_DBDIR} NO_DEPENDS=yes"
-	echo "===> Building with flags: ${PORT_FLAGS}"
-	echo "===> Cleaning workspace"
+	echo "===>> Building with flags: ${PORT_FLAGS}"
+	echo "===>> Cleaning workspace"
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
 	[ $CONFIGSTR -eq 1 ] && jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} config
 
 	if [ -d ${MNT}${PREFIX} ]; then
-		echo "===> Removing existing ${PREFIX}"
+		echo "===>> Removing existing ${PREFIX}"
 		[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${MNT}${PREFIX}
 	fi
 
 	build_port
 	if [ $? -eq 0 ]; then
-		echo "===> Extra files and directories check"
+		echo "===>> Extra files and directories check"
 		find ${MNT}${PREFIX} ! -type d | \
 		egrep -v "${MNT}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
 		sed -e "s,^${MNT}${PREFIX}/,,"
@@ -155,15 +155,15 @@ for JAILNAME in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 		comm -13 ${MNT}${PREFIX}.PLIST_DIRS.before ${MNT}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
 	fi
 
-	echo "===> Installing from package"
+	echo "===>> Installing from package"
 	PKG_DBDIR=${PKG_DBDIR} jexec -U root ${JAILNAME} pkg_add /tmp/${PKGNAME}.tbz
-	echo "===> Deinstalling package"
+	echo "===>> Deinstalling package"
 	PKG_DBDIR=${PKG_DBDIR} jexec -U root ${JAILNAME} pkg_delete ${PKGNAME}
 
-	echo "===> Cleaning up"
+	echo "===>> Cleaning up"
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
 
-	echo "===> Removing existing ${PREFIX} dir"
+	echo "===>> Removing existing ${PREFIX} dir"
 	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${MNT}${PREFIX} ${MNT}${PREFIX}.PLIST_DIRS.before ${MNT}${PREFIX}.PLIST_DIRS.after
 	rm -rf ${MNT}${PKG_DBDIR}
 
