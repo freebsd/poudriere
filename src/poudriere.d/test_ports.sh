@@ -121,7 +121,7 @@ for JAILNAME in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} extract-depends fetch-depends patch-depends build-depends lib-depends
 # Package all newly build ports
-	DEPLIST=`jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} build-depends-list`
+	echo "===> Packaging all dependencies"
 	for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1}'`; do
 		test -f ${POUDRIERE_DATA}/packages/${JAILNAME}/All/${pkg}.tbz || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
 	done
