@@ -37,6 +37,10 @@ case $1 in
 		shift
 		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/test_ports.sh $@
 	;;
+	genpkg)
+		shift
+		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/gen_package.sh $@
+	;;
 	*)
 	echo "unknown command $1"
 	usage

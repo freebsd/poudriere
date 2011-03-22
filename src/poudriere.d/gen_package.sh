@@ -1,7 +1,7 @@
 #!/bin/sh
 
 usage() {
-	echo "poudriere testport -d directory [-cn]"
+	echo "poudriere genpkg -d directory [-cn]"
 	echo "-c run make config for the given port"
 	echo "-n no custom prefix"
 	exit 1
@@ -33,36 +33,6 @@ sig_handler() {
 		cleanup
 		exit 0
 	fi
-}
-
-build_port() {
-	echo "===>> Building ${PKGNAME}"
-	for PHASE in build install package deinstall
-	do
-		if [ "${PHASE}" = "deinstall" ]; then
-			echo "===>> Checking pkg_info"
-			PKG_DBDIR=${PKG_DBDIR} jexec -U root ${JAILNAME} /usr/sbin/pkg_info ${PKGNAME}
-			PLIST="${PKG_DBDIR}/${PKGNAME}/+CONTENTS"
-			if [ -r ${MNT}${PLIST} ]; then
-				echo "===>> Checking shared library dependencies"
-				grep -v "^@" ${MNT}${PLIST} | \
-				sed -e "s,^,${PREFIX}/," | \
-				xargs jexec -U root ${JAILNAME} ldd 2>&1 | \
-				grep -v "not a dynamic executable" | \
-				grep '=>' | awk '{ print $3;}' | sort -u
-			fi
-		fi
-		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} ${PORT_FLAGS} ${PHASE} PKGREPOSITORY=/tmp PACKAGES=/tmp
-		if [ $? -gt 0 ]; then
-			echo "===>> Error running make ${PHASE}"
-			[ "${PHASE}" = "package" ] && return 0
-			echo "===>> Cleaning up"
-			[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${MNT}${PREFIX}
-			rm -rf ${MNT}${PKG_DBDIR}
-			return 1
-		fi
-	done
-	return 0
 }
 
 SCRIPTPATH=`realpath $0`
@@ -124,53 +94,22 @@ for JAILNAME in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 	for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1}'`; do
 		test -f ${POUDRIERE_DATA}/packages/${JAILNAME}/All/${pkg}.tbz || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
 	done
-	) 2>&1 | tee ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log
+	) 2>&1 | tee ${LOGS}/${PORTNAME}-${JAILNAME}.depends.pkg.log
 
 	(
 	PKGNAME=`jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VPKGNAME`
-	PKG_DBDIR=`jexec -U root ${JAILNAME} mktemp -d -t pkg_db`
-	LOCALBASE=`jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VLOCALBASE`
-	if [ ${NOPREFIX} -eq 1 ]; then
-		PREFIX=${LOCALBASE}
-	else
-		PREFIX="${BUILDROOT:-/tmp}/`echo ${PKGNAME} | tr '[,+]' _`"
-	fi
-	PORT_FLAGS="PREFIX=${PREFIX} PKG_DBDIR=${PKG_DBDIR} NO_DEPENDS=yes"
-	echo "===>> Building with flags: ${PORT_FLAGS}"
+
 	echo "===>> Cleaning workspace"
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
-	[ $CONFIGSTR -eq 1 ] && jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} config
 
-	if [ -d ${MNT}${PREFIX} ]; then
-		echo "===>> Removing existing ${PREFIX}"
-		[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${MNT}${PREFIX}
+	if jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} install; then
+		echo "===>> Packaging ${PORTNAME}"
+		jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${PORTNAME} /usr/ports/packages/All/${PORTNAME}.tbz
 	fi
-
-	find ${MNT}${LOCALBASE}/ -type d | sed "s,^${MNT}${LOCALBASE}/,," | sort > ${MNT}${PREFIX}.PLIST_DIRS.before
-	build_port
-	if [ $? -eq 0 ]; then
-		echo "===>> Extra files and directories check"
-		find ${MNT}${PREFIX} ! -type d | \
-		egrep -v "${MNT}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
-		sed -e "s,^${MNT}${PREFIX}/,,"
-
-		find ${MNT}${PREFIX}/ -type d | sed "s,^${MNT}${PREFIX}/,," | sort > ${MNT}${PREFIX}.PLIST_DIRS.after
-		comm -13 ${MNT}${PREFIX}.PLIST_DIRS.before ${MNT}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
-	fi
-
-	echo "===>> Installing from package"
-	PKG_DBDIR=${PKG_DBDIR} jexec -U root ${JAILNAME} pkg_add /tmp/${PKGNAME}.tbz
-	echo "===>> Deinstalling package"
-	PKG_DBDIR=${PKG_DBDIR} jexec -U root ${JAILNAME} pkg_delete ${PKGNAME}
 
 	echo "===>> Cleaning up"
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
-
-	echo "===>> Removing existing ${PREFIX} dir"
-	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${MNT}${PREFIX} ${MNT}${PREFIX}.PLIST_DIRS.before ${MNT}${PREFIX}.PLIST_DIRS.after
-	rm -rf ${MNT}${PKG_DBDIR}
-
-	) 2>&1 | tee  ${LOGS}/${PORTNAME}-${JAILNAME}.build.log
+	) 2>&1 | tee  ${LOGS}/${PORTNAME}-${JAILNAME}.pkg.log
 
 	cleanup
 	STATUS=0 #injail
