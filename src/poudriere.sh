@@ -10,7 +10,7 @@ usage() {
 	echo "- stopjail: stop the jail whose name is given to the -n option"
 	echo "- testport: launch a test on a given port"
 	echo "- genpkg: generate package for a given port"
-	echo "- bul: generate packages for given ports"
+	echo "- bulk: generate packages for given ports"
 	exit 1
 }
 
