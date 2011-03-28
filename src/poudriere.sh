@@ -9,6 +9,8 @@ usage() {
 	echo "- startjail: start the jail whose name is given to the -n option"
 	echo "- stopjail: stop the jail whose name is given to the -n option"
 	echo "- testport: launch a test on a given port"
+	echo "- genpkg: generate package for a given port"
+	echo "- bul: generate packages for given ports"
 	exit 1
 }
 
@@ -41,8 +43,12 @@ case $1 in
 		shift
 		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/gen_package.sh $@
 	;;
+	bulk)
+		shift
+		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/bulk.sh $@
+	;;
 	*)
-	echo "unknown command $1"
-	usage
+		echo "unknown command $1"
+		usage
 	;;
 esac
