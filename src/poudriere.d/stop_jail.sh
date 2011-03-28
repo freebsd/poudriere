@@ -33,6 +33,6 @@ msg "Stopping jail"
 jail -r ${NAME}
 msg "Unmounting devfs"
 umount -f ${MNT}/dev
-msg "Removing IP alias"
+msg "Removing IP alias ${NAME}"
 ifconfig ${ETH} inet ${IP} -alias
 zfs rollback ${ZPOOL}/poudriere/${NAME}@clean

@@ -35,5 +35,5 @@ msg "Mounting devfs"
 devfs_mount_jail "${MNT}/dev"
 msg "Adding IP alias"
 ifconfig ${ETH} inet ${IP} alias
-msg "Starting jail"
+msg "Starting jail ${NAME}"
 jail -c persist name=${NAME} path=${MNT} host.hostname=${NAME} ip4.addr=${IP}

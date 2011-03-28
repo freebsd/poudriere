@@ -1,8 +1,9 @@
 #!/bin/sh
 
 usage() {
-	echo "poudriere testport -d directory [-cn]"
+	echo "poudriere testport -d directory [-cn] [-j jailname]"
 	echo "-c run make config for the given port"
+	echo "-j jailname run only on the given jail"
 	echo "-n no custom prefix"
 	exit 1
 }
@@ -72,7 +73,7 @@ CONFIGSTR=0
 
 LOGS="${POUDRIERE_DATA}/logs"
 
-while getopts "d:cn" FLAG; do
+while getopts "d:cnj:" FLAG; do
 	case "${FLAG}" in
 		c)
 		CONFIGSTR=1
@@ -82,6 +83,10 @@ while getopts "d:cn" FLAG; do
 		;;
 		n)
 		NOPREFIX=1
+		;;
+		j)
+		zfs list ${ZPOOL}/poudriere/${OPTARG} >/dev/null 2>&1 || err 1 "No such jail: ${OPTARG}"
+		JAILNAMES="${OPTARG}"
 		;;
 		*)
 		usage
@@ -95,7 +100,10 @@ trap sig_handler SIGINT SIGTERM SIGKILL
 
 test -z ${PORTDIRECTORY} && usage
 PORTNAME=`make -C ${PORTDIRECTORY} -VPKGNAME`
-for JAILNAME in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }'`; do
+
+test -z ${JAILNAMES} && JAILNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }'`
+
+for JAILNAME in ${JAILNAMES}; do
 	MNT=`zfs list -H ${ZPOOL}/poudriere/${JAILNAME} | awk '{ print $NF}'`
 	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -n ${JAILNAME}
 	STATUS=1 #injail
