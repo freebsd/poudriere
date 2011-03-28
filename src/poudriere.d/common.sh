@@ -8,6 +8,14 @@ err() {
 	exit $1
 }
 
+msg_n() {
+	echo -n "====>> $1"
+}
+
+msg() {
+	echo "====>> $1"
+}
+
 test -f /usr/local/etc/poudriere.conf || err 1 "Unable to find /usr/local/etc/poudriere.conf"
 . /usr/local/etc/poudriere.conf
 

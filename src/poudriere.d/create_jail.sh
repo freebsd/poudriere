@@ -9,10 +9,6 @@ usage() {
 	exit 1
 }
 
-create_base_fs() {
-	echo -n "===>> Creating basefs:"
-	zfs create -o mountpoint=${BASEFS:=/usr/local/poudriere} ${ZPOOL}/poudriere >/dev/null 2>&1 || err 1 " Fail" && echo " done"
-}
 
 ARCH=`uname -m`
 METHOD="FTP"
@@ -20,6 +16,11 @@ METHOD="FTP"
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
+
+create_base_fs() {
+	msg_n "Creating basefs:"
+	zfs create -o mountpoint=${BASEFS:=/usr/local/poudriere} ${ZPOOL}/poudriere >/dev/null 2>&1 || err 1 " Fail" && echo " done"
+}
 
 #Test if the default FS for pourdriere exists if not creates it
 zfs list ${ZPOOL}/poudriere >/dev/null 2>&1 || create_base_fs
@@ -68,37 +69,37 @@ zfs list -r ${ZPOOL}/poudriere/${NAME} >/dev/null 2>&1 && err 2 "The jail ${NAME
 
 JAILBASE=${BASEFS:=/usr/local/poudriere}/jails/${NAME}
 # Create the jail FS
-echo -n "====>> Creating ${NAME} fs..."
+msg_n "Creating ${NAME} fs..."
 zfs create -o mountpoint=${JAILBASE} ${ZPOOL}/poudriere/${NAME} >/dev/null 2>&1 || err 1 " Fail" && echo " done"
 
 
 #We need to fetch base and src (for drivers)
-echo "====>> Fetching base sets for FreeBSD $VERSION $ARCH"
+msg_n "Fetching base sets for FreeBSD $VERSION $ARCH"
 PKGS=`echo "ls base*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/ | awk '/-r.*/ {print $NF}'`
 mkdir ${JAILBASE}/fromftp
 for pkg in ${PKGS}; do
 # Let's retry at least one time
 	fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/${pkg} || fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/${pkg}
 done
-echo -n "====>> Extracting base..."
+msg_n "Extracting base..."
 cat ${JAILBASE}/fromftp/base.* | tar --unlink -xpzf - -C ${JAILBASE}/ || err 1 " Fail" && echo " done"
-echo -n "====>> Cleaning Up base sets..."
+msg_n "Cleaning Up base sets..."
 rm ${JAILBASE}/fromftp/*
 echo " done"
 
-echo "====>> Fetching ${SRCSNAME} sets..."
+msg "Fetching ${SRCSNAME} sets..."
 PKGS=`echo "ls ${SRCS}"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/ | awk '/-r.*/ {print $NF}'`
 for pkg in ${PKGS}; do
 # Let's retry at least one time
 	fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/${pkg} || fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/${pkg}
 done
-echo "====>> Extracting ${SRCSNAME}:"
+msg "Extracting ${SRCSNAME}:"
 for SETS in ${JAILBASE}/fromftp/*.aa; do
 	SET=`basename $SETS .aa`
 	echo -e "\t- $SET...\c"
 	cat ${JAILBASE}/fromftp/${SET}.* | tar --unlink -xpzf - -C ${JAILBASE}/usr/src || err 1 " Fail" && echo " done"
 done
-echo -n "====>> Cleaning Up ${SRCSNAME} sets..."
+msg_-n "Cleaning Up ${SRCSNAME} sets..."
 rm ${JAILBASE}/fromftp/*
 echo " done"
 
@@ -135,4 +136,4 @@ mkdir -p ${POUDRIERE_DATA}/logs
 cp /etc/resolv.conf ${JAILBASE}/etc
 
 zfs snapshot ${ZPOOL}/poudriere/${NAME}@clean
-echo "====>> Jail ${NAME} ${VERSION} ${ARCH} is ready to be used"
+msg "Jail ${NAME} ${VERSION} ${ARCH} is ready to be used"

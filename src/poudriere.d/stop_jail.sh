@@ -29,10 +29,10 @@ test -z ${NAME} && usage
 jls -j ${NAME} >/dev/null 2>&1 || err 1 "No such jail: ${NAME}"
 
 MNT=`zfs list -H ${ZPOOL}/poudriere/${NAME} | awk '{ print $NF}'`
-echo "====>> Stopping jail"
+msg "Stopping jail"
 jail -r ${NAME}
-echo "====>> Unmounting devfs"
+msg "Unmounting devfs"
 umount -f ${MNT}/dev
-echo "====>> Removing IP alias"
+msg "Removing IP alias"
 ifconfig ${ETH} inet ${IP} -alias
 zfs rollback ${ZPOOL}/poudriere/${NAME}@clean

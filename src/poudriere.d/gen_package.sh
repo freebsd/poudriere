@@ -28,8 +28,7 @@ cleanup() {
 
 sig_handler() {
 	if [ ${STATUS} -eq 1 ]; then
-
-		echo "====>> Signal caught, cleaning up and exiting"
+		msg "Signal caught, cleaning up and exiting"
 		cleanup
 		exit 0
 	fi
@@ -83,14 +82,14 @@ for JAILNAME in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 		mount -t nullfs ${PORTDIRECTORY} ${MNT}/${PORTDIRECTORY}
 	fi
 
-	echo "===>> Populating LOCALBASE"
+	msg "Populating LOCALBASE"
 	jexec -U root ${JAILNAME} /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p /usr/local >/dev/null
 
 	(
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} extract-depends fetch-depends patch-depends build-depends lib-depends
 # Package all newly build ports
-	echo "===>> Packaging all dependencies"
+	msg "Packaging all dependencies"
 	for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1}'`; do
 		test -f ${POUDRIERE_DATA}/packages/${JAILNAME}/All/${pkg}.tbz || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
 	done
@@ -99,15 +98,15 @@ for JAILNAME in `zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\
 	(
 	PKGNAME=`jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VPKGNAME`
 
-	echo "===>> Cleaning workspace"
+	msg "Cleaning workspace"
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
 
 	if jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} install; then
-		echo "===>> Packaging ${PORTNAME}"
+		msg "Packaging ${PORTNAME}"
 		jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${PORTNAME} /usr/ports/packages/All/${PORTNAME}.tbz
 	fi
 
-	echo "===>> Cleaning up"
+	msg "Cleaning up"
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
 	) 2>&1 | tee  ${LOGS}/${PORTNAME}-${JAILNAME}.pkg.log
 
