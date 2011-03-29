@@ -74,6 +74,7 @@ for JAILNAME in ${JAILNAMES}; do
 	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -n ${JAILNAME}
 	STATUS=1 #injail
 	mount -t nullfs ${PORTSDIR} ${MNT}/usr/ports
+	test -d ${MNT}/usr/ports/packages || mkdir ${MNT}/usr/ports/packages
 	test -d ${POUDRIERE_DATA}/packages/bulk-${JAILNAME} || mkdir -p ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}
 	mkdir -p ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All
 	mount -t nullfs ${POUDRIERE_DATA}/packages/bulk-${JAILNAME} ${MNT}/usr/ports/packages

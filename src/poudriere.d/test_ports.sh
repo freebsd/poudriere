@@ -108,6 +108,7 @@ for JAILNAME in ${JAILNAMES}; do
 	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -n ${JAILNAME}
 	STATUS=1 #injail
 	mount -t nullfs ${PORTSDIR} ${MNT}/usr/ports
+	test -d ${MNT}/usr/ports/packages || mkdir ${MNT}/usr/ports/packages
 	mount -t nullfs ${POUDRIERE_DATA}/packages/${JAILNAME} ${MNT}/usr/ports/packages
 
 	test -n "${MFSSIZE}" && mdmfs -M -S -o async -s ${MFSSIZE} md ${MNT}/wrkdirs
