@@ -99,7 +99,7 @@ for SETS in ${JAILBASE}/fromftp/*.aa; do
 	echo -e "\t- $SET...\c"
 	cat ${JAILBASE}/fromftp/${SET}.* | tar --unlink -xpzf - -C ${JAILBASE}/usr/src || err 1 " Fail" && echo " done"
 done
-msg_-n "Cleaning Up ${SRCSNAME} sets..."
+msg_n "Cleaning Up ${SRCSNAME} sets..."
 rm ${JAILBASE}/fromftp/*
 echo " done"
 
