@@ -106,9 +106,11 @@ test -z ${JAILNAMES} && JAILNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${Z
 for JAILNAME in ${JAILNAMES}; do
 	MNT=`zfs list -H ${ZPOOL}/poudriere/${JAILNAME} | awk '{ print $NF}'`
 	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -n ${JAILNAME}
+
+	test $? == 0  || err 1 "Failed to start jail."
+
 	STATUS=1 #injail
 	mount -t nullfs ${PORTSDIR} ${MNT}/usr/ports
-	test -d ${MNT}/usr/ports/packages || mkdir ${MNT}/usr/ports/packages
 	mount -t nullfs ${POUDRIERE_DATA}/packages/${JAILNAME} ${MNT}/usr/ports/packages
 
 	test -n "${MFSSIZE}" && mdmfs -M -S -o async -s ${MFSSIZE} md ${MNT}/wrkdirs

@@ -30,6 +30,8 @@ zfs list ${ZPOOL}/poudriere/${NAME} >/dev/null 2>&1 || err 1 "No such jail"
 test -z ${IP} && err 1 "No IP defined for poudriere"
 test -z ${ETH} && err 1 "No ethernet device defined for poudriere"
 
+/usr/sbin/jls ip4.addr | egrep "^${IP}$" > /dev/null && err 2 "Configured IP is already in use by another jail."
+
 MNT=`zfs list -H ${ZPOOL}/poudriere/${NAME} | awk '{ print $NF}'`
 msg "Mounting devfs"
 devfs_mount_jail "${MNT}/dev"
