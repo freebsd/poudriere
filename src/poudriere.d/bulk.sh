@@ -104,7 +104,7 @@ for JAILNAME in ${JAILNAMES}; do
 	msg "Packaging all installed ports"
 	for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1}'`; do
 		msg_n "packaging ${pkg}"
-		test -f ${POUDRIERE_DATA}/packages/${JAILNAME}/All/${pkg}.tbz || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
+		test -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${pkg}.tbz || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
 		echo " done"
 	done
 	) 2>&1 | tee ${LOGS}/${PORTNAME}-${JAILNAME}.bulk.log
