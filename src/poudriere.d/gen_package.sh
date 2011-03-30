@@ -7,13 +7,6 @@ usage() {
 	exit 1
 }
 
-outside_portsdir() {
-	PORTROOT=`dirname $1`
-	PORTROOT=`dirname ${PORTROOT}`
-	test "${PORTROOT}" = `realpath ${PORTSDIR}` && return 1
-	return 0
-}
-
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 CONFIGSTR=0
@@ -38,10 +31,6 @@ while getopts "d:cnj:" FLAG; do
 		;;
 	esac
 done
-
-STATUS=0 # out of jail #
-
-trap sig_handler SIGINT SIGTERM SIGKILL
 
 test -z ${PORTDIRECTORY} && usage
 PORTNAME=`make -C ${PORTDIRECTORY} -VPKGNAME`

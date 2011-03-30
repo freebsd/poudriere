@@ -65,12 +65,24 @@ prepare_jail() {
 	jexec -U root ${JAILNAME} /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p /usr/local >/dev/null
 }
 
+outside_portsdir() {
+	PORTROOT=`dirname $1`
+	PORTROOT=`dirname ${PORTROOT}`
+	test "${PORTROOT}" = `realpath ${PORTSDIR}` && return 1
+	return 0
+}
+
+
 test -f /usr/local/etc/poudriere.conf || err 1 "Unable to find /usr/local/etc/poudriere.conf"
 . /usr/local/etc/poudriere.conf
 
 test -z ${ZPOOL} && err 1 "ZPOOL variable is not set"
 
-STATUS=0
+trap sig_handler SIGINT SIGTERM SIGKILL
+
+STATUS=0 # out of jail #
+LOGS="${POUDRIERE_DATA}/logs"
+
 
 # Test if spool exists
 zpool list ${ZPOOL} >/dev/null 2>&1 || err 1 "No such zpool : ${ZPOOL}"
