@@ -83,19 +83,18 @@ for JAILNAME in ${JAILNAMES}; do
 		mount -t nullfs ${PORTDIRECTORY} ${JAILBASE}/${PORTDIRECTORY}
 	fi
 
-	(
-
+	tee ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log &
+	TEEPID=$!
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
-	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} extract-depends fetch-depends patch-depends build-depends lib-depends
+	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} extract-depends \
+		fetch-depends patch-depends build-depends lib-depends \
+		| tee ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log || err 1 "an error occur while building the dependencies"
 
 # Package all newly build ports
 	msg "Packaging all dependencies"
-
 	for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1}'`; do
 		[ -f ${PKGDIR}/All/${pkg}.tbz ] || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
 	done
-	) 2>&1 | tee ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log
-
 
 	(
 	PKGNAME=`jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VPKGNAME`
