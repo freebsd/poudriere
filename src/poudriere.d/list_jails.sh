@@ -36,7 +36,7 @@ done
 for JAILNAME in ${JAILNAMES};do
 	MNT=`zfs list -H -o mountpoint ${ZPOOL}/poudriere/${JAILNAME}`
 
-	if [ -d ${MNT}${DIR} -a -d ${MNT}/boot/kernel ];then
+	if [ -d ${MNT} -a -d ${MNT}/boot/kernel ];then
 		VERSION=`jail -U root -c path=${MNT} command=uname -r`
 		ARCH=`jail -u root -c path=${MNT} command=uname -p`
 		
