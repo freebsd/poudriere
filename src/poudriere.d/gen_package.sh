@@ -14,26 +14,6 @@ outside_portsdir() {
 	return 0
 }
 
-cleanup() {
-	outside_portsdir ${PORTDIRECTORY} && umount ${PORTDIRECTORY}
-	umount ${MNT}/usr/ports/packages
-	umount ${MNT}/usr/ports
-	test -n "${MFSSIZE}" && {
-		MDUNIT=`mount | egrep "${MNT}/*/wrkdirs" | awk '{ print $1 }' | sed -e "s,/dev/md,,g"`
-		umount ${MNT}/wrkdirs
-		mdconfig -d -u ${MDUNIT}
-	}
-	/bin/sh ${SCRIPTPREFIX}/stop_jail.sh -n ${JAILNAME}
-}
-
-sig_handler() {
-	if [ ${STATUS} -eq 1 ]; then
-		msg "Signal caught, cleaning up and exiting"
-		cleanup
-		exit 0
-	fi
-}
-
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 CONFIGSTR=0
@@ -69,26 +49,18 @@ PORTNAME=`make -C ${PORTDIRECTORY} -VPKGNAME`
 test -z ${JAILNAMES} && JAILNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }'`
 
 for JAILNAME in ${JAILNAMES}; do
-	MNT=`zfs list -H -o mountpoint ${ZPOOL}/poudriere/${JAILNAME}`
+	JAILBASE=`zfs list -H -o mountpoint ${ZPOOL}/poudriere/${JAILNAME}`
+	PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}
 	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -n ${JAILNAME} || err 1 "Failed to start jail."
 
 	STATUS=1 #injail
-	mount -t nullfs ${PORTSDIR} ${MNT}/usr/ports
-	mount -t nullfs ${POUDRIERE_DATA}/packages/${JAILNAME} ${MNT}/usr/ports/packages
 
-	test -n "${MFSSIZE}" && mdmfs -M -S -o async -s ${MFSSIZE} md ${MNT}/wrkdirs
-
-	if [ -n "${CUSTOMCONFIG}" ]; then
-		test -f ${CUSTOMCONFIG} && cat ${CUSTOMCONFIG} >> ${MNT}/etc/make.conf
-	fi
+	prepare_jail
 
 	if outside_portsdir ${PORTDIRECTORY}; then
-		mkdir -p ${MNT}/${PORTDIRECTORY}
-		mount -t nullfs ${PORTDIRECTORY} ${MNT}/${PORTDIRECTORY}
+		mkdir -p ${JAILBASE}/${PORTDIRECTORY}
+		mount -t nullfs ${PORTDIRECTORY} ${JAILBASE}/${PORTDIRECTORY}
 	fi
-
-	msg "Populating LOCALBASE"
-	jexec -U root ${JAILNAME} /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p /usr/local >/dev/null
 
 	(
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean

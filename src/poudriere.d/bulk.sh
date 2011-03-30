@@ -8,33 +8,6 @@ usage() {
 	exit 1
 }
 
-outside_portsdir() {
-	PORTROOT=`dirname $1`
-	PORTROOT=`dirname ${PORTROOT}`
-	test "${PORTROOT}" = `realpath ${PORTSDIR}` && return 1
-	return 0
-}
-
-cleanup() {
-	umount ${MNT}/usr/ports/packages
-	umount ${MNT}/usr/ports
-	test -n "${MFSSIZE}" && {
-		MDUNIT=`mount | egrep "${MNT}/*/wrkdirs" | awk '{ print $1 }' | sed -e "s,/dev/md,,g"`
-		umount ${MNT}/wrkdirs
-		mdconfig -d -u ${MDUNIT}
-	}
-	/bin/sh ${SCRIPTPREFIX}/stop_jail.sh -n ${JAILNAME}
-}
-
-sig_handler() {
-	if [ ${STATUS} -eq 1 ]; then
-
-		msg "Signal caught, cleaning up and exiting"
-		cleanup
-		exit 0
-	fi
-}
-
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 CONFIGSTR=0
@@ -70,29 +43,17 @@ trap sig_handler SIGINT SIGTERM SIGKILL
 test -z ${JAILNAMES} && JAILNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }'`
 
 for JAILNAME in ${JAILNAMES}; do
-	MNT=`zfs list -H -o mountpoint ${ZPOOL}/poudriere/${JAILNAME}`
+	JAILBASE=`zfs list -H -o mountpoint ${ZPOOL}/poudriere/${JAILNAME}`
+	PKGDIR=${POUDRIERE_DATA}/packages/bulk-${JAILNAME}
 	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -n ${JAILNAME} || err 1 "Failed to start jail."
 
 	STATUS=1 #injail
-	mount -t nullfs ${PORTSDIR} ${MNT}/usr/ports
-	test -d ${POUDRIERE_DATA}/packages/bulk-${JAILNAME} || mkdir -p ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}
-	mkdir -p ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All
-	mount -t nullfs ${POUDRIERE_DATA}/packages/bulk-${JAILNAME} ${MNT}/usr/ports/packages
-
-	test -n "${MFSSIZE}" && mdmfs -M -S -o async -s ${MFSSIZE} md ${MNT}/wrkdirs
-
-	if [ -n "${CUSTOMCONFIG}" ]; then
-		test -f ${CUSTOMCONFIG} && cat ${CUSTOMCONFIG} >> ${MNT}/etc/make.conf
-	fi
-
-	msg "Populating LOCALBASE"
-	jexec -U root ${JAILNAME} /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p /usr/local >/dev/null
-
+	prepare_jail
 	(
 	for port in `cat ${LISTPKGS}`; do
 		PORTDIRECTORY="/usr/ports/${port}"
 
-		test -d ${MNT}/${PORTDIRECTORY} || {
+		test -d ${JAILBASE}/${PORTDIRECTORY} || {
 			msg "No such port ${port}"
 			continue
 		}
@@ -102,7 +63,7 @@ for JAILNAME in ${JAILNAMES}; do
 # Package all newly build ports
 	done
 	msg "Packaging all installed ports"
-	if [ -x ${MNT}/usr/sbin/pkg ]; then
+	if [ -x ${JAILBASE}/usr/sbin/pkg ]; then
 		jexec -U root ${JAILNAME} /usr/sbin/pkg create -a -o /usr/ports/packages/All/
 	else
 		for pkg in `jexec -U root ${JAILNAME} ${PKG_INFO}`; do
