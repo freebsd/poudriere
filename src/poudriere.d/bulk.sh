@@ -97,16 +97,20 @@ for JAILNAME in ${JAILNAMES}; do
 			continue
 		}
 
-		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
+		msg "building ${port}"
 		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} install
-# Packag	e all newly build ports
+# Package all newly build ports
 	done
 	msg "Packaging all installed ports"
-	for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1}'`; do
-		msg_n "packaging ${pkg}"
-		test -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${pkg}.tbz || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
-		echo " done"
-	done
+	if [ -x ${MNT}/usr/sbin/pkg ]; then
+		jexec -U root ${JAILNAME} /usr/sbin/pkg create -a -o /usr/ports/packages/All/
+	else
+		for pkg in `jexec -U root ${JAILNAME} ${PKG_INFO}`; do
+			msg_n "packaging ${pkg}"
+			test -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${pkg}.tbz || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
+			echo " done"
+		done
+	fi
 	) 2>&1 | tee ${LOGS}/${PORTNAME}-${JAILNAME}.bulk.log
 
 	cleanup
