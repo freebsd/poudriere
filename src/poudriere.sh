@@ -11,6 +11,7 @@ usage() {
 	echo "- testport: launch a test on a given port"
 	echo "- genpkg: generate package for a given port"
 	echo "- bulk: generate packages for given ports"
+	echo "- lsjail: list jails created and used by poudriere"
 	exit 1
 }
 
@@ -46,6 +47,10 @@ case $1 in
 	bulk)
 		shift
 		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/bulk.sh $@
+	;;
+	lsjail)
+		shift
+		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/list_jails.sh $@
 	;;
 	*)
 		echo "unknown command $1"
