@@ -32,7 +32,7 @@ test -z ${ETH} && err 1 "No ethernet device defined for poudriere"
 
 /usr/sbin/jls ip4.addr | egrep "^${IP}$" > /dev/null && err 2 "Configured IP is already in use by another jail."
 
-MNT=`zfs list -H ${ZPOOL}/poudriere/${NAME} | awk '{ print $NF}'`
+MNT=`zfs list -H -o mountpoint ${ZPOOL}/poudriere/${NAME}`
 msg "Mounting devfs"
 devfs_mount_jail "${MNT}/dev"
 msg "Adding IP alias"

@@ -104,7 +104,7 @@ PORTNAME=`make -C ${PORTDIRECTORY} -VPKGNAME`
 test -z ${JAILNAMES} && JAILNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }'`
 
 for JAILNAME in ${JAILNAMES}; do
-	MNT=`zfs list -H ${ZPOOL}/poudriere/${JAILNAME} | awk '{ print $NF}'`
+	MNT=`zfs list -H -o mountpoint ${ZPOOL}/poudriere/${JAILNAME}`
 	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -n ${JAILNAME} || err 1 "Failed to start jail."
 
 	STATUS=1 #injail
