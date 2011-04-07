@@ -48,6 +48,9 @@ for JAILNAME in ${JAILNAMES}; do
 	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -n ${JAILNAME} || err 1 "Failed to start jail."
 
 	STATUS=1 #injail
+	msg_n "Cleaning previous bulks if any..."
+	rm -rf ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/*
+	echo " done"
 	prepare_jail
 	(
 	for port in `cat ${LISTPKGS}`; do
@@ -66,9 +69,6 @@ for JAILNAME in ${JAILNAMES}; do
 	if [ -x ${JAILBASE}/usr/sbin/pkg ]; then
 		jexec -U root ${JAILNAME} /usr/sbin/pkg create -a -o /usr/ports/packages/All/
 	else
-		msg_n "Cleaning previous bulks if any..."
-		rm -rf ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/*
-		echo " done"
 		OSMAJ=`jexec -U root ${JAILNAME} uname -r | awk -F. '{ print $1 }'`
 		echo ${PKG_INFO}
 		for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1 }' `; do
