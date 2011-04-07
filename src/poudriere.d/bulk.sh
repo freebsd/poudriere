@@ -77,10 +77,10 @@ for JAILNAME in ${JAILNAMES}; do
 			jexec -U root ${JAILNAME} make -C /usr/ports/${ORIGIN} package > /dev/null
 			jexec -U root ${JAILNAME} make -C /usr/ports/${ORIGIN} describe >> ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/INDEX-${OSMAJ}
 			echo " done"
-			msg_n "compressing INDEX-${OSMAJ} ..."
-			bzip2 -9 ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/INDEX-${OSMAJ}
-			echo " done"
 		done
+		msg_n "compressing INDEX-${OSMAJ} ..."
+		bzip2 -9 ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/INDEX-${OSMAJ}
+		echo " done"
 	fi
 	) 2>&1 | tee ${LOGS}/${PORTNAME}-${JAILNAME}.bulk.log
 
