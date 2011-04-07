@@ -66,9 +66,19 @@ for JAILNAME in ${JAILNAMES}; do
 	if [ -x ${JAILBASE}/usr/sbin/pkg ]; then
 		jexec -U root ${JAILNAME} /usr/sbin/pkg create -a -o /usr/ports/packages/All/
 	else
-		for pkg in `jexec -U root ${JAILNAME} ${PKG_INFO}`; do
+		msg_n "Cleaning previous bulks if any..."
+		rm -rf ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/*
+		echo " done"
+		OSMAJ=`jexec -U root ${JAILNAME} uname -r | awk -F. '{ print $1 }'`
+		echo ${PKG_INFO}
+		for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1 }' `; do
 			msg_n "packaging ${pkg}"
-			test -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${pkg}.tbz || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
+			ORIGIN=`jexec -U root ${JAILNAME} /usr/sbin/pkg_info -qo ${pkg}`
+			jexec -U root ${JAILNAME} make -C /usr/ports/${ORIGIN} package > /dev/null
+			jexec -U root ${JAILNAME} make -C /usr/ports/${ORIGIN} describe >> ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/INDEX-${OSMAJ}
+			echo " done"
+			msg_n "compressing INDEX-${OSMAJ} ..."
+			bzip2 -9 ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/INDEX-${OSMAJ}
 			echo " done"
 		done
 	fi

@@ -42,6 +42,7 @@ SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 CONFIGSTR=0
 . ${SCRIPTPREFIX}/common.sh
+NOPREFIX=0
 
 while getopts "d:cnj:" FLAG; do
 	case "${FLAG}" in
@@ -88,13 +89,13 @@ for JAILNAME in ${JAILNAMES}; do
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} extract-depends \
 		fetch-depends patch-depends build-depends lib-depends \
-		| tee ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log || err 1 "an error occur while building the dependencies"
+		2>&1 | tee ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log || err 1 "an error occur while building the dependencies"
 
 # Package all newly build ports
-	msg "Packaging all dependencies"
+	msg "Packaging all dependencies" | tee -a ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log
 	for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1}'`; do
 		[ -f ${PKGDIR}/All/${pkg}.tbz ] || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
-	done
+	done 2>&1 | tee -a ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log
 
 	(
 	PKGNAME=`jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VPKGNAME`
@@ -105,7 +106,7 @@ for JAILNAME in ${JAILNAMES}; do
 	else
 		PREFIX="${BUILDROOT:-/tmp}/`echo ${PKGNAME} | tr '[,+]' _`"
 	fi
-	PORT_FLAGS="PREFIX=${PREFIX} PKG_DBDIR=${PKG_DBDIR} NO_DEPENDS=yes"
+	PORT_FLAGS="NO_DEPENDS=yes PREFIX=${PREFIX} PKG_DBDIR=${PKG_DBDIR}"
 	msg "Building with flags: ${PORT_FLAGS}"
 	msg "Cleaning workspace"
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
