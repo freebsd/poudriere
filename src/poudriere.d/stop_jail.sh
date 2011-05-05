@@ -33,6 +33,17 @@ msg "Stopping jail"
 jail -r ${NAME}
 msg "Unmounting devfs"
 umount -f ${MNT}/dev
-msg "Removing IP alias ${NAME}"
-ifconfig ${ETH} inet ${IP} -alias
+if [ "${USE_LOOPBACK}" = "yes" ]; then
+	LOOP=0
+	while :; do
+		LOOP=$(( LOOP += 1))
+		if ifconfig lo${LOOP} | grep ${IP} > /dev/null 2>&1 ; then
+			msg "Removing loopback lo${LOOP}"
+			ifconfig lo${LOOP} destroy && break
+		fi
+	done
+else
+	msg "Removing IP alias ${NAME}"
+	ifconfig ${ETH} inet ${IP} -alias
+fi
 zfs rollback ${ZPOOL}/poudriere/${NAME}@clean
