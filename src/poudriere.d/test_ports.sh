@@ -91,6 +91,15 @@ for JAILNAME in ${JAILNAMES}; do
 		fetch-depends patch-depends build-depends lib-depends \
 		2>&1 | tee ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log || err 1 "an error occur while building the dependencies"
 
+	if [ "${USE_PORTLINT}" = "yes" ]; then
+		if [ -f `which portlint` ]; then
+			msg "Portlint check"
+			cd ${JAILBASE}/${PORTDIRECTORY} && portlint -A 2>&1 | tee -a ${LOGS}/${PORTNAME}-${JAILNAME}.portlint.log
+		else
+			err 2 "First install portlint if you want USE_PORTLINT to work as expected"
+		fi
+	fi
+
 # Package all newly build ports
 	msg "Packaging all dependencies" | tee -a ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log
 	for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1}'`; do

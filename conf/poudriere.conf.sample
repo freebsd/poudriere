@@ -1,0 +1,24 @@
+# The pool where poudriere will create its jails
+ZPOOL=tank
+
+# The ftp host where to download base sets and ssys set for the jails
+FTPHOST=ftp.freebsd.org
+
+# IP for the jails in the network
+IP=192.168.1.58
+
+# Ethernet interface for the jail
+ETH=nfe0
+
+# The ports directory to use within jails (mounted via nullfs)
+PORTSDIR=/usr/ports
+
+# the directory where the jail will store the packages and logs
+POUDRIERE_DATA=/usr/local/poudriere_data
+
+# determine a loopback interface if dhcp only
+USE_LOOPBACK=no
+
+# use portlint to check ports sanity
+USE_PORTLINT=no
+
