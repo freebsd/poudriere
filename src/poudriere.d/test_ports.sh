@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 usage() {
 	echo "poudriere testport -d directory [-cn] [-j jailname]"
@@ -26,13 +27,13 @@ build_port() {
 			fi
 		fi
 		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} ${PORT_FLAGS} ${PHASE} PKGREPOSITORY=/tmp PACKAGES=/tmp
-		if [ $? -gt 0 ]; then
-			msg "Error running make ${PHASE}"
-			[ "${PHASE}" = "package" ] && return 0
-			msg "Cleaning up"
-			[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${JAILBASE}${PREFIX}
-			rm -rf ${JAILBASE}${PKG_DBDIR}
-			return 1
+		if [ "${PHASE}" = "build" ]; then
+			msg "Installing run dependencies"
+			jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} run-depends
+			msg "Packaging all run dependencies"
+			for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1}'`; do
+				[ -f ${PKGDIR}/All/${pkg}.tbz ] || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
+			done
 		fi
 	done
 	return 0
@@ -89,16 +90,7 @@ for JAILNAME in ${JAILNAMES}; do
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} extract-depends \
 		fetch-depends patch-depends build-depends lib-depends \
-		2>&1 | tee ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log || err 1 "an error occur while building the dependencies"
-
-	if [ "${USE_PORTLINT}" = "yes" ]; then
-		if [ -f `which portlint` ]; then
-			msg "Portlint check"
-			cd ${JAILBASE}/${PORTDIRECTORY} && portlint -A 2>&1 | tee -a ${LOGS}/${PORTNAME}-${JAILNAME}.portlint.log
-		else
-			err 2 "First install portlint if you want USE_PORTLINT to work as expected"
-		fi
-	fi
+		2>&1 | tee ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log
 
 # Package all newly build ports
 	msg "Packaging all dependencies" | tee -a ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log
@@ -128,15 +120,15 @@ for JAILNAME in ${JAILNAMES}; do
 
 	find ${JAILBASE}${LOCALBASE}/ -type d | sed "s,^${JAILBASE}${LOCALBASE}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.before
 
-	if build_port; then
-		msg "Extra files and directories check"
-		find ${JAILBASE}${PREFIX} ! -type d | \
+	build_port
+
+	msg "Extra files and directories check"
+	find ${JAILBASE}${PREFIX} ! -type d | \
 		egrep -v "${JAILBASE}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
 		sed -e "s,^${JAILBASE}${PREFIX}/,,"
 
-		find ${JAILBASE}${PREFIX}/ -type d | sed "s,^${JAILBASE}${PREFIX}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.after
-		comm -13 ${JAILBASE}${PREFIX}.PLIST_DIRS.before ${JAILBASE}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
-	fi
+	find ${JAILBASE}${PREFIX}/ -type d | sed "s,^${JAILBASE}${PREFIX}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.after
+	comm -13 ${JAILBASE}${PREFIX}.PLIST_DIRS.before ${JAILBASE}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
 
 	msg "Installing from package"
 	PKG_DBDIR=${PKG_DBDIR} jexec -U root ${JAILNAME} pkg_add /tmp/${PKGNAME}.tbz

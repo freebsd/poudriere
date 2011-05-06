@@ -20,8 +20,9 @@ msg() {
 sig_handler() {
 	if [ ${STATUS} -eq 1 ]; then
 
-		echo "====>> Signal caught, cleaning up and exiting"
+		msg "Signal caught, cleaning up and exiting"
 		cleanup
+		STATUS=0
 		exit 0
 	fi
 }
@@ -78,7 +79,7 @@ test -f /usr/local/etc/poudriere.conf || err 1 "Unable to find /usr/local/etc/po
 
 test -z ${ZPOOL} && err 1 "ZPOOL variable is not set"
 
-trap sig_handler SIGINT SIGTERM SIGKILL
+trap sig_handler SIGINT SIGTERM SIGKILL EXIT
 
 STATUS=0 # out of jail #
 LOGS="${POUDRIERE_DATA}/logs"
