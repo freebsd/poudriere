@@ -24,7 +24,7 @@ while getopts "d:cnj:" FLAG; do
 		;;
 		j)
 		zfs list ${ZPOOL}/poudriere/${OPTARG} >/dev/null 2>&1 || err 1 "No such jail: ${OPTARG}"
-		JAILNAMES="${OPTARG}"
+		JAILNAMES="${JAILNAMES} ${OPTARG}"
 		;;
 		*)
 		usage

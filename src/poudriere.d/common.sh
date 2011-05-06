@@ -49,7 +49,7 @@ prepare_jail() {
 	mount -t nullfs ${PORTSDIR} ${JAILBASE}/usr/ports || err 1 "Failed to mount the ports directory "
 
 	[ -d ${PORTSDIR}/packages ] || mkdir -p ${PORTSDIR}/packages
-	[ -d ${PKGDIR}/All ] || mkdir -p ${PKGDIR}
+	[ -d ${PKGDIR}/All ] || mkdir -p ${PKGDIR}/All
 
 	mount -t nullfs ${PKGDIR} ${JAILBASE}/usr/ports/packages || err 1 "Failed to mount the packages directory "
 
