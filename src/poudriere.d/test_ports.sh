@@ -75,7 +75,7 @@ for JAILNAME in ${JAILNAMES}; do
 	JAILBASE=`zfs list -H -o mountpoint ${ZPOOL}/poudriere/${JAILNAME}`
 	PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}
 
-	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -n ${JAILNAME} || err 1 "Failed to start jail."
+	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -j ${JAILNAME}
 	STATUS=1 #injail
 
 	prepare_jail

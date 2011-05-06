@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 usage() {
 	echo "poudriere bulk -f listpkgs [-c] [-j jailname]"
@@ -25,7 +26,7 @@ while getopts "f:cnj:" FLAG; do
 		;;
 		j)
 		zfs list ${ZPOOL}/poudriere/${OPTARG} >/dev/null 2>&1 || err 1 "No such jail: ${OPTARG}"
-		JAILNAMES="${OPTARG}"
+		JAILNAMES="${JAILNAMES} ${OPTARG}"
 		;;
 		*)
 		usage
@@ -38,14 +39,12 @@ test -f ${LISTPKGS} || err 1 "No such list of packages: ${LISTPKGS}"
 
 STATUS=0 # out of jail #
 
-trap sig_handler SIGINT SIGTERM SIGKILL
-
 test -z ${JAILNAMES} && JAILNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }'`
 
 for JAILNAME in ${JAILNAMES}; do
 	JAILBASE=`zfs list -H -o mountpoint ${ZPOOL}/poudriere/${JAILNAME}`
 	PKGDIR=${POUDRIERE_DATA}/packages/bulk-${JAILNAME}
-	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -n ${JAILNAME} || err 1 "Failed to start jail."
+	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -j ${JAILNAME}
 
 	STATUS=1 #injail
 	msg_n "Cleaning previous bulks if any..."

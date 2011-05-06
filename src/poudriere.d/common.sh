@@ -38,7 +38,7 @@ cleanup() {
 		mdconfig -d -u ${MDUNIT}
 	fi
 
-	/bin/sh ${SCRIPTPREFIX}/stop_jail.sh -n ${JAILNAME}
+	/bin/sh ${SCRIPTPREFIX}/stop_jail.sh -j ${JAILNAME}
 }
 
 prepare_jail() {

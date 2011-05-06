@@ -1,7 +1,7 @@
 #!/bin/sh
 
 usage() {
-	echo "poudriere stopjail -n name"
+	echo "poudriere stopjail -j jailname"
 	exit 1
 }
 
@@ -13,9 +13,9 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . /etc/defaults/rc.conf
 
 
-while getopts "n:" FLAG; do
+while getopts "j:" FLAG; do
 	case "${FLAG}" in
-		n)
+		j)
 		NAME=${OPTARG}
 		;;
 		*)

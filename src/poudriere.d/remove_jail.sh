@@ -1,7 +1,7 @@
 #!/bin/sh
 
 usage() {
-	echo "poudriere removejail [-clp] -n name"
+	echo "poudriere removejail [-clp] -j jailname"
 	echo "-l: clean logs"
 	echo "-p: clean packages"
 	echo "-c: clean all"
@@ -15,9 +15,9 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 CLEANLOGS=0
 CLEANPKGS=0
 
-while getopts "n:clp" FLAG; do
+while getopts "j:clp" FLAG; do
 	case "${FLAG}" in 
-		n)
+		j)
 		NAME=${OPTARG}
 		;;
 		p)

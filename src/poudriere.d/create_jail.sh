@@ -1,7 +1,7 @@
 #!/bin/sh
 
 usage() {
-	echo "pourdriere createjail -n name -v version [-a architecture] [-z zfs] -m [FTP|NONE] -s"
+	echo "pourdriere createjail -j jailname -v version [-a architecture] [-z zfs] -m [FTP|NONE] -s"
 	echo "by default architecture is the same as the host (amd64 can create i386 jails)"
 	echo "by default a new zfs filesystem will be created in the dedicated pool"
 	echo "by default the FTP method is used but you can add your home made jail with NONE -v and -a will be ignored in that case"
@@ -30,7 +30,7 @@ SRCSNAME="ssys"
 
 while getopts "n:v:a:z:m:s" FLAG; do
 	case "${FLAG}" in
-		n)
+		j)
 		NAME=${OPTARG}
 		;;
 		v)

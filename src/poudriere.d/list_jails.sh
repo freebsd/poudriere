@@ -2,9 +2,8 @@
 
 usage() {
 
-	echo "poudriere lsjail [-q] [-n JAIL]"
+	echo "poudriere lsjail [-q]"
 	echo "-q don't print header."
-	echo "-n JAIL print infos about JAIL"
 	exit 1
 
 }
@@ -16,11 +15,8 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 
 JAILNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }'`
 
-while getopts "n:q" FLAG; do
+while getopts "q" FLAG; do
         case "${FLAG}" in
-	  n)
-	  NAME=${OPTARG}
-	  ;;
 	  q)
 	  NOHEADER=1
 	  ;;
