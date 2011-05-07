@@ -85,20 +85,35 @@ for JAILNAME in ${JAILNAMES}; do
 		mount -t nullfs ${PORTDIRECTORY} ${JAILBASE}/${PORTDIRECTORY}
 	fi
 
-	tee ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log &
-	TEEPID=$!
+	exec 3>&1 4>&2
+	[ ! -e ${PIPE} ] && mkfifo ${PIPE}
+	tee ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log < ${PIPE} >&3 &
+	tpid=$!
+	exec > ${PIPE} 2>&1
+	if [ "${USE_PORTLINT}" = "yes" ]; then
+		if [ -x `which portlint` ]; then
+			msg "Portlint check"
+			cd ${JAILBASE}/${PORTDIRECTORY} && portlint -a
+		else
+			err 2 "First install portlint if you want USE_PORTLINT to work as expected"
+		fi
+	fi
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} extract-depends \
-		fetch-depends patch-depends build-depends lib-depends \
-		2>&1 | tee ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log
+		fetch-depends patch-depends build-depends lib-depends
 
 # Package all newly build ports
 	msg "Packaging all dependencies" | tee -a ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log
 	for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1}'`; do
 		[ -f ${PKGDIR}/All/${pkg}.tbz ] || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
-	done 2>&1 | tee -a ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log
+	done
+	exec 1>&3 3>&- 2>&4 4>&-
+	wait $tpid
 
-	(
+	exec 3>&1 4>&2
+	tee ${LOGS}/${PORTNAME}-${JAILNAME}.build.log < ${PIPE} >&3 &
+	tpid=$!
+	exec > ${PIPE} 2>&1
 	PKGNAME=`jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VPKGNAME`
 	PKG_DBDIR=`jexec -U root ${JAILNAME} mktemp -d -t pkg_db`
 	LOCALBASE=`jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VLOCALBASE`
@@ -142,7 +157,8 @@ for JAILNAME in ${JAILNAMES}; do
 	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${JAILBASE}${PREFIX} ${JAILBASE}${PREFIX}.PLIST_DIRS.before ${JAILBASE}${PREFIX}.PLIST_DIRS.after
 	rm -rf ${JAILBASE}${PKG_DBDIR}
 
-	) 2>&1 | tee  ${LOGS}/${PORTNAME}-${JAILNAME}.build.log
+	exec 1>&3 3>&- 2>&4 4>&-
+	wait $tpid
 
 	cleanup
 	STATUS=0 #injail

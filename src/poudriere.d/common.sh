@@ -28,6 +28,7 @@ sig_handler() {
 }
 
 cleanup() {
+	[ -e ${PIPE} ] && rm -f ${PIPE}
 	for MNT in $( mount | awk -v mnt="${JAILBASE}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /devfs/ && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
 		umount -f ${MNT}
 	done
@@ -81,6 +82,7 @@ test -z ${ZPOOL} && err 1 "ZPOOL variable is not set"
 
 trap sig_handler SIGINT SIGTERM SIGKILL EXIT
 
+PIPE=/tmp/poudriere.pipe
 STATUS=0 # out of jail #
 LOGS="${POUDRIERE_DATA}/logs"
 
