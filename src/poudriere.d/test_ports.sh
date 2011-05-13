@@ -67,6 +67,7 @@ while getopts "d:cnj:" FLAG; do
 done
 
 test -z ${PORTDIRECTORY} && usage
+HOST_PORTDIRECTORY=${PORTDIRECTORY}
 PORTNAME=`make -C ${PORTDIRECTORY} -VPKGNAME`
 
 test -z "${JAILNAMES}" && JAILNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }'`
@@ -80,9 +81,17 @@ for JAILNAME in ${JAILNAMES}; do
 
 	prepare_jail
 
+	TEMP=${JAILBASE}${PORTDIRECTORY}
+	if [ ${#TEMP} -ge 88 ]; then
+		PORTDIRECTORY="${PORTNAME}"
+		if [ ${#PORTDIRECTORY} -ge 88 ]; then
+			PORTDIRECTORY="a"
+		fi
+	fi
 	if outside_portsdir ${PORTDIRECTORY}; then
 		mkdir -p ${JAILBASE}/${PORTDIRECTORY}
-		mount -t nullfs ${PORTDIRECTORY} ${JAILBASE}/${PORTDIRECTORY}
+		mount -t nullfs ${HOST_PORTDIRECTORY} ${JAILBASE}/${PORTDIRECTORY}
+		
 	fi
 
 	exec 3>&1 4>&2
