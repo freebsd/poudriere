@@ -18,7 +18,7 @@ CLEAN=0
 
 LOGS="${POUDRIERE_DATA}/logs"
 
-while getopts "f:cnj:" FLAG; do
+while getopts "Cf:cnj:" FLAG; do
 	case "${FLAG}" in
 		c)
 		CONFIGSTR=1
