@@ -3,15 +3,17 @@ set -e
 
 usage() {
 	echo "poudriere bulk -f listpkgs [-c] [-j jailname]"
-	echo "-f listpkgs: list of packages to build"
+	echo "-f <listpkgs>: list of packages to build"
 	echo "-c run make config for the given port"
-	echo "-j jailname run only on the given jail"
+	echo "-j <jailname> run only on the given jail"
+	echo "-C cleanup the old bulk"
 	exit 1
 }
 
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 CONFIGSTR=0
+CLEAN=0
 . ${SCRIPTPREFIX}/common.sh
 
 LOGS="${POUDRIERE_DATA}/logs"
@@ -20,6 +22,9 @@ while getopts "f:cnj:" FLAG; do
 	case "${FLAG}" in
 		c)
 		CONFIGSTR=1
+		;;
+		C)
+		CLEAN=1
 		;;
 		f)
 		LISTPKGS=${OPTARG}
@@ -47,11 +52,21 @@ for JAILNAME in ${JAILNAMES}; do
 	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -j ${JAILNAME}
 
 	STATUS=1 #injail
-	msg_n "Cleaning previous bulks if any..."
-	rm -rf ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/*
-	echo " done"
+
+	if [ ${CLEAN} -eq 1 ]; then
+		msg_n "Cleaning previous bulks if any..."
+		rm -rf ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/*
+		echo " done"
+	fi
+
 	prepare_jail
-	(
+
+	exec 3>&1 4>&2
+	[ ! -e ${PIPE} ] && mkfifo ${PIPE}
+	tee ${LOGS}/bulk-${JAILNAME}.log < ${PIPE} >&3 &
+	tpid=$!
+	exec > ${PIPE} 2>&1
+
 	for port in `cat ${LISTPKGS}`; do
 		PORTDIRECTORY="/usr/ports/${port}"
 
@@ -62,8 +77,9 @@ for JAILNAME in ${JAILNAMES}; do
 
 		msg "building ${port}"
 		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} install
-# Package all newly build ports
 	done
+
+# Package all newly build ports
 	msg "Packaging all installed ports"
 	if [ -x ${JAILBASE}/usr/sbin/pkg ]; then
 		jexec -U root ${JAILNAME} /usr/sbin/pkg create -a -o /usr/ports/packages/All/
@@ -170,11 +186,14 @@ for JAILNAME in ${JAILNAMES}; do
 		' ${INDEXF}.1 > ${INDEXF}
 
 		rm ${INDEXF}.1
+		[ -f ${INDEXF}.bz2 ] && rm ${INDEXF}.bz2
 		msg_n "compressing INDEX-${OSMAJ} ..."
 		bzip2 -9 ${INDEXF}
 		echo " done"
 	fi
-	) 2>&1 | tee ${LOGS}/${PORTNAME}-${JAILNAME}.bulk.log
+
+	exec 1>&3 3>&- 2>&4 4>&-
+	wait $tpid
 
 	cleanup
 	STATUS=0 #injail
