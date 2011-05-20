@@ -82,9 +82,9 @@ for JAILNAME in ${JAILNAMES}; do
 	prepare_jail
 
 	TEMP=${JAILBASE}${PORTDIRECTORY}
-	if [ ${#TEMP} -ge 88 ]; then
+	if [ ${#TEMP} -ge 87 ]; then
 		PORTDIRECTORY="${PORTNAME}"
-		if [ ${#PORTDIRECTORY} -ge 88 ]; then
+		if [ ${#PORTDIRECTORY} -ge 87 ]; then
 			PORTDIRECTORY="a"
 		fi
 	fi
@@ -101,8 +101,10 @@ for JAILNAME in ${JAILNAMES}; do
 	exec > ${PIPE} 2>&1
 	if [ "${USE_PORTLINT}" = "yes" ]; then
 		if [ -x `which portlint` ]; then
+			set +e
 			msg "Portlint check"
-			cd ${JAILBASE}/${PORTDIRECTORY} && portlint -a
+			cd ${JAILBASE}/${PORTDIRECTORY} && portlint -a | tee -a ${LOGS}/${PORTNAME}-${JAILNAME}.portlint.log
+			set -e
 		else
 			err 2 "First install portlint if you want USE_PORTLINT to work as expected"
 		fi
