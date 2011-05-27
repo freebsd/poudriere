@@ -1,6 +1,6 @@
 poudriere only depends on base and only on base
 
-To be able to use poudriere you will need a zfs pool dedicated dedicated.
+To be able to use poudriere you will need a zfs pool dedicated.
 that pool should have a fs name poudriere : poolname/poudriere
 
 poudriere will also need a place to store it's datas : packages and logs. Let's
