@@ -21,7 +21,7 @@ by default createjail will create a jail which architecture is the same as the
 host. If the host is amd64 you will be able to create i386 jails (need 32bit
 support in the kernel)
 
-when the jail creation is finished poudriere snapshot the jail filesystem to be
+when the jail creation is finished poudriere snapshots the jail filesystem to be
 sure to be able to rollback to a clean filesystem.
 
 now you are ready to test some ports
@@ -37,7 +37,7 @@ runtime ones) and log it to
 poudriere_data/logs/mybeautifulporttotest-jailname-depends.log)
 if packages for the dependencies already exists it will use them
 
-when all the dependency are build packages for them are created so that next
+when all the dependency are build, packages for them are created so that next
 time it will be faster.
 
 all the dependency phase is done with PREFIX == LOCALBASE
