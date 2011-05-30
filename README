@@ -1,15 +1,15 @@
 poudriere only depends on base and only on base
 
 To be able to use poudriere you will need a zfs pool dedicated.
-that pool should have a fs name poudriere : poolname/poudriere
+that pool should have a fs name poudriere: poolname/poudriere
 
-poudriere will also need a place to store it's datas : packages and logs. Let's
+poudriere will also need a place to store it's datas: packages and logs. Let's
 call it poudriere_data.
 
 How it works
 first you have to create jails, poudriere comes with bundle script to create
 jails for you: 
-	poudriere createjail -v 8.1-RELEASE -a amd64 -n 81amd64
+	poudriere createjail -v 8.1-RELEASE -a amd64 -j 81amd64
 
 it will fetch all the necessary stuff to create a simple minimal jail you can
 create as much jails as you want.
@@ -37,7 +37,7 @@ runtime ones) and log it to
 poudriere_data/logs/mybeautifulporttotest-jailname-depends.log)
 if packages for the dependencies already exists it will use them
 
-when all the dependency are build, packages for them are created so that next
+when all the dependencies are built, packages for them are created so that next
 time it will be faster.
 
 all the dependency phase is done with PREFIX == LOCALBASE
