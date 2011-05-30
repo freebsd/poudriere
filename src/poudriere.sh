@@ -5,9 +5,9 @@ usage() {
 	echo 
 	echo "cmd can be:"
 	echo "- createjail: create a new jail to test ports"
-	echo "- removejail: remove the jail whose name is given to the -n option"
-	echo "- startjail: start the jail whose name is given to the -n option"
-	echo "- stopjail: stop the jail whose name is given to the -n option"
+	echo "- removejail: remove the jail whose name is given to the -j option"
+	echo "- startjail: start the jail whose name is given to the -j option"
+	echo "- stopjail: stop the jail whose name is given to the -j option"
 	echo "- testport: launch a test on a given port"
 	echo "- genpkg: generate package for a given port"
 	echo "- bulk: generate packages for given ports"
