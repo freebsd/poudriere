@@ -73,7 +73,7 @@ USE_PORTLINT=yes|no # use portling to check port sanity
 
 NOTE:
 
--n is the name of the jail which will also be the name of the zfs filesystem
+-j is the name of the jail which will also be the name of the zfs filesystem
 be carefull to respects the names supported by jail(8):
 "This is an arbitrary string that identifies a jail (except it may not contain a ‘.’)"
 be also carefull to not begin the name of the jail by a number if you are not in -stable or current:
