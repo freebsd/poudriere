@@ -67,7 +67,7 @@ for JAILNAME in ${JAILNAMES}; do
 	tpid=$!
 	exec > ${PIPE} 2>&1
 
-	for port in `cat ${LISTPKGS}`; do
+	for port in `grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}`; do
 		PORTDIRECTORY="/usr/ports/${port}"
 
 		test -d ${JAILBASE}/${PORTDIRECTORY} || {
