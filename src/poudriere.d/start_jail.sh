@@ -48,6 +48,11 @@ devfs_mount_jail "${MNT}/dev"
 msg "Mounting /proc"
 [ ! -d ${MNT}/proc ] && mkdir ${MNT}/proc
 mount -t procfs proc ${MNT}/proc
+msg "Mounting linuxfs"
+[ ! -d ${MNT}/compat/linux/proc ] && mkdir -p ${MNT}/compat/linux/proc
+[ ! -d ${MNT}/compat/linux/sys ] && mkdir -p ${MNT}/compat/linux/sys
+mount -t linprocfs linprocfs ${MNT}/compat/linux/proc
+mount -t linsysfs linsysfs ${MNT}/compat/linux/sys
 if [ ! "${USE_LOOPBACK}" = "yes" ]; then
 	msg "Adding IP alias"
 	ifconfig ${ETH} inet ${IP} alias > /dev/null 2>&1
