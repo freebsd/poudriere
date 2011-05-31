@@ -66,10 +66,13 @@ ETH=nfe0 # the network interface linked to the jail
 PORTSDIR=/usr/ports # the portstree that will be mounted into the jails
 POUDRIERE_DATA=/usr/local/poudriere_data # the directory where poudriere will store packages and logs
 MFSSIZE=1024m # if set WORKDIRPREFIX will be mdmfs at the given size
-CUSTOMCONFIG=/path/to/custom/make.conf # path to files to be appended to the jail make.conf
 USE_LOOPBACK=yes|no # you maybe want to use a loopback on your host when needed. lo interface is
 auto-magically found and setted
 USE_PORTLINT=yes|no # use portling to check port sanity
+
+make.conf per jails: 
+${PREFIX}/etc/poudriere.d/make.conf: global to all the jails
+${PREFIX}/etc/poudriere.d/<jailname>-make.conf: specific for the jail named <jailname>
 
 NOTE:
 
