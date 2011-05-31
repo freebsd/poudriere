@@ -87,10 +87,14 @@ for JAILNAME in ${JAILNAMES}; do
 		OSMAJ=`jexec -U root ${JAILNAME} uname -r | awk -F. '{ print $1 }'`
 		INDEXF=${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/INDEX-${OSMAJ}
 		for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1 }' `; do
-			msg_n "packaging ${pkg}"
-			ORIGIN=`jexec -U root ${JAILNAME} /usr/sbin/pkg_info -qo ${pkg}`
-			jexec -U root ${JAILNAME} make -C /usr/ports/${ORIGIN} package > /dev/null
-			echo " done"
+			if [ ! -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${pkg}.tbz ];then
+				msg_n "packaging ${pkg}"
+				ORIGIN=`jexec -U root ${JAILNAME} /usr/sbin/pkg_info -qo ${pkg}`
+				jexec -U root ${JAILNAME} make -C /usr/ports/${ORIGIN} package > /dev/null
+				echo " done"
+			else 
+				msg "package ${pkg}.tbz already exists"
+			fi 
 		done
 
 		for pkg_file in `ls ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/*.tbz`; do
