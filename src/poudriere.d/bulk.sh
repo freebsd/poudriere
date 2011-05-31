@@ -90,9 +90,16 @@ for JAILNAME in ${JAILNAMES}; do
 			msg_n "packaging ${pkg}"
 			ORIGIN=`jexec -U root ${JAILNAME} /usr/sbin/pkg_info -qo ${pkg}`
 			jexec -U root ${JAILNAME} make -C /usr/ports/${ORIGIN} package > /dev/null
-			jexec -U root ${JAILNAME} make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
 			echo " done"
 		done
+
+		for pkg_file in `ls ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/*.tbz`; do
+			msg_n "extracting description from `basename ${pkg_file}`"
+			ORIGIN=`/usr/sbin/pkg_info -qo ${pkg_file}`
+			[ -d /usr/ports/${ORIGIN} ] && jexec -U root ${JAILNAME} make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
+			echo " done"
+		done
+
 		awk -v indf=${INDEXF}.1 -F\| 'BEGIN {
 		nblines=0
 		while ((getline < indf) > 0) {
