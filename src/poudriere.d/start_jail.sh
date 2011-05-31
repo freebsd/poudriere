@@ -45,6 +45,9 @@ fi
 MNT=`zfs list -H -o mountpoint ${ZPOOL}/poudriere/${NAME}`
 msg "Mounting devfs"
 devfs_mount_jail "${MNT}/dev"
+msg "Mounting /proc"
+[ ! -d ${MNT}/proc ] && mkdir ${MNT}/proc
+mount -t procfs proc ${MNT}/proc
 if [ ! "${USE_LOOPBACK}" = "yes" ]; then
 	msg "Adding IP alias"
 	ifconfig ${ETH} inet ${IP} alias > /dev/null 2>&1
