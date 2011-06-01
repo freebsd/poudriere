@@ -89,7 +89,7 @@ for JAILNAME in ${JAILNAMES}; do
 			continue
 		fi
 		msg "building ${port}"
-		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install package-recursive clean
+		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install package-recursive
 	done
 	zfs destroy ${ZPOOL}/poudriere/${JAILNAME}@bulk 2>/dev/null || :
 

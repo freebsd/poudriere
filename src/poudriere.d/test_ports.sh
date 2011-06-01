@@ -64,6 +64,7 @@ while getopts "d:cnj:p:" FLAG; do
 		;;
 		p)
 		PTNAME=${OPTARG}
+		;;
 		*)
 		usage
 		;;
