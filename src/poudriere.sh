@@ -12,6 +12,7 @@ usage() {
 	echo "- genpkg: generate package for a given port"
 	echo "- bulk: generate packages for given ports"
 	echo "- lsjail: list jails created and used by poudriere"
+	echo "- portsnap: create or update the portstree used by poudriere"
 	exit 1
 }
 
@@ -51,6 +52,10 @@ case $1 in
 	lsjail)
 		shift
 		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/list_jails.sh $@
+	;;
+	portsnap)
+		shift
+		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/portsnap.sh $@
 	;;
 	*)
 		echo "unknown command $1"
