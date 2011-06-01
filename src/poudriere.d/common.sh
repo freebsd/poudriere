@@ -43,7 +43,7 @@ cleanup() {
 }
 
 prepare_jail() {
-	[ -z "${JAILBASE}" ] && err 1 "No path the the base of the jail defined" 
+	[ -z "${JAILBASE}" ] && err 1 "No path of the base of the jail defined"
 	[ -z "${PORTSDIR}" ] && err 1 "No ports directory defined"
 	[ -z "${PKGDIR}" ] && err 1 "No package directory defined"
 	[ -n "${MFSSIZE}" -a -n "${USE_TMPFS}" ] && err 1 "You can't use both tmpfs and mdmfs"

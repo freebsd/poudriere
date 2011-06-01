@@ -100,7 +100,7 @@ for JAILNAME in ${JAILNAMES}; do
 		for pkg_file in `ls ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/*.tbz`; do
 			msg_n "extracting description from `basename ${pkg_file}`"
 			ORIGIN=`/usr/sbin/pkg_info -qo ${pkg_file}`
-			[ -d /usr/ports/${ORIGIN} ] && jexec -U root ${JAILNAME} make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
+			[ -d ${PORTSDIR}/${ORIGIN} ] && jexec -U root ${JAILNAME} make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
 			echo " done"
 		done
 
