@@ -2,12 +2,12 @@
 set -e
 
 usage() {
-	echo "poudriere bulk -f listpkgs [-c] [-j jailname]"
+	echo "poudriere bulk -f listpkgs [-c] [-C] [-j jailname] [-p portstree]"
 	echo "-f <listpkgs>: list of packages to build"
 	echo "-c run make config for the given port"
-	echo "-j <jailname> run only on the given jail"
 	echo "-C cleanup the old bulk"
-	echo "-p portstree"
+	echo "-j <jailname> run only on the given jail"
+	echo "-p <portstree>: specify on which portstree we work"
 	exit 1
 }
 

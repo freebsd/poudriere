@@ -2,9 +2,10 @@
 set -e
 
 usage() {
-	echo "poudriere genpkg -d directory [-c] [-j jailname]"
+	echo "poudriere genpkg -d directory [-c] [-j jailname] [-p portstree]"
 	echo "-c run make config for the given port"
-	echo "-j jailname run only on the given jail"
+	echo "-j <jailname> run only on the given jail"
+	echo "-p <portstree> use portstree \"portstree\""
 	exit 1
 }
 

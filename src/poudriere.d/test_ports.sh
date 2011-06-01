@@ -2,11 +2,11 @@
 set -e
 
 usage() {
-	echo "poudriere testport -d directory [-cn] [-j jailname]"
+	echo "poudriere testport -d directory [-cn] [-j jailname] [-p portstree]"
 	echo "-c run make config for the given port"
-	echo "-j jailname run only on the given jail"
+	echo "-j jailname: run only on the given jail"
 	echo "-n no custom prefix"
-	echo "-p portstree"
+	echo "-p portstree: specify on which portstree we work"
 	exit 1
 }
 

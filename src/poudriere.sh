@@ -12,7 +12,7 @@ usage() {
 	echo "- genpkg: generate package for a given port"
 	echo "- bulk: generate packages for given ports"
 	echo "- lsjail: list jails created and used by poudriere"
-	echo "- ports: create or update the portstree used by poudriere"
+	echo "- ports: create, update or delete the portstrees used by poudriere"
 	exit 1
 }
 
