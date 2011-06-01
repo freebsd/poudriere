@@ -133,6 +133,8 @@ mkdir -p ${JAILBASE}/wrkdirs
 mkdir -p ${POUDRIERE_DATA}/packages/${NAME}/All
 mkdir -p ${POUDRIERE_DATA}/logs
 
+jail -U root -c path=${JAILBASE} command=/sbin/ldconfig -m /lib /usr/lib /usr/lib/compat
+
 cp /etc/resolv.conf ${JAILBASE}/etc
 
 zfs snapshot ${ZPOOL}/poudriere/${NAME}@clean
