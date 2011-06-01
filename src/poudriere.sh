@@ -49,7 +49,7 @@ case $1 in
 		shift
 		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/bulk.sh $@
 	;;
-	lsjail)
+	lsjail|lsjails)
 		shift
 		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/list_jails.sh $@
 	;;
