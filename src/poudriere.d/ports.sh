@@ -6,8 +6,18 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 
 # test if there is any args
 usage() {
-	echo "poudriere ports [-c-u-d-l] -p <portname>"
-	echo "    This command does not take any arguments."
+	echo "poudriere ports [options] -p <treename>"
+	cat <<EOF
+Options:
+    -c          -- create a portstree named "treename"
+    -d          -- delete a portstree named "treename"
+    -u          -- update a portstree named "treename"
+    -l          -- lists all available portstrees
+    -p          -- specifies on which portstree we work. If not
+                   specified, work on a portstree called "default".
+EOF
+
+
 	exit 1
 }
 
@@ -46,7 +56,9 @@ while getopts "cudlp:" FLAG; do
 	esac
 done
 
-[ $(( CREATE + UPDATE + DELETE +LIST )) -ne 1 ] && usage
+PTNAME=${PTNAME:-default}
+
+[ $(( CREATE + UPDATE + DELETE + LIST )) -ne 1 ] && usage
 
 if [ ${LIST} -eq 1 ]; then
 	PTNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\/ports-/ { sub(/^'${ZPOOL}'\/poudriere\/ports-/, "", $1); print $1 }'`
