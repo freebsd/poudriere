@@ -74,7 +74,6 @@ for JAILNAME in ${JAILNAMES}; do
 
 	zfs snapshot ${ZPOOL}/poudriere/${JAILNAME}@bulk
 	for port in `grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}`; do
-		msg "Rollback to fresh new jail"
 		zfs rollback ${ZPOOL}/poudriere/${JAILNAME}@bulk
 		PORTDIRECTORY="/usr/ports/${port}"
 
