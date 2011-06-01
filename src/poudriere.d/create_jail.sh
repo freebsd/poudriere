@@ -1,7 +1,7 @@
 #!/bin/sh
 
 usage() {
-	echo "pourdriere createjail -j jailname -v version [-a architecture] [-z zfs] -m [FTP|NONE] -s"
+	echo "poudriere createjail -j jailname -v version [-a architecture] [-z zfs] -m [FTP|NONE] -s"
 	echo "by default architecture is the same as the host (amd64 can create i386 jails)"
 	echo "by default a new zfs filesystem will be created in the dedicated pool"
 	echo "by default the FTP method is used but you can add your home made jail with NONE -v and -a will be ignored in that case"
@@ -22,7 +22,7 @@ create_base_fs() {
 	zfs create -o mountpoint=${BASEFS:=/usr/local/poudriere} ${ZPOOL}/poudriere >/dev/null 2>&1 || err 1 " Fail" && echo " done"
 }
 
-#Test if the default FS for pourdriere exists if not creates it
+#Test if the default FS for poudriere exists if not creates it
 zfs list ${ZPOOL}/poudriere >/dev/null 2>&1 || create_base_fs
 
 SRCS="ssys*"

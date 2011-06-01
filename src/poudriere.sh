@@ -1,7 +1,7 @@
 #!/bin/sh
 
 usage() {
-	echo "pourdriere cmd [options]"
+	echo "poudriere cmd [options]"
 	echo 
 	echo "cmd can be:"
 	echo "- createjail: create a new jail to test ports"
