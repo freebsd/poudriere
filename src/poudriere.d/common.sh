@@ -42,6 +42,8 @@ cleanup() {
 }
 
 prepare_jail() {
+	zfs list -r ${ZPOOL}/poudriere/ports-${PTNAME} >/dev/null 2>&1 || err 2 "No such ports tree ${PTNAME}"
+	PORTSDIR="$(zfs list -rH ${ZPOOL}/poudriere/ports-${PTNAME} | awk '{ print $NF }')/ports"
 	[ -z "${JAILBASE}" ] && err 1 "No path of the base of the jail defined"
 	[ -z "${PORTSDIR}" ] && err 1 "No ports directory defined"
 	[ -z "${PKGDIR}" ] && err 1 "No package directory defined"

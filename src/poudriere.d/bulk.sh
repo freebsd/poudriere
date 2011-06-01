@@ -7,18 +7,20 @@ usage() {
 	echo "-c run make config for the given port"
 	echo "-j <jailname> run only on the given jail"
 	echo "-C cleanup the old bulk"
+	echo "-p portstree"
 	exit 1
 }
 
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
-CONFIGSTR=0
+CONFIGSTR=0 
+PTNAME="default"
 CLEAN=0
 . ${SCRIPTPREFIX}/common.sh
 
 LOGS="${POUDRIERE_DATA}/logs"
 
-while getopts "Cf:cnj:" FLAG; do
+while getopts "Cf:cj:p:" FLAG; do
 	case "${FLAG}" in
 		c)
 		CONFIGSTR=1
@@ -32,6 +34,9 @@ while getopts "Cf:cnj:" FLAG; do
 		j)
 		zfs list ${ZPOOL}/poudriere/${OPTARG} >/dev/null 2>&1 || err 1 "No such jail: ${OPTARG}"
 		JAILNAMES="${JAILNAMES} ${OPTARG}"
+		;;
+		p)
+		PTNAME=${OPTARG}
 		;;
 		*)
 		usage

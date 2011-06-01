@@ -6,6 +6,7 @@ usage() {
 	echo "-c run make config for the given port"
 	echo "-j jailname run only on the given jail"
 	echo "-n no custom prefix"
+	echo "-p portstree"
 	exit 1
 }
 
@@ -44,8 +45,9 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 CONFIGSTR=0
 . ${SCRIPTPREFIX}/common.sh
 NOPREFIX=0
+PTNAME="default"
 
-while getopts "d:cnj:" FLAG; do
+while getopts "d:cnj:p:" FLAG; do
 	case "${FLAG}" in
 		c)
 		CONFIGSTR=1
@@ -60,6 +62,8 @@ while getopts "d:cnj:" FLAG; do
 		zfs list ${ZPOOL}/poudriere/${OPTARG} >/dev/null 2>&1 || err 1 "No such jail: ${OPTARG}"
 		JAILNAMES="${JAILNAMES} ${OPTARG}"
 		;;
+		p)
+		PTNAME=${OPTARG}
 		*)
 		usage
 		;;

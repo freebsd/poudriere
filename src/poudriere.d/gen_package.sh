@@ -11,11 +11,12 @@ usage() {
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 CONFIGSTR=0
+PTNAME="default"
 . ${SCRIPTPREFIX}/common.sh
 
 LOGS="${POUDRIERE_DATA}/logs"
 
-while getopts "d:cnj:" FLAG; do
+while getopts "d:cnj:p:" FLAG; do
 	case "${FLAG}" in
 		c)
 		CONFIGSTR=1
@@ -26,6 +27,9 @@ while getopts "d:cnj:" FLAG; do
 		j)
 		zfs list ${ZPOOL}/poudriere/${OPTARG} >/dev/null 2>&1 || err 1 "No such jail: ${OPTARG}"
 		JAILNAMES="${JAILNAMES} ${OPTARG}"
+		;;
+		p)
+			PTNAME=${OPTARG}
 		;;
 		*)
 		usage
