@@ -18,13 +18,11 @@ msg() {
 }
 
 sig_handler() {
-	set +e
 	if [ ${STATUS} -eq 1 ]; then
 		msg "Signal caught, cleaning up and exiting"
 		cleanup
-		STATUS=2
 	fi
-	exit ${STATUS}
+	return ${STATUS}
 }
 
 cleanup() {
