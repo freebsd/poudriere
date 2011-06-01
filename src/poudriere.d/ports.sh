@@ -6,13 +6,16 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 
 # test if there is any args
 usage() {
-	echo "poudriere ports [options] -p <treename>"
+	echo "poudriere ports [action] -p <treename>"
 	cat <<EOF
-Options:
-    -c          -- create a portstree named "treename"
-    -d          -- delete a portstree named "treename"
-    -u          -- update a portstree named "treename"
+
+Action:
+    -c          -- create a portstree
+    -d          -- delete a portstree
+    -u          -- update a portstree
     -l          -- lists all available portstrees
+
+Option:
     -p          -- specifies on which portstree we work. If not
                    specified, work on a portstree called "default".
 EOF
