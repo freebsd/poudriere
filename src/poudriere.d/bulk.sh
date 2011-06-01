@@ -75,28 +75,23 @@ for JAILNAME in ${JAILNAMES}; do
 			continue
 		}
 
+		PKGNAME=$(jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VPKGNAME)
+		if [ -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${PKGNAME}.tbz ]; then
+			msg "$PKGNAME already packaged skipping"
+			continue
+		fi
 		msg "building ${port}"
-		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} install
+		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install package-recursive clean
 	done
 
 # Package all newly build ports
-	msg "Packaging all installed ports"
 	if [ -x ${JAILBASE}/usr/sbin/pkg ]; then
+		msg "Packaging all installed ports"
 		jexec -U root ${JAILNAME} /usr/sbin/pkg create -a -o /usr/ports/packages/All/
 	else
+		msg "Preparing index"
 		OSMAJ=`jexec -U root ${JAILNAME} uname -r | awk -F. '{ print $1 }'`
 		INDEXF=${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/INDEX-${OSMAJ}
-		for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1 }' `; do
-			if [ ! -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${pkg}.tbz ];then
-				msg_n "packaging ${pkg}"
-				ORIGIN=`jexec -U root ${JAILNAME} /usr/sbin/pkg_info -qo ${pkg}`
-				jexec -U root ${JAILNAME} make -C /usr/ports/${ORIGIN} package > /dev/null
-				echo " done"
-			else 
-				msg "package ${pkg}.tbz already exists"
-			fi 
-		done
-
 		for pkg_file in `ls ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/*.tbz`; do
 			msg_n "extracting description from `basename ${pkg_file}`"
 			ORIGIN=`/usr/sbin/pkg_info -qo ${pkg_file}`
