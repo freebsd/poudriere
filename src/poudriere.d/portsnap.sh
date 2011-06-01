@@ -14,7 +14,7 @@ if [ $# -gt 0 ]; then
 fi
 
 if [ -z "${PORTSDIR}" ]; then
-       err 1 "No ports directory defined"
+       err 1 "No ports directory defined."
 fi
 
 # create needed directories
@@ -27,7 +27,9 @@ fi
 
 # actually install or update the portstree
 if [ ! -f $PORTSNAPDIR/INDEX ]; then
-	/usr/sbin/portsnap -d $PORTSNAPDIR -p $PORTSDIR fetch extract
+	msg "Extracting portstree"
+	/usr/sbin/portsnap -d $PORTSNAPDIR -p $PORTSDIR fetch extract > /dev/null
 else
-	/usr/sbin/portsnap -d $PORTSNAPDIR -p $PORTSDIR fetch update
+	msg "Updating portstree"
+	/usr/sbin/portsnap -d $PORTSNAPDIR -p $PORTSDIR fetch update > /dev/null
 fi
