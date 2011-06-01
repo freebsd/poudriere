@@ -13,11 +13,15 @@ if [ $# -gt 0 ]; then
 	exit 1
 fi
 
+if [ -z "${PORTSDIR}" ]; then
+       err 1 "No ports directory defined"
+fi
+
 # create needed directories
-if [ ! -d $PORTSNAPDIR ]; then
+if [ ! -d "$PORTSNAPDIR" ]; then
 	mkdir -p $PORTSNAPDIR 
 fi
-if [ ! -d $PORTSDIR ]; then
+if [ ! -d "$PORTSDIR" ]; then
 	mkdir -p $PORTSDIR
 fi
 
