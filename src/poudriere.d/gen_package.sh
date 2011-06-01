@@ -41,7 +41,7 @@ done
 test -z ${PORTDIRECTORY} && usage
 PORTNAME=`make -C ${PORTDIRECTORY} -VPKGNAME`
 
-test -z ${JAILNAMES} && JAILNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }'`
+test -z ${JAILNAMES} && JAILNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }'|grep -v ports-`
 
 for JAILNAME in ${JAILNAMES}; do
 	JAILBASE=`zfs list -H -o mountpoint ${ZPOOL}/poudriere/${JAILNAME}`
