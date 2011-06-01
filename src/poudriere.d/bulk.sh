@@ -13,7 +13,7 @@ usage() {
 
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
-CONFIGSTR=0 
+CONFIGSTR=0
 PTNAME="default"
 CLEAN=0
 . ${SCRIPTPREFIX}/common.sh
