@@ -67,7 +67,10 @@ for JAILNAME in ${JAILNAMES}; do
 	tpid=$!
 	exec > ${PIPE} 2>&1
 
+	zfs snapshot ${ZPOOL}/poudriere/${JAILNAME}@bulk
 	for port in `grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}`; do
+		msg "Rollback to fresh new jail"
+		zfs rollback ${ZPOOL}/poudriere/${JAILNAME}@bulk
 		PORTDIRECTORY="/usr/ports/${port}"
 
 		test -d ${JAILBASE}/${PORTDIRECTORY} || {
@@ -83,6 +86,7 @@ for JAILNAME in ${JAILNAMES}; do
 		msg "building ${port}"
 		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install package-recursive clean
 	done
+	zfs destroy ${ZPOOL}/poudriere/${JAILNAME}@bulk 2>/dev/null || :
 
 # Package all newly build ports
 	if [ -x ${JAILBASE}/usr/sbin/pkg ]; then
