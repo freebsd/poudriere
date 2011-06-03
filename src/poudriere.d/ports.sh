@@ -59,6 +59,11 @@ while getopts "cudlp:" FLAG; do
 	esac
 done
 
+if [ $(( CREATE + UPDATE + DELETE + LIST )) -lt 1 ]; then
+	usage
+	exit 1
+fi
+
 PTNAME=${PTNAME:-default}
 
 if [ ${LIST} -eq 1 ]; then
