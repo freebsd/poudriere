@@ -33,6 +33,10 @@ msg "Stopping jail"
 jail -r ${NAME}
 msg "Unmounting devfs"
 umount -f ${MNT}/dev
+msg "Unounting linuxfs"
+umount ${MNT}/compat/linux/proc
+umount ${MNT}/compat/linux/sys
+
 if [ "${USE_LOOPBACK}" = "yes" ]; then
 	LOOP=0
 	while :; do
