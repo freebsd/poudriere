@@ -88,7 +88,14 @@ for JAILNAME in ${JAILNAMES}; do
 			continue
 		fi
 		msg "building ${port}"
-		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install package-recursive
+		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install
+		msg "packaging"
+		for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1 }'`; do
+			[ -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${pkg}.tbz ] && continue
+			msg "packaging ${pkg}"
+			pkgorig=`jexec -U root ${JAILNAME} /usr/sbin/pkg_info -qo ${pkg}`
+			jexec -U root ${JAILNAME} make -C /usr/ports/${pkgorig} package-noinstall
+		done
 	done
 	zfs destroy ${ZPOOL}/poudriere/${JAILNAME}@bulk 2>/dev/null || :
 
