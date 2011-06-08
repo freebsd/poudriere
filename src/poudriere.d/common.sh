@@ -90,3 +90,4 @@ LOGS="${POUDRIERE_DATA}/logs"
 
 # Test if spool exists
 zpool list ${ZPOOL} >/dev/null 2>&1 || err 1 "No such zpool : ${ZPOOL}"
+ZVERSION=$(zpool get version ${ZPOOL} | awk '/^'${ZPOOL}'/ { print $3 }')

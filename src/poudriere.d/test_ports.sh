@@ -12,6 +12,7 @@ usage() {
 
 build_port() {
 	msg "Building ${PKGNAME}"
+	jexec -U root ${JAILNAME} mkdir -p /tmp/pkgs
 	for PHASE in build install package deinstall
 	do
 		if [ "${PHASE}" = "deinstall" ]; then
@@ -27,7 +28,7 @@ build_port() {
 				grep '=>' | awk '{ print $3;}' | sort -u
 			fi
 		fi
-		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} ${PORT_FLAGS} ${PHASE} PKGREPOSITORY=/tmp PACKAGES=/tmp
+		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} ${PORT_FLAGS} ${PHASE} PKGREPOSITORY=/tmp/pkgs PACKAGES=/tmp/pkgs
 		if [ "${PHASE}" = "build" ]; then
 			msg "Installing run dependencies"
 			jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} run-depends
@@ -35,6 +36,7 @@ build_port() {
 			for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1}'`; do
 				[ -f ${PKGDIR}/All/${pkg}.tbz ] || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
 			done
+			[ $ZVERSION -ge 28 ] && zfs snapshot ${ZPOOL}/poudriere/${JAILNAME}@prebuild
 		fi
 	done
 	return 0
@@ -149,20 +151,41 @@ for JAILNAME in ${JAILNAMES}; do
 		[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${JAILBASE}${PREFIX}
 	fi
 
-	find ${JAILBASE}${LOCALBASE}/ -type d | sed "s,^${JAILBASE}${LOCALBASE}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.before
+	msg "Populating PREFIX"
+	mkdir ${JAILBASE}${PREFIX}
+	jexec -U root ${JAILNAME} /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${PREFIX} >/dev/null
+
+	if [ $ZVERSION -lt 28 ]; then
+		find ${JAILBASE}${LOCALBASE}/ -type d | sed "s,^${JAILBASE}${LOCALBASE}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.before
+	fi
 
 	build_port
 
 	msg "Extra files and directories check"
-	find ${JAILBASE}${PREFIX} ! -type d | \
-		egrep -v "${JAILBASE}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
-		sed -e "s,^${JAILBASE}${PREFIX}/,,"
+	if [ $ZVERSION -lt 28 ]; then
+		find ${JAILBASE}${PREFIX} ! -type d | \
+			egrep -v "${JAILBASE}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
+			sed -e "s,^${JAILBASE}${PREFIX}/,,"
 
-	find ${JAILBASE}${PREFIX}/ -type d | sed "s,^${JAILBASE}${PREFIX}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.after
-	comm -13 ${JAILBASE}${PREFIX}.PLIST_DIRS.before ${JAILBASE}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
+		find ${JAILBASE}${PREFIX}/ -type d | sed "s,^${JAILBASE}${PREFIX}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.after
+		comm -13 ${JAILBASE}${PREFIX}.PLIST_DIRS.before ${JAILBASE}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
+	else
+		zfs diff ${ZPOOL}/poudriere/${JAILNAME}@prebuild \
+		${ZPOOL}/poudriere/${JAILNAME} | \
+		egrep -v "[\+|M][[:space:]]*${JAILBASE}(${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)|/tmp/pkgs)" | while read type path; do
+			if [ $type = "+" ]; then
+				[ -d $path ] && echo -n "@dirrmtry "
+				echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${PREFIX}/,,"
+			else
+				[ -d $path ] && continue
+				msg "WARNING: $path has been modified"
+			fi
+		done
+		zfs destroy ${ZPOOL}/poudriere/${JAILNAME}@prebuild || :
+	fi
 
 	msg "Installing from package"
-	PKG_DBDIR=${PKG_DBDIR} jexec -U root ${JAILNAME} pkg_add /tmp/${PKGNAME}.tbz
+	PKG_DBDIR=${PKG_DBDIR} jexec -U root ${JAILNAME} pkg_add /tmp/pkgs/${PKGNAME}.tbz
 	msg "Deinstalling package"
 	PKG_DBDIR=${PKG_DBDIR} jexec -U root ${JAILNAME} pkg_delete ${PKGNAME}
 
