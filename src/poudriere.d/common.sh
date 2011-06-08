@@ -28,6 +28,7 @@ sig_handler() {
 cleanup() {
 	[ -e ${PIPE} ] && rm -f ${PIPE}
 	zfs destroy ${ZPOOL}/poudriere/${JAILNAME}@bulk 2>/dev/null || :
+	zfs destroy ${ZPOOL}/poudriere/${JAILNAME}@prebuild 2>/dev/null || :
 	for MNT in $( mount | awk -v mnt="${JAILBASE}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /devfs/ && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
 		umount -f ${MNT}
 	done
