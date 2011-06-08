@@ -94,7 +94,7 @@ for JAILNAME in ${JAILNAMES}; do
 			[ -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${pkg}.tbz ] && continue
 			msg "packaging ${pkg}"
 			pkgorig=`jexec -U root ${JAILNAME} /usr/sbin/pkg_info -qo ${pkg}`
-			jexec -U root ${JAILNAME} make -C /usr/ports/${pkgorig} package-noinstall
+			jexec -U root ${JAILNAME} make -C /usr/ports/${pkgorig} package
 		done
 	done
 	zfs destroy ${ZPOOL}/poudriere/${JAILNAME}@bulk 2>/dev/null || :
