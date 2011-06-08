@@ -164,7 +164,6 @@ for JAILNAME in ${JAILNAMES}; do
 	msg "Extra files and directories check"
 	if [ $ZVERSION -lt 28 ]; then
 		find ${JAILBASE}${PREFIX} ! -type d | \
-			egrep -v "${JAILBASE}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
 			sed -e "s,^${JAILBASE}${PREFIX}/,,"
 
 		find ${JAILBASE}${PREFIX}/ -type d | sed "s,^${JAILBASE}${PREFIX}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.after
@@ -172,7 +171,7 @@ for JAILNAME in ${JAILNAMES}; do
 	else
 		zfs diff ${ZPOOL}/poudriere/${JAILNAME}@prebuild \
 		${ZPOOL}/poudriere/${JAILNAME} | \
-		egrep -v "[\+|M][[:space:]]*${JAILBASE}(${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)|/tmp/pkgs)" | while read type path; do
+		egrep -v "[\+|M][[:space:]]*${JAILBASE}/tmp/pkgs" | while read type path; do
 			if [ $type = "+" ]; then
 				[ -d $path ] && echo -n "@dirrmtry "
 				echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${PREFIX}/,,"
