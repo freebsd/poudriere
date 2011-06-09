@@ -68,6 +68,9 @@ case $1 in
 	;;
 	*)
 		echo "unknown command $1"
+		/bin/rm -f /tmp/poudriere.lock
 		usage
 	;;
 esac
+
+/bin/rm -f /tmp/poudriere.lock
