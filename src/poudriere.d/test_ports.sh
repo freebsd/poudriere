@@ -160,7 +160,7 @@ for JAILNAME in ${JAILNAMES}; do
 	fi
 
 	msg "Populating PREFIX"
-	mkdir ${JAILBASE}${PREFIX}
+	mkdir -p ${JAILBASE}${PREFIX}
 	jexec -U root ${JAILNAME} /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${PREFIX} >/dev/null
 
 	if [ $ZVERSION -lt 28 ]; then

@@ -59,7 +59,10 @@ STATUS=0 # out of jail #
 test -z ${JAILNAMES} && JAILNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }'|grep -v ports-`
 
 for JAILNAME in ${JAILNAMES}; do
+	PKGNG=0
+	EXT=tbz
 	JAILBASE=`zfs list -H -o mountpoint ${ZPOOL}/poudriere/${JAILNAME}`
+	[ -x ${JAILBASE}/usr/sbin/pkg ] && PKGNG=1
 	PKGDIR=${POUDRIERE_DATA}/packages/bulk-${JAILNAME}
 	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -j ${JAILNAME}
 
@@ -72,6 +75,8 @@ for JAILNAME in ${JAILNAMES}; do
 	fi
 
 	prepare_jail
+
+	[ $PKGNG -eq 1 ] && EXT=txz
 
 	exec 3>&1 4>&2
 	[ ! -e ${PIPE} ] && mkfifo ${PIPE}
@@ -90,26 +95,35 @@ for JAILNAME in ${JAILNAMES}; do
 		}
 
 		PKGNAME=$(jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VPKGNAME)
-		if [ -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${PKGNAME}.tbz ]; then
+		if [ -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${PKGNAME}.${EXT} ]; then
 			msg "$PKGNAME already packaged skipping"
 			continue
 		fi
 		msg "building ${port}"
 		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install
 		msg "packaging"
-		for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1 }'`; do
-			[ -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${pkg}.tbz ] && continue
-			msg "packaging ${pkg}"
-			pkgorig=`jexec -U root ${JAILNAME} /usr/sbin/pkg_info -qo ${pkg}`
-			jexec -U root ${JAILNAME} make -C /usr/ports/${pkgorig} package
-		done
+		if [ $PKGNG -eq 1 ]; then
+			for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg info -a | awk -F: '{ print $1 }'`; do
+				[ -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${pkg}.${EXT} ] && continue
+				msg "packaging ${pkg}"
+				pkgorig=`jexec -U root ${JAILNAME} /usr/sbin/pkg info -q -o ${pkg}`
+				jexec -U root ${JAILNAME} make -C /usr/ports/${pkgorig} package
+			done
+		else
+			for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1 }'`; do
+				[ -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${pkg}.${EXT} ] && continue
+				msg "packaging ${pkg}"
+				pkgorig=`jexec -U root ${JAILNAME} /usr/sbin/pkg_info -qo ${pkg}`
+				jexec -U root ${JAILNAME} make -C /usr/ports/${pkgorig} package
+			done
+		fi
 	done
 	zfs destroy ${ZPOOL}/poudriere/${JAILNAME}@bulk 2>/dev/null || :
 
 # Package all newly build ports
-	if [ -x ${JAILBASE}/usr/sbin/pkg ]; then
+	if [ $PKGNG -eq 1 ]; then
 		msg "Packaging all installed ports"
-		jexec -U root ${JAILNAME} /usr/sbin/pkg create -a -o /usr/ports/packages/All/
+		jexec -U root ${JAILNAME} /usr/sbin/pkg repo /usr/ports/packages/All/
 	else
 		msg "Preparing index"
 		OSMAJ=`jexec -U root ${JAILNAME} uname -r | awk -F. '{ print $1 }'`
