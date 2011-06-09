@@ -3,7 +3,7 @@ set -e
 
 usage() {
 	echo "poudriere testport parameters [options]"
-echo <<EOF
+cat <<EOF
 
 Parameters:
     -d path     -- Specify on which port we work
