@@ -17,6 +17,7 @@ Options:
     -s          -- Installs the whole source tree, some ports may need it
                    (Default: install only kernel sources)
 EOF
+	/bin/rm -f /tmp/poudriere.lock
 	exit 1
 }
 

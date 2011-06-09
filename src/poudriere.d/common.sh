@@ -40,6 +40,7 @@ cleanup() {
 	fi
 
 	/bin/sh ${SCRIPTPREFIX}/stop_jail.sh -j ${JAILNAME}
+	/bin/rm -f /tmp/poudriere.lock
 }
 
 prepare_jail() {

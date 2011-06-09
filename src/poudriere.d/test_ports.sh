@@ -14,6 +14,7 @@ Options:
     -n          -- No custom prefix
     -p tree     -- Specify on which portstree we work
 EOF
+	/bin/rm -f /tmp/poudriere.lock
 	exit 1
 }
 

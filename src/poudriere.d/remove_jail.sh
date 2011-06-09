@@ -12,6 +12,9 @@ Options:
     -p          -- Clean packages
     -a          -- Clean all
 EOF
+
+	/bin/rm -f /tmp/poudriere.lock
+	exit 1
 }
 
 SCRIPTPATH=`realpath $0`

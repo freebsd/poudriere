@@ -7,6 +7,7 @@ cat <<EOF
 Parameters:
     -j name     -- Start the given jail
 EOF
+	/bin/rm -f /tmp/poudriere.lock
 	exit 1
 }
 

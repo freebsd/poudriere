@@ -20,7 +20,7 @@ Options:
                    specified, work on a portstree called "default".
 EOF
 
-
+	/bin/rm -f /tmp/poudriere.lock
 	exit 1
 }
 

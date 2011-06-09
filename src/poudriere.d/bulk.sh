@@ -14,6 +14,7 @@ Options:
     -j name     -- Run only on the given jail
     -p tree     -- Specify on which ports tree the bulk will be done
 EOF
+	/bin/rm -f /tmp/poudriere.lock
 	exit 1
 }
 

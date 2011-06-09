@@ -14,6 +14,7 @@ Options:
     -p tree     -- Use portstree "tree'
 EOF
 
+	/bin/rm -f /tmp/poudriere.lock
 	exit 1
 }
 
