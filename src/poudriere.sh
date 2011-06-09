@@ -1,18 +1,20 @@
 #!/bin/sh
 
 usage() {
-	echo "poudriere cmd [options]"
-	echo 
-	echo "cmd can be:"
-	echo "- createjail: create a new jail to test ports"
-	echo "- removejail: remove the jail whose name is given to the -j option"
-	echo "- startjail: start the jail whose name is given to the -j option"
-	echo "- stopjail: stop the jail whose name is given to the -j option"
-	echo "- testport: launch a test on a given port"
-	echo "- genpkg: generate package for a given port"
-	echo "- bulk: generate packages for given ports"
-	echo "- lsjail: list jails created and used by poudriere"
-	echo "- ports: create, update or delete the portstrees used by poudriere"
+	echo "poudriere command [options]"
+cat <<EOF
+
+Commands:
+    createjail  -- create a new jail to test ports
+    removejail  -- remove the jail whose name is given to the -j option
+    startjail   -- start the jail whose name is given to the -j option
+    stopjail    -- stop the jail whose name is given to the -j option
+    testport    -- launch a test on a given port
+    genpkg      -- generate package for a given port
+    bulk        -- generate packages for given ports
+    lsjail      -- list jails created and used by poudriere
+    ports       -- create, update or delete the portstrees used by poudriere
+EOF
 	exit 1
 }
 
