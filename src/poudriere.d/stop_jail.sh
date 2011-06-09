@@ -1,7 +1,12 @@
 #!/bin/sh
 
 usage() {
-	echo "poudriere stopjail -j jailname"
+	echo "poudriere stopjail parameters"
+cat <<EOF
+
+Parameters:
+    -j name     -- Stop the given jail
+EOF
 	exit 1
 }
 

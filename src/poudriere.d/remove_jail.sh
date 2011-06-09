@@ -1,11 +1,17 @@
 #!/bin/sh
 
 usage() {
-	echo "poudriere removejail [-clp] -j jailname"
-	echo "-l: clean logs"
-	echo "-p: clean packages"
-	echo "-c: clean all"
-	exit 1
+	echo "poudriere removejail parameters [options]"
+cat <<EOF
+
+Parameters:
+    -j name     -- Specify which jail we remove
+
+Options:
+    -l          -- Clean logs
+    -p          -- Clean packages
+    -a          -- Clean all
+EOF
 }
 
 SCRIPTPATH=`realpath $0`

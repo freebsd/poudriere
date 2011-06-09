@@ -1,11 +1,22 @@
 #!/bin/sh
 
 usage() {
-	echo "poudriere createjail -j jailname -v version [-a architecture] -m [FTP|NONE] -s"
-	echo "by default architecture is the same as the host (amd64 can create i386 jails)"
-	echo "by default a new zfs filesystem will be created in the dedicated pool"
-	echo "by default the FTP method is used but you can add your home made jail with NONE -v and -a will be ignored in that case"
-	echo "-s: install the whole sources some ports my need it (only kernel sources are installed by default)"
+	echo "poudriere createjail parameters [options]"
+cat <<EOF
+
+Parameters:
+    -j jailname -- Specifies the jailname
+    -v version  -- Specifies which version of FreeBSD we want in jail
+ 
+Options:
+    -a arch     -- Indicates architecture of the jail: i386 or amd64
+                   (Default: same as host)
+    -m method   -- Method used to create jail, specify NONE if you want
+                   to use your home made jail
+                   (Default: FTP)
+    -s          -- Installs the whole source tree, some ports may need it
+                   (Default: install only kernel sources)
+EOF
 	exit 1
 }
 

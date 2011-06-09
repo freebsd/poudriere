@@ -1,11 +1,14 @@
 #!/bin/sh
 
 usage() {
+	echo "poudriere lsjail [options]"
+cat <<EOF
 
-	echo "poudriere lsjail [-q]"
-	echo "-q don't print header."
-	exit 1
+Options:
+    -q          -- Do not print headers 
+EOF
 
+        exit 1
 }
 
 SCRIPTPATH=`realpath $0`

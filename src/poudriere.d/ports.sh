@@ -6,16 +6,16 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 
 # test if there is any args
 usage() {
-	echo "poudriere ports [action] -p <treename>"
+	echo "poudriere ports [parameters] [options]"
 	cat <<EOF
 
-Action:
+Parameters:
     -c          -- create a portstree
     -d          -- delete a portstree
     -u          -- update a portstree
-    -l          -- lists all available portstrees
+    -l          -- lists all available portstrees (default)
 
-Option:
+Options:
     -p          -- specifies on which portstree we work. If not
                    specified, work on a portstree called "default".
 EOF
@@ -60,8 +60,7 @@ while getopts "cudlp:" FLAG; do
 done
 
 if [ $(( CREATE + UPDATE + DELETE + LIST )) -lt 1 ]; then
-	usage
-	exit 1
+	LIST=1
 fi
 
 PTNAME=${PTNAME:-default}
