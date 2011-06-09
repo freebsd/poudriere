@@ -1,30 +1,136 @@
-poudriere only depends on base and only on base
+What is poudriere?
+------------------
 
-To be able to use poudriere you will need a zfs pool dedicated.
-that pool should have a fs name poudriere: poolname/poudriere
+poudriere is a tool primarily designed to test package production on
+FreeBSD. However, most people will find it useful to bulk build ports
+for FreeBSD.
 
-poudriere will also need a place to store it's datas: packages and logs. Let's
-call it poudriere_data.
+Its goals are to use modern facilities present in FreeBSD (as ZFS,
+jails), to be easy to use and to depend only on base.
 
-How it works
-first you have to create jails, poudriere comes with bundle script to create
-jails for you: 
-	poudriere createjail -v 8.1-RELEASE -a amd64 -j 81amd64
+It is not designed to build the whole portstree as tinderbox.
 
-it will fetch all the necessary stuff to create a simple minimal jail you can
-create as much jails as you want.
+Poudriere is able to build packages for versions of FreeBSD that are
+different from the box on which it is installed, and also to build
+packages for i386 if the host is an amd64 box.
 
-poudriere creates the jail in a dedicated zfs file system under
-poolname/poudriere/nameofthejail
+Once the package building is done, the packages will be in a layout
+identical to the official one. Therefore they will be useable by any
+tool (pkg_add, portmaster, and so on).
 
-by default createjail will create a jail which architecture is the same as the
-host. If the host is amd64 you will be able to create i386 jails (need 32bit
-support in the kernel)
 
-when the jail creation is finished poudriere snapshots the jail filesystem to be
-sure to be able to rollback to a clean filesystem.
+What poudriere needs?
+---------------------
 
-now you are ready to test some ports
+- FreeBSD
+- a ZFS pool
+- root access
+
+That is all. For more comfort, we recommend to have quite a lot of RAM
+in order to make the builds in a VM resident filesystem.
+
+
+How to install it?
+------------------
+
+Just type "make" at the top-level directory.
+
+
+What do I have to configure before starting use it?
+---------------------------------------------------
+
+ Create a mandatory configuration file
+ -------------------------------------
+
+Poudriere will look for a configuration file in /usr/local/etc.
+
+============= /usr/local/etc/poudriere.conf =========================
+# The pool where poudriere will create its jails
+ZPOOL=tank
+# The ftp host where to download base sets and sys set for the jails
+FTPHOST=ftp.fr.freebsd.org
+# Ethernet interface for the jail
+#ETH=nfe0
+# If you cannot use another IP on your external interface
+USE_LOOPBACK=yes
+# IP for the jails
+IP=172.16.0.1
+# The ports directory to use within jails (mounted via nullfs)
+PORTSDIR=/usr/local/poudriere/ports
+# the directory where the jail will store the packages and logs
+POUDRIERE_DATA=/usr/local/poudriere_data
+# use portlint to check ports sanity
+USE_PORTLINT=no
+# if set WORKDIRPREFIX will be a mdmfs of the given size
+MFSSIZE=1024m
+=====================================================================
+
+ Create optional make.conf
+ -------------------------
+
+You can also specify a global make.conf which will be used for all the
+jails, and also add a per-jail make.conf:
+
+    /usr/local/etc/poudriere.d/make.conf
+
+and
+
+    /usr/local/etc/poudriere.d/<jailname>-make.conf
+
+
+How to use poudriere?
+---------------------
+
+ Prepare infrastructure
+ ----------------------
+
+First you have to create a jail, which will hold all the building
+infrastructure needs.
+
+     poudriere createjail -v 8.2-RELEASE -a amd64 -j 82amd64
+
+Of course you can use another version of FreeBSD, regarless on what
+version you are running. amd64 users can choose i386 arch like in this
+example:
+
+     poudriere createjail -v 8.1-RELEASE -a i386 -j 81i386
+
+This command will fetch and install a minimal jail, small (~400MB) so
+you can create a lot of them. It will install the jail under the pool
+you have chosen, at poudriere/jailname.
+
+ Specify a list of ports you want to build
+ -----------------------------------------
+
+Create a flat text file in which you put the ports you want to see
+built by poudriere.
+
+     echo "sysutils/screen" > ~/pkglist
+     echo "editors/vim" >> ~/pkglist
+
+ Launch the bulk build
+ ---------------------
+
+Now you can launch the bulk build. You can specify to build for only one
+arch/version ; by default it will make the bulk build on all the jails
+created by poudriere.
+
+    poudriere bulk -f ~/pkglist -j 81i386
+
+ Find your packages
+ ------------------
+
+Once the bulk build is over, you can meet your shiny new packages here:
+
+/usr/local/poudriere_data/packages/bulk-81i386
+
+with 81i386 as the name of the jail.
+
+
+Use poudriere for a single port
+-------------------------------
+
+Let's take the example of building a single port;
 
 poudriere testport -d ~/ports-cvs/mybeautifulporttotest
 
@@ -56,28 +162,45 @@ It is very easy to extend it so that we can easily add other tests if wanted
 One could imaging a webui or stores datas in a SGBD
 
 
-To use poudriere:
+Caveats
+-------
 
-first you need a configuration file ${PREFIX}/etc/poudriere.conf
-ZPOOL=poolname # the name of the zfs pool where poudriere will live
-FTPHOST=ftp.freebsd.org #the host where poudriere will download the sets for the jails
-IP=192.168.1.1 #the ip of the jail so that it can access internet (fetch distfiles etc)
-ETH=nfe0 # the network interface linked to the jail
-PORTSDIR=/usr/local/poudriere/ports # the portstree that will be mounted into the jails
-POUDRIERE_DATA=/usr/local/poudriere_data # the directory where poudriere will store packages and logs
-MFSSIZE=1024m # if set WORKDIRPREFIX will be mdmfs at the given size
-USE_LOOPBACK=yes|no # you maybe want to use a loopback on your host when needed. lo interface is
-auto-magically found and setted
-USE_PORTLINT=yes|no # use portling to check port sanity
-
-make.conf per jails: 
-${PREFIX}/etc/poudriere.d/make.conf: global to all the jails
-${PREFIX}/etc/poudriere.d/<jailname>-make.conf: specific for the jail named <jailname>
-
-NOTE:
+ Jailname
+ --------
 
 -j is the name of the jail which will also be the name of the zfs filesystem
 be carefull to respects the names supported by jail(8):
 "This is an arbitrary string that identifies a jail (except it may not contain a ‘.’)"
 be also carefull to not begin the name of the jail by a number if you are not in -stable or current:
 http://svn.freebsd.org/viewvc/base?view=revision&revision=209820
+
+Bonus: how to use the generated packages with portmaster
+--------------------------------------------------------
+
+First, install portmaster from the void:
+
+    fetch -o - http://ftp.fr.freebsd.org/pub/FreeBSD/ports/packages/All/portmaster-3.9.tbz | \
+    pkg_add -r -
+
+Then, configure it:
+
+    mkdir -p /usr/ports/Mk
+    touch /usr/ports/Mk/bsd.port.mk
+
+    cat > /usr/local/etc/portmaster.rc<<EOF
+MASTER_SITE_INDEX=http://example.com/82i386/
+LOCALBASE=/usr/local
+PACKAGESITE=http://example.com/82i386/
+PM_PACKAGES=only
+PM_INDEX=yes
+PM_INDEX_ONLY=pm_index_only
+EOF
+
+Of course you have to install a HTTP server, with /82i386/ an alias to
+/usr/local/poudriere_data/packages/bulk-82i386.
+
+You are now ready to invoke portmaster:
+
+     portmaster editors/vim
+
+Happy FreeBSDing!

@@ -22,3 +22,5 @@ USE_LOOPBACK=no
 # use portlint to check ports sanity
 USE_PORTLINT=no
 
+# if set WORKDIRPREFIX will be mdmfs of the given size (mM or gG)
+MFSSIZE=1024m
