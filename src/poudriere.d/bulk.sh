@@ -86,9 +86,7 @@ for JAILNAME in ${JAILNAMES}; do
 
 	zfs snapshot ${ZPOOL}/poudriere/${JAILNAME}@bulk
 	for port in `grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}`; do
-		zfs rollback ${ZPOOL}/poudriere/${JAILNAME}@bulk
 		PORTDIRECTORY="/usr/ports/${port}"
-		rm -rf ${JAILBASE}/wrkdirs/*
 
 		test -d ${JAILBASE}/${PORTDIRECTORY} || {
 			msg "No such port ${port}"
@@ -100,6 +98,8 @@ for JAILNAME in ${JAILNAMES}; do
 			msg "$PKGNAME already packaged skipping"
 			continue
 		fi
+		zfs rollback ${ZPOOL}/poudriere/${JAILNAME}@bulk
+		rm -rf ${JAILBASE}/wrkdirs/*
 		msg "building ${port}"
 		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install || :
 		msg "packaging"
