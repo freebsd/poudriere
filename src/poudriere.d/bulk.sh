@@ -88,6 +88,7 @@ for JAILNAME in ${JAILNAMES}; do
 	for port in `grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}`; do
 		zfs rollback ${ZPOOL}/poudriere/${JAILNAME}@bulk
 		PORTDIRECTORY="/usr/ports/${port}"
+		rm -rf ${JAILBASE}/wrkdirs/*
 
 		test -d ${JAILBASE}/${PORTDIRECTORY} || {
 			msg "No such port ${port}"
@@ -100,14 +101,14 @@ for JAILNAME in ${JAILNAMES}; do
 			continue
 		fi
 		msg "building ${port}"
-		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install
+		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install || :
 		msg "packaging"
 		if [ $PKGNG -eq 1 ]; then
 			for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg info -a | awk -F: '{ print $1 }'`; do
 				[ -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${pkg}.${EXT} ] && continue
 				msg "packaging ${pkg}"
 				pkgorig=`jexec -U root ${JAILNAME} /usr/sbin/pkg info -q -o ${pkg}`
-				jexec -U root ${JAILNAME} make -C /usr/ports/${pkgorig} package
+				jexec -U root ${JAILNAME} make -C /usr/ports/${pkgorig} package || continue
 			done
 		else
 			for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1 }'`; do
