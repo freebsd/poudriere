@@ -16,6 +16,8 @@ Options:
                    (Default: FTP)
     -s          -- Installs the whole source tree, some ports may need it
                    (Default: install only kernel sources)
+    -n server   -- Use server as namserver from the jail (Default: same
+                   /etc/resolv.conf as the host system)
 EOF
 	exit 1
 }
@@ -23,6 +25,7 @@ EOF
 
 ARCH=`uname -m`
 METHOD="FTP"
+NAMESERVER=""
 
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
@@ -39,7 +42,7 @@ zfs list ${ZPOOL}/poudriere >/dev/null 2>&1 || create_base_fs
 SRCS="ssys*"
 SRCSNAME="ssys"
 
-while getopts "j:v:a:z:m:s" FLAG; do
+while getopts "j:v:a:z:m:sn:" FLAG; do
 	case "${FLAG}" in
 		j)
 		NAME=${OPTARG}
@@ -60,6 +63,9 @@ while getopts "j:v:a:z:m:s" FLAG; do
 		SRCS="s*"
 		SRCSNAME="sources"
 		;;
+		n)
+		NAMESERVER=${OPTARG}
+		;;
 		*)
 			usage
 		;;
@@ -67,6 +73,10 @@ while getopts "j:v:a:z:m:s" FLAG; do
 done
 
 test -z ${NAME} && usage
+
+if ! grep -q nameserver /etc/resolv.conf && [ -z ${NAMESERVER} ]; then
+	echo "Warning: No nameserver configured in /etc/resolv.conf.  You should consider using the -n flag." >&2
+fi
 
 if [ "${METHOD}" = "FTP" ]; then
 	test -z ${VERSION} && usage
@@ -143,7 +153,12 @@ mkdir -p ${POUDRIERE_DATA}/logs
 
 jail -U root -c path=${JAILBASE} command=/sbin/ldconfig -m /lib /usr/lib /usr/lib/compat
 
-cp /etc/resolv.conf ${JAILBASE}/etc
+if [ -n ${NAMESERVER} ]; then
+	echo "nameserver ${NAMESERVER}" > ${JAILBASE}/etc/resolv.conf
+fi
+if [ -f /etc/resolv.conf ]; then
+	cat /etc/resolv.conf >> ${JAILBASE}/etc/resolv.conf
+fi
 
 zfs snapshot ${ZPOOL}/poudriere/${NAME}@clean
 msg "Jail ${NAME} ${VERSION} ${ARCH} is ready to be used"
