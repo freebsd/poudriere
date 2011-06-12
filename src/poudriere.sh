@@ -1,11 +1,13 @@
 #!/bin/sh
 
 if [ -f /tmp/poudriere.lock ]; then
-	echo "poudriere is already launched: pid"`cat /tmp/poudriere.lock`"."
+	echo "poudriere is already launched: pid `cat /tmp/poudriere.lock`."
 	exit 1
 else
 	echo $$ > /tmp/poudriere.lock
 fi
+
+trap 'rm -f /tmp/poudriere.lock' EXIT
 
 usage() {
 	echo "poudriere command [options]"
@@ -68,9 +70,6 @@ case $1 in
 	;;
 	*)
 		echo "unknown command $1"
-		/bin/rm -f /tmp/poudriere.lock
 		usage
 	;;
 esac
-
-/bin/rm -f /tmp/poudriere.lock
