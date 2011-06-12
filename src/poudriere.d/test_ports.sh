@@ -38,15 +38,20 @@ build_port() {
 		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} ${PORT_FLAGS} ${PHASE} PKGREPOSITORY=/tmp/pkgs PACKAGES=/tmp/pkgs
 		if [ "${PHASE}" = "build" ]; then
 			msg "Installing run dependencies"
-			jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} run-depends
-			msg "Packaging all run dependencies"
-			for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1}'`; do
-				[ -f ${PKGDIR}/All/${pkg}.tbz ] || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
-			done
+			jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} run-depends || \
+				(create_pkg "Packaging what is installed so far"; exit 1)
+			create_pkg "Packaging all run dependencies"
 			[ $ZVERSION -ge 28 ] && zfs snapshot ${ZPOOL}/poudriere/${JAILNAME}@prebuild
 		fi
 	done
 	return 0
+}
+
+create_pkg() {
+	msg "$1" | tee -a ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log
+	for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info -Ea`; do
+		[ -f ${PKGDIR}/All/${pkg}.tbz ] || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
+	done
 }
 
 SCRIPTPATH=`realpath $0`
@@ -125,13 +130,11 @@ for JAILNAME in ${JAILNAMES}; do
 	fi
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
 	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} extract-depends \
-		fetch-depends patch-depends build-depends lib-depends
+		fetch-depends patch-depends build-depends lib-depends || \
+		(create_pkg "Packaging what is installed so far" && exit 1)
 
-# Package all newly build ports
-	msg "Packaging all dependencies" | tee -a ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log
-	for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1}'`; do
-		[ -f ${PKGDIR}/All/${pkg}.tbz ] || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
-	done
+	create_pkg "Packaging all dependencies"
+
 	exec 1>&3 3>&- 2>&4 4>&-
 	wait $tpid
 
