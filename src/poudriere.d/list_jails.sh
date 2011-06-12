@@ -8,7 +8,6 @@ Options:
     -q          -- Do not print headers 
 EOF
 
-	/bin/rm -f /tmp/poudriere.lock
         exit 1
 }
 

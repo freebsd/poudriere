@@ -13,7 +13,6 @@ Options:
     -a          -- Clean all
 EOF
 
-	/bin/rm -f /tmp/poudriere.lock
 	exit 1
 }
 
