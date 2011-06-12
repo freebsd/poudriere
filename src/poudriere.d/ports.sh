@@ -16,6 +16,9 @@ Parameters:
     -l          -- lists all available portstrees (default)
 
 Options:
+    -f          -- when used with -c, only create the needed ZFS
+                   filesystems and directories, but do not populare
+                   them.
     -p          -- specifies on which portstree we work. If not
                    specified, work on a portstree called "default".
 EOF
@@ -31,14 +34,17 @@ create_base_fs() {
 #Test if the default FS for poudriere exists if not creates it
 zfs list ${ZPOOL}/poudriere >/dev/null 2>&1 || create_base_fs
 
-CREATE=0;
+CREATE=0; FAKE=0
 UPDATE=0;
 DELETE=0;
 LIST=0;
-while getopts "cudlp:" FLAG; do
+while getopts "cfudlp:" FLAG; do
 	case "${FLAG}" in
 		c)
 			CREATE=1
+			;;
+		f)
+			FAKE=1
 			;;
 		u)
 			UPDATE=1
@@ -79,14 +85,16 @@ if [ ${CREATE} -eq 1 ]; then
 	msg_n "Creating ports-${PTNAME} fs..."
 	zfs create -o mountpoint=${PTBASE} ${ZPOOL}/poudriere/ports-${PTNAME} > /dev/null 2>&1 || err 1 " Fail" && echo " done"
 	mkdir ${PTBASE}/ports
-	mkdir ${PTBASE}/snap
-	msg "Extracting portstree \"${PTNAME}\"..."
-	/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch extract || \
-	/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch extract || \
-	{ 
-		zfs destroy ${ZPOOL}/poudriere/ports-${PTNAME}
-		err 1 " Fail"
-	}
+	if [ $FAKE -eq 0 ]; then
+		mkdir ${PTBASE}/snap
+		msg "Extracting portstree \"${PTNAME}\"..."
+		/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch extract || \
+		/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch extract || \
+		{
+			zfs destroy ${ZPOOL}/poudriere/ports-${PTNAME}
+			err 1 " Fail"
+		}
+	fi
 fi
 
 if [ ${DELETE} -eq 1 ]; then

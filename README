@@ -174,6 +174,24 @@ be carefull to respects the names supported by jail(8):
 be also carefull to not begin the name of the jail by a number if you are not in -stable or current:
 http://svn.freebsd.org/viewvc/base?view=revision&revision=209820
 
+Bonus: how to manage poudriere ports using portshaker
+-----------------------------------------------------
+
+Create a fake (-f) poudriere portstree:
+
+    poudriere ports -c -f -p foo
+
+Configure the ports tree in /usr/local/etc/portshaker.conf:
+
+    ports_trees="... p_foo"
+    use_zfs="yes"
+    p_foo_ports_tree="/usr/local/poudriere/ports/foo/ports"
+    p_foo_merge_from="ports ..."
+
+You can then use portshaker to manage poudriere portstree:
+
+    portshaker
+
 Bonus: how to use the generated packages with portmaster
 --------------------------------------------------------
 
