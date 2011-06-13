@@ -2,13 +2,13 @@
 
 usage() {
 	echo "poudriere lsjail [options]"
-cat <<EOF
+	cat <<EOF
 
 Options:
     -q          -- Do not print headers 
 EOF
 
-        exit 1
+	exit 1
 }
 
 SCRIPTPATH=`realpath $0`
@@ -19,13 +19,13 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 JAILNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }' | grep -v ports-`
 
 while getopts "q" FLAG; do
-        case "${FLAG}" in
-	  q)
-	  NOHEADER=1
-	  ;;
-	  *)
-	  usage
-	  ;; 
+	case "${FLAG}" in
+	q)
+		NOHEADER=1
+		;;
+	*)
+		usage
+		;; 
 	esac
 done
 
@@ -38,7 +38,7 @@ for JAILNAME in ${JAILNAMES};do
 	if [ -d ${MNT} -a -d ${MNT}/boot/kernel ];then
 		VERSION=`jail -U root -c path=${MNT} command=uname -r`
 		ARCH=`jail -u root -c path=${MNT} command=uname -p`
-		
+	
 		printf '%-20s %-13s %s\n' ${JAILNAME} ${VERSION} ${ARCH}
 	fi
 done
