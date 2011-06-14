@@ -1,19 +1,30 @@
-# The pool where poudriere will create its jails
+# The pool where poudriere will create all the filesystems it needs
+# poudriere will use tank/poudriere as its root
 ZPOOL=tank
 
 # The ftp host where to download base sets and ssys set for the jails
+# You can specify here a hostname or an IP
 FTPHOST=ftp.freebsd.org
 
-# IPS for the jails in the network
+# IPs for the jails in the network
+# You can specify them as a space separated list of:
+# - single ip
+# - ip/netmask
+# - ip/prefix
+# - ip-ip
+#
+# These notations are equivalent:
+# 10.0.0.0/24, 10.0.0.0/255.255.255.0 and 10.0.0.1-10.0.0.254
+# Warning: do NOT specify large network ranges, keep it to /24.
 IPS=192.168.69.0/24
 
 # Ethernet interface for the jail
 ETH=nfe0
 
-# the directory where the jail will store the packages and logs
+# The directory where the jail will store the packages and logs
 POUDRIERE_DATA=/usr/local/poudriere_data
 
-# determine a loopback interface if dhcp only
+# Specify if you want to use a loopback interface instead of ETH
 USE_LOOPBACK=no
 
 # use portlint to check ports sanity
