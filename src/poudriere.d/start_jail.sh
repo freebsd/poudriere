@@ -98,13 +98,11 @@ for ip in ${IPS}; do
 	[ ${IP} = "bad" ] && continue
 	case ${IP} in
 		*/*.*)
-			echo Netmask ${IP}
 			netmask_to_ips_range ${IP%%/*} ${IP#*/}
 			add_ips_range
 
 			;;
 		*/*)
-			echo cidr ${IP}
 			full=$((${IP#*/} / 8))
 			modulo=$((${IP#*/} % 8))
 			i=0
@@ -129,7 +127,6 @@ EOF
 			read max1 max2 max3 max4 <<EOF
 			$(IFS=.; echo ${IP#*-})
 EOF
-
 			add_ips_range
 			;;
 		*)
