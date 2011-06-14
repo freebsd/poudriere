@@ -8,15 +8,15 @@ for FreeBSD.
 Its goals are to use modern facilities present in FreeBSD (as ZFS,
 jails), to be easy to use and to depend only on base.
 
-It is not designed to build the whole portstree as tinderbox.
+It is not designed to build the whole portstree like tinderbox does.
 
 Poudriere is able to build packages for versions of FreeBSD that are
 different from the box on which it is installed, and also to build
 packages for i386 if the host is an amd64 box.
 
 Once the package building is done, the packages will be in a layout
-identical to the official one. Therefore they will be useable by any
-tool (pkg_add, portmaster, and so on).
+identical to the official mirrors. Therefore they will be useable by any
+package management tool (pkg_add, portmaster, and so on).
 
 
 What poudriere needs?
