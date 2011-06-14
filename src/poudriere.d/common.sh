@@ -84,7 +84,7 @@ test -z ${ZPOOL} && err 1 "ZPOOL variable is not set"
 
 trap sig_handler SIGINT SIGTERM SIGKILL EXIT
 
-PIPE=/tmp/poudriere.pipe
+PIPE=/tmp/poudriere$$.pipe
 STATUS=0 # out of jail #
 LOGS="${POUDRIERE_DATA}/logs"
 
