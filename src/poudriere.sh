@@ -1,13 +1,7 @@
 #!/bin/sh
 
-if [ -f /tmp/poudriere.lock ]; then
-	echo "poudriere is already launched: pid `cat /tmp/poudriere.lock`."
-	exit 1
-else
-	echo $$ > /tmp/poudriere.lock
-fi
-
-trap 'rm -f /tmp/poudriere.lock' EXIT
+LC_ALL=C
+SHELL=/bin/sh
 
 usage() {
 	echo "poudriere command [options]"

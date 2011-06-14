@@ -43,7 +43,8 @@ if [ "${USE_LOOPBACK}" = "yes" ]; then
 	msg "Adding loopback lo${LOOP}"
         ifconfig lo${LOOP} inet ${IP} > /dev/null 2>&1
 else
-        /usr/sbin/jls ip4.addr | egrep "^${IP}$" > /dev/null && err 2 "Configured IP is already in use by another jail."
+	/usr/sbin/jls name | egrep -q "^${NAME}$" && err 2 "Jail is already in use."
+        /usr/sbin/jls ip4.addr | egrep -q "^${IP}$" && err 2 "Configured IP is already in use by another jail."
 	test -z ${ETH} && err 1 "No ethernet device defined for poudriere"
 fi
 
