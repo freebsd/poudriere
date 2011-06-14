@@ -98,12 +98,16 @@ if [ ${CREATE} -eq 1 ]; then
 fi
 
 if [ ${DELETE} -eq 1 ]; then
+	/sbin/mount -t nullfs | /usr/bin/grep -q "${PTNAME}/ports on" \
+		&& err 1 "Ports tree \"${PTNAME}\" is already used."
 	zfs list -r ${ZPOOL}/poudriere/ports-${PTNAME} >/dev/null 2>&1 || err 2 "No such ports tree ${PTNAME}"
 	msg "Deleting portstree \"${PTNAME}\""
 	zfs destroy ${ZPOOL}/poudriere/ports-${PTNAME}
 fi
 
 if [ ${UPDATE} -eq 1 ]; then
+	/sbin/mount -t nullfs | /usr/bin/grep -q "${PTNAME}/ports on" \
+		&& err 1 "Ports tree \"${PTNAME}\" is already used."
 	PTBASE=$(zfs list -H -o mountpoint ${ZPOOL}/poudriere/ports-${PTNAME})
 	msg "Updating portstree \"${PTNAME}\""
 	/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch update
