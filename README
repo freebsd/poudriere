@@ -23,7 +23,7 @@ What poudriere needs?
 ---------------------
 
 - FreeBSD
-- a ZFS pool
+- a ZFS pool with at least 7GB of free space
 - root access
 
 That is all. For more comfort, we recommend to have quite a lot of RAM
@@ -44,26 +44,15 @@ What do I have to configure before starting use it?
 
 Poudriere will look for a configuration file in /usr/local/etc.
 
-============= /usr/local/etc/poudriere.conf =========================
-# The pool where poudriere will create its jails
-ZPOOL=tank
-# The ftp host where to download base sets and sys set for the jails
-FTPHOST=ftp.fr.freebsd.org
-# Ethernet interface for the jail
-#ETH=nfe0
-# If you cannot use another IP on your external interface
-USE_LOOPBACK=yes
-# IPS for the jails
-IPS=172.16.0.1/24
-# The ports directory to use within jails (mounted via nullfs)
-PORTSDIR=/usr/local/poudriere/ports
-# the directory where the jail will store the packages and logs
-POUDRIERE_DATA=/usr/local/poudriere_data
-# use portlint to check ports sanity
-USE_PORTLINT=no
-# if set WORKDIRPREFIX will be a mdmfs of the given size
-MFSSIZE=1024m
-=====================================================================
+Copy the default configuration file:
+
+    cp /usr/local/etc/poudriere.conf.sample /usr/local/etc/poudriere.conf
+
+then edit it:
+
+    $EDITOR /usr/local/etc/poudriere.conf
+
+The comments inside the configuration file should be sufficient.
 
  Create optional make.conf
  -------------------------
@@ -89,6 +78,8 @@ infrastructure needs.
 
     poudriere createjail -v 8.2-RELEASE -a amd64 -j 82amd64
 
+A jail will take approximately 3GB of space.
+
 Of course you can use another version of FreeBSD, regarless on what
 version you are running. amd64 users can choose i386 arch like in this
 example:
@@ -104,6 +95,8 @@ so let us take the default configuration by creating a ports tree.
 
     poudriere ports -c
 
+A ports tree will take approximately 4GB of space.
+
  Specify a list of ports you want to build
  -----------------------------------------
 
@@ -112,6 +105,8 @@ built by poudriere.
 
     echo "sysutils/screen" > ~/pkglist
     echo "editors/vim" >> ~/pkglist
+
+Any line starting with the hash sign will be treated as a comment.
 
  Launch the bulk build
  ---------------------
@@ -139,32 +134,35 @@ Let's take the example of building a single port;
 
     poudriere testport -d ~/ports-cvs/mybeautifulporttotest
 
-all the tests will be done in all the jails in alphabetical order
+all the tests will be done in all the jails in alphabetical order.
 
-it starts the jail, then mount the ports tree (nullfs) then mounts the package
-dir (pourdriere_data/packages/jailname) then it mounts the
-~/ports-cvs/mybeautifulporttotest (nullfs) it builds all the dependency (except
-runtime ones) and log it to
-poudriere_data/logs/mybeautifulporttotest-jailname-depends.log)
-if packages for the dependencies already exists it will use them
+It starts the jail, then mount the ports tree (nullfs), then mounts the
+package dir (pourdriere_data/packages/jailname), then it mounts the
+~/ports-cvs/mybeautifulporttotest (nullfs) it builds all the dependency
+(except runtime ones) and log it to
+poudriere_data/logs/mybeautifulporttotest-jailname-depends.log).
 
-when all the dependencies are built, packages for them are created so that next
-time it will be faster.
+If packages for the dependencies already exists it will use them
 
-all the dependency phase is done with PREFIX == LOCALBASE
+When all the dependencies are built, packages for them are created so
+that next time it will be faster.
 
-after that it will build the port itself with LOCALBASE != PREFIX
+All the dependency phase is done with PREFIX == LOCALBASE.
+
+After that it will build the port itself with LOCALBASE != PREFIX
 and log the build to poudriere_data/logs/mybeautifulporttotest-jailname-build.log
 
-it will try to:
+It will try to:
  - install it
  - create a package from it
  - deinstall it
  - check for cruft left behind
  - propose the line to add to pkg-plist if needed
 
-It is very easy to extend it so that we can easily add other tests if wanted
-One could imaging a webui or stores datas in a SGBD
+It is very easy to extend it so that we can easily add other tests if
+wanted.
+
+One could imaging a webui or stores datas in a SGBD.
 
 
 Caveats
