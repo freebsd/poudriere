@@ -10,9 +10,6 @@ IP=192.168.1.58
 # Ethernet interface for the jail
 ETH=nfe0
 
-# The ports directory to use within jails (mounted via nullfs)
-PORTSDIR=/usr/local/poudriere/ports
-
 # the directory where the jail will store the packages and logs
 POUDRIERE_DATA=/usr/local/poudriere_data
 
