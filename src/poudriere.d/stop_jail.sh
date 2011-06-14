@@ -31,7 +31,8 @@ done
 
 test -z ${NAME} && usage
 
-jls -j ${NAME} >/dev/null 2>&1 || err 1 "No such jail: ${NAME}"
+IP=$(jls -j ${NAME} ip4.addr 2>/dev/null)
+[ $? -ne 0 ] && err 1 "No such jail ${NAME}"
 
 MNT=`zfs list -H ${ZPOOL}/poudriere/${NAME} | awk '{ print $NF}'`
 msg "Stopping jail"
