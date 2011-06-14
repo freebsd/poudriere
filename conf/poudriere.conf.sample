@@ -4,8 +4,8 @@ ZPOOL=tank
 # The ftp host where to download base sets and ssys set for the jails
 FTPHOST=ftp.freebsd.org
 
-# IP for the jails in the network
-IP=192.168.1.58
+# IPS for the jails in the network
+IPS=192.168.69.0/24
 
 # Ethernet interface for the jail
 ETH=nfe0
