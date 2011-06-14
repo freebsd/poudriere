@@ -53,8 +53,8 @@ FTPHOST=ftp.fr.freebsd.org
 #ETH=nfe0
 # If you cannot use another IP on your external interface
 USE_LOOPBACK=yes
-# IP for the jails
-IP=172.16.0.1
+# IPS for the jails
+IPS=172.16.0.1/24
 # The ports directory to use within jails (mounted via nullfs)
 PORTSDIR=/usr/local/poudriere/ports
 # the directory where the jail will store the packages and logs
