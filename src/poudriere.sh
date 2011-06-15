@@ -1,11 +1,10 @@
 #!/bin/sh
 
 LC_ALL=C
-SHELL=/bin/sh
+SHELL=/bin/sh; export SHELL
 
 usage() {
-	echo "poudriere command [options]"
-cat <<EOF
+	echo "Usage: poudriere command [options]
 
 Commands:
     createjail  -- create a new jail to test ports
@@ -16,54 +15,50 @@ Commands:
     genpkg      -- generate package for a given port
     bulk        -- generate packages for given ports
     lsjail      -- list jails created and used by poudriere
-    ports       -- create, update or delete the portstrees used by poudriere
-EOF
+    ports       -- create, update or delete the portstrees used by poudriere"
+
 	exit 1
 }
 
-POUDRIEREPATH=`realpath $0`
-POUDRIEREPREFIX=${POUDRIEREPATH%\/bin/*}
 [ $# -lt 1 ] && usage
 
-case $1 in
+POUDRIEREPATH=`realpath $0`
+POUDRIEREPREFIX=${POUDRIEREPATH%\/bin/*}
+POUDRIEREPREFIX=${POUDRIEREPREFIX}/share/poudriere
+
+CMD=$1
+shift
+
+case ${CMD} in
 	createjail)
-		shift
-		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/create_jail.sh $@
-	;;
+		/bin/sh ${POUDRIEREPREFIX}/create_jail.sh $@
+		;;
 	removejail)
-		shift
-		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/remove_jail.sh $@
-	;;
+		/bin/sh ${POUDRIEREPREFIX}/remove_jail.sh $@
+		;;
 	startjail)
-		shift
-		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/start_jail.sh $@
-	;;
+		/bin/sh ${POUDRIEREPREFIX}/start_jail.sh $@
+		;;
 	stopjail)
-		shift
-		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/stop_jail.sh $@
-	;;
+		/bin/sh ${POUDRIEREPREFIX}/stop_jail.sh $@
+		;;
 	testport)
-		shift
-		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/test_ports.sh $@
-	;;
+		/bin/sh ${POUDRIEREPREFIX}/test_ports.sh $@
+		;;
 	genpkg)
-		shift
-		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/gen_package.sh $@
-	;;
+		/bin/sh ${POUDRIEREPREFIX}/gen_package.sh $@
+		;;
 	bulk)
-		shift
-		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/bulk.sh $@
-	;;
+		/bin/sh ${POUDRIEREPREFIX}/bulk.sh $@
+		;;
 	lsjail|lsjails)
-		shift
-		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/list_jails.sh $@
-	;;
+		/bin/sh ${POUDRIEREPREFIX}/list_jails.sh $@
+		;;
 	ports)
-		shift
-		/bin/sh ${POUDRIEREPREFIX}/share/poudriere/ports.sh $@
-	;;
+		/bin/sh ${POUDRIEREPREFIX}/ports.sh $@
+		;;
 	*)
-		echo "unknown command $1"
+		echo "Unknown command ${CMD}"
 		usage
-	;;
+		;;
 esac
