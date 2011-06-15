@@ -7,6 +7,7 @@ cat <<EOF
 
 Parameters:
     -d path     -- Specify on which port we work
+    -o origin   -- Specify an origin in the portstree
 
 Options:
     -c          -- Run make config for the given port
@@ -61,13 +62,16 @@ CONFIGSTR=0
 NOPREFIX=0
 PTNAME="default"
 
-while getopts "d:cnj:p:" FLAG; do
+while getopts "d:o:cnj:p:" FLAG; do
 	case "${FLAG}" in
 		c)
 		CONFIGSTR=1
 		;;
 		d)
-		PORTDIRECTORY=`realpath ${OPTARG}`
+		HOST_PORTDIRECTORY=`realpath ${OPTARG}`
+		;;
+		o)
+		ORIGIN=${OPTARG}
 		;;
 		n)
 		NOPREFIX=1
@@ -85,9 +89,16 @@ while getopts "d:cnj:p:" FLAG; do
 	esac
 done
 
-test -z ${PORTDIRECTORY} && usage
-HOST_PORTDIRECTORY=${PORTDIRECTORY}
-PORTNAME=`make -C ${PORTDIRECTORY} -VPKGNAME`
+test -z ${HOST_PORTDIRECTORY} && test -z ${ORIGIN} && usage
+
+if [ -z ${ORIGIN} ]; then
+	PORTDIRECTORY=`basename ${HOST_PORTDIRECTORY}`
+else
+	HOST_PORTDIRECTORY=`get_portsdir`/${ORIGIN}
+	PORTDIRECTORY="/usr/ports/${ORIGIN}"
+fi
+
+PORTNAME=`make -C ${HOST_PORTDIRECTORY} -VPKGNAME`
 
 test -z "${JAILNAMES}" && JAILNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }' | grep -v ports-`
 
@@ -100,17 +111,9 @@ for JAILNAME in ${JAILNAMES}; do
 
 	prepare_jail
 
-	TEMP=${JAILBASE}${PORTDIRECTORY}
-	if [ ${#TEMP} -ge 87 ]; then
-		PORTDIRECTORY="${PORTNAME}"
-		if [ ${#PORTDIRECTORY} -ge 87 ]; then
-			PORTDIRECTORY="a"
-		fi
-	fi
-	if outside_portsdir ${PORTDIRECTORY}; then
+	if [ -z ${ORIGIN} ]; then
 		mkdir -p ${JAILBASE}/${PORTDIRECTORY}
 		mount -t nullfs ${HOST_PORTDIRECTORY} ${JAILBASE}/${PORTDIRECTORY}
-		
 	fi
 
 	exec 3>&1 4>&2

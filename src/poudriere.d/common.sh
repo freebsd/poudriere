@@ -25,6 +25,15 @@ sig_handler() {
 	return ${STATUS}
 }
 
+get_portsdir() {
+	if [ -z ${PORTSDIR} ]; then
+
+		zfs list ${ZPOOL}/poudriere/ports-${PTNAME} >/dev/null 2>&1 || err 2 "No such ports tree ${PTNAME}"
+		PORTSDIR="$(zfs list -H ${ZPOOL}/poudriere/ports-${PTNAME} | awk '{ print $NF }')/ports"
+	fi
+	echo ${PORTSDIR}
+}
+
 cleanup() {
 	[ -e ${PIPE} ] && rm -f ${PIPE}
 	zfs destroy ${ZPOOL}/poudriere/${JAILNAME}@bulk 2>/dev/null || :
@@ -43,8 +52,7 @@ cleanup() {
 }
 
 prepare_jail() {
-	zfs list ${ZPOOL}/poudriere/ports-${PTNAME} >/dev/null 2>&1 || err 2 "No such ports tree ${PTNAME}"
-	PORTSDIR="$(zfs list -H ${ZPOOL}/poudriere/ports-${PTNAME} | awk '{ print $NF }')/ports"
+	PORTSDIR=`get_portsdir`
 	[ -z "${JAILBASE}" ] && err 1 "No path of the base of the jail defined"
 	[ -z "${PORTSDIR}" ] && err 1 "No ports directory defined"
 	[ -z "${PKGDIR}" ] && err 1 "No package directory defined"
@@ -68,14 +76,6 @@ prepare_jail() {
 	msg "Populating LOCALBASE"
 	jexec -U root ${JAILNAME} /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p /usr/local >/dev/null
 }
-
-outside_portsdir() {
-	PORTROOT=`dirname $1`
-	PORTROOT=`dirname ${PORTROOT}`
-	test "${PORTROOT}" = `realpath ${PORTSDIR}` && return 1
-	return 0
-}
-
 
 test -f /usr/local/etc/poudriere.conf || err 1 "Unable to find /usr/local/etc/poudriere.conf"
 . /usr/local/etc/poudriere.conf
