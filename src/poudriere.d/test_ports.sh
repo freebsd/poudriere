@@ -179,7 +179,7 @@ for JAILNAME in ${JAILNAMES}; do
 	msg "Extra files and directories check"
 	if [ $ZVERSION -lt 28 ]; then
 		find ${JAILBASE}${PREFIX} ! -type d | \
-			sed -e "s,^${JAILBASE}${PREFIX}/,,"
+			sed -e "s,^${JAILBASE}${PREFIX}/,," | sort
 
 		find ${JAILBASE}${PREFIX}/ -type d | sed "s,^${JAILBASE}${PREFIX}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.after
 		comm -13 ${JAILBASE}${PREFIX}.PLIST_DIRS.before ${JAILBASE}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
