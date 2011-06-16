@@ -65,7 +65,7 @@ while getopts "cfudlp:" FLAG; do
 done
 
 if [ $(( CREATE + UPDATE + DELETE + LIST )) -lt 1 ]; then
-	LIST=1
+	usage
 fi
 
 PTNAME=${PTNAME:-default}
