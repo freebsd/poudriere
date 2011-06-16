@@ -19,7 +19,7 @@ Options:
     -f          -- when used with -c, only create the needed ZFS
                    filesystems and directories, but do not populare
                    them.
-    -p          -- specifies on which portstree we work. If not
+    -p tree     -- specifies on which portstree we work. If not
                    specified, work on a portstree called "default".
 EOF
 
