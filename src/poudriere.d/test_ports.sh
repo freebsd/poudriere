@@ -165,9 +165,7 @@ for JAILNAME in ${JAILNAMES}; do
 	fi
 
 	msg "Populating PREFIX"
-	if [ ${NOPREFIX} -eq 0 ]; then
-		mkdir -p ${JAILBASE}${PREFIX}
-	fi
+	mkdir -p ${JAILBASE}${PREFIX}
 	jexec -U root ${JAILNAME} /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${PREFIX} >/dev/null
 
 	if [ $ZVERSION -lt 28 ]; then
@@ -186,6 +184,7 @@ for JAILNAME in ${JAILNAMES}; do
 	else
 		zfs diff ${ZPOOL}/poudriere/${JAILNAME}@prebuild \
 		${ZPOOL}/poudriere/${JAILNAME} | \
+		egrep -v "[\+|M][[:space:]]*${JAILBASE}/wrkdirs" | \
 		egrep -v "[\+|M][[:space:]]*${JAILBASE}/tmp/pkgs" | while read type path; do
 			if [ $type = "+" ]; then
 				[ -d $path ] && echo -n "@dirrmtry "
