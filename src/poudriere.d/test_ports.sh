@@ -182,18 +182,31 @@ for JAILNAME in ${JAILNAMES}; do
 		find ${JAILBASE}${PREFIX}/ -type d | sed "s,^${JAILBASE}${PREFIX}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.after
 		comm -13 ${JAILBASE}${PREFIX}.PLIST_DIRS.before ${JAILBASE}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
 	else
+		FILES=`mktemp /tmp/files.XXXXXX`
+		DIRS=`mktemp /tmp/dirs.XXXXXX`
+		MODIFS=`mktemp /tmp/modifs.XXXXXX`
 		zfs diff ${ZPOOL}/poudriere/${JAILNAME}@prebuild \
 		${ZPOOL}/poudriere/${JAILNAME} | \
 		egrep -v "[\+|M][[:space:]]*${JAILBASE}/wrkdirs" | \
 		egrep -v "[\+|M][[:space:]]*${JAILBASE}/tmp/pkgs" | while read type path; do
+			PPATH=`echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${PREFIX}/,,"`
 			if [ $type = "+" ]; then
-				[ -d $path ] && echo -n "@dirrmtry "
-				echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${PREFIX}/,,"
+				if [ -d $path ]; then
+					echo "@dirrmtry ${PPATH}" >> ${DIRS}
+				else
+					echo "${PPATH}" >> ${FILES}
+				fi
 			else
 				[ -d $path ] && continue
-				msg "WARNING: $path has been modified"
+				msg "WARNING: ${PPATH} has been modified"
+				echo "${PPATH}" >> ${MODIFS}
 			fi
 		done
+		sort ${FILES} > ${FILES}.sort
+		sort ${MODIFS} > ${MODIFS}.sort
+		comm -23 ${FILES}.sort ${MODIFS}.sort
+		sort -r ${DIRS}
+		rm ${FILES} ${DIRS} ${MODIFS} ${FILES}.sort ${MODIFS}.sort
 		zfs destroy ${ZPOOL}/poudriere/${JAILNAME}@prebuild || :
 	fi
 
