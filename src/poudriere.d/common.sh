@@ -2,10 +2,10 @@
 
 err() {
 	if [ $# -ne 2 ]; then
-		err 1 "err expects 2 arguments: exit_number \"message\""
+		err 1 "err expects 2 arguments: exit_number \"message\"" >&2
 	fi
 	[ ${STATUS} -eq 1 ] && cleanup
-	echo "$2"
+	echo "$2" >&2
 	exit $1
 }
 
