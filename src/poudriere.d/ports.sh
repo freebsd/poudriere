@@ -71,7 +71,7 @@ fi
 PTNAME=${PTNAME:-default}
 
 if [ ${LIST} -eq 1 ]; then
-	PTNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\/ports-/ { sub(/^'${ZPOOL}'\/poudriere\/ports-/, "", $1); print $1 }'`
+	PTNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '$1 ~ /^'${ZPOOL}'\/poudriere\/ports-[^\/]*$/ { sub(/^'${ZPOOL}'\/poudriere\/ports-/, "", $1); print $1 }'`
 	for PTNAME in ${PTNAMES}; do
 		echo $PTNAME
 	done
