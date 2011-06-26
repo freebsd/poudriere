@@ -188,7 +188,7 @@ for JAILNAME in ${JAILNAMES}; do
 		zfs diff ${ZPOOL}/poudriere/${JAILNAME}@prebuild \
 		${ZPOOL}/poudriere/${JAILNAME} | \
 		egrep -v "[\+|M][[:space:]]*${JAILBASE}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
-		egrep -v "[\+|M][[:space:]]*${JAILBASE}/wrkdirs" | \
+		egrep -v "[\+|M|-][[:space:]]*${JAILBASE}/wrkdirs" | \
 		egrep -v "[\+|M][[:space:]]*${JAILBASE}/tmp/pkgs" | while read type path; do
 			PPATH=`echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${PREFIX}/,,"`
 			if [ $type = "+" ]; then
