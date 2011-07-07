@@ -13,7 +13,7 @@ Parameters:
     -c          -- create a portstree
     -d          -- delete a portstree
     -u          -- update a portstree
-    -l          -- lists all available portstrees (default)
+    -l          -- lists all available portstrees
 
 Options:
     -f          -- when used with -c, only create the needed ZFS
