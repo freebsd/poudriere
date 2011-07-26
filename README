@@ -171,10 +171,11 @@ Caveats
  Jailname
  --------
 
--j is the name of the jail which will also be the name of the zfs filesystem
-be carefull to respects the names supported by jail(8):
+-j is the name of the jail which will also be the name of the zfs
+filesystem.
+Be careful to respects the names supported by jail(8):
 "This is an arbitrary string that identifies a jail (except it may not contain a ‘.’)"
-be also carefull to not begin the name of the jail by a number if you are not in -stable or current:
+Be also careful to not begin the name of the jail by a number if you are not in -stable or current:
 http://svn.freebsd.org/viewvc/base?view=revision&revision=209820
 
 Bonus: how to manage poudriere ports using portshaker
