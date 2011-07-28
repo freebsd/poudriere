@@ -50,7 +50,7 @@ while getopts "j:v:a:z:m:sn:" FLAG; do
 			VERSION=${OPTARG}
 			;;
 		a)
-			if [ "${REALARCH}" != "amd64" ]; then
+			if [ "${REALARCH}" != "amd64" -a "${REALARCH}" != ${OPTARG} ]; then
 				err 1 "Only amd64 host can choose another architecture"
 			fi
 			ARCH=${OPTARG}

@@ -26,12 +26,11 @@ sig_handler() {
 }
 
 get_portsdir() {
-	if [ -z ${PORTSDIR} ]; then
-
+	if [ -z ${POUDRIERE_PORTSDIR} ]; then
 		zfs list ${ZPOOL}/poudriere/ports-${PTNAME} >/dev/null 2>&1 || err 2 "No such ports tree ${PTNAME}"
-		PORTSDIR="$(zfs list -H ${ZPOOL}/poudriere/ports-${PTNAME} | awk '{ print $NF }')/ports"
+		POUDRIERE_PORTSDIR="$(zfs list -H ${ZPOOL}/poudriere/ports-${PTNAME} | awk '{ print $NF }')/ports"
 	fi
-	echo ${PORTSDIR}
+	echo ${POUDRIERE_PORTSDIR}
 }
 
 cleanup() {
@@ -52,15 +51,15 @@ cleanup() {
 }
 
 prepare_jail() {
-	PORTSDIR=`get_portsdir`
+	POUDRIERE_PORTSDIR=`get_portsdir`
 	[ -z "${JAILBASE}" ] && err 1 "No path of the base of the jail defined"
-	[ -z "${PORTSDIR}" ] && err 1 "No ports directory defined"
+	[ -z "${POUDRIERE_PORTSDIR}" ] && err 1 "No ports directory defined"
 	[ -z "${PKGDIR}" ] && err 1 "No package directory defined"
 	[ -n "${MFSSIZE}" -a -n "${USE_TMPFS}" ] && err 1 "You can't use both tmpfs and mdmfs"
 
-	mount -t nullfs ${PORTSDIR} ${JAILBASE}/usr/ports || err 1 "Failed to mount the ports directory "
+	mount -t nullfs ${POUDRIERE_PORTSDIR} ${JAILBASE}/usr/ports || err 1 "Failed to mount the ports directory "
 
-	[ -d ${PORTSDIR}/packages ] || mkdir -p ${PORTSDIR}/packages
+	[ -d ${POUDRIERE_PORTSDIR}/packages ] || mkdir -p ${POUDRIERE_PORTSDIR}/packages
 	[ -d ${PKGDIR}/All ] || mkdir -p ${PKGDIR}/All
 
 	mount -t nullfs ${PKGDIR} ${JAILBASE}/usr/ports/packages || err 1 "Failed to mount the packages directory "
