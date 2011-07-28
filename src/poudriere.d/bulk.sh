@@ -9,7 +9,6 @@ Parameters:
     -f file     -- Give the list of ports to build
 
 Options:
-    -c          -- Run make config on the ports
     -C          -- Cleanup the old bulk build
     -j name     -- Run only on the given jail
     -p tree     -- Specify on which ports tree the bulk will be done
@@ -19,18 +18,14 @@ EOF
 
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
-CONFIGSTR=0
 PTNAME="default"
 CLEAN=0
 . ${SCRIPTPREFIX}/common.sh
 
 LOGS="${POUDRIERE_DATA}/logs"
 
-while getopts "Cf:cj:p:" FLAG; do
+while getopts "Cf:j:p:" FLAG; do
 	case "${FLAG}" in
-		c)
-		CONFIGSTR=1
-		;;
 		C)
 		CLEAN=1
 		;;
