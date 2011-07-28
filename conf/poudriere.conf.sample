@@ -25,6 +25,10 @@ IPS=192.168.69.0/24
 # Ethernet interface for the jail
 ETH=nfe0
 
+# If you want to use a custom resolv.conf file, set it bellow.  Defaults to
+# /etc/resolv.conf
+#RESOLV_CONF="/usr/local/etc/poudriere.d/resolv.conf"
+
 # The directory where the jail will store the packages and logs
 POUDRIERE_DATA=/usr/local/poudriere_data
 
