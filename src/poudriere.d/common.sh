@@ -65,7 +65,7 @@ prepare_jail() {
 	mount -t nullfs ${PKGDIR} ${JAILBASE}/usr/ports/packages || err 1 "Failed to mount the packages directory "
 
 	[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${JAILBASE}/wrkdirs
-	[ -n "${USR_TMPFS}" ] && mount -t tmpfs tmpfs ${JAILBASE}/wrkdirs
+	[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${JAILBASE}/wrkdirs
 
 	if [ -d /usr/local/etc/poudriere.d ]; then
 		[ -f /usr/local/etc/poudriere.d/make.conf ] && cat /usr/local/etc/poudriere.d/make.conf >> ${JAILBASE}/etc/make.conf
