@@ -32,6 +32,10 @@ create_base_fs() {
 	zfs create -o mountpoint=${BASEFS:=/usr/local/poudriere} ${ZPOOL}/poudriere >/dev/null 2>&1 || err 1 " Fail" && echo " done"
 }
 
+fetch_file() {
+		fetch -o $1 $2 || fetch -o $1 $2
+}
+
 #Test if the default FS for poudriere exists if not creates it
 zfs list ${ZPOOL}/poudriere >/dev/null 2>&1 || create_base_fs
 
@@ -79,40 +83,60 @@ JAILBASE=${BASEFS:=/usr/local/poudriere}/jails/${NAME}
 msg_n "Creating ${NAME} fs..."
 zfs create -o mountpoint=${JAILBASE} ${ZPOOL}/poudriere/${NAME} >/dev/null 2>&1 || err 1 " Fail" && echo " done"
 
-#We need to fetch base and src (for drivers)
-msg_n "Fetching base sets for FreeBSD $VERSION $ARCH"
-PKGS=`echo "ls base*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/ | awk '/-r.*/ {print $NF}'`
-mkdir ${JAILBASE}/fromftp
+if [ ${VERSION%%.*} -lt 9 ]; then
+	#We need to fetch base and src (for drivers)
+	msg_n "Fetching base sets for FreeBSD ${VERSION} ${ARCH}"
+	PKGS=`echo "ls base*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/ | awk '/-r.*/ {print $NF}'`
+	mkdir ${JAILBASE}/fromftp
 
-for pkg in ${PKGS}; do
-	# Let's retry at least one time
-	fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/${pkg} || fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/${pkg}
-done
+	for pkg in ${PKGS}; do
+		# Let's retry at least one time
+		fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/${pkg} || fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/${pkg}
+	done
 
-msg_n "Extracting base..."
-cat ${JAILBASE}/fromftp/base.* | tar --unlink -xpzf - -C ${JAILBASE}/ || err 1 " Fail" && echo " done"
+	msg_n "Extracting base..."
+	cat ${JAILBASE}/fromftp/base.* | tar --unlink -xpzf - -C ${JAILBASE}/ || err 1 " Fail" && echo " done"
 
-msg_n "Cleaning Up base sets..."
-rm ${JAILBASE}/fromftp/*
-echo " done"
+	msg_n "Cleaning Up base sets..."
+	rm ${JAILBASE}/fromftp/*
 
-msg "Fetching ${SRCSNAME} sets..."
-PKGS=`echo "ls ${SRCS}"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/ | awk '/-r.*/ {print $NF}'`
-for pkg in ${PKGS}; do
-	# Let's retry at least one time
-	fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/${pkg} || fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/${pkg}
-done
+	msg "Fetching ${SRCSNAME} sets..."
+	PKGS=`echo "ls ${SRCS}"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/ | awk '/-r.*/ {print $NF}'`
+	for pkg in ${PKGS}; do
+		# Let's retry at least one time
+		fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/${pkg} || fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/${pkg}
+	done
 
-msg "Extracting ${SRCSNAME}:"
-for SETS in ${JAILBASE}/fromftp/*.aa; do
-	SET=`basename $SETS .aa`
-	echo -e "\t- $SET...\c"
-	cat ${JAILBASE}/fromftp/${SET}.* | tar --unlink -xpzf - -C ${JAILBASE}/usr/src || err 1 " Fail" && echo " done"
-done
+	msg "Extracting ${SRCSNAME}:"
+	for SETS in ${JAILBASE}/fromftp/*.aa; do
+		SET=`basename $SETS .aa`
+		echo -e "\t- $SET...\c"
+		cat ${JAILBASE}/fromftp/${SET}.* | tar --unlink -xpzf - -C ${JAILBASE}/usr/src || err 1 " Fail" && echo " done"
+	done
 
-msg_n "Cleaning Up ${SRCSNAME} sets..."
-rm ${JAILBASE}/fromftp/*
-echo " done"
+	msg_n "Cleaning Up ${SRCSNAME} sets..."
+	rm ${JAILBASE}/fromftp/*
+	echo " done"
+else
+	msg "Fetching base.txz for FreeBSD ${VERSION} ${ARCH}"
+	mkdir ${JAILBASE}/fromftp
+	fetch_file ${JAILBASE}/fromftp/base.txz ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base.txz
+	msg_n "Extracting base.txz..."
+	tar -xpf ${JAILBASE}/fromftp/base.txz -C  ${JAILBASE}/ || err 1 " fail" && echo " done"
+	if [ ${ARCH} = "amd64" ];then
+		msg "Fetching lib32.txz for FreeBSD ${VERSION} ${ARCH}"
+		fetch_file  ${JAILBASE}/fromftp/lib32.txz ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/lib32.txz
+		msg_n "Extracting lib32.txz for FreeBSD ${VERSION} ${ARCH}"
+		tar -xpf ${JAILBASE}/fromftp/lib32.txz -C  ${JAILBASE}  || err 1 " fail" && echo " done"
+	fi
+	msg "Fetching src.txz for FreeBSD ${VERSION} ${ARCH}"
+	fetch_file ${JAILBASE}/fromftp/src.txz ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src.txz
+	msg_n "Extracting src.txz..."
+	tar -xpf ${JAILBASE}/fromftp/src.txz -C  ${JAILBASE} || err 1 " fail" && echo " done"
+	msg_n "Cleaning up..."
+	rm -f ${JAILBASE}/fromftp/*
+	echo " done"
+fi
 
 rmdir ${JAILBASE}/fromftp
 
