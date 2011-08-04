@@ -119,7 +119,9 @@ for JAILNAME in ${JAILNAMES}; do
 	zfs destroy ${ZPOOL}/poudriere/${JAILNAME}@bulk 2>/dev/null || :
 
 # Package all newly build ports
-	if [ $PKGNG -eq 1 ]; then
+	if [ $STATS_BUILT -eq 0 ]; then
+		msg "No package build, no need to update INDEX"
+	elif [ $PKGNG -eq 1 ]; then
 		msg "Packaging all installed ports"
 		jexec -U root ${JAILNAME} /usr/sbin/pkg repo /usr/ports/packages/All/
 	else
