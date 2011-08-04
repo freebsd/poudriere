@@ -52,6 +52,9 @@ STATUS=0 # out of jail #
 
 test -z ${JAILNAMES} && JAILNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }'|grep -v ports-`
 
+STATS_BUILT=0
+STATS_FAILED=0
+
 for JAILNAME in ${JAILNAMES}; do
 	PKGNG=0
 	EXT=tbz
@@ -95,7 +98,7 @@ for JAILNAME in ${JAILNAMES}; do
 		zfs rollback ${ZPOOL}/poudriere/${JAILNAME}@bulk
 		rm -rf ${JAILBASE}/wrkdirs/*
 		msg "building ${port}"
-		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install || :
+		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install && STATS_BUILT=$((STATS_BUILT+1)) || STATS_FAILED=$((STATS_FAILED+1))
 		msg "packaging"
 		if [ $PKGNG -eq 1 ]; then
 			for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg info -a | awk -F: '{ print $1 }'`; do
@@ -236,3 +239,6 @@ for JAILNAME in ${JAILNAMES}; do
 	STATUS=0 #injail
 done
 
+
+msg "$STATS_BUILT packages built, $STATS_FAILED failures"
+exit $STATS_FAILED
