@@ -85,26 +85,45 @@ zfs create -o mountpoint=${JAILBASE} ${ZPOOL}/poudriere/${NAME} >/dev/null 2>&1 
 
 if [ ${VERSION%%.*} -lt 9 ]; then
 	#We need to fetch base and src (for drivers)
-	msg_n "Fetching base sets for FreeBSD ${VERSION} ${ARCH}"
+	msg "Fetching base sets for FreeBSD ${VERSION} ${ARCH}"
 	PKGS=`echo "ls base*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/ | awk '/-r.*/ {print $NF}'`
 	mkdir ${JAILBASE}/fromftp
 
 	for pkg in ${PKGS}; do
 		# Let's retry at least one time
-		fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/${pkg} || fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/${pkg}
+		fetch_file ${JAILBASE}/fromftp/ ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/${pkg}
 	done
 
-	msg_n "Extracting base..."
-	cat ${JAILBASE}/fromftp/base.* | tar --unlink -xpzf - -C ${JAILBASE}/ || err 1 " Fail" && echo " done"
+	if [ ${ARCH} = "amd64" ]; then
+		msg "Fetching lib32 sets for FreeBSD ${VERSION} ${ARCH}"
+		PKGS=`echo "ls lib32*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/lib32/ | awk '/-r.*/ {print $NF}'`
+		for pkg in ${PKGS}; do
+			# Let's retry at least one time
+			fetch_file ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/lib32/${pkg}
+		done
+	fi
 
-	msg_n "Cleaning Up base sets..."
+	msg "Fetching dict sets for FreeBSD ${VERSION} ${ARCH}"
+	PKGS=`echo "ls dict*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/dict/ | awk '/-r.*/ {print $NF}'`
+	for pkg in ${PKGS}; do
+		# Let's retry at least one time
+		fetch_file ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/dict/${pkg}
+	done
+
+
+	msg "Extracting sets:"
+	for SETS in ${JAILBASE}/fromftp/*.aa; do
+		SET=`basename $SETS .aa`
+		echo -e "\t- $SET...\c"
+		cat ${JAILBASE}/fromftp/${SET}.* | tar --unlink -xpzf - -C ${JAILBASE}/ || err 1 " Fail" && echo " done"
+	done
 	rm ${JAILBASE}/fromftp/*
 
 	msg "Fetching ${SRCSNAME} sets..."
 	PKGS=`echo "ls ${SRCS}"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/ | awk '/-r.*/ {print $NF}'`
 	for pkg in ${PKGS}; do
 		# Let's retry at least one time
-		fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/${pkg} || fetch -o ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/${pkg}
+		fetch_file ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/${pkg}
 	done
 
 	msg "Extracting ${SRCSNAME}:"
