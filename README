@@ -165,6 +165,29 @@ wanted.
 One could imaging a webui or stores datas in a SGBD.
 
 
+Custom build options
+--------------------
+
+Before building a package, poudriere can mount a directory containing option
+files if available.  Poudriere will check for any of these directories in this
+order:
+ - /usr/local/etc/poudriere.d/<jail-name>-options
+ - /usr/local/etc/poudriere.d/options
+
+If a directory with this name exists, it is null-mounted into the
+/var/db/ports/ directory of the jail, thus allowing to build package with
+custom OPTIONS.
+
+This directory has the usual layout for options:  it contains one directory per
+port (the name of the port) containing an 'options' file with lines similar to:
+
+    WITH_FOO=true
+    WITHOUT_BAR=true
+
+As a starter, you may want to copy an existing /var/db/ports/ to
+/usr/local/etc/poudriere.d/options.
+
+
 Caveats
 -------
 
