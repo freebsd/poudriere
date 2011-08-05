@@ -174,7 +174,9 @@ if [ ! "${USE_LOOPBACK}" = "yes" ]; then
 	msg "Adding IP alias"
 	ifconfig ${ETH} inet ${SETIP} alias > /dev/null 2>&1
 fi
-#cp -v "${RESOLV_CONF}" "${MNT}/etc/"
+if [ -n "${RESOLV_CONF}" ]; then
+        cp -v "${RESOLV_CONF}" "${MNT}/etc/"
+fi
 msg "Starting jail ${NAME}"
 jail -c persist name=${NAME} path=${MNT} host.hostname=${NAME} ip4.addr=${IP} \
 allow.sysvipc allow.raw_sockets allow.socket_af allow.mount

@@ -25,8 +25,9 @@ IPS=192.168.69.0/24
 # Ethernet interface for the jail
 ETH=nfe0
 
-# If you want to use a custom resolv.conf file, set it bellow.  Defaults to
-# /etc/resolv.conf
+# If you want to use a custom resolv.conf in your jails, set the path to this
+# file on the host system bellow. If unset, the jail's resolv.conf file will
+# not be overwritten.
 #RESOLV_CONF="/usr/local/etc/poudriere.d/resolv.conf"
 
 # The directory where the jail will store the packages and logs

@@ -76,7 +76,7 @@ prepare_jail() {
 	jexec -U root ${JAILNAME} /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p /usr/local >/dev/null
 }
 
-RESOLV_CONF="${RESOLV_CONF:=/etc/resolv.conf}"
+RESOLV_CONF=""
 
 test -f /usr/local/etc/poudriere.conf || err 1 "Unable to find /usr/local/etc/poudriere.conf"
 . /usr/local/etc/poudriere.conf
