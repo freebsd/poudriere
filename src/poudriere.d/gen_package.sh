@@ -10,7 +10,6 @@ Parameters:
     -o origin   -- Specify an origin in the portstree
 
 Options:
-    -c          -- Run make config for the given port
     -j name     -- Run only inside the given jail
     -p tree     -- Use portstree "tree'
 EOF
@@ -20,17 +19,13 @@ EOF
 
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
-CONFIGSTR=0
 PTNAME="default"
 . ${SCRIPTPREFIX}/common.sh
 
 LOGS="${POUDRIERE_DATA}/logs"
 
-while getopts "d:cnj:o:p:" FLAG; do
+while getopts "d:nj:o:p:" FLAG; do
 	case "${FLAG}" in
-		c)
-		CONFIGSTR=1
-		;;
 		d)
 		HOST_PORTDIRECTORY=`realpath ${OPTARG}`
 		;;
