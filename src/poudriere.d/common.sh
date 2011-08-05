@@ -75,6 +75,12 @@ prepare_jail() {
 		[ -f /usr/local/etc/poudriere.d/${JAILNAME}-make.conf ] && cat /usr/local/etc/poudriere.d/${JAILNAME}-make.conf >> ${JAILBASE}/etc/make.conf
 	fi
 
+	if [ -d /usr/local/etc/poudriere.d/${JAILNAME}-options ]; then
+		mount -t nullfs /usr/local/etc/poudriere.d/${JAILNAME}-options ${JAILBASE}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+	elif [ -d /usr/local/etc/poudriere.d/options ]; then
+		mount -t nullfs /usr/local/etc/poudriere.d/options ${JAILBASE}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+	fi
+
 	msg "Populating LOCALBASE"
 	jexec -U root ${JAILNAME} /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p /usr/local >/dev/null
 }
