@@ -9,7 +9,7 @@ Parameters:
     -f file     -- Give the list of ports to build
 
 Options:
-    -C          -- Cleanup the old bulk build
+    -k          -- Keep the previous built binary packages
     -j name     -- Run only on the given jail
     -p tree     -- Specify on which ports tree the bulk will be done
 EOF
@@ -24,10 +24,10 @@ CLEAN=0
 
 LOGS="${POUDRIERE_DATA}/logs"
 
-while getopts "Cf:j:p:" FLAG; do
+while getopts "f:j:kp:" FLAG; do
 	case "${FLAG}" in
-		C)
-		CLEAN=1
+		k)
+		KEEP=1
 		;;
 		f)
 		LISTPKGS=${OPTARG}
@@ -65,7 +65,7 @@ for JAILNAME in ${JAILNAMES}; do
 
 	STATUS=1 #injail
 
-	if [ ${CLEAN} -eq 1 ]; then
+	if [ ${KEEP} -ne 1 ]; then
 		msg_n "Cleaning previous bulks if any..."
 		rm -rf ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/*
 		echo " done"
