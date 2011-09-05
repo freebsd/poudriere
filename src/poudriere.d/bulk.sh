@@ -19,7 +19,7 @@ EOF
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 PTNAME="default"
-CLEAN=0
+KEEP=0
 . ${SCRIPTPREFIX}/common.sh
 
 LOGS="${POUDRIERE_DATA}/logs"
