@@ -27,21 +27,21 @@ LOGS="${POUDRIERE_DATA}/logs"
 while getopts "d:nj:o:p:" FLAG; do
 	case "${FLAG}" in
 		d)
-		HOST_PORTDIRECTORY=`realpath ${OPTARG}`
-		;;
+			HOST_PORTDIRECTORY=`realpath ${OPTARG}`
+			;;
 		j)
-		zfs list ${ZPOOL}/poudriere/${OPTARG} >/dev/null 2>&1 || err 1 "No such jail: ${OPTARG}"
-		JAILNAMES="${JAILNAMES} ${OPTARG}"
-		;;
+			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
+			JAILNAMES="${JAILNAMES} ${OPTARG}"
+			;;
 		o)
-		ORIGIN=${OPTARG}
-		;;
+			ORIGIN=${OPTARG}
+			;;
 		p)
 			PTNAME=${OPTARG}
-		;;
+			;;
 		*)
-		usage
-		;;
+			usage
+			;;
 	esac
 done
 
@@ -50,18 +50,19 @@ test -z ${HOST_PORTDIRECTORY} && test -z ${ORIGIN} && usage
 if [ -z "${ORIGIN}" ]; then
 	PORTDIRECTORY=`basename ${HOST_PORTDIRECTORY}`
 else
-	HOST_PORTDIRECTORY=`get_portsdir`/${ORIGIN}
+	HOST_PORTDIRECTORY=`port_get_base ${PTNAME}`/${ORIGIN}
 	PORTDIRECTORY="/usr/ports/${ORIGIN}"
 fi
 
 PORTNAME=`make -C ${HOST_PORTDIRECTORY} -VPKGNAME`
 
-test -z ${JAILNAMES} && JAILNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }'|grep -v ports-`
+test -z "${JAILNAMES}" && JAILNAMES=`jail_ls`
 
 for JAILNAME in ${JAILNAMES}; do
-	JAILBASE=`zfs list -H -o mountpoint ${ZPOOL}/poudriere/${JAILNAME}`
+	JAILBASE=`jail_get_base ${JAILNAME}`
+	JAILFS=`jail_get_fs ${JAILNAME}`
 	PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}
-	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -j ${JAILNAME}
+	jail_start ${JAILNAME}
 
 	STATUS=1 #injail
 

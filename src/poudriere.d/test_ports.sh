@@ -94,7 +94,7 @@ test -z ${HOST_PORTDIRECTORY} && test -z ${ORIGIN} && usage
 if [ -z ${ORIGIN} ]; then
 	PORTDIRECTORY=`basename ${HOST_PORTDIRECTORY}`
 else
-	HOST_PORTDIRECTORY=`get_portsdir`/${ORIGIN}
+	HOST_PORTDIRECTORY=`port_get_base ${PTNAME}`/${ORIGIN}
 	PORTDIRECTORY="/usr/ports/${ORIGIN}"
 fi
 
