@@ -6,44 +6,39 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 
 # test if there is any args
 usage() {
-	echo "poudriere ports [parameters] [options]"
-	cat <<EOF
+	echo "poudriere ports [parameters] [options]
 
 Parameters:
-    -c          -- create a portstree
-    -d          -- delete a portstree
-    -u          -- update a portstree
-    -l          -- lists all available portstrees
+    -c            -- create a portstree
+    -d            -- delete a portstree
+    -u            -- update a portstree
+    -l            -- lists all available portstrees
+    -q            -- quiet (remove the header in list)
 
 Options:
-    -f          -- when used with -c, only create the needed ZFS
-                   filesystems and directories, but do not populare
-                   them.
-    -p tree     -- specifies on which portstree we work. If not
-                   specified, work on a portstree called "default".
-EOF
+    -F            -- when used with -c, only create the needed ZFS
+                     filesystems and directories, but do not populare
+                     them.
+    -p tree       -- specifies on which portstree we work. If not
+                     specified, work on a portstree called "default".
+    -f fs         -- FS name (tank/jails/myjail)
+    -M mountpoint -- mountpoint "
 
 	exit 1
 }
 
-create_base_fs() {
-	msg_n "Creating basefs:"
-	zfs create -o mountpoint=${BASEFS:=/usr/local/poudriere} ${ZPOOL}/poudriere >/dev/null 2>&1 || err 1 " Fail" && echo " done"
-}
-
-#Test if the default FS for poudriere exists if not creates it
-zfs list ${ZPOOL}/poudriere >/dev/null 2>&1 || create_base_fs
-
-CREATE=0; FAKE=0
-UPDATE=0;
-DELETE=0;
-LIST=0;
-while getopts "cfudlp:" FLAG; do
+CREATE=0
+FAKE=0
+UPDATE=0
+DELETE=0
+LIST=0
+QUIET=0
+while getopts "cfudlp:qf:M:" FLAG; do
 	case "${FLAG}" in
 		c)
 			CREATE=1
 			;;
-		f)
+		F)
 			FAKE=1
 			;;
 		u)
@@ -58,6 +53,15 @@ while getopts "cfudlp:" FLAG; do
 		l)
 			LIST=1
 			;;
+		q)
+			QUIET=1
+			;;
+		f)
+			FS=${OPTARG}
+			;;
+		M)
+			PTBASE=${OPTARG}
+			;;
 		*)
 			usage
 		;;
@@ -71,19 +75,17 @@ fi
 PTNAME=${PTNAME:-default}
 
 if [ ${LIST} -eq 1 ]; then
-	PTNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '$1 ~ /^'${ZPOOL}'\/poudriere\/ports-[^\/]*$/ { sub(/^'${ZPOOL}'\/poudriere\/ports-/, "", $1); print $1 }'`
-	for PTNAME in ${PTNAMES}; do
-		echo $PTNAME
-	done
+	[ $QUIET -eq 0 ] && echo "PORTSTREE"
+	zfs list -r -o poudriere:type,poudriere:name | awk '/ports/ {print $2 }'
 else
 	test -z "${PTNAME}" && usage
 fi
 if [ ${CREATE} -eq 1 ]; then
 	# test if it already exists
-	zfs list -r ${ZPOOL}/poudriere/ports-${PTNAME} >/dev/null 2>&1 && err 2 "The ports tree ${PTNAME} already exists"
-	PTBASE=${BASEFS:=/usr/local/poudriere}/ports/${PTNAME}
-	msg_n "Creating ports-${PTNAME} fs..."
-	zfs create -o mountpoint=${PTBASE} ${ZPOOL}/poudriere/ports-${PTNAME} > /dev/null 2>&1 || err 1 " Fail" && echo " done"
+	port_exists ${PTNAME} && err 2 "The ports tree ${PTNAME} already exists"
+	test -z ${PTBASE} && PTBASE=${BASEFS:=/usr/local/poudriere}/ports/${PTNAME}
+	test -z ${FS} && FS=${ZPOOL}/poudriere/ports-${PTNAME}
+	port_create_zfs ${PTNAME} ${PTBASE} ${FS}
 	mkdir ${PTBASE}/ports
 	if [ $FAKE -eq 0 ]; then
 		mkdir ${PTBASE}/snap
@@ -91,7 +93,7 @@ if [ ${CREATE} -eq 1 ]; then
 		/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch extract || \
 		/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch extract || \
 		{
-			zfs destroy ${ZPOOL}/poudriere/ports-${PTNAME}
+			zfs destroy ${FS}
 			err 1 " Fail"
 		}
 	fi
@@ -100,15 +102,15 @@ fi
 if [ ${DELETE} -eq 1 ]; then
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PTNAME}/ports on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is already used."
-	zfs list -r ${ZPOOL}/poudriere/ports-${PTNAME} >/dev/null 2>&1 || err 2 "No such ports tree ${PTNAME}"
+	port_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 	msg "Deleting portstree \"${PTNAME}\""
-	zfs destroy ${ZPOOL}/poudriere/ports-${PTNAME}
+	zfs destroy -r $(port_get_fs ${PTNAME})
 fi
 
 if [ ${UPDATE} -eq 1 ]; then
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PTNAME}/ports on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is already used."
-	PTBASE=$(zfs list -H -o mountpoint ${ZPOOL}/poudriere/ports-${PTNAME})
+	PTBASE=$(port_get_base ${PTNAME})
 	msg "Updating portstree \"${PTNAME}\""
 	/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch update
 fi

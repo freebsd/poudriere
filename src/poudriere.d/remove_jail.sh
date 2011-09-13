@@ -46,8 +46,9 @@ done
 
 test -z ${NAME} && usage
 
-zfs list ${ZPOOL}/poudriere/${NAME} >/dev/null 2>&1 || err 1 "No such jail: ${NAME}"
-JAILBASE=`zfs list -H -o mountpoint ${ZPOOL}/poudriere/${NAME}`
+jail_exists ${NAME} || err 1 "No such jail: ${NAME}"
+JAILBASE=`jail_get_base ${NAME}`
+FS=`jail_get_fs ${NAME}`
 
 if /usr/sbin/jls host.hostname | egrep "^${NAME}$" > /dev/null;then
 	msg "Found jail in running state. Stoping it."
@@ -55,7 +56,7 @@ if /usr/sbin/jls host.hostname | egrep "^${NAME}$" > /dev/null;then
 fi
 
 msg_n "Removing ${NAME} jail..."
-zfs destroy -r ${ZPOOL}/poudriere/${NAME}
+zfs destroy -r ${FS}
 rmdir ${JAILBASE}
 
 [ ${CLEANPKGS} -eq 1 ] && rm -rf ${POUDRIERE_DATA}/packages/${NAME}

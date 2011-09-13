@@ -27,21 +27,21 @@ LOGS="${POUDRIERE_DATA}/logs"
 while getopts "f:j:kp:" FLAG; do
 	case "${FLAG}" in
 		k)
-		KEEP=1
-		;;
+			KEEP=1
+			;;
 		f)
-		LISTPKGS=${OPTARG}
-		;;
+			LISTPKGS=${OPTARG}
+			;;
 		j)
-		zfs list ${ZPOOL}/poudriere/${OPTARG} >/dev/null 2>&1 || err 1 "No such jail: ${OPTARG}"
-		JAILNAMES="${JAILNAMES} ${OPTARG}"
-		;;
+			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
+			JAILNAMES="${JAILNAMES} ${OPTARG}"
+			;;
 		p)
-		PTNAME=${OPTARG}
-		;;
+			PTNAME=${OPTARG}
+			;;
 		*)
-		usage
-		;;
+			usage
+			;;
 	esac
 done
 
@@ -50,7 +50,7 @@ test -f ${LISTPKGS} || err 1 "No such list of packages: ${LISTPKGS}"
 
 STATUS=0 # out of jail #
 
-test -z "${JAILNAMES}" && JAILNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }'|grep -v ports-`
+test -z "${JAILNAMES}" && JAILNAMES=`jail_ls`
 
 STATS_BUILT=0
 STATS_FAILED=0
@@ -58,10 +58,11 @@ STATS_FAILED=0
 for JAILNAME in ${JAILNAMES}; do
 	PKGNG=0
 	EXT=tbz
-	JAILBASE=`zfs list -H -o mountpoint ${ZPOOL}/poudriere/${JAILNAME}`
+	JAILBASE=`jail_get_base ${JAILNAME}`
+	JAILFS=`jail_get_fs ${JAILNAME}`
 	[ -x ${JAILBASE}/usr/sbin/pkg ] && PKGNG=1
 	PKGDIR=${POUDRIERE_DATA}/packages/bulk-${JAILNAME}
-	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -j ${JAILNAME}
+	jail_start ${JAILNAME}
 
 	STATUS=1 #injail
 
@@ -81,7 +82,7 @@ for JAILNAME in ${JAILNAMES}; do
 	tpid=$!
 	exec > ${PIPE} 2>&1
 
-	zfs snapshot ${ZPOOL}/poudriere/${JAILNAME}@bulk
+	zfs snapshot ${JAILFS}@bulk
 	for port in `grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}`; do
 		PORTDIRECTORY="/usr/ports/${port}"
 
@@ -95,7 +96,7 @@ for JAILNAME in ${JAILNAMES}; do
 			msg "$PKGNAME already packaged skipping"
 			continue
 		fi
-		zfs rollback ${ZPOOL}/poudriere/${JAILNAME}@bulk
+		zfs rollback ${JAILFS}@bulk
 		rm -rf ${JAILBASE}/wrkdirs/*
 		msg "building ${port}"
 		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install && STATS_BUILT=$((STATS_BUILT+1)) || STATS_FAILED=$((STATS_FAILED+1))
@@ -116,7 +117,7 @@ for JAILNAME in ${JAILNAMES}; do
 			done
 		fi
 	done
-	zfs destroy ${ZPOOL}/poudriere/${JAILNAME}@bulk 2>/dev/null || :
+	zfs destroy ${JAILFS}@bulk 2>/dev/null || :
 
 # Package all newly build ports
 	if [ $STATS_BUILT -eq 0 ]; then

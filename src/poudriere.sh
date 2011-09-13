@@ -7,14 +7,11 @@ usage() {
 	echo "Usage: poudriere command [options]
 
 Commands:
-    createjail  -- create a new jail to test ports
-    removejail  -- remove the jail whose name is given to the -j option
-    startjail   -- start the jail whose name is given to the -j option
-    stopjail    -- stop the jail whose name is given to the -j option
     testport    -- launch a test on a given port
     genpkg      -- generate package for a given port
     bulk        -- generate packages for given ports
     lsjail      -- list jails created and used by poudriere
+    jail        -- list, create or manipulate the jails used by poudriere
     ports       -- create, update or delete the portstrees used by poudriere"
 
 	exit 1
@@ -30,17 +27,8 @@ CMD=$1
 shift
 
 case ${CMD} in
-	createjail)
-		/bin/sh ${POUDRIEREPREFIX}/create_jail.sh $@
-		;;
-	removejail)
-		/bin/sh ${POUDRIEREPREFIX}/remove_jail.sh $@
-		;;
-	startjail)
-		/bin/sh ${POUDRIEREPREFIX}/start_jail.sh $@
-		;;
-	stopjail)
-		/bin/sh ${POUDRIEREPREFIX}/stop_jail.sh $@
+	jail)
+		/bin/sh ${POUDRIEREPREFIX}/jail.sh $@
 		;;
 	testport)
 		/bin/sh ${POUDRIEREPREFIX}/test_ports.sh $@
@@ -50,9 +38,6 @@ case ${CMD} in
 		;;
 	bulk)
 		/bin/sh ${POUDRIEREPREFIX}/bulk.sh $@
-		;;
-	lsjail|lsjails)
-		/bin/sh ${POUDRIEREPREFIX}/list_jails.sh $@
 		;;
 	ports)
 		/bin/sh ${POUDRIEREPREFIX}/ports.sh $@

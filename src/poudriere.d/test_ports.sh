@@ -42,7 +42,7 @@ build_port() {
 			jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} run-depends || \
 				(create_pkg "Packaging what is installed so far"; exit 1)
 			create_pkg "Packaging all run dependencies"
-			[ $ZVERSION -ge 28 ] && zfs snapshot ${ZPOOL}/poudriere/${JAILNAME}@prebuild
+			[ $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
 		fi
 	done
 	return 0
@@ -65,27 +65,27 @@ PTNAME="default"
 while getopts "d:o:cnj:p:" FLAG; do
 	case "${FLAG}" in
 		c)
-		CONFIGSTR=1
-		;;
+			CONFIGSTR=1
+			;;
 		d)
-		HOST_PORTDIRECTORY=`realpath ${OPTARG}`
-		;;
+			HOST_PORTDIRECTORY=`realpath ${OPTARG}`
+			;;
 		o)
-		ORIGIN=${OPTARG}
-		;;
+			ORIGIN=${OPTARG}
+			;;
 		n)
-		NOPREFIX=1
-		;;
+			NOPREFIX=1
+			;;
 		j)
-		zfs list ${ZPOOL}/poudriere/${OPTARG} >/dev/null 2>&1 || err 1 "No such jail: ${OPTARG}"
-		JAILNAMES="${JAILNAMES} ${OPTARG}"
-		;;
+			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
+			JAILNAMES="${JAILNAMES} ${OPTARG}"
+			;;
 		p)
-		PTNAME=${OPTARG}
-		;;
+			PTNAME=${OPTARG}
+			;;
 		*)
-		usage
-		;;
+			usage
+			;;
 	esac
 done
 
@@ -100,13 +100,15 @@ fi
 
 PORTNAME=`make -C ${HOST_PORTDIRECTORY} -VPKGNAME`
 
-test -z "${JAILNAMES}" && JAILNAMES=`zfs list -rH ${ZPOOL}/poudriere | awk '/^'${ZPOOL}'\/poudriere\// { sub(/^'${ZPOOL}'\/poudriere\//, "", $1); print $1 }' | grep -v ports-`
+test -z "${JAILNAMES}" && JAILNAMES=`jail_ls`
 
 for JAILNAME in ${JAILNAMES}; do
-	JAILBASE=`zfs list -H -o mountpoint ${ZPOOL}/poudriere/${JAILNAME}`
+	JAILBASE=`jail_get_base ${JAILNAME}`
+	JAILFS=`jail_get_fs ${JAILNAME}`
 	PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}
 
-	/bin/sh ${SCRIPTPREFIX}/start_jail.sh -j ${JAILNAME}
+	jail_start ${JAILNAME}
+	ZVERSION=`jail_get_zpool_version ${JAILNAME}`
 	STATUS=1 #injail
 
 	prepare_jail
@@ -185,8 +187,7 @@ for JAILNAME in ${JAILNAMES}; do
 		FILES=`mktemp /tmp/files.XXXXXX`
 		DIRS=`mktemp /tmp/dirs.XXXXXX`
 		MODIFS=`mktemp /tmp/modifs.XXXXXX`
-		zfs diff ${ZPOOL}/poudriere/${JAILNAME}@prebuild \
-		${ZPOOL}/poudriere/${JAILNAME} | \
+		zfs diff ${JAILFS}@prebuild ${JAILFS} | \
 		egrep -v "[\+|M][[:space:]]*${JAILBASE}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
 		egrep -v "[\+|M|-][[:space:]]*${JAILBASE}/wrkdirs" | \
 		egrep -v "[\+|M][[:space:]]*${JAILBASE}/tmp/pkgs" | while read type path; do
@@ -209,7 +210,7 @@ for JAILNAME in ${JAILNAMES}; do
 		sort -r ${DIRS}
 		rm ${FILES} ${DIRS} ${MODIFS} ${FILES}.sort ${MODIFS}.sort
 
-		zfs destroy ${ZPOOL}/poudriere/${JAILNAME}@prebuild || :
+		zfs destroy ${JAILFS}@prebuild || :
 	fi
 
 	msg "Installing from package"

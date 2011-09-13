@@ -4,20 +4,19 @@ usage() {
 	echo "poudriere createjail parameters [options]
 
 Parameters:
-    -j jailname -- Specifies the jailname
-    -v version  -- Specifies which version of FreeBSD we want in jail
+    -j jailname   -- Specifies the jailname
+    -v version    -- Specifies which version of FreeBSD we want in jail
  
 Options:
-    -a arch     -- Indicates architecture of the jail: i386 or amd64
-                   (Default: same as host)
-    -m method   -- Method used to create jail, specify NONE if you want
-                   to use your home made jail
-                   (Default: FTP)
-    -s          -- Installs the whole source tree, some ports may need it
-                   (Default: install only kernel sources)"
-	exit 1
+    -a arch       -- Indicates architecture of the jail: i386 or amd64
+                     (Default: same as host)
+    -m method     -- Method used to create jail, specify NONE if you want
+                     to use your home made jail
+                     (Default: FTP)
+    -f fs         -- FS name (tank/jails/myjail)
+    -M mountpoint -- mountpoint "
+	 exit 1
 }
-
 
 ARCH=`uname -m`
 REALARCH=${ARCH}
@@ -27,22 +26,7 @@ SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
 
-create_base_fs() {
-	msg_n "Creating basefs:"
-	zfs create -o mountpoint=${BASEFS:=/usr/local/poudriere} ${ZPOOL}/poudriere >/dev/null 2>&1 || err 1 " Fail" && echo " done"
-}
-
-fetch_file() {
-		fetch -o $1 $2 || fetch -o $1 $2
-}
-
-#Test if the default FS for poudriere exists if not creates it
-zfs list ${ZPOOL}/poudriere >/dev/null 2>&1 || create_base_fs
-
-SRCS="ssys*"
-SRCSNAME="ssys"
-
-while getopts "j:v:a:z:m:sn:" FLAG; do
+while getopts "j:v:a:z:m:n:f:M:" FLAG; do
 	case "${FLAG}" in
 		j)
 			NAME=${OPTARG}
@@ -59,9 +43,11 @@ while getopts "j:v:a:z:m:sn:" FLAG; do
 		m)
 			METHOD=${OPTARG}
 			;;
-		s)
-			SRCS="s*"
-			SRCSNAME="sources"
+		f)
+			FS=${OPTARG}
+			;;
+		M)
+			JAILBASE=${OPTARG}
 			;;
 		*)
 			usage
@@ -76,88 +62,61 @@ if [ "${METHOD}" = "FTP" ]; then
 fi
 
 # Test if a jail with this name already exists
-zfs list -r ${ZPOOL}/poudriere/${NAME} >/dev/null 2>&1 && err 2 "The jail ${NAME} already exists"
+jail_exists ${NAME} && err 2 "The jail ${NAME} already exists"
 
-JAILBASE=${BASEFS:=/usr/local/poudriere}/jails/${NAME}
+test -z ${JAILBASE}  && JAILBASE=${BASEFS:=/usr/local/poudriere}/jails/${NAME}
+test -z ${FS} && FS=${ZPOOL}/poudriere/${NAME}
+
 # Create the jail FS
-msg_n "Creating ${NAME} fs..."
-zfs create -o mountpoint=${JAILBASE} ${ZPOOL}/poudriere/${NAME} >/dev/null 2>&1 || err 1 " Fail" && echo " done"
+jail_create_zfs ${NAME} ${VERSION} ${ARCH} ${JAILBASE} ${FS}
+
+mkdir ${JAILBASE}/fromftp
 
 if [ ${VERSION%%.*} -lt 9 ]; then
 	#We need to fetch base and src (for drivers)
 	msg "Fetching base sets for FreeBSD ${VERSION} ${ARCH}"
-	PKGS=`echo "ls base*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/ | awk '/-r.*/ {print $NF}'`
-	mkdir ${JAILBASE}/fromftp
-
-	for pkg in ${PKGS}; do
-		# Let's retry at least one time
-		fetch_file ${JAILBASE}/fromftp/ ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base/${pkg}
-	done
-
-	if [ ${ARCH} = "amd64" ]; then
-		msg "Fetching lib32 sets for FreeBSD ${VERSION} ${ARCH}"
-		PKGS=`echo "ls lib32*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/lib32/ | awk '/-r.*/ {print $NF}'`
+	FTPURL="ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}"
+	DISTS="base dict src"
+	[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32"
+	for dist in ${DISTS}; do
+		PKGS=`echo "ls *.??"| ftp -aV ${FTPURL}/$dist/ | awk '/-r.*/ {print $NF}'`
 		for pkg in ${PKGS}; do
+			[ ${pkg} = "install.sh" ] && continue
 			# Let's retry at least one time
-			fetch_file ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/lib32/${pkg}
+			fetch_file ${JAILBASE}/fromftp/ ${FTPURL}/${dist}/${pkg}
 		done
-	fi
-
-	msg "Fetching dict sets for FreeBSD ${VERSION} ${ARCH}"
-	PKGS=`echo "ls dict*"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/dict/ | awk '/-r.*/ {print $NF}'`
-	for pkg in ${PKGS}; do
-		# Let's retry at least one time
-		fetch_file ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/dict/${pkg}
 	done
-
 
 	msg "Extracting sets:"
 	for SETS in ${JAILBASE}/fromftp/*.aa; do
 		SET=`basename $SETS .aa`
 		echo -e "\t- $SET...\c"
-		cat ${JAILBASE}/fromftp/${SET}.* | tar --unlink -xpzf - -C ${JAILBASE}/ || err 1 " Fail" && echo " done"
+		case ${SET} in
+			s*)
+				APPEND="usr/src"
+				;;
+			*)
+				APPEND=""
+				;;
+		esac
+		cat ${JAILBASE}/fromftp/${SET}.* | \
+			tar --unlink -xpf - -C ${JAILBASE}/${APPEND} || err 1 " Fail" && echo " done"
 	done
-	rm ${JAILBASE}/fromftp/*
-
-	msg "Fetching ${SRCSNAME} sets..."
-	PKGS=`echo "ls ${SRCS}"| ftp -aV ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/ | awk '/-r.*/ {print $NF}'`
-	for pkg in ${PKGS}; do
-		# Let's retry at least one time
-		fetch_file ${JAILBASE}/fromftp/${pkg} ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src/${pkg}
-	done
-
-	msg "Extracting ${SRCSNAME}:"
-	for SETS in ${JAILBASE}/fromftp/*.aa; do
-		SET=`basename $SETS .aa`
-		echo -e "\t- $SET...\c"
-		cat ${JAILBASE}/fromftp/${SET}.* | tar --unlink -xpzf - -C ${JAILBASE}/usr/src || err 1 " Fail" && echo " done"
-	done
-
-	msg_n "Cleaning Up ${SRCSNAME} sets..."
-	rm ${JAILBASE}/fromftp/*
-	echo " done"
 else
-	msg "Fetching base.txz for FreeBSD ${VERSION} ${ARCH}"
-	mkdir ${JAILBASE}/fromftp
-	fetch_file ${JAILBASE}/fromftp/base.txz ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/base.txz
-	msg_n "Extracting base.txz..."
-	tar -xpf ${JAILBASE}/fromftp/base.txz -C  ${JAILBASE}/ || err 1 " fail" && echo " done"
-	if [ ${ARCH} = "amd64" ];then
-		msg "Fetching lib32.txz for FreeBSD ${VERSION} ${ARCH}"
-		fetch_file  ${JAILBASE}/fromftp/lib32.txz ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/lib32.txz
-		msg_n "Extracting lib32.txz for FreeBSD ${VERSION} ${ARCH}"
-		tar -xpf ${JAILBASE}/fromftp/lib32.txz -C  ${JAILBASE}  || err 1 " fail" && echo " done"
-	fi
-	msg "Fetching src.txz for FreeBSD ${VERSION} ${ARCH}"
-	fetch_file ${JAILBASE}/fromftp/src.txz ftp://${FTPHOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}/src.txz
-	msg_n "Extracting src.txz..."
-	tar -xpf ${JAILBASE}/fromftp/src.txz -C  ${JAILBASE} || err 1 " fail" && echo " done"
-	msg_n "Cleaning up..."
-	rm -f ${JAILBASE}/fromftp/*
-	echo " done"
+	FTPURL="ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${ARCH}/${VERSION}"
+	DISTS="base.txz src.txz"
+	[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
+	for dist in ${DISTS}; do
+		msg "Fetching ${dist} for FreeBSD ${VERSION} ${ARCH}"
+		fetch_file ${JAILBASE}/fromftp/${dist} ${FTPURL}/${dist}
+		msg_n "Extracting base.txz..."
+		tar -xpf ${JAILBASE}/fromftp/${dist} -C  ${JAILBASE}/ || err 1 " fail" && echo " done"
+	done
 fi
 
-rmdir ${JAILBASE}/fromftp
+msg_n "Cleaning up..."
+rm -rf ${JAILBASE}/fromftp/
+echo " done"
 
 OSVERSION=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILBASE}/usr/include/sys/param.h`
 
@@ -189,5 +148,5 @@ mkdir -p ${POUDRIERE_DATA}/logs
 
 jail -U root -c path=${JAILBASE} command=/sbin/ldconfig -m /lib /usr/lib /usr/lib/compat
 
-zfs snapshot ${ZPOOL}/poudriere/${NAME}@clean
+zfs snapshot ${FS}@clean
 msg "Jail ${NAME} ${VERSION} ${ARCH} is ready to be used"
