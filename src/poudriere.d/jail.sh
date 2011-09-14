@@ -204,7 +204,7 @@ while getopts "j:v:a:z:m:n:f:M:sdklqc" FLAG; do
 			DELETE=1
 			;;
 		q)
-			QUIER=1
+			QUIET=1
 			;;
 		*)
 			usage
