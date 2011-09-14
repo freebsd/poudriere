@@ -10,8 +10,7 @@ Commands:
     testport    -- launch a test on a given port
     genpkg      -- generate package for a given port
     bulk        -- generate packages for given ports
-    lsjail      -- list jails created and used by poudriere
-    jail        -- list, create or manipulate the jails used by poudriere
+    jail        -- manage the jails used by poudriere
     ports       -- create, update or delete the portstrees used by poudriere"
 
 	exit 1
