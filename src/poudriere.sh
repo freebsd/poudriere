@@ -26,7 +26,7 @@ CMD=$1
 shift
 
 case ${CMD} in
-	jail)
+	jail|jails)
 		/bin/sh ${POUDRIEREPREFIX}/jail.sh $@
 		;;
 	testport)
