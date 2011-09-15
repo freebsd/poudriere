@@ -173,7 +173,7 @@ get_ip() {
 			*/*)
 				full=$((${IP#*/} / 8))
 				modulo=$((${IP#*/} % 8))
-				i = 0
+				i=0
 				while [ $i -lt 4 ]; do
 					if [ $i -lt $full ]; then
 						mask="${mask}255"
