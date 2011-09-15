@@ -178,7 +178,7 @@ get_ip() {
 					if [ $i -lt $full ]; then
 						mask="${mask}255"
 					elif [ $i -eq $full ]; then
-						mask="${mask}$((256 - 2*(8-$modulo)))"
+						mask="${mask}$((256 - 32*(8-$modulo)))"
 					else
 						mask="${mask}0"
 					fi
