@@ -28,7 +28,7 @@ sig_handler() {
 jail_exists() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
 	zfs list -rH -o poudriere:type,poudriere:name | \
-		egrep -q "^rootfs[[:space:]]$1" && return 0
+		egrep -q "^rootfs[[:space:]]$1$" && return 0
 	return 1
 }
 
@@ -46,13 +46,13 @@ jail_get_ip() {
 jail_get_base() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
 	zfs list -rH -o poudriere:type,poudriere:name,mountpoint | \
-		awk '/^rootfs[[:space:]]'$1'/ { print $3 }'
+		awk '/^rootfs[[:space:]]'$1'[[:space:]]/ { print $3 }'
 }
 
 jail_get_fs() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
 	zfs list -rH -o poudriere:type,poudriere:name,name | \
-		awk '/^rootfs[[:space:]]'$1'/ { print $3 }'
+		awk '/^rootfs[[:space:]]'$1'[[:space:]]/ { print $3 }'
 }
 
 jail_get_zpool_version() {
