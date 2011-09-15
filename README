@@ -76,7 +76,7 @@ How to use poudriere?
 First you have to create a jail, which will hold all the building
 infrastructure needs.
 
-    poudriere createjail -v 8.2-RELEASE -a amd64 -j 82amd64
+    poudriere jail -c -v 8.2-RELEASE -a amd64 -j 82amd64
 
 A jail will take approximately 3GB of space.
 
@@ -84,7 +84,7 @@ Of course you can use another version of FreeBSD, regarless on what
 version you are running. amd64 users can choose i386 arch like in this
 example:
 
-    poudriere createjail -v 8.1-RELEASE -a i386 -j 81i386
+    poudriere jail -c -v 8.1-RELEASE -a i386 -j 81i386
 
 This command will fetch and install a minimal jail, small (~400MB) so
 you can create a lot of them. It will install the jail under the pool
@@ -178,7 +178,7 @@ If a directory with this name exists, it is null-mounted into the
 /var/db/ports/ directory of the jail, thus allowing to build package with
 custom OPTIONS.
 
-This directory has the usual layout for options:  it contains one directory per
+This directory has the usual layout for options: it contains one directory per
 port (the name of the port) containing an 'options' file with lines similar to:
 
     WITH_FOO=true
@@ -194,12 +194,16 @@ Caveats
  Jailname
  --------
 
--j is the name of the jail which will also be the name of the zfs
-filesystem.
+-j is the name of the jail which will also be the name of the zfs filesystem.
 Be careful to respects the names supported by jail(8):
-"This is an arbitrary string that identifies a jail (except it may not contain a ‘.’)"
-Be also careful to not begin the name of the jail by a number if you are not in -stable or current:
-http://svn.freebsd.org/viewvc/base?view=revision&revision=209820
+
+    "This is an arbitrary string that identifies a jail (except it
+     may not contain a ‘.’)"
+
+Be also careful to not begin the name of the jail by a number if you are
+not in -stable or current:
+
+    http://svn.freebsd.org/viewvc/base?view=revision&revision=209820
 
 Bonus: how to manage poudriere ports using portshaker
 -----------------------------------------------------
