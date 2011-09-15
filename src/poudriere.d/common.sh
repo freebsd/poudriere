@@ -185,7 +185,7 @@ get_ip() {
 					test $i -lt 3 && mask="${mask}."
 					i=$(( i + 1))
 				done
-				netmask_to_ips_range ${IPS%%/*} ${IP#*/}
+				netmask_to_ips_range ${IPS%%/*} ${mask}
 				add_ips_range
 				;;
 			*/*.*)
