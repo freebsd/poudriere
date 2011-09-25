@@ -102,7 +102,7 @@ for JAILNAME in ${JAILNAMES}; do
 		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install && STATS_BUILT=$((STATS_BUILT+1)) || STATS_FAILED=$((STATS_FAILED+1))
 		msg "packaging"
 		if [ $PKGNG -eq 1 ]; then
-			for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg info -a | awk -F: '{ print $1 }'`; do
+			for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg info -qa`; do
 				[ -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${pkg}.${EXT} ] && continue
 				msg "packaging ${pkg}"
 				pkgorig=`jexec -U root ${JAILNAME} /usr/sbin/pkg info -q -o ${pkg}`
