@@ -49,7 +49,7 @@ build_port() {
 }
 
 create_pkg() {
-	msg "$1" | tee -a ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log
+	msg "$1" | tee -a ${LOGS}/${PKGNAME}-${JAILNAME}.depends.log
 	for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info -Ea`; do
 		[ -f ${PKGDIR}/All/${pkg}.tbz ] || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
 	done
@@ -98,7 +98,8 @@ else
 	PORTDIRECTORY="/usr/ports/${ORIGIN}"
 fi
 
-PORTNAME=`make -C ${HOST_PORTDIRECTORY} -VPKGNAME`
+PKGNAME=`make -C ${HOST_PORTDIRECTORY} -VPKGNAME`
+PORTNAME=`make -C ${HOST_PORTDIRECTORY} -VPORTNAME`
 
 test -z "${JAILNAMES}" && JAILNAMES=`jail_ls`
 
@@ -120,14 +121,14 @@ for JAILNAME in ${JAILNAMES}; do
 
 	exec 3>&1 4>&2
 	[ ! -e ${PIPE} ] && mkfifo ${PIPE}
-	tee ${LOGS}/${PORTNAME}-${JAILNAME}.depends.log < ${PIPE} >&3 &
+	tee ${LOGS}/${PKGNAME}-${JAILNAME}.depends.log < ${PIPE} >&3 &
 	tpid=$!
 	exec > ${PIPE} 2>&1
 	if [ "${USE_PORTLINT}" = "yes" ]; then
 		if [ -x `which portlint` ]; then
 			set +e
 			msg "Portlint check"
-			cd ${JAILBASE}/${PORTDIRECTORY} && portlint -a | tee -a ${LOGS}/${PORTNAME}-${JAILNAME}.portlint.log
+			cd ${JAILBASE}/${PORTDIRECTORY} && portlint -a | tee -a ${LOGS}/${PKGNAME}-${JAILNAME}.portlint.log
 			set -e
 		else
 			err 2 "First install portlint if you want USE_PORTLINT to work as expected"
@@ -144,7 +145,7 @@ for JAILNAME in ${JAILNAMES}; do
 	wait $tpid
 
 	exec 3>&1 4>&2
-	tee ${LOGS}/${PORTNAME}-${JAILNAME}.build.log < ${PIPE} >&3 &
+	tee ${LOGS}/${PKGNAME}-${JAILNAME}.build.log < ${PIPE} >&3 &
 	tpid=$!
 	exec > ${PIPE} 2>&1
 	PKGNAME=`jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VPKGNAME`
@@ -191,7 +192,7 @@ for JAILNAME in ${JAILNAMES}; do
 		egrep -v "[\+|M][[:space:]]*${JAILBASE}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
 		egrep -v "[\+|M|-][[:space:]]*${JAILBASE}/wrkdirs" | \
 		egrep -v "[\+|M][[:space:]]*${JAILBASE}/tmp/pkgs" | while read type path; do
-			PPATH=`echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${PREFIX}/,,"`
+			PPATH=`echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${PREFIX}/,," -e "s,^share/${PORTNAME},%%DATADIR%%," -e "s,^etc/,%%ETCDIR%%,"`
 			if [ $type = "+" ]; then
 				if [ -d $path ]; then
 					echo "@dirrmtry ${PPATH}" >> ${DIRS}
