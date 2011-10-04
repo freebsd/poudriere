@@ -54,6 +54,7 @@ test -z "${JAILNAMES}" && JAILNAMES=`jail_ls`
 
 STATS_BUILT=0
 STATS_FAILED=0
+FAILED_PORTS=""
 
 for JAILNAME in ${JAILNAMES}; do
 	PKGNG=0
@@ -99,7 +100,7 @@ for JAILNAME in ${JAILNAMES}; do
 		zfs rollback ${JAILFS}@bulk
 		rm -rf ${JAILBASE}/wrkdirs/*
 		msg "building ${port}"
-		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install && STATS_BUILT=$((STATS_BUILT+1)) || STATS_FAILED=$((STATS_FAILED+1))
+		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install && STATS_BUILT=$((STATS_BUILT+1)) || (STATS_FAILED=$((STATS_FAILED+1)) ; FAILED_PORTS="${FAILED_PORTS} ${PORTDIRECTORY}")
 		msg "packaging"
 		if [ $PKGNG -eq 1 ]; then
 			for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg info -a | awk -F: '{ print $1 }'`; do
@@ -244,4 +245,5 @@ done
 
 
 msg "$STATS_BUILT packages built, $STATS_FAILED failures"
+msg "Failed ports:$FAILED_PORTS"
 exit $STATS_FAILED
