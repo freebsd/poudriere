@@ -100,7 +100,8 @@ for JAILNAME in ${JAILNAMES}; do
 		zfs rollback ${JAILFS}@bulk
 		rm -rf ${JAILBASE}/wrkdirs/*
 		msg "building ${port}"
-		if [ jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install; ]; then
+		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install
+		if [ $? ]; then
 			STATS_BUILT=$((STATS_BUILT+1))
 		else
 			STATS_FAILED=$((STATS_FAILED+1))
