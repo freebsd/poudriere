@@ -100,7 +100,12 @@ for JAILNAME in ${JAILNAMES}; do
 		zfs rollback ${JAILFS}@bulk
 		rm -rf ${JAILBASE}/wrkdirs/*
 		msg "building ${port}"
-		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install && STATS_BUILT=$((STATS_BUILT+1)) || (STATS_FAILED=$((STATS_FAILED+1)) ; FAILED_PORTS="${FAILED_PORTS} ${PORTDIRECTORY}")
+		if [ jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install; ]; then
+			STATS_BUILT=$((STATS_BUILT+1))
+		else
+			STATS_FAILED=$((STATS_FAILED+1))
+			FAILED_PORTS="$FAILED_PORTS ${PORTDIRECTORY#*/usr/ports/}"
+		fi
 		msg "packaging"
 		if [ $PKGNG -eq 1 ]; then
 			for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg info -a | awk -F: '{ print $1 }'`; do
