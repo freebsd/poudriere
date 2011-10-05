@@ -127,7 +127,7 @@ for JAILNAME in ${JAILNAMES}; do
 
 # Package all newly build ports
 	if [ $STATS_BUILT -eq 0 ]; then
-		msg "No package build, no need to update INDEX"
+		msg "No package built, no need to update INDEX"
 	elif [ $PKGNG -eq 1 ]; then
 		msg "Packaging all installed ports"
 		jexec -U root ${JAILNAME} /usr/sbin/pkg repo /usr/ports/packages/All/
