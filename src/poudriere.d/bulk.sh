@@ -251,5 +251,7 @@ done
 
 
 msg "$STATS_BUILT packages built, $STATS_FAILED failures"
-msg "Failed ports:$FAILED_PORTS"
+if [ ! -z $FAILED_PORTS ]; then
+	msg "Failed ports:$FAILED_PORTS"
+fi
 exit $STATS_FAILED
