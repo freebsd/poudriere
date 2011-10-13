@@ -92,12 +92,22 @@ for JAILNAME in ${JAILNAMES}; do
 			msg "No such port ${port}"
 			continue
 		}
-
+		LATEST_LINK=$(jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VLATEST_LINK)
 		PKGNAME=$(jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VPKGNAME)
-		if [ -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${PKGNAME}.${EXT} ]; then
-			msg "$PKGNAME already packaged skipping"
-			continue
+
+		# delete older one if any
+		if [ -e ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/Latest/${LATEST_LINK}.${EXT} ]; then
+			PKGNAME_PREV=$(realpath ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/Latest/${LATEST_LINK}.${EXT})
+			if [ "${PKGNAME_PREV##*/}" = "${PKGNAME}.${EXT}" ]; then
+				msg "$PKGNAME already packaged skipping"
+				continue
+			else
+				msg "Deleting previous version of ${port}"
+				find ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/ -name ${PKGNAME_PREV##*/} -delete
+				find ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/ -name ${LATEST_LINK}.${EXT} -delete
+			fi
 		fi
+
 		zfs rollback ${JAILFS}@bulk
 		rm -rf ${JAILBASE}/wrkdirs/*
 		msg "building ${port}"
