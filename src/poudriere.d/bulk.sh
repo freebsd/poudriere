@@ -84,7 +84,8 @@ for JAILNAME in ${JAILNAMES}; do
 	exec > ${PIPE} 2>&1
 
 	zfs snapshot ${JAILFS}@bulk
-	for port in `grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}`; do
+	msg "Calculating ports order and dependencies"
+	prepare_ports | while read port; do
 		PORTDIRECTORY="/usr/ports/${port}"
 
 		test -d ${JAILBASE}/${PORTDIRECTORY} || {

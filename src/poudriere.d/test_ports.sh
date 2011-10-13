@@ -192,13 +192,16 @@ for JAILNAME in ${JAILNAMES}; do
 		egrep -v "[\+|M][[:space:]]*${JAILBASE}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
 		egrep -v "[\+|M|-][[:space:]]*${JAILBASE}/wrkdirs" | \
 		egrep -v "[\+|M][[:space:]]*${JAILBASE}/tmp/pkgs" | while read type path; do
-			PPATH=`echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${PREFIX}/,," -e "s,^share/${PORTNAME},%%DATADIR%%," -e "s,^etc/,%%ETCDIR%%,"`
+			PPATH=`echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${PREFIX}/,," -e "s,^share/${PORTNAME},%%DATADIR%%," -e "s,^etc,%%ETCDIR%%,"`
 			if [ $type = "+" ]; then
 				if [ -d $path ]; then
 					echo "@dirrmtry ${PPATH}" >> ${DIRS}
 				else
 					echo "${PPATH}" >> ${FILES}
 				fi
+			elif [ $type = "-" ]; then
+				msg "!!!MISSING!!!: ${PPATH}"
+				echo "${PPATH}" >> ${MODIFS}
 			else
 				[ -d $path ] && continue
 				msg "WARNING: ${PPATH} has been modified"
