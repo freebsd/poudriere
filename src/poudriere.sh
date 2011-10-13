@@ -7,12 +7,11 @@ usage() {
 	echo "Usage: poudriere command [options]
 
 Commands:
-    testport    -- launch a test on a given port
-    genpkg      -- generate package for a given port
     bulk        -- generate packages for given ports
+    genpkg      -- generate package for a given port
     jail        -- manage the jails used by poudriere
-    ports       -- create, update or delete the portstrees used by poudriere"
-
+    ports       -- create, update or delete the portstrees used by poudriere
+    testport    -- launch a test on a given port"
 	exit 1
 }
 
