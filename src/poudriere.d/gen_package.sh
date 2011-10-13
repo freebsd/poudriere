@@ -11,7 +11,7 @@ Parameters:
 
 Options:
     -j name     -- Run only inside the given jail
-    -p tree     -- Use portstree "tree'
+    -p tree     -- Use portstree "tree"
 EOF
 
 	exit 1
