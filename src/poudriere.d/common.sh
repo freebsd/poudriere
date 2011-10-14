@@ -311,7 +311,6 @@ port_create_zfs() {
 cleanup() {
 	[ -e ${PIPE} ] && rm -f ${PIPE}
 	FS=`jail_get_fs ${JAILNAME}`
-	zfs destroy ${FS}@bulk 2>/dev/null || :
 	zfs destroy ${FS}@prepkg 2>/dev/null || :
 	zfs destroy ${FS}@prebuild 2>/dev/null || :
 	jail_stop ${JAILNAME}
