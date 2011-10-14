@@ -54,11 +54,12 @@ else
 	PORTDIRECTORY="/usr/ports/${ORIGIN}"
 fi
 
-PORTNAME=`make -C ${HOST_PORTDIRECTORY} -VPKGNAME`
+PKGNAME=`make -C ${HOST_PORTDIRECTORY} -VPKGNAME`
 
 test -z "${JAILNAMES}" && JAILNAMES=`jail_ls`
 
 for JAILNAME in ${JAILNAMES}; do
+	EXT=tbz
 	JAILBASE=`jail_get_base ${JAILNAME}`
 	JAILFS=`jail_get_fs ${JAILNAME}`
 	PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}
@@ -68,35 +69,45 @@ for JAILNAME in ${JAILNAMES}; do
 
 	prepare_jail
 
+	exec 3>&1 4>&2
+	[ ! -e ${PIPE} ] && mkfifo ${PIPE}
+	tee ${LOGS}/${PKGNAME}-${JAILNAME}.depends.log < ${PIPE} >&3 &
+	tpid=$!
+	exec > ${PIPE} 2>&1
 	if [ -z ${ORIGIN} ]; then
 		mkdir -p ${JAILBASE}/${PORTDIRECTORY}
 		mount -t nullfs ${HOST_PORTDIRECTORY} ${JAILBASE}/${PORTDIRECTORY}
 	fi
 
-	(
-	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
-	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} extract-depends fetch-depends patch-depends build-depends lib-depends
-# Package all newly build ports
-	msg "Packaging all dependencies"
-	for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1}'`; do
-		test -f ${POUDRIERE_DATA}/packages/${JAILNAME}/All/${pkg}.tbz || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
+	LISTPORTS=$(injail make -C ${PORTDIRECTORY} missing)
+	zfs snapshot ${JAILFS}@prepkg
+	msg "Calculating ports order and dependencies"
+	for port in `prepare_ports`; do
+		build_pkg ${port}
+		zfs rollback ${JAILFS}@prepkg
 	done
-	) 2>&1 | tee ${LOGS}/${PORTNAME}-${JAILNAME}.depends.pkg.log
+	zfs destroy ${JAILFS}@prepkg
+	injail make -C ${PORTDIRECTORY} extract-depends fetch-depends patch-depends build-depends lib-depends
+	exec 1>&3 3>&- 2>&4 4>&-
+	wait $tpid
 
-	(
-	PKGNAME=`jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VPKGNAME`
+	exec 3>&1 4>&2
+	tee ${LOGS}/${PKGNAME}-${JAILNAME}.build.log < ${PIPE} >&3 &
+	tpid=$!
+	exec > ${PIPE} 2>&1
+	PKGNAME=`injail make -C ${PORTDIRECTORY} -VPKGNAME`
 
 	msg "Cleaning workspace"
-	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
+	injail ${JAILNAME} make -C ${PORTDIRECTORY} clean
 
-	if jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} install; then
-		msg "Packaging ${PORTNAME}"
-		jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${PORTNAME} /usr/ports/packages/All/${PORTNAME}.tbz
-	fi
+	injail make -C ${PORTDIRECTORY} package
 
 	msg "Cleaning up"
-	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
-	) 2>&1 | tee  ${LOGS}/${PORTNAME}-${JAILNAME}.pkg.log
+	injail ${JAILNAME} make -C ${PORTDIRECTORY} clean
+
+	exec 1>&3 3>&- 2>&4 4>&-
+	wait $tpid
+
 
 	cleanup
 	STATUS=0 #injail
