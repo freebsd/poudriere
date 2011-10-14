@@ -20,26 +20,26 @@ EOF
 
 build_port() {
 	msg "Building ${PKGNAME}"
-	jexec -U root ${JAILNAME} mkdir -p /tmp/pkgs
+	injail mkdir -p /tmp/pkgs
 	for PHASE in build install package deinstall
 	do
 		if [ "${PHASE}" = "deinstall" ]; then
 			msg "Checking pkg_info"
-			PKG_DBDIR=${PKG_DBDIR} jexec -U root ${JAILNAME} /usr/sbin/pkg_info ${PKGNAME}
+			PKG_DBDIR=${PKG_DBDIR} injail /usr/sbin/pkg_info ${PKGNAME}
 			PLIST="${PKG_DBDIR}/${PKGNAME}/+CONTENTS"
 			if [ -r ${JAILBASE}${PLIST} ]; then
 				echo "===>> Checking shared library dependencies"
 				grep -v "^@" ${JAILBASE}${PLIST} | \
 				sed -e "s,^,${PREFIX}/," | \
-				xargs jexec -U root ${JAILNAME} ldd 2>&1 | \
+				xargs injail ldd 2>&1 | \
 				grep -v "not a dynamic executable" | \
 				grep '=>' | awk '{ print $3;}' | sort -u
 			fi
 		fi
-		jexec -U root ${JAILNAME} env PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs make -C ${PORTDIRECTORY} ${PORT_FLAGS} ${PHASE}
+		injail env PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs make -C ${PORTDIRECTORY} ${PORT_FLAGS} ${PHASE}
 		if [ "${PHASE}" = "build" ]; then
 			msg "Installing run dependencies"
-			jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} run-depends || \
+			injail make -C ${PORTDIRECTORY} run-depends || \
 				(create_pkg "Packaging what is installed so far"; exit 1)
 			create_pkg "Packaging all run dependencies"
 			[ $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
@@ -50,8 +50,8 @@ build_port() {
 
 create_pkg() {
 	msg "$1" | tee -a ${LOGS}/${PKGNAME}-${JAILNAME}.depends.log
-	for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info -Ea`; do
-		[ -f ${PKGDIR}/All/${pkg}.tbz ] || jexec -U root ${JAILNAME} /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
+	for pkg in `injail /usr/sbin/pkg_info -Ea`; do
+		[ -f ${PKGDIR}/All/${pkg}.${EXT} ] || injail /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
 	done
 }
 
@@ -61,6 +61,7 @@ CONFIGSTR=0
 . ${SCRIPTPREFIX}/common.sh
 NOPREFIX=0
 PTNAME="default"
+EXT="tbz"
 
 while getopts "d:o:cnj:p:" FLAG; do
 	case "${FLAG}" in
@@ -134,12 +135,16 @@ for JAILNAME in ${JAILNAMES}; do
 			err 2 "First install portlint if you want USE_PORTLINT to work as expected"
 		fi
 	fi
-	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
-	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} extract-depends \
-		fetch-depends patch-depends build-depends lib-depends || \
-		(create_pkg "Packaging what is installed so far" && exit 1)
-
-	create_pkg "Packaging all dependencies"
+	LISTPORTS=$(injail make -C ${PORTDIRECTORY} missing)
+	zfs snapshot ${JAILFS}@prepkg
+	msg "Calculating ports order and dependencies"
+	for port in `prepare_ports`; do
+		build_pkg ${port}
+		zfs rollback ${JAILFS}@prepkg
+	done
+	zfs destroy ${JAILFS}@prepkg
+	injail make -C ${PORTDIRECTORY} extract-depends \
+		fetch-depends patch-depends build-depends lib-depends
 
 	exec 1>&3 3>&- 2>&4 4>&-
 	wait $tpid
@@ -148,9 +153,9 @@ for JAILNAME in ${JAILNAMES}; do
 	tee ${LOGS}/${PKGNAME}-${JAILNAME}.build.log < ${PIPE} >&3 &
 	tpid=$!
 	exec > ${PIPE} 2>&1
-	PKGNAME=`jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VPKGNAME`
-	PKG_DBDIR=`jexec -U root ${JAILNAME} mktemp -d -t pkg_db`
-	LOCALBASE=`jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VLOCALBASE`
+	PKGNAME=`injail make -C ${PORTDIRECTORY} -VPKGNAME`
+	PKG_DBDIR=`injail mktemp -d -t pkg_db`
+	LOCALBASE=`injail make -C ${PORTDIRECTORY} -VLOCALBASE`
 	if [ ${NOPREFIX} -eq 1 ]; then
 		PREFIX=${LOCALBASE}
 	else
@@ -159,8 +164,8 @@ for JAILNAME in ${JAILNAMES}; do
 	PORT_FLAGS="NO_DEPENDS=yes PREFIX=${PREFIX} PKG_DBDIR=${PKG_DBDIR}"
 	msg "Building with flags: ${PORT_FLAGS}"
 	msg "Cleaning workspace"
-	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
-	[ $CONFIGSTR -eq 1 ] && jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} config
+	injail make -C ${PORTDIRECTORY} clean
+	[ $CONFIGSTR -eq 1 ] && injail make -C ${PORTDIRECTORY} config
 
 	if [ -d ${JAILBASE}${PREFIX} ]; then
 		msg "Removing existing ${PREFIX}"
@@ -169,7 +174,7 @@ for JAILNAME in ${JAILNAMES}; do
 
 	msg "Populating PREFIX"
 	mkdir -p ${JAILBASE}${PREFIX}
-	jexec -U root ${JAILNAME} /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${PREFIX} >/dev/null
+	injail /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${PREFIX} >/dev/null
 
 	if [ $ZVERSION -lt 28 ]; then
 		find ${JAILBASE}${LOCALBASE}/ -type d | sed "s,^${JAILBASE}${LOCALBASE}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.before
@@ -218,12 +223,12 @@ for JAILNAME in ${JAILNAMES}; do
 	fi
 
 	msg "Installing from package"
-	PKG_DBDIR=${PKG_DBDIR} jexec -U root ${JAILNAME} pkg_add /tmp/pkgs/${PKGNAME}.tbz
+	PKG_DBDIR=${PKG_DBDIR} injail pkg_add /tmp/pkgs/${PKGNAME}.tbz
 	msg "Deinstalling package"
-	PKG_DBDIR=${PKG_DBDIR} jexec -U root ${JAILNAME} pkg_delete ${PKGNAME}
+	PKG_DBDIR=${PKG_DBDIR} injail pkg_delete ${PKGNAME}
 
 	msg "Cleaning up"
-	jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean
+	injail make -C ${PORTDIRECTORY} clean
 
 	msg "Removing existing ${PREFIX} dir"
 	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${JAILBASE}${PREFIX} ${JAILBASE}${PREFIX}.PLIST_DIRS.before ${JAILBASE}${PREFIX}.PLIST_DIRS.after

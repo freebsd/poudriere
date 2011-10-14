@@ -69,7 +69,7 @@ for JAILNAME in ${JAILNAMES}; do
 
 	if [ ${KEEP} -ne 1 ]; then
 		msg_n "Cleaning previous bulks if any..."
-		rm -rf ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/*
+		rm -rf ${PKGDIR}/*
 		echo " done"
 	fi
 
@@ -83,74 +83,25 @@ for JAILNAME in ${JAILNAMES}; do
 	tpid=$!
 	exec > ${PIPE} 2>&1
 
-	zfs snapshot ${JAILFS}@bulk
 	msg "Calculating ports order and dependencies"
-	prepare_ports | while read port; do
-		PORTDIRECTORY="/usr/ports/${port}"
-
-		test -d ${JAILBASE}/${PORTDIRECTORY} || {
-			msg "No such port ${port}"
-			continue
-		}
-		LATEST_LINK=$(jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VLATEST_LINK)
-		PKGNAME=$(jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} -VPKGNAME)
-
-		# delete older one if any
-		if [ -e ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/Latest/${LATEST_LINK}.${EXT} ]; then
-			PKGNAME_PREV=$(realpath ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/Latest/${LATEST_LINK}.${EXT})
-			if [ "${PKGNAME_PREV##*/}" = "${PKGNAME}.${EXT}" ]; then
-				msg "$PKGNAME already packaged skipping"
-				continue
-			else
-				msg "Deleting previous version of ${port}"
-				find ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/ -name ${PKGNAME_PREV##*/} -delete
-				find ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/ -name ${LATEST_LINK}.${EXT} -delete
-			fi
-		fi
-
-		zfs rollback ${JAILFS}@bulk
-		rm -rf ${JAILBASE}/wrkdirs/*
-		msg "building ${port}"
-		jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} clean install
-		if [ $? ]; then
-			STATS_BUILT=$((STATS_BUILT+1))
-		else
-			STATS_FAILED=$((STATS_FAILED+1))
-			FAILED_PORTS="$FAILED_PORTS ${PORTDIRECTORY#*/usr/ports/}"
-		fi
-		msg "packaging"
-		if [ $PKGNG -eq 1 ]; then
-			for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg info -qa`; do
-				[ -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${pkg}.${EXT} ] && continue
-				msg "packaging ${pkg}"
-				pkgorig=`jexec -U root ${JAILNAME} /usr/sbin/pkg info -q -o ${pkg}`
-				jexec -U root ${JAILNAME} make -C /usr/ports/${pkgorig} package || continue
-			done
-		else
-			for pkg in `jexec -U root ${JAILNAME} /usr/sbin/pkg_info | awk '{ print $1 }'`; do
-				[ -f ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/${pkg}.${EXT} ] && continue
-				msg "packaging ${pkg}"
-				pkgorig=`jexec -U root ${JAILNAME} /usr/sbin/pkg_info -qo ${pkg}`
-				jexec -U root ${JAILNAME} make -C /usr/ports/${pkgorig} package
-			done
-		fi
+	for port in `prepare_ports`; do
+		build_pkg ${port} || :
 	done
-	zfs destroy ${JAILFS}@bulk 2>/dev/null || :
 
 # Package all newly build ports
 	if [ $STATS_BUILT -eq 0 ]; then
 		msg "No package built, no need to update INDEX"
 	elif [ $PKGNG -eq 1 ]; then
 		msg "Packaging all installed ports"
-		jexec -U root ${JAILNAME} /usr/sbin/pkg repo /usr/ports/packages/All/
+		injail /usr/sbin/pkg repo /usr/ports/packages/All/
 	else
 		msg "Preparing index"
-		OSMAJ=`jexec -U root ${JAILNAME} uname -r | awk -F. '{ print $1 }'`
-		INDEXF=${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/INDEX-${OSMAJ}
-		for pkg_file in `ls ${POUDRIERE_DATA}/packages/bulk-${JAILNAME}/All/*.tbz`; do
+		OSMAJ=`injail ${JAILNAME} uname -r | awk -F. '{ print $1 }'`
+		INDEXF=${PKGDIR}/INDEX-${OSMAJ}
+		for pkg_file in `ls ${PKGDIR}/All/*.tbz`; do
 			msg_n "extracting description from `basename ${pkg_file}`"
 			ORIGIN=`/usr/sbin/pkg_info -qo ${pkg_file}`
-			[ -d ${POUDRIERE_PORTSDIR}/${ORIGIN} ] && jexec -U root ${JAILNAME} make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
+			[ -d ${POUDRIERE_PORTSDIR}/${ORIGIN} ] && injail make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
 			echo " done"
 		done
 

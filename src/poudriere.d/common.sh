@@ -312,8 +312,51 @@ cleanup() {
 	[ -e ${PIPE} ] && rm -f ${PIPE}
 	FS=`jail_get_fs ${JAILNAME}`
 	zfs destroy ${FS}@bulk 2>/dev/null || :
+	zfs destroy ${FS}@prepkg 2>/dev/null || :
 	zfs destroy ${FS}@prebuild 2>/dev/null || :
 	jail_stop ${JAILNAME}
+}
+
+injail() {
+	jexec -U root ${JAILNAME} $@
+}
+
+build_pkg() {
+	local port=$1
+	local portdir="/usr/ports/${port}"
+	test -d ${JAILBASE}/${portdir} || {
+		msg "No such port ${port}"
+		return 1
+	}
+	local LATEST_LINK=$(injail make -C ${portdir} -VLATEST_LINK)
+	local PKGNAME=$(injail make -C ${portdir} -VPKGNAME)
+
+	# delete older one if any
+	if [ -e ${PKGDIR}/Latest/${LATEST_LINK}.${EXT} ]; then
+		PKGNAME_PREV=$(realpath ${PKGDIR}/Latest/${LATEST_LINK}.${EXT})
+		if [ "${PKGNAME_PREV##*/}" = "${PKGNAME}.${EXT}" ]; then
+			msg "$PKGNAME already packaged skipping"
+			return 2
+		else
+			msg "Deleting previous version of ${port}"
+			find ${PKGDIR}/ -name ${PKGNAME_PREV##*/} -delete
+			find ${PKGDIR}/ -name ${LATEST_LINK}.${EXT} -delete
+		fi
+	fi
+
+	msg "Cleaning up wrkdir"
+	rm -rf ${JAILBASE}/wrkdirs/*
+
+	msg "Building ${port}"
+	injail make -C ${portdir} clean package
+	if [ $? -eq 0 ]; then
+		STATS_BUILT=$(($STATS_BUILT + 1))
+		return 0
+	else
+		STATS_FAILED=$(($STATS_FAILED + 1))
+		FAILED_PORTS="$FAILED_PORTS ${PORTDIRECTORY#*/usr/ports/}"
+		return 1
+	fi
 }
 
 process_deps() {
@@ -321,12 +364,12 @@ process_deps() {
 	tmplist2=$2
 	tmplist3=$3
 	local port=$4
-	PORTDIRECTORY="/usr/ports/${port}"
+	local PORTDIRECTORY="/usr/ports/${port}"
 	grep -q "$port" ${tmplist} && return
 	echo $port >> ${tmplist}
 	deps=0
 	local m
-	for m in `jexec -U root ${JAILNAME} make -C ${PORTDIRECTORY} missing`; do
+	for m in `injail make -C ${PORTDIRECTORY} missing`; do
 		process_deps "${tmplist}" "${tmplist2}" "${tmplist3}" "$m"
 		echo $m $port >> ${tmplist2}
 		deps=1
@@ -341,9 +384,15 @@ prepare_ports() {
 	tmplist2=`mktemp /tmp/orderport2.XXXXX`
 	tmplist3=`mktemp /tmp/orderport3.XXXXX`
 	touch ${tmplist}
-	for port in `grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}`; do
-		process_deps "${tmplist}" "${tmplist2}" "$tmplist3" "${port}"
-	done
+	if [ -z "${LISTPORTS}" ]; then
+		for port in `grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}`; do
+			process_deps "${tmplist}" "${tmplist2}" "$tmplist3" "${port}"
+		done
+	else
+		for port in ${LISTPORTS}; do
+			process_deps "${tmplist}" "${tmplist2}" "$tmplist3" "${port}"
+		done
+	fi
 	tsort ${tmplist2} | while read port; do
 		grep -q ${port} ${tmplist3} || echo $port >> ${tmplist3}
 	done
@@ -383,7 +432,7 @@ prepare_jail() {
 	fi
 
 	msg "Populating LOCALBASE"
-	jexec -U root ${JAILNAME} /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p /usr/local >/dev/null
+	injail /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p /usr/local >/dev/null
 }
 
 RESOLV_CONF=""
