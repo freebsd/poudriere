@@ -311,6 +311,7 @@ port_create_zfs() {
 cleanup() {
 	[ -e ${PIPE} ] && rm -f ${PIPE}
 	FS=`jail_get_fs ${JAILNAME}`
+	[ -f ${deplist} ] && rm -f ${deplist}
 	zfs destroy ${FS}@prepkg 2>/dev/null || :
 	zfs destroy ${FS}@prebuild 2>/dev/null || :
 	jail_stop ${JAILNAME}
@@ -318,6 +319,22 @@ cleanup() {
 
 injail() {
 	jexec -U root ${JAILNAME} $@
+}
+
+delete_pkg_recursive() {
+	local pkgname_prev=$1
+	local latest_link=$3
+	local port=$4
+	msg "Delecting previous version of $4"
+	find ${PKGDIR}/ -name ${pkgname_prev##*/} -delete
+	find ${PKGDIR}/ -name ${LATEST_LINK}.${EXT} -delete
+	for p in `awk '{ if (\$2 ~ /^$port\$/) { print $1 } }' $deplist`; do
+		local llink=$(injail make -C /usr/port/${p} -VLATEST_LINK)
+		if [ -e ${PKGDIR}/Latest/${llink}.${EXT} ]; then
+			local pkgname=$(realpath ${PKGDIR}/Latest/${llink}.${EXT})
+			delete_pkg_recursive "${pkgname}" "${latest_link}" "$p"
+		fi
+	done
 }
 
 build_pkg() {
@@ -337,9 +354,13 @@ build_pkg() {
 			msg "$PKGNAME already packaged skipping"
 			return 0
 		else
-			msg "Deleting previous version of ${port}"
-			find ${PKGDIR}/ -name ${PKGNAME_PREV##*/} -delete
-			find ${PKGDIR}/ -name ${LATEST_LINK}.${EXT} -delete
+			if [ ${AGRESSIVE_DEP_TRACK} -eq 0 ]; then
+				msg "Deleting previous version of ${port}"
+				find ${PKGDIR}/ -name ${PKGNAME_PREV##*/} -delete
+				find ${PKGDIR}/ -name ${LATEST_LINK}.${EXT} -delete
+			else
+				delete_pkg_recursive "${PKGNAME_PREV}" "${LATEST_LINK}" "$port"
+			fi
 		fi
 	fi
 
@@ -360,8 +381,8 @@ build_pkg() {
 
 process_deps() {
 	tmplist=$1
-	tmplist2=$2
-	tmplist3=$3
+	deplist=$2
+	tmplist2=$3
 	local port=$4
 	local PORTDIRECTORY="/usr/ports/${port}"
 	grep -q "$port" ${tmplist} && return
@@ -369,34 +390,34 @@ process_deps() {
 	deps=0
 	local m
 	for m in `injail make -C ${PORTDIRECTORY} missing`; do
-		process_deps "${tmplist}" "${tmplist2}" "${tmplist3}" "$m"
-		echo $m $port >> ${tmplist2}
+		process_deps "${tmplist}" "${deplist}" "${tmplist2}" "$m"
+		echo $m $port >> ${deplist}
 		deps=1
 	done
 	if [ $deps -eq 0 ] ;then
-		echo $port >> ${tmplist3}
+		echo $port >> ${tmplist2}
 	fi
 }
 
 prepare_ports() {
 	tmplist=`mktemp /tmp/orderport.XXXXXX`
-	tmplist2=`mktemp /tmp/orderport2.XXXXX`
-	tmplist3=`mktemp /tmp/orderport3.XXXXX`
+	deplist=`mktemp /tmp/orderport2.XXXXX`
+	tmplist2=`mktemp /tmp/orderport3.XXXXX`
 	touch ${tmplist}
 	if [ -z "${LISTPORTS}" ]; then
 		for port in `grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}`; do
-			process_deps "${tmplist}" "${tmplist2}" "$tmplist3" "${port}"
+			process_deps "${tmplist}" "${deplist}" "$tmplist2" "${port}"
 		done
 	else
 		for port in ${LISTPORTS}; do
-			process_deps "${tmplist}" "${tmplist2}" "$tmplist3" "${port}"
+			process_deps "${tmplist}" "${deplist}" "$tmplist2" "${port}"
 		done
 	fi
-	tsort ${tmplist2} | while read port; do
-		grep -q ${port} ${tmplist3} || echo $port >> ${tmplist3}
+	tsort ${deplist} | while read port; do
+		grep -q ${port} ${tmplist2} || echo $port >> ${tmplist2}
 	done
-	cat ${tmplist3}
-	rm -f ${tmplist} ${tmplist2} ${tmplist3}
+	cat ${tmplist2}
+	rm -f ${tmplist} ${tmplist2}
 }
 
 prepare_jail() {
@@ -435,6 +456,7 @@ prepare_jail() {
 }
 
 RESOLV_CONF=""
+AGRESSIVE_DEP_TRACK=0
 
 test -f ${SCRIPTPREFIX}/../../etc/poudriere.conf || err 1 "Unable to find ${SCRIPTPREFIX}/../../etc/poudriere.conf"
 . ${SCRIPTPREFIX}/../../etc/poudriere.conf
