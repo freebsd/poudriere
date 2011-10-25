@@ -25,8 +25,8 @@ build_port() {
 	do
 		if [ "${PHASE}" = "deinstall" ]; then
 			msg "Checking pkg_info"
-			PKG_DBDIR=${PKG_DBDIR} injail /usr/sbin/pkg_info ${PKGNAME}
-			PLIST="${PKG_DBDIR}/${PKGNAME}/+CONTENTS"
+			injail /usr/sbin/pkg_info ${PKGNAME}
+			PLIST="/var/db/pkg/${PKGNAME}/+CONTENTS"
 			if [ -r ${JAILBASE}${PLIST} ]; then
 				echo "===>> Checking shared library dependencies"
 				grep -v "^@" ${JAILBASE}${PLIST} | \
@@ -38,10 +38,6 @@ build_port() {
 		fi
 		injail env PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs make -C ${PORTDIRECTORY} ${PORT_FLAGS} ${PHASE}
 		if [ "${PHASE}" = "build" ]; then
-			msg "Installing run dependencies"
-			injail make -C ${PORTDIRECTORY} run-depends || \
-				(create_pkg "Packaging what is installed so far"; exit 1)
-			create_pkg "Packaging all run dependencies"
 			[ $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
 		fi
 	done
@@ -154,14 +150,13 @@ for JAILNAME in ${JAILNAMES}; do
 	tpid=$!
 	exec > ${PIPE} 2>&1
 	PKGNAME=`injail make -C ${PORTDIRECTORY} -VPKGNAME`
-	PKG_DBDIR=`injail mktemp -d -t pkg_db`
 	LOCALBASE=`injail make -C ${PORTDIRECTORY} -VLOCALBASE`
 	if [ ${NOPREFIX} -eq 1 ]; then
 		PREFIX=${LOCALBASE}
 	else
 		PREFIX="${BUILDROOT:-/tmp}/`echo ${PKGNAME} | tr '[,+]' _`"
 	fi
-	PORT_FLAGS="NO_DEPENDS=yes PREFIX=${PREFIX} PKG_DBDIR=${PKG_DBDIR}"
+	PORT_FLAGS="NO_DEPENDS=yes PREFIX=${PREFIX}"
 	msg "Building with flags: ${PORT_FLAGS}"
 	msg "Cleaning workspace"
 	injail make -C ${PORTDIRECTORY} clean
@@ -223,16 +218,15 @@ for JAILNAME in ${JAILNAMES}; do
 	fi
 
 	msg "Installing from package"
-	PKG_DBDIR=${PKG_DBDIR} injail pkg_add /tmp/pkgs/${PKGNAME}.tbz
+	injail pkg_add /tmp/pkgs/${PKGNAME}.tbz
 	msg "Deinstalling package"
-	PKG_DBDIR=${PKG_DBDIR} injail pkg_delete ${PKGNAME}
+	injail pkg_delete ${PKGNAME}
 
 	msg "Cleaning up"
 	injail make -C ${PORTDIRECTORY} clean
 
 	msg "Removing existing ${PREFIX} dir"
 	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${JAILBASE}${PREFIX} ${JAILBASE}${PREFIX}.PLIST_DIRS.before ${JAILBASE}${PREFIX}.PLIST_DIRS.after
-	rm -rf ${JAILBASE}${PKG_DBDIR}
 
 	exec 1>&3 3>&- 2>&4 4>&-
 	wait $tpid
