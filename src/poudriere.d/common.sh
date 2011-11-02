@@ -352,7 +352,7 @@ build_pkg() {
 		PKGNAME_PREV=$(realpath ${PKGDIR}/Latest/${LATEST_LINK}.${EXT})
 		if [ "${PKGNAME_PREV##*/}" = "${PKGNAME}.${EXT}" ]; then
 			msg "$PKGNAME already packaged skipping"
-			return 0
+			return 2
 		else
 			if [ -z ${AGRESSIVE_DEP_TRACK} ]; then
 				msg "Deleting previous version of ${port}"

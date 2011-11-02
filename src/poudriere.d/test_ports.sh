@@ -135,7 +135,11 @@ for JAILNAME in ${JAILNAMES}; do
 	zfs snapshot ${JAILFS}@prepkg
 	msg "Calculating ports order and dependencies"
 	for port in `prepare_ports`; do
-		build_pkg ${port}
+		build_pkg ${port} || {
+			if [ $? -eq 2 ]; then
+				continue
+			fi
+		}
 		zfs rollback ${JAILFS}@prepkg
 	done
 	zfs destroy ${JAILFS}@prepkg
