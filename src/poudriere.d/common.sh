@@ -389,7 +389,16 @@ process_deps() {
 	echo $port >> ${tmplist}
 	deps=0
 	local m
-	for m in `injail make -C ${PORTDIRECTORY} missing`; do
+	LIST="BUILD_DEPENDS EXTRACT_DEPENDS LIB_DEPENDS PATCH_DEPENDS FETCH_DEPENDS RUN_DEPENDS"
+	MAKEARGS=""
+	for key in $LIST; do
+		MAKEARGS="${MAKEARGS} -V${key}"
+	done
+	injail make -C ${PORTDIRECTORY} $MAKEARGS | sed -e "s,[[:graph:]]*/usr/ports/,,g" | while read line; do
+		eval `echo ${LIST%% *}=\"$line\"`
+		LIST=${LIST#* }
+	done
+	for m in "$BUILD_DEPENDS $EXTRACT_DEPENDS $LIB_DEPENDS $PATCH_DEPENDS $FETCH_DEPENDS $RUN_DEPENDS"; do
 		process_deps "${tmplist}" "${deplist}" "${tmplist2}" "$m"
 		echo $m $port >> ${deplist}
 		deps=1
