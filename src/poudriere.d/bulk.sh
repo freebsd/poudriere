@@ -105,7 +105,7 @@ for JAILNAME in ${JAILNAMES}; do
 		injail /usr/sbin/pkg repo /usr/ports/packages/All/
 	else
 		msg "Preparing index"
-		OSMAJ=`injail ${JAILNAME} uname -r | awk -F. '{ print $1 }'`
+		OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
 		INDEXF=${PKGDIR}/INDEX-${OSMAJ}
 		for pkg_file in `ls ${PKGDIR}/All/*.tbz`; do
 			msg_n "extracting description from `basename ${pkg_file}`"
