@@ -322,6 +322,9 @@ injail() {
 }
 
 sanity_check_pkgs() {
+	[ ! -d ${PKGDIR}/Latest ] && return
+	[ ! -d ${PKGDIR}/All ] && return
+	[ -z "$(ls -A ${PKGDIR}/Latest)" ] && return
 	for pkg in ${PKGDIR}/Latest/*.${EXT}; do
 		realpkg=$(realpath $pkg)
 		if [ ! -e $realpkg ]; then
