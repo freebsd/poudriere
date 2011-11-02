@@ -425,7 +425,7 @@ prepare_ports() {
 		done
 	fi
 	tsort ${deplist} | while read port; do
-		grep -q ${port} ${tmplist2} || echo $port >> ${tmplist2}
+		egrep -q "^${port}$" ${tmplist2} || echo $port >> ${tmplist2}
 	done
 	cat ${tmplist2}
 	rm -f ${tmplist} ${tmplist2}
