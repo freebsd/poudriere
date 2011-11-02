@@ -386,9 +386,8 @@ list_deps() {
 	for key in $LIST; do
 		MAKEARGS="${MAKEARGS} -V${key}"
 	done
-	injail make -C ${1} $MAKEARGS | sed -e "s,[[:graph:]]*/usr/ports/,,g" | while read line; do
-		echo $line
-	done
+	injail make -C ${1} $MAKEARGS | sed -e "s,[[:graph:]]*/usr/ports/,,g" | \
+		tr ' ' '\n' | sort -u
 }
 
 process_deps() {
