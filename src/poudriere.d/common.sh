@@ -354,7 +354,7 @@ build_pkg() {
 			msg "$PKGNAME already packaged skipping"
 			return 0
 		else
-			if [ ${AGRESSIVE_DEP_TRACK} -eq 0 ]; then
+			if [ -z ${AGRESSIVE_DEP_TRACK} ]; then
 				msg "Deleting previous version of ${port}"
 				find ${PKGDIR}/ -name ${PKGNAME_PREV##*/} -delete
 				find ${PKGDIR}/ -name ${LATEST_LINK}.${EXT} -delete
@@ -465,7 +465,6 @@ prepare_jail() {
 }
 
 RESOLV_CONF=""
-AGRESSIVE_DEP_TRACK=0
 
 test -f ${SCRIPTPREFIX}/../../etc/poudriere.conf || err 1 "Unable to find ${SCRIPTPREFIX}/../../etc/poudriere.conf"
 . ${SCRIPTPREFIX}/../../etc/poudriere.conf
