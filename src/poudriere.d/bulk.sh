@@ -83,6 +83,8 @@ for JAILNAME in ${JAILNAMES}; do
 	tpid=$!
 	exec > ${PIPE} 2>&1
 
+	msg "Sanity checking the available packages"
+	sanity_check_pkgs
 	msg "Calculating ports order and dependencies"
 	for port in `prepare_ports`; do
 		build_pkg ${port} || :

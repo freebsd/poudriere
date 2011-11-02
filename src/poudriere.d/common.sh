@@ -321,18 +321,33 @@ injail() {
 	jexec -U root ${JAILNAME} $@
 }
 
-delete_pkg_recursive() {
-	local pkgname_prev=$1
-	local latest_link=$3
-	local port=$4
-	msg "Delecting previous version of $4"
-	find ${PKGDIR}/ -name ${pkgname_prev##*/} -delete
-	find ${PKGDIR}/ -name ${LATEST_LINK}.${EXT} -delete
-	for p in `awk '{ if (\$2 ~ /^$port\$/) { print $1 } }' $deplist`; do
-		local llink=$(injail make -C /usr/port/${p} -VLATEST_LINK)
-		if [ -e ${PKGDIR}/Latest/${llink}.${EXT} ]; then
-			local pkgname=$(realpath ${PKGDIR}/Latest/${llink}.${EXT})
-			delete_pkg_recursive "${pkgname}" "${latest_link}" "$p"
+sanity_check_pkgs() {
+	for pkg in ${PKGDIR}/Latest/*.${EXT}; do
+		realpkg=$(realpath $pkg)
+		if [ ! -e $realpkg ]; then
+			msg "Deleting stale symlinks ${pkg##*/}"
+			find ${PKGDIR}/ -name ${pkg##*/} -delete
+			continue
+		fi
+
+		if [ "${EXT}" = "tbz" ]; then
+			for dep in $(pkg_info -qr $pkg | awk '{ print $2 }'); do
+				if [ ! -e ${PKGDIR}/All/$dep.${EXT} ]; then
+					msg "Deleting ${realpkg##*/}: missing dependencies"
+					rm -f ${realpkg}
+					find ${PKGDIR}/ -name ${pkg##*/} -delete
+					break
+				fi
+			done
+		else
+			for dep in $(pkg info -qrF $pkg); do
+				if [ ! -e ${PKGDIR}/All/$dep.${EXT} ]; then
+					msg "Deleting ${realpkg##*/}: missing dependencies"
+					rm -f ${realpkg}
+					find ${PKGDIR}/ -name ${pkg##*/} -delete
+					break
+				fi
+			done
 		fi
 	done
 }
@@ -354,13 +369,10 @@ build_pkg() {
 			msg "$PKGNAME already packaged skipping"
 			return 2
 		else
-			if [ -z ${AGRESSIVE_DEP_TRACK} ]; then
-				msg "Deleting previous version of ${port}"
-				find ${PKGDIR}/ -name ${PKGNAME_PREV##*/} -delete
-				find ${PKGDIR}/ -name ${LATEST_LINK}.${EXT} -delete
-			else
-				delete_pkg_recursive "${PKGNAME_PREV}" "${LATEST_LINK}" "$port"
-			fi
+			msg "Deleting previous version of ${port}"
+			find ${PKGDIR}/ -name ${PKGNAME_PREV##*/} -delete
+			find ${PKGDIR}/ -name ${LATEST_LINK}.${EXT} -delete
+			sanity_check_pkgs
 		fi
 	fi
 

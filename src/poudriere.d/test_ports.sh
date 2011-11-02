@@ -131,6 +131,9 @@ for JAILNAME in ${JAILNAMES}; do
 			err 2 "First install portlint if you want USE_PORTLINT to work as expected"
 		fi
 	fi
+	# First sanity check the installed packages
+	msg "Sanity checking the available packages"
+	sanity_check_pkgs
 	LISTPORTS=$(list_deps ${PORTDIRECTORY} )
 	zfs snapshot ${JAILFS}@prepkg
 	msg "Calculating ports order and dependencies"
