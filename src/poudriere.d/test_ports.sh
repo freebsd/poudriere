@@ -131,7 +131,7 @@ for JAILNAME in ${JAILNAMES}; do
 			err 2 "First install portlint if you want USE_PORTLINT to work as expected"
 		fi
 	fi
-	LISTPORTS=$(injail make -C ${PORTDIRECTORY} missing)
+	LISTPORTS=$(list_deps ${PORTDIRECTORY} )
 	zfs snapshot ${JAILFS}@prepkg
 	msg "Calculating ports order and dependencies"
 	for port in `prepare_ports`; do

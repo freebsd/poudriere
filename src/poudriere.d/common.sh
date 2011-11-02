@@ -379,6 +379,18 @@ build_pkg() {
 	fi
 }
 
+list_deps() {
+	[ -z ${1} ] && return 0
+	LIST="BUILD_DEPENDS EXTRACT_DEPENDS LIB_DEPENDS PATCH_DEPENDS FETCH_DEPENDS RUN_DEPENDS"
+	MAKEARGS=""
+	for key in $LIST; do
+		MAKEARGS="${MAKEARGS} -V${key}"
+	done
+	injail make -C ${1} $MAKEARGS | sed -e "s,[[:graph:]]*/usr/ports/,,g" | while read line; do
+		echo $line
+	done
+}
+
 process_deps() {
 	tmplist=$1
 	deplist=$2
@@ -389,16 +401,7 @@ process_deps() {
 	echo $port >> ${tmplist}
 	deps=0
 	local m
-	LIST="BUILD_DEPENDS EXTRACT_DEPENDS LIB_DEPENDS PATCH_DEPENDS FETCH_DEPENDS RUN_DEPENDS"
-	MAKEARGS=""
-	for key in $LIST; do
-		MAKEARGS="${MAKEARGS} -V${key}"
-	done
-	injail make -C ${PORTDIRECTORY} $MAKEARGS | sed -e "s,[[:graph:]]*/usr/ports/,,g" | while read line; do
-		eval `echo ${LIST%% *}=\"$line\"`
-		LIST=${LIST#* }
-	done
-	for m in "$BUILD_DEPENDS $EXTRACT_DEPENDS $LIB_DEPENDS $PATCH_DEPENDS $FETCH_DEPENDS $RUN_DEPENDS"; do
+	for m in `list_deps ${PORTDIRECTORY}`; do
 		process_deps "${tmplist}" "${deplist}" "${tmplist2}" "$m"
 		echo $m $port >> ${deplist}
 		deps=1
