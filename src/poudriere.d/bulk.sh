@@ -222,7 +222,6 @@ done
 
 
 msg "$STATS_BUILT packages built, $STATS_FAILED failures"
-if [ ! -z $FAILED_PORTS ]; then
-	msg "Failed ports:$FAILED_PORTS"
-fi
+[ -n "$FAILED_PORTS" ] && msg "Failed ports:$FAILED_PORTS"
+
 exit $STATS_FAILED

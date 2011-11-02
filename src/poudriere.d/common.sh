@@ -389,7 +389,7 @@ build_pkg() {
 		return 0
 	else
 		STATS_FAILED=$(($STATS_FAILED + 1))
-		FAILED_PORTS="$FAILED_PORTS ${PORTDIRECTORY#*/usr/ports/}"
+		FAILED_PORTS="$FAILED_PORTS ${port}"
 		return 1
 	fi
 }
