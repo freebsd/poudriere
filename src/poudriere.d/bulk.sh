@@ -86,9 +86,16 @@ for JAILNAME in ${JAILNAMES}; do
 	msg "Sanity checking the available packages"
 	sanity_check_pkgs
 	msg "Calculating ports order and dependencies"
+	zfs snapshot ${JAILFS}@prepkg
 	for port in `prepare_ports`; do
-		build_pkg ${port} || :
+		build_pkg ${port} || {
+			if [ $? -eq 2 ]; then
+				continue
+			fi
+		}
+		zfs rollback ${JAILFS}@prepkg
 	done
+	zfs destroy ${JAILFS}@prepkg
 
 # Package all newly build ports
 	if [ $STATS_BUILT -eq 0 ]; then
