@@ -196,6 +196,7 @@ for JAILNAME in ${JAILNAMES}; do
 		egrep -v "[\+|M][[:space:]]*${JAILBASE}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
 		egrep -v "[\+|M|-][[:space:]]*${JAILBASE}/wrkdirs" | \
 		egrep -v "/var/db/pkg" | \
+		egrep -v "/var/run/ld-elf.so.hints" | \
 		egrep -v "[\+|M][[:space:]]*${JAILBASE}/tmp/pkgs" | while read type path; do
 			PPATH=`echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${PREFIX}/,," -e "s,^share/${PORTNAME},%%DATADIR%%," -e "s,^etc,%%ETCDIR%%,"`
 			if [ $type = "+" ]; then
