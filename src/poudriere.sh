@@ -8,7 +8,6 @@ usage() {
 
 Commands:
     bulk        -- generate packages for given ports
-    genpkg      -- generate package for a given port
     jail        -- manage the jails used by poudriere
     ports       -- create, update or delete the portstrees used by poudriere
     testport    -- launch a test on a given port"
@@ -30,9 +29,6 @@ case ${CMD} in
 		;;
 	testport)
 		/bin/sh ${POUDRIEREPREFIX}/test_ports.sh $@
-		;;
-	genpkg)
-		/bin/sh ${POUDRIEREPREFIX}/gen_package.sh $@
 		;;
 	bulk)
 		/bin/sh ${POUDRIEREPREFIX}/bulk.sh $@
