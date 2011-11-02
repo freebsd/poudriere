@@ -402,7 +402,7 @@ list_deps() {
 		MAKEARGS="${MAKEARGS} -V${key}"
 	done
 	injail make -C ${1} $MAKEARGS | sed -e "s,[[:graph:]]*/usr/ports/,,g" | \
-		tr ' ' '\n' | sort -u
+		tr ' ' '\n' | egrep -v ".*:.*" | sort -u
 }
 
 process_deps() {
