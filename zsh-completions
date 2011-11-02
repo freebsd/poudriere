@@ -31,14 +31,6 @@ _bulk=(
 	'-p[Specify on which ports tree the bulk will be done]::tree:_poudriere_pt'
 )
 
-_genpkg=(
-	'-d[Relative path of the port we want to build]:port:_files -/'
-	'-o[Specify an origin in the portstree]:origin:_poudriere_ports'
-#Options:
-	'*-j[Run only inside the given jail]::name:_poudriere_jail'
-	'-p[Use portstree "tree"]::tree:_poudriere_pt'
-)
-
 _jail=(
 	'-c[create a jail]'
 	'-d[delete a jail]'
@@ -72,7 +64,6 @@ _poudriere () {
 	typeset -A val_args
 	cmds=(
 		'bulk:generate packages for given ports'
-		'genpkg:generate package for a given port'
 		'jail:manage the jails used by poudriere'
 		'ports:create, update or delete the portstrees used by poudriere'
 		'testport:launch a test on a given port'
@@ -84,9 +75,6 @@ _poudriere () {
 		case $words[2] in
 			bulk)
 			_arguments -s $_bulk "::" && return
-			;;
-			genpkg)
-			_arguments -s $_genpkg "::" && return
 			;;
 			jail)
 			_arguments -s $_jail "::" && return
