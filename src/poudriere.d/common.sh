@@ -411,7 +411,7 @@ process_deps() {
 	tmplist2=$3
 	local port=$4
 	local PORTDIRECTORY="/usr/ports/${port}"
-	grep -q "$port" ${tmplist} && return
+	egrep -q "^$port$" ${tmplist} && return
 	echo $port >> ${tmplist}
 	deps=0
 	local m
