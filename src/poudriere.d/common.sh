@@ -343,7 +343,7 @@ sanity_check_pkgs() {
 				fi
 			done
 		else
-			for dep in $(pkg info -qrF $pkg); do
+			for dep in $(pkg info -qdF $pkg); do
 				if [ ! -e ${PKGDIR}/All/$dep.${EXT} ]; then
 					msg "Deleting ${realpkg##*/}: missing dependencies"
 					rm -f ${realpkg}
@@ -377,6 +377,11 @@ build_pkg() {
 			find ${PKGDIR}/ -name ${LATEST_LINK}.${EXT} -delete
 			sanity_check_pkgs
 		fi
+	fi
+
+	if [ -e ${PKGDIR}/All/${PKGNAME}.${EXT} ]; then
+		msg "$PKGNAME already packaged skipping"
+		return 2
 	fi
 
 	msg "Cleaning up wrkdir"
