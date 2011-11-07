@@ -33,6 +33,9 @@ ETH=nfe0
 # The directory where the jail will store the packages and logs
 POUDRIERE_DATA=/usr/local/poudriere_data
 
+# The directory where poudriere will store jails and ports
+BASEFS=/usr/local/poudriere
+
 # Specify if you want to use a loopback interface instead of ETH
 USE_LOOPBACK=no
 
