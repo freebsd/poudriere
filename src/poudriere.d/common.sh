@@ -110,7 +110,7 @@ netif_ip() {
 	IP=$1
 	/sbin/ifconfig -a | awk '{
 	if(/^[^[:space:]]/) { FS=":"; iface=$1; }
-	if(/'$IP'/) { print iface; exit;}}' | tr '\n' ' '
+	if(/'$IP'/) { printf("%s",iface); exit;}}'
 }
 
 add_ips_range () {
