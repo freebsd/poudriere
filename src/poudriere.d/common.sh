@@ -106,6 +106,13 @@ jail_create_zfs() {
 		-o mountpoint=${JAILBASE} ${FS} || err 1 " Fail" && echo " done"
 }
 
+netif_ip() {
+	IP=$1
+	/sbin/ifconfig -a | awk '{
+	if(/^[^[:space:]]/) { FS=":"; iface=$1; }
+	if(/'$IP'/) { print iface; exit;}}' | tr '\n' ' '
+}
+
 add_ips_range () {
 	while [ $max1 -ne $min1 ] || [ $max2 -ne $min2 ] ||
 		[ $max3 -ne $min3 ] || [ $max4 -ne $min4 ]; do
@@ -225,9 +232,14 @@ jail_start() {
 
 	if [ "${USE_LOOPBACK}" = "yes" ]; then
 		LOOP=0
+		configure=0
 		while :; do
+			/sbin/ifconfig lo${LOOP} > /dev/null 2>&1 || configure=1
+			if [ $configure -ne 0 ]; then
+				ifconfig lo${LOOP} create > /dev/null 2>&1
+				break
+			fi
 			LOOP=$(( LOOP += 1))
-			ifconfig lo${LOOP} create > /dev/null 2>&1 && break
 		done
 		msg "Adding loopback lo${LOOP}"
 		ifconfig lo${LOOP} inet ${IP} > /dev/null 2>&1
@@ -279,14 +291,9 @@ jail_stop() {
 		mdconfig -d -u ${MDUNIT}
 	fi
 	if [ "${USE_LOOPBACK}" = "yes" ]; then
-		LOOP=0
-		while :; do
-			LOOP=$(( LOOP += 1))
-			if ifconfig lo${LOOP} | grep ${IP} > /dev/null 2>&1 ; then
-				msg "Removing loopback lo${LOOP}"
-				ifconfig lo${LOOP} destroy && break
-			fi
-		done
+		LOOP=`netif_ip ${IP}`
+		msg "Removing loopback ${LOOP}"
+		ifconfig ${LOOP} destroy
 	else
 		msg "Removing IP alias ${NAME}"
 		ifconfig ${ETH} inet ${IP} -alias
