@@ -26,7 +26,7 @@ IPS=192.168.69.0/24
 ETH=nfe0
 
 # If you want to use a custom resolv.conf in your jails, set the path to this
-# file on the host system bellow. If unset, the jail's resolv.conf file will
+# file on the host system below. If unset, the jail's resolv.conf file will
 # not be overwritten.
 #RESOLV_CONF="/usr/local/etc/poudriere.d/resolv.conf"
 
