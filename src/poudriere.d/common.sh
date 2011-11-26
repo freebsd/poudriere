@@ -395,7 +395,7 @@ build_pkg() {
 	rm -rf ${JAILBASE}/wrkdirs/*
 
 	msg "Building ${port}"
-	injail make -C ${portdir} fetch-depends extract-depends patch-depends build-depends lib-depend
+	injail make -C ${portdir} fetch-depends extract-depends patch-depends build-depends lib-depends
 	injail make -C ${portdir} clean package
 	if [ $? -eq 0 ]; then
 		STATS_BUILT=$(($STATS_BUILT + 1))

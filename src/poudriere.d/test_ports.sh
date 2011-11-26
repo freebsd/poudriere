@@ -125,7 +125,7 @@ for JAILNAME in ${JAILNAMES}; do
 		if [ -x `which portlint` ]; then
 			set +e
 			msg "Portlint check"
-			cd ${JAILBASE}/${PORTDIRECTORY} && portlint -a | tee -a ${LOGS}/${PKGNAME}-${JAILNAME}.portlint.log
+			cd ${JAILBASE}/${PORTDIRECTORY} && portlint -C | tee -a ${LOGS}/${PKGNAME}-${JAILNAME}.portlint.log
 			set -e
 		else
 			err 2 "First install portlint if you want USE_PORTLINT to work as expected"
@@ -147,7 +147,8 @@ for JAILNAME in ${JAILNAMES}; do
 	done
 	zfs destroy ${JAILFS}@prepkg
 	injail make -C ${PORTDIRECTORY} extract-depends \
-		fetch-depends patch-depends build-depends lib-depends
+		fetch-depends patch-depends build-depends lib-depends \
+		run-depends
 
 	exec 1>&3 3>&- 2>&4 4>&-
 	wait $tpid
