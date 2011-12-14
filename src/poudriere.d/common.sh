@@ -34,18 +34,24 @@ jail_exists() {
 
 jail_runs() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
-	jls -qj ${1} name > /dev/null 2>&1 && return 0
+	[ -e /var/run/poudriere-${1}.lock ] && return 0
 	return 1
 }
 
-jail_get_ip() {
-	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
-	jls -qj ${1} ip4.addr
-}
+#jail_get_ip() {
+#	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
+#	jls -qj ${1} ip4.addr
+#}
 
 jail_get_base() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
 	zfs list -rH -o poudriere:type,poudriere:name,mountpoint | \
+		awk '/^rootfs[[:space:]]'$1'[[:space:]]/ { print $3 }'
+}
+
+jail_get_version() {
+	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
+	zfs list -rH -o poudriere:type,poudriere:name,poudriere:version | \
 		awk '/^rootfs[[:space:]]'$1'[[:space:]]/ { print $3 }'
 }
 
@@ -227,26 +233,34 @@ jail_start() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
 	NAME=$1
 	jail_exists ${NAME} || err 1 "No such jail: ${NAME}"
-	IP=`get_ip`
-	test -z ${IP} && err 1 "Fail: no IP left"
+	jail_runs ${NAME} && err 1 "jail already running: ${NAME}"
+	touch /var/run/poudriere-${NAME}.lock
+	UNAME_r=`jail_get_version ${NAME}`
+	export UNAME_r
+	UNAME_v="FreeBSD ${UNAME_r}"
+	export UNAME_v
+#	IP=`get_ip`
+#	test -z ${IP} && err 1 "Fail: no IP left"
 
-	if [ "${USE_LOOPBACK}" = "yes" ]; then
-		LOOP=0
-		configure=0
-		while :; do
-			/sbin/ifconfig lo${LOOP} > /dev/null 2>&1 || configure=1
-			if [ $configure -ne 0 ]; then
-				ifconfig lo${LOOP} create > /dev/null 2>&1
-				break
-			fi
-			LOOP=$(( LOOP += 1))
-		done
-		msg "Adding loopback lo${LOOP}"
-		ifconfig lo${LOOP} inet ${IP} > /dev/null 2>&1
-	else
-		test -z ${ETH} && err "No ethernet device defined"
-	fi
+#	if [ "${USE_LOOPBACK}" = "yes" ]; then
+#		LOOP=0
+#		configure=0
+#		while :; do
+#			/sbin/ifconfig lo${LOOP} > /dev/null 2>&1 || configure=1
+#			if [ $configure -ne 0 ]; then
+#				ifconfig lo${LOOP} create > /dev/null 2>&1
+#				break
+#			fi
+#			LOOP=$(( LOOP += 1))
+#		done
+#		msg "Adding loopback lo${LOOP}"
+#		ifconfig lo${LOOP} inet ${IP} > /dev/null 2>&1
+#	else
+#		test -z ${ETH} && err "No ethernet device defined"
+#	fi
 	MNT=`jail_get_base ${NAME}`
+	JAILMNT=${MNT}
+	export JAILMNT
 
 	. /etc/rc.subr
 	. /etc/defaults/rc.conf
@@ -261,15 +275,15 @@ jail_start() {
 	[ ! -d ${MNT}/compat/linux/sys ] && mkdir -p ${MNT}/compat/linux/sys
 	mount -t linprocfs linprocfs ${MNT}/compat/linux/proc
 	mount -t linsysfs linsysfs ${MNT}/compat/linux/sys
-	if [ ! "${USE_LOOPBACK}" = "yes" ]; then
-		msg "Adding IP alias"
-		ifconfig ${ETH} inet ${IP} alias > /dev/null 2>&1
-	fi
+#	if [ ! "${USE_LOOPBACK}" = "yes" ]; then
+#		msg "Adding IP alias"
+#		ifconfig ${ETH} inet ${IP} alias > /dev/null 2>&1
+#	fi
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${MNT}/etc/"
 	msg "Starting jail ${NAME}"
-	jail -c persist name=${NAME} path=${MNT} host.hostname=${NAME} \
-		ip4.addr=${IP} allow.sysvipc allow.raw_sockets \
-		allow.socket_af allow.mount
+#	jail -c persist name=${NAME} path=${MNT} host.hostname=${NAME} \
+#		ip4.addr=${IP} allow.sysvipc allow.raw_sockets \
+#		allow.socket_af allow.mount
 }
 
 jail_stop() {
@@ -278,9 +292,9 @@ jail_stop() {
 	jail_runs ${NAME} || err 1 "No such jail running: ${NAME}"
 
 	JAILBASE=`jail_get_base ${NAME}`
-	IP=`jail_get_ip ${NAME}`
+	#IP=`jail_get_ip ${NAME}`
 	msg "Stopping jail"
-	jail -r ${NAME}
+	rm -f /var/run/poudriere-${NAME}.lock
 	msg "Umounting file systems"
 	for MNT in $( mount | awk -v mnt="${JAILBASE}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do umount -f ${MNT}
 	done
@@ -289,14 +303,6 @@ jail_stop() {
 		MDUNIT=$(mount | awk -v mnt="${JAILBASE}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 ~ /\/dev\/md/ ) { sub(/\/dev\/md/, "", $1); print $1 }}')
 		umount ${JAILBASE}/wrkdirs
 		mdconfig -d -u ${MDUNIT}
-	fi
-	if [ "${USE_LOOPBACK}" = "yes" ]; then
-		LOOP=`netif_ip ${IP}`
-		msg "Removing loopback ${LOOP}"
-		ifconfig ${LOOP} destroy
-	else
-		msg "Removing IP alias ${NAME}"
-		ifconfig ${ETH} inet ${IP} -alias
 	fi
 	zfs rollback ${ZPOOL}/poudriere/${NAME}@clean
 }
@@ -325,7 +331,8 @@ cleanup() {
 }
 
 injail() {
-	jexec -U root ${JAILNAME} $@
+#	jexec -U root ${JAILNAME} $@
+	chroot -u root ${JAILMNT} env UNAME_v="${UNAME_v}" UNAME_r="${UNAME_r}" $@
 }
 
 sanity_check_pkgs() {
