@@ -10,21 +10,6 @@ ZPOOL=tank
 # replace _CHANGE_THIS_ by your 2-letter country-code.
 FTPHOST=ftp._CHANGE_THIS_.freebsd.org
 
-# IPs for the jails in the network
-# You can specify them as a space separated list of:
-# - single ip
-# - ip/netmask
-# - ip/prefix
-# - ip-ip
-#
-# These notations are equivalent:
-# 10.0.0.0/24, 10.0.0.0/255.255.255.0 and 10.0.0.1-10.0.0.254
-# Warning: do NOT specify large network ranges, keep it to /24.
-IPS=192.168.69.0/24
-
-# Ethernet interface for the jail
-ETH=nfe0
-
 # If you want to use a custom resolv.conf in your jails, set the path to this
 # file on the host system below. If unset, the jail's resolv.conf file will
 # not be overwritten.
@@ -36,9 +21,6 @@ POUDRIERE_DATA=/usr/local/poudriere_data
 # The directory where poudriere will store jails and ports
 BASEFS=/usr/local/poudriere
 
-# Specify if you want to use a loopback interface instead of ETH
-USE_LOOPBACK=no
-
 # use portlint to check ports sanity
 USE_PORTLINT=no
 
@@ -48,3 +30,6 @@ MFSSIZE=1024m
 # if set the given directory will be used for the distfiles this allow the share
 # the distfiles between jails and ports tree
 DISTFILES_CACHE=/usr/ports/distfiles
+
+# by default a jail has no resolv.conf, you need to specify one
+RESOLV_CONF=/etc/resolv.conf
