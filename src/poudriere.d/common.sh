@@ -467,6 +467,7 @@ prepare_ports() {
 }
 
 prepare_jail() {
+	export PACKAGE_BUILDING=yes
 	POUDRIERE_PORTSDIR=`port_get_base ${PTNAME}`/ports
 	[ -z "${JAILBASE}" ] && err 1 "No path of the base of the jail defined"
 	[ -z "${POUDRIERE_PORTSDIR}" ] && err 1 "No ports directory defined"
