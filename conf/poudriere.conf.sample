@@ -30,6 +30,3 @@ MFSSIZE=1024m
 # if set the given directory will be used for the distfiles this allow the share
 # the distfiles between jails and ports tree
 DISTFILES_CACHE=/usr/ports/distfiles
-
-# by default a jail has no resolv.conf, you need to specify one
-RESOLV_CONF=/etc/resolv.conf
