@@ -481,6 +481,7 @@ prepare_jail() {
 
 	mount -t nullfs ${PKGDIR} ${JAILBASE}/usr/ports/packages || err 1 "Failed to mount the packages directory "
 	if [ -n "${DISTFILES_CACHE}" -a -d "${DISTFILES_CACHE}" ]; then
+		[ -d ${JAILBASE}/usr/ports/distfiles ] || mkdir -p ${JAILBASE}/usr/ports/distfiles
 		mount -t nullfs ${DISTFILES_CACHE} ${JAILBASE}/usr/ports/distfiles || err 1 "Failed to mount the distfile directory"
 	fi
 
