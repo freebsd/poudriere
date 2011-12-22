@@ -354,6 +354,7 @@ prepare_jail() {
 }
 
 RESOLV_CONF=""
+STATUS=0 # out of jail #
 
 test -f ${SCRIPTPREFIX}/../../etc/poudriere.conf || err 1 "Unable to find ${SCRIPTPREFIX}/../../etc/poudriere.conf"
 . ${SCRIPTPREFIX}/../../etc/poudriere.conf
@@ -363,7 +364,6 @@ test -z ${ZPOOL} && err 1 "ZPOOL variable is not set"
 trap sig_handler SIGINT SIGTERM SIGKILL EXIT
 
 PIPE=/tmp/poudriere$$.pipe
-STATUS=0 # out of jail #
 LOGS="${POUDRIERE_DATA}/logs"
 
 
