@@ -10,7 +10,7 @@ jails), to be easy to use and to depend only on base.
 
 It is not designed to build the whole portstree like tinderbox does.
 
-Poudriere is able to build packages for versions of FreeBSD that are
+poudriere is able to build packages for versions of FreeBSD that are
 different from the box on which it is installed, and also to build
 packages for i386 if the host is an amd64 box.
 
