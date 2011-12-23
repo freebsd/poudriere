@@ -53,8 +53,8 @@ must be a
 from the following list:
 .Bl -tag -width "-f conffile"
 .It bulk
-This command bulk builds a ready-to-export package tree from a given
-list of ports.
+This command makes a ready-to-export package tree, and fills it with
+binary packages built from a given list of ports.
 .It jail
 This command gives you control to manage the jails used by
 .Nm
@@ -211,7 +211,7 @@ when creating jail.
 These subcommands are mutually exclusive.
 .Bl -tag -width "-f conffile"
 .It Fl d Ar path
-Specifies on which port we work.
+Specifies the path to the port we test.
 .It Fl o Ar origin
 Specifies an origin in the ports tree
 .El
@@ -229,7 +229,7 @@ Runs only inside the jail named
 Do not use custom prefix.
 .It Fl p Ar tree
 Specifies on wich ports
-.Ar trr
+.Ar tree
 we work.
 .El
 .Sh ENVIRONMENT
@@ -250,13 +250,53 @@ files for your different jails.
 .El
 .Sh EXIT STATUS
 .Ex -std
-.\".Sh EXAMPLES
-.\"The following is an example of a typical usage
-.\"of the
-.\".Nm
-.\"command:
-.\".Pp
-.\".Dl "example -abc -d xyzzy /dev/null"
+.Sh EXAMPLES
+This example provides a guide on how to use
+.Nm
+for bulk build packages.
+.Ss Prepare infrastructure
+First you have to create a jail, which will hold all the building
+infrastructure needs.
+.Pp
+.Dl "poudriere jail -c -v 8.2-RELEASE -a amd64 -j 82amd64"
+.Pp
+A jail will take approximately 3GB of space.
+.Pp
+Of course you can use another version of FreeBSD, regarless on what
+version you are running. amd64 users can choose i386 arch like in this
+example:
+.Pp
+.Dl "poudriere jail -c -v 8.1-RELEASE -a i386 -j 81i386"
+.Pp
+This command will fetch and install a minimal jail, small (~400MB) so
+you can create a lot of them. It will install the jail under the pool
+you have chosen, at poudriere/jailname.
+.Pp
+You also need to have at least one ports tree to build packages from it,
+so let us take the default configuration by creating a ports tree.
+.Pp
+.Dl "poudriere ports -c"
+.Pp
+A ports tree will take approximately 4GB of space.
+.Ss Specify a list of ports you want to build
+Create a flat text file in which you put the ports you want to see
+built by poudriere.
+.Pp
+.Dl "echo "sysutils/screen" > ~/pkglist"
+.Dl "echo "editors/vim" >> ~/pkglist"
+.Pp
+Any line starting with the hash sign will be treated as a comment.
+.Ss Launch the bulk build
+Now you can launch the bulk build. You can specify to build for only one
+arch/version ; by default it will make the bulk build on all the jails
+created by poudriere.
+.Dl "poudriere bulk -f ~/pkglist -j 81i386"
+.Ss Find your packages
+Once the bulk build is over, you can meet your shiny new packages here:
+.Pp
+.Dl "/usr/local/poudriere_data/packages/bulk-81i386"
+.Pp
+with 81i386 as the name of the jail.
 .\".Sh DIAGNOSTICS
 .\"The command may fail for one of the following reasons:
 .\".Bl -diag
@@ -317,7 +357,7 @@ which has ZFS >= v15, and a zpool.
 .\"manual page example first appeared in
 .\".At v6 .
 .Sh AUTHORS
-.An Baptiste Darroussin Aq bapt@freebsd.org
+.An Baptiste Daroussin Aq bapt@freebsd.org
 .Sh CONTRIBUTORS
 .An Philippe Audeoud Aq jadawin@tuxaco.net
 .An Freddy Dissaux Aq freddy.dsx@free.fr
