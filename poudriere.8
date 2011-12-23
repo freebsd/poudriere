@@ -86,6 +86,11 @@ must be specified in the form
 and shell-style comments are allowed.
 .El
 .Pp
+See
+.Sx CUSTOMISATION
+to know how to build binary packages with options that differs from
+defaults.
+.Pp
 Here are the options associated with the
 .Cm bulk
 command.
@@ -251,10 +256,13 @@ files for your different jails.
 .Sh EXIT STATUS
 .Ex -std
 .Sh EXAMPLES
-This example provides a guide on how to use
+.Ss bulk build of binary packages
+This first example provides a guide on how to use
 .Nm
 for bulk build packages.
-.Ss Prepare infrastructure
+.Pp
+.Bq Prepare infrastructure
+.Pp
 First you have to create a jail, which will hold all the building
 infrastructure needs.
 .Pp
@@ -278,7 +286,9 @@ so let us take the default configuration by creating a ports tree.
 .Dl "poudriere ports -c"
 .Pp
 A ports tree will take approximately 4GB of space.
-.Ss Specify a list of ports you want to build
+.Pp
+.Bq Specify a list of ports you want to build
+.Pp
 Create a flat text file in which you put the ports you want to see
 built by poudriere.
 .Pp
@@ -286,17 +296,58 @@ built by poudriere.
 .Dl "echo "editors/vim" >> ~/pkglist"
 .Pp
 Any line starting with the hash sign will be treated as a comment.
-.Ss Launch the bulk build
+.Pp
+.Bq Launch the bulk build
+.Pp
 Now you can launch the bulk build. You can specify to build for only one
 arch/version ; by default it will make the bulk build on all the jails
 created by poudriere.
 .Dl "poudriere bulk -f ~/pkglist -j 81i386"
-.Ss Find your packages
+.Pp
+.Bq Find your packages
+.Pp
 Once the bulk build is over, you can meet your shiny new packages here:
 .Pp
 .Dl "/usr/local/poudriere_data/packages/bulk-81i386"
 .Pp
 with 81i386 as the name of the jail.
+.Ss test a single port
+This second example show how to use
+.Nm
+for a single port.
+.Pp
+Let's take the example of building a single port;
+.Pp
+.Dl "poudriere testport -d ~/ports-cvs/mybeautifulporttotest"
+.Pp
+all the tests will be done in all the jails in alphabetical order.
+.Pp
+It starts the jail, then mount the ports tree (nullfs), then mounts the
+package dir (pourdriere_data/packages/jailname), then it mounts the
+~/ports-cvs/mybeautifulporttotest (nullfs) it builds all the dependency
+(except runtime ones) and log it to
+poudriere_data/logs/mybeautifulporttotest-jailname-depends.log).
+.Pp
+If packages for the dependencies already exists it will use them
+.Pp
+When all the dependencies are built, packages for them are created so
+that next time it will be faster.
+.Pp
+All the dependency phase is done with PREFIX == LOCALBASE.
+.Pp
+After that it will build the port itself with LOCALBASE != PREFIX
+and log the build to
+poudriere_data/logs/mybeautifulporttotest-jailname-build.log
+.Pp
+It will try to:
+install it,
+create a package from it,
+deinstall it,
+check for cruft left behind and
+propose the line to add to pkg-plist if needed.
+.Pp
+It is very easy to extend it so that we can easily add other tests if
+wanted.
 .\".Sh DIAGNOSTICS
 .\"The command may fail for one of the following reasons:
 .\".Bl -diag
@@ -305,11 +356,65 @@ with 81i386 as the name of the jail.
 .\".It "another example error message."
 .\"Self explanatory.
 .\".El
+.Sh CUSTOMISATION
+For bulk building, you can customize binary packages produced by
+.Nm
+by changing build options port by port, and you can also specify
+building directives in a make.conf file.
+.Ss Custom build options
+Before building a package,
+.Nm
+can mount a directory containing option files if available.
+.Nm
+will check for any of these directories in this order:
+.Pp
+.Dl /usr/local/etc/poudriere.d/<jail-name>-options
+.Dl /usr/local/etc/poudriere.d/options
+.Pp
+If a directory with this name exists, it is null-mounted into the
+/var/db/ports/ directory of the jail, thus allowing to build package
+with custom OPTIONS.
+.Pp
+This directory has the usual layout for options: it contains one directory per
+port (the name of the port) containing an 'options' file with lines similar to:
+.Pp
+.Dl WITH_FOO=true
+.Dl WITHOUT_BAR=true
+.Pp
+As a starter, you may want to copy an existing /var/db/ports/ to
+/usr/local/etc/poudriere.d/options.
+.Ss Create optional make.conf
+You can also specify a global make.conf which will be used for all the
+jails, and also add a per-jail make.conf:
+.Pp
+.Dl /usr/local/etc/poudriere.d/make.conf
+.Pp
+and
+.Pp
+.Dl /usr/local/etc/poudriere.d/<jailname>-make.conf
 .Sh COMPATIBILITY
 The
 .Nm
 command must be used on a recent version of FreeBSD, i.e. a version
 which has ZFS >= v15, and a zpool.
+.Sh CAVEATS
+.Ss Jailname
+.Fl j
+is the name of the jail which will also be the name of the zfs
+filesystem.
+.Pp
+Be careful to respects the names supported by jail(8):
+.Pp
+.Bd
+    "This is an arbitrary string that identifies a jail (except it
+     may not contain a '.')"
+.Ed
+.Pp
+Be also careful to not begin the name of the jail by a number if you are
+not in -stable or current:
+.Pp
+.Lk http://svn.freebsd.org/viewvc/base?view=revision&revision=209820
+
 .\".Sh SEE ALSO
 .\".Xr example 3 ,
 .\".Xr example 4 ,
