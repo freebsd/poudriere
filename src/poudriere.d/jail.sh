@@ -55,19 +55,13 @@ create_jail() {
 	test -z ${VERSION} && usage
 
 	if [ -z ${JAILBASE} ]; then
-		if [ -z ${BASEFS} ]; then
-			err 1 "Please provide a BASEFS variable in your poudriere.conf"
-		else
-			JAILBASE=${BASEFS}/jails/${NAME}
-		fi
+		[ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
+		JAILBASE=${BASEFS}/jails/${NAME}
 	fi
 
 	if [ -z ${FS} ] ; then
-		if [ -z ${ZPOOL} ]; then
-			err 1 "Please provide a ZPOOL variable in your poudriere.conf"
-		else
-			FS=${ZPOOL}/poudriere/${NAME}
-		fi
+		[ -z ${ZPOOL} ] && err 1 "Please provide a ZPOOL variable in your poudriere.conf"
+		FS=${ZPOOL}/poudriere/${NAME}
 	fi
 
 	jail_create_zfs ${NAME} ${VERSION} ${ARCH} ${JAILBASE} ${FS}

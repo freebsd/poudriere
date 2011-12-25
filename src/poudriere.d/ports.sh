@@ -68,9 +68,7 @@ while getopts "cfudlp:qf:M:" FLAG; do
 	esac
 done
 
-if [ $(( CREATE + UPDATE + DELETE + LIST )) -lt 1 ]; then
-	usage
-fi
+[ $(( CREATE + UPDATE + DELETE + LIST )) -lt 1 ] && usage
 
 PTNAME=${PTNAME:-default}
 

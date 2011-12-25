@@ -147,7 +147,8 @@ jail_stop() {
 	msg "Stopping jail"
 	rm -f /var/run/poudriere-${NAME}.lock
 	msg "Umounting file systems"
-	for MNT in $( mount | awk -v mnt="${JAILBASE}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do umount -f ${MNT}
+	for MNT in $( mount | awk -v mnt="${JAILBASE}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
+		umount -f ${MNT}
 	done
 
 	if [ -n "${MFSSIZE}" ]; then
@@ -290,9 +291,7 @@ process_deps() {
 		echo $m $port >> ${deplist}
 		deps=1
 	done
-	if [ $deps -eq 0 ] ;then
-		echo $port >> ${tmplist2}
-	fi
+	[ $deps -eq 0 ] && echo $port >> ${tmplist2}
 }
 
 prepare_ports() {

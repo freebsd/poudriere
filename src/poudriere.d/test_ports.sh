@@ -21,8 +21,7 @@ EOF
 build_port() {
 	msg "Building ${PKGNAME}"
 	injail mkdir -p /tmp/pkgs
-	for PHASE in build install package deinstall
-	do
+	for PHASE in build install package deinstall; do
 		if [ "${PHASE}" = "deinstall" ]; then
 			msg "Checking pkg_info"
 			injail /usr/sbin/pkg_info ${PKGNAME}
@@ -41,7 +40,6 @@ build_port() {
 			[ $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
 		fi
 	done
-	return 0
 }
 
 create_pkg() {
@@ -122,14 +120,11 @@ for JAILNAME in ${JAILNAMES}; do
 	tpid=$!
 	exec > ${PIPE} 2>&1
 	if [ "${USE_PORTLINT}" = "yes" ]; then
-		if [ -x `which portlint` ]; then
-			set +e
-			msg "Portlint check"
-			cd ${JAILBASE}/${PORTDIRECTORY} && portlint -C | tee -a ${LOGS}/${PKGNAME}-${JAILNAME}.portlint.log
-			set -e
-		else
-			err 2 "First install portlint if you want USE_PORTLINT to work as expected"
-		fi
+		[ ! -x `which portlint` ] && err 2 "First install portlint if you want USE_PORTLINT to work as expected"
+		set +e
+		msg "Portlint check"
+		cd ${JAILBASE}/${PORTDIRECTORY} && portlint -C | tee -a ${LOGS}/${PKGNAME}-${JAILNAME}.portlint.log
+		set -e
 	fi
 	# First sanity check the installed packages
 	msg "Sanity checking the available packages"
@@ -139,9 +134,7 @@ for JAILNAME in ${JAILNAMES}; do
 	msg "Calculating ports order and dependencies"
 	for port in `prepare_ports`; do
 		build_pkg ${port} || {
-			if [ $? -eq 2 ]; then
-				continue
-			fi
+			[ $? -eq 2 ] && continue
 		}
 		zfs rollback ${JAILFS}@prepkg
 	done
@@ -159,11 +152,8 @@ for JAILNAME in ${JAILNAMES}; do
 	exec > ${PIPE} 2>&1
 	PKGNAME=`injail make -C ${PORTDIRECTORY} -VPKGNAME`
 	LOCALBASE=`injail make -C ${PORTDIRECTORY} -VLOCALBASE`
-	if [ ${NOPREFIX} -eq 1 ]; then
-		PREFIX=${LOCALBASE}
-	else
-		PREFIX="${BUILDROOT:-/tmp}/`echo ${PKGNAME} | tr '[,+]' _`"
-	fi
+	PREFIX=${LOCALBASE}
+	[ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/tmp}/`echo ${PKGNAME} | tr '[,+]' _`"
 	PORT_FLAGS="NO_DEPENDS=yes PREFIX=${PREFIX}"
 	msg "Building with flags: ${PORT_FLAGS}"
 	msg "Cleaning workspace"
@@ -179,9 +169,8 @@ for JAILNAME in ${JAILNAMES}; do
 	mkdir -p ${JAILBASE}${PREFIX}
 	injail /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${PREFIX} >/dev/null
 
-	if [ $ZVERSION -lt 28 ]; then
+	[ $ZVERSION -lt 28 ] && \
 		find ${JAILBASE}${LOCALBASE}/ -type d | sed "s,^${JAILBASE}${LOCALBASE}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.before
-	fi
 
 	build_port
 
@@ -244,4 +233,3 @@ for JAILNAME in ${JAILNAMES}; do
 	cleanup
 	STATUS=0 #injail
 done
-
