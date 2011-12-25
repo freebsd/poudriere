@@ -20,7 +20,7 @@ Options:
                      filesystems and directories, but do not populare
                      them.
     -p tree       -- specifies on which portstree we work. If not
-                     specified, work on a portstree called "default".
+                     specified, work on a portstree called \"default\".
     -f fs         -- FS name (tank/jails/myjail)
     -M mountpoint -- mountpoint "
 
