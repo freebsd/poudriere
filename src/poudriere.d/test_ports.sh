@@ -77,7 +77,7 @@ NOPREFIX=0
 PTNAME="default"
 EXT="tbz"
 PKG_ADD=/usr/sbin/pkg_add
-PKG_DELETE=/usr/sbin/pkg_delete -y -f
+PKG_DELETE=/usr/sbin/pkg_delete
 
 while getopts "d:o:cnj:p:" FLAG; do
 	case "${FLAG}" in
@@ -130,7 +130,7 @@ for JAILNAME in ${JAILNAMES}; do
 	if [ ${PKGNG} -eq 1 ]; then
 		EXT=txz
 		PKG_ADD="/usr/sbin/pkg add"
-		PKG_DELETE="/usr/sbin/pkg delete"
+		PKG_DELETE="/usr/sbin/pkg delete -y -f"
 	fi
 
 	jail_start ${JAILNAME}
