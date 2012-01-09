@@ -23,16 +23,26 @@ build_port() {
 	injail mkdir -p /tmp/pkgs
 	for PHASE in build install package deinstall; do
 		if [ "${PHASE}" = "deinstall" ]; then
-			msg "Checking pkg_info"
-			injail /usr/sbin/pkg_info ${PKGNAME}
-			PLIST="/var/db/pkg/${PKGNAME}/+CONTENTS"
-			if [ -r ${JAILBASE}${PLIST} ]; then
+			if [ ${PKGNG} -ne 1 ]; then
+				msg "Checking pkg_info"
+				injail /usr/sbin/pkg_info ${PKGNAME}
+				PLIST="/var/db/pkg/${PKGNAME}/+CONTENTS"
+				if [ -r ${JAILBASE}${PLIST} ]; then
+					echo "===>> Checking shared library dependencies"
+					grep -v "^@" ${JAILBASE}${PLIST} | \
+						sed -e "s,^,${PREFIX}/," | \
+						xargs injail ldd 2>&1 | \
+						grep -v "not a dynamic executable" | \
+						grep '=>' | awk '{ print $3;}' | sort -u
+				fi
+			else
+				msg "Checking pkg_info"
+				injail /usr/sbin/pkg info ${PKGNAME}
 				echo "===>> Checking shared library dependencies"
-				grep -v "^@" ${JAILBASE}${PLIST} | \
-				sed -e "s,^,${PREFIX}/," | \
-				xargs injail ldd 2>&1 | \
-				grep -v "not a dynamic executable" | \
-				grep '=>' | awk '{ print $3;}' | sort -u
+				injail /usr/sbin/pkg query "%Fp" ${PKGNAME} | \
+					xargs injail ldd 2>&1 | \
+					grep -v "not a dynamic executable" | \
+					grep '=>' | awk '{ print $3;}' | sort -u
 			fi
 		fi
 		injail env PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs make -C ${PORTDIRECTORY} ${PORT_FLAGS} ${PHASE}
@@ -44,8 +54,18 @@ build_port() {
 
 create_pkg() {
 	msg "$1" | tee -a ${LOGS}/${PKGNAME}-${JAILNAME}.depends.log
-	for pkg in `injail /usr/sbin/pkg_info -Ea`; do
-		[ -f ${PKGDIR}/All/${pkg}.${EXT} ] || injail /usr/sbin/pkg_create -b ${pkg} /usr/ports/packages/All/${pkg}.tbz
+	PKGINFO="/usr/sbin/pkg_info -Ea"
+	[ ${PKGNG} -eq 1 ] && PKGINFO="/usr/sbin/pkg info -qa"
+	for pkg in `injail ${PKGINFO}`; do
+		if [ ! -f ${PKGDIR}/All/${pkg}.${EXT} ]; then
+			if [ ${PKGNG} -ne 1 ]; then
+				injail /usr/sbin/pkg_create -b ${pkg} \
+					/usr/ports/packages/All/${pkg}.tbz
+			else
+				injail /usr/sbin/pkg create ${pkg} -o \
+					/usr/ports/packages/All/
+			fi
+		fi
 	done
 }
 
@@ -56,6 +76,8 @@ CONFIGSTR=0
 NOPREFIX=0
 PTNAME="default"
 EXT="tbz"
+PKG_ADD=/usr/sbin/pkg_add
+PKG_DELETE=/usr/sbin/pkg_delete -y -f
 
 while getopts "d:o:cnj:p:" FLAG; do
 	case "${FLAG}" in
@@ -89,7 +111,7 @@ test -z ${HOST_PORTDIRECTORY} && test -z ${ORIGIN} && usage
 if [ -z ${ORIGIN} ]; then
 	PORTDIRECTORY=`basename ${HOST_PORTDIRECTORY}`
 else
-	HOST_PORTDIRECTORY=`port_get_base ${PTNAME}`/${ORIGIN}
+	HOST_PORTDIRECTORY=`port_get_base ${PTNAME}`/ports/${ORIGIN}
 	PORTDIRECTORY="/usr/ports/${ORIGIN}"
 fi
 
@@ -99,9 +121,17 @@ PORTNAME=`make -C ${HOST_PORTDIRECTORY} -VPORTNAME`
 test -z "${JAILNAMES}" && JAILNAMES=`jail_ls`
 
 for JAILNAME in ${JAILNAMES}; do
+	PKGNG=0
 	JAILBASE=`jail_get_base ${JAILNAME}`
 	JAILFS=`jail_get_fs ${JAILNAME}`
 	PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}
+
+	[ -x ${JAILBASE}/usr/sbin/pkg ] && PKGNG=1
+	if [ ${PKGNG} -eq 1 ]; then
+		EXT=txz
+		PKG_ADD="/usr/sbin/pkg add"
+		PKG_DELETE="/usr/sbin/pkg delete"
+	fi
 
 	jail_start ${JAILNAME}
 	ZVERSION=`jail_get_zpool_version ${JAILNAME}`
@@ -217,9 +247,9 @@ for JAILNAME in ${JAILNAMES}; do
 	fi
 
 	msg "Installing from package"
-	injail pkg_add /tmp/pkgs/${PKGNAME}.tbz
+	injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${EXT}
 	msg "Deinstalling package"
-	injail pkg_delete ${PKGNAME}
+	injail ${PKG_DELETE} ${PKGNAME}
 
 	msg "Cleaning up"
 	injail make -C ${PORTDIRECTORY} clean

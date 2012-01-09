@@ -291,7 +291,9 @@ process_deps() {
 		echo $m $port >> ${deplist}
 		deps=1
 	done
-	[ $deps -eq 0 ] && echo $port >> ${tmplist2}
+	if [ $deps -eq 0 ]; then 
+		echo $port >> ${tmplist2}
+	fi
 }
 
 prepare_ports() {
