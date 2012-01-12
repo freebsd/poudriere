@@ -302,9 +302,11 @@ prepare_ports() {
 	tmplist2=`mktemp /tmp/orderport3.XXXXX`
 	touch ${tmplist}
 	if [ -z "${LISTPORTS}" ]; then
-		for port in `grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}`; do
-			process_deps "${tmplist}" "${deplist}" "$tmplist2" "${port}"
-		done
+		if [ -n "${LISTPKGS}" ]; then
+			for port in `grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}`; do
+				process_deps "${tmplist}" "${deplist}" "$tmplist2" "${port}"
+			done
+		fi
 	else
 		for port in ${LISTPORTS}; do
 			process_deps "${tmplist}" "${deplist}" "$tmplist2" "${port}"
