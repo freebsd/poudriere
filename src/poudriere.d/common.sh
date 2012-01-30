@@ -253,7 +253,7 @@ build_pkg() {
 	rm -rf ${JAILBASE}/wrkdirs/*
 
 	msg "Building ${port}"
-	injail make -C ${portdir} fetch-depends extract-depends patch-depends build-depends lib-depends
+	injail make -C ${portdir} pkg-depends fetch-depends extract-depends patch-depends build-depends lib-depends
 	injail make -C ${portdir} clean package
 	if [ $? -eq 0 ]; then
 		STATS_BUILT=$(($STATS_BUILT + 1))
@@ -267,7 +267,7 @@ build_pkg() {
 
 list_deps() {
 	[ -z ${1} ] && return 0
-	LIST="BUILD_DEPENDS EXTRACT_DEPENDS LIB_DEPENDS PATCH_DEPENDS FETCH_DEPENDS RUN_DEPENDS"
+	LIST="PKG_DEPENDS BUILD_DEPENDS EXTRACT_DEPENDS LIB_DEPENDS PATCH_DEPENDS FETCH_DEPENDS RUN_DEPENDS"
 	MAKEARGS=""
 	for key in $LIST; do
 		MAKEARGS="${MAKEARGS} -V${key}"

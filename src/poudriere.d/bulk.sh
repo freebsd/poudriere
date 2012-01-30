@@ -61,7 +61,6 @@ for JAILNAME in ${JAILNAMES}; do
 	EXT=tbz
 	JAILBASE=`jail_get_base ${JAILNAME}`
 	JAILFS=`jail_get_fs ${JAILNAME}`
-	[ -x ${JAILBASE}/usr/sbin/pkg ] && PKGNG=1
 	PKGDIR=${POUDRIERE_DATA}/packages/bulk-${JAILNAME}
 	jail_start ${JAILNAME}
 
@@ -75,6 +74,7 @@ for JAILNAME in ${JAILNAMES}; do
 
 	prepare_jail
 
+	grep -q WITH_PKGNG ${JAILBASE}/etc/make.conf && PKGNG=1
 	[ $PKGNG -eq 1 ] && EXT=txz
 
 	exec 3>&1 4>&2
@@ -102,7 +102,8 @@ for JAILNAME in ${JAILNAMES}; do
 		msg "No package built, no need to update INDEX"
 	elif [ $PKGNG -eq 1 ]; then
 		msg "Packaging all installed ports"
-		injail /usr/sbin/pkg repo /usr/ports/packages/All/
+		injail tar xf /usr/ports/packages/Latest/pkg.txz -C / -s ",/.*/,,g" "*/pkg-static"
+		injail /pkg-static repo /usr/ports/packages/
 	else
 		msg "Preparing index"
 		OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
