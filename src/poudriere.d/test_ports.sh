@@ -126,18 +126,19 @@ for JAILNAME in ${JAILNAMES}; do
 	JAILFS=`jail_get_fs ${JAILNAME}`
 	PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}
 
-	[ -x ${JAILBASE}/usr/sbin/pkg ] && PKGNG=1
-	if [ ${PKGNG} -eq 1 ]; then
-		EXT=txz
-		PKG_ADD="/usr/sbin/pkg add"
-		PKG_DELETE="/usr/sbin/pkg delete -y -f"
-	fi
 
 	jail_start ${JAILNAME}
 	ZVERSION=`jail_get_zpool_version ${JAILNAME}`
 	STATUS=1 #injail
 
 	prepare_jail
+
+	grep -q WITH_PKGNG ${JAILBASE}/etc/make.conf && PKGNG=1
+	if [ ${PKGNG} -eq 1 ]; then
+		EXT=txz
+		PKG_ADD="/usr/sbin/pkg add"
+		PKG_DELETE="/usr/sbin/pkg delete -y -f"
+	fi
 
 	if [ -z ${ORIGIN} ]; then
 		mkdir -p ${JAILBASE}/${PORTDIRECTORY}
@@ -169,7 +170,7 @@ for JAILNAME in ${JAILNAMES}; do
 		zfs rollback ${JAILFS}@prepkg
 	done
 	zfs destroy ${JAILFS}@prepkg
-	injail make -C ${PORTDIRECTORY} extract-depends \
+	injail make -C ${PORTDIRECTORY} pkg-depends extract-depends \
 		fetch-depends patch-depends build-depends lib-depends \
 		run-depends
 
