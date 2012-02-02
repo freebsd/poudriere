@@ -61,7 +61,7 @@ for JAILNAME in ${JAILNAMES}; do
 	EXT=tbz
 	JAILBASE=`jail_get_base ${JAILNAME}`
 	JAILFS=`jail_get_fs ${JAILNAME}`
-	PKGDIR=${POUDRIERE_DATA}/packages/bulk-${JAILNAME}
+	PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}
 	jail_start ${JAILNAME}
 
 	STATUS=1 #injail

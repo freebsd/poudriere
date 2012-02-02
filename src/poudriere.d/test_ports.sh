@@ -124,7 +124,7 @@ for JAILNAME in ${JAILNAMES}; do
 	PKGNG=0
 	JAILBASE=`jail_get_base ${JAILNAME}`
 	JAILFS=`jail_get_fs ${JAILNAME}`
-	PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}
+	PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}
 
 	[ -x ${JAILBASE}/usr/sbin/pkg ] && PKGNG=1
 	if [ ${PKGNG} -eq 1 ]; then
