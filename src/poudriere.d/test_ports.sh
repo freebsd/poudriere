@@ -25,7 +25,7 @@ build_port() {
 		if [ "${PHASE}" = "deinstall" ]; then
 			if [ ${PKGNG} -ne 1 ]; then
 				msg "Checking pkg_info"
-				injail /usr/sbin/pkg_info ${PKGNAME}
+				injail pkg_info ${PKGNAME}
 				PLIST="/var/db/pkg/${PKGNAME}/+CONTENTS"
 				if [ -r ${JAILBASE}${PLIST} ]; then
 					echo "===>> Checking shared library dependencies"
@@ -37,9 +37,9 @@ build_port() {
 				fi
 			else
 				msg "Checking pkg_info"
-				injail /usr/sbin/pkg info ${PKGNAME}
+				injail pkg info ${PKGNAME}
 				echo "===>> Checking shared library dependencies"
-				injail /usr/sbin/pkg query "%Fp" ${PKGNAME} | \
+				injail pkg query "%Fp" ${PKGNAME} | \
 					xargs injail ldd 2>&1 | \
 					grep -v "not a dynamic executable" | \
 					grep '=>' | awk '{ print $3;}' | sort -u
@@ -54,15 +54,15 @@ build_port() {
 
 create_pkg() {
 	msg "$1" | tee -a ${LOGS}/${PKGNAME}-${JAILNAME}.depends.log
-	PKGINFO="/usr/sbin/pkg_info -Ea"
-	[ ${PKGNG} -eq 1 ] && PKGINFO="/usr/sbin/pkg info -qa"
+	PKGINFO="pkg_info -Ea"
+	[ ${PKGNG} -eq 1 ] && PKGINFO="pkg info -qa"
 	for pkg in `injail ${PKGINFO}`; do
 		if [ ! -f ${PKGDIR}/All/${pkg}.${EXT} ]; then
 			if [ ${PKGNG} -ne 1 ]; then
-				injail /usr/sbin/pkg_create -b ${pkg} \
+				injail pkg_create -b ${pkg} \
 					/usr/ports/packages/All/${pkg}.tbz
 			else
-				injail /usr/sbin/pkg create ${pkg} -o \
+				injail pkg create ${pkg} -o \
 					/usr/ports/packages/All/
 			fi
 		fi
@@ -76,8 +76,8 @@ CONFIGSTR=0
 NOPREFIX=0
 PTNAME="default"
 EXT="tbz"
-PKG_ADD=/usr/sbin/pkg_add
-PKG_DELETE=/usr/sbin/pkg_delete
+PKG_ADD=pkg_add
+PKG_DELETE=pkg_delete
 
 while getopts "d:o:cnj:p:" FLAG; do
 	case "${FLAG}" in
@@ -136,8 +136,8 @@ for JAILNAME in ${JAILNAMES}; do
 	grep -q WITH_PKGNG ${JAILBASE}/etc/make.conf && PKGNG=1
 	if [ ${PKGNG} -eq 1 ]; then
 		EXT=txz
-		PKG_ADD="/usr/sbin/pkg add"
-		PKG_DELETE="/usr/sbin/pkg delete -y -f"
+		PKG_ADD="pkg add"
+		PKG_DELETE="pkg delete -y -f"
 	fi
 
 	if [ -z ${ORIGIN} ]; then
