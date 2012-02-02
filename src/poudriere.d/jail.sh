@@ -103,7 +103,7 @@ create_jail() {
 		for dist in ${DISTS}; do
 			msg "Fetching ${dist} for FreeBSD ${VERSION} ${ARCH}"
 			fetch_file ${JAILBASE}/fromftp/${dist} ${FTPURL}/${dist}
-			msg_n "Extracting ${dist}.txz..."
+			msg_n "Extracting ${dist}..."
 			tar -xpf ${JAILBASE}/fromftp/${dist} -C  ${JAILBASE}/ || err 1 " fail" && echo " done"
 		done
 	fi
