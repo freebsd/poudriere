@@ -118,6 +118,7 @@ create_jail() {
 	if [ "${ARCH}" = "i386" -a "${REALARCH}" = "amd64" ];then
 		LOGIN_ENV="${LOGIN_ENV},UNAME_p=i386,UNAME_m=i386"
 		cat > ${JAILBASE}/etc/make.conf << EOF
+ARCH=i386
 MACHINE=i386
 MACHINE_ARCH=i386
 EOF
