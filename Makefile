@@ -2,7 +2,7 @@ PREFIX?=	/usr/local
 MAN8DIR?=	${PREFIX}/man/man8
 
 all:
-	/bin/true
+	/usr/bin/true
 
 install:
 .if exists(${PREFIX}/bin/zsh)
