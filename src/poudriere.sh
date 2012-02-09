@@ -36,6 +36,12 @@ case ${CMD} in
 	ports)
 		/bin/sh ${POUDRIEREPREFIX}/ports.sh $@
 		;;
+	queue)
+		/bin/sh ${POUDRIEREPREFIX}/queue.sh $@
+		;;
+	cron)
+		/bin/sh ${POUDRIEREPREFIX}/cron.sh
+		;;
 	*)
 		echo "Unknown command ${CMD}"
 		usage
