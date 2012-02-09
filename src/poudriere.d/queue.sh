@@ -10,11 +10,6 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
 QUEUEPATH="/tmp/poudriere-data"
 
-if [ ! -d ${QUEUEPATH} ]; then
-	mkdir -p ${QUEUEPATH}
-	chmod 777 ${QUEUEPATH}
-fi
-
 for ARG in $@
 do
 	echo -n "$ARG " >> ${QUEUEPATH}/poudriere-`date +%s`
