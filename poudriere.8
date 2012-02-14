@@ -68,6 +68,16 @@ by
 .It testport
 This command, mainly targeted at FreeBSD ports developers, launches a
 test on a given port (useful before submitting/commiting a port).
+.It queue
+This command allows a non-root user to queue
+.Nm
+commands.
+.It cron
+This command does not take arguments and run jobs from the queue
+command of
+.Nm ,
+and is designed to be run from
+.Xr cron 8 .
 .El
 .Sh SUBCOMMANDS
 Here are the list of subcommands and associated options supported by
@@ -105,7 +115,6 @@ This flag specifies on which ports
 .Ar tree
 the bulk build will be done.
 .El
-.\" comment
 .Ss jail
 .Pp
 These subcommands are mutually exclusive.
@@ -163,7 +172,6 @@ Gives an alternative
 .Ar mountpoint
 when creating jail.
 .El
-.\" PORTS
 .Ss ports
 .Pp
 These subcommands are mutually exclusive.
@@ -210,7 +218,6 @@ Gives an alternative
 .Ar mountpoint
 when creating jail.
 .El
-.\" BLABLA TEST PORT
 .Ss testport
 .Pp
 These subcommands are mutually exclusive.
@@ -236,6 +243,16 @@ Do not use custom prefix.
 Specifies on wich ports
 .Ar tree
 we work.
+.El
+.Ss queue
+.Pp
+This command takes a
+.Nm
+command in argument.
+.Pp
+There are no options associated with the
+.Cm queue
+command.
 .El
 .Sh ENVIRONMENT
 The
@@ -348,14 +365,6 @@ propose the line to add to pkg-plist if needed.
 .Pp
 It is very easy to extend it so that we can easily add other tests if
 wanted.
-.\".Sh DIAGNOSTICS
-.\"The command may fail for one of the following reasons:
-.\".Bl -diag
-.\".It "example error message"
-.\"An example of an error message.
-.\".It "another example error message."
-.\"Self explanatory.
-.\".El
 .Sh CUSTOMISATION
 For bulk building, you can customize binary packages produced by
 .Nm
@@ -413,60 +422,16 @@ Be also careful to not begin the name of the jail by a number if you are
 not in -stable or current:
 .Pp
 .Lk http://svn.freebsd.org/viewvc/base?view=revision&revision=209820
-.\".Sh SEE ALSO
-.\".Xr example 3 ,
-.\".Xr example 4 ,
-.\".Xr mdoc 7 ,
-.\".Xr example 9
-.\".Rs
-.\".%A "A. B. Author"
-.\".%T "Example RFC Title"
-.\".%O RFC0000
-.\".Re
-.\".Rs
-.\".%A "A. B. Author"
-.\".%B "Example Book Title"
-.\".%O ISBN-0-000-00000-0
-.\".Re
-.\".Rs
-.\".%A "A. B. Author"
-.\".%D "January 1997"
-.\".%J "Example Journal Name"
-.\".%T "Example Article Title"
-.\".Re
-.\".Sh STANDARDS
-.\"If the command conforms to some standard, such as
-.\".St -p1003.2
-.\"or
-.\".St -isoC ,
-.\"it should be noted here.
-.\".Sh HISTORY
-.\"The
-.\".Nm
-.\"manual page example first appeared in
-.\".Fx 2.2 .
-.\".Pp
-.\"Some other common
-.\".Sx HISTORY
-.\"section examples are:
-.\".Pp
-.\"The
-.\".Nm
-.\"manual page example first appeared in
-.\".Bx 4.4 .
-.\".Pp
-.\"The
-.\".Nm
-.\"manual page example first appeared in
-.\".At v6 .
+.Sh BUGS
+In case of bugs, feel free to fill
+.Pp
+.Lk http://bugs.etoilebsd.net/
 .Sh AUTHORS
 .An Baptiste Daroussin Aq bapt@freebsd.org
 .Sh CONTRIBUTORS
-.An Philippe Audeoud Aq jadawin@tuxaco.net
+.An Philippe Audeoud Aq jadawin@freebsd.org
 .An Freddy Dissaux Aq freddy.dsx@free.fr
 .An Gregoire Doumergue Aq gdoumergue@veepee.com
 .An Julien Laffaye Aq jlaffaye@FreeBSD.org
 .An Mathieu Launay Aq mathieu@breatheless.net
 .An Romain Tartiere Aq romain@blogreen.org
-.\".Sh BUGS
-.\"The actual code for this command is vaporware.
