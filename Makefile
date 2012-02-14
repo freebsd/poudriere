@@ -1,6 +1,6 @@
 PREFIX?=	/usr/local
 MAN8DIR?=	${PREFIX}/man/man8
-QUEUEPATH=	/tmp/poudriere-data
+
 all:
 	/usr/bin/true
 
@@ -10,8 +10,8 @@ install:
 .endif
 	install -m 755 -o root -g wheel src/poudriere.sh ${PREFIX}/bin/poudriere
 	mkdir -p ${PREFIX}/share/poudriere
-	mkdir -p ${QUEUEPATH}
-	chmod 1777 ${QUEUEPATH}
+	mkdir -p /usr/local/poudriere/cron
+	chmod 1777 /usr/local/poudriere/cron
 	install -m 755 -o root -g wheel src/poudriere.d/* ${PREFIX}/share/poudriere/
 	install -m 644 -o root -g wheel conf/poudriere.conf.sample ${PREFIX}/etc/
 	if [ -f poudriere.8.gz ]; then rm -f poudriere.8.gz; fi

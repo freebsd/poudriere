@@ -21,12 +21,16 @@ POUDRIERE_DATA=/usr/local/poudriere_data
 # The directory where poudriere will store jails and ports
 BASEFS=/usr/local/poudriere
 
-# use portlint to check ports sanity
+# Use portlint to check ports sanity
 USE_PORTLINT=no
 
-# if set WORKDIRPREFIX will be mdmfs of the given size (mM or gG)
+# If set WORKDIRPREFIX will be mdmfs of the given size (mM or gG)
 MFSSIZE=1024m
 
-# if set the given directory will be used for the distfiles this allow the share
+# If set the given directory will be used for the distfiles this allow the share
 # the distfiles between jails and ports tree
 DISTFILES_CACHE=/usr/ports/distfiles
+
+# Directory used to store "poudriere cron" files. Do not forget to set
+# it sticky and give a+rwx.
+CRONDIR=${BASEFS}/cron
