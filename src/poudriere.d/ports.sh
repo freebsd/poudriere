@@ -33,7 +33,7 @@ UPDATE=0
 DELETE=0
 LIST=0
 QUIET=0
-while getopts "cfudlp:qf:M:" FLAG; do
+while getopts "cFudlp:qf:M:" FLAG; do
 	case "${FLAG}" in
 		c)
 			CREATE=1
