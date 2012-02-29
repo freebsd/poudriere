@@ -175,7 +175,6 @@ port_create_zfs() {
 cleanup() {
 	[ -e ${PIPE} ] && rm -f ${PIPE}
 	FS=`jail_get_fs ${JAILNAME}`
-	[ -f ${deplist} ] && rm -f ${deplist}
 	zfs destroy ${FS}@prepkg 2>/dev/null || :
 	zfs destroy ${FS}@prebuild 2>/dev/null || :
 	jail_stop ${JAILNAME}
@@ -290,7 +289,7 @@ process_deps() {
 		echo $m $port >> ${deplist}
 		deps=1
 	done
-	if [ $deps -eq 0 ]; then 
+	if [ $deps -eq 0 ]; then
 		echo $port >> ${tmplist2}
 	fi
 }
@@ -315,7 +314,7 @@ prepare_ports() {
 		egrep -q "^${port}$" ${tmplist2} || echo $port >> ${tmplist2}
 	done
 	cat ${tmplist2}
-	rm -f ${tmplist} ${tmplist2}
+	rm -f ${tmplist} ${tmplist2} ${deplist}
 }
 
 prepare_jail() {
