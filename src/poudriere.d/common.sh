@@ -59,7 +59,7 @@ jail_get_fs() {
 jail_get_zpool_version() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
 	FS=`jail_get_fs $1`
-	ZVERSION=$(zpool get version ${FS%%/*} | awk '/^'${FS%%/*}'/ { print $3 }')
+	ZVERSION=$(zpool list -H -oversion ${FS%%/*})
 	echo $ZVERSION
 }
 
@@ -372,4 +372,4 @@ LOGS="${POUDRIERE_DATA}/logs"
 
 # Test if spool exists
 zpool list ${ZPOOL} >/dev/null 2>&1 || err 1 "No such zpool: ${ZPOOL}"
-ZVERSION=$(zpool get version ${ZPOOL} | awk '/^'${ZPOOL}'/ { print $3 }')
+ZVERSION=$(zpool list -H -oversion ${ZPOOL})
