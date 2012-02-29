@@ -59,8 +59,7 @@ jail_get_fs() {
 jail_get_zpool_version() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
 	FS=`jail_get_fs $1`
-	ZVERSION=$(zpool list -H -oversion ${FS%%/*})
-	echo $ZVERSION
+	zpool list -H -oversion ${FS%%/*}
 }
 
 jail_ls() {
