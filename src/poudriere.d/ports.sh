@@ -124,5 +124,15 @@ if [ ${UPDATE} -eq 1 ]; then
 		&& err 1 "Ports tree \"${PTNAME}\" is already used."
 	PTBASE=$(port_get_base ${PTNAME})
 	msg "Updating portstree \"${PTNAME}\""
-	/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch update
+	if [ -n "${CSUP_HOST}" ]; then
+		[ -d ${PTBASE}/db ] || mkdir ${PTBASE}/db
+		echo "*default prefix=${PTBASE}" >> ${PTBASE}/csup
+		echo "*default base=${PTBASE}/db" >> ${PTBASE}/csup
+		echo "*default release=cvs tag=." >> ${PTBASE}/csup
+		echo "*default delete use-rel-suffix" >> ${PTBASE}/csup
+		echo "ports-all" >> ${PTBASE}/csup
+		csup -z -h ${CSUP_HOST} ${PTBASE}/csup
+	else
+		/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch update
+	fi
 fi
