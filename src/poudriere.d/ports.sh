@@ -86,14 +86,28 @@ if [ ${CREATE} -eq 1 ]; then
 	port_create_zfs ${PTNAME} ${PTBASE} ${FS}
 	mkdir ${PTBASE}/ports
 	if [ $FAKE -eq 0 ]; then
-		mkdir ${PTBASE}/snap
-		msg "Extracting portstree \"${PTNAME}\"..."
-		/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch extract || \
-		/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch extract || \
-		{
-			zfs destroy ${FS}
-			err 1 " Fail"
-		}
+		if [ -n "${CSUP_HOST}" ]; then
+			mkdir ${PTBASE}/db
+			[ -f ${PTBASE}/csup ] && rm -f ${PTBASE}/csup
+			echo "*default prefix=${PTBASE}" >> ${PTBASE}/csup
+			echo "*default base=${PTBASE}/db" >> ${PTBASE}/csup
+			echo "*default release=cvs tag=." >> ${PTBASE}/csup
+			echo "*default delete use-rel-suffix" >> ${PTBASE}/csup
+			echo "ports-all" >> ${PTBASE}/csup
+			csup -z -h ${CSUP_HOST} ${PTBASE}/csup || {
+					zfs destroy ${FS}
+					err 1 " Fail"
+			}
+		else
+			mkdir ${PTBASE}/snap
+			msg "Extracting portstree \"${PTNAME}\"..."
+			/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch extract || \
+			/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch extract || \
+			{
+				zfs destroy ${FS}
+				err 1 " Fail"
+			}
+		fi
 	fi
 fi
 
