@@ -18,57 +18,6 @@ EOF
 	exit 1
 }
 
-build_port() {
-	msg "Building ${PKGNAME}"
-	injail mkdir -p /tmp/pkgs
-	for PHASE in build install package deinstall; do
-		if [ "${PHASE}" = "deinstall" ]; then
-			if [ ${PKGNG} -ne 1 ]; then
-				msg "Checking pkg_info"
-				injail pkg_info ${PKGNAME}
-				PLIST="/var/db/pkg/${PKGNAME}/+CONTENTS"
-				if [ -r ${JAILBASE}${PLIST} ]; then
-					echo "===>> Checking shared library dependencies"
-					grep -v "^@" ${JAILBASE}${PLIST} | \
-						sed -e "s,^,${PREFIX}/," | \
-						xargs injail ldd 2>&1 | \
-						grep -v "not a dynamic executable" | \
-						grep '=>' | awk '{ print $3;}' | sort -u
-				fi
-			else
-				msg "Checking pkg_info"
-				injail pkg info ${PKGNAME}
-				echo "===>> Checking shared library dependencies"
-				injail pkg query "%Fp" ${PKGNAME} | \
-					xargs injail ldd 2>&1 | \
-					grep -v "not a dynamic executable" | \
-					grep '=>' | awk '{ print $3;}' | sort -u
-			fi
-		fi
-		injail env PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs make -C ${PORTDIRECTORY} ${PORT_FLAGS} ${PHASE}
-		if [ "${PHASE}" = "build" ]; then
-			[ $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
-		fi
-	done
-}
-
-create_pkg() {
-	msg "$1" | tee -a ${LOGS}/${PKGNAME}-${JAILNAME}.depends.log
-	PKGINFO="pkg_info -Ea"
-	[ ${PKGNG} -eq 1 ] && PKGINFO="pkg info -qa"
-	for pkg in `injail ${PKGINFO}`; do
-		if [ ! -f ${PKGDIR}/All/${pkg}.${EXT} ]; then
-			if [ ${PKGNG} -ne 1 ]; then
-				injail pkg_create -b ${pkg} \
-					/usr/ports/packages/All/${pkg}.tbz
-			else
-				injail pkg create ${pkg} -o \
-					/usr/ports/packages/All/
-			fi
-		fi
-	done
-}
-
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 CONFIGSTR=0
@@ -203,6 +152,7 @@ for JAILNAME in ${JAILNAMES}; do
 	[ $ZVERSION -lt 28 ] && \
 		find ${JAILBASE}${LOCALBASE}/ -type d | sed "s,^${JAILBASE}${LOCALBASE}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.before
 
+	PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
 	build_port
 
 	msg "Extra files and directories check"

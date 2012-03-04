@@ -184,6 +184,24 @@ injail() {
 	chroot -u root ${JAILMNT} env UNAME_v="${UNAME_v}" UNAME_r="${UNAME_r}" $@
 }
 
+delete_pkg() {
+	local port=$1
+	local portdir="/usr/ports/${port}"
+	test -d ${JAILBASE}/${portdir} || {
+		msg "No such port ${port}"
+		return 1
+	}
+	local LATEST_LINK=$(injail make -C ${portdir} -VLATEST_LINK)
+	local PKGNAME=$(injail make -C ${portdir} -VPKGNAME)
+
+	# delete older one if any
+	if [ -e ${PKGDIR}/Latest/${LATEST_LINK}.${EXT} ]; then
+		PKGNAME_PREV=$(realpath ${PKGDIR}/Latest/${LATEST_LINK}.${EXT})
+		find ${PKGDIR}/ -name ${PKGNAME_PREV##*/} -delete
+		find ${PKGDIR}/ -name ${LATEST_LINK}.${EXT} -delete
+	fi
+}
+
 sanity_check_pkgs() {
 	[ ! -d ${PKGDIR}/Latest ] && return
 	[ ! -d ${PKGDIR}/All ] && return
@@ -216,6 +234,83 @@ sanity_check_pkgs() {
 			done
 		fi
 	done
+}
+
+build_port() {
+	PORTDIR=$1
+	msg "Building ${PKGNAME}"
+	for PHASE in build install package deinstall; do
+		[ "${PHASE}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
+		if [ -n "${PORTTESTING}" -a "${PHASE}" = "deinstall" ]; then
+			msg "Checking shared library dependencies"
+			if [ ${PKGNG} -eq 0 ]; then
+				PLIST="/var/db/pkg/${PKGNAME}/+CONTENTS"
+				grep -v "^@" ${JAILBASE}${PLIST} | \
+					sed -e "s,^,${PREFIX}/," | \
+					xargs injail ldd 2>&1 | \
+					grep -v "not a dynamic executable" | \
+					awk ' /=>/{ print $3 }' | sort -u
+			else
+				injail pkg query "%Fp" ${PKGNAME} | \
+					xargs injail ldd 2>&1 | \
+					grep -v "not a dynamic executable" | \
+					awk '/=>/ { print $3 }' | sort -u
+			fi
+		fi
+		injail env ${PKGENV} make -C ${1} ${PORT_FLAGS} ${PHASE} || return 1
+
+		if [ -n "${PORTTESTING}" -a  "${PHASE}" = "deinstall" ]; then
+			msg "Checking for extra files and directories"
+			if [ $ZVERSION -lt 28 ]; then
+				find ${JAILBASE}${PREFIX} ! -type d | \
+					sed -e "s,^${JAILBASE}${PREFIX}/,," | sort
+
+				find ${JAILBASE}${PREFIX}/ -type d | sed "s,^${JAILBASE}${PREFIX}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.after
+				comm -13 ${JAILBASE}${PREFIX}.PLIST_DIRS.before ${JAILBASE}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
+			else
+				FILES=`mktemp /tmp/files.XXXXXX`
+				DIRS=`mktemp /tmp/dirs.XXXXXX`
+				DIE=0
+				zfs diff -FH ${JAILFS}@prebuild ${JAILFS} | \
+					while read mod type path; do
+					PPATH=`echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${PREFIX}/,," -e "s,^share/${PORTNAME},%%DATADIR%%," -e "s,^etc,%%ETCDIR%%,"`
+					DIE=1
+					case $mod$type in
+						+/) echo "@dirrmtry ${PPATH}" >> ${DIRS} ;;
+						+*) echo "${PPATH}" >> ${FILES} ;;
+						-*)
+							[ "${PPATH}" = "var/run/ld-elf.so.hints" ] && continue
+							msg "!!!MISSING!!!: ${PPATH}"
+							;;
+						M/) continue ;;
+						M*)
+							[ "${PPATH}" = "var/db/pkg/local.sqlite" ] && continue
+							[ "${PPATH}" = "%%ETCDIR%%/spwd.db" ] && continue
+							[ "${PPATH}" = "%%ETCDIR%%/pwd.db" ] && continue
+							[ "${PPATH}" = "%%ETCDIR%%/passwd" ] && continue
+							[ "${PPATH}" = "%%ETCDIR%%/master.passwd" ] && continue
+							[ "${PPATH}" = "%%ETCDIR%%/shell" ] && continue
+							msg "!!!MODIFIED!!!: ${PPATH}"
+							;;
+					esac
+					#egrep -v "[\+|M][[:space:]]*${JAILBASE}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
+					#egrep -v "[\+|M|-][[:space:]]*${JAILBASE}/wrkdirs" | \
+					#egrep -v "/var/db/pkg" | \
+					#egrep -v "/var/run/ld-elf.so.hints" | \
+					#egrep -v "[\+|M][[:space:]]*${JAILBASE}/tmp/pkgs" | while read type path; do
+				done
+				if [ $DIE -eq 1 ]; then
+					sort ${FILES}
+					sort -r ${DIRS}
+					rm ${FILES} ${DIRS}
+					zfs destroy ${JAILFS}@prebuild || :
+					return 1
+				fi
+			fi
+		fi
+	done
+	zfs destroy ${JAILFS}@prebuild || :
+	return 0
 }
 
 build_pkg() {
@@ -251,8 +346,11 @@ build_pkg() {
 	rm -rf ${JAILBASE}/wrkdirs/*
 
 	msg "Building ${port}"
-	injail make -C ${portdir} pkg-depends fetch-depends extract-depends patch-depends build-depends lib-depends
-	injail make -C ${portdir} clean package
+	injail make -C ${portdir} pkg-depends fetch-depends extract-depends \
+		patch-depends build-depends lib-depends | tee -a \
+		${LOGS}/${JAILNAME}-${PKGNAME}-builddepends.log
+	injail make -C ${portdir} clean
+	build_port ${portdir} | tee -a ${LOGS}/${JAILNAME}-${PKGNAME}-buildport.log
 	if [ $? -eq 0 ]; then
 		STATS_BUILT=$(($STATS_BUILT + 1))
 		return 0

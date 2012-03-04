@@ -10,6 +10,7 @@ Parameters:
 
 Options:
     -k          -- Keep the previous built binary packages
+    -t          -- Add some testings to package building
     -j name     -- Run only on the given jail
     -p tree     -- Specify on which ports tree the bulk will be done
 EOF
@@ -24,8 +25,11 @@ KEEP=0
 
 LOGS="${POUDRIERE_DATA}/logs"
 
-while getopts "f:j:kp:" FLAG; do
+while getopts "f:j:kp:t" FLAG; do
 	case "${FLAG}" in
+		t)
+			export PORTTESTING=1
+			;;
 		k)
 			KEEP=1
 			;;
@@ -97,9 +101,20 @@ for JAILNAME in ${JAILNAMES}; do
 	done
 	zfs destroy ${JAILFS}@prepkg
 
+	if [ $STATS_FAILED -gt 0 ]; then
+		msg "Cleaning up failed ports"
+		for port in ${FAILED_PORTS}; do
+			delete_pkg $port
+		done
+		sanify_check_pkgs
+	fi
 # Package all newly build ports
 	if [ $STATS_BUILT -eq 0 ]; then
-		msg "No package built, no need to update INDEX"
+		if [ $PKGNG -eq 1 ]; then
+			msg "No package built, no need to update the reposiroty"
+		else
+			msg "No package built, no need to update INDEX"
+		fi
 	elif [ $PKGNG -eq 1 ]; then
 		msg "Packaging all installed ports"
 		injail tar xf /usr/ports/packages/Latest/pkg.txz -C / -s ",/.*/,,g" "*/pkg-static"

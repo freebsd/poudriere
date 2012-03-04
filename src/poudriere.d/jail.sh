@@ -138,7 +138,6 @@ EOF
 
 	mkdir -p ${JAILBASE}/usr/ports
 	mkdir -p ${JAILBASE}/wrkdirs
-	mkdir -p ${POUDRIERE_DATA}/packages/${NAME}/All
 	mkdir -p ${POUDRIERE_DATA}/logs
 
 	chroot -u root ${JAILBASE} /sbin/ldconfig  -m /lib /usr/lib /usr/lib/compat
