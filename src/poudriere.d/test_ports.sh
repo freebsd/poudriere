@@ -153,49 +153,50 @@ for JAILNAME in ${JAILNAMES}; do
 		find ${JAILBASE}${LOCALBASE}/ -type d | sed "s,^${JAILBASE}${LOCALBASE}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.before
 
 	PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
-	build_port
+	PORTTESTING=yes
+	build_port ${PORTDIRECTORY}
 
-	msg "Extra files and directories check"
-	if [ $ZVERSION -lt 28 ]; then
-		find ${JAILBASE}${PREFIX} ! -type d | \
-			sed -e "s,^${JAILBASE}${PREFIX}/,," | sort
+	#msg "Extra files and directories check"
+	#if [ $ZVERSION -lt 28 ]; then
+	#	find ${JAILBASE}${PREFIX} ! -type d | \
+	#		sed -e "s,^${JAILBASE}${PREFIX}/,," | sort
 
-		find ${JAILBASE}${PREFIX}/ -type d | sed "s,^${JAILBASE}${PREFIX}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.after
-		comm -13 ${JAILBASE}${PREFIX}.PLIST_DIRS.before ${JAILBASE}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
-	else
-		FILES=`mktemp /tmp/files.XXXXXX`
-		DIRS=`mktemp /tmp/dirs.XXXXXX`
-		MODIFS=`mktemp /tmp/modifs.XXXXXX`
-		zfs diff ${JAILFS}@prebuild ${JAILFS} | \
-		egrep -v "[\+|M][[:space:]]*${JAILBASE}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
-		egrep -v "[\+|M|-][[:space:]]*${JAILBASE}/wrkdirs" | \
-		egrep -v "/var/db/pkg" | \
-		egrep -v "/var/run/ld-elf.so.hints" | \
-		egrep -v "[\+|M][[:space:]]*${JAILBASE}/tmp/pkgs" | while read type path; do
-			PPATH=`echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${PREFIX}/,," -e "s,^share/${PORTNAME},%%DATADIR%%," -e "s,^etc,%%ETCDIR%%,"`
-			if [ $type = "+" ]; then
-				if [ -d $path ]; then
-					echo "@dirrmtry ${PPATH}" >> ${DIRS}
-				else
-					echo "${PPATH}" >> ${FILES}
-				fi
-			elif [ $type = "-" ]; then
-				msg "!!!MISSING!!!: ${PPATH}"
-				echo "${PPATH}" >> ${MODIFS}
-			else
-				[ -d $path ] && continue
-				msg "WARNING: ${PPATH} has been modified"
-				echo "${PPATH}" >> ${MODIFS}
-			fi
-		done
-		sort ${FILES} > ${FILES}.sort
-		sort ${MODIFS} > ${MODIFS}.sort
-		comm -23 ${FILES}.sort ${MODIFS}.sort
-		sort -r ${DIRS}
-		rm ${FILES} ${DIRS} ${MODIFS} ${FILES}.sort ${MODIFS}.sort
+	#	find ${JAILBASE}${PREFIX}/ -type d | sed "s,^${JAILBASE}${PREFIX}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.after
+	#	comm -13 ${JAILBASE}${PREFIX}.PLIST_DIRS.before ${JAILBASE}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
+	#else
+	#	FILES=`mktemp /tmp/files.XXXXXX`
+	#	DIRS=`mktemp /tmp/dirs.XXXXXX`
+	#	MODIFS=`mktemp /tmp/modifs.XXXXXX`
+	#	zfs diff ${JAILFS}@prebuild ${JAILFS} | \
+	#	egrep -v "[\+|M][[:space:]]*${JAILBASE}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
+	#	egrep -v "[\+|M|-][[:space:]]*${JAILBASE}/wrkdirs" | \
+	#	egrep -v "/var/db/pkg" | \
+	#	egrep -v "/var/run/ld-elf.so.hints" | \
+	#	egrep -v "[\+|M][[:space:]]*${JAILBASE}/tmp/pkgs" | while read type path; do
+	#		PPATH=`echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${PREFIX}/,," -e "s,^share/${PORTNAME},%%DATADIR%%," -e "s,^etc,%%ETCDIR%%,"`
+	#		if [ $type = "+" ]; then
+	#			if [ -d $path ]; then
+	#				echo "@dirrmtry ${PPATH}" >> ${DIRS}
+	#			else
+	#				echo "${PPATH}" >> ${FILES}
+	#			fi
+	#		elif [ $type = "-" ]; then
+	#			msg "!!!MISSING!!!: ${PPATH}"
+	#			echo "${PPATH}" >> ${MODIFS}
+	#		else
+	#			[ -d $path ] && continue
+	#			msg "WARNING: ${PPATH} has been modified"
+	#			echo "${PPATH}" >> ${MODIFS}
+	#		fi
+	#	done
+	#	sort ${FILES} > ${FILES}.sort
+	#	sort ${MODIFS} > ${MODIFS}.sort
+	#	comm -23 ${FILES}.sort ${MODIFS}.sort
+	#	sort -r ${DIRS}
+	#	rm ${FILES} ${DIRS} ${MODIFS} ${FILES}.sort ${MODIFS}.sort
 
-		zfs destroy ${JAILFS}@prebuild || :
-	fi
+	#	zfs destroy ${JAILFS}@prebuild || :
+	#fi
 
 	msg "Installing from package"
 	injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${EXT}

@@ -257,7 +257,7 @@ build_port() {
 					awk '/=>/ { print $3 }' | sort -u
 			fi
 		fi
-		injail env ${PKGENV} make -C ${1} ${PORT_FLAGS} ${PHASE} || return 1
+		injail env ${PKGENV} ${PORT_FLAGS} make -C ${1} ${PHASE} || return 1
 
 		if [ -n "${PORTTESTING}" -a  "${PHASE}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
