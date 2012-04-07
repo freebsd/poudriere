@@ -78,7 +78,7 @@ for JAILNAME in ${JAILNAMES}; do
 
 	prepare_jail
 
-	grep -q WITH_PKGNG ${JAILBASE}/etc/make.conf && PKGNG=1
+	grep -q ^WITH_PKGNG ${JAILBASE}/etc/make.conf && PKGNG=1
 	[ $PKGNG -eq 1 ] && EXT=txz
 
 	exec 3>&1 4>&2
