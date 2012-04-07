@@ -20,7 +20,7 @@ Options:
                      to use your home made jail
                      (Default: FTP)
     -f fs         -- FS name (tank/jails/myjail)
-    -M mountpoint -- mountpoint "
+    -M mountpoint -- mountpoint"
 	exit 1
 }
 

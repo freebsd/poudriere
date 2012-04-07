@@ -2,8 +2,7 @@
 set -e
 
 usage() {
-	echo "poudriere testport parameters [options]"
-cat <<EOF
+	echo "poudriere testport parameters [options]
 
 Parameters:
     -d path     -- Specify on which port we work
@@ -13,8 +12,7 @@ Options:
     -c          -- Run make config for the given port
     -j name     -- Run only inside the given jail
     -n          -- No custom prefix
-    -p tree     -- Specify on which portstree we work
-EOF
+    -p tree     -- Specify on which portstree we work"
 	exit 1
 }
 

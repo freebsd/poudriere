@@ -2,8 +2,7 @@
 set -e
 
 usage() {
-	echo "poudriere bulk parameters [options]"
-cat <<EOF
+	echo "poudriere bulk parameters [options]
 
 Parameters:
     -f file     -- Give the list of ports to build
@@ -12,8 +11,8 @@ Options:
     -k          -- Keep the previous built binary packages
     -t          -- Add some testings to package building
     -j name     -- Run only on the given jail
-    -p tree     -- Specify on which ports tree the bulk will be done
-EOF
+    -p tree     -- Specify on which ports tree the bulk will be done"
+
 	exit 1
 }
 

@@ -22,7 +22,7 @@ Options:
     -p tree       -- specifies on which portstree we work. If not
                      specified, work on a portstree called \"default\".
     -f fs         -- FS name (tank/jails/myjail)
-    -M mountpoint -- mountpoint "
+    -M mountpoint -- mountpoint"
 
 	exit 1
 }
