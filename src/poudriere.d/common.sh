@@ -139,7 +139,7 @@ jail_start() {
 	mount -t linsysfs linsysfs ${MNT}/compat/linux/sys
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${MNT}/etc/"
 	msg "Starting jail ${NAME}"
-	jail -c persist name=${NAME} ip4=inherit ip6=inherit path=${MNT} host.hostname=${NAME} \
+	jail -c persist name=${NAME} ip4=disable ip6=disable path=${MNT} host.hostname=${NAME} \
 		allow.sysvipc allow.mount allow.socket_af allow.raw_sockets
 }
 
@@ -247,7 +247,12 @@ build_port() {
 	msg "Fetch distfiles"
 	#fetch_distfiles ${PORTDIR}
 	msg "Building ${PKGNAME}"
-	for PHASE in build install package deinstall; do
+	for PHASE in fetch configure build install package deinstall; do
+		if [ "${PHASE}" = "fetch" ]; then
+			jail -r ${JAILNAME}
+			jail -c persist name=${NAME} ip4=inherit ip6=inherit path=${MNT} host.hostname=${NAME} \
+				allow.sysvipc allow.mount allow.socket_af allow.raw_sockets
+		fi
 		[ "${PHASE}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
 		if [ -n "${PORTTESTING}" -a "${PHASE}" = "deinstall" ]; then
 			msg "Checking shared library dependencies"
@@ -267,6 +272,11 @@ build_port() {
 		fi
 		injail env ${PKGENV} ${PORT_FLAGS} make -C ${1} ${PHASE} || return 1
 
+		if [ "${PHASE}" = "fetch" ]; then
+			jail -r ${JAILNAME}
+			jail -c persist name=${NAME} ip4.addr=1.2.3.4 ip6=disable path=${MNT} host.hostname=${NAME} \
+				allow.sysvipc allow.mount allow.socket_af allow.raw_sockets
+		fi
 		if [ -n "${PORTTESTING}" -a  "${PHASE}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
 			if [ $ZVERSION -lt 28 ]; then
