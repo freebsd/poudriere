@@ -90,14 +90,14 @@ fetch_file() {
 	fetch -o $1 $2 || fetch -o $1 $2
 }
 
-fetch_distfiles() {
-	PORTDIR=$1
-	SUBDISTDIR=$(injail make -C $PORTDIR -VDIST_SUBDIR)
-	for url in $(injail make -C $PORTDIR fetch-urlall-list); do
-		[ -f ${JAILMNT}/usr/ports/distfiles/${SUBDISTDIR}/${url##*/} ] && continue
-		fetch -o "${JAILMNT}/usr/ports/distfiles/${SUBDISTDIR}/${url##*/}" "${url}"
-	done
-}
+#fetch_distfiles() {
+#	PORTDIR=$1
+#	SUBDISTDIR=$(injail make -C $PORTDIR -VDIST_SUBDIR)
+#	for url in $(injail make -C $PORTDIR fetch-urlall-list); do
+#		[ -f ${JAILMNT}/usr/ports/distfiles/${SUBDISTDIR}/${url##*/} ] && continue
+#		fetch -o "${JAILMNT}/usr/ports/distfiles/${SUBDISTDIR}/${url##*/}" "${url}"
+#	done
+#}
 
 jail_create_zfs() {
 	[ $# -ne 5 ] && err 1 "Fail: wrong number of arguments"
@@ -120,7 +120,7 @@ jail_start() {
 	NAME=$1
 	jail_exists ${NAME} || err 1 "No such jail: ${NAME}"
 	jail_runs ${NAME} && err 1 "jail already running: ${NAME}"
-	zfs rollback ${ZPOOL}/poudriere/${NAME}@clean
+	zfs rollback -r ${ZPOOL}/poudriere/${NAME}@clean
 	touch /var/run/poudriere-${NAME}.lock
 	UNAME_r=`jail_get_version ${NAME}`
 	export UNAME_r
@@ -143,9 +143,10 @@ jail_start() {
 	[ ! -d ${MNT}/compat/linux/sys ] && mkdir -p ${MNT}/compat/linux/sys
 	mount -t linprocfs linprocfs ${MNT}/compat/linux/proc
 	mount -t linsysfs linsysfs ${MNT}/compat/linux/sys
-#	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${MNT}/etc/"
+	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${MNT}/etc/"
 	msg "Starting jail ${NAME}"
-	jail -c persist name=${NAME} path=${MNT} host.hostname=${NAME} allow.sysvipc allow.mount
+	jail -c persist name=${NAME} ip4=inherit ip6=inherit path=${MNT} host.hostname=${NAME} \
+		allow.sysvipc allow.mount allow.socket_af allow.raw_sockets
 }
 
 jail_stop() {
@@ -251,7 +252,7 @@ sanity_check_pkgs() {
 build_port() {
 	PORTDIR=$1
 	msg "Fetch distfiles"
-	fetch_distfiles ${PORTDIR}
+	#fetch_distfiles ${PORTDIR}
 	msg "Building ${PKGNAME}"
 	for PHASE in build install package deinstall; do
 		[ "${PHASE}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
