@@ -38,6 +38,11 @@ jail_runs() {
 	return 1
 }
 
+jail_running_base() {
+	[ $# -ne 1 ] && err 1 "Fail: wrong nomber of arguments"
+	jls -qj ${1} path
+}
+
 jail_get_base() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
 	zfs list -t filesystem -rH -o poudriere:type,poudriere:name,mountpoint | \
@@ -90,15 +95,6 @@ fetch_file() {
 	fetch -o $1 $2 || fetch -o $1 $2
 }
 
-#fetch_distfiles() {
-#	PORTDIR=$1
-#	SUBDISTDIR=$(injail make -C $PORTDIR -VDIST_SUBDIR)
-#	for url in $(injail make -C $PORTDIR fetch-urlall-list); do
-#		[ -f ${JAILMNT}/usr/ports/distfiles/${SUBDISTDIR}/${url##*/} ] && continue
-#		fetch -o "${JAILMNT}/usr/ports/distfiles/${SUBDISTDIR}/${url##*/}" "${url}"
-#	done
-#}
-
 jail_create_zfs() {
 	[ $# -ne 5 ] && err 1 "Fail: wrong number of arguments"
 	NAME=$1
@@ -127,8 +123,6 @@ jail_start() {
 	UNAME_v="FreeBSD ${UNAME_r}"
 	export UNAME_v
 	MNT=`jail_get_base ${NAME}`
-	JAILMNT=${MNT}
-	export JAILMNT
 
 	. /etc/rc.subr
 	. /etc/defaults/rc.conf
@@ -194,7 +188,6 @@ cleanup() {
 
 injail() {
 	jexec -U root ${JAILNAME} $@
-#	chroot -u root ${JAILMNT} env UNAME_v="${UNAME_v}" UNAME_r="${UNAME_r}" $@
 }
 
 delete_pkg() {
@@ -283,8 +276,9 @@ build_port() {
 				find ${JAILBASE}${PREFIX}/ -type d | sed "s,^${JAILBASE}${PREFIX}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.after
 				comm -13 ${JAILBASE}${PREFIX}.PLIST_DIRS.before ${JAILBASE}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
 			else
-				FILES=`mktemp /tmp/files.XXXXXX`
-				DIRS=`mktemp /tmp/dirs.XXXXXX`
+				local BASE=$(jail_running_base ${JAILNAME})
+				FILES=$(mktemp ${BASE}/tmp/files.XXXXXX)
+				DIRS=$(mktemp ${BASE}/tmp/dirs.XXXXXX)
 				DIE=0
 				zfs diff -FH ${JAILFS}@prebuild ${JAILFS} | \
 					while read mod type path; do
@@ -322,6 +316,7 @@ build_port() {
 					zfs destroy ${JAILFS}@prebuild || :
 					return 1
 				fi
+				rm ${FILES} ${DIRS}
 			fi
 		fi
 	done
@@ -411,9 +406,10 @@ process_deps() {
 }
 
 prepare_ports() {
-	tmplist=`mktemp /tmp/orderport.XXXXXX`
-	deplist=`mktemp /tmp/orderport2.XXXXX`
-	tmplist2=`mktemp /tmp/orderport3.XXXXX`
+	local base=$(jail_running_base ${JAILNAME})
+	tmplist=$(mktemp ${base}/tmp/orderport.XXXXXX)
+	deplist=$(mktemp ${base}/tmp/orderport2.XXXXX)
+	tmplist2=$(mktemp ${base}/tmp/orderport3.XXXXX)
 	touch ${tmplist}
 	if [ -z "${LISTPORTS}" ]; then
 		if [ -n "${LISTPKGS}" ]; then
@@ -430,7 +426,6 @@ prepare_ports() {
 		egrep -q "^${port}$" ${tmplist2} || echo $port >> ${tmplist2}
 	done
 	cat ${tmplist2}
-	rm -f ${tmplist} ${tmplist2} ${deplist}
 }
 
 prepare_jail() {
@@ -438,7 +433,7 @@ prepare_jail() {
 	PORTSDIR=`port_get_base ${PTNAME}`/ports
 	POUDRIERED=${SCRIPTPREFIX}/../../etc/poudriere.d
 	[ -z "${JAILBASE}" ] && err 1 "No path of the base of the jail defined"
-	[ -z "${POUDRIERE_PORTSDIR}" ] && err 1 "No ports directory defined"
+	[ -z "${PORTSDIR}" ] && err 1 "No ports directory defined"
 	[ -z "${PKGDIR}" ] && err 1 "No package directory defined"
 	[ -n "${MFSSIZE}" -a -n "${USE_TMPFS}" ] && err 1 "You can't use both tmpfs and mdmfs"
 
