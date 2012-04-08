@@ -143,7 +143,7 @@ jail_start() {
 	[ ! -d ${MNT}/compat/linux/sys ] && mkdir -p ${MNT}/compat/linux/sys
 	mount -t linprocfs linprocfs ${MNT}/compat/linux/proc
 	mount -t linsysfs linsysfs ${MNT}/compat/linux/sys
-	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${MNT}/etc/"
+#	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${MNT}/etc/"
 	msg "Starting jail ${NAME}"
 	jail -c persist name=${NAME} path=${MNT} host.hostname=${NAME} allow.sysvipc allow.mount
 }
