@@ -167,7 +167,7 @@ jail_stop() {
 		umount ${JAILBASE}/wrkdirs
 		mdconfig -d -u ${MDUNIT}
 	fi
-	zfs rollback ${ZPOOL}/poudriere/${NAME}@clean
+	zfs rollback -r ${ZPOOL}/poudriere/${NAME}@clean
 }
 
 port_create_zfs() {
@@ -366,6 +366,7 @@ build_pkg() {
 		patch-depends build-depends lib-depends | tee -a \
 		${LOGS}/${JAILNAME}-${PKGNAME}-builddepends.log
 	injail make -C ${portdir} clean
+	set +e
 	build_port ${portdir} | tee -a ${LOGS}/${JAILNAME}-${PKGNAME}-buildport.log
 	if [ $? -eq 0 ]; then
 		STATS_BUILT=$(($STATS_BUILT + 1))
@@ -375,6 +376,7 @@ build_pkg() {
 		FAILED_PORTS="$FAILED_PORTS ${port}"
 		return 1
 	fi
+	set -e
 }
 
 list_deps() {

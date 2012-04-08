@@ -114,9 +114,9 @@ for JAILNAME in ${JAILNAMES}; do
 		build_pkg ${port} || {
 			[ $? -eq 2 ] && continue
 		}
-		zfs rollback ${JAILFS}@prepkg
+		zfs rollback -r ${JAILFS}@prepkg
 	done
-	zfs destroy ${JAILFS}@prepkg
+	zfs destroy -r ${JAILFS}@prepkg
 	injail make -C ${PORTDIRECTORY} pkg-depends extract-depends \
 		fetch-depends patch-depends build-depends lib-depends \
 		run-depends

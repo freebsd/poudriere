@@ -96,9 +96,9 @@ for JAILNAME in ${JAILNAMES}; do
 				continue
 			fi
 		}
-		zfs rollback ${JAILFS}@prepkg
+		zfs rollback -r ${JAILFS}@prepkg
 	done
-	zfs destroy ${JAILFS}@prepkg
+	zfs destroy -r ${JAILFS}@prepkg
 
 	if [ $STATS_FAILED -gt 0 ]; then
 		msg "Cleaning up failed ports"
