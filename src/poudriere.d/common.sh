@@ -435,15 +435,16 @@ prepare_ports() {
 
 prepare_jail() {
 	export PACKAGE_BUILDING=yes
-	POUDRIERE_PORTSDIR=`port_get_base ${PTNAME}`/ports
+	PORTSDIR=`port_get_base ${PTNAME}`/ports
+	POUDRIERED=${SCRIPTPREFIX}/../../etc/poudriere.d
 	[ -z "${JAILBASE}" ] && err 1 "No path of the base of the jail defined"
 	[ -z "${POUDRIERE_PORTSDIR}" ] && err 1 "No ports directory defined"
 	[ -z "${PKGDIR}" ] && err 1 "No package directory defined"
 	[ -n "${MFSSIZE}" -a -n "${USE_TMPFS}" ] && err 1 "You can't use both tmpfs and mdmfs"
 
-	mount -t nullfs ${POUDRIERE_PORTSDIR} ${JAILBASE}/usr/ports || err 1 "Failed to mount the ports directory "
+	mount -t nullfs ${PORTSDIR} ${JAILBASE}/usr/ports || err 1 "Failed to mount the ports directory "
 
-	[ -d ${POUDRIERE_PORTSDIR}/packages ] || mkdir -p ${POUDRIERE_PORTSDIR}/packages
+	[ -d ${PORTSDIR}/packages ] || mkdir -p ${PORTSDIR}/packages
 	[ -d ${PKGDIR}/All ] || mkdir -p ${PKGDIR}/All
 
 	mount -t nullfs ${PKGDIR} ${JAILBASE}/usr/ports/packages || err 1 "Failed to mount the packages directory "
@@ -455,15 +456,13 @@ prepare_jail() {
 	[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${JAILBASE}/wrkdirs
 	[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${JAILBASE}/wrkdirs
 
-	if [ -d ${SCRIPTPREFIX}/../../etc/poudriere.d ]; then
-		[ -f ${SCRIPTPREFIX}/../../etc/poudriere.d/make.conf ] && cat ${SCRIPTPREFIX}/../../etc/poudriere.d/make.conf >> ${JAILBASE}/etc/make.conf
-		[ -f ${SCRIPTPREFIX}/../../etc/poudriere.d/${JAILNAME}-make.conf ] && cat ${SCRIPTPREFIX}/../../etc/poudriere.d/${JAILNAME}-make.conf >> ${JAILBASE}/etc/make.conf
-	fi
+	[ -f ${POUDRIERED}/make.conf ] && cat ${POUDRIERED}/make.conf >> ${JAILBASE}/etc/make.conf
+	[ -f ${POUDRIERED}/${JAILNAME}-make.conf ] && cat ${POUDRIERED}/${JAILNAME}-make.conf >> ${JAILBASE}/etc/make.conf
 
-	if [ -d ${SCRIPTPREFIX}/../../etc/poudriere.d/${JAILNAME}-options ]; then
-		mount -t nullfs ${SCRIPTPREFIX}/../../etc/poudriere.d/${JAILNAME}-options ${JAILBASE}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
-	elif [ -d ${SCRIPTPREFIX}/../../etc/poudriere.d/options ]; then
-		mount -t nullfs ${SCRIPTPREFIX}/../../etc/poudriere.d/options ${JAILBASE}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+	if [ -d ${POUDRIERED}/${JAILNAME}-options ]; then
+		mount -t nullfs ${POUDRIERED}/${JAILNAME}-options ${JAILBASE}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+	elif [ -d ${POUDRIERED}/options ]; then
+		mount -t nullfs ${POUDRIERED}/options ${JAILBASE}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
 	fi
 
 	msg "Populating LOCALBASE"
