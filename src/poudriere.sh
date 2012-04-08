@@ -28,22 +28,22 @@ shift
 
 case ${CMD} in
 	jail|jails)
-		/bin/sh ${POUDRIEREPREFIX}/jail.sh $@
+		exec /bin/sh ${POUDRIEREPREFIX}/jail.sh $@
 		;;
 	testport)
-		/bin/sh ${POUDRIEREPREFIX}/test_ports.sh $@
+		exec /bin/sh ${POUDRIEREPREFIX}/test_ports.sh $@
 		;;
 	bulk)
-		/bin/sh ${POUDRIEREPREFIX}/bulk.sh $@
+		exec /bin/sh ${POUDRIEREPREFIX}/bulk.sh $@
 		;;
 	ports)
-		/bin/sh ${POUDRIEREPREFIX}/ports.sh $@
+		exec /bin/sh ${POUDRIEREPREFIX}/ports.sh $@
 		;;
 	queue)
-		/bin/sh ${POUDRIEREPREFIX}/queue.sh $@
+		exec /bin/sh ${POUDRIEREPREFIX}/queue.sh $@
 		;;
 	cron)
-		/bin/sh ${POUDRIEREPREFIX}/cron.sh
+		exec /bin/sh ${POUDRIEREPREFIX}/cron.sh
 		;;
 	help)
 		usage
