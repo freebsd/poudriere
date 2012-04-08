@@ -298,11 +298,12 @@ build_port() {
 							;;
 						M/) continue ;;
 						M*)
-							[ "${PPATH}" = "var/db/pkg/local.sqlite" ] && continue
+							[ "${PPATH}" = "/var/db/pkg/local.sqlite" ] && continue
 							[ "${PPATH}" = "%%ETCDIR%%/spwd.db" ] && continue
 							[ "${PPATH}" = "%%ETCDIR%%/pwd.db" ] && continue
 							[ "${PPATH}" = "%%ETCDIR%%/passwd" ] && continue
 							[ "${PPATH}" = "%%ETCDIR%%/master.passwd" ] && continue
+							[ "${PPATH}" = "%%ETCDIR%%/shell" ] && continue
 							[ "${PPATH}" = "%%ETCDIR%%/shell" ] && continue
 							msg "!!!MODIFIED!!!: ${PPATH}"
 							;;
