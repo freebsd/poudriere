@@ -140,7 +140,8 @@ EOF
 	mkdir -p ${JAILBASE}/wrkdirs
 	mkdir -p ${POUDRIERE_DATA}/logs
 
-	chroot -u root ${JAILBASE} /sbin/ldconfig  -m /lib /usr/lib /usr/lib/compat
+	jail -U root -c path=${JAILBASE} command=/sbin/ldconfig -m /lib /usr/lib /usr/lib/compat
+#	chroot -u root ${JAILBASE} /sbin/ldconfig  -m /lib /usr/lib /usr/lib/compat
 
 	zfs snapshot ${FS}@clean
 	msg "Jail ${NAME} ${VERSION} ${ARCH} is ready to be used"

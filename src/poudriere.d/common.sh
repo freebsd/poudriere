@@ -34,7 +34,7 @@ jail_exists() {
 
 jail_runs() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
-	[ -e /var/run/poudriere-${1}.lock ] && return 0
+	jls -qj ${1} name > /dev/null 2>&1 && return 0
 	return 1
 }
 
@@ -90,6 +90,15 @@ fetch_file() {
 	fetch -o $1 $2 || fetch -o $1 $2
 }
 
+fetch_distfiles() {
+	PORTDIR=$1
+	SUBDISTDIR=$(injail make -C $PORTDIR -VDIST_SUBDIR)
+	for url in $(injail make -C $PORTDIR fetch-urlall-list); do
+		[ -f ${JAILMNT}/usr/ports/distfiles/${SUBDISTDIR}/${url##*/} ] && continue
+		fetch -o "${JAILMNT}/usr/ports/distfiles/${SUBDISTDIR}/${url##*/}" "${url}"
+	done
+}
+
 jail_create_zfs() {
 	[ $# -ne 5 ] && err 1 "Fail: wrong number of arguments"
 	NAME=$1
@@ -111,6 +120,7 @@ jail_start() {
 	NAME=$1
 	jail_exists ${NAME} || err 1 "No such jail: ${NAME}"
 	jail_runs ${NAME} && err 1 "jail already running: ${NAME}"
+	zfs rollback ${ZPOOL}/poudriere/${NAME}@clean
 	touch /var/run/poudriere-${NAME}.lock
 	UNAME_r=`jail_get_version ${NAME}`
 	export UNAME_r
@@ -135,6 +145,7 @@ jail_start() {
 	mount -t linsysfs linsysfs ${MNT}/compat/linux/sys
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${MNT}/etc/"
 	msg "Starting jail ${NAME}"
+	jail -c persist name=${NAME} path=${MNT} host.hostname=${NAME} allow.sysvipc allow.mount
 }
 
 jail_stop() {
@@ -144,7 +155,7 @@ jail_stop() {
 
 	JAILBASE=`jail_get_base ${NAME}`
 	msg "Stopping jail"
-	rm -f /var/run/poudriere-${NAME}.lock
+	jail -r ${NAME}
 	msg "Umounting file systems"
 	for MNT in $( mount | awk -v mnt="${JAILBASE}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
 		umount -f ${MNT}
@@ -181,7 +192,8 @@ cleanup() {
 }
 
 injail() {
-	chroot -u root ${JAILMNT} env UNAME_v="${UNAME_v}" UNAME_r="${UNAME_r}" $@
+	jexec -U root ${JAILNAME} $@
+#	chroot -u root ${JAILMNT} env UNAME_v="${UNAME_v}" UNAME_r="${UNAME_r}" $@
 }
 
 delete_pkg() {
@@ -238,6 +250,8 @@ sanity_check_pkgs() {
 
 build_port() {
 	PORTDIR=$1
+	msg "Fetch distfiles"
+	fetch_distfiles ${PORTDIR}
 	msg "Building ${PKGNAME}"
 	for PHASE in build install package deinstall; do
 		[ "${PHASE}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
