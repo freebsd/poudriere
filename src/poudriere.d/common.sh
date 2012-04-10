@@ -456,6 +456,7 @@ prepare_ports() {
 		[ ! -e ${PKGDIR}/Latest/${LATEST_LINK}.${EXT} ] && queue="${queue} $p"
 	done < ${tmplist2}
 
+	rm -f ${tmplist2} ${deplist} ${tmplist}
 	zfs set poudriere:queue="${queue}" ${JAILFS}
 }
 
