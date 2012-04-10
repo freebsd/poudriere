@@ -65,7 +65,7 @@ How-to...
  ...manage poudriere ports using portshaker
  ------------------------------------------
 
-Create a fake (-f) poudriere portstree:
+Create a fake (-F) poudriere portstree:
 
     poudriere ports -c -f -p foo
 
