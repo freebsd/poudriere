@@ -17,6 +17,18 @@ msg() {
 	echo "====>> $1"
 }
 
+zfs_get() {
+	[ $# -ne 1 ] && err 1 "Fail: need one argument"
+	[ -z "${JAILFS}" ] && err 1 "No JAILFS defined"
+	zfs get -H -o value ${1} ${JAILFS}
+}
+
+zfs_set() {
+	[ $# -ne 2 ] && err 1 "Fail: need two arguments got $@"
+	[ -z "${JAILFS}" ] && err 1 "No JAILFS defined"
+	zfs set $1="$2" ${JAILFS}
+}
+
 sig_handler() {
 	if [ ${STATUS} -eq 1 ]; then
 		msg "Signal caught, cleaning up and exiting"
@@ -251,7 +263,7 @@ build_port() {
 	#fetch_distfiles ${PORTDIR}
 	msg "Building ${PKGNAME}"
 	for PHASE in fetch extract patch configure build install package deinstall; do
-		zfs set "poudriere:status=${PHASE}:${PORTDIR##/usr/ports/}" ${JAILFS}
+		zfs_set "poudriere:status" "${PHASE}:${PORTDIR##/usr/ports/}"
 		if [ "${PHASE}" = "fetch" ]; then
 			jail -r ${JAILNAME}
 			jail -c persist name=${NAME} ip4=inherit ip6=inherit path=${MNT} host.hostname=${NAME} \
@@ -283,7 +295,7 @@ build_port() {
 		fi
 		if [ -n "${PORTTESTING}" -a  "${PHASE}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
-			zfs set "poudriere:status=fscheck:${PORTDIR##/usr/ports/}" ${JAILFS}
+			zfs_set "poudriere:status" "fscheck:${PORTDIR##/usr/ports/}"
 			if [ $ZVERSION -lt 28 ]; then
 				find ${JAILBASE}${PREFIX} ! -type d | \
 					sed -e "s,^${JAILBASE}${PREFIX}/,," | sort
@@ -335,7 +347,7 @@ build_port() {
 			fi
 		fi
 	done
-	zfs set "poudriere:status=idle:" ${JAILFS}
+	zfs_set "poudriere:status" "idle:"
 	zfs destroy ${JAILFS}@prebuild || :
 	return 0
 }
@@ -355,14 +367,24 @@ build_pkg() {
 	set +e
 	build_port ${portdir} | tee -a ${LOGS}/${JAILNAME}-${PKGNAME}-buildport.log
 	if [ $? -eq 0 ]; then
-		STATS_BUILT=$(($STATS_BUILT + 1))
-		return 0
+		set -e
+		cnt=$(zfs_get poudriere:stats_built)
+		[ "$cnt" = "-" ] && cnt=0
+		cnt=$(( cnt + 1))
+		zfs_set "poudriere:stats_built" "$cnt"
+		buf=$(zfs_get poudriere:built)
+		buf="${buf} ${port}"
+		zfs_set "poudriere:built" "${buf}"
 	else
-		STATS_FAILED=$(($STATS_FAILED + 1))
-		FAILED_PORTS="$FAILED_PORTS ${port}"
-		return 1
+		set -e
+		cnt=$(zfs_get poudriere:stats_failed)
+		[ "$cnt" = "-" ] && cnt=0
+		cnt=$(( cnt + 1))
+		zfs_set "poudriere:stats_failed" "$cnt"
+		buf=$(zfs_get poudriere:failed)
+		buf="${buf} ${port}"
+		zfs_set "poudriere:failed" "${buf}"
 	fi
-	set -e
 }
 
 list_deps() {
@@ -457,7 +479,11 @@ prepare_ports() {
 	done < ${tmplist2}
 
 	rm -f ${tmplist2} ${deplist} ${tmplist}
-	zfs set poudriere:queue="${queue}" ${JAILFS}
+	zfs_set "poudriere:queue" "${queue}"
+	zfs_set "poudriere:stats_built" "0"
+	zfs_set "poudriere:stats_failed" "0"
+	zfs_set "poudriere:built" " "
+	zfs_set "poudriere:failed" " "
 }
 
 prepare_jail() {

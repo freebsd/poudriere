@@ -55,10 +55,6 @@ STATUS=0 # out of jail #
 
 test -z "${JAILNAMES}" && JAILNAMES=`jail_ls`
 
-STATS_BUILT=0
-STATS_FAILED=0
-FAILED_PORTS=""
-
 for JAILNAME in ${JAILNAMES}; do
 	PKGNG=0
 	EXT=tbz
@@ -88,28 +84,21 @@ for JAILNAME in ${JAILNAMES}; do
 
 	prepare_ports
 	zfs snapshot ${JAILFS}@prepkg
-	queue=$(zfs get -H -o value poudriere:queue ${JAILFS})
+	queue=$(zfs_get poudriere:queue)
 	for port in $queue; do
-		build_pkg ${port} || {
-			if [ $? -eq 2 ]; then
-				continue
-			fi
-		}
+		build_pkg ${port}
 		zfs rollback -r ${JAILFS}@prepkg
 	done
 	zfs destroy -r ${JAILFS}@prepkg
 
-	if [ $STATS_FAILED -gt 0 ]; then
-		msg "Cleaning up failed ports"
-		for port in ${FAILED_PORTS}; do
-			delete_pkg $port
-		done
-		sanify_check_pkgs
-	fi
+	failed=$(zfs_get poudriere:stat_failed)
+	built=$(zfs_get poudriere:stat_build)
+	[ "$failed" = "-" ] && failed=0
+	[ "$built" = "-" ] && built=0
 # Package all newly build ports
-	if [ $STATS_BUILT -eq 0 ]; then
+	if [ $built -eq 0 ]; then
 		if [ $PKGNG -eq 1 ]; then
-			msg "No package built, no need to update the reposiroty"
+			msg "No package built, no need to update the repository"
 		else
 			msg "No package built, no need to update INDEX"
 		fi
@@ -235,7 +224,14 @@ for JAILNAME in ${JAILNAMES}; do
 done
 
 
-msg "$STATS_BUILT packages built, $STATS_FAILED failures"
-[ -n "$FAILED_PORTS" ] && msg "Failed ports:$FAILED_PORTS"
+msg "$built packages built, $failed failures"
+if [ $built -gt 0], then
+	msg_n "Built ports: "
+	zfs_get poudriere:built
+fi
+if [ $failed -gt 0 ]; then
+	msg_n "Failed ports: "
+	zfs_get poudriere:failed
+fi
 
-exit $STATS_FAILED
+exit $failed
