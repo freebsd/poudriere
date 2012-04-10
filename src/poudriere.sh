@@ -1,7 +1,8 @@
 #!/bin/sh
 
 LC_ALL=C
-SHELL=/bin/sh; export SHELL
+unset SHELL
+unset TERM
 
 usage() {
 	echo "Usage: poudriere command [options]
