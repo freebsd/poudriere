@@ -17,6 +17,20 @@ msg() {
 	echo "====>> $1"
 }
 
+log_start() {
+	exec 3>&1 4>&2
+	[ ! -e $1.pipe ] && mkfifo $1.pipe
+	tee $1 < $1.pipe >&3 &
+	export tpid=$!
+	exec > $1.pipe 2>&1
+}
+
+log_stop() {
+	exec 1>&3 3>&- 2>&4 4>&-
+	wait $tpid
+	rm -f $1.pipe
+}
+
 zfs_get() {
 	[ $# -ne 1 ] && err 1 "Fail: need one argument"
 	[ -z "${JAILFS}" ] && err 1 "No JAILFS defined"
@@ -360,9 +374,10 @@ build_pkg() {
 	rm -rf ${JAILBASE}/wrkdirs/*
 
 	msg "Building ${port}"
+	PKGNAME=$(injail make -C ${portdir} -VPKGNAME)
+	log_start ${LOGS}/${JAILNAME}-${PTNAME}-${PKGNAME}.log
 	injail make -C ${portdir} pkg-depends fetch-depends extract-depends \
-		patch-depends build-depends lib-depends | tee -a \
-		${LOGS}/${JAILNAME}-${PKGNAME}-builddepends.log
+		patch-depends build-depends lib-depends
 	injail make -C ${portdir} clean
 	if build_port ${portdir}; then
 		cnt=$(zfs_get poudriere:stats_built)
@@ -381,6 +396,7 @@ build_pkg() {
 		buf="${buf} ${port}"
 		zfs_set "poudriere:failed" "${buf}"
 	fi
+	log_stop ${LOGS}/${JAILNAME}-${PTNAME}-${PKGNAME}.log
 }
 
 list_deps() {
@@ -527,10 +543,6 @@ test -f ${SCRIPTPREFIX}/../../etc/poudriere.conf || err 1 "Unable to find ${SCRI
 test -z ${ZPOOL} && err 1 "ZPOOL variable is not set"
 
 trap sig_handler SIGINT SIGTERM SIGKILL EXIT
-
-PIPE=/tmp/poudriere$$.pipe
-LOGS="${POUDRIERE_DATA}/logs"
-
 
 # Test if spool exists
 zpool list ${ZPOOL} >/dev/null 2>&1 || err 1 "No such zpool: ${ZPOOL}"

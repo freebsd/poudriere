@@ -76,12 +76,6 @@ for JAILNAME in ${JAILNAMES}; do
 	grep -q ^WITH_PKGNG ${JAILBASE}/etc/make.conf && PKGNG=1
 	[ $PKGNG -eq 1 ] && EXT=txz
 
-	exec 3>&1 4>&2
-	[ ! -e ${PIPE} ] && mkfifo ${PIPE}
-	tee ${LOGS}/bulk-${JAILNAME}.log < ${PIPE} >&3 &
-	tpid=$!
-	exec > ${PIPE} 2>&1
-
 	prepare_ports
 	zfs snapshot ${JAILFS}@prepkg
 	queue=$(zfs_get poudriere:queue)
@@ -215,9 +209,6 @@ for JAILNAME in ${JAILNAMES}; do
 		bzip2 -9 ${INDEXF}
 		echo " done"
 	fi
-
-	exec 1>&3 3>&- 2>&4 4>&-
-	wait $tpid
 
 	cleanup
 	STATUS=0 #injail
