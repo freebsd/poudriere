@@ -222,7 +222,7 @@ for JAILNAME in ${JAILNAMES}; do
 	cleanup
 	STATUS=0 #injail
 	msg "$built packages built, $failed failures"
-	if [ $built -gt 0], then
+	if [ $built -gt 0]; then
 		msg_n "Built ports: "
 		zfs_get poudriere:built
 	fi

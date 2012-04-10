@@ -364,10 +364,7 @@ build_pkg() {
 		patch-depends build-depends lib-depends | tee -a \
 		${LOGS}/${JAILNAME}-${PKGNAME}-builddepends.log
 	injail make -C ${portdir} clean
-	set +e
-	build_port ${portdir} | tee -a ${LOGS}/${JAILNAME}-${PKGNAME}-buildport.log
-	if [ $? -eq 0 ]; then
-		set -e
+	if build_port ${portdir}; then
 		cnt=$(zfs_get poudriere:stats_built)
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
@@ -376,7 +373,6 @@ build_pkg() {
 		buf="${buf} ${port}"
 		zfs_set "poudriere:built" "${buf}"
 	else
-		set -e
 		cnt=$(zfs_get poudriere:stats_failed)
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
