@@ -247,7 +247,8 @@ build_port() {
 	msg "Fetch distfiles"
 	#fetch_distfiles ${PORTDIR}
 	msg "Building ${PKGNAME}"
-	for PHASE in fetch configure build install package deinstall; do
+	for PHASE in fetch extract patch configure build install package deinstall; do
+		zfs set "poudriere:status=${PHASE}:${PORTDIR##/usr/ports/}" ${JAILFS}
 		if [ "${PHASE}" = "fetch" ]; then
 			jail -r ${JAILNAME}
 			jail -c persist name=${NAME} ip4=inherit ip6=inherit path=${MNT} host.hostname=${NAME} \
@@ -279,6 +280,7 @@ build_port() {
 		fi
 		if [ -n "${PORTTESTING}" -a  "${PHASE}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
+			zfs set "poudriere:status=fscheck:${PORTDIR##/usr/ports/}" ${JAILFS}
 			if [ $ZVERSION -lt 28 ]; then
 				find ${JAILBASE}${PREFIX} ! -type d | \
 					sed -e "s,^${JAILBASE}${PREFIX}/,," | sort
@@ -330,6 +332,7 @@ build_port() {
 			fi
 		fi
 	done
+	zfs set "poudriere:status=idle:" ${JAILFS}
 	zfs destroy ${JAILFS}@prebuild || :
 	return 0
 }
