@@ -92,7 +92,7 @@ for JAILNAME in ${JAILNAMES}; do
 	zfs destroy -r ${JAILFS}@prepkg
 
 	failed=$(zfs_get poudriere:stat_failed)
-	built=$(zfs_get poudriere:stat_build)
+	built=$(zfs_get poudriere:stat_built)
 	[ "$failed" = "-" ] && failed=0
 	[ "$built" = "-" ] && built=0
 # Package all newly build ports
