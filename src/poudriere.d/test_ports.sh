@@ -104,13 +104,11 @@ for JAILNAME in ${JAILNAMES}; do
 		cd ${JAILBASE}/${PORTDIRECTORY} && portlint -C | tee -a ${LOGS}/${PKGNAME}-${JAILNAME}.portlint.log
 		set -e
 	fi
-	# First sanity check the installed packages
-	msg "Sanity checking the available packages"
-	sanity_check_pkgs
 	LISTPORTS=$(list_deps ${PORTDIRECTORY} )
+	prepare_ports
 	zfs snapshot ${JAILFS}@prepkg
-	msg "Calculating ports order and dependencies"
-	for port in `prepare_ports`; do
+	queue=$(zfs get -H -o value poudriere:queue ${JAILFS})
+	for port in ${queue}; do
 		build_pkg ${port} || {
 			[ $? -eq 2 ] && continue
 		}

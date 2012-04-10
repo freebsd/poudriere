@@ -86,11 +86,10 @@ for JAILNAME in ${JAILNAMES}; do
 	tpid=$!
 	exec > ${PIPE} 2>&1
 
-	msg "Sanity checking the available packages"
-	sanity_check_pkgs
-	msg "Calculating ports order and dependencies"
+	prepare_ports
 	zfs snapshot ${JAILFS}@prepkg
-	for port in `prepare_ports`; do
+	queue=$(zfs get -H -o value poudriere:queue ${JAILFS})
+	for port in $queue; do
 		build_pkg ${port} || {
 			if [ $? -eq 2 ]; then
 				continue

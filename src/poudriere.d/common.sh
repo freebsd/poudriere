@@ -209,6 +209,7 @@ delete_pkg() {
 }
 
 sanity_check_pkgs() {
+	ret=0
 	[ ! -d ${PKGDIR}/Latest ] && return
 	[ ! -d ${PKGDIR}/All ] && return
 	[ -z "$(ls -A ${PKGDIR}/Latest)" ] && return
@@ -223,6 +224,7 @@ sanity_check_pkgs() {
 		if [ "${EXT}" = "tbz" ]; then
 			for dep in $(pkg_info -qr $pkg | awk '{ print $2 }'); do
 				if [ ! -e ${PKGDIR}/All/$dep.${EXT} ]; then
+					ret=1
 					msg "Deleting ${realpkg##*/}: missing dependencies"
 					rm -f ${realpkg}
 					find ${PKGDIR}/ -name ${pkg##*/} -delete
@@ -232,6 +234,7 @@ sanity_check_pkgs() {
 		else
 			for dep in $(pkg info -qdF $pkg); do
 				if [ ! -e ${PKGDIR}/All/$dep.${EXT} ]; then
+					ret=1
 					msg "Deleting ${realpkg##*/}: missing dependencies"
 					rm -f ${realpkg}
 					find ${PKGDIR}/ -name ${pkg##*/} -delete
@@ -340,31 +343,6 @@ build_port() {
 build_pkg() {
 	local port=$1
 	local portdir="/usr/ports/${port}"
-	test -d ${JAILBASE}/${portdir} || {
-		msg "No such port ${port}"
-		return 1
-	}
-	local LATEST_LINK=$(injail make -C ${portdir} -VLATEST_LINK)
-	local PKGNAME=$(injail make -C ${portdir} -VPKGNAME)
-
-	# delete older one if any
-	if [ -e ${PKGDIR}/Latest/${LATEST_LINK}.${EXT} ]; then
-		PKGNAME_PREV=$(realpath ${PKGDIR}/Latest/${LATEST_LINK}.${EXT})
-		if [ "${PKGNAME_PREV##*/}" = "${PKGNAME}.${EXT}" ]; then
-			msg "$PKGNAME already packaged skipping"
-			return 2
-		else
-			msg "Deleting previous version of ${port}"
-			find ${PKGDIR}/ -name ${PKGNAME_PREV##*/} -delete
-			find ${PKGDIR}/ -name ${LATEST_LINK}.${EXT} -delete
-			sanity_check_pkgs
-		fi
-	fi
-
-	if [ -e ${PKGDIR}/All/${PKGNAME}.${EXT} ]; then
-		msg "$PKGNAME already packaged skipping"
-		return 2
-	fi
 
 	msg "Cleaning up wrkdir"
 	rm -rf ${JAILBASE}/wrkdirs/*
@@ -398,6 +376,27 @@ list_deps() {
 		tr ' ' '\n' | egrep -v ".*:.*" | sort -u
 }
 
+check_pkg() {
+	local p=$1
+	local portdir="/usr/ports/$p"
+	test -d ${JAILBASE}/${portdir} || {
+		msg "No such port ${port}"
+		return 1
+	}
+	local LATEST_LINK=$(injail make -C ${portdir} -VLATEST_LINK)
+	local PKGNAME=$(injail make -C ${portdir} -VPKGNAME)
+
+	# delete older one if any
+	if [ -e ${PKGDIR}/Latest/${LATEST_LINK}.${EXT} ]; then
+		PKGNAME_PREV=$(realpath ${PKGDIR}/Latest/${LATEST_LINK}.${EXT})
+		if [ "${PKGNAME_PREV##*/}" != "${PKGNAME}.${EXT}" ]; then
+			msg "Deleting previous version of ${port}"
+			find ${PKGDIR}/ -name ${PKGNAME_PREV##*/} -delete
+			find ${PKGDIR}/ -name ${LATEST_LINK}.${EXT} -delete
+		fi
+	fi
+}
+
 process_deps() {
 	tmplist=$1
 	deplist=$2
@@ -420,10 +419,12 @@ process_deps() {
 
 prepare_ports() {
 	local base=$(jail_running_base ${JAILNAME})
+	local queue=""
 	tmplist=$(mktemp ${base}/tmp/orderport.XXXXXX)
-	deplist=$(mktemp ${base}/tmp/orderport2.XXXXX)
-	tmplist2=$(mktemp ${base}/tmp/orderport3.XXXXX)
+	deplist=$(mktemp ${base}/tmp/orderport1.XXXXX)
+	tmplist2=$(mktemp ${base}/tmp/orderport2.XXXXX)
 	touch ${tmplist}
+	msg "Calculating ports order and dependencies"
 	if [ -z "${LISTPORTS}" ]; then
 		if [ -n "${LISTPKGS}" ]; then
 			for port in `grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}`; do
@@ -438,7 +439,24 @@ prepare_ports() {
 	tsort ${deplist} | while read port; do
 		egrep -q "^${port}$" ${tmplist2} || echo $port >> ${tmplist2}
 	done
-	cat ${tmplist2}
+
+
+	msg "Sanity checking the repository"
+	while read p; do
+		check_pkg ${p}
+	done < ${tmplist2}
+
+	while :; do
+		sanity_check_pkgs && break
+	done
+
+	msg "Cleaning the build queue"
+	while read p; do
+		local LATEST_LINK=$(injail make -C /usr/ports/${p} -VLATEST_LINK)
+		[ ! -e ${PKGDIR}/Latest/${LATEST_LINK}.${EXT} ] && queue="${queue} $p"
+	done < ${tmplist2}
+
+	zfs set poudriere:queue="${queue}" ${JAILFS}
 }
 
 prepare_jail() {
