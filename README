@@ -67,7 +67,7 @@ How-to...
 
 Create a fake (-F) poudriere portstree:
 
-    poudriere ports -c -f -p foo
+    poudriere ports -c -F -p foo
 
 Configure the ports tree in /usr/local/etc/portshaker.conf:
 
