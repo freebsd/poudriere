@@ -43,6 +43,10 @@ zfs_set() {
 	zfs set $1="$2" ${JAILFS}
 }
 
+jail_status() {
+	zfs_set poudriere:status "$1"
+}
+
 sig_handler() {
 	if [ ${STATUS} -eq 1 ]; then
 		msg "Signal caught, cleaning up and exiting"
@@ -142,6 +146,7 @@ jail_start() {
 	NAME=$1
 	jail_exists ${NAME} || err 1 "No such jail: ${NAME}"
 	jail_runs ${NAME} && err 1 "jail already running: ${NAME}"
+	jail_status "start:"
 	zfs rollback -r ${ZPOOL}/poudriere/${NAME}@clean
 	touch /var/run/poudriere-${NAME}.lock
 	UNAME_r=`jail_get_version ${NAME}`
@@ -173,6 +178,7 @@ jail_stop() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
 	NAME=${1}
 	jail_runs ${NAME} || err 1 "No such jail running: ${NAME}"
+	jail_status "stop:"
 
 	JAILBASE=`jail_get_base ${NAME}`
 	msg "Stopping jail"
@@ -188,6 +194,7 @@ jail_stop() {
 		mdconfig -d -u ${MDUNIT}
 	fi
 	zfs rollback -r ${ZPOOL}/poudriere/${NAME}@clean
+	jail_status "idle:"
 }
 
 port_create_zfs() {
@@ -392,10 +399,12 @@ build_pkg() {
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
 		zfs_set "poudriere:stats_failed" "$cnt"
+		state=$(zfs_get poudriere:status)
 		buf=$(zfs_get poudriere:failed)
-		buf="${buf} ${port}"
+		buf="${buf} ${state}"
 		zfs_set "poudriere:failed" "${buf}"
 	fi
+	jail_status "idle:"
 	log_stop ${LOGS}/${JAILNAME}-${PTNAME}-${PKGNAME}.log
 }
 
@@ -459,6 +468,7 @@ prepare_ports() {
 	tmplist2=$(mktemp ${base}/tmp/orderport2.XXXXX)
 	touch ${tmplist}
 	msg "Calculating ports order and dependencies"
+	jail_status "orderdeps:"
 	if [ -z "${LISTPORTS}" ]; then
 		if [ -n "${LISTPKGS}" ]; then
 			for port in `grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}`; do
@@ -475,6 +485,7 @@ prepare_ports() {
 	done
 
 
+	jail_status "sanity:"
 	msg "Sanity checking the repository"
 	while read p; do
 		check_pkg ${p}
@@ -484,6 +495,7 @@ prepare_ports() {
 		sanity_check_pkgs && break
 	done
 
+	jail_status "cleaning:"
 	msg "Cleaning the build queue"
 	while read p; do
 		local LATEST_LINK=$(injail make -C /usr/ports/${p} -VLATEST_LINK)

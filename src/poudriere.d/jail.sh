@@ -9,6 +9,7 @@ Parameters:
     -l            -- list all available jails
     -s            -- start a jail
     -k            -- kill (stop) a jail
+    -i            -- show informations
  
 Options:
     -q            -- quiet (remove the header in list)
@@ -24,12 +25,38 @@ Options:
 	exit 1
 }
 
+info_jail() {
+	test -z ${NAME} && usage
+	jail_exists ${NAME} || err 1 "No such jail: ${NAME}"
+	JAILFS=`jail_get_fs ${NAME}`
+	queue=$(zfs_get poudriere:queue)
+	nbb=$(zfs_get poudriere:stats_built)
+	nbf=$(zfs_get poudriere:stats_failed)
+	nbq=0
+	for a in ${queue}; do nbq=$((nbq + 1)); done
+	f=$(zfs_get poudriere:failed)
+	tobuild=$((nbq - nbb - nbf))
+	zfs list -rH -o poudriere:type,poudriere:name,poudriere:version,poudriere:arch,poudriere:stats_built,poudriere:stats_failed,poudriere:status ${JAILFS}| \
+		awk -v q="$nbq" -v tb="$tobuild" -v f="$f" '/^rootfs/  {
+			print "Jailname: " $2;
+			print "FreeBSD Version: " $3;
+			print "FreeBSD arch: "$4;
+			print "Status: ", $7;
+			print "Nb packages built: "$5;
+			print "Nb packages failed: "$6;
+			print "Nb packages queued: "q;
+			print "Nb packages to be built: "tb;
+			if ($6 > 0) {
+				print "Failed packages: "f;
+			}
+		}'
+}
+
 list_jail() {
 	[ ${QUIET} -eq 0 ] && \
-		printf '%-20s %-13s %s\n' "JAILNAME" "VERSION" "ARCH"
-
-	zfs list -rH -o poudriere:type,poudriere:name,poudriere:version,poudriere:arch | \
-		awk '/^rootfs/ { printf("%-20s %-13s %s\n",$2, $3,$4) }'
+		printf '%-20s %-13s %-7s %-7s %-7s %s\n' "JAILNAME" "VERSION" "ARCH" "SUCCESS" "FAILED" "STATUS"
+	zfs list -rH -o poudriere:type,poudriere:name,poudriere:version,poudriere:arch,poudriere:stats_built,poudriere:stats_failed,poudriere:status | \
+		awk '/^rootfs/ { printf("%-20s %-13s %-7s %-7s %-7s %s\n",$2, $3, $4, $5, $6, $7) }'
 }
 
 delete_jail() {
@@ -156,12 +183,13 @@ LIST=0
 DELETE=0
 CREATE=0
 QUIET=0
+INFO=0
 
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "j:v:a:z:m:n:f:M:sdklqc" FLAG; do
+while getopts "j:v:a:z:m:n:f:M:sdklqci" FLAG; do
 	case "${FLAG}" in
 		j)
 			NAME=${OPTARG}
@@ -202,28 +230,34 @@ while getopts "j:v:a:z:m:n:f:M:sdklqc" FLAG; do
 		q)
 			QUIET=1
 			;;
+		i)
+			INFO=1
+			;;
 		*)
 			usage
 			;;
 	esac
 done
 
-[ $(( CREATE + LIST + STOP + START + DELETE )) -lt 1 ] && usage
+[ $(( CREATE + LIST + STOP + START + DELETE + INFO)) -lt 1 ] && usage
 
-case "${CREATE}${LIST}${STOP}${START}${DELETE}" in
-	10000)
+case "${CREATE}${LIST}${STOP}${START}${DELETE}${INFO}" in
+	100000)
 		create_jail
 		;;
-	01000)
+	010000)
 		list_jail
 		;;
-	00100)
+	001000)
 		jail_stop ${NAME}
 		;;
-	00010)
+	000100)
 		jail_start ${NAME}
 		;;
-	00001)
+	000010)
 		delete_jail
+		;;
+	000001)
+		info_jail ${NAME}
 		;;
 esac
