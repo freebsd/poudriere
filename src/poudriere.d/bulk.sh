@@ -85,8 +85,8 @@ for JAILNAME in ${JAILNAMES}; do
 	done
 	zfs destroy -r ${JAILFS}@prepkg
 
-	failed=$(zfs_get poudriere:stat_failed)
-	built=$(zfs_get poudriere:stat_built)
+	failed=$(zfs_get poudriere:stats_failed)
+	built=$(zfs_get poudriere:stats_built)
 	[ "$failed" = "-" ] && failed=0
 	[ "$built" = "-" ] && built=0
 # Package all newly build ports
@@ -213,7 +213,7 @@ for JAILNAME in ${JAILNAMES}; do
 	cleanup
 	STATUS=0 #injail
 	msg "$built packages built, $failed failures"
-	if [ $built -gt 0]; then
+	if [ $built -gt 0 ]; then
 		msg_n "Built ports: "
 		zfs_get poudriere:built
 	fi
