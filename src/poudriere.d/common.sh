@@ -331,23 +331,36 @@ build_port() {
 				zfs diff -FH ${JAILFS}@prebuild ${JAILFS} | \
 					while read mod type path; do
 					PPATH=`echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${PREFIX}/,," -e "s,^share/${PORTNAME},%%DATADIR%%," -e "s,^etc,%%ETCDIR%%,"`
-					DIE=1
 					case $mod$type in
-						+/) echo "@dirrmtry ${PPATH}" >> ${DIRS} ;;
-						+*) echo "${PPATH}" >> ${FILES} ;;
+						+/) 
+							case "${PPATH}" in
+								/tmp/*) continue ;;
+								*) echo "@dirrmtry ${PPATH}" >> ${DIRS} ;;
+							esac
+							;;
+						+*)
+							case "${PPATH}" in
+								/var/db/pkg/local.sqlite) continue ;;
+								/tmp/*) continue ;;
+								/var/run/ld-elf.so.hints) continue ;;
+								share/nls/POSIX) continue ;;
+								share/nls/en_US.US-ASCII) continue ;;
+								*) echo "${PPATH}" >> ${FILES} ;;
+							esac
+							;;
 						-*)
-							[ "${PPATH}" = "var/run/ld-elf.so.hints" ] && continue
+							[ "${PPATH}" = "/var/run/ld-elf.so.hints" ] && continue
 							msg "!!!MISSING!!!: ${PPATH}"
 							;;
 						M/) continue ;;
 						M*)
 							[ "${PPATH}" = "/var/db/pkg/local.sqlite" ] && continue
-							[ "${PPATH}" = "%%ETCDIR%%/spwd.db" ] && continue
-							[ "${PPATH}" = "%%ETCDIR%%/pwd.db" ] && continue
-							[ "${PPATH}" = "%%ETCDIR%%/passwd" ] && continue
-							[ "${PPATH}" = "%%ETCDIR%%/master.passwd" ] && continue
-							[ "${PPATH}" = "%%ETCDIR%%/shell" ] && continue
-							[ "${PPATH}" = "%%ETCDIR%%/shell" ] && continue
+							[ "${PPATH}" = "/etc/spwd.db" ] && continue
+							[ "${PPATH}" = "/etc/pwd.db" ] && continue
+							[ "${PPATH}" = "/etc/passwd" ] && continue
+							[ "${PPATH}" = "/etc/master.passwd" ] && continue
+							[ "${PPATH}" = "/etc/shell" ] && continue
+							[ "${PPATH}" = "/etc/shell" ] && continue
 							msg "!!!MODIFIED!!!: ${PPATH}"
 							;;
 					esac
@@ -357,13 +370,8 @@ build_port() {
 					#egrep -v "/var/run/ld-elf.so.hints" | \
 					#egrep -v "[\+|M][[:space:]]*${JAILBASE}/tmp/pkgs" | while read type path; do
 				done
-				if [ $DIE -eq 1 ]; then
-					sort ${FILES}
-					sort -r ${DIRS}
-					rm ${FILES} ${DIRS}
-					zfs destroy ${JAILFS}@prebuild || :
-					return 1
-				fi
+				sort ${FILES}
+				sort -r ${DIRS}
 				rm ${FILES} ${DIRS}
 			fi
 		fi
@@ -462,7 +470,7 @@ process_deps() {
 
 prepare_ports() {
 	local base=$(jail_running_base ${JAILNAME})
-	local queue=""
+	local queue=" "
 	tmplist=$(mktemp ${base}/tmp/orderport.XXXXXX)
 	deplist=$(mktemp ${base}/tmp/orderport1.XXXXX)
 	tmplist2=$(mktemp ${base}/tmp/orderport2.XXXXX)
