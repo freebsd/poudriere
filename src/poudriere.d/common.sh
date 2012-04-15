@@ -506,8 +506,8 @@ prepare_ports() {
 	jail_status "cleaning:"
 	msg "Cleaning the build queue"
 	while read p; do
-		local LATEST_LINK=$(injail make -C /usr/ports/${p} -VLATEST_LINK)
-		[ ! -e ${PKGDIR}/Latest/${LATEST_LINK}.${EXT} ] && queue="${queue} $p"
+		local PKGNAME=$(injail make -C /usr/ports/${p} -VPKGNAME)
+		[ ! -f ${PKGDIR}/All/${PKGNAME}.${EXT} ] && queue="${queue} $p"
 	done < ${tmplist2}
 
 	rm -f ${tmplist2} ${deplist} ${tmplist}
