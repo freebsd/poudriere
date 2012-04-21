@@ -88,12 +88,11 @@ if [ ${CREATE} -eq 1 ]; then
 	if [ $FAKE -eq 0 ]; then
 		if [ -n "${CSUP_HOST}" ]; then
 			mkdir ${PTBASE}/db
-			[ -f ${PTBASE}/csup ] && rm -f ${PTBASE}/csup
-			echo "*default prefix=${PTBASE}" >> ${PTBASE}/csup
-			echo "*default base=${PTBASE}/db" >> ${PTBASE}/csup
-			echo "*default release=cvs tag=." >> ${PTBASE}/csup
-			echo "*default delete use-rel-suffix" >> ${PTBASE}/csup
-			echo "ports-all" >> ${PTBASE}/csup
+			echo "*default prefix=${PTBASE}
+*default base=${PTBASE}/db
+*default release=cvs tag=.
+*default delete use-rel-suffix
+ports-all" > ${PTBASE}/csup
 			csup -z -h ${CSUP_HOST} ${PTBASE}/csup || {
 					zfs destroy ${FS}
 					err 1 " Fail"
@@ -126,11 +125,11 @@ if [ ${UPDATE} -eq 1 ]; then
 	msg "Updating portstree \"${PTNAME}\""
 	if [ -n "${CSUP_HOST}" ]; then
 		[ -d ${PTBASE}/db ] || mkdir ${PTBASE}/db
-		echo "*default prefix=${PTBASE}" >> ${PTBASE}/csup
-		echo "*default base=${PTBASE}/db" >> ${PTBASE}/csup
-		echo "*default release=cvs tag=." >> ${PTBASE}/csup
-		echo "*default delete use-rel-suffix" >> ${PTBASE}/csup
-		echo "ports-all" >> ${PTBASE}/csup
+			echo "*default prefix=${PTBASE}
+*default base=${PTBASE}/db
+*default release=cvs tag=.
+*default delete use-rel-suffix
+ports-all" > ${PTBASE}/csup
 		csup -z -h ${CSUP_HOST} ${PTBASE}/csup
 	else
 		/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch update
