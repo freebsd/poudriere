@@ -57,7 +57,7 @@ sig_handler() {
 
 jail_exists() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
-	zfs list -t filesystem -rH -o poudriere:type,poudriere:name | \
+	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name ${ZPOOL}/poudriere | \
 		egrep -q "^rootfs[[:space:]]$1$" && return 0
 	return 1
 }
@@ -75,19 +75,19 @@ jail_running_base() {
 
 jail_get_base() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
-	zfs list -t filesystem -rH -o poudriere:type,poudriere:name,mountpoint | \
+	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name,mountpoint ${ZPOOL}/poudriere | \
 		awk '/^rootfs[[:space:]]'$1'[[:space:]]/ { print $3 }'
 }
 
 jail_get_version() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
-	zfs list -t filesystem -rH -o poudriere:type,poudriere:name,poudriere:version | \
+	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name,poudriere:version ${ZPOOL}/poudriere | \
 		awk '/^rootfs[[:space:]]'$1'[[:space:]]/ { print $3 }'
 }
 
 jail_get_fs() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
-	zfs list -t filesystem -rH -o poudriere:type,poudriere:name,name | \
+	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name,name ${ZPOOL}/poudriere | \
 		awk '/^rootfs[[:space:]]'$1'[[:space:]]/ { print $3 }'
 }
 
@@ -98,26 +98,26 @@ jail_get_zpool_version() {
 }
 
 jail_ls() {
-	zfs list -t filesystem -rH -o poudriere:type,poudriere:name | \
+	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name ${ZPOOL}/poudriere | \
 		awk '/^rootfs/ { print $2 }'
 }
 
 port_exists() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
-	zfs list -t filesystem -rH -o poudriere:type,poudriere:name,name | \
+	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name,name ${ZPOOL}/poudriere | \
 		egrep -q "^ports[[:space:]]$1" && return 0
 	return 1
 }
 
 port_get_base() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
-	zfs list -t filesystem -rH -o poudriere:type,poudriere:name,mountpoint | \
+	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name,mountpoint ${ZPOOL}/poudriere | \
 		awk '/^ports[[:space:]]'$1'/ { print $3 }'
 }
 
 port_get_fs() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
-	zfs list -t filesystem -rH -o poudriere:type,poudriere:name,name | \
+	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name,name ${ZPOOL}/poudriere | \
 		awk '/^ports[[:space:]]'$1'/ { print $3 }'
 }
 
