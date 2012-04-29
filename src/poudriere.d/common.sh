@@ -311,7 +311,7 @@ build_port() {
 
 		if [ "${PHASE}" = "fetch" ]; then
 			jail -r ${JAILNAME}
-			jail -c persist name=${NAME} ip4.addr=1.2.3.4 ip6=disable path=${MNT} host.hostname=${NAME} \
+			jail -c persist name=${NAME} ip4.addr=127.0.0.1 ip6=disable path=${MNT} host.hostname=${NAME} \
 				allow.sysvipc allow.mount allow.socket_af allow.raw_sockets
 		fi
 		if [ -n "${PORTTESTING}" -a  "${PHASE}" = "deinstall" ]; then
