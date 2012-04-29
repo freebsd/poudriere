@@ -36,7 +36,7 @@ info_jail() {
 	for a in ${queue}; do nbq=$((nbq + 1)); done
 	f=$(zfs_get poudriere:failed)
 	tobuild=$((nbq - nbb - nbf))
-	zfs list -rH -o poudriere:type,poudriere:name,poudriere:version,poudriere:arch,poudriere:stats_built,poudriere:stats_failed,poudriere:status ${JAILFS}| \
+	zfs list -H -o poudriere:type,poudriere:name,poudriere:version,poudriere:arch,poudriere:stats_built,poudriere:stats_failed,poudriere:status ${JAILFS}| \
 		awk -v q="$nbq" -v tb="$tobuild" -v f="$f" '/^rootfs/  {
 			print "Jailname: " $2;
 			print "FreeBSD Version: " $3;
@@ -55,7 +55,7 @@ info_jail() {
 list_jail() {
 	[ ${QUIET} -eq 0 ] && \
 		printf '%-20s %-13s %-7s %-7s %-7s %s\n' "JAILNAME" "VERSION" "ARCH" "SUCCESS" "FAILED" "STATUS"
-	zfs list -rH -o poudriere:type,poudriere:name,poudriere:version,poudriere:arch,poudriere:stats_built,poudriere:stats_failed,poudriere:status | \
+	zfs list -Hd1 -o poudriere:type,poudriere:name,poudriere:version,poudriere:arch,poudriere:stats_built,poudriere:stats_failed,poudriere:status ${ZPOOL}/poudriere | \
 		awk '/^rootfs/ { printf("%-20s %-13s %-7s %-7s %-7s %s\n",$2, $3, $4, $5, $6, $7) }'
 }
 

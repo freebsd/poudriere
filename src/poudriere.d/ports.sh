@@ -74,7 +74,7 @@ PTNAME=${PTNAME:-default}
 
 if [ ${LIST} -eq 1 ]; then
 	[ $QUIET -eq 0 ] && echo "PORTSTREE"
-	zfs list -r -o poudriere:type,poudriere:name | awk '/ports/ {print $2 }'
+	zfs list -d1 -o poudriere:type,poudriere:name ${ZPOOL}/poudriere | awk '/ports/ {print $2 }'
 else
 	test -z "${PTNAME}" && usage
 fi
