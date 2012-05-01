@@ -1,5 +1,4 @@
-What is poudriere?
-------------------
+<h1>What is poudriere?</h1>
 
 poudriere is a tool primarily designed to test package production on
 FreeBSD. However, most people will find it useful to bulk build ports
@@ -19,8 +18,7 @@ identical to the official mirrors. Therefore they will be useable by any
 package management tool (pkg_add, portmaster, and so on).
 
 
-What poudriere needs?
----------------------
+<h1>What poudriere needs?</h1>
 
 - FreeBSD
 - a ZFS pool with at least 7GB of free space
@@ -30,67 +28,60 @@ That is all. For more comfort, we recommend to have quite a lot of RAM
 in order to make the builds in a VM resident filesystem.
 
 
-How to install it?
-------------------
+<h1>How to install it?</h1>
 
 Just type "make" at the top-level directory.
 
 
-What do I have to configure before starting use it?
----------------------------------------------------
+<h1>What do I have to configure before starting use it?</h1>
 
- Create a mandatory configuration file
- -------------------------------------
+ <h2>Create a mandatory configuration file</h2>
 
 Poudriere will look for a configuration file in /usr/local/etc.
 
 Copy the default configuration file:
 
-    cp /usr/local/etc/poudriere.conf.sample /usr/local/etc/poudriere.conf
+    <code>cp /usr/local/etc/poudriere.conf.sample /usr/local/etc/poudriere.conf</code>
 
 then edit it:
 
-    $EDITOR /usr/local/etc/poudriere.conf
+    <code>$EDITOR /usr/local/etc/poudriere.conf</code>
 
 The comments inside the configuration file should be sufficient.
 
-Examples
---------
+<h2>Examples</h2>
 
 See poudriere(8).
 
-How-to...
----------
+<h1>How-to...</h1>
 
- ...manage poudriere ports using portshaker
- ------------------------------------------
+ <h2>...manage poudriere ports using portshaker</h2>
 
 Create a fake (-F) poudriere portstree:
 
-    poudriere ports -c -F -p foo
+   <code> poudriere ports -c -F -p foo</code>
 
 Configure the ports tree in /usr/local/etc/portshaker.conf:
 
-    ports_trees="... p_foo"
+    <code>ports_trees="... p_foo"
     use_zfs="yes"
     p_foo_ports_tree="/usr/local/poudriere/ports/foo/ports"
-    p_foo_merge_from="ports ..."
+    p_foo_merge_from="ports ..."</code>
 
 You can then use portshaker to manage poudriere portstree:
 
-    portshaker
+    <code>portshaker</code>
 
- ...use the generated packages with portmaster
- ---------------------------------------------
+ <h2>...use the generated packages with portmaster</h2>
 
 First, install portmaster from the void:
 
-    fetch -o - http://ftp.fr.freebsd.org/pub/FreeBSD/ports/packages/All/portmaster-3.9.tbz | \
-    pkg_add -r -
+    <code>fetch -o - http://ftp.fr.freebsd.org/pub/FreeBSD/ports/packages/All/portmaster-3.9.tbz | \
+    pkg_add -r -</code>
 
 Then, configure it:
 
-    mkdir -p /usr/ports/Mk
+    <code>mkdir -p /usr/ports/Mk
     touch /usr/ports/Mk/bsd.port.mk
 
     cat > /usr/local/etc/portmaster.rc<<EOF
@@ -101,12 +92,13 @@ PM_PACKAGES=only
 PM_INDEX=yes
 PM_INDEX_ONLY=pm_index_only
 EOF
+</code>
 
 Of course you have to install a HTTP server, with /82i386/ an alias to
 /usr/local/poudriere_data/packages/bulk-82i386.
 
 You are now ready to invoke portmaster:
 
-    portmaster editors/vim
+    <code>portmaster editors/vim</code>
 
 Happy FreeBSDing!
