@@ -64,9 +64,9 @@ Create a fake (-F) poudriere portstree:
 Configure the ports tree in /usr/local/etc/portshaker.conf:
 
     <verbatim>ports_trees="... p_foo"
-    use_zfs="yes"
-    p_foo_ports_tree="/usr/local/poudriere/ports/foo/ports"
-    p_foo_merge_from="ports ..."</verbatim>
+use_zfs="yes"
+p_foo_ports_tree="/usr/local/poudriere/ports/foo/ports"
+p_foo_merge_from="ports ..."</verbatim>
 
 You can then use portshaker to manage poudriere portstree:
 
