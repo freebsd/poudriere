@@ -81,7 +81,7 @@ First, install portmaster from the void:
 
 Then, configure it:
 
-    <code>mkdir -p /usr/ports/Mk
+    <code><verbatim>mkdir -p /usr/ports/Mk
     touch /usr/ports/Mk/bsd.port.mk
 
     cat > /usr/local/etc/portmaster.rc<<EOF
@@ -92,6 +92,7 @@ PM_PACKAGES=only
 PM_INDEX=yes
 PM_INDEX_ONLY=pm_index_only
 EOF
+</verbatim>
 </code>
 
 Of course you have to install a HTTP server, with /82i386/ an alias to
