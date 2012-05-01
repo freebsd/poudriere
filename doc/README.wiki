@@ -41,11 +41,11 @@ Poudriere will look for a configuration file in /usr/local/etc.
 
 Copy the default configuration file:
 
-    <code>cp /usr/local/etc/poudriere.conf.sample /usr/local/etc/poudriere.conf</code>
+    <verbatim>cp /usr/local/etc/poudriere.conf.sample /usr/local/etc/poudriere.conf</verbatim>
 
 then edit it:
 
-    <code>$EDITOR /usr/local/etc/poudriere.conf</code>
+    <verbatim>$EDITOR /usr/local/etc/poudriere.conf</verbatim>
 
 The comments inside the configuration file should be sufficient.
 
@@ -59,32 +59,32 @@ See poudriere(8).
 
 Create a fake (-F) poudriere portstree:
 
-   <code> poudriere ports -c -F -p foo</code>
+   <verbatim> poudriere ports -c -F -p foo</verbatim>
 
 Configure the ports tree in /usr/local/etc/portshaker.conf:
 
-    <code>ports_trees="... p_foo"
+    <verbatim>ports_trees="... p_foo"
     use_zfs="yes"
     p_foo_ports_tree="/usr/local/poudriere/ports/foo/ports"
-    p_foo_merge_from="ports ..."</code>
+    p_foo_merge_from="ports ..."</verbatim>
 
 You can then use portshaker to manage poudriere portstree:
 
-    <code>portshaker</code>
+    <verbatim>portshaker</verbatim>
 
  <h2>...use the generated packages with portmaster</h2>
 
 First, install portmaster from the void:
 
-    <code>fetch -o - http://ftp.fr.freebsd.org/pub/FreeBSD/ports/packages/All/portmaster-3.9.tbz | \
-    pkg_add -r -</code>
+    <verbatim>fetch -o - http://ftp.fr.freebsd.org/pub/FreeBSD/ports/packages/All/portmaster-3.9.tbz | \
+pkg_add -r -</verbatim>
 
 Then, configure it:
 
-    <code><verbatim>mkdir -p /usr/ports/Mk
-    touch /usr/ports/Mk/bsd.port.mk
+    <verbatim>mkdir -p /usr/ports/Mk
+touch /usr/ports/Mk/bsd.port.mk
 
-    cat > /usr/local/etc/portmaster.rc<<EOF
+cat > /usr/local/etc/portmaster.rc<<EOF
 MASTER_SITE_INDEX=http://example.com/82i386/
 LOCALBASE=/usr/local
 PACKAGESITE=http://example.com/82i386/
@@ -93,13 +93,12 @@ PM_INDEX=yes
 PM_INDEX_ONLY=pm_index_only
 EOF
 </verbatim>
-</code>
 
 Of course you have to install a HTTP server, with /82i386/ an alias to
 /usr/local/poudriere_data/packages/bulk-82i386.
 
 You are now ready to invoke portmaster:
 
-    <code>portmaster editors/vim</code>
+    <verbatim>portmaster editors/vim</verbatim>
 
 Happy FreeBSDing!
