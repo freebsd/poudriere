@@ -77,7 +77,7 @@ You can then use portshaker to manage poudriere portstree:
 
 Then, use the 'foo' ports tree as a regular poudriere ports tree:
 
-<verbatim>poudriere ports -l</verbatim>
+    <verbatim>poudriere ports -l</verbatim>
 
  <h2>...use the generated packages with portmaster</h2>
 
