@@ -25,7 +25,6 @@ PTNAME="default"
 EXT="tbz"
 PKG_ADD=pkg_add
 PKG_DELETE=pkg_delete
-LOGS="${POUDRIERE_DATA}/logs"
 
 while getopts "d:o:cnj:p:" FLAG; do
 	case "${FLAG}" in
