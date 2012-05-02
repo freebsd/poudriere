@@ -65,20 +65,25 @@ How-to...
  ...manage poudriere ports using portshaker
  ------------------------------------------
 
-Create a fake (-F) poudriere portstree:
+Ensure you are running at least portshaker 1.0.5.
 
-    poudriere ports -c -F -p foo
+Configure the 'foo' ports tree in /usr/local/etc/portshaker.conf like this:
 
-Configure the ports tree in /usr/local/etc/portshaker.conf:
-
-    ports_trees="... p_foo"
+    ports_trees="... foo"
     use_zfs="yes"
-    p_foo_ports_tree="/usr/local/poudriere/ports/foo/ports"
-    p_foo_merge_from="ports ..."
+    poudriere_dataset="data/poudriere"
+    poudriere_ports_mountpoint="/usr/local/poudriere/ports"
 
-You can then use portshaker to manage poudriere portstree:
+    foo_poudriere_tree="foo"
+    foo_merge_from="ports ..."
+
+You can then use portshaker to manage poudriere ports tree:
 
     portshaker
+
+Then, use the 'foo' ports tree as a regular poudriere ports tree.
+
+    poudriere ports -l
 
  ...use the generated packages with portmaster
  ---------------------------------------------
