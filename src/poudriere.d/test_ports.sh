@@ -25,6 +25,7 @@ PTNAME="default"
 EXT="tbz"
 PKG_ADD=pkg_add
 PKG_DELETE=pkg_delete
+LOGS="${POUDRIERE_DATA}/logs"
 
 while getopts "d:o:cnj:p:" FLAG; do
 	case "${FLAG}" in
@@ -138,6 +139,7 @@ for JAILNAME in ${JAILNAMES}; do
 
 	PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
 	PORTTESTING=yes
+	log_start ${LOGS}/testport-${PKGNAME}-${JAILNAME}.log
 	build_port ${PORTDIRECTORY}
 
 	msg "Installing from package"
@@ -150,6 +152,7 @@ for JAILNAME in ${JAILNAMES}; do
 
 	msg "Removing existing ${PREFIX} dir"
 	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${JAILBASE}${PREFIX} ${JAILBASE}${PREFIX}.PLIST_DIRS.before ${JAILBASE}${PREFIX}.PLIST_DIRS.after
+	log_stop ${LOGS}/testport-${PKGNAME}-${JAILNAME}.log
 
 	cleanup
 	STATUS=0 #injail
