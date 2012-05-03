@@ -37,6 +37,7 @@ _jail=(
 	'-l[list all available jails]'
 	'-s[start a jail]'
 	'-k[kill (stop) a jail]'
+	'-i[show information about a jail]'
 #Options:
 	'-q[quiet (remove the header in list)]::'
 	'*-j[Specifies the jailname]::jailname:_poudriere_jail'
