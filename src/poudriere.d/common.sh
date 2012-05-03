@@ -156,11 +156,10 @@ jail_start() {
 	export UNAME_v
 	MNT=`jail_get_base ${NAME}`
 
-	. /etc/rc.subr
 	. /etc/defaults/rc.conf
 
 	msg "Mounting devfs"
-	devfs_mount_jail "${MNT}/dev"
+	mount -t devfs devfs ${MNT}/dev
 	msg "Mounting /proc"
 	[ ! -d ${MNT}/proc ] && mkdir ${MNT}/proc
 	mount -t procfs proc ${MNT}/proc
