@@ -365,11 +365,6 @@ build_port() {
 							msg "!!!MODIFIED!!!: ${PPATH}"
 							;;
 					esac
-					#egrep -v "[\+|M][[:space:]]*${JAILBASE}${PREFIX}/share/nls/(POSIX|en_US.US-ASCII)" | \
-					#egrep -v "[\+|M|-][[:space:]]*${JAILBASE}/wrkdirs" | \
-					#egrep -v "/var/db/pkg" | \
-					#egrep -v "/var/run/ld-elf.so.hints" | \
-					#egrep -v "[\+|M][[:space:]]*${JAILBASE}/tmp/pkgs" | while read type path; do
 				done
 				sort ${FILES}
 				sort -r ${DIRS}
