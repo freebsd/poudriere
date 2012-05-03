@@ -24,8 +24,11 @@ BASEFS=/usr/local/poudriere
 # Use portlint to check ports sanity
 USE_PORTLINT=no
 
-# If set WORKDIRPREFIX will be mdmfs of the given size (mM or gG)
-MFSSIZE=1024m
+# If set WRKDIRPREFIX will be mdmfs of the given size (mM or gG)
+MFSSIZE=4G
+
+# If set WRKDIRPREFIX will be using tmpfs
+USE_TMPFS=yes
 
 # If set the given directory will be used for the distfiles this allow the share
 # the distfiles between jails and ports tree
@@ -34,3 +37,13 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Directory used to store "poudriere cron" files. Do not forget to set
 # it sticky and give a+rwx.
 CRONDIR=${BASEFS}/cron
+
+# Path to the resolv.conf to be used in the jails, the file will be copied from
+# the host to the jail
+RESOLV_CONF=/etc/resolv.conf
+
+# if set the ports tree will be synced using csup instead of portsnap using the
+# given cvsup mirror.
+CSUP_HOST=cvsup._CHANGE_THIS_.freebsd.org
+
+
