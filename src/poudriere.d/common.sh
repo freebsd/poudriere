@@ -553,6 +553,15 @@ prepare_jail() {
 
 	msg "Populating LOCALBASE"
 	injail /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p /usr/local >/dev/null
+
+	WITH_PKGNG=`injail make -C /usr/ports -VWITH_PKGNG`
+	if [ -n "${WITH_PKGNG}" ]; then
+		export PKGNG=1
+		export EXT=txz
+		export PKG_ADD="pkg add"
+		export PKG_DELETE="pkg delete -y -f"
+	fi
+
 }
 
 RESOLV_CONF=""

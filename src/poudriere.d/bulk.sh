@@ -73,9 +73,6 @@ for JAILNAME in ${JAILNAMES}; do
 
 	prepare_jail
 
-	grep -q ^WITH_PKGNG ${JAILBASE}/etc/make.conf && PKGNG=1
-	[ $PKGNG -eq 1 ] && EXT=txz
-
 	prepare_ports
 	zfs snapshot ${JAILFS}@prepkg
 	queue=$(zfs_get poudriere:queue)

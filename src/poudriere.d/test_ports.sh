@@ -81,13 +81,6 @@ for JAILNAME in ${JAILNAMES}; do
 
 	prepare_jail
 
-	grep -q ^WITH_PKGNG ${JAILBASE}/etc/make.conf && PKGNG=1
-	if [ ${PKGNG} -eq 1 ]; then
-		EXT=txz
-		PKG_ADD="pkg add"
-		PKG_DELETE="pkg delete -y -f"
-	fi
-
 	if [ -z ${ORIGIN} ]; then
 		mkdir -p ${JAILBASE}/${PORTDIRECTORY}
 		mount -t nullfs ${HOST_PORTDIRECTORY} ${JAILBASE}/${PORTDIRECTORY}
