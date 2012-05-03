@@ -63,9 +63,6 @@ else
 	PORTDIRECTORY="/usr/ports/${ORIGIN}"
 fi
 
-PKGNAME=`make -C ${HOST_PORTDIRECTORY} -VPKGNAME`
-PORTNAME=`make -C ${HOST_PORTDIRECTORY} -VPORTNAME`
-
 test -z "${JAILNAMES}" && JAILNAMES=`jail_ls`
 
 for JAILNAME in ${JAILNAMES}; do
@@ -86,13 +83,6 @@ for JAILNAME in ${JAILNAMES}; do
 		mount -t nullfs ${HOST_PORTDIRECTORY} ${JAILBASE}/${PORTDIRECTORY}
 	fi
 
-	if [ "${USE_PORTLINT}" = "yes" ]; then
-		[ ! -x `which portlint` ] && err 2 "First install portlint if you want USE_PORTLINT to work as expected"
-		set +e
-		msg "Portlint check"
-		cd ${JAILBASE}/${PORTDIRECTORY} && portlint -C | tee -a ${LOGS}/${PKGNAME}-${JAILNAME}.portlint.log
-		set -e
-	fi
 	LISTPORTS=$(list_deps ${PORTDIRECTORY} )
 	prepare_ports
 	zfs snapshot ${JAILFS}@prepkg
@@ -111,6 +101,13 @@ for JAILNAME in ${JAILNAMES}; do
 	PKGNAME=`injail make -C ${PORTDIRECTORY} -VPKGNAME`
 	LOCALBASE=`injail make -C ${PORTDIRECTORY} -VLOCALBASE`
 	PREFIX=${LOCALBASE}
+	if [ "${USE_PORTLINT}" = "yes" ]; then
+		[ ! -x `which portlint` ] && err 2 "First install portlint if you want USE_PORTLINT to work as expected"
+		set +e
+		msg "Portlint check"
+		cd ${JAILBASE}/${PORTDIRECTORY} && portlint -C | tee -a ${LOGS}/${PKGNAME}-${JAILNAME}.portlint.log
+		set -e
+	fi
 	[ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/tmp}/`echo ${PKGNAME} | tr '[,+]' _`"
 	PORT_FLAGS="NO_DEPENDS=yes PREFIX=${PREFIX}"
 	msg "Building with flags: ${PORT_FLAGS}"
