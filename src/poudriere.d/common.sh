@@ -539,11 +539,10 @@ prepare_jail() {
 	[ -f ${POUDRIERED}/make.conf ] && cat ${POUDRIERED}/make.conf >> ${JAILBASE}/etc/make.conf
 	[ -f ${POUDRIERED}/${JAILNAME}-make.conf ] && cat ${POUDRIERED}/${JAILNAME}-make.conf >> ${JAILBASE}/etc/make.conf
 
-	if [ -d ${POUDRIERED}/options ]; then
+	[ -d ${POUDRIERED}/options ] && \
 		mount -t unionfs ${POUDRIERED}/options ${JAILBASE}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
-	elif [ -d ${POUDRIERED}/${JAILNAME}-options ]; then
+	[ -d ${POUDRIERED}/${JAILNAME}-options ] && \
 		mount -t unionfs ${POUDRIERED}/${JAILNAME}-options ${JAILBASE}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
-	fi
 
 	msg "Populating LOCALBASE"
 	injail /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p /usr/local >/dev/null
