@@ -539,10 +539,10 @@ prepare_jail() {
 	[ -f ${POUDRIERED}/make.conf ] && cat ${POUDRIERED}/make.conf >> ${JAILBASE}/etc/make.conf
 	[ -f ${POUDRIERED}/${JAILNAME}-make.conf ] && cat ${POUDRIERED}/${JAILNAME}-make.conf >> ${JAILBASE}/etc/make.conf
 
-	if [ -d ${POUDRIERED}/${JAILNAME}-options ]; then
-		mount -t nullfs ${POUDRIERED}/${JAILNAME}-options ${JAILBASE}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
-	elif [ -d ${POUDRIERED}/options ]; then
-		mount -t nullfs ${POUDRIERED}/options ${JAILBASE}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+	if [ -d ${POUDRIERED}/options ]; then
+		mount -t unionfs ${POUDRIERED}/options ${JAILBASE}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+	elif [ -d ${POUDRIERED}/${JAILNAME}-options ]; then
+		mount -t unionfs ${POUDRIERED}/${JAILNAME}-options ${JAILBASE}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
 	fi
 
 	msg "Populating LOCALBASE"
