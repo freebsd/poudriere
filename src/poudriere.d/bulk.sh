@@ -22,8 +22,6 @@ PTNAME="default"
 KEEP=0
 . ${SCRIPTPREFIX}/common.sh
 
-LOGS="${POUDRIERE_DATA}/logs"
-
 while getopts "f:j:kp:t" FLAG; do
 	case "${FLAG}" in
 		t)
@@ -56,14 +54,8 @@ STATUS=0 # out of jail #
 test -z "${JAILNAMES}" && JAILNAMES=`jail_ls`
 
 for JAILNAME in ${JAILNAMES}; do
-	PKGNG=0
-	EXT=tbz
-	JAILBASE=`jail_get_base ${JAILNAME}`
-	JAILFS=`jail_get_fs ${JAILNAME}`
 	PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}
 	jail_start ${JAILNAME}
-
-	STATUS=1 #injail
 
 	if [ ${KEEP} -ne 1 ]; then
 		msg_n "Cleaning previous bulks if any..."
@@ -209,7 +201,6 @@ for JAILNAME in ${JAILNAMES}; do
 	fi
 
 	cleanup
-	STATUS=0 #injail
 	msg "$built packages built, $failed failures"
 	if [ $built -gt 0 ]; then
 		msg_n "Built ports: "

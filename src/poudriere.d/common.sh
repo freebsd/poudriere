@@ -144,16 +144,16 @@ jail_create_zfs() {
 jail_start() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
 	NAME=$1
-	JAILFS=`jail_get_fs ${NAME}`
+	export JAILBASE=`jail_get_base ${JAILNAME}`
+	export JAILFS=`jail_get_fs ${NAME}`
+
 	jail_exists ${NAME} || err 1 "No such jail: ${NAME}"
 	jail_runs ${NAME} && err 1 "jail already running: ${NAME}"
 	jail_status "start:"
 	zfs rollback -r ${ZPOOL}/poudriere/${NAME}@clean
 	touch /var/run/poudriere-${NAME}.lock
-	UNAME_r=`jail_get_version ${NAME}`
-	export UNAME_r
-	UNAME_v="FreeBSD ${UNAME_r}"
-	export UNAME_v
+	export UNAME_r=`jail_get_version ${NAME}`
+	export UNAME_v="FreeBSD ${UNAME_r}"
 	MNT=`jail_get_base ${NAME}`
 
 	. /etc/defaults/rc.conf
@@ -172,16 +172,15 @@ jail_start() {
 	msg "Starting jail ${NAME}"
 	jail -c persist name=${NAME} ip4=disable ip6=disable path=${MNT} host.hostname=${NAME} \
 		allow.sysvipc allow.mount allow.socket_af allow.raw_sockets
+	export STATUS=1
 }
 
 jail_stop() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
 	NAME=${1}
-	JAILFS=`jail_get_fs ${NAME}`
 	jail_runs ${NAME} || err 1 "No such jail running: ${NAME}"
 	jail_status "stop:"
 
-	JAILBASE=`jail_get_base ${NAME}`
 	msg "Stopping jail"
 	jail -r ${NAME}
 	msg "Umounting file systems"
@@ -196,6 +195,7 @@ jail_stop() {
 	fi
 	zfs rollback -r ${ZPOOL}/poudriere/${NAME}@clean
 	jail_status "idle:"
+	export STATUS=0
 }
 
 port_create_zfs() {
@@ -209,7 +209,6 @@ port_create_zfs() {
 		-o poudriere:type=ports \
 		-o poudriere:name=${NAME} \
 		${FS} || err 1 " Fail" && echo " done"
-		
 }
 
 cleanup() {
@@ -552,11 +551,17 @@ prepare_jail() {
 	WITH_PKGNG=`injail make -C /usr/ports -VWITH_PKGNG`
 	if [ -n "${WITH_PKGNG}" ]; then
 		export PKGNG=1
-		export EXT=txz
+		export EXT="txz"
 		export PKG_ADD="pkg add"
 		export PKG_DELETE="pkg delete -y -f"
+	else
+		export PKGNG=0
+		export PKG_ADD=pkg_add
+		export PKG_DELETE=pkg_delete
+		export EXT="tbz"
 	fi
 
+	export LOGS=${POUDRIERE_DATA}/logs
 }
 
 RESOLV_CONF=""

@@ -22,10 +22,6 @@ CONFIGSTR=0
 . ${SCRIPTPREFIX}/common.sh
 NOPREFIX=0
 PTNAME="default"
-EXT="tbz"
-PKG_ADD=pkg_add
-PKG_DELETE=pkg_delete
-LOGS=${POUDRIERE_DATA}/logs
 
 while getopts "d:o:cnj:p:" FLAG; do
 	case "${FLAG}" in
@@ -66,15 +62,11 @@ fi
 test -z "${JAILNAMES}" && JAILNAMES=`jail_ls`
 
 for JAILNAME in ${JAILNAMES}; do
-	PKGNG=0
-	JAILBASE=`jail_get_base ${JAILNAME}`
-	JAILFS=`jail_get_fs ${JAILNAME}`
 	PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}
 
 
 	jail_start ${JAILNAME}
 	ZVERSION=`jail_get_zpool_version ${JAILNAME}`
-	STATUS=1 #injail
 
 	prepare_jail
 
@@ -145,5 +137,4 @@ for JAILNAME in ${JAILNAMES}; do
 	log_stop ${LOGS}/testport-${PKGNAME}-${JAILNAME}.log
 
 	cleanup
-	STATUS=0 #injail
 done
