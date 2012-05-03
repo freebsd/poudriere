@@ -98,8 +98,9 @@ for JAILNAME in ${JAILNAMES}; do
 		fi
 	elif [ $PKGNG -eq 1 ]; then
 		msg "Packaging all installed ports"
-		injail tar xf /usr/ports/packages/Latest/pkg.txz -C / -s ",/.*/,,g" "*/pkg-static"
-		injail /pkg-static repo /usr/ports/packages/
+		injail tar xf /usr/ports/packages/Latest/pkg.txz -C /
+		injail rm -f /usr/ports/packages/repo.txz
+		injail pkg-static repo /usr/ports/packages/
 	else
 		msg "Preparing index"
 		OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
