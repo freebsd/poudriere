@@ -423,8 +423,8 @@ list_deps() {
 }
 
 check_pkg() {
-	local p=$1
-	local portdir="/usr/ports/$p"
+	local port=$1
+	local portdir="/usr/ports/${port}"
 	test -d ${JAILBASE}/${portdir} || {
 		msg "No such port ${port}"
 		return 1
