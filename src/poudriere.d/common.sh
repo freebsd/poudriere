@@ -232,7 +232,6 @@ delete_pkg() {
 	}
 	local LATEST_LINK=$(injail make -C ${portdir} -VLATEST_LINK)
 	local NO_LATEST_LINK=$(injail make -C ${portdir} -VNO_LATEST_LINK)
-	local PKGNAME=$(injail make -C ${portdir} -VPKGNAME)
 
 	# delete older one if any
 	if [ -z "$NO_LATEST_LINK" -a -e ${PKGDIR}/Latest/${LATEST_LINK}.${EXT} ]; then
