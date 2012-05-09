@@ -236,7 +236,7 @@ delete_pkg() {
 	if [ -z "$NO_LATEST_LINK" ]; then
 		local LATEST_LINK=$(injail make -C ${portdir} -VLATEST_LINK)
 		if [ -e ${PKGDIR}/Latest/${LATEST_LINK}.${EXT} ]; then
-			PKGNAME_PREV=$(realpath ${PKGDIR}/Latest/${LATEST_LINK}.${EXT})
+			local PKGNAME_PREV=$(realpath ${PKGDIR}/Latest/${LATEST_LINK}.${EXT})
 			find ${PKGDIR}/ -name ${PKGNAME_PREV##*/} -delete
 			find ${PKGDIR}/ -name ${LATEST_LINK}.${EXT} -delete
 		fi
@@ -438,7 +438,7 @@ check_pkg() {
 		local LATEST_LINK=$(injail make -C ${portdir} -VLATEST_LINK)
 		if [ -e ${PKGDIR}/Latest/${LATEST_LINK}.${EXT} ]; then
 			local PKGNAME=$(injail make -C ${portdir} -VPKGNAME)
-			PKGNAME_PREV=$(realpath ${PKGDIR}/Latest/${LATEST_LINK}.${EXT})
+			local PKGNAME_PREV=$(realpath ${PKGDIR}/Latest/${LATEST_LINK}.${EXT})
 			if [ "${PKGNAME_PREV##*/}" != "${PKGNAME}.${EXT}" ]; then
 				msg "Deleting previous version of ${port}"
 				find ${PKGDIR}/ -name ${PKGNAME_PREV##*/} -delete
