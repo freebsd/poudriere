@@ -112,7 +112,7 @@ fi
 
 if [ ${DELETE} -eq 1 ]; then
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PTNAME}/ports on" \
-		&& err 1 "Ports tree \"${PTNAME}\" is already used."
+		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	port_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 	msg "Deleting portstree \"${PTNAME}\""
 	zfs destroy -r $(port_get_fs ${PTNAME})
@@ -120,7 +120,7 @@ fi
 
 if [ ${UPDATE} -eq 1 ]; then
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PTNAME}/ports on" \
-		&& err 1 "Ports tree \"${PTNAME}\" is already used."
+		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	PTBASE=$(port_get_base ${PTNAME})
 	msg "Updating portstree \"${PTNAME}\""
 	if [ -n "${CSUP_HOST}" ]; then
