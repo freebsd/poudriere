@@ -190,8 +190,10 @@ jail_stop() {
 
 	if [ -n "${MFSSIZE}" ]; then
 		MDUNIT=$(mount | awk -v mnt="${JAILBASE}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 ~ /\/dev\/md/ ) { sub(/\/dev\/md/, "", $1); print $1 }}')
-		umount ${JAILBASE}/wrkdirs
-		mdconfig -d -u ${MDUNIT}
+		if [ -n "$MDUNIT" ]; then
+			umount ${JAILBASE}/wrkdirs
+			mdconfig -d -u ${MDUNIT}
+		fi
 	fi
 	zfs rollback -r ${ZPOOL}/poudriere/${NAME}@clean
 	jail_status "idle:"
