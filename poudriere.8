@@ -48,7 +48,7 @@ jails), to be easy to use and to depend only on base.
 .Sh COMMANDS
 The first argument to
 .Nm
-must be a 
+must be a
 .Cm command
 from the following list:
 .Bl -tag -width "-f conffile"
@@ -67,7 +67,7 @@ by
 (create, update and delete portstrees).
 .It testport
 This command, mainly targeted at FreeBSD ports developers, launches a
-test on a given port (useful before submitting/commiting a port).
+test on a given port (useful before submitting/committing a port).
 .It queue
 This command allows a non-root user to queue
 .Nm
@@ -90,8 +90,8 @@ order.
 There is only one subcommand for bulk command.
 .Bl -tag -width "-f conffile"
 .It Fl f Ar file
-Absolute path to a file which contains the list of ports to build. Ports
-must be specified in the form
+Absolute path to a file which contains the list of ports to build.
+Ports must be specified in the form
 .Ar category/port
 and shell-style comments are allowed.
 .El
@@ -130,7 +130,7 @@ Starts a jail.
 .It Fl k
 Kills a jail (stops it).
 .It Fl i
-Show informations about the jail
+Show information about the jail
 .El
 .Pp
 Excepted for
@@ -146,7 +146,8 @@ command.
 .It Fl q
 Remove the header when
 .Fl l
-is the specified mandatory option. Otherwise, it has no effect.
+is the specified mandatory option.
+Otherwise, it has no effect.
 .It Fl j Ar name
 Specifies the
 .Ar name
@@ -162,7 +163,8 @@ of FreeBSD we want in jail. (Default: same as host)
 .It Fl m Ar method
 Specifies which
 .Ar method
-we want to create jail. Specify
+we want to create jail.
+Specify
 .Ar NONE
 if you want to use your homemade jail. (Default: FTP)
 .It Fl f Ar filesystem
@@ -201,7 +203,8 @@ command.
 .It Fl q
 Remove the header when
 .Fl l
-is the specified subcommand. Otherwise, it has no effect.
+is the specified subcommand.
+Otherwise, it has no effect.
 .It Fl p Ar name
 Specifies the
 .Ar name
@@ -242,7 +245,7 @@ Runs only inside the jail named
 .It Fl n
 Do not use custom prefix.
 .It Fl p Ar tree
-Specifies on wich ports
+Specifies on which ports
 .Ar tree
 we work.
 .El
@@ -290,13 +293,15 @@ infrastructure needs.
 A jail will take approximately 3GB of space.
 .Pp
 Of course you can use another version of FreeBSD, regarless on what
-version you are running. amd64 users can choose i386 arch like in this
+version you are running.
+amd64 users can choose i386 arch like in this
 example:
 .Pp
 .Dl "poudriere jail -c -v 8.1-RELEASE -a i386 -j 81i386"
 .Pp
 This command will fetch and install a minimal jail, small (~400MB) so
-you can create a lot of them. It will install the jail under the pool
+you can create a lot of them.
+It will install the jail under the pool
 you have chosen, at poudriere/jailname.
 .Pp
 You also need to have at least one ports tree to build packages from it,
@@ -318,7 +323,8 @@ Any line starting with the hash sign will be treated as a comment.
 .Pp
 .Bq Launch the bulk build
 .Pp
-Now you can launch the bulk build. You can specify to build for only one
+Now you can launch the bulk build.
+You can specify to build for only one
 arch/version ; by default it will make the bulk build on all the jails
 created by poudriere.
 .Dl "poudriere bulk -f ~/pkglist -j 81i386"
