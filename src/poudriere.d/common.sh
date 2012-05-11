@@ -382,6 +382,16 @@ build_pkg() {
 	local port=$1
 	local portdir="/usr/ports/${port}"
 
+	# If this port is IGNORED, skip it
+	# This is checked here instead of when building the queue
+	# as the list may start big but become very small, so here
+	# is a less-common check
+	local IGNORE="$(injail make -C ${portdir} -VIGNORE)"
+	if [ -n "$IGNORE" ]; then
+		msg "Ignoring ${port}: $IGNORE"
+		return
+	fi
+
 	msg "Cleaning up wrkdir"
 	rm -rf ${JAILBASE}/wrkdirs/*
 
