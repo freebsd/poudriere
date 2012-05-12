@@ -67,7 +67,7 @@ for JAILNAME in ${JAILNAMES}; do
 
 	prepare_ports
 	zfs snapshot ${JAILFS}@prepkg
-	queue=$(zfs_get poudriere:queue)
+	queue=$(status_get poudriere:queue)
 	for port in $queue; do
 		build_pkg ${port}
 		zfs rollback -r ${JAILFS}@prepkg
@@ -204,11 +204,11 @@ for JAILNAME in ${JAILNAMES}; do
 	msg "$built packages built, $failed failures"
 	if [ $built -gt 0 ]; then
 		msg_n "Built ports: "
-		zfs_get poudriere:built
+		status_get poudriere:built
 	fi
 	if [ $failed -gt 0 ]; then
 		msg_n "Failed ports: "
-		zfs_get poudriere:failed
+		status_get poudriere:failed
 	fi
 done
 

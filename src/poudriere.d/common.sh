@@ -43,6 +43,16 @@ zfs_set() {
 	zfs set $1="$2" ${JAILFS}
 }
 
+status_get() {
+	[ $# -ne 1 ] && err 1 "Fail: need one argument"
+	cat /var/run/poudriere-${JAILNAME}-${1}
+}
+
+status_set() {
+	[ $# -ne 2 ] && err 1 "Fail: need two arguments got $@"
+	echo "$2" > /var/run/poudriere-${JAILNAME}-${1}
+}
+
 jail_status() {
 	zfs_set poudriere:status "$1"
 }
@@ -408,18 +418,18 @@ build_pkg() {
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
 		zfs_set "poudriere:stats_built" "$cnt"
-		buf=$(zfs_get poudriere:built)
+		buf=$(status_get poudriere:built)
 		buf="${buf} ${port}"
-		zfs_set "poudriere:built" "${buf}"
+		status_set "poudriere:built" "${buf}"
 	else
 		cnt=$(zfs_get poudriere:stats_failed)
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
 		zfs_set "poudriere:stats_failed" "$cnt"
 		state=$(zfs_get poudriere:status)
-		buf=$(zfs_get poudriere:failed)
+		buf=$(status_get poudriere:failed)
 		buf="${buf} ${state}"
-		zfs_set "poudriere:failed" "${buf}"
+		status_set "poudriere:failed" "${buf}"
 	fi
 	jail_status "idle:"
 	log_stop ${LOGS}/${JAILNAME}-${PTNAME}-${PKGNAME}.log
@@ -523,11 +533,11 @@ prepare_ports() {
 	done < ${tmplist2}
 
 	rm -f ${tmplist2} ${deplist} ${tmplist}
-	zfs_set "poudriere:queue" "${queue}"
+	status_set "poudriere:queue" "${queue}"
 	zfs_set "poudriere:stats_built" "0"
 	zfs_set "poudriere:stats_failed" "0"
-	zfs_set "poudriere:built" " "
-	zfs_set "poudriere:failed" " "
+	status_set "poudriere:built" " "
+	status_set "poudriere:failed" " "
 }
 
 prepare_jail() {

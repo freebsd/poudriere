@@ -29,12 +29,12 @@ info_jail() {
 	test -z ${NAME} && usage
 	jail_exists ${NAME} || err 1 "No such jail: ${NAME}"
 	JAILFS=`jail_get_fs ${NAME}`
-	queue=$(zfs_get poudriere:queue)
+	queue=$(status_get poudriere:queue)
 	nbb=$(zfs_get poudriere:stats_built)
 	nbf=$(zfs_get poudriere:stats_failed)
 	nbq=0
 	for a in ${queue}; do nbq=$((nbq + 1)); done
-	f=$(zfs_get poudriere:failed)
+	f=$(status_get poudriere:failed)
 	tobuild=$((nbq - nbb - nbf))
 	zfs list -H -o poudriere:type,poudriere:name,poudriere:version,poudriere:arch,poudriere:stats_built,poudriere:stats_failed,poudriere:status ${JAILFS}| \
 		awk -v q="$nbq" -v tb="$tobuild" -v f="$f" '/^rootfs/  {
