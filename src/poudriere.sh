@@ -46,6 +46,9 @@ case ${CMD} in
 	cron)
 		exec /bin/sh ${POUDRIEREPREFIX}/cron.sh
 		;;
+	pbi)
+		exec /bin/sh ${POUDRIEREPREFIX}/pbi.sh $@
+		;;
 	help)
 		usage
 		;;
