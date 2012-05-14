@@ -514,7 +514,6 @@ prepare_ports() {
 		egrep -q "^${port}$" ${tmplist2} || echo $port >> ${tmplist2}
 	done
 
-
 	jail_status "sanity:"
 	msg "Sanity checking the repository"
 	while read p; do
@@ -566,20 +565,22 @@ prepare_jail() {
 	[ -f ${POUDRIERED}/make.conf ] && cat ${POUDRIERED}/make.conf >> ${JAILBASE}/etc/make.conf
 	[ -f ${POUDRIERED}/${JAILNAME}-make.conf ] && cat ${POUDRIERED}/${JAILNAME}-make.conf >> ${JAILBASE}/etc/make.conf
 
-	[ -d ${POUDRIERED}/options ] && \
-		mount -t unionfs ${POUDRIERED}/options ${JAILBASE}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
-	[ -d ${POUDRIERED}/${JAILNAME}-options ] && \
-		mount -t unionfs ${POUDRIERED}/${JAILNAME}-options ${JAILBASE}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+	if [ -d ${POUDRIERED}/${JAILNAME}-options ]; then
+		mount -t nullfs ${POUDRIERED}/${JAILNAME}-options ${JAILBASE}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+	elif [ -d ${POUDRIERED}/options ]; then
+		mount -t nullfs ${POUDRIERED}/options ${JAILBASE}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+	fi
 
 	msg "Populating LOCALBASE"
-	injail /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p /usr/local >/dev/null
+	mkdir -p ${JAILBASE}/${MYBASE:-/usr/local}
+	injail /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${MYBASE:-/usr/local} >/dev/null
 
 	WITH_PKGNG=`injail make -C /usr/ports -VWITH_PKGNG`
 	if [ -n "${WITH_PKGNG}" ]; then
 		export PKGNG=1
 		export EXT="txz"
-		export PKG_ADD="pkg add"
-		export PKG_DELETE="pkg delete -y -f"
+		export PKG_ADD="${MYBASE:-/usr/local}/sbin/pkg add"
+		export PKG_DELETE="${MYBASE:-/usr/local}/sbin/pkg delete -y -f"
 	else
 		export PKGNG=0
 		export PKG_ADD=pkg_add
