@@ -48,7 +48,8 @@ test -z ${MYBASE} && usage
 test -z "${JAILNAMES}" && JAILNAMES=`jail_ls`
 
 for JAILNAME in ${JAILNAMES}; do
-	PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}
+	LBASENAME=$(echo ${MYBASE} | sed -e "s|/|_|g")
+	PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}-${LBASENAME}
 
 	jail_start ${JAILNAME}
 	ZVERSION=`jail_get_zpool_version ${JAILNAME}`
@@ -60,11 +61,9 @@ for JAILNAME in ${JAILNAMES}; do
 	PORTDIRECTORY=/usr/ports/${ORIGIN}
 	LISTPORTS=$(list_deps ${PORTDIRECTORY} )
 	LISTPORTS="${LISTPORTS} ${ORIGIN}"
-	export LOCALBASE=${MYBASE}
-	export MYBASE
 	prepare_ports
 	zfs snapshot ${JAILFS}@prepkg
-	queue=$(zfs get -H -o value poudriere:queue ${JAILFS})
+	export LOCALBASE=${MYBASE}
 	for port in ${queue}; do
 		build_pkg ${port} || {
 			[ $? -eq 2 ] && continue
@@ -74,7 +73,6 @@ for JAILNAME in ${JAILNAMES}; do
 	zfs rollback ${JAILFS}@prepkg
 	PKGNAME=`injail make -C ${PORTDIRECTORY} -VPKGNAME`
 	log_start ${LOGS}/pbi-${PKGNAME}-${JAILNAME}.log
-	echo here: ${PKGNAME}
 	echo pkg -j ${JAILNAME} add /usr/ports/packages/All/${PKGNAME}.${EXT}
 	/usr/local/sbin/pkg -j ${JAILNAME} add /usr/ports/packages/All/${PKGNAME}.${EXT}
 	zfs diff -FH ${JAILFS}@prepkg ${JAILFS}  | \
@@ -91,6 +89,7 @@ for JAILNAME in ${JAILNAMES}; do
 					;;
 				+*)	case "${PPATH}" in
 						/*) continue ;;
+						*.h|*.a) continue ;;
 						*)
 							SUM=`test -f ${JAILBASE}/${LOCALBASE}/${PPATH} && sha256 -q ${JAILBASE}/${LOCALBASE}/${PPATH} || echo '-'`
 							echo "  ${LOCALBASE}/${PPATH}: ${SUM}" >> ${JAILBASE}/files
@@ -119,7 +118,7 @@ files:
 	cat ${JAILBASE}/+MANIFEST
 	/usr/local/sbin/pkg create -m ${JAILBASE}/ -r ${JAILBASE} ${PKGNAME}
 
-	zfs rollback ${JAILBASE}/prepkg
+	zfs rollback ${JAILFS}@prepkg
 	log_stop ${LOGS}/pbi${PKGNAME}-${JAILNAME}.log
 
 	cleanup

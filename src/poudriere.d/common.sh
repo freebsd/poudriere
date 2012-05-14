@@ -418,18 +418,15 @@ build_pkg() {
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
 		zfs_set "poudriere:stats_built" "$cnt"
-		buf=$(status_get poudriere:built)
-		buf="${buf} ${port}"
-		status_set "poudriere:built" "${buf}"
+		export built="${build} ${port}"
 	else
 		cnt=$(zfs_get poudriere:stats_failed)
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
 		zfs_set "poudriere:stats_failed" "$cnt"
 		state=$(zfs_get poudriere:status)
-		buf=$(status_get poudriere:failed)
 		buf="${buf} ${state}"
-		status_set "poudriere:failed" "${buf}"
+		export failed="${failed} ${state}"
 	fi
 	jail_status "idle:"
 	log_stop ${LOGS}/${JAILNAME}-${PTNAME}-${PKGNAME}.log
@@ -492,7 +489,6 @@ process_deps() {
 
 prepare_ports() {
 	local base=$(jail_running_base ${JAILNAME})
-	local queue=" "
 	tmplist=$(mktemp ${base}/tmp/orderport.XXXXXX)
 	deplist=$(mktemp ${base}/tmp/orderport1.XXXXX)
 	tmplist2=$(mktemp ${base}/tmp/orderport2.XXXXX)
@@ -526,17 +522,18 @@ prepare_ports() {
 
 	jail_status "cleaning:"
 	msg "Cleaning the build queue"
+	export LOCALBASE=${MYBASE:-/usr/local}
 	while read p; do
 		local PKGNAME=$(injail make -C /usr/ports/${p} -VPKGNAME)
 		[ ! -f ${PKGDIR}/All/${PKGNAME}.${EXT} ] && queue="${queue} $p"
 	done < ${tmplist2}
 
 	rm -f ${tmplist2} ${deplist} ${tmplist}
-	status_set "poudriere:queue" "${queue}"
+	export queue
+	export built=""
+	export failed=""
 	zfs_set "poudriere:stats_built" "0"
 	zfs_set "poudriere:stats_failed" "0"
-	status_set "poudriere:built" " "
-	status_set "poudriere:failed" " "
 }
 
 prepare_jail() {
