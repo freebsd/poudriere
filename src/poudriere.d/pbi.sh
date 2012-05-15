@@ -136,7 +136,7 @@ files:
 		sed -i '' -e "/^[ \t]*$/d" ${JAILBASE}/+MANIFEST
 		/usr/local/sbin/pkg create -m ${JAILBASE}/ -r ${JAILBASE} ${PKGNAME}
 	else
-		injail tar cfJ /data.txz `awk '{ printf("%s ", $0) } END { printf("\n") }' ${JAILBASE}/files`
+		injail tar cfJ /data.txz -s ",${MYBASE},,g" `awk '{ printf("%s ", $0) } END { printf("\n") }' ${JAILBASE}/files`
 		mkdir ${JAILBASE}/head
 		echo ${PKGNAME%-*} > ${JAILBASE}/head/pbi_name
 		echo ${PKGNAME##*-} > ${JAILBASE}/head/pbi_version
