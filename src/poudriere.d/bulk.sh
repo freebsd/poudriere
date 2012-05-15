@@ -78,7 +78,7 @@ for JAILNAME in ${JAILNAMES}; do
 	[ "$nbfailed" = "-" ] && nbfailed=0
 	[ "$nbbuilt" = "-" ] && nbbuilt=0
 # Package all newly build ports
-	if [ $built -eq 0 ]; then
+	if [ $nbbuilt -eq 0 ]; then
 		if [ $PKGNG -eq 1 ]; then
 			msg "No package built, no need to update the repository"
 		else
@@ -200,12 +200,12 @@ for JAILNAME in ${JAILNAMES}; do
 	fi
 
 	cleanup
-	msg "$built packages built, $failed failures"
-	if [ $built -gt 0 ]; then
+	msg "$nbbuilt packages built, $nbfailed failures"
+	if [ $nbbuilt -gt 0 ]; then
 		msg_n "Built ports: "
 		echo ${built}
 	fi
-	if [ $failed -gt 0 ]; then
+	if [ $nbfailed -gt 0 ]; then
 		msg_n "Failed ports: "
 		status_get poudriere:failed
 		echo ${failed}
