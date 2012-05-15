@@ -207,7 +207,6 @@ for JAILNAME in ${JAILNAMES}; do
 	fi
 	if [ $nbfailed -gt 0 ]; then
 		msg_n "Failed ports: "
-		status_get poudriere:failed
 		echo ${failed}
 	fi
 done

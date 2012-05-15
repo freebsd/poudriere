@@ -532,6 +532,9 @@ prepare_ports() {
 	export queue
 	export built=""
 	export failed=""
+	local nbq=0
+	for a in ${queue}; do nbq=$((nbq + 1)); done
+	zfs_set "poudriere:stats_queued" "${nbq}"
 	zfs_set "poudriere:stats_built" "0"
 	zfs_set "poudriere:stats_failed" "0"
 }

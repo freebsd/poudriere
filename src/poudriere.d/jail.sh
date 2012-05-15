@@ -29,15 +29,12 @@ info_jail() {
 	test -z ${NAME} && usage
 	jail_exists ${NAME} || err 1 "No such jail: ${NAME}"
 	JAILFS=`jail_get_fs ${NAME}`
-	queue=$(status_get poudriere:queue)
 	nbb=$(zfs_get poudriere:stats_built)
 	nbf=$(zfs_get poudriere:stats_failed)
-	nbq=0
-	for a in ${queue}; do nbq=$((nbq + 1)); done
-	f=$(status_get poudriere:failed)
+	nbq=$(zfs_get poudriere:stats_queued)
 	tobuild=$((nbq - nbb - nbf))
 	zfs list -H -o poudriere:type,poudriere:name,poudriere:version,poudriere:arch,poudriere:stats_built,poudriere:stats_failed,poudriere:status ${JAILFS}| \
-		awk -v q="$nbq" -v tb="$tobuild" -v f="$f" '/^rootfs/  {
+		awk -v q="$nbq" -v tb="$tobuild" '/^rootfs/  {
 			print "Jailname: " $2;
 			print "FreeBSD Version: " $3;
 			print "FreeBSD arch: "$4;
@@ -46,17 +43,14 @@ info_jail() {
 			print "Nb packages failed: "$6;
 			print "Nb packages queued: "q;
 			print "Nb packages to be built: "tb;
-			if ($6 > 0) {
-				print "Failed packages: "f;
-			}
 		}'
 }
 
 list_jail() {
 	[ ${QUIET} -eq 0 ] && \
-		printf '%-20s %-13s %-7s %-7s %-7s %s\n' "JAILNAME" "VERSION" "ARCH" "SUCCESS" "FAILED" "STATUS"
-	zfs list -Hd1 -o poudriere:type,poudriere:name,poudriere:version,poudriere:arch,poudriere:stats_built,poudriere:stats_failed,poudriere:status ${ZPOOL}/poudriere | \
-		awk '/^rootfs/ { printf("%-20s %-13s %-7s %-7s %-7s %s\n",$2, $3, $4, $5, $6, $7) }'
+		printf '%-20s %-13s %-7s %-7s %-7s %-7s %s\n' "JAILNAME" "VERSION" "ARCH" "SUCCESS" "FAILED" "QUEUED" "STATUS"
+	zfs list -Hd1 -o poudriere:type,poudriere:name,poudriere:version,poudriere:arch,poudriere:stats_built,poudriere:stats_failed,poudriere:stats_queued,poudriere:status ${ZPOOL}/poudriere | \
+		awk '/^rootfs/ { printf("%-20s %-13s %-7s %-7s %-7s %-7s %s\n",$2, $3, $4, $5, $6, $7, $8) }'
 }
 
 delete_jail() {
