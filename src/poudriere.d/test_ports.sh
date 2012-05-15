@@ -78,7 +78,6 @@ for JAILNAME in ${JAILNAMES}; do
 	LISTPORTS=$(list_deps ${PORTDIRECTORY} )
 	prepare_ports
 	zfs snapshot ${JAILFS}@prepkg
-	queue=$(zfs get -H -o value poudriere:queue ${JAILFS})
 	for port in ${queue}; do
 		build_pkg ${port} || {
 			[ $? -eq 2 ] && continue

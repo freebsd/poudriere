@@ -67,7 +67,6 @@ for JAILNAME in ${JAILNAMES}; do
 
 	prepare_ports
 	zfs snapshot ${JAILFS}@prepkg
-	queue=$(status_get poudriere:queue)
 	for port in $queue; do
 		build_pkg ${port}
 		zfs rollback -r ${JAILFS}@prepkg
