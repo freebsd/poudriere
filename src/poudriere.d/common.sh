@@ -257,9 +257,9 @@ delete_pkg() {
 
 sanity_check_pkgs() {
 	ret=0
-	[ ! -d ${PKGDIR}/Latest ] && return
-	[ ! -d ${PKGDIR}/All ] && return
-	[ -z "$(ls -A ${PKGDIR}/Latest)" ] && return
+	[ ! -d ${PKGDIR}/Latest ] && return $ret
+	[ ! -d ${PKGDIR}/All ] && return $ret
+	[ -z "$(ls -A ${PKGDIR}/Latest)" ] && return $ret
 	for pkg in ${PKGDIR}/Latest/*.${EXT}; do
 		realpkg=$(realpath $pkg)
 		if [ ! -e $realpkg ]; then
@@ -290,6 +290,8 @@ sanity_check_pkgs() {
 			done
 		fi
 	done
+
+	return $ret
 }
 
 build_port() {
@@ -443,28 +445,29 @@ list_deps() {
 		tr ' ' '\n' | egrep -v ".*:.*" | sort -u
 }
 
-check_pkg() {
-	local port=$1
-	local portdir="/usr/ports/${port}"
-	test -d ${JAILBASE}/${portdir} || {
-		msg "No such port ${port}"
-		return 1
-	}
-	local NO_LATEST_LINK=$(injail make -C ${portdir} -VNO_LATEST_LINK)
-
-	# delete older one if any
-	if [ -z "$NO_LATEST_LINK" ]; then
-		local LATEST_LINK=$(injail make -C ${portdir} -VLATEST_LINK)
-		if [ -e ${PKGDIR}/Latest/${LATEST_LINK}.${EXT} ]; then
-			local PKGNAME=$(injail make -C ${portdir} -VPKGNAME)
-			local PKGNAME_PREV=$(realpath ${PKGDIR}/Latest/${LATEST_LINK}.${EXT})
-			if [ "${PKGNAME_PREV##*/}" != "${PKGNAME}.${EXT}" ]; then
-				msg "Deleting previous version of ${port}"
-				find ${PKGDIR}/ -name ${PKGNAME_PREV##*/} -delete
-				find ${PKGDIR}/ -name ${LATEST_LINK}.${EXT} -delete
-			fi
+delete_old_pkgs() {
+	local o
+	local v
+	local v2
+	for pkg in ${PKGDIR}/All/*.${EXT}; do
+		if [ "${EXT}" = "tbz" ]; then
+			o=`pkg_info -qo ${pkg}`
+		else
+			o=`pkg query -F ${pkg} "%o"`
 		fi
-	fi
+		v=${pkg##*-}
+		v=${v%.*}
+		if [ ! -d ${JAILBASE}/usr/ports/${o} ]; then
+			msg "${o} does exists anymore, delete staled ${pkg##*/}"
+			rm -f ${pkg}
+			continue
+		fi
+		v2=`injail make -C /usr/ports/${o} -VPKGVERSION`
+		if [ "$v" != "$v2" ]; then
+			msg "Deleting old version: ${pkg##*/}"
+			rm -f ${pkg}
+		fi
+	done
 }
 
 process_deps() {
@@ -512,9 +515,7 @@ prepare_ports() {
 
 	jail_status "sanity:"
 	msg "Sanity checking the repository"
-	while read p; do
-		check_pkg ${p}
-	done < ${tmplist2}
+	delete_old_pkgs
 
 	while :; do
 		sanity_check_pkgs && break
