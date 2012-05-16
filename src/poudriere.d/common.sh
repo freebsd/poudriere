@@ -341,6 +341,7 @@ build_port() {
 				comm -13 ${JAILBASE}${PREFIX}.PLIST_DIRS.before ${JAILBASE}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
 			else
 				local BASE=$(jail_running_base ${JAILNAME})
+				PORTNAME=$(injail make -C ${PORTDIR} -VPORTNAME)
 				FILES=$(mktemp ${BASE}/tmp/files.XXXXXX)
 				DIRS=$(mktemp ${BASE}/tmp/dirs.XXXXXX)
 				DIE=0
