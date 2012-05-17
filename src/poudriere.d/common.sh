@@ -154,7 +154,7 @@ jail_create_zfs() {
 jail_start() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
 	NAME=$1
-	export JAILBASE=`jail_get_base ${JAILNAME}`
+	export JAILBASE=`jail_get_base ${NAME}`
 	export JAILFS=`jail_get_fs ${NAME}`
 
 	jail_exists ${NAME} || err 1 "No such jail: ${NAME}"
@@ -188,6 +188,8 @@ jail_start() {
 jail_stop() {
 	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
 	NAME=${1}
+	export JAILBASE=`jail_get_base ${NAME}`
+	export JAILFS=`jail_get_fs ${NAME}`
 	jail_runs ${NAME} || err 1 "No such jail running: ${NAME}"
 	jail_status "stop:"
 
