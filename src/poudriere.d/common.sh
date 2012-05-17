@@ -182,7 +182,10 @@ jail_start() {
 	msg "Starting jail ${NAME}"
 	jail -c persist name=${NAME} ip4=disable ip6=disable path=${MNT} host.hostname=${NAME} \
 		allow.sysvipc allow.mount allow.socket_af allow.raw_sockets
-	export STATUS=1
+
+	# Only set STATUS=1 if not turned off
+	# jail -s should not do this or jail will stop on EXIT
+	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
 }
 
 jail_stop() {

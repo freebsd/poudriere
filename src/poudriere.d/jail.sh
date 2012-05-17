@@ -246,6 +246,7 @@ case "${CREATE}${LIST}${STOP}${START}${DELETE}${INFO}" in
 		jail_stop ${JAILNAME}
 		;;
 	000100)
+		export SET_STATUS_ON_START=0
 		jail_start ${JAILNAME}
 		;;
 	000010)
