@@ -421,7 +421,7 @@ build_pkg() {
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
 		zfs_set "poudriere:stats_built" "$cnt"
-		export built="${build} ${port}"
+		export built="${built} ${port}"
 	else
 		cnt=$(zfs_get poudriere:stats_failed)
 		[ "$cnt" = "-" ] && cnt=0
