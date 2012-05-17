@@ -224,6 +224,12 @@ port_create_zfs() {
 }
 
 cleanup() {
+	# Prevent recursive cleanup on error
+	if [ -n "${CLEANING_UP}" ]; then
+		echo "Failure cleaning up. Giving up." >&2
+		return
+	fi
+	export CLEANING_UP=1
 	[ -e ${PIPE} ] && rm -f ${PIPE}
 	FS=`jail_get_fs ${JAILNAME}`
 	zfs destroy ${FS}@prepkg 2>/dev/null || :
