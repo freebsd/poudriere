@@ -26,9 +26,9 @@ Options:
 }
 
 info_jail() {
-	test -z ${NAME} && usage
-	jail_exists ${NAME} || err 1 "No such jail: ${NAME}"
-	JAILFS=`jail_get_fs ${NAME}`
+	test -z ${JAILNAME} && usage
+	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
+	JAILFS=`jail_get_fs ${JAILNAME}`
 	nbb=$(zfs_get poudriere:stats_built)
 	nbf=$(zfs_get poudriere:stats_failed)
 	nbq=$(zfs_get poudriere:stats_queued)
@@ -54,38 +54,38 @@ list_jail() {
 }
 
 delete_jail() {
-	test -z ${NAME} && usage
-	jail_exists ${NAME} || err 1 "No such jail: ${NAME}"
-	jail_runs ${NAME} && \
-		err 1 "Unable to remove jail ${NAME}: it is running"
+	test -z ${JAILNAME} && usage
+	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
+	jail_runs ${JAILNAME} && \
+		err 1 "Unable to remove jail ${JAILNAME}: it is running"
 
-	JAILBASE=`jail_get_base ${NAME}`
-	FS=`jail_get_fs ${NAME}`
-	msg_n "Removing ${NAME} jail..."
+	JAILBASE=`jail_get_base ${JAILNAME}`
+	FS=`jail_get_fs ${JAILNAME}`
+	msg_n "Removing ${JAILNAME} jail..."
 	zfs destroy -r ${FS}
 	rmdir ${JAILBASE}
-	rm -rf ${POUDRIERE_DATA}/packages/${NAME}
-	rm -f ${POUDRIERE_DATA}/logs/*-${NAME}.*.log
-	rm -f ${POUDRIERE_DATA}/logs/bulk-${NAME}.log
+	rm -rf ${POUDRIERE_DATA}/packages/${JAILNAME}
+	rm -f ${POUDRIERE_DATA}/logs/*-${JAILNAME}.*.log
+	rm -f ${POUDRIERE_DATA}/logs/bulk-${JAILNAME}.log
 	echo done
 }
 
 create_jail() {
-	jail_exists ${NAME} && err 2 "The jail ${NAME} already exists"
+	jail_exists ${JAILNAME} && err 2 "The jail ${JAILNAME} already exists"
 
 	test -z ${VERSION} && usage
 
 	if [ -z ${JAILBASE} ]; then
 		[ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
-		JAILBASE=${BASEFS}/jails/${NAME}
+		JAILBASE=${BASEFS}/jails/${JAILNAME}
 	fi
 
 	if [ -z ${FS} ] ; then
 		[ -z ${ZPOOL} ] && err 1 "Please provide a ZPOOL variable in your poudriere.conf"
-		FS=${ZPOOL}/poudriere/${NAME}
+		FS=${ZPOOL}/poudriere/${JAILNAME}
 	fi
 
-	jail_create_zfs ${NAME} ${VERSION} ${ARCH} ${JAILBASE} ${FS}
+	jail_create_zfs ${JAILNAME} ${VERSION} ${ARCH} ${JAILBASE} ${FS}
 	mkdir ${JAILBASE}/fromftp
 
 	if [ ${VERSION%%.*} -lt 9 ]; then
@@ -165,7 +165,7 @@ EOF
 #	chroot -u root ${JAILBASE} /sbin/ldconfig  -m /lib /usr/lib /usr/lib/compat
 
 	zfs snapshot ${FS}@clean
-	msg "Jail ${NAME} ${VERSION} ${ARCH} is ready to be used"
+	msg "Jail ${JAILNAME} ${VERSION} ${ARCH} is ready to be used"
 }
 
 ARCH=`uname -m`
@@ -186,7 +186,7 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 while getopts "j:v:a:z:m:n:f:M:sdklqci" FLAG; do
 	case "${FLAG}" in
 		j)
-			NAME=${OPTARG}
+			JAILNAME=${OPTARG}
 			;;
 		v)
 			VERSION=${OPTARG}
@@ -243,15 +243,15 @@ case "${CREATE}${LIST}${STOP}${START}${DELETE}${INFO}" in
 		list_jail
 		;;
 	001000)
-		jail_stop ${NAME}
+		jail_stop ${JAILNAME}
 		;;
 	000100)
-		jail_start ${NAME}
+		jail_start ${JAILNAME}
 		;;
 	000010)
 		delete_jail
 		;;
 	000001)
-		info_jail ${NAME}
+		info_jail ${JAILNAME}
 		;;
 esac

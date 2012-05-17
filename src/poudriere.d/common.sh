@@ -233,6 +233,7 @@ cleanup() {
 	fi
 	export CLEANING_UP=1
 	[ -e ${PIPE} ] && rm -f ${PIPE}
+	[ -z "${JAILNAME}" ] && err 2 "Fail: Missing JAILNAME"
 	FS=`jail_get_fs ${JAILNAME}`
 	zfs destroy ${FS}@prepkg 2>/dev/null || :
 	zfs destroy ${FS}@prebuild 2>/dev/null || :
