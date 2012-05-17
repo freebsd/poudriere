@@ -428,7 +428,6 @@ build_pkg() {
 		cnt=$(( cnt + 1))
 		zfs_set "poudriere:stats_failed" "$cnt"
 		state=$(zfs_get poudriere:status)
-		buf="${buf} ${state}"
 		export failed="${failed} ${state}"
 	fi
 	jail_status "idle:"
