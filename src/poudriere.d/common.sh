@@ -470,7 +470,7 @@ delete_old_pkgs() {
 		v=${pkg##*-}
 		v=${v%.*}
 		if [ ! -d ${JAILBASE}/usr/ports/${o} ]; then
-			msg "${o} does exists anymore, delete staled ${pkg##*/}"
+			msg "${o} does not exist anymore. Deleting stale ${pkg##*/}"
 			rm -f ${pkg}
 			continue
 		fi
