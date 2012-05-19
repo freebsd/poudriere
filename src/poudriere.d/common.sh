@@ -462,6 +462,7 @@ delete_old_pkgs() {
 	local v
 	local v2
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
+		test -e ${pkg} || continue
 		if [ "${EXT}" = "tbz" ]; then
 			o=`pkg_info -qo ${pkg}`
 		else
