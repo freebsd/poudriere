@@ -132,6 +132,8 @@ if [ ${UPDATE} -eq 1 ]; then
 ports-all" > ${PTBASE}/csup
 		csup -z -h ${CSUP_HOST} ${PTBASE}/csup
 	else
-		/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch update
+		PSCOMMAND=fetch
+		[ -t 0 ] || PSCOMMAND=cron
+		/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports ${PSCOMMAND} update
 	fi
 fi
