@@ -10,10 +10,11 @@ ZPOOL=tank
 # replace _CHANGE_THIS_ by your 2-letter country-code.
 FTPHOST=ftp._CHANGE_THIS_.freebsd.org
 
-# If you want to use a custom resolv.conf in your jails, set the path to this
-# file on the host system below. If unset, the jail's resolv.conf file will
-# not be overwritten.
-#RESOLV_CONF="/usr/local/etc/poudriere.d/resolv.conf"
+# By default the jails have no /etc/resolv.conf, you will need to set
+# REVOLV_CONF to a file on your hosts system that will be copied has
+# /etc/resolv.conf for the jail, except if you don't need it (using an http
+# proxy for example)
+RESOLV_CONF=/etc/resolv.conf
 
 # The directory where the jail will store the packages and logs
 POUDRIERE_DATA=/usr/local/poudriere_data
@@ -37,12 +38,6 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Directory used to store "poudriere cron" files. Do not forget to set
 # it sticky and give a+rwx.
 CRONDIR=${BASEFS}/cron
-
-# By default the jails have no /etc/resolv.conf, you will need to set
-# REVOLV_CONF to a file on your hosts system that will be copied has
-# /etc/resolv.conf for the jail, except if you don't need it (using an http
-# proxy for example)
-RESOLV_CONF=/etc/resolv.conf
 
 # if set the ports tree will be synced using csup instead of portsnap using the
 # given cvsup mirror.
