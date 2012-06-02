@@ -13,6 +13,8 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 perms=`stat ${CRONDIR} | awk '{print $3}'`
 [ `stat -f '%Sp' ${CRONDIR}` != "drwxrwxrwt" ] && err 1 "Please fix permissions on ${CRONDIR} (see poudriere.conf)"
 
+QUEUEFILE=${CRONDIR}/poudriere-`date +%s`
 for ARG in $@; do
-	echo -n "$ARG " >> ${CRONDIR}/poudriere-`date +%s`
+	echo -n "$ARG " >> ${QUEUEFILE}
 done
+echo "" >> ${QUEUEFILE}
