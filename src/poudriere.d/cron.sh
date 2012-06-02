@@ -11,7 +11,10 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 if [ -d ${CRONDIR} ]; then
 	CMDFILE=`ls -t ${CRONDIR}/poudriere-* 2>/dev/null | tail -1`
 	if [ -s "${CMDFILE}" ]; then
-		COMMAND=`cat ${CMDFILE}`
-		poudriere ${COMMAND} && rm ${CMDFILE}
+		cat ${CMDFILE} | while read COMMAND
+		do
+			poudriere ${COMMAND}
+		done
+		rm -f ${CMDFILE}
 	fi
 fi
