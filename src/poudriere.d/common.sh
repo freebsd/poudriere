@@ -181,7 +181,7 @@ jail_start() {
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${MNT}/etc/"
 	msg "Starting jail ${NAME}"
 	jail -c persist name=${NAME} ip4=disable ip6=disable path=${MNT} host.hostname=${NAME} \
-		allow.sysvipc allow.mount allow.socket_af allow.raw_sockets
+		allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
 
 	# Only set STATUS=1 if not turned off
 	# jail -s should not do this or jail will stop on EXIT
@@ -316,7 +316,7 @@ build_port() {
 		if [ "${PHASE}" = "fetch" ]; then
 			jail -r ${JAILNAME}
 			jail -c persist name=${NAME} ip4=inherit ip6=inherit path=${MNT} host.hostname=${NAME} \
-				allow.sysvipc allow.mount allow.socket_af allow.raw_sockets
+				allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
 		fi
 		[ "${PHASE}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
 		if [ -n "${PORTTESTING}" -a "${PHASE}" = "deinstall" ]; then
@@ -340,7 +340,7 @@ build_port() {
 		if [ "${PHASE}" = "fetch" ]; then
 			jail -r ${JAILNAME}
 			jail -c persist name=${NAME} ip4.addr=127.0.0.1 ip6=disable path=${MNT} host.hostname=${NAME} \
-				allow.sysvipc allow.mount allow.socket_af allow.raw_sockets
+				allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
 		fi
 		if [ -n "${PORTTESTING}" -a  "${PHASE}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
