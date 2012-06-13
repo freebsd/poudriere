@@ -6,6 +6,7 @@ err() {
 	fi
 	[ ${STATUS} -eq 1 ] && cleanup
 	echo "$2" >&2
+	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
 	exit $1
 }
 

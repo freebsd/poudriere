@@ -70,6 +70,11 @@ delete_jail() {
 	echo done
 }
 
+cleanup_new_jail() {
+	delete_jail
+	rm -rf ${JAILBASE}/fromftp
+}
+
 create_jail() {
 	jail_exists ${JAILNAME} && err 2 "The jail ${JAILNAME} already exists"
 
@@ -87,6 +92,7 @@ create_jail() {
 
 	jail_create_zfs ${JAILNAME} ${VERSION} ${ARCH} ${JAILBASE} ${FS}
 	mkdir ${JAILBASE}/fromftp
+	CLEANUP_HOOK=cleanup_new_jail
 
 	if [ ${VERSION%%.*} -lt 9 ]; then
 		msg "Fetching sets for FreeBSD ${VERSION} ${ARCH}"
