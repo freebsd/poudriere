@@ -101,6 +101,7 @@ create_jail() {
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32"
 		for dist in ${DISTS}; do
 			PKGS=`echo "ls *.??"| ftp -aV ${FTPURL}/$dist/ | awk '/-r.*/ {print $NF}'`
+			[ -z ${PKGS} ] && err 1 "Could not find distribution on ${FTPURL}/dist"
 			for pkg in ${PKGS}; do
 				[ ${pkg} = "install.sh" ] && continue
 				# Let's retry at least one time
