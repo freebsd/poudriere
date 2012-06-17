@@ -322,7 +322,11 @@ build_port() {
 	msg "Fetch distfiles"
 	#fetch_distfiles ${PORTDIR}
 	msg "Building ${PKGNAME}"
-	for PHASE in fetch extract patch configure build install package deinstall; do
+	TARGETS="fetch extract patch configure build install package"
+	if [ -n "${PORTTESTING}" ]; then
+		TARGETS="${DEINSTALL} deinstall"
+	fi
+	for PHASE in ${TARGETS}; do
 		zfs_set "poudriere:status" "${PHASE}:${PORTDIR##/usr/ports/}"
 		if [ "${PHASE}" = "fetch" ]; then
 			jail -r ${JAILNAME}
