@@ -9,19 +9,22 @@ Parameters:
     -l            -- list all available jails
     -s            -- start a jail
     -k            -- kill (stop) a jail
+    -u            -- update a jail
     -i            -- show informations
- 
+
 Options:
     -q            -- quiet (remove the header in list)
     -j jailname   -- Specifies the jailname
     -v version    -- Specifies which version of FreeBSD we want in jail
     -a arch       -- Indicates architecture of the jail: i386 or amd64
                      (Default: same as host)
-    -m method     -- Method used to create jail, specify NONE if you want
-                     to use your home made jail
-                     (Default: FTP)
     -f fs         -- FS name (tank/jails/myjail)
-    -M mountpoint -- mountpoint"
+    -M mountpoint -- mountpoint
+    -m method     -- when used with -c forces the method to use by default
+                     \"ftp\", could also be \"svn\", \"csup\" please note
+                     that with svn and csup the world will be built. note
+                     that building from sources can use src.conf and
+                     jail-src.conf from localbase/etc/poudriere.d"
 	exit 1
 }
 
@@ -73,6 +76,33 @@ delete_jail() {
 cleanup_new_jail() {
 	delete_jail
 	rm -rf ${JAILBASE}/fromftp
+}
+
+update_jail() {
+	test -z ${JAILNAME} && usage
+	JAILFS=`jail_get_fs ${JAILNAME}`
+	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
+	jail_runs ${JAILNAME} && \
+		err 1 "Unable to remove jail ${JAILNAME}: it is running"
+
+	METHOD=`zfs_get poudriere:method`
+	if [ "${METHOD}" = "-" ]; then
+		METHOD="ftp"
+		zfs_set poudriere:method "ftp"
+	fi
+	case ${METHOD} in
+	ftp)
+		jail_start ${JAILNAME}
+		jail -r ${JAILNAME}
+		jail -c persist name=${NAME} ip4=inherit ip6=inherit path=${MNT} host.hostname=${NAME} \
+			allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
+		injail env PAGER=/bin/cat /usr/sbin/freebsd-update fetch install
+		jail_stop ${JAILNAME}
+		;;
+	*)
+		err 1 "Unknown method"
+		;;
+	esac
 }
 
 create_jail() {
@@ -177,7 +207,6 @@ EOF
 
 ARCH=`uname -m`
 REALARCH=${ARCH}
-METHOD="FTP"
 START=0
 STOP=0
 LIST=0
@@ -185,12 +214,13 @@ DELETE=0
 CREATE=0
 QUIET=0
 INFO=0
+UPDATE=0
 
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "j:v:a:z:m:n:f:M:sdklqci" FLAG; do
+while getopts "j:v:a:z:m:n:f:M:sdklqciu" FLAG; do
 	case "${FLAG}" in
 		j)
 			JAILNAME=${OPTARG}
@@ -234,32 +264,44 @@ while getopts "j:v:a:z:m:n:f:M:sdklqci" FLAG; do
 		i)
 			INFO=1
 			;;
+		u)
+			UPDATE=1
+			;;
 		*)
 			usage
 			;;
 	esac
 done
 
-[ $(( CREATE + LIST + STOP + START + DELETE + INFO)) -lt 1 ] && usage
+METHOD=${METHOD:-ftp}
 
-case "${CREATE}${LIST}${STOP}${START}${DELETE}${INFO}" in
-	100000)
+if [ "${METHOD}" = "ftp" ]; then
+	err 2 "No other method then ftp supported for now"
+fi
+
+[ $(( CREATE + LIST + STOP + START + DELETE + INFO + UPDATE )) -lt 1 ] && usage
+
+case "${CREATE}${LIST}${STOP}${START}${DELETE}${INFO}${UPDATE}" in
+	1000000)
 		create_jail
 		;;
-	010000)
+	0100000)
 		list_jail
 		;;
-	001000)
+	0010000)
 		jail_stop ${JAILNAME}
 		;;
-	000100)
+	0001000)
 		export SET_STATUS_ON_START=0
 		jail_start ${JAILNAME}
 		;;
-	000010)
+	0000100)
 		delete_jail
 		;;
-	000001)
+	0000010)
 		info_jail ${JAILNAME}
+		;;
+	0000001)
+		update_jail ${JAILNAME}
 		;;
 esac
