@@ -81,6 +81,7 @@ cleanup_new_jail() {
 update_jail() {
 	test -z ${JAILNAME} && usage
 	JAILFS=`jail_get_fs ${JAILNAME}`
+	JAILBASE=`jail_get_base ${JAILNAME}`
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	jail_runs ${JAILNAME} && \
 		err 1 "Unable to remove jail ${JAILNAME}: it is running"
@@ -96,31 +97,66 @@ update_jail() {
 		jail -r ${JAILNAME}
 		jail -c persist name=${NAME} ip4=inherit ip6=inherit path=${MNT} host.hostname=${NAME} \
 			allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
-		injail env PAGER=/bin/cat /usr/sbin/freebsd-update fetch install
+		injail /usr/sbin/freebsd-update fetch install
 		jail_stop ${JAILNAME}
 		;;
+	csup)
+		msg "Upgrading using csup"
+		echo ${JAILBASE}
+		rm -rf ${JAILBASE}/usr/src
+		RELEASE=`zfs_get poudriere:version`
+		install_from_csup
+		make -C ${JAILBASE}/usr/src delete-old delete-old-libs
+		;;
+	svn)
+		rm -rf ${JAILBASE}/usr/src
+		RELEASE=`zfs_get poudriere:version`
+		install_from_svn
+		make -C ${JAILBASE} delete-old delete-old-libs
+		;;
 	*)
-		err 1 "Unknown method"
+		err 1 "Unsupported method"
 		;;
 	esac
+
+	zfs destroy ${FS}@clean
+	zfs snapshot ${FS}@clean
 }
 
-create_jail() {
-	jail_exists ${JAILNAME} && err 2 "The jail ${JAILNAME} already exists"
+build_and_install_world() {
+	export TARGET_ARCH=${ARCH}
+	mkdir -p ${JAILBASE}/etc
+	[ -f ${POUDRIERED}/src.conf ] && cat ${POUDRIERED}/src.conf > ${JAILBASE}/etc/src.conf
+	[ -f ${POUDRIERED}/${JAILBASE}-src.conf ] && cat ${POUDRIERED}/${JAILBASE}-src.conf >> ${JAILBASE}/etc/src.conf
+	export __MAKE_CONF=/dev/null
+	export SRCCONF=${JAILBASE}/etc/src.conf
+	msg "Starting make buildworld"
+	make -C ${JAILBASE}/usr/src buildworld ${MAKEWORLDARGS}
+	msg "Starting make installworld"
+	make -C ${JAILBASE}/usr/src installworld DESTDIR=${JAILBASE}
+}
 
-	test -z ${VERSION} && usage
+install_from_svn() {
+	mkdir -p ${JAILBASE}/usr/src
+	msg "Fetching sources from svn"
+	svn co http://svn.freebsd.org/base/${RELEASE}
+	build_and_install_world
+}
 
-	if [ -z ${JAILBASE} ]; then
-		[ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
-		JAILBASE=${BASEFS}/jails/${JAILNAME}
-	fi
+install_from_csup() {
+	mkdir -p ${JAILBASE}/etc
+	mkdir -p ${JAILBASE}/var/db
+	[ -z ${CSUP_HOST} ] && err 2 "CSUP_HOST has to be defined in the configuration to use csup"
+	echo "*default base=${JAILBASE}/var/db
+*default prefix=${JAILBASE}/usr
+*default release=cvs tag=${RELEASE}
+*default delete use-rel-suffix
+src-all" > ${JAILBASE}/etc/supfile
+	csup -z -h ${CSUP_HOST} ${JAILBASE}/etc/supfile
+	build_and_install_world
+}
 
-	if [ -z ${FS} ] ; then
-		[ -z ${ZPOOL} ] && err 1 "Please provide a ZPOOL variable in your poudriere.conf"
-		FS=${ZPOOL}/poudriere/${JAILNAME}
-	fi
-
-	jail_create_zfs ${JAILNAME} ${VERSION} ${ARCH} ${JAILBASE} ${FS}
+install_from_ftp() {
 	mkdir ${JAILBASE}/fromftp
 	CLEANUP_HOOK=cleanup_new_jail
 
@@ -169,6 +205,42 @@ create_jail() {
 	msg_n "Cleaning up..."
 	rm -rf ${JAILBASE}/fromftp/
 	echo " done"
+}
+
+create_jail() {
+	jail_exists ${JAILNAME} && err 2 "The jail ${JAILNAME} already exists"
+
+	test -z ${VERSION} && usage
+
+	if [ -z ${JAILBASE} ]; then
+		[ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
+		JAILBASE=${BASEFS}/jails/${JAILNAME}
+	fi
+
+	if [ -z ${FS} ] ; then
+		[ -z ${ZPOOL} ] && err 1 "Please provide a ZPOOL variable in your poudriere.conf"
+		FS=${ZPOOL}/poudriere/${JAILNAME}
+	fi
+
+	case ${METHOD} in
+	ftp)
+		FCT=install_from_ftp
+		;;
+	svn)
+		SVN=`which svn`
+		test -z ${SVN} && err 1 "You need svn on your host to use svn method"
+		FCT=install_from_svn
+		;;
+	csup)
+		FCT=install_from_csup
+		;;
+	*)
+		err 2 "Unknown method to create the jail"
+		;;
+	esac
+
+	jail_create_zfs ${JAILNAME} ${VERSION} ${ARCH} ${JAILBASE} ${FS}
+	${FCT}
 
 	OSVERSION=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILBASE}/usr/include/sys/param.h`
 	LOGIN_ENV=",UNAME_r=${VERSION},UNAME_v=FreeBSD ${VERSION},OSVERSION=${OSVERSION}"
@@ -274,10 +346,6 @@ while getopts "j:v:a:z:m:n:f:M:sdklqciu" FLAG; do
 done
 
 METHOD=${METHOD:-ftp}
-
-if [ "${METHOD}" = "ftp" ]; then
-	err 2 "No other method then ftp supported for now"
-fi
 
 [ $(( CREATE + LIST + STOP + START + DELETE + INFO + UPDATE )) -lt 1 ] && usage
 
