@@ -22,7 +22,10 @@ Options:
     -p tree       -- specifies on which portstree we work. If not
                      specified, work on a portstree called \"default\".
     -f fs         -- FS name (tank/jails/myjail)
-    -M mountpoint -- mountpoint"
+    -M mountpoint -- mountpoint
+    -m method     -- when used with -c, specify the method used to update the
+                     tree by default it is portsnap, possible usage are
+                     \"csup\", \"portsnap\""
 
 	exit 1
 }
@@ -33,7 +36,7 @@ UPDATE=0
 DELETE=0
 LIST=0
 QUIET=0
-while getopts "cFudlp:qf:M:" FLAG; do
+while getopts "cFudlp:qf:M:m:" FLAG; do
 	case "${FLAG}" in
 		c)
 			CREATE=1
@@ -62,6 +65,9 @@ while getopts "cFudlp:qf:M:" FLAG; do
 		M)
 			PTBASE=${OPTARG}
 			;;
+		m)
+			METHOD=${OPTARG}
+			;;
 		*)
 			usage
 		;;
@@ -70,11 +76,22 @@ done
 
 [ $(( CREATE + UPDATE + DELETE + LIST )) -lt 1 ] && usage
 
+METHOD=${METHOD:-portsnap}
 PTNAME=${PTNAME:-default}
 
+case ${METHOD} in
+csup)
+	[ -z ${CSUP_HOST} ] && err 2 "CSUP_HOST has to be defined in the configuration to use csup"
+	;;
+portsnap);;
+*) usage;;
+esac
+
 if [ ${LIST} -eq 1 ]; then
-	[ $QUIET -eq 0 ] && echo "PORTSTREE"
-	zfs list -d1 -o poudriere:type,poudriere:name ${ZPOOL}/poudriere | awk '/ports/ {print $2 }'
+	[ $QUIET -eq 0 ] && \
+		printf '%-20s %-10s\n' "PORTSTREE" "METHOD"
+	zfs list -Hd1 -o poudriere:type,poudriere:name,poudriere:method ${ZPOOL}/poudriere | \
+		awk '/ports/ {printf("%-20s %-10s\n",$2,$2) }'
 else
 	test -z "${PTNAME}" && usage
 fi
@@ -86,7 +103,8 @@ if [ ${CREATE} -eq 1 ]; then
 	port_create_zfs ${PTNAME} ${PTBASE} ${FS}
 	mkdir ${PTBASE}/ports
 	if [ $FAKE -eq 0 ]; then
-		if [ -n "${CSUP_HOST}" ]; then
+		case ${METHOD} in
+		csup)
 			mkdir ${PTBASE}/db
 			echo "*default prefix=${PTBASE}
 *default base=${PTBASE}/db
@@ -94,10 +112,11 @@ if [ ${CREATE} -eq 1 ]; then
 *default delete use-rel-suffix
 ports-all" > ${PTBASE}/csup
 			csup -z -h ${CSUP_HOST} ${PTBASE}/csup || {
-					zfs destroy ${FS}
-					err 1 " Fail"
+				zfs destroy ${FS}
+				err 1 " Fail"
 			}
-		else
+			;;
+		portsnap)
 			mkdir ${PTBASE}/snap
 			msg "Extracting portstree \"${PTNAME}\"..."
 			/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch extract || \
@@ -106,7 +125,8 @@ ports-all" > ${PTBASE}/csup
 				zfs destroy ${FS}
 				err 1 " Fail"
 			}
-		fi
+		esac
+		port_set_method ${FS} ${METHOD}
 	fi
 fi
 
@@ -123,17 +143,29 @@ if [ ${UPDATE} -eq 1 ]; then
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	PTBASE=$(port_get_base ${PTNAME})
 	msg "Updating portstree \"${PTNAME}\""
-	if [ -n "${CSUP_HOST}" ]; then
+	METHOD=$(port_get_method ${ZPOOL}/poudriere/ports-${PTNAME})
+	if [ ${METHOD} = "-" ]; then
+		METHOD=portsnap
+		port_set_method ${ZPOOL}/poudriere/ports-${PTNAME} ${METHOD}
+	fi
+	case ${METHOD} in
+	csup)
+		[ -z ${CSUP_HOST} ] && err 2 "CSUP_HOST has to be defined in the configuration to use csup"
 		[ -d ${PTBASE}/db ] || mkdir ${PTBASE}/db
-			echo "*default prefix=${PTBASE}
+		echo "*default prefix=${PTBASE}
 *default base=${PTBASE}/db
 *default release=cvs tag=.
 *default delete use-rel-suffix
 ports-all" > ${PTBASE}/csup
 		csup -z -h ${CSUP_HOST} ${PTBASE}/csup
-	else
+		;;
+	portsnap|"")
 		PSCOMMAND=fetch
 		[ -t 0 ] || PSCOMMAND=cron
 		/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports ${PSCOMMAND} update
-	fi
+		;;
+	*)
+		err 1 "Undefined upgrade method"
+		;;
+	esac
 fi

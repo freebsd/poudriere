@@ -44,6 +44,16 @@ zfs_set() {
 	zfs set $1="$2" ${JAILFS}
 }
 
+port_set_method() {
+	[ $# -ne 2 ] && err 1 "Fail: need two argments got $@"
+	zfs set poudriere:method="$2" ${1}
+}
+
+port_get_method() {
+	[ $# -ne 1 ] && err 1 "Fail: need one argument"
+	zfs get -H -o value "poudriere:method" $1
+}
+
 status_get() {
 	[ $# -ne 1 ] && err 1 "Fail: need one argument"
 	cat /var/run/poudriere-${JAILNAME}-${1}
