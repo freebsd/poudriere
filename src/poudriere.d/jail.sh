@@ -106,21 +106,21 @@ update_jail() {
 		rm -rf ${JAILBASE}/usr/src
 		RELEASE=`zfs_get poudriere:version`
 		install_from_csup
-		make -C ${JAILBASE}/usr/src delete-old delete-old-libs
+		make -C ${JAILBASE}/usr/src delete-old delete-old-libs DESTDIR=${JAILBASE}
 		;;
 	svn)
 		rm -rf ${JAILBASE}/usr/src
 		RELEASE=`zfs_get poudriere:version`
 		install_from_svn
-		make -C ${JAILBASE} delete-old delete-old-libs
+		make -C ${JAILBASE} delete-old delete-old-libs DESTDIR=${JAILBASE}
 		;;
 	*)
 		err 1 "Unsupported method"
 		;;
 	esac
 
-	zfs destroy ${FS}@clean
-	zfs snapshot ${FS}@clean
+	zfs destroy ${JAILFS}@clean
+	zfs snapshot ${JAILFS}@clean
 }
 
 build_and_install_world() {
