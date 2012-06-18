@@ -61,7 +61,7 @@ This command gives you control to manage the jails used by
 to provide building environment (different FreeBSD versions, different
 architectures).
 .It ports
-This command allows you to manage different portstree which will be used
+This command allows you to manage different portstrees which will be used
 by
 .Nm
 (create, update and delete portstrees).
@@ -73,7 +73,7 @@ This command allows a non-root user to queue
 .Nm
 commands.
 .It cron
-This command does not take arguments and run jobs from the queue
+This command does not take arguments and runs jobs from the queue
 command of
 .Nm ,
 and is designed to be run from
@@ -114,6 +114,8 @@ If given, run the bulk build only on the jail named
 This flag specifies on which ports
 .Ar tree
 the bulk build will be done.
+.It Fl t
+add some testing
 .El
 .Ss jail
 .Pp
@@ -349,7 +351,7 @@ all the tests will be done in all the jails in alphabetical order.
 .Pp
 It starts the jail, then mount the ports tree (nullfs), then mounts the
 package dir (pourdriere_data/packages/jailname), then it mounts the
-~/ports-cvs/mybeautifulporttotest (nullfs) it builds all the dependency
+~/ports-cvs/mybeautifulporttotest (nullfs) it builds all the dependencies
 (except runtime ones) and log it to
 poudriere_data/logs/mybeautifulporttotest-jailname-depends.log).
 .Pp
