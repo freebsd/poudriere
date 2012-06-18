@@ -85,7 +85,7 @@ for JAILNAME in ${JAILNAMES}; do
 			msg "No package built, no need to update INDEX"
 		fi
 	elif [ $PKGNG -eq 1 ]; then
-		msg "Packaging all installed ports"
+		msg "Creating pkgng repository"
 		injail tar xf /usr/ports/packages/Latest/pkg.txz -C /
 		injail rm -f /usr/ports/packages/{repo.txz,repo.sqlite}
 		injail pkg-static repo /usr/ports/packages/
