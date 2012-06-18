@@ -131,15 +131,15 @@ build_and_install_world() {
 	export __MAKE_CONF=/dev/null
 	export SRCCONF=${JAILBASE}/etc/src.conf
 	msg "Starting make buildworld"
-	make -C ${JAILBASE}/usr/src buildworld ${MAKEWORLDARGS}
+	make -C ${JAILBASE}/usr/src buildworld ${MAKEWORLDARGS} || err 1 "Fail to build world"
 	msg "Starting make installworld"
-	make -C ${JAILBASE}/usr/src installworld DESTDIR=${JAILBASE}
+	make -C ${JAILBASE}/usr/src installworld DESTDIR=${JAILBASE} || err 1 "Fail to install world"
 }
 
 install_from_svn() {
 	mkdir -p ${JAILBASE}/usr/src
 	msg "Fetching sources from svn"
-	svn co http://svn.freebsd.org/base/${RELEASE}
+	svn co http://svn.freebsd.org/base/${RELEASE} || err 1 "Fail to fetch sources"
 	build_and_install_world
 }
 
@@ -152,7 +152,7 @@ install_from_csup() {
 *default release=cvs tag=${RELEASE}
 *default delete use-rel-suffix
 src-all" > ${JAILBASE}/etc/supfile
-	csup -z -h ${CSUP_HOST} ${JAILBASE}/etc/supfile
+	csup -z -h ${CSUP_HOST} ${JAILBASE}/etc/supfile || err 1 "Fail to fetch sources"
 	build_and_install_world
 }
 
