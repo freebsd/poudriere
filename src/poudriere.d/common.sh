@@ -182,11 +182,11 @@ jail_start() {
 	msg "Mounting devfs"
 	mount -t devfs devfs ${MNT}/dev
 	msg "Mounting /proc"
-	[ ! -d ${MNT}/proc ] && mkdir ${MNT}/proc
+	mkdir -p ${MNT}/proc
 	mount -t procfs proc ${MNT}/proc
 	msg "Mounting linuxfs"
-	[ ! -d ${MNT}/compat/linux/proc ] && mkdir -p ${MNT}/compat/linux/proc
-	[ ! -d ${MNT}/compat/linux/sys ] && mkdir -p ${MNT}/compat/linux/sys
+	mkdir -p ${MNT}/compat/linux/proc
+	mkdir -p ${MNT}/compat/linux/sy
 	mount -t linprocfs linprocfs ${MNT}/compat/linux/proc
 	mount -t linsysfs linsysfs ${MNT}/compat/linux/sys
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${MNT}/etc/"
@@ -579,12 +579,12 @@ prepare_jail() {
 
 	mount -t nullfs ${PORTSDIR} ${JAILBASE}/usr/ports || err 1 "Failed to mount the ports directory "
 
-	[ -d ${PORTSDIR}/packages ] || mkdir -p ${PORTSDIR}/packages
-	[ -d ${PKGDIR}/All ] || mkdir -p ${PKGDIR}/All
+	mkdir -p ${PORTSDIR}/packages
+	mkdir -p ${PKGDIR}/All
 
 	mount -t nullfs ${PKGDIR} ${JAILBASE}/usr/ports/packages || err 1 "Failed to mount the packages directory "
 	if [ -n "${DISTFILES_CACHE}" -a -d "${DISTFILES_CACHE}" ]; then
-		[ -d ${JAILBASE}/usr/ports/distfiles ] || mkdir -p ${JAILBASE}/usr/ports/distfiles
+		mkdir -p ${JAILBASE}/usr/ports/distfiles
 		mount -t nullfs ${DISTFILES_CACHE} ${JAILBASE}/usr/ports/distfiles || err 1 "Failed to mount the distfile directory"
 	fi
 

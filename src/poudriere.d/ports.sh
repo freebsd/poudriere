@@ -151,7 +151,7 @@ if [ ${UPDATE} -eq 1 ]; then
 	case ${METHOD} in
 	csup)
 		[ -z ${CSUP_HOST} ] && err 2 "CSUP_HOST has to be defined in the configuration to use csup"
-		[ -d ${PTBASE}/db ] || mkdir ${PTBASE}/db
+		mkdir -p ${PTBASE}/db
 		echo "*default prefix=${PTBASE}
 *default base=${PTBASE}/db
 *default release=cvs tag=.
