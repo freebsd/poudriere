@@ -284,8 +284,8 @@ sanity_check_pkgs() {
 	[ ! -d ${PKGDIR}/All ] && return $ret
 	[ -z "$(ls -A ${PKGDIR}/Latest)" ] && return $ret
 	for pkg in ${PKGDIR}/Latest/*.${EXT}; do
-		realpkg=$(realpath $pkg)
-		if [ ! -e $realpkg ]; then
+		realpkg=$(realpath $pkg 2>/dev/null)
+		if [ $? -ne 0 -o ! -e $realpkg ]; then
 			msg "Deleting stale symlinks ${pkg##*/}"
 			find ${PKGDIR}/ -name ${pkg##*/} -delete
 			continue
