@@ -81,7 +81,7 @@ PTNAME=${PTNAME:-default}
 
 case ${METHOD} in
 csup)
-	[ -z ${CSUP_HOST} ] && err 2 "CSUP_HOST has to be defined in the configuration to use csup"
+	die0 "${CSUP_HOST}" "CSUP_HOST has to be defined in the configuration to use csup"
 	;;
 portsnap);;
 *) usage;;
@@ -150,7 +150,7 @@ if [ ${UPDATE} -eq 1 ]; then
 	fi
 	case ${METHOD} in
 	csup)
-		[ -z ${CSUP_HOST} ] && err 2 "CSUP_HOST has to be defined in the configuration to use csup"
+		die0 "${CSUP_HOST}" "CSUP_HOST has to be defined in the configuration to use csup"
 		mkdir -p ${PTBASE}/db
 		echo "*default prefix=${PTBASE}
 *default base=${PTBASE}/db

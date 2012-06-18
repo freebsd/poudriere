@@ -10,6 +10,11 @@ err() {
 	exit $1
 }
 
+die0() {
+	[ $# -ne 2 ] && err 1 "die_if_null expects 2 arguments got $@"
+	[ -z "${1}" ] && err 1 "$2"
+}
+
 msg_n() {
 	echo -n "====>> $1"
 }
@@ -34,13 +39,13 @@ log_stop() {
 
 zfs_get() {
 	[ $# -ne 1 ] && err 1 "Fail: need one argument"
-	[ -z "${JAILFS}" ] && err 1 "No JAILFS defined"
+	die0 "${JAILFS}" "No JAILFS defined"
 	zfs get -H -o value ${1} ${JAILFS}
 }
 
 zfs_set() {
 	[ $# -ne 2 ] && err 1 "Fail: need two arguments got $@"
-	[ -z "${JAILFS}" ] && err 1 "No JAILFS defined"
+	die0 "${JAILFS}" "No JAILFS defined"
 	zfs set $1="$2" ${JAILFS}
 }
 
@@ -247,7 +252,7 @@ cleanup() {
 	fi
 	export CLEANING_UP=1
 	[ -e ${PIPE} ] && rm -f ${PIPE}
-	[ -z "${JAILNAME}" ] && err 2 "Fail: Missing JAILNAME"
+	die0 "${JAILNAME}" "Fail: Missing JAILNAME"
 	FS=`jail_get_fs ${JAILNAME}`
 	zfs destroy ${FS}@prepkg 2>/dev/null || :
 	zfs destroy ${FS}@prebuild 2>/dev/null || :
@@ -572,9 +577,9 @@ prepare_jail() {
 	export PACKAGE_BUILDING=yes
 	PORTSDIR=`port_get_base ${PTNAME}`/ports
 	POUDRIERED=${SCRIPTPREFIX}/../../etc/poudriere.d
-	[ -z "${JAILBASE}" ] && err 1 "No path of the base of the jail defined"
-	[ -z "${PORTSDIR}" ] && err 1 "No ports directory defined"
-	[ -z "${PKGDIR}" ] && err 1 "No package directory defined"
+	dieO "${JAILBASE}" "No path of the base of the jail defined"
+	die0 "${PORTSDIR}" "No ports directory defined"
+	die0 "${PKGDIR}" "No package directory defined"
 	[ -n "${MFSSIZE}" -a -n "${USE_TMPFS}" ] && err 1 "You can't use both tmpfs and mdmfs"
 
 	mount -t nullfs ${PORTSDIR} ${JAILBASE}/usr/ports || err 1 "Failed to mount the ports directory "
@@ -626,7 +631,7 @@ STATUS=0 # out of jail #
 test -f ${SCRIPTPREFIX}/../../etc/poudriere.conf || err 1 "Unable to find ${SCRIPTPREFIX}/../../etc/poudriere.conf"
 . ${SCRIPTPREFIX}/../../etc/poudriere.conf
 
-test -z ${ZPOOL} && err 1 "ZPOOL variable is not set"
+die0 "${ZPOOL}" "ZPOOL variable is not set"
 
 trap sig_handler SIGINT SIGTERM SIGKILL EXIT
 

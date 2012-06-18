@@ -146,7 +146,7 @@ install_from_svn() {
 install_from_csup() {
 	mkdir -p ${JAILBASE}/etc
 	mkdir -p ${JAILBASE}/var/db
-	[ -z ${CSUP_HOST} ] && err 2 "CSUP_HOST has to be defined in the configuration to use csup"
+	die0 "${CSUP_HOST}" "CSUP_HOST has to be defined in the configuration to use csup"
 	echo "*default base=${JAILBASE}/var/db
 *default prefix=${JAILBASE}/usr
 *default release=cvs tag=${RELEASE}
@@ -167,7 +167,7 @@ install_from_ftp() {
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32"
 		for dist in ${DISTS}; do
 			PKGS=`echo "ls *.??"| ftp -aV ${FTPURL}/$dist/ | awk '/-r.*/ {print $NF}'`
-			[ -z ${PKGS} ] && err 1 "Could not find distribution on ${FTPURL}/dist"
+			die0 "${PKGS}" "Could not find distribution on ${FTPURL}/dist"
 			for pkg in ${PKGS}; do
 				[ ${pkg} = "install.sh" ] && continue
 				# Let's retry at least one time
@@ -213,12 +213,12 @@ create_jail() {
 	test -z ${VERSION} && usage
 
 	if [ -z ${JAILBASE} ]; then
-		[ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
+		die0 "${BASEFS}" "Please provide a BASEFS variable in your poudriere.conf"
 		JAILBASE=${BASEFS}/jails/${JAILNAME}
 	fi
 
 	if [ -z ${FS} ] ; then
-		[ -z ${ZPOOL} ] && err 1 "Please provide a ZPOOL variable in your poudriere.conf"
+		die0 "${ZPOOL}" "Please provide a ZPOOL variable in your poudriere.conf"
 		FS=${ZPOOL}/poudriere/${JAILNAME}
 	fi
 
@@ -228,7 +228,7 @@ create_jail() {
 		;;
 	svn)
 		SVN=`which svn`
-		test -z ${SVN} && err 1 "You need svn on your host to use svn method"
+		die0 "${SVN}" "You need svn on your host to use svn method"
 		FCT=install_from_svn
 		;;
 	csup)
