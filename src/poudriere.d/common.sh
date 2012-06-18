@@ -328,9 +328,7 @@ build_port() {
 	#fetch_distfiles ${PORTDIR}
 	msg "Building ${PKGNAME}"
 	TARGETS="fetch extract patch configure build install package"
-	if [ -n "${PORTTESTING}" ]; then
-		TARGETS="${DEINSTALL} deinstall"
-	fi
+	[ -n "${PORTTESTING}" ] && TARGETS="${DEINSTALL} deinstall"
 	for PHASE in ${TARGETS}; do
 		zfs_set "poudriere:status" "${PHASE}:${PORTDIR##/usr/ports/}"
 		if [ "${PHASE}" = "fetch" ]; then
