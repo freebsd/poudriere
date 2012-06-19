@@ -43,4 +43,8 @@ CRONDIR=${BASEFS}/cron
 # given cvsup mirror.
 CSUP_HOST=cvsup._CHANGE_THIS_.freebsd.org
 
+# Disable ipv4 support
+# NOIPV4= yes
 
+# DIsable ipv6 support
+# NOIPV6= yes

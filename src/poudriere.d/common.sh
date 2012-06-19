@@ -191,7 +191,13 @@ jail_start() {
 	mount -t linsysfs linsysfs ${MNT}/compat/linux/sys
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${MNT}/etc/"
 	msg "Starting jail ${NAME}"
-	jail -c persist name=${NAME} ip4=disable ip6=disable path=${MNT} host.hostname=${NAME} \
+	if [ -z "${NOIPV4}" ]; then
+		IPARGS="${IPARGS} ip4=disable"
+	fi
+	if [ -z "${NOIPV6}" ]; then
+		IPARGS="${IPARGS} ip6=disable"
+	fi
+	jail -c persist name=${NAME} ${IPARGS} path=${MNT} host.hostname=${NAME} \
 		allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
 
 	# Only set STATUS=1 if not turned off
@@ -294,7 +300,14 @@ build_port() {
 		zfs_set "poudriere:status" "${PHASE}:${PORTDIR##/usr/ports/}"
 		if [ "${PHASE}" = "fetch" ]; then
 			jail -r ${JAILNAME}
-			jail -c persist name=${NAME} ip4=inherit ip6=inherit path=${MNT} host.hostname=${NAME} \
+			
+			if [ -z "${NOIPV4}" ]; then
+				IPARGS="${IPARGS} ip4=inherit"
+			fi
+			if [ -z "${NOIPV6}" ]; then
+				IPARGS="${IPARGS} ip6=inherit"
+			fi
+			jail -c persist name=${NAME} ${IPARGS} path=${MNT} host.hostname=${NAME} \
 				allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
 		fi
 		[ "${PHASE}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
@@ -318,7 +331,13 @@ build_port() {
 
 		if [ "${PHASE}" = "fetch" ]; then
 			jail -r ${JAILNAME}
-			jail -c persist name=${NAME} ip4.addr=127.0.0.1 ip6=disable path=${MNT} host.hostname=${NAME} \
+			if [ -z "${NOIPV4}" ]; then
+				IPARGS="${IPARGS} ip4.addr=127.0.0.1"
+			fi
+			if [ -z "${NOIPV6}" ]; then
+				IPARGS="${IPARGS} ip6.addr=::1"
+			fi
+			jail -c persist name=${NAME} ${IPARGS} path=${MNT} host.hostname=${NAME} \
 				allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
 		fi
 		if [ -n "${PORTTESTING}" -a  "${PHASE}" = "deinstall" ]; then
