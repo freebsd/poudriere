@@ -78,6 +78,9 @@ command of
 .Nm ,
 and is designed to be run from
 .Xr cron 8 .
+.It version
+Show version of poudriere
+.Nm.
 .El
 .Sh SUBCOMMANDS
 Here are the list of subcommands and associated options supported by
@@ -158,6 +161,15 @@ of the jail.
 Specifies which
 .Ar version
 of FreeBSD we want in jail.
+If you are using method ftp then the
+.Ar version
+should in the form of: 9.0-RELEASE.
+If you are using method csup then the
+.Ar version
+should be in the form of cvs branches: RELENG_9 or . for current.
+If you are using method svn then the
+.Ar version
+should be in the form of svn branches: stable/9 or head for current.
 .It Fl a Ar architecture
 Specifies which
 .Ar architecture
@@ -166,9 +178,7 @@ of FreeBSD we want in jail. (Default: same as host)
 Specifies which
 .Ar method
 we want to create jail.
-Specify
-.Ar NONE
-if you want to use your homemade jail. (Default: FTP)
+Could be csup or svn (Default: ftp).
 .It Fl f Ar filesystem
 Specifies the
 .Ar filesystem
@@ -223,7 +233,11 @@ name (${ZPOOL}/jails/filesystem).
 .It Fl M Ar mountpoint
 Gives an alternative
 .Ar mountpoint
-when creating jail.
+when creating ports tree.
+.It Fl m Ar method
+Specifies which
+.Ar method we want to create a ports tree. Could be portsnap, csup (Default:
+portsnap)
 .El
 .Ss testport
 .Pp
