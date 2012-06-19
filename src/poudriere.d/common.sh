@@ -263,25 +263,21 @@ sanity_check_pkgs() {
 	[ ! -d ${PKGDIR}/All ] && return $ret
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return $ret
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
-		if [ "${EXT}" = "tbz" ]; then
-			for dep in $(pkg_info -qr $pkg | awk '{ print $2 }'); do
-				if [ ! -e ${PKGDIR}/All/$dep.${EXT} ]; then
-					ret=1
-					msg "Deleting ${pkg}: missing dependencies"
-					rm -f ${pkg}
-					break
-				fi
-			done
-		else
-			for dep in $(pkg info -qdF $pkg); do
-				if [ ! -e ${PKGDIR}/All/$dep.${EXT} ]; then
-					ret=1
-					msg "Deleting ${pkg}: missing dependencies"
-					rm -f ${pkg}
-					break
-				fi
-			done
+		if [ ! -f ${JAILBASE}/tmp/${pkg##*/}.deps ]; then
+			if [ "${EXT}" = "tbz" ]; then
+				pkg_info -qr ${pkg} | awk '{ print $2 }' > ${JAILBASE}/tmp/${pkg##*/}.deps
+			else
+				pkg info -qdF $pkg > ${JAILBASE}/tmp/${pkg##*/}.dep
+			fi
 		fi
+		while read dep; do
+			if [ ! -e ${PKGDIR}/All/${dep}.${EXT} ]; then
+				ret=1
+				msg "Deleting ${pkg}: missing dependencies"
+				rm -f ${pkg}
+				break
+			fi
+		done < ${JAILBASE}/tmp/${pkg##*/}.dep
 	done
 
 	return $ret
