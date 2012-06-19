@@ -269,11 +269,12 @@ sanity_check_pkgs() {
 	[ ! -d ${PKGDIR}/All ] && return $ret
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return $ret
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
-		if [ ! -f ${JAILBASE}/tmp/${pkg##*/}.deps ]; then
+		local DEPFILE=${JAILBASE}/tmp/${pkg##*/}.deps
+		if [ ! -f ${DEPFILE} ]; then
 			if [ "${EXT}" = "tbz" ]; then
-				pkg_info -qr ${pkg} | awk '{ print $2 }' > ${JAILBASE}/tmp/${pkg##*/}.deps
+				pkg_info -qr ${pkg} | awk '{ print $2 }' > ${DEPFILE}
 			else
-				pkg info -qdF $pkg > ${JAILBASE}/tmp/${pkg##*/}.dep
+				pkg info -qdF $pkg > ${DEPFILE}
 			fi
 		fi
 		while read dep; do
@@ -283,7 +284,7 @@ sanity_check_pkgs() {
 				rm -f ${pkg}
 				break
 			fi
-		done < ${JAILBASE}/tmp/${pkg##*/}.dep
+		done < ${DEPFILE}
 	done
 
 	return $ret
