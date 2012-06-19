@@ -3,7 +3,7 @@
 LC_ALL=C
 unset SHELL
 unset TERM
-VERSION="1.4.99"
+VERSION="1.5.2"
 
 usage() {
 	echo "Usage: poudriere command [options]
