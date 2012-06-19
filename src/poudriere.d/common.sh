@@ -153,11 +153,11 @@ fetch_file() {
 
 jail_create_zfs() {
 	[ $# -ne 5 ] && err 1 "Fail: wrong number of arguments"
-	NAME=$1
-	VERSION=$2
-	ARCH=$3
-	JAILBASE=$( echo $4 | sed -e "s,//,/,g")
-	FS=$5
+	local NAME=$1
+	local VERSION=$2
+	local ARCH=$3
+	local JAILBASE=$( echo $4 | sed -e "s,//,/,g")
+	local FS=$5
 	msg_n "Creating ${NAME} fs..."
 	zfs create -p \
 		-o poudriere:type=rootfs \
@@ -191,7 +191,7 @@ jail_start() {
 	mount -t procfs proc ${MNT}/proc
 	msg "Mounting linuxfs"
 	mkdir -p ${MNT}/compat/linux/proc
-	mkdir -p ${MNT}/compat/linux/sy
+	mkdir -p ${MNT}/compat/linux/sys
 	mount -t linprocfs linprocfs ${MNT}/compat/linux/proc
 	mount -t linsysfs linsysfs ${MNT}/compat/linux/sys
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${MNT}/etc/"

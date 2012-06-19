@@ -3,6 +3,7 @@
 LC_ALL=C
 unset SHELL
 unset TERM
+VERSION="1.4.99"
 
 usage() {
 	echo "Usage: poudriere command [options]
@@ -14,7 +15,8 @@ Commands:
     jail        -- manage the jails used by poudriere
     ports       -- create, update or delete the portstrees used by poudriere
     queue       -- queue a build request (through cron)
-    testport    -- launch a test on a given port"
+    testport    -- launch a test on a given port
+    version     -- show poudriere version"
 	exit 1
 }
 
@@ -29,28 +31,31 @@ shift
 
 case ${CMD} in
 	jail|jails)
-		exec /bin/sh ${POUDRIEREPREFIX}/jail.sh $@
+		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/jail.sh $@
 		;;
 	testport)
-		exec /bin/sh ${POUDRIEREPREFIX}/test_ports.sh $@
+		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/test_ports.sh $@
 		;;
 	bulk)
-		exec /bin/sh ${POUDRIEREPREFIX}/bulk.sh $@
+		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/bulk.sh $@
 		;;
 	ports)
-		exec /bin/sh ${POUDRIEREPREFIX}/ports.sh $@
+		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/ports.sh $@
 		;;
 	queue)
-		exec /bin/sh ${POUDRIEREPREFIX}/queue.sh $@
+		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/queue.sh $@
 		;;
 	cron)
-		exec /bin/sh ${POUDRIEREPREFIX}/cron.sh
+		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/cron.sh
 		;;
 	pbi)
-		exec /bin/sh ${POUDRIEREPREFIX}/pbi.sh $@
+		exec env -i  PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/pbi.sh $@
 		;;
 	help)
 		usage
+		;;
+	version)
+		echo "${VERSION}"
 		;;
 	*)
 		echo "Unknown command ${CMD}"
