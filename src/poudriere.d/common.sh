@@ -282,22 +282,14 @@ sanity_check_pkgs() {
 	ret=0
 	[ ! -d ${PKGDIR}/Latest ] && return $ret
 	[ ! -d ${PKGDIR}/All ] && return $ret
-	[ -z "$(ls -A ${PKGDIR}/Latest)" ] && return $ret
-	for pkg in ${PKGDIR}/Latest/*.${EXT}; do
-		realpkg=$(realpath $pkg 2>/dev/null)
-		if [ $? -ne 0 -o ! -e $realpkg ]; then
-			msg "Deleting stale symlinks ${pkg##*/}"
-			find ${PKGDIR}/ -name ${pkg##*/} -delete
-			continue
-		fi
-
+	[ -z "$(ls -A ${PKGDIR}/All)" ] && return $ret
+	for pkg in ${PKGDIR}/All/*.${EXT}; do
 		if [ "${EXT}" = "tbz" ]; then
 			for dep in $(pkg_info -qr $pkg | awk '{ print $2 }'); do
 				if [ ! -e ${PKGDIR}/All/$dep.${EXT} ]; then
 					ret=1
-					msg "Deleting ${realpkg##*/}: missing dependencies"
+					msg "Deleting ${pkg}: missing dependencies"
 					rm -f ${realpkg}
-					find ${PKGDIR}/ -name ${pkg##*/} -delete
 					break
 				fi
 			done
@@ -305,9 +297,8 @@ sanity_check_pkgs() {
 			for dep in $(pkg info -qdF $pkg); do
 				if [ ! -e ${PKGDIR}/All/$dep.${EXT} ]; then
 					ret=1
-					msg "Deleting ${realpkg##*/}: missing dependencies"
+					msg "Deleting ${pkg}: missing dependencies"
 					rm -f ${realpkg}
-					find ${PKGDIR}/ -name ${pkg##*/} -delete
 					break
 				fi
 			done
@@ -466,14 +457,23 @@ list_deps() {
 	for key in $LIST; do
 		MAKEARGS="${MAKEARGS} -V${key}"
 	done
-	injail make -C ${1} $MAKEARGS | sed -e "s,[[:graph:]]*/usr/ports/,,g" | \
-		tr ' ' '\n' | egrep -v ".*:.*" | sort -u
+	local pdeps
+	local pn
+	injail make -C /usr/ports/${1} -VPKGNAME $MAKEARGS | tr '\n' ' ' | \
+		sed -e "s,[[:graph:]]*/usr/ports/,,g" | while read pn pdeps; do
+		echo "${1} ${pn}" >> ${cache}
+		for d in ${pdeps}; do
+			echo $pdeps
+		done | sort -u
+	done
 }
 
 delete_old_pkgs() {
 	local o
 	local v
 	local v2
+	[ ! -d ${PKGDIR}/All ] && return 0
+	[ -z "$(ls -A ${PKGDIR}/All)" ] && return 0
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
 		test -e ${pkg} || continue
 		if [ "${EXT}" = "tbz" ]; then
@@ -488,7 +488,12 @@ delete_old_pkgs() {
 			rm -f ${pkg}
 			continue
 		fi
-		v2=`injail make -C /usr/ports/${o} -VPKGVERSION`
+		v2=$(awk -v o=${o} ' { if ($1 == o) {print $2} }' ${cache})
+		if [ -z "$v2" ]; then
+			v2=`injail make -C /usr/ports/${o} -VPKGNAME`
+			echo "${o} ${v2}" >> ${cache}
+		fi
+		v2=${v2##*-}
 		if [ "$v" != "$v2" ]; then
 			msg "Deleting old version: ${pkg##*/}"
 			rm -f ${pkg}
@@ -501,12 +506,11 @@ process_deps() {
 	deplist=$2
 	tmplist2=$3
 	local port=$4
-	local PORTDIRECTORY="/usr/ports/${port}"
 	egrep -q "^$port$" ${tmplist} && return
 	echo $port >> ${tmplist}
 	deps=0
 	local m
-	for m in `list_deps ${PORTDIRECTORY}`; do
+	for m in `list_deps ${port}`; do
 		process_deps "${tmplist}" "${deplist}" "${tmplist2}" "$m"
 		echo $m $port >> ${deplist}
 		deps=1
@@ -521,6 +525,8 @@ prepare_ports() {
 	tmplist=$(mktemp ${base}/tmp/orderport.XXXXXX)
 	deplist=$(mktemp ${base}/tmp/orderport1.XXXXX)
 	tmplist2=$(mktemp ${base}/tmp/orderport2.XXXXX)
+	cache=$(mktemp ${base}/tmp/cache.XXXXX)
+	touch ${cache}
 	touch ${tmplist}
 	msg "Calculating ports order and dependencies"
 	jail_status "orderdeps:"
@@ -539,20 +545,33 @@ prepare_ports() {
 		egrep -q "^${port}$" ${tmplist2} || echo $port >> ${tmplist2}
 	done
 
-	jail_status "sanity:"
+	local pn
+	msg "Caching missing port versions"
+	while read port; do
+		if ! egrep -q "^${port} " ${cache}; then
+			pn=$(injail make -C /usr/ports/${port} -VPKGNAME)
+			echo "${port} ${pn}" >> ${cache}
+		fi
+	done < ${tmplist2}
+
 	msg "Sanity checking the repository"
+
 	delete_old_pkgs
 
 	while :; do
 		sanity_check_pkgs && break
 	done
 
+	msg "Deleting stale symlinks"
+	find -L ${PKGDIR} -type l -exec rm -vf {} \;
+
+	jail_status "sanity:"
 	jail_status "cleaning:"
 	msg "Cleaning the build queue"
 	export LOCALBASE=${MYBASE:-/usr/local}
 	while read p; do
-		local PKGNAME=$(injail make -C /usr/ports/${p} -VPKGNAME)
-		[ ! -f ${PKGDIR}/All/${PKGNAME}.${EXT} ] && queue="${queue} $p"
+		pn=$(awk -v o=${p} ' { if ($1 == o) {print $2} }' ${cache})
+		[ ! -f ${PKGDIR}/All/${pn}.${EXT} ] && queue="${queue} $p"
 	done < ${tmplist2}
 
 	rm -f ${tmplist2} ${deplist} ${tmplist}
