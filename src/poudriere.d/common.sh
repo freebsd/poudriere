@@ -564,7 +564,7 @@ prepare_ports() {
 	done
 
 	msg "Deleting stale symlinks"
-	find -L ${PKGDIR} -type l -exec rm -vf {} \;
+	find -L ${PKGDIR} -type l -exec rm -vf {} +
 
 	jail_status "sanity:"
 	jail_status "cleaning:"
