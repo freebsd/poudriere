@@ -258,29 +258,8 @@ injail() {
 	jexec -U root ${JAILNAME} $@
 }
 
-delete_pkg() {
-	local port=$1
-	local portdir="/usr/ports/${port}"
-	test -d ${JAILBASE}/${portdir} || {
-		msg "No such port ${port}"
-		return 1
-	}
-	local NO_LATEST_LINK=$(injail make -C ${portdir} -VNO_LATEST_LINK)
-
-	# delete older one if any
-	if [ -z "$NO_LATEST_LINK" ]; then
-		local LATEST_LINK=$(injail make -C ${portdir} -VLATEST_LINK)
-		if [ -e ${PKGDIR}/Latest/${LATEST_LINK}.${EXT} ]; then
-			local PKGNAME_PREV=$(realpath ${PKGDIR}/Latest/${LATEST_LINK}.${EXT})
-			find ${PKGDIR}/ -name ${PKGNAME_PREV##*/} -delete
-			find ${PKGDIR}/ -name ${LATEST_LINK}.${EXT} -delete
-		fi
-	fi
-}
-
 sanity_check_pkgs() {
 	ret=0
-	[ ! -d ${PKGDIR}/Latest ] && return $ret
 	[ ! -d ${PKGDIR}/All ] && return $ret
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return $ret
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
