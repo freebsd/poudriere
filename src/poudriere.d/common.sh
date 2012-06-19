@@ -447,15 +447,22 @@ build_pkg() {
 list_deps() {
 	[ -z ${1} ] && return 0
 	LIST="PKG_DEPENDS BUILD_DEPENDS EXTRACT_DEPENDS LIB_DEPENDS PATCH_DEPENDS FETCH_DEPENDS RUN_DEPENDS"
+	local dir
 	MAKEARGS=""
 	for key in $LIST; do
 		MAKEARGS="${MAKEARGS} -V${key}"
 	done
+	if [ -d "${PORTSDIR}/${1}" ]; then
+		dir="/usr/ports/${1}"
+	else
+		dir=${1}
+	fi
+
 	local pdeps
 	local pn
-	injail make -C /usr/ports/${1} -VPKGNAME $MAKEARGS | tr '\n' ' ' | \
+	injail make -C ${dir} -VPKGNAME $MAKEARGS | tr '\n' ' ' | \
 		sed -e "s,[[:graph:]]*/usr/ports/,,g" | while read pn pdeps; do
-		echo "${1} ${pn}" >> ${cache}
+		[ -n "${cache}" ] && echo "${1} ${pn}" >> ${cache}
 		for d in ${pdeps}; do
 			echo $pdeps
 		done | sort -u
