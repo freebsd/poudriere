@@ -289,7 +289,7 @@ sanity_check_pkgs() {
 				if [ ! -e ${PKGDIR}/All/$dep.${EXT} ]; then
 					ret=1
 					msg "Deleting ${pkg}: missing dependencies"
-					rm -f ${realpkg}
+					rm -f ${pkg}
 					break
 				fi
 			done
@@ -298,7 +298,7 @@ sanity_check_pkgs() {
 				if [ ! -e ${PKGDIR}/All/$dep.${EXT} ]; then
 					ret=1
 					msg "Deleting ${pkg}: missing dependencies"
-					rm -f ${realpkg}
+					rm -f ${pkg}
 					break
 				fi
 			done
