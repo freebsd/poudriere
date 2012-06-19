@@ -462,7 +462,7 @@ list_deps() {
 	local pdeps
 	local pn
 	injail make -C ${dir} -VPKGNAME $MAKEARGS | tr '\n' ' ' | \
-		sed -e "s,[[:graph:]]*/usr/ports/,,g" | while read pn pdeps; do
+		sed -e "s,[[:graph:]]*/usr/ports/,,g" -e "s,:[[:graph:]]*,,g" | while read pn pdeps; do
 		[ -n "${cache}" ] && echo "${1} ${pn}" >> ${cache}
 		for d in ${pdeps}; do
 			echo $pdeps
