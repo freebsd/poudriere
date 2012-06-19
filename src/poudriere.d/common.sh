@@ -555,6 +555,7 @@ prepare_ports() {
 		fi
 	done < ${tmplist2}
 
+	jail_status "sanity:"
 	msg "Sanity checking the repository"
 
 	delete_old_pkgs
@@ -566,7 +567,6 @@ prepare_ports() {
 	msg "Deleting stale symlinks"
 	find -L ${PKGDIR} -type l -exec rm -vf {} +
 
-	jail_status "sanity:"
 	jail_status "cleaning:"
 	msg "Cleaning the build queue"
 	export LOCALBASE=${MYBASE:-/usr/local}
