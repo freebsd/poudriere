@@ -474,6 +474,8 @@ delete_old_pkgs() {
 	local o
 	local v
 	local v2
+	local compiled_options
+	local current_options
 	[ ! -d ${PKGDIR}/All ] && return 0
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return 0
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
@@ -499,6 +501,22 @@ delete_old_pkgs() {
 		if [ "$v" != "$v2" ]; then
 			msg "Deleting old version: ${pkg##*/}"
 			rm -f ${pkg}
+			continue
+		fi
+
+		# Check if the compiled options match the current options from make.conf and /var/db/options
+		if [ -n "${CHECK_CHANGED_OPTIONS}" -a "${CHECK_CHANGED_OPTIONS}" != "no" -a $PKGNG -eq 1 ]; then
+			compiled_options=$(pkg query -F ${pkg} '%Ov %Ok' | awk '$1 == "on" {print $2}' | sort | tr '\n' ' ')
+			current_options=$(injail make -C /usr/ports/${o} pretty-print-config | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
+			if [ "${compiled_options}" != "${current_options}" ]; then
+				msg "Options changed, deleting: ${pkg##*/}"
+				if [ "${CHECK_CHANGED_OPTIONS}" = "verbose" ]; then
+					msg "Pkg: ${compiled_options}"
+					msg "New: ${current_options}"
+				fi
+				rm -f ${pkg}
+				continue
+			fi
 		fi
 	done
 }

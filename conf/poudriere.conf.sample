@@ -53,3 +53,11 @@ CSUP_HOST=cvsup._CHANGE_THIS_.freebsd.org
 
 # Disable ipv6 support
 # NOIPV6=yes
+
+# Automatic OPTION change detection
+# Only if using PKGNG, when bulk building packages with -k, compare the options from
+# kept packages to the current options to be built. If they differ, the existing package
+# will be deleted and the port will be rebuilt.
+# Valid options: yes, no, verbose
+# verbose will display the old and new options
+# CHECK_CHANGED_OPTIONS=no
