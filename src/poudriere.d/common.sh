@@ -69,11 +69,15 @@ jail_status() {
 }
 
 sig_handler() {
-	if [ ${STATUS} -eq 1 ]; then
-		msg "Signal caught, cleaning up and exiting"
-		cleanup
+	# Only run the handler once, don't re-run on EXIT
+	if [ -z "${CAUGHT_SIGNAL}" ]; then
+		export CAUGHT_SIGNAL=1
+		if [ ${STATUS} -eq 1 ]; then
+			msg "Signal caught, cleaning up and exiting"
+			cleanup
+		fi
 	fi
-	return ${STATUS}
+	exit
 }
 
 jail_exists() {
