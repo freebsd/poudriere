@@ -191,12 +191,11 @@ jail_start() {
 	mount -t linsysfs linsysfs ${MNT}/compat/linux/sys
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${MNT}/etc/"
 	msg "Starting jail ${NAME}"
-	if [ -z "${NOIPV4}" ]; then
-		IPARGS="${IPARGS} ip4=disable"
-	fi
-	if [ -z "${NOIPV6}" ]; then
-		IPARGS="${IPARGS} ip6=disable"
-	fi
+	case $IPS in
+	01) IPARGS="ip6=disable" ;;
+	10) IPARGS="ip4=disable" ;;
+	11) IPARGS="ip4=disable ip6=disable" ;;
+	esac
 	jail -c persist name=${NAME} ${IPARGS} path=${MNT} host.hostname=${NAME} \
 		allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
 
@@ -292,9 +291,7 @@ sanity_check_pkgs() {
 
 build_port() {
 	PORTDIR=$1
-	msg "Fetch distfiles"
-	#fetch_distfiles ${PORTDIR}
-	msg "Building ${PKGNAME}"
+	IPS="$(sysctl -n kern.features.inet)$(sysctl -n kern.features.inet6)"
 	TARGETS="fetch extract patch configure build install package"
 	[ -n "${PORTTESTING}" ] && TARGETS="${TARGETS} deinstall"
 	for PHASE in ${TARGETS}; do
@@ -302,12 +299,11 @@ build_port() {
 		if [ "${PHASE}" = "fetch" ]; then
 			jail -r ${JAILNAME}
 			
-			if [ -z "${NOIPV4}" ]; then
-				IPARGS="${IPARGS} ip4=inherit"
-			fi
-			if [ -z "${NOIPV6}" ]; then
-				IPARGS="${IPARGS} ip6=inherit"
-			fi
+			case $IPS in
+			01) IPARGS="ip6=inherit" ;;
+			10) IPARGS="ip4=inherit" ;;
+			11) IPARGS="ip4=inherit ip6=inherit" ;;
+			esac
 			jail -c persist name=${NAME} ${IPARGS} path=${MNT} host.hostname=${NAME} \
 				allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
 		fi
@@ -332,12 +328,11 @@ build_port() {
 
 		if [ "${PHASE}" = "fetch" ]; then
 			jail -r ${JAILNAME}
-			if [ -z "${NOIPV4}" ]; then
-				IPARGS="${IPARGS} ip4.addr=127.0.0.1"
-			fi
-			if [ -z "${NOIPV6}" ]; then
-				IPARGS="${IPARGS} ip6.addr=::1"
-			fi
+			case $IPS in
+			01) IPARGS="ip6.addr=::1" ;;
+			10) IPARGS="ip4.addr=127.0.0.1" ;;
+			11) IPARGS="ip4.addr=127.0.0.1 ip6.addr=::1" ;;
+			esac
 			jail -c persist name=${NAME} ${IPARGS} path=${MNT} host.hostname=${NAME} \
 				allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
 		fi
