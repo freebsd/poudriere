@@ -384,10 +384,11 @@ build_port() {
 							[ "${PPATH}" = "/var/db/pkg/local.sqlite" ] && continue
 							[ "${PPATH}" = "/etc/spwd.db" ] && continue
 							[ "${PPATH}" = "/etc/pwd.db" ] && continue
+							[ "${PPATH}" = "/etc/group" ] && continue
 							[ "${PPATH}" = "/etc/passwd" ] && continue
 							[ "${PPATH}" = "/etc/master.passwd" ] && continue
-							[ "${PPATH}" = "/etc/shell" ] && continue
-							[ "${PPATH}" = "/etc/shell" ] && continue
+							[ "${PPATH}" = "/etc/shells" ] && continue
+							[ "${PPATH}" = "/var/log/userlog" ] && continue
 							msg "!!!MODIFIED!!!: ${PPATH}"
 							;;
 					esac
