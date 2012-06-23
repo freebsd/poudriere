@@ -74,8 +74,10 @@ for JAILNAME in ${JAILNAMES}; do
 	zfs destroy -r ${JAILFS}@prepkg
 
 	nbfailed=$(zfs_get poudriere:stats_failed)
+	nbignored=$(zfs_get poudriere:stats_ignored)
 	nbbuilt=$(zfs_get poudriere:stats_built)
 	[ "$nbfailed" = "-" ] && nbfailed=0
+	[ "$nbignored" = "-" ] && nbignored=0
 	[ "$nbbuilt" = "-" ] && nbbuilt=0
 # Package all newly build ports
 	if [ $nbbuilt -eq 0 ]; then
@@ -200,7 +202,7 @@ for JAILNAME in ${JAILNAMES}; do
 	fi
 
 	cleanup
-	msg "$nbbuilt packages built, $nbfailed failures"
+	msg "$nbbuilt packages built, $nbfailed failures, $nbignored ignored"
 	if [ $nbbuilt -gt 0 ]; then
 		msg_n "Built ports: "
 		echo ${built}
@@ -208,6 +210,10 @@ for JAILNAME in ${JAILNAMES}; do
 	if [ $nbfailed -gt 0 ]; then
 		msg_n "Failed ports: "
 		echo ${failed}
+	fi
+	if [ $nbignored -gt 0 ]; then
+		msg_n "Ignored ports: "
+		echo ${ignored}
 	fi
 done
 

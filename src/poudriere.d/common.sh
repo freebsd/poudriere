@@ -414,6 +414,11 @@ build_pkg() {
 	local IGNORE="$(injail make -C ${portdir} -VIGNORE)"
 	if [ -n "$IGNORE" ]; then
 		msg "Ignoring ${port}: $IGNORE"
+		cnt=$(zfs_get poudriere:stats_ignored)
+		[ "$cnt" = "-" ] && cnt=0
+		cnt=$(( cnt + 1))
+		zfs_set "poudriere:stats_ignored" "$cnt"
+		export ignored="${ignored} ${port}"
 		return
 	fi
 
@@ -597,11 +602,13 @@ prepare_ports() {
 	export queue
 	export built=""
 	export failed=""
+	export ignored=""
 	local nbq=0
 	for a in ${queue}; do nbq=$((nbq + 1)); done
 	zfs_set "poudriere:stats_queued" "${nbq}"
 	zfs_set "poudriere:stats_built" "0"
 	zfs_set "poudriere:stats_failed" "0"
+	zfs_set "poudriere:stats_ignored" "0"
 }
 
 prepare_jail() {
