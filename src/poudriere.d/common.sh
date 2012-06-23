@@ -328,7 +328,7 @@ build_port() {
 					awk '/=>/ { print $3 }' | sort -u
 			fi
 		fi
-		injail env ${PKGENV} ${PORT_FLAGS} make -C ${1} ${PHASE} || return 1
+		injail env ${PKGENV} ${PORT_FLAGS} make -C ${PORTDIR} ${PHASE} || return 1
 
 		if [ "${PHASE}" = "fetch" ]; then
 			jail -r ${JAILNAME}
