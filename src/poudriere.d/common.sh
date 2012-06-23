@@ -406,6 +406,7 @@ build_port() {
 build_pkg() {
 	local port=$1
 	local portdir="/usr/ports/${port}"
+	local build_failed=0
 
 	# If this port is IGNORED, skip it
 	# This is checked here instead of when building the queue
@@ -428,10 +429,20 @@ build_pkg() {
 	msg "Building ${port}"
 	PKGNAME=$(injail make -C ${portdir} -VPKGNAME)
 	log_start ${LOGS}/${JAILNAME}-${PTNAME}-${PKGNAME}.log
-	injail make -C ${portdir} pkg-depends fetch-depends extract-depends \
-		patch-depends build-depends lib-depends
-	injail make -C ${portdir} clean
-	if build_port ${portdir}; then
+
+	zfs_set "poudriere:status" "depends:${port}"
+	if ! injail make -C ${portdir} pkg-depends fetch-depends extract-depends \
+		patch-depends build-depends lib-depends; then
+		build_failed=1
+	else
+		# Only build if the depends built fine
+		injail make -C ${portdir} clean
+		if ! build_port ${portdir}; then
+			build_failed=1
+		fi
+	fi
+
+	if [ ${build_failed} -eq 0 ]; then
 		cnt=$(zfs_get poudriere:stats_built)
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
