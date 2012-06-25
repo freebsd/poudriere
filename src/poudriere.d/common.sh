@@ -54,16 +54,6 @@ port_get_method() {
 	zfs get -H -o value "poudriere:method" $1
 }
 
-status_get() {
-	[ $# -ne 1 ] && err 1 "Fail: need one argument"
-	cat /var/run/poudriere-${JAILNAME}-${1}
-}
-
-status_set() {
-	[ $# -ne 2 ] && err 1 "Fail: need two arguments got $@"
-	echo "$2" > /var/run/poudriere-${JAILNAME}-${1}
-}
-
 jail_status() {
 	zfs_set poudriere:status "$1"
 }
