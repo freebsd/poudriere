@@ -90,7 +90,11 @@ for JAILNAME in ${JAILNAMES}; do
 		msg "Creating pkgng repository"
 		injail tar xf /usr/ports/packages/Latest/pkg.txz -C /
 		injail rm -f /usr/ports/packages/{repo.txz,repo.sqlite}
-		injail pkg-static repo /usr/ports/packages/
+		if [ -n "${PKG_REPO_SIGNING_KEY}" -a -f "${PKG_REPO_SIGNING_KEY}" ]; then
+			injail pkg-static repo /usr/ports/packages/ ${PKG_REPO_SIGNING_KEY}
+		else
+			injail pkg-static repo /usr/ports/packages/
+		fi
 	else
 		msg "Preparing index"
 		OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`

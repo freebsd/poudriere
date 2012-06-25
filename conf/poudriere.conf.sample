@@ -55,3 +55,7 @@ CSUP_HOST=cvsup._CHANGE_THIS_.freebsd.org
 # Valid options: yes, no, verbose
 # verbose will display the old and new options
 # CHECK_CHANGED_OPTIONS=no
+
+
+# Path to the RSA key to sign the PKGNG repo with. See pkg-repo(8)
+# PKG_REPO_SIGNING_KEY=/etc/ssl/keys/repo.key
