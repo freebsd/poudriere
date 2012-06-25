@@ -296,7 +296,7 @@ sanity_check_pkgs() {
 build_port() {
 	PORTDIR=$1
 	IPS="$(sysctl -n kern.features.inet)$(sysctl -n kern.features.inet6)"
-	TARGETS="fetch extract patch configure build install package"
+	TARGETS="fetch checksum extract patch configure build install package"
 	[ -n "${PORTTESTING}" ] && TARGETS="${TARGETS} deinstall"
 	for PHASE in ${TARGETS}; do
 		zfs_set "poudriere:status" "${PHASE}:${PORTDIR##/usr/ports/}"
@@ -330,7 +330,7 @@ build_port() {
 		fi
 		injail env ${PKGENV} ${PORT_FLAGS} make -C ${PORTDIR} ${PHASE} || return 1
 
-		if [ "${PHASE}" = "fetch" ]; then
+		if [ "${PHASE}" = "checksum" ]; then
 			jail -r ${JAILNAME}
 			case $IPS in
 			01) IPARGS="ip6.addr=::1" ;;
