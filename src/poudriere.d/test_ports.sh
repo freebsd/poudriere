@@ -86,8 +86,7 @@ for JAILNAME in ${JAILNAMES}; do
 	done
 	zfs destroy -r ${JAILFS}@prepkg
 	injail make -C ${PORTDIRECTORY} pkg-depends extract-depends \
-		fetch-depends patch-depends build-depends lib-depends \
-		run-depends
+		fetch-depends patch-depends build-depends lib-depends
 
 	PKGNAME=`injail make -C ${PORTDIRECTORY} -VPKGNAME`
 	LOCALBASE=`injail make -C ${PORTDIRECTORY} -VLOCALBASE`

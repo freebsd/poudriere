@@ -423,7 +423,7 @@ build_pkg() {
 
 	zfs_set "poudriere:status" "depends:${port}"
 	if ! injail make -C ${portdir} pkg-depends fetch-depends extract-depends \
-		patch-depends build-depends lib-depends run-depends; then
+		patch-depends build-depends lib-depends; then
 		build_failed=1
 	else
 		# Only build if the depends built fine
