@@ -54,8 +54,13 @@ CSUP_HOST=cvsup._CHANGE_THIS_.freebsd.org
 # will be deleted and the port will be rebuilt.
 # Valid options: yes, no, verbose
 # verbose will display the old and new options
-# CHECK_CHANGED_OPTIONS=no
+#CHECK_CHANGED_OPTIONS=no
 
 
 # Path to the RSA key to sign the PKGNG repo with. See pkg-repo(8)
-# PKG_REPO_SIGNING_KEY=/etc/ssl/keys/repo.key
+#PKG_REPO_SIGNING_KEY=/etc/ssl/keys/repo.key
+
+
+# ccache support. Supply the path to your ccache cache directory.
+# It will be mounted into the jail and be shared among all jails.
+#CCACHE_DIR=/var/cache/ccache

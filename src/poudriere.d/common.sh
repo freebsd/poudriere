@@ -624,6 +624,14 @@ prepare_jail() {
 
 	mount -t nullfs ${PORTSDIR} ${JAILBASE}/usr/ports || err 1 "Failed to mount the ports directory "
 
+	if [ -n "${CCACHE_DIR}" -a -d "${CCACHE_DIR}" ]; then
+		# Mount user supplied CCACHE_DIR into /var/cache/ccache
+		msg "Mounting ccache from ${CCACHE_DIR}"
+		mkdir -p ${JAILBASE}/var/cache/ccache || err 1 "Failed to create ccache directory "
+		mount -t nullfs ${CCACHE_DIR} ${JAILBASE}/var/cache/ccache || err 1 "Failed to mount the ccache directory "
+		export CCACHE_DIR=/var/cache/ccache
+	fi
+
 	mkdir -p ${PORTSDIR}/packages
 	mkdir -p ${PKGDIR}/All
 
