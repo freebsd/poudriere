@@ -89,7 +89,7 @@ for JAILNAME in ${JAILNAMES}; do
 	elif [ $PKGNG -eq 1 ]; then
 		msg "Creating pkgng repository"
 		injail tar xf /usr/ports/packages/Latest/pkg.txz -C /
-		injail rm -f /usr/ports/packages/{repo.txz,repo.sqlite}
+		injail rm -f /usr/ports/packages/repo.txz /usr/ports/packages/repo.sqlite
 		if [ -n "${PKG_REPO_SIGNING_KEY}" -a -f "${PKG_REPO_SIGNING_KEY}" ]; then
 			injail pkg-static repo /usr/ports/packages/ ${PKG_REPO_SIGNING_KEY}
 		else
