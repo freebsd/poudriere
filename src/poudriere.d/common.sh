@@ -162,6 +162,12 @@ jail_start() {
 	export JAILBASE=`jail_get_base ${NAME}`
 	export JAILFS=`jail_get_fs ${NAME}`
 
+	local NEEDFS="linprocfs linsysfs nullfs procfs"
+	[ -n "${USE_TMPFS}" ] && NEEDFS="${NEEDFS} tmpfs"
+	for fs in ${NEEDFS}; do
+		lsvfs $fs 2>&1 >/dev/null || kldload linprocfs
+	done
+	sysctl -n compat.linux.osrelease >/dev/null 2>&1 || kldload linux
 	jail_exists ${NAME} || err 1 "No such jail: ${NAME}"
 	jail_runs ${NAME} && err 1 "jail already running: ${NAME}"
 	jail_status "start:"
