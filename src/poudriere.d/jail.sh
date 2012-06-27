@@ -128,14 +128,27 @@ update_jail() {
 build_and_install_world() {
 	export TARGET_ARCH=${ARCH}
 	mkdir -p ${JAILBASE}/etc
+	mkdir -p ${JAILBASE}/usr/obj
 	[ -f ${POUDRIERED}/src.conf ] && cat ${POUDRIERED}/src.conf > ${JAILBASE}/etc/src.conf
 	[ -f ${POUDRIERED}/${JAILBASE}-src.conf ] && cat ${POUDRIERED}/${JAILBASE}-src.conf >> ${JAILBASE}/etc/src.conf
 	export __MAKE_CONF=/dev/null
+	echo "MAKEOBJDIRPREFIX=${JAILBASE}/usr/obj" >> ${JAILBASE}/etc/src.conf
 	export SRCCONF=${JAILBASE}/etc/src.conf
+	[ -n "${USE_TMPFS}" ] && mount -t tmpfs ${JAILBASE}/usr/obj
 	msg "Starting make buildworld"
-	make -C ${JAILBASE}/usr/src buildworld ${MAKEWORLDARGS} || err 1 "Fail to build world"
+	make -C ${JAILBASE}/usr/src buildworld ${MAKEWORLDARGS} || {
+		err 1 "Fail to build world"
+		[ -n "${USE_TMPFS}" ] && umount ${JAILBASE}/usr/obj
+		rm -rf ${JAILBASE}/usr/obj/*
+	}
 	msg "Starting make installworld"
-	make -C ${JAILBASE}/usr/src installworld DESTDIR=${JAILBASE} || err 1 "Fail to install world"
+	make -C ${JAILBASE}/usr/src installworld DESTDIR=${JAILBASE} || {
+		umount ${JAILBASE}/usr/obj
+		[ -n "${USE_TMPFS}" ] && err 1 "Fail to install world"
+		rm -rf ${JAILBASE}/usr/obj/*
+	}
+	[ -n "${USE_TMPFS}" ] && umount ${JAILBASE}/usr/obj
+	rm -rf ${JAILBASE}/usr/obj/*
 }
 
 install_from_svn() {
