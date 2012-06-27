@@ -165,7 +165,7 @@ jail_start() {
 	local NEEDFS="linprocfs linsysfs nullfs procfs"
 	[ -n "${USE_TMPFS}" ] && NEEDFS="${NEEDFS} tmpfs"
 	for fs in ${NEEDFS}; do
-		lsvfs $fs 2>&1 >/dev/null || kldload linprocfs
+		lsvfs $fs >/dev/null 2>&1 || kldload $fs
 	done
 	sysctl -n compat.linux.osrelease >/dev/null 2>&1 || kldload linux
 	jail_exists ${NAME} || err 1 "No such jail: ${NAME}"
