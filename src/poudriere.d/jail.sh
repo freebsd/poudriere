@@ -148,6 +148,7 @@ install_from_svn() {
 install_from_csup() {
 	mkdir -p ${JAILBASE}/etc
 	mkdir -p ${JAILBASE}/var/db
+	mkdir -p ${JAILBASE}/usr
 	[ -z ${CSUP_HOST} ] && err 2 "CSUP_HOST has to be defined in the configuration to use csup"
 	echo "*default base=${JAILBASE}/var/db
 *default prefix=${JAILBASE}/usr
@@ -242,6 +243,7 @@ create_jail() {
 	esac
 
 	jail_create_zfs ${JAILNAME} ${VERSION} ${ARCH} ${JAILBASE} ${FS}
+	RELEASE=${VERSION}
 	${FCT}
 
 	OSVERSION=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILBASE}/usr/include/sys/param.h`
