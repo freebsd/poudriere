@@ -581,13 +581,15 @@ prepare_ports() {
 	done < ${tmplist2}
 
 	jail_status "sanity:"
-	msg "Sanity checking the repository"
 
-	delete_old_pkgs
+	if [ $SKIPSANITY -eq 0 ]; then
+		msg "Sanity checking the repository"
+		delete_old_pkgs
 
-	while :; do
-		sanity_check_pkgs && break
-	done
+		while :; do
+			sanity_check_pkgs && break
+		done
+	fi
 
 	msg "Deleting stale symlinks"
 	find -L ${PKGDIR} -type l -exec rm -vf {} +

@@ -21,9 +21,10 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 CONFIGSTR=0
 . ${SCRIPTPREFIX}/common.sh
 NOPREFIX=0
+SKIPSANITY=0
 PTNAME="default"
 
-while getopts "d:o:cnj:p:" FLAG; do
+while getopts "d:o:cnj:p:s" FLAG; do
 	case "${FLAG}" in
 		c)
 			CONFIGSTR=1
@@ -44,6 +45,9 @@ while getopts "d:o:cnj:p:" FLAG; do
 		p)
 			PTNAME=${OPTARG}
 			;;
+		s)
+			SKIPSANITY=1
+			;;
 		*)
 			usage
 			;;
@@ -51,6 +55,8 @@ while getopts "d:o:cnj:p:" FLAG; do
 done
 
 test -z ${HOST_PORTDIRECTORY} && test -z ${ORIGIN} && usage
+
+export SKIPSANITY
 
 if [ -z ${ORIGIN} ]; then
 	PORTDIRECTORY=`basename ${HOST_PORTDIRECTORY}`

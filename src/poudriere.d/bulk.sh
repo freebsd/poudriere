@@ -19,10 +19,11 @@ Options:
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 PTNAME="default"
+SKIPSANITY=0
 KEEP=0
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "f:j:kp:t" FLAG; do
+while getopts "f:j:kp:ts" FLAG; do
 	case "${FLAG}" in
 		t)
 			export PORTTESTING=1
@@ -40,6 +41,9 @@ while getopts "f:j:kp:t" FLAG; do
 		p)
 			PTNAME=${OPTARG}
 			;;
+		s)
+			SKIPSANITY=1
+			;;
 		*)
 			usage
 			;;
@@ -48,6 +52,7 @@ done
 
 test -z ${LISTPKGS} && usage
 test -f ${LISTPKGS} || err 1 "No such list of packages: ${LISTPKGS}"
+export SKIPSANITY
 
 STATUS=0 # out of jail #
 
