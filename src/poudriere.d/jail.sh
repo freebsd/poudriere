@@ -168,7 +168,7 @@ install_from_ftp() {
 		DISTS="base dict src"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32"
 		for dist in ${DISTS}; do
-			PKGS=`echo "ls *.??"| ftp -aV ${FTPURL}/$dist/ | awk '/-r.*/ {print $NF}'`
+			PKGS=`echo "ls *.??"| ftp -apV ${FTPURL}/$dist/ | awk '/-r.*/ {print $NF}'`
 			[ -z "${PKGS}" ] && err 1 "Could not find distribution on ${FTPURL}/dist"
 			for pkg in ${PKGS}; do
 				[ ${pkg} = "install.sh" ] && continue
