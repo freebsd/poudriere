@@ -111,7 +111,6 @@ update_jail() {
 		make -C ${JAILBASE}/usr/src delete-old delete-old-libs DESTDIR=${JAILBASE}
 		;;
 	svn)
-		rm -rf ${JAILBASE}/usr/src
 		RELEASE=`zfs_get poudriere:version`
 		install_from_svn
 		make -C ${JAILBASE} delete-old delete-old-libs DESTDIR=${JAILBASE}
@@ -152,9 +151,15 @@ build_and_install_world() {
 }
 
 install_from_svn() {
+	local UPDATE=0
+	[ -d ${JAILBASE}/usr/src ] && UPDATE=1
 	mkdir -p ${JAILBASE}/usr/src
 	msg "Fetching sources from svn"
-	svn co http://svn.freebsd.org/base/${RELEASE} || err 1 "Fail to fetch sources"
+	if [ ${UPDATE} -eq 0 ]; then
+		svn co http://svn.freebsd.org/base/${RELEASE} ${JAILBASE}/usr/src || err 1 "Fail to fetch sources"
+	else
+		cd ${JAILBASE}/usr/src && svn up
+	fi
 	build_and_install_world
 }
 
