@@ -133,7 +133,7 @@ build_and_install_world() {
 	export __MAKE_CONF=/dev/null
 	echo "MAKEOBJDIRPREFIX=${JAILBASE}/usr/obj" >> ${JAILBASE}/etc/src.conf
 	export SRCCONF=${JAILBASE}/etc/src.conf
-	[ -n "${USE_TMPFS}" ] && mount -t tmpfs ${JAILBASE}/usr/obj
+	[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${JAILBASE}/usr/obj
 	msg "Starting make buildworld"
 	make -C ${JAILBASE}/usr/src buildworld ${MAKEWORLDARGS} || {
 		err 1 "Fail to build world"
