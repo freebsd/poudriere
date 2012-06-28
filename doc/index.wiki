@@ -108,4 +108,31 @@ You are now ready to invoke portmaster:
 
     <verbatim>portmaster editors/vim</verbatim>
 
+ <h2>...use ccache with poudriere</h2>
+
+Define the CCACHE_DIR to use in your /usr/local/etc/poudriere.conf:
+
+    <verbatim>
+echo "CCACHE_DIR=/usr/obj/ccache" >> /usr/local/etc/poudriere.conf
+mkdir -p /usr/obj/ccache
+</verbatim>
+
+Configure the make.conf to use CCACHE:
+
+    <verbatim>echo "USE_CCACHE=yes" >> /usr/local/etc/poudriere.d/make.conf</verbatim>
+
+Add this into the port tree's Mk/bsd.local.mk before the last .endif:
+
+    <verbatim>
+.if defined(USE_CCACHE) && !${.CURDIR:M*/devel/ccache} && !${.CURDIR:M*/ports-mgmt/pkg}
+BUILD_DEPENDS+=         ${LOCALBASE}/bin/ccache:${PORTSDIR}/devel/ccache
+.endif
+
+.if defined(USE_CCACHE) && !${CC:M*ccache*}
+MAKE_ENV+=      PATH=${LOCALBASE}/libexec/ccache/world:${PATH}
+.endif
+</verbatim>
+This last step is a temporary solution until it can be put into the ports framework by default.
+
+
 Happy FreeBSDing!
