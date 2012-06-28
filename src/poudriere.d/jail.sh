@@ -106,12 +106,12 @@ update_jail() {
 		msg "Upgrading using csup"
 		RELEASE=`zfs_get poudriere:version`
 		install_from_csup
-		make -C ${JAILBASE}/usr/src delete-old delete-old-libs DESTDIR=${JAILBASE}
+		yes | make -C ${JAILBASE}/usr/src delete-old delete-old-libs DESTDIR=${JAILBASE}
 		;;
 	svn)
 		RELEASE=`zfs_get poudriere:version`
 		install_from_svn
-		make -C ${JAILBASE} delete-old delete-old-libs DESTDIR=${JAILBASE}
+		yes | make -C ${JAILBASE} delete-old delete-old-libs DESTDIR=${JAILBASE}
 		;;
 	*)
 		err 1 "Unsupported method"
@@ -136,6 +136,8 @@ build_and_install_world() {
 	make -C ${JAILBASE}/usr/src buildworld ${MAKEWORLDARGS} || err 1 "Fail to build world"
 	msg "Starting make installworld"
 	make -C ${JAILBASE}/usr/src installworld DESTDIR=${JAILBASE} || err 1 "Fail to install world"
+	make -C ${JAILBASE}/usr/src DESTDIR=${JAILBASE} distrib-dirs && \
+	make -C ${JAILBASE}/usr/src DESTDIR=${JAILBASE} distribution
 }
 
 install_from_svn() {
