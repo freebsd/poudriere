@@ -105,7 +105,6 @@ update_jail() {
 	csup)
 		msg "Upgrading using csup"
 		echo ${JAILBASE}
-		rm -rf ${JAILBASE}/usr/src
 		RELEASE=`zfs_get poudriere:version`
 		install_from_csup
 		make -C ${JAILBASE}/usr/src delete-old delete-old-libs DESTDIR=${JAILBASE}
@@ -137,16 +136,17 @@ build_and_install_world() {
 	[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${JAILBASE}/usr/obj
 	mkdir -p ${JAILBASE}/usr/obj/legacy/usr/lib
 	msg "Starting make buildworld"
-	env MAKEOBJDIRPREFIX=${JAILBASE}/usr/obj make -C ${JAILBASE}/usr/src buildworld ${MAKEWORLDARGS} || {
+	export MAKEOBJDIRPREFIX=${JAILBASE}/usr/obj
+	make -C ${JAILBASE}/usr/src buildworld ${MAKEWORLDARGS} || {
 		err 1 "Fail to build world"
-		[ -n "${USE_TMPFS}" ] && umount ${JAILBASE}/usr/obj
 		rm -rf ${JAILBASE}/usr/obj/*
+		[ -n "${USE_TMPFS}" ] && umount ${JAILBASE}/usr/obj
 	}
 	msg "Starting make installworld"
 	make -C ${JAILBASE}/usr/src installworld DESTDIR=${JAILBASE} || {
-		umount ${JAILBASE}/usr/obj
-		[ -n "${USE_TMPFS}" ] && err 1 "Fail to install world"
+		[ -n "${USE_TMPFS}" ] && umount ${JAILBASE}/usr/obj
 		rm -rf ${JAILBASE}/usr/obj/*
+		err 1 "Fail to install world"
 	}
 	[ -n "${USE_TMPFS}" ] && umount ${JAILBASE}/usr/obj
 	rm -rf ${JAILBASE}/usr/obj/*
