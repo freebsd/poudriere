@@ -128,14 +128,16 @@ build_and_install_world() {
 	export TARGET_ARCH=${ARCH}
 	mkdir -p ${JAILBASE}/etc
 	mkdir -p ${JAILBASE}/usr/obj
+	[ -f ${JAILBASE}/etc/src.conf ] && rm -f ${JAILBASE}/etc/src.conf
 	[ -f ${POUDRIERED}/src.conf ] && cat ${POUDRIERED}/src.conf > ${JAILBASE}/etc/src.conf
 	[ -f ${POUDRIERED}/${JAILBASE}-src.conf ] && cat ${POUDRIERED}/${JAILBASE}-src.conf >> ${JAILBASE}/etc/src.conf
 	export __MAKE_CONF=/dev/null
 	echo "MAKEOBJDIRPREFIX=${JAILBASE}/usr/obj" >> ${JAILBASE}/etc/src.conf
 	export SRCCONF=${JAILBASE}/etc/src.conf
 	[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${JAILBASE}/usr/obj
+	mkdir -p ${JAILBASE}/usr/obj/legacy/usr/lib
 	msg "Starting make buildworld"
-	make -C ${JAILBASE}/usr/src buildworld ${MAKEWORLDARGS} || {
+	env MAKEOBJDIRPREFIX=${JAILBASE}/usr/obj make -C ${JAILBASE}/usr/src buildworld ${MAKEWORLDARGS} || {
 		err 1 "Fail to build world"
 		[ -n "${USE_TMPFS}" ] && umount ${JAILBASE}/usr/obj
 		rm -rf ${JAILBASE}/usr/obj/*
