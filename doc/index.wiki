@@ -117,9 +117,14 @@ echo "CCACHE_DIR=/usr/obj/ccache" >> /usr/local/etc/poudriere.conf
 mkdir -p /usr/obj/ccache
 </verbatim>
 
-Configure the make.conf to use CCACHE:
+Configure the make.conf to use CCACHE and bsd.local.mk:
 
-    <verbatim>echo "USE_CCACHE=yes" >> /usr/local/etc/poudriere.d/make.conf</verbatim>
+    <verbatim>
+cat >> /usr/local/etc/poudriere.d/make.conf << EOF
+USE_CCACHE=yes
+USE_LOCAL_MK=yes
+EOF
+</verbatim>
 
 Add this into the port tree's Mk/bsd.local.mk before the last .endif:
 
