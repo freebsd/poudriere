@@ -338,6 +338,7 @@ build_port() {
 		fi
 		if [ -n "${PORTTESTING}" -a  "${PHASE}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
+			PREFIX=`injail make -C ${PORTDIR} -VPREFIX`
 			zfs_set "poudriere:status" "fscheck:${PORTDIR##/usr/ports/}"
 			if [ $ZVERSION -lt 28 ]; then
 				find ${JAILBASE}${PREFIX} ! -type d | \
@@ -348,50 +349,71 @@ build_port() {
 			else
 				local BASE=$(jail_running_base ${JAILNAME})
 				PORTNAME=$(injail make -C ${PORTDIR} -VPORTNAME)
-				FILES=$(mktemp ${BASE}/tmp/files.XXXXXX)
-				DIRS=$(mktemp ${BASE}/tmp/dirs.XXXXXX)
+				ADD=$(mktemp ${BASE}/tmp/add.XXXXXX)
+				ADD1=$(mktemp ${BASE}/tmp/add1.XXXXXX)
+				DEL=$(mktemp ${BASE}/tmp/del.XXXXXX)
+				DEL1=$(mktemp ${BASE}/tmp/del1.XXXXXX)
+				MOD=$(mktemp ${BASE}/tmp/mod.XXXXXX)
+				MOD1=$(mktemp ${BASE}/tmp/mod1.XXXXXX)
 				DIE=0
 				zfs diff -FH ${JAILFS}@prebuild ${JAILFS} | \
 					while read mod type path; do
 					PPATH=`echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${PREFIX}/,," -e "s,^share/${PORTNAME},%%DATADIR%%," -e "s,^etc,%%ETCDIR%%,"`
 					case $mod$type in
-						+/) 
-							case "${PPATH}" in
-								/tmp/*) continue ;;
-								*) echo "@dirrmtry ${PPATH}" >> ${DIRS} ;;
-							esac
-							;;
 						+*)
 							case "${PPATH}" in
-								/var/db/pkg/local.sqlite) continue ;;
-								/tmp/*) continue ;;
-								/var/run/ld-elf.so.hints) continue ;;
-								share/nls/POSIX) continue ;;
-								share/nls/en_US.US-ASCII) continue ;;
-								*) echo "${PPATH}" >> ${FILES} ;;
+								/var/db/pkg/local.sqlite) continue;;
+								/var/run/ld-elf.so.hints) continue;;
+								/tmp/*) continue;;
+								/wrkdirs/*) continue;;
+								share/nls/POSIX) continue;;
+								share/nls/en_US.US-ASCII) continue;;
+								*) echo "${PPATH}" >> ${ADD};;
 							esac
 							;;
 						-*)
-							[ "${PPATH}" = "/var/run/ld-elf.so.hints" ] && continue
-							msg "!!!MISSING!!!: ${PPATH}"
+							case "${PPATH}" in
+								/var/run/ld-elf.so.hints) continue;;
+								/tmp/*) continue;;
+								/wrkdirs/*) continue;;
+								*) echo "${PPATH}" >> ${DEL};;
+							esac
 							;;
-						M/) continue ;;
+						M/) continue;;
 						M*)
-							[ "${PPATH}" = "/var/db/pkg/local.sqlite" ] && continue
-							[ "${PPATH}" = "/etc/spwd.db" ] && continue
-							[ "${PPATH}" = "/etc/pwd.db" ] && continue
-							[ "${PPATH}" = "/etc/group" ] && continue
-							[ "${PPATH}" = "/etc/passwd" ] && continue
-							[ "${PPATH}" = "/etc/master.passwd" ] && continue
-							[ "${PPATH}" = "/etc/shells" ] && continue
-							[ "${PPATH}" = "/var/log/userlog" ] && continue
-							msg "!!!MODIFIED!!!: ${PPATH}"
+							case "${PPATH}" in
+								/var/db/pkg/local.sqlite) continue;;
+								/var/log/userlog) continue;;
+								/etc/spwd.db) continue;;
+								/etc/pwd.db) continue;;
+								/etc/group) continue;;
+								/etc/passwd) continue;;
+								/etc/master.passwd) continue;;
+								/etc/shells) continue;;
+								*) echo "${PPATH}" >> ${MOD};;
+							esac
 							;;
 					esac
 				done
-				sort ${FILES}
-				sort -r ${DIRS}
-				rm ${FILES} ${DIRS}
+				sort ${ADD} > ${ADD1}
+				sort ${DEL} > ${DEL1}
+				sort ${MOD} > ${MOD1}
+				comm -12 ${ADD1} ${DEL1} >> ${MOD1}
+				comm -23 ${ADD1} ${DEL1} > ${ADD}
+				comm -13 ${ADD1} ${DEL1} > ${DEL}
+				if [ -s "${ADD}" ]; then
+					msg "Files or directories left over:"
+					cat ${ADD}
+				fi
+				if [ -s "${DEL}" ]; then
+					msg "Files or directories removed:"
+					cat ${DEL}
+				fi
+				if [ -s "${MOD}" ]; then
+					msg "Files or directories modified:"
+					cat ${MOD1}
+				fi
+				rm ${ADD} ${ADD1} ${DEL} ${DEL1} ${MOD} ${MOD1}
 			fi
 		fi
 	done
