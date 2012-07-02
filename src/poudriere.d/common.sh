@@ -291,7 +291,7 @@ sanity_check_pkgs() {
 
 build_port() {
 	PORTDIR=$1
-	IPS="$(sysctl -n kern.features.inet)$(sysctl -n kern.features.inet6)"
+	IPS="$(sysctl -n kern.features.inet 2>/dev/null || echo 0)$(sysctl -n kern.features.inet6 2>/dev/null || echo 0)"
 	TARGETS="fetch checksum extract patch configure build install package"
 	[ -n "${PORTTESTING}" ] && TARGETS="${TARGETS} deinstall"
 	for PHASE in ${TARGETS}; do
