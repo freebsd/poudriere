@@ -170,19 +170,29 @@ src-all" > ${JAILBASE}/etc/supfile
 install_from_ftp() {
 	mkdir ${JAILBASE}/fromftp
 	CLEANUP_HOOK=cleanup_new_jail
+	local FREEBSD_BASE
+	local URL
+
+	if [ -n "${FREEBSD_HOST}" ]; then
+		FREEBSD_BASE=${FREEBSD_HOST}
+	else
+		FREEBSD_BASE="ftp://${FTPHOST:=ftp.freebsd.org}"
+	fi
 
 	if [ ${VERSION%%.*} -lt 9 ]; then
 		msg "Fetching sets for FreeBSD ${VERSION} ${ARCH}"
-		FTPURL="ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${VERSION}"
+		URL="${FREEBSD_BASE}/pub/FreeBSD/releases/${ARCH}/${VERSION}"
 		DISTS="base dict src"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32"
 		for dist in ${DISTS}; do
-			PKGS=`echo "ls *.??"| ftp -apV ${FTPURL}/$dist/ | awk '/-r.*/ {print $NF}'`
-			[ -z "${PKGS}" ] && err 1 "Could not find distribution on ${FTPURL}/dist"
-			for pkg in ${PKGS}; do
+			fetch_file ${JAILBASE}/fromftp/ ${URL}/$dist/CHECKSUM.SHA256 || \
+				err 1 "Fail to fetch checksum file"
+			sed -n "s/.*(\(.*\...\)).*/\1/p" \
+				${JAILBASE}/fromftp/CHECKSUM.SHA256 | \
+				while read pkg; do
 				[ ${pkg} = "install.sh" ] && continue
 				# Let's retry at least one time
-				fetch_file ${JAILBASE}/fromftp/ ${FTPURL}/${dist}/${pkg}
+				fetch_file ${JAILBASE}/fromftp/ ${URL}/${dist}/${pkg}
 			done
 		done
 
@@ -202,12 +212,12 @@ install_from_ftp() {
 				tar --unlink -xpf - -C ${JAILBASE}/${APPEND} || err 1 " Fail" && echo " done"
 		done
 	else
-		FTPURL="ftp://${FTPHOST:=ftp.freebsd.org}/pub/FreeBSD/releases/${ARCH}/${ARCH}/${VERSION}"
+		URL="${FREEBSD_BASE}/pub/FreeBSD/releases/${ARCH}/${VERSION}"
 		DISTS="base.txz src.txz"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
 		for dist in ${DISTS}; do
 			msg "Fetching ${dist} for FreeBSD ${VERSION} ${ARCH}"
-			fetch_file ${JAILBASE}/fromftp/${dist} ${FTPURL}/${dist}
+			fetch_file ${JAILBASE}/fromftp/${dist} ${URL}/${dist}
 			msg_n "Extracting ${dist}..."
 			tar -xpf ${JAILBASE}/fromftp/${dist} -C  ${JAILBASE}/ || err 1 " fail" && echo " done"
 		done
