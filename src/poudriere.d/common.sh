@@ -137,7 +137,7 @@ port_get_fs() {
 }
 
 fetch_file() {
-	fetch -o $1 $2 || fetch -o $1 $2
+	fetch -p -o $1 $2 || fetch -p -o $1 $2
 }
 
 jail_create_zfs() {
