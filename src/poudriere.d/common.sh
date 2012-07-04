@@ -417,6 +417,14 @@ build_port() {
 			fi
 		fi
 	done
+	jail -r ${JAILNAME}
+	case $IPS in
+	01) IPARGS="ip6.addr=::1" ;;
+	10) IPARGS="ip4.addr=127.0.0.1" ;;
+	11) IPARGS="ip4.addr=127.0.0.1 ip6.addr=::1" ;;
+	esac
+	jail -c persist name=${NAME} ${IPARGS} path=${MNT} host.hostname=${NAME} \
+		allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
 	zfs_set "poudriere:status" "idle:"
 	zfs destroy ${JAILFS}@prebuild || :
 	return 0
