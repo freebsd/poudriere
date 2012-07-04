@@ -24,7 +24,8 @@ Options:
                      \"ftp\", could also be \"svn\", \"csup\" please note
                      that with svn and csup the world will be built. note
                      that building from sources can use src.conf and
-                     jail-src.conf from localbase/etc/poudriere.d"
+                     jail-src.conf from localbase/etc/poudriere.d
+    -t version    -- version to upgrade to"
 	exit 1
 }
 
@@ -99,7 +100,15 @@ update_jail() {
 		jail -r ${JAILNAME}
 		jail -c persist name=${NAME} ip4=inherit ip6=inherit path=${MNT} host.hostname=${NAME} \
 			allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
-		injail /usr/sbin/freebsd-update fetch install
+		if [ -z "${TORELEASE}" ]; then
+			injail /usr/sbin/freebsd-update fetch install
+		else
+			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update -r ${TORELEASE} upgrade install || err 1 "Fail to upgrade system"
+			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update install || err 1 "Fail to upgrade system"
+			zfs_set poudriere:version "${TORELEASE}"
+		fi
+		zfs destroy ${JAILFS}@clean
+		zfs snapshot ${JAILFS}@clean
 		jail_stop ${JAILNAME}
 		;;
 	csup)
@@ -107,19 +116,21 @@ update_jail() {
 		RELEASE=`zfs_get poudriere:version`
 		install_from_csup
 		yes | make -C ${JAILBASE}/usr/src delete-old delete-old-libs DESTDIR=${JAILBASE}
+		zfs destroy ${JAILFS}@clean
+		zfs snapshot ${JAILFS}@clean
 		;;
 	svn)
 		RELEASE=`zfs_get poudriere:version`
 		install_from_svn
 		yes | make -C ${JAILBASE} delete-old delete-old-libs DESTDIR=${JAILBASE}
+		zfs destroy ${JAILFS}@clean
+		zfs snapshot ${JAILFS}@clean
 		;;
 	*)
 		err 1 "Unsupported method"
 		;;
 	esac
 
-	zfs destroy ${JAILFS}@clean
-	zfs snapshot ${JAILFS}@clean
 }
 
 build_and_install_world() {
@@ -314,7 +325,7 @@ SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "j:v:a:z:m:n:f:M:sdklqciu" FLAG; do
+while getopts "j:v:a:z:m:n:f:M:sdklqciut:" FLAG; do
 	case "${FLAG}" in
 		j)
 			JAILNAME=${OPTARG}
@@ -360,6 +371,9 @@ while getopts "j:v:a:z:m:n:f:M:sdklqciu" FLAG; do
 			;;
 		u)
 			UPDATE=1
+			;;
+		t)
+			TORELEASE=${OPTARG}
 			;;
 		*)
 			usage
