@@ -448,9 +448,9 @@ build_pkg() {
 	# This is checked here instead of when building the queue
 	# as the list may start big but become very small, so here
 	# is a less-common check
-	local IGNORE="$(injail make -C ${portdir} -VIGNORE)"
-	if [ -n "$IGNORE" ]; then
-		msg "Ignoring ${port}: $IGNORE"
+	local ignore="$(injail make -C ${portdir} -VIGNORE)"
+	if [ -n "$ignore" ]; then
+		msg "Ignoring ${port}: $ignore"
 		cnt=$(zfs_get ${NS}:stats_ignored)
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
@@ -497,22 +497,18 @@ build_pkg() {
 }
 
 list_deps() {
-	[ -z ${1} ] && return 0
-	LIST="PKG_DEPENDS BUILD_DEPENDS EXTRACT_DEPENDS LIB_DEPENDS PATCH_DEPENDS FETCH_DEPENDS RUN_DEPENDS"
-	local dir
-	MAKEARGS=""
-	for key in $LIST; do
-		MAKEARGS="${MAKEARGS} -V${key}"
+	[ $# -ne 1 ] && eargs directory
+	local list="PKG_DEPENDS BUILD_DEPENDS EXTRACT_DEPENDS LIB_DEPENDS PATCH_DEPENDS FETCH_DEPENDS RUN_DEPENDS"
+	local dir=$1
+	local makeargs=""
+	for key in $list; do
+		makergs="${makeargs} -V${key}"
 	done
-	if [ -d "${PORTSDIR}/${1}" ]; then
-		dir="/usr/ports/${1}"
-	else
-		dir=${1}
-	fi
+	[ -d "${PORTSDIR}/${dir}" ] && dir="/usr/ports/${dir}"
 
 	local pdeps
 	local pn
-	injail make -C ${dir} -VPKGNAME $MAKEARGS | tr '\n' ' ' | \
+	injail make -C ${dir} -VPKGNAME $makeargs | tr '\n' ' ' | \
 		sed -e "s,[[:graph:]]*/usr/ports/,,g" -e "s,:[[:graph:]]*,,g" | while read pn pdeps; do
 		[ -n "${cache}" ] && echo "${1} ${pn}" >> ${cache}
 		for d in ${pdeps}; do
