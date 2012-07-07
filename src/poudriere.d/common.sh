@@ -170,21 +170,21 @@ jail_run() {
 	local jname=$1
 	local jpath=$2
 	local network=$3
-	local IPARGS
+	local ipargs
 	if [ ${NETWORK} -eq 0 ]; then
 		case $IPS in
-		01) IPARGS="ip6.addr=::1" ;;
-		10) IPARGS="ip4.addr=127.0.0.1" ;;
-		11) IPARGS="ip4.addr=127.0.0.1 ip6.addr=::1" ;;
+		01) ipargs="ip6.addr=::1" ;;
+		10) ipargs="ip4.addr=127.0.0.1" ;;
+		11) ipargs="ip4.addr=127.0.0.1 ip6.addr=::1" ;;
 		esac
 	else
 		case $IPS in
-		01) IPARGS="ip6=inherit" ;;
-		10) IPARGS="ip4=inherit" ;;
-		11) IPARGS="ip4=inherit ip6=inherit" ;;
+		01) ipargs="ip6=inherit" ;;
+		10) ipargs="ip4=inherit" ;;
+		11) ipargs="ip4=inherit ip6=inherit" ;;
 		esac
 	fi
-	jail -c persist name=${jname} ${IPARGS} path=${jpath} host.hostname=${jname} \
+	jail -c persist name=${jname} ${ipargs} path=${jpath} host.hostname=${jname} \
 		allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
 
 }
@@ -231,27 +231,27 @@ jail_start() {
 
 jail_stop() {
 	[ $# -ne 1 ] && eargs jailname
-	NAME=${1}
-	export JAILBASE=`jail_get_base ${NAME}`
-	export JAILFS=`jail_get_fs ${NAME}`
-	jail_runs ${NAME} || err 1 "No such jail running: ${NAME}"
+	local name=${1}
+	local jailbase=`jail_get_base ${name}`
+	local jailfs=`jail_get_fs ${name}`
+	jail_runs ${name} || err 1 "No such jail running: ${name}"
 	jail_status "stop:"
 
 	msg "Stopping jail"
-	jail -r ${NAME}
+	jail -r ${name}
 	msg "Umounting file systems"
-	for MNT in $( mount | awk -v mnt="${JAILBASE}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
-		umount -f ${MNT}
+	for mnt in $( mount | awk -v mnt="${jailbase}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
+		umount -f ${mnt}
 	done
 
 	if [ -n "${MFSSIZE}" ]; then
-		MDUNIT=$(mount | awk -v mnt="${JAILBASE}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 ~ /\/dev\/md/ ) { sub(/\/dev\/md/, "", $1); print $1 }}')
-		if [ -n "$MDUNIT" ]; then
-			umount ${JAILBASE}/wrkdirs
-			mdconfig -d -u ${MDUNIT}
+		local mdunit=$(mount | awk -v mnt="${jailbase}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 ~ /\/dev\/md/ ) { sub(/\/dev\/md/, "", $1); print $1 }}')
+		if [ -n "$mdunit" ]; then
+			umount ${jailbase}/wrkdirs
+			mdconfig -d -u ${mdunit}
 		fi
 	fi
-	zfs rollback -r ${ZPOOL}/poudriere/${NAME}@clean
+	zfs rollback -r ${ZPOOL}/poudriere/${name}@clean
 	jail_status "idle:"
 	export STATUS=0
 }
