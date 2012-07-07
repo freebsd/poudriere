@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# zfs namespace
+ns="poudriere"
+
 err() {
 	if [ $# -ne 2 ]; then
 		err 1 "err expects 2 arguments: exit_number \"message\""
@@ -54,17 +57,17 @@ zfs_set() {
 
 port_set_method() {
 	[ $# -ne 2 ] && eargs value fsname
-	zfs set poudriere:method="$2" ${1}
+	zfs set ${ns}:method="$2" ${1}
 }
 
 port_get_method() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs get -H -o value "poudriere:method" $1
+	zfs get -H -o value "${ns}:method" $1
 }
 
 jail_status() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs_set poudriere:status "$1"
+	zfs_set ${ns}:status "$1"
 }
 
 sig_handler() {
@@ -81,7 +84,7 @@ sig_handler() {
 
 jail_exists() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name ${ZPOOL}/poudriere | \
+	zfs list -t filesystem -Hd1 -o ${ns}:type,${ns}:name ${ZPOOL}/poudriere | \
 		egrep -q "^rootfs[[:space:]]$1$" && return 0
 	return 1
 }
@@ -99,19 +102,19 @@ jail_running_base() {
 
 jail_get_base() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name,mountpoint ${ZPOOL}/poudriere | \
+	zfs list -t filesystem -Hd1 -o ${ns}:type,${ns}:name,mountpoint ${ZPOOL}/poudriere | \
 		awk '/^rootfs[[:space:]]'$1'[[:space:]]/ { print $3 }'
 }
 
 jail_get_version() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name,poudriere:version ${ZPOOL}/poudriere | \
+	zfs list -t filesystem -Hd1 -o ${ns}:type,${ns}:name,${ns}:version ${ZPOOL}/poudriere | \
 		awk '/^rootfs[[:space:]]'$1'[[:space:]]/ { print $3 }'
 }
 
 jail_get_fs() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name,name ${ZPOOL}/poudriere | \
+	zfs list -t filesystem -Hd1 -o ${ns}:type,${ns}:name,name ${ZPOOL}/poudriere | \
 		awk '/^rootfs[[:space:]]'$1'[[:space:]]/ { print $3 }'
 }
 
@@ -122,26 +125,26 @@ jail_get_zpool_version() {
 }
 
 jail_ls() {
-	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name ${ZPOOL}/poudriere | \
+	zfs list -t filesystem -Hd1 -o ${ns}:type,${ns}:name ${ZPOOL}/poudriere | \
 		awk '/^rootfs/ { print $2 }'
 }
 
 port_exists() {
 	[ $# -ne 1 ] && eargs portstree_name
-	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name,name ${ZPOOL}/poudriere | \
+	zfs list -t filesystem -Hd1 -o ${ns}:type,${ns}:name,name ${ZPOOL}/poudriere | \
 		egrep -q "^ports[[:space:]]$1" && return 0
 	return 1
 }
 
 port_get_base() {
 	[ $# -ne 1 ] && eargs portstree_name
-	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name,mountpoint ${ZPOOL}/poudriere | \
+	zfs list -t filesystem -Hd1 -o ${ns}:type,${ns}:name,mountpoint ${ZPOOL}/poudriere | \
 		awk '/^ports[[:space:]]'$1'/ { print $3 }'
 }
 
 port_get_fs() {
 	[ $# -ne 1 ] && eargs portstree_name
-	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name,name ${ZPOOL}/poudriere | \
+	zfs list -t filesystem -Hd1 -o ${ns}:type,${ns}:name,name ${ZPOOL}/poudriere | \
 		awk '/^ports[[:space:]]'$1'/ { print $3 }'
 }
 
@@ -159,10 +162,10 @@ jail_create_zfs() {
 	local FS=$5
 	msg_n "Creating ${NAME} fs..."
 	zfs create -p \
-		-o poudriere:type=rootfs \
-		-o poudriere:name=${NAME} \
-		-o poudriere:version=${VERSION} \
-		-o poudriere:arch=${ARCH} \
+		-o ${ns}:type=rootfs \
+		-o ${ns}:name=${NAME} \
+		-o ${ns}:version=${VERSION} \
+		-o ${ns}:arch=${ARCH} \
 		-o mountpoint=${JAILBASE} ${FS} || err 1 " Fail" && echo " done"
 }
 
@@ -249,8 +252,8 @@ port_create_zfs() {
 	msg_n "Creating ${NAME} fs..."
 	zfs create -p \
 		-o mountpoint=${MNT} \
-		-o poudriere:type=ports \
-		-o poudriere:name=${NAME} \
+		-o ${ns}:type=ports \
+		-o ${ns}:name=${NAME} \
 		${FS} || err 1 " Fail" && echo " done"
 }
 
@@ -306,7 +309,7 @@ build_port() {
 	TARGETS="fetch checksum extract patch configure build install package"
 	[ -n "${PORTTESTING}" ] && TARGETS="${TARGETS} deinstall"
 	for PHASE in ${TARGETS}; do
-		zfs_set "poudriere:status" "${PHASE}:${PORTDIR##/usr/ports/}"
+		zfs_set "${ns}:status" "${PHASE}:${PORTDIR##/usr/ports/}"
 		if [ "${PHASE}" = "fetch" ]; then
 			jail -r ${JAILNAME}
 			
@@ -350,7 +353,7 @@ build_port() {
 		if [ -n "${PORTTESTING}" -a  "${PHASE}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
 			PREFIX=`injail make -C ${PORTDIR} -VPREFIX`
-			zfs_set "poudriere:status" "fscheck:${PORTDIR##/usr/ports/}"
+			zfs_set "${ns}:status" "fscheck:${PORTDIR##/usr/ports/}"
 			if [ $ZVERSION -lt 28 ]; then
 				find ${JAILBASE}${PREFIX} ! -type d | \
 					sed -e "s,^${JAILBASE}${PREFIX}/,," | sort
@@ -436,7 +439,7 @@ build_port() {
 	esac
 	jail -c persist name=${NAME} ${IPARGS} path=${MNT} host.hostname=${NAME} \
 		allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
-	zfs_set "poudriere:status" "idle:"
+	zfs_set "${ns}:status" "idle:"
 	zfs destroy ${JAILFS}@prebuild || :
 	return 0
 }
@@ -454,10 +457,10 @@ build_pkg() {
 	local IGNORE="$(injail make -C ${portdir} -VIGNORE)"
 	if [ -n "$IGNORE" ]; then
 		msg "Ignoring ${port}: $IGNORE"
-		cnt=$(zfs_get poudriere:stats_ignored)
+		cnt=$(zfs_get ${ns}:stats_ignored)
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
-		zfs_set "poudriere:stats_ignored" "$cnt"
+		zfs_set "${ns}:stats_ignored" "$cnt"
 		export ignored="${ignored} ${port}"
 		return
 	fi
@@ -469,7 +472,7 @@ build_pkg() {
 	PKGNAME=$(injail make -C ${portdir} -VPKGNAME)
 	log_start ${LOGS}/${JAILNAME}-${PTNAME}-${PKGNAME}.log
 
-	zfs_set "poudriere:status" "depends:${port}"
+	zfs_set "${ns}:status" "depends:${port}"
 	if ! injail make -C ${portdir} pkg-depends fetch-depends extract-depends \
 		patch-depends build-depends lib-depends; then
 		build_failed=1
@@ -482,17 +485,17 @@ build_pkg() {
 	fi
 
 	if [ ${build_failed} -eq 0 ]; then
-		cnt=$(zfs_get poudriere:stats_built)
+		cnt=$(zfs_get ${ns}:stats_built)
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
-		zfs_set "poudriere:stats_built" "$cnt"
+		zfs_set "${ns}:stats_built" "$cnt"
 		export built="${built} ${port}"
 	else
-		cnt=$(zfs_get poudriere:stats_failed)
+		cnt=$(zfs_get ${ns}:stats_failed)
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
-		zfs_set "poudriere:stats_failed" "$cnt"
-		state=$(zfs_get poudriere:status)
+		zfs_set "${ns}:stats_failed" "$cnt"
+		state=$(zfs_get ${ns}:status)
 		export failed="${failed} ${state}"
 	fi
 	jail_status "idle:"
@@ -658,10 +661,10 @@ prepare_ports() {
 	export ignored=""
 	local nbq=0
 	for a in ${queue}; do nbq=$((nbq + 1)); done
-	zfs_set "poudriere:stats_queued" "${nbq}"
-	zfs_set "poudriere:stats_built" "0"
-	zfs_set "poudriere:stats_failed" "0"
-	zfs_set "poudriere:stats_ignored" "0"
+	zfs_set "${ns}:stats_queued" "${nbq}"
+	zfs_set "${ns}:stats_built" "0"
+	zfs_set "${ns}:stats_failed" "0"
+	zfs_set "${ns}:stats_ignored" "0"
 }
 
 prepare_jail() {
