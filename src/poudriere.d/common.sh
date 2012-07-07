@@ -315,22 +315,25 @@ sanity_check_pkgs() {
 }
 
 build_port() {
-	[ $# -ne 1 ] && eargs portdir
+	[ $# -ne 1 ] && eargs portdir jailname
 	local portdir=$1
+	local jailname=$2
+	local jailfs=`jail_get_fs ${jailname}`
+	local jailbase=`jail_get_base ${jailname}`
 	local targets="fetch checksum extract patch configure build install package"
 	[ -n "${PORTTESTING}" ] && targets="${targets} deinstall"
 	for phase in ${targets}; do
 		zfs_set "${NS}:status" "${PHASE}:${portdir##/usr/ports/}"
 		if [ "${phase}" = "fetch" ]; then
-			jail -r ${JAILNAME}
-			jail_run ${NAME} ${MNT} 1
+			jail -r ${jailname}
+			jail_run ${jailname} ${jailbase} 1
 		fi
-		[ "${phase}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
-		if [ -n "${PORTTESTING}" -a "${PHASE}" = "deinstall" ]; then
+		[ "${phase}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${jailfs}@prebuild
+		if [ -n "${PORTTESTING}" -a "${phase}" = "deinstall" ]; then
 			msg "Checking shared library dependencies"
 			if [ ${PKGNG} -eq 0 ]; then
 				PLIST="/var/db/pkg/${PKGNAME}/+CONTENTS"
-				grep -v "^@" ${JAILBASE}${PLIST} | \
+				grep -v "^@" ${jailbase}${PLIST} | \
 					sed -e "s,^,${PREFIX}/," | \
 					xargs injail ldd 2>&1 | \
 					grep -v "not a dynamic executable" | \
@@ -345,32 +348,31 @@ build_port() {
 		injail env ${PKGENV} ${PORT_FLAGS} make -C ${portdir} ${phase} || return 1
 
 		if [ "${phase}" = "checksum" ]; then
-			jail -r ${JAILNAME}
-			jail_run ${NAME} ${MNT} 0
+			jail -r ${jailname}
+			jail_run ${jailname} ${jailbase} 0
 		fi
 		if [ -n "${PORTTESTING}" -a  "${phase}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
 			PREFIX=`injail make -C ${portdir} -VPREFIX`
 			zfs_set "${NS}:status" "fscheck:${portdir##/usr/ports/}"
 			if [ $ZVERSION -lt 28 ]; then
-				find ${JAILBASE}${PREFIX} ! -type d | \
-					sed -e "s,^${JAILBASE}${PREFIX}/,," | sort
+				find ${jailbase}${PREFIX} ! -type d | \
+					sed -e "s,^${jailbase}${PREFIX}/,," | sort
 
-				find ${JAILBASE}${PREFIX}/ -type d | sed "s,^${JAILBASE}${PREFIX}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.after
-				comm -13 ${JAILBASE}${PREFIX}.PLIST_DIRS.before ${JAILBASE}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
+				find ${jailbase}${PREFIX}/ -type d | sed "s,^${jailbase}${PREFIX}/,," | sort > ${jailbase}${PREFIX}.PLIST_DIRS.after
+				comm -13 ${jailbase}${PREFIX}.PLIST_DIRS.before ${jailbase}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
 			else
-				local base=$(jail_running_base ${JAILNAME})
 				local portname=$(injail make -C ${portdir} -VPORTNAME)
-				local add=$(mktemp ${BASE}/tmp/add.XXXXXX)
-				local add1=$(mktemp ${BASE}/tmp/add1.XXXXXX)
-				local del=$(mktemp ${BASE}/tmp/del.XXXXXX)
-				local del1=$(mktemp ${BASE}/tmp/del1.XXXXXX)
-				local mod=$(mktemp ${BASE}/tmp/mod.XXXXXX)
-				local mod1=$(mktemp ${BASE}/tmp/mod1.XXXXXX)
+				local add=$(mktemp ${jailbase}/tmp/add.XXXXXX)
+				local add1=$(mktemp ${jailbase}/tmp/add1.XXXXXX)
+				local del=$(mktemp ${jailbase}/tmp/del.XXXXXX)
+				local del1=$(mktemp ${jailbase}/tmp/del1.XXXXXX)
+				local mod=$(mktemp ${jailbase}/tmp/mod.XXXXXX)
+				local mod1=$(mktemp ${jailbase}/tmp/mod1.XXXXXX)
 				local die=0
-				zfs diff -FH ${JAILFS}@prebuild ${JAILFS} | \
+				zfs diff -FH ${jailfs}@prebuild ${jailfs} | \
 					while read mod type path; do
-					local ppath=`echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${PREFIX}/,," -e "s,^share/${portname},%%DATADIR%%," -e "s,^etc,%%ETCDIR%%,"`
+					local ppath=`echo "$path" | sed -e "s,^${jailbase},," -e "s,^${PREFIX}/,," -e "s,^share/${portname},%%DATADIR%%," -e "s,^etc,%%ETCDIR%%,"`
 					case $mod$type in
 						+*)
 							case "${ppath}" in
@@ -429,10 +431,10 @@ build_port() {
 			fi
 		fi
 	done
-	jail -r ${JAILNAME}
-	jail_run ${NAME} ${MNT} 0
+	jail -r ${jailbase}
+	jail_run ${jailname} ${jailbase} 0
 	zfs_set "${NS}:status" "idle:"
-	zfs destroy ${JAILFS}@prebuild || :
+	zfs destroy ${jailfs}@prebuild || :
 	return 0
 }
 
@@ -471,7 +473,7 @@ build_pkg() {
 	else
 		# Only build if the depends built fine
 		injail make -C ${portdir} clean
-		if ! build_port ${portdir}; then
+		if ! build_port ${portdir} ${JAILNAME}; then
 			build_failed=1
 		fi
 	fi

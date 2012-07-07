@@ -126,7 +126,7 @@ for JAILNAME in ${JAILNAMES}; do
 	PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
 	PORTTESTING=yes
 	log_start ${LOGS}/testport-${PKGNAME}-${JAILNAME}.log
-	build_port ${PORTDIRECTORY}
+	build_port ${PORTDIRECTORY} ${JAILNAME}
 
 	msg "Installing from package"
 	injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${EXT}
