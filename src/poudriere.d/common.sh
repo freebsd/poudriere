@@ -278,9 +278,9 @@ cleanup() {
 	export CLEANING_UP=1
 	[ -e ${PIPE} ] && rm -f ${PIPE}
 	[ -z "${JAILNAME}" ] && err 2 "Fail: Missing JAILNAME"
-	FS=`jail_get_fs ${JAILNAME}`
-	zfs destroy ${FS}@prepkg 2>/dev/null || :
-	zfs destroy ${FS}@prebuild 2>/dev/null || :
+	local fs=`jail_get_fs ${JAILNAME}`
+	zfs destroy ${fs}@prepkg 2>/dev/null || :
+	zfs destroy ${fs}@prebuild 2>/dev/null || :
 	jail_stop ${JAILNAME}
 }
 
@@ -289,16 +289,16 @@ injail() {
 }
 
 sanity_check_pkgs() {
-	ret=0
+	local ret=0
 	[ ! -d ${PKGDIR}/All ] && return $ret
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return $ret
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
-		local DEPFILE=${JAILBASE}/tmp/${pkg##*/}.deps
-		if [ ! -f ${DEPFILE} ]; then
+		local depfile=${JAILBASE}/tmp/${pkg##*/}.deps
+		if [ ! -f ${depfile} ]; then
 			if [ "${EXT}" = "tbz" ]; then
-				pkg_info -qr ${pkg} | awk '{ print $2 }' > ${DEPFILE}
+				pkg_info -qr ${pkg} | awk '{ print $2 }' > ${depfile}
 			else
-				pkg info -qdF $pkg > ${DEPFILE}
+				pkg info -qdF $pkg > ${depfile}
 			fi
 		fi
 		while read dep; do
@@ -308,7 +308,7 @@ sanity_check_pkgs() {
 				rm -f ${pkg}
 				break
 			fi
-		done < ${DEPFILE}
+		done < ${depfile}
 	done
 
 	return $ret
@@ -316,16 +316,16 @@ sanity_check_pkgs() {
 
 build_port() {
 	[ $# -ne 1 ] && eargs portdir
-	PORTDIR=$1
-	TARGETS="fetch checksum extract patch configure build install package"
-	[ -n "${PORTTESTING}" ] && TARGETS="${TARGETS} deinstall"
-	for PHASE in ${TARGETS}; do
-		zfs_set "${NS}:status" "${PHASE}:${PORTDIR##/usr/ports/}"
-		if [ "${PHASE}" = "fetch" ]; then
+	local portdir=$1
+	local targets="fetch checksum extract patch configure build install package"
+	[ -n "${PORTTESTING}" ] && targets="${targets} deinstall"
+	for phase in ${targets}; do
+		zfs_set "${NS}:status" "${PHASE}:${portdir##/usr/ports/}"
+		if [ "${phase}" = "fetch" ]; then
 			jail -r ${JAILNAME}
 			jail_run ${NAME} ${MNT} 1
 		fi
-		[ "${PHASE}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
+		[ "${phase}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
 		if [ -n "${PORTTESTING}" -a "${PHASE}" = "deinstall" ]; then
 			msg "Checking shared library dependencies"
 			if [ ${PKGNG} -eq 0 ]; then
@@ -342,16 +342,16 @@ build_port() {
 					awk '/=>/ { print $3 }' | sort -u
 			fi
 		fi
-		injail env ${PKGENV} ${PORT_FLAGS} make -C ${PORTDIR} ${PHASE} || return 1
+		injail env ${PKGENV} ${PORT_FLAGS} make -C ${portdir} ${phase} || return 1
 
-		if [ "${PHASE}" = "checksum" ]; then
+		if [ "${phase}" = "checksum" ]; then
 			jail -r ${JAILNAME}
 			jail_run ${NAME} ${MNT} 0
 		fi
-		if [ -n "${PORTTESTING}" -a  "${PHASE}" = "deinstall" ]; then
+		if [ -n "${PORTTESTING}" -a  "${phase}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
-			PREFIX=`injail make -C ${PORTDIR} -VPREFIX`
-			zfs_set "${NS}:status" "fscheck:${PORTDIR##/usr/ports/}"
+			PREFIX=`injail make -C ${portdir} -VPREFIX`
+			zfs_set "${NS}:status" "fscheck:${portdir##/usr/ports/}"
 			if [ $ZVERSION -lt 28 ]; then
 				find ${JAILBASE}${PREFIX} ! -type d | \
 					sed -e "s,^${JAILBASE}${PREFIX}/,," | sort
@@ -359,41 +359,41 @@ build_port() {
 				find ${JAILBASE}${PREFIX}/ -type d | sed "s,^${JAILBASE}${PREFIX}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.after
 				comm -13 ${JAILBASE}${PREFIX}.PLIST_DIRS.before ${JAILBASE}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
 			else
-				local BASE=$(jail_running_base ${JAILNAME})
-				PORTNAME=$(injail make -C ${PORTDIR} -VPORTNAME)
-				ADD=$(mktemp ${BASE}/tmp/add.XXXXXX)
-				ADD1=$(mktemp ${BASE}/tmp/add1.XXXXXX)
-				DEL=$(mktemp ${BASE}/tmp/del.XXXXXX)
-				DEL1=$(mktemp ${BASE}/tmp/del1.XXXXXX)
-				MOD=$(mktemp ${BASE}/tmp/mod.XXXXXX)
-				MOD1=$(mktemp ${BASE}/tmp/mod1.XXXXXX)
-				DIE=0
+				local base=$(jail_running_base ${JAILNAME})
+				local portname=$(injail make -C ${portdir} -VPORTNAME)
+				local add=$(mktemp ${BASE}/tmp/add.XXXXXX)
+				local add1=$(mktemp ${BASE}/tmp/add1.XXXXXX)
+				local del=$(mktemp ${BASE}/tmp/del.XXXXXX)
+				local del1=$(mktemp ${BASE}/tmp/del1.XXXXXX)
+				local mod=$(mktemp ${BASE}/tmp/mod.XXXXXX)
+				local mod1=$(mktemp ${BASE}/tmp/mod1.XXXXXX)
+				local die=0
 				zfs diff -FH ${JAILFS}@prebuild ${JAILFS} | \
 					while read mod type path; do
-					PPATH=`echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${PREFIX}/,," -e "s,^share/${PORTNAME},%%DATADIR%%," -e "s,^etc,%%ETCDIR%%,"`
+					local ppath=`echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${PREFIX}/,," -e "s,^share/${portname},%%DATADIR%%," -e "s,^etc,%%ETCDIR%%,"`
 					case $mod$type in
 						+*)
-							case "${PPATH}" in
+							case "${ppath}" in
 								/var/db/pkg/local.sqlite) continue;;
 								/var/run/ld-elf.so.hints) continue;;
 								/tmp/*) continue;;
 								/wrkdirs/*) continue;;
 								share/nls/POSIX) continue;;
 								share/nls/en_US.US-ASCII) continue;;
-								*) echo "${PPATH}" >> ${ADD};;
+								*) echo "${ppath}" >> ${add};;
 							esac
 							;;
 						-*)
-							case "${PPATH}" in
+							case "${ppath}" in
 								/var/run/ld-elf.so.hints) continue;;
 								/tmp/*) continue;;
 								/wrkdirs/*) continue;;
-								*) echo "${PPATH}" >> ${DEL};;
+								*) echo "${ppath}" >> ${del};;
 							esac
 							;;
 						M/) continue;;
 						M*)
-							case "${PPATH}" in
+							case "${ppath}" in
 								/var/db/pkg/local.sqlite) continue;;
 								/var/log/userlog) continue;;
 								/etc/spwd.db) continue;;
@@ -402,30 +402,30 @@ build_port() {
 								/etc/passwd) continue;;
 								/etc/master.passwd) continue;;
 								/etc/shells) continue;;
-								*) echo "${PPATH}" >> ${MOD};;
+								*) echo "${ppath}" >> ${mod};;
 							esac
 							;;
 					esac
 				done
-				sort ${ADD} > ${ADD1}
-				sort ${DEL} > ${DEL1}
-				sort ${MOD} > ${MOD1}
-				comm -12 ${ADD1} ${DEL1} >> ${MOD1}
-				comm -23 ${ADD1} ${DEL1} > ${ADD}
-				comm -13 ${ADD1} ${DEL1} > ${DEL}
-				if [ -s "${ADD}" ]; then
+				sort ${add} > ${add1}
+				sort ${del} > ${del1}
+				sort ${mod} > ${mod1}
+				comm -12 ${add1} ${del1} >> ${mod1}
+				comm -23 ${add1} ${del1} > ${add}
+				comm -13 ${add1} ${del1} > ${del}
+				if [ -s "${add}" ]; then
 					msg "Files or directories left over:"
-					cat ${ADD}
+					cat ${add}
 				fi
-				if [ -s "${DEL}" ]; then
+				if [ -s "${del}" ]; then
 					msg "Files or directories removed:"
-					cat ${DEL}
+					cat ${del}
 				fi
-				if [ -s "${MOD}" ]; then
+				if [ -s "${mod}" ]; then
 					msg "Files or directories modified:"
-					cat ${MOD1}
+					cat ${mod1}
 				fi
-				rm ${ADD} ${ADD1} ${DEL} ${DEL1} ${MOD} ${MOD1}
+				rm -f ${add} ${add1} ${del} ${del1} ${mod} ${mod1}
 			fi
 		fi
 	done
