@@ -18,6 +18,14 @@ msg() {
 	echo "====>> $1"
 }
 
+eargs() {
+	case $# in
+	0) err 1 "No aruments expected" ;;
+	1) err 1 "1 argument expected: $1" ;;
+	*) err 1 "$# arguments expected: $@";;
+	esac
+}
+
 log_start() {
 	exec 3>&1 4>&2
 	[ ! -e $1.pipe ] && mkfifo $1.pipe
@@ -33,28 +41,29 @@ log_stop() {
 }
 
 zfs_get() {
-	[ $# -ne 1 ] && err 1 "Fail: need one argument"
+	[ $# -ne 1 ] && eargs zfsproperty
 	[ -z "${JAILFS}" ] && err 1 "No JAILFS defined"
 	zfs get -H -o value ${1} ${JAILFS}
 }
 
 zfs_set() {
-	[ $# -ne 2 ] && err 1 "Fail: need two arguments got $@"
+	[ $# -ne 2 ] && eargs zfsproperty value
 	[ -z "${JAILFS}" ] && err 1 "No JAILFS defined"
 	zfs set $1="$2" ${JAILFS}
 }
 
 port_set_method() {
-	[ $# -ne 2 ] && err 1 "Fail: need two argments got $@"
+	[ $# -ne 2 ] && eargs value fsname
 	zfs set poudriere:method="$2" ${1}
 }
 
 port_get_method() {
-	[ $# -ne 1 ] && err 1 "Fail: need one argument"
+	[ $# -ne 1 ] && eargs jailname
 	zfs get -H -o value "poudriere:method" $1
 }
 
 jail_status() {
+	[ $# -ne 1 ] && eargs jailname
 	zfs_set poudriere:status "$1"
 }
 
@@ -71,43 +80,43 @@ sig_handler() {
 }
 
 jail_exists() {
-	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
+	[ $# -ne 1 ] && eargs jailname
 	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name ${ZPOOL}/poudriere | \
 		egrep -q "^rootfs[[:space:]]$1$" && return 0
 	return 1
 }
 
 jail_runs() {
-	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
+	[ $# -ne 1 ] && eargs jailname
 	jls -qj ${1} name > /dev/null 2>&1 && return 0
 	return 1
 }
 
 jail_running_base() {
-	[ $# -ne 1 ] && err 1 "Fail: wrong nomber of arguments"
+	[ $# -ne 1 ] && eargs jailname
 	jls -qj ${1} path
 }
 
 jail_get_base() {
-	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
+	[ $# -ne 1 ] && eargs jailname
 	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name,mountpoint ${ZPOOL}/poudriere | \
 		awk '/^rootfs[[:space:]]'$1'[[:space:]]/ { print $3 }'
 }
 
 jail_get_version() {
-	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
+	[ $# -ne 1 ] && eargs jailname
 	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name,poudriere:version ${ZPOOL}/poudriere | \
 		awk '/^rootfs[[:space:]]'$1'[[:space:]]/ { print $3 }'
 }
 
 jail_get_fs() {
-	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
+	[ $# -ne 1 ] && eargs jailname
 	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name,name ${ZPOOL}/poudriere | \
 		awk '/^rootfs[[:space:]]'$1'[[:space:]]/ { print $3 }'
 }
 
 jail_get_zpool_version() {
-	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
+	[ $# -ne 1 ] && eargs jailname
 	FS=`jail_get_fs $1`
 	zpool list -H -oversion ${FS%%/*}
 }
@@ -118,30 +127,31 @@ jail_ls() {
 }
 
 port_exists() {
-	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
+	[ $# -ne 1 ] && eargs portstree_name
 	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name,name ${ZPOOL}/poudriere | \
 		egrep -q "^ports[[:space:]]$1" && return 0
 	return 1
 }
 
 port_get_base() {
-	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
+	[ $# -ne 1 ] && eargs portstree_name
 	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name,mountpoint ${ZPOOL}/poudriere | \
 		awk '/^ports[[:space:]]'$1'/ { print $3 }'
 }
 
 port_get_fs() {
-	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
+	[ $# -ne 1 ] && eargs portstree_name
 	zfs list -t filesystem -Hd1 -o poudriere:type,poudriere:name,name ${ZPOOL}/poudriere | \
 		awk '/^ports[[:space:]]'$1'/ { print $3 }'
 }
 
 fetch_file() {
+	[ $# -ne 2 ] && eargs destination source
 	fetch -p -o $1 $2 || fetch -p -o $1 $2
 }
 
 jail_create_zfs() {
-	[ $# -ne 5 ] && err 1 "Fail: wrong number of arguments"
+	[ $# -ne 5 ] && eargs name version arch jailbase fs
 	local NAME=$1
 	local VERSION=$2
 	local ARCH=$3
@@ -157,7 +167,7 @@ jail_create_zfs() {
 }
 
 jail_start() {
-	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
+	[ $# -ne 1 ] && earsg jailname
 	NAME=$1
 	export JAILBASE=`jail_get_base ${NAME}`
 	export JAILFS=`jail_get_fs ${NAME}`
@@ -205,7 +215,7 @@ jail_start() {
 }
 
 jail_stop() {
-	[ $# -ne 1 ] && err 1 "Fail: wrong number of arguments"
+	[ $# -ne 1 ] && eargs jailname
 	NAME=${1}
 	export JAILBASE=`jail_get_base ${NAME}`
 	export JAILFS=`jail_get_fs ${NAME}`
@@ -232,7 +242,7 @@ jail_stop() {
 }
 
 port_create_zfs() {
-	[ $# -ne 3 ] && err 2 "Fail: wrong number of arguments"
+	[ $# -ne 3 ] && earsg name mountpoint fs
 	NAME=$1
 	MNT=$( echo $2 | sed -e 's,//,/,g')
 	FS=$3
@@ -290,6 +300,7 @@ sanity_check_pkgs() {
 }
 
 build_port() {
+	[ $# -ne 1 ] && eargs portdir
 	PORTDIR=$1
 	IPS="$(sysctl -n kern.features.inet 2>/dev/null || echo 0)$(sysctl -n kern.features.inet6 2>/dev/null || echo 0)"
 	TARGETS="fetch checksum extract patch configure build install package"
@@ -431,6 +442,7 @@ build_port() {
 }
 
 build_pkg() {
+	[ $# -ne 1 ] && eargs port
 	local port=$1
 	local portdir="/usr/ports/${port}"
 	local build_failed=0
@@ -564,6 +576,7 @@ delete_old_pkgs() {
 }
 
 process_deps() {
+	[ $# -ne 4 ] && eargs tmplist deplist tmplist2 port
 	tmplist=$1
 	deplist=$2
 	tmplist2=$3
