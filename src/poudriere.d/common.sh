@@ -2,6 +2,7 @@
 
 # zfs namespace
 ns="poudriere"
+IPS="$(sysctl -n kern.features.inet 2>/dev/null || echo 0)$(sysctl -n kern.features.inet6 2>/dev/null || echo 0)"
 
 err() {
 	if [ $# -ne 2 ]; then
@@ -13,13 +14,8 @@ err() {
 	exit $1
 }
 
-msg_n() {
-	echo -n "====>> $1"
-}
-
-msg() {
-	echo "====>> $1"
-}
+msg_n() { echo -n "====>> $1"; }
+msg() { echo "====>> $1"; }
 
 eargs() {
 	case $# in
@@ -169,6 +165,29 @@ jail_create_zfs() {
 		-o mountpoint=${JAILBASE} ${FS} || err 1 " Fail" && echo " done"
 }
 
+jail_run() {
+	[ $# -ne 3 ] && eargs jname jpath network
+	local jname=$1
+	local jpath=$2
+	local network=$3
+	local IPARGS
+	if [ ${NETWORK} -eq 0 ]; then
+		case $IPS in
+		01) IPARGS="ip6.addr=::1" ;;
+		10) IPARGS="ip4.addr=127.0.0.1" ;;
+		11) IPARGS="ip4.addr=127.0.0.1 ip6.addr=::1" ;;
+		esac
+	else
+		case $IPS in
+		01) IPARGS="ip6=inherit" ;;
+		10) IPARGS="ip4=inherit" ;;
+		11) IPARGS="ip4=inherit ip6=inherit" ;;
+		esac
+	fi
+	jail -c persist name=${jname} ${IPARGS} path=${jpath} host.hostname=${jname} \
+		allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
+
+}
 jail_start() {
 	[ $# -ne 1 ] && earsg jailname
 	NAME=$1
@@ -204,14 +223,7 @@ jail_start() {
 	mount -t linsysfs linsysfs ${MNT}/compat/linux/sys
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${MNT}/etc/"
 	msg "Starting jail ${NAME}"
-	case $IPS in
-	01) IPARGS="ip6=disable" ;;
-	10) IPARGS="ip4=disable" ;;
-	11) IPARGS="ip4=disable ip6=disable" ;;
-	esac
-	jail -c persist name=${NAME} ${IPARGS} path=${MNT} host.hostname=${NAME} \
-		allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
-
+	jailrun ${NAME} ${MNT} 0
 	# Only set STATUS=1 if not turned off
 	# jail -s should not do this or jail will stop on EXIT
 	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
@@ -305,21 +317,13 @@ sanity_check_pkgs() {
 build_port() {
 	[ $# -ne 1 ] && eargs portdir
 	PORTDIR=$1
-	IPS="$(sysctl -n kern.features.inet 2>/dev/null || echo 0)$(sysctl -n kern.features.inet6 2>/dev/null || echo 0)"
 	TARGETS="fetch checksum extract patch configure build install package"
 	[ -n "${PORTTESTING}" ] && TARGETS="${TARGETS} deinstall"
 	for PHASE in ${TARGETS}; do
 		zfs_set "${ns}:status" "${PHASE}:${PORTDIR##/usr/ports/}"
 		if [ "${PHASE}" = "fetch" ]; then
 			jail -r ${JAILNAME}
-			
-			case $IPS in
-			01) IPARGS="ip6=inherit" ;;
-			10) IPARGS="ip4=inherit" ;;
-			11) IPARGS="ip4=inherit ip6=inherit" ;;
-			esac
-			jail -c persist name=${NAME} ${IPARGS} path=${MNT} host.hostname=${NAME} \
-				allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
+			jail_run ${NAME} ${MNT} 1
 		fi
 		[ "${PHASE}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
 		if [ -n "${PORTTESTING}" -a "${PHASE}" = "deinstall" ]; then
@@ -342,13 +346,7 @@ build_port() {
 
 		if [ "${PHASE}" = "checksum" ]; then
 			jail -r ${JAILNAME}
-			case $IPS in
-			01) IPARGS="ip6.addr=::1" ;;
-			10) IPARGS="ip4.addr=127.0.0.1" ;;
-			11) IPARGS="ip4.addr=127.0.0.1 ip6.addr=::1" ;;
-			esac
-			jail -c persist name=${NAME} ${IPARGS} path=${MNT} host.hostname=${NAME} \
-				allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
+			jail_run ${NAME} ${MNT} 0
 		fi
 		if [ -n "${PORTTESTING}" -a  "${PHASE}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
@@ -432,13 +430,7 @@ build_port() {
 		fi
 	done
 	jail -r ${JAILNAME}
-	case $IPS in
-	01) IPARGS="ip6.addr=::1" ;;
-	10) IPARGS="ip4.addr=127.0.0.1" ;;
-	11) IPARGS="ip4.addr=127.0.0.1 ip6.addr=::1" ;;
-	esac
-	jail -c persist name=${NAME} ${IPARGS} path=${MNT} host.hostname=${NAME} \
-		allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
+	jail_run ${NAME} ${MNT} 0
 	zfs_set "${ns}:status" "idle:"
 	zfs destroy ${JAILFS}@prebuild || :
 	return 0
