@@ -10,5 +10,6 @@ struct zfs_prop {
 void zfs_list(struct zfs_prop[], const char *, int);
 int jail_runs(const char *name);
 void jail_stop(const char *jailname);
+void jail_start(const char *jailname);
 
 #endif

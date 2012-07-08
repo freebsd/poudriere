@@ -117,6 +117,7 @@ exec_jail(int argc, char **argv)
 	case DELETE:
 		break;
 	case START:
+		jail_start(jailname);
 		break;
 	case KILL:
 		jail_stop(jailname);

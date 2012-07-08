@@ -94,6 +94,46 @@ zfs_list(struct zfs_prop z[], const char *t, int n)
 }
 
 int
+zfs_exists(const char *t, const char *n)
+{
+	struct sbuf *res, *cmd;
+	char *walk, *end;
+	char *name, *type;
+	int exists = 0;
+
+	cmd = sbuf_new_auto();
+	sbuf_printf(cmd, "/sbin/zfs list -Hd1 -o poudriere:type,poudriere:name %s/poudriere", conf.zfs_pool);
+	sbuf_finish(cmd);
+
+	if ((res = exec_buf(sbuf_data(cmd))) != NULL) {
+		walk = sbuf_data(res);
+		end = walk + sbuf_len(res);
+		type = walk;
+		name = NULL;
+		do {
+			if (isspace(*walk)) {
+				*walk = '\0';
+				walk++;
+				if (name == NULL) {
+					name = walk;
+					continue;
+				} else if (strcmp(type, t) == 0 && strcmp(name, n) == 0) {
+					exists = 1;
+					break;
+				}
+				type = walk;
+				name = NULL;
+				continue;
+			}
+			walk++;
+		} while (walk <= end);
+		sbuf_delete(res);
+	}
+	sbuf_delete(cmd);
+	return (exists);
+}
+
+int
 jail_runs(const char *jailname)
 {
 	int jid;
@@ -112,4 +152,17 @@ jail_stop(const char *jailname)
 		return;
 	}
 	printf("%s\n", jailname);
+}
+
+void
+jail_start(const char *jailname)
+{
+	if (!zfs_exists("rootfs", jailname)) {
+		fprintf(stderr, "====>> No such jail %s\n", jailname);
+		return;
+	}
+	if (jail_runs(jailname)) {
+		fprintf(stderr, "====>> jail %s is already running\n", jailname);
+		return;
+	}
 }
