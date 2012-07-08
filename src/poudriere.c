@@ -32,6 +32,8 @@
 #include <sysexits.h>
 #include <unistd.h>
 
+#include "commands.h"
+
 static void usage(void);
 static void usage_help(void);
 static int exec_help(int, char **);
@@ -45,7 +47,7 @@ static struct commands {
 	{ "bulk", "Run bulks", NULL, NULL },
 	{ "help", "Displays help information", exec_help, usage_help},
 	{ "jail", "Manipulate the jails", NULL, NULL },
-	{ "ports", "Manipulate the ports trees", NULL, NULL },
+	{ "ports", "Manipulate the ports trees", exec_ports, usage_ports },
 	{ "test", "Test some ports", NULL, NULL },
 };
 
