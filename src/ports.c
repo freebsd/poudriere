@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include "commands.h"
+#include "poudriere.h"
 
 typedef enum {
 	NONE = 0,
@@ -67,9 +68,14 @@ ports_list()
 	struct sbuf *res;
 	char *walk, *end;
 	char *name, *method, *type;
+	struct sbuf *cmd = sbuf_new_auto();
 	bool newword;
 	printf("%-20s %-10s\n", "PORTSTREE", "METHOD");
-	if ((res = exec_buf("/sbin/zfs list -H -o poudriere:type,poudriere:name,poudriere:method")) != NULL) {
+	sbuf_printf(cmd,
+	    "/sbin/zfs list -Hd1 "
+	    "-o poudriere:type,poudriere:name,poudriere:method %s/poudriere",
+	    conf.zfs_pool);
+	if ((res = exec_buf(sbuf_data(cmd))) != NULL) {
 		walk = sbuf_data(res);
 		end = walk + sbuf_len(res);
 		type = walk;
@@ -96,6 +102,8 @@ ports_list()
 		} while (walk <= end);
 		sbuf_delete(res);
 	}
+
+	sbuf_delete(cmd);
 }
 
 int
