@@ -50,6 +50,7 @@ exec_jail(int argc, char **argv)
 	signed char ch;
 	params p;
 	char *jailname = NULL;
+	struct pjail j;
 	struct zfs_prop props[] = {
 		{ "JAILNAME", "name", "%-20s " },
 		{ "VERSION", "version", "%-13s " },
@@ -59,6 +60,16 @@ exec_jail(int argc, char **argv)
 		{ "IGNORED", "stats_ignored", "%-7s " },
 		{ "QUEUED", "stats_queued", "%-7s " },
 		{ "STATUS", "status", "%s\n" },
+	};
+
+	struct zfs_query q[] = {
+		{ "version", STRING, j.version, 0 },
+		{ "arch", STRING, j.arch, 0 },
+		{ "stats_built", INTEGER, NULL, j.built },
+		{ "stats_failed", INTEGER, NULL, j.failed },
+		{ "stats_ignored", INTEGER, NULL, j.ignored },
+		{ "stats_queued", INTEGER, NULL, j.queued },
+		{ "status", STRING, j.status, 0 },
 	};
 
 	p = NONE;
@@ -110,17 +121,27 @@ exec_jail(int argc, char **argv)
 	case CREATE:
 		break;
 	case LIST:
-		zfs_list(props, "rootfs", 8);
+		zfs_list(props, "rootfs", 7);
 		break;
 	case UPDATE:
 		break;
 	case DELETE:
 		break;
 	case START:
-		jail_start(jailname);
+		if (zfs_query("rootfs", jailname, q, 7)) {
+			j.name = jailname;
+			jail_start(&j);
+		} else {
+			fprintf(stderr, "No such jail: %s\n", jailname);
+		}
 		break;
 	case KILL:
-		jail_stop(jailname);
+		if (zfs_query("rootfs", jailname, q, 8)) {
+			j.name = jailname;
+			jail_stop(&j);
+		} else {
+			fprintf(stderr, "No such jail: %s\n", jailname);
+		}
 		break;
 	case NONE:
 		usage_jail();

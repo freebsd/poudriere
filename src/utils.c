@@ -94,15 +94,22 @@ zfs_list(struct zfs_prop z[], const char *t, int n)
 }
 
 int
-zfs_exists(const char *t, const char *n)
+zfs_query(const char *t, const char *n, struct zfs_query z[], int nfields)
 {
 	struct sbuf *res, *cmd;
 	char *walk, *end;
-	char *name, *type;
-	int exists = 0;
+	const char *type, *name;
+	char **fields;
+	int i = 0;
+	int ret = 0;
 
 	cmd = sbuf_new_auto();
-	sbuf_printf(cmd, "/sbin/zfs list -Hd1 -o poudriere:type,poudriere:name %s/poudriere", conf.zfs_pool);
+	fields = malloc(nfields * sizeof(char *));
+
+	sbuf_cat(cmd, "/sbin/zfs list -Hd1 -o poudriere:type,poudriere:name");
+	for (i = 0; i < nfields; i++)
+		sbuf_printf(cmd, ",poudriere:%s", z[i].name);
+	sbuf_printf(cmd, " %s/poudriere", conf.zfs_pool);
 	sbuf_finish(cmd);
 
 	if ((res = exec_buf(sbuf_data(cmd))) != NULL) {
@@ -110,6 +117,8 @@ zfs_exists(const char *t, const char *n)
 		end = walk + sbuf_len(res);
 		type = walk;
 		name = NULL;
+		for (i = 0; i < nfields; i++)
+			fields[i] = NULL;
 		do {
 			if (isspace(*walk)) {
 				*walk = '\0';
@@ -117,20 +126,46 @@ zfs_exists(const char *t, const char *n)
 				if (name == NULL) {
 					name = walk;
 					continue;
-				} else if (strcmp(type, t) == 0 && strcmp(name, n) == 0) {
-					exists = 1;
+				}
+				for (i = 0; i < nfields; i++) {
+					if (fields[i] == NULL) {
+						fields[i] = walk;
+						break;
+					}
+				}
+				if (i < nfields)
+					continue;
+				if (strcmp(type, t) == 0 && strcmp(name, n) == 0) {
+					for (i = 0; i < nfields; i++) {
+						switch (z[i].type) {
+						case STRING:
+							z[i].strval = strdup(fields[i]);
+							break;
+						case INTEGER:
+							if (strcmp(fields[i], "-") == 0)
+								z[i].intval = 0;
+							else 
+								z[i].intval = strtonum(fields[i], 0, INT_MAX, NULL);
+							break;
+						}
+					}
+					ret = 1;
 					break;
 				}
 				type = walk;
 				name = NULL;
+				for (i = 0; i < nfields; i++)
+					fields[i] = NULL;
 				continue;
 			}
 			walk++;
 		} while (walk <= end);
 		sbuf_delete(res);
 	}
+	free(fields);
 	sbuf_delete(cmd);
-	return (exists);
+
+	return (ret);
 }
 
 int
@@ -145,24 +180,20 @@ jail_runs(const char *jailname)
 }
 
 void
-jail_stop(const char *jailname)
+jail_stop(struct pjail *j)
 {
-	if (!jail_runs(jailname)) {
-		fprintf(stderr, "====>> No such jail: %s\n", jailname);
+	if (!jail_runs(j->name)) {
+		fprintf(stderr, "====>> No such jail: %s\n", j->name);
 		return;
 	}
-	printf("%s\n", jailname);
 }
 
 void
-jail_start(const char *jailname)
+jail_start(struct pjail *j)
 {
-	if (!zfs_exists("rootfs", jailname)) {
-		fprintf(stderr, "====>> No such jail %s\n", jailname);
+	if (jail_runs(j->name)) {
+		fprintf(stderr, "====>> jail %s is already running\n", j->name);
 		return;
 	}
-	if (jail_runs(jailname)) {
-		fprintf(stderr, "====>> jail %s is already running\n", jailname);
-		return;
-	}
+	printf("%s\n", j->mountpoint);
 }
