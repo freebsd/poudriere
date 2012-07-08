@@ -18,26 +18,27 @@ struct zfs_query {
 	char *name;
 	zfs_query_type type;
 	char *strval;
+	size_t strsize;
 	int intval;
 };
 
 struct pjail {
-	char *name;
-	char *version;
-	char *arch;
-	char *mountpoint;
-	char *fs;
+	char name[20];
+	char version[13];
+	char arch[7];
+	char mountpoint[MAXPATHLEN];
+	char fs[MAXPATHLEN];
 	int built;
 	int failed;
 	int ignored;
 	int queued;
-	char *status;
+	char status[BUFSIZ];
 	struct pjail *next;
 };
 
 struct pport_tree {
-	char *name[20];
-	char *method[10];
+	char name[20];
+	char method[10];
 	struct pport_tree *next;
 };
 

@@ -108,7 +108,7 @@ zfs_query(const char *t, const char *n, struct zfs_query z[], int nfields)
 
 	sbuf_cat(cmd, "/sbin/zfs list -Hd1 -o poudriere:type,poudriere:name");
 	for (i = 0; i < nfields; i++)
-		sbuf_printf(cmd, ",poudriere:%s", z[i].name);
+		sbuf_printf(cmd, ",%s", z[i].name);
 	sbuf_printf(cmd, " %s/poudriere", conf.zfs_pool);
 	sbuf_finish(cmd);
 
@@ -139,7 +139,7 @@ zfs_query(const char *t, const char *n, struct zfs_query z[], int nfields)
 					for (i = 0; i < nfields; i++) {
 						switch (z[i].type) {
 						case STRING:
-							z[i].strval = strdup(fields[i]);
+							strlcpy(z[i].strval, fields[i], z[i].strsize);
 							break;
 						case INTEGER:
 							if (strcmp(fields[i], "-") == 0)
@@ -196,4 +196,6 @@ jail_start(struct pjail *j)
 		return;
 	}
 	printf("%s\n", j->mountpoint);
+	printf("%s\n", j->fs);
+	return;
 }

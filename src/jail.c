@@ -63,13 +63,15 @@ exec_jail(int argc, char **argv)
 	};
 
 	struct zfs_query q[] = {
-		{ "version", STRING, j.version, 0 },
-		{ "arch", STRING, j.arch, 0 },
-		{ "stats_built", INTEGER, NULL, j.built },
-		{ "stats_failed", INTEGER, NULL, j.failed },
-		{ "stats_ignored", INTEGER, NULL, j.ignored },
-		{ "stats_queued", INTEGER, NULL, j.queued },
-		{ "status", STRING, j.status, 0 },
+		{ "poudriere:version", STRING, j.version, sizeof(j.version), 0 },
+		{ "poudriere:arch", STRING, j.arch, sizeof(j.arch), 0 },
+		{ "poudriere:stats_built", INTEGER, NULL, 0,  j.built },
+		{ "poudriere:stats_failed", INTEGER, NULL, 0,  j.failed },
+		{ "poudriere:stats_ignored", INTEGER, NULL, 0,  j.ignored },
+		{ "poudriere:stats_queued", INTEGER, NULL, 0, j.queued },
+		{ "poudriere:status", STRING, j.status, sizeof(j.status), 0 },
+		{ "mountpoint", STRING, j.mountpoint, sizeof(j.mountpoint), 0 },
+		{ "name", STRING, j.fs, sizeof(j.fs), 0 },
 	};
 
 	p = NONE;
@@ -128,16 +130,16 @@ exec_jail(int argc, char **argv)
 	case DELETE:
 		break;
 	case START:
-		if (zfs_query("rootfs", jailname, q, 7)) {
-			j.name = jailname;
+		if (zfs_query("rootfs", jailname, q, sizeof(q) / sizeof(struct zfs_query))) {
+			strlcpy(j.name,jailname, sizeof(j.name));
 			jail_start(&j);
 		} else {
 			fprintf(stderr, "No such jail: %s\n", jailname);
 		}
 		break;
 	case KILL:
-		if (zfs_query("rootfs", jailname, q, 8)) {
-			j.name = jailname;
+		if (zfs_query("rootfs", jailname, q, sizeof(q) / sizeof(struct zfs_query))) {
+			strlcpy(j.name,jailname, sizeof(j.name));
 			jail_stop(&j);
 		} else {
 			fprintf(stderr, "No such jail: %s\n", jailname);
