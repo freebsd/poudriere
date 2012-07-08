@@ -1,6 +1,8 @@
 PROG=	poudriere
 
-SRCS=	poudriere.c \
+SRCS=	parseconf.y \
+	lexconf.l \
+	poudriere.c \
 	ports.c
 
 LDADD=	-lsbuf

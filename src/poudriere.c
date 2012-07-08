@@ -33,7 +33,10 @@
 #include <unistd.h>
 
 #include "commands.h"
+#include "poudriere.h"
+#include "parseconf.h"
 
+struct poudriere_conf conf;
 static void usage(void);
 static void usage_help(void);
 static int exec_help(int, char **);
@@ -147,12 +150,14 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
+	parse_config("/usr/local/etc/poudriere2.conf");
+
 	/* reset getopt for the next call */
 	optreset = 1;
 	optind = 1;
 
 	len = strlen(argv[0]);
-	for (i < 0; i < cmd_len; i++) {
+	for (i = 0; i < cmd_len; i++) {
 		if (strncmp(argv[0], cmd[i].name, len) == 0) {
 			/* if we have the exact cmd */
 			if (len == strlen(cmd[i].name)) {
