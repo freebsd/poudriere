@@ -10,6 +10,7 @@
 
 #include "commands.h"
 #include "poudriere.h"
+#include "utils.h"
 
 typedef enum {
 	NONE = 0,
@@ -19,30 +20,6 @@ typedef enum {
 	LIST,
 } params;
 
-static struct sbuf *
-exec_buf(const char *cmd) {
-	FILE *fp;
-	char buf[BUFSIZ];
-	struct sbuf *res;
-
-	if ((fp = popen(cmd, "r")) == NULL)
-		return (NULL);
-
-	res = sbuf_new_auto();
-	while (fgets(buf, BUFSIZ, fp) != NULL)
-		sbuf_cat(res, buf);
-
-	pclose(fp);
-
-	if (sbuf_len(res) == 0) {
-		sbuf_delete(res);
-		return (NULL);
-	}
-
-	sbuf_finish(res);
-
-	return (res);
-}
 
 void
 usage_ports(void)
@@ -62,56 +39,16 @@ usage_ports(void)
 
 }
 
-void
-ports_list()
-{
-	struct sbuf *res;
-	char *walk, *end;
-	char *name, *method, *type;
-	struct sbuf *cmd = sbuf_new_auto();
-	bool newword;
-	printf("%-20s %-10s\n", "PORTSTREE", "METHOD");
-	sbuf_printf(cmd,
-	    "/sbin/zfs list -Hd1 "
-	    "-o poudriere:type,poudriere:name,poudriere:method %s/poudriere",
-	    conf.zfs_pool);
-	if ((res = exec_buf(sbuf_data(cmd))) != NULL) {
-		walk = sbuf_data(res);
-		end = walk + sbuf_len(res);
-		type = walk;
-		name = NULL;
-		method = NULL;
-		do {
-			if (isspace(*walk)) {
-				*walk = '\0';
-				walk++;
-				if (name == NULL) {
-					name = walk;
-					continue;
-				} else if (method == NULL) {
-					method = walk;
-					continue;
-				} else if (strcmp(type, "ports") == 0)
-					printf("%-20s %-10s\n", name, method);
-				type = walk;
-				name = NULL;
-				method = NULL;
-				continue;
-			}
-			walk++;
-		} while (walk <= end);
-		sbuf_delete(res);
-	}
-
-	sbuf_delete(cmd);
-}
-
 int
 exec_ports(int argc, char **argv)
 {
 	signed char ch;
 	params p;
 
+	struct zfs_prop props[] = {
+		{ "PORTSTREE", "name", "%-20s " },
+		{ "METHOD", "method", "%-10s\n" },
+	};
 	p = NONE;
 
 	while ((ch = getopt(argc, argv, "cFudlp:f:M:m:")) != -1) {
@@ -158,7 +95,7 @@ exec_ports(int argc, char **argv)
 	case CREATE:
 		break;
 	case LIST:
-		ports_list();
+		zfs_list(props, "ports", 2);
 		break;
 	case UPDATE:
 		break;

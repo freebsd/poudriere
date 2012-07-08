@@ -4,7 +4,8 @@ SRCS=	parseconf.y \
 	lexconf.l \
 	poudriere.c \
 	ports.c \
-	jail.c
+	jail.c \
+	utils.c
 
 LDADD=	-lsbuf
 
