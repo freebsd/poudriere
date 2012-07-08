@@ -4,12 +4,16 @@
 #include <sys/jail.h>
 #include <sys/mount.h>
 #include <sys/linker.h>
+#include <sys/uio.h>
+#include <sys/stat.h>
 
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <jail.h>
+#include <err.h>
+#include <errno.h>
 
 #include "utils.h"
 #include "poudriere.h"
@@ -198,12 +202,55 @@ static const char *needfs[] = {
 	"xfs",
 	NULL,
 };
+static struct mntpts {
+	const char *dest;
+	char *fstype;
+} mntpts [] = {
+	{ "/dev", "devfs" },
+	{ "/compat/linux/proc", "linprocfs" },
+	{ "/compat/linux/sys", "linsysfs" },
+	{ "/proc", "procfs" },
+	{ NULL, NULL },
+};
 
+static int
+mkdirs(const char *_path)
+{
+	char path[MAXPATHLEN + 1];
+	char *p;
+
+	strlcpy(path, _path, sizeof(path));
+	p = path;
+	if (*p == '/')
+		p++;
+
+	for (;;) {
+		if ((p = strchr(p, '/')) != NULL)
+			*p = '\0';
+
+		if (mkdir(path, S_IRWXU | S_IRWXG | S_IRWXO) < 0)
+			if (errno != EEXIST && errno != EISDIR) {
+				return (0);
+			}
+
+		/* that was the last element of the path */
+		if (p == NULL)
+			break;
+
+		*p = '/';
+		p++;
+	}
+
+	return (1);
+}
 void
 jail_start(struct pjail *j)
 {
 	int i;
 	struct xvfsconf vfc;
+	int iovlen;
+	struct iovec iov[6];
+	char dest[MAXPATHLEN];
 
 	if (jail_runs(j->name)) {
 		fprintf(stderr, "====>> jail %s is already running\n", j->name);
@@ -214,13 +261,33 @@ jail_start(struct pjail *j)
 		if (getvfsbyname(needfs[i], &vfc) < 0)
 			if (kldload(needfs[i]) == -1) {
 				fprintf(stderr, "failed to load %s\n", needfs[i]);
+				return;
 			}
 	}
 	if (conf.use_tmpfs) {
 		if (getvfsbyname(needfs[i], &vfc) < 0)
 			if (kldload(needfs[i]) == -1) {
 				fprintf(stderr, "failed to load %s\n", needfs[i]);
+				return;
 			}
+	}
+
+	for (i = 0; mntpts[i].dest != NULL; i++) {
+		snprintf(dest, MAXPATHLEN, "%s/%s", j->mountpoint, mntpts[i].dest);
+		if (!mkdirs(dest)) {
+			warn("failed to create dirs: %s\n", dest);
+			continue;
+		}
+		iov[0].iov_base = "fstype";
+		iov[0].iov_len = sizeof("fstype");
+		iov[1].iov_base = mntpts[i].fstype;
+		iov[1].iov_len = strlen(mntpts[i].fstype) + 1;
+		iov[2].iov_base = "fspath";
+		iov[2].iov_len = sizeof("fspath");
+		iov[3].iov_base = dest;
+		iov[3].iov_len = strlen(dest) + 1;
+		if (nmount(iov, 4, 0))
+			warn("failed to mount %s\n", dest);
 	}
 
 	return;
