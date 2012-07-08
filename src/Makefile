@@ -7,6 +7,6 @@ SRCS=	parseconf.y \
 	jail.c \
 	utils.c
 
-LDADD=	-lsbuf
+LDADD=	-lsbuf -ljail
 
 .include <bsd.prog.mk>

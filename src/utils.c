@@ -1,10 +1,13 @@
 #include <sys/types.h>
 #include <sys/sbuf.h>
+#include <sys/param.h>
+#include <sys/jail.h>
 
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <jail.h>
 
 #include "utils.h"
 #include "poudriere.h"
@@ -88,4 +91,25 @@ zfs_list(struct zfs_prop z[], const char *t, int n)
 	}
 	free(fields);
 	sbuf_delete(cmd);
+}
+
+int
+jail_runs(const char *jailname)
+{
+	int jid;
+
+	if ((jid = jail_getid(jailname)) < 0)
+		return 0;
+
+	return 1;
+}
+
+void
+jail_stop(const char *jailname)
+{
+	if (!jail_runs(jailname)) {
+		fprintf(stderr, "====>> No such jail: %s\n", jailname);
+		return;
+	}
+	printf("%s\n", jailname);
 }

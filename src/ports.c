@@ -36,7 +36,6 @@ usage_ports(void)
 	fprintf(stderr,"\t%-15s%s\n", "-f", "FS name (tank/jails/myjail)");
 	fprintf(stderr,"\t%-15s%s\n", "-M", "mountpoint");
 	fprintf(stderr,"\t%-15s%s\n\n", "-m", "method (to be used with -c). (default: \"portsnap\"). Valid method: \"portsnap\", \"csup\"");
-
 }
 
 int

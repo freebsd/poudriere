@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <sys/sbuf.h>
+#include <sys/param.h>
 
 #include <ctype.h>
 #include <stdbool.h>
@@ -48,6 +49,7 @@ exec_jail(int argc, char **argv)
 {
 	signed char ch;
 	params p;
+	char *jailname = NULL;
 	struct zfs_prop props[] = {
 		{ "JAILNAME", "name", "%-20s " },
 		{ "VERSION", "version", "%-13s " },
@@ -93,6 +95,9 @@ exec_jail(int argc, char **argv)
 				usage_jail();
 			p = KILL;
 			break;
+		case 'j':
+			jailname = optarg;
+			break;
 		default:
 			usage_jail();
 			break;
@@ -114,6 +119,7 @@ exec_jail(int argc, char **argv)
 	case START:
 		break;
 	case KILL:
+		jail_stop(jailname);
 		break;
 	case NONE:
 		usage_jail();
