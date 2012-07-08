@@ -3,7 +3,8 @@ PROG=	poudriere
 SRCS=	parseconf.y \
 	lexconf.l \
 	poudriere.c \
-	ports.c
+	ports.c \
+	jail.c
 
 LDADD=	-lsbuf
 

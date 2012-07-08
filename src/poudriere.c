@@ -49,7 +49,7 @@ static struct commands {
 } cmd[] = {
 	{ "bulk", "Run bulks", NULL, NULL },
 	{ "help", "Displays help information", exec_help, usage_help},
-	{ "jail", "Manipulate the jails", NULL, NULL },
+	{ "jail", "Manipulate the jails", exec_jail, usage_jail },
 	{ "ports", "Manipulate the ports trees", exec_ports, usage_ports },
 	{ "test", "Test some ports", NULL, NULL },
 };
