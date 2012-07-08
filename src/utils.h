@@ -42,7 +42,6 @@ struct pport_tree {
 	struct pport_tree *next;
 };
 
-
 void zfs_list(struct zfs_prop[], const char *, int);
 int jail_runs(const char *name);
 int zfs_query(const char *, const char *, struct zfs_query[], int);

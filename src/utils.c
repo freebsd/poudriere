@@ -2,6 +2,8 @@
 #include <sys/sbuf.h>
 #include <sys/param.h>
 #include <sys/jail.h>
+#include <sys/mount.h>
+#include <sys/linker.h>
 
 #include <ctype.h>
 #include <stdio.h>
@@ -188,14 +190,38 @@ jail_stop(struct pjail *j)
 	}
 }
 
+static const char *needfs[] = {
+	"linprocfs",
+	"linsysfs",
+	"procfs",
+	"nullfs",
+	"xfs",
+	NULL,
+};
+
 void
 jail_start(struct pjail *j)
 {
+	int i;
+	struct xvfsconf vfc;
+
 	if (jail_runs(j->name)) {
 		fprintf(stderr, "====>> jail %s is already running\n", j->name);
 		return;
 	}
-	printf("%s\n", j->mountpoint);
-	printf("%s\n", j->fs);
+	
+	for (i = 0; needfs[i] != NULL; i++) {
+		if (getvfsbyname(needfs[i], &vfc) < 0)
+			if (kldload(needfs[i]) == -1) {
+				fprintf(stderr, "failed to load %s\n", needfs[i]);
+			}
+	}
+	if (conf.use_tmpfs) {
+		if (getvfsbyname(needfs[i], &vfc) < 0)
+			if (kldload(needfs[i]) == -1) {
+				fprintf(stderr, "failed to load %s\n", needfs[i]);
+			}
+	}
+
 	return;
 }
