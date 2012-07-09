@@ -67,9 +67,11 @@ care of creating this file)
     <verbatim>echo "packagesite: http://yoururl/90amd64-default" >> /usr/local/etc/pkg.conf</verbatim>
 
 From 9.1 you can directly bootstrap from the base:
+
     <verbatim>PACKAGESITE="http://yoururl/10i386-default" pkg update</verbatim>
 
 Before 9.1 you will need to boostrap by hand:
+
     <verbatim>fetch http://yoururl/90amd64-default/Latest/pkg.txz
 tar xf ./pkg.txz -s ",/.*/,,g" "*/pkg-static"
 ./pkg-static add ./pkg.txz</verbatim>
