@@ -56,6 +56,8 @@ See poudriere(8).
 
 <h1>How-to...</h1>
 
+ <h2>...create and maintain pkgng repositories </h2>
+[./pkgng_repos.wiki|creating and maintaining pkgng repositories]
  <h2>...manage poudriere ports using portshaker</h2>
 
 Ensure you are running at least portshaker 1.0.5
