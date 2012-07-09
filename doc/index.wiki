@@ -57,7 +57,7 @@ See poudriere(8).
 <h1>How-to...</h1>
 
   *  [./pkgng_repos.wiki|...create and maintain pkgng repositories]
-  *  [./portshaker.wiki|manage poudriere ports using portshaker]
+  *  [./portshaker.wiki|...manage poudriere ports using portshaker]
   *  [./portmaster.wiki|...use the generated packages with portmaster]
   *  [./ccache.wiki|...use ccache with poudriere]
 
