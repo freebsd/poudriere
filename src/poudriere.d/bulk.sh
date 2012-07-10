@@ -97,7 +97,7 @@ elif [ $PKGNG -eq 1 ]; then
 	if [ -n "${PKG_REPO_SIGNING_KEY}" -a -f "${PKG_REPO_SIGNING_KEY}" ]; then
 		install -m 0400 ${PKG_REPO_SIGNING_KEY} ${JAILBASE}/tmp/repo.key
 		injail pkg-static repo /usr/ports/packages/ /tmp/repo.key
-		rm -f /tmp/repo.key
+		rm -f ${JAILBASE}/tmp/repo.key
 	else
 		injail pkg-static repo /usr/ports/packages/
 	fi
