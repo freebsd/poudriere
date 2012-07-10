@@ -315,6 +315,20 @@ jail_run(struct pjail *j, bool network)
 }
 
 void
+jail_kill(struct pjail *j)
+{
+	char *argv[4];
+
+	argv[0] = "jail";
+	argv[1] = "-r";
+	argv[2] = j->name;
+	argv[3] = NULL;
+
+	if (exec("/usr/sbin/jail", argv) != 0)
+		fprintf(stderr, "Fail to stop jail\n");
+}
+
+void
 jail_start(struct pjail *j)
 {
 	int i;
