@@ -84,10 +84,9 @@ zfs_list(struct zfs_prop z[], const char *t, int n)
 	cmd = sbuf_new_auto();
 	fields = malloc(n * sizeof(char *));
 
-	sbuf_cat(cmd, "/sbin/zfs list -Hd1 -o poudriere:type");
+	sbuf_cat(cmd, "/sbin/zfs list -r -H -o poudriere:type");
 	for (i = 0; i < n; i++)
 		sbuf_printf(cmd, ",poudriere:%s", z[i].name);
-	sbuf_printf(cmd, " %s/poudriere", conf.zfs_pool);
 	sbuf_finish(cmd);
 	for (i = 0; i < n; i++)
 		printf(z[i].format, z[i].title);
@@ -140,10 +139,9 @@ zfs_query(const char *t, const char *n, struct zfs_query z[], int nfields)
 	cmd = sbuf_new_auto();
 	fields = malloc(nfields * sizeof(char *));
 
-	sbuf_cat(cmd, "/sbin/zfs list -Hd1 -o poudriere:type,poudriere:name");
+	sbuf_cat(cmd, "/sbin/zfs list -r -H -o poudriere:type,poudriere:name");
 	for (i = 0; i < nfields; i++)
 		sbuf_printf(cmd, ",%s", z[i].name);
-	sbuf_printf(cmd, " %s/poudriere", conf.zfs_pool);
 	sbuf_finish(cmd);
 
 	if ((res = exec_buf(sbuf_data(cmd))) != NULL) {
