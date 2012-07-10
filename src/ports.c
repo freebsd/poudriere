@@ -307,7 +307,7 @@ exec_ports(int argc, char **argv)
 		}
 		break;
 	case LIST:
-		zfs_list(props, "ports", 2);
+		zfs_list(props, "ports", sizeof(props) / sizeof(struct zfs_prop));
 		break;
 	case UPDATE:
 		if (zfs_query("ports", pt.name, q, sizeof(q) / sizeof(struct zfs_query ))) {

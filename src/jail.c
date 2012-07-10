@@ -123,7 +123,7 @@ exec_jail(int argc, char **argv)
 	case CREATE:
 		break;
 	case LIST:
-		zfs_list(props, "rootfs", 7);
+		zfs_list(props, "rootfs", sizeof(props) / sizeof(struct zfs_prop));
 		break;
 	case UPDATE:
 		break;
