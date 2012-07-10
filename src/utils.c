@@ -2,6 +2,7 @@
 #include <sys/sbuf.h>
 #include <sys/param.h>
 #include <sys/jail.h>
+#include <sys/ucred.h>
 #include <sys/mount.h>
 #include <sys/linker.h>
 #include <sys/uio.h>
@@ -213,15 +214,6 @@ jail_runs(const char *jailname)
 	return 1;
 }
 
-void
-jail_stop(struct pjail *j)
-{
-	if (!jail_runs(j->name)) {
-		fprintf(stderr, "====>> No such jail: %s\n", j->name);
-		return;
-	}
-}
-
 static const char *needfs[] = {
 	"linprocfs",
 	"linsysfs",
@@ -378,4 +370,27 @@ jail_start(struct pjail *j)
 	jail_run(j, false);
 
 	return;
+}
+
+void
+jail_stop(struct pjail *j)
+{
+	struct statfs *mntbuf;
+	size_t mntsize, i;
+
+	if (!jail_runs(j->name)) {
+		fprintf(stderr, "No such jail: %s\n", j->name);
+		return;
+	}
+
+	jail_kill(j);
+
+	if ((mntsize = getmntinfo(&mntbuf, MNT_NOWAIT)) <= 0)
+		err(EXIT_FAILURE, "Error while getting the list of mountpoints");
+
+	for (i = 0; i < mntsize; i++) {
+		if (strncmp(mntbuf[i].f_mntonname, j->mountpoint, strlen(j->mountpoint)) == 0)
+			if (strlen(mntbuf[i].f_mntonname) > strlen(j->mountpoint))
+				unmount(mntbuf[i].f_mntonname, 0);
+	}
 }
