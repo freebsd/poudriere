@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <sys/sbuf.h>
+#include <sys/stat.h>
 
 #include <ctype.h>
 #include <stdbool.h>
@@ -7,6 +8,8 @@
 #include <string.h>
 #include <sysexits.h>
 #include <unistd.h>
+#include <errno.h>
+#include <err.h>
 
 #include "commands.h"
 #include "poudriere.h"
@@ -64,6 +67,36 @@ portsnap_update(struct pport_tree *p)
 static void
 csup_update(struct pport_tree *p)
 {
+	char *argv[6];
+	char csup[MAXPATHLEN], db[MAXPATHLEN];
+	FILE *csupf;
+
+	snprintf(csup, sizeof(csup), "%s/csup", p->mountpoint);
+	snprintf(db, sizeof(db), "%s/db", p->mountpoint);
+
+	if (mkdir(db, 0755) != 0 && errno != EEXIST)
+		err(1, "Unable to create db dir: %s", db);
+
+	if ((csupf = fopen(csup, "w+")) == NULL)
+		err(1, "Unable to open %s", csup);
+
+	fprintf(csupf, "*default prefix=%s\n"
+	    "*default base=%s/db\n"
+	    "*default release=cvs tag=.\n"
+	    "*default delete use-rel-suffix\n"
+	    "ports-all", p->mountpoint, p->mountpoint);
+	fclose(csupf);
+
+	argv[0] = "csup";
+	argv[1] = "-z";
+	argv[2] = "-h";
+	argv[3] = conf.csup_host;
+	argv[4] = csup;
+	argv[5] = NULL;
+
+	if (exec("/usr/bin/csup", argv) != 0)
+		fprintf(stderr, "Fail to update the ports tree\n");
+
 }
 
 static void
@@ -75,6 +108,7 @@ port_update(struct pport_tree *p)
 		void (*exec)(struct pport_tree *p);
 	} pm [] = {
 		{ "portsnap", portsnap_update },
+		{ "-", portsnap_update }, /* default on portsnap */
 		{ "csup", csup_update },
 		{ "svn", NULL },
 		{ NULL, NULL },
