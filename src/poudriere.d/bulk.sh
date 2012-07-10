@@ -95,7 +95,9 @@ elif [ $PKGNG -eq 1 ]; then
 	injail tar xf /usr/ports/packages/Latest/pkg.txz -C /
 	injail rm -f /usr/ports/packages/repo.txz /usr/ports/packages/repo.sqlite
 	if [ -n "${PKG_REPO_SIGNING_KEY}" -a -f "${PKG_REPO_SIGNING_KEY}" ]; then
-		injail pkg-static repo /usr/ports/packages/ ${PKG_REPO_SIGNING_KEY}
+		install -m 0400 ${PKG_REPO_SIGNING_KEY} ${JAILBASE}/tmp/repo.key
+		injail pkg-static repo /usr/ports/packages/ /tmp/repo.key
+		rm -f /tmp/repo.key
 	else
 		injail pkg-static repo /usr/ports/packages/
 	fi
