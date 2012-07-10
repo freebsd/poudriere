@@ -36,7 +36,7 @@ while getopts "f:j:kp:ts" FLAG; do
 			;;
 		j)
 			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
-			JAILNAMES="${JAILNAMES} ${OPTARG}"
+			JAILNAME=${OPTARG}
 			;;
 		p)
 			PTNAME=${OPTARG}
@@ -56,175 +56,173 @@ export SKIPSANITY
 
 STATUS=0 # out of jail #
 
-test -z "${JAILNAMES}" && JAILNAMES=`jail_ls`
+test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
 
-for JAILNAME in ${JAILNAMES}; do
-	PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}
-	jail_start ${JAILNAME}
+if [ ${KEEP} -ne 1 ]; then
+	msg_n "Cleaning previous bulks if any..."
+	rm -rf ${PKGDIR}/*
+	echo " done"
+fi
 
-	if [ ${KEEP} -ne 1 ]; then
-		msg_n "Cleaning previous bulks if any..."
-		rm -rf ${PKGDIR}/*
-		echo " done"
-	fi
+PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}
+jail_start ${JAILNAME}
 
-	prepare_jail
+prepare_jail
 
-	prepare_ports
-	zfs snapshot ${JAILFS}@prepkg
-	for port in $queue; do
-		build_pkg ${port}
-		zfs rollback -r ${JAILFS}@prepkg
-	done
-	zfs destroy -r ${JAILFS}@prepkg
-
-	nbfailed=$(zfs_get poudriere:stats_failed)
-	nbignored=$(zfs_get poudriere:stats_ignored)
-	nbbuilt=$(zfs_get poudriere:stats_built)
-	[ "$nbfailed" = "-" ] && nbfailed=0
-	[ "$nbignored" = "-" ] && nbignored=0
-	[ "$nbbuilt" = "-" ] && nbbuilt=0
-# Package all newly build ports
-	if [ $nbbuilt -eq 0 ]; then
-		if [ $PKGNG -eq 1 ]; then
-			msg "No package built, no need to update the repository"
-		else
-			msg "No package built, no need to update INDEX"
-		fi
-	elif [ $PKGNG -eq 1 ]; then
-		msg "Creating pkgng repository"
-		injail tar xf /usr/ports/packages/Latest/pkg.txz -C /
-		injail rm -f /usr/ports/packages/repo.txz /usr/ports/packages/repo.sqlite
-		if [ -n "${PKG_REPO_SIGNING_KEY}" -a -f "${PKG_REPO_SIGNING_KEY}" ]; then
-			injail pkg-static repo /usr/ports/packages/ ${PKG_REPO_SIGNING_KEY}
-		else
-			injail pkg-static repo /usr/ports/packages/
-		fi
-	else
-		msg "Preparing index"
-		OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
-		INDEXF=${PKGDIR}/INDEX-${OSMAJ}
-		for pkg_file in `ls ${PKGDIR}/All/*.tbz`; do
-			msg_n "extracting description from `basename ${pkg_file}`"
-			ORIGIN=`/usr/sbin/pkg_info -qo ${pkg_file}`
-			[ -d ${PORTSDIR}/${ORIGIN} ] && injail make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
-			echo " done"
-		done
-
-		awk -v indf=${INDEXF}.1 -F\| 'BEGIN {
-		nblines=0
-		while ((getline < indf) > 0) {
-		sub(/\//, "\/", $2);
-		patterns[nblines] = "^"$2"$";
-		subst[nblines] = $1;
-		a_edep[nblines] = $8;
-		a_pdep[nblines] = $9;
-		a_fdep[nblines] = $10;
-		a_bdep[nblines] = $11;
-		a_rdep[nblines] = $12;
-		nblines++;
-		}
-		OFS="|"}
-		{
-
-		edep = $8;
-		pdep = $9;
-		fdep = $10;
-		bdep = $11;
-		rdep = $12;
-
-		split($8, sedep, " ") ;
-		split($9, sfdep, " ") ;
-		split($10, spdep, " ") ;
-		split($11, sbdep, " ") ;
-		split($12, srdep, " ") ;
-
-		for (i = 0; i < nblines; i++) {
-			for (s in sedep)
-				if ( sedep[s] ~ patterns[i] )
-					edep = edep" "a_rdep[i];
-
-			for (s in sfdep)
-				if ( sfdep[s] ~ patterns[i] )
-					fdep = fdep" "a_rdep[i];
-
-			for (s in spdep)
-				if ( spdep[s] ~ patterns[i] )
-					pdep = pdep" "a_rdep[i];
-
-			for (s in sbdep)
-				if ( sbdep[s] ~ patterns[i] )
-					bdep = bdep" "a_rdep[i];
-
-			for (s in srdep)
-				if ( srdep[s] ~ patterns[i] )
-					rdep = rdep" "a_rdep[i];
-		}
-
-		edep = uniq(edep, patterns, subst);
-		fdep = uniq(fdep, patterns, subst);
-		pdep = uniq(pdep, patterns, subst);
-		bdep = uniq(bdep, patterns, subst);
-		rdep = uniq(rdep, patterns, subst);
-
-		sub(/^ /, "", edep);
-		sub(/^ /, "", fdep);
-		sub(/^ /, "", pdep);
-		sub(/^ /, "", bdep);
-		sub(/^ /, "", rdep);
-		print $1"|"$2"|"$3"|"$4"|"$5"|"$6"|"$7"|"bdep"|"rdep"|"$13"|"edep"|"pdep"|"fdep
-		}
-
-		function array_s(array, str, i) {
-			for (i in array)
-				if (array[i] == str)
-					return 0;
-
-			return -1;
-		}
-
-		function uniq(as, pat, subst, B) {
-			split(as, A, " ");
-			as = "";
-
-			for (a in A) {
-				if (array_s(B, A[a]) != 0) {
-					str = A[a];
-					for (j in subst)
-						sub(pat[j], subst[j], str);
-						
-					as = as" "str
-					B[i] = A[a];
-					i++;
-				}
-			}
-
-			return as;
-		}
-		' ${INDEXF}.1 > ${INDEXF}
-
-		rm ${INDEXF}.1
-		[ -f ${INDEXF}.bz2 ] && rm ${INDEXF}.bz2
-		msg_n "compressing INDEX-${OSMAJ} ..."
-		bzip2 -9 ${INDEXF}
-		echo " done"
-	fi
-
-	cleanup
-	msg "$nbbuilt packages built, $nbfailed failures, $nbignored ignored"
-	if [ $nbbuilt -gt 0 ]; then
-		msg_n "Built ports: "
-		echo ${built}
-	fi
-	if [ $nbfailed -gt 0 ]; then
-		msg_n "Failed ports: "
-		echo ${failed}
-	fi
-	if [ $nbignored -gt 0 ]; then
-		msg_n "Ignored ports: "
-		echo ${ignored}
-	fi
+prepare_ports
+zfs snapshot ${JAILFS}@prepkg
+for port in $queue; do
+	build_pkg ${port}
+	zfs rollback -r ${JAILFS}@prepkg
 done
+zfs destroy -r ${JAILFS}@prepkg
+
+nbfailed=$(zfs_get poudriere:stats_failed)
+nbignored=$(zfs_get poudriere:stats_ignored)
+nbbuilt=$(zfs_get poudriere:stats_built)
+[ "$nbfailed" = "-" ] && nbfailed=0
+[ "$nbignored" = "-" ] && nbignored=0
+[ "$nbbuilt" = "-" ] && nbbuilt=0
+# Package all newly build ports
+if [ $nbbuilt -eq 0 ]; then
+	if [ $PKGNG -eq 1 ]; then
+		msg "No package built, no need to update the repository"
+	else
+		msg "No package built, no need to update INDEX"
+	fi
+elif [ $PKGNG -eq 1 ]; then
+	msg "Creating pkgng repository"
+	injail tar xf /usr/ports/packages/Latest/pkg.txz -C /
+	injail rm -f /usr/ports/packages/repo.txz /usr/ports/packages/repo.sqlite
+	if [ -n "${PKG_REPO_SIGNING_KEY}" -a -f "${PKG_REPO_SIGNING_KEY}" ]; then
+		injail pkg-static repo /usr/ports/packages/ ${PKG_REPO_SIGNING_KEY}
+	else
+		injail pkg-static repo /usr/ports/packages/
+	fi
+else
+	msg "Preparing index"
+	OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
+	INDEXF=${PKGDIR}/INDEX-${OSMAJ}
+	for pkg_file in `ls ${PKGDIR}/All/*.tbz`; do
+		msg_n "extracting description from `basename ${pkg_file}`"
+		ORIGIN=`/usr/sbin/pkg_info -qo ${pkg_file}`
+		[ -d ${PORTSDIR}/${ORIGIN} ] && injail make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
+		echo " done"
+	done
+
+	awk -v indf=${INDEXF}.1 -F\| 'BEGIN {
+	nblines=0
+	while ((getline < indf) > 0) {
+	sub(/\//, "\/", $2);
+	patterns[nblines] = "^"$2"$";
+	subst[nblines] = $1;
+	a_edep[nblines] = $8;
+	a_pdep[nblines] = $9;
+	a_fdep[nblines] = $10;
+	a_bdep[nblines] = $11;
+	a_rdep[nblines] = $12;
+	nblines++;
+	}
+	OFS="|"}
+	{
+
+	edep = $8;
+	pdep = $9;
+	fdep = $10;
+	bdep = $11;
+	rdep = $12;
+
+	split($8, sedep, " ") ;
+	split($9, sfdep, " ") ;
+	split($10, spdep, " ") ;
+	split($11, sbdep, " ") ;
+	split($12, srdep, " ") ;
+
+	for (i = 0; i < nblines; i++) {
+		for (s in sedep)
+			if ( sedep[s] ~ patterns[i] )
+				edep = edep" "a_rdep[i];
+
+		for (s in sfdep)
+			if ( sfdep[s] ~ patterns[i] )
+				fdep = fdep" "a_rdep[i];
+
+		for (s in spdep)
+			if ( spdep[s] ~ patterns[i] )
+				pdep = pdep" "a_rdep[i];
+
+		for (s in sbdep)
+			if ( sbdep[s] ~ patterns[i] )
+				bdep = bdep" "a_rdep[i];
+
+		for (s in srdep)
+			if ( srdep[s] ~ patterns[i] )
+				rdep = rdep" "a_rdep[i];
+	}
+
+	edep = uniq(edep, patterns, subst);
+	fdep = uniq(fdep, patterns, subst);
+	pdep = uniq(pdep, patterns, subst);
+	bdep = uniq(bdep, patterns, subst);
+	rdep = uniq(rdep, patterns, subst);
+
+	sub(/^ /, "", edep);
+	sub(/^ /, "", fdep);
+	sub(/^ /, "", pdep);
+	sub(/^ /, "", bdep);
+	sub(/^ /, "", rdep);
+	print $1"|"$2"|"$3"|"$4"|"$5"|"$6"|"$7"|"bdep"|"rdep"|"$13"|"edep"|"pdep"|"fdep
+	}
+
+	function array_s(array, str, i) {
+		for (i in array)
+			if (array[i] == str)
+				return 0;
+
+		return -1;
+	}
+
+	function uniq(as, pat, subst, B) {
+		split(as, A, " ");
+		as = "";
+
+		for (a in A) {
+			if (array_s(B, A[a]) != 0) {
+				str = A[a];
+				for (j in subst)
+					sub(pat[j], subst[j], str);
+					
+				as = as" "str
+				B[i] = A[a];
+				i++;
+			}
+		}
+
+		return as;
+	}
+	' ${INDEXF}.1 > ${INDEXF}
+
+	rm ${INDEXF}.1
+	[ -f ${INDEXF}.bz2 ] && rm ${INDEXF}.bz2
+	msg_n "compressing INDEX-${OSMAJ} ..."
+	bzip2 -9 ${INDEXF}
+	echo " done"
+fi
+
+cleanup
+msg "$nbbuilt packages built, $nbfailed failures, $nbignored ignored"
+if [ $nbbuilt -gt 0 ]; then
+	msg_n "Built ports: "
+	echo ${built}
+fi
+if [ $nbfailed -gt 0 ]; then
+	msg_n "Failed ports: "
+	echo ${failed}
+fi
+if [ $nbignored -gt 0 ]; then
+	msg_n "Ignored ports: "
+	echo ${ignored}
+fi
 
 set +e
 
