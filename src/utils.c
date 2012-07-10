@@ -6,11 +6,13 @@
 #include <sys/linker.h>
 #include <sys/uio.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <jail.h>
 #include <err.h>
 #include <errno.h>
@@ -43,6 +45,32 @@ exec_buf(const char *cmd)
 
 	return (res);
 }
+
+int
+exec(char *path, char *const argv[])
+{
+	int pstat;
+	pid_t pid;
+
+	switch ((pid = fork())) {
+	case -1:
+		return (-1);
+	case 0:
+		execv(path, argv);
+		_exit(1);
+		/* NOTREACHED */
+	default:
+		/* parent */
+		break;
+	}
+
+	while (waitpid(pid, &pstat, 0) == -1) {
+		if (errno != EINTR)
+			return (-1);
+	}
+
+	return (WEXITSTATUS(pstat));
+};
 
 void
 zfs_list(struct zfs_prop z[], const char *t, int n)

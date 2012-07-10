@@ -39,6 +39,8 @@ struct pjail {
 struct pport_tree {
 	char name[20];
 	char method[10];
+	char mountpoint[MAXPATHLEN];
+	char fs[MAXPATHLEN];
 	struct pport_tree *next;
 };
 
@@ -47,5 +49,6 @@ int jail_runs(const char *name);
 int zfs_query(const char *, const char *, struct zfs_query[], int);
 void jail_stop(struct pjail *j);
 void jail_start(struct pjail *j);
+int exec(char *, char * const argv[]);
 
 #endif
