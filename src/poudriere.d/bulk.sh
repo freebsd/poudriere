@@ -58,13 +58,13 @@ STATUS=0 # out of jail #
 
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
 
+PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}
 if [ ${KEEP} -ne 1 ]; then
 	msg_n "Cleaning previous bulks if any..."
 	rm -rf ${PKGDIR}/*
 	echo " done"
 fi
 
-PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}
 jail_start ${JAILNAME}
 
 prepare_jail
