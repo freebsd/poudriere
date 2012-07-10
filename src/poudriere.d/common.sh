@@ -294,7 +294,7 @@ sanity_check_pkgs() {
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return $ret
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
 		local depfile=${JAILBASE}/tmp/${pkg##*/}.deps
-		if [ ! -f ${depfile} ]; then
+		if [ ! -f "${depfile}" ]; then
 			if [ "${EXT}" = "tbz" ]; then
 				pkg_info -qr ${pkg} | awk '{ print $2 }' > ${depfile}
 			else
@@ -302,7 +302,7 @@ sanity_check_pkgs() {
 			fi
 		fi
 		while read dep; do
-			if [ ! -e ${PKGDIR}/All/${dep}.${EXT} ]; then
+			if [ ! -e "${PKGDIR}/All/${dep}.${EXT}" ]; then
 				ret=1
 				msg "Deleting ${pkg}: missing dependencies"
 				rm -f ${pkg}
@@ -534,7 +534,7 @@ delete_old_pkgs() {
 		fi
 		v=${pkg##*-}
 		v=${v%.*}
-		if [ ! -d ${JAILBASE}/usr/ports/${o} ]; then
+		if [ ! -d "${JAILBASE}/usr/ports/${o}" ]; then
 			msg "${o} does not exist anymore. Deleting stale ${pkg##*/}"
 			rm -f ${pkg}
 			continue
@@ -641,7 +641,7 @@ prepare_ports() {
 	export LOCALBASE=${MYBASE:-/usr/local}
 	while read p; do
 		pn=$(awk -v o=${p} ' { if ($1 == o) {print $2} }' ${cache})
-		[ ! -f ${PKGDIR}/All/${pn}.${EXT} ] && queue="${queue} $p"
+		[ ! -f "${PKGDIR}/All/${pn}.${EXT}" ] && queue="${queue} $p"
 	done < ${tmplist2}
 
 	rm -f ${tmplist2} ${deplist} ${tmplist}
