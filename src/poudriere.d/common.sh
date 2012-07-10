@@ -223,7 +223,7 @@ jail_start() {
 	mount -t linsysfs linsysfs ${MNT}/compat/linux/sys
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${MNT}/etc/"
 	msg "Starting jail ${NAME}"
-	jailrun ${NAME} ${MNT} 0
+	jail_run ${NAME} ${MNT} 0
 	# Only set STATUS=1 if not turned off
 	# jail -s should not do this or jail will stop on EXIT
 	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
