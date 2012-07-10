@@ -7,10 +7,12 @@
 #include <sys/uio.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/sysctl.h>
 
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
 #include <jail.h>
@@ -233,8 +235,8 @@ static struct mntpts {
 	char *fstype;
 } mntpts [] = {
 	{ "/dev", "devfs" },
-	{ "/compat/linux/proc", "linprocfs" },
-	{ "/compat/linux/sys", "linsysfs" },
+/*	{ "/compat/linux/proc", "linprocfs" },
+	{ "/compat/linux/sys", "linsysfs" },*/
 	{ "/proc", "procfs" },
 	{ NULL, NULL },
 };
@@ -269,6 +271,49 @@ mkdirs(const char *_path)
 
 	return (1);
 }
+
+void
+jail_run(struct pjail *j, bool network)
+{
+	char *argv[14];
+	int n=11;
+	size_t sysvallen;
+	int sysval = 0;
+	char name[BUFSIZ], hostname[BUFSIZ], path[MAXPATHLEN + 5] ;
+
+	snprintf(name, sizeof(name), "name=%s", j->name);
+	snprintf(hostname, sizeof(name), "host.hostname=%s", j->name);
+	snprintf(path, sizeof(path), "path=%s", j->mountpoint);
+
+	argv[0] = "jail";
+	argv[1] = "-c";
+	argv[2] = "persist";
+	argv[3] = path;
+	argv[4] = name;
+	argv[5] = hostname;
+	argv[6] = "allow.sysvipc";
+	argv[7] = "allow.mount";
+	argv[8] = "allow.socket_af";
+	argv[9] = "allow.raw_sockets";
+	argv[10] = "allow.chflags";
+
+	sysvallen = sizeof(sysval);
+	if (sysctlbyname("kern.features.inet", &sysval, &sysvallen, NULL, 0) == 0) {
+		argv[n] = network ? "ip4=inherit" : "ip4.addr=127.0.0.1";
+		n++;
+	}
+
+	sysvallen = sizeof(sysval);
+	if (sysctlbyname("kern.features.inet6", &sysval, &sysvallen, NULL, 0) == 0) {
+		argv[n] = network ? "ip6=inherit" : "ip6.addr=::1";
+		n++;
+	}
+	argv[n] = NULL;
+
+	if (exec("/usr/sbin/jail", argv) != 0)
+		fprintf(stderr, "Fail to start jail\n");
+}
+
 void
 jail_start(struct pjail *j)
 {
@@ -315,6 +360,8 @@ jail_start(struct pjail *j)
 		if (nmount(iov, 4, 0))
 			warn("failed to mount %s\n", dest);
 	}
+
+	jail_run(j, false);
 
 	return;
 }
