@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # zfs namespace
-ns="poudriere"
+NS="poudriere"
 IPS="$(sysctl -n kern.features.inet 2>/dev/null || echo 0)$(sysctl -n kern.features.inet6 2>/dev/null || echo 0)"
 
 err() {
