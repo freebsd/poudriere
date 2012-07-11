@@ -1,6 +1,8 @@
 #include <sys/types.h>
 #include <sys/sbuf.h>
+#include <sys/stat.h>
 
+#define _WITH_GETLINE
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
@@ -9,6 +11,7 @@
 #include <err.h>
 #include <glob.h>
 #include <fts.h>
+#include <stdlib.h>
 
 #include "commands.h"
 #include "utils.h"
@@ -27,6 +30,62 @@ usage_bulk(void)
 	fprintf(stderr,"\t%-15s%s\n", "-p", "Specify on which ports tree the bulk will be done");
 }
 
+void
+delete_ifold(struct pjail *j, const char *path)
+{
+	FILE *fp;
+	char cmd[BUFSIZ];
+	char origin[MAXPATHLEN];
+	char pkgname[MAXPATHLEN];
+	char myname[MAXPATHLEN];
+	char ppath[MAXPATHLEN];
+	char *buf;
+	char *line = NULL;
+	size_t linecap = 0;
+	struct stat st;
+
+	origin[0] = '\0';
+
+	if (conf.pkgng)
+		snprintf(cmd, sizeof(cmd), "pkg query -F \"%s\" \"%%o\"", path);
+	else
+		snprintf(cmd, sizeof(cmd), "pkg_info -qo \"%s\"", path);
+	if ((fp = popen(cmd, "r")) != NULL) {
+		while (getline(&line, &linecap, fp) > 0)
+			strlcpy(origin, line, sizeof(origin));
+		fclose(fp);
+	}
+	if (origin[strlen(origin) - 1] == '\n')
+		origin[strlen(origin) - 1] = '\0';
+	snprintf(ppath, sizeof(ppath), "%s/usr/ports/%s", j->mountpoint, origin);
+	if (lstat(ppath, &st) == -1) {
+		printf("\t\t* %s, doesn't not exist anymore\n", strrchr(path, '/') + 1);
+		unlink(path);
+		return;
+	}
+
+	snprintf(cmd, sizeof(cmd), "/usr/sbin/jexec -U root %s make -C /usr/ports/%s -VPKGNAME", j->name, origin);
+	linecap = 0;
+	line = NULL;
+	if ((fp = popen(cmd, "r")) != NULL) {
+		while (getline(&line, &linecap, fp) > 0)
+			strlcpy(pkgname, line, sizeof(pkgname));
+		fclose(fp);
+	}
+	if (pkgname[strlen(pkgname) - 1] == '\n')
+		pkgname[strlen(pkgname) - 1] = '\0';
+
+	strlcpy(myname, strrchr(path, '/') + 1, sizeof(myname));
+	buf = myname;
+	buf = strrchr(myname, '.');
+	buf[0] = '\0';
+	if (strcmp(myname, pkgname) != 0) {
+		printf("\t\t* %s is outdated\n", strrchr(path, '/') + 1);
+		unlink(path);
+		return;
+	}
+}
+
 int
 sanify_check(struct pjail *j)
 {
@@ -36,15 +95,15 @@ sanify_check(struct pjail *j)
 	FTS *fts;
 	FTSENT *ent = NULL;
 	char *pkgpath[2];
+	char vlocal[BUFSIZ], vremote[BUFSIZ], origin[BUFSIZ];
 
 	printf("====>> Sanity checking the repository:\n");
-	printf("\t- Checking for old packages...");
+	printf("\t- Delete outdated packages:\n");
 
 	snprintf(query, sizeof(query), "%s/usr/ports/packages/All/*.%s", j->mountpoint, conf.ext);
 	if (glob(query, 0, NULL, &g) == 0) {
-/*		for (i = 0; i < g.gl_matchc; i++) {
-			printf("%s\n", g.gl_pathv[i]);
-		}*/
+		for (i = 0; i < g.gl_matchc; i++)
+			delete_ifold(j, g.gl_pathv[i]);
 		globfree(&g);
 	}
 	printf("done\n");
