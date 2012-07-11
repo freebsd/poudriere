@@ -67,6 +67,8 @@ check_pkgtools(struct pjail *j)
 		walk++;
 	} while (walk <= end);
 
+	printf("%s\n", conf.pkg_add);
+
 	return (0);
 }
 
@@ -81,6 +83,7 @@ exec_bulk(int argc, char **argv)
 	char *porttree = "default";
 	struct pjail j;
 	struct pport_tree p;
+	char snapshot[MAXPATHLEN], *args[4];
 
 	struct zfs_query qj[] = {
 		{ "poudriere:version", STRING, j.version, sizeof(j.version), 0 },
@@ -140,7 +143,17 @@ exec_bulk(int argc, char **argv)
 	if (!zfs_query("ports", porttree, qp, sizeof(qp) / sizeof(struct zfs_query)))
 		err(EX_USAGE, "No such ports tree %s", porttree);
 
+	snprintf(snapshot, sizeof(snapshot), "%s@clean", j.fs);
+	args[0] = "zfs";
+	args[1] = "rollback";
+	args[2] = snapshot;
+	args[3] = NULL;
+
+	if (exec("/sbin/zfs", args) != 0)
+		err(1, "failed to rollback to %s", snapshot);
+
 	jail_start(&j);
+	jail_setup(&j);
 	mount_nullfs(&j, &p);
 	check_pkgtools(&j);
 	sleep(60);

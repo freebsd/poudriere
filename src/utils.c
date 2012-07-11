@@ -408,7 +408,6 @@ void
 mount_nullfs(struct pjail *j, struct pport_tree *p)
 {
 	struct iovec iov[6];
-
 	char source[MAXPATHLEN], target[MAXPATHLEN];
 
 	iov[0].iov_base = "fstype";
@@ -503,4 +502,45 @@ jail_stop(struct pjail *j)
 		unmount(mnts[i], 0);
 
 	free(mnts);
+}
+
+void
+jail_setup(struct pjail *j)
+{
+	FILE *s,*t;
+	char path[MAXPATHLEN];
+	char dest[MAXPATHLEN];
+	char buf[BUFSIZ];
+	struct stat st;
+
+	/* prepare the make.conf */
+	snprintf(path, sizeof(path), "/usr/local/etc/poudriere.d/make.conf");
+	snprintf(dest, sizeof(dest), "%s/etc/make.conf", j->mountpoint);
+
+	lstat(path, &st);
+	if (S_ISREG(st.st_mode) && (s = fopen(path, "r")) && (t = fopen(dest, "a+")) ) {
+		while (fgets(buf, BUFSIZ, s) != NULL)
+			fprintf(t, "%s", buf);
+		fclose(t);
+		fclose(s);
+	}
+
+	snprintf(path, sizeof(path), "/usr/local/etc/poudriere.d/%s-make.conf", j->name);
+
+	lstat(path, &st);
+	if (S_ISREG(st.st_mode) && (s = fopen(path, "r")) && (t = fopen(dest, "a+")) ) {
+		while (fgets(buf, BUFSIZ, s) != NULL)
+			fprintf(t, "%s", buf);
+		fclose(t);
+		fclose(s);
+	}
+
+	snprintf(dest, sizeof(dest), "%s/etc/resolv.conf", j->mountpoint);
+	lstat(conf.resolv_conf, &st);
+	if (S_ISREG(st.st_mode) && (s = fopen(conf.resolv_conf, "r")) && (t = fopen(dest, "a+")) ) {
+		while (fgets(buf, BUFSIZ, s) != NULL)
+			fprintf(t, "%s", buf);
+		fclose(t);
+		fclose(s);
+	}
 }

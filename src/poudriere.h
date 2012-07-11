@@ -1,5 +1,8 @@
 #ifndef _POUDRIERE_H
 #define _POUDRIERE_H
+#include <sys/param.h>
+#include <stdbool.h>
+
 struct poudriere_conf {
 	char *basefs;
 	char *zfs_pool;
@@ -16,7 +19,6 @@ struct poudriere_conf {
 	char ext[4];
 	char pkg_add[MAXPATHLEN];
 	char pkg_delete[MAXPATHLEN];
-
 };
 
 extern struct poudriere_conf conf;
