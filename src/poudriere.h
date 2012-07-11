@@ -11,6 +11,7 @@ struct poudriere_conf {
 	int use_tmpfs;
 	int check_options_changed;
 	char *makeworld_args;
+	char *poudriere_data;
 };
 
 extern struct poudriere_conf conf;

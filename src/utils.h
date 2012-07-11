@@ -50,5 +50,6 @@ int zfs_query(const char *, const char *, struct zfs_query[], int);
 void jail_stop(struct pjail *j);
 void jail_start(struct pjail *j);
 int exec(char *, char * const argv[]);
+void mount_nullfs(struct pjail *j, struct pport_tree *p);
 
 #endif

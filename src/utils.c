@@ -227,8 +227,8 @@ static struct mntpts {
 	char *fstype;
 } mntpts [] = {
 	{ "/dev", "devfs" },
-/*	{ "/compat/linux/proc", "linprocfs" },
-	{ "/compat/linux/sys", "linsysfs" },*/
+	{ "/compat/linux/proc", "linprocfs" },
+	{ "/compat/linux/sys", "linsysfs" },
 	{ "/proc", "procfs" },
 	{ NULL, NULL },
 };
@@ -328,6 +328,7 @@ jail_start(struct pjail *j)
 	int iovlen;
 	struct iovec iov[6];
 	char dest[MAXPATHLEN];
+	size_t sysvallen;
 
 	if (jail_runs(j->name)) {
 		fprintf(stderr, "====>> jail %s is already running\n", j->name);
@@ -370,6 +371,65 @@ jail_start(struct pjail *j)
 	jail_run(j, false);
 
 	return;
+}
+
+void
+mount_nullfs(struct pjail *j, struct pport_tree *p)
+{
+	struct iovec iov[6];
+
+	char source[MAXPATHLEN], target[MAXPATHLEN];
+
+	iov[0].iov_base = "fstype";
+	iov[0].iov_len = sizeof("fstype");
+	iov[1].iov_base = "nullfs";
+	iov[1].iov_len = strlen(iov[1].iov_base) + 1;
+	iov[2].iov_base = "fspath";
+	iov[2].iov_len = sizeof("fspath");
+
+	/* ports */
+	snprintf(target, sizeof(target), "%s/ports", p->mountpoint);
+	snprintf(source, sizeof(source), "%s/usr/ports", j->mountpoint);
+
+	if (mkdir(target, 0755) != 0 && errno != EEXIST)
+		err(1, "Unable to create dir: %s", target);
+
+	if (mkdir(source, 0755) != 0 && errno != EEXIST)
+		err(1, "Unable to create dir: %s", source);
+
+	iov[3].iov_base = source;
+	iov[3].iov_len =  strlen(source) + 1;
+
+	iov[4].iov_base = "target";
+	iov[4].iov_len = sizeof("target");
+
+	iov[5].iov_base = target;
+	iov[5].iov_len = strlen(target) + 1;
+
+	if (nmount(iov, 6, 0))
+		err(1, "failed to mount %s on %s\n", source, target);
+
+	/* packages */
+	snprintf(target, sizeof(target), "%s/packages", conf.poudriere_data);
+	if (mkdir(target, 0755) != 0 && errno != EEXIST)
+		err(1, "Unable to create dir: %s", target);
+	snprintf(target, sizeof(target), "%s/packages/%s-%s",
+	    conf.poudriere_data, j->name, p->name);
+	if (mkdir(target, 0755) != 0 && errno != EEXIST)
+		err(1, "Unable to create dir: %s", target);
+	snprintf(source, sizeof(source), "%s/usr/ports/packages", j->mountpoint);
+
+	if (mkdir(source, 0755) != 0 && errno != EEXIST)
+		err(1, "Unable to create dir: %s", source);
+
+	iov[3].iov_base = source;
+	iov[3].iov_len =  strlen(source) + 1;
+
+	iov[5].iov_base = target;
+	iov[5].iov_len = strlen(target) + 1;
+
+	if (nmount(iov, 6, 0))
+		err(1, "failed to mount %s\n", target);
 }
 
 void

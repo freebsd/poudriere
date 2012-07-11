@@ -69,6 +69,7 @@ int yylex(void);
 
 %token BASEFS ZFS_POOL FREEBSD_HOST WRKDIRPREFIX RESOLV_CONF CSUP_HOST
 %token SVN_HOST USE_TMPFS CHECK_OPTIONS_CHANGED MAKEWORLD_ARGS
+%token POUDRIERE_DATA
 
 %union
 {
@@ -86,7 +87,7 @@ options: /* empty */
 
 option: basefs | zfs_pool | freebsd_host | wrkdirprefix | resolv_conf 
 	| csup_host | svn_host | use_tmpfs | check_options_changed
-	| makeworld_args;
+	| makeworld_args | poudriere_data;
 
 basefs: BASEFS WORD {
 	if (word_is_fs($2, WANT_DIRNAME) != 0)
@@ -101,13 +102,13 @@ zfs_pool: ZFS_POOL WORD {
 freebsd_host: FREEBSD_HOST WORD { conf.freebsd_host = $2; };
 
 wrkdirprefix: WRKDIRPREFIX WORD {
-	if (word_is_fs($2, WANT_DIRNAME) != 0)
+	if (word_is_fs($2, WANT_DIRNAME) == 0)
 		YYERROR;
 	conf.wrkdirprefix = $2;
 };
 
 resolv_conf: RESOLV_CONF WORD {
-	if (word_is_fs($2, WANT_FILENAME) != 0)
+	if (word_is_fs($2, WANT_FILENAME) == 0)
 		YYERROR;
 	conf.resolv_conf = $2;
 };
@@ -125,4 +126,10 @@ check_options_changed: CHECK_OPTIONS_CHANGED STATE {
 makeworld_args: MAKEWORLD_ARGS WORD { conf.makeworld_args = $2; }
 	| MAKEWORLD_ARGS WORDS { conf.makeworld_args = $2; };
 
+
+poudriere_data: POUDRIERE_DATA WORD {
+	if (word_is_fs($2, WANT_DIRNAME) != 0)
+		YYERROR;
+	conf.poudriere_data = $2;
+};
 %%

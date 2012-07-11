@@ -47,7 +47,7 @@ static struct commands {
 	int (*exec)(int argc, char **argv);
 	void (*const usage)(void);
 } cmd[] = {
-	{ "bulk", "Run bulks", NULL, NULL },
+	{ "bulk", "Run bulks", exec_bulk, usage_bulk },
 	{ "help", "Displays help information", exec_help, usage_help},
 	{ "jail", "Manipulate the jails", exec_jail, usage_jail },
 	{ "ports", "Manipulate the ports trees", exec_ports, usage_ports },
