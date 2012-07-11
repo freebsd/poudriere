@@ -432,11 +432,18 @@ mount_nullfs(struct pjail *j, struct pport_tree *p)
 		err(1, "failed to mount %s\n", target);
 }
 
+int
+mntcmp(const void *a, const void *b)
+{
+	return (strcmp((char*)a, (char *)b));
+}
+
 void
 jail_stop(struct pjail *j)
 {
 	struct statfs *mntbuf;
-	size_t mntsize, i;
+	size_t mntsize, i, n;
+	char **mnts;
 
 	if (!jail_runs(j->name)) {
 		fprintf(stderr, "No such jail: %s\n", j->name);
@@ -448,9 +455,21 @@ jail_stop(struct pjail *j)
 	if ((mntsize = getmntinfo(&mntbuf, MNT_NOWAIT)) <= 0)
 		err(EXIT_FAILURE, "Error while getting the list of mountpoints");
 
+	mnts = malloc(mntsize * sizeof(char *));
+
+	n = 0;
 	for (i = 0; i < mntsize; i++) {
 		if (strncmp(mntbuf[i].f_mntonname, j->mountpoint, strlen(j->mountpoint)) == 0)
-			if (strlen(mntbuf[i].f_mntonname) > strlen(j->mountpoint))
-				unmount(mntbuf[i].f_mntonname, 0);
+			if (strlen(mntbuf[i].f_mntonname) > strlen(j->mountpoint)) {
+				mnts[n] = mntbuf[i].f_mntonname;
+				n++;
+			}
 	}
+
+	qsort(mnts, n, sizeof(char *), mntcmp);
+
+	for (i = 0; i < n; i++)
+		unmount(mnts[i], 0);
+
+	free(mnts);
 }
