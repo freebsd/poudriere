@@ -12,6 +12,11 @@ struct poudriere_conf {
 	int check_options_changed;
 	char *makeworld_args;
 	char *poudriere_data;
+	bool pkgng;
+	char ext[4];
+	char pkg_add[MAXPATHLEN];
+	char pkg_delete[MAXPATHLEN];
+
 };
 
 extern struct poudriere_conf conf;

@@ -49,6 +49,37 @@ exec_buf(const char *cmd)
 	return (res);
 }
 
+struct sbuf *
+injail_buf(struct pjail *j, char *cmd)
+{
+	FILE *fp;
+	char buf[BUFSIZ];
+	struct sbuf *res;
+	struct sbuf *command;
+
+	command = sbuf_new_auto();
+	sbuf_printf(command, "jexec -U root %s %s", j->name, cmd);
+	sbuf_finish(command);
+	if ((fp = popen(sbuf_data(command), "r")) == NULL)
+		return (NULL);
+
+	res = sbuf_new_auto();
+	while (fgets(buf, BUFSIZ, fp) != NULL)
+		sbuf_cat(res, buf);
+
+	pclose(fp);
+
+	sbuf_delete(command);
+	if (sbuf_len(res) == 0) {
+		sbuf_delete(res);
+		return (NULL);
+	}
+
+	sbuf_finish(res);
+
+	return (res);
+}
+
 int
 exec(char *path, char *const argv[])
 {

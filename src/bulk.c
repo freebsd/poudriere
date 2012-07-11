@@ -26,6 +26,51 @@ usage_bulk(void)
 }
 
 int
+sanify_check(struct pjail *j)
+{
+	printf("====>> Sanity checking the repository");
+	return (0);
+}
+
+int
+check_pkgtools(struct pjail *j)
+{
+	struct sbuf *b;
+	int state = 0;
+	char *pos;
+	char *walk, *end;
+
+	b = injail_buf(j, "/usr/bin/make -C /usr/ports/ports-mgmt/poudriere -VWITH_PKGNG -VPKG_ADD -VPKG_DELETE");
+	walk = sbuf_data(b);
+	end = walk + sbuf_len(b);
+	pos = walk;
+	do {
+		if (*walk == '\n') {
+			*walk = '\0';
+			switch (state) {
+			case 0:
+				conf.pkgng = false;
+				if (strlen(pos) != 0)
+					conf.pkgng = true;
+				break;
+			case 1:
+				strlcpy(conf.pkg_add, pos, sizeof(conf.pkg_add));
+				break;
+			case 2:
+				strlcpy(conf.pkg_delete, pos, sizeof(conf.pkg_delete));
+			}
+			state++;
+			walk++;
+			pos = walk;
+			continue;
+		}
+		walk++;
+	} while (walk <= end);
+
+	return (0);
+}
+
+int
 exec_bulk(int argc, char **argv)
 {
 	signed char ch;
@@ -97,6 +142,7 @@ exec_bulk(int argc, char **argv)
 
 	jail_start(&j);
 	mount_nullfs(&j, &p);
+	check_pkgtools(&j);
 	sleep(60);
 	jail_stop(&j);
 	return (EX_OK);
