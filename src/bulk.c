@@ -7,6 +7,8 @@
 #include <sysexits.h>
 #include <unistd.h>
 #include <err.h>
+#include <glob.h>
+#include <fts.h>
 
 #include "commands.h"
 #include "utils.h"
@@ -28,7 +30,38 @@ usage_bulk(void)
 int
 sanify_check(struct pjail *j)
 {
-	printf("====>> Sanity checking the repository");
+	char query[MAXPATHLEN];
+	glob_t g;
+	int i = 0;
+	FTS *fts;
+	FTSENT *ent = NULL;
+	char *pkgpath[2];
+
+	printf("====>> Sanity checking the repository:\n");
+	printf("\t- Checking for old packages...");
+
+	snprintf(query, sizeof(query), "%s/usr/ports/packages/All/*.%s", j->mountpoint, conf.ext);
+	if (glob(query, 0, NULL, &g) == 0) {
+/*		for (i = 0; i < g.gl_matchc; i++) {
+			printf("%s\n", g.gl_pathv[i]);
+		}*/
+		globfree(&g);
+	}
+	printf("done\n");
+	printf("\t- Removing stale symlinks:\n");
+	snprintf(query, sizeof(query), "%s/usr/ports/packages", j->mountpoint);
+	pkgpath[0] = query;
+	pkgpath[1] = NULL;
+
+	if ((fts = fts_open(pkgpath, FTS_LOGICAL, NULL)) != NULL) {
+		while (( ent = fts_read(fts)) != NULL) {
+			if (ent->fts_info != FTS_SLNONE)
+				continue;
+			printf("\t\t * %s\n", ent->fts_name);
+			unlink(ent->fts_accpath);
+		}
+		fts_close(fts);
+	}
 	return (0);
 }
 
@@ -40,6 +73,7 @@ check_pkgtools(struct pjail *j)
 	char *pos;
 	char *walk, *end;
 
+	printf("====>> build will use: ");
 	b = injail_buf(j, "/usr/bin/make -C /usr/ports/ports-mgmt/poudriere -VWITH_PKGNG -VPKG_ADD -VPKG_DELETE");
 	walk = sbuf_data(b);
 	end = walk + sbuf_len(b);
@@ -67,7 +101,8 @@ check_pkgtools(struct pjail *j)
 		walk++;
 	} while (walk <= end);
 
-	printf("%s\n", conf.pkg_add);
+	strlcpy(conf.ext, conf.pkgng ? "txz" : "tbz", sizeof(conf.ext));
+	printf("%s\n", conf.pkgng ? "pkgng" : "legacy pkg_*");
 
 	return (0);
 }
@@ -149,14 +184,17 @@ exec_bulk(int argc, char **argv)
 	args[2] = snapshot;
 	args[3] = NULL;
 
+	printf("====>> cleaning up the jail: ");
 	if (exec("/sbin/zfs", args) != 0)
 		err(1, "failed to rollback to %s", snapshot);
+	printf("done\n");
 
 	jail_start(&j);
 	jail_setup(&j);
 	mount_nullfs(&j, &p);
 	check_pkgtools(&j);
-	sleep(60);
-	jail_stop(&j);
+	sanify_check(&j);
+/*	jail_stop(&j);*/
+
 	return (EX_OK);
 }
