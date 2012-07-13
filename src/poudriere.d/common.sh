@@ -733,4 +733,6 @@ mkdir -p ${PTMP}
 zpool list ${ZPOOL} >/dev/null 2>&1 || err 1 "No such zpool: ${ZPOOL}"
 ZVERSION=$(zpool list -H -oversion ${ZPOOL})
 # Pool version has now
-[ "${ZVERSION}" = "-" ] && ZVERSION=29
+if [ "${ZVERSION}" = "-" ]; then
+	ZVERSION=29
+fi
