@@ -171,7 +171,7 @@ jail_run() {
 	local jpath=$2
 	local network=$3
 	local ipargs
-	if [ ${NETWORK} -eq 0 ]; then
+	if [ ${network} -eq 0 ]; then
 		case $IPS in
 		01) ipargs="ip6.addr=::1" ;;
 		10) ipargs="ip4.addr=127.0.0.1" ;;
