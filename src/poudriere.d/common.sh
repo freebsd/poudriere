@@ -315,7 +315,7 @@ sanity_check_pkgs() {
 }
 
 build_port() {
-	[ $# -ne 1 ] && eargs portdir jailname
+	[ $# -ne 2 ] && eargs portdir jailname
 	local portdir=$1
 	local jailname=$2
 	local jailfs=`jail_get_fs ${jailname}`
