@@ -373,40 +373,26 @@ build_port() {
 				zfs diff -FH ${jailfs}@prebuild ${jailfs} | \
 					while read mod type path; do
 					local ppath=`echo "$path" | sed -e "s,^${jailbase},," -e "s,^${PREFIX}/,," -e "s,^share/${portname},%%DATADIR%%," -e "s,^etc,%%ETCDIR%%,"`
+					case "$ppath" in
+					/var/db/pkg/*) continue;;
+					/var/run/*) continue;;
+					/wrkdirs/*) continue;;
+					/tmp/*) continue;;
+					share/nls/POSIX) continue;;
+					share/nls/en_US.US-ASCII) continue;;
+					/var/log/*) continue;;
+					/etc/spwd.db) continue;;
+					/etc/pwd.db) continue;;
+					/etc/group) continue;;
+					/etc/passwd) continue;;
+					/etc/master.passwd) continue;;
+					/etc/shells) continue;;
+					esac
 					case $mod$type in
-						+*)
-							case "${ppath}" in
-								/var/db/pkg/local.sqlite) continue;;
-								/var/run/ld-elf.so.hints) continue;;
-								/tmp/*) continue;;
-								/wrkdirs/*) continue;;
-								share/nls/POSIX) continue;;
-								share/nls/en_US.US-ASCII) continue;;
-								*) echo "${ppath}" >> ${add};;
-							esac
-							;;
-						-*)
-							case "${ppath}" in
-								/var/run/ld-elf.so.hints) continue;;
-								/tmp/*) continue;;
-								/wrkdirs/*) continue;;
-								*) echo "${ppath}" >> ${del};;
-							esac
-							;;
-						M/) continue;;
-						M*)
-							case "${ppath}" in
-								/var/db/pkg/local.sqlite) continue;;
-								/var/log/userlog) continue;;
-								/etc/spwd.db) continue;;
-								/etc/pwd.db) continue;;
-								/etc/group) continue;;
-								/etc/passwd) continue;;
-								/etc/master.passwd) continue;;
-								/etc/shells) continue;;
-								*) echo "${ppath}" >> ${mod};;
-							esac
-							;;
+					+*) echo "${ppath}" >> ${add};;
+					-*) echo "${ppath}" >> ${del};;
+					M/) continue;;
+					M*) echo "${ppath}" >> ${mod};;
 					esac
 				done
 				sort ${add} > ${add1}
