@@ -114,12 +114,6 @@ jail_get_fs() {
 		awk '/^rootfs[[:space:]]'$1'[[:space:]]/ { print $3 }'
 }
 
-jail_get_zpool_version() {
-	[ $# -ne 1 ] && eargs jailname
-	FS=`jail_get_fs $1`
-	zpool list -H -oversion ${FS%%/*}
-}
-
 jail_ls() {
 	zfs list -t filesystem -Hd1 -o ${NS}:type,${NS}:name ${ZPOOL}/poudriere | \
 		awk '/^rootfs/ { print $2 }'
