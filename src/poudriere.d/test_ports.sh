@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+sil_çet -e
 
 usage() {
 	echo "poudriere testport parameters [options]
@@ -72,7 +72,6 @@ for JAILNAME in ${JAILNAMES}; do
 
 
 	jail_start ${JAILNAME}
-	ZVERSION=`jail_get_zpool_version ${JAILNAME}`
 
 	prepare_jail
 

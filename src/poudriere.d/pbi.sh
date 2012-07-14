@@ -58,7 +58,6 @@ for JAILNAME in ${JAILNAMES}; do
 	PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}-${LBASENAME}
 
 	jail_start ${JAILNAME}
-	ZVERSION=`jail_get_zpool_version ${JAILNAME}`
 
 	prepare_jail
 	mkdir -p ${JAILBASE}/pbi
