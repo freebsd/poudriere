@@ -59,7 +59,7 @@ port_get_method() {
 	zfs get -H -o value "${NS}:method" $1
 }
 
-jail_status() {
+zset status() {
 	[ $# -ne 1 ] && eargs jailname
 	zset status "$1"
 }
@@ -184,7 +184,7 @@ jail_start() {
 	sysctl -n compat.linux.osrelease >/dev/null 2>&1 || kldload linux
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	jail_runs && err 1 "jail already running: ${JAILNAME}"
-	jail_status "start:"
+	zset status "start:"
 	zfs rollback -r ${ZPOOL}/poudriere/${JAILNAME}@clean
 	touch /var/run/poudriere-${JAILNAME}.lock
 
@@ -214,7 +214,7 @@ jail_stop() {
 	local jailbase=`jail_get_base ${name}`
 	local jailfs=`jail_get_fs ${name}`
 	jail_runs || err 1 "No such jail running: ${name}"
-	jail_status "stop:"
+	zset status "stop:"
 
 	msg "Stopping jail"
 	jail -r ${name}
@@ -231,7 +231,7 @@ jail_stop() {
 		fi
 	fi
 	zfs rollback -r ${ZPOOL}/poudriere/${name}@clean
-	jail_status "idle:"
+	zset status "idle:"
 	export STATUS=0
 }
 
@@ -457,7 +457,7 @@ build_pkg() {
 		state=$(zget status)
 		export failed="${failed} ${state}"
 	fi
-	jail_status "idle:"
+	zset status "idle:"
 	log_stop ${LOGS}/${JAILNAME}-${PTNAME}-${PKGNAME}.log
 }
 
@@ -561,7 +561,7 @@ prepare_ports() {
 	touch ${cache}
 	touch ${tmplist}
 	msg "Calculating ports order and dependencies"
-	jail_status "orderdeps:"
+	zset status "orderdeps:"
 	if [ -z "${LISTPORTS}" ]; then
 		if [ -n "${LISTPKGS}" ]; then
 			for port in `grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}`; do
@@ -586,7 +586,7 @@ prepare_ports() {
 		fi
 	done < ${tmplist2}
 
-	jail_status "sanity:"
+	zset status "sanity:"
 
 	if [ $SKIPSANITY -eq 0 ]; then
 		msg "Sanity checking the repository"
@@ -600,7 +600,7 @@ prepare_ports() {
 	msg "Deleting stale symlinks"
 	find -L ${PKGDIR} -type l -exec rm -vf {} +
 
-	jail_status "cleaning:"
+	zset status "cleaning:"
 	msg "Cleaning the build queue"
 	export LOCALBASE=${MYBASE:-/usr/local}
 	while read p; do
