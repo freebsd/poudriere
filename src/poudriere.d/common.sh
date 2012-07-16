@@ -285,12 +285,12 @@ build_port() {
 	local targets="fetch checksum extract patch configure build install package"
 	[ -n "${PORTTESTING}" ] && targets="${targets} deinstall"
 	for phase in ${targets}; do
-		zset status "${PHASE}:${portdir##/usr/ports/}"
+		zset status "${phase}:${portdir##/usr/ports/}"
 		if [ "${phase}" = "fetch" ]; then
 			jail -r ${JAILNAME}
 			jrun 1
 		fi
-		[ "${phase}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${jailfs}@prebuild
+		[ "${phase}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
 		if [ -n "${PORTTESTING}" -a "${phase}" = "deinstall" ]; then
 			msg "Checking shared library dependencies"
 			if [ ${PKGNG} -eq 0 ]; then
