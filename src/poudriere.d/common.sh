@@ -421,7 +421,7 @@ build_pkg() {
 	else
 		# Only build if the depends built fine
 		injail make -C ${portdir} clean
-		if ! build_port ${portdir} ${JAILNAME}; then
+		if ! build_port ${portdir}; then
 			build_failed=1
 		fi
 	fi
