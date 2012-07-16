@@ -49,9 +49,9 @@ zset() {
 	zfs set ${NS}:$1="$2" ${JAILFS}
 }
 
-port_set_method() {
-	[ $# -ne 2 ] && eargs value fsname
-	zfs set ${NS}:method="$2" ${1}
+pzset() {
+	[ $# -ne 2 ] eargs property value
+	zfs set ${NS}:$1="$2" ${PFS}
 }
 
 port_get_method() {

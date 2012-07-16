@@ -60,10 +60,10 @@ while getopts "cFudlp:qf:M:m:" FLAG; do
 			QUIET=1
 			;;
 		f)
-			FS=${OPTARG}
+			PTFS=${OPTARG}
 			;;
 		M)
-			PTBASE=${OPTARG}
+			PTMNT=${OPTARG}
 			;;
 		m)
 			METHOD=${OPTARG}
@@ -98,35 +98,35 @@ fi
 if [ ${CREATE} -eq 1 ]; then
 	# test if it already exists
 	port_exists ${PTNAME} && err 2 "The ports tree ${PTNAME} already exists"
-	test -z ${PTBASE} && PTBASE=${BASEFS:=/usr/local/poudriere}/ports/${PTNAME}
-	test -z ${FS} && FS=${ZPOOL}/poudriere/ports-${PTNAME}
-	port_create_zfs ${PTNAME} ${PTBASE} ${FS}
-	mkdir ${PTBASE}/ports
+	test -z ${PTMNT} && PTMNT=${BASEFS:=/usr/local/poudriere}/ports/${PTNAME}
+	test -z ${PTFS} && PTFS=${ZPOOL}/poudriere/ports-${PTNAME}
+	port_create_zfs ${PTNAME} ${PTMNT} ${PTFS}
+	mkdir ${PTMNT}/ports
 	if [ $FAKE -eq 0 ]; then
 		case ${METHOD} in
 		csup)
-			mkdir ${PTBASE}/db
-			echo "*default prefix=${PTBASE}
-*default base=${PTBASE}/db
+			mkdir ${PTMNT}/db
+			echo "*default prefix=${PTMNT}
+*default base=${PTMNT}/db
 *default release=cvs tag=.
 *default delete use-rel-suffix
-ports-all" > ${PTBASE}/csup
-			csup -z -h ${CSUP_HOST} ${PTBASE}/csup || {
+ports-all" > ${PTMNT}/csup
+			csup -z -h ${CSUP_HOST} ${PTMNT}/csup || {
 				zfs destroy ${FS}
 				err 1 " Fail"
 			}
 			;;
 		portsnap)
-			mkdir ${PTBASE}/snap
+			mkdir ${PTMNT}/snap
 			msg "Extracting portstree \"${PTNAME}\"..."
-			/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch extract || \
-			/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports fetch extract || \
+			/usr/sbin/portsnap -d ${PTMNT}/snap -p ${PTMNT}/ports fetch extract || \
+			/usr/sbin/portsnap -d ${PTMNT}/snap -p ${PTMNT}/ports fetch extract || \
 			{
 				zfs destroy ${FS}
 				err 1 " Fail"
 			}
 		esac
-		port_set_method ${FS} ${METHOD}
+		pzset method ${METHOD}
 	fi
 fi
 
@@ -141,28 +141,29 @@ fi
 if [ ${UPDATE} -eq 1 ]; then
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PTNAME}/ports on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
-	PTBASE=$(port_get_base ${PTNAME})
+	PTMNT=$(port_get_base ${PTNAME})
+	PTFS=$(port_get_fs ${PTNAME})
 	msg "Updating portstree \"${PTNAME}\""
 	METHOD=$(port_get_method ${ZPOOL}/poudriere/ports-${PTNAME})
 	if [ ${METHOD} = "-" ]; then
 		METHOD=portsnap
-		port_set_method ${ZPOOL}/poudriere/ports-${PTNAME} ${METHOD}
+		pzset method ${METHOD}
 	fi
 	case ${METHOD} in
 	csup)
 		[ -z ${CSUP_HOST} ] && err 2 "CSUP_HOST has to be defined in the configuration to use csup"
-		mkdir -p ${PTBASE}/db
-		echo "*default prefix=${PTBASE}
-*default base=${PTBASE}/db
+		mkdir -p ${PTMNT}/db
+		echo "*default prefix=${PTMNT}
+*default base=${PTMNT}/db
 *default release=cvs tag=.
 *default delete use-rel-suffix
-ports-all" > ${PTBASE}/csup
-		csup -z -h ${CSUP_HOST} ${PTBASE}/csup
+ports-all" > ${PTMNT}/csup
+		csup -z -h ${CSUP_HOST} ${PTMNT}/csup
 		;;
 	portsnap|"")
 		PSCOMMAND=fetch
 		[ -t 0 ] || PSCOMMAND=cron
-		/usr/sbin/portsnap -d ${PTBASE}/snap -p ${PTBASE}/ports ${PSCOMMAND} update
+		/usr/sbin/portsnap -d ${PTMNT}/snap -p ${PTMNT}/ports ${PSCOMMAND} update
 		;;
 	*)
 		err 1 "Undefined upgrade method"
