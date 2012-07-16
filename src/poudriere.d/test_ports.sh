@@ -69,8 +69,8 @@ test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -
 
 PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}
 
-JAILMNT=`jail_get_base ${NAME}`
-JAILFS=`jail_get_fs ${NAME}`
+JAILFS=`jail_get_fs ${JAILNAME}`
+JAILMNT=`jail_get_base ${JAILNAME}`
 
 jail_start
 

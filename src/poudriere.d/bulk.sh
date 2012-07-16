@@ -65,8 +65,8 @@ if [ ${KEEP} -ne 1 ]; then
 	echo " done"
 fi
 
-JAILMNT=`jail_get_base ${NAME}`
-JAILFS=`jail_get_fs ${NAME}`
+JAILFS=`jail_get_fs ${JAILNAME}`
+JAILMNT=`jail_get_base ${JAILNAME}`
 
 jail_start
 

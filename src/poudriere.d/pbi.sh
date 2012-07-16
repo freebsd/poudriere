@@ -56,8 +56,8 @@ test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -
 LBASENAME=$(echo ${MYBASE} | sed -e "s|/|_|g")
 PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}-${LBASENAME}
 
-JAILMNT=`jail_get_base ${NAME}`
-JAILFS=`jail_get_fs ${NAME}`
+JAILMNT=`jail_get_base ${JAILNAME}`
+JAILFS=`jail_get_fs ${JAILNAME}`
 
 jail_start
 

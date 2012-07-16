@@ -87,7 +87,7 @@ jail_runs() {
 jail_get_base() {
 	[ $# -ne 1 ] && eargs jailname
 	zfs list -t filesystem -Hd1 -o ${NS}:type,${NS}:name,mountpoint ${ZPOOL}/poudriere | \
-		awk -v n=$1 '$1 == "rootfs && $2 == n  { print $3 }'
+		awk -v n=$1 '$1 == "rootfs" && $2 == n  { print $3 }'
 }
 
 jail_get_version() {
@@ -112,13 +112,13 @@ port_exists() {
 port_get_base() {
 	[ $# -ne 1 ] && eargs portstree_name
 	zfs list -t filesystem -Hd1 -o ${NS}:type,${NS}:name,mountpoint ${ZPOOL}/poudriere | \
-		awk -n n=$1 '$1 == "ports" && $2 == n { print $3 }'
+		awk -v n=$1 '$1 == "ports" && $2 == n { print $3 }'
 }
 
 port_get_fs() {
 	[ $# -ne 1 ] && eargs portstree_name
 	zfs list -t filesystem -Hd1 -o ${NS}:type,${NS}:name,name ${ZPOOL}/poudriere | \
-		awk -n n=$1 '$1 == "ports" && $2 == n { print $3 }'
+		awk -v n=$1 '$1 == "ports" && $2 == n { print $3 }'
 }
 
 fetch_file() {
@@ -143,8 +143,8 @@ jail_create_zfs() {
 }
 
 jrun() {
-	[ $# -ne 3 ] && eargs network
-	local network=$3
+	[ $# -ne 1 ] && eargs network
+	local network=$1
 	local ipargs
 	if [ ${network} -eq 0 ]; then
 		case $IPS in
@@ -204,7 +204,7 @@ jail_stop() {
 	zset status "stop:"
 
 	msg "Stopping jail"
-	jail -r ${name}
+	jail -r ${JAILNAME}
 	msg "Umounting file systems"
 	for mnt in $( mount | awk -v mnt="${JAILMNT}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
 		umount -f ${mnt}

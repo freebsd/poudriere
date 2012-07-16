@@ -63,8 +63,6 @@ delete_jail() {
 	jail_runs ${JAILNAME} && \
 		err 1 "Unable to remove jail ${JAILNAME}: it is running"
 
-	JAILMNT=`jail_get_base ${JAILNAME}`
-	FS=`jail_get_fs ${JAILNAME}`
 	msg_n "Removing ${JAILNAME} jail..."
 	zfs destroy -r ${FS}
 	rmdir ${JAILMNT}
@@ -376,10 +374,11 @@ while getopts "j:v:a:z:m:n:f:M:sdklqciut:" FLAG; do
 done
 
 METHOD=${METHOD:-ftp}
-if [ -n ${JAILNAME} -a ${CREATE} -eq 0 ]; then
-JAILFS=`jail_get_fs ${JAILNAME}`
-JAILMNT=`jail_get_mnt ${JAILNAME}`
+if [ -n ${JAILNAME} ] && [ ${CREATE} -eq 0 ]; then
+	JAILFS=`jail_get_fs ${JAILNAME}`
+	JAILMNT=`jail_get_base ${JAILNAME}`
 fi
+
 
 [ $(( CREATE + LIST + STOP + START + DELETE + INFO + UPDATE )) -lt 1 ] && usage
 
