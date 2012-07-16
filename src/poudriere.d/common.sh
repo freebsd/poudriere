@@ -51,7 +51,7 @@ zset() {
 
 pzset() {
 	[ $# -ne 2 ] eargs property value
-	zfs set ${NS}:$1="$2" ${PFS}
+	zfs set ${NS}:$1="$2" ${PTFS}
 }
 
 port_get_method() {
