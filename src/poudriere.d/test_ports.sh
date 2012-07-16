@@ -84,10 +84,10 @@ fi
 LISTPORTS=$(list_deps ${PORTDIRECTORY} )
 prepare_ports
 zfs snapshot ${JAILFS}@prepkg
-for port in ${queue}; do
-	build_pkg ${port} || {
-		[ $? -eq 2 ] && continue
-	}
+while :; do
+	port=$(next_in_queue)
+	[ -n "${port}" ] || break
+	build_pkg ${port}
 	zfs rollback -r ${JAILFS}@prepkg
 done
 zfs destroy -r ${JAILFS}@prepkg

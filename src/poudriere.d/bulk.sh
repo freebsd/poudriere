@@ -74,7 +74,9 @@ prepare_jail
 
 prepare_ports
 zfs snapshot ${JAILFS}@prepkg
-for port in $queue; do
+while :; do
+	port=$(next_in_queue)
+	[ -n "${port}" ] || break
 	build_pkg ${port}
 	zfs rollback -r ${JAILFS}@prepkg
 done

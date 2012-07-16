@@ -56,7 +56,7 @@ pzset() {
 
 psget() {
 	[ $# -ne 1 ] && eargs property
-	zfs get -H -o value ${NS}:${preperty} ${PTFS}
+	zfs get -H -o value ${NS}:${1} ${PTFS}
 }
 
 sig_handler() {
@@ -391,6 +391,7 @@ build_pkg() {
 	local port=$1
 	local portdir="/usr/ports/${port}"
 	local build_failed=0
+	local name cnt tmp
 
 	# If this port is IGNORED, skip it
 	# This is checked here instead of when building the queue
@@ -426,6 +427,10 @@ build_pkg() {
 		fi
 	fi
 
+	tmp="${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}"
+	name=$(awk -v n=${m} '$1 == n { print $2 }' "${tmp}/cache")
+	rm -rf "${tmp}/pool/${name}"
+	find ${tmp}/pool -name ${name} -type f -delete
 	if [ ${build_failed} -eq 0 ]; then
 		cnt=$(zget stats_built)
 		[ "$cnt" = "-" ] && cnt=0
@@ -440,7 +445,7 @@ build_pkg() {
 		state=$(zget status)
 		export failed="${failed} ${state}"
 	fi
-	zset status "idle:"
+	zset status "next:"
 	log_stop ${LOGS}/${JAILNAME}-${PTNAME}-${PKGNAME}.log
 }
 
@@ -448,9 +453,10 @@ list_deps() {
 	[ $# -ne 1 ] && eargs directory
 	local list="PKG_DEPENDS BUILD_DEPENDS EXTRACT_DEPENDS LIB_DEPENDS PATCH_DEPENDS FETCH_DEPENDS RUN_DEPENDS"
 	local dir=$1
+	local tmp="${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}"
 	local makeargs=""
 	for key in $list; do
-		makergs="${makeargs} -V${key}"
+		makeargs="${makeargs} -V${key}"
 	done
 	[ -d "${PORTSDIR}/${dir}" ] && dir="/usr/ports/${dir}"
 
@@ -458,7 +464,6 @@ list_deps() {
 	local pn
 	injail make -C ${dir} -VPKGNAME $makeargs | tr '\n' ' ' | \
 		sed -e "s,[[:graph:]]*/usr/ports/,,g" -e "s,:[[:graph:]]*,,g" | while read pn pdeps; do
-		[ -n "${cache}" ] && echo "${1} ${pn}" >> ${cache}
 		for d in ${pdeps}; do
 			echo $pdeps
 		done | sort -u
@@ -471,6 +476,7 @@ delete_old_pkgs() {
 	local v2
 	local compiled_options
 	local current_options
+	local cache="${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}/cache"
 	[ ! -d ${PKGDIR}/All ] && return 0
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return 0
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
@@ -516,59 +522,53 @@ delete_old_pkgs() {
 	done
 }
 
-process_deps() {
-	[ $# -ne 4 ] && eargs tmplist deplist tmplist2 port
-	tmplist=$1
-	deplist=$2
-	tmplist2=$3
-	local port=$4
-	egrep -q "^$port$" ${tmplist} && return
-	echo $port >> ${tmplist}
-	deps=0
-	local m
-	for m in `list_deps ${port}`; do
-		process_deps "${tmplist}" "${deplist}" "${tmplist2}" "$m"
-		echo $m $port >> ${deplist}
-		deps=1
+next_in_queue() {
+	local tmp="${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}"
+	find ${tmp}/pool -type d -depth 1 -empty | while read p; do
+		awk -v n=${p##*/} '$2 == n { print $1 }' \
+			${tmp}/cache
+		return
 	done
-	if [ $deps -eq 0 ]; then
-		echo $port >> ${tmplist2}
+}
+
+compute_deps() {
+	[ $# -ne 1 ] && eargs port
+	local port=$1
+	local pn
+	local tmp="${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}"
+	local name=$(awk -v n=${port} '$1 == n { print $2 }' "${tmp}/cache")
+	if [ -n "${name}" ]; then
+		[ -d "${tmp}/pool/${name}" ] && return
 	fi
+	pn=$(injail make -C /usr/ports/${port} -VPKGNAME)
+	echo "${port} ${pn}" >> "${tmp}/cache"
+	mkdir  "${tmp}/pool/${pn}"
+	for m in `list_deps ${port}`; do
+		compute_deps "${m}"
+		name=$(awk -v n=${m} '$1 == n { print $2 }' "${tmp}/cache")
+		touch "${tmp}/pool/${pn}/${name}"
+	done
 }
 
 prepare_ports() {
-	tmplist=$(mktemp ${JAILMNT}/tmp/orderport.XXXXXX)
-	deplist=$(mktemp ${JAILMNT}/tmp/orderport1.XXXXX)
-	tmplist2=$(mktemp ${JAILMNT}/tmp/orderport2.XXXXX)
-	cache=$(mktemp ${JAILMNT}/tmp/cache.XXXXX)
-	touch ${cache}
-	touch ${tmplist}
+	local tmp="${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}"
 	msg "Calculating ports order and dependencies"
-	zset status "orderdeps:"
+	[ -d "${POUDRIERE_DATA}/tmp" ] || mkdir -p "${POUDRIERE_DATA}/tmp"
+	[ ! -d "${tmp}" ] || rm -rf "${tmp}"
+	mkdir -p "${tmp}/pool"
+	touch "${tmp}/cache"
+	zset status "computingdeps:"
 	if [ -z "${LISTPORTS}" ]; then
 		if [ -n "${LISTPKGS}" ]; then
 			for port in `grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}`; do
-				process_deps "${tmplist}" "${deplist}" "$tmplist2" "${port}"
+				compute_deps "${port}"
 			done
 		fi
 	else
 		for port in ${LISTPORTS}; do
-			process_deps "${tmplist}" "${deplist}" "$tmplist2" "${port}"
+			compute_deps "${port}"
 		done
 	fi
-	tsort ${deplist} | while read port; do
-		egrep -q "^${port}$" ${tmplist2} || echo $port >> ${tmplist2}
-	done
-
-	local pn
-	msg "Caching missing port versions"
-	while read port; do
-		if ! egrep -q "^${port} " ${cache}; then
-			pn=$(injail make -C /usr/ports/${port} -VPKGNAME)
-			echo "${port} ${pn}" >> ${cache}
-		fi
-	done < ${tmplist2}
-
 	zset status "sanity:"
 
 	if [ $SKIPSANITY -eq 0 ]; then
@@ -586,18 +586,18 @@ prepare_ports() {
 	zset status "cleaning:"
 	msg "Cleaning the build queue"
 	export LOCALBASE=${MYBASE:-/usr/local}
-	while read p; do
-		pn=$(awk -v o=${p} ' { if ($1 == o) {print $2} }' ${cache})
-		[ ! -f "${PKGDIR}/All/${pn}.${EXT}" ] && queue="${queue} $p"
-	done < ${tmplist2}
+	find ${tmp}/pool -type d -depth 1 | while read p; do
+		pn=${p##*/}
+		if [ -f "${PKGDIR}/All/${pn}.${EXT}" ]; then
+			rm -rf ${p}
+			find ${tmp}/pool -name ${pn} -type f -delete
+		fi
+	done
 
-	rm -f ${tmplist2} ${deplist} ${tmplist}
-	export queue
-	export built=""
-	export failed=""
-	export ignored=""
 	local nbq=0
-	for a in ${queue}; do nbq=$((nbq + 1)); done
+	for a in $(find ${tmp}/pool -type d -depth 1); do
+		nbq=$((nbq + 1))
+	done
 	zset stats_queued "${nbq}"
 	zset stats_built "0"
 	zset stats_failed "0"
