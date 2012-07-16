@@ -280,17 +280,14 @@ sanity_check_pkgs() {
 }
 
 build_port() {
-	[ $# -ne 2 ] && eargs portdir jailname
+	[ $# -ne 1 ] && eargs portdir
 	local portdir=$1
-	local jailname=$2
-	local jailfs=`jail_get_fs ${jailname}`
-	local jailbase=`jail_get_base ${jailname}`
 	local targets="fetch checksum extract patch configure build install package"
 	[ -n "${PORTTESTING}" ] && targets="${targets} deinstall"
 	for phase in ${targets}; do
 		zset status "${PHASE}:${portdir##/usr/ports/}"
 		if [ "${phase}" = "fetch" ]; then
-			jail -r ${jailname}
+			jail -r ${JAILNAME}
 			jrun 1
 		fi
 		[ "${phase}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${jailfs}@prebuild
@@ -298,7 +295,7 @@ build_port() {
 			msg "Checking shared library dependencies"
 			if [ ${PKGNG} -eq 0 ]; then
 				PLIST="/var/db/pkg/${PKGNAME}/+CONTENTS"
-				grep -v "^@" ${jailbase}${PLIST} | \
+				grep -v "^@" ${JAILMNT}${PLIST} | \
 					sed -e "s,^,${PREFIX}/," | \
 					xargs injail ldd 2>&1 | \
 					grep -v "not a dynamic executable" | \
@@ -313,7 +310,7 @@ build_port() {
 		injail env ${PKGENV} ${PORT_FLAGS} make -C ${portdir} ${phase} || return 1
 
 		if [ "${phase}" = "checksum" ]; then
-			jail -r ${jailname}
+			jail -r ${JAILNAME}
 			jrun 0
 		fi
 		if [ -n "${PORTTESTING}" -a  "${phase}" = "deinstall" ]; then
@@ -335,9 +332,9 @@ build_port() {
 				local mod=$(mktemp ${jailbase}/tmp/mod.XXXXXX)
 				local mod1=$(mktemp ${jailbase}/tmp/mod1.XXXXXX)
 				local die=0
-				zfs diff -FH ${jailfs}@prebuild ${jailfs} | \
+				zfs diff -FH ${JAILFS}@prebuild ${JAILFS} | \
 					while read mod type path; do
-					local ppath=`echo "$path" | sed -e "s,^${jailbase},," -e "s,^${PREFIX}/,," -e "s,^share/${portname},%%DATADIR%%," -e "s,^etc,%%ETCDIR%%,"`
+					local ppath=`echo "$path" | sed -e "s,^${JAILMNT},," -e "s,^${PREFIX}/,," -e "s,^share/${portname},%%DATADIR%%," -e "s,^etc,%%ETCDIR%%,"`
 					case "$ppath" in
 					/var/db/pkg/*) continue;;
 					/var/run/*) continue;;
@@ -382,10 +379,10 @@ build_port() {
 			fi
 		fi
 	done
-	jail -r ${jailbase}
+	jail -r ${JAILNAME}
 	jrun 0
-	zset status "idle:"
-	zfs destroy ${jailfs}@prebuild || :
+	zset status "next:"
+	zfs destroy ${JAILFS}@prebuild || :
 	return 0
 }
 
