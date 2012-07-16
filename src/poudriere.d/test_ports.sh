@@ -40,7 +40,7 @@ while getopts "d:o:cnj:p:s" FLAG; do
 			;;
 		j)
 			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
-			JAILNAMES="${JAILNAMES} ${OPTARG}"
+			JAILNAME="${OPTARG}"
 			;;
 		p)
 			PTNAME=${OPTARG}
@@ -65,79 +65,79 @@ else
 	PORTDIRECTORY="/usr/ports/${ORIGIN}"
 fi
 
-test -z "${JAILNAMES}" && JAILNAMES=`jail_ls`
+test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
 
-for JAILNAME in ${JAILNAMES}; do
-	PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}
+PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}
 
+JAILMNT=`jail_get_base ${NAME}`
+JAILFS=`jail_get_fs ${NAME}`
 
-	jail_start ${JAILNAME}
+jail_start
 
-	prepare_jail
+prepare_jail
 
-	if [ -z ${ORIGIN} ]; then
-		mkdir -p ${JAILBASE}/${PORTDIRECTORY}
-		mount -t nullfs ${HOST_PORTDIRECTORY} ${JAILBASE}/${PORTDIRECTORY}
-	fi
+if [ -z ${ORIGIN} ]; then
+	mkdir -p ${JAILMNT}/${PORTDIRECTORY}
+	mount -t nullfs ${HOST_PORTDIRECTORY} ${JAILMNT}/${PORTDIRECTORY}
+fi
 
-	LISTPORTS=$(list_deps ${PORTDIRECTORY} )
-	prepare_ports
-	zfs snapshot ${JAILFS}@prepkg
-	for port in ${queue}; do
-		build_pkg ${port} || {
-			[ $? -eq 2 ] && continue
-		}
-		zfs rollback -r ${JAILFS}@prepkg
-	done
-	zfs destroy -r ${JAILFS}@prepkg
-	injail make -C ${PORTDIRECTORY} pkg-depends extract-depends \
-		fetch-depends patch-depends build-depends lib-depends
-
-	PKGNAME=`injail make -C ${PORTDIRECTORY} -VPKGNAME`
-	LOCALBASE=`injail make -C ${PORTDIRECTORY} -VLOCALBASE`
-	PREFIX=${LOCALBASE}
-	if [ "${USE_PORTLINT}" = "yes" ]; then
-		[ ! -x `which portlint` ] && err 2 "First install portlint if you want USE_PORTLINT to work as expected"
-		set +e
-		msg "Portlint check"
-		cd ${JAILBASE}/${PORTDIRECTORY} && portlint -C | tee -a ${LOGS}/${PKGNAME}-${JAILNAME}.portlint.log
-		set -e
-	fi
-	[ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/tmp}/`echo ${PKGNAME} | tr '[,+]' _`"
-	PORT_FLAGS="NO_DEPENDS=yes PREFIX=${PREFIX}"
-	msg "Building with flags: ${PORT_FLAGS}"
-	msg "Cleaning workspace"
-	injail make -C ${PORTDIRECTORY} clean
-	[ $CONFIGSTR -eq 1 ] && injail make -C ${PORTDIRECTORY} config
-
-	if [ -d ${JAILBASE}${PREFIX} ]; then
-		msg "Removing existing ${PREFIX}"
-		[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${JAILBASE}${PREFIX}
-	fi
-
-	msg "Populating PREFIX"
-	mkdir -p ${JAILBASE}${PREFIX}
-	injail /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${PREFIX} >/dev/null
-
-	[ $ZVERSION -lt 28 ] && \
-		find ${JAILBASE}${LOCALBASE}/ -type d | sed "s,^${JAILBASE}${LOCALBASE}/,," | sort > ${JAILBASE}${PREFIX}.PLIST_DIRS.before
-
-	PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
-	PORTTESTING=yes
-	log_start ${LOGS}/testport-${PKGNAME}-${JAILNAME}.log
-	build_port ${PORTDIRECTORY} ${JAILNAME}
-
-	msg "Installing from package"
-	injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${EXT}
-	msg "Deinstalling package"
-	injail ${PKG_DELETE} ${PKGNAME}
-
-	msg "Cleaning up"
-	injail make -C ${PORTDIRECTORY} clean
-
-	msg "Removing existing ${PREFIX} dir"
-	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${JAILBASE}${PREFIX} ${JAILBASE}${PREFIX}.PLIST_DIRS.before ${JAILBASE}${PREFIX}.PLIST_DIRS.after
-	log_stop ${LOGS}/testport-${PKGNAME}-${JAILNAME}.log
-
-	cleanup
+LISTPORTS=$(list_deps ${PORTDIRECTORY} )
+prepare_ports
+zfs snapshot ${JAILFS}@prepkg
+for port in ${queue}; do
+	build_pkg ${port} || {
+		[ $? -eq 2 ] && continue
+	}
+	zfs rollback -r ${JAILFS}@prepkg
 done
+zfs destroy -r ${JAILFS}@prepkg
+injail make -C ${PORTDIRECTORY} pkg-depends extract-depends \
+	fetch-depends patch-depends build-depends lib-depends
+
+PKGNAME=`injail make -C ${PORTDIRECTORY} -VPKGNAME`
+LOCALBASE=`injail make -C ${PORTDIRECTORY} -VLOCALBASE`
+PREFIX=${LOCALBASE}
+if [ "${USE_PORTLINT}" = "yes" ]; then
+	[ ! -x `which portlint` ] && err 2 "First install portlint if you want USE_PORTLINT to work as expected"
+	set +e
+	msg "Portlint check"
+	cd ${JAILMNT}/${PORTDIRECTORY} && portlint -C | tee -a ${LOGS}/${PKGNAME}-${JAILNAME}.portlint.log
+	set -e
+fi
+[ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/tmp}/`echo ${PKGNAME} | tr '[,+]' _`"
+PORT_FLAGS="NO_DEPENDS=yes PREFIX=${PREFIX}"
+msg "Building with flags: ${PORT_FLAGS}"
+msg "Cleaning workspace"
+injail make -C ${PORTDIRECTORY} clean
+[ $CONFIGSTR -eq 1 ] && injail make -C ${PORTDIRECTORY} config
+
+if [ -d ${JAILMNT}${PREFIX} ]; then
+	msg "Removing existing ${PREFIX}"
+	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${JAILMNT}${PREFIX}
+fi
+
+msg "Populating PREFIX"
+mkdir -p ${JAILMNT}${PREFIX}
+injail /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${PREFIX} >/dev/null
+
+[ $ZVERSION -lt 28 ] && \
+	find ${JAILMNT}${LOCALBASE}/ -type d | sed "s,^${JAILMNT}${LOCALBASE}/,," | sort > ${JAILMNT}${PREFIX}.PLIST_DIRS.before
+
+PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
+PORTTESTING=yes
+log_start ${LOGS}/testport-${PKGNAME}-${JAILNAME}.log
+build_port ${PORTDIRECTORY} ${JAILNAME}
+
+msg "Installing from package"
+injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${EXT}
+msg "Deinstalling package"
+injail ${PKG_DELETE} ${PKGNAME}
+
+msg "Cleaning up"
+injail make -C ${PORTDIRECTORY} clean
+
+msg "Removing existing ${PREFIX} dir"
+[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${JAILMNT}${PREFIX} ${JAILMNT}${PREFIX}.PLIST_DIRS.before ${JAILMNT}${PREFIX}.PLIST_DIRS.after
+log_stop ${LOGS}/testport-${PKGNAME}-${JAILNAME}.log
+
+cleanup
