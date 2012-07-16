@@ -92,7 +92,7 @@ update_jail() {
 	METHOD=`zget method`
 	if [ "${METHOD}" = "-" ]; then
 		METHOD="ftp"
-		zfs_set poudriere:method "ftp"
+		zset method "ftp"
 	fi
 	case ${METHOD} in
 	ftp)
@@ -105,7 +105,7 @@ update_jail() {
 		else
 			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update -r ${TORELEASE} upgrade install || err 1 "Fail to upgrade system"
 			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update install || err 1 "Fail to upgrade system"
-			zfs_set poudriere:version "${TORELEASE}"
+			zset version "${TORELEASE}"
 		fi
 		zfs destroy ${JAILFS}@clean
 		zfs snapshot ${JAILFS}@clean

@@ -44,16 +44,9 @@ zget() {
 	zfs get -H -o value ${NS}:${1} ${JAILFS}
 }
 
-zfs_get() {
-	[ $# -ne 1 ] && eargs zfsproperty
-	[ -z "${JAILFS}" ] && err 1 "No JAILFS defined"
-	zfs get -H -o value ${1} ${JAILFS}
-}
-
-zfs_set() {
-	[ $# -ne 2 ] && eargs zfsproperty value
-	[ -z "${JAILFS}" ] && err 1 "No JAILFS defined"
-	zfs set $1="$2" ${JAILFS}
+zset() {
+	[ $# -ne 2 ] && eargs property value
+	zfs set ${NS}:$1="$2" ${JAILFS}
 }
 
 port_set_method() {
@@ -68,7 +61,7 @@ port_get_method() {
 
 jail_status() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs_set ${NS}:status "$1"
+	zset status "$1"
 }
 
 sig_handler() {
@@ -309,7 +302,7 @@ build_port() {
 	local targets="fetch checksum extract patch configure build install package"
 	[ -n "${PORTTESTING}" ] && targets="${targets} deinstall"
 	for phase in ${targets}; do
-		zfs_set "${NS}:status" "${PHASE}:${portdir##/usr/ports/}"
+		zset status "${PHASE}:${portdir##/usr/ports/}"
 		if [ "${phase}" = "fetch" ]; then
 			jail -r ${jailname}
 			jrun ${jailname} ${jailbase} 1
@@ -340,7 +333,7 @@ build_port() {
 		if [ -n "${PORTTESTING}" -a  "${phase}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
 			PREFIX=`injail make -C ${portdir} -VPREFIX`
-			zfs_set "${NS}:status" "fscheck:${portdir##/usr/ports/}"
+			zset status "fscheck:${portdir##/usr/ports/}"
 			if [ $ZVERSION -lt 28 ]; then
 				find ${jailbase}${PREFIX} ! -type d | \
 					sed -e "s,^${jailbase}${PREFIX}/,," | sort
@@ -405,7 +398,7 @@ build_port() {
 	done
 	jail -r ${jailbase}
 	jrun ${jailname} ${jailbase} 0
-	zfs_set "${NS}:status" "idle:"
+	zset status "idle:"
 	zfs destroy ${jailfs}@prebuild || :
 	return 0
 }
@@ -426,7 +419,7 @@ build_pkg() {
 		cnt=$(zget stats_ignored)
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
-		zfs_set "${NS}:stats_ignored" "$cnt"
+		zset stats_ignored "$cnt"
 		export ignored="${ignored} ${port}"
 		return
 	fi
@@ -438,7 +431,7 @@ build_pkg() {
 	PKGNAME=$(injail make -C ${portdir} -VPKGNAME)
 	log_start ${LOGS}/${JAILNAME}-${PTNAME}-${PKGNAME}.log
 
-	zfs_set "${NS}:status" "depends:${port}"
+	zset status "depends:${port}"
 	if ! injail make -C ${portdir} pkg-depends fetch-depends extract-depends \
 		patch-depends build-depends lib-depends; then
 		build_failed=1
@@ -454,13 +447,13 @@ build_pkg() {
 		cnt=$(zget stats_built)
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
-		zfs_set "${NS}:stats_built" "$cnt"
+		zset stats_built "$cnt"
 		export built="${built} ${port}"
 	else
 		cnt=$(zget stats_failed)
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
-		zfs_set "${NS}:stats_failed" "$cnt"
+		zset stats_failed "$cnt"
 		state=$(zget status)
 		export failed="${failed} ${state}"
 	fi
@@ -622,10 +615,10 @@ prepare_ports() {
 	export ignored=""
 	local nbq=0
 	for a in ${queue}; do nbq=$((nbq + 1)); done
-	zfs_set "${NS}:stats_queued" "${nbq}"
-	zfs_set "${NS}:stats_built" "0"
-	zfs_set "${NS}:stats_failed" "0"
-	zfs_set "${NS}:stats_ignored" "0"
+	zset stats_queued "${nbq}"
+	zset stats_built "0"
+	zset stats_failed "0"
+	zset stats_ignored "0"
 }
 
 prepare_jail() {
