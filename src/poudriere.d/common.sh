@@ -102,11 +102,6 @@ jail_get_fs() {
 		awk -v n=$1 '$1 == "rootfs" && $2 == n { print $3 }'
 }
 
-jail_ls() {
-	zfs list -t filesystem -Hd1 -o ${NS}:type,${NS}:name ${ZPOOL}/poudriere | \
-		awk '$1 == "rootfs" { print $2 }'
-}
-
 port_exists() {
 	[ $# -ne 1 ] && eargs portstree_name
 	zfs list -t filesystem -Hd1 -o ${NS}:type,${NS}:name,name ${ZPOOL}/poudriere | \
