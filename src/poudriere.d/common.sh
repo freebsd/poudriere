@@ -81,7 +81,7 @@ sig_handler() {
 jail_exists() {
 	[ $# -ne 1 ] && eargs jailname
 	zfs list -t filesystem -Hd1 -o ${NS}:type,${NS}:name ${ZPOOL}/poudriere | \
-		egrep -q "^rootfs[[:space:]]$1$" && return 0
+		awk -v n=$1 'BEGIN { ret = 1 } $1 == "rootfs" && $2 == n { ret = 0; } END { exit ret }' && return 0
 	return 1
 }
 
@@ -99,43 +99,43 @@ jail_running_base() {
 jail_get_base() {
 	[ $# -ne 1 ] && eargs jailname
 	zfs list -t filesystem -Hd1 -o ${NS}:type,${NS}:name,mountpoint ${ZPOOL}/poudriere | \
-		awk '/^rootfs[[:space:]]'$1'[[:space:]]/ { print $3 }'
+		awk -v n=$1 '$1 == "rootfs && $2 == n  { print $3 }'
 }
 
 jail_get_version() {
 	[ $# -ne 1 ] && eargs jailname
 	zfs list -t filesystem -Hd1 -o ${NS}:type,${NS}:name,${NS}:version ${ZPOOL}/poudriere | \
-		awk '/^rootfs[[:space:]]'$1'[[:space:]]/ { print $3 }'
+		awk -v n=$1 '$1 == "rootfs" && $2 == n { print $3 }'
 }
 
 jail_get_fs() {
 	[ $# -ne 1 ] && eargs jailname
 	zfs list -t filesystem -Hd1 -o ${NS}:type,${NS}:name,name ${ZPOOL}/poudriere | \
-		awk '/^rootfs[[:space:]]'$1'[[:space:]]/ { print $3 }'
+		awk -v n=$1 '$1 == "rootfs" && $2 == n { print $3 }'
 }
 
 jail_ls() {
 	zfs list -t filesystem -Hd1 -o ${NS}:type,${NS}:name ${ZPOOL}/poudriere | \
-		awk '/^rootfs/ { print $2 }'
+		awk '$1 == "rootfs" { print $2 }'
 }
 
 port_exists() {
 	[ $# -ne 1 ] && eargs portstree_name
 	zfs list -t filesystem -Hd1 -o ${NS}:type,${NS}:name,name ${ZPOOL}/poudriere | \
-		egrep -q "^ports[[:space:]]$1" && return 0
+		awk -v n=$1 'BEGIN { ret = 1 } $1 == "ports" && $2 == n { ret = 0; } END { exit ret }' && return 0
 	return 1
 }
 
 port_get_base() {
 	[ $# -ne 1 ] && eargs portstree_name
 	zfs list -t filesystem -Hd1 -o ${NS}:type,${NS}:name,mountpoint ${ZPOOL}/poudriere | \
-		awk '/^ports[[:space:]]'$1'/ { print $3 }'
+		awk -n n=$1 '$1 == "ports" && $2 == n { print $3 }'
 }
 
 port_get_fs() {
 	[ $# -ne 1 ] && eargs portstree_name
 	zfs list -t filesystem -Hd1 -o ${NS}:type,${NS}:name,name ${ZPOOL}/poudriere | \
-		awk '/^ports[[:space:]]'$1'/ { print $3 }'
+		awk -n n=$1 '$1 == "ports" && $2 == n { print $3 }'
 }
 
 fetch_file() {
