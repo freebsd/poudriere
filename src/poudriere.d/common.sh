@@ -39,6 +39,11 @@ log_stop() {
 	rm -f $1.pipe
 }
 
+zget() {
+	[ $# -ne 1 ] && eargs property
+	zfs get -H -o value ${NS}:${1} ${JAILFS}
+}
+
 zfs_get() {
 	[ $# -ne 1 ] && eargs zfsproperty
 	[ -z "${JAILFS}" ] && err 1 "No JAILFS defined"
@@ -418,7 +423,7 @@ build_pkg() {
 	local ignore="$(injail make -C ${portdir} -VIGNORE)"
 	if [ -n "$ignore" ]; then
 		msg "Ignoring ${port}: $ignore"
-		cnt=$(zfs_get ${NS}:stats_ignored)
+		cnt=$(zget stats_ignored)
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
 		zfs_set "${NS}:stats_ignored" "$cnt"
@@ -446,17 +451,17 @@ build_pkg() {
 	fi
 
 	if [ ${build_failed} -eq 0 ]; then
-		cnt=$(zfs_get ${NS}:stats_built)
+		cnt=$(zget stats_built)
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
 		zfs_set "${NS}:stats_built" "$cnt"
 		export built="${built} ${port}"
 	else
-		cnt=$(zfs_get ${NS}:stats_failed)
+		cnt=$(zget stats_failed)
 		[ "$cnt" = "-" ] && cnt=0
 		cnt=$(( cnt + 1))
 		zfs_set "${NS}:stats_failed" "$cnt"
-		state=$(zfs_get ${NS}:status)
+		state=$(zget status)
 		export failed="${failed} ${state}"
 	fi
 	jail_status "idle:"

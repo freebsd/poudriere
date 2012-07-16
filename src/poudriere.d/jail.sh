@@ -33,10 +33,10 @@ info_jail() {
 	test -z ${JAILNAME} && usage
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	JAILFS=`jail_get_fs ${JAILNAME}`
-	nbb=$(zfs_get poudriere:stats_built)
-	nbf=$(zfs_get poudriere:stats_failed)
-	nbi=$(zfs_get poudriere:stats_ignored)
-	nbq=$(zfs_get poudriere:stats_queued)
+	nbb=$(zget stats_built)
+	nbf=$(zget stats_failed)
+	nbi=$(zget stats_ignored)
+	nbq=$(zget stats_queued)
 	tobuild=$((nbq - nbb - nbf - nbi))
 	zfs list -H -o poudriere:type,poudriere:name,poudriere:version,poudriere:arch,poudriere:stats_built,poudriere:stats_failed,poudriere:stats_ignored,poudriere:status ${JAILFS}| \
 		awk -v q="$nbq" -v tb="$tobuild" '/^rootfs/  {
@@ -89,7 +89,7 @@ update_jail() {
 	jail_runs ${JAILNAME} && \
 		err 1 "Unable to remove jail ${JAILNAME}: it is running"
 
-	METHOD=`zfs_get poudriere:method`
+	METHOD=`zget method`
 	if [ "${METHOD}" = "-" ]; then
 		METHOD="ftp"
 		zfs_set poudriere:method "ftp"
@@ -113,14 +113,14 @@ update_jail() {
 		;;
 	csup)
 		msg "Upgrading using csup"
-		RELEASE=`zfs_get poudriere:version`
+		RELEASE=`zget version`
 		install_from_csup
 		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
 		zfs destroy ${JAILFS}@clean
 		zfs snapshot ${JAILFS}@clean
 		;;
 	svn)
-		RELEASE=`zfs_get poudriere:version`
+		RELEASE=`zget version`
 		install_from_svn
 		yes | make -C ${JAILMNT} delete-old delete-old-libs DESTDIR=${JAILMNT}
 		zfs destroy ${JAILFS}@clean

@@ -80,9 +80,9 @@ for port in $queue; do
 done
 zfs destroy -r ${JAILFS}@prepkg
 
-nbfailed=$(zfs_get poudriere:stats_failed)
-nbignored=$(zfs_get poudriere:stats_ignored)
-nbbuilt=$(zfs_get poudriere:stats_built)
+nbfailed=$(zget stats_failed)
+nbignored=$(zget stats_ignored)
+nbbuilt=$(zget stats_built)
 [ "$nbfailed" = "-" ] && nbfailed=0
 [ "$nbignored" = "-" ] && nbignored=0
 [ "$nbbuilt" = "-" ] && nbbuilt=0
