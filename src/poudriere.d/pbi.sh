@@ -60,11 +60,11 @@ for JAILNAME in ${JAILNAMES}; do
 	jail_start ${JAILNAME}
 
 	prepare_jail
-	mkdir -p ${JAILBASE}/pbi
-	mount -t nullfs ${PBIDIRECTORY} ${JAILBASE}/pbi
+	mkdir -p ${JAILMNT}/pbi
+	mount -t nullfs ${PBIDIRECTORY} ${JAILMNT}/pbi
 
-	echo "LOCALBASE=${MYBASE}" >> ${JAILBASE}/etc/make.conf
-	echo "WITH_PKGNG=yes" >> ${JAILBASE}/etc/make.conf
+	echo "LOCALBASE=${MYBASE}" >> ${JAILMNT}/etc/make.conf
+	echo "WITH_PKGNG=yes" >> ${JAILMNT}/etc/make.conf
 
 	PORTDIRECTORY=/usr/ports/${ORIGIN}
 	LISTPORTS=$(list_deps ${PORTDIRECTORY} )
@@ -92,13 +92,13 @@ for JAILNAME in ${JAILNAMES}; do
 	fi
 	zfs diff -FH ${JAILFS}@prepkg ${JAILFS}  | \
 		while read mod type path; do
-			PPATH=`echo "$path" | sed -e "s,^${JAILBASE},," -e "s,^${LOCALBASE}/,,"`
+			PPATH=`echo "$path" | sed -e "s,^${JAILMNT},," -e "s,^${LOCALBASE}/,,"`
 			case $mod$type in
 				+/)
 					case "${PPATH}" in
 						/*) continue ;;
 						*)
-							echo "  ${LOCALBASE}/${PPATH}: n" >> ${JAILBASE}/dirs
+							echo "  ${LOCALBASE}/${PPATH}: n" >> ${JAILMNT}/dirs
 							;;
 					esac
 					;;
@@ -107,10 +107,10 @@ for JAILNAME in ${JAILNAMES}; do
 						*.h|*.a|*.la) continue ;;
 						*)
 							if [ $REAL -eq 0 ]; then
-								SUM=`test -f ${JAILBASE}/${LOCALBASE}/${PPATH} && sha256 -q ${JAILBASE}/${LOCALBASE}/${PPATH} || echo '-'`
-								echo "  ${LOCALBASE}/${PPATH}: ${SUM}" >> ${JAILBASE}/files
+								SUM=`test -f ${JAILMNT}/${LOCALBASE}/${PPATH} && sha256 -q ${JAILMNT}/${LOCALBASE}/${PPATH} || echo '-'`
+								echo "  ${LOCALBASE}/${PPATH}: ${SUM}" >> ${JAILMNT}/files
 							else
-								echo "${LOCALBASE}/${PPATH}" >> ${JAILBASE}/files
+								echo "${LOCALBASE}/${PPATH}" >> ${JAILMNT}/files
 							fi
 							;;
 					esac
@@ -130,38 +130,38 @@ arch: ${ABI}
 desc: |-
   This is a test
 files:
-" >> ${JAILBASE}/+MANIFEST
-		cat  ${JAILBASE}/+MANIFEST
-		sort ${JAILBASE}/files >> ${JAILBASE}/+MANIFEST
-		echo "directories:" >> ${JAILBASE}/+MANIFEST
-		sort -r ${JAILBASE}/dirs >> ${JAILBASE}/+MANIFEST
-		sed -i '' -e "/^[ \t]*$/d" ${JAILBASE}/+MANIFEST
-		/usr/local/sbin/pkg create -m ${JAILBASE}/ -r ${JAILBASE} ${PKGNAME}
+" >> ${JAILMNT}/+MANIFEST
+		cat  ${JAILMNT}/+MANIFEST
+		sort ${JAILMNT}/files >> ${JAILMNT}/+MANIFEST
+		echo "directories:" >> ${JAILMNT}/+MANIFEST
+		sort -r ${JAILMNT}/dirs >> ${JAILMNT}/+MANIFEST
+		sed -i '' -e "/^[ \t]*$/d" ${JAILMNT}/+MANIFEST
+		/usr/local/sbin/pkg create -m ${JAILMNT}/ -r ${JAILMNT} ${PKGNAME}
 	else
-		injail tar cfJ /data.txz -s ",${MYBASE},,g" `awk '{ printf("%s ", $0) } END { printf("\n") }' ${JAILBASE}/files`
-		mkdir ${JAILBASE}/head
-		echo ${PBI_PROGNAME} > ${JAILBASE}/head/pbi_name
-		echo ${PKGNAME##*-} > ${JAILBASE}/head/pbi_version
-		echo ${PBI_PROGAUTHOR:-unknown} > ${JAILBASE}/head/pbi_author
-		echo ${PBI_PROGWEB:-unknown} > ${JAILBASE}/head/pbi_web
-		echo ${ABI} > ${JAILBASE}/head/pbi_arch
-		wc -l ${JAILBASE}/files | awk '{ print $1 }' > ${JAILBASE}/head/pbi_archive_count
-		injail uname -r > ${JAILBASE}/head/pbi_fbsdver
-		echo ${MYBASE} > ${JAILBASE}/head/pbi_defaultpath
-		date "+%Y%m%d %H%M%S" > ${JAILBASE}/head/pbi_mdate
-		sha256 -q ${JAILBASE}/data.txz > ${JAILBASE}/head/pbi_archivesum
-		[ -e "${JAILBASE}/pbi/resources/gui_banner.png" ] && cp ${JAILBASE}/pbi/resources/gui_banner.png ${JAILBASE}/head/top_banner.png
-		[ -e "${JAILBASE}/pbi/resources/gui_sidebanner.png" ] && cp ${JAILBASE}/pbi/resources/gui_banner.png ${JAILBASE}/head/side-banner.png
-		if [ -n "${PBI_PROGICON}" -a -e "${JAILBASE}/pbi/resources/${PBI_PROGICON}" ]; then
-			cp "${JAILBASE}/pbi/resources/${PBI_PROGICON}" "${PBI_HEADERDIR}/pbi_icon.${PBI_PROGICON##*.}"
+		injail tar cfJ /data.txz -s ",${MYBASE},,g" `awk '{ printf("%s ", $0) } END { printf("\n") }' ${JAILMNT}/files`
+		mkdir ${JAILMNT}/head
+		echo ${PBI_PROGNAME} > ${JAILMNT}/head/pbi_name
+		echo ${PKGNAME##*-} > ${JAILMNT}/head/pbi_version
+		echo ${PBI_PROGAUTHOR:-unknown} > ${JAILMNT}/head/pbi_author
+		echo ${PBI_PROGWEB:-unknown} > ${JAILMNT}/head/pbi_web
+		echo ${ABI} > ${JAILMNT}/head/pbi_arch
+		wc -l ${JAILMNT}/files | awk '{ print $1 }' > ${JAILMNT}/head/pbi_archive_count
+		injail uname -r > ${JAILMNT}/head/pbi_fbsdver
+		echo ${MYBASE} > ${JAILMNT}/head/pbi_defaultpath
+		date "+%Y%m%d %H%M%S" > ${JAILMNT}/head/pbi_mdate
+		sha256 -q ${JAILMNT}/data.txz > ${JAILMNT}/head/pbi_archivesum
+		[ -e "${JAILMNT}/pbi/resources/gui_banner.png" ] && cp ${JAILMNT}/pbi/resources/gui_banner.png ${JAILMNT}/head/top_banner.png
+		[ -e "${JAILMNT}/pbi/resources/gui_sidebanner.png" ] && cp ${JAILMNT}/pbi/resources/gui_banner.png ${JAILMNT}/head/side-banner.png
+		if [ -n "${PBI_PROGICON}" -a -e "${JAILMNT}/pbi/resources/${PBI_PROGICON}" ]; then
+			cp "${JAILMNT}/pbi/resources/${PBI_PROGICON}" "${PBI_HEADERDIR}/pbi_icon.${PBI_PROGICON##*.}"
 		fi
 		injail tar cjf /head.tbz -C head .
-		injail cat /head.tbz > ${JAILBASE}/${PKGNAME}.pbi
-		echo -e "\n_PBI_ICON_" >> ${JAILBASE}/${PKGNAME}.pbi
-		injail cat /pbi/resources/${PBI_PROGICON} >> ${JAILBASE}/${PKGNAME}.pbi
-		echo -e "\n_PBI_ARCHIVE_" >> ${JAILBASE}/${PKGNAME}.pbi
-		injail cat /data.txz >> ${JAILBASE}/${PKGNAME}.pbi
-		mv ${JAILBASE}/${PKGNAME}.pbi .
+		injail cat /head.tbz > ${JAILMNT}/${PKGNAME}.pbi
+		echo -e "\n_PBI_ICON_" >> ${JAILMNT}/${PKGNAME}.pbi
+		injail cat /pbi/resources/${PBI_PROGICON} >> ${JAILMNT}/${PKGNAME}.pbi
+		echo -e "\n_PBI_ARCHIVE_" >> ${JAILMNT}/${PKGNAME}.pbi
+		injail cat /data.txz >> ${JAILMNT}/${PKGNAME}.pbi
+		mv ${JAILMNT}/${PKGNAME}.pbi .
 	fi
 
 	zfs rollback ${JAILFS}@prepkg

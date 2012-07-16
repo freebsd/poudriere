@@ -86,14 +86,9 @@ jail_exists() {
 }
 
 jail_runs() {
-	[ $# -ne 1 ] && eargs jailname
-	jls -qj ${1} name > /dev/null 2>&1 && return 0
+	[ $# -ne 0 ] && eargs
+	jls -qj ${JAILNAME} name > /dev/null 2>&1 && return 0
 	return 1
-}
-
-jail_running_base() {
-	[ $# -ne 1 ] && eargs jailname
-	jls -qj ${1} path
 }
 
 jail_get_base() {
@@ -159,10 +154,8 @@ jail_create_zfs() {
 		-o mountpoint=${mnt} ${fs} || err 1 " Fail" && echo " done"
 }
 
-jail_run() {
-	[ $# -ne 3 ] && eargs jname jpath network
-	local jname=$1
-	local jpath=$2
+jrun() {
+	[ $# -ne 3 ] && eargs network
 	local network=$3
 	local ipargs
 	if [ ${network} -eq 0 ]; then
@@ -178,46 +171,40 @@ jail_run() {
 		11) ipargs="ip4=inherit ip6=inherit" ;;
 		esac
 	fi
-	jail -c persist name=${jname} ${ipargs} path=${jpath} host.hostname=${jname} \
-		allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
-
+	jail -c persist name=${JAILNAME} ${ipargs} path=${JAILMNT} \
+		host.hostname=${JAILNAME} allow.sysvipc allow.mount \
+		allow.socket_af allow.raw_sockets allow.chflags
 }
-jail_start() {
-	[ $# -ne 1 ] && earsg jailname
-	NAME=$1
-	export JAILBASE=`jail_get_base ${NAME}`
-	export JAILFS=`jail_get_fs ${NAME}`
 
+jail_start() {
+	[ $# -ne 0 ] && earsg
 	local NEEDFS="linprocfs linsysfs nullfs procfs"
 	[ -n "${USE_TMPFS}" ] && NEEDFS="${NEEDFS} tmpfs"
 	for fs in ${NEEDFS}; do
 		lsvfs $fs >/dev/null 2>&1 || kldload $fs
 	done
 	sysctl -n compat.linux.osrelease >/dev/null 2>&1 || kldload linux
-	jail_exists ${NAME} || err 1 "No such jail: ${NAME}"
-	jail_runs ${NAME} && err 1 "jail already running: ${NAME}"
+	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
+	jail_runs && err 1 "jail already running: ${JAILNAME}"
 	jail_status "start:"
-	zfs rollback -r ${ZPOOL}/poudriere/${NAME}@clean
-	touch /var/run/poudriere-${NAME}.lock
-	export UNAME_r=`jail_get_version ${NAME}`
-	export UNAME_v="FreeBSD ${UNAME_r}"
-	MNT=`jail_get_base ${NAME}`
+	zfs rollback -r ${ZPOOL}/poudriere/${JAILNAME}@clean
+	touch /var/run/poudriere-${JAILNAME}.lock
 
 	. /etc/defaults/rc.conf
 
 	msg "Mounting devfs"
-	mount -t devfs devfs ${MNT}/dev
+	mount -t devfs devfs ${JAILMNT}/dev
 	msg "Mounting /proc"
-	mkdir -p ${MNT}/proc
-	mount -t procfs proc ${MNT}/proc
+	mkdir -p ${JAILMNT}/proc
+	mount -t procfs proc ${JAILMNT}/proc
 	msg "Mounting linuxfs"
-	mkdir -p ${MNT}/compat/linux/proc
-	mkdir -p ${MNT}/compat/linux/sys
-	mount -t linprocfs linprocfs ${MNT}/compat/linux/proc
-	mount -t linsysfs linsysfs ${MNT}/compat/linux/sys
-	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${MNT}/etc/"
-	msg "Starting jail ${NAME}"
-	jail_run ${NAME} ${MNT} 0
+	mkdir -p ${JAILMNT}/compat/linux/proc
+	mkdir -p ${JAILMNT}/compat/linux/sys
+	mount -t linprocfs linprocfs ${JAILMNT}/compat/linux/proc
+	mount -t linsysfs linsysfs ${JAILMNT}/compat/linux/sys
+	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
+	msg "Starting jail ${JAILNAME}"
+	jrun 0
 	# Only set STATUS=1 if not turned off
 	# jail -s should not do this or jail will stop on EXIT
 	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
@@ -228,7 +215,7 @@ jail_stop() {
 	local name=${1}
 	local jailbase=`jail_get_base ${name}`
 	local jailfs=`jail_get_fs ${name}`
-	jail_runs ${name} || err 1 "No such jail running: ${name}"
+	jail_runs || err 1 "No such jail running: ${name}"
 	jail_status "stop:"
 
 	msg "Stopping jail"
@@ -287,7 +274,7 @@ sanity_check_pkgs() {
 	[ ! -d ${PKGDIR}/All ] && return $ret
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return $ret
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
-		local depfile=${JAILBASE}/tmp/${pkg##*/}.deps
+		local depfile=${JAILMNT}/tmp/${pkg##*/}.deps
 		if [ ! -f "${depfile}" ]; then
 			if [ "${EXT}" = "tbz" ]; then
 				pkg_info -qr ${pkg} | awk '{ print $2 }' > ${depfile}
@@ -320,7 +307,7 @@ build_port() {
 		zfs_set "${NS}:status" "${PHASE}:${portdir##/usr/ports/}"
 		if [ "${phase}" = "fetch" ]; then
 			jail -r ${jailname}
-			jail_run ${jailname} ${jailbase} 1
+			jrun ${jailname} ${jailbase} 1
 		fi
 		[ "${phase}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${jailfs}@prebuild
 		if [ -n "${PORTTESTING}" -a "${phase}" = "deinstall" ]; then
@@ -343,7 +330,7 @@ build_port() {
 
 		if [ "${phase}" = "checksum" ]; then
 			jail -r ${jailname}
-			jail_run ${jailname} ${jailbase} 0
+			jrun ${jailname} ${jailbase} 0
 		fi
 		if [ -n "${PORTTESTING}" -a  "${phase}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
@@ -412,7 +399,7 @@ build_port() {
 		fi
 	done
 	jail -r ${jailbase}
-	jail_run ${jailname} ${jailbase} 0
+	jrun ${jailname} ${jailbase} 0
 	zfs_set "${NS}:status" "idle:"
 	zfs destroy ${jailfs}@prebuild || :
 	return 0
@@ -440,7 +427,7 @@ build_pkg() {
 	fi
 
 	msg "Cleaning up wrkdir"
-	rm -rf ${JAILBASE}/wrkdirs/*
+	rm -rf ${JAILMNT}/wrkdirs/*
 
 	msg "Building ${port}"
 	PKGNAME=$(injail make -C ${portdir} -VPKGNAME)
@@ -514,7 +501,7 @@ delete_old_pkgs() {
 		fi
 		v=${pkg##*-}
 		v=${v%.*}
-		if [ ! -d "${JAILBASE}/usr/ports/${o}" ]; then
+		if [ ! -d "${JAILMNT}/usr/ports/${o}" ]; then
 			msg "${o} does not exist anymore. Deleting stale ${pkg##*/}"
 			rm -f ${pkg}
 			continue
@@ -569,11 +556,10 @@ process_deps() {
 }
 
 prepare_ports() {
-	local base=$(jail_running_base ${JAILNAME})
-	tmplist=$(mktemp ${base}/tmp/orderport.XXXXXX)
-	deplist=$(mktemp ${base}/tmp/orderport1.XXXXX)
-	tmplist2=$(mktemp ${base}/tmp/orderport2.XXXXX)
-	cache=$(mktemp ${base}/tmp/cache.XXXXX)
+	tmplist=$(mktemp ${JAILMNT}/tmp/orderport.XXXXXX)
+	deplist=$(mktemp ${JAILMNT}/tmp/orderport1.XXXXX)
+	tmplist2=$(mktemp ${JAILMNT}/tmp/orderport2.XXXXX)
+	cache=$(mktemp ${JAILMNT}/tmp/cache.XXXXX)
 	touch ${cache}
 	touch ${tmplist}
 	msg "Calculating ports order and dependencies"
@@ -641,44 +627,44 @@ prepare_jail() {
 	export PACKAGE_BUILDING=yes
 	PORTSDIR=`port_get_base ${PTNAME}`/ports
 	POUDRIERED=${SCRIPTPREFIX}/../../etc/poudriere.d
-	[ -z "${JAILBASE}" ] && err 1 "No path of the base of the jail defined"
+	[ -z "${JAILMNT}" ] && err 1 "No path of the base of the jail defined"
 	[ -z "${PORTSDIR}" ] && err 1 "No ports directory defined"
 	[ -z "${PKGDIR}" ] && err 1 "No package directory defined"
 	[ -n "${MFSSIZE}" -a -n "${USE_TMPFS}" ] && err 1 "You can't use both tmpfs and mdmfs"
 
-	mount -t nullfs ${PORTSDIR} ${JAILBASE}/usr/ports || err 1 "Failed to mount the ports directory "
+	mount -t nullfs ${PORTSDIR} ${JAILMNT}/usr/ports || err 1 "Failed to mount the ports directory "
 
 	if [ -n "${CCACHE_DIR}" -a -d "${CCACHE_DIR}" ]; then
 		# Mount user supplied CCACHE_DIR into /var/cache/ccache
 		msg "Mounting ccache from ${CCACHE_DIR}"
-		mkdir -p ${JAILBASE}/var/cache/ccache || err 1 "Failed to create ccache directory "
-		mount -t nullfs ${CCACHE_DIR} ${JAILBASE}/var/cache/ccache || err 1 "Failed to mount the ccache directory "
+		mkdir -p ${JAILMNT}/var/cache/ccache || err 1 "Failed to create ccache directory "
+		mount -t nullfs ${CCACHE_DIR} ${JAILMNT}/var/cache/ccache || err 1 "Failed to mount the ccache directory "
 		export CCACHE_DIR=/var/cache/ccache
 	fi
 
 	mkdir -p ${PORTSDIR}/packages
 	mkdir -p ${PKGDIR}/All
 
-	mount -t nullfs ${PKGDIR} ${JAILBASE}/usr/ports/packages || err 1 "Failed to mount the packages directory "
+	mount -t nullfs ${PKGDIR} ${JAILMNT}/usr/ports/packages || err 1 "Failed to mount the packages directory "
 	if [ -n "${DISTFILES_CACHE}" -a -d "${DISTFILES_CACHE}" ]; then
-		mkdir -p ${JAILBASE}/usr/ports/distfiles
-		mount -t nullfs ${DISTFILES_CACHE} ${JAILBASE}/usr/ports/distfiles || err 1 "Failed to mount the distfile directory"
+		mkdir -p ${JAILMNT}/usr/ports/distfiles
+		mount -t nullfs ${DISTFILES_CACHE} ${JAILMNT}/usr/ports/distfiles || err 1 "Failed to mount the distfile directory"
 	fi
 
-	[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${JAILBASE}/wrkdirs
-	[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${JAILBASE}/wrkdirs
+	[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${JAILMNT}/wrkdirs
+	[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${JAILMNT}/wrkdirs
 
-	[ -f ${POUDRIERED}/make.conf ] && cat ${POUDRIERED}/make.conf >> ${JAILBASE}/etc/make.conf
-	[ -f ${POUDRIERED}/${JAILNAME}-make.conf ] && cat ${POUDRIERED}/${JAILNAME}-make.conf >> ${JAILBASE}/etc/make.conf
+	[ -f ${POUDRIERED}/make.conf ] && cat ${POUDRIERED}/make.conf >> ${JAILMNT}/etc/make.conf
+	[ -f ${POUDRIERED}/${JAILNAME}-make.conf ] && cat ${POUDRIERED}/${JAILNAME}-make.conf >> ${JAILMNT}/etc/make.conf
 
 	if [ -d ${POUDRIERED}/${JAILNAME}-options ]; then
-		mount -t nullfs ${POUDRIERED}/${JAILNAME}-options ${JAILBASE}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+		mount -t nullfs ${POUDRIERED}/${JAILNAME}-options ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
 	elif [ -d ${POUDRIERED}/options ]; then
-		mount -t nullfs ${POUDRIERED}/options ${JAILBASE}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+		mount -t nullfs ${POUDRIERED}/options ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
 	fi
 
 	msg "Populating LOCALBASE"
-	mkdir -p ${JAILBASE}/${MYBASE:-/usr/local}
+	mkdir -p ${JAILMNT}/${MYBASE:-/usr/local}
 	injail /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${MYBASE:-/usr/local} >/dev/null
 
 	WITH_PKGNG=`injail make -C /usr/ports -VWITH_PKGNG`

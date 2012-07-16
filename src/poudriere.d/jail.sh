@@ -65,11 +65,11 @@ delete_jail() {
 	jail_runs ${JAILNAME} && \
 		err 1 "Unable to remove jail ${JAILNAME}: it is running"
 
-	JAILBASE=`jail_get_base ${JAILNAME}`
+	JAILMNT=`jail_get_base ${JAILNAME}`
 	FS=`jail_get_fs ${JAILNAME}`
 	msg_n "Removing ${JAILNAME} jail..."
 	zfs destroy -r ${FS}
-	rmdir ${JAILBASE}
+	rmdir ${JAILMNT}
 	rm -rf ${POUDRIERE_DATA}/packages/${JAILNAME}
 	rm -f ${POUDRIERE_DATA}/logs/*-${JAILNAME}.*.log
 	rm -f ${POUDRIERE_DATA}/logs/bulk-${JAILNAME}.log
@@ -78,13 +78,13 @@ delete_jail() {
 
 cleanup_new_jail() {
 	delete_jail
-	rm -rf ${JAILBASE}/fromftp
+	rm -rf ${JAILMNT}/fromftp
 }
 
 update_jail() {
 	test -z ${JAILNAME} && usage
 	JAILFS=`jail_get_fs ${JAILNAME}`
-	JAILBASE=`jail_get_base ${JAILNAME}`
+	JAILMNT=`jail_get_base ${JAILNAME}`
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	jail_runs ${JAILNAME} && \
 		err 1 "Unable to remove jail ${JAILNAME}: it is running"
@@ -115,14 +115,14 @@ update_jail() {
 		msg "Upgrading using csup"
 		RELEASE=`zfs_get poudriere:version`
 		install_from_csup
-		yes | make -C ${JAILBASE}/usr/src delete-old delete-old-libs DESTDIR=${JAILBASE}
+		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
 		zfs destroy ${JAILFS}@clean
 		zfs snapshot ${JAILFS}@clean
 		;;
 	svn)
 		RELEASE=`zfs_get poudriere:version`
 		install_from_svn
-		yes | make -C ${JAILBASE} delete-old delete-old-libs DESTDIR=${JAILBASE}
+		yes | make -C ${JAILMNT} delete-old delete-old-libs DESTDIR=${JAILMNT}
 		zfs destroy ${JAILFS}@clean
 		zfs snapshot ${JAILFS}@clean
 		;;
@@ -135,51 +135,51 @@ update_jail() {
 
 build_and_install_world() {
 	export TARGET_ARCH=${ARCH}
-	export SRC_BASE=${JAILBASE}/usr/src
-	mkdir -p ${JAILBASE}/etc
-	[ -f ${JAILBASE}/etc/src.conf ] && rm -f ${JAILBASE}/etc/src.conf
-	[ -f ${POUDRIERED}/src.conf ] && cat ${POUDRIERED}/src.conf > ${JAILBASE}/etc/src.conf
-	[ -f ${POUDRIERED}/${JAILBASE}-src.conf ] && cat ${POUDRIERED}/${JAILBASE}-src.conf >> ${JAILBASE}/etc/src.conf
+	export SRC_BASE=${JAILMNT}/usr/src
+	mkdir -p ${JAILMNT}/etc
+	[ -f ${JAILMNT}/etc/src.conf ] && rm -f ${JAILMNT}/etc/src.conf
+	[ -f ${POUDRIERED}/src.conf ] && cat ${POUDRIERED}/src.conf > ${JAILMNT}/etc/src.conf
+	[ -f ${POUDRIERED}/${JAILMNT}-src.conf ] && cat ${POUDRIERED}/${JAILMNT}-src.conf >> ${JAILMNT}/etc/src.conf
 	unset MAKEOBJPREFIX
 	export __MAKE_CONF=/dev/null
-	export SRCCONF=${JAILBASE}/etc/src.conf
+	export SRCCONF=${JAILMNT}/etc/src.conf
 	msg "Starting make buildworld"
-	make -C ${JAILBASE}/usr/src buildworld ${MAKEWORLDARGS} || err 1 "Fail to build world"
+	make -C ${JAILMNT}/usr/src buildworld ${MAKEWORLDARGS} || err 1 "Fail to build world"
 	msg "Starting make installworld"
-	make -C ${JAILBASE}/usr/src installworld DESTDIR=${JAILBASE} || err 1 "Fail to install world"
-	make -C ${JAILBASE}/usr/src DESTDIR=${JAILBASE} distrib-dirs && \
-	make -C ${JAILBASE}/usr/src DESTDIR=${JAILBASE} distribution
+	make -C ${JAILMNT}/usr/src installworld DESTDIR=${JAILMNT} || err 1 "Fail to install world"
+	make -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distrib-dirs && \
+	make -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distribution
 }
 
 install_from_svn() {
 	local UPDATE=0
-	[ -d ${JAILBASE}/usr/src ] && UPDATE=1
-	mkdir -p ${JAILBASE}/usr/src
+	[ -d ${JAILMNT}/usr/src ] && UPDATE=1
+	mkdir -p ${JAILMNT}/usr/src
 	msg "Fetching sources from svn"
 	if [ ${UPDATE} -eq 0 ]; then
-		svn co http://svn.freebsd.org/base/${RELEASE} ${JAILBASE}/usr/src || err 1 "Fail to fetch sources"
+		svn co http://svn.freebsd.org/base/${RELEASE} ${JAILMNT}/usr/src || err 1 "Fail to fetch sources"
 	else
-		cd ${JAILBASE}/usr/src && svn up
+		cd ${JAILMNT}/usr/src && svn up
 	fi
 	build_and_install_world
 }
 
 install_from_csup() {
-	mkdir -p ${JAILBASE}/etc
-	mkdir -p ${JAILBASE}/var/db
-	mkdir -p ${JAILBASE}/usr
+	mkdir -p ${JAILMNT}/etc
+	mkdir -p ${JAILMNT}/var/db
+	mkdir -p ${JAILMNT}/usr
 	[ -z ${CSUP_HOST} ] && err 2 "CSUP_HOST has to be defined in the configuration to use csup"
-	echo "*default base=${JAILBASE}/var/db
-*default prefix=${JAILBASE}/usr
+	echo "*default base=${JAILMNT}/var/db
+*default prefix=${JAILMNT}/usr
 *default release=cvs tag=${RELEASE}
 *default delete use-rel-suffix
-src-all" > ${JAILBASE}/etc/supfile
-	csup -z -h ${CSUP_HOST} ${JAILBASE}/etc/supfile || err 1 "Fail to fetch sources"
+src-all" > ${JAILMNT}/etc/supfile
+	csup -z -h ${CSUP_HOST} ${JAILMNT}/etc/supfile || err 1 "Fail to fetch sources"
 	build_and_install_world
 }
 
 install_from_ftp() {
-	mkdir ${JAILBASE}/fromftp
+	mkdir ${JAILMNT}/fromftp
 	CLEANUP_HOOK=cleanup_new_jail
 	local FREEBSD_BASE
 	local URL
@@ -196,19 +196,19 @@ install_from_ftp() {
 		DISTS="base dict src"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32"
 		for dist in ${DISTS}; do
-			fetch_file ${JAILBASE}/fromftp/ ${URL}/$dist/CHECKSUM.SHA256 || \
+			fetch_file ${JAILMNT}/fromftp/ ${URL}/$dist/CHECKSUM.SHA256 || \
 				err 1 "Fail to fetch checksum file"
 			sed -n "s/.*(\(.*\...\)).*/\1/p" \
-				${JAILBASE}/fromftp/CHECKSUM.SHA256 | \
+				${JAILMNT}/fromftp/CHECKSUM.SHA256 | \
 				while read pkg; do
 				[ ${pkg} = "install.sh" ] && continue
 				# Let's retry at least one time
-				fetch_file ${JAILBASE}/fromftp/ ${URL}/${dist}/${pkg}
+				fetch_file ${JAILMNT}/fromftp/ ${URL}/${dist}/${pkg}
 			done
 		done
 
 		msg "Extracting sets:"
-		for SETS in ${JAILBASE}/fromftp/*.aa; do
+		for SETS in ${JAILMNT}/fromftp/*.aa; do
 			SET=`basename $SETS .aa`
 			echo -e "\t- $SET...\c"
 			case ${SET} in
@@ -219,8 +219,8 @@ install_from_ftp() {
 					APPEND=""
 					;;
 			esac
-			cat ${JAILBASE}/fromftp/${SET}.* | \
-				tar --unlink -xpf - -C ${JAILBASE}/${APPEND} || err 1 " Fail" && echo " done"
+			cat ${JAILMNT}/fromftp/${SET}.* | \
+				tar --unlink -xpf - -C ${JAILMNT}/${APPEND} || err 1 " Fail" && echo " done"
 		done
 	else
 		URL="${FREEBSD_BASE}/pub/FreeBSD/releases/${ARCH}/${VERSION}"
@@ -228,14 +228,14 @@ install_from_ftp() {
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
 		for dist in ${DISTS}; do
 			msg "Fetching ${dist} for FreeBSD ${VERSION} ${ARCH}"
-			fetch_file ${JAILBASE}/fromftp/${dist} ${URL}/${dist}
+			fetch_file ${JAILMNT}/fromftp/${dist} ${URL}/${dist}
 			msg_n "Extracting ${dist}..."
-			tar -xpf ${JAILBASE}/fromftp/${dist} -C  ${JAILBASE}/ || err 1 " fail" && echo " done"
+			tar -xpf ${JAILMNT}/fromftp/${dist} -C  ${JAILMNT}/ || err 1 " fail" && echo " done"
 		done
 	fi
 
 	msg_n "Cleaning up..."
-	rm -rf ${JAILBASE}/fromftp/
+	rm -rf ${JAILMNT}/fromftp/
 	echo " done"
 }
 
@@ -244,9 +244,9 @@ create_jail() {
 
 	test -z ${VERSION} && usage
 
-	if [ -z ${JAILBASE} ]; then
+	if [ -z ${JAILMNT} ]; then
 		[ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
-		JAILBASE=${BASEFS}/jails/${JAILNAME}
+		JAILMNT=${BASEFS}/jails/${JAILNAME}
 	fi
 
 	if [ -z ${FS} ] ; then
@@ -271,16 +271,16 @@ create_jail() {
 		;;
 	esac
 
-	jail_create_zfs ${JAILNAME} ${VERSION} ${ARCH} ${JAILBASE} ${FS}
+	jail_create_zfs ${JAILNAME} ${VERSION} ${ARCH} ${JAILMNT} ${FS}
 	RELEASE=${VERSION}
 	${FCT}
 
-	OSVERSION=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILBASE}/usr/include/sys/param.h`
+	OSVERSION=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILMNT}/usr/include/sys/param.h`
 	LOGIN_ENV=",UNAME_r=${VERSION},UNAME_v=FreeBSD ${VERSION},OSVERSION=${OSVERSION}"
 
 	if [ "${ARCH}" = "i386" -a "${REALARCH}" = "amd64" ];then
 		LOGIN_ENV="${LOGIN_ENV},UNAME_p=i386,UNAME_m=i386"
-		cat > ${JAILBASE}/etc/make.conf << EOF
+		cat > ${JAILMNT}/etc/make.conf << EOF
 ARCH=i386
 MACHINE=i386
 MACHINE_ARCH=i386
@@ -288,23 +288,23 @@ EOF
 
 	fi
 
-	sed -i .back -e "s/:\(setenv.*\):/:\1${LOGIN_ENV}:/" ${JAILBASE}/etc/login.conf
-	cap_mkdb ${JAILBASE}/etc/login.conf
-	pwd_mkdb -d ${JAILBASE}/etc/ -p ${JAILBASE}/etc/master.passwd
+	sed -i .back -e "s/:\(setenv.*\):/:\1${LOGIN_ENV}:/" ${JAILMNT}/etc/login.conf
+	cap_mkdb ${JAILMNT}/etc/login.conf
+	pwd_mkdb -d ${JAILMNT}/etc/ -p ${JAILMNT}/etc/master.passwd
 
-	cat >> ${JAILBASE}/etc/make.conf << EOF
+	cat >> ${JAILMNT}/etc/make.conf << EOF
 USE_PACKAGE_DEPENDS=yes
 BATCH=yes
 PACKAGE_BUILDING=yes
 WRKDIRPREFIX=/wrkdirs
 EOF
 
-	mkdir -p ${JAILBASE}/usr/ports
-	mkdir -p ${JAILBASE}/wrkdirs
+	mkdir -p ${JAILMNT}/usr/ports
+	mkdir -p ${JAILMNT}/wrkdirs
 	mkdir -p ${POUDRIERE_DATA}/logs
 
-	jail -U root -c path=${JAILBASE} command=/sbin/ldconfig -m /lib /usr/lib /usr/lib/compat
-#	chroot -u root ${JAILBASE} /sbin/ldconfig  -m /lib /usr/lib /usr/lib/compat
+	jail -U root -c path=${JAILMNT} command=/sbin/ldconfig -m /lib /usr/lib /usr/lib/compat
+#	chroot -u root ${JAILMNT} /sbin/ldconfig  -m /lib /usr/lib /usr/lib/compat
 
 	zfs snapshot ${FS}@clean
 	msg "Jail ${JAILNAME} ${VERSION} ${ARCH} is ready to be used"
@@ -346,7 +346,7 @@ while getopts "j:v:a:z:m:n:f:M:sdklqciut:" FLAG; do
 			FS=${OPTARG}
 			;;
 		M)
-			JAILBASE=${OPTARG}
+			JAILMNT=${OPTARG}
 			;;
 		s)
 			START=1

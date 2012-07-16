@@ -65,7 +65,10 @@ if [ ${KEEP} -ne 1 ]; then
 	echo " done"
 fi
 
-jail_start ${JAILNAME}
+JAILMNT=`jail_get_base ${NAME}`
+JAILFS=`jail_get_fs ${NAME}`
+
+jail_start
 
 prepare_jail
 
@@ -95,9 +98,9 @@ elif [ $PKGNG -eq 1 ]; then
 	injail tar xf /usr/ports/packages/Latest/pkg.txz -C /
 	injail rm -f /usr/ports/packages/repo.txz /usr/ports/packages/repo.sqlite
 	if [ -n "${PKG_REPO_SIGNING_KEY}" -a -f "${PKG_REPO_SIGNING_KEY}" ]; then
-		install -m 0400 ${PKG_REPO_SIGNING_KEY} ${JAILBASE}/tmp/repo.key
+		install -m 0400 ${PKG_REPO_SIGNING_KEY} ${JAILMNT}/tmp/repo.key
 		injail pkg-static repo /usr/ports/packages/ /tmp/repo.key
-		rm -f ${JAILBASE}/tmp/repo.key
+		rm -f ${JAILMNT}/tmp/repo.key
 	else
 		injail pkg-static repo /usr/ports/packages/
 	fi
