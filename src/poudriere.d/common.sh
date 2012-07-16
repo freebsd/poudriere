@@ -59,11 +59,6 @@ port_get_method() {
 	zfs get -H -o value "${NS}:method" $1
 }
 
-zset status() {
-	[ $# -ne 1 ] && eargs jailname
-	zset status "$1"
-}
-
 sig_handler() {
 	# Only run the handler once, don't re-run on EXIT
 	if [ -z "${CAUGHT_SIGNAL}" ]; then
