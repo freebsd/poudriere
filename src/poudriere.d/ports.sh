@@ -144,7 +144,7 @@ if [ ${UPDATE} -eq 1 ]; then
 	PTMNT=$(port_get_base ${PTNAME})
 	PTFS=$(port_get_fs ${PTNAME})
 	msg "Updating portstree \"${PTNAME}\""
-	METHOD=$(port_get_method ${ZPOOL}/poudriere/ports-${PTNAME})
+	METHOD=$(pzget method)
 	if [ ${METHOD} = "-" ]; then
 		METHOD=portsnap
 		pzset method ${METHOD}

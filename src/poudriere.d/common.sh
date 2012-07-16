@@ -54,9 +54,9 @@ pzset() {
 	zfs set ${NS}:$1="$2" ${PTFS}
 }
 
-port_get_method() {
-	[ $# -ne 1 ] && eargs jailname
-	zfs get -H -o value "${NS}:method" $1
+psget() {
+	[ $# -ne 1 ] && eargs property
+	zfs get -H -o value ${NS}:${preperty} ${PTFS}
 }
 
 sig_handler() {
