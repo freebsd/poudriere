@@ -199,28 +199,25 @@ jail_start() {
 }
 
 jail_stop() {
-	[ $# -ne 1 ] && eargs jailname
-	local name=${1}
-	local jailbase=`jail_get_base ${name}`
-	local jailfs=`jail_get_fs ${name}`
-	jail_runs || err 1 "No such jail running: ${name}"
+	[ $# -ne 0 ] && eargs
+	jail_runs || err 1 "No such jail running: ${JAILNAME}"
 	zset status "stop:"
 
 	msg "Stopping jail"
 	jail -r ${name}
 	msg "Umounting file systems"
-	for mnt in $( mount | awk -v mnt="${jailbase}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
+	for mnt in $( mount | awk -v mnt="${JAILMNT}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
 		umount -f ${mnt}
 	done
 
 	if [ -n "${MFSSIZE}" ]; then
-		local mdunit=$(mount | awk -v mnt="${jailbase}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 ~ /\/dev\/md/ ) { sub(/\/dev\/md/, "", $1); print $1 }}')
+		local mdunit=$(mount | awk -v mnt="${JAILMNT}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 ~ /\/dev\/md/ ) { sub(/\/dev\/md/, "", $1); print $1 }}')
 		if [ -n "$mdunit" ]; then
-			umount ${jailbase}/wrkdirs
+			umount ${JAILMNT}/wrkdirs
 			mdconfig -d -u ${mdunit}
 		fi
 	fi
-	zfs rollback -r ${ZPOOL}/poudriere/${name}@clean
+	zfs rollback -r ${JAILFS}@clean
 	zset status "idle:"
 	export STATUS=0
 }
@@ -247,10 +244,9 @@ cleanup() {
 	export CLEANING_UP=1
 	[ -e ${PIPE} ] && rm -f ${PIPE}
 	[ -z "${JAILNAME}" ] && err 2 "Fail: Missing JAILNAME"
-	local fs=`jail_get_fs ${JAILNAME}`
-	zfs destroy ${fs}@prepkg 2>/dev/null || :
-	zfs destroy ${fs}@prebuild 2>/dev/null || :
-	jail_stop ${JAILNAME}
+	zfs destroy ${JAILFS}@prepkg 2>/dev/null || :
+	zfs destroy ${JAILFS}@prebuild 2>/dev/null || :
+	jail_stop
 }
 
 injail() {

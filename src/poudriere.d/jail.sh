@@ -30,9 +30,7 @@ Options:
 }
 
 info_jail() {
-	test -z ${JAILNAME} && usage
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
-	JAILFS=`jail_get_fs ${JAILNAME}`
 	nbb=$(zget stats_built)
 	nbf=$(zget stats_failed)
 	nbi=$(zget stats_ignored)
@@ -82,9 +80,6 @@ cleanup_new_jail() {
 }
 
 update_jail() {
-	test -z ${JAILNAME} && usage
-	JAILFS=`jail_get_fs ${JAILNAME}`
-	JAILMNT=`jail_get_base ${JAILNAME}`
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	jail_runs ${JAILNAME} && \
 		err 1 "Unable to remove jail ${JAILNAME}: it is running"
@@ -109,7 +104,7 @@ update_jail() {
 		fi
 		zfs destroy ${JAILFS}@clean
 		zfs snapshot ${JAILFS}@clean
-		jail_stop ${JAILNAME}
+		jail_stop
 		;;
 	csup)
 		msg "Upgrading using csup"
@@ -181,8 +176,7 @@ src-all" > ${JAILMNT}/etc/supfile
 install_from_ftp() {
 	mkdir ${JAILMNT}/fromftp
 	CLEANUP_HOOK=cleanup_new_jail
-	local FREEBSD_BASE
-	local URL
+	local FREEBSD_BASE URL
 
 	if [ -n "${FREEBSD_HOST}" ]; then
 		FREEBSD_BASE=${FREEBSD_HOST}
@@ -382,30 +376,40 @@ while getopts "j:v:a:z:m:n:f:M:sdklqciut:" FLAG; do
 done
 
 METHOD=${METHOD:-ftp}
+if [ -n ${JAILNAME} -a ${CREATE} -eq 0 ]; then
+JAILFS=`jail_get_fs ${JAILNAME}`
+JAILMNT=`jail_get_mnt ${JAILNAME}`
+fi
 
 [ $(( CREATE + LIST + STOP + START + DELETE + INFO + UPDATE )) -lt 1 ] && usage
 
 case "${CREATE}${LIST}${STOP}${START}${DELETE}${INFO}${UPDATE}" in
 	1000000)
+		test -z ${JAILNAME} && usage
 		create_jail
 		;;
 	0100000)
 		list_jail
 		;;
 	0010000)
-		jail_stop ${JAILNAME}
+		test -z ${JAILNAME} && usage
+		jail_stop
 		;;
 	0001000)
 		export SET_STATUS_ON_START=0
-		jail_start ${JAILNAME}
+		test -z ${JAILNAME} && usage
+		jail_start
 		;;
 	0000100)
+		test -z ${JAILNAME} && usage
 		delete_jail
 		;;
 	0000010)
-		info_jail ${JAILNAME}
+		test -z ${JAILNAME} && usage
+		info_jail
 		;;
 	0000001)
-		update_jail ${JAILNAME}
+		test -z ${JAILNAME} && usage
+		update_jail
 		;;
 esac
