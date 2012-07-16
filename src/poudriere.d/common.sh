@@ -432,7 +432,6 @@ build_pkg() {
 	name=$(awk -v n=${port} '$1 == n { print $2 }' "${tmp}/cache")
 	rm -rf "${tmp}/pool/${name}"
 	find ${tmp}/pool -name ${name} -type f -delete
-	find ${tmp}/pool -print
 	if [ ${build_failed} -eq 0 ]; then
 		cnt=$(zget stats_built)
 		[ "$cnt" = "-" ] && cnt=0
