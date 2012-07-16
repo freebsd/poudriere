@@ -1,5 +1,5 @@
 #!/bin/sh
-sil_çet -e
+set -e
 
 usage() {
 	echo "poudriere testport parameters [options]

@@ -291,7 +291,7 @@ build_port() {
 		zset status "${PHASE}:${portdir##/usr/ports/}"
 		if [ "${phase}" = "fetch" ]; then
 			jail -r ${jailname}
-			jrun ${jailname} ${jailbase} 1
+			jrun 1
 		fi
 		[ "${phase}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${jailfs}@prebuild
 		if [ -n "${PORTTESTING}" -a "${phase}" = "deinstall" ]; then
@@ -314,7 +314,7 @@ build_port() {
 
 		if [ "${phase}" = "checksum" ]; then
 			jail -r ${jailname}
-			jrun ${jailname} ${jailbase} 0
+			jrun 0
 		fi
 		if [ -n "${PORTTESTING}" -a  "${phase}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
@@ -383,7 +383,7 @@ build_port() {
 		fi
 	done
 	jail -r ${jailbase}
-	jrun ${jailname} ${jailbase} 0
+	jrun 0
 	zset status "idle:"
 	zfs destroy ${jailfs}@prebuild || :
 	return 0
