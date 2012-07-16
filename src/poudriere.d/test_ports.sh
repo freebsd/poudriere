@@ -126,7 +126,7 @@ injail /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${P
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
 PORTTESTING=yes
 log_start ${LOGS}/testport-${PKGNAME}-${JAILNAME}.log
-build_port ${PORTDIRECTORY} ${JAILNAME}
+build_port ${PORTDIRECTORY}
 
 msg "Installing from package"
 injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${EXT}
