@@ -54,7 +54,7 @@ pzset() {
 	zfs set ${NS}:$1="$2" ${PTFS}
 }
 
-psget() {
+pzget() {
 	[ $# -ne 1 ] && eargs property
 	zfs get -H -o value ${NS}:${1} ${PTFS}
 }
