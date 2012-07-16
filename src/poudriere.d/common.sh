@@ -427,10 +427,12 @@ build_pkg() {
 		fi
 	fi
 
+	# Cleaning queue
 	tmp="${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}"
-	name=$(awk -v n=${m} '$1 == n { print $2 }' "${tmp}/cache")
+	name=$(awk -v n=${port} '$1 == n { print $2 }' "${tmp}/cache")
 	rm -rf "${tmp}/pool/${name}"
 	find ${tmp}/pool -name ${name} -type f -delete
+	find ${tmp}/pool -print
 	if [ ${build_failed} -eq 0 ]; then
 		cnt=$(zget stats_built)
 		[ "$cnt" = "-" ] && cnt=0
@@ -523,12 +525,11 @@ delete_old_pkgs() {
 }
 
 next_in_queue() {
+	local p
 	local tmp="${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}"
-	find ${tmp}/pool -type d -depth 1 -empty | while read p; do
-		awk -v n=${p##*/} '$2 == n { print $1 }' \
-			${tmp}/cache
-		return
-	done
+	p=$(find ${tmp}/pool -type d -depth 1 -empty -print || : | head -n 1)
+	[ -n "$p" ] || return 0
+	awk -v n=${p##*/} '$2 == n { print $1 }' ${tmp}/cache
 }
 
 compute_deps() {
