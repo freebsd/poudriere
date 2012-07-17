@@ -33,6 +33,10 @@ run_build() {
 			-o ${NS}:version=${version} \
 			${JAILFS}@prepkg ${fs}
 		zfs snapshot ${fs}@prepkg
+		mount -t devfs devfs ${mnt}/dev
+		mount -t procfs proc ${mnt}/proc
+		mount -t linprocfs linprocfs ${mnt}/compat/linux/proc
+		mount -t linsysfs linsysfs ${mnt}/compat/linux/sys
 		mount -t nullfs ${PORTSDIR} ${mnt}/usr/ports
 		mount -t nullfs ${PKGDIR} ${mnt}/usr/ports/packages
 		if [ -n "${DISTFILES_CACHE}" -a -d "${DISTFILES_CACHE}" ]; then

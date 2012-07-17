@@ -176,7 +176,6 @@ jail_start() {
 	jail_runs && err 1 "jail already running: ${JAILNAME}"
 	zset status "start:"
 	zfs rollback -R ${JAILFS}@clean
-	touch /var/run/poudriere-${JAILNAME}.lock
 
 	. /etc/defaults/rc.conf
 
