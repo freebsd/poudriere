@@ -16,6 +16,32 @@ Options:
 	exit 1
 }
 
+run_build() {
+	local activity PIDPATH
+	PIDPATH=${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}/
+	while :; do
+		activity=0
+		jot ${PARALLEL_JOB} | while read j; do
+			if [ -f  "${PIDPATH}/${j}.pid" ]; then
+				if pgrep -qF "${PIDPATH}/${j}.pid" >/dev/null 2>&1; then
+					continue
+				fi
+			fi
+			port=$(next_in_queue)
+			if [ -z "${port}" ]; then
+				# pool empty ?
+				[ $(stat -f '%z' ${PIDPATH}/pool) -eq 2 ] && return
+			break
+			fi
+			msg "Starting build of ${port}"
+			activity=1
+			sh ${SCRIPTPREFIX}/buildpkg.sh "${JAILNAME}" "${PTNAME}" "${j}" "${port}" "${PKGDIR}" >/dev/null 2>&1 & 
+			echo "$!" > ${PIDPATH}/${j}.pid
+			[ $activity -ne 0 ] || sleep 5
+		done
+	done
+}
+
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 PTNAME="default"
@@ -84,34 +110,7 @@ if [ -z "${PARALLEL_BUILD}" ]; then
 else
 	PIDPATH=${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}/
 	DONE=0
-	while :; do
-		activity=0
-		jot ${PARALLEL_JOB} | while read j; do
-			if [ -f  "${PIDPATH}/${j}.pid" ]; then
-				if pgrep -qF "${PIDPATH}/${j}.pid" >/dev/null 2>&1; then
-					continue
-				fi
-			fi
-
-			port=$(next_in_queue)
-			if [ -z "${port}" ]; then
-				# pool empty ?
-				if [ $(stat -f '%z' ${PIDPATH}/pool) -eq 2 ];
-				then
-					DONE=1
-				fi
-				break
-			fi
-			msg "Starting build of ${port}"
-			activity=1
-			sh ${SCRIPTPREFIX}/buildpkg.sh "${JAILNAME}" "${PTNAME}" "${j}" "${port}" "${PKGDIR}" >/dev/null 2>&1 & 
-			echo "$!" > ${PIDPATH}/${j}.pid
-		done
-		[ $DONE -eq 0 ] || break
-		if [ $activity -eq 0 ]; then
-			sleep 5
-		fi
-	done
+	run_build
 	# wait for the last running processes
 	cat ${PIDPATH}/*.pid | xargs pwait
 fi

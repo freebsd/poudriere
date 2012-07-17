@@ -635,10 +635,10 @@ prepare_jail() {
 	[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${JAILMNT}/wrkdirs
 
 	[ -f ${POUDRIERED}/make.conf ] && cat ${POUDRIERED}/make.conf >> ${JAILMNT}/etc/make.conf
-	[ -f ${POUDRIERED}/${JAILNAME}-make.conf ] && cat ${POUDRIERED}/${JAILNAME}-make.conf >> ${JAILMNT}/etc/make.conf
+	[ -f ${POUDRIERED}/${ORIGNAME:-${JAILNAME}}-make.conf ] && cat ${POUDRIERED}/${ORIGNAME:-${JAILNAME}}-make.conf >> ${JAILMNT}/etc/make.conf
 
-	if [ -d ${POUDRIERED}/${JAILNAME}-options ]; then
-		mount -t nullfs ${POUDRIERED}/${JAILNAME}-options ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+	if [ -d ${POUDRIERED}/${ORIGNAME:-${JAILNAME}}-options ]; then
+		mount -t nullfs ${POUDRIERED}/${ORIGNAME:-${JAILNAME}}-options ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
 	elif [ -d ${POUDRIERED}/options ]; then
 		mount -t nullfs ${POUDRIERED}/options ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
 	fi
