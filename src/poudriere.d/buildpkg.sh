@@ -6,6 +6,7 @@ SLOT=$3
 PORT=$4
 PKGDIR=$5
 
+BUILDER=1
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
@@ -30,4 +31,3 @@ jail_start
 prepare_jail
 build_pkg ${PORT}
 jail_stop
-zfs destroy -r ${JAILFS}

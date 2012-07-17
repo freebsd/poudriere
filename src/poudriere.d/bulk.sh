@@ -17,7 +17,7 @@ Options:
 }
 
 run_build() {
-	local activity PIDPATH
+	local activity PIDPATH cnt
 	PIDPATH=${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}/
 	while :; do
 		activity=0
@@ -27,6 +27,12 @@ run_build() {
 					continue
 				fi
 				rm -f "${PIDPATH}/${j}.pid"
+				cnt=$(wc -l ${PIDPATH}/ignored | awk '{ print $1 }')
+				zset stats_ignored $cnt
+				cnt=$(wc -l ${PIDPATH}/built | awk '{ print $1 }')
+				zset stats_built $cnt
+				cnt=$(wc -l ${PIDPATH}/failed | awk '{ print $1 }')
+				zset stats_failed $cnt
 			fi
 			port=$(next_in_queue)
 			if [ -z "${port}" ]; then
@@ -36,7 +42,7 @@ run_build() {
 			fi
 			msg "Starting build of ${port}"
 			activity=1
-			sh ${SCRIPTPREFIX}/buildpkg.sh "${JAILNAME}" "${PTNAME}" "${j}" "${port}" "${PKGDIR}" >/dev/null 2>&1 & 
+			sh ${SCRIPTPREFIX}/buildpkg.sh "${JAILNAME}" "${PTNAME}" "${j}" "${port}" "${PKGDIR}" >/dev/null 2>&1 &
 			echo "$!" > ${PIDPATH}/${j}.pid
 			[ $activity -ne 0 ] || sleep 5
 		done
@@ -100,6 +106,9 @@ jail_start
 prepare_jail
 
 prepare_ports
+
+zset status "building:"
+
 zfs snapshot ${JAILFS}@prepkg
 if [ -z "${PARALLEL_BUILD}" ]; then
 	while :; do

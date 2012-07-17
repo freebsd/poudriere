@@ -220,6 +220,7 @@ jail_stop() {
 	zfs rollback -r ${JAILFS}@clean
 	zset status "idle:"
 	export STATUS=0
+	[ -n "${BUILDER}" ] && zfs destroy -r ${JAILFS} || :
 }
 
 port_create_zfs() {
@@ -237,6 +238,7 @@ port_create_zfs() {
 
 cleanup() {
 	# Prevent recursive cleanup on error
+	tmp="${POUDRIERE_DATA}/tmp/${ORIGNAME:-${JAILNAME}}-${PTNAME}"
 	if [ -n "${CLEANING_UP}" ]; then
 		echo "Failure cleaning up. Giving up." >&2
 		return
@@ -244,6 +246,9 @@ cleanup() {
 	export CLEANING_UP=1
 	[ -e ${PIPE} ] && rm -f ${PIPE}
 	[ -z "${JAILNAME}" ] && err 2 "Fail: Missing JAILNAME"
+	for pid in ${tmp}/*.pid; do
+		pkill -15 -F ${pid} >/dev/null 2>&1 || :
+	done
 	zfs destroy ${JAILFS}@prepkg 2>/dev/null || :
 	zfs destroy ${JAILFS}@prebuild 2>/dev/null || :
 	jail_stop
@@ -400,11 +405,8 @@ build_pkg() {
 	local ignore="$(injail make -C ${portdir} -VIGNORE)"
 	if [ -n "$ignore" ]; then
 		msg "Ignoring ${port}: $ignore"
-		cnt=$(zget stats_ignored)
-		[ "$cnt" = "-" ] && cnt=0
-		cnt=$(( cnt + 1))
-		zset stats_ignored "$cnt"
-		export ignored="${ignored} ${port}"
+		tmp="${POUDRIERE_DATA}/tmp/${ORIGNAME:-${JAILNAME}}-${PTNAME}"
+		echo "${port}" >> ${tmp}/ignored
 		return
 	fi
 
@@ -431,20 +433,11 @@ build_pkg() {
 	tmp="${POUDRIERE_DATA}/tmp/${ORIGNAME:-${JAILNAME}}-${PTNAME}"
 	lockf -t 60 ${tmp}/.lock sh ${SCRIPTPREFIX}/clean.sh "${tmp}" "${port}"
 	if [ ${build_failed} -eq 0 ]; then
-		cnt=$(zget stats_built)
-		[ "$cnt" = "-" ] && cnt=0
-		cnt=$(( cnt + 1))
-		zset stats_built "$cnt"
-		export built="${built} ${port}"
+		echo "${port}" >> "${tmp}/built"
 	else
-		cnt=$(zget stats_failed)
-		[ "$cnt" = "-" ] && cnt=0
-		cnt=$(( cnt + 1))
-		zset stats_failed "$cnt"
-		state=$(zget status)
-		export failed="${failed} ${state}"
+		echo "${port}" >> "${tmp}/failed"
 	fi
-	zset status "next:"
+	zset status "done:${port}"
 	log_stop ${LOGS}/${JAILNAME}-${PTNAME}-${PKGNAME}.log
 }
 
@@ -592,6 +585,9 @@ prepare_ports() {
 	zset stats_built "0"
 	zset stats_failed "0"
 	zset stats_ignored "0"
+	touch ${tmp}/built
+	touch ${tmp}/failed
+	touch ${tmp}/ignored
 }
 
 prepare_jail() {
