@@ -529,7 +529,7 @@ next_in_queue() {
 compute_deps() {
 	[ $# -ne 1 ] && eargs port
 	local port=$1
-	local pn
+	local pn m
 	local tmp="${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}"
 	local name=$(awk -v n=${port} '$1 == n { print $2 }' "${tmp}/cache")
 	if [ -n "${name}" ]; then
