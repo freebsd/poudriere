@@ -21,7 +21,7 @@ run_build() {
 	PIDPATH=${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}/
 	while :; do
 		activity=0
-		jot ${PARALLEL_JOB} | while read j; do
+		for j in $(jot ${PARALLEL_JOB}); do
 			if [ -f  "${PIDPATH}/${j}.pid" ]; then
 				if pgrep -qF "${PIDPATH}/${j}.pid" >/dev/null 2>&1; then
 					continue
