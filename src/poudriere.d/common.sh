@@ -175,7 +175,7 @@ jail_start() {
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	jail_runs && err 1 "jail already running: ${JAILNAME}"
 	zset status "start:"
-	zfs rollback -r ${ZPOOL}/poudriere/${JAILNAME}@clean
+	zfs rollback -R ${JAILFS}@clean
 	touch /var/run/poudriere-${JAILNAME}.lock
 
 	. /etc/defaults/rc.conf
@@ -203,8 +203,12 @@ jail_stop() {
 	jail_runs || err 1 "No such jail running: ${JAILNAME}"
 	zset status "stop:"
 
-	msg "Stopping jail"
 	jail -r ${JAILNAME}
+	if [ -n "${PARALLEL_BUILD}" ];then
+		for j in $(jot ${PARALLEL_JOB}); do
+			jail -r ${JAILNAME}-job-$j 2>/dev/null
+		done
+	fi
 	msg "Umounting file systems"
 	for mnt in $( mount | awk -v mnt="${JAILMNT}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
 		umount -f ${mnt}
@@ -217,10 +221,9 @@ jail_stop() {
 			mdconfig -d -u ${mdunit}
 		fi
 	fi
-	zfs rollback -r ${JAILFS}@clean
+	zfs rollback -R ${JAILFS}@clean
 	zset status "idle:"
 	export STATUS=0
-	[ -n "${BUILDER}" ] && zfs destroy -r ${JAILFS} || :
 }
 
 port_create_zfs() {
@@ -238,7 +241,6 @@ port_create_zfs() {
 
 cleanup() {
 	# Prevent recursive cleanup on error
-	tmp="${POUDRIERE_DATA}/tmp/${ORIGNAME:-${JAILNAME}}-${PTNAME}"
 	if [ -n "${CLEANING_UP}" ]; then
 		echo "Failure cleaning up. Giving up." >&2
 		return
@@ -246,7 +248,7 @@ cleanup() {
 	export CLEANING_UP=1
 	[ -e ${PIPE} ] && rm -f ${PIPE}
 	[ -z "${JAILNAME}" ] && err 2 "Fail: Missing JAILNAME"
-	for pid in ${tmp}/*.pid; do
+	for pid in ${JAILMNT}/*.pid; do
 		pkill -15 -F ${pid} >/dev/null 2>&1 || :
 	done
 	zfs destroy ${JAILFS}@prepkg 2>/dev/null || :
@@ -396,7 +398,7 @@ build_pkg() {
 	local port=$1
 	local portdir="/usr/ports/${port}"
 	local build_failed=0
-	local name cnt tmp
+	local name cnt
 
 	# If this port is IGNORED, skip it
 	# This is checked here instead of when building the queue
@@ -405,8 +407,7 @@ build_pkg() {
 	local ignore="$(injail make -C ${portdir} -VIGNORE)"
 	if [ -n "$ignore" ]; then
 		msg "Ignoring ${port}: $ignore"
-		tmp="${POUDRIERE_DATA}/tmp/${ORIGNAME:-${JAILNAME}}-${PTNAME}"
-		echo "${port}" >> ${tmp}/ignored
+		echo "${port}" >> ${JAILMNT}/ignored
 		return
 	fi
 
@@ -430,12 +431,11 @@ build_pkg() {
 	fi
 
 	# Cleaning queue
-	tmp="${POUDRIERE_DATA}/tmp/${ORIGNAME:-${JAILNAME}}-${PTNAME}"
-	lockf -t 60 ${tmp}/.lock sh ${SCRIPTPREFIX}/clean.sh "${tmp}" "${port}"
+	lockf -t 60 ${JAILMNT}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${port}"
 	if [ ${build_failed} -eq 0 ]; then
-		echo "${port}" >> "${tmp}/built"
+		echo "${port}" >> "${JAILMNT}/built"
 	else
-		echo "${port}" >> "${tmp}/failed"
+		echo "${port}" >> "${JAILMNT}/failed"
 	fi
 	zset status "done:${port}"
 	log_stop ${LOGS}/${JAILNAME}-${PTNAME}-${PKGNAME}.log
@@ -445,7 +445,6 @@ list_deps() {
 	[ $# -ne 1 ] && eargs directory
 	local list="PKG_DEPENDS BUILD_DEPENDS EXTRACT_DEPENDS LIB_DEPENDS PATCH_DEPENDS FETCH_DEPENDS RUN_DEPENDS"
 	local dir=$1
-	local tmp="${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}"
 	local makeargs=""
 	for key in $list; do
 		makeargs="${makeargs} -V${key}"
@@ -459,7 +458,7 @@ list_deps() {
 
 delete_old_pkgs() {
 	local o v v2 compiled_options current_options
-	local cache="${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}/cache"
+	local cache="${JAILMNT}/cache"
 	[ ! -d ${PKGDIR}/All ] && return 0
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return 0
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
@@ -507,39 +506,34 @@ delete_old_pkgs() {
 
 next_in_queue() {
 	local p
-	local tmp="${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}"
-	p=$(lockf -t 60 ${tmp}/.lock find ${tmp}/pool -type d -depth 1 -empty -print || : | head -n 1)
+	p=$(lockf -t 60 ${JAILMNT}/.lock find ${JAILMNT}/pool -type d -depth 1 -empty -print || : | head -n 1)
 	[ -n "$p" ] || return 0
 	touch ${p}/.building
-	awk -v n=${p##*/} '$2 == n { print $1 }' ${tmp}/cache
+	awk -v n=${p##*/} '$2 == n { print $1 }' ${JAILMNT}/cache
 }
 
 compute_deps() {
 	[ $# -ne 1 ] && eargs port
 	local port=$1
 	local pn m
-	local tmp="${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}"
-	local name=$(awk -v n=${port} '$1 == n { print $2 }' "${tmp}/cache")
+	local name=$(awk -v n=${port} '$1 == n { print $2 }' "${JAILMNT}/cache")
 	if [ -n "${name}" ]; then
-		[ -d "${tmp}/pool/${name}" ] && return
+		[ -d "${JAILMNT}/pool/${name}" ] && return
 	fi
 	pn=$(injail make -C /usr/ports/${port} -VPKGNAME)
-	echo "${port} ${pn}" >> "${tmp}/cache"
-	mkdir  "${tmp}/pool/${pn}"
+	echo "${port} ${pn}" >> "${JAILMNT}/cache"
+	mkdir  "${JAILMNT}/pool/${pn}"
 	for m in `list_deps ${port}`; do
 		compute_deps "${m}"
-		name=$(awk -v n=${m} '$1 == n { print $2 }' "${tmp}/cache")
-		touch "${tmp}/pool/${pn}/${name}"
+		name=$(awk -v n=${m} '$1 == n { print $2 }' "${JAILMNT}/cache")
+		touch "${JAILMNT}/pool/${pn}/${name}"
 	done
 }
 
 prepare_ports() {
-	local tmp="${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}"
 	msg "Calculating ports order and dependencies"
-	[ -d "${POUDRIERE_DATA}/tmp" ] || mkdir -p "${POUDRIERE_DATA}/tmp"
-	[ ! -d "${tmp}" ] || rm -rf "${tmp}"
-	mkdir -p "${tmp}/pool"
-	touch "${tmp}/cache"
+	mkdir -p "${JAILMNT}/pool"
+	touch "${JAILMNT}/cache"
 	zset status "computingdeps:"
 	if [ -z "${LISTPORTS}" ]; then
 		if [ -n "${LISTPKGS}" ]; then
@@ -569,25 +563,25 @@ prepare_ports() {
 	zset status "cleaning:"
 	msg "Cleaning the build queue"
 	export LOCALBASE=${MYBASE:-/usr/local}
-	find ${tmp}/pool -type d -depth 1 | while read p; do
+	find ${JAILMNT}/pool -type d -depth 1 | while read p; do
 		pn=${p##*/}
 		if [ -f "${PKGDIR}/All/${pn}.${EXT}" ]; then
 			rm -rf ${p}
-			find ${tmp}/pool -name ${pn} -type f -delete
+			find ${JAILMNT}/pool -name ${pn} -type f -delete
 		fi
 	done
 
 	local nbq=0
-	for a in $(find ${tmp}/pool -type d -depth 1); do
+	for a in $(find ${JAILMNT}/pool -type d -depth 1); do
 		nbq=$((nbq + 1))
 	done
 	zset stats_queued "${nbq}"
 	zset stats_built "0"
 	zset stats_failed "0"
 	zset stats_ignored "0"
-	touch ${tmp}/built
-	touch ${tmp}/failed
-	touch ${tmp}/ignored
+	:> ${JAILMNT}/built
+	:> ${JAILMNT}/failed
+	:> ${JAILMNT}/ignored
 }
 
 prepare_jail() {

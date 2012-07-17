@@ -17,32 +17,65 @@ Options:
 }
 
 run_build() {
-	local activity PIDPATH cnt
-	PIDPATH=${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}/
+	local activity cnt mnt fs name arch version
+	PORTSDIR=`port_get_base ${PTNAME}`/ports
+	arch=$(zget arch)
+	version=$(zget version)
+	for j in $(jot ${PARALLEL_JOB}); do
+		mnt="${JAILMNT}/build/${j}"
+		mkdir -p "${mnt}"
+		fs="${JAILFS}/job-${j}"
+		name="${JAILNAME}-job-${j}"
+		zfs clone -o mountpoint=${mnt} \
+			-o ${NS}:name=${name} \
+			-o ${NS}:type=rootfs \
+			-o ${NS}:arch=${arch} \
+			-o ${NS}:version=${version} \
+			${JAILFS}@prepkg ${fs}
+		zfs snapshot ${fs}@prepkg
+		mount -t nullfs ${PORTSDIR} ${mnt}/usr/ports
+		mount -t nullfs ${PKGDIR} ${mnt}/usr/ports/packages
+		if [ -n "${DISTFILES_CACHE}" -a -d "${DISTFILES_CACHE}" ]; then
+			mount -t nullfs ${DISTFILES_CACHE} ${mnt}/usr/ports/distfiles || err 1 "Failed to mount the distfile directory"
+		fi
+		[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
+		[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${mnt}/wrkdirs
+		if [ -d ${POUDRIERED}/${ORIGNAME:-${JAILNAME}}-options ]; then
+			mount -t nullfs ${POUDRIERED}/${JAILNAME}-options ${mnt}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+		elif [ -d ${POUDRIERED}/options ]; then
+			mount -t nullfs ${POUDRIERED}/options ${mnt}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+		fi
+		JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} jrun 0
+	done
 	while :; do
 		activity=0
 		for j in $(jot ${PARALLEL_JOB}); do
-			if [ -f  "${PIDPATH}/${j}.pid" ]; then
-				if pgrep -qF "${PIDPATH}/${j}.pid" >/dev/null 2>&1; then
+			mnt="${JAILMNT}/build/${j}"
+			fs="${JAILFS}/job-${j}"
+			name="${JAILNAME}-job-${j}"
+			if [ -f  "${JAILMNT}/${j}.pid" ]; then
+				if pgrep -qF "${JAILMNT}/${j}.pid" >/dev/null 2>&1; then
 					continue
 				fi
-				rm -f "${PIDPATH}/${j}.pid"
-				cnt=$(wc -l ${PIDPATH}/ignored | awk '{ print $1 }')
+				rm -f "${JAILMNT}/${j}.pid"
+				cnt=$(wc -l ${JAILMNT}/ignored | awk '{ print $1 }')
 				zset stats_ignored $cnt
-				cnt=$(wc -l ${PIDPATH}/built | awk '{ print $1 }')
+				cnt=$(wc -l ${JAILMNT}/built | awk '{ print $1 }')
 				zset stats_built $cnt
-				cnt=$(wc -l ${PIDPATH}/failed | awk '{ print $1 }')
+				cnt=$(wc -l ${JAILMNT}/failed | awk '{ print $1 }')
 				zset stats_failed $cnt
 			fi
 			port=$(next_in_queue)
 			if [ -z "${port}" ]; then
 				# pool empty ?
-				[ $(stat -f '%z' ${PIDPATH}/pool) -eq 2 ] && return
+				[ $(stat -f '%z' ${JAILMNT}/pool) -eq 2 ] && return
 			break
 			fi
 			msg "Starting build of ${port}"
 			activity=1
-			sh ${SCRIPTPREFIX}/buildpkg.sh "${JAILNAME}" "${PTNAME}" "${j}" "${port}" "${PKGDIR}" >/dev/null 2>&1 &
+			zfs rollback -r ${fs}@prepkg
+			MASTERMNT=${JAILMNT} JAILNAME="${name}" JAILMNT="${mnt}" JAILFS="${fs}" \
+				build_pkg ${port} >/dev/null 2>&1 &
 			echo "$!" > ${PIDPATH}/${j}.pid
 			[ $activity -ne 0 ] || sleep 5
 		done
