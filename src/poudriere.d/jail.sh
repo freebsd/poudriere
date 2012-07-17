@@ -374,7 +374,7 @@ while getopts "j:v:a:z:m:n:f:M:sdklqciut:" FLAG; do
 done
 
 METHOD=${METHOD:-ftp}
-if [ -n ${JAILNAME} ] && [ ${CREATE} -eq 0 ]; then
+if [ -n "${JAILNAME}" ] && [ ${CREATE} -eq 0 ]; then
 	JAILFS=`jail_get_fs ${JAILNAME}`
 	JAILMNT=`jail_get_base ${JAILNAME}`
 fi
