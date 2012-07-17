@@ -461,12 +461,8 @@ list_deps() {
 
 	local pdeps
 	local pn
-	injail make -C ${dir} -VPKGNAME $makeargs | tr '\n' ' ' | \
-		sed -e "s,[[:graph:]]*/usr/ports/,,g" -e "s,:[[:graph:]]*,,g" | while read pn pdeps; do
-		for d in ${pdeps}; do
-			echo $pdeps
-		done | sort -u
-	done
+	injail make -C ${dir} $makeargs | tr '\n' ' ' | \
+		sed -e "s,[[:graph:]]*/usr/ports/,,g" -e "s,:[[:graph:]]*,,g" | sort -u
 }
 
 delete_old_pkgs() {
