@@ -459,18 +459,13 @@ list_deps() {
 	done
 	[ -d "${PORTSDIR}/${dir}" ] && dir="/usr/ports/${dir}"
 
-	local pdeps
-	local pn
+	local pdeps pn
 	injail make -C ${dir} $makeargs | tr '\n' ' ' | \
 		sed -e "s,[[:graph:]]*/usr/ports/,,g" -e "s,:[[:graph:]]*,,g" | sort -u
 }
 
 delete_old_pkgs() {
-	local o
-	local v
-	local v2
-	local compiled_options
-	local current_options
+	local o v v2 compiled_options current_options
 	local cache="${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}/cache"
 	[ ! -d ${PKGDIR}/All ] && return 0
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return 0
