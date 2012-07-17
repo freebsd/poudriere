@@ -428,10 +428,8 @@ build_pkg() {
 	fi
 
 	# Cleaning queue
-	tmp="${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}"
-	name=$(awk -v n=${port} '$1 == n { print $2 }' "${tmp}/cache")
-	rm -rf "${tmp}/pool/${name}"
-	find ${tmp}/pool -name ${name} -type f -delete
+	tmp="${POUDRIERE_DATA}/tmp/${ORIGNAME:-${JAILNAME}}-${PTNAME}"
+	lockf -t 60 ${tmp}/.lock sh ${SCRIPTPREFIX}/clean.sh "${tmp}" "${port}"
 	if [ ${build_failed} -eq 0 ]; then
 		cnt=$(zget stats_built)
 		[ "$cnt" = "-" ] && cnt=0
@@ -526,8 +524,9 @@ delete_old_pkgs() {
 next_in_queue() {
 	local p
 	local tmp="${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}"
-	p=$(find ${tmp}/pool -type d -depth 1 -empty -print || : | head -n 1)
+	p=$(lockf -t 60 ${tmp}/.lock find ${tmp}/pool -type d -depth 1 -empty -print || : | head -n 1)
 	[ -n "$p" ] || return 0
+	touch ${p}/.building
 	awk -v n=${p##*/} '$2 == n { print $1 }' ${tmp}/cache
 }
 

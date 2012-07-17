@@ -74,12 +74,47 @@ prepare_jail
 
 prepare_ports
 zfs snapshot ${JAILFS}@prepkg
-while :; do
-	port=$(next_in_queue)
-	[ -n "${port}" ] || break
-	build_pkg ${port}
-	zfs rollback -r ${JAILFS}@prepkg
-done
+if [ -z "${PARALLEL_BUILD}" ]; then
+	while :; do
+		port=$(next_in_queue)
+		[ -n "${port}" ] || break
+		build_pkg ${port}
+		zfs rollback -r ${JAILFS}@prepkg
+	done
+else
+	PIDPATH=${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}/
+	DONE=0
+	while :; do
+		activity=0
+		jot ${PARALLEL_JOB} | while read j; do
+			if [ -f  "${PIDPATH}/${j}.pid" ]; then
+				if pgrep -qF "${PIDPATH}/${j}.pid" >/dev/null 2>&1; then
+					continue
+				fi
+			fi
+
+			port=$(next_in_queue)
+			if [ -z "${port}" ]; then
+				# pool empty ?
+				if [ $(stat -f '%z' ${PIDPATH}/pool) -eq 2 ];
+				then
+					DONE=1
+				fi
+				break
+			fi
+			msg "Starting build of ${port}"
+			activity=1
+			sh ${SCRIPTPREFIX}/buildpkg.sh "${JAILNAME}" "${PTNAME}" "${j}" "${port}" "${PKGDIR}" >/dev/null 2>&1 & 
+			echo "$!" > ${PIDPATH}/${j}.pid
+		done
+		[ $DONE -eq 0 ] || break
+		if [ $activity -eq 0 ]; then
+			sleep 5
+		fi
+	done
+	# wait for the last running processes
+	cat ${PIDPATH}/*.pid | xargs pwait
+fi
 zfs destroy -r ${JAILFS}@prepkg
 
 nbfailed=$(zget stats_failed)
