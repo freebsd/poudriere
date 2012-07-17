@@ -157,7 +157,6 @@ else
 	# wait for the last running processes
 	cat ${PIDPATH}/*.pid | xargs pwait
 fi
-zfs destroy -r ${JAILFS}@prepkg
 
 nbfailed=$(zget stats_failed)
 nbignored=$(zget stats_ignored)
