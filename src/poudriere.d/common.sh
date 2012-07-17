@@ -177,8 +177,6 @@ jail_start() {
 	zset status "start:"
 	zfs rollback -R ${JAILFS}@clean
 
-	. /etc/defaults/rc.conf
-
 	msg "Mounting devfs"
 	mount -t devfs devfs ${JAILMNT}/dev
 	msg "Mounting /proc"
