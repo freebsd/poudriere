@@ -683,3 +683,13 @@ ZVERSION=$(zpool list -H -oversion ${ZPOOL})
 if [ "${ZVERSION}" = "-" ]; then
 	ZVERSION=29
 fi
+
+if [ -n "${PARALLEL_BUILD}" ]; then
+	case ${PARALLEL_JOB} in
+	''|*[!0-9]*)
+		PARALLEL_JOB=$(sysctl -n hw.ncpu)
+		msg "Starting using ${PARALLEL_JOB} builders (value from hw.ncpu)"
+		;;
+	*) msg "Starting using ${PARALLEL_JOB} builders" ;;
+	esac
+fi

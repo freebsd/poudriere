@@ -75,3 +75,13 @@ CSUP_HOST=cvsup._CHANGE_THIS_.freebsd.org
 # ccache support. Supply the path to your ccache cache directory.
 # It will be mounted into the jail and be shared among all jails.
 #CCACHE_DIR=/var/cache/ccache
+#
+
+# parallel build support.
+#
+# define PARALLEL_BUILD to enable parallel building (throwing multiple jails for
+# building)
+# by default it uses hw.cpu to determine the number of builders, you can for it
+# to a given value bye specifying PARALLEL_JOBS
+#
+PARALLEL_BUILD=yes
