@@ -433,9 +433,9 @@ build_pkg() {
 	# Cleaning queue
 	lockf -t 60 ${JAILMNT}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${port}"
 	if [ ${build_failed} -eq 0 ]; then
-		echo "${port}" >> "${JAILMNT}/built"
+		echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/built"
 	else
-		echo "${port}" >> "${JAILMNT}/failed"
+		echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/failed"
 	fi
 	zset status "done:${port}"
 	log_stop ${LOGS}/${JAILNAME}-${PTNAME}-${PKGNAME}.log
