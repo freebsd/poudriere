@@ -26,6 +26,7 @@ run_build() {
 				if pgrep -qF "${PIDPATH}/${j}.pid" >/dev/null 2>&1; then
 					continue
 				fi
+				rm -f "${PIDPATH}/${j}.pid"
 			fi
 			port=$(next_in_queue)
 			if [ -z "${port}" ]; then
