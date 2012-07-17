@@ -215,7 +215,7 @@ install_from_ftp() {
 				tar --unlink -xpf - -C ${JAILMNT}/${APPEND} || err 1 " Fail" && echo " done"
 		done
 	else
-		URL="${FREEBSD_BASE}/pub/FreeBSD/releases/${ARCH}/${VERSION}"
+		URL="${FREEBSD_BASE}/pub/FreeBSD/releases/${ARCH}/${ARCH}/${VERSION}"
 		DISTS="base.txz src.txz"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
 		for dist in ${DISTS}; do
