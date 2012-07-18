@@ -159,7 +159,7 @@ else
 	DONE=0
 	run_build
 	# wait for the last running processes
-	cat ${PIDPATH}/*.pid | xargs pwait
+	cat ${PIDPATH}/*.pid | xargs pwait 2>/dev/null
 fi
 
 nbfailed=$(zget stats_failed)
