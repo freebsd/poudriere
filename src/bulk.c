@@ -13,16 +13,29 @@
 #include <glob.h>
 #include <fts.h>
 #include <stdlib.h>
+#include <stringlist.h>
 
 #include "commands.h"
 #include "utils.h"
 #include "poudriere.h"
 
-static TAILQ_HEAD(pcache_list, pcache) cache = TAILQ_HEAD_INITIALIZER(cache);
-struct pcache {
+static STAILQ_HEAD(ports, port) ports = STAILQ_HEAD_INITIALIZER(ports);
+struct port {
 	char name[BUFSIZ];
 	char origin[BUFSIZ];
-	TAILQ_ENTRY(pcache) next;
+	STAILQ_ENTRY(port) next;
+};
+
+struct dep {
+	char origin[BUFSIZ];
+	STAILQ_ENTRY(dep) next;
+};
+
+static STAILQ_HEAD(pkg_list, pkg) queue = STAILQ_HEAD_INITIALIZER(queue);
+struct pkg {
+	char origin[BUFSIZ];
+	STAILQ_HEAD(deps, dep) deps;
+	STAILQ_ENTRY(pkg) next;
 };
 
 void
@@ -50,7 +63,7 @@ delete_ifold(struct pjail *j, const char *path)
 	char *line = NULL;
 	size_t linecap = 0;
 	struct stat st;
-	struct pcache *c = NULL;
+	struct port *p = NULL;
 
 	origin[0] = '\0';
 
@@ -72,21 +85,21 @@ delete_ifold(struct pjail *j, const char *path)
 		return;
 	}
 
-	TAILQ_FOREACH(c, &cache, next) {
-		if (strcmp(c->origin, origin) == 0)
+	STAILQ_FOREACH(p, &ports, next) {
+		if (strcmp(p->origin, origin) == 0)
 			break;
 	}
-	if (c == NULL) {
+	if (p == NULL) {
 		snprintf(cmd, sizeof(cmd), "/usr/sbin/jexec -U root %s make -C /usr/ports/%s -VPKGNAME", j->name, origin);
 		linecap = 0;
 		line = NULL;
 		if ((fp = popen(cmd, "r")) != NULL) {
 			while (getline(&line, &linecap, fp) > 0) {
-				c = malloc(sizeof(struct pcache));
-				strlcpy(c->origin, origin, sizeof(c->origin));
-				strlcpy(c->name, line, sizeof(c->name));
-				if (c->name[strlen(c->name) - 1] == '\n')
-					c->name[strlen(c->name) - 1] = '\0';
+				p = malloc(sizeof(struct port));
+				strlcpy(p->origin, origin, sizeof(p->origin));
+				strlcpy(p->name, line, sizeof(p->name));
+				if (p->name[strlen(p->name) - 1] == '\n')
+					p->name[strlen(p->name) - 1] = '\0';
 				break;
 			}
 			fclose(fp);
@@ -94,14 +107,14 @@ delete_ifold(struct pjail *j, const char *path)
 	}
 
 	/* TODO a problem occured, handle this later */
-	if (c == NULL)
+	if (p == NULL)
 		return;
 
 	strlcpy(myname, strrchr(path, '/') + 1, sizeof(myname));
 	buf = myname;
 	buf = strrchr(myname, '.');
 	buf[0] = '\0';
-	if (strcmp(myname, c->name) != 0) {
+	if (strcmp(myname, p->name) != 0) {
 		printf("\t\t* %s is outdated\n", strrchr(path, '/') + 1);
 		unlink(path);
 		return;
@@ -109,7 +122,7 @@ delete_ifold(struct pjail *j, const char *path)
 }
 
 int
-sanify_check(struct pjail *j)
+sanity_check(struct pjail *j)
 {
 	char query[MAXPATHLEN];
 	glob_t g;
@@ -274,7 +287,7 @@ exec_bulk(int argc, char **argv)
 	jail_setup(&j);
 	mount_nullfs(&j, &p);
 	check_pkgtools(&j);
-	sanify_check(&j);
+	sanity_check(&j);
 	jail_stop(&j);
 
 	return (EX_OK);
