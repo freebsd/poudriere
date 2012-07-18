@@ -146,6 +146,7 @@ prepare_ports
 
 zset status "building:"
 
+[ -z "${PARALLEL_BUILD}" ] || echo "DISABLE_MAKE_JOBS=yes" >> ${JAILMNT}/etc/make.conf
 zfs snapshot ${JAILFS}@prepkg
 if [ -z "${PARALLEL_BUILD}" ]; then
 	while :; do
