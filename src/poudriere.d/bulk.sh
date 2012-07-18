@@ -80,7 +80,7 @@ run_build() {
 			zfs rollback -r ${fs}@prepkg
 			MASTERMNT=${JAILMNT} JAILNAME="${name}" JAILMNT="${mnt}" JAILFS="${fs}" \
 				build_pkg ${port} >/dev/null 2>&1 &
-			echo "$!" > ${PIDPATH}/${j}.pid
+			echo "$!" > ${JAILMNT}/${j}.pid
 			[ $activity -ne 0 ] || sleep 5
 		done
 	done
