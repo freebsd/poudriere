@@ -160,9 +160,18 @@ else
 	DONE=0
 	run_build
 	# wait for the last running processes
-	cat ${PIDPATH}/*.pid | xargs pwait 2>/dev/null
+	cat ${PIDPATH}/*.pid 2>/dev/null | xargs pwait 2>/dev/null
+	cnt=$(wc -l ${JAILMNT}/ignored | awk '{ print $1 }')
+	zset stats_ignored $cnt
+	cnt=$(wc -l ${JAILMNT}/built | awk '{ print $1 }')
+	zset stats_built $cnt
+	cnt=$(wc -l ${JAILMNT}/failed | awk '{ print $1 }')
+	zset stats_failed $cnt
 fi
 
+failed=$(cat ${JAILMNT}/failed | xargs echo)
+built=$(cat ${JAILMNT}/built | xargs echo)
+ignored=$(cat ${JAILMNT}/ignored | xargs echo)
 nbfailed=$(zget stats_failed)
 nbignored=$(zget stats_ignored)
 nbbuilt=$(zget stats_built)
