@@ -155,6 +155,7 @@ if [ -z "${PARALLEL_BUILD}" ]; then
 		zfs rollback -r ${JAILFS}@prepkg
 	done
 else
+	msg "Starting using ${PARALLEL_JOB} builders"
 	PIDPATH=${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}/
 	DONE=0
 	run_build
