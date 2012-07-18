@@ -11,6 +11,7 @@ struct poudriere_conf {
 	char *resolv_conf;
 	char *csup_host;
 	char *svn_host;
+	char *svn_path;
 	int use_tmpfs;
 	int check_options_changed;
 	char *makeworld_args;

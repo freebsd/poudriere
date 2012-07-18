@@ -32,6 +32,7 @@ use_tmpfs		return USE_TMPFS;
 check_options_changed	return CHECK_OPTIONS_CHANGED;
 makeworld_args		return MAKEWORLD_ARGS;
 poudriere_data		return POUDRIERE_DATA;
+svn_path		return SVN_PATH;
 
 on|off			yylval.number =! strcmp(yytext, "on"); return STATE;
 \"[^\"]*\"		yylval.string = strdup(words(yytext)); return WORDS;

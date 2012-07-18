@@ -69,7 +69,7 @@ int yylex(void);
 
 %token BASEFS ZFS_POOL FREEBSD_HOST WRKDIRPREFIX RESOLV_CONF CSUP_HOST
 %token SVN_HOST USE_TMPFS CHECK_OPTIONS_CHANGED MAKEWORLD_ARGS
-%token POUDRIERE_DATA
+%token POUDRIERE_DATA SVN_PATH
 
 %union
 {
@@ -87,7 +87,7 @@ options: /* empty */
 
 option: basefs | zfs_pool | freebsd_host | wrkdirprefix | resolv_conf 
 	| csup_host | svn_host | use_tmpfs | check_options_changed
-	| makeworld_args | poudriere_data;
+	| makeworld_args | poudriere_data | svn_path;
 
 basefs: BASEFS WORD {
 	if (word_is_fs($2, WANT_DIRNAME) != 0)
@@ -117,10 +117,16 @@ csup_host: CSUP_HOST WORD { conf.csup_host = $2; };
 
 svn_host: SVN_HOST WORD { conf.svn_host = $2; };
 
+svn_path: SVN_PATH WORD {
+	if (word_is_fs($2, WANT_FILENAME) != 0)
+		YYERROR;
+	conf.svn_path = $2;
+};
+
 use_tmpfs: USE_TMPFS STATE { conf.use_tmpfs = $2; };
 
 check_options_changed: CHECK_OPTIONS_CHANGED STATE {
-	conf.check_options_changed = $2; 
+	conf.check_options_changed = $2;
 };
 
 makeworld_args: MAKEWORLD_ARGS WORD { conf.makeworld_args = $2; }

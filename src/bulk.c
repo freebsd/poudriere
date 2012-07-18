@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include <sys/sbuf.h>
 #include <sys/stat.h>
+#include <sys/queue.h>
 
 #define _WITH_GETLINE
 #include <stdio.h>
@@ -16,6 +17,13 @@
 #include "commands.h"
 #include "utils.h"
 #include "poudriere.h"
+
+static TAILQ_HEAD(pcache_list, pcache) cache = TAILQ_HEAD_INITIALIZER(cache);
+struct pcache {
+	char name[BUFSIZ];
+	char origin[BUFSIZ];
+	TAILQ_ENTRY(pcache) next;
+};
 
 void
 usage_bulk(void)
@@ -36,13 +44,13 @@ delete_ifold(struct pjail *j, const char *path)
 	FILE *fp;
 	char cmd[BUFSIZ];
 	char origin[MAXPATHLEN];
-	char pkgname[MAXPATHLEN];
 	char myname[MAXPATHLEN];
 	char ppath[MAXPATHLEN];
 	char *buf;
 	char *line = NULL;
 	size_t linecap = 0;
 	struct stat st;
+	struct pcache *c = NULL;
 
 	origin[0] = '\0';
 
@@ -64,22 +72,36 @@ delete_ifold(struct pjail *j, const char *path)
 		return;
 	}
 
-	snprintf(cmd, sizeof(cmd), "/usr/sbin/jexec -U root %s make -C /usr/ports/%s -VPKGNAME", j->name, origin);
-	linecap = 0;
-	line = NULL;
-	if ((fp = popen(cmd, "r")) != NULL) {
-		while (getline(&line, &linecap, fp) > 0)
-			strlcpy(pkgname, line, sizeof(pkgname));
-		fclose(fp);
+	TAILQ_FOREACH(c, &cache, next) {
+		if (strcmp(c->origin, origin) == 0)
+			break;
 	}
-	if (pkgname[strlen(pkgname) - 1] == '\n')
-		pkgname[strlen(pkgname) - 1] = '\0';
+	if (c == NULL) {
+		snprintf(cmd, sizeof(cmd), "/usr/sbin/jexec -U root %s make -C /usr/ports/%s -VPKGNAME", j->name, origin);
+		linecap = 0;
+		line = NULL;
+		if ((fp = popen(cmd, "r")) != NULL) {
+			while (getline(&line, &linecap, fp) > 0) {
+				c = malloc(sizeof(struct pcache));
+				strlcpy(c->origin, origin, sizeof(c->origin));
+				strlcpy(c->name, line, sizeof(c->name));
+				if (c->name[strlen(c->name) - 1] == '\n')
+					c->name[strlen(c->name) - 1] = '\0';
+				break;
+			}
+			fclose(fp);
+		}
+	}
+
+	/* TODO a problem occured, handle this later */
+	if (c == NULL)
+		return;
 
 	strlcpy(myname, strrchr(path, '/') + 1, sizeof(myname));
 	buf = myname;
 	buf = strrchr(myname, '.');
 	buf[0] = '\0';
-	if (strcmp(myname, pkgname) != 0) {
+	if (strcmp(myname, c->name) != 0) {
 		printf("\t\t* %s is outdated\n", strrchr(path, '/') + 1);
 		unlink(path);
 		return;
@@ -253,7 +275,7 @@ exec_bulk(int argc, char **argv)
 	mount_nullfs(&j, &p);
 	check_pkgtools(&j);
 	sanify_check(&j);
-/*	jail_stop(&j);*/
+	jail_stop(&j);
 
 	return (EX_OK);
 }

@@ -39,7 +39,7 @@ usage_ports(void)
 	fprintf(stderr,"\t%-15s%s\n", "-p", "specifies on which portstree we work. (defaule: \"default\").");
 	fprintf(stderr,"\t%-15s%s\n", "-f", "FS name (tank/jails/myjail)");
 	fprintf(stderr,"\t%-15s%s\n", "-M", "mountpoint");
-	fprintf(stderr,"\t%-15s%s\n\n", "-m", "method (to be used with -c). (default: \"portsnap\"). Valid method: \"portsnap\", \"csup\"");
+	fprintf(stderr,"\t%-15s%s\n\n", "-m", "method (to be used with -c). (default: \"portsnap\"). Valid method: \"portsnap\", \"csup\", \"svn+http\", \"svn\", \"svn+ssh\"");
 }
 
 static void
@@ -71,27 +71,84 @@ portsnap_create(struct pport_tree *p)
 	return;
 }
 
+typedef enum {
+	SVN,
+	SVNHTTP,
+	SVNSSH
+} svnproto;
+
 static void
-portsnap_update(struct pport_tree *p)
+_svn_create(struct pport_tree *p, svnproto proto)
 {
-	char *argv[8];
-	char snap[MAXPATHLEN], ports[MAXPATHLEN];
+	char dest[MAXPATHLEN];
+	char url[MAXPATHLEN];
+	char *argv[5];
+	const char *protocol;
 
-	snprintf(snap, sizeof(snap), "%s/snap", p->mountpoint);
-	snprintf(ports, sizeof(ports), "%s/ports", p->mountpoint);
-	argv[0] = "portsnap";
-	argv[1] = "-d";
-	argv[2] = snap;
-	argv[3] = "-p";
-	argv[4] = ports;
-	argv[5] = "fetch";
-	argv[6] = "update";
-	argv[7] = NULL;
+	snprintf(dest, sizeof(dest), "%s/ports", p->mountpoint);
+	switch(proto) {
+	case SVN:
+		protocol = "svn";
+		break;
+	case SVNHTTP:
+		protocol = "svn+http";
+		break;
+	case SVNSSH:
+		protocol = "svn+ssh";
+		break;
+	}
+	snprintf(url, sizeof(url), "%s://%s/ports/head", protocol, conf.svn_host);
 
-	if (exec("/usr/sbin/portsnap", argv) != 0)
-		fprintf(stderr, "Fail to update the ports tree\n");
+	argv[0] = "svn";
+	argv[1] = "co";
+	argv[2] = url;
+	argv[3] = dest;
+	argv[4] = NULL;
+
+	if (exec(conf.svn_path != NULL ? conf.svn_path : "/usr/local/bin/svn", argv) != 0)
+		fprintf(stderr, "Fail to create the ports tree\n");
 
 	return;
+
+}
+
+static void
+svn_update(struct pport_tree *p)
+{
+	char dest[MAXPATHLEN];
+	char *argv[4];
+	const char *protocol;
+
+	snprintf(dest, sizeof(dest), "%s/ports", p->mountpoint);
+
+	argv[0] = "svn";
+	argv[1] = "update";
+	argv[2] = dest;
+	argv[3] = NULL;
+
+	if (exec(conf.svn_path != NULL ? conf.svn_path : "/usr/local/bin/svn", argv) != 0)
+		fprintf(stderr, "Fail to create the ports tree\n");
+
+	return;
+
+}
+
+static void
+svn_create(struct pport_tree *p)
+{
+	_svn_create(p, SVN);
+}
+
+static void
+svnhttp_create(struct pport_tree *p)
+{
+	_svn_create(p, SVNHTTP);
+}
+
+static void
+svnssh_create(struct pport_tree *p)
+{
+	_svn_create(p, SVNSSH);
 }
 
 static void
@@ -130,6 +187,29 @@ csup_update(struct pport_tree *p)
 }
 
 static void
+portsnap_update(struct pport_tree *p)
+{
+	char *argv[8];
+	char snap[MAXPATHLEN], ports[MAXPATHLEN];
+
+	snprintf(snap, sizeof(snap), "%s/snap", p->mountpoint);
+	snprintf(ports, sizeof(ports), "%s/ports", p->mountpoint);
+	argv[0] = "portsnap";
+	argv[1] = "-d";
+	argv[2] = snap;
+	argv[3] = "-p";
+	argv[4] = ports;
+	argv[5] = "fetch";
+	argv[6] = "update";
+	argv[7] = NULL;
+
+	if (exec("/usr/sbin/portsnap", argv) != 0)
+		fprintf(stderr, "Fail to update the ports tree\n");
+
+	return;
+}
+
+static void
 port_create(struct pport_tree *p, bool fake)
 {
 	char *argv[13];
@@ -144,7 +224,9 @@ port_create(struct pport_tree *p, bool fake)
 	} pm [] = {
 		{ "portsnap", portsnap_create },
 		{ "csup", csup_update },
-		{ "svn", NULL },
+		{ "svn", svn_create },
+		{ "svn+http", svnhttp_create },
+		{ "svn+ssh", svnssh_create },
 		{ NULL, NULL },
 	};
 
@@ -219,7 +301,9 @@ port_update(struct pport_tree *p)
 		{ "portsnap", portsnap_update },
 		{ "-", portsnap_update }, /* default on portsnap */
 		{ "csup", csup_update },
-		{ "svn", NULL },
+		{ "svn", svn_update },
+		{ "svn+http", svn_update },
+		{ "svn+ssh", svn_update },
 		{ NULL, NULL },
 	};
 
