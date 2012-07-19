@@ -53,5 +53,6 @@ void jail_setup(struct pjail *j);
 int exec(char *, char * const argv[]);
 struct sbuf *injail_buf(struct pjail *j, char *cmd);
 void mount_nullfs(struct pjail *j, struct pport_tree *p);
+int split_chr(char *str, char sep);
 
 #endif

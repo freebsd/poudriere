@@ -49,6 +49,23 @@ exec_buf(const char *cmd)
 	return (res);
 }
 
+int
+split_chr(char *str, char sep)
+{
+	char *next;
+	char *buf = str;
+	int nbel = 0;
+
+	while ((next = strchr(buf, sep)) != NULL) {
+		nbel++;
+		buf = next;
+		buf[0] = '\0';
+		buf++;
+	}
+
+	return nbel;
+}
+
 struct sbuf *
 injail_buf(struct pjail *j, char *cmd)
 {

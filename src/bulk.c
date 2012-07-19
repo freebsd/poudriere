@@ -13,7 +13,7 @@
 #include <glob.h>
 #include <fts.h>
 #include <stdlib.h>
-#include <stringlist.h>
+#include <ctype.h>
 
 #include "commands.h"
 #include "utils.h"
@@ -121,6 +121,136 @@ delete_ifold(struct pjail *j, const char *path)
 	}
 }
 
+static int
+compute_deps(struct pjail *j, struct pport_tree *p, const char *orig)
+{
+	struct stat st;
+	struct port *port = NULL;
+	struct pkg *pkg = NULL;
+	struct dep *dep = NULL;
+	char path[MAXPATHLEN];
+	char cmd[BUFSIZ];
+	char *line = NULL;
+	char *buf, *buffer;
+	size_t next;
+	size_t linecap = 0;
+	char *pkgname = NULL;
+	int nbel, i;
+	FILE *fp;
+
+	STAILQ_FOREACH(pkg, &queue, next) {
+		if (strcmp(pkg->origin, orig) == 0)
+			return(0);
+	}
+
+	snprintf(path, sizeof(path), "%s/ports/%s", p->mountpoint, orig);
+
+	if ((stat(path, &st) == -1) || !S_ISDIR(st.st_mode)) {
+		warn("No such port %s in ports tree %s" , orig, p->name);
+		return (-1);
+	}
+
+	pkg = malloc(sizeof(struct pkg));
+	STAILQ_INIT(&pkg->deps);
+	port = malloc(sizeof(struct port));
+	strlcpy(port->origin, orig, sizeof(port->origin));
+	strlcpy(pkg->origin, orig, sizeof(pkg->origin));
+	STAILQ_INSERT_TAIL(&queue, pkg, next);
+	snprintf(cmd, sizeof(cmd), "/usr/sbin/jexec -U root %s "
+	    "make -C /usr/ports/%s "
+	    "-VPKGNAME "
+	    "-VPKG_DEPENDS "
+	    "-VBUILD_DEPENDS "
+	    "-VEXTRACT_DEPENDS "
+	    "-VLIB_DEPENDS "
+	    "-VPATCH_DEPENDS "
+	    "-VFETCH_DEPENDS "
+	    "-VRUN_DEPENDS",
+	    j->name, orig);
+
+	if ((fp = popen(cmd, "r")) != NULL) {
+		while (getline(&line, &linecap, fp) > 0) {
+			if (line[strlen(line) - 1] == '\n')
+				line[strlen(line) - 1] = '\0';
+			if (pkgname == NULL) {
+				pkgname = line;
+				strlcpy(port->name, pkgname, sizeof(port->name));
+				STAILQ_INSERT_TAIL(&ports, port, next);
+				continue;
+			}
+			if (line[0] == '\0')
+				continue;
+			nbel = split_chr(line, ' ');
+			buf = buffer = line;
+			for (i = 0; i < nbel; i++) {
+				buf = buffer;
+				next = strlen(buffer);
+				STAILQ_FOREACH(dep, &pkg->deps, next) {
+					if (strcmp(dep->origin, buf) == 0)
+						break;
+				}
+				/* from the end find the previous : */
+				buf = strrchr(buf, ':');
+				if (strncmp(buf + 1, "/usr/ports/", 11) == 0) {
+					buf += 11;
+					buf[0] = '\0';
+					buf++;
+				} else {
+					/* this is file:port:state */
+					buf[0] = '\0';
+					buf--;
+					buf = strrchr(buf, ':');
+					if (strncmp(buf + 1, "/usr/ports/", 11) == 0) {
+						buf += 11;
+						buf[0] = '\0';
+						buf++;
+					}
+				}
+				if (compute_deps(j, p, buf) != 0)
+					return (-1);
+
+				dep = malloc(sizeof(struct dep));
+				strlcpy(dep->origin, buf, sizeof(dep));
+				STAILQ_INSERT_TAIL(&pkg->deps, dep, next);
+				buffer += next + 1;
+				i++;
+			}
+		}
+		fclose(fp);
+	}
+	return (0);
+}
+
+int
+queue_ports(struct pjail *j, struct pport_tree *p, const char *path)
+{
+	FILE *fp;
+	size_t linecap = 0;
+	char *line = NULL;
+	char *buf;
+
+	printf("====>> Calculating ports order and dependencies\n");
+
+	if ((fp = fopen(path, "r")) == NULL) {
+		warn("Enable to open %s:", path);
+		return (-1);
+	}
+
+	while (getline(&line, &linecap, fp) > 0) {
+		buf = line;
+		while (isspace(buf[0]) && buf[0] != '\n')
+			buf++;
+		if (buf[0] == '#')
+			continue;
+		if (buf[strlen(buf) - 1] == '\n')
+			buf[strlen(buf) - 1] = '\0';
+		compute_deps(j, p, buf);
+	}
+	fclose (fp);
+	return (0);
+
+}
+
 int
 sanity_check(struct pjail *j)
 {
@@ -212,6 +342,7 @@ exec_bulk(int argc, char **argv)
 	char *porttree = "default";
 	struct pjail j;
 	struct pport_tree p;
+	struct pkg *pkg;
 	char snapshot[MAXPATHLEN], *args[4];
 
 	struct zfs_query qj[] = {
@@ -263,14 +394,19 @@ exec_bulk(int argc, char **argv)
 		return (EX_USAGE);
 	}
 
+	if (file == NULL) {
+		usage_bulk();
+		return (EX_USAGE);
+	}
+
 	strlcpy(j.name, jail, sizeof(j.name));
 	strlcpy(p.name, porttree, sizeof(p.name));
 
 	if (!zfs_query("rootfs", jail, qj, sizeof(qj) / sizeof(struct zfs_query)))
-		err(EX_USAGE, "No such jail %s", jail);
+		errx(EX_USAGE, "No such jail %s", jail);
 
 	if (!zfs_query("ports", porttree, qp, sizeof(qp) / sizeof(struct zfs_query)))
-		err(EX_USAGE, "No such ports tree %s", porttree);
+		errx(EX_USAGE, "No such ports tree %s", porttree);
 
 	snprintf(snapshot, sizeof(snapshot), "%s@clean", j.fs);
 	args[0] = "zfs";
@@ -287,6 +423,7 @@ exec_bulk(int argc, char **argv)
 	jail_setup(&j);
 	mount_nullfs(&j, &p);
 	check_pkgtools(&j);
+	queue_ports(&j, &p, file);
 	sanity_check(&j);
 	jail_stop(&j);
 
