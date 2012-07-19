@@ -422,12 +422,96 @@ spawn_jobs(struct pjail *j, struct pport_tree *p)
 	return (0);
 }
 
+typedef enum {
+	OK = 0,
+	IGNORED,
+	BROKEN,
+	FETCH,
+	CHECKSUM,
+	EXTRACT,
+	PATCH,
+	CONFIGURE,
+	BUILD,
+	INSTALL,
+	PACKAGE
+} ebuild;
+
+static struct phase {
+	char *target;
+	ebuild err;
+} phase[] = {
+	{ "fetch", FETCH },
+	{ "checksum", CHECKSUM },
+	{ "extract", EXTRACT },
+	{ "patch", PATCH },
+	{ "configure", CONFIGURE },
+	{ "build", BUILD },
+	{ "install", INSTALL },
+	{ "package", PACKAGE },
+	{ NULL, OK },
+};
+
 void
 build(struct pjail *j)
 {
-	printf("====>> %s - %s\n", j->name, j->pkg->origin);
-	sleep(20);
-	exit(0);
+	FILE *fp;
+	char cmd[BUFSIZ];
+	char *line = NULL;
+	int linenb = 0;
+	size_t linecap = 0;
+	int i;
+	char portdir[MAXPATHLEN];
+
+	char *argv[9];
+
+	printf("====>> Start building %s\n", j->pkg->origin);
+	snprintf(cmd, sizeof(cmd), "/usr/sbin/jexec -U root %s "
+	    "make -C /usr/ports/%s "
+	    "-VIGNORED "
+	    "-VBROKEN ", j->name, j->pkg->origin);
+
+	if ((fp = popen(cmd, "r")) != NULL) {
+		while (getline(&line, &linecap, fp) > 0) {
+			linenb++;
+			if (line[0] == '\n')
+				continue;
+			if (linenb == 1) {
+				printf("====>> Marked as IGNORED, aborting: %s", line);
+				exit(IGNORED);
+			}
+			if (linenb == 2)
+				exit(BROKEN);
+				printf("====>> Marked as BROKEN, aborting: %s", line);
+		}
+		fclose(fp);
+	}
+
+	snprintf(portdir, sizeof(portdir), "/usr/ports/%s", j->pkg->origin);
+
+	for (i = 0; phase[i].target != NULL; i++) {
+		if (phase[i].err == FETCH) {
+			jail_kill(j);
+			jail_run(j, true);
+		}
+		argv[0] = "jexec";
+		argv[1] = "-U";
+		argv[2] = "root";
+		argv[3] = j->name;
+		argv[4] = "make";
+		argv[5] = "-C";
+		argv[6] = portdir;
+		argv[7] = phase[i].target;
+		argv[8] = NULL;
+		if (exec("/usr/sbin/jexec", argv) != 0)
+			exit(phase[i].err);
+
+		if (phase[i].err == CHECKSUM) {
+			jail_kill(j);
+			jail_run(j, true);
+		}
+	}
+
+	exit(OK);
 }
 
 pid_t
@@ -521,7 +605,6 @@ build_packages(struct pjail *j)
 			}
 			free(p);
 		}
-		printf("next\n");
 	}
 	return (0);
 }

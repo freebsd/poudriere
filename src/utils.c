@@ -19,6 +19,8 @@
 #include <jail.h>
 #include <err.h>
 #include <errno.h>
+#include <login_cap.h>
+#include <pwd.h>
 
 #include "utils.h"
 #include "poudriere.h"
@@ -122,6 +124,53 @@ exec(char *path, char *const argv[])
 
 	return (WEXITSTATUS(pstat));
 };
+
+int
+jexec(struct pjail *j, char *argv[])
+{
+	int jid;
+	int pstat;
+	pid_t pid;
+	struct passwd *pwd;
+	login_cap_t *lcap;
+	gid_t *groups;
+	int ngroups;
+	long ngroups_max;
+
+	jid = jail_getid(j->name);
+	if (jid == -1)
+		return (jid);
+
+	switch((pid = fork())) {
+	case -1:
+		break;
+	case 0:
+		jail_attach(jid);
+		chdir("/");
+		pwd = getpwnam("root");
+		lcap = login_getpwclass(pwd);
+		ngroups_max = sysconf(_SC_NGROUPS_MAX) + 1;
+		groups = malloc(sizeof(gid_t) * ngroups_max);
+		getgrouplist("root", pwd->pw_gid, groups, &ngroups);
+		setgroups(ngroups, groups);
+		setgid(pwd->pw_gid);
+		setusercontext(lcap, pwd, pwd->pw_uid,
+		    LOGIN_SETALL & ~LOGIN_SETGROUP & ~LOGIN_SETLOGIN);
+		login_close(lcap);
+		execvp(argv[1], argv + 1);
+		exit(0);
+		break;
+	default:
+		break;
+	}
+
+	while (waitpid(pid, &pstat, 0) == -1) {
+		if (errno != EINTR)
+			return (-1);
+	}
+
+	return (WEXITSTATUS(pstat));
+}
 
 void
 zfs_list(struct zfs_prop z[], const char *t, int n)

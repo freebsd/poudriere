@@ -8,6 +8,6 @@ SRCS=	parseconf.y \
 	bulk.c \
 	utils.c
 
-LDADD=	-lsbuf -ljail
+LDADD=	-lsbuf -ljail -lutil
 
 .include <bsd.prog.mk>
