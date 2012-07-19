@@ -2,6 +2,7 @@
 #include <sys/sbuf.h>
 #include <sys/stat.h>
 #include <sys/queue.h>
+#include <sys/sysctl.h>
 
 #define _WITH_GETLINE
 #include <stdio.h>
@@ -95,7 +96,7 @@ delete_ifold(struct pjail *j, const char *path)
 		line = NULL;
 		if ((fp = popen(cmd, "r")) != NULL) {
 			while (getline(&line, &linecap, fp) > 0) {
-				p = malloc(sizeof(struct port));
+				p = calloc(0, sizeof(struct port));
 				strlcpy(p->origin, origin, sizeof(p->origin));
 				strlcpy(p->name, line, sizeof(p->name));
 				if (p->name[strlen(p->name) - 1] == '\n')
@@ -332,6 +333,98 @@ check_pkgtools(struct pjail *j)
 }
 
 int
+jail_clone(struct pjail *j, int slot)
+{
+	char *argv[11];
+	char mnt[MAXPATHLEN + 11];
+	char snap[MAXPATHLEN];
+	char fs[MAXPATHLEN];
+	char buf[BUFSIZ];
+
+	struct pjail *c;
+
+	c = malloc(sizeof(struct pjail));
+
+	struct zfs_query qj[] = {
+		{ "poudriere:version", STRING, c->version, sizeof(c->version), 0 },
+		{ "poudriere:arch", STRING, c->arch, sizeof(c->arch), 0 },
+		{ "poudriere:stats_built", INTEGER, NULL, 0,  c->built },
+		{ "poudriere:stats_failed", INTEGER, NULL, 0,  c->failed },
+		{ "poudriere:stats_ignored", INTEGER, NULL, 0,  c->ignored },
+		{ "poudriere:stats_queued", INTEGER, NULL, 0, c->queued },
+		{ "poudriere:status", STRING, c->status, sizeof(c->status), 0 },
+		{ "mountpoint", STRING, c->mountpoint, sizeof(c->mountpoint), 0 },
+		{ "name", STRING, c->fs, sizeof(c->fs), 0 },
+	};
+
+	snprintf(mnt, sizeof(mnt), "mountpoint=%s/build/%d", j->mountpoint, slot);
+	snprintf(c->name, sizeof(c->name), "%s-job-%i", j->name, slot);
+	snprintf(snap, sizeof(snap), "%s@prepkg", j->fs);
+	snprintf(fs, sizeof(fs), "%s/job-%d", j->fs, slot);
+
+	argv[0] = "zfs";
+	argv[1] = "clone";
+	argv[2] = "-o";
+	snprintf(buf, sizeof(buf), "poudriere:name=%s", c->name);
+	argv[3] = buf;
+	argv[4] = "-o";
+	argv[5] = "poudriere:type=rootfs";
+	argv[6] = "-o";
+	argv[7] = mnt;
+	argv[8] = snap;
+	argv[9] = fs;
+	argv[10] = NULL;
+
+	if (exec("/sbin/zfs", argv) != 0) {
+		warnx("Unable to clone %s", j->fs);
+		free(c);
+		return (-1);
+	}
+	if (!zfs_query("rootfs", c->name, qj, sizeof(qj) / sizeof(struct zfs_query)))
+		errx(EX_USAGE, "No such jail %s", c->name);
+
+	STAILQ_INSERT_TAIL(&j->children, c, next);
+	return (0);
+}
+
+int
+spawn_jobs(struct pjail *j, struct pport_tree *p)
+{
+	int i;
+	size_t len;
+	struct pjail *c;
+	char *argv[4];
+	char snap[MAXPATHLEN];
+
+	/* if no parallel jobs number is defined then set it to hw.ncpu */
+	if (conf.parallel_jobs == 0) {
+		len = sizeof(conf.parallel_jobs);
+		sysctlbyname("hw.ncpu", &conf.parallel_jobs, &len, NULL, 0);
+	}
+
+	printf("====>> Spawning %d builders\n", conf.parallel_jobs);
+
+	snprintf(snap, sizeof(snap), "%s@prepkg", j->fs);
+	argv[0] = "zfs";
+	argv[1] = "snapshot";
+	argv[2] = snap;
+	argv[3] = NULL;
+
+	if (exec("/sbin/zfs", argv) != 0)
+		err(1, "Failed to snapshot to %s", snap);
+
+	for (i = 0; i < conf.parallel_jobs; i++) {
+		if (jail_clone(j, i) == 0) {
+			c = STAILQ_LAST(&j->children, pjail, next);
+			jail_start(c);
+			mount_nullfs(c, p);
+		}
+	}
+
+	return (0);
+}
+
+int
 exec_bulk(int argc, char **argv)
 {
 	signed char ch;
@@ -345,6 +438,7 @@ exec_bulk(int argc, char **argv)
 	struct pkg *pkg;
 	char snapshot[MAXPATHLEN], *args[4];
 
+	STAILQ_INIT(&j.children);
 	struct zfs_query qj[] = {
 		{ "poudriere:version", STRING, j.version, sizeof(j.version), 0 },
 		{ "poudriere:arch", STRING, j.arch, sizeof(j.arch), 0 },
@@ -424,7 +518,10 @@ exec_bulk(int argc, char **argv)
 	mount_nullfs(&j, &p);
 	check_pkgtools(&j);
 	queue_ports(&j, &p, file);
+
 	sanity_check(&j);
+
+	spawn_jobs(&j, &p);
 	jail_stop(&j);
 
 	return (EX_OK);

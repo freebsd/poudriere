@@ -1,6 +1,7 @@
 #ifndef _POUDRIERE_H
 #define _POUDRIERE_H
 #include <sys/param.h>
+#include <sys/queue.h>
 #include <stdbool.h>
 
 struct poudriere_conf {

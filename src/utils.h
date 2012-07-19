@@ -2,6 +2,7 @@
 #define _UTILS_H
 
 #include <sys/param.h>
+#include <sys/queue.h>
 
 struct zfs_prop {
 	const char *title;
@@ -33,7 +34,8 @@ struct pjail {
 	int ignored;
 	int queued;
 	char status[BUFSIZ];
-	struct pjail *next;
+	STAILQ_HEAD(jails, pjail) children;
+	STAILQ_ENTRY(pjail) next;
 };
 
 struct pport_tree {

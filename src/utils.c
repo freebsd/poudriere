@@ -490,13 +490,19 @@ jail_stop(struct pjail *j)
 {
 	struct statfs *mntbuf;
 	size_t mntsize, i, n;
+	struct pjail *c;
+	char snap[MAXPATHLEN];
 	char **mnts;
+	char *argv[5];
 
 	if (!jail_runs(j->name)) {
 		fprintf(stderr, "No such jail: %s\n", j->name);
 		return;
 	}
 
+	STAILQ_FOREACH(c, &j->children, next) {
+		jail_kill(c);
+	}
 	jail_kill(j);
 
 	if ((mntsize = getmntinfo(&mntbuf, MNT_NOWAIT)) <= 0)
@@ -519,6 +525,16 @@ jail_stop(struct pjail *j)
 		unmount(mnts[i], 0);
 
 	free(mnts);
+
+	snprintf(snap, sizeof(snap), "%s@clean", j->fs);
+	argv[0] = "zfs";
+	argv[1] = "rollback";
+	argv[2] = "-R";
+	argv[3] = snap;
+	argv[4] = NULL;
+
+	if (exec("/sbin/zfs", argv) != 0)
+		err(1, "Failed to rollback to %s", snap);
 }
 
 void
@@ -560,4 +576,5 @@ jail_setup(struct pjail *j)
 		fclose(t);
 		fclose(s);
 	}
+
 }
