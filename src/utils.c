@@ -500,9 +500,8 @@ jail_stop(struct pjail *j)
 		return;
 	}
 
-	STAILQ_FOREACH(c, &j->children, next) {
+	STAILQ_FOREACH(c, &j->children, next)
 		jail_kill(c);
-	}
 	jail_kill(j);
 
 	if ((mntsize = getmntinfo(&mntbuf, MNT_NOWAIT)) <= 0)
@@ -576,5 +575,4 @@ jail_setup(struct pjail *j)
 		fclose(t);
 		fclose(s);
 	}
-
 }

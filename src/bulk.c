@@ -3,6 +3,8 @@
 #include <sys/stat.h>
 #include <sys/queue.h>
 #include <sys/sysctl.h>
+#include <sys/event.h>
+#include <sys/time.h>
 
 #define _WITH_GETLINE
 #include <stdio.h>
@@ -15,6 +17,7 @@
 #include <fts.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <fcntl.h>
 
 #include "commands.h"
 #include "utils.h"
@@ -33,11 +36,6 @@ struct dep {
 };
 
 static STAILQ_HEAD(pkg_list, pkg) queue = STAILQ_HEAD_INITIALIZER(queue);
-struct pkg {
-	char origin[BUFSIZ];
-	STAILQ_HEAD(deps, dep) deps;
-	STAILQ_ENTRY(pkg) next;
-};
 
 void
 usage_bulk(void)
@@ -211,7 +209,7 @@ compute_deps(struct pjail *j, struct pport_tree *p, const char *orig)
 					return (-1);
 
 				dep = malloc(sizeof(struct dep));
-				strlcpy(dep->origin, buf, sizeof(dep));
+				strlcpy(dep->origin, buf, sizeof(dep->origin));
 				STAILQ_INSERT_TAIL(&pkg->deps, dep, next);
 				buffer += next + 1;
 				i++;
@@ -424,6 +422,110 @@ spawn_jobs(struct pjail *j, struct pport_tree *p)
 	return (0);
 }
 
+void
+build(struct pjail *j)
+{
+	printf("====>> %s - %s\n", j->name, j->pkg->origin);
+	sleep(20);
+	exit(0);
+}
+
+pid_t
+build_pkg(struct pjail *j)
+{
+	int fd;
+	pid_t pid;
+	struct port *p;
+	char logpath[MAXPATHLEN];
+
+	switch ((pid = fork())) {
+	case -1:
+		return (-1);
+	case 0:
+		/* todo create it */
+		STAILQ_FOREACH(p, &ports, next) {
+			if (strcmp(p->origin, j->pkg->origin) == 0)
+				break;
+		}
+		printf("%s\n",p->name);
+		snprintf(logpath, sizeof(logpath), "%s/logs/%s-%s.log", conf.poudriere_data, j->name, p->name);
+		fd = open(logpath, (O_CREAT|O_RDWR), 0644);
+		dup2(fd, STDOUT_FILENO);
+		dup2(fd, STDERR_FILENO);
+		build(j);
+		_exit(1);
+		/* NOT REACHED */
+	default:
+		break;
+	}
+
+	signal(SIGCHLD, SIG_IGN);
+
+	return (pid);
+}
+
+int
+build_packages(struct pjail *j)
+{
+	int kq;
+	struct kevent ke;
+	struct kevent *e;
+	int i = 0;
+	struct pkg *p, *p2;
+	struct dep *d;
+	struct pjail *w, *w1;
+	pid_t pid;
+	int n;
+
+	e = malloc(conf.parallel_jobs * sizeof(struct kevent));
+
+	/* initialize the workers */
+	STAILQ_FOREACH(w1, &j->children, next)
+		w1->pkg = NULL;
+
+	kq = kqueue();
+	while (!STAILQ_EMPTY(&queue)) {
+		STAILQ_FOREACH_SAFE(p, &queue, next, p2) {
+			if (STAILQ_EMPTY(&p->deps)) {
+				w = NULL;
+				STAILQ_FOREACH(w1, &j->children, next) {
+					if (w1->pkg == NULL) {
+						w = w1;
+						w->pkg = p;
+						break;
+					}
+				}
+				if (w == NULL)
+					break;
+				pid = build_pkg(w);
+				EV_SET(&ke, pid, EVFILT_PROC, EV_ADD|EV_ONESHOT, NOTE_EXIT, 0, p);
+				kevent(kq, &ke, 1, NULL, 0, NULL);
+				STAILQ_REMOVE(&queue, p, pkg, next);
+			}
+		}
+		n = kevent(kq, NULL, 0, e, conf.parallel_jobs, NULL);
+		for (i = 0; i < n; i++) {
+			p = (struct pkg *)e[i].udata;
+			STAILQ_FOREACH(p2, &queue, next) {
+				STAILQ_FOREACH(d, &p2->deps, next) {
+					if (strcmp(d->origin, p->origin) == 0) {
+						STAILQ_REMOVE(&p2->deps, d, dep, next);
+						break;
+					}
+				}
+			}
+			/* release the builder */
+			STAILQ_FOREACH(w1, &j->children, next) {
+				if (w1->pkg == p)
+					w1->pkg = NULL;
+			}
+			free(p);
+		}
+		printf("next\n");
+	}
+	return (0);
+}
+
 int
 exec_bulk(int argc, char **argv)
 {
@@ -439,6 +541,7 @@ exec_bulk(int argc, char **argv)
 	char snapshot[MAXPATHLEN], *args[4];
 
 	STAILQ_INIT(&j.children);
+
 	struct zfs_query qj[] = {
 		{ "poudriere:version", STRING, j.version, sizeof(j.version), 0 },
 		{ "poudriere:arch", STRING, j.arch, sizeof(j.arch), 0 },
@@ -522,6 +625,9 @@ exec_bulk(int argc, char **argv)
 	sanity_check(&j);
 
 	spawn_jobs(&j, &p);
+
+	build_packages(&j);
+
 	jail_stop(&j);
 
 	return (EX_OK);

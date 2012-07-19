@@ -34,8 +34,15 @@ struct pjail {
 	int ignored;
 	int queued;
 	char status[BUFSIZ];
+	struct pkg *pkg;
 	STAILQ_HEAD(jails, pjail) children;
 	STAILQ_ENTRY(pjail) next;
+};
+
+struct pkg {
+	char origin[BUFSIZ];
+	STAILQ_HEAD(deps, dep) deps;
+	STAILQ_ENTRY(pkg) next;
 };
 
 struct pport_tree {
