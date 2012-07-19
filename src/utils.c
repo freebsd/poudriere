@@ -315,57 +315,41 @@ mkdirs(const char *_path)
 void
 jail_run(struct pjail *j, bool network)
 {
-	char *argv[14];
-	int n=11;
-	size_t sysvallen;
-	int sysval = 0;
-	char name[BUFSIZ], hostname[BUFSIZ], path[MAXPATHLEN + 5] ;
+	int jid;
 
-	snprintf(name, sizeof(name), "name=%s", j->name);
-	snprintf(hostname, sizeof(name), "host.hostname=%s", j->name);
-	snprintf(path, sizeof(path), "path=%s", j->mountpoint);
+	jid = jail_setv(JAIL_CREATE,
+	    "name", j->name,
+	    "path", j->mountpoint,
+	    "persist", "true",
+	    "allow.sysvipc", "true",
+	    "allow.mount", "true",
+	    "allow.socket_af", "true",
+	    "allow.raw_sockets", "true",
+	    "allow.chflags", "true",
+	    network ? "ip4" : "ip4.addr", network ? "inherit" : "127.0.0.1",
+	    network ? "ip6" : "ip6.addr", network ? "inherit" : "::1",
+	    NULL);
 
-	argv[0] = "jail";
-	argv[1] = "-c";
-	argv[2] = "persist";
-	argv[3] = path;
-	argv[4] = name;
-	argv[5] = hostname;
-	argv[6] = "allow.sysvipc";
-	argv[7] = "allow.mount";
-	argv[8] = "allow.socket_af";
-	argv[9] = "allow.raw_sockets";
-	argv[10] = "allow.chflags";
-
-	sysvallen = sizeof(sysval);
-	if (sysctlbyname("kern.features.inet", &sysval, &sysvallen, NULL, 0) == 0) {
-		argv[n] = network ? "ip4=inherit" : "ip4.addr=127.0.0.1";
-		n++;
-	}
-
-	sysvallen = sizeof(sysval);
-	if (sysctlbyname("kern.features.inet6", &sysval, &sysvallen, NULL, 0) == 0) {
-		argv[n] = network ? "ip6=inherit" : "ip6.addr=::1";
-		n++;
-	}
-	argv[n] = NULL;
-
-	if (exec("/usr/sbin/jail", argv) != 0)
-		fprintf(stderr, "Fail to start jail\n");
+	if (jid == -1)
+		warn("Fail to start jail\n");
 }
 
 void
 jail_kill(struct pjail *j)
 {
-	char *argv[4];
+	int jid;
 
-	argv[0] = "jail";
-	argv[1] = "-r";
-	argv[2] = j->name;
-	argv[3] = NULL;
+	jid = jail_getid(j->name);
+	if (jid == -1)
+		return;
 
-	if (exec("/usr/sbin/jail", argv) != 0)
-		fprintf(stderr, "Fail to stop jail\n");
+	if (jail_remove(jid) < 0)
+		warn("Fail to stop jail");
+
+	while (jail_getid(j->name) != -1)
+		usleep(100);
+
+	return;
 }
 
 void
@@ -477,6 +461,24 @@ mount_nullfs(struct pjail *j, struct pport_tree *p)
 
 	if (nmount(iov, 6, 0))
 		err(1, "failed to mount %s\n", target);
+
+	/* distfiles */
+	if (conf.distfiles_cache == NULL)
+		return;
+
+	snprintf(source, sizeof(source), "%s/usr/ports/distfiles", j->mountpoint);
+
+	if (mkdir(source, 0755) != 0 && errno != EEXIST)
+		err(1, "Unable to create dir: %s", source);
+
+	iov[3].iov_base = source;
+	iov[3].iov_len =  strlen(source) + 1;
+
+	iov[5].iov_base = conf.distfiles_cache;
+	iov[5].iov_len = strlen(conf.distfiles_cache) + 1;
+
+	if (nmount(iov, 6, 0))
+		err(1, "failed to mount %s\n", target);
 }
 
 int
@@ -521,7 +523,7 @@ jail_stop(struct pjail *j)
 	qsort(mnts, n, sizeof(char *), mntcmp);
 
 	for (i = 0; i < n; i++)
-		unmount(mnts[i], 0);
+		unmount(mnts[i], MNT_FORCE);
 
 	free(mnts);
 

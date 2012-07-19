@@ -53,6 +53,7 @@ makeworld_args		return MAKEWORLD_ARGS;
 poudriere_data		return POUDRIERE_DATA;
 svn_path		return SVN_PATH;
 parallel_jobs		return PARALLEL_JOBS;
+distfiles_cache		return DISTFILES_CACHE;
 
 on|off			yylval.number =! strcmp(yytext, "on"); return STATE;
 \"[^\"]*\"		yylval.string = strdup(words(yytext)); return WORDS;

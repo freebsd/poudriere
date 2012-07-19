@@ -4,6 +4,8 @@
 #include <sys/param.h>
 #include <sys/queue.h>
 
+#include <stdbool.h>
+
 struct zfs_prop {
 	const char *title;
 	const char *name;
@@ -59,6 +61,8 @@ int zfs_query(const char *, const char *, struct zfs_query[], int);
 void jail_stop(struct pjail *j);
 void jail_start(struct pjail *j);
 void jail_setup(struct pjail *j);
+void jail_kill(struct pjail *j);
+void jail_run(struct pjail *j, bool network);
 int exec(char *, char * const argv[]);
 struct sbuf *injail_buf(struct pjail *j, char *cmd);
 void mount_nullfs(struct pjail *j, struct pport_tree *p);

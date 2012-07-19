@@ -69,7 +69,7 @@ int yylex(void);
 
 %token BASEFS ZFS_POOL FREEBSD_HOST WRKDIRPREFIX RESOLV_CONF CSUP_HOST
 %token SVN_HOST USE_TMPFS CHECK_OPTIONS_CHANGED MAKEWORLD_ARGS
-%token POUDRIERE_DATA SVN_PATH PARALLEL_JOBS
+%token POUDRIERE_DATA SVN_PATH PARALLEL_JOBS DISTFILES_CACHE
 
 %union
 {
@@ -88,7 +88,8 @@ options: /* empty */
 
 option: basefs | zfs_pool | freebsd_host | wrkdirprefix | resolv_conf
 	| csup_host | svn_host | use_tmpfs | check_options_changed
-	| makeworld_args | poudriere_data | svn_path | parallel_jobs ;
+	| makeworld_args | poudriere_data | svn_path | parallel_jobs
+	| distfiles_cache ;
 
 basefs: BASEFS WORD {
 	if (word_is_fs($2, WANT_DIRNAME) != 0)
@@ -140,5 +141,11 @@ poudriere_data: POUDRIERE_DATA WORD {
 	if (word_is_fs($2, WANT_DIRNAME) != 0)
 		YYERROR;
 	conf.poudriere_data = $2;
+};
+
+distfiles_cache: DISTFILES_CACHE WORD {
+	if (word_is_fs($2, WANT_DIRNAME) != 0)
+		YYERROR;
+	conf.distfiles_cache = $2;
 };
 %%

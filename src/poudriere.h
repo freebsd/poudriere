@@ -18,6 +18,7 @@ struct poudriere_conf {
 	int check_options_changed;
 	char *makeworld_args;
 	char *poudriere_data;
+	char *distfiles_cache;
 	bool pkgng;
 	char ext[4];
 	char pkg_add[MAXPATHLEN];
