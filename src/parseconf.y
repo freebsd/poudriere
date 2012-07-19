@@ -69,7 +69,7 @@ int yylex(void);
 
 %token BASEFS ZFS_POOL FREEBSD_HOST WRKDIRPREFIX RESOLV_CONF CSUP_HOST
 %token SVN_HOST USE_TMPFS CHECK_OPTIONS_CHANGED MAKEWORLD_ARGS
-%token POUDRIERE_DATA SVN_PATH
+%token POUDRIERE_DATA SVN_PATH PARALLEL_JOBS
 
 %union
 {
@@ -77,6 +77,7 @@ int yylex(void);
 	char *string;
 }
 %token <number> STATE
+%token <number> NUMBER
 %token <string> WORD
 %token <string> WORDS
 
@@ -85,9 +86,9 @@ options: /* empty */
 	| options option
 	;
 
-option: basefs | zfs_pool | freebsd_host | wrkdirprefix | resolv_conf 
+option: basefs | zfs_pool | freebsd_host | wrkdirprefix | resolv_conf
 	| csup_host | svn_host | use_tmpfs | check_options_changed
-	| makeworld_args | poudriere_data | svn_path;
+	| makeworld_args | poudriere_data | svn_path | parallel_jobs ;
 
 basefs: BASEFS WORD {
 	if (word_is_fs($2, WANT_DIRNAME) != 0)
@@ -98,6 +99,8 @@ basefs: BASEFS WORD {
 zfs_pool: ZFS_POOL WORD {
 	conf.zfs_pool = $2;
 };
+
+parallel_jobs: PARALLEL_JOBS NUMBER { conf.parallel_jobs = $2; };
 
 freebsd_host: FREEBSD_HOST WORD { conf.freebsd_host = $2; };
 

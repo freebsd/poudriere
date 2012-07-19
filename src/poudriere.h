@@ -12,6 +12,7 @@ struct poudriere_conf {
 	char *csup_host;
 	char *svn_host;
 	char *svn_path;
+	int parallel_jobs;
 	int use_tmpfs;
 	int check_options_changed;
 	char *makeworld_args;
