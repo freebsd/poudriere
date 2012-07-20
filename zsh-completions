@@ -27,6 +27,8 @@ _bulk=(
 	'-f[Give the list of ports to build]:name of file:_files'
 #Options:
 	'-k[Keep the previous built binary packages]::'
+	'-t[Add some testings to package building]::'
+	'-s[Skip sanity]::'
 	'*-j[Run only on the given jail]::jail name:_poudriere_jail'
 	'-p[Specify on which ports tree the bulk will be done]::tree:_poudriere_pt'
 )

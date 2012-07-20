@@ -10,6 +10,7 @@ Parameters:
 Options:
     -k          -- Keep the previous built binary packages
     -t          -- Add some testings to package building
+    -s          -- Skip sanity
     -j name     -- Run only on the given jail
     -p tree     -- Specify on which ports tree the bulk will be done"
 
