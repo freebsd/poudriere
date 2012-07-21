@@ -141,3 +141,6 @@ msg "Removing existing ${PREFIX} dir"
 log_stop ${LOGS}/testport-${PKGNAME}-${JAILNAME}.log
 
 cleanup
+set +e
+
+exit 0
