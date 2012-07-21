@@ -679,8 +679,8 @@ if [ "${ZVERSION}" = "-" ]; then
 fi
 
 POUDRIERE_DATA=`get_data_dir`
-: ${CRONDIR="${POUDRIERE_DATA}/cron}
-: ${SVN_HOST="svn.FreeBSD.org}
+: ${CRONDIR="${POUDRIERE_DATA}/cron"}
+: ${SVN_HOST="svn.FreeBSD.org"}
 : ${FREEBSD_HOST="ftp://${FTP_HOST:-ftp.FreeBSD.org}"}
 
 if [ -n "${PARALLEL_BUILD}" ]; then
