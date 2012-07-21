@@ -61,7 +61,7 @@ list_jail() {
 delete_jail() {
 	test -z ${JAILNAME} && usage
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
-	jail_runs ${JAILNAME} && \
+	jail_runs && \
 		err 1 "Unable to remove jail ${JAILNAME}: it is running"
 
 	msg_n "Removing ${JAILNAME} jail..."
@@ -80,7 +80,7 @@ cleanup_new_jail() {
 
 update_jail() {
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
-	jail_runs ${JAILNAME} && \
+	jail_runs && \
 		err 1 "Unable to remove jail ${JAILNAME}: it is running"
 
 	METHOD=`zget method`
