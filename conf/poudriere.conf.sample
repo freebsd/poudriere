@@ -55,9 +55,12 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # it sticky and give a+rwx.
 CRONDIR=${BASEFS}/cron
 
-# if set the ports tree will be synced using csup instead of portsnap using the
-# given cvsup mirror.
-CSUP_HOST=cvsup._CHANGE_THIS_.freebsd.org
+# if set the ports tree marked to use csup method will use the defined mirror
+#CSUP_HOST=cvsup._CHANGE_THIS_.freebsd.org
+
+# if set the ports tree or source tree marked to use svn will use the defined
+# mirror by default svn.FreeBSD.org
+#SVN_HOST=svn.FreeBSD.org
 
 # Automatic OPTION change detection
 # Only if using PKGNG, when bulk building packages with -k, compare the options from
