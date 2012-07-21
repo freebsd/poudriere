@@ -36,7 +36,7 @@ info_jail() {
 	nbi=$(zget stats_ignored)
 	nbq=$(zget stats_queued)
 	tobuild=$((nbq - nbb - nbf - nbi))
-	zfs list -H -o poudriere:type,poudriere:name,poudriere:version,poudriere:arch,poudriere:stats_built,poudriere:stats_failed,poudriere:stats_ignored,poudriere:status ${JAILFS}| \
+	zfs list -H -o ${NS}:type,${NS}:name,${NS}:version,${NS}:arch,${NS}:stats_built,${NS}:stats_failed,${NS}:stats_ignored,${NS}:status ${JAILFS}| \
 		awk -v q="$nbq" -v tb="$tobuild" '/^rootfs/  {
 			print "Jailname: " $2;
 			print "FreeBSD Version: " $3;
@@ -53,8 +53,9 @@ info_jail() {
 list_jail() {
 	[ ${QUIET} -eq 0 ] && \
 		printf '%-20s %-13s %-7s %-7s %-7s %-7s %-7s %s\n' "JAILNAME" "VERSION" "ARCH" "SUCCESS" "FAILED" "IGNORED" "QUEUED" "STATUS"
-	zfs list -Hd1 -o poudriere:type,poudriere:name,poudriere:version,poudriere:arch,poudriere:stats_built,poudriere:stats_failed,poudriere:stats_ignored,poudriere:stats_queued,poudriere:status ${ZPOOL}/poudriere | \
-		awk '/^rootfs/ { printf("%-20s %-13s %-7s %-7s %-7s %-7s %-7s %s\n",$2, $3, $4, $5, $6, $7, $8, $9) }'
+	zfs list -t filesystem -H \
+		-o ${NS}:type,${NS}:name,${NS}:version,${NS}:arch,${NS}:stats_built,${NS}:stats_failed,${NS}:stats_ignored,${NS}:stats_queued,${NS}:status | \
+		awk '$1 == "rootfs" { printf("%-20s %-13s %-7s %-7s %-7s %-7s %-7s %s\n",$2, $3, $4, $5, $6, $7, $8, $9) }'
 }
 
 delete_jail() {
