@@ -660,6 +660,9 @@ ZVERSION=$(zpool list -H -oversion ${ZPOOL})
 if [ "${ZVERSION}" = "-" ]; then
 	ZVERSION=29
 fi
+if [ -z "${CRONDIR}" ]; then
+	CRONDIR=${POUDRIERE_DATA}/cron
+fi
 
 if [ -n "${PARALLEL_BUILD}" ]; then
 	case ${PARALLEL_JOB} in
