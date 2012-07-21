@@ -21,10 +21,10 @@ Options:
     -f fs         -- FS name (tank/jails/myjail)
     -M mountpoint -- mountpoint
     -m method     -- when used with -c forces the method to use by default
-                     \"ftp\", could also be \"svn\", \"csup\" please note
-                     that with svn and csup the world will be built. note
-                     that building from sources can use src.conf and
-                     jail-src.conf from localbase/etc/poudriere.d
+                     \"ftp\", could also be \"svn\", \"svn+http\", \"svn+ssh\",
+		     \"csup\" please note that with svn and csup the world
+		     will be built. note that building from sources can use
+		     src.conf and jail-src.conf from localbase/etc/poudriere.d
     -t version    -- version to upgrade to"
 	exit 1
 }
@@ -146,13 +146,22 @@ build_and_install_world() {
 
 install_from_svn() {
 	local UPDATE=0
+	local proto
 	[ -d ${JAILMNT}/usr/src ] && UPDATE=1
 	mkdir -p ${JAILMNT}/usr/src
-	msg "Fetching sources from svn"
+	case ${METHOD} in
+	svn+http) proto="http" ;;
+	svn+ssh) proto="svn+ssh" ;;
+	svn) proto="svn" ;;
+	esac
 	if [ ${UPDATE} -eq 0 ]; then
-		svn co http://svn.freebsd.org/base/${RELEASE} ${JAILMNT}/usr/src || err 1 "Fail to fetch sources"
+		msg_n "Checking out the sources from svn..."
+		svn -q co proto://${SVN_HOST:-svn.FreeBSD.org}/base/${RELEASE} ${JAILMNT}/usr/src || err 1 "Fail "
+		echo " done"
 	else
-		cd ${JAILMNT}/usr/src && svn up
+		msg_n "Updating the sources from svn..."
+		svn -q update ${JAILMNT}/usr/src || err 1 "Fail "
+		echo " done"
 	fi
 	build_and_install_world
 }
@@ -250,7 +259,7 @@ create_jail() {
 	ftp)
 		FCT=install_from_ftp
 		;;
-	svn)
+	svn*)
 		SVN=`which svn`
 		test -z ${SVN} && err 1 "You need svn on your host to use svn method"
 		FCT=install_from_svn
