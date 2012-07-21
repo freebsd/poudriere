@@ -156,7 +156,7 @@ install_from_svn() {
 	esac
 	if [ ${UPDATE} -eq 0 ]; then
 		msg_n "Checking out the sources from svn..."
-		svn -q co proto://${SVN_HOST:-svn.FreeBSD.org}/base/${RELEASE} ${JAILMNT}/usr/src || err 1 "Fail "
+		svn -q co ${proto}://${SVN_HOST:-svn.FreeBSD.org}/base/${RELEASE} ${JAILMNT}/usr/src || err 1 "Fail "
 		echo " done"
 	else
 		msg_n "Updating the sources from svn..."

@@ -94,7 +94,7 @@ if [ ${LIST} -eq 1 ]; then
 	[ $QUIET -eq 0 ] && \
 		printf '%-20s %-10s\n' "PORTSTREE" "METHOD"
 	zfs list -Hd1 -o poudriere:type,poudriere:name,poudriere:method ${ZPOOL}/poudriere | \
-		awk '/ports/ {printf("%-20s %-10s\n",$2,$2) }'
+		awk '/ports/ {printf("%-20s %-10s\n",$2,$3) }'
 else
 	test -z "${PTNAME}" && usage
 fi
@@ -129,27 +129,15 @@ ports-all" > ${PTMNT}/csup
 				err 1 " Fail"
 			}
 			;;
-		svn+http)
+		svn*)
+			case ${METHOD} in
+			svn+http) proto="http" ;;
+			svn+ssh) proto="svn+ssh" ;;
+			svn) proto="svn" ;;
+			esac
+
 			msg_n "Checking out the ports tree..."
-			svn -q co http://${SVN_HOST:-svn.FreeBSD.org}/ports/head \
-				${PTMNT}/ports || {
-				zfs destroy ${FS}
-				err 1 " Fail"
-			}
-			echo " done"
-			;;
-		svn+ssh)
-			msg_n "Checking out the ports tree..."
-			svn -q co svn+ssh://${SVN_HOST:-svn.FreeBSD.org}/ports/head \
-				${PTMNT}/ports || {
-				zfs destroy ${FS}
-				err 1 " Fail"
-			}
-			echo " done"
-			;;
-		svn)
-			msg_n "Checking out the ports tree..."
-			svn -q co svn://${SVN_HOST:-svn.FreeBSD.org}/ports/head \
+			svn -q co ${proto}://${SVN_HOST:-svn.FreeBSD.org}/ports/head \
 				${PTMNT}/ports || {
 				zfs destroy ${FS}
 				err 1 " Fail"
