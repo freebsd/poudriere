@@ -82,7 +82,7 @@ run_build() {
 			MASTERMNT=${JAILMNT} JAILNAME="${name}" JAILMNT="${mnt}" JAILFS="${fs}" \
 				build_pkg ${port} >/dev/null 2>&1 &
 			echo "$!" > ${JAILMNT}/${j}.pid
-			[ $activity -ne 0 ] || sleep 5
+			[ $activity -ne 0 ] || wait
 		done
 	done
 }
