@@ -678,10 +678,8 @@ if [ "${ZVERSION}" = "-" ]; then
 	ZVERSION=29
 fi
 
-if [ -z "${CRONDIR}" ]; then
-	CRONDIR=${POUDRIERE_DATA}/cron
-fi
 POUDRIERE_DATA=`get_data_dir`
+: ${CRONDIR="${POUDRIERE_DATA}/cron}
 : ${SVN_HOST="svn.FreeBSD.org}
 : ${FREEBSD_HOST="ftp://${FTP_HOST:-ftp.FreeBSD.org}"}
 
