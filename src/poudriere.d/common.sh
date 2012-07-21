@@ -642,7 +642,6 @@ prepare_jail() {
 }
 
 RESOLV_CONF=""
-PTMP="${POUDRIERE_DATA}/tmp"
 STATUS=0 # out of jail #
 
 test -f ${SCRIPTPREFIX}/../../etc/poudriere.conf || err 1 "Unable to find ${SCRIPTPREFIX}/../../etc/poudriere.conf"
@@ -650,9 +649,10 @@ test -f ${SCRIPTPREFIX}/../../etc/poudriere.conf || err 1 "Unable to find ${SCRI
 
 test -z ${ZPOOL} && err 1 "ZPOOL variable is not set"
 
+[ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
+
 trap sig_handler SIGINT SIGTERM SIGKILL EXIT
 
-mkdir -p ${PTMP}
 # Test if spool exists
 zpool list ${ZPOOL} >/dev/null 2>&1 || err 1 "No such zpool: ${ZPOOL}"
 ZVERSION=$(zpool list -H -oversion ${ZPOOL})
@@ -660,6 +660,7 @@ ZVERSION=$(zpool list -H -oversion ${ZPOOL})
 if [ "${ZVERSION}" = "-" ]; then
 	ZVERSION=29
 fi
+
 if [ -z "${CRONDIR}" ]; then
 	CRONDIR=${POUDRIERE_DATA}/cron
 fi
