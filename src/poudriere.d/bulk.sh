@@ -147,29 +147,19 @@ prepare_ports
 
 zset status "building:"
 
-[ -z "${PARALLEL_BUILD}" ] || echo "DISABLE_MAKE_JOBS=yes" >> ${JAILMNT}/etc/make.conf
+echo "DISABLE_MAKE_JOBS=yes" >> ${JAILMNT}/etc/make.conf
 zfs snapshot ${JAILFS}@prepkg
-if [ -z "${PARALLEL_BUILD}" ]; then
-	while :; do
-		port=$(next_in_queue)
-		[ -n "${port}" ] || break
-		build_pkg ${port}
-		zfs rollback -r ${JAILFS}@prepkg
-	done
-else
-	msg "Starting using ${PARALLEL_JOB} builders"
-	PIDPATH=${POUDRIERE_DATA}/tmp/${JAILNAME}-${PTNAME}/
-	DONE=0
-	run_build
-	# wait for the last running processes
-	cat ${PIDPATH}/*.pid 2>/dev/null | xargs pwait 2>/dev/null
-	cnt=$(wc -l ${JAILMNT}/ignored | awk '{ print $1 }')
-	zset stats_ignored $cnt
-	cnt=$(wc -l ${JAILMNT}/built | awk '{ print $1 }')
-	zset stats_built $cnt
-	cnt=$(wc -l ${JAILMNT}/failed | awk '{ print $1 }')
-	zset stats_failed $cnt
-fi
+msg "Starting using ${PARALLEL_JOB} builders"
+DONE=0
+run_build
+# wait for the last running processes
+cat ${JAILMNT}/*.pid 2>/dev/null | xargs pwait 2>/dev/null
+cnt=$(wc -l ${JAILMNT}/ignored | awk '{ print $1 }')
+zset stats_ignored $cnt
+cnt=$(wc -l ${JAILMNT}/built | awk '{ print $1 }')
+zset stats_built $cnt
+cnt=$(wc -l ${JAILMNT}/failed | awk '{ print $1 }')
+zset stats_failed $cnt
 
 failed=$(cat ${JAILMNT}/failed | xargs echo)
 built=$(cat ${JAILMNT}/built | xargs echo)
