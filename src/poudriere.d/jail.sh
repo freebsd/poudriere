@@ -253,7 +253,7 @@ create_jail() {
 
 	if [ -z ${FS} ] ; then
 		[ -z ${ZPOOL} ] && err 1 "Please provide a ZPOOL variable in your poudriere.conf"
-		FS=${ZPOOL}/poudriere/${JAILNAME}
+		FS=${ZPOOL}/poudriere/jails/${JAILNAME}
 	fi
 
 	case ${METHOD} in
