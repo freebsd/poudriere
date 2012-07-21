@@ -25,7 +25,7 @@ Options:
     -M mountpoint -- mountpoint
     -m method     -- when used with -c, specify the method used to update the
                      tree by default it is portsnap, possible usage are
-                     \"csup\", \"portsnap\""
+                     \"csup\", \"portsnap\", \"svn\", \"svn+http\", \"svn+ssh\""
 
 	exit 1
 }
@@ -84,6 +84,9 @@ csup)
 	[ -z ${CSUP_HOST} ] && err 2 "CSUP_HOST has to be defined in the configuration to use csup"
 	;;
 portsnap);;
+svn+http);;
+svn+ssh);;
+svn);;
 *) usage;;
 esac
 
@@ -125,6 +128,35 @@ ports-all" > ${PTMNT}/csup
 				zfs destroy ${FS}
 				err 1 " Fail"
 			}
+			;;
+		svn+http)
+			msg_n "Checking out the ports tree..."
+			svn -q co http://${SVN_HOST:-svn.FreeBSD.org}/ports/head \
+				${PMNT}/ports || {
+				zfs destroy ${FS}
+				err 1 " Fail"
+			}
+			echo " done"
+			;;
+		svn+ssh)
+			msg_n "Checking out the ports tree..."
+			svn -q co svn+ssh://${SVN_HOST:-svn.FreeBSD.org}/ports/head \
+				${PMNT}/ports || {
+				zfs destroy ${FS}
+				err 1 " Fail"
+			}
+			echo " done"
+			;;
+		svn)
+			msg_n "Checking out the ports tree..."
+			svn -q co svn://${SVN_HOST:-svn.FreeBSD.org}/ports/head \
+				${PMNT}/ports || {
+				zfs destroy ${FS}
+				err 1 " Fail"
+			}
+			echo " done"
+			;;
+			;;
 		esac
 		pzset method ${METHOD}
 	fi
@@ -164,6 +196,11 @@ ports-all" > ${PTMNT}/csup
 		PSCOMMAND=fetch
 		[ -t 0 ] || PSCOMMAND=cron
 		/usr/sbin/portsnap -d ${PTMNT}/snap -p ${PTMNT}/ports ${PSCOMMAND} update
+		;;
+	svn*)
+		msg_n "Updating the ports tree..."
+		svn -q update ${PTMNT}/ports
+		echo " done"
 		;;
 	*)
 		err 1 "Undefined upgrade method"
