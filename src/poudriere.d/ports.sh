@@ -101,8 +101,8 @@ fi
 if [ ${CREATE} -eq 1 ]; then
 	# test if it already exists
 	port_exists ${PTNAME} && err 2 "The ports tree ${PTNAME} already exists"
-	test -z ${PTMNT} && PTMNT=${BASEFS:=/usr/local/poudriere}/ports/${PTNAME}
-	test -z ${PTFS} && PTFS=${ZPOOL}/poudriere/ports/${PTNAME}
+	: ${PTMNT="${BASEFS:=/usr/local/poudriere}/ports/${PTNAME}"}
+	: ${PTFS="${ZPOOL}/poudriere/ports/${PTNAME}"}
 	port_create_zfs ${PTNAME} ${PTMNT} ${PTFS}
 	mkdir ${PTMNT}/ports
 	if [ $FAKE -eq 0 ]; then
