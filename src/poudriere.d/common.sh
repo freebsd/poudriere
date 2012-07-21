@@ -121,6 +121,23 @@ port_get_fs() {
 		awk -v n=$1 '$1 == "ports" && $2 == n { print $3 }'
 }
 
+get_data_dir() {
+	local data
+	if [ -n "${POUDRIERE_DATA}" ]; then
+		echo ${POUDRIERE_DATA}
+		return
+	fi
+	data=$(zfs list -t filesystem -H -o ${NS}:type,mountpoint | awk '$1 == "data" { print $2 }')
+	if [ -n "${data}" ]; then
+		echo $data
+		return
+	fi
+	zfs create -p -o ${NS}:type=data \
+		-o mountpoint=${BASEFS}/data \
+		${ZPOOL}/poudriere/data
+	echo "${BASEFS}/data"
+}
+
 fetch_file() {
 	[ $# -ne 2 ] && eargs destination source
 	fetch -p -o $1 $2 || fetch -p -o $1 $2
@@ -664,6 +681,7 @@ fi
 if [ -z "${CRONDIR}" ]; then
 	CRONDIR=${POUDRIERE_DATA}/cron
 fi
+POUDRIERE_DATA=`get_data_dir`
 
 if [ -n "${PARALLEL_BUILD}" ]; then
 	case ${PARALLEL_JOB} in
