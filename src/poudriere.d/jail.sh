@@ -184,17 +184,11 @@ src-all" > ${JAILMNT}/etc/supfile
 install_from_ftp() {
 	mkdir ${JAILMNT}/fromftp
 	CLEANUP_HOOK=cleanup_new_jail
-	local FREEBSD_BASE URL
-
-	if [ -n "${FREEBSD_HOST}" ]; then
-		FREEBSD_BASE=${FREEBSD_HOST}
-	else
-		FREEBSD_BASE="ftp://${FTPHOST:=ftp.freebsd.org}"
-	fi
+	local URL
 
 	if [ ${VERSION%%.*} -lt 9 ]; then
 		msg "Fetching sets for FreeBSD ${VERSION} ${ARCH}"
-		URL="${FREEBSD_BASE}/pub/FreeBSD/releases/${ARCH}/${VERSION}"
+		URL="${FREEBSD_HOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}"
 		DISTS="base dict src"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32"
 		for dist in ${DISTS}; do
@@ -225,7 +219,7 @@ install_from_ftp() {
 				tar --unlink -xpf - -C ${JAILMNT}/${APPEND} || err 1 " Fail" && echo " done"
 		done
 	else
-		URL="${FREEBSD_BASE}/pub/FreeBSD/releases/${ARCH}/${ARCH}/${VERSION}"
+		URL="${FREEBSD_HOST}/pub/FreeBSD/releases/${ARCH}/${ARCH}/${VERSION}"
 		DISTS="base.txz src.txz"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
 		for dist in ${DISTS}; do
