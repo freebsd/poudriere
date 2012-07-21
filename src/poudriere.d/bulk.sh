@@ -50,6 +50,11 @@ run_build() {
 		elif [ -d ${POUDRIERED}/options ]; then
 			mount -t nullfs ${POUDRIERED}/options ${mnt}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
 		fi
+		if [ -n "${CCACHE_DIR}" -a -d "${CCACHE_DIR}" ]; then
+			# Mount user supplied CCACHE_DIR into /var/cache/ccache
+			mount -t nullfs ${CCACHE_DIR} ${mnt}/var/cache/ccache || err 1 "Failed to mount the ccache directory "
+			export CCACHE_DIR=/var/cache/ccache
+		fi
 		JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} jrun 0
 	done
 	while :; do
