@@ -86,9 +86,8 @@ DISTFILES_CACHE=/usr/ports/distfiles
 
 # parallel build support.
 #
-# define PARALLEL_BUILD to enable parallel building (throwing multiple jails for
-# building)
 # by default it uses hw.cpu to determine the number of builders, you can for it
 # to a given value bye specifying PARALLEL_JOBS
 #
-PARALLEL_BUILD=yes
+# Example to define PARALLEL_JOBS to one single job
+# PARALLEL_JOBS=1
