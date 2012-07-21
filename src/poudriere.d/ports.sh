@@ -132,7 +132,7 @@ ports-all" > ${PTMNT}/csup
 		svn+http)
 			msg_n "Checking out the ports tree..."
 			svn -q co http://${SVN_HOST:-svn.FreeBSD.org}/ports/head \
-				${PMNT}/ports || {
+				${PTMNT}/ports || {
 				zfs destroy ${FS}
 				err 1 " Fail"
 			}
@@ -141,7 +141,7 @@ ports-all" > ${PTMNT}/csup
 		svn+ssh)
 			msg_n "Checking out the ports tree..."
 			svn -q co svn+ssh://${SVN_HOST:-svn.FreeBSD.org}/ports/head \
-				${PMNT}/ports || {
+				${PTMNT}/ports || {
 				zfs destroy ${FS}
 				err 1 " Fail"
 			}
@@ -150,12 +150,11 @@ ports-all" > ${PTMNT}/csup
 		svn)
 			msg_n "Checking out the ports tree..."
 			svn -q co svn://${SVN_HOST:-svn.FreeBSD.org}/ports/head \
-				${PMNT}/ports || {
+				${PTMNT}/ports || {
 				zfs destroy ${FS}
 				err 1 " Fail"
 			}
 			echo " done"
-			;;
 			;;
 		esac
 		pzset method ${METHOD}
