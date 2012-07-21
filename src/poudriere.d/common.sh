@@ -683,11 +683,9 @@ POUDRIERE_DATA=`get_data_dir`
 : ${SVN_HOST="svn.FreeBSD.org"}
 : ${FREEBSD_HOST="ftp://${FTP_HOST:-ftp.FreeBSD.org}"}
 
-if [ -n "${PARALLEL_BUILD}" ]; then
-	case ${PARALLEL_JOB} in
-	''|*[!0-9]*)
-		PARALLEL_JOB=$(sysctl -n hw.ncpu)
-		;;
-	*) ;;
-	esac
-fi
+case ${PARALLEL_JOB} in
+''|*[!0-9]*)
+	PARALLEL_JOB=$(sysctl -n hw.ncpu)
+	;;
+*) ;;
+esac
