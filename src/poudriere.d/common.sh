@@ -233,7 +233,7 @@ port_create_zfs() {
 		-o mountpoint=${mnt} \
 		-o ${NS}:type=ports \
 		-o ${NS}:name=${name} \
-		${ps} || err 1 " Fail" && echo " done"
+		${fs} || err 1 " Fail" && echo " done"
 }
 
 cleanup() {
