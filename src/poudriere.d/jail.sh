@@ -65,7 +65,7 @@ delete_jail() {
 		err 1 "Unable to remove jail ${JAILNAME}: it is running"
 
 	msg_n "Removing ${JAILNAME} jail..."
-	zfs destroy -r ${FS}
+	zfs destroy -r ${JAILFS}
 	rmdir ${JAILMNT}
 	rm -rf ${POUDRIERE_DATA}/packages/${JAILNAME}
 	rm -f ${POUDRIERE_DATA}/logs/*-${JAILNAME}.*.log
