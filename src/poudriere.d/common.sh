@@ -682,6 +682,7 @@ if [ -z "${CRONDIR}" ]; then
 	CRONDIR=${POUDRIERE_DATA}/cron
 fi
 POUDRIERE_DATA=`get_data_dir`
+: ${SVN_HOST="svn.FreeBSD.org}
 
 if [ -n "${PARALLEL_BUILD}" ]; then
 	case ${PARALLEL_JOB} in

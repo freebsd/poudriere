@@ -137,7 +137,7 @@ ports-all" > ${PTMNT}/csup
 			esac
 
 			msg_n "Checking out the ports tree..."
-			svn -q co ${proto}://${SVN_HOST:-svn.FreeBSD.org}/ports/head \
+			svn -q co ${proto}://${SVN_HOST}/ports/head \
 				${PTMNT}/ports || {
 				zfs destroy ${FS}
 				err 1 " Fail"
