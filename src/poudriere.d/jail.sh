@@ -305,7 +305,6 @@ EOF
 	mkdir -p ${POUDRIERE_DATA}/logs
 
 	jail -U root -c path=${JAILMNT} command=/sbin/ldconfig -m /lib /usr/lib /usr/lib/compat
-#	chroot -u root ${JAILMNT} /sbin/ldconfig  -m /lib /usr/lib /usr/lib/compat
 
 	zfs snapshot ${FS}@clean
 	msg "Jail ${JAILNAME} ${VERSION} ${ARCH} is ready to be used"
