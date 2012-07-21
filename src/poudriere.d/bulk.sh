@@ -8,7 +8,7 @@ Parameters:
     -f file     -- Give the list of ports to build
 
 Options:
-    -k          -- Keep the previous built binary packages
+    -c          -- Clean the previous built binary packages
     -t          -- Add some testings to package building
     -s          -- Skip sanity
     -j name     -- Run only on the given jail
@@ -91,16 +91,16 @@ SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 PTNAME="default"
 SKIPSANITY=0
-KEEP=0
+CLEAN=0
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "f:j:kp:ts" FLAG; do
+while getopts "f:j:cp:ts" FLAG; do
 	case "${FLAG}" in
 		t)
 			export PORTTESTING=1
 			;;
-		k)
-			KEEP=1
+		c)
+			CLEAN=1
 			;;
 		f)
 			LISTPKGS=${OPTARG}
@@ -130,7 +130,7 @@ STATUS=0 # out of jail #
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
 
 PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}
-if [ ${KEEP} -ne 1 ]; then
+if [ ${CLEAN} -eq 1 ]; then
 	msg_n "Cleaning previous bulks if any..."
 	rm -rf ${PKGDIR}/*
 	echo " done"
