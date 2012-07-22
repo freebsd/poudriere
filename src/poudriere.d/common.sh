@@ -437,7 +437,7 @@ build_pkg() {
 
 	msg "Building ${port}"
 	PKGNAME=$(injail make -C ${portdir} -VPKGNAME)
-	log_start ${LOGS}/${JAILNAME}-${PTNAME}-${PKGNAME}.log
+	log_start ${LOGS}/${JAILNAME%-job-*}-${PTNAME}-${PKGNAME}.log
 
 	echo "port directory: ${portdir}"
 	echo "building for: $(injail uname -rm)"
@@ -474,7 +474,7 @@ build_pkg() {
 		echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/failed"
 	fi
 	zset status "done:${port}"
-	log_stop ${LOGS}/${JAILNAME}-${PTNAME}-${PKGNAME}.log
+	log_stop ${LOGS}/${JAILNAME%-job-*}-${PTNAME}-${PKGNAME}.log
 }
 
 list_deps() {
