@@ -608,9 +608,7 @@ prepare_ports() {
 	done
 
 	local nbq=0
-	for a in $(find ${JAILMNT}/pool -type d -depth 1); do
-		nbq=$((nbq + 1))
-	done
+	nbq=$(find ${JAILMNT}/pool -type d -depth 1 | wc -l)
 	zset stats_queued "${nbq}"
 	zset stats_built "0"
 	zset stats_failed "0"
