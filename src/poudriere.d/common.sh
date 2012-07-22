@@ -328,7 +328,10 @@ build_port() {
 					awk '/=>/ { print $3 }' | sort -u
 			fi
 		fi
+
+		printf "=======================<phase: %-9s>==========================\n" ${phase}
 		injail env ${PKGENV} ${PORT_FLAGS} make -C ${portdir} ${phase} || return 1
+		echo "==================================================================="
 
 		if [ "${phase}" = "checksum" ]; then
 			jail -r ${JAILNAME}
@@ -432,11 +435,26 @@ build_pkg() {
 	PKGNAME=$(injail make -C ${portdir} -VPKGNAME)
 	log_start ${LOGS}/${JAILNAME}-${PTNAME}-${PKGNAME}.log
 
+	echo "port directory: ${portdir}"
+	echo "building for: $(injail uname -rm)"
+	echo "maintained by: $(injail make -C ${portdir} maintainer)"
+	echo "Makefile ident: $(injail ident ${portdir}/Makefile|sed -n '2,2p')"
+
+	echo "---Begin Environment---"
+	injail env ${PKGENV} ${PORT_FLAGS}
+	echo "---End Environment---"
+	echo ""
+	echo "---Begin OPTIONS List---"
+	injail make -C ${portdir} showconfig
+	echo "---End OPTIONS List---"
+
 	zset status "depends:${port}"
+	printf "=======================<phase: %-9s>==========================\n" "depends"
 	if ! injail make -C ${portdir} pkg-depends fetch-depends extract-depends \
 		patch-depends build-depends lib-depends; then
 		build_failed=1
 	else
+		echo "==================================================================="
 		# Only build if the depends built fine
 		injail make -C ${portdir} clean
 		if ! build_port ${portdir}; then
