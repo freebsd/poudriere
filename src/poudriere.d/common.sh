@@ -218,6 +218,7 @@ jail_stop() {
 	zset status "stop:"
 
 	jail -r ${JAILNAME}
+	# Shutdown all builders
 	for j in $(jot ${PARALLEL_JOB}); do
 		jail -r ${JAILNAME}-job-${j} >/dev/null 2>&1 || :
 	done
@@ -262,10 +263,6 @@ cleanup() {
 	[ -z "${JAILNAME}" ] && err 2 "Fail: Missing JAILNAME"
 	for pid in ${JAILMNT}/*.pid; do
 		pkill -15 -F ${pid} >/dev/null 2>&1 || :
-	done
-	# Shutdown all builders
-	for j in $(jot ${PARALLEL_JOB}); do
-		jail -r ${JAILNAME}-job-${j} >/dev/null 2>&1 || :
 	done
 	zfs destroy ${JAILFS}@prepkg 2>/dev/null || :
 	zfs destroy ${JAILFS}@prebuild 2>/dev/null || :
