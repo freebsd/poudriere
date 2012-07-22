@@ -425,6 +425,7 @@ build_pkg() {
 	if [ -n "$ignore" ]; then
 		msg "Ignoring ${port}: $ignore"
 		echo "${port}" >> ${JAILMNT}/ignored
+		lockf -t 60 ${JAILMNT}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${port}"
 		return
 	fi
 
