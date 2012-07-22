@@ -90,6 +90,7 @@ run_build() {
 			echo "$!" > ${JAILMNT}/${j}.pid
 			[ $activity -ne 0 ] || wait
 		done
+		sleep 1
 	done
 }
 
