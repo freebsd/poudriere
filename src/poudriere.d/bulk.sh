@@ -184,6 +184,7 @@ if [ $nbbuilt -eq 0 ]; then
 	fi
 elif [ $PKGNG -eq 1 ]; then
 	msg "Creating pkgng repository"
+	zset status "pkgrepo:"
 	injail tar xf /usr/ports/packages/Latest/pkg.txz -C /
 	injail rm -f /usr/ports/packages/repo.txz /usr/ports/packages/repo.sqlite
 	if [ -n "${PKG_REPO_SIGNING_KEY}" -a -f "${PKG_REPO_SIGNING_KEY}" ]; then
@@ -195,6 +196,7 @@ elif [ $PKGNG -eq 1 ]; then
 	fi
 else
 	msg "Preparing index"
+	zset status "index:"
 	OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
 	INDEXF=${PKGDIR}/INDEX-${OSMAJ}
 	for pkg_file in `ls ${PKGDIR}/All/*.tbz`; do
