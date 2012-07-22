@@ -56,6 +56,7 @@ run_build() {
 			export CCACHE_DIR
 		fi
 		JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} jrun 0
+		JAILFS=${fs} zset status "idle:"
 	done
 	while :; do
 		activity=0
