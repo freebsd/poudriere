@@ -612,9 +612,9 @@ prepare_jail() {
 	if [ -n "${CCACHE_DIR}" -a -d "${CCACHE_DIR}" ]; then
 		# Mount user supplied CCACHE_DIR into /var/cache/ccache
 		msg "Mounting ccache from ${CCACHE_DIR}"
-		mkdir -p ${JAILMNT}/var/cache/ccache || err 1 "Failed to create ccache directory "
-		mount -t nullfs ${CCACHE_DIR} ${JAILMNT}/var/cache/ccache || err 1 "Failed to mount the ccache directory "
-		export CCACHE_DIR=/var/cache/ccache
+		mkdir -p ${JAILMNT}${CCACHE_DIR} || err 1 "Failed to create ccache directory "
+		mount -t nullfs ${CCACHE_DIR} ${JAILMNT}${CCACHE_DIR} || err 1 "Failed to mount the ccache directory "
+		export CCACHE_DIR
 	fi
 
 	mkdir -p ${PORTSDIR}/packages

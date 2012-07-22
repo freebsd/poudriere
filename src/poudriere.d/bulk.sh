@@ -52,8 +52,8 @@ run_build() {
 		fi
 		if [ -n "${CCACHE_DIR}" -a -d "${CCACHE_DIR}" ]; then
 			# Mount user supplied CCACHE_DIR into /var/cache/ccache
-			mount -t nullfs ${CCACHE_DIR} ${mnt}/var/cache/ccache || err 1 "Failed to mount the ccache directory "
-			export CCACHE_DIR=/var/cache/ccache
+			mount -t nullfs ${CCACHE_DIR} ${mnt}${CCACHE_DIR} || err 1 "Failed to mount the ccache directory "
+			export CCACHE_DIR
 		fi
 		JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} jrun 0
 	done
