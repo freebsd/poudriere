@@ -218,11 +218,9 @@ jail_stop() {
 	zset status "stop:"
 
 	jail -r ${JAILNAME}
-	if [ -n "${PARALLEL_BUILD}" ];then
-		for j in $(jot ${PARALLEL_JOB}); do
-			jail -r ${JAILNAME}-job-$j 2>/dev/null
-		done
-	fi
+	for j in $(jot ${PARALLEL_JOB}); do
+		jail -r ${JAILNAME}-job-${j} >/dev/null 2>&1 || :
+	done
 	msg "Umounting file systems"
 	for mnt in $( mount | awk -v mnt="${JAILMNT}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
 		umount -f ${mnt}
