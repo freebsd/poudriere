@@ -267,7 +267,7 @@ cleanup() {
 	done
 	# Shutdown all builders
 	for j in $(jot ${PARALLEL_JOB}); do
-		jail -r ${JAILNAME}-job-${j}
+		jail -r ${JAILNAME}-job-${j} >/dev/null 2>&1 || :
 	done
 	zfs destroy ${JAILFS}@prepkg 2>/dev/null || :
 	zfs destroy ${JAILFS}@prebuild 2>/dev/null || :
