@@ -461,7 +461,7 @@ build_pkg() {
 		fi
 	fi
 
-	# Cleaning queue
+	# Cleaning queue (pool is cleaned here)
 	lockf -t 60 ${JAILMNT}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${port}"
 	if [ ${build_failed} -eq 0 ]; then
 		echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/built"
