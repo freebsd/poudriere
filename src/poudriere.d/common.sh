@@ -264,6 +264,7 @@ cleanup() {
 	for pid in ${JAILMNT}/*.pid; do
 		pkill -15 -F ${pid} >/dev/null 2>&1 || :
 	done
+	wait
 	zfs destroy ${JAILFS}@prepkg 2>/dev/null || :
 	zfs destroy ${JAILFS}@prebuild 2>/dev/null || :
 	jail_stop
