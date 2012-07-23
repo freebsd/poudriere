@@ -80,7 +80,7 @@ run_build() {
 			if [ -z "${port}" ]; then
 				# pool empty ?
 				[ $(stat -f '%z' ${JAILMNT}/pool) -eq 2 ] && return
-			break
+				break
 			fi
 			msg "Starting build of ${port}"
 			activity=1
