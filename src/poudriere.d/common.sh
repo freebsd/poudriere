@@ -26,11 +26,13 @@ eargs() {
 }
 
 log_start() {
+	local logfile=$1
+
 	exec 3>&1 4>&2
-	[ ! -e $1.pipe ] && mkfifo $1.pipe
-	tee $1 < $1.pipe >&3 &
+	[ ! -e ${logfile}.pipe ] && mkfifo ${logfile}.pipe
+	tee ${logfile} < ${logfile}.pipe >&3 &
 	export tpid=$!
-	exec > $1.pipe 2>&1
+	exec > ${logfile}.pipe 2>&1
 }
 
 log_stop() {
