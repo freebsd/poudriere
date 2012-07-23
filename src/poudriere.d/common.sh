@@ -38,6 +38,7 @@ log_start() {
 buildlog_start() {
 	local portdir=$1
 
+	echo "build started at $(date)"
 	echo "port directory: ${portdir}"
 	echo "building for: $(injail uname -rm)"
 	echo "maintained by: $(injail make -C ${portdir} maintainer)"
@@ -50,6 +51,12 @@ buildlog_start() {
 	echo "---Begin OPTIONS List---"
 	injail make -C ${portdir} showconfig
 	echo "---End OPTIONS List---"
+}
+
+buildlog_stop() {
+	local portdir=$1
+
+	echo "build of ${portdir} ended at $(date)"
 }
 
 log_stop() {
@@ -478,6 +485,7 @@ build_pkg() {
 	lockf -t 60 ${JAILMNT}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${port}"
 
 	zset status "done:${port}"
+	buildlog_stop ${portdir}
 	log_stop ${LOGS}/${JAILNAME%-job-*}-${PTNAME}-${PKGNAME}.log
 }
 
