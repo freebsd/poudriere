@@ -422,12 +422,6 @@ build_pkg() {
 	# as the list may start big but become very small, so here
 	# is a less-common check
 	local ignore="$(injail make -C ${portdir} -VIGNORE)"
-	if [ -n "$ignore" ]; then
-		msg "Ignoring ${port}: $ignore"
-		echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/ignored"
-		lockf -t 60 ${JAILMNT}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${port}"
-		return
-	fi
 
 	msg "Cleaning up wrkdir"
 	rm -rf ${JAILMNT}/wrkdirs/*
@@ -449,27 +443,33 @@ build_pkg() {
 	injail make -C ${portdir} showconfig
 	echo "---End OPTIONS List---"
 
-	zset status "depends:${port}"
-	printf "=======================<phase: %-9s>==========================\n" "depends"
-	if ! injail make -C ${portdir} pkg-depends fetch-depends extract-depends \
-		patch-depends build-depends lib-depends; then
-		build_failed=1
+	if [ -n "${ignore}" ]; then
+		msg "Ignoring ${port}: ${ignore}"
+		echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/ignored"
 	else
-		echo "==================================================================="
-		# Only build if the depends built fine
-		injail make -C ${portdir} clean
-		if ! build_port ${portdir}; then
+		zset status "depends:${port}"
+		printf "=======================<phase: %-9s>==========================\n" "depends"
+		if ! injail make -C ${portdir} pkg-depends fetch-depends extract-depends \
+			patch-depends build-depends lib-depends; then
 			build_failed=1
+		else
+			echo "==================================================================="
+			# Only build if the depends built fine
+			injail make -C ${portdir} clean
+			if ! build_port ${portdir}; then
+				build_failed=1
+			fi
+		fi
+
+		if [ ${build_failed} -eq 0 ]; then
+			echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/built"
+		else
+			echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/failed"
 		fi
 	fi
-
 	# Cleaning queue (pool is cleaned here)
 	lockf -t 60 ${JAILMNT}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${port}"
-	if [ ${build_failed} -eq 0 ]; then
-		echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/built"
-	else
-		echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/failed"
-	fi
+
 	zset status "done:${port}"
 	log_stop ${LOGS}/${JAILNAME%-job-*}-${PTNAME}-${PKGNAME}.log
 }
