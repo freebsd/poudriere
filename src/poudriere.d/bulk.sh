@@ -154,7 +154,7 @@ prepare_ports
 
 zset status "building:"
 
-echo "DISABLE_MAKE_JOBS=yes" >> ${JAILMNT}/etc/make.conf
+test -z ${PORTTESTING} && echo "DISABLE_MAKE_JOBS=yes" >> ${JAILMNT}/etc/make.conf
 zfs snapshot ${JAILFS}@prepkg
 msg "Starting using ${PARALLEL_JOB} builders"
 DONE=0
