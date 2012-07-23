@@ -424,7 +424,7 @@ build_pkg() {
 	local ignore="$(injail make -C ${portdir} -VIGNORE)"
 	if [ -n "$ignore" ]; then
 		msg "Ignoring ${port}: $ignore"
-		echo "${port}" >> ${JAILMNT}/ignored
+		echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/ignored"
 		lockf -t 60 ${JAILMNT}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${port}"
 		return
 	fi
