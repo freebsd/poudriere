@@ -35,6 +35,23 @@ log_start() {
 	exec > ${logfile}.pipe 2>&1
 }
 
+buildlog_start() {
+	local portdir=$1
+
+	echo "port directory: ${portdir}"
+	echo "building for: $(injail uname -rm)"
+	echo "maintained by: $(injail make -C ${portdir} maintainer)"
+	echo "Makefile ident: $(injail ident ${portdir}/Makefile|sed -n '2,2p')"
+
+	echo "---Begin Environment---"
+	injail env ${PKGENV} ${PORT_FLAGS}
+	echo "---End Environment---"
+	echo ""
+	echo "---Begin OPTIONS List---"
+	injail make -C ${portdir} showconfig
+	echo "---End OPTIONS List---"
+}
+
 log_stop() {
 	exec 1>&3 3>&- 2>&4 4>&-
 	wait $tpid
@@ -431,19 +448,7 @@ build_pkg() {
 	msg "Building ${port}"
 	PKGNAME=$(injail make -C ${portdir} -VPKGNAME)
 	log_start ${LOGS}/${JAILNAME%-job-*}-${PTNAME}-${PKGNAME}.log
-
-	echo "port directory: ${portdir}"
-	echo "building for: $(injail uname -rm)"
-	echo "maintained by: $(injail make -C ${portdir} maintainer)"
-	echo "Makefile ident: $(injail ident ${portdir}/Makefile|sed -n '2,2p')"
-
-	echo "---Begin Environment---"
-	injail env ${PKGENV} ${PORT_FLAGS}
-	echo "---End Environment---"
-	echo ""
-	echo "---Begin OPTIONS List---"
-	injail make -C ${portdir} showconfig
-	echo "---End OPTIONS List---"
+	buildlog_start ${portdir}
 
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
