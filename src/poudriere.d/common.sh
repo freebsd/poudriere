@@ -482,7 +482,7 @@ build_pkg() {
 		fi
 	fi
 	# Cleaning queue (pool is cleaned here)
-	lockf -t 60 ${MASTERMNT:-${JAILMNT}}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${port}"
+	lockf -k -t 60 ${MASTERMNT:-${JAILMNT}}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${port}"
 
 	zset status "done:${port}"
 	buildlog_stop ${portdir}
@@ -554,7 +554,7 @@ delete_old_pkgs() {
 
 next_in_queue() {
 	local p
-	p=$(lockf -t 60 ${JAILMNT}/.lock find ${JAILMNT}/pool -type d -depth 1 -empty -print || : | head -n 1)
+	p=$(lockf -k -t 60 ${JAILMNT}/.lock find ${JAILMNT}/pool -type d -depth 1 -empty -print || : | head -n 1)
 	[ -n "$p" ] || return 0
 	touch ${p}/.building
 	awk -v n=${p##*/} '$2 == n { print $1 }' ${JAILMNT}/cache
