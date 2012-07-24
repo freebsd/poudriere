@@ -384,7 +384,8 @@ build_port() {
 				local die=0
 				zfs diff -FH ${JAILFS}@prebuild ${JAILFS} | \
 					while read mod type path; do
-					local ppath=`echo "$path" | sed -e "s,^${JAILMNT},," -e "s,^${PREFIX}/,," -e "s,^share/${portname},%%DATADIR%%," -e "s,^etc,%%ETCDIR%%,"`
+					local ppath
+					ppath=`echo "$path" | sed -e "s,^${JAILMNT},," -e "s,^${PREFIX}/,," -e "s,^share/${portname},%%DATADIR%%," -e "s,^etc,%%ETCDIR%%,"`
 					case "$ppath" in
 					/var/db/pkg/*) continue;;
 					/var/run/*) continue;;
