@@ -115,7 +115,7 @@ if [ ${CREATE} -eq 1 ]; then
 *default delete use-rel-suffix
 ports-all" > ${PTMNT}/csup
 			csup -z -h ${CSUP_HOST} ${PTMNT}/csup || {
-				zfs destroy ${FS}
+				zfs destroy ${PTFS}
 				err 1 " Fail"
 			}
 			;;
@@ -125,7 +125,7 @@ ports-all" > ${PTMNT}/csup
 			/usr/sbin/portsnap -d ${PTMNT}/snap -p ${PTMNT}/ports fetch extract || \
 			/usr/sbin/portsnap -d ${PTMNT}/snap -p ${PTMNT}/ports fetch extract || \
 			{
-				zfs destroy ${FS}
+				zfs destroy ${PTFS}
 				err 1 " Fail"
 			}
 			;;
@@ -139,7 +139,7 @@ ports-all" > ${PTMNT}/csup
 			msg_n "Checking out the ports tree..."
 			svn -q co ${proto}://${SVN_HOST}/ports/head \
 				${PTMNT}/ports || {
-				zfs destroy ${FS}
+				zfs destroy ${PTFS}
 				err 1 " Fail"
 			}
 			echo " done"
