@@ -22,7 +22,7 @@ run_build() {
 	PORTSDIR=`port_get_base ${PTNAME}`/ports
 	arch=$(zget arch)
 	version=$(zget version)
-	for j in $(jot ${PARALLEL_JOB}); do
+	for j in $(jot -w %02d ${PARALLEL_JOB}); do
 		mnt="${JAILMNT}/build/${j}"
 		mkdir -p "${mnt}"
 		fs="${JAILFS}/job-${j}"
@@ -60,7 +60,7 @@ run_build() {
 	done
 	while :; do
 		activity=0
-		for j in $(jot ${PARALLEL_JOB}); do
+		for j in $(jot -w %02d ${PARALLEL_JOB}); do
 			mnt="${JAILMNT}/build/${j}"
 			fs="${JAILFS}/job-${j}"
 			name="${JAILNAME}-job-${j}"

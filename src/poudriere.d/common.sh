@@ -245,7 +245,7 @@ jail_stop() {
 
 	jail -r ${JAILNAME}
 	# Shutdown all builders
-	for j in $(jot ${PARALLEL_JOB}); do
+	for j in $(jot -w %02d ${PARALLEL_JOB}); do
 		jail -r ${JAILNAME}-job-${j} >/dev/null 2>&1 || :
 	done
 	msg "Umounting file systems"
