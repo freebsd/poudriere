@@ -76,7 +76,7 @@ zset() {
 }
 
 pzset() {
-	[ $# -ne 2 ] eargs property value
+	[ $# -ne 2 ] && eargs property value
 	zfs set ${NS}:$1="$2" ${PTFS}
 }
 
