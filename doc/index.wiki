@@ -30,7 +30,7 @@ in order to make the builds in a VM resident filesystem.
 
 <h1>How to install it?</h1>
 
-Just type "make" at the top-level directory.
+Just type "make install" at the top-level directory.
 
 <h1>What do I have to configure before starting use it?</h1>
 
