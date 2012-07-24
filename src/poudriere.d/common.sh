@@ -245,7 +245,7 @@ jail_stop() {
 
 	jail -r ${JAILNAME}
 	# Shutdown all builders
-	for j in $(jot -w %02d ${PARALLEL_JOB}); do
+	for j in $(jot -w %02d ${PARALLEL_JOBS}); do
 		jail -r ${JAILNAME}-job-${j} >/dev/null 2>&1 || :
 	done
 	msg "Umounting file systems"
@@ -717,9 +717,9 @@ POUDRIERE_DATA=`get_data_dir`
 : ${SVN_HOST="svn.FreeBSD.org"}
 : ${FREEBSD_HOST="ftp://${FTP_HOST:-ftp.FreeBSD.org}"}
 
-case ${PARALLEL_JOB} in
+case ${PARALLEL_JOBS} in
 ''|*[!0-9]*)
-	PARALLEL_JOB=$(sysctl -n hw.ncpu)
+	PARALLEL_JOBS=$(sysctl -n hw.ncpu)
 	;;
 *) ;;
 esac
