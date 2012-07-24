@@ -31,22 +31,22 @@ Options:
 
 info_jail() {
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
-	nbb=$(zget stats_built)
-	nbf=$(zget stats_failed)
-	nbi=$(zget stats_ignored)
-	nbq=$(zget stats_queued)
+	nbb=$(zget stats_built|sed -e 's/ //g')
+	nbf=$(zget stats_failed|sed -e 's/ //g')
+	nbi=$(zget stats_ignored|sed -e 's/ //g')
+	nbq=$(zget stats_queued|sed -e 's/ //g')
 	tobuild=$((nbq - nbb - nbf - nbi))
 	zfs list -H -o ${NS}:type,${NS}:name,${NS}:version,${NS}:arch,${NS}:stats_built,${NS}:stats_failed,${NS}:stats_ignored,${NS}:status ${JAILFS}| \
 		awk -v q="$nbq" -v tb="$tobuild" '/^rootfs/  {
 			print "Jailname: " $2;
-			print "FreeBSD Version: " $3;
+			print "FreeBSD version: " $3;
 			print "FreeBSD arch: "$4;
-			print "Status: ", $7;
-			print "Nb packages built: "$5;
-			print "Nb packages failed: "$6;
-			print "Nb packages ignored: "$7;
-			print "Nb packages queued: "q;
-			print "Nb packages to be built: "tb;
+			print "Status: "$7;
+			print "Packages built: "$5;
+			print "Packages failed: "$6;
+			print "Packages ignored: "$7;
+			print "Packages queued: "q;
+			print "Packages to be built: "tb;
 		}'
 }
 
