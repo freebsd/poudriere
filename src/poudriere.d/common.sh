@@ -473,6 +473,7 @@ build_pkg() {
 			if ! build_port ${portdir}; then
 				build_failed=1
 			fi
+			injail make -C ${portdir} clean
 		fi
 
 		if [ ${build_failed} -eq 0 ]; then
