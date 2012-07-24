@@ -21,18 +21,16 @@ package management tool (pkg_add, portmaster, and so on).
 
 <h1>What poudriere needs?</h1>
 
-  *  FreeBSD
+  *  a recent FreeBSD (>= 9)
   *  a ZFS pool with at least 7GB of free space
   *  root access
 
 That is all. For more comfort, we recommend to have quite a lot of RAM
 in order to make the builds in a VM resident filesystem.
 
-
 <h1>How to install it?</h1>
 
 Just type "make" at the top-level directory.
-
 
 <h1>What do I have to configure before starting use it?</h1>
 
