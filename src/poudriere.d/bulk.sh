@@ -11,6 +11,7 @@ Options:
     -c          -- Clean the previous built binary packages
     -t          -- Add some testings to package building
     -s          -- Skip sanity
+    -n i        -- Run i jobs in parallel
     -j name     -- Run only on the given jail
     -p tree     -- Specify on which ports tree the bulk will be done"
 
@@ -101,7 +102,7 @@ SKIPSANITY=0
 CLEAN=0
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "f:j:cp:ts" FLAG; do
+while getopts "f:j:cn:p:ts" FLAG; do
 	case "${FLAG}" in
 		t)
 			export PORTTESTING=1
@@ -115,6 +116,9 @@ while getopts "f:j:cp:ts" FLAG; do
 		j)
 			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
 			JAILNAME=${OPTARG}
+			;;
+		n)
+			PARALLEL_JOBS=${OPTARG}
 			;;
 		p)
 			PTNAME=${OPTARG}
