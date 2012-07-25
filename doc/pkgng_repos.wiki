@@ -4,7 +4,7 @@ Install poudriere and pkgng on the host (please note that the host do not need
 to be converted to pkgng)
 
     <verbatim>make -C /usr/ports/ports-mgmt/poudriere install clean
-make -C /usr/ports/ports-mgmt/pkgng install clean</verbatim>
+make -C /usr/ports/ports-mgmt/pkg install clean</verbatim>
 
 Create a default configuration in the ${LOCALBASE}/etc/poudriere.conf
 configuration file: 
