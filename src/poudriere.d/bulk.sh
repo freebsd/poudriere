@@ -84,6 +84,7 @@ run_build() {
 				break
 			fi
 			msg "Starting build of ${port}"
+			zset status "starting:${port}"
 			activity=1
 			zfs rollback -r ${fs}@prepkg
 			MASTERMNT=${JAILMNT} JAILNAME="${name}" JAILMNT="${mnt}" JAILFS="${fs}" \
