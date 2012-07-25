@@ -19,7 +19,7 @@ package management tool (pkg_add, portmaster, and so on).
 
 [./TODO.wiki|TODO list for next versions]
 
-<h1>What poudriere needs?</h1>
+<h1>What does poudriere require?</h1>
 
   *  a recent FreeBSD (>= 8.3)
   *  a ZFS pool with at least 7GB of free space
