@@ -254,11 +254,16 @@ jail_stop() {
 	done
 
 	if [ -n "${MFSSIZE}" ]; then
-		local mdunit=$(mount | awk -v mnt="${JAILMNT}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 ~ /\/dev\/md/ ) { sub(/\/dev\/md/, "", $1); print $1 }}')
-		if [ -n "$mdunit" ]; then
-			umount ${JAILMNT}/wrkdirs
-			mdconfig -d -u ${mdunit}
-		fi
+		# umount the ${JAILMNT}/build/$jobno/wrkdirs
+		mount | grep "/dev/md.*${JAILMNT}/build" | while read mnt; do
+			local dev=`echo $mnt | awk '{print $1}'`
+			umount $dev
+			mdconfig -d -u $dev
+		done
+		# umount the $JAILMNT/wrkdirs
+		local dev=`mount | grep "/dev/md.*${JAILMNT}" | awk '{print $1}'`
+		umount $dev
+		mdconfig -d -u $dev
 	fi
 	zfs rollback -R ${JAILFS}@clean
 	zset status "idle:"
