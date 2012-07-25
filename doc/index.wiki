@@ -58,5 +58,6 @@ See poudriere(8).
   *  [./portshaker.wiki|...manage poudriere ports using portshaker]
   *  [./portmaster.wiki|...use the generated packages with portmaster]
   *  [./ccache.wiki|...use ccache with poudriere]
+  *  [./config.wiki|...easily generate options]
 
 Happy FreeBSDing!
