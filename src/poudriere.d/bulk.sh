@@ -11,7 +11,7 @@ Options:
     -c          -- Clean the previous built binary packages
     -t          -- Add some testings to package building
     -s          -- Skip sanity
-    -n i        -- Run i jobs in parallel
+    -J n        -- Run n jobs in parallel
     -j name     -- Run only on the given jail
     -p tree     -- Specify on which ports tree the bulk will be done"
 
@@ -117,7 +117,7 @@ while getopts "f:j:cn:p:ts" FLAG; do
 			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
 			JAILNAME=${OPTARG}
 			;;
-		n)
+		J)
 			PARALLEL_JOBS=${OPTARG}
 			;;
 		p)
