@@ -17,7 +17,7 @@ Parameters:
 
 Options:
     -F            -- when used with -c, only create the needed ZFS
-                     filesystems and directories, but do not populare
+                     filesystems and directories, but do not populate
                      them.
     -p tree       -- specifies on which portstree we work. If not
                      specified, work on a portstree called \"default\".
