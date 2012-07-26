@@ -5,7 +5,7 @@ _poudriere_jail() {
 }
 
 _poudriere_pt() {
-	_values "poudriere portstrees" ${${(f)"$(ls /usr/local/poudriere/ports/default/ports/(/))"}%%.*}
+	_values "poudriere portstrees" ${${(f)"$(ls /usr/local/poudriere/ports/(/))"}%%.*}
 }
 
 _poudriere_pt_method() {
@@ -29,7 +29,9 @@ _poudriere_ports() {
 
 _bulk=(
 	'-f[Give the list of ports to build]:name of file:_files'
-#Options:
+)
+
+_bulk_option=(
 	'-k[Keep the previous built binary packages]::'
 	'-t[Add some testings to package building]::'
 	'-s[Skip sanity]::'
@@ -38,30 +40,34 @@ _bulk=(
 )
 
 _jail=(
-	'-c[create a jail]'
-	'-d[delete a jail]'
-	'-l[list all available jails]'
-	'-s[start a jail]'
-	'-k[kill (stop) a jail]'
-	'-u[update a jail]'
-	'-i[show information about a jail]'
-#Options:
-	'-q[quiet (remove the header in list)]::'
-	'*-j[Specifies the jailname]::jailname:_poudriere_jail'
-	'-v[Specifies which version of FreeBSD we want in jail]::version'
-	'-a[Indicates architecture of the jail: i386 or amd64(same as host by default)]::arch:(amd64 i386)'
-	'-m[Method used to create jail, specify NONE if you want to use your home made jail(ftp by default)]::method:(ftp svn svn+http svn+ssh csup)'
-	'-f[FS name (tank/jails/myjail)]::fs:_files -/'
-	'-t[version to upgrade to]'
+	'(-d -l -s -k -u -i)-c[create a jail]' 
+	'(-c -l -s -k -u -i)-d[delete a jail]' 
+	'(-c -d -s -k -u -i)-l[list all available jails]' 
+	'(-c -d -l -k -u -i)-s[start a jail]' 
+	'(-c -d -i -s -u -i)-k[kill (stop) a jail]' 
+	'(-c -d -l -s -k -i)-u[update a jail]' 
+	'(-c -d -l -s -k -u)-i[show information about a jail]'
+)
+
+_jail_option=(
+	'-q[quiet (remove the header in list)]::' \
+	'*-j[Specifies the jailname]::jailname:_poudriere_jail' \
+	'-v[Specifies which version of FreeBSD we want in jail]::version' \
+	'-a[Indicates architecture of the jail: i386 or amd64(same as host by default)]::arch:(amd64 i386)' \
+	'-m[Method used to create jail, specify NONE if you want to use your home made jail(ftp by default)]::method:(ftp svn svn+http svn+ssh csup)' \
+	'-f[FS name (tank/jails/myjail)]::fs:_files -/' \
+	'-t[version to upgrade to]' \
 	'-M[mountpoint]::mountpoint:_files -/'
 )
 
 
 
 _testport=(
-	'-d[specify on which port we work]:path:_files -/'
-	'-o[specify an origin in the portstree]:origin:_poudriere_ports'
-# options
+	'(-o)-d[specify on which port we work]:path:_files -/'
+	'(-d)-o[specify an origin in the portstree]:origin:_poudriere_ports'
+)
+
+_testport_option=(
 	'-c[run make config for the given port]::'
 	'*-j[run only inside the given jail]::name:_poudriere_jail'
 	'-n[no custom prefix]::'
@@ -69,12 +75,14 @@ _testport=(
 )
 
 _ports=(
-	'-c[create a portstree]'
-	'-d[delete a portstree]'
-	'-u[update a portstree]'
-	'-l[lists all available portstrees]'
+	'(-d -u -l)-c[create a portstree]'
+	'(-c -u -l)-d[delete a portstree]'
+	'(-c -d -l)-u[update a portstree]'
+	'(-c -d -u)-l[lists all available portstrees]'
+)
+
+_ports_option=(
 	'-q[quiet (remove the header in list)]'
-#Options:
 	'-F[when used with -c, only create the needed ZFS filesystems and directories, but do not populate them]'
 	'-p[specify on which portstree we work]::tree:_poudriere_pt'
 	'-f[FS name (tank/jails/myjail)]::fs:_files -/'
@@ -95,10 +103,11 @@ _poudriere () {
 		'testport:launch a test on a given port'
 		'version:show poudriere version'
 	)
-
+	# we are in second argument
 	if ((CURRENT == 2)); then
 		_describe "poudriere main commands" cmds
-	else
+	# the main command has been typed, now we take care of the action
+	elif ((CURRENT == 3)); then
 		case $words[2] in
 			bulk)
 			_arguments -s $_bulk "::" && return
@@ -111,6 +120,22 @@ _poudriere () {
 			;;
 			testport)
 			_arguments -s $_testport "::" && return
+			;;
+		esac
+	# this is where we get the options for the action of the main command
+	elif ((CURRENT >= 4)); then
+		case $words[2] in
+			bulk)
+			_arguments -s $_bulk_option "::" && return
+			;;
+			jail)
+			_arguments -s $_jail_option "::" && return
+			;;
+			ports)
+			_arguments -s $_ports_option "::" && return
+			;;
+			testport)
+			_arguments -s $_testport_option "::" && return
 			;;
 		esac
 	fi
