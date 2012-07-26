@@ -5,7 +5,11 @@ _poudriere_jail() {
 }
 
 _poudriere_pt() {
-	_values "poudriere portstrees" ${${(f)"$(ls /usr/local/poudriere/ports/(/))"}%%.*}
+	_values "poudriere portstrees" ${${(f)"$(ls /usr/local/poudriere/ports/default/ports/(/))"}%%.*}
+}
+
+_poudriere_pt_method() {
+	_values "poudriere portstree fetch method" "csup" "portsnap" "svn" "svn+http" "svn+ssh"
 }
 
 # shamelessely stolen from
@@ -60,6 +64,19 @@ _testport=(
 	'-p[specify on which portstree we work]::tree:_poudriere_pt'
 )
 
+_ports=(
+	'-c[create a portstree]'
+	'-d[delete a portstree]'
+	'-u[update a portstree]'
+	'-l[lists all available portstrees]'
+	'-q[quiet (remove the header in list)]'
+#Options:
+	'-F[when used with -c, only create the needed ZFS filesystems and directories, but do not populate them]'
+	'-p[specify on which portstree we work]::tree:_poudriere_pt'
+	'-f[FS name (tank/jails/myjail)]::fs:_files -/'
+	'-M[mountpoint]::mountpoint:_files -/'
+	'-m[method]::method:_poudriere_pt_method'
+)
 
 _poudriere () {
 	local cmds
