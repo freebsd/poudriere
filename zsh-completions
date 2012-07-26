@@ -84,7 +84,7 @@ _ports=(
 _ports_option=(
 	'-q[quiet (remove the header in list)]'
 	'-F[when used with -c, only create the needed ZFS filesystems and directories, but do not populate them]'
-	'-p[specify on which portstree we work]::tree:_poudriere_pt'
+	'-p[specify the name of the portstree we work on]::tree:_poudriere_pt'
 	'-f[FS name (tank/jails/myjail)]::fs:_files -/'
 	'-M[mountpoint]::mountpoint:_files -/'
 	'-m[method]::method:_poudriere_pt_method'
