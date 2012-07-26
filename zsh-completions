@@ -82,9 +82,6 @@ _poudriere () {
 			bulk)
 			_arguments -s $_bulk "::" && return
 			;;
-			cron)
-			_arguments -s $_cron "::" && return
-			;;
 			jail)
 			_arguments -s $_jail "::" && return
 			;;
