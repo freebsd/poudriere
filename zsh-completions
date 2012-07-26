@@ -67,9 +67,12 @@ _poudriere () {
 	typeset -A val_args
 	cmds=(
 		'bulk:generate packages for given ports'
+		'cron:run poudriere from the crontab'
 		'jail:manage the jails used by poudriere'
 		'ports:create, update or delete the portstrees used by poudriere'
+		'queue:queue a build request (through cron)'
 		'testport:launch a test on a given port'
+		'version:show poudriere version'
 	)
 
 	if ((CURRENT == 2)); then
