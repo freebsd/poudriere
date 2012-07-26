@@ -110,16 +110,16 @@ _poudriere () {
 	elif ((CURRENT == 3)); then
 		case $words[2] in
 			bulk)
-			_arguments -s $_bulk "::" && return
+			_arguments $_bulk "::" && return
 			;;
 			jail)
-			_arguments -s $_jail "::" && return
+			_arguments $_jail "::" && return
 			;;
 			ports)
-			_arguments -s $_ports "::" && return
+			_arguments $_ports "::" && return
 			;;
 			testport)
-			_arguments -s $_testport "::" && return
+			_arguments $_testport "::" && return
 			;;
 		esac
 	# this is where we get the options for the action of the main command
