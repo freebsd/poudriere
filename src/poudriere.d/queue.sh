@@ -2,7 +2,8 @@
 set -e
 
 usage() {
-	echo "poudriere queue your command"
+        echo "poudriere queue poudriere_command"
+	exit 1
 }
 
 SCRIPTPATH=`realpath $0`
@@ -18,6 +19,11 @@ perms=`stat ${CRONDIR} | awk '{print $3}'`
 [ `stat -f '%Sp' ${CRONDIR}` != "drwxrwxrwt" ] && err 1 "Please fix permissions on ${CRONDIR} (see poudriere.conf)"
 
 QUEUEFILE=${CRONDIR}/poudriere-`date +%s`
+
+if [ $# -lt 1]; then
+	usage();
+fi
+
 for ARG in $@; do
 	echo -n "$ARG " >> ${QUEUEFILE}
 done
