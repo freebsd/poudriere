@@ -257,13 +257,17 @@ jail_stop() {
 		# umount the ${JAILMNT}/build/$jobno/wrkdirs
 		mount | grep "/dev/md.*${JAILMNT}/build" | while read mnt; do
 			local dev=`echo $mnt | awk '{print $1}'`
-			umount $dev
-			mdconfig -d -u $dev
+			if [ -n "$dev" ]; then
+				umount $dev
+				mdconfig -d -u $dev
+			fi
 		done
 		# umount the $JAILMNT/wrkdirs
 		local dev=`mount | grep "/dev/md.*${JAILMNT}" | awk '{print $1}'`
-		umount $dev
-		mdconfig -d -u $dev
+		if [ -n "$dev" ]; then
+			umount $dev
+			mdconfig -d -u $dev
+		fi
 	fi
 	zfs rollback -R ${JAILFS}@clean
 	zset status "idle:"
@@ -659,6 +663,7 @@ prepare_jail() {
 	mkdir -p ${PORTSDIR}/packages
 	mkdir -p ${PKGDIR}/All
 
+	[ ! -d ${DISTFILES_CACHE} ] && err 1 "DISTFILES_CACHE directory	does not exists. (c.f. poudriere.conf)"
 	mount -t nullfs ${PKGDIR} ${JAILMNT}/usr/ports/packages || err 1 "Failed to mount the packages directory "
 	if [ -n "${DISTFILES_CACHE}" -a -d "${DISTFILES_CACHE}" ]; then
 		mkdir -p ${JAILMNT}/usr/ports/distfiles
