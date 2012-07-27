@@ -121,8 +121,13 @@ jobs will run in parallel for a bulk build.
 This flag specifies on which ports
 .Ar tree
 the bulk build will be done.
+.It Fl s
+Skip sanity tests. Sanity tests are made to check if the ports exists,
+does not have an increased version number, and if the compiled options
+match the current options from the make.conf files and /var/db/options.
 .It Fl t
-Add some testing.
+Add some testing. Currently uninstalls the port, and disable parallel
+jobs for make.
 .El
 .Ss jail
 .Pp
@@ -284,7 +289,6 @@ command in argument.
 There are no options associated with the
 .Cm queue
 command.
-.El
 .Sh ENVIRONMENT
 The
 .Nm
@@ -300,6 +304,7 @@ for example.
 This directory contains
 .Ar make.conf
 files for your different jails.
+.El
 .Sh EXIT STATUS
 .Ex -std
 .Sh EXAMPLES
