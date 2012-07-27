@@ -28,15 +28,16 @@ _poudriere_ports() {
 }
 
 _bulk=(
-	'-f[Give the list of ports to build]:name of file:_files'
+	'-f[Give the list of ports to build]::name of file:_files'
 )
 
 _bulk_option=(
-	'-k[Keep the previous built binary packages]::'
+	'-c[Clean the previous built binary packages]::'
 	'-t[Add some testings to package building]::'
 	'-s[Skip sanity]::'
 	'*-j[Run only on the given jail]::jail name:_poudriere_jail'
 	'-p[Specify on which ports tree the bulk will be done]::tree:_poudriere_pt'
+	'-J[Specify the number of jobs you want to run in parallel]::'
 )
 
 _jail=(
@@ -63,7 +64,7 @@ _jail_option=(
 
 
 _testport=(
-	'(-o)-d[specify on which port we work]:path:_files -/'
+	'(-o)-d[specify on which port we work]::path:_files -/'
 	'(-d)-o[specify an origin in the portstree]:origin:_poudriere_ports'
 )
 
