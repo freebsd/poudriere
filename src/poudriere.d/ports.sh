@@ -87,6 +87,7 @@ portsnap);;
 svn+http);;
 svn+ssh);;
 svn);;
+git);;
 *) usage;;
 esac
 
@@ -144,6 +145,14 @@ ports-all" > ${PTMNT}/csup
 			}
 			echo " done"
 			;;
+		git)
+			msg "Cloning the ports tree"
+			git clone ${GIT_URL} ${PTMNT}/ports || {
+				zfs destroy ${PTFS}
+				err 1 " Fail"
+			}
+			echo " done"
+			;;
 		esac
 		pzset method ${METHOD}
 	fi
@@ -187,6 +196,11 @@ ports-all" > ${PTMNT}/csup
 	svn*)
 		msg_n "Updating the ports tree..."
 		svn -q update ${PTMNT}/ports
+		echo " done"
+		;;
+	git)
+		msg "Pulling from ${GIT_URL}"
+		cd ${PTMNT}/ports && git pull
 		echo " done"
 		;;
 	*)
