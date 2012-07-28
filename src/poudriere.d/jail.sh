@@ -108,13 +108,20 @@ update_jail() {
 	csup)
 		msg "Upgrading using csup"
 		RELEASE=`zget version`
+		case ${RELEASE} in
+			*-CURRENT)
+				RELEASE="."
+				;;
+			*-STABLE|*-RELEASE)
+				RELEASE="RELENG_`echo ${RELEASE%%-*} | sed "s/\./_/"`"
+				;;
+		esac
 		install_from_csup
 		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
 		zfs destroy ${JAILFS}@clean
 		zfs snapshot ${JAILFS}@clean
 		;;
-	svn)
-		RELEASE=`zget version`
+	svn*)
 		install_from_svn
 		yes | make -C ${JAILMNT} delete-old delete-old-libs DESTDIR=${JAILMNT}
 		zfs destroy ${JAILFS}@clean
@@ -257,9 +264,54 @@ create_jail() {
 	svn*)
 		SVN=`which svn`
 		test -z ${SVN} && err 1 "You need svn on your host to use svn method"
+		case ${VERSION} in
+			head)
+				# hardcoded because I don't know how to figure
+				# it out
+				REAL_VERSION="10-CURRENT"
+				;;
+			stable/*![0-9]*)
+				err 1 "bad version number for stable version"
+				;;
+			stable/*)
+				REAL_VERSION="${VERSION#*/}-STABLE"
+				;;
+			release/*![0-9]*.[0-9].[0-9])
+				err 1 "bad version number for release version"
+				;;
+			release/*.[0-9].[0-9])
+				REAL_VERSION="${VERSION#*/}-RELEASE"
+				;;
+			releng/*![0-9]*.[0-9])
+				err 1 "bad version number for releng version"
+				;;
+			releng/*.[0-9])
+				REAL_VERSION="${VERSION#*/}-RELEASE"
+				;;
+			*)
+				err 1 "version with svn should be: head or stable/N or release/N or releng/N"
+				;;
+		esac
 		FCT=install_from_svn
 		;;
 	csup)
+		case ${VERSION} in
+			.)
+				REAL_VERSION="10-CURRENT"
+				;;
+			RELENG_*![0-9]*_[0-9])
+				err 1 "bad version number for RELENG"
+				;;
+			RELENG_*_[0-9])
+				REAL_VERSION="`echo ${VERSION#*_} | sed s/_/./`-RELEASE"
+				;;
+			RELENG_*![0-9]*)
+				err 1 "bad version number for RELENG"
+				;;
+			RELENG_*)
+				REAL_VERSION="${VERSION#*_}-STABLE"
+				;;
+			esac
 		FCT=install_from_csup
 		;;
 	*)
@@ -267,7 +319,7 @@ create_jail() {
 		;;
 	esac
 
-	jail_create_zfs ${JAILNAME} ${VERSION} ${ARCH} ${JAILMNT} ${FS}
+	jail_create_zfs ${JAILNAME} ${REAL_VERSION:-${VERSION}} ${ARCH} ${JAILMNT} ${FS}
 	RELEASE=${VERSION}
 	${FCT}
 
