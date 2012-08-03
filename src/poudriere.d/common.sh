@@ -153,7 +153,7 @@ get_data_dir() {
 		echo ${POUDRIERE_DATA}
 		return
 	fi
-	data=$(zfs list -rt filesystem -H -o ${NS}:type,mountpoint ${ZPOOL}/poudriere | awk '$1 == "data" { print $2 }')
+	data=$(zfs list -rt filesystem -H -o ${NS}:type,mountpoint ${ZPOOL}/poudriere | awk '$1 == "data" { print $2 }' | head -n 1)
 	if [ -n "${data}" ]; then
 		echo $data
 		return
