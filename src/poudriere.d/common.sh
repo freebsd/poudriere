@@ -338,10 +338,11 @@ sanity_check_pkgs() {
 build_port() {
 	[ $# -ne 1 ] && eargs portdir
 	local portdir=$1
+	local port=${portdir##/usr/ports/}
 	local targets="fetch checksum extract patch configure build install package"
 	[ -n "${PORTTESTING}" ] && targets="${targets} deinstall"
 	for phase in ${targets}; do
-		zset status "${phase}:${portdir##/usr/ports/}"
+		zset status "${phase}:${port}"
 		if [ "${phase}" = "fetch" ]; then
 			jail -r ${JAILNAME}
 			jrun 1
@@ -375,7 +376,7 @@ build_port() {
 		if [ -n "${PORTTESTING}" -a  "${phase}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
 			PREFIX=`injail make -C ${portdir} -VPREFIX`
-			zset status "fscheck:${portdir##/usr/ports/}"
+			zset status "fscheck:${port}"
 			if [ $ZVERSION -lt 28 ]; then
 				find ${jailbase}${PREFIX} ! -type d | \
 					sed -e "s,^${jailbase}${PREFIX}/,," | sort
