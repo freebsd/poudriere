@@ -99,7 +99,7 @@ sig_handler() {
 
 jail_exists() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs list -t filesystem -H -o ${NS}:type,${NS}:name | \
+	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name ${ZPOOL}/poudriere | \
 		awk -v n=$1 'BEGIN { ret = 1 } $1 == "rootfs" && $2 == n { ret = 0; } END { exit ret }' && return 0
 	return 1
 }
@@ -112,38 +112,38 @@ jail_runs() {
 
 jail_get_base() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,mountpoint | \
+	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,mountpoint ${ZPOOL}/poudriere | \
 		awk -v n=$1 '$1 == "rootfs" && $2 == n  { print $3 }'
 }
 
 jail_get_version() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,${NS}:version | \
+	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,${NS}:version ${ZPOOL}/poudriere | \
 		awk -v n=$1 '$1 == "rootfs" && $2 == n { print $3 }'
 }
 
 jail_get_fs() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,name | \
+	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,name ${ZPOOL}/poudriere | \
 		awk -v n=$1 '$1 == "rootfs" && $2 == n { print $3 }'
 }
 
 port_exists() {
 	[ $# -ne 1 ] && eargs portstree_name
-	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,name | \
+	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,name ${ZPOOL}/poudriere | \
 		awk -v n=$1 'BEGIN { ret = 1 } $1 == "ports" && $2 == n { ret = 0; } END { exit ret }' && return 0
 	return 1
 }
 
 port_get_base() {
 	[ $# -ne 1 ] && eargs portstree_name
-	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,mountpoint | \
+	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,mountpoint ${ZPOOL}/poudriere | \
 		awk -v n=$1 '$1 == "ports" && $2 == n { print $3 }'
 }
 
 port_get_fs() {
 	[ $# -ne 1 ] && eargs portstree_name
-	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,name | \
+	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,name ${ZPOOL}/poudriere | \
 		awk -v n=$1 '$1 == "ports" && $2 == n { print $3 }'
 }
 
@@ -153,7 +153,7 @@ get_data_dir() {
 		echo ${POUDRIERE_DATA}
 		return
 	fi
-	data=$(zfs list -t filesystem -H -o ${NS}:type,mountpoint | awk '$1 == "data" { print $2 }')
+	data=$(zfs list -rt filesystem -H -o ${NS}:type,mountpoint ${ZPOOL}/poudriere | awk '$1 == "data" { print $2 }')
 	if [ -n "${data}" ]; then
 		echo $data
 		return
