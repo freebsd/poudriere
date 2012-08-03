@@ -340,6 +340,9 @@ build_port() {
 	local portdir=$1
 	local port=${portdir##/usr/ports/}
 	local targets="fetch checksum extract patch configure build install package"
+	local name=$(awk -v n=${port} '$1 == n { print $2 }' "${JAILMNT}/cache")
+	local options
+
 	[ -n "${PORTTESTING}" ] && targets="${targets} deinstall"
 	for phase in ${targets}; do
 		zset status "${phase}:${port}"
@@ -363,6 +366,13 @@ build_port() {
 					grep -v "not a dynamic executable" | \
 					awk '/=>/ { print $3 }' | sort -u
 			fi
+		fi
+
+		# If creating a pkg_install package, insert the options into the +CONTENTS
+		# XXX: Move to bsd.port.mk?
+		if [ "${phase}" = "package" -a $PKGNG -eq 0 ]; then
+			options=$(injail make -C ${portdir} pretty-print-config)
+			echo "@comment OPTIONS:${options}" >> ${JAILMNT}/var/db/pkg/${name}/+CONTENTS
 		fi
 
 		printf "=======================<phase: %-9s>==========================\n" ${phase}
@@ -548,9 +558,14 @@ delete_old_pkgs() {
 		fi
 
 		# Check if the compiled options match the current options from make.conf and /var/db/options
-		if [ -n "${CHECK_CHANGED_OPTIONS}" -a "${CHECK_CHANGED_OPTIONS}" != "no" -a $PKGNG -eq 1 ]; then
-			compiled_options=$(pkg query -F ${pkg} '%Ov %Ok' | awk '$1 == "on" {print $2}' | sort | tr '\n' ' ')
+		if [ -n "${CHECK_CHANGED_OPTIONS}" -a "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
 			current_options=$(injail make -C /usr/ports/${o} pretty-print-config | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
+
+			if [ $PKGNG -eq 1 ]; then
+				compiled_options=$(pkg query -F ${pkg} '%Ov %Ok' | awk '$1 == "on" {print $2}' | sort | tr '\n' ' ')
+			else
+				compiled_options=$(pkg_info -qf ${pkg} | awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
+			fi
 			if [ "${compiled_options}" != "${current_options}" ]; then
 				msg "Options changed, deleting: ${pkg##*/}"
 				if [ "${CHECK_CHANGED_OPTIONS}" = "verbose" ]; then

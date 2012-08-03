@@ -67,8 +67,8 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #SVN_HOST=svn.FreeBSD.org
 
 # Automatic OPTION change detection
-# Only if using PKGNG, when bulk building packages with -k, compare the options from
-# kept packages to the current options to be built. If they differ, the existing package
+# When bulk building packages, compare the options from kept packages to
+# the current options to be built. If they differ, the existing package
 # will be deleted and the port will be rebuilt.
 # Valid options: yes, no, verbose
 # verbose will display the old and new options
