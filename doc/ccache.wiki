@@ -24,7 +24,7 @@ BUILD_DEPENDS+=         ${LOCALBASE}/bin/ccache:${PORTSDIR}/devel/ccache
 .endif
 
 .if defined(WITH_CCACHE_BUILD) && !${CC:M*ccache*}
-MAKE_ENV+=      PATH=${LOCALBASE}/libexec/ccache/world:${PATH}
+MAKE_ENV+=      PATH=${LOCALBASE}/libexec/ccache:${PATH}
 .endif
 </verbatim>
 This last step is a temporary solution until it can be put into the ports framework by default.
