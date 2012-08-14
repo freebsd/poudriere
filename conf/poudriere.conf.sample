@@ -86,7 +86,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 
 # parallel build support.
 #
-# by default it uses hw.cpu to determine the number of builders, you can for it
+# by default it uses hw.ncpu to determine the number of builders, you can for it
 # to a given value bye specifying PARALLEL_JOBS
 #
 # Example to define PARALLEL_JOBS to one single job
