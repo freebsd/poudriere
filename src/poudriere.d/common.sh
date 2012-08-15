@@ -33,6 +33,11 @@ log_start() {
 	tee ${logfile} < ${logfile}.pipe >&3 &
 	export tpid=$!
 	exec > ${logfile}.pipe 2>&1
+
+	# Remove fifo pipe file right away to avoid orphaning it.
+	# The pipe will continue to work as long as we keep
+	# the FD open to it.
+	rm -f ${logfile}.pipe
 }
 
 buildlog_start() {
@@ -62,7 +67,6 @@ buildlog_stop() {
 log_stop() {
 	exec 1>&3 3>&- 2>&4 4>&-
 	wait $tpid
-	rm -f $1.pipe
 }
 
 zget() {
