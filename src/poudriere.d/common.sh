@@ -351,7 +351,7 @@ build_port() {
 	local portdir=$1
 	local port=${portdir##/usr/ports/}
 	local targets="fetch checksum extract patch configure build install package"
-	local name=$(awk -v n=${port} '$1 == n { print $2 }' "${JAILMNT}/cache")
+	local name=$(cache_get_pkgname ${port})
 	local options
 
 	[ -n "${PORTTESTING}" ] && targets="${targets} deinstall"
@@ -539,7 +539,6 @@ list_deps() {
 
 delete_old_pkgs() {
 	local o v v2 compiled_options current_options
-	local cache="${JAILMNT}/cache"
 	[ ! -d ${PKGDIR}/All ] && return 0
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return 0
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
@@ -556,11 +555,7 @@ delete_old_pkgs() {
 			rm -f ${pkg}
 			continue
 		fi
-		v2=$(awk -v o=${o} ' { if ($1 == o) {print $2} }' ${cache})
-		if [ -z "$v2" ]; then
-			v2=`injail make -C /usr/ports/${o} -VPKGNAME`
-			echo "${o} ${v2}" >> ${cache}
-		fi
+		v2=$(cache_get_pkgname ${o})
 		v2=${v2##*-}
 		if [ "$v" != "$v2" ]; then
 			msg "Deleting old version: ${pkg##*/}"
@@ -595,24 +590,44 @@ next_in_queue() {
 	p=$(lockf -k -t 60 ${JAILMNT}/.lock find ${JAILMNT}/pool -type d -depth 1 -empty -print || : | head -n 1)
 	[ -n "$p" ] || return 0
 	touch ${p}/.building
-	awk -v n=${p##*/} '$2 == n { print $1 }' ${JAILMNT}/cache
+	cache_get_origin ${p##*/}
+}
+
+cache_get_pkgname() {
+	[ $# -ne 1 ] && eargs origin
+	local origin=$1
+	local pkgname
+
+	pkgname=$(awk -v o=${origin} '$1 == o { print $2 }' ${JAILMNT}/cache)
+
+	# Add to cache if not found.
+	if [ -z "${pkgname}" ]; then
+		pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME)
+		echo "${origin} ${pkgname}" >> ${JAILMNT}/cache
+	fi
+	echo ${pkgname}
+}
+
+cache_get_origin() {
+	[ $# -ne 1 ] && eargs pkgname
+	local pkgname=$1
+
+	awk -v p=${pkgname} '$2 == p { print $1 }' ${JAILMNT}/cache
 }
 
 compute_deps() {
 	[ $# -ne 1 ] && eargs port
 	local port=$1
-	local pn m
-	local name=$(awk -v n=${port} '$1 == n { print $2 }' "${JAILMNT}/cache")
-	if [ -n "${name}" ]; then
-		[ -d "${JAILMNT}/pool/${name}" ] && return
-	fi
-	pn=$(injail make -C /usr/ports/${port} -VPKGNAME)
-	echo "${port} ${pn}" >> "${JAILMNT}/cache"
-	mkdir  "${JAILMNT}/pool/${pn}"
+	local name m
+	local pn=$(cache_get_pkgname ${port})
+	local pkg_pooldir="${JAILMNT}/pool/${pn}"
+	[ -d "${pkg_pooldir}" ] && return
+
+	mkdir "${pkg_pooldir}"
 	for m in `list_deps ${port}`; do
 		compute_deps "${m}"
-		name=$(awk -v n=${m} '$1 == n { print $2 }' "${JAILMNT}/cache")
-		touch "${JAILMNT}/pool/${pn}/${name}"
+		name=$(cache_get_pkgname ${m})
+		touch "${pkg_pooldir}/${name}"
 	done
 }
 
