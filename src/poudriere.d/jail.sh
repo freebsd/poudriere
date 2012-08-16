@@ -128,6 +128,9 @@ update_jail() {
 		zfs destroy ${JAILFS}@clean
 		zfs snapshot ${JAILFS}@clean
 		;;
+	allbsd)
+		err 1 "Upgrade is not supported with allbsd, to upgrade, please delete and recreate the jail"
+		;;
 	*)
 		err 1 "Unsupported method"
 		;;
@@ -192,11 +195,15 @@ src-all" > ${JAILMNT}/etc/supfile
 install_from_ftp() {
 	mkdir ${JAILMNT}/fromftp
 	CLEANUP_HOOK=cleanup_new_jail
-	local URL
+	local URL BASEURL
 
-	if [ ${VERSION%%.*} -lt 9 ]; then
-		msg "Fetching sets for FreeBSD ${VERSION} ${ARCH}"
-		URL="${FREEBSD_HOST}/pub/FreeBSD/releases/${ARCH}/${VERSION}"
+	if [ ${RELEASE%%.*} -lt 9 ]; then
+		msg "Fetching sets for FreeBSD ${RELEASE} ${ARCH}"
+		case ${METHOD} in
+		ftp) BASEURL="${FREEBSD_HOST}/pub/FreeBSD/releases/${ARCH}/" ;;
+		allbsd) BASEURL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}" ;;
+		esac
+		URL="${BASEURL}/${RELEASE}"
 		DISTS="base dict src"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32"
 		for dist in ${DISTS}; do
@@ -227,7 +234,11 @@ install_from_ftp() {
 				tar --unlink -xpf - -C ${JAILMNT}/${APPEND} || err 1 " Fail" && echo " done"
 		done
 	else
-		URL="${FREEBSD_HOST}/pub/FreeBSD/releases/${ARCH}/${ARCH}/${VERSION}"
+		case ${METHOD} in
+		ftp) BASEURL="${FREEBSD_HOST}/pub/FreeBSD/releases/${ARCH}/${ARCH}" ;;
+		allbsd) BASEURL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}" ;;
+		esac
+		URL="${BASEURL}/${RELEASE}"
 		DISTS="base.txz src.txz"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
 		for dist in ${DISTS}; do
@@ -261,6 +272,25 @@ create_jail() {
 	case ${METHOD} in
 	ftp)
 		FCT=install_from_ftp
+		;;
+	allbsd)
+		FCT=install_from_ftp
+		ALLBSDVER=`fetch -qo - \
+			https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/ | \
+			sed -n "s,.*href=\"\(.*${VERSION}.*\)-JPSNAP/\".*,\1,p" | \
+			sort -k 3 -t - -r | head -n 1 `
+		if [ -z ${ALLBSDVER} ]; then
+			err 1 "Unknown version $VERSION"
+		fi
+		OIFS=${IFS}
+		IFS=-
+		set -- ${ALLBSDVER}
+		IFS=${OIFS}
+		case $2 in
+		HEAD) REAL_VERSION=${1}-CURRENT ;;
+		RELENG*) REAL_VERSION=${1}-STABLE ;;
+		esac
+		ALLBSDVER="${ALLBSDVER}-JPSNAP/ftp"
 		;;
 	svn*)
 		SVN=`which svn`
@@ -321,7 +351,7 @@ create_jail() {
 	esac
 
 	jail_create_zfs ${JAILNAME} ${REAL_VERSION:-${VERSION}} ${ARCH} ${JAILMNT} ${FS}
-	RELEASE=${VERSION}
+	RELEASE=${ALLBSDVER:-VERSION}
 	${FCT}
 
 	OSVERSION=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILMNT}/usr/include/sys/param.h`
