@@ -515,7 +515,7 @@ build_pkg() {
 		fi
 	fi
 	# Cleaning queue (pool is cleaned here)
-	lockf -k ${MASTERMNT:-${JAILMNT}}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${port}"
+	lockf -k ${MASTERMNT:-${JAILMNT}}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${PKGNAME}"
 
 	zset status "done:${port}"
 	buildlog_stop ${portdir}
