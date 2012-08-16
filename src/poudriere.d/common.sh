@@ -541,7 +541,6 @@ delete_old_pkgs() {
 	[ ! -d ${PKGDIR}/All ] && return 0
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return 0
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
-		test -e "${pkg}" || continue
 		if [ "${EXT}" = "tbz" ]; then
 			o=`pkg_info -qo "${pkg}"`
 		else
