@@ -327,9 +327,9 @@ sanity_check_pkgs() {
 		local depfile=${JAILMNT}/tmp/${pkg##*/}.deps
 		if [ ! -f "${depfile}" ]; then
 			if [ "${EXT}" = "tbz" ]; then
-				pkg_info -qr ${pkg} | awk '{ print $2 }' > ${depfile}
+				pkg_info -qr "${pkg}" | awk '{ print $2 }' > ${depfile}
 			else
-				pkg info -qdF $pkg > ${depfile}
+				pkg info -qdF "${pkg}" > ${depfile}
 			fi
 		fi
 		while read dep; do
@@ -541,11 +541,11 @@ delete_old_pkgs() {
 	[ ! -d ${PKGDIR}/All ] && return 0
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return 0
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
-		test -e ${pkg} || continue
+		test -e "${pkg}" || continue
 		if [ "${EXT}" = "tbz" ]; then
-			o=`pkg_info -qo ${pkg}`
+			o=`pkg_info -qo "${pkg}"`
 		else
-			o=`pkg query -F ${pkg} "%o"`
+			o=`pkg query -F "${pkg}" "%o"`
 		fi
 		v=${pkg##*-}
 		v=${v%.*}
@@ -567,9 +567,9 @@ delete_old_pkgs() {
 			current_options=$(injail make -C /usr/ports/${o} pretty-print-config | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 
 			if [ $PKGNG -eq 1 ]; then
-				compiled_options=$(pkg query -F ${pkg} '%Ov %Ok' | awk '$1 == "on" {print $2}' | sort | tr '\n' ' ')
+				compiled_options=$(pkg query -F "${pkg}" '%Ov %Ok' | awk '$1 == "on" {print $2}' | sort | tr '\n' ' ')
 			else
-				compiled_options=$(pkg_info -qf ${pkg} | awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
+				compiled_options=$(pkg_info -qf "${pkg}" | awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 			fi
 			if [ "${compiled_options}" != "${current_options}" ]; then
 				msg "Options changed, deleting: ${pkg##*/}"
