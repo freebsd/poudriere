@@ -72,6 +72,8 @@ PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}
 JAILFS=`jail_get_fs ${JAILNAME}`
 JAILMNT=`jail_get_base ${JAILNAME}`
 
+export BUILD_TYPE=testport
+
 jail_start
 
 prepare_jail
@@ -101,7 +103,7 @@ if [ "${USE_PORTLINT}" = "yes" ]; then
 	[ ! -x `which portlint` ] && err 2 "First install portlint if you want USE_PORTLINT to work as expected"
 	set +e
 	msg "Portlint check"
-	cd ${JAILMNT}/${PORTDIRECTORY} && portlint -C | tee -a ${LOGS}/${PKGNAME}-${JAILNAME}.portlint.log
+	cd ${JAILMNT}/${PORTDIRECTORY} && portlint -C | tee -a $(log_path)/${PKGNAME}.portlint.log
 	set -e
 fi
 [ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/tmp}/`echo ${PKGNAME} | tr '[,+]' _`"
@@ -125,7 +127,7 @@ injail /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${P
 
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
 PORTTESTING=yes
-log_start ${LOGS}/testport-${PKGNAME}-${JAILNAME}.log
+log_start $(log_path)/${PKGNAME}.log
 buildlog_start ${PORTDIRECTORY}
 build_port ${PORTDIRECTORY}
 
@@ -140,7 +142,7 @@ injail make -C ${PORTDIRECTORY} clean
 msg "Removing existing ${PREFIX} dir"
 [ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${JAILMNT}${PREFIX} ${JAILMNT}${PREFIX}.PLIST_DIRS.before ${JAILMNT}${PREFIX}.PLIST_DIRS.after
 buildlog_stop ${portdir}
-log_stop ${LOGS}/testport-${PKGNAME}-${JAILNAME}.log
+log_stop $(log_path)/${PKGNAME}.log
 
 cleanup
 set +e

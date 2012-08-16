@@ -151,6 +151,8 @@ fi
 JAILFS=`jail_get_fs ${JAILNAME}`
 JAILMNT=`jail_get_base ${JAILNAME}`
 
+export BUILD_TYPE=bulk
+
 jail_start
 
 prepare_jail

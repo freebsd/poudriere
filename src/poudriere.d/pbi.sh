@@ -59,6 +59,8 @@ PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}-${LBASENAME}
 JAILMNT=`jail_get_base ${JAILNAME}`
 JAILFS=`jail_get_fs ${JAILNAME}`
 
+export BUILD_TYPE=pbi
+
 jail_start
 
 prepare_jail
@@ -84,7 +86,7 @@ zfs rollback ${JAILFS}@prepkg
 PKGNAME=`injail make -C ${PORTDIRECTORY} -VPKGNAME`
 WWW=`awk '/^WWW/ { print $2 }' ${PORTDIRECTORY}/pkg-descr`
 COMMENT=`injail make -C ${PORTDIRECTORY} -VCOMMENT`
-log_start ${LOGS}/pbi-${PKGNAME}-${JAILNAME}.log
+log_start $(log_path)/${PKGNAME}.log
 echo pkg -j ${JAILNAME} add /usr/ports/packages/All/${PKGNAME}.${EXT}
 /usr/local/sbin/pkg -j ${JAILNAME} add /usr/ports/packages/All/${PKGNAME}.${EXT}
 if [ $REAL -eq 0 ]; then
@@ -167,6 +169,6 @@ else
 fi
 
 zfs rollback ${JAILFS}@prepkg
-log_stop ${LOGS}/pbi${PKGNAME}-${JAILNAME}.log
+log_stop $(log_path)/${PKGNAME}.log
 
 cleanup

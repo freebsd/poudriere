@@ -28,6 +28,9 @@ eargs() {
 log_start() {
 	local logfile=$1
 
+	# Make sure directory exists
+	mkdir -p ${logfile%/*}
+
 	exec 3>&1 4>&2
 	[ ! -e ${logfile}.pipe ] && mkfifo ${logfile}.pipe
 	tee ${logfile} < ${logfile}.pipe >&3 &
@@ -38,6 +41,10 @@ log_start() {
 	# The pipe will continue to work as long as we keep
 	# the FD open to it.
 	rm -f ${logfile}.pipe
+}
+
+log_path() {
+	echo "${LOGS}/${BUILD_TYPE}/${JAILNAME%-job-*}/${PTNAME}"
 }
 
 buildlog_start() {
@@ -212,7 +219,7 @@ jrun() {
 }
 
 jail_start() {
-	[ $# -ne 0 ] && eargs
+	[ $# -ne 0 ] && earsg
 	local NEEDFS="linprocfs linsysfs nullfs procfs"
 	[ -n "${USE_TMPFS}" ] && NEEDFS="${NEEDFS} tmpfs"
 	for fs in ${NEEDFS}; do
@@ -279,7 +286,7 @@ jail_stop() {
 }
 
 port_create_zfs() {
-	[ $# -ne 3 ] && eargs name mountpoint fs
+	[ $# -ne 3 ] && earsg name mountpoint fs
 	local name=$1
 	local mnt=$( echo $2 | sed -e 's,//,/,g')
 	local fs=$3
@@ -479,7 +486,7 @@ build_pkg() {
 
 	msg "Building ${port}"
 	PKGNAME=$(injail make -C ${portdir} -VPKGNAME)
-	log_start ${LOGS}/${JAILNAME%-job-*}-${PTNAME}-${PKGNAME}.log
+	log_start $(log_path)/${PKGNAME}.log
 	buildlog_start ${portdir}
 
 	if [ -n "${ignore}" ]; then
@@ -512,7 +519,7 @@ build_pkg() {
 
 	zset status "done:${port}"
 	buildlog_stop ${portdir}
-	log_stop ${LOGS}/${JAILNAME%-job-*}-${PTNAME}-${PKGNAME}.log
+	log_stop $(log_path)/${PKGNAME}.log
 }
 
 list_deps() {

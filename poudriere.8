@@ -381,7 +381,7 @@ It starts the jail, then mount the ports tree (nullfs), then mounts the
 package dir (pourdriere_data/packages/jailname), then it mounts the
 ~/ports-cvs/mybeautifulporttotest (nullfs) it builds all the dependencies
 (except runtime ones) and log it to
-poudriere_data/logs/mybeautifulporttotest-jailname-depends.log).
+poudriere_data/logs/testport/jailname/default/mybeautifulporttotest.log).
 .Pp
 If packages for the dependencies already exists it will use them
 .Pp
@@ -392,7 +392,7 @@ All the dependency phase is done with PREFIX == LOCALBASE.
 .Pp
 After that it will build the port itself with LOCALBASE != PREFIX
 and log the build to
-poudriere_data/logs/mybeautifulporttotest-jailname-build.log
+poudriere_data/logs/testport/jailname/default/mybeautifulporttotest.log
 .Pp
 It will try to:
 install it,
