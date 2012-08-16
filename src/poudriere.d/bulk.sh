@@ -209,7 +209,7 @@ else
 	OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
 	INDEXF=${PKGDIR}/INDEX-${OSMAJ}
 	for pkg_file in `ls ${PKGDIR}/All/*.tbz`; do
-		msg_n "extracting description from `basename ${pkg_file}`"
+		msg_n "extracting description from ${pkg_file##*/}"
 		ORIGIN=`/usr/sbin/pkg_info -qo "${pkg_file}"`
 		[ -d ${PORTSDIR}/${ORIGIN} ] && injail make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
 		echo " done"
