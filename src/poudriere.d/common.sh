@@ -219,7 +219,7 @@ jrun() {
 }
 
 jail_start() {
-	[ $# -ne 0 ] && earsg
+	[ $# -ne 0 ] && eargs
 	local NEEDFS="linprocfs linsysfs nullfs procfs"
 	[ -n "${USE_TMPFS}" ] && NEEDFS="${NEEDFS} tmpfs"
 	for fs in ${NEEDFS}; do
@@ -286,7 +286,7 @@ jail_stop() {
 }
 
 port_create_zfs() {
-	[ $# -ne 3 ] && earsg name mountpoint fs
+	[ $# -ne 3 ] && eargs name mountpoint fs
 	local name=$1
 	local mnt=$( echo $2 | sed -e 's,//,/,g')
 	local fs=$3
