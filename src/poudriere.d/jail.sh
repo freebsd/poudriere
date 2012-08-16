@@ -36,12 +36,13 @@ info_jail() {
 	nbi=$(zget stats_ignored|sed -e 's/ //g')
 	nbq=$(zget stats_queued|sed -e 's/ //g')
 	tobuild=$((nbq - nbb - nbf - nbi))
-	zfs list -H -o ${NS}:type,${NS}:name,${NS}:version,${NS}:arch,${NS}:stats_built,${NS}:stats_failed,${NS}:stats_ignored,${NS}:status ${JAILFS}| \
+	zfs list -H -o ${NS}:type,${NS}:name,${NS}:version,${NS}:arch,${NS}:stats_built,${NS}:stats_failed,${NS}:stats_ignored,${NS}:status,${NS}:method ${JAILFS}| \
 		awk -v q="$nbq" -v tb="$tobuild" '/^rootfs/  {
 			print "Jailname: " $2;
 			print "FreeBSD version: " $3;
 			print "FreeBSD arch: "$4;
-			print "Status: "$7;
+			print "install/update method: "$9;
+			print "Status: "$8;
 			print "Packages built: "$5;
 			print "Packages failed: "$6;
 			print "Packages ignored: "$7;
@@ -385,7 +386,7 @@ EOF
 
 	jail -U root -c path=${JAILMNT} command=/sbin/ldconfig -m /lib /usr/lib /usr/lib/compat
 
-	zfs snapshot ${FS}@clean
+	zfs snapshot ${JAILFS}@clean
 	msg "Jail ${JAILNAME} ${VERSION} ${ARCH} is ready to be used"
 }
 
@@ -422,7 +423,7 @@ while getopts "j:v:a:z:m:n:f:M:sdklqciut:" FLAG; do
 			METHOD=${OPTARG}
 			;;
 		f)
-			FS=${OPTARG}
+			JAILFS=${OPTARG}
 			;;
 		M)
 			JAILMNT=${OPTARG}
