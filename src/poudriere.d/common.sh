@@ -728,7 +728,7 @@ prepare_jail() {
 	mkdir -p ${JAILMNT}/${MYBASE:-/usr/local}
 	injail /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${MYBASE:-/usr/local} >/dev/null
 
-	WITH_PKGNG=`injail make -C /usr/ports -VWITH_PKGNG`
+	WITH_PKGNG=$(injail make -f /usr/ports/Mk/bsd.port.mk -V WITH_PKGNG)
 	if [ -n "${WITH_PKGNG}" ]; then
 		export PKGNG=1
 		export EXT="txz"
