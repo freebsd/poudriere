@@ -52,10 +52,10 @@ info_jail() {
 
 list_jail() {
 	[ ${QUIET} -eq 0 ] && \
-		printf '%-20s %-13s %-7s %-7s %-7s %-7s %-7s %s\n' "JAILNAME" "VERSION" "ARCH" "SUCCESS" "FAILED" "IGNORED" "QUEUED" "STATUS"
+		printf '%-20s %-13s %-7s %-7s %-7s %-7s %-7s %-7s %s\n' "JAILNAME" "VERSION" "ARCH" "METHOD" "SUCCESS" "FAILED" "IGNORED" "QUEUED" "STATUS"
 	zfs list -rt filesystem -H \
-		-o ${NS}:type,${NS}:name,${NS}:version,${NS}:arch,${NS}:stats_built,${NS}:stats_failed,${NS}:stats_ignored,${NS}:stats_queued,${NS}:status ${ZPOOL}/poudriere | \
-		awk '$1 == "rootfs" { printf("%-20s %-13s %-7s %-7s %-7s %-7s %-7s %s\n",$2, $3, $4, $5, $6, $7, $8, $9) }'
+		-o ${NS}:type,${NS}:name,${NS}:version,${NS}:arch,${NS}:method,${NS}:stats_built,${NS}:stats_failed,${NS}:stats_ignored,${NS}:stats_queued,${NS}:status ${ZPOOL}/poudriere | \
+		awk '$1 == "rootfs" { printf("%-20s %-13s %-7s %-7s %-7s %-7s %-7s %-7s %s\n",$2, $3, $4, $5, $6, $7, $8, $9, $10) }'
 }
 
 delete_jail() {
