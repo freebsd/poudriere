@@ -87,11 +87,10 @@ update_jail() {
 	METHOD=`zget method`
 	if [ "${METHOD}" = "-" ]; then
 		METHOD="ftp"
-		zset method "ftp"
+		zset method "${METHOD}"
 	fi
 	case ${METHOD} in
 	ftp)
-		JAILFS=`jail_get_fs ${JAILNAME}`
 		JAILMNT=`jail_get_base ${JAILNAME}`
 		jail_start
 		jail -r ${JAILNAME}
@@ -265,9 +264,9 @@ create_jail() {
 		JAILMNT=${BASEFS}/jails/${JAILNAME}
 	fi
 
-	if [ -z ${FS} ] ; then
+	if [ -z ${JAILFS} ] ; then
 		[ -z ${ZPOOL} ] && err 1 "Please provide a ZPOOL variable in your poudriere.conf"
-		FS=${ZPOOL}/poudriere/jails/${JAILNAME}
+		JAILFS=${ZPOOL}/poudriere/jails/${JAILNAME}
 	fi
 
 	case ${METHOD} in
@@ -351,7 +350,8 @@ create_jail() {
 		;;
 	esac
 
-	jail_create_zfs ${JAILNAME} ${REAL_VERSION:-${VERSION}} ${ARCH} ${JAILMNT} ${FS}
+	jail_create_zfs ${JAILNAME} ${REAL_VERSION:-${VERSION}} ${ARCH} ${JAILMNT} ${JAILFS}
+	zset method "${METHOD}"
 	RELEASE=${ALLBSDVER:-VERSION}
 	${FCT}
 
