@@ -305,7 +305,6 @@ cleanup() {
 		return
 	fi
 	export CLEANING_UP=1
-	[ -e ${PIPE} ] && rm -f ${PIPE}
 	[ -z "${JAILNAME}" ] && err 2 "Fail: Missing JAILNAME"
 	for pid in ${JAILMNT}/*.pid; do
 		pkill -15 -F ${pid} >/dev/null 2>&1 || :
