@@ -83,7 +83,7 @@ for port in ${queue}; do
 	zfs rollback -r ${JAILFS}@prepkg
 done
 zfs rollback ${JAILFS}@prepkg
-PKGNAME=`injail make -C ${PORTDIRECTORY} -VPKGNAME`
+PKGNAME=$(cache_get_pkgname ${ORIGIN})
 WWW=`awk '/^WWW/ { print $2 }' ${PORTDIRECTORY}/pkg-descr`
 COMMENT=`injail make -C ${PORTDIRECTORY} -VCOMMENT`
 log_start $(log_path)/${PKGNAME}.log

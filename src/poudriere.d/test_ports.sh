@@ -96,7 +96,7 @@ zfs destroy -r ${JAILFS}@prepkg
 injail make -C ${PORTDIRECTORY} pkg-depends extract-depends \
 	fetch-depends patch-depends build-depends lib-depends
 
-PKGNAME=`injail make -C ${PORTDIRECTORY} -VPKGNAME`
+PKGNAME=$(cache_get_pkgname ${ORIGIN})
 LOCALBASE=`injail make -C ${PORTDIRECTORY} -VLOCALBASE`
 PREFIX=${LOCALBASE}
 if [ "${USE_PORTLINT}" = "yes" ]; then

@@ -485,7 +485,7 @@ build_pkg() {
 	rm -rf ${JAILMNT}/wrkdirs/*
 
 	msg "Building ${port}"
-	PKGNAME=$(injail make -C ${portdir} -VPKGNAME)
+	PKGNAME=$(cache_get_pkgname ${port})
 	log_start $(log_path)/${PKGNAME}.log
 	buildlog_start ${portdir}
 
@@ -598,12 +598,12 @@ cache_get_pkgname() {
 	local origin=$1
 	local pkgname
 
-	pkgname=$(awk -v o=${origin} '$1 == o { print $2 }' ${JAILMNT}/cache)
+	pkgname=$(awk -v o=${origin} '$1 == o { print $2 }' ${MASTERMNT:-${JAILMNT}}/cache)
 
 	# Add to cache if not found.
 	if [ -z "${pkgname}" ]; then
 		pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME)
-		echo "${origin} ${pkgname}" >> ${JAILMNT}/cache
+		echo "${origin} ${pkgname}" >> ${MASTERMNT:-${JAILMNT}}/cache
 	fi
 	echo ${pkgname}
 }
@@ -612,7 +612,7 @@ cache_get_origin() {
 	[ $# -ne 1 ] && eargs pkgname
 	local pkgname=$1
 
-	awk -v p=${pkgname} '$2 == p { print $1 }' ${JAILMNT}/cache
+	awk -v p=${pkgname} '$2 == p { print $1 }' ${MASTERMNT:-${JAILMNT}}/cache
 }
 
 compute_deps() {
