@@ -91,10 +91,11 @@ update_jail() {
 	fi
 	case ${METHOD} in
 	ftp)
-		jail_start ${JAILNAME}
+		JAILFS=`jail_get_fs ${JAILNAME}`
+		JAILMNT=`jail_get_base ${JAILNAME}`
+		jail_start
 		jail -r ${JAILNAME}
-		jail -c persist name=${NAME} ip4=inherit ip6=inherit path=${MNT} host.hostname=${NAME} \
-			allow.sysvipc allow.mount allow.socket_af allow.raw_sockets allow.chflags
+		jrun 1
 		if [ -z "${TORELEASE}" ]; then
 			injail /usr/sbin/freebsd-update fetch install
 		else
