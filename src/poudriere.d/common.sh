@@ -668,7 +668,7 @@ prepare_ports() {
 		pn=${p##*/}
 		if [ -f "${PKGDIR}/All/${pn}.${EXT}" ]; then
 			rm -rf ${p}
-			find ${JAILMNT}/pool -name ${pn} -type f -delete
+			find ${JAILMNT}/pool -name "${pn}" -type f -delete
 		fi
 	done
 
