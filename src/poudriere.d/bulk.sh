@@ -59,6 +59,12 @@ run_build() {
 		JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} jrun 0
 		JAILFS=${fs} zset status "idle:"
 	done
+
+	# Duplicate stdout to socket 5 so the child process can send
+	# status information back on it since we redirect its
+	# stdout to /dev/null
+	exec 5<&1
+
 	while :; do
 		activity=0
 		for j in $(jot -w %02d ${PARALLEL_JOBS}); do
