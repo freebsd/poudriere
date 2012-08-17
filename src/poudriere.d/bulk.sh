@@ -103,7 +103,7 @@ SKIPSANITY=0
 CLEAN=0
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "f:j:cn:p:ts" FLAG; do
+while getopts "f:j:J:cn:p:ts" FLAG; do
 	case "${FLAG}" in
 		t)
 			export PORTTESTING=1
