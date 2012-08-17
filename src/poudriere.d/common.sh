@@ -325,6 +325,8 @@ sanity_check_pkgs() {
 	[ ! -d ${PKGDIR}/All ] && return $ret
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return $ret
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
+		# Check for non-empty directory with no packages in it
+		[ "${pkg}" = "${PKGDIR}/All/*.${EXT}" ] && break
 		depfile=$(deps_file ${pkg})
 		while read dep; do
 			if [ ! -e "${PKGDIR}/All/${dep}.${EXT}" ]; then
@@ -644,6 +646,9 @@ delete_old_pkgs() {
 	[ ! -d ${PKGDIR}/All ] && return 0
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return 0
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
+		# Check for non-empty directory with no packages in it
+		[ "${pkg}" = "${PKGDIR}/All/*.${EXT}" ] && break
+
 		mkdir -p $(pkg_cache_dir ${pkg})
 
 		o=$(pkg_get_origin ${pkg})
