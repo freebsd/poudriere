@@ -505,6 +505,9 @@ build_pkg() {
 
 		if [ ${build_failed} -eq 0 ]; then
 			echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/built"
+
+			# Cache information for next run
+			pkg_cache_data "${PKGDIR}/All/${PKGNAME}.${EXT}" ${port} || :
 		else
 			echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/failed"
 		fi
@@ -549,16 +552,18 @@ deps_file() {
 }
 
 pkg_get_origin() {
-	[ $# -ne 1 ] && eargs pkg
+	[ $# -lt 1 ] && eargs pkg
 	local pkg=$1
 	local originfile=$(pkg_cache_dir ${pkg})/origin
-	local origin
+	local origin=$2
 
 	if [ ! -f "${originfile}" ]; then
-		if [ "${EXT}" = "tbz" ]; then
-			origin=$(pkg_info -qo "${pkg}")
-		else
-			origin=$(pkg query -F "${pkg}" "%o")
+		if [ -z "${origin}" ]; then
+			if [ "${EXT}" = "tbz" ]; then
+				origin=$(pkg_info -qo "${pkg}")
+			else
+				origin=$(pkg query -F "${pkg}" "%o")
+			fi
 		fi
 		echo ${origin} > "${originfile}"
 		echo ${origin}
@@ -586,6 +591,21 @@ pkg_get_options() {
 	cat "${optionsfile}"
 }
 
+pkg_cache_data() {
+	[ $# -ne 2 ] && eargs pkg origin
+	# Ignore errors in here
+	set +e
+	local pkg=$1
+	local origin=$2
+	local cachedir=$(pkg_cache_dir ${pkg})
+	local originfile=${cachedir}/origin
+
+	mkdir -p $(pkg_cache_dir ${pkg})
+	pkg_get_options ${pkg} > /dev/null
+	pkg_get_origin ${pkg} ${origin} > /dev/null
+	deps_file ${pkg} > /dev/null
+	set -e
+}
 
 pkg_to_pkgname() {
 	[ $# -ne 1 ] && eargs pkg
@@ -596,7 +616,7 @@ pkg_to_pkgname() {
 }
 
 cache_dir() {
-	echo ${POUDRIERE_DATA}/cache/${JAILNAME}/${PTNAME}
+	echo ${POUDRIERE_DATA}/cache/${JAILNAME%-job-*}/${PTNAME}
 }
 
 # Return the cache dir for the given pkg
