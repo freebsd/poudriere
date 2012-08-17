@@ -321,25 +321,19 @@ injail() {
 
 sanity_check_pkgs() {
 	local ret=0
+	local depfile
 	[ ! -d ${PKGDIR}/All ] && return $ret
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return $ret
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
-		local depfile=${JAILMNT}/tmp/${pkg##*/}.deps
-		if [ ! -f "${depfile}" ]; then
-			if [ "${EXT}" = "tbz" ]; then
-				pkg_info -qr "${pkg}" | awk '{ print $2 }' > ${depfile}
-			else
-				pkg info -qdF "${pkg}" > ${depfile}
-			fi
-		fi
+		depfile=$(deps_file ${pkg})
 		while read dep; do
 			if [ ! -e "${PKGDIR}/All/${dep}.${EXT}" ]; then
 				ret=1
 				msg "Deleting ${pkg}: missing dependencies"
-				rm -f ${pkg}
+				delete_pkg ${pkg}
 				break
 			fi
-		done < ${depfile}
+		done < "${depfile}"
 	done
 
 	return $ret
@@ -536,47 +530,150 @@ list_deps() {
 		sed -e "s,[[:graph:]]*/usr/ports/,,g" -e "s,:[[:graph:]]*,,g" | sort -u
 }
 
+deps_file() {
+	[ $# -ne 1 ] && eargs pkg
+	local pkg=$1
+	local depfile=$(pkg_cache_dir ${pkg})/deps
+
+	if [ ! -f "${depfile}" ]; then
+		if [ "${EXT}" = "tbz" ]; then
+			pkg_info -qr "${pkg}" | awk '{ print $2 }' > "${depfile}"
+		else
+			pkg info -qdF "${pkg}" > "${depfile}"
+		fi
+	fi
+
+	echo ${depfile}
+}
+
+pkg_get_origin() {
+	[ $# -ne 1 ] && eargs pkg
+	local pkg=$1
+	local originfile=$(pkg_cache_dir ${pkg})/origin
+	local origin
+
+	if [ ! -f "${originfile}" ]; then
+		if [ "${EXT}" = "tbz" ]; then
+			origin=$(pkg_info -qo "${pkg}")
+		else
+			origin=$(pkg query -F "${pkg}" "%o")
+		fi
+		echo ${origin} > "${originfile}"
+		echo ${origin}
+		return
+	fi
+	cat "${originfile}"
+}
+
+pkg_get_options() {
+	[ $# -ne 1 ] && eargs pkg
+	local pkg=$1
+	local optionsfile=$(pkg_cache_dir ${pkg})/options
+	local compiled_options
+
+	if [ ! -f "${optionsfile}" ]; then
+		if [ "${EXT}" = "tbz" ]; then
+			compiled_options=$(pkg_info -qf "${pkg}" | awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
+		else
+			compiled_options=$(pkg query -F "${pkg}" '%Ov %Ok' | awk '$1 == "on" {print $2}' | sort | tr '\n' ' ')
+		fi
+		echo "${compiled_options}" > "${optionsfile}"
+		echo "${compiled_options}"
+		return
+	fi
+	cat "${optionsfile}"
+}
+
+
+pkg_to_pkgname() {
+	[ $# -ne 1 ] && eargs pkg
+	local pkg=$1
+	local pkg_file=${pkg##*/}
+	local pkgname=${pkg_file%.*}
+	echo ${pkgname}
+}
+
+cache_dir() {
+	echo ${POUDRIERE_DATA}/cache/${JAILNAME}/${PTNAME}
+}
+
+# Return the cache dir for the given pkg
+# @param string pkg $PKGDIR/All/PKGNAME.EXT
+pkg_cache_dir() {
+	[ $# -ne 1 ] && eargs pkg
+	local pkg=$1
+	local pkg_file=${pkg##*/}
+
+	echo $(cache_dir)/${pkg_file}
+}
+
+clear_pkg_cache() {
+	[ $# -ne 1 ] && eargs pkg
+	local pkg=$1
+
+	rm -fr $(pkg_cache_dir ${pkg})
+}
+
+delete_pkg() {
+	[ $# -ne 1 ] && eargs pkg
+	local pkg=$1
+
+	# Delete the package and the depsfile since this package is being deleted,
+	# which will force it to be recreated
+	rm -f ${pkg}
+	clear_pkg_cache ${pkg}
+}
+
+# Deleted cached information for stale packages (manually removed)
+delete_stale_pkg_cache() {
+	local pkgname
+	local cachedir=$(cache_dir)
+	[ ! -d ${cachedir} ] && return 0
+	[ -z "$(ls -A ${cachedir})" ] && return 0
+	for pkg in ${cachedir}/*.${EXT}; do
+		pkg_file=${pkg##*/}
+		# If this package no longer exists in the PKGDIR, delete the cache.
+		if [ ! -e "${PKGDIR}/All/${pkg_file}" ]; then
+			clear_pkg_cache ${pkg}
+		fi
+	done
+}
+
 delete_old_pkgs() {
 	local o v v2 compiled_options current_options
 	[ ! -d ${PKGDIR}/All ] && return 0
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return 0
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
-		if [ "${EXT}" = "tbz" ]; then
-			o=`pkg_info -qo "${pkg}"`
-		else
-			o=`pkg query -F "${pkg}" "%o"`
-		fi
+		mkdir -p $(pkg_cache_dir ${pkg})
+
+		o=$(pkg_get_origin ${pkg})
 		v=${pkg##*-}
 		v=${v%.*}
 		if [ ! -d "${JAILMNT}/usr/ports/${o}" ]; then
 			msg "${o} does not exist anymore. Deleting stale ${pkg##*/}"
-			rm -f ${pkg}
+			delete_pkg ${pkg}
 			continue
 		fi
 		v2=$(cache_get_pkgname ${o})
 		v2=${v2##*-}
 		if [ "$v" != "$v2" ]; then
 			msg "Deleting old version: ${pkg##*/}"
-			rm -f ${pkg}
+			delete_pkg ${pkg}
 			continue
 		fi
 
 		# Check if the compiled options match the current options from make.conf and /var/db/options
 		if [ -n "${CHECK_CHANGED_OPTIONS}" -a "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
 			current_options=$(injail make -C /usr/ports/${o} pretty-print-config | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
+			compiled_options=$(pkg_get_options ${pkg})
 
-			if [ "${EXT}" = "txz" ]; then
-				compiled_options=$(pkg query -F "${pkg}" '%Ov %Ok' | awk '$1 == "on" {print $2}' | sort | tr '\n' ' ')
-			else
-				compiled_options=$(pkg_info -qf "${pkg}" | awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
-			fi
 			if [ "${compiled_options}" != "${current_options}" ]; then
 				msg "Options changed, deleting: ${pkg##*/}"
 				if [ "${CHECK_CHANGED_OPTIONS}" = "verbose" ]; then
 					msg "Pkg: ${compiled_options}"
 					msg "New: ${current_options}"
 				fi
-				rm -f ${pkg}
+				delete_pkg ${pkg}
 				continue
 			fi
 		fi
@@ -649,6 +746,7 @@ prepare_ports() {
 
 	if [ $SKIPSANITY -eq 0 ]; then
 		msg "Sanity checking the repository"
+		delete_stale_pkg_cache
 		delete_old_pkgs
 
 		while :; do

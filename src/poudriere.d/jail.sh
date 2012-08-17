@@ -69,6 +69,7 @@ delete_jail() {
 	zfs destroy -r ${JAILFS}
 	rmdir ${JAILMNT}
 	rm -rf ${POUDRIERE_DATA}/packages/${JAILNAME}
+	rm -rf ${POUDRIERE_DATA}/cache/${JAILNAME}
 	rm -f ${POUDRIERE_DATA}/logs/*-${JAILNAME}.*.log
 	rm -f ${POUDRIERE_DATA}/logs/bulk-${JAILNAME}.log
 	rm -rf ${POUDRIERE_DATA}/logs/*/${JAILNAME}
