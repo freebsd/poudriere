@@ -358,7 +358,7 @@ create_jail() {
 	${FCT}
 
 	OSVERSION=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILMNT}/usr/include/sys/param.h`
-	LOGIN_ENV=",UNAME_r=${VERSION},UNAME_v=FreeBSD ${VERSION},OSVERSION=${OSVERSION}"
+	LOGIN_ENV=",UNAME_r=${REAL_VERSION:-${VERSION}},UNAME_v=FreeBSD ${VERSION},OSVERSION=${OSVERSION}"
 
 	if [ "${ARCH}" = "i386" -a "${REALARCH}" = "amd64" ];then
 		LOGIN_ENV="${LOGIN_ENV},UNAME_p=i386,UNAME_m=i386"
