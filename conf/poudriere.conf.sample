@@ -91,3 +91,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #
 # Example to define PARALLEL_JOBS to one single job
 # PARALLEL_JOBS=1
+
+
+# If set, failed builds will save the WRKDIR to ${POUDRIERE_DATA}/wrkdirs
+# SAVE_WRKDIR=1

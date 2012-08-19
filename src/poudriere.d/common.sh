@@ -463,6 +463,22 @@ build_port() {
 	return 0
 }
 
+save_wrkdir() {
+	[ $# -ne 1 ] && eargs port
+
+	local portdir="/usr/ports/${port}"
+	local tardir=${POUDRIERE_DATA}/wrkdirs/${JAILNAME%-job-*}/${PTNAME}
+	local tarname=${tardir}/${PKGNAME}.tbz
+	local mnted_portdir=${JAILMNT}/wrkdirs/${portdir}
+
+	mkdir -p ${tardir}
+
+	# Tar up the WRKDIR, and ignore errors
+	rm -f ${tarname}
+	tar -s ",${mnted_portdir},," -cjf ${tarname} ${mnted_portdir}/work > /dev/null 2>&1
+	msg "Saved ${port} wrkdir to: ${tarname}" >&5
+}
+
 build_pkg() {
 	[ $# -ne 1 ] && eargs port
 	local port=$1
@@ -500,7 +516,12 @@ build_pkg() {
 			injail make -C ${portdir} clean
 			if ! build_port ${portdir}; then
 				build_failed=1
+
+				if [ "${SAVE_WRKDIR}" -eq 1 ]; then
+					save_wrkdir ${portdir} || :
+				fi
 			fi
+
 			injail make -C ${portdir} clean
 		fi
 

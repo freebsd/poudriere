@@ -130,6 +130,10 @@ match the current options from the make.conf files and /var/db/options.
 Add some testing.
 Currently uninstalls the port, and disable parallel
 jobs for make.
+.It Fl w
+Save WRKDIR on build failure.
+The WRKDIR will be tarred up into
+.Sy ${POUDRIERE_DATA}/wrkdirs .
 .El
 .Ss jail
 .Pp

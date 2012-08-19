@@ -13,7 +13,8 @@ Options:
     -s          -- Skip sanity
     -J n        -- Run n jobs in parallel
     -j name     -- Run only on the given jail
-    -p tree     -- Specify on which ports tree the bulk will be done"
+    -p tree     -- Specify on which ports tree the bulk will be done
+    -w          -- Save WRKDIR on failed builds"
 
 	exit 1
 }
@@ -109,7 +110,7 @@ SKIPSANITY=0
 CLEAN=0
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "f:j:J:cn:p:ts" FLAG; do
+while getopts "f:j:J:cn:p:tsw" FLAG; do
 	case "${FLAG}" in
 		t)
 			export PORTTESTING=1
@@ -132,6 +133,9 @@ while getopts "f:j:J:cn:p:ts" FLAG; do
 			;;
 		s)
 			SKIPSANITY=1
+			;;
+		w)
+			SAVE_WRKDIR=1
 			;;
 		*)
 			usage
