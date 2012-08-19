@@ -487,7 +487,7 @@ build_pkg() {
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
 		echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/ignored"
-		msg "Finished build of ${port}: Ignored" >&5
+		msg "Finished build of ${port}: Ignored: ${ignore}" >&5
 	else
 		zset status "depends:${port}"
 		printf "=======================<phase: %-9s>==========================\n" "depends"
@@ -512,7 +512,8 @@ build_pkg() {
 			pkg_cache_data "${PKGDIR}/All/${PKGNAME}.${EXT}" ${port} || :
 		else
 			echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/failed"
-			msg "Finished build of ${port}: Failed" >&5
+			failed_status=$(zget status)
+			msg "Finished build of ${port}: Failed: ${failed_status%:*}" >&5
 		fi
 	fi
 	# Cleaning queue (pool is cleaned here)
