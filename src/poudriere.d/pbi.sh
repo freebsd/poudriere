@@ -59,7 +59,7 @@ PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}-${LBASENAME}
 JAILMNT=`jail_get_base ${JAILNAME}`
 JAILFS=`jail_get_fs ${JAILNAME}`
 
-export BUILD_TYPE=pbi
+export POUDRIERE_BUILD_TYPE=pbi
 
 jail_start
 

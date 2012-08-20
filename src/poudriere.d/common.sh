@@ -44,7 +44,7 @@ log_start() {
 }
 
 log_path() {
-	echo "${LOGS}/${BUILD_TYPE}/${JAILNAME%-job-*}/${PTNAME}"
+	echo "${LOGS}/${POUDRIERE_BUILD_TYPE}/${JAILNAME%-job-*}/${PTNAME}"
 }
 
 buildlog_start() {
