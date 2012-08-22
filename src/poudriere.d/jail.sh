@@ -104,7 +104,7 @@ update_jail() {
 			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update install || err 1 "Fail to upgrade system"
 			zset version "${TORELEASE}"
 		fi
-		zfs destroy ${JAILFS}@clean
+		zfs destroy -r ${JAILFS}@clean
 		zfs snapshot ${JAILFS}@clean
 		jail_stop
 		;;
@@ -121,13 +121,13 @@ update_jail() {
 		esac
 		install_from_csup
 		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
-		zfs destroy ${JAILFS}@clean
+		zfs destroy -r ${JAILFS}@clean
 		zfs snapshot ${JAILFS}@clean
 		;;
 	svn*)
 		install_from_svn
 		yes | make -C ${JAILMNT} delete-old delete-old-libs DESTDIR=${JAILMNT}
-		zfs destroy ${JAILFS}@clean
+		zfs destroy -r ${JAILFS}@clean
 		zfs snapshot ${JAILFS}@clean
 		;;
 	allbsd)

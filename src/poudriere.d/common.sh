@@ -310,8 +310,8 @@ cleanup() {
 		pkill -15 -F ${pid} >/dev/null 2>&1 || :
 	done
 	wait
-	zfs destroy ${JAILFS}@prepkg 2>/dev/null || :
-	zfs destroy ${JAILFS}@prebuild 2>/dev/null || :
+	zfs destroy -r ${JAILFS}@prepkg 2>/dev/null || :
+	zfs destroy -r ${JAILFS}@prebuild 2>/dev/null || :
 	jail_stop
 }
 
@@ -452,7 +452,7 @@ build_port() {
 	jail -r ${JAILNAME}
 	jrun 0
 	zset status "next:"
-	zfs destroy ${JAILFS}@prebuild || :
+	zfs destroy -r ${JAILFS}@prebuild || :
 	return 0
 }
 
