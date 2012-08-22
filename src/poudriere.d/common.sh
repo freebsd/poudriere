@@ -347,7 +347,6 @@ build_port() {
 	local port=${portdir##/usr/ports/}
 	local targets="fetch checksum extract patch configure build install package"
 	local name=$(cache_get_pkgname ${port})
-	local options
 
 	[ -n "${PORTTESTING}" ] && targets="${targets} deinstall"
 	for phase in ${targets}; do
@@ -372,13 +371,6 @@ build_port() {
 					grep -v "not a dynamic executable" | \
 					awk '/=>/ { print $3 }' | sort -u
 			fi
-		fi
-
-		# If creating a pkg_install package, insert the options into the +CONTENTS
-		# XXX: Move to bsd.port.mk?
-		if [ "${phase}" = "package" -a $PKGNG -eq 0 ]; then
-			options=$(injail make -C ${portdir} pretty-print-config)
-			echo "@comment OPTIONS:${options}" >> ${JAILMNT}/var/db/pkg/${name}/+CONTENTS
 		fi
 
 		printf "=======================<phase: %-9s>==========================\n" ${phase}
