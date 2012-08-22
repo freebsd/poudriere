@@ -261,7 +261,7 @@ jail_stop() {
 	done
 	msg "Umounting file systems"
 	for mnt in $( mount | awk -v mnt="${JAILMNT}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
-		umount -f ${mnt}
+		umount -f ${mnt} || :
 	done
 
 	if [ -n "${MFSSIZE}" ]; then
