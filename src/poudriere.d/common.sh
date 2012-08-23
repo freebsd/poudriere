@@ -72,8 +72,11 @@ buildlog_stop() {
 }
 
 log_stop() {
-	exec 1>&3 3>&- 2>&4 4>&-
-	wait $tpid
+	if [ -n "${tpid}" ]; then
+		exec 1>&3 3>&- 2>&4 4>&-
+		wait $tpid
+		unset tpid
+	fi
 }
 
 zget() {
