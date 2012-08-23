@@ -307,6 +307,8 @@ cleanup() {
 	export CLEANING_UP=1
 	[ -z "${JAILNAME%-job-*}" ] && err 2 "Fail: Missing JAILNAME"
 	for pid in ${MASTERMNT:-${JAILMNT}}/*.pid; do
+		# Ensure there is a pidfile to read or break
+		[ "${pid}" = "${MASTERMNT:-${JAILMNT}}/*.pid" ] && break
 		pkill -15 -F ${pid} >/dev/null 2>&1 || :
 	done
 	wait
