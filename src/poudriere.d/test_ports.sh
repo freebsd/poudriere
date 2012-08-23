@@ -143,7 +143,7 @@ injail make -C ${PORTDIRECTORY} clean
 
 msg "Removing existing ${PREFIX} dir"
 [ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${JAILMNT}${PREFIX} ${JAILMNT}${PREFIX}.PLIST_DIRS.before ${JAILMNT}${PREFIX}.PLIST_DIRS.after
-buildlog_stop ${portdir}
+buildlog_stop ${PORTDIRECTORY}
 log_stop $(log_path)/${PKGNAME}.log
 
 cleanup
