@@ -35,7 +35,6 @@ log_start() {
 	[ ! -e ${logfile}.pipe ] && mkfifo ${logfile}.pipe
 	tee ${logfile} < ${logfile}.pipe >&3 &
 	export tpid=$!
-	echo "${tpid}" > ${MASTERMNT:-${JAILMNT}}/log.pid
 	exec > ${logfile}.pipe 2>&1
 
 	# Remove fifo pipe file right away to avoid orphaning it.
@@ -307,6 +306,7 @@ cleanup() {
 	fi
 	export CLEANING_UP=1
 	[ -z "${JAILNAME%-job-*}" ] && err 2 "Fail: Missing JAILNAME"
+	log_stop
 	for pid in ${MASTERMNT:-${JAILMNT}}/*.pid; do
 		# Ensure there is a pidfile to read or break
 		[ "${pid}" = "${MASTERMNT:-${JAILMNT}}/*.pid" ] && break
