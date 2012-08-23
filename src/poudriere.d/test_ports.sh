@@ -127,6 +127,7 @@ injail /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${P
 	find ${JAILMNT}${LOCALBASE}/ -type d | sed "s,^${JAILMNT}${LOCALBASE}/,," | sort > ${JAILMNT}${PREFIX}.PLIST_DIRS.before
 
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
+mkdir -p ${JAILMNT}/tmp/pkgs
 PORTTESTING=yes
 log_start $(log_path)/${PKGNAME}.log
 buildlog_start ${PORTDIRECTORY}
