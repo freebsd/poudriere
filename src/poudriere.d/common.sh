@@ -35,6 +35,7 @@ log_start() {
 	[ ! -e ${logfile}.pipe ] && mkfifo ${logfile}.pipe
 	tee ${logfile} < ${logfile}.pipe >&3 &
 	export tpid=$!
+	echo "${tpid}" > ${MASTERMNT:-${JAILMNT}}/log.pid
 	exec > ${logfile}.pipe 2>&1
 
 	# Remove fifo pipe file right away to avoid orphaning it.
