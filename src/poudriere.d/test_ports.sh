@@ -103,6 +103,7 @@ if [ "${USE_PORTLINT}" = "yes" ]; then
 	[ ! -x `which portlint` ] && err 2 "First install portlint if you want USE_PORTLINT to work as expected"
 	set +e
 	msg "Portlint check"
+	rm -f $(log_path)/${PKGNAME}.portlint.log > /dev/null 2>&1 || :
 	cd ${JAILMNT}/${PORTDIRECTORY} && portlint -C | tee -a $(log_path)/${PKGNAME}.portlint.log
 	set -e
 fi
