@@ -251,13 +251,13 @@ jail_start() {
 
 jail_stop() {
 	[ $# -ne 0 ] && eargs
-	jail_runs || err 1 "No such jail running: ${JAILNAME}"
+	jail_runs || err 1 "No such jail running: ${JAILNAME%-job-*}"
 	zset status "stop:"
 
-	jail -r ${JAILNAME}
+	jail -r ${JAILNAME%-job-*}
 	# Shutdown all builders
 	for j in $(jot -w %02d ${PARALLEL_JOBS}); do
-		jail -r ${JAILNAME}-job-${j} >/dev/null 2>&1 || :
+		jail -r ${JAILNAME%-job-*}-job-${j} >/dev/null 2>&1 || :
 	done
 	msg "Umounting file systems"
 	for mnt in $( mount | awk -v mnt="${JAILMNT}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
@@ -280,7 +280,7 @@ jail_stop() {
 			mdconfig -d -u $dev
 		fi
 	fi
-	zfs rollback -R ${JAILFS}@clean
+	zfs rollback -R ${JAILFS%/job-*}@clean
 	zset status "idle:"
 	export STATUS=0
 }
@@ -305,13 +305,13 @@ cleanup() {
 		return
 	fi
 	export CLEANING_UP=1
-	[ -z "${JAILNAME}" ] && err 2 "Fail: Missing JAILNAME"
+	[ -z "${JAILNAME%-job-*}" ] && err 2 "Fail: Missing JAILNAME"
 	for pid in ${JAILMNT}/*.pid; do
 		pkill -15 -F ${pid} >/dev/null 2>&1 || :
 	done
 	wait
-	zfs destroy -r ${JAILFS}@prepkg 2>/dev/null || :
-	zfs destroy -r ${JAILFS}@prebuild 2>/dev/null || :
+	zfs destroy -r ${JAILFS%/job-*}@prepkg 2>/dev/null || :
+	zfs destroy -r ${JAILFS%/job-*}@prebuild 2>/dev/null || :
 	jail_stop
 }
 
