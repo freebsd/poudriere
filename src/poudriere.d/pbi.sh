@@ -8,6 +8,7 @@ Parameters:
     -d pbidir   -- Directory for the pbi metadata files
 
 Options:
+    -J n        -- Run n jobs in parallel for dependencies
     -j name     -- Run only inside the given jail
     -l path     -- Localbase
     -p tree     -- Specify on which portstree we work
@@ -21,11 +22,14 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 REAL=0
 PTNAME="default"
 
-while getopts "l:j:p:rd:" FLAG; do
+while getopts "l:J:j:p:rd:" FLAG; do
 	case "${FLAG}" in
 		j)
 			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
 			JAILNAME="${OPTARG}"
+			;;
+		J)
+			PARALLEL_JOBS=${OPTARG}
 			;;
 		p)
 			PTNAME=${OPTARG}
