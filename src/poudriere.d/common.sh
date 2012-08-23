@@ -221,6 +221,64 @@ jrun() {
 		allow.socket_af allow.raw_sockets allow.chflags
 }
 
+do_jail_mounts() {
+	[ $# -ne 1 ] && eargs should_mkdir
+	local should_mkdir=$1
+	msg "Mounting system devices for ${JAILNAME}"
+
+	# Only do this when starting the master jail, clones will already have the dirs
+	if [ ${should_mkdir} -eq 1 ]; then
+		mkdir -p ${JAILMNT}/proc
+		mkdir -p ${JAILMNT}/compat/linux/proc
+		mkdir -p ${JAILMNT}/compat/linux/sys
+	fi
+
+	mount -t devfs devfs ${JAILMNT}/dev
+	mount -t procfs proc ${JAILMNT}/proc
+	mount -t linprocfs linprocfs ${JAILMNT}/compat/linux/proc
+	mount -t linsysfs linsysfs ${JAILMNT}/compat/linux/sys
+}
+
+do_portbuild_mounts() {
+	[ $# -ne 1 ] && eargs should_mkdir
+	local should_mkdir=$1
+	msg "Mounting ports filesystems for ${JAILNAME}"
+
+	# Only do this when starting the master jail, clones will already have the dirs
+	if [ ${should_mkdir} -eq 1 ]; then
+		mkdir -p ${PORTSDIR}/packages
+		mkdir -p ${PKGDIR}/All
+		if [ -n "${DISTFILES_CACHE}" -a -d "${DISTFILES_CACHE}" ]; then
+			mkdir -p ${JAILMNT}/usr/ports/distfiles
+		fi
+		if [ -n "${CCACHE_DIR}" -a -d "${CCACHE_DIR}" ]; then
+			mkdir -p ${JAILMNT}${CCACHE_DIR} || err 1 "Failed to create ccache directory "
+			export CCACHE_DIR
+		fi
+	fi
+
+	mount -t nullfs ${PORTSDIR} ${JAILMNT}/usr/ports || err 1 "Failed to mount the ports directory "
+	mount -t nullfs ${PKGDIR} ${JAILMNT}/usr/ports/packages || err 1 "Failed to mount the packages directory "
+
+	if [ -n "${DISTFILES_CACHE}" -a -d "${DISTFILES_CACHE}" ]; then
+		mount -t nullfs ${DISTFILES_CACHE} ${JAILMNT}/usr/ports/distfiles || err 1 "Failed to mount the distfile directory"
+	fi
+	[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${JAILMNT}/wrkdirs
+	[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${JAILMNT}/wrkdirs
+
+	if [ -d ${POUDRIERED}/${JAILNAME%-job-*}-options ]; then
+		mount -t nullfs ${POUDRIERED}/${JAILNAME%-job-*}-options ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+	elif [ -d ${POUDRIERED}/options ]; then
+		mount -t nullfs ${POUDRIERED}/options ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+	fi
+
+	if [ -n "${CCACHE_DIR}" -a -d "${CCACHE_DIR}" ]; then
+		# Mount user supplied CCACHE_DIR into /var/cache/ccache
+		msg "Mounting ccache from ${CCACHE_DIR}"
+		mount -t nullfs ${CCACHE_DIR} ${JAILMNT}${CCACHE_DIR} || err 1 "Failed to mount the ccache directory "
+	fi
+}
+
 jail_start() {
 	[ $# -ne 0 ] && eargs
 	local NEEDFS="linprocfs linsysfs nullfs procfs"
@@ -234,16 +292,8 @@ jail_start() {
 	zset status "start:"
 	zfs rollback -R ${JAILFS}@clean
 
-	msg "Mounting devfs"
-	mount -t devfs devfs ${JAILMNT}/dev
-	msg "Mounting /proc"
-	mkdir -p ${JAILMNT}/proc
-	mount -t procfs proc ${JAILMNT}/proc
-	msg "Mounting linuxfs"
-	mkdir -p ${JAILMNT}/compat/linux/proc
-	mkdir -p ${JAILMNT}/compat/linux/sys
-	mount -t linprocfs linprocfs ${JAILMNT}/compat/linux/proc
-	mount -t linsysfs linsysfs ${JAILMNT}/compat/linux/sys
+	do_jail_mounts 1
+
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
 	msg "Starting jail ${JAILNAME}"
 	jrun 0
@@ -503,27 +553,8 @@ parallel_build() {
 			-o ${NS}:version=${version} \
 			${JAILFS}@prepkg ${fs}
 		zfs snapshot ${fs}@prepkg
-		mount -t devfs devfs ${mnt}/dev
-		mount -t procfs proc ${mnt}/proc
-		mount -t linprocfs linprocfs ${mnt}/compat/linux/proc
-		mount -t linsysfs linsysfs ${mnt}/compat/linux/sys
-		mount -t nullfs ${PORTSDIR} ${mnt}/usr/ports
-		mount -t nullfs ${PKGDIR} ${mnt}/usr/ports/packages
-		if [ -n "${DISTFILES_CACHE}" -a -d "${DISTFILES_CACHE}" ]; then
-			mount -t nullfs ${DISTFILES_CACHE} ${mnt}/usr/ports/distfiles || err 1 "Failed to mount the distfile directory"
-		fi
-		[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
-		[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${mnt}/wrkdirs
-		if [ -d ${POUDRIERED}/${ORIGNAME:-${JAILNAME}}-options ]; then
-			mount -t nullfs ${POUDRIERED}/${JAILNAME}-options ${mnt}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
-		elif [ -d ${POUDRIERED}/options ]; then
-			mount -t nullfs ${POUDRIERED}/options ${mnt}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
-		fi
-		if [ -n "${CCACHE_DIR}" -a -d "${CCACHE_DIR}" ]; then
-			# Mount user supplied CCACHE_DIR into /var/cache/ccache
-			mount -t nullfs ${CCACHE_DIR} ${mnt}${CCACHE_DIR} || err 1 "Failed to mount the ccache directory "
-			export CCACHE_DIR
-		fi
+		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_jail_mounts 0
+		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_portbuild_mounts 0
 		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} jrun 0
 		JAILFS=${fs} zset status "idle:"
 	done
@@ -934,37 +965,12 @@ prepare_jail() {
 	[ -z "${PKGDIR}" ] && err 1 "No package directory defined"
 	[ -n "${MFSSIZE}" -a -n "${USE_TMPFS}" ] && err 1 "You can't use both tmpfs and mdmfs"
 
-	mount -t nullfs ${PORTSDIR} ${JAILMNT}/usr/ports || err 1 "Failed to mount the ports directory "
-
-	if [ -n "${CCACHE_DIR}" -a -d "${CCACHE_DIR}" ]; then
-		# Mount user supplied CCACHE_DIR into /var/cache/ccache
-		msg "Mounting ccache from ${CCACHE_DIR}"
-		mkdir -p ${JAILMNT}${CCACHE_DIR} || err 1 "Failed to create ccache directory "
-		mount -t nullfs ${CCACHE_DIR} ${JAILMNT}${CCACHE_DIR} || err 1 "Failed to mount the ccache directory "
-		export CCACHE_DIR
-	fi
-
-	mkdir -p ${PORTSDIR}/packages
-	mkdir -p ${PKGDIR}/All
+	do_portbuild_mounts 1
 
 	[ ! -d ${DISTFILES_CACHE} ] && err 1 "DISTFILES_CACHE directory	does not exists. (c.f. poudriere.conf)"
-	mount -t nullfs ${PKGDIR} ${JAILMNT}/usr/ports/packages || err 1 "Failed to mount the packages directory "
-	if [ -n "${DISTFILES_CACHE}" -a -d "${DISTFILES_CACHE}" ]; then
-		mkdir -p ${JAILMNT}/usr/ports/distfiles
-		mount -t nullfs ${DISTFILES_CACHE} ${JAILMNT}/usr/ports/distfiles || err 1 "Failed to mount the distfile directory"
-	fi
-
-	[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${JAILMNT}/wrkdirs
-	[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${JAILMNT}/wrkdirs
 
 	[ -f ${POUDRIERED}/make.conf ] && cat ${POUDRIERED}/make.conf >> ${JAILMNT}/etc/make.conf
-	[ -f ${POUDRIERED}/${ORIGNAME:-${JAILNAME}}-make.conf ] && cat ${POUDRIERED}/${ORIGNAME:-${JAILNAME}}-make.conf >> ${JAILMNT}/etc/make.conf
-
-	if [ -d ${POUDRIERED}/${ORIGNAME:-${JAILNAME}}-options ]; then
-		mount -t nullfs ${POUDRIERED}/${ORIGNAME:-${JAILNAME}}-options ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
-	elif [ -d ${POUDRIERED}/options ]; then
-		mount -t nullfs ${POUDRIERED}/options ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
-	fi
+	[ -f ${POUDRIERED}/${JAILNAME}-make.conf ] && cat ${POUDRIERED}/${JAILNAME}-make.conf >> ${JAILMNT}/etc/make.conf
 
 	msg "Populating LOCALBASE"
 	mkdir -p ${JAILMNT}/${MYBASE:-/usr/local}
