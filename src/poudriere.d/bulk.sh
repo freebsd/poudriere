@@ -20,11 +20,12 @@ Options:
 }
 
 run_build() {
-	local activity cnt mnt fs name arch version
+	local activity cnt mnt fs name arch version jobs
 	PORTSDIR=`port_get_base ${PTNAME}`/ports
 	arch=$(zget arch)
 	version=$(zget version)
-	for j in $(jot -w %02d ${PARALLEL_JOBS}); do
+	jobs="$(jot -w %02d ${PARALLEL_JOBS})"
+	for j in ${jobs}; do
 		mnt="${JAILMNT}/build/${j}"
 		mkdir -p "${mnt}"
 		fs="${JAILFS}/job-${j}"
@@ -68,7 +69,7 @@ run_build() {
 
 	while :; do
 		activity=0
-		for j in $(jot -w %02d ${PARALLEL_JOBS}); do
+		for j in ${jobs}; do
 			mnt="${JAILMNT}/build/${j}"
 			fs="${JAILFS}/job-${j}"
 			name="${JAILNAME}-job-${j}"
