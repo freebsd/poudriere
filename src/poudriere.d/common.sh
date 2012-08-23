@@ -224,7 +224,6 @@ jrun() {
 do_jail_mounts() {
 	[ $# -ne 1 ] && eargs should_mkdir
 	local should_mkdir=$1
-	msg "Mounting system devices for ${JAILNAME}"
 
 	# Only do this when starting the master jail, clones will already have the dirs
 	if [ ${should_mkdir} -eq 1 ]; then
@@ -242,7 +241,6 @@ do_jail_mounts() {
 do_portbuild_mounts() {
 	[ $# -ne 1 ] && eargs should_mkdir
 	local should_mkdir=$1
-	msg "Mounting ports filesystems for ${JAILNAME}"
 
 	# Only do this when starting the master jail, clones will already have the dirs
 	if [ ${should_mkdir} -eq 1 ]; then
@@ -292,6 +290,7 @@ jail_start() {
 	zset status "start:"
 	zfs rollback -R ${JAILFS}@clean
 
+	msg "Mounting system devices for ${JAILNAME}"
 	do_jail_mounts 1
 
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
@@ -965,6 +964,7 @@ prepare_jail() {
 	[ -z "${PKGDIR}" ] && err 1 "No package directory defined"
 	[ -n "${MFSSIZE}" -a -n "${USE_TMPFS}" ] && err 1 "You can't use both tmpfs and mdmfs"
 
+	msg "Mounting ports filesystems for ${JAILNAME}"
 	do_portbuild_mounts 1
 
 	[ ! -d ${DISTFILES_CACHE} ] && err 1 "DISTFILES_CACHE directory	does not exists. (c.f. poudriere.conf)"
