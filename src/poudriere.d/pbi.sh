@@ -77,7 +77,7 @@ prepare_ports
 
 export LOCALBASE=${MYBASE}
 
-parallel_build
+POUDRIERE_BUILD_TYPE=bulk parallel_build
 zfs rollback ${JAILFS}@prepkg
 
 PKGNAME=$(cache_get_pkgname ${ORIGIN})
