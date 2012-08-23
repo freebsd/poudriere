@@ -58,7 +58,7 @@ run_build() {
 			mount -t nullfs ${CCACHE_DIR} ${mnt}${CCACHE_DIR} || err 1 "Failed to mount the ccache directory "
 			export CCACHE_DIR
 		fi
-		JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} jrun 0
+		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} jrun 0
 		JAILFS=${fs} zset status "idle:"
 	done
 

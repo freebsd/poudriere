@@ -260,13 +260,13 @@ jail_stop() {
 		jail -r ${JAILNAME%-job-*}-job-${j} >/dev/null 2>&1 || :
 	done
 	msg "Umounting file systems"
-	for mnt in $( mount | awk -v mnt="${JAILMNT}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
+	for mnt in $( mount | awk -v mnt="${MASTERMNT:-${JAILMNT}}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
 		umount -f ${mnt} || :
 	done
 
 	if [ -n "${MFSSIZE}" ]; then
 		# umount the ${JAILMNT}/build/$jobno/wrkdirs
-		mount | grep "/dev/md.*${JAILMNT}/build" | while read mnt; do
+		mount | grep "/dev/md.*${MASTERMNT:-${JAILMNT}}/build" | while read mnt; do
 			local dev=`echo $mnt | awk '{print $1}'`
 			if [ -n "$dev" ]; then
 				umount $dev
@@ -274,7 +274,7 @@ jail_stop() {
 			fi
 		done
 		# umount the $JAILMNT/wrkdirs
-		local dev=`mount | grep "/dev/md.*${JAILMNT}" | awk '{print $1}'`
+		local dev=`mount | grep "/dev/md.*${MASTERMNT:-${JAILMNT}}" | awk '{print $1}'`
 		if [ -n "$dev" ]; then
 			umount $dev
 			mdconfig -d -u $dev
@@ -306,7 +306,7 @@ cleanup() {
 	fi
 	export CLEANING_UP=1
 	[ -z "${JAILNAME%-job-*}" ] && err 2 "Fail: Missing JAILNAME"
-	for pid in ${JAILMNT}/*.pid; do
+	for pid in ${MASTERMNT:-${JAILMNT}}/*.pid; do
 		pkill -15 -F ${pid} >/dev/null 2>&1 || :
 	done
 	wait
