@@ -74,15 +74,12 @@ PORTDIRECTORY=/usr/ports/${ORIGIN}
 LISTPORTS=$(list_deps ${PORTDIRECTORY} )
 LISTPORTS="${LISTPORTS} ${ORIGIN}"
 prepare_ports
-zfs snapshot ${JAILFS}@prepkg
+
 export LOCALBASE=${MYBASE}
-for port in ${queue}; do
-	build_pkg ${port} || {
-		[ $? -eq 2 ] && continue
-	}
-	zfs rollback -r ${JAILFS}@prepkg
-done
+
+parallel_build
 zfs rollback ${JAILFS}@prepkg
+
 PKGNAME=$(cache_get_pkgname ${ORIGIN})
 WWW=`awk '/^WWW/ { print $2 }' ${PORTDIRECTORY}/pkg-descr`
 COMMENT=`injail make -C ${PORTDIRECTORY} -VCOMMENT`

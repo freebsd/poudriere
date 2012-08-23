@@ -85,14 +85,11 @@ fi
 
 LISTPORTS=$(list_deps ${PORTDIRECTORY} )
 prepare_ports
-zfs snapshot ${JAILFS}@prepkg
-while :; do
-	port=$(next_in_queue)
-	[ -n "${port}" ] || break
-	build_pkg ${port}
-	zfs rollback -r ${JAILFS}@prepkg
-done
+
+POUDRIERE_BUILD_TYPE=bulk parallel_build
+
 zfs destroy -r ${JAILFS}@prepkg
+
 injail make -C ${PORTDIRECTORY} pkg-depends extract-depends \
 	fetch-depends patch-depends build-depends lib-depends
 

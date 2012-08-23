@@ -19,91 +19,6 @@ Options:
 	exit 1
 }
 
-run_build() {
-	local activity cnt mnt fs name arch version jobs
-	PORTSDIR=`port_get_base ${PTNAME}`/ports
-	arch=$(zget arch)
-	version=$(zget version)
-	jobs="$(jot -w %02d ${PARALLEL_JOBS})"
-	for j in ${jobs}; do
-		mnt="${JAILMNT}/build/${j}"
-		mkdir -p "${mnt}"
-		fs="${JAILFS}/job-${j}"
-		name="${JAILNAME}-job-${j}"
-		zfs clone -o mountpoint=${mnt} \
-			-o ${NS}:name=${name} \
-			-o ${NS}:type=rootfs \
-			-o ${NS}:arch=${arch} \
-			-o ${NS}:version=${version} \
-			${JAILFS}@prepkg ${fs}
-		zfs snapshot ${fs}@prepkg
-		mount -t devfs devfs ${mnt}/dev
-		mount -t procfs proc ${mnt}/proc
-		mount -t linprocfs linprocfs ${mnt}/compat/linux/proc
-		mount -t linsysfs linsysfs ${mnt}/compat/linux/sys
-		mount -t nullfs ${PORTSDIR} ${mnt}/usr/ports
-		mount -t nullfs ${PKGDIR} ${mnt}/usr/ports/packages
-		if [ -n "${DISTFILES_CACHE}" -a -d "${DISTFILES_CACHE}" ]; then
-			mount -t nullfs ${DISTFILES_CACHE} ${mnt}/usr/ports/distfiles || err 1 "Failed to mount the distfile directory"
-		fi
-		[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
-		[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${mnt}/wrkdirs
-		if [ -d ${POUDRIERED}/${ORIGNAME:-${JAILNAME}}-options ]; then
-			mount -t nullfs ${POUDRIERED}/${JAILNAME}-options ${mnt}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
-		elif [ -d ${POUDRIERED}/options ]; then
-			mount -t nullfs ${POUDRIERED}/options ${mnt}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
-		fi
-		if [ -n "${CCACHE_DIR}" -a -d "${CCACHE_DIR}" ]; then
-			# Mount user supplied CCACHE_DIR into /var/cache/ccache
-			mount -t nullfs ${CCACHE_DIR} ${mnt}${CCACHE_DIR} || err 1 "Failed to mount the ccache directory "
-			export CCACHE_DIR
-		fi
-		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} jrun 0
-		JAILFS=${fs} zset status "idle:"
-	done
-
-	# Duplicate stdout to socket 5 so the child process can send
-	# status information back on it since we redirect its
-	# stdout to /dev/null
-	exec 5<&1
-
-	while :; do
-		activity=0
-		for j in ${jobs}; do
-			mnt="${JAILMNT}/build/${j}"
-			fs="${JAILFS}/job-${j}"
-			name="${JAILNAME}-job-${j}"
-			if [ -f  "${JAILMNT}/${j}.pid" ]; then
-				if pgrep -qF "${JAILMNT}/${j}.pid" >/dev/null 2>&1; then
-					continue
-				fi
-				rm -f "${JAILMNT}/${j}.pid"
-				cnt=$(wc -l ${JAILMNT}/ignored | awk '{ print $1 }')
-				zset stats_ignored $cnt
-				cnt=$(wc -l ${JAILMNT}/built | awk '{ print $1 }')
-				zset stats_built $cnt
-				cnt=$(wc -l ${JAILMNT}/failed | awk '{ print $1 }')
-				zset stats_failed $cnt
-			fi
-			port=$(next_in_queue)
-			if [ -z "${port}" ]; then
-				# pool empty ?
-				[ $(stat -f '%z' ${JAILMNT}/pool) -eq 2 ] && return
-				break
-			fi
-			msg "Starting build of ${port}"
-			JAILFS=${fs} zset status "starting:${port}"
-			activity=1
-			zfs rollback -r ${fs}@prepkg
-			MASTERMNT=${JAILMNT} JAILNAME="${name}" JAILMNT="${mnt}" JAILFS="${fs}" \
-				build_pkg ${port} >/dev/null 2>&1 &
-			echo "$!" > ${JAILMNT}/${j}.pid
-		done
-		# Sleep briefly if still waiting on builds, to save CPU
-		[ $activity -eq 0 ] && sleep 0.1
-	done
-}
-
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 PTNAME="default"
@@ -173,12 +88,9 @@ prepare_ports
 zset status "building:"
 
 test -z ${PORTTESTING} && echo "DISABLE_MAKE_JOBS=yes" >> ${JAILMNT}/etc/make.conf
-zfs snapshot ${JAILFS}@prepkg
-msg "Starting using ${PARALLEL_JOBS} builders"
-DONE=0
-run_build
-# wait for the last running processes
-cat ${JAILMNT}/*.pid 2>/dev/null | xargs pwait 2>/dev/null
+
+parallel_build
+
 cnt=$(wc -l ${JAILMNT}/ignored | awk '{ print $1 }')
 zset stats_ignored $cnt
 cnt=$(wc -l ${JAILMNT}/built | awk '{ print $1 }')
