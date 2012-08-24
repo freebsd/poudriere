@@ -529,29 +529,16 @@ save_wrkdir() {
 	msg "Saved ${port} wrkdir to: ${tarname}" >&5
 }
 
-# Build ports in parallel
-# Returns when all are built.
-parallel_build() {
-	[ -z "${JAILMNT}" ] && err 2 "Fail: Missing JAILMNT"
-	local activity cnt mnt fs name arch version jobs
-	local nbq=$(zget stats_queued)
+start_builders() {
+	local arch=$(zget arch)
+	local version=$(zget version)
+	local j mnt fs name
 
-	zfs snapshot ${JAILFS}@prepkg
-
-	# If pool is empty, just return
-	test ${nbq} -eq 0 && return 0
-
-	msg "Starting using ${PARALLEL_JOBS} builders"
-	PORTSDIR=`port_get_base ${PTNAME}`/ports
-	arch=$(zget arch)
-	version=$(zget version)
-	jobs="$(jot -w %02d ${PARALLEL_JOBS})"
-
-	for j in ${jobs}; do
+	for j in ${JOBS}; do
 		mnt="${JAILMNT}/build/${j}"
-		mkdir -p "${mnt}"
 		fs="${JAILFS}/job-${j}"
 		name="${JAILNAME}-job-${j}"
+		mkdir -p "${mnt}"
 		zfs clone -o mountpoint=${mnt} \
 			-o ${NS}:name=${name} \
 			-o ${NS}:type=rootfs \
@@ -564,15 +551,34 @@ parallel_build() {
 		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} jrun 0
 		JAILFS=${fs} zset status "idle:"
 	done
+}
 
-	# Duplicate stdout to socket 5 so the child process can send
-	# status information back on it since we redirect its
-	# stdout to /dev/null
-	exec 5<&1
+stop_builders() {
+	local j mnt
+
+	# wait for the last running processes
+	cat ${JAILMNT}/*.pid 2>/dev/null | xargs pwait 2>/dev/null
+
+	msg "Stopping ${PARALLEL_JOBS} builders"
+
+	for j in ${JOBS}; do
+		jail -r ${JAILNAME}-job-${j} >/dev/null 2>&1 || :
+	done
+
+	for mnt in $( mount | awk -v mnt="${JAILMNT}/build/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
+		umount -f ${mnt} >/dev/null 2>&1 || :
+	done
+
+	# No builders running, unset JOBS
+	unset JOBS
+}
+
+build_queue() {
+	local activity j cnt mnt fs name port
 
 	while :; do
 		activity=0
-		for j in ${jobs}; do
+		for j in ${JOBS}; do
 			mnt="${JAILMNT}/build/${j}"
 			fs="${JAILFS}/job-${j}"
 			name="${JAILNAME}-job-${j}"
@@ -605,9 +611,35 @@ parallel_build() {
 		# Sleep briefly if still waiting on builds, to save CPU
 		[ $activity -eq 0 ] && sleep 0.1
 	done
+}
 
-	# wait for the last running processes
-	cat ${JAILMNT}/*.pid 2>/dev/null | xargs pwait 2>/dev/null
+# Build ports in parallel
+# Returns when all are built.
+parallel_build() {
+	[ -z "${JAILMNT}" ] && err 2 "Fail: Missing JAILMNT"
+	local nbq=$(zget stats_queued)
+
+	zfs snapshot ${JAILFS}@prepkg
+
+	# If pool is empty, just return
+	test ${nbq} -eq 0 && return 0
+
+	msg "Starting using ${PARALLEL_JOBS} builders"
+	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
+
+	start_builders
+
+	# Duplicate stdout to socket 5 so the child process can send
+	# status information back on it since we redirect its
+	# stdout to /dev/null
+	exec 5<&1
+
+	build_queue
+
+	stop_builders
+
+	# Close the builder socket
+	exec 5>&-
 }
 
 
