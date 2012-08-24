@@ -310,7 +310,8 @@ jail_stop() {
 	jail -r ${JAILNAME%-job-*}
 	# Shutdown all builders
 	if [ ${PARALLEL_JOBS} -ne 0 ]; then
-		for j in $(jot -w %02d ${PARALLEL_JOBS}); do
+		# - here to only check for unset, {start,stop}_builders will set this to blank if already stopped
+		for j in ${JOBS-$(jot -w %02d ${PARALLEL_JOBS})}; do
 			jail -r ${JAILNAME%-job-*}-job-${j} >/dev/null 2>&1 || :
 		done
 	fi
@@ -576,7 +577,7 @@ stop_builders() {
 	zfs destroy -r ${JAILFS}/build 2>/dev/null || :
 
 	# No builders running, unset JOBS
-	unset JOBS
+	JOBS=""
 }
 
 build_queue() {
