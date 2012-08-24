@@ -945,7 +945,7 @@ prepare_ports() {
 
 	local nbq=0
 	nbq=$(find ${JAILMNT}/pool -type d -depth 1 | wc -l)
-	zset stats_queued "${nbq}"
+	zset stats_queued "${nbq##* }"
 	zset stats_built "0"
 	zset stats_failed "0"
 	zset stats_ignored "0"
