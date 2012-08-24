@@ -308,9 +308,11 @@ jail_stop() {
 
 	jail -r ${JAILNAME%-job-*}
 	# Shutdown all builders
-	for j in $(jot -w %02d ${PARALLEL_JOBS}); do
-		jail -r ${JAILNAME%-job-*}-job-${j} >/dev/null 2>&1 || :
-	done
+	if [ ${PARALLEL_JOBS} -ne 0 ]; then
+		for j in $(jot -w %02d ${PARALLEL_JOBS}); do
+			jail -r ${JAILNAME%-job-*}-job-${j} >/dev/null 2>&1 || :
+		done
+	fi
 	msg "Umounting file systems"
 	for mnt in $( mount | awk -v mnt="${MASTERMNT:-${JAILMNT}}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
 		umount -f ${mnt} || :
@@ -532,13 +534,18 @@ save_wrkdir() {
 parallel_build() {
 	[ -z "${JAILMNT}" ] && err 2 "Fail: Missing JAILMNT"
 	local activity cnt mnt fs name arch version jobs
+	local nbq=$(zget stats_queued)
+
+	zfs snapshot ${JAILFS}@prepkg
+
+	# If pool is empty, just return
+	test ${nbq} -eq 0 && return 0
+
 	msg "Starting using ${PARALLEL_JOBS} builders"
 	PORTSDIR=`port_get_base ${PTNAME}`/ports
 	arch=$(zget arch)
 	version=$(zget version)
 	jobs="$(jot -w %02d ${PARALLEL_JOBS})"
-
-	zfs snapshot ${JAILFS}@prepkg
 
 	for j in ${jobs}; do
 		mnt="${JAILMNT}/build/${j}"
@@ -952,6 +959,11 @@ prepare_ports() {
 	:> ${JAILMNT}/built
 	:> ${JAILMNT}/failed
 	:> ${JAILMNT}/ignored
+
+	# Minimize PARALLEL_JOBS to queue size
+	if [ ${PARALLEL_JOBS} -gt ${nbq} ]; then
+		PARALLEL_JOBS=${nbq}
+	fi
 }
 
 prepare_jail() {
