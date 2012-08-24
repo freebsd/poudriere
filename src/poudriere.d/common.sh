@@ -526,7 +526,7 @@ save_wrkdir() {
 	# Tar up the WRKDIR, and ignore errors
 	rm -f ${tarname}
 	tar -s ",${mnted_portdir},," -cjf ${tarname} ${mnted_portdir}/work > /dev/null 2>&1
-	msg "Saved ${port} wrkdir to: ${tarname}" >&5
+	msg "[${MY_JOBID}] Saved ${port} wrkdir to: ${tarname}" >&5
 }
 
 start_builders() {
@@ -600,11 +600,12 @@ build_queue() {
 				[ $(stat -f '%z' ${JAILMNT}/pool) -eq 2 ] && return
 				break
 			fi
-			msg "Starting build of ${port}"
+			msg "[${j}] Starting build of ${port}" >&5
 			JAILFS=${fs} zset status "starting:${port}"
 			activity=1
 			zfs rollback -r ${fs}@prepkg
 			MASTERMNT=${JAILMNT} JAILNAME="${name}" JAILMNT="${mnt}" JAILFS="${fs}" \
+				MY_JOBID="${j}" \
 				build_pkg ${port} >/dev/null 2>&1 &
 			echo "$!" > ${JAILMNT}/${j}.pid
 		done
@@ -667,7 +668,7 @@ build_pkg() {
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
 		echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/ignored"
-		msg "Finished build of ${port}: Ignored: ${ignore}" >&5
+		msg "[${MY_JOBID}] Finished build of ${port}: Ignored: ${ignore}" >&5
 	else
 		zset status "depends:${port}"
 		printf "=======================<phase: %-9s>==========================\n" "depends"
@@ -692,13 +693,13 @@ build_pkg() {
 		if [ ${build_failed} -eq 0 ]; then
 			echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/built"
 
-			msg "Finished build of ${port}: Success" >&5
+			msg "[${MY_JOBID}] Finished build of ${port}: Success" >&5
 			# Cache information for next run
 			pkg_cache_data "${PKGDIR}/All/${PKGNAME}.${EXT}" ${port} || :
 		else
 			echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/failed"
 			failed_status=$(zget status)
-			msg "Finished build of ${port}: Failed: ${failed_status%:*}" >&5
+			msg "[${MY_JOBID}] Finished build of ${port}: Failed: ${failed_status%:*}" >&5
 		fi
 	fi
 	# Cleaning queue (pool is cleaned here)
