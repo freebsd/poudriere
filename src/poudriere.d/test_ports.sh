@@ -90,6 +90,8 @@ fi
 LISTPORTS=$(list_deps ${PORTDIRECTORY} )
 prepare_ports
 
+zfs snapshot ${JAILFS}@prepkg
+
 POUDRIERE_BUILD_TYPE=bulk parallel_build
 
 zfs destroy -r ${JAILFS}@prepkg

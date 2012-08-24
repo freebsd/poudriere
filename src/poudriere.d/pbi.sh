@@ -81,8 +81,9 @@ prepare_ports
 
 export LOCALBASE=${MYBASE}
 
+zfs snapshot ${JAILFS}@prepkg
 POUDRIERE_BUILD_TYPE=bulk parallel_build
-zfs rollback ${JAILFS}@prepkg
+zfs rollback -R ${JAILFS}@prepkg
 
 PKGNAME=$(cache_get_pkgname ${ORIGIN})
 WWW=`awk '/^WWW/ { print $2 }' ${PORTDIRECTORY}/pkg-descr`

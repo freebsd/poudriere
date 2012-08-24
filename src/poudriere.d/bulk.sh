@@ -89,6 +89,8 @@ zset status "building:"
 
 test -z ${PORTTESTING} && echo "DISABLE_MAKE_JOBS=yes" >> ${JAILMNT}/etc/make.conf
 
+zfs snapshot ${JAILFS}@prepkg
+
 parallel_build
 
 cnt=$(wc -l ${JAILMNT}/ignored | awk '{ print $1 }')

@@ -288,6 +288,7 @@ jail_start() {
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	jail_runs && err 1 "jail already running: ${JAILNAME}"
 	zset status "start:"
+	zfs destroy -r ${JAILFS}/build 2>/dev/null || :
 	zfs rollback -R ${JAILFS}@clean
 
 	msg "Mounting system devices for ${JAILNAME}"
@@ -334,7 +335,7 @@ jail_stop() {
 			mdconfig -d -u $dev
 		fi
 	fi
-	zfs rollback -R ${JAILFS%/job-*}@clean
+	zfs rollback -R ${JAILFS%/build/*}@clean
 	zset status "idle:"
 	export STATUS=0
 }
@@ -367,8 +368,9 @@ cleanup() {
 		pkill -15 -F ${pid} >/dev/null 2>&1 || :
 	done
 	wait
-	zfs destroy -r ${JAILFS%/job-*}@prepkg 2>/dev/null || :
-	zfs destroy -r ${JAILFS%/job-*}@prebuild 2>/dev/null || :
+	zfs destroy -r ${JAILFS}/build 2>/dev/null || :
+	zfs destroy -r ${JAILFS%/build/*}@prepkg 2>/dev/null || :
+	zfs destroy -r ${JAILFS%/build/*}@prebuild 2>/dev/null || :
 	jail_stop
 }
 
@@ -534,9 +536,11 @@ start_builders() {
 	local version=$(zget version)
 	local j mnt fs name
 
+	zfs create -o canmount=off ${JAILFS}/build
+
 	for j in ${JOBS}; do
 		mnt="${JAILMNT}/build/${j}"
-		fs="${JAILFS}/job-${j}"
+		fs="${JAILFS}/build/${j}"
 		name="${JAILNAME}-job-${j}"
 		mkdir -p "${mnt}"
 		zfs clone -o mountpoint=${mnt} \
@@ -569,6 +573,8 @@ stop_builders() {
 		umount -f ${mnt} >/dev/null 2>&1 || :
 	done
 
+	zfs destroy -r ${JAILFS}/build 2>/dev/null || :
+
 	# No builders running, unset JOBS
 	unset JOBS
 }
@@ -580,7 +586,7 @@ build_queue() {
 		activity=0
 		for j in ${JOBS}; do
 			mnt="${JAILMNT}/build/${j}"
-			fs="${JAILFS}/job-${j}"
+			fs="${JAILFS}/build/${j}"
 			name="${JAILNAME}-job-${j}"
 			if [ -f  "${JAILMNT}/${j}.pid" ]; then
 				if pgrep -qF "${JAILMNT}/${j}.pid" >/dev/null 2>&1; then
@@ -619,8 +625,6 @@ build_queue() {
 parallel_build() {
 	[ -z "${JAILMNT}" ] && err 2 "Fail: Missing JAILMNT"
 	local nbq=$(zget stats_queued)
-
-	zfs snapshot ${JAILFS}@prepkg
 
 	# If pool is empty, just return
 	test ${nbq} -eq 0 && return 0
