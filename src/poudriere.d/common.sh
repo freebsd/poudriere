@@ -251,6 +251,7 @@ do_portbuild_mounts() {
 		fi
 		if [ -n "${CCACHE_DIR}" -a -d "${CCACHE_DIR}" ]; then
 			mkdir -p ${JAILMNT}${CCACHE_DIR} || err 1 "Failed to create ccache directory "
+			msg "Mounting ccache from ${CCACHE_DIR}"
 			export CCACHE_DIR
 		fi
 	fi
@@ -272,7 +273,6 @@ do_portbuild_mounts() {
 
 	if [ -n "${CCACHE_DIR}" -a -d "${CCACHE_DIR}" ]; then
 		# Mount user supplied CCACHE_DIR into /var/cache/ccache
-		msg "Mounting ccache from ${CCACHE_DIR}"
 		mount -t nullfs ${CCACHE_DIR} ${JAILMNT}${CCACHE_DIR} || err 1 "Failed to mount the ccache directory "
 	fi
 }
