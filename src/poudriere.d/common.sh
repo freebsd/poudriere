@@ -962,7 +962,7 @@ prepare_ports() {
 
 	# Minimize PARALLEL_JOBS to queue size
 	if [ ${PARALLEL_JOBS} -gt ${nbq} ]; then
-		PARALLEL_JOBS=${nbq}
+		PARALLEL_JOBS=${nbq##* }
 	fi
 }
 
