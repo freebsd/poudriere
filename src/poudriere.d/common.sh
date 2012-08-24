@@ -1064,7 +1064,7 @@ fi
 POUDRIERE_DATA=`get_data_dir`
 : ${CRONDIR="${POUDRIERE_DATA}/cron"}
 : ${SVN_HOST="svn.FreeBSD.org"}
-: ${GIT_URL="git://github.com/freebsd/freebsd-ports.git"}
+: ${GIT_URL="git://git.freebsd.org/freebsd-ports.git"}
 : ${FREEBSD_HOST="ftp://${FTP_HOST:-ftp.FreeBSD.org}"}
 
 case ${PARALLEL_JOBS} in
