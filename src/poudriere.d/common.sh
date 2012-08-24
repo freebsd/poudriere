@@ -368,7 +368,7 @@ cleanup() {
 		pkill -15 -F ${pid} >/dev/null 2>&1 || :
 	done
 	wait
-	zfs destroy -r ${JAILFS}/build 2>/dev/null || :
+	zfs destroy -r ${JAILFS%/build/*}/build 2>/dev/null || :
 	zfs destroy -r ${JAILFS%/build/*}@prepkg 2>/dev/null || :
 	zfs destroy -r ${JAILFS%/build/*}@prebuild 2>/dev/null || :
 	jail_stop
