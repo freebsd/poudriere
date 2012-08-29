@@ -863,6 +863,11 @@ delete_old_pkgs() {
 	for pkg in ${PKGDIR}/All/*.${EXT}; do
 		# Check for non-empty directory with no packages in it
 		[ "${pkg}" = "${PKGDIR}/All/*.${EXT}" ] && break
+		if [ "${pkg##*/}" = "repo.txz" ]; then
+			msg "Removing invalid pkg repo file: ${pkg}"
+			rm -f ${pkg}
+			continue
+		fi
 
 		mkdir -p $(pkg_cache_dir ${pkg})
 
