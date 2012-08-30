@@ -137,7 +137,7 @@ else
 		# Check for non-empty directory with no packages in it
 		[ "${pkg}" = "${PKGDIR}/All/*.tbz" ] && break
 		msg_n "Extracting description from ${pkg_file##*/}..."
-		ORIGIN=`/usr/sbin/pkg_info -qo "${pkg_file}"`
+		ORIGIN=$(pkg_get_origin ${pkg_file})
 		[ -d ${PORTSDIR}/${ORIGIN} ] && injail make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
 		echo " done"
 	done
