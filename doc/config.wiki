@@ -6,5 +6,5 @@ Run this, specifying either <em>options<em> or <em>options-jailname</em> for <st
 PORT_DBDIR=/usr/local/etc/poudriere.d/options
 BULK_LIST=/root/poudriere.list
 mkdir -p ${PORT_DBDIR}
-for x in $(cat ${BULK_LIST}); do make PORT_DBDIR=${PORT_DBDIR} -C /usr/ports/$x config-conditional config-recursive; done;
+while read origin; do make PORT_DBDIR=${PORT_DBDIR} -C /usr/ports/${origin} config-conditional config-recursive; done < ${BULK_LIST}
 </verbatim>
