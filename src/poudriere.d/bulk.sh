@@ -142,7 +142,7 @@ else
 		echo " done"
 	done
 
-	msg "Generating INDEX"
+	msg_n "Generating INDEX..."
 	awk -v indf=${INDEXF}.1 -F\| 'BEGIN {
 	nblines=0
 	while ((getline < indf) > 0) {
@@ -234,6 +234,7 @@ else
 		return as;
 	}
 	' ${INDEXF}.1 > ${INDEXF}
+	echo " done"
 
 	rm ${INDEXF}.1
 	[ -f ${INDEXF}.bz2 ] && rm ${INDEXF}.bz2
