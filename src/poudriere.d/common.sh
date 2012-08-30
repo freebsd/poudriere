@@ -224,18 +224,22 @@ jrun() {
 do_jail_mounts() {
 	[ $# -ne 1 ] && eargs should_mkdir
 	local should_mkdir=$1
+	local arch=$(zget arch)
 
 	# Only do this when starting the master jail, clones will already have the dirs
 	if [ ${should_mkdir} -eq 1 ]; then
 		mkdir -p ${JAILMNT}/proc
-		mkdir -p ${JAILMNT}/compat/linux/proc
-		mkdir -p ${JAILMNT}/compat/linux/sys
 	fi
 
 	mount -t devfs devfs ${JAILMNT}/dev
 	mount -t procfs proc ${JAILMNT}/proc
-	mount -t linprocfs linprocfs ${JAILMNT}/compat/linux/proc
-	mount -t linsysfs linsysfs ${JAILMNT}/compat/linux/sys
+
+	if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
+		mkdir -p ${JAILMNT}/compat/linux/proc
+		mkdir -p ${JAILMNT}/compat/linux/sys
+		mount -t linprocfs linprocfs ${JAILMNT}/compat/linux/proc
+		mount -t linsysfs linsysfs ${JAILMNT}/compat/linux/sys
+	fi
 }
 
 do_portbuild_mounts() {
@@ -279,7 +283,11 @@ do_portbuild_mounts() {
 
 jail_start() {
 	[ $# -ne 0 ] && eargs
-	local NEEDFS="linprocfs linsysfs nullfs procfs"
+	local arch=$(zget arch)
+	local NEEDFS="nullfs procfs"
+	if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
+		NEEDFS="${NEEDFS} linprocfs linsysfs"
+	fi
 	[ -n "${USE_TMPFS}" ] && NEEDFS="${NEEDFS} tmpfs"
 	for fs in ${NEEDFS}; do
 		lsvfs $fs >/dev/null 2>&1 || kldload $fs
