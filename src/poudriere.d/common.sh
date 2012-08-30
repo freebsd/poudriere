@@ -289,12 +289,12 @@ jail_start() {
 	local NEEDFS="nullfs procfs"
 	if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
 		NEEDFS="${NEEDFS} linprocfs linsysfs"
+		sysctl -n compat.linux.osrelease >/dev/null 2>&1 || kldload linux
 	fi
 	[ -n "${USE_TMPFS}" ] && NEEDFS="${NEEDFS} tmpfs"
 	for fs in ${NEEDFS}; do
 		lsvfs $fs >/dev/null 2>&1 || kldload $fs
 	done
-	sysctl -n compat.linux.osrelease >/dev/null 2>&1 || kldload linux
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	jail_runs && err 1 "jail already running: ${JAILNAME}"
 	zset status "start:"
