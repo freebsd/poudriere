@@ -316,7 +316,7 @@ jail_stop() {
 		done
 	fi
 	msg "Umounting file systems"
-	for mnt in $( mount | awk -v mnt="${MASTERMNT:-${JAILMNT}}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
+	mount | awk -v mnt="${MASTERMNT:-${JAILMNT}}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r | while read mnt; do
 		umount -f ${mnt} || :
 	done
 
@@ -570,7 +570,7 @@ stop_builders() {
 		jail -r ${JAILNAME}-job-${j} >/dev/null 2>&1 || :
 	done
 
-	for mnt in $( mount | awk -v mnt="${JAILMNT}/build/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r ); do
+	mount | awk -v mnt="${JAILMNT}/build/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r | while read mnt; do
 		umount -f ${mnt} >/dev/null 2>&1 || :
 	done
 
@@ -958,7 +958,7 @@ prepare_ports() {
 	zset status "computingdeps:"
 	if [ -z "${LISTPORTS}" ]; then
 		if [ -n "${LISTPKGS}" ]; then
-			for port in `grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}`; do
+			grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS} | while read port; do
 				compute_deps "${port}"
 			done
 		fi

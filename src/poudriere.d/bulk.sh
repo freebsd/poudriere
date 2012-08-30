@@ -133,7 +133,9 @@ else
 	zset status "index:"
 	OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
 	INDEXF=${PKGDIR}/INDEX-${OSMAJ}
-	for pkg_file in `ls ${PKGDIR}/All/*.tbz`; do
+	for pkg_file in ${PKGDIR}/All/*.tbz; do
+		# Check for non-empty directory with no packages in it
+		[ "${pkg}" = "${PKGDIR}/All/*.tbz" ] && break
 		msg_n "Extracting description from ${pkg_file##*/}..."
 		ORIGIN=`/usr/sbin/pkg_info -qo "${pkg_file}"`
 		[ -d ${PORTSDIR}/${ORIGIN} ] && injail make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
