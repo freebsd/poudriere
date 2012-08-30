@@ -235,8 +235,10 @@ do_jail_mounts() {
 	mount -t procfs proc ${JAILMNT}/proc
 
 	if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
-		mkdir -p ${JAILMNT}/compat/linux/proc
-		mkdir -p ${JAILMNT}/compat/linux/sys
+		if [ ${should_mkdir} -eq 1 ]; then
+			mkdir -p ${JAILMNT}/compat/linux/proc
+			mkdir -p ${JAILMNT}/compat/linux/sys
+		fi
 		mount -t linprocfs linprocfs ${JAILMNT}/compat/linux/proc
 		mount -t linsysfs linsysfs ${JAILMNT}/compat/linux/sys
 	fi
