@@ -771,10 +771,10 @@ pkg_get_origin() {
 			fi
 		fi
 		echo ${origin} > "${originfile}"
-		echo ${origin}
-		return
+	else
+		read origin < "${originfile}"
 	fi
-	cat "${originfile}"
+	echo ${origin}
 }
 
 pkg_get_options() {
@@ -793,6 +793,7 @@ pkg_get_options() {
 		echo "${compiled_options}"
 		return
 	fi
+	# optionsfile is multi-line, no point for read< trick here
 	cat "${optionsfile}"
 }
 
