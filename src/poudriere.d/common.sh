@@ -138,7 +138,7 @@ jail_get_version() {
 
 jail_get_fs() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,name ${ZPOOL}/poudriere | \
+	zfs list -rt filesystem -H -s name -o ${NS}:type,${NS}:name,name ${ZPOOL}/poudriere | \
 		awk -v n=$1 '$1 == "rootfs" && $2 == n { print $3 }' | head -1
 }
 
