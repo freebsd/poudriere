@@ -138,8 +138,8 @@ jail_get_version() {
 
 jail_get_fs() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,name ${ZPOOL}/poudriere | \
-		awk -v n=$1 '$1 == "rootfs" && $2 == n { print $3 }'
+	zfs list -rt filesystem -s name -H -o ${NS}:type,${NS}:name,name ${ZPOOL}/poudriere | \
+		awk -v n=$1 '$1 == "rootfs" && $2 == n { print $3 }' | head -n 1
 }
 
 port_exists() {
