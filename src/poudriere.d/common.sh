@@ -1023,6 +1023,7 @@ prepare_ports() {
 prepare_jail() {
 	export PACKAGE_BUILDING=yes
 	export USER=root
+	export HOME=/root
 	PORTSDIR=`port_get_base ${PTNAME}`/ports
 	POUDRIERED=${SCRIPTPREFIX}/../../etc/poudriere.d
 	[ -z "${JAILMNT}" ] && err 1 "No path of the base of the jail defined"
