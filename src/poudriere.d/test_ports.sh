@@ -136,7 +136,7 @@ buildlog_start ${PORTDIRECTORY}
 build_port ${PORTDIRECTORY}
 
 msg "Installing from package"
-injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${EXT}
+injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT}
 msg "Deinstalling package"
 injail ${PKG_DELETE} ${PKGNAME}
 

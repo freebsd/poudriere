@@ -89,8 +89,8 @@ PKGNAME=$(cache_get_pkgname ${ORIGIN})
 WWW=`awk '/^WWW/ { print $2 }' ${PORTDIRECTORY}/pkg-descr`
 COMMENT=`injail make -C ${PORTDIRECTORY} -VCOMMENT`
 log_start $(log_path)/${PKGNAME}.log
-echo pkg -j ${JAILNAME} add /usr/ports/packages/All/${PKGNAME}.${EXT}
-/usr/local/sbin/pkg -j ${JAILNAME} add /usr/ports/packages/All/${PKGNAME}.${EXT}
+echo pkg -j ${JAILNAME} add /usr/ports/packages/All/${PKGNAME}.${PKG_EXT}
+/usr/local/sbin/pkg -j ${JAILNAME} add /usr/ports/packages/All/${PKGNAME}.${PKG_EXT}
 if [ $REAL -eq 0 ]; then
 	ABI=`/usr/local/sbin/pkg -j ${JAILNAME} -vv | awk '/^abi/ { print $2 }'`
 else

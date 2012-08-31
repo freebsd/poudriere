@@ -394,12 +394,12 @@ sanity_check_pkgs() {
 	local depfile
 	[ ! -d ${PKGDIR}/All ] && return $ret
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return $ret
-	for pkg in ${PKGDIR}/All/*.${EXT}; do
+	for pkg in ${PKGDIR}/All/*.${PKG_EXT}; do
 		# Check for non-empty directory with no packages in it
-		[ "${pkg}" = "${PKGDIR}/All/*.${EXT}" ] && break
+		[ "${pkg}" = "${PKGDIR}/All/*.${PKG_EXT}" ] && break
 		depfile=$(deps_file ${pkg})
 		while read dep; do
-			if [ ! -e "${PKGDIR}/All/${dep}.${EXT}" ]; then
+			if [ ! -e "${PKGDIR}/All/${dep}.${PKG_EXT}" ]; then
 				ret=1
 				msg "Deleting ${pkg}: missing dependencies"
 				delete_pkg ${pkg}
@@ -710,7 +710,7 @@ build_pkg() {
 
 			msg "[${MY_JOBID}] Finished build of ${port}: Success" >&5
 			# Cache information for next run
-			pkg_cache_data "${PKGDIR}/All/${PKGNAME}.${EXT}" ${port} || :
+			pkg_cache_data "${PKGDIR}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
 		else
 			echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/failed"
 			failed_status=$(zget status)
@@ -746,7 +746,7 @@ deps_file() {
 	local depfile=$(pkg_cache_dir ${pkg})/deps
 
 	if [ ! -f "${depfile}" ]; then
-		if [ "${EXT}" = "tbz" ]; then
+		if [ "${PKG_EXT}" = "tbz" ]; then
 			pkg_info -qr "${pkg}" | awk '{ print $2 }' > "${depfile}"
 		else
 			pkg info -qdF "${pkg}" > "${depfile}"
@@ -764,7 +764,7 @@ pkg_get_origin() {
 
 	if [ ! -f "${originfile}" ]; then
 		if [ -z "${origin}" ]; then
-			if [ "${EXT}" = "tbz" ]; then
+			if [ "${PKG_EXT}" = "tbz" ]; then
 				origin=$(pkg_info -qo "${pkg}")
 			else
 				origin=$(pkg query -F "${pkg}" "%o")
@@ -784,7 +784,7 @@ pkg_get_options() {
 	local compiled_options
 
 	if [ ! -f "${optionsfile}" ]; then
-		if [ "${EXT}" = "tbz" ]; then
+		if [ "${PKG_EXT}" = "tbz" ]; then
 			compiled_options=$(pkg_info -qf "${pkg}" | awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 		else
 			compiled_options=$(pkg query -F "${pkg}" '%Ov %Ok' | awk '$1 == "on" {print $2}' | sort | tr '\n' ' ')
@@ -826,7 +826,7 @@ cache_dir() {
 }
 
 # Return the cache dir for the given pkg
-# @param string pkg $PKGDIR/All/PKGNAME.EXT
+# @param string pkg $PKGDIR/All/PKGNAME.PKG_EXT
 pkg_cache_dir() {
 	[ $# -ne 1 ] && eargs pkg
 	local pkg=$1
@@ -858,7 +858,7 @@ delete_stale_pkg_cache() {
 	local cachedir=$(cache_dir)
 	[ ! -d ${cachedir} ] && return 0
 	[ -z "$(ls -A ${cachedir})" ] && return 0
-	for pkg in ${cachedir}/*.${EXT}; do
+	for pkg in ${cachedir}/*.${PKG_EXT}; do
 		pkg_file=${pkg##*/}
 		# If this package no longer exists in the PKGDIR, delete the cache.
 		if [ ! -e "${PKGDIR}/All/${pkg_file}" ]; then
@@ -871,9 +871,9 @@ delete_old_pkgs() {
 	local o v v2 compiled_options current_options
 	[ ! -d ${PKGDIR}/All ] && return 0
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return 0
-	for pkg in ${PKGDIR}/All/*.${EXT}; do
+	for pkg in ${PKGDIR}/All/*.${PKG_EXT}; do
 		# Check for non-empty directory with no packages in it
-		[ "${pkg}" = "${PKGDIR}/All/*.${EXT}" ] && break
+		[ "${pkg}" = "${PKGDIR}/All/*.${PKG_EXT}" ] && break
 		if [ "${pkg##*/}" = "repo.txz" ]; then
 			msg "Removing invalid pkg repo file: ${pkg}"
 			rm -f ${pkg}
@@ -998,7 +998,7 @@ prepare_ports() {
 	export LOCALBASE=${MYBASE:-/usr/local}
 	find ${JAILMNT}/pool -type d -depth 1 | while read p; do
 		pn=${p##*/}
-		if [ -f "${PKGDIR}/All/${pn}.${EXT}" ]; then
+		if [ -f "${PKGDIR}/All/${pn}.${PKG_EXT}" ]; then
 			rm -rf ${p}
 			find ${JAILMNT}/pool -name "${pn}" -type f -delete
 		fi
@@ -1045,14 +1045,14 @@ prepare_jail() {
 	WITH_PKGNG=$(injail make -f /usr/ports/Mk/bsd.port.mk -V WITH_PKGNG)
 	if [ -n "${WITH_PKGNG}" ]; then
 		export PKGNG=1
-		export EXT="txz"
+		export PKG_EXT="txz"
 		export PKG_ADD="${MYBASE:-/usr/local}/sbin/pkg add"
 		export PKG_DELETE="${MYBASE:-/usr/local}/sbin/pkg delete -y -f"
 	else
 		export PKGNG=0
 		export PKG_ADD=pkg_add
 		export PKG_DELETE=pkg_delete
-		export EXT="tbz"
+		export PKG_EXT="tbz"
 	fi
 
 	export LOGS=${POUDRIERE_DATA}/logs
