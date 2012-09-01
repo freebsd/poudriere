@@ -21,7 +21,7 @@ eargs() {
 	case $# in
 	0) err 1 "No arguments expected" ;;
 	1) err 1 "1 argument expected: $1" ;;
-	*) err 1 "$# arguments expected: $@";;
+	*) err 1 "$# arguments expected: $*" ;;
 	esac
 }
 
