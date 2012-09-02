@@ -126,13 +126,13 @@ jail_runs() {
 
 jail_get_base() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,mountpoint ${ZPOOL}/poudriere | \
+	zfs list -rt filesystem -s name -H -o ${NS}:type,${NS}:name,mountpoint ${ZPOOL}/poudriere | \
 		awk -v n=$1 '$1 == "rootfs" && $2 == n  { print $3 }' | head -n 1
 }
 
 jail_get_version() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,${NS}:version ${ZPOOL}/poudriere | \
+	zfs list -rt filesystem -s name -H -o ${NS}:type,${NS}:name,${NS}:version ${ZPOOL}/poudriere | \
 		awk -v n=$1 '$1 == "rootfs" && $2 == n { print $3 }' | head -n 1
 }
 
