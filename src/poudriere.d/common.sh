@@ -561,6 +561,10 @@ start_builders() {
 			-o ${NS}:version=${version} \
 			${JAILFS}@prepkg ${fs}
 		zfs snapshot ${fs}@prepkg
+		# Jail might be lingering from previous build. Already recursively
+		# destroyed all the builder datasets, so just try stopping the jail
+		# and ignore any errors
+		jail -r ${name} >/dev/null 2>&1 || :
 		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_jail_mounts 0
 		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_portbuild_mounts 0
 		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} jrun 0
