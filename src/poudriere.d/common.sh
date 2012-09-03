@@ -667,7 +667,7 @@ cat >> ${logdir}/index.html << EOF
       </table>
     </div>
     <div id="ignored">
-      <h2>ignored ports </h2>
+      <h2>Ignored ports </h2>
       <table>
         <tr>
           <th>Port</th>
@@ -692,7 +692,7 @@ cat >> ${logdir}/index.html << EOF
       </table>
     </div>
     <div id="success">
-      <h2>Success ports </h2>
+      <h2>Successful ports </h2>
       <table>
         <tr>
           <th>Port</th>
