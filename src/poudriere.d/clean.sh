@@ -7,13 +7,13 @@ case "${JAILMNT}" in
 	/?*)
 		;;
 	*)
-		echo "Invalid JAILMNT"
+		echo "Invalid JAILMNT passed when cleaning pool" >&2
 		exit 1
 		;;
 esac
 
 if [ -z "${PKGNAME}" ]; then
-	echo "Invalid PKGNAME"
+	echo "Invalid PKGNAME passed when cleaning pool" >&2
 	exit 1
 fi
 
