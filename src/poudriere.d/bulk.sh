@@ -61,8 +61,7 @@ done
 
 shift $((OPTIND-1))
 
-if [ $# -eq 0 ]; then 
-	if [ $# -eq 0 ]; then
+if [ $# -eq 0 ]; then
 	[ -n "${LISTPKGS}" ] || err 1 "No packages specify"
 	test -f ${LISTPKGS} || err 1 "No such list of packages: ${LISTPKGS}"
 else
