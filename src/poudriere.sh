@@ -2,6 +2,7 @@
 
 LC_ALL=C
 unset SHELL
+SAVED_TERM=$TERM
 unset TERM
 VERSION="2.1-pre"
 
@@ -14,6 +15,7 @@ Commands:
     help        -- show usage informations
     jail        -- manage the jails used by poudriere
     ports       -- create, update or delete the portstrees used by poudriere
+    options     -- Configure ports options
     queue       -- queue a build request (through cron)
     testport    -- launch a test on a given port
     version     -- show poudriere version"
@@ -50,6 +52,9 @@ case ${CMD} in
 		;;
 	pbi)
 		exec env -i  PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/pbi.sh $@
+		;;
+	options)
+		exec env -i TERM=${SAVED_TERM} PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/options.sh $@
 		;;
 	help)
 		usage
