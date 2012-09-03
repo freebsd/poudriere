@@ -594,7 +594,135 @@ stop_builders() {
 	JOBS=""
 }
 
+
+build_stats() {
+	local port logdir pkgname
+	logdir=`log_path`
+
+cat > ${logdir}/index.html << EOF
+<html>
+  <head>
+    <title>Poudriere bulk results</title>
+    <style type="text/css">
+      table {
+        display: block;
+        border: 2px;
+        border-collapse:collapse;
+        border: 2px solid black;
+        margin-top: 5px;
+      }
+      th, td { border: 1px solid black; }
+      td.success { background-color: #00CC00; }
+      td.failed { background-color: #E00000 ; }
+      td.ignored { background-color: #FF9900; }
+    </style>
+    <script type="text/javascript">
+      function toggle_display(id) {
+        var e = document.getElementById(id);
+        if(e.style.display == 'block')
+          e.style.display = 'none';
+        else
+          e.style.display = 'block';
+      }
+    </script>
+  </head>
+  <body>
+    <h1>Poudriere bulk results</h1>
+    <ul>
+      <li>Jail: ${JAILNAME}</li>
+      <li>Ports tree: ${PTNAME}</li>
+EOF
+				cnt=$(zget stats_queued)
+cat >> ${logdir}/index.html << EOF
+      <li>Nb ports queued: ${cnt}</li>
+    </ul>
+    <hr />
+    <button onclick="toggle_display('success');">Show/Hide success</button>
+    <button onclick="toggle_display('failed');">Show/Hide failure</button>
+    <button onclick="toggle_display('ignored');">Show/Hide ignored</button>
+    <hr />
+    <div id="failed">
+      <h2>Failed ports </h2>
+      <table>
+        <tr>
+          <th>Port</th>
+          <th>Origin</th>
+          <th>status</th>
+        </tr>
+EOF
+				cnt=0
+				while read port; do
+	pkgname=$(cache_get_pkgname ${port})
+cat >> ${logdir}/index.html << EOF
+        <tr>
+          <td>${pkgname}</td>
+          <td>${port}</td>
+          <td><a href="${pkgname}.log">logfile</a></td>
+        </tr>
+EOF
+				cnt=$(( cnt + 1 ))
+				done <  ${JAILMNT}/failed
+				zset stats_failed $cnt
+cat >> ${logdir}/index.html << EOF
+      </table>
+    </div>
+    <div id="ignored">
+      <h2>ignored ports </h2>
+      <table>
+        <tr>
+          <th>Port</th>
+          <th>Origin</th>
+          <th>status</th>
+        </tr>
+EOF
+				cnt=0
+				while read port; do
+	pkgname=$(cache_get_pkgname ${port})
+cat >> ${logdir}/index.html << EOF
+        <tr>
+          <td>${pkgname}</td>
+          <td>${port}</td>
+          <td><a href="${pkgname}.log">logfile</a></td>
+        </tr>
+EOF
+				cnt=$(( cnt + 1 ))
+				done < ${JAILMNT}/ignored
+				zset stats_ignored $cnt
+cat >> ${logdir}/index.html << EOF
+      </table>
+    </div>
+    <div id="success">
+      <h2>Success ports </h2>
+      <table>
+        <tr>
+          <th>Port</th>
+          <th>Origin</th>
+          <th>status</th>
+        </tr>
+EOF
+				cnt=0
+				while read port; do
+	pkgname=$(cache_get_pkgname ${port})
+cat >> ${logdir}/index.html << EOF
+        <tr>
+          <td>${pkgname}</td>
+          <td>${port}</td>
+          <td><a href="${pkgname}.log">logfile</a></td>
+        </tr>
+EOF
+				cnt=$(( cnt + 1 ))
+				done < ${JAILMNT}/built
+				zset stats_built $cnt
+cat >> ${logdir}/index.html << EOF
+      </table>
+    </div>
+  </body>
+</html>
+EOF
+}
+
 build_queue() {
+
 	local activity j cnt mnt fs name port
 
 	while :; do
@@ -607,19 +735,14 @@ build_queue() {
 				if pgrep -qF "${JAILMNT}/${j}.pid" >/dev/null 2>&1; then
 					continue
 				fi
-				rm -f "${JAILMNT}/${j}.pid"
-				cnt=$(wc -l ${JAILMNT}/ignored | awk '{ print $1 }')
-				zset stats_ignored $cnt
-				cnt=$(wc -l ${JAILMNT}/built | awk '{ print $1 }')
-				zset stats_built $cnt
-				cnt=$(wc -l ${JAILMNT}/failed | awk '{ print $1 }')
-				zset stats_failed $cnt
 			fi
 			port=$(next_in_queue)
 			if [ -z "${port}" ]; then
 				# pool empty ?
 				[ $(stat -f '%z' ${JAILMNT}/pool) -eq 2 ] && return
+				build_stats
 				break
+				rm -f "${JAILMNT}/${j}.pid"
 			fi
 			msg "[${j}] Starting build of ${port}" >&5
 			JAILFS=${fs} zset status "starting:${port}"
