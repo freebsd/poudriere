@@ -61,11 +61,12 @@ done
 
 shift $((OPTIND-1))
 
-if [ $# -rq 0 ]; then 
-	[ -z "${LISTPKGS}" ] || err 1 "No packages specify"
+if [ $# -eq 0 ]; then 
+	if [ $# -eq 0 ]; then
+	[ -n "${LISTPKGS}" ] || err 1 "No packages specify"
 	test -f ${LISTPKGS} || err 1 "No such list of packages: ${LISTPKGS}"
 else
-	[ -n "${LISTPKGS}" ] || err 1 "command line arguments and list of ports cannot be used at the same time"
+	[ -z "${LISTPKGS}" ] || err 1 "command line arguments and list of ports cannot be used at the same time"
 	LISTPORTS="$@"
 fi
 
