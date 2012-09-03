@@ -1026,6 +1026,7 @@ prepare_ports() {
 
 prepare_jail() {
 	export PACKAGE_BUILDING=yes
+	export FORCE_PACKAGE=yes
 	export USER=root
 	export HOME=/root
 	PORTSDIR=`port_get_base ${PTNAME}`/ports
