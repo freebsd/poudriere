@@ -86,15 +86,16 @@ JAILFS=`jail_get_fs ${JAILNAME}`
 JAILMNT=`jail_get_base ${JAILNAME}`
 
 export POUDRIERE_BUILD_TYPE=bulk
-LOGD=`log_path`
-if [ -d ${LOGD} ]; then
-	msg "Cleaning up old logs"
-	rm -f ${LOGD}/*.log
-fi
 
 jail_start
 
 prepare_jail
+
+LOGD=`log_path`
+if [ -d ${LOGD} ]; then
+	msg "Cleaning up old logs"
+	rm -f ${LOGD}/*.log 2>/dev/null
+fi
 
 prepare_ports
 
