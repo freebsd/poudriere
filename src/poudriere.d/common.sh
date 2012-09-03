@@ -735,14 +735,14 @@ build_queue() {
 				if pgrep -qF "${JAILMNT}/${j}.pid" >/dev/null 2>&1; then
 					continue
 				fi
+				build_stats
+				rm -f "${JAILMNT}/${j}.pid"
 			fi
 			port=$(next_in_queue)
 			if [ -z "${port}" ]; then
 				# pool empty ?
 				[ $(stat -f '%z' ${JAILMNT}/pool) -eq 2 ] && return
-				build_stats
 				break
-				rm -f "${JAILMNT}/${j}.pid"
 			fi
 			msg "[${j}] Starting build of ${port}" >&5
 			JAILFS=${fs} zset status "starting:${port}"

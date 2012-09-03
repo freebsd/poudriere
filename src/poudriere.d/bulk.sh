@@ -107,12 +107,6 @@ zfs snapshot ${JAILFS}@prepkg
 
 parallel_build
 
-#cnt=$(wc -l ${JAILMNT}/ignored | awk '{ print $1 }')
-#zset stats_ignored $cnt
-#cnt=$(wc -l ${JAILMNT}/built | awk '{ print $1 }')
-#zset stats_built $cnt
-#cnt=$(wc -l ${JAILMNT}/failed | awk '{ print $1 }')
-#zset stats_failed $cnt
 build_stats
 
 failed=$(cat ${JAILMNT}/failed | xargs echo)
