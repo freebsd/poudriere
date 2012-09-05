@@ -36,10 +36,10 @@ case ${CMD} in
 		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/jail.sh $@
 		;;
 	testport)
-		exec env -i PATH=${PATH} HOME=${HOME} /bin/sh ${POUDRIEREPREFIX}/test_ports.sh $@
+		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/test_ports.sh $@
 		;;
 	bulk)
-		exec env -i PATH=${PATH} HOME=${HOME} /bin/sh ${POUDRIEREPREFIX}/bulk.sh $@
+		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/bulk.sh $@
 		;;
 	ports)
 		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/ports.sh $@
