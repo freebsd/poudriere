@@ -487,6 +487,8 @@ case "${CREATE}${LIST}${STOP}${START}${DELETE}${INFO}${UPDATE}" in
 		export SET_STATUS_ON_START=0
 		test -z ${JAILNAME} && usage
 		jail_start
+		jail -r ${JAILNAME} >/dev/null
+		jrun 1
 		;;
 	0000100)
 		test -z ${JAILNAME} && usage
