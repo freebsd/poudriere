@@ -79,6 +79,7 @@ PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}
 if [ ${CLEAN} -eq 1 ]; then
 	msg_n "Cleaning previous bulks if any..."
 	rm -rf ${PKGDIR}/*
+	rm -rf ${POUDRIERE_DATA}/cache/${JAILNAME}
 	echo " done"
 fi
 
