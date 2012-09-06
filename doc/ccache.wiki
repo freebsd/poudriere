@@ -7,24 +7,4 @@ echo "CCACHE_DIR=/usr/obj/ccache" >> /usr/local/etc/poudriere.conf
 mkdir -p /usr/obj/ccache
 </verbatim>
 
-Configure the make.conf to use CCACHE and bsd.local.mk:
-
-    <verbatim>
-cat >> /usr/local/etc/poudriere.d/make.conf << EOF
-WITH_CCACHE_BUILD=yes
-USE_LOCAL_MK=yes
-EOF
-</verbatim>
-
-Add this into the port tree's Mk/bsd.local.mk before the last .endif:
-
-    <verbatim>
-.if defined(WITH_CCACHE_BUILD) && !${.CURDIR:M*/devel/ccache} && !${.CURDIR:M*/ports-mgmt/pkg}
-BUILD_DEPENDS+=         ${LOCALBASE}/bin/ccache:${PORTSDIR}/devel/ccache
-.endif
-
-.if defined(WITH_CCACHE_BUILD) && !${CC:M*ccache*}
-MAKE_ENV+=      PATH=${LOCALBASE}/libexec/ccache:${PATH}
-.endif
-</verbatim>
-This last step is a temporary solution until it can be put into the ports framework by default.
+That's it!

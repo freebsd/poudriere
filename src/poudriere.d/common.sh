@@ -259,6 +259,7 @@ do_portbuild_mounts() {
 			mkdir -p ${JAILMNT}${CCACHE_DIR} || err 1 "Failed to create ccache directory "
 			msg "Mounting ccache from ${CCACHE_DIR}"
 			export CCACHE_DIR
+			export WITH_CCACHE_BUILD=yes
 		fi
 	fi
 
