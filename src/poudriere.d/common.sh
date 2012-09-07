@@ -1222,7 +1222,7 @@ POUDRIERE_DATA=`get_data_dir`
 : ${SVN_HOST="svn.FreeBSD.org"}
 : ${GIT_URL="git://git.freebsd.org/freebsd-ports.git"}
 : ${FREEBSD_HOST="ftp://${FTP_HOST:-ftp.FreeBSD.org}"}
-: ${ZROOTFS:="/poudriere}
+: ${ZROOTFS:="/poudriere"}
 
 case ${PARALLEL_JOBS} in
 ''|*[!0-9]*)
