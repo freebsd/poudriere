@@ -327,9 +327,7 @@ jail_stop() {
 		done
 	fi
 	msg "Umounting file systems"
-	mount | awk -v mnt="${MASTERMNT:-${JAILMNT}}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r | while read mnt; do
-		umount -f ${mnt} || :
-	done
+	mount | awk -v mnt="${MASTERMNT:-${JAILMNT}}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r | xargs umount -f || :
 
 	if [ -n "${MFSSIZE}" ]; then
 		# umount the ${JAILMNT}/build/$jobno/wrkdirs
@@ -585,9 +583,7 @@ stop_builders() {
 		jail -r ${JAILNAME}-job-${j} >/dev/null 2>&1 || :
 	done
 
-	mount | awk -v mnt="${JAILMNT}/build/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r | while read mnt; do
-		umount -f ${mnt} >/dev/null 2>&1 || :
-	done
+	mount | awk -v mnt="${JAILMNT}/build/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r | xargs umount -f 2>/dev/null || :
 
 	zfs destroy -r ${JAILFS}/build 2>/dev/null || :
 
