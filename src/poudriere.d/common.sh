@@ -254,9 +254,7 @@ do_portbuild_mounts() {
 	if [ ${should_mkdir} -eq 1 ]; then
 		mkdir -p ${PORTSDIR}/packages
 		mkdir -p ${PKGDIR}/All
-		if [ -n "${DISTFILES_CACHE}" -a -d "${DISTFILES_CACHE}" ]; then
-			mkdir -p ${JAILMNT}/usr/ports/distfiles
-		fi
+		mkdir -p ${PORTSDIR}/distfiles
 		if [ -n "${CCACHE_DIR}" -a -d "${CCACHE_DIR}" ]; then
 			mkdir -p ${JAILMNT}${CCACHE_DIR} || err 1 "Failed to create ccache directory "
 			msg "Mounting ccache from ${CCACHE_DIR}"
