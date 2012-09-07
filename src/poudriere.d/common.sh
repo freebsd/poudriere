@@ -1048,6 +1048,7 @@ delete_old_pkgs() {
 
 next_in_queue() {
 	local p
+	[ ! -d ${JAILMNT}/pool ] && err 1 "Build pool is missing"
 	p=$(lockf -k -t 60 ${JAILMNT}/.lock find ${JAILMNT}/pool -type d -depth 1 -empty -print || : | head -n 1)
 	[ -n "$p" ] || return 0
 	touch ${p}/.building
