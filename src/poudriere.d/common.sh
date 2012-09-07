@@ -789,6 +789,7 @@ build_pkg() {
 	local portdir="/usr/ports/${port}"
 	local build_failed=0
 	local name cnt
+	local failed_status failed_phase
 
 	# If this port is IGNORED, skip it
 	# This is checked here instead of when building the queue
@@ -820,9 +821,14 @@ build_pkg() {
 			injail make -C ${portdir} clean
 			if ! build_port ${portdir}; then
 				build_failed=1
+				failed_status=$(zget status)
+				failed_phase=${failed_status%:*}
 
 				if [ "${SAVE_WRKDIR}" -eq 1 ]; then
-					save_wrkdir ${portdir} || :
+					# Only save if not in fetch/checksum phase
+					if ! [ "${failed_phase}" = "fetch" -o "${failed_phase}" = "checksum" ]; then
+						save_wrkdir ${portdir} || :
+					fi
 				fi
 			fi
 
