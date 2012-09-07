@@ -113,7 +113,7 @@ sig_handler() {
 
 jail_exists() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name ${ZPOOL}/poudriere | \
+	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name ${ZPOOL}${ZROOTFS} | \
 		awk -v n=$1 'BEGIN { ret = 1 } $1 == "rootfs" && $2 == n { ret = 0; } END { exit ret }' && return 0
 	return 1
 }
@@ -126,38 +126,38 @@ jail_runs() {
 
 jail_get_base() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs list -rt filesystem -s name -H -o ${NS}:type,${NS}:name,mountpoint ${ZPOOL}/poudriere | \
+	zfs list -rt filesystem -s name -H -o ${NS}:type,${NS}:name,mountpoint ${ZPOOL}${ZROOTFS} | \
 		awk -v n=$1 '$1 == "rootfs" && $2 == n  { print $3 }' | head -n 1
 }
 
 jail_get_version() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs list -rt filesystem -s name -H -o ${NS}:type,${NS}:name,${NS}:version ${ZPOOL}/poudriere | \
+	zfs list -rt filesystem -s name -H -o ${NS}:type,${NS}:name,${NS}:version ${ZPOOL}${ZROOTFS} | \
 		awk -v n=$1 '$1 == "rootfs" && $2 == n { print $3 }' | head -n 1
 }
 
 jail_get_fs() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs list -rt filesystem -s name -H -o ${NS}:type,${NS}:name,name ${ZPOOL}/poudriere | \
+	zfs list -rt filesystem -s name -H -o ${NS}:type,${NS}:name,name ${ZPOOL}${ZROOTFS} | \
 		awk -v n=$1 '$1 == "rootfs" && $2 == n { print $3 }' | head -n 1
 }
 
 port_exists() {
 	[ $# -ne 1 ] && eargs portstree_name
-	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,name ${ZPOOL}/poudriere | \
+	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,name ${ZPOOL}${ZROOTFS} | \
 		awk -v n=$1 'BEGIN { ret = 1 } $1 == "ports" && $2 == n { ret = 0; } END { exit ret }' && return 0
 	return 1
 }
 
 port_get_base() {
 	[ $# -ne 1 ] && eargs portstree_name
-	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,mountpoint ${ZPOOL}/poudriere | \
+	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,mountpoint ${ZPOOL}${ZROOTFS} | \
 		awk -v n=$1 '$1 == "ports" && $2 == n { print $3 }'
 }
 
 port_get_fs() {
 	[ $# -ne 1 ] && eargs portstree_name
-	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,name ${ZPOOL}/poudriere | \
+	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,name ${ZPOOL}${ZROOTFS} | \
 		awk -v n=$1 '$1 == "ports" && $2 == n { print $3 }'
 }
 
@@ -167,14 +167,14 @@ get_data_dir() {
 		echo ${POUDRIERE_DATA}
 		return
 	fi
-	data=$(zfs list -rt filesystem -H -o ${NS}:type,mountpoint ${ZPOOL}/poudriere | awk '$1 == "data" { print $2 }' | head -n 1)
+	data=$(zfs list -rt filesystem -H -o ${NS}:type,mountpoint ${ZPOOL}${ZROOTFS} | awk '$1 == "data" { print $2 }' | head -n 1)
 	if [ -n "${data}" ]; then
 		echo $data
 		return
 	fi
 	zfs create -p -o ${NS}:type=data \
 		-o mountpoint=${BASEFS}/data \
-		${ZPOOL}/poudriere/data
+		${ZPOOL}${ZROOTFS}/data
 	echo "${BASEFS}/data"
 }
 
@@ -1162,7 +1162,7 @@ prepare_jail() {
 	export USER=root
 	export HOME=/root
 	PORTSDIR=`port_get_base ${PTNAME}`/ports
-	POUDRIERED=${SCRIPTPREFIX}/../../etc/poudriere.d
+	POUDRIERED=${SCRIPTPREFIX}/../../etc${ZROOTFS}.d
 	[ -z "${JAILMNT}" ] && err 1 "No path of the base of the jail defined"
 	[ -z "${PORTSDIR}" ] && err 1 "No ports directory defined"
 	[ -z "${PKGDIR}" ] && err 1 "No package directory defined"
@@ -1199,8 +1199,8 @@ prepare_jail() {
 RESOLV_CONF=""
 STATUS=0 # out of jail #
 
-test -f ${SCRIPTPREFIX}/../../etc/poudriere.conf || err 1 "Unable to find ${SCRIPTPREFIX}/../../etc/poudriere.conf"
-. ${SCRIPTPREFIX}/../../etc/poudriere.conf
+test -f ${SCRIPTPREFIX}/../../etc${ZROOTFS}.conf || err 1 "Unable to find ${SCRIPTPREFIX}/../../etc${ZROOTFS}.conf"
+. ${SCRIPTPREFIX}/../../etc${ZROOTFS}.conf
 
 test -z ${ZPOOL} && err 1 "ZPOOL variable is not set"
 
@@ -1221,10 +1221,19 @@ POUDRIERE_DATA=`get_data_dir`
 : ${SVN_HOST="svn.FreeBSD.org"}
 : ${GIT_URL="git://git.freebsd.org/freebsd-ports.git"}
 : ${FREEBSD_HOST="ftp://${FTP_HOST:-ftp.FreeBSD.org}"}
+: ${ZROOTFS:="/poudriere}
 
 case ${PARALLEL_JOBS} in
 ''|*[!0-9]*)
 	PARALLEL_JOBS=$(sysctl -n hw.ncpu)
 	;;
 *) ;;
+esac
+
+case ${ZROOTFS} in
+	/*)
+		;;
+	*)
+		err 1 "ZROOTFS shoud start with a /"
+		;;
 esac

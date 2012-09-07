@@ -1,5 +1,5 @@
 # The pool where poudriere will create all the filesystems it needs
-# poudriere will use tank/poudriere as its root
+# poudriere will use tank/${ZROOTFS} as its root
 #
 # You need at least 7GB of free space in this pool to have a working
 # poudriere.
@@ -10,6 +10,9 @@ ZPOOL=tank
 # replace _CHANGE_THIS_ by your 2-letter country-code.
 # This is deprecated and remains for compatibility
 #FTPHOST=ftp._CHANGE_THIS_.freebsd.org
+
+# root of the poudriere zfs filesystem, by default /poudriere
+# ZROOTFS=/poudriere
 
 # the host where to download sets  for the jails setup
 # You can specify here a host or an IP

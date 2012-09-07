@@ -94,7 +94,7 @@ esac
 if [ ${LIST} -eq 1 ]; then
 	[ $QUIET -eq 0 ] && \
 		printf '%-20s %-10s\n' "PORTSTREE" "METHOD"
-	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,${NS}:method ${ZPOOL}/poudriere | \
+	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,${NS}:method ${ZPOOL}${ZROOTFS} | \
 		awk '$1 == "ports" {printf("%-20s %-10s\n",$2,$3) }'
 else
 	test -z "${PTNAME}" && usage
@@ -102,8 +102,8 @@ fi
 if [ ${CREATE} -eq 1 ]; then
 	# test if it already exists
 	port_exists ${PTNAME} && err 2 "The ports tree ${PTNAME} already exists"
-	: ${PTMNT="${BASEFS:=/usr/local/poudriere}/ports/${PTNAME}"}
-	: ${PTFS="${ZPOOL}/poudriere/ports/${PTNAME}"}
+	: ${PTMNT="${BASEFS:=/usr/local${ZROOTFS}}/ports/${PTNAME}"}
+	: ${PTFS="${ZPOOL}${ZROOTFS}/ports/${PTNAME}"}
 	port_create_zfs ${PTNAME} ${PTMNT} ${PTFS}
 	mkdir ${PTMNT}/ports
 	if [ $FAKE -eq 0 ]; then
