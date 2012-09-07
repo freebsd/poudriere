@@ -101,3 +101,8 @@ DISTFILES_CACHE=/usr/ports/distfiles
 
 # Disable linux support
 # NOLINUX=1
+
+
+# by default poudriere set PACKAGE_BUILDING
+# to disable it:
+# NO_PACKAGE_BUILD=1

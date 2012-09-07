@@ -1153,7 +1153,9 @@ prepare_ports() {
 }
 
 prepare_jail() {
-	export PACKAGE_BUILDING=yes
+	if [ -z "${NO_PACKAGE_BUILDING}" ]; then
+		export PACKAGE_BUILDING=yes
+	fi
 	export FORCE_PACKAGE=yes
 	export USER=root
 	export HOME=/root
@@ -1171,6 +1173,9 @@ prepare_jail() {
 
 	[ -f ${POUDRIERED}/make.conf ] && cat ${POUDRIERED}/make.conf >> ${JAILMNT}/etc/make.conf
 	[ -f ${POUDRIERED}/${JAILNAME}-make.conf ] && cat ${POUDRIERED}/${JAILNAME}-make.conf >> ${JAILMNT}/etc/make.conf
+	if [ -z "${NO_PACKAGE_BUILDING}" ]; then
+		echo "PACKAGE_BUILDING=yes" >> ${JAILMNT}/etc/make.conf
+	fi
 
 	msg "Populating LOCALBASE"
 	mkdir -p ${JAILMNT}/${MYBASE:-/usr/local}

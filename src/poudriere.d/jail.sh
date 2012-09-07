@@ -377,7 +377,6 @@ EOF
 	cat >> ${JAILMNT}/etc/make.conf << EOF
 USE_PACKAGE_DEPENDS=yes
 BATCH=yes
-PACKAGE_BUILDING=yes
 WRKDIRPREFIX=/wrkdirs
 EOF
 
