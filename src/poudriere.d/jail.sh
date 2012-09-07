@@ -24,7 +24,7 @@ Options:
                      \"ftp\", could also be \"svn\", \"svn+http\", \"svn+ssh\",
 		     \"csup\" please note that with svn and csup the world
 		     will be built. note that building from sources can use
-		     src.conf and jail-src.conf from localbase/etc${ZROOTFS}.d
+		     src.conf and jail-src.conf from localbase/etc/poudriere.d
     -t version    -- version to upgrade to"
 	exit 1
 }
