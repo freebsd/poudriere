@@ -109,6 +109,7 @@ if [ ${CREATE} -eq 1 ]; then
 	if [ $FAKE -eq 0 ]; then
 		case ${METHOD} in
 		csup)
+			echo "/!\ WARNING /!\ csup is deprecated and will soon be dropped"
 			mkdir ${PTMNT}/db
 			echo "*default prefix=${PTMNT}
 *default base=${PTMNT}/db
@@ -179,6 +180,7 @@ if [ ${UPDATE} -eq 1 ]; then
 	fi
 	case ${METHOD} in
 	csup)
+		echo "/!\ WARNING /!\ csup is deprecated and will soon be dropped"
 		[ -z ${CSUP_HOST} ] && err 2 "CSUP_HOST has to be defined in the configuration to use csup"
 		mkdir -p ${PTMNT}/db
 		echo "*default prefix=${PTMNT}
