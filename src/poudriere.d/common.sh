@@ -845,8 +845,7 @@ build_pkg() {
 			pkg_cache_data "${PKGDIR}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
 		else
 			echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/failed"
-			failed_status=$(zget status)
-			msg "[${MY_JOBID}] Finished build of ${port}: Failed: ${failed_status%:*}" >&5
+			msg "[${MY_JOBID}] Finished build of ${port}: Failed: ${failed_phase}" >&5
 		fi
 	fi
 	# Cleaning queue (pool is cleaned here)
