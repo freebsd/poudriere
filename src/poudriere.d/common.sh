@@ -419,7 +419,6 @@ build_port() {
 	local portdir=$1
 	local port=${portdir##/usr/ports/}
 	local targets="fetch checksum extract patch configure build install package"
-	local name=$(cache_get_pkgname ${port})
 
 	[ -n "${PORTTESTING}" ] && targets="${targets} deinstall"
 	for phase in ${targets}; do
