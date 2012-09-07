@@ -95,3 +95,6 @@ DISTFILES_CACHE=/usr/ports/distfiles
 
 # If set, failed builds will save the WRKDIR to ${POUDRIERE_DATA}/wrkdirs
 # SAVE_WRKDIR=1
+
+# Disable linux support
+# NOLINUX=1

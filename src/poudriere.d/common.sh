@@ -234,13 +234,15 @@ do_jail_mounts() {
 	mount -t devfs devfs ${JAILMNT}/dev
 	mount -t procfs proc ${JAILMNT}/proc
 
-	if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
-		if [ ${should_mkdir} -eq 1 ]; then
-			mkdir -p ${JAILMNT}/compat/linux/proc
-			mkdir -p ${JAILMNT}/compat/linux/sys
+	if [ -z "${NOLINUX}" ]; then
+		if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
+			if [ ${should_mkdir} -eq 1 ]; then
+				mkdir -p ${JAILMNT}/compat/linux/proc
+				mkdir -p ${JAILMNT}/compat/linux/sys
+			fi
+			mount -t linprocfs linprocfs ${JAILMNT}/compat/linux/proc
+			mount -t linsysfs linsysfs ${JAILMNT}/compat/linux/sys
 		fi
-		mount -t linprocfs linprocfs ${JAILMNT}/compat/linux/proc
-		mount -t linsysfs linsysfs ${JAILMNT}/compat/linux/sys
 	fi
 }
 
@@ -288,9 +290,11 @@ jail_start() {
 	[ $# -ne 0 ] && eargs
 	local arch=$(zget arch)
 	local NEEDFS="nullfs procfs"
-	if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
-		NEEDFS="${NEEDFS} linprocfs linsysfs"
-		sysctl -n compat.linux.osrelease >/dev/null 2>&1 || kldload linux
+	if [ -z "${NOLINUX}" ]; then
+		if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
+			NEEDFS="${NEEDFS} linprocfs linsysfs"
+			sysctl -n compat.linux.osrelease >/dev/null 2>&1 || kldload linux
+		fi
 	fi
 	[ -n "${USE_TMPFS}" ] && NEEDFS="${NEEDFS} tmpfs"
 	for fs in ${NEEDFS}; do
