@@ -815,6 +815,7 @@ build_pkg() {
 		if ! injail make -C ${portdir} pkg-depends fetch-depends extract-depends \
 			patch-depends build-depends lib-depends; then
 			build_failed=1
+			failed_phase="depends"
 		else
 			echo "==================================================================="
 			# Only build if the depends built fine
