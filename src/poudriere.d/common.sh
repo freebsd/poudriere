@@ -1139,6 +1139,15 @@ prepare_ports() {
 	msg "Calculating ports order and dependencies"
 	mkdir -p "${JAILMNT}/pool"
 	touch "${JAILMNT}/cache"
+
+	zset stats_queued "0"
+	zset stats_built "0"
+	zset stats_failed "0"
+	zset stats_ignored "0"
+	:> ${JAILMNT}/built
+	:> ${JAILMNT}/failed
+	:> ${JAILMNT}/ignored
+
 	zset status "computingdeps:"
 	if [ -z "${LISTPORTS}" ]; then
 		if [ -n "${LISTPKGS}" ]; then
@@ -1180,12 +1189,6 @@ prepare_ports() {
 	local nbq=0
 	nbq=$(find ${JAILMNT}/pool -type d -depth 1 | wc -l)
 	zset stats_queued "${nbq##* }"
-	zset stats_built "0"
-	zset stats_failed "0"
-	zset stats_ignored "0"
-	:> ${JAILMNT}/built
-	:> ${JAILMNT}/failed
-	:> ${JAILMNT}/ignored
 
 	# Minimize PARALLEL_JOBS to queue size
 	if [ ${PARALLEL_JOBS} -gt ${nbq} ]; then
