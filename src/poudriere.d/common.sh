@@ -9,7 +9,7 @@ err() {
 		err 1 "err expects 2 arguments: exit_number \"message\""
 	fi
 	local err_msg="Error: $2"
-	echo "${err_msg}" >&2
+	msg "${err_msg}" >&2
 	[ -n "${MY_JOBID}" ] && job_msg "${err_msg}"
 	exit $1
 }
