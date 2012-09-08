@@ -113,11 +113,14 @@ build_stats
 failed=$(cat ${JAILMNT}/poudriere/ports.failed | xargs echo)
 built=$(cat ${JAILMNT}/poudriere/ports.built | xargs echo)
 ignored=$(cat ${JAILMNT}/poudriere/ports.ignored | xargs echo)
+skipped=$(cat ${JAILMNT}/poudriere/ports.skipped | xargs echo)
 nbfailed=$(zget stats_failed)
 nbignored=$(zget stats_ignored)
+nbskipped=$(zget stats_skipped)
 nbbuilt=$(zget stats_built)
 [ "$nbfailed" = "-" ] && nbfailed=0
 [ "$nbignored" = "-" ] && nbignored=0
+[ "$nbskipped" = "-" ] && nbskipped=0
 [ "$nbbuilt" = "-" ] && nbbuilt=0
 # Package all newly build ports
 if [ $nbbuilt -eq 0 ]; then
@@ -254,7 +257,7 @@ else
 fi
 
 cleanup
-msg "$nbbuilt packages built, $nbfailed failures, $nbignored ignored"
+msg "$nbbuilt packages built, $nbfailed failures, $nbignored ignored, $nbskipped skipped"
 if [ $nbbuilt -gt 0 ]; then
 	msg_n "Built ports: "
 	echo ${built}
@@ -266,6 +269,10 @@ fi
 if [ $nbignored -gt 0 ]; then
 	msg_n "Ignored ports: "
 	echo ${ignored}
+fi
+if [ $nbskipped -gt 0 ]; then
+	msg_n "Skipped ports: "
+	echo ${skipped}
 fi
 
 set +e

@@ -639,6 +639,7 @@ cat > ${logdir}/index.html << EOF
       th, td { border: 1px solid black; }
       #success td { background-color: #00CC00; }
       #failed td { background-color: #E00000 ; }
+      #skipped td { background-color: #CC6633; }
       #ignored td { background-color: #FF9900; }
     </style>
     <script type="text/javascript">
@@ -665,6 +666,7 @@ cat >> ${logdir}/index.html << EOF
     <button onclick="toggle_display('success');">Show/Hide success</button>
     <button onclick="toggle_display('failed');">Show/Hide failure</button>
     <button onclick="toggle_display('ignored');">Show/Hide ignored</button>
+    <button onclick="toggle_display('skipped');">Show/Hide skipped</button>
     <hr />
     <div id="failed">
       <h2>Failed ports </h2>
@@ -713,6 +715,33 @@ EOF
 				cnt=$(( cnt + 1 ))
 				done < ${JAILMNT}/poudriere/ports.ignored
 				zset stats_ignored $cnt
+
+cat >> ${logdir}/index.html << EOF
+      </table>
+    </div>
+    <div id="skipped">
+      <h2>Skipped ports </h2>
+      <table>
+        <tr>
+          <th>Port</th>
+          <th>Origin</th>
+          <th>status</th>
+        </tr>
+EOF
+				cnt=0
+				while read port; do
+	pkgname=$(cache_get_pkgname ${port})
+cat >> ${logdir}/index.html << EOF
+        <tr>
+          <td>${pkgname}</td>
+          <td>${port}</td>
+          <td><a href="${pkgname}.log">logfile</a></td>
+        </tr>
+EOF
+				cnt=$(( cnt + 1 ))
+				done <  ${JAILMNT}/poudriere/ports.skipped
+				zset stats_skipped $cnt
+
 cat >> ${logdir}/index.html << EOF
       </table>
     </div>
@@ -1146,9 +1175,11 @@ prepare_ports() {
 	zset stats_built "0"
 	zset stats_failed "0"
 	zset stats_ignored "0"
+	zset stats_skipped "0"
 	:> ${JAILMNT}/poudriere/ports.built
 	:> ${JAILMNT}/poudriere/ports.failed
 	:> ${JAILMNT}/poudriere/ports.ignored
+	:> ${JAILMNT}/poudriere/ports.skipped
 
 	zset status "computingdeps:"
 	if [ -z "${LISTPORTS}" ]; then
