@@ -8,8 +8,8 @@ err() {
 	if [ $# -ne 2 ]; then
 		err 1 "err expects 2 arguments: exit_number \"message\""
 	fi
-	[ ${STATUS} -eq 1 ] && cleanup
 	echo "$2" >&2
+	[ ${STATUS} -eq 1 ] && cleanup
 	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
 	exit $1
 }
