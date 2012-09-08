@@ -1099,7 +1099,7 @@ cache_get_pkgname() {
 	local origin=$1
 	local pkgname existing_origin
 
-	pkgname=$(awk -v o=${origin} '$1 == o { print $2 }' ${MASTERMNT:-${JAILMNT}}/poudriere/cache)
+	pkgname=$(awk -v o=${origin} '$1 == o { print $2 }' ${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/origin-pkgname)
 
 	# Add to cache if not found.
 	if [ -z "${pkgname}" ]; then
@@ -1107,7 +1107,7 @@ cache_get_pkgname() {
 		# Make sure this origin did not already exist
 		existing_origin=$(cache_get_origin "${pkgname}")
 		[ -n "${existing_origin}" ] &&  err 1 "Duplicated origin for ${pkgname}: ${origin} AND ${existing_origin}"
-		echo "${origin} ${pkgname}" >> ${MASTERMNT:-${JAILMNT}}/poudriere/cache
+		echo "${origin} ${pkgname}" >> ${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/origin-pkgname
 	fi
 	echo ${pkgname}
 }
@@ -1116,7 +1116,7 @@ cache_get_origin() {
 	[ $# -ne 1 ] && eargs pkgname
 	local pkgname=$1
 
-	awk -v p=${pkgname} '$2 == p { print $1 }' ${MASTERMNT:-${JAILMNT}}/poudriere/cache
+	awk -v p=${pkgname} '$2 == p { print $1 }' ${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/origin-pkgname
 }
 
 # Take optional pkgname to speedup lookup
@@ -1139,8 +1139,8 @@ compute_deps() {
 
 prepare_ports() {
 	msg "Calculating ports order and dependencies"
-	mkdir -p "${JAILMNT}/poudriere/pool" "${JAILMNT}/poudriere/var/run"
-	touch "${JAILMNT}/poudriere/cache"
+	mkdir -p "${JAILMNT}/poudriere/pool" "${JAILMNT}/poudriere/var/run" "${JAILMNT}/poudriere/var/cache"
+	touch "${JAILMNT}/poudriere/var/cache/origin-pkgname"
 
 	zset stats_queued "0"
 	zset stats_built "0"
