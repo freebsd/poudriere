@@ -8,7 +8,9 @@ err() {
 	if [ $# -ne 2 ]; then
 		err 1 "err expects 2 arguments: exit_number \"message\""
 	fi
-	echo "$2" >&2
+	local err_msg="Error: $2"
+	echo "${err_msg}" >&2
+	[ -n "${MY_JOBID}" ] && job_msg "${err_msg}"
 	[ ${STATUS} -eq 1 ] && cleanup
 	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
 	exit $1
