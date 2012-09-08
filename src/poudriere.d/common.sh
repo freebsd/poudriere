@@ -1078,13 +1078,16 @@ next_in_queue() {
 cache_get_pkgname() {
 	[ $# -ne 1 ] && eargs origin
 	local origin=$1
-	local pkgname
+	local pkgname existing_origin
 
 	pkgname=$(awk -v o=${origin} '$1 == o { print $2 }' ${MASTERMNT:-${JAILMNT}}/cache)
 
 	# Add to cache if not found.
 	if [ -z "${pkgname}" ]; then
 		pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME)
+		# Make sure this origin did not already exist
+		existing_origin=$(cache_get_origin "${pkgname}")
+		[ -n "${existing_origin}" ] &&  err 1 "Duplicated origin for ${pkgname}: ${origin} AND ${existing_origin}"
 		echo "${origin} ${pkgname}" >> ${MASTERMNT:-${JAILMNT}}/cache
 	fi
 	echo ${pkgname}
