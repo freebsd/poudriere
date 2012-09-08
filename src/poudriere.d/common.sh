@@ -373,6 +373,7 @@ port_create_zfs() {
 }
 
 cleanup() {
+	[ -n "${CLEANED_UP}" ] && return 0
 	# If this is a builder, don't cleanup, the master will handle that.
 	if [ -n "${MY_JOBID}" ]; then
 		[ -n "${PKGNAME}" ] && clean_pool ${PKGNAME} 1 || :
