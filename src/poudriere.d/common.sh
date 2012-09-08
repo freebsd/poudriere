@@ -371,7 +371,11 @@ port_create_zfs() {
 
 cleanup() {
 	# If this is a builder, don't cleanup, the master will handle that.
-	[ -n "${MY_JOBID}" ] && return 0
+	if [ -n "${MY_JOBID}" ]; then
+		[ -n "${PKGNAME}" ] && clean_pool ${PKGNAME} 1 || :
+		return 0
+
+	fi
 	# Prevent recursive cleanup on error
 	if [ -n "${CLEANING_UP}" ]; then
 		echo "Failure cleaning up. Giving up." >&2
@@ -786,6 +790,14 @@ parallel_build() {
 	exec 5>&-
 }
 
+clean_pool() {
+	[ $# -ne 1 ] && eargs pkgname
+	local pkgname=$1
+
+	# Cleaning queue (pool is cleaned here)
+	lockf -k ${MASTERMNT:-${JAILMNT}}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${pkgname}"
+}
+
 build_pkg() {
 	# If this first check fails, the pool will not be cleaned up,
 	# since PKGNAME is not yet set.
@@ -861,8 +873,8 @@ build_pkg() {
 			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
 		fi
 	fi
-	# Cleaning queue (pool is cleaned here)
-	lockf -k ${MASTERMNT:-${JAILMNT}}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${PKGNAME}"
+
+	clean_pool ${PKGNAME}
 
 	zset status "done:${port}"
 	buildlog_stop ${portdir}
