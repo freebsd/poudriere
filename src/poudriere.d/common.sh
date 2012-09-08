@@ -11,8 +11,6 @@ err() {
 	local err_msg="Error: $2"
 	echo "${err_msg}" >&2
 	[ -n "${MY_JOBID}" ] && job_msg "${err_msg}"
-	[ ${STATUS} -eq 1 ] && cleanup
-	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
 	exit $1
 }
 
@@ -105,12 +103,19 @@ pzget() {
 }
 
 sig_handler() {
-	# Only run the handler once, don't re-run on EXIT
-	if [ -z "${CAUGHT_SIGNAL}" ]; then
-		export CAUGHT_SIGNAL=1
-		err 1 "Signal caught, cleaning up and exiting"
-	fi
-	exit
+	trap - SIGTERM SIGKILL
+	# Ignore SIGINT while cleaning up
+	trap '' SIGINT
+	err 1 "Signal caught, cleaning up and exiting"
+}
+
+exit_handler() {
+	# Avoid recursively cleaning up here
+	trap - EXIT SIGTERM SIGKILL
+	# Ignore SIGINT while cleaning up
+	trap '' SIGINT
+	[ ${STATUS} -eq 1 ] && cleanup
+	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
 }
 
 jail_exists() {
@@ -392,6 +397,7 @@ cleanup() {
 	zfs destroy -r ${JAILFS%/build/*}@prepkg 2>/dev/null || :
 	zfs destroy -r ${JAILFS%/build/*}@prebuild 2>/dev/null || :
 	jail_stop
+	export CLEANED_UP=1
 }
 
 injail() {
@@ -1231,7 +1237,8 @@ test -z ${ZPOOL} && err 1 "ZPOOL variable is not set"
 
 [ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
 
-trap sig_handler SIGINT SIGTERM SIGKILL EXIT
+trap sig_handler SIGINT SIGTERM SIGKILL
+trap exit_handler EXIT
 
 # Test if spool exists
 zpool list ${ZPOOL} >/dev/null 2>&1 || err 1 "No such zpool: ${ZPOOL}"
