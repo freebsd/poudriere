@@ -107,8 +107,7 @@ sig_handler() {
 	if [ -z "${CAUGHT_SIGNAL}" ]; then
 		export CAUGHT_SIGNAL=1
 		if [ ${STATUS} -eq 1 ]; then
-			msg "Signal caught, cleaning up and exiting"
-			cleanup
+			err 1 "Signal caught, cleaning up and exiting"
 		fi
 	fi
 	exit
