@@ -745,7 +745,7 @@ build_queue() {
 				[ $(stat -f '%z' ${JAILMNT}/pool) -eq 2 ] && return
 				break
 			fi
-			msg "[${j}] Starting build of ${port}" >&5
+			MY_JOBID="${j}" job_msg "Starting build of ${port}"
 			JAILFS=${fs} zset status "starting:${port}"
 			activity=1
 			zfs rollback -r ${fs}@prepkg
