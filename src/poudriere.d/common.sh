@@ -883,15 +883,10 @@ build_pkg() {
 
 list_deps() {
 	[ $# -ne 1 ] && eargs directory
-	local list="PKG_DEPENDS BUILD_DEPENDS EXTRACT_DEPENDS LIB_DEPENDS PATCH_DEPENDS FETCH_DEPENDS RUN_DEPENDS"
 	local dir=$1
-	local makeargs=""
-	for key in $list; do
-		makeargs="${makeargs} -V${key}"
-	done
+	local makeargs="-VPKG_DEPENDS -VBUILD_DEPENDS -VEXTRACT_DEPENDS -VLIB_DEPENDS -VPATCH_DEPENDS -VFETCH_DEPENDS -VRUN_DEPENDS"
 	[ -d "${PORTSDIR}/${dir}" ] && dir="/usr/ports/${dir}"
 
-	local pdeps pn
 	injail make -C ${dir} $makeargs | tr '\n' ' ' | \
 		sed -e "s,[[:graph:]]*/usr/ports/,,g" -e "s,:[[:graph:]]*,,g" | sort -u
 }
@@ -1104,19 +1099,21 @@ cache_get_origin() {
 	awk -v p=${pkgname} '$2 == p { print $1 }' ${MASTERMNT:-${JAILMNT}}/cache
 }
 
+# Take optional pkgname to speedup lookup
 compute_deps() {
-	[ $# -ne 1 ] && eargs port
+	[ $# -lt 1 ] && eargs port
+	[ $# -gt 2 ] && eargs port pkgnme
 	local port=$1
-	local name m
-	local pn=$(cache_get_pkgname ${port})
-	local pkg_pooldir="${JAILMNT}/pool/${pn}"
+	local pkgname="${2:-$(cache_get_pkgname ${port})}"
+	local dep_pkgname dep_port
+	local pkg_pooldir="${JAILMNT}/pool/${pkgname}"
 	[ -d "${pkg_pooldir}" ] && return
 
 	mkdir "${pkg_pooldir}"
-	for m in `list_deps ${port}`; do
-		compute_deps "${m}"
-		name=$(cache_get_pkgname ${m})
-		touch "${pkg_pooldir}/${name}"
+	for dep_port in `list_deps ${port}`; do
+		dep_pkgname=$(cache_get_pkgname ${dep_port})
+		compute_deps "${dep_port}" "${dep_pkgname}"
+		touch "${pkg_pooldir}/${dep_pkgname}"
 	done
 }
 
