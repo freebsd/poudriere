@@ -368,6 +368,8 @@ port_create_zfs() {
 }
 
 cleanup() {
+	# If this is a builder, don't cleanup, the master will handle that.
+	[ -n "${MY_JOBID}" ] && return 0
 	# Prevent recursive cleanup on error
 	if [ -n "${CLEANING_UP}" ]; then
 		echo "Failure cleaning up. Giving up." >&2
