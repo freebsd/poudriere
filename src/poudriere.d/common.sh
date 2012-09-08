@@ -16,6 +16,9 @@ err() {
 
 msg_n() { echo -n "====>> $1"; }
 msg() { echo "====>> $1"; }
+job_msg() {
+	msg "[${MY_JOBID}] $1" >&5
+}
 
 eargs() {
 	case $# in
@@ -539,7 +542,7 @@ save_wrkdir() {
 	# Tar up the WRKDIR, and ignore errors
 	rm -f ${tarname}
 	tar -s ",${mnted_portdir},," -cjf ${tarname} ${mnted_portdir}/work > /dev/null 2>&1
-	msg "[${MY_JOBID}] Saved ${port} wrkdir to: ${tarname}" >&5
+	job_msg "Saved ${port} wrkdir to: ${tarname}"
 }
 
 start_builders() {
@@ -809,7 +812,7 @@ build_pkg() {
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
 		echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/ignored"
-		msg "[${MY_JOBID}] Finished build of ${port}: Ignored: ${ignore}" >&5
+		job_msg "Finished build of ${port}: Ignored: ${ignore}"
 	else
 		zset status "depends:${port}"
 		printf "=======================<phase: %-9s>==========================\n" "depends"
@@ -840,12 +843,12 @@ build_pkg() {
 		if [ ${build_failed} -eq 0 ]; then
 			echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/built"
 
-			msg "[${MY_JOBID}] Finished build of ${port}: Success" >&5
+			job_msg "Finished build of ${port}: Success"
 			# Cache information for next run
 			pkg_cache_data "${PKGDIR}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
 		else
 			echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/failed"
-			msg "[${MY_JOBID}] Finished build of ${port}: Failed: ${failed_phase}" >&5
+			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
 		fi
 	fi
 	# Cleaning queue (pool is cleaned here)
