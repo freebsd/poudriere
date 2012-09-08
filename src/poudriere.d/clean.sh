@@ -17,5 +17,5 @@ if [ -z "${PKGNAME}" ]; then
 	exit 1
 fi
 
-rm -rf "${JAILMNT}/pool/${PKGNAME}"
-find ${JAILMNT}/pool -name "${PKGNAME}" -type f -delete
+rm -rf "${JAILMNT}/poudriere/pool/${PKGNAME}"
+find ${JAILMNT}/poudriere/pool -name "${PKGNAME}" -type f -delete

@@ -390,12 +390,14 @@ cleanup() {
 	[ -z "${JAILNAME%-job-*}" ] && err 2 "Fail: Missing JAILNAME"
 	log_stop
 
-	for pid in ${MASTERMNT:-${JAILMNT}}/*.pid; do
-		# Ensure there is a pidfile to read or break
-		[ "${pid}" = "${MASTERMNT:-${JAILMNT}}/*.pid" ] && break
-		pkill -15 -F ${pid} >/dev/null 2>&1 || :
-	done
-	wait
+	if [ -d ${MASTERMNT:-${JAILMNT}}/poudriere ]; then
+		for pid in ${MASTERMNT:-${JAILMNT}}/poudriere/*.pid; do
+			# Ensure there is a pidfile to read or break
+			[ "${pid}" = "${MASTERMNT:-${JAILMNT}}/poudriere/*.pid" ] && break
+			pkill -15 -F ${pid} >/dev/null 2>&1 || :
+		done
+		wait
+	fi
 
 	# Kill anything orphaned by the workers by killing the PGID
 	# This includes MY PID, so ignore SIGTERM briefly
@@ -601,7 +603,7 @@ stop_builders() {
 	local j mnt
 
 	# wait for the last running processes
-	cat ${JAILMNT}/*.pid 2>/dev/null | xargs pwait 2>/dev/null
+	cat ${JAILMNT}/poudriere/*.pid 2>/dev/null | xargs pwait 2>/dev/null
 
 	msg "Stopping ${PARALLEL_JOBS} builders"
 
@@ -684,7 +686,7 @@ cat >> ${logdir}/index.html << EOF
         </tr>
 EOF
 				cnt=$(( cnt + 1 ))
-				done <  ${JAILMNT}/failed
+				done <  ${JAILMNT}/poudriere/ports.failed
 				zset stats_failed $cnt
 cat >> ${logdir}/index.html << EOF
       </table>
@@ -709,7 +711,7 @@ cat >> ${logdir}/index.html << EOF
         </tr>
 EOF
 				cnt=$(( cnt + 1 ))
-				done < ${JAILMNT}/ignored
+				done < ${JAILMNT}/poudriere/ports.ignored
 				zset stats_ignored $cnt
 cat >> ${logdir}/index.html << EOF
       </table>
@@ -734,7 +736,7 @@ cat >> ${logdir}/index.html << EOF
         </tr>
 EOF
 				cnt=$(( cnt + 1 ))
-				done < ${JAILMNT}/built
+				done < ${JAILMNT}/poudriere/ports.built
 				zset stats_built $cnt
 cat >> ${logdir}/index.html << EOF
       </table>
@@ -754,24 +756,24 @@ build_queue() {
 			mnt="${JAILMNT}/build/${j}"
 			fs="${JAILFS}/build/${j}"
 			name="${JAILNAME}-job-${j}"
-			if [ -f  "${JAILMNT}/${j}.pid" ]; then
-				if pgrep -qF "${JAILMNT}/${j}.pid" >/dev/null 2>&1; then
+			if [ -f  "${JAILMNT}/poudriere/${j}.pid" ]; then
+				if pgrep -qF "${JAILMNT}/poudriere/${j}.pid" >/dev/null 2>&1; then
 					continue
 				fi
 				build_stats
-				rm -f "${JAILMNT}/${j}.pid"
+				rm -f "${JAILMNT}/poudriere/${j}.pid"
 			fi
 			pkgname=$(next_in_queue)
 			if [ -z "${pkgname}" ]; then
 				# pool empty ?
-				[ $(stat -f '%z' ${JAILMNT}/pool) -eq 2 ] && return
+				[ $(stat -f '%z' ${JAILMNT}/poudriere/pool) -eq 2 ] && return
 				break
 			fi
 			activity=1
 			MASTERMNT=${JAILMNT} JAILNAME="${name}" JAILMNT="${mnt}" JAILFS="${fs}" \
 				MY_JOBID="${j}" \
 				build_pkg "${pkgname}" >/dev/null 2>&1 &
-			echo "$!" > ${JAILMNT}/${j}.pid
+			echo "$!" > ${JAILMNT}/poudriere/${j}.pid
 		done
 		# Sleep briefly if still waiting on builds, to save CPU
 		[ $activity -eq 0 ] && sleep 0.1
@@ -848,7 +850,7 @@ build_pkg() {
 
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
-		echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/ignored"
+		echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/poudriere/ports.ignored"
 		job_msg "Finished build of ${port}: Ignored: ${ignore}"
 	else
 		zset status "depends:${port}"
@@ -878,13 +880,13 @@ build_pkg() {
 		fi
 
 		if [ ${build_failed} -eq 0 ]; then
-			echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/built"
+			echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/poudriere/ports.built"
 
 			job_msg "Finished build of ${port}: Success"
 			# Cache information for next run
 			pkg_cache_data "${PKGDIR}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
 		else
-			echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/failed"
+			echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/poudriere/ports.failed"
 			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
 		fi
 	fi
@@ -1084,8 +1086,8 @@ delete_old_pkgs() {
 
 next_in_queue() {
 	local p
-	[ ! -d ${JAILMNT}/pool ] && err 1 "Build pool is missing"
-	p=$(lockf -k -t 60 ${JAILMNT}/.lock find ${JAILMNT}/pool -type d -depth 1 -empty -print || : | head -n 1)
+	[ ! -d ${JAILMNT}/poudriere/pool ] && err 1 "Build pool is missing"
+	p=$(lockf -k -t 60 ${JAILMNT}/.lock find ${JAILMNT}/poudriere/pool -type d -depth 1 -empty -print || : | head -n 1)
 	[ -n "$p" ] || return 0
 	touch ${p}/.building
 	# pkgname
@@ -1097,7 +1099,7 @@ cache_get_pkgname() {
 	local origin=$1
 	local pkgname existing_origin
 
-	pkgname=$(awk -v o=${origin} '$1 == o { print $2 }' ${MASTERMNT:-${JAILMNT}}/cache)
+	pkgname=$(awk -v o=${origin} '$1 == o { print $2 }' ${MASTERMNT:-${JAILMNT}}/poudriere/cache)
 
 	# Add to cache if not found.
 	if [ -z "${pkgname}" ]; then
@@ -1105,7 +1107,7 @@ cache_get_pkgname() {
 		# Make sure this origin did not already exist
 		existing_origin=$(cache_get_origin "${pkgname}")
 		[ -n "${existing_origin}" ] &&  err 1 "Duplicated origin for ${pkgname}: ${origin} AND ${existing_origin}"
-		echo "${origin} ${pkgname}" >> ${MASTERMNT:-${JAILMNT}}/cache
+		echo "${origin} ${pkgname}" >> ${MASTERMNT:-${JAILMNT}}/poudriere/cache
 	fi
 	echo ${pkgname}
 }
@@ -1114,7 +1116,7 @@ cache_get_origin() {
 	[ $# -ne 1 ] && eargs pkgname
 	local pkgname=$1
 
-	awk -v p=${pkgname} '$2 == p { print $1 }' ${MASTERMNT:-${JAILMNT}}/cache
+	awk -v p=${pkgname} '$2 == p { print $1 }' ${MASTERMNT:-${JAILMNT}}/poudriere/cache
 }
 
 # Take optional pkgname to speedup lookup
@@ -1124,7 +1126,7 @@ compute_deps() {
 	local port=$1
 	local pkgname="${2:-$(cache_get_pkgname ${port})}"
 	local dep_pkgname dep_port
-	local pkg_pooldir="${JAILMNT}/pool/${pkgname}"
+	local pkg_pooldir="${JAILMNT}/poudriere/pool/${pkgname}"
 	[ -d "${pkg_pooldir}" ] && return
 
 	mkdir "${pkg_pooldir}"
@@ -1137,16 +1139,16 @@ compute_deps() {
 
 prepare_ports() {
 	msg "Calculating ports order and dependencies"
-	mkdir -p "${JAILMNT}/pool"
-	touch "${JAILMNT}/cache"
+	mkdir -p "${JAILMNT}/poudriere/pool"
+	touch "${JAILMNT}/poudriere/cache"
 
 	zset stats_queued "0"
 	zset stats_built "0"
 	zset stats_failed "0"
 	zset stats_ignored "0"
-	:> ${JAILMNT}/built
-	:> ${JAILMNT}/failed
-	:> ${JAILMNT}/ignored
+	:> ${JAILMNT}/poudriere/ports.built
+	:> ${JAILMNT}/poudriere/ports.failed
+	:> ${JAILMNT}/poudriere/ports.ignored
 
 	zset status "computingdeps:"
 	if [ -z "${LISTPORTS}" ]; then
@@ -1178,16 +1180,16 @@ prepare_ports() {
 	zset status "cleaning:"
 	msg "Cleaning the build queue"
 	export LOCALBASE=${MYBASE:-/usr/local}
-	find ${JAILMNT}/pool -type d -depth 1 | while read p; do
+	find ${JAILMNT}/poudriere/pool -type d -depth 1 | while read p; do
 		pn=${p##*/}
 		if [ -f "${PKGDIR}/All/${pn}.${PKG_EXT}" ]; then
 			rm -rf ${p}
-			find ${JAILMNT}/pool -name "${pn}" -type f -delete
+			find ${JAILMNT}/poudriere/pool -name "${pn}" -type f -delete
 		fi
 	done
 
 	local nbq=0
-	nbq=$(find ${JAILMNT}/pool -type d -depth 1 | wc -l)
+	nbq=$(find ${JAILMNT}/poudriere/pool -type d -depth 1 | wc -l)
 	zset stats_queued "${nbq##* }"
 
 	# Minimize PARALLEL_JOBS to queue size

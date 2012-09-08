@@ -110,9 +110,9 @@ parallel_build
 
 build_stats
 
-failed=$(cat ${JAILMNT}/failed | xargs echo)
-built=$(cat ${JAILMNT}/built | xargs echo)
-ignored=$(cat ${JAILMNT}/ignored | xargs echo)
+failed=$(cat ${JAILMNT}/poudriere/ports.failed | xargs echo)
+built=$(cat ${JAILMNT}/poudriere/ports.built | xargs echo)
+ignored=$(cat ${JAILMNT}/poudriere/ports.ignored | xargs echo)
 nbfailed=$(zget stats_failed)
 nbignored=$(zget stats_ignored)
 nbbuilt=$(zget stats_built)
