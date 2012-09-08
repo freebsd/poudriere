@@ -637,9 +637,9 @@ cat > ${logdir}/index.html << EOF
         margin-top: 5px;
       }
       th, td { border: 1px solid black; }
-      td.success { background-color: #00CC00; }
-      td.failed { background-color: #E00000 ; }
-      td.ignored { background-color: #FF9900; }
+      #success td { background-color: #00CC00; }
+      #failed td { background-color: #E00000 ; }
+      #ignored td { background-color: #FF9900; }
     </style>
     <script type="text/javascript">
       function toggle_display(id) {
