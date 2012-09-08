@@ -390,10 +390,10 @@ cleanup() {
 	[ -z "${JAILNAME%-job-*}" ] && err 2 "Fail: Missing JAILNAME"
 	log_stop
 
-	if [ -d ${MASTERMNT:-${JAILMNT}}/poudriere ]; then
-		for pid in ${MASTERMNT:-${JAILMNT}}/poudriere/*.pid; do
+	if [ -d ${MASTERMNT:-${JAILMNT}}/poudriere/var/run ]; then
+		for pid in ${MASTERMNT:-${JAILMNT}}/poudriere/var/run/*.pid; do
 			# Ensure there is a pidfile to read or break
-			[ "${pid}" = "${MASTERMNT:-${JAILMNT}}/poudriere/*.pid" ] && break
+			[ "${pid}" = "${MASTERMNT:-${JAILMNT}}/poudriere/var/run/*.pid" ] && break
 			pkill -15 -F ${pid} >/dev/null 2>&1 || :
 		done
 		wait
@@ -603,7 +603,7 @@ stop_builders() {
 	local j mnt
 
 	# wait for the last running processes
-	cat ${JAILMNT}/poudriere/*.pid 2>/dev/null | xargs pwait 2>/dev/null
+	cat ${JAILMNT}/poudriere/var/run/*.pid 2>/dev/null | xargs pwait 2>/dev/null
 
 	msg "Stopping ${PARALLEL_JOBS} builders"
 
@@ -756,12 +756,12 @@ build_queue() {
 			mnt="${JAILMNT}/build/${j}"
 			fs="${JAILFS}/build/${j}"
 			name="${JAILNAME}-job-${j}"
-			if [ -f  "${JAILMNT}/poudriere/${j}.pid" ]; then
-				if pgrep -qF "${JAILMNT}/poudriere/${j}.pid" >/dev/null 2>&1; then
+			if [ -f  "${JAILMNT}/poudriere/var/run/${j}.pid" ]; then
+				if pgrep -qF "${JAILMNT}/poudriere/var/run/${j}.pid" >/dev/null 2>&1; then
 					continue
 				fi
 				build_stats
-				rm -f "${JAILMNT}/poudriere/${j}.pid"
+				rm -f "${JAILMNT}/poudriere/var/run/${j}.pid"
 			fi
 			pkgname=$(next_in_queue)
 			if [ -z "${pkgname}" ]; then
@@ -773,7 +773,7 @@ build_queue() {
 			MASTERMNT=${JAILMNT} JAILNAME="${name}" JAILMNT="${mnt}" JAILFS="${fs}" \
 				MY_JOBID="${j}" \
 				build_pkg "${pkgname}" >/dev/null 2>&1 &
-			echo "$!" > ${JAILMNT}/poudriere/${j}.pid
+			echo "$!" > ${JAILMNT}/poudriere/var/run/${j}.pid
 		done
 		# Sleep briefly if still waiting on builds, to save CPU
 		[ $activity -eq 0 ] && sleep 0.1
@@ -1139,7 +1139,7 @@ compute_deps() {
 
 prepare_ports() {
 	msg "Calculating ports order and dependencies"
-	mkdir -p "${JAILMNT}/poudriere/pool"
+	mkdir -p "${JAILMNT}/poudriere/pool" "${JAILMNT}/poudriere/var/run"
 	touch "${JAILMNT}/poudriere/cache"
 
 	zset stats_queued "0"
