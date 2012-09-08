@@ -793,6 +793,7 @@ build_pkg() {
 	local name cnt
 	local failed_status failed_phase
 	local clean_rdepends=0
+	local ignore
 
 	PKGNAME="${pkgname}" # set ASAP so cleanup() can use it
 	port=$(cache_get_origin ${pkgname})
@@ -806,7 +807,7 @@ build_pkg() {
 	# This is checked here instead of when building the queue
 	# as the list may start big but become very small, so here
 	# is a less-common check
-	local ignore="$(injail make -C ${portdir} -VIGNORE)"
+	ignore="$(injail make -C ${portdir} -VIGNORE)"
 
 	msg "Cleaning up wrkdir"
 	rm -rf ${JAILMNT}/wrkdirs/*
