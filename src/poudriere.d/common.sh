@@ -387,12 +387,21 @@ cleanup() {
 	export CLEANING_UP=1
 	[ -z "${JAILNAME%-job-*}" ] && err 2 "Fail: Missing JAILNAME"
 	log_stop
+
 	for pid in ${MASTERMNT:-${JAILMNT}}/*.pid; do
 		# Ensure there is a pidfile to read or break
 		[ "${pid}" = "${MASTERMNT:-${JAILMNT}}/*.pid" ] && break
 		pkill -15 -F ${pid} >/dev/null 2>&1 || :
 	done
 	wait
+
+	# Kill anything orphaned by the workers by killing the PGID
+	# This includes MY PID, so ignore SIGTERM briefly
+	trap '' SIGTERM
+	kill 0
+	trap sig_handler SIGTERM
+	wait
+
 	zfs destroy -r ${JAILFS%/build/*}/build 2>/dev/null || :
 	zfs destroy -r ${JAILFS%/build/*}@prepkg 2>/dev/null || :
 	zfs destroy -r ${JAILFS%/build/*}@prebuild 2>/dev/null || :
