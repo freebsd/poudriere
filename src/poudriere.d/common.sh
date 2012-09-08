@@ -724,7 +724,7 @@ EOF
 
 build_queue() {
 
-	local activity j cnt mnt fs name port
+	local activity j cnt mnt fs name pkgname
 
 	while :; do
 		activity=0
@@ -739,19 +739,16 @@ build_queue() {
 				build_stats
 				rm -f "${JAILMNT}/${j}.pid"
 			fi
-			port=$(next_in_queue)
-			if [ -z "${port}" ]; then
+			pkgname=$(next_in_queue)
+			if [ -z "${pkgname}" ]; then
 				# pool empty ?
 				[ $(stat -f '%z' ${JAILMNT}/pool) -eq 2 ] && return
 				break
 			fi
-			MY_JOBID="${j}" job_msg "Starting build of ${port}"
-			JAILFS=${fs} zset status "starting:${port}"
 			activity=1
-			zfs rollback -r ${fs}@prepkg
 			MASTERMNT=${JAILMNT} JAILNAME="${name}" JAILMNT="${mnt}" JAILFS="${fs}" \
 				MY_JOBID="${j}" \
-				build_pkg ${port} >/dev/null 2>&1 &
+				build_pkg "${pkgname}" >/dev/null 2>&1 &
 			echo "$!" > ${JAILMNT}/${j}.pid
 		done
 		# Sleep briefly if still waiting on builds, to save CPU
@@ -786,14 +783,24 @@ parallel_build() {
 	exec 5>&-
 }
 
-
 build_pkg() {
-	[ $# -ne 1 ] && eargs port
-	local port=$1
-	local portdir="/usr/ports/${port}"
+	# If this first check fails, the pool will not be cleaned up,
+	# since PKGNAME is not yet set.
+	[ $# -ne 1 ] && eargs pkgname
+	local pkgname="$1"
+	local port portdir
 	local build_failed=0
 	local name cnt
 	local failed_status failed_phase
+	local clean_rdepends=0
+
+	PKGNAME="${pkgname}" # set ASAP so cleanup() can use it
+	port=$(cache_get_origin ${pkgname})
+	portdir="/usr/ports/${port}"
+
+	job_msg "Starting build of ${port}"
+	zset status "starting:${port}"
+	zfs rollback -r ${JAILFS}@prepkg || err 1 "Unable to rollback ${JAILFS}"
 
 	# If this port is IGNORED, skip it
 	# This is checked here instead of when building the queue
@@ -805,7 +812,6 @@ build_pkg() {
 	rm -rf ${JAILMNT}/wrkdirs/*
 
 	msg "Building ${port}"
-	PKGNAME=$(cache_get_pkgname ${port})
 	log_start $(log_path)/${PKGNAME}.log
 	buildlog_start ${portdir}
 
@@ -1056,7 +1062,8 @@ next_in_queue() {
 	p=$(lockf -k -t 60 ${JAILMNT}/.lock find ${JAILMNT}/pool -type d -depth 1 -empty -print || : | head -n 1)
 	[ -n "$p" ] || return 0
 	touch ${p}/.building
-	cache_get_origin ${p##*/}
+	# pkgname
+	echo ${p##*/}
 }
 
 cache_get_pkgname() {
