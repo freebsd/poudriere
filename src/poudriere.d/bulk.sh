@@ -112,6 +112,8 @@ zfs snapshot ${JAILFS}@prepkg
 
 parallel_build
 
+zset status "done:"
+
 build_stats
 
 failed=$(cat ${JAILMNT}/poudriere/ports.failed | xargs echo)

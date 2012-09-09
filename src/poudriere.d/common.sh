@@ -124,6 +124,39 @@ exit_handler() {
 	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
 }
 
+siginfo_handler() {
+	local status=$(zget status)
+	local nbb=$(zget stats_built|sed -e 's/ //g')
+	local nbf=$(zget stats_failed|sed -e 's/ //g')
+	local nbi=$(zget stats_ignored|sed -e 's/ //g')
+	local nbs=$(zget stats_skipped|sed -e 's/ //g')
+	local nbq=$(zget stats_queued|sed -e 's/ //g')
+	local ndone=$((nbb + nbf + nbi + nbs))
+	local queue_width=2
+	local j status
+
+	if [ ${nbq} -gt 9999 ]; then
+		queue_width=5
+	elif [ ${nbq} -gt 999 ]; then
+		queue_width=4
+	elif [ ${nbq} -gt 99 ]; then
+		queue_width=3
+	fi
+
+	printf "[${status}] [%0${queue_width}d/%0${queue_width}d] Built: %-${queue_width}d Failed: %-${queue_width}d  Ignored: %-${queue_width}d  Skipped: %-${queue_width}d  \n" \
+	  ${ndone} ${nbq} ${nbb} ${nbf} ${nbi} ${nbs}
+
+	if [ -n "${JOBS}" ]; then
+		for j in ${JOBS}; do
+			status=$(JAILFS=${JAILFS}/build/${j} zget status)
+			# Hide idle workers
+			if ! [ "${status}" = "idle:" ]; then
+				echo -e "\t[${j}]: ${status}"
+			fi
+		done
+	fi
+}
+
 jail_exists() {
 	[ $# -ne 1 ] && eargs jailname
 	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name ${ZPOOL}${ZROOTFS} | \
@@ -554,7 +587,7 @@ build_port() {
 	done
 	jail -r ${JAILNAME}
 	jrun 0
-	zset status "next:"
+	zset status "idle:"
 	zfs destroy -r ${JAILFS}@prebuild || :
 	return 0
 }
@@ -586,6 +619,7 @@ start_builders() {
 		mnt="${JAILMNT}/build/${j}"
 		fs="${JAILFS}/build/${j}"
 		name="${JAILNAME}-job-${j}"
+		zset status "starting_jobs:${j}"
 		mkdir -p "${mnt}"
 		zfs clone -o mountpoint=${mnt} \
 			-o ${NS}:name=${name} \
@@ -805,6 +839,7 @@ parallel_build() {
 	msg "Starting using ${PARALLEL_JOBS} builders"
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
 
+	zset status "starting_jobs:"
 	start_builders
 
 	# Duplicate stdout to socket 5 so the child process can send
@@ -812,9 +847,12 @@ parallel_build() {
 	# stdout to /dev/null
 	exec 5<&1
 
+	zset status "parallel_build:"
 	build_queue
 
+	zset status "stopping_jobs:"
 	stop_builders
+	zset status "idle:"
 
 	# Close the builder socket
 	exec 5>&-
@@ -1278,6 +1316,7 @@ test -z ${ZPOOL} && err 1 "ZPOOL variable is not set"
 
 trap sig_handler SIGINT SIGTERM SIGKILL
 trap exit_handler EXIT
+trap siginfo_handler SIGINFO
 
 # Test if spool exists
 zpool list ${ZPOOL} >/dev/null 2>&1 || err 1 "No such zpool: ${ZPOOL}"

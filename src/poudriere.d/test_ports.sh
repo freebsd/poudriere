@@ -98,10 +98,14 @@ zfs snapshot ${JAILFS}@prepkg
 
 POUDRIERE_BUILD_TYPE=bulk parallel_build
 
+zset status "depends:"
+
 zfs destroy -r ${JAILFS}@prepkg
 
 injail make -C ${PORTDIRECTORY} pkg-depends extract-depends \
 	fetch-depends patch-depends build-depends lib-depends
+
+zset status "testing:"
 
 PKGNAME=`injail make -C ${PORTDIRECTORY} -VPKGNAME`
 LOCALBASE=`injail make -C ${PORTDIRECTORY} -VLOCALBASE`
