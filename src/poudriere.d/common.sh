@@ -779,11 +779,12 @@ parallel_build() {
 }
 
 clean_pool() {
-	[ $# -ne 1 ] && eargs pkgname
+	[ $# -ne 2 ] && eargs pkgname clean_rdepends
 	local pkgname=$1
+	local clean_rdepends=$2
 
 	# Cleaning queue (pool is cleaned here)
-	lockf -k ${MASTERMNT:-${JAILMNT}}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${pkgname}"
+	lockf -k ${MASTERMNT:-${JAILMNT}}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${pkgname}" ${clean_rdepends}
 }
 
 build_pkg() {
@@ -823,6 +824,7 @@ build_pkg() {
 		msg "Ignoring ${port}: ${ignore}"
 		echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/poudriere/ports.ignored"
 		job_msg "Finished build of ${port}: Ignored: ${ignore}"
+		clean_rdepends=1
 	else
 		zset status "depends:${port}"
 		printf "=======================<phase: %-9s>==========================\n" "depends"
@@ -859,10 +861,11 @@ build_pkg() {
 		else
 			echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/poudriere/ports.failed"
 			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
+			clean_rdepends=1
 		fi
 	fi
 
-	clean_pool ${PKGNAME}
+	clean_pool ${PKGNAME} ${clean_rdepends}
 
 	zset status "done:${port}"
 	buildlog_stop ${portdir}

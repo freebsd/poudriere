@@ -1,4 +1,3 @@
 <h1> TODO list </h1>
 
-  *  impact support (do not build a package if one of its dependency failed)
   *  rewrite in C (a branch c_version is opened for that)
