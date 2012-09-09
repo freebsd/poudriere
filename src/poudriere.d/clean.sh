@@ -31,6 +31,9 @@ clean_pool() {
 			dep_pkgname=${dep_dir##*/}
 			clean_pool ${dep_pkgname} ${clean_rdepends}
 		done
+
+		# clean_pool() in common.sh will pick this up and add to SKIPPED
+		echo "${pkgname}"
 	fi
 
 	rm -rf "${JAILMNT}/poudriere/pool/${pkgname}"

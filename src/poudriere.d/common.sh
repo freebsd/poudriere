@@ -782,9 +782,12 @@ clean_pool() {
 	[ $# -ne 2 ] && eargs pkgname clean_rdepends
 	local pkgname=$1
 	local clean_rdepends=$2
+	local port
 
 	# Cleaning queue (pool is cleaned here)
-	lockf -k ${MASTERMNT:-${JAILMNT}}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${pkgname}" ${clean_rdepends}
+	lockf -k ${MASTERMNT:-${JAILMNT}}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${pkgname}" ${clean_rdepends} | while read skipped_pkgname; do
+		cache_get_origin "${skipped_pkgname}" >> ${MASTERMNT:-${JAILMNT}}/poudriere/ports.skipped
+	done
 }
 
 build_pkg() {
