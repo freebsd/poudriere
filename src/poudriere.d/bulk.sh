@@ -9,6 +9,7 @@ Parameters:
 
 Options:
     -c          -- Clean the previous built binary packages
+    -D          -- Debug mode, dislay more information
     -t          -- Add some testings to package building
     -s          -- Skip sanity
     -J n        -- Run n jobs in parallel
@@ -26,8 +27,11 @@ SKIPSANITY=0
 CLEAN=0
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "f:j:J:cn:p:tsw" FLAG; do
+while getopts "Df:j:J:cn:p:tsw" FLAG; do
 	case "${FLAG}" in
+		D)
+			DEBUG_MODE=1
+			;;
 		t)
 			export PORTTESTING=1
 			;;

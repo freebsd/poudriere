@@ -10,6 +10,7 @@ Parameters:
 
 Options:
     -c          -- Run make config for the given port
+    -D          -- Debug mode, dislay more information
     -J n        -- Run n jobs in parallel for dependencies
     -j name     -- Run only inside the given jail
     -n          -- No custom prefix
@@ -25,13 +26,16 @@ NOPREFIX=0
 SKIPSANITY=0
 PTNAME="default"
 
-while getopts "d:o:cnj:J:p:s" FLAG; do
+while getopts "Dd:o:cnj:J:p:s" FLAG; do
 	case "${FLAG}" in
 		c)
 			CONFIGSTR=1
 			;;
 		d)
 			HOST_PORTDIRECTORY=`realpath ${OPTARG}`
+			;;
+		D)
+			DEBUG_MODE=1
 			;;
 		o)
 			ORIGIN=${OPTARG}

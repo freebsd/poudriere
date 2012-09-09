@@ -20,6 +20,12 @@ job_msg() {
 	msg "[${MY_JOBID}] $1" >&5
 }
 
+debug() {
+	[ -z "${DEBUG_MODE}" ] && return 0;
+
+	msg "DEBUG: $1" >&2
+}
+
 eargs() {
 	case $# in
 	0) err 1 "No arguments expected" ;;
@@ -1148,6 +1154,7 @@ compute_deps() {
 
 	mkdir "${pkg_pooldir}"
 	for dep_port in `list_deps ${port}`; do
+		debug "${port} depends on ${dep_port}"
 		dep_pkgname=$(cache_get_pkgname ${dep_port})
 		compute_deps "${dep_port}" "${dep_pkgname}"
 		touch "${pkg_pooldir}/${dep_pkgname}"
