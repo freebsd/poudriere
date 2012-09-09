@@ -149,13 +149,16 @@ siginfo_handler() {
 	printf "[${status}] [%0${queue_width}d/%0${queue_width}d] Built: %-${queue_width}d Failed: %-${queue_width}d  Ignored: %-${queue_width}d  Skipped: %-${queue_width}d  \n" \
 	  ${ndone} ${nbq} ${nbb} ${nbf} ${nbi} ${nbs}
 
-	if [ -n "${JOBS}" ]; then
+	# Skip if stopping or starting jobs
+	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" -a "${status}" != "stopping_jobs:" ]; then
 		for j in ${JOBS}; do
-			status=$(JAILFS=${JAILFS}/build/${j} zget status)
+			# Ignore error here as the zfs dataset may not be cloned yet.
+			status=$(JAILFS=${JAILFS}/build/${j} zget status 2>/dev/null || :)
+			# Skip builders not started yet
+			[ -z "${status}" ] && continue
 			# Hide idle workers
-			if ! [ "${status}" = "idle:" ]; then
-				echo -e "\t[${j}]: ${status}"
-			fi
+			[ "${status}" = "idle:" ] && continue
+			echo -e "\t[${j}]: ${status}"
 		done
 	fi
 }
