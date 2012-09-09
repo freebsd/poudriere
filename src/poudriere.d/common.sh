@@ -624,7 +624,20 @@ build_stats_list() {
 	local logdir="$1"
 	local type=$2
 	local display_name="$3"
-	local port cnt pkgname
+	local port cnt pkgname extra
+	local status_head="" status_col=""
+	local reason_head="" reason_col=""
+
+	if [ ! "${type}" = "skipped" ]; then
+		status_head="<th>status</th>"
+	fi
+
+	# ignored has a reason
+	if [ "${type}" = "ignored" -o "${type}" = "skipped" ]; then
+		reason_head="<th>reason</th>"
+	elif [ "${type}" = "failed" ]; then
+		reason_head="<th>phase</th>"
+	fi
 
 cat >> ${logdir}/index.html << EOF
     <div id="${type}">
@@ -633,17 +646,32 @@ cat >> ${logdir}/index.html << EOF
         <tr>
           <th>Port</th>
           <th>Origin</th>
-          <th>status</th>
+	  ${status_head}
+	  ${reason_head}
         </tr>
 EOF
 	cnt=0
-	while read port; do
+	while read port extra; do
 		pkgname=$(cache_get_pkgname ${port})
+
+		if [ -n "${status_head}" ]; then
+			status_col="<td><a href=\"${pkgname}.log\">logfile</a></td>"
+		fi
+
+		if [ "${type}" = "ignored" ]; then
+			reason_col="<td>${extra}</td>"
+		elif [ "${type}" = "skipped" ]; then
+			reason_col="<td>depends failed: <a href="#tr_pkg_${extra}">${extra}</a></td>"
+		elif [ "${type}" = "failed" ]; then
+			reason_col="<td>${extra}</td>"
+		fi
+
 		cat >> ${logdir}/index.html << EOF
         <tr>
-          <td>${pkgname}</td>
+          <td id="tr_pkg_${pkgname}">${pkgname}</td>
           <td>${port}</td>
-          <td><a href="${pkgname}.log">logfile</a></td>
+	  ${status_col}
+	  ${reason_col}
         </tr>
 EOF
 		cnt=$(( cnt + 1 ))
@@ -782,11 +810,12 @@ clean_pool() {
 	[ $# -ne 2 ] && eargs pkgname clean_rdepends
 	local pkgname=$1
 	local clean_rdepends=$2
-	local port
+	local port skipped_origin
 
 	# Cleaning queue (pool is cleaned here)
 	lockf -k ${MASTERMNT:-${JAILMNT}}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${pkgname}" ${clean_rdepends} | while read skipped_pkgname; do
-		cache_get_origin "${skipped_pkgname}" >> ${MASTERMNT:-${JAILMNT}}/poudriere/ports.skipped
+		skipped_origin=$(cache_get_origin "${skipped_pkgname}")
+		echo "${skipped_origin} ${pkgname}" >> ${MASTERMNT:-${JAILMNT}}/poudriere/ports.skipped
 	done
 }
 
@@ -825,7 +854,7 @@ build_pkg() {
 
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
-		echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/poudriere/ports.ignored"
+		echo "${port} ${ignore}" >> "${MASTERMNT:-${JAILMNT}}/poudriere/ports.ignored"
 		job_msg "Finished build of ${port}: Ignored: ${ignore}"
 		clean_rdepends=1
 	else
@@ -862,7 +891,7 @@ build_pkg() {
 			# Cache information for next run
 			pkg_cache_data "${PKGDIR}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
 		else
-			echo "${port}" >> "${MASTERMNT:-${JAILMNT}}/poudriere/ports.failed"
+			echo "${port} ${failed_phase}" >> "${MASTERMNT:-${JAILMNT}}/poudriere/ports.failed"
 			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
 			clean_rdepends=1
 		fi
