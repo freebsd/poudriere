@@ -619,6 +619,42 @@ stop_builders() {
 	JOBS=""
 }
 
+build_stats_list() {
+	[ $# -ne 3 ] && eargs logdir type display_name
+	local logdir="$1"
+	local type=$2
+	local display_name="$3"
+	local port cnt pkgname
+
+cat >> ${logdir}/index.html << EOF
+    <div id="${type}">
+      <h2>${display_name} ports </h2>
+      <table>
+        <tr>
+          <th>Port</th>
+          <th>Origin</th>
+          <th>status</th>
+        </tr>
+EOF
+	cnt=0
+	while read port; do
+		pkgname=$(cache_get_pkgname ${port})
+		cat >> ${logdir}/index.html << EOF
+        <tr>
+          <td>${pkgname}</td>
+          <td>${port}</td>
+          <td><a href="${pkgname}.log">logfile</a></td>
+        </tr>
+EOF
+		cnt=$(( cnt + 1 ))
+	done <  ${JAILMNT}/poudriere/ports.${type}
+	zset stats_failed $cnt
+
+cat >> ${logdir}/index.html << EOF
+      </table>
+    </div>
+EOF
+}
 
 build_stats() {
 	local port logdir pkgname
@@ -637,7 +673,7 @@ cat > ${logdir}/index.html << EOF
         margin-top: 5px;
       }
       th, td { border: 1px solid black; }
-      #success td { background-color: #00CC00; }
+      #built td { background-color: #00CC00; }
       #failed td { background-color: #E00000 ; }
       #skipped td { background-color: #CC6633; }
       #ignored td { background-color: #FF9900; }
@@ -663,113 +699,19 @@ cat >> ${logdir}/index.html << EOF
       <li>Nb ports queued: ${cnt}</li>
     </ul>
     <hr />
-    <button onclick="toggle_display('success');">Show/Hide success</button>
+    <button onclick="toggle_display('built');">Show/Hide success</button>
     <button onclick="toggle_display('failed');">Show/Hide failure</button>
     <button onclick="toggle_display('ignored');">Show/Hide ignored</button>
     <button onclick="toggle_display('skipped');">Show/Hide skipped</button>
     <hr />
-    <div id="failed">
-      <h2>Failed ports </h2>
-      <table>
-        <tr>
-          <th>Port</th>
-          <th>Origin</th>
-          <th>status</th>
-        </tr>
 EOF
-				cnt=0
-				while read port; do
-	pkgname=$(cache_get_pkgname ${port})
-cat >> ${logdir}/index.html << EOF
-        <tr>
-          <td>${pkgname}</td>
-          <td>${port}</td>
-          <td><a href="${pkgname}.log">logfile</a></td>
-        </tr>
-EOF
-				cnt=$(( cnt + 1 ))
-				done <  ${JAILMNT}/poudriere/ports.failed
-				zset stats_failed $cnt
-cat >> ${logdir}/index.html << EOF
-      </table>
-    </div>
-    <div id="ignored">
-      <h2>Ignored ports </h2>
-      <table>
-        <tr>
-          <th>Port</th>
-          <th>Origin</th>
-          <th>status</th>
-        </tr>
-EOF
-				cnt=0
-				while read port; do
-	pkgname=$(cache_get_pkgname ${port})
-cat >> ${logdir}/index.html << EOF
-        <tr>
-          <td>${pkgname}</td>
-          <td>${port}</td>
-          <td><a href="${pkgname}.log">logfile</a></td>
-        </tr>
-EOF
-				cnt=$(( cnt + 1 ))
-				done < ${JAILMNT}/poudriere/ports.ignored
-				zset stats_ignored $cnt
+
+    build_stats_list "${logdir}" "failed" "Failed"
+    build_stats_list "${logdir}" "ignored" "Ignored"
+    build_stats_list "${logdir}" "skipped" "Skipped"
+    build_stats_list "${logdir}" "built" "Successful"
 
 cat >> ${logdir}/index.html << EOF
-      </table>
-    </div>
-    <div id="skipped">
-      <h2>Skipped ports </h2>
-      <table>
-        <tr>
-          <th>Port</th>
-          <th>Origin</th>
-          <th>status</th>
-        </tr>
-EOF
-				cnt=0
-				while read port; do
-	pkgname=$(cache_get_pkgname ${port})
-cat >> ${logdir}/index.html << EOF
-        <tr>
-          <td>${pkgname}</td>
-          <td>${port}</td>
-          <td><a href="${pkgname}.log">logfile</a></td>
-        </tr>
-EOF
-				cnt=$(( cnt + 1 ))
-				done <  ${JAILMNT}/poudriere/ports.skipped
-				zset stats_skipped $cnt
-
-cat >> ${logdir}/index.html << EOF
-      </table>
-    </div>
-    <div id="success">
-      <h2>Successful ports </h2>
-      <table>
-        <tr>
-          <th>Port</th>
-          <th>Origin</th>
-          <th>status</th>
-        </tr>
-EOF
-				cnt=0
-				while read port; do
-	pkgname=$(cache_get_pkgname ${port})
-cat >> ${logdir}/index.html << EOF
-        <tr>
-          <td>${pkgname}</td>
-          <td>${port}</td>
-          <td><a href="${pkgname}.log">logfile</a></td>
-        </tr>
-EOF
-				cnt=$(( cnt + 1 ))
-				done < ${JAILMNT}/poudriere/ports.built
-				zset stats_built $cnt
-cat >> ${logdir}/index.html << EOF
-      </table>
-    </div>
   </body>
 </html>
 EOF
