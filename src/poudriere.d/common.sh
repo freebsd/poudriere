@@ -1114,14 +1114,11 @@ prepare_ports() {
 	touch "${JAILMNT}/poudriere/var/cache/origin-pkgname"
 
 	zset stats_queued "0"
-	zset stats_built "0"
-	zset stats_failed "0"
-	zset stats_ignored "0"
-	zset stats_skipped "0"
 	:> ${JAILMNT}/poudriere/ports.built
 	:> ${JAILMNT}/poudriere/ports.failed
 	:> ${JAILMNT}/poudriere/ports.ignored
 	:> ${JAILMNT}/poudriere/ports.skipped
+	build_stats
 
 	zset status "computingdeps:"
 	if [ -z "${LISTPORTS}" ]; then
