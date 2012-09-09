@@ -648,7 +648,7 @@ EOF
 EOF
 		cnt=$(( cnt + 1 ))
 	done <  ${JAILMNT}/poudriere/ports.${type}
-	zset stats_failed $cnt
+	zset stats_${type} $cnt
 
 cat >> ${logdir}/index.html << EOF
       </table>
