@@ -620,8 +620,8 @@ stop_builders() {
 }
 
 build_stats_list() {
-	[ $# -ne 3 ] && eargs logdir type display_name
-	local logdir="$1"
+	[ $# -ne 3 ] && eargs html_path type display_name
+	local html_path="$1"
 	local type=$2
 	local display_name="$3"
 	local port cnt pkgname extra
@@ -639,7 +639,7 @@ build_stats_list() {
 		reason_head="<th>phase</th>"
 	fi
 
-cat >> ${logdir}/index.html << EOF
+cat >> ${html_path} << EOF
     <div id="${type}">
       <h2>${display_name} ports </h2>
       <table>
@@ -666,7 +666,7 @@ EOF
 			reason_col="<td>${extra}</td>"
 		fi
 
-		cat >> ${logdir}/index.html << EOF
+		cat >> ${html_path} << EOF
         <tr>
           <td id="tr_pkg_${pkgname}">${pkgname}</td>
           <td>${port}</td>
@@ -678,17 +678,25 @@ EOF
 	done <  ${JAILMNT}/poudriere/ports.${type}
 	zset stats_${type} $cnt
 
-cat >> ${logdir}/index.html << EOF
+cat >> ${html_path} << EOF
       </table>
     </div>
 EOF
 }
 
 build_stats() {
-	local port logdir pkgname
+	local port logdir pkgname html_path
 	logdir=`log_path`
 
-cat > ${logdir}/index.html << EOF
+	if [ "${POUDRIERE_BUILD_TYPE}" = "testport" ]; then
+		# Discard test stats page for now
+		html_path="/dev/null"
+	else
+		html_path="${logdir}/index.html"
+	fi
+	
+
+cat > ${html_path} << EOF
 <html>
   <head>
     <title>Poudriere bulk results</title>
@@ -723,7 +731,7 @@ cat > ${logdir}/index.html << EOF
       <li>Ports tree: ${PTNAME}</li>
 EOF
 				cnt=$(zget stats_queued)
-cat >> ${logdir}/index.html << EOF
+cat >> ${html_path} << EOF
       <li>Nb ports queued: ${cnt}</li>
     </ul>
     <hr />
@@ -734,12 +742,12 @@ cat >> ${logdir}/index.html << EOF
     <hr />
 EOF
 
-    build_stats_list "${logdir}" "built" "Successful"
-    build_stats_list "${logdir}" "failed" "Failed"
-    build_stats_list "${logdir}" "ignored" "Ignored"
-    build_stats_list "${logdir}" "skipped" "Skipped"
+    build_stats_list "${html_path}" "built" "Successful"
+    build_stats_list "${html_path}" "failed" "Failed"
+    build_stats_list "${html_path}" "ignored" "Ignored"
+    build_stats_list "${html_path}" "skipped" "Skipped"
 
-cat >> ${logdir}/index.html << EOF
+cat >> ${html_path} << EOF
   </body>
 </html>
 EOF
