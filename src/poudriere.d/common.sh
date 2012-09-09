@@ -706,10 +706,10 @@ cat >> ${logdir}/index.html << EOF
     <hr />
 EOF
 
+    build_stats_list "${logdir}" "built" "Successful"
     build_stats_list "${logdir}" "failed" "Failed"
     build_stats_list "${logdir}" "ignored" "Ignored"
     build_stats_list "${logdir}" "skipped" "Skipped"
-    build_stats_list "${logdir}" "built" "Successful"
 
 cat >> ${logdir}/index.html << EOF
   </body>
