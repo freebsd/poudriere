@@ -125,6 +125,9 @@ exit_handler() {
 }
 
 siginfo_handler() {
+	if [ ! ${POUDRIERE_BUILD_TYPE} = "bulk" ]; then
+		return 0;
+	fi
 	local status=$(zget status)
 	local nbb=$(zget stats_built|sed -e 's/ //g')
 	local nbf=$(zget stats_failed|sed -e 's/ //g')
