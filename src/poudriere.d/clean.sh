@@ -29,11 +29,12 @@ clean_pool() {
 		find ${JAILMNT}/poudriere/pool -name "${pkgname}" -type f | while read fulldep; do
 			dep_dir=${fulldep%/*}
 			dep_pkgname=${dep_dir##*/}
+
+			# clean_pool() in common.sh will pick this up and add to SKIPPED
+			echo "${dep_pkgname}"
+
 			clean_pool ${dep_pkgname} ${clean_rdepends}
 		done
-
-		# clean_pool() in common.sh will pick this up and add to SKIPPED
-		echo "${pkgname}"
 	fi
 
 	rm -rf "${JAILMNT}/poudriere/pool/${pkgname}"
