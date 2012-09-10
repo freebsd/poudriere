@@ -201,9 +201,8 @@ zfs_list(struct zfs_prop z[], const char *t, int n)
 			}
 			fields[j++] = walk;
 
-			while (!isspace(*walk)) {
+			while (!isspace(*walk))
 				walk++;
-			}
 			*walk = '\0';
 			walk++;
 			
@@ -220,9 +219,8 @@ zfs_list(struct zfs_prop z[], const char *t, int n)
 			}
 			type = walk;
 			j = 0;
-			while (!isspace(*walk)) {
+			while (!isspace(*walk))
 				walk++;
-			}
 			*walk = '\0';
 			walk++;
 		}
@@ -241,6 +239,7 @@ zfs_query(const char *t, const char *n, struct zfs_query z[], int nfields)
 	char **fields;
 	int i = 0;
 	int ret = 0;
+	int j = 0;
 
 	cmd = sbuf_new_auto();
 	fields = malloc(nfields * sizeof(char *));
@@ -257,47 +256,51 @@ zfs_query(const char *t, const char *n, struct zfs_query z[], int nfields)
 		name = NULL;
 		for (i = 0; i < nfields; i++)
 			fields[i] = NULL;
-		do {
-			if (isspace(*walk)) {
+		while (!isspace(*walk))
+			walk++;
+		while (walk <= end) {
+			while (isspace(*walk)) {
 				*walk = '\0';
 				walk++;
-				if (name == NULL) {
-					name = walk;
-					continue;
-				}
+			}
+			if (name == NULL)
+				name = walk;
+			else
+				fields[j++] = walk;
+
+			while (!isspace(*walk))
+				walk++;
+			*walk = '\0';
+			walk++;
+
+			if (j < nfields)
+				continue;
+
+			if (strcmp(type, t) == 0 && strcmp(name, n) == 0) {
 				for (i = 0; i < nfields; i++) {
-					if (fields[i] == NULL) {
-						fields[i] = walk;
+					switch (z[i].type) {
+					case STRING:
+						strlcpy(z[i].strval, fields[i], z[i].strsize);
+						break;
+					case INTEGER:
+						if (strcmp(fields[i], "-") == 0)
+							z[i].intval = 0;
+						else 
+							z[i].intval = strtonum(fields[i], 0, INT_MAX, NULL);
 						break;
 					}
 				}
-				if (i < nfields)
-					continue;
-				if (strcmp(type, t) == 0 && strcmp(name, n) == 0) {
-					for (i = 0; i < nfields; i++) {
-						switch (z[i].type) {
-						case STRING:
-							strlcpy(z[i].strval, fields[i], z[i].strsize);
-							break;
-						case INTEGER:
-							if (strcmp(fields[i], "-") == 0)
-								z[i].intval = 0;
-							else 
-								z[i].intval = strtonum(fields[i], 0, INT_MAX, NULL);
-							break;
-						}
-					}
-					ret = 1;
-					break;
-				}
-				type = walk;
-				name = NULL;
-				for (i = 0; i < nfields; i++)
-					fields[i] = NULL;
-				continue;
+				ret = 1;
+				break;
 			}
+			type = walk;
+			name = NULL;
+			j = 0;
+			while (!isspace(*walk))
+				walk++;
+			*walk= '\0';
 			walk++;
-		} while (walk <= end);
+		}
 		sbuf_delete(res);
 	}
 	free(fields);

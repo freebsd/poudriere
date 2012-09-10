@@ -75,6 +75,8 @@ exec_jail(int argc, char **argv)
 		{ "poudriere:stats_skipped", INTEGER, NULL, 0, j.skipped },
 		{ "poudriere:stats_queued", INTEGER, NULL, 0, j.queued },
 		{ "poudriere:status", STRING, j.status, sizeof(j.status), 0 },
+		{ "mountpoint", STRING, j.mountpoint, sizeof(j.mountpoint), 0 },
+		{ "name", STRING, j.fs, sizeof(j.fs), 0 },
 	};
 
 	p = NONE;
