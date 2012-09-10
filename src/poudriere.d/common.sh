@@ -444,13 +444,6 @@ cleanup() {
 		wait
 	fi
 
-	# Kill anything orphaned by the workers by killing the PGID
-	# This includes MY PID, so ignore SIGTERM briefly
-	trap '' SIGTERM
-	kill 0
-	trap sig_handler SIGTERM
-	wait
-
 	zfs destroy -r ${JAILFS%/build/*}/build 2>/dev/null || :
 	zfs destroy -r ${JAILFS%/build/*}@prepkg 2>/dev/null || :
 	zfs destroy -r ${JAILFS%/build/*}@prebuild 2>/dev/null || :
