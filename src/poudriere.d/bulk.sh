@@ -283,4 +283,4 @@ fi
 
 set +e
 
-exit $nbfailed
+exit $((nbfailed + nbskipped))
