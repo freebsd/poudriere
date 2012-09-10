@@ -5,6 +5,7 @@
 #include <sys/sysctl.h>
 #include <sys/event.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 
 #define _WITH_GETLINE
 #include <stdio.h>
@@ -414,7 +415,7 @@ spawn_jobs(struct pjail *j, struct pport_tree *p)
 	for (i = 0; i < conf.parallel_jobs; i++) {
 		if (jail_clone(j, i) == 0) {
 			c = STAILQ_LAST(&j->children, pjail, next);
-			jail_start(c);
+			jail_start(c, true);
 			mount_nullfs(c, p);
 		}
 	}
@@ -439,16 +440,17 @@ typedef enum {
 static struct phase {
 	char *target;
 	ebuild err;
+	bool network;
 } phase[] = {
-	{ "fetch", FETCH },
-	{ "checksum", CHECKSUM },
-	{ "extract", EXTRACT },
-	{ "patch", PATCH },
-	{ "configure", CONFIGURE },
-	{ "build", BUILD },
-	{ "install", INSTALL },
-	{ "package", PACKAGE },
-	{ NULL, OK },
+	{ "fetch", FETCH, true },
+	{ "checksum", CHECKSUM, true },
+	{ "extract", EXTRACT, false },
+	{ "patch", PATCH, false },
+	{ "configure", CONFIGURE, false},
+	{ "build", BUILD, false },
+	{ "install", INSTALL, false },
+	{ "package", PACKAGE, false },
+	{ NULL, OK, false },
 };
 
 void
@@ -462,7 +464,7 @@ build(struct pjail *j)
 	int i;
 	char portdir[MAXPATHLEN];
 
-	char *argv[9];
+	char *argv[5];
 
 	printf("====>> Start building %s\n", j->pkg->origin);
 	snprintf(cmd, sizeof(cmd), "/usr/sbin/jexec -U root %s "
@@ -489,25 +491,18 @@ build(struct pjail *j)
 	snprintf(portdir, sizeof(portdir), "/usr/ports/%s", j->pkg->origin);
 
 	for (i = 0; phase[i].target != NULL; i++) {
-		if (phase[i].err == FETCH) {
-			jail_kill(j);
+		if (phase[i].network) {
 			jail_run(j, true);
 		}
-		argv[0] = "jexec";
-		argv[1] = "-U";
-		argv[2] = "root";
-		argv[3] = j->name;
-		argv[4] = "make";
-		argv[5] = "-C";
-		argv[6] = portdir;
-		argv[7] = phase[i].target;
-		argv[8] = NULL;
-		if (exec("/usr/sbin/jexec", argv) != 0)
+		argv[0] = "make";
+		argv[1] = "-C";
+		argv[2] = portdir;
+		argv[3] = phase[i].target;
+		argv[4] = NULL;
+		if (jexec(j, argv) != 0)
 			exit(phase[i].err);
-
 		if (phase[i].err == CHECKSUM) {
-			jail_kill(j);
-			jail_run(j, true);
+			jail_run(j, false);
 		}
 	}
 
@@ -533,11 +528,11 @@ build_pkg(struct pjail *j)
 		}
 		printf("%s\n",p->name);
 		snprintf(logpath, sizeof(logpath), "%s/logs/%s-%s.log", conf.poudriere_data, j->name, p->name);
-		fd = open(logpath, (O_CREAT|O_RDWR), 0644);
+		/*fd = open(logpath, (O_CREAT|O_RDWR), 0644);
 		dup2(fd, STDOUT_FILENO);
-		dup2(fd, STDERR_FILENO);
+		dup2(fd, STDERR_FILENO);*/
 		build(j);
-		_exit(1);
+		exit(0);
 		/* NOT REACHED */
 	default:
 		break;
@@ -600,12 +595,16 @@ build_packages(struct pjail *j)
 			}
 			/* release the builder */
 			STAILQ_FOREACH(w1, &j->children, next) {
-				if (w1->pkg == p)
+				if (w1->pkg == p) {
 					w1->pkg = NULL;
+					printf("%s exited with status %d\n", w1->name, WEXITSTATUS((int) e[i].data));
+					break;
+				}
 			}
 			free(p);
 		}
 	}
+	printf("fini\n");
 	return (0);
 }
 
@@ -699,7 +698,7 @@ exec_bulk(int argc, char **argv)
 		err(1, "failed to rollback to %s", snapshot);
 	printf("done\n");
 
-	jail_start(&j);
+	jail_start(&j, true);
 	jail_setup(&j);
 	mount_nullfs(&j, &p);
 	check_pkgtools(&j);

@@ -55,23 +55,26 @@ exec_jail(int argc, char **argv)
 		{ "JAILNAME", "name", "%-20s " },
 		{ "VERSION", "version", "%-13s " },
 		{ "ARCH", "arch", "%-7s " },
+		{ "METHOD", "method", "%-7s " },
 		{ "SUCCESS", "stats_built", "%-7s " },
 		{ "FAILED", "stats_failed", "%-7s " },
 		{ "IGNORED", "stats_ignored", "%-7s " },
+		{ "SKIPPED", "stats_skipped", "%-7s " },
 		{ "QUEUED", "stats_queued", "%-7s " },
 		{ "STATUS", "status", "%s\n" },
 	};
 
 	struct zfs_query q[] = {
+		{ "poudriere:name", STRING, j.name, sizeof(j.name), 0 },
 		{ "poudriere:version", STRING, j.version, sizeof(j.version), 0 },
 		{ "poudriere:arch", STRING, j.arch, sizeof(j.arch), 0 },
+		{ "poudriere:method", STRING, j.method, sizeof(j.method), 0 },
 		{ "poudriere:stats_built", INTEGER, NULL, 0,  j.built },
 		{ "poudriere:stats_failed", INTEGER, NULL, 0,  j.failed },
 		{ "poudriere:stats_ignored", INTEGER, NULL, 0,  j.ignored },
+		{ "poudriere:stats_skipped", INTEGER, NULL, 0, j.skipped },
 		{ "poudriere:stats_queued", INTEGER, NULL, 0, j.queued },
 		{ "poudriere:status", STRING, j.status, sizeof(j.status), 0 },
-		{ "mountpoint", STRING, j.mountpoint, sizeof(j.mountpoint), 0 },
-		{ "name", STRING, j.fs, sizeof(j.fs), 0 },
 	};
 
 	p = NONE;
@@ -132,7 +135,7 @@ exec_jail(int argc, char **argv)
 	case START:
 		if (zfs_query("rootfs", jailname, q, sizeof(q) / sizeof(struct zfs_query))) {
 			strlcpy(j.name,jailname, sizeof(j.name));
-			jail_start(&j);
+			jail_start(&j, true);
 		} else {
 			fprintf(stderr, "No such jail: %s\n", jailname);
 		}

@@ -133,9 +133,6 @@ jexec(struct pjail *j, char *argv[])
 	pid_t pid;
 	struct passwd *pwd;
 	login_cap_t *lcap;
-	gid_t *groups;
-	int ngroups;
-	long ngroups_max;
 
 	jid = jail_getid(j->name);
 	if (jid == -1)
@@ -149,10 +146,7 @@ jexec(struct pjail *j, char *argv[])
 		chdir("/");
 		pwd = getpwnam("root");
 		lcap = login_getpwclass(pwd);
-		ngroups_max = sysconf(_SC_NGROUPS_MAX) + 1;
-		groups = malloc(sizeof(gid_t) * ngroups_max);
-		getgrouplist("root", pwd->pw_gid, groups, &ngroups);
-		setgroups(ngroups, groups);
+		initgroups(pwd->pw_name, pwd->pw_gid);
 		setgid(pwd->pw_gid);
 		setusercontext(lcap, pwd, pwd->pw_uid,
 		    LOGIN_SETALL & ~LOGIN_SETGROUP & ~LOGIN_SETLOGIN);
@@ -180,6 +174,7 @@ zfs_list(struct zfs_prop z[], const char *t, int n)
 	const char *type;
 	char **fields;
 	int i=0;
+	int j=0;
 
 	cmd = sbuf_new_auto();
 	fields = malloc(n * sizeof(char *));
@@ -197,29 +192,40 @@ zfs_list(struct zfs_prop z[], const char *t, int n)
 		type = walk;
 		for (i = 0; i < n; i++)
 			fields[i] = NULL;
-		do {
-			if (isspace(*walk)) {
+		while (!isspace(*walk))
+			walk++;
+		while (walk <= end) {
+			while (isspace(*walk)) {
 				*walk = '\0';
 				walk++;
-				for (i = 0; i < n; i++) {
-					if (fields[i] == NULL) {
-						fields[i] = walk;
-						break;
-					}
-				}
-				if (i < n)
-					continue;
-				if (strcmp(type, t) == 0) {
-					for (i = 0; i < n; i++)
-						printf(z[i].format, fields[i]);
-				}
-				type = walk;
-				for (i = 0; i < n; i++)
-					fields[i] = NULL;
-				continue;
 			}
+			fields[j++] = walk;
+
+			while (!isspace(*walk)) {
+				walk++;
+			}
+			*walk = '\0';
 			walk++;
-		} while (walk <= end);
+			
+			if (j < n)
+				continue;
+
+			if (strcmp(type, t) == 0) {
+				for (i = 0; i < n; i++)
+					printf(z[i].format, fields[i]);
+			}
+			while (isspace(*walk)) {
+				*walk = '\0';
+				walk++;
+			}
+			type = walk;
+			j = 0;
+			while (!isspace(*walk)) {
+				walk++;
+			}
+			*walk = '\0';
+			walk++;
+		}
 		sbuf_delete(res);
 	}
 	free(fields);
@@ -366,8 +372,14 @@ jail_run(struct pjail *j, bool network)
 {
 	int jid;
 
+	jid = jail_getid(j->name);
+	if (jid != -1)
+		jail_remove(jid);
+
+	printf("Starting %s\n", j->name);
 	jid = jail_setv(JAIL_CREATE,
 	    "name", j->name,
+	    "host.hostname", j->name,
 	    "path", j->mountpoint,
 	    "persist", "true",
 	    "allow.sysvipc", "true",
@@ -380,7 +392,7 @@ jail_run(struct pjail *j, bool network)
 	    NULL);
 
 	if (jid == -1)
-		warn("Fail to start jail\n");
+		warn("Fail to start jail: %s" , jail_errmsg);
 }
 
 void
@@ -395,14 +407,11 @@ jail_kill(struct pjail *j)
 	if (jail_remove(jid) < 0)
 		warn("Fail to stop jail");
 
-	while (jail_getid(j->name) != -1)
-		usleep(100);
-
 	return;
 }
 
 void
-jail_start(struct pjail *j)
+jail_start(struct pjail *j, bool network)
 {
 	int i;
 	struct xvfsconf vfc;
@@ -434,7 +443,7 @@ jail_start(struct pjail *j)
 	for (i = 0; mntpts[i].dest != NULL; i++) {
 		snprintf(dest, MAXPATHLEN, "%s/%s", j->mountpoint, mntpts[i].dest);
 		if (!mkdirs(dest)) {
-			warn("failed to create dirs: %s\n", dest);
+			warn("failed to create dirs: %s", dest);
 			continue;
 		}
 		iov[0].iov_base = "fstype";
@@ -446,7 +455,7 @@ jail_start(struct pjail *j)
 		iov[3].iov_base = dest;
 		iov[3].iov_len = strlen(dest) + 1;
 		if (nmount(iov, 4, 0))
-			warn("failed to mount %s\n", dest);
+			warn("failed to mount %s", dest);
 	}
 
 	jail_run(j, false);
