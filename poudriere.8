@@ -26,7 +26,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd September 9, 2012
+.Dd September 10, 2012
 .Dt POUDRIERE 8
 .Os FreeBSD
 .Sh NAME
@@ -71,6 +71,8 @@ by
 .It testport
 This command, mainly targeted at FreeBSD ports developers, launches a
 test on a given port (useful before submitting/committing a port).
+.It options
+This command allows to configure the options for a given port
 .It queue
 This command allows a non-root user to queue
 .Nm
@@ -106,6 +108,8 @@ See
 .Sx CUSTOMISATION
 to know how to build binary packages with options that differs from
 defaults.
+.Pp
+The list of ports can also be provided by command line arguments.
 .Pp
 Here are the options associated with the
 .Cm bulk
@@ -299,6 +303,27 @@ Specifies on which ports
 .Ar tree
 we work.
 .El
+.Ss options
+This command accept the following options:
+.Bl -tag -width "-f conffile"
+.It Fl j Ar jailname
+If given, configure the options only for the given jail.
+.It Fl p Ar portstree
+Run the configuration inside the given ports tree (by default uses default)
+.It Fl f Ar filename
+List of ports to configure
+.It Fl n
+Do not be resursive
+.It Fl r
+Remove port options instead of configuring them
+.It Fl s
+Show port options instead of configuring them
+.El
+.Pp
+The
+.Cm options
+subcommand can also take the list of ports to configure thought command line
+arguments instead of the using a file list.
 .Ss queue
 .Pp
 This command takes a
@@ -486,3 +511,4 @@ In case of bugs, feel free to fill
 .Lk http://fossil.etoilebsd.net/poudriere/reportlist
 .Sh AUTHORS
 .An Baptiste Daroussin Aq bapt@freebsd.org
+.An Bryan Drewery Aq bdrewery@freebsd.org
