@@ -39,7 +39,7 @@ usage_ports(void)
 	fprintf(stderr,"\t%-15s%s\n", "-p", "specifies on which portstree we work. (defaule: \"default\").");
 	fprintf(stderr,"\t%-15s%s\n", "-f", "FS name (tank/jails/myjail)");
 	fprintf(stderr,"\t%-15s%s\n", "-M", "mountpoint");
-	fprintf(stderr,"\t%-15s%s\n\n", "-m", "method (to be used with -c). (default: \"portsnap\"). Valid method: \"portsnap\", \"csup\", \"svn+http\", \"svn\", \"svn+ssh\"");
+	fprintf(stderr,"\t%-15s%s\n\n", "-m", "method (to be used with -c). (default: \"portsnap\"). Valid method: \"portsnap\", \"svn+http\", \"svn\", \"svn+ssh\"");
 }
 
 static void
@@ -152,41 +152,6 @@ svnssh_create(struct pport_tree *p)
 }
 
 static void
-csup_update(struct pport_tree *p)
-{
-	char *argv[6];
-	char csup[MAXPATHLEN], db[MAXPATHLEN];
-	FILE *csupf;
-
-	snprintf(csup, sizeof(csup), "%s/csup", p->mountpoint);
-	snprintf(db, sizeof(db), "%s/db", p->mountpoint);
-
-	if (mkdir(db, 0755) != 0 && errno != EEXIST)
-		err(1, "Unable to create db dir: %s", db);
-
-	if ((csupf = fopen(csup, "w+")) == NULL)
-		err(1, "Unable to open %s", csup);
-
-	fprintf(csupf, "*default prefix=%s\n"
-	    "*default base=%s/db\n"
-	    "*default release=cvs tag=.\n"
-	    "*default delete use-rel-suffix\n"
-	    "ports-all", p->mountpoint, p->mountpoint);
-	fclose(csupf);
-
-	argv[0] = "csup";
-	argv[1] = "-z";
-	argv[2] = "-h";
-	argv[3] = conf.csup_host;
-	argv[4] = csup;
-	argv[5] = NULL;
-
-	if (exec("/usr/bin/csup", argv) != 0)
-		err(1, "Fail to update the ports tree");
-
-}
-
-static void
 portsnap_update(struct pport_tree *p)
 {
 	char *argv[8];
@@ -223,7 +188,6 @@ port_create(struct pport_tree *p, bool fake)
 		void (*exec)(struct pport_tree *p);
 	} pm [] = {
 		{ "portsnap", portsnap_create },
-		{ "csup", csup_update },
 		{ "svn", svn_create },
 		{ "svn+http", svnhttp_create },
 		{ "svn+ssh", svnssh_create },
@@ -300,7 +264,6 @@ port_update(struct pport_tree *p)
 	} pm [] = {
 		{ "portsnap", portsnap_update },
 		{ "-", portsnap_update }, /* default on portsnap */
-		{ "csup", csup_update },
 		{ "svn", svn_update },
 		{ "svn+http", svn_update },
 		{ "svn+ssh", svn_update },
