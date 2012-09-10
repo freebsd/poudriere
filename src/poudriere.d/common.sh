@@ -815,6 +815,7 @@ build_queue() {
 				fi
 				build_stats
 				rm -f "${JAILMNT}/poudriere/var/run/${j}.pid"
+				JAILFS="${fs}" zset status "idle:"
 			fi
 			pkgname=$(next_in_queue)
 			if [ -z "${pkgname}" ]; then
