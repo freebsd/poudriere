@@ -461,7 +461,7 @@ jail_start(struct pjail *j, bool network)
 			warn("failed to mount %s", dest);
 	}
 
-	jail_run(j, false);
+	jail_run(j, network);
 
 	return;
 }
