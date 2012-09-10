@@ -118,8 +118,8 @@ build_stats
 
 failed=$(cat ${JAILMNT}/poudriere/ports.failed | xargs echo)
 built=$(cat ${JAILMNT}/poudriere/ports.built | xargs echo)
-ignored=$(cat ${JAILMNT}/poudriere/ports.ignored | xargs echo)
-skipped=$(cat ${JAILMNT}/poudriere/ports.skipped | xargs echo)
+ignored=$(cat ${JAILMNT}/poudriere/ports.ignored | awk '{print $1}' | xargs echo)
+skipped=$(cat ${JAILMNT}/poudriere/ports.skipped | awk '{print $1}' | xargs echo)
 nbfailed=$(zget stats_failed)
 nbignored=$(zget stats_ignored)
 nbskipped=$(zget stats_skipped)
