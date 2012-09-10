@@ -136,7 +136,6 @@ exec_jail(int argc, char **argv)
 		break;
 	case START:
 		if (zfs_query("rootfs", jailname, q, sizeof(q) / sizeof(struct zfs_query))) {
-			strlcpy(j.name,jailname, sizeof(j.name));
 			jail_start(&j, true);
 		} else {
 			fprintf(stderr, "No such jail: %s\n", jailname);
@@ -144,7 +143,7 @@ exec_jail(int argc, char **argv)
 		break;
 	case KILL:
 		if (zfs_query("rootfs", jailname, q, sizeof(q) / sizeof(struct zfs_query))) {
-			strlcpy(j.name,jailname, sizeof(j.name));
+			STAILQ_INIT(&j.children);
 			jail_stop(&j);
 		} else {
 			fprintf(stderr, "No such jail: %s\n", jailname);
