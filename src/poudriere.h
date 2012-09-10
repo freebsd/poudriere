@@ -12,6 +12,7 @@ struct poudriere_conf {
 	char *resolv_conf;
 	char *csup_host;
 	char *svn_host;
+	char *git_url;
 	char *svn_path;
 	int parallel_jobs;
 	int use_tmpfs;

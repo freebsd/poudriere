@@ -109,7 +109,7 @@ exec(char *path, char *const argv[])
 	case -1:
 		return (-1);
 	case 0:
-		execv(path, argv);
+		execvp(path, argv);
 		_exit(1);
 		/* NOTREACHED */
 	default:

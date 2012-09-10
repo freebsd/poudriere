@@ -150,7 +150,12 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
+	memset(&conf, 0, sizeof(struct poudriere_conf));
 	parse_config("/usr/local/etc/poudriere2.conf");
+	if (conf.svn_host == NULL)
+		conf.svn_host = "svn.FreeBSD.org";
+	if (conf.git_url == NULL)
+		conf.git_url = "git://git.FreeBSD.org/freebsd-ports.git";
 
 	/* reset getopt for the next call */
 	optreset = 1;

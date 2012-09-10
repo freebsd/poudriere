@@ -39,7 +39,7 @@ usage_ports(void)
 	fprintf(stderr,"\t%-15s%s\n", "-p", "specifies on which portstree we work. (defaule: \"default\").");
 	fprintf(stderr,"\t%-15s%s\n", "-f", "FS name (tank/jails/myjail)");
 	fprintf(stderr,"\t%-15s%s\n", "-M", "mountpoint");
-	fprintf(stderr,"\t%-15s%s\n\n", "-m", "method (to be used with -c). (default: \"portsnap\"). Valid method: \"portsnap\", \"svn+http\", \"svn\", \"svn+ssh\"");
+	fprintf(stderr,"\t%-15s%s\n\n", "-m", "method (to be used with -c). (default: \"portsnap\"). Valid method: \"portsnap\", \"svn+http\", \"svn\", \"svn+ssh\", \"git\"");
 }
 
 static void
@@ -105,7 +105,7 @@ _svn_create(struct pport_tree *p, svnproto proto)
 	argv[3] = dest;
 	argv[4] = NULL;
 
-	if (exec(conf.svn_path != NULL ? conf.svn_path : "/usr/local/bin/svn", argv) != 0)
+	if (exec("svn", argv) != 0)
 		fprintf(stderr, "Fail to create the ports tree\n");
 
 	return;
@@ -116,18 +116,19 @@ static void
 svn_update(struct pport_tree *p)
 {
 	char dest[MAXPATHLEN];
-	char *argv[4];
+	char *argv[5];
 	const char *protocol;
 
 	snprintf(dest, sizeof(dest), "%s/ports", p->mountpoint);
 
 	argv[0] = "svn";
-	argv[1] = "update";
-	argv[2] = dest;
-	argv[3] = NULL;
+	argv[1] = "-q";
+	argv[2] = "update";
+	argv[3] = dest;
+	argv[4] = NULL;
 
-	if (exec(conf.svn_path != NULL ? conf.svn_path : "/usr/local/bin/svn", argv) != 0)
-		fprintf(stderr, "Fail to create the ports tree\n");
+	if (exec("svn", argv) != 0)
+		fprintf(stderr, "Fail to update the ports tree\n");
 
 	return;
 
@@ -175,6 +176,52 @@ portsnap_update(struct pport_tree *p)
 }
 
 static void
+git_create(struct pport_tree *p)
+{
+
+	char *argv[5];
+	char ports[MAXPATHLEN];
+
+	snprintf(ports, sizeof(ports), "%s/ports", p->mountpoint);
+
+	argv[0] = "git";
+	argv[1] = "clone";
+	argv[2] = conf.git_url;
+	argv[3] = ports;
+	argv[4] = NULL;
+
+	if (exec("git", argv) != 0)
+		fprintf(stderr, "Fail to update the ports tree\n");
+}
+
+static void
+git_update(struct pport_tree *p)
+{
+	char *argv[3];
+	char ports[MAXPATHLEN];
+	char cwd[MAXPATHLEN];
+	char *mycwd;
+
+
+	mycwd = getcwd(cwd, sizeof(cwd));
+	snprintf(ports, sizeof(ports), "%s/ports", p->mountpoint);
+	if (chdir(ports) != 0) {
+		fprintf(stderr, "Faile to update the ports tree\n");
+		return;
+	}
+
+	argv[0] = "git";
+	argv[1] = "pull";
+	argv[2] = NULL;
+
+	if (exec("git", argv) != 0)
+		fprintf(stderr, "Faile to update the ports tree\n");
+
+	if (mycwd != NULL)
+		chdir(mycwd);
+}
+
+static void
 port_create(struct pport_tree *p, bool fake)
 {
 	char *argv[13];
@@ -188,6 +235,7 @@ port_create(struct pport_tree *p, bool fake)
 		void (*exec)(struct pport_tree *p);
 	} pm [] = {
 		{ "portsnap", portsnap_create },
+		{ "git", git_create },
 		{ "svn", svn_create },
 		{ "svn+http", svnhttp_create },
 		{ "svn+ssh", svnssh_create },
@@ -264,6 +312,7 @@ port_update(struct pport_tree *p)
 	} pm [] = {
 		{ "portsnap", portsnap_update },
 		{ "-", portsnap_update }, /* default on portsnap */
+		{ "git", git_update },
 		{ "svn", svn_update },
 		{ "svn+http", svn_update },
 		{ "svn+ssh", svn_update },
