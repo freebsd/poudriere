@@ -667,7 +667,7 @@ build_stats_list() {
 	local status_head="" status_col=""
 	local reason_head="" reason_col=""
 
-	if [ ! "${type}" = "skipped" ]; then
+	if [ "${type}" != "skipped" ]; then
 		status_head="<th>status</th>"
 	fi
 
