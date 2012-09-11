@@ -79,8 +79,8 @@ delete_jail() {
 }
 
 cleanup_new_jail() {
+	msg "Error while creating jail, cleaning up." >&2
 	delete_jail
-	rm -rf ${JAILMNT}/fromftp
 }
 
 update_jail() {
@@ -198,7 +198,6 @@ src-all" > ${JAILMNT}/etc/supfile
 
 install_from_ftp() {
 	mkdir ${JAILMNT}/fromftp
-	CLEANUP_HOOK=cleanup_new_jail
 	local URL BASEURL
 
 	if [ ${RELEASE%%.*} -lt 9 ]; then
@@ -355,6 +354,9 @@ create_jail() {
 	esac
 
 	jail_create_zfs ${JAILNAME} ${REAL_VERSION:-${VERSION}} ${ARCH} ${JAILMNT} ${JAILFS}
+	# Wrap the zail creation in a special cleanup hook that will remove the jail
+	# if any error is encountered
+	CLEANUP_HOOK=cleanup_new_jail
 	zset method "${METHOD}"
 	RELEASE=${ALLBSDVER:-${VERSION}}
 	${FCT}
@@ -389,6 +391,7 @@ EOF
 	jail -U root -c path=${JAILMNT} command=/sbin/ldconfig -m /lib /usr/lib /usr/lib/compat
 
 	zfs snapshot ${JAILFS}@clean
+	unset CLEANUP_HOOK
 	msg "Jail ${JAILNAME} ${VERSION} ${ARCH} is ready to be used"
 }
 
