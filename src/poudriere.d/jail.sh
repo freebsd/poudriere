@@ -36,7 +36,7 @@ info_jail() {
 	nbi=$(zget stats_ignored|sed -e 's/ //g')
 	nbs=$(zget stats_skipped|sed -e 's/ //g')
 	nbq=$(zget stats_queued|sed -e 's/ //g')
-	tobuild=$((nbq - nbb - nbf - nbi))
+	tobuild=$((nbq - nbb - nbf - nbi - nbs))
 	zfs list -H -o ${NS}:type,${NS}:name,${NS}:version,${NS}:arch,${NS}:stats_built,${NS}:stats_failed,${NS}:stats_ignored,${NS}:stats_skipped,${NS}:status,${NS}:method ${JAILFS}| \
 		awk -v q="$nbq" -v tb="$tobuild" '/^rootfs/  {
 			print "Jailname: " $2;
