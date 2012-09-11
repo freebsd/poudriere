@@ -125,7 +125,7 @@ exit_handler() {
 }
 
 siginfo_handler() {
-	if [ ! ${POUDRIERE_BUILD_TYPE} = "bulk" ]; then
+	if [ "${POUDRIERE_BUILD_TYPE}" != "bulk" ]; then
 		return 0;
 	fi
 	local status=$(zget status)
