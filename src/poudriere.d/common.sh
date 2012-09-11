@@ -1280,6 +1280,7 @@ prepare_jail() {
 
 	[ -f ${POUDRIERED}/make.conf ] && cat ${POUDRIERED}/make.conf >> ${JAILMNT}/etc/make.conf
 	[ -f ${POUDRIERED}/${JAILNAME}-make.conf ] && cat ${POUDRIERED}/${JAILNAME}-make.conf >> ${JAILMNT}/etc/make.conf
+	[ -f ${POUDRIERED}/${JAILNAME}-${PTNAME}-make.conf ] && cat ${POUDRIERED}/${JAILNAME}-${PTNAME}-make.conf >> ${JAILMNT}/etc/make.conf
 	if [ -z "${NO_PACKAGE_BUILDING}" ]; then
 		echo "PACKAGE_BUILDING=yes" >> ${JAILMNT}/etc/make.conf
 	fi
