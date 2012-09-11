@@ -354,7 +354,7 @@ create_jail() {
 	esac
 
 	jail_create_zfs ${JAILNAME} ${REAL_VERSION:-${VERSION}} ${ARCH} ${JAILMNT} ${JAILFS}
-	# Wrap the zail creation in a special cleanup hook that will remove the jail
+	# Wrap the jail creation in a special cleanup hook that will remove the jail
 	# if any error is encountered
 	CLEANUP_HOOK=cleanup_new_jail
 	zset method "${METHOD}"
