@@ -76,9 +76,10 @@ Before 9.1 you will need to boostrap by hand:
 tar xf ./pkg.txz -s ",/.*/,,g" "*/pkg-static"
 ./pkg-static add ./pkg.txz</verbatim>
 
-To update your repositories just rerun poudriere, the -k options to bulk command
-will make sure to do incremental updates (only rebuilding what is needed) 
+To update your repositories just rerun poudriere bulk. By default, the build
+will be incremental, and reuse packages from the previous run. Use -c to clear
+all packages and build fresh.
 
     <verbatim>poudriere ports -u # this update your default ports tree
-poudriere bulk -f ~/mylist1 -j 90amd64 -k
-poudriere bulk -f ~/mylist2 -j 10i386 -k</verbatim>
+poudriere bulk -f ~/mylist1 -j 90amd64
+poudriere bulk -f ~/mylist2 -j 10i386</verbatim>
