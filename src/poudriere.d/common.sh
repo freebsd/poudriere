@@ -725,12 +725,13 @@ EOF
 
 build_stats() {
 	local port logdir pkgname html_path
-	logdir=`log_path`
 
 	if [ "${POUDRIERE_BUILD_TYPE}" = "testport" ]; then
 		# Discard test stats page for now
 		html_path="/dev/null"
 	else
+		logdir=`log_path`
+		[ -d "${logdir}" ] || mkdir -p "${logdir}"
 		html_path="${logdir}/index.html"
 	fi
 	
