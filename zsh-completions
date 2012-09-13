@@ -58,6 +58,15 @@ _jail=(
 
 
 
+_options=(
+	'-f[Give the list of ports to configure]:name of file:_files'
+	'-j[run only inside the given jail]::name:_poudriere_jail'
+	'-n[do not be recursive]::'
+	'-p[specify on which portstree we work]::tree:_poudriere_pt'
+	'-s[show options instead of configuring them]::'
+	'-r[remove options instead of configuring them]::'
+)
+
 _testport=(
 	'(-o)-d[specify on which port we work]::path:_files -/'
 	'(-d)-o[specify an origin in the portstree]:origin:_poudriere_ports'
@@ -89,6 +98,7 @@ _poudriere () {
 		'bulk:generate packages for given ports'
 		'cron:run poudriere from the crontab'
 		'jail:manage the jails used by poudriere'
+		'options:allows to configure the options for a given port'
 		'ports:create, update or delete the portstrees used by poudriere'
 		'queue:queue a build request (through cron)'
 		'testport:launch a test on a given port'
@@ -105,6 +115,9 @@ _poudriere () {
 			;;
 			jail)
 			_arguments : $_jail "::" && return
+			;;
+			options)
+			_arguments : $_options "::" && return
 			;;
 			ports)
 			_arguments : $_ports "::" && return
