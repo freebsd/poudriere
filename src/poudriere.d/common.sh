@@ -146,7 +146,7 @@ siginfo_handler() {
 		queue_width=3
 	fi
 
-	printf "[${status}] [%0${queue_width}d/%0${queue_width}d] Built: %-${queue_width}d Failed: %-${queue_width}d  Ignored: %-${queue_width}d  Skipped: %-${queue_width}d  \n" \
+	printf "[${JAILNAME}] [${status}] [%0${queue_width}d/%0${queue_width}d] Built: %-${queue_width}d Failed: %-${queue_width}d  Ignored: %-${queue_width}d  Skipped: %-${queue_width}d  \n" \
 	  ${ndone} ${nbq} ${nbb} ${nbf} ${nbi} ${nbs}
 
 	# Skip if stopping or starting jobs
