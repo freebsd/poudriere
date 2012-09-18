@@ -263,23 +263,27 @@ else
 fi
 
 cleanup
-msg "$nbbuilt packages built, $nbfailed failures, $nbignored ignored, $nbskipped skipped"
 if [ $nbbuilt -gt 0 ]; then
 	msg_n "Built ports: "
 	echo ${built}
+	echo ""
 fi
 if [ $nbfailed -gt 0 ]; then
 	msg_n "Failed ports: "
 	echo ${failed}
+	echo ""
 fi
 if [ $nbignored -gt 0 ]; then
 	msg_n "Ignored ports: "
 	echo ${ignored}
+	echo ""
 fi
 if [ $nbskipped -gt 0 ]; then
 	msg_n "Skipped ports: "
 	echo ${skipped}
+	echo ""
 fi
+msg "$nbbuilt packages built, $nbfailed failures, $nbignored ignored, $nbskipped skipped"
 
 set +e
 
