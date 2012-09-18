@@ -548,6 +548,7 @@ build_port() {
 					share/nls/en_US.US-ASCII) continue;;
 					/var/log/*) continue;;
 					/var/mail/*) continue;;
+					${HOME}/*) continue;;
 					/etc/spwd.db) continue;;
 					/etc/pwd.db) continue;;
 					/etc/group) continue;;
