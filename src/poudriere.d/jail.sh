@@ -285,43 +285,27 @@ create_jail() {
 		if [ -z ${ALLBSDVER} ]; then
 			err 1 "Unknown version $VERSION"
 		fi
+		set -x
 		OIFS=${IFS}
 		IFS=-
 		set -- ${ALLBSDVER}
 		IFS=${OIFS}
-		case $2 in
-		HEAD) REAL_VERSION=${1}-CURRENT ;;
-		RELENG*) REAL_VERSION=${1}-STABLE ;;
-		esac
-		ALLBSDVER="${ALLBSDVER}-JPSNAP/ftp"
+		RELEASE="${ALLBSDVER}-JPSNAP/ftp"
 		;;
 	svn*)
 		SVN=`which svn`
 		test -z ${SVN} && err 1 "You need svn on your host to use svn method"
 		case ${VERSION} in
-			head)
-				# hardcoded because I don't know how to figure
-				# it out
-				REAL_VERSION="10-CURRENT"
-				;;
 			stable/*![0-9]*)
 				err 1 "bad version number for stable version"
-				;;
-			stable/*)
-				REAL_VERSION="${VERSION#*/}-STABLE"
 				;;
 			release/*![0-9]*.[0-9].[0-9])
 				err 1 "bad version number for release version"
 				;;
-			release/*.[0-9].[0-9])
-				REAL_VERSION="${VERSION#*/}-RELEASE"
-				;;
 			releng/*![0-9]*.[0-9])
 				err 1 "bad version number for releng version"
 				;;
-			releng/*.[0-9])
-				REAL_VERSION="${VERSION#*/}-RELEASE"
-				;;
+			stable/*|head|release/*|releng/*.[0-9]) ;;
 			*)
 				err 1 "version with svn should be: head or stable/N or release/N or releng/N"
 				;;
@@ -331,19 +315,16 @@ create_jail() {
 	csup)
 		case ${VERSION} in
 			.)
-				REAL_VERSION="10-CURRENT"
 				;;
 			RELENG_*![0-9]*_[0-9])
 				err 1 "bad version number for RELENG"
 				;;
-			RELENG_*_[0-9])
-				REAL_VERSION="`echo ${VERSION#*_} | sed s/_/./`-RELEASE"
-				;;
 			RELENG_*![0-9]*)
 				err 1 "bad version number for RELENG"
 				;;
-			RELENG_*)
-				REAL_VERSION="${VERSION#*_}-STABLE"
+			RELENG_*|.) ;;
+			*)
+				err 1 "version with svn should be: head or stable/N or release/N or releng/N"
 				;;
 			esac
 		FCT=install_from_csup
@@ -353,16 +334,18 @@ create_jail() {
 		;;
 	esac
 
-	jail_create_zfs ${JAILNAME} ${REAL_VERSION:-${VERSION}} ${ARCH} ${JAILMNT} ${JAILFS}
+	jail_create_zfs ${JAILNAME} ${VERSION} ${ARCH} ${JAILMNT} ${JAILFS}
 	# Wrap the jail creation in a special cleanup hook that will remove the jail
 	# if any error is encountered
 	CLEANUP_HOOK=cleanup_new_jail
 	zset method "${METHOD}"
-	RELEASE=${ALLBSDVER:-${VERSION}}
 	${FCT}
+	eval `grep "^[RB][A-Z]*=" ${JAILMNT}/usr/src/sys/conf/newvers.sh `
+	RELEASE=${REVISION}-${BRANCH}
+	zset version "${RELEASE}"
 
 	OSVERSION=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILMNT}/usr/include/sys/param.h`
-	LOGIN_ENV=",UNAME_r=${REAL_VERSION:-${VERSION}},UNAME_v=FreeBSD ${REAL_VERSION:-${VERSION}},OSVERSION=${OSVERSION}"
+	LOGIN_ENV=",UNAME_r=${RELEASE},UNAME_v=FreeBSD ${RELEASE},OSVERSION=${OSVERSION}"
 
 	if [ "${ARCH}" = "i386" -a "${REALARCH}" = "amd64" ];then
 		LOGIN_ENV="${LOGIN_ENV},UNAME_p=i386,UNAME_m=i386"
