@@ -117,7 +117,7 @@ if [ "${USE_PORTLINT}" = "yes" ]; then
 	cd ${JAILMNT}/${PORTDIRECTORY} && portlint -C | tee $(log_path)/${PKGNAME}.portlint.log
 	set -e
 fi
-[ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/tmp}/`echo ${PKGNAME} | tr '[,+]' _`"
+[ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/prefix}/`echo ${PKGNAME} | tr '[,+]' _`"
 PORT_FLAGS="NO_DEPENDS=yes PREFIX=${PREFIX}"
 msg "Building with flags: ${PORT_FLAGS}"
 msg "Cleaning workspace"
