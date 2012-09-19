@@ -1327,6 +1327,12 @@ if [ "${ZVERSION}" = "-" ]; then
 	ZVERSION=29
 fi
 
+case ${ZROOTFS} in
+	[!/]*)
+		err 1 "ZROOTFS shoud start with a /"
+		;;
+esac
+
 POUDRIERE_DATA=`get_data_dir`
 : ${CRONDIR="${POUDRIERE_DATA}/cron"}
 : ${SVN_HOST="svn.FreeBSD.org"}
@@ -1338,13 +1344,5 @@ case ${PARALLEL_JOBS} in
 ''|*[!0-9]*)
 	PARALLEL_JOBS=$(sysctl -n hw.ncpu)
 	;;
-*) ;;
 esac
 
-case ${ZROOTFS} in
-	/*)
-		;;
-	*)
-		err 1 "ZROOTFS shoud start with a /"
-		;;
-esac
