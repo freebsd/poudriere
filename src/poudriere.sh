@@ -50,9 +50,6 @@ case ${CMD} in
 	cron)
 		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/cron.sh
 		;;
-	pbi)
-		exec env -i  PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/pbi.sh $@
-		;;
 	options)
 		exec env -i TERM=${SAVED_TERM} PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/options.sh $@
 		;;
