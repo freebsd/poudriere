@@ -307,7 +307,7 @@ do_portbuild_mounts() {
 		mkdir -p ${PORTSDIR}/packages
 		mkdir -p ${PKGDIR}/All
 		mkdir -p ${PORTSDIR}/distfiles
-		if [ -n "${CCACHE_DIR}" -a -d "${CCACHE_DIR}" ]; then
+		if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 			mkdir -p ${JAILMNT}${CCACHE_DIR} || err 1 "Failed to create ccache directory "
 			msg "Mounting ccache from ${CCACHE_DIR}"
 			export CCACHE_DIR
@@ -318,7 +318,7 @@ do_portbuild_mounts() {
 	mount -t nullfs ${PORTSDIR} ${JAILMNT}/usr/ports || err 1 "Failed to mount the ports directory "
 	mount -t nullfs ${PKGDIR} ${JAILMNT}/usr/ports/packages || err 1 "Failed to mount the packages directory "
 
-	if [ -n "${DISTFILES_CACHE}" -a -d "${DISTFILES_CACHE}" ]; then
+	if [ -d "${DISTFILES_CACHE:-/nonexistent}" ]; then
 		mount -t nullfs ${DISTFILES_CACHE} ${JAILMNT}/usr/ports/distfiles || err 1 "Failed to mount the distfile directory"
 	fi
 	[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${JAILMNT}/wrkdirs
@@ -330,7 +330,7 @@ do_portbuild_mounts() {
 		mount -t nullfs ${POUDRIERED}/options ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
 	fi
 
-	if [ -n "${CCACHE_DIR}" -a -d "${CCACHE_DIR}" ]; then
+	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 		# Mount user supplied CCACHE_DIR into /var/cache/ccache
 		mount -t nullfs ${CCACHE_DIR} ${JAILMNT}${CCACHE_DIR} || err 1 "Failed to mount the ccache directory "
 	fi
@@ -1129,7 +1129,7 @@ delete_old_pkgs() {
 		fi
 
 		# Check if the compiled options match the current options from make.conf and /var/db/options
-		if [ "${CHECK_CHANGED_OPTIONS:+no}" != "no" ]; then
+		if [ "${CHECK_CHANGED_OPTIONS:-no}" != "no" ]; then
 			current_options=$(injail make -C /usr/ports/${o} pretty-print-config | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 			compiled_options=$(pkg_get_options ${pkg})
 
