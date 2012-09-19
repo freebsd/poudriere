@@ -742,7 +742,7 @@ build_stats() {
 	fi
 	
 
-cat > ${html_path} << EOF
+	cat > ${html_path} << EOF
 <html>
   <head>
     <title>Poudriere bulk results</title>
@@ -776,8 +776,8 @@ cat > ${html_path} << EOF
       <li>Jail: ${JAILNAME}</li>
       <li>Ports tree: ${PTNAME}</li>
 EOF
-				cnt=$(zget stats_queued)
-cat >> ${html_path} << EOF
+	cnt=$(zget stats_queued)
+	cat >> ${html_path} << EOF
       <li>Nb ports queued: ${cnt}</li>
     </ul>
     <hr />
@@ -788,12 +788,12 @@ cat >> ${html_path} << EOF
     <hr />
 EOF
 
-    build_stats_list "${html_path}" "built" "Successful"
-    build_stats_list "${html_path}" "failed" "Failed"
-    build_stats_list "${html_path}" "ignored" "Ignored"
-    build_stats_list "${html_path}" "skipped" "Skipped"
+	build_stats_list "${html_path}" "built" "Successful"
+	build_stats_list "${html_path}" "failed" "Failed"
+	build_stats_list "${html_path}" "ignored" "Ignored"
+	build_stats_list "${html_path}" "skipped" "Skipped"
 
-cat >> ${html_path} << EOF
+	cat >> ${html_path} << EOF
   </body>
 </html>
 EOF
