@@ -1,11 +1,11 @@
 #compdef poudriere
 
 _poudriere_jail() {
-	_values "poudriere jails" ${${(f)"$(poudriere jails -lq)"}%% *}
+	_values "poudriere jails" ${${(f)"$(${service} jails -lq)"}%% *}
 }
 
 _poudriere_pt() {
-	_values "poudriere portstrees" ${${(f)"$(ls /usr/local/poudriere/ports/(/))"}%%.*}
+	_values "poudriere portstrees" ${${(f)"$(${service} ports -lq)"}%% *}
 }
 
 # shamelessely stolen from
@@ -51,8 +51,6 @@ _jail=(
 	'-t[version to upgrade to]' \
 	'-M[mountpoint]::mountpoint:_files -/'
 )
-
-
 
 _options=(
 	'-f[Give the list of ports to configure]:name of file:_files'
