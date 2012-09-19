@@ -481,9 +481,8 @@ build_port() {
 	[ $# -ne 1 ] && eargs portdir
 	local portdir=$1
 	local port=${portdir##/usr/ports/}
-	local targets="fetch checksum extract patch configure build install package"
+	local targets="fetch checksum extract patch configure build install ${PORTTESTING:+deinstall}"
 
-	[ -n "${PORTTESTING}" ] && targets="${targets} deinstall"
 	for phase in ${targets}; do
 		zset status "${phase}:${port}"
 		if [ "${phase}" = "fetch" ]; then
@@ -491,7 +490,7 @@ build_port() {
 			jrun 1
 		fi
 		[ "${phase}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
-		if [ -n "${PORTTESTING}" -a "${phase}" = "deinstall" ]; then
+		if [ "${phase}" = "deinstall" ]; then
 			msg "Checking shared library dependencies"
 			if [ ${PKGNG} -eq 0 ]; then
 				PLIST="/var/db/pkg/${PKGNAME}/+CONTENTS"
@@ -516,7 +515,7 @@ build_port() {
 			jail -r ${JAILNAME} >/dev/null
 			jrun 0
 		fi
-		if [ -n "${PORTTESTING}" -a  "${phase}" = "deinstall" ]; then
+		if [ "${phase}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
 			PREFIX=`injail make -C ${portdir} -VPREFIX`
 			zset status "fscheck:${port}"
@@ -1130,7 +1129,7 @@ delete_old_pkgs() {
 		fi
 
 		# Check if the compiled options match the current options from make.conf and /var/db/options
-		if [ -n "${CHECK_CHANGED_OPTIONS}" -a "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
+		if [ "${CHECK_CHANGED_OPTIONS:+no}" != "no" ]; then
 			current_options=$(injail make -C /usr/ports/${o} pretty-print-config | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 			compiled_options=$(pkg_get_options ${pkg})
 
