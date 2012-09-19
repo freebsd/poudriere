@@ -1155,7 +1155,7 @@ delete_old_pkgs() {
 next_in_queue() {
 	local p
 	[ ! -d ${JAILMNT}/poudriere/pool ] && err 1 "Build pool is missing"
-	p=$(lockf -k -t 60 ${JAILMNT}/.lock find ${JAILMNT}/poudriere/pool -type d -depth 1 -empty -print || : | head -n 1)
+	p=$(lockf -k -t 60 ${JAILMNT}/.lock find ${JAILMNT}/poudriere/pool -type d -depth 1 -empty -print -quit || :)
 	[ -n "$p" ] || return 0
 	touch ${p}/.building
 	# pkgname
