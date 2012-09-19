@@ -372,7 +372,7 @@ jail_stop() {
 	jail_runs || err 1 "No such jail running: ${JAILNAME%-job-*}"
 	zset status "stop:"
 
-	jail -r ${JAILNAME%-job-*}
+	jail -r ${JAILNAME%-job-*} >/dev/null
 	# Shutdown all builders
 	if [ ${PARALLEL_JOBS} -ne 0 ]; then
 		# - here to only check for unset, {start,stop}_builders will set this to blank if already stopped
@@ -487,7 +487,7 @@ build_port() {
 	for phase in ${targets}; do
 		zset status "${phase}:${port}"
 		if [ "${phase}" = "fetch" ]; then
-			jail -r ${JAILNAME}
+			jail -r ${JAILNAME} >/dev/null
 			jrun 1
 		fi
 		[ "${phase}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
@@ -513,7 +513,7 @@ build_port() {
 		echo "==================================================================="
 
 		if [ "${phase}" = "checksum" ]; then
-			jail -r ${JAILNAME}
+			jail -r ${JAILNAME} >/dev/null
 			jrun 0
 		fi
 		if [ -n "${PORTTESTING}" -a  "${phase}" = "deinstall" ]; then
@@ -585,7 +585,7 @@ build_port() {
 			fi
 		fi
 	done
-	jail -r ${JAILNAME}
+	jail -r ${JAILNAME} >/dev/null
 	jrun 0
 	zset status "idle:"
 	zfs destroy -r ${JAILFS}@prebuild || :

@@ -97,7 +97,7 @@ update_jail() {
 	ftp)
 		JAILMNT=`jail_get_base ${JAILNAME}`
 		jail_start
-		jail -r ${JAILNAME}
+		jail -r ${JAILNAME} >/dev/null
 		jrun 1
 		if [ -z "${TORELEASE}" ]; then
 			injail /usr/sbin/freebsd-update fetch install
