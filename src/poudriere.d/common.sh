@@ -596,14 +596,20 @@ save_wrkdir() {
 
 	local portdir="/usr/ports/${port}"
 	local tardir=${POUDRIERE_DATA}/wrkdirs/${JAILNAME%-job-*}/${PTNAME}
-	local tarname=${tardir}/${PKGNAME}.tbz
+	local tarname=${tardir}/${PKGNAME}.${WRKDIR_ARCHIVE_FORMAT}
 	local mnted_portdir=${JAILMNT}/wrkdirs/${portdir}
 
 	mkdir -p ${tardir}
 
 	# Tar up the WRKDIR, and ignore errors
+	case ${WRKDIR_ARCHIVE_FORMAT} in
+	tar) COMPRESSKEY="" ;;
+	tgz) COMPRESSKEY="z" ;;
+	tbz) COMPRESSKEY="j" ;;
+	txz) COMPRESSKEY="J" ;;
+	esac
 	rm -f ${tarname}
-	tar -s ",${mnted_portdir},," -cjf ${tarname} ${mnted_portdir}/work > /dev/null 2>&1
+	tar -s ",${mnted_portdir},," -c${COMPRESSKEY}f ${tarname} ${mnted_portdir}/work > /dev/null 2>&1
 	job_msg "Saved ${port} wrkdir to: ${tarname}"
 }
 
@@ -1327,18 +1333,24 @@ if [ "${ZVERSION}" = "-" ]; then
 	ZVERSION=29
 fi
 
+: ${SVN_HOST="svn.FreeBSD.org"}
+: ${GIT_URL="git://git.freebsd.org/freebsd-ports.git"}
+: ${FREEBSD_HOST="ftp://${FTP_HOST:-ftp.FreeBSD.org}"}
+: ${ZROOTFS="/poudriere"}
+
 case ${ZROOTFS} in
 	[!/]*)
 		err 1 "ZROOTFS shoud start with a /"
 		;;
 esac
 
-POUDRIERE_DATA=`get_data_dir`
 : ${CRONDIR="${POUDRIERE_DATA}/cron"}
-: ${SVN_HOST="svn.FreeBSD.org"}
-: ${GIT_URL="git://git.freebsd.org/freebsd-ports.git"}
-: ${FREEBSD_HOST="ftp://${FTP_HOST:-ftp.FreeBSD.org}"}
-: ${ZROOTFS:="/poudriere"}
+POUDRIERE_DATA=`get_data_dir`
+: ${WRKDIR_ARCHIVE_FORMAT="tbz"}
+case "${WRKDIR_ARCHIVE_FORMAT}" in
+	tar|tgz|tbz|txz);;
+	*) err 1 "invalid format for WRKDIR_ARCHIVE_FORMAT: ${WRKDIR_ARCHIVE_FORMAT}" ;;
+esac
 
 case ${PARALLEL_JOBS} in
 ''|*[!0-9]*)
