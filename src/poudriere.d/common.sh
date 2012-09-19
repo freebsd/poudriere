@@ -481,7 +481,7 @@ build_port() {
 	[ $# -ne 1 ] && eargs portdir
 	local portdir=$1
 	local port=${portdir##/usr/ports/}
-	local targets="fetch checksum extract patch configure build install ${PORTTESTING:+deinstall}"
+	local targets="fetch checksum extract patch configure build install package ${PORTTESTING:+deinstall}"
 
 	for phase in ${targets}; do
 		zset status "${phase}:${port}"
