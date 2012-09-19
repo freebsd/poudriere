@@ -1,0 +1,33 @@
+<h1>Run poudriere in a jail</h1>
+
+/!\ This can only be done on a 9.X or higher host because it needs recent jails
+features
+
+  1.  You need to create a jail the usual way, but you have to make sure you
+  respect the following needs:
+
+  *  allow.mount
+  *  allow.mount.devfs
+  *  allow.mount.procfs
+  *  allow.mount.nullfs
+  *  allow.mount.zfs
+  *  allow.raw_sockets
+  *  allow.socket_af
+  *  allow.sysvipc
+  *  enforce_statfs=1
+
+  2. Make sure the jail have at least the 127.0.0.1 address (and ::1 for ipv6)
+
+  3. create the poudriere ZROOTFS:
+
+<verbatim>
+# zfs create tank/poudriere
+# zfs set jailed=on tank/poudriere
+# zfs jail myjail tank/poudriere
+</verbatim>
+
+  4. mount anything inside the jail:
+
+<verbatim>
+#  jexec -U root zfs mount -a
+</varbatim>
