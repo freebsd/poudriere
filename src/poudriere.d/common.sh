@@ -1312,9 +1312,11 @@ STATUS=0 # out of jail #
 test -f ${SCRIPTPREFIX}/../../etc/poudriere.conf || err 1 "Unable to find ${SCRIPTPREFIX}/../../etc/poudriere.conf"
 . ${SCRIPTPREFIX}/../../etc/poudriere.conf
 
-test -z ${ZPOOL} && err 1 "ZPOOL variable is not set"
+: ${ZPOOL:?}
+: ${BASEFS:?}
+#test -z ${ZPOOL} && err 1 "ZPOOL variable is not set"
 
-[ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
+#[ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
 
 trap sig_handler SIGINT SIGTERM SIGKILL
 trap exit_handler EXIT
