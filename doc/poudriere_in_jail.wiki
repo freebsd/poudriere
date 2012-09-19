@@ -59,6 +59,12 @@ Give the dataset to the jail
 # jexec -U root zfs mount -a
 </verbatim>
 
+On recent HEAD, instead of the above you can do
+<verbatim>
+# zfs jail poudriere tank/poudriere
+# jexec -U root zfs mount -a
+</verbatim>
+
 Bootstrap pkgng and install the needed tools if you want using things that are
 not default like subversion for ports
 <verbatim>
