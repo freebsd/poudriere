@@ -87,7 +87,7 @@ Fetch and install the latest poudriere
 poudriere# fetch http://fossil.etoilebsd.net/poudriere/tarball/poudriere-trunk.tar.gz?uuid=trunk | tar xf -
 poudriere# cd poudriere-trunk
 poduriere# make install
-</varbatim>
+</verbatim>
 
 You can now play normally with poudriere
 <verbatim>
