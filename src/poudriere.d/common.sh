@@ -880,7 +880,7 @@ clean_pool() {
 	[ ${clean_rdepends} -eq 1 ] && port=$(cache_get_origin "${pkgname}")
 
 	# Cleaning queue (pool is cleaned here)
-	lockf -k ${MASTERMNT:-${JAILMNT}}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${pkgname}" ${clean_rdepends} | while read skipped_pkgname; do
+	lockf -k ${MASTERMNT:-${JAILMNT}}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${pkgname}" ${clean_rdepends} | sort -u | while read skipped_pkgname; do
 		skipped_origin=$(cache_get_origin "${skipped_pkgname}")
 		echo "${skipped_origin} ${pkgname}" >> ${MASTERMNT:-${JAILMNT}}/poudriere/ports.skipped
 		job_msg "Skipping build of ${skipped_origin}: Dependent port ${port} failed"
