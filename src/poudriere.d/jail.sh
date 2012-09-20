@@ -285,7 +285,7 @@ create_jail() {
 		if [ -z ${ALLBSDVER} ]; then
 			err 1 "Unknown version $VERSION"
 		fi
-		set -x
+
 		OIFS=${IFS}
 		IFS=-
 		set -- ${ALLBSDVER}
