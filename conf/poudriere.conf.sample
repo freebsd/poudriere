@@ -101,7 +101,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 
 # Choose the default format for the workdir packing: could be tar,tgz,tbz,txz
 # default is tbz
-# WRKDIR_ARCHIVE_FORMATS=tbz
+# WRKDIR_ARCHIVE_FORMAT=tbz
 
 # Disable linux support
 # NOLINUX=1
