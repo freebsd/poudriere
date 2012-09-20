@@ -25,7 +25,8 @@ Options:
     -p tree     -- Specify on which ports tree the configuration will be done
     -n          -- Don't configure/show/remove options of dependicies
     -r          -- Remove port options instead of configuring them
-    -s          -- Show port options instead of configuring them"
+    -s          -- Show port options instead of configuring them
+    -z set      -- Specify which SET to use"
 
 	exit 1
 }
@@ -34,13 +35,14 @@ SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 
 PTNAME=default
+SETNAME=""
 DO_RECURSE=y
 COMMAND=config-conditional
 RECURSE_COMMAND=config-recursive
 
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "j:f:p:nrs" FLAG; do
+while getopts "j:f:p:nrsz:" FLAG; do
 	case "${FLAG}" in
 		j)
 			jail_exists ${OPTARG} || err 1 "No such jail"
@@ -63,6 +65,10 @@ while getopts "j:f:p:nrs" FLAG; do
 			COMMAND=showconfig
 			RECURSE_COMMAND=showconfig-recursive
 			;;
+		z)
+			[ -n "${OPTARG}" ] || err 1 "Empty set name"
+			SETNAME="-${OPTARG}"
+			;;
 		*)
 			usage
 			;;
@@ -83,7 +89,7 @@ else
 	LISTPORTS="$@"
 fi
 
-PORT_DBDIR=${SCRIPTPREFIX}/../../etc/poudriere.d/options${JAILNAME:+-}${JAILNAME}
+PORT_DBDIR=${SCRIPTPREFIX}/../../etc/poudriere.d/options${JAILNAME:+-}${JAILNAME}${SETNAME}
 
 mkdir -p ${PORT_DBDIR}
 

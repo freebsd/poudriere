@@ -15,7 +15,8 @@ Options:
     -J n        -- Run n jobs in parallel
     -j name     -- Run only on the given jail
     -p tree     -- Specify on which ports tree the bulk will be done
-    -w          -- Save WRKDIR on failed builds"
+    -w          -- Save WRKDIR on failed builds
+    -z set      -- Specify which SET to use"
 
 	exit 1
 }
@@ -24,10 +25,11 @@ SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 PTNAME="default"
 SKIPSANITY=0
+SETNAME=""
 CLEAN=0
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "Df:j:J:cn:p:tsw" FLAG; do
+while getopts "Df:j:J:cn:p:tswz:" FLAG; do
 	case "${FLAG}" in
 		D)
 			DEBUG_MODE=1
@@ -57,6 +59,10 @@ while getopts "Df:j:J:cn:p:tsw" FLAG; do
 		w)
 			SAVE_WRKDIR=1
 			;;
+		z)
+			[ -n "${OPTARG}" ] || err 1 "Empty set name"
+			SETNAME="-${OPTARG}"
+			;;
 		*)
 			usage
 			;;
@@ -79,7 +85,7 @@ STATUS=0 # out of jail #
 
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
 
-PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}
+PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}${SETNAME}
 if [ ${CLEAN} -eq 1 ]; then
 	msg_n "Cleaning previous bulks if any..."
 	rm -rf ${PKGDIR}/*

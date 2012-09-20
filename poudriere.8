@@ -144,6 +144,11 @@ jobs for make.
 Save WRKDIR on build failure.
 The WRKDIR will be tarred up into
 .Sy ${POUDRIERE_DATA}/wrkdirs .
+.It Fl z Ar set
+This specifies whith SET to use for the build.
+See
+.Sx CUSTOMISATION
+for examples of how this is used.
 .El
 .Ss jail
 .Pp
@@ -318,6 +323,11 @@ Do not be recursive
 Remove port options instead of configuring them
 .It Fl s
 Show port options instead of configuring them
+.It Fl z Ar set
+This specifies whith SET to use for the build.
+See
+.Sx CUSTOMISATION
+for examples of how this is used.
 .El
 .Pp
 The
@@ -459,12 +469,18 @@ can mount a directory containing option files if available.
 .Nm
 will check for any of these directories in this order:
 .Pp
-.Dl /usr/local/etc/poudriere.d/<jail-name>-options
+.Dl /usr/local/etc/poudriere.d/<jailname>-<setname>-options
+.Dl /usr/local/etc/poudriere.d/<setname>-options
+.Dl /usr/local/etc/poudriere.d/<jailname>-options
 .Dl /usr/local/etc/poudriere.d/options
 .Pp
 If a directory with this name exists, it is null-mounted into the
 /var/db/ports/ directory of the jail, thus allowing to build package
 with custom OPTIONS.
+.Pp
+The
+.Cm options
+subcommand can be used to easily configure options in the correct directory.
 .Pp
 This directory has the usual layout for options: it contains one directory per
 port (the name of the port) containing an 'options' file with lines similar to:
@@ -476,13 +492,13 @@ As a starter, you may want to copy an existing /var/db/ports/ to
 /usr/local/etc/poudriere.d/options.
 .Ss Create optional make.conf
 You can also specify a global make.conf which will be used for all the
-jails, and also add a per-jail make.conf:
+jails, and also add a per-jail, per-set, or per-jail-set make.conf.
+They will all be used in the jail, in the order shown:
 .Pp
 .Dl /usr/local/etc/poudriere.d/make.conf
-.Pp
-and
-.Pp
+.Dl /usr/local/etc/poudriere.d/<setname>-make.conf
 .Dl /usr/local/etc/poudriere.d/<jailname>-make.conf
+.Dl /usr/local/etc/poudriere.d/<jailname>-<setname>-make.conf
 .Sh COMPATIBILITY
 The
 .Nm

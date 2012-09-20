@@ -53,7 +53,7 @@ log_start() {
 }
 
 log_path() {
-	echo "${LOGS}/${POUDRIERE_BUILD_TYPE}/${JAILNAME%-job-*}/${PTNAME}"
+	echo "${LOGS}/${POUDRIERE_BUILD_TYPE}/${JAILNAME%-job-*}/${PTNAME}${SETNAME}"
 }
 
 buildlog_start() {
@@ -324,7 +324,12 @@ do_portbuild_mounts() {
 	[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${JAILMNT}/wrkdirs
 	[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${JAILMNT}/wrkdirs
 
-	if [ -d ${POUDRIERED}/${JAILNAME%-job-*}-options ]; then
+	# Order is JAILNAME-SETNAME, then SETNAME, then JAILNAME, then default.
+	if [ -n "${SETNAME}" -a -d ${POUDRIERED}/${JAILNAME%-job-*}${SETNAME}-options ]; then
+		mount -t nullfs ${POUDRIERED}/${JAILNAME%-job-*}${SETNAME}-options ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+	elif [ -d ${POUDRIERED}/${SETNAME#-}-options ]; then
+		mount -t nullfs ${POUDRIERED}/${SETNAME#-}-options ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+	elif [ -d ${POUDRIERED}/${JAILNAME%-job-*}-options ]; then
 		mount -t nullfs ${POUDRIERED}/${JAILNAME%-job-*}-options ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
 	elif [ -d ${POUDRIERED}/options ]; then
 		mount -t nullfs ${POUDRIERED}/options ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
@@ -775,6 +780,7 @@ build_stats() {
     <ul>
       <li>Jail: ${JAILNAME}</li>
       <li>Ports tree: ${PTNAME}</li>
+      <li>Set Name: ${SETNAME:-none}</li>
 EOF
 	cnt=$(zget stats_queued)
 	cat >> ${html_path} << EOF
@@ -1058,7 +1064,7 @@ pkg_to_pkgname() {
 }
 
 cache_dir() {
-	echo ${POUDRIERE_DATA}/cache/${JAILNAME%-job-*}/${PTNAME}
+	echo ${POUDRIERE_DATA}/cache/${JAILNAME%-job-*}/${PTNAME}${SETNAME}
 }
 
 # Return the cache dir for the given pkg
@@ -1286,8 +1292,10 @@ prepare_jail() {
 	[ ! -d ${DISTFILES_CACHE} ] && err 1 "DISTFILES_CACHE directory	does not exists. (c.f. poudriere.conf)"
 
 	[ -f ${POUDRIERED}/make.conf ] && cat ${POUDRIERED}/make.conf >> ${JAILMNT}/etc/make.conf
+	[ -f ${POUDRIERED}/${SETNAME#-}-make.conf ] && cat ${POUDRIERED}/${SETNAME#-}-make.conf >> ${JAILMNT}/etc/make.conf
 	[ -f ${POUDRIERED}/${JAILNAME}-make.conf ] && cat ${POUDRIERED}/${JAILNAME}-make.conf >> ${JAILMNT}/etc/make.conf
 	[ -f ${POUDRIERED}/${JAILNAME}-${PTNAME}-make.conf ] && cat ${POUDRIERED}/${JAILNAME}-${PTNAME}-make.conf >> ${JAILMNT}/etc/make.conf
+	[ -f ${POUDRIERED}/${JAILNAME}${SETNAME}-make.conf ] && cat ${POUDRIERED}/${JAILNAME}${SETNAME}-make.conf >> ${JAILMNT}/etc/make.conf
 	if [ -z "${NO_PACKAGE_BUILDING}" ]; then
 		echo "PACKAGE_BUILDING=yes" >> ${JAILMNT}/etc/make.conf
 	fi
