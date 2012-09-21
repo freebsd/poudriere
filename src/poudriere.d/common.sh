@@ -313,6 +313,8 @@ do_portbuild_mounts() {
 			export CCACHE_DIR
 			export WITH_CCACHE_BUILD=yes
 		fi
+		# Check for invalid options-JAILNAME created by bad options.sh
+		[ -d ${POUDRIERED}/options-${JAILNAME%-job-*} ] && err 1 "Please move your options-${JAILNAME%-job-*} to ${JAILNAME%-job-*}-options"
 	fi
 
 	mount -t nullfs ${PORTSDIR} ${JAILMNT}/usr/ports || err 1 "Failed to mount the ports directory "
