@@ -67,7 +67,7 @@ while getopts "j:f:p:nrsz:" FLAG; do
 			;;
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"
-			SETNAME="-${OPTARG}"
+			SETNAME="${OPTARG}"
 			;;
 		*)
 			usage
@@ -89,7 +89,7 @@ else
 	LISTPORTS="$@"
 fi
 
-PORT_DBDIR=${SCRIPTPREFIX}/../../etc/poudriere.d/options${JAILNAME:+-}${JAILNAME}${SETNAME}
+PORT_DBDIR=${SCRIPTPREFIX}/../../etc/poudriere.d/${JAILNAME}${JAILNAME:+-}${SETNAME}${SETNAME:+-}options
 
 mkdir -p ${PORT_DBDIR}
 
