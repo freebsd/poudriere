@@ -109,4 +109,4 @@ DISTFILES_CACHE=/usr/ports/distfiles
 
 # by default poudriere set PACKAGE_BUILDING
 # to disable it:
-# NO_PACKAGE_BUILD=1
+# NO_PACKAGE_BUILDING=1
