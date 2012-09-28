@@ -818,7 +818,7 @@ build_queue() {
 			fs="${JAILFS}/build/${j}"
 			name="${JAILNAME}-job-${j}"
 			if [ -f  "${JAILMNT}/poudriere/var/run/${j}.pid" ]; then
-				if pgrep -qF "${JAILMNT}/poudriere/var/run/${j}.pid" >/dev/null 2>&1; then
+				if pgrep -F "${JAILMNT}/poudriere/var/run/${j}.pid" >/dev/null 2>&1; then
 					continue
 				fi
 				build_stats
