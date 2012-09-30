@@ -112,15 +112,6 @@ update_jail() {
 		;;
 	csup)
 		msg "Upgrading using csup"
-		RELEASE=`zget version`
-		case ${RELEASE} in
-			*-CURRENT)
-				RELEASE="."
-				;;
-			*-STABLE|*-RELEASE)
-				RELEASE="RELENG_`echo ${RELEASE%%-*} | sed "s/\./_/"`"
-				;;
-		esac
 		install_from_csup
 		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
 		zfs destroy -r ${JAILFS}@clean
@@ -172,7 +163,7 @@ install_from_svn() {
 	esac
 	if [ ${UPDATE} -eq 0 ]; then
 		msg_n "Checking out the sources from svn..."
-		svn -q co ${proto}://${SVN_HOST}/base/${RELEASE} ${JAILMNT}/usr/src || err 1 "Fail "
+		svn -q co ${proto}://${SVN_HOST}/base/${VERSION} ${JAILMNT}/usr/src || err 1 "Fail "
 		echo " done"
 	else
 		msg_n "Updating the sources from svn..."
@@ -183,15 +174,19 @@ install_from_svn() {
 }
 
 install_from_csup() {
+	local UPDATE=0
+	[ -d ${JAILMNT}/usr/src ] && UPDATE=1
 	mkdir -p ${JAILMNT}/etc
 	mkdir -p ${JAILMNT}/var/db
 	mkdir -p ${JAILMNT}/usr
 	[ -z ${CSUP_HOST} ] && err 2 "CSUP_HOST has to be defined in the configuration to use csup"
-	echo "*default base=${JAILMNT}/var/db
+	if [ "${UPDATE}" -eq 0 ]; then
+		echo "*default base=${JAILMNT}/var/db
 *default prefix=${JAILMNT}/usr
-*default release=cvs tag=${RELEASE}
+*default release=cvs tag=${VERSION}
 *default delete use-rel-suffix
 src-all" > ${JAILMNT}/etc/supfile
+	fi
 	csup -z -h ${CSUP_HOST} ${JAILMNT}/etc/supfile || err 1 "Fail to fetch sources"
 	build_and_install_world
 }
@@ -326,7 +321,7 @@ create_jail() {
 			*)
 				err 1 "version with svn should be: head or stable/N or release/N or releng/N"
 				;;
-			esac
+		esac
 		FCT=install_from_csup
 		;;
 	*)
