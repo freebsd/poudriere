@@ -195,13 +195,13 @@ install_from_ftp() {
 	mkdir ${JAILMNT}/fromftp
 	local URL BASEURL
 
-	if [ ${RELEASE%%.*} -lt 9 ]; then
-		msg "Fetching sets for FreeBSD ${RELEASE} ${ARCH}"
+	if [ ${VERSION%%.*} -lt 9 ]; then
+		msg "Fetching sets for FreeBSD ${VERSION} ${ARCH}"
 		case ${METHOD} in
 		ftp) BASEURL="${FREEBSD_HOST}/pub/FreeBSD/releases/${ARCH}/" ;;
 		allbsd) BASEURL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}" ;;
 		esac
-		URL="${BASEURL}/${RELEASE}"
+		URL="${BASEURL}/${VERSION}"
 		DISTS="base dict src"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32"
 		for dist in ${DISTS}; do
@@ -236,7 +236,7 @@ install_from_ftp() {
 		ftp) BASEURL="${FREEBSD_HOST}/pub/FreeBSD/releases/${ARCH}/${ARCH}" ;;
 		allbsd) BASEURL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}" ;;
 		esac
-		URL="${BASEURL}/${RELEASE}"
+		URL="${BASEURL}/${VERSION}"
 		DISTS="base.txz src.txz"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
 		for dist in ${DISTS}; do
