@@ -29,6 +29,8 @@ SETNAME=""
 CLEAN=0
 . ${SCRIPTPREFIX}/common.sh
 
+[ $# -eq 0 ] && usage
+
 while getopts "Df:j:J:cn:p:tswz:" FLAG; do
 	case "${FLAG}" in
 		D)
