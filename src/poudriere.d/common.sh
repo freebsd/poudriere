@@ -376,6 +376,7 @@ jail_start() {
 
 jail_stop() {
 	[ $# -ne 0 ] && eargs
+	local mnt
 	jail_runs || err 1 "No such jail running: ${JAILNAME%-job-*}"
 	zset status "stop:"
 
@@ -388,19 +389,20 @@ jail_stop() {
 		done
 	fi
 	msg "Umounting file systems"
-	mount | awk -v mnt="${MASTERMNT:-${JAILMNT}}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r | xargs umount -f || :
+	mnt=`realpath ${MASTERMNT:-${JAILMNT}}`
+	mount | awk -v mnt="${mnt}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r | xargs umount -f || :
 
 	if [ -n "${MFSSIZE}" ]; then
 		# umount the ${JAILMNT}/build/$jobno/wrkdirs
-		mount | grep "/dev/md.*${MASTERMNT:-${JAILMNT}}/build" | while read mnt; do
-			local dev=`echo $mnt | awk '{print $1}'`
+		mount | grep "/dev/md.*${mnt}/build" | while read mntpt; do
+			local dev=`echo $mntpt | awk '{print $1}'`
 			if [ -n "$dev" ]; then
 				umount $dev
 				mdconfig -d -u $dev
 			fi
 		done
 		# umount the $JAILMNT/wrkdirs
-		local dev=`mount | grep "/dev/md.*${MASTERMNT:-${JAILMNT}}" | awk '{print $1}'`
+		local dev=`mount | grep "/dev/md.*${mnt}" | awk '{print $1}'`
 		if [ -n "$dev" ]; then
 			umount $dev
 			mdconfig -d -u $dev
