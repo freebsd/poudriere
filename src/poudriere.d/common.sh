@@ -665,7 +665,7 @@ stop_builders() {
 		jail -r ${JAILNAME}-job-${j} >/dev/null 2>&1 || :
 	done
 
-	mnt=`realpath ${MASTERMNT:-${JAILMNT}}`
+	mnt=`realpath ${JAILMNT}`
 	mount | awk -v mnt="${mnt}/build/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r | xargs umount -f 2>/dev/null || :
 
 	zfs destroy -r ${JAILFS}/build 2>/dev/null || :
