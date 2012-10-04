@@ -60,5 +60,6 @@ See poudriere(8).
   *  [./ccache.wiki|...use ccache with poudriere]
   *  [./config.wiki|...easily generate options]
   *  [./poudriere_in_jail.wiki|...run poudriere in a jail]
+  *  [./use_system_ports_tree.wiki|...use the system ports tree in poudriere]
 
 Happy FreeBSDing!

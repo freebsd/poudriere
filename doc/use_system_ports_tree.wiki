@@ -1,0 +1,18 @@
+<h1>Use the system ports tree in poudriere</h1>
+
+This is only possible if your systems ports tree is self contained in a zfs
+zfs filesystem or or inside a /ports subdirectory in a zfs filesystem
+
+to do this you need to tag the zfs filesystem like this:
+
+    <verbatim># zfs set poudriere:type=ports tank/your/fs
+#zfs set poudriere:name=myownportstree tank/your/fs
+</verbatim>
+
+To check that everything is correctly working:
+    <verbatim># poudriere ports -l
+PORTSTREE            METHOD
+myownportstree       -
+</verbatim>
+
+You can now use it for you bulks
