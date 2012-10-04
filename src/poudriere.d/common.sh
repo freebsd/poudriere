@@ -455,7 +455,7 @@ cleanup() {
 
 	zfs destroy -r ${JAILFS%/build/*}/build 2>/dev/null || :
 	zfs destroy -r ${JAILFS%/build/*}@prepkg 2>/dev/null || :
-	zfs destroy -r ${JAILFS%/build/*}@prebuild 2>/dev/null || :
+	zfs destroy -r ${JAILFS%/build/*}@preinst 2>/dev/null || :
 	jail_stop
 	export CLEANED_UP=1
 }
@@ -490,7 +490,7 @@ build_port() {
 	[ $# -ne 1 ] && eargs portdir
 	local portdir=$1
 	local port=${portdir##/usr/ports/}
-	local targets="check-config fetch checksum extract patch configure build install package ${PORTTESTING:+deinstall}"
+	local targets="check-config fetch checksum extract patch configure build run-depends install package ${PORTTESTING:+deinstall}"
 
 	for phase in ${targets}; do
 		zset status "${phase}:${port}"
@@ -498,7 +498,7 @@ build_port() {
 			jail -r ${JAILNAME} >/dev/null
 			jrun 1
 		fi
-		[ "${phase}" = "build" -a $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@prebuild
+		[ "${phase}" = "install" -a $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@preinst
 		if [ "${phase}" = "deinstall" ]; then
 			msg "Checking shared library dependencies"
 			if [ ${PKGNG} -eq 0 ]; then
@@ -543,7 +543,7 @@ build_port() {
 				local mod=$(mktemp ${jailbase}/tmp/mod.XXXXXX)
 				local mod1=$(mktemp ${jailbase}/tmp/mod1.XXXXXX)
 				local die=0
-				zfs diff -FH ${JAILFS}@prebuild ${JAILFS} | \
+				zfs diff -FH ${JAILFS}@preinst ${JAILFS} | \
 					while read mod type path; do
 					local ppath
 					ppath=`echo "$path" | sed -e "s,^${JAILMNT},," -e "s,^${PREFIX}/,," -e "s,^share/${portname},%%DATADIR%%," -e "s,^etc/${portname},%%ETCDIR%%,"`
@@ -579,24 +579,28 @@ build_port() {
 				comm -13 ${add1} ${del1} > ${del}
 				if [ -s "${add}" ]; then
 					msg "Files or directories left over:"
+					die=1
 					cat ${add}
 				fi
 				if [ -s "${del}" ]; then
 					msg "Files or directories removed:"
+					die=1
 					cat ${del}
 				fi
 				if [ -s "${mod}" ]; then
 					msg "Files or directories modified:"
+					die=1
 					cat ${mod1}
 				fi
 				rm -f ${add} ${add1} ${del} ${del1} ${mod} ${mod1}
+				[ die -eq 0 ] || err 1 "Left overs have been found"
 			fi
 		fi
 	done
 	jail -r ${JAILNAME} >/dev/null
 	jrun 0
 	zset status "idle:"
-	zfs destroy -r ${JAILFS}@prebuild || :
+	zfs destroy -r ${JAILFS}@preinst || :
 	return 0
 }
 
