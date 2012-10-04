@@ -63,3 +63,5 @@ See poudriere(8).
   *  [./use_system_ports_tree.wiki|...use the system ports tree in poudriere]
 
 Happy FreeBSDing!
+
+Join us on IRC: #poudriere on Freenode
