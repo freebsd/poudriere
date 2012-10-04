@@ -105,7 +105,6 @@ if [ ${CREATE} -eq 1 ]; then
 	: ${PTMNT="${BASEFS:=/usr/local${ZROOTFS}}/ports/${PTNAME}"}
 	: ${PTFS="${ZPOOL}${ZROOTFS}/ports/${PTNAME}"}
 	port_create_zfs ${PTNAME} ${PTMNT} ${PTFS}
-	mkdir ${PTMNT}/ports
 	if [ $FAKE -eq 0 ]; then
 		case ${METHOD} in
 		csup)
@@ -124,6 +123,7 @@ ports-all" > ${PTMNT}/csup
 		portsnap)
 			mkdir ${PTMNT}/snap
 			msg "Extracting portstree \"${PTNAME}\"..."
+			mkdir ${PTMNT}/ports
 			/usr/sbin/portsnap -d ${PTMNT}/snap -p ${PTMNT}/ports fetch extract || \
 			/usr/sbin/portsnap -d ${PTMNT}/snap -p ${PTMNT}/ports fetch extract || \
 			{
@@ -140,7 +140,7 @@ ports-all" > ${PTMNT}/csup
 
 			msg_n "Checking out the ports tree..."
 			svn -q co ${proto}://${SVN_HOST}/ports/head \
-				${PTMNT}/ports || {
+				${PTMNT} || {
 				zfs destroy ${PTFS}
 				err 1 " Fail"
 			}
@@ -148,7 +148,7 @@ ports-all" > ${PTMNT}/csup
 			;;
 		git)
 			msg "Cloning the ports tree"
-			git clone ${GIT_URL} ${PTMNT}/ports || {
+			git clone ${GIT_URL} ${PTMNT} || {
 				zfs destroy ${PTFS}
 				err 1 " Fail"
 			}
@@ -160,17 +160,21 @@ ports-all" > ${PTMNT}/csup
 fi
 
 if [ ${DELETE} -eq 1 ]; then
-	/sbin/mount -t nullfs | /usr/bin/grep -q "${PTNAME}/ports on" \
-		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	port_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
+	PTMNT=$(port_get_base ${PTNAME})
+	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
+	/sbin/mount -t nullfs | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
+		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	msg "Deleting portstree \"${PTNAME}\""
-	zfs destroy -r $(port_get_fs ${PTNAME})
+	zfs destroy -r ${PTMNT}
 fi
 
 if [ ${UPDATE} -eq 1 ]; then
-	/sbin/mount -t nullfs | /usr/bin/grep -q "${PTNAME}/ports on" \
-		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
+	port_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 	PTMNT=$(port_get_base ${PTNAME})
+	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
+	/sbin/mount -t nullfs | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
+		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	PTFS=$(port_get_fs ${PTNAME})
 	msg "Updating portstree \"${PTNAME}\""
 	METHOD=$(pzget method)
@@ -193,16 +197,16 @@ ports-all" > ${PTMNT}/csup
 	portsnap|"")
 		PSCOMMAND=fetch
 		[ -t 0 ] || PSCOMMAND=cron
-		/usr/sbin/portsnap -d ${PTMNT}/snap -p ${PTMNT}/ports ${PSCOMMAND} update
+		/usr/sbin/portsnap -d ${PTMNT}/snap -p ${PORTSMNT} ${PSCOMMAND} update
 		;;
 	svn*)
 		msg_n "Updating the ports tree..."
-		svn -q update ${PTMNT}/ports
+		svn -q update ${PORTSMNT:-${PTMNT}}
 		echo " done"
 		;;
 	git)
 		msg "Pulling from ${GIT_URL}"
-		cd ${PTMNT}/ports && git pull
+		cd ${PORTSMNT:-${PTMNT}} && git pull
 		echo " done"
 		;;
 	*)

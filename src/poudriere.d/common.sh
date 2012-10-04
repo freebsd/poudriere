@@ -1283,7 +1283,8 @@ prepare_jail() {
 	export FORCE_PACKAGE=yes
 	export USER=root
 	export HOME=/root
-	PORTSDIR=`port_get_base ${PTNAME}`/ports
+	PORTSDIR=`port_get_base ${PTNAME}`
+	[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 	POUDRIERED=${SCRIPTPREFIX}/../../etc/poudriere.d
 	[ -z "${JAILMNT}" ] && err 1 "No path of the base of the jail defined"
 	[ -z "${PORTSDIR}" ] && err 1 "No ports directory defined"
