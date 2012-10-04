@@ -105,7 +105,7 @@ jail_start
 prepare_jail
 
 LOGD=`log_path`
-if [ -d ${LOGD} ]; then
+if [ -d ${LOGD} -a ${CLEAN} -eq 1 ]; then
 	msg "Cleaning up old logs"
 	rm -f ${LOGD}/*.log 2>/dev/null
 fi
