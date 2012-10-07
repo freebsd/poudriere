@@ -10,6 +10,7 @@ to do this you need to tag the zfs filesystem like this:
 </verbatim>
 
 To check that everything is correctly working:
+
     <verbatim># poudriere ports -l
 PORTSTREE            METHOD
 myownportstree       -
