@@ -858,7 +858,7 @@ parallel_build() {
 	# If pool is empty, just return
 	test ${nbq} -eq 0 && return 0
 
-	msg "Starting using ${PARALLEL_JOBS} builders"
+	msg "Building ${nbq} packages using ${PARALLEL_JOBS} builders"
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
 
 	zset status "starting_jobs:"
