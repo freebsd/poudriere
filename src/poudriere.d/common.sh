@@ -196,20 +196,20 @@ jail_get_fs() {
 
 port_exists() {
 	[ $# -ne 1 ] && eargs portstree_name
-	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,name ${ZPOOL}${ZROOTFS} | \
+	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,name | \
 		awk -v n=$1 'BEGIN { ret = 1 } $1 == "ports" && $2 == n { ret = 0; } END { exit ret }' && return 0
 	return 1
 }
 
 port_get_base() {
 	[ $# -ne 1 ] && eargs portstree_name
-	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,mountpoint ${ZPOOL}${ZROOTFS} | \
+	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,mountpoint | \
 		awk -v n=$1 '$1 == "ports" && $2 == n { print $3 }'
 }
 
 port_get_fs() {
 	[ $# -ne 1 ] && eargs portstree_name
-	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name,name ${ZPOOL}${ZROOTFS} | \
+	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,name | \
 		awk -v n=$1 '$1 == "ports" && $2 == n { print $3 }'
 }
 
