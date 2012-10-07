@@ -9,6 +9,7 @@ Parameters:
 
 Options:
     -c          -- Clean the previous built binary packages
+    -C          -- Clean previous packages for the given list to build
     -D          -- Debug mode, dislay more information
     -t          -- Add some testings to package building
     -s          -- Skip sanity
@@ -27,11 +28,12 @@ PTNAME="default"
 SKIPSANITY=0
 SETNAME=""
 CLEAN=0
+CLEAN_LISTED=0
 . ${SCRIPTPREFIX}/common.sh
 
 [ $# -eq 0 ] && usage
 
-while getopts "Df:j:J:cn:p:tswz:" FLAG; do
+while getopts "Df:j:J:Ccn:p:tswz:" FLAG; do
 	case "${FLAG}" in
 		D)
 			DEBUG_MODE=1
@@ -41,6 +43,9 @@ while getopts "Df:j:J:cn:p:tswz:" FLAG; do
 			;;
 		c)
 			CLEAN=1
+			;;
+		C)
+			CLEAN_LISTED=1
 			;;
 		f)
 			LISTPKGS=${OPTARG}

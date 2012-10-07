@@ -1232,6 +1232,8 @@ listed_ports() {
 }
 
 prepare_ports() {
+	local pkg
+
 	msg "Calculating ports order and dependencies"
 	mkdir -p "${JAILMNT}/poudriere/pool" "${JAILMNT}/poudriere/var/run" "${JAILMNT}/poudriere/var/cache"
 	touch "${JAILMNT}/poudriere/var/cache/origin-pkgname"
@@ -1249,6 +1251,16 @@ prepare_ports() {
 	done
 
 	zset status "sanity:"
+
+	if [ ${CLEAN_LISTED:-0} -eq 1 ]; then
+		listed_ports | while read port; do
+			pkg="${PKGDIR}/All/$(cache_get_pkgname  ${port}).${PKG_EXT}"
+			if [ -f "${pkg}" ]; then
+				msg "Deleting existing package: ${pkg##*/}"
+				delete_pkg ${pkg}
+			fi
+		done
+	fi
 
 	if [ $SKIPSANITY -eq 0 ]; then
 		msg "Sanity checking the repository"
