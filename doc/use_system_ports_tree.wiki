@@ -15,4 +15,8 @@ PORTSTREE            METHOD
 myownportstree       -
 </verbatim>
 
-You can now use it for you bulks
+You can now use it with <em>bulk</em> and <em>testport</em> with the <em>-p</em> option:
+
+    <verbatim># poudriere bulk -p myownportstree -j JAIL -f LIST
+# poudriere testport -p myownportstree -j JAIL -o PORT
+</verbatim>
