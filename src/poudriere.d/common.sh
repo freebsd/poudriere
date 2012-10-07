@@ -1221,6 +1221,16 @@ compute_deps() {
 	done
 }
 
+listed_ports() {
+	if [ -z "${LISTPORTS}" ]; then
+		if [ -n "${LISTPKGS}" ]; then
+			grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}
+		fi
+	else
+		echo "${LISTPORTS}" | tr ' ' '\n'
+	fi
+}
+
 prepare_ports() {
 	msg "Calculating ports order and dependencies"
 	mkdir -p "${JAILMNT}/poudriere/pool" "${JAILMNT}/poudriere/var/run" "${JAILMNT}/poudriere/var/cache"
@@ -1234,17 +1244,10 @@ prepare_ports() {
 	build_stats
 
 	zset status "computingdeps:"
-	if [ -z "${LISTPORTS}" ]; then
-		if [ -n "${LISTPKGS}" ]; then
-			grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS} | while read port; do
-				compute_deps "${port}"
-			done
-		fi
-	else
-		for port in ${LISTPORTS}; do
-			compute_deps "${port}"
-		done
-	fi
+	listed_ports | while read port; do
+		compute_deps "${port}"
+	done
+
 	zset status "sanity:"
 
 	if [ $SKIPSANITY -eq 0 ]; then
