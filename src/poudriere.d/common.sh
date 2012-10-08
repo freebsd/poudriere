@@ -1367,7 +1367,7 @@ if [ "${ZVERSION}" = "-" ]; then
 fi
 
 : ${SVN_HOST="svn.FreeBSD.org"}
-: ${GIT_URL="git://git.freebsd.org/freebsd-ports.git"}
+: ${GIT_URL="git://github.com/freebsd/freebsd-ports.git"}
 : ${FREEBSD_HOST="ftp://${FTP_HOST:-ftp.FreeBSD.org}"}
 : ${ZROOTFS="/poudriere"}
 
