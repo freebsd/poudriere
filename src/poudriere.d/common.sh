@@ -527,7 +527,7 @@ build_port() {
 		if [ "${phase}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
 			PREFIX=`injail make -C ${portdir} -VPREFIX`
-			zset status "fscheck:${port}"
+			zset status "leftovers:${port}"
 			if [ $ZVERSION -lt 28 ]; then
 				find ${jailbase}${PREFIX} ! -type d | \
 					sed -e "s,^${jailbase}${PREFIX}/,," | sort
