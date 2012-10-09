@@ -593,9 +593,7 @@ build_port() {
 					cat ${mod1}
 				fi
 				rm -f ${add} ${add1} ${del} ${del1} ${mod} ${mod1}
-				if [ $die -eq 1 ]; then
-					return 1
-				fi
+				[ $die -eq 0 ] || return 1
 			fi
 		fi
 	done
