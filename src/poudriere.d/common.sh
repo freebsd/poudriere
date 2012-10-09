@@ -593,7 +593,9 @@ build_port() {
 					cat ${mod1}
 				fi
 				rm -f ${add} ${add1} ${del} ${del1} ${mod} ${mod1}
-				[ $die -eq 0 ] || err 1 "Left overs have been found"
+				if [ $die -eq 1 ]; then
+					return 1
+				fi
 			fi
 		fi
 	done
