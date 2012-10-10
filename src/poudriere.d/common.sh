@@ -298,6 +298,14 @@ do_jail_mounts() {
 	fi
 }
 
+use_options() {
+	[ $# -ne 1 ] && eargs optionsdir
+	local optionsdir="$(realpath "$1")"
+
+	msg "Mounting /var/db/ports from: ${optionsdir}"
+	mount -t nullfs ${optionsdir} ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+}
+
 do_portbuild_mounts() {
 	[ $# -ne 1 ] && eargs should_mkdir
 	local should_mkdir=$1
@@ -328,13 +336,13 @@ do_portbuild_mounts() {
 
 	# Order is JAILNAME-SETNAME, then SETNAME, then JAILNAME, then default.
 	if [ -n "${SETNAME}" -a -d ${POUDRIERED}/${JAILNAME%-job-*}${SETNAME}-options ]; then
-		mount -t nullfs ${POUDRIERED}/${JAILNAME%-job-*}${SETNAME}-options ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+		use_options ${POUDRIERED}/${JAILNAME%-job-*}${SETNAME}-options
 	elif [ -d ${POUDRIERED}/${SETNAME#-}-options ]; then
-		mount -t nullfs ${POUDRIERED}/${SETNAME#-}-options ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+		use_options ${POUDRIERED}/${SETNAME#-}-options
 	elif [ -d ${POUDRIERED}/${JAILNAME%-job-*}-options ]; then
-		mount -t nullfs ${POUDRIERED}/${JAILNAME%-job-*}-options ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+		use_options ${POUDRIERED}/${JAILNAME%-job-*}-options
 	elif [ -d ${POUDRIERED}/options ]; then
-		mount -t nullfs ${POUDRIERED}/options ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+		use_options ${POUDRIERED}/options
 	fi
 
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
