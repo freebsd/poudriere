@@ -424,7 +424,7 @@ created by poudriere.
 .Pp
 Once the bulk build is over, you can meet your shiny new packages here:
 .Pp
-.Dl "/usr/local/poudriere_data/packages/bulk-81i386"
+.Dl "/usr/local/poudriere_data/packages/81i386"
 .Pp
 with 81i386 as the name of the jail.
 .Ss test a single port
@@ -439,7 +439,7 @@ Let's take the example of building a single port;
 all the tests will be done in all the jails in alphabetical order.
 .Pp
 It starts the jail, then mount the ports tree (nullfs), then mounts the
-package dir (pourdriere_data/packages/jailname), then it mounts the
+package dir (pourdriere_data/packages/<jailname>-<tree>-<setname>), then it mounts the
 ~/ports-cvs/mybeautifulporttotest (nullfs) it builds all the dependencies
 (except runtime ones) and log it to
 poudriere_data/logs/testport/jailname/default/mybeautifulporttotest.log).
