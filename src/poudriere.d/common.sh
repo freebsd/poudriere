@@ -1304,6 +1304,14 @@ prepare_ports() {
 	fi
 }
 
+append_make() {
+	[ $# -ne 1 ] && eargs makeconf
+	local makeconf="$(realpath "$1")"
+
+	msg "Appending to /etc/make.conf: ${makeconf}"
+	cat "${makeconf}" >> ${JAILMNT}/etc/make.conf
+}
+
 prepare_jail() {
 	if [ -z "${NO_PACKAGE_BUILDING}" ]; then
 		export PACKAGE_BUILDING=yes
@@ -1324,11 +1332,11 @@ prepare_jail() {
 
 	[ ! -d ${DISTFILES_CACHE} ] && err 1 "DISTFILES_CACHE directory	does not exists. (c.f. poudriere.conf)"
 
-	[ -f ${POUDRIERED}/make.conf ] && cat ${POUDRIERED}/make.conf >> ${JAILMNT}/etc/make.conf
-	[ -f ${POUDRIERED}/${SETNAME#-}-make.conf ] && cat ${POUDRIERED}/${SETNAME#-}-make.conf >> ${JAILMNT}/etc/make.conf
-	[ -f ${POUDRIERED}/${JAILNAME}-make.conf ] && cat ${POUDRIERED}/${JAILNAME}-make.conf >> ${JAILMNT}/etc/make.conf
-	[ -f ${POUDRIERED}/${JAILNAME}-${PTNAME}-make.conf ] && cat ${POUDRIERED}/${JAILNAME}-${PTNAME}-make.conf >> ${JAILMNT}/etc/make.conf
-	[ -f ${POUDRIERED}/${JAILNAME}${SETNAME}-make.conf ] && cat ${POUDRIERED}/${JAILNAME}${SETNAME}-make.conf >> ${JAILMNT}/etc/make.conf
+	[ -f ${POUDRIERED}/make.conf ] && append_make ${POUDRIERED}/make.conf
+	[ -f ${POUDRIERED}/${SETNAME#-}-make.conf ] && append_make ${POUDRIERED}/${SETNAME#-}-make.conf
+	[ -f ${POUDRIERED}/${JAILNAME}-make.conf ] && append_make ${POUDRIERED}/${JAILNAME}-make.conf
+	[ -f ${POUDRIERED}/${JAILNAME}-${PTNAME}-make.conf ] && append_make ${POUDRIERED}/${JAILNAME}-${PTNAME}-make.conf
+	[ -f ${POUDRIERED}/${JAILNAME}${SETNAME}-make.conf ] && append_make ${POUDRIERED}/${JAILNAME}${SETNAME}-make.conf
 	if [ -z "${NO_PACKAGE_BUILDING}" ]; then
 		echo "PACKAGE_BUILDING=yes" >> ${JAILMNT}/etc/make.conf
 	fi
