@@ -1337,6 +1337,7 @@ prepare_jail() {
 
 	[ -f ${POUDRIERED}/make.conf ] && append_make ${POUDRIERED}/make.conf
 	[ -f ${POUDRIERED}/${SETNAME#-}-make.conf ] && append_make ${POUDRIERED}/${SETNAME#-}-make.conf
+	[ -f ${POUDRIERED}/${PTNAME}-make.conf ] && append_make ${POUDRIERED}/${PTNAME}-make.conf
 	[ -f ${POUDRIERED}/${JAILNAME}-make.conf ] && append_make ${POUDRIERED}/${JAILNAME}-make.conf
 	[ -f ${POUDRIERED}/${JAILNAME}-${PTNAME}-make.conf ] && append_make ${POUDRIERED}/${JAILNAME}-${PTNAME}-make.conf
 	[ -n "${SETNAME}" -a -f ${POUDRIERED}/${JAILNAME}${SETNAME}-make.conf ] && append_make ${POUDRIERED}/${JAILNAME}${SETNAME}-make.conf
