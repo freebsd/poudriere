@@ -72,6 +72,7 @@ _testport=(
 	'-j[run only inside the given jail]::name:_poudriere_jail'
 	'-n[no custom prefix]::'
 	'-p[specify on which portstree we work]::tree:_poudriere_pt'
+	'-z[Specify on which SET to use]::'
 )
 
 _ports=(

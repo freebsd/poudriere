@@ -23,10 +23,11 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 CONFIGSTR=0
 . ${SCRIPTPREFIX}/common.sh
 NOPREFIX=0
+SETNAME=""
 SKIPSANITY=0
 PTNAME="default"
 
-while getopts "Dd:o:cnj:J:p:s" FLAG; do
+while getopts "Dd:o:cnj:J:p:sz:" FLAG; do
 	case "${FLAG}" in
 		c)
 			CONFIGSTR=1
@@ -56,6 +57,10 @@ while getopts "Dd:o:cnj:J:p:s" FLAG; do
 		s)
 			SKIPSANITY=1
 			;;
+		z)
+			[ -n "${OPTARG}" ] || err 1 "Empty set name"
+			SETNAME="-${OPTARG}"
+			;;
 		*)
 			usage
 			;;
@@ -75,7 +80,7 @@ fi
 
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
 
-PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}
+PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}${SETNAME}
 
 JAILFS=`jail_get_fs ${JAILNAME}`
 JAILMNT=`jail_get_base ${JAILNAME}`
