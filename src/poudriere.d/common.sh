@@ -1336,7 +1336,7 @@ prepare_jail() {
 	[ -f ${POUDRIERED}/${SETNAME#-}-make.conf ] && append_make ${POUDRIERED}/${SETNAME#-}-make.conf
 	[ -f ${POUDRIERED}/${JAILNAME}-make.conf ] && append_make ${POUDRIERED}/${JAILNAME}-make.conf
 	[ -f ${POUDRIERED}/${JAILNAME}-${PTNAME}-make.conf ] && append_make ${POUDRIERED}/${JAILNAME}-${PTNAME}-make.conf
-	[ -f ${POUDRIERED}/${JAILNAME}${SETNAME}-make.conf ] && append_make ${POUDRIERED}/${JAILNAME}${SETNAME}-make.conf
+	[ -n "${SETNAME}" -a -f ${POUDRIERED}/${JAILNAME}${SETNAME}-make.conf ] && append_make ${POUDRIERED}/${JAILNAME}${SETNAME}-make.conf
 	if [ -z "${NO_PACKAGE_BUILDING}" ]; then
 		echo "PACKAGE_BUILDING=yes" >> ${JAILMNT}/etc/make.conf
 	fi
