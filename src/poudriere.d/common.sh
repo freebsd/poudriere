@@ -324,6 +324,8 @@ do_portbuild_mounts() {
 		fi
 		# Check for invalid options-JAILNAME created by bad options.sh
 		[ -d ${POUDRIERED}/options-${JAILNAME%-job-*} ] && err 1 "Please move your options-${JAILNAME%-job-*} to ${JAILNAME%-job-*}-options"
+
+		msg "Mounting packages from: ${PKGDIR}"
 	fi
 
 	mount -t nullfs ${PORTSDIR} ${JAILMNT}/usr/ports || err 1 "Failed to mount the ports directory "
