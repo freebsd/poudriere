@@ -1338,7 +1338,7 @@ prepare_jail() {
 	[ -z "${PKGDIR}" ] && err 1 "No package directory defined"
 	[ -n "${MFSSIZE}" -a -n "${USE_TMPFS}" ] && err 1 "You can't use both tmpfs and mdmfs"
 
-	msg "Mounting ports filesystems for ${JAILNAME}"
+	msg "Mounting ports from: ${PORTSDIR}"
 	do_portbuild_mounts 1
 
 	[ ! -d ${DISTFILES_CACHE} ] && err 1 "DISTFILES_CACHE directory	does not exists. (c.f. poudriere.conf)"
