@@ -42,6 +42,7 @@ while getopts "Df:j:J:Ccn:p:tswz:a" FLAG; do
 			;;
 		t)
 			export PORTTESTING=1
+			export DEVELOPER_MODE=yes
 			;;
 		c)
 			CLEAN=1

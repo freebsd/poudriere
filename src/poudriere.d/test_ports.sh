@@ -144,6 +144,7 @@ injail /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${P
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
 mkdir -p ${JAILMNT}/tmp/pkgs
 PORTTESTING=yes
+export DEVELOPER_MODE=yes
 log_start $(log_path)/${PKGNAME}.log
 buildlog_start ${PORTDIRECTORY}
 build_port ${PORTDIRECTORY}
