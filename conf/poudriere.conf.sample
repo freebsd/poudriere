@@ -89,11 +89,12 @@ DISTFILES_CACHE=/usr/ports/distfiles
 
 # parallel build support.
 #
-# by default it uses hw.ncpu to determine the number of builders, you can for it
-# to a given value bye specifying PARALLEL_JOBS
+# By default poudriere uses hw.ncpu to determine the number of builders.
+# You can override this default by changing PARALLEL_JOBS here, or
+# by specifying the -J flag to bulk/testport.
 #
 # Example to define PARALLEL_JOBS to one single job
-# PARALLEL_JOBS=yes
+# PARALLEL_JOBS=1
 
 
 # If set, failed builds will save the WRKDIR to ${POUDRIERE_DATA}/wrkdirs
