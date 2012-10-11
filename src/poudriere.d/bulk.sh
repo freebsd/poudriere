@@ -17,7 +17,8 @@ Options:
     -j name     -- Run only on the given jail
     -p tree     -- Specify on which ports tree the bulk will be done
     -w          -- Save WRKDIR on failed builds
-    -z set      -- Specify which SET to use"
+    -z set      -- Specify which SET to use
+    -a          -- Build the whole ports tree"
 
 	exit 1
 }
@@ -29,11 +30,12 @@ SKIPSANITY=0
 SETNAME=""
 CLEAN=0
 CLEAN_LISTED=0
+ALL=0
 . ${SCRIPTPREFIX}/common.sh
 
 [ $# -eq 0 ] && usage
 
-while getopts "Df:j:J:Ccn:p:tswz:" FLAG; do
+while getopts "Df:j:J:Ccn:p:tswz:a" FLAG; do
 	case "${FLAG}" in
 		D)
 			DEBUG_MODE=1
@@ -70,6 +72,9 @@ while getopts "Df:j:J:Ccn:p:tswz:" FLAG; do
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"
 			SETNAME="-${OPTARG}"
 			;;
+		a)
+			ALL=1
+			;;
 		*)
 			usage
 			;;
@@ -79,9 +84,10 @@ done
 shift $((OPTIND-1))
 
 if [ $# -eq 0 ]; then
-	[ -n "${LISTPKGS}" ] || err 1 "No packages specified"
-	[ -f "${LISTPKGS}" ] || err 1 "No such list of packages: ${LISTPKGS}"
+	[ -n "${LISTPKGS}" -o ${ALL} -eq 1 ] || err 1 "No packages specified"
+	[ ${ALL} -eq 1 -o -f "${LISTPKGS}" ] || err 1 "No such list of packages: ${LISTPKGS}"
 else
+	[ ${ALL} -eq 1 ] || err 1 "command line arguments and -a cannot be used at the same fime"
 	[ -z "${LISTPKGS}" ] || err 1 "command line arguments and list of ports cannot be used at the same time"
 	LISTPORTS="$@"
 fi
