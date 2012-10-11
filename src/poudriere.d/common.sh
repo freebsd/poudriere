@@ -1233,7 +1233,7 @@ compute_deps() {
 }
 
 listed_ports() {
-	if [ ${ALL} -eq 1 ]; then
+	if [ ${ALL:-0} -eq 1 ]; then
 		PORTSDIR=`port_get_base ${PTNAME}`
 		[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 		for cat in $(awk '$1 == "SUBDIR" { print $3}' ${PORTSDIR}/Makefile); do
