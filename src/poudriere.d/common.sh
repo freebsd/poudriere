@@ -1236,10 +1236,8 @@ listed_ports() {
 	if [ ${ALL} -eq 1 ]; then
 		PORTSDIR=`port_get_base ${PTNAME}`
 		[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
-		for cat in $(make -VSUBDIR -f ${PORTSDIR}/Makefile); do
-			for port in $(make -VSUBDIR -f ${PORTSDIR}/${cat}/Makefile); do
-				echo ${cat}/${port}
-			done
+		for cat in $(awk '$1 == "SUBDIR" { print $3}' ${PORTSDIR}/Makefile); do
+			awk -v cat=${cat}  '$1 == "SUBDIR" { print cat"/"$3}' ${PORTSDIR}/${cat}/Makefile
 		done
 		return
 	fi
