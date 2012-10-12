@@ -88,7 +88,7 @@ if [ $# -eq 0 ]; then
 	[ -n "${LISTPKGS}" -o ${ALL} -eq 1 ] || err 1 "No packages specified"
 	[ ${ALL} -eq 1 -o -f "${LISTPKGS}" ] || err 1 "No such list of packages: ${LISTPKGS}"
 else
-	[ ${ALL} -eq 1 ] || err 1 "command line arguments and -a cannot be used at the same fime"
+	[ ${ALL} -eq 0 ] || err 1 "command line arguments and -a cannot be used at the same fime"
 	[ -z "${LISTPKGS}" ] || err 1 "command line arguments and list of ports cannot be used at the same time"
 	LISTPORTS="$@"
 fi
