@@ -42,6 +42,8 @@ RECURSE_COMMAND=config-recursive
 
 . ${SCRIPTPREFIX}/common.sh
 
+[ $# -eq 0 ] && usage
+
 while getopts "j:f:p:nrsz:" FLAG; do
 	case "${FLAG}" in
 		j)
