@@ -166,7 +166,8 @@ if [ ${DELETE} -eq 1 ]; then
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	msg "Deleting portstree \"${PTNAME}\""
-	zfs destroy -r ${PTMNT}
+	PTFS=$(port_get_fs ${PTNAME})
+	zfs destroy -r ${PTFS}
 fi
 
 if [ ${UPDATE} -eq 1 ]; then
