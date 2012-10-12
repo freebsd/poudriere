@@ -20,9 +20,7 @@ perms=`stat ${CRONDIR} | awk '{print $3}'`
 
 QUEUEFILE=${CRONDIR}/poudriere-`date +%s`
 
-if [ $# -lt 1]; then
-	usage();
-fi
+[ $# -eq 0 ] && usage
 
 for ARG in $@; do
 	echo -n "$ARG " >> ${QUEUEFILE}
