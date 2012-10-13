@@ -574,6 +574,7 @@ build_port() {
 					/etc/passwd) continue;;
 					/etc/master.passwd) continue;;
 					/etc/shells) continue;;
+					/etc/make.conf.bak) continue;;
 					esac
 					case $mod$type in
 					+*) echo "${ppath}" >> ${add};;
