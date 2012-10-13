@@ -565,6 +565,7 @@ build_port() {
 					/tmp/*) continue;;
 					share/nls/POSIX) continue;;
 					share/nls/en_US.US-ASCII) continue;;
+					/var/db/fontconfig/*) continue;;
 					/var/log/*) continue;;
 					/var/mail/*) continue;;
 					${HOME}/*) continue;;
