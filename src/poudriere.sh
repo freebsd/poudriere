@@ -4,7 +4,7 @@ LC_ALL=C
 unset SHELL
 SAVED_TERM=$TERM
 unset TERM
-VERSION="2.2-pre"
+VERSION="2.2"
 
 usage() {
 	echo "Usage: poudriere command [options]
