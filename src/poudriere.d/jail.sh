@@ -145,6 +145,14 @@ build_and_install_world() {
 	export __MAKE_CONF=/dev/null
 	export SRCCONF=${JAILMNT}/etc/src.conf
 	MAKE_JOBS="-j${PARALLEL_JOBS}"
+
+	: ${CCACHE_PATH:="/usr/local/libexec/ccache"}
+	if [ -n "${CCACHE_DIR}" -a -d ${CCACHE_PATH}/world ]; then
+		export CCACHE_DIR
+		export CC="${CCACHE_PATH}/world/cc"
+		export CXX="${CCACHE_PATH}/world/c++"
+	fi
+
 	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
 	make -C ${JAILMNT}/usr/src buildworld ${MAKE_JOBS} ${MAKEWORLDARGS} || err 1 "Fail to build world"
 	msg "Starting make installworld"
