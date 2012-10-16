@@ -109,6 +109,7 @@ update_jail() {
 		METHOD="ftp"
 		zset method "${METHOD}"
 	fi
+	msg "Upgrading using ${METHOD}"
 	case ${METHOD} in
 	ftp)
 		JAILMNT=`jail_get_base ${JAILNAME}`
@@ -127,7 +128,6 @@ update_jail() {
 		jail_stop
 		;;
 	csup)
-		msg "Upgrading using csup"
 		install_from_csup
 		update_version $(zget version)
 		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
