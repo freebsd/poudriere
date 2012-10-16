@@ -14,6 +14,7 @@ Parameters:
 
 Options:
     -q            -- quiet (remove the header in list)
+    -J n          -- Run buildworld in parallell with n jobs.
     -j jailname   -- Specifies the jailname
     -v version    -- Specifies which version of FreeBSD we want in jail
     -a arch       -- Indicates architecture of the jail: i386 or amd64
@@ -143,8 +144,9 @@ build_and_install_world() {
 	unset MAKEOBJPREFIX
 	export __MAKE_CONF=/dev/null
 	export SRCCONF=${JAILMNT}/etc/src.conf
-	msg "Starting make buildworld"
-	make -C ${JAILMNT}/usr/src buildworld ${MAKEWORLDARGS} || err 1 "Fail to build world"
+	MAKE_JOBS="-j${PARALLEL_JOBS}"
+	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
+	make -C ${JAILMNT}/usr/src buildworld ${MAKE_JOBS} ${MAKEWORLDARGS} || err 1 "Fail to build world"
 	msg "Starting make installworld"
 	make -C ${JAILMNT}/usr/src installworld DESTDIR=${JAILMNT} || err 1 "Fail to install world"
 	make -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distrib-dirs && \
@@ -388,10 +390,13 @@ SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "j:v:a:z:m:n:f:M:sdklqciut:" FLAG; do
+while getopts "J:j:v:a:z:m:n:f:M:sdklqciut:" FLAG; do
 	case "${FLAG}" in
 		j)
 			JAILNAME=${OPTARG}
+			;;
+		J)
+			PARALLEL_JOBS=${OPTARG}
 			;;
 		v)
 			VERSION=${OPTARG}
