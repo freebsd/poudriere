@@ -120,7 +120,7 @@ update_jail() {
 		;;
 	svn*)
 		install_from_svn
-		yes | make -C ${JAILMNT} delete-old delete-old-libs DESTDIR=${JAILMNT}
+		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
 		zfs destroy -r ${JAILFS}@clean
 		zfs snapshot ${JAILFS}@clean
 		;;
