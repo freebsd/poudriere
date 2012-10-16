@@ -140,7 +140,7 @@ build_and_install_world() {
 	mkdir -p ${JAILMNT}/etc
 	[ -f ${JAILMNT}/etc/src.conf ] && rm -f ${JAILMNT}/etc/src.conf
 	[ -f ${POUDRIERED}/src.conf ] && cat ${POUDRIERED}/src.conf > ${JAILMNT}/etc/src.conf
-	[ -f ${POUDRIERED}/${JAILMNT}-src.conf ] && cat ${POUDRIERED}/${JAILMNT}-src.conf >> ${JAILMNT}/etc/src.conf
+	[ -f ${POUDRIERED}/${JAILNAME}-src.conf ] && cat ${POUDRIERED}/${JAILNAME}-src.conf >> ${JAILMNT}/etc/src.conf
 	unset MAKEOBJPREFIX
 	export __MAKE_CONF=/dev/null
 	export SRCCONF=${JAILMNT}/etc/src.conf
