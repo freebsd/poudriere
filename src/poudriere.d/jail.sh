@@ -84,6 +84,21 @@ cleanup_new_jail() {
 	delete_jail
 }
 
+update_version() {
+	local release="$1"
+	local login_env osversion
+
+	osversion=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILMNT}/usr/include/sys/param.h`
+	login_env=",UNAME_r=${release},UNAME_v=FreeBSD ${release},OSVERSION=${osversion}"
+
+	if [ "${ARCH}" = "i386" -a "${REALARCH}" = "amd64" ];then
+		login_env="${login_env},UNAME_p=i386,UNAME_m=i386"
+	fi
+
+	sed -i "" -e "s/:\(setenv.*\):/:\1${login_env}:/" ${JAILMNT}/etc/login.conf
+	cap_mkdb ${JAILMNT}/etc/login.conf
+}
+
 update_jail() {
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	jail_runs && \
@@ -114,12 +129,14 @@ update_jail() {
 	csup)
 		msg "Upgrading using csup"
 		install_from_csup
+		update_version $(zget version)
 		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
 		zfs destroy -r ${JAILFS}@clean
 		zfs snapshot ${JAILFS}@clean
 		;;
 	svn*)
 		install_from_svn
+		update_version $(zget version)
 		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
 		zfs destroy -r ${JAILFS}@clean
 		zfs snapshot ${JAILFS}@clean
@@ -345,15 +362,13 @@ create_jail() {
 	CLEANUP_HOOK=cleanup_new_jail
 	zset method "${METHOD}"
 	${FCT}
+
 	eval `grep "^[RB][A-Z]*=" ${JAILMNT}/usr/src/sys/conf/newvers.sh `
 	RELEASE=${REVISION}-${BRANCH}
 	zset version "${RELEASE}"
-
-	OSVERSION=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILMNT}/usr/include/sys/param.h`
-	LOGIN_ENV=",UNAME_r=${RELEASE},UNAME_v=FreeBSD ${RELEASE},OSVERSION=${OSVERSION}"
+	update_version ${RELEASE}
 
 	if [ "${ARCH}" = "i386" -a "${REALARCH}" = "amd64" ];then
-		LOGIN_ENV="${LOGIN_ENV},UNAME_p=i386,UNAME_m=i386"
 		cat > ${JAILMNT}/etc/make.conf << EOF
 ARCH=i386
 MACHINE=i386
@@ -362,8 +377,6 @@ EOF
 
 	fi
 
-	sed -i .back -e "s/:\(setenv.*\):/:\1${LOGIN_ENV}:/" ${JAILMNT}/etc/login.conf
-	cap_mkdb ${JAILMNT}/etc/login.conf
 	pwd_mkdb -d ${JAILMNT}/etc/ -p ${JAILMNT}/etc/master.passwd
 
 	cat >> ${JAILMNT}/etc/make.conf << EOF
