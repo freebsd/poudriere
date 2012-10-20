@@ -84,7 +84,7 @@ export PORTSDIR=`port_get_base ${PTNAME}`
 [ -z "${PORTSDIR}" ] && err 1 "No such ports tree: ${PTNAME}"
 
 if [ $# -eq 0 ]; then 
-	[ -n "${BULK_LIST}" ] || err 1 "No packages specify"
+	[ -n "${BULK_LIST}" ] || err 1 "No packages specified"
 	test -f ${BULK_LIST} || err 1 "No such list of packages: ${BULK_LIST}"
 LISTPORTS=`grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${BULK_LIST}`
 else
