@@ -293,7 +293,7 @@ do_jail_mounts() {
 				mkdir -p ${JAILMNT}/compat/linux/sys
 			fi
 			mount -t linprocfs linprocfs ${JAILMNT}/compat/linux/proc
-			mount -t linsysfs linsysfs ${JAILMNT}/compat/linux/sys
+#			mount -t linsysfs linsysfs ${JAILMNT}/compat/linux/sys
 		fi
 	fi
 }
