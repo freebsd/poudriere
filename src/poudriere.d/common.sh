@@ -858,7 +858,7 @@ build_queue() {
 			fi
 		done
 		# Sleep briefly if still waiting on builds, to save CPU
-		[ $activity -eq 0 ] && sleep 0.1
+		[ $activity -eq 0 ] && sleep 1
 	done
 }
 
