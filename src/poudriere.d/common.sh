@@ -849,13 +849,13 @@ build_queue() {
 			if [ -z "${pkgname}" ]; then
 				# pool empty ?
 				[ $(stat -f '%z' ${JAILMNT}/poudriere/pool) -eq 2 ] && return
-				break
+			else
+				activity=1
+				MASTERMNT=${JAILMNT} JAILNAME="${name}" JAILMNT="${mnt}" JAILFS="${fs}" \
+					MY_JOBID="${j}" \
+					build_pkg "${pkgname}" >/dev/null 2>&1 &
+				echo "$!" > ${JAILMNT}/poudriere/var/run/${j}.pid
 			fi
-			activity=1
-			MASTERMNT=${JAILMNT} JAILNAME="${name}" JAILMNT="${mnt}" JAILFS="${fs}" \
-				MY_JOBID="${j}" \
-				build_pkg "${pkgname}" >/dev/null 2>&1 &
-			echo "$!" > ${JAILMNT}/poudriere/var/run/${j}.pid
 		done
 		# Sleep briefly if still waiting on builds, to save CPU
 		[ $activity -eq 0 ] && sleep 0.1
