@@ -53,6 +53,10 @@ USE_PORTLINT=no
 # If set WRKDIRPREFIX will be using tmpfs
 USE_TMPFS=yes
 
+# Use TMPFS the build pool/cache operations
+# # default: no
+TMPFS_DATA=yes
+
 # If set the given directory will be used for the distfiles this allow the share
 # the distfiles between jails and ports tree
 DISTFILES_CACHE=/usr/ports/distfiles
