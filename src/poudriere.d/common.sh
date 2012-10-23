@@ -1011,7 +1011,7 @@ deps_file() {
 
 	if [ ! -f "${depfile}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
-			pkg_info -qr "${pkg}" | awk '{ print $2 }' > "${depfile}"
+			injail pkg_info -qr "${pkg}" | awk '{ print $2 }' > "${depfile}"
 		else
 			pkg info -qdF "${pkg}" > "${depfile}"
 		fi
@@ -1029,7 +1029,7 @@ pkg_get_origin() {
 	if [ ! -f "${originfile}" ]; then
 		if [ -z "${origin}" ]; then
 			if [ "${PKG_EXT}" = "tbz" ]; then
-				origin=$(pkg_info -qo "${pkg}")
+				origin=$(injail pkg_info -qo "${pkg}")
 			else
 				origin=$(pkg query -F "${pkg}" "%o")
 			fi
@@ -1049,7 +1049,7 @@ pkg_get_options() {
 
 	if [ ! -f "${optionsfile}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
-			compiled_options=$(pkg_info -qf "${pkg}" | awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
+			compiled_options=$(injail pkg_info -qf "${pkg}" | awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 		else
 			compiled_options=$(pkg query -F "${pkg}" '%Ov %Ok' | awk '$1 == "on" {print $2}' | sort | tr '\n' ' ')
 		fi
