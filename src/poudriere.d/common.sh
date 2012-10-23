@@ -1249,9 +1249,11 @@ cache_get_pkgname() {
 		[ -n "${existing_origin}" ] &&  err 1 "Duplicated origin for ${pkgname}: ${origin} AND ${existing_origin}. Rerun with -D to see which ports are depending on these."
 		echo "${origin} ${pkgname}" >> ${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/origin-pkgname
 	fi
-	echo ${pkgname}
 
 	lock_release origin-pkgname
+
+	echo ${pkgname}
+
 }
 
 cache_get_origin() {
