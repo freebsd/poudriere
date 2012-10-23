@@ -1321,7 +1321,7 @@ prepare_ports() {
 	zset status "computingdeps:"
 
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
-	listed_ports | while read port; do
+	for port in $(listed_ports); do
 		for j in ${JOBS}; do
 			next=0
 			if [ -f  "${JAILMNT}/poudriere/var/run/${j}.pid" ]; then
