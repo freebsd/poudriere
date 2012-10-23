@@ -829,11 +829,10 @@ EOF
 
 build_queue() {
 
-	local activity j cnt mnt fs name pkgname read_queue
+	local j cnt mnt fs name pkgname read_queue
 
 	read_queue=1
 	while :; do
-		activity=0
 		for j in ${JOBS}; do
 			mnt="${JAILMNT}/build/${j}"
 			fs="${JAILFS}/build/${j}"
@@ -864,7 +863,6 @@ build_queue() {
 				# is done before checking the queue again
 				read_queue=0
 			else
-				activity=1
 				MASTERMNT=${JAILMNT} JAILNAME="${name}" JAILMNT="${mnt}" JAILFS="${fs}" \
 					MY_JOBID="${j}" \
 					build_pkg "${pkgname}" >/dev/null 2>&1 &
@@ -875,8 +873,14 @@ build_queue() {
 				read_queue=1
 			fi
 		done
-		# Sleep briefly if still waiting on builds, to save CPU
-		[ $activity -eq 0 ] && sleep 1
+		if [ ${read_queue} -eq 0 ]; then
+			# If not wanting to read the queue, sleep to save CPU
+			sleep 2
+		else
+			# The queue wants to be read, sleep only briefly
+			sleep 0.1
+		fi
+
 	done
 }
 
