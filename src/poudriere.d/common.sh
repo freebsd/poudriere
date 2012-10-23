@@ -1221,7 +1221,7 @@ lock_acquire() {
 		if mkdir ${POUDRIERE_DATA}/.lock-${JAILNAME}-${lockname} 2>/dev/null; then
 			break
 		fi
-		sleep 1
+		sleep 0.1
 	done
 }
 
