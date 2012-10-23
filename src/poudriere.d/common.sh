@@ -1339,7 +1339,7 @@ prepare_ports() {
 			break
 		done
 		if [ ${next} -eq 0 ]; then
-			sleep 1
+			sleep 0.1
 		fi
 	done
 	wait
