@@ -220,15 +220,15 @@ src-all" > ${JAILMNT}/etc/supfile
 
 install_from_ftp() {
 	mkdir ${JAILMNT}/fromftp
-	local URL BASEURL
+	local URL V
 
-	if [ ${VERSION%%.*} -lt 9 ]; then
-		msg "Fetching sets for FreeBSD ${VERSION} ${ARCH}"
+	V=${ALLBSDVER:-${VERSION}}
+	if [ ${V%%.*} -lt 9 ]; then
+		msg "Fetching sets for FreeBSD ${V} ${ARCH}"
 		case ${METHOD} in
-		ftp) BASEURL="${FREEBSD_HOST}/pub/FreeBSD/releases/${ARCH}/" ;;
-		allbsd) BASEURL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}" ;;
+		ftp) URL="${FREEBSD_HOST}/pub/FreeBSD/releases/${ARCH}/${V}" ;;
+		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
 		esac
-		URL="${BASEURL}/${VERSION}"
 		DISTS="base dict src"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32"
 		for dist in ${DISTS}; do
@@ -260,14 +260,13 @@ install_from_ftp() {
 		done
 	else
 		case ${METHOD} in
-		ftp) BASEURL="${FREEBSD_HOST}/pub/FreeBSD/releases/${ARCH}/${ARCH}" ;;
-		allbsd) BASEURL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}" ;;
+		ftp) URL="${FREEBSD_HOST}/pub/FreeBSD/releases/${ARCH}/${ARCH}/${V}" ;;
+		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
 		esac
-		URL="${BASEURL}/${VERSION}"
 		DISTS="base.txz src.txz"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
 		for dist in ${DISTS}; do
-			msg "Fetching ${dist} for FreeBSD ${VERSION} ${ARCH}"
+			msg "Fetching ${dist} for FreeBSD ${V} ${ARCH}"
 			fetch_file ${JAILMNT}/fromftp/${dist} ${URL}/${dist}
 			msg_n "Extracting ${dist}..."
 			tar -xpf ${JAILMNT}/fromftp/${dist} -C  ${JAILMNT}/ || err 1 " fail" && echo " done"
