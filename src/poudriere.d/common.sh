@@ -440,6 +440,7 @@ port_create_zfs() {
 cleanup() {
 	[ -n "${CLEANED_UP}" ] && return 0
 	msg "Cleaning up"
+	lock_release origin-pkgname || :
 	# If this is a builder, don't cleanup, the master will handle that.
 	if [ -n "${MY_JOBID}" ]; then
 		[ -n "${PKGNAME}" ] && clean_pool ${PKGNAME} 1 || :
@@ -461,8 +462,8 @@ cleanup() {
 			[ "${pid}" = "${MASTERMNT:-${JAILMNT}}/poudriere/var/run/*.pid" ] && break
 			pkill -15 -F ${pid} >/dev/null 2>&1 || :
 		done
-		wait
 	fi
+	wait
 
 	zfs destroy -r ${JAILFS%/build/*}/build 2>/dev/null || :
 	zfs destroy -r ${JAILFS%/build/*}@prepkg 2>/dev/null || :
@@ -1212,10 +1213,31 @@ next_in_queue() {
 	echo ${p##*/}
 }
 
+lock_acquire() {
+	[ $# -ne 1 ] && eargs lockname
+	local lockname=$1
+
+	while :; do
+		if mkdir ${POUDRIERE_DATA}/.lock-${JAILNAME}-${lockname} 2>/dev/null; then
+			break
+		fi
+		sleep 1
+	done
+}
+
+lock_release() {
+	[ $# -ne 1 ] && eargs lockname
+	local lockname=$1
+
+	rmdir ${POUDRIERE_DATA}/.lock-${JAILNAME}-${lockname} 2>/dev/null
+}
+
 cache_get_pkgname() {
 	[ $# -ne 1 ] && eargs origin
 	local origin=$1
 	local pkgname existing_origin
+
+	lock_acquire origin-pkgname
 
 	pkgname=$(awk -v o=${origin} '$1 == o { print $2 }' ${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/origin-pkgname)
 
@@ -1228,6 +1250,8 @@ cache_get_pkgname() {
 		echo "${origin} ${pkgname}" >> ${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/origin-pkgname
 	fi
 	echo ${pkgname}
+
+	lock_release origin-pkgname
 }
 
 cache_get_origin() {
@@ -1245,9 +1269,10 @@ compute_deps() {
 	local pkgname="${2:-$(cache_get_pkgname ${port})}"
 	local dep_pkgname dep_port
 	local pkg_pooldir="${JAILMNT}/poudriere/pool/${pkgname}"
-	[ -d "${pkg_pooldir}" ] && return
+	mkdir "${pkg_pooldir}" 2>/dev/null || return
 
-	mkdir "${pkg_pooldir}"
+	msg "Computing deps for ${port}"
+
 	for dep_port in `list_deps ${port}`; do
 		debug "${port} depends on ${dep_port}"
 		dep_pkgname=$(cache_get_pkgname ${dep_port})
@@ -1282,6 +1307,7 @@ prepare_ports() {
 	[ -n "${TMPFS_DATA}" ] && mount -t tmpfs tmpfs "${JAILMNT}/poudriere"
 	mkdir -p "${JAILMNT}/poudriere/pool" "${JAILMNT}/poudriere/var/run" "${JAILMNT}/poudriere/var/cache"
 	touch "${JAILMNT}/poudriere/var/cache/origin-pkgname"
+	lock_release origin-pkgname || :
 
 	zset stats_queued "0"
 	:> ${JAILMNT}/poudriere/ports.built
@@ -1291,9 +1317,33 @@ prepare_ports() {
 	build_stats
 
 	zset status "computingdeps:"
+
+	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
 	listed_ports | while read port; do
-		compute_deps "${port}"
+		for j in ${JOBS}; do
+			next=0
+			if [ -f  "${JAILMNT}/poudriere/var/run/${j}.pid" ]; then
+				if pgrep -F "${JAILMNT}/poudriere/var/run/${j}.pid" >/dev/null 2>&1; then
+					continue
+				fi
+				# A dep finished
+				next=1
+			else
+				next=1
+			fi
+
+			[ ${next} -eq 0 ] && continue
+
+			compute_deps "${port}" &
+			echo "$!" > ${JAILMNT}/poudriere/var/run/${j}.pid
+		done
+		if [ ${next} -eq 0 ]; then
+			sleep 2
+		else
+			sleep 0.1
+		fi
 	done
+	wait
 
 	zset status "sanity:"
 
@@ -1444,4 +1494,3 @@ case ${PARALLEL_JOBS} in
 	PARALLEL_JOBS=$(sysctl -n hw.ncpu)
 	;;
 esac
-
