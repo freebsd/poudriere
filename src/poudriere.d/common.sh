@@ -1336,11 +1336,10 @@ prepare_ports() {
 
 			compute_deps "${port}" &
 			echo "$!" > ${JAILMNT}/poudriere/var/run/${j}.pid
+			break
 		done
 		if [ ${next} -eq 0 ]; then
-			sleep 2
-		else
-			sleep 0.1
+			sleep 1
 		fi
 	done
 	wait
