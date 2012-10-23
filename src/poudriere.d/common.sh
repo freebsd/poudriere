@@ -829,8 +829,9 @@ EOF
 
 build_queue() {
 
-	local activity j cnt mnt fs name pkgname
+	local activity j cnt mnt fs name pkgname read_queue
 
+	read_queue=1
 	while :; do
 		activity=0
 		for j in ${JOBS}; do
@@ -844,17 +845,34 @@ build_queue() {
 				build_stats
 				rm -f "${JAILMNT}/poudriere/var/run/${j}.pid"
 				JAILFS="${fs}" zset status "idle:"
+
+				# A builder finished, check the queue to see if
+				# it can do some work
+				read_queue=1
 			fi
+
+			# Don't want to read the queue, so just skip this
+			# builder and check the next, as it may be done
+			[ ${read_queue} -eq 0 ] && continue
+
 			pkgname=$(next_in_queue)
 			if [ -z "${pkgname}" ]; then
 				# pool empty ?
 				[ $(stat -f '%z' ${JAILMNT}/poudriere/pool) -eq 2 ] && return
+
+				# Pool is waiting on dep, wait until a build
+				# is done before checking the queue again
+				read_queue=0
 			else
 				activity=1
 				MASTERMNT=${JAILMNT} JAILNAME="${name}" JAILMNT="${mnt}" JAILFS="${fs}" \
 					MY_JOBID="${j}" \
 					build_pkg "${pkgname}" >/dev/null 2>&1 &
 				echo "$!" > ${JAILMNT}/poudriere/var/run/${j}.pid
+
+				# A new job is spawned, try to read the queue
+				# just to keep things moving
+				read_queue=1
 			fi
 		done
 		# Sleep briefly if still waiting on builds, to save CPU
