@@ -1257,7 +1257,7 @@ prepare_ports() {
 
 	msg "Calculating ports order and dependencies"
 	mkdir -p "${JAILMNT}/poudriere"
-	[ -n "${TMPFS_DATA}" ] && mount -t tmpfs tmpfs ${JAILMNT}/poudriere
+	[ -n "${TMPFS_DATA}" ] && mount -t tmpfs tmpfs "${JAILMNT}/poudriere"
 	mkdir -p "${JAILMNT}/poudriere/pool" "${JAILMNT}/poudriere/var/run" "${JAILMNT}/poudriere/var/cache"
 	touch "${JAILMNT}/poudriere/var/cache/origin-pkgname"
 
