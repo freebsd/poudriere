@@ -1302,7 +1302,7 @@ listed_ports() {
 }
 
 prepare_ports() {
-	local pkg
+	local pkg taken
 
 	msg "Calculating ports order and dependencies"
 	mkdir -p "${JAILMNT}/poudriere"
@@ -1322,27 +1322,28 @@ prepare_ports() {
 
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
 	for port in $(listed_ports); do
-		for j in ${JOBS}; do
-			next=0
-			if [ -f  "${JAILMNT}/poudriere/var/run/${j}.pid" ]; then
-				if pgrep -F "${JAILMNT}/poudriere/var/run/${j}.pid" >/dev/null 2>&1; then
-					continue
+
+		taken=0
+		while [ ${taken} -eq 0 ]; do
+			for j in ${JOBS}; do
+				if [ -f  "${JAILMNT}/poudriere/var/run/${j}.pid" ]; then
+					if pgrep -F "${JAILMNT}/poudriere/var/run/${j}.pid" >/dev/null 2>&1; then
+						# This child is busy, skip
+						continue
+					fi
+
+					# A dep finished
+					rm -f "${JAILMNT}/poudriere/var/run/${j}.pid"
 				fi
-				# A dep finished
-				next=1
-			else
-				next=1
-			fi
 
-			[ ${next} -eq 0 ] && continue
-
-			compute_deps "${port}" &
-			echo "$!" > ${JAILMNT}/poudriere/var/run/${j}.pid
-			break
-		done
-		if [ ${next} -eq 0 ]; then
+				compute_deps "${port}" &
+				echo "$!" > ${JAILMNT}/poudriere/var/run/${j}.pid
+				taken=1
+				break
+			done
 			sleep 0.1
-		fi
+			# Did not want the next dep, wait more.
+		done
 	done
 	wait
 
