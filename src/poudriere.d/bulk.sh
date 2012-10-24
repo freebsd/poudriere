@@ -176,11 +176,11 @@ else
 	for pkg_file in ${PKGDIR}/All/*.tbz; do
 		# Check for non-empty directory with no packages in it
 		[ "${pkg}" = "${PKGDIR}/All/*.tbz" ] && break
-		msg_n "Extracting description from ${pkg_file##*/}..."
+		msg "Extracting description from ${pkg_file##*/}..."
 		ORIGIN=$(pkg_get_origin ${pkg_file})
-		[ -d ${PORTSDIR}/${ORIGIN} ] && injail make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
-		echo " done"
+		[ -d ${PORTSDIR}/${ORIGIN} ] &&	parallel_run "injail make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1"
 	done
+	parallel_stop
 
 	msg_n "Generating INDEX..."
 	awk -v indf=${INDEXF}.1 -F\| 'BEGIN {
