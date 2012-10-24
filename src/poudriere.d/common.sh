@@ -462,7 +462,7 @@ cleanup() {
 	# Kill all children - this does NOT recurse, so orphans can still
 	# occur. This is just to avoid requiring pid files for parallel_run
 	for pid in $(jobs -p); do
-		kill ${pid}
+		kill ${pid} 2>/dev/null || :
 	done
 
 	if [ -d ${MASTERMNT:-${JAILMNT}}/poudriere/var/run ]; then
