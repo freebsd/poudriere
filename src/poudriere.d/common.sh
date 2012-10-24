@@ -1334,6 +1334,37 @@ parallel_compute_deps() {
 	wait
 }
 
+parallel_stop() {
+	wait
+}
+
+_reap_children() {
+        _child_count=0
+        for pid in $(jobs -p); do
+                if kill -0 ${pid} 2>/dev/null; then
+                        _child_count=$((_child_count + 1))
+                else
+                        wait ${pid}
+                fi
+        done
+}
+
+parallel_run() {
+	local cmd="$@"
+
+	while :; do
+		_reap_children
+		if [ ${_child_count} -lt ${_REAL_PARALLEL_JOBS} ]; then
+			# Execute the command in the background
+			eval "${cmd} &"
+			return 0
+		fi
+		sleep 0.001
+	done
+
+	return 0
+}
+
 # Get all data that make this build env unique,
 # so if the same build is done again,
 # we can use the some of the same cached data
@@ -1360,6 +1391,8 @@ cache_get_key() {
 
 prepare_ports() {
 	local pkg
+
+	_REAL_PARALLEL_JOBS=${PARALLEL_JOBS}
 
 	msg "Calculating ports order and dependencies"
 	mkdir -p "${JAILMNT}/poudriere"
