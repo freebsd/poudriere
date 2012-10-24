@@ -431,6 +431,8 @@ port_create_zfs() {
 	local fs=$3
 	msg_n "Creating ${name} fs..."
 	zfs create -p \
+		-o atime=off \
+		-o recordsize=4k \
 		-o mountpoint=${mnt} \
 		-o ${NS}:type=ports \
 		-o ${NS}:name=${name} \
