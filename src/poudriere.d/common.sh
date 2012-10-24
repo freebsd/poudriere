@@ -1233,11 +1233,12 @@ lock_release() {
 }
 
 cache_get_pkgname() {
-	[ $# -ne 1 ] && eargs origin
+	[ $# -lt 1 ] && eargs origin do_lock
 	local origin=$1
+	local do_lock=${2:-0}
 	local pkgname existing_origin
 
-	lock_acquire origin-pkgname
+	[ ${do_lock} -eq 1 ] && lock_acquire origin-pkgname
 
 	pkgname=$(awk -v o=${origin} '$1 == o { print $2 }' ${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/origin-pkgname)
 
@@ -1250,7 +1251,7 @@ cache_get_pkgname() {
 		echo "${origin} ${pkgname}" >> ${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/origin-pkgname
 	fi
 
-	lock_release origin-pkgname
+	[ ${do_lock} -eq 1 ] && lock_release origin-pkgname
 
 	echo ${pkgname}
 
@@ -1268,7 +1269,7 @@ compute_deps() {
 	[ $# -lt 1 ] && eargs port
 	[ $# -gt 2 ] && eargs port pkgnme
 	local port=$1
-	local pkgname="${2:-$(cache_get_pkgname ${port})}"
+	local pkgname="${2:-$(cache_get_pkgname ${port} 1)}"
 	local dep_pkgname dep_port
 	local pkg_pooldir="${JAILMNT}/poudriere/pool/${pkgname}"
 	[ -d "${pkg_pooldir}" ] && return
@@ -1279,7 +1280,7 @@ compute_deps() {
 
 	for dep_port in `list_deps ${port}`; do
 		debug "${port} depends on ${dep_port}"
-		dep_pkgname=$(cache_get_pkgname ${dep_port})
+		dep_pkgname=$(cache_get_pkgname ${dep_port} 1)
 		compute_deps "${dep_port}" "${dep_pkgname}"
 		touch "${pkg_pooldir}/${dep_pkgname}"
 	done
