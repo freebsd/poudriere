@@ -1341,8 +1341,15 @@ cache_get_key() {
 			injail cat /etc/make.conf
 			injail find /var/db/ports -exec sha256 {} +
 			echo ${JAILNAME}-${SETNAME}-${PTNAME}
-			[ -f ${JAILMNT}/usr/ports/.poudriere.stamp ] && \
+			if [ -f ${JAILMNT}/usr/ports/.poudriere.stamp ]; then
 				cat ${JAILMNT}/usr/ports/.poudriere.stamp
+			else
+				# This is not a poudriere-managed ports tree.
+				# Just toss in getpid() to invalidate the cache
+				# as there is no quick way to hash the tree without
+				# taking possibly minutes+
+				echo $$
+			fi
 		} | sha256)
 	fi
 	echo ${CACHE_KEY}
