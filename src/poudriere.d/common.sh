@@ -1359,7 +1359,7 @@ parallel_run() {
 			eval "${cmd} &"
 			return 0
 		fi
-		sleep 0.001
+		sleep 0.1
 	done
 
 	return 0
