@@ -443,7 +443,7 @@ port_create_zfs() {
 cleanup() {
 	[ -n "${CLEANED_UP}" ] && return 0
 	msg "Cleaning up"
-	lock_release origin-pkgname || :
+	lock_release origin-pkgname-* || :
 	# If this is a builder, don't cleanup, the master will handle that.
 	if [ -n "${MY_JOBID}" ]; then
 		[ -n "${PKGNAME}" ] && clean_pool ${PKGNAME} 1 || :
@@ -1251,9 +1251,10 @@ cache_get_pkgname() {
 	[ $# -lt 1 ] && eargs origin do_lock
 	local origin=$1
 	local do_lock=${2:-0}
+	local lockname="origin-pkgname-${origin%%/*}_${origin##*/}"
 	local pkgname existing_origin
 
-	[ ${do_lock} -eq 1 ] && lock_acquire origin-pkgname
+	[ ${do_lock} -eq 1 ] && lock_acquire ${lockname}
 
 	pkgname=$(awk -v o=${origin} '$1 == o { print $2 }' ${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/origin-pkgname)
 
@@ -1266,7 +1267,7 @@ cache_get_pkgname() {
 		echo "${origin} ${pkgname}" >> ${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/origin-pkgname
 	fi
 
-	[ ${do_lock} -eq 1 ] && lock_release origin-pkgname
+	[ ${do_lock} -eq 1 ] && lock_release ${lockname}
 
 	echo ${pkgname}
 
@@ -1382,7 +1383,7 @@ prepare_ports() {
 	[ -n "${TMPFS_DATA}" ] && mount -t tmpfs tmpfs "${JAILMNT}/poudriere"
 	mkdir -p "${JAILMNT}/poudriere/pool" "${JAILMNT}/poudriere/var/run" "${JAILMNT}/poudriere/var/cache"
 	touch "${JAILMNT}/poudriere/var/cache/origin-pkgname"
-	lock_release origin-pkgname || :
+	lock_release origin-pkgname-* || :
 
 	zset stats_queued "0"
 	:> ${JAILMNT}/poudriere/ports.built
