@@ -1302,28 +1302,10 @@ listed_ports() {
 	fi
 }
 
-prepare_ports() {
-	local pkg taken
-
-	msg "Calculating ports order and dependencies"
-	mkdir -p "${JAILMNT}/poudriere"
-	[ -n "${TMPFS_DATA}" ] && mount -t tmpfs tmpfs "${JAILMNT}/poudriere"
-	mkdir -p "${JAILMNT}/poudriere/pool" "${JAILMNT}/poudriere/var/run" "${JAILMNT}/poudriere/var/cache"
-	touch "${JAILMNT}/poudriere/var/cache/origin-pkgname"
-	lock_release origin-pkgname || :
-
-	zset stats_queued "0"
-	:> ${JAILMNT}/poudriere/ports.built
-	:> ${JAILMNT}/poudriere/ports.failed
-	:> ${JAILMNT}/poudriere/ports.ignored
-	:> ${JAILMNT}/poudriere/ports.skipped
-	build_stats
-
-	zset status "computingdeps:"
-
+parallel_compute_deps() {
+	local taken
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
 	for port in $(listed_ports); do
-
 		taken=0
 		while [ ${taken} -eq 0 ]; do
 			for j in ${JOBS}; do
@@ -1347,6 +1329,27 @@ prepare_ports() {
 		done
 	done
 	wait
+}
+
+prepare_ports() {
+	local pkg
+
+	msg "Calculating ports order and dependencies"
+	mkdir -p "${JAILMNT}/poudriere"
+	[ -n "${TMPFS_DATA}" ] && mount -t tmpfs tmpfs "${JAILMNT}/poudriere"
+	mkdir -p "${JAILMNT}/poudriere/pool" "${JAILMNT}/poudriere/var/run" "${JAILMNT}/poudriere/var/cache"
+	touch "${JAILMNT}/poudriere/var/cache/origin-pkgname"
+	lock_release origin-pkgname || :
+
+	zset stats_queued "0"
+	:> ${JAILMNT}/poudriere/ports.built
+	:> ${JAILMNT}/poudriere/ports.failed
+	:> ${JAILMNT}/poudriere/ports.ignored
+	:> ${JAILMNT}/poudriere/ports.skipped
+	build_stats
+
+	zset status "computingdeps:"
+	parallel_compute_deps
 
 	zset status "sanity:"
 
