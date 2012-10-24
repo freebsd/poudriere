@@ -172,6 +172,7 @@ else
 	zset status "index:"
 	OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
 	INDEXF=${PKGDIR}/INDEX-${OSMAJ}
+	rm -f ${INDEXF}.1 2>/dev/null || :
 	for pkg_file in ${PKGDIR}/All/*.tbz; do
 		# Check for non-empty directory with no packages in it
 		[ "${pkg}" = "${PKGDIR}/All/*.tbz" ] && break
