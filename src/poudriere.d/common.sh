@@ -1311,35 +1311,6 @@ listed_ports() {
 	fi
 }
 
-parallel_compute_deps() {
-	local taken
-	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
-	for port in $(listed_ports); do
-		taken=0
-		while [ ${taken} -eq 0 ]; do
-			for j in ${JOBS}; do
-				if [ -f  "${JAILMNT}/poudriere/var/run/${j}.pid" ]; then
-					if pgrep -F "${JAILMNT}/poudriere/var/run/${j}.pid" >/dev/null 2>&1; then
-						# This child is busy, skip
-						continue
-					fi
-
-					# A dep finished
-					rm -f "${JAILMNT}/poudriere/var/run/${j}.pid"
-				fi
-
-				compute_deps "${port}" &
-				echo "$!" > ${JAILMNT}/poudriere/var/run/${j}.pid
-				taken=1
-				break
-			done
-			sleep 0.1
-			# Did not want the next dep, wait more.
-		done
-	done
-	wait
-}
-
 parallel_stop() {
 	wait
 }
@@ -1415,7 +1386,11 @@ prepare_ports() {
 	build_stats
 
 	zset status "computingdeps:"
-	parallel_compute_deps
+	for port in $(listed_ports); do
+		parallel_run "compute_deps ${port}"
+	done
+	parallel_stop
+
 
 	zset status "sanity:"
 
