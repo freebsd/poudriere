@@ -459,6 +459,12 @@ cleanup() {
 	[ -z "${JAILNAME%-job-*}" ] && err 2 "Fail: Missing JAILNAME"
 	log_stop
 
+	# Kill all children - this does NOT recurse, so orphans can still
+	# occur. This is just to avoid requiring pid files for parallel_run
+	for pid in $(jobs -p); do
+		kill ${pid}
+	done
+
 	if [ -d ${MASTERMNT:-${JAILMNT}}/poudriere/var/run ]; then
 		for pid in ${MASTERMNT:-${JAILMNT}}/poudriere/var/run/*.pid; do
 			# Ensure there is a pidfile to read or break
