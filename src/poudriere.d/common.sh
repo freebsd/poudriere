@@ -858,7 +858,7 @@ build_queue() {
 			pkgname=$(next_in_queue)
 			if [ -z "${pkgname}" ]; then
 				# pool empty ?
-				[ $(stat -f '%z' ${JAILMNT}/poudriere/pool) -eq 2 ] && return
+				[ -z $(ls -A ${JAILMNT}/poudriere/pool) ] && return
 
 				# Pool is waiting on dep, wait until a build
 				# is done before checking the queue again
