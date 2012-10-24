@@ -1163,53 +1163,59 @@ delete_stale_pkg_cache() {
 	done
 }
 
-delete_old_pkgs() {
+delete_old_pkg() {
+	local pkg="$1"
 	local o v v2 compiled_options current_options
+	if [ "${pkg##*/}" = "repo.txz" ]; then
+		msg "Removing invalid pkg repo file: ${pkg}"
+		rm -f ${pkg}
+		return 0
+	fi
+
+	mkdir -p $(pkg_cache_dir ${pkg})
+
+	o=$(pkg_get_origin ${pkg})
+	v=${pkg##*-}
+	v=${v%.*}
+	if [ ! -d "${JAILMNT}/usr/ports/${o}" ]; then
+		msg "${o} does not exist anymore. Deleting stale ${pkg##*/}"
+		delete_pkg ${pkg}
+		return 0
+	fi
+	v2=$(cache_get_pkgname ${o})
+	v2=${v2##*-}
+	if [ "$v" != "$v2" ]; then
+		msg "Deleting old version: ${pkg##*/}"
+		delete_pkg ${pkg}
+		return 0
+	fi
+
+	# Check if the compiled options match the current options from make.conf and /var/db/options
+	if [ "${CHECK_CHANGED_OPTIONS:-no}" != "no" ]; then
+		current_options=$(injail make -C /usr/ports/${o} pretty-print-config | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
+		compiled_options=$(pkg_get_options ${pkg})
+
+		if [ "${compiled_options}" != "${current_options}" ]; then
+			msg "Options changed, deleting: ${pkg##*/}"
+			if [ "${CHECK_CHANGED_OPTIONS}" = "verbose" ]; then
+				msg "Pkg: ${compiled_options}"
+				msg "New: ${current_options}"
+			fi
+			delete_pkg ${pkg}
+			return 0
+		fi
+	fi
+}
+
+delete_old_pkgs() {
 	[ ! -d ${PKGDIR}/All ] && return 0
 	[ -z "$(ls -A ${PKGDIR}/All)" ] && return 0
 	for pkg in ${PKGDIR}/All/*.${PKG_EXT}; do
 		# Check for non-empty directory with no packages in it
 		[ "${pkg}" = "${PKGDIR}/All/*.${PKG_EXT}" ] && break
-		if [ "${pkg##*/}" = "repo.txz" ]; then
-			msg "Removing invalid pkg repo file: ${pkg}"
-			rm -f ${pkg}
-			continue
-		fi
-
-		mkdir -p $(pkg_cache_dir ${pkg})
-
-		o=$(pkg_get_origin ${pkg})
-		v=${pkg##*-}
-		v=${v%.*}
-		if [ ! -d "${JAILMNT}/usr/ports/${o}" ]; then
-			msg "${o} does not exist anymore. Deleting stale ${pkg##*/}"
-			delete_pkg ${pkg}
-			continue
-		fi
-		v2=$(cache_get_pkgname ${o})
-		v2=${v2##*-}
-		if [ "$v" != "$v2" ]; then
-			msg "Deleting old version: ${pkg##*/}"
-			delete_pkg ${pkg}
-			continue
-		fi
-
-		# Check if the compiled options match the current options from make.conf and /var/db/options
-		if [ "${CHECK_CHANGED_OPTIONS:-no}" != "no" ]; then
-			current_options=$(injail make -C /usr/ports/${o} pretty-print-config | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
-			compiled_options=$(pkg_get_options ${pkg})
-
-			if [ "${compiled_options}" != "${current_options}" ]; then
-				msg "Options changed, deleting: ${pkg##*/}"
-				if [ "${CHECK_CHANGED_OPTIONS}" = "verbose" ]; then
-					msg "Pkg: ${compiled_options}"
-					msg "New: ${current_options}"
-				fi
-				delete_pkg ${pkg}
-				continue
-			fi
-		fi
+		parallel_run "delete_old_pkg ${pkg}"
 	done
+	parallel_stop
 }
 
 next_in_queue() {
