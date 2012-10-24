@@ -214,4 +214,6 @@ ports-all" > ${PTMNT}/csup
 		err 1 "Undefined upgrade method"
 		;;
 	esac
+
+	date +%s > ${PORTSMNT:-${PTMNT}}/.poudriere.stamp
 fi
