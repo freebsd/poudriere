@@ -1331,6 +1331,23 @@ parallel_compute_deps() {
 	wait
 }
 
+# Get all data that make this build env unique,
+# so if the same build is done again,
+# we can use the some of the same cached data
+cache_get_key() {
+	if [ -z "${CACHE_KEY}" ]; then
+		CACHE_KEY=$({
+			injail env
+			injail cat /etc/make.conf
+			injail find /var/db/ports -exec sha256 {} +
+			echo ${JAILNAME}-${SETNAME}-${PTNAME}
+			[ -f ${JAILMNT}/usr/ports/.poudriere.stamp ] && \
+				stat ${JAILMNT}/usr/ports/.poudriere.stamp
+		} | sha256)
+	fi
+	echo ${CACHE_KEY}
+}
+
 prepare_ports() {
 	local pkg
 
