@@ -1272,9 +1272,7 @@ compute_deps() {
 	local pkgname="${2:-$(cache_get_pkgname ${port} 1)}"
 	local dep_pkgname dep_port
 	local pkg_pooldir="${JAILMNT}/poudriere/pool/${pkgname}"
-	[ -d "${pkg_pooldir}" ] && return
-
-	mkdir "${pkg_pooldir}"
+	mkdir "${pkg_pooldir}" 2>/dev/null || return 0
 
 	msg "Computing deps for ${port}"
 
