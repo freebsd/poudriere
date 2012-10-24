@@ -1342,7 +1342,7 @@ cache_get_key() {
 			injail find /var/db/ports -exec sha256 {} +
 			echo ${JAILNAME}-${SETNAME}-${PTNAME}
 			[ -f ${JAILMNT}/usr/ports/.poudriere.stamp ] && \
-				stat ${JAILMNT}/usr/ports/.poudriere.stamp
+				cat ${JAILMNT}/usr/ports/.poudriere.stamp
 		} | sha256)
 	fi
 	echo ${CACHE_KEY}
