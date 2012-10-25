@@ -284,6 +284,7 @@ do_jail_mounts() {
 	fi
 
 	mount -t devfs devfs ${JAILMNT}/dev
+	mount -t fdescfs fdesc ${JAILMNT}/dev/fd
 	mount -t procfs proc ${JAILMNT}/proc
 
 	if [ -z "${NOLINUX}" ]; then
