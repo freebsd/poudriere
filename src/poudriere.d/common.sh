@@ -432,7 +432,6 @@ port_create_zfs() {
 	msg_n "Creating ${name} fs..."
 	zfs create -p \
 		-o atime=off \
-		-o recordsize=4k \
 		-o compression=off \
 		-o mountpoint=${mnt} \
 		-o ${NS}:type=ports \
