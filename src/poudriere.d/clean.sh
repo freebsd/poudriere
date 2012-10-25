@@ -21,20 +21,20 @@ fi
 clean_pool() {
 	local pkgname=$1
 	local clean_rdepends=$2
-	local dep_dir dep_pkgname fulldep
+	local dep_dir dep_pkgname
 
 	# Determine everything that depends on the given package
 	# Recursively cleanup anything that depends on this port.
 	if [ ${clean_rdepends} -eq 1 ]; then
-		find ${JAILMNT}/poudriere/pool -name "${pkgname}" -type f | while read fulldep; do
-			dep_dir=${fulldep%/*}
-			dep_pkgname=${dep_dir##*/}
+		if [ -d "${JAILMNT}/poudriere/rpool/${pkgname}" ]; then
+			for dep_pkgname in $(ls "${JAILMNT}/poudriere/rpool/${pkgname}/"); do
 
-			# clean_pool() in common.sh will pick this up and add to SKIPPED
-			echo "${dep_pkgname}"
+				# clean_pool() in common.sh will pick this up and add to SKIPPED
+				echo "${dep_pkgname}"
 
-			clean_pool ${dep_pkgname} ${clean_rdepends}
-		done
+				clean_pool ${dep_pkgname} ${clean_rdepends}
+			done
+		fi
 	fi
 
 	rm -rf "${JAILMNT}/poudriere/pool/${pkgname}"
