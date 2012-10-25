@@ -38,7 +38,13 @@ clean_pool() {
 	fi
 
 	rm -rf "${JAILMNT}/poudriere/pool/${pkgname}"
-	find ${JAILMNT}/poudriere/pool -name "${pkgname}" -type f -delete
+	if [ -d "${JAILMNT}/poudriere/rpool/${pkgname}" ]; then
+		for f in $(find -H "${JAILMNT}/poudriere/rpool/${pkgname}" -type l); do
+			path=$(realpath -q ${f}) || continue
+			rm -f "${path}" 2>/dev/null
+		done
+		rm -rf "${JAILMNT}/poudriere/rpool/${pkgname}"
+	fi
 }
 
 clean_pool "${PKGNAME}" ${CLEAN_RDEPENDS}

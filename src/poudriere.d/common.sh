@@ -1297,6 +1297,9 @@ compute_deps() {
 		dep_pkgname=$(cache_get_pkgname ${dep_port} 1)
 		compute_deps "${dep_port}" "${dep_pkgname}"
 		touch "${pkg_pooldir}/${dep_pkgname}"
+		mkdir -p "${JAILMNT}/poudriere/rpool/${dep_pkgname}"
+		ln -sf "${pkg_pooldir}/${dep_pkgname}" \
+			"${JAILMNT}/poudriere/rpool/${dep_pkgname}/${pkgname}"
 	done
 }
 
@@ -1388,7 +1391,10 @@ prepare_ports() {
 	msg "Calculating ports order and dependencies"
 	mkdir -p "${JAILMNT}/poudriere"
 	[ -n "${TMPFS_DATA}" ] && mount -t tmpfs tmpfs "${JAILMNT}/poudriere"
-	mkdir -p "${JAILMNT}/poudriere/pool" "${JAILMNT}/poudriere/var/run" "${JAILMNT}/poudriere/var/cache"
+	mkdir -p "${JAILMNT}/poudriere/pool" \
+		"${JAILMNT}/poudriere/rpool" \
+		"${JAILMNT}/poudriere/var/run" \
+		"${JAILMNT}/poudriere/var/cache"
 	touch "${JAILMNT}/poudriere/var/cache/origin-pkgname"
 	lock_release origin-pkgname-* || :
 
@@ -1438,7 +1444,13 @@ prepare_ports() {
 		pn=${p##*/}
 		if [ -f "${PKGDIR}/All/${pn}.${PKG_EXT}" ]; then
 			rm -rf ${p}
-			find ${JAILMNT}/poudriere/pool -name "${pn}" -type f -delete
+			if [ -d "${JAILMNT}/poudriere/rpool/${pn}" ]; then
+				for f in $(find "${JAILMNT}/poudriere/rpool/${pn}" -type l); do
+					path=$(realpath -q ${f}) || continue
+					rm -f "${path}" 2>/dev/null
+				done
+				rm -rf "${JAILMNT}/poudriere/rpool/${pn}"
+			fi
 		fi
 	done
 
