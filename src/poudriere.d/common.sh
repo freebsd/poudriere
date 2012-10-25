@@ -1444,9 +1444,7 @@ prepare_ports() {
 		if [ -f "${PKGDIR}/All/${pn}.${PKG_EXT}" ]; then
 			rm -rf ${p}
 			if [ -d "${JAILMNT}/poudriere/rpool/${pn}" ]; then
-				for f in $(realpath -q "${JAILMNT}/poudriere/rpool/${pn}/"*); do
-					rm -f "${f}" 2>/dev/null
-				done
+				echo ${JAILMNT}/poudriere/pool/*/${pn} | xargs rm -f
 				rm -rf "${JAILMNT}/poudriere/rpool/${pn}"
 			fi
 		fi
