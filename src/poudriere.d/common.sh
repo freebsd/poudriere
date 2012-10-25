@@ -1439,14 +1439,13 @@ prepare_ports() {
 	zset status "cleaning:"
 	msg "Cleaning the build queue"
 	export LOCALBASE=${MYBASE:-/usr/local}
-	find ${JAILMNT}/poudriere/pool -type d -depth 1 | while read p; do
-		pn=${p##*/}
+	for pn in $(ls ${JAILMNT}/poudriere/pool/); do
+		p=${JAILMNT}/poudriere/pool/${pn}
 		if [ -f "${PKGDIR}/All/${pn}.${PKG_EXT}" ]; then
 			rm -rf ${p}
 			if [ -d "${JAILMNT}/poudriere/rpool/${pn}" ]; then
-				for f in $(find "${JAILMNT}/poudriere/rpool/${pn}" -type l); do
-					path=$(realpath -q ${f}) || continue
-					rm -f "${path}" 2>/dev/null
+				for f in $(realpath -q "${JAILMNT}/poudriere/rpool/${pn}/"*); do
+					rm -f "${f}" 2>/dev/null
 				done
 				rm -rf "${JAILMNT}/poudriere/rpool/${pn}"
 			fi

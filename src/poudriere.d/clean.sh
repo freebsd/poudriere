@@ -39,9 +39,8 @@ clean_pool() {
 
 	rm -rf "${JAILMNT}/poudriere/pool/${pkgname}"
 	if [ -d "${JAILMNT}/poudriere/rpool/${pkgname}" ]; then
-		for f in $(find -H "${JAILMNT}/poudriere/rpool/${pkgname}" -type l); do
-			path=$(realpath -q ${f}) || continue
-			rm -f "${path}" 2>/dev/null
+		for f in $(realpath -q "${JAILMNT}/poudriere/rpool/${pkgname}/"*); do
+			rm -f "${f}" 2>/dev/null
 		done
 		rm -rf "${JAILMNT}/poudriere/rpool/${pkgname}"
 	fi
