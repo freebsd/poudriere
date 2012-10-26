@@ -1301,7 +1301,12 @@ compute_deps() {
 	for dep_port in `list_deps ${port}`; do
 		debug "${port} depends on ${dep_port}"
 		dep_pkgname=$(cache_get_pkgname ${dep_port} 1)
-		compute_deps "${dep_port}" "${dep_pkgname}"
+
+		# Only do this if it's not already done, and not ALL, as everything will
+		# be touched anyway
+		[ ${ALL:-0} -eq 0 ] && ! [ -d "${JAILMNT}/poudriere/pool/${dep_pkgname}" ] && \
+			compute_deps "${dep_port}" "${dep_pkgname}"
+
 		touch "${pkg_pooldir}/${dep_pkgname}"
 		mkdir -p "${JAILMNT}/poudriere/rpool/${dep_pkgname}"
 		ln -sf "${pkg_pooldir}/${dep_pkgname}" \
