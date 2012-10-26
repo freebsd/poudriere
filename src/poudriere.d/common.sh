@@ -443,7 +443,6 @@ port_create_zfs() {
 cleanup() {
 	[ -n "${CLEANED_UP}" ] && return 0
 	msg "Cleaning up"
-	lock_release origin-pkgname-* || :
 	# If this is a builder, don't cleanup, the master will handle that.
 	if [ -n "${MY_JOBID}" ]; then
 		[ -n "${PKGNAME}" ] && clean_pool ${PKGNAME} 1 || :
@@ -1248,15 +1247,13 @@ lock_release() {
 }
 
 cache_get_pkgname() {
-	[ $# -lt 1 ] && eargs origin do_lock
+	[ $# -ne 1 ] && eargs origin
 	local origin=$1
-	local do_lock=${2:-0}
-	local lockname="origin-pkgname-${origin%%/*}_${origin##*/}"
-	local pkgname existing_origin
+	local pkgname="" existing_origin
+	local cache_origin_pkgname=${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/origin-pkgname/${origin%%/*}_${origin##*/}
+	local cache_pkgname_origin
 
-	[ ${do_lock} -eq 1 ] && lock_acquire ${lockname}
-
-	pkgname=$(awk -v o=${origin} '$1 == o { print $2 }' ${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/origin-pkgname)
+	[ -f ${cache_origin_pkgname} ] && read pkgname < ${cache_origin_pkgname}
 
 	# Add to cache if not found.
 	if [ -z "${pkgname}" ]; then
@@ -1265,25 +1262,23 @@ cache_get_pkgname() {
 		existing_origin=$(cache_get_origin "${pkgname}")
 		# It may already exist due to race conditions, it is not harmful. Just ignore.
 		if [ "${existing_origin}" != "${origin}" ]; then
-			if [ -n "${existing_origin}" ]; then
-				[ ${do_lock} -eq 1 ] && lock_release ${lockname}
+			[ -n "${existing_origin}" ] && \
 				err 1 "Duplicated origin for ${pkgname}: ${origin} AND ${existing_origin}. Rerun with -D to see which ports are depending on these."
-			fi
-			echo "${origin} ${pkgname}" >> ${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/origin-pkgname
+			echo "${pkgname}" > ${cache_origin_pkgname}
+			cache_pkgname_origin="${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/pkgname-origin/${pkgname}"
+			echo "${origin}" > "${cache_pkgname_origin}"
 		fi
 	fi
 
-	[ ${do_lock} -eq 1 ] && lock_release ${lockname}
-
 	echo ${pkgname}
-
 }
 
 cache_get_origin() {
 	[ $# -ne 1 ] && eargs pkgname
 	local pkgname=$1
+	local cache_pkgname_origin="${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/pkgname-origin/${pkgname}"
 
-	awk -v p=${pkgname} '$2 == p { print $1 }' ${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/origin-pkgname
+	cat "${cache_pkgname_origin}" 2>/dev/null || :
 }
 
 # Take optional pkgname to speedup lookup
@@ -1291,7 +1286,7 @@ compute_deps() {
 	[ $# -lt 1 ] && eargs port
 	[ $# -gt 2 ] && eargs port pkgnme
 	local port=$1
-	local pkgname="${2:-$(cache_get_pkgname ${port} 1)}"
+	local pkgname="${2:-$(cache_get_pkgname ${port})}"
 	local dep_pkgname dep_port
 	local pkg_pooldir="${JAILMNT}/poudriere/pool/${pkgname}"
 	mkdir "${pkg_pooldir}" 2>/dev/null || return 0
@@ -1300,7 +1295,7 @@ compute_deps() {
 
 	for dep_port in `list_deps ${port}`; do
 		debug "${port} depends on ${dep_port}"
-		dep_pkgname=$(cache_get_pkgname ${dep_port} 1)
+		dep_pkgname=$(cache_get_pkgname ${dep_port})
 
 		# Only do this if it's not already done, and not ALL, as everything will
 		# be touched anyway
@@ -1402,12 +1397,14 @@ prepare_ports() {
 	msg "Calculating ports order and dependencies"
 	mkdir -p "${JAILMNT}/poudriere"
 	[ -n "${TMPFS_DATA}" ] && mount -t tmpfs tmpfs "${JAILMNT}/poudriere"
+	rm -rf "${JAILMNT}/poudriere/var/cache/origin-pkgname" \
+	       "${JAILMNT}/poudriere/var/cache/pkgname-origin" 2>/dev/null || :
 	mkdir -p "${JAILMNT}/poudriere/pool" \
 		"${JAILMNT}/poudriere/rpool" \
 		"${JAILMNT}/poudriere/var/run" \
-		"${JAILMNT}/poudriere/var/cache"
-	touch "${JAILMNT}/poudriere/var/cache/origin-pkgname"
-	lock_release origin-pkgname-* || :
+		"${JAILMNT}/poudriere/var/cache" \
+		"${JAILMNT}/poudriere/var/cache/origin-pkgname" \
+		"${JAILMNT}/poudriere/var/cache/pkgname-origin"
 
 	zset stats_queued "0"
 	:> ${JAILMNT}/poudriere/ports.built
