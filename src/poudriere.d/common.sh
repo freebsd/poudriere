@@ -1263,11 +1263,14 @@ cache_get_pkgname() {
 		pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME)
 		# Make sure this origin did not already exist
 		existing_origin=$(cache_get_origin "${pkgname}")
-		if [ -n "${existing_origin}" ]; then
-			[ ${do_lock} -eq 1 ] && lock_release ${lockname}
-			err 1 "Duplicated origin for ${pkgname}: ${origin} AND ${existing_origin}. Rerun with -D to see which ports are depending on these."
+		# It may already exist due to race conditions, it is not harmful. Just ignore.
+		if [ "${existing_origin}" != "${origin}" ]; then
+			if [ -n "${existing_origin}" ]; then
+				[ ${do_lock} -eq 1 ] && lock_release ${lockname}
+				err 1 "Duplicated origin for ${pkgname}: ${origin} AND ${existing_origin}. Rerun with -D to see which ports are depending on these."
+			fi
+			echo "${origin} ${pkgname}" >> ${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/origin-pkgname
 		fi
-		echo "${origin} ${pkgname}" >> ${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/origin-pkgname
 	fi
 
 	[ ${do_lock} -eq 1 ] && lock_release ${lockname}
