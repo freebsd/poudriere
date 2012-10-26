@@ -4,6 +4,10 @@
 NS="poudriere"
 IPS="$(sysctl -n kern.features.inet 2>/dev/null || (sysctl -n net.inet 1>/dev/null 2>&1 && echo 1) || echo 0)$(sysctl -n kern.features.inet6 2>/dev/null || (sysctl -n net.inet6 1>/dev/null 2>&1 && echo 1) || echo 0)"
 
+dir_empty() {
+	find $1 -maxdepth 0 -empty
+}
+
 err() {
 	if [ $# -ne 2 ]; then
 		err 1 "err expects 2 arguments: exit_number \"message\""
@@ -488,7 +492,7 @@ sanity_check_pkgs() {
 	local ret=0
 	local depfile
 	[ ! -d ${PKGDIR}/All ] && return $ret
-	[ -z "$(ls -A ${PKGDIR}/All)" ] && return $ret
+	[ -n "$(dir_empty ${PKGDIR}/All)" ] && return $ret
 	for pkg in ${PKGDIR}/All/*.${PKG_EXT}; do
 		# Check for non-empty directory with no packages in it
 		[ "${pkg}" = "${PKGDIR}/All/*.${PKG_EXT}" ] && break
@@ -866,7 +870,7 @@ build_queue() {
 			pkgname=$(next_in_queue)
 			if [ -z "${pkgname}" ]; then
 				# pool empty ?
-				[ -z "$(ls -A ${JAILMNT}/poudriere/pool)" ] && return
+				[ -n "$(dir_empty ${JAILMNT}/poudriere/pool)" ] && return
 
 				# Pool is waiting on dep, wait until a build
 				# is done before checking the queue again
@@ -1152,7 +1156,7 @@ delete_stale_pkg_cache() {
 	local pkgname
 	local cachedir=$(cache_dir)
 	[ ! -d ${cachedir} ] && return 0
-	[ -z "$(ls -A ${cachedir})" ] && return 0
+	[ -n "$(dir_empty ${cachedir})" ] && return 0
 	for pkg in ${cachedir}/*.${PKG_EXT}; do
 		pkg_file=${pkg##*/}
 		# If this package no longer exists in the PKGDIR, delete the cache.
@@ -1208,7 +1212,7 @@ delete_old_pkg() {
 
 delete_old_pkgs() {
 	[ ! -d ${PKGDIR}/All ] && return 0
-	[ -z "$(ls -A ${PKGDIR}/All)" ] && return 0
+	[ -n "$(dir_empty ${PKGDIR}/All)" ] && return 0
 	for pkg in ${PKGDIR}/All/*.${PKG_EXT}; do
 		# Check for non-empty directory with no packages in it
 		[ "${pkg}" = "${PKGDIR}/All/*.${PKG_EXT}" ] && break
