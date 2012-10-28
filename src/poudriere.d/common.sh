@@ -842,16 +842,18 @@ EOF
 
 build_queue() {
 
-	local j cnt mnt fs name pkgname read_queue
+	local j cnt mnt fs name pkgname read_queue builders_active
 
 	read_queue=1
 	while :; do
+		builders_active=0
 		for j in ${JOBS}; do
 			mnt="${JAILMNT}/build/${j}"
 			fs="${JAILFS}/build/${j}"
 			name="${JAILNAME}-job-${j}"
 			if [ -f  "${JAILMNT}/poudriere/var/run/${j}.pid" ]; then
 				if pgrep -F "${JAILMNT}/poudriere/var/run/${j}.pid" >/dev/null 2>&1; then
+					builders_active=1
 					continue
 				fi
 				build_stats
@@ -884,6 +886,7 @@ build_queue() {
 				# A new job is spawned, try to read the queue
 				# just to keep things moving
 				read_queue=1
+				builders_active=1
 			fi
 		done
 		if [ ${read_queue} -eq 0 ]; then
@@ -894,6 +897,12 @@ build_queue() {
 			sleep 0.1
 		fi
 
+		if [ ${builders_active} -eq 0 ]; then
+			msg "Dependency loop or poudriere bug detected."
+			find ${JAILMNT}/poudriere/pool || echo "pool missing"
+			find ${JAILMNT}/poudriere/rpool || echo "rpool missing"
+			err 1 "Queue is unprocessable"
+		fi
 	done
 }
 
