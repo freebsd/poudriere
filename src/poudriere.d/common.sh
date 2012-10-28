@@ -1263,7 +1263,7 @@ cache_get_pkgname() {
 	if [ -z "${pkgname}" ]; then
 		pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME)
 		# Make sure this origin did not already exist
-		existing_origin=$(cache_get_origin "${pkgname}")
+		existing_origin=$(cache_get_origin "${pkgname}" 2>/dev/null || :)
 		# It may already exist due to race conditions, it is not harmful. Just ignore.
 		if [ "${existing_origin}" != "${origin}" ]; then
 			[ -n "${existing_origin}" ] && \
@@ -1282,7 +1282,7 @@ cache_get_origin() {
 	local pkgname=$1
 	local cache_pkgname_origin="${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/pkgname-origin/${pkgname}"
 
-	cat "${cache_pkgname_origin}" 2>/dev/null || :
+	cat "${cache_pkgname_origin}"
 }
 
 # Take optional pkgname to speedup lookup
