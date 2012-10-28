@@ -2,7 +2,7 @@
 set -e
 
 usage() {
-	echo "poudriere bulk parameters [options]
+	echo "poudriere bulk [options] [-f file|cat/port ...]
 
 Parameters:
     -f file     -- Give the list of ports to build
