@@ -585,6 +585,7 @@ build_port() {
 					/etc/spwd.db) continue;;
 					/etc/pwd.db) continue;;
 					/etc/group) continue;;
+					/etc/make.conf) continue;;
 					/etc/passwd) continue;;
 					/etc/master.passwd) continue;;
 					/etc/shells) continue;;
