@@ -1008,7 +1008,7 @@ build_pkg() {
 				failed_status=$(zget status)
 				failed_phase=${failed_status%:*}
 
-				if [ "${SAVE_WRKDIR}" -eq 1 ]; then
+				if [ -n "${SAVE_WRKDIR}" ]; then
 					# Only save if not in fetch/checksum phase
 					if ! [ "${failed_phase}" = "fetch" -o "${failed_phase}" = "checksum" ]; then
 						save_wrkdir ${portdir} || :
