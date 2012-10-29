@@ -1465,13 +1465,13 @@ prepare_ports() {
 	for pn in $(ls ${JAILMNT}/poudriere/pool/); do
 		p=${JAILMNT}/poudriere/pool/${pn}
 		if [ -f "${PKGDIR}/All/${pn}.${PKG_EXT}" ]; then
-			rm -rf ${p}
+			echo ${p}
 			if [ -d "${JAILMNT}/poudriere/rpool/${pn}" ]; then
-				echo ${JAILMNT}/poudriere/pool/*/${pn} | xargs rm -f
-				rm -rf "${JAILMNT}/poudriere/rpool/${pn}"
+				echo ${JAILMNT}/poudriere/pool/*/${pn}
+				echo "${JAILMNT}/poudriere/rpool/${pn}"
 			fi
 		fi
-	done
+	done | xargs rm -rf
 
 	local nbq=0
 	nbq=$(find ${JAILMNT}/poudriere/pool -type d -depth 1 | wc -l)
