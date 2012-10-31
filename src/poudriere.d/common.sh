@@ -901,7 +901,6 @@ build_queue() {
 		if [ ${builders_active} -eq 0 ]; then
 			msg "Dependency loop or poudriere bug detected."
 			find ${JAILMNT}/poudriere/pool || echo "pool missing"
-			find ${JAILMNT}/poudriere/rpool || echo "rpool missing"
 			err 1 "Queue is unprocessable"
 		fi
 	done
