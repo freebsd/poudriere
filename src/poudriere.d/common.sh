@@ -540,9 +540,9 @@ build_port() {
 			fi
 		fi
 
-		printf "=======================<phase: %-9s>==========================\n" ${phase}
+		print_phase_header ${phase}
 		injail env ${PKGENV} ${PORT_FLAGS} make -C ${portdir} ${phase} || return 1
-		echo "==================================================================="
+		print_phase_footer
 
 		if [ "${phase}" = "checksum" ]; then
 			jail -r ${JAILNAME} >/dev/null
@@ -953,6 +953,14 @@ clean_pool() {
 	done
 }
 
+print_phase_header() {
+	printf "=======================<phase: %-12s>==========================\n" "$1"
+}
+
+print_phase_footer() {
+	echo "======================================================================"
+}
+
 build_pkg() {
 	# If this first check fails, the pool will not be cleaned up,
 	# since PKGNAME is not yet set.
@@ -993,13 +1001,13 @@ build_pkg() {
 		clean_rdepends=1
 	else
 		zset status "depends:${port}"
-		printf "=======================<phase: %-9s>==========================\n" "depends"
+		print_phase_header "depends"
 		if ! injail make -C ${portdir} pkg-depends fetch-depends extract-depends \
 			patch-depends build-depends lib-depends; then
 			build_failed=1
 			failed_phase="depends"
 		else
-			echo "==================================================================="
+			print_phase_footer
 			# Only build if the depends built fine
 			injail make -C ${portdir} clean
 			if ! build_port ${portdir}; then
