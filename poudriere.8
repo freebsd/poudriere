@@ -172,9 +172,9 @@ Kills a jail (stops it).
 Show information about the jail.
 .El
 .Pp
-Excepted for
+Except for
 .Fl l ,
-all these subcommands requires
+all of the subcommands require the
 .Fl j
 option (see below).
 .Pp
@@ -198,7 +198,7 @@ of the jail.
 .It Fl v Ar version
 Specifies which
 .Ar version
-of FreeBSD we want in jail.
+of FreeBSD to use in the jail.
 If you are using method ftp then the
 .Ar version
 should in the form of: 9.0-RELEASE.
@@ -211,11 +211,11 @@ should be in the form of svn branches: stable/9 or head for current.
 .It Fl a Ar architecture
 Specifies which
 .Ar architecture
-of FreeBSD we want in jail. (Default: same as host)
+of FreeBSD to use in the jail. (Default: same as host)
 .It Fl m Ar method
 Specifies which
 .Ar method
-we want to create jail.
+to use to create the jail.
 Could be csup, svn{,+http,+ssh), ftp, allbsd (Default: ftp).
 .It Fl f Ar filesystem
 Specifies the
@@ -244,9 +244,9 @@ Updates a ports tree.
 List all available ports trees.
 .El
 .Pp
-Excepted for
+Except for
 .Fl l ,
-all these subcommands requires
+all of the subcommands require the
 .Fl p
 switch (see below).
 .Pp
@@ -262,7 +262,7 @@ Otherwise, it has no effect.
 .It Fl p Ar name
 Specifies the
 .Ar name
-of the ports tree we are working on.
+of the ports tree to use.
 .It Fl F
 When used with
 .Fl c ,
@@ -279,7 +279,7 @@ when creating ports tree.
 .It Fl m Ar method
 Specifies which
 .Ar method
-we want to create a ports tree.
+to use to create the ports tree.
 Could be portsnap, git, svn{,+http,+ssh} (Default:
 portsnap).
 .El
@@ -288,7 +288,7 @@ portsnap).
 These subcommands are mutually exclusive.
 .Bl -tag -width "-f conffile"
 .It Fl d Ar path
-Specifies the path to the port we test.
+Specifies the path to the port to test.
 .It Fl o Ar origin
 Specifies an origin in the ports tree
 .El
@@ -312,9 +312,9 @@ jobs will run in parallel for building the dependencies.
 .It Fl n
 Do not use custom prefix.
 .It Fl p Ar tree
-Specifies on which ports
+Specifies which ports
 .Ar tree
-we work.
+to use.
 .It Fl z Ar set
 This specifies whith SET to use for the build.
 See
@@ -322,7 +322,7 @@ See
 for examples of how this is used.
 .El
 .Ss options
-This command accept the following options:
+This command accepts the following options:
 .Bl -tag -width "-f conffile"
 .It Fl j Ar jailname
 If given, configure the options only for the given jail.
