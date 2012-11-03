@@ -21,6 +21,8 @@ Parameters:
     -f file     -- Give the list of ports to set options
 
 Options:
+    -c          -- Use 'make config' target
+    -C          -- Use 'make config-conditional' target (default)
     -j name     -- Run on the given jail
     -p tree     -- Specify on which ports tree the configuration will be done
     -n          -- Don't configure/show/remove options of dependicies
@@ -44,8 +46,14 @@ RECURSE_COMMAND=config-recursive
 
 [ $# -eq 0 ] && usage
 
-while getopts "j:f:p:nrsz:" FLAG; do
+while getopts "cCj:f:p:nrsz:" FLAG; do
 	case "${FLAG}" in
+		c)
+			COMMAND=config
+			;;
+		C)
+			COMMAND=config-conditional
+			;;
 		j)
 			jail_exists ${OPTARG} || err 1 "No such jail"
 			JAILNAME=${OPTARG}

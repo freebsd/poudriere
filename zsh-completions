@@ -56,6 +56,8 @@ _jail=(
 )
 
 _options=(
+	'-c[Use config target]::'
+	'-C[Use config-conditional target]::'
 	'-f[Give the list of ports to configure]:name of file:_files'
 	'-j[run only inside the given jail]::name:_poudriere_jail'
 	'-n[do not be recursive]::'

@@ -324,6 +324,11 @@ for examples of how this is used.
 .Ss options
 This command accepts the following options:
 .Bl -tag -width "-f conffile"
+.It Fl c
+Use 'config' target, which will always show the dialog for the given ports.
+.It Fl C
+Use 'config-conditional' target, which will only bring up the dialog on new options for the given ports.
+(This is the default)
 .It Fl j Ar jailname
 If given, configure the options only for the given jail.
 .It Fl p Ar portstree
