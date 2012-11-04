@@ -101,10 +101,10 @@ else
 fi
 if [ ${CREATE} -eq 1 ]; then
 	# test if it already exists
-	port_exists ${PTNAME} && err 2 "The ports tree ${PTNAME} already exists"
+	porttree_exists ${PTNAME} && err 2 "The ports tree ${PTNAME} already exists"
 	: ${PTMNT="${BASEFS:=/usr/local${ZROOTFS}}/ports/${PTNAME}"}
 	: ${PTFS="${ZPOOL}${ZROOTFS}/ports/${PTNAME}"}
-	port_create_zfs ${PTNAME} ${PTMNT} ${PTFS}
+	porttree_create_zfs ${PTNAME} ${PTMNT} ${PTFS}
 	if [ $FAKE -eq 0 ]; then
 		case ${METHOD} in
 		csup)
@@ -160,23 +160,23 @@ ports-all" > ${PTMNT}/csup
 fi
 
 if [ ${DELETE} -eq 1 ]; then
-	port_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
-	PTMNT=$(port_get_base ${PTNAME})
+	porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
+	PTMNT=$(porttree_get_base ${PTNAME})
 	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	msg "Deleting portstree \"${PTNAME}\""
-	PTFS=$(port_get_fs ${PTNAME})
+	PTFS=$(porttree_get_fs ${PTNAME})
 	zfs destroy -r ${PTFS}
 fi
 
 if [ ${UPDATE} -eq 1 ]; then
-	port_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
-	PTMNT=$(port_get_base ${PTNAME})
+	porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
+	PTMNT=$(porttree_get_base ${PTNAME})
 	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
-	PTFS=$(port_get_fs ${PTNAME})
+	PTFS=$(porttree_get_fs ${PTNAME})
 	msg "Updating portstree \"${PTNAME}\""
 	METHOD=$(pzget method)
 	if [ ${METHOD} = "-" ]; then

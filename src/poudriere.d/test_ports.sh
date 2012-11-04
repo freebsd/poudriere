@@ -74,7 +74,7 @@ export SKIPSANITY
 if [ -z ${ORIGIN} ]; then
 	PORTDIRECTORY=`basename ${HOST_PORTDIRECTORY}`
 else
-	HOST_PORTDIRECTORY=`port_get_base ${PTNAME}`/ports/${ORIGIN}
+	HOST_PORTDIRECTORY=`porttree_get_base ${PTNAME}`/ports/${ORIGIN}
 	PORTDIRECTORY="/usr/ports/${ORIGIN}"
 fi
 

@@ -198,20 +198,20 @@ jail_get_fs() {
 		awk -v n=$1 '$1 == "rootfs" && $2 == n { print $3 }' | head -n 1
 }
 
-port_exists() {
+porttree_exists() {
 	[ $# -ne 1 ] && eargs portstree_name
 	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,name | \
 		awk -v n=$1 'BEGIN { ret = 1 } $1 == "ports" && $2 == n { ret = 0; } END { exit ret }' && return 0
 	return 1
 }
 
-port_get_base() {
+porttree_get_base() {
 	[ $# -ne 1 ] && eargs portstree_name
 	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,mountpoint | \
 		awk -v n=$1 '$1 == "ports" && $2 == n { print $3 }'
 }
 
-port_get_fs() {
+porttree_get_fs() {
 	[ $# -ne 1 ] && eargs portstree_name
 	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,name | \
 		awk -v n=$1 '$1 == "ports" && $2 == n { print $3 }'
@@ -429,7 +429,7 @@ jail_stop() {
 	export STATUS=0
 }
 
-port_create_zfs() {
+porttree_create_zfs() {
 	[ $# -ne 3 ] && eargs name mountpoint fs
 	local name=$1
 	local mnt=$( echo $2 | sed -e 's,//,/,g')
@@ -1332,7 +1332,7 @@ compute_deps() {
 
 listed_ports() {
 	if [ ${ALL:-0} -eq 1 ]; then
-		PORTSDIR=`port_get_base ${PTNAME}`
+		PORTSDIR=`porttree_get_base ${PTNAME}`
 		[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 		for cat in $(awk '$1 == "SUBDIR" { print $3}' ${PORTSDIR}/Makefile); do
 			awk -v cat=${cat}  '$1 == "SUBDIR" { print cat"/"$3}' ${PORTSDIR}/${cat}/Makefile
@@ -1505,7 +1505,7 @@ prepare_jail() {
 	export FORCE_PACKAGE=yes
 	export USER=root
 	export HOME=/root
-	PORTSDIR=`port_get_base ${PTNAME}`
+	PORTSDIR=`porttree_get_base ${PTNAME}`
 	[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 	POUDRIERED=${SCRIPTPREFIX}/../../etc/poudriere.d
 	[ -z "${JAILMNT}" ] && err 1 "No path of the base of the jail defined"

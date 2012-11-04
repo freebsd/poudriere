@@ -87,7 +87,7 @@ done
 
 shift $((OPTIND-1))
 
-export PORTSDIR=`port_get_base ${PTNAME}`
+export PORTSDIR=`porttree_get_base ${PTNAME}`
 [ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 [ -z "${PORTSDIR}" ] && err 1 "No such ports tree: ${PTNAME}"
 
