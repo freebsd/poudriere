@@ -130,7 +130,7 @@ test -z ${PORTTESTING} && echo "DISABLE_MAKE_JOBS=yes" >> ${JAILMNT}/etc/make.co
 
 zfs snapshot ${JAILFS}@prepkg
 
-parallel_build
+parallel_build || : # Ignore errors as they are handled below
 
 zset status "done:"
 

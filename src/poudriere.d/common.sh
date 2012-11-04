@@ -935,6 +935,8 @@ parallel_build() {
 
 	# Close the builder socket
 	exec 5>&-
+
+	return $(($(zget stats_failed) + $(zget stats_skipped)))
 }
 
 clean_pool() {
