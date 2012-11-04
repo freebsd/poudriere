@@ -93,9 +93,9 @@ esac
 
 if [ ${LIST} -eq 1 ]; then
 	[ $QUIET -eq 0 ] && \
-		printf '%-20s %-10s\n' "PORTSTREE" "METHOD"
-	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,${NS}:method | \
-		awk '$1 == "ports" {printf("%-20s %-10s\n",$2,$3) }'
+		printf '%-20s %-10s %s\n' "PORTSTREE" "METHOD" "PATH"
+	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,${NS}:method,mountpoint | \
+		awk '$1 == "ports" {printf("%-20s %-10s %s\n",$2,$3,$4) }'
 else
 	test -z "${PTNAME}" && usage
 fi
