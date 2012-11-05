@@ -156,19 +156,25 @@ compute_deps(struct pjail *j, struct pport_tree *p, const char *orig)
 	strlcpy(port->origin, orig, sizeof(port->origin));
 	strlcpy(pkg->origin, orig, sizeof(pkg->origin));
 	STAILQ_INSERT_TAIL(&queue, pkg, next);
-	snprintf(cmd, sizeof(cmd), "/usr/sbin/jexec -U root %s "
-	    "make -C /usr/ports/%s "
-	    "-VPKGNAME "
-	    "-VPKG_DEPENDS "
-	    "-VBUILD_DEPENDS "
-	    "-VEXTRACT_DEPENDS "
-	    "-VLIB_DEPENDS "
-	    "-VPATCH_DEPENDS "
-	    "-VFETCH_DEPENDS "
-	    "-VRUN_DEPENDS",
-	    j->name, orig);
+	char *argv[] = {
+		"make",
+		"-C",
+		NULL,
+		"-VPKGNAME",
+		"-VPKG_DEPENDS",
+		"-VBUILD_DEPENDS", 
+		"-VEXTRACT_DEPENDS",
+		"-VLIB_DEPENDS",
+		"-VPATCH_DEPENDS",
+		"-VFETCH_DEPENDS",
+		"-VRUN_DEPENDS",
+		NULL
+	};
 
-	if ((fp = popen(cmd, "r")) != NULL) {
+	snprintf(cmd, sizeof(cmd), "/usr/ports/%s", orig);
+	argv[2] = cmd;
+
+	if ((fp = injail(j,(char **)argv)) != NULL) {
 		while (getline(&line, &linecap, fp) > 0) {
 			if (line[strlen(line) - 1] == '\n')
 				line[strlen(line) - 1] = '\0';
@@ -217,6 +223,8 @@ compute_deps(struct pjail *j, struct pport_tree *p, const char *orig)
 			}
 		}
 		fclose(fp);
+	} else {
+		warnx("failed to run grrr");
 	}
 	return (0);
 }
@@ -256,6 +264,7 @@ queue_ports(struct pjail *j, struct pport_tree *p, const char *path, int argc, c
 		compute_deps(j, p, argv[i]);
 		return (0);
 	}
+	return (-1);
 }
 
 int

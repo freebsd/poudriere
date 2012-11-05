@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <login_cap.h>
 #include <pwd.h>
+#include <fcntl.h>
 
 #include "utils.h"
 #include "poudriere.h"
@@ -641,4 +642,49 @@ jail_setup(struct pjail *j)
 		fclose(t);
 		fclose(s);
 	}
+}
+
+FILE *
+injail(struct pjail *j, char **cmd)
+{
+	int pdes[2];
+	int jid;
+	struct passwd *pw;
+	int ngroups;
+
+	jid = jail_getid(j->name);
+	if (jid < 0) {
+		warnx("No such jail %s: %s", j->name, jail_errmsg);
+		return (NULL);
+	}
+
+	if (pipe(pdes) < 0)
+		return (NULL);
+
+	switch (vfork()) {
+	case -1:
+		close(pdes[0]);
+		close(pdes[1]);
+		return (NULL);
+	case 0:
+		if (jail_attach(jid) == -1)
+			err(1, "jail_attach(%s)", j->name);
+		if (chdir("/") == -1)
+			err(1, "chdir(%s)", j->mountpoint);
+		pw = getpwnam("root");
+		setgroups(0, (gid_t *)0);
+		setgid(pw->pw_gid);
+		initgroups("root", pw->pw_gid);
+		setlogin("root");
+		setreuid(pw->pw_uid, pw->pw_uid);
+		close(pdes[0]);
+		if (pdes[1] != STDOUT_FILENO) {
+			dup2(pdes[1], STDOUT_FILENO);
+			close(pdes[1]);
+		}
+		execvp(*cmd, cmd);
+		/* not reached */
+		exit (-1);
+	}
+	return (fdopen(pdes[0], "r"));
 }
