@@ -325,7 +325,7 @@ check_pkgtools(struct pjail *j)
 	char *argv[] = {
 		"make",
 		"-f",
-		"/usr/port/Mk/bsd.port.mk",
+		"/usr/ports/Mk/bsd.port.mk",
 		"-VWITH_PKGNG",
 		"-VPKG_ADD",
 		"-VPKG_DELETE",
