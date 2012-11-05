@@ -928,9 +928,6 @@ build_queue() {
 		if [ ${read_queue} -eq 0 ]; then
 			# If not wanting to read the queue, sleep to save CPU
 			sleep 2
-		else
-			# The queue wants to be read, sleep only briefly
-			sleep 0.1
 		fi
 
 		if [ ${builders_active} -eq 0 ]; then
