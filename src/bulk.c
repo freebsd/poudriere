@@ -103,7 +103,7 @@ delete_ifold(struct pjail *j, const char *path)
 
 		linecap = 0;
 		line = NULL;
-		if ((fp = injail(j, arg)) != NULL) {
+		if ((fp = injail(j, arg, NULL)) != NULL) {
 			while (getline(&line, &linecap, fp) > 0) {
 				p = calloc(0, sizeof(struct port));
 				strlcpy(p->origin, origin, sizeof(p->origin));
@@ -146,6 +146,7 @@ compute_deps(struct pjail *j, struct pport_tree *p, const char *orig)
 	size_t linecap = 0;
 	char *pkgname = NULL;
 	int nbel, i;
+	int linenb = 0;
 	FILE *fp;
 
 	STAILQ_FOREACH(pkg, &queue, next) {
@@ -184,8 +185,11 @@ compute_deps(struct pjail *j, struct pport_tree *p, const char *orig)
 	snprintf(cmd, sizeof(cmd), "/usr/ports/%s", orig);
 	argv[2] = cmd;
 
-	if ((fp = injail(j, argv)) != NULL) {
+	if ((fp = injail(j, argv, NULL)) != NULL) {
 		while (getline(&line, &linecap, fp) > 0) {
+			linenb++;
+			if (linenb > 8)
+				break;
 			if (line[strlen(line) - 1] == '\n')
 				line[strlen(line) - 1] = '\0';
 			if (pkgname == NULL) {
@@ -325,6 +329,7 @@ check_pkgtools(struct pjail *j)
 	size_t linecap = 0;
 	int linenb = 0;
 	char *line = NULL;
+	pid_t pid;
 	conf.pkgng = true;
 
 	char *argv[] = {
@@ -338,7 +343,7 @@ check_pkgtools(struct pjail *j)
 	};
 
 	printf("====>> build will use: ");
-	if ((fp = injail(j, argv)) != NULL) {
+	if ((fp = injail(j, argv, &pid)) != NULL) {
 		while (getline(&line, &linecap, fp) > 0) {
 			linenb++;
 			if (linenb == 1) {
@@ -352,10 +357,11 @@ check_pkgtools(struct pjail *j)
 				if (line[strlen(line) -1] == '\n')
 					line[strlen(line) -1] = '\0';
 				strlcpy(conf.pkg_delete, pos, sizeof(conf.pkg_delete));
-				break;
 			}
+			if (waitpid(-1, NULL, WNOHANG) == -1)
+				break;
 		}
-		fclose(fp);
+		pclose(fp);
 		free(line);
 	}
 
@@ -518,18 +524,20 @@ build(struct pjail *j)
 	snprintf(cmd, sizeof(cmd), "/usr/ports/%s", j->pkg->origin);
 	arg[2] = cmd;
 
-	if ((fp = injail(j, arg)) != NULL) {
+	if ((fp = injail(j, arg, NULL)) != NULL) {
 		while (getline(&line, &linecap, fp) > 0) {
 			linenb++;
+			if (linenb > 2)
+				break;
 			if (line[0] == '\n')
 				continue;
 			if (linenb == 1) {
 				printf("====>> Marked as IGNORED, aborting: %s", line);
 				exit(IGNORED);
-			}
-			if (linenb == 2)
-				exit(BROKEN);
+			} else if (linenb == 2) {
 				printf("====>> Marked as BROKEN, aborting: %s", line);
+				exit(BROKEN);
+			}
 		}
 		fclose(fp);
 	}

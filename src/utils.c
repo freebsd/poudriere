@@ -11,6 +11,7 @@
 #include <sys/sysctl.h>
 
 #include <ctype.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -67,32 +68,6 @@ split_chr(char *str, char sep)
 	}
 
 	return nbel;
-}
-
-struct sbuf *
-injail_buf(struct pjail *j, char *cmd[])
-{
-	FILE *fp;
-	char buf[BUFSIZ];
-	struct sbuf *res;
-
-	if ((fp = injail(j, cmd)) == NULL)
-		return (NULL);
-
-	res = sbuf_new_auto();
-	while (fgets(buf, BUFSIZ, fp) != NULL)
-		sbuf_cat(res, buf);
-
-	fclose(fp);
-
-	if (sbuf_len(res) == 0) {
-		sbuf_delete(res);
-		return (NULL);
-	}
-
-	sbuf_finish(res);
-
-	return (res);
 }
 
 int
@@ -640,12 +615,13 @@ jail_setup(struct pjail *j)
 }
 
 FILE *
-injail(struct pjail *j, char *cmd[])
+injail(struct pjail *j, char *cmd[], pid_t *pid)
 {
 	int pdes[2];
 	int jid;
 	struct passwd *pw;
 	int ngroups;
+	pid_t p;
 
 	jid = jail_getid(j->name);
 	if (jid < 0) {
@@ -656,7 +632,9 @@ injail(struct pjail *j, char *cmd[])
 	if (pipe(pdes) < 0)
 		return (NULL);
 
-	switch (vfork()) {
+	fcntl(pdes[0], F_SETFL, O_NONBLOCK);
+
+	switch ((p = vfork())) {
 	case -1:
 		close(pdes[0]);
 		close(pdes[1]);
@@ -681,5 +659,9 @@ injail(struct pjail *j, char *cmd[])
 		/* not reached */
 		exit (-1);
 	}
+
+	if (pid != NULL)
+		*pid = p;
+
 	return (fdopen(pdes[0], "r"));
 }
