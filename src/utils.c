@@ -70,26 +70,21 @@ split_chr(char *str, char sep)
 }
 
 struct sbuf *
-injail_buf(struct pjail *j, char *cmd)
+injail_buf(struct pjail *j, char **cmd)
 {
 	FILE *fp;
 	char buf[BUFSIZ];
 	struct sbuf *res;
-	struct sbuf *command;
 
-	command = sbuf_new_auto();
-	sbuf_printf(command, "jexec -U root %s %s", j->name, cmd);
-	sbuf_finish(command);
-	if ((fp = popen(sbuf_data(command), "r")) == NULL)
+	if ((fp = injail(j, cmd)) == NULL)
 		return (NULL);
 
 	res = sbuf_new_auto();
 	while (fgets(buf, BUFSIZ, fp) != NULL)
 		sbuf_cat(res, buf);
 
-	pclose(fp);
+	fclose(fp);
 
-	sbuf_delete(command);
 	if (sbuf_len(res) == 0) {
 		sbuf_delete(res);
 		return (NULL);

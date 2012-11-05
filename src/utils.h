@@ -67,7 +67,7 @@ void jail_kill(struct pjail *j);
 void jail_run(struct pjail *j, bool network);
 int exec(char *, char * const argv[]);
 int jexec(struct pjail *j, char *argv[]);
-struct sbuf *injail_buf(struct pjail *j, char *cmd);
+struct sbuf *injail_buf(struct pjail *j, char **cmd);
 void mount_nullfs(struct pjail *j, struct pport_tree *p);
 int split_chr(char *str, char sep);
 FILE *injail(struct pjail *j, char **cmd);

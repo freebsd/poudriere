@@ -322,9 +322,18 @@ check_pkgtools(struct pjail *j)
 	int state = 0;
 	char *pos;
 	char *walk, *end;
+	char *argv[] = {
+		"make",
+		"-f",
+		"/usr/port/Mk/bsd.port.mk",
+		"-VWITH_PKGNG",
+		"-VPKG_ADD",
+		"-VPKG_DELETE",
+		NULL
+	};
 
 	printf("====>> build will use: ");
-	b = injail_buf(j, "/usr/bin/make -C /usr/ports/ports-mgmt/poudriere -VWITH_PKGNG -VPKG_ADD -VPKG_DELETE");
+	b = injail_buf(j, (char **)argv);
 	walk = sbuf_data(b);
 	end = walk + sbuf_len(b);
 	pos = walk;
