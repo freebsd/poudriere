@@ -323,10 +323,9 @@ jail_runs(const char *jailname)
 
 static const char *needfs[] = {
 	"linprocfs",
-	"linsysfs",
 	"procfs",
 	"nullfs",
-	"xfs",
+	"fdescfs",
 	NULL,
 };
 static struct mntpts {
@@ -335,8 +334,8 @@ static struct mntpts {
 } mntpts [] = {
 	{ "/dev", "devfs" },
 	{ "/compat/linux/proc", "linprocfs" },
-	{ "/compat/linux/sys", "linsysfs" },
 	{ "/proc", "procfs" },
+	{ "/dev/fd", "fdescfs" },
 	{ NULL, NULL },
 };
 
@@ -472,6 +471,7 @@ mount_nullfs(struct pjail *j, struct pport_tree *p)
 {
 	struct iovec iov[6];
 	char source[MAXPATHLEN], target[MAXPATHLEN];
+	struct stat st;
 
 	iov[0].iov_base = "fstype";
 	iov[0].iov_len = sizeof("fstype");
@@ -482,6 +482,8 @@ mount_nullfs(struct pjail *j, struct pport_tree *p)
 
 	/* ports */
 	snprintf(target, sizeof(target), "%s/ports", p->mountpoint);
+	if (stat(target, &st) == -1)
+		strlcpy(target, p->mountpoint, sizeof(target));
 	snprintf(source, sizeof(source), "%s/usr/ports", j->mountpoint);
 
 	if (mkdir(target, 0755) != 0 && errno != EEXIST)
@@ -500,7 +502,7 @@ mount_nullfs(struct pjail *j, struct pport_tree *p)
 	iov[5].iov_len = strlen(target) + 1;
 
 	if (nmount(iov, 6, 0))
-		err(1, "failed to mount %s on %s\n", source, target);
+		err(1, "failed to mount %s on %s\n", target, source);
 
 	/* packages */
 	snprintf(target, sizeof(target), "%s/packages", conf.poudriere_data);

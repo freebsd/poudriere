@@ -143,7 +143,7 @@ compute_deps(struct pjail *j, struct pport_tree *p, const char *orig)
 			return(0);
 	}
 
-	snprintf(path, sizeof(path), "%s/ports/%s", p->mountpoint, orig);
+	snprintf(path, sizeof(path), "%s/usr/ports/%s", j->mountpoint, orig);
 
 	if ((stat(path, &st) == -1) || !S_ISDIR(st.st_mode)) {
 		warn("No such port %s in ports tree %s" , orig, p->name);
@@ -222,33 +222,40 @@ compute_deps(struct pjail *j, struct pport_tree *p, const char *orig)
 }
 
 int
-queue_ports(struct pjail *j, struct pport_tree *p, const char *path)
+queue_ports(struct pjail *j, struct pport_tree *p, const char *path, int argc, char **argv)
 {
 	FILE *fp;
 	size_t linecap = 0;
 	char *line = NULL;
 	char *buf;
+	int i;
 
 	printf("====>> Calculating ports order and dependencies\n");
 
-	if ((fp = fopen(path, "r")) == NULL) {
-		warn("Enable to open %s:", path);
-		return (-1);
+	if (path) {
+		if ((fp = fopen(path, "r")) == NULL) {
+			warn("Enable to open %s:", path);
+			return (-1);
+		}
+
+		while (getline(&line, &linecap, fp) > 0) {
+			buf = line;
+			while (isspace(buf[0]) && buf[0] != '\n')
+				buf++;
+			if (buf[0] == '#')
+				continue;
+			if (buf[strlen(buf) - 1] == '\n')
+				buf[strlen(buf) - 1] = '\0';
+			compute_deps(j, p, buf);
+		}
+		fclose (fp);
+		return (0);
 	}
 
-	while (getline(&line, &linecap, fp) > 0) {
-		buf = line;
-		while (isspace(buf[0]) && buf[0] != '\n')
-			buf++;
-		if (buf[0] == '#')
-			continue;
-		if (buf[strlen(buf) - 1] == '\n')
-			buf[strlen(buf) - 1] = '\0';
-		compute_deps(j, p, buf);
+	for (i = 0; i < argc; i++) {
+		compute_deps(j, p, argv[i]);
+		return (0);
 	}
-	fclose (fp);
-	return (0);
-
 }
 
 int
@@ -621,6 +628,7 @@ exec_bulk(int argc, char **argv)
 	struct pport_tree p;
 	struct pkg *pkg;
 	char snapshot[MAXPATHLEN], *args[4];
+	struct stat st;
 
 	STAILQ_INIT(&j.children);
 
@@ -673,7 +681,18 @@ exec_bulk(int argc, char **argv)
 		return (EX_USAGE);
 	}
 
-	if (file == NULL) {
+	if (file == NULL && argc == 0) {
+		usage_bulk();
+		return (EX_USAGE);
+	}
+
+	if (file != NULL && argc > 0) {
+		usage_bulk();
+		return (EX_USAGE);
+	}
+
+	if (file != NULL && ((lstat(file, &st) == -1) || !S_ISREG(st.st_mode))) {
+		warn("%s", file);
 		usage_bulk();
 		return (EX_USAGE);
 	}
@@ -702,7 +721,7 @@ exec_bulk(int argc, char **argv)
 	jail_setup(&j);
 	mount_nullfs(&j, &p);
 	check_pkgtools(&j);
-	queue_ports(&j, &p, file);
+	queue_ports(&j, &p, file, argc, argv);
 
 	sanity_check(&j);
 
