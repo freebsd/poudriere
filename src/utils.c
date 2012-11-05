@@ -181,7 +181,7 @@ zfs_list(struct zfs_prop z[], const char *t, int n)
 
 	sbuf_cat(cmd, "/sbin/zfs list -r -H -o poudriere:type");
 	for (i = 0; i < n; i++)
-		sbuf_printf(cmd, ",poudriere:%s", z[i].name);
+		sbuf_printf(cmd, ",%s", z[i].name);
 	sbuf_finish(cmd);
 	for (i = 0; i < n; i++)
 		printf(z[i].format, z[i].title);
@@ -219,7 +219,8 @@ zfs_list(struct zfs_prop z[], const char *t, int n)
 			}
 			type = walk;
 			j = 0;
-			while (!isspace(*walk))
+
+			while (!isspace(*walk) && walk < end)
 				walk++;
 			*walk = '\0';
 			walk++;

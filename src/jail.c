@@ -52,16 +52,16 @@ exec_jail(int argc, char **argv)
 	char *jailname = NULL;
 	struct pjail j;
 	struct zfs_prop props[] = {
-		{ "JAILNAME", "name", "%-20s " },
-		{ "VERSION", "version", "%-13s " },
-		{ "ARCH", "arch", "%-7s " },
-		{ "METHOD", "method", "%-7s " },
-		{ "SUCCESS", "stats_built", "%-7s " },
-		{ "FAILED", "stats_failed", "%-7s " },
-		{ "IGNORED", "stats_ignored", "%-7s " },
-		{ "SKIPPED", "stats_skipped", "%-7s " },
-		{ "QUEUED", "stats_queued", "%-7s " },
-		{ "STATUS", "status", "%s\n" },
+		{ "JAILNAME", "poudriere:name", "%-20s " },
+		{ "VERSION", "poudriere:version", "%-13s " },
+		{ "ARCH", "poudriere:arch", "%-7s " },
+		{ "METHOD", "poudriere:method", "%-7s " },
+		{ "SUCCESS", "poudriere:stats_built", "%-7s " },
+		{ "FAILED", "poudriere:stats_failed", "%-7s " },
+		{ "IGNORED", "poudriere:stats_ignored", "%-7s " },
+		{ "SKIPPED", "poudriere:stats_skipped", "%-7s " },
+		{ "QUEUED", "poudriere:stats_queued", "%-7s " },
+		{ "STATUS", "poudriere:status", "%s\n" },
 	};
 
 	struct zfs_query q[] = {

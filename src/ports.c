@@ -336,8 +336,9 @@ exec_ports(int argc, char **argv)
 	bool fake = false;
 	struct pport_tree pt;
 	struct zfs_prop props[] = {
-		{ "PORTSTREE", "name", "%-20s " },
-		{ "METHOD", "method", "%-10s\n" },
+		{ "PORTSTREE", "poudriere:name", "%-20s " },
+		{ "METHOD", "poudriere:method", "%-10s" },
+		{ "PATH", "mountpoint", "%s\n" },
 	};
 
 	struct zfs_query q[] = {
