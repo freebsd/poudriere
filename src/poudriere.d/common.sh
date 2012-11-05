@@ -1470,6 +1470,7 @@ prepare_ports() {
 
 	zset status "computingdeps:"
 	for port in $(listed_ports); do
+		[ -d "${PORTSDIR}/${port}" ] || err 1 "Invalid port origin: ${port}"
 		parallel_run "compute_deps ${port}"
 	done
 	parallel_stop
