@@ -878,9 +878,10 @@ EOF
 
 build_queue() {
 
-	local j cnt mnt fs name pkgname read_queue builders_active
+	local j cnt mnt fs name pkgname read_queue builders_active should_build_stats
 
 	read_queue=1
+	should_build_stats=1 # Always build stats on first pass
 	while :; do
 		builders_active=0
 		for j in ${JOBS}; do
@@ -892,7 +893,7 @@ build_queue() {
 					builders_active=1
 					continue
 				fi
-				build_stats
+				should_build_stats=1
 				rm -f "${JAILMNT}/poudriere/var/run/${j}.pid"
 				JAILFS="${fs}" zset status "idle:"
 
@@ -936,6 +937,11 @@ build_queue() {
 			find ${JAILMNT}/poudriere/deps || echo "deps missing"
 			err 1 "Queue is unprocessable"
 		fi
+
+		if [ ${should_build_stats} -eq 1 ]; then
+			build_stats
+			should_build_stats=0
+		fi
 	done
 }
 
@@ -961,6 +967,7 @@ parallel_build() {
 
 	zset status "parallel_build:"
 	build_queue
+	build_stats
 
 	zset status "stopping_jobs:"
 	stop_builders
