@@ -207,17 +207,17 @@ porttree_list() {
 		# Validate proper format
 		format="Format expected: NAME PATH"
 		n=0
-		awk 'substr($1, 0, 1) != "#" { print $1 " manual " $2 }' \
-			${POUDRIERED}/portstrees | while read name method mntpoint; do
-				n=$((n + 1))
-				[ -n "${name%%/*}" ] || \
-					err 1 "$(realpath ${POUDRIERED}/portstrees):${n}: Invalid name '${name}'. ${format}"
-				[ -n "${mntpoint}" ] || \
-					err 1 "$(realpath ${POUDRIERED}/portstrees):${n}: Missing path for '${name}'. ${format}"
-				[ -z "${mntpoint%%/*}" ] || \
-					err 1 "$(realpath ${POUDRIERED}/portstrees):${n}: Invalid path '${mntpoint}' for '${name}'. ${format}"
-				echo "${name} ${method} ${mntpoint}"
-			done
+		while read name mntpoint; do
+			n=$((n + 1))
+			[ -z "${name###*}" ] && continue # Skip comments
+			[ -n "${name%%/*}" ] || \
+				err 1 "$(realpath ${POUDRIERED}/portstrees):${n}: Invalid name '${name}'. ${format}"
+			[ -n "${mntpoint}" ] || \
+				err 1 "$(realpath ${POUDRIERED}/portstrees):${n}: Missing path for '${name}'. ${format}"
+			[ -z "${mntpoint%%/*}" ] || \
+				err 1 "$(realpath ${POUDRIERED}/portstrees):${n}: Invalid path '${mntpoint}' for '${name}'. ${format}"
+			echo "${name} manual ${mntpoint}"
+		done < ${POUDRIERED}/portstrees
 	fi
 	# Outputs: name method mountpoint
 }
