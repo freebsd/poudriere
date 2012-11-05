@@ -318,10 +318,15 @@ sanity_check(struct pjail *j)
 int
 check_pkgtools(struct pjail *j)
 {
-	struct sbuf *b;
 	int state = 0;
 	char *pos;
 	char *walk, *end;
+	FILE *fp;
+	size_t linecap = 0;
+	int linenb = 0;
+	char *line = NULL;
+	conf.pkgng = true;
+
 	char *argv[] = {
 		"make",
 		"-f",
@@ -333,32 +338,26 @@ check_pkgtools(struct pjail *j)
 	};
 
 	printf("====>> build will use: ");
-	b = injail_buf(j, argv);
-	walk = sbuf_data(b);
-	end = walk + sbuf_len(b);
-	pos = walk;
-	do {
-		if (*walk == '\n') {
-			*walk = '\0';
-			switch (state) {
-			case 0:
-				conf.pkgng = false;
-				if (strlen(pos) != 0)
-					conf.pkgng = true;
-				break;
-			case 1:
+	if ((fp = injail(j, argv)) != NULL) {
+		while (getline(&line, &linecap, fp) > 0) {
+			linenb++;
+			if (linenb == 1) {
+				if (line[0] == '\n')
+					conf.pkgng = false;
+			} else if (linenb == 2) {
+				if (line[strlen(line) -1] == '\n')
+					line[strlen(line) -1] = '\0';
 				strlcpy(conf.pkg_add, pos, sizeof(conf.pkg_add));
-				break;
-			case 2:
+			} else if (linenb == 3) {
+				if (line[strlen(line) -1] == '\n')
+					line[strlen(line) -1] = '\0';
 				strlcpy(conf.pkg_delete, pos, sizeof(conf.pkg_delete));
+				break;
 			}
-			state++;
-			walk++;
-			pos = walk;
-			continue;
 		}
-		walk++;
-	} while (walk <= end);
+		fclose(fp);
+		free(line);
+	}
 
 	strlcpy(conf.ext, conf.pkgng ? "txz" : "tbz", sizeof(conf.ext));
 	printf("%s\n", conf.pkgng ? "pkgng" : "legacy pkg_*");
