@@ -37,17 +37,22 @@ clean_pool() {
 		fi
 	fi
 
+	# Determine which packages are ready-to-build,
+	# and move from deps/ to pool/
+	if [ -z "$(find "${JAILMNT}/poudriere/rpool/${pkgname}" -type d -maxdepth 0 -empty)" ]; then
+		for dep_dir in ${JAILMNT}/poudriere/rpool/${pkgname}/*; do
+			dep_pkgname=${dep_dir##*/}
+			[ -d "${JAILMNT}/poudriere/deps/${dep_pkgname}" ] || continue
+			rm -f "${JAILMNT}/poudriere/deps/${dep_pkgname}/${pkgname}"
+			# If that packages was just waiting on my package, and
+			# is now ready-to-build, move it to pool/
+			find "${JAILMNT}/poudriere/deps/${dep_pkgname}" \
+				-type d -maxdepth 0 -empty \
+				-exec mv {} "${JAILMNT}/poudriere/pool" \;
+		done
+	fi
 	rm -rf "${JAILMNT}/poudriere/pool/${pkgname}" \
 		"${JAILMNT}/poudriere/rpool/${pkgname}" 2>/dev/null || :
-
-	for dep_pkgname in ${JAILMNT}/poudriere/deps/*/${pkgname}; do
-		[ "${dep_pkgname}" = "${JAILMNT}/poudriere/deps/*/${pkgname}" ] && break
-		dep_dir=${dep_pkgname%/*}
-		rm -f ${dep_pkgname}
-		## If this pkg is now ready-to-build, move it to pool/
-		find "${dep_dir}" -type d -empty -exec mv {} "${JAILMNT}/poudriere/pool" \;
-	done
-
 }
 
 clean_pool "${PKGNAME}" ${CLEAN_RDEPENDS}
