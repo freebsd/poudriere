@@ -90,10 +90,20 @@ delete_ifold(struct pjail *j, const char *path)
 			break;
 	}
 	if (p == NULL) {
-		snprintf(cmd, sizeof(cmd), "/usr/sbin/jexec -U root %s make -C /usr/ports/%s -VPKGNAME", j->name, origin);
+		char *arg[] = {
+			"make",
+			"-C",
+			NULL,
+			"-VPKGNAME",
+			NULL
+		};
+
+		snprintf(cmd, sizeof(cmd), "/usr/ports/%s", origin);
+		arg[2] = cmd;
+
 		linecap = 0;
 		line = NULL;
-		if ((fp = popen(cmd, "r")) != NULL) {
+		if ((fp = injail(j,(char **)arg)) != NULL) {
 			while (getline(&line, &linecap, fp) > 0) {
 				p = calloc(0, sizeof(struct port));
 				strlcpy(p->origin, origin, sizeof(p->origin));
@@ -483,12 +493,20 @@ build(struct pjail *j)
 	char *argv[5];
 
 	printf("====>> Start building %s\n", j->pkg->origin);
-	snprintf(cmd, sizeof(cmd), "/usr/sbin/jexec -U root %s "
-	    "make -C /usr/ports/%s "
-	    "-VIGNORED "
-	    "-VBROKEN ", j->name, j->pkg->origin);
 
-	if ((fp = popen(cmd, "r")) != NULL) {
+	char *arg[] = {
+		"make",
+		"-C",
+		NULL,
+		"-VIGNORED",
+		"-VBROKEN",
+		NULL
+	};
+
+	snprintf(cmd, sizeof(cmd), "/usr/ports/%s", j->pkg->origin);
+	arg[2] = cmd;
+
+	if ((fp = injail(j,(char **)arg)) != NULL) {
 		while (getline(&line, &linecap, fp) > 0) {
 			linenb++;
 			if (line[0] == '\n')
