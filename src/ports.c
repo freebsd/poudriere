@@ -80,12 +80,10 @@ typedef enum {
 static void
 _svn_create(struct pport_tree *p, svnproto proto)
 {
-	char dest[MAXPATHLEN];
 	char url[MAXPATHLEN];
 	char *argv[5];
 	const char *protocol;
 
-	snprintf(dest, sizeof(dest), "%s/ports", p->mountpoint);
 	switch(proto) {
 	case SVN:
 		protocol = "svn";
@@ -102,7 +100,7 @@ _svn_create(struct pport_tree *p, svnproto proto)
 	argv[0] = "svn";
 	argv[1] = "co";
 	argv[2] = url;
-	argv[3] = dest;
+	argv[3] = p->mountpoint;
 	argv[4] = NULL;
 
 	if (exec("svn", argv) != 0)
@@ -118,13 +116,21 @@ svn_update(struct pport_tree *p)
 	char dest[MAXPATHLEN];
 	char *argv[5];
 	const char *protocol;
+	struct stat st;
+	bool subport = true;
+	char *rep = NULL;
 
 	snprintf(dest, sizeof(dest), "%s/ports", p->mountpoint);
+	if (stat(dest, &st) == -1)
+		subport = false;
+
+	if (subport && !S_ISDIR(st.st_mode))
+		subport = false;
 
 	argv[0] = "svn";
 	argv[1] = "-q";
 	argv[2] = "update";
-	argv[3] = dest;
+	argv[3] = subport ? dest : p->mountpoint;
 	argv[4] = NULL;
 
 	if (exec("svn", argv) != 0)
@@ -182,12 +188,10 @@ git_create(struct pport_tree *p)
 	char *argv[5];
 	char ports[MAXPATHLEN];
 
-	snprintf(ports, sizeof(ports), "%s/ports", p->mountpoint);
-
 	argv[0] = "git";
 	argv[1] = "clone";
 	argv[2] = conf.git_url;
-	argv[3] = ports;
+	argv[3] = p->mountpoint;
 	argv[4] = NULL;
 
 	if (exec("git", argv) != 0)
@@ -201,11 +205,18 @@ git_update(struct pport_tree *p)
 	char ports[MAXPATHLEN];
 	char cwd[MAXPATHLEN];
 	char *mycwd;
-
+	bool subport = true;
+	struct stat st;
 
 	mycwd = getcwd(cwd, sizeof(cwd));
 	snprintf(ports, sizeof(ports), "%s/ports", p->mountpoint);
-	if (chdir(ports) != 0) {
+	if (stat(ports, &st) == -1)
+		subport = false;
+
+	if (subport && !S_ISDIR(st.st_mode))
+		subport = false;
+
+	if (chdir(subport ? ports : p->mountpoint) != 0) {
 		fprintf(stderr, "Faile to update the ports tree\n");
 		return;
 	}
