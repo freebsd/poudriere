@@ -818,6 +818,8 @@ build_stats() {
 	cat > ${html_path} << EOF
 <html>
   <head>
+    <meta http-equiv="refresh" content="10">
+    <meta http-equiv="pragma" content="NO-CACHE">
     <title>Poudriere bulk results</title>
     <style type="text/css">
       table {
@@ -845,6 +847,7 @@ build_stats() {
   </head>
   <body>
     <h1>Poudriere bulk results</h1>
+    Page will auto refresh every 10 seconds.
     <ul>
       <li>Jail: ${JAILNAME}</li>
       <li>Ports tree: ${PTNAME}</li>
