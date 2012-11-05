@@ -37,11 +37,17 @@ clean_pool() {
 		fi
 	fi
 
-	rm -rf "${JAILMNT}/poudriere/pool/${pkgname}"
-	if [ -d "${JAILMNT}/poudriere/rpool/${pkgname}" ]; then
-		echo ${JAILMNT}/poudriere/pool/*/${pkgname} 2>/dev/null | xargs rm -f
-		rm -rf "${JAILMNT}/poudriere/rpool/${pkgname}"
-	fi
+	rm -rf "${JAILMNT}/poudriere/pool/${pkgname}" \
+		"${JAILMNT}/poudriere/rpool/${pkgname}" 2>/dev/null || :
+
+	for dep_pkgname in ${JAILMNT}/poudriere/deps/*/${pkgname}; do
+		[ "${dep_pkgname}" = "${JAILMNT}/poudriere/deps/*/${pkgname}" ] && break
+		dep_dir=${dep_pkgname%/*}
+		rm -f ${dep_pkgname}
+		## If this pkg is now ready-to-build, move it to pool/
+		find "${dep_dir}" -type d -empty -exec mv {} "${JAILMNT}/poudriere/pool" \;
+	done
+
 }
 
 clean_pool "${PKGNAME}" ${CLEAN_RDEPENDS}

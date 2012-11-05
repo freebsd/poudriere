@@ -933,6 +933,7 @@ build_queue() {
 		if [ ${builders_active} -eq 0 ]; then
 			msg "Dependency loop or poudriere bug detected."
 			find ${JAILMNT}/poudriere/pool || echo "pool missing"
+			find ${JAILMNT}/poudriere/deps || echo "deps missing"
 			err 1 "Queue is unprocessable"
 		fi
 	done
@@ -1343,7 +1344,7 @@ compute_deps() {
 	local port=$1
 	local pkgname="${2:-$(cache_get_pkgname ${port})}"
 	local dep_pkgname dep_port
-	local pkg_pooldir="${JAILMNT}/poudriere/pool/${pkgname}"
+	local pkg_pooldir="${JAILMNT}/poudriere/deps/${pkgname}"
 	mkdir "${pkg_pooldir}" 2>/dev/null || return 0
 
 	msg "Computing deps for ${port}"
@@ -1354,7 +1355,7 @@ compute_deps() {
 
 		# Only do this if it's not already done, and not ALL, as everything will
 		# be touched anyway
-		[ ${ALL:-0} -eq 0 ] && ! [ -d "${JAILMNT}/poudriere/pool/${dep_pkgname}" ] && \
+		[ ${ALL:-0} -eq 0 ] && ! [ -d "${JAILMNT}/poudriere/deps/${dep_pkgname}" ] && \
 			compute_deps "${dep_port}" "${dep_pkgname}"
 
 		touch "${pkg_pooldir}/${dep_pkgname}"
@@ -1455,6 +1456,7 @@ prepare_ports() {
 	rm -rf "${JAILMNT}/poudriere/var/cache/origin-pkgname" \
 	       "${JAILMNT}/poudriere/var/cache/pkgname-origin" 2>/dev/null || :
 	mkdir -p "${JAILMNT}/poudriere/pool" \
+		"${JAILMNT}/poudriere/deps" \
 		"${JAILMNT}/poudriere/rpool" \
 		"${JAILMNT}/poudriere/var/run" \
 		"${JAILMNT}/poudriere/var/cache" \
@@ -1504,17 +1506,17 @@ prepare_ports() {
 	zset status "cleaning:"
 	msg "Cleaning the build queue"
 	export LOCALBASE=${MYBASE:-/usr/local}
-	for pn in $(ls ${JAILMNT}/poudriere/pool/); do
+	for pn in $(ls ${JAILMNT}/poudriere/deps/); do
 		if [ -f "${PKGDIR}/All/${pn}.${PKG_EXT}" ]; then
 			# Cleanup rpool/*/${pn}
-			for rpn in $(ls "${JAILMNT}/poudriere/pool/${pn}"); do
+			for rpn in $(ls "${JAILMNT}/poudriere/deps/${pn}"); do
 				echo "${JAILMNT}/poudriere/rpool/${rpn}/${pn}"
 			done
-			echo "${JAILMNT}/poudriere/pool/${pn}"
-			# Cleanup pool/*/${pn}
+			echo "${JAILMNT}/poudriere/deps/${pn}"
+			# Cleanup deps/*/${pn}
 			if [ -d "${JAILMNT}/poudriere/rpool/${pn}" ]; then
 				for rpn in $(ls "${JAILMNT}/poudriere/rpool/${pn}"); do
-					echo "${JAILMNT}/poudriere/pool/${rpn}/${pn}"
+					echo "${JAILMNT}/poudriere/deps/${rpn}/${pn}"
 				done
 				echo "${JAILMNT}/poudriere/rpool/${pn}"
 			fi
@@ -1522,8 +1524,11 @@ prepare_ports() {
 	done | xargs rm -rf
 
 	local nbq=0
-	nbq=$(find ${JAILMNT}/poudriere/pool -type d -depth 1 | wc -l)
+	nbq=$(find ${JAILMNT}/poudriere/deps -type d -depth 1 | wc -l)
 	zset stats_queued "${nbq##* }"
+
+	# Create a pool of ready-to-build from the deps pool
+	find "${JAILMNT}/poudriere/deps" -type d -empty|xargs -J % mv % "${JAILMNT}/poudriere/pool"
 
 	# Minimize PARALLEL_JOBS to queue size
 	if [ ${PARALLEL_JOBS} -gt ${nbq} ]; then
