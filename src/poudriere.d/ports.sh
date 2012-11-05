@@ -92,10 +92,12 @@ git);;
 esac
 
 if [ ${LIST} -eq 1 ]; then
+	format='%-20s %-10s %s\n'
 	[ $QUIET -eq 0 ] && \
-		printf '%-20s %-10s %s\n' "PORTSTREE" "METHOD" "PATH"
-	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,${NS}:method,mountpoint | \
-		awk '$1 == "ports" {printf("%-20s %-10s %s\n",$2,$3,$4) }'
+		printf "${format}" "PORTSTREE" "METHOD" "PATH"
+	porttree_list | while read ptname ptmethod ptpath; do
+		printf "${format}" ${ptname} ${ptmethod} ${ptpath}
+	done
 else
 	test -z "${PTNAME}" && usage
 fi
@@ -161,24 +163,29 @@ fi
 
 if [ ${DELETE} -eq 1 ]; then
 	porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
+	METHOD=$(porttree_get_method ${PTNAME})
+	[ "${METHOD}" = "manual" ] && err 1 "Ports tree ${PTNAME} is manually managed."
 	PTMNT=$(porttree_get_base ${PTNAME})
 	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	msg "Deleting portstree \"${PTNAME}\""
 	PTFS=$(porttree_get_fs ${PTNAME})
+	[ -n "${PTFS}" ] || err 2 "${PTNAME} ZFS dataset unable to be determined."
 	zfs destroy -r ${PTFS}
 fi
 
 if [ ${UPDATE} -eq 1 ]; then
 	porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
+	METHOD=$(porttree_get_method ${PTNAME})
+	[ "${METHOD}" = "manual" ] && err 1 "Ports tree ${PTNAME} is manually managed."
 	PTMNT=$(porttree_get_base ${PTNAME})
 	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	PTFS=$(porttree_get_fs ${PTNAME})
+	[ -n "${PTFS}" ] || err 2 "${PTNAME} ZFS dataset unable to be determined."
 	msg "Updating portstree \"${PTNAME}\""
-	METHOD=$(pzget method)
 	if [ ${METHOD} = "-" ]; then
 		METHOD=portsnap
 		pzset method ${METHOD}

@@ -198,17 +198,49 @@ jail_get_fs() {
 		awk -v n=$1 '$1 == "rootfs" && $2 == n { print $3 }' | head -n 1
 }
 
+porttree_list() {
+	local name method mntpoint n format
+	# Combine local ZFS and manual list
+	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,${NS}:method,mountpoint | \
+		awk '$1 == "ports" { print $2 " " $3 " " $4 }'
+	if [ -f "${POUDRIERED}/portstrees" ]; then
+		# Validate proper format
+		format="Format expected: NAME PATH"
+		n=0
+		awk 'substr($1, 0, 1) != "#" { print $1 " manual " $2 }' \
+			${POUDRIERED}/portstrees | while read name method mntpoint; do
+				n=$((n + 1))
+				[ -n "${name%%/*}" ] || \
+					err 1 "$(realpath ${POUDRIERED}/portstrees):${n}: Invalid name '${name}'. ${format}"
+				[ -n "${mntpoint}" ] || \
+					err 1 "$(realpath ${POUDRIERED}/portstrees):${n}: Missing path for '${name}'. ${format}"
+				[ -z "${mntpoint%%/*}" ] || \
+					err 1 "$(realpath ${POUDRIERED}/portstrees):${n}: Invalid path '${mntpoint}' for '${name}'. ${format}"
+				echo "${name} ${method} ${mntpoint}"
+			done
+	fi
+	# Outputs: name method mountpoint
+}
+
+porttree_get_method() {
+	[ $# -ne 1 ] && eargs portstree_name
+	porttree_list | awk -v portstree_name=$1 '$1 == portstree_name {print $2}'
+}
+
 porttree_exists() {
 	[ $# -ne 1 ] && eargs portstree_name
-	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,name | \
-		awk -v n=$1 'BEGIN { ret = 1 } $1 == "ports" && $2 == n { ret = 0; } END { exit ret }' && return 0
+	porttree_list |
+		awk -v portstree_name=$1 '
+		BEGIN { ret = 1 }
+		$1 == portstree_name {ret = 0; }
+		END { exit ret }
+		' && return 0
 	return 1
 }
 
 porttree_get_base() {
 	[ $# -ne 1 ] && eargs portstree_name
-	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,mountpoint | \
-		awk -v n=$1 '$1 == "ports" && $2 == n { print $3 }'
+	porttree_list | awk -v portstree_name=$1 '$1 == portstree_name { print $3 }'
 }
 
 porttree_get_fs() {
