@@ -6,6 +6,10 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
 
 [ -z ${CRONDIR} ] && err 1 "Please provide a CRONDIR variable in your poudriere.conf"
+if [ ! -d ${CRONDIR} ];then
+	mkdir ${CRONDIR}
+	chmod 1777 ${CRONDIR}
+fi
 [ `stat -f '%Sp' ${CRONDIR}` != "drwxrwxrwt" ] && err 1 "Please fix permissions on ${CRONDIR} (see poudriere.conf)"
 
 if [ -d ${CRONDIR} ]; then

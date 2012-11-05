@@ -1,5 +1,5 @@
 # The pool where poudriere will create all the filesystems it needs
-# poudriere will use tank/poudriere as its root
+# poudriere will use tank/${ZROOTFS} as its root
 #
 # You need at least 7GB of free space in this pool to have a working
 # poudriere.
@@ -10,6 +10,9 @@ ZPOOL=tank
 # replace _CHANGE_THIS_ by your 2-letter country-code.
 # This is deprecated and remains for compatibility
 #FTPHOST=ftp._CHANGE_THIS_.freebsd.org
+
+# root of the poudriere zfs filesystem, by default /poudriere
+# ZROOTFS=/poudriere
 
 # the host where to download sets  for the jails setup
 # You can specify here a host or an IP
@@ -28,7 +31,10 @@ FREEBSD_HOST=_PROTO_://_CHANGE_THIS_
 RESOLV_CONF=/etc/resolv.conf
 
 # The directory where the jail will store the packages and logs
-POUDRIERE_DATA=/usr/local/poudriere_data
+# by default a zfs filesystem will be created and set to
+# ${BASEFS}/data
+#
+#POUDRIERE_DATA=/usr/local/poudriere_data
 
 # The directory where poudriere will store jails and ports
 BASEFS=/usr/local/poudriere
@@ -47,21 +53,29 @@ USE_PORTLINT=no
 # If set WRKDIRPREFIX will be using tmpfs
 USE_TMPFS=yes
 
+# Use TMPFS the build pool/cache operations
+# # default: no
+#TMPFS_DATA=yes
+
 # If set the given directory will be used for the distfiles this allow the share
 # the distfiles between jails and ports tree
 DISTFILES_CACHE=/usr/ports/distfiles
 
-# Directory used to store "poudriere cron" files. Do not forget to set
-# it sticky and give a+rwx.
-CRONDIR=${BASEFS}/cron
+# Directory used to store "poudriere cron" files by default:
+# ${POUDRIERE_DATA}/cron
+#
+# CRONDIR=${POUDRIERE_DATA}/cron
 
-# if set the ports tree will be synced using csup instead of portsnap using the
-# given cvsup mirror.
-CSUP_HOST=cvsup._CHANGE_THIS_.freebsd.org
+# if set the ports tree marked to use csup method will use the defined mirror
+#CSUP_HOST=cvsup._CHANGE_THIS_.freebsd.org
+
+# if set the ports tree or source tree marked to use svn will use the defined
+# mirror by default svn.FreeBSD.org
+#SVN_HOST=svn.FreeBSD.org
 
 # Automatic OPTION change detection
-# Only if using PKGNG, when bulk building packages with -k, compare the options from
-# kept packages to the current options to be built. If they differ, the existing package
+# When bulk building packages, compare the options from kept packages to
+# the current options to be built. If they differ, the existing package
 # will be deleted and the port will be rebuilt.
 # Valid options: yes, no, verbose
 # verbose will display the old and new options
@@ -75,3 +89,33 @@ CSUP_HOST=cvsup._CHANGE_THIS_.freebsd.org
 # ccache support. Supply the path to your ccache cache directory.
 # It will be mounted into the jail and be shared among all jails.
 #CCACHE_DIR=/var/cache/ccache
+#
+
+# parallel build support.
+#
+# By default poudriere uses hw.ncpu to determine the number of builders.
+# You can override this default by changing PARALLEL_JOBS here, or
+# by specifying the -J flag to bulk/testport.
+#
+# Example to define PARALLEL_JOBS to one single job
+# PARALLEL_JOBS=1
+
+
+# If set, failed builds will save the WRKDIR to ${POUDRIERE_DATA}/wrkdirs
+# SAVE_WRKDIR=yes
+
+# Choose the default format for the workdir packing: could be tar,tgz,tbz,txz
+# default is tbz
+# WRKDIR_ARCHIVE_FORMAT=tbz
+
+# Disable linux support
+# NOLINUX=yes
+
+
+# by default poudriere set PACKAGE_BUILDING
+# to disable it:
+# NO_PACKAGE_BUILDING=yes
+
+# If you are using a proxy define it here:
+# export HTTP_PROXY=bla
+# export FTP_PROXY=bla

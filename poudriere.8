@@ -26,7 +26,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd May 03, 2012
+.Dd November 3, 2012
 .Dt POUDRIERE 8
 .Os FreeBSD
 .Sh NAME
@@ -40,7 +40,7 @@
 .Sh DESCRIPTION
 The
 .Nm
-tool is used to build package from the FreeBSD ports tree.
+tool is used to build packages from the FreeBSD ports tree.
 It can also be used to test a single port.
 .Pp
 Its goals are to use modern facilities present in FreeBSD (as ZFS,
@@ -55,6 +55,9 @@ from the following list:
 .It bulk
 This command makes a ready-to-export package tree, and fills it with
 binary packages built from a given list of ports.
+During the build, hit ^T to send
+.Dv SIGINFO
+and get stats and progress back.
 .It jail
 This command gives you control to manage the jails used by
 .Nm
@@ -68,6 +71,8 @@ by
 .It testport
 This command, mainly targeted at FreeBSD ports developers, launches a
 test on a given port (useful before submitting/committing a port).
+.It options
+This command allows to configure the options for a given port
 .It queue
 This command allows a non-root user to queue
 .Nm
@@ -79,7 +84,7 @@ command of
 and is designed to be run from
 .Xr cron 8 .
 .It version
-Show version of poudriere
+Show version of poudriere.
 .Nm.
 .El
 .Sh SUBCOMMANDS
@@ -104,21 +109,50 @@ See
 to know how to build binary packages with options that differs from
 defaults.
 .Pp
+The list of ports can also be provided by command line arguments.
+.Pp
 Here are the options associated with the
 .Cm bulk
 command.
 .Bl -tag -width "-f conffile"
-.It Fl k
-This flags specifies to keep the previous built binary packages.
+.It Fl a
+Build all ports in the tree.
+.It Fl c
+This flag specifies to clean the previous built binary packages.
+.It Fl C
+Clean previous packages for the given list to build.
+.It Fl D
+Run in debug mode.
+Displays more information.
 .It Fl j Ar name
 If given, run the bulk build only on the jail named
-.Ar name.
+.Ar name .
+.It Fl J Ar number
+This argument specifies how many
+.Ar number
+jobs will run in parallel for a bulk build.
 .It Fl p Ar tree
 This flag specifies on which ports
 .Ar tree
 the bulk build will be done.
+.It Fl s
+Skip sanity tests.
+Sanity tests are made to check if the ports exists,
+does not have an increased version number, and if the compiled options
+match the current options from the make.conf files and /var/db/options.
 .It Fl t
-add some testing
+Add some testing.
+Currently uninstalls the port, and disable parallel
+jobs for make.
+.It Fl w
+Save WRKDIR on build failure.
+The WRKDIR will be tarred up into
+.Sy ${POUDRIERE_DATA}/wrkdirs .
+.It Fl z Ar set
+This specifies which SET to use for the build.
+See
+.Sx CUSTOMISATION
+for examples of how this is used.
 .El
 .Ss jail
 .Pp
@@ -135,12 +169,12 @@ Starts a jail.
 .It Fl k
 Kills a jail (stops it).
 .It Fl i
-Show information about the jail
+Show information about the jail.
 .El
 .Pp
-Excepted for
+Except for
 .Fl l ,
-all these subcommands requires
+all of the subcommands require the
 .Fl j
 option (see below).
 .Pp
@@ -148,6 +182,10 @@ Here are the options associated with the
 .Cm jail
 command.
 .Bl -tag -width "-f conffile"
+.It Fl J Ar number
+This argument specifies how many
+.Ar number
+jobs will run in parallel for buildworld.
 .It Fl q
 Remove the header when
 .Fl l
@@ -160,7 +198,7 @@ of the jail.
 .It Fl v Ar version
 Specifies which
 .Ar version
-of FreeBSD we want in jail.
+of FreeBSD to use in the jail.
 If you are using method ftp then the
 .Ar version
 should in the form of: 9.0-RELEASE.
@@ -173,12 +211,12 @@ should be in the form of svn branches: stable/9 or head for current.
 .It Fl a Ar architecture
 Specifies which
 .Ar architecture
-of FreeBSD we want in jail. (Default: same as host)
+of FreeBSD to use in the jail. (Default: same as host)
 .It Fl m Ar method
 Specifies which
 .Ar method
-we want to create jail.
-Could be csup or svn (Default: ftp).
+to use to create the jail.
+Could be csup, svn{,+http,+ssh), ftp, allbsd (Default: ftp).
 .It Fl f Ar filesystem
 Specifies the
 .Ar filesystem
@@ -190,8 +228,7 @@ when creating jail.
 .It Fl t Ar version
 instead of upgrading to the latest security fix of the jail version, you can
 jump to the new specified
-.Ar version
-.
+.Ar version .
 .El
 .Ss ports
 .Pp
@@ -207,9 +244,9 @@ Updates a ports tree.
 List all available ports trees.
 .El
 .Pp
-Excepted for
+Except for
 .Fl l ,
-all these subcommands requires
+all of the subcommands require the
 .Fl p
 switch (see below).
 .Pp
@@ -225,7 +262,7 @@ Otherwise, it has no effect.
 .It Fl p Ar name
 Specifies the
 .Ar name
-of the ports tree we are working on.
+of the ports tree to use.
 .It Fl F
 When used with
 .Fl c ,
@@ -241,15 +278,17 @@ Gives an alternative
 when creating ports tree.
 .It Fl m Ar method
 Specifies which
-.Ar method we want to create a ports tree. Could be portsnap, csup (Default:
-portsnap)
+.Ar method
+to use to create the ports tree.
+Could be portsnap, git, svn{,+http,+ssh} (Default:
+portsnap).
 .El
 .Ss testport
 .Pp
 These subcommands are mutually exclusive.
 .Bl -tag -width "-f conffile"
 .It Fl d Ar path
-Specifies the path to the port we test.
+Specifies the path to the port to test.
 .It Fl o Ar origin
 Specifies an origin in the ports tree
 .El
@@ -260,16 +299,59 @@ command.
 .Bl -tag -width "-f conffile"
 .It Fl c
 Run make config for the given port.
+.It Fl D
+Run in debug mode.
+Displays more information.
 .It Fl j Ar name
 Runs only inside the jail named
 .Ar name .
+.It Fl J Ar number
+This argument specifies how many
+.Ar number
+jobs will run in parallel for building the dependencies.
 .It Fl n
 Do not use custom prefix.
 .It Fl p Ar tree
-Specifies on which ports
+Specifies which ports
 .Ar tree
-we work.
+to use.
+.It Fl z Ar set
+This specifies whith SET to use for the build.
+See
+.Sx CUSTOMISATION
+for examples of how this is used.
 .El
+.Ss options
+This command accepts the following options:
+.Bl -tag -width "-f conffile"
+.It Fl c
+Use 'config' target, which will always show the dialog for the given ports.
+.It Fl C
+Use 'config-conditional' target, which will only bring up the dialog on new options for the given ports.
+(This is the default)
+.It Fl j Ar jailname
+If given, configure the options only for the given jail.
+.It Fl p Ar portstree
+Run the configuration inside the given ports tree (by default uses default)
+.It Fl f Ar filename
+List of ports to configure
+.It Fl n
+Do not be recursive
+.It Fl r
+Remove port options instead of configuring them
+.It Fl s
+Show port options instead of configuring them
+.It Fl z Ar set
+This specifies whith SET to use for the build.
+See
+.Sx CUSTOMISATION
+for examples of how this is used.
+.El
+.Pp
+The
+.Cm options
+subcommand can also take the list of ports to configure thought command line
+arguments instead of the using a file list.
 .Ss queue
 .Pp
 This command takes a
@@ -279,7 +361,6 @@ command in argument.
 There are no options associated with the
 .Cm queue
 command.
-.El
 .Sh ENVIRONMENT
 The
 .Nm
@@ -354,7 +435,7 @@ created by poudriere.
 .Pp
 Once the bulk build is over, you can meet your shiny new packages here:
 .Pp
-.Dl "/usr/local/poudriere_data/packages/bulk-81i386"
+.Dl "/usr/local/poudriere_data/packages/81i386"
 .Pp
 with 81i386 as the name of the jail.
 .Ss test a single port
@@ -369,10 +450,10 @@ Let's take the example of building a single port;
 all the tests will be done in all the jails in alphabetical order.
 .Pp
 It starts the jail, then mount the ports tree (nullfs), then mounts the
-package dir (pourdriere_data/packages/jailname), then it mounts the
+package dir (pourdriere_data/packages/<jailname>-<tree>-<setname>), then it mounts the
 ~/ports-cvs/mybeautifulporttotest (nullfs) it builds all the dependencies
 (except runtime ones) and log it to
-poudriere_data/logs/mybeautifulporttotest-jailname-depends.log).
+poudriere_data/logs/testport/jailname/default/mybeautifulporttotest.log).
 .Pp
 If packages for the dependencies already exists it will use them
 .Pp
@@ -383,7 +464,7 @@ All the dependency phase is done with PREFIX == LOCALBASE.
 .Pp
 After that it will build the port itself with LOCALBASE != PREFIX
 and log the build to
-poudriere_data/logs/mybeautifulporttotest-jailname-build.log
+poudriere_data/logs/testport/jailname/default/mybeautifulporttotest.log
 .Pp
 It will try to:
 install it,
@@ -406,12 +487,18 @@ can mount a directory containing option files if available.
 .Nm
 will check for any of these directories in this order:
 .Pp
-.Dl /usr/local/etc/poudriere.d/<jail-name>-options
+.Dl /usr/local/etc/poudriere.d/<jailname>-<setname>-options
+.Dl /usr/local/etc/poudriere.d/<setname>-options
+.Dl /usr/local/etc/poudriere.d/<jailname>-options
 .Dl /usr/local/etc/poudriere.d/options
 .Pp
 If a directory with this name exists, it is null-mounted into the
 /var/db/ports/ directory of the jail, thus allowing to build package
 with custom OPTIONS.
+.Pp
+The
+.Cm options
+subcommand can be used to easily configure options in the correct directory.
 .Pp
 This directory has the usual layout for options: it contains one directory per
 port (the name of the port) containing an 'options' file with lines similar to:
@@ -423,13 +510,15 @@ As a starter, you may want to copy an existing /var/db/ports/ to
 /usr/local/etc/poudriere.d/options.
 .Ss Create optional make.conf
 You can also specify a global make.conf which will be used for all the
-jails, and also add a per-jail make.conf:
+jails, and also add a per-jail, per-set, or per-jail-set make.conf.
+They will all be used in the jail, in the order shown:
 .Pp
 .Dl /usr/local/etc/poudriere.d/make.conf
-.Pp
-and
-.Pp
+.Dl /usr/local/etc/poudriere.d/<setname>-make.conf
+.Dl /usr/local/etc/poudriere.d/<tree>-make.conf
 .Dl /usr/local/etc/poudriere.d/<jailname>-make.conf
+.Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-make.conf
+.Dl /usr/local/etc/poudriere.d/<jailname>-<setname>-make.conf
 .Sh COMPATIBILITY
 The
 .Nm
@@ -455,6 +544,7 @@ not in -stable or current:
 .Sh BUGS
 In case of bugs, feel free to fill
 .Pp
-.Lk http://bugs.etoilebsd.net/
+.Lk http://fossil.etoilebsd.net/poudriere/reportlist
 .Sh AUTHORS
-.An Baptiste Daroussin Aq bapt@freebsd.org
+.An Baptiste Daroussin Aq bapt@FreeBSD.org
+.An Bryan Drewery Aq bdrewery@FreeBSD.org

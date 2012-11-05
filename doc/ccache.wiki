@@ -1,0 +1,10 @@
+<h1>Use ccache with poudriere</h1>
+
+Define the CCACHE_DIR to use in your /usr/local/etc/poudriere.conf:
+
+    <verbatim>
+echo "CCACHE_DIR=/usr/obj/ccache" >> /usr/local/etc/poudriere.conf
+mkdir -p /usr/obj/ccache
+</verbatim>
+
+That's it!

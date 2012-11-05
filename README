@@ -1,5 +1,5 @@
-What is poudriere?
-------------------
+Welcome to poudriere!
+---------------------
 
 poudriere is a tool primarily designed to test package production on
 FreeBSD. However, most people will find it useful to bulk build ports
@@ -8,110 +8,23 @@ for FreeBSD.
 Its goals are to use modern facilities present in FreeBSD (as ZFS,
 jails), to be easy to use and to depend only on base.
 
-It is not designed to build the whole portstree like tinderbox does.
+Where is the documentation?
+---------------------------
 
-poudriere is able to build packages for versions of FreeBSD that are
-different from the box on which it is installed, and also to build
-packages for i386 if the host is an amd64 box.
+The canonical documentation is located at:
 
-Once the package building is done, the packages will be in a layout
-identical to the official mirrors. Therefore they will be useable by any
-package management tool (pkg_add, portmaster, and so on).
+http://fossil.etoilebsd.net/poudriere/doc/trunk/doc/index.wiki
 
+A copy of this documentation could be found in the doc directory.
 
-What poudriere needs?
----------------------
+You can also open the manpage of poudriere, located in the 8th section.
 
-- FreeBSD
-- a ZFS pool with at least 7GB of free space
-- root access
+Getting started with poudriere
+------------------------------
 
-That is all. For more comfort, we recommend to have quite a lot of RAM
-in order to make the builds in a VM resident filesystem.
-
-
-How to install it?
-------------------
-
-Just type "make" at the top-level directory.
-
-
-What do I have to configure before starting use it?
----------------------------------------------------
-
- Create a mandatory configuration file
- -------------------------------------
-
-Poudriere will look for a configuration file in /usr/local/etc.
-
-Copy the default configuration file:
-
-    cp /usr/local/etc/poudriere.conf.sample /usr/local/etc/poudriere.conf
-
-then edit it:
-
-    $EDITOR /usr/local/etc/poudriere.conf
-
-The comments inside the configuration file should be sufficient.
-
-Examples
---------
-
-See poudriere(8).
-
-How-to...
----------
-
- ...manage poudriere ports using portshaker
- ------------------------------------------
-
-Ensure you are running at least portshaker 1.0.5.
-
-Configure the 'foo' ports tree in /usr/local/etc/portshaker.conf like this:
-
-    ports_trees="... foo"
-    use_zfs="yes"
-    poudriere_dataset="data/poudriere"
-    poudriere_ports_mountpoint="/usr/local/poudriere/ports"
-
-    foo_poudriere_tree="foo"
-    foo_merge_from="ports ..."
-
-You can then use portshaker to manage poudriere ports tree:
-
-    portshaker
-
-Then, use the 'foo' ports tree as a regular poudriere ports tree.
-
-    poudriere ports -l
-
- ...use the generated packages with portmaster
- ---------------------------------------------
-
-First, install portmaster from the void:
-
-    fetch -o - http://ftp.fr.freebsd.org/pub/FreeBSD/ports/packages/All/portmaster-3.9.tbz | \
-    pkg_add -r -
-
-Then, configure it:
-
-    mkdir -p /usr/ports/Mk
-    touch /usr/ports/Mk/bsd.port.mk
-
-    cat > /usr/local/etc/portmaster.rc<<EOF
-MASTER_SITE_INDEX=http://example.com/82i386/
-LOCALBASE=/usr/local
-PACKAGESITE=http://example.com/82i386/
-PM_PACKAGES=only
-PM_INDEX=yes
-PM_INDEX_ONLY=pm_index_only
-EOF
-
-Of course you have to install a HTTP server, with /82i386/ an alias to
-/usr/local/poudriere_data/packages/bulk-82i386.
-
-You are now ready to invoke portmaster:
-
-    portmaster editors/vim
-
-Happy FreeBSDing!
+1. Install it by typing "make install" at the top-level directory
+2. Copy /usr/local/etc/poudriere.conf.sample to /usr/local/etc/poudriere.conf
+3. Edit it to suit your needs
+4. man poudriere, search for EXAMPLES
+5. Follow "bulk build of binary packages" steps
+6. Enjoy your new fresh binary packages!

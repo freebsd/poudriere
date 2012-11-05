@@ -1,0 +1,24 @@
+<h1>Manage poudriere ports using portshaker</h1>
+
+Ensure you are running at least portshaker 1.0.5
+
+
+Configure the 'foo' ports tree in /usr/local/etc/portshaker.conf like this:
+
+    <verbatim>ports_trees="... p_foo"
+use_zfs="yes"
+poudriere_dataset="data/poudriere"
+poudriere_ports_mountpoint="/usr/local/poudriere/ports"
+
+foo_poudriere_tree="foo"
+foo_merge_from="ports ..."
+</verbatim>
+
+You can then use portshaker to manage poudriere portstree:
+
+    <verbatim>portshaker</verbatim>
+
+Then, use the 'foo' ports tree as a regular poudriere ports tree:
+
+    <verbatim>poudriere ports -l</verbatim>
+

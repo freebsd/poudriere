@@ -17,21 +17,20 @@ Once the package building is done, the packages will be in a layout
 identical to the official mirrors. Therefore they will be useable by any
 package management tool (pkg_add, portmaster, and so on).
 
+[./TODO.wiki|TODO list for next versions]
 
-<h1>What poudriere needs?</h1>
+<h1>What does poudriere require?</h1>
 
-  *  FreeBSD
+  *  a recent FreeBSD (>= 8.3)
   *  a ZFS pool with at least 7GB of free space
   *  root access
 
 That is all. For more comfort, we recommend to have quite a lot of RAM
 in order to make the builds in a VM resident filesystem.
 
-
 <h1>How to install it?</h1>
 
-Just type "make" at the top-level directory.
-
+Just type "make install" at the top-level directory.
 
 <h1>What do I have to configure before starting use it?</h1>
 
@@ -55,89 +54,14 @@ See poudriere(8).
 
 <h1>How-to...</h1>
 
- <h2>...manage poudriere ports using portshaker</h2>
-
-Ensure you are running at least portshaker 1.0.5
-
-
-Configure the 'foo' ports tree in /usr/local/etc/portshaker.conf like this:
-
-    <verbatim>ports_trees="... p_foo"
-use_zfs="yes"
-poudriere_dataset="data/poudriere"
-poudriere_ports_mountpoint="/usr/local/poudriere/ports"
-
-foo_poudriere_tree="foo"
-foo_merge_from="ports ..."
-</verbatim>
-
-You can then use portshaker to manage poudriere portstree:
-
-    <verbatim>portshaker</verbatim>
-
-Then, use the 'foo' ports tree as a regular poudriere ports tree:
-
-    <verbatim>poudriere ports -l</verbatim>
-
- <h2>...use the generated packages with portmaster</h2>
-
-First, install portmaster from the void:
-
-    <verbatim>fetch -o - http://ftp.fr.freebsd.org/pub/FreeBSD/ports/packages/All/portmaster-3.9.tbz | \
-pkg_add -r -</verbatim>
-
-Then, configure it:
-
-    <verbatim>mkdir -p /usr/ports/Mk
-touch /usr/ports/Mk/bsd.port.mk
-
-cat > /usr/local/etc/portmaster.rc<<EOF
-MASTER_SITE_INDEX=http://example.com/82i386/
-LOCALBASE=/usr/local
-PACKAGESITE=http://example.com/82i386/
-PM_PACKAGES=only
-PM_INDEX=yes
-PM_INDEX_ONLY=pm_index_only
-EOF
-</verbatim>
-
-Of course you have to install a HTTP server, with /82i386/ an alias to
-/usr/local/poudriere_data/packages/bulk-82i386.
-
-You are now ready to invoke portmaster:
-
-    <verbatim>portmaster editors/vim</verbatim>
-
- <h2>...use ccache with poudriere</h2>
-
-Define the CCACHE_DIR to use in your /usr/local/etc/poudriere.conf:
-
-    <verbatim>
-echo "CCACHE_DIR=/usr/obj/ccache" >> /usr/local/etc/poudriere.conf
-mkdir -p /usr/obj/ccache
-</verbatim>
-
-Configure the make.conf to use CCACHE and bsd.local.mk:
-
-    <verbatim>
-cat >> /usr/local/etc/poudriere.d/make.conf << EOF
-USE_CCACHE=yes
-USE_LOCAL_MK=yes
-EOF
-</verbatim>
-
-Add this into the port tree's Mk/bsd.local.mk before the last .endif:
-
-    <verbatim>
-.if defined(USE_CCACHE) && !${.CURDIR:M*/devel/ccache} && !${.CURDIR:M*/ports-mgmt/pkg}
-BUILD_DEPENDS+=         ${LOCALBASE}/bin/ccache:${PORTSDIR}/devel/ccache
-.endif
-
-.if defined(USE_CCACHE) && !${CC:M*ccache*}
-MAKE_ENV+=      PATH=${LOCALBASE}/libexec/ccache/world:${PATH}
-.endif
-</verbatim>
-This last step is a temporary solution until it can be put into the ports framework by default.
-
+  *  [./pkgng_repos.wiki|...create and maintain pkgng repositories]
+  *  [./portshaker.wiki|...manage poudriere ports using portshaker]
+  *  [./portmaster.wiki|...use the generated packages with portmaster]
+  *  [./ccache.wiki|...use ccache with poudriere]
+  *  [./config.wiki|...easily generate options]
+  *  [./poudriere_in_jail.wiki|...run poudriere in a jail]
+  *  [./use_system_ports_tree.wiki|...use the system ports tree in poudriere]
 
 Happy FreeBSDing!
+
+Join us on IRC: #poudriere on Freenode
