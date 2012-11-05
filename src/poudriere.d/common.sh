@@ -811,7 +811,7 @@ build_stats() {
 	else
 		logdir=`log_path`
 		[ -d "${logdir}" ] || mkdir -p "${logdir}"
-		html_path="${logdir}/index.html"
+		html_path="${logdir}/index.html.tmp"
 	fi
 	
 
@@ -871,6 +871,9 @@ EOF
   </body>
 </html>
 EOF
+
+
+	[ "${html_path}" != "/dev/null" ] && mv ${html_path} ${html_path%.tmp}
 }
 
 build_queue() {
