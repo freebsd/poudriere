@@ -462,12 +462,14 @@ typedef enum {
 	OK = 0,
 	IGNORED,
 	BROKEN,
+	CHECKCONFIG,
 	FETCH,
 	CHECKSUM,
 	EXTRACT,
 	PATCH,
 	CONFIGURE,
 	BUILD,
+	RUNDEPENDS,
 	INSTALL,
 	PACKAGE
 } ebuild;
@@ -477,12 +479,14 @@ static struct phase {
 	ebuild err;
 	bool network;
 } phase[] = {
+	{ "check-config", CHECKCONFIG, false},
 	{ "fetch", FETCH, true },
 	{ "checksum", CHECKSUM, true },
 	{ "extract", EXTRACT, false },
 	{ "patch", PATCH, false },
 	{ "configure", CONFIGURE, false},
 	{ "build", BUILD, false },
+	{ "run-depends", RUNDEPENDS, false },
 	{ "install", INSTALL, false },
 	{ "package", PACKAGE, false },
 	{ NULL, OK, false },
