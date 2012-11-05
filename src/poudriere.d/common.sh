@@ -1507,6 +1507,10 @@ prepare_ports() {
 	for pn in $(ls ${JAILMNT}/poudriere/pool/); do
 		p=${JAILMNT}/poudriere/pool/${pn}
 		if [ -f "${PKGDIR}/All/${pn}.${PKG_EXT}" ]; then
+			# Cleanup rpool/*/${pn}
+			for rpn in $(ls "${p}"); do
+				echo "${JAILMNT}/poudriere/rpool/${rpn}/${pn}"
+			done
 			echo ${p}
 			if [ -d "${JAILMNT}/poudriere/rpool/${pn}" ]; then
 				echo ${JAILMNT}/poudriere/pool/*/${pn}
