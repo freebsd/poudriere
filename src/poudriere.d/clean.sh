@@ -42,7 +42,6 @@ clean_pool() {
 	if [ -z "$(find "${JAILMNT}/poudriere/rpool/${pkgname}" -type d -maxdepth 0 -empty)" ]; then
 		for dep_dir in ${JAILMNT}/poudriere/rpool/${pkgname}/*; do
 			dep_pkgname=${dep_dir##*/}
-			[ -d "${JAILMNT}/poudriere/deps/${dep_pkgname}" ] || continue
 			rm -f "${JAILMNT}/poudriere/deps/${dep_pkgname}/${pkgname}"
 			# If that packages was just waiting on my package, and
 			# is now ready-to-build, move it to pool/
