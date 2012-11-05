@@ -1505,13 +1505,12 @@ prepare_ports() {
 	msg "Cleaning the build queue"
 	export LOCALBASE=${MYBASE:-/usr/local}
 	for pn in $(ls ${JAILMNT}/poudriere/pool/); do
-		p=${JAILMNT}/poudriere/pool/${pn}
 		if [ -f "${PKGDIR}/All/${pn}.${PKG_EXT}" ]; then
 			# Cleanup rpool/*/${pn}
-			for rpn in $(ls "${p}"); do
+			for rpn in $(ls "${JAILMNT}/poudriere/pool/${pn}"); do
 				echo "${JAILMNT}/poudriere/rpool/${rpn}/${pn}"
 			done
-			echo ${p}
+			echo "${JAILMNT}/poudriere/pool/${pn}"
 			# Cleanup pool/*/${pn}
 			if [ -d "${JAILMNT}/poudriere/rpool/${pn}" ]; then
 				for rpn in $(ls "${JAILMNT}/poudriere/rpool/${pn}"); do
