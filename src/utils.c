@@ -70,7 +70,7 @@ split_chr(char *str, char sep)
 }
 
 struct sbuf *
-injail_buf(struct pjail *j, char **cmd)
+injail_buf(struct pjail *j, char *cmd[])
 {
 	FILE *fp;
 	char buf[BUFSIZ];
@@ -640,7 +640,7 @@ jail_setup(struct pjail *j)
 }
 
 FILE *
-injail(struct pjail *j, char **cmd)
+injail(struct pjail *j, char *cmd[])
 {
 	int pdes[2];
 	int jid;

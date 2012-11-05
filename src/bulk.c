@@ -103,7 +103,7 @@ delete_ifold(struct pjail *j, const char *path)
 
 		linecap = 0;
 		line = NULL;
-		if ((fp = injail(j,(char **)arg)) != NULL) {
+		if ((fp = injail(j, arg)) != NULL) {
 			while (getline(&line, &linecap, fp) > 0) {
 				p = calloc(0, sizeof(struct port));
 				strlcpy(p->origin, origin, sizeof(p->origin));
@@ -184,7 +184,7 @@ compute_deps(struct pjail *j, struct pport_tree *p, const char *orig)
 	snprintf(cmd, sizeof(cmd), "/usr/ports/%s", orig);
 	argv[2] = cmd;
 
-	if ((fp = injail(j,(char **)argv)) != NULL) {
+	if ((fp = injail(j, argv)) != NULL) {
 		while (getline(&line, &linecap, fp) > 0) {
 			if (line[strlen(line) - 1] == '\n')
 				line[strlen(line) - 1] = '\0';
@@ -333,7 +333,7 @@ check_pkgtools(struct pjail *j)
 	};
 
 	printf("====>> build will use: ");
-	b = injail_buf(j, (char **)argv);
+	b = injail_buf(j, argv);
 	walk = sbuf_data(b);
 	end = walk + sbuf_len(b);
 	pos = walk;
@@ -515,7 +515,7 @@ build(struct pjail *j)
 	snprintf(cmd, sizeof(cmd), "/usr/ports/%s", j->pkg->origin);
 	arg[2] = cmd;
 
-	if ((fp = injail(j,(char **)arg)) != NULL) {
+	if ((fp = injail(j, arg)) != NULL) {
 		while (getline(&line, &linecap, fp) > 0) {
 			linenb++;
 			if (line[0] == '\n')
