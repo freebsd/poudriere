@@ -1512,8 +1512,11 @@ prepare_ports() {
 				echo "${JAILMNT}/poudriere/rpool/${rpn}/${pn}"
 			done
 			echo ${p}
+			# Cleanup pool/*/${pn}
 			if [ -d "${JAILMNT}/poudriere/rpool/${pn}" ]; then
-				echo ${JAILMNT}/poudriere/pool/*/${pn}
+				for rpn in $(ls "${JAILMNT}/poudriere/rpool/${pn}"); do
+					echo "${JAILMNT}/poudriere/pool/${rpn}/${pn}"
+				done
 				echo "${JAILMNT}/poudriere/rpool/${pn}"
 			fi
 		fi
