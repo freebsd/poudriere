@@ -1509,7 +1509,6 @@ prepare_jail() {
 	export HOME=/root
 	PORTSDIR=`porttree_get_base ${PTNAME}`
 	[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
-	POUDRIERED=${SCRIPTPREFIX}/../../etc/poudriere.d
 	[ -z "${JAILMNT}" ] && err 1 "No path of the base of the jail defined"
 	[ -z "${PORTSDIR}" ] && err 1 "No ports directory defined"
 	[ -z "${PKGDIR}" ] && err 1 "No package directory defined"
@@ -1555,6 +1554,7 @@ STATUS=0 # out of jail #
 
 test -f ${SCRIPTPREFIX}/../../etc/poudriere.conf || err 1 "Unable to find ${SCRIPTPREFIX}/../../etc/poudriere.conf"
 . ${SCRIPTPREFIX}/../../etc/poudriere.conf
+POUDRIERED=${SCRIPTPREFIX}/../../etc/poudriere.d
 
 [ -z ${ZPOOL} ] && err 1 "ZPOOL variable is not set"
 [ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
