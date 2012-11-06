@@ -803,7 +803,8 @@ EOF
 }
 
 build_stats() {
-	local port logdir pkgname html_path
+	local should_refresh=${1:-0}
+	local port logdir pkgname html_path refresh_meta=""
 
 	if [ "${POUDRIERE_BUILD_TYPE}" = "testport" ]; then
 		# Discard test stats page for now
@@ -814,11 +815,13 @@ build_stats() {
 		html_path="${logdir}/index.html.tmp"
 	fi
 	
+	[ ${should_refresh} -eq 1 ] && \
+		refresh_meta='<meta http-equiv="refresh" content="10">'
 
 	cat > ${html_path} << EOF
 <html>
   <head>
-    <meta http-equiv="refresh" content="10">
+    ${refresh_meta}
     <meta http-equiv="pragma" content="NO-CACHE">
     <title>Poudriere bulk results</title>
     <style type="text/css">
@@ -970,7 +973,7 @@ parallel_build() {
 
 	zset status "parallel_build:"
 	build_queue
-	build_stats
+	build_stats 0
 
 	zset status "stopping_jobs:"
 	stop_builders

@@ -134,7 +134,7 @@ parallel_build || : # Ignore errors as they are handled below
 
 zset status "done:"
 
-build_stats
+build_stats 0
 
 failed=$(cat ${JAILMNT}/poudriere/ports.failed | awk '{print $1 ":" $2 }' | xargs echo)
 built=$(cat ${JAILMNT}/poudriere/ports.built | xargs echo)
