@@ -28,6 +28,10 @@ job_msg() {
 	msg "[${MY_JOBID}] $1" >&5
 }
 
+job_msg_verbose() {
+	msg_verbose "[${MY_JOBID}] $1" >&5
+}
+
 debug() {
 	[ -z "${DEBUG_MODE}" ] && return 0;
 
@@ -554,6 +558,7 @@ build_port() {
 
 	for phase in ${targets}; do
 		zset status "${phase}:${port}"
+		job_msg_verbose "Status for build ${port}: ${phase}"
 		if [ "${phase}" = "fetch" ]; then
 			jail -r ${JAILNAME} >/dev/null
 			jrun 1
@@ -1054,6 +1059,7 @@ build_pkg() {
 		clean_rdepends=1
 	else
 		zset status "depends:${port}"
+		job_msg_verbose "Status for build ${port}: depends"
 		print_phase_header "depends"
 		if ! injail make -C ${portdir} pkg-depends fetch-depends extract-depends \
 			patch-depends build-depends lib-depends; then
