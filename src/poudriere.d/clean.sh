@@ -39,7 +39,8 @@ clean_pool() {
 
 	# Determine which packages are ready-to-build,
 	# and move from deps/ to pool/
-	if [ -z "$(find "${JAILMNT}/poudriere/rpool/${pkgname}" -type d -maxdepth 0 -empty)" ]; then
+	if [ -d "${JAILMNT}/poudriere/rpool/${pkgname}" ] && \
+		[ -z "$(find "${JAILMNT}/poudriere/rpool/${pkgname}" -type d -maxdepth 0 -empty)" ]; then
 		for dep_dir in ${JAILMNT}/poudriere/rpool/${pkgname}/*; do
 			dep_pkgname=${dep_dir##*/}
 			rm -f "${JAILMNT}/poudriere/deps/${dep_pkgname}/${pkgname}"
