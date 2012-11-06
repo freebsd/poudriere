@@ -121,9 +121,6 @@ Build all ports in the tree.
 This flag specifies to clean the previous built binary packages.
 .It Fl C
 Clean previous packages for the given list to build.
-.It Fl D
-Run in debug mode.
-Displays more information.
 .It Fl j Ar name
 If given, run the bulk build only on the jail named
 .Ar name .
@@ -150,6 +147,7 @@ The WRKDIR will be tarred up into
 .Sy ${POUDRIERE_DATA}/wrkdirs .
 .It Fl v
 This will show more information during the build.
+Specify twice to enable debug output.
 .It Fl z Ar set
 This specifies which SET to use for the build.
 See
@@ -301,9 +299,6 @@ command.
 .Bl -tag -width "-f conffile"
 .It Fl c
 Run make config for the given port.
-.It Fl D
-Run in debug mode.
-Displays more information.
 .It Fl j Ar name
 Runs only inside the jail named
 .Ar name .
@@ -319,6 +314,7 @@ Specifies which ports
 to use.
 .It Fl v
 This will show more information during the build.
+Specify twice to enable debug output.
 .It Fl z Ar set
 This specifies whith SET to use for the build.
 See

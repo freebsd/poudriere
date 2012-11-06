@@ -22,20 +22,21 @@ msg_n() { echo -n "====>> $1"; }
 msg() { echo "====>> $1"; }
 msg_verbose() {
 	[ ${VERBOSE:-0} -gt 0 ] || return 0
-	echo "====>> $1";
+	msg "$1"
 }
+
+msg_debug() {
+	[ ${VERBOSE:-0} -gt 1 ] || return 0
+
+	msg "DEBUG: $1" >&2
+}
+
 job_msg() {
 	msg "[${MY_JOBID}] $1" >&5
 }
 
 job_msg_verbose() {
 	msg_verbose "[${MY_JOBID}] $1" >&5
-}
-
-debug() {
-	[ -z "${DEBUG_MODE}" ] && return 0;
-
-	msg "DEBUG: $1" >&2
 }
 
 eargs() {
@@ -1374,7 +1375,7 @@ compute_deps() {
 	msg_verbose "Computing deps for ${port}"
 
 	for dep_port in `list_deps ${port}`; do
-		debug "${port} depends on ${dep_port}"
+		msg_debug "${port} depends on ${dep_port}"
 		dep_pkgname=$(cache_get_pkgname ${dep_port})
 
 		# Only do this if it's not already done, and not ALL, as everything will

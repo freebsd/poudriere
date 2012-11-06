@@ -16,7 +16,7 @@ Options:
     -J n        -- Run n jobs in parallel
     -j name     -- Run only on the given jail
     -p tree     -- Specify on which ports tree the bulk will be done
-    -v          -- Be verbose; show more information
+    -v          -- Be verbose; show more information. Use twice to enable debug output.
     -w          -- Save WRKDIR on failed builds
     -z set      -- Specify which SET to use
     -a          -- Build the whole ports tree"
@@ -36,11 +36,8 @@ ALL=0
 
 [ $# -eq 0 ] && usage
 
-while getopts "Df:j:J:Ccn:p:tsvwz:a" FLAG; do
+while getopts "f:j:J:Ccn:p:tsvwz:a" FLAG; do
 	case "${FLAG}" in
-		D)
-			DEBUG_MODE=1
-			;;
 		t)
 			export PORTTESTING=1
 			export DEVELOPER_MODE=yes
