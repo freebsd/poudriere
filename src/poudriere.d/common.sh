@@ -994,7 +994,7 @@ clean_pool() {
 	[ ${clean_rdepends} -eq 1 ] && port=$(cache_get_origin "${pkgname}")
 
 	# Cleaning queue (pool is cleaned here)
-	lockf -s -k ${MASTERMNT:-${JAILMNT}}/.lock sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${pkgname}" ${clean_rdepends} | sort -u | while read skipped_pkgname; do
+	lockf -s -k ${MASTERMNT:-${JAILMNT}}/poudriere/.lock.pool sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT:-${JAILMNT}}" "${pkgname}" ${clean_rdepends} | sort -u | while read skipped_pkgname; do
 		skipped_origin=$(cache_get_origin "${skipped_pkgname}")
 		echo "${skipped_origin} ${pkgname}" >> ${MASTERMNT:-${JAILMNT}}/poudriere/ports.skipped
 		job_msg "Skipping build of ${skipped_origin}: Dependent port ${port} failed"
@@ -1289,7 +1289,7 @@ delete_old_pkgs() {
 next_in_queue() {
 	local p
 	[ ! -d ${JAILMNT}/poudriere/pool ] && err 1 "Build pool is missing"
-	p=$(lockf -k -t 60 ${JAILMNT}/.lock find ${JAILMNT}/poudriere/pool -type d -depth 1 -empty -print -quit || :)
+	p=$(lockf -k -t 60 ${JAILMNT}/poudriere/.lock.pool find ${JAILMNT}/poudriere/pool -type d -depth 1 -empty -print -quit || :)
 	[ -n "$p" ] || return 0
 	touch ${p}/.building
 	# pkgname
