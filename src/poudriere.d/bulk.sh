@@ -177,7 +177,7 @@ else
 	for pkg_file in ${PKGDIR}/All/*.tbz; do
 		# Check for non-empty directory with no packages in it
 		[ "${pkg}" = "${PKGDIR}/All/*.tbz" ] && break
-		msg "Extracting description from ${pkg_file##*/}..."
+		msg_verbose "Extracting description for ${ORIGIN} ..."
 		ORIGIN=$(pkg_get_origin ${pkg_file})
 		[ -d ${PORTSDIR}/${ORIGIN} ] &&	parallel_run "injail make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1"
 	done
