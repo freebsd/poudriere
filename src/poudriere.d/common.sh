@@ -1344,7 +1344,7 @@ cache_get_pkgname() {
 		# It may already exist due to race conditions, it is not harmful. Just ignore.
 		if [ "${existing_origin}" != "${origin}" ]; then
 			[ -n "${existing_origin}" ] && \
-				err 1 "Duplicated origin for ${pkgname}: ${origin} AND ${existing_origin}. Rerun with -D to see which ports are depending on these."
+				err 1 "Duplicated origin for ${pkgname}: ${origin} AND ${existing_origin}. Rerun with -vv to see which ports are depending on these."
 			echo "${pkgname}" > ${cache_origin_pkgname}
 			cache_pkgname_origin="${MASTERMNT:-${JAILMNT}}/poudriere/var/cache/pkgname-origin/${pkgname}"
 			echo "${origin}" > "${cache_pkgname_origin}"
