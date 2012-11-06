@@ -880,7 +880,7 @@ EOF
 EOF
 
 
-	[ "${html_path}" != "/dev/null" ] && mv ${html_path} ${html_path%.tmp}
+	[ "${html_path}" = "/dev/null" ] || mv ${html_path} ${html_path%.tmp}
 }
 
 build_queue() {
