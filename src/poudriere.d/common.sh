@@ -565,12 +565,10 @@ build_port() {
 					grep -v "not a dynamic executable" | \
 					awk ' /=>/{ print $3 }' | sort -u
 			else
-				if [ -f ${JAILMNT}/${LOCALBASE}/sbin/pkg ]; then
-					injail pkg query "%Fp" ${PKGNAME} | \
-						xargs injail ldd 2>&1 | \
-						grep -v "not a dynamic executable" | \
-						awk '/=>/ { print $3 }' | sort -u
-				fi
+				injail pkg query "%Fp" ${PKGNAME} | \
+					xargs injail ldd 2>&1 | \
+					grep -v "not a dynamic executable" | \
+					awk '/=>/ { print $3 }' | sort -u
 			fi
 		fi
 
