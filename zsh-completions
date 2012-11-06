@@ -34,6 +34,7 @@ _bulk=(
 	'-j[Run only on the given jail]::jail name:_poudriere_jail'
 	'-p[Specify on which ports tree the bulk will be done]::tree:_poudriere_pt'
 	'-J[Specify the number of jobs you want to run in parallel]::'
+	'-v[Be verbose; show more information]'
 	'-z[Specify on which SET to use]::'
 )
 
@@ -75,6 +76,7 @@ _testport=(
 	'-j[run only inside the given jail]::name:_poudriere_jail'
 	'-n[no custom prefix]::'
 	'-p[specify on which portstree we work]::tree:_poudriere_pt'
+	'-v[Be verbose; show more information]'
 	'-z[Specify on which SET to use]::'
 )
 

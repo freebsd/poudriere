@@ -14,7 +14,8 @@ Options:
     -J n        -- Run n jobs in parallel for dependencies
     -j name     -- Run only inside the given jail
     -n          -- No custom prefix
-    -p tree     -- Specify on which portstree we work"
+    -p tree     -- Specify on which portstree we work
+    -v          -- Be verbose; show more information"
 	exit 1
 }
 
@@ -27,7 +28,7 @@ SETNAME=""
 SKIPSANITY=0
 PTNAME="default"
 
-while getopts "Dd:o:cnj:J:p:sz:" FLAG; do
+while getopts "Dd:o:cnj:J:p:svz:" FLAG; do
 	case "${FLAG}" in
 		c)
 			CONFIGSTR=1
@@ -60,6 +61,9 @@ while getopts "Dd:o:cnj:J:p:sz:" FLAG; do
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"
 			SETNAME="-${OPTARG}"
+			;;
+		v)
+			VERBOSE=$((${VERBOSE:-0} + 1))
 			;;
 		*)
 			usage

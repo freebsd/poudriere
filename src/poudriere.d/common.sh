@@ -20,6 +20,10 @@ err() {
 
 msg_n() { echo -n "====>> $1"; }
 msg() { echo "====>> $1"; }
+msg_verbose() {
+	[ ${VERBOSE:-0} -gt 0 ] || return 0
+	echo "====>> $1";
+}
 job_msg() {
 	msg "[${MY_JOBID}] $1" >&5
 }
@@ -1361,7 +1365,7 @@ compute_deps() {
 	local pkg_pooldir="${JAILMNT}/poudriere/deps/${pkgname}"
 	mkdir "${pkg_pooldir}" 2>/dev/null || return 0
 
-	msg "Computing deps for ${port}"
+	msg_verbose "Computing deps for ${port}"
 
 	for dep_port in `list_deps ${port}`; do
 		debug "${port} depends on ${dep_port}"
