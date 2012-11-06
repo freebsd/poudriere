@@ -837,6 +837,7 @@ build_stats() {
       #failed td { background-color: #E00000 ; }
       #skipped td { background-color: #CC6633; }
       #ignored td { background-color: #FF9900; }
+      :target { color: #FF0000; }
     </style>
     <script type="text/javascript">
       function toggle_display(id) {
