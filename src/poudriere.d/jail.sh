@@ -229,7 +229,7 @@ install_from_ftp() {
 		ftp) URL="${FREEBSD_HOST}/pub/FreeBSD/releases/${ARCH}/${V}" ;;
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
 		esac
-		DISTS="base dict src"
+		DISTS="base dict src games"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32"
 		for dist in ${DISTS}; do
 			fetch_file ${JAILMNT}/fromftp/ ${URL}/$dist/CHECKSUM.SHA256 || \
@@ -263,7 +263,7 @@ install_from_ftp() {
 		ftp) URL="${FREEBSD_HOST}/pub/FreeBSD/releases/${ARCH}/${ARCH}/${V}" ;;
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
 		esac
-		DISTS="base.txz src.txz"
+		DISTS="base.txz src.txz games.txz"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
 		for dist in ${DISTS}; do
 			msg "Fetching ${dist} for FreeBSD ${V} ${ARCH}"
