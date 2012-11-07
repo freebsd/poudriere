@@ -23,7 +23,7 @@ poudriere {
 	enforce_statfs=1;
 	path=/jails/poudriere;
 	exec.start="mount -t devfs devfs /dev";
-	exec.stop="umount -a"
+	exec.stop="umount -a";
 }
 </verbatim>
 
@@ -39,7 +39,7 @@ Get and install the latest HEAD base.txz
 # cd /jails/poudriere
 # fetch -q -o - https://pub.allbsd.org/FreeBSD-snapshots/amd64-amd64/10.0-HEAD-20120919-JPSNAP/ftp/base.txz | tar xpf
 # cp /etc/resolv.conf /jails/poudriere/etc/resolv.conf
-</varbatim>
+</verbatim>
 
 Create the default dataset for poudriere
 
@@ -56,13 +56,13 @@ Start the jail:
 Give the dataset to the jail
 <verbatim>
 # zfs jail `jls -q -j poudriere jid` tank/poudriere
-# jexec -U root zfs mount -a
+# jexec -U root poudriere zfs mount -a
 </verbatim>
 
 On recent HEAD, instead of the above you can do
 <verbatim>
 # zfs jail poudriere tank/poudriere
-# jexec -U root zfs mount -a
+# jexec -U root poudriere zfs mount -a
 </verbatim>
 
 Bootstrap pkgng and install the needed tools if you want using things that are
@@ -74,7 +74,7 @@ not default like subversion for ports
 Create a default poudriere.conf file /jails/poudriere/usr/local/etc/
 <verbatim>
 BASEFS=/poudriere
-ZPOOL=/tank
+ZPOOL=tank
 RESOLV_CONF=/etc/resolv.conf
 DISTFILES_CACHE=/distfiles
 CHECK_CHANGED_OPTIONS=yes
@@ -84,7 +84,7 @@ NOLINUX=1
 Fetch and install the latest poudriere
 <verbatim>
 # jexec -U root poudriere sh
-poudriere# fetch http://fossil.etoilebsd.net/poudriere/tarball/poudriere-trunk.tar.gz?uuid=trunk | tar xf -
+poudriere# fetch -o - http://fossil.etoilebsd.net/poudriere/tarball/poudriere-trunk.tar.gz?uuid=trunk | tar xf -
 poudriere# cd poudriere-trunk
 poduriere# make install
 </verbatim>
