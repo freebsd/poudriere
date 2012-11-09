@@ -813,7 +813,7 @@ EOF
 }
 
 build_stats() {
-	local should_refresh=${1:-0}
+	local should_refresh=${1:-1}
 	local port logdir pkgname html_path refresh_meta=""
 
 	if [ "${POUDRIERE_BUILD_TYPE}" = "testport" ]; then
