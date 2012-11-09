@@ -1386,9 +1386,9 @@ compute_deps() {
 			compute_deps "${dep_port}" "${dep_pkgname}"
 
 		touch "${pkg_pooldir}/${dep_pkgname}"
-		mkdir -p "${JAILMNT}/poudriere/rpool/${dep_pkgname}"
+		mkdir -p "${JAILMNT}/poudriere/rdeps/${dep_pkgname}"
 		ln -sf "${pkg_pooldir}/${dep_pkgname}" \
-			"${JAILMNT}/poudriere/rpool/${dep_pkgname}/${pkgname}"
+			"${JAILMNT}/poudriere/rdeps/${dep_pkgname}/${pkgname}"
 	done
 }
 
@@ -1484,7 +1484,7 @@ prepare_ports() {
 	       "${JAILMNT}/poudriere/var/cache/pkgname-origin" 2>/dev/null || :
 	mkdir -p "${JAILMNT}/poudriere/pool" \
 		"${JAILMNT}/poudriere/deps" \
-		"${JAILMNT}/poudriere/rpool" \
+		"${JAILMNT}/poudriere/rdeps" \
 		"${JAILMNT}/poudriere/var/run" \
 		"${JAILMNT}/poudriere/var/cache" \
 		"${JAILMNT}/poudriere/var/cache/origin-pkgname" \
@@ -1535,17 +1535,17 @@ prepare_ports() {
 	export LOCALBASE=${MYBASE:-/usr/local}
 	for pn in $(ls ${JAILMNT}/poudriere/deps/); do
 		if [ -f "${PKGDIR}/All/${pn}.${PKG_EXT}" ]; then
-			# Cleanup rpool/*/${pn}
+			# Cleanup rdeps/*/${pn}
 			for rpn in $(ls "${JAILMNT}/poudriere/deps/${pn}"); do
-				echo "${JAILMNT}/poudriere/rpool/${rpn}/${pn}"
+				echo "${JAILMNT}/poudriere/rdeps/${rpn}/${pn}"
 			done
 			echo "${JAILMNT}/poudriere/deps/${pn}"
 			# Cleanup deps/*/${pn}
-			if [ -d "${JAILMNT}/poudriere/rpool/${pn}" ]; then
-				for rpn in $(ls "${JAILMNT}/poudriere/rpool/${pn}"); do
+			if [ -d "${JAILMNT}/poudriere/rdeps/${pn}" ]; then
+				for rpn in $(ls "${JAILMNT}/poudriere/rdeps/${pn}"); do
 					echo "${JAILMNT}/poudriere/deps/${rpn}/${pn}"
 				done
-				echo "${JAILMNT}/poudriere/rpool/${pn}"
+				echo "${JAILMNT}/poudriere/rdeps/${pn}"
 			fi
 		fi
 	done | xargs rm -rf

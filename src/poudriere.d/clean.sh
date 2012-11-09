@@ -23,11 +23,11 @@ clean_pool() {
 	local clean_rdepends=$2
 	local dep_dir dep_pkgname
 
-	if [ -d "${JAILMNT}/poudriere/rpool/${pkgname}" ]; then
+	if [ -d "${JAILMNT}/poudriere/rdeps/${pkgname}" ]; then
 		# Determine everything that depends on the given package
 		# Recursively cleanup anything that depends on this port.
 		if [ ${clean_rdepends} -eq 1 ]; then
-			for dep_pkgname in $(ls "${JAILMNT}/poudriere/rpool/${pkgname}/"); do
+			for dep_pkgname in $(ls "${JAILMNT}/poudriere/rdeps/${pkgname}/"); do
 
 				# clean_pool() in common.sh will pick this up and add to SKIPPED
 				echo "${dep_pkgname}"
@@ -38,8 +38,8 @@ clean_pool() {
 
 		# Determine which packages are ready-to-build,
 		# and move from deps/ to pool/
-		if [ -z "$(find "${JAILMNT}/poudriere/rpool/${pkgname}" -type d -maxdepth 0 -empty)" ]; then
-			for dep_dir in ${JAILMNT}/poudriere/rpool/${pkgname}/*; do
+		if [ -z "$(find "${JAILMNT}/poudriere/rdeps/${pkgname}" -type d -maxdepth 0 -empty)" ]; then
+			for dep_dir in ${JAILMNT}/poudriere/rdeps/${pkgname}/*; do
 				dep_pkgname=${dep_dir##*/}
 				rm -f "${JAILMNT}/poudriere/deps/${dep_pkgname}/${pkgname}"
 				# If that packages was just waiting on my package, and
@@ -53,7 +53,7 @@ clean_pool() {
 
 	rm -rf "${JAILMNT}/poudriere/pool/${pkgname}" \
 		"${JAILMNT}/poudriere/deps/${pkgname}" \
-		"${JAILMNT}/poudriere/rpool/${pkgname}" 2>/dev/null || :
+		"${JAILMNT}/poudriere/rdeps/${pkgname}" 2>/dev/null || :
 }
 
 clean_pool "${PKGNAME}" ${CLEAN_RDEPENDS}
