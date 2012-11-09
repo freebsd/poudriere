@@ -752,7 +752,7 @@ build_stats_list() {
 	local html_path="$1"
 	local type=$2
 	local display_name="$3"
-	local port cnt pkgname extra
+	local port cnt pkgname extra port_category port_name
 	local status_head="" status_col=""
 	local reason_head="" reason_col=""
 
@@ -781,6 +781,8 @@ EOF
 	cnt=0
 	while read port extra; do
 		pkgname=$(cache_get_pkgname ${port})
+		port_category=${port%/*}
+		port_name=${port#*/}
 
 		if [ -n "${status_head}" ]; then
 			status_col="<td><a href=\"${pkgname}.log\">logfile</a></td>"
@@ -797,7 +799,7 @@ EOF
 		cat >> ${html_path} << EOF
         <tr>
           <td id="tr_pkg_${pkgname}">${pkgname}</td>
-          <td>${port}</td>
+          <td><a href="http://portsmon.freebsd.org/portoverview.py?category=${port_category}&amp;portname=${port_name}">${port}</a></td>
 	  ${status_col}
 	  ${reason_col}
         </tr>
