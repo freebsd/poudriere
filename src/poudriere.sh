@@ -12,6 +12,7 @@ usage() {
 Commands:
     bulk        -- generate packages for given ports
     cron        -- run poudriere from the crontab
+    distclean   -- clean old distfiles
     help        -- show usage informations
     jail        -- manage the jails used by poudriere
     ports       -- create, update or delete the portstrees used by poudriere
@@ -40,6 +41,9 @@ case ${CMD} in
 		;;
 	bulk)
 		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/bulk.sh $@
+		;;
+	distclean)
+		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/distclean.sh $@
 		;;
 	ports)
 		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/ports.sh $@

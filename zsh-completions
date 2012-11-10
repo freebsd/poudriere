@@ -67,6 +67,14 @@ _options=(
 	'-z[Specify on which SET to use]::'
 )
 
+_distclean=(
+	'-J[Specify the number of jobs you want to run in parallel]::'
+	'-n[dry run, only show what would be done]::'
+	'-p[specify on which portstree we work]::tree:_poudriere_pt'
+	'-v[Be verbose; show more information. Specify twice to enable debug output.]'
+	'-y[assume yes and do not confirm before deleting]::'
+)
+
 _testport=(
 	'(-o)-d[specify on which port we work]::path:_files -/'
 	'(-d)-o[specify an origin in the portstree]:origin:_poudriere_ports'
@@ -99,6 +107,7 @@ _poudriere () {
 		'bulk:generate packages for given ports'
 		'cron:run poudriere from the crontab'
 		'jail:manage the jails used by poudriere'
+		'distclean:clean old distfiles'
 		'options:allows to configure the options for a given port'
 		'ports:create, update or delete the portstrees used by poudriere'
 		'queue:queue a build request (through cron)'
@@ -116,6 +125,9 @@ _poudriere () {
 			;;
 			jail)
 			_arguments : $_jail "::" && return
+			;;
+			distclean)
+			_arguments : $_distclean "::" && return
 			;;
 			options)
 			_arguments : $_options "::" && return

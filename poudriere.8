@@ -26,7 +26,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd November 3, 2012
+.Dd November 10, 2012
 .Dt POUDRIERE 8
 .Os FreeBSD
 .Sh NAME
@@ -73,6 +73,8 @@ This command, mainly targeted at FreeBSD ports developers, launches a
 test on a given port (useful before submitting/committing a port).
 .It options
 This command allows to configure the options for a given port
+.It distclean
+This command will cleanup old distfiles
 .It queue
 This command allows a non-root user to queue
 .Nm
@@ -321,6 +323,26 @@ See
 .Sx CUSTOMISATION
 for examples of how this is used.
 .El
+.Ss distclean
+This command accepts the following options:
+.Bl -tag -width "-f conffile"
+.It Fl J Ar number
+This argument specifies how many
+.Ar number
+jobs will run in parallel for gathering distfile information.
+.It Fl n
+Dry run, do not actually delete anything.
+.It Fl p Ar tree
+Specifies which ports
+.Ar tree
+to use.
+.It Fl y
+Assume yes, do not confirm and just delete the files.
+.It Fl v
+This will show more information during the build.
+Specify twice to enable debug output.
+.El
+.Pp
 .Ss options
 This command accepts the following options:
 .Bl -tag -width "-f conffile"
