@@ -150,5 +150,5 @@ fi
 
 if [ "${answer}" = "yes" ]; then
 	msg "Cleaning files"
-	cat ${DISTILES_LIST}.unexpected | xargs rm -v
+	cat ${DISTILES_LIST}.unexpected | xargs rm -f
 fi
