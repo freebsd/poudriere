@@ -678,7 +678,7 @@ build_port() {
 
 # Save wrkdir and return path to file
 save_wrkdir() {
-	[ $# -ne 2 ] && eargs port portdir phase
+	[ $# -ne 3 ] && eargs port portdir phase
 	local port="$1"
 	local phase="$2"
 	local portdir="$2"

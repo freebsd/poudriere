@@ -161,7 +161,13 @@ PORTTESTING=yes
 export DEVELOPER_MODE=yes
 log_start $(log_path)/${PKGNAME}.log
 buildlog_start ${PORTDIRECTORY}
-build_port ${PORTDIRECTORY}
+if ! build_port ${PORTDIRECTORY}; then
+	failed_status=$(zget status)
+	failed_phase=${failed_status%:*}
+
+	save_wrkdir "${PKGNAME}" "${PORTDIRECTORY}" "${failed_phase}" || :
+	exit 1
+fi
 
 msg "Installing from package"
 injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT}
