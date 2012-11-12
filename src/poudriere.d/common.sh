@@ -32,10 +32,12 @@ msg_debug() {
 }
 
 job_msg() {
+	[ -n "${JOB_MSGS}" ] || return 0
 	msg "[${MY_JOBID}] $1" >&5
 }
 
 job_msg_verbose() {
+	[ -n "${JOB_MSGS}" ] || return 0
 	msg_verbose "[${MY_JOBID}] $1" >&5
 }
 
@@ -983,6 +985,7 @@ parallel_build() {
 	# status information back on it since we redirect its
 	# stdout to /dev/null
 	exec 5<&1
+	JOB_MSGS=1
 
 	zset status "parallel_build:"
 	build_queue
@@ -994,6 +997,7 @@ parallel_build() {
 
 	# Close the builder socket
 	exec 5>&-
+	unset JOB_MSGS
 
 	return $(($(zget stats_failed) + $(zget stats_skipped)))
 }
