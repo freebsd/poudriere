@@ -553,6 +553,7 @@ sanity_check_pkgs() {
 	return $ret
 }
 
+# Build+test port and return on first failure
 build_port() {
 	[ $# -ne 1 ] && eargs portdir
 	local portdir=$1
@@ -675,13 +676,19 @@ build_port() {
 	return 0
 }
 
+# Save wrkdir and return path to file
 save_wrkdir() {
-	[ $# -ne 1 ] && eargs port
-
-	local portdir="/usr/ports/${port}"
+	[ $# -ne 2 ] && eargs port portdir phase
+	local port="$1"
+	local phase="$2"
+	local portdir="$2"
 	local tardir=${POUDRIERE_DATA}/wrkdirs/${JAILNAME%-job-*}/${PTNAME}
 	local tarname=${tardir}/${PKGNAME}.${WRKDIR_ARCHIVE_FORMAT}
 	local mnted_portdir=${JAILMNT}/wrkdirs/${portdir}
+
+	[ -n "${SAVE_WRKDIR}" ] || return 0
+	# Only save if not in fetch/checksum phase
+	[ "${failed_phase}" != "fetch" -a "${failed_phase}" != "checksum" ] || return 0
 
 	mkdir -p ${tardir}
 
@@ -694,7 +701,12 @@ save_wrkdir() {
 	esac
 	rm -f ${tarname}
 	tar -s ",${mnted_portdir},," -c${COMPRESSKEY}f ${tarname} ${mnted_portdir}/work > /dev/null 2>&1
-	job_msg "Saved ${port} wrkdir to: ${tarname}"
+
+	if [ -n "${JOB_MSGS}" ]; then
+		job_msg "Saved ${port} wrkdir to: ${tarname}"
+	else
+		msg "Saved ${port} wrkdir to: ${tarname}"
+	fi
 }
 
 start_builders() {
@@ -1081,12 +1093,7 @@ build_pkg() {
 				failed_status=$(zget status)
 				failed_phase=${failed_status%:*}
 
-				if [ -n "${SAVE_WRKDIR}" ]; then
-					# Only save if not in fetch/checksum phase
-					if ! [ "${failed_phase}" = "fetch" -o "${failed_phase}" = "checksum" ]; then
-						save_wrkdir ${portdir} || :
-					fi
-				fi
+				save_wrkdir "${port}" "${portdir}" "${failed_phase}" || :
 			fi
 
 			injail make -C ${portdir} clean
