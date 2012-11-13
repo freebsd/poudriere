@@ -1435,7 +1435,7 @@ _reap_children() {
 	# No available slot, try to reap some children to find one
 	for pid in ${running_jobs}; do
 		if ! kill -0 ${pid} 2>/dev/null; then
-			wait ${pid} 2>dev/null || :
+			wait ${pid} 2>/dev/null || :
 			_child_count=$((_child_count - 1))
 		fi
 	done
