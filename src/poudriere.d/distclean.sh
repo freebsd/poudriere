@@ -101,16 +101,16 @@ msg "Gathering list of actual distfiles"
 find -x -s ${DISTFILES_CACHE}/ -type f > ${DISTFILES_LIST}.actual
 
 comm -1 -3 ${DISTFILES_LIST}.expected ${DISTFILES_LIST}.actual \
-	> ${DISTILES_LIST}.unexpected
+	> ${DISTFILES_LIST}.unexpected
 
-file_cnt=$(wc -l ${DISTILES_LIST}.unexpected | awk '{print $1}')
+file_cnt=$(wc -l ${DISTFILES_LIST}.unexpected | awk '{print $1}')
 
 if [ ${file_cnt} -eq 0 ]; then
 	msg "No stale distfiles to cleanup"
 	exit 0
 fi
 
-hsize=$(cat ${DISTILES_LIST}.unexpected | xargs stat -f %z | \
+hsize=$(cat ${DISTFILES_LIST}.unexpected | xargs stat -f %z | \
 	awk '{total += $1} END {print total}' | \
 	awk '{
 		hum[1024**4]="TB";
@@ -128,7 +128,7 @@ hsize=$(cat ${DISTILES_LIST}.unexpected | xargs stat -f %z | \
 )
 
 msg "Files to be deleted:"
-cat ${DISTILES_LIST}.unexpected
+cat ${DISTFILES_LIST}.unexpected
 msg "Cleaning these will free: ${hsize}"
 
 if [ ${DRY_RUN} -eq 1 ];  then
@@ -151,5 +151,5 @@ fi
 
 if [ "${answer}" = "yes" ]; then
 	msg "Cleaning files"
-	cat ${DISTILES_LIST}.unexpected | xargs rm -f
+	cat ${DISTFILES_LIST}.unexpected | xargs rm -f
 fi
