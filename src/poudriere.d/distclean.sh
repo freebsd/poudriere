@@ -138,7 +138,7 @@ if [ ${DRY_RUN} -eq 1 ];  then
 fi
 
 if [ -z "${answer}" ]; then
-	msg_n "Proceed? [Y/N] "
+	msg_n "Proceed? [y/N] "
 	read answer
 	case $answer in
 		[Yy][Ee][Ss]|[Yy][Ee]|[Yy])
