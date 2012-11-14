@@ -103,7 +103,7 @@ find -x -s ${DISTFILES_CACHE}/ -type f > ${DISTFILES_LIST}.actual
 comm -1 -3 ${DISTFILES_LIST}.expected ${DISTFILES_LIST}.actual \
 	> ${DISTILES_LIST}.unexpected
 
-file_cnt=$(wc -l ${DISTILES_LIST}.unexpected)
+file_cnt=$(wc -l ${DISTILES_LIST}.unexpected | awk '{print $1}')
 
 if [ ${file_cnt} -eq 0 ]; then
 	msg "No stale distfiles to cleanup"
