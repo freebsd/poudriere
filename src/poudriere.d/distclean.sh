@@ -63,7 +63,6 @@ done
 
 shift $((OPTIND-1))
 
-_REAL_PARALLEL_JOBS=${PARALLEL_JOBS}
 export PORTSDIR=`porttree_get_base ${PTNAME}`
 [ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 [ -z "${PORTSDIR}" ] && err 1 "No such ports tree: ${PTNAME}"

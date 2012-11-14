@@ -983,9 +983,15 @@ build_queue() {
 parallel_build() {
 	[ -z "${JAILMNT}" ] && err 2 "Fail: Missing JAILMNT"
 	local nbq=$(zget stats_queued)
+	local real_parallel_jobs=${PARALLEL_JOBS}
 
 	# If pool is empty, just return
 	test ${nbq} -eq 0 && return 0
+
+	# Minimize PARALLEL_JOBS to queue size
+	if [ ${PARALLEL_JOBS} -gt ${nbq} ]; then
+		PARALLEL_JOBS=${nbq##* }
+	fi
 
 	msg "Building ${nbq} packages using ${PARALLEL_JOBS} builders"
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
@@ -1008,6 +1014,9 @@ parallel_build() {
 
 	# Close the builder socket
 	exec 5>&-
+
+	# Restore PARALLEL_JOBS
+	PARALLEL_JOBS=${real_parallel_jobs}
 
 	return $(($(zget stats_failed) + $(zget stats_skipped)))
 }
@@ -1445,8 +1454,8 @@ parallel_run() {
 	local cmd="$@"
 
 	while :; do
-		_reap_children ${_REAL_PARALLEL_JOBS}
-		if [ ${PARALLEL_CHILDREN_COUNT} -lt ${_REAL_PARALLEL_JOBS} ]; then
+		_reap_children ${PARALLEL_JOBS}
+		if [ ${PARALLEL_CHILDREN_COUNT} -lt ${PARALLEL_JOBS} ]; then
 			# Execute the command in the background
 			eval "${cmd} &"
 			return 0
@@ -1483,8 +1492,6 @@ cache_get_key() {
 
 prepare_ports() {
 	local pkg
-
-	_REAL_PARALLEL_JOBS=${PARALLEL_JOBS}
 
 	msg "Calculating ports order and dependencies"
 	mkdir -p "${JAILMNT}/poudriere"
@@ -1565,11 +1572,6 @@ prepare_ports() {
 
 	# Create a pool of ready-to-build from the deps pool
 	find "${JAILMNT}/poudriere/deps" -type d -empty|xargs -J % mv % "${JAILMNT}/poudriere/pool"
-
-	# Minimize PARALLEL_JOBS to queue size
-	if [ ${PARALLEL_JOBS} -gt ${nbq} ]; then
-		PARALLEL_JOBS=${nbq##* }
-	fi
 }
 
 append_make() {

@@ -159,7 +159,7 @@ if [ $nbbuilt -eq 0 ]; then
 elif [ $PKGNG -eq 1 ]; then
 	if [ -n "${NO_RESTRICTED}" ]; then
 		msg "Cleaning restricted packages"
-		injail make -C /usr/ports -j ${_REAL_PARALLEL_JOBS} clean-restricted
+		injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
 	fi
 	msg "Creating pkgng repository"
 	zset status "pkgrepo:"
@@ -175,7 +175,7 @@ elif [ $PKGNG -eq 1 ]; then
 else
 	if [ -n "${NO_RESTRICTED}" ]; then
 		msg "Cleaning restricted packages"
-		injail make -C /usr/ports -j ${_REAL_PARALLEL_JOBS} clean-restricted
+		injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
 	fi
 	msg "Preparing INDEX"
 	zset status "index:"
