@@ -1,6 +1,5 @@
 #!/bin/sh
 set -e
-exit 1
 
 # Copyright (c) 2012, Bryan Drewery <bdrewery@FreeBSD.org>
 #
