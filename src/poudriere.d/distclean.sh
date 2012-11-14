@@ -98,7 +98,7 @@ sort -u ${DISTFILES_LIST} > ${DISTFILES_LIST}.expected
 
 # Gather list of actual files
 msg "Gathering list of actual distfiles"
-find -s ${DISTFILES_CACHE}/ -type f >> ${DISTFILES_LIST}.actual
+find -x -s ${DISTFILES_CACHE}/ -type f >> ${DISTFILES_LIST}.actual
 
 comm -1 -3 ${DISTFILES_LIST}.expected ${DISTFILES_LIST}.actual \
 	> ${DISTILES_LIST}.unexpected
