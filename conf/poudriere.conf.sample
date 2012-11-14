@@ -119,3 +119,6 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # If you are using a proxy define it here:
 # export HTTP_PROXY=bla
 # export FTP_PROXY=bla
+#
+# Cleanout the restricted packages
+# NO_RESTRICTED=yes

@@ -157,6 +157,10 @@ if [ $nbbuilt -eq 0 ]; then
 		msg "No package built, no need to update INDEX"
 	fi
 elif [ $PKGNG -eq 1 ]; then
+	if [ -n "${NO_RESTRICTED}" ]; then
+		msg "Cleaning restricted packages"
+		injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
+	fi
 	msg "Creating pkgng repository"
 	zset status "pkgrepo:"
 	injail tar xf /usr/ports/packages/Latest/pkg.txz -C /
@@ -169,6 +173,10 @@ elif [ $PKGNG -eq 1 ]; then
 		injail pkg-static repo /usr/ports/packages/
 	fi
 else
+	if [ -n "${NO_RESTRICTED}" ]; then
+		msg "Cleaning restricted packages"
+		injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
+	fi
 	msg "Preparing INDEX"
 	zset status "index:"
 	OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
