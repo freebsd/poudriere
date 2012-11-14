@@ -68,7 +68,7 @@ _REAL_PARALLEL_JOBS=${PARALLEL_JOBS}
 export PORTSDIR=`porttree_get_base ${PTNAME}`
 [ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 [ -z "${PORTSDIR}" ] && err 1 "No such ports tree: ${PTNAME}"
-[ ! -d ${DISTFILES_CACHE} ] && err 1 "DISTFILES_CACHE directory	does not exists. (c.f. poudriere.conf)"
+[ -d ${DISTFILES_CACHE:-/nonexistent} ] || err 1 "DISTFILES_CACHE directory does not exists. (c.f. poudriere.conf)"
 
 DISTFILES_LIST=$(mktemp -t poudriere_distfiles)
 trap "rm -f ${DISTFILES_LIST} ${DISTFILES_LIST}.expected \
