@@ -1425,18 +1425,18 @@ parallel_stop() {
 
 _reap_children() {
 	local skip_count=${1:-0}
-	_child_count=0
+	PARALLEL_CHILDREN_COUNT=0
 	running_jobs=$(jobs -p) # |wc -l here will always be 0
 	for pid in ${running_jobs}; do
-		_child_count=$((_child_count + 1))
+		PARALLEL_CHILDREN_COUNT=$((PARALLEL_CHILDREN_COUNT + 1))
 	done
-	[ ${_child_count} -lt ${skip_count} ] && return 0
+	[ ${PARALLEL_CHILDREN_COUNT} -lt ${skip_count} ] && return 0
 
 	# No available slot, try to reap some children to find one
 	for pid in ${running_jobs}; do
 		if ! kill -0 ${pid} 2>/dev/null; then
 			wait ${pid} 2>/dev/null || :
-			_child_count=$((_child_count - 1))
+			PARALLEL_CHILDREN_COUNT=$((PARALLEL_CHILDREN_COUNT - 1))
 		fi
 	done
 }
@@ -1446,7 +1446,7 @@ parallel_run() {
 
 	while :; do
 		_reap_children ${_REAL_PARALLEL_JOBS}
-		if [ ${_child_count} -lt ${_REAL_PARALLEL_JOBS} ]; then
+		if [ ${PARALLEL_CHILDREN_COUNT} -lt ${_REAL_PARALLEL_JOBS} ]; then
 			# Execute the command in the background
 			eval "${cmd} &"
 			return 0
