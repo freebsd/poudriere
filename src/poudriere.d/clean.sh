@@ -24,23 +24,21 @@ clean_pool() {
 	local dep_dir dep_pkgname
 
 	if [ -d "${JAILMNT}/poudriere/rdeps/${pkgname}" ]; then
-		# Determine everything that depends on the given package
-		# Recursively cleanup anything that depends on this port.
-		if [ ${clean_rdepends} -eq 1 ]; then
-			for dep_pkgname in $(ls "${JAILMNT}/poudriere/rdeps/${pkgname}/"); do
-
-				# clean_pool() in common.sh will pick this up and add to SKIPPED
-				echo "${dep_pkgname}"
-
-				clean_pool ${dep_pkgname} ${clean_rdepends}
-			done
-		fi
-
-		# Determine which packages are ready-to-build,
-		# and move from deps/ to pool/
+		# Determine which packages are ready-to-build and
+		# handle "impact"/skipping support
 		if [ -z "$(find "${JAILMNT}/poudriere/rdeps/${pkgname}" -type d -maxdepth 0 -empty)" ]; then
 			for dep_dir in ${JAILMNT}/poudriere/rdeps/${pkgname}/*; do
 				dep_pkgname=${dep_dir##*/}
+
+				# Determine everything that depends on the given package
+				# Recursively cleanup anything that depends on this port.
+				if [ ${clean_rdepends} -eq 1 ]; then
+					# clean_pool() in common.sh will pick this up and add to SKIPPED
+					echo "${dep_pkgname}"
+
+					clean_pool ${dep_pkgname} ${clean_rdepends}
+				fi
+
 				rm -f "${JAILMNT}/poudriere/deps/${dep_pkgname}/${pkgname}"
 				# If that packages was just waiting on my package, and
 				# is now ready-to-build, move it to pool/
