@@ -37,14 +37,16 @@ clean_pool() {
 					echo "${dep_pkgname}"
 
 					clean_pool ${dep_pkgname} ${clean_rdepends}
+					#clean_pool deletes deps/${dep_pkgname} already
+					# no need for below code
+				else
+					rm -f "${JAILMNT}/poudriere/deps/${dep_pkgname}/${pkgname}"
+					# If that packages was just waiting on my package, and
+					# is now ready-to-build, move it to pool/
+					find "${JAILMNT}/poudriere/deps/${dep_pkgname}" \
+						-type d -maxdepth 0 -empty \
+						-exec mv {} "${JAILMNT}/poudriere/pool" \;
 				fi
-
-				rm -f "${JAILMNT}/poudriere/deps/${dep_pkgname}/${pkgname}"
-				# If that packages was just waiting on my package, and
-				# is now ready-to-build, move it to pool/
-				find "${JAILMNT}/poudriere/deps/${dep_pkgname}" \
-					-type d -maxdepth 0 -empty \
-					-exec mv {} "${JAILMNT}/poudriere/pool" \;
 			done
 		fi
 	fi
