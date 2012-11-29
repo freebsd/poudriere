@@ -216,9 +216,9 @@ porttree_list() {
 		awk '$1 == "ports" { print $2 " " $3 " " $4 }'
 	if [ -f "${POUDRIERED}/portstrees" ]; then
 		# Validate proper format
-		format="Format expected: NAME PATH"
+		format="Format expected: NAME METHOD PATH"
 		n=0
-		while read name mntpoint; do
+		while read name method mntpoint; do
 			n=$((n + 1))
 			[ -z "${name###*}" ] && continue # Skip comments
 			[ -n "${name%%/*}" ] || \
@@ -227,7 +227,7 @@ porttree_list() {
 				err 1 "$(realpath ${POUDRIERED}/portstrees):${n}: Missing path for '${name}'. ${format}"
 			[ -z "${mntpoint%%/*}" ] || \
 				err 1 "$(realpath ${POUDRIERED}/portstrees):${n}: Invalid path '${mntpoint}' for '${name}'. ${format}"
-			echo "${name} manual ${mntpoint}"
+			echo "${name} ${method} ${mntpoint}"
 		done < ${POUDRIERED}/portstrees
 	fi
 	# Outputs: name method mountpoint
