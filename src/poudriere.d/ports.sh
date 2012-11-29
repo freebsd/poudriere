@@ -21,7 +21,7 @@ Options:
                      them.
     -p name       -- specifies the name of the portstree we workon . If not
                      specified, work on a portstree called \"default\".
-    -f fs         -- FS name (tank/jails/myjail) if fs is none then do not
+    -f fs         -- FS name (tank/jails/myjail) if fs is \"none\" then do not
                      create on zfs
     -M mountpoint -- mountpoint
     -m method     -- when used with -c, specify the method used to update the
