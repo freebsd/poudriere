@@ -477,14 +477,19 @@ porttree_create_zfs() {
 	local name=$1
 	local mnt=$( echo $2 | sed -e 's,//,/,g')
 	local fs=$3
-	msg_n "Creating ${name} fs..."
-	zfs create -p \
-		-o atime=off \
-		-o compression=off \
-		-o mountpoint=${mnt} \
-		-o ${NS}:type=ports \
-		-o ${NS}:name=${name} \
-		${fs} || err 1 " Fail" && echo " done"
+	if [ $fs != "none" ]; then
+		msg_n "Creating ${name} fs..."
+		zfs create -p \
+			-o atime=off \
+			-o compression=off \
+			-o mountpoint=${mnt} \
+			-o ${NS}:type=ports \
+			-o ${NS}:name=${name} \
+			${fs} || err 1 " Fail" && echo " done"
+	else
+		mkdir -p ${mnt}
+		echo "${name} __METHOD__ ${mnt}" >> ${POUDRIERED}/portstrees
+	fi
 }
 
 cleanup() {
