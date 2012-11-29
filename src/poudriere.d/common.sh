@@ -223,6 +223,8 @@ porttree_list() {
 			[ -z "${name###*}" ] && continue # Skip comments
 			[ -n "${name%%/*}" ] || \
 				err 1 "$(realpath ${POUDRIERED}/portstrees):${n}: Invalid name '${name}'. ${format}"
+			[ -n "${method}" ] || \
+				err 1 "$(realpath ${POUDRIERED}/portstrees):${n}: Missing method for '${name}'. ${format}"
 			[ -n "${mntpoint}" ] || \
 				err 1 "$(realpath ${POUDRIERED}/portstrees):${n}: Missing path for '${name}'. ${format}"
 			[ -z "${mntpoint%%/*}" ] || \
