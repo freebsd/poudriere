@@ -122,3 +122,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #
 # Cleanout the restricted packages
 # NO_RESTRICTED=yes
+
+# By default MAKE_JOBS is disabled to allow only one process per cpu
+# Use the following to allow it anyway
+# ALLOW_MAKE_JOBS=yes
