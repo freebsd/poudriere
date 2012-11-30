@@ -26,6 +26,9 @@ Options:
 		     \"csup\" please note that with svn and csup the world
 		     will be built. note that building from sources can use
 		     src.conf and jail-src.conf from localbase/etc/poudriere.d
+		     other possible method are: \"allbsd\" retreive snapshot
+		     from allbsd website or \"gjb\" for snapshot from Glen
+		     Barber's website.
     -t version    -- version to upgrade to"
 	exit 1
 }
@@ -141,7 +144,7 @@ update_jail() {
 		zfs destroy -r ${JAILFS}@clean
 		zfs snapshot ${JAILFS}@clean
 		;;
-	allbsd)
+	allbsd|gjb)
 		err 1 "Upgrade is not supported with allbsd, to upgrade, please delete and recreate the jail"
 		;;
 	*)
@@ -264,6 +267,7 @@ install_from_ftp() {
 		case ${METHOD} in
 		ftp) URL="${FREEBSD_HOST}/pub/FreeBSD/releases/${ARCH}/${ARCH}/${V}" ;;
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
+		gjb) URL="https://snapshots.glenbarber.us/Latest/ftp/${GJBVERSION}/${ARCH}/${ARCH}/" ;;
 		esac
 		DISTS="base.txz src.txz games.txz"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
@@ -298,6 +302,11 @@ create_jail() {
 	case ${METHOD} in
 	ftp)
 		FCT=install_from_ftp
+		;;
+	gjb)
+		FCT=install_from_ftp
+		GJBVERSION=${VERSION}
+		VERSION=${VERSION%%-*}
 		;;
 	allbsd)
 		FCT=install_from_ftp
