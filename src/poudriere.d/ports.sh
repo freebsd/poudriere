@@ -130,11 +130,10 @@ ports-all" > ${PTMNT}/csup
 			}
 			;;
 		portsnap)
-			mkdir ${PTMNT}/snap
+			mkdir ${PTMNT}/.snap
 			msg "Extracting portstree \"${PTNAME}\"..."
-			mkdir ${PTMNT}/ports
-			/usr/sbin/portsnap -d ${PTMNT}/snap -p ${PTMNT}/ports fetch extract || \
-			/usr/sbin/portsnap -d ${PTMNT}/snap -p ${PTMNT}/ports fetch extract || \
+			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract || \
+			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract || \
 			{
 				if [ ${PTFS} != "none" ]; then
 					zfs destroy ${PTFS}
@@ -230,7 +229,11 @@ ports-all" > ${PTMNT}/csup
 	portsnap|"")
 		PSCOMMAND=fetch
 		[ -t 0 ] || PSCOMMAND=cron
-		/usr/sbin/portsnap -d ${PTMNT}/snap -p ${PORTSMNT} ${PSCOMMAND} update
+		if [ -n "${PORTSMNT}" ]; then
+			/usr/sbin/portsnap -d ${PTMNT}/snap -p ${PORTSMNT} ${PSCOMMAND} update
+		else
+			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} ${PSCOMMAND} update
+		fi
 		;;
 	svn*)
 		msg_n "Updating the ports tree..."
