@@ -26,7 +26,7 @@ Options:
     -M mountpoint -- mountpoint
     -m method     -- when used with -c, specify the method used to update the
                      tree by default it is portsnap, possible usage are
-                     \"csup\", \"portsnap\", \"svn\", \"svn+http\", \"svn+ssh\""
+                     \"csup\", \"portsnap\", \"svn\", \"svn+http\", \"svn+ssh\", \"git\""
 
 	exit 1
 }
