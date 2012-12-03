@@ -5,12 +5,6 @@
 # poudriere.
 ZPOOL=tank
 
-# The ftp host where to download base sets and ssys set for the jails
-# You can specify here a hostname or an IP
-# replace _CHANGE_THIS_ by your 2-letter country-code.
-# This is deprecated and remains for compatibility
-#FTPHOST=ftp._CHANGE_THIS_.freebsd.org
-
 # root of the poudriere zfs filesystem, by default /poudriere
 # ZROOTFS=/poudriere
 
