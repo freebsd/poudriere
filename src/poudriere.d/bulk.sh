@@ -10,7 +10,6 @@ Parameters:
 Options:
     -c          -- Clean the previous built binary packages
     -C          -- Clean previous packages for the given list to build
-    -D          -- Debug mode, dislay more information
     -t          -- Add some testings to package building
     -s          -- Skip sanity
     -J n        -- Run n jobs in parallel

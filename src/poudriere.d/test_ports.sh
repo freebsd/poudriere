@@ -10,7 +10,6 @@ Parameters:
 
 Options:
     -c          -- Run make config for the given port
-    -D          -- Debug mode, dislay more information
     -J n        -- Run n jobs in parallel for dependencies
     -j name     -- Run only inside the given jail
     -n          -- No custom prefix
