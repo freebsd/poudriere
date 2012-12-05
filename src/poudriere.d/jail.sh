@@ -173,6 +173,7 @@ build_and_install_world() {
 		export CCACHE_CPP2=yes
 		export CC="${CCACHE_PATH}/world/cc"
 		export CXX="${CCACHE_PATH}/world/c++"
+		unset CCACHE_TEMPDIR
 	fi
 
 	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
