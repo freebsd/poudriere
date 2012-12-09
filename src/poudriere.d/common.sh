@@ -1652,7 +1652,7 @@ trap sig_handler SIGINT SIGTERM SIGKILL
 trap exit_handler EXIT
 trap siginfo_handler SIGINFO
 
-# Test if spool exists
+# Test if zpool exists
 zpool list ${ZPOOL} >/dev/null 2>&1 || err 1 "No such zpool: ${ZPOOL}"
 ZVERSION=$(zpool list -H -oversion ${ZPOOL})
 # Pool version has now
