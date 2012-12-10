@@ -627,15 +627,29 @@ build_port() {
 				zfs diff -FH ${JAILFS}@preinst ${JAILFS} | \
 					while read mod type path; do
 					local ppath
-					ppath=`echo "$path" | sed \
-						-e "s,^${JAILMNT},," \
-						-e "s,^${datadir},%%DATADIR%%," \
-						-e "s,^${etcdir},%%ETCDIR%%," \
-						-e "s,^${wwwdir},%%WWWDIR%%," \
-						-e "s,^${docsdir},%%PORTDOCS%%%%DOCSDIR%%," \
-						-e "s,^${docsdir},%%PORTEXAMPLES%%%%EXAMPLESDIR%%," \
-						-e "s,^${PREFIX}/,," \
+
+					# If this is a directory, use @dirrm in output
+					if [ -d "${path}" ]; then
+						ppath=`echo "$path" | sed \
+							-e "s,^${JAILMNT},," \
+							-e "s,^${datadir},@dirrm %%DATADIR%%," \
+							-e "s,^${etcdir},@dirrmtry %%ETCDIR%%," \
+							-e "s,^${wwwdir},@dirrm %%WWWDIR%%," \
+							-e "s,^${docsdir},%%PORTDOCS%%@dirrm %%DOCSDIR%%," \
+							-e "s,^${docsdir},%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%," \
+							-e "s,^${PREFIX}/,," \
 						`
+					else
+						ppath=`echo "$path" | sed \
+							-e "s,^${JAILMNT},," \
+							-e "s,^${datadir},%%DATADIR%%," \
+							-e "s,^${etcdir},%%ETCDIR%%," \
+							-e "s,^${wwwdir},%%WWWDIR%%," \
+							-e "s,^${docsdir},%%PORTDOCS%%%%DOCSDIR%%," \
+							-e "s,^${docsdir},%%PORTEXAMPLES%%%%EXAMPLESDIR%%," \
+							-e "s,^${PREFIX}/,," \
+						`
+					fi
 					case "$ppath" in
 					/var/db/pkg/*) continue;;
 					/var/run/*) continue;;
