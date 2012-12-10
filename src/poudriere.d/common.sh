@@ -612,6 +612,8 @@ build_port() {
 				comm -13 ${jailbase}${PREFIX}.PLIST_DIRS.before ${jailbase}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
 			else
 				local portname=$(injail make -C ${portdir} -VPORTNAME)
+				local datadir=$(injail make -C ${portdir} -V DATADIR)
+				local etcdir=$(injail make -C ${portdir} -V ETCDIR)
 				local add=$(mktemp ${jailbase}/tmp/add.XXXXXX)
 				local add1=$(mktemp ${jailbase}/tmp/add1.XXXXXX)
 				local del=$(mktemp ${jailbase}/tmp/del.XXXXXX)
@@ -622,7 +624,7 @@ build_port() {
 				zfs diff -FH ${JAILFS}@preinst ${JAILFS} | \
 					while read mod type path; do
 					local ppath
-					ppath=`echo "$path" | sed -e "s,^${JAILMNT},," -e "s,^${PREFIX}/,," -e "s,^share/${portname},%%DATADIR%%," -e "s,^etc/${portname},%%ETCDIR%%,"`
+					ppath=`echo "$path" | sed -e "s,^${JAILMNT},," -e "s,^${datadir},%%DATADIR%%," -e "s,^${etcdir},%%ETCDIR%%," -e "s,^${PREFIX}/,,"`
 					case "$ppath" in
 					/var/db/pkg/*) continue;;
 					/var/run/*) continue;;
