@@ -614,6 +614,9 @@ build_port() {
 				local portname=$(injail make -C ${portdir} -VPORTNAME)
 				local datadir=$(injail make -C ${portdir} -V DATADIR)
 				local etcdir=$(injail make -C ${portdir} -V ETCDIR)
+				local docsdir=$(injail make -C ${portdir} -V DOCSDIR)
+				local examplesdir=$(injail make -C ${portdir} -V EXAMPLESDIR)
+				local wwwdir=$(injail make -C ${portdir} -V WWWDIR)
 				local add=$(mktemp ${jailbase}/tmp/add.XXXXXX)
 				local add1=$(mktemp ${jailbase}/tmp/add1.XXXXXX)
 				local del=$(mktemp ${jailbase}/tmp/del.XXXXXX)
@@ -624,7 +627,15 @@ build_port() {
 				zfs diff -FH ${JAILFS}@preinst ${JAILFS} | \
 					while read mod type path; do
 					local ppath
-					ppath=`echo "$path" | sed -e "s,^${JAILMNT},," -e "s,^${datadir},%%DATADIR%%," -e "s,^${etcdir},%%ETCDIR%%," -e "s,^${PREFIX}/,,"`
+					ppath=`echo "$path" | sed \
+						-e "s,^${JAILMNT},," \
+						-e "s,^${datadir},%%DATADIR%%," \
+						-e "s,^${etcdir},%%ETCDIR%%," \
+						-e "s,^${wwwdir},%%WWWDIR%%," \
+						-e "s,^${docsdir},%%PORTDOCS%%%%DOCSDIR%%," \
+						-e "s,^${docsdir},%%PORTEXAMPLES%%%%EXAMPLESDIR%%," \
+						-e "s,^${PREFIX}/,," \
+						`
 					case "$ppath" in
 					/var/db/pkg/*) continue;;
 					/var/run/*) continue;;
