@@ -602,7 +602,7 @@ build_port() {
 		fi
 		if [ "${phase}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
-			PREFIX=`injail make -C ${portdir} -VPREFIX`
+			PREFIX=`injail env ${PORT_FLAGS} make -C ${portdir} -VPREFIX`
 			zset status "leftovers:${port}"
 			if [ $ZVERSION -lt 28 ]; then
 				find ${jailbase}${PREFIX} ! -type d | \
@@ -629,7 +629,7 @@ build_port() {
 					examplesdir \
 					wwwdir \
 					<< EOF
-$(injail make -C ${portdir} \
+$(injail env ${PORT_FLAGS} make make -C ${portdir} \
 		-V PORTNAME \
 		-V DATADIR \
 		-V ETCDIR \
