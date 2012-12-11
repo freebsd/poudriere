@@ -611,12 +611,7 @@ build_port() {
 				find ${jailbase}${PREFIX}/ -type d | sed "s,^${jailbase}${PREFIX}/,," | sort > ${jailbase}${PREFIX}.PLIST_DIRS.after
 				comm -13 ${jailbase}${PREFIX}.PLIST_DIRS.before ${jailbase}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
 			else
-				local portname=$(injail make -C ${portdir} -VPORTNAME)
-				local datadir=$(injail make -C ${portdir} -V DATADIR)
-				local etcdir=$(injail make -C ${portdir} -V ETCDIR)
-				local docsdir=$(injail make -C ${portdir} -V DOCSDIR)
-				local examplesdir=$(injail make -C ${portdir} -V EXAMPLESDIR)
-				local wwwdir=$(injail make -C ${portdir} -V WWWDIR)
+				local portname datadir etcdir docsdir examples dir wwwdir
 				local add=$(mktemp ${jailbase}/tmp/add.XXXXXX)
 				local add1=$(mktemp ${jailbase}/tmp/add1.XXXXXX)
 				local del=$(mktemp ${jailbase}/tmp/del.XXXXXX)
@@ -624,6 +619,26 @@ build_port() {
 				local mod=$(mktemp ${jailbase}/tmp/mod.XXXXXX)
 				local mod1=$(mktemp ${jailbase}/tmp/mod1.XXXXXX)
 				local die=0
+
+				# Ugly style is needed due to heredoc
+				IFS=% read \
+					portname \
+					datadir \
+					etcdir \
+					docsdir \
+					examplesdir \
+					wwwdir \
+					<< EOF
+$(injail make -C ${portdir} \
+		-V PORTNAME \
+		-V DATADIR \
+		-V ETCDIR \
+		-V DOCSDIR \
+		-V EXAMPLESDIR \
+		-V WWWDIR \
+		| tr '\n' '%')
+EOF
+
 				zfs diff -FH ${JAILFS}@preinst ${JAILFS} | \
 					while read mod type path; do
 					local ppath
