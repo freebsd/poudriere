@@ -611,7 +611,7 @@ build_port() {
 				find ${jailbase}${PREFIX}/ -type d | sed "s,^${jailbase}${PREFIX}/,," | sort > ${jailbase}${PREFIX}.PLIST_DIRS.after
 				comm -13 ${jailbase}${PREFIX}.PLIST_DIRS.before ${jailbase}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
 			else
-				local portname datadir etcdir docsdir examples dir wwwdir
+				local portname datadir etcdir docsdir examplesdir wwwdir site_perl
 				local add=$(mktemp ${jailbase}/tmp/add.XXXXXX)
 				local add1=$(mktemp ${jailbase}/tmp/add1.XXXXXX)
 				local del=$(mktemp ${jailbase}/tmp/del.XXXXXX)
@@ -651,7 +651,7 @@ EOF
 							-e "s,^${etcdir},@dirrmtry %%ETCDIR%%," \
 							-e "s,^${wwwdir},@dirrm %%WWWDIR%%," \
 							-e "s,^${docsdir},%%PORTDOCS%%@dirrm %%DOCSDIR%%," \
-							-e "s,^${docsdir},%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%," \
+							-e "s,^${examplesdir},%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%," \
 							-e "s,^${PREFIX}/,," \
 						`
 					else
@@ -661,7 +661,7 @@ EOF
 							-e "s,^${etcdir},%%ETCDIR%%," \
 							-e "s,^${wwwdir},%%WWWDIR%%," \
 							-e "s,^${docsdir},%%PORTDOCS%%%%DOCSDIR%%," \
-							-e "s,^${docsdir},%%PORTEXAMPLES%%%%EXAMPLESDIR%%," \
+							-e "s,^${examplesdir},%%PORTEXAMPLES%%%%EXAMPLESDIR%%," \
 							-e "s,^${PREFIX}/,," \
 						`
 					fi
