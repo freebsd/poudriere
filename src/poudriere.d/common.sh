@@ -628,6 +628,7 @@ build_port() {
 					docsdir \
 					examplesdir \
 					wwwdir \
+					site_perl \
 					<< EOF
 $(injail env ${PORT_FLAGS} make make -C ${portdir} \
 		-V PORTNAME \
@@ -636,6 +637,7 @@ $(injail env ${PORT_FLAGS} make make -C ${portdir} \
 		-V DOCSDIR \
 		-V EXAMPLESDIR \
 		-V WWWDIR \
+		-V SITE_PERL \
 		| tr '\n' '%')
 EOF
 
@@ -650,6 +652,7 @@ EOF
 							-e "s,^${datadir},@dirrm %%DATADIR%%," \
 							-e "s,^${etcdir},@dirrmtry %%ETCDIR%%," \
 							-e "s,^${wwwdir},@dirrm %%WWWDIR%%," \
+							-e "s,^${site_perl},@dirrm %%SITE_PERL%%," \
 							-e "s,^${docsdir},%%PORTDOCS%%@dirrm %%DOCSDIR%%," \
 							-e "s,^${examplesdir},%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%," \
 							-e "s,^${PREFIX}/,," \
@@ -660,6 +663,7 @@ EOF
 							-e "s,^${datadir},%%DATADIR%%," \
 							-e "s,^${etcdir},%%ETCDIR%%," \
 							-e "s,^${wwwdir},%%WWWDIR%%," \
+							-e "s,^${site_perl},%%SITE_PERL%%," \
 							-e "s,^${docsdir},%%PORTDOCS%%%%DOCSDIR%%," \
 							-e "s,^${examplesdir},%%PORTEXAMPLES%%%%EXAMPLESDIR%%," \
 							-e "s,^${PREFIX}/,," \
