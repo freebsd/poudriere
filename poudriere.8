@@ -314,6 +314,11 @@ Do not use custom prefix.
 Specifies which ports
 .Ar tree
 to use.
+.It Fl s
+Skip sanity tests.
+Sanity tests are made to check if the ports exists,
+does not have an increased version number, and if the compiled options
+match the current options from the make.conf files and /var/db/options.
 .It Fl v
 This will show more information during the build.
 Specify twice to enable debug output.

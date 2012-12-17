@@ -14,6 +14,7 @@ Options:
     -j name     -- Run only inside the given jail
     -n          -- No custom prefix
     -p tree     -- Specify on which portstree we work
+    -s          -- Skip sanity
     -v          -- Be verbose; show more information. Use twice to enable debug output."
 	exit 1
 }
