@@ -139,7 +139,7 @@ fi
 [ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/prefix}/`echo ${PKGNAME} | tr '[,+]' _`"
 PORT_FLAGS="NO_DEPENDS=yes PREFIX=${PREFIX}"
 msg "Building with flags: ${PORT_FLAGS}"
-[ $CONFIGSTR -eq 1 ] && injail make -C ${PORTDIRECTORY} config
+[ $CONFIGSTR -eq 1 ] && injail env TERM=${SAVED_TERM} make -C ${PORTDIRECTORY} config
 
 if [ -d ${JAILMNT}${PREFIX} ]; then
 	msg "Removing existing ${PREFIX}"

@@ -37,7 +37,7 @@ case ${CMD} in
 		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/jail.sh $@
 		;;
 	testport)
-		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/test_ports.sh $@
+		exec env -i PATH=${PATH} SAVED_TERM=${SAVED_TERM} /bin/sh ${POUDRIEREPREFIX}/test_ports.sh $@
 		;;
 	bulk)
 		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/bulk.sh $@
