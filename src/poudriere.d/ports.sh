@@ -123,8 +123,10 @@ ports-all" > ${PTMNT}/csup
 					zfs destroy ${PTFS}
 				else
 					rm -rf ${PTMNT}
-					sed -i "" "s/${PTNAME}/d" \
-						${POUDRIERED}/portstrees
+					if [ -e ${POUDRIERED}/portstrees ]; then
+						sed -i "" "s/${PTNAME}/d" \
+							${POUDRIERED}/portstrees
+					fi
 				fi
 				err 1 " Fail"
 			}
@@ -139,8 +141,10 @@ ports-all" > ${PTMNT}/csup
 					zfs destroy ${PTFS}
 				else
 					rm -rf ${PTMNT}
-					sed -i "" "s/${PTNAME}/d" \
-						${POUDRIERED}/portstrees
+					if [ -e ${POUDRIERED}/portstrees ]; then
+						sed -i "" "s/${PTNAME}/d" \
+							${POUDRIERED}/portstrees
+					fi
 				fi
 				err 1 " Fail"
 			}
@@ -159,8 +163,10 @@ ports-all" > ${PTMNT}/csup
 					zfs destroy ${PTFS}
 				else
 					rm -rf ${PTMNT}
-					sed -i "" "s/${PTNAME}/d" \
-						${POUDRIERED}/portstrees
+					if [ -e ${POUDRIERED}/portstrees ]; then
+						sed -i "" "s/${PTNAME}/d" \
+							${POUDRIERED}/portstrees
+					fi
 				fi
 				err 1 " Fail"
 			}
@@ -173,15 +179,19 @@ ports-all" > ${PTMNT}/csup
 					zfs destroy ${PTFS}
 				else
 					rm -rf ${PTMNT}
-					sed -i "" "/${PTNAME}/d" \
-						${POUDRIERED}/portstrees
+					if [ -e ${POUDRIERED}/portstrees ]; then
+						sed -i "" "s/${PTNAME}/d" \
+							${POUDRIERED}/portstrees
+					fi
 				fi
 			}
 			echo " done"
 			;;
 		esac
 		pzset method ${METHOD}
-		sed -i "" "s/__METHOD__/${METHOD}/g" ${POUDRIERED}/portstrees
+		if [ -e ${POUDRIERED}/portstrees ]; then
+			sed -i "" "s/__METHOD__/${METHOD}/g" ${POUDRIERED}/portstrees
+		fi
 	fi
 fi
 
@@ -197,8 +207,10 @@ if [ ${DELETE} -eq 1 ]; then
 		zfs destroy -r ${PTFS}
 	else
 		rm -rf ${PTMNT}
-		sed -i "" "/${PTNAME}/d" \
-			${POUDRIERED}/portstrees
+		if [ -e ${POUDRIERED}/portstrees ]; then
+			sed -i "" "s/${PTNAME}/d" \
+				${POUDRIERED}/portstrees
+		fi
 	fi
 fi
 
