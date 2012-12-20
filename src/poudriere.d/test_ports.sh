@@ -104,7 +104,7 @@ zfs snapshot ${JAILFS}@prepkg
 
 if ! POUDRIERE_BUILD_TYPE=bulk parallel_build; then
 	failed=$(cat ${JAILMNT}/poudriere/ports.failed | awk '{print $1 ":" $2 }' | xargs echo)
-	skipped=$(cat ${JAILMNT}/poudriere/ports.skipped | awk '{print $1}' | xargs echo)
+	skipped=$(cat ${JAILMNT}/poudriere/ports.skipped | awk '{print $1}' | sort -u | xargs echo)
 	nbfailed=$(zget stats_failed)
 	nbskipped=$(zget stats_skipped)
 
