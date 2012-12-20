@@ -873,7 +873,16 @@ EOF
 EOF
 		cnt=$(( cnt + 1 ))
 	done <  ${JAILMNT}/poudriere/ports.${type}
-	zset stats_${type} $cnt
+
+	if [ "${type}" = "skipped" ]; then
+		# Skipped lists the skipped origin for every dependency that wanted it
+		zset stats_skipped $(
+			awk '{print $1}' ${JAILMNT}/poudriere/ports.skipped |
+			sort -u |
+			wc -l)
+	else
+		zset stats_${type} $cnt
+	fi
 
 cat >> ${html_path} << EOF
       </table>
