@@ -266,8 +266,14 @@ install_from_ftp() {
 				tar --unlink -xpf - -C ${JAILMNT}/${APPEND} || err 1 " Fail" && echo " done"
 		done
 	else
+		local type
 		case ${METHOD} in
-		ftp) URL="${FREEBSD_HOST}/pub/FreeBSD/releases/${ARCH}/${ARCH}/${V}" ;;
+		ftp)
+			case ${VERSION} in
+			*-CURRENT|*-PRERELEASE|*-STABLE) type=snapshots;;
+			*) type=releases;;
+			esac
+			URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH}/${ARCH}/${V}" ;;
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
 		gjb) URL="https://snapshots.glenbarber.us/Latest/ftp/${GJBVERSION}/${ARCH}/${ARCH}" ;;
 		esac
