@@ -152,7 +152,9 @@ ports-all" > ${PTMNT}/csup
 		svn*)
 			case ${METHOD} in
 			svn+http) proto="http" ;;
+			svn+https) proto="https" ;;
 			svn+ssh) proto="svn+ssh" ;;
+			svn+file) proto="file" ;;
 			svn) proto="svn" ;;
 			esac
 

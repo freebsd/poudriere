@@ -191,7 +191,9 @@ install_from_svn() {
 	mkdir -p ${JAILMNT}/usr/src
 	case ${METHOD} in
 	svn+http) proto="http" ;;
+	svn+https) proto="https" ;;
 	svn+ssh) proto="svn+ssh" ;;
+	svn+file) proto="file" ;;
 	svn) proto="svn" ;;
 	esac
 	if [ ${UPDATE} -eq 0 ]; then
