@@ -22,13 +22,13 @@ Options:
     -f fs         -- FS name (tank/jails/myjail)
     -M mountpoint -- mountpoint
     -m method     -- when used with -c forces the method to use by default
-                     \"ftp\", could also be \"svn\", \"svn+http\", \"svn+ssh\",
-		     \"csup\" please note that with svn and csup the world
-		     will be built. note that building from sources can use
-		     src.conf and jail-src.conf from localbase/etc/poudriere.d
-		     other possible method are: \"allbsd\" retreive snapshot
-		     from allbsd website or \"gjb\" for snapshot from Glen
-		     Barber's website.
+		     \"ftp\", could also be \"svn\", \"svn+http\", \"svn+https\",
+		     \"svn+file\", \"svn+ssh\", \"csup\" please note that with
+		     svn and csup the world will be built. Note that building
+		     from sources can use src.conf and jail-src.conf from
+		     localbase/etc/poudriere.d other possible method are:
+		     \"allbsd\" retreive snapshot from allbsd website or \"gjb\"
+		     for snapshot from Glen Barber's website.
     -t version    -- version to upgrade to"
 	exit 1
 }

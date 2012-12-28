@@ -26,7 +26,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd December 6, 2012
+.Dd December 28, 2012
 .Dt POUDRIERE 8
 .Os FreeBSD
 .Sh NAME
@@ -218,7 +218,7 @@ of FreeBSD to use in the jail. (Default: same as host)
 Specifies which
 .Ar method
 to use to create the jail.
-Could be csup, svn{,+http,+ssh), ftp, allbsd, or gjb (Default: ftp).
+Could be csup, svn{,+http,+https,+file,+ssh), ftp, allbsd, or gjb (Default: ftp).
 .It Fl f Ar filesystem
 Specifies the
 .Ar filesystem
@@ -282,7 +282,7 @@ when creating ports tree.
 Specifies which
 .Ar method
 to use to create the ports tree.
-Could be portsnap, git, svn{,+http,+ssh} (Default:
+Could be portsnap, git, svn{,+http,+https,+file,+ssh} (Default:
 portsnap).
 .El
 .Ss testport
