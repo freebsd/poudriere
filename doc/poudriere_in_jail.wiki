@@ -17,6 +17,7 @@ poudriere {
 	allow.mount.devfs;
 	allow.mount.procfs;
 	allow.mount.zfs;
+	allow.mount.nullfs;
 	allow.raw_sockets;
 	allow.socket_af;
 	allow.sysvipc;
