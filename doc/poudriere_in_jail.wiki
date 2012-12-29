@@ -25,7 +25,7 @@ poudriere {
 	enforce_statfs=1;
 	path=/jails/poudriere;
 	exec.start="mount -t devfs devfs /dev";
-	exec.stop="umount -a";
+	exec.stop="umount /dev; zfs umount -a";
 }
 </verbatim>
 
@@ -81,6 +81,11 @@ RESOLV_CONF=/etc/resolv.conf
 DISTFILES_CACHE=/distfiles
 CHECK_CHANGED_OPTIONS=yes
 NOLINUX=1
+</verbatim>
+
+Create the distfiles cache directory
+<verbatim>
+# mkdir /jails/poudriere/distfiles
 </verbatim>
 
 Load the needed modules on the host
