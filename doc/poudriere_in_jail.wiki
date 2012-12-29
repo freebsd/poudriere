@@ -20,6 +20,7 @@ poudriere {
 	allow.raw_sockets;
 	allow.socket_af;
 	allow.sysvipc;
+	allow.chflags;
 	enforce_statfs=1;
 	path=/jails/poudriere;
 	exec.start="mount -t devfs devfs /dev";
