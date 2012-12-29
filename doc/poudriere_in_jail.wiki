@@ -82,6 +82,11 @@ CHECK_CHANGED_OPTIONS=yes
 NOLINUX=1
 </verbatim>
 
+Load the needed modules on the host
+<verbatim>
+# kldload tmpfs linux linprocfs nullfs procfs fdescfs
+</verbatim>
+
 Fetch and install the latest poudriere
 <verbatim>
 # jexec -U root poudriere sh
