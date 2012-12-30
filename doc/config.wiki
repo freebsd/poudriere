@@ -1,11 +1,10 @@
 <h1>easily generate options</h1>
 
-Run this, specifying either <em>options<em> or <em>options-jailname</em> for <strong>PORT_DBDIR</strong>. Also set <strong>BULK_LIST</strong> to the path of your list of ports for bulk build. Set the <strong>PORTSDIR</strong> to the portstree you are building with.
+Use the <em>options</em> subcommand.
 
     <verbatim>
-PORT_DBDIR=/usr/local/etc/poudriere.d/options
-BULK_LIST=/root/poudriere.list
-PORTSDIR=/usr/ports
-mkdir -p ${PORT_DBDIR}
-while read origin; do make PORT_DBDIR=${PORT_DBDIR} -C ${PORTSDIR}/${origin} config-conditional config-recursive; done < ${BULK_LIST}
+poudriere options -j JAIL -f ~/mylist
+poudriere options -j JAIL cat/port1 cat/port2
 </verbatim>
+
+See <em>man poudriere</em> and <em>poudriere options</em> usage for more information.
