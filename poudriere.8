@@ -26,7 +26,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd December 28, 2012
+.Dd December 29, 2012
 .Dt POUDRIERE 8
 .Os FreeBSD
 .Sh NAME
@@ -349,6 +349,16 @@ Specify twice to enable debug output.
 .El
 .Pp
 .Ss options
+This command accepts the following parameters:
+.Bl -tag -width "-f conffile"
+.It Fl f Ar file
+Absolute path to a file which contains the list of ports to configure.
+Ports must be specified in the form
+.Ar category/port
+and shell-style comments are allowed.
+.It The list of ports can also be provided by command line arguments.
+.El
+.Pp
 This command accepts the following options:
 .Bl -tag -width "-f conffile"
 .It Fl c

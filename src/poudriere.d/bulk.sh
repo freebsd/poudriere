@@ -6,6 +6,7 @@ usage() {
 
 Parameters:
     -f file     -- Give the list of ports to build
+    [ports...]  -- List of ports to build
 
 Options:
     -c          -- Clean the previous built binary packages

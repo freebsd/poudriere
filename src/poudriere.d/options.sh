@@ -15,10 +15,11 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 usage() {
-	echo "poudriere options [parameters] [options]
+	echo "poudriere options [options] [-f file|cat/port ...]
 
 Parameters:
     -f file     -- Give the list of ports to set options
+    [ports...]  -- List of ports to set options on
 
 Options:
     -c          -- Use 'make config' target
