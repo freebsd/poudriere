@@ -315,7 +315,7 @@ if [ $nbskipped -gt 0 ]; then
 	echo ${skipped}
 	echo ""
 fi
-msg "$nbbuilt packages built, $nbfailed failures, $nbignored ignored, $nbskipped skipped"
+msg "[${JAILNAME}] $nbbuilt packages built, $nbfailed failures, $nbignored ignored, $nbskipped skipped"
 
 set +e
 
