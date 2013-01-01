@@ -1739,3 +1739,7 @@ case ${PARALLEL_JOBS} in
 	PARALLEL_JOBS=$(sysctl -n hw.ncpu)
 	;;
 esac
+
+if [ -n "${USE_UNIONFS}" ]; then
+	[ ! -x `which unionfs` ] && err 2 "First install sysutils/fusefs-unionfs if you want USE_UNIONFS to work as expected"
+fi
