@@ -45,10 +45,14 @@ USE_PORTLINT=no
 #MFSSIZE=4G
 
 # If set WRKDIRPREFIX will be using tmpfs
+# setting to yes will make the workdir to use tmpfs, setting to full will allow
+# a full memory building, only work with unionfs, please see the above
+# USE_UNIONFS
+# default: no
 USE_TMPFS=yes
 
 # Use TMPFS the build pool/cache operations
-# # default: no
+# default: no
 #TMPFS_DATA=yes
 
 # If set the given directory will be used for the distfiles this allow the share
@@ -120,3 +124,9 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # By default MAKE_JOBS is disabled to allow only one process per cpu
 # Use the following to allow it anyway
 # ALLOW_MAKE_JOBS=yes
+
+# Use sysutils/fusefs-unionfs for the build system this allow non zfs builds
+# Used in combinaison use USE_TMPFS=full it will allow to do the whole build
+# process totally in memory
+# default: no
+# USE_UNIONFS=yes
