@@ -381,17 +381,19 @@ do_portbuild_mounts() {
 		msg "Mounting packages from: ${PKGDIR}"
 	fi
 
-		mount -t nullfs ${PORTSDIR} ${JAILMNT}/usr/ports || err 1 "Failed to mount the ports directory "
-		mount -t nullfs ${PKGDIR} ${JAILMNT}/usr/ports/packages || err 1 "Failed to mount the packages directory "
+	mount -t nullfs ${PORTSDIR} ${JAILMNT}/usr/ports || err 1 "Failed to mount the ports directory "
+	mount -t nullfs ${PKGDIR} ${JAILMNT}/usr/ports/packages || err 1 "Failed to mount the packages directory "
 
 	if [ "$(realpath ${DISTFILES_CACHE:-/nonexistent})" != "$(realpath ${PORTSDIR}/distfiles)" ]; then
 		mount -t nullfs ${DISTFILES_CACHE} ${JAILMNT}/usr/ports/distfiles || err 1 "Failed to mount the distfile directory"
 	fi
 
 	mkdir -p ${JAILMNT}/wrkdirs
-	if [ ${should_mkdir} -eq 1 ]; then
-		[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${JAILMNT}/wrkdirs
-		[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${JAILMNT}/wrkdirs
+	if [ ${should_mkdir} -eq 0 ]; then
+		if [ "${USE_TMPFS}" != "full" ]; then
+			[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${JAILMNT}/wrkdirs
+			[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${JAILMNT}/wrkdirs
+		fi
 	fi
 
 	# Order is JAILNAME-SETNAME, then SETNAME, then JAILNAME, then default.
@@ -805,18 +807,9 @@ start_builders() {
 				${mnt}/build=RW:${JAILMNT}=RO ${mnt}/work
 		fi
 		jail -r ${name} >/dev/null 2>&1 || :
-		if [ -z "${USE_UNIONFS}" ]; then
-			MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_jail_mounts 0
-			MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_portbuild_mounts 0
-		else
-			mnt=${mnt}/work
-			mkdir -p ${mnt}/wrkdirs
-			MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_jail_mounts 0
-			if [ "${USE_TMPFS}" != "full" ];then
-				[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
-				[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${mnt}/wrkdirs
-			fi
-		fi
+		[ -n "${USE_UNIONFS}" ] && mnt=${mnt}/work
+		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_jail_mounts 0
+		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_portbuild_mounts 0
 		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} jrun 0
 		if [ -z "${USE_UNIONFS}" ]; then
 			JAILFS=${fs} zset status "idle:"
