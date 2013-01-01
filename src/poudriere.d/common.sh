@@ -110,11 +110,13 @@ zget() {
 
 zset() {
 	[ $# -ne 2 ] && eargs property value
+	[ -n "${USE_UNIONFS}" ] && return
 	zfs set ${NS}:$1="$2" ${JAILFS}
 }
 
 pzset() {
 	[ $# -ne 2 ] && eargs property value
+	[ -n "${USE_UNIONFS}" ] && return
 	zfs set ${NS}:$1="$2" ${PTFS}
 }
 
@@ -325,7 +327,8 @@ jrun() {
 do_jail_mounts() {
 	[ $# -ne 1 ] && eargs should_mkdir
 	local should_mkdir=$1
-	local arch=$(zget arch)
+	local arch
+	arch=$(${JAILMNT}/usr/bin/uname -p)
 
 	# Only do this when starting the master jail, clones will already have the dirs
 	if [ ${should_mkdir} -eq 1 ]; then
@@ -378,14 +381,18 @@ do_portbuild_mounts() {
 		msg "Mounting packages from: ${PKGDIR}"
 	fi
 
-	mount -t nullfs ${PORTSDIR} ${JAILMNT}/usr/ports || err 1 "Failed to mount the ports directory "
-	mount -t nullfs ${PKGDIR} ${JAILMNT}/usr/ports/packages || err 1 "Failed to mount the packages directory "
+		mount -t nullfs ${PORTSDIR} ${JAILMNT}/usr/ports || err 1 "Failed to mount the ports directory "
+		mount -t nullfs ${PKGDIR} ${JAILMNT}/usr/ports/packages || err 1 "Failed to mount the packages directory "
 
 	if [ "$(realpath ${DISTFILES_CACHE:-/nonexistent})" != "$(realpath ${PORTSDIR}/distfiles)" ]; then
 		mount -t nullfs ${DISTFILES_CACHE} ${JAILMNT}/usr/ports/distfiles || err 1 "Failed to mount the distfile directory"
 	fi
-	[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${JAILMNT}/wrkdirs
-	[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${JAILMNT}/wrkdirs
+
+	mkdir -p ${JAILMNT}/wrkdirs
+	if [ ${should_mkdir} -eq 1 ]; then
+		[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${JAILMNT}/wrkdirs
+		[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${JAILMNT}/wrkdirs
+	fi
 
 	# Order is JAILNAME-SETNAME, then SETNAME, then JAILNAME, then default.
 	if [ -n "${SETNAME}" -a -d ${POUDRIERED}/${JAILNAME%-job-*}${SETNAME}-options ]; then
@@ -767,29 +774,53 @@ start_builders() {
 	local version=$(zget version)
 	local j mnt fs name
 
-	zfs create -o canmount=off ${JAILFS}/build
+	if [ -z "${USE_UNIONFS}" ]; then
+		zfs create -o canmount=off ${JAILFS}/build
+	else
+		mkdir -p ${JAILFS}/build
+	fi
 
 	for j in ${JOBS}; do
 		mnt="${JAILMNT}/build/${j}"
 		fs="${JAILFS}/build/${j}"
 		name="${JAILNAME}-job-${j}"
-		zset status "starting_jobs:${j}"
 		mkdir -p "${mnt}"
-		zfs clone -o mountpoint=${mnt} \
-			-o ${NS}:name=${name} \
-			-o ${NS}:type=rootfs \
-			-o ${NS}:arch=${arch} \
-			-o ${NS}:version=${version} \
-			${JAILFS}@prepkg ${fs}
-		zfs snapshot ${fs}@prepkg
-		# Jail might be lingering from previous build. Already recursively
-		# destroyed all the builder datasets, so just try stopping the jail
-		# and ignore any errors
+		if [ -z "${USE_UNIONFS}" ]; then
+			zset status "starting_jobs:${j}"
+			zfs clone -o mountpoint=${mnt} \
+				-o ${NS}:name=${name} \
+				-o ${NS}:type=rootfs \
+				-o ${NS}:arch=${arch} \
+				-o ${NS}:version=${version} \
+				${JAILFS}@prepkg ${fs}
+			zfs snapshot ${fs}@prepkg
+			# Jail might be lingering from previous build. Already recursively
+			# destroyed all the builder datasets, so just try stopping the jail
+			# and ignore any errors
+		else
+			mkdir -p ${mnt}/build
+			mkdir -p ${mnt}/work
+			[ "${USE_TMPFS}" = "full" ] && mount -t tmpfs tmpfs ${mnt}/build
+			unionfs -o cow,allow_other,use_ino,suid,nonempty \
+				${mnt}/build=RW:${JAILMNT}=RO ${mnt}/work
+		fi
 		jail -r ${name} >/dev/null 2>&1 || :
-		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_jail_mounts 0
-		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_portbuild_mounts 0
+		if [ -z "${USE_UNIONFS}" ]; then
+			MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_jail_mounts 0
+			MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_portbuild_mounts 0
+		else
+			mnt=${mnt}/work
+			mkdir -p ${mnt}/wrkdirs
+			MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_jail_mounts 0
+			if [ "${USE_TMPFS}" != "full" ];then
+				[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
+				[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${mnt}/wrkdirs
+			fi
+		fi
 		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} jrun 0
-		JAILFS=${fs} zset status "idle:"
+		if [ -z "${USE_UNIONFS}" ]; then
+			JAILFS=${fs} zset status "idle:"
+		fi
 	done
 }
 
@@ -1010,6 +1041,7 @@ build_queue() {
 				# is done before checking the queue again
 				read_queue=0
 			else
+				[ -n "${USE_UNIONFS}" ] && mnt=${mnt}/work
 				MASTERMNT=${JAILMNT} JAILNAME="${name}" JAILMNT="${mnt}" JAILFS="${fs}" \
 					MY_JOBID="${j}" \
 					build_pkg "${pkgname}" >/dev/null 2>&1 &
@@ -1125,7 +1157,12 @@ build_pkg() {
 
 	job_msg "Starting build of ${port}"
 	zset status "starting:${port}"
-	zfs rollback -r ${JAILFS}@prepkg || err 1 "Unable to rollback ${JAILFS}"
+	if [ -z ${USE_UNIONFS} ]; then
+		zfs rollback -r ${JAILFS}@prepkg || err 1 "Unable to rollback ${JAILFS}"
+	else
+		rm -rf ${mnt}/../build/* || :
+		rm -rf ${mnt}/../build/.unionfs || :
+	fi
 
 	# If this port is IGNORED, skip it
 	# This is checked here instead of when building the queue
@@ -1741,5 +1778,5 @@ case ${PARALLEL_JOBS} in
 esac
 
 if [ -n "${USE_UNIONFS}" ]; then
-	[ ! -x `which unionfs` ] && err 2 "First install sysutils/fusefs-unionfs if you want USE_UNIONFS to work as expected"
+	[ -x `which unionfs` ] || err 2 "First install sysutils/fusefs-unionfs if you want USE_UNIONFS to work as expected"
 fi
