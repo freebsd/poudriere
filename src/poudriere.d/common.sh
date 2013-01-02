@@ -733,8 +733,8 @@ EOF
 save_wrkdir() {
 	[ $# -ne 3 ] && eargs port portdir phase
 	local port="$1"
-	local phase="$2"
 	local portdir="$2"
+	local phase="$3"
 	local tardir=${POUDRIERE_DATA}/wrkdirs/${JAILNAME%-job-*}/${PTNAME}
 	local tarname=${tardir}/${PKGNAME}.${WRKDIR_ARCHIVE_FORMAT}
 	local mnted_portdir=${JAILMNT}/wrkdirs/${portdir}
