@@ -111,7 +111,9 @@ for origin in ${LISTPORTS}; do
 		-C ${PORTSDIR}/${origin} \
 		${COMMAND}
 
-	make PORT_DBDIR=${PORT_DBDIR} \
-		-C ${PORTSDIR}/${origin} \
-		${DO_RECURSE:+${RECURSE_COMMAND}}
+	if [ -n "${DO_RECURSE}" ]; then
+		make PORT_DBDIR=${PORT_DBDIR} \
+			-C ${PORTSDIR}/${origin} \
+			${RECURSE_COMMAND}
+	fi
 done
