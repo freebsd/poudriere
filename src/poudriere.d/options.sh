@@ -109,6 +109,9 @@ for origin in ${LISTPORTS}; do
 	[ -d ${PORTSDIR}/${origin} ] || err 1 "No such ports ${origin}"
 	make PORT_DBDIR=${PORT_DBDIR} \
 		-C ${PORTSDIR}/${origin} \
-		${COMMAND} \
+		${COMMAND}
+
+	make PORT_DBDIR=${PORT_DBDIR} \
+		-C ${PORTSDIR}/${origin} \
 		${DO_RECURSE:+${RECURSE_COMMAND}}
 done
