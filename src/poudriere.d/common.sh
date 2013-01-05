@@ -73,7 +73,6 @@ log_path() {
 
 do_unionfs() {
 	local bdir
-	set -x
 	[ -d ${JAILMNT} ] || mkdir -p ${JAILMNT}
 	mnt=`realpath ${JAILMNT}`
 	mount | awk -v mnt="${mnt}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r | xargs umount -f || :
@@ -93,7 +92,6 @@ do_unionfs() {
 			mdconfig -d -u $dev
 		fi
 	fi
-	set +x
 	[ -d ${JAILMNT}/../build ] && rm -rf ${JAILMNT}/../build
 	mkdir -p ${JAILMNT}/../build
 	bdir=`realpath ${JAILMNT}/../build`
