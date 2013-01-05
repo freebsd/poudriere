@@ -71,6 +71,39 @@ log_path() {
 	echo "${LOGS}/${POUDRIERE_BUILD_TYPE}/${JAILNAME%-job-*}/${PTNAME}${SETNAME}"
 }
 
+do_unionfs() {
+	local bdir
+	set -x
+	[ -d ${JAILMNT} ] || mkdir -p ${JAILMNT}
+	mnt=`realpath ${JAILMNT}`
+	mount | awk -v mnt="${mnt}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r | xargs umount -f || :
+	if [ -n "${MFSSIZE}" ]; then
+		# umount the ${JAILMNT}/build/$jobno/wrkdirs
+		mount | grep "/dev/md.*${mnt}/build" | while read mntpt; do
+			local dev=`echo $mntpt | awk '{print $1}'`
+			if [ -n "$dev" ]; then
+				umount $dev
+				mdconfig -d -u $dev
+			fi
+		done
+		# umount the $JAILMNT/wrkdirs
+		local dev=`mount | grep "/dev/md.*${mnt}" | awk '{print $1}'`
+		if [ -n "$dev" ]; then
+			umount $dev
+			mdconfig -d -u $dev
+		fi
+	fi
+	set +x
+	[ -d ${JAILMNT}/../build ] && rm -rf ${JAILMNT}/../build
+	mkdir -p ${JAILMNT}/../build
+	bdir=`realpath ${JAILMNT}/../build`
+	[ "${USE_TMPFS}" = "full" ] && mount -t tmpfs tmpfs ${bdir}
+	unionfs -o cow,allow_other,suid,use_ino,default_permissions \
+		${bdir}=RW:${MASTERMNT}=RO ${JAILMNT}
+	do_jail_mounts 0
+	do_portbuild_mounts 0
+}
+
 buildlog_start() {
 	local portdir=$1
 
@@ -327,8 +360,8 @@ jrun() {
 do_jail_mounts() {
 	[ $# -ne 1 ] && eargs should_mkdir
 	local should_mkdir=$1
-	local arch
-	arch=$(${JAILMNT}/usr/bin/uname -p)
+	[ -z "${ARCH}" ] && ARCH=$(${JAILMNT}/usr/bin/uname -p)
+	export ARCH
 
 	# Only do this when starting the master jail, clones will already have the dirs
 	if [ ${should_mkdir} -eq 1 ]; then
@@ -340,7 +373,7 @@ do_jail_mounts() {
 	mount -t procfs proc ${JAILMNT}/proc
 
 	if [ -z "${NOLINUX}" ]; then
-		if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
+		if [ "${ARCH}" = "i386" -o "${ARCH}" = "amd64" ]; then
 			if [ ${should_mkdir} -eq 1 ]; then
 				mkdir -p ${JAILMNT}/compat/linux/proc
 				mkdir -p ${JAILMNT}/compat/linux/sys
@@ -776,44 +809,29 @@ start_builders() {
 	local version=$(zget version)
 	local j mnt fs name
 
-	if [ -z "${USE_UNIONFS}" ]; then
-		zfs create -o canmount=off ${JAILFS}/build
-	else
-		mkdir -p ${JAILFS}/build
-	fi
+	zfs create -o canmount=off ${JAILFS}/build
 
 	for j in ${JOBS}; do
 		mnt="${JAILMNT}/build/${j}"
 		fs="${JAILFS}/build/${j}"
 		name="${JAILNAME}-job-${j}"
 		mkdir -p "${mnt}"
-		if [ -z "${USE_UNIONFS}" ]; then
-			zset status "starting_jobs:${j}"
-			zfs clone -o mountpoint=${mnt} \
-				-o ${NS}:name=${name} \
-				-o ${NS}:type=rootfs \
-				-o ${NS}:arch=${arch} \
-				-o ${NS}:version=${version} \
-				${JAILFS}@prepkg ${fs}
-			zfs snapshot ${fs}@prepkg
-			# Jail might be lingering from previous build. Already recursively
-			# destroyed all the builder datasets, so just try stopping the jail
-			# and ignore any errors
-		else
-			mkdir -p ${mnt}/build
-			mkdir -p ${mnt}/work
-			[ "${USE_TMPFS}" = "full" ] && mount -t tmpfs tmpfs ${mnt}/build
-			unionfs -o cow,allow_other,use_ino,suid,nonempty \
-				${mnt}/build=RW:${JAILMNT}=RO ${mnt}/work
-		fi
+		zset status "starting_jobs:${j}"
+		zfs clone -o mountpoint=${mnt} \
+			-o ${NS}:name=${name} \
+			-o ${NS}:type=rootfs \
+			-o ${NS}:arch=${arch} \
+			-o ${NS}:version=${version} \
+			${JAILFS}@prepkg ${fs}
+		zfs snapshot ${fs}@prepkg
+		# Jail might be lingering from previous build. Already recursively
+		# destroyed all the builder datasets, so just try stopping the jail
+		# and ignore any errors
 		jail -r ${name} >/dev/null 2>&1 || :
-		[ -n "${USE_UNIONFS}" ] && mnt=${mnt}/work
 		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_jail_mounts 0
 		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_portbuild_mounts 0
 		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} jrun 0
-		if [ -z "${USE_UNIONFS}" ]; then
-			JAILFS=${fs} zset status "idle:"
-		fi
+		JAILFS=${fs} zset status "idle:"
 	done
 }
 
@@ -1084,7 +1102,7 @@ parallel_build() {
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
 
 	zset status "starting_jobs:"
-	start_builders
+	[ -z "${USE_UNIONFS}" ] && start_builders
 
 	# Duplicate stdout to socket 5 so the child process can send
 	# status information back on it since we redirect its
@@ -1153,8 +1171,9 @@ build_pkg() {
 	if [ -z ${USE_UNIONFS} ]; then
 		zfs rollback -r ${JAILFS}@prepkg || err 1 "Unable to rollback ${JAILFS}"
 	else
-		rm -rf ${mnt}/../build/* || :
-		rm -rf ${mnt}/../build/.unionfs || :
+		jail -r ${JAILNAME} || :
+		do_unionfs || :
+		jrun 0
 	fi
 
 	# If this port is IGNORED, skip it
