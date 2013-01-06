@@ -92,10 +92,12 @@ do_unionfs() {
 			mdconfig -d -u $dev
 		fi
 	fi
+	[ "${USE_TMPFS}" = "full" ] && umount -f ${JAILMNT}/../build 2>/dev/null
 	[ -d ${JAILMNT}/../build ] && rm -rf ${JAILMNT}/../build
 	mkdir -p ${JAILMNT}/../build
 	bdir=`realpath ${JAILMNT}/../build`
 	[ "${USE_TMPFS}" = "full" ] && mount -t tmpfs tmpfs ${bdir}
+	umount -f ${JAILMNT} 2>/dev/null || :
 	unionfs -o cow,allow_other,suid,use_ino,default_permissions \
 		${bdir}=RW:${MASTERMNT}=RO ${JAILMNT}
 	do_jail_mounts 0
