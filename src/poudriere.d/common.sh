@@ -281,7 +281,7 @@ get_data_dir() {
 
 fetch_file() {
 	[ $# -ne 2 ] && eargs destination source
-	fetch -p -o $1 $2 || fetch -p -o $1 $2
+	fetch -p -o $1 $2 || fetch -p -o $1 $2 || err 1 "Failed to fetch from $2"
 }
 
 jail_create_zfs() {
@@ -1717,7 +1717,7 @@ fi
 
 : ${SVN_HOST="svn.FreeBSD.org"}
 : ${GIT_URL="git://github.com/freebsd/freebsd-ports.git"}
-: ${FREEBSD_HOST="ftp://${FTP_HOST:-ftp.FreeBSD.org}"}
+: ${FREEBSD_HOST="${FTP_HOST:-ftp.FreeBSD.org}"}
 : ${ZROOTFS="/poudriere"}
 
 case ${ZROOTFS} in

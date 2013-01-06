@@ -2,20 +2,20 @@
 set -e
 
 usage() {
-	echo "poudriere testport parameters [options]
+	echo "poudriere testport [parameters] [options]
 
 Parameters:
-    -d path     -- Specify on which port we work
+    -d path     -- Specify the port to test
     -o origin   -- Specify an origin in the portstree
 
 Options:
     -c          -- Run make config for the given port
     -J n        -- Run n jobs in parallel for dependencies
-    -j name     -- Run only inside the given jail
+    -j name     -- Run inside the given jail
     -n          -- No custom prefix
-    -p tree     -- Specify on which portstree we work
-    -s          -- Skip sanity
-    -v          -- Be verbose; show more information. Use twice to enable debug output."
+    -p tree     -- Specify the path to the portstree
+    -s          -- Skip sanity checks
+    -v          -- Be verbose; show more information. Use twice to enable debug output"
 	exit 1
 }
 

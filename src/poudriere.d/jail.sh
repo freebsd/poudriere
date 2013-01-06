@@ -10,25 +10,27 @@ Parameters:
     -s            -- start a jail
     -k            -- kill (stop) a jail
     -u            -- update a jail
-    -i            -- show informations
+    -i            -- show information about the jail and package
+                     statistics within the jail
 
 Options:
-    -q            -- quiet (remove the header in list)
-    -J n          -- Run buildworld in parallell with n jobs.
+    -q            -- quiet (Do not print the header)
+    -J n          -- Run buildworld in parallel with n jobs.
     -j jailname   -- Specifies the jailname
     -v version    -- Specifies which version of FreeBSD we want in jail
     -a arch       -- Indicates architecture of the jail: i386 or amd64
                      (Default: same as host)
     -f fs         -- FS name (tank/jails/myjail)
     -M mountpoint -- mountpoint
-    -m method     -- when used with -c forces the method to use by default
-		     \"ftp\", could also be \"svn\", \"svn+http\", \"svn+https\",
-		     \"svn+file\", \"svn+ssh\", \"csup\" please note that with
-		     svn and csup the world will be built. Note that building
-		     from sources can use src.conf and jail-src.conf from
-		     localbase/etc/poudriere.d other possible method are:
-		     \"allbsd\" retreive snapshot from allbsd website or \"gjb\"
-		     for snapshot from Glen Barber's website.
+    -m method     -- When used with -c, overrides the method to use by default.
+                     Could also be \"http\", \"svn\", \"svn+http\",
+                     \"svn+https\", \"svn+file\", \"svn+ssh\", \"csup\".
+                     Please note that with svn and csup the world will be
+                     built. Note that building from sources can use src.conf
+		     and jail-src.conf from /usr/local/etc/poudriere.d/.
+		     Other possible method are: \"allbsd\" retrieve a
+		     snapshot from allbsd.org's website or \"gjb\" for a
+		     snapshot from Glen Barber's website.
     -t version    -- version to upgrade to"
 	exit 1
 }
@@ -270,14 +272,23 @@ install_from_ftp() {
 	else
 		local type
 		case ${METHOD} in
-		ftp)
-			case ${VERSION} in
-			*-CURRENT|*-PRERELEASE|*-STABLE) type=snapshots;;
-			*) type=releases;;
-			esac
-			URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH}/${ARCH}/${V}" ;;
-		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
-		gjb) URL="https://snapshots.glenbarber.us/Latest/ftp/${GJBVERSION}/${ARCH}/${ARCH}" ;;
+			ftp)
+				case ${VERSION} in
+					*-CURRENT|*-PRERELEASE|*-STABLE) type=snapshots ;;
+					*) type=releases ;;
+				esac
+
+				# Check that the defaults have been changed
+				echo ${FREEBSD_HOST} | egrep -E "(_PROTO_|_CHANGE_THIS_)" > /dev/null
+				if [ $? -eq 0 ]; then
+					msg "FREEBSD_HOST from config invalid; defaulting to http://ftp.freebsd.org"
+					FREEBSD_HOST="http://ftp.freebsd.org"
+				fi
+
+				URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH}/${ARCH}/${V}"
+				;;
+			allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
+			gjb) URL="https://snapshots.glenbarber.us/Latest/ftp/${GJBVERSION}/${ARCH}/${ARCH}" ;;
 		esac
 		DISTS="base.txz src.txz games.txz"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"

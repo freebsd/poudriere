@@ -13,7 +13,7 @@ Commands:
     bulk        -- generate packages for given ports
     cron        -- run poudriere from the crontab
     distclean   -- clean old distfiles
-    help        -- show usage informations
+    help        -- show usage
     jail        -- manage the jails used by poudriere
     ports       -- create, update or delete the portstrees used by poudriere
     options     -- Configure ports options

@@ -5,18 +5,18 @@ usage() {
 	echo "poudriere bulk [options] [-f file|cat/port ...]
 
 Parameters:
-    -f file     -- Give the list of ports to build
-    [ports...]  -- List of ports to build
+    -f file     -- Get the list of ports to build from a file
+    [ports...]  -- List of ports to build on the command line
 
 Options:
-    -c          -- Clean the previous built binary packages
-    -C          -- Clean previous packages for the given list to build
-    -t          -- Add some testings to package building
-    -s          -- Skip sanity
-    -J n        -- Run n jobs in parallel
+    -c          -- Clean all the previously built binary packages
+    -C          -- Clean previously built packages from the given list to build
+    -t          -- Add some tests to the package build
+    -s          -- Skip sanity checks
+	 -J n        -- Run n jobs in parallel (Default: to 8)
     -j name     -- Run only on the given jail
-    -p tree     -- Specify on which ports tree the bulk will be done
-    -v          -- Be verbose; show more information. Use twice to enable debug output.
+    -p tree     -- Specify on which ports tree the bulk build will be done
+    -v          -- Be verbose; show more information. Use twice to enable debug output
     -w          -- Save WRKDIR on failed builds
     -z set      -- Specify which SET to use
     -a          -- Build the whole ports tree"
