@@ -299,6 +299,8 @@ create_jail() {
 
 	test -z ${VERSION} && usage
 
+	[ "${JAILNAME#*.*}" = "${JAILNAME}" ] || err 1 "The jailname can not contain a period (.). See jail(8)"
+
 	if [ -z ${JAILMNT} ]; then
 		[ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
 		JAILMNT=${BASEFS}/jails/${JAILNAME}
