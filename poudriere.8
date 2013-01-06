@@ -482,9 +482,9 @@ for a single port.
 .Pp
 Let's take the example of building a single port;
 .Pp
-.Dl "poudriere testport -d ~/ports-cvs/mybeautifulporttotest"
+.Dl "poudriere testport -d ~/ports-cvs/mybeautifulporttotest -j myjail"
 .Pp
-all the tests will be done in all the jails in alphabetical order.
+all the tests will be done in all the myjail.
 .Pp
 It starts the jail, then mount the ports tree (nullfs), then mounts the
 package dir (pourdriere_data/packages/<jailname>-<tree>-<setname>), then it mounts the
