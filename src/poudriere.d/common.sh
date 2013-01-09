@@ -669,7 +669,7 @@ EOF
 							-e "s,^${PREFIX}/,," \
 						`
 					fi
-					case "$ppath" in
+					case "${ppath#@dirrm* }" in
 					/var/db/pkg/*) continue;;
 					/var/run/*) continue;;
 					/wrkdirs/*) continue;;
