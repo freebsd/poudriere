@@ -1,4 +1,5 @@
 .\" Copyright (c) 2012 Baptiste Daroussin <bapt@FreeBSD.org>
+.\" Copyright (c) 2012,2013 Bryan Drewery <bdrewery@FreeBSD.org>
 .\" All rights reserved.
 .\"
 .\" Redistribution and use in source and binary forms, with or without
@@ -26,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd December 29, 2012
+.Dd January 9, 2012
 .Dt POUDRIERE 8
 .Os FreeBSD
 .Sh NAME
@@ -301,6 +302,19 @@ command.
 .Bl -tag -width "-f conffile"
 .It Fl c
 Run make config for the given port.
+.It Fl i
+Interactive mode.
+Enter jail for interactive testing and automatically cleanup when done.
+The
+.Ev PACKAGESITE
+environment variable will be set so that
+.Xr pkg 8
+will be able to be used with any existing packages built for the jail.
+.It Fl I
+Advanced Interactive mode.
+Leaves jail running with port installed after test.
+When done with the jail you will need to manually shut it down:
+.Dl "poudriere jail -k -j JAILNAME"
 .It Fl j Ar name
 Runs only inside the jail named
 .Ar name .

@@ -12,6 +12,8 @@ Options:
     -c          -- Run make config for the given port
     -J n        -- Run n jobs in parallel for dependencies
     -j name     -- Run inside the given jail
+    -i          -- Interactive mode. Enter jail for interactive testing and automatically cleanup when done.
+    -I          -- Advanced Interactive mode. Leaves jail running with port installed after test.
     -n          -- No custom prefix
     -p tree     -- Specify the path to the portstree
     -s          -- Skip sanity checks
@@ -26,9 +28,10 @@ CONFIGSTR=0
 NOPREFIX=0
 SETNAME=""
 SKIPSANITY=0
+INTERACTIVE_MODE=0
 PTNAME="default"
 
-while getopts "d:o:cnj:J:p:svz:" FLAG; do
+while getopts "d:o:cnj:J:iIp:svz:" FLAG; do
 	case "${FLAG}" in
 		c)
 			CONFIGSTR=1
@@ -48,6 +51,12 @@ while getopts "d:o:cnj:J:p:svz:" FLAG; do
 			;;
 		J)
 			PARALLEL_JOBS=${OPTARG}
+			;;
+		i)
+			INTERACTIVE_MODE=1
+			;;
+		I)
+			INTERACTIVE_MODE=2
 			;;
 		p)
 			PTNAME=${OPTARG}
@@ -169,11 +178,23 @@ fi
 
 msg "Installing from package"
 injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT}
-msg "Deinstalling package"
-injail ${PKG_DELETE} ${PKGNAME}
 
 msg "Cleaning up"
 injail make -C ${PORTDIRECTORY} clean
+
+if [ $INTERACTIVE_MODE -eq 1 ]; then
+	msg "Entering interactive test mode. Type 'exit' when done."
+	injail env -i TERM=${SAVED_TERM} PACKAGESITE="file:///usr/ports/packages" /usr/bin/login -fp root
+elif [ $INTERACTIVE_MODE -eq 2 ]; then
+	msg "Leaving jail ${JAILNAME} running, mounted at ${JAILMNT} for interactive run testing"
+	msg "To enter jail: jexec ${JAILNAME} /bin/sh"
+	msg "To stop jail: poudriere jail -k -j ${JAILNAME}"
+	CLEANING_UP=1
+	exit 0
+fi
+
+msg "Deinstalling package"
+injail ${PKG_DELETE} ${PKGNAME}
 
 msg "Removing existing ${PREFIX} dir"
 [ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${JAILMNT}${PREFIX} ${JAILMNT}${PREFIX}.PLIST_DIRS.before ${JAILMNT}${PREFIX}.PLIST_DIRS.after
