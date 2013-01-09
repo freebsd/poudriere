@@ -550,6 +550,7 @@ sanity_check_pkgs() {
 		while read dep; do
 			if [ ! -e "${PKGDIR}/All/${dep}.${PKG_EXT}" ]; then
 				ret=1
+				msg_debug "${pkg} needs missing ${PKGDIR}/All/${dep}.${PKG_EXT}"
 				msg "Deleting ${pkg}: missing dependencies"
 				delete_pkg ${pkg}
 				break
