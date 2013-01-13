@@ -657,6 +657,7 @@ EOF
 							-e "s,^${docsdir},%%PORTDOCS%%@dirrm %%DOCSDIR%%," \
 							-e "s,^${examplesdir},%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%," \
 							-e "s,^${PREFIX}/,@dirrm ," \
+							-e "s,^/,@dirrm /," \
 						`
 					else
 						ppath=`echo "$path" | sed \
