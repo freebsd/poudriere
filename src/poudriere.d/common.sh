@@ -584,7 +584,7 @@ mark_preinst() {
 EOF
 	mtree -X ${JAILMNT}/tmp/mtree.preexclude \
 		-xcn -k uid,gid,mode,size \
-		-p ${JAILMNT} > ${JAILMNT}/tmp/mtree.preinst
+		-p ${JAILMNT} >> ${JAILMNT}/tmp/mtree.preinst
 }
 
 check_leftovers() {
@@ -594,12 +594,19 @@ check_leftovers() {
 	fi
 
 	mtree -X ${JAILMNT}/tmp/mtree.preexclude -x -f ${JAILMNT}/tmp/mtree.preinst \
-		-p ${JAILMNT} | awk -v jaimnt=${JAILMNT} '/^[^[:space:]]/ {
-				if ( $2 == "extra" ) { $2 = "+" }
-				else if ($2 == "missing" ) { $2 = "-" }
-				else if ($2 == "changed" ) { $2 = "M" };
-				print $2" . "jailmnt"/"$1;
-			}'
+		-p ${JAILMNT} | while read l ; do
+		case ${l} in
+		*extra)
+			if [ -d ${JAILMNT}/${l% *} ]; then
+				find ${JAILMNT}/${l% *} -exec echo "+ . {}" \;
+			else
+				echo "+ . ${JAILMNT}/${l% *}"
+			fi
+			;;
+		*missing) echo "- . ${JAILMNT}/${l% *}" ;;
+		*changed) echo "M . ${JAILMNT}/${l% *}" ;;
+		esac
+	done
 }
 
 # Build+test port and return on first failure
@@ -689,6 +696,7 @@ EOF
 
 					# If this is a directory, use @dirrm in output
 					if [ -d "${path}" ]; then
+						type="/"
 						ppath=`echo "$path" | sed \
 							-e "s,^${JAILMNT},," \
 							-e "s,^${datadir},@dirrm %%DATADIR%%," \
