@@ -756,7 +756,8 @@ EOF
 				if [ -s "${add}" ]; then
 					msg "Files or directories left over:"
 					die=1
-					cat ${add}
+					grep -v "^@dirrm" ${add}
+					grep "^@dirrm" ${add} | sort -r
 				fi
 				if [ -s "${del}" ]; then
 					msg "Files or directories removed:"
