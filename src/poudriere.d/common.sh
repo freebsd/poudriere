@@ -566,7 +566,7 @@ build_port() {
 	[ $# -ne 1 ] && eargs portdir
 	local portdir=$1
 	local port=${portdir##/usr/ports/}
-	local targets="check-config fetch checksum extract patch configure build run-depends install package ${PORTTESTING:+deinstall}"
+	local targets="check-config fetch checksum extract patch configure build run-depends install-mtree install package ${PORTTESTING:+deinstall}"
 
 	for phase in ${targets}; do
 		zset status "${phase}:${port}"
@@ -1675,10 +1675,7 @@ prepare_jail() {
 		echo "PACKAGE_BUILDING=yes" >> ${JAILMNT}/etc/make.conf
 	fi
 
-	msg "Populating LOCALBASE"
 	mkdir -p ${JAILMNT}/${MYBASE:-/usr/local}
-	injail /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${MYBASE:-/usr/local} >/dev/null
-
 	WITH_PKGNG=$(injail make -f /usr/ports/Mk/bsd.port.mk -V WITH_PKGNG)
 	if [ -n "${WITH_PKGNG}" ]; then
 		export PKGNG=1
