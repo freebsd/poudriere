@@ -561,6 +561,47 @@ sanity_check_pkgs() {
 	return $ret
 }
 
+mark_preinst() {
+	if [ ${ZVERSION} -ge 28 -a -z ${TMPFS_LOCALBASE} ]; then
+		zfs snapshot ${JAILFS}@preinst
+		return
+	fi
+
+	cat > ${JAILMNT}/tmp/mtree.preexclude <<EOF
+./root/*
+./var/*
+./tmp/*
+./etc/make.conf.bak
+./etc/make.conf
+./work/*
+./compat/linux/proc
+./usr/share/man/cat*/*
+./usr/local/etc/apache
+./usr/local/news
+./usr/local/share/xml
+./usr/local/etc/gconf
+./var/db/fontconfig
+EOF
+	mtree -X ${JAILMNT}/tmp/mtree.preexclude \
+		-xcn -k uid,gid,mode,size \
+		-p ${JAILMNT} > ${JAILMNT}/tmp/mtree.preinst
+}
+
+check_leftovers() {
+	if [ ${ZVERSION} -ge 28 -a -z ${TMPFS_LOCALBASE} ]; then
+		zfs diff -FH ${JAILFS}@preinst ${JAILFS}
+		return
+	fi
+
+	mtree -X ${JAILMNT}/tmp/mtree.preexclude -x -f ${JAILMNT}/tmp/mtree.preinst \
+		-p ${JAILMNT} | awk -v jaimnt=${JAILMNT} '/^[^[:space:]]/ {
+				if ( $2 == "extra" ) { $2 = "+" }
+				else if ($2 == "missing" ) { $2 = "-" }
+				else if ($2 == "changed" ) { $2 = "M" };
+				print $2" . "jailmnt"/"$1;
+			}'
+}
+
 # Build+test port and return on first failure
 build_port() {
 	[ $# -ne 1 ] && eargs portdir
@@ -575,7 +616,7 @@ build_port() {
 			jail -r ${JAILNAME} >/dev/null
 			jrun 1
 		fi
-		[ "${phase}" = "install" -a $ZVERSION -ge 28 ] && zfs snapshot ${JAILFS}@preinst
+		[ "${phase}" = "install" -a $ZVERSION -ge 28 ] && mark_preinst
 		if [ "${phase}" = "deinstall" ]; then
 			msg "Checking shared library dependencies"
 			if [ ${PKGNG} -eq 0 ]; then
@@ -642,7 +683,7 @@ $(injail env ${PORT_FLAGS} make make -C ${portdir} \
 		| tr '\n' '%')
 EOF
 
-				zfs diff -FH ${JAILFS}@preinst ${JAILFS} | \
+				check_leftovers | \
 					while read mod type path; do
 					local ppath
 
@@ -1129,6 +1170,10 @@ build_pkg() {
 	zset status "starting:${port}"
 	zfs rollback -r ${JAILFS}@prepkg || err 1 "Unable to rollback ${JAILFS}"
 
+	if [ -n "${TMPFS_LOCALBASE}" ]; then
+		umount -f ${JAILMNT}/${MYBASE:-/usr/local} 2>/dev/null || :
+		mount -t tmpfs tmpfs ${JAILMNT}/${MYBASE:-/usr/local}
+	fi
 	# If this port is IGNORED, skip it
 	# This is checked here instead of when building the queue
 	# as the list may start big but become very small, so here
