@@ -562,10 +562,10 @@ sanity_check_pkgs() {
 }
 
 mark_preinst() {
-	if [ ${ZVERSION} -ge 28 -a -z ${TMPFS_LOCALBASE} ]; then
-		zfs snapshot ${JAILFS}@preinst
-		return
-	fi
+#	if [ ${ZVERSION} -ge 28 -a -z ${TMPFS_LOCALBASE} ]; then
+#		zfs snapshot ${JAILFS}@preinst
+#		return
+#	fi
 
 	cat > ${JAILMNT}/tmp/mtree.preexclude <<EOF
 ./root/*
@@ -588,10 +588,10 @@ EOF
 }
 
 check_leftovers() {
-	if [ ${ZVERSION} -ge 28 -a -z ${TMPFS_LOCALBASE} ]; then
-		zfs diff -FH ${JAILFS}@preinst ${JAILFS}
-		return
-	fi
+#	if [ ${ZVERSION} -ge 28 -a -z ${TMPFS_LOCALBASE} ]; then
+#		zfs diff -FH ${JAILFS}@preinst ${JAILFS}
+#		return
+#	fi
 
 	mtree -X ${JAILMNT}/tmp/mtree.preexclude -x -f ${JAILMNT}/tmp/mtree.preinst \
 		-p ${JAILMNT} | while read l ; do
@@ -669,26 +669,7 @@ build_port() {
 				local mod1=$(mktemp ${jailbase}/tmp/mod1.XXXXXX)
 				local die=0
 
-				# Ugly style is needed due to heredoc
-				IFS=% read \
-					portname \
-					datadir \
-					etcdir \
-					docsdir \
-					examplesdir \
-					wwwdir \
-					site_perl \
-					<< EOF
-$(injail env ${PORT_FLAGS} make make -C ${portdir} \
-		-V PORTNAME \
-		-V DATADIR \
-		-V ETCDIR \
-		-V DOCSDIR \
-		-V EXAMPLESDIR \
-		-V WWWDIR \
-		-V SITE_PERL \
-		| tr '\n' '%')
-EOF
+				sedargs=$(injail env ${PORT_FLAGS} make -C ${portdir} -V'${PLIST_SUB:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/}')
 
 				check_leftovers | \
 					while read mod type path; do
@@ -697,27 +678,16 @@ EOF
 					# If this is a directory, use @dirrm in output
 					if [ -d "${path}" ]; then
 						type="/"
-						ppath=`echo "$path" | sed \
+						ppath="@dirrm "`echo $path | sed \
 							-e "s,^${JAILMNT},," \
-							-e "s,^${datadir},@dirrm %%DATADIR%%," \
-							-e "s,^${etcdir},@dirrmtry %%ETCDIR%%," \
-							-e "s,^${wwwdir},@dirrm %%WWWDIR%%," \
-							-e "s,^${site_perl},@dirrm %%SITE_PERL%%," \
-							-e "s,^${docsdir},%%PORTDOCS%%@dirrm %%DOCSDIR%%," \
-							-e "s,^${examplesdir},%%PORTEXAMPLES%%@dirrm %%EXAMPLESDIR%%," \
-							-e "s,^${PREFIX}/,@dirrm ," \
-							-e "s,^/,@dirrm /," \
+							-e "s,^${PREFIX}/,," \
+							${sedargs} \
 						`
 					else
 						ppath=`echo "$path" | sed \
 							-e "s,^${JAILMNT},," \
-							-e "s,^${datadir},%%DATADIR%%," \
-							-e "s,^${etcdir},%%ETCDIR%%," \
-							-e "s,^${wwwdir},%%WWWDIR%%," \
-							-e "s,^${site_perl},%%SITE_PERL%%," \
-							-e "s,^${docsdir},%%PORTDOCS%%%%DOCSDIR%%," \
-							-e "s,^${examplesdir},%%PORTEXAMPLES%%%%EXAMPLESDIR%%," \
 							-e "s,^${PREFIX}/,," \
+							${sedargs} \
 						`
 					fi
 					case "${ppath#@dirrm* }" in
