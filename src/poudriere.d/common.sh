@@ -529,7 +529,6 @@ cleanup() {
 
 	zfs destroy -r ${JAILFS%/build/*}/build 2>/dev/null || :
 	zfs destroy -r ${JAILFS%/build/*}@prepkg 2>/dev/null || :
-	zfs destroy -r ${JAILFS%/build/*}@preinst 2>/dev/null || :
 	jail_stop
 	export CLEANED_UP=1
 }
@@ -562,10 +561,6 @@ sanity_check_pkgs() {
 }
 
 mark_preinst() {
-#	if [ ${ZVERSION} -ge 28 -a -z ${TMPFS_LOCALBASE} ]; then
-#		zfs snapshot ${JAILFS}@preinst
-#		return
-#	fi
 
 	cat > ${JAILMNT}/tmp/mtree.preexclude <<EOF
 ./root/*
@@ -588,11 +583,6 @@ EOF
 }
 
 check_leftovers() {
-#	if [ ${ZVERSION} -ge 28 -a -z ${TMPFS_LOCALBASE} ]; then
-#		zfs diff -FH ${JAILFS}@preinst ${JAILFS}
-#		return
-#	fi
-
 	mtree -X ${JAILMNT}/tmp/mtree.preexclude -x -f ${JAILMNT}/tmp/mtree.preinst \
 		-p ${JAILMNT} | while read l ; do
 		case ${l} in
@@ -623,8 +613,9 @@ build_port() {
 			jail -r ${JAILNAME} >/dev/null
 			jrun 1
 		fi
-		[ "${phase}" = "install" -a $ZVERSION -ge 28 ] && mark_preinst
-		if [ "${phase}" = "deinstall" ]; then
+		case ${phase} in
+		install) mark_preinst ;;
+		deinstall)
 			msg "Checking shared library dependencies"
 			if [ ${PKGNG} -eq 0 ]; then
 				PLIST="/var/db/pkg/${PKGNAME}/+CONTENTS"
@@ -639,7 +630,8 @@ build_port() {
 					grep -v "not a dynamic executable" | \
 					awk '/=>/ { print $3 }' | sort -u
 			fi
-		fi
+			;;
+		esac
 
 		print_phase_header ${phase}
 		injail env ${PKGENV} ${PORT_FLAGS} make -C ${portdir} ${phase} || return 1
@@ -653,101 +645,92 @@ build_port() {
 			msg "Checking for extra files and directories"
 			PREFIX=`injail env ${PORT_FLAGS} make -C ${portdir} -VPREFIX`
 			zset status "leftovers:${port}"
-			if [ $ZVERSION -lt 28 ]; then
-				find ${jailbase}${PREFIX} ! -type d | \
-					sed -e "s,^${jailbase}${PREFIX}/,," | sort
+			local portname datadir etcdir docsdir examplesdir wwwdir site_perl
+			local add=$(mktemp ${jailbase}/tmp/add.XXXXXX)
+			local add1=$(mktemp ${jailbase}/tmp/add1.XXXXXX)
+			local del=$(mktemp ${jailbase}/tmp/del.XXXXXX)
+			local del1=$(mktemp ${jailbase}/tmp/del1.XXXXXX)
+			local mod=$(mktemp ${jailbase}/tmp/mod.XXXXXX)
+			local mod1=$(mktemp ${jailbase}/tmp/mod1.XXXXXX)
+			local die=0
 
-				find ${jailbase}${PREFIX}/ -type d | sed "s,^${jailbase}${PREFIX}/,," | sort > ${jailbase}${PREFIX}.PLIST_DIRS.after
-				comm -13 ${jailbase}${PREFIX}.PLIST_DIRS.before ${jailbase}${PREFIX}.PLIST_DIRS.after | sort -r | awk '{ print "@dirrmtry "$1}'
-			else
-				local portname datadir etcdir docsdir examplesdir wwwdir site_perl
-				local add=$(mktemp ${jailbase}/tmp/add.XXXXXX)
-				local add1=$(mktemp ${jailbase}/tmp/add1.XXXXXX)
-				local del=$(mktemp ${jailbase}/tmp/del.XXXXXX)
-				local del1=$(mktemp ${jailbase}/tmp/del1.XXXXXX)
-				local mod=$(mktemp ${jailbase}/tmp/mod.XXXXXX)
-				local mod1=$(mktemp ${jailbase}/tmp/mod1.XXXXXX)
-				local die=0
+			sedargs=$(injail env ${PORT_FLAGS} make -C ${portdir} -V'${PLIST_SUB:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/}')
 
-				sedargs=$(injail env ${PORT_FLAGS} make -C ${portdir} -V'${PLIST_SUB:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/}')
+			check_leftovers | \
+				while read mod type path; do
+				local ppath
 
-				check_leftovers | \
-					while read mod type path; do
-					local ppath
-
-					# If this is a directory, use @dirrm in output
-					if [ -d "${path}" ]; then
-						type="/"
-						ppath="@dirrm "`echo $path | sed \
-							-e "s,^${JAILMNT},," \
-							-e "s,^${PREFIX}/,," \
-							${sedargs} \
-						`
-					else
-						ppath=`echo "$path" | sed \
-							-e "s,^${JAILMNT},," \
-							-e "s,^${PREFIX}/,," \
-							${sedargs} \
-						`
-					fi
-					case "${ppath#@dirrm* }" in
-					/var/db/pkg/*) continue;;
-					/var/run/*) continue;;
-					/wrkdirs/*) continue;;
-					/tmp/*) continue;;
-					share/nls/POSIX) continue;;
-					share/nls/en_US.US-ASCII) continue;;
-					/var/db/fontconfig/*) continue;;
-					/var/log/*) continue;;
-					/var/mail/*) continue;;
-					${HOME}/*) continue;;
-					/etc/spwd.db) continue;;
-					/etc/pwd.db) continue;;
-					/etc/group) continue;;
-					/etc/make.conf) continue;;
-					/etc/passwd) continue;;
-					/etc/master.passwd) continue;;
-					/etc/shells) continue;;
-					/etc/make.conf.bak) continue;;
-					esac
-					case $mod$type in
-					+*) echo "${ppath}" >> ${add};;
-					-*) echo "${ppath}" >> ${del};;
-					M/) continue;;
-					M*) echo "${ppath}" >> ${mod};;
-					esac
-				done
-				sort ${add} > ${add1}
-				sort ${del} > ${del1}
-				sort ${mod} > ${mod1}
-				comm -12 ${add1} ${del1} >> ${mod1}
-				comm -23 ${add1} ${del1} > ${add}
-				comm -13 ${add1} ${del1} > ${del}
-				if [ -s "${add}" ]; then
-					msg "Files or directories left over:"
-					die=1
-					grep -v "^@dirrm" ${add}
-					grep "^@dirrm" ${add} | sort -r
+				# If this is a directory, use @dirrm in output
+				if [ -d "${path}" ]; then
+					type="/"
+					ppath="@dirrm "`echo $path | sed \
+						-e "s,^${JAILMNT},," \
+						-e "s,^${PREFIX}/,," \
+						${sedargs} \
+					`
+				else
+					ppath=`echo "$path" | sed \
+						-e "s,^${JAILMNT},," \
+						-e "s,^${PREFIX}/,," \
+						${sedargs} \
+					`
 				fi
-				if [ -s "${del}" ]; then
-					msg "Files or directories removed:"
-					die=1
-					cat ${del}
-				fi
-				if [ -s "${mod}" ]; then
-					msg "Files or directories modified:"
-					die=1
-					cat ${mod1}
-				fi
-				rm -f ${add} ${add1} ${del} ${del1} ${mod} ${mod1}
-				[ $die -eq 0 ] || return 1
+				case "${ppath#@dirrm* }" in
+				/var/db/pkg/*) continue;;
+				/var/run/*) continue;;
+				/wrkdirs/*) continue;;
+				/tmp/*) continue;;
+				share/nls/POSIX) continue;;
+				share/nls/en_US.US-ASCII) continue;;
+				/var/db/fontconfig/*) continue;;
+				/var/log/*) continue;;
+				/var/mail/*) continue;;
+				${HOME}/*) continue;;
+				/etc/spwd.db) continue;;
+				/etc/pwd.db) continue;;
+				/etc/group) continue;;
+				/etc/make.conf) continue;;
+				/etc/passwd) continue;;
+				/etc/master.passwd) continue;;
+				/etc/shells) continue;;
+				/etc/make.conf.bak) continue;;
+				esac
+				case $mod$type in
+				+*) echo "${ppath}" >> ${add};;
+				-*) echo "${ppath}" >> ${del};;
+				M/) continue;;
+				M*) echo "${ppath}" >> ${mod};;
+				esac
+			done
+			sort ${add} > ${add1}
+			sort ${del} > ${del1}
+			sort ${mod} > ${mod1}
+			comm -12 ${add1} ${del1} >> ${mod1}
+			comm -23 ${add1} ${del1} > ${add}
+			comm -13 ${add1} ${del1} > ${del}
+			if [ -s "${add}" ]; then
+				msg "Files or directories left over:"
+				die=1
+				grep -v "^@dirrm" ${add}
+				grep "^@dirrm" ${add} | sort -r
 			fi
+			if [ -s "${del}" ]; then
+				msg "Files or directories removed:"
+				die=1
+				cat ${del}
+			fi
+			if [ -s "${mod}" ]; then
+				msg "Files or directories modified:"
+				die=1
+				cat ${mod1}
+			fi
+			rm -f ${add} ${add1} ${del} ${del1} ${mod} ${mod1}
+			[ $die -eq 0 ] || return 1
 		fi
 	done
 	jail -r ${JAILNAME} >/dev/null
 	jrun 0
 	zset status "idle:"
-	zfs destroy -r ${JAILFS}@preinst || :
 	return 0
 }
 
@@ -1732,11 +1715,6 @@ trap siginfo_handler SIGINFO
 
 # Test if zpool exists
 zpool list ${ZPOOL} >/dev/null 2>&1 || err 1 "No such zpool: ${ZPOOL}"
-ZVERSION=$(zpool list -H -oversion ${ZPOOL})
-# Pool version has now
-if [ "${ZVERSION}" = "-" ]; then
-	ZVERSION=29
-fi
 
 : ${SVN_HOST="svn.FreeBSD.org"}
 : ${GIT_URL="git://github.com/freebsd/freebsd-ports.git"}

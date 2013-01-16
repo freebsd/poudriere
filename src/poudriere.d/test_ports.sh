@@ -159,9 +159,6 @@ msg "Populating PREFIX"
 mkdir -p ${JAILMNT}${PREFIX}
 injail /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${PREFIX} >/dev/null
 
-[ $ZVERSION -lt 28 ] && \
-	find ${JAILMNT}${LOCALBASE}/ -type d | sed "s,^${JAILMNT}${LOCALBASE}/,," | sort > ${JAILMNT}${PREFIX}.PLIST_DIRS.before
-
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
 mkdir -p ${JAILMNT}/tmp/pkgs
 PORTTESTING=yes
