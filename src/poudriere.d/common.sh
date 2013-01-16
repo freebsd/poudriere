@@ -474,7 +474,7 @@ jail_stop() {
 	export STATUS=0
 }
 
-porttree_create_zfs() {
+porttree_create_fs() {
 	[ $# -ne 3 ] && eargs name mountpoint fs
 	local name=$1
 	local mnt=$( echo $2 | sed -e 's,//,/,g')
