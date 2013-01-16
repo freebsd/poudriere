@@ -593,11 +593,11 @@ check_leftovers() {
 			if [ -d ${JAILMNT}/${l% *} ]; then
 				find ${JAILMNT}/${l% *} -exec echo "+ . {}" \;
 			else
-				echo "+ . ${JAILMNT}/${l% *}"
+				echo "+ ${JAILMNT}/${l% *}"
 			fi
 			;;
-		*missing) echo "- . ${JAILMNT}/${l% *}" ;;
-		*changed) echo "M . ${JAILMNT}/${l% *}" ;;
+		*missing) echo "- ${JAILMNT}/${l% *}" ;;
+		*changed) echo "M ${JAILMNT}/${l% *}" ;;
 		esac
 	done
 }
@@ -660,12 +660,11 @@ build_port() {
 			sedargs=$(injail env ${PORT_FLAGS} make -C ${portdir} -V'${PLIST_SUB:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/}')
 
 			check_leftovers | \
-				while read mod type path; do
+				while read mod path; do
 				local ppath
 
 				# If this is a directory, use @dirrm in output
 				if [ -d "${path}" ]; then
-					type="/"
 					ppath="@dirrm "`echo $path | sed \
 						-e "s,^${JAILMNT},," \
 						-e "s,^${PREFIX}/,," \
@@ -675,14 +674,13 @@ build_port() {
 					ppath=`echo "$path" | sed \
 						-e "s,^${JAILMNT},," \
 						-e "s,^${PREFIX}/,," \
-						${sedargs} \
+					l	${sedargs} \
 					`
 				fi
 				case $mod$type in
-				+*) echo "${ppath}" >> ${add};;
-				-*) echo "${ppath}" >> ${del};;
-				M/) continue;;
-				M*) echo "${ppath}" >> ${mod};;
+				+) echo "${ppath}" >> ${add};;
+				-) echo "${ppath}" >> ${del};;
+				M) echo "${ppath}" >> ${mod};;
 				esac
 			done
 			sort ${add} > ${add1}
