@@ -161,10 +161,7 @@ ports-all" > ${PTMNT}/csup
 			echo " done"
 			;;
 		esac
-		pzset method ${METHOD}
-		if [ -e ${POUDRIERED}/portstrees ]; then
-			sed -i "" "s/__METHOD__/${METHOD}/g" ${POUDRIERED}/portstrees
-		fi
+		pset ${PTNAME} method ${METHOD}
 	fi
 fi
 
@@ -188,9 +185,9 @@ if [ ${UPDATE} -eq 1 ]; then
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	msg "Updating portstree \"${PTNAME}\""
-	if [ ${METHOD} = "-" ]; then
+	if [ -z "${METHOD}" -o ${METHOD} = "-" ]; then
 		METHOD=portsnap
-		pzset method ${METHOD}
+		pset ${PTNAME} method ${METHOD}
 	fi
 	case ${METHOD} in
 	csup)

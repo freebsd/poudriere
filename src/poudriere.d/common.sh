@@ -111,6 +111,13 @@ pget() {
 	cat ${POUDRIERED}/ports/${1}/${2} || :
 }
 
+pset() {
+	local name=$1
+	local property=$2
+	shift 2
+	echo "$@" > ${POUDRIERED}/ports/${name} ${property}
+}
+
 zget() {
 	[ $# -ne 1 ] && eargs property
 	if [ -n "${JAILFS}" -a "${JAILFS}" != "none" ]; then
@@ -123,11 +130,6 @@ zget() {
 zset() {
 	[ $# -ne 2 ] && eargs property value
 	zfs set ${NS}:$1="$2" ${JAILFS}
-}
-
-pzset() {
-	[ $# -ne 2 ] && eargs property value
-	zfs set ${NS}:$1="$2" ${PTFS}
 }
 
 sig_handler() {
