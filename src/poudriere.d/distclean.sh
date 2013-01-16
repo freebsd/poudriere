@@ -63,7 +63,7 @@ done
 
 shift $((OPTIND-1))
 
-export PORTSDIR=`porttree_get_base ${PTNAME}`
+export PORTSDIR=$(pget ${PTNAME} mnt)
 [ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 [ -z "${PORTSDIR}" ] && err 1 "No such ports tree: ${PTNAME}"
 [ -d ${DISTFILES_CACHE:-/nonexistent} ] || err 1 "DISTFILES_CACHE directory does not exists. (c.f. poudriere.conf)"

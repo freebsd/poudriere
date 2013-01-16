@@ -10,8 +10,6 @@ Parameters:
     -s            -- start a jail
     -k            -- kill (stop) a jail
     -u            -- update a jail
-    -i            -- show information about the jail and package
-                     statistics within the jail
 
 Options:
     -q            -- quiet (Do not print the header)
@@ -36,36 +34,16 @@ Options:
 	exit 1
 }
 
-info_jail() {
-	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
-	nbb=$(zget stats_built|sed -e 's/ //g')
-	nbf=$(zget stats_failed|sed -e 's/ //g')
-	nbi=$(zget stats_ignored|sed -e 's/ //g')
-	nbs=$(zget stats_skipped|sed -e 's/ //g')
-	nbq=$(zget stats_queued|sed -e 's/ //g')
-	tobuild=$((nbq - nbb - nbf - nbi - nbs))
-	zfs list -H -o ${NS}:type,${NS}:name,${NS}:version,${NS}:arch,${NS}:stats_built,${NS}:stats_failed,${NS}:stats_ignored,${NS}:stats_skipped,${NS}:status,${NS}:method ${JAILFS}| \
-		awk -v q="$nbq" -v tb="$tobuild" '/^rootfs/  {
-			print "Jailname: " $2;
-			print "FreeBSD version: " $3;
-			print "FreeBSD arch: "$4;
-			print "install/update method: "$10;
-			print "Status: "$9;
-			print "Packages built: "$5;
-			print "Packages failed: "$6;
-			print "Packages ignored: "$7;
-			print "Packages skipped: "$8;
-			print "Packages queued: "q;
-			print "Packages to be built: "tb;
-		}'
-}
-
 list_jail() {
 	[ ${QUIET} -eq 0 ] && \
-		printf '%-20s %-20s %-7s %-7s %-7s %-7s %-7s %-7s %-7s %s\n' "JAILNAME" "VERSION" "ARCH" "METHOD" "SUCCESS" "FAILED" "IGNORED" "SKIPPED" "QUEUED" "STATUS"
-	zfs list -rt filesystem -H \
-		-o ${NS}:type,${NS}:name,${NS}:version,${NS}:arch,${NS}:method,${NS}:stats_built,${NS}:stats_failed,${NS}:stats_ignored,${NS}:stats_skipped,${NS}:stats_queued,${NS}:status ${ZPOOL}${ZROOTFS} | \
-		awk '$1 == "rootfs" { printf("%-20s %-20s %-7s %-7s %-7s %-7s %-7s %-7s %-7s %s\n",$2, $3, $4, $5, $6, $7, $8, $9, $10, $11) }'
+		printf '%-20s %-20s %-7s %-7s\n' "JAILNAME" "VERSION" "ARCH" "METHOD"
+	for j in $(find ${POUDRIERED}/jails -type d -maxdepth 1 -mindepth 1 -print); do
+		name=${j##*/}
+		version=$(jget ${name} version)
+		arch=$(jget ${name} arch)
+		method=$(jget ${name} method)
+		printf '%-20s %-20s %-7s %-7s\n' "${name}" "${version}" "${arch}" "${method}"
+	done
 }
 
 delete_jail() {
@@ -112,7 +90,7 @@ update_jail() {
 	msg "Upgrading using ${METHOD}"
 	case ${METHOD} in
 	ftp)
-		JAILMNT=`jail_get_base ${JAILNAME}`
+		JAILMNT=$(jget ${JAILNAME} mnt)
 		jail_start
 		jail -r ${JAILNAME} >/dev/null
 		jrun 1
@@ -483,9 +461,6 @@ while getopts "J:j:v:a:z:m:n:f:M:sdklqciut:" FLAG; do
 		q)
 			QUIET=1
 			;;
-		i)
-			INFO=1
-			;;
 		u)
 			UPDATE=1
 			;;
@@ -500,41 +475,37 @@ done
 
 METHOD=${METHOD:-ftp}
 if [ -n "${JAILNAME}" ] && [ ${CREATE} -eq 0 ]; then
-	JAILFS=`jail_get_fs ${JAILNAME}`
-	JAILMNT=`jail_get_base ${JAILNAME}`
+	JAILFS=$(jget ${JAILNAME} fs)
+	JAILMNT=$(jget ${JAILNAME} mnt)
 fi
 
 
-[ $(( CREATE + LIST + STOP + START + DELETE + INFO + UPDATE )) -lt 1 ] && usage
+[ $(( CREATE + LIST + STOP + START + DELETE + UPDATE )) -lt 1 ] && usage
 
-case "${CREATE}${LIST}${STOP}${START}${DELETE}${INFO}${UPDATE}" in
-	1000000)
+case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}" in
+	100000)
 		test -z ${JAILNAME} && usage
 		create_jail
 		;;
-	0100000)
+	010000)
 		list_jail
 		;;
-	0010000)
+	001000)
 		test -z ${JAILNAME} && usage
 		jail_stop
 		;;
-	0001000)
+	000100)
 		export SET_STATUS_ON_START=0
 		test -z ${JAILNAME} && usage
 		jail_start
 		jail -r ${JAILNAME} >/dev/null
 		jrun 1
 		;;
-	0000100)
+	000010)
 		test -z ${JAILNAME} && usage
 		delete_jail
 		;;
-	0000010)
-		test -z ${JAILNAME} && usage
-		info_jail
-		;;
-	0000001)
+	000001)
 		test -z ${JAILNAME} && usage
 		update_jail
 		;;

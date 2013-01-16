@@ -103,12 +103,20 @@ log_stop() {
 	fi
 }
 
+jget() {
+	cat ${POUDRIERED}/jails/${1}/${2} || :
+}
+
+pget() {
+	cat ${POUDRIERED}/ports/${1}/${2} || :
+}
+
 zget() {
 	[ $# -ne 1 ] && eargs property
 	if [ -n "${JAILFS}" -a "${JAILFS}" != "none" ]; then
 		zfs get -H -o value ${NS}:${1} ${JAILFS}
 	else
-		cat ${JAILMNT}/.poudriere/${1}
+		cat ${JAILMNT}/.poudriere/${1} 2>/dev/null || :
 	fi
 }
 
@@ -190,53 +198,14 @@ jail_runs() {
 	return 1
 }
 
-jail_get_base() {
-	[ $# -ne 1 ] && eargs jailname
-	zfs list -rt filesystem -s name -H -o ${NS}:type,${NS}:name,mountpoint ${ZPOOL}${ZROOTFS} | \
-		awk -v n=$1 '$1 == "rootfs" && $2 == n  { print $3 }' | head -n 1
-}
-
-jail_get_version() {
-	[ $# -ne 1 ] && eargs jailname
-	zfs list -rt filesystem -s name -H -o ${NS}:type,${NS}:name,${NS}:version ${ZPOOL}${ZROOTFS} | \
-		awk -v n=$1 '$1 == "rootfs" && $2 == n { print $3 }' | head -n 1
-}
-
-jail_get_fs() {
-	[ $# -ne 1 ] && eargs jailname
-	zfs list -rt filesystem -s name -H -o ${NS}:type,${NS}:name,name ${ZPOOL}${ZROOTFS} | \
-		awk -v n=$1 '$1 == "rootfs" && $2 == n { print $3 }' | head -n 1
-}
-
 porttree_list() {
-	local name method mntpoint n format
-	# Combine local ZFS and manual list
-	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,${NS}:method,mountpoint | \
-		awk '$1 == "ports" { print $2 " " $3 " " $4 }'
-	if [ -f "${POUDRIERED}/portstrees" ]; then
-		# Validate proper format
-		format="Format expected: NAME METHOD PATH"
-		n=0
-		while read name method mntpoint; do
-			n=$((n + 1))
-			[ -z "${name###*}" ] && continue # Skip comments
-			[ -n "${name%%/*}" ] || \
-				err 1 "$(realpath ${POUDRIERED}/portstrees):${n}: Invalid name '${name}'. ${format}"
-			[ -n "${method}" -a -n "${method%%/*}" ] || \
-				err 1 "$(realpath ${POUDRIERED}/portstrees):${n}: Missing method for '${name}'. ${format}"
-			[ -n "${mntpoint}" ] || \
-				err 1 "$(realpath ${POUDRIERED}/portstrees):${n}: Missing path for '${name}'. ${format}"
-			[ -z "${mntpoint%%/*}" ] || \
-				err 1 "$(realpath ${POUDRIERED}/portstrees):${n}: Invalid path '${mntpoint}' for '${name}'. ${format}"
-			echo "${name} ${method} ${mntpoint}"
-		done < ${POUDRIERED}/portstrees
-	fi
-	# Outputs: name method mountpoint
-}
-
-porttree_get_method() {
-	[ $# -ne 1 ] && eargs portstree_name
-	porttree_list | awk -v portstree_name=$1 '$1 == portstree_name {print $2}'
+	local name method mntpoint
+	for p in $(find ${POUDRIERED}/ports -type d -maxdepth 1 -mindepth 1 -print); do
+		name=${p##*/}
+		mnt=$(pget ${name} mnt)
+		method=$(pget ${name} method)
+		echo "${name} ${method:--} ${mnt}"
+	done
 }
 
 porttree_exists() {
@@ -248,17 +217,6 @@ porttree_exists() {
 		END { exit ret }
 		' && return 0
 	return 1
-}
-
-porttree_get_base() {
-	[ $# -ne 1 ] && eargs portstree_name
-	porttree_list | awk -v portstree_name=$1 '$1 == portstree_name { print $3 }'
-}
-
-porttree_get_fs() {
-	[ $# -ne 1 ] && eargs portstree_name
-	zfs list -t filesystem -H -o ${NS}:type,${NS}:name,name | \
-		awk -v n=$1 '$1 == "ports" && $2 == n { print $3 }'
 }
 
 get_data_dir() {
@@ -290,18 +248,20 @@ jail_create_fs() {
 	local arch=$3
 	local mnt=$( echo $4 | sed -e "s,//,/,g")
 	local fs=$5
-	if [ $fs != "none" ]; then
+	if [ -n "${fs}" -a ${fs} != "none" ]; then
 		msg_n "Creating ${name} fs..."
 		zfs create -p \
-			-o ${NS}:type=rootfs \
-			-o ${NS}:name=${name} \
-			-o ${NS}:version=${version} \
-			-o ${NS}:arch=${arch} \
 			-o mountpoint=${mnt} ${fs} || err 1 " Fail" && echo " done"
 	else
 		mkdir -p ${mnt}
-		echo "${name} __METHOD__ ${mnt} ${version} ${arch}" >> ${POUDRIERED}/jails
 	fi
+	mkdir -p ${POUDRIERED}/jails/${name}
+	if [ -n "${fs}" -a "${fs}" != "none" ]; then
+		echo "${fs}" > ${POUDRIERED}/jails/${name}/fs
+	fi
+	echo "${version}" > ${POUDRIERED}/jails/${name}/version
+	echo "${arch}" > ${POUDRIERED}/jails/${name}/arch
+	echo "${mnt}" > ${POUDRIERED}/jails/${name}/mnt
 }
 
 jail_destroy_fs() {
@@ -513,13 +473,12 @@ porttree_create_fs() {
 			-o atime=off \
 			-o compression=off \
 			-o mountpoint=${mnt} \
-			-o ${NS}:type=ports \
-			-o ${NS}:name=${name} \
 			${fs} || err 1 " Fail" && echo " done"
 	else
 		mkdir -p ${mnt}
-		echo "${name} __METHOD__ ${mnt}" >> ${POUDRIERED}/portstrees
 	fi
+	mkdir -p ${POUDRIERED}/ports/${name}
+	echo "${mnt}" > ${POUDRIERED}/ports/${mnt}
 }
 
 porttree_destroy_fs() {
@@ -1510,7 +1469,7 @@ compute_deps() {
 
 listed_ports() {
 	if [ ${ALL:-0} -eq 1 ]; then
-		PORTSDIR=`porttree_get_base ${PTNAME}`
+		PORTSDIR=$(pget ${PTNAME} mnt)
 		[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 		for cat in $(awk '$1 == "SUBDIR" { print $3}' ${PORTSDIR}/Makefile); do
 			awk -v cat=${cat}  '$1 == "SUBDIR" { print cat"/"$3}' ${PORTSDIR}/${cat}/Makefile
@@ -1687,7 +1646,7 @@ prepare_jail() {
 	export FORCE_PACKAGE=yes
 	export USER=root
 	export HOME=/root
-	PORTSDIR=`porttree_get_base ${PTNAME}`
+	PORTSDIR=$(pget ${PTNAME} mnt)
 	[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 	[ -z "${JAILMNT}" ] && err 1 "No path of the base of the jail defined"
 	[ -z "${PORTSDIR}" ] && err 1 "No ports directory defined"
@@ -1761,6 +1720,61 @@ case "${WRKDIR_ARCHIVE_FORMAT}" in
 	tar|tgz|tbz|txz);;
 	*) err 1 "invalid format for WRKDIR_ARCHIVE_FORMAT: ${WRKDIR_ARCHIVE_FORMAT}" ;;
 esac
+
+#Converting portstree if any
+if [ ! -d ${POUDRIERED}/ports ]; then
+	mkdir -p ${POUDRIERED}/ports
+	zfs list -t filesystem -H \
+		-o ${NS}:type,${NS}:name,${NS}:method,mountpoint,name | \
+		grep "^ports" | \
+		while read t name method mnt fs; do
+			msg "Converting the ${name} ports tree"
+			mkdir ${POUDRIERED}/ports/${name}
+			echo ${method} > ${POUDRIERED}/ports/${name}/method
+			echo ${mnt} > ${POUDRIERED}/ports/${name}/mnt
+			echo ${fs} > ${POUDRIERED}/ports/${name}/fs
+			# Delete the old properties
+			zfs inherit -r ${NS}:type ${fs}
+			zfs inherit -r ${NS}:name ${fs}
+			zfs inherit -r ${NS}:method ${fs}
+		done
+	if [ -f ${POUDRIERED}/portstrees ]; then
+		while read name method mnt; do
+			msg "Converting the ${name} ports tree"
+			mkdir ${POUDRIERED}/ports/${name}
+			echo ${method} > ${POUDRIERED}/ports/${name}/method
+			echo ${mnt} > ${POUDRIERED}/ports/${name}/mnt
+		done < ${POUDRIERED}/portstrees
+		rm -f ${POUDRIERED}/portstrees
+	fi
+fi
+
+#Converting jails if any
+if [ ! -d ${POUDRIERED}/jails ]; then
+	mkdir -p ${POUDRIERED}/jails
+	zfs list -t filesystem -H \
+		-o ${NS}:type,${NS}:name,${NS}:version,${NS}:arch,${NS}:method,mountpoint,name | \
+		grep "^rootfs" | \
+		while read t name version arch method mnt fs; do
+			msg "Converting the ${name} jail"
+			mkdir ${POUDRIERED}/jails/${name}
+			echo ${version} > ${POUDRIERED}/jails/${name}/version
+			echo ${arch} > ${POUDRIERED}/jails/${name}/arch
+			echo ${method} > ${POUDRIERED}/jails/${name}/method
+			echo ${mnt} > ${POUDRIERED}/jails/${name}/mnt
+			echo ${fs} > ${POUDRIERED}/jails/${name}/fs
+			# Delete the old properties
+			zfs inherit -r ${NS}:type ${fs}
+			zfs inherit -r ${NS}:name ${fs}
+			zfs inherit -r ${NS}:method ${fs}
+			zfs inherit -r ${NS}:version ${fs}
+			zfs inherit -r ${NS}:arch ${fs}
+			zfs inherit -r ${NS}:stats_built ${fs}
+			zfs inherit -r ${NS}:stats_failed ${fs}
+			zfs inherit -r ${NS}:stats_skipped ${fs}
+			zfs inherit -r ${NS}:stats_status ${fs}
+		done
+fi
 
 case ${PARALLEL_JOBS} in
 ''|*[!0-9]*)

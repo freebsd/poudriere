@@ -170,20 +170,20 @@ fi
 
 if [ ${DELETE} -eq 1 ]; then
 	porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
-	PTMNT=$(porttree_get_base ${PTNAME})
+	PTMNT=$(pget ${PTNAME} mnt)
 	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	msg_n "Deleting portstree \"${PTNAME}\""
-	PTFS=$(porttree_get_fs ${PTNAME})
+	PTFS=$(pget ${PTNAME} fs)
 	porttree_destroy_fs ${PTNAME} ${PTMNT} ${PTFS}
 	echo " done"
 fi
 
 if [ ${UPDATE} -eq 1 ]; then
 	porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
-	METHOD=$(porttree_get_method ${PTNAME})
-	PTMNT=$(porttree_get_base ${PTNAME})
+	METHOD=$(pget ${PTNAME} method)
+	PTMNT=$(pget ${PTNAME} mnt)
 	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."

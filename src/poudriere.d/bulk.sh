@@ -112,8 +112,8 @@ if [ ${CLEAN} -eq 1 ]; then
 	echo " done"
 fi
 
-JAILFS=`jail_get_fs ${JAILNAME}`
-JAILMNT=`jail_get_base ${JAILNAME}`
+JAILFS=$(jget ${JAILNAME} fs)
+JAILMNT=$(jget ${JAILNAME} mnt)
 
 export POUDRIERE_BUILD_TYPE=bulk
 

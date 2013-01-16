@@ -84,7 +84,7 @@ export SKIPSANITY
 if [ -z ${ORIGIN} ]; then
 	PORTDIRECTORY=`basename ${HOST_PORTDIRECTORY}`
 else
-	HOST_PORTDIRECTORY=`porttree_get_base ${PTNAME}`/ports/${ORIGIN}
+	HOST_PORTDIRECTORY=$(pget ${PTNAME} mnt)/ports/${ORIGIN}
 	PORTDIRECTORY="/usr/ports/${ORIGIN}"
 fi
 
@@ -92,8 +92,8 @@ test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -
 
 PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}${SETNAME}
 
-JAILFS=`jail_get_fs ${JAILNAME}`
-JAILMNT=`jail_get_base ${JAILNAME}`
+JAILFS=$(jget ${JAILNAME} fs)
+JAILMNT=$(jget ${JAILNAME} mnt)
 
 export POUDRIERE_BUILD_TYPE=testport
 
