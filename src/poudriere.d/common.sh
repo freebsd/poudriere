@@ -313,7 +313,7 @@ jrun() {
 do_jail_mounts() {
 	[ $# -ne 1 ] && eargs should_mkdir
 	local should_mkdir=$1
-	local arch=$(zget arch)
+	local arch=$(jget ${JAILNAME} arch)
 
 	# Only do this when starting the master jail, clones will already have the dirs
 	if [ ${should_mkdir} -eq 1 ]; then
@@ -394,7 +394,7 @@ do_portbuild_mounts() {
 
 jail_start() {
 	[ $# -ne 0 ] && eargs
-	local arch=$(zget arch)
+	local arch=$(jget ${JAILNAME} arch)
 	local NEEDFS="nullfs procfs"
 	if [ -z "${NOLINUX}" ]; then
 		if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
@@ -754,8 +754,8 @@ save_wrkdir() {
 }
 
 start_builders() {
-	local arch=$(zget arch)
-	local version=$(zget version)
+	local arch=$(jget ${JAILNAME} arch)
+	local version=$(jget ${JAILNAME} version)
 	local j mnt fs name
 
 	zfs create -o canmount=off ${JAILFS}/build

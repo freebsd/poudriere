@@ -82,7 +82,7 @@ update_jail() {
 	jail_runs && \
 		err 1 "Unable to remove jail ${JAILNAME}: it is running"
 
-	METHOD=`zget method`
+	METHOD=$(jget ${JAILNAME} method)
 	if [ "${METHOD}" = "-" ]; then
 		METHOD="ftp"
 		zset method "${METHOD}"
@@ -107,14 +107,14 @@ update_jail() {
 		;;
 	csup)
 		install_from_csup
-		update_version $(zget version)
+		update_version $(jget ${JAILNAME} version)
 		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
 		zfs destroy -r ${JAILFS}@clean
 		zfs snapshot ${JAILFS}@clean
 		;;
 	svn*)
 		install_from_svn
-		update_version $(zget version)
+		update_version $(jget ${JAILNAME} version)
 		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
 		zfs destroy -r ${JAILFS}@clean
 		zfs snapshot ${JAILFS}@clean
