@@ -53,7 +53,7 @@ delete_jail() {
 		err 1 "Unable to remove jail ${JAILNAME}: it is running"
 
 	msg_n "Removing ${JAILNAME} jail..."
-	jail_destroy_fs ${JAILNAME} ${JAILMNT} "${JAILFS}"
+	destroyfs jail ${JAILNAME}
 	echo done
 }
 

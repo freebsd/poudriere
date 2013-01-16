@@ -121,7 +121,7 @@ if [ ${CREATE} -eq 1 ]; then
 *default delete use-rel-suffix
 ports-all" > ${PTMNT}/csup
 			csup -z -h ${CSUP_HOST} ${PTMNT}/csup || {
-				porttree_destroy_fs ${PTNAME} ${PTMNT} ${PTFS}
+				destroyfs ports ${PTNAME}
 				err 1 " Fail"
 			}
 			;;
@@ -131,7 +131,7 @@ ports-all" > ${PTMNT}/csup
 			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract || \
 			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract || \
 			{
-				porttree_destroy_fs ${PTNAME} ${PTMNT} ${PTFS}
+				destroyfs ports ${PTNAME}
 				err 1 " Fail"
 			}
 			;;
@@ -147,7 +147,7 @@ ports-all" > ${PTMNT}/csup
 			msg_n "Checking out the ports tree..."
 			svn -q co ${proto}://${SVN_HOST}/ports/head \
 				${PTMNT} || {
-					porttree_destroy_fs ${PTNAME} ${PTMNT} ${PTFS}
+					destroyfs ports ${PTNAME}
 					err 1 " Fail"
 				}
 			echo " done"
@@ -155,7 +155,7 @@ ports-all" > ${PTMNT}/csup
 		git)
 			msg "Cloning the ports tree"
 			git clone ${GIT_URL} ${PTMNT} || {
-				porttree_destroy_fs ${PTNAME} ${PTMNT} ${PTFS}
+				destroyfs ports ${PTNAME}
 				err 1 " Fail"
 			}
 			echo " done"
@@ -172,8 +172,7 @@ if [ ${DELETE} -eq 1 ]; then
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	msg_n "Deleting portstree \"${PTNAME}\""
-	PTFS=$(pget ${PTNAME} fs)
-	porttree_destroy_fs ${PTNAME} ${PTMNT} ${PTFS}
+	destroyfs ports ${PTNAME}
 	echo " done"
 fi
 

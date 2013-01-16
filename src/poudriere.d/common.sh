@@ -27,7 +27,6 @@ msg_verbose() {
 
 msg_debug() {
 	[ ${VERBOSE:-0} -gt 1 ] || return 0
-
 	msg "DEBUG: $1" >&2
 }
 
@@ -266,30 +265,6 @@ jail_create_fs() {
 	echo "${mnt}" > ${POUDRIERED}/jails/${name}/mnt
 }
 
-jail_destroy_fs() {
-	[ $# -ne 3 ] && eargs name mnt fs
-	local name=$1
-	local mnt=$2
-	local fs=$3
-
-	msg_n "Removing ${JAILNAME} jail..."
-	if [ -n "${fs}" -a "${fs}" != "none" ]; then
-		zfs destroy -r ${fs}
-		rmdir ${mnt}
-	else
-		chflahs -R noschg ${mnt}
-		rm -rf ${mnt}
-		if [ -e ${POUDRIERED}/jails ]; then
-			sed -i "" "s/^${name}/d" \
-				${POUDRIERED}/jails
-		fi
-	fi
-	rm -rf ${POUDRIERE_DATA}/packages/${name}
-	rm -rf ${POUDRIERE_DATA}/cache/${name}
-	rm -rf ${POUDRIERE_DATA}/logs/*/${name}
-	echo done
-}
-
 jrun() {
 	[ $# -ne 1 ] && eargs network
 	local network=$1
@@ -483,20 +458,33 @@ porttree_create_fs() {
 	echo "${mnt}" > ${POUDRIERED}/ports/${mnt}
 }
 
-porttree_destroy_fs() {
-	[ $# -ne 2 ] && eargs name mnt fs
-	local name=$1
-	local mnt=$2
-	local fs=$3
-
+destroyfs() {
+	[ $# -ne 2 ] && eargs name type
+	local name mnt fs type
+	name=$1
+	type=$2
+	case "$type" in
+	ports) fct=pget ;;
+	jail) fct=jget ;;
+	*) err 1 "unknown type of fs"
+	esac
+	mnt=$(pget ${name} mnt)
+	fs=$(pget ${name} fs)
 	if [ -n "${fs}" -a "${fs}" != "none" ]; then
-		zfs destroy ${fs}
+		zfs destroy -r ${fs}
+		rmdir ${mnt}
 	else
+		[ $type = "jail" ] && chflags -R noschg ${mnt}
 		rm -rf ${mnt}
-		if [ -e ${POUDRIERED}/portstrees ]; then
-			sed -i "" "s/^${name}/d" \
-				${POUDRIERED}/portstrees
-		fi
+	fi
+
+	if [ $type = "jail" ]; then
+		rm -rf ${POUDRIERED}/jails/${name}
+		rm -rf ${POUDRIERE_DATA}/packages/${name}
+		rm -rf ${POUDRIERE_DATA}/cache/${name}
+		rm -rf ${POUDRIERE_DATA}/logs/*/${name}
+	else
+		rm -rf ${POUDRIERED}/ports/${name}
 	fi
 }
 
