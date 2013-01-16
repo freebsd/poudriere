@@ -11,6 +11,7 @@ Parameters:
 Options:
     -c          -- Clean all the previously built binary packages
     -C          -- Clean previously built packages from the given list to build
+    -R          -- Clean RESTRICTED packages after building
     -t          -- Add some tests to the package build
     -s          -- Skip sanity checks
 	 -J n        -- Run n jobs in parallel (Default: to 8)
@@ -36,7 +37,7 @@ ALL=0
 
 [ $# -eq 0 ] && usage
 
-while getopts "f:j:J:Ccn:p:tsvwz:a" FLAG; do
+while getopts "f:j:J:Ccn:p:Rtsvwz:a" FLAG; do
 	case "${FLAG}" in
 		t)
 			export PORTTESTING=1
@@ -60,6 +61,9 @@ while getopts "f:j:J:Ccn:p:tsvwz:a" FLAG; do
 			;;
 		p)
 			PTNAME=${OPTARG}
+			;;
+		R)
+			NO_RESTRICTED=1
 			;;
 		s)
 			SKIPSANITY=1
