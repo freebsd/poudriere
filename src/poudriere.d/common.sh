@@ -563,19 +563,22 @@ sanity_check_pkgs() {
 mark_preinst() {
 
 	cat > ${JAILMNT}/tmp/mtree.preexclude <<EOF
-./root/*
-./var/*
-./tmp/*
-./etc/make.conf.bak
-./etc/make.conf
-./work/*
-./compat/linux/proc
-./usr/share/man/cat*/*
-./usr/local/etc/apache
-./usr/local/news
-./usr/local/share/xml
-./usr/local/etc/gconf
+./var/db/pkg/*.sqlite
+./var/run/*
+./wrkdirs/*
+./${MYBASE:-/usr/local}/share/nls/POSIX
+./${MYBASE:-/usr/local}/share/nls/en_US.US-ASCII
 ./var/db/fontconfig
+./var/log/*
+./${HOME}/*
+./etc/spwd.db
+./etc/pwd.db
+./etc/group
+./etc/make.conf
+./etc/make.conf.bak
+./etc/passwd
+./etc/master.passwd
+./etc/shells
 EOF
 	mtree -X ${JAILMNT}/tmp/mtree.preexclude \
 		-xcn -k uid,gid,mode,size \
@@ -675,26 +678,6 @@ build_port() {
 						${sedargs} \
 					`
 				fi
-				case "${ppath#@dirrm* }" in
-				/var/db/pkg/*) continue;;
-				/var/run/*) continue;;
-				/wrkdirs/*) continue;;
-				/tmp/*) continue;;
-				share/nls/POSIX) continue;;
-				share/nls/en_US.US-ASCII) continue;;
-				/var/db/fontconfig/*) continue;;
-				/var/log/*) continue;;
-				/var/mail/*) continue;;
-				${HOME}/*) continue;;
-				/etc/spwd.db) continue;;
-				/etc/pwd.db) continue;;
-				/etc/group) continue;;
-				/etc/make.conf) continue;;
-				/etc/passwd) continue;;
-				/etc/master.passwd) continue;;
-				/etc/shells) continue;;
-				/etc/make.conf.bak) continue;;
-				esac
 				case $mod$type in
 				+*) echo "${ppath}" >> ${add};;
 				-*) echo "${ppath}" >> ${del};;
