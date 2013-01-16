@@ -20,7 +20,8 @@ Options:
     -v version    -- Specifies which version of FreeBSD we want in jail
     -a arch       -- Indicates architecture of the jail: i386 or amd64
                      (Default: same as host)
-    -f fs         -- FS name (tank/jails/myjail)
+    -f fs         -- FS name (tank/jails/myjail) if fs is \"none\" then do not
+                     create on zfs
     -M mountpoint -- mountpoint
     -m method     -- When used with -c, overrides the method to use by default.
                      Could also be \"http\", \"svn\", \"svn+http\",
@@ -74,13 +75,7 @@ delete_jail() {
 		err 1 "Unable to remove jail ${JAILNAME}: it is running"
 
 	msg_n "Removing ${JAILNAME} jail..."
-	zfs destroy -r ${JAILFS}
-	rmdir ${JAILMNT}
-	rm -rf ${POUDRIERE_DATA}/packages/${JAILNAME}
-	rm -rf ${POUDRIERE_DATA}/cache/${JAILNAME}
-	rm -f ${POUDRIERE_DATA}/logs/*-${JAILNAME}.*.log
-	rm -f ${POUDRIERE_DATA}/logs/bulk-${JAILNAME}.log
-	rm -rf ${POUDRIERE_DATA}/logs/*/${JAILNAME}
+	jail_destroy_fs ${JAILNAME} ${JAILMNT} "${JAILFS}"
 	echo done
 }
 
@@ -389,7 +384,7 @@ create_jail() {
 		;;
 	esac
 
-	jail_create_zfs ${JAILNAME} ${VERSION} ${ARCH} ${JAILMNT} ${JAILFS}
+	jail_create_fs ${JAILNAME} ${VERSION} ${ARCH} ${JAILMNT} ${JAILFS}
 	# Wrap the jail creation in a special cleanup hook that will remove the jail
 	# if any error is encountered
 	CLEANUP_HOOK=cleanup_new_jail

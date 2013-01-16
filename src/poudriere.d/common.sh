@@ -105,7 +105,11 @@ log_stop() {
 
 zget() {
 	[ $# -ne 1 ] && eargs property
-	zfs get -H -o value ${NS}:${1} ${JAILFS}
+	if [ -n "${JAILFS}" -a "${JAILFS}" != "none" ]; then
+		zfs get -H -o value ${NS}:${1} ${JAILFS}
+	else
+		cat ${JAILMNT}/.poudriere/${1}
+	fi
 }
 
 zset() {
@@ -116,11 +120,6 @@ zset() {
 pzset() {
 	[ $# -ne 2 ] && eargs property value
 	zfs set ${NS}:$1="$2" ${PTFS}
-}
-
-pzget() {
-	[ $# -ne 1 ] && eargs property
-	zfs get -H -o value ${NS}:${1} ${PTFS}
 }
 
 sig_handler() {
@@ -284,20 +283,49 @@ fetch_file() {
 	fetch -p -o $1 $2 || fetch -p -o $1 $2 || err 1 "Failed to fetch from $2"
 }
 
-jail_create_zfs() {
+jail_create_fs() {
 	[ $# -ne 5 ] && eargs name version arch mountpoint fs
 	local name=$1
 	local version=$2
 	local arch=$3
 	local mnt=$( echo $4 | sed -e "s,//,/,g")
 	local fs=$5
-	msg_n "Creating ${name} fs..."
-	zfs create -p \
-		-o ${NS}:type=rootfs \
-		-o ${NS}:name=${name} \
-		-o ${NS}:version=${version} \
-		-o ${NS}:arch=${arch} \
-		-o mountpoint=${mnt} ${fs} || err 1 " Fail" && echo " done"
+	if [ $fs != "none" ]; then
+		msg_n "Creating ${name} fs..."
+		zfs create -p \
+			-o ${NS}:type=rootfs \
+			-o ${NS}:name=${name} \
+			-o ${NS}:version=${version} \
+			-o ${NS}:arch=${arch} \
+			-o mountpoint=${mnt} ${fs} || err 1 " Fail" && echo " done"
+	else
+		mkdir -p ${mnt}
+		echo "${name} __METHOD__ ${mnt} ${version} ${arch}" >> ${POUDRIERED}/jails
+	fi
+}
+
+jail_destroy_fs() {
+	[ $# -ne 3 ] && eargs name mnt fs
+	local name=$1
+	local mnt=$2
+	local fs=$3
+
+	msg_n "Removing ${JAILNAME} jail..."
+	if [ -n "${fs}" -a "${fs}" != "none" ]; then
+		zfs destroy -r ${fs}
+		rmdir ${mnt}
+	else
+		chflahs -R noschg ${mnt}
+		rm -rf ${mnt}
+		if [ -e ${POUDRIERED}/jails ]; then
+			sed -i "" "s/^${name}/d" \
+				${POUDRIERED}/jails
+		fi
+	fi
+	rm -rf ${POUDRIERE_DATA}/packages/${name}
+	rm -rf ${POUDRIERE_DATA}/cache/${name}
+	rm -rf ${POUDRIERE_DATA}/logs/*/${name}
+	echo done
 }
 
 jrun() {
@@ -494,6 +522,23 @@ porttree_create_fs() {
 	fi
 }
 
+porttree_destroy_fs() {
+	[ $# -ne 2 ] && eargs name mnt fs
+	local name=$1
+	local mnt=$2
+	local fs=$3
+
+	if [ -n "${fs}" -a "${fs}" != "none" ]; then
+		zfs destroy ${fs}
+	else
+		rm -rf ${mnt}
+		if [ -e ${POUDRIERED}/portstrees ]; then
+			sed -i "" "s/^${name}/d" \
+				${POUDRIERED}/portstrees
+		fi
+	fi
+}
+
 cleanup() {
 	[ -n "${CLEANED_UP}" ] && return 0
 	msg "Cleaning up"
@@ -563,6 +608,7 @@ sanity_check_pkgs() {
 mark_preinst() {
 
 	cat > ${JAILMNT}/tmp/mtree.preexclude <<EOF
+./.poudriere/*
 ./var/db/pkg/*.sqlite
 ./var/run/*
 ./wrkdirs/*

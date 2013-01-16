@@ -121,15 +121,7 @@ if [ ${CREATE} -eq 1 ]; then
 *default delete use-rel-suffix
 ports-all" > ${PTMNT}/csup
 			csup -z -h ${CSUP_HOST} ${PTMNT}/csup || {
-				if [ ${PTFS} != "none" ]; then
-					zfs destroy ${PTFS}
-				else
-					rm -rf ${PTMNT}
-					if [ -e ${POUDRIERED}/portstrees ]; then
-						sed -i "" "s/${PTNAME}/d" \
-							${POUDRIERED}/portstrees
-					fi
-				fi
+				porttree_destroy_fs ${PTNAME} ${PTMNT} ${PTFS}
 				err 1 " Fail"
 			}
 			;;
@@ -139,15 +131,7 @@ ports-all" > ${PTMNT}/csup
 			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract || \
 			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract || \
 			{
-				if [ ${PTFS} != "none" ]; then
-					zfs destroy ${PTFS}
-				else
-					rm -rf ${PTMNT}
-					if [ -e ${POUDRIERED}/portstrees ]; then
-						sed -i "" "s/${PTNAME}/d" \
-							${POUDRIERED}/portstrees
-					fi
-				fi
+				porttree_destroy_fs ${PTNAME} ${PTMNT} ${PTFS}
 				err 1 " Fail"
 			}
 			;;
@@ -163,31 +147,16 @@ ports-all" > ${PTMNT}/csup
 			msg_n "Checking out the ports tree..."
 			svn -q co ${proto}://${SVN_HOST}/ports/head \
 				${PTMNT} || {
-				if [ ${PTFS} != "none" ]; then
-					zfs destroy ${PTFS}
-				else
-					rm -rf ${PTMNT}
-					if [ -e ${POUDRIERED}/portstrees ]; then
-						sed -i "" "s/${PTNAME}/d" \
-							${POUDRIERED}/portstrees
-					fi
-				fi
-				err 1 " Fail"
-			}
+					porttree_destroy_fs ${PTNAME} ${PTMNT} ${PTFS}
+					err 1 " Fail"
+				}
 			echo " done"
 			;;
 		git)
 			msg "Cloning the ports tree"
 			git clone ${GIT_URL} ${PTMNT} || {
-				if [ ${PTFS} != "none" ]; then
-					zfs destroy ${PTFS}
-				else
-					rm -rf ${PTMNT}
-					if [ -e ${POUDRIERED}/portstrees ]; then
-						sed -i "" "s/${PTNAME}/d" \
-							${POUDRIERED}/portstrees
-					fi
-				fi
+				porttree_destroy_fs ${PTNAME} ${PTMNT} ${PTFS}
+				err 1 " Fail"
 			}
 			echo " done"
 			;;
@@ -205,17 +174,10 @@ if [ ${DELETE} -eq 1 ]; then
 	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
-	msg "Deleting portstree \"${PTNAME}\""
+	msg_n "Deleting portstree \"${PTNAME}\""
 	PTFS=$(porttree_get_fs ${PTNAME})
-	if [ -n "${PTFS}" ]; then
-		zfs destroy -r ${PTFS}
-	else
-		rm -rf ${PTMNT}
-		if [ -e ${POUDRIERED}/portstrees ]; then
-			sed -i "" "s/${PTNAME}/d" \
-				${POUDRIERED}/portstrees
-		fi
-	fi
+	porttree_destroy_fs ${PTNAME} ${PTMNT} ${PTFS}
+	echo " done"
 fi
 
 if [ ${UPDATE} -eq 1 ]; then
