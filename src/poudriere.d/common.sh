@@ -306,7 +306,7 @@ rollbackfs() {
 }
 
 zfs_getfs() {
-	[ $# -ne 1 ] eargs mnt
+	[ $# -ne 1 ] && eargs mnt
 	local mnt=$1
 	mount -t zfs | awk -v n="${mnt}" ' $3 == n { print $1 }'
 }
@@ -387,7 +387,7 @@ EOF
 }
 
 clonefs() {
-	[ $# -lt 2 ] eargs from to snap
+	[ $# -lt 2 ] && eargs from to snap
 	local from=$1
 	local to=$2
 	local snap=$3
