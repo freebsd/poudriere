@@ -289,14 +289,21 @@ rollbackfs() {
 	local name=$1
 	local mnt=$2
 	local fs=$(zfs_getfs ${mnt})
+	local mmnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
 
 	if [ -n "${fs}" ]; then
 		zfs rollbask -r ${fs}@${name}  || err 1 "Unable to rollback ${fs}"
 		return
 	fi
 
-	
-
+	mtree -X ${mnt}/poudriere/mtree.${name}exclude \
+	-xr -f ${mnt}/poudriere/mtree.${name} -p ${mnt} | \
+	while read l ; do
+		case "$l" in
+		*extra*Directory*) rm -rf ${l%% *} 2>/dev/null ;;
+		*changed|*missing) echo ${mmnt}${l% *} ;;
+		esac
+	done | pax -rw -p p ${mnt}
 }
 
 zfs_getfs() {
@@ -377,7 +384,7 @@ EOF
 	fi
 	mtree -X ${mnt}/poudriere/mtree.${name}exclude \
 		-xcn -k uid,git,mode,size \
-		-p ${mnt} >> ${mnt}/poudriere/.mtree.${name}
+		-p ${mnt} >> ${mnt}/poudriere/mtree.${name}
 }
 
 clonefs() {
