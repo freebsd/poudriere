@@ -208,8 +208,7 @@ siginfo_handler() {
 
 jail_exists() {
 	[ $# -ne 1 ] && eargs jailname
-	zfs list -rt filesystem -H -o ${NS}:type,${NS}:name ${ZPOOL}${ZROOTFS} | \
-		awk -v n=$1 'BEGIN { ret = 1 } $1 == "rootfs" && $2 == n { ret = 0; } END { exit ret }' && return 0
+	[ -d ${POUDRIERED}/jails/${jailname} ] && return 0
 	return 1
 }
 
