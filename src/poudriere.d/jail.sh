@@ -83,7 +83,7 @@ update_jail() {
 		err 1 "Unable to remove jail ${JAILNAME}: it is running"
 
 	METHOD=$(jget ${JAILNAME} method)
-	if [ "${METHOD}" = "-" ]; then
+	if [ -z "${METHOD}" -o "${METHOD}" = "-" ]; then
 		METHOD="ftp"
 		zset method "${METHOD}"
 	fi

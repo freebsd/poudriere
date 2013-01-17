@@ -1682,7 +1682,11 @@ test -f ${SCRIPTPREFIX}/../../etc/poudriere.conf || err 1 "Unable to find ${SCRI
 . ${SCRIPTPREFIX}/../../etc/poudriere.conf
 POUDRIERED=${SCRIPTPREFIX}/../../etc/poudriere.d
 
-[ -z ${ZPOOL} ] && err 1 "ZPOOL variable is not set"
+# If the zfs module is not loaded it means we can't have zfs
+[ -z "${NO_ZFS}" ] && lsvfs zfs >/dev/null 2>&1 || NO_ZFS=yes
+[ -z "${NO_ZFS}" -a -z "$(zpool list -H -o name 2>/dev/null)" ] && NO_ZFS=yes
+
+[ -z "${NO_ZFS}" -a -z ${ZPOOL} ] && err 1 "ZPOOL variable is not set"
 [ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
 
 trap sig_handler SIGINT SIGTERM SIGKILL
@@ -1690,18 +1694,19 @@ trap exit_handler EXIT
 trap siginfo_handler SIGINFO
 
 # Test if zpool exists
-zpool list ${ZPOOL} >/dev/null 2>&1 || err 1 "No such zpool: ${ZPOOL}"
+if [ -z "${NO_ZFS}" ]; then
+	zpool list ${ZPOOL} >/dev/null 2>&1 || err 1 "No such zpool: ${ZPOOL}"
+fi
 
 : ${SVN_HOST="svn.FreeBSD.org"}
 : ${GIT_URL="git://github.com/freebsd/freebsd-ports.git"}
 : ${FREEBSD_HOST="${FTP_HOST:-ftp.FreeBSD.org}"}
-: ${ZROOTFS="/poudriere"}
-
-case ${ZROOTFS} in
-	[!/]*)
-		err 1 "ZROOTFS shoud start with a /"
-		;;
-esac
+if [ -z "${NO_ZFS}" ]; then
+	: ${ZROOTFS="/poudriere"}
+	case ${ZROOTFS} in
+	[!/]*) err 1 "ZROOTFS shoud start with a /" ;;
+	esac
+fi
 
 : ${CRONDIR="${POUDRIERE_DATA}/cron"}
 POUDRIERE_DATA=`get_data_dir`
@@ -1714,7 +1719,7 @@ esac
 #Converting portstree if any
 if [ ! -d ${POUDRIERED}/ports ]; then
 	mkdir -p ${POUDRIERED}/ports
-	zfs list -t filesystem -H \
+	[ -z "${NO_ZFS}" ] && zfs list -t filesystem -H \
 		-o ${NS}:type,${NS}:name,${NS}:method,mountpoint,name | \
 		grep "^ports" | \
 		while read t name method mnt fs; do
@@ -1742,7 +1747,7 @@ fi
 #Converting jails if any
 if [ ! -d ${POUDRIERED}/jails ]; then
 	mkdir -p ${POUDRIERED}/jails
-	zfs list -t filesystem -H \
+	[ -z "${NO_ZFS}" ] && zfs list -t filesystem -H \
 		-o ${NS}:type,${NS}:name,${NS}:version,${NS}:arch,${NS}:method,mountpoint,name | \
 		grep "^rootfs" | \
 		while read t name version arch method mnt fs; do
