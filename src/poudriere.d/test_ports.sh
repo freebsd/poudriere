@@ -66,7 +66,7 @@ while getopts "d:o:cnj:J:iIp:svz:" FLAG; do
 			;;
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"
-			SETNAME="-${OPTARG}"
+			SETNAME="${OPTARG}"
 			;;
 		v)
 			VERBOSE=$((${VERBOSE:-0} + 1))
@@ -90,16 +90,14 @@ fi
 
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
 
-PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}${SETNAME}
-
-JAILFS=$(jget ${JAILNAME} fs)
 JAILMNT=$(jget ${JAILNAME} mnt)
 
+MASTERNAME=${JAILNAME}-${PTNAME}
+[ -n "${SETNAME}" ] && MASTERNAME="${MASTERNAME}-${SETNAME}"
+export MASTERNAME
 export POUDRIERE_BUILD_TYPE=testport
 
-jail_start
-
-prepare_jail
+jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
 if [ -z ${ORIGIN} ]; then
 	mkdir -p ${JAILMNT}/${PORTDIRECTORY}
@@ -126,14 +124,14 @@ if ! POUDRIERE_BUILD_TYPE=bulk parallel_build; then
 	exit 1
 fi
 
-zset status "depends:"
+bset ${MASTERNAME} status "depends:"
 
 unmaekfs prepkg ${JAILMNT}
 
 injail make -C ${PORTDIRECTORY} pkg-depends extract-depends \
 	fetch-depends patch-depends build-depends lib-depends
 
-zset status "testing:"
+bset ${MASTERNAME} status "testing:"
 
 PKGNAME=`injail make -C ${PORTDIRECTORY} -VPKGNAME`
 LOCALBASE=`injail make -C ${PORTDIRECTORY} -VLOCALBASE`
