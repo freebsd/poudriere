@@ -292,7 +292,7 @@ rollbackfs() {
 	local mmnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
 
 	if [ -n "${fs}" ]; then
-		zfs rollbask -r ${fs}@${name}  || err 1 "Unable to rollback ${fs}"
+		zfs rollback -r ${fs}@${name}  || err 1 "Unable to rollback ${fs}"
 		return
 	fi
 
