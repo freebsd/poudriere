@@ -303,7 +303,7 @@ rollbackfs() {
 		*extra*Directory*) rm -rf ${l%% *} 2>/dev/null ;;
 		*changed|*missing) echo ${mmnt}${l% *} ;;
 		esac
-	done | pax -rw -p p ${mnt}
+	done | pax -rw -p p -s ",${mmnt},,g" ${mnt}
 }
 
 zfs_getfs() {
