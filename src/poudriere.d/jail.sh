@@ -85,7 +85,7 @@ update_jail() {
 	METHOD=$(jget ${JAILNAME} method)
 	if [ -z "${METHOD}" -o "${METHOD}" = "-" ]; then
 		METHOD="ftp"
-		zset method "${METHOD}"
+		jset ${JAILNAME} method ${METHOD}
 	fi
 	msg "Upgrading using ${METHOD}"
 	case ${METHOD} in
@@ -99,7 +99,7 @@ update_jail() {
 		else
 			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update -r ${TORELEASE} upgrade install || err 1 "Fail to upgrade system"
 			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update install || err 1 "Fail to upgrade system"
-			zset version "${TORELEASE}"
+			jset ${JAILNAME} version ${TORELEASE}
 		fi
 		zfs destroy -r ${JAILFS}@clean
 		zfs snapshot ${JAILFS}@clean
@@ -362,16 +362,22 @@ create_jail() {
 		;;
 	esac
 
+	createfs ${JAILNAME} ${JAILMNT} ${JAILFS:-none}
+	[ -n "${JAILFS}" -a "${JAILFS}" != "none" ] && jset ${JAILNAME} fs ${JAILFS}
+	jset ${JAILNAME} version ${VERSION}
+	jset ${JAILNAME} arch ${ARCH}
+	jset ${JAILNAME} mnt ${JAILMNT}
+
 	jail_create_fs ${JAILNAME} ${VERSION} ${ARCH} ${JAILMNT} ${JAILFS}
 	# Wrap the jail creation in a special cleanup hook that will remove the jail
 	# if any error is encountered
 	CLEANUP_HOOK=cleanup_new_jail
-	zset method "${METHOD}"
+	jset ${JAILNAME} method ${METHOD}
 	${FCT}
 
 	eval `grep "^[RB][A-Z]*=" ${JAILMNT}/usr/src/sys/conf/newvers.sh `
 	RELEASE=${REVISION}-${BRANCH}
-	zset version "${RELEASE}"
+	jset ${JAILNAME} version ${RELEASE}
 	update_version ${RELEASE}
 
 	if [ "${ARCH}" = "i386" -a "${REALARCH}" = "amd64" ];then

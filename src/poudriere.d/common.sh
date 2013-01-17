@@ -102,19 +102,32 @@ log_stop() {
 	fi
 }
 
-jget() {
-	cat ${POUDRIERED}/jails/${1}/${2} || :
+attr_set() {
+	local type=$1
+	local name=$2
+	local property=$3
+	shift 3
+	mkdir -p ${POUDRIERED}/${type}/${name}
+	echo "$@" > ${POUDRIERED}/${type}/${name}/${property} || :
 }
-
-pget() {
-	cat ${POUDRIERED}/ports/${1}/${2} || :
+jset() {
+	attr_set jails $@
 }
-
 pset() {
-	local name=$1
-	local property=$2
-	shift 2
-	echo "$@" > ${POUDRIERED}/ports/${name} ${property}
+	attr_set ports $@
+}
+
+attr_get() {
+	local type=$1
+	local name=$2
+	local property=$3
+	cat ${POUDRIERED}/${type}/${name}/${property} || :
+}
+jget() {
+	attr_get jails $@
+}
+pget() {
+	attr_get ports $@
 }
 
 zget() {
@@ -226,14 +239,19 @@ get_data_dir() {
 		echo ${POUDRIERE_DATA}
 		return
 	fi
-	data=$(zfs list -rt filesystem -H -o ${NS}:type,mountpoint ${ZPOOL}${ZROOTFS} | awk '$1 == "data" { print $2 }' | head -n 1)
-	if [ -n "${data}" ]; then
-		echo $data
+
+	if [ -z "${NO_ZFS}" ]; then
+		data=$(zfs list -rt filesystem -H -o ${NS}:type,mountpoint ${ZPOOL}${ZROOTFS} | awk '$1 == "data" { print $2 }' | head -n 1)
+		if [ -n "${data}" ]; then
+			echo $data
 		return
+		fi
+		zfs create -p -o ${NS}:type=data \
+			-o mountpoint=${BASEFS}/data \
+			${ZPOOL}${ZROOTFS}/data
+	else
+		mkdir -p "${BASEFS}/data"
 	fi
-	zfs create -p -o ${NS}:type=data \
-		-o mountpoint=${BASEFS}/data \
-		${ZPOOL}${ZROOTFS}/data
 	echo "${BASEFS}/data"
 }
 
@@ -242,27 +260,50 @@ fetch_file() {
 	fetch -p -o $1 $2 || fetch -p -o $1 $2 || err 1 "Failed to fetch from $2"
 }
 
-jail_create_fs() {
-	[ $# -ne 5 ] && eargs name version arch mountpoint fs
-	local name=$1
-	local version=$2
-	local arch=$3
-	local mnt=$( echo $4 | sed -e "s,//,/,g")
-	local fs=$5
-	if [ -n "${fs}" -a ${fs} != "none" ]; then
+createfs() {
+	[ $# -ne 3 ] && eargs name mnt fs
+	local name mnt fs
+	name=$1
+	mnt=$(echo $2 | sed -e "s,//,/,g")
+	fs=$3
+
+	if [ -n "${fs}" -a "${fs}" != "none" ]; then
 		msg_n "Creating ${name} fs..."
 		zfs create -p \
 			-o mountpoint=${mnt} ${fs} || err 1 " Fail" && echo " done"
 	else
 		mkdir -p ${mnt}
 	fi
-	mkdir -p ${POUDRIERED}/jails/${name}
+}
+
+destroyfs() {
+	[ $# -ne 2 ] && eargs name type
+	local name mnt fs type
+	name=$1
+	type=$2
+	case "$type" in
+	ports) fct=pget ;;
+	jail) fct=jget ;;
+	*) err 1 "unknown type of fs"
+	esac
+	mnt=$(pget ${name} mnt)
+	fs=$(pget ${name} fs)
 	if [ -n "${fs}" -a "${fs}" != "none" ]; then
-		echo "${fs}" > ${POUDRIERED}/jails/${name}/fs
+		zfs destroy -r ${fs}
+		rmdir ${mnt}
+	else
+		[ $type = "jail" ] && chflags -R noschg ${mnt}
+		rm -rf ${mnt}
 	fi
-	echo "${version}" > ${POUDRIERED}/jails/${name}/version
-	echo "${arch}" > ${POUDRIERED}/jails/${name}/arch
-	echo "${mnt}" > ${POUDRIERED}/jails/${name}/mnt
+
+	if [ $type = "jail" ]; then
+		rm -rf ${POUDRIERED}/jails/${name}
+		rm -rf ${POUDRIERE_DATA}/packages/${name}
+		rm -rf ${POUDRIERE_DATA}/cache/${name}
+		rm -rf ${POUDRIERE_DATA}/logs/*/${name}
+	else
+		rm -rf ${POUDRIERED}/ports/${name}
+	fi
 }
 
 jrun() {
@@ -437,55 +478,6 @@ jail_stop() {
 	zfs rollback -R ${JAILFS%/build/*}@clean
 	zset status "idle:"
 	export STATUS=0
-}
-
-porttree_create_fs() {
-	[ $# -ne 3 ] && eargs name mountpoint fs
-	local name=$1
-	local mnt=$( echo $2 | sed -e 's,//,/,g')
-	local fs=$3
-	if [ $fs != "none" ]; then
-		msg_n "Creating ${name} fs..."
-		zfs create -p \
-			-o atime=off \
-			-o compression=off \
-			-o mountpoint=${mnt} \
-			${fs} || err 1 " Fail" && echo " done"
-	else
-		mkdir -p ${mnt}
-	fi
-	mkdir -p ${POUDRIERED}/ports/${name}
-	echo "${mnt}" > ${POUDRIERED}/ports/${mnt}
-}
-
-destroyfs() {
-	[ $# -ne 2 ] && eargs name type
-	local name mnt fs type
-	name=$1
-	type=$2
-	case "$type" in
-	ports) fct=pget ;;
-	jail) fct=jget ;;
-	*) err 1 "unknown type of fs"
-	esac
-	mnt=$(pget ${name} mnt)
-	fs=$(pget ${name} fs)
-	if [ -n "${fs}" -a "${fs}" != "none" ]; then
-		zfs destroy -r ${fs}
-		rmdir ${mnt}
-	else
-		[ $type = "jail" ] && chflags -R noschg ${mnt}
-		rm -rf ${mnt}
-	fi
-
-	if [ $type = "jail" ]; then
-		rm -rf ${POUDRIERED}/jails/${name}
-		rm -rf ${POUDRIERE_DATA}/packages/${name}
-		rm -rf ${POUDRIERE_DATA}/cache/${name}
-		rm -rf ${POUDRIERE_DATA}/logs/*/${name}
-	else
-		rm -rf ${POUDRIERED}/ports/${name}
-	fi
 }
 
 cleanup() {
@@ -1724,10 +1716,9 @@ if [ ! -d ${POUDRIERED}/ports ]; then
 		grep "^ports" | \
 		while read t name method mnt fs; do
 			msg "Converting the ${name} ports tree"
-			mkdir ${POUDRIERED}/ports/${name}
-			echo ${method} > ${POUDRIERED}/ports/${name}/method
-			echo ${mnt} > ${POUDRIERED}/ports/${name}/mnt
-			echo ${fs} > ${POUDRIERED}/ports/${name}/fs
+			pset ${name} method ${method}
+			pset ${name} mnt ${mnt}
+			pset ${name} fs ${fs}
 			# Delete the old properties
 			zfs inherit -r ${NS}:type ${fs}
 			zfs inherit -r ${NS}:name ${fs}
@@ -1752,12 +1743,11 @@ if [ ! -d ${POUDRIERED}/jails ]; then
 		grep "^rootfs" | \
 		while read t name version arch method mnt fs; do
 			msg "Converting the ${name} jail"
-			mkdir ${POUDRIERED}/jails/${name}
-			echo ${version} > ${POUDRIERED}/jails/${name}/version
-			echo ${arch} > ${POUDRIERED}/jails/${name}/arch
-			echo ${method} > ${POUDRIERED}/jails/${name}/method
-			echo ${mnt} > ${POUDRIERED}/jails/${name}/mnt
-			echo ${fs} > ${POUDRIERED}/jails/${name}/fs
+			jset ${name} version ${version}
+			jset ${name} arch ${arch}
+			jset ${name} method ${method}
+			jset ${name} mnt ${mnt}
+			jset ${name} fs ${fs}
 			# Delete the old properties
 			zfs inherit -r ${NS}:type ${fs}
 			zfs inherit -r ${NS}:name ${fs}

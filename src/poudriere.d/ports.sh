@@ -109,7 +109,8 @@ if [ ${CREATE} -eq 1 ]; then
 	porttree_exists ${PTNAME} && err 2 "The ports tree ${PTNAME} already exists"
 	: ${PTMNT="${BASEFS:=/usr/local${ZROOTFS}}/ports/${PTNAME}"}
 	: ${PTFS="${ZPOOL}${ZROOTFS}/ports/${PTNAME}"}
-	porttree_create_fs ${PTNAME} ${PTMNT} ${PTFS}
+	createfs ${PTNAME} ${PTMNT} ${PTFS}
+	pset ${PTNAME} mnt ${PTMNT}
 	if [ $FAKE -eq 0 ]; then
 		case ${METHOD} in
 		csup)
