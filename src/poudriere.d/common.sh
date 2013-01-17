@@ -485,7 +485,7 @@ do_jail_mounts() {
 
 	# ref jail only needs devfs
 	mount -t devfs devfs ${mnt}/dev
-	if [ ${mnt##*/} != "ref" ]; then
+	if [ "${mnt##*/}" != "ref" ]; then
 		mount -t fdescfs fdesc ${mnt}/dev/fd
 		mount -t procfs proc ${mnt}/proc
 		if [ -z "${NOLINUX}" ]; then
@@ -502,11 +502,12 @@ use_options() {
 	local optionsdir=$2
 
 	if [ "${optionsdir}" = "-" ]; then
-		optionsdir=$(realpath ${POUDRIERED}/options)
+		optionsdir="${POUDRIERED}/options"
 	else
-		optionsdir=$(realpath ${POUDRIERED}/${optionsdir}-options)
+		optionsdir="${POUDRIERED}/${optionsdir}-options"
 	fi
-	[ -d ${optionsdir} ] || return 1
+	[ -d "${optionsdir}" ] || return 1
+	optionsdir=$(realpath ${optionsdir} 2>/dev/null)
 	msg "Mounting /var/db/ports from: ${optionsdir}"
 	mount -t nullfs ${optionsdir} ${mnt}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
 
@@ -516,10 +517,9 @@ use_options() {
 do_portbuild_mounts() {
 	[ $# -lt 3 ] && eargs mnt jname ptname setname
 	local mnt=$1
-	local pkgdir=$2
-	local jname=$3
-	local ptname=$4
-	local setname=$5
+	local jname=$2
+	local ptname=$3
+	local setname=$4
 	local portsdir=$(pget ${ptname} mnt)
 	local optionsdir
 
@@ -581,15 +581,16 @@ jail_start() {
 
 	[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
 	msg "Mounting ports/packages/distfiles"
-	do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
+	do_portbuild_mounts ${tomnt} ${name} ${ptname} ${setname}
 
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 		echo "WITH_CCACHE_BUILD=yes" > ${mnt}/make.conf
 		echo "MAKE_ENV+= CCACHE_DIR=/ccache" >> ${mnt}/make.conf
 	fi
 
-	makeconf="- ${jname} ${jname}-${ptname}"
-	[ -n "${setname}" ] && makeconf="${makeconf} ${jname}-${setname}"
+	set -x
+	makeconf="- ${name} ${name}-${ptname}"
+	[ -n "${setname}" ] && makeconf="${makeconf} ${name}-${setname}"
 	makeconf="${makeconf} ${MASTERNAME}"
 	for opt in ${makeconf}; do
 		append_make ${mnt} ${opt}
@@ -600,7 +601,7 @@ jail_start() {
 	jrun ${MASTERNAME} ${tomnt} 0
 	# Only set STATUS=1 if not turned off
 	# jail -s should not do this or jail will stop on EXIT
-	WITH_PKGNG=$(injail make -f /usr/ports/Mk/bsd.port.mk -V WITH_PKGNG)
+	WITH_PKGNG=$(injail ${MASTERNAME} make -f /usr/ports/Mk/bsd.port.mk -V WITH_PKGNG)
 	if [ -n "${WITH_PKGNG}" ]; then
 		export PKGNG=1
 		export PKG_EXT="txz"
@@ -1131,7 +1132,7 @@ build_queue() {
 			pkgname=$(next_in_queue)
 			if [ -z "${pkgname}" ]; then
 				# pool empty ?
-				[ -n "$(dir_empty ${mnt}/poudriere/pool)" ] && return
+				[ -n "$(dir_empty ${mnt}/poudriere/pool)" ] && return 0
 
 				# Pool is waiting on dep, wait until a build
 				# is done before checking the queue again
@@ -1384,7 +1385,7 @@ pkg_get_options() {
 		fi
 		echo "${compiled_options}" > "${optionsfile}"
 		echo "${compiled_options}"
-		return
+		return 0
 	fi
 	# optionsfile is multi-line, no point for read< trick here
 	cat "${optionsfile}"
@@ -1620,7 +1621,7 @@ listed_ports() {
 		for cat in $(awk '$1 == "SUBDIR" { print $3}' ${PORTSDIR}/Makefile); do
 			awk -v cat=${cat}  '$1 == "SUBDIR" { print cat"/"$3}' ${PORTSDIR}/${cat}/Makefile
 		done
-		return
+		return 0
 	fi
 	if [ -z "${LISTPORTS}" ]; then
 		if [ -n "${LISTPKGS}" ]; then
@@ -1784,12 +1785,13 @@ append_make() {
 	local makeconf=$2
 
 	if [ "${makeconf}" = "-" ]; then
-		makeconf="$(realpath ${POUDRIERED}/make.conf)"
+		makeconf="${POUDRIERED}/make.conf"
 	else
-		makeconf="$(realpath ${POUDRIERED}/${makeconf}-make.conf)"
+		makeconf="${POUDRIERED}/${makeconf}-make.conf"
 	fi
 
-	[ -f ${make.conf} ] || return
+	[ -f "${makeconf}" ] || return 0
+	makeconf="$(realpath ${makeconf} 2>/dev/null)"
 	msg "Appending to /etc/make.conf: ${makeconf}"
 	cat "${makeconf}" >> ${mnt}/etc/make.conf
 }
