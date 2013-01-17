@@ -276,6 +276,20 @@ createfs() {
 	fi
 }
 
+unmarkfs() {
+	[ $# -ne 2 ] && eargs name mnt
+	local name=$1
+	local mnt=$2
+	local fs
+
+	fs=$(mount -t zfs | awk -v n="${mnt}" ' $3 == n { print $1 }')
+	if [ -n "${fs}" ]; then
+		zfs destroy -f ${fs}@${name} 2>/dev/null || :
+	else
+		rm -f ${mnt}/.poudriere/mtree.${name} 2>/dev/null || :
+	fi
+}
+
 markfs() {
 	[ $# -ne 2 ] && eargs name mnt
 	local name=$1
@@ -285,7 +299,7 @@ markfs() {
 	fs=$(mount -t zfs | awk -v n="${mnt}" ' $3 == n { print $1 }')
 	if [ -n "${fs}" ]; then
 		# remove old snapshot if exists
-		zfs destroy -r ${fs}@${name} || :
+		zfs destroy -r ${fs}@${name} 2>/dev/null || :
 		#create new snapshot
 		zfs snapshot ${fs}@${name}
 	fi
@@ -442,7 +456,7 @@ jail_start() {
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	jail_runs && err 1 "jail already running: ${JAILNAME}"
 	zset status "start:"
-	zfs destroy -r ${JAILFS}/build 2>/dev/null || :
+	unmarkfs build ${JAILMNT}
 	zfs rollback -R ${JAILFS}@clean
 
 	msg "Mounting system devices for ${JAILNAME}"
@@ -529,7 +543,7 @@ cleanup() {
 	wait
 
 	zfs destroy -r ${JAILFS%/build/*}/build 2>/dev/null || :
-	zfs destroy -r ${JAILFS%/build/*}@prepkg 2>/dev/null || :
+	unmaekfs prepkg ${JAILMNT}
 	jail_stop
 	export CLEANED_UP=1
 }

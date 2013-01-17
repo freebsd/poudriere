@@ -128,7 +128,7 @@ fi
 
 zset status "depends:"
 
-zfs destroy -r ${JAILFS}@prepkg
+unmaekfs prepkg ${JAILMNT}
 
 injail make -C ${PORTDIRECTORY} pkg-depends extract-depends \
 	fetch-depends patch-depends build-depends lib-depends
