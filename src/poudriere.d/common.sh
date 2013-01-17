@@ -412,31 +412,16 @@ clonefs() {
 
 destroyfs() {
 	[ $# -ne 2 ] && eargs name type
-	local name mnt fs type
-	name=$1
+	local mnt fs type
+	mnt=$1
 	type=$2
-	case "$type" in
-	ports) fct=pget ;;
-	jail) fct=jget ;;
-	*) err 1 "unknown type of fs"
-	esac
-	mnt=$(pget ${name} mnt)
-	fs=$(pget ${name} fs)
+	fs=$(zfs_getfs ${mnt})
 	if [ -n "${fs}" -a "${fs}" != "none" ]; then
 		zfs destroy -r ${fs}
 		rmdir ${mnt}
 	else
 		[ $type = "jail" ] && chflags -R noschg ${mnt}
 		rm -rf ${mnt}
-	fi
-
-	if [ $type = "jail" ]; then
-		rm -rf ${POUDRIERED}/jails/${name}
-		rm -rf ${POUDRIERE_DATA}/packages/${name}
-		rm -rf ${POUDRIERE_DATA}/cache/${name}
-		rm -rf ${POUDRIERE_DATA}/logs/*/${name}
-	else
-		rm -rf ${POUDRIERED}/ports/${name}
 	fi
 }
 
@@ -636,7 +621,7 @@ jail_stop() {
 	fi
 	msg "Umounting file systems"
 	pmnt=$(realpath ${mnt}/../)
-	mount -t !zfs | awk -v mnt="${pmnt}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r | xargs umount -f || :
+	mount | awk -v mnt="${pmnt}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ && $4 != "(zfs,") { print $3 }}' |  sort -r | xargs umount -f || :
 
 	if [ -n "${MFSSIZE}" ]; then
 		mount | grep "/dev/md.*${pmnt}/build" | while read mntpt; do
@@ -652,7 +637,7 @@ jail_stop() {
 			mdconfig -d -u $dev
 		fi
 	fi
-	destroyfs ${mnt}
+	destroyfs ${mnt} jail
 	rm -rf ${pmnt}
 	export STATUS=0
 }
@@ -934,7 +919,7 @@ stop_builders() {
 
 	mnt=`realpath ${mmnt}/../`
 	for j in ${JOBS}; do
-		mount -t !zfs | awk -v mnt="${mnt}/$j" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ ) { print $3 }}' |  sort -r | xargs umount -f 2>/dev/null || :
+		mount | awk -v mnt="${mnt}/$j" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ && $4 != "(zfs," ) { print $3 }}' |  sort -r | xargs umount -f 2>/dev/null || :
 	done
 
 
