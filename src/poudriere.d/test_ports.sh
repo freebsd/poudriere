@@ -109,7 +109,7 @@ fi
 LISTPORTS=$(list_deps ${PORTDIRECTORY} )
 prepare_ports
 
-zfs snapshot ${JAILFS}@prepkg
+markfs prepkg ${JAILMNT}
 
 if ! POUDRIERE_BUILD_TYPE=bulk parallel_build; then
 	failed=$(cat ${JAILMNT}/poudriere/ports.failed | awk '{print $1 ":" $2 }' | xargs echo)

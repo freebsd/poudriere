@@ -135,7 +135,7 @@ if [ -z "${PORTTESTING}" -a -z "${ALLOW_MAKE_JOBS}" ]; then
 	echo "DISABLE_MAKE_JOBS=yes" >> ${JAILMNT}/etc/make.conf
 fi
 
-zfs snapshot ${JAILFS}@prepkg
+markfs prepkg ${JAILMNT}
 
 parallel_build || : # Ignore errors as they are handled below
 

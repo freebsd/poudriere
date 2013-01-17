@@ -101,23 +101,20 @@ update_jail() {
 			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update install || err 1 "Fail to upgrade system"
 			jset ${JAILNAME} version ${TORELEASE}
 		fi
-		zfs destroy -r ${JAILFS}@clean
-		zfs snapshot ${JAILFS}@clean
+		markfs clean ${JAILMNT}
 		jail_stop
 		;;
 	csup)
 		install_from_csup
 		update_version $(jget ${JAILNAME} version)
 		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
-		zfs destroy -r ${JAILFS}@clean
-		zfs snapshot ${JAILFS}@clean
+		markfs clean ${JAILMNT}
 		;;
 	svn*)
 		install_from_svn
 		update_version $(jget ${JAILNAME} version)
 		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
-		zfs destroy -r ${JAILFS}@clean
-		zfs snapshot ${JAILFS}@clean
+		markfs clean ${JAILMNT}
 		;;
 	allbsd|gjb)
 		err 1 "Upgrade is not supported with allbsd, to upgrade, please delete and recreate the jail"
@@ -403,7 +400,7 @@ EOF
 
 	jail -U root -c path=${JAILMNT} command=/sbin/ldconfig -m /lib /usr/lib /usr/lib/compat
 
-	zfs snapshot ${JAILFS}@clean
+	markfs clean ${JAILMNT}
 	unset CLEANUP_HOOK
 	msg "Jail ${JAILNAME} ${VERSION} ${ARCH} is ready to be used"
 }

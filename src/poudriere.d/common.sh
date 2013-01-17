@@ -276,6 +276,21 @@ createfs() {
 	fi
 }
 
+markfs() {
+	[ $# -ne 2 ] && eargs name mnt
+	local name=$1
+	local mnt=$2
+	local fs
+
+	fs=$(mount -t zfs | awk -v n="${mnt}" ' $3 == n { print $1 }')
+	if [ -n "${fs}" ]; then
+		# remove old snapshot if exists
+		zfs destroy -r ${fs}@${name} || :
+		#create new snapshot
+		zfs snapshot ${fs}@${name}
+	fi
+}
+
 destroyfs() {
 	[ $# -ne 2 ] && eargs name type
 	local name mnt fs type
@@ -754,7 +769,7 @@ start_builders() {
 			-o ${NS}:arch=${arch} \
 			-o ${NS}:version=${version} \
 			${JAILFS}@prepkg ${fs}
-		zfs snapshot ${fs}@prepkg
+		markfs prepkg ${fs}
 		# Jail might be lingering from previous build. Already recursively
 		# destroyed all the builder datasets, so just try stopping the jail
 		# and ignore any errors
