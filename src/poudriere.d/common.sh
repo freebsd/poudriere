@@ -581,7 +581,7 @@ jail_start() {
 
 	[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
 	msg "Mounting ports/packages/distfiles"
-	do_portbuild_mount ${mnt} ${jname} ${ptname} ${setname}
+	do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
 
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 		echo "WITH_CCACHE_BUILD=yes" > ${mnt}/make.conf
