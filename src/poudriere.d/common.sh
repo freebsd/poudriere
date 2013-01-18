@@ -1301,7 +1301,7 @@ build_pkg() {
 
 			job_msg "Finished build of ${port}: Success"
 			# Cache information for next run
-			pkg_cache_data "${POUDRIERE}/packages/${MASTERNAME}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
+			pkg_cache_data "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
 		else
 			echo "${port} ${failed_phase}" >> "${mmnt}/poudriere/ports.failed"
 			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
