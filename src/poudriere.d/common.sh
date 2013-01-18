@@ -500,6 +500,11 @@ do_jail_mounts() {
 
 	# ref jail only needs devfs
 	mount -t devfs devfs ${mnt}/dev
+	devfs -m ${mnt}/dev rule apply hide
+	devfspath="null zero random urandom stdin stdout stderr fd "
+	for p in ${devfspath} ; do
+		devfs -m ${mnt}/dev/ rule apply path ${p} unhide
+	done
 	if [ "${mnt##*/}" != "ref" ]; then
 		mount -t fdescfs fdesc ${mnt}/dev/fd
 		mount -t procfs proc ${mnt}/proc
