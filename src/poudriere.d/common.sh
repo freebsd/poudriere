@@ -529,7 +529,7 @@ use_options() {
 	[ -d "${optionsdir}" ] || return 1
 	optionsdir=$(realpath ${optionsdir} 2>/dev/null)
 	msg "Mounting /var/db/ports from: ${optionsdir}"
-	mount -t nullfs ${optionsdir} ${mnt}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+	mount -t nullfs -o ro ${optionsdir} ${mnt}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
 
 	return 0
 }
@@ -557,7 +557,7 @@ do_portbuild_mounts() {
 		[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${mnt}/wrkdirs
 	fi
 
-	mount -t nullfs ${portsdir} ${mnt}/usr/ports || err 1 "Failed to mount the ports directory "
+	mount -t nullfs -o ro ${portsdir} ${mnt}/usr/ports || err 1 "Failed to mount the ports directory "
 	mount -t nullfs ${POUDRIERE_DATA}/packages/${MASTERNAME} ${mnt}/packages || err 1 "Failed to mount the packages directory "
 	mount -t nullfs ${DISTFILES_CACHE} ${mnt}/distfiles || err 1 "Failed to mount the distfiles cache directory"
 
