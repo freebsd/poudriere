@@ -644,7 +644,7 @@ jail_stop() {
 		# - here to only check for unset, {start,stop}_builders will set this to blank if already stopped
 		for j in ${JOBS-$(jot -w %02d ${PARALLEL_JOBS})}; do
 			jail -r ${MASTERNAME}-job-${j} >/dev/null 2>&1 || :
-			destroyfs ${mnt}/../${j}
+			destroyfs ${mnt}/../${j} jail
 		done
 	fi
 	msg "Umounting file systems"
@@ -903,7 +903,7 @@ start_builders() {
 		# destroyed all the builder datasets, so just try stopping the jail
 		# and ignore any errors
 		jail -r ${name} >/dev/null 2>&1 || :
-		rm -rf ${mnt} 2>/dev/null || :
+		destroyfs ${mnt} jail
 		mkdir -p "${mnt}"
 		clonefs ${mmnt} ${mnt} prepkg
 		markfs prepkg ${mnt}
@@ -925,7 +925,7 @@ stop_builders() {
 
 	for j in ${JOBS}; do
 		jail -r ${MASTERNAME}-job-${j} >/dev/null 2>&1 || :
-		destroyfs ${mnt}/../${j}
+		destroyfs ${mnt}/../${j} jail
 	done
 
 	# No builders running, unset JOBS
