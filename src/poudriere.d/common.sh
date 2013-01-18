@@ -554,7 +554,7 @@ do_portbuild_mounts() {
 	mount -t nullfs ${DISTFILES_CACHE} ${mnt}/distfiles || err 1 "Failed to mount the distfiles cache directory"
 
 	for opt in ${optionsdir}; do
-		use_options ${mnt} ${opt} && break
+		use_options ${mnt} ${opt} && break || continue
 	done
 }
 
@@ -635,7 +635,6 @@ jail_stop() {
 	jail_runs ${MASTERNAME} || err 1 "No such jail running: ${MASTERNAME}"
 	local mnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
 	local fs=$(zfs_getfs ${mnt})
-	local pmnt
 	bset ${MASTERNAME} status "stop:"
 
 
@@ -645,11 +644,11 @@ jail_stop() {
 		# - here to only check for unset, {start,stop}_builders will set this to blank if already stopped
 		for j in ${JOBS-$(jot -w %02d ${PARALLEL_JOBS})}; do
 			jail -r ${MASTERNAME}-job-${j} >/dev/null 2>&1 || :
+			destroyfs ${mnt}/../${j}
 		done
 	fi
 	msg "Umounting file systems"
 	destroyfs ${mnt} jail
-	rm -rf ${pmnt}
 	export STATUS=0
 }
 
