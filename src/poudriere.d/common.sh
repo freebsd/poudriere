@@ -578,7 +578,7 @@ jail_start() {
 		echo "WITH_CCACHE_BUILD=yes" >> ${tomnt}/etc/make.conf
 		echo "MAKE_ENV+= CCACHE_DIR=/ccache" >> ${tomnt}/etc/make.conf
 	fi
-	echo "PKGDIR=/packages" >> ${tomnt}/etc/make.conf
+	echo "PACKAGES=/packages" >> ${tomnt}/etc/make.conf
 	echo "DISTDIR=/distfiles" >> ${tomnt}/etc/make.conf
 
 	makeconf="- ${name} ${name}-${ptname}"
@@ -749,7 +749,7 @@ build_port() {
 		job_msg_verbose "Status for build ${port}: ${phase}"
 		if [ "${phase}" = "fetch" ]; then
 			jail -r ${name} >/dev/null
-			jrun 1
+			jrun ${name} ${mnt} 1
 		fi
 		case ${phase} in
 		install) markfs preinst ${mnt} ;;
@@ -777,7 +777,7 @@ build_port() {
 
 		if [ "${phase}" = "checksum" ]; then
 			jail -r ${name} >/dev/null
-			jrun 0
+			jrun ${name} ${mnt} 1
 		fi
 		if [ "${phase}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
@@ -845,7 +845,7 @@ build_port() {
 		fi
 	done
 	jail -r ${name} >/dev/null
-	jrun 0
+	jrun ${name} ${mnt} 0
 	bset ${name} status "idle:"
 	return 0
 }
