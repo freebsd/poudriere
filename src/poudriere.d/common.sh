@@ -1249,7 +1249,6 @@ build_pkg() {
 	portdir="/usr/ports/${port}"
 
 	job_msg "Starting build of ${port}"
-	log_start $(log_path)/${PKGNAME}.log
 	bset ${name} status "starting:${port}"
 	rollbackfs prepkg ${mnt}
 
@@ -1266,6 +1265,7 @@ build_pkg() {
 	msg "Cleaning up wrkdir"
 	rm -rf ${mnt}/wrkdirs/*
 
+	log_start $(log_path)/${PKGNAME}.log
 	msg "Building ${port}"
 	buildlog_start ${portdir}
 
