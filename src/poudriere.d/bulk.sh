@@ -104,16 +104,17 @@ STATUS=0 # out of jail #
 
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
 
+MASTERNAME=${JAILNAME}-${PTNAME}
+[ -n "${SETNAME}" ] && MASTERNAME="${MASTERNAME}-${SETNAME}"
+
+export MASTERNAME
 if [ ${CLEAN} -eq 1 ]; then
 	msg_n "Cleaning previous bulks if any..."
-	rm -rf ${POUDRIERE}/packages/${MASTERNAME}/*
+	rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/*
 	rm -rf ${POUDRIERE_DATA}/cache/${JAILNAME}
 	echo " done"
 fi
 
-MASTERNAME=${JAILNAME}-${PTNAME}
-[ -n "${SETNAME}" ] && MASTERNAME="${MASTERNAME}-${SETNAME}"
-export MASTERNAME
 export POUDRIERE_BUILD_TYPE=bulk
 
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
@@ -166,7 +167,7 @@ elif [ $PKGNG -eq 1 ]; then
 		injail ${MASTERNAME} make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
 	fi
 	msg "Creating pkgng repository"
-	bget ${MASTERNAME} status "pkgrepo:"
+	bset ${MASTERNAME} status "pkgrepo:"
 	injail ${MASTERNAME} tar xf /packages/Latest/pkg.txz -C /
 	injail ${MASTERNAME} rm -f /packages/repo.txz /packages/repo.sqlite
 	if [ -n "${PKG_REPO_SIGNING_KEY}" -a -f "${PKG_REPO_SIGNING_KEY}" ]; then
