@@ -336,7 +336,7 @@ markfs() {
 	clean) [ -n "${fs}" ] && dozfs=1 ;;
 	prepkg)
 		[ -n "${fs}" ] && dozfs=1
-		[ ${dozfs} -eq 1 -a  "${mnt##*/}" != "ref" ] && domtree=1
+		[ "${dozfs}" -eq 0 -a  "${mnt##*/}" != "ref" ] && domtree=1
 		;;
 	preinst) domtree=1 ;;
 	esac
@@ -348,7 +348,7 @@ markfs() {
 		zfs snapshot ${fs}@${name}
 	fi
 
-	[ $domtree -eq 0 ] && return
+	[ $domtree -eq 0 ] && return 0
 	mkdir -p ${mnt}/poudriere/
 	if [ "${name}" = "prepkg" ]; then
 		cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
@@ -383,7 +383,7 @@ EOF
 EOF
 	fi
 	mtree -X ${mnt}/poudriere/mtree.${name}exclude \
-		-xcn -k uid,git,mode,size \
+		-xcn -k uid,gid,mode,size \
 		-p ${mnt} >> ${mnt}/poudriere/mtree.${name}
 }
 
