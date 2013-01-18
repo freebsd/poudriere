@@ -111,7 +111,6 @@ if [ ${CLEAN} -eq 1 ]; then
 	echo " done"
 fi
 
-JAILMNT=$(jget ${JAILNAME} mnt)
 MASTERNAME=${JAILNAME}-${PTNAME}
 [ -n "${SETNAME}" ] && MASTERNAME="${MASTERNAME}-${SETNAME}"
 export MASTERNAME
@@ -129,11 +128,12 @@ prepare_ports
 
 bset ${MASTERNAME} status "building:"
 
+mnt=$(my_path)
 if [ -z "${PORTTESTING}" -a -z "${ALLOW_MAKE_JOBS}" ]; then
-	echo "DISABLE_MAKE_JOBS=yes" >> ${JAILMNT}/etc/make.conf
+	echo "DISABLE_MAKE_JOBS=yes" >> ${mnt}/etc/make.conf
 fi
 
-markfs prepkg ${JAILMNT}
+markfs prepkg ${mnt}
 
 parallel_build || : # Ignore errors as they are handled below
 
@@ -170,9 +170,9 @@ elif [ $PKGNG -eq 1 ]; then
 	injail ${MASTERNAME} tar xf /packages/Latest/pkg.txz -C /
 	injail ${MASTERNAME} rm -f /packages/repo.txz /packages/repo.sqlite
 	if [ -n "${PKG_REPO_SIGNING_KEY}" -a -f "${PKG_REPO_SIGNING_KEY}" ]; then
-		install -m 0400 ${PKG_REPO_SIGNING_KEY} ${JAILMNT}/tmp/repo.key
+		install -m 0400 ${PKG_REPO_SIGNING_KEY} ${mnt}/tmp/repo.key
 		injail ${MASTERNAME} pkg-static repo /packages/ /tmp/repo.key
-		rm -f ${JAILMNT}/tmp/repo.key
+		rm -f ${mnt}/tmp/repo.key
 	else
 		injail ${MASTERNAME} pkg-static repo /packages/
 	fi

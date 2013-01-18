@@ -144,7 +144,7 @@ bget() {
 }
 
 bset() {
-	local mastername=$1
+	local astername=$1
 	local property=$2
 	local mnt=$(jls -qj ${mastername} path)
 
@@ -395,6 +395,8 @@ clonefs() {
 	local name=${to##*/}
 	local fs=$(zfs_getfs ${from})
 
+	mkdir -p ${to}
+	to=$(realpath ${to})
 	if [ -n "${fs}" ]; then
 		# Make sure the fs is clean before cloning
 		zfs rollback -R ${fs}@${snap}
@@ -406,7 +408,6 @@ clonefs() {
 			chflags -R noschg ${to}
 			rm -rf ${to}
 		fi
-		mkdir -p ${to}
 		pax -X -rw -p p -s ",${from},,g" ${from} ${to}
 	fi
 }
@@ -897,8 +898,8 @@ start_builders() {
 		rm -rf ${mnt} 2>/dev/null || :
 		mkdir -p "${mnt}"
 		clonefs ${mmnt} ${mnt} prepkg
-		markfs prepkg ${fs}
-		do_jail_mounts ${mnt} ${jname} ${ptname} ${setname}
+		markfs prepkg ${mnt}
+		do_jail_mounts ${mnt} ${arch}
 		do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
 		jrun ${name} ${mnt} 0
 		bset ${name} status "idle:"
