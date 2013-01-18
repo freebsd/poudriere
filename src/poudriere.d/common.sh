@@ -213,7 +213,8 @@ siginfo_handler() {
 
 jail_exists() {
 	[ $# -ne 1 ] && eargs jailname
-	[ -d ${POUDRIERED}/jails/${jailname} ] && return 0
+	local jname=$1
+	[ -d ${POUDRIERED}/jails/${jname} ] && return 0
 	return 1
 }
 
