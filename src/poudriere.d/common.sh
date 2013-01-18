@@ -80,19 +80,20 @@ log_path() {
 
 buildlog_start() {
 	local portdir=$1
+	local name=$(my_name)
 
 	echo "build started at $(date)"
 	echo "port directory: ${portdir}"
-	echo "building for: $(injail uname -rm)"
-	echo "maintained by: $(injail make -C ${portdir} maintainer)"
-	echo "Makefile ident: $(injail ident ${portdir}/Makefile|sed -n '2,2p')"
+	echo "building for: $(injail ${name} uname -rm)"
+	echo "maintained by: $(injail ${name} make -C ${portdir} maintainer)"
+	echo "Makefile ident: $(injail ${name} ident ${portdir}/Makefile|sed -n '2,2p')"
 
 	echo "---Begin Environment---"
-	injail env ${PKGENV} ${PORT_FLAGS}
+	injail ${name} env ${PKGENV} ${PORT_FLAGS}
 	echo "---End Environment---"
 	echo ""
 	echo "---Begin OPTIONS List---"
-	injail make -C ${portdir} showconfig
+	injail ${name} make -C ${portdir} showconfig
 	echo "---End OPTIONS List---"
 }
 
@@ -752,12 +753,12 @@ build_port() {
 				PLIST="/var/db/pkg/${PKGNAME}/+CONTENTS"
 				grep -v "^@" ${mnt}${PLIST} | \
 					sed -e "s,^,${PREFIX}/," | \
-					xargs injail ldd 2>&1 | \
+					xargs injail ${name} ldd 2>&1 | \
 					grep -v "not a dynamic executable" | \
 					awk ' /=>/{ print $3 }' | sort -u
 			else
 				injail ${name} pkg query "%Fp" ${PKGNAME} | \
-					xargs injail ldd 2>&1 | \
+					xargs injail ${name} ldd 2>&1 | \
 					grep -v "not a dynamic executable" | \
 					awk '/=>/ { print $3 }' | sort -u
 			fi
@@ -765,7 +766,7 @@ build_port() {
 		esac
 
 		print_phase_header ${phase}
-		injail env ${PKGENV} ${PORT_FLAGS} make -C ${portdir} ${phase} || return 1
+		injail ${name} env ${PKGENV} ${PORT_FLAGS} make -C ${portdir} ${phase} || return 1
 		print_phase_footer
 
 		if [ "${phase}" = "checksum" ]; then
@@ -774,7 +775,7 @@ build_port() {
 		fi
 		if [ "${phase}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
-			PREFIX=`injail env ${PORT_FLAGS} make -C ${portdir} -VPREFIX`
+			PREFIX=`injail ${name} env ${PORT_FLAGS} make -C ${portdir} -VPREFIX`
 			bset ${name} status "leftovers:${port}"
 			local portname datadir etcdir docsdir examplesdir wwwdir site_perl
 			local add=$(mktemp ${jailbase}/tmp/add.XXXXXX)
@@ -785,7 +786,7 @@ build_port() {
 			local mod1=$(mktemp ${jailbase}/tmp/mod1.XXXXXX)
 			local die=0
 
-			sedargs=$(injail env ${PORT_FLAGS} make -C ${portdir} -V'${PLIST_SUB:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/}')
+			sedargs=$(injail ${name} env ${PORT_FLAGS} make -C ${portdir} -V'${PLIST_SUB:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/}')
 
 			check_leftovers ${mnt} | \
 				while read mod path; do
@@ -1315,7 +1316,7 @@ list_deps() {
 	local makeargs="-VPKG_DEPENDS -VBUILD_DEPENDS -VEXTRACT_DEPENDS -VLIB_DEPENDS -VPATCH_DEPENDS -VFETCH_DEPENDS -VRUN_DEPENDS"
 	[ -d "${PORTSDIR}/${dir}" ] && dir="/usr/ports/${dir}"
 
-	injail make -C ${dir} $makeargs | tr '\n' ' ' | \
+	injail ${MASTERNAME} make -C ${dir} $makeargs | tr '\n' ' ' | \
 		sed -e "s,[[:graph:]]*/usr/ports/,,g" -e "s,:[[:graph:]]*,,g" | sort -u
 }
 
@@ -1326,7 +1327,7 @@ deps_file() {
 
 	if [ ! -f "${depfile}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
-			injail pkg_info -qr "/usr/ports/packages/All/${pkg##*/}" | awk '{ print $2 }' > "${depfile}"
+			injail ${MASTERNAME} pkg_info -qr "/usr/ports/packages/All/${pkg##*/}" | awk '{ print $2 }' > "${depfile}"
 		else
 			pkg info -qdF "${pkg}" > "${depfile}"
 		fi
@@ -1344,7 +1345,7 @@ pkg_get_origin() {
 	if [ ! -f "${originfile}" ]; then
 		if [ -z "${origin}" ]; then
 			if [ "${PKG_EXT}" = "tbz" ]; then
-				origin=$(injail pkg_info -qo "/usr/ports/packages/All/${pkg##*/}")
+				origin=$(injail ${MASTERNAME} pkg_info -qo "/usr/ports/packages/All/${pkg##*/}")
 			else
 				origin=$(pkg query -F "${pkg}" "%o")
 			fi
@@ -1364,7 +1365,7 @@ pkg_get_options() {
 
 	if [ ! -f "${optionsfile}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
-			compiled_options=$(injail pkg_info -qf "/usr/ports/packages/All/${pkg##*/}" | awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
+			compiled_options=$(injail ${MASTERNAME} pkg_info -qf "/usr/ports/packages/All/${pkg##*/}" | awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 		else
 			compiled_options=$(pkg query -F "${pkg}" '%Ov %Ok' | awk '$1 == "on" {print $2}' | sort | tr '\n' ' ')
 		fi
@@ -1663,7 +1664,7 @@ cache_get_key() {
 	if [ -z "${CACHE_KEY}" ]; then
 		CACHE_KEY=$({
 			injail ${MASTERNAME} env
-			injail cat /etc/make.conf
+			injail ${MASTERNAME} cat /etc/make.conf
 			injail ${MASTERNAME} find /var/db/ports -exec sha256 {} +
 			echo ${MASTERNAME}
 			if [ -f ${mnt}/usr/ports/poudriere.stamp ]; then
