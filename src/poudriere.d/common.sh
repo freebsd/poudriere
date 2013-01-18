@@ -326,6 +326,7 @@ do_jail_mounts() {
 	[ $# -ne 1 ] && eargs should_mkdir
 	local should_mkdir=$1
 	local arch=$(zget arch)
+	local devfspath="null zero random urandom stdin stdout stderr fd"
 
 	# Only do this when starting the master jail, clones will already have the dirs
 	if [ ${should_mkdir} -eq 1 ]; then
@@ -333,6 +334,10 @@ do_jail_mounts() {
 	fi
 
 	mount -t devfs devfs ${JAILMNT}/dev
+	devfs -m ${JAILMNT}/dev rule apply hide
+	for p in ${devfspath} ; do
+		devfs -m ${JAILMNT}/dev/ rule apply path ${p} unhide
+	done
 	mount -t fdescfs fdesc ${JAILMNT}/dev/fd
 	mount -t procfs proc ${JAILMNT}/proc
 
