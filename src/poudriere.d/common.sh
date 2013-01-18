@@ -311,6 +311,28 @@ rollbackfs() {
 	done | pax -rw -p p -s ",${mmnt},,g" ${mnt}
 }
 
+umountfs() {
+	[ $# -lt 1 ] && eargs mnt childonly
+	local mnt=$1
+	local childonly=$2
+	local pattern
+	
+	[ -n "${childonly}" ] && pattern="/"
+
+	[ -d "${mnt}" ] || return 0
+	mnt=$(realpath ${mnt})
+	mount | sort -r -k 2 | while read dev on pt opts; do
+		case ${pt} in
+		${mnt}${pattern}*)
+			umount -f ${pt}
+			if [ "${dev#/dev/md*}" != "${dev}" ]; then
+				mdconfig -d -u ${dev#/dev/md*}
+			fi
+		;;
+		esac
+	done
+}
+
 zfs_getfs() {
 	[ $# -ne 1 ] && eargs mnt
 	local mnt=$(realpath $1)
@@ -420,6 +442,7 @@ destroyfs() {
 	mnt=$(realpath $1)
 	type=$2
 	fs=$(zfs_getfs ${mnt})
+	umountfs ${mnt} 1
 	if [ -n "${fs}" -a "${fs}" != "none" ]; then
 		zfs destroy -r ${fs}
 		rmdir ${mnt}
@@ -625,23 +648,6 @@ jail_stop() {
 		done
 	fi
 	msg "Umounting file systems"
-	pmnt=$(realpath ${mnt}/../)
-	mount | awk -v mnt="${pmnt}/" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ && $4 != "(zfs,") { print $3 }}' |  sort -r | xargs umount -f || :
-
-	if [ -n "${MFSSIZE}" ]; then
-		mount | grep "/dev/md.*${pmnt}/build" | while read mntpt; do
-			local dev=`echo $mntpt | awk '{print $1}'`
-			if [ -n "$dev" ]; then
-				umount $dev
-				mdconfig -d -u $dev
-			fi
-		done
-		local dev=`mount | grep "/dev/md.*${pmnt}" | awk '{print $1}'`
-		if [ -n "$dev" ]; then
-			umount $dev
-			mdconfig -d -u $dev
-		fi
-	fi
 	destroyfs ${mnt} jail
 	rm -rf ${pmnt}
 	export STATUS=0
@@ -920,13 +926,8 @@ stop_builders() {
 
 	for j in ${JOBS}; do
 		jail -r ${MASTERNAME}-job-${j} >/dev/null 2>&1 || :
+		destroyfs ${mnt}/../${j}
 	done
-
-	mnt=`realpath ${mmnt}/../`
-	for j in ${JOBS}; do
-		mount | awk -v mnt="${mnt}/$j" 'BEGIN{ gsub(/\//, "\\\/", mnt); } { if ($3 ~ mnt && $1 !~ /\/dev\/md/ && $4 != "(zfs," ) { print $3 }}' |  sort -r | xargs umount -f 2>/dev/null || :
-	done
-
 
 	# No builders running, unset JOBS
 	JOBS=""
