@@ -187,9 +187,9 @@ else
 	OSMAJ=`injail ${MASTERNAME} uname -r | awk -F. '{ print $1 }'`
 	INDEXF=${POUDRIERE_DATA}/packages/${MASTERNAME}/INDEX-${OSMAJ}
 	rm -f ${INDEXF}.1 2>/dev/null || :
-	for pkg_file in ${POUDRIERE}/packages/${MASTERNAME}/All/*.tbz; do
+	for pkg_file in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz; do
 		# Check for non-empty directory with no packages in it
-		[ "${pkg}" = "${POUDRIERE}/packages/${MASTERNAME}/All/*.tbz" ] && break
+		[ "${pkg}" = "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz" ] && break
 		msg_verbose "Extracting description for ${ORIGIN} ..."
 		ORIGIN=$(pkg_get_origin ${pkg_file})
 		[ -d ${PORTSDIR}/${ORIGIN} ] &&	parallel_run "injail make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1"
