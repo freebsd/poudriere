@@ -400,6 +400,7 @@ clonefs() {
 	local name=${to##*/}
 	local fs=$(zfs_getfs ${from})
 
+	[ -d ${to} ] && destroyfs ${to} jail
 	mkdir -p ${to}
 	to=$(realpath ${to})
 	if [ -n "${fs}" ]; then
@@ -409,10 +410,6 @@ clonefs() {
 			${fs}@${snap} \
 			${fs}/${name}
 	else
-		if [ -d ${to} ]; then
-			chflags -R noschg ${to}
-			rm -rf ${to}
-		fi
 		pax -X -rw -p p -s ",${from},,g" ${from} ${to}
 	fi
 }
