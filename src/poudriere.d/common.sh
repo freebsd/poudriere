@@ -1209,12 +1209,12 @@ clean_pool() {
 	local pkgname=$1
 	local clean_rdepends=$2
 	local port skipped_origin
-	local mnt=$(my_path)
+	local mmnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
 
 	[ ${clean_rdepends} -eq 1 ] && port=$(cache_get_origin "${pkgname}")
 
 	# Cleaning queue (pool is cleaned here)
-	lockf -s -k ${mnt}/poudriere/.lock.pool sh ${SCRIPTPREFIX}/clean.sh "${mnt}" "${pkgname}" ${clean_rdepends} | sort -u | while read skipped_pkgname; do
+	lockf -s -k ${mnt}/poudriere/.lock.pool sh ${SCRIPTPREFIX}/clean.sh "${mmnt}" "${pkgname}" ${clean_rdepends} | sort -u | while read skipped_pkgname; do
 		skipped_origin=$(cache_get_origin "${skipped_pkgname}")
 		echo "${skipped_origin} ${pkgname}" >> ${mnt}/poudriere/ports.skipped
 		job_msg "Skipping build of ${skipped_origin}: Dependent port ${port} failed"
