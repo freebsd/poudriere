@@ -752,7 +752,7 @@ build_port() {
 			jrun ${name} ${mnt} 1
 		fi
 		case ${phase} in
-		install) markfs preinst ${mnt} ;;
+		install) [ -n ${PORTTESTING} ] && markfs preinst ${mnt} ;;
 		deinstall)
 			msg "Checking shared library dependencies"
 			if [ ${PKGNG} -eq 0 ]; then
