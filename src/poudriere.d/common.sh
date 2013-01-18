@@ -292,7 +292,7 @@ createfs() {
 rollbackfs() {
 	[ $# -ne 2 ] && eargs name mnt
 	local name=$1
-	local mnt=$(realpath $2)
+	local mnt=$2
 	local fs=$(zfs_getfs ${mnt})
 	local mmnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
 
@@ -306,7 +306,7 @@ rollbackfs() {
 	while read l ; do
 		case "$l" in
 		*extra*Directory*) rm -rf ${l%% *} 2>/dev/null ;;
-		*changed|*missing) echo ${mmnt}${l% *} ;;
+		*changed|*missing) echo ${mmnt}/${l% *} ;;
 		esac
 	done | pax -rw -p p -s ",${mmnt},,g" ${mnt}
 }
@@ -380,6 +380,7 @@ markfs() {
 	if [ "${name}" = "prepkg" ]; then
 		cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
 ./poudriere/*
+./compat/linux/proc
 ./wrkdirs/*
 ./${LOCALBASE:-/usr/local}/*
 ./packages/*
@@ -439,8 +440,10 @@ clonefs() {
 destroyfs() {
 	[ $# -ne 2 ] && eargs name type
 	local mnt fs type
-	mnt=$(realpath $1)
+	mnt=$1
 	type=$2
+	[ -d ${mnt} ] || return 0
+	mnt=$(realpath ${mnt})
 	fs=$(zfs_getfs ${mnt})
 	umountfs ${mnt} 1
 	if [ -n "${fs}" -a "${fs}" != "none" ]; then
@@ -1246,6 +1249,7 @@ build_pkg() {
 	portdir="/usr/ports/${port}"
 
 	job_msg "Starting build of ${port}"
+	log_start $(log_path)/${PKGNAME}.log
 	bset ${name} status "starting:${port}"
 	rollbackfs prepkg ${mnt}
 
@@ -1263,7 +1267,6 @@ build_pkg() {
 	rm -rf ${mnt}/wrkdirs/*
 
 	msg "Building ${port}"
-	log_start $(log_path)/${PKGNAME}.log
 	buildlog_start ${portdir}
 
 	if [ -n "${ignore}" ]; then
