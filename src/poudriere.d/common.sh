@@ -92,6 +92,10 @@ buildlog_start() {
 	injail ${name} env ${PKGENV} ${PORT_FLAGS}
 	echo "---End Environment---"
 	echo ""
+	echo "---Begin make.conf---"
+	injail ${name} cat /etc/make.conf
+	echo "---End make.conf---"
+	echo ""
 	echo "---Begin OPTIONS List---"
 	injail ${name} make -C ${portdir} showconfig
 	echo "---End OPTIONS List---"
@@ -135,18 +139,18 @@ pget() { attr_get ports $@ ; }
 
 #build getter/setter
 bget() {
-	[ $# -ne 2 ] && eargs mastername property
-	local mastername=$1
+	[ $# -ne 2 ] && eargs name property
+	local name=$1
 	local property=$2
-	local mnt=$(jls -qj ${mastername} path)
+	local mnt=$(jls -qj ${name} path)
 
 	cat ${mnt}/poudriere/${property} || :
 }
 
 bset() {
-	local astername=$1
+	local name=$1
 	local property=$2
-	local mnt=$(jls -qj ${mastername} path)
+	local mnt=$(jls -qj ${name} path)
 
 	shift 2
 	echo "$@" > ${mnt}/poudriere/${property} || :
@@ -285,9 +289,9 @@ createfs() {
 }
 
 rollbackfs() {
-	[ $# -ne 3 ] && eargs name mnt
+	[ $# -ne 2 ] && eargs name mnt
 	local name=$1
-	local mnt=$2
+	local mnt=$(realpath $2)
 	local fs=$(zfs_getfs ${mnt})
 	local mmnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
 
@@ -308,14 +312,14 @@ rollbackfs() {
 
 zfs_getfs() {
 	[ $# -ne 1 ] && eargs mnt
-	local mnt=$1
+	local mnt=$(realpath $1)
 	mount -t zfs | awk -v n="${mnt}" ' $3 == n { print $1 }'
 }
 
 unmarkfs() {
 	[ $# -ne 2 ] && eargs name mnt
 	local name=$1
-	local mnt=$2
+	local mnt=$(realpath $2)
 
 	if [ -n "$(zfs_getfs ${mnt})" ]; then
 		zfs destroy -f ${fs}@${name} 2>/dev/null || :
@@ -327,7 +331,7 @@ unmarkfs() {
 markfs() {
 	[ $# -lt 2 ] && eargs name mnt
 	local name=$1
-	local mnt=$2
+	local mnt=$(realpath $2)
 	local fs="$(zfs_getfs ${mnt})"
 	local dozfs=0
 	local domtree=0
@@ -415,7 +419,7 @@ clonefs() {
 destroyfs() {
 	[ $# -ne 2 ] && eargs name type
 	local mnt fs type
-	mnt=$1
+	mnt=$(realpath $1)
 	type=$2
 	fs=$(zfs_getfs ${mnt})
 	if [ -n "${fs}" -a "${fs}" != "none" ]; then
@@ -571,16 +575,17 @@ jail_start() {
 	do_portbuild_mounts ${tomnt} ${name} ${ptname} ${setname}
 
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
-		echo "WITH_CCACHE_BUILD=yes" > ${mnt}/make.conf
-		echo "MAKE_ENV+= CCACHE_DIR=/ccache" >> ${mnt}/make.conf
+		echo "WITH_CCACHE_BUILD=yes" >> ${tomnt}/etc/make.conf
+		echo "MAKE_ENV+= CCACHE_DIR=/ccache" >> ${tomnt}/etc/make.conf
 	fi
+	echo "PKGDIR=/packages" >> ${tomnt}/etc/make.conf
+	echo "DISTDIR=/distfiles" >> ${tomnt}/etc/make.conf
 
-	set -x
 	makeconf="- ${name} ${name}-${ptname}"
 	[ -n "${setname}" ] && makeconf="${makeconf} ${name}-${setname}"
 	makeconf="${makeconf} ${MASTERNAME}"
 	for opt in ${makeconf}; do
-		append_make ${mnt} ${opt}
+		append_make ${tomnt} ${opt}
 	done
 
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${tomnt}/etc/"

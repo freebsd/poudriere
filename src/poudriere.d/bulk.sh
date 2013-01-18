@@ -135,7 +135,7 @@ fi
 
 markfs prepkg ${mnt}
 
-parallel_build || : # Ignore errors as they are handled below
+parallel_build ${JAILNAME} ${PTNAME} ${SETNAME} || : # Ignore errors as they are handled below
 
 bset ${MASTERNAME} status "done:"
 
