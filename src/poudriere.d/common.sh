@@ -305,7 +305,7 @@ rollbackfs() {
 	-xr -f ${mnt}/poudriere/mtree.${name} -p ${mnt} | \
 	while read l ; do
 		case "$l" in
-		*extra*Directory*) rm -rf ${mmnt}/${l%% *} 2>/dev/null ;;
+		*extra*Directory*) rm -rf ${mnt}/${l%% *} 2>/dev/null ;;
 		*changed|*missing) echo ${mmnt}/${l% *} ;;
 		esac
 	done | pax -rw -p p -s ",${mmnt},,g" ${mnt}
@@ -324,7 +324,7 @@ umountfs() {
 	mount | sort -r -k 2 | while read dev on pt opts; do
 		case ${pt} in
 		${mnt}${pattern}*)
-			umount -f ${pt}
+			umount -f ${pt} || :
 			if [ "${dev#/dev/md*}" != "${dev}" ]; then
 				mdconfig -d -u ${dev#/dev/md*}
 			fi
@@ -426,6 +426,7 @@ clonefs() {
 	[ -d ${to} ] && destroyfs ${to} jail
 	mkdir -p ${to}
 	to=$(realpath ${to})
+	[ ${TMPFS_ALL} -eq 1 ] && unset fs
 	if [ -n "${fs}" ]; then
 		# Make sure the fs is clean before cloning
 		zfs rollback -R ${fs}@${snap}
@@ -433,6 +434,7 @@ clonefs() {
 			${fs}@${snap} \
 			${fs}/${name}
 	else
+		[ ${TMPFS_ALL} ] && mount -t tmpfs tmpfs ${to}
 		pax -X -rw -p p -s ",${from},,g" ${from} ${to}
 	fi
 }
@@ -446,7 +448,9 @@ destroyfs() {
 	mnt=$(realpath ${mnt})
 	fs=$(zfs_getfs ${mnt})
 	umountfs ${mnt} 1
-	if [ -n "${fs}" -a "${fs}" != "none" ]; then
+	if [ ${TMPFS_ALL} -eq 1 ]; then
+		umount -f ${mnt} 2>/dev/null || :
+	elif [ -n "${fs}" -a "${fs}" != "none" ]; then
 		zfs destroy -r ${fs}
 		rmdir ${mnt}
 	else
@@ -554,7 +558,7 @@ do_portbuild_mounts() {
 			mount -t nullfs ${CCACHE_DIR} ${mnt}/ccache
 		fi
 		[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
-		[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${mnt}/wrkdirs
+		[ ${TMPFS_WRKDIR} -eq 1 ] && mount -t tmpfs tmpfs ${mnt}/wrkdirs
 	fi
 
 	mount -t nullfs -o ro ${portsdir} ${mnt}/usr/ports || err 1 "Failed to mount the ports directory "
@@ -1255,12 +1259,14 @@ build_pkg() {
 
 	job_msg "Starting build of ${port}"
 	bset ${name} status "starting:${port}"
-	rollbackfs prepkg ${mnt}
 
 	if [ -n "${TMPFS_LOCALBASE}" ]; then
 		umount -f ${mnt}/${LOCALBASE:-/usr/local} 2>/dev/null || :
 		mount -t tmpfs tmpfs ${mnt}/${LOCALBASE:-/usr/local}
 	fi
+
+	rollbackfs prepkg ${mnt}
+
 	# If this port is IGNORED, skip it
 	# This is checked here instead of when building the queue
 	# as the list may start big but become very small, so here
@@ -1828,6 +1834,28 @@ if [ -z "${NO_ZFS}" ]; then
 fi
 
 [ -n "${MFSSIZE}" -a -n "${USE_TMPFS}" ] && err 1 "You can't use both tmpfs and mdmfs"
+
+TMPFS_WRKDIR=0
+TMPFS_DATA=0
+TMPFS_ALL=0
+TMPFS_LOCALBASE=0
+for val in ${USE_TMPFS}; do
+	case ${val} in
+	wrkdir|yes) TMPFS_WRKDIR=1 ;;
+	data) TMPFS_DATA=1 ;;
+	all) TMPFS_ALL=1 ;;
+	localbase) TMPFS_LOCALBASE=1 ;;
+	*) err 1 "Unkown value for USE_TMPFS can be a combinaison of wrkdir,data,all,yes,localbase" ;;
+	esac
+done
+
+case ${TMPFS_WRKDIR}${TMPFS_DATA}${TMPFS_LOCALBASE}${TMPFS_ALL} in
+1**1|*1*1|**11)
+	TMPFS_WRKDIR=0
+	TMPFS_DATA=0
+	TMPFS_LOCALBASE=0
+	;;
+esac
 
 : ${CRONDIR="${POUDRIERE_DATA}/cron"}
 POUDRIERE_DATA=`get_data_dir`
