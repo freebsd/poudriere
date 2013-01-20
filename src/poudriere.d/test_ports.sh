@@ -127,7 +127,7 @@ fi
 
 bset ${MASTERNAME} status "depends:"
 
-unmaekfs prepkg ${JAILMNT}
+unmarkfs prepkg ${JAILMNT}
 
 injail ${MASTERNAME} make -C ${PORTDIRECTORY} pkg-depends extract-depends \
 	fetch-depends patch-depends build-depends lib-depends
