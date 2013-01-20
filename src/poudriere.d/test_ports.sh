@@ -5,7 +5,6 @@ usage() {
 	echo "poudriere testport [parameters] [options]
 
 Parameters:
-    -d path     -- Specify the port to test
     -o origin   -- Specify an origin in the portstree
 
 Options:
@@ -31,13 +30,10 @@ SKIPSANITY=0
 INTERACTIVE_MODE=0
 PTNAME="default"
 
-while getopts "d:o:cnj:J:iIp:svz:" FLAG; do
+while getopts "o:cnj:J:iIp:svz:" FLAG; do
 	case "${FLAG}" in
 		c)
 			CONFIGSTR=1
-			;;
-		d)
-			HOST_PORTDIRECTORY=`realpath ${OPTARG}`
 			;;
 		o)
 			ORIGIN=${OPTARG}
@@ -77,16 +73,9 @@ while getopts "d:o:cnj:J:iIp:svz:" FLAG; do
 	esac
 done
 
-test -z ${HOST_PORTDIRECTORY} && test -z ${ORIGIN} && usage
+test -z ${ORIGIN} && usage
 
 export SKIPSANITY
-
-if [ -z ${ORIGIN} ]; then
-	PORTDIRECTORY=`basename ${HOST_PORTDIRECTORY}`
-else
-	HOST_PORTDIRECTORY=$(pget ${PTNAME} mnt)/ports/${ORIGIN}
-	PORTDIRECTORY="/usr/ports/${ORIGIN}"
-fi
 
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
 
@@ -100,12 +89,7 @@ export POUDRIERE_BUILD_TYPE=testport
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 mnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
 
-if [ -z ${ORIGIN} ]; then
-	mkdir -p ${mnt}/${PORTDIRECTORY}
-	mount -t nullfs ${HOST_PORTDIRECTORY} ${mnt}/${PORTDIRECTORY}
-fi
-
-LISTPORTS=$(list_deps ${PORTDIRECTORY} )
+LISTPORTS=$(list_deps ${ORIGIN} )
 prepare_ports
 
 markfs prepkg ${mnt}
@@ -129,25 +113,25 @@ bset ${MASTERNAME} status "depends:"
 
 unmarkfs prepkg ${JAILMNT}
 
-injail ${MASTERNAME} make -C ${PORTDIRECTORY} pkg-depends extract-depends \
+injail ${MASTERNAME} make -C /usr/ports/${ORIGIN} pkg-depends extract-depends \
 	fetch-depends patch-depends build-depends lib-depends
 
 bset ${MASTERNAME} status "testing:"
 
-PKGNAME=`injail ${MASTERNAME} make -C ${PORTDIRECTORY} -VPKGNAME`
-LOCALBASE=`injail ${MASTERNAME} make -C ${PORTDIRECTORY} -VLOCALBASE`
+PKGNAME=`injail ${MASTERNAME} make -C /usr/ports/${ORIGIN} -VPKGNAME`
+LOCALBASE=`injail ${MASTERNAME} make -C /usr/ports/${ORIGIN} -VLOCALBASE`
 PREFIX=${LOCALBASE}
 if [ "${USE_PORTLINT}" = "yes" ]; then
 	[ ! -x `which portlint` ] && err 2 "First install portlint if you want USE_PORTLINT to work as expected"
 	msg "Portlint check"
 	set +e
-	cd ${mnt}/${PORTDIRECTORY} && PORTSDIR="${PORTSDIR}" portlint -C | tee $(log_path)/${PKGNAME}.portlint.log
+	cd ${mnt}//usr/ports/${ORIGIN} && PORTSDIR="${PORTSDIR}" portlint -C | tee $(log_path)/${PKGNAME}.portlint.log
 	set -e
 fi
 [ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/prefix}/`echo ${PKGNAME} | tr '[,+]' _`"
 PORT_FLAGS="NO_DEPENDS=yes PREFIX=${PREFIX}"
 msg "Building with flags: ${PORT_FLAGS}"
-[ $CONFIGSTR -eq 1 ] && injail ${MASTERNAME} env TERM=${SAVED_TERM} make -C ${PORTDIRECTORY} config
+[ $CONFIGSTR -eq 1 ] && injail ${MASTERNAME} env TERM=${SAVED_TERM} make -C /usr/ports/${ORIGIN} config
 
 if [ -d ${mnt}${PREFIX} ]; then
 	msg "Removing existing ${PREFIX}"
@@ -163,12 +147,12 @@ mkdir -p ${mnt}/tmp/pkgs
 PORTTESTING=yes
 export DEVELOPER_MODE=yes
 log_start $(log_path)/${PKGNAME}.log
-buildlog_start ${PORTDIRECTORY}
-if ! build_port ${PORTDIRECTORY}; then
+buildlog_start /usr/ports/${ORIGIN}
+if ! build_port /usr/ports/${ORIGIN}; then
 	failed_status=$(jget ${MASTERNAME} status)
 	failed_phase=${failed_status%:*}
 
-	save_wrkdir "${PKGNAME}" "${PORTDIRECTORY}" "${failed_phase}" || :
+	save_wrkdir "${PKGNAME}" "/usr/ports/${ORIGIN}" "${failed_phase}" || :
 	exit 1
 fi
 
@@ -176,7 +160,7 @@ msg "Installing from package"
 injail ${MASTERNAME} ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT}
 
 msg "Cleaning up"
-injail ${MASTERNAME} make -C ${PORTDIRECTORY} clean
+injail ${MASTERNAME} make -C /usr/ports/${ORIGIN} clean
 
 if [ $INTERACTIVE_MODE -eq 1 ]; then
 	msg "Entering interactive test mode. Type 'exit' when done."
@@ -193,7 +177,7 @@ msg "Deinstalling package"
 injail ${MASTERNAME} ${PKG_DELETE} ${PKGNAME}
 
 msg "Removing existing ${PREFIX} dir"
-buildlog_stop ${PORTDIRECTORY}
+buildlog_stop /usr/ports/${ORIGIN}
 log_stop $(log_path)/${PKGNAME}.log
 
 cleanup
