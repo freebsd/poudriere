@@ -141,7 +141,7 @@ if [ "${USE_PORTLINT}" = "yes" ]; then
 	[ ! -x `which portlint` ] && err 2 "First install portlint if you want USE_PORTLINT to work as expected"
 	msg "Portlint check"
 	set +e
-	cd ${JAILMNT}/${PORTDIRECTORY} && PORTSDIR="${PORTSDIR}" portlint -C | tee $(log_path)/${PKGNAME}.portlint.log
+	cd ${mnt}/${PORTDIRECTORY} && PORTSDIR="${PORTSDIR}" portlint -C | tee $(log_path)/${PKGNAME}.portlint.log
 	set -e
 fi
 [ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/prefix}/`echo ${PKGNAME} | tr '[,+]' _`"
@@ -149,23 +149,23 @@ PORT_FLAGS="NO_DEPENDS=yes PREFIX=${PREFIX}"
 msg "Building with flags: ${PORT_FLAGS}"
 [ $CONFIGSTR -eq 1 ] && injail ${MASTERNAME} env TERM=${SAVED_TERM} make -C ${PORTDIRECTORY} config
 
-if [ -d ${JAILMNT}${PREFIX} ]; then
+if [ -d ${mnt}${PREFIX} ]; then
 	msg "Removing existing ${PREFIX}"
-	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${JAILMNT}${PREFIX}
+	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${mnt}${PREFIX}
 fi
 
 msg "Populating PREFIX"
-mkdir -p ${JAILMNT}${PREFIX}
+mkdir -p ${mnt}${PREFIX}
 injail ${MASTERNAME} mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${PREFIX} >/dev/null
 
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
-mkdir -p ${JAILMNT}/tmp/pkgs
+mkdir -p ${mnt}/tmp/pkgs
 PORTTESTING=yes
 export DEVELOPER_MODE=yes
 log_start $(log_path)/${PKGNAME}.log
 buildlog_start ${PORTDIRECTORY}
 if ! build_port ${PORTDIRECTORY}; then
-	failed_status=$(zget status)
+	failed_status=$(jget ${MASTERNAME} status)
 	failed_phase=${failed_status%:*}
 
 	save_wrkdir "${PKGNAME}" "${PORTDIRECTORY}" "${failed_phase}" || :
@@ -182,9 +182,9 @@ if [ $INTERACTIVE_MODE -eq 1 ]; then
 	msg "Entering interactive test mode. Type 'exit' when done."
 	injail ${MASTERNAME} env -i TERM=${SAVED_TERM} PACKAGESITE="file:///usr/ports/packages" /usr/bin/login -fp root
 elif [ $INTERACTIVE_MODE -eq 2 ]; then
-	msg "Leaving jail ${JAILNAME} running, mounted at ${JAILMNT} for interactive run testing"
-	msg "To enter jail: jexec ${JAILNAME} /bin/sh"
-	msg "To stop jail: poudriere jail -k -j ${JAILNAME}"
+	msg "Leaving jail ${MASTERNAME} running, mounted at ${mnt} for interactive run testing"
+	msg "To enter jail: jexec ${MASTERNAME} /bin/sh"
+	msg "To stop jail: poudriere jail -k -j ${MASTERNAME}"
 	CLEANING_UP=1
 	exit 0
 fi
@@ -193,7 +193,6 @@ msg "Deinstalling package"
 injail ${MASTERNAME} ${PKG_DELETE} ${PKGNAME}
 
 msg "Removing existing ${PREFIX} dir"
-[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${JAILMNT}${PREFIX} ${JAILMNT}${PREFIX}.PLIST_DIRS.before ${JAILMNT}${PREFIX}.PLIST_DIRS.after
 buildlog_stop ${PORTDIRECTORY}
 log_stop $(log_path)/${PKGNAME}.log
 
