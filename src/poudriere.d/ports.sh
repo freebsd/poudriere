@@ -109,7 +109,8 @@ if [ ${CREATE} -eq 1 ]; then
 	porttree_exists ${PTNAME} && err 2 "The ports tree ${PTNAME} already exists"
 	: ${PTMNT="${BASEFS:=/usr/local${ZROOTFS}}/ports/${PTNAME}"}
 	: ${PTFS="${ZPOOL}${ZROOTFS}/ports/${PTNAME}"}
-	porttree_create_fs ${PTNAME} ${PTMNT} ${PTFS}
+	createfs ${PTNAME} ${PTMNT} ${PTFS}
+	pset ${PTNAME} mnt ${PTMNT}
 	if [ $FAKE -eq 0 ]; then
 		case ${METHOD} in
 		csup)
@@ -121,15 +122,7 @@ if [ ${CREATE} -eq 1 ]; then
 *default delete use-rel-suffix
 ports-all" > ${PTMNT}/csup
 			csup -z -h ${CSUP_HOST} ${PTMNT}/csup || {
-				if [ ${PTFS} != "none" ]; then
-					zfs destroy ${PTFS}
-				else
-					rm -rf ${PTMNT}
-					if [ -e ${POUDRIERED}/portstrees ]; then
-						sed -i "" "s/${PTNAME}/d" \
-							${POUDRIERED}/portstrees
-					fi
-				fi
+				destroyfs ports ${PTNAME}
 				err 1 " Fail"
 			}
 			;;
@@ -139,15 +132,7 @@ ports-all" > ${PTMNT}/csup
 			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract || \
 			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract || \
 			{
-				if [ ${PTFS} != "none" ]; then
-					zfs destroy ${PTFS}
-				else
-					rm -rf ${PTMNT}
-					if [ -e ${POUDRIERED}/portstrees ]; then
-						sed -i "" "s/${PTNAME}/d" \
-							${POUDRIERED}/portstrees
-					fi
-				fi
+				destroyfs ports ${PTNAME}
 				err 1 " Fail"
 			}
 			;;
@@ -163,72 +148,46 @@ ports-all" > ${PTMNT}/csup
 			msg_n "Checking out the ports tree..."
 			svn -q co ${proto}://${SVN_HOST}/ports/head \
 				${PTMNT} || {
-				if [ ${PTFS} != "none" ]; then
-					zfs destroy ${PTFS}
-				else
-					rm -rf ${PTMNT}
-					if [ -e ${POUDRIERED}/portstrees ]; then
-						sed -i "" "s/${PTNAME}/d" \
-							${POUDRIERED}/portstrees
-					fi
-				fi
-				err 1 " Fail"
-			}
+					destroyfs ports ${PTNAME}
+					err 1 " Fail"
+				}
 			echo " done"
 			;;
 		git)
 			msg "Cloning the ports tree"
 			git clone ${GIT_URL} ${PTMNT} || {
-				if [ ${PTFS} != "none" ]; then
-					zfs destroy ${PTFS}
-				else
-					rm -rf ${PTMNT}
-					if [ -e ${POUDRIERED}/portstrees ]; then
-						sed -i "" "s/${PTNAME}/d" \
-							${POUDRIERED}/portstrees
-					fi
-				fi
+				destroyfs ports ${PTNAME}
+				err 1 " Fail"
 			}
 			echo " done"
 			;;
 		esac
-		pzset method ${METHOD}
-		if [ -e ${POUDRIERED}/portstrees ]; then
-			sed -i "" "s/__METHOD__/${METHOD}/g" ${POUDRIERED}/portstrees
-		fi
+		pset ${PTNAME} method ${METHOD}
 	fi
 fi
 
 if [ ${DELETE} -eq 1 ]; then
 	porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
-	PTMNT=$(porttree_get_base ${PTNAME})
+	PTMNT=$(pget ${PTNAME} mnt)
 	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
-	msg "Deleting portstree \"${PTNAME}\""
-	PTFS=$(porttree_get_fs ${PTNAME})
-	if [ -n "${PTFS}" ]; then
-		zfs destroy -r ${PTFS}
-	else
-		rm -rf ${PTMNT}
-		if [ -e ${POUDRIERED}/portstrees ]; then
-			sed -i "" "s/${PTNAME}/d" \
-				${POUDRIERED}/portstrees
-		fi
-	fi
+	msg_n "Deleting portstree \"${PTNAME}\""
+	destroyfs ports ${PTNAME}
+	echo " done"
 fi
 
 if [ ${UPDATE} -eq 1 ]; then
 	porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
-	METHOD=$(porttree_get_method ${PTNAME})
-	PTMNT=$(porttree_get_base ${PTNAME})
+	METHOD=$(pget ${PTNAME} method)
+	PTMNT=$(pget ${PTNAME} mnt)
 	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	msg "Updating portstree \"${PTNAME}\""
-	if [ ${METHOD} = "-" ]; then
+	if [ -z "${METHOD}" -o ${METHOD} = "-" ]; then
 		METHOD=portsnap
-		pzset method ${METHOD}
+		pset ${PTNAME} method ${METHOD}
 	fi
 	case ${METHOD} in
 	csup)

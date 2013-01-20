@@ -73,7 +73,7 @@ while getopts "f:j:J:Ccn:p:Rtsvwz:a" FLAG; do
 			;;
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"
-			SETNAME="-${OPTARG}"
+			SETNAME="${OPTARG}"
 			;;
 		a)
 			ALL=1
@@ -104,22 +104,20 @@ STATUS=0 # out of jail #
 
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
 
-PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}${SETNAME}
+MASTERNAME=${JAILNAME}-${PTNAME}
+[ -n "${SETNAME}" ] && MASTERNAME="${MASTERNAME}-${SETNAME}"
+
+export MASTERNAME
 if [ ${CLEAN} -eq 1 ]; then
 	msg_n "Cleaning previous bulks if any..."
-	rm -rf ${PKGDIR}/*
+	rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/*
 	rm -rf ${POUDRIERE_DATA}/cache/${JAILNAME}
 	echo " done"
 fi
 
-JAILFS=`jail_get_fs ${JAILNAME}`
-JAILMNT=`jail_get_base ${JAILNAME}`
-
 export POUDRIERE_BUILD_TYPE=bulk
 
-jail_start
-
-prepare_jail
+jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
 LOGD=`log_path`
 if [ -d ${LOGD} -a ${CLEAN} -eq 1 ]; then
@@ -129,28 +127,29 @@ fi
 
 prepare_ports
 
-zset status "building:"
+bset ${MASTERNAME} status "building:"
 
+mnt=$(my_path)
 if [ -z "${PORTTESTING}" -a -z "${ALLOW_MAKE_JOBS}" ]; then
-	echo "DISABLE_MAKE_JOBS=yes" >> ${JAILMNT}/etc/make.conf
+	echo "DISABLE_MAKE_JOBS=yes" >> ${mnt}/etc/make.conf
 fi
 
-zfs snapshot ${JAILFS}@prepkg
+markfs prepkg ${mnt}
 
-parallel_build || : # Ignore errors as they are handled below
+parallel_build ${JAILNAME} ${PTNAME} ${SETNAME} || : # Ignore errors as they are handled below
 
-zset status "done:"
+bset ${MASTERNAME} status "done:"
 
 build_stats 0
 
-failed=$(cat ${JAILMNT}/poudriere/ports.failed | awk '{print $1 ":" $2 }' | xargs echo)
-built=$(cat ${JAILMNT}/poudriere/ports.built | xargs echo)
-ignored=$(cat ${JAILMNT}/poudriere/ports.ignored | awk '{print $1}' | xargs echo)
-skipped=$(cat ${JAILMNT}/poudriere/ports.skipped | awk '{print $1}' | sort -u | xargs echo)
-nbfailed=$(zget stats_failed)
-nbignored=$(zget stats_ignored)
-nbskipped=$(zget stats_skipped)
-nbbuilt=$(zget stats_built)
+failed=$(bget ${MASTERNAME} ports.failed | awk '{print $1 ":" $2 }' | xargs echo)
+built=$(bget ${MASTERNAME} ports.built | xargs echo)
+ignored=$(bget ${MASTERNAME} ports.ignored | awk '{print $1}' | xargs echo)
+skipped=$(bget ${MASTERNAME} ports.skipped | awk '{print $1}' | sort -u | xargs echo)
+nbfailed=$(bget ${MASTERNAME} stats_failed)
+nbignored=$(bget ${MASTERNAME} stats_ignored)
+nbskipped=$(bget ${MASTERNAME} stats_skipped)
+nbbuilt=$(bget ${MASTERNAME} stats_built)
 [ "$nbfailed" = "-" ] && nbfailed=0
 [ "$nbignored" = "-" ] && nbignored=0
 [ "$nbskipped" = "-" ] && nbskipped=0
@@ -165,35 +164,35 @@ if [ $nbbuilt -eq 0 ]; then
 elif [ $PKGNG -eq 1 ]; then
 	if [ -n "${NO_RESTRICTED}" ]; then
 		msg "Cleaning restricted packages"
-		injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
+		injail ${MASTERNAME} make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
 	fi
 	msg "Creating pkgng repository"
-	zset status "pkgrepo:"
-	injail tar xf /usr/ports/packages/Latest/pkg.txz -C /
-	injail rm -f /usr/ports/packages/repo.txz /usr/ports/packages/repo.sqlite
+	bset ${MASTERNAME} status "pkgrepo:"
+	injail ${MASTERNAME} tar xf /packages/Latest/pkg.txz -C /
+	injail ${MASTERNAME} rm -f /packages/repo.txz /packages/repo.sqlite
 	if [ -n "${PKG_REPO_SIGNING_KEY}" -a -f "${PKG_REPO_SIGNING_KEY}" ]; then
-		install -m 0400 ${PKG_REPO_SIGNING_KEY} ${JAILMNT}/tmp/repo.key
-		injail pkg-static repo /usr/ports/packages/ /tmp/repo.key
-		rm -f ${JAILMNT}/tmp/repo.key
+		install -m 0400 ${PKG_REPO_SIGNING_KEY} ${mnt}/tmp/repo.key
+		injail ${MASTERNAME} pkg-static repo /packages/ /tmp/repo.key
+		rm -f ${mnt}/tmp/repo.key
 	else
-		injail pkg-static repo /usr/ports/packages/
+		injail ${MASTERNAME} pkg-static repo /packages/
 	fi
 else
 	if [ -n "${NO_RESTRICTED}" ]; then
 		msg "Cleaning restricted packages"
-		injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
+		injail ${MASTERNAME} make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
 	fi
 	msg "Preparing INDEX"
-	zset status "index:"
-	OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
-	INDEXF=${PKGDIR}/INDEX-${OSMAJ}
+	bset ${MASTERNAME} status "index:"
+	OSMAJ=`injail ${MASTERNAME} uname -r | awk -F. '{ print $1 }'`
+	INDEXF=${POUDRIERE_DATA}/packages/${MASTERNAME}/INDEX-${OSMAJ}
 	rm -f ${INDEXF}.1 2>/dev/null || :
-	for pkg_file in ${PKGDIR}/All/*.tbz; do
+	for pkg_file in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz; do
 		# Check for non-empty directory with no packages in it
-		[ "${pkg}" = "${PKGDIR}/All/*.tbz" ] && break
+		[ "${pkg}" = "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz" ] && break
 		msg_verbose "Extracting description for ${ORIGIN} ..."
 		ORIGIN=$(pkg_get_origin ${pkg_file})
-		[ -d ${PORTSDIR}/${ORIGIN} ] &&	parallel_run "injail make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1"
+		[ -d ${PORTSDIR}/${ORIGIN} ] &&	parallel_run "injail ${MASTERNAME} make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1"
 	done
 	parallel_stop
 
@@ -319,7 +318,7 @@ if [ $nbskipped -gt 0 ]; then
 	echo ${skipped}
 	echo ""
 fi
-msg "[${JAILNAME}] $nbbuilt packages built, $nbfailed failures, $nbignored ignored, $nbskipped skipped"
+msg "[${MASTERNAME}] $nbbuilt packages built, $nbfailed failures, $nbignored ignored, $nbskipped skipped"
 
 set +e
 

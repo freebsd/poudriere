@@ -66,7 +66,7 @@ while getopts "d:o:cnj:J:iIp:svz:" FLAG; do
 			;;
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"
-			SETNAME="-${OPTARG}"
+			SETNAME="${OPTARG}"
 			;;
 		v)
 			VERBOSE=$((${VERBOSE:-0} + 1))
@@ -84,38 +84,37 @@ export SKIPSANITY
 if [ -z ${ORIGIN} ]; then
 	PORTDIRECTORY=`basename ${HOST_PORTDIRECTORY}`
 else
-	HOST_PORTDIRECTORY=`porttree_get_base ${PTNAME}`/ports/${ORIGIN}
+	HOST_PORTDIRECTORY=$(pget ${PTNAME} mnt)/ports/${ORIGIN}
 	PORTDIRECTORY="/usr/ports/${ORIGIN}"
 fi
 
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
 
-PKGDIR=${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}${SETNAME}
+JAILMNT=$(jget ${JAILNAME} mnt)
 
-JAILFS=`jail_get_fs ${JAILNAME}`
-JAILMNT=`jail_get_base ${JAILNAME}`
-
+MASTERNAME=${JAILNAME}-${PTNAME}
+[ -n "${SETNAME}" ] && MASTERNAME="${MASTERNAME}-${SETNAME}"
+export MASTERNAME
 export POUDRIERE_BUILD_TYPE=testport
 
-jail_start
-
-prepare_jail
+jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
+mnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
 
 if [ -z ${ORIGIN} ]; then
-	mkdir -p ${JAILMNT}/${PORTDIRECTORY}
-	mount -t nullfs ${HOST_PORTDIRECTORY} ${JAILMNT}/${PORTDIRECTORY}
+	mkdir -p ${mnt}/${PORTDIRECTORY}
+	mount -t nullfs ${HOST_PORTDIRECTORY} ${mnt}/${PORTDIRECTORY}
 fi
 
 LISTPORTS=$(list_deps ${PORTDIRECTORY} )
 prepare_ports
 
-zfs snapshot ${JAILFS}@prepkg
+markfs prepkg ${mnt}
 
-if ! POUDRIERE_BUILD_TYPE=bulk parallel_build; then
-	failed=$(cat ${JAILMNT}/poudriere/ports.failed | awk '{print $1 ":" $2 }' | xargs echo)
-	skipped=$(cat ${JAILMNT}/poudriere/ports.skipped | awk '{print $1}' | sort -u | xargs echo)
-	nbfailed=$(zget stats_failed)
-	nbskipped=$(zget stats_skipped)
+if ! POUDRIERE_BUILD_TYPE=bulk parallel_build ${JAILNAME} ${PTNAME} ${SETNAME} ; then
+	failed=$(bget ${MASTERNAME} ports.failed | awk '{print $1 ":" $2 }' | xargs echo)
+	skipped=$(bget ${MASTERNAME} ports.skipped | awk '{print $1}' | sort -u | xargs echo)
+	nbignored=$(bget ${MASTERNAME} stats_failed)
+	nbskipped=$(bget ${MASTERNAME} stats_skipped)
 
 	cleanup
 
@@ -126,47 +125,47 @@ if ! POUDRIERE_BUILD_TYPE=bulk parallel_build; then
 	exit 1
 fi
 
-zset status "depends:"
+bset ${MASTERNAME} status "depends:"
 
-zfs destroy -r ${JAILFS}@prepkg
+unmarkfs prepkg ${JAILMNT}
 
-injail make -C ${PORTDIRECTORY} pkg-depends extract-depends \
+injail ${MASTERNAME} make -C ${PORTDIRECTORY} pkg-depends extract-depends \
 	fetch-depends patch-depends build-depends lib-depends
 
-zset status "testing:"
+bset ${MASTERNAME} status "testing:"
 
-PKGNAME=`injail make -C ${PORTDIRECTORY} -VPKGNAME`
-LOCALBASE=`injail make -C ${PORTDIRECTORY} -VLOCALBASE`
+PKGNAME=`injail ${MASTERNAME} make -C ${PORTDIRECTORY} -VPKGNAME`
+LOCALBASE=`injail ${MASTERNAME} make -C ${PORTDIRECTORY} -VLOCALBASE`
 PREFIX=${LOCALBASE}
 if [ "${USE_PORTLINT}" = "yes" ]; then
 	[ ! -x `which portlint` ] && err 2 "First install portlint if you want USE_PORTLINT to work as expected"
 	msg "Portlint check"
 	set +e
-	cd ${JAILMNT}/${PORTDIRECTORY} && PORTSDIR="${PORTSDIR}" portlint -C | tee $(log_path)/${PKGNAME}.portlint.log
+	cd ${mnt}/${PORTDIRECTORY} && PORTSDIR="${PORTSDIR}" portlint -C | tee $(log_path)/${PKGNAME}.portlint.log
 	set -e
 fi
 [ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/prefix}/`echo ${PKGNAME} | tr '[,+]' _`"
 PORT_FLAGS="NO_DEPENDS=yes PREFIX=${PREFIX}"
 msg "Building with flags: ${PORT_FLAGS}"
-[ $CONFIGSTR -eq 1 ] && injail env TERM=${SAVED_TERM} make -C ${PORTDIRECTORY} config
+[ $CONFIGSTR -eq 1 ] && injail ${MASTERNAME} env TERM=${SAVED_TERM} make -C ${PORTDIRECTORY} config
 
-if [ -d ${JAILMNT}${PREFIX} ]; then
+if [ -d ${mnt}${PREFIX} ]; then
 	msg "Removing existing ${PREFIX}"
-	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${JAILMNT}${PREFIX}
+	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${mnt}${PREFIX}
 fi
 
 msg "Populating PREFIX"
-mkdir -p ${JAILMNT}${PREFIX}
-injail /usr/sbin/mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${PREFIX} >/dev/null
+mkdir -p ${mnt}${PREFIX}
+injail ${MASTERNAME} mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${PREFIX} >/dev/null
 
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
-mkdir -p ${JAILMNT}/tmp/pkgs
+mkdir -p ${mnt}/tmp/pkgs
 PORTTESTING=yes
 export DEVELOPER_MODE=yes
 log_start $(log_path)/${PKGNAME}.log
 buildlog_start ${PORTDIRECTORY}
 if ! build_port ${PORTDIRECTORY}; then
-	failed_status=$(zget status)
+	failed_status=$(jget ${MASTERNAME} status)
 	failed_phase=${failed_status%:*}
 
 	save_wrkdir "${PKGNAME}" "${PORTDIRECTORY}" "${failed_phase}" || :
@@ -174,27 +173,26 @@ if ! build_port ${PORTDIRECTORY}; then
 fi
 
 msg "Installing from package"
-injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT}
+injail ${MASTERNAME} ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT}
 
 msg "Cleaning up"
-injail make -C ${PORTDIRECTORY} clean
+injail ${MASTERNAME} make -C ${PORTDIRECTORY} clean
 
 if [ $INTERACTIVE_MODE -eq 1 ]; then
 	msg "Entering interactive test mode. Type 'exit' when done."
-	injail env -i TERM=${SAVED_TERM} PACKAGESITE="file:///usr/ports/packages" /usr/bin/login -fp root
+	injail ${MASTERNAME} env -i TERM=${SAVED_TERM} PACKAGESITE="file:///usr/ports/packages" /usr/bin/login -fp root
 elif [ $INTERACTIVE_MODE -eq 2 ]; then
-	msg "Leaving jail ${JAILNAME} running, mounted at ${JAILMNT} for interactive run testing"
-	msg "To enter jail: jexec ${JAILNAME} /bin/sh"
-	msg "To stop jail: poudriere jail -k -j ${JAILNAME}"
+	msg "Leaving jail ${MASTERNAME} running, mounted at ${mnt} for interactive run testing"
+	msg "To enter jail: jexec ${MASTERNAME} /bin/sh"
+	msg "To stop jail: poudriere jail -k -j ${MASTERNAME}"
 	CLEANING_UP=1
 	exit 0
 fi
 
 msg "Deinstalling package"
-injail ${PKG_DELETE} ${PKGNAME}
+injail ${MASTERNAME} ${PKG_DELETE} ${PKGNAME}
 
 msg "Removing existing ${PREFIX} dir"
-[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${JAILMNT}${PREFIX} ${JAILMNT}${PREFIX}.PLIST_DIRS.before ${JAILMNT}${PREFIX}.PLIST_DIRS.after
 buildlog_stop ${PORTDIRECTORY}
 log_stop $(log_path)/${PKGNAME}.log
 

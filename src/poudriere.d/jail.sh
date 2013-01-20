@@ -10,8 +10,6 @@ Parameters:
     -s            -- start a jail
     -k            -- kill (stop) a jail
     -u            -- update a jail
-    -i            -- show information about the jail and package
-                     statistics within the jail
 
 Options:
     -q            -- quiet (Do not print the header)
@@ -20,7 +18,8 @@ Options:
     -v version    -- Specifies which version of FreeBSD we want in jail
     -a arch       -- Indicates architecture of the jail: i386 or amd64
                      (Default: same as host)
-    -f fs         -- FS name (tank/jails/myjail)
+    -f fs         -- FS name (tank/jails/myjail) if fs is \"none\" then do not
+                     create on zfs
     -M mountpoint -- mountpoint
     -m method     -- When used with -c, overrides the method to use by default.
                      Could also be \"http\", \"svn\", \"svn+http\",
@@ -35,36 +34,16 @@ Options:
 	exit 1
 }
 
-info_jail() {
-	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
-	nbb=$(zget stats_built|sed -e 's/ //g')
-	nbf=$(zget stats_failed|sed -e 's/ //g')
-	nbi=$(zget stats_ignored|sed -e 's/ //g')
-	nbs=$(zget stats_skipped|sed -e 's/ //g')
-	nbq=$(zget stats_queued|sed -e 's/ //g')
-	tobuild=$((nbq - nbb - nbf - nbi - nbs))
-	zfs list -H -o ${NS}:type,${NS}:name,${NS}:version,${NS}:arch,${NS}:stats_built,${NS}:stats_failed,${NS}:stats_ignored,${NS}:stats_skipped,${NS}:status,${NS}:method ${JAILFS}| \
-		awk -v q="$nbq" -v tb="$tobuild" '/^rootfs/  {
-			print "Jailname: " $2;
-			print "FreeBSD version: " $3;
-			print "FreeBSD arch: "$4;
-			print "install/update method: "$10;
-			print "Status: "$9;
-			print "Packages built: "$5;
-			print "Packages failed: "$6;
-			print "Packages ignored: "$7;
-			print "Packages skipped: "$8;
-			print "Packages queued: "q;
-			print "Packages to be built: "tb;
-		}'
-}
-
 list_jail() {
 	[ ${QUIET} -eq 0 ] && \
-		printf '%-20s %-20s %-7s %-7s %-7s %-7s %-7s %-7s %-7s %s\n' "JAILNAME" "VERSION" "ARCH" "METHOD" "SUCCESS" "FAILED" "IGNORED" "SKIPPED" "QUEUED" "STATUS"
-	zfs list -rt filesystem -H \
-		-o ${NS}:type,${NS}:name,${NS}:version,${NS}:arch,${NS}:method,${NS}:stats_built,${NS}:stats_failed,${NS}:stats_ignored,${NS}:stats_skipped,${NS}:stats_queued,${NS}:status ${ZPOOL}${ZROOTFS} | \
-		awk '$1 == "rootfs" { printf("%-20s %-20s %-7s %-7s %-7s %-7s %-7s %-7s %-7s %s\n",$2, $3, $4, $5, $6, $7, $8, $9, $10, $11) }'
+		printf '%-20s %-20s %-7s %-7s\n' "JAILNAME" "VERSION" "ARCH" "METHOD"
+	for j in $(find ${POUDRIERED}/jails -type d -maxdepth 1 -mindepth 1 -print); do
+		name=${j##*/}
+		version=$(jget ${name} version)
+		arch=$(jget ${name} arch)
+		method=$(jget ${name} method)
+		printf '%-20s %-20s %-7s %-7s\n' "${name}" "${version}" "${arch}" "${method}"
+	done
 }
 
 delete_jail() {
@@ -74,13 +53,7 @@ delete_jail() {
 		err 1 "Unable to remove jail ${JAILNAME}: it is running"
 
 	msg_n "Removing ${JAILNAME} jail..."
-	zfs destroy -r ${JAILFS}
-	rmdir ${JAILMNT}
-	rm -rf ${POUDRIERE_DATA}/packages/${JAILNAME}
-	rm -rf ${POUDRIERE_DATA}/cache/${JAILNAME}
-	rm -f ${POUDRIERE_DATA}/logs/*-${JAILNAME}.*.log
-	rm -f ${POUDRIERE_DATA}/logs/bulk-${JAILNAME}.log
-	rm -rf ${POUDRIERE_DATA}/logs/*/${JAILNAME}
+	destroyfs jail ${JAILNAME}
 	echo done
 }
 
@@ -109,15 +82,15 @@ update_jail() {
 	jail_runs && \
 		err 1 "Unable to remove jail ${JAILNAME}: it is running"
 
-	METHOD=`zget method`
-	if [ "${METHOD}" = "-" ]; then
+	METHOD=$(jget ${JAILNAME} method)
+	if [ -z "${METHOD}" -o "${METHOD}" = "-" ]; then
 		METHOD="ftp"
-		zset method "${METHOD}"
+		jset ${JAILNAME} method ${METHOD}
 	fi
 	msg "Upgrading using ${METHOD}"
 	case ${METHOD} in
 	ftp)
-		JAILMNT=`jail_get_base ${JAILNAME}`
+		JAILMNT=$(jget ${JAILNAME} mnt)
 		jail_start
 		jail -r ${JAILNAME} >/dev/null
 		jrun 1
@@ -126,25 +99,22 @@ update_jail() {
 		else
 			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update -r ${TORELEASE} upgrade install || err 1 "Fail to upgrade system"
 			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update install || err 1 "Fail to upgrade system"
-			zset version "${TORELEASE}"
+			jset ${JAILNAME} version ${TORELEASE}
 		fi
-		zfs destroy -r ${JAILFS}@clean
-		zfs snapshot ${JAILFS}@clean
+		markfs clean ${JAILMNT}
 		jail_stop
 		;;
 	csup)
 		install_from_csup
-		update_version $(zget version)
+		update_version $(jget ${JAILNAME} version)
 		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
-		zfs destroy -r ${JAILFS}@clean
-		zfs snapshot ${JAILFS}@clean
+		markfs clean ${JAILMNT}
 		;;
 	svn*)
 		install_from_svn
-		update_version $(zget version)
+		update_version $(jget ${JAILNAME} version)
 		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
-		zfs destroy -r ${JAILFS}@clean
-		zfs snapshot ${JAILFS}@clean
+		markfs clean ${JAILMNT}
 		;;
 	allbsd|gjb)
 		err 1 "Upgrade is not supported with allbsd, to upgrade, please delete and recreate the jail"
@@ -389,16 +359,22 @@ create_jail() {
 		;;
 	esac
 
-	jail_create_zfs ${JAILNAME} ${VERSION} ${ARCH} ${JAILMNT} ${JAILFS}
+	createfs ${JAILNAME} ${JAILMNT} ${JAILFS:-none}
+	[ -n "${JAILFS}" -a "${JAILFS}" != "none" ] && jset ${JAILNAME} fs ${JAILFS}
+	jset ${JAILNAME} version ${VERSION}
+	jset ${JAILNAME} arch ${ARCH}
+	jset ${JAILNAME} mnt ${JAILMNT}
+
+	jail_create_fs ${JAILNAME} ${VERSION} ${ARCH} ${JAILMNT} ${JAILFS}
 	# Wrap the jail creation in a special cleanup hook that will remove the jail
 	# if any error is encountered
 	CLEANUP_HOOK=cleanup_new_jail
-	zset method "${METHOD}"
+	jset ${JAILNAME} method ${METHOD}
 	${FCT}
 
 	eval `grep "^[RB][A-Z]*=" ${JAILMNT}/usr/src/sys/conf/newvers.sh `
 	RELEASE=${REVISION}-${BRANCH}
-	zset version "${RELEASE}"
+	jset ${JAILNAME} version ${RELEASE}
 	update_version ${RELEASE}
 
 	if [ "${ARCH}" = "i386" -a "${REALARCH}" = "amd64" ];then
@@ -424,7 +400,7 @@ EOF
 
 	jail -U root -c path=${JAILMNT} command=/sbin/ldconfig -m /lib /usr/lib /usr/lib/compat
 
-	zfs snapshot ${JAILFS}@clean
+	markfs clean ${JAILMNT}
 	unset CLEANUP_HOOK
 	msg "Jail ${JAILNAME} ${VERSION} ${ARCH} is ready to be used"
 }
@@ -488,9 +464,6 @@ while getopts "J:j:v:a:z:m:n:f:M:sdklqciut:" FLAG; do
 		q)
 			QUIET=1
 			;;
-		i)
-			INFO=1
-			;;
 		u)
 			UPDATE=1
 			;;
@@ -505,41 +478,37 @@ done
 
 METHOD=${METHOD:-ftp}
 if [ -n "${JAILNAME}" ] && [ ${CREATE} -eq 0 ]; then
-	JAILFS=`jail_get_fs ${JAILNAME}`
-	JAILMNT=`jail_get_base ${JAILNAME}`
+	JAILFS=$(jget ${JAILNAME} fs)
+	JAILMNT=$(jget ${JAILNAME} mnt)
 fi
 
 
-[ $(( CREATE + LIST + STOP + START + DELETE + INFO + UPDATE )) -lt 1 ] && usage
+[ $(( CREATE + LIST + STOP + START + DELETE + UPDATE )) -lt 1 ] && usage
 
-case "${CREATE}${LIST}${STOP}${START}${DELETE}${INFO}${UPDATE}" in
-	1000000)
+case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}" in
+	100000)
 		test -z ${JAILNAME} && usage
 		create_jail
 		;;
-	0100000)
+	010000)
 		list_jail
 		;;
-	0010000)
+	001000)
 		test -z ${JAILNAME} && usage
 		jail_stop
 		;;
-	0001000)
+	000100)
 		export SET_STATUS_ON_START=0
 		test -z ${JAILNAME} && usage
 		jail_start
 		jail -r ${JAILNAME} >/dev/null
 		jrun 1
 		;;
-	0000100)
+	000010)
 		test -z ${JAILNAME} && usage
 		delete_jail
 		;;
-	0000010)
-		test -z ${JAILNAME} && usage
-		info_jail
-		;;
-	0000001)
+	000001)
 		test -z ${JAILNAME} && usage
 		update_jail
 		;;
