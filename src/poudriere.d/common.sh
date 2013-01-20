@@ -395,6 +395,7 @@ EOF
 ./var/db/pkg/*.sqlite
 ./var/run/*
 ./wrkdirs/*
+./tmp/*
 ./${LOCALBASE:-/usr/local}/share/nls/POSIX
 ./${LOCALBASE:-/usr/local}/share/nls/en_US.US-ASCII
 ./var/db/fontconfig
@@ -824,7 +825,7 @@ build_port() {
 					ppath=`echo "$path" | sed \
 						-e "s,^${mnt},," \
 						-e "s,^${PREFIX}/,," \
-					l	${sedargs} \
+						${sedargs} \
 					`
 				fi
 				case $mod$type in
