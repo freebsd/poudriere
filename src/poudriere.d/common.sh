@@ -392,7 +392,7 @@ EOF
 	elif [ "${name}" = "preinst" ]; then
 		cat >  ${mnt}/poudriere/mtree.${name}exclude << EOF
 ./poudriere/*
-./var/db/pkg/*.sqlite
+./var/db/pkg/*
 ./var/run/*
 ./wrkdirs/*
 ./tmp/*
