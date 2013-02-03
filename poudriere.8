@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd January 9, 2013
+.Dd February 3, 2013
 .Dt POUDRIERE 8
 .Os FreeBSD
 .Sh NAME
@@ -98,13 +98,15 @@ sorted by
 order.
 .Ss bulk
 .Pp
-There is only one subcommand for bulk command.
+These subcommands are mutually exclusive.
 .Bl -tag -width "-f conffile"
 .It Fl f Ar file
 Absolute path to a file which contains the list of ports to build.
 Ports must be specified in the form
 .Ar category/port
 and shell-style comments are allowed.
+.It cat/port cat/port2 ...
+A list of ports can be specified directly.
 .El
 .Pp
 See
