@@ -14,7 +14,7 @@ Options:
     -R          -- Clean RESTRICTED packages after building
     -t          -- Add some tests to the package build
     -s          -- Skip sanity checks
-	 -J n        -- Run n jobs in parallel (Default: to 8)
+    -J n        -- Run n jobs in parallel (Default: to 8)
     -j name     -- Run only on the given jail
     -p tree     -- Specify on which ports tree the bulk build will be done
     -v          -- Be verbose; show more information. Use twice to enable debug output
