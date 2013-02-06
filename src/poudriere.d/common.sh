@@ -84,7 +84,7 @@ buildlog_start() {
 
 	echo "build started at $(date)"
 	echo "port directory: ${portdir}"
-	echo "building for: $(injail ${name} uname -rm)"
+	echo "building for: $(injail ${name} uname -a)"
 	echo "maintained by: $(injail ${name} make -C ${portdir} maintainer)"
 	echo "Makefile ident: $(injail ${name} ident ${portdir}/Makefile|sed -n '2,2p')"
 
