@@ -1,9 +1,11 @@
 <h1>Use the system ports tree in poudriere</h1>
 
-This is only possible if your systems ports tree is self contained in a zfs
-zfs filesystem or or inside a /ports subdirectory in a zfs filesystem.
+<h2>Using a ZFS tree</h2>
 
-To do this you need to tag the zfs filesystem like this:
+This is only possible if your systems ports tree is self contained in a ZFS
+ZFS filesystem or or inside a /ports subdirectory in a ZFS filesystem.
+
+To do this you need to tag the ZFS filesystem like this:
 
     <verbatim># zfs set poudriere:type=ports tank/your/fs
 # zfs set poudriere:name=myownportstree tank/your/fs
@@ -22,7 +24,7 @@ You can now use it with <em>bulk</em> and <em>testport</em> with the <em>-p</em>
 # poudriere testport -p myownportstree -j JAIL -o PORT
 </verbatim>
 
-<h1>Use an NFS mounted ports tree</h1>
+<h2>Using a non-ZFS tree (such as NFS mounted)</h2>
 
 Create a <em>/usr/local/etc/poudriere.d/portstrees</em> and populate it in the format:
 
