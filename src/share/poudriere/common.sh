@@ -1383,7 +1383,7 @@ deps_file() {
 
 	if [ ! -f "${depfile}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
-			injail ${MASTERNAME} pkg_info -qr "/usr/ports/packages/All/${pkg##*/}" | awk '{ print $2 }' > "${depfile}"
+			tar -xf "${pkg}" -O +CONTENTS | awk '$1 == "@pkgdep" { print $2 }' > "${depfile}"
 		else
 			pkg info -qdF "${pkg}" > "${depfile}"
 		fi
@@ -1401,7 +1401,7 @@ pkg_get_origin() {
 	if [ ! -f "${originfile}" ]; then
 		if [ -z "${origin}" ]; then
 			if [ "${PKG_EXT}" = "tbz" ]; then
-				origin=$(injail ${MASTERNAME} pkg_info -qo "/usr/ports/packages/All/${pkg##*/}")
+				origin=$(tar -xf "${pkg}" -O +CONTENTS | awk -F: '$1 == "@comment ORIGIN" { print $2 }')
 			else
 				origin=$(pkg query -F "${pkg}" "%o")
 			fi
@@ -1421,7 +1421,7 @@ pkg_get_options() {
 
 	if [ ! -f "${optionsfile}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
-			compiled_options=$(injail ${MASTERNAME} pkg_info -qf "/usr/ports/packages/All/${pkg##*/}" | awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
+			compiled_options=$(tar -xf "${pkg}" -0 +CONTENTS | awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 		else
 			compiled_options=$(pkg query -F "${pkg}" '%Ov %Ok' | awk '$1 == "on" {print $2}' | sort | tr '\n' ' ')
 		fi
