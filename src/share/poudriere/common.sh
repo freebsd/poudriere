@@ -147,19 +147,19 @@ bget() {
 		shift
 	fi
 	property=$1
-	mnt=${MASTERMNT}${id+/../${id}}
+	mnt=${MASTERMNT}${id:+/../${id}}
 
 	cat ${mnt}/poudriere/${property} || :
 }
 
 bset() {
 	local id property mnt
-	if [ $# -eq 2 ]; then
+	if [ $# -eq 3 ]; then
 		id=$1
 		shift
 	fi
 	property=$1
-	mnt=${MASTERMNT}${id+/../${MY_JOBID}}
+	mnt=${MASTERMNT}${id:+/../${MY_JOBID}}
 	shift
 	echo "$@" > ${mnt}/poudriere/${property} || :
 }
@@ -706,6 +706,7 @@ jail_stop() {
 	fi
 	msg "Umounting file systems"
 	destroyfs ${MASTERMNT} jail
+	rm -rf ${MASTERMNT}/../
 	export STATUS=0
 }
 
@@ -947,7 +948,7 @@ start_builders() {
 	local jname=$1
 	local ptname=$2
 	local setname=$3
-	local arch=$(jail path=${MASTERMNT} command=uname -p)
+	local arch=$(jail -c path=${MASTERMNT} command=uname -p)
 	local mnt name
 
 	for j in ${JOBS}; do
@@ -1044,7 +1045,7 @@ EOF
         </tr>
 EOF
 		cnt=$(( cnt + 1 ))
-	done <  ${mnt}/poudriere/ports.${type}
+	done <  ${MASTERMNT}/poudriere/ports.${type}
 
 	if [ "${type}" = "skipped" ]; then
 		# Skipped lists the skipped origin for every dependency that wanted it
