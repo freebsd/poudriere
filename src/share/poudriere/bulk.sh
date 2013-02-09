@@ -104,8 +104,8 @@ STATUS=0 # out of jail #
 
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
 
-MASTERMNT=$(jget ${JAILNAME} mnt)
 MASTERNAME=${JAILNAME}-${PTNAME}
+MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 [ -n "${SETNAME}" ] && MASTERNAME="${MASTERNAME}-${SETNAME}"
 
 export MASTERNAME

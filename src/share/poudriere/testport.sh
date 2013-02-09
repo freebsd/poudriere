@@ -79,21 +79,19 @@ export SKIPSANITY
 
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
 
-MASTERMNT=$(jget ${JAILNAME} mnt)
-
 MASTERNAME=${JAILNAME}-${PTNAME}
+MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 [ -n "${SETNAME}" ] && MASTERNAME="${MASTERNAME}-${SETNAME}"
 export MASTERNAME
 export MASTERMNT
 export POUDRIERE_BUILD_TYPE=testport
 
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
-mnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
 
 LISTPORTS=$(list_deps ${ORIGIN} )
 prepare_ports
 
-markfs prepkg ${mnt}
+markfs prepkg ${MASTERMNT}
 
 if ! POUDRIERE_BUILD_TYPE=bulk parallel_build ${JAILNAME} ${PTNAME} ${SETNAME} ; then
 	failed=$(bget ports.failed | awk '{print $1 ":" $2 }' | xargs echo)
