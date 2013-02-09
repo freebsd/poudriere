@@ -1600,7 +1600,7 @@ cache_get_pkgname() {
 
 	# Add to cache if not found.
 	if [ -z "${pkgname}" ]; then
-		pkgname=$(injail ${MASTERNAME} make -C /usr/ports/${origin} -VPKGNAME)
+		pkgname=$(jail -c path=${MASTERMNT} command=make -C /usr/ports/${origin} -VPKGNAME)
 		# Make sure this origin did not already exist
 		existing_origin=$(cache_get_origin "${pkgname}" 2>/dev/null || :)
 		# It may already exist due to race conditions, it is not harmful. Just ignore.
@@ -1715,9 +1715,9 @@ parallel_run() {
 cache_get_key() {
 	if [ -z "${CACHE_KEY}" ]; then
 		CACHE_KEY=$({
-			injail ${MASTERNAME} env
-			injail ${MASTERNAME} cat /etc/make.conf
-			injail ${MASTERNAME} find /var/db/ports -exec sha256 {} +
+			jail -c path=${MASTERMNT} command=env
+			cat ${MASTERMNT}/etc/make.conf
+			jail -c path=${MASTERMNT} command=find /var/db/ports -exec sha256 {} +
 			echo ${MASTERNAME}
 			if [ -f ${MASTERMNT}/usr/ports/poudriere.stamp ]; then
 				cat ${MASTERMNT}/usr/ports/poudriere.stamp
