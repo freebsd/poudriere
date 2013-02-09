@@ -672,7 +672,7 @@ jail_start() {
 	jrun ${MASTERNAME} ${tomnt} 0
 	# Only set STATUS=1 if not turned off
 	# jail -s should not do this or jail will stop on EXIT
-	WITH_PKGNG=$(injail ${MASTERNAME} make -f /usr/ports/Mk/bsd.port.mk -V WITH_PKGNG)
+	WITH_PKGNG=$(jail -c path=${MASTERMNT} command=make -f /usr/ports/Mk/bsd.port.mk -V WITH_PKGNG)
 	if [ -n "${WITH_PKGNG}" ]; then
 		export PKGNG=1
 		export PKG_EXT="txz"
@@ -1309,7 +1309,7 @@ build_pkg() {
 	# This is checked here instead of when building the queue
 	# as the list may start big but become very small, so here
 	# is a less-common check
-	ignore="$(injail ${name} make -C ${portdir} -VIGNORE)"
+	ignore="$(jail -c path=${mnt} command=make -C ${portdir} -VIGNORE)"
 
 	msg "Cleaning up wrkdir"
 	rm -rf ${mnt}/wrkdirs/*
@@ -1372,7 +1372,7 @@ list_deps() {
 	local makeargs="-VPKG_DEPENDS -VBUILD_DEPENDS -VEXTRACT_DEPENDS -VLIB_DEPENDS -VPATCH_DEPENDS -VFETCH_DEPENDS -VRUN_DEPENDS"
 	[ -d "${PORTSDIR}/${dir}" ] && dir="/usr/ports/${dir}"
 
-	injail ${MASTERNAME} make -C ${dir} $makeargs | tr '\n' ' ' | \
+	jail -c path=${MASTERMNT} command=make -C ${dir} $makeargs | tr '\n' ' ' | \
 		sed -e "s,[[:graph:]]*/usr/ports/,,g" -e "s,:[[:graph:]]*,,g" | sort -u
 }
 
