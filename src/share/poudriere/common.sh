@@ -300,7 +300,6 @@ rollbackfs() {
 	local name=$1
 	local mnt=$2
 	local fs=$(zfs_getfs ${mnt})
-	local mmnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
 
 	if [ -n "${fs}" ]; then
 		zfs rollback -r ${fs}@${name}  || err 1 "Unable to rollback ${fs}"
@@ -312,9 +311,9 @@ rollbackfs() {
 	while read l ; do
 		case "$l" in
 		*extra*Directory*) rm -rf ${mnt}/${l%% *} 2>/dev/null ;;
-		*changed|*missing) echo ${mmnt}/${l% *} ;;
+		*changed|*missing) echo ${MASTERMNT}/${l% *} ;;
 		esac
-	done | pax -rw -p p -s ",${mmnt},,g" ${mnt}
+	done | pax -rw -p p -s ",${MASTERMNT},,g" ${mnt}
 }
 
 umountfs() {
@@ -687,8 +686,7 @@ jail_start() {
 jail_stop() {
 	[ $# -ne 0 ] && eargs
 	jail_runs ${MASTERNAME} || err 1 "No such jail running: ${MASTERNAME}"
-	local mnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
-	local fs=$(zfs_getfs ${mnt})
+	local fs=$(zfs_getfs ${MASTERMNT})
 	bset status "stop:"
 
 
@@ -698,17 +696,16 @@ jail_stop() {
 		# - here to only check for unset, {start,stop}_builders will set this to blank if already stopped
 		for j in ${JOBS-$(jot -w %02d ${PARALLEL_JOBS})}; do
 			jail -r ${MASTERNAME}-job-${j} >/dev/null 2>&1 || :
-			destroyfs ${mnt}/../${j} jail
+			destroyfs ${MASTERMNT}/../${j} jail
 		done
 	fi
 	msg "Umounting file systems"
-	destroyfs ${mnt} jail
+	destroyfs ${MASTERMNT} jail
 	export STATUS=0
 }
 
 cleanup() {
 	[ -n "${CLEANED_UP}" ] && return 0
-	local mmnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
 	msg "Cleaning up"
 	# If this is a builder, don't cleanup, the master will handle that.
 	if [ -n "${MY_JOBID}" ]; then
@@ -731,10 +728,10 @@ cleanup() {
 		kill ${pid} 2>/dev/null || :
 	done
 
-	if [ -d ${mmnt}/poudriere/var/run ]; then
-		for pid in ${mmnt}/poudriere/var/run/*.pid; do
+	if [ -d ${MASTERMNT}/poudriere/var/run ]; then
+		for pid in ${MASTERMNT}/poudriere/var/run/*.pid; do
 			# Ensure there is a pidfile to read or break
-			[ "${pid}" = "${mmnt}/poudriere/var/run/*.pid" ] && break
+			[ "${pid}" = "${MASTERMNT}/poudriere/var/run/*.pid" ] && break
 			pkill -15 -F ${pid} >/dev/null 2>&1 || :
 		done
 	fi
@@ -947,10 +944,9 @@ start_builders() {
 	local setname=$3
 	local arch=$(jail path=${MASTERMNT} command=uname -p)
 	local mnt name
-	local mmnt=$(my_path)
 
 	for j in ${JOBS}; do
-		mnt=${mmnt}/../${j}
+		mnt=${MASTERMNT}/../${j}
 		name="${MASTERNAME}-job-${j}"
 		bset status "starting_jobs:${j}"
 		# Jail might be lingering from previous build. Already recursively
@@ -959,7 +955,7 @@ start_builders() {
 		jail -r ${name} >/dev/null 2>&1 || :
 		destroyfs ${mnt} jail
 		mkdir -p "${mnt}"
-		clonefs ${mmnt} ${mnt} prepkg
+		clonefs ${MASTERMNT} ${mnt} prepkg
 		markfs prepkg ${mnt}
 		do_jail_mounts ${mnt} ${arch}
 		do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
@@ -970,16 +966,15 @@ start_builders() {
 
 stop_builders() {
 	local mnt
-	local mmnt=$(my_path())
 
 	# wait for the last running processes
-	cat ${mnt}/poudriere/var/run/*.pid 2>/dev/null | xargs pwait 2>/dev/null
+	cat ${MASTERMNT}/poudriere/var/run/*.pid 2>/dev/null | xargs pwait 2>/dev/null
 
 	msg "Stopping ${PARALLEL_JOBS} builders"
 
 	for j in ${JOBS}; do
 		jail -r ${MASTERNAME}-job-${j} >/dev/null 2>&1 || :
-		destroyfs ${mnt}/../${j} jail
+		destroyfs ${MASTERMNT}/../${j} jail
 	done
 
 	# No builders running, unset JOBS
@@ -994,7 +989,6 @@ build_stats_list() {
 	local port cnt pkgname extra port_category port_name
 	local status_head="" status_col=""
 	local reason_head="" reason_col=""
-	local mnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
 
 	if [ "${type}" != "skipped" ]; then
 		status_head="<th>status</th>"
@@ -1050,7 +1044,7 @@ EOF
 	if [ "${type}" = "skipped" ]; then
 		# Skipped lists the skipped origin for every dependency that wanted it
 		bset stats_skipped $(
-			awk '{print $1}' ${mnt}/poudriere/ports.skipped |
+			awk '{print $1}' ${MASTERMNT}/poudriere/ports.skipped |
 			sort -u |
 			wc -l)
 	else
@@ -1216,7 +1210,6 @@ parallel_build() {
 	local jname=$1
 	local ptname=$2
 	local setname=$3
-	local mnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
 	local nbq=$(bget stats_queued)
 	local real_parallel_jobs=${PARALLEL_JOBS}
 
@@ -1261,14 +1254,13 @@ clean_pool() {
 	local pkgname=$1
 	local clean_rdepends=$2
 	local port skipped_origin
-	local mmnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
 
 	[ ${clean_rdepends} -eq 1 ] && port=$(cache_get_origin "${pkgname}")
 
 	# Cleaning queue (pool is cleaned here)
-	lockf -s -k ${mnt}/poudriere/.lock.pool sh ${SCRIPTPREFIX}/clean.sh "${mmnt}" "${pkgname}" ${clean_rdepends} | sort -u | while read skipped_pkgname; do
+	lockf -s -k ${MASTERMNT}/poudriere/.lock.pool sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT}" "${pkgname}" ${clean_rdepends} | sort -u | while read skipped_pkgname; do
 		skipped_origin=$(cache_get_origin "${skipped_pkgname}")
-		echo "${skipped_origin} ${pkgname}" >> ${mnt}/poudriere/ports.skipped
+		echo "${skipped_origin} ${pkgname}" >> ${MASTERMNT}/poudriere/ports.skipped
 		job_msg "Skipping build of ${skipped_origin}: Dependent port ${port} failed"
 	done
 }
@@ -1289,8 +1281,7 @@ build_pkg() {
 	local port portdir
 	local build_failed=0
 	local name=${MASTERNAME}-job-${MY_JOBID}
-	local mnt=$(jls -qj ${name} path 2>/dev/null)
-	local mmnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
+	local mnt=$(my_path)
 	local failed_status failed_phase cnt
 	local clean_rdepends=0
 	local ignore
@@ -1324,7 +1315,7 @@ build_pkg() {
 
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
-		echo "${port} ${ignore}" >> "${mmnt}/poudriere/ports.ignored"
+		echo "${port} ${ignore}" >> "${MASTERMNT}/poudriere/ports.ignored"
 		job_msg "Finished build of ${port}: Ignored: ${ignore}"
 		clean_rdepends=1
 	else
@@ -1351,13 +1342,13 @@ build_pkg() {
 		fi
 
 		if [ ${build_failed} -eq 0 ]; then
-			echo "${port}" >> "${mmnt}/poudriere/ports.built"
+			echo "${port}" >> "${MASTERMNT}/poudriere/ports.built"
 
 			job_msg "Finished build of ${port}: Success"
 			# Cache information for next run
 			pkg_cache_data "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
 		else
-			echo "${port} ${failed_phase}" >> "${mmnt}/poudriere/ports.failed"
+			echo "${port} ${failed_phase}" >> "${MASTERMNT}/poudriere/ports.failed"
 			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
 			clean_rdepends=1
 		fi
@@ -1565,10 +1556,9 @@ delete_old_pkgs() {
 
 next_in_queue() {
 	local p
-	local mnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
 
-	[ ! -d ${mnt}/poudriere/pool ] && err 1 "Build pool is missing"
-	p=$(lockf -k -t 60 ${mnt}/poudriere/.lock.pool find ${mnt}/poudriere/pool -type d -depth 1 -empty -print -quit || :)
+	[ ! -d ${MASTERMNT}/poudriere/pool ] && err 1 "Build pool is missing"
+	p=$(lockf -k -t 60 ${MASTERMNT}/poudriere/.lock.pool find ${MASTERMNT}/poudriere/pool -type d -depth 1 -empty -print -quit || :)
 	[ -n "$p" ] || return 0
 	touch ${p}/.building
 	# pkgname
@@ -1598,8 +1588,7 @@ cache_get_pkgname() {
 	[ $# -ne 1 ] && eargs origin
 	local origin=$1
 	local pkgname="" existing_origin
-	local mnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
-	local cache_origin_pkgname=${mnt}/poudriere/var/cache/origin-pkgname/${origin%%/*}_${origin##*/}
+	local cache_origin_pkgname=${MASTERMNT}/poudriere/var/cache/origin-pkgname/${origin%%/*}_${origin##*/}
 	local cache_pkgname_origin
 
 	[ -f ${cache_origin_pkgname} ] && read pkgname < ${cache_origin_pkgname}
@@ -1614,7 +1603,7 @@ cache_get_pkgname() {
 			[ -n "${existing_origin}" ] && \
 				err 1 "Duplicated origin for ${pkgname}: ${origin} AND ${existing_origin}. Rerun with -vv to see which ports are depending on these."
 			echo "${pkgname}" > ${cache_origin_pkgname}
-			cache_pkgname_origin="${mnt}/poudriere/var/cache/pkgname-origin/${pkgname}"
+			cache_pkgname_origin="${MASTERMNT}/poudriere/var/cache/pkgname-origin/${pkgname}"
 			echo "${origin}" > "${cache_pkgname_origin}"
 		fi
 	fi
@@ -1625,8 +1614,7 @@ cache_get_pkgname() {
 cache_get_origin() {
 	[ $# -ne 1 ] && eargs pkgname
 	local pkgname=$1
-	local mnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
-	local cache_pkgname_origin="${mnt}/poudriere/var/cache/pkgname-origin/${pkgname}"
+	local cache_pkgname_origin="${MASTERMNT}/poudriere/var/cache/pkgname-origin/${pkgname}"
 
 	cat "${cache_pkgname_origin}"
 }
@@ -1720,15 +1708,14 @@ parallel_run() {
 # so if the same build is done again,
 # we can use the some of the same cached data
 cache_get_key() {
-	local mnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
 	if [ -z "${CACHE_KEY}" ]; then
 		CACHE_KEY=$({
 			injail ${MASTERNAME} env
 			injail ${MASTERNAME} cat /etc/make.conf
 			injail ${MASTERNAME} find /var/db/ports -exec sha256 {} +
 			echo ${MASTERNAME}
-			if [ -f ${mnt}/usr/ports/poudriere.stamp ]; then
-				cat ${mnt}/usr/ports/poudriere.stamp
+			if [ -f ${MASTERMNT}/usr/ports/poudriere.stamp ]; then
+				cat ${MASTERMNT}/usr/ports/poudriere.stamp
 			else
 				# This is not a poudriere-managed ports tree.
 				# Just toss in getpid() to invalidate the cache
@@ -1743,31 +1730,30 @@ cache_get_key() {
 
 prepare_ports() {
 	local pkg
-	local mnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
 
 	msg "Calculating ports order and dependencies"
-	mkdir -p "${mnt}/poudriere"
+	mkdir -p "${MASTERMNT}/poudriere"
 	[ -n "${TMPFS_DATA}" ] && mount -t tmpfs tmpfs "${mnt}/poudriere"
-	rm -rf "${mnt}/poudriere/var/cache/origin-pkgname" \
-	       "${mnt}/poudriere/var/cache/pkgname-origin" 2>/dev/null || :
-	mkdir -p "${mnt}/poudriere/pool" \
-		"${mnt}/poudriere/deps" \
-		"${mnt}/poudriere/rdeps" \
-		"${mnt}/poudriere/var/run" \
-		"${mnt}/poudriere/var/cache" \
-		"${mnt}/poudriere/var/cache/origin-pkgname" \
-		"${mnt}/poudriere/var/cache/pkgname-origin"
+	rm -rf "${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
+	       "${MASTERMNT}/poudriere/var/cache/pkgname-origin" 2>/dev/null || :
+	mkdir -p "${MASTERMNT}/poudriere/pool" \
+		"${MASTERMNT}/poudriere/deps" \
+		"${MASTERMNT}/poudriere/rdeps" \
+		"${MASTERMNT}/poudriere/var/run" \
+		"${MASTERMNT}/poudriere/var/cache" \
+		"${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
+		"${MASTERMNT}/poudriere/var/cache/pkgname-origin"
 
 	bset stats_queued 0
-	:> ${mnt}/poudriere/ports.built
-	:> ${mnt}/poudriere/ports.failed
-	:> ${mnt}/poudriere/ports.ignored
-	:> ${mnt}/poudriere/ports.skipped
+	:> ${MASTERMNT}/poudriere/ports.built
+	:> ${MASTERMNT}/poudriere/ports.failed
+	:> ${MASTERMNT}/poudriere/ports.ignored
+	:> ${MASTERMNT}/poudriere/ports.skipped
 	build_stats
 
 	bset status "computingdeps:"
 	for port in $(listed_ports); do
-		[ -d "${mnt}/usr/ports/${port}" ] || err 1 "Invalid port origin: ${port}"
+		[ -d "${MASTERMNT}/usr/ports/${port}" ] || err 1 "Invalid port origin: ${port}"
 		parallel_run "compute_deps ${port}"
 	done
 	parallel_stop
@@ -1776,7 +1762,7 @@ prepare_ports() {
 
 	if [ ${CLEAN_LISTED:-0} -eq 1 ]; then
 		listed_ports | while read port; do
-			pkg="${mnt}/packages/All/$(cache_get_pkgname  ${port}).${PKG_EXT}"
+			pkg="${MASTERMNT}/packages/All/$(cache_get_pkgname  ${port}).${PKG_EXT}"
 			if [ -f "${pkg}" ]; then
 				msg "Deleting existing package: ${pkg##*/}"
 				delete_pkg ${pkg}
@@ -1795,34 +1781,34 @@ prepare_ports() {
 	fi
 
 	msg "Deleting stale symlinks"
-	find -L ${mnt}/packages -type l -exec rm -vf {} +
+	find -L ${MASTERMNT}/packages -type l -exec rm -vf {} +
 
 	bset status "cleaning:"
 	msg "Cleaning the build queue"
 	export LOCALBASE=${LOCALBASE:-/usr/local}
-	for pn in $(ls ${mnt}/poudriere/deps/); do
-		if [ -f "${mnt}/packages/All/${pn}.${PKG_EXT}" ]; then
+	for pn in $(ls ${MASTERMNT}/poudriere/deps/); do
+		if [ -f "${MASTERMNT}/packages/All/${pn}.${PKG_EXT}" ]; then
 			# Cleanup rdeps/*/${pn}
-			for rpn in $(ls "${mnt}/poudriere/deps/${pn}"); do
-				echo "${mnt}/poudriere/rdeps/${rpn}/${pn}"
+			for rpn in $(ls "${MASTERMNT}/poudriere/deps/${pn}"); do
+				echo "${MASTERMNT}/poudriere/rdeps/${rpn}/${pn}"
 			done
-			echo "${mnt}/poudriere/deps/${pn}"
+			echo "${MASTERMNT}/poudriere/deps/${pn}"
 			# Cleanup deps/*/${pn}
-			if [ -d "${mnt}/poudriere/rdeps/${pn}" ]; then
-				for rpn in $(ls "${mnt}/poudriere/rdeps/${pn}"); do
-					echo "${mnt}/poudriere/deps/${rpn}/${pn}"
+			if [ -d "${MASTERMNT}/poudriere/rdeps/${pn}" ]; then
+				for rpn in $(ls "${MASTERMNT}/poudriere/rdeps/${pn}"); do
+					echo "${MASTERMNT}/poudriere/deps/${rpn}/${pn}"
 				done
-				echo "${mnt}/poudriere/rdeps/${pn}"
+				echo "${MASTERMNT}/poudriere/rdeps/${pn}"
 			fi
 		fi
 	done | xargs rm -rf
 
 	local nbq=0
-	nbq=$(find ${mnt}/poudriere/deps -type d -depth 1 | wc -l)
+	nbq=$(find ${MASTERMNT}/poudriere/deps -type d -depth 1 | wc -l)
 	bset stats_queued ${nbq##* }
 
 	# Create a pool of ready-to-build from the deps pool
-	find "${mnt}/poudriere/deps" -type d -empty|xargs -J % mv % "${mnt}/poudriere/pool"
+	find "${MASTERMNT}/poudriere/deps" -type d -empty|xargs -J % mv % "${MASTERMNT}/poudriere/pool"
 }
 
 append_make() {
