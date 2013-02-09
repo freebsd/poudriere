@@ -484,6 +484,41 @@ jrun() {
 		allow.socket_af allow.raw_sockets allow.chflags
 }
 
+jr() {
+	[ $# -le 3 ] && eargs jname mnt network
+	local jname=$1
+	local mnt=$2
+	local network=$3
+	local ipargs
+	shift 3
+	if [ ${network} -eq 0 ]; then
+		case $IPS in
+		01) ipargs="ip6.addr=::1" ;;
+		10) ipargs="ip4.addr=127.0.0.1" ;;
+		11) ipargs="ip4.addr=127.0.0.1 ip6.addr=::1" ;;
+		esac
+	elif [ ${network} -eq 1 ]; then
+		case $IPS in
+		01) ipargs="ip6=inherit" ;;
+		10) ipargs="ip4=inherit" ;;
+		11) ipargs="ip4=inherit ip6=inherit" ;;
+		esac
+	else
+		case $IPS in
+		01) ipargs="ip6=disable" ;;
+		10) ipargs="ip4=disable" ;;
+		11) ipargs="ip6=disable ip4=disable" ;;
+		esac
+	fi
+
+	[ -n "EXECTIMEOUT" ] && tmarg=exec.timeout=${EXECTIMEOUT}
+	[ -n "LOGFILE" ] && logarg=exec.consolelog=${LOGFILE}
+	jail -c name=${jname} ${ipargs} path=${mnt} \
+		host.hostname=${jname} allow.chflags \
+		exec.clean ${tmarg} ${logarg} command="$@"
+	unset EXECTIMEOUT
+}
+
 do_jail_mounts() {
 	[ $# -ne 2 ] && eargs mnt arch
 	local mnt=$1
