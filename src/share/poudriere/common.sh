@@ -3,6 +3,7 @@
 # zfs namespace
 NS="poudriere"
 IPS="$(sysctl -n kern.features.inet 2>/dev/null || (sysctl -n net.inet 1>/dev/null 2>&1 && echo 1) || echo 0)$(sysctl -n kern.features.inet6 2>/dev/null || (sysctl -n net.inet6 1>/dev/null 2>&1 && echo 1) || echo 0)"
+RELDATE=$(sysctl kern.reldate)
 
 dir_empty() {
 	find $1 -maxdepth 0 -empty
@@ -494,7 +495,7 @@ jr() {
 	local jname=$1
 	local mnt=$2
 	local network=$3
-	local ipargs
+	local ipargs logarg tmarg extraargs
 	shift 3
 	if [ ${network} -eq 0 ]; then
 		case $IPS in
@@ -516,11 +517,14 @@ jr() {
 		esac
 	fi
 
-	[ -n "EXECTIMEOUT" ] && tmarg=exec.timeout=${EXECTIMEOUT}
-	[ -n "LOGFILE" ] && logarg=exec.consolelog=${LOGFILE}
+	if [ ${RELDATE} -gt 901000 ]; then
+		[ -n "EXECTIMEOUT" ] && tmarg=exec.timeout=${EXECTIMEOUT}
+		[ -n "LOGFILE" ] && logarg=exec.consolelog=${LOGFILE}
+		extraargs="exec.clean ${tmarg} ${logarg}"
+	fi
 	jail -c name=${jname} ${ipargs} path=${mnt} \
 		host.hostname=${jname} allow.chflags \
-		exec.clean ${tmarg} ${logarg} command="$@"
+		${extraargs} command="$@"
 	unset EXECTIMEOUT
 }
 
