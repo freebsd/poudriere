@@ -365,7 +365,6 @@ create_jail() {
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
 
-	jail_create_fs ${JAILNAME} ${VERSION} ${ARCH} ${JAILMNT} ${JAILFS}
 	# Wrap the jail creation in a special cleanup hook that will remove the jail
 	# if any error is encountered
 	CLEANUP_HOOK=cleanup_new_jail
