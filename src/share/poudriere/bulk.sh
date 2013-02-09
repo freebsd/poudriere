@@ -170,14 +170,13 @@ elif [ $PKGNG -eq 1 ]; then
 	fi
 	msg "Creating pkgng repository"
 	bset status "pkgrepo:"
-	injail ${MASTERNAME} tar xf /packages/Latest/pkg.txz -C /
-	injail ${MASTERNAME} rm -f /packages/repo.txz /packages/repo.sqlite
+	tar xf ${MASTERMNT}/packages/Latest/pkg.txz -C ${MASTERMNT} \
+		-s ",/.*/,poudriere/,g" "*/pkg-static"
+	rm -f ${MASTERMNT}/packages/repo.txz ${MASTERMNT}/packages/repo.sqlite
 	if [ -n "${PKG_REPO_SIGNING_KEY}" -a -f "${PKG_REPO_SIGNING_KEY}" ]; then
-		install -m 0400 ${PKG_REPO_SIGNING_KEY} ${mnt}/tmp/repo.key
-		injail ${MASTERNAME} pkg-static repo /packages/ /tmp/repo.key
-		rm -f ${mnt}/tmp/repo.key
+		${MASTERMNT}/poudriere/pkg-static repo /packages/ ${PKG_REPO_SIGNING_KEY}
 	else
-		injail ${MASTERNAME} pkg-static repo /packages/
+		${MASTERMNT}/poudriere/pkg-static repo /packages/
 	fi
 else
 	if [ -n "${NO_RESTRICTED}" ]; then
