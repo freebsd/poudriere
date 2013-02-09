@@ -96,10 +96,10 @@ prepare_ports
 markfs prepkg ${mnt}
 
 if ! POUDRIERE_BUILD_TYPE=bulk parallel_build ${JAILNAME} ${PTNAME} ${SETNAME} ; then
-	failed=$(bget ${MASTERNAME} ports.failed | awk '{print $1 ":" $2 }' | xargs echo)
-	skipped=$(bget ${MASTERNAME} ports.skipped | awk '{print $1}' | sort -u | xargs echo)
-	nbignored=$(bget ${MASTERNAME} stats_failed)
-	nbskipped=$(bget ${MASTERNAME} stats_skipped)
+	failed=$(bget ports.failed | awk '{print $1 ":" $2 }' | xargs echo)
+	skipped=$(bget ports.skipped | awk '{print $1}' | sort -u | xargs echo)
+	nbignored=$(bget stats_failed)
+	nbskipped=$(bget stats_skipped)
 
 	cleanup
 
@@ -110,14 +110,14 @@ if ! POUDRIERE_BUILD_TYPE=bulk parallel_build ${JAILNAME} ${PTNAME} ${SETNAME} ;
 	exit 1
 fi
 
-bset ${MASTERNAME} status "depends:"
+bset status "depends:"
 
 unmarkfs prepkg ${MASTERMNT}
 
 injail ${MASTERNAME} make -C /usr/ports/${ORIGIN} pkg-depends extract-depends \
 	fetch-depends patch-depends build-depends lib-depends
 
-bset ${MASTERNAME} status "testing:"
+bset status "testing:"
 
 PKGNAME=`injail ${MASTERNAME} make -C /usr/ports/${ORIGIN} -VPKGNAME`
 LOCALBASE=`injail ${MASTERNAME} make -C /usr/ports/${ORIGIN} -VLOCALBASE`

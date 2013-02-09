@@ -139,20 +139,26 @@ pget() { attr_get ports $@ ; }
 
 #build getter/setter
 bget() {
-	[ $# -ne 2 ] && eargs name property
-	local name=$1
-	local property=$2
-	local mnt=$(jls -qj ${name} path)
+	local id property mnt
+	if [ $# -eq 2 ]; then
+		id=$1
+		shift
+	fi
+	property=$1
+	mnt=${MASTERMNT}${id+/../${id}}
 
 	cat ${mnt}/poudriere/${property} || :
 }
 
 bset() {
-	local name=$1
-	local property=$2
-	local mnt=$(jls -qj ${name} path)
-
-	shift 2
+	local id property mnt
+	if [ $# -eq 2 ]; then
+		id=$1
+		shift
+	fi
+	property=$1
+	mnt=${MASTERMNT}${id+/../${MY_JOBID}}
+	shift
 	echo "$@" > ${mnt}/poudriere/${property} || :
 }
 
@@ -176,12 +182,12 @@ siginfo_handler() {
 	if [ "${POUDRIERE_BUILD_TYPE}" != "bulk" ]; then
 		return 0;
 	fi
-	local status=$(bget ${MASTERNAME} status)
-	local nbb=$(bget ${MASTERNAME} stats_built|sed -e 's/ //g')
-	local nbf=$(bget ${MASTERNAME} stats_failed|sed -e 's/ //g')
-	local nbi=$(bget ${MASTERNAME} stats_ignored|sed -e 's/ //g')
-	local nbs=$(bget ${MASTERNAME} stats_skipped|sed -e 's/ //g')
-	local nbq=$(bget ${MASTERNAME} stats_queued|sed -e 's/ //g')
+	local status=$(bget status)
+	local nbb=$(bget stats_built|sed -e 's/ //g')
+	local nbf=$(bget stats_failed|sed -e 's/ //g')
+	local nbi=$(bget stats_ignored|sed -e 's/ //g')
+	local nbs=$(bget stats_skipped|sed -e 's/ //g')
+	local nbq=$(bget stats_queued|sed -e 's/ //g')
 	local ndone=$((nbb + nbf + nbi + nbs))
 	local queue_width=2
 	local j status
@@ -201,7 +207,7 @@ siginfo_handler() {
 	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" -a "${status}" != "stopping_jobs:" ]; then
 		for j in ${JOBS}; do
 			# Ignore error here as the zfs dataset may not be cloned yet.
-			status=$(bget ${MASTERNAME}-job-${j} status 2>/dev/null || :)
+			status=$(bget ${j} status 2>/dev/null || :)
 			# Skip builders not started yet
 			[ -z "${status}" ] && continue
 			# Hide idle workers
@@ -683,7 +689,7 @@ jail_stop() {
 	jail_runs ${MASTERNAME} || err 1 "No such jail running: ${MASTERNAME}"
 	local mnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
 	local fs=$(zfs_getfs ${mnt})
-	bset ${MASTERNAME} status "stop:"
+	bset status "stop:"
 
 
 	jail -r ${MASTERNAME} >/dev/null
@@ -796,7 +802,7 @@ build_port() {
 	local name=$(my_name)
 
 	for phase in ${targets}; do
-		bset ${name} status "${phase}:${port}"
+		bset ${MY_JOBID} status "${phase}:${port}"
 		job_msg_verbose "Status for build ${port}: ${phase}"
 		if [ "${phase}" = "fetch" ]; then
 			jail -r ${name} >/dev/null
@@ -833,7 +839,7 @@ build_port() {
 		if [ "${phase}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
 			PREFIX=`injail ${name} env ${PORT_FLAGS} make -C ${portdir} -VPREFIX`
-			bset ${name} status "leftovers:${port}"
+			bset ${MY_JOBID} status "leftovers:${port}"
 			local portname datadir etcdir docsdir examplesdir wwwdir site_perl
 			local add=$(mktemp ${jailbase}/tmp/add.XXXXXX)
 			local add1=$(mktemp ${jailbase}/tmp/add1.XXXXXX)
@@ -897,7 +903,7 @@ build_port() {
 	done
 	jail -r ${name} >/dev/null
 	jrun ${name} ${mnt} 0
-	bset ${name} status "idle:"
+	bset ${MY_JOBID} status "idle:"
 	return 0
 }
 
@@ -946,7 +952,7 @@ start_builders() {
 	for j in ${JOBS}; do
 		mnt=${mmnt}/../${j}
 		name="${MASTERNAME}-job-${j}"
-		bset ${MASTERNAME} status "starting_jobs:${j}"
+		bset status "starting_jobs:${j}"
 		# Jail might be lingering from previous build. Already recursively
 		# destroyed all the builder datasets, so just try stopping the jail
 		# and ignore any errors
@@ -958,7 +964,7 @@ start_builders() {
 		do_jail_mounts ${mnt} ${arch}
 		do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
 		jrun ${name} ${mnt} 0
-		bset ${name} status "idle:"
+		bset ${MY_JOBID} status "idle:"
 	done
 }
 
@@ -1043,12 +1049,12 @@ EOF
 
 	if [ "${type}" = "skipped" ]; then
 		# Skipped lists the skipped origin for every dependency that wanted it
-		bset ${MASTERNAME} stats_skipped $(
+		bset stats_skipped $(
 			awk '{print $1}' ${mnt}/poudriere/ports.skipped |
 			sort -u |
 			wc -l)
 	else
-		bset ${MASTERNAME} stats_${type} $cnt
+		bset stats_${type} $cnt
 	fi
 
 cat >> ${html_path} << EOF
@@ -1112,7 +1118,7 @@ build_stats() {
       <li>Ports tree: ${PTNAME}</li>
       <li>Set Name: ${SETNAME:-none}</li>
 EOF
-	cnt=$(bget ${MASTERNAME} stats_queued)
+	cnt=$(bget stats_queued)
 	cat >> ${html_path} << EOF
       <li>Nb ports queued: ${cnt}</li>
     </ul>
@@ -1156,7 +1162,7 @@ build_queue() {
 				fi
 				should_build_stats=1
 				rm -f "${mnt}/poudriere/var/run/${j}.pid"
-				bset ${name} status "idle:"
+				bset ${MY_JOBID} status "idle:"
 
 				# A builder finished, check the queue to see if
 				# it can do some work
@@ -1211,7 +1217,7 @@ parallel_build() {
 	local ptname=$2
 	local setname=$3
 	local mnt=$(jls -qj ${MASTERNAME} path 2>/dev/null)
-	local nbq=$(bget ${MASTERNAME} stats_queued)
+	local nbq=$(bget stats_queued)
 	local real_parallel_jobs=${PARALLEL_JOBS}
 
 	# If pool is empty, just return
@@ -1225,7 +1231,7 @@ parallel_build() {
 	msg "Building ${nbq} packages using ${PARALLEL_JOBS} builders"
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
 
-	bset ${MASTERNAME} status "starting_jobs:"
+	bset status "starting_jobs:"
 	start_builders ${jname} ${ptname} ${setname}
 
 	# Duplicate stdout to socket 5 so the child process can send
@@ -1233,13 +1239,13 @@ parallel_build() {
 	# stdout to /dev/null
 	exec 5<&1
 
-	bset ${MASTERNAME} status "parallel_build:"
+	bset status "parallel_build:"
 	build_queue
 	build_stats 0
 
-	bset ${MASTERNAME} status "stopping_jobs:"
+	bset status "stopping_jobs:"
 	stop_builders
-	bset ${MASTERNAME} status "idle:"
+	bset status "idle:"
 
 	# Close the builder socket
 	exec 5>&-
@@ -1247,7 +1253,7 @@ parallel_build() {
 	# Restore PARALLEL_JOBS
 	PARALLEL_JOBS=${real_parallel_jobs}
 
-	return $(($(bget ${MASTERNAME} stats_failed) + $(bget ${MASTERNAME} stats_skipped)))
+	return $(($(bget stats_failed) + $(bget stats_skipped)))
 }
 
 clean_pool() {
@@ -1294,7 +1300,7 @@ build_pkg() {
 	portdir="/usr/ports/${port}"
 
 	job_msg "Starting build of ${port}"
-	bset ${name} status "starting:${port}"
+	bset ${MY_JOBID} status "starting:${port}"
 
 	if [ -n "${TMPFS_LOCALBASE}" ]; then
 		umount -f ${mnt}/${LOCALBASE:-/usr/local} 2>/dev/null || :
@@ -1322,7 +1328,7 @@ build_pkg() {
 		job_msg "Finished build of ${port}: Ignored: ${ignore}"
 		clean_rdepends=1
 	else
-		bset ${name} status "depends:${port}"
+		bset ${MY_JOBID} status "depends:${port}"
 		job_msg_verbose "Status for build ${port}: depends"
 		print_phase_header "depends"
 		if ! injail ${name} make -C ${portdir} pkg-depends fetch-depends extract-depends \
@@ -1335,7 +1341,7 @@ build_pkg() {
 			injail ${name} make -C ${portdir} clean
 			if ! build_port ${portdir}; then
 				build_failed=1
-				failed_status=$(bget ${MASTERNAME} status)
+				failed_status=$(bget status)
 				failed_phase=${failed_status%:*}
 
 				save_wrkdir ${mnt} "${port}" "${portdir}" "${failed_phase}" || :
@@ -1359,7 +1365,7 @@ build_pkg() {
 
 	clean_pool ${PKGNAME} ${clean_rdepends}
 
-	bset ${name} status "done:${port}"
+	bset ${MY_JOBID} status "done:${port}"
 	buildlog_stop ${portdir}
 	log_stop $(log_path)/${PKGNAME}.log
 }
@@ -1752,21 +1758,21 @@ prepare_ports() {
 		"${mnt}/poudriere/var/cache/origin-pkgname" \
 		"${mnt}/poudriere/var/cache/pkgname-origin"
 
-	bset ${MASTERNAME} stats_queued 0
+	bset stats_queued 0
 	:> ${mnt}/poudriere/ports.built
 	:> ${mnt}/poudriere/ports.failed
 	:> ${mnt}/poudriere/ports.ignored
 	:> ${mnt}/poudriere/ports.skipped
 	build_stats
 
-	bset ${MASTERNAME} status "computingdeps:"
+	bset status "computingdeps:"
 	for port in $(listed_ports); do
 		[ -d "${mnt}/usr/ports/${port}" ] || err 1 "Invalid port origin: ${port}"
 		parallel_run "compute_deps ${port}"
 	done
 	parallel_stop
 
-	bset ${MASTERNAME} status "sanity:"
+	bset status "sanity:"
 
 	if [ ${CLEAN_LISTED:-0} -eq 1 ]; then
 		listed_ports | while read port; do
@@ -1791,7 +1797,7 @@ prepare_ports() {
 	msg "Deleting stale symlinks"
 	find -L ${mnt}/packages -type l -exec rm -vf {} +
 
-	bset ${MASTERNAME} status "cleaning:"
+	bset status "cleaning:"
 	msg "Cleaning the build queue"
 	export LOCALBASE=${LOCALBASE:-/usr/local}
 	for pn in $(ls ${mnt}/poudriere/deps/); do
@@ -1813,7 +1819,7 @@ prepare_ports() {
 
 	local nbq=0
 	nbq=$(find ${mnt}/poudriere/deps -type d -depth 1 | wc -l)
-	bset ${MASTERNAME} stats_queued ${nbq##* }
+	bset stats_queued ${nbq##* }
 
 	# Create a pool of ready-to-build from the deps pool
 	find "${mnt}/poudriere/deps" -type d -empty|xargs -J % mv % "${mnt}/poudriere/pool"

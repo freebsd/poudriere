@@ -129,7 +129,7 @@ fi
 
 prepare_ports
 
-bset ${MASTERNAME} status "building:"
+bset status "building:"
 
 mnt=$(my_path)
 if [ -z "${PORTTESTING}" -a -z "${ALLOW_MAKE_JOBS}" ]; then
@@ -140,18 +140,18 @@ markfs prepkg ${mnt}
 
 parallel_build ${JAILNAME} ${PTNAME} ${SETNAME} || : # Ignore errors as they are handled below
 
-bset ${MASTERNAME} status "done:"
+bset status "done:"
 
 build_stats 0
 
-failed=$(bget ${MASTERNAME} ports.failed | awk '{print $1 ":" $2 }' | xargs echo)
-built=$(bget ${MASTERNAME} ports.built | xargs echo)
-ignored=$(bget ${MASTERNAME} ports.ignored | awk '{print $1}' | xargs echo)
-skipped=$(bget ${MASTERNAME} ports.skipped | awk '{print $1}' | sort -u | xargs echo)
-nbfailed=$(bget ${MASTERNAME} stats_failed)
-nbignored=$(bget ${MASTERNAME} stats_ignored)
-nbskipped=$(bget ${MASTERNAME} stats_skipped)
-nbbuilt=$(bget ${MASTERNAME} stats_built)
+failed=$(bget ports.failed | awk '{print $1 ":" $2 }' | xargs echo)
+built=$(bget ports.built | xargs echo)
+ignored=$(bget ports.ignored | awk '{print $1}' | xargs echo)
+skipped=$(bget ports.skipped | awk '{print $1}' | sort -u | xargs echo)
+nbfailed=$(bget stats_failed)
+nbignored=$(bget stats_ignored)
+nbskipped=$(bget stats_skipped)
+nbbuilt=$(bget stats_built)
 [ "$nbfailed" = "-" ] && nbfailed=0
 [ "$nbignored" = "-" ] && nbignored=0
 [ "$nbskipped" = "-" ] && nbskipped=0
@@ -169,7 +169,7 @@ elif [ $PKGNG -eq 1 ]; then
 		injail ${MASTERNAME} make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
 	fi
 	msg "Creating pkgng repository"
-	bset ${MASTERNAME} status "pkgrepo:"
+	bset status "pkgrepo:"
 	injail ${MASTERNAME} tar xf /packages/Latest/pkg.txz -C /
 	injail ${MASTERNAME} rm -f /packages/repo.txz /packages/repo.sqlite
 	if [ -n "${PKG_REPO_SIGNING_KEY}" -a -f "${PKG_REPO_SIGNING_KEY}" ]; then
@@ -185,7 +185,7 @@ else
 		injail ${MASTERNAME} make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
 	fi
 	msg "Preparing INDEX"
-	bset ${MASTERNAME} status "index:"
+	bset status "index:"
 	OSMAJ=`injail ${MASTERNAME} uname -r | awk -F. '{ print $1 }'`
 	INDEXF=${POUDRIERE_DATA}/packages/${MASTERNAME}/INDEX-${OSMAJ}
 	rm -f ${INDEXF}.1 2>/dev/null || :
