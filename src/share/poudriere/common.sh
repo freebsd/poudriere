@@ -82,23 +82,24 @@ log_path() {
 buildlog_start() {
 	local portdir=$1
 	local name=$(my_name)
+	local mnt=$(my_path)
 
 	echo "build started at $(date)"
 	echo "port directory: ${portdir}"
-	echo "building for: $(injail ${name} uname -a)"
-	echo "maintained by: $(injail ${name} make -C ${portdir} maintainer)"
-	echo "Makefile ident: $(injail ${name} ident ${portdir}/Makefile|sed -n '2,2p')"
+	echo "building for: $(jail -c path=${mnt} command=uname -a)"
+	echo "maintained by: $(jail -c path=${mnt} command=make -C ${portdir} maintainer)"
+	echo "Makefile ident: $(ident ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
 
 	echo "---Begin Environment---"
-	injail ${name} env ${PKGENV} ${PORT_FLAGS}
+	jail -c path=${mnt} command=env ${PKGENV} ${PORT_FLAGS}
 	echo "---End Environment---"
 	echo ""
 	echo "---Begin make.conf---"
-	injail ${name} cat /etc/make.conf
+	cat ${mnt}/etc/make.conf
 	echo "---End make.conf---"
 	echo ""
 	echo "---Begin OPTIONS List---"
-	injail ${name} make -C ${portdir} showconfig
+	jail -c path=${mnt} command=make -C ${portdir} showconfig
 	echo "---End OPTIONS List---"
 }
 
