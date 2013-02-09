@@ -227,7 +227,7 @@ jail_exists() {
 jail_runs() {
 	[ $# -ne 1 ] && eargs jname
 	local jname=$1
-	jls -qj ${jname} name > /dev/null 2>&1 && return 0
+	[ -d ${POUDRIERE_DATA}/build/${MASTERNAME}/ref ] && return 0
 	return 1
 }
 
