@@ -41,7 +41,7 @@ job_msg_verbose() {
 }
 
 my_path() {
-	jls -qj ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}} path 2>/dev/null
+	echo ${MASTERMNT}${MY_JOBID+/../${MY_JOBID}}
 }
 
 my_name() {
