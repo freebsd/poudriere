@@ -104,10 +104,12 @@ STATUS=0 # out of jail #
 
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
 
+MASTERMNT=$(jget ${JAILNAME} mnt)
 MASTERNAME=${JAILNAME}-${PTNAME}
 [ -n "${SETNAME}" ] && MASTERNAME="${MASTERNAME}-${SETNAME}"
 
 export MASTERNAME
+export MASTERMNT
 if [ ${CLEAN} -eq 1 ]; then
 	msg_n "Cleaning previous bulks if any..."
 	rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/*

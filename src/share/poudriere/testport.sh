@@ -79,11 +79,12 @@ export SKIPSANITY
 
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
 
-JAILMNT=$(jget ${JAILNAME} mnt)
+MASTERMNT=$(jget ${JAILNAME} mnt)
 
 MASTERNAME=${JAILNAME}-${PTNAME}
 [ -n "${SETNAME}" ] && MASTERNAME="${MASTERNAME}-${SETNAME}"
 export MASTERNAME
+export MASTERMNT
 export POUDRIERE_BUILD_TYPE=testport
 
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
@@ -111,7 +112,7 @@ fi
 
 bset ${MASTERNAME} status "depends:"
 
-unmarkfs prepkg ${JAILMNT}
+unmarkfs prepkg ${MASTERMNT}
 
 injail ${MASTERNAME} make -C /usr/ports/${ORIGIN} pkg-depends extract-depends \
 	fetch-depends patch-depends build-depends lib-depends

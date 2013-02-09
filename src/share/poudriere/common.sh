@@ -939,7 +939,7 @@ start_builders() {
 	local jname=$1
 	local ptname=$2
 	local setname=$3
-	local arch=$(injail ${MASTERNAME} uname -p)
+	local arch=$(jail path=${MASTERMNT} command=uname -p)
 	local mnt name
 	local mmnt=$(my_path)
 
