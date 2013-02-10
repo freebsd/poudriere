@@ -1149,8 +1149,10 @@ build_queue() {
 	local j cnt name pkgname read_queue builders_active should_build_stats
 	local mnt=$(my_path)
 
-	read_queue=1
 	should_build_stats=1 # Always build stats on first pass
+	mkfifo ${MASTERMNT}/poudriere/builders.pipe
+	exec 6<> ${MASTERMNT}/poudriere/builders.pipe
+	rm -f ${MASTERMNT}/poudriere/builders.pipe
 	while :; do
 		builders_active=0
 		for j in ${JOBS}; do
@@ -1164,14 +1166,7 @@ build_queue() {
 				rm -f "${mnt}/poudriere/var/run/${j}.pid"
 				bset ${MY_JOBID} status "idle:"
 
-				# A builder finished, check the queue to see if
-				# it can do some work
-				read_queue=1
 			fi
-
-			# Don't want to read the queue, so just skip this
-			# builder and check the next, as it may be done
-			[ ${read_queue} -eq 0 ] && continue
 
 			pkgname=$(next_in_queue)
 			if [ -z "${pkgname}" ]; then
@@ -1180,21 +1175,16 @@ build_queue() {
 
 				# Pool is waiting on dep, wait until a build
 				# is done before checking the queue again
-				read_queue=0
 			else
 				MY_JOBID="${j}" build_pkg "${pkgname}" >/dev/null 2>&1 &
 				echo "$!" > ${mnt}/poudriere/var/run/${j}.pid
 
 				# A new job is spawned, try to read the queue
 				# just to keep things moving
-				read_queue=1
 				builders_active=1
 			fi
 		done
-		if [ ${read_queue} -eq 0 ]; then
-			# If not wanting to read the queue, sleep to save CPU
-			sleep 1
-		fi
+		read jobid <&6
 
 		if [ ${builders_active} -eq 0 ]; then
 			msg "Dependency loop or poudriere bug detected."
@@ -1208,6 +1198,8 @@ build_queue() {
 			should_build_stats=0
 		fi
 	done
+	exec 6<&-
+	exec 6>&-
 }
 
 # Build ports in parallel
@@ -1365,6 +1357,7 @@ build_pkg() {
 	bset ${MY_JOBID} status "done:${port}"
 	buildlog_stop ${portdir}
 	log_stop $(log_path)/${PKGNAME}.log
+	echo ${MY_JOBID} >&6
 }
 
 list_deps() {
