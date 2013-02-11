@@ -863,6 +863,26 @@ save_wrkdir() {
 	fi
 }
 
+start_builder() {
+	local id=$1
+	local arch=$2
+
+	mnt=${MASTERMNT}/../${id}
+	name=${MASTERNAME}-job-${id}
+
+	# Jail might be lingering from previous build. Already recursively
+	# destroyed all the builder datasets, so just try stopping the jail
+	# and ignore any errors
+	jail -qr ${name} 2>/dev/null || :
+	destroyfs ${mnt} jail
+	mkdir -p "${mnt}"
+	clonefs ${MASTERMNT} ${mnt} prepkg
+	markfs prepkg ${mnt}
+	do_jail_mounts ${mnt} ${arch}
+	do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
+	bset ${id} status "idle:"
+
+}
 start_builders() {
 	local jname=$1
 	local ptname=$2
@@ -870,22 +890,12 @@ start_builders() {
 	local arch=$(jail -c path=${MASTERMNT} command=uname -p)
 	local mnt name
 
+	bset status "starting_builders:"
+	parallel_start
 	for j in ${JOBS}; do
-		mnt=${MASTERMNT}/../${j}
-		name="${MASTERNAME}-job-${j}"
-		bset status "starting_jobs:${j}"
-		# Jail might be lingering from previous build. Already recursively
-		# destroyed all the builder datasets, so just try stopping the jail
-		# and ignore any errors
-		jail -qr ${name} 2>/dev/null || :
-		destroyfs ${mnt} jail
-		mkdir -p "${mnt}"
-		clonefs ${MASTERMNT} ${mnt} prepkg
-		markfs prepkg ${mnt}
-		do_jail_mounts ${mnt} ${arch}
-		do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
-		bset ${MY_JOBID} status "idle:"
+		parallel_run start_builder ${j} ${arch}
 	done
+	parallel_stop
 }
 
 stop_builders() {
@@ -1463,6 +1473,7 @@ delete_old_pkg() {
 delete_old_pkgs() {
 	[ ! -d ${POUDRIERE}/packages/${MASTERNAME}/All ] && return 0
 	[ -n "$(dir_empty ${POUDRIERE}/packages/${MASTERNAME}/All)" ] && return 0
+	parallel_start
 	for pkg in ${POUDRIERE}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
 		# Check for non-empty directory with no packages in it
 		[ "${pkg}" = "${POUDRIERE}/packages/${MASTERNAME}/All/*.${PKG_EXT}" ] && break
@@ -1586,42 +1597,34 @@ listed_ports() {
 	fi
 }
 
-parallel_stop() {
-	wait
+parallel_exec() {
+	eval "$@"
+	echo >&6
 }
 
-_reap_children() {
-	local skip_count=${1:-0}
-	PARALLEL_CHILDREN_COUNT=0
-	running_jobs=$(jobs -p) # |wc -l here will always be 0
-	for pid in ${running_jobs}; do
-		PARALLEL_CHILDREN_COUNT=$((PARALLEL_CHILDREN_COUNT + 1))
-	done
-	[ ${PARALLEL_CHILDREN_COUNT} -lt ${skip_count} ] && return 0
+parallel_start() {
+	mkfifo ${MASTERMNT}/poudriere/parallel.pipe
+	exec 6<> ${MASTERMNT}/poudriere/parallel.pipe
+	rm -f ${MASTERMNT}/poudriere/parallel.pipe
+	export NBPARALLEL=0
+}
 
-	# No available slot, try to reap some children to find one
-	for pid in ${running_jobs}; do
-		if ! kill -0 ${pid} 2>/dev/null; then
-			wait ${pid} 2>/dev/null || :
-			PARALLEL_CHILDREN_COUNT=$((PARALLEL_CHILDREN_COUNT - 1))
-		fi
+parallel_stop() {
+	for j in $(jot ${PARALLEL_JOBS}); do
+		wait
 	done
+
+	exec 6<&-
+	exec 6>&-
 }
 
 parallel_run() {
 	local cmd="$@"
 
-	while :; do
-		_reap_children ${PARALLEL_JOBS}
-		if [ ${PARALLEL_CHILDREN_COUNT} -lt ${PARALLEL_JOBS} ]; then
-			# Execute the command in the background
-			eval "${cmd} &"
-			return 0
-		fi
-		sleep 0.1
-	done
+	[ ${NBPARALLEL} -eq ${PARALLEL_JOBS} ] && read a <&6
+	[ ${NBPARALLEL} -lt ${PARALLEL_JOBS} ] && NBPARALLEL=$((NBPARALLEL + 1))
 
-	return 0
+	parallel_exec ${fd} $cmd &
 }
 
 # Get all data that make this build env unique,
@@ -1672,6 +1675,7 @@ prepare_ports() {
 	build_stats
 
 	bset status "computingdeps:"
+	parallel_start
 	for port in $(listed_ports); do
 		[ -d "${MASTERMNT}/usr/ports/${port}" ] || err 1 "Invalid port origin: ${port}"
 		parallel_run "compute_deps ${port}"
