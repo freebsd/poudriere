@@ -1585,7 +1585,7 @@ lock_release() {
 
 cache_get_pkgname() {
 	[ $# -ne 1 ] && eargs origin
-	local origin=$1
+	local origin=${1%/}
 	local pkgname="" existing_origin
 	local cache_origin_pkgname=${MASTERMNT}/poudriere/var/cache/origin-pkgname/${origin%%/*}_${origin##*/}
 	local cache_pkgname_origin
@@ -1615,7 +1615,7 @@ cache_get_origin() {
 	local pkgname=$1
 	local cache_pkgname_origin="${MASTERMNT}/poudriere/var/cache/pkgname-origin/${pkgname}"
 
-	cat "${cache_pkgname_origin}"
+	cat "${cache_pkgname_origin%/}"
 }
 
 # Take optional pkgname to speedup lookup
