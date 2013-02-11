@@ -566,6 +566,7 @@ mark_preinst() {
 ./var/db/pkg/*
 ./var/run/*
 ./wrkdirs/*
+./tmp/*
 ./${MYBASE:-/usr/local}/share/nls/POSIX
 ./${MYBASE:-/usr/local}/share/nls/en_US.US-ASCII
 ./var/db/fontconfig
@@ -674,7 +675,7 @@ build_port() {
 					ppath=`echo "$path" | sed \
 						-e "s,^${JAILMNT},," \
 						-e "s,^${PREFIX}/,," \
-					l	${sedargs} \
+						${sedargs} \
 					`
 				fi
 				case $mod$type in
