@@ -421,7 +421,7 @@ EOF
 	fi
 	mtree -X ${mnt}/poudriere/mtree.${name}exclude \
 		-xcn -k uid,gid,mode,size \
-		-p ${mnt} >> ${mnt}/poudriere/mtree.${name}
+		-p ${mnt} > ${mnt}/poudriere/mtree.${name}
 }
 
 clonefs() {
