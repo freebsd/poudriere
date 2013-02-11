@@ -631,7 +631,7 @@ jail_stop() {
 	local fs=$(zfs_getfs ${MASTERMNT})
 	bset status "stop:"
 
-	jail -qr ${MASTERNAME} 2>/dev/null
+	jail -qr ${MASTERNAME} 2>/dev/null || :
 	# Shutdown all builders
 	if [ ${PARALLEL_JOBS} -ne 0 ]; then
 		# - here to only check for unset, {start,stop}_builders will set this to blank if already stopped
