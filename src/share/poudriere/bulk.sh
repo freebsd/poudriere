@@ -192,9 +192,8 @@ else
 		[ "${pkg}" = "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz" ] && break
 		msg_verbose "Extracting description for ${ORIGIN} ..."
 		ORIGIN=$(pkg_get_origin ${pkg_file})
-		[ -d ${PORTSDIR}/${ORIGIN} ] &&	parallel_run "injail ${MASTERNAME} make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1"
+		[ -d ${PORTSDIR}/${ORIGIN} ] &&	injail ${MASTERNAME} make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
 	done
-	parallel_stop
 
 	msg_n "Generating INDEX..."
 	awk -v indf=${INDEXF}.1 -F\| 'BEGIN {
