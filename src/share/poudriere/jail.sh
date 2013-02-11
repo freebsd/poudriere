@@ -78,6 +78,7 @@ update_version() {
 }
 
 update_jail() {
+	local netargs
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	jail_runs && \
 		err 1 "Unable to remove jail ${JAILNAME}: it is running"
@@ -91,18 +92,16 @@ update_jail() {
 	case ${METHOD} in
 	ftp)
 		JAILMNT=$(jget ${JAILNAME} mnt)
-		jail_start
-		jail -r ${JAILNAME} >/dev/null
-		jrun 1
 		if [ -z "${TORELEASE}" ]; then
-			injail ${JAILNAME} /usr/sbin/freebsd-update fetch install
+			netargs=$localipargs
+			[ $network -eq 1 ] && netargs=$ipargs
+			jail -c path=${JAILMNT} $ipargs command=/usr/sbin/freebsd-update fetch install
 		else
-			yes | injail ${JAILNAME} env PAGER=/bin/cat /usr/sbin/freebsd-update -r ${TORELEASE} upgrade install || err 1 "Fail to upgrade system"
-			yes | injail ${JAILNAME} env PAGER=/bin/cat /usr/sbin/freebsd-update install || err 1 "Fail to upgrade system"
+			yes | jail -c path=${JAILMNT} command=env PAGER=/bin/cat /usr/sbin/freebsd-update -r ${TORELEASE} upgrade install || err 1 "Fail to upgrade system"
+			yes | jail -c path=${JAILMNT} command=env PAGER=/bin/cat /usr/sbin/freebsd-update install || err 1 "Fail to upgrade system"
 			jset ${JAILNAME} version ${TORELEASE}
 		fi
 		markfs clean ${JAILMNT}
-		jail_stop
 		;;
 	csup)
 		install_from_csup
@@ -494,14 +493,12 @@ case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}" in
 		;;
 	001000)
 		test -z ${JAILNAME} && usage
-		jail_stop
+		jail -qr ${JAILNAME}
 		;;
 	000100)
 		export SET_STATUS_ON_START=0
 		test -z ${JAILNAME} && usage
-		jail_start
-		jail -r ${JAILNAME} >/dev/null
-		jrun 1
+		jail -c persist path=${JAILMNT} name=${JAILNAME} $ipargs
 		;;
 	000010)
 		test -z ${JAILNAME} && usage

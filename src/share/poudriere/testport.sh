@@ -111,13 +111,13 @@ bset status "depends:"
 
 unmarkfs prepkg ${MASTERMNT}
 
-injail ${MASTERNAME} make -C /usr/ports/${ORIGIN} pkg-depends extract-depends \
+jail -c path=${MASTERMNT} command=make -C /usr/ports/${ORIGIN} pkg-depends extract-depends \
 	fetch-depends patch-depends build-depends lib-depends
 
 bset status "testing:"
 
-PKGNAME=`injail ${MASTERNAME} make -C /usr/ports/${ORIGIN} -VPKGNAME`
-LOCALBASE=`injail ${MASTERNAME} make -C /usr/ports/${ORIGIN} -VLOCALBASE`
+PKGNAME=`jail -c path=${MASTERMNT} command=make -C /usr/ports/${ORIGIN} -VPKGNAME`
+LOCALBASE=`jail -c path=${MASTERMNT} command=make -C /usr/ports/${ORIGIN} -VLOCALBASE`
 PREFIX=${LOCALBASE}
 if [ "${USE_PORTLINT}" = "yes" ]; then
 	[ ! -x `which portlint` ] && err 2 "First install portlint if you want USE_PORTLINT to work as expected"
@@ -129,7 +129,7 @@ fi
 [ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/prefix}/`echo ${PKGNAME} | tr '[,+]' _`"
 PORT_FLAGS="NO_DEPENDS=yes PREFIX=${PREFIX}"
 msg "Building with flags: ${PORT_FLAGS}"
-[ $CONFIGSTR -eq 1 ] && injail ${MASTERNAME} env TERM=${SAVED_TERM} make -C /usr/ports/${ORIGIN} config
+[ $CONFIGSTR -eq 1 ] && jail -c path=${MASTERNAME} command=env TERM=${SAVED_TERM} make -C /usr/ports/${ORIGIN} config
 
 if [ -d ${mnt}${PREFIX} ]; then
 	msg "Removing existing ${PREFIX}"
@@ -138,7 +138,7 @@ fi
 
 msg "Populating PREFIX"
 mkdir -p ${mnt}${PREFIX}
-injail ${MASTERNAME} mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${PREFIX} >/dev/null
+jail -c path=${MASTERMNT} command=mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${PREFIX} >/dev/null
 
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
 mkdir -p ${mnt}/tmp/pkgs
@@ -155,14 +155,14 @@ if ! build_port /usr/ports/${ORIGIN}; then
 fi
 
 msg "Installing from package"
-injail ${MASTERNAME} ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT}
+jail -c path=${MASTERMNT} command=${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT}
 
 msg "Cleaning up"
-injail ${MASTERNAME} make -C /usr/ports/${ORIGIN} clean
+jail -c path=${MASTERMNT} command=make -C /usr/ports/${ORIGIN} clean
 
 if [ $INTERACTIVE_MODE -eq 1 ]; then
 	msg "Entering interactive test mode. Type 'exit' when done."
-	injail ${MASTERNAME} env -i TERM=${SAVED_TERM} PACKAGESITE="file:///usr/ports/packages" /usr/bin/login -fp root
+	jail -c path=${MASTERMNT} command=env -i TERM=${SAVED_TERM} PACKAGESITE="file:///usr/ports/packages" /usr/bin/login -fp root
 elif [ $INTERACTIVE_MODE -eq 2 ]; then
 	msg "Leaving jail ${MASTERNAME} running, mounted at ${mnt} for interactive run testing"
 	msg "To enter jail: jexec ${MASTERNAME} /bin/sh"
@@ -172,7 +172,7 @@ elif [ $INTERACTIVE_MODE -eq 2 ]; then
 fi
 
 msg "Deinstalling package"
-injail ${MASTERNAME} ${PKG_DELETE} ${PKGNAME}
+jail -c path=${MASTERMNT} command=${PKG_DELETE} ${PKGNAME}
 
 msg "Removing existing ${PREFIX} dir"
 buildlog_stop /usr/ports/${ORIGIN}

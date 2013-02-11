@@ -467,68 +467,6 @@ destroyfs() {
 	fi
 }
 
-jrun() {
-	[ $# -ne 3 ] && eargs jname mnt network
-	local jname=$1
-	local mnt=$2
-	local network=$3
-	local ipargs
-	if [ ${network} -eq 0 ]; then
-		case $IPS in
-		01) ipargs="ip6.addr=::1" ;;
-		10) ipargs="ip4.addr=127.0.0.1" ;;
-		11) ipargs="ip4.addr=127.0.0.1 ip6.addr=::1" ;;
-		esac
-	else
-		case $IPS in
-		01) ipargs="ip6=inherit" ;;
-		10) ipargs="ip4=inherit" ;;
-		11) ipargs="ip4=inherit ip6=inherit" ;;
-		esac
-	fi
-	jail -c persist name=${jname} ${ipargs} path=${mnt} \
-		host.hostname=${jname} allow.sysvipc \
-		allow.socket_af allow.raw_sockets allow.chflags
-}
-
-jr() {
-	[ $# -le 3 ] && eargs jname mnt network
-	local jname=$1
-	local mnt=$2
-	local network=$3
-	local ipargs logarg tmarg extraargs
-	shift 3
-	if [ ${network} -eq 0 ]; then
-		case $IPS in
-		01) ipargs="ip6.addr=::1" ;;
-		10) ipargs="ip4.addr=127.0.0.1" ;;
-		11) ipargs="ip4.addr=127.0.0.1 ip6.addr=::1" ;;
-		esac
-	elif [ ${network} -eq 1 ]; then
-		case $IPS in
-		01) ipargs="ip6=inherit" ;;
-		10) ipargs="ip4=inherit" ;;
-		11) ipargs="ip4=inherit ip6=inherit" ;;
-		esac
-	else
-		case $IPS in
-		01) ipargs="ip6=disable" ;;
-		10) ipargs="ip4=disable" ;;
-		11) ipargs="ip6=disable ip4=disable" ;;
-		esac
-	fi
-
-	if [ ${RELDATE} -gt 901000 ]; then
-		[ -n "EXECTIMEOUT" ] && tmarg=exec.timeout=${EXECTIMEOUT}
-		[ -n "LOGFILE" ] && logarg=exec.consolelog=${LOGFILE}
-		extraargs="exec.clean ${tmarg} ${logarg}"
-	fi
-	jail -c name=${jname} ${ipargs} path=${mnt} \
-		host.hostname=${jname} allow.chflags \
-		${extraargs} command="$@"
-	unset EXECTIMEOUT
-}
-
 do_jail_mounts() {
 	[ $# -ne 2 ] && eargs mnt arch
 	local mnt=$1
@@ -669,7 +607,6 @@ jail_start() {
 
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${tomnt}/etc/"
 	msg "Starting jail ${MASTERNAME}"
-	jrun ${MASTERNAME} ${tomnt} 0
 	# Only set STATUS=1 if not turned off
 	# jail -s should not do this or jail will stop on EXIT
 	WITH_PKGNG=$(jail -c path=${MASTERMNT} command=make -f /usr/ports/Mk/bsd.port.mk -V WITH_PKGNG)
@@ -747,12 +684,6 @@ cleanup() {
 	export CLEANED_UP=1
 }
 
-injail() {
-	local jname=$1
-	shift
-	jexec -U root ${jname} $@
-}
-
 sanity_check_pkgs() {
 	local ret=0
 	local depfile
@@ -803,45 +734,36 @@ build_port() {
 	local targets="check-config fetch checksum extract patch configure build run-depends install-mtree install package ${PORTTESTING:+deinstall}"
 	local mnt=$(my_path)
 	local name=$(my_name)
+	local listfilecmd network netargs
 
 	for phase in ${targets}; do
 		bset ${MY_JOBID} status "${phase}:${port}"
 		job_msg_verbose "Status for build ${port}: ${phase}"
-		if [ "${phase}" = "fetch" ]; then
-			jail -r ${name} >/dev/null
-			jrun ${name} ${mnt} 1
-		fi
+		case ${phase} in
+		fetch|checksum) network=1 ;;
+		*) network=0 ;;
+		esac
 		case ${phase} in
 		install) [ -n ${PORTTESTING} ] && markfs preinst ${mnt} ;;
 		deinstall)
 			msg "Checking shared library dependencies"
-			if [ ${PKGNG} -eq 0 ]; then
-				PLIST="/var/db/pkg/${PKGNAME}/+CONTENTS"
-				grep -v "^@" ${mnt}${PLIST} | \
-					sed -e "s,^,${PREFIX}/," | \
-					xargs injail ${name} ldd 2>&1 | \
-					grep -v "not a dynamic executable" | \
-					awk ' /=>/{ print $3 }' | sort -u
-			else
-				injail ${name} pkg query "%Fp" ${PKGNAME} | \
-					xargs injail ${name} ldd 2>&1 | \
-					grep -v "not a dynamic executable" | \
-					awk '/=>/ { print $3 }' | sort -u
-			fi
+			listfilecmd="grep -v '^@' /var/db/pkg/${PKGNAME}/+CONTENTS"
+			[ ${PKGNG} -eq 1 ] && listfilecmd="pkg query '%Fp' ${PKGNAME}"
+			echo "${listfilecmd} | xargs ldd 2>&1 | awk '/=>/ { print $3 } | sort -u" > ${mnt}/shared.sh
+			jail -c path=${mnt} command=sh /shared.sh
+			rm -f ${mnt}/shared.sh
 			;;
 		esac
 
 		print_phase_header ${phase}
-		injail ${name} env ${PKGENV} ${PORT_FLAGS} make -C ${portdir} ${phase} || return 1
+		netargs=$localipargs
+		[ $network -eq 1 ] && netargs=$ipargs
+		jail -c path=${mnt} name=${name} ${netargs} command=env ${PKGENV} ${PORT_FLAGS} make -C ${portdir} ${phase} || return 1
 		print_phase_footer
 
-		if [ "${phase}" = "checksum" ]; then
-			jail -r ${name} >/dev/null
-			jrun ${name} ${mnt} 1
-		fi
 		if [ "${phase}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
-			PREFIX=`injail ${name} env ${PORT_FLAGS} make -C ${portdir} -VPREFIX`
+			PREFIX=$(jail -c path=${mnt} command=env ${PORT_FLAGS} make -C ${portdir} -VPREFIX)
 			bset ${MY_JOBID} status "leftovers:${port}"
 			local portname datadir etcdir docsdir examplesdir wwwdir site_perl
 			local add=$(mktemp ${jailbase}/tmp/add.XXXXXX)
@@ -852,7 +774,7 @@ build_port() {
 			local mod1=$(mktemp ${jailbase}/tmp/mod1.XXXXXX)
 			local die=0
 
-			sedargs=$(injail ${name} env ${PORT_FLAGS} make -C ${portdir} -V'${PLIST_SUB:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/}')
+			sedargs=$(jail -c path=${mnt} command=env ${PORT_FLAGS} make -C ${portdir} -V'${PLIST_SUB:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/}')
 
 			check_leftovers ${mnt} | \
 				while read mod path; do
@@ -904,8 +826,6 @@ build_port() {
 			[ $die -eq 0 ] || return 1
 		fi
 	done
-	jail -r ${name} >/dev/null
-	jrun ${name} ${mnt} 0
 	bset ${MY_JOBID} status "idle:"
 	return 0
 }
@@ -965,7 +885,6 @@ start_builders() {
 		markfs prepkg ${mnt}
 		do_jail_mounts ${mnt} ${arch}
 		do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
-		jrun ${name} ${mnt} 0
 		bset ${MY_JOBID} status "idle:"
 	done
 }
@@ -1320,14 +1239,14 @@ build_pkg() {
 		bset ${MY_JOBID} status "depends:${port}"
 		job_msg_verbose "Status for build ${port}: depends"
 		print_phase_header "depends"
-		if ! injail ${name} make -C ${portdir} pkg-depends fetch-depends extract-depends \
+		if ! jail -c name=${name} path=${mnt} command=make -C ${portdir} pkg-depends fetch-depends extract-depends \
 			patch-depends build-depends lib-depends; then
 			build_failed=1
 			failed_phase="depends"
 		else
 			print_phase_footer
 			# Only build if the depends built fine
-			injail ${name} make -C ${portdir} clean
+			jail -c path=${mnt} command=make -C ${portdir} clean
 			if ! build_port ${portdir}; then
 				build_failed=1
 				failed_status=$(bget status)
@@ -1336,7 +1255,7 @@ build_pkg() {
 				save_wrkdir ${mnt} "${port}" "${portdir}" "${failed_phase}" || :
 			fi
 
-			injail ${name} make -C ${portdir} clean
+			jail -c path=${mnt} command=make -C ${portdir} clean
 		fi
 
 		if [ ${build_failed} -eq 0 ]; then
@@ -1527,7 +1446,7 @@ delete_old_pkg() {
 
 	# Check if the compiled options match the current options from make.conf and /var/db/options
 	if [ "${CHECK_CHANGED_OPTIONS:-no}" != "no" ]; then
-		current_options=$(injail ${MASTERNAME} make -C /usr/ports/${o} pretty-print-config | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
+		current_options=$(jail -c path=${MASTERMNT} command=make -C /usr/ports/${o} pretty-print-config | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 		compiled_options=$(pkg_get_options ${pkg})
 
 		if [ "${compiled_options}" != "${current_options}" ]; then
@@ -1947,6 +1866,22 @@ if [ ! -d ${POUDRIERED}/jails ]; then
 			zfs inherit -r ${NS}:stats_status ${fs}
 		done
 fi
+
+case $IPS in
+01)
+	localipargs="ip6.addr=::1"
+	ipargs="ip6.addr=inherit"
+	;;
+10)
+	localipargs="ip4.addr=127.0.0.1"
+	ipargs="ip4=inherit"
+	;;
+11)
+	localipargs="ip4.addr=127.0.0.1 ip6.addr=::1"
+	ipargs="ip4=inherit ip6=inherit"
+	;;
+esac
+
 
 case ${PARALLEL_JOBS} in
 ''|*[!0-9]*)
