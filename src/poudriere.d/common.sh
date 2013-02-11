@@ -563,7 +563,7 @@ sanity_check_pkgs() {
 mark_preinst() {
 
 	cat > ${JAILMNT}/tmp/mtree.preexclude <<EOF
-./var/db/pkg/*.sqlite
+./var/db/pkg/*
 ./var/run/*
 ./wrkdirs/*
 ./${MYBASE:-/usr/local}/share/nls/POSIX
