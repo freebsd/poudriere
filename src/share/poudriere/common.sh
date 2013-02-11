@@ -631,13 +631,12 @@ jail_stop() {
 	local fs=$(zfs_getfs ${MASTERMNT})
 	bset status "stop:"
 
-
-	jail -r ${MASTERNAME} >/dev/null
+	jail -qr ${MASTERNAME} 2>/dev/null
 	# Shutdown all builders
 	if [ ${PARALLEL_JOBS} -ne 0 ]; then
 		# - here to only check for unset, {start,stop}_builders will set this to blank if already stopped
 		for j in ${JOBS-$(jot -w %02d ${PARALLEL_JOBS})}; do
-			jail -r ${MASTERNAME}-job-${j} >/dev/null 2>&1 || :
+			jail -qr ${MASTERNAME}-job-${j} 2>/dev/null || :
 			destroyfs ${MASTERMNT}/../${j} jail
 		done
 	fi
@@ -878,7 +877,7 @@ start_builders() {
 		# Jail might be lingering from previous build. Already recursively
 		# destroyed all the builder datasets, so just try stopping the jail
 		# and ignore any errors
-		jail -r ${name} >/dev/null 2>&1 || :
+		jail -qr ${name} 2>/dev/null || :
 		destroyfs ${mnt} jail
 		mkdir -p "${mnt}"
 		clonefs ${MASTERMNT} ${mnt} prepkg
@@ -898,7 +897,7 @@ stop_builders() {
 	msg "Stopping ${PARALLEL_JOBS} builders"
 
 	for j in ${JOBS}; do
-		jail -r ${MASTERNAME}-job-${j} >/dev/null 2>&1 || :
+		jail -qr ${MASTERNAME}-job-${j} 2>/dev/null || :
 		destroyfs ${MASTERMNT}/../${j} jail
 	done
 
