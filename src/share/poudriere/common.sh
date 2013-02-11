@@ -1594,6 +1594,7 @@ cache_get_pkgname() {
 
 	# Add to cache if not found.
 	if [ -z "${pkgname}" ]; then
+		[ -d "${PORTSDIR}/${origin}" ] || err 1 "Invalid port origin '${origin}' not found."
 		pkgname=$(jail -c path=${MASTERMNT} command=make -C /usr/ports/${origin} -VPKGNAME)
 		# Make sure this origin did not already exist
 		existing_origin=$(cache_get_origin "${pkgname}" 2>/dev/null || :)
