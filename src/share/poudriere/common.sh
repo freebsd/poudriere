@@ -395,6 +395,7 @@ markfs() {
 ./distfiles/*
 ./ccache/*
 ./var/db/ports/*
+./proc/*
 EOF
 	elif [ "${name}" = "preinst" ]; then
 		cat >  ${mnt}/poudriere/mtree.${name}exclude << EOF
@@ -579,6 +580,12 @@ jail_start() {
 	done
 	jail_exists ${name} || err 1 "No such jail: ${name}"
 	jail_runs ${MASTERNAME} && err 1 "jail already running: ${MASTERNAME}"
+	export HOME=/root
+	export USER=root
+	export FORCE_PACKAGE=yes
+	if [ -z "${NO_PACKAGE_BUILDING}" ]; then
+		export PACKAGE_BUILDING=yes
+	fi
 
 	msg_n "Creating the reference jail..."
 	clonefs ${mnt} ${tomnt} clean
@@ -748,7 +755,7 @@ build_port() {
 			msg "Checking shared library dependencies"
 			listfilecmd="grep -v '^@' /var/db/pkg/${PKGNAME}/+CONTENTS"
 			[ ${PKGNG} -eq 1 ] && listfilecmd="pkg query '%Fp' ${PKGNAME}"
-			echo "${listfilecmd} | xargs ldd 2>&1 | awk '/=>/ { print $3 } | sort -u" > ${mnt}/shared.sh
+			echo "${listfilecmd} | xargs ldd 2>&1 | awk '/=>/ { print $3 }' | sort -u" > ${mnt}/shared.sh
 			jail -c path=${mnt} command=sh /shared.sh
 			rm -f ${mnt}/shared.sh
 			;;
@@ -884,11 +891,7 @@ start_builder() {
 }
 
 start_builders() {
-	local jname=$1
-	local ptname=$2
-	local setname=$3
 	local arch=$(jail -c path=${MASTERMNT} command=uname -p)
-	local mnt name
 
 	bset status "starting_builders:"
 	parallel_start
@@ -1151,7 +1154,7 @@ parallel_build() {
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
 
 	bset status "starting_jobs:"
-	start_builders ${jname} ${ptname} ${setname}
+	start_builders
 
 	# Duplicate stdout to socket 5 so the child process can send
 	# status information back on it since we redirect its
