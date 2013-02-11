@@ -159,7 +159,7 @@ bset() {
 		shift
 	fi
 	property=$1
-	mnt=${MASTERMNT}${id:+/../${MY_JOBID}}
+	mnt=${MASTERMNT}${id:+/../${id}}
 	shift
 	echo "$@" > ${mnt}/poudriere/${property} || :
 }
@@ -881,8 +881,8 @@ start_builder() {
 	do_jail_mounts ${mnt} ${arch}
 	do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
 	bset ${id} status "idle:"
-
 }
+
 start_builders() {
 	local jname=$1
 	local ptname=$2
