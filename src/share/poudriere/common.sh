@@ -144,11 +144,11 @@ siginfo_handler() {
 		return 0;
 	fi
 	local status=$(zget status)
-	local nbb=$(zget stats_built|sed -e 's/ //g')
-	local nbf=$(zget stats_failed|sed -e 's/ //g')
-	local nbi=$(zget stats_ignored|sed -e 's/ //g')
-	local nbs=$(zget stats_skipped|sed -e 's/ //g')
-	local nbq=$(zget stats_queued|sed -e 's/ //g')
+	local nbb=$(zget stats_built)
+	local nbf=$(zget stats_failed)
+	local nbi=$(zget stats_ignored)
+	local nbs=$(zget stats_skipped)
+	local nbq=$(zget stats_queued)
 	local ndone=$((nbb + nbf + nbi + nbs))
 	local queue_width=2
 	local j status
@@ -932,9 +932,18 @@ build_stats() {
       <li>Ports tree: ${PTNAME}</li>
       <li>Set Name: ${SETNAME:-none}</li>
 EOF
-	cnt=$(zget stats_queued)
+	local nbb=$(zget stats_built)
+	local nbf=$(zget stats_failed)
+	local nbi=$(zget stats_ignored)
+	local nbs=$(zget stats_skipped)
+	local nbq=$(zget stats_queued)
+	local nbdone=$((nbb + nbf + nbi + nbs))
 	cat >> ${html_path} << EOF
-      <li>Nb ports queued: ${cnt}</li>
+      <li>Queue: ${nbdone} / ${nbq}</li>
+      <li>Nb ports built: ${nbb}</li>
+      <li>Nb ports failed: ${nbf}</li>
+      <li>Nb ports ignored: ${nbi}</li>
+      <li>Nb ports skipped: ${nbs}</li>
     </ul>
     <hr />
     <button onclick="toggle_display('built');">Show/Hide success</button>
@@ -1562,11 +1571,15 @@ prepare_ports() {
 		"${JAILMNT}/poudriere/var/cache/origin-pkgname" \
 		"${JAILMNT}/poudriere/var/cache/pkgname-origin"
 
-	zset stats_queued "0"
-	:> ${JAILMNT}/poudriere/ports.built
-	:> ${JAILMNT}/poudriere/ports.failed
-	:> ${JAILMNT}/poudriere/ports.ignored
-	:> ${JAILMNT}/poudriere/ports.skipped
+	zset stats_queued 0
+	zset stats_built 0
+	zset stats_failed 0
+	zset stats_ignored 0
+	zset stats_skipped 0
+	:> ${MASTERMNT}/poudriere/ports.built
+	:> ${MASTERMNT}/poudriere/ports.failed
+	:> ${MASTERMNT}/poudriere/ports.ignored
+	:> ${MASTERMNT}/poudriere/ports.skipped
 	build_stats
 
 	zset status "computingdeps:"
