@@ -4,6 +4,7 @@
 NS="poudriere"
 IPS="$(sysctl -n kern.features.inet 2>/dev/null || (sysctl -n net.inet 1>/dev/null 2>&1 && echo 1) || echo 0)$(sysctl -n kern.features.inet6 2>/dev/null || (sysctl -n net.inet6 1>/dev/null 2>&1 && echo 1) || echo 0)"
 RELDATE=$(sysctl kern.osreldate)
+JAILED=$(sysctl security.jail.jailed)
 
 dir_empty() {
 	find $1 -maxdepth 0 -empty
@@ -81,7 +82,6 @@ log_path() {
 
 buildlog_start() {
 	local portdir=$1
-	local name=$(my_name)
 	local mnt=$(my_path)
 
 	echo "build started at $(date)"
@@ -495,7 +495,7 @@ do_jail_mounts() {
 		devfs -m ${mnt}/dev/ rule apply path "${p}" unhide
 	done
 	if [ "${mnt##*/}" != "ref" ]; then
-		mount -t fdescfs fdesc ${mnt}/dev/fd
+		[ ${JAILED} -eq 0 ] && mount -t fdescfs fdesc ${mnt}/dev/fd
 		mount -t procfs proc ${mnt}/proc
 		if [ -z "${NOLINUX}" ]; then
 			if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
