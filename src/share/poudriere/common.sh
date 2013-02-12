@@ -1060,7 +1060,7 @@ EOF
 	local nbi=$(bget stats_ignored)
 	local nbs=$(bget stats_skipped)
 	local nbq=$(bget stats_queued)
-	local ndone=$((nbb + nbf + nbi + nbs))
+	local nbdone=$((nbb + nbf + nbi + nbs))
 	cat >> ${html_path} << EOF
       <li>Queue: ${nbdone} / ${nbq}</li>
       <li>Nb ports built: ${nbb}</li>
