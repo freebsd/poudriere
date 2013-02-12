@@ -1280,6 +1280,8 @@ build_pkg() {
 				failed_phase=${failed_status%:*}
 
 				save_wrkdir ${mnt} "${port}" "${portdir}" "${failed_phase}" || :
+			elif [ -f ${mnt}/${portdir}/.keep ]; then
+				save_wrkdir ${mnt} "${port}" "${portdir}" "noneed" ||:
 			fi
 
 			jail -c path=${mnt} command=make -C ${portdir} clean
