@@ -1576,10 +1576,6 @@ prepare_ports() {
 	zset stats_failed 0
 	zset stats_ignored 0
 	zset stats_skipped 0
-	:> ${MASTERMNT}/poudriere/ports.built
-	:> ${MASTERMNT}/poudriere/ports.failed
-	:> ${MASTERMNT}/poudriere/ports.ignored
-	:> ${MASTERMNT}/poudriere/ports.skipped
 	build_stats
 
 	zset status "computingdeps:"
