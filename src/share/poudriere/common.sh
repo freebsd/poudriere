@@ -443,7 +443,7 @@ clonefs() {
 			${fs}@${snap} \
 			${fs}/${name}
 	else
-		[ ${TMPFS_ALL} ] && mount -t tmpfs tmpfs ${to}
+		[ ${TMPFS_ALL} -eq 1 ] && mount -t tmpfs tmpfs ${to}
 		pax -X -rw -p p -s ",${from},,g" ${from} ${to}
 	fi
 }
