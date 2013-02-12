@@ -1310,9 +1310,8 @@ build_pkg() {
 
 list_deps() {
 	[ $# -ne 1 ] && eargs directory
-	local dir=$1
+	local dir="/usr/ports/$1"
 	local makeargs="-VPKG_DEPENDS -VBUILD_DEPENDS -VEXTRACT_DEPENDS -VLIB_DEPENDS -VPATCH_DEPENDS -VFETCH_DEPENDS -VRUN_DEPENDS"
-	[ -d "${PORTSDIR}/${dir}" ] && dir="/usr/ports/${dir}"
 
 	jail -c path=${MASTERMNT} command=make -C ${dir} $makeargs | tr '\n' ' ' | \
 		sed -e "s,[[:graph:]]*/usr/ports/,,g" -e "s,:[[:graph:]]*,,g" | sort -u
@@ -1543,7 +1542,7 @@ cache_get_pkgname() {
 
 	# Add to cache if not found.
 	if [ -z "${pkgname}" ]; then
-		[ -d "${PORTSDIR}/${origin}" ] || err 1 "Invalid port origin '${origin}' not found."
+		[ -d "${MASTERMNT}/usr/ports/${origin}" ] || err 1 "Invalid port origin '${origin}' not found."
 		pkgname=$(jail -c path=${MASTERMNT} command=make -C /usr/ports/${origin} -VPKGNAME)
 		# Make sure this origin did not already exist
 		existing_origin=$(cache_get_origin "${pkgname}" 2>/dev/null || :)
