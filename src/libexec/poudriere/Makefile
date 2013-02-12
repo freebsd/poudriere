@@ -1,3 +1,5 @@
+PREFIX?=	/usr/local
+
 dirwatch: dirwatch.c
 	${CC} -Wall -Werror ${CFLAGS} dirwatch.c -o dirwatch
 

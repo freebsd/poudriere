@@ -1913,3 +1913,8 @@ case ${PARALLEL_JOBS} in
 	PARALLEL_JOBS=$(sysctl -n hw.ncpu)
 	;;
 esac
+
+: ${WATCHDIR:=${POUDRIERE_DATA}/queue}
+: ${PIDFILE:=${POUDRIERE_DATA}/daemon.pid}
+
+[ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}

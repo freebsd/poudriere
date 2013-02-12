@@ -13,6 +13,7 @@ Commands:
     bulk        -- generate packages for given ports
     cron        -- run poudriere from the crontab
     distclean   -- clean old distfiles
+    daemon      -- launch the poudriere daemon
     help        -- show usage
     jail        -- manage the jails used by poudriere
     ports       -- create, update or delete the portstrees used by poudriere
@@ -62,6 +63,9 @@ case ${CMD} in
 		;;
 	version)
 		echo "${VERSION}"
+		;;
+	daemon)
+		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/daemon.sh $@
 		;;
 	*)
 		echo "Unknown command ${CMD}"
