@@ -902,7 +902,7 @@ start_builders() {
 	bset status "starting_builders:"
 	parallel_start
 	for j in ${JOBS}; do
-		parallel_run start_builder ${j} ${arch}
+		parallel_run "start_builder ${j} ${arch}"
 	done
 	parallel_stop
 }
