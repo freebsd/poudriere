@@ -576,7 +576,13 @@ jail_start() {
 	fi
 	[ -n "${USE_TMPFS}" ] && NEEDFS="${NEEDFS} tmpfs"
 	for fs in ${needfs}; do
-		lsvfs $fs >/dev/null 2>&1 || kldload $fs
+		if ! lsvfs $fs >/dev/null 2>&1; then
+			if [ $JAILED -eq 0 ]; then
+				kldload $fs
+			else
+				err 1 "please load the $fs module on host using \"kldload $fs\""
+			fi
+		fi
 	done
 	jail_exists ${name} || err 1 "No such jail: ${name}"
 	jail_runs ${MASTERNAME} && err 1 "jail already running: ${MASTERNAME}"
