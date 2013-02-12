@@ -184,7 +184,7 @@ else
 	fi
 	msg "Preparing INDEX"
 	bset status "index:"
-	OSMAJ=`jail -c ${MASTERMNT} command=uname -r | awk -F. '{ print $1 }'`
+	OSMAJ=`jail -c path=${MASTERMNT} command=uname -r | awk -F. '{ print $1 }'`
 	INDEXF=${POUDRIERE_DATA}/packages/${MASTERNAME}/INDEX-${OSMAJ}
 	rm -f ${INDEXF}.1 2>/dev/null || :
 	for pkg_file in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz; do
