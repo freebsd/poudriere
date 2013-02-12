@@ -981,9 +981,9 @@ build_queue() {
 	local j cnt mnt fs name pkgname read_queue builders_active should_build_stats
 
 	should_build_stats=1 # Always build stats on first pass
-	mkfifo ${MASTERMNT}/poudriere/builders.pipe
-	exec 6<> ${MASTERMNT}/poudriere/builders.pipe
-	rm -f ${MASTERMNT}/poudriere/builders.pipe
+	mkfifo ${MASTERMNT:-${JAILMNT}}/poudriere/builders.pipe
+	exec 6<> ${MASTERMNT:-${JAILMNT}}/poudriere/builders.pipe
+	rm -f ${MASTERMNT:-${JAILMNT}}/poudriere/builders.pipe
 	while :; do
 		builders_active=0
 		for j in ${JOBS}; do
@@ -1504,9 +1504,9 @@ parallel_exec() {
 }
 
 parallel_start() {
-	mkfifo ${MASTERMNT}/poudriere/parallel.pipe
-	exec 6<> ${MASTERMNT}/poudriere/parallel.pipe
-	rm -f ${MASTERMNT}/poudriere/parallel.pipe
+	mkfifo ${MASTERMNT:-${JAILMNT}}/poudriere/parallel.pipe
+	exec 6<> ${MASTERMNT:-${JAILMNT}}/poudriere/parallel.pipe
+	rm -f ${MASTERMNT:-${JAILMNT}}/poudriere/parallel.pipe
 	export NBPARALLEL=0
 }
 
