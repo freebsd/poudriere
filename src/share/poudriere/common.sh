@@ -1629,9 +1629,7 @@ parallel_start() {
 }
 
 parallel_stop() {
-	for j in $(jot ${PARALLEL_JOBS}); do
-		wait
-	done
+	wait
 
 	exec 6<&-
 	exec 6>&-
