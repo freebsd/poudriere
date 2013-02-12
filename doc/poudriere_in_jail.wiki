@@ -39,7 +39,7 @@ Get and install the latest HEAD base.txz
 
 <verbatim>
 # cd /jails/poudriere
-# fetch -q -o - https://pub.allbsd.org/FreeBSD-snapshots/amd64-amd64/10.0-HEAD-20120919-JPSNAP/ftp/base.txz | tar xpf
+# fetch -q -o - https://pub.allbsd.org/FreeBSD-snapshots/amd64-amd64/10.0-HEAD-20120919-JPSNAP/ftp/base.txz | tar xpf -
 # cp /etc/resolv.conf /jails/poudriere/etc/resolv.conf
 </verbatim>
 
