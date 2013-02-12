@@ -41,7 +41,7 @@ if [ -z "${DAEMON_ARGS_PARSED}" ]; then
 		daemon -f -p ${PIDFILE} env -i PATH=${PATH} DAEMON_ARGS_PARSED=1 $0 || exit 1
 		exit 0
 	else
-		pgrep -F ${PIDFILE} >:dev/null 2>&1 && err 1 "poudriere daemon is already running"
+		pgrep -F ${PIDFILE} >/dev/null 2>&1 && err 1 "poudriere daemon is already running"
 		echo "$$" > ${PIDFILE}
 	fi
 fi
