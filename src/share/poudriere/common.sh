@@ -1644,7 +1644,7 @@ parallel_run() {
 	fi
 	[ ${NBPARALLEL} -lt ${PARALLEL_JOBS} ] && NBPARALLEL=$((NBPARALLEL + 1))
 
-	parallel_exec ${fd} $cmd &
+	parallel_exec $cmd &
 }
 
 # Get all data that make this build env unique,
