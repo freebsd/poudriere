@@ -69,9 +69,12 @@ export PORTSDIR=`porttree_get_base ${PTNAME}`
 [ -d ${DISTFILES_CACHE:-/nonexistent} ] || err 1 "DISTFILES_CACHE directory does not exists. (c.f. poudriere.conf)"
 
 DISTFILES_LIST=$(mktemp -t poudriere_distfiles)
-trap "rm -f ${DISTFILES_LIST} ${DISTFILES_LIST}.expected \
-	${DISTFILES_LIST}.actual ${DISTFILES_LIST}.unexpected \
-	2>/dev/null" EXIT INT
+CLEANUP_HOOK=distfiles_cleanup
+distfiles_cleanup() {
+	rm -f ${DISTFILES_LIST} ${DISTFILES_LIST}.expected \
+		${DISTFILES_LIST}.actual ${DISTFILES_LIST}.unexpected \
+		2>/dev/null
+}
 
 gather_distfiles() {
 	local origin="$1"
