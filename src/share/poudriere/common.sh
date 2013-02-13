@@ -143,6 +143,7 @@ siginfo_handler() {
 	if [ "${POUDRIERE_BUILD_TYPE}" != "bulk" ]; then
 		return 0;
 	fi
+	trappedinfo=1
 	local status=$(zget status)
 	local nbb=$(zget stats_built)
 	local nbf=$(zget stats_failed)
@@ -1019,7 +1020,7 @@ build_queue() {
 				builders_active=1
 			fi
 		done
-		read jobid <&6
+		unset jobid; until trappedinfo=; read jobid <&6 || [ -z "$trappedinfo" ]; do :; done
 
 		if [ ${builders_active} -eq 0 ]; then
 			msg "Dependency loop or poudriere bug detected."
@@ -1520,7 +1521,9 @@ parallel_stop() {
 parallel_run() {
 	local cmd="$@"
 
-	[ ${NBPARALLEL} -eq ${PARALLEL_JOBS} ] && read a <&6
+	if [ ${NBPARALLEL} -eq ${PARALLEL_JOBS} ]; then
+		unset a; until trappedinfo=; read a <&6 || [ -z "$trappedinfo" ]; do :; done
+	fi
 	[ ${NBPARALLEL} -lt ${PARALLEL_JOBS} ] && NBPARALLEL=$((NBPARALLEL + 1))
 
 	parallel_exec ${fd} $cmd &
