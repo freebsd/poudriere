@@ -1625,9 +1625,16 @@ parallel_exec() {
 }
 
 parallel_start() {
-	mkfifo ${MASTERMNT}/poudriere/parallel.pipe
-	exec 6<> ${MASTERMNT}/poudriere/parallel.pipe
-	rm -f ${MASTERMNT}/poudriere/parallel.pipe
+	local fifo
+
+	if [ -n "${MASTERMNT}" ]; then
+		fifo=${MASTERMNT}/poudriere/parallel.pipe
+	else
+		fifo=$(mktemp -ut parallel)
+	fi
+	mkfifo ${fifo}
+	exec 6<> ${fifo}
+	rm -f ${fifo}
 	export NBPARALLEL=0
 }
 
