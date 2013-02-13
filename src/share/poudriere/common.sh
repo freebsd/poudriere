@@ -143,6 +143,7 @@ siginfo_handler() {
 	if [ "${POUDRIERE_BUILD_TYPE}" != "bulk" ]; then
 		return 0;
 	fi
+	trappedinfo=1
 	local status=$(zget status)
 	local nbb=$(zget stats_built)
 	local nbf=$(zget stats_failed)
@@ -749,35 +750,44 @@ save_wrkdir() {
 	fi
 }
 
+start_builder() {
+	local j="$1"
+	local mnt fs name
+
+	mnt="${JAILMNT}/build/${j}"
+	fs="${JAILFS}/build/${j}"
+	name="${JAILNAME}-job-${j}"
+	zset status "starting_jobs:${j}"
+	mkdir -p "${mnt}"
+	zfs clone -o mountpoint=${mnt} \
+		-o ${NS}:name=${name} \
+		-o ${NS}:type=rootfs \
+		-o ${NS}:arch=${arch} \
+		-o ${NS}:version=${version} \
+		${JAILFS}@prepkg ${fs}
+	zfs snapshot ${fs}@prepkg
+	# Jail might be lingering from previous build. Already recursively
+	# destroyed all the builder datasets, so just try stopping the jail
+	# and ignore any errors
+	jail -r ${name} >/dev/null 2>&1 || :
+	MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_jail_mounts 0
+	MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_portbuild_mounts 0
+	MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} jrun 0
+	JAILFS=${fs} zset status "idle:"
+
+}
 start_builders() {
 	local arch=$(zget arch)
 	local version=$(zget version)
-	local j mnt fs name
+	local j
 
 	zfs create -o canmount=off ${JAILFS}/build
 
+	parallel_start
 	for j in ${JOBS}; do
-		mnt="${JAILMNT}/build/${j}"
-		fs="${JAILFS}/build/${j}"
-		name="${JAILNAME}-job-${j}"
-		zset status "starting_jobs:${j}"
-		mkdir -p "${mnt}"
-		zfs clone -o mountpoint=${mnt} \
-			-o ${NS}:name=${name} \
-			-o ${NS}:type=rootfs \
-			-o ${NS}:arch=${arch} \
-			-o ${NS}:version=${version} \
-			${JAILFS}@prepkg ${fs}
-		zfs snapshot ${fs}@prepkg
-		# Jail might be lingering from previous build. Already recursively
-		# destroyed all the builder datasets, so just try stopping the jail
-		# and ignore any errors
-		jail -r ${name} >/dev/null 2>&1 || :
-		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_jail_mounts 0
-		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} do_portbuild_mounts 0
-		MASTERMNT=${JAILMNT} JAILNAME=${name} JAILMNT=${mnt} JAILFS=${fs} jrun 0
-		JAILFS=${fs} zset status "idle:"
+		parallel_run "start_builder ${j}"
 	done
+	parallel_stop
 }
 
 stop_builders() {
@@ -971,8 +981,10 @@ build_queue() {
 
 	local j cnt mnt fs name pkgname read_queue builders_active should_build_stats
 
-	read_queue=1
 	should_build_stats=1 # Always build stats on first pass
+	mkfifo ${MASTERMNT:-${JAILMNT}}/poudriere/builders.pipe
+	exec 6<> ${MASTERMNT:-${JAILMNT}}/poudriere/builders.pipe
+	rm -f ${MASTERMNT:-${JAILMNT}}/poudriere/builders.pipe
 	while :; do
 		builders_active=0
 		for j in ${JOBS}; do
@@ -988,14 +1000,7 @@ build_queue() {
 				rm -f "${JAILMNT}/poudriere/var/run/${j}.pid"
 				JAILFS="${fs}" zset status "idle:"
 
-				# A builder finished, check the queue to see if
-				# it can do some work
-				read_queue=1
 			fi
-
-			# Don't want to read the queue, so just skip this
-			# builder and check the next, as it may be done
-			[ ${read_queue} -eq 0 ] && continue
 
 			pkgname=$(next_in_queue)
 			if [ -z "${pkgname}" ]; then
@@ -1004,7 +1009,6 @@ build_queue() {
 
 				# Pool is waiting on dep, wait until a build
 				# is done before checking the queue again
-				read_queue=0
 			else
 				MASTERMNT=${JAILMNT} JAILNAME="${name}" JAILMNT="${mnt}" JAILFS="${fs}" \
 					MY_JOBID="${j}" \
@@ -1013,14 +1017,10 @@ build_queue() {
 
 				# A new job is spawned, try to read the queue
 				# just to keep things moving
-				read_queue=1
 				builders_active=1
 			fi
 		done
-		if [ ${read_queue} -eq 0 ]; then
-			# If not wanting to read the queue, sleep to save CPU
-			sleep 1
-		fi
+		unset jobid; until trappedinfo=; read jobid <&6 || [ -z "$trappedinfo" ]; do :; done
 
 		if [ ${builders_active} -eq 0 ]; then
 			msg "Dependency loop or poudriere bug detected."
@@ -1034,6 +1034,8 @@ build_queue() {
 			should_build_stats=0
 		fi
 	done
+	exec 6<&-
+	exec 6>&-
 }
 
 # Build ports in parallel
@@ -1188,6 +1190,7 @@ build_pkg() {
 	zset status "done:${port}"
 	buildlog_stop ${portdir}
 	log_stop $(log_path)/${PKGNAME}.log
+	echo ${MY_JOBID} >&6
 }
 
 list_deps() {
@@ -1374,6 +1377,7 @@ delete_old_pkg() {
 delete_old_pkgs() {
 	[ ! -d ${PKGDIR}/All ] && return 0
 	[ -n "$(dir_empty ${PKGDIR}/All)" ] && return 0
+	parallel_start
 	for pkg in ${PKGDIR}/All/*.${PKG_EXT}; do
 		# Check for non-empty directory with no packages in it
 		[ "${pkg}" = "${PKGDIR}/All/*.${PKG_EXT}" ] && break
@@ -1495,42 +1499,34 @@ listed_ports() {
 	fi
 }
 
-parallel_stop() {
-	wait
+parallel_exec() {
+	eval "$@"
+	echo >&6
 }
 
-_reap_children() {
-	local skip_count=${1:-0}
-	PARALLEL_CHILDREN_COUNT=0
-	running_jobs=$(jobs -p) # |wc -l here will always be 0
-	for pid in ${running_jobs}; do
-		PARALLEL_CHILDREN_COUNT=$((PARALLEL_CHILDREN_COUNT + 1))
-	done
-	[ ${PARALLEL_CHILDREN_COUNT} -lt ${skip_count} ] && return 0
+parallel_start() {
+	mkfifo ${MASTERMNT:-${JAILMNT}}/poudriere/parallel.pipe
+	exec 6<> ${MASTERMNT:-${JAILMNT}}/poudriere/parallel.pipe
+	rm -f ${MASTERMNT:-${JAILMNT}}/poudriere/parallel.pipe
+	export NBPARALLEL=0
+}
 
-	# No available slot, try to reap some children to find one
-	for pid in ${running_jobs}; do
-		if ! kill -0 ${pid} 2>/dev/null; then
-			wait ${pid} 2>/dev/null || :
-			PARALLEL_CHILDREN_COUNT=$((PARALLEL_CHILDREN_COUNT - 1))
-		fi
-	done
+parallel_stop() {
+	wait
+
+	exec 6<&-
+	exec 6>&-
 }
 
 parallel_run() {
 	local cmd="$@"
 
-	while :; do
-		_reap_children ${PARALLEL_JOBS}
-		if [ ${PARALLEL_CHILDREN_COUNT} -lt ${PARALLEL_JOBS} ]; then
-			# Execute the command in the background
-			eval "${cmd} &"
-			return 0
-		fi
-		sleep 0.1
-	done
+	if [ ${NBPARALLEL} -eq ${PARALLEL_JOBS} ]; then
+		unset a; until trappedinfo=; read a <&6 || [ -z "$trappedinfo" ]; do :; done
+	fi
+	[ ${NBPARALLEL} -lt ${PARALLEL_JOBS} ] && NBPARALLEL=$((NBPARALLEL + 1))
 
-	return 0
+	parallel_exec ${fd} $cmd &
 }
 
 # Get all data that make this build env unique,
@@ -1585,6 +1581,7 @@ prepare_ports() {
 	build_stats
 
 	zset status "computingdeps:"
+	parallel_start
 	for port in $(listed_ports); do
 		[ -d "${PORTSDIR}/${port}" ] || err 1 "Invalid port origin: ${port}"
 		parallel_run "compute_deps ${port}"
