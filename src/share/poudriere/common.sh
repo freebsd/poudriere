@@ -903,7 +903,7 @@ start_builders() {
 	bset status "starting_builders:"
 	parallel_start
 	for j in ${JOBS}; do
-		parallel_run "start_builder ${j} ${arch}"
+		parallel_run start_builder ${j} ${arch}
 	done
 	parallel_stop
 }
@@ -1497,7 +1497,7 @@ delete_old_pkgs() {
 	for pkg in ${POUDRIERE}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
 		# Check for non-empty directory with no packages in it
 		[ "${pkg}" = "${POUDRIERE}/packages/${MASTERNAME}/All/*.${PKG_EXT}" ] && break
-		parallel_run "delete_old_pkg ${pkg}"
+		parallel_run delete_old_pkg "${pkg}"
 	done
 	parallel_stop
 }
@@ -1618,7 +1618,9 @@ listed_ports() {
 }
 
 parallel_exec() {
-	eval "$@"
+	local cmd="$1"
+	shift 1
+	${cmd} "$@"
 	echo >&6
 }
 
@@ -1637,14 +1639,15 @@ parallel_stop() {
 }
 
 parallel_run() {
-	local cmd="$@"
+	local cmd="$1"
+	shift 1
 
 	if [ ${NBPARALLEL} -eq ${PARALLEL_JOBS} ]; then
 		unset a; until trappedinfo=; read a <&6 || [ -z "$trappedinfo" ]; do :; done
 	fi
 	[ ${NBPARALLEL} -lt ${PARALLEL_JOBS} ] && NBPARALLEL=$((NBPARALLEL + 1))
 
-	parallel_exec $cmd &
+	parallel_exec $cmd "$@" &
 }
 
 # Get all data that make this build env unique,
@@ -1702,7 +1705,7 @@ prepare_ports() {
 	parallel_start
 	for port in $(listed_ports); do
 		[ -d "${MASTERMNT}/usr/ports/${port}" ] || err 1 "Invalid port origin: ${port}"
-		parallel_run "compute_deps ${port}"
+		parallel_run compute_deps ${port}
 	done
 	parallel_stop
 
