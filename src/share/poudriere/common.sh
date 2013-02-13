@@ -135,7 +135,15 @@ exit_handler() {
 	trap - EXIT SIGTERM SIGKILL
 	# Ignore SIGINT while cleaning up
 	trap '' SIGINT
+
+	# Kill all children - this does NOT recurse, so orphans can still
+	# occur. This is just to avoid requiring pid files for parallel_run
+	for pid in $(jobs -p); do
+		kill ${pid} 2>/dev/null || :
+	done
+
 	[ ${STATUS} -eq 1 ] && cleanup
+
 	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
 }
 
@@ -512,12 +520,6 @@ cleanup() {
 	export CLEANING_UP=1
 	[ -z "${JAILNAME%-job-*}" ] && err 2 "Fail: Missing JAILNAME"
 	log_stop
-
-	# Kill all children - this does NOT recurse, so orphans can still
-	# occur. This is just to avoid requiring pid files for parallel_run
-	for pid in $(jobs -p); do
-		kill ${pid} 2>/dev/null || :
-	done
 
 	if [ -d ${MASTERMNT:-${JAILMNT}}/poudriere/var/run ]; then
 		for pid in ${MASTERMNT:-${JAILMNT}}/poudriere/var/run/*.pid; do
