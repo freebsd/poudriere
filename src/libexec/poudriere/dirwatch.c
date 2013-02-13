@@ -3,6 +3,7 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
+#include <unistd.h>
 #include <fcntl.h>
 #include <err.h>
 
@@ -28,6 +29,8 @@ main(int argc __unused, char **argv)
 
 	if (kevent(kq, &change, 1, &event, 1, NULL) < 0)
 		err(1, "kevent()");
+
+	close(fd);
 
 	return (0);
 }
