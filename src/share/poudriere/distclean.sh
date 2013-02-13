@@ -86,6 +86,7 @@ gather_distfiles() {
 }
 
 msg "Gathering all expected disfiles"
+parallel_start
 for origin in $(listed_ports); do
 	parallel_run gather_distfiles ${origin}
 done
