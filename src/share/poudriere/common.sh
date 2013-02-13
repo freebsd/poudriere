@@ -1638,13 +1638,19 @@ parallel_start() {
 	exec 6<> ${fifo}
 	rm -f ${fifo}
 	export NBPARALLEL=0
+	export PARALLEL_PIDS=""
 }
 
 parallel_stop() {
-	wait
+	for pid in ${PARALLEL_PIDS}; do
+		# This will read the return code of each child
+		# and properly error out if the children errored
+		wait ${pid}
+	done
 
 	exec 6<&-
 	exec 6>&-
+	unset PARALLEL_PIDS
 }
 
 parallel_run() {
@@ -1657,6 +1663,7 @@ parallel_run() {
 	[ ${NBPARALLEL} -lt ${PARALLEL_JOBS} ] && NBPARALLEL=$((NBPARALLEL + 1))
 
 	parallel_exec $cmd "$@" &
+	PARALLEL_PIDS="${PARALLEL_PIDS} $!"
 }
 
 # Get all data that make this build env unique,
