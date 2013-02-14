@@ -749,7 +749,7 @@ build_port() {
 	local targets="check-config fetch checksum extract patch configure build run-depends install-mtree install package ${PORTTESTING:+deinstall}"
 	local mnt=$(my_path)
 	local name=$(my_name)
-	local listfilecmd network netargs
+	local listfilecmd network netargs sub dists
 
 	for phase in ${targets}; do
 		bset ${MY_JOBID} status "${phase}:${port}"
@@ -775,6 +775,17 @@ build_port() {
 		[ $network -eq 1 ] && netargs=$ipargs
 		jail -c path=${mnt} name=${name} ${netargs} command=env ${PKGENV} ${PORT_FLAGS} make -C ${portdir} ${phase} || return 1
 		print_phase_footer
+
+		if [ "${phase}" = "checksum" ]; then
+			sub=$(jail -c path=${mnt} command=make -C ${portdir} -VDIST_SUB)
+			dists=$(jail -c path=${mnt} command=make -C ${portdir} -V_DISTFILES)
+			mkdir -p ${mnt}/portdistfiles
+			echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf
+			for d in ${dists}; do
+				[ -f ${DISTFILES_CACHE}/${sub}/${DIST_SUB}/${d} ] || continue
+				echo ${DISTFILES_CACHE}/${sub}/${DIST_SUB}/${d}
+			done | pax -rw -p p -s ",${DISTFILES_CACHE},,g" ${mnt}/portdistfiles
+		fi
 
 		if [ "${phase}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
@@ -1127,7 +1138,7 @@ build_queue() {
 				# Pool is waiting on dep, wait until a build
 				# is done before checking the queue again
 			else
-				MY_JOBID="${j}" build_pkg "${pkgname}" >/dev/null 2>&1 &
+				MY_JOBID="${j}" build_pkg "${pkgname}" >/gr 2>&1 &
 				echo "$!" > ${mnt}/poudriere/var/run/${j}.pid
 
 				# A new job is spawned, try to read the queue
