@@ -91,10 +91,11 @@ LISTPORTS=$(list_deps ${ORIGIN} )
 prepare_ports
 
 markfs prepkg ${MASTERMNT}
+log=$(log_path)
 
 if ! POUDRIERE_BUILD_TYPE=bulk parallel_build ${JAILNAME} ${PTNAME} ${SETNAME} ; then
-	failed=$(bget ports.failed | awk '{print $1 ":" $2 }' | xargs echo)
-	skipped=$(bget ports.skipped | awk '{print $1}' | sort -u | xargs echo)
+	failed=$(awk '{print $1 ":" $2 }' ${log}/.poudriere.ports.failed | xargs echo)
+	skipped=$(awk '{print $1}' ${log}/.poudriere.ports.skipped | sort -u | xargs echo)
 	nbignored=$(bget stats_failed)
 	nbskipped=$(bget stats_skipped)
 
