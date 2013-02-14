@@ -584,6 +584,8 @@ mark_preinst() {
 ./etc/master.passwd
 ./etc/shells
 ./compat/linux/proc
+./proc/*
+./var/mail/*
 EOF
 	mtree -X ${JAILMNT}/tmp/mtree.preexclude \
 		-xcn -k uid,gid,mode,size \
