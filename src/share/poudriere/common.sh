@@ -732,7 +732,7 @@ check_leftovers() {
 		case ${l} in
 		*extra)
 			if [ -d ${mnt}/${l% *} ]; then
-				find ${mnt}/${l% *} -exec echo "+ . {}" \;
+				find ${mnt}/${l% *} -exec echo "+ {}" \;
 			else
 				echo "+ ${mnt}/${l% *}"
 			fi
