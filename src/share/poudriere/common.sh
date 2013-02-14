@@ -400,6 +400,7 @@ markfs() {
 ./wrkdirs/*
 ./${LOCALBASE:-/usr/local}/*
 ./packages/*
+./new_packages/*
 ./usr/ports/*
 ./distfiles/*
 ./ccache/*
@@ -493,6 +494,7 @@ do_jail_mounts() {
 		mkdir -p ${mnt}/${LOCALBASE:-/usr/local}
 		mkdir -p ${mnt}/distfiles
 		mkdir -p ${mnt}/packages
+		mkdir -p ${mnt}/new_packages
 		mkdir -p ${mnt}/ccache
 		mkdir -p ${mnt}/var/db/ports
 	fi
@@ -556,7 +558,7 @@ do_portbuild_mounts() {
 	fi
 
 	mount -t nullfs -o ro ${portsdir} ${mnt}/usr/ports || err 1 "Failed to mount the ports directory "
-	mount -t nullfs ${POUDRIERE_DATA}/packages/${MASTERNAME} ${mnt}/packages || err 1 "Failed to mount the packages directory "
+	mount -t nullfs -o ro ${POUDRIERE_DATA}/packages/${MASTERNAME} ${mnt}/packages || err 1 "Failed to mount the packages directory "
 	mount -t nullfs ${DISTFILES_CACHE} ${mnt}/distfiles || err 1 "Failed to mount the distfiles cache directory"
 
 	for opt in ${optionsdir}; do
@@ -773,6 +775,7 @@ build_port() {
 		print_phase_header ${phase}
 		netargs=$localipargs
 		[ $network -eq 1 ] && netargs=$ipargs
+		[ "${phase}" = "package" ] && echo "PACKAGES=/new_packages" >> ${mnt}/etc/make.conf
 		jail -c path=${mnt} name=${name} ${netargs} command=env ${PKGENV} ${PORT_FLAGS} make -C ${portdir} ${phase} || return 1
 		print_phase_footer
 
@@ -852,6 +855,10 @@ build_port() {
 			[ $die -eq 0 ] || return 1
 		fi
 	done
+	# everything was fine we can copy package the package to the package
+	# directory
+	pax -rw -p p -s ",${mnt}/new_packages,,g" ${mnt}/new_packages ${POUDRIERE_DATA}/packages/${MASTERNAME}
+
 	bset ${MY_JOBID} status "idle:"
 	return 0
 }
