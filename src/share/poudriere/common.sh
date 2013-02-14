@@ -416,7 +416,7 @@ EOF
 ./tmp/*
 ./${LOCALBASE:-/usr/local}/share/nls/POSIX
 ./${LOCALBASE:-/usr/local}/share/nls/en_US.US-ASCII
-./var/db/fontconfig
+./var/db/*
 ./var/log/*
 ./${HOME}/*
 ./etc/spwd.db
