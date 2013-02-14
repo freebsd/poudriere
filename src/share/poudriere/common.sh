@@ -1467,6 +1467,7 @@ compute_deps() {
 
 	for dep_port in `list_deps ${port}`; do
 		msg_debug "${port} depends on ${dep_port}"
+		[ "${port}" != "${dep_port}" ] || err 1 "${port} incorrectly depends on itself. Please contact maintainer of the port to fix this."
 		dep_pkgname=$(cache_get_pkgname ${dep_port})
 		# Detect bad cat/origin/ dependency which pkgng will not register properly
 		[ "${dep_port}" = "${dep_port%/}" ] || err 1 "${port} depends on bad origin '${dep_port}'; Please contact maintainer of the port to fix this."
