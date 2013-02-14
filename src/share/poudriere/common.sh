@@ -173,7 +173,7 @@ badd() {
 	fi
 	file=.poudriere${id:+.${id}}.${1}
 	shift
-	echo "$@" > ${log}/${file} || :
+	echo "$@" >> ${log}/${file} || :
 }
 
 sig_handler() {
@@ -934,6 +934,7 @@ start_builder() {
 start_builders() {
 	local arch=$(jail -c path=${MASTERMNT} command=uname -p)
 
+	bset nbbuilders ${JOBS}
 	bset status "starting_builders:"
 	parallel_start
 	for j in ${JOBS}; do
