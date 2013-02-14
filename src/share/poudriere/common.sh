@@ -598,7 +598,7 @@ check_leftovers() {
 		case ${l} in
 		*extra)
 			if [ -d ${JAILMNT}/${l% *} ]; then
-				find ${JAILMNT}/${l% *} -exec echo "+ . {}" \;
+				find ${JAILMNT}/${l% *} -exec echo "+ {}" \;
 			else
 				echo "+ ${JAILMNT}/${l% *}"
 			fi
