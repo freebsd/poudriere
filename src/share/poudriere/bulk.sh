@@ -144,10 +144,10 @@ bset status "done:"
 build_stats 0
 
 log=$(log_path)
-failed=$(cat ${log}/.poudriere.ports.failed | awk '{print $1 ":" $2 }' | xargs echo)
+failed=$(awk '{print $1 ":" $2 }' ${log}/.poudriere.ports.failed | xargs echo)
 built=$(cat ${log}/.poudriere.ports.built | xargs echo)
-ignored=$(cat ${log}/.poudriere.ports.ignored | awk '{print $1}' | xargs echo)
-skipped=$(cat ${log}/.poduriere.ports.skipped | awk '{print $1}' | sort -u | xargs echo)
+ignored=$(awk '{print $1}' ${log}/.poudriere.ports.ignored | xargs echo)
+skipped=$(awk '{print $1}' ${log}/.poduriere.ports.skipped | sort -u | xargs echo)
 nbfailed=$(bget stats_failed)
 nbignored=$(bget stats_ignored)
 nbskipped=$(bget stats_skipped)
