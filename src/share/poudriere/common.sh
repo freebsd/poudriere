@@ -893,6 +893,8 @@ start_builder() {
 	destroyfs ${mnt} jail
 	mkdir -p "${mnt}"
 	clonefs ${MASTERMNT} ${mnt} prepkg
+	# Create the /poudriere so that on zfs rollback does not nukes it
+	mkdir -p ${mnt}/poudriere
 	markfs prepkg ${mnt}
 	do_jail_mounts ${mnt} ${arch}
 	do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
