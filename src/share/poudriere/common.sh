@@ -1153,7 +1153,7 @@ build_pkg() {
 	msg "Cleaning up wrkdir"
 	rm -rf ${JAILMNT}/wrkdirs/*
 
-	Msg "Building ${port}"
+	msg "Building ${port}"
 	log_start $(log_path)/${PKGNAME}.log
 	buildlog_start ${portdir}
 
