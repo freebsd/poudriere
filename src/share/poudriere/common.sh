@@ -77,7 +77,7 @@ log_start() {
 }
 
 log_path() {
-	echo "${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}"
+	echo "${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${STARTTIME}"
 }
 
 buildlog_start() {
@@ -952,6 +952,7 @@ build_stats_list() {
 	local html_path="$1"
 	local type=$2
 	local display_name="$3"
+	local log=$(log_path)
 	local port cnt pkgname extra port_category port_name
 	local status_head="" status_col=""
 	local reason_head="" reason_col=""
@@ -1005,12 +1006,12 @@ EOF
         </tr>
 EOF
 		cnt=$(( cnt + 1 ))
-	done <  ${MASTERMNT}/poudriere/ports.${type}
+	done <  ${log}/.poudriere.ports.${type}
 
 	if [ "${type}" = "skipped" ]; then
 		# Skipped lists the skipped origin for every dependency that wanted it
 		bset stats_skipped $(
-			awk '{print $1}' ${MASTERMNT}/poudriere/ports.skipped |
+			awk '{print $1}' ${log}/.poudriere.ports.skipped |
 			sort -u |
 			wc -l)
 	else
@@ -1221,13 +1222,14 @@ clean_pool() {
 	local pkgname=$1
 	local clean_rdepends=$2
 	local port skipped_origin
+	local log=$(log_path)
 
 	[ ${clean_rdepends} -eq 1 ] && port=$(cache_get_origin "${pkgname}")
 
 	# Cleaning queue (pool is cleaned here)
 	lockf -s -k ${MASTERMNT}/poudriere/.lock.pool sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT}" "${pkgname}" ${clean_rdepends} | sort -u | while read skipped_pkgname; do
 		skipped_origin=$(cache_get_origin "${skipped_pkgname}")
-		echo "${skipped_origin} ${pkgname}" >> ${MASTERMNT}/poudriere/ports.skipped
+		echo "${skipped_origin} ${pkgname}" >> ${log}/.poudriere.ports.skipped
 		job_msg "Skipping build of ${skipped_origin}: Dependent port ${port} failed"
 	done
 }
@@ -1251,6 +1253,7 @@ build_pkg() {
 	local mnt=$(my_path)
 	local failed_status failed_phase cnt
 	local clean_rdepends=0
+	local log=$(log_path)
 	local ignore
 
 	export PKGNAME="${pkgname}" # set ASAP so cleanup() can use it
@@ -1282,7 +1285,7 @@ build_pkg() {
 
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
-		echo "${port} ${ignore}" >> "${MASTERMNT}/poudriere/ports.ignored"
+		echo "${port} ${ignore}" >> "${log}/.poudriere.ports.ignored"
 		job_msg "Finished build of ${port}: Ignored: ${ignore}"
 		clean_rdepends=1
 	else
@@ -1311,13 +1314,13 @@ build_pkg() {
 		fi
 
 		if [ ${build_failed} -eq 0 ]; then
-			echo "${port}" >> "${MASTERMNT}/poudriere/ports.built"
+			echo "${port}" >> "${log}/.poudriere.ports.built"
 
 			job_msg "Finished build of ${port}: Success"
 			# Cache information for next run
 			pkg_cache_data "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
 		else
-			echo "${port} ${failed_phase}" >> "${MASTERMNT}/poudriere/ports.failed"
+			echo "${port} ${failed_phase}" >> "${log}/.poudriere.ports.failed"
 			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
 			clean_rdepends=1
 		fi
@@ -1713,6 +1716,7 @@ cache_get_key() {
 
 prepare_ports() {
 	local pkg
+	local log=$(log_path)
 
 	msg "Calculating ports order and dependencies"
 	mkdir -p "${MASTERMNT}/poudriere"
@@ -1732,10 +1736,11 @@ prepare_ports() {
 	bset stats_failed 0
 	bset stats_ignored 0
 	bset stats_skipped 0
-	:> ${MASTERMNT}/poudriere/ports.built
-	:> ${MASTERMNT}/poudriere/ports.failed
-	:> ${MASTERMNT}/poudriere/ports.ignored
-	:> ${MASTERMNT}/poudriere/ports.skipped
+	mkdir -p ${log}
+	:> ${log}/.poudriere.ports.built
+	:> ${log}/.poudriere.ports.failed
+	:> ${log}/.poudriere.ports.ignored
+	:> ${log}/.poudriere.ports.skipped
 	build_stats
 
 	bset status "computingdeps:"
@@ -1958,5 +1963,7 @@ esac
 
 : ${WATCHDIR:=${POUDRIERE_DATA}/queue}
 : ${PIDFILE:=${POUDRIERE_DATA}/daemon.pid}
+
+STARTTIME=$(date +%Y-%m-%d_%H:%M:%S)
 
 [ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}
