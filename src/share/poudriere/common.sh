@@ -612,6 +612,7 @@ build_port() {
 	local portdir=$1
 	local port=${portdir##/usr/ports/}
 	local targets="check-config fetch checksum extract patch configure build run-depends install-mtree install package ${PORTTESTING:+deinstall}"
+	local sub dists
 
 	for phase in ${targets}; do
 		zset status "${phase}:${port}"
@@ -643,6 +644,17 @@ build_port() {
 		print_phase_header ${phase}
 		injail env ${PKGENV} ${PORT_FLAGS} make -C ${portdir} ${phase} || return 1
 		print_phase_footer
+
+		if [ "${phase}" = "checksum" ]; then
+			sub=$(injail make -C ${portdir} -VDIST_SUB)
+			dists=$(injail make -C ${portdir} -V_DISTFILES)
+			mkdir -p ${mnt}/portdistfiles
+			echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf
+			for d in ${dists}; do
+				[ -f ${DISTFILES_CACHE}/${sub}/${DIST_SUB}/${d} ] || continue
+				echo ${DISTFILES_CACHE}/${sub}/${DIST_SUB}/${d}
+			done | pax -rw -p p -s ",${DISTFILES_CACHE},,g" ${mnt}/portdistfiles
+		fi
 
 		if [ "${phase}" = "checksum" ]; then
 			jail -r ${JAILNAME} >/dev/null
