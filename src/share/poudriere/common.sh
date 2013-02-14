@@ -869,7 +869,7 @@ save_wrkdir() {
 
 	[ -n "${SAVE_WRKDIR}" ] || return 0
 	# Only save if not in fetch/checksum phase
-	[ "${failed_phase}" != "fetch" -a "${failed_phase}" != "checksum" ] || return 0
+	[ "${failed_phase}" != "fetch" -a "${failed_phase}" != "checksum" -a "${failed_phase}" != "extract" ] || return 0
 
 	mkdir -p ${tardir}
 
