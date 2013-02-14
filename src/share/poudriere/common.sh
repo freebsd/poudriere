@@ -777,13 +777,13 @@ build_port() {
 		print_phase_footer
 
 		if [ "${phase}" = "checksum" ]; then
-			sub=$(jail -c path=${mnt} command=make -C ${portdir} -VDIST_SUB)
+			sub=$(jail -c path=${mnt} command=make -C ${portdir} -VDIST_SUBDIR)
 			dists=$(jail -c path=${mnt} command=make -C ${portdir} -V_DISTFILES)
 			mkdir -p ${mnt}/portdistfiles
 			echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf
 			for d in ${dists}; do
-				[ -f ${DISTFILES_CACHE}/${sub}/${DIST_SUB}/${d} ] || continue
-				echo ${DISTFILES_CACHE}/${sub}/${DIST_SUB}/${d}
+				[ -f ${DISTFILES_CACHE}/${sub}/${d} ] || continue
+				echo ${DISTFILES_CACHE}/${sub}/${d}
 			done | pax -rw -p p -s ",${DISTFILES_CACHE},,g" ${mnt}/portdistfiles
 		fi
 
