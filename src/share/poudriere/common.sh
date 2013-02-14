@@ -648,7 +648,7 @@ build_port() {
 
 		if [ "${phase}" = "checksum" ]; then
 			sub=$(injail make -C ${portdir} -VDIST_SUBDIR)
-			dists=$(injail make -C ${portdir} -V_DISTFILES)
+			dists=$(injail make -C ${portdir} -V_DISTFILES -V_PATCHFILES)
 			mkdir -p ${mnt}/portdistfiles
 			echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf
 			for d in ${dists}; do
