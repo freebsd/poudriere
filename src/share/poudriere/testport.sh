@@ -5,7 +5,6 @@ usage() {
 	echo "poudriere testport [parameters] [options]
 
 Parameters:
-    -d path     -- Specify the port to test
     -o origin   -- Specify an origin in the portstree
 
 Options:
@@ -37,6 +36,7 @@ while getopts "d:o:cnj:J:iIp:svz:" FLAG; do
 			CONFIGSTR=1
 			;;
 		d)
+			echo "!!! The -d flag is deprecated. Use -o with the custom port tree -p option instead."
 			HOST_PORTDIRECTORY=`realpath ${OPTARG}`
 			;;
 		o)
