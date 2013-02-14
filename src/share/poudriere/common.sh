@@ -142,26 +142,38 @@ pget() { attr_get ports $@ ; }
 #build getter/setter
 bget() {
 	local id property mnt
+	local log=$(log_path)
 	if [ $# -eq 2 ]; then
 		id=$1
 		shift
 	fi
-	property=$1
-	mnt=${MASTERMNT}${id:+/../${id}}
+	file=.poudriere${id:+.${id}}.${1}
 
-	cat ${mnt}/poudriere/${property} || :
+	cat ${log}/${file} || :
 }
 
 bset() {
 	local id property mnt
+	local log=$(log_path)
 	if [ $# -eq 3 ]; then
 		id=$1
 		shift
 	fi
-	property=$1
-	mnt=${MASTERMNT}${id:+/../${id}}
+	file=.poudriere${id:+.${id}}.${1}
 	shift
-	echo "$@" > ${mnt}/poudriere/${property} || :
+	echo "$@" > ${log}/${file} || :
+}
+
+badd() {
+	local id property mnt
+	local log=$(log_path)
+	if [ $# -eq 3 ]; then
+		id=$1
+		shift
+	fi
+	file=.poudriere${id:+.${id}}.${1}
+	shift
+	echo "$@" > ${log}/${file} || :
 }
 
 sig_handler() {
@@ -1229,7 +1241,7 @@ clean_pool() {
 	# Cleaning queue (pool is cleaned here)
 	lockf -s -k ${MASTERMNT}/poudriere/.lock.pool sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT}" "${pkgname}" ${clean_rdepends} | sort -u | while read skipped_pkgname; do
 		skipped_origin=$(cache_get_origin "${skipped_pkgname}")
-		echo "${skipped_origin} ${pkgname}" >> ${log}/.poudriere.ports.skipped
+		badd ports.skipped "${skipped_origin} ${pkgname}"
 		job_msg "Skipping build of ${skipped_origin}: Dependent port ${port} failed"
 	done
 }
@@ -1285,7 +1297,7 @@ build_pkg() {
 
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
-		echo "${port} ${ignore}" >> "${log}/.poudriere.ports.ignored"
+		badd ports.ignored "${port} ${ignore}"
 		job_msg "Finished build of ${port}: Ignored: ${ignore}"
 		clean_rdepends=1
 	else
@@ -1314,13 +1326,13 @@ build_pkg() {
 		fi
 
 		if [ ${build_failed} -eq 0 ]; then
-			echo "${port}" >> "${log}/.poudriere.ports.built"
+			badd ports.built "${port}"
 
 			job_msg "Finished build of ${port}: Success"
 			# Cache information for next run
 			pkg_cache_data "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
 		else
-			echo "${port} ${failed_phase}" >> "${log}/.poudriere.ports.failed"
+			badd ports.failed "${port} ${failed_phase}"
 			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
 			clean_rdepends=1
 		fi
@@ -1731,12 +1743,12 @@ prepare_ports() {
 		"${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
 		"${MASTERMNT}/poudriere/var/cache/pkgname-origin"
 
+	mkdir -p ${log}
 	bset stats_queued 0
 	bset stats_built 0
 	bset stats_failed 0
 	bset stats_ignored 0
 	bset stats_skipped 0
-	mkdir -p ${log}
 	:> ${log}/.poudriere.ports.built
 	:> ${log}/.poudriere.ports.failed
 	:> ${log}/.poudriere.ports.ignored
