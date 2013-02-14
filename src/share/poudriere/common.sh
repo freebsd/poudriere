@@ -646,13 +646,13 @@ build_port() {
 		print_phase_footer
 
 		if [ "${phase}" = "checksum" ]; then
-			sub=$(injail make -C ${portdir} -VDIST_SUB)
+			sub=$(injail make -C ${portdir} -VDIST_SUBDIR)
 			dists=$(injail make -C ${portdir} -V_DISTFILES)
 			mkdir -p ${mnt}/portdistfiles
 			echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf
 			for d in ${dists}; do
-				[ -f ${DISTFILES_CACHE}/${sub}/${DIST_SUB}/${d} ] || continue
-				echo ${DISTFILES_CACHE}/${sub}/${DIST_SUB}/${d}
+				[ -f ${DISTFILES_CACHE}/${sub}/${d} ] || continue
+				echo ${DISTFILES_CACHE}/${sub}/${d}
 			done | pax -rw -p p -s ",${DISTFILES_CACHE},,g" ${mnt}/portdistfiles
 		fi
 
@@ -1152,7 +1152,7 @@ build_pkg() {
 	msg "Cleaning up wrkdir"
 	rm -rf ${JAILMNT}/wrkdirs/*
 
-	msg "Building ${port}"
+	Msg "Building ${port}"
 	log_start $(log_path)/${PKGNAME}.log
 	buildlog_start ${portdir}
 
