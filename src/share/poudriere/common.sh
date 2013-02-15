@@ -736,7 +736,7 @@ build_port() {
 
 	# everything was fine we can copy package the package to the package
 	# directory
-	pax -rw -p p -s ",${mnt}/new_packages,,g" ${mnt}/new_packages ${POUDRIERE_DATA}/packages/${MASTERNAME}
+	pax -rw -p p -s ",${mnt}/new_packages,,g" ${mnt}/new_packages ${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}${SETNAME}
 
 	zset status "idle:"
 	return 0
