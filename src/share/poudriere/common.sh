@@ -363,7 +363,7 @@ use_options() {
 	local verbose="$2"
 
 	[ ${verbose} -eq 1 ] && msg "Mounting /var/db/ports from: ${optionsdir}"
-	mount -t nullfs ${optionsdir} ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+	mount -t nullfs -o ro ${optionsdir} ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
 }
 
 do_portbuild_mounts() {
@@ -388,7 +388,7 @@ do_portbuild_mounts() {
 		msg "Mounting packages from: ${PKGDIR}"
 	fi
 
-	mount -t nullfs ${PORTSDIR} ${JAILMNT}/usr/ports || err 1 "Failed to mount the ports directory "
+	mount -t nullfs -o ro ${PORTSDIR} ${JAILMNT}/usr/ports || err 1 "Failed to mount the ports directory "
 	mount -t nullfs -o ro ${PKGDIR} ${JAILMNT}/usr/ports/packages || err 1 "Failed to mount the packages directory "
 
 	if [ "$(realpath ${DISTFILES_CACHE:-/nonexistent})" != "$(realpath ${PORTSDIR}/distfiles)" ]; then
