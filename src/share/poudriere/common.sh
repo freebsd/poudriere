@@ -460,7 +460,7 @@ clonefs() {
 	[ ${TMPFS_ALL} -eq 1 ] && unset fs
 	if [ -n "${fs}" ]; then
 		# Make sure the fs is clean before cloning
-		zfs rollback -R ${fs}@${snap}
+		zfs rollback -R ${fs}@${snap} 2>/dev/null || :
 		zfs clone -o mountpoint=${to} \
 			${fs}@${snap} \
 			${fs}/${name}
@@ -960,179 +960,10 @@ stop_builders() {
 	JOBS=""
 }
 
-build_stats_list() {
-	[ $# -ne 3 ] && eargs html_path type display_name
-	local html_path="$1"
-	local type=$2
-	local display_name="$3"
-	local log=$(log_path)
-	local port cnt pkgname extra port_category port_name
-	local status_head="" status_col=""
-	local reason_head="" reason_col=""
-
-	if [ "${type}" != "skipped" ]; then
-		status_head="<th>status</th>"
-	fi
-
-	# ignored has a reason
-	if [ "${type}" = "ignored" -o "${type}" = "skipped" ]; then
-		reason_head="<th>reason</th>"
-	elif [ "${type}" = "failed" ]; then
-		reason_head="<th>phase</th>"
-	fi
-
-cat >> ${html_path} << EOF
-    <div id="${type}">
-      <h2>${display_name} ports </h2>
-      <table>
-        <tr>
-          <th>Port</th>
-          <th>Origin</th>
-	  ${status_head}
-	  ${reason_head}
-        </tr>
-EOF
-	cnt=0
-	while read port extra; do
-		pkgname=$(cache_get_pkgname ${port})
-		port_category=${port%/*}
-		port_name=${port#*/}
-
-		if [ -n "${status_head}" ]; then
-			status_col="<td><a href=\"${pkgname}.log\">logfile</a></td>"
-		fi
-
-		if [ "${type}" = "ignored" ]; then
-			reason_col="<td>${extra}</td>"
-		elif [ "${type}" = "skipped" ]; then
-			reason_col="<td>depends failed: <a href="#tr_pkg_${extra}">${extra}</a></td>"
-		elif [ "${type}" = "failed" ]; then
-			reason_col="<td>${extra}</td>"
-		fi
-
-		cat >> ${html_path} << EOF
-        <tr>
-          <td id="tr_pkg_${pkgname}">${pkgname}</td>
-          <td><a href="http://portsmon.freebsd.org/portoverview.py?category=${port_category}&amp;portname=${port_name}">${port}</a></td>
-	  ${status_col}
-	  ${reason_col}
-        </tr>
-EOF
-		cnt=$(( cnt + 1 ))
-	done <  ${log}/.poudriere.ports.${type}
-
-	if [ "${type}" = "skipped" ]; then
-		# Skipped lists the skipped origin for every dependency that wanted it
-		bset stats_skipped $(
-			awk '{print $1}' ${log}/.poudriere.ports.skipped |
-			sort -u |
-			wc -l)
-	else
-		bset stats_${type} $cnt
-	fi
-
-cat >> ${html_path} << EOF
-      </table>
-    </div>
-EOF
-}
-
-build_stats() {
-	local should_refresh=${1:-1}
-	local port logdir pkgname html_path refresh_meta=""
-
-	if [ "${POUDRIERE_BUILD_TYPE}" = "testport" ]; then
-		# Discard test stats page for now
-		html_path="/dev/null"
-	else
-		logdir=`log_path`
-		[ -d "${logdir}" ] || mkdir -p "${logdir}"
-		html_path="${logdir}/index.html.tmp"
-	fi
-	
-	[ ${should_refresh} -eq 1 ] && \
-		refresh_meta='<meta http-equiv="refresh" content="10">'
-
-	cat > ${html_path} << EOF
-<html>
-  <head>
-    ${refresh_meta}
-    <meta http-equiv="pragma" content="NO-CACHE">
-    <title>Poudriere bulk results</title>
-    <style type="text/css">
-      table {
-        display: block;
-        border: 2px;
-        border-collapse:collapse;
-        border: 2px solid black;
-        margin-top: 5px;
-      }
-      th, td { border: 1px solid black; }
-      #built td { background-color: #00CC00; }
-      #failed td { background-color: #E00000 ; }
-      #skipped td { background-color: #CC6633; }
-      #ignored td { background-color: #FF9900; }
-      :target { color: #FF0000; }
-    </style>
-    <script type="text/javascript">
-      function toggle_display(id) {
-        var e = document.getElementById(id);
-        if (e.style.display != 'none')
-          e.style.display = 'none';
-        else
-          e.style.display = 'block';
-      }
-    </script>
-  </head>
-  <body>
-    <h1>Poudriere bulk results</h1>
-    Page will auto refresh every 10 seconds.
-    <ul>
-      <li>Jail: ${MASTERNAME}</li>
-      <li>Ports tree: ${PTNAME}</li>
-      <li>Set Name: ${SETNAME:-none}</li>
-EOF
-	local nbb=$(bget stats_built)
-	local nbf=$(bget stats_failed)
-	local nbi=$(bget stats_ignored)
-	local nbs=$(bget stats_skipped)
-	local nbq=$(bget stats_queued)
-	local nbdone=$((nbb + nbf + nbi + nbs))
-	cat >> ${html_path} << EOF
-      <li>Queue: ${nbdone} / ${nbq}</li>
-      <li>Nb ports built: ${nbb}</li>
-      <li>Nb ports failed: ${nbf}</li>
-      <li>Nb ports ignored: ${nbi}</li>
-      <li>Nb ports skipped: ${nbs}</li>
-    </ul>
-    <hr />
-    <button onclick="toggle_display('built');">Show/Hide success</button>
-    <button onclick="toggle_display('failed');">Show/Hide failure</button>
-    <button onclick="toggle_display('ignored');">Show/Hide ignored</button>
-    <button onclick="toggle_display('skipped');">Show/Hide skipped</button>
-    <hr />
-EOF
-
-	build_stats_list "${html_path}" "built" "Successful"
-	build_stats_list "${html_path}" "failed" "Failed"
-	build_stats_list "${html_path}" "ignored" "Ignored"
-	build_stats_list "${html_path}" "skipped" "Skipped"
-
-	cat >> ${html_path} << EOF
-  </body>
-</html>
-EOF
-
-
-	[ "${html_path}" = "/dev/null" ] || mv ${html_path} ${html_path%.tmp}
-}
-
 build_queue() {
-
-	local j cnt name pkgname read_queue builders_active should_build_stats
+	local j cnt name pkgname read_queue builders_active
 	local mnt=$(my_path)
 
-	should_build_stats=1 # Always build stats on first pass
 	mkfifo ${MASTERMNT}/poudriere/builders.pipe
 	exec 6<> ${MASTERMNT}/poudriere/builders.pipe
 	rm -f ${MASTERMNT}/poudriere/builders.pipe
@@ -1145,7 +976,6 @@ build_queue() {
 					builders_active=1
 					continue
 				fi
-				should_build_stats=1
 				rm -f "${mnt}/poudriere/var/run/${j}.pid"
 				bset ${MY_JOBID} status "idle:"
 
@@ -1159,7 +989,7 @@ build_queue() {
 				# Pool is waiting on dep, wait until a build
 				# is done before checking the queue again
 			else
-				MY_JOBID="${j}" build_pkg "${pkgname}" >/dev/null 2>&1 &
+				MY_JOBID="${j}" build_pkg "${pkgname}" >/tmp/grr 2>&1 &
 				echo "$!" > ${mnt}/poudriere/var/run/${j}.pid
 
 				# A new job is spawned, try to read the queue
@@ -1168,17 +998,15 @@ build_queue() {
 			fi
 		done
 		unset jobid; until trappedinfo=; read jobid <&6 || [ -z "$trappedinfo" ]; do :; done
+		for type in built failed ignored skipped; do
+			bset stats_${type} $(bget ports.${type} | wc -l)
+		done
 
 		if [ ${builders_active} -eq 0 ]; then
 			msg "Dependency loop or poudriere bug detected."
 			find ${mnt}/poudriere/pool || echo "pool missing"
 			find ${mnt}/poudriere/deps || echo "deps missing"
 			err 1 "Queue is unprocessable"
-		fi
-
-		if [ ${should_build_stats} -eq 1 ]; then
-			build_stats
-			should_build_stats=0
 		fi
 	done
 	exec 6<&-
@@ -1215,7 +1043,6 @@ parallel_build() {
 
 	bset status "parallel_build:"
 	build_queue
-	build_stats 0
 
 	bset status "stopping_jobs:"
 	stop_builders
@@ -1242,7 +1069,7 @@ clean_pool() {
 	# Cleaning queue (pool is cleaned here)
 	lockf -s -k ${MASTERMNT}/poudriere/.lock.pool sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT}" "${pkgname}" ${clean_rdepends} | sort -u | while read skipped_pkgname; do
 		skipped_origin=$(cache_get_origin "${skipped_pkgname}")
-		badd ports.skipped "${skipped_origin} ${pkgname}"
+		badd ports.skipped "${skipped_origin} ${skipped_pkgname} ${pkgname}"
 		job_msg "Skipping build of ${skipped_origin}: Dependent port ${port} failed"
 	done
 }
@@ -1298,7 +1125,7 @@ build_pkg() {
 
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
-		badd ports.ignored "${port} ${ignore}"
+		badd ports.ignored "${port} ${PKGNAME} ${ignore}"
 		job_msg "Finished build of ${port}: Ignored: ${ignore}"
 		clean_rdepends=1
 	else
@@ -1327,13 +1154,12 @@ build_pkg() {
 		fi
 
 		if [ ${build_failed} -eq 0 ]; then
-			badd ports.built "${port}"
-
+			badd ports.built "${port} ${PKGNAME}"
 			job_msg "Finished build of ${port}: Success"
 			# Cache information for next run
 			pkg_cache_data "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
 		else
-			badd ports.failed "${port} ${failed_phase}"
+			badd ports.failed "${port} ${PKGNAME} ${failed_phase}"
 			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
 			clean_rdepends=1
 		fi
@@ -1754,7 +1580,7 @@ prepare_ports() {
 	:> ${log}/.poudriere.ports.failed
 	:> ${log}/.poudriere.ports.ignored
 	:> ${log}/.poudriere.ports.skipped
-	build_stats
+	cp ${SCRIPTPREFIX}/html/* ${log}
 
 	bset status "computingdeps:"
 	parallel_start
