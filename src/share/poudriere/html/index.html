@@ -14,7 +14,8 @@
 		var show_failed = false;
 		var show_skipped = false;
 		var show_ignored = false;
-		function fetch(url, cb) { $.ajax({url:url, cache:false}).done(cb); }
+		var building = false;
+		function fetch(url, cb) { $.ajax({url:url, cache:false, async:false}).done(cb); }
 
 		function minidraw(x, context, color, variable) {
 			var pct = variable * 100 / queued;
@@ -24,7 +25,35 @@
 
 			return (newx);
 		}
+
 		function update_fields() {
+			fetch(".poudriere.status", function (data) {
+				document.getElementById("status").innerHTML = data;
+				if (data != "stop:")
+					building = true;
+				else
+					building = false;
+				if (building) {
+					fetch(".poudriere.nbbuilders", function (data) {
+						var html = "";
+						var b = data.split(" ");
+						for (i = 0; i < b.length; i++) {
+							if (i == 0)
+								html = "<h2> Builders </h2><table><tr><th>id</th><th>Port</th><th>Phase</th></tr>";
+							html += "<tr><td>" + b[i] + "</td>";
+							fetch(".poudriere."+ b[i] +".status", function (data) {
+								var a = data.split(":");
+								html += "<td>" + a[1] + "</td>";
+								html += "<td>" + a[0] + "</td></tr>";
+							});
+						}
+						if (i > 0)
+							html += "</table>";
+						document.getElementById("building").innerHTML=html;
+					});
+				} else
+					document.getElementById("building").innerHTML="";
+			});
 			fetch(".poudriere.stats_built", function (data) {
 				document.getElementById("stats_built").innerHTML=data;
 				built=data;
@@ -177,7 +206,7 @@
 	</head>
 	<body onload="update_fields();">
 		<h1> Poudriere </h1>
-		<h2 id="bla"></h2>
+		<h2 id="status"></h2>
 		<table border=1>
 			<tr>
 				<th>Total</th>
@@ -209,6 +238,7 @@
 			<input type="checkbox" name="show" value="ignored"
 			onclick="show_ignored = !show_ignored; update_fields();" />Show ignored</br>
 		</form>
+		<div id="building"></div>
 		<div id="success"></div>
 		<div id="failed"></div>
 		<div id="skipped"></div>

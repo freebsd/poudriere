@@ -977,7 +977,7 @@ build_queue() {
 					continue
 				fi
 				rm -f "${mnt}/poudriere/var/run/${j}.pid"
-				bset ${MY_JOBID} status "idle:"
+				bset ${j} status "idle:"
 
 			fi
 
