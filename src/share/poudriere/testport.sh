@@ -117,6 +117,8 @@ jail -c path=${MASTERMNT} command=make -C /usr/ports/${ORIGIN} pkg-depends extra
 
 bset status "testing:"
 
+[ -n "${mnt}" ] || err 1 "mnt not set"
+
 PKGNAME=`jail -c path=${MASTERMNT} command=make -C /usr/ports/${ORIGIN} -VPKGNAME`
 LOCALBASE=`jail -c path=${MASTERMNT} command=make -C /usr/ports/${ORIGIN} -VLOCALBASE`
 PREFIX=${LOCALBASE}
