@@ -169,14 +169,13 @@ elif [ $PKGNG -eq 1 ]; then
 	fi
 	msg "Creating pkgng repository"
 	zset status "pkgrepo:"
-	injail tar xf /usr/ports/packages/Latest/pkg.txz -C /
-	injail rm -f /usr/ports/packages/repo.txz /usr/ports/packages/repo.sqlite
+	tar xf ${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}${SETNAME}/Latest/pkg.txz -C ${JAILMNT} \
+		-s ",/.*/,poudriere/,g" "*/pkg-static"
+	rm -f ${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}${SETNAME}/repo.txz ${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}${SETNAME}/repo.sqlite
 	if [ -n "${PKG_REPO_SIGNING_KEY}" -a -f "${PKG_REPO_SIGNING_KEY}" ]; then
-		install -m 0400 ${PKG_REPO_SIGNING_KEY} ${JAILMNT}/tmp/repo.key
-		injail pkg-static repo /usr/ports/packages/ /tmp/repo.key
-		rm -f ${JAILMNT}/tmp/repo.key
+		${JAILMNT}/poudriere/pkg-static repo ${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}${SETNAME} ${PKG_REPO_SIGNING_KEY}
 	else
-		injail pkg-static repo /usr/ports/packages/
+		${JAILMNT}/poudriere/pkg-static repo ${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}${SETNAME}
 	fi
 else
 	if [ -n "${NO_RESTRICTED}" ]; then

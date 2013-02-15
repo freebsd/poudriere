@@ -372,6 +372,7 @@ do_portbuild_mounts() {
 
 	# Only do this when starting the master jail, clones will already have the dirs
 	if [ ${should_mkdir} -eq 1 ]; then
+		mkdir -p ${JAILMNT}/new_packages
 		mkdir -p ${PORTSDIR}/packages
 		mkdir -p ${PKGDIR}/All
 		mkdir -p ${PORTSDIR}/distfiles
@@ -387,8 +388,8 @@ do_portbuild_mounts() {
 		msg "Mounting packages from: ${PKGDIR}"
 	fi
 
-	mount -t nullfs ${PORTSDIR} ${JAILMNT}/usr/ports || err 1 "Failed to mount the ports directory "
-	mount -t nullfs ${PKGDIR} ${JAILMNT}/usr/ports/packages || err 1 "Failed to mount the packages directory "
+	mount -t nullfs -o ro ${PORTSDIR} ${JAILMNT}/usr/ports || err 1 "Failed to mount the ports directory "
+	mount -t nullfs -o ro ${PKGDIR} ${JAILMNT}/usr/ports/packages || err 1 "Failed to mount the packages directory "
 
 	if [ "$(realpath ${DISTFILES_CACHE:-/nonexistent})" != "$(realpath ${PORTSDIR}/distfiles)" ]; then
 		mount -t nullfs ${DISTFILES_CACHE} ${JAILMNT}/usr/ports/distfiles || err 1 "Failed to mount the distfile directory"
@@ -569,6 +570,7 @@ mark_preinst() {
 ./var/db/pkg/*
 ./var/run/*
 ./wrkdirs/*
+./new_packages/*
 ./tmp/*
 ./${MYBASE:-/usr/local}/share/nls/POSIX
 ./${MYBASE:-/usr/local}/share/nls/en_US.US-ASCII
@@ -645,6 +647,7 @@ build_port() {
 		esac
 
 		print_phase_header ${phase}
+		[ "${phase}" = "package" ] && echo "PACKAGES=/new_packages" >> ${JAILMNT}/etc/make.conf
 		injail env ${PKGENV} ${PORT_FLAGS} make -C ${portdir} ${phase} || return 1
 		print_phase_footer
 
@@ -730,6 +733,11 @@ build_port() {
 	done
 	jail -r ${JAILNAME} >/dev/null
 	jrun 0
+
+	# everything was fine we can copy package the package to the package
+	# directory
+	pax -rw -p p -s ",${JAILMNT}/new_packages,,g" ${JAILMNT}/new_packages ${POUDRIERE_DATA}/packages/${JAILNAME%-job-*}-${PTNAME}${SETNAME}
+
 	zset status "idle:"
 	return 0
 }
