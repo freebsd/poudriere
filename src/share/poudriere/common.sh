@@ -363,7 +363,7 @@ use_options() {
 	local verbose="$2"
 
 	[ ${verbose} -eq 1 ] && msg "Mounting /var/db/ports from: ${optionsdir}"
-	mount -t nullfs -o ro ${optionsdir} ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+	mount -t nullfs ${optionsdir} ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
 }
 
 do_portbuild_mounts() {
