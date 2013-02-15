@@ -170,11 +170,11 @@ elif [ $PKGNG -eq 1 ]; then
 	bset status "pkgrepo:"
 	tar xf ${MASTERMNT}/packages/Latest/pkg.txz -C ${MASTERMNT} \
 		-s ",/.*/,poudriere/,g" "*/pkg-static"
-	rm -f ${MASTERMNT}/packages/repo.txz ${MASTERMNT}/packages/repo.sqlite
+	rm -f ${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.txz ${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.sqlite
 	if [ -n "${PKG_REPO_SIGNING_KEY}" -a -f "${PKG_REPO_SIGNING_KEY}" ]; then
-		${MASTERMNT}/poudriere/pkg-static repo ${MASTERMNT}/packages/ ${PKG_REPO_SIGNING_KEY}
+		${MASTERMNT}/poudriere/pkg-static repo ${POUDRIERE_DATA}/packages/${MASTERNAME} ${PKG_REPO_SIGNING_KEY}
 	else
-		${MASTERMNT}/poudriere/pkg-static repo ${MASTERMNT}/packages/
+		${MASTERMNT}/poudriere/pkg-static repo ${POUDRIERE_DATA}/packages/${MASTERNAME}
 	fi
 else
 	if [ -n "${NO_RESTRICTED}" ]; then
@@ -191,7 +191,7 @@ else
 		[ "${pkg}" = "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz" ] && break
 		msg_verbose "Extracting description for ${ORIGIN} ..."
 		ORIGIN=$(pkg_get_origin ${pkg_file})
-		[ -d ${PORTSDIR}/${ORIGIN} ] &&	jail -c path=${MASTERMNT} command=make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
+		[ -d ${MASTERMNT}/usr/ports/${ORIGIN} ] && jail -c path=${MASTERMNT} command=make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
 	done
 
 	msg_n "Generating INDEX..."
