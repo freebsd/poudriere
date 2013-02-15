@@ -87,6 +87,8 @@ export POUDRIERE_BUILD_TYPE=testport
 
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
+[ $CONFIGSTR -eq 1 ] && jail -c path=${MASTERNAME} command=env TERM=${SAVED_TERM} make -C /usr/ports/${ORIGIN} config
+
 LISTPORTS=$(list_deps ${ORIGIN} )
 prepare_ports
 
@@ -130,7 +132,6 @@ fi
 [ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/prefix}/`echo ${PKGNAME} | tr '[,+]' _`"
 PORT_FLAGS="NO_DEPENDS=yes PREFIX=${PREFIX}"
 msg "Building with flags: ${PORT_FLAGS}"
-[ $CONFIGSTR -eq 1 ] && jail -c path=${MASTERNAME} command=env TERM=${SAVED_TERM} make -C /usr/ports/${ORIGIN} config
 
 if [ -d ${MASTERMNT}${PREFIX} ]; then
 	msg "Removing existing ${PREFIX}"
