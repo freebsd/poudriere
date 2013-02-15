@@ -106,6 +106,8 @@ if [ -z ${ORIGIN} ]; then
 	mount -t nullfs ${HOST_PORTDIRECTORY} ${JAILMNT}/${PORTDIRECTORY}
 fi
 
+[ $CONFIGSTR -eq 1 ] && injail env TERM=${SAVED_TERM} make -C ${PORTDIRECTORY} config
+
 LISTPORTS=$(list_deps ${PORTDIRECTORY} )
 prepare_ports
 
@@ -148,7 +150,6 @@ fi
 [ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/prefix}/`echo ${PKGNAME} | tr '[,+]' _`"
 PORT_FLAGS="NO_DEPENDS=yes PREFIX=${PREFIX}"
 msg "Building with flags: ${PORT_FLAGS}"
-[ $CONFIGSTR -eq 1 ] && injail env TERM=${SAVED_TERM} make -C ${PORTDIRECTORY} config
 
 if [ -d ${JAILMNT}${PREFIX} ]; then
 	msg "Removing existing ${PREFIX}"
