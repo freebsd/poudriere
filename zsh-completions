@@ -77,7 +77,6 @@ _distclean=(
 
 _testport=(
 	'(-o)-d[specify on which port we work]::path:_files -/'
-	'(-d)-o[specify an origin in the portstree]:origin:_poudriere_ports'
 	'-c[run make config for the given port]::'
 	'-j[run only inside the given jail]::name:_poudriere_jail'
 	'-n[no custom prefix]::'
