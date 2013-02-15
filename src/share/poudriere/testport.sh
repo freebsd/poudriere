@@ -117,8 +117,6 @@ jail -c path=${MASTERMNT} command=make -C /usr/ports/${ORIGIN} pkg-depends extra
 
 bset status "testing:"
 
-[ -n "${mnt}" ] || err 1 "mnt not set"
-
 PKGNAME=`jail -c path=${MASTERMNT} command=make -C /usr/ports/${ORIGIN} -VPKGNAME`
 LOCALBASE=`jail -c path=${MASTERMNT} command=make -C /usr/ports/${ORIGIN} -VLOCALBASE`
 PREFIX=${LOCALBASE}
@@ -126,7 +124,7 @@ if [ "${USE_PORTLINT}" = "yes" ]; then
 	[ ! -x `which portlint` ] && err 2 "First install portlint if you want USE_PORTLINT to work as expected"
 	msg "Portlint check"
 	set +e
-	cd ${mnt}//usr/ports/${ORIGIN} && PORTSDIR="${PORTSDIR}" portlint -C | tee $(log_path)/${PKGNAME}.portlint.log
+	cd ${MASTERMNT}/usr/ports/${ORIGIN} && PORTSDIR="${PORTSDIR}" portlint -C | tee $(log_path)/${PKGNAME}.portlint.log
 	set -e
 fi
 [ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/prefix}/`echo ${PKGNAME} | tr '[,+]' _`"
@@ -134,17 +132,17 @@ PORT_FLAGS="NO_DEPENDS=yes PREFIX=${PREFIX}"
 msg "Building with flags: ${PORT_FLAGS}"
 [ $CONFIGSTR -eq 1 ] && jail -c path=${MASTERNAME} command=env TERM=${SAVED_TERM} make -C /usr/ports/${ORIGIN} config
 
-if [ -d ${mnt}${PREFIX} ]; then
+if [ -d ${MASTERMNT}${PREFIX} ]; then
 	msg "Removing existing ${PREFIX}"
-	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${mnt}${PREFIX}
+	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${MASTERMNT}${PREFIX}
 fi
 
 msg "Populating PREFIX"
-mkdir -p ${mnt}${PREFIX}
+mkdir -p ${MASTERMNT}${PREFIX}
 jail -c path=${MASTERMNT} command=mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${PREFIX} >/dev/null
 
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
-mkdir -p ${mnt}/tmp/pkgs
+mkdir -p ${MASTERMNT}/tmp/pkgs
 PORTTESTING=yes
 export DEVELOPER_MODE=yes
 log_start $(log_path)/${PKGNAME}.log
@@ -167,7 +165,7 @@ if [ $INTERACTIVE_MODE -eq 1 ]; then
 	msg "Entering interactive test mode. Type 'exit' when done."
 	jail -c path=${MASTERMNT} command=env -i TERM=${SAVED_TERM} PACKAGESITE="file:///usr/ports/packages" /usr/bin/login -fp root
 elif [ $INTERACTIVE_MODE -eq 2 ]; then
-	msg "Leaving jail ${MASTERNAME} running, mounted at ${mnt} for interactive run testing"
+	msg "Leaving jail ${MASTERNAME} running, mounted at ${MASTERMNT} for interactive run testing"
 	msg "To enter jail: jexec ${MASTERNAME} /bin/sh"
 	msg "To stop jail: poudriere jail -k -j ${MASTERNAME}"
 	CLEANING_UP=1
