@@ -1029,8 +1029,11 @@ build_queue() {
 
 			pkgname=$(next_in_queue)
 			if [ -z "${pkgname}" ]; then
-				# pool empty ?
-				[ -n "$(dir_empty ${JAILMNT}/poudriere/pool)" ] && return
+				# Check if the ready-to-build pool and need-to-build pools
+				# are empty
+				[ -n "$(dir_empty ${JAILMNT}/poudriere/pool)" ]  && \
+				  [ -n "$(dir_empty ${JAILMNT}/poudriere/deps)" ] \
+				  && return
 
 				# Pool is waiting on dep, wait until a build
 				# is done before checking the queue again
