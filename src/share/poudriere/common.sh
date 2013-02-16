@@ -997,7 +997,7 @@ build_queue() {
 				builders_active=1
 			fi
 		done
-		unset jobid; until trappedinfo=; read jobid <&6 || [ -z "$trappedinfo" ]; do :; done
+		unset jobid; until trappedinfo=; read -t 30 jobid <&6 || [ -z "$trappedinfo" ]; do :; done
 		for type in built failed ignored skipped; do
 			bset stats_${type} $(bget ports.${type} | wc -l)
 		done
