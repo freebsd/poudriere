@@ -989,7 +989,7 @@ build_queue() {
 				# Pool is waiting on dep, wait until a build
 				# is done before checking the queue again
 			else
-				MY_JOBID="${j}" build_pkg "${pkgname}" >/tmp/grr 2>&1 &
+				MY_JOBID="${j}" build_pkg "${pkgname}" > /dev/null 2>&1 &
 				echo "$!" > ${mnt}/poudriere/var/run/${j}.pid
 
 				# A new job is spawned, try to read the queue
