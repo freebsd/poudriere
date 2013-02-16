@@ -1000,7 +1000,6 @@ build_queue() {
 				builders_active=1
 			fi
 		done
-		unset jobid; until trappedinfo=; read -t 30 jobid <&6 || [ -z "$trappedinfo" ]; do :; done
 		for type in built failed ignored skipped; do
 			bset stats_${type} $(bget ports.${type} | wc -l)
 		done
@@ -1011,6 +1010,8 @@ build_queue() {
 			find ${mnt}/poudriere/deps || echo "deps missing"
 			err 1 "Queue is unprocessable"
 		fi
+
+		unset jobid; until trappedinfo=; read -t 30 jobid <&6 || [ -z "$trappedinfo" ]; do :; done
 	done
 	exec 6<&-
 	exec 6>&-
