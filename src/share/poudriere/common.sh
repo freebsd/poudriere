@@ -961,6 +961,7 @@ stop_builders() {
 }
 
 deadlock_detected() {
+	local always_fail=${1:-1}
 	local mnt=$(my_path)
 	local crashed_packages dependency_cycles
 
@@ -1004,6 +1005,8 @@ deadlock_detected() {
 		err 1 "Dependency loop detected:
 ${dependency_cycles}"
 	fi
+
+	[ ${always_fail} -eq 1 ] || return 0
 
 	# No cycle, there's some unknown poudriere bug
 	err 1 "Unknown stuck queue bug detected. Give this information to poudriere developers:
@@ -1683,6 +1686,9 @@ prepare_ports() {
 			fi
 		fi
 	done | xargs rm -rf
+
+	# Call the deadlock code as non-fatal which will check for cycles
+	deadlock_detected 0
 
 	local nbq=0
 	nbq=$(find ${MASTERMNT}/poudriere/deps -type d -depth 1 | wc -l)
