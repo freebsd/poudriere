@@ -172,9 +172,9 @@ elif [ $PKGNG -eq 1 ]; then
 		-s ",/.*/,poudriere/,g" "*/pkg-static"
 	rm -f ${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.txz ${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.sqlite
 	if [ -n "${PKG_REPO_SIGNING_KEY}" -a -f "${PKG_REPO_SIGNING_KEY}" ]; then
-		${MASTERMNT}/poudriere/pkg-static repo ${POUDRIERE_DATA}/packages/${MASTERNAME} ${PKG_REPO_SIGNING_KEY}
+		${MASTERMNT}/poudriere/pkg-static repo ${POUDRIERE_DATA}/packages/${MASTERNAME}/ ${PKG_REPO_SIGNING_KEY}
 	else
-		${MASTERMNT}/poudriere/pkg-static repo ${POUDRIERE_DATA}/packages/${MASTERNAME}
+		${MASTERMNT}/poudriere/pkg-static repo ${POUDRIERE_DATA}/packages/${MASTERNAME}/
 	fi
 else
 	if [ -n "${NO_RESTRICTED}" ]; then
