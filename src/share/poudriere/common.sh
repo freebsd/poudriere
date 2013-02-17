@@ -1040,7 +1040,7 @@ deadlock_detected() {
 				print "These packages depend on each other: " a[n]
 		}' \
 	)
-	
+
 	if [ -n "${dependency_cycles}" ]; then
 		err 1 "Dependency loop detected:
 ${dependency_cycles}"
