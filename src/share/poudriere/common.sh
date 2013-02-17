@@ -960,6 +960,56 @@ stop_builders() {
 	JOBS=""
 }
 
+deadlock_detected() {
+	local mnt=$(my_path)
+	local crashed_packages dependency_cycles
+
+	# If there are still packages marked as "building" they have crashed
+	# and it's likely some poudriere or system bug
+	crashed_packages=$( \
+		find ${mnt}/poudriere/pool -type d -mindepth 1 -maxdepth 1 | \
+		sed -e "s:${mnt}/poudriere/pool::" | tr '\n' ' ' \
+	)
+	[ -z "${crashed_packages}" ] ||	\
+		err 1 "Crashed package builds detected: ${crashed_packages}"
+
+	# Check if there's a cycle in the need-to-build queue
+	dependency_cycles=$(\
+		find ${mnt}/poudriere/deps -mindepth 2 | \
+		sed -e "s:${mnt}/poudriere/deps/::" -e 's:/: :' | \
+		# Only cycle errors are wanted
+		tsort 2>&1 >/dev/null | \
+		sed -e 's/tsort: //' | \
+		awk '
+		BEGIN {
+			i = 0
+		}
+		{
+			if ($0 == "cycle in data") {
+				i = i + 1
+				next
+			}
+			if (a[i])
+				a[i] = a[i] " " $1
+			else
+				a[i] = $1
+		}
+		END {
+			for (n in a)
+				print "These packages depend on each other: " a[n]
+		}' \
+	)
+	
+	if [ -n "${dependency_cycles}" ]; then
+		err 1 "Dependency loop detected:
+${dependency_cycles}"
+	fi
+
+	# No cycle, there's some unknown poudriere bug
+	err 1 "Unknown stuck queue bug detected. Give this information to poudriere developers:
+$(find ${mnt}/poudriere/pool ${mnt}/poudriere/deps)"
+}
+
 build_queue() {
 	local j cnt name pkgname read_queue builders_active
 	local mnt=$(my_path)
@@ -1004,12 +1054,7 @@ build_queue() {
 			bset stats_${type} $(bget ports.${type} | wc -l)
 		done
 
-		if [ ${builders_active} -eq 0 ]; then
-			msg "Dependency loop or poudriere bug detected."
-			find ${mnt}/poudriere/pool || echo "pool missing"
-			find ${mnt}/poudriere/deps || echo "deps missing"
-			err 1 "Queue is unprocessable"
-		fi
+		[ ${builders_active} -eq 1 ] || deadlock_detected
 
 		unset jobid; until trappedinfo=; read -t 30 jobid <&6 || [ -z "$trappedinfo" ]; do :; done
 	done
