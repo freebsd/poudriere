@@ -788,7 +788,7 @@ build_port() {
 		netargs=$localipargs
 		[ $network -eq 1 ] && netargs=$ipargs
 		[ "${phase}" = "package" ] && echo "PACKAGES=/new_packages" >> ${mnt}/etc/make.conf
-		jail -c path=${mnt} name=${name} ${netargs} command=env ${PKGENV} ${PORT_FLAGS} make -C ${portdir} ${phase} || return 1
+		jail -U root -c path=${mnt} name=${name} ${netargs} command=env ${PKGENV} ${PORT_FLAGS} make -C ${portdir} ${phase} || return 1
 		print_phase_footer
 
 		if [ "${phase}" = "checksum" ]; then
@@ -1184,7 +1184,7 @@ build_pkg() {
 		bset ${MY_JOBID} status "depends:${port}"
 		job_msg_verbose "Status for build ${port}: depends"
 		print_phase_header "depends"
-		if ! jail -c name=${name} path=${mnt} command=make -C ${portdir} pkg-depends fetch-depends extract-depends \
+		if ! jail -U root -c name=${name} path=${mnt} command=make -C ${portdir} pkg-depends fetch-depends extract-depends \
 			patch-depends build-depends lib-depends; then
 			build_failed=1
 			failed_phase="depends"
