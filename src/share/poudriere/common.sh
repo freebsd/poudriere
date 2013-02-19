@@ -1407,12 +1407,12 @@ delete_old_pkg() {
 }
 
 delete_old_pkgs() {
-	[ ! -d ${POUDRIERE}/packages/${MASTERNAME}/All ] && return 0
-	[ -n "$(dir_empty ${POUDRIERE}/packages/${MASTERNAME}/All)" ] && return 0
+	[ ! -d ${POUDRIERE_DATA}/packages/${MASTERNAME}/All ] && return 0
+	[ -n "$(dir_empty ${POUDRIERE_DATA}/packages/${MASTERNAME}/All)" ] && return 0
 	parallel_start
-	for pkg in ${POUDRIERE}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
+	for pkg in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
 		# Check for non-empty directory with no packages in it
-		[ "${pkg}" = "${POUDRIERE}/packages/${MASTERNAME}/All/*.${PKG_EXT}" ] && break
+		[ "${pkg}" = "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}" ] && break
 		parallel_run delete_old_pkg "${pkg}"
 	done
 	parallel_stop
@@ -1646,7 +1646,7 @@ prepare_ports() {
 
 	if [ ${CLEAN_LISTED:-0} -eq 1 ]; then
 		listed_ports | while read port; do
-			pkg="${MASTERMNT}/packages/All/$(cache_get_pkgname  ${port}).${PKG_EXT}"
+			pkg="${POUDRIERE_DATA}/packages/${MASTERNAME}/$(cache_get_pkgname  ${port}).${PKG_EXT}"
 			if [ -f "${pkg}" ]; then
 				msg "Deleting existing package: ${pkg##*/}"
 				delete_pkg ${pkg}
