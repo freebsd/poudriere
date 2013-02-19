@@ -1665,7 +1665,7 @@ prepare_ports() {
 	fi
 
 	msg "Deleting stale symlinks"
-	find -L ${MASTERMNT}/packages -type l -exec rm -vf {} +
+	find -L ${POUDRIERE_DATA}/packages/${MASTERNAME} -type l -exec rm -vf {} +
 
 	bset status "cleaning:"
 	msg "Cleaning the build queue"
