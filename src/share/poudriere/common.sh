@@ -189,6 +189,8 @@ exit_handler() {
 	# Ignore SIGINT while cleaning up
 	trap '' SIGINT
 
+	log_stop
+
 	# Kill all children - this does NOT recurse, so orphans can still
 	# occur. This is just to avoid requiring pid files for parallel_run
 	for pid in $(jobs -p); do
@@ -698,7 +700,6 @@ cleanup() {
 	fi
 	export CLEANING_UP=1
 	[ -z "${MASTERNAME}" ] && err 2 "Fail: Missing MASTERNAME"
-	log_stop
 
 	if [ -d ${MASTERMNT}/poudriere/var/run ]; then
 		for pid in ${MASTERMNT}/poudriere/var/run/*.pid; do
