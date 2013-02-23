@@ -675,12 +675,12 @@ build_port() {
 			PREFIX=`injail env ${PORT_FLAGS} make -C ${portdir} -VPREFIX`
 			zset status "leftovers:${port}"
 			local portname datadir etcdir docsdir examplesdir wwwdir site_perl
-			local add=$(mktemp ${jailbase}/tmp/add.XXXXXX)
-			local add1=$(mktemp ${jailbase}/tmp/add1.XXXXXX)
-			local del=$(mktemp ${jailbase}/tmp/del.XXXXXX)
-			local del1=$(mktemp ${jailbase}/tmp/del1.XXXXXX)
-			local mod=$(mktemp ${jailbase}/tmp/mod.XXXXXX)
-			local mod1=$(mktemp ${jailbase}/tmp/mod1.XXXXXX)
+			local add=$(mktemp ${JAILMNT}/tmp/add.XXXXXX)
+			local add1=$(mktemp ${JAILMNT}/tmp/add1.XXXXXX)
+			local del=$(mktemp ${JAILMNT}/tmp/del.XXXXXX)
+			local del1=$(mktemp ${JAILMNT}/tmp/del1.XXXXXX)
+			local mod=$(mktemp ${JAILMNT}/tmp/mod.XXXXXX)
+			local mod1=$(mktemp ${JAILMNT}/tmp/mod1.XXXXXX)
 			local die=0
 
 			sedargs=$(injail env ${PORT_FLAGS} make -C ${portdir} -V'${PLIST_SUB:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/}')
