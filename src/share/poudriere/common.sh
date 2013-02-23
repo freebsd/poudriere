@@ -822,7 +822,7 @@ build_port() {
 			sedargs=$(jail -c path=${mnt} command=env ${PORT_FLAGS} make -C ${portdir} -V'${PLIST_SUB:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/}')
 
 			check_leftovers ${mnt} | \
-				while read mod path; do
+				while read modtype path; do
 				local ppath
 
 				# If this is a directory, use @dirrm in output
@@ -839,7 +839,7 @@ build_port() {
 						${sedargs} \
 					`
 				fi
-				case $mod$type in
+				case $modtype in
 				+) echo "${ppath}" >> ${add};;
 				-) echo "${ppath}" >> ${del};;
 				M) echo "${ppath}" >> ${mod};;
