@@ -811,12 +811,12 @@ build_port() {
 			PREFIX=$(jail -c path=${mnt} command=env ${PORT_FLAGS} make -C ${portdir} -VPREFIX)
 			bset ${MY_JOBID} status "leftovers:${port}"
 			local portname datadir etcdir docsdir examplesdir wwwdir site_perl
-			local add=$(mktemp ${jailbase}/tmp/add.XXXXXX)
-			local add1=$(mktemp ${jailbase}/tmp/add1.XXXXXX)
-			local del=$(mktemp ${jailbase}/tmp/del.XXXXXX)
-			local del1=$(mktemp ${jailbase}/tmp/del1.XXXXXX)
-			local mod=$(mktemp ${jailbase}/tmp/mod.XXXXXX)
-			local mod1=$(mktemp ${jailbase}/tmp/mod1.XXXXXX)
+			local add=$(mktemp ${mnt}/tmp/add.XXXXXX)
+			local add1=$(mktemp ${mnt}/tmp/add1.XXXXXX)
+			local del=$(mktemp ${mnt}/tmp/del.XXXXXX)
+			local del1=$(mktemp ${mnt}/tmp/del1.XXXXXX)
+			local mod=$(mktemp ${mnt}/tmp/mod.XXXXXX)
+			local mod1=$(mktemp ${mnt}/tmp/mod1.XXXXXX)
 			local die=0
 
 			sedargs=$(jail -c path=${mnt} command=env ${PORT_FLAGS} make -C ${portdir} -V'${PLIST_SUB:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/}')
