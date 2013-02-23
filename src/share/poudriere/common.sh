@@ -706,7 +706,10 @@ build_port() {
 				case $modtype in
 				+) echo "${ppath}" >> ${add};;
 				-) echo "${ppath}" >> ${del};;
-				M) echo "${ppath}" >> ${mod};;
+				M)
+					[ -d "${path}" ] && continue
+					echo "${ppath}" >> ${mod}
+					;;
 				esac
 			done
 			sort ${add} > ${add1}
