@@ -33,8 +33,11 @@ msg_debug() {
 }
 
 job_msg() {
-	[ -n "${MY_JOBID}" ] || return 0
-	msg "[${MY_JOBID}] $1" >&5
+	if [ -n "${MY_JOBID}" ]; then
+		msg "[${MY_JOBID}] $1" >&5
+	else
+		msg "$1"
+	fi
 }
 
 job_msg_verbose() {
@@ -903,11 +906,7 @@ save_wrkdir() {
 	rm -f ${tarname}
 	tar -s ",${mnted_portdir},," -c${COMPRESSKEY}f ${tarname} ${mnted_portdir}/work > /dev/null 2>&1
 
-	if [ -n "${MY_JOBID}" ]; then
-		job_msg "Saved ${port} wrkdir to: ${tarname}"
-	else
-		msg "Saved ${port} wrkdir to: ${tarname}"
-	fi
+	job_msg "Saved ${port} wrkdir to: ${tarname}"
 }
 
 start_builder() {
