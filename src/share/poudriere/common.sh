@@ -972,7 +972,7 @@ deadlock_detected() {
 	# and it's likely some poudriere or system bug
 	crashed_packages=$( \
 		find ${mnt}/poudriere/pool -type d -mindepth 1 -maxdepth 1 | \
-		sed -e "s:${mnt}/poudriere/pool::" | tr '\n' ' ' \
+		sed -e "s:${mnt}/poudriere/pool/::" | tr '\n' ' ' \
 	)
 	[ -z "${crashed_packages}" ] ||	\
 		err 1 "Crashed package builds detected: ${crashed_packages}"
