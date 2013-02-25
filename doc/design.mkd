@@ -13,7 +13,7 @@ List of dependencies that should be installed on the box runing poudriere:
 
  | Port | Optional | Description |
  |------|----------|-------------|
- | devel/subversion | yes | Used to be able to get the sources and ports from the FreeNSD svn |
+ | devel/subversion | yes | Used to be able to get the sources and ports from the FreeBSD svn |
  | devel/git | yes | Used to be able to get the ports from the FreeBSD github mirror |
  | ports-mgmt/portlint | yes | Used for testport or bulk -t to run portlint prior to building the packages |
  | ports-mgmt/pkg | yes | Used for sanity checking a pkgng repository (incremental building) |
