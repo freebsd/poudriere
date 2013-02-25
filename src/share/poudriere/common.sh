@@ -720,16 +720,16 @@ cleanup() {
 sanity_check_pkgs() {
 	local ret=0
 	local depfile
-	[ ! -d ${POUDRIERE}/packages/${MASTERNAME}/All ] && return $ret
-	[ -n "$(dir_empty ${POUDRIERE}/packages/${MASTERNAME}/All)" ] && return $ret
-	for pkg in ${POUDRIERE}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
+	[ ! -d ${POUDRIERE_DATA}/packages/${MASTERNAME}/All ] && return $ret
+	[ -n "$(dir_empty ${POUDRIERE_DATA}/packages/${MASTERNAME}/All)" ] && return $ret
+	for pkg in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
 		# Check for non-empty directory with no packages in it
-		[ "${pkg}" = "${POUDRIERE}/packages/${MASTERNAME}/All/*.${PKG_EXT}" ] && break
+		[ "${pkg}" = "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}" ] && break
 		depfile=$(deps_file ${pkg})
 		while read dep; do
-			if [ ! -e "${POUDRIERE}/packages/${MASTERNAME}/All/${dep}.${PKG_EXT}" ]; then
+			if [ ! -e "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${dep}.${PKG_EXT}" ]; then
 				ret=1
-				msg_debug "${pkg} needs missing ${POUDRIERE}/packages/${MASTERNAME}/All/${dep}.${PKG_EXT}"
+				msg_debug "${pkg} needs missing ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${dep}.${PKG_EXT}"
 				msg "Deleting ${pkg}: missing dependencies"
 				delete_pkg ${pkg}
 				break
