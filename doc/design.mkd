@@ -387,6 +387,7 @@ For each jail the following filesystems are mounted in it:
   * the option directory is nullfs mounted readonly using the same rule as for the reference jail
 
 For each port in /poudriere/pool a job is started on one of the above builders:
+
   1. umount all tmpfs within the builders to cleanup their content
   2. rollback the jail file system to the @prepkg state (using zfs rollback or using mtree -r + some pax hack)
   3. cleanup /wrkdirs from any previous build
