@@ -325,4 +325,32 @@ The different statistic files are initialized in the log directory:
  | .poudriere.ports.ignored | "" |
  | .poudriere.ports.skipped | "" |
 
+The dependency calculation itself is done in parallel (using one process per core by default)
+
+For each ports listed to be built en entry is created in /poudriere/deps corresponding to the package name
+
+All the dependency are extracted from the port via:
+make -VPKG\_DEPENDS -VBUILD\_DEPENDS -VEXTRACT\_DEPENDS -VLIB\_DEPENDS -VPATCH\_DEPENDS -VFETCH\_DEPENDS -VRUN\_DEPENDS
+
+For each dependency an entry corresponding to the dependency pkgname is added to /poudriere/deps/\<pkgname\>/\<depname\>
+And also in an entry is added to /poudriere/rdeps/\<depname\>/\<pkgname\> (reverse dependency tracking)
+
+The above process is also applied to the depname
+
+The above will populate /poudriere/deps with all the packages that needs to be built each package will have entry for each dependency it depends on.
+
+Now that the full dependency tree is populated, poudriere will sanity check the repository of packages if there are already packages in it
+In parallel (one process per core) each package is checked and deleted if:
+  1. the origin of the package doesnt exists anymore in the ports tree
+  2. the version in ports is newer than the version of the package
+  3. if CHECK\_CHANGED\_OPTIONS is set, the package is delete is the options activated in the ports tree for the given port are different from the one for the built package
+
+After that poudriere will process all existing package and will delete each one for which a dependency is missing and loop on this process until, no package is deleted.
+
+To finish with the sanity check, all the dead symlinks are deleted.
+
+The dependency calculation process ends by looping over all the entry in /poudriere/deps each time it figures out the package already exists in the package directory then the entry is removed from the queue.
+
+All the port with no dependency to be built (empty directories in /poudriere/deps) are now moved to /poudriere/pool as they are ready to be built straight away.
+
 ## Bulks
