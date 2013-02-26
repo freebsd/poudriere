@@ -1358,7 +1358,7 @@ delete_stale_pkg_cache() {
 	for pkg in ${cachedir}/*.${PKG_EXT}; do
 		pkg_file=${pkg##*/}
 		# If this package no longer exists in the PKGDIR, delete the cache.
-		if [ ! -e "${POUDRIERE}/packages/${MASTERNAME}/All/${pkg_file}" ]; then
+		if [ ! -e "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${pkg_file}" ]; then
 			clear_pkg_cache ${pkg}
 		fi
 	done
