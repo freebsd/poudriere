@@ -1641,6 +1641,7 @@ prepare_ports() {
 		"${MASTERMNT}/poudriere/var/cache/pkgname-origin"
 
 	mkdir -p ${log}
+	ln -sfh ${STARTTIME} ${log%/*}/latest
 	bset stats_queued 0
 	bset stats_built 0
 	bset stats_failed 0
