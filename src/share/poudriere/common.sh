@@ -1182,7 +1182,7 @@ build_pkg() {
 	msg "Cleaning up wrkdir"
 	rm -rf ${mnt}/wrkdirs/*
 
-	log_start $(log_path)/${PKGNAME}.log
+	log_start $(log_path)/logs/${PKGNAME}.log
 	msg "Building ${port}"
 	buildlog_start ${portdir}
 
@@ -1232,7 +1232,7 @@ build_pkg() {
 
 	bset ${MY_JOBID} status "done:${port}"
 	buildlog_stop ${portdir}
-	log_stop $(log_path)/${PKGNAME}.log
+	log_stop $(log_path)/logs/${PKGNAME}.log
 	echo ${MY_JOBID} >&6
 }
 
