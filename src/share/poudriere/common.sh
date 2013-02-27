@@ -552,7 +552,9 @@ use_options() {
 	fi
 	[ -d "${optionsdir}" ] || return 1
 	optionsdir=$(realpath ${optionsdir} 2>/dev/null)
-	msg "Mounting /var/db/ports from: ${optionsdir}"
+	if [ "${mnt##*/}" = "ref" ]; then
+		msg "Mounting /var/db/ports from: ${optionsdir}"
+	fi
 	mount -t nullfs -o ro ${optionsdir} ${mnt}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
 
 	return 0
@@ -574,11 +576,14 @@ do_portbuild_mounts() {
 	mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/All
 	if [ ${mnt##*/} != "ref" ]; then
 		if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
-			msg "Mounting ccache from: ${CCACHE_DIR}"
 			mount -t nullfs ${CCACHE_DIR} ${mnt}/ccache
 		fi
 		[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
 		[ ${TMPFS_WRKDIR} -eq 1 ] && mount -t tmpfs tmpfs ${mnt}/wrkdirs
+	else
+		if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
+			msg "Mounting ccache from: ${CCACHE_DIR}"
+		fi
 	fi
 
 	mount -t nullfs -o ro ${portsdir} ${mnt}/usr/ports || err 1 "Failed to mount the ports directory "
