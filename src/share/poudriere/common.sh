@@ -1779,7 +1779,7 @@ for val in ${USE_TMPFS}; do
 	data) TMPFS_DATA=1 ;;
 	all) TMPFS_ALL=1 ;;
 	localbase) TMPFS_LOCALBASE=1 ;;
-	*) err 1 "Unkown value for USE_TMPFS can be a combinaison of wrkdir,data,all,yes,localbase" ;;
+	*) err 1 "Unknown value for USE_TMPFS can be a combination of wrkdir,data,all,yes,localbase" ;;
 	esac
 done
 

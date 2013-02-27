@@ -45,11 +45,14 @@ USE_PORTLINT=no
 #MFSSIZE=4G
 
 # If set WRKDIRPREFIX will be using tmpfs
+# This can be a comma-separated list of options:
+# wrkdir    - Use tmpfs(5) for port building WRKDIRPREFIX
+# data      - Use tmpfs(5) for poudriere cache/temp build data
+# localbase - Use tmpfs(5) for LOCALBASE (installing ports for packaging/testing)
+# all       - Enable all of the above
+# yes       - Only enables tmpfs(5) for wrkdir
+# EXAMPLE: USE_TMPFS=wrkdir,data
 USE_TMPFS=yes
-
-# Use TMPFS the build pool/cache operations
-# # default: no
-#TMPFS_DATA=yes
 
 # If set the given directory will be used for the distfiles this allow the share
 # the distfiles between jails and ports tree
