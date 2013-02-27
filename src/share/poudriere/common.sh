@@ -179,6 +179,13 @@ badd() {
 	echo "$@" >> ${log}/${file} || :
 }
 
+update_stats() {
+	local type
+	for type in built failed ignored skipped; do
+		bset stats_${type} $(bget ports.${type} | wc -l)
+	done
+}
+
 sig_handler() {
 	trap - SIGTERM SIGKILL
 	# Ignore SIGINT while cleaning up
@@ -1041,9 +1048,11 @@ build_queue() {
 			if [ -z "${pkgname}" ]; then
 				# Check if the ready-to-build pool and need-to-build pools
 				# are empty
-				[ -n "$(dir_empty ${mnt}/poudriere/pool)" ]  && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/deps)" ] \
-				  && return 0
+				if [ -n "$(dir_empty ${mnt}/poudriere/pool)" ]  && \
+				    [ -n "$(dir_empty ${mnt}/poudriere/deps)" ]; then
+					update_stats
+					return 0
+				fi
 
 				# Pool is waiting on dep, wait until a build
 				# is done before checking the queue again
@@ -1056,9 +1065,8 @@ build_queue() {
 				builders_active=1
 			fi
 		done
-		for type in built failed ignored skipped; do
-			bset stats_${type} $(bget ports.${type} | wc -l)
-		done
+
+		update_stats
 
 		[ ${builders_active} -eq 1 ] || deadlock_detected
 
