@@ -149,7 +149,7 @@ export DEVELOPER_MODE=yes
 log_start $(log_path)/${PKGNAME}.log
 buildlog_start /usr/ports/${ORIGIN}
 if ! build_port /usr/ports/${ORIGIN}; then
-	failed_status=$(jget ${MASTERNAME} status)
+	failed_status=$(bget status)
 	failed_phase=${failed_status%:*}
 
 	save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" "${failed_phase}" || :
