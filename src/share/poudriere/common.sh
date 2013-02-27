@@ -559,7 +559,7 @@ use_options() {
 }
 
 do_portbuild_mounts() {
-	[ $# -ne 4 ] && eargs mnt jname ptname setname
+	[ $# -lt 3 ] && eargs mnt jname ptname setname
 	local mnt=$1
 	local jname=$2
 	local ptname=$3
