@@ -121,6 +121,7 @@ export POUDRIERE_BUILD_TYPE=bulk
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
 LOGD=`log_path`
+msg "Saving logs to ${LOGD}"
 if [ -d ${LOGD} -a ${CLEAN} -eq 1 ]; then
 	msg "Cleaning up old logs"
 	rm -f ${LOGD}/*.log 2>/dev/null
