@@ -145,7 +145,7 @@ bset status "done:"
 log=$(log_path)
 failed=$(bget ports.failed | awk '{print $1 ":" $2 }' | xargs echo)
 built=$(bget ports.built | xargs echo)
-ignored=$(bget ports.ignored | awk '{printf $1}' | xargs echo)
+ignored=$(bget ports.ignored | awk '{print $1}' | xargs echo)
 skipped=$(bget ports.skipped | awk '{print $1}' | sort -u | xargs echo)
 nbfailed=$(bget stats_failed)
 nbignored=$(bget stats_ignored)
