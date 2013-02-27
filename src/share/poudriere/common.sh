@@ -437,6 +437,7 @@ EOF
 ./var/db/pkg/*
 ./var/run/*
 ./wrkdirs/*
+./new_packages/*
 ./tmp/*
 ./${LOCALBASE:-/usr/local}/share/nls/POSIX
 ./${LOCALBASE:-/usr/local}/share/nls/en_US.US-ASCII
