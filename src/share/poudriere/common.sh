@@ -1173,7 +1173,7 @@ build_pkg() {
 	job_msg "Starting build of ${port}"
 	bset ${MY_JOBID} status "starting:${port}"
 
-	if [ -n "${TMPFS_LOCALBASE}" ]; then
+	if [ ${TMPFS_LOCALBASE} -eq 1 ]; then
 		umount -f ${mnt}/${LOCALBASE:-/usr/local} 2>/dev/null || :
 		mount -t tmpfs tmpfs ${mnt}/${LOCALBASE:-/usr/local}
 	fi
@@ -1629,7 +1629,7 @@ prepare_ports() {
 
 	msg "Calculating ports order and dependencies"
 	mkdir -p "${MASTERMNT}/poudriere"
-	[ -n "${TMPFS_DATA}" ] && mount -t tmpfs tmpfs "${MASTERMNT}/poudriere"
+	[ ${TMPFS_DATA} -eq 1 ] && mount -t tmpfs tmpfs "${MASTERMNT}/poudriere"
 	rm -rf "${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
 	       "${MASTERMNT}/poudriere/var/cache/pkgname-origin" 2>/dev/null || :
 	mkdir -p "${MASTERMNT}/poudriere/pool" \
