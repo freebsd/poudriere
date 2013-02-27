@@ -80,7 +80,7 @@ log_start() {
 }
 
 log_path() {
-	echo "${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${STARTTIME}"
+	echo "${POUDRIERE_DATA}/logs/bulk/${MASTERNAME}/${STARTTIME}"
 }
 
 buildlog_start() {
