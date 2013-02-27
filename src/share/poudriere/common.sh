@@ -1197,7 +1197,7 @@ build_pkg() {
 			jail -c path=${mnt} command=make -C ${portdir} clean
 			if ! build_port ${portdir}; then
 				build_failed=1
-				failed_status=$(bget ${id} status)
+				failed_status=$(bget ${MY_JOBID} status)
 				failed_phase=${failed_status%:*}
 
 				save_wrkdir ${mnt} "${port}" "${portdir}" "${failed_phase}" || :
