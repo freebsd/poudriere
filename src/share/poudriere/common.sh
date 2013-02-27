@@ -584,6 +584,7 @@ do_portbuild_mounts() {
 		if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 			msg "Mounting ccache from: ${CCACHE_DIR}"
 		fi
+		msg "Mounting packages from: ${POUDRIERE_DATA}/packages/${MASTERNAME}"
 	fi
 
 	mount -t nullfs -o ro ${portsdir} ${mnt}/usr/ports || err 1 "Failed to mount the ports directory "
