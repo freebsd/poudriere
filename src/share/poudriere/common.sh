@@ -1663,7 +1663,7 @@ prepare_ports() {
 
 	if [ ${CLEAN_LISTED:-0} -eq 1 ]; then
 		listed_ports | while read port; do
-			pkg="${POUDRIERE_DATA}/packages/${MASTERNAME}/$(cache_get_pkgname  ${port}).${PKG_EXT}"
+			pkg="${POUDRIERE_DATA}/packages/${MASTERNAME}/All/$(cache_get_pkgname ${port}).${PKG_EXT}"
 			if [ -f "${pkg}" ]; then
 				msg "Deleting existing package: ${pkg##*/}"
 				delete_pkg ${pkg}
