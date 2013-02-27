@@ -152,7 +152,7 @@ if ! build_port /usr/ports/${ORIGIN}; then
 	failed_status=$(jget ${MASTERNAME} status)
 	failed_phase=${failed_status%:*}
 
-	save_wrkdir "${PKGNAME}" "/usr/ports/${ORIGIN}" "${failed_phase}" || :
+	save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" "${failed_phase}" || :
 	exit 1
 fi
 
