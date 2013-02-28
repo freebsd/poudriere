@@ -45,13 +45,13 @@ USE_PORTLINT=no
 #MFSSIZE=4G
 
 # Use tmpfs(5)
-# This can be a comma-separated list of options:
+# This can be a space-separated list of options:
 # wrkdir    - Use tmpfs(5) for port building WRKDIRPREFIX
 # data      - Use tmpfs(5) for poudriere cache/temp build data
 # localbase - Use tmpfs(5) for LOCALBASE (installing ports for packaging/testing)
 # all       - Enable all of the above
 # yes       - Only enables tmpfs(5) for wrkdir
-# EXAMPLE: USE_TMPFS=wrkdir,data
+# EXAMPLE: USE_TMPFS="wrkdir data"
 USE_TMPFS=yes
 
 # If set the given directory will be used for the distfiles this allow the share
