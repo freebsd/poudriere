@@ -985,8 +985,8 @@ deadlock_detected() {
 	# If there are still packages marked as "building" they have crashed
 	# and it's likely some poudriere or system bug
 	crashed_packages=$( \
-		find ${mnt}/poudriere/pool -type d -mindepth 1 -maxdepth 1 | \
-		sed -e "s:${mnt}/poudriere/pool/::" | tr '\n' ' ' \
+		find ${mnt}/poudriere/building -type d -mindepth 1 -maxdepth 1 | \
+		sed -e "s:${mnt}/poudriere/building/::" | tr '\n' ' ' \
 	)
 	[ -z "${crashed_packages}" ] ||	\
 		err 1 "Crashed package builds detected: ${crashed_packages}"
@@ -1027,7 +1027,7 @@ ${dependency_cycles}"
 
 	# No cycle, there's some unknown poudriere bug
 	err 1 "Unknown stuck queue bug detected. Give this information to poudriere developers:
-$(find ${mnt}/poudriere/pool ${mnt}/poudriere/deps)"
+$(find ${mnt}/poudriere/building ${mnt}/poudriere/pool ${mnt}/poudriere/deps)"
 }
 
 build_queue() {
@@ -1142,6 +1142,8 @@ clean_pool() {
 		badd ports.skipped "${skipped_origin} ${skipped_pkgname} ${pkgname}"
 		job_msg "Skipping build of ${skipped_origin}: Dependent port ${port} failed"
 	done
+
+	rmdir ${MASTERMNT}/poudriere/building/${pkgname}
 }
 
 print_phase_header() {
@@ -1436,15 +1438,18 @@ delete_old_pkgs() {
 	parallel_stop
 }
 
+## Pick the next package from the "ready to build" queue in pool/
+## Then move the package to the "building" dir in building/
+## This is only ran from 1 process
 next_in_queue() {
-	local p
+	local p pkgname
 
 	[ ! -d ${MASTERMNT}/poudriere/pool ] && err 1 "Build pool is missing"
 	p=$(lockf -k -t 60 ${MASTERMNT}/poudriere/.lock.pool find ${MASTERMNT}/poudriere/pool -type d -depth 1 -empty -print -quit || :)
 	[ -n "$p" ] || return 0
-	touch ${p}/.building
-	# pkgname
-	echo ${p##*/}
+	pkgname=${p##*/}
+	mv ${p} ${MASTERMNT}/poudriere/building/${pkgname}
+	echo ${pkgname}
 }
 
 lock_acquire() {
@@ -1632,7 +1637,8 @@ prepare_ports() {
 	[ ${TMPFS_DATA} -eq 1 ] && mount -t tmpfs tmpfs "${MASTERMNT}/poudriere"
 	rm -rf "${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
 	       "${MASTERMNT}/poudriere/var/cache/pkgname-origin" 2>/dev/null || :
-	mkdir -p "${MASTERMNT}/poudriere/pool" \
+	mkdir -p "${MASTERMNT}/poudriere/building" \
+		"${MASTERMNT}/poudriere/pool" \
 		"${MASTERMNT}/poudriere/deps" \
 		"${MASTERMNT}/poudriere/rdeps" \
 		"${MASTERMNT}/poudriere/var/run" \

@@ -296,6 +296,7 @@ if TMPFS\_DATA is set or USE\_TMPFS is set to all then /poudriere will be a tmpf
 
 The following directories are created inside the /poudriere directory:
 
+  * /poudriere/building # this is the pool of currently building ports
   * /poudriere/pool # this is the pool of ready to build ports (no dependencies left to built)
   * /poudriere/deps # this is the pool of left ports which at least depend on one port not already built
   * /poudriere/var/run # This will receive the pids of the running builders
@@ -388,28 +389,30 @@ For each jail the following filesystems are mounted in it:
 
 For each port in /poudriere/pool a job is started on one of the above builders:
 
-  1. umount all tmpfs within the builders to cleanup their content
-  2. rollback the jail file system to the @prepkg state (using zfs rollback or using mtree -r + some pax hack)
-  3. cleanup /wrkdirs from any previous build
-  4. install all pkg, fetch, extract, patch, build and lib dependencies if any inside a jail(8) with no network
-  5. run make check-config in a jail(8) with no network
-  6. run make fetch in a jail(8) with network access
-  7. run make checksum in a jail(8) with network access
-  8. copy the distfiles required by the port and only them into /portdistfiles and modify /etc/make.conf so that the port will pickup its distfiles only in this directory
-  9. run make extract in a jail(8) with no network
-  10. run make patch in a jail(8) with no network
-  11. run make configure in a jail(8) with no network
-  12. run make build in a jail(8) with no network
-  13. run make run-depends in a jail(8) with no network
-  14. run make install-mtree in a jail(8) with no network
-  15. if in test mode mark the filesystem as preinst (mtree file created)
-  16. run make install in a jail(8) with no network
-  17. modify /etc/make.conf to that is will create its packages in /new\_packages and create that directory
-  18. run make package in a jail(8) with no network
-  19. if in test mode run make deinstall in a jail(8) with no network
-  20. if in test mode check for leftovers by comparing the state of the filesystem with the one in the preinst mtree
-  21. if all the above went ok copy the created packages from /new\_packages to the final package directory
-  22. remove all the /poudriere/deps/\*/\<pkgname\> and move all the new empty directoris into /poudriere/pool so that they can be picked up in a jail for building.
+  1. the /poudriere/pool/\<pkgname\> dir is moved to /poudriere/building/\<pkgname\>
+  2. umount all tmpfs within the builders to cleanup their content
+  3. rollback the jail file system to the @prepkg state (using zfs rollback or using mtree -r + some pax hack)
+  4. cleanup /wrkdirs from any previous build
+  5. install all pkg, fetch, extract, patch, build and lib dependencies if any inside a jail(8) with no network
+  6. run make check-config in a jail(8) with no network
+  7. run make fetch in a jail(8) with network access
+  8. run make checksum in a jail(8) with network access
+  9. copy the distfiles required by the port and only them into /portdistfiles and modify /etc/make.conf so that the port will pickup its distfiles only in this directory
+  10. run make extract in a jail(8) with no network
+  11. run make patch in a jail(8) with no network
+  12. run make configure in a jail(8) with no network
+  13. run make build in a jail(8) with no network
+  14. run make run-depends in a jail(8) with no network
+  15. run make install-mtree in a jail(8) with no network
+  16. if in test mode mark the filesystem as preinst (mtree file created)
+  17. run make install in a jail(8) with no network
+  18. modify /etc/make.conf to that is will create its packages in /new\_packages and create that directory
+  19. run make package in a jail(8) with no network
+  20. if in test mode run make deinstall in a jail(8) with no network
+  21. if in test mode check for leftovers by comparing the state of the filesystem with the one in the preinst mtree
+  22. if all the above went ok copy the created packages from /new\_packages to the final package directory
+  23. remove all the /poudriere/deps/\*/\<pkgname\> and move all the new empty directoris into /poudriere/pool so that they can be picked up in a jail for building.
+  24. the /poudriere/building/\<pkgname\> is removed
 
 Once finished (all packages built)
 if the built packages are pkgng "pkg repo" in the repository (with a key to sign it is specified in poudriere.conf)
