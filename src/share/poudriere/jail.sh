@@ -51,6 +51,7 @@ delete_jail() {
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	msg_n "Removing ${JAILNAME} jail..."
 	destroyfs jail ${JAILNAME}
+	rm -rf ${POUDRIERED}/jails/${JAILNAME} || :
 	echo done
 }
 
