@@ -51,7 +51,7 @@ The jails created will then be considered as a reference of a clean vanilla jail
 
 the minimal setup consist in doing the following:
 
-Modify the login.conf to add the following environment variables: 
+Modify the login.conf to add the following environment variables:
 
   * UNAME\_r
   * UNAME\_v
@@ -106,7 +106,7 @@ Only world is built, and the following features are supported: ccache and parall
 
 The built jail can be tuned using src.conf:
 if a src.con files exists in /usr/local/etc/poudriere.d/ on the host, it will used as the src.conf for the jail.
-if a \<jailname\>-src.conf file exists in /usr/local/etc/poudriere.d/ on the host, it will be appended the the src.conf used to built the jail.
+if a \<jailname\>-src.conf file exists in /usr/local/etc/poudriere.d/ on the host, it will be appended the src.conf used to built the jail.
 
 The rest is just "normal" building of world:
 
@@ -198,7 +198,7 @@ The following command allows to update the ports tree
 
 according to the method used to create the command it will run the following commands:
 
-#### Using portsnap 
+#### Using portsnap
 
 	portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch update
 
@@ -224,7 +224,7 @@ First a reference jail is created by copying the original jail (chosen via the -
 
 If the original jail has been created on top of zfs then the reference jail is created as a zfs clone of the @clean snapshot of the original jail.
 
-Otherwise the the jail is duplicated using pax(1)
+Otherwise the jail is duplicated using pax(1)
 
 if USE\_TMPFS is set to "all" in poudriere.conf then the reference jail is mounted as tmpfs and the original jail duplicated using pax(1)
 
@@ -268,7 +268,7 @@ The option directory that can be found under /usr/local/etc/poudriere.d will be 
   3. /usr/local/etc/poudriere.d/\<jailname\>-options
   4. /usr/local/etc/poudriere.d/options
 
-It will be nullfs mounted in readonly as /var/db/ports inside of the jail directory 
+It will be nullfs mounted in readonly as /var/db/ports inside of the jail directory
 
 The reference jail is now populated:
 
@@ -292,7 +292,7 @@ The jail is now ready to be used
 
 The queue calculation is done on the reference jail directly. inside the /poudriere directory
 
-if TMPFS\_DATA is set or USE\_TMPFS is set to all then then /poudriere will be a tmpfs directory (highly recommanded)
+if TMPFS\_DATA is set or USE\_TMPFS is set to all then /poudriere will be a tmpfs directory (highly recommanded)
 
 The following directories are created inside the /poudriere directory:
 
@@ -302,7 +302,7 @@ The following directories are created inside the /poudriere directory:
   * /poduriere/var/cache/origin-pkgname #cache to quickly figure out package name out of an origin
   * /poudriere/var/cache/pkgname-origin #cache to quickly figure out origin out of a packagename
 
-It initializes the log directory in 
+It initializes the log directory in
 
   * ${POUDRIERE\_DATA}/logs/bulk/\<MASTERNAME\>/\<STARTTIME\>
 
@@ -341,7 +341,7 @@ The above will populate /poudriere/deps with all the packages that needs to be b
 
 Now that the full dependency tree is populated, poudriere will sanity check the repository of packages if there are already packages in it
 In parallel (one process per core) each package is checked and deleted if:
-  1. the origin of the package doesnt exists anymore in the ports tree
+  1. the origin of the package doesnt exists any more in the ports tree
   2. the version in ports is newer than the version of the package
   3. if CHECK\_CHANGED\_OPTIONS is set, the package is delete is the options activated in the ports tree for the given port are different from the one for the built package
 
