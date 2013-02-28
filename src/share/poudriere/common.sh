@@ -692,7 +692,7 @@ jail_stop() {
 		# - here to only check for unset, {start,stop}_builders will set this to blank if already stopped
 		for j in ${JOBS-$(jot -w %02d ${PARALLEL_JOBS})}; do
 			jail -qr ${MASTERNAME}-job-${j} 2>/dev/null || :
-			destroyfs ${MASTERMNT}/../${j} jail
+			destroyfs ${MASTERMNT}/../${j} jail || :
 		done
 	fi
 	msg "Umounting file systems"
