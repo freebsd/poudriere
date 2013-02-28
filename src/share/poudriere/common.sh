@@ -1137,7 +1137,7 @@ clean_pool() {
 	[ ${clean_rdepends} -eq 1 ] && port=$(cache_get_origin "${pkgname}")
 
 	# Cleaning queue (pool is cleaned here)
-	lockf -s -k ${MASTERMNT}/poudriere/.lock.pool sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT}" "${pkgname}" ${clean_rdepends} | sort -u | while read skipped_pkgname; do
+	sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT}" "${pkgname}" ${clean_rdepends} | sort -u | while read skipped_pkgname; do
 		skipped_origin=$(cache_get_origin "${skipped_pkgname}")
 		badd ports.skipped "${skipped_origin} ${skipped_pkgname} ${pkgname}"
 		job_msg "Skipping build of ${skipped_origin}: Dependent port ${port} failed"
@@ -1445,7 +1445,7 @@ next_in_queue() {
 	local p pkgname
 
 	[ ! -d ${MASTERMNT}/poudriere/pool ] && err 1 "Build pool is missing"
-	p=$(lockf -k -t 60 ${MASTERMNT}/poudriere/.lock.pool find ${MASTERMNT}/poudriere/pool -type d -depth 1 -empty -print -quit || :)
+	p=$(find ${MASTERMNT}/poudriere/pool -type d -depth 1 -empty -print -quit || :)
 	[ -n "$p" ] || return 0
 	pkgname=${p##*/}
 	mv ${p} ${MASTERMNT}/poudriere/building/${pkgname}
