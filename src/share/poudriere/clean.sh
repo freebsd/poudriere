@@ -51,8 +51,7 @@ clean_pool() {
 		fi
 	fi
 
-	rm -rf "${JAILMNT}/poudriere/pool/${pkgname}" \
-		"${JAILMNT}/poudriere/deps/${pkgname}" \
+	rm -rf "${JAILMNT}/poudriere/deps/${pkgname}" \
 		"${JAILMNT}/poudriere/rdeps/${pkgname}" 2>/dev/null || :
 }
 
