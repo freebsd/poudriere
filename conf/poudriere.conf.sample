@@ -49,7 +49,7 @@ USE_PORTLINT=no
 # wrkdir    - Use tmpfs(5) for port building WRKDIRPREFIX
 # data      - Use tmpfs(5) for poudriere cache/temp build data
 # localbase - Use tmpfs(5) for LOCALBASE (installing ports for packaging/testing)
-# all       - Enable all of the above
+# all       - Run the entire build in memory, including builder jails.
 # yes       - Only enables tmpfs(5) for wrkdir
 # EXAMPLE: USE_TMPFS="wrkdir data"
 USE_TMPFS=yes
