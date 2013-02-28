@@ -498,7 +498,7 @@ destroyfs() {
 		zfs destroy -r ${fs}
 		rmdir ${mnt}
 	else
-		[ $type = "jail" ] && chflags -R noschg ${mnt}
+		chflags -R noschg ${mnt}
 		rm -rf ${mnt}
 	fi
 }
