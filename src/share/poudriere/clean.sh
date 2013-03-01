@@ -27,6 +27,14 @@ clean_pool() {
 		# Determine which packages are ready-to-build and
 		# handle "impact"/skipping support
 		if [ -z "$(find "${JAILMNT}/poudriere/rdeps/${pkgname}" -type d -maxdepth 0 -empty)" ]; then
+
+			# Remove this package from every package depending on this
+			# This follows the symlink in rdeps which references
+			# deps/<pkgname>/<this pkg>
+			find ${JAILMNT}/poudriere/rdeps/${pkgname} -type l | \
+				xargs realpath | \
+				xargs rm
+
 			for dep_dir in ${JAILMNT}/poudriere/rdeps/${pkgname}/*; do
 				dep_pkgname=${dep_dir##*/}
 
@@ -40,7 +48,6 @@ clean_pool() {
 					#clean_pool deletes deps/${dep_pkgname} already
 					# no need for below code
 				else
-					rm -f "${JAILMNT}/poudriere/deps/${dep_pkgname}/${pkgname}"
 					# If that packages was just waiting on my package, and
 					# is now ready-to-build, move it to pool/
 					find "${JAILMNT}/poudriere/deps/${dep_pkgname}" \
