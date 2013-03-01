@@ -22,6 +22,7 @@ clean_pool() {
 	local pkgname=$1
 	local clean_rdepends=$2
 	local dep_dir dep_pkgname
+	local deps_to_check
 
 	if [ -d "${JAILMNT}/poudriere/rdeps/${pkgname}" ]; then
 		# Determine which packages are ready-to-build and
@@ -50,11 +51,15 @@ clean_pool() {
 				else
 					# If that packages was just waiting on my package, and
 					# is now ready-to-build, move it to pool/
-					find "${JAILMNT}/poudriere/deps/${dep_pkgname}" \
-						-type d -maxdepth 0 -empty \
-						-exec mv {} "${JAILMNT}/poudriere/pool" \;
+					deps_to_check="${deps_to_check} ${JAILMNT}/poudriere/deps/${dep_pkgname}"
 				fi
 			done
+
+			echo ${deps_to_check} | \
+				xargs -J % \
+				find % -type d -maxdepth 0 -empty | \
+				xargs -J % mv % "${JAILMNT}/poudriere/pool" \
+				2>/dev/null || :
 		fi
 	fi
 
