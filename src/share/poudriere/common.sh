@@ -475,6 +475,8 @@ clonefs() {
 		# Make sure the fs is clean before cloning
 		zfs rollback -R ${fs}@${snap} 2>/dev/null || :
 		zfs clone -o mountpoint=${to} \
+			-o sync=disabled \
+			-o atime=off \
 			${fs}@${snap} \
 			${fs}/${name}
 	else
