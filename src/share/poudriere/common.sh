@@ -477,6 +477,7 @@ clonefs() {
 		zfs clone -o mountpoint=${to} \
 			-o sync=disabled \
 			-o atime=off \
+			-o compression=off \
 			${fs}@${snap} \
 			${fs}/${name}
 	else
