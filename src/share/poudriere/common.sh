@@ -791,7 +791,7 @@ build_port() {
 		*) network=0 ;;
 		esac
 		case ${phase} in
-		install) [ -n ${PORTTESTING} ] && markfs preinst ${mnt} ;;
+		install) [ -n "${PORTTESTING}" ] && markfs preinst ${mnt} ;;
 		deinstall)
 			msg "Checking shared library dependencies"
 			listfilecmd="grep -v '^@' /var/db/pkg/${PKGNAME}/+CONTENTS"
