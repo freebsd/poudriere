@@ -631,7 +631,7 @@ build_port() {
 			jrun 1
 		fi
 		case ${phase} in
-		install) mark_preinst ;;
+		install) [ -n ${PORTTESTING} ] && mark_preinst ;;
 		deinstall)
 			msg "Checking shared library dependencies"
 			if [ ${PKGNG} -eq 0 ]; then
