@@ -788,6 +788,8 @@ start_builder() {
 	zset status "starting_jobs:${j}"
 	mkdir -p "${mnt}"
 	zfs clone -o mountpoint=${mnt} \
+		-o sync=disabled \
+		-o atime=off \
 		-o ${NS}:name=${name} \
 		-o ${NS}:type=rootfs \
 		-o ${NS}:arch=${arch} \
