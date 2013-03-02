@@ -1660,10 +1660,12 @@ prepare_ports() {
 		"${MASTERMNT}/poudriere/var/cache/pkgname-origin"
 
 	POOL_BUCKET_DIRS=""
-	# Add pool/N dirs in reverse order from highest to lowest
-	for n in $(jot ${POOL_BUCKETS} 0 | sort -nr); do
-		POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/${n}"
-	done
+	if [ ${POOL_BUCKETS} -gt 0 ]; then
+		# Add pool/N dirs in reverse order from highest to lowest
+		for n in $(jot ${POOL_BUCKETS} 0 | sort -nr); do
+			POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/${n}"
+		done
+	fi
 	# Add unbalanced at the end
 	POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/unbalanced"
 	mkdir -p ${POOL_BUCKET_DIRS}
@@ -1747,6 +1749,9 @@ prepare_ports() {
 }
 
 balance_pool() {
+	# Don't bother if disabled
+	[ ${POOL_BUCKETS} -gt 0 ] || return 0
+
 	local mnt=$(my_path)
 	local pkgname pkg_dir dep_count rdep lock
 
