@@ -1065,7 +1065,8 @@ build_queue() {
 				  [ -n "$(dir_empty ${mnt}/poudriere/pool/6)" ] && \
 				  [ -n "$(dir_empty ${mnt}/poudriere/pool/7)" ] && \
 				  [ -n "$(dir_empty ${mnt}/poudriere/pool/8)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool/9)" ] then \
+				  [ -n "$(dir_empty ${mnt}/poudriere/pool/9)" ] && \
+				  [ -n "$(dir_empty ${mnt}/poudriere/pool/unbalanced)" ] then \
 					update_stats
 					return 0
 				fi
@@ -1153,6 +1154,7 @@ clean_pool() {
 	done
 
 	rmdir ${MASTERMNT}/poudriere/building/${pkgname}
+	balance_pool
 }
 
 print_phase_header() {
@@ -1669,6 +1671,7 @@ prepare_ports() {
 		"${MASTERMNT}/poudriere/pool/7" \
 		"${MASTERMNT}/poudriere/pool/8" \
 		"${MASTERMNT}/poudriere/pool/9" \
+		"${MASTERMNT}/poudriere/pool/unbalanced" \
 		"${MASTERMNT}/poudriere/deps" \
 		"${MASTERMNT}/poudriere/rdeps" \
 		"${MASTERMNT}/poudriere/var/run" \
@@ -1750,7 +1753,24 @@ prepare_ports() {
 	bset stats_queued ${nbq##* }
 
 	# Create a pool of ready-to-build from the deps pool
-	find "${MASTERMNT}/poudriere/deps" -type d -empty|xargs -J % mv % "${MASTERMNT}/poudriere/pool/0"
+	find "${MASTERMNT}/poudriere/deps" -type d -empty|xargs -J % mv % "${MASTERMNT}/poudriere/pool/unbalanced"
+	balance_pool
+}
+
+balance_pool() {
+	local mnt=$(my_path)
+	local pkgname pkg_dir dep_count
+	zset status "balancing_pool:"
+	# For everything ready-to-build...
+	find ${mnt}/poudriere/pool/unbalanced -type d -mindepth 1 | while read pkg_dir; do
+		pkgname=${pkg_dir##*/}
+		# Determine its priority, based on how much depends on it
+		dep_count=$(find "${mnt}/poudriere/rdeps/${pkgname}" -mindepth 1 2>/dev/null | wc -l)
+		if [ ${dep_count} -gt 9 ]; then
+			dep_count=9
+		fi
+		mv ${pkg_dir} ${mnt}/poudriere/pool/${dep_count##* }/
+	done
 }
 
 append_make() {
