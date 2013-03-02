@@ -1751,7 +1751,8 @@ balance_pool() {
 	local pkgname pkg_dir dep_count rdep
 	zset status "balancing_pool:"
 	# For everything ready-to-build...
-	find ${mnt}/poudriere/pool/unbalanced -type d -mindepth 1 | while read pkg_dir; do
+	for pkg_dir in ${mnt}/poudriere/pool/unbalanced/*; do
+		[ ${pkg_dir} = "${mnt}/poudriere/pool/unbalanced/*" ] && break
 		pkgname=${pkg_dir##*/}
 		dep_count=0
 		# Determine its priority, based on how much depends on it
