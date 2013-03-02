@@ -1749,7 +1749,7 @@ prepare_ports() {
 balance_pool() {
 	local mnt=$(my_path)
 	local pkgname pkg_dir dep_count rdep
-	zset status "balancing_pool:"
+	bset status "balancing_pool:"
 	# For everything ready-to-build...
 	for pkg_dir in ${mnt}/poudriere/pool/unbalanced/*; do
 		[ ${pkg_dir} = "${mnt}/poudriere/pool/unbalanced/*" ] && break
