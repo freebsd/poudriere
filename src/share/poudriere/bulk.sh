@@ -131,18 +131,16 @@ prepare_ports
 
 bset status "building:"
 
-mnt=$(my_path)
 if [ -z "${PORTTESTING}" -a -z "${ALLOW_MAKE_JOBS}" ]; then
-	echo "DISABLE_MAKE_JOBS=yes" >> ${mnt}/etc/make.conf
+	echo "DISABLE_MAKE_JOBS=yes" >> ${MASTERMNT}/etc/make.conf
 fi
 
-markfs prepkg ${mnt}
+markfs prepkg ${MASTERMNT}
 
 parallel_build ${JAILNAME} ${PTNAME} ${SETNAME} || : # Ignore errors as they are handled below
 
 bset status "done:"
 
-log=$(log_path)
 failed=$(bget ports.failed | awk '{print $1 ":" $3 }' | xargs echo)
 built=$(bget ports.built | xargs echo)
 ignored=$(bget ports.ignored | awk '{print $1}' | xargs echo)
