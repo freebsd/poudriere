@@ -353,7 +353,7 @@ To finish with the sanity check, all the dead symlinks are deleted.
 
 The dependency calculation process ends by looping over all the entry in /poudriere/deps each time it figures out the package already exists in the package directory then the entry is removed from the queue.
 
-All the port with no dependency to be built (empty directories in /poudriere/deps) are now moved to /poudriere/pool as they are ready to be built straight away.
+All the port with no dependency to be built (empty directories in /poudriere/deps) are now moved to /poudriere/pool/unbalanced as they are ready to be built straight away.
 
 ## Bulks
 
@@ -412,8 +412,18 @@ For each port in /poudriere/pool a job is started on one of the above builders:
   20. if in test mode run make deinstall in a jail(8) with no network
   21. if in test mode check for leftovers by comparing the state of the filesystem with the one in the preinst mtree
   22. if all the above went ok copy the created packages from /new\_packages to the final package directory
-  23. remove all the /poudriere/deps/\*/\<pkgname\> and move all the new empty directoris into /poudriere/pool so that they can be picked up in a jail for building.
+  23. remove all the /poudriere/deps/\*/\<pkgname\> and move all the new empty directoris into /poudriere/pool/unbalanced so that they can be picked up in a jail for building.
   24. the /poudriere/building/\<pkgname\> is removed
+
+### Pool priority
+
+The pool queue is designed to prioritize building packages that are depended on first. This allows the ready-to-build pool to more quickly get all packages in a ready-to-build state. This can help avoid bottlenecks where large dependencies must build before moving on, which may be a problem with large CPU sets.
+
+  1. a /poudriere/pool/N pool is created for the number of POOL\_BUCKETS (default is 10)
+  2. packages are initially added into /poudriere/pool/unbalanced
+  3. they are then moved to /poudriere/pool/N where N is the number of packages that _directly_ depend on it. This is capped at POOL\_BUCKETS-1
+  4. the build queue reads from the highest priority pool down to 0
+  5. as builds finish, they add new packages ready-to-build into /poudriere/pool/unbalanced and then call balance\_pool to prioritize those
 
 Once finished (all packages built)
 if the built packages are pkgng "pkg repo" in the repository (with a key to sign it is specified in poudriere.conf)
