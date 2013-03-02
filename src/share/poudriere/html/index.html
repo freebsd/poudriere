@@ -28,7 +28,7 @@
 		function update_fields() {
 			fetch(".poudriere.status", function (data) {
 				document.getElementById("status").innerHTML = data;
-				fetch(".poudriere.nbbuilders", function (data) {
+				fetch(".poudriere.builders", function (data) {
 					var html = "";
 					var b = data.split(" ");
 					for (i = 0; i < b.length; i++) {

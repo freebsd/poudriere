@@ -954,7 +954,7 @@ start_builder() {
 start_builders() {
 	local arch=$(jail -c path=${MASTERMNT} command=uname -p)
 
-	bset nbbuilders "${JOBS}"
+	bset builders "${JOBS}"
 	bset status "starting_builders:"
 	parallel_start
 	for j in ${JOBS}; do
