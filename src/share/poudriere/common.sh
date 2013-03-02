@@ -1749,10 +1749,12 @@ prepare_ports() {
 balance_pool() {
 	local mnt=$(my_path)
 	local pkgname pkg_dir dep_count rdep
+
+	[ -z "$(dir_empty ${mnt}/poudriere/pool/unbalanced)" ] || return 0
+
 	bset status "balancing_pool:"
 	# For everything ready-to-build...
 	for pkg_dir in ${mnt}/poudriere/pool/unbalanced/*; do
-		[ ${pkg_dir} = "${mnt}/poudriere/pool/unbalanced/*" ] && break
 		pkgname=${pkg_dir##*/}
 		dep_count=0
 		# Determine its priority, based on how much depends on it
