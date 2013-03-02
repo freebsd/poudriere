@@ -35,7 +35,7 @@
 						if (i == 0)
 							html = "<h2> Builders </h2><table><tr><th>id</th><th>Port</th><th>Phase</th></tr>";
 						html += "<tr><td>" + b[i] + "</td>";
-						fetch(".poudriere."+ b[i] +".status", function (data) {
+						fetch(".poudriere.status." + b[i], function (data) {
 							var a = data.split(":");
 							html += "<td>" + a[1] + "</td>";
 							html += "<td>" + a[0] + "</td></tr>";
