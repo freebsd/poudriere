@@ -1748,9 +1748,12 @@ prepare_ports() {
 
 balance_pool() {
 	local mnt=$(my_path)
-	local pkgname pkg_dir dep_count rdep
+	local pkgname pkg_dir dep_count rdep lock
 
 	[ -z "$(dir_empty ${mnt}/poudriere/pool/unbalanced)" ] || return 0
+	# Avoid running this in parallel, no need
+	lock=${mnt}/poudriere/.lock-balance_pool
+	mkdir ${lock} 2>/dev/null || return 0
 
 	bset status "balancing_pool:"
 	# For everything ready-to-build...
@@ -1766,6 +1769,8 @@ balance_pool() {
 		done
 		mv ${pkg_dir} ${mnt}/poudriere/pool/${dep_count##* }/ 2>/dev/null || :
 	done
+
+	rmdir ${lock}
 }
 
 append_make() {
