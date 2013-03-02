@@ -88,6 +88,7 @@ csup)
 	;;
 portsnap);;
 svn+http);;
+svn+https);;
 svn+ssh);;
 svn);;
 git);;
