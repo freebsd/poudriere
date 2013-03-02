@@ -1030,6 +1030,20 @@ ${dependency_cycles}"
 $(find ${mnt}/poudriere/building ${mnt}/poudriere/pool ${mnt}/poudriere/deps)"
 }
 
+queue_empty() {
+	local pool_dir
+	local mnt=$(my_path)
+	[ -n "$(dir_empty ${mnt}/poudriere/deps)" ] || return 1
+
+	for pool_dir in ${POOL_BUCKET_DIRS}; do
+		[ -n "$(dir_empty ${pool_dir})" ] || return 1
+	done
+
+	[ -n "$(dir_empty ${mnt}/poudriere/pool/unbalanced)" ] || return 1
+
+	return 0
+}
+
 build_queue() {
 	local j cnt name pkgname read_queue builders_active
 	local mnt=$(my_path)
@@ -1055,18 +1069,7 @@ build_queue() {
 			if [ -z "${pkgname}" ]; then
 				# Check if the ready-to-build pool and need-to-build pools
 				# are empty
-				[ -n "$(dir_empty ${mnt}/poudriere/deps)" ]  && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool/0)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool/1)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool/2)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool/3)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool/4)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool/5)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool/6)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool/7)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool/8)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool/9)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool/unbalanced)" ] then \
+				if queue_empty; then
 					update_stats
 					return 0
 				fi
@@ -1456,19 +1459,7 @@ next_in_queue() {
 	local p pkgname
 
 	[ ! -d ${MASTERMNT}/poudriere/pool ] && err 1 "Build pool is missing"
-	p=$(find \
-		${MASTERMNT}/poudriere/pool/9 \
-		${MASTERMNT}/poudriere/pool/8 \
-		${MASTERMNT}/poudriere/pool/7 \
-		${MASTERMNT}/poudriere/pool/6 \
-		${MASTERMNT}/poudriere/pool/5 \
-		${MASTERMNT}/poudriere/pool/4 \
-		${MASTERMNT}/poudriere/pool/3 \
-		${MASTERMNT}/poudriere/pool/2 \
-		${MASTERMNT}/poudriere/pool/1 \
-		${MASTERMNT}/poudriere/pool/0 \
-		-type d -depth 1 -empty -print -quit || : \
-	)
+	p=$(find ${POOL_BUCKET_DIRS} -type d -depth 1 -empty -print -quit || :)
 	[ -n "$p" ] || return 0
 	pkgname=${p##*/}
 	mv ${p} ${MASTERMNT}/poudriere/building/${pkgname}
@@ -1654,6 +1645,7 @@ cache_get_key() {
 prepare_ports() {
 	local pkg
 	local log=$(log_path)
+	local n
 
 	msg "Calculating ports order and dependencies"
 	mkdir -p "${MASTERMNT}/poudriere"
@@ -1661,16 +1653,7 @@ prepare_ports() {
 	rm -rf "${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
 	       "${MASTERMNT}/poudriere/var/cache/pkgname-origin" 2>/dev/null || :
 	mkdir -p "${MASTERMNT}/poudriere/building" \
-		"${MASTERMNT}/poudriere/pool/0" \
-		"${MASTERMNT}/poudriere/pool/1" \
-		"${MASTERMNT}/poudriere/pool/2" \
-		"${MASTERMNT}/poudriere/pool/3" \
-		"${MASTERMNT}/poudriere/pool/4" \
-		"${MASTERMNT}/poudriere/pool/5" \
-		"${MASTERMNT}/poudriere/pool/6" \
-		"${MASTERMNT}/poudriere/pool/7" \
-		"${MASTERMNT}/poudriere/pool/8" \
-		"${MASTERMNT}/poudriere/pool/9" \
+		"${MASTERMNT}/poudriere/pool" \
 		"${MASTERMNT}/poudriere/pool/unbalanced" \
 		"${MASTERMNT}/poudriere/deps" \
 		"${MASTERMNT}/poudriere/rdeps" \
@@ -1678,6 +1661,12 @@ prepare_ports() {
 		"${MASTERMNT}/poudriere/var/cache" \
 		"${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
 		"${MASTERMNT}/poudriere/var/cache/pkgname-origin"
+
+	POOL_BUCKET_DIRS=""
+	for n in $(jot ${POOL_BUCKETS} 0 | sort -nr); do
+		POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/${n}"
+	done
+	mkdir -p ${POOL_BUCKET_DIRS}
 
 	mkdir -p ${log}
 	ln -sfh ${STARTTIME} ${log%/*}/latest
@@ -1927,6 +1916,12 @@ esac
 case ${PARALLEL_JOBS} in
 ''|*[!0-9]*)
 	PARALLEL_JOBS=$(sysctl -n hw.ncpu)
+	;;
+esac
+
+case ${POOL_BUCKETS} in
+''|*[!0-9]*)
+	POOL_BUCKETS=10
 	;;
 esac
 
