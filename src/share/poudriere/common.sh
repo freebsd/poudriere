@@ -1039,8 +1039,6 @@ queue_empty() {
 		[ -n "$(dir_empty ${pool_dir})" ] || return 1
 	done
 
-	[ -n "$(dir_empty ${mnt}/poudriere/pool/unbalanced)" ] || return 1
-
 	return 0
 }
 
@@ -1654,7 +1652,6 @@ prepare_ports() {
 	       "${MASTERMNT}/poudriere/var/cache/pkgname-origin" 2>/dev/null || :
 	mkdir -p "${MASTERMNT}/poudriere/building" \
 		"${MASTERMNT}/poudriere/pool" \
-		"${MASTERMNT}/poudriere/pool/unbalanced" \
 		"${MASTERMNT}/poudriere/deps" \
 		"${MASTERMNT}/poudriere/rdeps" \
 		"${MASTERMNT}/poudriere/var/run" \
@@ -1663,9 +1660,12 @@ prepare_ports() {
 		"${MASTERMNT}/poudriere/var/cache/pkgname-origin"
 
 	POOL_BUCKET_DIRS=""
+	# Add pool/N dirs in reverse order from highest to lowest
 	for n in $(jot ${POOL_BUCKETS} 0 | sort -nr); do
 		POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/${n}"
 	done
+	# Add unbalanced at the end
+	POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/unbalanced"
 	mkdir -p ${POOL_BUCKET_DIRS}
 
 	mkdir -p ${log}
