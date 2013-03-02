@@ -58,7 +58,7 @@ clean_pool() {
 			echo ${deps_to_check} | \
 				xargs -J % \
 				find % -type d -maxdepth 0 -empty | \
-				xargs -J % mv % "${JAILMNT}/poudriere/pool" \
+				xargs -J % mv % "${JAILMNT}/poudriere/unbalanced" \
 				2>/dev/null || :
 		fi
 	fi
