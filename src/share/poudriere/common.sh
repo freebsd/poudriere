@@ -1060,6 +1060,17 @@ ${dependency_cycles}"
 $(find ${JAILMNT}/poudriere/building ${JAILMNT}/poudriere/pool ${JAILMNT}/poudriere/deps)"
 }
 
+queue_empty() {
+	local pool_dir
+	[ -n "$(dir_empty ${JAILMNT}/poudriere/deps)" ] || return 1
+
+	for pool_dir in ${POOL_BUCKET_DIRS}; do
+		[ -n "$(dir_empty ${pool_dir})" ] || return 1
+	done
+
+	return 0
+}
+
 build_queue() {
 
 	local j cnt mnt fs name pkgname read_queue builders_active should_build_stats
@@ -1089,9 +1100,7 @@ build_queue() {
 			if [ -z "${pkgname}" ]; then
 				# Check if the ready-to-build pool and need-to-build pools
 				# are empty
-				[ -n "$(dir_empty ${JAILMNT}/poudriere/pool)" ]  && \
-				  [ -n "$(dir_empty ${JAILMNT}/poudriere/deps)" ] \
-				  && return
+				queue_empty && return
 
 				# Pool is waiting on dep, wait until a build
 				# is done before checking the queue again
@@ -1179,6 +1188,7 @@ clean_pool() {
 	done
 
 	rmdir ${MASTERMNT:-${JAILMNT}}/poudriere/building/${pkgname}
+	balance_pool
 }
 
 print_phase_header() {
@@ -1477,7 +1487,7 @@ next_in_queue() {
 	local p pkgname
 
 	[ ! -d ${JAILMNT}/poudriere/pool ] && err 1 "Build pool is missing"
-	p=$(find ${JAILMNT}/poudriere/pool -type d -depth 1 -empty -print -quit || :)
+	p=$(find ${POOL_BUCKET_DIRS} -type d -depth 1 -empty -print -quit || :)
 	[ -n "$p" ] || return 0
 	pkgname=${p##*/}
 	mv ${p} ${JAILMNT}/poudriere/building/${pkgname}
@@ -1660,7 +1670,7 @@ cache_get_key() {
 }
 
 prepare_ports() {
-	local pkg
+	local pkg n
 
 	msg "Calculating ports order and dependencies"
 	mkdir -p "${JAILMNT}/poudriere"
@@ -1675,6 +1685,18 @@ prepare_ports() {
 		"${JAILMNT}/poudriere/var/cache" \
 		"${JAILMNT}/poudriere/var/cache/origin-pkgname" \
 		"${JAILMNT}/poudriere/var/cache/pkgname-origin"
+
+	POOL_BUCKET_DIRS=""
+	if [ ${POOL_BUCKETS} -gt 0 ]; then
+		# Add pool/N dirs in reverse order from highest to lowest
+		for n in $(jot ${POOL_BUCKETS} 0 | sort -nr); do
+			POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} ${JAILMNT}/poudriere/pool/${n}"
+		done
+	fi
+	# Add unbalanced at the end
+	POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} ${JAILMNT}/poudriere/pool/unbalanced"
+
+	mkdir -p ${POOL_BUCKET_DIRS}
 
 	zset stats_queued 0
 	zset stats_built 0
@@ -1748,7 +1770,39 @@ prepare_ports() {
 	zset stats_queued "${nbq##* }"
 
 	# Create a pool of ready-to-build from the deps pool
-	find "${JAILMNT}/poudriere/deps" -type d -empty|xargs -J % mv % "${JAILMNT}/poudriere/pool"
+	find "${JAILMNT}/poudriere/deps" -type d -empty|xargs -J % mv % "${JAILMNT}/poudriere/pool/unbalanced"
+	balance_pool
+}
+
+balance_pool() {
+	local pkgname pkg_dir dep_count rdep lock
+	local mnt=${MASTERMNT:-${JAILMNT}}
+
+	# Don't bother if disabled
+	[ ${POOL_BUCKETS} -gt 0 ] || return 0
+
+	[ -z "$(dir_empty ${mnt}/poudriere/pool/unbalanced)" ] || return 0
+	# Avoid running this in parallel, no need
+	lock=${mnt}/poudriere/.lock-balance_pool
+	mkdir ${lock} 2>/dev/null || return 0
+
+	zset status "balancing_pool:"
+
+	# For everything ready-to-build...
+	for pkg_dir in ${mnt}/poudriere/pool/unbalanced/*; do
+		pkgname=${pkg_dir##*/}
+		dep_count=0
+		# Determine its priority, based on how much depends on it
+		for rdep in ${mnt}/poudriere/rdeps/${pkgname}/*; do
+			# Empty
+			[ ${rdep} = "${mnt}/poudriere/rdeps/${pkgname}/*" ] && break
+			dep_count=$(($dep_count + 1))
+			[ $dep_count -eq $((${POOL_BUCKETS} - 1)) ] && break
+		done
+		mv ${pkg_dir} ${mnt}/poudriere/pool/${dep_count##* }/ 2>/dev/null || :
+	done
+
+	rmdir ${lock}
 }
 
 append_make() {
@@ -1844,5 +1898,11 @@ esac
 case ${PARALLEL_JOBS} in
 ''|*[!0-9]*)
 	PARALLEL_JOBS=$(sysctl -n hw.ncpu)
+	;;
+esac
+
+case ${POOL_BUCKETS} in
+''|*[!0-9]*)
+	POOL_BUCKETS=10
 	;;
 esac
