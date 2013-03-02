@@ -1762,7 +1762,7 @@ balance_pool() {
 			dep_count=$(($dep_count + 1))
 			[ $dep_count -eq $((${POOL_BUCKETS} - 1)) ] && break
 		done
-		mv ${pkg_dir} ${mnt}/poudriere/pool/${dep_count##* }/
+		mv ${pkg_dir} ${mnt}/poudriere/pool/${dep_count##* }/ 2>/dev/null || :
 	done
 }
 
