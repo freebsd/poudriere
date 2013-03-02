@@ -56,9 +56,6 @@ clean_pool() {
 						fi
 						mv ${JAILMNT}/poudriere/deps/${xdep} ${JAILMNT}/poudriere/pool/${xcount}/
 					done
-					find "${JAILMNT}/poudriere/deps/${dep_pkgname}" \
-						-type d -maxdepth 0 -empty \
-						-exec mv {} "${JAILMNT}/poudriere/pool/unbalanced" \;
 				fi
 			done
 		fi
