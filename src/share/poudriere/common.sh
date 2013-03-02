@@ -150,7 +150,7 @@ bget() {
 		id=$1
 		shift
 	fi
-	file=.poudriere${id:+.${id}}.${1}
+	file=.poudriere.${1}${id:+.${id}}
 
 	cat ${log}/${file} || :
 }
@@ -162,7 +162,7 @@ bset() {
 		id=$1
 		shift
 	fi
-	file=.poudriere${id:+.${id}}.${1}
+	file=.poudriere.${1}${id:+.${id}}
 	shift
 	echo "$@" > ${log}/${file} || :
 }
@@ -174,7 +174,7 @@ badd() {
 		id=$1
 		shift
 	fi
-	file=.poudriere${id:+.${id}}.${1}
+	file=.poudriere.${1}${id:+.${id}}
 	shift
 	echo "$@" >> ${log}/${file} || :
 }
