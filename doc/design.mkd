@@ -299,6 +299,7 @@ The following directories are created inside the /poudriere directory:
   * /poudriere/building # this is the pool of currently building ports
   * /poudriere/pool # this is the pool of ready to build ports (no dependencies left to built)
   * /poudriere/deps # this is the pool of left ports which at least depend on one port not already built
+  * /poudriere/rdeps # this is a reference of reverse dependencies. Each package dir contains a link to each package depending on it
   * /poudriere/var/run # This will receive the pids of the running builders
   * /poduriere/var/cache/origin-pkgname #cache to quickly figure out package name out of an origin
   * /poudriere/var/cache/pkgname-origin #cache to quickly figure out origin out of a packagename
