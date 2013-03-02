@@ -1748,16 +1748,19 @@ prepare_ports() {
 
 balance_pool() {
 	local mnt=$(my_path)
-	local pkgname pkg_dir dep_count
+	local pkgname pkg_dir dep_count rdep
 	zset status "balancing_pool:"
 	# For everything ready-to-build...
 	find ${mnt}/poudriere/pool/unbalanced -type d -mindepth 1 | while read pkg_dir; do
 		pkgname=${pkg_dir##*/}
+		dep_count=0
 		# Determine its priority, based on how much depends on it
-		dep_count=$(find "${mnt}/poudriere/rdeps/${pkgname}" -mindepth 1 2>/dev/null | wc -l)
-		if [ ${dep_count} -gt 9 ]; then
-			dep_count=9
-		fi
+		for rdep in ${mnt}/poudriere/rdeps/${pkgname}/*; do
+			# Empty
+			[ ${rdep} = "${mnt}/poudriere/rdeps/${pkgname}/*" ] && break
+			dep_count=$(($dep_count + 1))
+			[ $dep_count -eq $((${POOL_BUCKETS} - 1)) ] && break
+		done
 		mv ${pkg_dir} ${mnt}/poudriere/pool/${dep_count##* }/
 	done
 }
