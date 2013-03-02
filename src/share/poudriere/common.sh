@@ -1056,16 +1056,16 @@ build_queue() {
 				# Check if the ready-to-build pool and need-to-build pools
 				# are empty
 				[ -n "$(dir_empty ${mnt}/poudriere/deps)" ]  && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool0)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool1)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool2)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool3)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool4)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool5)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool6)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool7)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool8)" ] && \
-				  [ -n "$(dir_empty ${mnt}/poudriere/pool9)" ] then \
+				  [ -n "$(dir_empty ${mnt}/poudriere/pool/0)" ] && \
+				  [ -n "$(dir_empty ${mnt}/poudriere/pool/1)" ] && \
+				  [ -n "$(dir_empty ${mnt}/poudriere/pool/2)" ] && \
+				  [ -n "$(dir_empty ${mnt}/poudriere/pool/3)" ] && \
+				  [ -n "$(dir_empty ${mnt}/poudriere/pool/4)" ] && \
+				  [ -n "$(dir_empty ${mnt}/poudriere/pool/5)" ] && \
+				  [ -n "$(dir_empty ${mnt}/poudriere/pool/6)" ] && \
+				  [ -n "$(dir_empty ${mnt}/poudriere/pool/7)" ] && \
+				  [ -n "$(dir_empty ${mnt}/poudriere/pool/8)" ] && \
+				  [ -n "$(dir_empty ${mnt}/poudriere/pool/9)" ] then \
 					update_stats
 					return 0
 				fi
@@ -1455,16 +1455,16 @@ next_in_queue() {
 
 	[ ! -d ${MASTERMNT}/poudriere/pool ] && err 1 "Build pool is missing"
 	p=$(find \
-		${MASTERMNT}/poudriere/pool9 \
-		${MASTERMNT}/poudriere/pool8 \
-		${MASTERMNT}/poudriere/pool7 \
-		${MASTERMNT}/poudriere/pool6 \
-		${MASTERMNT}/poudriere/pool5 \
-		${MASTERMNT}/poudriere/pool4 \
-		${MASTERMNT}/poudriere/pool3 \
-		${MASTERMNT}/poudriere/pool2 \
-		${MASTERMNT}/poudriere/pool1 \
-		${MASTERMNT}/poudriere/pool0 \
+		${MASTERMNT}/poudriere/pool/9 \
+		${MASTERMNT}/poudriere/pool/8 \
+		${MASTERMNT}/poudriere/pool/7 \
+		${MASTERMNT}/poudriere/pool/6 \
+		${MASTERMNT}/poudriere/pool/5 \
+		${MASTERMNT}/poudriere/pool/4 \
+		${MASTERMNT}/poudriere/pool/3 \
+		${MASTERMNT}/poudriere/pool/2 \
+		${MASTERMNT}/poudriere/pool/1 \
+		${MASTERMNT}/poudriere/pool/0 \
 		-type d -depth 1 -empty -print -quit || : \
 	)
 	[ -n "$p" ] || return 0
@@ -1659,16 +1659,16 @@ prepare_ports() {
 	rm -rf "${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
 	       "${MASTERMNT}/poudriere/var/cache/pkgname-origin" 2>/dev/null || :
 	mkdir -p "${MASTERMNT}/poudriere/building" \
-		"${MASTERMNT}/poudriere/pool0" \
-		"${MASTERMNT}/poudriere/pool1" \
-		"${MASTERMNT}/poudriere/pool2" \
-		"${MASTERMNT}/poudriere/pool3" \
-		"${MASTERMNT}/poudriere/pool4" \
-		"${MASTERMNT}/poudriere/pool5" \
-		"${MASTERMNT}/poudriere/pool6" \
-		"${MASTERMNT}/poudriere/pool7" \
-		"${MASTERMNT}/poudriere/pool8" \
-		"${MASTERMNT}/poudriere/pool9" \
+		"${MASTERMNT}/poudriere/pool/0" \
+		"${MASTERMNT}/poudriere/pool/1" \
+		"${MASTERMNT}/poudriere/pool/2" \
+		"${MASTERMNT}/poudriere/pool/3" \
+		"${MASTERMNT}/poudriere/pool/4" \
+		"${MASTERMNT}/poudriere/pool/5" \
+		"${MASTERMNT}/poudriere/pool/6" \
+		"${MASTERMNT}/poudriere/pool/7" \
+		"${MASTERMNT}/poudriere/pool/8" \
+		"${MASTERMNT}/poudriere/pool/9" \
 		"${MASTERMNT}/poudriere/deps" \
 		"${MASTERMNT}/poudriere/rdeps" \
 		"${MASTERMNT}/poudriere/var/run" \
@@ -1750,7 +1750,7 @@ prepare_ports() {
 	bset stats_queued ${nbq##* }
 
 	# Create a pool of ready-to-build from the deps pool
-	find "${MASTERMNT}/poudriere/deps" -type d -empty|xargs -J % mv % "${MASTERMNT}/poudriere/pool0"
+	find "${MASTERMNT}/poudriere/deps" -type d -empty|xargs -J % mv % "${MASTERMNT}/poudriere/pool/0"
 }
 
 append_make() {
