@@ -1258,6 +1258,9 @@ build_pkg() {
 	bset ${MY_JOBID} status "done:${port}"
 	buildlog_stop ${portdir}
 	log_stop $(log_path)/logs/${PKGNAME}.log
+	# If the build failed, symlink it from errors/
+	[ ${build_failed} -eq 0 ] || ln -s ../${PKGNAME}.log \
+	    $(log_path)/logs/errors/${PKGNAME}.log
 	echo ${MY_JOBID} >&6
 }
 
@@ -1674,7 +1677,7 @@ prepare_ports() {
 	POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/unbalanced"
 	mkdir -p ${POOL_BUCKET_DIRS}
 
-	mkdir -p ${log}
+	mkdir -p ${log}/logs ${log}/logs/errors
 	ln -sfh ${STARTTIME} ${log%/*}/latest
 	bset stats_queued 0
 	bset stats_built 0
