@@ -49,28 +49,28 @@ shift
 
 case ${CMD} in
 	jail|jails)
-		exec env -i PATH=${PATH} /bin/sh ${SETX} ${POUDRIEREPREFIX}/jail.sh $@
+		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/jail.sh $@
 		;;
 	testport)
-		exec env -i PATH=${PATH} SAVED_TERM=${SAVED_TERM} /bin/sh ${SETX} ${POUDRIEREPREFIX}/testport.sh $@
+		exec env -i PATH=${PATH} VERSION="${VERSION}" SAVED_TERM=${SAVED_TERM} /bin/sh ${SETX} ${POUDRIEREPREFIX}/testport.sh $@
 		;;
 	bulk)
-		exec env -i PATH=${PATH} /bin/sh ${SETX} ${POUDRIEREPREFIX}/bulk.sh $@
+		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/bulk.sh $@
 		;;
 	distclean)
-		exec env -i PATH=${PATH} /bin/sh ${SETX} ${POUDRIEREPREFIX}/distclean.sh $@
+		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/distclean.sh $@
 		;;
 	ports)
-		exec env -i PATH=${PATH} /bin/sh ${SETX} ${POUDRIEREPREFIX}/ports.sh $@
+		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/ports.sh $@
 		;;
 	queue)
-		exec env -i PATH=${PATH} /bin/sh ${SETX} ${POUDRIEREPREFIX}/queue.sh $@
+		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/queue.sh $@
 		;;
 	cron)
-		exec env -i PATH=${PATH} /bin/sh ${SETX} ${POUDRIEREPREFIX}/cron.sh
+		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/cron.sh
 		;;
 	options)
-		exec env -i TERM=${SAVED_TERM} PATH=${PATH} /bin/sh ${SETX} ${POUDRIEREPREFIX}/options.sh $@
+		exec env -i TERM=${SAVED_TERM} PATH=${PATH} VERSION="${VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/options.sh $@
 		;;
 	help)
 		usage
@@ -79,7 +79,7 @@ case ${CMD} in
 		echo "${VERSION}"
 		;;
 	daemon)
-		exec env -i PATH=${PATH} /bin/sh ${SETX} ${POUDRIEREPREFIX}/daemon.sh $@
+		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/daemon.sh $@
 		;;
 	*)
 		echo "Unknown command ${CMD}"
