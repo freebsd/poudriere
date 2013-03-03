@@ -1759,27 +1759,26 @@ balance_pool() {
 	# Don't bother if disabled
 	[ ${POOL_BUCKETS} -gt 0 ] || return 0
 
-	local mnt=$(my_path)
 	local pkgname pkg_dir dep_count rdep lock
 
-	[ -z "$(dir_empty ${mnt}/poudriere/pool/unbalanced)" ] || return 0
+	[ -z "$(dir_empty ${MASTERMNT}/poudriere/pool/unbalanced)" ] || return 0
 	# Avoid running this in parallel, no need
-	lock=${mnt}/poudriere/.lock-balance_pool
+	lock=${MASTERMNT}/poudriere/.lock-balance_pool
 	mkdir ${lock} 2>/dev/null || return 0
 
 	bset status "balancing_pool:"
 	# For everything ready-to-build...
-	for pkg_dir in ${mnt}/poudriere/pool/unbalanced/*; do
+	for pkg_dir in ${MASTERMNT}/poudriere/pool/unbalanced/*; do
 		pkgname=${pkg_dir##*/}
 		dep_count=0
 		# Determine its priority, based on how much depends on it
-		for rdep in ${mnt}/poudriere/rdeps/${pkgname}/*; do
+		for rdep in ${MASTERMNT}/poudriere/rdeps/${pkgname}/*; do
 			# Empty
-			[ ${rdep} = "${mnt}/poudriere/rdeps/${pkgname}/*" ] && break
+			[ ${rdep} = "${MASTERMNT}/poudriere/rdeps/${pkgname}/*" ] && break
 			dep_count=$(($dep_count + 1))
 			[ $dep_count -eq $((${POOL_BUCKETS} - 1)) ] && break
 		done
-		mv ${pkg_dir} ${mnt}/poudriere/pool/${dep_count##* }/ 2>/dev/null || :
+		mv ${pkg_dir} ${MASTERMNT}/poudriere/pool/${dep_count##* }/ 2>/dev/null || :
 	done
 
 	rmdir ${lock}
