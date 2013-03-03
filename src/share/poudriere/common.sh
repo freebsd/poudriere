@@ -208,7 +208,7 @@ exit_handler() {
 		kill ${pid} 2>/dev/null || :
 	done
 
-	[ ${STATUS} -eq 1 ] && cleanup
+	[ ${CLEANUP_ON_EXIT} -eq 1 ] && cleanup
 
 	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
 }
@@ -666,7 +666,6 @@ jail_start() {
 
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${tomnt}/etc/"
 	msg "Starting jail ${MASTERNAME}"
-	# Only set STATUS=1 if not turned off
 	# jail -s should not do this or jail will stop on EXIT
 	WITH_PKGNG=$(jail -c path=${MASTERMNT} command=make -f /usr/ports/Mk/bsd.port.mk -V WITH_PKGNG)
 	if [ -n "${WITH_PKGNG}" ]; then
@@ -680,15 +679,13 @@ jail_start() {
 		export PKG_DELETE=pkg_delete
 		export PKG_EXT="tbz"
 	fi
-
-	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
 }
 
 jail_stop() {
 	[ $# -ne 0 ] && eargs
 	jail_runs ${MASTERNAME} || err 1 "No such jail running: ${MASTERNAME}"
 	local fs=$(zfs_getfs ${MASTERMNT})
-	bset status "stop:"
+	bset status "stop:" 2>/dev/null || :
 
 	jail -qr ${MASTERNAME} 2>/dev/null || :
 	# Shutdown all builders
@@ -702,7 +699,7 @@ jail_stop() {
 	msg "Umounting file systems"
 	destroyfs ${MASTERMNT} jail
 	rm -rf ${MASTERMNT}/../
-	export STATUS=0
+	CLEANUP_ON_EXIT=0
 }
 
 cleanup() {
@@ -1802,7 +1799,7 @@ append_make() {
 }
 
 RESOLV_CONF=""
-STATUS=0 # out of jail #
+CLEANUP_ON_EXIT=1
 
 test -f ${SCRIPTPREFIX}/../../etc/poudriere.conf || err 1 "Unable to find ${SCRIPTPREFIX}/../../etc/poudriere.conf"
 . ${SCRIPTPREFIX}/../../etc/poudriere.conf
