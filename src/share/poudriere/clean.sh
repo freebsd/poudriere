@@ -33,8 +33,8 @@ clean_pool() {
 			# This follows the symlink in rdeps which references
 			# deps/<pkgname>/<this pkg>
 			find ${JAILMNT}/poudriere/rdeps/${pkgname} -type l | \
-				xargs realpath | \
-				xargs rm
+				xargs realpath -q | \
+				xargs rm -f || :
 
 			for dep_dir in ${JAILMNT}/poudriere/rdeps/${pkgname}/*; do
 				dep_pkgname=${dep_dir##*/}
