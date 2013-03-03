@@ -24,6 +24,20 @@ Commands:
 	exit 1
 }
 
+SETX=""
+while getopts "x" FLAG; do
+        case "${FLAG}" in
+                x)
+                        SETX="-x"
+                        ;;
+                *)
+                        usage
+                        ;;
+        esac
+done
+
+shift $((OPTIND-1))
+
 [ $# -lt 1 ] && usage
 
 POUDRIEREPATH=`realpath $0`
@@ -35,28 +49,28 @@ shift
 
 case ${CMD} in
 	jail|jails)
-		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/jail.sh $@
+		exec env -i PATH=${PATH} /bin/sh ${SETX} ${POUDRIEREPREFIX}/jail.sh $@
 		;;
 	testport)
-		exec env -i PATH=${PATH} SAVED_TERM=${SAVED_TERM} /bin/sh ${POUDRIEREPREFIX}/testport.sh $@
+		exec env -i PATH=${PATH} SAVED_TERM=${SAVED_TERM} /bin/sh ${SETX} ${POUDRIEREPREFIX}/testport.sh $@
 		;;
 	bulk)
-		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/bulk.sh $@
+		exec env -i PATH=${PATH} /bin/sh ${SETX} ${POUDRIEREPREFIX}/bulk.sh $@
 		;;
 	distclean)
-		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/distclean.sh $@
+		exec env -i PATH=${PATH} /bin/sh ${SETX} ${POUDRIEREPREFIX}/distclean.sh $@
 		;;
 	ports)
-		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/ports.sh $@
+		exec env -i PATH=${PATH} /bin/sh ${SETX} ${POUDRIEREPREFIX}/ports.sh $@
 		;;
 	queue)
-		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/queue.sh $@
+		exec env -i PATH=${PATH} /bin/sh ${SETX} ${POUDRIEREPREFIX}/queue.sh $@
 		;;
 	cron)
-		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/cron.sh
+		exec env -i PATH=${PATH} /bin/sh ${SETX} ${POUDRIEREPREFIX}/cron.sh
 		;;
 	options)
-		exec env -i TERM=${SAVED_TERM} PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/options.sh $@
+		exec env -i TERM=${SAVED_TERM} PATH=${PATH} /bin/sh ${SETX} ${POUDRIEREPREFIX}/options.sh $@
 		;;
 	help)
 		usage
@@ -65,7 +79,7 @@ case ${CMD} in
 		echo "${VERSION}"
 		;;
 	daemon)
-		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/daemon.sh $@
+		exec env -i PATH=${PATH} /bin/sh ${SETX} ${POUDRIEREPREFIX}/daemon.sh $@
 		;;
 	*)
 		echo "Unknown command ${CMD}"
