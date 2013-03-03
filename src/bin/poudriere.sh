@@ -34,28 +34,28 @@ shift
 
 case ${CMD} in
 	jail|jails)
-		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/jail.sh $@
+		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${POUDRIEREPREFIX}/jail.sh $@
 		;;
 	testport)
-		exec env -i PATH=${PATH} SAVED_TERM=${SAVED_TERM} /bin/sh ${POUDRIEREPREFIX}/testport.sh $@
+		exec env -i PATH=${PATH} VERSION="${VERSION}" SAVED_TERM=${SAVED_TERM} /bin/sh ${POUDRIEREPREFIX}/testport.sh $@
 		;;
 	bulk)
-		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/bulk.sh $@
+		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${POUDRIEREPREFIX}/bulk.sh $@
 		;;
 	distclean)
-		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/distclean.sh $@
+		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${POUDRIEREPREFIX}/distclean.sh $@
 		;;
 	ports)
-		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/ports.sh $@
+		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${POUDRIEREPREFIX}/ports.sh $@
 		;;
 	queue)
-		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/queue.sh $@
+		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${POUDRIEREPREFIX}/queue.sh $@
 		;;
 	cron)
-		exec env -i PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/cron.sh
+		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${POUDRIEREPREFIX}/cron.sh
 		;;
 	options)
-		exec env -i TERM=${SAVED_TERM} PATH=${PATH} /bin/sh ${POUDRIEREPREFIX}/options.sh $@
+		exec env -i TERM=${SAVED_TERM} PATH=${PATH} VERSION="${VERSION}" /bin/sh ${POUDRIEREPREFIX}/options.sh $@
 		;;
 	help)
 		usage
