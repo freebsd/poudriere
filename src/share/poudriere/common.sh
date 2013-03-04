@@ -687,7 +687,7 @@ jail_stop() {
 	[ $# -ne 0 ] && eargs
 	jail_runs ${MASTERNAME} || err 1 "No such jail running: ${MASTERNAME}"
 	local fs=$(zfs_getfs ${MASTERMNT})
-	bset status "stop:"
+	bset status "stop:" 2>/dev/null || :
 
 	jail -qr ${MASTERNAME} 2>/dev/null || :
 	# Shutdown all builders
