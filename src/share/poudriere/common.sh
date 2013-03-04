@@ -499,7 +499,7 @@ destroyfs() {
 	if [ ${TMPFS_ALL} -eq 1 ]; then
 		umount -f ${mnt} 2>/dev/null || :
 	elif [ -n "${fs}" -a "${fs}" != "none" ]; then
-		zfs destroy -r ${fs}
+		zfs destroy -rf ${fs}
 		rmdir ${mnt}
 	else
 		chflags -R noschg ${mnt}
