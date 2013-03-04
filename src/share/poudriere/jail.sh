@@ -494,7 +494,7 @@ case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}" in
 		jail -qr ${JAILNAME}
 		;;
 	000100)
-		CLEANUP_ON_EXIT=0
+		export SET_STATUS_ON_START=0
 		test -z ${JAILNAME} && usage
 		jail -c persist path=${JAILMNT} name=${JAILNAME} $ipargs
 		;;
