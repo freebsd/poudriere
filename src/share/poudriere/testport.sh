@@ -96,7 +96,7 @@ markfs prepkg ${MASTERMNT}
 log=$(log_path)
 
 if ! POUDRIERE_BUILD_TYPE=bulk parallel_build ${JAILNAME} ${PTNAME} ${SETNAME} ; then
-	failed=$(bget ports.failed | awk '{print $1 ":" $2 }' | xargs echo)
+	failed=$(bget ports.failed | awk '{print $1 ":" $3 }' | xargs echo)
 	skipped=$(bget ports.skipped | awk '{print $1}' | sort -u | xargs echo)
 	nbignored=$(bget stats_failed)
 	nbskipped=$(bget stats_skipped)
