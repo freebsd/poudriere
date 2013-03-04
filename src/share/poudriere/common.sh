@@ -639,6 +639,7 @@ jail_start() {
 		export PACKAGE_BUILDING=yes
 	fi
 
+	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
 	msg_n "Creating the reference jail..."
 	clonefs ${mnt} ${tomnt} clean
 	echo " done"
@@ -680,8 +681,6 @@ jail_start() {
 		export PKG_DELETE=pkg_delete
 		export PKG_EXT="tbz"
 	fi
-
-	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
 }
 
 jail_stop() {
