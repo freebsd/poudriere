@@ -89,15 +89,6 @@ done
 
 shift $((OPTIND-1))
 
-if [ $# -eq 0 ]; then
-	[ -n "${LISTPKGS}" -o ${ALL} -eq 1 ] || err 1 "No packages specified"
-	[ ${ALL} -eq 1 -o -f "${LISTPKGS}" ] || err 1 "No such list of packages: ${LISTPKGS}"
-else
-	[ ${ALL} -eq 0 ] || err 1 "command line arguments and -a cannot be used at the same time"
-	[ -z "${LISTPKGS}" ] || err 1 "command line arguments and list of ports cannot be used at the same time"
-	LISTPORTS="$@"
-fi
-
 export SKIPSANITY
 
 STATUS=0 # out of jail #
@@ -114,6 +105,15 @@ if [ ${CLEAN} -eq 1 ]; then
 	rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/*
 	rm -rf ${POUDRIERE_DATA}/cache/${JAILNAME}
 	echo " done"
+fi
+
+if [ $# -eq 0 ]; then
+	[ -n "${LISTPKGS}" -o ${ALL} -eq 1 ] || err 1 "No packages specified"
+	[ ${ALL} -eq 1 -o -f "${LISTPKGS}" ] || err 1 "No such list of packages: ${LISTPKGS}"
+else
+	[ ${ALL} -eq 0 ] || err 1 "command line arguments and -a cannot be used at the same time"
+	[ -z "${LISTPKGS}" ] || err 1 "command line arguments and list of ports cannot be used at the same time"
+	LISTPORTS="$@"
 fi
 
 export POUDRIERE_BUILD_TYPE=bulk
