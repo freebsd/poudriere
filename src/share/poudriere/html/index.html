@@ -1,243 +1,197 @@
+<!-- vim: set sts=4 sw=4 ts=4 noet: -->
 <html>
 	<head>
 		<title>Poudriere bulk results</title>
-		<script src="jquery-1.9.1.min.js"></script>
-		<script type="text/javascript">
-		var built=0;
-		var queued=0;
-		var failed=0;
-		var skipped=0;
-		var ignored=0;
-		var left=0;
-
-		var show_success = false;
-		var show_failed = false;
-		var show_skipped = false;
-		var show_ignored = false;
-		function fetch(url, cb) { $.ajax({url:url, cache:false, async:false}).done(cb); }
-
-		function minidraw(x, context, color, variable) {
-			var pct = variable * 100 / queued;
-			var newx = pct * 5;
-			context.fillStyle = color;
-			context.fillRect(x + 1, 1, newx, 20);
-
-			return (newx);
-		}
-
-		function update_fields() {
-			fetch(".poudriere.status", function (data) {
-				document.getElementById("status").innerHTML = data;
-				fetch(".poudriere.builders", function (data) {
-					var html = "";
-					var b = data.split(" ");
-					for (i = 0; i < b.length; i++) {
-						if (i == 0)
-							html = "<h2> Builders </h2><table><tr><th>id</th><th>Port</th><th>Phase</th></tr>";
-						html += "<tr><td>" + b[i] + "</td>";
-						fetch(".poudriere.status." + b[i], function (data) {
-							var a = data.split(":");
-							html += "<td>" + a[1] + "</td>";
-							html += "<td>" + a[0] + "</td></tr>";
-						});
-					}
-					if (i > 0)
-						html += "</table>";
-					document.getElementById("building").innerHTML=html;
-				});
-			});
-			fetch(".poudriere.stats_built", function (data) {
-				document.getElementById("stats_built").innerHTML=data;
-				built=data;
-			})
-			fetch(".poudriere.stats_queued", function (data) {
-				document.getElementById("stats_queued").innerHTML=data;
-				queued=data;
-			})
-			fetch(".poudriere.stats_failed", function (data) {
-				document.getElementById("stats_failed").innerHTML=data;
-				failed=data;
-			})
-			fetch(".poudriere.stats_skipped", function (data) {
-				document.getElementById("stats_skipped").innerHTML=data;
-				skipped=data;
-			})
-			fetch(".poudriere.stats_ignored", function (data) {
-				document.getElementById("stats_ignored").innerHTML=data;
-				ignored=data;
-			})
-			var left = queued - built - failed - skipped - ignored;
-			document.getElementById("left").innerHTML = left;
-
-			var canvas = document.getElementById('progressbar');
-			if (canvas.getContext !== undefined) {
-				var context = canvas.getContext('2d');
-
-				context.beginPath();
-				context.rect(0, 0, 502, 22);
-				context.fillStyle = '#E3E3E3';
-				context.fillRect(1, 1, 500, 20);
-				context.lineWidth = 1;
-				context.strokeStyle = 'black';
-				context.stroke();
-				var x = 0;
-				x += minidraw(x, context, "#00CC00", built);
-				x += minidraw(x, context, "#E00000", failed);
-				x += minidraw(x, context, "#CC6633", skipped);
-				minidraw(x, context, "#FF9900", ignored);
-			}
-
-			if (show_success) {
-				fetch(".poudriere.ports.built", function(data) {
-					var html= "<h2>Successfull ports</h2>";
-					if (data.length != 0) {
-						html += "<table><tr><th>Port</th><th>Origin</th><th>log</th></th>";
-						var lines = data.split("\n");
-						for (i = 0; i < lines.length; i++) {
-							if (lines[i].length == 0)
-								continue;
-							var p = lines[i].split(" ");
-							var s = p[0].split("/");
-							html += "<tr><td>" + p[1] + "</td>";
-							html += "<td><a href=\"http://portsmon.freebsd.org/portoverview.py?category=" + s[0] + "&amp;portname=" + s[1] + "\">"+ p[0] + "</a></td>";
-							html += "<td><a href=\"logs/"+ p[1] + ".log\">logfile</a></td></tr>";
-						}
-						html += "</table>";
-					}
-					document.getElementById('success').innerHTML = html;
-				});
-			} else
-				document.getElementById('success').innerHTML = "";
-			if (show_failed) {
-				fetch('.poudriere.ports.failed', function (data) {
-					var html= "<h2>Failed ports</h2>";
-					if (data.length != 0) {
-						html += "<table><tr><th>Port</th><th>Origin</th><th>Log</th><th>Phase</th></tr>";
-						var lines = data.split("\n");
-						for (i = 0; i < lines.length; i++) {
-							if (lines[i].length == 0)
-								continue;
-							var p = lines[i].split(" ");
-							var s = p[0].split("/");
-							html += "<tr><td>" + p[1] + "</td>";
-							html += "<td><a href=\"http://portsmon.freebsd.org/portoverview.py?category=" + s[0] + "&amp;portname=" + s[1] + "\">"+ p[0] + "</a></td>";
-							html += "<td>" + p[2] + "</td>";
-							html += "<td><a href=\"logs/errors/"+ p[1] + ".log\">logfile</a></td></tr>";
-						}
-						html += "</table>";
-					}
-					document.getElementById('failed').innerHTML = html;
-				});
-			} else
-				document.getElementById('failed').innerHTML = "";
-			if (show_skipped) {
-				fetch('.poudriere.ports.skipped', function (data) {
-					var html= "<h2>Skipped ports</h2>";
-					if (data.length != 0) {
-						html += "<table><tr><th>Port</th><th>Origin</th><th>Reason</th></tr>";
-						var lines = data.split("\n");
-						for (i = 0; i < lines.length; i++) {
-							if (lines[i].length == 0)
-								continue;
-							var p = lines[i].split(" ");
-							var s = p[0].split("/");
-							html += "<tr><td>" + p[1] + "</td>";
-							html += "<td><a href=\"http://portsmon.freebsd.org/portoverview.py?category=" + s[0] + "&amp;portname=" + s[1] + "\">"+ p[0] + "</a></td>";
-							html += "<td>Depends on: " + p[2] + "</td></tr>";
-						}
-						html += "</table>";
-					}
-					document.getElementById('skipped').innerHTML = html;
-				});
-			} else
-				document.getElementById('skipped').innerHTML = "";
-			if (show_ignored) {
-				fetch('.poudriere.ports.ignored', function (data) {
-					var html= "<h2>Ignored ports</h2>";
-					if (data.length != 0) {
-						html += "<table><tr><th>Port</th><th>Origin</th><th>Reason</th></tr>";
-						var lines = data.split("\n");
-						for (i = 0; i < lines.length; i++) {
-							if(lines[i].length == 0)
-								continue;
-							var p = lines[i].split(" ");
-							var s = p[0].split("/");
-							var r = lines[i].replace(p[0] + " " + p[1] + " ", "");
-							html += "<tr><td>" + p[1] + "</td>";
-							html += "<td><a href=\"http://portsmon.freebsd.org/portoverview.py?category=" + s[0] + "&amp;portname=" + s[1] + "\">"+ p[0] + "</a></td>";
-							html += "<td>"+ r + "</td></tr>";
-						}
-						html += "</table>";
-					}
-					document.getElementById('ignored').innerHTML = html;
-				});
-			} else
-				document.getElementById('ignored').innerHTML = "";
-
-		}
-		setInterval(update_fields, 5000);
-
-		</script>
-		<style type="text/css">
-			table {
-				border-collapse:collapse;
-				border: 2px solid
-				black;
-				margin-top:
-				5px;
-			}
-			th, td { border: 1px solid black; }
-			#stats_built { background-color: #00CC00; }
-			#stats_failed { background-color: #E00000; }
-			#stats_skipped { background-color: #CC6633; }
-			#stats_ignored { background-color: #FF9900; }
-			#left { background-color: #E3E3E3; }
-			:target { color: #FF0000; }
-		</style>
+		<script src="jquery-1.9.1.min.js" type="text/javascript"></script>
+		<script src="poudriere.js" type="text/javascript"></script>
+		<link href="poudriere.css" type="text/css" rel="stylesheet" />
 		<META http-equiv="Cache-Control" content="no-cache">
 		<META http-equiv="Pragma" content="no-cache">
 		<META http-equiv="Expires" content="0"> 
 	</head>
-	<body onload="update_fields();">
-		<h1> Poudriere </h1>
-		<h2 id="status"></h2>
-		<a href="..">../</a>
-		<a href="logs">logfiles/</a>
-		<table border=1>
-			<tr>
-				<th>Total</th>
-				<th>Built</th>
-				<th>Failed</th>
-				<th>Skipped</th>
-				<th>Ignored</th>
-				<th>To built</th>
-			</tr>
-			<tr>
-				<td id="stats_queued"></td>
-				<td id="stats_built"></td>
-				<td id="stats_failed"></td>
-				<td id="stats_skipped"></td>
-				<td id="stats_ignored"></td>
-				<td id="left"></td>
-			</tr>
-		</table>
-		<br />
-		<canvas id="progressbar" width=502 height=22></canvas>
-		<br />
-		<form>
-			<input type="checkbox" name="show" value="success"
-			onclick="show_success = !show_success; update_fields();" />Show success<br />
-			<input type="checkbox" name="show" value="failed"
-			onclick="show_failed = !show_failed; update_fields();"/>Show failed<br />
-			<input type="checkbox" name="show" value="skipped"
-			onclick="show_skipped = !show_skipped; update_fields();" />Show skipped<br />
-			<input type="checkbox" name="show" value="ignored"
-			onclick="show_ignored = !show_ignored; update_fields();" />Show ignored<br />
-		</form>
-		<div id="building"></div>
-		<div id="success"></div>
-		<div id="failed"></div>
-		<div id="skipped"></div>
-		<div id="ignored"></div>
+	<body>
+		<div id="loading_overlay" style="display: none;">
+			<div id="loading">
+				<p>Loading...</p>
+			</div>
+		</div>
+		<div id="top" class="anchor"></div>
+		<div id="header">
+			<div id="header_left">
+				<div id="logo">
+					<img src="logo.jpg" alt="logo" />
+					<h1>Poudriere</h1>
+				</div>
+			</div>
+			<div id="header_right">
+				<table class="layout">
+					<tr>
+						<td rowspan="2">
+							<div id="build_info">
+								<table border=0>
+									<tr>
+										<th>Jail:</th>
+										<td id="jail"></td>
+									</tr>
+									<tr>
+										<th>Set:</th>
+										<td id="setname"></td>
+									</tr>
+									<tr>
+										<th>Ptname:</th>
+										<td id="ptname"></td>
+									</tr>
+									<tr>
+										<th>Build:</th>
+										<td id="buildname"></td>
+									</tr>
+								</table>
+							</div>
+						</td>
+						<td>
+							<div id="stats">
+								<table border=1>
+									<thead>
+										<tr>
+											<th>Total</th>
+											<th>Built</th>
+											<th>Failed</th>
+											<th>Skipped</th>
+											<th>Ignored</th>
+											<th>To build</th>
+										</tr>
+									</thead>
+									<tr>
+										<td id="stats_queued" class="queued"></td>
+										<td id="stats_built" class="built"></td>
+										<td id="stats_failed" class="failed"></td>
+										<td id="stats_skipped" class="skipped"></td>
+										<td id="stats_ignored" class="ignored"></td>
+										<td id="stats_remaining" class="remaining"></td>
+									</tr>
+								</table>
+							</div>
+							<div id="toggles">
+								<form>
+									<table>
+										<th>Show</th>
+										<td>
+											<input type="checkbox" name="show_builders" value="builders" id="builders_check" checked=true
+											onclick=" toggle(this.value);" />
+											<label for="builders_check">Builders</label>
+										</td>
+										<td>
+											<input type="checkbox" name="show_check" value="built" id="built_check"
+											onclick="toggle(this.value);" />
+											<label for="built_check">Built</label>
+										</td>
+										<td>
+											<input type="checkbox" name="show_check" value="failed" id="failed_check"
+											onclick="toggle(this.value);"/>
+											<label for="failed_check">Failed</label>
+										</td>
+										<td>
+											<input type="checkbox" name="show_check" value="skipped" id="skipped_check"
+											onclick="toggle(this.value);" />
+											<label for="skipped_check">Skipped</label>
+										</td>
+										<td>
+											<input type="checkbox" name="show_check" value="ignored" id="ignored_check"
+											onclick="toggle(this.value);" />
+											<label for="ignored_check">Ignored</label>
+										</td>
+									</table>
+								</form>
+							</div><!-- #toggles -->
+						</td>
+					</tr>
+				</table>
+			</div><!-- #header_right -->
+		</div><!-- #header -->
+		<div id="main">
+			<div id="left">
+				<div id="builders">
+					<h2>Builders</h2>
+					<table>
+						<thead>
+							<tr>
+								<th>Id</th>
+								<th>Origin</th>
+								<th>Status</th>
+							</tr>
+						</thead>
+						<tbody id="builders_body"></tbody>
+					</table>
+				</div>
+				<br class="clear" />
+			</div>
+			<div id="right">
+				<div id="built" class="anchor" style="display: none;">
+					<h2>Built ports</h2>
+					<table class="built">
+						<thead>
+							<tr>
+								<th>Package</th>
+								<th>Origin</th>
+								<th>Log</th>
+							</tr>
+						</thead>
+						<tbody id="built_body"></tbody>
+					</table>
+				</div>
+				<div id="failed" class="anchor" style="display: none;">
+					<h2>Failed ports</h2>
+					<table class="failed">
+						<thead>
+							<tr>
+								<th>Package</th>
+								<th>Origin</th>
+								<th>Phase</th>
+								<th>Log</th>
+							</tr>
+						</thead>
+						<tbody id="failed_body"></tbody>
+					</table>
+				</div>
+				<div id="skipped" class="anchor" style="display: none;">
+					<h2>Skipped ports</h2>
+					<table class="skipped">
+						<thead>
+							<tr>
+								<th>Package</th>
+								<th>Origin</th>
+								<th>Reason</th>
+							</tr>
+						</thead>
+						<tbody id="skipped_body"></tbody>
+					</table>
+				</div>
+				<div id="ignored" class="anchor" style="display: none;">
+					<h2>Ignored ports</h2>
+					<table class="ignored">
+						<thead>
+							<tr>
+								<th>Package</th>
+								<th>Origin</th>
+								<th>Reason</th>
+							</tr>
+						</thead>
+						<tbody id="ignored_body"></tbody>
+					</table>
+				</div>
+				<br class="clear" />
+			</div><!-- #right -->
+		</div><!-- #main -->
+		<div id="footer">
+			<div id="nav">
+				<a href="#top" title="top">Top</a>
+				<a href="..">../</a>
+				<a href="logs">All Logs</a>
+				<a href="logs/errors">Error Logs</a>
+			</div>
+			<div id="progress">
+				<canvas id="progressbar" width=502 height=22></canvas>
+			</div>
+		</div>
 	</body>
 </html>

@@ -201,6 +201,7 @@ exit_handler() {
 	trap '' SIGINT
 
 	log_stop
+	stop_html_json
 
 	# Kill all children - this does NOT recurse, so orphans can still
 	# occur. This is just to avoid requiring pid files for parallel_run
@@ -1097,6 +1098,38 @@ build_queue() {
 	exec 6>&-
 }
 
+start_html_json() {
+	build_json &
+	JSON_PID=$!
+}
+
+build_json() {
+	local log=$(log_path)
+	while :; do
+		job_msg "UPDATING JSON"
+		awk -vbuildname="${STARTTIME}" \
+			-vjail="${MASTERNAME}" \
+			-vsetname="${SETNAME}" \
+			-vptname="${PTNAME}" \
+			-f json.awk ${log}/.poudriere.* | \
+			awk 'ORS=""; {print}' | \
+			sed  -e 's/,\([]}]\)/\1/g' \
+			> ${log}/.data.json.tmp
+		mv -f ${log}/.data.json.tmp ${log}/.data.json
+		sleep 2
+	done
+}
+
+stop_html_json() {
+	local log=$(log_path)
+	if [ -n "${JSON_PID}" ]; then
+		kill ${JSON_PID} 2>/dev/null || :
+		wait ${JSON_PID} 2>/dev/null || :
+		unset JSON_PID
+		rm -f ${log}/.data.json.tmp 2>/dev/null || :
+	fi
+}
+
 # Build ports in parallel
 # Returns when all are built.
 parallel_build() {
@@ -1117,6 +1150,8 @@ parallel_build() {
 	msg "Building ${nbq} packages using ${PARALLEL_JOBS} builders"
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
 
+	start_html_json
+
 	bset status "starting_jobs:"
 	start_builders
 
@@ -1134,6 +1169,8 @@ parallel_build() {
 
 	# Close the builder socket
 	exec 5>&-
+
+	stop_html_json
 
 	# Restore PARALLEL_JOBS
 	PARALLEL_JOBS=${real_parallel_jobs}

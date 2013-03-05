@@ -1,0 +1,146 @@
+/* vim: set sts=4 sw=4 ts=4 noet: */
+#loading_overlay {
+	background: #FFF;
+	width: 100%;
+	height: 100%;
+	z-index: 3;
+	top: 0;
+	left: 0;
+	position: fixed;
+}
+#loading {
+	z-index: 4;
+	top: 50%;
+	left: 50%;
+	position: absolute;
+}
+
+table {
+	border-collapse: collapse;
+	border: 2px solid black;
+	margin-top:	5px;
+}
+th, td { border: 1px solid black; }
+
+.layout,
+.layout th,
+.layout td {
+	border: 0;
+}
+.built { background-color: #00CC00; }
+.built .row1 { background-color: #00FF00; }
+.failed { background-color: #E00000; }
+.failed .row1 { background-color: #FF0000; }
+.skipped { background-color: #CC6633; }
+.skipped .row1 { background-color: #AA6734; }
+.ignored { background-color: #FF9900; }
+.ignored .row1 { background-color: #FF6F00; }
+.remaining { background-color: #E3E3E3; }
+.new { display: none; }
+#header {
+	top: 0;
+	height: 95px;
+	border-bottom: 1px solid black;
+}
+
+#header, #footer {
+	background-color: #EEEEEE;
+	z-index: 2;
+	left: 0;
+	width: 100%;
+	position: fixed;
+}
+
+#header table {
+	font-size: 9pt;
+	text-align: center;
+}
+
+#main {
+	margin-bottom: 22px; /* footer */
+	margin-top: 95px;
+	width: 100%;
+	height: 100%;
+}
+
+#footer {
+	bottom: 0;
+	height: 22px;
+	margin-top: 5px;
+	border-top: 1px solid black;
+}
+
+/* http://nicolasgallagher.com/jump-links-and-viewport-positioning/demo */
+.anchor {
+	border-top: 95px solid transparent;
+	margin-top: -95px;
+	-webkit-background-clip: padding-box;
+	-moz-background-clip: padding;
+	background-clip: padding-box;
+}
+
+#left {
+	width: 25%;
+	float: left;
+}
+#right {
+	float: left;
+	width: 75%;
+}
+#header_left { float: left; }
+#header_right {
+	margin-top: 5px;
+	margin-left: 5px;
+	float: left;
+	width: 80%;
+}
+#nav {
+	float: left;
+}
+#logo {
+	float: left;
+}
+#logo h1 {
+	display: none;
+	margin: 0;
+}
+#stats {
+	float: left;
+}
+#stats table {
+	width: 502px;/* canvas size */
+	border: 0;
+	margin-bottom: 1px;
+}
+#progress {
+	right: 0;
+	position: absolute;
+}
+#build_info {
+	float: left;
+	margin-right: 5px;
+}
+#build_info table {
+	border: 0;
+	float: left;
+	text-align: left;
+}
+
+h1 {
+	font-size: 16pt;
+	text-align: center;
+}
+br.clear {
+	clear: both;
+	height: 0;
+	overflow: hidden;
+}
+.ports {
+	float: left;
+}
+:target { color: #FF0000; }
+#toggles table,
+#toggles th,
+#toggles td {
+	border: none;
+}
