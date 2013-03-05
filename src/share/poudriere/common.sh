@@ -1801,7 +1801,11 @@ balance_pool() {
 	lock=${MASTERMNT}/poudriere/.lock-balance_pool
 	mkdir ${lock} 2>/dev/null || return 0
 
-	bset status "balancing_pool:"
+	if [ -n ${MY_JOBID}]; then
+		bset ${MY_JOBID} status "balancing_pool:"
+	else
+		bset status "balancing_pool:"
+	fi
 	# For everything ready-to-build...
 	for pkg_dir in ${MASTERMNT}/poudriere/pool/unbalanced/*; do
 		pkgname=${pkg_dir##*/}
