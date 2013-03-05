@@ -89,7 +89,7 @@ buildlog_start() {
 
 	echo "build started at $(date)"
 	echo "port directory: ${portdir}"
-	echo "building for: $(jail -c path=${mnt} command=uname -a)"
+	echo "building for: $(jail -U root -c path=${mnt} command=uname -a)"
 	echo "maintained by: $(jail -c path=${mnt} command=make -C ${portdir} maintainer)"
 	echo "Makefile ident: $(ident ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
 	echo "Poudriere version: ${VERSION}"
