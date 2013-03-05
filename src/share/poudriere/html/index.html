@@ -70,20 +70,22 @@
 			document.getElementById("left").innerHTML = left;
 
 			var canvas = document.getElementById('progressbar');
-			var context = canvas.getContext('2d');
+			if (canvas.getContext !== undefined) {
+				var context = canvas.getContext('2d');
 
-			context.beginPath();
-			context.rect(0, 0, 502, 22);
-			context.fillStyle = '#E3E3E3';
-			context.fillRect(1, 1, 500, 20);
-			context.lineWidth = 1;
-			context.strokeStyle = 'black';
-			context.stroke();
-			var x = 0;
-			x += minidraw(x, context, "#00CC00", built);
-			x += minidraw(x, context, "#E00000", failed);
-			x += minidraw(x, context, "#CC6633", skipped);
-			minidraw(x, context, "#FF9900", ignored);
+				context.beginPath();
+				context.rect(0, 0, 502, 22);
+				context.fillStyle = '#E3E3E3';
+				context.fillRect(1, 1, 500, 20);
+				context.lineWidth = 1;
+				context.strokeStyle = 'black';
+				context.stroke();
+				var x = 0;
+				x += minidraw(x, context, "#00CC00", built);
+				x += minidraw(x, context, "#E00000", failed);
+				x += minidraw(x, context, "#CC6633", skipped);
+				minidraw(x, context, "#FF9900", ignored);
+			}
 
 			if (show_success) {
 				fetch(".poudriere.ports.built", function(data) {
