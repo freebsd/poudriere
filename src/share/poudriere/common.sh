@@ -1099,24 +1099,28 @@ build_queue() {
 }
 
 start_html_json() {
-	build_json &
+	json_main &
 	JSON_PID=$!
+}
+
+json_main() {
+	while :; do
+		build_json
+		sleep 2
+	done
 }
 
 build_json() {
 	local log=$(log_path)
-	while :; do
-		awk -vbuildname="${STARTTIME}" \
-			-vjail="${MASTERNAME}" \
-			-vsetname="${SETNAME}" \
-			-vptname="${PTNAME}" \
-			-f json.awk ${log}/.poudriere.* | \
-			awk 'ORS=""; {print}' | \
-			sed  -e 's/,\([]}]\)/\1/g' \
-			> ${log}/.data.json.tmp
-		mv -f ${log}/.data.json.tmp ${log}/.data.json
-		sleep 2
-	done
+	awk -vbuildname="${STARTTIME}" \
+		-vjail="${MASTERNAME}" \
+		-vsetname="${SETNAME}" \
+		-vptname="${PTNAME}" \
+		-f json.awk ${log}/.poudriere.* | \
+		awk 'ORS=""; {print}' | \
+		sed  -e 's/,\([]}]\)/\1/g' \
+		> ${log}/.data.json.tmp
+	mv -f ${log}/.data.json.tmp ${log}/.data.json
 }
 
 stop_html_json() {
@@ -1170,6 +1174,7 @@ parallel_build() {
 	exec 5>&-
 
 	stop_html_json
+	build_json
 
 	# Restore PARALLEL_JOBS
 	PARALLEL_JOBS=${real_parallel_jobs}
