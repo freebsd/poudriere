@@ -1106,7 +1106,6 @@ start_html_json() {
 build_json() {
 	local log=$(log_path)
 	while :; do
-		job_msg "UPDATING JSON"
 		awk -vbuildname="${STARTTIME}" \
 			-vjail="${MASTERNAME}" \
 			-vsetname="${SETNAME}" \
