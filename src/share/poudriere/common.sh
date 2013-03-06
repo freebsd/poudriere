@@ -1132,7 +1132,7 @@ build_json() {
 		-vjail="${MASTERNAME}" \
 		-vsetname="${SETNAME}" \
 		-vptname="${PTNAME}" \
-		-f json.awk ${log}/.poudriere.* | \
+		-f ${SCRIPTPREFIX}/json.awk ${log}/.poudriere.* | \
 		awk 'ORS=""; {print}' | \
 		sed  -e 's/,\([]}]\)/\1/g' \
 		> ${log}/.data.json.tmp
