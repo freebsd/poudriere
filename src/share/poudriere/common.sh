@@ -11,9 +11,12 @@ dir_empty() {
 }
 
 err() {
+	export CRASHED=1
 	if [ $# -ne 2 ]; then
 		err 1 "err expects 2 arguments: exit_number \"message\""
 	fi
+	# Try to set status so other processes know this crashed
+	bset status "crashed:" 2>/dev/null || :
 	local err_msg="Error: $2"
 	msg "${err_msg}" >&2
 	[ -n "${MY_JOBID}" ] && job_msg "${err_msg}"
@@ -689,7 +692,9 @@ jail_stop() {
 	[ $# -ne 0 ] && eargs
 	jail_runs ${MASTERNAME} || err 1 "No such jail running: ${MASTERNAME}"
 	local fs=$(zfs_getfs ${MASTERMNT})
-	bset status "stop:" 2>/dev/null || :
+
+	# err() will set status to 'crashed', don't override.
+	[ -n "${CRASHED}" ] || bset status "stop:" 2>/dev/null || :
 
 	jail -qr ${MASTERNAME} 2>/dev/null || :
 	# Shutdown all builders
