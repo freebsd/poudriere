@@ -454,6 +454,7 @@ EOF
 ./etc/passwd
 ./etc/master.passwd
 ./etc/shells
+./var/mail/*
 EOF
 	fi
 	mtree -X ${mnt}/poudriere/mtree.${name}exclude \
