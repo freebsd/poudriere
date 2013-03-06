@@ -1075,11 +1075,13 @@ queue_empty() {
 build_queue() {
 
 	local j cnt mnt fs name pkgname read_queue builders_active should_build_stats
+	local queue_empty
 
 	should_build_stats=1 # Always build stats on first pass
 	mkfifo ${MASTERMNT:-${JAILMNT}}/poudriere/builders.pipe
 	exec 6<> ${MASTERMNT:-${JAILMNT}}/poudriere/builders.pipe
 	rm -f ${MASTERMNT:-${JAILMNT}}/poudriere/builders.pipe
+	queue_empty=0
 	while :; do
 		builders_active=0
 		for j in ${JOBS}; do
@@ -1094,14 +1096,15 @@ build_queue() {
 				should_build_stats=1
 				rm -f "${JAILMNT}/poudriere/var/run/${j}.pid"
 				JAILFS="${fs}" zset status "idle:"
-
 			fi
+
+			[ ${queue_empty} -eq 0 ] || continue
 
 			pkgname=$(next_in_queue)
 			if [ -z "${pkgname}" ]; then
 				# Check if the ready-to-build pool and need-to-build pools
 				# are empty
-				queue_empty && return
+				queue_empty && queue_empty=1
 
 				# Pool is waiting on dep, wait until a build
 				# is done before checking the queue again
@@ -1116,6 +1119,17 @@ build_queue() {
 				builders_active=1
 			fi
 		done
+
+		if [ ${queue_empty} -eq 1 ]; then
+			if [ ${builders_active} -eq 1 ]; then
+				# The queue is empty, but builds are still going.
+				# Wait on them.
+				continue
+			else
+				# All work is done
+				break
+			fi
+		fi
 
 		[ ${builders_active} -eq 1 ] || deadlock_detected
 
