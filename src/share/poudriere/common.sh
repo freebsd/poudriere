@@ -1725,6 +1725,7 @@ prepare_ports() {
 	bset stats_failed 0
 	bset stats_ignored 0
 	bset stats_skipped 0
+	:> ${log}/.data.json
 	:> ${log}/.poudriere.ports.built
 	:> ${log}/.poudriere.ports.failed
 	:> ${log}/.poudriere.ports.ignored
