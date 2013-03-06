@@ -1145,8 +1145,9 @@ stop_html_json() {
 		kill ${JSON_PID} 2>/dev/null || :
 		wait ${JSON_PID} 2>/dev/null || :
 		unset JSON_PID
-		rm -f ${log}/.data.json.tmp 2>/dev/null || :
 	fi
+	build_json 2>/dev/null || :
+	rm -f ${log}/.data.json.tmp 2>/dev/null || :
 }
 
 # Build ports in parallel
@@ -1190,7 +1191,6 @@ parallel_build() {
 	exec 5>&-
 
 	stop_html_json
-	build_json
 
 	# Restore PARALLEL_JOBS
 	PARALLEL_JOBS=${real_parallel_jobs}
