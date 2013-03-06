@@ -199,3 +199,10 @@ $(document).ready(function() {
 	$('#loading_overlay').show();	
 	update_fields();
 });
+
+$(document).bind("keydown", function(e) {
+	/* Disable F5 refreshing since this is AJAX driven. */
+	if (e.which == 116) {
+		e.preventDefault();
+	}
+});
