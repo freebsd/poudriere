@@ -88,6 +88,10 @@ buildlog_start() {
 	injail env ${PKGENV} ${PORT_FLAGS}
 	echo "---End Environment---"
 	echo ""
+	echo "---Begin make.conf---"
+	cat ${JAILMNT}/etc/make.conf
+	echo "---End make.conf---"
+	echo ""
 	echo "---Begin OPTIONS List---"
 	injail make -C ${portdir} showconfig
 	echo "---End OPTIONS List---"
