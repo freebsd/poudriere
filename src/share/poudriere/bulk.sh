@@ -163,7 +163,7 @@ if [ $nbbuilt -eq 0 ]; then
 elif [ $PKGNG -eq 1 ]; then
 	if [ -n "${NO_RESTRICTED}" ]; then
 		msg "Cleaning restricted packages"
-		jail -c path=${MASTERMNT} command=make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
+		injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
 	fi
 	msg "Creating pkgng repository"
 	bset status "pkgrepo:"
@@ -178,11 +178,11 @@ elif [ $PKGNG -eq 1 ]; then
 else
 	if [ -n "${NO_RESTRICTED}" ]; then
 		msg "Cleaning restricted packages"
-		jail -c path=${MASTERMNT} command=make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
+		injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
 	fi
 	msg "Preparing INDEX"
 	bset status "index:"
-	OSMAJ=`jail -c path=${MASTERMNT} command=uname -r | awk -F. '{ print $1 }'`
+	OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
 	INDEXF=${POUDRIERE_DATA}/packages/${MASTERNAME}/INDEX-${OSMAJ}
 	rm -f ${INDEXF}.1 2>/dev/null || :
 	for pkg_file in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz; do
@@ -190,7 +190,7 @@ else
 		[ "${pkg}" = "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz" ] && break
 		msg_verbose "Extracting description for ${ORIGIN} ..."
 		ORIGIN=$(pkg_get_origin ${pkg_file})
-		[ -d ${MASTERMNT}/usr/ports/${ORIGIN} ] && jail -c path=${MASTERMNT} command=make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
+		[ -d ${MASTERMNT}/usr/ports/${ORIGIN} ] && injail make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
 	done
 
 	msg_n "Generating INDEX..."
