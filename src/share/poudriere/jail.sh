@@ -89,16 +89,17 @@ update_jail() {
 	msg "Upgrading using ${METHOD}"
 	case ${METHOD} in
 	ftp)
-		JAILMNT=$(jget ${JAILNAME} mnt)
+		MASTERMNT=$(jget ${JAILNAME} mnt)
+		MASTERNAME=${JAILNAME}
+		jstart 1
 		if [ -z "${TORELEASE}" ]; then
-			netargs=$localipargs
-			[ $network -eq 1 ] && netargs=$ipargs
-			jail -c path=${JAILMNT} $ipargs command=/usr/sbin/freebsd-update fetch install
+			injail /usr/sbin/freebsd-update fetch install
 		else
-			yes | jail -c path=${JAILMNT} command=env PAGER=/bin/cat /usr/sbin/freebsd-update -r ${TORELEASE} upgrade install || err 1 "Fail to upgrade system"
-			yes | jail -c path=${JAILMNT} command=env PAGER=/bin/cat /usr/sbin/freebsd-update install || err 1 "Fail to upgrade system"
+			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update -r ${TORELEASE} upgrade install || err 1 "Fail to upgrade system"
+			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update install || err 1 "Fail to upgrade system"
 			jset ${JAILNAME} version ${TORELEASE}
 		fi
+		jstop
 		markfs clean ${JAILMNT}
 		;;
 	csup)
@@ -491,12 +492,12 @@ case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}" in
 		;;
 	001000)
 		test -z ${JAILNAME} && usage
-		jail -qr ${JAILNAME}
+		MASTERNAME=${JAILNAME} jstop
 		;;
 	000100)
 		export SET_STATUS_ON_START=0
 		test -z ${JAILNAME} && usage
-		jail -c persist path=${JAILMNT} name=${JAILNAME} $ipargs
+		MASTERMNT=${JAILMNT} MASTERNMAE=${JAILNAME} jstart 1
 		;;
 	000010)
 		test -z ${JAILNAME} && usage
