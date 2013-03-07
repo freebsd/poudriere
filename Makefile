@@ -8,6 +8,7 @@ install:
 	install -m 755 -o root -g wheel src/bin/poudriere.sh ${PREFIX}/bin/poudriere
 	mkdir -p ${PREFIX}/share/poudriere
 	install -m 755 -o root -g wheel src/share/poudriere/*.sh ${PREFIX}/share/poudriere/
+	install -m 644 -o root -g wheel src/share/poudriere/*.awk ${PREFIX}/share/poudriere/
 	install -m 644 -o root -g wheel conf/poudriere.conf.sample ${PREFIX}/etc/
 	mkdir -p ${PREFIX}/share/poudriere/html
 	install -m 644 -o root -g wheel src/share/poudriere/html/* ${PREFIX}/share/poudriere/html/
