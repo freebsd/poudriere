@@ -812,8 +812,7 @@ build_port() {
 	local port=${portdir##/usr/ports/}
 	local targets="check-config fetch checksum extract patch configure build run-depends install-mtree install package ${PORTTESTING:+deinstall}"
 	local mnt=$(my_path)
-	local name=$(my_name)
-	local listfilecmd network netargs sub dists
+	local listfilecmd network sub dists
 
 	for phase in ${targets}; do
 		bset ${MY_JOBID} status "${phase}:${port}"
@@ -835,8 +834,6 @@ build_port() {
 		esac
 
 		print_phase_header ${phase}
-		netargs=$localipargs
-		[ $network -eq 1 ] && netargs=$ipargs
 		[ "${phase}" = "package" ] && echo "PACKAGES=/new_packages" >> ${mnt}/etc/make.conf
 		injail env ${PKGENV} ${PORT_FLAGS} make -C ${portdir} ${phase} || return 1
 		if [ "${phase}" = "checksum" ]; then
