@@ -497,7 +497,7 @@ case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}" in
 	000100)
 		export SET_STATUS_ON_START=0
 		test -z ${JAILNAME} && usage
-		MASTERMNT=${JAILMNT} MASTERNMAE=${JAILNAME} jstart 1
+		MASTERMNT=${JAILMNT} MASTERNAME=${JAILNAME} jstart 1
 		;;
 	000010)
 		test -z ${JAILNAME} && usage
