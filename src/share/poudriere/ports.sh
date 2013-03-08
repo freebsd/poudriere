@@ -28,6 +28,7 @@ Options:
 		     tree by default it is portsnap, possible usage are
 		     \"csup\", \"portsnap\", \"svn\", \"svn+http\", \"svn+https\",
 		     \"svn+file\", \"svn+ssh\", \"git\"
+    -B branch     -- Which branch to use for SVN method (default: head)
 "
 
 	exit 1
@@ -39,8 +40,12 @@ UPDATE=0
 DELETE=0
 LIST=0
 QUIET=0
-while getopts "cFudlp:qf:M:m:" FLAG; do
+BRANCH=head
+while getopts "B:cFudlp:qf:M:m:" FLAG; do
 	case "${FLAG}" in
+		B)
+			BRANCH="${OPTARG}"
+			;;
 		c)
 			CREATE=1
 			;;
@@ -147,7 +152,7 @@ ports-all" > ${PTMNT}/csup
 			esac
 
 			msg_n "Checking out the ports tree..."
-			svn -q co ${proto}://${SVN_HOST}/ports/head \
+			svn -q co ${proto}://${SVN_HOST}/ports/${BRANCH} \
 				${PTMNT} || {
 					destroyfs ports ${PTNAME}
 					err 1 " Fail"

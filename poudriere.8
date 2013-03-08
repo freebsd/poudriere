@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd February 3, 2013
+.Dd March 8, 2013
 .Dt POUDRIERE 8
 .Os FreeBSD
 .Sh NAME
@@ -287,6 +287,11 @@ Specifies which
 to use to create the ports tree.
 Could be portsnap, git, svn{,+http,+https,+file,+ssh} (Default:
 portsnap).
+.It Fl B Ar branch
+Specifies which
+.Ar branch
+to checkout when using the svn method.
+(Default: head)
 .El
 .Ss testport
 .Pp
