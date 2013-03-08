@@ -591,6 +591,12 @@ use_options() {
 	return 0
 }
 
+mount_packages() {
+	mount -t nullfs "$@" ${POUDRIERE_DATA}/packages/${MASTERNAME} \
+		${MASTERMNT}/packages || \
+		err 1 "Failed to mount the packages directory "
+}
+
 do_portbuild_mounts() {
 	[ $# -lt 3 ] && eargs mnt jname ptname setname
 	local mnt=$1
@@ -621,7 +627,7 @@ do_portbuild_mounts() {
 	fi
 
 	mount -t nullfs -o ro ${portsdir} ${mnt}/usr/ports || err 1 "Failed to mount the ports directory "
-	mount -t nullfs -o ro ${POUDRIERE_DATA}/packages/${MASTERNAME} ${mnt}/packages || err 1 "Failed to mount the packages directory "
+	mount_packages -o ro
 	mount -t nullfs ${DISTFILES_CACHE} ${mnt}/distfiles || err 1 "Failed to mount the distfiles cache directory"
 
 	for opt in ${optionsdir}; do
