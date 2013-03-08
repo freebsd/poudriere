@@ -25,6 +25,20 @@ Options:
 	exit 1
 }
 
+clean_restricted() {
+	if [ -n "${NO_RESTRICTED}" ]; then
+		msg "Cleaning restricted packages"
+		# Remount rw
+		# mount_nullfs does not support mount -u
+		umount ${JAILMNT}/usr/ports/packages
+		mount_packages
+		injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
+		# Remount ro
+		umount ${JAILMNT}/usr/ports/packages
+		mount_packages -o ro
+	fi
+}
+
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 PTNAME="default"
@@ -163,10 +177,7 @@ if [ $nbbuilt -eq 0 ]; then
 		msg "No package built, no need to update INDEX"
 	fi
 elif [ $PKGNG -eq 1 ]; then
-	if [ -n "${NO_RESTRICTED}" ]; then
-		msg "Cleaning restricted packages"
-		injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
-	fi
+	clean_restricted
 	msg "Creating pkgng repository"
 	zset status "pkgrepo:"
 	tar xf ${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}${SETNAME}/Latest/pkg.txz -C ${JAILMNT} \
@@ -178,10 +189,7 @@ elif [ $PKGNG -eq 1 ]; then
 		${JAILMNT}/poudriere/pkg-static repo ${POUDRIERE_DATA}/packages/${JAILNAME}-${PTNAME}${SETNAME}/
 	fi
 else
-	if [ -n "${NO_RESTRICTED}" ]; then
-		msg "Cleaning restricted packages"
-		injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
-	fi
+	clean_restricted
 	msg "Preparing INDEX"
 	zset status "index:"
 	OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`

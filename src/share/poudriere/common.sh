@@ -376,6 +376,11 @@ use_options() {
 	mount -t nullfs ${optionsdir} ${JAILMNT}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
 }
 
+mount_packages() {
+	mount -t nullfs "$@" ${PKGDIR} ${JAILMNT}/usr/ports/packages \
+		|| err 1 "Failed to mount the packages directory "
+}
+
 do_portbuild_mounts() {
 	[ $# -ne 1 ] && eargs should_mkdir
 	local should_mkdir=$1
@@ -399,7 +404,7 @@ do_portbuild_mounts() {
 	fi
 
 	mount -t nullfs -o ro ${PORTSDIR} ${JAILMNT}/usr/ports || err 1 "Failed to mount the ports directory "
-	mount -t nullfs -o ro ${PKGDIR} ${JAILMNT}/usr/ports/packages || err 1 "Failed to mount the packages directory "
+	mount_packages -o ro
 
 	if [ "$(realpath ${DISTFILES_CACHE:-/nonexistent})" != "$(realpath ${PORTSDIR}/distfiles)" ]; then
 		mount -t nullfs ${DISTFILES_CACHE} ${JAILMNT}/usr/ports/distfiles || err 1 "Failed to mount the distfile directory"
