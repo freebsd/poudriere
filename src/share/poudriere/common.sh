@@ -1194,6 +1194,7 @@ parallel_build() {
 		PARALLEL_JOBS=${nbq##* }
 	fi
 
+	msg "Hit ctrl+t at any time to see build progress and stats"
 	msg "Building ${nbq} packages using ${PARALLEL_JOBS} builders"
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
 
