@@ -778,7 +778,7 @@ sanity_check_pkgs() {
 			if [ ! -e "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${dep}.${PKG_EXT}" ]; then
 				ret=1
 				msg_debug "${pkg} needs missing ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${dep}.${PKG_EXT}"
-				msg "Deleting ${pkg}: missing dependencies"
+				msg "Deleting ${pkg##*/}: missing dependencies"
 				delete_pkg ${pkg}
 				break
 			fi
