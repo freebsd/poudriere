@@ -204,9 +204,11 @@ badd() {
 
 update_stats() {
 	local type
-	for type in built failed ignored skipped; do
+	for type in built failed ignored; do
 		bset stats_${type} $(bget ports.${type} | wc -l)
 	done
+	# Skipped may have duplicates in it
+	bset stats_skipped $(bget ports.skipped | sort -u | wc -l)
 }
 
 sig_handler() {
