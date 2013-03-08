@@ -6,6 +6,16 @@ function group_type(type) {
   return "object"
 }
 
+function escape(string) {
+  # Remove escaped newlines
+  gsub("\\n", "", string)
+  # Remove all bad escapes
+  gsub("\\\\", "", string)
+  # Escape any nested quotes
+  gsub(/"/, "\\\"", string)
+  return string
+}
+
 function end_type() {
   if (in_type) {
     # Close out ports
@@ -29,7 +39,7 @@ function end_type() {
 	      else
 		reason = reason " " build_reasons[n]
 	    }
-	    print "\"reason\":\"" reason "\","
+	    print "\"reason\":\"" escape(reason) "\","
 	  } else if (port_status_type == "skipped") {
 	    print "\"depends\":\"" build_reasons[3] "\","
 	  }
