@@ -592,8 +592,9 @@ use_options() {
 }
 
 mount_packages() {
+	local mnt=$(my_path)
 	mount -t nullfs "$@" ${POUDRIERE_DATA}/packages/${MASTERNAME} \
-		${MASTERMNT}/packages || \
+		${mnt}/packages || \
 		err 1 "Failed to mount the packages directory "
 }
 
