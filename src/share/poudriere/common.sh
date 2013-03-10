@@ -1835,6 +1835,7 @@ append_make() {
 	local makeconf="$(realpath "$1")"
 
 	msg "Appending to /etc/make.conf: ${makeconf}"
+	echo "#### ${makeconf} ####" >> ${JAILMNT}/etc/make.conf
 	cat "${makeconf}" >> ${JAILMNT}/etc/make.conf
 }
 
