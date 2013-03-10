@@ -1898,6 +1898,7 @@ append_make() {
 	[ -f "${makeconf}" ] || return 0
 	makeconf="$(realpath ${makeconf} 2>/dev/null)"
 	msg "Appending to /etc/make.conf: ${makeconf}"
+	echo "#### ${makeconf} ####" >> ${mnt}/etc/make.conf
 	cat "${makeconf}" >> ${mnt}/etc/make.conf
 }
 
