@@ -251,7 +251,9 @@ siginfo_handler() {
 	local nbq=$(bget stats_queued)
 	local ndone=$((nbb + nbf + nbi + nbs))
 	local queue_width=2
-	local j status
+	local j
+
+	[ "${status}" = "index:" ] && return 0
 
 	if [ ${nbq} -gt 9999 ]; then
 		queue_width=5
