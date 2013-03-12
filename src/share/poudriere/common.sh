@@ -588,8 +588,8 @@ mark_preinst() {
 ./wrkdirs/*
 ./new_packages/*
 ./tmp/*
-./${MYBASE:-/usr/local}/share/nls/POSIX
-./${MYBASE:-/usr/local}/share/nls/en_US.US-ASCII
+./${LOCALBASE:-/usr/local}/share/nls/POSIX
+./${LOCALBASE:-/usr/local}/share/nls/en_US.US-ASCII
 ./var/db/*
 ./var/log/*
 ./${HOME}/*
@@ -1247,8 +1247,8 @@ build_pkg() {
 	zfs rollback -r ${JAILFS}@prepkg || err 1 "Unable to rollback ${JAILFS}"
 
 	if [ -n "${TMPFS_LOCALBASE}" ]; then
-		umount -f ${JAILMNT}/${MYBASE:-/usr/local} 2>/dev/null || :
-		mount -t tmpfs tmpfs ${JAILMNT}/${MYBASE:-/usr/local}
+		umount -f ${JAILMNT}/${LOCALBASE:-/usr/local} 2>/dev/null || :
+		mount -t tmpfs tmpfs ${JAILMNT}/${LOCALBASE:-/usr/local}
 	fi
 	# If this port is IGNORED, skip it
 	# This is checked here instead of when building the queue
@@ -1771,7 +1771,7 @@ prepare_ports() {
 
 	zset status "cleaning:"
 	msg "Cleaning the build queue"
-	export LOCALBASE=${MYBASE:-/usr/local}
+	export LOCALBASE=${LOCALBASE:-/usr/local}
 	for pn in $(ls ${JAILMNT}/poudriere/deps/); do
 		if [ -f "${PKGDIR}/All/${pn}.${PKG_EXT}" ]; then
 			# Cleanup rdeps/*/${pn}
@@ -1870,13 +1870,13 @@ prepare_jail() {
 		echo "PACKAGE_BUILDING=yes" >> ${JAILMNT}/etc/make.conf
 	fi
 
-	mkdir -p ${JAILMNT}/${MYBASE:-/usr/local}
+	mkdir -p ${JAILMNT}/${LOCALBASE:-/usr/local}
 	WITH_PKGNG=$(injail make -f /usr/ports/Mk/bsd.port.mk -V WITH_PKGNG)
 	if [ -n "${WITH_PKGNG}" ]; then
 		export PKGNG=1
 		export PKG_EXT="txz"
-		export PKG_ADD="${MYBASE:-/usr/local}/sbin/pkg add"
-		export PKG_DELETE="${MYBASE:-/usr/local}/sbin/pkg delete -y -f"
+		export PKG_ADD="${LOCALBASE:-/usr/local}/sbin/pkg add"
+		export PKG_DELETE="${LOCALBASE:-/usr/local}/sbin/pkg delete -y -f"
 	else
 		export PKGNG=0
 		export PKG_ADD=pkg_add
