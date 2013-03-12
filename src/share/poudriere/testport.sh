@@ -138,10 +138,6 @@ if [ -d ${MASTERMNT}${PREFIX} ]; then
 	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${MASTERMNT}${PREFIX}
 fi
 
-msg "Populating PREFIX"
-mkdir -p ${MASTERMNT}${PREFIX}
-injail mtree -q -U -f /usr/ports/Templates/BSD.local.dist -d -e -p ${PREFIX} >/dev/null
-
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
 mkdir -p ${MASTERMNT}/tmp/pkgs
 PORTTESTING=yes
