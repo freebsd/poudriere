@@ -158,15 +158,31 @@ injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT}
 msg "Cleaning up"
 injail make -C /usr/ports/${ORIGIN} clean
 
-if [ $INTERACTIVE_MODE -eq 1 ]; then
-	msg "Entering interactive test mode. Type 'exit' when done."
-	injail env -i TERM=${SAVED_TERM} PACKAGESITE="file:///packages" /usr/bin/login -fp root
-elif [ $INTERACTIVE_MODE -eq 2 ]; then
-	msg "Leaving jail ${MASTERNAME} running, mounted at ${MASTERMNT} for interactive run testing"
-	msg "To enter jail: jexec ${MASTERNAME} /bin/sh"
-	msg "To stop jail: poudriere jail -k -j ${MASTERNAME}"
-	CLEANING_UP=1
-	exit 0
+# Interactive test mode
+if [ $INTERACTIVE_MODE -gt 0 ]; then
+	print_phase_header "Interactive"
+
+	msg "Installing run-depends"
+	# Install run-depends since this is an interactive test
+	echo "PACKAGES=/packages" >> ${MASTERMNT}/etc/make.conf
+	injail make -C /usr/ports/${ORIGIN} run-depends
+
+	# Enable networking
+	jstop
+	jstart 1
+
+	if [ $INTERACTIVE_MODE -eq 1 ]; then
+		msg "Entering interactive test mode. Type 'exit' when done."
+		injail env -i TERM=${SAVED_TERM} \
+			PACKAGESITE="file:///packages" /usr/bin/login -fp root
+	elif [ $INTERACTIVE_MODE -eq 2 ]; then
+		msg "Leaving jail ${MASTERNAME} running, mounted at ${MASTERMNT} for interactive run testing"
+		msg "To enter jail: jexec ${MASTERNAME} /bin/sh"
+		msg "To stop jail: poudriere jail -k -j ${MASTERNAME}"
+		CLEANING_UP=1
+		exit 0
+	fi
+	print_phase_footer
 fi
 
 msg "Deinstalling package"
