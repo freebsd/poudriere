@@ -116,6 +116,8 @@ buildlog_start() {
 	echo "Makefile ident: $(ident ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
 	echo "Poudriere version: ${VERSION}"
 
+	echo "PREFIX=$(injail env ${PORT_FLAGS} make -C ${portdir} -V PREFIX)"
+	echo "LOCALBASE=$(injail env ${PORT_FLAGS} make -C ${portdir} -V LOCALBASE)"
 	echo "---Begin Environment---"
 	injail env ${PKGENV} ${PORT_FLAGS}
 	echo "---End Environment---"
