@@ -621,7 +621,10 @@ check_leftovers() {
 				echo "+ ${JAILMNT}/${l% *}"
 			fi
 			;;
-		*missing) echo "- ${JAILMNT}/${l% *}" ;;
+		*missing)
+			l=${l#./}
+			echo "- ${JAILMNT}/${l% *}"
+			;;
 		*changed) echo "M ${JAILMNT}/${l% *}" ;;
 		esac
 	done
