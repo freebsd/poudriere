@@ -160,7 +160,7 @@ injail make -C /usr/ports/${ORIGIN} clean
 
 if [ $INTERACTIVE_MODE -eq 1 ]; then
 	msg "Entering interactive test mode. Type 'exit' when done."
-	injail env -i TERM=${SAVED_TERM} PACKAGESITE="file:///usr/ports/packages" /usr/bin/login -fp root
+	injail env -i TERM=${SAVED_TERM} PACKAGESITE="file:///packages" /usr/bin/login -fp root
 elif [ $INTERACTIVE_MODE -eq 2 ]; then
 	msg "Leaving jail ${MASTERNAME} running, mounted at ${MASTERMNT} for interactive run testing"
 	msg "To enter jail: jexec ${MASTERNAME} /bin/sh"
