@@ -115,9 +115,11 @@ buildlog_start() {
 	echo "maintained by: $(injail make -C ${portdir} maintainer)"
 	echo "Makefile ident: $(ident ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
 	echo "Poudriere version: ${VERSION}"
-
-	echo "PREFIX=$(injail env ${PORT_FLAGS} make -C ${portdir} -V PREFIX)"
-	echo "LOCALBASE=$(injail env ${PORT_FLAGS} make -C ${portdir} -V LOCALBASE)"
+	echo ""
+	echo "--SUB_LIST--"
+	echo "$(injail env ${PORT_FLAGS} make -C ${portdir} -V SUB_LIST | tr ' ' '\n' | grep -v '^$')"
+	echo "--End SUB_LIST--"
+	echo ""
 	echo "---Begin Environment---"
 	injail env ${PKGENV} ${PORT_FLAGS}
 	echo "---End Environment---"
