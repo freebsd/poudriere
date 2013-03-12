@@ -1390,8 +1390,6 @@ list_deps() {
 	local dir="/usr/ports/$1"
 	local makeargs="-VPKG_DEPENDS -VBUILD_DEPENDS -VEXTRACT_DEPENDS -VLIB_DEPENDS -VPATCH_DEPENDS -VFETCH_DEPENDS -VRUN_DEPENDS"
 
-	# Crazy redirection is to add the portname into stderr.
-	# Idea from http://superuser.com/a/453609/34747
 	mangle_stderr "WARNING" "($1)" injail make -C ${dir} $makeargs | \
 		tr '\n' ' ' | sed -e "s,[[:graph:]]*/usr/ports/,,g" \
 		-e "s,:[[:graph:]]*,,g" | \
