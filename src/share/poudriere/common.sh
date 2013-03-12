@@ -810,7 +810,10 @@ check_leftovers() {
 				echo "+ ${mnt}/${l% *}"
 			fi
 			;;
-		*missing) echo "- ${mnt}/${l% *}" ;;
+		*missing)
+			l=${l#./}
+			echo "- ${mnt}/${l% *}"
+			;;
 		*changed) echo "M ${mnt}/${l% *}" ;;
 		esac
 	done
