@@ -26,7 +26,7 @@ Options:
     -M mountpoint -- mountpoint
     -m method     -- when used with -c, specify the method used to update the
 		     tree by default it is portsnap, possible usage are
-		     \"csup\", \"portsnap\", \"svn\", \"svn+http\", \"svn+https\",
+		     \"portsnap\", \"svn\", \"svn+http\", \"svn+https\",
 		     \"svn+file\", \"svn+ssh\", \"git\"
 "
 
@@ -83,9 +83,6 @@ METHOD=${METHOD:-portsnap}
 PTNAME=${PTNAME:-default}
 
 case ${METHOD} in
-csup)
-	[ -z ${CSUP_HOST} ] && err 2 "CSUP_HOST has to be defined in the configuration to use csup"
-	;;
 portsnap);;
 svn+http);;
 svn+https);;
@@ -113,27 +110,6 @@ if [ ${CREATE} -eq 1 ]; then
 	porttree_create_fs ${PTNAME} ${PTMNT} ${PTFS}
 	if [ $FAKE -eq 0 ]; then
 		case ${METHOD} in
-		csup)
-			echo "/!\ WARNING /!\ csup is deprecated and will soon be dropped"
-			mkdir ${PTMNT}/db
-			echo "*default prefix=${PTMNT}
-*default base=${PTMNT}/db
-*default release=cvs tag=.
-*default delete use-rel-suffix
-ports-all" > ${PTMNT}/csup
-			csup -z -h ${CSUP_HOST} ${PTMNT}/csup || {
-				if [ ${PTFS} != "none" ]; then
-					zfs destroy ${PTFS}
-				else
-					rm -rf ${PTMNT}
-					if [ -e ${POUDRIERED}/portstrees ]; then
-						sed -i "" "s/${PTNAME}/d" \
-							${POUDRIERED}/portstrees
-					fi
-				fi
-				err 1 " Fail"
-			}
-			;;
 		portsnap)
 			mkdir ${PTMNT}/.snap
 			msg "Extracting portstree \"${PTNAME}\"..."
@@ -232,17 +208,6 @@ if [ ${UPDATE} -eq 1 ]; then
 		pzset method ${METHOD}
 	fi
 	case ${METHOD} in
-	csup)
-		echo "/!\ WARNING /!\ csup is deprecated and will soon be dropped"
-		[ -z ${CSUP_HOST} ] && err 2 "CSUP_HOST has to be defined in the configuration to use csup"
-		mkdir -p ${PTMNT}/db
-		echo "*default prefix=${PTMNT}
-*default base=${PTMNT}/db
-*default release=cvs tag=.
-*default delete use-rel-suffix
-ports-all" > ${PTMNT}/csup
-		csup -z -h ${CSUP_HOST} ${PTMNT}/csup
-		;;
 	portsnap|"")
 		PSCOMMAND=fetch
 		[ -t 0 ] || PSCOMMAND=cron
