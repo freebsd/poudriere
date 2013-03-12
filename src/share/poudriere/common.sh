@@ -469,6 +469,7 @@ EOF
 ./tmp/*
 ./${LOCALBASE:-/usr/local}/share/nls/POSIX
 ./${LOCALBASE:-/usr/local}/share/nls/en_US.US-ASCII
+./${LOCALBASE:-/usr/local}/info/dir
 ./var/db/*
 ./var/log/*
 ./${HOME}/*
