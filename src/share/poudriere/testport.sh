@@ -139,7 +139,7 @@ zset status "testing:"
 
 PKGNAME=`injail make -C ${PORTDIRECTORY} -VPKGNAME`
 LOCALBASE=`injail make -C ${PORTDIRECTORY} -VLOCALBASE`
-PREFIX=${LOCALBASE}
+: ${PREFIX:=$(injail make -C /usr/ports/${ORIGIN} -VPREFIX)}
 if [ "${USE_PORTLINT}" = "yes" ]; then
 	[ ! -x `which portlint` ] && err 2 "First install portlint if you want USE_PORTLINT to work as expected"
 	msg "Portlint check"
