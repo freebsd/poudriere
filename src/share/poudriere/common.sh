@@ -885,7 +885,7 @@ build_port() {
 			local mod1=$(mktemp ${mnt}/tmp/mod1.XXXXXX)
 			local die=0
 
-			sedargs=$(injail env ${PORT_FLAGS} make -C ${portdir} -V'PLIST_SUB:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/')
+			sedargs=$(injail env ${PORT_FLAGS} make -C ${portdir} -V'PLIST_SUB:C/"//g:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/')
 
 			check_leftovers ${mnt} | \
 				while read modtype path; do
