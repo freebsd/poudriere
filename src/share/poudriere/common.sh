@@ -1370,7 +1370,8 @@ list_deps() {
 	local makeargs="-VPKG_DEPENDS -VBUILD_DEPENDS -VEXTRACT_DEPENDS -VLIB_DEPENDS -VPATCH_DEPENDS -VFETCH_DEPENDS -VRUN_DEPENDS"
 
 	injail make -C ${dir} $makeargs | tr '\n' ' ' | \
-		sed -e "s,[[:graph:]]*/usr/ports/,,g" -e "s,:[[:graph:]]*,,g" | sort -u
+		sed -e "s,[[:graph:]]*/usr/ports/,,g" -e "s,:[[:graph:]]*,,g" | \
+		sort -u || err 1 "Makefile broken: $1"
 }
 
 deps_file() {
@@ -1602,7 +1603,8 @@ cache_get_pkgname() {
 	# Add to cache if not found.
 	if [ -z "${pkgname}" ]; then
 		[ -d "${MASTERMNT}/usr/ports/${origin}" ] || err 1 "Invalid port origin '${origin}' not found."
-		pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME)
+		pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME || \
+			err 1 "Error getting PKGNAME for ${origin}")
 		# Make sure this origin did not already exist
 		existing_origin=$(cache_get_origin "${pkgname}" 2>/dev/null || :)
 		# It may already exist due to race conditions, it is not harmful. Just ignore.
