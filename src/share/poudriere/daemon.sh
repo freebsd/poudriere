@@ -37,7 +37,6 @@ if [ -z "${DAEMON_ARGS_PARSED}" ]; then
 	fi
 
 	if [ ${NODAEMONIZE} -eq 0 ]; then
-		exit 1
 		daemon -f -p ${PIDFILE} env -i PATH=${PATH} DAEMON_ARGS_PARSED=1 $0 || exit 1
 		exit 0
 	else
