@@ -11,7 +11,7 @@ usage() {
 
 Commands:
     bulk        -- generate packages for given ports
-    cron        -- run poudriere from the crontab
+    cron        -- run poudriere from the crontab (DEPRECATED)
     distclean   -- clean old distfiles
     help        -- show usage
     jail        -- manage the jails used by poudriere
