@@ -11,14 +11,13 @@ usage() {
 
 Commands:
     bulk        -- generate packages for given ports
-    cron        -- run poudriere from the crontab
     distclean   -- clean old distfiles
     daemon      -- launch the poudriere daemon
     help        -- show usage
     jail        -- manage the jails used by poudriere
     ports       -- create, update or delete the portstrees used by poudriere
     options     -- Configure ports options
-    queue       -- queue a build request (through cron)
+    queue       -- queue a build request
     testport    -- launch a test on a given port
     version     -- show poudriere version"
 	exit 1
@@ -65,9 +64,6 @@ case ${CMD} in
 		;;
 	queue)
 		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/queue.sh $@
-		;;
-	cron)
-		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/cron.sh
 		;;
 	options)
 		exec env -i TERM=${SAVED_TERM} PATH=${PATH} VERSION="${VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/options.sh $@
