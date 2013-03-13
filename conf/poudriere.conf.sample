@@ -58,11 +58,6 @@ USE_TMPFS=yes
 # the distfiles between jails and ports tree
 DISTFILES_CACHE=/usr/ports/distfiles
 
-# Directory used to store "poudriere cron" files by default:
-# ${POUDRIERE_DATA}/cron
-#
-# CRONDIR=${POUDRIERE_DATA}/cron
-
 # if set the ports tree marked to use csup method will use the defined mirror
 #CSUP_HOST=cvsup._CHANGE_THIS_.freebsd.org
 
