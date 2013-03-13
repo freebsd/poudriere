@@ -910,7 +910,12 @@ build_port() {
 				-) echo "${ppath}" >> ${del};;
 				M)
 					[ -d "${path}" ] && continue
-					echo "${ppath}" >> ${mod}
+					case "${ppath}" in
+					# removal of info files leaves entry uneasy to cleanup in info/dir
+					# accept a modification of this file
+					info/dir) ;;
+					*) echo "${ppath}" >> ${mod} ;;
+					esac
 					;;
 				esac
 			done
