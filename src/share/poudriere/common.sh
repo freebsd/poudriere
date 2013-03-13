@@ -1352,6 +1352,8 @@ build_pkg() {
 			# Cache information for next run
 			pkg_cache_data "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
 		else
+			# Symlink the buildlog into errors/
+			ln -s ../${PKGNAME}.log $(log_path)/logs/errors/${PKGNAME}.log
 			badd ports.failed "${port} ${PKGNAME} ${failed_phase}"
 			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
 			clean_rdepends=1
@@ -1363,9 +1365,6 @@ build_pkg() {
 	bset ${MY_JOBID} status "done:${port}"
 	buildlog_stop ${portdir}
 	log_stop $(log_path)/logs/${PKGNAME}.log
-	# If the build failed, symlink it from errors/
-	[ ${build_failed} -eq 0 ] || ln -s ../${PKGNAME}.log \
-	    $(log_path)/logs/errors/${PKGNAME}.log
 	echo ${MY_JOBID} >&6
 }
 
