@@ -1057,7 +1057,7 @@ deadlock_detected() {
 		# Only cycle errors are wanted
 		tsort 2>&1 >/dev/null | \
 		sed -e 's/tsort: //' | \
-		awk -f ${AWKPREFIX}/dependency_loop.awk  \
+		awk -f ${AWKPREFIX}/dependency_loop.awk \
 	)
 
 	if [ -n "${dependency_cycles}" ]; then
