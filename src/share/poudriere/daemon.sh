@@ -26,9 +26,15 @@ if [ -z "${DAEMON_ARGS_PARSED}" ]; then
 
 	while getopts "np:d:" FLAG; do
 		case "${FLAG}" in
-		n) NODAEMONIZE=1 ;;
-		p) PIDFILE=${OPTARG} ;;
-		k) KILL=1 ;;
+		n)
+			NODAEMONIZE=1
+			;;
+		p)
+			PIDFILE=${OPTARG}
+			;;
+		k)
+			KILL=1
+			;;
 		esac
 	done
 	if [ ${KILL} -eq 1 ]; then
