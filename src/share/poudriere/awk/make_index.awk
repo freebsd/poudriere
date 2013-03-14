@@ -59,7 +59,7 @@ BEGIN {
 	sub(/^ /, "", pdep);
 	sub(/^ /, "", bdep);
 	sub(/^ /, "", rdep);
-	print $1"|"$2"|"$3"|"$4"|"$5"|"$6"|"$7"|"bdep"|"rdep"|"$13"|"edep"|"pdep"|"fdep
+	print $1,$2,$3,$4,$5,$6,$7,bdep,rdep,$13,edep,pdep,fdep
 }
 
 function array_s(array, str, i) {
