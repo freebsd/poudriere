@@ -68,7 +68,7 @@ jstart() {
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}} \
 		${network} \
-		allow.socket_af allow.raw_sockets allow.chflags
+		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
 }
 
 jstop() {
