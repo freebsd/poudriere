@@ -92,7 +92,7 @@ export PORTSDIR=`pget ${PTNAME} mnt`
 [ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 [ -z "${PORTSDIR}" ] && err 1 "No such ports tree: ${PTNAME}"
 
-if [ $# -eq 0 ]; then 
+if [ $# -eq 0 ]; then
 	[ -n "${BULK_LIST}" ] || err 1 "No packages specified"
 	test -f ${BULK_LIST} || err 1 "No such list of packages: ${BULK_LIST}"
 LISTPORTS=`grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${BULK_LIST}`
