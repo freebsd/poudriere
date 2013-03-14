@@ -118,3 +118,9 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # By default MAKE_JOBS is disabled to allow only one process per cpu
 # Use the following to allow it anyway
 # ALLOW_MAKE_JOBS=yes
+
+
+# Define as the URL that your POUDRIERE_DATA/logs is hosted at
+# This will be used for giving URL hints to the HTML output when
+# scheduling and starting builds
+#URL_BASE=http://yourdomain.com/poudriere/

@@ -102,7 +102,7 @@ log_start() {
 }
 
 log_path() {
-	echo "${POUDRIERE_DATA}/logs/bulk/${MASTERNAME}/${STARTTIME}"
+	echo "${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${STARTTIME}"
 }
 
 buildlog_start() {
@@ -652,6 +652,7 @@ jail_start() {
 	local arch=$(jget ${name} arch)
 	local mnt=$(jget ${name} mnt)
 	local needfs="nullfs procfs"
+	local log=$(log_path)
 	local makeconf
 
 	local tomnt=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
@@ -692,6 +693,9 @@ jail_start() {
 	[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
 	msg "Mounting ports/packages/distfiles"
 	do_portbuild_mounts ${tomnt} ${name} ${ptname} ${setname}
+
+	msg "Saving logs to ${log}"
+	[ -n "${URL_BASE}" ] && msg "Build www: ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${STARTTIME}"
 
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 		echo "WITH_CCACHE_BUILD=yes" >> ${tomnt}/etc/make.conf
