@@ -1057,24 +1057,7 @@ deadlock_detected() {
 		# Only cycle errors are wanted
 		tsort 2>&1 >/dev/null | \
 		sed -e 's/tsort: //' | \
-		awk '
-		BEGIN {
-			i = 0
-		}
-		{
-			if ($0 == "cycle in data") {
-				i = i + 1
-				next
-			}
-			if (a[i])
-				a[i] = a[i] " " $1
-			else
-				a[i] = $1
-		}
-		END {
-			for (n in a)
-				print "These packages depend on each other: " a[n]
-		}' \
+		awk -f ${AWKPREFIX}/dependency_loop.awk  \
 	)
 
 	if [ -n "${dependency_cycles}" ]; then
