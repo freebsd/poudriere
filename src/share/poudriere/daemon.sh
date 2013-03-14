@@ -11,7 +11,6 @@ Options:
     exit 1
 }
 
-
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 LIBEXECPREFIX=`realpath ${SCRIPTPREFIX}/../../libexec/poudriere`
