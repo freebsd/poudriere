@@ -1181,7 +1181,7 @@ build_json() {
 		-vjail="${MASTERNAME}" \
 		-vsetname="${SETNAME}" \
 		-vptname="${PTNAME}" \
-		-f ${SCRIPTPREFIX}/json.awk ${log}/.poudriere.* | \
+		-f ${AWKPREFIX}/json.awk ${log}/.poudriere.* | \
 		awk 'ORS=""; {print}' | \
 		sed  -e 's/,\([]}]\)/\1/g' \
 		> ${log}/.data.json.tmp
@@ -1821,7 +1821,7 @@ prepare_ports() {
 	:> ${log}/.poudriere.ports.failed
 	:> ${log}/.poudriere.ports.ignored
 	:> ${log}/.poudriere.ports.skipped
-	cp ${SCRIPTPREFIX}/html/* ${log}
+	cp ${HTMLPREFIX}/* ${log}
 
 	bset status "computingdeps:"
 	parallel_start
@@ -1945,6 +1945,8 @@ STATUS=0 # out of jail #
 test -f ${SCRIPTPREFIX}/../../etc/poudriere.conf || err 1 "Unable to find ${SCRIPTPREFIX}/../../etc/poudriere.conf"
 . ${SCRIPTPREFIX}/../../etc/poudriere.conf
 POUDRIERED=${SCRIPTPREFIX}/../../etc/poudriere.d
+AWKPREFIX=${SCRIPTPREFIX}/awk
+HTMLPREFIX=${SCRIPTPREFIX}/html
 
 # If the zfs module is not loaded it means we can't have zfs
 [ -z "${NO_ZFS}" ] && lsvfs zfs >/dev/null 2>&1 || NO_ZFS=yes
