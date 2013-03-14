@@ -23,7 +23,7 @@ KILL=0
 if [ -z "${DAEMON_ARGS_PARSED}" ]; then
 	[ $# -eq 0 ] && usage
 
-	while getopts "np:d:" FLAG; do
+	while getopts "knp:" FLAG; do
 		case "${FLAG}" in
 		n)
 			NODAEMONIZE=1
