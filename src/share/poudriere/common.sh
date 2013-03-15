@@ -658,6 +658,8 @@ jail_start() {
 	local log=$(log_path)
 	local makeconf
 
+	USES_JAILS=1
+
 	local tomnt=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 
 	if [ -z "${NOLINUX}" ]; then
@@ -758,31 +760,35 @@ jail_stop() {
 
 cleanup() {
 	[ -n "${CLEANED_UP}" ] && return 0
-	msg "Cleaning up"
-	# If this is a builder, don't cleanup, the master will handle that.
-	if [ -n "${MY_JOBID}" ]; then
-		[ -n "${PKGNAME}" ] && clean_pool ${PKGNAME} 1 || :
-		return 0
-
-	fi
 	# Prevent recursive cleanup on error
 	if [ -n "${CLEANING_UP}" ]; then
 		echo "Failure cleaning up. Giving up." >&2
 		return
 	fi
 	export CLEANING_UP=1
-	[ -z "${MASTERNAME}" ] && err 2 "Fail: Missing MASTERNAME"
+	msg "Cleaning up"
 
-	if [ -d ${MASTERMNT}/poudriere/var/run ]; then
-		for pid in ${MASTERMNT}/poudriere/var/run/*.pid; do
-			# Ensure there is a pidfile to read or break
-			[ "${pid}" = "${MASTERMNT}/poudriere/var/run/*.pid" ] && break
-			pkill -15 -F ${pid} >/dev/null 2>&1 || :
-		done
+	# If this is a builder, don't cleanup, the master will handle that.
+	if [ -n "${MY_JOBID}" ]; then
+		[ -n "${PKGNAME}" ] && clean_pool ${PKGNAME} 1 || :
+		return 0
 	fi
-	wait
 
-	jail_stop
+	# Only bother with this is jail_start was called
+	# as this may being ran from queue.sh or daemon.sh, etc.
+	if [ -n "${USES_JAILS}" ]; then
+		if [ -d ${MASTERMNT}/poudriere/var/run ]; then
+			for pid in ${MASTERMNT}/poudriere/var/run/*.pid; do
+				# Ensure there is a pidfile to read or break
+				[ "${pid}" = "${MASTERMNT}/poudriere/var/run/*.pid" ] && break
+				pkill -15 -F ${pid} >/dev/null 2>&1 || :
+			done
+		fi
+		wait
+
+		jail_stop
+	fi
+
 	export CLEANED_UP=1
 }
 
