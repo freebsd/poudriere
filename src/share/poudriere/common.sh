@@ -248,7 +248,7 @@ exit_handler() {
 show_log_info() {
 	local log=$(log_path)
 	msg "Logs: ${log}"
-	[ -n "${URL_BASE}" ] && \
+	[ -z "${URL_BASE}" ] || \
 		msg "WWW: ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${STARTTIME}"
 }
 
