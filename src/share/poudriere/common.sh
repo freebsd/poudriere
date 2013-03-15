@@ -699,8 +699,11 @@ jail_start() {
 	msg "Mounting ports/packages/distfiles"
 	do_portbuild_mounts ${tomnt} ${name} ${ptname} ${setname}
 
-	msg "Saving logs to ${log}"
-	[ -n "${URL_BASE}" ] && msg "Build www: ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${STARTTIME}"
+	if [ -n "${POUDRIERE_BUILD_TYPE}" ]; then
+		msg "Saving logs to ${log}"
+		[ -n "${URL_BASE}" ] && \
+			msg "Build www: ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${STARTTIME}"
+	fi
 
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 		echo "WITH_CCACHE_BUILD=yes" >> ${tomnt}/etc/make.conf

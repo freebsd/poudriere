@@ -30,7 +30,10 @@ Options:
 		     Other possible method are: \"allbsd\" retrieve a
 		     snapshot from allbsd.org's website or \"gjb\" for a
 		     snapshot from Glen Barber's website.
-    -t version    -- version to upgrade to"
+    -p tree       -- Specify which ports tree the jail to start/stop with
+    -t version    -- version to upgrade to
+    -z set        -- Specify which SET the jail to start/stop with
+"
 	exit 1
 }
 
@@ -412,12 +415,14 @@ CREATE=0
 QUIET=0
 INFO=0
 UPDATE=0
+PTNAME=default
+SETNAME=""
 
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "J:j:v:a:z:m:n:f:M:sdklqciut:" FLAG; do
+while getopts "J:j:v:a:z:m:n:f:M:sdklqcip:ut:z:" FLAG; do
 	case "${FLAG}" in
 		j)
 			JAILNAME=${OPTARG}
@@ -458,6 +463,9 @@ while getopts "J:j:v:a:z:m:n:f:M:sdklqciut:" FLAG; do
 		d)
 			DELETE=1
 			;;
+		p)
+			PTNAME=${OPTARG}
+			;;
 		q)
 			QUIET=1
 			;;
@@ -466,6 +474,10 @@ while getopts "J:j:v:a:z:m:n:f:M:sdklqciut:" FLAG; do
 			;;
 		t)
 			TORELEASE=${OPTARG}
+			;;
+		z)
+			[ -n "${OPTARG}" ] || err 1 "Empty set name"
+			SETNAME="${OPTARG}"
 			;;
 		*)
 			usage
@@ -492,12 +504,16 @@ case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}" in
 		;;
 	001000)
 		test -z ${JAILNAME} && usage
-		MASTERNAME=${JAILNAME} jstop
+		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
+		export MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
+		jail_stop
 		;;
 	000100)
 		export SET_STATUS_ON_START=0
 		test -z ${JAILNAME} && usage
-		MASTERMNT=${JAILMNT} MASTERNAME=${JAILNAME} jstart 1
+		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
+		export MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
+		jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 		;;
 	000010)
 		test -z ${JAILNAME} && usage

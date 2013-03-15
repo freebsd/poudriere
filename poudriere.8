@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 13, 2013
+.Dd March 14, 2013
 .Dt POUDRIERE 8
 .Os FreeBSD
 .Sh NAME
@@ -224,10 +224,14 @@ name (${ZPOOL}/jails/filesystem).
 Gives an alternative
 .Ar mountpoint
 when creating jail.
+.It Fl p Ar name
+This specifies which port tree to start/stop the jail with.
 .It Fl t Ar version
 instead of upgrading to the latest security fix of the jail version, you can
 jump to the new specified
 .Ar version .
+.It Fl z Ar set
+This specifies which SET to start/stop the jail with.
 .El
 .Ss ports
 .Pp
