@@ -17,8 +17,6 @@ Once the package building is done, the packages will be in a layout
 identical to the official mirrors. Therefore they will be useable by any
 package management tool (pkg_add, portmaster, and so on).
 
-[./TODO.wiki|TODO list for next versions]
-
 <h1>What does poudriere require?</h1>
 
   *  a recent FreeBSD (>= 8.3)
