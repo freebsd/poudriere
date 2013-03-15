@@ -928,6 +928,8 @@ build_port() {
 					# removal of info files leaves entry uneasy to cleanup in info/dir
 					# accept a modification of this file
 					info/dir) ;;
+					# The is pear database cache
+					%%PEARDIR%%/.depdb|%%PEARDIR%%/.filemap) ;;
 					*) echo "${ppath}" >> ${mod} ;;
 					esac
 					;;
