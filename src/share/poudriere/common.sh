@@ -245,6 +245,13 @@ exit_handler() {
 	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
 }
 
+show_log_info() {
+	local log=$(log_path)
+	msg "Logs: ${log}"
+	[ -n "${URL_BASE}" ] && \
+		msg "WWW: ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${STARTTIME}"
+}
+
 siginfo_handler() {
 	if [ "${POUDRIERE_BUILD_TYPE}" != "bulk" ]; then
 		return 0;
@@ -285,6 +292,8 @@ siginfo_handler() {
 			echo -e "\t[${j}]: ${status}"
 		done
 	fi
+
+	show_log_info
 }
 
 jail_exists() {
@@ -655,7 +664,6 @@ jail_start() {
 	local arch=$(jget ${name} arch)
 	local mnt=$(jget ${name} mnt)
 	local needfs="nullfs procfs"
-	local log=$(log_path)
 	local makeconf
 
 	local tomnt=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
@@ -698,9 +706,7 @@ jail_start() {
 	do_portbuild_mounts ${tomnt} ${name} ${ptname} ${setname}
 
 	if [ -n "${POUDRIERE_BUILD_TYPE}" ]; then
-		msg "Saving logs to ${log}"
-		[ -n "${URL_BASE}" ] && \
-			msg "Build www: ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${STARTTIME}"
+		show_log_info
 	fi
 
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
