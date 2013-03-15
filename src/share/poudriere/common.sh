@@ -921,7 +921,12 @@ build_port() {
 				fi
 				case $modtype in
 				+) echo "${ppath}" >> ${add};;
-				-) echo "${ppath}" >> ${del};;
+				-) 
+					case "${ppath}" in
+					%%KDE4_PREFIX%%) ;;
+					*) echo "${ppath}" >> ${del} ;;
+					esac
+					;;
 				M)
 					[ -d "${path}" ] && continue
 					case "${ppath}" in
