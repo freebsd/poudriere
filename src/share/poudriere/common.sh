@@ -658,8 +658,6 @@ jail_start() {
 	local log=$(log_path)
 	local makeconf
 
-	USES_JAILS=1
-
 	local tomnt=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 
 	if [ -z "${NOLINUX}" ]; then
@@ -777,9 +775,9 @@ cleanup() {
 		return 0
 	fi
 
-	# Only bother with this is jail_start was called
-	# as this may being ran from queue.sh or daemon.sh, etc.
-	if [ -n "${USES_JAILS}" ]; then
+	# Only bother with this if using jails as this may be being ran
+	# from queue.sh or daemon.sh, etc.
+	if [ -n "${MASTERMNT}" -a -n "${MASTERNAME}" ]; then
 		if [ -d ${MASTERMNT}/poudriere/var/run ]; then
 			for pid in ${MASTERMNT}/poudriere/var/run/*.pid; do
 				# Ensure there is a pidfile to read or break
