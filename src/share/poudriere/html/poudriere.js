@@ -92,18 +92,26 @@ function update_canvas(stats) {
 	$('#stats_remaining').html(remaining);
 }
 
+function format_log(pkgname, errors, text) {
+	var html;
+
+	html = '<a href="logs/' + (errors ? 'errors/' : '') +
+		pkgname + '.log">' + text + '</a>';
+	return html;
+}
+
 function format_status_row(status, row) {
 	var html = '';
 
 	if (status == "built") {
 		html += "<td>" + format_pkgname(row.pkgname) + "</td>";
 		html += "<td>" + format_origin(row.origin) + "</td>";
-		html += "<td><a href=\"logs/"+ row.pkgname + ".log\">logfile</a></td>";
+		html += "<td>" + format_log(row.pkgname, false, "logfile") + "</td>";
 	} else if (status == "failed") {
 		html += "<td>" + format_pkgname(row.pkgname) + "</td>";
 		html += "<td>" + format_origin(row.origin) + "</td>";
 		html += "<td>" + row.phase + "</td>";
-		html += "<td><a href=\"logs/errors/"+ row.pkgname + ".log\">logfile</a></td>";
+		html += "<td>" + format_log(row.pkgname, true, "logfile") + "</td>";
 	} else if (status == "skipped") {
 		html += "<td>" + format_pkgname(row.pkgname) + "</td>";
 		html += "<td>" + format_origin(row.origin) + "</td>";
