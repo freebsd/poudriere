@@ -228,8 +228,11 @@ exit_handler() {
 	# Ignore SIGINT while cleaning up
 	trap '' SIGINT
 
-	log_stop
-	stop_html_json
+	if [ "${POUDRIERE_BUILD_TYPE}" = "bulk" \
+		-o "${POUDRIERE_BUILD_TYPE}" = "testport" ]; then
+		log_stop
+		stop_html_json
+	fi
 
 	# Kill all children - this does NOT recurse, so orphans can still
 	# occur. This is just to avoid requiring pid files for parallel_run
