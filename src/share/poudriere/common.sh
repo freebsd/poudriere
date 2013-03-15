@@ -920,9 +920,17 @@ build_port() {
 					`
 				fi
 				case $modtype in
-				+) echo "${ppath}" >> ${add};;
+				+)
+					case "${ppath}" in
+					# This is a cache file for gio modules could be created for any gio modules
+					lib/gio/modules/giomodule.cache) ;;
+					*) echo "${ppath}" >> ${add} ;;
+					esac
+					;;
 				-) 
 					case "${ppath}" in
+					# This needs a better fix, but for now, install-mtree to create a prefix before 
+					# the preinst is created and the port removes it.
 					%%KDE4_PREFIX%%) ;;
 					*) echo "${ppath}" >> ${del} ;;
 					esac
@@ -930,6 +938,8 @@ build_port() {
 				M)
 					[ -d "${path}" ] && continue
 					case "${ppath}" in
+					# This is a cache file for gio modules could be modified for any gio modules
+					lib/gio/modules/giomodule.cache) ;;
 					# removal of info files leaves entry uneasy to cleanup in info/dir
 					# accept a modification of this file
 					info/dir) ;;
