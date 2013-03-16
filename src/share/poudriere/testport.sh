@@ -149,7 +149,8 @@ if ! build_port /usr/ports/${ORIGIN}; then
 	failed_phase=${failed_status%:*}
 
 	save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" "${failed_phase}" || :
-	exit 1
+
+	[ ${INTERACTIVE_MODE} -gt 0 ] || exit 1
 fi
 
 msg "Installing from package"
@@ -165,7 +166,8 @@ if [ $INTERACTIVE_MODE -gt 0 ]; then
 	msg "Installing run-depends"
 	# Install run-depends since this is an interactive test
 	echo "PACKAGES=/packages" >> ${MASTERMNT}/etc/make.conf
-	injail make -C /usr/ports/${ORIGIN} run-depends
+	injail make -C /usr/ports/${ORIGIN} run-depends || \
+		msg "Failed to install RUN_DEPENDS"
 
 	# Enable networking
 	jstop
@@ -175,6 +177,7 @@ if [ $INTERACTIVE_MODE -gt 0 ]; then
 		msg "Entering interactive test mode. Type 'exit' when done."
 		injail env -i TERM=${SAVED_TERM} \
 			PACKAGESITE="file:///packages" /usr/bin/login -fp root
+		[ -z "${failed_phase}" ] || err 1 "Build failed in phase: ${failed_phase}"
 	elif [ $INTERACTIVE_MODE -eq 2 ]; then
 		msg "Leaving jail ${MASTERNAME} running, mounted at ${MASTERMNT} for interactive run testing"
 		msg "To enter jail: jexec ${MASTERNAME} /bin/sh"
