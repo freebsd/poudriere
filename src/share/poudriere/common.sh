@@ -1015,7 +1015,7 @@ save_wrkdir() {
 	txz) COMPRESSKEY="J" ;;
 	esac
 	rm -f ${tarname}
-	tar -s ",${mnted_portdir},," -c${COMPRESSKEY}f ${tarname} ${mnted_portdir}/work > /dev/null 3>&1
+	tar -s ",${mnted_portdir},," -c${COMPRESSKEY}f ${tarname} ${mnted_portdir}/work > /dev/null 2>&1
 
 	job_msg "Saved ${port} wrkdir to: ${tarname}"
 }
