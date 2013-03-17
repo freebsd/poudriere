@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 14, 2013
+.Dd March 17, 2013
 .Dt POUDRIERE 8
 .Os FreeBSD
 .Sh NAME
@@ -571,6 +571,7 @@ They will all be used in the jail, in the order shown:
 .Dl /usr/local/etc/poudriere.d/<jailname>-make.conf
 .Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-make.conf
 .Dl /usr/local/etc/poudriere.d/<jailname>-<setname>-make.conf
+.Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-make.conf
 .Sh COMPATIBILITY
 The
 .Nm
