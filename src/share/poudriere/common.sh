@@ -212,7 +212,8 @@ update_stats() {
 		bset stats_${type} $(bget ports.${type} | wc -l)
 	done
 	# Skipped may have duplicates in it
-	bset stats_skipped $(bget ports.skipped | sort -u | wc -l)
+	bset stats_skipped $(bget ports.skipped | awk '{print $1}' | \
+		sort -u | wc -l)
 }
 
 sig_handler() {
