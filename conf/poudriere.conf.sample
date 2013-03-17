@@ -48,8 +48,12 @@ USE_PORTLINT=no
 USE_TMPFS=yes
 
 # Use TMPFS the build pool/cache operations
-# # default: no
+# default: no (any value is seen as enabled)
 #TMPFS_DATA=yes
+
+# Use TMPFS for LOCALBASE
+# default: no (any value is seen as enabled)
+#TMPFS_LOCALBASE=yes
 
 # If set the given directory will be used for the distfiles this allow the share
 # the distfiles between jails and ports tree
