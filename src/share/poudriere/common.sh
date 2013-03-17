@@ -716,7 +716,7 @@ jail_start() {
 	echo "PACKAGES=/packages" >> ${tomnt}/etc/make.conf
 	echo "DISTDIR=/distfiles" >> ${tomnt}/etc/make.conf
 
-	makeconf="- ${name} ${name}-${ptname}"
+	makeconf="- ${setname} ${ptname} ${name} ${name}-${ptname}"
 	[ -n "${setname}" ] && makeconf="${makeconf} ${name}-${setname}"
 	makeconf="${makeconf} ${MASTERNAME}"
 	for opt in ${makeconf}; do
