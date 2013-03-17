@@ -104,12 +104,12 @@ _poudriere () {
 	typeset -A val_args
 	cmds=(
 		'bulk:generate packages for given ports'
-		'cron:run poudriere from the crontab'
+		'daemon:process jobs in the queue'
 		'jail:manage the jails used by poudriere'
 		'distclean:clean old distfiles'
 		'options:allows to configure the options for a given port'
 		'ports:create, update or delete the portstrees used by poudriere'
-		'queue:queue a build request (through cron)'
+		'queue:queue a build request (through daemon)'
 		'testport:launch a test on a given port'
 		'version:show poudriere version'
 	)
