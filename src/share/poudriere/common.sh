@@ -929,8 +929,6 @@ build_port() {
 				case $modtype in
 				+)
 					case "${ppath}" in
-					# This is a cache file for gio modules could be created for any gio modules
-					lib/gio/modules/giomodule.cache) ;;
 					*) echo "${ppath}" >> ${add} ;;
 					esac
 					;;
