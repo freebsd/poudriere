@@ -741,6 +741,13 @@ jail_start() {
 		export PKG_DELETE=pkg_delete
 		export PKG_EXT="tbz"
 	fi
+
+	# 8.3 did not have distrib-dirs ran on it, so various
+	# /usr and /var dirs are missing. Namely /var/games
+	if [ "$(injail uname -r | cut -d - -f 1 )" = "8.3" ]; then
+		injail mtree -eu -f /etc/mtree/BSD.var.dist -p /var
+		injail mtree -eu -f /etc/mtree/BSD.usr.dist -p /usr
+	fi
 }
 
 jail_stop() {
