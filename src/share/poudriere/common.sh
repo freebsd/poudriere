@@ -917,7 +917,7 @@ build_port() {
 
 			check_leftovers ${mnt} | \
 				while read modtype path; do
-				local ppath
+				local ppath ignore_path=0
 
 				# If this is a directory, use @dirrm in output
 				if [ -d "${path}" ]; then
@@ -940,12 +940,14 @@ build_port() {
 					esac
 					;;
 				-) 
-					case "${ppath}" in
-					# This needs a better fix, but for now, install-mtree to create a prefix before 
-					# the preinst is created and the port removes it.
-					%%KDE4_PREFIX%%) ;;
-					*) echo "${ppath}" >> ${del} ;;
-					esac
+					# Skip if it is PREFIX and non-LOCALBASE. See misc/kdehier4
+					# or mail/qmail for examples
+					[ "${ppath}" = "${PREFIX}" -a \
+						"${LOCALBASE}" != "${PREFIX}" ] && ignore_path=1
+
+					if [ $ignore_path -ne 0 ]; then
+						echo "${ppath}" >> ${del}
+					fi
 					;;
 				M)
 					[ -d "${path}" ] && continue
