@@ -156,9 +156,6 @@ fi
 msg "Installing from package"
 injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT}
 
-msg "Cleaning up"
-injail make -C /usr/ports/${ORIGIN} clean
-
 # Interactive test mode
 if [ $INTERACTIVE_MODE -gt 0 ]; then
 	print_phase_header "Interactive"
@@ -187,6 +184,9 @@ if [ $INTERACTIVE_MODE -gt 0 ]; then
 	fi
 	print_phase_footer
 fi
+
+msg "Cleaning up"
+injail make -C /usr/ports/${ORIGIN} clean
 
 msg "Deinstalling package"
 injail ${PKG_DELETE} ${PKGNAME}
