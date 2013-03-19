@@ -2092,7 +2092,9 @@ if [ ! -d ${POUDRIERED}/jails ]; then
 			zfs inherit -r ${NS}:stats_built ${fs}
 			zfs inherit -r ${NS}:stats_failed ${fs}
 			zfs inherit -r ${NS}:stats_skipped ${fs}
-			zfs inherit -r ${NS}:stats_status ${fs}
+			zfs inherit -r ${NS}:stats_ignored ${fs}
+			zfs inherit -r ${NS}:stats_queued ${fs}
+			zfs inherit -r ${NS}:status ${fs}
 		done
 fi
 
