@@ -1,6 +1,6 @@
 <h1>What is poudriere?</h1>
 
-poudriere is a tool primarily designed to test package production on
+poudriere is a BSD-2 licensed tool primarily designed to test package production on
 FreeBSD. However, most people will find it useful to bulk build ports
 for FreeBSD.
 
