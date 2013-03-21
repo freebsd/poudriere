@@ -34,6 +34,7 @@ Parameters:
     [ports...]  -- List of ports to build on the command line
 
 Options:
+    -B name     -- What buildname to use (must be unique, defaults to YYYY-MM-DD_HH:MM:SS)
     -c          -- Clean all the previously built binary packages
     -C          -- Clean previously built packages from the given list to build
     -R          -- Clean RESTRICTED packages after building
@@ -76,8 +77,11 @@ ALL=0
 
 [ $# -eq 0 ] && usage
 
-while getopts "f:j:J:Ccn:p:Rtsvwz:a" FLAG; do
+while getopts "B:f:j:J:Ccn:p:Rtsvwz:a" FLAG; do
 	case "${FLAG}" in
+		B)
+			BUILDNAME="${OPTARG}"
+			;;
 		t)
 			export PORTTESTING=1
 			export DEVELOPER_MODE=yes
