@@ -1948,7 +1948,8 @@ prepare_ports() {
 	bset stats_queued ${nbq##* }
 
 	# Create a pool of ready-to-build from the deps pool
-	find "${MASTERMNT}/poudriere/deps" -type d -empty|xargs -J % mv % "${MASTERMNT}/poudriere/pool/unbalanced"
+	find "${MASTERMNT}/poudriere/deps" -type d -empty -depth 1 | \
+		xargs -J % mv % "${MASTERMNT}/poudriere/pool/unbalanced"
 	balance_pool
 }
 
