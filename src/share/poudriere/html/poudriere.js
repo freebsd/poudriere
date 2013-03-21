@@ -206,6 +206,14 @@ $(document).ready(function() {
 	// Enable LOADING overlay until the page is loaded
 	$('#loading_overlay').show();	
 	update_fields();
+	$("form input").each(function(){
+		var elem = $(this);
+		var type = elem.attr("type");
+		if (type == "checkbox" && elem.attr("id") != "builders_check") {
+			elem.prop("checked", "");
+		}
+	});
+
 });
 
 $(document).bind("keydown", function(e) {
