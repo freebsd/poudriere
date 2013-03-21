@@ -128,7 +128,7 @@ log_start() {
 }
 
 log_path() {
-	echo "${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${STARTTIME}"
+	echo "${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"
 }
 
 buildlog_start() {
@@ -276,7 +276,7 @@ show_log_info() {
 	local log=$(log_path)
 	msg "Logs: ${log}"
 	[ -z "${URL_BASE}" ] || \
-		msg "WWW: ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${STARTTIME}"
+		msg "WWW: ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"
 }
 
 siginfo_handler() {
@@ -1231,7 +1231,7 @@ json_main() {
 
 build_json() {
 	local log=$(log_path)
-	awk -vbuildname="${STARTTIME}" \
+	awk -vbuildname="${BUILDNAME}" \
 		-vjail="${MASTERNAME}" \
 		-vsetname="${SETNAME}" \
 		-vptname="${PTNAME}" \
@@ -1260,18 +1260,24 @@ parallel_build() {
 	local ptname=$2
 	local setname=$3
 	local nbq=$(bget stats_queued)
+	local nbb=$(bget stats_built)
+	local nbf=$(bget stats_failed)
+	local nbi=$(bget stats_ignored)
+	local nbs=$(bget stats_skipped)
+	local ndone=$((nbb + nbf + nbi + nbs))
+	local nremaining=$((nbq - ndone))
 	local real_parallel_jobs=${PARALLEL_JOBS}
 
 	# If pool is empty, just return
-	test ${nbq} -eq 0 && return 0
+	test ${nremaining} -eq 0 && return 0
 
 	# Minimize PARALLEL_JOBS to queue size
-	if [ ${PARALLEL_JOBS} -gt ${nbq} ]; then
-		PARALLEL_JOBS=${nbq##* }
+	if [ ${PARALLEL_JOBS} -gt ${nremaining} ]; then
+		PARALLEL_JOBS=${nremaining##* }
 	fi
 
 	msg "Hit ctrl+t at any time to see build progress and stats"
-	msg "Building ${nbq} packages using ${PARALLEL_JOBS} builders"
+	msg "Building ${nremaining} packages using ${PARALLEL_JOBS} builders"
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
 
 	start_html_json
@@ -1843,10 +1849,29 @@ cache_get_key() {
 	echo ${CACHE_KEY}
 }
 
+find_all_pool_references() {
+	[ $# -ne 1 ] && eargs pkgname
+	local pkgname="$1"
+	local rpn
+
+	# Cleanup rdeps/*/${pkgname}
+	for rpn in $(ls "${MASTERMNT}/poudriere/deps/${pkgname}"); do
+		echo "${MASTERMNT}/poudriere/rdeps/${rpn}/${pkgname}"
+	done
+	echo "${MASTERMNT}/poudriere/deps/${pkgname}"
+	# Cleanup deps/*/${pkgname}
+	if [ -d "${MASTERMNT}/poudriere/rdeps/${pkgname}" ]; then
+		for rpn in $(ls "${MASTERMNT}/poudriere/rdeps/${pkgname}"); do
+			echo "${MASTERMNT}/poudriere/deps/${rpn}/${pkgname}"
+		done
+		echo "${MASTERMNT}/poudriere/rdeps/${pkgname}"
+	fi
+}
+
 prepare_ports() {
 	local pkg
 	local log=$(log_path)
-	local n
+	local n port pn nbq resuming_build
 
 	msg "Calculating ports order and dependencies"
 	mkdir -p "${MASTERMNT}/poudriere"
@@ -1874,17 +1899,7 @@ prepare_ports() {
 	mkdir -p ${POOL_BUCKET_DIRS}
 
 	mkdir -p ${log}/logs ${log}/logs/errors
-	ln -sfh ${STARTTIME} ${log%/*}/latest
-	bset stats_queued 0
-	bset stats_built 0
-	bset stats_failed 0
-	bset stats_ignored 0
-	bset stats_skipped 0
-	:> ${log}/.data.json
-	:> ${log}/.poudriere.ports.built
-	:> ${log}/.poudriere.ports.failed
-	:> ${log}/.poudriere.ports.ignored
-	:> ${log}/.poudriere.ports.skipped
+	ln -sfh ${BUILDNAME} ${log%/*}/latest
 	cp ${HTMLPREFIX}/* ${log}
 
 	bset status "computingdeps:"
@@ -1907,6 +1922,34 @@ prepare_ports() {
 		done
 	fi
 
+	# If the build dir already exists, it is being resumed and any
+	# packages already built/failed/skipped/ignored should not
+	# be rebuilt
+	if [ -e ${log}/.poudriere.ports.built ]; then
+		resuming_build=1
+		awk '{print $2}' \
+			${log}/.poudriere.ports.built \
+			${log}/.poudriere.ports.failed \
+			${log}/.poudriere.ports.ignored \
+			${log}/.poudriere.ports.skipped | \
+		while read pn; do
+			find_all_pool_references "${pn}"
+		done | xargs rm -rf
+	else
+		# New build
+		resuming_build=0
+		bset stats_queued 0
+		bset stats_built 0
+		bset stats_failed 0
+		bset stats_ignored 0
+		bset stats_skipped 0
+		:> ${log}/.data.json
+		:> ${log}/.poudriere.ports.built
+		:> ${log}/.poudriere.ports.failed
+		:> ${log}/.poudriere.ports.ignored
+		:> ${log}/.poudriere.ports.skipped
+	fi
+
 	if [ $SKIPSANITY -eq 0 ]; then
 		msg "Sanity checking the repository"
 		delete_stale_pkg_cache
@@ -1925,27 +1968,18 @@ prepare_ports() {
 	export LOCALBASE=${LOCALBASE:-/usr/local}
 	for pn in $(ls ${MASTERMNT}/poudriere/deps/); do
 		if [ -f "${MASTERMNT}/packages/All/${pn}.${PKG_EXT}" ]; then
-			# Cleanup rdeps/*/${pn}
-			for rpn in $(ls "${MASTERMNT}/poudriere/deps/${pn}"); do
-				echo "${MASTERMNT}/poudriere/rdeps/${rpn}/${pn}"
-			done
-			echo "${MASTERMNT}/poudriere/deps/${pn}"
-			# Cleanup deps/*/${pn}
-			if [ -d "${MASTERMNT}/poudriere/rdeps/${pn}" ]; then
-				for rpn in $(ls "${MASTERMNT}/poudriere/rdeps/${pn}"); do
-					echo "${MASTERMNT}/poudriere/deps/${rpn}/${pn}"
-				done
-				echo "${MASTERMNT}/poudriere/rdeps/${pn}"
-			fi
+			find_all_pool_references "${pn}"
 		fi
 	done | xargs rm -rf
 
 	# Call the deadlock code as non-fatal which will check for cycles
 	deadlock_detected 0
 
-	local nbq=0
-	nbq=$(find ${MASTERMNT}/poudriere/deps -type d -depth 1 | wc -l)
-	bset stats_queued ${nbq##* }
+	if [ $resuming_build -eq 0 ]; then
+		nbq=0
+		nbq=$(find ${MASTERMNT}/poudriere/deps -type d -depth 1 | wc -l)
+		bset stats_queued ${nbq##* }
+	fi
 
 	# Create a pool of ready-to-build from the deps pool
 	find "${MASTERMNT}/poudriere/deps" -type d -empty -depth 1 | \
@@ -2156,6 +2190,6 @@ esac
 : ${WATCHDIR:=${POUDRIERE_DATA}/queue}
 : ${PIDFILE:=${POUDRIERE_DATA}/daemon.pid}
 
-STARTTIME=$(date +%Y-%m-%d_%H:%M:%S)
+BUILDNAME=$(date +%Y-%m-%d_%H:%M:%S)
 
 [ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}
