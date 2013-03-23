@@ -152,7 +152,7 @@ if [ "${USE_PORTLINT}" = "yes" ]; then
 	[ ! -x `which portlint` ] && err 2 "First install portlint if you want USE_PORTLINT to work as expected"
 	msg "Portlint check"
 	set +e
-	cd ${MASTERMNT}/usr/ports/${ORIGIN} && PORTSDIR="${MASTERMNT}/usr/ports" portlint -C | tee $(log_path)/${PKGNAME}.portlint.log
+	cd ${MASTERMNT}/usr/ports/${ORIGIN} && PORTSDIR="${MASTERMNT}/usr/ports" portlint -C | tee ${log}/logs/${PKGNAME}.portlint.log
 	set -e
 fi
 [ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/prefix}/`echo ${PKGNAME} | tr '[,+]' _`"
@@ -168,7 +168,7 @@ PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
 mkdir -p ${MASTERMNT}/tmp/pkgs
 PORTTESTING=yes
 export DEVELOPER_MODE=yes
-log_start $(log_path)/${PKGNAME}.log
+log_start ${log}/logs/${PKGNAME}.log
 buildlog_start /usr/ports/${ORIGIN}
 if ! build_port /usr/ports/${ORIGIN}; then
 	failed_status=$(bget status)
@@ -219,7 +219,7 @@ injail ${PKG_DELETE} ${PKGNAME}
 
 msg "Removing existing ${PREFIX} dir"
 buildlog_stop /usr/ports/${ORIGIN}
-log_stop $(log_path)/${PKGNAME}.log
+log_stop ${log}/logs/${PKGNAME}.log
 
 cleanup
 set +e
