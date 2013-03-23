@@ -285,15 +285,16 @@ siginfo_handler() {
 	fi
 	trappedinfo=1
 	local status=$(bget status)
-	local nbb=$(bget stats_built)
-	local nbf=$(bget stats_failed)
-	local nbi=$(bget stats_ignored)
-	local nbs=$(bget stats_skipped)
-	local nbq=$(bget stats_queued)
+	local nbb=$(bget stats_built 2>/dev/null)
+	local nbf=$(bget stats_failed 2>/dev/null)
+	local nbi=$(bget stats_ignored 2>/dev/null)
+	local nbs=$(bget stats_skipped 2>/dev/null)
+	local nbq=$(bget stats_queued 2>/dev/null)
 	local ndone=$((nbb + nbf + nbi + nbs))
 	local queue_width=2
 	local j
 
+	[ -n "${nbq}" ] || return 0
 	[ "${status}" = "index:" ] && return 0
 
 	if [ ${nbq} -gt 9999 ]; then
