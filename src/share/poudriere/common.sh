@@ -292,7 +292,10 @@ siginfo_handler() {
 	local nbq=$(bget stats_queued 2>/dev/null)
 	local ndone=$((nbb + nbf + nbi + nbs))
 	local queue_width=2
+	local now
 	local j
+	local pkgname origin phase buildtime
+	local format_origin_phase format_phase
 
 	[ -n "${nbq}" ] || return 0
 	[ "${status}" = "index:" ] && return 0
@@ -310,6 +313,15 @@ siginfo_handler() {
 
 	# Skip if stopping or starting jobs
 	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" -a "${status}" != "stopping_jobs:" ]; then
+		now=$(date +%s)
+		format_origin_phase="\t[%s]: %-30s %-13s (%s)\n"
+		format_phase="\t[%s]: %13s\n"
+
+		# Collect build stats into a string with minimal execs
+		pkgname_buildtimes=$(find ${MASTERMNT}/poudriere/building -depth 1 \
+			-exec stat -f "%N %m" {} + | \
+			awk -v now=${now} -f ${AWKPREFIX}/siginfo_buildtime.awk)
+
 		for j in ${JOBS}; do
 			# Ignore error here as the zfs dataset may not be cloned yet.
 			status=$(bget ${j} status 2>/dev/null || :)
@@ -317,7 +329,21 @@ siginfo_handler() {
 			[ -z "${status}" ] && continue
 			# Hide idle workers
 			[ "${status}" = "idle:" ] && continue
-			echo -e "\t[${j}]: ${status}"
+			origin=${status#*:}
+			phase="${status%:*}"
+			if [ "${origin}" != "${status}" ]; then
+				pkgname=$(cache_get_pkgname ${origin})
+				# Find the buildtime for this pkgname
+				for pkgname_buildtime in $pkgname_buildtimes; do
+					[ "${pkgname_buildtime%!*}" = "${pkgname}" ] || continue
+					buildtime="${pkgname_buildtime#*!}"
+					break
+				done
+				printf "${format_origin_phase}" ${j} ${origin} ${phase} \
+					${buildtime}
+			else
+				printf "${format_phase}" ${j} ${phase}
+			fi
 		done
 	fi
 
@@ -1670,6 +1696,8 @@ next_in_queue() {
 	[ -n "$p" ] || return 0
 	pkgname=${p##*/}
 	mv ${p} ${MASTERMNT}/poudriere/building/${pkgname}
+	# Update timestamp for buildtime accounting
+	touch ${MASTERMNT}/poudriere/building/${pkgname}
 	echo ${pkgname}
 }
 
