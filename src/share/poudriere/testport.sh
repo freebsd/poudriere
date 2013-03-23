@@ -176,7 +176,11 @@ if ! build_port /usr/ports/${ORIGIN}; then
 
 	save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" "${failed_phase}" || :
 
-	[ ${INTERACTIVE_MODE} -gt 0 ] || exit 1
+	if [ ${INTERACTIVE_MODE} -eq 0 ]; then
+		buildlog_stop /usr/ports/${ORIGIN}
+		log_stop ${log}/logs/${PKGNAME}.log
+		exit 1
+	fi
 fi
 
 msg "Installing from package"
