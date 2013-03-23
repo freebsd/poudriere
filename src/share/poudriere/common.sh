@@ -1467,9 +1467,27 @@ build_pkg() {
 	clean_pool ${PKGNAME} ${clean_rdepends}
 
 	bset ${MY_JOBID} status "done:${port}"
-	buildlog_stop ${portdir}
-	log_stop ${log}/logs/${PKGNAME}.log
+
+	stop_build ${portdir} ${log}/logs/${PKGNAME}.log
+
 	echo ${MY_JOBID} >&6
+}
+
+stop_build() {
+	[ $# -eq 2 ] || eargs portdir logfile
+	local portdir="$1"
+	local logfile="$2"
+
+	# 2 = HEADER+ps itself
+	if [ $(injail ps aux | wc -l) -ne 2 ]; then
+		msg "Leftover processes:"
+		injail ps auxwwd | grep -v 'ps auxwwd'
+	fi
+	# Always kill to avoid missing anything
+	injail kill -9 -1
+
+	buildlog_stop ${portdir}
+	log_stop ${logfile}
 }
 
 # Crazy redirection is to add the portname into stderr.

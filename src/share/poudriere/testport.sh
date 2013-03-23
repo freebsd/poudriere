@@ -177,8 +177,7 @@ if ! build_port /usr/ports/${ORIGIN}; then
 	save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" "${failed_phase}" || :
 
 	if [ ${INTERACTIVE_MODE} -eq 0 ]; then
-		buildlog_stop /usr/ports/${ORIGIN}
-		log_stop ${log}/logs/${PKGNAME}.log
+		stop_build /usr/ports/${ORIGIN} ${log}/logs/${PKGNAME}.log
 		exit 1
 	fi
 fi
@@ -222,8 +221,7 @@ msg "Deinstalling package"
 injail ${PKG_DELETE} ${PKGNAME}
 
 msg "Removing existing ${PREFIX} dir"
-buildlog_stop /usr/ports/${ORIGIN}
-log_stop ${log}/logs/${PKGNAME}.log
+stop_build /usr/ports/${ORIGIN} ${log}/logs/${PKGNAME}.log
 
 cleanup
 set +e
