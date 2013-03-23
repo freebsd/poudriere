@@ -1212,7 +1212,9 @@ build_queue() {
 					builders_active=1
 					continue
 				fi
-				rm -f "${mnt}/poudriere/var/run/${j}.pid"
+				read pkgname < ${mnt}/poudriere/var/run/${j}.pkgname
+				rm -f ${mnt}/poudriere/var/run/${j}.pid \
+					${mnt}/poudriere/var/run/${j}.pkgname
 				bset ${j} status "idle:"
 				mark_done ${pkgname}
 			fi
@@ -1230,6 +1232,7 @@ build_queue() {
 			else
 				MY_JOBID="${j}" build_pkg "${pkgname}" > /dev/null 2>&1 &
 				echo "$!" > ${mnt}/poudriere/var/run/${j}.pid
+				echo "${pkgname}" > ${mnt}/poudriere/var/run/${j}.pkgname
 
 				# A new job is spawned, try to read the queue
 				# just to keep things moving
