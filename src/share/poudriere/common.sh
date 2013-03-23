@@ -660,13 +660,13 @@ do_portbuild_mounts() {
 	optionsdir="${optionsdir} ${jname}-${ptname} ${jname} -"
  
 	mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/All
-	if [ ${mnt##*/} != "ref" ]; then
-		if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
-			mount -t nullfs ${CCACHE_DIR} ${mnt}/ccache
-		fi
-		[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
-		[ ${TMPFS_WRKDIR} -eq 1 ] && mount -t tmpfs tmpfs ${mnt}/wrkdirs
-	else
+	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
+		mount -t nullfs ${CCACHE_DIR} ${mnt}/ccache
+	fi
+	[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
+	[ ${TMPFS_WRKDIR} -eq 1 ] && mount -t tmpfs tmpfs ${mnt}/wrkdirs
+	# Only show mounting messages once, not for every builder
+	if [ ${mnt##*/} = "ref" ]; then
 		if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 			msg "Mounting ccache from: ${CCACHE_DIR}"
 		fi
