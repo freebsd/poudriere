@@ -1182,6 +1182,19 @@ queue_empty() {
 	return 0
 }
 
+mark_done() {
+	[ $# -eq 1 ] || eargs pkgname
+	local pkgname="$1"
+	local origin=$(cache_get_origin "${pkgname}")
+	local cache_dir=$(cache_dir)
+
+	echo -n "${origin} $(date +%s)" >> ${cache_dir}/buildtimes
+	stat -f "%m" ${MASTERMNT}/poudriere/building/${pkgname} >> \
+		${cache_dir}/buildtimes
+	rmdir ${MASTERMNT}/poudriere/building/${pkgname}
+}
+
+
 build_queue() {
 	local j name pkgname builders_active queue_empty
 	local mnt=$(my_path)
@@ -1201,6 +1214,7 @@ build_queue() {
 				fi
 				rm -f "${mnt}/poudriere/var/run/${j}.pid"
 				bset ${j} status "idle:"
+				mark_done ${pkgname}
 			fi
 
 			[ ${queue_empty} -eq 0 ] || continue
@@ -1351,7 +1365,6 @@ clean_pool() {
 		job_msg "Skipping build of ${skipped_origin}: Dependent port ${port} failed"
 	done
 
-	rmdir ${MASTERMNT}/poudriere/building/${pkgname}
 	balance_pool
 }
 
