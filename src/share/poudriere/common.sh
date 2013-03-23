@@ -1484,7 +1484,7 @@ stop_build() {
 		injail ps auxwwd | grep -v 'ps auxwwd'
 	fi
 	# Always kill to avoid missing anything
-	injail kill -9 -1
+	injail kill -9 -1 2>/dev/null || :
 
 	buildlog_stop ${portdir}
 	log_stop ${logfile}
