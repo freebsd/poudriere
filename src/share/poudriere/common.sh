@@ -1354,7 +1354,6 @@ clean_pool() {
 	local pkgname=$1
 	local clean_rdepends=$2
 	local port skipped_origin
-	local log=$(log_path)
 
 	[ ${clean_rdepends} -eq 1 ] && port=$(cache_get_origin "${pkgname}")
 
@@ -1417,7 +1416,7 @@ build_pkg() {
 	msg "Cleaning up wrkdir"
 	rm -rf ${mnt}/wrkdirs/*
 
-	log_start $(log_path)/logs/${PKGNAME}.log
+	log_start ${log}/logs/${PKGNAME}.log
 	msg "Building ${port}"
 	buildlog_start ${portdir}
 
@@ -1458,7 +1457,7 @@ build_pkg() {
 			pkg_cache_data "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
 		else
 			# Symlink the buildlog into errors/
-			ln -s ../${PKGNAME}.log $(log_path)/logs/errors/${PKGNAME}.log
+			ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
 			badd ports.failed "${port} ${PKGNAME} ${failed_phase}"
 			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
 			clean_rdepends=1
@@ -1469,7 +1468,7 @@ build_pkg() {
 
 	bset ${MY_JOBID} status "done:${port}"
 	buildlog_stop ${portdir}
-	log_stop $(log_path)/logs/${PKGNAME}.log
+	log_stop ${log}/logs/${PKGNAME}.log
 	echo ${MY_JOBID} >&6
 }
 
