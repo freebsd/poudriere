@@ -408,9 +408,7 @@ do_portbuild_mounts() {
 	mount -t nullfs -o ro ${PORTSDIR} ${JAILMNT}/usr/ports || err 1 "Failed to mount the ports directory "
 	mount_packages -o ro
 
-	if [ "$(realpath ${DISTFILES_CACHE:-/nonexistent})" != "$(realpath ${PORTSDIR}/distfiles)" ]; then
-		mount -t nullfs ${DISTFILES_CACHE} ${JAILMNT}/usr/ports/distfiles || err 1 "Failed to mount the distfile directory"
-	fi
+	mount -t nullfs ${DISTFILES_CACHE} ${JAILMNT}/usr/ports/distfiles || err 1 "Failed to mount the distfile directory"
 	[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${JAILMNT}/wrkdirs
 	[ -n "${USE_TMPFS}" ] && mount -t tmpfs tmpfs ${JAILMNT}/wrkdirs
 
@@ -1858,6 +1856,9 @@ prepare_jail() {
 	[ -z "${PKGDIR}" ] && err 1 "No package directory defined"
 	[ -n "${MFSSIZE}" -a -n "${USE_TMPFS}" ] && err 1 "You can't use both tmpfs and mdmfs"
 	[ -d ${DISTFILES_CACHE:-/nonexistent} ] || err 1 "DISTFILES_CACHE directory does not exists. (c.f. poudriere.conf)"
+	[ "$(realpath ${DISTFILES_CACHE})" != \
+		"$(realpath ${PORTSDIR}/distfiles)" ] || err 1 \
+		"DISTFILES_CACHE cannot be in the portsdir as the portsdir will be mounted read-only"
 
 	msg "Mounting ports from: ${PORTSDIR}"
 	do_portbuild_mounts 1
