@@ -722,6 +722,8 @@ jail_start() {
 
 	local tomnt=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 
+	[ -d ${DISTFILES_CACHE:-/nonexistent} ] || err 1 "DISTFILES_CACHE directory does not exist. (c.f. poudriere.conf)"
+
 	if [ -z "${NOLINUX}" ]; then
 		if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
 			needfs="${needfs} linprocfs linsysfs"
