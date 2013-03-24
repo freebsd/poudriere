@@ -682,6 +682,10 @@ do_portbuild_mounts() {
 
 	[ -d ${portsdir}/ports ] && portsdir=${portsdir}/ports
 
+	[ "$(realpath ${DISTFILES_CACHE:-/nonexistent})" != \
+		"$(realpath ${portsdir}/distfiles)" ] || err 1 \
+		"DISTFILES_CACHE cannot be in the portsdir as the portsdir is mounted read-only"
+
 	optionsdir="${MASTERNAME}"
 	[ -n "${setname}" ] && optionsdir="${optionsdir} ${jname}-${setname}"
 	optionsdir="${optionsdir} ${jname}-${ptname} ${jname} -"
