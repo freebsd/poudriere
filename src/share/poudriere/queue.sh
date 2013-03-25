@@ -38,7 +38,7 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 [ $# -le 2 ] && usage
 name=$1
 shift
-[ -f ${WATCHDIR}${name} ] && err 1 "A jobs named ${name} is already in queue"
+[ -f ${WATCHDIR}/${name} ] && err 1 "A jobs named ${name} is already in queue"
 
 case $1 in
 bulk|testport) ;;
