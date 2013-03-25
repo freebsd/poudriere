@@ -20,3 +20,4 @@ install:
 
 clean:
 	${MAKE} -C src/libexec/poudriere clean
+	if [ -f poudriere.8.gz ]; then rm -f poudriere.8.gz; fi
