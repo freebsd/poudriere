@@ -537,12 +537,12 @@ EOF
 ./wrkdirs/*
 ./new_packages/*
 ./tmp/*
-./${LOCALBASE:-/usr/local}/share/nls/POSIX
-./${LOCALBASE:-/usr/local}/share/nls/en_US.US-ASCII
+.${LOCALBASE:-/usr/local}/share/nls/POSIX
+.${LOCALBASE:-/usr/local}/share/nls/en_US.US-ASCII
 ./compat/linux/proc/*
 ./var/db/*
 ./var/log/*
-./${HOME}/*
+.${HOME}/*
 ./etc/spwd.db
 ./etc/pwd.db
 ./etc/group
