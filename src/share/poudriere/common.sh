@@ -911,6 +911,79 @@ check_leftovers() {
 	done
 }
 
+nohang() {
+	[ $# -gt 4 ] || eargs cmd_timeout log_timeout logfile cmd
+	local cmd_timeout
+	local log_timeout
+	local logfile
+	local childpid
+	local now starttime
+	local fifo
+	local n
+	local read_timeout
+	local ret=0
+
+	cmd_timeout="$1"
+	log_timeout="$2"
+	logfile="$3"
+	shift 3
+
+	read_timeout=$((log_timeout / 10))
+
+	fifo=$(mktemp -ut nohang)
+	mkfifo ${fifo}
+	exec 7<> ${fifo}
+	rm -f ${fifo}
+
+	starttime=$(date +%s)
+
+	# Run the actual command in a child subshell
+	(
+		"$@"
+		# Notify the pipe the command is done
+		echo done >&7 2>/dev/null || :
+	) &
+	childpid=$!
+
+	# Now wait on the cmd with a timeout on the log's mtime
+	while :; do
+		if ! kill -CHLD $childpid 2>/dev/null; then
+			wait $childpid || ret=1
+			break
+		fi
+
+		lastupdated=$(stat -f "%m" ${logfile})
+		now=$(date +%s)
+
+		# No need to actually kill anything as stop_build()
+		# will be called and kill -9 -1 the jail later
+		if [ $((now - lastupdated)) -gt $log_timeout ]; then
+			ret=2
+			break
+		elif [ $((now - starttime)) -gt $cmd_timeout ]; then
+			ret=3
+			break
+		fi
+
+		# Wait until it is done, but check on it every so often
+		# This is done instead of a 'sleep' as it should recognize
+		# the command has completed right away instead of waiting
+		# on the 'sleep' to finish
+		unset n; until trappedinfo=; read -t $read_timeout n <&7 || \
+			[ -z "$trappedinfo" ]; do :; done
+		if [ "${n}" = "done" ]; then
+			wait $childpid || ret 1
+			break
+		fi
+		# Not done, was a timeout, check the log time
+	done
+
+	exec 7<&-
+	exec 7>&-
+
+	return $ret
+}
+
 # Build+test port and return on first failure
 build_port() {
 	[ $# -ne 1 ] && eargs portdir
@@ -918,7 +991,10 @@ build_port() {
 	local port=${portdir##/usr/ports/}
 	local targets="check-config fetch checksum extract patch configure build run-depends install-mtree install package ${PORTTESTING:+deinstall}"
 	local mnt=$(my_path)
+	local log=$(log_path)
 	local listfilecmd network sub dists
+	local pkgname=$(cache_get_pkgname ${port})
+	local hangstatus
 
 	for phase in ${targets}; do
 		bset ${MY_JOBID} status "${phase}:${port}"
@@ -941,7 +1017,28 @@ build_port() {
 
 		print_phase_header ${phase}
 		[ "${phase}" = "package" ] && echo "PACKAGES=/new_packages" >> ${mnt}/etc/make.conf
-		injail env ${PKGENV} ${PORT_FLAGS} make -C ${portdir} ${phase} || return 1
+
+		# 24 hours for 1 command, or 20 minutes with no log update
+		nohang 86400 1200 ${log}/logs/${pkgname}.log \
+			injail env ${PKGENV} ${PORT_FLAGS} \
+			make -C ${portdir} ${phase}
+		hangstatus=$? # This is done as it may return 1 or 2 or 3
+		if [ $hangstatus -ne 0 ]; then
+			# 1 = cmd failed, not a timeout
+			# 2 = log timed out
+			# 3 = cmd timeout
+			if [ $hangstatus -eq 2 ]; then
+				msg "Killing runaway build"
+				bset ${MY_JOBID} status "${phase}/runaway:${port}"
+				job_msg_verbose "Status for build ${port}: runaway"
+			elif [ $hangstatus -eq 3 ]; then
+				msg "Killing timed out build"
+				bset ${MY_JOBID} status "${phase}/timeout:${port}"
+				job_msg_verbose "Status for build ${port}: timeout"
+			fi
+			return 1
+		fi
+
 		if [ "${phase}" = "checksum" ]; then
 			jstop
 			jstart 0
