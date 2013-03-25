@@ -518,7 +518,7 @@ markfs() {
 	if [ "${name}" = "prepkg" ]; then
 		cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
 ./poudriere/*
-./compat/linux/proc/*
+./compat/linux/proc
 ./wrkdirs/*
 ./${LOCALBASE:-/usr/local}/*
 ./packages/*
