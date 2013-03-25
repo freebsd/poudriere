@@ -520,7 +520,6 @@ markfs() {
 ./poudriere/*
 ./compat/linux/proc
 ./wrkdirs/*
-./${LOCALBASE:-/usr/local}/*
 ./packages/*
 ./new_packages/*
 ./usr/ports/*
