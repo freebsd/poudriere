@@ -1335,6 +1335,7 @@ parallel_build() {
 	start_html_json
 
 	bset status "starting_jobs:"
+	msg "Starting/Cloning builders"
 	start_builders
 
 	# Duplicate stdout to socket 5 so the child process can send
