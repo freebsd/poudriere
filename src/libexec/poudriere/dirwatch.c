@@ -8,7 +8,7 @@
 #include <err.h>
 
 int
-main(int argc __unused, char **argv)
+main(int argc, char **argv)
 {
 	struct kevent event, change;
 	struct stat st;
