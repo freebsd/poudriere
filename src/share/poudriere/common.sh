@@ -1209,6 +1209,9 @@ build_queue() {
 	exec 6<> ${MASTERMNT}/poudriere/builders.pipe
 	rm -f ${MASTERMNT}/poudriere/builders.pipe
 	queue_empty=0
+
+	msg "Hit CTRL+t at any time to see build progress and stats"
+
 	while :; do
 		builders_active=0
 		for j in ${JOBS}; do
@@ -1326,7 +1329,6 @@ parallel_build() {
 		PARALLEL_JOBS=${nremaining##* }
 	fi
 
-	msg "Hit ctrl+t at any time to see build progress and stats"
 	msg "Building ${nremaining} packages using ${PARALLEL_JOBS} builders"
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
 
@@ -1341,6 +1343,7 @@ parallel_build() {
 	exec 5<&1
 
 	bset status "parallel_build:"
+
 	build_queue
 
 	bset status "stopping_jobs:"
