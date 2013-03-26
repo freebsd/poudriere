@@ -939,9 +939,11 @@ nohang() {
 
 	# Run the actual command in a child subshell
 	(
-		"$@"
+		local ret=0
+		"$@" || ret=1
 		# Notify the pipe the command is done
 		echo done >&7 2>/dev/null || :
+		exit $ret
 	) &
 	childpid=$!
 
