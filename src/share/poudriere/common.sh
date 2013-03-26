@@ -972,7 +972,7 @@ nohang() {
 		unset n; until trappedinfo=; read -t $read_timeout n <&7 || \
 			[ -z "$trappedinfo" ]; do :; done
 		if [ "${n}" = "done" ]; then
-			wait $childpid || ret 1
+			wait $childpid || ret=1
 			break
 		fi
 		# Not done, was a timeout, check the log time
