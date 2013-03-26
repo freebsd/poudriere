@@ -564,7 +564,7 @@ clonefs() {
 	local from=$1
 	local to=$2
 	local snap=$3
-	local name=${to##*/}
+	local name zfs_to
 	local fs=$(zfs_getfs ${from})
 
 	[ -d ${to} ] && destroyfs ${to} jail
@@ -572,6 +572,14 @@ clonefs() {
 	to=$(realpath ${to})
 	[ ${TMPFS_ALL} -eq 1 ] && unset fs
 	if [ -n "${fs}" ]; then
+		name=${to##*/}
+
+		if [ "${name}" = "ref" ]; then
+			zfs_to=${fs%/*}/${MASTERNAME}-${name}
+		else
+			zfs_to=${fs}/${name}
+		fi
+
 		# Make sure the fs is clean before cloning
 		zfs rollback -R ${fs}@${snap} 2>/dev/null || :
 		zfs clone -o mountpoint=${to} \
@@ -579,7 +587,7 @@ clonefs() {
 			-o atime=off \
 			-o compression=off \
 			${fs}@${snap} \
-			${fs}/${name}
+			${zfs_to}
 	else
 		[ ${TMPFS_ALL} -eq 1 ] && mount -t tmpfs tmpfs ${to}
 		pax -X -rw -p p -s ",${from},,g" ${from} ${to}
