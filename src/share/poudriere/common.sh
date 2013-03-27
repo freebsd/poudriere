@@ -1857,7 +1857,7 @@ prepare_jail() {
 	[ -n "${MFSSIZE}" -a -n "${USE_TMPFS}" ] && err 1 "You can't use both tmpfs and mdmfs"
 	[ -d ${DISTFILES_CACHE:-/nonexistent} ] || err 1 "DISTFILES_CACHE directory does not exists. (c.f. poudriere.conf)"
 	[ "$(realpath ${DISTFILES_CACHE})" != \
-		"$(realpath ${PORTSDIR}/distfiles)" ] || err 1 \
+		"$(realpath -q ${PORTSDIR}/distfiles)" ] || err 1 \
 		"DISTFILES_CACHE cannot be in the portsdir as the portsdir will be mounted read-only"
 
 	msg "Mounting ports from: ${PORTSDIR}"
