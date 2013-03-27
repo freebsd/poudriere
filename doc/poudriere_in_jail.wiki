@@ -3,6 +3,9 @@
 /!\ This can only be done on a 9.X or higher host because it needs recent jails
 features
 
+/!\ DO NOT DO IT UNLESS YOU KNOW WHAT YOU ARE DOING
+/!\ IT NEEDS SOME FILESYSTEM TO BE PATCHED TO BE JAIL READY
+
 Create a poudriere jail in /etc/jail.conf:
 
 <verbatim>
