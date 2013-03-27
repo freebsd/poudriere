@@ -512,6 +512,7 @@ done
 
 METHOD=${METHOD:-ftp}
 if [ -n "${JAILNAME}" ] && [ ${CREATE} -eq 0 ]; then
+	ARCH=$(jget ${JAILNAME} arch)
 	JAILFS=$(jget ${JAILNAME} fs)
 	JAILMNT=$(jget ${JAILNAME} mnt)
 fi
