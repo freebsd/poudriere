@@ -206,13 +206,7 @@ if [ ${UPDATE} -eq 1 ]; then
 	fi
 	case ${METHOD} in
 	portsnap|"")
-		PSCOMMAND=fetch
-		[ -t 0 ] || PSCOMMAND=cron
-		if [ -n "${PORTSMNT}" ]; then
-			/usr/sbin/portsnap -d ${PTMNT}/snap -p ${PORTSMNT} ${PSCOMMAND} update
-		else
-			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} ${PSCOMMAND} update
-		fi
+		/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PORTSMNT:-${PTMNT}} ${PSCOMMAND} alfred
 		;;
 	svn*)
 		msg_n "Updating the ports tree..."
