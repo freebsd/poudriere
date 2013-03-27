@@ -29,7 +29,7 @@ LC_ALL=C
 unset SHELL
 SAVED_TERM=$TERM
 unset TERM
-VERSION="3.0-pre"
+POUDRIERE_VERSION="3.0-pre"
 
 usage() {
 	echo "Usage: poudriere command [options]
@@ -73,34 +73,34 @@ shift
 
 case ${CMD} in
 	jail|jails)
-		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/jail.sh $@
+		exec env -i PATH=${PATH} POUDRIERE_VERSION="${POUDRIERE_VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/jail.sh $@
 		;;
 	testport)
-		exec env -i PATH=${PATH} VERSION="${VERSION}" SAVED_TERM=${SAVED_TERM} /bin/sh ${SETX} ${POUDRIEREPREFIX}/testport.sh $@
+		exec env -i PATH=${PATH} POUDRIERE_VERSION="${POUDRIERE_VERSION}" SAVED_TERM=${SAVED_TERM} /bin/sh ${SETX} ${POUDRIEREPREFIX}/testport.sh $@
 		;;
 	bulk)
-		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/bulk.sh $@
+		exec env -i PATH=${PATH} POUDRIERE_VERSION="${POUDRIERE_VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/bulk.sh $@
 		;;
 	distclean)
-		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/distclean.sh $@
+		exec env -i PATH=${PATH} POUDRIERE_VERSION="${POUDRIERE_VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/distclean.sh $@
 		;;
 	ports)
-		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/ports.sh $@
+		exec env -i PATH=${PATH} POUDRIERE_VERSION="${POUDRIERE_VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/ports.sh $@
 		;;
 	queue)
-		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/queue.sh $@
+		exec env -i PATH=${PATH} POUDRIERE_VERSION="${POUDRIERE_VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/queue.sh $@
 		;;
 	options)
-		exec env -i TERM=${SAVED_TERM} PATH=${PATH} VERSION="${VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/options.sh $@
+		exec env -i TERM=${SAVED_TERM} PATH=${PATH} POUDRIERE_VERSION="${POUDRIERE_VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/options.sh $@
 		;;
 	help)
 		usage
 		;;
 	version)
-		echo "${VERSION}"
+		echo "${POUDRIERE_VERSION}"
 		;;
 	daemon)
-		exec env -i PATH=${PATH} VERSION="${VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/daemon.sh $@
+		exec env -i PATH=${PATH} POUDRIERE_VERSION="${POUDRIERE_VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/daemon.sh $@
 		;;
 	*)
 		echo "Unknown command ${CMD}"

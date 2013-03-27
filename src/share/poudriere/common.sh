@@ -140,7 +140,7 @@ buildlog_start() {
 	echo "building for: $(injail uname -a)"
 	echo "maintained by: $(injail make -C ${portdir} maintainer)"
 	echo "Makefile ident: $(ident ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
-	echo "Poudriere version: ${VERSION}"
+	echo "Poudriere version: ${POUDRIERE_VERSION}"
 	echo ""
 	echo "--SUB_LIST--"
 	echo "$(injail env ${PORT_FLAGS} make -C ${portdir} -V SUB_LIST | tr ' ' '\n' | grep -v '^$')"
