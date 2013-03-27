@@ -82,7 +82,7 @@ buildlog_start() {
 	echo "building for: $(injail uname -rm)"
 	echo "maintained by: $(injail make -C ${portdir} maintainer)"
 	echo "Makefile ident: $(injail ident ${portdir}/Makefile|sed -n '2,2p')"
-	echo "Poudriere version: ${VERSION}"
+	echo "Poudriere version: ${POUDRIERE_VERSION}"
 
 	echo "---Begin Environment---"
 	injail env ${PKGENV} ${PORT_FLAGS}
