@@ -233,9 +233,20 @@ install_from_ftp() {
 	if [ ${V%%.*} -lt 9 ]; then
 		msg "Fetching sets for FreeBSD ${V} ${ARCH}"
 		case ${METHOD} in
-		ftp) URL="${FREEBSD_HOST}/pub/FreeBSD/releases/${ARCH}/${V}" ;;
+		ftp|gjb)
+			case ${VERSION} in
+				*-PRERELEASE|*-STABLE) type=snapshots ;;
+				*) type=releases ;;
+			esac
+
+			# Check that the defaults have been changed
+			echo ${FREEBSD_HOST} | egrep -E "(_PROTO_|_CHANGE_THIS_)" > /dev/null
+			if [ $? -eq 0 ]; then
+				msg "FREEBSD_HOST from config invalid; defaulting to http://ftp.freebsd.org"
+				FREEBSD_HOST="http://ftp.freebsd.org"
+			fi
+			URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH}/${V}" ;;
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
-		gjb) URL="https://snapshots.glenbarber.us/Latest/ftp/${GJBVERSION}/${ARCH}/${ARCH}" ;;
 		esac
 		DISTS="base dict src games"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32"
@@ -269,7 +280,7 @@ install_from_ftp() {
 	else
 		local type
 		case ${METHOD} in
-			ftp)
+			ftp|gjb)
 				case ${VERSION} in
 					*-CURRENT|*-PRERELEASE|*-STABLE) type=snapshots ;;
 					*) type=releases ;;
@@ -285,7 +296,6 @@ install_from_ftp() {
 				URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH}/${ARCH}/${V}"
 				;;
 			allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
-			gjb) URL="https://snapshots.glenbarber.us/Latest/ftp/${GJBVERSION}/${ARCH}/${ARCH}" ;;
 		esac
 		DISTS="base.txz src.txz games.txz"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
