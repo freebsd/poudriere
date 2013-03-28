@@ -1488,6 +1488,7 @@ clean_pool() {
 		skipped_origin=$(cache_get_origin "${skipped_pkgname}")
 		badd ports.skipped "${skipped_origin} ${skipped_pkgname} ${pkgname}"
 		job_msg "Skipping build of ${skipped_origin}: Dependent port ${port} failed"
+		run_hook pkgbuild skipped "${skipped_origin}" "${skipped_pkgname}" "${port}"
 	done
 
 	balance_pool
@@ -1551,6 +1552,7 @@ build_pkg() {
 		badd ports.ignored "${port} ${PKGNAME} ${ignore}"
 		job_msg "Finished build of ${port}: Ignored: ${ignore}"
 		clean_rdepends=1
+		run_hook pkgbuild ignored "${port}" "${PKGNAME}" "${ignore}"
 	else
 		bset ${MY_JOBID} status "depends:${port}"
 		job_msg_verbose "Status for build ${port}: depends"
@@ -1579,6 +1581,7 @@ build_pkg() {
 		if [ ${build_failed} -eq 0 ]; then
 			badd ports.built "${port} ${PKGNAME}"
 			job_msg "Finished build of ${port}: Success"
+			run_hook pkgbuild success "${port}" "${PKGNAME}"
 			# Cache information for next run
 			pkg_cache_data "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
 		else
@@ -1586,6 +1589,7 @@ build_pkg() {
 			ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
 			badd ports.failed "${port} ${PKGNAME} ${failed_phase}"
 			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
+			run_hook pkgbuild failed "${port}" "${PKGNAME}" "${failed_phase}" "${log}/logs/errors/${PKGNAME}.log"
 			clean_rdepends=1
 		fi
 	fi
