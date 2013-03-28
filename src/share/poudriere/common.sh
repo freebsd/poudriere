@@ -109,8 +109,8 @@ eargs() {
 	esac
 }
 
-run_hooks() {
-	local hookfile=${HOOKDIR}/hook_${1}.sh
+run_hook() {
+	local hookfile=${HOOKDIR}/${1}.sh
 	shift
 	[ -f ${hookfile} ] && /bin/sh ${hookfile} $@
 }
