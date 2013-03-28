@@ -109,6 +109,12 @@ eargs() {
 	esac
 }
 
+run_hooks() {
+	local hookfile=${HOOKDIR}/hook_${1}.sh
+	shift
+	[ -f ${hookfile} ] && /bin/sh ${hookfile} $@
+}
+
 log_start() {
 	local logfile=$1
 
@@ -2225,6 +2231,7 @@ test -f ${SCRIPTPREFIX}/../../etc/poudriere.conf || err 1 "Unable to find ${SCRI
 POUDRIERED=${SCRIPTPREFIX}/../../etc/poudriere.d
 AWKPREFIX=${SCRIPTPREFIX}/awk
 HTMLPREFIX=${SCRIPTPREFIX}/html
+HOOKDIR=${POUDRIERED}/hooks
 
 # If the zfs module is not loaded it means we can't have zfs
 [ -z "${NO_ZFS}" ] && lsvfs zfs >/dev/null 2>&1 || NO_ZFS=yes
