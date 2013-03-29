@@ -113,6 +113,7 @@ run_hook() {
 	local hookfile=${HOOKDIR}/${1}.sh
 	shift
 	[ -f ${hookfile} ] && /bin/sh ${hookfile} $@
+	return 0
 }
 
 log_start() {
