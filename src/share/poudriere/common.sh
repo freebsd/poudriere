@@ -1442,7 +1442,7 @@ parallel_build() {
 	local real_parallel_jobs=${PARALLEL_JOBS}
 
 	# If pool is empty, just return
-	test ${nremaining} -eq 0 && return 0
+	[ ${nremaining} -eq 0 ] && return 0
 
 	# Minimize PARALLEL_JOBS to queue size
 	if [ ${PARALLEL_JOBS} -gt ${nremaining} ]; then
@@ -2239,7 +2239,9 @@ append_make() {
 RESOLV_CONF=""
 STATUS=0 # out of jail #
 
-test -f ${SCRIPTPREFIX}/../../etc/poudriere.conf || err 1 "Unable to find ${SCRIPTPREFIX}/../../etc/poudriere.conf"
+[ -f ${SCRIPTPREFIX}/../../etc/poudriere.conf ] ||
+	err 1 "Unable to find ${SCRIPTPREFIX}/../../etc/poudriere.conf"
+
 . ${SCRIPTPREFIX}/../../etc/poudriere.conf
 POUDRIERED=${SCRIPTPREFIX}/../../etc/poudriere.d
 AWKPREFIX=${SCRIPTPREFIX}/awk
