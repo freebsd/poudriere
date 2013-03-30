@@ -130,7 +130,7 @@ if [ ${LIST} -eq 1 ]; then
 		printf "${format}" ${ptname} ${ptmethod} ${ptpath}
 	done
 else
-	test -z "${PTNAME}" && usage
+	[ -z "${PTNAME}" ] && usage
 fi
 if [ ${CREATE} -eq 1 ]; then
 	# test if it already exists

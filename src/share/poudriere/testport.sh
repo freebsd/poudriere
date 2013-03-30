@@ -99,11 +99,11 @@ while getopts "o:cnj:J:iIp:svz:" FLAG; do
 	esac
 done
 
-test -z ${ORIGIN} && usage
+[ -z ${ORIGIN} ] && usage
 
 export SKIPSANITY
 
-test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
+[ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
 
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
