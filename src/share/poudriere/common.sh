@@ -403,7 +403,7 @@ get_data_dir() {
 		data=$(zfs list -rt filesystem -H -o ${NS}:type,mountpoint ${ZPOOL}${ZROOTFS} | awk '$1 == "data" { print $2 }' | head -n 1)
 		if [ -n "${data}" ]; then
 			echo $data
-		return
+			return
 		fi
 		zfs create -p -o ${NS}:type=data \
 			-o mountpoint=${BASEFS}/data \
@@ -461,7 +461,7 @@ umountfs() {
 	local mnt=$1
 	local childonly=$2
 	local pattern
-	
+
 	[ -n "${childonly}" ] && pattern="/"
 
 	[ -d "${mnt}" ] || return 0
@@ -704,7 +704,7 @@ do_portbuild_mounts() {
 	optionsdir="${MASTERNAME}"
 	[ -n "${setname}" ] && optionsdir="${optionsdir} ${jname}-${setname}"
 	optionsdir="${optionsdir} ${jname}-${ptname} ${jname} -"
- 
+
 	mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/All
 	[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
 		mount -t nullfs ${CCACHE_DIR} ${mnt}/ccache
@@ -1112,7 +1112,7 @@ build_port() {
 					*) echo "${ppath}" >> ${add} ;;
 					esac
 					;;
-				-) 
+				-)
 					# Skip if it is PREFIX and non-LOCALBASE. See misc/kdehier4
 					# or mail/qmail for examples
 					[ "${ppath}" = "${PREFIX}" -a \
@@ -1966,7 +1966,7 @@ listed_ports() {
 		PORTSDIR=$(pget ${PTNAME} mnt)
 		[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 		for cat in $(awk '$1 == "SUBDIR" { print $3}' ${PORTSDIR}/Makefile); do
-			awk -v cat=${cat}  '$1 == "SUBDIR" { print cat"/"$3}' ${PORTSDIR}/${cat}/Makefile
+			awk -v cat=${cat} '$1 == "SUBDIR" { print cat"/"$3}' ${PORTSDIR}/${cat}/Makefile
 		done
 		return 0
 	fi
@@ -2077,7 +2077,7 @@ prepare_ports() {
 	mkdir -p "${MASTERMNT}/poudriere"
 	[ ${TMPFS_DATA} -eq 1 ] && mount -t tmpfs tmpfs "${MASTERMNT}/poudriere"
 	rm -rf "${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
-	       "${MASTERMNT}/poudriere/var/cache/pkgname-origin" 2>/dev/null || :
+		"${MASTERMNT}/poudriere/var/cache/pkgname-origin" 2>/dev/null || :
 	mkdir -p "${MASTERMNT}/poudriere/building" \
 		"${MASTERMNT}/poudriere/pool" \
 		"${MASTERMNT}/poudriere/deps" \

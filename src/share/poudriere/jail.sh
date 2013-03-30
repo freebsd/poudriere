@@ -326,7 +326,7 @@ create_jail() {
 		JAILMNT=${BASEFS}/jails/${JAILNAME}
 	fi
 
-	if [ -z ${JAILFS} ] ; then
+	if [ -z ${JAILFS} ]; then
 		[ -z ${ZPOOL} ] && err 1 "Please provide a ZPOOL variable in your poudriere.conf"
 		JAILFS=${ZPOOL}${ZROOTFS}/jails/${JAILNAME}
 	fi
@@ -413,7 +413,7 @@ create_jail() {
 	jset ${JAILNAME} version ${RELEASE}
 	update_version ${RELEASE}
 
-	if [ "${ARCH}" = "i386" -a "${REALARCH}" = "amd64" ];then
+	if [ "${ARCH}" = "i386" -a "${REALARCH}" = "amd64" ]; then
 		cat > ${JAILMNT}/etc/make.conf << EOF
 ARCH=i386
 MACHINE=i386
