@@ -275,7 +275,7 @@ install_from_ftp() {
 					APPEND=""
 					;;
 			esac
-			cat ${JAILMNT}/fromftp/${SET}.* | \
+			(cat ${JAILMNT}/fromftp/${SET}.* || echo Error) | \
 				tar --unlink -xpf - -C ${JAILMNT}/${APPEND} || err 1 " fail"
 			echo " done"
 		done
