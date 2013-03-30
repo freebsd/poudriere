@@ -149,10 +149,13 @@ PKGNAME=`injail make -C /usr/ports/${ORIGIN} -VPKGNAME`
 LOCALBASE=`injail make -C /usr/ports/${ORIGIN} -VLOCALBASE`
 : ${PREFIX:=$(injail make -C /usr/ports/${ORIGIN} -VPREFIX)}
 if [ "${USE_PORTLINT}" = "yes" ]; then
-	[ ! -x `which portlint` ] && err 2 "First install portlint if you want USE_PORTLINT to work as expected"
+	[ ! -x `which portlint` ] &&
+		err 2 "First install portlint if you want USE_PORTLINT to work as expected"
 	msg "Portlint check"
 	set +e
-	cd ${MASTERMNT}/usr/ports/${ORIGIN} && PORTSDIR="${MASTERMNT}/usr/ports" portlint -C | tee ${log}/logs/${PKGNAME}.portlint.log
+	cd ${MASTERMNT}/usr/ports/${ORIGIN} &&
+		PORTSDIR="${MASTERMNT}/usr/ports" portlint -C | \
+		tee ${log}/logs/${PKGNAME}.portlint.log
 	set -e
 fi
 [ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/prefix}/`echo ${PKGNAME} | tr '[,+]' _`"

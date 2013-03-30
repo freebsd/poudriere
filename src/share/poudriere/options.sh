@@ -109,7 +109,8 @@ if [ $# -eq 0 ]; then
 	[ -f ${BULK_LIST} ] || err 1 "No such list of packages: ${BULK_LIST}"
 LISTPORTS=`grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${BULK_LIST}`
 else
-	[ -z "${BULK_LIST}" ] || err 1 "command line arguments and list of ports cannot be used at the same time"
+	[ -z "${BULK_LIST}" ] ||
+		err 1 "command line arguments and list of ports cannot be used at the same time"
 	LISTPORTS="$@"
 fi
 

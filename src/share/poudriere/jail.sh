@@ -123,8 +123,10 @@ update_jail() {
 		if [ -z "${TORELEASE}" ]; then
 			injail /usr/sbin/freebsd-update fetch install
 		else
-			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update -r ${TORELEASE} upgrade install || err 1 "Fail to upgrade system"
-			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update install || err 1 "Fail to upgrade system"
+			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update -r ${TORELEASE} upgrade install ||
+				err 1 "Fail to upgrade system"
+			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update install ||
+				err 1 "Fail to upgrade system"
 			jset ${JAILNAME} version ${TORELEASE}
 		fi
 		jstop
@@ -317,7 +319,8 @@ create_jail() {
 
 	test -z ${VERSION} && usage
 
-	[ "${JAILNAME#*.*}" = "${JAILNAME}" ] || err 1 "The jailname can not contain a period (.). See jail(8)"
+	[ "${JAILNAME#*.*}" = "${JAILNAME}" ] ||
+		err 1 "The jailname can not contain a period (.). See jail(8)"
 
 	if [ -z ${JAILMNT} ]; then
 		[ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"

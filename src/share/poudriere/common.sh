@@ -677,8 +677,8 @@ use_options() {
 	optionsdir=$(realpath ${optionsdir} 2>/dev/null)
 	if [ "${mnt##*/}" = "ref" ]; then
 		msg "Mounting /var/db/ports from: ${optionsdir}"
-	fi
-	mount -t nullfs -o ro ${optionsdir} ${mnt}/var/db/ports || err 1 "Failed to mount OPTIONS directory"
+	mount -t nullfs -o ro ${optionsdir} ${mnt}/var/db/ports ||
+		err 1 "Failed to mount OPTIONS directory"
 
 	return 0
 }
@@ -723,9 +723,11 @@ do_portbuild_mounts() {
 		msg "Mounting packages from: ${POUDRIERE_DATA}/packages/${MASTERNAME}"
 	fi
 
-	mount -t nullfs -o ro ${portsdir} ${mnt}/usr/ports || err 1 "Failed to mount the ports directory "
+	mount -t nullfs -o ro ${portsdir} ${mnt}/usr/ports ||
+		err 1 "Failed to mount the ports directory "
 	mount_packages -o ro
-	mount -t nullfs ${DISTFILES_CACHE} ${mnt}/distfiles || err 1 "Failed to mount the distfiles cache directory"
+	mount -t nullfs ${DISTFILES_CACHE} ${mnt}/distfiles ||
+		err 1 "Failed to mount the distfiles cache directory"
 
 	for opt in ${optionsdir}; do
 		use_options ${mnt} ${opt} && break || continue
@@ -1171,7 +1173,8 @@ build_port() {
 	done
 	# everything was fine we can copy package the package to the package
 	# directory
-	pax -rw -p p -s ",${mnt}/new_packages,,g" ${mnt}/new_packages ${POUDRIERE_DATA}/packages/${MASTERNAME}
+	pax -rw -p p -s ",${mnt}/new_packages,,g" \
+		${mnt}/new_packages ${POUDRIERE_DATA}/packages/${MASTERNAME}
 
 	bset ${MY_JOBID} status "idle:"
 	return 0
@@ -1190,7 +1193,8 @@ save_wrkdir() {
 
 	[ -n "${SAVE_WRKDIR}" ] || return 0
 	# Only save if not in fetch/checksum phase
-	[ "${failed_phase}" != "fetch" -a "${failed_phase}" != "checksum" -a "${failed_phase}" != "extract" ] || return 0
+	[ "${failed_phase}" != "fetch" -a "${failed_phase}" != "checksum" -a \
+		"${failed_phase}" != "extract" ] || return 0
 
 	mkdir -p ${tardir}
 
@@ -1384,7 +1388,8 @@ build_queue() {
 
 		[ ${builders_active} -eq 1 ] || deadlock_detected
 
-		unset jobid; until trappedinfo=; read -t 30 jobid <&6 || [ -z "$trappedinfo" ]; do :; done
+		unset jobid; until trappedinfo=; read -t 30 jobid <&6 ||
+			[ -z "$trappedinfo" ]; do :; done
 	done
 	exec 6<&-
 	exec 6>&-
@@ -1596,7 +1601,8 @@ build_pkg() {
 			ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
 			badd ports.failed "${port} ${PKGNAME} ${failed_phase}"
 			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
-			run_hook pkgbuild failed "${port}" "${PKGNAME}" "${failed_phase}" "${log}/logs/errors/${PKGNAME}.log"
+			run_hook pkgbuild failed "${port}" "${PKGNAME}" "${failed_phase}" \
+				"${log}/logs/errors/${PKGNAME}.log"
 			clean_rdepends=1
 		fi
 	fi
@@ -1693,7 +1699,8 @@ pkg_get_origin() {
 	if [ ! -f "${originfile}" ]; then
 		if [ -z "${origin}" ]; then
 			if [ "${PKG_EXT}" = "tbz" ]; then
-				origin=$(tar -xf "${pkg}" -O +CONTENTS | awk -F: '$1 == "@comment ORIGIN" { print $2 }')
+				origin=$(tar -xf "${pkg}" -O +CONTENTS | \
+					awk -F: '$1 == "@comment ORIGIN" { print $2 }')
 			else
 				origin=$(pkg query -F "${pkg}" "%o")
 			fi
@@ -1713,9 +1720,12 @@ pkg_get_options() {
 
 	if [ ! -f "${optionsfile}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
-			compiled_options=$(tar -xf "${pkg}" -O +CONTENTS | awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
+			compiled_options=$(tar -xf "${pkg}" -O +CONTENTS | \
+				awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | \
+				sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 		else
-			compiled_options=$(pkg query -F "${pkg}" '%Ov %Ok' | awk '$1 == "on" {print $2}' | sort | tr '\n' ' ')
+			compiled_options=$(pkg query -F "${pkg}" '%Ov %Ok' | \
+				awk '$1 == "on" {print $2}' | sort | tr '\n' ' ')
 		fi
 		echo "${compiled_options}" > "${optionsfile}"
 		echo "${compiled_options}"
@@ -1827,7 +1837,8 @@ delete_old_pkg() {
 
 	# Check if the compiled options match the current options from make.conf and /var/db/options
 	if [ "${CHECK_CHANGED_OPTIONS:-no}" != "no" ]; then
-		current_options=$(injail make -C /usr/ports/${o} pretty-print-config | tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
+		current_options=$(injail make -C /usr/ports/${o} pretty-print-config | \
+			tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 		compiled_options=$(pkg_get_options ${pkg})
 
 		if [ "${compiled_options}" != "${current_options}" ]; then
@@ -1844,7 +1855,8 @@ delete_old_pkg() {
 
 delete_old_pkgs() {
 	[ ! -d ${POUDRIERE_DATA}/packages/${MASTERNAME}/All ] && return 0
-	[ -n "$(dir_empty ${POUDRIERE_DATA}/packages/${MASTERNAME}/All)" ] && return 0
+	[ -n "$(dir_empty ${POUDRIERE_DATA}/packages/${MASTERNAME}/All)" ] &&
+		return 0
 	parallel_start
 	for pkg in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
 		# Check for non-empty directory with no packages in it
@@ -1900,7 +1912,8 @@ cache_get_pkgname() {
 
 	# Add to cache if not found.
 	if [ -z "${pkgname}" ]; then
-		[ -d "${MASTERMNT}/usr/ports/${origin}" ] || err 1 "Invalid port origin '${origin}' not found."
+		[ -d "${MASTERMNT}/usr/ports/${origin}" ] ||
+			err 1 "Invalid port origin '${origin}' not found."
 		pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME ||
 			err 1 "Error getting PKGNAME for ${origin}")
 		# Make sure this origin did not already exist
@@ -1941,9 +1954,11 @@ compute_deps() {
 
 	for dep_port in `list_deps ${port}`; do
 		msg_debug "${port} depends on ${dep_port}"
-		[ "${port}" != "${dep_port}" ] || err 1 "${port} incorrectly depends on itself. Please contact maintainer of the port to fix this."
+		[ "${port}" != "${dep_port}" ] ||
+			err 1 "${port} incorrectly depends on itself. Please contact maintainer of the port to fix this."
 		# Detect bad cat/origin/ dependency which pkgng will not register properly
-		[ "${dep_port}" = "${dep_port%/}" ] || err 1 "${port} depends on bad origin '${dep_port}'; Please contact maintainer of the port to fix this."
+		[ "${dep_port}" = "${dep_port%/}" ] ||
+			err 1 "${port} depends on bad origin '${dep_port}'; Please contact maintainer of the port to fix this."
 		dep_pkgname=$(cache_get_pkgname ${dep_port})
 
 		# Only do this if it's not already done, and not ALL, as everything will
@@ -2103,7 +2118,8 @@ prepare_ports() {
 	bset status "computingdeps:"
 	parallel_start
 	for port in $(listed_ports); do
-		[ -d "${MASTERMNT}/usr/ports/${port}" ] || err 1 "Invalid port origin: ${port}"
+		[ -d "${MASTERMNT}/usr/ports/${port}" ] ||
+			err 1 "Invalid port origin: ${port}"
 		parallel_run compute_deps ${port}
 	done
 	parallel_stop
