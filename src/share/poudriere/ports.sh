@@ -148,7 +148,7 @@ if [ ${CREATE} -eq 1 ]; then
 			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract ||
 			{
 				destroyfs ports ${PTNAME}
-				err 1 " Fail"
+				err 1 " fail"
 			}
 			;;
 		svn*)
@@ -164,7 +164,7 @@ if [ ${CREATE} -eq 1 ]; then
 			svn -q co ${proto}://${SVN_HOST}/ports/${BRANCH} \
 				${PTMNT} || {
 					destroyfs ports ${PTNAME}
-					err 1 " Fail"
+					err 1 " fail"
 				}
 			echo " done"
 			;;
@@ -172,7 +172,7 @@ if [ ${CREATE} -eq 1 ]; then
 			msg "Cloning the ports tree"
 			git clone ${GIT_URL} ${PTMNT} || {
 				destroyfs ports ${PTNAME}
-				err 1 " Fail"
+				err 1 " fail"
 			}
 			echo " done"
 			;;
