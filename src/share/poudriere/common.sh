@@ -2329,6 +2329,8 @@ if [ ! -d ${POUDRIERED}/jails ]; then
 		-o ${NS}:type,${NS}:name,${NS}:version,${NS}:arch,${NS}:method,mountpoint,name | \
 		grep "^rootfs" | \
 		while read t name version arch method mnt fs; do
+			[ -z "${name###*}" ] && continue # Skip comments
+
 			msg "Converting the ${name} jail"
 			jset ${name} version ${version}
 			jset ${name} arch ${arch}
