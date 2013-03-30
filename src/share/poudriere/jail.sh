@@ -95,9 +95,8 @@ update_version() {
 	osversion=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILMNT}/usr/include/sys/param.h`
 	login_env=",UNAME_r=${release},UNAME_v=FreeBSD ${release},OSVERSION=${osversion}"
 
-	if [ "${ARCH}" = "i386" -a "${REALARCH}" = "amd64" ];then
+	[ "${ARCH}" = "i386" -a "${REALARCH}" = "amd64" ] &&
 		login_env="${login_env},UNAME_p=i386,UNAME_m=i386"
-	fi
 
 	sed -i "" -e "s/:\(setenv.*\):/:\1${login_env}:/" ${JAILMNT}/etc/login.conf
 	cap_mkdb ${JAILMNT}/etc/login.conf
@@ -347,9 +346,7 @@ create_jail() {
 			https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/ | \
 			sed -n "s,.*href=\"\(.*${VERSION}.*\)-JPSNAP/\".*,\1,p" | \
 			sort -k 3 -t - -r | head -n 1 `
-		if [ -z ${ALLBSDVER} ]; then
-			err 1 "Unknown version $VERSION"
-		fi
+		[ -z ${ALLBSDVER} ] && err 1 "Unknown version $VERSION"
 
 		OIFS=${IFS}
 		IFS=-
@@ -473,9 +470,8 @@ while getopts "J:j:v:a:z:m:n:f:M:sdklqcip:ut:z:" FLAG; do
 			VERSION=${OPTARG}
 			;;
 		a)
-			if [ "${REALARCH}" != "amd64" -a "${REALARCH}" != ${OPTARG} ]; then
+			[ "${REALARCH}" != "amd64" -a "${REALARCH}" != ${OPTARG} ] &&
 				err 1 "Only amd64 host can choose another architecture"
-			fi
 			ARCH=${OPTARG}
 			;;
 		m)

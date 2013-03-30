@@ -173,9 +173,8 @@ prepare_ports
 
 bset status "building:"
 
-if [ -z "${PORTTESTING}" -a -z "${ALLOW_MAKE_JOBS}" ]; then
+[ -z "${PORTTESTING}" -a -z "${ALLOW_MAKE_JOBS}" ] &&
 	echo "DISABLE_MAKE_JOBS=yes" >> ${MASTERMNT}/etc/make.conf
-fi
 
 markfs prepkg ${MASTERMNT}
 

@@ -288,9 +288,8 @@ show_log_info() {
 }
 
 siginfo_handler() {
-	if [ "${POUDRIERE_BUILD_TYPE}" != "bulk" ]; then
-		return 0;
-	fi
+	[ "${POUDRIERE_BUILD_TYPE}" != "bulk" ] && return 0
+
 	trappedinfo=1
 	local status=$(bget status)
 	local nbb=$(bget stats_built 2>/dev/null)
@@ -471,9 +470,7 @@ umountfs() {
 		case ${pt} in
 		${mnt}${pattern}*)
 			umount -f ${pt} || :
-			if [ "${dev#/dev/md*}" != "${dev}" ]; then
-				mdconfig -d -u ${dev#/dev/md*}
-			fi
+			[ "${dev#/dev/md*}" != "${dev}" ] && mdconfig -d -u ${dev#/dev/md*}
 		;;
 		esac
 	done
@@ -654,9 +651,8 @@ do_jail_mounts() {
 		[ ${JAILED} -eq 0 ] && mount -t fdescfs fdesc ${mnt}/dev/fd
 		mount -t procfs proc ${mnt}/proc
 		if [ -z "${NOLINUX}" ]; then
-			if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
+			[ "${arch}" = "i386" -o "${arch}" = "amd64" ] &&
 				mount -t linprocfs linprocfs ${mnt}/compat/linux/proc
-			fi
 		fi
 	fi
 
@@ -675,7 +671,7 @@ use_options() {
 	fi
 	[ -d "${optionsdir}" ] || return 1
 	optionsdir=$(realpath ${optionsdir} 2>/dev/null)
-	if [ "${mnt##*/}" = "ref" ]; then
+	[ "${mnt##*/}" = "ref" ] &&
 		msg "Mounting /var/db/ports from: ${optionsdir}"
 	mount -t nullfs -o ro ${optionsdir} ${mnt}/var/db/ports ||
 		err 1 "Failed to mount OPTIONS directory"
@@ -710,16 +706,14 @@ do_portbuild_mounts() {
 	optionsdir="${optionsdir} ${jname}-${ptname} ${jname} -"
  
 	mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/All
-	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
+	[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
 		mount -t nullfs ${CCACHE_DIR} ${mnt}/ccache
-	fi
 	[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
 	[ ${TMPFS_WRKDIR} -eq 1 ] && mount -t tmpfs tmpfs ${mnt}/wrkdirs
 	# Only show mounting messages once, not for every builder
 	if [ ${mnt##*/} = "ref" ]; then
-		if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
+		[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
 			msg "Mounting ccache from: ${CCACHE_DIR}"
-		fi
 		msg "Mounting packages from: ${POUDRIERE_DATA}/packages/${MASTERNAME}"
 	fi
 
@@ -772,9 +766,7 @@ jail_start() {
 	export HOME=/root
 	export USER=root
 	export FORCE_PACKAGE=yes
-	if [ -z "${NO_PACKAGE_BUILDING}" ]; then
-		export PACKAGE_BUILDING=yes
-	fi
+	[ -z "${NO_PACKAGE_BUILDING}" ] && export PACKAGE_BUILDING=yes
 
 	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
 	msg_n "Creating the reference jail..."
@@ -1450,9 +1442,7 @@ parallel_build() {
 	[ ${nremaining} -eq 0 ] && return 0
 
 	# Minimize PARALLEL_JOBS to queue size
-	if [ ${PARALLEL_JOBS} -gt ${nremaining} ]; then
-		PARALLEL_JOBS=${nremaining##* }
-	fi
+	[ ${PARALLEL_JOBS} -gt ${nremaining} ] && PARALLEL_JOBS=${nremaining##* }
 
 	msg "Building ${nremaining} packages using ${PARALLEL_JOBS} builders"
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
@@ -1799,9 +1789,8 @@ delete_stale_pkg_cache() {
 	for pkg in ${cachedir}/*.${PKG_EXT}; do
 		pkg_file=${pkg##*/}
 		# If this package no longer exists in the PKGDIR, delete the cache.
-		if [ ! -e "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${pkg_file}" ]; then
+		[ ! -e "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${pkg_file}" ] &&
 			clear_pkg_cache ${pkg}
-		fi
 	done
 
 	return 0
@@ -1887,9 +1876,8 @@ lock_acquire() {
 	local lockname=$1
 
 	while :; do
-		if mkdir ${POUDRIERE_DATA}/.lock-${MASTERNAME}-${lockname} 2>/dev/null; then
+		mkdir ${POUDRIERE_DATA}/.lock-${MASTERNAME}-${lockname} 2>/dev/null &&
 			break
-		fi
 		sleep 0.1
 	done
 }
@@ -1983,9 +1971,8 @@ listed_ports() {
 		return 0
 	fi
 	if [ -z "${LISTPORTS}" ]; then
-		if [ -n "${LISTPKGS}" ]; then
+		[ -n "${LISTPKGS}" ] &&
 			grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}
-		fi
 	else
 		echo ${LISTPORTS} | tr ' ' '\n'
 	fi
