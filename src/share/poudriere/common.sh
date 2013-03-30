@@ -283,7 +283,7 @@ exit_handler() {
 show_log_info() {
 	local log=$(log_path)
 	msg "Logs: ${log}"
-	[ -z "${URL_BASE}" ] || \
+	[ -z "${URL_BASE}" ] ||
 		msg "WWW: ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"
 }
 
@@ -682,7 +682,7 @@ use_options() {
 mount_packages() {
 	local mnt=$(my_path)
 	mount -t nullfs "$@" ${POUDRIERE_DATA}/packages/${MASTERNAME} \
-		${mnt}/packages || \
+		${mnt}/packages ||
 		err 1 "Failed to mount the packages directory "
 }
 
@@ -986,7 +986,7 @@ nohang() {
 		# This is done instead of a 'sleep' as it should recognize
 		# the command has completed right away instead of waiting
 		# on the 'sleep' to finish
-		unset n; until trappedinfo=; read -t $read_timeout n <&7 || \
+		unset n; until trappedinfo=; read -t $read_timeout n <&7 ||
 			[ -z "$trappedinfo" ]; do :; done
 		if [ "${n}" = "done" ]; then
 			wait $childpid || ret=1
@@ -1893,13 +1893,13 @@ cache_get_pkgname() {
 	# Add to cache if not found.
 	if [ -z "${pkgname}" ]; then
 		[ -d "${MASTERMNT}/usr/ports/${origin}" ] || err 1 "Invalid port origin '${origin}' not found."
-		pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME || \
+		pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME ||
 			err 1 "Error getting PKGNAME for ${origin}")
 		# Make sure this origin did not already exist
 		existing_origin=$(cache_get_origin "${pkgname}" 2>/dev/null || :)
 		# It may already exist due to race conditions, it is not harmful. Just ignore.
 		if [ "${existing_origin}" != "${origin}" ]; then
-			[ -n "${existing_origin}" ] && \
+			[ -n "${existing_origin}" ] &&
 				err 1 "Duplicated origin for ${pkgname}: ${origin} AND ${existing_origin}. Rerun with -vv to see which ports are depending on these."
 			echo "${pkgname}" > ${cache_origin_pkgname}
 			cache_pkgname_origin="${MASTERMNT}/poudriere/var/cache/pkgname-origin/${pkgname}"
@@ -1940,7 +1940,7 @@ compute_deps() {
 
 		# Only do this if it's not already done, and not ALL, as everything will
 		# be touched anyway
-		[ ${ALL:-0} -eq 0 ] && ! [ -d "${mnt}/poudriere/deps/${dep_pkgname}" ] && \
+		[ ${ALL:-0} -eq 0 ] && ! [ -d "${mnt}/poudriere/deps/${dep_pkgname}" ] &&
 			compute_deps "${dep_port}" "${dep_pkgname}"
 
 		touch "${pkg_pooldir}/${dep_pkgname}"

@@ -63,7 +63,7 @@ Options:
 }
 
 list_jail() {
-	[ ${QUIET} -eq 0 ] && \
+	[ ${QUIET} -eq 0 ] &&
 		printf '%-20s %-20s %-7s %-7s\n' "JAILNAME" "VERSION" "ARCH" "METHOD"
 	for j in $(find ${POUDRIERED}/jails -type d -maxdepth 1 -mindepth 1 -print); do
 		name=${j##*/}
@@ -106,7 +106,7 @@ update_version() {
 update_jail() {
 	local netargs
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
-	jail_runs && \
+	jail_runs &&
 		err 1 "Unable to remove jail ${JAILNAME}: it is running"
 
 	METHOD=$(jget ${JAILNAME} method)
@@ -179,7 +179,7 @@ build_and_install_world() {
 	make -C ${JAILMNT}/usr/src buildworld ${MAKE_JOBS} ${MAKEWORLDARGS} || err 1 "Fail to build world"
 	msg "Starting make installworld"
 	make -C ${JAILMNT}/usr/src installworld DESTDIR=${JAILMNT} || err 1 "Fail to install world"
-	make -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distrib-dirs && \
+	make -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distrib-dirs &&
 	make -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distribution
 }
 
@@ -251,7 +251,7 @@ install_from_ftp() {
 		DISTS="base dict src games"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32"
 		for dist in ${DISTS}; do
-			fetch_file ${JAILMNT}/fromftp/ ${URL}/$dist/CHECKSUM.SHA256 || \
+			fetch_file ${JAILMNT}/fromftp/ ${URL}/$dist/CHECKSUM.SHA256 ||
 				err 1 "Fail to fetch checksum file"
 			sed -n "s/.*(\(.*\...\)).*/\1/p" \
 				${JAILMNT}/fromftp/CHECKSUM.SHA256 | \
