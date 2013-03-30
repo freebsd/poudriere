@@ -27,7 +27,7 @@
 set -e
 
 usage() {
-        echo "poudriere queue queuename poudriere_command"
+	echo "poudriere queue queuename poudriere_command"
 	exit 1
 }
 

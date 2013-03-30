@@ -79,7 +79,7 @@ function uniq(as, pat, subst, B) {
 			str = A[a];
 			for (j in subst)
 				sub(pat[j], subst[j], str);
-				
+
 			as = as" "str
 			B[i] = A[a];
 			i++;
