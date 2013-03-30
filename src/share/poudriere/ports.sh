@@ -178,6 +178,8 @@ if [ ${CREATE} -eq 1 ]; then
 			;;
 		esac
 		pset ${PTNAME} method ${METHOD}
+	else
+		pset ${PTNAME} method "-"
 	fi
 fi
 
