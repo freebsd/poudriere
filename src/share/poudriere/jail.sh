@@ -80,7 +80,7 @@ delete_jail() {
 	msg_n "Removing ${JAILNAME} jail..."
 	destroyfs jail ${JAILNAME}
 	rm -rf ${POUDRIERED}/jails/${JAILNAME} || :
-	echo done
+	echo " done"
 }
 
 cleanup_new_jail() {
@@ -198,11 +198,11 @@ install_from_svn() {
 	esac
 	if [ ${UPDATE} -eq 0 ]; then
 		msg_n "Checking out the sources from svn..."
-		svn -q co ${proto}://${SVN_HOST}/base/${VERSION} ${JAILMNT}/usr/src || err 1 "Fail "
+		svn -q co ${proto}://${SVN_HOST}/base/${VERSION} ${JAILMNT}/usr/src || err 1 " fail"
 		echo " done"
 	else
 		msg_n "Updating the sources from svn..."
-		svn -q update ${JAILMNT}/usr/src || err 1 "Fail "
+		svn -q update ${JAILMNT}/usr/src || err 1 " fail"
 		echo " done"
 	fi
 	build_and_install_world
@@ -276,7 +276,7 @@ install_from_ftp() {
 					;;
 			esac
 			cat ${JAILMNT}/fromftp/${SET}.* | \
-				tar --unlink -xpf - -C ${JAILMNT}/${APPEND} || err 1 " Fail" && echo " done"
+				tar --unlink -xpf - -C ${JAILMNT}/${APPEND} || err 1 " fail" && echo " done"
 		done
 	else
 		local type
