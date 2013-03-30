@@ -429,7 +429,8 @@ createfs() {
 	if [ -n "${fs}" -a "${fs}" != "none" ]; then
 		msg_n "Creating ${name} fs..."
 		zfs create -p \
-			-o mountpoint=${mnt} ${fs} || err 1 " fail" && echo " done"
+			-o mountpoint=${mnt} ${fs} || err 1 " fail"
+		echo " done"
 	else
 		mkdir -p ${mnt}
 	fi

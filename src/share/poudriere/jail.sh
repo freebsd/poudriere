@@ -276,7 +276,8 @@ install_from_ftp() {
 					;;
 			esac
 			cat ${JAILMNT}/fromftp/${SET}.* | \
-				tar --unlink -xpf - -C ${JAILMNT}/${APPEND} || err 1 " fail" && echo " done"
+				tar --unlink -xpf - -C ${JAILMNT}/${APPEND} || err 1 " fail"
+			echo " done"
 		done
 	else
 		local type
@@ -304,7 +305,8 @@ install_from_ftp() {
 			msg "Fetching ${dist} for FreeBSD ${V} ${ARCH}"
 			fetch_file ${JAILMNT}/fromftp/${dist} ${URL}/${dist}
 			msg_n "Extracting ${dist}..."
-			tar -xpf ${JAILMNT}/fromftp/${dist} -C  ${JAILMNT}/ || err 1 " fail" && echo " done"
+			tar -xpf ${JAILMNT}/fromftp/${dist} -C  ${JAILMNT}/ || err 1 " fail"
+			echo " done"
 		done
 	fi
 
