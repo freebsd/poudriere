@@ -521,7 +521,7 @@ while getopts "J:j:v:a:z:m:n:f:M:sdklqcip:ut:z:" FLAG; do
 done
 
 METHOD=${METHOD:-ftp}
-if [ -n "${JAILNAME}" ] && [ ${CREATE} -eq 0 ]; then
+if [ -n "${JAILNAME}" -a ${CREATE} -eq 0 ]; then
 	ARCH=$(jget ${JAILNAME} arch)
 	JAILFS=$(jget ${JAILNAME} fs)
 	JAILMNT=$(jget ${JAILNAME} mnt)
