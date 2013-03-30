@@ -527,9 +527,6 @@ if [ -n "${JAILNAME}" ] && [ ${CREATE} -eq 0 ]; then
 	JAILMNT=$(jget ${JAILNAME} mnt)
 fi
 
-
-[ $(( CREATE + LIST + STOP + START + DELETE + UPDATE )) -lt 1 ] && usage
-
 case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}" in
 	100000)
 		test -z ${JAILNAME} && usage
@@ -558,5 +555,8 @@ case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}" in
 	000001)
 		test -z ${JAILNAME} && usage
 		update_jail
+		;;
+	*)
+		usage
 		;;
 esac
