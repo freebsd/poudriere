@@ -477,6 +477,8 @@ umountfs() {
 		;;
 		esac
 	done
+
+	return 0
 }
 
 zfs_getfs() {
@@ -657,6 +659,8 @@ do_jail_mounts() {
 			fi
 		fi
 	fi
+
+	return 0
 }
 
 use_options() {
@@ -726,6 +730,8 @@ do_portbuild_mounts() {
 	for opt in ${optionsdir}; do
 		use_options ${mnt} ${opt} && break || continue
 	done
+
+	return 0
 }
 
 jail_start() {
@@ -1787,6 +1793,8 @@ delete_stale_pkg_cache() {
 			clear_pkg_cache ${pkg}
 		fi
 	done
+
+	return 0
 }
 
 delete_old_pkg() {
