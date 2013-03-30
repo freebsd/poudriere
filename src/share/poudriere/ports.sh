@@ -124,7 +124,7 @@ esac
 
 if [ ${LIST} -eq 1 ]; then
 	format='%-20s %-10s %s\n'
-	[ $QUIET -eq 0 ] && \
+	[ $QUIET -eq 0 ] &&
 		printf "${format}" "PORTSTREE" "METHOD" "PATH"
 	porttree_list | while read ptname ptmethod ptpath; do
 		printf "${format}" ${ptname} ${ptmethod} ${ptpath}
@@ -144,8 +144,8 @@ if [ ${CREATE} -eq 1 ]; then
 		portsnap)
 			mkdir ${PTMNT}/.snap
 			msg "Extracting portstree \"${PTNAME}\"..."
-			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract || \
-			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract || \
+			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract ||
+			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract ||
 			{
 				destroyfs ports ${PTNAME}
 				err 1 " Fail"

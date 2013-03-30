@@ -192,7 +192,7 @@ if [ $INTERACTIVE_MODE -gt 0 ]; then
 	msg "Installing run-depends"
 	# Install run-depends since this is an interactive test
 	echo "PACKAGES=/packages" >> ${MASTERMNT}/etc/make.conf
-	injail make -C /usr/ports/${ORIGIN} run-depends || \
+	injail make -C /usr/ports/${ORIGIN} run-depends ||
 		msg "Failed to install RUN_DEPENDS"
 
 	# Enable networking
