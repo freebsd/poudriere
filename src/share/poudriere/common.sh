@@ -1078,7 +1078,6 @@ build_port() {
 			msg "Checking for extra files and directories"
 			PREFIX=$(injail env ${PORT_FLAGS} make -C ${portdir} -VPREFIX)
 			bset ${MY_JOBID} status "leftovers:${port}"
-			local portname datadir etcdir docsdir examplesdir wwwdir site_perl
 			local add=$(mktemp ${mnt}/tmp/add.XXXXXX)
 			local add1=$(mktemp ${mnt}/tmp/add1.XXXXXX)
 			local del=$(mktemp ${mnt}/tmp/del.XXXXXX)
