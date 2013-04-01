@@ -1,13 +1,17 @@
 PREFIX?=	/usr/local
 
+all: dirwatch make_index
+
 dirwatch: dirwatch.c
 	${CC} -Wall -Werror ${CFLAGS} dirwatch.c -o dirwatch
 
-All: dirwatch
+make_index: make_index.c
+	${CC} -Wall -Werror ${CFLAGS} make_index.c -o make_index -lsbuf
 
-install: dirwatch
+install: dirwatch make_index
 	mkdir -p ${PREFIX}/libexec/poudriere
 	install -m 755 -o root -g wheel dirwatch ${PREFIX}/libexec/poudriere
+	install -m 755 -o root -g wheel make_index ${PREFIX}/libexec/poudriere
 
 clean:
-	rm -f dirwatch
+	rm -f dirwatch make_index
