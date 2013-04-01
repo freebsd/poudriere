@@ -67,6 +67,7 @@ clean_restricted() {
 
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
+LIBEXECPREFIX=`realpath ${SCRIPTPREFIX}/../../libexec/poudriere`
 PTNAME="default"
 SKIPSANITY=0
 SETNAME=""
@@ -229,8 +230,7 @@ else
 	done
 
 	msg_n "Generating INDEX..."
-	awk -v indf=${INDEXF}.1 -F\| -f ${AWKPREFIX}/make_index.awk ${INDEXF}.1 \
-	    > ${INDEXF}
+	${LIBEXECPREFIX}/make_index ${INDEXF}.1 ${INDEXF}
 	echo " done"
 
 	rm ${INDEXF}.1
