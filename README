@@ -19,6 +19,12 @@ A copy of this documentation could be found in the doc directory.
 
 You can also open the manpage of poudriere, located in the 8th section.
 
+Support
+-------
+
+IRC:          #poudriere on freenode
+Mailing list: freebsd-pkg@FreeBSD.org
+
 Getting started with poudriere
 ------------------------------
 
