@@ -559,6 +559,7 @@ EOF
 ./etc/master.passwd
 ./etc/shells
 ./var/mail/*
+.${LOCALBASE:-/usr/local}/etc/gconf/gconf.xml.defaults
 EOF
 	fi
 	mtree -X ${mnt}/poudriere/mtree.${name}exclude \
@@ -1134,6 +1135,8 @@ build_port() {
 					%%PEARDIR%%/.depdb|%%PEARDIR%%/.filemap) ;;
 					#ls-R files from texmf are often regenerated
 					*/ls-R);;
+					# xmlcatmgr is constantly updating catalog.ports ignore modification to that file
+					share/xml/catalog.ports);;
 					*) echo "${ppath}" >> ${mod} ;;
 					esac
 					;;
