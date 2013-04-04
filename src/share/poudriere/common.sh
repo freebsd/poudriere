@@ -1132,6 +1132,8 @@ build_port() {
 					info/dir) ;;
 					# The is pear database cache
 					%%PEARDIR%%/.depdb|%%PEARDIR%%/.filemap) ;;
+					#ls-R files from texmf are often regenerated
+					*/ls-R);;
 					*) echo "${ppath}" >> ${mod} ;;
 					esac
 					;;
