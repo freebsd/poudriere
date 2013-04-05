@@ -1,6 +1,6 @@
 <h1>creating pkgng repositories</h1>
 
-Install poudriere and pkgng on the host (please note that the host do not need
+Install poudriere and pkgng on the host (please note that the host does not need
 to be converted to pkgng)
 
     <verbatim>make -C /usr/ports/ports-mgmt/poudriere install clean
@@ -18,7 +18,7 @@ DISTFILES_CACHE=/usr/ports/distfiles</verbatim>
 
 poudriere is now ready to be used.
 
-First create a ports tree to be used by poudriere 
+First create a ports tree to be used by poudriere:
 
     <verbatim>poudriere ports -c</verbatim>
 
@@ -28,8 +28,8 @@ Create the jail in version you want to build packages for:
 poudriere jail -c -j 10i386 -v head -a i386 -m svn</verbatim>
 
 The first will create a 9.0-RELEASE amd64 jail from the official sets (fetched
-on FREEBSD_HOST) The second will create a current jail using svn and build for
-i386
+from FREEBSD_HOST) The second will create a current jail using svn and build for
+i386.
 
 As poudriere works for both legacy pkg_* and pkgng you need to make it pkgng
 aware: 
@@ -48,17 +48,17 @@ www/nginx</verbatim>
 www/firefox
 editors/libreoffice</verbatim>
 
-Just run poudriere: 
+Start a poudriere build run:
 
     <verbatim>poudriere bulk -f ~/mylist1 -j 90amd64
 poudriere bulk -f ~/mylist2 -j 10i386</verbatim>
 
-This will built 2 pkgng repositories:
+This will build two pkgng repositories:
 
   *  ${POUDRIERE_DATA}/packages/10i386-default
   *  ${POUDRIERE_DATA}/packages/90amd64-default 
 
-Configure you http server to those directories to be able to serve them.
+Configure an http server to serve these directories.
 
 On your user boxes: (if you use the automatic bootstrap it will take
 care of creating this file) 
@@ -66,20 +66,22 @@ care of creating this file)
     <verbatim>echo "packagesite: http://yoururl/10i386-default" >> /usr/local/etc/pkg.conf</verbatim>
     <verbatim>echo "packagesite: http://yoururl/90amd64-default" >> /usr/local/etc/pkg.conf</verbatim>
 
-From 9.1 you can directly bootstrap from the base:
+From FreeBSD 9.1 and later it is possible to directly bootstrap from the base:
 
     <verbatim>PACKAGESITE="http://yoururl/10i386-default" pkg update</verbatim>
 
-Before 9.1 you will need to boostrap by hand:
+Before FreeBSD 9.1, it is necessary to bootstrap by hand:
 
     <verbatim>fetch http://yoururl/90amd64-default/Latest/pkg.txz
 tar xf ./pkg.txz -s ",/.*/,,g" "*/pkg-static"
 ./pkg-static add ./pkg.txz</verbatim>
 
-To update your repositories just rerun poudriere bulk. By default, the build
-will be incremental, and reuse packages from the previous run. Use -c to clear
-all packages and build fresh.
-
-    <verbatim>poudriere ports -u # this update your default ports tree
-poudriere bulk -f ~/mylist1 -j 90amd64
+Normal operation after the needed build jails have been created looks like:
+ * Update the poudriere ports tree:
+    <verbatim>poudriere ports -u</verbatim>
+ * Run an incremental build on both build jails:
+    <verbatim>poudriere bulk -f ~/mylist1 -j 90amd64
 poudriere bulk -f ~/mylist2 -j 10i386</verbatim>
+
+It might become necessary to do a full fresh build, use the -c flag to bulk to
+clear all packages and build fresh.
