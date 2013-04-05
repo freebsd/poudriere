@@ -147,7 +147,8 @@ if [ ${CREATE} -eq 1 ]; then
 			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract ||
 			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract ||
 			{
-				destroyfs ports ${PTNAME}
+				destroyfs ${PTMNT} ports
+				rm -rf ${POUDRIERED}/ports/${PTNAME} || :
 				err 1 " fail"
 			}
 			;;
@@ -163,7 +164,8 @@ if [ ${CREATE} -eq 1 ]; then
 			msg_n "Checking out the ports tree..."
 			svn -q co ${proto}://${SVN_HOST}/ports/${BRANCH} \
 				${PTMNT} || {
-					destroyfs ports ${PTNAME}
+					destroyfs ${PTMNT} ports
+					rm -rf ${POUDRIERED}/ports/${PTNAME} || :
 					err 1 " fail"
 				}
 			echo " done"
@@ -171,7 +173,8 @@ if [ ${CREATE} -eq 1 ]; then
 		git)
 			msg "Cloning the ports tree"
 			git clone ${GIT_URL} ${PTMNT} || {
-				destroyfs ports ${PTNAME}
+				destroyfs ${PTMNT} ports
+				rm -rf ${POUDRIERED}/ports/${PTNAME} || :
 				err 1 " fail"
 			}
 			echo " done"
@@ -190,7 +193,8 @@ if [ ${DELETE} -eq 1 ]; then
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	msg_n "Deleting portstree \"${PTNAME}\""
-	destroyfs ports ${PTNAME}
+	destroyfs ${PTMNT} ports
+	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
 	echo " done"
 fi
 
