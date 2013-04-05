@@ -1038,7 +1038,8 @@ build_port() {
 		[ "${phase}" = "package" ] && echo "PACKAGES=/new_packages" >> ${mnt}/etc/make.conf
 
 		# 24 hours for 1 command, or 20 minutes with no log update
-		nohang 86400 1200 ${log}/logs/${pkgname}.log \
+		nohang ${MAX_EXECUTION_TIME:-86400} ${NOHANG_TIME:-7200} \
+			${log}/logs/${pkgname}.log \
 			injail env ${PKGENV} ${PORT_FLAGS} \
 			make -C ${portdir} ${phase}
 		hangstatus=$? # This is done as it may return 1 or 2 or 3

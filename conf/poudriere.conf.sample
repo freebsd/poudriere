@@ -124,3 +124,12 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # This will be used for giving URL hints to the HTML output when
 # scheduling and starting builds
 #URL_BASE=http://yourdomain.com/poudriere/
+
+
+# This defines the max time (in seconds) that a command may run for a build
+# before it is killed for taking too long. Default: 86400
+#MAX_EXECUTION_TIME=86400
+
+# This defines the how long (in seconds) before a command is considered to
+# be in a runaway state for having no output on stdout. Default: 7200
+#NOHANG_TIME=7200
