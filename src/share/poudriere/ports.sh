@@ -208,7 +208,12 @@ if [ ${UPDATE} -eq 1 ]; then
 	fi
 	case ${METHOD} in
 	portsnap|"")
-		/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PORTSMNT:-${PTMNT}} ${PSCOMMAND} alfred
+		if [ -d "${PTMNT}/snap" ]; then
+			SNAPDIR=${PTMNT}/snap
+		else
+			SNAPDIR=${PTMNT}/.snap
+		fi
+		/usr/sbin/portsnap -d ${SNAPDIR} -p ${PORTSMNT:-${PTMNT}} ${PSCOMMAND} alfred
 		;;
 	svn*)
 		msg_n "Updating the ports tree..."
