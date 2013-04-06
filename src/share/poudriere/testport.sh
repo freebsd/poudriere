@@ -183,6 +183,8 @@ if ! build_port /usr/ports/${ORIGIN}; then
 		stop_build /usr/ports/${ORIGIN} ${log}/logs/${PKGNAME}.log
 		exit 1
 	fi
+elif [ -f ${MASTERMNT}/usr/ports/${ORIGIN}/.keep ]; then
+	save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" "noneed" ||:
 fi
 
 msg "Installing from package"
