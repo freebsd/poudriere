@@ -2205,6 +2205,9 @@ prepare_ports() {
 	msg "Deleting stale symlinks"
 	find -L ${POUDRIERE_DATA}/packages/${MASTERNAME} -type l -exec rm -f {} +
 
+	msg "Deleting empty directories"
+	find ${POUDRIERE_DATA}/packages/${MASTERNAME} -type d -empty -delete
+
 	bset status "cleaning:"
 	msg "Cleaning the build queue"
 	export LOCALBASE=${LOCALBASE:-/usr/local}
