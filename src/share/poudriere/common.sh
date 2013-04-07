@@ -1708,6 +1708,27 @@ pkg_get_origin() {
 	echo ${origin}
 }
 
+pkg_get_dep_origin() {
+	[ $# -ne 1 ] && eargs pkg
+	local pkg=$1
+	local dep_origin_file=$(pkg_cache_dir ${pkg})/dep_origin
+	local compiled_dep_origins
+
+	if [ ! -f "${dep_origin_file}" ]; then
+		if [ "${PKG_EXT}" = "tbz" ]; then
+			compiled_dep_origins=$(tar -xf "${pkg}" -O +CONTENTS | \
+				awk -F: '$1 == "@comment DEPORIGIN" ${print $2}' | tr '\n' ' ')
+		else
+			compiled_dep_origins=$(pkg query -F "${pkg}" '%do' | tr '\n' ' ')
+		fi
+		echo "${compiled_dep_origins}" > "${dep_origin_file}"
+		echo "${compiled_dep_origins}"
+		return 0
+	fi
+
+	cat "${dep_origin_file}"
+}
+
 pkg_get_options() {
 	[ $# -ne 1 ] && eargs pkg
 	local pkg=$1
@@ -1743,6 +1764,7 @@ pkg_cache_data() {
 	mkdir -p $(pkg_cache_dir ${pkg})
 	pkg_get_options ${pkg} > /dev/null
 	pkg_get_origin ${pkg} ${origin} > /dev/null
+	pkg_get_dep_origin ${pkg} > /dev/null
 	deps_file ${pkg} > /dev/null
 	set -e
 }
@@ -1805,7 +1827,7 @@ delete_stale_pkg_cache() {
 delete_old_pkg() {
 	local pkg="$1"
 	local mnt=$(my_path)
-	local o v v2 compiled_options current_options
+	local o v v2 compiled_options current_options current_deps compiled_deps
 	if [ "${pkg##*/}" = "repo.txz" ]; then
 		msg "Removing invalid pkg repo file: ${pkg}"
 		rm -f ${pkg}
@@ -1829,6 +1851,19 @@ delete_old_pkg() {
 		delete_pkg ${pkg}
 		return 0
 	fi
+
+	current_deps=$(injail make -C /usr/ports/${o} run-depends-list | sed 's,/usr/ports/,,g' | tr '\n' ' ')
+	compiled_deps=$(pkg_get_dep_origin ${pkg})
+	for d in ${current_deps}; do
+		case " $compiled_deps " in
+		*\ $d\ *) ;;
+		*)
+			msg "Direct dependency change, deleting: ${pkg##*/}"
+			delete_pkg ${pkg}
+			return 0
+			;;
+		esac
+	done
 
 	# Check if the compiled options match the current options from make.conf and /var/db/options
 	if [ "${CHECK_CHANGED_OPTIONS:-no}" != "no" ]; then
