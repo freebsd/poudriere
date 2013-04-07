@@ -53,8 +53,8 @@ Options:
                      built. Note that building from sources can use src.conf
 		     and jail-src.conf from /usr/local/etc/poudriere.d/.
 		     Other possible method are: \"allbsd\" retrieve a
-		     snapshot from allbsd.org's website or \"gjb\" for a
-		     snapshot from Glen Barber's website.
+		     snapshot from allbsd.org's website or \"ftp-archive\"
+		     for old releases that're no longer available on \"ftp\".
     -p tree       -- Specify which ports tree the jail to start/stop with
     -t version    -- version to upgrade to
     -z set        -- Specify which SET the jail to start/stop with
@@ -115,7 +115,7 @@ update_jail() {
 	fi
 	msg "Upgrading using ${METHOD}"
 	case ${METHOD} in
-	ftp)
+	ftp|ftp-archive)
 		MASTERMNT=$(jget ${JAILNAME} mnt)
 		MASTERNAME=${JAILNAME}
 		jstart 1
@@ -231,6 +231,11 @@ install_from_ftp() {
 	local URL V
 
 	V=${ALLBSDVER:-${VERSION}}
+	case $V in
+	[0-4].*) HASH=MD5 ;;
+	5.[0-4]*) HASH=MD5 ;;
+	*) HASH=SHA256 ;;
+	esac
 	if [ ${V%%.*} -lt 9 ]; then
 		msg "Fetching sets for FreeBSD ${V} ${ARCH}"
 		case ${METHOD} in
@@ -248,14 +253,15 @@ install_from_ftp() {
 			fi
 			URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH}/${V}" ;;
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
+		ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
 		esac
 		DISTS="base dict src games"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32"
 		for dist in ${DISTS}; do
-			fetch_file ${JAILMNT}/fromftp/ ${URL}/$dist/CHECKSUM.SHA256 ||
+			fetch_file ${JAILMNT}/fromftp/ ${URL}/$dist/CHECKSUM.${HASH} ||
 				err 1 "Fail to fetch checksum file"
 			sed -n "s/.*(\(.*\...\)).*/\1/p" \
-				${JAILMNT}/fromftp/CHECKSUM.SHA256 | \
+				${JAILMNT}/fromftp/CHECKSUM.${HASH} | \
 				while read pkg; do
 				[ ${pkg} = "install.sh" ] && continue
 				# Let's retry at least one time
@@ -282,7 +288,7 @@ install_from_ftp() {
 	else
 		local type
 		case ${METHOD} in
-			ftp|gjb)
+			ftp|gjb|ftp-archive)
 				case ${VERSION} in
 					*-CURRENT|*-PRERELEASE|*-STABLE) type=snapshots ;;
 					*) type=releases ;;
@@ -334,13 +340,8 @@ create_jail() {
 	fi
 
 	case ${METHOD} in
-	ftp)
+	ftp|gjb|ftp-archive)
 		FCT=install_from_ftp
-		;;
-	gjb)
-		FCT=install_from_ftp
-		GJBVERSION=${VERSION}
-		VERSION=${VERSION%%-*}
 		;;
 	allbsd)
 		FCT=install_from_ftp
