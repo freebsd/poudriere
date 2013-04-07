@@ -364,15 +364,18 @@ create_jail() {
 			stable/*![0-9]*)
 				err 1 "bad version number for stable version"
 				;;
+			head@*![0-9]*)
+				err 1 "bad revision number for head version"
+				;;
 			release/*![0-9]*.[0-9].[0-9])
 				err 1 "bad version number for release version"
 				;;
 			releng/*![0-9]*.[0-9])
 				err 1 "bad version number for releng version"
 				;;
-			stable/*|head|release/*|releng/*.[0-9]) ;;
+			stable/*|head*|release/*|releng/*.[0-9]) ;;
 			*)
-				err 1 "version with svn should be: head or stable/N or release/N or releng/N"
+				err 1 "version with svn should be: head[@rev] or stable/N or release/N or releng/N"
 				;;
 		esac
 		FCT=install_from_svn
