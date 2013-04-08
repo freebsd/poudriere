@@ -39,6 +39,7 @@ Options:
     -C          -- Clean previously built packages from the given list to build
     -R          -- Clean RESTRICTED packages after building
     -t          -- Add some tests to the package build
+    -T          -- Try to build broken ports anyway
     -s          -- Skip sanity checks
     -J n        -- Run n jobs in parallel (Default: to 8)
     -j name     -- Run only on the given jail
@@ -78,7 +79,7 @@ ALL=0
 
 [ $# -eq 0 ] && usage
 
-while getopts "B:f:j:J:Ccn:p:Rtsvwz:a" FLAG; do
+while getopts "B:f:j:J:Ccn:p:RtTsvwz:a" FLAG; do
 	case "${FLAG}" in
 		B)
 			BUILDNAME="${OPTARG}"
@@ -86,6 +87,9 @@ while getopts "B:f:j:J:Ccn:p:Rtsvwz:a" FLAG; do
 		t)
 			export PORTTESTING=1
 			export DEVELOPER_MODE=yes
+			;;
+		T)
+			export TRYBROKEN=yes
 			;;
 		c)
 			CLEAN=1
