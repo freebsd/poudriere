@@ -34,6 +34,7 @@ _bulk=(
 	'-s[Skip sanity]'
 	'-j[Run only on the given jail]::jail name:_poudriere_jail'
 	'-p[Specify on which ports tree the bulk will be done]::tree:_poudriere_pt'
+	'-T[Try building BROKEN ports]'
 	'-J[Specify the number of jobs you want to run in parallel]::'
 	'-R[Remove RESTRICTED packages after building]'
 	'-v[Be verbose; show more information. Specify twice to enable debug output.]'
