@@ -2206,7 +2206,8 @@ prepare_ports() {
 	find -L ${POUDRIERE_DATA}/packages/${MASTERNAME} -type l -exec rm -f {} +
 
 	msg "Deleting empty directories"
-	find ${POUDRIERE_DATA}/packages/${MASTERNAME} -type d -empty -delete
+	find ${POUDRIERE_DATA}/packages/${MASTERNAME} -type d -mindepth 1 -empty \
+		-delete
 
 	bset status "cleaning:"
 	msg "Cleaning the build queue"
