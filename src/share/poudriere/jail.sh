@@ -56,6 +56,7 @@ Options:
 		     snapshot from allbsd.org's website or \"ftp-archive\"
 		     for old releases that're no longer available on \"ftp\".
     -p tree       -- Specify which ports tree the jail to start/stop with
+    -P patch      -- Specify a patch file to apply to the source before committing.
     -t version    -- version to upgrade to
     -z set        -- Specify which SET the jail to start/stop with
 "
@@ -200,6 +201,11 @@ install_from_svn() {
 		msg_n "Checking out the sources from svn..."
 		svn -q co ${proto}://${SVN_HOST}/base/${VERSION} ${JAILMNT}/usr/src || err 1 " fail"
 		echo " done"
+		if [ -n "${SRCPATCHFILE}" ]; then
+			msg_n "Patching the sources with ${SRCPATCHFILE}"
+			svn -q patch ${SRCPATCHFILE} ${JAILMNT}/usr/src || err 1 " fail"
+			echo done
+		fi
 	else
 		msg_n "Updating the sources from svn..."
 		svn -q update ${JAILMNT}/usr/src || err 1 " fail"
@@ -464,7 +470,7 @@ SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "J:j:v:a:z:m:n:f:M:sdklqcip:ut:z:" FLAG; do
+while getopts "J:j:v:a:z:m:n:f:M:sdklqcip:ut:z:P:" FLAG; do
 	case "${FLAG}" in
 		j)
 			JAILNAME=${OPTARG}
@@ -506,6 +512,10 @@ while getopts "J:j:v:a:z:m:n:f:M:sdklqcip:ut:z:" FLAG; do
 			;;
 		p)
 			PTNAME=${OPTARG}
+			;;
+		P)
+			[ -f ${OPTARG} ] || err 1 "No such patch"
+			SRCPATCHFILE=${OPTARG}
 			;;
 		q)
 			QUIET=1
