@@ -1012,7 +1012,6 @@ build_port() {
 	local mnt=$(my_path)
 	local log=$(log_path)
 	local listfilecmd network sub dists
-	local pkgname=$(cache_get_pkgname ${port})
 	local hangstatus
 
 	for phase in ${targets}; do
@@ -1039,7 +1038,7 @@ build_port() {
 
 		# 24 hours for 1 command, or 20 minutes with no log update
 		nohang ${MAX_EXECUTION_TIME:-86400} ${NOHANG_TIME:-7200} \
-			${log}/logs/${pkgname}.log \
+			${log}/logs/${PKGNAME}.log \
 			injail env ${PKGENV} ${PORT_FLAGS} \
 			make -C ${portdir} ${phase}
 		hangstatus=$? # This is done as it may return 1 or 2 or 3
