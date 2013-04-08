@@ -1041,10 +1041,10 @@ build_port() {
 		if [ "${phase}" = "package" ]; then
 			echo "PACKAGES=/new_packages" >> ${mnt}/etc/make.conf
 			# Create sandboxed staging dir for new package for this build
-			rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}
-			mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}
+			rm -rf "${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}"
+			mkdir -p "${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}"
 			mount -t nullfs \
-				${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME} \
+				"${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}" \
 				${mnt}/new_packages
 		fi
 
@@ -1181,7 +1181,7 @@ build_port() {
 		fi
 	done
 
-	if [ -d ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME} ]; then
+	if [ -d "${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}" ]; then
 		# everything was fine we can copy package the package to the package
 		# directory
 		find ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME} \
@@ -1191,7 +1191,7 @@ build_port() {
 			mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/${pkg_base}
 			mv ${pkg_path} ${POUDRIERE_DATA}/packages/${MASTERNAME}/${pkg_base}
 		done
-		rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}
+		rm -rf "${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}"
 	fi
 
 	bset ${MY_JOBID} status "idle:"
@@ -1639,7 +1639,7 @@ stop_build() {
 	local logfile="$2"
 
 	umount -f ${mnt}/new_packages 2>/dev/null || :
-	rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}
+	rm -rf "${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}"
 
 	# 2 = HEADER+ps itself
 	if [ $(injail ps aux | wc -l) -ne 2 ]; then
