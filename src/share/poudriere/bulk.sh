@@ -192,7 +192,7 @@ parallel_build ${JAILNAME} ${PTNAME} ${SETNAME} || : # Ignore errors as they are
 bset status "done:"
 
 failed=$(bget ports.failed | awk '{print $1 ":" $3 }' | xargs echo)
-built=$(bget ports.built | xargs echo)
+built=$(bget ports.built | awk '{print $1}' | xargs echo)
 ignored=$(bget ports.ignored | awk '{print $1}' | xargs echo)
 skipped=$(bget ports.skipped | awk '{print $1}' | sort -u | xargs echo)
 nbfailed=$(bget stats_failed)
