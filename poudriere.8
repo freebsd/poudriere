@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 21, 2013
+.Dd April 8, 2013
 .Dt POUDRIERE 8
 .Os FreeBSD
 .Sh NAME
@@ -126,6 +126,9 @@ This can be used to resume a previous build and use the same log and URL paths.
 This flag specifies to clean the previous built binary packages.
 .It Fl C
 Clean previous packages for the given list to build.
+.It Fl F
+Only fetch from original MASTER_SITES.
+Skip FreeBSD mirrors.
 .It Fl j Ar name
 If given, run the bulk build only on the jail named
 .Ar name .
