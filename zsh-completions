@@ -27,6 +27,7 @@ _bulk=(
 	'-a[Build all ports in the tree]'
 	'-B[What buildname to use]:buildname'
 	'-f[Give the list of ports to build]:name of file:_files'
+	'-F[Only fetch from original master_sites; skip FreeBSD mirrors]'
 	'-c[Clean the previous built binary packages]'
 	'-C[Clean previous packages for the given list to build]'
 	'-t[Add some testings to package building]'
