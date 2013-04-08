@@ -1181,16 +1181,18 @@ build_port() {
 		fi
 	done
 
-	# everything was fine we can copy package the package to the package
-	# directory
-	find ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME} \
-		-mindepth 1 \( -type f -or -type l \) | while read pkg_path; do
-		pkg_file=${pkg_path#${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}}
-		pkg_base=${pkg_file%/*}
-		mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/${pkg_base}
-		mv ${pkg_path} ${POUDRIERE_DATA}/packages/${MASTERNAME}/${pkg_base}
-	done
-	rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}
+	if [ -d ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME} ]; then
+		# everything was fine we can copy package the package to the package
+		# directory
+		find ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME} \
+			-mindepth 1 \( -type f -or -type l \) | while read pkg_path; do
+			pkg_file=${pkg_path#${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}}
+			pkg_base=${pkg_file%/*}
+			mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/${pkg_base}
+			mv ${pkg_path} ${POUDRIERE_DATA}/packages/${MASTERNAME}/${pkg_base}
+		done
+		rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}
+	fi
 
 	bset ${MY_JOBID} status "idle:"
 	return 0
