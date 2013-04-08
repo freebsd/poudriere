@@ -1017,13 +1017,6 @@ build_port() {
 	local listfilecmd network sub dists
 	local hangstatus
 
-	# Create sandboxed staging dir for new package for this build
-	rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}
-	mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}
-	mount -t nullfs \
-		${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME} \
-		${mnt}/new_packages
-
 	for phase in ${targets}; do
 		bset ${MY_JOBID} status "${phase}:${port}"
 		job_msg_verbose "Status for build ${port}: ${phase}"
@@ -1044,7 +1037,16 @@ build_port() {
 		esac
 
 		print_phase_header ${phase}
-		[ "${phase}" = "package" ] && echo "PACKAGES=/new_packages" >> ${mnt}/etc/make.conf
+
+		if [ "${phase}" = "package" ]; then
+			echo "PACKAGES=/new_packages" >> ${mnt}/etc/make.conf
+			# Create sandboxed staging dir for new package for this build
+			rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}
+			mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}
+			mount -t nullfs \
+				${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME} \
+				${mnt}/new_packages
+		fi
 
 		# 24 hours for 1 command, or 20 minutes with no log update
 		nohang ${MAX_EXECUTION_TIME:-86400} ${NOHANG_TIME:-7200} \
