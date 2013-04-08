@@ -60,7 +60,7 @@ clean_restricted() {
 		# mount_nullfs does not support mount -u
 		umount ${MASTERMNT}/packages
 		mount_packages
-		injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted
+		injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted >/dev/null
 		# Remount ro
 		umount ${MASTERMNT}/packages
 		mount_packages -o ro
