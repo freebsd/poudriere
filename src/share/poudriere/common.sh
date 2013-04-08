@@ -865,6 +865,9 @@ cleanup() {
 		return 0
 	fi
 
+	[ -n "${MASTERNAME}" ] && rm -rf \
+		${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages
+
 	# Only bother with this if using jails as this may be being ran
 	# from queue.sh or daemon.sh, etc.
 	if [ -n "${MASTERMNT}" -a -n "${MASTERNAME}" ]; then
@@ -1013,6 +1016,13 @@ build_port() {
 	local log=$(log_path)
 	local listfilecmd network sub dists
 	local hangstatus
+
+	# Create sandboxed staging dir for new package for this build
+	rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}
+	mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}
+	mount -t nullfs \
+		${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME} \
+		${mnt}/new_packages
 
 	for phase in ${targets}; do
 		bset ${MY_JOBID} status "${phase}:${port}"
@@ -1168,10 +1178,17 @@ build_port() {
 			[ $die -eq 0 ] || return 1
 		fi
 	done
+
 	# everything was fine we can copy package the package to the package
 	# directory
-	pax -rw -p p -s ",${mnt}/new_packages,,g" \
-		${mnt}/new_packages ${POUDRIERE_DATA}/packages/${MASTERNAME}
+	find ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME} \
+		-mindepth 1 \( -type f -or -type l \) | while read pkg_path; do
+		pkg_file=${pkg_path#${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}}
+		pkg_base=${pkg_file%/*}
+		mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/${pkg_base}
+		mv ${pkg_path} ${POUDRIERE_DATA}/packages/${MASTERNAME}/${pkg_base}
+	done
+	rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}
 
 	bset ${MY_JOBID} status "idle:"
 	return 0
@@ -1614,7 +1631,11 @@ build_pkg() {
 stop_build() {
 	[ $# -eq 2 ] || eargs portdir logfile
 	local portdir="$1"
+	local mnt=$(my_path)
 	local logfile="$2"
+
+	umount -f ${mnt}/new_packages 2>/dev/null || :
+	rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}
 
 	# 2 = HEADER+ps itself
 	if [ $(injail ps aux | wc -l) -ne 2 ]; then
