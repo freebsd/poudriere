@@ -40,6 +40,7 @@ Options:
     -R          -- Clean RESTRICTED packages after building
     -t          -- Add some tests to the package build
     -T          -- Try to build broken ports anyway
+    -F          -- Only fetch from orignial master_site (skip FreeBSD mirrors)
     -s          -- Skip sanity checks
     -J n        -- Run n jobs in parallel (Default: to 8)
     -j name     -- Run only on the given jail
@@ -79,7 +80,7 @@ ALL=0
 
 [ $# -eq 0 ] && usage
 
-while getopts "B:f:j:J:Ccn:p:RtTsvwz:a" FLAG; do
+while getopts "B:f:j:J:Ccn:p:RFtTsvwz:a" FLAG; do
 	case "${FLAG}" in
 		B)
 			BUILDNAME="${OPTARG}"
@@ -99,6 +100,9 @@ while getopts "B:f:j:J:Ccn:p:RtTsvwz:a" FLAG; do
 			;;
 		f)
 			LISTPKGS=${OPTARG}
+			;;
+		F)
+			export MASTER_SITE_BACKUP=''
 			;;
 		j)
 			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
