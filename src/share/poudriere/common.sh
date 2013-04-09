@@ -32,10 +32,6 @@ IPS="$(sysctl -n kern.features.inet 2>/dev/null || echo 0)$(sysctl -n kern.featu
 RELDATE=$(sysctl -n kern.osreldate)
 JAILED=$(sysctl -n security.jail.jailed)
 
-dir_empty() {
-	find $1 -maxdepth 0 -empty
-}
-
 err() {
 	export CRASHED=1
 	if [ $# -ne 2 ]; then
@@ -890,7 +886,7 @@ sanity_check_pkgs() {
 	local ret=0
 	local depfile
 	[ ! -d ${POUDRIERE_DATA}/packages/${MASTERNAME}/All ] && return $ret
-	[ -n "$(dir_empty ${POUDRIERE_DATA}/packages/${MASTERNAME}/All)" ] && return $ret
+	dirempty ${POUDRIERE_DATA}/packages/${MASTERNAME}/All && return $ret
 	for pkg in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
 		# Check for non-empty directory with no packages in it
 		[ "${pkg}" = "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}" ] && break
@@ -1343,10 +1339,10 @@ $(find ${mnt}/poudriere/building ${mnt}/poudriere/pool ${mnt}/poudriere/deps)"
 queue_empty() {
 	local pool_dir
 	local mnt=$(my_path)
-	[ -n "$(dir_empty ${mnt}/poudriere/deps)" ] || return 1
+	dirempty ${mnt}/poudriere/deps || return 1
 
 	for pool_dir in ${POOL_BUCKET_DIRS}; do
-		[ -n "$(dir_empty ${pool_dir})" ] || return 1
+		dirempty ${pool_dir} || return 1
 	done
 
 	return 0
@@ -1848,7 +1844,7 @@ delete_stale_pkg_cache() {
 	local pkgname
 	local cachedir=$(cache_dir)
 	[ ! -d ${cachedir} ] && return 0
-	[ -n "$(dir_empty ${cachedir})" ] && return 0
+	dirempty ${cachedir} && return 0
 	for pkg in ${cachedir}/*.${PKG_EXT}; do
 		pkg_file=${pkg##*/}
 		# If this package no longer exists in the PKGDIR, delete the cache.
@@ -1920,8 +1916,7 @@ delete_old_pkg() {
 
 delete_old_pkgs() {
 	[ ! -d ${POUDRIERE_DATA}/packages/${MASTERNAME}/All ] && return 0
-	[ -n "$(dir_empty ${POUDRIERE_DATA}/packages/${MASTERNAME}/All)" ] &&
-		return 0
+	dirempty ${POUDRIERE_DATA}/packages/${MASTERNAME}/All && return 0
 	parallel_start
 	for pkg in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
 		# Check for non-empty directory with no packages in it
@@ -2274,7 +2269,7 @@ balance_pool() {
 
 	local pkgname pkg_dir dep_count rdep lock
 
-	[ -z "$(dir_empty ${MASTERMNT}/poudriere/pool/unbalanced)" ] || return 0
+	! dirempty ${MASTERMNT}/poudriere/pool/unbalanced || return 0
 	# Avoid running this in parallel, no need
 	lock=${MASTERMNT}/poudriere/.lock-balance_pool
 	mkdir ${lock} 2>/dev/null || return 0
