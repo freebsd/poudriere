@@ -1006,6 +1006,25 @@ nohang() {
 	return $ret
 }
 
+gather_distfiles() {
+	[ $# -eq 2 ] || eargs portdir distfiles
+	local portdir="$1"
+	local distfiles="$2"
+	local sub dists d
+	sub=$(injail make -C ${portdir} -VDIST_SUBDIR)
+	dists=$(injail make -C ${portdir} -V_DISTFILES -V_PATCHFILES)
+	specials=$(injail make -C ${portdir} -V_DEPEND_SPECIALS)
+	job_msg_verbose "Providing distfiles for ${portdir}"
+	for d in ${dists}; do
+		[ -f ${DISTFILES_CACHE}/${sub}/${d} ] || continue
+		echo ${DISTFILES_CACHE}/${sub}/${d}
+	done | pax -rw -p p -s ",${DISTFILES_CACHE},,g" ${mnt}/portdistfiles
+
+	[ -n "${specials}" ] && gather_distfiles ${specials} ${distfiles}
+
+	return 0
+}
+
 # Build+test port and return on first failure
 build_port() {
 	[ $# -ne 1 ] && eargs portdir
@@ -1017,7 +1036,7 @@ build_port() {
 				   install package ${PORTTESTING:+deinstall}"
 	local mnt=$(my_path)
 	local log=$(log_path)
-	local listfilecmd network sub dists
+	local listfilecmd network
 	local hangstatus
 
 	for phase in ${targets}; do
@@ -1085,14 +1104,9 @@ build_port() {
 		print_phase_footer
 
 		if [ "${phase}" = "checksum" ]; then
-			sub=$(injail make -C ${portdir} -VDIST_SUBDIR)
-			dists=$(injail make -C ${portdir} -V_DISTFILES -V_PATCHFILES)
 			mkdir -p ${mnt}/portdistfiles
 			echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf
-			for d in ${dists}; do
-				[ -f ${DISTFILES_CACHE}/${sub}/${d} ] || continue
-				echo ${DISTFILES_CACHE}/${sub}/${d}
-			done | pax -rw -p p -s ",${DISTFILES_CACHE},,g" ${mnt}/portdistfiles
+			gather_distfiles ${portdir} ${mnt}/portdistfiles
 		fi
 
 		if [ "${phase}" = "deinstall" ]; then
