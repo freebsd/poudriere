@@ -38,7 +38,6 @@ Options:
 
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
-LIBEXECPREFIX=`realpath ${SCRIPTPREFIX}/../../libexec/poudriere`
 PTNAME="default"
 NODAEMONIZE=0
 KILL=0
@@ -78,7 +77,7 @@ fi
 while :; do
 	next=$(find ${WATCHDIR} -type f -depth 1 -print -quit 2>/dev/null)
 	if [ -z "${next}" ]; then
-		${LIBEXECPREFIX}/dirwatch ${WATCHDIR}
+		dirwatch ${WATCHDIR}
 		continue
 	fi
 	POUDRIERE_ARGS=$(sed -n "s/^POUDRIERE_ARGS: //p" ${next})

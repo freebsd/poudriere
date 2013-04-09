@@ -2327,9 +2327,11 @@ STATUS=0 # out of jail #
 
 . ${SCRIPTPREFIX}/../../etc/poudriere.conf
 POUDRIERED=${SCRIPTPREFIX}/../../etc/poudriere.d
+LIBEXECPREFIX=${SCRIPTPREFIX}/../../libexec/poudriere
 AWKPREFIX=${SCRIPTPREFIX}/awk
 HTMLPREFIX=${SCRIPTPREFIX}/html
 HOOKDIR=${POUDRIERED}/hooks
+PATH="${LIBEXECPREFIX}:${PATH}"
 
 # If the zfs module is not loaded it means we can't have zfs
 [ -z "${NO_ZFS}" ] && lsvfs zfs >/dev/null 2>&1 || NO_ZFS=yes
