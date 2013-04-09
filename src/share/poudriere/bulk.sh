@@ -69,7 +69,6 @@ clean_restricted() {
 
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
-LIBEXECPREFIX=`realpath ${SCRIPTPREFIX}/../../libexec/poudriere`
 PTNAME="default"
 SKIPSANITY=0
 SETNAME=""
@@ -238,7 +237,7 @@ else
 	done
 
 	msg_n "Generating INDEX..."
-	${LIBEXECPREFIX}/make_index ${INDEXF}.1 ${INDEXF}
+	make_index ${INDEXF}.1 ${INDEXF}
 	echo " done"
 
 	rm ${INDEXF}.1
