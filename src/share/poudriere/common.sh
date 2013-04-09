@@ -1377,7 +1377,7 @@ build_queue() {
 		for j in ${JOBS}; do
 			name="${MASTERNAME}-job-${j}"
 			if [ -f  "${mnt}/poudriere/var/run/${j}.pid" ]; then
-				if pgrep -F "${mnt}/poudriere/var/run/${j}.pid" >/dev/null 2>&1; then
+				if pgrep -qF "${mnt}/poudriere/var/run/${j}.pid" 2>/dev/null; then
 					builders_active=1
 					continue
 				fi
