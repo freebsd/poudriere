@@ -59,6 +59,14 @@ See poudriere(8).
   *  [./config.wiki|...easily generate options]
   *  [./use_system_ports_tree.wiki|...use the system ports tree in poudriere]
 
+<h1>Hacking </h1>
+
+To hack on poudriere you first need to use [fossil|http://fossil-scm.org]
+
+and clone the repo:
+
+<verbatim># fossil clone https://fossil.etoilebsd.net/poudriere poudriere.clone</verbatim>
+
 Happy FreeBSDing!
 
 Join us on IRC: #poudriere on Freenode
