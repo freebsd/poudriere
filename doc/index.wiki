@@ -65,7 +65,10 @@ To hack on poudriere you first need to use [fossil|http://fossil-scm.org]
 
 and clone the repo:
 
-<verbatim># fossil clone https://fossil.etoilebsd.net/poudriere poudriere.clone</verbatim>
+<verbatim># fossil clone https://fossil.etoilebsd.net/poudriere poudriere.fossil
+# mkdir poudriere
+# cd poudriere
+# fossil open ../poudriere.fossil</verbatim>
 
 Happy FreeBSDing!
 
