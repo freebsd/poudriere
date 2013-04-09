@@ -136,12 +136,7 @@ if ! POUDRIERE_BUILD_TYPE=bulk parallel_build ${JAILNAME} ${PTNAME} ${SETNAME} ;
 	exit 1
 fi
 
-bset status "depends:"
-
 unmarkfs prepkg ${MASTERMNT}
-
-injail make -C /usr/ports/${ORIGIN} pkg-depends extract-depends \
-	fetch-depends patch-depends build-depends lib-depends
 
 bset status "testing:"
 

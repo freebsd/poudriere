@@ -1011,7 +1011,10 @@ build_port() {
 	[ $# -ne 1 ] && eargs portdir
 	local portdir=$1
 	local port=${portdir##/usr/ports/}
-	local targets="check-config fetch checksum extract patch configure build run-depends install-mtree install package ${PORTTESTING:+deinstall}"
+	local targets="check-config pkg-depends fetch-depends fetch checksum \
+				   extract-depends extract patch-depends patch build-depends \
+				   lib-depends configure build install-mtree run-depends \
+				   install package ${PORTTESTING:+deinstall}"
 	local mnt=$(my_path)
 	local log=$(log_path)
 	local listfilecmd network sub dists
@@ -1048,26 +1051,31 @@ build_port() {
 				${mnt}/new_packages
 		fi
 
-		# 24 hours for 1 command, or 20 minutes with no log update
-		nohang ${MAX_EXECUTION_TIME:-86400} ${NOHANG_TIME:-7200} \
-			${log}/logs/${PKGNAME}.log \
-			injail env ${PKGENV} ${PORT_FLAGS} \
-			make -C ${portdir} ${phase}
-		hangstatus=$? # This is done as it may return 1 or 2 or 3
-		if [ $hangstatus -ne 0 ]; then
-			# 1 = cmd failed, not a timeout
-			# 2 = log timed out
-			# 3 = cmd timeout
-			if [ $hangstatus -eq 2 ]; then
-				msg "Killing runaway build"
-				bset ${MY_JOBID} status "${phase}/runaway:${port}"
-				job_msg_verbose "Status for build ${port}: runaway"
-			elif [ $hangstatus -eq 3 ]; then
-				msg "Killing timed out build"
-				bset ${MY_JOBID} status "${phase}/timeout:${port}"
-				job_msg_verbose "Status for build ${port}: timeout"
+		if [ "${phase#*-}" = "depends" ]; then
+			# No need for nohang or PKGENV/PORT_FLAGS for *-depends
+			injail make -C ${portdir} ${phase}
+		else
+			# 24 hours for 1 command, or 20 minutes with no log update
+			nohang ${MAX_EXECUTION_TIME:-86400} ${NOHANG_TIME:-7200} \
+				${log}/logs/${PKGNAME}.log \
+				injail env ${PKGENV} ${PORT_FLAGS} \
+				make -C ${portdir} ${phase}
+			hangstatus=$? # This is done as it may return 1 or 2 or 3
+			if [ $hangstatus -ne 0 ]; then
+				# 1 = cmd failed, not a timeout
+				# 2 = log timed out
+				# 3 = cmd timeout
+				if [ $hangstatus -eq 2 ]; then
+					msg "Killing runaway build"
+					bset ${MY_JOBID} status "${phase}/runaway:${port}"
+					job_msg_verbose "Status for build ${port}: runaway"
+				elif [ $hangstatus -eq 3 ]; then
+					msg "Killing timed out build"
+					bset ${MY_JOBID} status "${phase}/timeout:${port}"
+					job_msg_verbose "Status for build ${port}: timeout"
+				fi
+				return 1
 			fi
-			return 1
 		fi
 
 		if [ "${phase}" = "checksum" ]; then
@@ -1582,29 +1590,18 @@ build_pkg() {
 		clean_rdepends=1
 		run_hook pkgbuild ignored "${port}" "${PKGNAME}" "${ignore}"
 	else
-		bset ${MY_JOBID} status "depends:${port}"
-		job_msg_verbose "Status for build ${port}: depends"
-		print_phase_header "depends"
-		if ! injail make -C ${portdir} pkg-depends fetch-depends extract-depends \
-			patch-depends build-depends lib-depends; then
+		injail make -C ${portdir} clean
+		if ! build_port ${portdir}; then
 			build_failed=1
-			failed_phase="depends"
-		else
-			print_phase_footer
-			# Only build if the depends built fine
-			injail make -C ${portdir} clean
-			if ! build_port ${portdir}; then
-				build_failed=1
-				failed_status=$(bget ${MY_JOBID} status)
-				failed_phase=${failed_status%:*}
+			failed_status=$(bget ${MY_JOBID} status)
+			failed_phase=${failed_status%:*}
 
-				save_wrkdir ${mnt} "${port}" "${portdir}" "${failed_phase}" || :
-			elif [ -f ${mnt}/${portdir}/.keep ]; then
-				save_wrkdir ${mnt} "${port}" "${portdir}" "noneed" ||:
-			fi
-
-			injail make -C ${portdir} clean
+			save_wrkdir ${mnt} "${port}" "${portdir}" "${failed_phase}" || :
+		elif [ -f ${mnt}/${portdir}/.keep ]; then
+			save_wrkdir ${mnt} "${port}" "${portdir}" "noneed" ||:
 		fi
+
+		injail make -C ${portdir} clean
 
 		if [ ${build_failed} -eq 0 ]; then
 			badd ports.built "${port} ${PKGNAME}"
