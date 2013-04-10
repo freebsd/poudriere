@@ -334,7 +334,7 @@ siginfo_handler() {
 			[ "${status}" = "idle:" ] && continue
 			origin=${status#*:}
 			phase="${status%:*}"
-			if [ "${origin}" != "${status}" ]; then
+			if [ -n "${origin}" -a "${origin}" != "${status}" ]; then
 				pkgname=$(cache_get_pkgname ${origin})
 				# Find the buildtime for this pkgname
 				for pkgname_buildtime in $pkgname_buildtimes; do
