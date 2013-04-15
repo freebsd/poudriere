@@ -1146,10 +1146,10 @@ build_port() {
 				-)
 					# Skip if it is PREFIX and non-LOCALBASE. See misc/kdehier4
 					# or mail/qmail for examples
-					[ "${ppath}" = "${PREFIX}" -a \
+					[ "${path#${mnt}}" = "${PREFIX}" -a \
 						"${LOCALBASE}" != "${PREFIX}" ] && ignore_path=1
 
-					if [ $ignore_path -ne 0 ]; then
+					if [ $ignore_path -eq 0 ]; then
 						echo "${ppath}" >> ${del}
 					fi
 					;;
