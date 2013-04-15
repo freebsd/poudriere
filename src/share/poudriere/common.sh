@@ -1006,7 +1006,7 @@ gather_distfiles() {
 	[ $# -eq 2 ] || eargs portdir distfiles
 	local portdir="$1"
 	local distfiles="$2"
-	local sub dists d
+	local sub dists d special
 	sub=$(injail make -C ${portdir} -VDIST_SUBDIR)
 	dists=$(injail make -C ${portdir} -V_DISTFILES -V_PATCHFILES)
 	specials=$(injail make -C ${portdir} -V_DEPEND_SPECIALS)
@@ -1016,7 +1016,9 @@ gather_distfiles() {
 		echo ${DISTFILES_CACHE}/${sub}/${d}
 	done | pax -rw -p p -s ",${DISTFILES_CACHE},,g" ${mnt}/portdistfiles
 
-	[ -n "${specials}" ] && gather_distfiles ${specials} ${distfiles}
+	for special in ${specials}; do
+		gather_distfiles ${special} ${distfiles}
+	done
 
 	return 0
 }
