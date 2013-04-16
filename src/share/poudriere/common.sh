@@ -2232,14 +2232,15 @@ prepare_ports() {
 		while :; do
 			sanity_check_pkgs && break
 		done
+
+		msg "Deleting stale symlinks"
+		find -L ${POUDRIERE_DATA}/packages/${MASTERNAME} -type l \
+			-exec rm -f {} +
+
+		msg "Deleting empty directories"
+		find ${POUDRIERE_DATA}/packages/${MASTERNAME} -type d -mindepth 1 \
+			-empty -delete
 	fi
-
-	msg "Deleting stale symlinks"
-	find -L ${POUDRIERE_DATA}/packages/${MASTERNAME} -type l -exec rm -f {} +
-
-	msg "Deleting empty directories"
-	find ${POUDRIERE_DATA}/packages/${MASTERNAME} -type d -mindepth 1 -empty \
-		-delete
 
 	bset status "cleaning:"
 	msg "Cleaning the build queue"
