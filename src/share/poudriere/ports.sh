@@ -136,11 +136,23 @@ if [ ${LIST} -eq 1 ]; then
 else
 	[ -z "${PTNAME}" ] && usage
 fi
+
+cleanup_new_ports() {
+	msg "Error while creating ports tree, cleaning up." >&2
+	destroyfs ${PTMNT} ports
+	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
+}
+
 if [ ${CREATE} -eq 1 ]; then
 	# test if it already exists
 	porttree_exists ${PTNAME} && err 2 "The ports tree ${PTNAME} already exists"
 	: ${PTMNT="${BASEFS:=/usr/local${ZROOTFS}}/ports/${PTNAME}"}
 	: ${PTFS="${ZPOOL}${ZROOTFS}/ports/${PTNAME}"}
+
+	# Wrap the ports creation in a special cleanup hook that will remove it
+	# if any error is encountered
+	CLEANUP_HOOK=cleanup_new_ports
+
 	createfs ${PTNAME} ${PTMNT} ${PTFS}
 	pset ${PTNAME} mnt ${PTMNT}
 	if [ $FAKE -eq 0 ]; then
@@ -150,11 +162,7 @@ if [ ${CREATE} -eq 1 ]; then
 			msg "Extracting portstree \"${PTNAME}\"..."
 			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract ||
 			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract ||
-			{
-				destroyfs ${PTMNT} ports
-				rm -rf ${POUDRIERED}/ports/${PTNAME} || :
-				err 1 " fail"
-			}
+			    err 1 " fail"
 			;;
 		svn*)
 			case ${METHOD} in
@@ -168,20 +176,12 @@ if [ ${CREATE} -eq 1 ]; then
 			msg_n "Checking out the ports tree..."
 			[ ${VERBOSE} -gt 0 ] || quiet="-q"
 			svn ${quiet} co ${proto}://${SVN_HOST}/ports/${BRANCH} \
-				${PTMNT} || {
-					destroyfs ${PTMNT} ports
-					rm -rf ${POUDRIERED}/ports/${PTNAME} || :
-					err 1 " fail"
-				}
+				${PTMNT} || err 1 " fail"
 			echo " done"
 			;;
 		git)
 			msg "Cloning the ports tree"
-			git clone ${GIT_URL} ${PTMNT} || {
-				destroyfs ${PTMNT} ports
-				rm -rf ${POUDRIERED}/ports/${PTNAME} || :
-				err 1 " fail"
-			}
+			git clone ${GIT_URL} ${PTMNT} || err 1 " fail"
 			echo " done"
 			;;
 		esac
@@ -189,6 +189,8 @@ if [ ${CREATE} -eq 1 ]; then
 	else
 		pset ${PTNAME} method "-"
 	fi
+
+	unset CLEANUP_HOOK
 fi
 
 if [ ${DELETE} -eq 1 ]; then
