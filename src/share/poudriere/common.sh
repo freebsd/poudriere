@@ -726,7 +726,7 @@ do_portbuild_mounts() {
 
 	optionsdir="${MASTERNAME}"
 	[ -n "${setname}" ] && optionsdir="${optionsdir} ${jname}-${setname}"
-	optionsdir="${optionsdir} ${jname}-${ptname} ${setname} ${jname} -"
+	optionsdir="${optionsdir} ${jname}-${ptname} ${setname} ${ptname} ${jname} -"
 
 	for opt in ${optionsdir}; do
 		use_options ${mnt} ${opt} && break || continue
