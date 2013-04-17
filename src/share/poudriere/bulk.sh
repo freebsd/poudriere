@@ -44,6 +44,7 @@ Options:
     -s          -- Skip sanity checks
     -J n        -- Run n jobs in parallel (Default: to 8)
     -j name     -- Run only on the given jail
+    -N          -- Do not build package repository or INDEX when build completed
     -p tree     -- Specify on which ports tree the bulk build will be done
     -v          -- Be verbose; show more information. Use twice to enable debug output
     -w          -- Save WRKDIR on failed builds
@@ -67,6 +68,49 @@ clean_restricted() {
 	fi
 }
 
+build_repo() {
+	if [ $PKGNG -eq 1 ]; then
+		msg "Creating pkgng repository"
+		bset status "pkgrepo:"
+		tar xf ${MASTERMNT}/packages/Latest/pkg.txz -C ${MASTERMNT} \
+			-s ",/.*/,poudriere/,g" "*/pkg-static"
+		rm -f ${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.txz \
+			${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.sqlite
+		if [ -n "${PKG_REPO_SIGNING_KEY}" -a \
+			-f "${PKG_REPO_SIGNING_KEY}" ]; then
+			${MASTERMNT}/poudriere/pkg-static repo \
+				${POUDRIERE_DATA}/packages/${MASTERNAME}/ ${PKG_REPO_SIGNING_KEY}
+		else
+			${MASTERMNT}/poudriere/pkg-static repo \
+				${POUDRIERE_DATA}/packages/${MASTERNAME}/
+		fi
+	else
+		msg "Preparing INDEX"
+		bset status "index:"
+		OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
+		INDEXF=${POUDRIERE_DATA}/packages/${MASTERNAME}/INDEX-${OSMAJ}
+		rm -f ${INDEXF}.1 2>/dev/null || :
+		for pkg_file in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz; do
+			# Check for non-empty directory with no packages in it
+			[ "${pkg}" = "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz" ] && break
+			msg_verbose "Extracting description for ${ORIGIN} ..."
+			ORIGIN=$(pkg_get_origin ${pkg_file})
+			[ -d ${MASTERMNT}/usr/ports/${ORIGIN} ] &&
+				injail make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
+		done
+
+		msg_n "Generating INDEX..."
+		make_index ${INDEXF}.1 ${INDEXF}
+		echo " done"
+
+		rm ${INDEXF}.1
+		[ -f ${INDEXF}.bz2 ] && rm ${INDEXF}.bz2
+		msg_n "Compressing INDEX-${OSMAJ}..."
+		bzip2 -9 ${INDEXF}
+		echo " done"
+	fi
+}
+
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 PTNAME="default"
@@ -75,11 +119,12 @@ SETNAME=""
 CLEAN=0
 CLEAN_LISTED=0
 ALL=0
+BUILD_REPO=1
 . ${SCRIPTPREFIX}/common.sh
 
 [ $# -eq 0 ] && usage
 
-while getopts "B:f:j:J:Ccn:p:RFtTsvwz:a" FLAG; do
+while getopts "B:f:j:J:CcNp:RFtTsvwz:a" FLAG; do
 	case "${FLAG}" in
 		B)
 			BUILDNAME="${OPTARG}"
@@ -109,6 +154,9 @@ while getopts "B:f:j:J:Ccn:p:RFtTsvwz:a" FLAG; do
 			;;
 		J)
 			PARALLEL_JOBS=${OPTARG}
+			;;
+		N)
+			BUILD_REPO=0
 			;;
 		p)
 			PTNAME=${OPTARG}
@@ -209,42 +257,9 @@ if [ $nbbuilt -eq 0 ]; then
 	else
 		msg "No package built, no need to update INDEX"
 	fi
-elif [ $PKGNG -eq 1 ]; then
-	clean_restricted
-	msg "Creating pkgng repository"
-	bset status "pkgrepo:"
-	tar xf ${MASTERMNT}/packages/Latest/pkg.txz -C ${MASTERMNT} \
-		-s ",/.*/,poudriere/,g" "*/pkg-static"
-	rm -f ${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.txz ${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.sqlite
-	if [ -n "${PKG_REPO_SIGNING_KEY}" -a -f "${PKG_REPO_SIGNING_KEY}" ]; then
-		${MASTERMNT}/poudriere/pkg-static repo ${POUDRIERE_DATA}/packages/${MASTERNAME}/ ${PKG_REPO_SIGNING_KEY}
-	else
-		${MASTERMNT}/poudriere/pkg-static repo ${POUDRIERE_DATA}/packages/${MASTERNAME}/
-	fi
 else
 	clean_restricted
-	msg "Preparing INDEX"
-	bset status "index:"
-	OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
-	INDEXF=${POUDRIERE_DATA}/packages/${MASTERNAME}/INDEX-${OSMAJ}
-	rm -f ${INDEXF}.1 2>/dev/null || :
-	for pkg_file in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz; do
-		# Check for non-empty directory with no packages in it
-		[ "${pkg}" = "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz" ] && break
-		msg_verbose "Extracting description for ${ORIGIN} ..."
-		ORIGIN=$(pkg_get_origin ${pkg_file})
-		[ -d ${MASTERMNT}/usr/ports/${ORIGIN} ] && injail make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
-	done
-
-	msg_n "Generating INDEX..."
-	make_index ${INDEXF}.1 ${INDEXF}
-	echo " done"
-
-	rm ${INDEXF}.1
-	[ -f ${INDEXF}.bz2 ] && rm ${INDEXF}.bz2
-	msg_n "Compressing INDEX-${OSMAJ}..."
-	bzip2 -9 ${INDEXF}
-	echo " done"
+	[ ${BUILD_REPO} -eq 1 ] && build_repo
 fi
 
 cleanup
