@@ -1750,7 +1750,7 @@ pkg_get_dep_origin() {
 	if [ ! -f "${dep_origin_file}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
 			compiled_dep_origins=$(tar -xf "${pkg}" -O +CONTENTS | \
-				awk -F: '$1 == "@comment DEPORIGIN" ${print $2}' | tr '\n' ' ')
+				awk -F: '$1 == "@comment DEPORIGIN" {print $2}' | tr '\n' ' ')
 		else
 			compiled_dep_origins=$(pkg query -F "${pkg}" '%do' | tr '\n' ' ')
 		fi
