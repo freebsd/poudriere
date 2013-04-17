@@ -55,17 +55,15 @@ Options:
 }
 
 clean_restricted() {
-	if [ -n "${NO_RESTRICTED}" ]; then
-		msg "Cleaning restricted packages"
-		# Remount rw
-		# mount_nullfs does not support mount -u
-		umount ${MASTERMNT}/packages
-		mount_packages
-		injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted >/dev/null
-		# Remount ro
-		umount ${MASTERMNT}/packages
-		mount_packages -o ro
-	fi
+	msg "Cleaning restricted packages"
+	# Remount rw
+	# mount_nullfs does not support mount -u
+	umount ${MASTERMNT}/packages
+	mount_packages
+	injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted >/dev/null
+	# Remount ro
+	umount ${MASTERMNT}/packages
+	mount_packages -o ro
 }
 
 build_repo() {
@@ -258,7 +256,7 @@ if [ $nbbuilt -eq 0 ]; then
 		msg "No package built, no need to update INDEX"
 	fi
 else
-	clean_restricted
+	[ -n "${NO_RESTRICTED}" ] && clean_restricted
 	[ ${BUILD_REPO} -eq 1 ] && build_repo
 fi
 
