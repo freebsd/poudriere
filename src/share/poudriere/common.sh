@@ -629,7 +629,7 @@ do_jail_mounts() {
 	[ $# -ne 2 ] && eargs mnt arch
 	local mnt=$1
 	local arch=$2
-	local devfspath="null zero random urandom stdin stdout stderr fd fd/*"
+	local devfspath="null zero random urandom stdin stdout stderr fd fd/* bpf*"
 
 	# clone will inherit from the ref jail
 	if [ ${mnt##*/} = "ref" ]; then
