@@ -228,7 +228,8 @@ if [ ${UPDATE} -eq 1 ]; then
 		;;
 	svn*)
 		msg_n "Updating the ports tree..."
-		svn -q update ${PORTSMNT:-${PTMNT}}
+		[ ${VERBOSE} -gt 0 ] || quiet="-q"
+		svn ${quiet} update ${PORTSMNT:-${PTMNT}}
 		echo " done"
 		;;
 	git)
