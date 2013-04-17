@@ -706,10 +706,6 @@ do_portbuild_mounts() {
 		"$(realpath -q ${portsdir}/distfiles)" ] || err 1 \
 		"DISTFILES_CACHE cannot be in the portsdir as the portsdir will be mounted read-only"
 
-	optionsdir="${MASTERNAME}"
-	[ -n "${setname}" ] && optionsdir="${optionsdir} ${jname}-${setname}"
-	optionsdir="${optionsdir} ${jname}-${ptname} ${jname} -"
-
 	mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/All
 	[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
 		mount -t nullfs ${CCACHE_DIR} ${mnt}/ccache
@@ -727,6 +723,10 @@ do_portbuild_mounts() {
 	mount_packages -o ro
 	mount -t nullfs ${DISTFILES_CACHE} ${mnt}/distfiles ||
 		err 1 "Failed to mount the distfiles cache directory"
+
+	optionsdir="${MASTERNAME}"
+	[ -n "${setname}" ] && optionsdir="${optionsdir} ${jname}-${setname}"
+	optionsdir="${optionsdir} ${jname}-${ptname} ${jname} -"
 
 	for opt in ${optionsdir}; do
 		use_options ${mnt} ${opt} && break || continue
