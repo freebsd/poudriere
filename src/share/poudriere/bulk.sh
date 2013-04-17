@@ -56,6 +56,7 @@ Options:
 
 clean_restricted() {
 	msg "Cleaning restricted packages"
+	bset status "clean_restricted:"
 	# Remount rw
 	# mount_nullfs does not support mount -u
 	umount ${MASTERMNT}/packages
