@@ -137,6 +137,7 @@ log_path() {
 buildlog_start() {
 	local portdir=$1
 	local mnt=$(my_path)
+	local var
 
 	echo "build started at $(date)"
 	echo "port directory: ${portdir}"
@@ -145,21 +146,27 @@ buildlog_start() {
 	echo "Makefile ident: $(ident ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
 	echo "Poudriere version: ${POUDRIERE_VERSION}"
 	echo ""
-	echo "--SUB_LIST--"
-	echo "$(injail env ${PORT_FLAGS} make -C ${portdir} -V SUB_LIST | tr ' ' '\n' | grep -v '^$')"
-	echo "--End SUB_LIST--"
-	echo ""
 	echo "---Begin Environment---"
 	injail env ${PKGENV} ${PORT_FLAGS}
 	echo "---End Environment---"
 	echo ""
-	echo "---Begin make.conf---"
-	cat ${mnt}/etc/make.conf
-	echo "---End make.conf---"
-	echo ""
 	echo "---Begin OPTIONS List---"
 	injail make -C ${portdir} showconfig
 	echo "---End OPTIONS List---"
+	echo ""
+	for var in CONFIGURE_ARGS CONFIGURE_ENV MAKE_ENV; do
+		echo "--${var}--"
+		echo "$(injail env ${PORT_FLAGS} make -C ${portdir} -V ${var})"
+		echo "--End ${var}--"
+		echo ""
+	done
+	echo "--SUB_LIST--"
+	echo "$(injail env ${PORT_FLAGS} make -C ${portdir} -V SUB_LIST | tr ' ' '\n' | grep -v '^$')"
+	echo "--End SUB_LIST--"
+	echo ""
+	echo "---Begin make.conf---"
+	cat ${mnt}/etc/make.conf
+	echo "---End make.conf---"
 }
 
 buildlog_stop() {
