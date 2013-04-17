@@ -39,6 +39,7 @@ Parameters:
     -u            -- update a portstree
     -l            -- lists all available portstrees
     -q            -- quiet (remove the header in list)
+    -v            -- Be verbose; show more information.
 
 Options:
     -F            -- when used with -c, only create the needed ZFS
