@@ -65,8 +65,9 @@ UPDATE=0
 DELETE=0
 LIST=0
 QUIET=0
+VERBOSE=0
 BRANCH=head
-while getopts "B:cFudlp:qf:M:m:" FLAG; do
+while getopts "B:cFudlp:qf:M:m:v" FLAG; do
 	case "${FLAG}" in
 		B)
 			BRANCH="${OPTARG}"
@@ -100,6 +101,9 @@ while getopts "B:cFudlp:qf:M:m:" FLAG; do
 			;;
 		m)
 			METHOD=${OPTARG}
+			;;
+		v)
+			VERBOSE=$((${VERBOSE:-0} + 1))
 			;;
 		*)
 			usage
@@ -162,7 +166,8 @@ if [ ${CREATE} -eq 1 ]; then
 			esac
 
 			msg_n "Checking out the ports tree..."
-			svn -q co ${proto}://${SVN_HOST}/ports/${BRANCH} \
+			[ ${VERBOSE} -gt 0 ] || quiet="-q"
+			svn ${quiet} co ${proto}://${SVN_HOST}/ports/${BRANCH} \
 				${PTMNT} || {
 					destroyfs ${PTMNT} ports
 					rm -rf ${POUDRIERED}/ports/${PTNAME} || :

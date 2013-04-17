@@ -100,6 +100,7 @@ _ports=(
 	'-f[FS name (tank/jails/myjail)]::fs:_files -/'
 	'-M[mountpoint]::mountpoint:_files -/'
 	'-m[method]::method:((portsnap svn svn+http svn+ssh git))'
+	'-v[Be verbose; show more information.]'
 )
 
 _poudriere () {
