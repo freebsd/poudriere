@@ -554,7 +554,9 @@ can mount a directory containing option files if available.
 .Nm
 will check for any of these directories in this order:
 .Pp
+.Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-options
 .Dl /usr/local/etc/poudriere.d/<jailname>-<setname>-options
+.Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-options
 .Dl /usr/local/etc/poudriere.d/<setname>-options
 .Dl /usr/local/etc/poudriere.d/<jailname>-options
 .Dl /usr/local/etc/poudriere.d/options
