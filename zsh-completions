@@ -30,6 +30,7 @@ _bulk=(
 	'-F[Only fetch from original master_sites; skip FreeBSD mirrors]'
 	'-c[Clean the previous built binary packages]'
 	'-C[Clean previous packages for the given list to build]'
+	'-N[Do not build repository or INDEX when done building]'
 	'-t[Add some testings to package building]'
 	'-s[Skip sanity]'
 	'-j[Run only on the given jail]::jail name:_poudriere_jail'
