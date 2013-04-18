@@ -669,17 +669,6 @@ build_port() {
 		print_phase_footer
 
 		if [ "${phase}" = "checksum" ]; then
-			sub=$(injail make -C ${portdir} -VDIST_SUBDIR)
-			dists=$(injail make -C ${portdir} -V_DISTFILES -V_PATCHFILES)
-			mkdir -p ${JAILMNT}/portdistfiles
-			echo "DISTDIR=/portdistfiles" >> ${JAILMNT}/etc/make.conf
-			for d in ${dists}; do
-				[ -f ${DISTFILES_CACHE}/${sub}/${d} ] || continue
-				echo ${DISTFILES_CACHE}/${sub}/${d}
-			done | pax -rw -p p -s ",${DISTFILES_CACHE},,g" ${JAILMNT}/portdistfiles
-		fi
-
-		if [ "${phase}" = "checksum" ]; then
 			jail -r ${JAILNAME} >/dev/null
 			jrun 0
 		fi
