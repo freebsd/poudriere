@@ -527,6 +527,7 @@ markfs() {
 			domtree=0
 		fi
 		;;
+	prebuild) domtree=1 ;;
 	preinst) domtree=1 ;;
 	esac
 
@@ -540,6 +541,19 @@ markfs() {
 	[ $domtree -eq 0 ] && return 0
 	mkdir -p ${mnt}/poudriere/
 	if [ "${name}" = "prepkg" ]; then
+		cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
+./poudriere/*
+./compat/linux/proc
+./wrkdirs/*
+./packages/*
+./new_packages/*
+./usr/ports/*
+./distfiles/*
+./ccache/*
+./var/db/ports/*
+./proc/*
+EOF
+	elif [ "${name}" = "prebuild" ]; then
 		cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
 ./poudriere/*
 ./compat/linux/proc
@@ -1065,6 +1079,21 @@ build_port() {
 			jstart 1
 		fi
 		case ${phase} in
+		configure) [ -n "${PORTTESTING}" ] && markfs prebuild ${mnt} ;;
+		install-mtree)
+			mtree -X ${mnt}/poudriere/mtree.prebuildexclude -x \
+				-f ${mnt}/poudriere/mtree.prebuild \
+				-p ${mnt} > ${mnt}/tmp/preinst
+			if [ -s ${mnt}/tmp/preinst ]; then
+				msg "Filesystem touched before install:"
+				cat ${mnt}/tmp/preinst
+				rm -f ${mnt}/tmp/preinst
+				bset ${MY_JOBID} status "preinst_fs_violation:${port}"
+				job_msg_verbose "Status for build ${port}: preinst_fs_violation"
+				return 1
+			fi
+			rm -f ${mnt}/tmp/preinst
+			;;
 		install) [ -n "${PORTTESTING}" ] && markfs preinst ${mnt} ;;
 		deinstall)
 			msg "Checking shared library dependencies"
