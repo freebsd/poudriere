@@ -555,6 +555,7 @@ markfs() {
 EOF
 	elif [ "${name}" = "prebuild" ]; then
 		cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
+./tmp/preinst
 ./poudriere/*
 ./compat/linux/proc
 ./wrkdirs/*
