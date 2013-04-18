@@ -118,7 +118,6 @@ jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 LISTPORTS=$(list_deps ${ORIGIN} )
 prepare_ports
 
-markfs prepkg ${MASTERMNT}
 log=$(log_path)
 
 if ! POUDRIERE_BUILD_TYPE=bulk parallel_build ${JAILNAME} ${PTNAME} ${SETNAME} ; then
@@ -136,7 +135,6 @@ if ! POUDRIERE_BUILD_TYPE=bulk parallel_build ${JAILNAME} ${PTNAME} ${SETNAME} ;
 	exit 1
 fi
 
-unmarkfs prepkg ${MASTERMNT}
 
 bset status "testing:"
 

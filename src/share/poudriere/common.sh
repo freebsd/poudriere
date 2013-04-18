@@ -444,14 +444,21 @@ rollbackfs() {
 	local name=$1
 	local mnt=$2
 	local fs=$(zfs_getfs ${mnt})
+	local mtree_mnt
 
 	if [ -n "${fs}" ]; then
 		zfs rollback -r ${fs}@${name}  || err 1 "Unable to rollback ${fs}"
 		return
 	fi
 
-	mtree -X ${mnt}/poudriere/mtree.${name}exclude \
-	-xr -f ${mnt}/poudriere/mtree.${name} -p ${mnt} | \
+	if [ "${name}" = "prepkg" ]; then
+		mtree_mnt="${MASTERMNT}"
+	else
+		mtree_mnt="${mnt}"
+	fi
+	
+	mtree -X ${mtree_mnt}/poudriere/mtree.${name}exclude \
+	-xr -f ${mtree_mnt}/poudriere/mtree.${name} -p ${mnt} | \
 	while read l ; do
 		case "$l" in
 		*extra*Directory*) rm -rf ${mnt}/${l%% *} 2>/dev/null ;;
@@ -512,7 +519,13 @@ markfs() {
 	clean) [ -n "${fs}" ] && dozfs=1 ;;
 	prepkg)
 		[ -n "${fs}" ] && dozfs=1
-		[ "${dozfs}" -eq 0 -a  "${mnt##*/}" != "ref" ] && domtree=1
+		# Only create prepkg mtree in ref
+		# Everything else may need to snapshot
+		if [ "${mnt##*/}" = "ref" ]; then
+			domtree=1
+		else
+			domtree=0
+		fi
 		;;
 	preinst) domtree=1 ;;
 	esac
@@ -2268,6 +2281,8 @@ prepare_ports() {
 	find "${MASTERMNT}/poudriere/deps" -type d -empty -depth 1 | \
 		xargs -J % mv % "${MASTERMNT}/poudriere/pool/unbalanced"
 	balance_pool
+
+	markfs prepkg ${MASTERMNT}
 }
 
 balance_pool() {
