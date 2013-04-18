@@ -231,8 +231,6 @@ bset status "building:"
 [ -z "${PORTTESTING}" -a -z "${ALLOW_MAKE_JOBS}" ] &&
 	echo "DISABLE_MAKE_JOBS=yes" >> ${MASTERMNT}/etc/make.conf
 
-markfs prepkg ${MASTERMNT}
-
 parallel_build ${JAILNAME} ${PTNAME} ${SETNAME} || : # Ignore errors as they are handled below
 
 bset status "done:"
