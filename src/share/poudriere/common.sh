@@ -1078,7 +1078,7 @@ build_port() {
 
 		if [ "${phase#*-}" = "depends" ]; then
 			# No need for nohang or PKGENV/PORT_FLAGS for *-depends
-			injail make -C ${portdir} ${phase}
+			injail make -C ${portdir} ${phase} || return 1
 		else
 			# 24 hours for 1 command, or 20 minutes with no log update
 			nohang ${MAX_EXECUTION_TIME:-86400} ${NOHANG_TIME:-7200} \
