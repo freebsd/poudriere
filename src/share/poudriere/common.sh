@@ -1311,22 +1311,21 @@ stop_builders() {
 
 deadlock_detected() {
 	local always_fail=${1:-1}
-	local mnt=$(my_path)
 	local crashed_packages dependency_cycles
 
 	# If there are still packages marked as "building" they have crashed
 	# and it's likely some poudriere or system bug
 	crashed_packages=$( \
-		find ${mnt}/poudriere/building -type d -mindepth 1 -maxdepth 1 | \
-		sed -e "s:${mnt}/poudriere/building/::" | tr '\n' ' ' \
+		find ${MASTERMNT}/poudriere/building -type d -mindepth 1 -maxdepth 1 | \
+		sed -e "s:${MASTERMNT}/poudriere/building/::" | tr '\n' ' ' \
 	)
 	[ -z "${crashed_packages}" ] ||	\
 		err 1 "Crashed package builds detected: ${crashed_packages}"
 
 	# Check if there's a cycle in the need-to-build queue
 	dependency_cycles=$(\
-		find ${mnt}/poudriere/deps -mindepth 2 | \
-		sed -e "s:${mnt}/poudriere/deps/::" -e 's:/: :' | \
+		find ${MASTERMNT}/poudriere/deps -mindepth 2 | \
+		sed -e "s:${MASTERMNT}/poudriere/deps/::" -e 's:/: :' | \
 		# Only cycle errors are wanted
 		tsort 2>&1 >/dev/null | \
 		sed -e 's/tsort: //' | \
@@ -1342,13 +1341,12 @@ ${dependency_cycles}"
 
 	# No cycle, there's some unknown poudriere bug
 	err 1 "Unknown stuck queue bug detected. Give this information to poudriere developers:
-$(find ${mnt}/poudriere/building ${mnt}/poudriere/pool ${mnt}/poudriere/deps)"
+$(find ${MASTERMNT}/poudriere/building ${MASTERMNT}/poudriere/pool ${MASTERMNT}/poudriere/deps)"
 }
 
 queue_empty() {
 	local pool_dir
-	local mnt=$(my_path)
-	dirempty ${mnt}/poudriere/deps || return 1
+	dirempty ${MASTERMNT}/poudriere/deps || return 1
 
 	for pool_dir in ${POOL_BUCKET_DIRS}; do
 		dirempty ${pool_dir} || return 1
@@ -1372,7 +1370,6 @@ mark_done() {
 
 build_queue() {
 	local j name pkgname builders_active queue_empty
-	local mnt=$(my_path)
 
 	mkfifo ${MASTERMNT}/poudriere/builders.pipe
 	exec 6<> ${MASTERMNT}/poudriere/builders.pipe
@@ -1385,14 +1382,14 @@ build_queue() {
 		builders_active=0
 		for j in ${JOBS}; do
 			name="${MASTERNAME}-job-${j}"
-			if [ -f  "${mnt}/poudriere/var/run/${j}.pid" ]; then
-				if pgrep -qF "${mnt}/poudriere/var/run/${j}.pid" 2>/dev/null; then
+			if [ -f  "${MASTERMNT}/poudriere/var/run/${j}.pid" ]; then
+				if pgrep -qF "${MASTERMNT}/poudriere/var/run/${j}.pid" 2>/dev/null; then
 					builders_active=1
 					continue
 				fi
-				read pkgname < ${mnt}/poudriere/var/run/${j}.pkgname
-				rm -f ${mnt}/poudriere/var/run/${j}.pid \
-					${mnt}/poudriere/var/run/${j}.pkgname
+				read pkgname < ${MASTERMNT}/poudriere/var/run/${j}.pkgname
+				rm -f ${MASTERMNT}/poudriere/var/run/${j}.pid \
+					${MASTERMNT}/poudriere/var/run/${j}.pkgname
 				bset ${j} status "idle:"
 				mark_done ${pkgname}
 			fi
@@ -1409,8 +1406,8 @@ build_queue() {
 				# is done before checking the queue again
 			else
 				MY_JOBID="${j}" build_pkg "${pkgname}" > /dev/null 2>&1 &
-				echo "$!" > ${mnt}/poudriere/var/run/${j}.pid
-				echo "${pkgname}" > ${mnt}/poudriere/var/run/${j}.pkgname
+				echo "$!" > ${MASTERMNT}/poudriere/var/run/${j}.pid
+				echo "${pkgname}" > ${MASTERMNT}/poudriere/var/run/${j}.pkgname
 
 				# A new job is spawned, try to read the queue
 				# just to keep things moving
@@ -2013,9 +2010,8 @@ compute_deps() {
 	[ $# -gt 2 ] && eargs port pkgnme
 	local port=$1
 	local pkgname="${2:-$(cache_get_pkgname ${port})}"
-	local mnt=$(my_path)
 	local dep_pkgname dep_port
-	local pkg_pooldir="${mnt}/poudriere/deps/${pkgname}"
+	local pkg_pooldir="${MASTERMNT}/poudriere/deps/${pkgname}"
 	mkdir "${pkg_pooldir}" 2>/dev/null || return 0
 
 	msg_verbose "Computing deps for ${port}"
@@ -2031,13 +2027,13 @@ compute_deps() {
 
 		# Only do this if it's not already done, and not ALL, as everything will
 		# be touched anyway
-		[ ${ALL:-0} -eq 0 ] && ! [ -d "${mnt}/poudriere/deps/${dep_pkgname}" ] &&
+		[ ${ALL:-0} -eq 0 ] && ! [ -d "${MASTERMNT}/poudriere/deps/${dep_pkgname}" ] &&
 			compute_deps "${dep_port}" "${dep_pkgname}"
 
 		touch "${pkg_pooldir}/${dep_pkgname}"
-		mkdir -p "${mnt}/poudriere/rdeps/${dep_pkgname}"
+		mkdir -p "${MASTERMNT}/poudriere/rdeps/${dep_pkgname}"
 		ln -sf "${pkg_pooldir}/${dep_pkgname}" \
-			"${mnt}/poudriere/rdeps/${dep_pkgname}/${pkgname}"
+			"${MASTERMNT}/poudriere/rdeps/${dep_pkgname}/${pkgname}"
 	done
 }
 
