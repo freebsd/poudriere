@@ -325,7 +325,7 @@ siginfo_handler() {
 	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" -a "${status}" != "stopping_jobs:" ]; then
 		now=$(date +%s)
 		format_origin_phase="\t[%s]: %-30s %-13s (%s)\n"
-		format_phase="\t[%s]: %13s\n"
+		format_phase="\t[%s]: %15s\n"
 
 		# Collect build stats into a string with minimal execs
 		pkgname_buildtimes=$(find ${MASTERMNT}/poudriere/building -depth 1 \
@@ -1548,11 +1548,11 @@ clean_pool() {
 }
 
 print_phase_header() {
-	printf "=======================<phase: %-13s>==========================\n" "$1"
+	printf "=======================<phase: %-15s>============================\n" "$1"
 }
 
 print_phase_footer() {
-	echo "======================================================================="
+	echo "========================================================================="
 }
 
 build_pkg() {
