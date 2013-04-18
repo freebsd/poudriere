@@ -189,6 +189,10 @@ injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT}
 if [ $INTERACTIVE_MODE -gt 0 ]; then
 	print_phase_header "Interactive"
 
+	# Stop the tee process and stop redirecting stdout so that
+	# the terminal can be properly used in the jail
+	log_stop
+
 	msg "Installing run-depends"
 	# Install run-depends since this is an interactive test
 	echo "PACKAGES=/packages" >> ${MASTERMNT}/etc/make.conf
