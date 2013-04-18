@@ -283,6 +283,7 @@ if [ $nbskipped -gt 0 ]; then
 	echo ""
 fi
 msg "[${MASTERNAME}] $nbbuilt packages built, $nbfailed failures, $nbignored ignored, $nbskipped skipped"
+show_log_info
 
 set +e
 
