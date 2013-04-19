@@ -294,12 +294,12 @@ siginfo_handler() {
 	[ "${POUDRIERE_BUILD_TYPE}" != "bulk" ] && return 0
 
 	trappedinfo=1
-	local status=$(bget status)
-	local nbb=$(bget stats_built 2>/dev/null)
-	local nbf=$(bget stats_failed 2>/dev/null)
-	local nbi=$(bget stats_ignored 2>/dev/null)
-	local nbs=$(bget stats_skipped 2>/dev/null)
-	local nbq=$(bget stats_queued 2>/dev/null)
+	local status=$(bget status 2> /dev/null || echo unknown)
+	local nbb=$(bget stats_built 2>/dev/null || echo 0)
+	local nbf=$(bget stats_failed 2>/dev/null || echo 0)
+	local nbi=$(bget stats_ignored 2>/dev/null || echo 0)
+	local nbs=$(bget stats_skipped 2>/dev/null || echo 0)
+	local nbq=$(bget stats_queued 2>/dev/null || echo 0)
 	local ndone=$((nbb + nbf + nbi + nbs))
 	local queue_width=2
 	local now
