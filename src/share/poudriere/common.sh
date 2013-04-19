@@ -324,7 +324,7 @@ siginfo_handler() {
 	# Skip if stopping or starting jobs
 	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" -a "${status}" != "stopping_jobs:" ]; then
 		now=$(date +%s)
-		format_origin_phase="\t[%s]: %-30s %-13s (%s)\n"
+		format_origin_phase="\t[%s]: %-30s %-15s (%s)\n"
 		format_phase="\t[%s]: %15s\n"
 
 		# Collect build stats into a string with minimal execs
