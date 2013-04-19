@@ -2197,7 +2197,7 @@ prepare_ports() {
 
 	msg "Calculating ports order and dependencies"
 	mkdir -p "${MASTERMNT}/poudriere"
-	[ ${TMPFS_DATA} -eq 1 ] && mount -t tmpfs tmpfs "${MASTERMNT}/poudriere"
+	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] && mount -t tmpfs tmpfs "${MASTERMNT}/poudriere"
 	rm -rf "${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
 		"${MASTERMNT}/poudriere/var/cache/pkgname-origin" 2>/dev/null || :
 	mkdir -p "${MASTERMNT}/poudriere/building" \
