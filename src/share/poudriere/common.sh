@@ -1295,7 +1295,7 @@ save_wrkdir() {
 	local tarname=${tardir}/${PKGNAME}.${WRKDIR_ARCHIVE_FORMAT}
 	local mnted_portdir=${mnt}/wrkdirs/${portdir}
 
-	[ -n "${SAVE_WRKDIR}" ] || return 0
+	[ "${SAVE_WRKDIR:-no}" != "no" ] || return 0
 	# Only save if not in fetch/checksum phase
 	[ "${failed_phase}" != "fetch" -a "${failed_phase}" != "checksum" -a \
 		"${failed_phase}" != "extract" ] || return 0
