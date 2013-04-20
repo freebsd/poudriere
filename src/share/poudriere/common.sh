@@ -552,6 +552,7 @@ markfs() {
 ./ccache/*
 ./var/db/ports/*
 ./proc/*
+./usr/src
 EOF
 	elif [ "${name}" = "prebuild" ]; then
 		cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
@@ -566,6 +567,7 @@ EOF
 ./ccache/*
 ./var/db/ports/*
 ./proc/*
+./usr/src
 EOF
 	elif [ "${name}" = "preinst" ]; then
 		cat >  ${mnt}/poudriere/mtree.${name}exclude << EOF
@@ -591,6 +593,7 @@ EOF
 ./etc/shells
 ./var/mail/*
 .${LOCALBASE:-/usr/local}/etc/gconf/gconf.xml.defaults
+./usr/src
 EOF
 	fi
 	mtree -X ${mnt}/poudriere/mtree.${name}exclude \
@@ -629,7 +632,11 @@ clonefs() {
 			${zfs_to}
 	else
 		[ ${TMPFS_ALL} -eq 1 ] && mount -t tmpfs tmpfs ${to}
-		pax -X -rw -p p -s ",${from},,g" ${from} ${to}
+		# Mount /usr/src into target, no need for anything to write to it
+		mkdir -p ${to}/usr/src
+		mount -t nullfs -o ro ${from}/usr/src ${to}/usr/src
+		find -x ${from} | egrep -v "(${from}/usr/src|${from}/poudriere)" |
+			pax -drw -p p -s ",${from},," ${to}
 	fi
 }
 
