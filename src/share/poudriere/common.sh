@@ -1451,7 +1451,7 @@ build_queue() {
 				# Pool is waiting on dep, wait until a build
 				# is done before checking the queue again
 			else
-				MY_JOBID="${j}" build_pkg "${pkgname}" > /dev/null 2>&1 &
+				MY_JOBID="${j}" build_pkg "${pkgname}" > /dev/null &
 				echo "$!" > ${MASTERMNT}/poudriere/var/run/${j}.pid
 				echo "${pkgname}" > ${MASTERMNT}/poudriere/var/run/${j}.pkgname
 
