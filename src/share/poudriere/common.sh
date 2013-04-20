@@ -601,6 +601,7 @@ EOF
 .${LOCALBASE:-/usr/local}/etc/gconf/gconf.xml.defaults
 ./proc/*
 ./usr/src
+./ccache/*
 EOF
 	fi
 	mtree -X ${mnt}/poudriere/mtree.${name}exclude \
