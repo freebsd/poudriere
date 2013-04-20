@@ -104,7 +104,6 @@ update_version() {
 }
 
 update_jail() {
-	local netargs
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	jail_runs ${JAILNAME} &&
 		err 1 "Unable to remove jail ${JAILNAME}: it is running"
