@@ -1760,7 +1760,7 @@ deps_file() {
 
 	if [ ! -f "${depfile}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
-			tar -xf "${pkg}" -O +CONTENTS | awk '$1 == "@pkgdep" { print $2 }' > "${depfile}"
+			tar -qxf "${pkg}" -O +CONTENTS | awk '$1 == "@pkgdep" { print $2 }' > "${depfile}"
 		else
 			pkg info -qdF "${pkg}" > "${depfile}"
 		fi
@@ -1778,7 +1778,7 @@ pkg_get_origin() {
 	if [ ! -f "${originfile}" ]; then
 		if [ -z "${origin}" ]; then
 			if [ "${PKG_EXT}" = "tbz" ]; then
-				origin=$(tar -xf "${pkg}" -O +CONTENTS | \
+				origin=$(tar -qxf "${pkg}" -O +CONTENTS | \
 					awk -F: '$1 == "@comment ORIGIN" { print $2 }')
 			else
 				origin=$(pkg query -F "${pkg}" "%o")
@@ -1799,7 +1799,7 @@ pkg_get_dep_origin() {
 
 	if [ ! -f "${dep_origin_file}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
-			compiled_dep_origins=$(tar -xf "${pkg}" -O +CONTENTS | \
+			compiled_dep_origins=$(tar -qxf "${pkg}" -O +CONTENTS | \
 				awk -F: '$1 == "@comment DEPORIGIN" {print $2}' | tr '\n' ' ')
 		else
 			compiled_dep_origins=$(pkg query -F "${pkg}" '%do' | tr '\n' ' ')
@@ -1820,7 +1820,7 @@ pkg_get_options() {
 
 	if [ ! -f "${optionsfile}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
-			compiled_options=$(tar -xf "${pkg}" -O +CONTENTS | \
+			compiled_options=$(tar -qxf "${pkg}" -O +CONTENTS | \
 				awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | \
 				sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 		else
