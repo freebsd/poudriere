@@ -78,6 +78,8 @@ list_jail() {
 delete_jail() {
 	test -z ${JAILNAME} && usage
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
+	jail_runs ${JAILNAME} &&
+		err 1 "Unable to delete jail ${JAILNAME}: it is running"
 	msg_n "Removing ${JAILNAME} jail..."
 	destroyfs ${JAILMNT} jail
 	rm -rf ${POUDRIERED}/jails/${JAILNAME} || :
