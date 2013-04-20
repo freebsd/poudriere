@@ -51,10 +51,10 @@ Options:
                      \"svn+https\", \"svn+file\", \"svn+ssh\", \"csup\".
                      Please note that with svn and csup the world will be
                      built. Note that building from sources can use src.conf
-		     and jail-src.conf from /usr/local/etc/poudriere.d/.
-		     Other possible method are: \"allbsd\" retrieve a
-		     snapshot from allbsd.org's website or \"ftp-archive\"
-		     for old releases that're no longer available on \"ftp\".
+                     and jail-src.conf from /usr/local/etc/poudriere.d/.
+                     Other possible method are: \"allbsd\" retrieve a
+                     snapshot from allbsd.org's website or \"ftp-archive\"
+                     for old releases that're no longer available on \"ftp\".
     -p tree       -- Specify which ports tree the jail to start/stop with
     -P patch      -- Specify a patch file to apply to the source before committing.
     -t version    -- version to upgrade to
