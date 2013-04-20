@@ -1621,7 +1621,7 @@ build_pkg() {
 	job_msg "Starting build of ${port}"
 	bset ${MY_JOBID} status "starting:${port}"
 
-	if [ ${TMPFS_LOCALBASE} -eq 1 ]; then
+	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
 		umount -f ${mnt}/${LOCALBASE:-/usr/local} 2>/dev/null || :
 		mount -t tmpfs tmpfs ${mnt}/${LOCALBASE:-/usr/local}
 	fi
