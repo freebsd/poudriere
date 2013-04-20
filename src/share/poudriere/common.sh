@@ -2115,9 +2115,11 @@ listed_ports() {
 
 parallel_exec() {
 	local cmd="$1"
+	local ret=0
 	shift 1
-	${cmd} "$@"
-	echo >&6
+	${cmd} "$@" || ret=1
+	echo >&6 || :
+	exit ${ret}
 }
 
 parallel_start() {
