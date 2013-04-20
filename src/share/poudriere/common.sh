@@ -542,6 +542,7 @@ markfs() {
 	mkdir -p ${mnt}/poudriere/
 	if [ "${name}" = "prepkg" ]; then
 		cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
+./dev/*
 ./poudriere/*
 ./compat/linux/proc
 ./wrkdirs/*
@@ -556,6 +557,7 @@ markfs() {
 EOF
 	elif [ "${name}" = "prebuild" ]; then
 		cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
+./dev/*
 ./tmp/preinst
 ./poudriere/*
 ./compat/linux/proc
@@ -571,11 +573,14 @@ EOF
 EOF
 	elif [ "${name}" = "preinst" ]; then
 		cat >  ${mnt}/poudriere/mtree.${name}exclude << EOF
+./dev/*
 ./poudriere/*
 ./var/db/pkg/*
 ./var/run/*
 ./wrkdirs/*
+./packages/*
 ./new_packages/*
+./usr/ports/*
 ./tmp/*
 .${LOCALBASE:-/usr/local}/share/nls/POSIX
 .${LOCALBASE:-/usr/local}/share/nls/en_US.US-ASCII
@@ -593,11 +598,12 @@ EOF
 ./etc/shells
 ./var/mail/*
 .${LOCALBASE:-/usr/local}/etc/gconf/gconf.xml.defaults
+./proc/*
 ./usr/src
 EOF
 	fi
 	mtree -X ${mnt}/poudriere/mtree.${name}exclude \
-		-xcn -k uid,gid,mode,size \
+		-cn -k uid,gid,mode,size \
 		-p ${mnt} > ${mnt}/poudriere/mtree.${name}
 }
 
@@ -949,7 +955,7 @@ sanity_check_pkgs() {
 
 check_leftovers() {
 	local mnt=$1
-	mtree -X ${mnt}/poudriere/mtree.preinstexclude -x \
+	mtree -X ${mnt}/poudriere/mtree.preinstexclude \
 		-f ${mnt}/poudriere/mtree.preinst \
 		-p ${mnt} | while read l ; do
 		case ${l} in
@@ -1090,7 +1096,7 @@ build_port() {
 		configure) [ -n "${PORTTESTING}" ] && markfs prebuild ${mnt} ;;
 		install-mtree)
 			if [ -n "${PORTTESTING}" ]; then
-				mtree -X ${mnt}/poudriere/mtree.prebuildexclude -x \
+				mtree -X ${mnt}/poudriere/mtree.prebuildexclude \
 					-f ${mnt}/poudriere/mtree.prebuild \
 					-p ${mnt} > ${mnt}/tmp/preinst
 				if [ -s ${mnt}/tmp/preinst ]; then
