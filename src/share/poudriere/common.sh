@@ -464,7 +464,7 @@ rollbackfs() {
 		*extra*Directory*) rm -rf ${mnt}/${l%% *} ;;
 		*changed|*missing) echo ${MASTERMNT}/${l% *} ;;
 		esac
-	done | pax -rw -p p -s ",${MASTERMNT},,g" ${mnt}
+	done | pax -rw -p e -s ",${MASTERMNT},,g" ${mnt}
 }
 
 umountfs() {
@@ -636,7 +636,7 @@ clonefs() {
 		mkdir -p ${to}/usr/src
 		mount -t nullfs -o ro ${from}/usr/src ${to}/usr/src
 		find -x ${from} | egrep -v "(${from}/usr/src|${from}/poudriere)" |
-			pax -drw -p p -s ",${from},," ${to}
+			pax -drw -p e -s ",${from},," ${to}
 	fi
 }
 
