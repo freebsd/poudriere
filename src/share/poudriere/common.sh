@@ -581,6 +581,7 @@ EOF
 ./packages/*
 ./new_packages/*
 ./usr/ports/*
+./distfiles/*
 ./tmp/*
 .${LOCALBASE:-/usr/local}/share/nls/POSIX
 .${LOCALBASE:-/usr/local}/share/nls/en_US.US-ASCII
