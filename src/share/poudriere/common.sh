@@ -461,7 +461,7 @@ rollbackfs() {
 	-xr -f ${mtree_mnt}/poudriere/mtree.${name} -p ${mnt} | \
 	while read l ; do
 		case "$l" in
-		*extra*Directory*) rm -rf ${mnt}/${l%% *} 2>/dev/null ;;
+		*extra*Directory*) rm -rf ${mnt}/${l%% *} ;;
 		*changed|*missing) echo ${MASTERMNT}/${l% *} ;;
 		esac
 	done | pax -rw -p p -s ",${MASTERMNT},,g" ${mnt}
