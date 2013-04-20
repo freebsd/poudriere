@@ -42,7 +42,8 @@ Options:
     -n          -- No custom prefix
     -p tree     -- Specify the path to the portstree
     -s          -- Skip sanity checks
-    -v          -- Be verbose; show more information. Use twice to enable debug output"
+    -v          -- Be verbose; show more information. Use twice to enable debug output
+    -z set      -- Specify which SET to use"
 	exit 1
 }
 
