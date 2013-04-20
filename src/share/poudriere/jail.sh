@@ -106,7 +106,7 @@ update_version() {
 update_jail() {
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	jail_runs ${JAILNAME} &&
-		err 1 "Unable to remove jail ${JAILNAME}: it is running"
+		err 1 "Unable to update jail ${JAILNAME}: it is running"
 
 	METHOD=$(jget ${JAILNAME} method)
 	if [ -z "${METHOD}" -o "${METHOD}" = "-" ]; then
