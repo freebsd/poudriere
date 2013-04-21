@@ -100,7 +100,7 @@ gather_distfiles() {
 		"${distinfo_file}" >> ${DISTFILES_LIST}
 }
 
-msg "Gathering all expected disfiles"
+msg "Gathering all expected distfiles"
 parallel_start
 for origin in $(listed_ports); do
 	parallel_run gather_distfiles ${origin}
