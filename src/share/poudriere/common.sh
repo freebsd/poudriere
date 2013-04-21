@@ -558,7 +558,6 @@ EOF
 	elif [ "${name}" = "prebuild" ]; then
 		cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
 ./dev/*
-./tmp/preinst
 ./poudriere/*
 ./compat/linux/proc
 ./wrkdirs/*
@@ -570,6 +569,7 @@ EOF
 ./var/db/ports/*
 ./proc/*
 ./usr/src
+./tmp/*
 EOF
 	elif [ "${name}" = "preinst" ]; then
 		cat >  ${mnt}/poudriere/mtree.${name}exclude << EOF
