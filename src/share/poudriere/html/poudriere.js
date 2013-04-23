@@ -132,7 +132,9 @@ function format_setname(setname) {
 function process_data(data) {
 	var html, a, n;
 
-	update_canvas(data.stats);
+	if (data.stats) {
+		update_canvas(data.stats);
+	}
 
 	document.title = 'Poudriere bulk results for ' + data.jail +
 		format_setname(data.setname) + '-' + data.ptname + ' ' +
@@ -156,15 +158,17 @@ function process_data(data) {
 	$('#builders_body').html(html);
 
 	/* Stats */
-	$.each(data.stats, function(status, count) {
-		if (status == "queued") {
-			html = count;
-		} else {
-			html = '<a href="#' + status + '">' + count + '</a>';
-		}
+	if (data.stats) {
+		$.each(data.stats, function(status, count) {
+			if (status == "queued") {
+				html = count;
+			} else {
+				html = '<a href="#' + status + '">' + count + '</a>';
+			}
 
-		$('#stats_' + status).html(html);
-	});
+			$('#stats_' + status).html(html);
+		});
+	}
 
 	/* For each status, track how many of the existing data has been
 	 * added to the table. On each update, only append new data. This
