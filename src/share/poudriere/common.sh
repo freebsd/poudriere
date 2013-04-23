@@ -832,7 +832,7 @@ jail_start() {
 
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 		echo "WITH_CCACHE_BUILD=yes" >> ${tomnt}/etc/make.conf
-		echo "CCACHE_DIR= CCACHE_DIR=/ccache" >> ${tomnt}/etc/make.conf
+		echo "CCACHE_DIR=/ccache" >> ${tomnt}/etc/make.conf
 	fi
 	echo "PACKAGES=/packages" >> ${tomnt}/etc/make.conf
 	echo "DISTDIR=/distfiles" >> ${tomnt}/etc/make.conf
