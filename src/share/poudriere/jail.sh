@@ -171,8 +171,6 @@ build_and_install_world() {
 	: ${CCACHE_PATH:="/usr/local/libexec/ccache"}
 	if [ -n "${CCACHE_DIR}" -a -d ${CCACHE_PATH}/world ]; then
 		export CCACHE_DIR
-		# Fix building world when CC is clang
-		export CCACHE_CPP2=yes
 		export CC="${CCACHE_PATH}/world/cc"
 		export CXX="${CCACHE_PATH}/world/c++"
 		unset CCACHE_TEMPDIR
