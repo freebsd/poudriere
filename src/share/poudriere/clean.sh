@@ -57,7 +57,7 @@ clean_pool() {
 			# Remove this package from every package depending on this
 			# This follows the symlink in rdeps which references
 			# deps/<pkgname>/<this pkg>
-			find ${JAILMNT}/poudriere/rdeps/${pkgname} -type l | \
+			find ${JAILMNT}/poudriere/rdeps/${pkgname} -type l 2>/dev/null | \
 				xargs realpath -q | \
 				xargs rm -f || :
 
