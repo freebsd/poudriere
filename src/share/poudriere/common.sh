@@ -1112,13 +1112,16 @@ build_port() {
 			;;
 		install) [ -n "${PORTTESTING}" ] && markfs preinst ${mnt} ;;
 		deinstall)
-			msg "Checking shared library dependencies"
-			listfilecmd="grep -v '^@' /var/db/pkg/${PKGNAME}/+CONTENTS"
-			[ ${PKGNG} -eq 1 ] && listfilecmd="pkg query '%Fp' ${PKGNAME}"
-			echo "${listfilecmd} | grep -v '/compat/linux' | xargs ldd 2>&1 |
-			    awk '/=>/ { print $3 }' | sort -u" > ${mnt}/shared.sh
-			injail sh /shared.sh
-			rm -f ${mnt}/shared.sh
+			# Skip for all linux ports, they are not safe
+			if [ "${PKGNAME%%*linux*}" != "" ]; then
+				msg "Checking shared library dependencies"
+				listfilecmd="grep -v '^@' /var/db/pkg/${PKGNAME}/+CONTENTS"
+				[ ${PKGNG} -eq 1 ] && listfilecmd="pkg query '%Fp' ${PKGNAME}"
+				echo "${listfilecmd} | xargs ldd 2>&1 |
+					awk '/=>/ { print $3 }' | sort -u" > ${mnt}/shared.sh
+				injail sh /shared.sh
+				rm -f ${mnt}/shared.sh
+			fi
 			;;
 		esac
 
