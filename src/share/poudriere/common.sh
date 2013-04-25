@@ -113,11 +113,24 @@ run_hook() {
 }
 
 log_start() {
-	local logfile=$1
+	local log=$(log_path)
+	local latest_log
+
+	logfile="${log}/logs/${PKGNAME}.log"
+	latest_log=${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/latest-per-pkg/${PKGNAME%%-*}/${PKGNAME##*-}
 
 	# Make sure directory exists
-	mkdir -p ${logfile%/*}
+	mkdir -p ${log}/logs ${latest_log}
 
+	# Symlink to /latest-per-pkg/PORTNAME/PKGVERSION/MASTERNAME.log
+	ln -fs ${log}/../latest-per-pkg/${PKGNAME}.log \
+		${latest_log}/${MASTERNAME}.log
+
+	# Symlink to JAIL/latest-per-pkg/PKGNAME.log
+	ln -fs ${log}/logs/${PKGNAME}.log \
+		${log}/../latest-per-pkg/${PKGNAME}.log
+
+	# Tee all of the output to the logfile through a pipe
 	exec 3>&1 4>&2
 	[ ! -e ${logfile}.pipe ] && mkfifo ${logfile}.pipe
 	tee ${logfile} < ${logfile}.pipe >&3 &
@@ -1657,7 +1670,7 @@ build_pkg() {
 	msg "Cleaning up wrkdir"
 	rm -rf ${mnt}/wrkdirs/*
 
-	log_start ${log}/logs/${PKGNAME}.log
+	log_start
 	msg "Building ${port}"
 	buildlog_start ${portdir}
 
@@ -1702,16 +1715,15 @@ build_pkg() {
 
 	bset ${MY_JOBID} status "done:${port}"
 
-	stop_build ${portdir} ${log}/logs/${PKGNAME}.log
+	stop_build ${portdir}
 
 	echo ${MY_JOBID} >&6
 }
 
 stop_build() {
-	[ $# -eq 2 ] || eargs portdir logfile
+	[ $# -eq 1 ] || eargs portdir
 	local portdir="$1"
 	local mnt=$(my_path)
-	local logfile="$2"
 
 	umount -f ${mnt}/new_packages 2>/dev/null || :
 	rm -rf "${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}"
@@ -1725,7 +1737,7 @@ stop_build() {
 	injail kill -9 -1 2>/dev/null || :
 
 	buildlog_stop ${portdir}
-	log_stop ${logfile}
+	log_stop
 }
 
 # Crazy redirection is to add the portname into stderr.
@@ -2238,6 +2250,7 @@ prepare_ports() {
 	POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/unbalanced"
 	mkdir -p ${POOL_BUCKET_DIRS}
 
+	mkdir -p ${log}/../../latest-per-pkg ${log}/../latest-per-pkg
 	mkdir -p ${log}/logs ${log}/logs/errors
 	ln -sfh ${BUILDNAME} ${log%/*}/latest
 	cp ${HTMLPREFIX}/* ${log}
