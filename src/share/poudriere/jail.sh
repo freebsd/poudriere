@@ -179,7 +179,7 @@ build_and_install_world() {
 	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
 	make -C ${JAILMNT}/usr/src buildworld ${MAKE_JOBS} ${MAKEWORLDARGS} || err 1 "Fail to build world"
 	msg "Starting make installworld"
-	make -C ${JAILMNT}/usr/src installworld DESTDIR=${JAILMNT} || err 1 "Fail to install world"
+	make -C ${JAILMNT}/usr/src installworld DESTDIR=${JAILMNT} DB_FROM_SRC=1 || err 1 "Fail to install world"
 	make -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distrib-dirs &&
 	make -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distribution
 }
