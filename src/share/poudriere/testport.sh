@@ -165,7 +165,7 @@ PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
 mkdir -p ${MASTERMNT}/tmp/pkgs
 PORTTESTING=yes
 export DEVELOPER_MODE=yes
-log_start ${log}/logs/${PKGNAME}.log
+log_start
 buildlog_start /usr/ports/${ORIGIN}
 if ! build_port /usr/ports/${ORIGIN}; then
 	failed_status=$(bget status)
@@ -174,7 +174,7 @@ if ! build_port /usr/ports/${ORIGIN}; then
 	save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" "${failed_phase}" || :
 
 	if [ ${INTERACTIVE_MODE} -eq 0 ]; then
-		stop_build /usr/ports/${ORIGIN} ${log}/logs/${PKGNAME}.log
+		stop_build /usr/ports/${ORIGIN}
 		exit 1
 	fi
 elif [ -f ${MASTERMNT}/usr/ports/${ORIGIN}/.keep ]; then
@@ -224,7 +224,7 @@ msg "Deinstalling package"
 injail ${PKG_DELETE} ${PKGNAME}
 
 msg "Removing existing ${PREFIX} dir"
-stop_build /usr/ports/${ORIGIN} ${log}/logs/${PKGNAME}.log
+stop_build /usr/ports/${ORIGIN}
 
 cleanup
 set +e
