@@ -1401,7 +1401,7 @@ deadlock_detected() {
 	# and it's likely some poudriere or system bug
 	crashed_packages=$( \
 		find ${MASTERMNT}/poudriere/building -type d -mindepth 1 -maxdepth 1 | \
-		sed -e "s:${MASTERMNT}/poudriere/building/::" | tr '\n' ' ' \
+		sed -e "s,${MASTERMNT}/poudriere/building/,," | tr '\n' ' ' \
 	)
 	[ -z "${crashed_packages}" ] ||	\
 		err 1 "Crashed package builds detected: ${crashed_packages}"
@@ -1409,7 +1409,7 @@ deadlock_detected() {
 	# Check if there's a cycle in the need-to-build queue
 	dependency_cycles=$(\
 		find ${MASTERMNT}/poudriere/deps -mindepth 2 | \
-		sed -e "s:${MASTERMNT}/poudriere/deps/::" -e 's:/: :' | \
+		sed -e "s,${MASTERMNT}/poudriere/deps/,," -e 's:/: :' | \
 		# Only cycle errors are wanted
 		tsort 2>&1 >/dev/null | \
 		sed -e 's/tsort: //' | \
