@@ -1424,7 +1424,7 @@ ${dependency_cycles}"
 	[ ${always_fail} -eq 1 ] || return 0
 
 	# No cycle, there's some unknown poudriere bug
-	err 1 "Unknown stuck queue bug detected. Give this information to poudriere developers:
+	err 1 "Unknown stuck queue bug detected. Please submit the entire build output to poudriere developers.
 $(find ${MASTERMNT}/poudriere/building ${MASTERMNT}/poudriere/pool ${MASTERMNT}/poudriere/deps)"
 }
 
