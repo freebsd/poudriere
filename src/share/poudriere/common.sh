@@ -117,7 +117,7 @@ log_start() {
 	local latest_log
 
 	logfile="${log}/logs/${PKGNAME}.log"
-	latest_log=${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/latest-per-pkg/${PKGNAME%%-*}/${PKGNAME##*-}
+	latest_log=${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/latest-per-pkg/${PKGNAME%-*}/${PKGNAME##*-}
 
 	# Make sure directory exists
 	mkdir -p ${log}/logs ${latest_log}
