@@ -184,8 +184,17 @@ buildlog_start() {
 
 buildlog_stop() {
 	local portdir=$1
+	local log=$(log_path)
+	local buildtime
+
+	buildtime=$( \
+		stat -f '%N %B' ${log}/logs/${PKGNAME}.log  | awk -v now=$(date +%s) \
+		-f ${AWKPREFIX}/siginfo_buildtime.awk |
+		awk -F'!' '{print $2}' \
+	)
 
 	echo "build of ${portdir} ended at $(date)"
+	echo "build time: ${buildtime}"
 }
 
 log_stop() {
