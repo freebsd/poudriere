@@ -108,7 +108,13 @@ eargs() {
 run_hook() {
 	local hookfile=${HOOKDIR}/${1}.sh
 	shift
-	[ -f ${hookfile} ] && /bin/sh ${hookfile} $@
+
+	[ -f ${hookfile} ] &&
+		URL_BASE="${URL_BASE}" \
+		POUDRIERE_BUILD_TYPE=${POUDRIERE_BUILD_TYPE} \
+		MASTERNAME="${MASTERNAME}" \
+		BUILDNAME="${BUILDNAME}" \
+		/bin/sh ${hookfile} $@
 	return 0
 }
 
