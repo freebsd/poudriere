@@ -142,7 +142,7 @@ while getopts "B:f:j:J:CcNp:RFtTsvwz:a" FLAG; do
 			CLEAN_LISTED=1
 			;;
 		f)
-			LISTPKGS=${OPTARG}
+			LISTPKGS="${LISTPKGS} ${OPTARG}"
 			;;
 		F)
 			export MASTER_SITE_BACKUP=''
@@ -207,7 +207,11 @@ fi
 
 if [ $# -eq 0 ]; then
 	[ -n "${LISTPKGS}" -o ${ALL} -eq 1 ] || err 1 "No packages specified"
-	[ ${ALL} -eq 1 -o -f "${LISTPKGS}" ] || err 1 "No such list of packages: ${LISTPKGS}"
+	if [ ${ALL} -eq 0 ]; then
+		for listpkg_name in ${LISTPKGS}; do
+			[ -f "${listpkg_name}" ] || err 1 "No such list of packages: ${listpkg_name}"
+		done
+	fi
 else
 	[ ${ALL} -eq 0 ] || err 1 "command line arguments and -a cannot be used at the same time"
 	[ -z "${LISTPKGS}" ] || err 1 "command line arguments and list of ports cannot be used at the same time"
