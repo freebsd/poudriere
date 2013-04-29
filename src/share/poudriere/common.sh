@@ -2137,7 +2137,7 @@ listed_ports() {
 	fi
 	if [ -z "${LISTPORTS}" ]; then
 		[ -n "${LISTPKGS}" ] &&
-			grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}
+			grep -h -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS}
 	else
 		echo ${LISTPORTS} | tr ' ' '\n'
 	fi

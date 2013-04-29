@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd April 17, 2013
+.Dd April 29, 2013
 .Dt POUDRIERE 8
 .Os FreeBSD
 .Sh NAME
@@ -99,6 +99,9 @@ Absolute path to a file which contains the list of ports to build.
 Ports must be specified in the form
 .Ar category/port
 and shell-style comments are allowed.
+Multiple
+.Fl f Ar file
+arguments may be specified at once.
 .It cat/port cat/port2 ...
 A list of ports can be specified directly.
 .El
