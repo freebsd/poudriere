@@ -195,6 +195,7 @@ if [ $INTERACTIVE_MODE -gt 0 ]; then
 	msg "Installing run-depends"
 	# Install run-depends since this is an interactive test
 	echo "PACKAGES=/packages" >> ${MASTERMNT}/etc/make.conf
+	echo "127.0.0.1 ${MASTERNAME}" >> ${MASTERMNT}/etc/hosts
 	injail make -C /usr/ports/${ORIGIN} run-depends ||
 		msg "Failed to install RUN_DEPENDS"
 
