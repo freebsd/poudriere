@@ -38,7 +38,7 @@ Options:
     -C          -- Use 'make config-conditional' target (default)
     -j name     -- Run on the given jail
     -p tree     -- Specify on which ports tree the configuration will be done
-    -n          -- Don't configure/show/remove options of dependicies
+    -n          -- Don't configure/show/remove options of dependencies
     -r          -- Remove port options instead of configuring them
     -s          -- Show port options instead of configuring them
     -z set      -- Specify which SET to use"
