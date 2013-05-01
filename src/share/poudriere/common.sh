@@ -2360,6 +2360,9 @@ prepare_ports() {
 		xargs -J % mv % "${MASTERMNT}/poudriere/pool/unbalanced"
 	balance_pool
 
+	[ -z "${PORTTESTING}" -a -z "${ALLOW_MAKE_JOBS}" ] &&
+		echo "DISABLE_MAKE_JOBS=yes" >> ${MASTERMNT}/etc/make.conf
+
 	markfs prepkg ${MASTERMNT}
 }
 
