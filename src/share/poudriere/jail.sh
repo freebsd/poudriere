@@ -126,9 +126,18 @@ update_jail() {
 		if [ -z "${TORELEASE}" ]; then
 			injail env PAGER=/bin/cat /usr/sbin/freebsd-update fetch install
 		else
-			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update -r ${TORELEASE} upgrade install ||
+			# Intall new kernel
+			injail env PAGER=/bin/cat /usr/sbin/freebsd-update -r ${TORELEASE} upgrade install ||
 				err 1 "Fail to upgrade system"
-			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update install ||
+			# Reboot
+			update_version ${TORELEASE}
+			# Install new world
+			injail env PAGER=/bin/cat /usr/sbin/freebsd-update install ||
+				err 1 "Fail to upgrade system"
+			# Reboot
+			update_version ${TORELEASE}
+			# Remove stale files
+			injail env PAGER=/bin/cat /usr/sbin/freebsd-update install ||
 				err 1 "Fail to upgrade system"
 			jset ${JAILNAME} version ${TORELEASE}
 		fi
