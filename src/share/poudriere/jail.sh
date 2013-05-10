@@ -118,11 +118,13 @@ update_jail() {
 	msg "Upgrading using ${METHOD}"
 	case ${METHOD} in
 	ftp|ftp-archive)
-		MASTERMNT=$(jget ${JAILNAME} mnt)
+		MASTERMNT=${JAILMNT}
 		MASTERNAME=${JAILNAME}
+		[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
+		do_jail_mounts ${JAILMNT} ${ARCH}
 		jstart 1
 		if [ -z "${TORELEASE}" ]; then
-			injail /usr/sbin/freebsd-update fetch install
+			injail env PAGER=/bin/cat /usr/sbin/freebsd-update fetch install
 		else
 			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update -r ${TORELEASE} upgrade install ||
 				err 1 "Fail to upgrade system"
@@ -131,6 +133,8 @@ update_jail() {
 			jset ${JAILNAME} version ${TORELEASE}
 		fi
 		jstop
+		umountfs ${JAILMNT} 1
+		[ -n "${RESOLV_CONF}" ] && rm -f ${JAILMNT}/etc/resolv.conf
 		markfs clean ${JAILMNT}
 		;;
 	csup)
