@@ -126,7 +126,7 @@ update_jail() {
 		if [ -z "${TORELEASE}" ]; then
 			injail env PAGER=/bin/cat /usr/sbin/freebsd-update fetch install
 		else
-			# Intall new kernel
+			# Install new kernel
 			injail env PAGER=/bin/cat /usr/sbin/freebsd-update -r ${TORELEASE} upgrade install ||
 				err 1 "Fail to upgrade system"
 			# Reboot
