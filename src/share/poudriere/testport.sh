@@ -153,7 +153,7 @@ if [ "${USE_PORTLINT}" = "yes" ]; then
 	set -e
 fi
 [ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/prefix}/`echo ${PKGNAME} | tr '[,+]' _`"
-PORT_FLAGS="NO_DEPENDS=yes PREFIX=${PREFIX}"
+PORT_FLAGS="PREFIX=${PREFIX}"
 msg "Building with flags: ${PORT_FLAGS}"
 
 if [ -d ${MASTERMNT}${PREFIX} ]; then
