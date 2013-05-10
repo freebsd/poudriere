@@ -118,24 +118,19 @@ update_jail() {
 	msg "Upgrading using ${METHOD}"
 	case ${METHOD} in
 	ftp|ftp-archive)
-		# Workaround PR bin/164834
-		sed -i '' '/Components/s/kernel// ; s/# BackupKernel yes/BackupKernel no/' \
-			${JAILMNT}/etc/freebsd-update.conf
+		MASTERMNT=$(jget ${JAILNAME} mnt)
+		MASTERNAME=${JAILNAME}
+		jstart 1
 		if [ -z "${TORELEASE}" ]; then
-			env PAGER=/bin/cat /usr/sbin/freebsd-update -b ${JAILMNT}/ \
-				-d ${JAILMNT}/var/db/freebsd-update/ \
-				-f ${JAILMNT}/etc/freebsd-update.conf fetch install
+			injail /usr/sbin/freebsd-update fetch install
 		else
-			yes | env PAGER=/bin/cat /usr/sbin/freebsd-update -b ${JAILMNT}/ \
-				-d ${JAILMNT}/var/db/freebsd-update/ \
-				-f ${JAILMNT}/etc/freebsd-update.conf -r ${TORELEASE} upgrade install ||
+			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update -r ${TORELEASE} upgrade install ||
 				err 1 "Fail to upgrade system"
-			yes | env PAGER=/bin/cat /usr/sbin/freebsd-update -b ${JAILMNT}/ \
-				-d ${JAILMNT}/var/db/freebsd-update/ \
-				-f ${JAILMNT}/etc/freebsd-update.conf install ||
+			yes | injail env PAGER=/bin/cat /usr/sbin/freebsd-update install ||
 				err 1 "Fail to upgrade system"
 			jset ${JAILNAME} version ${TORELEASE}
 		fi
+		jstop
 		markfs clean ${JAILMNT}
 		;;
 	csup)
