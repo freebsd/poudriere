@@ -101,7 +101,7 @@ update_version() {
 	[ "${ARCH}" = "i386" -a "${REALARCH}" = "amd64" ] &&
 		login_env="${login_env},UNAME_p=i386,UNAME_m=i386"
 
-	sed -i "" -e "s/:\(setenv.*\):/:\1${login_env}:/" ${JAILMNT}/etc/login.conf
+	sed -i "" -e "s/,UNAME_r.*:/:/ ; s/:\(setenv.*\):/:\1${login_env}:/" ${JAILMNT}/etc/login.conf
 	cap_mkdb ${JAILMNT}/etc/login.conf
 }
 
