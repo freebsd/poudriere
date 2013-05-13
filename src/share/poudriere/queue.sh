@@ -1,6 +1,6 @@
 #!/bin/sh
 # 
-# Copyright (c) 2012 jadawin@tuxaco.net
+# Copyright (c) 2012 Philippe Audéoud <jadawin@FreeBSD.org>
 # Copyright (c) 2012-2013 Baptiste Daroussin <bapt@FreeBSD.org>
 # All rights reserved.
 # 
