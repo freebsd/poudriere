@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd May 15, 2013
+.Dd May 16, 2013
 .Dt POUDRIERE 8
 .Os FreeBSD
 .Sh NAME
@@ -80,6 +80,8 @@ This command will cleanup old distfiles
 This command allows a non-root user to queue
 .Nm
 commands.
+.It status
+This command shows status of current and previous builds
 .It version
 Show version of poudriere.
 .Nm.
@@ -431,6 +433,23 @@ command in argument.
 There are no options associated with the
 .Cm queue
 command.
+.Ss status
+This command accepts the following options:
+.Bl -tag -width "-f conffile"
+.It Fl j Ar name
+Specifies the
+.Ar name
+of the jail to view the status of.
+.It Fl p Ar tree
+This flag specifies which ports
+.Ar tree
+the build is running on when using
+.Fl j
+.It Fl z Ar set
+This specifies which SET the build is running on when using
+.Fl j
+.El
+.Pp
 .Sh ENVIRONMENT
 The
 .Nm

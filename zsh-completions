@@ -90,6 +90,12 @@ _testport=(
 	'-z[Specify on which SET to use]::'
 )
 
+_status=(
+	'-j[run only inside the given jail]::name:_poudriere_jail'
+	'-p[specify on which portstree we work]::tree:_poudriere_pt'
+	'-z[Specify on which SET to use]::'
+)
+
 _ports=(
 	'(-d -u -l)-c[create a portstree]'
 	'(-c -u -l)-d[delete a portstree]'
@@ -142,6 +148,9 @@ _poudriere () {
 			;;
 			testport)
 			_arguments : $_testport "::" && return
+			;;
+			status)
+			_arguments : $_status "::" && return
 			;;
 		esac
 	fi
