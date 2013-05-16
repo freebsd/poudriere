@@ -102,3 +102,5 @@ else
 			"${nbbuilt}" "${nbfailed}" "${nbskipped}" "${nbignored}"
 	done
 fi
+
+unset POUDRIERE_BUILD_TYPE
