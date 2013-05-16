@@ -76,7 +76,7 @@ if [ -n "${JAILNAME}" ]; then
 	format="%3s %-15s %-40s\n"
 	printf "${format}" "JOB" "PHASE" "PORT"
 	mastername=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
-	mastermnt=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
+	mastermnt=${POUDRIERE_DATA}/build/${mastername}/ref
 	for job_id in $(MASTERNAME=$mastername bget builders); do
 		status="$(MASTERNAME=$mastername bget ${job_id} status)"
 		phase=${status%:*}
