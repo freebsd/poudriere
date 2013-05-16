@@ -69,15 +69,18 @@ if [ ${POUDRIERE_DATA}/build/*/ref = "${POUDRIERE_DATA}/build/*/ref" ]; then
 	exit 0
 fi
 
-POUDRIERE_BUILD_TYPE=bulk
 BUILDNAME=latest
 
 if [ -n "${JAILNAME}" ]; then
 	mastername=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 	mastermnt=${POUDRIERE_DATA}/build/${mastername}/ref
+	jail_runs ${mastername} || err 1 "No such jail running"
+	POUDRIERE_BUILD_TYPE=bulk
+	builders="$(MASTERNAME=$mastername bget builders)"
 	MASTERNAME=$mastername MASTERMNT=$mastermnt \
-		JOBS="$(MASTERNAME=$mastername bget builders)" siginfo_handler
+		JOBS="${builders}" siginfo_handler
 else
+	POUDRIERE_BUILD_TYPE=bulk
 	format="%-20s %-25s %6s %5s %6s %7s %7s %s\n"
 	printf "${format}" "JAIL" "STATUS" "QUEUED" "BUILT" "FAILED" "SKIPPED" \
 		"IGNORED"
