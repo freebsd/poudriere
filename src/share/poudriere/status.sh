@@ -73,16 +73,10 @@ POUDRIERE_BUILD_TYPE=bulk
 BUILDNAME=latest
 
 if [ -n "${JAILNAME}" ]; then
-	format="%3s %-15s %-40s\n"
-	printf "${format}" "JOB" "PHASE" "PORT"
 	mastername=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 	mastermnt=${POUDRIERE_DATA}/build/${mastername}/ref
-	for job_id in $(MASTERNAME=$mastername bget builders); do
-		status="$(MASTERNAME=$mastername bget ${job_id} status)"
-		phase=${status%:*}
-		port=${status#*:}
-		printf "${format}" "${job_id}" "${phase}" "${port}"
-	done
+	MASTERNAME=$mastername MASTERMNT=$mastermnt \
+		JOBS="$(MASTERNAME=$mastername bget builders)" siginfo_handler
 else
 	format="%-20s %-25s %6s %5s %6s %7s %7s %s\n"
 	printf "${format}" "JAIL" "STATUS" "QUEUED" "BUILT" "FAILED" "SKIPPED" \
