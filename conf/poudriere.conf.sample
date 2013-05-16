@@ -71,7 +71,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # will be deleted and the port will be rebuilt.
 # Valid options: yes, no, verbose
 # verbose will display the old and new options
-#CHECK_CHANGED_OPTIONS=no
+#CHECK_CHANGED_OPTIONS=verbose
 
 # Automatic Dependency change detection
 # When bulk building packages, compare the dependencies from kept packages to
