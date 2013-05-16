@@ -1993,18 +1993,23 @@ delete_old_pkg() {
 		return 0
 	fi
 
-	current_deps=$(injail make -C /usr/ports/${o} run-depends-list | sed 's,/usr/ports/,,g' | tr '\n' ' ')
-	compiled_deps=$(pkg_get_dep_origin ${pkg})
-	for d in ${current_deps}; do
-		case " $compiled_deps " in
-		*\ $d\ *) ;;
-		*)
-			msg "Deleting ${pkg##*/}: new dependency: ${d}"
-			delete_pkg ${pkg}
-			return 0
-			;;
-		esac
-	done
+	# Detect ports that have new dependencies that the existing packages
+	# do not have and delete them.
+	if [ "${CHECK_CHANGED_DEPS:-yes}" != "no" ]; then
+		current_deps=$(injail make -C /usr/ports/${o} run-depends-list | \
+			sed 's,/usr/ports/,,g' | tr '\n' ' ')
+		compiled_deps=$(pkg_get_dep_origin ${pkg})
+		for d in ${current_deps}; do
+			case " $compiled_deps " in
+			*\ $d\ *) ;;
+			*)
+				msg "Deleting ${pkg##*/}: new dependency: ${d}"
+				delete_pkg ${pkg}
+				return 0
+				;;
+			esac
+		done
+	fi
 
 	# Check if the compiled options match the current options from make.conf and /var/db/options
 	if [ "${CHECK_CHANGED_OPTIONS:-no}" != "no" ]; then

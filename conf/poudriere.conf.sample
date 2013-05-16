@@ -73,6 +73,15 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # verbose will display the old and new options
 #CHECK_CHANGED_OPTIONS=no
 
+# Automatic Dependency change detection
+# When bulk building packages, compare the dependencies from kept packages to
+# the current dependencies for every port. If they differ, the existing package
+# will be deleted and the port will be rebuilt. This helps catch changes such
+# as DEFAULT_RUBY_VERSION, PERL_VERSION, WITHOUT_X11 that change dependencies
+# for many ports.
+# Valid options: yes, no
+#CHECK_CHANGED_DEPS=yes
+
 
 # Path to the RSA key to sign the PKGNG repo with. See pkg-repo(8)
 #PKG_REPO_SIGNING_KEY=/etc/ssl/keys/repo.key
