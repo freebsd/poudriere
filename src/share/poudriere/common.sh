@@ -294,7 +294,7 @@ exit_handler() {
 	# Ignore SIGINT while cleaning up
 	trap '' SIGINT
 
-	if [ "${POUDRIERE_BUILD_TYPE}" = "bulk" \
+	if [ ${STATUS} -eq 1 ] && [ "${POUDRIERE_BUILD_TYPE}" = "bulk" \
 		-o "${POUDRIERE_BUILD_TYPE}" = "testport" ]; then
 		log_stop
 		stop_html_json
