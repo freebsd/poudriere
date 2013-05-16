@@ -41,7 +41,7 @@ Commands:
     help        -- show usage
     jail        -- manage the jails used by poudriere
     ports       -- create, update or delete the portstrees used by poudriere
-    options     -- Configure ports options
+    options     -- configure ports options
     queue       -- queue a build request
     testport    -- launch a test on a given port
     version     -- show poudriere version"
