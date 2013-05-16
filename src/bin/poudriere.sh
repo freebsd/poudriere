@@ -43,6 +43,7 @@ Commands:
     ports       -- create, update or delete the portstrees used by poudriere
     options     -- configure ports options
     queue       -- queue a build request
+    status      -- get status of builds
     testport    -- launch a test on a given port
     version     -- show poudriere version"
 	exit 1
@@ -92,6 +93,9 @@ case ${CMD} in
 		;;
 	options)
 		exec env -i TERM=${SAVED_TERM} PATH=${PATH} POUDRIERE_VERSION="${POUDRIERE_VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/options.sh $@
+		;;
+	status)
+		exec env -i PATH=${PATH} POUDRIERE_VERSION="${POUDRIERE_VERSION}" /bin/sh ${SETX} ${POUDRIEREPREFIX}/status.sh $@
 		;;
 	help)
 		usage
