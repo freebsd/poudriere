@@ -2012,7 +2012,7 @@ delete_old_pkg() {
 	fi
 
 	# Check if the compiled options match the current options from make.conf and /var/db/options
-	if [ "${CHECK_CHANGED_OPTIONS:-no}" != "no" ]; then
+	if [ "${CHECK_CHANGED_OPTIONS:-verbose}" != "no" ]; then
 		current_options=$(injail make -C /usr/ports/${o} pretty-print-config | \
 			tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 		compiled_options=$(pkg_get_options ${pkg})
