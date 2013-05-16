@@ -76,7 +76,7 @@ if [ -n "${JAILNAME}" ]; then
 	mastermnt=${POUDRIERE_DATA}/build/${mastername}/ref
 	jail_runs ${mastername} || err 1 "No such jail running"
 	POUDRIERE_BUILD_TYPE=bulk
-	builders="$(MASTERNAME=$mastername bget builders)"
+	builders="$(MASTERNAME=$mastername bget builders 2>/dev/null || :)"
 	MASTERNAME=$mastername MASTERMNT=$mastermnt \
 		JOBS="${builders}" siginfo_handler
 else
@@ -89,15 +89,13 @@ else
 		mastername=${mastermnt#${POUDRIERE_DATA}/build/}
 		mastername=${mastername%/ref}
 
-		status=$(MASTERNAME=$mastername bget status)
-		nbqueued=$(MASTERNAME=$mastername bget stats_queued)
-		nbfailed=$(MASTERNAME=$mastername bget stats_failed)
-		nbignored=$(MASTERNAME=$mastername bget stats_ignored)
-		nbskipped=$(MASTERNAME=$mastername bget stats_skipped)
-		nbbuilt=$(MASTERNAME=$mastername bget stats_built)
+		status=$(MASTERNAME=$mastername bget status 2>/dev/null || :)
+		nbqueued=$(MASTERNAME=$mastername bget stats_queued 2>/dev/null || :)
+		nbfailed=$(MASTERNAME=$mastername bget stats_failed 2>/dev/null || :)
+		nbignored=$(MASTERNAME=$mastername bget stats_ignored 2>/dev/null || :)
+		nbskipped=$(MASTERNAME=$mastername bget stats_skipped 2>/dev/null || :)
+		nbbuilt=$(MASTERNAME=$mastername bget stats_built 2>/dev/null || :)
 		printf "${format}" "${mastername}" "${status}" "${nbqueued}" \
 			"${nbbuilt}" "${nbfailed}" "${nbskipped}" "${nbignored}"
 	done
 fi
-
-unset POUDRIERE_BUILD_TYPE
