@@ -4,8 +4,8 @@ poudriere is a BSD-2 licensed tool primarily designed to test package production
 FreeBSD. However, most people will find it useful to bulk build ports
 for FreeBSD.
 
-Its goals are to use modern facilities present in FreeBSD (as ZFS,
-jails), to be easy to use, to depend only on base, and to be parallel.
+Its goals are to use modern facilities present in FreeBSD, to be easy to use,
+to depend only on base, and to be parallel.
 
 It is able to build the whole portstree like tinderbox does.
 
@@ -20,7 +20,6 @@ package management tool (pkg_add, portmaster, and so on).
 <h1>What does poudriere require?</h1>
 
   *  a recent FreeBSD (>= 8.3)
-  *  a ZFS pool with at least 7GB of free space
   *  root access
 
 That is all. For more comfort, we recommend to have quite a lot of RAM
