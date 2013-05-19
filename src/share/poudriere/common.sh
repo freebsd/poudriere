@@ -1325,7 +1325,6 @@ build_port() {
 			mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/${pkg_base}
 			mv ${pkg_path} ${POUDRIERE_DATA}/packages/${MASTERNAME}/${pkg_base}
 		done
-		rm -rf "${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}"
 	fi
 
 	bset ${MY_JOBID} status "idle:"
