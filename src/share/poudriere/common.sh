@@ -457,6 +457,8 @@ createfs() {
 	mnt=$(echo $2 | sed -e "s,//,/,g")
 	fs=$3
 
+	[ -z "${NO_ZFS}" ] || fs=none
+
 	if [ -n "${fs}" -a "${fs}" != "none" ]; then
 		msg_n "Creating ${name} fs..."
 		zfs create -p \
