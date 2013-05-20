@@ -1511,7 +1511,8 @@ build_queue() {
 				# Pool is waiting on dep, wait until a build
 				# is done before checking the queue again
 			else
-				MY_JOBID="${j}" build_pkg "${pkgname}" > /dev/null &
+				MY_JOBID="${j}" PORTTESTING=$(get_porttesting "${pkgname}") \
+					build_pkg "${pkgname}" > /dev/null &
 				echo "$!" > ${MASTERMNT}/poudriere/var/run/${j}.pid
 				echo "${pkgname}" > ${MASTERMNT}/poudriere/var/run/${j}.pkgname
 
@@ -2162,6 +2163,34 @@ listed_ports() {
 	else
 		echo ${LISTPORTS} | tr ' ' '\n'
 	fi
+}
+
+port_is_listed() {
+	[ $# -eq 1 ] || eargs origin
+	local origin="$1"
+
+	if [ ${ALL:-0} -eq 1 ]; then
+		return 0
+	fi
+
+	listed_ports | grep -q "^${origin}\$" && return 0
+
+	return 1
+}
+
+get_porttesting() {
+	[ $# -eq 1 ] || eargs pkgname
+	local pkgname="$1"
+	local porttesting
+
+	if [ -n "${PORTTESTING}" ] && port_is_listed \
+		$(cache_get_origin "${pkgname}"); then
+		porttesting=1
+	else
+		porttesting=
+	fi
+
+	echo $porttesting
 }
 
 parallel_exec() {

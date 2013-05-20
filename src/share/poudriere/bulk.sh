@@ -129,7 +129,7 @@ while getopts "B:f:j:J:CcNp:RFtTsvwz:a" FLAG; do
 			BUILDNAME="${OPTARG}"
 			;;
 		t)
-			export PORTTESTING=1
+			PORTTESTING=1
 			export DEVELOPER_MODE=yes
 			;;
 		T)
