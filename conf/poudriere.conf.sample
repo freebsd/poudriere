@@ -1,9 +1,19 @@
+
+# Poudriere can optionally use ZFS for its ports/jail storage. For
+# ZFS define ZPOOL, otherwise set NO_ZFS=yes
+# 
+#### ZFS
 # The pool where poudriere will create all the filesystems it needs
 # poudriere will use tank/${ZROOTFS} as its root
 #
 # You need at least 7GB of free space in this pool to have a working
 # poudriere.
-ZPOOL=tank
+#
+#ZPOOL=tank
+
+### NO ZFS
+# To not use ZFS, define NO_ZFS=yes
+#NO_ZFS=yes
 
 # root of the poudriere zfs filesystem, by default /poudriere
 # ZROOTFS=/poudriere
