@@ -10,7 +10,10 @@ Create a default configuration in the ${LOCALBASE}/etc/poudriere.conf
 configuration file: 
 
     <verbatim>BASEFS=/poudriere
+# For ZFS:
 ZPOOL=myzpool
+# For NO ZFS:
+NO_ZFS=yes
 FREEBSD_HOST=ftp://ftp.freebsd.org
 POUDRIERE_DATA=/poudriere_data
 RESOLV_CONF=/etc/resolv.conf
