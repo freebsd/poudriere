@@ -431,7 +431,8 @@ get_data_dir() {
 	fi
 
 	if [ -z "${NO_ZFS}" ]; then
-		data=$(zfs list -rt filesystem -H -o ${NS}:type,mountpoint ${ZPOOL}${ZROOTFS} | awk '$1 == "data" { print $2 }' | head -n 1)
+		data=$(zfs list -rt filesystem -H -o ${NS}:type,mountpoint ${ZPOOL}${ZROOTFS} 2>/dev/null |
+		    awk '$1 == "data" { print $2 }' | head -n 1)
 		if [ -n "${data}" ]; then
 			echo $data
 			return
