@@ -336,7 +336,7 @@ siginfo_handler() {
 	local format_origin_phase format_phase
 
 	[ -n "${nbq}" ] || return 0
-	[ "${status}" = "index:" ] && return 0
+	[ "${status}" = "index:" -o "${status}" = "crashed:" ] && return 0
 
 	if [ ${nbq} -gt 9999 ]; then
 		queue_width=5
