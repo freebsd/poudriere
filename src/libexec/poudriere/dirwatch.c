@@ -24,11 +24,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * Watch a directory and exit immediately once a new file is added.
- * Used by poudriere-daemon to watch for items added by poudriere-queue
- */
-
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>
@@ -38,6 +33,10 @@
 #include <fcntl.h>
 #include <err.h>
 
+/*
+ * Watch a directory and exit immediately once a new file is added.
+ * Used by poudriere-daemon to watch for items added by poudriere-queue
+ */
 int
 main(int argc, char **argv)
 {

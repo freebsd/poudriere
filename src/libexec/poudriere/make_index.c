@@ -14,10 +14,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-/*
- * Parse 'make describe' output into the proper INDEX output
- */
-
 #include <sys/types.h>
 #include <sys/sbuf.h>
 #include <sys/queue.h>
@@ -416,6 +412,9 @@ ports_free(Ports *ports)
 	}
 }
 
+/*
+ * Parse 'make describe' output into the proper INDEX output
+ */
 int
 main(int argc, char **argv)
 {
