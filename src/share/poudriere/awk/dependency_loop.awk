@@ -1,3 +1,4 @@
+# Used by deadlock_detected to parse tsort(1) output
 BEGIN {
 	i = 0
 }

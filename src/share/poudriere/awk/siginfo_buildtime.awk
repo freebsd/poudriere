@@ -1,3 +1,6 @@
+# Parse 'path TIME' into an output of duration H:M:S to display
+# buildtimes in siginfo_handler()
+
 function duration(seconds) {
 	hours = int(seconds / 3600)
 	minutes = int((seconds - (hours * 3600)) / 60)

@@ -1,3 +1,7 @@
+# Parse the .poudriere files created during build into a JSON format
+# that the web interface can fetch and use with jQuery. See
+# common.sh build_json() for how it is used
+
 function group_type(type) {
   if (type == "builders")
     return "array"

@@ -1,3 +1,4 @@
+# Humanize the output of a size, ie, 1048576 -> 1MiB
 function humanize(number) {
 	hum[1024**4]="TiB";
 	hum[1024**3]="GiB";
