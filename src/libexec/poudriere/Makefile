@@ -9,7 +9,7 @@ dirwatch: dirwatch.c
 	${CC} -Wall -Werror ${CFLAGS} dirwatch.c -o dirwatch
 
 make_index: make_index.c
-	${CC} -Wall -Werror ${CFLAGS} make_index.c -o make_index -lsbuf
+	${CC} -Wall -Werror ${CFLAGS} -ljail make_index.c -o make_index -lsbuf
 
 install: dirwatch make_index dirempty
 	mkdir -p ${PREFIX}/libexec/poudriere

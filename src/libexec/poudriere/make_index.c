@@ -21,11 +21,14 @@
 #include <sys/types.h>
 #include <sys/sbuf.h>
 #include <sys/queue.h>
+#include <sys/param.h>
+#include <sys/jail.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 #include <err.h>
+#include <jail.h>
 
 /*
  * A field, it helps defining the list of fields such as depends
@@ -417,13 +420,24 @@ int
 main(int argc, char **argv)
 {
 	Ports ports;
+	int jid;
+	const char *jail_str;
 
-	if (argc < 3)
+	if (argc < 4)
 		usage();
 		/* NOTREACHED */
 
-	ports_read(&ports, argv[1]);
-	ports_write(&ports, argv[2]);
+	jail_str = argv[1];
+
+	jid = jail_getid(jail_str);
+	if (jid < 0)
+		errx(1, "%s", jail_errmsg);
+
+	if (jail_attach(jid) == -1)
+		err(1, "jail_attach(%s)", jail_str);
+
+	ports_read(&ports, argv[2]);
+	ports_write(&ports, argv[3]);
 	ports_free(&ports);
 
 	return 0;

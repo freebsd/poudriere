@@ -88,6 +88,7 @@ build_repo() {
 		bset status "index:"
 		OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
 		INDEXF=${POUDRIERE_DATA}/packages/${MASTERNAME}/INDEX-${OSMAJ}
+		INDEXF_JAIL=$(mktemp -u /tmp/index.XXXXXX)
 		rm -f ${INDEXF}.1 2>/dev/null || :
 		for pkg_file in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz; do
 			# Check for non-empty directory with no packages in it
@@ -99,10 +100,13 @@ build_repo() {
 		done
 
 		msg_n "Generating INDEX..."
-		make_index ${INDEXF}.1 ${INDEXF}
+		# Move temp INDEX file into the jail. make_index will jail_attach()
+		# to the specified jail
+		mv ${INDEXF}.1 ${MASTERMNT}${INDEXF_JAIL}.1
+		make_index ${MASTERNAME} ${INDEXF_JAIL}.1 ${INDEXF_JAIL}
+		mv ${MASTERMNT}${INDEXF_JAIL} ${INDEXF}
 		echo " done"
 
-		rm ${INDEXF}.1
 		[ -f ${INDEXF}.bz2 ] && rm ${INDEXF}.bz2
 		msg_n "Compressing INDEX-${OSMAJ}..."
 		bzip2 -9 ${INDEXF}
