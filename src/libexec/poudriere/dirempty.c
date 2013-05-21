@@ -24,6 +24,11 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * Return 0 if a directory is empty, else 1
+ * Used as a fast replacement for find -empty or ls -A
+ */
+
 #include <sys/types.h>
 #include <stdbool.h>
 #include <dirent.h>

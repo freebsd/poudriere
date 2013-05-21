@@ -23,6 +23,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+/*
+ * Watch a directory and exit immediately once a new file is added.
+ * Used by poudriere-daemon to watch for items added by poudriere-queue
+ */
+
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>

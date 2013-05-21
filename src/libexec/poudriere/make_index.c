@@ -14,6 +14,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/*
+ * Parse 'make describe' output into the proper INDEX output
+ */
+
 #include <sys/types.h>
 #include <sys/sbuf.h>
 #include <sys/queue.h>
