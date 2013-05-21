@@ -100,6 +100,8 @@ done
 
 shift $((OPTIND-1))
 
+porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
+
 export PORTSDIR=`pget ${PTNAME} mnt`
 [ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 [ -z "${PORTSDIR}" ] && err 1 "No such ports tree: ${PTNAME}"
