@@ -300,11 +300,7 @@ exit_handler() {
 		stop_html_json
 	fi
 
-	# Kill all children - this does NOT recurse, so orphans can still
-	# occur. This is just to avoid requiring pid files for parallel_run
-	for pid in $(jobs -p); do
-		kill ${pid} 2>/dev/null || :
-	done
+	parallel_shutdown
 
 	[ ${STATUS} -eq 1 ] && cleanup
 
@@ -2238,6 +2234,12 @@ parallel_stop() {
 	exec 6<&-
 	exec 6>&-
 	unset PARALLEL_PIDS
+}
+
+parallel_shutdown() {
+	# Kill all children instead of waiting on them
+	[ -n "${PARALLEL_PIDS}" ] && kill -9 ${PARALLEL_PIDS} 2>/dev/null || :
+	parallel_stop || :
 }
 
 parallel_run() {
