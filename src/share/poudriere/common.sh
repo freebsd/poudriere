@@ -94,6 +94,10 @@ jstart() {
 }
 
 jstop() {
+	# SIGKILL everything as jail -r does not seem to wait
+	# for processes to actually exit. So there is a race condition
+	# on umount after this where files may still be opened.
+	injail kill -9 -1 2>/dev/null || :
 	jail -r ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}} 2>/dev/null || :
 }
 
