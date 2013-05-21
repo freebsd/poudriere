@@ -64,7 +64,8 @@ done
 
 shift $((OPTIND-1))
 
-if ! find ${POUDRIERE_DATA}/build -depth 2 -quit >/dev/null 2>&1; then
+if [ $(find ${POUDRIERE_DATA}/build -mindepth 2 -maxdepth 2 2>&1 | wc -l) \
+	-eq 0 ] ; then
 	msg "No running builds"
 	exit 0
 fi
