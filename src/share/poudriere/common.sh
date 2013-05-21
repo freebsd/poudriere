@@ -2239,7 +2239,7 @@ parallel_stop() {
 parallel_shutdown() {
 	# Kill all children instead of waiting on them
 	[ -n "${PARALLEL_PIDS}" ] && kill -9 ${PARALLEL_PIDS} 2>/dev/null || :
-	parallel_stop || :
+	parallel_stop 2>/dev/null || :
 }
 
 parallel_run() {
