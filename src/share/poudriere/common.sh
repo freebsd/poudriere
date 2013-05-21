@@ -872,7 +872,7 @@ jail_start() {
 	[ -n "${setname}" ] && makeconf="${makeconf} ${name}-${setname}"
 	makeconf="${makeconf} ${MASTERNAME}"
 	for opt in ${makeconf}; do
-		append_make ${tomnt} ${opt}
+		append_make ${opt} ${tomnt}/etc/make.conf
 	done
 
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${tomnt}/etc/"
@@ -2451,21 +2451,21 @@ balance_pool() {
 }
 
 append_make() {
-	[ $# -ne 2 ] && eargs mnt makeconf
-	local mnt=$1
-	local makeconf=$2
+	[ $# -ne 2 ] && eargs src_makeconf dst_makeconf
+	local src_makeconf=$1
+	local dst_makeconf=$2
 
-	if [ "${makeconf}" = "-" ]; then
-		makeconf="${POUDRIERED}/make.conf"
+	if [ "${src_makeconf}" = "-" ]; then
+		src_makeconf="${POUDRIERED}/make.conf"
 	else
-		makeconf="${POUDRIERED}/${makeconf}-make.conf"
+		src_makeconf="${POUDRIERED}/${src_makeconf}-make.conf"
 	fi
 
-	[ -f "${makeconf}" ] || return 0
-	makeconf="$(realpath ${makeconf} 2>/dev/null)"
-	msg "Appending to /etc/make.conf: ${makeconf}"
-	echo "#### ${makeconf} ####" >> ${mnt}/etc/make.conf
-	cat "${makeconf}" >> ${mnt}/etc/make.conf
+	[ -f "${src_makeconf}" ] || return 0
+	src_makeconf="$(realpath ${src_makeconf} 2>/dev/null)"
+	msg "Appending to make.conf: ${src_makeconf}"
+	echo "#### ${src_makeconf} ####" >> ${dst_makeconf}
+	cat "${src_makeconf}" >> ${dst_makeconf}
 }
 
 RESOLV_CONF=""
