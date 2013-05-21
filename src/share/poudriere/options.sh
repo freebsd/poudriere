@@ -120,6 +120,14 @@ PORT_DBDIR=${SCRIPTPREFIX}/../../etc/poudriere.d/${JAILNAME}${JAILNAME:+-}${SETN
 
 mkdir -p ${PORT_DBDIR}
 
+__MAKE_CONF=$(mktemp -t poudriere-make.conf)
+export __MAKE_CONF
+CLEANUP_HOOK=options_cleanup
+options_cleanup() {
+	rm -f ${__MAKE_CONF}
+}
+setup_makeconf ${__MAKE_CONF} "${JAILNAME}" "${PTNAME}" "${SETNAME}"
+
 for origin in ${LISTPORTS}; do
 	[ -d ${PORTSDIR}/${origin} ] || err 1 "No such ports ${origin}"
 	make PORT_DBDIR=${PORT_DBDIR} \
