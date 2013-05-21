@@ -64,7 +64,7 @@ done
 
 shift $((OPTIND-1))
 
-if [ ${POUDRIERE_DATA}/build/*/ref = "${POUDRIERE_DATA}/build/*/ref" ]; then
+if ! find ${POUDRIERE_DATA}/build -depth 2 -quit >/dev/null 2>&1; then
 	msg "No running builds"
 	exit 0
 fi
