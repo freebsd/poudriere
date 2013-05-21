@@ -816,7 +816,6 @@ jail_start() {
 	local arch=$(jget ${name} arch)
 	local mnt=$(jget ${name} mnt)
 	local needfs="nullfs procfs"
-	local makeconf
 
 	local tomnt=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 
@@ -868,12 +867,7 @@ jail_start() {
 	echo "PACKAGES=/packages" >> ${tomnt}/etc/make.conf
 	echo "DISTDIR=/distfiles" >> ${tomnt}/etc/make.conf
 
-	makeconf="- ${setname} ${ptname} ${name} ${name}-${ptname}"
-	[ -n "${setname}" ] && makeconf="${makeconf} ${name}-${setname}"
-	makeconf="${makeconf} ${MASTERNAME}"
-	for opt in ${makeconf}; do
-		append_make ${opt} ${tomnt}/etc/make.conf
-	done
+	setup_makeconf ${tomnt}/etc/make.conf ${name} ${ptname} ${setname}
 
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${tomnt}/etc/"
 	msg "Starting jail ${MASTERNAME}"
@@ -899,6 +893,22 @@ jail_start() {
 		injail mtree -eu -f /etc/mtree/BSD.var.dist -p /var >/dev/null 2>&1 || :
 		injail mtree -eu -f /etc/mtree/BSD.usr.dist -p /usr >/dev/null 2>&1 || :
 	fi
+}
+
+setup_makeconf() {
+	[ $# -lt 3 ] && dst_makeconf eargs name ptname setname
+	local dst_makeconf=$1
+	local name=$2
+	local ptname=$3
+	local setname=$4
+	local makeconf opt
+
+	makeconf="- ${setname} ${ptname} ${name} ${name}-${ptname}"
+	[ -n "${setname}" ] && makeconf="${makeconf} ${name}-${setname}"
+	makeconf="${makeconf} ${MASTERNAME}"
+	for opt in ${makeconf}; do
+		append_make ${opt} ${dst_makeconf}
+	done
 }
 
 jail_stop() {
