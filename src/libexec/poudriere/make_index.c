@@ -119,7 +119,7 @@ xstrdup(const char *src)
 static void
 usage(void)
 {
-	errx(1, "usage: %s oldindex newindex", getprogname());
+	errx(1, "usage: %s jail_name oldindex newindex", getprogname());
 }
 
 /* --------------------------------------------------------
