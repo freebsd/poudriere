@@ -1,0 +1,74 @@
+#!/bin/sh
+# 
+# Copyright (c) 2010-2013 Baptiste Daroussin <bapt@FreeBSD.org>
+# Copyright (c) 2010-2011 Julien Laffaye <jlaffaye@FreeBSD.org>
+# Copyright (c) 2012-2013 Bryan Drewery <bdrewery@FreeBSD.org>
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+
+# /usr/local/etc/poudriere.d/hooks/pkgbuild.sh
+
+EMAIL_TO=some@address.com
+# The failure email will snip out the middle of a build log to help
+# save BW. A URL is provided to view the full log
+# Set to how many header lines from the build to display
+HEADER_LINES=200
+# Set to how many footer lines from the build to display
+FOOTER_LINES=200
+
+status="$1"
+port="$2"
+pkgname="$3"
+
+if [ "$status" = "failed" ]; then
+	failed_phase="$4"
+	log="$5"
+	maintainer=$(awk '/maintained by:/ {print $3}' ${log})
+	ident=$(awk '/Makefile ident:/ {print $0}' ${log})
+	last_committer=$(awk '/Makefile ident:/ {print $8}' ${log})
+	mail_subject="[${MASTERNAME}] Build failed for ${pkgname} during ${failed_phase}"
+
+	log_lines=$(wc -l ${log}|awk '{print $1}')
+	if [ ${log_lines} -lt $((${FOOTER_LINES} + ${HEADER_LINES})) ]; then
+		# Log is short enough, just print it all
+		awk_script='{print $0}'
+	else
+		# Trim out the middle of the log
+		awk_script="NR < ${HEADER_LINES} || NR > $((${log_lines} - ${FOOTER_LINES} + ${HEADER_LINES})); NR == ${HEADER_LINES} { print \"<snip>\" }"
+	fi
+	
+	mail -s "${mail_subject}" ${EMAIL_TO} << EOF
+Maintainer:     ${maintainer}
+Last committer: ${last_committer}@FreeBSD.org
+Ident:          ${ident#Makefile ident:      }
+Log URL:        ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}/logs/${pkgname}.log
+Build URL:      ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}
+Log:
+
+$(awk "${awk_script}" ${log})
+EOF
+	
+
+fi
+
+exit 0
