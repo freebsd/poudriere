@@ -1283,9 +1283,6 @@ build_port() {
 				M)
 					[ -d "${path}" ] && continue
 					case "${ppath}" in
-					# compat/linux shared library cache
-					etc/ld.so.cache) ;;
-					var/cache/ldconfig/aux-cache) ;;
 					# This is a cache file for gio modules could be modified for any gio modules
 					lib/gio/modules/giomodule.cache) ;;
 					# removal of info files leaves entry uneasy to cleanup in info/dir
