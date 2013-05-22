@@ -36,7 +36,7 @@ Parameters:
 Options:
     -B name     -- What buildname to use (must be unique, defaults to YYYY-MM-DD_HH:MM:SS)
     -c          -- Clean all the previously built binary packages
-    -C          -- Clean previously built packages from the given list to build
+    -C          -- Clean only the packages listed on the command line or -f file
     -R          -- Clean RESTRICTED packages after building
     -t          -- Add some tests to the package build
     -T          -- Try to build broken ports anyway

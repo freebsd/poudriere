@@ -128,9 +128,13 @@ By default
 will be used.
 This can be used to resume a previous build and use the same log and URL paths.
 .It Fl c
-This flag specifies to clean the previous built binary packages.
+Clean
+.Em all
+previously built packages and logs.
 .It Fl C
-Clean previous packages for the given list to build.
+Clean only the packages specified on the command line or in in the file given in
+.Fl f Ar file
+.
 .It Fl F
 Only fetch from original MASTER_SITES.
 Skip FreeBSD mirrors.
