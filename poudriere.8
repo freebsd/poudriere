@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd May 16, 2013
+.Dd May 22, 2013
 .Dt POUDRIERE 8
 .Os FreeBSD
 .Sh NAME
@@ -534,9 +534,9 @@ for a single port.
 .Pp
 Let's take the example of building a single port;
 .Pp
-.Dl "poudriere testport -d ~/ports-cvs/mybeautifulporttotest -j myjail"
+.Dl "poudriere testport -o category/port -j myjail"
 .Pp
-all the tests will be done in all the myjail.
+all the tests will be done in myjail.
 .Pp
 It starts the jail, then mount the ports tree (nullfs), then mounts the
 package dir (pourdriere_data/packages/<jailname>-<tree>-<setname>), then it mounts the
