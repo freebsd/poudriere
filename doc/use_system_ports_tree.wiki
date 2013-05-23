@@ -5,8 +5,8 @@ is supported as long as it is mounted. To add a custom tree called
 <em>custom</em> located at <em>/ports/custom</em>:
 
     <verbatim># mkdir -p /usr/local/etc/poudriere.d/ports/custom
-# echo '-' > /usr/local/etc/poudriere.d/ports/custom/method
-# echo '/ports/custom' > /usr/local/etc/poudriere.d/ports/mnt
+# echo '-'             > /usr/local/etc/poudriere.d/ports/custom/method
+# echo '/ports/custom' > /usr/local/etc/poudriere.d/ports/custom/mnt
 </verbatim>
 
 To check that everything is correctly working:
