@@ -1,42 +1,24 @@
 <h1>Use the system ports tree in poudriere</h1>
 
-<h2>Using a ZFS tree</h2>
+Port trees are listed in /usr/local/etc/poudriere.d/ports/. Any filesystem
+is supported as long as it is mounted. To add a custom tree called
+<em>custom</em> located at <em>/ports/custom</em>:
 
-This is only possible if your systems ports tree is self contained in a ZFS
-ZFS filesystem or or inside a /ports subdirectory in a ZFS filesystem.
-
-To do this you need to tag the ZFS filesystem like this:
-
-    <verbatim># zfs set poudriere:type=ports tank/your/fs
-# zfs set poudriere:name=myownportstree tank/your/fs
+    <verbatim>
+# mkdir -p               /usr/local/etc/poudriere.d/ports/custom
+# echo '-'             > /usr/local/etc/poudriere.d/ports/custom/method
+# echo '/ports/custom' > /usr/local/etc/poudriere.d/ports/custom/mnt
 </verbatim>
 
 To check that everything is correctly working:
 
     <verbatim># poudriere ports -l
-PORTSTREE            METHOD
-myownportstree       -
+PORTSTREE            METHOD        PATH
+custom               -             /ports/custom
 </verbatim>
 
 You can now use it with <em>bulk</em> and <em>testport</em> with the <em>-p</em> option:
 
-    <verbatim># poudriere bulk -p myownportstree -j JAIL -f LIST
-# poudriere testport -p myownportstree -j JAIL -o PORT
+    <verbatim># poudriere bulk -p custom -j JAIL -f LIST
+# poudriere testport -p custom -j JAIL -o PORT
 </verbatim>
-
-<h2>Using a non-ZFS tree (such as NFS mounted)</h2>
-
-Create a <em>/usr/local/etc/poudriere.d/portstrees</em> and populate it in the format:
-
-    <verbatim># NAME METHOD PATH
-sometree - /path/to/tree
-</verbatim>
-
-Poudriere will now see it:
-
-    <verbatim># poudriere ports -l
-PORTSTREE            METHOD
-sometree             -
-</verbatim>
-
-It can now be used by name <em>sometree</em> in commands with the <em>-p</em> flag.
