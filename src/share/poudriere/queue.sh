@@ -45,4 +45,5 @@ bulk|testport) ;;
 *) err 1 "$2 command cannot be queued" ;;
 esac
 
-echo "POUDRIERE_ARGS: $@" > ${WATCHDIR}/${name}
+# Queue the command through the poudriered socket
+echo "${name} POUDRIERE_ARGS: $@" | nc -U ${QUEUE_SOCKET}

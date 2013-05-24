@@ -36,6 +36,31 @@ Options:
     exit 1
 }
 
+start_queue_reader() {
+	queue_reader_main &
+	QUEUE_READER_PID=$!
+}
+
+queue_reader_main() {
+	# Read from the socket and then write the command
+	# to the watchdir. This is done so non-privileged users
+	# do not need write access to the real queue dir
+	umask 0111 # Create rw-rw-rw
+	nc -klU ${QUEUE_SOCKET} | while read name command; do
+		echo "${command}" > ${WATCHDIR}/${name}
+	done
+}
+
+stop_queue_reader() {
+	if [ -n "${QUEUE_READER_PID}" ]; then
+		kill ${QUEUE_READER_PID} 2>/dev/null || :
+		wait ${QUEUE_READER_PID} 2>/dev/null || :
+		unset QUEUE_READER_PID
+	fi
+	rm -f ${QUEUE_SOCKET}
+}
+
+
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 PTNAME="default"
@@ -73,6 +98,14 @@ if [ -z "${DAEMON_ARGS_PARSED}" ]; then
 		echo "$$" > ${PIDFILE}
 	fi
 fi
+
+# Start the queue reader
+start_queue_reader
+
+CLEANUP_HOOK=daemon_cleanup
+daemon_cleanup() {
+	stop_queue_reader
+}
 
 while :; do
 	next=$(find ${WATCHDIR} -type f -depth 1 -print -quit 2>/dev/null)

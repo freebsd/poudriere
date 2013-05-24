@@ -2659,6 +2659,7 @@ esac
 
 : ${WATCHDIR:=${POUDRIERE_DATA}/queue}
 : ${PIDFILE:=${POUDRIERE_DATA}/daemon.pid}
+: ${QUEUE_SOCKET:=/var/run/poudriered.sock}
 
 BUILDNAME=$(date +%Y-%m-%d_%H:%M:%S)
 
