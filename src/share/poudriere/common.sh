@@ -38,7 +38,9 @@ err() {
 		err 1 "err expects 2 arguments: exit_number \"message\""
 	fi
 	# Try to set status so other processes know this crashed
-	[ -z "${PARALLEL_CHILD}" ] && bset status "crashed:" 2>/dev/null || :
+	# Don't set it from children failures though, only master
+	[ -z "${PARALLEL_CHILD}" ] &&
+		bset status "${EXIT_STATUS:-crashed:}" 2>/dev/null || :
 	local err_msg="Error: $2"
 	msg "${err_msg}" >&2
 	[ -n "${MY_JOBID}" ] && job_msg "${err_msg}"
@@ -284,6 +286,17 @@ update_stats() {
 	bset stats_skipped $(bget ports.skipped | awk '{print $1}' | \
 		sort -u | wc -l)
 }
+
+sigint_handler() {
+	EXIT_STATUS="sigint:"
+	sig_handler
+}
+
+sigterm_handler() {
+	EXIT_STATUS="sigterm:"
+	sig_handler
+}
+
 
 sig_handler() {
 	trap - SIGTERM SIGKILL
@@ -2506,7 +2519,9 @@ PATH="${LIBEXECPREFIX}:${PATH}"
 [ -z "${NO_ZFS}" -a -z ${ZPOOL} ] && err 1 "ZPOOL variable is not set"
 [ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
 
-trap sig_handler SIGINT SIGTERM SIGKILL
+trap sigint_handler SIGINT
+trap sigterm_handler SIGTERM
+trap sig_handler SIGKILL
 trap exit_handler EXIT
 trap siginfo_handler SIGINFO
 
