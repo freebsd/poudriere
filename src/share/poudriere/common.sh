@@ -357,7 +357,7 @@ siginfo_handler() {
 
 		# Collect build stats into a string with minimal execs
 		pkgname_buildtimes=$(find ${MASTERMNT}/poudriere/building -depth 1 \
-			-exec stat -f "%N %m" {} + | \
+			-exec stat -f "%N %m" {} + 2>/dev/null | \
 			awk -v now=${now} -f ${AWKPREFIX}/siginfo_buildtime.awk)
 
 		for j in ${JOBS}; do
