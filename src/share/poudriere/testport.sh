@@ -105,6 +105,7 @@ done
 export SKIPSANITY
 
 [ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
+porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
