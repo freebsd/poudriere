@@ -40,8 +40,8 @@ err() {
 	# Try to set status so other processes know this crashed
 	# Don't set it from children failures though, only master
 	[ -z "${PARALLEL_CHILD}" ] &&
-		[ "${POUDRIERE_BUILD_TYPE}" = "bulk" \
-		-o "${POUDRIERE_BUILD_TYPE}" = "testport" ] &&
+		[ "${0##*/}" = "bulk.sh" \
+		-o "${0##*/}" = "testport.sh" ] &&
 		bset status "${EXIT_STATUS:-crashed:}" 2>/dev/null || :
 	local err_msg="Error: $2"
 	msg "${err_msg}" >&2
