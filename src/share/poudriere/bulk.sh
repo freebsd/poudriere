@@ -38,7 +38,8 @@ Options:
     -c          -- Clean all the previously built binary packages
     -C          -- Clean only the packages listed on the command line or -f file
     -R          -- Clean RESTRICTED packages after building
-    -t          -- Add some tests to the package build
+    -t          -- Test the specified ports for leftovers
+    -r          -- Resursively test all dependencies as well
     -T          -- Try to build broken ports anyway
     -F          -- Only fetch from orignial master_site (skip FreeBSD mirrors)
     -s          -- Skip sanity checks
@@ -127,7 +128,7 @@ BUILD_REPO=1
 
 [ $# -eq 0 ] && usage
 
-while getopts "B:f:j:J:CcNp:RFtTsvwz:a" FLAG; do
+while getopts "B:f:j:J:CcNp:RFtrTsvwz:a" FLAG; do
 	case "${FLAG}" in
 		B)
 			BUILDNAME="${OPTARG}"
@@ -135,6 +136,9 @@ while getopts "B:f:j:J:CcNp:RFtTsvwz:a" FLAG; do
 		t)
 			PORTTESTING=1
 			export DEVELOPER_MODE=yes
+			;;
+		r)
+			PORTTESTING_RECURSIVE=1
 			;;
 		T)
 			export TRYBROKEN=yes

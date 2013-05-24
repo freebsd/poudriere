@@ -2195,7 +2195,7 @@ port_is_listed() {
 	[ $# -eq 1 ] || eargs origin
 	local origin="$1"
 
-	if [ ${ALL:-0} -eq 1 ]; then
+	if [ ${ALL:-0} -eq 1 -o ${PORTTESTING_RECURSIVE:-0} -eq 1 ]; then
 		return 0
 	fi
 
