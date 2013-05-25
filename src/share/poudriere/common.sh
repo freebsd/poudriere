@@ -792,7 +792,7 @@ do_portbuild_mounts() {
 
 	mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/All
 	[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
-		mount -t nullfs ${CCACHE_DIR} ${mnt}/ccache
+		mount -t nullfs ${CCACHE_DIR} ${mnt}/root/.ccache
 	[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
 	[ ${TMPFS_WRKDIR} -eq 1 ] && mount -t tmpfs tmpfs ${mnt}/wrkdirs
 	# Only show mounting messages once, not for every builder
@@ -874,7 +874,7 @@ jail_start() {
 
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 		echo "WITH_CCACHE_BUILD=yes" >> ${tomnt}/etc/make.conf
-		echo "CCACHE_DIR=/ccache" >> ${tomnt}/etc/make.conf
+		echo "CCACHE_DIR=/root/.ccache" >> ${tomnt}/etc/make.conf
 	fi
 	echo "PACKAGES=/packages" >> ${tomnt}/etc/make.conf
 	echo "DISTDIR=/distfiles" >> ${tomnt}/etc/make.conf
