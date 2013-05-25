@@ -588,7 +588,7 @@ markfs() {
 	mkdir -p ${mnt}/poudriere/
 	if [ "${name}" = "prepkg" ]; then
 		cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
-./ccache/*
+.${HOME}/.ccache/*
 ./compat/linux/proc
 ./dev/*
 ./distfiles/*
@@ -603,7 +603,7 @@ markfs() {
 EOF
 	elif [ "${name}" = "prebuild" ]; then
 		cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
-./ccache/*
+.${HOME}/.ccache/*
 ./compat/linux/proc
 ./dev/*
 ./distfiles/*
@@ -620,7 +620,7 @@ EOF
 	elif [ "${name}" = "preinst" ]; then
 		cat >  ${mnt}/poudriere/mtree.${name}exclude << EOF
 .${HOME}/*
-./ccache/*
+.${HOME}/.ccache/*
 ./compat/linux/proc/*
 ./dev/*
 ./distfiles/*
@@ -726,7 +726,7 @@ do_jail_mounts() {
 		mkdir -p ${mnt}/distfiles
 		mkdir -p ${mnt}/packages
 		mkdir -p ${mnt}/new_packages
-		mkdir -p ${mnt}/ccache
+		mkdir -p ${mnt}${HOME}/.ccache
 		mkdir -p ${mnt}/var/db/ports
 	fi
 
@@ -792,7 +792,7 @@ do_portbuild_mounts() {
 
 	mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/All
 	[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
-		mount -t nullfs ${CCACHE_DIR} ${mnt}/root/.ccache
+		mount -t nullfs ${CCACHE_DIR} ${mnt}${HOME}/.ccache
 	[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
 	[ ${TMPFS_WRKDIR} -eq 1 ] && mount -t tmpfs tmpfs ${mnt}/wrkdirs
 	# Only show mounting messages once, not for every builder
@@ -874,7 +874,7 @@ jail_start() {
 
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 		echo "WITH_CCACHE_BUILD=yes" >> ${tomnt}/etc/make.conf
-		echo "CCACHE_DIR=/root/.ccache" >> ${tomnt}/etc/make.conf
+		echo "CCACHE_DIR=${HOME}/.ccache" >> ${tomnt}/etc/make.conf
 	fi
 	echo "PACKAGES=/packages" >> ${tomnt}/etc/make.conf
 	echo "DISTDIR=/distfiles" >> ${tomnt}/etc/make.conf
