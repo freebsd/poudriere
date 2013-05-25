@@ -620,7 +620,6 @@ EOF
 	elif [ "${name}" = "preinst" ]; then
 		cat >  ${mnt}/poudriere/mtree.${name}exclude << EOF
 .${HOME}/*
-.${LOCALBASE:-/usr/local}/etc/gconf/gconf.xml.defaults
 ./ccache/*
 ./compat/linux/proc/*
 ./dev/*
@@ -1280,6 +1279,8 @@ build_port() {
 				case $modtype in
 				+)
 					case "${ppath}" in
+					# gconftool-2 --makefile-uninstall-rule is unpredictable
+					etc/gconf/gconf.xml.defaults/%gconf-tree*.xml) ;;
 					*) echo "${ppath}" >> ${add} ;;
 					esac
 					;;
@@ -1296,6 +1297,8 @@ build_port() {
 				M)
 					[ -d "${path}" ] && continue
 					case "${ppath}" in
+					# gconftool-2 --makefile-uninstall-rule is unpredictable
+					etc/gconf/gconf.xml.defaults/%gconf-tree*.xml) ;;
 					# This is a cache file for gio modules could be modified for any gio modules
 					lib/gio/modules/giomodule.cache) ;;
 					# removal of info files leaves entry uneasy to cleanup in info/dir
