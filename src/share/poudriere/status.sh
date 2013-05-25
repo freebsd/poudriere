@@ -81,9 +81,9 @@ if [ -n "${JAILNAME}" ]; then
 	MASTERNAME=$mastername MASTERMNT=$mastermnt \
 		JOBS="${builders}" siginfo_handler
 else
-	format="%-20s %-25s %6s %5s %6s %7s %7s %s\n"
+	format="%-30s %-25s %6s %5s %6s %7s %7s %7s %7s\n"
 	printf "${format}" "JAIL" "STATUS" "QUEUED" "BUILT" "FAILED" "SKIPPED" \
-		"IGNORED"
+		"IGNORED" "TOBUILD"
 	for mastermnt in ${POUDRIERE_DATA}/build/*/ref; do
 		[ "${mastermnt}" = "${POUDRIERE_DATA}/build/*/ref" ] && break
 		mastername=${mastermnt#${POUDRIERE_DATA}/build/}
@@ -95,7 +95,9 @@ else
 		nbignored=$(MASTERNAME=$mastername bget stats_ignored 2>/dev/null || :)
 		nbskipped=$(MASTERNAME=$mastername bget stats_skipped 2>/dev/null || :)
 		nbbuilt=$(MASTERNAME=$mastername bget stats_built 2>/dev/null || :)
+		nbtobuild=$((nbqueued - (nbbuilt + nbfailed + nbskipped + nbignored)))
 		printf "${format}" "${mastername}" "${status}" "${nbqueued}" \
-			"${nbbuilt}" "${nbfailed}" "${nbskipped}" "${nbignored}"
+			"${nbbuilt}" "${nbfailed}" "${nbskipped}" "${nbignored}" \
+			"${nbtobuild}"
 	done
 fi
