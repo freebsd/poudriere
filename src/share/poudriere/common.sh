@@ -621,8 +621,6 @@ EOF
 		cat >  ${mnt}/poudriere/mtree.${name}exclude << EOF
 .${HOME}/*
 .${LOCALBASE:-/usr/local}/etc/gconf/gconf.xml.defaults
-.${LOCALBASE:-/usr/local}/share/nls/POSIX
-.${LOCALBASE:-/usr/local}/share/nls/en_US.US-ASCII
 ./ccache/*
 ./compat/linux/proc/*
 ./dev/*
