@@ -159,7 +159,10 @@ update_jail() {
 		markfs clean ${JAILMNT}
 		;;
 	allbsd|gjb|url=*)
-		err 1 "Upgrade is not supported with allbsd, to upgrade, please delete and recreate the jail"
+		[ -z "${VERSION}" ] && VERSION=$(jget ${JAILNAME} version)
+		[ -z "${ARCH}" ] && ARCH=$(jget ${JAILNAME} arch)
+		delete_jail
+		create_jail
 		;;
 	*)
 		err 1 "Unsupported method"
