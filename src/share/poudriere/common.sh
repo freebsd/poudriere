@@ -2548,7 +2548,7 @@ if [ -z "${NO_ZFS}" ]; then
 	zpool list ${ZPOOL} >/dev/null 2>&1 || err 1 "No such zpool: ${ZPOOL}"
 fi
 
-: ${SVN_HOST="svn.FreeBSD.org"}
+: ${SVN_HOST="svn0.us-west.freebsd.org"}
 : ${GIT_URL="git://github.com/freebsd/freebsd-ports.git"}
 : ${FREEBSD_HOST="http://ftp.FreeBSD.org"}
 if [ -z "${NO_ZFS}" ]; then
