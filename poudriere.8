@@ -239,7 +239,12 @@ of FreeBSD to use in the jail. (Default: same as host)
 Specifies which
 .Ar method
 to use to create the jail.
-Could be csup, svn{,+http,+https,+file,+ssh), ftp, allbsd, or gjb (Default: ftp).
+Can be csup, svn{,+http,+https,+file,+ssh), ftp, allbsd, or url= (Default: ftp).
+When using url=, specify the URL to the distributions.
+Any URL supported by
+.Xr fetch 1
+can be used; for example:
+.Dl "poudriere jail -c -j 100amd64 -a amd64 -v 10.0 -m url=file:///mirror/10.0"
 .It Fl f Ar filesystem
 Specifies the
 .Ar filesystem

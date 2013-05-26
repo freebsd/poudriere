@@ -158,7 +158,7 @@ update_jail() {
 		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
 		markfs clean ${JAILMNT}
 		;;
-	allbsd|gjb)
+	allbsd|gjb|url=*)
 		err 1 "Upgrade is not supported with allbsd, to upgrade, please delete and recreate the jail"
 		;;
 	*)
@@ -270,6 +270,7 @@ install_from_ftp() {
 				FREEBSD_HOST="http://ftp.freebsd.org"
 			fi
 			URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH}/${V}" ;;
+		url=*) URL=${METHOD##url=} ;;
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
 		ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
 		esac
@@ -322,6 +323,7 @@ install_from_ftp() {
 				URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH}/${ARCH}/${V}"
 				;;
 			allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
+			url=*) URL=${METHOD##url=} ;;
 		esac
 		DISTS="base.txz src.txz games.txz"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
@@ -358,7 +360,7 @@ create_jail() {
 	fi
 
 	case ${METHOD} in
-	ftp|gjb|ftp-archive)
+	ftp|gjb|ftp-archive|url=*)
 		FCT=install_from_ftp
 		;;
 	allbsd)
