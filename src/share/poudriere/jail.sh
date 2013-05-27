@@ -64,14 +64,19 @@ Options:
 }
 
 list_jail() {
+	local format
+	local j name version arch method mnt
+
+	format='%-20s %-20s %-7s %-7s %s\n'
 	[ ${QUIET} -eq 0 ] &&
-		printf '%-20s %-20s %-7s %-7s\n' "JAILNAME" "VERSION" "ARCH" "METHOD"
+		printf "${format}" "JAILNAME" "VERSION" "ARCH" "METHOD" "PATH"
 	for j in $(find ${POUDRIERED}/jails -type d -maxdepth 1 -mindepth 1 -print); do
 		name=${j##*/}
 		version=$(jget ${name} version)
 		arch=$(jget ${name} arch)
 		method=$(jget ${name} method)
-		printf '%-20s %-20s %-7s %-7s\n' "${name}" "${version}" "${arch}" "${method}"
+		mnt=$(jget ${name} mnt)
+		printf "${format}" "${name}" "${version}" "${arch}" "${method}" "${mnt}"
 	done
 }
 
