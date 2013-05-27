@@ -55,9 +55,11 @@ Options:
                      Other possible method are: \"allbsd\" retrieve a
                      snapshot from allbsd.org's website or \"ftp-archive\"
                      for old releases that're no longer available on \"ftp\".
-    -p tree       -- Specify which ports tree the jail to start/stop with
     -P patch      -- Specify a patch file to apply to the source before building.
     -t version    -- version to upgrade to
+
+Options for -s and -k:
+    -p tree       -- Specify which ports tree the jail to start/stop with
     -z set        -- Specify which SET the jail to start/stop with
 "
 	exit 1
