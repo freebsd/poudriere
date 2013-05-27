@@ -192,7 +192,7 @@ function process_data(data) {
 						row.skipped_cnt =
 							(data.skipped && data.skipped[row.pkgname]) ?
 							data.skipped[row.pkgname] :
-							'';
+							0;
 					html += '<tr class="' + (first_run ? '' : 'new ') +
 						'row' + even + ' "' +
 						' >' + format_status_row(status, row) + '</tr>';
