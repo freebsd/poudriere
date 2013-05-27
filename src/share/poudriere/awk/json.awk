@@ -78,10 +78,12 @@ BEGIN {
   print "\"buildname\": \"" buildname "\","
 }
 {
+  file_parts_count = split(FILENAME, file_parts, "/")
+  filename = file_parts[file_parts_count]
   # Skip builders as status already contains enough information
-  if (FILENAME == ".poudriere.builders" || FILENAME ~ /\.swp/)
+  if (filename == ".poudriere.builders" || FILENAME ~ /\.swp/)
     next
-  split(FILENAME, file_split, "\.")
+  split(filename, file_split, "\.")
   type = file_split[3]
   group_id = file_split[4]
 
