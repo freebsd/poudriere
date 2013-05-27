@@ -32,6 +32,11 @@ IPS="$(sysctl -n kern.features.inet 2>/dev/null || echo 0)$(sysctl -n kern.featu
 RELDATE=$(sysctl -n kern.osreldate)
 JAILED=$(sysctl -n security.jail.jailed)
 
+# Return true if ran from bulk/testport, ie not daemon/status/jail
+was_a_bulk_run() {
+	[ "${0##*/}" = "bulk.sh" -o "${0##*/}" = "testport.sh" ]
+}
+
 err() {
 	export CRASHED=1
 	if [ $# -ne 2 ]; then
@@ -39,9 +44,7 @@ err() {
 	fi
 	# Try to set status so other processes know this crashed
 	# Don't set it from children failures though, only master
-	[ -z "${PARALLEL_CHILD}" ] &&
-		[ "${0##*/}" = "bulk.sh" \
-		-o "${0##*/}" = "testport.sh" ] &&
+	[ -z "${PARALLEL_CHILD}" ] && was_a_bulk_run &&
 		bset status "${EXIT_STATUS:-crashed:}" 2>/dev/null || :
 	local err_msg="Error: $2"
 	msg "${err_msg}" >&2
@@ -313,8 +316,7 @@ exit_handler() {
 	# Ignore SIGINT while cleaning up
 	trap '' SIGINT
 
-	if [ ${STATUS} -eq 1 ] && [ "${POUDRIERE_BUILD_TYPE}" = "bulk" \
-		-o "${POUDRIERE_BUILD_TYPE}" = "testport" ]; then
+	if was_a_bulk_run; then
 		log_stop
 		stop_html_json
 	fi
