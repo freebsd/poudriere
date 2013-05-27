@@ -111,6 +111,7 @@ function format_status_row(status, row) {
 		html += "<td>" + format_pkgname(row.pkgname) + "</td>";
 		html += "<td>" + format_origin(row.origin) + "</td>";
 		html += "<td>" + row.phase + "</td>";
+		html += "<td>" + row.skipped_cnt + "</td>";
 		html += "<td>" + format_log(row.pkgname, true, "logfile") + "</td>";
 	} else if (status == "skipped") {
 		html += "<td>" + format_pkgname(row.pkgname) + "</td>";
@@ -119,6 +120,7 @@ function format_status_row(status, row) {
 	} else if (status == "ignored") {
 		html += "<td>" + format_pkgname(row.pkgname) + "</td>";
 		html += "<td>" + format_origin(row.origin) + "</td>";
+		html += "<td>" + row.skipped_cnt + "</td>";
 		html += "<td>" + row.reason + "</td>";
 	}
 
@@ -185,6 +187,12 @@ function process_data(data) {
 				for (; n < data.ports[status].length; n++) {
 					var row = data.ports[status][n];
 					var even = ((n % 2) == 0) ? '1' : '0';
+					// Add in skipped counts for failures and ignores
+					if (status == "failed" || status == "ignored")
+						row.skipped_cnt =
+							(data.skipped && data.skipped[row.pkgname]) ?
+							data.skipped[row.pkgname] :
+							'';
 					html += '<tr class="' + (first_run ? '' : 'new ') +
 						'row' + even + ' "' +
 						' >' + format_status_row(status, row) + '</tr>';

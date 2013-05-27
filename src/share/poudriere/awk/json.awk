@@ -20,6 +20,14 @@ function escape(string) {
   return string
 }
 
+# Print out impact/skipped counts
+function display_skipped() {
+  print "\"skipped\":{"
+  for (pkgname in skipped_count)
+    print "\"" pkgname "\":" skipped_count[pkgname] ","
+  print "}\n"
+}
+
 function end_type() {
   if (in_type) {
     # Close out ports
@@ -83,6 +91,12 @@ BEGIN {
   # Skip builders as status already contains enough information
   if (filename == ".poudriere.builders" || FILENAME ~ /\.swp/)
     next
+  # Track how many ports are skipped per failed/ignored port
+  if (filename == ".poudriere.ports.skipped") {
+      if (!skipped_count[$3])
+          skipped_count[$3] = 0
+      skipped_count[$3] += 1
+  }
   split(filename, file_split, "\.")
   type = file_split[3]
   group_id = file_split[4]
@@ -124,5 +138,6 @@ BEGIN {
 END {
   type=""
   end_type()
+  display_skipped()
   print "}\n"
 }
