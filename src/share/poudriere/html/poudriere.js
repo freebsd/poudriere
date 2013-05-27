@@ -186,8 +186,8 @@ function process_data(data) {
 					var row = data.ports[status][n];
 					var even = ((n % 2) == 0) ? '1' : '0';
 					html += '<tr class="' + (first_run ? '' : 'new ') +
-			'row' + even + ' "' +
-			' >' + format_status_row(status, row) + '</tr>';
+						'row' + even + ' "' +
+						' >' + format_status_row(status, row) + '</tr>';
 				}
 				$('#' + status + '_body').append(html);
 				$('#' + status + '_body').data('index', n);
