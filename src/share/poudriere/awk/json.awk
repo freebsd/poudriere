@@ -5,6 +5,16 @@
 function group_type(type) {
   if (type == "svn_url")
     return "string"
+  if (type == "setname")
+    return "string"
+  if (type == "ptname")
+    return "string"
+  if (type == "jailname")
+    return "string"
+  if (type == "buildname")
+    return "string"
+  if (type == "mastername")
+    return "string"
   if (type == "builders")
     return "array"
   if (type == "status")
@@ -85,10 +95,6 @@ BEGIN {
   ORS=""
   in_type=""
   print "{\n"
-  print "\"setname\": \"" setname "\","
-  print "\"ptname\": \"" ptname "\","
-  print "\"jail\": \"" jail "\","
-  print "\"buildname\": \"" buildname "\","
 }
 {
   file_parts_count = split(FILENAME, file_parts, "/")

@@ -138,10 +138,10 @@ function process_data(data) {
 		update_canvas(data.stats);
 	}
 
-	document.title = 'Poudriere bulk results for ' + data.jail +
+	document.title = 'Poudriere bulk results for ' + data.mastername +
 		data.buildname;
 
-	$('#jail').html(data.jail);
+	$('#mastername').html(data.mastername);
 	$('#buildname').html(data.buildname);
 	if (data.svn_url)
 		$('#svn_url').html(data.svn_url);

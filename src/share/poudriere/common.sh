@@ -1587,10 +1587,7 @@ json_main() {
 
 build_json() {
 	local log=$(log_path)
-	awk -vbuildname="${BUILDNAME}" \
-		-vjail="${MASTERNAME}" \
-		-vsetname="${SETNAME}" \
-		-vptname="${PTNAME}" \
+	awk \
 		-f ${AWKPREFIX}/json.awk ${log}/.poudriere.* | \
 		awk 'ORS=""; {print}' | \
 		sed  -e 's/,\([]}]\)/\1/g' \
@@ -2369,6 +2366,12 @@ prepare_ports() {
 			/Revision: / {REVISION=substr($0, 11)}
 			END { print URL "@" REVISION }
 		')
+
+	bset mastername "${MASTERNAME}"
+	bset jailname "${JAILNAME}"
+	bset setname "${SETNAME}"
+	bset ptname "${PTNAME}"
+	bset buildname "${BUILDNAME}"
 
 	bset status "computingdeps:"
 	parallel_start
