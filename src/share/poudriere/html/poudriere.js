@@ -139,12 +139,9 @@ function process_data(data) {
 	}
 
 	document.title = 'Poudriere bulk results for ' + data.jail +
-		format_setname(data.setname) + '-' + data.ptname + ' ' +
 		data.buildname;
 
 	$('#jail').html(data.jail);
-	$('#setname').html(data.setname);
-	$('#ptname').html(data.ptname);
 	$('#buildname').html(data.buildname);
 
 	/* Builder status */
