@@ -565,6 +565,7 @@ case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}" in
 		;;
 	001000)
 		test -z ${JAILNAME} && usage
+		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		export MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 		jail_stop
@@ -572,6 +573,7 @@ case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}" in
 	000100)
 		export SET_STATUS_ON_START=0
 		test -z ${JAILNAME} && usage
+		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		export MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 		jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
