@@ -3,6 +3,8 @@
 # common.sh build_json() for how it is used
 
 function group_type(type) {
+  if (type == "svn_url")
+    return "string"
   if (type == "builders")
     return "array"
   if (type == "status")

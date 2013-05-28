@@ -143,6 +143,10 @@ function process_data(data) {
 
 	$('#jail').html(data.jail);
 	$('#buildname').html(data.buildname);
+	if (data.svn_url)
+		$('#svn_url').html(data.svn_url);
+	else
+		$('#svn_url').hide();
 
 	/* Builder status */
 	html = '';

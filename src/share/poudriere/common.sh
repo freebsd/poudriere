@@ -2362,6 +2362,14 @@ prepare_ports() {
 	ln -sfh ${BUILDNAME} ${log%/*}/latest
 	cp ${HTMLPREFIX}/* ${log}
 
+	# Record the SVN URL@REV in the build
+	[ -d ${MASTERMNT}/usr/ports/.svn ] && bset svn_url $(
+		svn info ${MASTERMNT}/usr/ports | awk '
+			/URL: / {URL=substr($0, 6)}
+			/Revision: / {REVISION=substr($0, 11)}
+			END { print URL "@" REVISION }
+		')
+
 	bset status "computingdeps:"
 	parallel_start
 	for port in $(listed_ports); do
