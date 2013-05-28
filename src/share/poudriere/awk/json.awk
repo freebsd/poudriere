@@ -60,18 +60,21 @@ function end_type() {
 	print "],"
       }
     }
-    if (group_type(in_type) == "array")
-      print "]"
-    else
-      print "}"
-    print ",\n"
+
+    gtype = group_type(in_type)
+    if (gtype == "array")
+      print "],"
+    else if (gtype == "object")
+      print "},"
+    print "\n"
   }
 
   if (type) {
     print "\"" type "\":"
-    if (group_type(type) == "array")
+    gtype = group_type(type)
+    if (gtype == "array")
       print "["
-    else
+    else if (gtype == "object")
       print "{"
     in_type = type
   }
