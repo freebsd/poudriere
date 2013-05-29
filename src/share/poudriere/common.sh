@@ -1850,7 +1850,7 @@ deps_file() {
 		if [ "${PKG_EXT}" = "tbz" ]; then
 			tar -qxf "${pkg}" -O +CONTENTS | awk '$1 == "@pkgdep" { print $2 }' > "${depfile}"
 		else
-			pkg info -qdF "${pkg}" > "${depfile}"
+			injail /poudriere/pkg-static info -qdF "/packages/All/${pkg##*/}" > "${depfile}"
 		fi
 	fi
 
@@ -1869,7 +1869,8 @@ pkg_get_origin() {
 				origin=$(tar -qxf "${pkg}" -O +CONTENTS | \
 					awk -F: '$1 == "@comment ORIGIN" { print $2 }')
 			else
-				origin=$(pkg query -F "${pkg}" "%o")
+				origin=$(injail /poudriere/pkg-static query -F \
+					"/packages/All/${pkg##*/}" "%o")
 			fi
 		fi
 		echo ${origin} > "${originfile}"
@@ -1890,7 +1891,8 @@ pkg_get_dep_origin() {
 			compiled_dep_origins=$(tar -qxf "${pkg}" -O +CONTENTS | \
 				awk -F: '$1 == "@comment DEPORIGIN" {print $2}' | tr '\n' ' ')
 		else
-			compiled_dep_origins=$(pkg query -F "${pkg}" '%do' | tr '\n' ' ')
+			compiled_dep_origins=$(injail /poudriere/pkg-static query -F \
+				"/packages/All/${pkg##*/}" '%do' | tr '\n' ' ')
 		fi
 		echo "${compiled_dep_origins}" > "${dep_origin_file}"
 		echo "${compiled_dep_origins}"
@@ -1912,8 +1914,8 @@ pkg_get_options() {
 				awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | \
 				sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 		else
-			compiled_options=$(pkg query -F "${pkg}" '%Ov %Ok' | \
-				awk '$1 == "on" {print $2}' | sort | tr '\n' ' ')
+			compiled_options=$(injail /poudriere/pkg-static query -F \
+				"/packages/All/${pkg##*/}" '%Ov%Ok' | sed '/^off/d;s/^on//' | sort | tr '\n' ' ')
 		fi
 		echo "${compiled_options}" > "${optionsfile}"
 		echo "${compiled_options}"
@@ -1931,7 +1933,12 @@ pkg_cache_data() {
 	local origin=$2
 	local cachedir=$(pkg_cache_dir ${pkg})
 	local originfile=${cachedir}/origin
+	local mnt=$(my_path)
 
+	if [ ${PKGNG} -eq 1 -a ! -x ${mnt}/poudriere/pkg-static ]; then
+		tar xf ${mnt}/packages/Latest/pkg.txz -C ${mnt} \
+			-s ",/.*/,poudriere/,g" "*/pkg-static"
+	fi
 	mkdir -p $(pkg_cache_dir ${pkg})
 	pkg_get_options ${pkg} > /dev/null
 	pkg_get_origin ${pkg} ${origin} > /dev/null
@@ -2373,6 +2380,14 @@ prepare_ports() {
 		:> ${log}/.poudriere.ports.failed
 		:> ${log}/.poudriere.ports.ignored
 		:> ${log}/.poudriere.ports.skipped
+	fi
+
+	if [ ${PKGNG} -eq 1 -a -e ${MASTERMNT}/packages/Latest/pkg.txz ]; then
+		tar xf ${MASTERMNT}/packages/Latest/pkg.txz -C ${MASTERMNT} \
+			-s ",/.*/,poudriere/,g" "*/pkg-static"
+	elif [ ${PKGNG} -eq 1 -a ${SKIPSANITY} -eq 0 ]; then
+		msg "pkg package missing, skipping sanity"
+		SKIPSANITY=1
 	fi
 
 	if [ $SKIPSANITY -eq 0 ]; then
