@@ -122,6 +122,7 @@ portsnap);;
 svn+http);;
 svn+https);;
 svn+ssh);;
+svn+file);;
 svn);;
 git);;
 *) usage;;
