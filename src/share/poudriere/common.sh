@@ -1117,7 +1117,8 @@ gather_distfiles() {
 	for d in ${dists}; do
 		[ -f ${DISTFILES_CACHE}/${sub}/${d} ] || continue
 		echo ${DISTFILES_CACHE}/${sub}/${d}
-	done | pax -rw -p p -s ",${DISTFILES_CACHE},,g" ${mnt}/portdistfiles
+	done | pax -rw -p p -s ",${DISTFILES_CACHE},,g" ${mnt}/portdistfiles ||
+		return 1
 
 	for special in ${specials}; do
 		gather_distfiles ${special} ${distfiles}
@@ -1243,7 +1244,7 @@ build_port() {
 		if [ "${phase}" = "checksum" ]; then
 			mkdir -p ${mnt}/portdistfiles
 			echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf
-			gather_distfiles ${portdir} ${mnt}/portdistfiles
+			gather_distfiles ${portdir} ${mnt}/portdistfiles || return 1
 		fi
 
 		if [ "${phase}" = "deinstall" ]; then
