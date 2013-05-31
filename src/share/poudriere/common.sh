@@ -788,10 +788,6 @@ do_portbuild_mounts() {
 
 	[ -d ${portsdir}/ports ] && portsdir=${portsdir}/ports
 
-	[ "$(realpath ${DISTFILES_CACHE})" != \
-		"$(realpath -q ${portsdir}/distfiles)" ] || err 1 \
-		"DISTFILES_CACHE cannot be in the portsdir as the portsdir will be mounted read-only"
-
 	mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/All
 	[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
 		mount -t nullfs ${CCACHE_DIR} ${mnt}${HOME}/.ccache
