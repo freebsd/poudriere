@@ -76,14 +76,23 @@ build_repo() {
 			-s ",/.*/,poudriere/,g" "*/pkg-static"
 		rm -f ${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.txz \
 			${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.sqlite
-		if [ -n "${PKG_REPO_SIGNING_KEY}" -a \
-			-f "${PKG_REPO_SIGNING_KEY}" ]; then
-			${MASTERMNT}/poudriere/pkg-static repo \
-				${POUDRIERE_DATA}/packages/${MASTERNAME}/ ${PKG_REPO_SIGNING_KEY}
+		# remount rw
+		umount ${MASTERMNT}/packages
+		mount_packages
+		if [ -f "${PKG_REPO_SIGNING_KEY:-/nonexistent}" ]; then
+			install -m 0400 ${PKG_REPO_SIGNING_KEY} \
+				${MASTERMNT}/tmp/repo.key
+			### XXX: Update pkg-repo to support -o
+			### so that /packages can remain RO
+			injail /poudriere/pkg-static repo /packages \
+				/tmp/repo.key
+			rm -f ${MASTERMNT}/tmp/repo.key
 		else
-			${MASTERMNT}/poudriere/pkg-static repo \
-				${POUDRIERE_DATA}/packages/${MASTERNAME}/
+			injail /poudriere/pkg-static repo /packages
 		fi
+		# Remount ro
+		umount ${MASTERMNT}/packages
+		mount_packages -o ro
 	else
 		msg "Preparing INDEX"
 		bset status "index:"
