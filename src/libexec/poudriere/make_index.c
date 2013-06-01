@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013 David Demelier <demelier.david@gmail.com>
+ * Copyright (c) 2013 Bryan Drewery <bdrewery@FreeBSD.org>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -25,6 +26,8 @@
 #include <string.h>
 #include <err.h>
 #include <jail.h>
+#include <sysexits.h>
+#include <unistd.h>
 
 /*
  * A field, it helps defining the list of fields such as depends
@@ -119,7 +122,7 @@ xstrdup(const char *src)
 static void
 usage(void)
 {
-	errx(1, "usage: %s jail_name oldindex newindex", getprogname());
+	errx(1, "usage: %s [-j jail_name] oldindex newindex", getprogname());
 }
 
 /* --------------------------------------------------------
@@ -419,24 +422,40 @@ int
 main(int argc, char **argv)
 {
 	Ports ports;
+	int ch;
 	int jid;
-	const char *jail_str;
+	const char *jail_str = NULL;
 
-	if (argc < 4)
+	while ((ch = getopt(argc, argv, "j:")) != -1) {
+		switch (ch) {
+			case 'j':
+				jail_str = optarg;
+				break;
+			case '?':
+			default:
+				usage();
+				return (EX_USAGE);
+		}
+	}
+
+	argc -= optind;
+	argv += optind;
+
+	if (argc < 2)
 		usage();
 		/* NOTREACHED */
 
-	jail_str = argv[1];
+	if (jail_str != NULL) {
+		jid = jail_getid(jail_str);
+		if (jid < 0)
+			errx(1, "%s", jail_errmsg);
 
-	jid = jail_getid(jail_str);
-	if (jid < 0)
-		errx(1, "%s", jail_errmsg);
+		if (jail_attach(jid) == -1)
+			err(1, "jail_attach(%s)", jail_str);
+	}
 
-	if (jail_attach(jid) == -1)
-		err(1, "jail_attach(%s)", jail_str);
-
-	ports_read(&ports, argv[2]);
-	ports_write(&ports, argv[3]);
+	ports_read(&ports, argv[0]);
+	ports_write(&ports, argv[1]);
 	ports_free(&ports);
 
 	return 0;

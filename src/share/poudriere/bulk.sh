@@ -104,7 +104,7 @@ build_repo() {
 		# Move temp INDEX file into the jail. make_index will jail_attach()
 		# to the specified jail
 		mv ${INDEXF}.1 ${MASTERMNT}${INDEXF_JAIL}.1
-		make_index ${MASTERNAME} ${INDEXF_JAIL}.1 ${INDEXF_JAIL}
+		make_index -j ${MASTERNAME} ${INDEXF_JAIL}.1 ${INDEXF_JAIL}
 		mv ${MASTERMNT}${INDEXF_JAIL} ${INDEXF}
 		echo " done"
 
