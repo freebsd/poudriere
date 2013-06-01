@@ -176,7 +176,7 @@ if ! build_port /usr/ports/${ORIGIN}; then
 
 	if [ ${INTERACTIVE_MODE} -eq 0 ]; then
 		stop_build /usr/ports/${ORIGIN}
-		exit 1
+		err 1 "Build failed in phase: ${failed_phase}"
 	fi
 elif [ -f ${MASTERMNT}/usr/ports/${ORIGIN}/.keep ]; then
 	save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" "noneed" ||:
