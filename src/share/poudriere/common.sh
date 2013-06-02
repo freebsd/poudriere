@@ -2278,30 +2278,6 @@ parallel_run() {
 	PARALLEL_PIDS="${PARALLEL_PIDS} $!"
 }
 
-# Get all data that make this build env unique,
-# so if the same build is done again,
-# we can use the some of the same cached data
-cache_get_key() {
-	if [ -z "${CACHE_KEY}" ]; then
-		CACHE_KEY=$({
-			injail env
-			cat ${MASTERMNT}/etc/make.conf
-			injail find /var/db/ports -exec sha256 {} +
-			echo ${MASTERNAME}
-			if [ -f ${MASTERMNT}/usr/ports/poudriere.stamp ]; then
-				cat ${MASTERMNT}/usr/ports/poudriere.stamp
-			else
-				# This is not a poudriere-managed ports tree.
-				# Just toss in getpid() to invalidate the cache
-				# as there is no quick way to hash the tree without
-				# taking possibly minutes+
-				echo $$
-			fi
-		} | sha256)
-	fi
-	echo ${CACHE_KEY}
-}
-
 find_all_pool_references() {
 	[ $# -ne 1 ] && eargs pkgname
 	local pkgname="$1"
