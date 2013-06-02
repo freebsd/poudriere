@@ -1176,10 +1176,8 @@ build_port() {
 				msg "Checking shared library dependencies"
 				listfilecmd="grep -v '^@' /var/db/pkg/${PKGNAME}/+CONTENTS"
 				[ ${PKGNG} -eq 1 ] && listfilecmd="pkg query '%Fp' ${PKGNAME}"
-				echo "${listfilecmd} | xargs ldd 2>&1 |
-					awk '/=>/ { print $3 }' | sort -u" > ${mnt}/shared.sh
-				injail sh /shared.sh
-				rm -f ${mnt}/shared.sh
+				injail ${listfilecmd} | injail xargs ldd 2>&1 |
+					awk '/=>/ { print $3 }' | sort -u
 			fi
 			;;
 		esac
