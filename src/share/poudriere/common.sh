@@ -86,7 +86,7 @@ my_name() {
 }
 
 injail() {
-	jexec -U root ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}} $@
+	jexec -U root ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}} "$@"
 }
 
 jstart() {
@@ -125,7 +125,7 @@ run_hook() {
 		POUDRIERE_BUILD_TYPE=${POUDRIERE_BUILD_TYPE} \
 		MASTERNAME="${MASTERNAME}" \
 		BUILDNAME="${BUILDNAME}" \
-		/bin/sh ${hookfile} $@
+		/bin/sh ${hookfile} "$@"
 	return 0
 }
 
@@ -232,8 +232,8 @@ attr_set() {
 	echo "$@" > ${POUDRIERED}/${type}/${name}/${property} || :
 }
 
-jset() { attr_set jails $@ ; }
-pset() { attr_set ports $@ ; }
+jset() { attr_set jails "$@" ; }
+pset() { attr_set ports "$@" ; }
 
 attr_get() {
 	local type=$1
@@ -242,8 +242,8 @@ attr_get() {
 	cat ${POUDRIERED}/${type}/${name}/${property} || :
 }
 
-jget() { attr_get jails $@ ; }
-pget() { attr_get ports $@ ; }
+jget() { attr_get jails "$@" ; }
+pget() { attr_get ports "$@" ; }
 
 #build getter/setter
 bget() {
