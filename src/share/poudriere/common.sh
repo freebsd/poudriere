@@ -1843,7 +1843,7 @@ deps_file() {
 
 	if [ ! -f "${depfile}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
-			tar -qxf "${pkg}" -O +CONTENTS | awk '$1 == "@pkgdep" { print $2 }' > "${depfile}"
+			injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | awk '$1 == "@pkgdep" { print $2 }' > "${depfile}"
 		else
 			injail /poudriere/pkg-static info -qdF "/packages/All/${pkg##*/}" > "${depfile}"
 		fi
@@ -1861,7 +1861,7 @@ pkg_get_origin() {
 	if [ ! -f "${originfile}" ]; then
 		if [ -z "${origin}" ]; then
 			if [ "${PKG_EXT}" = "tbz" ]; then
-				origin=$(tar -qxf "${pkg}" -O +CONTENTS | \
+				origin=$(injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | \
 					awk -F: '$1 == "@comment ORIGIN" { print $2 }')
 			else
 				origin=$(injail /poudriere/pkg-static query -F \
@@ -1883,7 +1883,7 @@ pkg_get_dep_origin() {
 
 	if [ ! -f "${dep_origin_file}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
-			compiled_dep_origins=$(tar -qxf "${pkg}" -O +CONTENTS | \
+			compiled_dep_origins=$(injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | \
 				awk -F: '$1 == "@comment DEPORIGIN" {print $2}' | tr '\n' ' ')
 		else
 			compiled_dep_origins=$(injail /poudriere/pkg-static query -F \
@@ -1905,7 +1905,7 @@ pkg_get_options() {
 
 	if [ ! -f "${optionsfile}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
-			compiled_options=$(tar -qxf "${pkg}" -O +CONTENTS | \
+			compiled_options=$(injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | \
 				awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | \
 				sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 		else
@@ -1931,7 +1931,7 @@ pkg_cache_data() {
 	local mnt=$(my_path)
 
 	if [ ${PKGNG} -eq 1 -a ! -x ${mnt}/poudriere/pkg-static ]; then
-		tar xf ${mnt}/packages/Latest/pkg.txz -C ${mnt} \
+		injail tar xf /packages/Latest/pkg.txz -C / \
 			-s ",/.*/,poudriere/,g" "*/pkg-static"
 	fi
 	mkdir -p $(pkg_cache_dir ${pkg})
@@ -2396,7 +2396,7 @@ prepare_ports() {
 	fi
 
 	if [ ${PKGNG} -eq 1 -a -e ${MASTERMNT}/packages/Latest/pkg.txz ]; then
-		tar xf ${MASTERMNT}/packages/Latest/pkg.txz -C ${MASTERMNT} \
+		injail tar xf /packages/Latest/pkg.txz -C / \
 			-s ",/.*/,poudriere/,g" "*/pkg-static"
 	elif [ ${PKGNG} -eq 1 -a ${SKIPSANITY} -eq 0 ]; then
 		msg "pkg package missing, skipping sanity"
