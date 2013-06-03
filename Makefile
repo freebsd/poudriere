@@ -11,9 +11,13 @@ install:
 	mkdir -p ${PREFIX}/share/poudriere
 	mkdir -p ${PREFIX}/share/poudriere/awk
 	mkdir -p ${PREFIX}/share/poudriere/html
+	mkdir -p ${PREFIX}/share/poudriere/html/assets
 	install -m 755 -o root -g wheel src/share/poudriere/*.sh ${PREFIX}/share/poudriere/
 	install -m 644 -o root -g wheel src/share/poudriere/awk/* ${PREFIX}/share/poudriere/awk/
-	install -m 644 -o root -g wheel src/share/poudriere/html/* ${PREFIX}/share/poudriere/html/
+	install -m 644 -o root -g wheel src/share/poudriere/html/index.html \
+	  ${PREFIX}/share/poudriere/html/
+	install -m 644 -o root -g wheel src/share/poudriere/html/assets/* \
+	  ${PREFIX}/share/poudriere/html/assets
 	install -m 644 -o root -g wheel conf/poudriere.conf.sample ${PREFIX}/etc/
 	install -m 644 -o root -g wheel src/etc/poudriere.d/hooks/pkgbuild.sh.sample ${PREFIX}/etc/poudriere.d/hooks
 	install -m 555 -o root -g wheel src/etc/rc.d/poudriere ${PREFIX}/etc/rc.d

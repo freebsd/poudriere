@@ -2326,9 +2326,10 @@ prepare_ports() {
 	mkdir -p ${POOL_BUCKET_DIRS}
 
 	mkdir -p ${log}/../../latest-per-pkg ${log}/../latest-per-pkg
-	mkdir -p ${log}/logs ${log}/logs/errors
+	mkdir -p ${log}/logs ${log}/logs/errors ${log}/assets
 	ln -sfh ${BUILDNAME} ${log%/*}/latest
-	cp ${HTMLPREFIX}/* ${log}
+	cp ${HTMLPREFIX}/index.html ${log}
+	cp ${HTMLPREFIX}/assets/* ${log}/assets
 
 	# Record the SVN URL@REV in the build
 	[ -d ${MASTERMNT}/usr/ports/.svn ] && bset svn_url $(
