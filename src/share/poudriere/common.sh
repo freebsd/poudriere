@@ -662,7 +662,7 @@ clonefs() {
 	local name zfs_to
 	local fs=$(zfs_getfs ${from})
 
-	[ -d ${to} ] && destroyfs ${to} jail
+	destroyfs ${to} jail
 	mkdir -p ${to}
 	to=$(realpath ${to})
 	[ ${TMPFS_ALL} -eq 1 ] && unset fs
