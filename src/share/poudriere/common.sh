@@ -504,7 +504,7 @@ rollbackfs() {
 	else
 		mtree_mnt="${mnt}"
 	fi
-	
+
 	mtree -X ${mtree_mnt}/poudriere/mtree.${name}exclude \
 	-xr -f ${mtree_mnt}/poudriere/mtree.${name} -p ${mnt} | \
 	while read l ; do
