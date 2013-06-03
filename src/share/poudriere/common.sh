@@ -791,7 +791,7 @@ do_portbuild_mounts() {
 	mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/All
 	[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
 		mount -t nullfs ${CCACHE_DIR} ${mnt}${HOME}/.ccache
-	[ -n "${MFSSIZE}" ] && mdmfs -M -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
+	[ -n "${MFSSIZE}" ] && mdmfs -t -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
 	[ ${TMPFS_WRKDIR} -eq 1 ] && mount -t tmpfs tmpfs ${mnt}/wrkdirs
 	# Only show mounting messages once, not for every builder
 	if [ ${mnt##*/} = "ref" ]; then
