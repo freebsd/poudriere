@@ -920,8 +920,8 @@ setup_makeconf() {
 	local makeconf opt
 
 	makeconf="- ${setname} ${ptname} ${name} ${name}-${ptname}"
-	[ -n "${setname}" ] && makeconf="${makeconf} ${name}-${setname}"
-	makeconf="${makeconf} ${MASTERNAME}"
+	[ -n "${setname}" ] && makeconf="${makeconf} ${name}-${setname} \
+		    ${name}-${ptname}-${setname}"
 	for opt in ${makeconf}; do
 		append_make ${opt} ${dst_makeconf}
 	done
