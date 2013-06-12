@@ -641,8 +641,8 @@ EOF
 ./tmp/*
 ./usr/ports/*
 ./usr/src
-./var/db/*
 ./var/db/pkg/*
+./var/db/ports/*
 ./var/log/*
 ./var/mail/*
 ./var/run/*
@@ -1278,6 +1278,8 @@ build_port() {
 					case "${ppath}" in
 					# gconftool-2 --makefile-uninstall-rule is unpredictable
 					etc/gconf/gconf.xml.defaults/%gconf-tree*.xml) ;;
+					# fc-cache - skip for now
+					/var/db/fontconfig/*) ;;
 					*) echo "${ppath}" >> ${add} ;;
 					esac
 					;;
@@ -1286,6 +1288,11 @@ build_port() {
 					# or mail/qmail for examples
 					[ "${path#${mnt}}" = "${PREFIX}" -a \
 						"${LOCALBASE}" != "${PREFIX}" ] && ignore_path=1
+
+					# fc-cache - skip for now
+					case "${ppath}" in
+					/var/db/fontconfig/*) ignore_path=1 ;;
+					esac
 
 					if [ $ignore_path -eq 0 ]; then
 						echo "${ppath}" >> ${del}
