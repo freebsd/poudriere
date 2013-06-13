@@ -1947,14 +1947,6 @@ pkg_cache_data() {
 	set -e
 }
 
-pkg_to_pkgname() {
-	[ $# -ne 1 ] && eargs pkg
-	local pkg=$1
-	local pkg_file=${pkg##*/}
-	local pkgname=${pkg_file%.*}
-	echo ${pkgname}
-}
-
 cache_dir() {
 	echo ${POUDRIERE_DATA}/cache/${MASTERNAME}
 }
