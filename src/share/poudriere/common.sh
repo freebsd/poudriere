@@ -1843,7 +1843,7 @@ list_deps() {
 
 deps_file() {
 	[ $# -ne 1 ] && eargs pkg
-	local pkg=$1
+	local pkg="$1"
 	local depfile="$(pkg_cache_dir "${pkg}")/deps"
 
 	if [ ! -f "${depfile}" ]; then
@@ -1859,7 +1859,7 @@ deps_file() {
 
 pkg_get_origin() {
 	[ $# -lt 1 ] && eargs pkg
-	local pkg=$1
+	local pkg="$1"
 	local originfile="$(pkg_cache_dir "${pkg}")/origin"
 	local origin=$2
 
@@ -1882,7 +1882,7 @@ pkg_get_origin() {
 
 pkg_get_dep_origin() {
 	[ $# -ne 1 ] && eargs pkg
-	local pkg=$1
+	local pkg="$1"
 	local dep_origin_file="$(pkg_cache_dir "${pkg}")/dep_origin"
 	local compiled_dep_origins
 
@@ -1904,7 +1904,7 @@ pkg_get_dep_origin() {
 
 pkg_get_options() {
 	[ $# -ne 1 ] && eargs pkg
-	local pkg=$1
+	local pkg="$1"
 	local optionsfile="$(pkg_cache_dir "${pkg}")/options"
 	local compiled_options
 
@@ -1929,7 +1929,7 @@ pkg_cache_data() {
 	[ $# -ne 2 ] && eargs pkg origin
 	# Ignore errors in here
 	set +e
-	local pkg=$1
+	local pkg="$1"
 	local origin=$2
 	local cachedir="$(pkg_cache_dir "${pkg}")"
 	local originfile="${cachedir}/origin"
@@ -1955,22 +1955,22 @@ cache_dir() {
 # @param string pkg $PKGDIR/All/PKGNAME.PKG_EXT
 pkg_cache_dir() {
 	[ $# -ne 1 ] && eargs pkg
-	local pkg=$1
-	local pkg_file=${pkg##*/}
+	local pkg="$1"
+	local pkg_file="${pkg##*/}"
 
 	echo $(cache_dir)/${pkg_file}
 }
 
 clear_pkg_cache() {
 	[ $# -ne 1 ] && eargs pkg
-	local pkg=$1
+	local pkg="$1"
 
 	rm -fr "$(pkg_cache_dir "${pkg}")"
 }
 
 delete_pkg() {
 	[ $# -ne 1 ] && eargs pkg
-	local pkg=$1
+	local pkg="$1"
 
 	# Delete the package and the depsfile since this package is being deleted,
 	# which will force it to be recreated
@@ -1985,7 +1985,7 @@ delete_stale_pkg_cache() {
 	[ ! -d ${cachedir} ] && return 0
 	dirempty ${cachedir} && return 0
 	for pkg in ${cachedir}/*.${PKG_EXT}; do
-		pkg_file=${pkg##*/}
+		pkg_file="${pkg##*/}"
 		# If this package no longer exists in the PKGDIR, delete the cache.
 		[ ! -e "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${pkg_file}" ] &&
 			clear_pkg_cache "${pkg}"
@@ -2007,7 +2007,7 @@ delete_old_pkg() {
 	mkdir -p "$(pkg_cache_dir "${pkg}")"
 
 	o=$(pkg_get_origin "${pkg}")
-	v=${pkg##*-}
+	v="${pkg##*-}"
 	v=${v%.*}
 	if [ ! -d "${mnt}/usr/ports/${o}" ]; then
 		msg "${o} does not exist anymore. Deleting stale ${pkg##*/}"
