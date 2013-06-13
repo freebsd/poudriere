@@ -989,13 +989,13 @@ sanity_check_pkgs() {
 	for pkg in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
 		# Check for non-empty directory with no packages in it
 		[ "${pkg}" = "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}" ] && break
-		depfile=$(deps_file ${pkg})
+		depfile="$(deps_file "${pkg}")"
 		while read dep; do
 			if [ ! -e "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${dep}.${PKG_EXT}" ]; then
 				ret=1
 				msg_debug "${pkg} needs missing ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${dep}.${PKG_EXT}"
 				msg "Deleting ${pkg##*/}: missing dependency: ${dep}"
-				delete_pkg ${pkg}
+				delete_pkg "${pkg}"
 				break
 			fi
 		done < "${depfile}"
@@ -1844,7 +1844,7 @@ list_deps() {
 deps_file() {
 	[ $# -ne 1 ] && eargs pkg
 	local pkg=$1
-	local depfile=$(pkg_cache_dir ${pkg})/deps
+	local depfile="$(pkg_cache_dir "${pkg}")/deps"
 
 	if [ ! -f "${depfile}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
@@ -1860,7 +1860,7 @@ deps_file() {
 pkg_get_origin() {
 	[ $# -lt 1 ] && eargs pkg
 	local pkg=$1
-	local originfile=$(pkg_cache_dir ${pkg})/origin
+	local originfile="$(pkg_cache_dir "${pkg}")/origin"
 	local origin=$2
 
 	if [ ! -f "${originfile}" ]; then
@@ -1883,7 +1883,7 @@ pkg_get_origin() {
 pkg_get_dep_origin() {
 	[ $# -ne 1 ] && eargs pkg
 	local pkg=$1
-	local dep_origin_file=$(pkg_cache_dir ${pkg})/dep_origin
+	local dep_origin_file="$(pkg_cache_dir "${pkg}")/dep_origin"
 	local compiled_dep_origins
 
 	if [ ! -f "${dep_origin_file}" ]; then
@@ -1905,7 +1905,7 @@ pkg_get_dep_origin() {
 pkg_get_options() {
 	[ $# -ne 1 ] && eargs pkg
 	local pkg=$1
-	local optionsfile=$(pkg_cache_dir ${pkg})/options
+	local optionsfile="$(pkg_cache_dir "${pkg}")/options"
 	local compiled_options
 
 	if [ ! -f "${optionsfile}" ]; then
@@ -1931,19 +1931,19 @@ pkg_cache_data() {
 	set +e
 	local pkg=$1
 	local origin=$2
-	local cachedir=$(pkg_cache_dir ${pkg})
-	local originfile=${cachedir}/origin
+	local cachedir="$(pkg_cache_dir "${pkg}")"
+	local originfile="${cachedir}/origin"
 	local mnt=$(my_path)
 
 	if [ ${PKGNG} -eq 1 -a ! -x ${mnt}/poudriere/pkg-static ]; then
 		injail tar xf /packages/Latest/pkg.txz -C / \
 			-s ",/.*/,poudriere/,g" "*/pkg-static"
 	fi
-	mkdir -p $(pkg_cache_dir ${pkg})
-	pkg_get_options ${pkg} > /dev/null
-	pkg_get_origin ${pkg} ${origin} > /dev/null
-	pkg_get_dep_origin ${pkg} > /dev/null
-	deps_file ${pkg} > /dev/null
+	mkdir -p "$(pkg_cache_dir "${pkg}")"
+	pkg_get_options "${pkg}" > /dev/null
+	pkg_get_origin "${pkg}" ${origin} > /dev/null
+	pkg_get_dep_origin "${pkg}" > /dev/null
+	deps_file "${pkg}" > /dev/null
 	set -e
 }
 
@@ -1973,7 +1973,7 @@ clear_pkg_cache() {
 	[ $# -ne 1 ] && eargs pkg
 	local pkg=$1
 
-	rm -fr $(pkg_cache_dir ${pkg})
+	rm -fr "$(pkg_cache_dir "${pkg}")"
 }
 
 delete_pkg() {
@@ -1983,7 +1983,7 @@ delete_pkg() {
 	# Delete the package and the depsfile since this package is being deleted,
 	# which will force it to be recreated
 	rm -f "${pkg}"
-	clear_pkg_cache ${pkg}
+	clear_pkg_cache "${pkg}"
 }
 
 # Deleted cached information for stale packages (manually removed)
@@ -1996,7 +1996,7 @@ delete_stale_pkg_cache() {
 		pkg_file=${pkg##*/}
 		# If this package no longer exists in the PKGDIR, delete the cache.
 		[ ! -e "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${pkg_file}" ] &&
-			clear_pkg_cache ${pkg}
+			clear_pkg_cache "${pkg}"
 	done
 
 	return 0
@@ -2008,25 +2008,25 @@ delete_old_pkg() {
 	local o v v2 compiled_options current_options current_deps compiled_deps
 	if [ "${pkg##*/}" = "repo.txz" ]; then
 		msg "Removing invalid pkg repo file: ${pkg}"
-		rm -f ${pkg}
+		rm -f "${pkg}"
 		return 0
 	fi
 
-	mkdir -p $(pkg_cache_dir ${pkg})
+	mkdir -p "$(pkg_cache_dir "${pkg}")"
 
-	o=$(pkg_get_origin ${pkg})
+	o=$(pkg_get_origin "${pkg}")
 	v=${pkg##*-}
 	v=${v%.*}
 	if [ ! -d "${mnt}/usr/ports/${o}" ]; then
 		msg "${o} does not exist anymore. Deleting stale ${pkg##*/}"
-		delete_pkg ${pkg}
+		delete_pkg "${pkg}"
 		return 0
 	fi
 	v2=$(cache_get_pkgname ${o})
 	v2=${v2##*-}
 	if [ "$v" != "$v2" ]; then
 		msg "Deleting old version: ${pkg##*/}"
-		delete_pkg ${pkg}
+		delete_pkg "${pkg}"
 		return 0
 	fi
 
@@ -2035,13 +2035,13 @@ delete_old_pkg() {
 	if [ "${CHECK_CHANGED_DEPS:-yes}" != "no" ]; then
 		current_deps=$(injail make -C /usr/ports/${o} run-depends-list | \
 			sed 's,/usr/ports/,,g' | tr '\n' ' ')
-		compiled_deps=$(pkg_get_dep_origin ${pkg})
+		compiled_deps=$(pkg_get_dep_origin "${pkg}")
 		for d in ${current_deps}; do
 			case " $compiled_deps " in
 			*\ $d\ *) ;;
 			*)
 				msg "Deleting ${pkg##*/}: new dependency: ${d}"
-				delete_pkg ${pkg}
+				delete_pkg "${pkg}"
 				return 0
 				;;
 			esac
@@ -2052,7 +2052,7 @@ delete_old_pkg() {
 	if [ "${CHECK_CHANGED_OPTIONS:-verbose}" != "no" ]; then
 		current_options=$(injail make -C /usr/ports/${o} pretty-print-config | \
 			tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
-		compiled_options=$(pkg_get_options ${pkg})
+		compiled_options=$(pkg_get_options "${pkg}")
 
 		if [ "${compiled_options}" != "${current_options}" ]; then
 			msg "Options changed, deleting: ${pkg##*/}"
@@ -2060,7 +2060,7 @@ delete_old_pkg() {
 				msg "Pkg: ${compiled_options}"
 				msg "New: ${current_options}"
 			fi
-			delete_pkg ${pkg}
+			delete_pkg "${pkg}"
 			return 0
 		fi
 	fi
@@ -2385,7 +2385,7 @@ prepare_ports() {
 			pkg="${POUDRIERE_DATA}/packages/${MASTERNAME}/All/$(cache_get_pkgname ${port}).${PKG_EXT}"
 			if [ -f "${pkg}" ]; then
 				msg "Deleting existing package: ${pkg##*/}"
-				delete_pkg ${pkg}
+				delete_pkg "${pkg}"
 			fi
 		done
 	fi
