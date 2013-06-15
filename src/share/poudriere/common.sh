@@ -1312,6 +1312,8 @@ build_port() {
 					%%PEARDIR%%/.depdb|%%PEARDIR%%/.filemap) ;;
 					#ls-R files from texmf are often regenerated
 					*/ls-R);;
+					# Octave packages database, blank lines can be inserted between pre-install and post-deinstall
+					share/octave/octave_packages) ;;
 					# xmlcatmgr is constantly updating catalog.ports ignore modification to that file
 					share/xml/catalog.ports);;
 					*) echo "${ppath}" >> ${mod} ;;
