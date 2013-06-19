@@ -134,6 +134,14 @@ function format_setname(setname) {
 function process_data(data) {
 	var html, a, n;
 
+	// Redirect from /latest/ to the actual build.
+	if (document.location.href.indexOf('/latest/') != -1) {
+		document.location.href =
+			document.location.href.replace('/latest/', '/' + 
+			data.buildname + '/');
+		return;
+	}
+
 	if (data.stats) {
 		update_canvas(data.stats);
 	}
