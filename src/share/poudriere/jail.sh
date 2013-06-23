@@ -230,6 +230,7 @@ install_from_svn() {
 		fi
 	else
 		msg_n "Updating the sources from svn..."
+		svn upgrade ${JAILMNT}/usr/src 2>/dev/null || :
 		svn -q update ${JAILMNT}/usr/src || err 1 " fail"
 		echo " done"
 	fi
