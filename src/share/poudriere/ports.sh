@@ -231,6 +231,7 @@ if [ ${UPDATE} -eq 1 ]; then
 	svn*)
 		msg_n "Updating the ports tree..."
 		[ ${VERBOSE} -gt 0 ] || quiet="-q"
+		svn upgrade ${PORTSMNT:-${PTMNT}} 2>/dev/null || :
 		svn ${quiet} update ${PORTSMNT:-${PTMNT}}
 		echo " done"
 		;;
