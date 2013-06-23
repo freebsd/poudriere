@@ -2352,7 +2352,7 @@ prepare_ports() {
 	# Record the SVN URL@REV in the build
 	[ -d ${MASTERMNT}/usr/ports/.svn ] && bset svn_url $(
 		svn info ${MASTERMNT}/usr/ports | awk '
-			/URL: / {URL=substr($0, 6)}
+			/^URL: / {URL=substr($0, 6)}
 			/Revision: / {REVISION=substr($0, 11)}
 			END { print URL "@" REVISION }
 		')
