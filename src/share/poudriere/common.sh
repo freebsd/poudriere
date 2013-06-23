@@ -2203,10 +2203,27 @@ listed_ports() {
 parallel_exec() {
 	local cmd="$1"
 	local ret=0
+	local - # Make `set +e` local
+	local errexit=0
 	shift 1
-	${cmd} "$@" || ret=1
+
+	# Disable -e so that the actual execution failing does not
+	# return early and prevent notifying the FIFO that the
+	# exec is done
+	case $- in *e*) errexit=1;; esac
+	set +e
+	(
+		# Do still cause the actual command to return
+		# non-zero if it has any failures, if caller
+		# was set -e as well. Using 'if cmd' or 'cmd || '
+		# here would disable set -e in the cmd execution
+		[ $errexit -eq 1 ] && set -e
+		${cmd} "$@"
+	)
+	ret=$?
 	echo >&6 || :
 	exit ${ret}
+	# set -e will be restored by 'local -'
 }
 
 parallel_start() {
