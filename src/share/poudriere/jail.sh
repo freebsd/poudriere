@@ -592,6 +592,9 @@ case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}" in
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		export MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 		jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
+		jstop
+		# Restart with network
+		jstart 1
 		;;
 	000010)
 		test -z ${JAILNAME} && usage
