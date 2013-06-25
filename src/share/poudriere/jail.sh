@@ -199,12 +199,19 @@ build_and_install_world() {
 		unset CCACHE_TEMPDIR
 	fi
 
+	fbsdver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $$3}' ${JAILMNT}/usr/src/sys/sys/param.h)
+	hostver=$(sysctl -n kern.osreldate)
+	make_cmd=make
+	if [ ${hostver} -gt 1000000 -a ${fbsdver} -lt 1000000 ]; then
+		[ -x `which fmake 2>/dev/null` ] || err 1 "You need fmake installed on the host: devel/fmake"
+		make_cmd=fmake
+	fi
 	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
-	make -C ${JAILMNT}/usr/src buildworld ${MAKE_JOBS} ${MAKEWORLDARGS} || err 1 "Fail to build world"
+	${make_cmd} -C ${JAILMNT}/usr/src buildworld ${MAKE_JOBS} ${MAKEWORLDARGS} || err 1 "Fail to build world"
 	msg "Starting make installworld"
-	make -C ${JAILMNT}/usr/src installworld DESTDIR=${JAILMNT} DB_FROM_SRC=1 || err 1 "Fail to install world"
-	make -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distrib-dirs &&
-	make -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distribution
+	${make_cmd} -C ${JAILMNT}/usr/src installworld DESTDIR=${JAILMNT} DB_FROM_SRC=1 || err 1 "Fail to install world"
+	${make_cmd} -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distrib-dirs &&
+	${make_cmd} -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distribution
 }
 
 install_from_svn() {
