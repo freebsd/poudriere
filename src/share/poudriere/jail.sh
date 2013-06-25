@@ -179,6 +179,14 @@ update_jail() {
 }
 
 build_and_install_world() {
+	case "${ARCH}" in
+	mips64)
+		export TARGET=mips
+		;;
+	armv6)
+		export TARGET=arm
+		;;
+	esac
 	export TARGET_ARCH=${ARCH}
 	export SRC_BASE=${JAILMNT}/usr/src
 	mkdir -p ${JAILMNT}/etc
@@ -212,6 +220,15 @@ build_and_install_world() {
 	${make_cmd} -C ${JAILMNT}/usr/src installworld DESTDIR=${JAILMNT} DB_FROM_SRC=1 || err 1 "Fail to install world"
 	${make_cmd} -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distrib-dirs &&
 	${make_cmd} -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distribution
+
+	case "${ARCH}" in
+	mips64)
+		cp `which qemu-mips64` ${JAILMNT}/usr/bin/qemu-mips64
+		;;
+	armv6)
+		cp `which qemu-arm` ${JAILMNT}/usr/bin/qemu-arm
+		;;
+	esac
 }
 
 install_from_svn() {
@@ -519,6 +536,14 @@ while getopts "J:j:v:a:z:m:n:f:M:sdklqcip:ut:z:P:" FLAG; do
 			[ "${REALARCH}" != "amd64" -a "${REALARCH}" != ${OPTARG} ] &&
 				err 1 "Only amd64 host can choose another architecture"
 			ARCH=${OPTARG}
+			case "${ARCH}" in
+			mips64)
+				[ -x `which qemu-mips64` ] || err 1 "You need qemu-mips64 installed on the host"
+				;;
+			armv6)
+				[ -x `which qemu-arm` ] || err 1 "You need qemu-arm installed on the host"
+				;;
+			esac
 			;;
 		m)
 			METHOD=${OPTARG}
