@@ -266,6 +266,9 @@ nbbuilt=$(bget stats_built)
 [ "$nbignored" = "-" ] && nbignored=0
 [ "$nbskipped" = "-" ] && nbskipped=0
 [ "$nbbuilt" = "-" ] && nbbuilt=0
+if [ $PKGNG -eq 1 -a ${nbbuilt} -eq 0 ]; then
+	[ -f ${MASTERMNT}/packages/digests.txz ] || nbbuilt=1
+fi
 # Package all newly build ports
 if [ $nbbuilt -eq 0 ]; then
 	if [ $PKGNG -eq 1 ]; then
