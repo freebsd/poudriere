@@ -266,20 +266,26 @@ nbbuilt=$(bget stats_built)
 [ "$nbignored" = "-" ] && nbignored=0
 [ "$nbskipped" = "-" ] && nbskipped=0
 [ "$nbbuilt" = "-" ] && nbbuilt=0
-if [ $PKGNG -eq 1 -a ${nbbuilt} -eq 0 ]; then
-	[ -f ${MASTERMNT}/packages/digests.txz ] || nbbuilt=1
-fi
+# Always create repository if it is missing (but still respect -T)
+if [ $PKGNG -eq 1 ] && \
+	[ ! -f ${MASTERMNT}/packages/digests.txz -o \
+	  ! -f ${MASTERMNT}/packages/repo.txz ]; then
+	[ $nbbuilt -eq 0 -a ${BUILD_REPO} -eq 1 ] && 
+		msg "No package built, but repository needs to be created"
+	# This block mostly to avoid next
 # Package all newly build ports
-if [ $nbbuilt -eq 0 ]; then
+elif [ $nbbuilt -eq 0 ]; then
 	if [ $PKGNG -eq 1 ]; then
 		msg "No package built, no need to update the repository"
 	else
 		msg "No package built, no need to update INDEX"
 	fi
+	BUILD_REPO=0
 else
 	[ "${NO_RESTRICTED:-no}" != "no" ] && clean_restricted
-	[ ${BUILD_REPO} -eq 1 ] && build_repo
 fi
+
+[ ${BUILD_REPO} -eq 1 ] && build_repo
 
 cleanup
 if [ $nbbuilt -gt 0 ]; then
