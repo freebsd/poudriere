@@ -189,7 +189,7 @@ build_and_install_world() {
 		unset CCACHE_TEMPDIR
 	fi
 
-	fbsdver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $$3}' ${JAILMNT}/usr/src/sys/sys/param.h)
+	fbsdver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' ${JAILMNT}/usr/src/sys/sys/param.h)
 	hostver=$(sysctl -n kern.osreldate)
 	make_cmd=make
 	if [ ${hostver} -gt 1000000 -a ${fbsdver} -lt 1000000 ]; then
