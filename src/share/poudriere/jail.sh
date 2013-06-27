@@ -211,8 +211,10 @@ build_and_install_world() {
 	hostver=$(sysctl -n kern.osreldate)
 	make_cmd=make
 	if [ ${hostver} -gt 1000000 -a ${fbsdver} -lt 1000000 ]; then
-		[ -x `which fmake 2>/dev/null` ] || err 1 "You need fmake installed on the host: devel/fmake"
-		make_cmd=fmake
+		FMAKE=$(which fmake 2>/dev/null)
+		[ -n "${FMAKE}" ] ||
+			err 1 "You need fmake installed on the host: devel/fmake"
+		make_cmd=${FMAKE}
 	fi
 	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
 	${make_cmd} -C ${JAILMNT}/usr/src buildworld ${MAKE_JOBS} ${MAKEWORLDARGS} || err 1 "Fail to build world"
