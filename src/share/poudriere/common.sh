@@ -1308,6 +1308,7 @@ build_port() {
 					# removal of info files leaves entry uneasy to cleanup in info/dir
 					# accept a modification of this file
 					info/dir) ;;
+					*/info/dir) ;;
 					# The is pear database cache
 					%%PEARDIR%%/.depdb|%%PEARDIR%%/.filemap) ;;
 					#ls-R files from texmf are often regenerated
@@ -1316,6 +1317,8 @@ build_port() {
 					share/octave/octave_packages) ;;
 					# xmlcatmgr is constantly updating catalog.ports ignore modification to that file
 					share/xml/catalog.ports);;
+					# fc-cache - skip for now
+					/var/db/fontconfig/*) ;;
 					*) echo "${ppath}" >> ${mod} ;;
 					esac
 					;;
