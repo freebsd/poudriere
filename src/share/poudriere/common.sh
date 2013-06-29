@@ -2666,6 +2666,6 @@ esac
 : ${WATCHDIR:=${POUDRIERE_DATA}/queue}
 : ${PIDFILE:=${POUDRIERE_DATA}/daemon.pid}
 
-BUILDNAME=$(date +%Y-%m-%d_%H:%M:%S)
+BUILDNAME=$(date +%Y-%m-%d_%Hh%Mm%Ss)
 
 [ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}
