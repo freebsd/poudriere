@@ -2524,11 +2524,12 @@ append_make() {
 RESOLV_CONF=""
 STATUS=0 # out of jail #
 
-[ -f ${SCRIPTPREFIX}/../../etc/poudriere.conf ] ||
-	err 1 "Unable to find ${SCRIPTPREFIX}/../../etc/poudriere.conf"
+[ -z "${POUDRIERE_ETC}" ] && POUDRIERE_ETC=${SCRIPTPREFIX}/../../etc
+[ -f ${POUDRIERE_ETC}/poudriere.conf ] ||
+	err 1 "Unable to find ${POUDRIERE_ETC}/poudriere.conf"
 
-. ${SCRIPTPREFIX}/../../etc/poudriere.conf
-POUDRIERED=${SCRIPTPREFIX}/../../etc/poudriere.d
+. ${POUDRIERE_ETC}/poudriere.conf
+POUDRIERED=${POUDRIERE_ETC}/poudriere.d
 LIBEXECPREFIX=${SCRIPTPREFIX}/../../libexec/poudriere
 AWKPREFIX=${SCRIPTPREFIX}/awk
 HTMLPREFIX=${SCRIPTPREFIX}/html

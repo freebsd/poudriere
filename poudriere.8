@@ -46,6 +46,18 @@ It can also be used to test a single port.
 .Pp
 Its goals are to use modern facilities present in FreeBSD (as ZFS,
 jails), to be easy to use and to depend only on base.
+.Sh GLOBAL OPTIONS
+.Nm
+accepts a global option:
+.Bl -tag -width "-f conffile"
+.It Fl e Ar etcdir
+Path to the directory where poudriere will find its configuration data.
+See 
+.Sx FILES
+and
+.Sx ENVIRONMENT
+for more information.
+.El
 .Sh COMMANDS
 The first argument to
 .Nm
@@ -464,15 +476,19 @@ This specifies which SET the build is running on when using
 .Sh ENVIRONMENT
 The
 .Nm
-command does not use any
-environment variable.
+command may use the following environment variable:
+.Bl -tag -width "POUDRIERE_ETC"
+.It Pa POUDRIERE_ETC
+If specified, the path to poudriere's config directory.
+Defaults to /usr/local/etc.
+.El
 .Sh FILES
-.Bl -tag -width ".Pa /usr/local/etc/poudriere.conf" -compact
-.It Pa /usr/local/etc/poudriere.conf
+.Bl -tag -width ".Pa POUDRIERE_ETC/poudriere.conf" -compact
+.It Pa POUDRIERE_ETC/poudriere.conf
 See self-documented
 .Ar /usr/local/etc/poudriere.conf.sample
 for example.
-.It Pa /usr/local/etc/poudriere.d
+.It Pa POUDRIERE_ETC/poudriere.d
 This directory contains
 .Ar make.conf
 files for your different jails.

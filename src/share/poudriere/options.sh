@@ -116,7 +116,7 @@ else
 	LISTPORTS="$@"
 fi
 
-PORT_DBDIR=${SCRIPTPREFIX}/../../etc/poudriere.d/${JAILNAME}${JAILNAME:+-}${SETNAME}${SETNAME:+-}options
+PORT_DBDIR=${POUDRIERED}/${JAILNAME}${JAILNAME:+-}${SETNAME}${SETNAME:+-}options
 
 mkdir -p ${PORT_DBDIR}
 
