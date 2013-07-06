@@ -157,7 +157,7 @@ fi
 PORT_FLAGS="PREFIX=${PREFIX}"
 msg "Building with flags: ${PORT_FLAGS}"
 
-if [ -d ${MASTERMNT}${PREFIX} ]; then
+if [ -d ${MASTERMNT}${PREFIX} -a "${PREFIX}" != "/usr" ]; then
 	msg "Removing existing ${PREFIX}"
 	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${MASTERMNT}${PREFIX}
 fi
