@@ -225,7 +225,6 @@ injail make -C /usr/ports/${ORIGIN} clean
 msg "Deinstalling package"
 injail ${PKG_DELETE} ${PKGNAME}
 
-msg "Removing existing ${PREFIX} dir"
 stop_build /usr/ports/${ORIGIN}
 
 cleanup
