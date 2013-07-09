@@ -972,10 +972,10 @@ cleanup() {
 		fi
 		wait
 
+		jail_stop
+
 		rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages \
 			|| :
-
-		jail_stop
 	fi
 
 	export CLEANED_UP=1
