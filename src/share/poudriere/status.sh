@@ -74,12 +74,12 @@ BUILDNAME=latest
 POUDRIERE_BUILD_TYPE=bulk
 
 if [ -n "${JAILNAME}" ]; then
-	mastername=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
-	mastermnt=${POUDRIERE_DATA}/build/${mastername}/ref
-	jail_runs ${mastername} || err 1 "No such jail running"
-	builders="$(MASTERNAME=$mastername bget builders 2>/dev/null || :)"
-	MASTERNAME=$mastername MASTERMNT=$mastermnt \
-		JOBS="${builders}" siginfo_handler
+	MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
+	MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
+	jail_runs ${MASTERNAME} || err 1 "No such jail running"
+	builders="$(bget builders 2>/dev/null || :)"
+
+	JOBS="${builders}" siginfo_handler
 else
 	format="%-30s %-25s %6s %5s %6s %7s %7s %7s %7s\n"
 	printf "${format}" "JAIL" "STATUS" "QUEUED" "BUILT" "FAILED" "SKIPPED" \
@@ -87,16 +87,16 @@ else
 	for mastermnt in ${POUDRIERE_DATA}/build/*/ref; do
 		[ "${mastermnt}" = "${POUDRIERE_DATA}/build/*/ref" ] && break
 		mastername=${mastermnt#${POUDRIERE_DATA}/build/}
-		mastername=${mastername%/ref}
+		MASTERNAME=${mastername%/ref}
 
-		status=$(MASTERNAME=$mastername bget status 2>/dev/null || :)
-		nbqueued=$(MASTERNAME=$mastername bget stats_queued 2>/dev/null || :)
-		nbfailed=$(MASTERNAME=$mastername bget stats_failed 2>/dev/null || :)
-		nbignored=$(MASTERNAME=$mastername bget stats_ignored 2>/dev/null || :)
-		nbskipped=$(MASTERNAME=$mastername bget stats_skipped 2>/dev/null || :)
-		nbbuilt=$(MASTERNAME=$mastername bget stats_built 2>/dev/null || :)
+		status=$(bget status 2>/dev/null || :)
+		nbqueued=$(bget stats_queued 2>/dev/null || :)
+		nbfailed=$(bget stats_failed 2>/dev/null || :)
+		nbignored=$(bget stats_ignored 2>/dev/null || :)
+		nbskipped=$(bget stats_skipped 2>/dev/null || :)
+		nbbuilt=$(bget stats_built 2>/dev/null || :)
 		nbtobuild=$((nbqueued - (nbbuilt + nbfailed + nbskipped + nbignored)))
-		printf "${format}" "${mastername}" "${status}" "${nbqueued}" \
+		printf "${format}" "${MASTERNAME}" "${status}" "${nbqueued}" \
 			"${nbbuilt}" "${nbfailed}" "${nbskipped}" "${nbignored}" \
 			"${nbtobuild}"
 	done
