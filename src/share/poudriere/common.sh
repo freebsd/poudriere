@@ -966,9 +966,6 @@ cleanup() {
 		return 0
 	fi
 
-	[ -n "${MASTERNAME}" ] && rm -rf \
-		${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages
-
 	# Only bother with this if using jails as this may be being ran
 	# from queue.sh or daemon.sh, etc.
 	if [ -n "${MASTERMNT}" -a -n "${MASTERNAME}" ]; then
@@ -983,6 +980,9 @@ cleanup() {
 
 		jail_stop
 	fi
+
+	[ -n "${MASTERNAME}" ] && rm -rf \
+		${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages
 
 	export CLEANED_UP=1
 }
