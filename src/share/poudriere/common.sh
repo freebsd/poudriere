@@ -963,8 +963,6 @@ cleanup() {
 			return 0
 		fi
 
-		rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages
-
 		if [ -d ${MASTERMNT}/poudriere/var/run ]; then
 			for pid in ${MASTERMNT}/poudriere/var/run/*.pid; do
 				# Ensure there is a pidfile to read or break
@@ -973,6 +971,9 @@ cleanup() {
 			done
 		fi
 		wait
+
+		rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages \
+			|| :
 
 		jail_stop
 	fi
