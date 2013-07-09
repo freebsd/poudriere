@@ -78,6 +78,8 @@ if [ -n "${JAILNAME}" ]; then
 	MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 	jail_runs ${MASTERNAME} || err 1 "No such jail running"
 	builders="$(bget builders 2>/dev/null || :)"
+	# Dereference latest into actual buildname
+	BUILDNAME="$(bget buildname)"
 
 	JOBS="${builders}" siginfo_handler
 else
