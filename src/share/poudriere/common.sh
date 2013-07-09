@@ -954,18 +954,17 @@ cleanup() {
 	export CLEANING_UP=1
 	msg "Cleaning up"
 
-	# If this is a builder, don't cleanup, the master will handle that.
-	if [ -n "${MY_JOBID}" ]; then
-		[ -n "${PKGNAME}" ] && clean_pool ${PKGNAME} 1 || :
-		return 0
-	fi
-
-	[ -n "${MASTERNAME}" ] && rm -rf \
-		${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages
-
 	# Only bother with this if using jails as this may be being ran
 	# from queue.sh or daemon.sh, etc.
-	if [ -n "${MASTERMNT}" -a -n "${MASTERNAME}" ]; then
+	if [ -n "${MASTERMNT}" -a -n "${MASTERNAME}" ] && was_a_bulk_run; then
+		# If this is a builder, don't cleanup, the master will handle that.
+		if [ -n "${MY_JOBID}" ]; then
+			[ -n "${PKGNAME}" ] && clean_pool ${PKGNAME} 1 || :
+			return 0
+		fi
+
+		rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages
+
 		if [ -d ${MASTERMNT}/poudriere/var/run ]; then
 			for pid in ${MASTERMNT}/poudriere/var/run/*.pid; do
 				# Ensure there is a pidfile to read or break
