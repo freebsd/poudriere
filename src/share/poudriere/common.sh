@@ -2348,6 +2348,7 @@ prepare_ports() {
 
 	mkdir -p ${log}/../../latest-per-pkg ${log}/../latest-per-pkg
 	mkdir -p ${log}/logs ${log}/logs/errors ${log}/assets
+	mkdir -p $(cache_dir)
 	ln -sfh ${BUILDNAME} ${log%/*}/latest
 	cp ${HTMLPREFIX}/index.html ${log}
 	cp ${HTMLPREFIX}/assets/* ${log}/assets
