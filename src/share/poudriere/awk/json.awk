@@ -55,6 +55,7 @@ function end_type() {
 	  print "\"pkgname\":\"" pkgname "\","
 	  if (port_status_type == "failed") {
 	    print "\"phase\":\"" build_reasons[3] "\","
+	    print "\"errortype\":\"" build_reasons[4] "\","
 	  } else if (port_status_type == "ignored") {
 	    reason_length = length(build_reasons)
 	    for (n = 3; n <= reason_length; n++) {

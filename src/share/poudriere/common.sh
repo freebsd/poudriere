@@ -1709,6 +1709,7 @@ build_pkg() {
 	local clean_rdepends=0
 	local log=$(log_path)
 	local ignore
+	local errortype
 
 	export PKGNAME="${pkgname}" # set ASAP so cleanup() can use it
 	port=$(cache_get_origin ${pkgname})
@@ -1770,7 +1771,10 @@ build_pkg() {
 		else
 			# Symlink the buildlog into errors/
 			ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
-			badd ports.failed "${port} ${PKGNAME} ${failed_phase}"
+			errortype=$(${SCRIPTPREFIX}/processonelog.sh \
+				${log}/logs/errors/${PKGNAME}.log \
+				2> /dev/null)
+			badd ports.failed "${port} ${PKGNAME} ${failed_phase} ${errortype}"
 			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
 			run_hook pkgbuild failed "${port}" "${PKGNAME}" "${failed_phase}" \
 				"${log}/logs/errors/${PKGNAME}.log"

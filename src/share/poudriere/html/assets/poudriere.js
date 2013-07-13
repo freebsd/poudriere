@@ -112,7 +112,7 @@ function format_status_row(status, row) {
 		html += "<td>" + format_origin(row.origin) + "</td>";
 		html += "<td>" + row.phase + "</td>";
 		html += "<td>" + row.skipped_cnt + "</td>";
-		html += "<td>" + format_log(row.pkgname, true, "logfile") + "</td>";
+		html += "<td>" + format_log(row.pkgname, true, row.errortype) + "</td>";
 	} else if (status == "skipped") {
 		html += "<td>" + format_pkgname(row.pkgname) + "</td>";
 		html += "<td>" + format_origin(row.origin) + "</td>";
