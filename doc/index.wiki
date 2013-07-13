@@ -75,10 +75,10 @@ There is also a git mirror available at https://github.com/bdrewery/poudriere
 
 Any of these options are available for contributing:
 
-  * Open new ticket with patch attached
-  * Post link to patch in #poudriere on freenode
-  * Post patch to freebsd-pkg@FreeBSD.org
-  * Send github Pull Request (not preferred, but still accepted)
+  *  Open new ticket with patch attached
+  *  Post link to patch in #poudriere on freenode
+  *  Post patch to freebsd-pkg@FreeBSD.org
+  *  Send github Pull Request (not preferred, but still accepted)
 
 Happy FreeBSDing!
 
