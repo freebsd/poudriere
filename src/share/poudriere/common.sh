@@ -2032,8 +2032,54 @@ delete_old_pkg() {
 	# Detect ports that have new dependencies that the existing packages
 	# do not have and delete them.
 	if [ "${CHECK_CHANGED_DEPS:-yes}" != "no" ]; then
-		current_deps=$(injail make -C /usr/ports/${o} run-depends-list | \
-			sed 's,/usr/ports/,,g' | tr '\n' ' ')
+		current_deps=""
+		liblist=""
+		for td in LIB RUN; do
+			raw_deps=$(injail make -C /usr/ports/${o} -V${td}_DEPENDS)
+			for d in ${raw_deps}; do
+				key=${d%:*}
+				dpath=${d#*:/usr/ports/}
+				case ${td} in
+				LIB)
+					[ -n "${liblist}" ] || liblist=$(injail ldconfig -r | awk '$1 ~ /:-l/ { gsub(/.*-l/, "", $1); print $1 }' | tr '\n' ' ')
+					case ${key} in
+					lib*)
+						unset found
+						for dir in /lib /usr/lib ; do
+							if [ -f "${mnt}/${dir}/${key}" ]; then
+								found=yes
+								break;
+							fi
+						done
+						[ -n "${found}" ] || current_deps="${current_deps} ${dpath}"
+						;;
+					*.*)
+						case " ${liblist} " in
+							*\ ${key}\ *) ;;
+							*) current_deps="${current_deps} ${dpath}" ;;
+						esac
+						;;
+					*)
+						unset found
+						for dir in /lib /usr/lib ; do
+							if [ -f "${mnt}/${dir}/lib${key}.so" ]; then
+								found=yes
+								break;
+							fi
+						done
+						[ -n "${found}" ] || current_deps="${current_deps} ${dpath}"
+						;;
+					esac
+					;;
+				RUN)
+					case $key in
+					/*) [ -e ${mnt}/${key} ] || current_deps="${current_deps} ${dpath}" ;;
+					*) [ -n "$(injail which ${key})" ] || current_deps="${current_deps} ${dpath}" ;;
+					esac
+					;;
+				esac
+			done
+		done
 		compiled_deps=$(pkg_get_dep_origin "${pkg}")
 		for d in ${current_deps}; do
 			case " $compiled_deps " in
