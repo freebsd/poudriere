@@ -69,6 +69,17 @@ and clone the repo:
 # cd poudriere
 # fossil open ../poudriere.fossil</verbatim>
 
+There is also a git mirror available at https://github.com/bdrewery/poudriere
+
+<h2>Contributing</h2>
+
+Any of these options are available for contributing:
+
+  * Open new ticket with patch attached
+  * Post link to patch in #poudriere on freenode
+  * Post patch to freebsd-pkg@FreeBSD.org
+  * Send github Pull Request (not preferred, but still accepted)
+
 Happy FreeBSDing!
 
 Join us on IRC: #poudriere on Freenode
