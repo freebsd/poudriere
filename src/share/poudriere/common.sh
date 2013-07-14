@@ -2050,7 +2050,7 @@ delete_old_pkg() {
 					lib*)
 						unset found
 						for dir in /lib /usr/lib ; do
-							if [ -f "${mnt}/${dir}/${key}" ]; then
+							if injail test -f "${dir}/${key}"; then
 								found=yes
 								break;
 							fi
@@ -2066,7 +2066,7 @@ delete_old_pkg() {
 					*)
 						unset found
 						for dir in /lib /usr/lib ; do
-							if [ -f "${mnt}/${dir}/lib${key}.so" ]; then
+							if injail test -f "${dir}/lib${key}.so"; then
 								found=yes
 								break;
 							fi
