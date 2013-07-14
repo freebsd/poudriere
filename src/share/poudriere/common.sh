@@ -981,14 +981,29 @@ cleanup() {
 	export CLEANED_UP=1
 }
 
+# return 0 if the package dir exists and has packages, 0 otherwise
+package_dir_exists_and_has_packages() {
+	[ ! -d ${POUDRIERE_DATA}/packages/${MASTERNAME}/All ] && return 1
+	dirempty ${POUDRIERE_DATA}/packages/${MASTERNAME}/All && return 1
+	# Check for non-empty directory with no packages in it
+	for pkg in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
+		[ "${pkg}" = \
+		    "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}" ] \
+		    && return 1
+		# Stop on first match
+		break
+	done
+	return 0
+}
+
+
 sanity_check_pkgs() {
 	local ret=0
-	local depfile
-	[ ! -d ${POUDRIERE_DATA}/packages/${MASTERNAME}/All ] && return $ret
-	dirempty ${POUDRIERE_DATA}/packages/${MASTERNAME}/All && return $ret
+	local depfile origin
+
+	package_dir_exists_and_has_packages || return 0
+
 	for pkg in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
-		# Check for non-empty directory with no packages in it
-		[ "${pkg}" = "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}" ] && break
 		depfile="$(deps_file "${pkg}")"
 		while read dep; do
 			if [ ! -e "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${dep}.${PKG_EXT}" ]; then
@@ -2116,12 +2131,11 @@ delete_old_pkg() {
 }
 
 delete_old_pkgs() {
-	[ ! -d ${POUDRIERE_DATA}/packages/${MASTERNAME}/All ] && return 0
-	dirempty ${POUDRIERE_DATA}/packages/${MASTERNAME}/All && return 0
+
+	package_dir_exists_and_has_packages || return 0
+	
 	parallel_start
 	for pkg in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
-		# Check for non-empty directory with no packages in it
-		[ "${pkg}" = "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}" ] && break
 		parallel_run delete_old_pkg "${pkg}"
 	done
 	parallel_stop
