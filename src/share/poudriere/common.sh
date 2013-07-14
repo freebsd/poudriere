@@ -2009,11 +2009,6 @@ delete_old_pkg() {
 	local pkg="$1"
 	local mnt=$(my_path)
 	local o v v2 compiled_options current_options current_deps compiled_deps
-	if [ "${pkg##*/}" = "repo.txz" ]; then
-		msg "Removing invalid pkg repo file: ${pkg}"
-		rm -f "${pkg}"
-		return 0
-	fi
 
 	mkdir -p "$(pkg_cache_dir "${pkg}")"
 
@@ -2483,6 +2478,13 @@ prepare_ports() {
 
 	if [ $SKIPSANITY -eq 0 ]; then
 		msg "Sanity checking the repository"
+
+		pkg="${POUDRIERE_DATA}/packages/${MASTERNAME}/All/repo.txz"
+		if [ -f "${pkg}" ]; then
+			msg "Removing invalid pkg repo file: ${pkg}"
+			rm -f "${pkg}"
+		fi
+
 		delete_stale_pkg_cache
 		delete_old_pkgs
 
