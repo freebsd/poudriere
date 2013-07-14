@@ -2038,6 +2038,10 @@ delete_old_pkg() {
 	if [ "${CHECK_CHANGED_DEPS:-yes}" != "no" ]; then
 		current_deps=""
 		liblist=""
+		# FIXME: Move into Infrastructure/scripts and 
+		# 'make actual-run-depends-list' after enough testing,
+		# which will avoida all of the injail hacks
+
 		for td in LIB RUN; do
 			raw_deps=$(injail make -C /usr/ports/${o} -V${td}_DEPENDS)
 			for d in ${raw_deps}; do
