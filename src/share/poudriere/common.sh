@@ -2008,6 +2008,9 @@ delete_pkg() {
 delete_stale_pkg_cache() {
 	local pkgname
 	local cachedir=$(cache_dir)
+
+	msg_verbose "Checking for stale cache files"
+
 	[ ! -d ${cachedir} ] && return 0
 	dirempty ${cachedir} && return 0
 	for pkg in ${cachedir}/*.${PKG_EXT}; do
@@ -2131,6 +2134,7 @@ delete_old_pkg() {
 }
 
 delete_old_pkgs() {
+	msg_verbose "Checking packages for incremental rebuild needed"
 
 	package_dir_exists_and_has_packages || return 0
 	
@@ -2503,6 +2507,7 @@ prepare_ports() {
 		delete_stale_pkg_cache
 		delete_old_pkgs
 
+		msg_verbose "Checking packages for missing dependencies"
 		while :; do
 			sanity_check_pkgs && break
 		done
