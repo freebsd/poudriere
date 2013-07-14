@@ -1983,8 +1983,13 @@ pkg_cache_dir() {
 	[ $# -ne 1 ] && eargs pkg
 	local pkg="$1"
 	local pkg_file="${pkg##*/}"
+	local pkg_dir
 
-	echo $(cache_dir)/${pkg_file}
+	pkg_dir="$(cache_dir)/${pkg_file}"
+
+	[ -d "${pkg_dir}" ] || mkdir -p "${pkg_dir}"
+
+	echo "${pkg_dir}"
 }
 
 clear_pkg_cache() {
@@ -2028,7 +2033,6 @@ delete_old_pkg() {
 	local mnt=$(my_path)
 	local o v v2 compiled_options current_options current_deps compiled_deps
 
-	mkdir -p "$(pkg_cache_dir "${pkg}")"
 
 	o=$(pkg_get_origin "${pkg}")
 	if [ ! -d "${mnt}/usr/ports/${o}" ]; then
