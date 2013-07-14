@@ -2137,7 +2137,7 @@ delete_old_pkgs() {
 	msg_verbose "Checking packages for incremental rebuild needed"
 
 	package_dir_exists_and_has_packages || return 0
-	
+
 	parallel_start
 	for pkg in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
 		parallel_run delete_old_pkg "${pkg}"
