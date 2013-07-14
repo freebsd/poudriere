@@ -999,7 +999,7 @@ package_dir_exists_and_has_packages() {
 
 sanity_check_pkgs() {
 	local ret=0
-	local depfile origin
+	local depfile
 
 	package_dir_exists_and_has_packages || return 0
 
