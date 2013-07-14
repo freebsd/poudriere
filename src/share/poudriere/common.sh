@@ -2248,6 +2248,8 @@ compute_deps() {
 		mkdir -p "${MASTERMNT}/poudriere/rdeps/${dep_pkgname}"
 		ln -sf "${pkg_pooldir}/${dep_pkgname}" \
 			"${MASTERMNT}/poudriere/rdeps/${dep_pkgname}/${pkgname}"
+		echo "${port} ${dep_port}" >> \
+			${MASTERMNT}/poudriere/port_deps.unsorted
 	done
 }
 
@@ -2446,6 +2448,10 @@ prepare_ports() {
 		parallel_run compute_deps ${port}
 	done
 	parallel_stop
+
+	sort -u "${MASTERMNT}/poudriere/port_deps.unsorted" > \
+		"${MASTERMNT}/poudriere/port_deps"
+	rm -f "${MASTERMNT}/poudriere/port_deps.unsorted"
 
 	bset status "sanity:"
 
