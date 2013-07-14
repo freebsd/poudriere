@@ -2018,13 +2018,13 @@ delete_old_pkg() {
 	mkdir -p "$(pkg_cache_dir "${pkg}")"
 
 	o=$(pkg_get_origin "${pkg}")
-	v="${pkg##*-}"
-	v=${v%.*}
 	if [ ! -d "${mnt}/usr/ports/${o}" ]; then
 		msg "${o} does not exist anymore. Deleting stale ${pkg##*/}"
 		delete_pkg "${pkg}"
 		return 0
 	fi
+	v="${pkg##*-}"
+	v=${v%.*}
 	v2=$(cache_get_pkgname ${o})
 	v2=${v2##*-}
 	if [ "$v" != "$v2" ]; then
