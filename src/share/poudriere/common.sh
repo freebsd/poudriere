@@ -2018,6 +2018,7 @@ delete_old_pkg() {
 		delete_pkg "${pkg}"
 		return 0
 	fi
+
 	v="${pkg##*-}"
 	v=${v%.*}
 	v2=$(cache_get_pkgname ${o})
