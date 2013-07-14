@@ -999,11 +999,13 @@ package_dir_exists_and_has_packages() {
 
 sanity_check_pkgs() {
 	local ret=0
-	local depfile
+	local depfile origin
 
 	package_dir_exists_and_has_packages || return 0
 
 	for pkg in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
+		origin=$(pkg_get_origin "${pkg}")
+		port_is_needed "${origin}" || continue
 		depfile="$(deps_file "${pkg}")"
 		while read dep; do
 			if [ ! -e "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${dep}.${PKG_EXT}" ]; then
@@ -2029,9 +2031,11 @@ delete_stale_pkg_cache() {
 }
 
 delete_old_pkg() {
+	[ $# -eq 2 ] || eargs pkgname origin
 	local pkg="$1"
+	local o="$2"
 	local mnt=$(my_path)
-	local o v v2 compiled_options current_options current_deps compiled_deps
+	local v v2 compiled_options current_options current_deps compiled_deps
 
 
 	o=$(pkg_get_origin "${pkg}")
@@ -2138,13 +2142,17 @@ delete_old_pkg() {
 }
 
 delete_old_pkgs() {
+	local origin
+
 	msg_verbose "Checking packages for incremental rebuild needed"
 
 	package_dir_exists_and_has_packages || return 0
 
 	parallel_start
 	for pkg in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
-		parallel_run delete_old_pkg "${pkg}"
+		origin=$(pkg_get_origin "${pkg}")
+		port_is_needed "${origin}" || continue
+		parallel_run delete_old_pkg "${pkg}" "${origin}"
 	done
 	parallel_stop
 }
@@ -2274,6 +2282,7 @@ listed_ports() {
 	fi
 }
 
+# Port was requested to be built
 port_is_listed() {
 	[ $# -eq 1 ] || eargs origin
 	local origin="$1"
@@ -2285,6 +2294,18 @@ port_is_listed() {
 	listed_ports | grep -q "^${origin}\$" && return 0
 
 	return 1
+}
+
+# Port was requested to be built, or is needed by a port requested to be built
+port_is_needed() {
+	[ $# -eq 1 ] || eargs origin
+	local origin="$1"
+
+	[ ${ALL:-0} -eq 1 ] && return 0
+
+	awk -vorigin="${origin}" '
+	    $1 == origin || $2 == origin { found=1; exit 0 }
+	    END { if (found != 1) exit 1 }' "${MASTERMNT}/poudriere/port_deps"
 }
 
 get_porttesting() {
