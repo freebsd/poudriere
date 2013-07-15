@@ -505,14 +505,7 @@ rollbackfs() {
 		mtree_mnt="${mnt}"
 	fi
 
-	mtree -X ${mtree_mnt}/poudriere/mtree.${name}exclude \
-	-xr -f ${mtree_mnt}/poudriere/mtree.${name} -p ${mnt} | \
-	while read l ; do
-		case "$l" in
-		*extra*Directory*) rm -rf ${mnt}/${l%% *} ;;
-		*changed|*missing) echo ${MASTERMNT}/${l% *} ;;
-		esac
-	done | pax -rw -p e -s ",${MASTERMNT},,g" ${mnt}
+	cpdup -i0 -X ${MASTERMNT}/usr/src -X ${MASTERMNT}/poudriere ${MASTERMNT} ${mnt}
 }
 
 umountfs() {
@@ -686,8 +679,7 @@ clonefs() {
 		# Mount /usr/src into target, no need for anything to write to it
 		mkdir -p ${to}/usr/src
 		mount -t nullfs -o ro ${from}/usr/src ${to}/usr/src
-		find -x ${from} | egrep -v "(${from}/usr/src|${from}/poudriere)" |
-			pax -drw -p e -s ",${from},," ${to}
+		cpdup -X ${from}/usr/src -X ${from}/poudriere ${from} ${to}
 	fi
 }
 
