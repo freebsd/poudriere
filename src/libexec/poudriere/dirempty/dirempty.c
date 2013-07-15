@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <err.h>
  
-bool
+static bool
 dir_empty(const char *path)
 {
 	struct dirent *ent;
