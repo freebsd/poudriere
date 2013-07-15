@@ -18,6 +18,7 @@ FILES=		bulk.sh \
 		queue.sh \
 		status.sh \
 		testport.sh
+FILESMODE=	${BINMODE}
 
 beforeinstall:
 	mkdir -p ${FILESDIR}
