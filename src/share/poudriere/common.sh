@@ -31,6 +31,7 @@ NS="poudriere"
 IPS="$(sysctl -n kern.features.inet 2>/dev/null || echo 0)$(sysctl -n kern.features.inet6 2>/dev/null || echo 0)"
 RELDATE=$(sysctl -n kern.osreldate)
 JAILED=$(sysctl -n security.jail.jailed)
+BLACKLIST=""
 
 # Return true if ran from bulk/testport, ie not daemon/status/jail
 was_a_bulk_run() {
@@ -870,6 +871,7 @@ jail_start() {
 	echo "DISTDIR=/distfiles" >> ${tomnt}/etc/make.conf
 
 	setup_makeconf ${tomnt}/etc/make.conf ${name} ${ptname} ${setname}
+	load_blacklist ${mnt} ${ptname} ${setname}
 
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${tomnt}/etc/"
 	msg "Starting jail ${MASTERNAME}"
@@ -895,6 +897,32 @@ jail_start() {
 		injail mtree -eu -f /etc/mtree/BSD.var.dist -p /var >/dev/null 2>&1 || :
 		injail mtree -eu -f /etc/mtree/BSD.usr.dist -p /usr >/dev/null 2>&1 || :
 	fi
+}
+
+load_blacklist() {
+	[ $# -lt 2 ] && dst_makeconf eargs name ptname setname
+	local name=$1
+	local ptname=$3
+	local setname=$4
+	local bl b bfile
+
+	bl="- ${setname} ${ptname} ${name} ${name}-${ptname}"
+	[ -n "${setname}" ] && bl="${bl} ${bl}-${setname} \
+		${name}-${ptname}-${setname}"
+	for b in ${bl} ; do
+		if [ "${b}" = "-" ]; then
+			unset b
+		fi
+		bfile=${b:+${b}-}blacklist
+		[ -f ${POUDRIERED}/${bfile} ] || continue
+		for port in `grep -h -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${POUDRIERED}/${bfile}`; do
+			case " ${BLACKLIST} " in
+			*\ ${port}\ *) continue;;
+			esac
+			msg "Blacklisting (from ${POUDRIERED}/${bfile}): ${port}"
+			BLACKLIST="${BLACKLIST} ${port}"
+		done
+	done
 }
 
 setup_makeconf() {
@@ -1738,11 +1766,14 @@ build_pkg() {
 	# Make sure we start with no network
 	jstart 0
 
+	case " ${BLACKLIST} " in
+	*\ ${port}\ *) ignore="Blacklisted" ;;
+	esac
 	# If this port is IGNORED, skip it
 	# This is checked here instead of when building the queue
 	# as the list may start big but become very small, so here
 	# is a less-common check
-	ignore="$(injail make -C ${portdir} -VIGNORE)"
+	: ${ignore:=$(injail make -C ${portdir} -VIGNORE)}
 
 	msg "Cleaning up wrkdir"
 	rm -rf ${mnt}/wrkdirs/*
