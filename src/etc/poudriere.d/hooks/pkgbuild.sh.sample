@@ -1,6 +1,7 @@
 #!/bin/sh
 # /usr/local/etc/poudriere.d/hooks/pkgbuild.sh
 
+EMAIL_FROM=an@address.com
 EMAIL_TO=some@address.com
 # The failure email will snip out the middle of a build log to help
 # save BW. A URL is provided to view the full log
@@ -30,7 +31,10 @@ if [ "$status" = "failed" ]; then
 		awk_script="NR < ${HEADER_LINES} || NR > $((${log_lines} - ${FOOTER_LINES} + ${HEADER_LINES})); NR == ${HEADER_LINES} { print \"<snip>\" }"
 	fi
 	
-	mail -s "${mail_subject}" ${EMAIL_TO} << EOF
+	sendmail -f ${EMAIL_FROM} ${EMAIL_TO} << EOF
+To: ${EMAIL_TO}
+Subject: ${mail_subject}
+
 Maintainer:     ${maintainer}
 Last committer: ${last_committer}@FreeBSD.org
 Ident:          ${ident#Makefile ident:      }
