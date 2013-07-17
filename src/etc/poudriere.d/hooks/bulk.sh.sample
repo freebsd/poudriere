@@ -1,0 +1,33 @@
+#!/bin/sh
+# /usr/local/etc/poudriere.d/hooks/bulk.sh
+
+EMAIL_FROM=an@address.com
+EMAIL_TO=another@address.com
+
+status="$1"
+
+if [ "$status" = "start" ]; then
+        mail_subject="[${MASTERNAME}] bulk started on `hostname`"
+
+        sendmail -f ${EMAIL_FROM} ${EMAIL_TO} << EOF
+To: ${EMAIL_TO}
+Subject: ${mail_subject}
+
+Build URL:      ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}
+EOF
+
+fi
+
+if [ "$status" = "done" ]; then
+        mail_subject="[RELEASE - ${MASTERNAME}] bulk done on `hostname`"
+
+        sendmail -f ${EMAIL_FROM} ${EMAIL_TO} << EOF
+To: ${EMAIL_TO}
+Subject: ${mail_subject}
+
+Build URL:      ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}
+EOF
+
+fi
+
+exit 0

@@ -223,6 +223,8 @@ if [ ${CLEAN} -eq 1 ]; then
 	echo " done"
 fi
 
+run_hook bulk start
+
 if [ $# -eq 0 ]; then
 	[ -n "${LISTPKGS}" -o ${ALL} -eq 1 ] || err 1 "No packages specified"
 	if [ ${ALL} -eq 0 ]; then
@@ -308,6 +310,7 @@ if [ $nbskipped -gt 0 ]; then
 	echo ${skipped}
 	echo ""
 fi
+run_hook bulk done
 msg "[${MASTERNAME}] $nbbuilt packages built, $nbfailed failures, $nbignored ignored, $nbskipped skipped"
 show_log_info
 
