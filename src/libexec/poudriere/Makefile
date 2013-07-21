@@ -3,4 +3,10 @@ SUBDIR=	make_index \
 	dirwatch \
 	cpdup
 
+PREFIX?=	/usr/local
+BINDIR=		${PREFIX}/libexec/poudriere
+
+beforeinstall:
+	mkdir -p ${DESTDIR}${BINDIR}
+
 .include <bsd.subdir.mk>
