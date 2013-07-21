@@ -1,5 +1,8 @@
 SUBDIR=	src \
-	conf \
-	completions/zsh \
+	conf
+
+.if !defined(NO_ZSH)
+SUBDIR+=	completions/zsh
+.endif
 
 .include <bsd.subdir.mk>
