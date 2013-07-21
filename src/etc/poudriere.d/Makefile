@@ -1,1 +1,3 @@
-.include <bsd.port.mk>
+SUBDIR=	hooks
+
+.include <bsd.subdir.mk>
