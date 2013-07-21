@@ -2489,6 +2489,7 @@ prepare_ports() {
 	bset buildname "${BUILDNAME}"
 
 	bset status "computingdeps:"
+	:> "${MASTERMNT}/poudriere/port_deps.unsorted"
 	parallel_start
 	for port in $(listed_ports); do
 		[ -d "${MASTERMNT}/usr/ports/${port}" ] ||
