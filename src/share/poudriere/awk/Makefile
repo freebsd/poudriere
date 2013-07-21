@@ -8,6 +8,6 @@ FILES=		dependency_loop.awk \
 FILESDIR=	${PREFIX}/share/poudriere/awk
 
 beforeinstall:
-	mkdir -p ${FILESDIR}
+	mkdir -p ${DESTDIR}${FILESDIR}
 
 .include <bsd.prog.mk>

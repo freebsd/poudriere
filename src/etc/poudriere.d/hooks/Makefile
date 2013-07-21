@@ -7,6 +7,6 @@ FILES=		pkgbuild.sh.sample \
 		bulk.sh.sample
 
 beforeinstall:
-	mkdir -p ${FILESDIR}
+	mkdir -p ${DESTDIR}${FILESDIR}
 
 .include <bsd.prog.mk>

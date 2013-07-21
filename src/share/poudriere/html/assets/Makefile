@@ -7,6 +7,6 @@ FILES=		jquery-1.9.1.min.js \
 		poudriere.js
 
 beforeinstall:
-	mkdir -p ${FILESDIR}
+	mkdir -p ${DESTDIR}${FILESDIR}
 
 .include <bsd.prog.mk>

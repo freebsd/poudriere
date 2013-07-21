@@ -5,6 +5,6 @@ FILESDIR=	${PREFIX}/share/poudriere/html
 FILES=		index.html
 
 beforeinstall:
-	mkdir -p ${FILESDIR}
+	mkdir -p ${DESTDIR}${FILESDIR}
 
 .include <bsd.prog.mk>

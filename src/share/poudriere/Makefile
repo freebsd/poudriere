@@ -21,6 +21,6 @@ FILES=		bulk.sh \
 FILESMODE=	${BINMODE}
 
 beforeinstall:
-	mkdir -p ${FILESDIR}
+	mkdir -p ${DESTDIR}${FILESDIR}
 
 .include <bsd.prog.mk>

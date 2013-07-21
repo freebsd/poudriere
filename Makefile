@@ -6,6 +6,6 @@ FILESDIR=	${PREFIX}/share/zsh/site-functions/
 FILES=		_poudriere
 
 beforeinstall:
-	mkdir -p ${FILESDIR}
+	mkdir -p ${DESTDIR}${FILESDIR}
 
 .include <bsd.prog.mk>
