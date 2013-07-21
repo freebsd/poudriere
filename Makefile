@@ -1,11 +1,5 @@
 SUBDIR=	src \
-	conf
+	conf \
+	completions/zsh \
 
-PREFIX?=	/usr/local
-FILESDIR=	${PREFIX}/share/zsh/site-functions/
-FILES=		_poudriere
-
-beforeinstall:
-	mkdir -p ${DESTDIR}${FILESDIR}
-
-.include <bsd.prog.mk>
+.include <bsd.subdir.mk>
