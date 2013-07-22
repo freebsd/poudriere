@@ -2,14 +2,6 @@
 var updateInterval = 8;
 var first_run = true;
 
-var show = {
-	success: false,
-	failed: false,
-	skipped: false,
-	ignored: false,
-	builders: true
-}
-
 /* Disabling jQuery caching */
 $.ajaxSetup({
 	cache: false
@@ -29,11 +21,6 @@ function minidraw(x, context, color, queued, variable) {
 	return (newx);
 }
 
-
-function toggle(status) {
-	show[status] = !show[status];
-	$('#' + status).toggle();
-}
 
 function update_fields() {
 	$.ajax({
@@ -101,30 +88,30 @@ function format_log(pkgname, errors, text) {
 }
 
 function format_status_row(status, row) {
-	var html = '';
+	var table_row = [];
 
 	if (status == "built") {
-		html += "<td>" + format_pkgname(row.pkgname) + "</td>";
-		html += "<td>" + format_origin(row.origin) + "</td>";
-		html += "<td>" + format_log(row.pkgname, false, "logfile") + "</td>";
+		table_row.push(format_pkgname(row.pkgname));
+		table_row.push(format_origin(row.origin));
+		table_row.push(format_log(row.pkgname, false, "logfile"));
 	} else if (status == "failed") {
-		html += "<td>" + format_pkgname(row.pkgname) + "</td>";
-		html += "<td>" + format_origin(row.origin) + "</td>";
-		html += "<td>" + row.phase + "</td>";
-		html += "<td>" + row.skipped_cnt + "</td>";
-		html += "<td>" + format_log(row.pkgname, true, row.errortype) + "</td>";
+		table_row.push(format_pkgname(row.pkgname));
+		table_row.push(format_origin(row.origin));
+		table_row.push(row.phase);
+		table_row.push(row.skipped_cnt);
+		table_row.push(format_log(row.pkgname, true, row.errortype));
 	} else if (status == "skipped") {
-		html += "<td>" + format_pkgname(row.pkgname) + "</td>";
-		html += "<td>" + format_origin(row.origin) + "</td>";
-		html += "<td>" + format_pkgname(row.depends) + "</td>";
+		table_row.push(format_pkgname(row.pkgname));
+		table_row.push(format_origin(row.origin));
+		table_row.push(format_pkgname(row.depends));
 	} else if (status == "ignored") {
-		html += "<td>" + format_pkgname(row.pkgname) + "</td>";
-		html += "<td>" + format_origin(row.origin) + "</td>";
-		html += "<td>" + row.skipped_cnt + "</td>";
-		html += "<td>" + row.reason + "</td>";
+		table_row.push(format_pkgname(row.pkgname));
+		table_row.push(format_origin(row.origin));
+		table_row.push(row.skipped_cnt);
+		table_row.push(row.reason);
 	}
 
-	return html;
+	return table_row;
 }
 
 function format_setname(setname) {
@@ -133,6 +120,7 @@ function format_setname(setname) {
 
 function process_data(data) {
 	var html, a, n;
+	var table_rows, table_row;
 
 	// Redirect from /latest/ to the actual build.
 	if (document.location.href.indexOf('/latest/') != -1) {
@@ -157,16 +145,20 @@ function process_data(data) {
 		$('#svn_url').hide();
 
 	/* Builder status */
-	html = '';
+	table_rows = [];
 	for (n = 0; n < data.status.length; n++) {
 		var builder = data.status[n];
-		html += "<tr><td>" + builder.id + "</td>";
+		table_row = [];
+		table_row.push(builder.id);
 
 		a = builder.status.split(":");
-		html += "<td>" + format_origin(a[1]) + "</td>";
-		html += "<td>" + a[0] + "</td></tr>";
+		table_row.push(format_origin(a[1]));
+		table_row.push(a[0]);
+		table_rows.push(table_row);
 	}
-	$('#builders_body').html(html);
+	// XXX This could be improved by updating cells in-place
+	$('#builders_table').dataTable().fnClearTable();
+	$('#builders_table').dataTable().fnAddData(table_rows);
 
 	/* Stats */
 	if (data.stats) {
@@ -189,25 +181,23 @@ function process_data(data) {
 	if (data.ports) {
 		$.each(data.ports, function(status, ports) {
 			if (data.ports[status] && data.ports[status].length > 0) {
-				html = '';
+				table_rows = [];
 				if ((n = $('#' + status + '_body').data('index')) === undefined) {
 					n = 0;
 				}
 				for (; n < data.ports[status].length; n++) {
 					var row = data.ports[status][n];
-					var even = ((n % 2) == 0) ? '1' : '0';
 					// Add in skipped counts for failures and ignores
 					if (status == "failed" || status == "ignored")
 						row.skipped_cnt =
 							(data.skipped && data.skipped[row.pkgname]) ?
 							data.skipped[row.pkgname] :
 							0;
-					html += '<tr class="' + (first_run ? '' : 'new ') +
-						'row' + even + ' "' +
-						' >' + format_status_row(status, row) + '</tr>';
+
+					table_rows.push(format_status_row(status, row));
 				}
-				$('#' + status + '_body').append(html);
 				$('#' + status + '_body').data('index', n);
+				$('#' + status + '_table').dataTable().fnAddData(table_rows);
 			}
 		});
 	}
@@ -224,17 +214,46 @@ function process_data(data) {
 }
 
 $(document).ready(function() {
+	var columnDefs, status, types, i;
+
 	// Enable LOADING overlay until the page is loaded
-	$('#loading_overlay').show();	
-	update_fields();
-	$("form input").each(function(){
-		var elem = $(this);
-		var type = elem.attr("type");
-		if (type == "checkbox" && elem.attr("id") != "builders_check") {
-			elem.prop("checked", "");
-		}
+	$('#loading_overlay').show();
+	$('#builders_table').dataTable({
+		"bFilter": false,
+		"bInfo": false,
+		"bPaginate": false,
 	});
 
+	columnDefs = {
+		"built": [
+			// Disable sorting/searching on 'logfile' link
+			{"bSortable": false, "aTargets": [2]},
+			{"bSearchable": false, "aTargets": [2]},
+		],
+		"failed": [
+			// Skipped count is numeric
+			{"sType": "numeric", "aTargets": [3]},
+		],
+		"skipped": [],
+		"ignored": [
+			// Skipped count is numeric
+			{"sType": "numeric", "aTargets": [2]},
+		],
+	};
+
+	types = ['built', 'failed', 'skipped', 'ignored'];
+	for (i in types) {
+		status = types[i];
+		$('#' + status + '_table').dataTable({
+			"aaSorting": [], // No initial sorting
+			"bProcessing": true, // Show processing icon
+			"bDeferRender": true, // Defer creating TR/TD until needed
+			"aoColumnDefs": columnDefs[status],
+			"bStateSave": true, // Enable cookie for keeping state
+		});
+	}
+
+	update_fields();
 });
 
 $(document).bind("keydown", function(e) {

@@ -2,7 +2,11 @@
 <html>
 	<head>
 		<title>Poudriere bulk results</title>
+
 		<script src="assets/jquery-1.9.1.min.js" type="text/javascript"></script>
+		<link href="assets/dataTables/css/jquery.dataTables.css" rel="stylesheet" type="text/css">
+		<script src="assets/dataTables/js/jquery.dataTables.min.js" type="text/javascript" charset="utf8"></script>
+
 		<script src="assets/poudriere.js" type="text/javascript"></script>
 		<link href="assets/poudriere.css" type="text/css" rel="stylesheet" />
 		<META http-equiv="Cache-Control" content="no-cache">
@@ -67,38 +71,6 @@
 									</tr>
 								</table>
 							</div>
-							<div id="toggles">
-								<form>
-									<table>
-										<th>Show</th>
-										<td>
-											<input type="checkbox" name="show_builders" value="builders" id="builders_check" checked=true
-											onclick=" toggle(this.value);" />
-											<label for="builders_check">Builders</label>
-										</td>
-										<td>
-											<input type="checkbox" name="show_check" value="built" id="built_check"
-											onclick="toggle(this.value);" />
-											<label for="built_check">Built</label>
-										</td>
-										<td>
-											<input type="checkbox" name="show_check" value="failed" id="failed_check"
-											onclick="toggle(this.value);"/>
-											<label for="failed_check">Failed</label>
-										</td>
-										<td>
-											<input type="checkbox" name="show_check" value="skipped" id="skipped_check"
-											onclick="toggle(this.value);" />
-											<label for="skipped_check">Skipped</label>
-										</td>
-										<td>
-											<input type="checkbox" name="show_check" value="ignored" id="ignored_check"
-											onclick="toggle(this.value);" />
-											<label for="ignored_check">Ignored</label>
-										</td>
-									</table>
-								</form>
-							</div><!-- #toggles -->
 						</td>
 					</tr>
 				</table>
@@ -108,7 +80,7 @@
 			<div id="left">
 				<div id="builders">
 					<h2>Builders</h2>
-					<table>
+					<table id="builders_table">
 						<thead>
 							<tr>
 								<th>Id</th>
@@ -122,9 +94,9 @@
 				<br class="clear" />
 			</div>
 			<div id="right">
-				<div id="built" class="anchor" style="display: none;">
+				<div id="built" class="anchor status">
 					<h2>Built ports</h2>
-					<table class="built">
+					<table class="built" id="built_table">
 						<thead>
 							<tr>
 								<th>Package</th>
@@ -135,9 +107,9 @@
 						<tbody id="built_body"></tbody>
 					</table>
 				</div>
-				<div id="failed" class="anchor" style="display: none;">
+				<div id="failed" class="anchor status">
 					<h2>Failed ports</h2>
-					<table class="failed">
+					<table class="failed" id="failed_table">
 						<thead>
 							<tr>
 								<th>Package</th>
@@ -150,9 +122,9 @@
 						<tbody id="failed_body"></tbody>
 					</table>
 				</div>
-				<div id="skipped" class="anchor" style="display: none;">
+				<div id="skipped" class="anchor status">
 					<h2>Skipped ports</h2>
-					<table class="skipped">
+					<table class="skipped" id="skipped_table">
 						<thead>
 							<tr>
 								<th>Package</th>
@@ -163,9 +135,9 @@
 						<tbody id="skipped_body"></tbody>
 					</table>
 				</div>
-				<div id="ignored" class="anchor" style="display: none;">
+				<div id="ignored" class="anchor status">
 					<h2>Ignored ports</h2>
-					<table class="ignored">
+					<table class="ignored" id="ignored_table">
 						<thead>
 							<tr>
 								<th>Package</th>

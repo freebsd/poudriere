@@ -80,12 +80,14 @@ th, td { border: 1px solid black; }
 }
 
 #left {
-	width: 25%;
+	width: 21%;
 	float: left;
 }
 #right {
 	float: left;
 	width: 75%;
+	margin-bottom: 25px;
+	margin-left: 10px;
 }
 #header_left { float: left; }
 #header_right {
@@ -130,6 +132,12 @@ h1 {
 	font-size: 16pt;
 	text-align: center;
 }
+h2 {
+	background-color: #eee;
+}
+.status {
+	padding-bottom: 20px;
+}
 br.clear {
 	clear: both;
 	height: 0;
@@ -139,8 +147,3 @@ br.clear {
 	float: left;
 }
 :target { color: #FF0000; }
-#toggles table,
-#toggles th,
-#toggles td {
-	border: none;
-}

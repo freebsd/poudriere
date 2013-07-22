@@ -2472,7 +2472,7 @@ prepare_ports() {
 	mkdir -p $(cache_dir)
 	ln -sfh ${BUILDNAME} ${log%/*}/latest
 	cp ${HTMLPREFIX}/index.html ${log}
-	cp ${HTMLPREFIX}/assets/* ${log}/assets
+	cp -R ${HTMLPREFIX}/assets/ ${log}/assets/
 
 	# Record the SVN URL@REV in the build
 	[ -d ${MASTERMNT}/usr/ports/.svn ] && bset svn_url $(
