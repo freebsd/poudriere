@@ -184,6 +184,7 @@ function process_data(data) {
 				table_rows = [];
 				if ((n = $('#' + status + '_body').data('index')) === undefined) {
 					n = 0;
+					$('#' + status).show();
 				}
 				for (; n < data.ports[status].length; n++) {
 					var row = data.ports[status][n];
@@ -244,6 +245,7 @@ $(document).ready(function() {
 	types = ['built', 'failed', 'skipped', 'ignored'];
 	for (i in types) {
 		status = types[i];
+		$('#' + status).hide();
 		$('#' + status + '_table').dataTable({
 			"aaSorting": [], // No initial sorting
 			"bProcessing": true, // Show processing icon
