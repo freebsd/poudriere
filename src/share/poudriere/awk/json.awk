@@ -113,6 +113,11 @@ BEGIN {
   type = file_split[3]
   group_id = file_split[4]
 
+  # Skip port list and builder list in mini
+  if (mini && (type == "ports" || type == "status")) {
+    next
+  }
+
   if (type == "status" && !group_id)
     group_id = "main"
   if (type ~ /^stats/) {
@@ -150,6 +155,8 @@ BEGIN {
 END {
   type=""
   end_type()
-  display_skipped()
+  if (!mini) {
+    display_skipped()
+  }
   print "}\n"
 }

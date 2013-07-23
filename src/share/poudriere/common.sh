@@ -1639,6 +1639,14 @@ build_json() {
 		sed  -e 's/,\([]}]\)/\1/g' \
 		> ${log}/.data.json.tmp
 	mv -f ${log}/.data.json.tmp ${log}/.data.json
+
+	# Build mini json for stats
+	awk -v mini=yes \
+		-f ${AWKPREFIX}/json.awk ${log}/.poudriere.* | \
+		awk 'ORS=""; {print}' | \
+		sed  -e 's/,\([]}]\)/\1/g' \
+		> ${log}/.data.mini.json.tmp
+	mv -f ${log}/.data.mini.json.tmp ${log}/.data.mini.json
 }
 
 stop_html_json() {
@@ -1649,7 +1657,7 @@ stop_html_json() {
 		unset JSON_PID
 	fi
 	build_json 2>/dev/null || :
-	rm -f ${log}/.data.json.tmp 2>/dev/null || :
+	rm -f ${log}/.data.json.tmp ${log}/.data.mini.json 2>/dev/null || :
 }
 
 # Build ports in parallel
@@ -2536,6 +2544,7 @@ prepare_ports() {
 		bset stats_ignored 0
 		bset stats_skipped 0
 		:> ${log}/.data.json
+		:> ${log}/.data.mini.json
 		:> ${log}/.poudriere.ports.built
 		:> ${log}/.poudriere.ports.failed
 		:> ${log}/.poudriere.ports.ignored
