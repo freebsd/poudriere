@@ -250,6 +250,7 @@ $(document).ready(function() {
 			"bDeferRender": true, // Defer creating TR/TD until needed
 			"aoColumnDefs": columnDefs[status],
 			"bStateSave": true, // Enable cookie for keeping state
+			"aLengthMenu":[5,10,25,50,100],
 		});
 	}
 
