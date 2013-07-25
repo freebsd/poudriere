@@ -24,6 +24,8 @@ elif bzgrep -qE '(configure: error:|Script.*configure.*failed unexpectedly|scrip
   else
     reason="configure_error"
   fi
+elif bzgrep -q "invalid DSO for symbol" $1; then
+  reason="missing LDFLAGS"
 elif bzgrep -q "Couldn't fetch it - please try" $1; then
   reason="fetch"
 elif bzgrep -q "Error: shared library \".*\" does not exist" $1; then
