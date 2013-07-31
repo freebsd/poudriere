@@ -28,7 +28,7 @@ if [ "$status" = "failed" ]; then
 		awk_script='{print $0}'
 	else
 		# Trim out the middle of the log
-		awk_script="NR < ${HEADER_LINES} || NR > $((${log_lines} - ${FOOTER_LINES} + ${HEADER_LINES})); NR == ${HEADER_LINES} { print \"<snip>\" }"
+		awk_script="NR < ${HEADER_LINES} || NR > $((${log_lines} - ${FOOTER_LINES})); NR == ${HEADER_LINES} { print \"<snip>\" }"
 	fi
 	
 	sendmail -f ${EMAIL_FROM} ${EMAIL_TO} << EOF
