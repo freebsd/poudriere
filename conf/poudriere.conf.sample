@@ -122,9 +122,12 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Disable linux support
 # NOLINUX=yes
 
+# By default poudriere sets FORCE_PACKAGE
+# To disable it (useful when building public packages):
+# NO_FORCE_PACKAGE=yes
 
-# by default poudriere set PACKAGE_BUILDING
-# to disable it:
+# By default poudriere sets PACKAGE_BUILDING
+# To disable it:
 # NO_PACKAGE_BUILDING=yes
 
 # If you are using a proxy define it here:

@@ -844,7 +844,7 @@ jail_start() {
 	jail_runs ${MASTERNAME} && err 1 "jail already running: ${MASTERNAME}"
 	export HOME=/root
 	export USER=root
-	export FORCE_PACKAGE=yes
+	[ -z "${NO_FORCE_PACKAGE}" ] && export FORCE_PACKAGE=yes
 	[ -z "${NO_PACKAGE_BUILDING}" ] && export PACKAGE_BUILDING=yes
 
 	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
