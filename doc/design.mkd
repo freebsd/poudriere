@@ -1,15 +1,15 @@
 # Design of poudriere
 
-Poudriere is a port builder tool, it has 2 main frontend:
+Poudriere is a port builder tool, it has 2 main frontends:
 
   * testport
   * bulk
 
 Both are designed to build packages in a clean room, and are able to handle both the legacy pkg\_install and the new pkgng.
 
-The code is written 100% in shell script has very few dependencies out of base.
+The code is written 100% in shell script and has very few dependencies out of base.
 
-List of dependencies that should be installed on the box runing poudriere:
+List of dependencies that should be installed on the box running poudriere:
 
  | Port | Optional | Description |
  |------|----------|-------------|
@@ -18,7 +18,7 @@ List of dependencies that should be installed on the box runing poudriere:
  | ports-mgmt/portlint | yes | Used for testport or bulk -t to run portlint prior to building the packages |
  | ports-mgmt/pkg | yes | Used for sanity checking a pkgng repository (incremental building) |
 
-Poudriere is composed ot jails and ports tree, it associate them to build packages.
+Poudriere is composed of jails and ports tree, it associates them to build packages.
 
 # Data
 
@@ -40,16 +40,16 @@ With the following files in the directory
 
 ### Creating a jail
 
-Creating a jail can be done using different method: ftp, allbsd, gjb, svn, svn+http, svn+ssh, svn+https, svn+file, csup
+Creating a jail can be done using different methods: ftp, allbsd, gjb, svn, svn+http, svn+ssh, svn+https, svn+file, csup
 
-What ever the method used the principle is the same:
-getting the binaries and the sources for a given version/architecture of FreeBSD, and prepare a minimal setup so that it result in a usable jail.
+Whatever method is used the principle is the same:
+getting the binaries and the sources for a given version/architecture of FreeBSD, and prepare a minimal setup so that it results in a usable jail.
 
-The jails will never be touched again except when specifically request for an update via "poudriere jail -u".
+The jails will never be touched again except when specifically requested for an update via "poudriere jail -u".
 
-The jails created will then be considered as a reference of a clean vanilla jail"
+The jails created will then be considered as a reference of a clean vanilla jail
 
-the minimal setup consist in doing the following:
+the minimal setup consists in doing the following:
 
 Modify the login.conf to add the following environment variables:
 
@@ -57,7 +57,7 @@ Modify the login.conf to add the following environment variables:
   * UNAME\_v
   * OSVERSION
 
-which will be set what is excepted on the jail in order to make sure the builds correctly discovers the release, version and OSVERSION of the jail they are building on.
+which will set what is excepted on the jail in order to make sure the builds correctly discovers the release, version and OSVERSION of the jail they are building on.
 
 Modify the make.conf to add the following variables:
 
@@ -96,17 +96,17 @@ For version upper than 9+ jails:
 
 #### method gjb/allbsd
 
-This method is the same has ftp except that it fetches the sets out of the gjb's snapshot hsoting service or the allbsd one.
+This method is the same has ftp except that it fetches the sets out of the gjb's snapshot hosting service or the allbsd one.
 
 #### method svn (+\*)
 
-This method will build the jails from sources fetching them using svn (all svn possible method are supported)
+This method will build the jails from sources fetching them using svn (all svn possible methods are supported)
 
 Only world is built, and the following features are supported: ccache and parallel (make -j) building.
 
 The built jail can be tuned using src.conf:
 if a src.con files exists in /usr/local/etc/poudriere.d/ on the host, it will used as the src.conf for the jail.
-if a \<jailname\>-src.conf file exists in /usr/local/etc/poudriere.d/ on the host, it will be appended the src.conf used to built the jail.
+if a \<jailname\>-src.conf file exists in /usr/local/etc/poudriere.d/ on the host, it will be appended to the src.conf used to built the jail.
 
 The rest is just "normal" building of world:
 
@@ -117,14 +117,14 @@ The rest is just "normal" building of world:
 
 #### method csup
 
-This method is considered as deprecated and will be removed soon, it works the same as the svn method except the sources are fetched using csup.
+This method is considered as deprecated and will be removed soon, it works the same way as the svn method except the sources are fetched using csup.
 
 ### Updating/Upgrading jails
 
 #### method ftp
 
 The update of the jail is done by calling freebsd-update from inside the jail.
-A parameter can be passed specify a release the user wants to jump to, in that case freebsd-update will be called to perform an upgrade to the said version.
+A parameter can be passed to specify a release the user wants to jump to, in that case freebsd-update will be called to perform an upgrade to the said version.
 
 #### method gjb/allbsd
 
@@ -139,7 +139,7 @@ Only updates on the same branch are supported, sources will be updated, the worl
 
 ## Ports trees
 
-The ports tree management can be done using the following method:
+The ports tree management can be done using the following methods:
 
   * portsnap
   * svn+\*
@@ -164,7 +164,7 @@ if no name is specified then the "default" one is used.
 #### method portsnap
 
 This is the default method as it requires no external dependencies.
-A directory which will contain the ports tree is created, in this directory a .snap hidden directory is created to received all the portsnap temporary files.
+A directory which will contain the ports tree is created, in this directory a .snap hidden directory is created to receive all the portsnap temporary files.
 
 Creation is done using the following command:
 
@@ -174,7 +174,7 @@ PTMNT being the path to the ports tree that has been created
 
 #### method svn
 
-As for the jails, the svn method can support the folloing submethod:
+As for the jails, the svn method can support the following submethods:
 
   * svn
   * svn+http
@@ -186,7 +186,7 @@ the following variable can be tweak in poudriere.conf: SVN\_HOST which by defaul
 
 #### method git
 
-Same as the two previous method except that the ports tree will be fetched out of the git
+Same as the two previous methods except that the ports tree will be fetched out of the git
 
 The following variable can be tweak in poudriere.conf: GIT\_URL which by default is: git://github.com/freebsd/freebsd-ports.git
 
@@ -218,7 +218,7 @@ or if run from crontab
 
 ## General principles
 
-What ever the build that are run the principle are the same.
+Whatever build is run, the principle is the same.
 
 First a reference jail is created by copying the original jail (chosen via the -j option) into the reference destination.
 
@@ -261,7 +261,7 @@ Then the following filesystems are mounted in it:
   * the packages dir is nullfs mounted in /packages in readonly
   * the distfiles dir is nullfs mounted in /distfiles in readonly
 
-The option directory that can be found under /usr/local/etc/poudriere.d will be mounted if they exists respecting that order:
+The option directories that can be found under /usr/local/etc/poudriere.d will be mounted if they exist respecting that order:
 
   1. /usr/local/etc/poudriere.d/\<jailname\>-\<portstreename\>-\<setname\>-options
   2. /usr/local/etc/poudriere.d/\<jailname\>-\<portstreename\>-options
@@ -284,7 +284,7 @@ The content of the following is appended is they exists:
   3. /usr/local/etc/poudriere.d/\<jailname\>-\<setname\>-make.conf
   4. /usr/local/etc/poudriere.d/\<jailname\>-\<portstreename\>-\<setname\>-make.conf
 
-To finish the file correcponding to the variable RESOLV\_CONF in poudriere.conf is copied inside the jail as /etc/resolv.conf
+To finish the file corresponding to the variable RESOLV\_CONF in poudriere.conf is copied inside the jail as /etc/resolv.conf
 
 The jail is now ready to be used
 
@@ -347,13 +347,13 @@ In parallel (one process per core) each package is checked and deleted if:
   2. the version in ports is newer than the version of the package
   3. if CHECK\_CHANGED\_OPTIONS is set, the package is delete is the options activated in the ports tree for the given port are different from the one for the built package
 
-After that poudriere will process all existing package and will delete each one for which a dependency is missing and loop on this process until, no package is deleted.
+After that poudriere will process all existing packages and will delete each one for which a dependency is missing and loop on this process until, no package is deleted.
 
 To finish with the sanity check, all the dead symlinks are deleted.
 
-The dependency calculation process ends by looping over all the entry in /poudriere/deps each time it figures out the package already exists in the package directory then the entry is removed from the queue.
+The dependency calculation process ends by looping over all the entries in /poudriere/deps, and each time it figures out the package already exists in the package directory then the entry is removed from the queue.
 
-All the port with no dependency to be built (empty directories in /poudriere/deps) are now moved to /poudriere/pool/unbalanced as they are ready to be built straight away.
+All the ports with no dependency to be built (empty directories in /poudriere/deps) are now moved to /poudriere/pool/unbalanced as they are ready to be built straight away.
 
 ## Bulks
 
@@ -363,7 +363,7 @@ On other filesystems a mtree file tracking all files of the jail is created.
 
 The build is now started in parallel: one building jail per core will be created.
 
-The reference jail is cloned using zfs clone or duplicated via pax. into new jails.
+The reference jail is cloned using zfs clone or duplicated via pax(1) into new jails.
 
 For each jail the following filesystems are mounted in it:
 

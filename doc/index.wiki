@@ -29,7 +29,7 @@ in order to make the builds in a VM resident filesystem.
 
 Just type "make install" at the top-level directory.
 
-<h1>What do I have to configure before starting use it?</h1>
+<h1>What do I need to configure before being able to start using it?</h1>
 
  <h2>Create a mandatory configuration file</h2>
 
