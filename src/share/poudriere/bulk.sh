@@ -31,6 +31,7 @@ usage() {
 poudriere bulk [options] [-f file|cat/port ...]
 
 Parameters:
+    -a          -- Build the whole ports tree
     -f file     -- Get the list of ports to build from a file
     [ports...]  -- List of ports to build on the command line
 
@@ -55,7 +56,6 @@ Options:
                    debug output
     -w          -- Save WRKDIR on failed builds
     -z set      -- Specify which SET to use
-    -a          -- Build the whole ports tree
 EOF
 	exit 1
 }
