@@ -76,6 +76,8 @@ while getopts "cCj:f:p:nrsz:" FLAG; do
 			BULK_LIST=${OPTARG}
 			;;
 		p)
+			porttree_exists ${OPTARG} ||
+			    err 2 "No such ports tree ${OPTARG}"
 			PTNAME=${OPTARG}
 			;;
 		n)
@@ -100,8 +102,6 @@ while getopts "cCj:f:p:nrsz:" FLAG; do
 done
 
 shift $((OPTIND-1))
-
-porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 
 export PORTSDIR=`pget ${PTNAME} mnt`
 [ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"

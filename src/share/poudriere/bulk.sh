@@ -180,6 +180,8 @@ while getopts "B:f:j:J:CcNp:RFtrTsvwz:a" FLAG; do
 			BUILD_REPO=0
 			;;
 		p)
+			porttree_exists ${OPTARG} ||
+			    err 2 "No such ports tree ${OPTARG}"
 			PTNAME=${OPTARG}
 			;;
 		R)
@@ -210,7 +212,6 @@ done
 shift $((OPTIND-1))
 
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
-porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref

@@ -87,6 +87,8 @@ while getopts "o:cnj:J:iIp:svz:" FLAG; do
 			INTERACTIVE_MODE=2
 			;;
 		p)
+			porttree_exists ${OPTARG} ||
+			    err 2 "No such ports tree ${OPTARG}"
 			PTNAME=${OPTARG}
 			;;
 		s)
@@ -108,7 +110,6 @@ done
 [ -z ${ORIGIN} ] && usage
 
 [ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
-porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
