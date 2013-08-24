@@ -32,7 +32,8 @@ unset TERM
 POUDRIERE_VERSION="3.1-pre"
 
 usage() {
-	echo "Usage: poudriere [-e etcdir] command [options]
+	cat << EOF
+Usage: poudriere [-e etcdir] command [options]
 
 Commands:
     bulk        -- generate packages for given ports
@@ -45,7 +46,8 @@ Commands:
     queue       -- queue a build request
     status      -- get status of builds
     testport    -- launch a test on a given port
-    version     -- show poudriere version"
+    version     -- show poudriere version
+EOF
 	exit 1
 }
 

@@ -26,14 +26,15 @@
 # SUCH DAMAGE.
 
 usage() {
-	echo "poudriere daemon [options]
+	cat << EOF
+poudriere daemon [options]
 
 Options:
     -n        -- No daemonise
     -p        -- pidfile
-    -k        -- kill the running daemon"
-
-    exit 1
+    -k        -- kill the running daemon
+EOF
+	exit 1
 }
 
 start_queue_reader() {

@@ -28,7 +28,8 @@
 set -e
 
 usage() {
-	echo "poudriere testport [parameters] [options]
+	cat << EOF
+poudriere testport [parameters] [options]
 
 Parameters:
     -o origin   -- Specify an origin in the portstree
@@ -43,7 +44,8 @@ Options:
     -p tree     -- Specify the path to the portstree
     -s          -- Skip sanity checks
     -v          -- Be verbose; show more information. Use twice to enable debug output
-    -z set      -- Specify which SET to use"
+    -z set      -- Specify which SET to use
+EOF
 	exit 1
 }
 

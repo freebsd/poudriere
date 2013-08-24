@@ -27,7 +27,8 @@
 set -e
 
 usage() {
-	echo "poudriere bulk [options] [-f file|cat/port ...]
+	cat << EOF
+poudriere bulk [options] [-f file|cat/port ...]
 
 Parameters:
     -f file     -- Get the list of ports to build from a file
@@ -50,8 +51,8 @@ Options:
     -v          -- Be verbose; show more information. Use twice to enable debug output
     -w          -- Save WRKDIR on failed builds
     -z set      -- Specify which SET to use
-    -a          -- Build the whole ports tree"
-
+    -a          -- Build the whole ports tree
+EOF
 	exit 1
 }
 

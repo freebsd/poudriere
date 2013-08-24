@@ -27,7 +27,8 @@
 # SUCH DAMAGE.
 
 usage() {
-	echo "poudriere options [options] [-f file|cat/port ...]
+	cat << EOF
+poudriere options [options] [-f file|cat/port ...]
 
 Parameters:
     -f file     -- Give the list of ports to set options
@@ -41,8 +42,8 @@ Options:
     -n          -- Don't configure/show/remove options of dependencies
     -r          -- Remove port options instead of configuring them
     -s          -- Show port options instead of configuring them
-    -z set      -- Specify which SET to use"
-
+    -z set      -- Specify which SET to use
+EOF
 	exit 1
 }
 

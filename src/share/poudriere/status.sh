@@ -25,13 +25,14 @@
 # SUCH DAMAGE.
 
 usage() {
-	echo "poudriere status [options]
+	cat << EOF
+poudriere status [options]
 
 Options:
     -j name     -- Run on the given jail
     -p tree     -- Specify on which ports tree the configuration will be done
-    -z set      -- Specify which SET to use"
-
+    -z set      -- Specify which SET to use
+EOF
 	exit 1
 }
 

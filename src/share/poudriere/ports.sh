@@ -31,7 +31,8 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 
 # test if there is any args
 usage() {
-	echo "poudriere ports [parameters] [options]
+	cat << EOF
+poudriere ports [parameters] [options]
 
 Parameters:
     -c            -- create a portstree
@@ -46,17 +47,16 @@ Options:
                      filesystems and directories, but do not populate
                      them.
     -p name       -- specifies the name of the portstree we workon . If not
-                     specified, work on a portstree called \"default\".
-    -f fs         -- FS name (tank/jails/myjail) if fs is \"none\" then do not
+                     specified, work on a portstree called "default".
+    -f fs         -- FS name (tank/jails/myjail) if fs is "none" then do not
                      create on zfs
     -M mountpoint -- mountpoint
     -m method     -- when used with -c, specify the method used to update the
 		     tree by default it is portsnap, possible usage are
-		     \"portsnap\", \"svn\", \"svn+http\", \"svn+https\",
-		     \"svn+file\", \"svn+ssh\", \"git\"
+		     "portsnap", "svn", "svn+http", "svn+https",
+		     "svn+file", "svn+ssh", "git"
     -B branch     -- Which branch to use for SVN method (default: head)
-"
-
+EOF
 	exit 1
 }
 

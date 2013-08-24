@@ -26,7 +26,8 @@
 # SUCH DAMAGE.
 
 usage() {
-	echo "poudriere jail [parameters] [options]
+	cat << EOF
+poudriere jail [parameters] [options]
 
 Parameters:
     -c            -- create a jail
@@ -43,25 +44,25 @@ Options:
     -v version    -- Specifies which version of FreeBSD we want in jail
     -a arch       -- Indicates architecture of the jail: i386 or amd64
                      (Default: same as host)
-    -f fs         -- FS name (tank/jails/myjail) if fs is \"none\" then do not
+    -f fs         -- FS name (tank/jails/myjail) if fs is "none" then do not
                      create on zfs
     -M mountpoint -- mountpoint
     -m method     -- When used with -c, overrides the method to use by default.
-                     Could also be \"http\", \"svn\", \"svn+http\",
-                     \"svn+https\", \"svn+file\", \"svn+ssh\", \"csup\".
+                     Could also be "http", "svn", "svn+http",
+                     "svn+https", "svn+file", "svn+ssh", "csup".
                      Please note that with svn and csup the world will be
                      built. Note that building from sources can use src.conf
                      and jail-src.conf from /usr/local/etc/poudriere.d/.
-                     Other possible method are: \"allbsd\" retrieve a
-                     snapshot from allbsd.org's website or \"ftp-archive\"
-                     for old releases that're no longer available on \"ftp\".
+                     Other possible method are: "allbsd" retrieve a
+                     snapshot from allbsd.org's website or "ftp-archive"
+                     for old releases that're no longer available on "ftp".
     -P patch      -- Specify a patch file to apply to the source before building.
     -t version    -- version to upgrade to
 
 Options for -s and -k:
     -p tree       -- Specify which ports tree the jail to start/stop with
     -z set        -- Specify which SET the jail to start/stop with
-"
+EOF
 	exit 1
 }
 
