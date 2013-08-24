@@ -32,9 +32,11 @@ poudriere distclean [options]
 
 Options:
     -J n        -- Run n jobs in parallel
-    -p tree     -- Specify which ports tree to use for comparing to the distfiles
-    -n          -- Don't actually remove anything, just show what would be removed
-    -v          -- Be verbose; show more information. Use twice to enable debug output
+    -p tree     -- Specify which ports tree to use for comparing to distfiles
+    -n          -- Don't actually remove anything, just show what would be
+                   removed
+    -v          -- Be verbose; show more information. Use twice to enable
+                   debug output
     -y          -- Assume yes when deleting and do not confirm
 EOF
 	exit 1

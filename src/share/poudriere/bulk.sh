@@ -35,9 +35,11 @@ Parameters:
     [ports...]  -- List of ports to build on the command line
 
 Options:
-    -B name     -- What buildname to use (must be unique, defaults to YYYY-MM-DD_HH:MM:SS)
+    -B name     -- What buildname to use (must be unique, defaults to
+                   YYYY-MM-DD_HH:MM:SS)
     -c          -- Clean all the previously built binary packages
-    -C          -- Clean only the packages listed on the command line or -f file
+    -C          -- Clean only the packages listed on the command line or
+                   -f file
     -R          -- Clean RESTRICTED packages after building
     -t          -- Test the specified ports for leftovers
     -r          -- Resursively test all dependencies as well
@@ -46,9 +48,11 @@ Options:
     -s          -- Skip sanity checks
     -J n        -- Run n jobs in parallel (Default: to 8)
     -j name     -- Run only on the given jail
-    -N          -- Do not build package repository or INDEX when build completed
+    -N          -- Do not build package repository or INDEX when build
+                   completed
     -p tree     -- Specify on which ports tree the bulk build will be done
-    -v          -- Be verbose; show more information. Use twice to enable debug output
+    -v          -- Be verbose; show more information. Use twice to enable
+                   debug output
     -w          -- Save WRKDIR on failed builds
     -z set      -- Specify which SET to use
     -a          -- Build the whole ports tree
