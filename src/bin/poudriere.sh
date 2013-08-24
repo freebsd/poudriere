@@ -96,11 +96,13 @@ case "${CMD}" in
 		CMD_ENV="${CMD_ENV} TERM=${SAVED_TERM}"
 esac
 
-# At this point, the command should be an actual script to execute.
-execpath="${POUDRIEREPREFIX}/${CMD}.sh"
-if [ ! -x "${execpath}" ]; then
-	echo "Unknown command '${CMD}'"
-	usage
-fi
+case "${CMD}" in
+	bulk|distclean|daemon|jail|ports|options|queue|status|testport)
+		;;
+	*)
+		echo "Unknown command '${CMD}'"
+		usage
+		;;
+esac
 
-exec env -i ${CMD_ENV} /bin/sh ${SETX} ${execpath} $@
+exec env -i ${CMD_ENV} /bin/sh ${SETX} "${POUDRIEREPREFIX}/${CMD}.sh" $@
