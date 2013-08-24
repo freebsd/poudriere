@@ -209,8 +209,6 @@ done
 
 shift $((OPTIND-1))
 
-export SKIPSANITY
-
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
 porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 

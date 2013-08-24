@@ -107,8 +107,6 @@ done
 
 [ -z ${ORIGIN} ] && usage
 
-export SKIPSANITY
-
 [ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
 porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 
