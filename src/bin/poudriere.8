@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd August 24, 2013
+.Dd August 26, 2013
 .Dt POUDRIERE 8
 .Os FreeBSD
 .Sh NAME
@@ -126,8 +126,6 @@ See
 .Sx CUSTOMISATION
 to know how to build binary packages with options that differs from
 defaults.
-.Pp
-The list of ports can also be provided by command line arguments.
 .Pp
 Here are the options associated with the
 .Cm bulk
@@ -416,7 +414,8 @@ Absolute path to a file which contains the list of ports to configure.
 Ports must be specified in the form
 .Ar category/port
 and shell-style comments are allowed.
-.It The list of ports can also be provided by command line arguments.
+.It cat/port cat/port2 ...
+A list of ports can be specified directly.
 .El
 .Pp
 This command accepts the following options:
