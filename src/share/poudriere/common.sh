@@ -1984,6 +1984,15 @@ pkg_get_options() {
 	cat "${optionsfile}"
 }
 
+ensure_pkg_installed() {
+	[ ${PKGNG} -eq 1 ] || return 0
+	[ -x ${MASTERMNT}/poudriere/pkg-static ] && return 0
+	[ -e ${MASTERMNT}/packages/Latest/pkg.txz ] || return 1 #pkg missing
+	injail tar xf /packages/Latest/pkg.txz -C / \
+		-s ",/.*/,poudriere/,g" "*/pkg-static"
+	return 0
+}
+
 pkg_cache_data() {
 	[ $# -ne 2 ] && eargs pkg origin
 	# Ignore errors in here
@@ -1992,12 +2001,8 @@ pkg_cache_data() {
 	local origin=$2
 	local cachedir="$(pkg_cache_dir "${pkg}")"
 	local originfile="${cachedir}/origin"
-	local mnt=$(my_path)
 
-	if [ ${PKGNG} -eq 1 -a ! -x ${mnt}/poudriere/pkg-static ]; then
-		injail tar xf /packages/Latest/pkg.txz -C / \
-			-s ",/.*/,poudriere/,g" "*/pkg-static"
-	fi
+	ensure_pkg_installed
 	mkdir -p "$(pkg_cache_dir "${pkg}")"
 	pkg_get_options "${pkg}" > /dev/null
 	pkg_get_origin "${pkg}" ${origin} > /dev/null
@@ -2551,10 +2556,7 @@ prepare_ports() {
 		:> ${log}/.poudriere.ports.skipped
 	fi
 
-	if [ ${PKGNG} -eq 1 -a -e ${MASTERMNT}/packages/Latest/pkg.txz ]; then
-		injail tar xf /packages/Latest/pkg.txz -C / \
-			-s ",/.*/,poudriere/,g" "*/pkg-static"
-	elif [ ${PKGNG} -eq 1 -a ${SKIPSANITY} -eq 0 ]; then
+	if ! ensure_pkg_installed && [ ${SKIPSANITY} -eq 0 ]; then
 		msg "pkg package missing, skipping sanity"
 		SKIPSANITY=1
 	fi
