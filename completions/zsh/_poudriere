@@ -81,6 +81,20 @@ _distclean=(
 	'-y[assume yes and do not confirm before deleting]::'
 )
 
+_pkgclean=(
+	'-a[Expect all ports in the tree]'
+	'-f[Give the list of ports to expect]:name of file:_files'
+	'-n[dry run, only show what would be done]::'
+	'-N[Do not build repository or INDEX when done cleaning]'
+	'-j[The jail to use for the packages to clean]::jail name:_poudriere_jail'
+	'-p[The porttree to use for the packages to clean]::tree:_poudriere_pt'
+	'-J[Specify the number of jobs you want to run in parallel]::'
+	'-R[Remove RESTRICTED packages]'
+	'-v[Be verbose; show more information. Specify twice to enable debug output.]'
+	'-y[assume yes and do not confirm before deleting]::'
+	'-z[The SET to use for the packages to clean]::'
+)
+
 _testport=(
 	'(-o)-d[specify on which port we work]::path:_files -/'
 	'-c[run make config for the given port]::'
@@ -122,6 +136,7 @@ _poudriere () {
 		'distclean:clean old distfiles'
 		'options:allows to configure the options for a given port'
 		'ports:create, update or delete the portstrees used by poudriere'
+		'pkgclean:clean old and unwanted packages'
 		'queue:queue a build request (through daemon)'
 		'testport:launch a test on a given port'
 		'version:show poudriere version'
@@ -146,6 +161,9 @@ _poudriere () {
 			;;
 			ports)
 			_arguments : $_ports "::" && return
+			;;
+			pkgclean)
+			_arguments : $_pkgclean "::" && return
 			;;
 			testport)
 			_arguments : $_testport "::" && return

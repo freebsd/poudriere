@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd August 26, 2013
+.Dd August 27, 2013
 .Dt POUDRIERE 8
 .Os FreeBSD
 .Sh NAME
@@ -88,6 +88,8 @@ test on a given port (useful before submitting/committing a port).
 This command allows to configure the options for a given port
 .It distclean
 This command will cleanup old distfiles
+.It pkgclean
+This command will cleanup old and unwanted packages
 .It queue
 This command allows a non-root user to queue
 .Nm
@@ -406,6 +408,55 @@ Assume yes, do not confirm and just delete the files.
 .It Fl v
 This will show more information during the build.
 Specify twice to enable debug output.
+.El
+.Pp
+.Ss pkgclean
+This command is used to delete all packages not specified to build.
+.Pp
+These subcommands are mutually exclusive.
+.Bl -tag -width "-f conffile"
+.It Fl a
+Keep all ports in the tree.
+.It Fl f Ar file
+Absolute path to a file which contains the list of ports to keep.
+Ports must be specified in the form
+.Ar category/port
+and shell-style comments are allowed.
+Multiple
+.Fl f Ar file
+arguments may be specified at once.
+.It cat/port cat/port2 ...
+A list of ports can be specified directly.
+.El
+.Pp
+Here are the options associated with the
+.Cm pkgclean
+command.
+This command accepts the following options:
+.Bl -tag -width "-f conffile"
+.It Fl j Ar name
+Jail to use for the packages to inspect.
+.It Fl J Ar number
+This argument specifies how many
+.Ar number
+jobs will run in parallel for gathering package information.
+.It Fl n
+Dry run, do not actually delete anything.
+.It Fl N
+Do not build package repository or INDEX when done cleaning.
+.It Fl p Ar tree
+Specifies which ports
+.Ar tree
+to use.
+.It Fl R
+Also clean restricted packages.
+.It Fl y
+Assume yes, do not confirm and just delete the files.
+.It Fl v
+This will show more information during the build.
+Specify twice to enable debug output.
+.It Fl z Ar set
+SET to use for the packages to inspect.
 .El
 .Pp
 .Ss options

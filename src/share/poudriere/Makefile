@@ -14,6 +14,7 @@ FILES=		bulk.sh \
 		jail.sh \
 		options.sh \
 		ports.sh \
+		pkgclean.sh \
 		processonelog.sh \
 		queue.sh \
 		status.sh \

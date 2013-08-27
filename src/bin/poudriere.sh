@@ -42,6 +42,7 @@ Commands:
     help        -- show usage
     jail        -- manage the jails used by poudriere
     ports       -- create, update or delete the portstrees used by poudriere
+    pkgclean    -- removed packages that are no longer needed
     options     -- configure ports options
     queue       -- queue a build request
     status      -- get status of builds
@@ -99,7 +100,7 @@ case "${CMD}" in
 esac
 
 case "${CMD}" in
-	bulk|distclean|daemon|jail|ports|options|queue|status|testport)
+	bulk|distclean|daemon|jail|ports|options|pkgclean|queue|status|testport)
 		;;
 	*)
 		echo "Unknown command '${CMD}'"

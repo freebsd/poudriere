@@ -37,6 +37,10 @@ BLACKLIST=""
 was_a_bulk_run() {
 	[ "${0##*/}" = "bulk.sh" -o "${0##*/}" = "testport.sh" ]
 }
+# Return true if in a bulk or other jail run that needs to shutdown the jail
+was_a_jail_run() {
+	was_a_bulk_run ||  [ "${0##*/}" = "pkgclean.sh" ]
+}
 
 err() {
 	export CRASHED=1
@@ -260,6 +264,7 @@ bget() {
 }
 
 bset() {
+	was_a_bulk_run || return 0
 	local id property mnt
 	local log=$(log_path)
 	if [ $# -eq 3 ]; then
@@ -859,9 +864,7 @@ jail_start() {
 	msg "Mounting ports/packages/distfiles"
 	do_portbuild_mounts ${tomnt} ${name} ${ptname} ${setname}
 
-	if [ -n "${POUDRIERE_BUILD_TYPE}" ]; then
-		show_log_info
-	fi
+	was_a_bulk_run && show_log_info
 
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 		echo "WITH_CCACHE_BUILD=yes" >> ${tomnt}/etc/make.conf
@@ -884,10 +887,12 @@ jail_start() {
 		export PKG_EXT="txz"
 		export PKG_ADD="${LOCALBASE:-/usr/local}/sbin/pkg add"
 		export PKG_DELETE="${LOCALBASE:-/usr/local}/sbin/pkg delete -y -f"
+		export PKG_VERSION="/poudriere/pkg-static version"
 	else
 		export PKGNG=0
 		export PKG_ADD=pkg_add
 		export PKG_DELETE=pkg_delete
+		export PKG_VERSION=pkg_version
 		export PKG_EXT="tbz"
 	fi
 
@@ -976,7 +981,7 @@ cleanup() {
 
 	# Only bother with this if using jails as this may be being ran
 	# from queue.sh or daemon.sh, etc.
-	if [ -n "${MASTERMNT}" -a -n "${MASTERNAME}" ] && was_a_bulk_run; then
+	if [ -n "${MASTERMNT}" -a -n "${MASTERNAME}" ] && was_a_jail_run; then
 		# If this is a builder, don't cleanup, the master will handle that.
 		if [ -n "${MY_JOBID}" ]; then
 			[ -n "${PKGNAME}" ] && clean_pool ${PKGNAME} 1 || :
@@ -2450,6 +2455,16 @@ find_all_pool_references() {
 	fi
 }
 
+delete_stale_symlinks_and_empty_dirs() {
+	msg "Deleting stale symlinks"
+	find -L ${POUDRIERE_DATA}/packages/${MASTERNAME} -type l \
+		-exec rm -f {} +
+
+	msg "Deleting empty directories"
+	find ${POUDRIERE_DATA}/packages/${MASTERNAME} -type d -mindepth 1 \
+		-empty -delete
+}
+
 prepare_ports() {
 	local pkg
 	local log=$(log_path)
@@ -2480,28 +2495,31 @@ prepare_ports() {
 	POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/unbalanced"
 	mkdir -p ${POOL_BUCKET_DIRS}
 
-	mkdir -p ${log}/../../latest-per-pkg ${log}/../latest-per-pkg
-	mkdir -p ${log}/logs ${log}/logs/errors ${log}/assets
-	mkdir -p $(cache_dir)
-	ln -sfh ${BUILDNAME} ${log%/*}/latest
-	cp ${HTMLPREFIX}/index.html ${log}
-	cp -R ${HTMLPREFIX}/assets/ ${log}/assets/
+	if was_a_bulk_run; then
+		mkdir -p ${log}/../../latest-per-pkg ${log}/../latest-per-pkg
+		mkdir -p ${log}/logs ${log}/logs/errors ${log}/assets
+		mkdir -p $(cache_dir)
+		ln -sfh ${BUILDNAME} ${log%/*}/latest
+		cp ${HTMLPREFIX}/index.html ${log}
+		cp -R ${HTMLPREFIX}/assets/ ${log}/assets/
 
-	# Record the SVN URL@REV in the build
-	[ -d ${MASTERMNT}/usr/ports/.svn ] && bset svn_url $(
-		svn info ${MASTERMNT}/usr/ports | awk '
-			/^URL: / {URL=substr($0, 6)}
-			/Revision: / {REVISION=substr($0, 11)}
-			END { print URL "@" REVISION }
-		')
+		# Record the SVN URL@REV in the build
+		[ -d ${MASTERMNT}/usr/ports/.svn ] && bset svn_url $(
+			svn info ${MASTERMNT}/usr/ports | awk '
+				/^URL: / {URL=substr($0, 6)}
+				/Revision: / {REVISION=substr($0, 11)}
+				END { print URL "@" REVISION }
+			')
 
-	bset mastername "${MASTERNAME}"
-	bset jailname "${JAILNAME}"
-	bset setname "${SETNAME}"
-	bset ptname "${PTNAME}"
-	bset buildname "${BUILDNAME}"
+		bset mastername "${MASTERNAME}"
+		bset jailname "${JAILNAME}"
+		bset setname "${SETNAME}"
+		bset ptname "${PTNAME}"
+		bset buildname "${BUILDNAME}"
 
-	bset status "computingdeps:"
+		bset status "computingdeps:"
+	fi
+
 	:> "${MASTERMNT}/poudriere/port_deps.unsorted"
 	parallel_start
 	for port in $(listed_ports); do
@@ -2517,43 +2535,45 @@ prepare_ports() {
 
 	bset status "sanity:"
 
-	if [ ${CLEAN_LISTED:-0} -eq 1 ]; then
-		listed_ports | while read port; do
-			pkg="${POUDRIERE_DATA}/packages/${MASTERNAME}/All/$(cache_get_pkgname ${port}).${PKG_EXT}"
-			if [ -f "${pkg}" ]; then
-				msg "Deleting existing package: ${pkg##*/}"
-				delete_pkg "${pkg}"
-			fi
-		done
-	fi
+	if was_a_bulk_run; then
+		if [ ${CLEAN_LISTED:-0} -eq 1 ]; then
+			listed_ports | while read port; do
+				pkg="${POUDRIERE_DATA}/packages/${MASTERNAME}/All/$(cache_get_pkgname ${port}).${PKG_EXT}"
+				if [ -f "${pkg}" ]; then
+					msg "Deleting existing package: ${pkg##*/}"
+					delete_pkg "${pkg}"
+				fi
+			done
+		fi
 
-	# If the build dir already exists, it is being resumed and any
-	# packages already built/failed/skipped/ignored should not
-	# be rebuilt
-	if [ -e ${log}/.poudriere.ports.built ]; then
-		resuming_build=1
-		awk '{print $2}' \
-			${log}/.poudriere.ports.built \
-			${log}/.poudriere.ports.failed \
-			${log}/.poudriere.ports.ignored \
-			${log}/.poudriere.ports.skipped | \
-		while read pn; do
-			find_all_pool_references "${pn}"
-		done | xargs rm -rf
-	else
-		# New build
-		resuming_build=0
-		bset stats_queued 0
-		bset stats_built 0
-		bset stats_failed 0
-		bset stats_ignored 0
-		bset stats_skipped 0
-		:> ${log}/.data.json
-		:> ${log}/.data.mini.json
-		:> ${log}/.poudriere.ports.built
-		:> ${log}/.poudriere.ports.failed
-		:> ${log}/.poudriere.ports.ignored
-		:> ${log}/.poudriere.ports.skipped
+		# If the build dir already exists, it is being resumed and any
+		# packages already built/failed/skipped/ignored should not
+		# be rebuilt
+		if [ -e ${log}/.poudriere.ports.built ]; then
+			resuming_build=1
+			awk '{print $2}' \
+				${log}/.poudriere.ports.built \
+				${log}/.poudriere.ports.failed \
+				${log}/.poudriere.ports.ignored \
+				${log}/.poudriere.ports.skipped | \
+			while read pn; do
+				find_all_pool_references "${pn}"
+			done | xargs rm -rf
+		else
+			# New build
+			resuming_build=0
+			bset stats_queued 0
+			bset stats_built 0
+			bset stats_failed 0
+			bset stats_ignored 0
+			bset stats_skipped 0
+			:> ${log}/.data.json
+			:> ${log}/.data.mini.json
+			:> ${log}/.poudriere.ports.built
+			:> ${log}/.poudriere.ports.failed
+			:> ${log}/.poudriere.ports.ignored
+			:> ${log}/.poudriere.ports.skipped
+		fi
 	fi
 
 	if ! ensure_pkg_installed && [ ${SKIPSANITY} -eq 0 ]; then
@@ -2571,20 +2591,18 @@ prepare_ports() {
 		fi
 
 		delete_stale_pkg_cache
-		delete_old_pkgs
 
-		msg_verbose "Checking packages for missing dependencies"
-		while :; do
-			sanity_check_pkgs && break
-		done
+		# Skip incremental build for pkgclean
+		if was_a_bulk_run; then
+			delete_old_pkgs
 
-		msg "Deleting stale symlinks"
-		find -L ${POUDRIERE_DATA}/packages/${MASTERNAME} -type l \
-			-exec rm -f {} +
+			msg_verbose "Checking packages for missing dependencies"
+			while :; do
+				sanity_check_pkgs && break
+			done
 
-		msg "Deleting empty directories"
-		find ${POUDRIERE_DATA}/packages/${MASTERNAME} -type d -mindepth 1 \
-			-empty -delete
+			delete_stale_symlinks_and_empty_dirs
+		fi
 	fi
 
 	bset status "cleaning:"
@@ -2599,7 +2617,7 @@ prepare_ports() {
 	# Call the deadlock code as non-fatal which will check for cycles
 	deadlock_detected 0
 
-	if [ $resuming_build -eq 0 ]; then
+	if was_a_bulk_run && [ $resuming_build -eq 0 ]; then
 		nbq=0
 		nbq=$(find ${MASTERMNT}/poudriere/deps -type d -depth 1 | wc -l)
 		bset stats_queued ${nbq##* }
@@ -2666,6 +2684,96 @@ append_make() {
 	echo "#### ${src_makeconf} ####" >> ${dst_makeconf}
 	cat "${src_makeconf}" >> ${dst_makeconf}
 }
+
+read_packages_from_params()
+{
+	if [ $# -eq 0 ]; then
+		[ -n "${LISTPKGS}" -o ${ALL} -eq 1 ] ||
+		    err 1 "No packages specified"
+		if [ ${ALL} -eq 0 ]; then
+			for listpkg_name in ${LISTPKGS}; do
+				[ -f "${listpkg_name}" ] ||
+				    err 1 "No such list of packages: ${listpkg_name}"
+			done
+		fi
+	else
+		[ ${ALL} -eq 0 ] ||
+		    err 1 "command line arguments and -a cannot be used at the same time"
+		[ -z "${LISTPKGS}" ] ||
+		    err 1 "command line arguments and list of ports cannot be used at the same time"
+		LISTPORTS="$@"
+	fi
+}
+
+clean_restricted() {
+	msg "Cleaning restricted packages"
+	bset status "clean_restricted:"
+	# Remount rw
+	# mount_nullfs does not support mount -u
+	umount ${MASTERMNT}/packages
+	mount_packages
+	injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted >/dev/null
+	# Remount ro
+	umount ${MASTERMNT}/packages
+	mount_packages -o ro
+}
+
+build_repo() {
+	if [ $PKGNG -eq 1 ]; then
+		msg "Creating pkgng repository"
+		bset status "pkgrepo:"
+		tar xf ${MASTERMNT}/packages/Latest/pkg.txz -C ${MASTERMNT} \
+			-s ",/.*/,poudriere/,g" "*/pkg-static"
+		rm -f ${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.txz \
+			${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.sqlite
+		# remount rw
+		umount ${MASTERMNT}/packages
+		mount_packages
+		if [ -f "${PKG_REPO_SIGNING_KEY:-/nonexistent}" ]; then
+			install -m 0400 ${PKG_REPO_SIGNING_KEY} \
+				${MASTERMNT}/tmp/repo.key
+			### XXX: Update pkg-repo to support -o
+			### so that /packages can remain RO
+			injail /poudriere/pkg-static repo /packages \
+				/tmp/repo.key
+			rm -f ${MASTERMNT}/tmp/repo.key
+		else
+			injail /poudriere/pkg-static repo /packages
+		fi
+		# Remount ro
+		umount ${MASTERMNT}/packages
+		mount_packages -o ro
+	else
+		msg "Preparing INDEX"
+		bset status "index:"
+		OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
+		INDEXF=${POUDRIERE_DATA}/packages/${MASTERNAME}/INDEX-${OSMAJ}
+		INDEXF_JAIL=$(mktemp -u /tmp/index.XXXXXX)
+		rm -f ${INDEXF}.1 2>/dev/null || :
+		for pkg_file in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz; do
+			# Check for non-empty directory with no packages in it
+			[ "${pkg}" = "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz" ] && break
+			msg_verbose "Extracting description for ${ORIGIN} ..."
+			ORIGIN=$(pkg_get_origin ${pkg_file})
+			[ -d ${MASTERMNT}/usr/ports/${ORIGIN} ] &&
+				injail make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
+		done
+
+		msg_n "Generating INDEX..."
+		# Move temp INDEX file into the jail. make_index will jail_attach()
+		# to the specified jail
+		mv ${INDEXF}.1 ${MASTERMNT}${INDEXF_JAIL}.1
+		make_index -j ${MASTERNAME} ${INDEXF_JAIL}.1 ${INDEXF_JAIL}
+		mv ${MASTERMNT}${INDEXF_JAIL} ${INDEXF}
+		echo " done"
+
+		[ -f ${INDEXF}.bz2 ] && rm ${INDEXF}.bz2
+		msg_n "Compressing INDEX-${OSMAJ}..."
+		bzip2 -9 ${INDEXF}
+		echo " done"
+	fi
+}
+
 
 RESOLV_CONF=""
 STATUS=0 # out of jail #

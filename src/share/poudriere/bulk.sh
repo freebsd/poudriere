@@ -60,75 +60,6 @@ EOF
 	exit 1
 }
 
-clean_restricted() {
-	msg "Cleaning restricted packages"
-	bset status "clean_restricted:"
-	# Remount rw
-	# mount_nullfs does not support mount -u
-	umount ${MASTERMNT}/packages
-	mount_packages
-	injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted >/dev/null
-	# Remount ro
-	umount ${MASTERMNT}/packages
-	mount_packages -o ro
-}
-
-build_repo() {
-	if [ $PKGNG -eq 1 ]; then
-		msg "Creating pkgng repository"
-		bset status "pkgrepo:"
-		tar xf ${MASTERMNT}/packages/Latest/pkg.txz -C ${MASTERMNT} \
-			-s ",/.*/,poudriere/,g" "*/pkg-static"
-		rm -f ${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.txz \
-			${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.sqlite
-		# remount rw
-		umount ${MASTERMNT}/packages
-		mount_packages
-		if [ -f "${PKG_REPO_SIGNING_KEY:-/nonexistent}" ]; then
-			install -m 0400 ${PKG_REPO_SIGNING_KEY} \
-				${MASTERMNT}/tmp/repo.key
-			### XXX: Update pkg-repo to support -o
-			### so that /packages can remain RO
-			injail /poudriere/pkg-static repo /packages \
-				/tmp/repo.key
-			rm -f ${MASTERMNT}/tmp/repo.key
-		else
-			injail /poudriere/pkg-static repo /packages
-		fi
-		# Remount ro
-		umount ${MASTERMNT}/packages
-		mount_packages -o ro
-	else
-		msg "Preparing INDEX"
-		bset status "index:"
-		OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
-		INDEXF=${POUDRIERE_DATA}/packages/${MASTERNAME}/INDEX-${OSMAJ}
-		INDEXF_JAIL=$(mktemp -u /tmp/index.XXXXXX)
-		rm -f ${INDEXF}.1 2>/dev/null || :
-		for pkg_file in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz; do
-			# Check for non-empty directory with no packages in it
-			[ "${pkg}" = "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz" ] && break
-			msg_verbose "Extracting description for ${ORIGIN} ..."
-			ORIGIN=$(pkg_get_origin ${pkg_file})
-			[ -d ${MASTERMNT}/usr/ports/${ORIGIN} ] &&
-				injail make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
-		done
-
-		msg_n "Generating INDEX..."
-		# Move temp INDEX file into the jail. make_index will jail_attach()
-		# to the specified jail
-		mv ${INDEXF}.1 ${MASTERMNT}${INDEXF_JAIL}.1
-		make_index -j ${MASTERNAME} ${INDEXF_JAIL}.1 ${INDEXF_JAIL}
-		mv ${MASTERMNT}${INDEXF_JAIL} ${INDEXF}
-		echo " done"
-
-		[ -f ${INDEXF}.bz2 ] && rm ${INDEXF}.bz2
-		msg_n "Compressing INDEX-${OSMAJ}..."
-		bzip2 -9 ${INDEXF}
-		echo " done"
-	fi
-}
-
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 PTNAME="default"
@@ -227,18 +158,7 @@ fi
 
 run_hook bulk start
 
-if [ $# -eq 0 ]; then
-	[ -n "${LISTPKGS}" -o ${ALL} -eq 1 ] || err 1 "No packages specified"
-	if [ ${ALL} -eq 0 ]; then
-		for listpkg_name in ${LISTPKGS}; do
-			[ -f "${listpkg_name}" ] || err 1 "No such list of packages: ${listpkg_name}"
-		done
-	fi
-else
-	[ ${ALL} -eq 0 ] || err 1 "command line arguments and -a cannot be used at the same time"
-	[ -z "${LISTPKGS}" ] || err 1 "command line arguments and list of ports cannot be used at the same time"
-	LISTPORTS="$@"
-fi
+read_packages_from_params "$@"
 
 export POUDRIERE_BUILD_TYPE=bulk
 
