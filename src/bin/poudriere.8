@@ -681,8 +681,8 @@ As a starter, you may want to copy an existing /var/db/ports/ to
 /usr/local/etc/poudriere.d/options.
 .Ss Create optional make.conf
 You can also specify a global make.conf which will be used for all the
-jails, and also add a per-jail, per-set, or per-jail-set make.conf.
-They will all be used in the jail, in the order shown:
+jails.
+Any of the following are allowed and will all be used in the order shown:
 .Pp
 .Dl /usr/local/etc/poudriere.d/make.conf
 .Dl /usr/local/etc/poudriere.d/<setname>-make.conf
@@ -691,6 +691,15 @@ They will all be used in the jail, in the order shown:
 .Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-make.conf
 .Dl /usr/local/etc/poudriere.d/<jailname>-<setname>-make.conf
 .Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-make.conf
+.Ss Create optional src.conf
+You can also specify a global src.conf which will be used for building
+jails with the
+.Cm jail -c
+subcommand.
+Any of the following are allowed and will all be used in the order shown:
+.Pp
+.Dl /usr/local/etc/poudriere.d/src.conf
+.Dl /usr/local/etc/poudriere.d/<jailname>-src.conf
 .Sh COMPATIBILITY
 The
 .Nm
