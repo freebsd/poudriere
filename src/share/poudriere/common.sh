@@ -885,8 +885,8 @@ jail_start() {
 	if [ -n "${WITH_PKGNG}" ]; then
 		export PKGNG=1
 		export PKG_EXT="txz"
-		export PKG_ADD="${LOCALBASE:-/usr/local}/sbin/pkg add"
-		export PKG_DELETE="${LOCALBASE:-/usr/local}/sbin/pkg delete -y -f"
+		export PKG_ADD="${LOCALBASE:-/usr/local}/sbin/pkg-static add"
+		export PKG_DELETE="${LOCALBASE:-/usr/local}/sbin/pkg-static delete -y -f"
 		export PKG_VERSION="/poudriere/pkg-static version"
 	else
 		export PKGNG=0
