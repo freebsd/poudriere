@@ -2722,8 +2722,7 @@ build_repo() {
 	if [ $PKGNG -eq 1 ]; then
 		msg "Creating pkgng repository"
 		bset status "pkgrepo:"
-		tar xf ${MASTERMNT}/packages/Latest/pkg.txz -C ${MASTERMNT} \
-			-s ",/.*/,poudriere/,g" "*/pkg-static"
+		ensure_pkg_installed
 		rm -f ${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.txz \
 			${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.sqlite
 		# remount rw
