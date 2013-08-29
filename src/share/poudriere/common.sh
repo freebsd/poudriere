@@ -1990,8 +1990,10 @@ pkg_get_options() {
 }
 
 ensure_pkg_installed() {
+	local mnt=$(my_path)
+
 	[ ${PKGNG} -eq 1 ] || return 0
-	[ -x ${MASTERMNT}/poudriere/pkg-static ] && return 0
+	[ -x ${mnt}/poudriere/pkg-static ] && return 0
 	[ -e ${MASTERMNT}/packages/Latest/pkg.txz ] || return 1 #pkg missing
 	injail tar xf /packages/Latest/pkg.txz -C / \
 		-s ",/.*/,poudriere/,g" "*/pkg-static"
