@@ -1338,6 +1338,11 @@ build_port() {
 				die=1
 				cat ${mod1}
 			fi
+			[ "${0##*/}" = "testport.sh" -a \
+			    "${PREFIX}" != "${LOCALBASE}" ] && msg \
+			    "This test was done with PREFIX!=LOCALBASE which \
+may show failures if the port does not respect PREFIX. \
+Try testport with -n to use PREFIX=LOCALBASE"
 			rm -f ${add} ${add1} ${del} ${del1} ${mod} ${mod1}
 			[ $die -eq 0 ] || return 1
 		fi
