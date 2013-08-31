@@ -1204,7 +1204,8 @@ build_port() {
 
 		if [ "${phase#*-}" = "depends" ]; then
 			# No need for nohang or PORT_FLAGS for *-depends
-			injail make -C ${portdir} ${phase} || return 1
+			injail env USE_PACKAGE_DEPENDS_ONLY=1 \
+			    make -C ${portdir} ${phase} || return 1
 		else
 			# Only set PKGENV during 'package' to prevent testport-built
 			# packages from going into the main repo
