@@ -156,11 +156,11 @@ if [ ${CLEAN} -eq 1 ]; then
 	echo " done"
 fi
 
+export POUDRIERE_BUILD_TYPE=bulk
+
 run_hook bulk start
 
 read_packages_from_params "$@"
-
-export POUDRIERE_BUILD_TYPE=bulk
 
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
