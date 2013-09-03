@@ -242,7 +242,7 @@ prepare_ports
 
 bset status "building:"
 
-parallel_build ${JAILNAME} ${PTNAME} ${SETNAME} || : # Ignore errors as they are handled below
+parallel_build ${JAILNAME} ${PTNAME} ${SETNAME}
 
 bset status "done:"
 
