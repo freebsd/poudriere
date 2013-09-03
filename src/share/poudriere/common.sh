@@ -835,7 +835,7 @@ jail_start() {
 			sysctl -n compat.linux.osrelease >/dev/null 2>&1 || kldload linux
 		fi
 	fi
-	[ -n "${USE_TMPFS}" ] && NEEDFS="${NEEDFS} tmpfs"
+	[ -n "${USE_TMPFS}" ] && needfs="${needfs} tmpfs"
 	for fs in ${needfs}; do
 		if ! lsvfs $fs >/dev/null 2>&1; then
 			if [ $JAILED -eq 0 ]; then
