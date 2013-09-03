@@ -1723,7 +1723,7 @@ parallel_build() {
 	# Restore PARALLEL_JOBS
 	PARALLEL_JOBS=${real_parallel_jobs}
 
-	return $(($(bget stats_failed) + $(bget stats_skipped)))
+	return 0
 }
 
 clean_pool() {
