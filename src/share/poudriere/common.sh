@@ -844,10 +844,11 @@ jail_start() {
 		fi
 	fi
 	[ -n "${USE_TMPFS}" ] && needfs="${needfs} tmpfs"
+	[ ${JAILED} -eq 0 ] && needfs="${needfs} fdescfs"
 	for fs in ${needfs}; do
 		if ! lsvfs $fs >/dev/null 2>&1; then
 			if [ $JAILED -eq 0 ]; then
-				kldload $fs
+				kldload $fs || err 1 "Required kernel module '${fs}' not found"
 			else
 				err 1 "please load the $fs module on host using \"kldload $fs\""
 			fi
