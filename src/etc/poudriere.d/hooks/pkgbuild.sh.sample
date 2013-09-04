@@ -31,7 +31,7 @@ if [ "$status" = "failed" ]; then
 		awk_script="NR < ${HEADER_LINES} || NR > $((${log_lines} - ${FOOTER_LINES})); NR == ${HEADER_LINES} { print \"<snip>\" }"
 	fi
 	
-	sendmail -f ${EMAIL_FROM} ${EMAIL_TO} << EOF
+	sendmail -f ${EMAIL_FROM} -t << EOF
 To: ${EMAIL_TO}
 Subject: ${mail_subject}
 
