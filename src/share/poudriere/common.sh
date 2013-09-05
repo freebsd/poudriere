@@ -1250,7 +1250,7 @@ build_port() {
 				pkgenv=
 			fi
 
-			# 24 hours for 1 command, or 20 minutes with no log update
+			# 24 hours for 1 command, or 120 minutes with no log update
 			nohang ${MAX_EXECUTION_TIME:-86400} ${NOHANG_TIME:-7200} \
 				${log}/logs/${PKGNAME}.log \
 				injail env ${pkgenv} ${PORT_FLAGS} \
