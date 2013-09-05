@@ -1250,8 +1250,7 @@ build_port() {
 				pkgenv=
 			fi
 
-			# 24 hours for 1 command, or 120 minutes with no log update
-			nohang ${MAX_EXECUTION_TIME:-86400} ${NOHANG_TIME:-7200} \
+			nohang ${MAX_EXECUTION_TIME} ${NOHANG_TIME} \
 				${log}/logs/${PKGNAME}.log \
 				injail env ${pkgenv} ${PORT_FLAGS} \
 				make -C ${portdir} ${phase}
@@ -1261,11 +1260,11 @@ build_port() {
 				# 2 = log timed out
 				# 3 = cmd timeout
 				if [ $hangstatus -eq 2 ]; then
-					msg "Killing runaway build"
+					msg "Killing runaway build after ${NOHANG_TIME} seconds with no output"
 					bset ${MY_JOBID} status "${phase}/runaway:${port}"
 					job_msg_verbose "Status for build ${port}: runaway"
 				elif [ $hangstatus -eq 3 ]; then
-					msg "Killing timed out build"
+					msg "Killing timed out build after ${MAX_EXECUTION_TIME} seconds"
 					bset ${MY_JOBID} status "${phase}/timeout:${port}"
 					job_msg_verbose "Status for build ${port}: timeout"
 				fi
@@ -2945,6 +2944,10 @@ esac
 : ${WATCHDIR:=${POUDRIERE_DATA}/queue}
 : ${PIDFILE:=${POUDRIERE_DATA}/daemon.pid}
 : ${QUEUE_SOCKET:=/var/run/poudriered.sock}
+# 24 hours for 1 command
+: ${MAX_EXECUTION_TIME:=86400}
+# 120 minutes with no log update
+: ${NOHANG_TIME:=7200}
 
 BUILDNAME=$(date +%Y-%m-%d_%Hh%Mm%Ss)
 
