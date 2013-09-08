@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd August 27, 2013
+.Dd September 8, 2013
 .Dt POUDRIERE 8
 .Os FreeBSD
 .Sh NAME
@@ -335,6 +335,10 @@ Specifies which
 .Ar branch
 to checkout when using the svn method.
 (Default: head)
+.It Fl k
+When used with
+.Fl d ,
+only unregister the ports tree with out removing the files.
 .El
 .Ss testport
 .Pp

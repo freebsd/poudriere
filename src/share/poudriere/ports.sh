@@ -46,6 +46,8 @@ Options:
     -F            -- when used with -c, only create the needed ZFS
                      filesystems and directories, but do not populate
                      them.
+    -k            -- when used with -d, only unregister the directory from
+                     the ports tree list, but keep the files.
     -p name       -- specifies the name of the portstree we workon . If not
                      specified, work on a portstree called "default".
     -f fs         -- FS name (tank/jails/myjail) if fs is "none" then do not
@@ -67,8 +69,9 @@ DELETE=0
 LIST=0
 QUIET=0
 VERBOSE=0
+KEEP=0
 BRANCH=head
-while getopts "B:cFudlp:qf:M:m:v" FLAG; do
+while getopts "B:cFudklp:qf:M:m:v" FLAG; do
 	case "${FLAG}" in
 		B)
 			BRANCH="${OPTARG}"
@@ -87,6 +90,9 @@ while getopts "B:cFudlp:qf:M:m:v" FLAG; do
 			;;
 		d)
 			DELETE=1
+			;;
+		k)
+			KEEP=1
 			;;
 		l)
 			LIST=1
@@ -202,7 +208,7 @@ if [ ${DELETE} -eq 1 ]; then
 	/sbin/mount -t nullfs | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	msg_n "Deleting portstree \"${PTNAME}\""
-	destroyfs ${PTMNT} ports
+	[ ${KEEP} -eq 0 ] && destroyfs ${PTMNT} ports
 	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
 	echo " done"
 fi
