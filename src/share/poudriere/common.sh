@@ -930,7 +930,10 @@ setup_makeconf() {
 
 jail_stop() {
 	[ $# -ne 0 ] && eargs
-	jail_runs ${MASTERNAME} || err 1 "No such jail running: ${MASTERNAME}"
+	if ! jail_runs ${MASTERNAME}; then
+		[ -n "${CLEANING_UP}" ] && return 0
+		err 1 "No such jail running: ${MASTERNAME}"
+	fi
 	local fs=$(zfs_getfs ${MASTERMNT})
 
 	# err() will set status to 'crashed', don't override.
