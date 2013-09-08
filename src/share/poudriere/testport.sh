@@ -32,12 +32,12 @@ usage() {
 poudriere testport [parameters] [options]
 
 Parameters:
+    -j jailname -- Run inside the given jail
     -o origin   -- Specify an origin in the portstree
 
 Options:
     -c          -- Run make config for the given port
     -J n        -- Run n jobs in parallel for dependencies
-    -j name     -- Run inside the given jail
     -i          -- Interactive mode. Enter jail for interactive testing and
                    automatically cleanup when done.
     -I          -- Advanced Interactive mode. Leaves jail running with port
