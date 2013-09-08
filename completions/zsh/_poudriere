@@ -118,6 +118,7 @@ _ports=(
 	'(-c -d -u)-l[lists all available portstrees]'
 	'-q[quiet (remove the header in list)]'
 	'-F[when used with -c, only create the needed ZFS filesystems and directories, but do not populate them]'
+	'-k[when used with -d, only unregister the directory from the ports tree list, but keep the files]'
 	'-p[specify the name of the portstree we work on]::tree:_poudriere_pt'
 	'-f[FS name (tank/jails/myjail)]::fs:_files -/'
 	'-M[mountpoint]::mountpoint:_files -/'
