@@ -139,13 +139,13 @@ log_start() {
 	# Make sure directory exists
 	mkdir -p ${log}/logs ${latest_log}
 
-	# Symlink to /latest-per-pkg/PORTNAME/PKGVERSION/MASTERNAME.log
-	ln -f ${log}/../latest-per-pkg/${PKGNAME}.log \
-		${latest_log}/${MASTERNAME}.log
+	touch ${logfile}
 
-	# Symlink to JAIL/latest-per-pkg/PKGNAME.log
-	ln -f ${log}/logs/${PKGNAME}.log \
-		${log}/../latest-per-pkg/${PKGNAME}.log
+	# Link to BUILD_TYPE/latest-per-pkg/PORTNAME/PKGVERSION/MASTERNAME.log
+	ln -f ${logfile} ${latest_log}/${MASTERNAME}.log
+
+	# Link to JAIL/latest-per-pkg/PKGNAME.log
+	ln -f ${logfile} ${log}/../latest-per-pkg/${PKGNAME}.log
 
 	# Tee all of the output to the logfile through a pipe
 	exec 3>&1 4>&2
