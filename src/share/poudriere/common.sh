@@ -155,7 +155,15 @@ log_start() {
 	# Tee all of the output to the logfile through a pipe
 	exec 3>&1 4>&2
 	[ ! -e ${logfile}.pipe ] && mkfifo ${logfile}.pipe
-	tee ${logfile} < ${logfile}.pipe >&3 &
+	{
+		if [ "${TIMESTAMP_LOGS:-no}" = "yes" ]; then
+			tee ${logfile} | while read line; do
+				echo "$(date "+%Y%m%d%H%M.%S") ${line}";
+			done
+		else
+			tee ${logfile}
+		fi
+	} < ${logfile}.pipe >&3 &
 	export tpid=$!
 	exec > ${logfile}.pipe 2>&1
 

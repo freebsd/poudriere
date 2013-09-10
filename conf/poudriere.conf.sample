@@ -141,6 +141,9 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Use the following to allow it anyway
 # ALLOW_MAKE_JOBS=yes
 
+# Timestamp every line of build logs
+# Default: no
+#TIMESTAMP_LOGS=no
 
 # URL where your POUDRIERE_DATA/logs are hosted
 # This will be used for giving URL hints to the HTML output when
