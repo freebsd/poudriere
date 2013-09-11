@@ -129,6 +129,7 @@ options_cleanup() {
 }
 setup_makeconf ${__MAKE_CONF} "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 
+export TERM=${SAVED_TERM}
 for origin in ${LISTPORTS}; do
 	[ -d ${PORTSDIR}/${origin} ] || err 1 "No such ports ${origin}"
 	make PORT_DBDIR=${PORT_DBDIR} \

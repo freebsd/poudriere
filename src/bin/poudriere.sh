@@ -96,7 +96,7 @@ case "${CMD}" in
 		CMD="jail"
 		;;
 	options|testport)
-		CMD_ENV="${CMD_ENV} TERM=${SAVED_TERM}"
+		CMD_ENV="${CMD_ENV} SAVED_TERM=${SAVED_TERM}"
 esac
 
 case "${CMD}" in
