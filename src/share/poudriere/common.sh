@@ -2796,13 +2796,14 @@ build_repo() {
 RESOLV_CONF=""
 STATUS=0 # out of jail #
 
-[ -z "${POUDRIERE_ETC}" ] && POUDRIERE_ETC=${SCRIPTPREFIX}/../../etc
+[ -z "${POUDRIERE_ETC}" ] &&
+    POUDRIERE_ETC=$(realpath ${SCRIPTPREFIX}/../../etc)
 [ -f ${POUDRIERE_ETC}/poudriere.conf ] ||
 	err 1 "Unable to find ${POUDRIERE_ETC}/poudriere.conf"
 
 . ${POUDRIERE_ETC}/poudriere.conf
 POUDRIERED=${POUDRIERE_ETC}/poudriere.d
-LIBEXECPREFIX=${SCRIPTPREFIX}/../../libexec/poudriere
+LIBEXECPREFIX=$(realpath ${SCRIPTPREFIX}/../../libexec/poudriere)
 AWKPREFIX=${SCRIPTPREFIX}/awk
 HTMLPREFIX=${SCRIPTPREFIX}/html
 HOOKDIR=${POUDRIERED}/hooks
