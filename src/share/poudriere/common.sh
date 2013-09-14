@@ -856,6 +856,11 @@ jail_start() {
 	done
 	jail_exists ${name} || err 1 "No such jail: ${name}"
 	jail_runs ${MASTERNAME} && err 1 "jail already running: ${MASTERNAME}"
+
+	# Block the build dir from being traversed by non-root to avoid
+	# system blowup due to all of the extra mounts
+	chmod 0700 ${POUDRIERE_DATA}/build
+
 	export HOME=/root
 	export USER=root
 	export FORCE_PACKAGE=yes
