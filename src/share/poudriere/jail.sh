@@ -204,8 +204,8 @@ build_and_install_world() {
 	msg "Starting make installworld"
 	${make_cmd} -C ${JAILMNT}/usr/src installworld DESTDIR=${JAILMNT} \
 	    DB_FROM_SRC=1 || err 1 "Failed to 'make installworld'"
-	${make_cmd} -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distrib-dirs ||
-	    err 1 "Failed to 'make distrib-dirs'"
+	${make_cmd} -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} DB_FROM_SRC=1 \
+	    distrib-dirs || err 1 "Failed to 'make distrib-dirs'"
 	${make_cmd} -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distribution ||
 	    err 1 "Failed to 'make distribution'"
 }
