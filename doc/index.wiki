@@ -57,6 +57,7 @@ See poudriere(8).
   *  [./ccache.wiki|...use ccache with poudriere]
   *  [./config.wiki|...easily generate options]
   *  [./use_system_ports_tree.wiki|...use the system ports tree in poudriere]
+  *  [./using_testport.wiki|...using testport to test ports]
 
 <h1>Hacking </h1>
 
