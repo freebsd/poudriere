@@ -199,11 +199,15 @@ build_and_install_world() {
 		make_cmd=${FMAKE}
 	fi
 	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
-	${make_cmd} -C ${JAILMNT}/usr/src buildworld ${MAKE_JOBS} ${MAKEWORLDARGS} || err 1 "Fail to build world"
+	${make_cmd} -C ${JAILMNT}/usr/src buildworld ${MAKE_JOBS} \
+	    ${MAKEWORLDARGS} || err 1 "Failed to 'make buildworld'"
 	msg "Starting make installworld"
-	${make_cmd} -C ${JAILMNT}/usr/src installworld DESTDIR=${JAILMNT} DB_FROM_SRC=1 || err 1 "Fail to install world"
-	${make_cmd} -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distrib-dirs &&
-	${make_cmd} -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distribution
+	${make_cmd} -C ${JAILMNT}/usr/src installworld DESTDIR=${JAILMNT} \
+	    DB_FROM_SRC=1 || err 1 "Failed to 'make installworld'"
+	${make_cmd} -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distrib-dirs ||
+	    err 1 "Failed to 'make distrib-dirs'"
+	${make_cmd} -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distribution ||
+	    err 1 "Failed to 'make distribution'"
 }
 
 install_from_svn() {
