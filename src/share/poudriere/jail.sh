@@ -30,38 +30,39 @@ usage() {
 poudriere jail [parameters] [options]
 
 Parameters:
-    -c            -- create a jail
-    -d            -- delete a jail
-    -l            -- list all available jails
-    -s            -- start a jail
-    -k            -- kill (stop) a jail
-    -u            -- update a jail
+    -c            -- Create a jail
+    -d            -- Delete a jail
+    -l            -- List all available jails
+    -s            -- Start a jail
+    -k            -- Stop a jail
+    -u            -- Update a jail
 
 Options:
-    -q            -- quiet (Do not print the header)
+    -q            -- Quiet (Do not print the header)
     -J n          -- Run buildworld in parallel with n jobs.
-    -j jailname   -- Specifies the jailname
-    -v version    -- Specifies which version of FreeBSD we want in jail
-    -a arch       -- Indicates architecture of the jail: i386 or amd64
-                     (Default: same as host)
+    -j jailname   -- Specify the jailname
+    -v version    -- Specify which version of FreeBSD to install in the jail.
+    -a arch       -- Indicates the architecture of the jail: i386 or amd64
+                     (Default: same as the host)
     -f fs         -- FS name (tank/jails/myjail) if fs is "none" then do not
-                     create on zfs
-    -M mountpoint -- mountpoint
-    -m method     -- When used with -c, overrides the method to use by default.
+                     create on ZFS.
+    -M mountpoint -- Mountpoint
+    -m method     -- When used with -c, overrides the default method (ftp).
                      Could also be "http", "svn", "svn+http",
                      "svn+https", "svn+file", "svn+ssh", "csup".
-                     Please note that with svn and csup the world will be
-                     built. Note that building from sources can use src.conf
-                     and jail-src.conf from /usr/local/etc/poudriere.d/.
-                     Other possible method are: "allbsd" retrieve a
-                     snapshot from allbsd.org's website or "ftp-archive"
-                     for old releases that're no longer available on "ftp".
+                     Please note that with the svn and csup methods the world
+                     will be built. Note that building from sources can use
+                     src.conf and jailname-src.conf in
+                     /usr/local/etc/poudriere.d/.  Other possible method are:
+                     "allbsd" (Retrieve a snapshot from allbsd.org's website)
+                     or "ftp-archive" (Retrieve an old release that is no
+                     longer available on "ftp").
     -P patch      -- Specify a patch to apply to the source before building.
-    -t version    -- version to upgrade to
+    -t version    -- Version of FreeBSD to upgrade the jail to.
 
 Options for -s and -k:
-    -p tree       -- Specify which ports tree the jail to start/stop with
-    -z set        -- Specify which SET the jail to start/stop with
+    -p tree       -- Specify which ports tree the jail to start/stop with.
+    -z set        -- Specify which SET the jail to start/stop with.
 EOF
 	exit 1
 }
