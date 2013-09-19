@@ -1205,6 +1205,10 @@ build_port() {
 	local listfilecmd network
 	local hangstatus
 	local pkgenv
+	local nostage=$(injail make -C ${portdir} -VNO_STAGE)
+	local mount_pkg_phase="package"
+
+	[ ${PKGNG} -eq 0 -a "${nostage}" != "yes" ] && mount_pkg_phase="install"
 
 	# If not testing, then avoid rechecking deps in build/install;
 	# When testing, check depends twice to ensure they depend on
@@ -1252,7 +1256,7 @@ build_port() {
 
 		print_phase_header ${phase}
 
-		if [ "${phase}" = "package" ]; then
+		if [ "${phase}" = "${mount_pkg_phase}" ]; then
 			echo "PACKAGES=/new_packages" >> ${mnt}/etc/make.conf
 			# Create sandboxed staging dir for new package for this build
 			rm -rf "${PACKAGES}/.new_packages/${PKGNAME}"
