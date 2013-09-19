@@ -785,7 +785,7 @@ use_options() {
 
 mount_packages() {
 	local mnt=$(my_path)
-	mount -t nullfs "$@" ${POUDRIERE_DATA}/packages/${MASTERNAME} \
+	mount -t nullfs "$@" ${PACKAGES} \
 		${mnt}/packages ||
 		err 1 "Failed to mount the packages directory "
 }
@@ -801,7 +801,7 @@ do_portbuild_mounts() {
 
 	[ -d ${portsdir}/ports ] && portsdir=${portsdir}/ports
 
-	mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/All
+	mkdir -p ${PACKAGES}/All
 	[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
 		mount -t nullfs ${CCACHE_DIR} ${mnt}${HOME}/.ccache
 	[ -n "${MFSSIZE}" ] && mdmfs -t -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
@@ -810,7 +810,7 @@ do_portbuild_mounts() {
 	if [ ${mnt##*/} = "ref" ]; then
 		[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
 			msg "Mounting ccache from: ${CCACHE_DIR}"
-		msg "Mounting packages from: ${POUDRIERE_DATA}/packages/${MASTERNAME}"
+		msg "Mounting packages from: ${PACKAGES}"
 	fi
 
 	mount -t nullfs -o ro ${portsdir} ${mnt}/usr/ports ||
@@ -880,6 +880,8 @@ jail_start() {
 
 	msg "Mounting system devices for ${MASTERNAME}"
 	do_jail_mounts ${tomnt} ${arch}
+
+	PACKAGES=${POUDRIERE_DATA}/packages/${MASTERNAME}
 
 	[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
 	msg "Mounting ports/packages/distfiles"
@@ -1023,7 +1025,7 @@ cleanup() {
 
 		jail_stop
 
-		rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages \
+		rm -rf ${PACKAGES}/.new_packages \
 			|| :
 	fi
 
@@ -1032,12 +1034,12 @@ cleanup() {
 
 # return 0 if the package dir exists and has packages, 0 otherwise
 package_dir_exists_and_has_packages() {
-	[ ! -d ${POUDRIERE_DATA}/packages/${MASTERNAME}/All ] && return 1
-	dirempty ${POUDRIERE_DATA}/packages/${MASTERNAME}/All && return 1
+	[ ! -d ${PACKAGES}/All ] && return 1
+	dirempty ${PACKAGES}/All && return 1
 	# Check for non-empty directory with no packages in it
-	for pkg in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
+	for pkg in ${PACKAGES}/All/*.${PKG_EXT}; do
 		[ "${pkg}" = \
-		    "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}" ] \
+		    "${PACKAGES}/All/*.${PKG_EXT}" ] \
 		    && return 1
 		# Stop on first match
 		break
@@ -1052,14 +1054,14 @@ sanity_check_pkgs() {
 
 	package_dir_exists_and_has_packages || return 0
 
-	for pkg in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
+	for pkg in ${PACKAGES}/All/*.${PKG_EXT}; do
 		origin=$(pkg_get_origin "${pkg}")
 		port_is_needed "${origin}" || continue
 		depfile="$(deps_file "${pkg}")"
 		while read dep; do
-			if [ ! -e "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${dep}.${PKG_EXT}" ]; then
+			if [ ! -e "${PACKAGES}/All/${dep}.${PKG_EXT}" ]; then
 				ret=1
-				msg_debug "${pkg} needs missing ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${dep}.${PKG_EXT}"
+				msg_debug "${pkg} needs missing ${PACKAGES}/All/${dep}.${PKG_EXT}"
 				msg "Deleting ${pkg##*/}: missing dependency: ${dep}"
 				delete_pkg "${pkg}"
 				break
@@ -1253,10 +1255,10 @@ build_port() {
 		if [ "${phase}" = "package" ]; then
 			echo "PACKAGES=/new_packages" >> ${mnt}/etc/make.conf
 			# Create sandboxed staging dir for new package for this build
-			rm -rf "${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}"
-			mkdir -p "${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}"
+			rm -rf "${PACKAGES}/.new_packages/${PKGNAME}"
+			mkdir -p "${PACKAGES}/.new_packages/${PKGNAME}"
 			mount -t nullfs \
-				"${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}" \
+				"${PACKAGES}/.new_packages/${PKGNAME}" \
 				${mnt}/new_packages
 		fi
 
@@ -1422,15 +1424,15 @@ Try testport with -n to use PREFIX=LOCALBASE"
 		fi
 	done
 
-	if [ -d "${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}" ]; then
+	if [ -d "${PACKAGES}/.new_packages/${PKGNAME}" ]; then
 		# everything was fine we can copy package the package to the package
 		# directory
-		find ${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME} \
+		find ${PACKAGES}/.new_packages/${PKGNAME} \
 			-mindepth 1 \( -type f -or -type l \) | while read pkg_path; do
-			pkg_file=${pkg_path#${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}}
+			pkg_file=${pkg_path#${PACKAGES}/.new_packages/${PKGNAME}}
 			pkg_base=${pkg_file%/*}
-			mkdir -p ${POUDRIERE_DATA}/packages/${MASTERNAME}/${pkg_base}
-			mv ${pkg_path} ${POUDRIERE_DATA}/packages/${MASTERNAME}/${pkg_base}
+			mkdir -p ${PACKAGES}/${pkg_base}
+			mv ${pkg_path} ${PACKAGES}/${pkg_base}
 		done
 	fi
 
@@ -1849,7 +1851,7 @@ build_pkg() {
 			job_msg "Finished build of ${port}: Success"
 			run_hook pkgbuild success "${port}" "${PKGNAME}"
 			# Cache information for next run
-			pkg_cache_data "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
+			pkg_cache_data "${PACKAGES}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
 		else
 			# Symlink the buildlog into errors/
 			ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
@@ -1879,7 +1881,7 @@ stop_build() {
 	local mnt=$(my_path)
 
 	umount -f ${mnt}/new_packages 2>/dev/null || :
-	rm -rf "${POUDRIERE_DATA}/packages/${MASTERNAME}/.new_packages/${PKGNAME}"
+	rm -rf "${PACKAGES}/.new_packages/${PKGNAME}"
 
 	# 2 = HEADER+ps itself
 	if [ $(injail ps aux | wc -l) -ne 2 ]; then
@@ -2095,7 +2097,7 @@ delete_stale_pkg_cache() {
 	for pkg in ${cachedir}/*.${PKG_EXT}; do
 		pkg_file="${pkg##*/}"
 		# If this package no longer exists in the PKGDIR, delete the cache.
-		[ ! -e "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/${pkg_file}" ] &&
+		[ ! -e "${PACKAGES}/All/${pkg_file}" ] &&
 			clear_pkg_cache "${pkg}"
 	done
 
@@ -2221,7 +2223,7 @@ delete_old_pkgs() {
 	package_dir_exists_and_has_packages || return 0
 
 	parallel_start
-	for pkg in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.${PKG_EXT}; do
+	for pkg in ${PACKAGES}/All/*.${PKG_EXT}; do
 		origin=$(pkg_get_origin "${pkg}")
 		port_is_needed "${origin}" || continue
 		parallel_run delete_old_pkg "${pkg}" "${origin}"
@@ -2488,11 +2490,11 @@ find_all_pool_references() {
 
 delete_stale_symlinks_and_empty_dirs() {
 	msg "Deleting stale symlinks"
-	find -L ${POUDRIERE_DATA}/packages/${MASTERNAME} -type l \
+	find -L ${PACKAGES} -type l \
 		-exec rm -f {} +
 
 	msg "Deleting empty directories"
-	find ${POUDRIERE_DATA}/packages/${MASTERNAME} -type d -mindepth 1 \
+	find ${PACKAGES} -type d -mindepth 1 \
 		-empty -delete
 }
 
@@ -2569,7 +2571,7 @@ prepare_ports() {
 	if was_a_bulk_run; then
 		if [ ${CLEAN_LISTED:-0} -eq 1 ]; then
 			listed_ports | while read port; do
-				pkg="${POUDRIERE_DATA}/packages/${MASTERNAME}/All/$(cache_get_pkgname ${port}).${PKG_EXT}"
+				pkg="${PACKAGES}/All/$(cache_get_pkgname ${port}).${PKG_EXT}"
 				if [ -f "${pkg}" ]; then
 					msg "Deleting existing package: ${pkg##*/}"
 					delete_pkg "${pkg}"
@@ -2615,7 +2617,7 @@ prepare_ports() {
 	if [ $SKIPSANITY -eq 0 ]; then
 		msg "Sanity checking the repository"
 
-		pkg="${POUDRIERE_DATA}/packages/${MASTERNAME}/All/repo.txz"
+		pkg="${PACKAGES}/All/repo.txz"
 		if [ -f "${pkg}" ]; then
 			msg "Removing invalid pkg repo file: ${pkg}"
 			rm -f "${pkg}"
@@ -2754,8 +2756,8 @@ build_repo() {
 		msg "Creating pkgng repository"
 		bset status "pkgrepo:"
 		ensure_pkg_installed
-		rm -f ${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.txz \
-			${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.sqlite
+		rm -f ${PACKAGES}/repo.txz \
+			${PACKAGES}/repo.sqlite
 		# remount rw
 		umount ${MASTERMNT}/packages
 		mount_packages
@@ -2777,12 +2779,12 @@ build_repo() {
 		msg "Preparing INDEX"
 		bset status "index:"
 		OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
-		INDEXF=${POUDRIERE_DATA}/packages/${MASTERNAME}/INDEX-${OSMAJ}
+		INDEXF=${PACKAGES}/INDEX-${OSMAJ}
 		INDEXF_JAIL=$(mktemp -u /tmp/index.XXXXXX)
 		rm -f ${INDEXF}.1 2>/dev/null || :
-		for pkg_file in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz; do
+		for pkg_file in ${PACKAGES}/All/*.tbz; do
 			# Check for non-empty directory with no packages in it
-			[ "${pkg}" = "${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*.tbz" ] && break
+			[ "${pkg}" = "${PACKAGES}/All/*.tbz" ] && break
 			msg_verbose "Extracting description for ${ORIGIN} ..."
 			ORIGIN=$(pkg_get_origin ${pkg_file})
 			[ -d ${MASTERMNT}/usr/ports/${ORIGIN} ] &&

@@ -140,7 +140,7 @@ pkgclean_cleanup() {
 BADFILES_LIST=$(mktemp -t poudriere_pkgclean)
 FOUND_ORIGINS=$(mktemp -t poudriere_pkgclean)
 
-for file in ${POUDRIERE_DATA}/packages/${MASTERNAME}/All/*; do
+for file in ${PACKAGES}/All/*; do
 	case ${file} in
 		*.${PKG_EXT})
 			origin=$(pkg_get_origin "${file}")

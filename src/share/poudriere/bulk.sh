@@ -151,7 +151,7 @@ export MASTERNAME
 export MASTERMNT
 if [ ${CLEAN} -eq 1 ]; then
 	msg_n "Cleaning previous bulks if any..."
-	rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/*
+	rm -rf ${PACKAGES}/*
 	rm -rf ${POUDRIERE_DATA}/cache/${MASTERNAME}
 	echo " done"
 fi
