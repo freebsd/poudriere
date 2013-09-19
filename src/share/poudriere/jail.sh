@@ -283,7 +283,7 @@ install_from_svn() {
 		svn -q update ${JAILMNT}/usr/src || err 1 " fail"
 		echo " done"
 	fi
-#	build_and_install_world
+	build_and_install_world
 
 	svn_rev=$(svn info ${JAILMNT}/usr/src |
 	    awk '/Last Changed Rev:/ {print $4}')
