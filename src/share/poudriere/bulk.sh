@@ -232,7 +232,7 @@ if [ $nbskipped -gt 0 ]; then
 	echo ${skipped}
 	echo ""
 fi
-run_hook bulk done
+run_hook bulk done ${nbbuilt} ${nbfailed} ${nbignored} ${nbskipped}
 msg "[${MASTERNAME}] $nbbuilt packages built, $nbfailed failures, $nbignored ignored, $nbskipped skipped"
 show_log_info
 

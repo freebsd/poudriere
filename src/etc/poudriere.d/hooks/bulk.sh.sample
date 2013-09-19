@@ -19,6 +19,12 @@ EOF
 fi
 
 if [ "$status" = "done" ]; then
+	n_built=$1
+	n_failed=$2
+	n_ignored=$3
+	n_skipped=$4
+	n_total=$((${n_built} + ${n_failed} + ${n_ignored} + ${n_skipped}))
+
         mail_subject="[RELEASE - ${MASTERNAME}] bulk done on `hostname`"
 
         sendmail -f ${EMAIL_FROM} ${EMAIL_TO} << EOF
@@ -26,6 +32,10 @@ To: ${EMAIL_TO}
 Subject: ${mail_subject}
 
 Build URL:      ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}
+Built:          ${n_built}
+Failed:         ${n_failed}
+Ignored:        ${n_ignored}
+Skipped:        ${n_skipped}
 EOF
 
 fi
