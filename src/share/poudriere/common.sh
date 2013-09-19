@@ -128,8 +128,15 @@ run_hook() {
 	[ -f ${hookfile} ] &&
 		URL_BASE="${URL_BASE}" \
 		POUDRIERE_BUILD_TYPE=${POUDRIERE_BUILD_TYPE} \
+		POUDRIERED="${POUDRIERED}" \
+		POUDRIERE_DATA="${POUDRIERE_DATA}" \
 		MASTERNAME="${MASTERNAME}" \
 		BUILDNAME="${BUILDNAME}" \
+		JAILNAME="${JAILNAME}" \
+		PTNAME="${PTNAME}" \
+		SETNAME="${SETNAME}" \
+		PACKAGES="${PACKAGES}" \
+		PACKAGES_ROOT="${PACKAGES_ROOT}" \
 		/bin/sh ${hookfile} "$@"
 	return 0
 }
