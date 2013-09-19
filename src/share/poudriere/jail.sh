@@ -154,7 +154,10 @@ update_jail() {
 		;;
 	svn*)
 		install_from_svn
-		update_version $(jget ${JAILNAME} version)
+		eval `grep "^[RB][A-Z]*=" ${JAILMNT}/usr/src/sys/conf/newvers.sh `
+		RELEASE=${REVISION}-${BRANCH}
+		jset ${JAILNAME} version ${RELEASE}
+		update_version ${RELEASE}
 		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
 		markfs clean ${JAILMNT}
 		;;
