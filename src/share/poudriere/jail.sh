@@ -100,12 +100,25 @@ cleanup_new_jail() {
 	delete_jail
 }
 
+# Lookup new version from newvers and set in jset version
 update_version() {
+	local version_extra="$1"
+
+	eval `grep "^[RB][A-Z]*=" ${JAILMNT}/usr/src/sys/conf/newvers.sh `
+	RELEASE=${REVISION}-${BRANCH}
+	[ -n "${version_extra}" ] &&
+	    RELEASE="${RELEASE} ${version_extra}"
+	jset ${JAILNAME} version "${RELEASE}"
+	echo "${RELEASE}"
+}
+
+# Set specified version into login.conf
+update_version_env() {
 	local release="$1"
 	local login_env osversion
 
 	osversion=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILMNT}/usr/include/sys/param.h`
-	login_env=",UNAME_r=${release},UNAME_v=FreeBSD ${release},OSVERSION=${osversion}"
+	login_env=",UNAME_r=${release% *},UNAME_v=FreeBSD ${release},OSVERSION=${osversion}"
 
 	[ "${ARCH}" = "i386" -a "${REALARCH}" = "amd64" ] &&
 		login_env="${login_env},UNAME_p=i386,UNAME_m=i386"
@@ -139,12 +152,12 @@ update_jail() {
 			injail env PAGER=/bin/cat /usr/sbin/freebsd-update -r ${TORELEASE} upgrade install ||
 				err 1 "Fail to upgrade system"
 			# Reboot
-			update_version ${TORELEASE}
+			update_version_env ${TORELEASE}
 			# Install new world
 			injail env PAGER=/bin/cat /usr/sbin/freebsd-update install ||
 				err 1 "Fail to upgrade system"
 			# Reboot
-			update_version ${TORELEASE}
+			update_version_env ${TORELEASE}
 			# Remove stale files
 			injail env PAGER=/bin/cat /usr/sbin/freebsd-update install ||
 				err 1 "Fail to upgrade system"
@@ -157,13 +170,14 @@ update_jail() {
 		;;
 	csup)
 		install_from_csup
-		update_version $(jget ${JAILNAME} version)
+		update_version_env $(jget ${JAILNAME} version)
 		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
 		markfs clean ${JAILMNT}
 		;;
 	svn*)
-		install_from_svn
-		update_version $(jget ${JAILNAME} version)
+		install_from_svn version_extra
+		RELEASE=$(update_version "${version_extra}")
+		update_version_env "${RELEASE}"
 		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
 		markfs clean ${JAILMNT}
 		;;
@@ -240,8 +254,11 @@ build_and_install_world() {
 }
 
 install_from_svn() {
+	local var_version_extra="$1"
 	local UPDATE=0
 	local proto
+	local svn_rev
+
 	[ -d ${JAILMNT}/usr/src ] && UPDATE=1
 	mkdir -p ${JAILMNT}/usr/src
 	case ${METHOD} in
@@ -266,10 +283,15 @@ install_from_svn() {
 		svn -q update ${JAILMNT}/usr/src || err 1 " fail"
 		echo " done"
 	fi
-	build_and_install_world
+#	build_and_install_world
+
+	svn_rev=$(svn info ${JAILMNT}/usr/src |
+	    awk '/Last Changed Rev:/ {print $4}')
+	setvar "${var_version_extra}" "r${svn_rev}"
 }
 
 install_from_csup() {
+	local var_version_extra="$1"
 	local UPDATE=0
 	[ -d ${JAILMNT}/usr/src ] && UPDATE=1
 	mkdir -p ${JAILMNT}/etc
@@ -288,6 +310,7 @@ src-all" > ${JAILMNT}/etc/supfile
 }
 
 install_from_ftp() {
+	local var_version_extra="$1"
 	mkdir ${JAILMNT}/fromftp
 	local URL V
 
@@ -475,12 +498,10 @@ create_jail() {
 	# if any error is encountered
 	CLEANUP_HOOK=cleanup_new_jail
 	jset ${JAILNAME} method ${METHOD}
-	${FCT}
+	${FCT} version_extra
 
-	eval `grep "^[RB][A-Z]*=" ${JAILMNT}/usr/src/sys/conf/newvers.sh `
-	RELEASE=${REVISION}-${BRANCH}
-	jset ${JAILNAME} version ${RELEASE}
-	update_version ${RELEASE}
+	RELEASE=$(update_version "${version_extra}")
+	update_version_env "${RELEASE}"
 
 	if [ "${ARCH}" = "i386" -a "${REALARCH}" = "amd64" ]; then
 		cat > ${JAILMNT}/etc/make.conf << EOF
