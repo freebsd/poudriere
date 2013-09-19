@@ -1196,19 +1196,19 @@ build_port() {
 	[ $# -ne 1 ] && eargs portdir
 	local portdir=$1
 	local port=${portdir##/usr/ports/}
-	local targets="check-config pkg-depends fetch-depends fetch checksum \
-				   extract-depends extract patch-depends patch build-depends \
-				   lib-depends configure build install-mtree run-depends \
-				   install package ${PORTTESTING:+deinstall}"
 	local mnt=$(my_path)
 	local log=$(log_path)
 	local listfilecmd network
 	local hangstatus
 	local pkgenv
 	local nostage=$(injail make -C ${portdir} -VNO_STAGE)
-	local mount_pkg_phase="package"
+	local order="install package"
 
-	[ ${PKGNG} -eq 0 -a "${nostage}" != "yes" ] && mount_pkg_phase="install"
+	[ "${nostage}" != "yes" ] && order="package install"
+	local targets="check-config pkg-depends fetch-depends fetch checksum \
+				   extract-depends extract patch-depends patch build-depends \
+				   lib-depends configure build install-mtree run-depends \
+				   ${order} ${PORTTESTING:+deinstall}"
 
 	# If not testing, then avoid rechecking deps in build/install;
 	# When testing, check depends twice to ensure they depend on
@@ -1256,7 +1256,7 @@ build_port() {
 
 		print_phase_header ${phase}
 
-		if [ "${phase}" = "${mount_pkg_phase}" ]; then
+		if [ "${phase}" = "package" ]; then
 			echo "PACKAGES=/new_packages" >> ${mnt}/etc/make.conf
 			# Create sandboxed staging dir for new package for this build
 			rm -rf "${PACKAGES}/.new_packages/${PKGNAME}"
