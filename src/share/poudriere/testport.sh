@@ -170,6 +170,7 @@ fi
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
 mkdir -p ${MASTERMNT}/tmp/pkgs
 PORTTESTING=yes
+export TRYBROKEN=yes
 export DEVELOPER_MODE=yes
 log_start
 buildlog_start /usr/ports/${ORIGIN}

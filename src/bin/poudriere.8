@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd September 8, 2013
+.Dd September 21, 2013
 .Dt POUDRIERE 8
 .Os FreeBSD
 .Sh NAME
@@ -341,6 +341,12 @@ When used with
 only unregister the ports tree with out removing the files.
 .El
 .Ss testport
+.PP
+The specified port will be tested for build and packaging problems.
+All missing dependencies will first be built in parallel.
+.Ev TRYBROKEN=yes
+is automatically defined in the environment to test ports marked as
+.Ev BROKEN .
 .Pp
 There is only 1 subcommand for the testport command.
 .Bl -tag -width "-f conffile"
