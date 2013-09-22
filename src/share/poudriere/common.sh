@@ -577,6 +577,8 @@ markfs() {
 	local dozfs=0
 	local domtree=0
 
+	msg_n "Recording filesystem state for ${name}..."
+
 	case "${name}" in
 	clean) [ -n "${fs}" ] && dozfs=1 ;;
 	prepkg)
@@ -671,6 +673,7 @@ EOF
 	mtree -X ${mnt}/poudriere/mtree.${name}exclude \
 		-cn -k uid,gid,mode,size \
 		-p ${mnt} > ${mnt}/poudriere/mtree.${name}
+	echo " done"
 }
 
 clonefs() {
