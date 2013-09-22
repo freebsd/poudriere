@@ -575,7 +575,7 @@ markfs() {
 			domtree=0
 		fi
 		;;
-	prebuild) domtree=1 ;;
+	prebuild|prestage) domtree=1 ;;
 	preinst) domtree=1 ;;
 	esac
 
@@ -588,8 +588,10 @@ markfs() {
 
 	[ $domtree -eq 0 ] && return 0
 	mkdir -p ${mnt}/poudriere/
-	if [ "${name}" = "prepkg" ]; then
-		cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
+
+	case "${name}" in
+		prepkg)
+			cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
 .${HOME}/.ccache/*
 ./ccache/*
 ./compat/linux/proc
@@ -604,8 +606,9 @@ markfs() {
 ./var/db/ports/*
 ./wrkdirs/*
 EOF
-	elif [ "${name}" = "prebuild" ]; then
-		cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
+			;;
+		prebuild|prestage)
+			cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
 .${HOME}/.ccache/*
 ./ccache/*
 ./compat/linux/proc
@@ -621,8 +624,9 @@ EOF
 ./var/db/ports/*
 ./wrkdirs/*
 EOF
-	elif [ "${name}" = "preinst" ]; then
-		cat >  ${mnt}/poudriere/mtree.${name}exclude << EOF
+			;;
+		preinst)
+			cat >  ${mnt}/poudriere/mtree.${name}exclude << EOF
 .${HOME}/*
 .${HOME}/.ccache/*
 .${LOCALBASE:-/usr/local}/etc/gconf/gconf.xml.defaults
@@ -654,7 +658,8 @@ EOF
 ./var/run/*
 ./wrkdirs/*
 EOF
-	fi
+		;;
+	esac
 	mtree -X ${mnt}/poudriere/mtree.${name}exclude \
 		-cn -k uid,gid,mode,size \
 		-p ${mnt} > ${mnt}/poudriere/mtree.${name}
@@ -1043,6 +1048,36 @@ check_leftovers() {
 	done
 }
 
+check_fs_violation() {
+	[ $# -eq 6 ] || eargs mnt mtree_target port status_msg err_msg \
+	    status_value
+	local mnt="$1"
+	local mtree_target="$2"
+	local port="$3"
+	local status_msg="$4"
+	local err_msg="$5"
+	local status_value="$6"
+	local tmpfile=${mnt}/tmp/check_fs_violation
+	local ret=0
+
+	msg_n "${status_msg}..."
+	mtree -X ${mnt}/poudriere/mtree.${mtree_target}exclude \
+		-f ${mnt}/poudriere/mtree.${mtree_target} \
+		-p ${mnt} > ${tmpfile}
+	echo " done"
+
+	if [ -s ${tmpfile} ]; then
+		msg "Error: ${err_msg}"
+		cat ${tmpfile}
+		bset ${MY_JOBID} status "${status_value}:${port}"
+		job_msg_verbose "Status for build ${port}: ${status_value}"
+		ret=1
+	fi
+	rm -f ${tmpfile}
+
+	return $ret
+}
+
 nohang() {
 	[ $# -gt 4 ] || eargs cmd_timeout log_timeout logfile cmd
 	local cmd_timeout
@@ -1150,19 +1185,18 @@ build_port() {
 	local listfilecmd network
 	local hangstatus
 	local pkgenv
-	local nostage=$(injail make -C ${portdir} -VNO_STAGE)
-	local targets install_order preinst_check_target
+	local no_stage=$(injail make -C ${portdir} -VNO_STAGE)
+	local targets install_order build_fs_violation_check_target
 
 	# Must install run-depends as 'actual-package-depends' and autodeps
 	# only consider installed packages as dependencies
-	if [ "${nostage}" = "yes" ]; then
+	if [ -n "${no_stage}" ]; then
 		install_order="install-mtree run-depends install package"
-		preinst_check_target="install-mtree"
+		build_fs_violation_check_target="install-mtree"
 	else
 		install_order="run-depends stage package install"
-		# Check before 'package' because it will modify make.conf
-		# for PACKAGES dir
-		preinst_check_target="package"
+		build_fs_violation_check_target="run-depends"
+
 	fi
 	targets="check-config pkg-depends fetch-depends fetch checksum \
 		  extract-depends extract patch-depends patch build-depends \
@@ -1184,29 +1218,26 @@ build_port() {
 		fi
 		case ${phase} in
 		configure) [ -n "${PORTTESTING}" ] && markfs prebuild ${mnt} ;;
-		${preinst_check_target})
+		${build_fs_violation_check_target})
 			if [ -n "${PORTTESTING}" ]; then
-				mtree -X ${mnt}/poudriere/mtree.prebuildexclude \
-					-f ${mnt}/poudriere/mtree.prebuild \
-					-p ${mnt} > ${mnt}/tmp/preinst
-				if [ -s ${mnt}/tmp/preinst ]; then
-					if [ "${nostage}" = "yes" ]; then
-						msg \
-						    "Filesystem touched before install:"
-					else
-						msg \
-						    "Filesystem touched before install (may be STAGE unsafe):"
-					fi
-					cat ${mnt}/tmp/preinst
-					rm -f ${mnt}/tmp/preinst
-					bset ${MY_JOBID} status "preinst_fs_violation:${port}"
-					job_msg_verbose "Status for build ${port}: preinst_fs_violation"
-					return 1
-				fi
-				rm -f ${mnt}/tmp/preinst
+				check_fs_violation ${mnt} prebuild "${port}" \
+				    "Checking for filesystem violations" \
+				    "Filesystem touched during build:" \
+				    "build_fs_violation" ||
+				    return 1
 			fi
 			;;
+		stage) [ -n "${PORTTESTING}" ] && markfs prestage ${mnt} ;;
 		install) [ -n "${PORTTESTING}" ] && markfs preinst ${mnt} ;;
+		package)
+			if [ -n "${PORTTESTING}" ] &&
+			    [ -z "${no_stage}" ]; then
+				check_fs_violation ${mnt} prestage "${port}" \
+				    "Checking for staging violations" \
+				    "Filesystem touched during stage (files must install to \${STAGEDIR}):" \
+				    "stage_fs_violation" || return 1
+			fi
+			;;
 		deinstall)
 			# Skip for all linux ports, they are not safe
 			if [ "${PKGNAME%%*linux*}" != "" ]; then
