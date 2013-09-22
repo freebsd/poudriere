@@ -556,9 +556,10 @@ unmarkfs() {
 }
 
 markfs() {
-	[ $# -lt 2 ] && eargs name mnt
+	[ $# -lt 2 ] && eargs name mnt path
 	local name=$1
 	local mnt=$(realpath $2)
+	local path="$3"
 	local fs="$(zfs_getfs ${mnt})"
 	local dozfs=0
 	local domtree=0
@@ -577,6 +578,7 @@ markfs() {
 		;;
 	prebuild|prestage) domtree=1 ;;
 	preinst) domtree=1 ;;
+	poststage) domtree=1 ;;
 	esac
 
 	if [ $dozfs -eq 1 ]; then
@@ -586,11 +588,14 @@ markfs() {
 		zfs snapshot ${fs}@${name}
 	fi
 
-	[ $domtree -eq 0 ] && return 0
+	if [ $domtree -eq 0 ]; then
+		echo " done"
+		return 0
+	fi
 	mkdir -p ${mnt}/poudriere/
 
 	case "${name}" in
-		prepkg)
+		prepkg|poststage)
 			cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
 .${HOME}/.ccache/*
 ./ccache/*
@@ -662,7 +667,7 @@ EOF
 	esac
 	mtree -X ${mnt}/poudriere/mtree.${name}exclude \
 		-cn -k uid,gid,mode,size \
-		-p ${mnt} > ${mnt}/poudriere/mtree.${name}
+		-p ${mnt}${path} > ${mnt}/poudriere/mtree.${name}
 }
 
 clonefs() {
@@ -1027,10 +1032,22 @@ sanity_check_pkgs() {
 }
 
 check_leftovers() {
+	[ $# -lt 1 ] && eargs mnt [stagedir]
 	local mnt=$1
-	mtree -X ${mnt}/poudriere/mtree.preinstexclude \
-		-f ${mnt}/poudriere/mtree.preinst \
-		-p ${mnt} | while read l ; do
+	local stagedir="$2"
+
+	{
+		if [ -z "${stagedir}" ]; then
+			mtree -X ${mnt}/poudriere/mtree.preinstexclude \
+			    -f ${mnt}/poudriere/mtree.preinst \
+			    -p ${mnt}
+		else
+			markfs poststage ${mnt} ${stagedir}
+			mtree -X ${mnt}/poudriere/mtree.preinstexclude \
+			    -f ${mnt}/poudriere/mtree.poststage \
+			    -e -p ${mnt}
+		fi
+	} | while read l ; do
 		case ${l} in
 		*extra)
 			if [ -d ${mnt}/${l% *} ]; then
@@ -1187,6 +1204,7 @@ build_port() {
 	local pkgenv
 	local no_stage=$(injail make -C ${portdir} -VNO_STAGE)
 	local targets install_order build_fs_violation_check_target
+	local stagedir plistsub_sed
 
 	# Must install run-depends as 'actual-package-depends' and autodeps
 	# only consider installed packages as dependencies
@@ -1196,7 +1214,7 @@ build_port() {
 	else
 		install_order="run-depends stage package install"
 		build_fs_violation_check_target="run-depends"
-
+		stagedir=$(injail make -C ${portdir} -VSTAGEDIR)
 	fi
 	targets="check-config pkg-depends fetch-depends fetch checksum \
 		  extract-depends extract patch-depends patch build-depends \
@@ -1264,6 +1282,52 @@ build_port() {
 				${mnt}/new_packages
 		fi
 
+		if [ "${phase}" = "deinstall" ]; then
+			plistsub_sed=$(injail env ${PORT_FLAGS} make -C ${portdir} -V'PLIST_SUB:C/"//g:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/')
+			PREFIX=$(injail env ${PORT_FLAGS} make -C ${portdir} -VPREFIX)
+			if [ -z "${no_stage}" ]; then
+				msg "Checking for orphaned files and directories in stage directory (missing from plist)"
+				bset ${MY_JOBID} status "stage_orphans:${port}"
+				local orphans=$(mktemp ${mnt}/tmp/orphans.XXXXXX)
+				local die=0
+
+				check_leftovers ${mnt} ${stagedir} | \
+				    while read modtype path; do
+					local ppath
+
+					# If this is a directory, use @dirrm in output
+					if [ -d "${path}" ]; then
+						ppath="@dirrm "`echo $path | sed \
+							-e "s,^${mnt},," \
+							-e "s,^${PREFIX}/,," \
+							${plistsub_sed} \
+						`
+					else
+						ppath=`echo "$path" | sed \
+							-e "s,^${mnt},," \
+							-e "s,^${PREFIX}/,," \
+							${plistsub_sed} \
+						`
+					fi
+					echo "${ppath}" >> ${orphans}
+				done
+
+				if [ -s "${orphans}" ]; then
+					msg "Files or directories orphaned:"
+					die=1
+					grep -v "^@dirrm" ${orphans}
+					grep "^@dirrm" ${orphans} | sort -r
+				fi
+				[ ${die} -eq 1 -a "${0##*/}" = "testport.sh" -a \
+				    "${PREFIX}" != "${LOCALBASE}" ] && msg \
+				    "This test was done with PREFIX!=LOCALBASE which \
+may show failures if the port does not respect PREFIX. \
+Try testport with -n to use PREFIX=LOCALBASE"
+				rm -f ${orphans}
+				[ $die -eq 0 ] || return 1
+			fi
+		fi
+
 		if [ "${phase#*-}" = "depends" ]; then
 			# No need for nohang or PORT_FLAGS for *-depends
 			injail env USE_PACKAGE_DEPENDS_ONLY=1 \
@@ -1314,7 +1378,6 @@ build_port() {
 
 		if [ "${phase}" = "deinstall" ]; then
 			msg "Checking for extra files and directories"
-			PREFIX=$(injail env ${PORT_FLAGS} make -C ${portdir} -VPREFIX)
 			bset ${MY_JOBID} status "leftovers:${port}"
 			local add=$(mktemp ${mnt}/tmp/add.XXXXXX)
 			local add1=$(mktemp ${mnt}/tmp/add1.XXXXXX)
@@ -1323,8 +1386,6 @@ build_port() {
 			local mod=$(mktemp ${mnt}/tmp/mod.XXXXXX)
 			local mod1=$(mktemp ${mnt}/tmp/mod1.XXXXXX)
 			local die=0
-
-			sedargs=$(injail env ${PORT_FLAGS} make -C ${portdir} -V'PLIST_SUB:C/"//g:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/')
 
 			check_leftovers ${mnt} | \
 				while read modtype path; do
@@ -1335,13 +1396,13 @@ build_port() {
 					ppath="@dirrm "`echo $path | sed \
 						-e "s,^${mnt},," \
 						-e "s,^${PREFIX}/,," \
-						${sedargs} \
+						${plistsub_sed} \
 					`
 				else
 					ppath=`echo "$path" | sed \
 						-e "s,^${mnt},," \
 						-e "s,^${PREFIX}/,," \
-						${sedargs} \
+						${plistsub_sed} \
 					`
 				fi
 				case $modtype in
