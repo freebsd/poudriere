@@ -1387,9 +1387,12 @@ Try testport with -n to use PREFIX=LOCALBASE"
 			injail env USE_PACKAGE_DEPENDS_ONLY=1 \
 			    make -C ${portdir} ${phase} || return 1
 		else
-			# Only set PKGENV during 'package' to prevent testport-built
-			# packages from going into the main repo
-			if [ "${phase}" = "package" ]; then
+			# Only set PKGENV during 'package' to prevent
+			# testport-built packages from going into the main repo
+			# Also enable during stage/install since it now
+			# uses a pkg for pkg_tools
+			if [ "${phase}" = "package" ] || [ -z "${no_stage}" \
+			    -a "${phase}" = "install" -a $PKGNG -eq 0 ]; then
 				pkgenv="${PKGENV}"
 			else
 				pkgenv=
