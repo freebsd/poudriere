@@ -1203,13 +1203,21 @@ build_port() {
 	local hangstatus
 	local pkgenv
 	local nostage=$(injail make -C ${portdir} -VNO_STAGE)
-	local order="install package"
+	local targets install_order preinst_check_target
 
-	[ "${nostage}" != "yes" ] && order="package install"
-	local targets="check-config pkg-depends fetch-depends fetch checksum \
-				   extract-depends extract patch-depends patch build-depends \
-				   lib-depends configure build install-mtree run-depends \
-				   ${order} ${PORTTESTING:+deinstall}"
+	# Must install run-depends as 'actual-package-depends' and autodeps
+	# only consider installed packages as dependencies
+	if [ "${nostage}" = "yes" ]; then
+		install_order="install-mtree run-depends install package"
+		preinst_check_target="install-mtree"
+	else
+		install_order="stage run-depends package install"
+		preinst_check_target="run-depends"
+	fi
+	targets="check-config pkg-depends fetch-depends fetch checksum \
+		  extract-depends extract patch-depends patch build-depends \
+		  lib-depends configure build ${install_order} \
+		  ${PORTTESTING:+deinstall}"
 
 	# If not testing, then avoid rechecking deps in build/install;
 	# When testing, check depends twice to ensure they depend on
@@ -1226,13 +1234,19 @@ build_port() {
 		fi
 		case ${phase} in
 		configure) [ -n "${PORTTESTING}" ] && markfs prebuild ${mnt} ;;
-		install-mtree)
+		${preinst_check_target})
 			if [ -n "${PORTTESTING}" ]; then
 				mtree -X ${mnt}/poudriere/mtree.prebuildexclude \
 					-f ${mnt}/poudriere/mtree.prebuild \
 					-p ${mnt} > ${mnt}/tmp/preinst
 				if [ -s ${mnt}/tmp/preinst ]; then
-					msg "Filesystem touched before install:"
+					if [ "${nostage}" = "yes" ]; then
+						msg \
+						    "Filesystem touched before install:"
+					else
+						msg \
+						    "Filesystem touched before install (may be STAGE unsafe):"
+					fi
 					cat ${mnt}/tmp/preinst
 					rm -f ${mnt}/tmp/preinst
 					bset ${MY_JOBID} status "preinst_fs_violation:${port}"
