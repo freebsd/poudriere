@@ -1953,13 +1953,10 @@ stop_build() {
 mangle_stderr() {
 	local msg_type="$1"
 	local extra="$2"
-	local xtrace=0
+	local - # Make `set +x` local
 
 	shift 2
 
-	# Must always disable xtrace here or it gets confused
-	# Subshell not used as this code is called a LOT in compute/list_deps
-	case $- in *x*) xtrace=1;; esac
 	set +x
 
 	{
@@ -1974,8 +1971,6 @@ mangle_stderr() {
 					'{print msg_type, extra ":", $0}' 1>&3
 		} 3>&2 2>&1
 	}
-
-	[ $xtrace -eq 1 ] && set -x
 }
 
 list_deps() {
