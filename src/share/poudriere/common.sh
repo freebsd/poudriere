@@ -1159,8 +1159,10 @@ build_port() {
 		install_order="install-mtree run-depends install package"
 		preinst_check_target="install-mtree"
 	else
-		install_order="stage run-depends package install"
-		preinst_check_target="run-depends"
+		install_order="run-depends stage package install"
+		# Check before 'package' because it will modify make.conf
+		# for PACKAGES dir
+		preinst_check_target="package"
 	fi
 	targets="check-config pkg-depends fetch-depends fetch checksum \
 		  extract-depends extract patch-depends patch build-depends \
