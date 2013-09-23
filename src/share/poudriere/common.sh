@@ -588,10 +588,7 @@ markfs() {
 		zfs snapshot ${fs}@${name}
 	fi
 
-	if [ $domtree -eq 0 ]; then
-		echo " done"
-		return 0
-	fi
+	[ $domtree -eq 0 ] && return 0
 	mkdir -p ${mnt}/poudriere/
 
 	case "${name}" in
