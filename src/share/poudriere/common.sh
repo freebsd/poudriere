@@ -1234,7 +1234,7 @@ gather_distfiles() {
 	sub=$(injail make -C ${portdir} -VDIST_SUBDIR)
 	dists=$(injail make -C ${portdir} -V_DISTFILES -V_PATCHFILES)
 	specials=$(injail make -C ${portdir} -V_DEPEND_SPECIALS)
-	job_msg_verbose "Providing distfiles for ${portdir}"
+	job_msg_verbose "Status for build ${portdir##/usr/ports/}: distfiles"
 	for d in ${dists}; do
 		[ -f ${DISTFILES_CACHE}/${sub}/${d} ] || continue
 		echo ${DISTFILES_CACHE}/${sub}/${d}
