@@ -2911,8 +2911,8 @@ build_repo() {
 		for pkg_file in ${PACKAGES}/All/*.tbz; do
 			# Check for non-empty directory with no packages in it
 			[ "${pkg}" = "${PACKAGES}/All/*.tbz" ] && break
-			msg_verbose "Extracting description for ${ORIGIN} ..."
 			ORIGIN=$(pkg_get_origin ${pkg_file})
+			msg_verbose "Extracting description for ${ORIGIN} ..."
 			[ -d ${MASTERMNT}/usr/ports/${ORIGIN} ] &&
 				injail make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
 		done
