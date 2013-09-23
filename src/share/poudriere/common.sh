@@ -1608,7 +1608,7 @@ start_builder() {
 	clonefs ${MASTERMNT} ${mnt} prepkg
 	# Create the /poudriere so that on zfs rollback does not nukes it
 	mkdir -p ${mnt}/poudriere
-	markfs prepkg ${mnt}
+	markfs prepkg ${mnt} >/dev/null
 	do_jail_mounts ${mnt} ${arch}
 	do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
 	jstart 0
