@@ -707,6 +707,17 @@ clonefs() {
 	fi
 }
 
+rm() {
+	local arg
+
+	for arg in "$@"; do
+		[ "${arg}" = "/" ] && err 1 "Tried to rm /"
+		[ "${arg%/}" = "/bin" ] && err 1 "Tried to rm /*"
+	done
+
+	/bin/rm "$@"
+}
+
 destroyfs() {
 	[ $# -ne 2 ] && eargs name type
 	local mnt fs type
