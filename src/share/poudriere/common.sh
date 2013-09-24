@@ -1282,7 +1282,6 @@ build_port() {
 		install_order="run-depends stage package install-mtree install"
 		build_fs_violation_check_target="run-depends"
 		stagedir=$(injail make -C ${portdir} -VSTAGEDIR)
-		USER=root
 	fi
 	targets="check-config pkg-depends fetch-depends fetch checksum \
 		  extract-depends extract patch-depends patch build-depends \
