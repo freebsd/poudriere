@@ -119,6 +119,8 @@ export MASTERMNT
 
 read_packages_from_params "$@"
 
+PACKAGES=${POUDRIERE_DATA}/packages/${MASTERNAME}
+
 PKG_EXT='*' package_dir_exists_and_has_packages ||
     err 1 "No packages exist for ${MASTERNAME}"
 
