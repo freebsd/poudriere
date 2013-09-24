@@ -1306,6 +1306,9 @@ build_port() {
 			jstart 1
 			JUSER=root
 			;;
+		extract)
+			chown -R ${JUSER} ${mnt}/wrkdirs
+			;;
 		*-depends|install-mtree) JUSER=root ;;
 		configure) [ -n "${PORTTESTING}" ] && markfs prebuild ${mnt} ;;
 		${build_fs_violation_check_target})
