@@ -1297,6 +1297,7 @@ build_port() {
 	[ -z "${PORTTESTING}" ] && PORT_FLAGS="${PORT_FLAGS} NO_DEPENDS=yes"
 
 	for phase in ${targets}; do
+		[ -z "${no_stage}" ] && JUSER=nobody
 		bset ${MY_JOBID} status "${phase}:${port}"
 		job_msg_verbose "Status for build ${port}: ${phase}"
 		case ${phase} in
