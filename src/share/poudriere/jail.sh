@@ -139,7 +139,7 @@ update_jail() {
 	fi
 	msg "Upgrading using ${METHOD}"
 	case ${METHOD} in
-	ftp|ftp-archive)
+	ftp|http|ftp-archive)
 		MASTERMNT=${JAILMNT}
 		MASTERNAME=${JAILNAME}
 		[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
@@ -324,7 +324,7 @@ install_from_ftp() {
 	if [ ${V%%.*} -lt 9 ]; then
 		msg "Fetching sets for FreeBSD ${V} ${ARCH}"
 		case ${METHOD} in
-		ftp|gjb)
+		ftp|http|gjb)
 			case ${VERSION} in
 				*-PRERELEASE|*-STABLE) type=snapshots ;;
 				*) type=releases ;;
@@ -374,7 +374,7 @@ install_from_ftp() {
 	else
 		local type
 		case ${METHOD} in
-			ftp|gjb|ftp-archive)
+			ftp|http|gjb|ftp-archive)
 				case ${VERSION} in
 					*-CURRENT|*-PRERELEASE|*-STABLE) type=snapshots ;;
 					*) type=releases ;;
@@ -427,7 +427,7 @@ create_jail() {
 	fi
 
 	case ${METHOD} in
-	ftp|gjb|ftp-archive|url=*)
+	ftp|http|gjb|ftp-archive|url=*)
 		FCT=install_from_ftp
 		;;
 	allbsd)
