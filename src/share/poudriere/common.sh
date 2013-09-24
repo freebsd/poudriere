@@ -1276,8 +1276,8 @@ build_port() {
 	# Must install run-depends as 'actual-package-depends' and autodeps
 	# only consider installed packages as dependencies
 	if [ -n "${no_stage}" ]; then
-		install_order="install-mtree run-depends install package"
-		build_fs_violation_check_target="install-mtree"
+		install_order="run-depends install-mtree install package"
+		build_fs_violation_check_target="run-depends"
 	else
 		install_order="run-depends stage package install-mtree install"
 		build_fs_violation_check_target="run-depends"
