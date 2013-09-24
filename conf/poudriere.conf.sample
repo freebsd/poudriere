@@ -68,12 +68,15 @@ USE_TMPFS=yes
 # This allows to share the distfiles between jails and ports tree
 DISTFILES_CACHE=/usr/ports/distfiles
 
-# if set the ports tree marked to use csup method will use the defined mirror
+# If set the ports or source tree marked to use csup method will use the defined mirror
+# Note: csup is deprecated. Use svn instead.
 #CSUP_HOST=cvsup._CHANGE_THIS_.freebsd.org
 
-# if set the ports tree or source tree marked to use svn will use the defined
-# mirror (default: svn.FreeBSD.org)
-#SVN_HOST=svn.FreeBSD.org
+# If set the ports tree or source tree marked to use svn will use the defined
+# mirror (default: svn0.us-west.FreeBSD.org)
+# The full mirror list is available here:
+# http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/svn-mirrors.html
+#SVN_HOST=svn0.us-west.FreeBSD.org
 
 # Automatic OPTION change detection
 # When bulk building packages, compare the options from kept packages to
