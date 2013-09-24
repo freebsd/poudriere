@@ -1260,7 +1260,7 @@ gather_distfiles() {
 }
 
 # Build+test port and return on first failure
-build_port() {
+_real_build_port() {
 	[ $# -ne 1 ] && eargs portdir
 	local portdir=$1
 	local port=${portdir##/usr/ports/}
@@ -1582,6 +1582,15 @@ Try testport with -n to use PREFIX=LOCALBASE"
 
 	bset ${MY_JOBID} status "idle:"
 	return 0
+}
+
+# Wrapper to ensure JUSER is reset and any other cleanup needed
+build_port() {
+	local ret
+	_real_build_port "$@" || :
+	ret=$?
+	JUSER=root
+	return ${ret}
 }
 
 # Save wrkdir and return path to file
@@ -1988,7 +1997,6 @@ build_pkg() {
 			save_wrkdir ${mnt} "${port}" "${portdir}" "noneed" ||:
 		fi
 
-		JUSER=root
 		injail make -C ${portdir} clean
 
 		if [ ${build_failed} -eq 0 ]; then
