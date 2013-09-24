@@ -1279,7 +1279,7 @@ build_port() {
 		install_order="run-depends install-mtree install package"
 		build_fs_violation_check_target="run-depends"
 	else
-		JUSER=nobody
+		JUSER=${PORTBUILD_USER}
 		chown -R ${JUSER} ${mnt}/wrkdirs
 		install_order="run-depends stage package install-mtree install"
 		build_fs_violation_check_target="run-depends"
@@ -1297,7 +1297,7 @@ build_port() {
 	[ -z "${PORTTESTING}" ] && PORT_FLAGS="${PORT_FLAGS} NO_DEPENDS=yes"
 
 	for phase in ${targets}; do
-		[ -z "${no_stage}" ] && JUSER=nobody
+		[ -z "${no_stage}" ] && JUSER=${PORTBUILD_USER}
 		bset ${MY_JOBID} status "${phase}:${port}"
 		job_msg_verbose "Status for build ${port}: ${phase}"
 		case ${phase} in
@@ -3110,6 +3110,7 @@ esac
 : ${WATCHDIR:=${POUDRIERE_DATA}/queue}
 : ${PIDFILE:=${POUDRIERE_DATA}/daemon.pid}
 : ${QUEUE_SOCKET:=/var/run/poudriered.sock}
+: ${PORTBUILD_USER:=nobody}
 # 24 hours for 1 command
 : ${MAX_EXECUTION_TIME:=86400}
 # 120 minutes with no log update
