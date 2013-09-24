@@ -39,7 +39,7 @@ Options:
     -C          -- Use 'make config-conditional' target (default)
     -j name     -- Run on the given jail
     -p tree     -- Specify on which ports tree the configuration will be done
-    -n          -- Don't configure/show/remove options of dependencies
+    -n          -- Do not configure/show/remove options of dependencies
     -r          -- Remove port options instead of configuring them
     -s          -- Show port options instead of configuring them
     -z set      -- Specify which SET to use
@@ -69,7 +69,7 @@ while getopts "cCj:f:p:nrsz:" FLAG; do
 			COMMAND=config-conditional
 			;;
 		j)
-			jail_exists ${OPTARG} || err 1 "No such jail"
+			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
 			JAILNAME=${OPTARG}
 			;;
 		f)
@@ -77,7 +77,7 @@ while getopts "cCj:f:p:nrsz:" FLAG; do
 			;;
 		p)
 			porttree_exists ${OPTARG} ||
-			    err 2 "No such ports tree ${OPTARG}"
+			    err 2 "No such ports tree: ${OPTARG}"
 			PTNAME=${OPTARG}
 			;;
 		n)
@@ -113,7 +113,7 @@ if [ $# -eq 0 ]; then
 LISTPORTS=`grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${BULK_LIST}`
 else
 	[ -z "${BULK_LIST}" ] ||
-		err 1 "command line arguments and list of ports cannot be used at the same time"
+		err 1 "Command line arguments and a list of ports cannot be used at the same time"
 	LISTPORTS="$@"
 fi
 
@@ -131,7 +131,7 @@ setup_makeconf ${__MAKE_CONF} "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 
 export TERM=${SAVED_TERM}
 for origin in ${LISTPORTS}; do
-	[ -d ${PORTSDIR}/${origin} ] || err 1 "No such ports ${origin}"
+	[ -d ${PORTSDIR}/${origin} ] || err 1 "No such port: ${origin}"
 	make PORT_DBDIR=${PORT_DBDIR} \
 		-C ${PORTSDIR}/${origin} \
 		${COMMAND}

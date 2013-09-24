@@ -30,16 +30,16 @@ usage() {
 poudriere pkgclean [options] [-f file|cat/port ...]
 
 Parameters:
-    -a          -- Build the whole ports tree
+    -a          -- Clean the whole ports tree
+    -j jail     -- Which jail to use for packages
     -f file     -- Get the list of ports to keep from a file
     [ports...]  -- List of ports to keep on the command line
 
 Options:
-    -j jail     -- Which jail to use for packages
-    -J n        -- Run n jobs in parallel
-    -n          -- Don't actually remove anything, just show what would be
+    -J n        -- Run n jobs in parallel (Defaults to the number of CPUs)
+    -n          -- Do not actually remove anything, just show what would be
                    removed
-    -N          -- Do not build package repository or INDEX when build
+    -N          -- Do not build the package repository or INDEX when clean
                    completed
     -p tree     -- Which ports tree to use for packages
     -R          -- Clean RESTRICTED packages after building
@@ -87,7 +87,7 @@ while getopts "aj:J:f:nNp:Rvyz:" FLAG; do
 			;;
 		p)
 			porttree_exists ${OPTARG} ||
-			    err 2 "No such ports tree ${OPTARG}"
+			    err 2 "No such ports tree: ${OPTARG}"
 			PTNAME=${OPTARG}
 			;;
 		R)
