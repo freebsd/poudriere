@@ -168,7 +168,7 @@ if [ -d ${MASTERMNT}${PREFIX} -a "${PREFIX}" != "/usr" ]; then
 fi
 
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
-mkdir -p ${MASTERMNT}/tmp/pkgs
+install -d -o ${PORTBUILD_USER} ${MASTERMNT}/tmp/pkgs
 PORTTESTING=yes
 export TRYBROKEN=yes
 export DEVELOPER_MODE=yes
