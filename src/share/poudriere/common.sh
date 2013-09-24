@@ -103,6 +103,14 @@ jstart() {
 		host.hostname=${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}} \
 		${network} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
+	if ! injail id ${PORTBUILD_USER} 2>/dev/null ; then
+		msg_n "Creating user/group ${PORTBUILD_USER}"
+		injail pw groupadd ${PORTBUILD_USER} -g 65532 || \
+		err 1 "Unable to create group ${PORTBUILD_USER}"
+		injail pw useradd ${PORTBUILD_USER} -u 65532 -d /nonexistent -c "Package builder" || \
+		err 1 "Unable to create user ${PORTBUILD_USER}"
+		echo " done"
+	fi
 }
 
 jstop() {
