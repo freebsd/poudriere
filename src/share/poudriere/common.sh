@@ -1395,7 +1395,13 @@ _real_build_port() {
 							${plistsub_sed} \
 						`
 					fi
-					echo "${ppath}" >> ${orphans}
+					# Ignore PREFIX as orphan, which
+					# happens via stage-dir if
+					# NO_MTREE is set
+					[ "${path#${mnt}}" != "${PREFIX}" ] &&
+					  [ "${path#${mnt}}" != "/usr" ] &&
+					  [ "${path#${mnt}}" != "/." ] &&
+					    echo "${ppath}" >> ${orphans}
 				done
 
 				if [ -s "${orphans}" ]; then
