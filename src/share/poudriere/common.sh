@@ -1280,6 +1280,7 @@ build_port() {
 		build_fs_violation_check_target="run-depends"
 	else
 		JUSER=nobody
+		chown -R ${JUSER} ${mnt}/wrkdirs
 		install_order="run-depends stage package install-mtree install"
 		build_fs_violation_check_target="run-depends"
 		stagedir=$(injail make -C ${portdir} -VSTAGEDIR)
