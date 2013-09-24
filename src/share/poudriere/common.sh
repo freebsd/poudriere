@@ -1298,11 +1298,11 @@ build_port() {
 	for phase in ${targets}; do
 		bset ${MY_JOBID} status "${phase}:${port}"
 		job_msg_verbose "Status for build ${port}: ${phase}"
-		if [ "${phase}" = "fetch" ]; then
+		case ${phase} in
+		fetch)
 			jstop
 			jstart 1
-		fi
-		case ${phase} in
+			;;
 		*-depends) JUSER=root ;;
 		configure) [ -n "${PORTTESTING}" ] && markfs prebuild ${mnt} ;;
 		${build_fs_violation_check_target})
