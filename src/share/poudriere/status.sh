@@ -47,7 +47,7 @@ SETNAME=""
 while getopts "j:p:z:" FLAG; do
 	case "${FLAG}" in
 		j)
-			jail_exists ${OPTARG} || err 1 "No such jail"
+			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
 			JAILNAME=${OPTARG}
 			;;
 		p)
@@ -77,7 +77,7 @@ POUDRIERE_BUILD_TYPE=bulk
 if [ -n "${JAILNAME}" ]; then
 	MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 	MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
-	jail_runs ${MASTERNAME} || err 1 "No such jail running"
+	jail_runs ${MASTERNAME} || err 1 "Jail, ${JAILNAME}, is not running"
 	builders="$(bget builders 2>/dev/null || :)"
 	# Dereference latest into actual buildname
 	BUILDNAME="$(bget buildname)"
