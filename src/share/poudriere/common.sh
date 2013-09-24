@@ -91,7 +91,7 @@ my_name() {
 }
 
 injail() {
-	jexec -U root ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}} "$@"
+	jexec -U ${JUSER:-root} ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}} "$@"
 }
 
 jstart() {
@@ -1279,6 +1279,8 @@ build_port() {
 		install_order="run-depends install-mtree install package"
 		build_fs_violation_check_target="run-depends"
 	else
+		JUSER=nobody
+		chown -R ${JUSER} ${mnt}/wrkdirs
 		install_order="run-depends stage package install-mtree install"
 		build_fs_violation_check_target="run-depends"
 		stagedir=$(injail make -C ${portdir} -VSTAGEDIR)
@@ -1295,13 +1297,19 @@ build_port() {
 	[ -z "${PORTTESTING}" ] && PORT_FLAGS="${PORT_FLAGS} NO_DEPENDS=yes"
 
 	for phase in ${targets}; do
+		[ -z "${no_stage}" ] && JUSER=nobody
 		bset ${MY_JOBID} status "${phase}:${port}"
 		job_msg_verbose "Status for build ${port}: ${phase}"
 		case ${phase} in
 		fetch)
 			jstop
 			jstart 1
+			JUSER=root
 			;;
+		extract)
+			chown -R ${JUSER} ${mnt}/wrkdirs
+			;;
+		*-depends|install-mtree) JUSER=root ;;
 		configure) [ -n "${PORTTESTING}" ] && markfs prebuild ${mnt} ;;
 		${build_fs_violation_check_target})
 			if [ -n "${PORTTESTING}" ]; then
@@ -1313,7 +1321,10 @@ build_port() {
 			fi
 			;;
 		stage) [ -n "${PORTTESTING}" ] && markfs prestage ${mnt} ;;
-		install) [ -n "${PORTTESTING}" ] && markfs preinst ${mnt} ;;
+		install)
+			JUSER=root
+			[ -n "${PORTTESTING}" ] && markfs preinst ${mnt}
+			;;
 		package)
 			if [ -n "${PORTTESTING}" ] &&
 			    [ -z "${no_stage}" ]; then
@@ -1324,6 +1335,7 @@ build_port() {
 			fi
 			;;
 		deinstall)
+			JUSER=root
 			# Skip for all linux ports, they are not safe
 			if [ "${PKGNAME%%*linux*}" != "" ]; then
 				msg "Checking shared library dependencies"
@@ -1345,6 +1357,7 @@ build_port() {
 			mount -t nullfs \
 				"${PACKAGES}/.new_packages/${PKGNAME}" \
 				${mnt}/new_packages
+			chown -R ${JUSER} ${mnt}/new_packages
 		fi
 
 		if [ "${phase}" = "deinstall" ]; then
@@ -1975,6 +1988,7 @@ build_pkg() {
 			save_wrkdir ${mnt} "${port}" "${portdir}" "noneed" ||:
 		fi
 
+		JUSER=root
 		injail make -C ${portdir} clean
 
 		if [ ${build_failed} -eq 0 ]; then
