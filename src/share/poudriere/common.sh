@@ -1280,6 +1280,7 @@ _real_build_port() {
 	local no_stage=$(injail make -C ${portdir} -VNO_STAGE)
 	local targets install_order build_fs_violation_check_target
 	local stagedir plistsub_sed
+	local jailuser
 
 	# Must install run-depends as 'actual-package-depends' and autodeps
 	# only consider installed packages as dependencies
@@ -1287,7 +1288,12 @@ _real_build_port() {
 		install_order="run-depends install-mtree install package"
 		build_fs_violation_check_target="run-depends"
 	else
-		JUSER=${PORTBUILD_USER}
+		local needroot=$(injail make -C ${PORTDIR} -VNEED_ROOT)
+		if [ ${needroot} != "yes" ]; then
+			jailuser=${PORTBUILD_USER}
+		else
+			jailuser=root
+		fi
 		chown -R ${JUSER} ${mnt}/wrkdirs
 		install_order="run-depends stage package install-mtree install"
 		build_fs_violation_check_target="run-depends"
@@ -1305,7 +1311,7 @@ _real_build_port() {
 	[ -z "${PORTTESTING}" ] && PORT_FLAGS="${PORT_FLAGS} NO_DEPENDS=yes"
 
 	for phase in ${targets}; do
-		[ -z "${no_stage}" ] && JUSER=${PORTBUILD_USER}
+		[ -z "${no_stage}" ] && JUSER=${jailuser}
 		bset ${MY_JOBID} status "${phase}:${port}"
 		job_msg_verbose "Status for build ${port}: ${phase}"
 		case ${phase} in
