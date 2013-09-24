@@ -36,18 +36,18 @@ usage() {
 Usage: poudriere [-e etcdir] command [options]
 
 Commands:
-    bulk        -- generate packages for given ports
-    distclean   -- clean old distfiles
-    daemon      -- launch the poudriere daemon
-    help        -- show usage
-    jail        -- manage the jails used by poudriere
-    ports       -- create, update or delete the portstrees used by poudriere
-    pkgclean    -- removed packages that are no longer needed
-    options     -- configure ports options
-    queue       -- queue a build request
-    status      -- get status of builds
-    testport    -- launch a test on a given port
-    version     -- show poudriere version
+    bulk        -- Generate packages for given ports
+    distclean   -- Remove old distfiles
+    daemon      -- Launch the poudriere daemon
+    help        -- Show usage
+    jail        -- Manage the jails used by poudriere
+    ports       -- Create, update or delete the portstrees used by poudriere
+    pkgclean    -- Remove packages that are no longer needed
+    options     -- Configure ports options
+    queue       -- Queue a build request
+    status      -- Get the status of builds
+    testport    -- Launch a test build of a given port
+    version     -- Show the version of poudriere
 EOF
 	exit 1
 }
@@ -88,6 +88,7 @@ CMD_ENV="PATH=${PATH} POUDRIERE_VERSION=${POUDRIERE_VERSION}"
 case "${CMD}" in
 	version)
 		echo "${POUDRIERE_VERSION}"
+		exit 0
 		;;
 	help)
 		usage
