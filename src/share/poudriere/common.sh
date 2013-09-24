@@ -1306,7 +1306,7 @@ build_port() {
 			jstart 1
 			JUSER=root
 			;;
-		*-depends) JUSER=root ;;
+		*-depends|install-mtree) JUSER=root ;;
 		configure) [ -n "${PORTTESTING}" ] && markfs prebuild ${mnt} ;;
 		${build_fs_violation_check_target})
 			if [ -n "${PORTTESTING}" ]; then
