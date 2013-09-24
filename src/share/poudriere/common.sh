@@ -1601,8 +1601,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 # Wrapper to ensure JUSER is reset and any other cleanup needed
 build_port() {
 	local ret
-	_real_build_port "$@" || :
-	ret=$?
+	_real_build_port "$@" || ret=$?
 	JUSER=root
 	return ${ret}
 }
