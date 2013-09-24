@@ -1279,6 +1279,7 @@ build_port() {
 		install_order="run-depends install-mtree install package"
 		build_fs_violation_check_target="run-depends"
 	else
+		JUSER=nobody
 		install_order="run-depends stage package install-mtree install"
 		build_fs_violation_check_target="run-depends"
 		stagedir=$(injail make -C ${portdir} -VSTAGEDIR)
@@ -1302,6 +1303,7 @@ build_port() {
 			jstart 1
 		fi
 		case ${phase} in
+		*-depends) JUSER=root ;;
 		configure) [ -n "${PORTTESTING}" ] && markfs prebuild ${mnt} ;;
 		${build_fs_violation_check_target})
 			if [ -n "${PORTTESTING}" ]; then
@@ -1313,7 +1315,10 @@ build_port() {
 			fi
 			;;
 		stage) [ -n "${PORTTESTING}" ] && markfs prestage ${mnt} ;;
-		install) [ -n "${PORTTESTING}" ] && markfs preinst ${mnt} ;;
+		install)
+			JUSER=root
+			[ -n "${PORTTESTING}" ] && markfs preinst ${mnt}
+			;;
 		package)
 			if [ -n "${PORTTESTING}" ] &&
 			    [ -z "${no_stage}" ]; then
@@ -1324,6 +1329,7 @@ build_port() {
 			fi
 			;;
 		deinstall)
+			JUSER=root
 			# Skip for all linux ports, they are not safe
 			if [ "${PKGNAME%%*linux*}" != "" ]; then
 				msg "Checking shared library dependencies"
