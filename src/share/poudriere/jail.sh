@@ -147,6 +147,7 @@ update_jail() {
 		markfs clean ${JAILMNT}
 		;;
 	csup)
+		msg "csup has been deprecated by FreeBSD. Only use if you are syncing with your own csup repo."
 		install_from_csup
 		update_version $(jget ${JAILNAME} version)
 		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
@@ -410,7 +411,7 @@ create_jail() {
 				;;
 			stable/*|head*|release/*|releng/*.[0-9]) ;;
 			*)
-				err 1 "version with svn should be: head[@rev] or stable/N or release/N or releng/N"
+				err 1 "version with svn should be: head[@rev], stable/N, release/N or releng/N"
 				;;
 		esac
 		FCT=install_from_svn
@@ -427,9 +428,10 @@ create_jail() {
 				;;
 			RELENG_*|.) ;;
 			*)
-				err 1 "version with svn should be: head or stable/N or release/N or releng/N"
+				err 1 "version with csup should be: . or RELENG_N or RELEASE_N"
 				;;
 		esac
+		msg "csup has been depreciated by FreeBSD. Only use if you are syncing with your own csup repo."
 		FCT=install_from_csup
 		;;
 	*)
