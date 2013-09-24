@@ -1302,6 +1302,7 @@ build_port() {
 		fetch)
 			jstop
 			jstart 1
+			JUSER=root
 			;;
 		*-depends) JUSER=root ;;
 		configure) [ -n "${PORTTESTING}" ] && markfs prebuild ${mnt} ;;
