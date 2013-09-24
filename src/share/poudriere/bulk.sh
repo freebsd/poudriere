@@ -47,7 +47,7 @@ Options:
     -T          -- Try to build broken ports anyway
     -F          -- Only fetch from orignial master_site (skip FreeBSD mirrors)
     -s          -- Skip sanity checks
-    -J n        -- Run n jobs in parallel (Default: to 8)
+    -J n        -- Run n jobs in parallel (Defaults to the number of CPUs)
     -j name     -- Run only on the given jail
     -N          -- Do not build package repository or INDEX when build
                    completed
@@ -197,7 +197,7 @@ if [ $PKGNG -eq 1 ] && \
 	[ $nbbuilt -eq 0 -a ${BUILD_REPO} -eq 1 ] && 
 		msg "No package built, but repository needs to be created"
 	# This block mostly to avoid next
-# Package all newly build ports
+# Package all newly built ports
 elif [ $nbbuilt -eq 0 ]; then
 	if [ $PKGNG -eq 1 ]; then
 		msg "No package built, no need to update the repository"
