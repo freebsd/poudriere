@@ -71,8 +71,6 @@ KILL=0
 . ${SCRIPTPREFIX}/common.sh
 
 if [ -z "${DAEMON_ARGS_PARSED}" ]; then
-	[ $# -eq 0 ] && usage
-
 	while getopts "knp:" FLAG; do
 		case "${FLAG}" in
 		n)

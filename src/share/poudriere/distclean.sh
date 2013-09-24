@@ -31,13 +31,14 @@ usage() {
 poudriere distclean [options]
 
 Options:
-    -J n        -- Run n jobs in parallel
+    -J n        -- Run n jobs in parallel (Defaults to the number of CPUs)
     -p tree     -- Specify which ports tree to use for comparing to distfiles
-    -n          -- Don't actually remove anything, just show what would be
+                   (Defaults to the 'default' tree)
+    -n          -- Do not actually remove anything, just show what would be
                    removed
     -v          -- Be verbose; show more information. Use twice to enable
                    debug output
-    -y          -- Assume yes when deleting and do not confirm
+    -y          -- Assume yes when deleting and do not prompt for confirmation
 EOF
 	exit 1
 }
@@ -49,8 +50,6 @@ DRY_RUN=0
 ALL=1
 
 . ${SCRIPTPREFIX}/common.sh
-
-[ $# -eq 0 ] && usage
 
 while getopts "J:np:vy" FLAG; do
 	case "${FLAG}" in
@@ -81,7 +80,7 @@ export PORTSDIR=$(pget ${PTNAME} mnt)
 [ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 [ -z "${PORTSDIR}" ] && err 1 "No such ports tree: ${PTNAME}"
 [ -d ${DISTFILES_CACHE:-/nonexistent} ] ||
-	err 1 "DISTFILES_CACHE directory does not exists. (c.f. poudriere.conf)"
+	err 1 "The DISTFILES_CACHE directory does not exist (c.f. poudriere.conf)"
 
 DISTFILES_LIST=$(mktemp -t poudriere_distfiles)
 CLEANUP_HOOK=distfiles_cleanup
@@ -115,7 +114,7 @@ sort -u ${DISTFILES_LIST} > ${DISTFILES_LIST}.expected
 
 # Gather list of actual files
 msg "Gathering list of actual distfiles"
-[ -n "${DISTFILES_CACHE}" ] || err 1 "DISTFILES_CACHE is required to be set"
+[ -n "${DISTFILES_CACHE}" ] || err 1 "DISTFILES_CACHE must be set (c.f. poudriere.conf)"
 find -x -s ${DISTFILES_CACHE}/ -type f > ${DISTFILES_LIST}.actual
 
 comm -1 -3 ${DISTFILES_LIST}.expected ${DISTFILES_LIST}.actual \
