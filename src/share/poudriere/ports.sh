@@ -35,11 +35,10 @@ usage() {
 poudriere ports [parameters] [options]
 
 Parameters:
-    -c            -- create a portstree
-    -d            -- delete a portstree
-    -u            -- update a portstree
-    -l            -- lists all available portstrees
-    -q            -- quiet (remove the header in list)
+    -c            -- Create a portstree
+    -d            -- Delete a portstree
+    -u            -- Update a portstree
+    -l            -- List all available portstrees
     -v            -- Be verbose; show more information.
 
 Options:
@@ -53,11 +52,12 @@ Options:
     -f fs         -- FS name (tank/jails/myjail) if fs is "none" then do not
                      create on zfs
     -M mountpoint -- mountpoint
-    -m method     -- when used with -c, specify the method used to update the
-		     tree by default it is portsnap, possible usage are
+    -m method     -- when used with -c, specify the method used to create the
+		     tree. By default it is portsnap, possible alternatives are
 		     "portsnap", "svn", "svn+http", "svn+https",
 		     "svn+file", "svn+ssh", "git"
     -B branch     -- Which branch to use for SVN method (default: head)
+    -q            -- Quiet (Remove the header in the list view)
 EOF
 	exit 1
 }
@@ -153,7 +153,7 @@ cleanup_new_ports() {
 
 if [ ${CREATE} -eq 1 ]; then
 	# test if it already exists
-	porttree_exists ${PTNAME} && err 2 "The ports tree ${PTNAME} already exists"
+	porttree_exists ${PTNAME} && err 2 "The ports tree, ${PTNAME}, already exists"
 	: ${PTMNT="${BASEFS:=/usr/local${ZROOTFS}}/ports/${PTNAME}"}
 	: ${PTFS="${ZPOOL}${ZROOTFS}/ports/${PTNAME}"}
 
@@ -188,8 +188,8 @@ if [ ${CREATE} -eq 1 ]; then
 			echo " done"
 			;;
 		git)
-			msg "Cloning the ports tree"
-			git clone ${GIT_URL} ${PTMNT} || err 1 " fail"
+			msg_n "Cloning the ports tree..."
+			git clone -q ${GIT_URL} ${PTMNT} || err 1 " fail"
 			echo " done"
 			;;
 		esac
@@ -243,7 +243,7 @@ if [ ${UPDATE} -eq 1 ]; then
 		;;
 	git)
 		msg "Pulling from ${GIT_URL}"
-		cd ${PORTSMNT:-${PTMNT}} && git pull
+		cd ${PORTSMNT:-${PTMNT}} && git pull -q
 		echo " done"
 		;;
 	*)
