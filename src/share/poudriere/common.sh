@@ -1279,7 +1279,7 @@ build_port() {
 		install_order="install-mtree run-depends install package"
 		build_fs_violation_check_target="install-mtree"
 	else
-		install_order="run-depends stage package install"
+		install_order="run-depends stage package install-mtree install"
 		build_fs_violation_check_target="run-depends"
 		stagedir=$(injail make -C ${portdir} -VSTAGEDIR)
 	fi
