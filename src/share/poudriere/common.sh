@@ -1351,6 +1351,7 @@ build_port() {
 			mount -t nullfs \
 				"${PACKAGES}/.new_packages/${PKGNAME}" \
 				${mnt}/new_packages
+			chown -R ${JUSER} ${mnt}/new_packages
 		fi
 
 		if [ "${phase}" = "deinstall" ]; then
