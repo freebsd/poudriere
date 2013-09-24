@@ -1985,6 +1985,7 @@ build_pkg() {
 			save_wrkdir ${mnt} "${port}" "${portdir}" "noneed" ||:
 		fi
 
+		JUSER=root
 		injail make -C ${portdir} clean
 
 		if [ ${build_failed} -eq 0 ]; then
