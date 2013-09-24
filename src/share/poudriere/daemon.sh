@@ -30,9 +30,9 @@ usage() {
 poudriere daemon [options]
 
 Options:
-    -n        -- No daemonise
-    -p        -- pidfile
-    -k        -- kill the running daemon
+    -n        -- Do not daemonise
+    -p        -- Override the pidfile location
+    -k        -- Kill the running daemon
 EOF
 	exit 1
 }
@@ -88,6 +88,9 @@ if [ -z "${DAEMON_ARGS_PARSED}" ]; then
 	done
 	if [ ${KILL} -eq 1 ]; then
 		pkill -15 -F ${PIDFILE} >/dev/null 2>&1 || exit 1
+		if [ -f ${PIDFILE} ]; then
+			rm ${PIDFILE}
+		fi
 		exit 0
 	fi
 
@@ -112,6 +115,9 @@ while :; do
 	next=$(find ${WATCHDIR} -type f -depth 1 -print -quit 2>/dev/null)
 	if [ -z "${next}" ]; then
 		dirwatch ${WATCHDIR}
+		if [ $? -ne 0 ]; then
+			err 1 "dirwatch terminated unsuccessfully"
+		fi
 		continue
 	fi
 	POUDRIERE_ARGS=$(sed -n "s/^POUDRIERE_ARGS: //p" ${next})
