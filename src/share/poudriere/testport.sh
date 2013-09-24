@@ -188,6 +188,8 @@ elif [ -f ${MASTERMNT}/usr/ports/${ORIGIN}/.keep ]; then
 	save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" "noneed" ||:
 fi
 
+JUSER=root
+
 if [ -f ${MASTERMNT}/tmp/pkgs/${PKGNAME}.${PKG_EXT} ]; then
 	msg "Installing from package"
 	injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT} || :
