@@ -1288,7 +1288,7 @@ _real_build_port() {
 		install_order="run-depends install-mtree install package"
 		build_fs_violation_check_target="run-depends"
 	else
-		local needroot=$(injail make -C ${PORTDIR} -VNEED_ROOT)
+		local needroot=$(injail make -C ${portdir} -VNEED_ROOT)
 		if [ ${needroot} != "yes" ]; then
 			jailuser=${PORTBUILD_USER}
 		else
