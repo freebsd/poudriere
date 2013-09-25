@@ -1882,6 +1882,9 @@ build_pkg() {
 	msg "Building ${port}"
 	buildlog_start ${portdir}
 
+	# Ensure /dev/null exists (kern/139014)
+	devfs -m ${mnt}/dev rule apply path null unhide
+
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
 		badd ports.ignored "${port} ${PKGNAME} ${ignore}"
