@@ -1289,7 +1289,7 @@ _real_build_port() {
 		build_fs_violation_check_target="run-depends"
 	else
 		local needroot=$(injail make -C ${portdir} -VNEED_ROOT)
-		if [ ${needroot} != "yes" ]; then
+		if [ "${needroot}" != "yes" ]; then
 			jailuser=${PORTBUILD_USER}
 		else
 			jailuser=root
