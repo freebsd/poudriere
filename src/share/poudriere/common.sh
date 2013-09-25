@@ -1294,7 +1294,7 @@ _real_build_port() {
 		else
 			jailuser=root
 		fi
-		chown -R ${JUSER} ${mnt}/wrkdirs
+		chown -R ${jailuser} ${mnt}/wrkdirs
 		install_order="run-depends stage package install-mtree install"
 		build_fs_violation_check_target="run-depends"
 		stagedir=$(injail make -C ${portdir} -VSTAGEDIR)
