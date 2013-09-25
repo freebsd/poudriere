@@ -1401,6 +1401,9 @@ _real_build_port() {
 							${plistsub_sed} \
 						`
 					fi
+
+					[ "${modtype}" = "M" ] && continue
+
 					# Ignore PREFIX as orphan, which
 					# happens via stage-dir if
 					# NO_MTREE is set
