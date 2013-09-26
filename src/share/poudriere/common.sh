@@ -920,8 +920,9 @@ jail_start() {
 	if [ -n "${WITH_PKGNG}" ]; then
 		export PKGNG=1
 		export PKG_EXT="txz"
-		export PKG_ADD="${LOCALBASE:-/usr/local}/sbin/pkg add"
-		export PKG_DELETE="${LOCALBASE:-/usr/local}/sbin/pkg delete -y -f"
+		export PKG_BIN="${LOCALBASE:-/usr/local}/sbin/pkg-static"
+		export PKG_ADD="${PKG_BIN} add"
+		export PKG_DELETE="${PKG_BIN} delete -y -f"
 	else
 		export PKGNG=0
 		export PKG_ADD=pkg_add
@@ -1339,6 +1340,20 @@ may show failures if the port does not respect PREFIX. \
 Try testport with -n to use PREFIX=LOCALBASE"
 				rm -f ${orphans}
 				[ $die -eq 0 ] || return 1
+
+				msg "Checking for absolute symlinks into staging directory"
+				bset ${MY_JOBID} status "stage_symlinks:${port}"
+				if [ ${PKGNG} -eq 1 ]; then
+					injail ${PKG_BIN} query %Fp ${PKGNAME}
+				else
+					injail pkg_info -qL ${PKGNAME}
+				fi | injail xargs -J % find % -type l |
+				    injail xargs stat -l |
+				    grep "${portdir}/work/stage" && die=1
+				if [ ${die} -eq 1 ]; then
+					msg "Port is installing absolute symlinks into stagedir"
+					return 1
+				fi
 			fi
 		fi
 
