@@ -1288,13 +1288,12 @@ _real_build_port() {
 		install_order="run-depends install-mtree install package"
 		build_fs_violation_check_target="run-depends"
 	else
-		local needroot=$(injail make -C ${portdir} -VNEED_ROOT)
-		if [ "${needroot}" != "yes" ]; then
+		jailuser=root
+		if [ "${BUILD_AS_NON_ROOT}" = "yes" ] &&
+		    [ -z "$(injail make -C ${portdir} -VNEED_ROOT)" ]; then
 			jailuser=${PORTBUILD_USER}
-		else
-			jailuser=root
+			chown -R ${jailuser} ${mnt}/wrkdirs
 		fi
-		chown -R ${jailuser} ${mnt}/wrkdirs
 		install_order="run-depends stage package install-mtree install"
 		build_fs_violation_check_target="run-depends"
 		stagedir=$(injail make -C ${portdir} -VSTAGEDIR)
@@ -3144,6 +3143,7 @@ esac
 : ${PIDFILE:=${POUDRIERE_DATA}/daemon.pid}
 : ${QUEUE_SOCKET:=/var/run/poudriered.sock}
 : ${PORTBUILD_USER:=nobody}
+: ${BUILD_AS_NON_ROOT:=no}
 # 24 hours for 1 command
 : ${MAX_EXECUTION_TIME:=86400}
 # 120 minutes with no log update
