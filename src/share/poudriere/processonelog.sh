@@ -119,7 +119,7 @@ elif bzgrep -qE "((perl|perl5.6.1):.*(not found|No such file or directory)|cp:.*
   reason="perl"
 elif bzgrep -qE "(Abort trap|Bus error|Error 127|Killed: 9|Signal 1[01])" $1; then
   reason="process_failed"
-elif bzgrep -qE "(USER.*PID.*TIME.*COMMAND|pnohang: killing make package)" $1; then
+elif bzgrep -qE "(USER.*PID.*TIME.*COMMAND|pnohang: killing make package|Killing runaway)" $1; then
   reason="runaway_process"
 elif bzgrep -qE "(/usr/bin/ld: cannot find -l(pthread|XThrStub)|cannot find -lc_r|Error: pthreads are required to build this package|Please install/update your POSIX threads (pthreads) library|requires.*thread support|: The -pthread option is deprecated)" $1; then
   reason="threads"
