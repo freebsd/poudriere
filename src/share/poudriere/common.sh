@@ -2855,15 +2855,15 @@ fi
 
 case $IPS in
 01)
-	localipargs="ip6.addr=::1"
+	localipargs="ip6.addr=${LOIP6}"
 	ipargs="ip6.addr=inherit"
 	;;
 10)
-	localipargs="ip4.addr=127.0.0.1"
+	localipargs="ip4.addr=${LOIP4}"
 	ipargs="ip4=inherit"
 	;;
 11)
-	localipargs="ip4.addr=127.0.0.1 ip6.addr=::1"
+	localipargs="ip4.addr=${LOIP4} ip6.addr=${LOIP6}"
 	ipargs="ip4=inherit ip6=inherit"
 	;;
 esac
@@ -2883,6 +2883,8 @@ esac
 
 : ${WATCHDIR:=${POUDRIERE_DATA}/queue}
 : ${PIDFILE:=${POUDRIERE_DATA}/daemon.pid}
+: ${LOIP6:=::1}
+: ${LOIP4:=127.0.0.1}
 
 BUILDNAME=$(date +%Y-%m-%d_%Hh%Mm%Ss)
 
