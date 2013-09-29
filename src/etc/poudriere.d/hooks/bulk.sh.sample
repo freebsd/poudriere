@@ -5,6 +5,7 @@ EMAIL_FROM=an@address.com
 EMAIL_TO=another@address.com
 
 status="$1"
+shift
 
 if [ "$status" = "start" ]; then
         mail_subject="[${MASTERNAME}] bulk started on `hostname`"
