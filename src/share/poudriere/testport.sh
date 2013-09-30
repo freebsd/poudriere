@@ -169,6 +169,7 @@ fi
 
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
 injail install -d -o ${PORTBUILD_USER} /tmp/pkgs
+[ ${PKGNG} -eq 0 ] && injail mkdir -p ${PREFIX}
 PORTTESTING=yes
 export TRYBROKEN=yes
 export DEVELOPER_MODE=yes
