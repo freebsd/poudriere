@@ -165,6 +165,7 @@ fi
 
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
 mkdir -p ${MASTERMNT}/tmp/pkgs
+[ ${PKGNG} -eq 0 ] && injail mkdir -p ${PREFIX}
 PORTTESTING=yes
 export DEVELOPER_MODE=yes
 log_start
