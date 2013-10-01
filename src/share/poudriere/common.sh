@@ -786,7 +786,7 @@ do_jail_mounts() {
 		done
 	fi
 	if [ "${mnt##*/}" != "ref" ]; then
-		[ ${JAILED} -eq 0 ] && mount -t fdescfs fdesc ${mnt}/dev/fd
+		[ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ] && mount -t fdescfs fdesc ${mnt}/dev/fd
 		mount -t procfs proc ${mnt}/proc
 		if [ -z "${NOLINUX}" ]; then
 			[ "${arch}" = "i386" -o "${arch}" = "amd64" ] &&
@@ -885,7 +885,7 @@ jail_start() {
 		fi
 	fi
 	[ -n "${USE_TMPFS}" ] && needfs="${needfs} tmpfs"
-	[ ${JAILED} -eq 0 ] && needfs="${needfs} fdescfs"
+	[ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ] && needfs="${needfs} fdescfs"
 	for fs in ${needfs}; do
 		if ! lsvfs $fs >/dev/null 2>&1; then
 			if [ $JAILED -eq 0 ]; then
@@ -3167,6 +3167,7 @@ esac
 : ${NOHANG_TIME:=7200}
 : ${LOIP6:=::1}
 : ${LOIP4:=127.0.0.1}
+: ${PATCHED_FS_KERNEL:=no}
 
 BUILDNAME=$(date +%Y-%m-%d_%Hh%Mm%Ss)
 
