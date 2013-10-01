@@ -32,6 +32,14 @@ IPS="$(sysctl -n kern.features.inet 2>/dev/null || echo 0)$(sysctl -n kern.featu
 RELDATE=$(sysctl -n kern.osreldate)
 JAILED=$(sysctl -n security.jail.jailed)
 BLACKLIST=""
+if [ -z "${LOIP4}" -a -z "${LOIP6}" ]; then
+	for ip in $(getent hosts localhost | awk '{ print $1 }'); do
+		case $ip in
+		*:*) LOIP6=$ip ;;
+		*) LOIP4=$ip ;;
+		esac
+	done
+fi
 
 # Return true if ran from bulk/testport, ie not daemon/status/jail
 was_a_bulk_run() {
@@ -3128,15 +3136,15 @@ fi
 
 case $IPS in
 01)
-	localipargs="ip6.addr=::1"
+	localipargs="ip6.addr=${LOIP6}"
 	ipargs="ip6.addr=inherit"
 	;;
 10)
-	localipargs="ip4.addr=127.0.0.1"
+	localipargs="ip4.addr=${LOIP4}"
 	ipargs="ip4=inherit"
 	;;
 11)
-	localipargs="ip4.addr=127.0.0.1 ip6.addr=::1"
+	localipargs="ip4.addr=${LOIP4} ip6.addr=${LOIP6}"
 	ipargs="ip4=inherit ip6=inherit"
 	;;
 esac
