@@ -779,10 +779,12 @@ do_jail_mounts() {
 
 	# ref jail only needs devfs
 	mount -t devfs devfs ${mnt}/dev
-	devfs -m ${mnt}/dev rule apply hide
-	for p in ${devfspath} ; do
-		devfs -m ${mnt}/dev/ rule apply path "${p}" unhide
-	done
+	if [ ${JAILED} -eq 0 ]; then
+		devfs -m ${mnt}/dev rule apply hide
+		for p in ${devfspath} ; do
+			devfs -m ${mnt}/dev/ rule apply path "${p}" unhide
+		done
+	fi
 	if [ "${mnt##*/}" != "ref" ]; then
 		[ ${JAILED} -eq 0 ] && mount -t fdescfs fdesc ${mnt}/dev/fd
 		mount -t procfs proc ${mnt}/proc
@@ -2016,7 +2018,7 @@ build_pkg() {
 	buildlog_start ${portdir}
 
 	# Ensure /dev/null exists (kern/139014)
-	devfs -m ${mnt}/dev rule apply path null unhide
+	[ ${JAILED} -eq 0 ] && devfs -m ${mnt}/dev rule apply path null unhide
 
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
