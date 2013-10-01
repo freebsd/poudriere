@@ -32,14 +32,6 @@ IPS="$(sysctl -n kern.features.inet 2>/dev/null || echo 0)$(sysctl -n kern.featu
 RELDATE=$(sysctl -n kern.osreldate)
 JAILED=$(sysctl -n security.jail.jailed)
 BLACKLIST=""
-if [ -z "${LOIP4}" -a -z "${LOIP6}" ]; then
-	for ip in $(getent hosts localhost | awk '{ print $1 }'); do
-		case $ip in
-		*:*) LOIP6=$ip ;;
-		*) LOIP4=$ip ;;
-		esac
-	done
-fi
 
 # Return true if ran from bulk/testport, ie not daemon/status/jail
 was_a_bulk_run() {
@@ -3171,6 +3163,8 @@ esac
 : ${MAX_EXECUTION_TIME:=86400}
 # 120 minutes with no log update
 : ${NOHANG_TIME:=7200}
+: ${LOIP6:=::1}
+: ${LOIP4:=127.0.0.1}
 
 BUILDNAME=$(date +%Y-%m-%d_%Hh%Mm%Ss)
 
