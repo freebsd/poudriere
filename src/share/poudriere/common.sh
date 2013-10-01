@@ -1983,6 +1983,8 @@ build_pkg() {
 	local ignore
 	local errortype
 
+	trap '' SIGTSTP
+
 	export PKGNAME="${pkgname}" # set ASAP so cleanup() can use it
 	port=$(cache_get_origin ${pkgname})
 	portdir="/usr/ports/${port}"
