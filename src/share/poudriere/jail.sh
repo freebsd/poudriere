@@ -324,7 +324,7 @@ install_from_ftp() {
 	else
 		local type
 		case ${METHOD} in
-			ftp|http|gjb|ftp-archive)
+			ftp|http|gjb)
 				case ${VERSION} in
 					*-CURRENT|*-PRERELEASE|*-STABLE) type=snapshots ;;
 					*) type=releases ;;
@@ -340,6 +340,7 @@ install_from_ftp() {
 				URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH}/${ARCH}/${V}"
 				;;
 			allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
+			ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
 		esac
 		DISTS="base.txz src.txz games.txz"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
