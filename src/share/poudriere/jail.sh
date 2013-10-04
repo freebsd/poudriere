@@ -271,22 +271,22 @@ install_from_svn() {
 	esac
 	if [ ${UPDATE} -eq 0 ]; then
 		msg_n "Checking out the sources from svn..."
-		svn -q co ${proto}://${SVN_HOST}/base/${VERSION} ${JAILMNT}/usr/src || err 1 " fail"
+		${SVN_CMD} -q co ${proto}://${SVN_HOST}/base/${VERSION} ${JAILMNT}/usr/src || err 1 " fail"
 		echo " done"
 		if [ -n "${SRCPATCHFILE}" ]; then
 			msg_n "Patching the sources with ${SRCPATCHFILE}"
-			svn -q patch ${SRCPATCHFILE} ${JAILMNT}/usr/src || err 1 " fail"
+			${SVN_CMD} -q patch ${SRCPATCHFILE} ${JAILMNT}/usr/src || err 1 " fail"
 			echo done
 		fi
 	else
 		msg_n "Updating the sources from svn..."
-		svn upgrade ${JAILMNT}/usr/src 2>/dev/null || :
-		svn -q update ${JAILMNT}/usr/src || err 1 " fail"
+		${SVN_CMD} upgrade ${JAILMNT}/usr/src 2>/dev/null || :
+		${SVN_CMD} -q update ${JAILMNT}/usr/src || err 1 " fail"
 		echo " done"
 	fi
 	build_and_install_world
 
-	svn_rev=$(svn info ${JAILMNT}/usr/src |
+	svn_rev=$(${SVN_CMD} info ${JAILMNT}/usr/src |
 	    awk '/Last Changed Rev:/ {print $4}')
 	setvar "${var_version_extra}" "r${svn_rev}"
 }
@@ -446,8 +446,7 @@ create_jail() {
 		RELEASE="${ALLBSDVER}-JPSNAP/ftp"
 		;;
 	svn*)
-		SVN=`which svn`
-		test -z ${SVN} && err 1 "You need svn on your host to use svn method"
+		test -z "${SVN_CMD}" && err 1 "You need svn on your host to use svn method"
 		case ${VERSION} in
 			stable/*![0-9]*)
 				err 1 "bad version number for stable version"

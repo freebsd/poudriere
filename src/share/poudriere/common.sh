@@ -2729,7 +2729,7 @@ prepare_ports() {
 
 		# Record the SVN URL@REV in the build
 		[ -d ${MASTERMNT}/usr/ports/.svn ] && bset svn_url $(
-			svn info ${MASTERMNT}/usr/ports | awk '
+			${SVN_CMD} info ${MASTERMNT}/usr/ports | awk '
 				/^URL: / {URL=substr($0, 6)}
 				/Revision: / {REVISION=substr($0, 11)}
 				END { print URL "@" REVISION }
@@ -3163,6 +3163,7 @@ esac
 : ${QUEUE_SOCKET:=/var/run/poudriered.sock}
 : ${PORTBUILD_USER:=nobody}
 : ${BUILD_AS_NON_ROOT:=no}
+: ${SVN_CMD:=$(which svn 2>/dev/null || which svnlite 2>/dev/null)}
 # 24 hours for 1 command
 : ${MAX_EXECUTION_TIME:=86400}
 # 120 minutes with no log update
