@@ -3130,6 +3130,8 @@ if [ ! -d ${POUDRIERED}/jails ]; then
 		done
 fi
 
+: ${LOIP6:=::1}
+: ${LOIP4:=127.0.0.1}
 case $IPS in
 01)
 	localipargs="ip6.addr=${LOIP6}"
@@ -3168,8 +3170,6 @@ esac
 : ${MAX_EXECUTION_TIME:=86400}
 # 120 minutes with no log update
 : ${NOHANG_TIME:=7200}
-: ${LOIP6:=::1}
-: ${LOIP4:=127.0.0.1}
 : ${PATCHED_FS_KERNEL:=no}
 
 BUILDNAME=$(date +%Y-%m-%d_%Hh%Mm%Ss)
