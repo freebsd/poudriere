@@ -30,7 +30,7 @@ poudriere jail -c -j 10i386 -v head -a i386 -m svn</verbatim>
 
 Then create a ports tree to be used by poudriere:
 
-    <verbatim>poudriere ports -c -p svn -m svn+https</verbatim>
+    <verbatim>poudriere ports -c -m svn+https</verbatim>
 
 This will create a ports tree that can be easily modified to create
 patches for submitting into The Ports Collection.
