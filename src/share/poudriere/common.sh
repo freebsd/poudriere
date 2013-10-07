@@ -2302,8 +2302,6 @@ delete_old_pkg() {
 	local mnt=$(my_path)
 	local v v2 compiled_options current_options current_deps compiled_deps
 
-
-	o=$(pkg_get_origin "${pkg}")
 	if [ ! -d "${mnt}/usr/ports/${o}" ]; then
 		msg "${o} does not exist anymore. Deleting stale ${pkg##*/}"
 		delete_pkg "${pkg}"
