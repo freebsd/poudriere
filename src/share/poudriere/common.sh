@@ -2463,10 +2463,36 @@ parallel_start() {
 	rm -f ${fifo}
 	export NBPARALLEL=0
 	export PARALLEL_PIDS=""
+	_SHOULD_REAP=0
 }
 
+# For all running children, look for dead ones, collect their status, error out
+# if any have non-zero return, and then remove them from the PARALLEL_PIDS
+# list.
+_reap_children() {
+	local pid
+	for pid in ${PARALLEL_PIDS}; do
+		# Check if this pid is still alive
+		if ! kill -0 ${pid} 2>/dev/null; then
+			# This will error out if the return status is non-zero
+			_wait ${pid}
+			# Remove pid from PARALLEL_PIDS and strip away all
+			# spaces
+			PARALLEL_PIDS_L=${PARALLEL_PIDS%% ${pid} *}
+			PARALLEL_PIDS_L=${PARALLEL_PIDS_L% }
+			PARALLEL_PIDS_L=${PARALLEL_PIDS_L# }
+			PARALLEL_PIDS_R=${PARALLEL_PIDS##* ${pid} }
+			PARALLEL_PIDS_R=${PARALLEL_PIDS_R% }
+			PARALLEL_PIDS_R=${PARALLEL_PIDS_R# }
+			PARALLEL_PIDS=" ${PARALLEL_PIDS_L} ${PARALLEL_PIDS_R} "
+		fi
+	done
+}
+
+# Wait on all remaining running processes and clean them up. Error out if
+# any have non-zero return status.
 parallel_stop() {
-	echo ${PARALLEL_PIDS} | xargs pwait 2>/dev/null || :
+	pwait ${PARALLEL_PIDS} 2>/dev/null || :
 	for pid in ${PARALLEL_PIDS}; do
 		# This will read the return code of each child
 		# and properly error out if the children errored
@@ -2476,6 +2502,7 @@ parallel_stop() {
 	exec 6<&-
 	exec 6>&-
 	unset PARALLEL_PIDS
+	unset NBPARALLEL
 }
 
 parallel_shutdown() {
@@ -2492,9 +2519,17 @@ parallel_run() {
 		unset a; until trappedinfo=; read a <&6 || [ -z "$trappedinfo" ]; do :; done
 	fi
 	[ ${NBPARALLEL} -lt ${PARALLEL_JOBS} ] && NBPARALLEL=$((NBPARALLEL + 1))
+	# Occasionally reap dead children. Don't do this too often or it
+	# becomes a bottleneck. Do it too infrequently and there is a risk
+	# of PID reuse/collision
+	_SHOULD_REAP=$((_SHOULD_REAP + 1))
+	if [ ${_SHOULD_REAP} -eq 16 ]; then
+		_reap_children
+		_SHOULD_REAP=0
+	fi
 
 	PARALLEL_CHILD=1 parallel_exec $cmd "$@" &
-	PARALLEL_PIDS="${PARALLEL_PIDS} $!"
+	PARALLEL_PIDS="${PARALLEL_PIDS} $! "
 }
 
 # Get all data that make this build env unique,
