@@ -146,7 +146,7 @@ log_start() {
 	# Make sure directory exists
 	mkdir -p ${log}/logs ${latest_log}
 
-	touch ${logfile}
+	:> ${logfile}
 
 	# Link to BUILD_TYPE/latest-per-pkg/PORTNAME/PKGVERSION/MASTERNAME.log
 	ln -f ${logfile} ${latest_log}/${MASTERNAME}.log
@@ -2400,7 +2400,7 @@ compute_deps() {
 		[ ${ALL:-0} -eq 0 ] && ! [ -d "${MASTERMNT}/poudriere/deps/${dep_pkgname}" ] &&
 			compute_deps "${dep_port}" "${dep_pkgname}"
 
-		touch "${pkg_pooldir}/${dep_pkgname}"
+		:> "${pkg_pooldir}/${dep_pkgname}"
 		mkdir -p "${MASTERMNT}/poudriere/rdeps/${dep_pkgname}"
 		ln -sf "${pkg_pooldir}/${dep_pkgname}" \
 			"${MASTERMNT}/poudriere/rdeps/${dep_pkgname}/${pkgname}"
