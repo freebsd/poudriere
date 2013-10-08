@@ -42,6 +42,13 @@ was_a_jail_run() {
 	was_a_bulk_run ||  [ "${0##*/}" = "pkgclean.sh" ]
 }
 
+_wait() {
+	# Workaround 'wait' builtin possibly returning early due to signals
+	# by using 'pwait' to wait(2) and then 'wait' to collect return code
+	pwait "$@" 2>/dev/null || :
+	wait "$@"
+}
+
 err() {
 	export CRASHED=1
 	if [ $# -ne 2 ]; then
@@ -246,7 +253,7 @@ log_stop() {
 	if [ -n "${tpid}" ]; then
 		exec 1>&3 3>&- 2>&4 4>&-
 		kill $tpid
-		wait $tpid 2>/dev/null || :
+		_wait $tpid 2>/dev/null || :
 		unset tpid
 	fi
 }
@@ -1212,7 +1219,7 @@ nohang() {
 	# Now wait on the cmd with a timeout on the log's mtime
 	while :; do
 		if ! kill -CHLD $childpid 2>/dev/null; then
-			wait $childpid || ret=1
+			_wait $childpid || ret=1
 			break
 		fi
 
@@ -1236,7 +1243,7 @@ nohang() {
 		unset n; until trappedinfo=; read -t $read_timeout n <&7 ||
 			[ -z "$trappedinfo" ]; do :; done
 		if [ "${n}" = "done" ]; then
-			wait $childpid || ret=1
+			_wait $childpid || ret=1
 			break
 		fi
 		# Not done, was a timeout, check the log time
@@ -1880,7 +1887,7 @@ stop_html_json() {
 	local log=$(log_path)
 	if [ -n "${JSON_PID}" ]; then
 		kill ${JSON_PID} 2>/dev/null || :
-		wait ${JSON_PID} 2>/dev/null || :
+		_wait ${JSON_PID} 2>/dev/null || :
 		unset JSON_PID
 	fi
 	build_json 2>/dev/null || :
@@ -2628,6 +2635,7 @@ parallel_start() {
 }
 
 parallel_stop() {
+	echo ${PARALLEL_PIDS} | xargs pwait 2>/dev/null || :
 	for pid in ${PARALLEL_PIDS}; do
 		# This will read the return code of each child
 		# and properly error out if the children errored
