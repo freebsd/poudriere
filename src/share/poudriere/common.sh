@@ -1091,29 +1091,39 @@ package_dir_exists_and_has_packages() {
 	return 0
 }
 
+sanity_check_pkg() {
+	[ $# -eq 1 ] || eargs pkg
+	local pkg="$1"
+	local depfile origin
+
+	origin=$(pkg_get_origin "${pkg}")
+	port_is_needed "${origin}" || return 0
+	depfile="$(deps_file "${pkg}")"
+	while read dep; do
+		if [ ! -e "${PACKAGES}/All/${dep}.${PKG_EXT}" ]; then
+			msg_debug "${pkg} needs missing ${PACKAGES}/All/${dep}.${PKG_EXT}"
+			msg "Deleting ${pkg##*/}: missing dependency: ${dep}"
+			delete_pkg "${pkg}"
+			return 65	# Package deleted, need another pass
+		fi
+	done < "${depfile}"
+
+	return 0
+}
 
 sanity_check_pkgs() {
 	local ret=0
-	local depfile origin
 
 	package_dir_exists_and_has_packages || return 0
 
+	parallel_start
 	for pkg in ${PACKAGES}/All/*.${PKG_EXT}; do
-		origin=$(pkg_get_origin "${pkg}")
-		port_is_needed "${origin}" || continue
-		depfile="$(deps_file "${pkg}")"
-		while read dep; do
-			if [ ! -e "${PACKAGES}/All/${dep}.${PKG_EXT}" ]; then
-				ret=1
-				msg_debug "${pkg} needs missing ${PACKAGES}/All/${dep}.${PKG_EXT}"
-				msg "Deleting ${pkg##*/}: missing dependency: ${dep}"
-				delete_pkg "${pkg}"
-				break
-			fi
-		done < "${depfile}"
+		parallel_run sanity_check_pkg "${pkg}" || ret=$?
 	done
-
-	return $ret
+	parallel_stop || ret=$?
+	[ ${ret} -eq 0 ] && return 0	# Nothing deleted
+	[ ${ret} -eq 65 ] && return 1	# Packages deleted
+	err 1 "Failure during sanity check"
 }
 
 check_leftovers() {
