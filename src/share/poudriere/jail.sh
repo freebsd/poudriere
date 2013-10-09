@@ -216,14 +216,6 @@ build_and_install_world() {
 	export SRCCONF=${JAILMNT}/etc/src.conf
 	MAKE_JOBS="-j${PARALLEL_JOBS}"
 
-	: ${CCACHE_PATH:="/usr/local/libexec/ccache"}
-	if [ -n "${CCACHE_DIR}" -a -d ${CCACHE_PATH}/world ]; then
-		export CCACHE_DIR
-		export CC="${CCACHE_PATH}/world/cc"
-		export CXX="${CCACHE_PATH}/world/c++"
-		unset CCACHE_TEMPDIR
-	fi
-
 	fbsdver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' ${JAILMNT}/usr/src/sys/sys/param.h)
 	hostver=$(sysctl -n kern.osreldate)
 	make_cmd=make
@@ -233,6 +225,19 @@ build_and_install_world() {
 			err 1 "You need fmake installed on the host: devel/fmake"
 		make_cmd=${FMAKE}
 	fi
+
+	# Don't enable CCACHE for 10, there are still obscure clang and ld
+	# issues
+	if [ ${fbsdver} -lt 1000000 ]; then
+		: ${CCACHE_PATH:="/usr/local/libexec/ccache"}
+		if [ -n "${CCACHE_DIR}" -a -d ${CCACHE_PATH}/world ]; then
+			export CCACHE_DIR
+			export CC="${CCACHE_PATH}/world/cc"
+			export CXX="${CCACHE_PATH}/world/c++"
+			unset CCACHE_TEMPDIR
+		fi
+	fi
+
 	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
 	${make_cmd} -C ${JAILMNT}/usr/src buildworld ${MAKE_JOBS} \
 	    ${MAKEWORLDARGS} || err 1 "Failed to 'make buildworld'"
