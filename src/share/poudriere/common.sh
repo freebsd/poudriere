@@ -26,11 +26,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-# zfs namespace
-NS="poudriere"
-IPS="$(sysctl -n kern.features.inet 2>/dev/null || echo 0)$(sysctl -n kern.features.inet6 2>/dev/null || echo 0)"
-RELDATE=$(sysctl -n kern.osreldate)
-JAILED=$(sysctl -n security.jail.jailed)
+BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
+. $(dirname ${0})/common.sh.${BSDPLATFORM}
 BLACKLIST=""
 
 # Return true if ran from bulk/testport, ie not daemon/status/jail
@@ -727,7 +724,7 @@ clonefs() {
 		[ ${TMPFS_ALL} -eq 1 ] && mount -t tmpfs tmpfs ${to}
 		# Mount /usr/src into target, no need for anything to write to it
 		mkdir -p ${to}/usr/src
-		mount -t nullfs -o ro ${from}/usr/src ${to}/usr/src
+		${NULLMOUNT} -o ro ${from}/usr/src ${to}/usr/src
 		cpdup -X ${from}/usr/src -X ${from}/poudriere ${from} ${to}
 	fi
 }
@@ -818,7 +815,7 @@ use_options() {
 	optionsdir=$(realpath ${optionsdir} 2>/dev/null)
 	[ "${mnt##*/}" = "ref" ] &&
 		msg "Mounting /var/db/ports from: ${optionsdir}"
-	mount -t nullfs -o ro ${optionsdir} ${mnt}/var/db/ports ||
+	${NULLMOUNT} -o ro ${optionsdir} ${mnt}/var/db/ports ||
 		err 1 "Failed to mount OPTIONS directory"
 
 	return 0
@@ -826,7 +823,7 @@ use_options() {
 
 mount_packages() {
 	local mnt=$(my_path)
-	mount -t nullfs "$@" ${PACKAGES} \
+	${NULLMOUNT} "$@" ${PACKAGES} \
 		${mnt}/packages ||
 		err 1 "Failed to mount the packages directory "
 }
@@ -844,7 +841,7 @@ do_portbuild_mounts() {
 
 	mkdir -p ${PACKAGES}/All
 	[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
-		mount -t nullfs ${CCACHE_DIR} ${mnt}${HOME}/.ccache
+		${NULLMOUNT} ${CCACHE_DIR} ${mnt}${HOME}/.ccache
 	[ -n "${MFSSIZE}" ] && mdmfs -t -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
 	[ ${TMPFS_WRKDIR} -eq 1 ] && mount -t tmpfs tmpfs ${mnt}/wrkdirs
 	# Only show mounting messages once, not for every builder
@@ -854,10 +851,10 @@ do_portbuild_mounts() {
 		msg "Mounting packages from: ${PACKAGES}"
 	fi
 
-	mount -t nullfs -o ro ${portsdir} ${mnt}/usr/ports ||
+	${NULLMOUNT} -o ro ${portsdir} ${mnt}/usr/ports ||
 		err 1 "Failed to mount the ports directory "
 	mount_packages -o ro
-	mount -t nullfs ${DISTFILES_CACHE} ${mnt}/distfiles ||
+	${NULLMOUNT} ${DISTFILES_CACHE} ${mnt}/distfiles ||
 		err 1 "Failed to mount the distfiles cache directory"
 
 	optionsdir="${MASTERNAME}"
@@ -879,7 +876,7 @@ jail_start() {
 	local portsdir=$(pget ${ptname} mnt)
 	local arch=$(jget ${name} arch)
 	local mnt=$(jget ${name} mnt)
-	local needfs="nullfs procfs"
+	local needfs="${NULLFSREF} procfs"
 
 	local tomnt=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 
@@ -936,6 +933,7 @@ jail_start() {
 		echo "WITH_CCACHE_BUILD=yes" >> ${tomnt}/etc/make.conf
 		echo "CCACHE_DIR=${HOME}/.ccache" >> ${tomnt}/etc/make.conf
 	fi
+	echo "PORTSDIR=/usr/ports" >> ${tomnt}/etc/make.conf
 	echo "PACKAGES=/packages" >> ${tomnt}/etc/make.conf
 	echo "DISTDIR=/distfiles" >> ${tomnt}/etc/make.conf
 
@@ -1387,7 +1385,7 @@ _real_build_port() {
 			# Create sandboxed staging dir for new package for this build
 			rm -rf "${PACKAGES}/.new_packages/${PKGNAME}"
 			mkdir -p "${PACKAGES}/.new_packages/${PKGNAME}"
-			mount -t nullfs \
+			${NULLMOUNT} \
 				"${PACKAGES}/.new_packages/${PKGNAME}" \
 				${mnt}/new_packages
 			chown -R ${JUSER} ${mnt}/new_packages
@@ -3097,10 +3095,6 @@ fi
 
 [ -n "${MFSSIZE}" -a -n "${USE_TMPFS}" ] && err 1 "You can't use both tmpfs and mdmfs"
 
-TMPFS_WRKDIR=0
-TMPFS_DATA=0
-TMPFS_ALL=0
-TMPFS_LOCALBASE=0
 for val in ${USE_TMPFS}; do
 	case ${val} in
 	wrkdir|yes) TMPFS_WRKDIR=1 ;;

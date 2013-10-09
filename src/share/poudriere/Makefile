@@ -9,6 +9,8 @@ FILESDIR=	${PREFIX}/share/poudriere
 FILES=		bulk.sh \
 		clean.sh \
 		common.sh \
+		common.sh.freebsd \
+		common.sh.dragonfly \
 		daemon.sh \
 		distclean.sh \
 		jail.sh \
