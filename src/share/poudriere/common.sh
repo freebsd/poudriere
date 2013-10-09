@@ -2313,11 +2313,15 @@ delete_stale_pkg_cache() {
 }
 
 delete_old_pkg() {
-	[ $# -eq 2 ] || eargs pkgname origin
+	[ $# -eq 1 ] || eargs pkgname
 	local pkg="$1"
-	local o="$2"
-	local mnt=$(my_path)
-	local v v2 compiled_options current_options current_deps compiled_deps
+	local mnt
+	local o v v2 compiled_options current_options current_deps compiled_deps
+
+	o=$(pkg_get_origin "${pkg}")
+	port_is_needed "${o}" || return 0
+
+	mnt=$(my_path)
 
 	if [ ! -d "${mnt}/usr/ports/${o}" ]; then
 		msg "${o} does not exist anymore. Deleting stale ${pkg##*/}"
@@ -2422,7 +2426,6 @@ delete_old_pkg() {
 }
 
 delete_old_pkgs() {
-	local origin
 
 	msg_verbose "Checking packages for incremental rebuild needed"
 
@@ -2430,9 +2433,7 @@ delete_old_pkgs() {
 
 	parallel_start
 	for pkg in ${PACKAGES}/All/*.${PKG_EXT}; do
-		origin=$(pkg_get_origin "${pkg}")
-		port_is_needed "${origin}" || continue
-		parallel_run delete_old_pkg "${pkg}" "${origin}"
+		parallel_run delete_old_pkg "${pkg}"
 	done
 	parallel_stop
 }
