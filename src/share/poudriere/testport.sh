@@ -177,12 +177,24 @@ if ! build_port /usr/ports/${ORIGIN}; then
 
 	save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" "${failed_phase}" || :
 
+	ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
+	errortype=$(${SCRIPTPREFIX}/processonelog.sh \
+		${log}/logs/errors/${PKGNAME}.log \
+		2> /dev/null)
+	badd ports.failed "${ORIGIN} ${PKGNAME} ${failed_phase} ${errortype}"
+	update_stats
+
 	if [ ${INTERACTIVE_MODE} -eq 0 ]; then
 		stop_build /usr/ports/${ORIGIN}
 		err 1 "Build failed in phase: ${failed_phase}"
 	fi
-elif [ -f ${MASTERMNT}/usr/ports/${ORIGIN}/.keep ]; then
-	save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" "noneed" ||:
+else
+	badd ports.built "${ORIGIN} ${PKGNAME}"
+	if [ -f ${MASTERMNT}/usr/ports/${ORIGIN}/.keep ]; then
+		save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" \
+		    "noneed" || :
+	fi
+	update_stats
 fi
 
 if [ -f ${MASTERMNT}/tmp/pkgs/${PKGNAME}.${PKG_EXT} ]; then
