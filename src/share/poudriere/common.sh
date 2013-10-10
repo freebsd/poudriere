@@ -1354,8 +1354,9 @@ Try testport with -n to use PREFIX=LOCALBASE"
 					injail ${PKG_BIN} query %Fp ${PKGNAME}
 				else
 					injail pkg_info -qL ${PKGNAME}
-				fi | injail xargs -J % find % -type l |
-				    injail xargs stat -l |
+				fi | tr '\n' '\0' | injail xargs -0 -J % \
+				    find % -type l -print0 |
+				    injail xargs -0 stat -l |
 				    grep "${portdir}/work/stage" && die=1
 				if [ ${die} -eq 1 ]; then
 					msg "Port is installing absolute symlinks into stagedir"
