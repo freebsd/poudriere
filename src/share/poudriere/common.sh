@@ -970,7 +970,7 @@ jail_start() {
 }
 
 load_blacklist() {
-	[ $# -lt 2 ] && dst_makeconf eargs name ptname setname
+	[ $# -lt 2 ] && eargs name ptname setname
 	local name=$1
 	local ptname=$3
 	local setname=$4
@@ -996,7 +996,7 @@ load_blacklist() {
 }
 
 setup_makeconf() {
-	[ $# -lt 3 ] && dst_makeconf eargs name ptname setname
+	[ $# -lt 3 ] && eargs dst_makeconf name ptname setname
 	local dst_makeconf=$1
 	local name=$2
 	local ptname=$3
