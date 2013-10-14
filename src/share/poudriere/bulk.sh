@@ -158,9 +158,9 @@ fi
 
 export POUDRIERE_BUILD_TYPE=bulk
 
-run_hook bulk start
-
 read_packages_from_params "$@"
+
+run_hook bulk start
 
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
