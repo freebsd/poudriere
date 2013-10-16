@@ -193,6 +193,7 @@ END {
 ' | while read origin packages; do
 	lastpkg=
 	lastver=0
+	real_pkgname=
 	for pkg in $packages; do
 		pkgversion="${pkg##*-}"
 		pkgversion="${pkgversion%.*}"
@@ -214,6 +215,23 @@ END {
 			'<')
 				msg_verbose "Found old package: ${pkg}"
 				echo "${pkg}" >> ${BADFILES_LIST}
+				;;
+			'=')
+				# Version is the same, it's a duplicate. Compare
+				# against the real PKGNAME and decide which
+				# to keep
+				[ -z "${real_pkgname}" ] && real_pkgname=$( \
+				    injail make -C /usr/ports/${origin} \
+				    -V PKGNAME)
+				if [ "${real_pkgname}" = "${pkg##*/}" ]; then
+					msg_verbose \
+					    "Found duplicate renamed package: ${lastpkg}"
+					echo "${lastpkg}" >> ${BADFILES_LIST}
+				else
+					msg_verbose \
+					    "Found duplicate renamed package: ${pkg}"
+					echo "${pkg}" >> ${BADFILES_LIST}
+				fi
 				;;
 		esac
 	done
