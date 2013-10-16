@@ -2179,6 +2179,7 @@ delete_stale_pkg_cache() {
 delete_old_pkg() {
 	local pkg="$1"
 	local mnt=$(my_path)
+	local pkgname cached_pkgname
 	local o v v2 compiled_options current_options current_deps compiled_deps
 	if [ "${pkg##*/}" = "repo.txz" ]; then
 		msg "Removing invalid pkg repo file: ${pkg}"
@@ -2196,8 +2197,8 @@ delete_old_pkg() {
 		delete_pkg "${pkg}"
 		return 0
 	fi
-	v2=$(cache_get_pkgname ${o})
-	v2=${v2##*-}
+	cached_pkgname=$(cache_get_pkgname ${o})
+	v2=${cached_pkgname##*-}
 	if [ "$v" != "$v2" ]; then
 		msg "Deleting old version: ${pkg##*/}"
 		delete_pkg "${pkg}"
@@ -2287,6 +2288,13 @@ delete_old_pkg() {
 			delete_pkg "${pkg}"
 			return 0
 		fi
+	fi
+
+	pkgname="${pkg##*/}"
+	if [ "${pkgname%-*}" != "${cached_pkgname%-*}" ]; then
+		msg "Deleting ${pkg##*/}: package name changed to '${cached_pkgname%-*}'"
+		delete_pkg "${pkg}"
+		return 0
 	fi
 }
 
