@@ -2424,7 +2424,7 @@ delete_old_pkg() {
 	fi
 
 	pkgname="${pkg##*/}"
-	# Check if the pkgname has changed and rename in the repo
+	# XXX: Check if the pkgname has changed and rename in the repo
 	if [ "${pkgname%-*}" != "${cached_pkgname%-*}" ]; then
 		msg "Deleting ${pkg##*/}: package name changed to '${cached_pkgname%-*}'"
 		delete_pkg "${pkg}"
