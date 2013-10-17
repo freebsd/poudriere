@@ -49,7 +49,7 @@ _wait() {
 not_for_os() {
 	local os=$1
 	shift
-	err 1 "This is no supported on ${1}: $@"
+	[ "${os}" = "${BSDPLATFORM}" ] && err 1 "This is no supported on ${BSDPLATFORM}: $@"
 }
 
 err() {
