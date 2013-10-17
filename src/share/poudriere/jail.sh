@@ -74,6 +74,7 @@ list_jail() {
 	format='%-20s %-20s %-7s %-7s %s\n'
 	[ ${QUIET} -eq 0 ] &&
 		printf "${format}" "JAILNAME" "VERSION" "ARCH" "METHOD" "PATH"
+	[ -d ${POUDRIERED}/jails ] || return 0
 	for j in $(find ${POUDRIERED}/jails -type d -maxdepth 1 -mindepth 1 -print); do
 		name=${j##*/}
 		version=$(jget ${name} version)
