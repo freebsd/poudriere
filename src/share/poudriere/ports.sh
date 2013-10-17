@@ -189,7 +189,8 @@ if [ ${CREATE} -eq 1 ]; then
 			;;
 		git)
 			msg_n "Cloning the ports tree..."
-			git clone -q ${GIT_URL} ${PTMNT} || err 1 " fail"
+			[ ${VERBOSE} -gt 0 ] || quiet="-q"
+			git clone --depth=1 ${quiet} ${GIT_URL} ${PTMNT} || err 1 " fail"
 			echo " done"
 			;;
 		esac
@@ -243,7 +244,8 @@ if [ ${UPDATE} -eq 1 ]; then
 		;;
 	git)
 		msg "Pulling from ${GIT_URL}"
-		cd ${PORTSMNT:-${PTMNT}} && git pull -q
+		[ ${VERBOSE} -gt 0 ] |- quiet="-q"
+		cd ${PORTSMNT:-${PTMNT}} && git pull ${quiet}
 		echo " done"
 		;;
 	*)
