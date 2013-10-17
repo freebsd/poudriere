@@ -40,7 +40,7 @@ Options:
     -R          -- Clean RESTRICTED packages after building
     -t          -- Add some tests to the package build
     -T          -- Try to build broken ports anyway
-    -F          -- Only fetch from orignial master_site (skip FreeBSD mirrors)
+    -F          -- Only fetch from original master_site (skip FreeBSD mirrors)
     -s          -- Skip sanity checks
     -J n        -- Run n jobs in parallel (Default: to 8)
     -j name     -- Run only on the given jail
