@@ -1,7 +1,7 @@
 SUBDIR= dirempty dirwatch
 
-if !defined(DRAGONFLY)
-SUBDIR+=	make_index cpdup
+.if !defined(DRAGONFLY)
+SUBDIR+= make_index cpdup
 .endif
 
 PREFIX?=	/usr/local
