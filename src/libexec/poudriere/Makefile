@@ -1,7 +1,8 @@
-SUBDIR=	make_index \
-	dirempty \
-	dirwatch \
-	cpdup
+SUBDIR= dirempty dirwatch
+
+if !defined(DRAGONFLY)
+SUBDIR+=	make_index cpdup
+.endif
 
 PREFIX?=	/usr/local
 BINDIR=		${PREFIX}/libexec/poudriere
