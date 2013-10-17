@@ -45,7 +45,7 @@ Options:
     -t          -- Test the specified ports for leftovers
     -r          -- Resursively test all dependencies as well
     -T          -- Try to build broken ports anyway
-    -F          -- Only fetch from orignial master_site (skip FreeBSD mirrors)
+    -F          -- Only fetch from original master_site (skip FreeBSD mirrors)
     -s          -- Skip sanity checks
     -J n        -- Run n jobs in parallel (Defaults to the number of CPUs)
     -j name     -- Run only on the given jail
