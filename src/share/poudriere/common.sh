@@ -460,6 +460,7 @@ jail_runs() {
 
 porttree_list() {
 	local name method mntpoint
+	[ -d ${POUDRIERED}/ports ] || return 0
 	for p in $(find ${POUDRIERED}/ports -type d -maxdepth 1 -mindepth 1 -print); do
 		name=${p##*/}
 		mnt=$(pget ${name} mnt)
