@@ -223,7 +223,8 @@ END {
 				[ -z "${real_pkgname}" ] && real_pkgname=$( \
 				    injail make -C /usr/ports/${origin} \
 				    -V PKGNAME)
-				if [ "${real_pkgname}" = "${pkg##*/}" ]; then
+				if [ "${real_pkgname}.${PKG_EXT}" = \
+				    "${pkg##*/}" ]; then
 					msg_verbose \
 					    "Found duplicate renamed package: ${lastpkg}"
 					echo "${lastpkg}" >> ${BADFILES_LIST}
