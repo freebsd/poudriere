@@ -123,6 +123,7 @@ jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
 LISTPORTS=$(list_deps ${ORIGIN} )
 prepare_ports
+markfs prepkg ${MASTERMNT}
 
 log=$(log_path)
 

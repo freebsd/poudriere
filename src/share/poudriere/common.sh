@@ -2920,8 +2920,6 @@ prepare_ports() {
 
 	[ -z "${ALLOW_MAKE_JOBS}" ] && echo "DISABLE_MAKE_JOBS=poudriere" \
 	    >> ${MASTERMNT}/etc/make.conf
-
-	markfs prepkg ${MASTERMNT}
 }
 
 balance_pool() {

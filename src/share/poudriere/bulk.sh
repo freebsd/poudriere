@@ -171,6 +171,7 @@ if [ -d ${LOGD} -a ${CLEAN} -eq 1 ]; then
 fi
 
 prepare_ports
+markfs prepkg ${MASTERMNT}
 
 bset status "building:"
 
