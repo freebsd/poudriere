@@ -178,9 +178,6 @@ if ! build_port /usr/ports/${ORIGIN}; then
 	save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" "${failed_phase}" || :
 
 	ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
-	errortype=$(${SCRIPTPREFIX}/processonelog.sh \
-		${log}/logs/errors/${PKGNAME}.log \
-		2> /dev/null)
 	badd ports.failed "${ORIGIN} ${PKGNAME} ${failed_phase} ${errortype}"
 	update_stats
 
