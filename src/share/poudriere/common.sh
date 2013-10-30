@@ -1146,8 +1146,7 @@ check_leftovers() {
 			    -p ${mnt}
 		else
 			markfs poststage ${mnt} ${stagedir}
-			mtree -X ${mnt}/poudriere/mtree.preinstexclude \
-			    -f ${mnt}/poudriere/mtree.poststage \
+			mtree -f ${mnt}/poudriere/mtree.poststage \
 			    -e -p ${mnt}
 		fi
 	} | while read l ; do
