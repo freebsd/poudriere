@@ -638,6 +638,7 @@ markfs() {
 ./distfiles/*
 ./new_packages/*
 ./packages/*
+./portdistfiles/*
 ./poudriere/*
 ./proc/*
 ./usr/ports/*
@@ -654,6 +655,7 @@ EOF
 ./distfiles/*
 ./new_packages/*
 ./packages/*
+./portdistfiles/*
 ./poudriere/*
 ./proc/*
 ./tmp/*
@@ -680,6 +682,7 @@ EOF
 ./etc/spwd.db
 ./new_packages/*
 ./packages/*
+./portdistfiles/*
 ./poudriere/*
 ./proc/*
 ./tmp/*
@@ -2920,8 +2923,6 @@ prepare_ports() {
 
 	[ -z "${ALLOW_MAKE_JOBS}" ] && echo "DISABLE_MAKE_JOBS=poudriere" \
 	    >> ${MASTERMNT}/etc/make.conf
-
-	return 0
 }
 
 balance_pool() {
