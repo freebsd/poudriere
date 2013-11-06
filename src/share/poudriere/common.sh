@@ -2816,7 +2816,7 @@ prepare_ports() {
 	parallel_start
 	for port in $(listed_ports); do
 		[ -d "${MASTERMNT}/usr/ports/${port}" ] ||
-			err 1 "Invalid port origin: ${port}"
+			err 1 "Invalid port origin listed for build: ${port}"
 		parallel_run compute_deps ${port}
 	done
 	parallel_stop
