@@ -2920,7 +2920,7 @@ prepare_ports() {
 		xargs -J % mv % "${MASTERMNT}/poudriere/pool/unbalanced"
 	balance_pool
 
-	[ -z "${ALLOW_MAKE_JOBS}" ] && echo "DISABLE_MAKE_JOBS=poudriere" \
+	[ -n "${ALLOW_MAKE_JOBS}" ] || echo "DISABLE_MAKE_JOBS=poudriere" \
 	    >> ${MASTERMNT}/etc/make.conf
 }
 
