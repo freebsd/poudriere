@@ -640,7 +640,7 @@ markfs() {
 ./packages/*
 ./portdistfiles/*
 ./poudriere/*
-./proc/*
+./proc
 ./usr/ports/*
 ./usr/src
 ./var/db/ports/*
@@ -657,7 +657,7 @@ EOF
 ./packages/*
 ./portdistfiles/*
 ./poudriere/*
-./proc/*
+./proc
 ./tmp/*
 ./usr/ports/*
 ./usr/src
@@ -669,7 +669,7 @@ EOF
 			cat >  ${mnt}/poudriere/mtree.${name}exclude << EOF
 .${HOME}/*
 .${HOME}/.ccache/*
-./compat/linux/proc/*
+./compat/linux/proc
 ./dev/*
 ./distfiles/*
 ./etc/group
@@ -684,7 +684,7 @@ EOF
 ./packages/*
 ./portdistfiles/*
 ./poudriere/*
-./proc/*
+./proc
 ./tmp/*
 ./usr/ports/*
 ./usr/src
