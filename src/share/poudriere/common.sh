@@ -1163,6 +1163,14 @@ check_leftovers() {
 			echo "- ${mnt}/${l% *}"
 			;;
 		*changed) echo "M ${mnt}/${l% *}" ;;
+		extra:*)
+			if [ -d ${mnt}/${l#* } ]; then
+				find ${mnt}/${l#* } -exec echo "+ {}" \;
+			else
+				echo "+ ${mnt}/${l#* }"
+			fi
+			;;
+		*:*) echo "M ${mnt}/${l%:*}" ;;
 		esac
 	done
 }
