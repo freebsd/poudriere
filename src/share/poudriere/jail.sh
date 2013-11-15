@@ -160,8 +160,7 @@ update_jail() {
 			# Reboot
 			update_version_env ${TORELEASE}
 			# Remove stale files
-			injail env PAGER=/bin/cat /usr/sbin/freebsd-update install ||
-				err 1 "Fail to upgrade system"
+			injail env PAGER=/bin/cat /usr/sbin/freebsd-update install || :
 			jset ${JAILNAME} version ${TORELEASE}
 		fi
 		jstop
