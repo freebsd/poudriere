@@ -145,7 +145,7 @@ FOUND_ORIGINS=$(mktemp -t poudriere_pkgclean)
 for file in ${PACKAGES}/All/*; do
 	case ${file} in
 		*.${PKG_EXT})
-			origin=$(pkg_get_origin "${file}")
+			pkg_get_origin origin "${file}"
 			if ! port_is_needed "${origin}"; then
 				msg_verbose "Found unwanted package: ${file}"
 				echo "${file}" >> ${BADFILES_LIST}

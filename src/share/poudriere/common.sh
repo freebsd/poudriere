@@ -1239,7 +1239,7 @@ sanity_check_pkg() {
 	local pkg="$1"
 	local depfile origin
 
-	origin=$(pkg_get_origin "${pkg}")
+	pkg_get_origin origin "${pkg}"
 	port_is_needed "${origin}" || return 0
 	depfile="$(deps_file "${pkg}")"
 	while read dep; do
@@ -2324,9 +2324,10 @@ deps_file() {
 }
 
 pkg_get_origin() {
-	[ $# -lt 1 ] && eargs pkg
-	local pkg="$1"
-	local origin=$2
+	[ $# -lt 2 ] && eargs var_return pkg
+	local var_return="$1"
+	local pkg="$2"
+	local _origin=$3
 	local pkg_cache_dir
 	local originfile
 
@@ -2334,20 +2335,21 @@ pkg_get_origin() {
 	originfile="${pkg_cache_dir}/origin"
 
 	if [ ! -f "${originfile}" ]; then
-		if [ -z "${origin}" ]; then
+		if [ -z "${_origin}" ]; then
 			if [ "${PKG_EXT}" = "tbz" ]; then
-				origin=$(injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | \
+				_origin=$(injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | \
 					awk -F: '$1 == "@comment ORIGIN" { print $2 }')
 			else
-				origin=$(injail /poudriere/pkg-static query -F \
+				_origin=$(injail /poudriere/pkg-static query -F \
 					"/packages/All/${pkg##*/}" "%o")
 			fi
 		fi
-		echo ${origin} > "${originfile}"
+		echo ${_origin} > "${originfile}"
 	else
-		read origin < "${originfile}"
+		read _origin < "${originfile}"
 	fi
-	echo ${origin}
+
+	setvar "${var_return}" "${_origin}"
 }
 
 pkg_get_dep_origin() {
@@ -2428,7 +2430,7 @@ pkg_cache_data() {
 
 	ensure_pkg_installed
 	pkg_get_options "${pkg}" > /dev/null
-	pkg_get_origin "${pkg}" ${origin} > /dev/null
+	pkg_get_origin _ignored "${pkg}" ${origin} > /dev/null
 	pkg_get_dep_origin "${pkg}" > /dev/null
 	deps_file "${pkg}" > /dev/null
 	set -e
@@ -2506,7 +2508,7 @@ delete_old_pkg() {
 	local mnt pkgname cached_pkgname
 	local o v v2 compiled_options current_options current_deps compiled_deps
 
-	o=$(pkg_get_origin "${pkg}")
+	pkg_get_origin o "${pkg}"
 	port_is_needed "${o}" || return 0
 
 	mnt=$(my_path)
@@ -3201,6 +3203,8 @@ clean_restricted() {
 }
 
 build_repo() {
+	local origin
+
 	if [ $PKGNG -eq 1 ]; then
 		msg "Creating pkgng repository"
 		bset status "pkgrepo:"
@@ -3234,10 +3238,10 @@ build_repo() {
 		for pkg_file in ${PACKAGES}/All/*.tbz; do
 			# Check for non-empty directory with no packages in it
 			[ "${pkg}" = "${PACKAGES}/All/*.tbz" ] && break
-			ORIGIN=$(pkg_get_origin ${pkg_file})
-			msg_verbose "Extracting description for ${ORIGIN} ..."
-			[ -d ${MASTERMNT}/usr/ports/${ORIGIN} ] &&
-				injail make -C /usr/ports/${ORIGIN} describe >> ${INDEXF}.1
+			pkg_get_origin origin "${pkg_file}"
+			msg_verbose "Extracting description for ${origin} ..."
+			[ -d ${MASTERMNT}/usr/ports/${origin} ] &&
+				injail make -C /usr/ports/${origin} describe >> ${INDEXF}.1
 		done
 
 		msg_n "Generating INDEX..."
