@@ -141,6 +141,7 @@ if [ $(bget stats_failed) -gt 0 ] || [ $(bget stats_skipped) -gt 0 ]; then
 	exit 1
 fi
 
+commit_packages
 
 bset status "testing:"
 
@@ -248,7 +249,6 @@ injail ${PKG_DELETE} ${PKGNAME}
 
 stop_build /usr/ports/${ORIGIN}
 
-commit_packages
 cleanup
 set +e
 

@@ -878,7 +878,44 @@ do_portbuild_mounts() {
 	return 0
 }
 
+# Convert the repository to the new format of links
+# so that an atomic update can be done at the end
+# of the build.
+# This is done at the package repo level instead of the parent
+# dir in DATA/packages because someone may have created a separate
+# ZFS dataset / NFS mount for each dataset. Avoid cross-device linking.
+convert_repository() {
+	msg "Converting package repository to new format"
+
+	mkdir ${PACKAGES}/.real
+
+	# Move all top-level dirs into .real
+	find ${PACKAGES}/ -mindepth 1 -maxdepth 1 -type d ! -name .real |
+	    xargs -J % mv % ${PACKAGES}/.real
+	# Symlink them over through .latest
+	find ${PACKAGES}/.real -mindepth 1 -maxdepth 1 -type d \
+	    ! -name .real | while read directory; do
+		dirname=${directory##*/}
+		ln -s .latest/${dirname} ${PACKAGES}/${dirname}
+	done
+
+	# Now move+symlink any files in the top-level
+	find ${PACKAGES}/ -mindepth 1 -maxdepth 1 -type f |
+	    xargs -J % mv % ${PACKAGES}/.real
+	find ${PACKAGES}/.real -mindepth 1 -maxdepth 1 -type f |
+	    while read file; do
+		fname=${file##*/}
+		ln -s .latest/${fname} ${PACKAGES}/${fname}
+	done
+
+	# Setup current symlink which is how the build will atomically finish
+	ln -s .real ${PACKAGES}/.latest
+}
+
 stash_packages() {
+
+	[ -L ${PACKAGES}/.latest ] || convert_repository
+
 	msg "Stashing existing package repository"
 	rm -rf ${PACKAGES}/.building 2>/dev/null || :
 
@@ -889,35 +926,39 @@ stash_packages() {
 
 	mkdir -p ${PACKAGES}/.building
 	# hardlink copy all top-level directories
-	find ${PACKAGES}/ -mindepth 1 -maxdepth 1 -type d \
+	find ${PACKAGES}/.latest/ -mindepth 1 -maxdepth 1 -type d \
 	    ! -name .building | xargs -J % cp -al % ${PACKAGES}/.building
 
 	# Copy all top-level files to avoid appending
 	# to real copy in pkg-repo, etc.
-	find ${PACKAGES}/ -mindepth 1 -maxdepth 1 -type f |
+	find ${PACKAGES}/.latest/ -mindepth 1 -maxdepth 1 -type f |
 	    xargs -J % cp -a % ${PACKAGES}/.building
 
 	# From this point forward, only work in the shadow
 	# package dir
-	PACKAGES_ROOT=${PACKAGES}/.real
+	PACKAGES_ROOT=${PACKAGES}
 	PACKAGES=${PACKAGES}/.building
 }
 
 commit_packages() {
+	local pkgdir_old pkgdir_new
 
 	msg "Committing packages to repository"
 
-	# Rename old files aside as it is quick
-	mkdir ${PACKAGES_ROOT}/.old
-	find ${PACKAGES_ROOT}/ -mindepth 1 -maxdepth 1 -type d \
-	    ! -name .building ! -name .old |
-	    xargs -J % mv % ${PACKAGES_ROOT}/.old
-	# Move in files from shadow dir
-	find ${PACKAGES}/ -mindepth 1 -maxdepth 1 ! -name .new_packages |
-	    xargs -J % mv % ${PACKAGES_ROOT}/
+	pkgdir_old=$(realpath ${PACKAGES_ROOT}/.latest)
+
+	# Rename shadow dir to a production name
+	pkgdir_new=.real_$(date +%s)
+	mv ${PACKAGES_ROOT}/.building ${PACKAGES_ROOT}/${pkgdir_new}
+
+	# XXX: Copy in packages that failed to build
+
+	# Switch latest symlink to new build
+	PACKAGES=${PACKAGES_ROOT}/.latest
+	ln -hfs ${pkgdir_new} ${PACKAGES}
 
 	# Remove old and shadow dir
-	rm -rf ${PACKAGES_ROOT}/.old ${PACKAGES_ROOT}.building 2>/dev/null || :
+	rm -rf ${pkgdir_old} 2>/dev/null || :
 }
 
 jail_start() {
@@ -1121,7 +1162,10 @@ cleanup() {
 
 		jail_stop
 
-		rm -rf ${PACKAGES}/.new_packages ${PACKAGES_ROOT}/.building || :
+		rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/.building \
+		    ${POUDRIERE_DATA}/packages/${MASTERNAME}/.latest/.new_packages \
+		    2>/dev/null || :
+
 	fi
 
 	export CLEANED_UP=1
