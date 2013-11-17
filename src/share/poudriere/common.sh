@@ -1932,9 +1932,10 @@ queue_empty() {
 mark_done() {
 	[ $# -eq 1 ] || eargs pkgname
 	local pkgname="$1"
-	local origin=$(cache_get_origin "${pkgname}")
+	local origin
 	local cache_dir
 
+	cache_get_origin origin "${pkgname}"
 	get_cache_dir cache_dir
 
 	if [ "${TRACK_BUILDTIMES}" != "no" ]; then
@@ -2123,11 +2124,11 @@ clean_pool() {
 	local clean_rdepends=$2
 	local port skipped_origin
 
-	[ ${clean_rdepends} -eq 1 ] && port=$(cache_get_origin "${pkgname}")
+	[ ${clean_rdepends} -eq 1 ] && cache_get_origin port "${pkgname}"
 
 	# Cleaning queue (pool is cleaned here)
 	sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT}" "${pkgname}" ${clean_rdepends} | sort -u | while read skipped_pkgname; do
-		skipped_origin=$(cache_get_origin "${skipped_pkgname}")
+		cache_get_origin skipped_origin "${skipped_pkgname}"
 		badd ports.skipped "${skipped_origin} ${skipped_pkgname} ${pkgname}"
 		job_msg "Skipping build of ${skipped_origin}: Dependent port ${port} failed"
 		run_hook pkgbuild skipped "${skipped_origin}" "${skipped_pkgname}" "${port}"
@@ -2162,7 +2163,7 @@ build_pkg() {
 	trap '' SIGTSTP
 
 	export PKGNAME="${pkgname}" # set ASAP so cleanup() can use it
-	port=$(cache_get_origin ${pkgname})
+	cache_get_origin port "${pkgname}"
 	portdir="/usr/ports/${port}"
 
 	job_msg "Starting build of ${port}"
@@ -2695,7 +2696,7 @@ cache_get_pkgname() {
 			err 1 "Error getting PKGNAME for ${origin}")
 		[ -n "${_pkgname}" ] || err 1 "Missing PKGNAME for ${origin}"
 		# Make sure this origin did not already exist
-		existing_origin=$(cache_get_origin "${_pkgname}" 2>/dev/null || :)
+		cache_get_origin existing_origin "${_pkgname}" 2>/dev/null || :
 		# It may already exist due to race conditions, it is not harmful. Just ignore.
 		if [ "${existing_origin}" != "${origin}" ]; then
 			[ -n "${existing_origin}" ] &&
@@ -2710,11 +2711,15 @@ cache_get_pkgname() {
 }
 
 cache_get_origin() {
-	[ $# -ne 1 ] && eargs pkgname
-	local pkgname=$1
+	[ $# -ne 2 ] && eargs var_return pkgname
+	local var_return="$1"
+	local pkgname="$2"
 	local cache_pkgname_origin="${MASTERMNT}/poudriere/var/cache/pkgname-origin/${pkgname}"
+	local _origin
 
-	cat "${cache_pkgname_origin%/}"
+	read _origin < "${cache_pkgname_origin%/}"
+
+	setvar "${var_return}" "${_origin}"
 }
 
 # Take optional pkgname to speedup lookup
@@ -2803,12 +2808,13 @@ get_porttesting() {
 	[ $# -eq 1 ] || eargs pkgname
 	local pkgname="$1"
 	local porttesting
+	local origin
 
-	if [ -n "${PORTTESTING}" ] && port_is_listed \
-		$(cache_get_origin "${pkgname}"); then
-		porttesting=1
-	else
-		porttesting=
+	if [ -n "${PORTTESTING}" ]; then
+		cache_get_origin origin "${pkgname}"
+		if port_is_listed "${origin}"; then
+			porttesting=1
+		fi
 	fi
 
 	echo $porttesting
