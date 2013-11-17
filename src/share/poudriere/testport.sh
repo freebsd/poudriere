@@ -248,6 +248,7 @@ injail ${PKG_DELETE} ${PKGNAME}
 
 stop_build /usr/ports/${ORIGIN}
 
+commit_packages
 cleanup
 set +e
 

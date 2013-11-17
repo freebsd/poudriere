@@ -858,7 +858,7 @@ do_portbuild_mounts() {
 	if [ ${mnt##*/} = "ref" ]; then
 		[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
 			msg "Mounting ccache from: ${CCACHE_DIR}"
-		msg "Mounting packages from: ${PACKAGES}"
+		msg "Mounting packages from: ${PACKAGES_ROOT}"
 	fi
 
 	${NULLMOUNT} -o ro ${portsdir} ${mnt}/usr/ports ||
@@ -876,6 +876,48 @@ do_portbuild_mounts() {
 	done
 
 	return 0
+}
+
+stash_packages() {
+	msg "Stashing existing package repository"
+	rm -rf ${PACKAGES}/.building 2>/dev/null || :
+
+	# Use a linked shadow directory in the package root, not
+	# in the parent directory as the user may have created
+	# a separate ZFS dataset or NFS mount for each package
+	# set; Must stay on the same device for linking.
+
+	mkdir -p ${PACKAGES}/.building
+	# hardlink copy all top-level directories
+	find ${PACKAGES}/ -mindepth 1 -maxdepth 1 -type d \
+	    ! -name .building | xargs -J % cp -al % ${PACKAGES}/.building
+
+	# Copy all top-level files to avoid appending
+	# to real copy in pkg-repo, etc.
+	find ${PACKAGES}/ -mindepth 1 -maxdepth 1 -type f |
+	    xargs -J % cp -a % ${PACKAGES}/.building
+
+	# From this point forward, only work in the shadow
+	# package dir
+	PACKAGES_ROOT=${PACKAGES}/.real
+	PACKAGES=${PACKAGES}/.building
+}
+
+commit_packages() {
+
+	msg "Committing packages to repository"
+
+	# Rename old files aside as it is quick
+	mkdir ${PACKAGES_ROOT}/.old
+	find ${PACKAGES_ROOT}/ -mindepth 1 -maxdepth 1 -type d \
+	    ! -name .building ! -name .old |
+	    xargs -J % mv % ${PACKAGES_ROOT}/.old
+	# Move in files from shadow dir
+	find ${PACKAGES}/ -mindepth 1 -maxdepth 1 ! -name .new_packages |
+	    xargs -J % mv % ${PACKAGES_ROOT}/
+
+	# Remove old and shadow dir
+	rm -rf ${PACKAGES_ROOT}/.old ${PACKAGES_ROOT}.building 2>/dev/null || :
 }
 
 jail_start() {
@@ -932,6 +974,8 @@ jail_start() {
 	do_jail_mounts ${tomnt} ${arch}
 
 	PACKAGES=${POUDRIERE_DATA}/packages/${MASTERNAME}
+
+	was_a_bulk_run && stash_packages
 
 	[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
 	msg "Mounting ports/packages/distfiles"
@@ -1077,8 +1121,7 @@ cleanup() {
 
 		jail_stop
 
-		rm -rf ${PACKAGES}/.new_packages \
-			|| :
+		rm -rf ${PACKAGES}/.new_packages ${PACKAGES_ROOT}/.building || :
 	fi
 
 	export CLEANED_UP=1

@@ -212,7 +212,9 @@ fi
 
 [ ${BUILD_REPO} -eq 1 ] && build_repo
 
+commit_packages
 cleanup
+
 if [ $nbbuilt -gt 0 ]; then
 	msg_n "Built ports: "
 	echo ${built}
