@@ -158,13 +158,6 @@ MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 
 export MASTERNAME
 export MASTERMNT
-if [ ${CLEAN} -eq 1 ]; then
-	msg_n "Cleaning previous bulks if any..."
-	rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/*
-	rm -rf ${POUDRIERE_DATA}/cache/${MASTERNAME}
-	echo " done"
-fi
-
 export POUDRIERE_BUILD_TYPE=bulk
 
 read_packages_from_params "$@"

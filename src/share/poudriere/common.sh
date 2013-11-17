@@ -2932,7 +2932,15 @@ prepare_ports() {
 	bset status "sanity:"
 
 	if was_a_bulk_run; then
+		if [ ${CLEAN:-0} -eq 1 ]; then
+			msg_n "(-c): Cleaning all packages..."
+			rm -rf ${PACKAGES}/*
+			rm -rf ${POUDRIERE_DATA}/cache/${MASTERNAME}
+			echo " done"
+		fi
+
 		if [ ${CLEAN_LISTED:-0} -eq 1 ]; then
+			msg "(-C) Cleaning specified ports to build"
 			listed_ports | while read port; do
 				pkg="${PACKAGES}/All/$(cache_get_pkgname ${port}).${PKG_EXT}"
 				if [ -f "${pkg}" ]; then
