@@ -954,6 +954,11 @@ commit_packages() {
 	local pkgdir_old pkgdir_new
 
 	[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] || return 0
+	if [ "${COMMIT_PACKAGES_ON_FAILURE}" = "no" ] &&
+	    [ $(bget stats_failed) -gt 0 ]; then
+		msg "Not committing packages to repository as failures were encountered"
+		return 0
+	fi
 
 	msg "Committing packages to repository"
 

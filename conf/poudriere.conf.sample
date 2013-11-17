@@ -170,6 +170,13 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Default: yes
 #ATOMIC_PACKAGE_REPOSITORY=yes
 
+# When using ATOMIC_PACKAGE_REPOSITORY, commit the packages if some
+# packages fail to build. Ignored ports are considered successful.
+# This can be set to 'no' to only commit the packages once no failures
+# are encountered.
+# Default: yes
+#COMMIT_PACKAGES_ON_FAILURE=yes
+
 # Keep older package repositories. This can be used to rollback a system
 # or to bisect issues by changing the repository to one of the older
 # versions and reinstalling everything with `pkg upgrade -f`
