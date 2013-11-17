@@ -849,7 +849,6 @@ do_portbuild_mounts() {
 
 	[ -d ${portsdir}/ports ] && portsdir=${portsdir}/ports
 
-	mkdir -p ${PACKAGES}/All
 	[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
 		${NULLMOUNT} ${CCACHE_DIR} ${mnt}${HOME}/.ccache
 	[ -n "${MFSSIZE}" ] && mdmfs -t -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
@@ -1057,10 +1056,12 @@ jail_start() {
 
 	PACKAGES=${POUDRIERE_DATA}/packages/${MASTERNAME}
 
-	was_a_bulk_run && stash_packages
-
 	[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
 	msg "Mounting ports/packages/distfiles"
+
+	mkdir -p ${PACKAGES}/All ${PACKAGES}/Latest
+	was_a_bulk_run && stash_packages
+
 	do_portbuild_mounts ${tomnt} ${name} ${ptname} ${setname}
 
 	was_a_bulk_run && show_log_info
