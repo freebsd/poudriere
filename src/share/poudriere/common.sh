@@ -2354,8 +2354,9 @@ pkg_get_origin() {
 }
 
 pkg_get_dep_origin() {
-	[ $# -ne 1 ] && eargs pkg
-	local pkg="$1"
+	[ $# -ne 2 ] && eargs var_return pkg
+	local var_return="$1"
+	local pkg="$2"
 	local dep_origin_file
 	local pkg_cache_dir
 	local compiled_dep_origins
@@ -2372,11 +2373,15 @@ pkg_get_dep_origin() {
 				"/packages/All/${pkg##*/}" '%do' | tr '\n' ' ')
 		fi
 		echo "${compiled_dep_origins}" > "${dep_origin_file}"
-		echo "${compiled_dep_origins}"
+		setvar "${var_return}" "${compiled_dep_origins}"
 		return 0
 	fi
 
-	cat "${dep_origin_file}"
+	while read line; do
+		compiled_dep_origins="${deps} ${line}"
+	done < "${dep_origin_file}"
+
+	setvar "${var_return}" "${compiled_dep_origins}"
 }
 
 pkg_get_options() {
@@ -2432,7 +2437,7 @@ pkg_cache_data() {
 	ensure_pkg_installed
 	pkg_get_options "${pkg}" > /dev/null
 	pkg_get_origin _ignored "${pkg}" ${origin} > /dev/null
-	pkg_get_dep_origin "${pkg}" > /dev/null
+	pkg_get_dep_origin _ignored "${pkg}" > /dev/null
 	deps_file _ignored "${pkg}" > /dev/null
 	set -e
 }
@@ -2585,7 +2590,8 @@ delete_old_pkg() {
 				esac
 			done
 		done
-		compiled_deps=$(pkg_get_dep_origin "${pkg}")
+		pkg_get_dep_origin compiled_deps "${pkg}"
+
 		for d in ${current_deps}; do
 			case " $compiled_deps " in
 			*\ $d\ *) ;;
