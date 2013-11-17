@@ -169,3 +169,14 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Recommended to always keep on.
 # Default: yes
 #ATOMIC_PACKAGE_REPOSITORY=yes
+
+# Keep older package repositories. This can be used to rollback a system
+# or to bisect issues by changing the repository to one of the older
+# versions and reinstalling everything with `pkg upgrade -f`
+# ATOMIC_PACKAGE_REPOSITORY is required for this.
+# Default: no
+#KEEP_OLD_PACKAGES=no
+
+# How many old package repositories to keep with KEEP_OLD_PACKAGES
+# Default: 5
+#KEEP_OLD_PACKAGES_COUNT=5

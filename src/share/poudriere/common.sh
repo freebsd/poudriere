@@ -885,31 +885,34 @@ do_portbuild_mounts() {
 # dir in DATA/packages because someone may have created a separate
 # ZFS dataset / NFS mount for each dataset. Avoid cross-device linking.
 convert_repository() {
+	local pkgdir
+
 	msg "Converting package repository to new format"
 
-	mkdir ${PACKAGES}/.real
+	pkgdir=.real_$(date +%s)
+	mkdir ${PACKAGES}/${pkgdir}
 
 	# Move all top-level dirs into .real
-	find ${PACKAGES}/ -mindepth 1 -maxdepth 1 -type d ! -name .real |
-	    xargs -J % mv % ${PACKAGES}/.real
+	find ${PACKAGES}/ -mindepth 1 -maxdepth 1 -type d ! -name ${pkgdir} |
+	    xargs -J % mv % ${PACKAGES}/${pkgdir}
 	# Symlink them over through .latest
-	find ${PACKAGES}/.real -mindepth 1 -maxdepth 1 -type d \
-	    ! -name .real | while read directory; do
+	find ${PACKAGES}/${pkgdir} -mindepth 1 -maxdepth 1 -type d \
+	    ! -name ${pkgdir} | while read directory; do
 		dirname=${directory##*/}
 		ln -s .latest/${dirname} ${PACKAGES}/${dirname}
 	done
 
 	# Now move+symlink any files in the top-level
 	find ${PACKAGES}/ -mindepth 1 -maxdepth 1 -type f |
-	    xargs -J % mv % ${PACKAGES}/.real
-	find ${PACKAGES}/.real -mindepth 1 -maxdepth 1 -type f |
+	    xargs -J % mv % ${PACKAGES}/${pkgdir}
+	find ${PACKAGES}/${pkgdir} -mindepth 1 -maxdepth 1 -type f |
 	    while read file; do
 		fname=${file##*/}
 		ln -s .latest/${fname} ${PACKAGES}/${fname}
 	done
 
 	# Setup current symlink which is how the build will atomically finish
-	ln -s .real ${PACKAGES}/.latest
+	ln -s ${pkgdir} ${PACKAGES}/.latest
 }
 
 stash_packages() {
@@ -961,8 +964,18 @@ commit_packages() {
 	PACKAGES=${PACKAGES_ROOT}/.latest
 	ln -hfs ${pkgdir_new} ${PACKAGES}
 
-	# Remove old and shadow dir
-	rm -rf ${pkgdir_old} 2>/dev/null || :
+	msg "Removing old packages"
+
+	if [ "${KEEP_OLD_PACKAGES:-no}" = "yes" ]; then
+		keep_cnt=$((${KEEP_OLD_PACKAGES_COUNT:-5} + 1))
+		find ${PACKAGES_ROOT} -type d -mindepth 1 -maxdepth 1 \
+		    -name '.real_*' | sort -Vr |
+		    sed -n "${keep_cnt},\$p" |
+		    xargs rm -rf 2>/dev/null || :
+	else
+		# Remove old and shadow dir
+		rm -rf ${pkgdir_old} 2>/dev/null || :
+	fi
 }
 
 jail_start() {
