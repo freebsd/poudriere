@@ -100,6 +100,10 @@ my_name() {
 	echo ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}
 }
 
+log_path() {
+	echo "${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"
+}
+
 injail() {
 	jexec -U ${JUSER:-root} ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}} "$@"
 }
@@ -196,10 +200,6 @@ log_start() {
 	# The pipe will continue to work as long as we keep
 	# the FD open to it.
 	rm -f ${logfile}.pipe
-}
-
-log_path() {
-	echo "${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"
 }
 
 buildlog_start() {
