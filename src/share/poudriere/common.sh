@@ -2265,7 +2265,6 @@ pkg_cache_data() {
 	local originfile="${cachedir}/origin"
 
 	ensure_pkg_installed
-	mkdir -p "$(pkg_cache_dir "${pkg}")"
 	pkg_get_options "${pkg}" > /dev/null
 	pkg_get_origin "${pkg}" ${origin} > /dev/null
 	pkg_get_dep_origin "${pkg}" > /dev/null
