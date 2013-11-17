@@ -2434,8 +2434,10 @@ ensure_pkg_installed() {
 
 pkg_cache_data() {
 	[ $# -ne 2 ] && eargs pkg origin
+	local - # Make `set +e` local
 	# Ignore errors in here
 	set +e
+
 	local pkg="$1"
 	local origin=$2
 	local pkg_cache_dir
@@ -2449,7 +2451,6 @@ pkg_cache_data() {
 	pkg_get_origin _ignored "${pkg}" ${origin} > /dev/null
 	pkg_get_dep_origin _ignored "${pkg}" > /dev/null
 	deps_file _ignored "${pkg}" > /dev/null
-	set -e
 }
 
 get_cache_dir() {
