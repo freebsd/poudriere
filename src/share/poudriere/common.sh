@@ -974,6 +974,19 @@ commit_packages() {
 	PACKAGES=${PACKAGES_ROOT}/.latest
 	ln -hfs ${pkgdir_new} ${PACKAGES}
 
+	# Look for broken top-level links and remove them, if they reference
+	# the old directory
+	find ${PACKAGES_ROOT}/ -mindepth 1 -maxdepth 1 ! -name '.*' -type l |
+	    while read path; do
+		# Skip if not a broken link
+		[ ! -e "${path}" ] || continue
+		link=$(readlink ${path})
+		# Skip if link does not reference inside latest
+		[ "${link##.latest}" != "${link}" ] || continue
+		rm -f ${path}
+	done
+
+
 	msg "Removing old packages"
 
 	if [ "${KEEP_OLD_PACKAGES:-no}" = "yes" ]; then
