@@ -426,7 +426,7 @@ siginfo_handler() {
 			origin=${status#*:}
 			phase="${status%:*}"
 			if [ -n "${origin}" -a "${origin}" != "${status}" ]; then
-				pkgname=$(cache_get_pkgname ${origin})
+				cache_get_pkgname pkgname "${origin}"
 				# Find the buildtime for this pkgname
 				for pkgname_buildtime in $pkgname_buildtimes; do
 					[ "${pkgname_buildtime%!*}" = "${pkgname}" ] || continue
@@ -2527,7 +2527,7 @@ delete_old_pkg() {
 
 	v="${pkg##*-}"
 	v=${v%.*}
-	cached_pkgname=$(cache_get_pkgname ${o})
+	cache_get_pkgname cached_pkgname "${o}"
 	v2=${cached_pkgname##*-}
 	if [ "$v" != "$v2" ]; then
 		msg "Deleting old version: ${pkg##*/}"
@@ -2678,34 +2678,35 @@ lock_release() {
 }
 
 cache_get_pkgname() {
-	[ $# -ne 1 ] && eargs origin
-	local origin=${1%/}
-	local pkgname="" existing_origin
+	[ $# -ne 2 ] && eargs var_return origin
+	local var_return="$1"
+	local origin=${2%/}
+	local _pkgname="" existing_origin
 	local cache_origin_pkgname=${MASTERMNT}/poudriere/var/cache/origin-pkgname/${origin%%/*}_${origin##*/}
 	local cache_pkgname_origin
 
-	[ -f ${cache_origin_pkgname} ] && read pkgname < ${cache_origin_pkgname}
+	[ -f ${cache_origin_pkgname} ] && read _pkgname < ${cache_origin_pkgname}
 
 	# Add to cache if not found.
-	if [ -z "${pkgname}" ]; then
+	if [ -z "${_pkgname}" ]; then
 		[ -d "${MASTERMNT}/usr/ports/${origin}" ] ||
 			err 1 "Invalid port origin '${origin}' not found."
-		pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME ||
+		_pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME ||
 			err 1 "Error getting PKGNAME for ${origin}")
-		[ -n "${pkgname}" ] || err 1 "Missing PKGNAME for ${origin}"
+		[ -n "${_pkgname}" ] || err 1 "Missing PKGNAME for ${origin}"
 		# Make sure this origin did not already exist
-		existing_origin=$(cache_get_origin "${pkgname}" 2>/dev/null || :)
+		existing_origin=$(cache_get_origin "${_pkgname}" 2>/dev/null || :)
 		# It may already exist due to race conditions, it is not harmful. Just ignore.
 		if [ "${existing_origin}" != "${origin}" ]; then
 			[ -n "${existing_origin}" ] &&
-				err 1 "Duplicated origin for ${pkgname}: ${origin} AND ${existing_origin}. Rerun with -vv to see which ports are depending on these."
-			echo "${pkgname}" > ${cache_origin_pkgname}
-			cache_pkgname_origin="${MASTERMNT}/poudriere/var/cache/pkgname-origin/${pkgname}"
+				err 1 "Duplicated origin for ${_pkgname}: ${origin} AND ${existing_origin}. Rerun with -vv to see which ports are depending on these."
+			echo "${_pkgname}" > ${cache_origin_pkgname}
+			cache_pkgname_origin="${MASTERMNT}/poudriere/var/cache/pkgname-origin/${_pkgname}"
 			echo "${origin}" > "${cache_pkgname_origin}"
 		fi
 	fi
 
-	echo ${pkgname}
+	setvar "${var_return}" "${_pkgname}"
 }
 
 cache_get_origin() {
@@ -2721,9 +2722,13 @@ compute_deps() {
 	[ $# -lt 1 ] && eargs port
 	[ $# -gt 2 ] && eargs port pkgnme
 	local port=$1
-	local pkgname="${2:-$(cache_get_pkgname ${port})}"
+	local pkgname="$2"
 	local dep_pkgname dep_port
-	local pkg_pooldir="${MASTERMNT}/poudriere/deps/${pkgname}"
+	local pkg_pooldir
+
+	[ -z "${pkgname}" ] && cache_get_pkgname pkgname "${port}"
+	pkg_pooldir="${MASTERMNT}/poudriere/deps/${pkgname}"
+
 	mkdir "${pkg_pooldir}" 2>/dev/null || return 0
 
 	msg_verbose "Computing deps for ${port}"
@@ -2735,7 +2740,7 @@ compute_deps() {
 		# Detect bad cat/origin/ dependency which pkgng will not register properly
 		[ "${dep_port}" = "${dep_port%/}" ] ||
 			err 1 "${port} depends on bad origin '${dep_port}'; Please contact maintainer of the port to fix this."
-		dep_pkgname=$(cache_get_pkgname ${dep_port})
+		cache_get_pkgname dep_pkgname "${dep_port}"
 
 		# Only do this if it's not already done, and not ALL, as everything will
 		# be touched anyway
@@ -3029,7 +3034,8 @@ prepare_ports() {
 		if [ ${CLEAN_LISTED} -eq 1 ]; then
 			msg "(-C) Cleaning specified ports to build"
 			listed_ports | while read port; do
-				pkg="${PACKAGES}/All/$(cache_get_pkgname ${port}).${PKG_EXT}"
+				cache_get_pkgname pkgname "${port}"
+				pkg="${PACKAGES}/All/${pkgname}.${PKG_EXT}"
 				if [ -f "${pkg}" ]; then
 					msg "Deleting existing package: ${pkg##*/}"
 					delete_pkg "${pkg}"

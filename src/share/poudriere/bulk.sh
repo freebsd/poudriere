@@ -192,7 +192,8 @@ if [ ${DRY_RUN} -eq 1 ]; then
 			    -maxdepth 2
 		} | while read pkgpath; do
 			pkgname=${pkgpath##*/}
-			echo $(cache_get_origin ${pkgname})
+			cache_get_origin pkgname "${pkgpath##*/}"
+			echo "${pkgname}"
 		done | sort -u | tr '\n' ' '
 		echo
 	else
