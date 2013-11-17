@@ -30,6 +30,7 @@ _bulk=(
 	'-F[Only fetch from original master_sites; skip FreeBSD mirrors]'
 	'-c[Clean the previous built binary packages]'
 	'-C[Clean previous packages for the given list to build]'
+	'-n[Dry run. Show what would be done, but do not build any packages]'
 	'-N[Do not build repository or INDEX when done building]'
 	'-t[Test the specified ports for leftovers]'
 	'-r[Recursively test all dependencies as well]'

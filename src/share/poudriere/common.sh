@@ -67,8 +67,8 @@ err() {
 	exit $1
 }
 
-msg_n() { echo -n "====>> $1"; }
-msg() { echo "====>> $1"; }
+msg_n() { echo -n "${DRY_MODE}====>> $1"; }
+msg() { msg_n "$@"; echo; }
 msg_verbose() {
 	[ ${VERBOSE:-0} -gt 0 ] || return 0
 	msg "$1"
@@ -2011,12 +2011,7 @@ stop_html_json() {
 	rm -f ${log}/.data.json.tmp ${log}/.data.mini.json 2>/dev/null || :
 }
 
-# Build ports in parallel
-# Returns when all are built.
-parallel_build() {
-	local jname=$1
-	local ptname=$2
-	local setname=$3
+calculate_tobuild() {
 	local nbq=$(bget stats_queued)
 	local nbb=$(bget stats_built)
 	local nbf=$(bget stats_failed)
@@ -2024,7 +2019,18 @@ parallel_build() {
 	local nbs=$(bget stats_skipped)
 	local ndone=$((nbb + nbf + nbi + nbs))
 	local nremaining=$((nbq - ndone))
+
+	echo ${nremaining}
+}
+
+# Build ports in parallel
+# Returns when all are built.
+parallel_build() {
+	local jname=$1
+	local ptname=$2
+	local setname=$3
 	local real_parallel_jobs=${PARALLEL_JOBS}
+	local nremaining=$(calculate_tobuild)
 
 	# If pool is empty, just return
 	[ ${nremaining} -eq 0 ] && return 0
