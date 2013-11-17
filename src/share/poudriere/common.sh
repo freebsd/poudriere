@@ -2386,30 +2386,39 @@ pkg_get_dep_origin() {
 }
 
 pkg_get_options() {
-	[ $# -ne 1 ] && eargs pkg
-	local pkg="$1"
+	[ $# -ne 2 ] && eargs var_return pkg
+	local var_return="$1"
+	local pkg="$2"
 	local optionsfile
 	local pkg_cache_dir
-	local compiled_options
+	local _compiled_options
 
 	get_pkg_cache_dir pkg_cache_dir "${pkg}"
 	optionsfile="${pkg_cache_dir}/options"
 
 	if [ ! -f "${optionsfile}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
-			compiled_options=$(injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | \
+			_compiled_options=$(injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | \
 				awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | \
 				sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 		else
-			compiled_options=$(injail /poudriere/pkg-static query -F \
+			_compiled_options=$(injail /poudriere/pkg-static query -F \
 				"/packages/All/${pkg##*/}" '%Ov%Ok' | sed '/^off/d;s/^on//' | sort | tr '\n' ' ')
 		fi
-		echo "${compiled_options}" > "${optionsfile}"
-		echo "${compiled_options}"
+		echo "${_compiled_options}" > "${optionsfile}"
+		setvar "${var_return}" "${_compiled_options}"
 		return 0
 	fi
-	# optionsfile is multi-line, no point for read< trick here
-	cat "${optionsfile}"
+
+	# Special care here to match whitespace of 'pretty-print-config'
+	while read line; do
+		_compiled_options="${_compiled_options}${_compiled_options:+ }${line}"
+	done < "${optionsfile}"
+
+	# Space on end to match 'pretty-print-config' in delete_old_pkg
+	[ -n "${_compiled_options}" ] &&
+	    _compiled_options="${_compiled_options} "
+	setvar "${var_return}" "${_compiled_options}"
 }
 
 ensure_pkg_installed() {
@@ -2436,7 +2445,7 @@ pkg_cache_data() {
 	originfile="${pkg_cache_dir}/origin"
 
 	ensure_pkg_installed
-	pkg_get_options "${pkg}" > /dev/null
+	pkg_get_options _ignored "${pkg}" > /dev/null
 	pkg_get_origin _ignored "${pkg}" ${origin} > /dev/null
 	pkg_get_dep_origin _ignored "${pkg}" > /dev/null
 	deps_file _ignored "${pkg}" > /dev/null
@@ -2609,7 +2618,7 @@ delete_old_pkg() {
 	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
 		current_options=$(injail make -C /usr/ports/${o} pretty-print-config | \
 			tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
-		compiled_options=$(pkg_get_options "${pkg}")
+		pkg_get_options compiled_options "${pkg}"
 
 		if [ "${compiled_options}" != "${current_options}" ]; then
 			msg "Options changed, deleting: ${pkg##*/}"
