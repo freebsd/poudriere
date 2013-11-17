@@ -914,6 +914,8 @@ convert_repository() {
 
 stash_packages() {
 
+	[ "${ATOMIC_PACKAGE_REPOSITORY:-yes}" = "yes" ] || return 0
+
 	[ -L ${PACKAGES}/.latest ] || convert_repository
 
 	msg "Stashing existing package repository"
@@ -942,6 +944,8 @@ stash_packages() {
 
 commit_packages() {
 	local pkgdir_old pkgdir_new
+
+	[ "${ATOMIC_PACKAGE_REPOSITORY:-yes}" = "yes" ] || return 0
 
 	msg "Committing packages to repository"
 
