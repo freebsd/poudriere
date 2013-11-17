@@ -952,6 +952,16 @@ commit_packages() {
 
 	msg "Committing packages to repository"
 
+	# Find any new top-level files not symlinked yet. This is
+	# mostly incase pkg adds a new top-level repo or the ports framework
+	# starts creating a new directory
+	find ${PACKAGES}/ -mindepth 1 -maxdepth 1 ! -name '.*' |
+	    while read path; do
+		name=${path##*/}
+		[ ! -L "${PACKAGES_ROOT}/${name}" ] || continue
+		ln -s .latest/${name} ${PACKAGES_ROOT}/${name}
+	done
+
 	pkgdir_old=$(realpath ${PACKAGES_ROOT}/.latest)
 
 	# Rename shadow dir to a production name
