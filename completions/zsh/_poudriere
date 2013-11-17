@@ -101,6 +101,7 @@ _testport=(
 	'-c[run make config for the given port]::'
 	'-j[run only inside the given jail]::name:_poudriere_jail'
 	'-n[no custom prefix]::'
+	'-N[Do not build repository or INDEX when done building dependencies]'
 	'-p[specify on which portstree we work]::tree:_poudriere_pt'
 	'-v[Be verbose; show more information. Specify twice to enable debug output.]'
 	'-z[Specify on which SET to use]::'

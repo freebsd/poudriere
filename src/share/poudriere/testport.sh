@@ -43,6 +43,8 @@ Options:
     -I          -- Advanced Interactive mode. Leaves jail running with port
                    installed after test.
     -n          -- No custom prefix
+    -N          -- Do not build package repository or INDEX when build
+                   of dependencies completed
     -p tree     -- Specify the path to the portstree
     -s          -- Skip sanity checks
     -v          -- Be verbose; show more information. Use twice to enable
@@ -61,8 +63,9 @@ SETNAME=""
 SKIPSANITY=0
 INTERACTIVE_MODE=0
 PTNAME="default"
+BUILD_REPO=1
 
-while getopts "o:cnj:J:iIp:svz:" FLAG; do
+while getopts "o:cnj:J:iINp:svz:" FLAG; do
 	case "${FLAG}" in
 		c)
 			CONFIGSTR=1
@@ -85,6 +88,9 @@ while getopts "o:cnj:J:iIp:svz:" FLAG; do
 			;;
 		I)
 			INTERACTIVE_MODE=2
+			;;
+		N)
+			BUILD_REPO=0
 			;;
 		p)
 			porttree_exists ${OPTARG} ||
@@ -140,6 +146,9 @@ if [ $(bget stats_failed) -gt 0 ] || [ $(bget stats_skipped) -gt 0 ]; then
 
 	exit 1
 fi
+nbbuilt=$(bget stats_built)
+
+[ ${BUILD_REPO} -eq 1 -a ${nbbuilt} -gt 0 ] && build_repo
 
 commit_packages
 
