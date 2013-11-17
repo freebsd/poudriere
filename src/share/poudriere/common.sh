@@ -2304,7 +2304,11 @@ list_deps() {
 deps_file() {
 	[ $# -ne 1 ] && eargs pkg
 	local pkg="$1"
-	local depfile="$(pkg_cache_dir "${pkg}")/deps"
+	local pkg_cache_dir
+	local depfile
+
+	get_pkg_cache_dir pkg_cache_dir "${pkg}"
+	depfile="${pkg_cache_dir}/deps"
 
 	if [ ! -f "${depfile}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
@@ -2320,8 +2324,12 @@ deps_file() {
 pkg_get_origin() {
 	[ $# -lt 1 ] && eargs pkg
 	local pkg="$1"
-	local originfile="$(pkg_cache_dir "${pkg}")/origin"
 	local origin=$2
+	local pkg_cache_dir
+	local originfile
+
+	get_pkg_cache_dir pkg_cache_dir "${pkg}"
+	originfile="${pkg_cache_dir}/origin"
 
 	if [ ! -f "${originfile}" ]; then
 		if [ -z "${origin}" ]; then
@@ -2343,8 +2351,12 @@ pkg_get_origin() {
 pkg_get_dep_origin() {
 	[ $# -ne 1 ] && eargs pkg
 	local pkg="$1"
-	local dep_origin_file="$(pkg_cache_dir "${pkg}")/dep_origin"
+	local dep_origin_file
+	local pkg_cache_dir
 	local compiled_dep_origins
+
+	get_pkg_cache_dir pkg_cache_dir "${pkg}"
+	dep_origin_file="${pkg_cache_dir}/dep_origin"
 
 	if [ ! -f "${dep_origin_file}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
@@ -2365,8 +2377,12 @@ pkg_get_dep_origin() {
 pkg_get_options() {
 	[ $# -ne 1 ] && eargs pkg
 	local pkg="$1"
-	local optionsfile="$(pkg_cache_dir "${pkg}")/options"
+	local optionsfile
+	local pkg_cache_dir
 	local compiled_options
+
+	get_pkg_cache_dir pkg_cache_dir "${pkg}"
+	optionsfile="${pkg_cache_dir}/options"
 
 	if [ ! -f "${optionsfile}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
@@ -2402,8 +2418,11 @@ pkg_cache_data() {
 	set +e
 	local pkg="$1"
 	local origin=$2
-	local cachedir="$(pkg_cache_dir "${pkg}")"
-	local originfile="${cachedir}/origin"
+	local pkg_cache_dir
+	local originfile
+
+	get_pkg_cache_dir pkg_cache_dir "${pkg}"
+	originfile="${pkg_cache_dir}/origin"
 
 	ensure_pkg_installed
 	pkg_get_options "${pkg}" > /dev/null
@@ -2418,10 +2437,12 @@ cache_dir() {
 }
 
 # Return the cache dir for the given pkg
+# @param var_return The variable to set the result in
 # @param string pkg $PKGDIR/All/PKGNAME.PKG_EXT
-pkg_cache_dir() {
-	[ $# -ne 1 ] && eargs pkg
-	local pkg="$1"
+get_pkg_cache_dir() {
+	[ $# -ne 2 ] && eargs var_return pkg
+	local var_return="$1"
+	local pkg="$2"
 	local pkg_file="${pkg##*/}"
 	local pkg_dir
 
@@ -2429,14 +2450,17 @@ pkg_cache_dir() {
 
 	[ -d "${pkg_dir}" ] || mkdir -p "${pkg_dir}"
 
-	echo "${pkg_dir}"
+	setvar "${var_return}" "${pkg_dir}"
 }
 
 clear_pkg_cache() {
 	[ $# -ne 1 ] && eargs pkg
 	local pkg="$1"
+	local pkg_cache_dir
 
-	rm -fr "$(pkg_cache_dir "${pkg}")"
+	get_pkg_cache_dir pkg_cache_dir "${pkg}"
+
+	rm -fr "${pkg_cache_dir}"
 }
 
 delete_pkg() {
