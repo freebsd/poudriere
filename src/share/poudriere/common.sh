@@ -1933,7 +1933,9 @@ mark_done() {
 	[ $# -eq 1 ] || eargs pkgname
 	local pkgname="$1"
 	local origin=$(cache_get_origin "${pkgname}")
-	local cache_dir=$(cache_dir)
+	local cache_dir
+
+	get_cache_dir cache_dir
 
 	if [ "${TRACK_BUILDTIMES}" != "no" ]; then
 		echo -n "${origin} $(date +%s) " >> ${cache_dir}/buildtimes
@@ -2432,8 +2434,9 @@ pkg_cache_data() {
 	set -e
 }
 
-cache_dir() {
-	echo ${POUDRIERE_DATA}/cache/${MASTERNAME}
+get_cache_dir() {
+	local var_return="$1"
+	setvar "${var_return}" ${POUDRIERE_DATA}/cache/${MASTERNAME}
 }
 
 # Return the cache dir for the given pkg
@@ -2445,8 +2448,11 @@ get_pkg_cache_dir() {
 	local pkg="$2"
 	local pkg_file="${pkg##*/}"
 	local pkg_dir
+	local cache_dir
 
-	pkg_dir="$(cache_dir)/${pkg_file}"
+	get_cache_dir cache_dir
+
+	pkg_dir="${cache_dir}/${pkg_file}"
 
 	[ -d "${pkg_dir}" ] || mkdir -p "${pkg_dir}"
 
@@ -2476,13 +2482,15 @@ delete_pkg() {
 # Deleted cached information for stale packages (manually removed)
 delete_stale_pkg_cache() {
 	local pkgname
-	local cachedir=$(cache_dir)
+	local cache_dir
+
+	get_cache_dir cache_dir
 
 	msg_verbose "Checking for stale cache files"
 
-	[ ! -d ${cachedir} ] && return 0
-	dirempty ${cachedir} && return 0
-	for pkg in ${cachedir}/*.${PKG_EXT}; do
+	[ ! -d ${cache_dir} ] && return 0
+	dirempty ${cache_dir} && return 0
+	for pkg in ${cache_dir}/*.${PKG_EXT}; do
 		pkg_file="${pkg##*/}"
 		# If this package no longer exists in the PKGDIR, delete the cache.
 		[ ! -e "${PACKAGES}/All/${pkg_file}" ] &&
@@ -2933,6 +2941,7 @@ prepare_ports() {
 	local pkg
 	local log=$(log_path)
 	local n port pn nbq resuming_build
+	local cache_dir
 
 	msg "Calculating ports order and dependencies"
 	mkdir -p "${MASTERMNT}/poudriere"
@@ -2960,9 +2969,10 @@ prepare_ports() {
 	mkdir -p ${POOL_BUCKET_DIRS}
 
 	if was_a_bulk_run; then
+		get_cache_dir cache_dir
 		mkdir -p ${log}/../../latest-per-pkg ${log}/../latest-per-pkg
 		mkdir -p ${log}/logs ${log}/logs/errors ${log}/assets
-		mkdir -p $(cache_dir)
+		mkdir -p ${cache_dir}
 		ln -sfh ${BUILDNAME} ${log%/*}/latest
 		cp ${HTMLPREFIX}/index.html ${log}
 		cp -R ${HTMLPREFIX}/assets/ ${log}/assets/
