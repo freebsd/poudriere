@@ -70,12 +70,12 @@ err() {
 msg_n() { echo -n "${DRY_MODE}====>> $1"; }
 msg() { msg_n "$@"; echo; }
 msg_verbose() {
-	[ ${VERBOSE:-0} -gt 0 ] || return 0
+	[ ${VERBOSE} -gt 0 ] || return 0
 	msg "$1"
 }
 
 msg_debug() {
-	[ ${VERBOSE:-0} -gt 1 ] || return 0
+	[ ${VERBOSE} -gt 1 ] || return 0
 	msg "DEBUG: $1" >&2
 }
 
@@ -181,7 +181,7 @@ log_start() {
 	exec 3>&1 4>&2
 	[ ! -e ${logfile}.pipe ] && mkfifo ${logfile}.pipe
 	{
-		if [ "${TIMESTAMP_LOGS:-no}" = "yes" ]; then
+		if [ "${TIMESTAMP_LOGS}" = "yes" ]; then
 			tee ${logfile} | while read line; do
 				echo "$(date "+%Y%m%d%H%M.%S") ${line}";
 			done
@@ -855,7 +855,7 @@ do_portbuild_mounts() {
 	[ ${TMPFS_WRKDIR} -eq 1 ] && mount -t tmpfs tmpfs ${mnt}/wrkdirs
 	# Only show mounting messages once, not for every builder
 	if [ ${mnt##*/} = "ref" ]; then
-		[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
+		[ -d "${CCACHE_DIR}" ] &&
 			msg "Mounting ccache from: ${CCACHE_DIR}"
 		msg "Mounting packages from: ${PACKAGES_ROOT}"
 	fi
@@ -916,7 +916,7 @@ convert_repository() {
 
 stash_packages() {
 
-	[ "${ATOMIC_PACKAGE_REPOSITORY:-yes}" = "yes" ] || return 0
+	[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] || return 0
 
 	[ -L ${PACKAGES}/.latest ] || convert_repository
 
@@ -953,7 +953,7 @@ stash_packages() {
 commit_packages() {
 	local pkgdir_old pkgdir_new
 
-	[ "${ATOMIC_PACKAGE_REPOSITORY:-yes}" = "yes" ] || return 0
+	[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] || return 0
 
 	msg "Committing packages to repository"
 
@@ -995,8 +995,8 @@ commit_packages() {
 
 	msg "Removing old packages"
 
-	if [ "${KEEP_OLD_PACKAGES:-no}" = "yes" ]; then
-		keep_cnt=$((${KEEP_OLD_PACKAGES_COUNT:-5} + 1))
+	if [ "${KEEP_OLD_PACKAGES}" = "yes" ]; then
+		keep_cnt=$((${KEEP_OLD_PACKAGES_COUNT} + 1))
 		find ${PACKAGES_ROOT} -type d -mindepth 1 -maxdepth 1 \
 		    -name '.real_*' | sort -Vr |
 		    sed -n "${keep_cnt},\$p" |
@@ -1810,7 +1810,7 @@ save_wrkdir() {
 	local tarname=${tardir}/${PKGNAME}.${WRKDIR_ARCHIVE_FORMAT}
 	local mnted_portdir=${mnt}/wrkdirs/${portdir}
 
-	[ "${SAVE_WRKDIR:-no}" != "no" ] || return 0
+	[ "${SAVE_WRKDIR}" != "no" ] || return 0
 	# Only save if not in fetch/checksum phase
 	[ "${failed_phase}" != "fetch" -a "${failed_phase}" != "checksum" -a \
 		"${failed_phase}" != "extract" ] || return 0
@@ -1935,7 +1935,7 @@ mark_done() {
 	local origin=$(cache_get_origin "${pkgname}")
 	local cache_dir=$(cache_dir)
 
-	if [ "${TRACK_BUILDTIMES:-no}" != "no" ]; then
+	if [ "${TRACK_BUILDTIMES}" != "no" ]; then
 		echo -n "${origin} $(date +%s) " >> ${cache_dir}/buildtimes
 		stat -f "%m" ${MASTERMNT}/poudriere/building/${pkgname} >> \
 			${cache_dir}/buildtimes
@@ -2497,7 +2497,7 @@ delete_old_pkg() {
 
 	# Detect ports that have new dependencies that the existing packages
 	# do not have and delete them.
-	if [ "${CHECK_CHANGED_DEPS:-yes}" != "no" ]; then
+	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
 		current_deps=""
 		liblist=""
 		# FIXME: Move into Infrastructure/scripts and 
@@ -2564,7 +2564,7 @@ delete_old_pkg() {
 	fi
 
 	# Check if the compiled options match the current options from make.conf and /var/db/ports
-	if [ "${CHECK_CHANGED_OPTIONS:-verbose}" != "no" ]; then
+	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
 		current_options=$(injail make -C /usr/ports/${o} pretty-print-config | \
 			tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 		compiled_options=$(pkg_get_options "${pkg}")
@@ -2698,7 +2698,7 @@ compute_deps() {
 
 		# Only do this if it's not already done, and not ALL, as everything will
 		# be touched anyway
-		[ ${ALL:-0} -eq 0 ] && ! [ -d "${MASTERMNT}/poudriere/deps/${dep_pkgname}" ] &&
+		[ ${ALL} -eq 0 ] && ! [ -d "${MASTERMNT}/poudriere/deps/${dep_pkgname}" ] &&
 			compute_deps "${dep_port}" "${dep_pkgname}"
 
 		:> "${pkg_pooldir}/${dep_pkgname}"
@@ -2711,7 +2711,7 @@ compute_deps() {
 }
 
 listed_ports() {
-	if [ ${ALL:-0} -eq 1 ]; then
+	if [ ${ALL} -eq 1 ]; then
 		PORTSDIR=$(pget ${PTNAME} mnt)
 		[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 		for cat in $(awk '$1 == "SUBDIR" { print $3}' ${PORTSDIR}/Makefile); do
@@ -2732,7 +2732,7 @@ port_is_listed() {
 	[ $# -eq 1 ] || eargs origin
 	local origin="$1"
 
-	if [ ${ALL:-0} -eq 1 -o ${PORTTESTING_RECURSIVE:-0} -eq 1 ]; then
+	if [ ${ALL} -eq 1 -o ${PORTTESTING_RECURSIVE} -eq 1 ]; then
 		return 0
 	fi
 
@@ -2746,7 +2746,7 @@ port_is_needed() {
 	[ $# -eq 1 ] || eargs origin
 	local origin="$1"
 
-	[ ${ALL:-0} -eq 1 ] && return 0
+	[ ${ALL} -eq 1 ] && return 0
 
 	awk -vorigin="${origin}" '
 	    $1 == origin || $2 == origin { found=1; exit 0 }
@@ -2976,14 +2976,14 @@ prepare_ports() {
 	bset status "sanity:"
 
 	if was_a_bulk_run; then
-		if [ ${CLEAN:-0} -eq 1 ]; then
+		if [ ${CLEAN} -eq 1 ]; then
 			msg_n "(-c): Cleaning all packages..."
 			rm -rf ${PACKAGES}/*
 			rm -rf ${POUDRIERE_DATA}/cache/${MASTERNAME}
 			echo " done"
 		fi
 
-		if [ ${CLEAN_LISTED:-0} -eq 1 ]; then
+		if [ ${CLEAN_LISTED} -eq 1 ]; then
 			msg "(-C) Cleaning specified ports to build"
 			listed_ports | while read port; do
 				pkg="${PACKAGES}/All/$(cache_get_pkgname ${port}).${PKG_EXT}"
@@ -3391,6 +3391,24 @@ esac
 # 120 minutes with no log update
 : ${NOHANG_TIME:=7200}
 : ${PATCHED_FS_KERNEL:=no}
+: ${ALL:=0}
+: ${CLEAN:=0}
+: ${CLEAN_LISTED:=0}
+: ${VERBOSE:=0}
+: ${PORTTESTING_RECURSIVE:=0}
+
+# Be sure to update poudriere.conf to document the default when changing these
+: ${MAX_EXECUTION_TIME:=86400}         # 24 hours for 1 command
+: ${NOHANG_TIME:=7200}                 # 120 minutes with no log update
+: ${TIMESTAMP_LOGS:=no}
+: ${ATOMIC_PACKAGE_REPOSITORY:=yes}
+: ${KEEP_OLD_PACKAGES:=no}
+: ${KEEP_OLD_PACKAGES_COUNT:=5}
+: ${SAVE_WRKDIR:=no}
+: ${TRACK_BUILDTIMES:=no}
+: ${CHECK_CHANGED_DEPS:=yes}
+: ${CHECK_CHANGED_OPTIONS:=verbose}
+: ${NO_RESTRICTED:=no}
 
 BUILDNAME=$(date +%Y-%m-%d_%Hh%Mm%Ss)
 

@@ -99,7 +99,7 @@ while getopts "o:cnj:J:iIp:svz:" FLAG; do
 			SETNAME="${OPTARG}"
 			;;
 		v)
-			VERBOSE=$((${VERBOSE:-0} + 1))
+			VERBOSE=$((${VERBOSE} + 1))
 			;;
 		*)
 			usage

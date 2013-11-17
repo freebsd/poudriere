@@ -98,7 +98,7 @@ while getopts "B:f:j:J:CcnNp:RFtrTsvwz:a" FLAG; do
 			CLEAN_LISTED=1
 			;;
 		n)
-			[ "${ATOMIC_PACKAGE_REPOSITORY:-yes}" = "yes" ] ||
+			[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] ||
 			    err 1 "ATOMIC_PACKAGE_REPOSITORY required for dry-run support"
 			DRY_RUN=1
 			DRY_MODE="[Dry Run] "
@@ -141,7 +141,7 @@ while getopts "B:f:j:J:CcnNp:RFtrTsvwz:a" FLAG; do
 			ALL=1
 			;;
 		v)
-			VERBOSE=$((${VERBOSE:-0} + 1))
+			VERBOSE=$((${VERBOSE} + 1))
 			;;
 		*)
 			usage
@@ -237,7 +237,7 @@ elif [ $nbbuilt -eq 0 ]; then
 	fi
 	BUILD_REPO=0
 else
-	[ "${NO_RESTRICTED:-no}" != "no" ] && clean_restricted
+	[ "${NO_RESTRICTED}" != "no" ] && clean_restricted
 fi
 
 [ ${BUILD_REPO} -eq 1 ] && build_repo

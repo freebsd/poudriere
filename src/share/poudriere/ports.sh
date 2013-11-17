@@ -110,7 +110,7 @@ while getopts "B:cFudklp:qf:M:m:v" FLAG; do
 			METHOD=${OPTARG}
 			;;
 		v)
-			VERBOSE=$((${VERBOSE:-0} + 1))
+			VERBOSE=$((${VERBOSE} + 1))
 			;;
 		*)
 			usage
