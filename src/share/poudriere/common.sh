@@ -1241,7 +1241,7 @@ sanity_check_pkg() {
 
 	pkg_get_origin origin "${pkg}"
 	port_is_needed "${origin}" || return 0
-	depfile="$(deps_file "${pkg}")"
+	deps_file depfile "${pkg}"
 	while read dep; do
 		if [ ! -e "${PACKAGES}/All/${dep}.${PKG_EXT}" ]; then
 			msg_debug "${pkg} needs missing ${PACKAGES}/All/${dep}.${PKG_EXT}"
@@ -2304,23 +2304,24 @@ list_deps() {
 }
 
 deps_file() {
-	[ $# -ne 1 ] && eargs pkg
-	local pkg="$1"
+	[ $# -ne 2 ] && eargs var_return pkg
+	local var_return="$1"
+	local pkg="$2"
 	local pkg_cache_dir
-	local depfile
+	local _depfile
 
 	get_pkg_cache_dir pkg_cache_dir "${pkg}"
-	depfile="${pkg_cache_dir}/deps"
+	_depfile="${pkg_cache_dir}/deps"
 
-	if [ ! -f "${depfile}" ]; then
+	if [ ! -f "${_depfile}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
-			injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | awk '$1 == "@pkgdep" { print $2 }' > "${depfile}"
+			injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | awk '$1 == "@pkgdep" { print $2 }' > "${_depfile}"
 		else
-			injail /poudriere/pkg-static info -qdF "/packages/All/${pkg##*/}" > "${depfile}"
+			injail /poudriere/pkg-static info -qdF "/packages/All/${pkg##*/}" > "${_depfile}"
 		fi
 	fi
 
-	echo ${depfile}
+	setvar "${var_return}" "${_depfile}"
 }
 
 pkg_get_origin() {
@@ -2432,7 +2433,7 @@ pkg_cache_data() {
 	pkg_get_options "${pkg}" > /dev/null
 	pkg_get_origin _ignored "${pkg}" ${origin} > /dev/null
 	pkg_get_dep_origin "${pkg}" > /dev/null
-	deps_file "${pkg}" > /dev/null
+	deps_file _ignored "${pkg}" > /dev/null
 	set -e
 }
 
