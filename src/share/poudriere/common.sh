@@ -920,23 +920,29 @@ stash_packages() {
 
 	[ -L ${PACKAGES}/.latest ] || convert_repository
 
-	msg "Stashing existing package repository"
-	rm -rf ${PACKAGES}/.building 2>/dev/null || :
+	if [ -d ${PACKAGES}/.building ]; then
+		# If the .building directory is still around, use it. The
+		# previous build may have failed, but all of the successful
+		# packages are still worth keeping for this build.
+		msg "Using packages from previously failed build"
+	else
+		msg "Stashing existing package repository"
 
-	# Use a linked shadow directory in the package root, not
-	# in the parent directory as the user may have created
-	# a separate ZFS dataset or NFS mount for each package
-	# set; Must stay on the same device for linking.
+		# Use a linked shadow directory in the package root, not
+		# in the parent directory as the user may have created
+		# a separate ZFS dataset or NFS mount for each package
+		# set; Must stay on the same device for linking.
 
-	mkdir -p ${PACKAGES}/.building
-	# hardlink copy all top-level directories
-	find ${PACKAGES}/.latest/ -mindepth 1 -maxdepth 1 -type d \
-	    ! -name .building | xargs -J % cp -al % ${PACKAGES}/.building
+		mkdir -p ${PACKAGES}/.building
+		# hardlink copy all top-level directories
+		find ${PACKAGES}/.latest/ -mindepth 1 -maxdepth 1 -type d \
+		    ! -name .building | xargs -J % cp -al % ${PACKAGES}/.building
 
-	# Copy all top-level files to avoid appending
-	# to real copy in pkg-repo, etc.
-	find ${PACKAGES}/.latest/ -mindepth 1 -maxdepth 1 -type f |
-	    xargs -J % cp -a % ${PACKAGES}/.building
+		# Copy all top-level files to avoid appending
+		# to real copy in pkg-repo, etc.
+		find ${PACKAGES}/.latest/ -mindepth 1 -maxdepth 1 -type f |
+		    xargs -J % cp -a % ${PACKAGES}/.building
+	fi
 
 	# From this point forward, only work in the shadow
 	# package dir
@@ -1204,7 +1210,7 @@ cleanup() {
 
 		jail_stop
 
-		rm -rf ${POUDRIERE_DATA}/packages/${MASTERNAME}/.building \
+		rm -rf \
 		    ${POUDRIERE_DATA}/packages/${MASTERNAME}/.latest/.new_packages \
 		    2>/dev/null || :
 
