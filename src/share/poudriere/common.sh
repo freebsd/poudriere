@@ -1975,7 +1975,7 @@ build_queue() {
 
 			[ ${queue_empty} -eq 0 ] || continue
 
-			pkgname=$(next_in_queue)
+			next_in_queue pkgname
 			if [ -z "${pkgname}" ]; then
 				# Check if the ready-to-build pool and need-to-build pools
 				# are empty
@@ -2658,16 +2658,19 @@ delete_old_pkgs() {
 ## Then move the package to the "building" dir in building/
 ## This is only ran from 1 process
 next_in_queue() {
-	local p pkgname
+	local var_return="$1"
+	local p _pkgname
 
 	[ ! -d ${MASTERMNT}/poudriere/pool ] && err 1 "Build pool is missing"
 	p=$(find ${POOL_BUCKET_DIRS} -type d -depth 1 -empty -print -quit || :)
-	[ -n "$p" ] || return 0
-	pkgname=${p##*/}
-	mv ${p} ${MASTERMNT}/poudriere/building/${pkgname}
-	# Update timestamp for buildtime accounting
-	touch ${MASTERMNT}/poudriere/building/${pkgname}
-	echo ${pkgname}
+	if [ -n "$p" ]; then
+		_pkgname=${p##*/}
+		mv ${p} ${MASTERMNT}/poudriere/building/${_pkgname}
+		# Update timestamp for buildtime accounting
+		touch ${MASTERMNT}/poudriere/building/${_pkgname}
+	fi
+
+	setvar "${var_return}" "${_pkgname}"
 }
 
 lock_acquire() {
