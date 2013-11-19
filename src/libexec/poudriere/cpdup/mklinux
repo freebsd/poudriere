@@ -1,0 +1,4 @@
+#!/bin/csh
+#
+
+cc -DNOMD5 compat_linux.c cpdup.c fsmid.c hclink.c hcproto.c misc.c -o cpdup
