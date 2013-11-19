@@ -22,7 +22,8 @@ install: dirwatch make_index dirempty cpdup/cpdup
 	    ${DESTDIR}${PREFIX}/libexec/poudriere
 	install -m 755 -o root -g wheel dirempty \
 	    ${DESTDIR}${PREFIX}/libexec/poudriere
-	install -m 755 -o root -g wheel cpdup/cpdup ${PREFIX}/libexec/poudriere
+	install -m 755 -o root -g wheel cpdup/cpdup \
+	    ${DESTDIR}${PREFIX}/libexec/poudriere
 
 clean:
 	${MAKE} -C ${.CURDIR}/cpdup clean
