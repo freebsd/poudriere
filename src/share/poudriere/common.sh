@@ -1453,7 +1453,7 @@ _real_build_port() {
 	local hangstatus
 	local pkgenv
 	local no_stage=$(injail make -C ${portdir} -VNO_STAGE)
-	local targets install_order build_fs_violation_check_target
+	local targets install_order
 	local stagedir plistsub_sed
 	local jailuser
 
@@ -1461,7 +1461,6 @@ _real_build_port() {
 	# only consider installed packages as dependencies
 	if [ -n "${no_stage}" ]; then
 		install_order="run-depends install-mtree install package"
-		build_fs_violation_check_target="run-depends"
 	else
 		jailuser=root
 		if [ "${BUILD_AS_NON_ROOT}" = "yes" ] &&
@@ -1470,7 +1469,6 @@ _real_build_port() {
 			chown -R ${jailuser} ${mnt}/wrkdirs
 		fi
 		install_order="run-depends stage package install-mtree install"
-		build_fs_violation_check_target="run-depends"
 		stagedir=$(injail make -C ${portdir} -VSTAGEDIR)
 	fi
 	targets="check-config pkg-depends fetch-depends fetch checksum \
@@ -1497,9 +1495,9 @@ _real_build_port() {
 		extract)
 			chown -R ${JUSER} ${mnt}/wrkdirs
 			;;
-		*-depends|install-mtree) JUSER=root ;;
 		configure) [ -n "${PORTTESTING}" ] && markfs prebuild ${mnt} ;;
-		${build_fs_violation_check_target})
+		run-depends)
+			JUSER=root
 			if [ -n "${PORTTESTING}" ]; then
 				check_fs_violation ${mnt} prebuild "${port}" \
 				    "Checking for filesystem violations" \
@@ -1508,6 +1506,7 @@ _real_build_port() {
 				    return 1
 			fi
 			;;
+		*-depends|install-mtree) JUSER=root ;;
 		stage) [ -n "${PORTTESTING}" ] && markfs prestage ${mnt} ;;
 		install)
 			JUSER=root
