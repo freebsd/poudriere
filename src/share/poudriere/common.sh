@@ -3104,11 +3104,14 @@ prepare_ports() {
 	if [ $SKIPSANITY -eq 0 ]; then
 		msg "Sanity checking the repository"
 
-		pkg="${PACKAGES}/All/repo.txz"
-		if [ -f "${pkg}" ]; then
-			msg "Removing invalid pkg repo file: ${pkg}"
-			rm -f "${pkg}"
-		fi
+		for n in repo.txz digests.txz packagesite.txz; do
+			pkg="${PACKAGES}/All/${n}"
+			if [ -f "${pkg}" ]; then
+				msg "Removing invalid pkg repo file: ${pkg}"
+				rm -f "${pkg}"
+			fi
+
+		done
 
 		delete_stale_pkg_cache
 
