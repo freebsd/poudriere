@@ -3245,8 +3245,6 @@ build_repo() {
 		msg "Creating pkgng repository"
 		bset status "pkgrepo:"
 		ensure_pkg_installed
-		rm -f ${PACKAGES}/repo.txz \
-			${PACKAGES}/repo.sqlite
 		# remount rw
 		umount ${MASTERMNT}/packages
 		mount_packages
