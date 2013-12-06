@@ -225,7 +225,7 @@ nbbuilt=$(bget stats_built)
 # Always create repository if it is missing (but still respect -T)
 if [ $PKGNG -eq 1 ] && \
 	[ ! -f ${MASTERMNT}/packages/digests.txz -o \
-	  ! -f ${MASTERMNT}/packages/repo.txz ]; then
+	  ! -f ${MASTERMNT}/packages/packagesite.txz ]; then
 	[ $nbbuilt -eq 0 -a ${BUILD_REPO} -eq 1 ] && 
 		msg "No package built, but repository needs to be created"
 	# This block mostly to avoid next
