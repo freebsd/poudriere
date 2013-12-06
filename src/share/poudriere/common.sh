@@ -3245,26 +3245,22 @@ build_repo() {
 		msg "Creating pkgng repository"
 		bset status "pkgrepo:"
 		ensure_pkg_installed
-		# remount rw
-		umount ${MASTERMNT}/packages
-		mount_packages
+		mkdir -p ${MASTERMNT}/tmp/packages
 		if [ -f "${PKG_REPO_SIGNING_KEY:-/nonexistent}" ]; then
 			install -m 0400 ${PKG_REPO_SIGNING_KEY} \
 				${MASTERMNT}/tmp/repo.key
-			### XXX: Update pkg-repo to support -o
-			### so that /packages can remain RO
-			injail /poudriere/pkg-static repo /packages \
-				/tmp/repo.key
+			injail /poudriere/pkg-static repo -o /tmp/packages \
+				/packages /tmp/repo.key
 			rm -f ${MASTERMNT}/tmp/repo.key
 		else
 			# XXX SIGNING command should most of the time need network access
 			jstop
 			jstart 1
-			injail /poudriere/pkg-static repo /packages ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
+			injail /poudriere/pkg-static repo -o /tmp/packages \
+			    /packages \
+			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 		fi
-		# Remount ro
-		umount ${MASTERMNT}/packages
-		mount_packages -o ro
+		cp ${MASTERMNT}/tmp/packages/* ${PACKAGES}/
 	else
 		msg "Preparing INDEX"
 		bset status "index:"
