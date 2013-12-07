@@ -165,7 +165,9 @@ update_jail() {
 		fi
 		jstop
 		umountfs ${JAILMNT} 1
+		update_version
 		[ -n "${RESOLV_CONF}" ] && rm -f ${JAILMNT}/etc/resolv.conf
+		update_version_env $(jget ${JAILNAME} version)
 		markfs clean ${JAILMNT}
 		;;
 	csup)
