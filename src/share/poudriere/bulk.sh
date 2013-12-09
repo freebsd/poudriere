@@ -59,11 +59,11 @@ clean_restricted() {
 	bset status "clean_restricted:"
 	# Remount rw
 	# mount_nullfs does not support mount -u
-	umount ${MASTERMNT}/packages
+	umount -f ${MASTERMNT}/packages
 	mount_packages
 	injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted >/dev/null
 	# Remount ro
-	umount ${MASTERMNT}/packages
+	umount -f ${MASTERMNT}/packages
 	mount_packages -o ro
 }
 
@@ -76,7 +76,7 @@ build_repo() {
 		rm -f ${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.txz \
 			${POUDRIERE_DATA}/packages/${MASTERNAME}/repo.sqlite
 		# remount rw
-		umount ${MASTERMNT}/packages
+		umount -f ${MASTERMNT}/packages
 		mount_packages
 		if [ -f "${PKG_REPO_SIGNING_KEY:-/nonexistent}" ]; then
 			install -m 0400 ${PKG_REPO_SIGNING_KEY} \
@@ -90,7 +90,7 @@ build_repo() {
 			injail /poudriere/pkg-static repo /packages
 		fi
 		# Remount ro
-		umount ${MASTERMNT}/packages
+		umount -f ${MASTERMNT}/packages
 		mount_packages -o ro
 	else
 		msg "Preparing INDEX"
