@@ -109,8 +109,11 @@ injail() {
 }
 
 jstart() {
+	local enable_networking="$1"
 	local network="${localipargs}"
-	[ $1 -eq 1 ] && network="${ipargs}"
+
+	[ "${RESTRICT_NETWORKING}" = "yes" ] || enable_networking=1
+	[ ${enable_networking} -eq 1 ] && network="${ipargs}"
 
 	jail -c persist name=${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}} \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
@@ -3470,6 +3473,7 @@ esac
 : ${CLEAN_LISTED:=0}
 : ${VERBOSE:=0}
 : ${PORTTESTING_RECURSIVE:=0}
+: ${RESTRICT_NETWORKING:=yes}
 
 # Be sure to update poudriere.conf to document the default when changing these
 : ${MAX_EXECUTION_TIME:=86400}         # 24 hours for 1 command
