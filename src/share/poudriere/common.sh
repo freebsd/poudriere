@@ -1445,7 +1445,8 @@ gather_distfiles() {
 	return 0
 }
 
-# Build+test port and return on first failure
+# Build+test port and return 1 on first failure
+# Return 2 on test failure if PORTTESTING_FATAL=no
 _real_build_port() {
 	[ $# -ne 1 ] && eargs portdir
 	local portdir=$1
@@ -1459,6 +1460,7 @@ _real_build_port() {
 	local targets install_order
 	local stagedir plistsub_sed
 	local jailuser
+	local testfailure=0
 
 	# Must install run-depends as 'actual-package-depends' and autodeps
 	# only consider installed packages as dependencies
@@ -1506,7 +1508,11 @@ _real_build_port() {
 				    "Checking for filesystem violations" \
 				    "Filesystem touched during build:" \
 				    "build_fs_violation" ||
-				    return 1
+				if [ "${PORTTESTING_FATAL}" != "no" ]; then
+					return 1
+				else
+					testfailure=2
+				fi
 			fi
 			;;
 		*-depends|install-mtree) JUSER=root ;;
@@ -1521,7 +1527,11 @@ _real_build_port() {
 				check_fs_violation ${mnt} prestage "${port}" \
 				    "Checking for staging violations" \
 				    "Filesystem touched during stage (files must install to \${STAGEDIR}):" \
-				    "stage_fs_violation" || return 1
+				    "stage_fs_violation" || if [ "${PORTTESTING_FATAL}" != "no" ]; then
+					return 1
+				else
+					testfailure=2
+				fi
 			fi
 			;;
 		deinstall)
@@ -1601,7 +1611,12 @@ _real_build_port() {
 may show failures if the port does not respect PREFIX. \
 Try testport with -n to use PREFIX=LOCALBASE"
 				rm -f ${orphans}
-				[ $die -eq 0 ] || return 1
+				[ $die -eq 0 ] || if [ "${PORTTESTING_FATAL}" != "no" ]; then
+					return 1
+				else
+					testfailure=2
+					die=0
+				fi
 
 				msg "Checking for absolute symlinks into staging directory"
 				bset ${MY_JOBID} status "stage_symlinks:${port}"
@@ -1778,7 +1793,11 @@ Try testport with -n to use PREFIX=LOCALBASE"
 may show failures if the port does not respect PREFIX. \
 Try testport with -n to use PREFIX=LOCALBASE"
 			rm -f ${add} ${add1} ${del} ${del1} ${mod} ${mod1}
-			[ $die -eq 0 ] || return 1
+			[ $die -eq 0 ] || if [ "${PORTTESTING_FATAL}" != "no" ]; then
+				return 1
+			else
+				testfailure=2
+			fi
 		fi
 	done
 
@@ -1795,7 +1814,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 	fi
 
 	bset ${MY_JOBID} status "idle:"
-	return 0
+	return ${testfailure}
 }
 
 # Wrapper to ensure JUSER is reset and any other cleanup needed
@@ -2166,6 +2185,7 @@ build_pkg() {
 	local log=$(log_path)
 	local ignore
 	local errortype
+	local ret=0
 
 	trap '' SIGTSTP
 
@@ -2214,10 +2234,17 @@ build_pkg() {
 		run_hook pkgbuild ignored "${port}" "${PKGNAME}" "${ignore}"
 	else
 		injail make -C ${portdir} clean
-		if ! build_port ${portdir}; then
+		build_port ${portdir} || ret=$?
+		if [ ${ret} -ne 0 ]; then
 			build_failed=1
-			failed_status=$(bget ${MY_JOBID} status)
-			failed_phase=${failed_status%:*}
+			if [ ${ret} -eq 2 ]; then
+				failed_phase=$(${SCRIPTPREFIX}/processonelog2.sh \
+					${log}/logs/${PKGNAME}.log \
+					2> /dev/null)
+			else
+				failed_status=$(bget ${MY_JOBID} status)
+				failed_phase=${failed_status%:*}
+			fi
 
 			save_wrkdir ${mnt} "${port}" "${portdir}" "${failed_phase}" || :
 		elif [ -f ${mnt}/${portdir}/.keep ]; then
@@ -2242,7 +2269,11 @@ build_pkg() {
 			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
 			run_hook pkgbuild failed "${port}" "${PKGNAME}" "${failed_phase}" \
 				"${log}/logs/errors/${PKGNAME}.log"
-			clean_rdepends=1
+			if [ ${ret} -eq 2 ]; then
+				clean_rdepends=0
+			else
+				clean_rdepends=1
+			fi
 		fi
 	fi
 
@@ -3472,6 +3503,7 @@ esac
 : ${CLEAN:=0}
 : ${CLEAN_LISTED:=0}
 : ${VERBOSE:=0}
+: ${PORTTESTING_FATAL:=yes}
 : ${PORTTESTING_RECURSIVE:=0}
 : ${RESTRICT_NETWORKING:=yes}
 

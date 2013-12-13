@@ -185,9 +185,17 @@ export DEVELOPER_MODE=yes
 sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' ${MASTERMNT}/etc/make.conf
 log_start
 buildlog_start /usr/ports/${ORIGIN}
-if ! build_port /usr/ports/${ORIGIN}; then
-	failed_status=$(bget status)
-	failed_phase=${failed_status%:*}
+ret=0
+build_port /usr/ports/${ORIGIN} || ret=$?
+if [ ${ret} -ne 0 ]; then
+	if [ ${ret} -eq 2 ]; then
+		failed_phase=$(${SCRIPTPREFIX}/processonelog2.sh \
+			${log}/logs/${PKGNAME}.log \
+			2> /dev/null)
+	else
+		failed_status=$(bget status)
+		failed_phase=${failed_status%:*}
+	fi
 
 	save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" "${failed_phase}" || :
 
