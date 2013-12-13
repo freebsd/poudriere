@@ -1289,8 +1289,8 @@ check_leftovers() {
 			    -p ${mnt}
 		else
 			markfs poststage ${mnt} ${stagedir}
-			mtree -f ${mnt}/poudriere/mtree.poststage \
-			    -e -p ${mnt}
+			injail mtree -f /poudriere/mtree.poststage \
+			    -e -L -p /
 		fi
 	} | while read l ; do
 		case ${l} in
