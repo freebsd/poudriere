@@ -3117,7 +3117,7 @@ prepare_ports() {
 				cache_get_pkgname pkgname "${port}"
 				pkg="${PACKAGES}/All/${pkgname}.${PKG_EXT}"
 				if [ -f "${pkg}" ]; then
-					msg "Deleting existing package: ${pkg##*/}"
+					msg "(-C) Deleting existing package: ${pkg##*/}"
 					delete_pkg "${pkg}"
 				fi
 			done
