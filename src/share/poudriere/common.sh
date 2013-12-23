@@ -1679,8 +1679,6 @@ Try testport with -n to use PREFIX=LOCALBASE"
 				pkgenv=
 			fi
 
-			max_execution_time=${MAX_EXECUTION_TIME}
-
 			nohang ${max_execution_time} ${NOHANG_TIME} \
 				${log}/logs/${PKGNAME}.log \
 				injail env ${pkgenv} ${PORT_FLAGS} \
