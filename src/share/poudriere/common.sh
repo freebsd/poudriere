@@ -1483,6 +1483,7 @@ _real_build_port() {
 	local stagedir plistsub_sed
 	local jailuser
 	local testfailure=0
+	local max_execution_time
 
 	# Must install run-depends as 'actual-package-depends' and autodeps
 	# only consider installed packages as dependencies
@@ -1510,6 +1511,7 @@ _real_build_port() {
 	[ -z "${PORTTESTING}" ] && PORT_FLAGS="${PORT_FLAGS} NO_DEPENDS=yes"
 
 	for phase in ${targets}; do
+		max_execution_time=${MAX_EXECUTION_TIME}
 		[ -z "${no_stage}" ] && JUSER=${jailuser}
 		bset ${MY_JOBID} status "${phase}:${port}"
 		job_msg_verbose "Status for build ${port}: ${phase}"
@@ -1520,6 +1522,7 @@ _real_build_port() {
 			JUSER=root
 			;;
 		extract)
+			max_execution_time=3600
 			chown -R ${JUSER} ${mnt}/wrkdirs
 			;;
 		configure) [ -n "${PORTTESTING}" ] && markfs prebuild ${mnt} ;;
@@ -1540,10 +1543,12 @@ _real_build_port() {
 		*-depends|install-mtree) JUSER=root ;;
 		stage) [ -n "${PORTTESTING}" ] && markfs prestage ${mnt} ;;
 		install)
+			max_execution_time=3600
 			JUSER=root
 			[ -n "${PORTTESTING}" ] && markfs preinst ${mnt}
 			;;
 		package)
+			max_execution_time=3600
 			if [ -n "${PORTTESTING}" ] &&
 			    [ -z "${no_stage}" ]; then
 				check_fs_violation ${mnt} prestage "${port}" \
@@ -1557,6 +1562,7 @@ _real_build_port() {
 			fi
 			;;
 		deinstall)
+			max_execution_time=3600
 			JUSER=root
 			# Skip for all linux ports, they are not safe
 			if [ "${PKGNAME%%*linux*}" != "" ]; then
@@ -1673,7 +1679,9 @@ Try testport with -n to use PREFIX=LOCALBASE"
 				pkgenv=
 			fi
 
-			nohang ${MAX_EXECUTION_TIME} ${NOHANG_TIME} \
+			max_execution_time=${MAX_EXECUTION_TIME}
+
+			nohang ${max_execution_time} ${NOHANG_TIME} \
 				${log}/logs/${PKGNAME}.log \
 				injail env ${pkgenv} ${PORT_FLAGS} \
 				make -C ${portdir} ${phase}
