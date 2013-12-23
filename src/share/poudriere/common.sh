@@ -706,6 +706,28 @@ EOF
 	echo " done"
 }
 
+mnt_tmpfs() {
+	[ $# -lt 2 ] && eargs type dst
+	local type="$1"
+	local dst="$2"
+	local limit size
+
+	case ${type} in
+		data)
+			# Limit data to 1GiB
+			limit=1
+			;;
+
+		*)
+			limit=${TMPFS_LIMIT}
+			;;
+	esac
+
+	[ -n "${limit}" ] && size="-o size=${limit}G"
+
+	mount -t tmpfs ${size} tmpfs "${dst}"
+}
+
 clonefs() {
 	[ $# -lt 2 ] && eargs from to snap
 	local from=$1
@@ -734,7 +756,7 @@ clonefs() {
 			${fs}@${snap} \
 			${zfs_to}
 	else
-		[ ${TMPFS_ALL} -eq 1 ] && mount -t tmpfs tmpfs ${to}
+		[ ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs all ${to}
 		# Mount /usr/src into target, no need for anything to write to it
 		mkdir -p ${to}/usr/src
 		${NULLMOUNT} -o ro ${from}/usr/src ${to}/usr/src
@@ -855,7 +877,7 @@ do_portbuild_mounts() {
 	[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
 		${NULLMOUNT} ${CCACHE_DIR} ${mnt}${HOME}/.ccache
 	[ -n "${MFSSIZE}" ] && mdmfs -t -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
-	[ ${TMPFS_WRKDIR} -eq 1 ] && mount -t tmpfs tmpfs ${mnt}/wrkdirs
+	[ ${TMPFS_WRKDIR} -eq 1 ] && mnt_tmpfs wrkdir ${mnt}/wrkdirs
 	# Only show mounting messages once, not for every builder
 	if [ ${mnt##*/} = "ref" ]; then
 		[ -d "${CCACHE_DIR}" ] &&
@@ -2188,6 +2210,7 @@ build_pkg() {
 	local ret=0
 
 	trap '' SIGTSTP
+	[ -n "${MAX_MEMORY}" ] && ulimit -m $((${MAX_MEMORY} * 1024 * 1024))
 
 	export PKGNAME="${pkgname}" # set ASAP so cleanup() can use it
 	cache_get_origin port "${pkgname}"
@@ -2198,7 +2221,7 @@ build_pkg() {
 
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
 		umount -f ${mnt}/${LOCALBASE:-/usr/local} 2>/dev/null || :
-		mount -t tmpfs tmpfs ${mnt}/${LOCALBASE:-/usr/local}
+		mnt_tmpfs localbase ${mnt}/${LOCALBASE:-/usr/local}
 	fi
 
 	# Stop everything first
@@ -3016,7 +3039,7 @@ prepare_ports() {
 
 	msg "Calculating ports order and dependencies"
 	mkdir -p "${MASTERMNT}/poudriere"
-	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] && mount -t tmpfs tmpfs "${MASTERMNT}/poudriere"
+	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs data "${MASTERMNT}/poudriere"
 	rm -rf "${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
 		"${MASTERMNT}/poudriere/var/cache/pkgname-origin" 2>/dev/null || :
 	mkdir -p "${MASTERMNT}/poudriere/building" \

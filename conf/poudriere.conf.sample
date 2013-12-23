@@ -64,6 +64,14 @@ USE_PORTLINT=no
 # EXAMPLE: USE_TMPFS="wrkdir data"
 USE_TMPFS=yes
 
+# How much memory to limit tmpfs size to for *each builder* in GiB
+# (default: none)
+#TMPFS_LIMIT=8
+
+# How much memory to limit jail processes to for *each builder*
+# in GiB (default: none)
+#MAX_MEMORY=8
+
 # If set the given directory will be used for the distfiles
 # This allows to share the distfiles between jails and ports tree
 DISTFILES_CACHE=/usr/ports/distfiles
