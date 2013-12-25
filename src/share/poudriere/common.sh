@@ -3550,6 +3550,6 @@ esac
 : ${CHECK_CHANGED_OPTIONS:=verbose}
 : ${NO_RESTRICTED:=no}
 
-BUILDNAME=$(date +%Y-%m-%d_%Hh%Mm%Ss)
+: ${BUILDNAME:=$(date +%Y-%m-%d_%Hh%Mm%Ss)}
 
 [ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}
