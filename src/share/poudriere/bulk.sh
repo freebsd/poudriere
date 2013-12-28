@@ -49,7 +49,9 @@ Options:
     -T          -- Try to build broken ports anyway
     -F          -- Only fetch from original master_site (skip FreeBSD mirrors)
     -s          -- Skip sanity checks
-    -J n        -- Run n jobs in parallel (Defaults to the number of CPUs)
+    -J n[:p]    -- Run n jobs in parallel, and optionnaly run a different
+                   number of jobs in parallel while preparing the build.
+                   (Defaults to the number of CPUs)
     -j name     -- Run only on the given jail
     -N          -- Do not build package repository or INDEX when build
                    completed
@@ -114,7 +116,8 @@ while getopts "B:f:j:J:CcnNp:RFtrTsvwz:a" FLAG; do
 			JAILNAME=${OPTARG}
 			;;
 		J)
-			PARALLEL_JOBS=${OPTARG}
+			BUILD_PARALLEL_JOBS=${OPTARG%:*}
+			PREPARE_PARALLEL_JOBS=${OPTARG#*:}
 			;;
 		N)
 			BUILD_REPO=0
@@ -150,6 +153,10 @@ while getopts "B:f:j:J:CcnNp:RFtrTsvwz:a" FLAG; do
 done
 
 shift $((OPTIND-1))
+
+: ${BUILD_PARALLEL_JOBS:=${PARALLEL_JOBS}}
+: ${PREPARE_PARALLEL_JOBS:=${PARALLEL_JOBS}}
+: ${PARALLEL_JOBS:=${PREPARE_PARALLEL_JOBS}}
 
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
 
@@ -203,6 +210,8 @@ if [ ${DRY_RUN} -eq 1 ]; then
 	cleanup
 	exit 0
 fi
+
+PARALLEL_JOBS=${BUILD_PARALLEL_JOBS}
 
 bset status "building:"
 

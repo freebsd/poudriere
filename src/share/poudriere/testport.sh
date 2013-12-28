@@ -38,6 +38,9 @@ Parameters:
 Options:
     -c          -- Run make config for the given port
     -J n        -- Run n jobs in parallel for dependencies
+    -J n[:p]    -- Run n jobs in parallel for dependencies, and optionnaly
+                   run a different number of jobs in parallel while preparing
+                   the build. (Defaults to the number of CPUs)
     -i          -- Interactive mode. Enter jail for interactive testing and
                    automatically cleanup when done.
     -I          -- Advanced Interactive mode. Leaves jail running with port
@@ -81,7 +84,8 @@ while getopts "o:cnj:J:iINp:svz:" FLAG; do
 			JAILNAME="${OPTARG}"
 			;;
 		J)
-			PARALLEL_JOBS=${OPTARG}
+			BUILD_PARALLEL_JOBS=${OPTARG%:*}
+			PREPARE_PARALLEL_JOBS=${OPTARG#*:}
 			;;
 		i)
 			INTERACTIVE_MODE=1
@@ -117,6 +121,10 @@ done
 
 [ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
 
+: ${BUILD_PARALLEL_JOBS:=${PARALLEL_JOBS}}
+: ${PREPARE_PARALLEL_JOBS:=${PARALLEL_JOBS}}
+: ${PARALLEL_JOBS:=${PREPARE_PARALLEL_JOBS}}
+
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 export MASTERNAME
@@ -151,6 +159,8 @@ nbbuilt=$(bget stats_built)
 [ ${BUILD_REPO} -eq 1 -a ${nbbuilt} -gt 0 ] && build_repo
 
 commit_packages
+
+PARALLEL_JOBS=${BUILD_PARALLEL_JOBS}
 
 bset status "testing:"
 
