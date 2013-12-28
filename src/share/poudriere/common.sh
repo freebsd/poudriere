@@ -1111,7 +1111,7 @@ jail_start() {
 	echo "DISTDIR=/distfiles" >> ${tomnt}/etc/make.conf
 
 	setup_makeconf ${tomnt}/etc/make.conf ${name} ${ptname} ${setname}
-	load_blacklist ${mnt} ${ptname} ${setname}
+	load_blacklist ${name} ${ptname} ${setname}
 
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${tomnt}/etc/"
 	msg "Starting jail ${MASTERNAME}"
@@ -1145,8 +1145,8 @@ jail_start() {
 load_blacklist() {
 	[ $# -lt 2 ] && eargs name ptname setname
 	local name=$1
-	local ptname=$3
-	local setname=$4
+	local ptname=$2
+	local setname=$3
 	local bl b bfile
 
 	bl="- ${setname} ${ptname} ${name} ${name}-${ptname}"
