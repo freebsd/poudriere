@@ -2947,11 +2947,13 @@ parallel_start() {
 # list.
 _reap_children() {
 	local pid
+	local ret=0
+
 	for pid in ${PARALLEL_PIDS}; do
 		# Check if this pid is still alive
 		if ! kill -0 ${pid} 2>/dev/null; then
 			# This will error out if the return status is non-zero
-			_wait ${pid}
+			_wait ${pid} || ret=$?
 			# Remove pid from PARALLEL_PIDS and strip away all
 			# spaces
 			PARALLEL_PIDS_L=${PARALLEL_PIDS%% ${pid} *}
@@ -2963,22 +2965,27 @@ _reap_children() {
 			PARALLEL_PIDS=" ${PARALLEL_PIDS_L} ${PARALLEL_PIDS_R} "
 		fi
 	done
+
+	return ${ret}
 }
 
 # Wait on all remaining running processes and clean them up. Error out if
 # any have non-zero return status.
 parallel_stop() {
+	local ret=0
+
 	pwait ${PARALLEL_PIDS} 2>/dev/null || :
 	for pid in ${PARALLEL_PIDS}; do
 		# This will read the return code of each child
-		# and properly error out if the children errored
-		wait ${pid}
+		wait ${pid} || ret=$?
 	done
 
 	exec 6<&-
 	exec 6>&-
 	unset PARALLEL_PIDS
 	unset NBPARALLEL
+
+	return ${ret}
 }
 
 parallel_shutdown() {
@@ -3000,8 +3007,8 @@ parallel_run() {
 	# of PID reuse/collision
 	_SHOULD_REAP=$((_SHOULD_REAP + 1))
 	if [ ${_SHOULD_REAP} -eq 16 ]; then
-		_reap_children
 		_SHOULD_REAP=0
+		_reap_children || return $?
 	fi
 
 	PARALLEL_CHILD=1 parallel_exec $cmd "$@" &
