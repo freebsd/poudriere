@@ -42,8 +42,14 @@ was_a_jail_run() {
 _wait() {
 	# Workaround 'wait' builtin possibly returning early due to signals
 	# by using 'pwait' to wait(2) and then 'wait' to collect return code
+	local ret=0 pid
+
 	pwait "$@" 2>/dev/null || :
-	wait "$@"
+	for pid in "$@"; do
+		wait ${pid} || ret=$?
+	done
+
+	return ${ret}
 }
 
 not_for_os() {
@@ -2974,11 +2980,7 @@ _reap_children() {
 parallel_stop() {
 	local ret=0
 
-	pwait ${PARALLEL_PIDS} 2>/dev/null || :
-	for pid in ${PARALLEL_PIDS}; do
-		# This will read the return code of each child
-		wait ${pid} || ret=$?
-	done
+	_wait ${PARALLEL_PIDS} || ret=$?
 
 	exec 6<&-
 	exec 6>&-
