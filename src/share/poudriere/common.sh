@@ -554,7 +554,7 @@ rollbackfs() {
 		mtree_mnt="${mnt}"
 	fi
 
-	cpdup -i0 -X ${MASTERMNT}/usr/src -X ${MASTERMNT}/poudriere ${MASTERMNT} ${mnt}
+	cpdup -i0 -x ${MASTERMNT} ${mnt}
 }
 
 umountfs() {
@@ -766,7 +766,7 @@ clonefs() {
 		# Mount /usr/src into target, no need for anything to write to it
 		mkdir -p ${to}/usr/src
 		${NULLMOUNT} -o ro ${from}/usr/src ${to}/usr/src
-		cpdup -X ${from}/usr/src -X ${from}/poudriere ${from} ${to}
+		cpdup -x ${from} ${to}
 	fi
 }
 
@@ -1091,6 +1091,8 @@ jail_start() {
 	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
 	msg_n "Creating the reference jail..."
 	clonefs ${mnt} ${tomnt} clean
+	echo "src" >> ${tomnt}/usr/.cpignore
+	echo "poudriere" >> ${tomnt}/.cpignore
 	echo " done"
 
 	msg "Mounting system devices for ${MASTERNAME}"
