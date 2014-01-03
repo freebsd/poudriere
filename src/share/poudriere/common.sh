@@ -2250,9 +2250,11 @@ build_pkg() {
 
 	# Stop everything first
 	jstop
-	rollbackfs prepkg ${mnt}
+	[ -f ${mnt}/.need_rollback ] && rollbackfs prepkg ${mnt}
 	# Make sure we start with no network
 	jstart 0
+
+	touch ${mnt}/.need_rollback
 
 	case " ${BLACKLIST} " in
 	*\ ${port}\ *) ignore="Blacklisted" ;;
