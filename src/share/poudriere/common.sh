@@ -2545,16 +2545,20 @@ get_cache_dir() {
 # @param var_return The variable to set the result in
 # @param string pkg $PKGDIR/All/PKGNAME.PKG_EXT
 get_pkg_cache_dir() {
-	[ $# -ne 2 ] && eargs var_return pkg
+	[ $# -lt 2 ] && eargs var_return pkg
 	local var_return="$1"
 	local pkg="$2"
+	local use_mtime="${3:-1}"
 	local pkg_file="${pkg##*/}"
 	local pkg_dir
 	local cache_dir
+	local pkg_mtime
 
 	get_cache_dir cache_dir
 
-	pkg_dir="${cache_dir}/${pkg_file}"
+	[ ${use_mtime} -eq 1 ] && pkg_mtime=$(stat -f %m "${pkg}")
+
+	pkg_dir="${cache_dir}/${pkg_file}/${pkg_mtime}"
 
 	[ -d "${pkg_dir}" ] || mkdir -p "${pkg_dir}"
 
@@ -2566,9 +2570,9 @@ clear_pkg_cache() {
 	local pkg="$1"
 	local pkg_cache_dir
 
-	get_pkg_cache_dir pkg_cache_dir "${pkg}"
+	get_pkg_cache_dir pkg_cache_dir "${pkg}" 0
 
-	rm -fr "${pkg_cache_dir}"
+	rm -fr "${pkg_cache_dir}*"
 }
 
 delete_pkg() {
