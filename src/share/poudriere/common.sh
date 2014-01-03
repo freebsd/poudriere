@@ -2576,7 +2576,7 @@ clear_pkg_cache() {
 
 	get_pkg_cache_dir pkg_cache_dir "${pkg}" 0
 
-	rm -fr "${pkg_cache_dir}*"
+	rm -fr "${pkg_cache_dir}"
 }
 
 delete_pkg() {
