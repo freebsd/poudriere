@@ -1767,6 +1767,14 @@ Try testport with -n to use PREFIX=LOCALBASE"
 			local mod=$(mktemp ${mnt}/tmp/mod.XXXXXX)
 			local mod1=$(mktemp ${mnt}/tmp/mod1.XXXXXX)
 			local die=0
+			local users user homedirs
+
+			users=$(injail make -C ${portdir} -VUSERS)
+			homedirs=""
+			for user in ${users}; do
+				user=$(grep ^${user}: ${mnt}/usr/ports/UIDs | cut -f 9 -d : | sed -e "s|/usr/local|${PREFIX}| ; s|^|${mnt}|")
+				homedirs="${homedirs} ${user}"
+			done
 
 			check_leftovers ${mnt} | \
 				while read modtype path; do
@@ -1788,6 +1796,12 @@ Try testport with -n to use PREFIX=LOCALBASE"
 				fi
 				case $modtype in
 				+)
+					if [ -d "${path}" ]; then
+						# home directory of users created
+						case " ${homedirs} " in
+						*\ ${path}\ *) continue;;
+						esac
+					fi
 					case "${ppath}" in
 					# gconftool-2 --makefile-uninstall-rule is unpredictable
 					etc/gconf/gconf.xml.defaults/%gconf-tree*.xml) ;;
