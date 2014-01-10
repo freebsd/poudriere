@@ -88,6 +88,36 @@ kill_and_wait() {
 	return ${ret}
 }
 
+# Based on Shell Scripting Recipes - Chris F.A. Johnson (c) 2005
+# Replace a pattern without needing a subshell/exec
+_gsub() {
+	[ $# -ne 3 ] && eargs string pattern replacement
+	local string="$1"
+	local pattern="$2"
+	local replacement="$3"
+	local result_l= result_r="${string}"
+
+	while :; do
+		case ${result_r} in
+			*${pattern}*)
+				result_l=${result_l}${result_r%%${pattern}*}${replacement}
+				result_r=${result_r#*${pattern}}
+				;;
+			*)
+				break
+				;;
+		esac
+	done
+
+	_gsub="${result_l}${result_r}"
+}
+
+
+gsub() {
+	_gsub "$@"
+	echo "${_gsub}"
+}
+
 not_for_os() {
 	local os=$1
 	shift
