@@ -2531,6 +2531,7 @@ pkg_get_dep_origin() {
 	local dep_origin_file
 	local pkg_cache_dir
 	local compiled_dep_origins
+	local origin new_origin _old_dep_origins
 
 	get_pkg_cache_dir pkg_cache_dir "${pkg}"
 	dep_origin_file="${pkg_cache_dir}/dep_origin"
@@ -2544,13 +2545,22 @@ pkg_get_dep_origin() {
 				"/packages/All/${pkg##*/}" '%do' | tr '\n' ' ')
 		fi
 		echo "${compiled_dep_origins}" > "${dep_origin_file}"
-		setvar "${var_return}" "${compiled_dep_origins}"
-		return 0
+	else
+		while read line; do
+			compiled_dep_origins="${deps} ${line}"
+		done < "${dep_origin_file}"
 	fi
 
-	while read line; do
-		compiled_dep_origins="${deps} ${line}"
-	done < "${dep_origin_file}"
+	# Check MOVED
+	_old_dep_origins="${compiled_dep_origins}"
+	compiled_dep_origins=
+	for origin in ${_old_dep_origins}; do
+		if check_moved new_origin "${origin}"; then
+			compiled_dep_origins="${compiled_dep_origins} ${new_origin}"
+		else
+			compiled_dep_origins="${compiled_dep_origins} ${origin}"
+		fi
+	done
 
 	setvar "${var_return}" "${compiled_dep_origins}"
 }
