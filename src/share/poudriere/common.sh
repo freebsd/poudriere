@@ -1084,10 +1084,8 @@ commit_packages() {
 
 	# Look for broken top-level links and remove them, if they reference
 	# the old directory
-	find ${PACKAGES_ROOT}/ -mindepth 1 -maxdepth 1 ! -name '.*' -type l |
+	find -L ${PACKAGES_ROOT}/ -mindepth 1 -maxdepth 1 ! -name '.*' -type l |
 	    while read path; do
-		# Skip if not a broken link
-		[ ! -e "${path}" ] || continue
 		link=$(readlink ${path})
 		# Skip if link does not reference inside latest
 		[ "${link##.latest}" != "${link}" ] || continue
