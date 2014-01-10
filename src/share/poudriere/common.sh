@@ -3150,13 +3150,44 @@ delete_stale_symlinks_and_empty_dirs() {
 		-empty -delete
 }
 
+load_moved() {
+	msg "Loading MOVED"
+	bset status "loading_moved:"
+	mkdir ${MASTERMNT}/poudriere/MOVED
+	grep -v '^#' ${MASTERMNT}/usr/ports/MOVED | awk \
+	    -F\| '
+		$2 != "" {
+			sub("/", "_", $1);
+			print $1,$2;
+		}' | while read old_origin new_origin; do
+			echo ${new_origin} > \
+			    ${MASTERMNT}/poudriere/MOVED/${old_origin}
+		done
+}
+
+check_moved() {
+	[ $# -lt 2 ] && eargs var_return origin
+	local var_return="$1"
+	local origin="$2"
+	local _new_origin
+
+	_gsub ${origin} "/" "_"
+	[ -f "${MASTERMNT}/poudriere/MOVED/${_gsub}" ] &&
+	    read _new_origin < "${MASTERMNT}/poudriere/MOVED/${_gsub}"
+
+	setvar "${var_return}" "${_new_origin}"
+
+	# Return 0 if blank
+	[ -n "${_new_origin}" ]
+}
+
+
 prepare_ports() {
 	local pkg
 	local log=$(log_path)
 	local n port pn nbq resuming_build
 	local cache_dir
 
-	msg "Calculating ports order and dependencies"
 	mkdir -p "${MASTERMNT}/poudriere"
 	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs data "${MASTERMNT}/poudriere"
 	rm -rf "${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
@@ -3201,9 +3232,12 @@ prepare_ports() {
 		bset setname "${SETNAME}"
 		bset ptname "${PTNAME}"
 		bset buildname "${BUILDNAME}"
-
-		bset status "computingdeps:"
 	fi
+
+	load_moved
+
+	msg "Calculating ports order and dependencies"
+	bset status "computingdeps:"
 
 	:> "${MASTERMNT}/poudriere/port_deps.unsorted"
 	parallel_start
