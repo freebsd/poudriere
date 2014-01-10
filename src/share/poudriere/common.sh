@@ -1612,7 +1612,7 @@ _real_build_port() {
 				fi
 			fi
 			;;
-		*-depends|install-mtree) JUSER=root ;;
+		checksum|*-depends|install-mtree) JUSER=root ;;
 		stage) [ -n "${PORTTESTING}" ] && markfs prestage ${mnt} ;;
 		install)
 			max_execution_time=3600
