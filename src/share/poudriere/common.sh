@@ -2499,6 +2499,7 @@ pkg_get_origin() {
 	local _origin=$3
 	local pkg_cache_dir
 	local originfile
+	local new_origin
 
 	get_pkg_cache_dir pkg_cache_dir "${pkg}"
 	originfile="${pkg_cache_dir}/origin"
@@ -2517,6 +2518,8 @@ pkg_get_origin() {
 	else
 		read _origin < "${originfile}"
 	fi
+
+	check_moved new_origin ${_origin} && _origin=${new_origin}
 
 	setvar "${var_return}" "${_origin}"
 }
