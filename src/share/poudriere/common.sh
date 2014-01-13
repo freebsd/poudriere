@@ -1650,6 +1650,7 @@ $(find ${MASTERMNT}/poudriere/building ${MASTERMNT}/poudriere/pool ${MASTERMNT}/
 queue_empty() {
 	local pool_dir
 	dirempty ${MASTERMNT}/poudriere/deps || return 1
+	dirempty ${MASTERMNT}/poudriere/pool/unbalanced || return 1
 
 	for pool_dir in ${POOL_BUCKET_DIRS}; do
 		dirempty ${pool_dir} || return 1
@@ -2609,9 +2610,7 @@ prepare_ports() {
 			POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/${n}"
 		done
 	fi
-	# Add unbalanced at the end
-	POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/unbalanced"
-	mkdir -p ${POOL_BUCKET_DIRS}
+	mkdir -p ${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/unbalanced
 
 	mkdir -p ${log}/../../latest-per-pkg ${log}/../latest-per-pkg
 	mkdir -p ${log}/logs ${log}/logs/errors
