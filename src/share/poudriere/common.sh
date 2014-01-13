@@ -2561,8 +2561,11 @@ _reap_children() {
 # any have non-zero return status.
 parallel_stop() {
 	local ret=0
+	local do_wait="${1:-1}"
 
-	_wait ${PARALLEL_PIDS} || ret=$?
+	if [ ${do_wait} -eq 1 ]; then
+		_wait ${PARALLEL_PIDS} || ret=$?
+	fi
 
 	exec 6<&-
 	exec 6>&-
@@ -2575,7 +2578,7 @@ parallel_stop() {
 parallel_shutdown() {
 	kill_and_wait 30 "${PARALLEL_PIDS}" 2>/dev/null || :
 	# Reap the pids
-	parallel_stop 2>/dev/null || :
+	parallel_stop 0 2>/dev/null || :
 }
 
 parallel_run() {
