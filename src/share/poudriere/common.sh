@@ -1648,14 +1648,23 @@ $(find ${MASTERMNT}/poudriere/building ${MASTERMNT}/poudriere/pool ${MASTERMNT}/
 }
 
 queue_empty() {
-	local pool_dir
-	dirempty ${MASTERMNT}/poudriere/deps || return 1
-	dirempty ${MASTERMNT}/poudriere/pool/unbalanced || return 1
+	local pool_dir lock dirs
 
-	for pool_dir in ${POOL_BUCKET_DIRS}; do
-		dirempty ${pool_dir} || return 1
+	# Lock on balance_pool to avoid race here while it is moving between
+	# /unbalanced and a balanced slot
+	lock=${MASTERMNT}/poudriere/.lock-balance_pool
+	mkdir ${lock} 2>/dev/null || return 1
+
+	dirs="${MASTERMNT}/poudriere/deps ${MASTERMNT}/poudriere/pool/unbalanced ${POOL_BUCKET_DIRS}"
+
+	for pool_dir in ${dirs}; do
+		if ! dirempty ${pool_dir}; then
+			rmdir ${lock}
+			return 1
+		fi
 	done
 
+	rmdir ${lock}
 	return 0
 }
 
