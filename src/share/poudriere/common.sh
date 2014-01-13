@@ -2546,10 +2546,6 @@ parallel_run() {
 	local cmd="$1"
 	shift 1
 
-	if [ ${NBPARALLEL} -eq ${PARALLEL_JOBS} ]; then
-		unset a; until trappedinfo=; read a <&6 || [ -z "$trappedinfo" ]; do :; done
-	fi
-	[ ${NBPARALLEL} -lt ${PARALLEL_JOBS} ] && NBPARALLEL=$((NBPARALLEL + 1))
 	# Occasionally reap dead children. Don't do this too often or it
 	# becomes a bottleneck. Do it too infrequently and there is a risk
 	# of PID reuse/collision
@@ -2559,6 +2555,13 @@ parallel_run() {
 		_reap_children || return $?
 	fi
 
+	# Only read once all slots are taken up; burst jobs until maxed out.
+	# NBPARALLEL is never decreased and only inreased until maxed.
+	if [ ${NBPARALLEL} -eq ${PARALLEL_JOBS} ]; then
+		unset a; until trappedinfo=; read a <&6 || [ -z "$trappedinfo" ]; do :; done
+	fi
+
+	[ ${NBPARALLEL} -lt ${PARALLEL_JOBS} ] && NBPARALLEL=$((NBPARALLEL + 1))
 	PARALLEL_CHILD=1 parallel_exec $cmd "$@" &
 	PARALLEL_PIDS="${PARALLEL_PIDS} $! "
 }
