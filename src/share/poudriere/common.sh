@@ -1899,9 +1899,11 @@ build_pkg() {
 
 	# Stop everything first
 	jstop
-	rollbackfs prepkg ${mnt}
+	[ -f ${mnt}/.need_rollback ] && rollbackfs prepkg ${mnt}
 	# Make sure we start with no network
 	jstart 0
+
+	touch ${mnt}/.need_rollback
 
 	# If this port is IGNORED, skip it
 	# This is checked here instead of when building the queue
