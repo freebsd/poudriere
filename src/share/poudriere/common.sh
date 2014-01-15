@@ -2161,6 +2161,7 @@ pkg_get_dep_origin() {
 	local pkg="$1"
 	local dep_origin_file="$(pkg_cache_dir "${pkg}")/dep_origin"
 	local compiled_dep_origins
+	local origin new_origin _old_dep_origins
 
 	if [ ! -f "${dep_origin_file}" ]; then
 		if [ "${PKG_EXT}" = "tbz" ]; then
@@ -2171,11 +2172,24 @@ pkg_get_dep_origin() {
 				"/packages/All/${pkg##*/}" '%do' | tr '\n' ' ')
 		fi
 		echo "${compiled_dep_origins}" > "${dep_origin_file}"
-		echo "${compiled_dep_origins}"
-		return 0
+	else
+		while read line; do
+			compiled_dep_origins="${compiled_dep_origins} ${line}"
+		done < "${dep_origin_file}"
 	fi
 
-	cat "${dep_origin_file}"
+	# Check MOVED
+	_old_dep_origins="${compiled_dep_origins}"
+	compiled_dep_origins=
+	for origin in ${_old_dep_origins}; do
+		if check_moved new_origin "${origin}"; then
+			compiled_dep_origins="${compiled_dep_origins} ${new_origin}"
+		else
+			compiled_dep_origins="${compiled_dep_origins} ${origin}"
+		fi
+	done
+
+	echo "${compiled_dep_origins}"
 }
 
 pkg_get_options() {
