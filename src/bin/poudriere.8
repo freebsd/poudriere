@@ -29,7 +29,7 @@
 .\" change is made to the manual page.
 .Dd December 28, 2013
 .Dt POUDRIERE 8
-.Os FreeBSD
+.Os
 .Sh NAME
 .Nm poudriere
 .Nd bulk package builder and port tester
@@ -41,11 +41,8 @@
 .Sh DESCRIPTION
 The
 .Nm
-tool is used to build packages from the FreeBSD ports tree.
+tool is used to build packages from the ports tree.
 It can also be used to test a single port.
-.Pp
-Its goals are to use modern facilities present in FreeBSD (as ZFS,
-jails), to be easy to use and to depend only on base.
 .Sh GLOBAL OPTIONS
 .Nm
 accepts a global option:
@@ -72,17 +69,16 @@ During the build, hit ^T to send
 .Dv SIGINFO
 and get stats and progress back.
 .It jail
-This command gives you control to manage the jails used by
+This command allows you to manage the jails used by
 .Nm
-to provide building environment (different FreeBSD versions, different
-architectures).
+which are building environments differing by OS version and architecture.
 .It ports
 This command allows you to manage different portstrees which will be used
 by
 .Nm
 (create, update and delete portstrees).
 .It testport
-This command, mainly targeted at FreeBSD ports developers, launches a
+This command, mainly targeted at ports developers, launches a
 test on a given port (useful before submitting/committing a port).
 .It options
 This command allows to configure the options for a given port
