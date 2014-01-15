@@ -59,9 +59,14 @@ See poudriere(8).
   *  [./use_system_ports_tree.wiki|...use the system ports tree in poudriere]
   *  [./using_testport.wiki|...using testport to test ports]
 
+<h1>Quick Links</h1>
+
+  *  [https://fossil.etoilebsd.net/poudriere/vdiff?from=trunk&to=3.0.x|View difference between trunk and 3.0.x branch]
+  *  [https://fossil.etoilebsd.net/poudriere/vdiff?from=trunk&to=dragonfly|View difference between trunk and dragonfly branch]
+
 <h1>Hacking </h1>
 
-To hack on poudriere you first need to use [fossil|http://fossil-scm.org]
+To hack on poudriere you first need to use [http://fossil-scm.org|fossil]
 
 and clone the repo:
 
