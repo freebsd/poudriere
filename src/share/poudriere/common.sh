@@ -2135,6 +2135,7 @@ pkg_get_origin() {
 	local pkg="$1"
 	local originfile="$(pkg_cache_dir "${pkg}")/origin"
 	local origin=$2
+	local new_origin
 
 	if [ ! -f "${originfile}" ]; then
 		if [ -z "${origin}" ]; then
@@ -2150,6 +2151,8 @@ pkg_get_origin() {
 	else
 		read origin < "${originfile}"
 	fi
+
+	check_moved new_origin ${origin} && origin=${new_origin}
 	echo ${origin}
 }
 
