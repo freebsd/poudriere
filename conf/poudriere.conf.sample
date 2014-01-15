@@ -175,7 +175,8 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #NOHANG_TIME=7200
 
 
-# The repository is updated atomically if set yes. This involves using
+# The repository is updated atomically if set yes. This leaves the
+# repository untouched until the build completes. This involves using
 # hardlinks and symlinks. The operations are fast, but can be intrusive
 # for remote syncing or backups.
 # Recommended to always keep on.
