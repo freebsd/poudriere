@@ -3475,8 +3475,14 @@ build_repo() {
 			injail /poudriere/pkg-static repo -o /tmp/packages \
 				/packages /tmp/repo.key
 			rm -f ${MASTERMNT}/tmp/repo.key
+		elif [ "${PKG_REPO_FROM_HOST:-no}" = "yes" ]; then
+			# Sometimes building repo from host is needed if
+			# using SSH with DNSSEC as older hosts don't support
+			# it.
+			${MASTERMNT}/poudriere/pkg-static repo \
+			    -o ${MASERMNT}/tmp/packages ${MASERMNT}/packages \
+			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 		else
-			# XXX SIGNING command should most of the time need network access
 			jstop
 			jstart 1
 			injail /poudriere/pkg-static repo -o /tmp/packages \
