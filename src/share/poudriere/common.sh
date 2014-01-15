@@ -2546,7 +2546,7 @@ pkg_get_dep_origin() {
 		echo "${compiled_dep_origins}" > "${dep_origin_file}"
 	else
 		while read line; do
-			compiled_dep_origins="${deps} ${line}"
+			compiled_dep_origins="${compiled_dep_origins} ${line}"
 		done < "${dep_origin_file}"
 	fi
 
