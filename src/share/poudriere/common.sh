@@ -1015,7 +1015,7 @@ stash_packages() {
 
 	PACKAGES_ROOT=${PACKAGES}
 
-	[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] && return 0
+	[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] || return 0
 
 	[ -L ${PACKAGES}/.latest ] || convert_repository
 
