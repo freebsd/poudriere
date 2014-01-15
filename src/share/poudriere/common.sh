@@ -2692,12 +2692,42 @@ find_all_pool_references() {
 	fi
 }
 
+load_moved() {
+	msg "Loading MOVED"
+	bset status "loading_moved:"
+	mkdir ${MASTERMNT}/poudriere/MOVED
+	grep -v '^#' ${MASTERMNT}/usr/ports/MOVED | awk \
+	    -F\| '
+		$2 != "" {
+			sub("/", "_", $1);
+			print $1,$2;
+		}' | while read old_origin new_origin; do
+			echo ${new_origin} > \
+			    ${MASTERMNT}/poudriere/MOVED/${old_origin}
+		done
+}
+
+check_moved() {
+	[ $# -lt 2 ] && eargs var_return origin
+	local var_return="$1"
+	local origin="$2"
+	local _new_origin
+
+	_gsub ${origin} "/" "_"
+	[ -f "${MASTERMNT}/poudriere/MOVED/${_gsub}" ] &&
+	    read _new_origin < "${MASTERMNT}/poudriere/MOVED/${_gsub}"
+
+	setvar "${var_return}" "${_new_origin}"
+
+	# Return 0 if blank
+	[ -n "${_new_origin}" ]
+}
+
 prepare_ports() {
 	local pkg
 	local log=$(log_path)
 	local n port pn nbq resuming_build
 
-	msg "Calculating ports order and dependencies"
 	mkdir -p "${MASTERMNT}/poudriere"
 	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] && mount -t tmpfs tmpfs "${MASTERMNT}/poudriere"
 	rm -rf "${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
@@ -2726,6 +2756,9 @@ prepare_ports() {
 	ln -sfh ${BUILDNAME} ${log%/*}/latest
 	cp ${HTMLPREFIX}/* ${log}
 
+	load_moved
+
+	msg "Calculating ports order and dependencies"
 	bset status "computingdeps:"
 	parallel_start
 	for port in $(listed_ports); do
