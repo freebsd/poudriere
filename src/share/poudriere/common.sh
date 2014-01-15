@@ -1013,10 +1013,9 @@ convert_repository() {
 
 stash_packages() {
 
-	if [ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ];
-		PACKAGES_ROOT=${PACKAGES}
-		return 0
-	fi
+	PACKAGES_ROOT=${PACKAGES}
+
+	[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] && return 0
 
 	[ -L ${PACKAGES}/.latest ] || convert_repository
 
@@ -1046,7 +1045,6 @@ stash_packages() {
 
 	# From this point forward, only work in the shadow
 	# package dir
-	PACKAGES_ROOT=${PACKAGES}
 	PACKAGES=${PACKAGES}/.building
 }
 
