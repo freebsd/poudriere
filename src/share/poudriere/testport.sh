@@ -37,7 +37,7 @@ Parameters:
 
 Options:
     -c          -- Run make config for the given port
-    -J n[:p]    -- Run n jobs in parallel for dependencies, and optionnaly
+    -J n[:p]    -- Run n jobs in parallel for dependencies, and optionally
                    run a different number of jobs in parallel while preparing
                    the build. (Defaults to the number of CPUs)
     -i          -- Interactive mode. Enter jail for interactive testing and

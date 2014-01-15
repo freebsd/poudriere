@@ -49,7 +49,7 @@ Options:
     -T          -- Try to build broken ports anyway
     -F          -- Only fetch from original master_site (skip FreeBSD mirrors)
     -s          -- Skip sanity checks
-    -J n[:p]    -- Run n jobs in parallel, and optionnaly run a different
+    -J n[:p]    -- Run n jobs in parallel, and optionally run a different
                    number of jobs in parallel while preparing the build.
                    (Defaults to the number of CPUs)
     -j name     -- Run only on the given jail
