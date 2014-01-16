@@ -189,7 +189,7 @@ jstart() {
 
 	jail -c persist name=${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}} \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
-		host.hostname=${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}} \
+		host.hostname=${BUILDER_HOSTNAME-${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}} \
 		${network} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
 	if ! injail id ${PORTBUILD_USER} >/dev/null 2>&1 ; then
