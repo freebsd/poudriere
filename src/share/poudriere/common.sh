@@ -3674,6 +3674,10 @@ case ${POOL_BUCKETS} in
 	;;
 esac
 
+if [ -n "${PRESERVE_TIMESTAMP}" ]; then
+	SVN_PRESERVE_TIMESTAMP=--config-option config:miscellany:use-commit-times=yes
+fi
+
 : ${WATCHDIR:=${POUDRIERE_DATA}/queue}
 : ${PIDFILE:=${POUDRIERE_DATA}/daemon.pid}
 : ${QUEUE_SOCKET:=/var/run/poudriered.sock}

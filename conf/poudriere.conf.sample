@@ -213,3 +213,8 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # This is a necessary setup for reproducible builds.
 #
 # BUILDER_HOSTNAME=pkg.FreeBSD.org
+#
+
+# Define to get a predictable timestamp on the ports tree
+# This is a necessary setup for reproducible builds.
+# PRESERVE_TIMESTAMP=yes
