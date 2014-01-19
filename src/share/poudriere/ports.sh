@@ -184,7 +184,7 @@ if [ ${CREATE} -eq 1 ]; then
 			msg_n "Checking out the ports tree..."
 			[ ${VERBOSE} -gt 0 ] || quiet="-q"
 			${SVN_CMD} ${quiet} co \
-				${SVN_PRESERVE_TIMESTAMP}
+				${SVN_PRESERVE_TIMESTAMP} \
 				${proto}://${SVN_HOST}/ports/${BRANCH} \
 				${PTMNT} || err 1 " fail"
 			echo " done"
@@ -242,7 +242,7 @@ if [ ${UPDATE} -eq 1 ]; then
 		[ ${VERBOSE} -gt 0 ] || quiet="-q"
 		${SVN_CMD} upgrade ${PORTSMNT:-${PTMNT}} 2>/dev/null || :
 		${SVN_CMD} ${quiet} update \
-			${SVN_PRESERVE_TIMESTAMP}
+			${SVN_PRESERVE_TIMESTAMP} \
 			${PORTSMNT:-${PTMNT}}
 		echo " done"
 		;;
