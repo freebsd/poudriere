@@ -3670,7 +3670,7 @@ fi
 case $IPS in
 01)
 	localipargs="ip6.addr=${LOIP6}"
-	ipargs="ip6.addr=inherit"
+	ipargs="ip6=inherit"
 	;;
 10)
 	localipargs="ip4.addr=${LOIP4}"
