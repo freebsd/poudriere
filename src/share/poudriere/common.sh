@@ -3266,7 +3266,20 @@ prepare_ports() {
 
 	bset status "sanity:"
 
+	if [ -f ${PACKAGES}/.jailversion ]; then
+		if [ "$(cat ${PACKAGES}/.jailversion)" = "$(jget ${JAILNAME} version)" ]; then
+			JAIL_NEEDS_CLEAN=1
+		fi
+	fi
+
 	if was_a_bulk_run; then
+		if [ ${JAIL_NEEDS_CLEAN} -eq 1 ]; then
+			msg_n "Cleaning all packages due to newer version of the jail..."
+			rm -rf ${PACKAGES}/*
+			rm -rf ${POUDRIERE_DATA}/cache/${MASTERNAME}
+			echo " done"
+		fi
+
 		if [ ${CLEAN} -eq 1 ]; then
 			msg_n "(-c): Cleaning all packages..."
 			rm -rf ${PACKAGES}/*
@@ -3373,6 +3386,8 @@ prepare_ports() {
 
 	[ -n "${ALLOW_MAKE_JOBS}" ] || echo "DISABLE_MAKE_JOBS=poudriere" \
 	    >> ${MASTERMNT}/etc/make.conf
+
+	jget ${JAILNAME} version > ${PACKAGES}/.jailversion
 
 	return 0
 }
@@ -3698,6 +3713,7 @@ fi
 : ${ALL:=0}
 : ${CLEAN:=0}
 : ${CLEAN_LISTED:=0}
+: ${JAIL_NEEDS_CLEAN:=0}
 : ${VERBOSE:=0}
 : ${PORTTESTING_FATAL:=yes}
 : ${PORTTESTING_RECURSIVE:=0}
