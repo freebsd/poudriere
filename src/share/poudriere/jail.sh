@@ -39,6 +39,7 @@ Parameters:
 
 Options:
     -q            -- Quiet (Do not print the header)
+    -n            -- Print only jail name
     -J n          -- Run buildworld in parallel with n jobs.
     -j jailname   -- Specify the jailname
     -v version    -- Specify which version of FreeBSD to install in the jail.
@@ -77,11 +78,15 @@ list_jail() {
 	[ -d ${POUDRIERED}/jails ] || return 0
 	for j in $(find ${POUDRIERED}/jails -type d -maxdepth 1 -mindepth 1 -print); do
 		name=${j##*/}
-		version=$(jget ${name} version)
-		arch=$(jget ${name} arch)
-		method=$(jget ${name} method)
-		mnt=$(jget ${name} mnt)
-		printf "${format}" "${name}" "${version}" "${arch}" "${method}" "${mnt}"
+		if [ ${NAMEONLY} -eq 0 ]; then
+			version=$(jget ${name} version)
+			arch=$(jget ${name} arch)
+			method=$(jget ${name} method)
+			mnt=$(jget ${name} mnt)
+			printf "${format}" "${name}" "${version}" "${arch}" "${method}" "${mnt}"
+		else
+			echo ${name}
+		fi
 	done
 }
 
@@ -548,6 +553,7 @@ LIST=0
 DELETE=0
 CREATE=0
 QUIET=0
+NAMEONLY=0
 INFO=0
 UPDATE=0
 PTNAME=default
@@ -585,6 +591,9 @@ while getopts "J:j:v:a:z:m:n:f:M:sdklqcip:ut:z:P:" FLAG; do
 			;;
 		m)
 			METHOD=${OPTARG}
+			;;
+		n)
+			NAMEONLY=1
 			;;
 		f)
 			JAILFS=${OPTARG}
