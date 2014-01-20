@@ -36,6 +36,7 @@ Parameters:
     -s            -- Start a jail
     -k            -- Stop a jail
     -u            -- Update a jail
+    -r            -- Rename a jail
 
 Options:
     -q            -- Quiet (Do not print the header)
@@ -131,6 +132,13 @@ update_version_env() {
 
 	sed -i "" -e "s/,UNAME_r.*:/:/ ; s/:\(setenv.*\):/:\1${login_env}:/" ${JAILMNT}/etc/login.conf
 	cap_mkdb ${JAILMNT}/etc/login.conf
+}
+
+rename_jail() {
+	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
+	msg_n "Renaming '${JAILNAME}' in '${NEWJAILNAME}'"
+	mv ${POUDRIERED}/jails/${JAILNAME} ${POUDRIERED}/jail/${NEWJAILNAME}
+	echo " done"
 }
 
 update_jail() {
@@ -552,6 +560,7 @@ STOP=0
 LIST=0
 DELETE=0
 CREATE=0
+RENAME=0
 QUIET=0
 NAMEONLY=0
 INFO=0
@@ -565,7 +574,7 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 
 TMPFS_ALL=0
 
-while getopts "J:j:v:a:z:m:n:f:M:sdklqcip:ut:z:P:" FLAG; do
+while getopts "J:j:v:a:z:m:n:f:M:sdklqcip:r:ut:z:P:" FLAG; do
 	case "${FLAG}" in
 		j)
 			JAILNAME=${OPTARG}
@@ -629,6 +638,10 @@ while getopts "J:j:v:a:z:m:n:f:M:sdklqcip:ut:z:P:" FLAG; do
 		u)
 			UPDATE=1
 			;;
+		r)
+			RENAME=1;
+			NEWJAILNAME=${OPTARG}
+			;;
 		t)
 			TORELEASE=${OPTARG}
 			;;
@@ -649,22 +662,22 @@ if [ -n "${JAILNAME}" -a ${CREATE} -eq 0 ]; then
 	JAILMNT=$(jget ${JAILNAME} mnt)
 fi
 
-case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}" in
-	100000)
+case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
+	1000000)
 		test -z ${JAILNAME} && usage
 		create_jail
 		;;
-	010000)
+	0100000)
 		list_jail
 		;;
-	001000)
+	0010000)
 		test -z ${JAILNAME} && usage
 		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		export MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 		jail_stop
 		;;
-	000100)
+	0001000)
 		export SET_STATUS_ON_START=0
 		test -z ${JAILNAME} && usage
 		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
@@ -675,13 +688,17 @@ case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}" in
 		# Restart with network
 		jstart 1
 		;;
-	000010)
+	0000100)
 		test -z ${JAILNAME} && usage
 		delete_jail
 		;;
-	000001)
+	0000010)
 		test -z ${JAILNAME} && usage
 		update_jail
+		;;
+	0000011)
+		test -z ${JAILNAME} && usage
+		rename_jail
 		;;
 	*)
 		usage
