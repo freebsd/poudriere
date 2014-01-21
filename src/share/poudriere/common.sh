@@ -3064,7 +3064,7 @@ fi
 case $IPS in
 01)
 	localipargs="ip6.addr=::1"
-	ipargs="ip6.addr=inherit"
+	ipargs="ip6=inherit"
 	;;
 10)
 	localipargs="ip4.addr=127.0.0.1"
