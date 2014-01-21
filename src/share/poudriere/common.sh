@@ -2943,7 +2943,7 @@ LIBEXECPREFIX=${SCRIPTPREFIX}/../../libexec/poudriere
 AWKPREFIX=${SCRIPTPREFIX}/awk
 HTMLPREFIX=${SCRIPTPREFIX}/html
 HOOKDIR=${POUDRIERED}/hooks
-PATH="${LIBEXECPREFIX}:${PATH}"
+PATH="${LIBEXECPREFIX}:${PATH}:/sbin:/usr/sbin"
 
 # If the zfs module is not loaded it means we can't have zfs
 [ -z "${NO_ZFS}" ] && lsvfs zfs >/dev/null 2>&1 || NO_ZFS=yes
