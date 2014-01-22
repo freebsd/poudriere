@@ -3277,7 +3277,8 @@ prepare_ports() {
 	bset status "sanity:"
 
 	if [ -f ${PACKAGES}/.jailversion ]; then
-		if [ "$(cat ${PACKAGES}/.jailversion)" = "$(jget ${JAILNAME} version)" ]; then
+		if [ "$(cat ${PACKAGES}/.jailversion)" != \
+		    "$(jget ${JAILNAME} version)" ]; then
 			JAIL_NEEDS_CLEAN=1
 		fi
 	fi
