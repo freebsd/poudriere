@@ -3287,7 +3287,7 @@ prepare_ports() {
 		[ ${JAIL_NEEDS_CLEAN} -eq 1 ] &&
 		    msg_n "Cleaning all packages due to newer version of the jail..."
 
-		if [ ${CLEAN} -eq 1 ] &&
+		[ ${CLEAN} -eq 1 ] &&
 		    msg_n "(-c): Cleaning all packages..."
 
 		if [ ${JAIL_NEEDS_CLEAN} -eq 1 ] || [ ${CLEAN} -eq 1 ]; then
