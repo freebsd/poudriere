@@ -1117,6 +1117,7 @@ jail_start() {
 	local arch=$(jget ${name} arch)
 	local mnt=$(jget ${name} mnt)
 	local needfs="${NULLFSREF} procfs"
+	local needkld="sem"
 
 	local tomnt=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 
@@ -1136,6 +1137,15 @@ jail_start() {
 				kldload $fs || err 1 "Required kernel module '${fs}' not found"
 			else
 				err 1 "please load the $fs module on host using \"kldload $fs\""
+			fi
+		fi
+	done
+	for kld in ${needkld}; do
+		if !kldstat -q -m ${kld} ; then
+			if [ $JAILED -eq 0 ]; then
+				err 1 "Please load the ${kld} module on the hist using \"kldload ${kld}\""
+			else
+				kldload ${kld} || err 1 "Required kernel module '${kld}' not found"
 			fi
 		fi
 	done
