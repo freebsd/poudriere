@@ -3704,7 +3704,7 @@ case ${POOL_BUCKETS} in
 	;;
 esac
 
-if [ -n "${PRESERVE_TIMESTAMP}" ]; then
+if [ "${PRESERVE_TIMESTAMP:-no}" = "yes" ]; then
 	SVN_PRESERVE_TIMESTAMP=--config-option config:miscellany:use-commit-times=yes
 fi
 
