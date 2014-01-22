@@ -574,7 +574,7 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 
 TMPFS_ALL=0
 
-while getopts "J:j:v:a:z:m:n:f:M:sdklqcip:r:ut:z:P:" FLAG; do
+while getopts "J:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:" FLAG; do
 	case "${FLAG}" in
 		j)
 			JAILNAME=${OPTARG}
