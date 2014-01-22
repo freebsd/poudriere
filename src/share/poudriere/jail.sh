@@ -36,7 +36,7 @@ Parameters:
     -s            -- Start a jail
     -k            -- Stop a jail
     -u            -- Update a jail
-    -r            -- Rename a jail
+    -r newname    -- Rename a jail
 
 Options:
     -q            -- Quiet (Do not print the header)
