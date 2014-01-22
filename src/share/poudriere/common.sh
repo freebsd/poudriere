@@ -3705,7 +3705,7 @@ case ${POOL_BUCKETS} in
 esac
 
 if [ "${PRESERVE_TIMESTAMP:-no}" = "yes" ]; then
-	SVN_PRESERVE_TIMESTAMP=--config-option config:miscellany:use-commit-times=yes
+	SVN_PRESERVE_TIMESTAMP="--config-option config:miscellany:use-commit-times=yes"
 fi
 
 : ${WATCHDIR:=${POUDRIERE_DATA}/queue}
