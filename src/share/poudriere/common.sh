@@ -1143,7 +1143,7 @@ jail_start() {
 	for kld in ${needkld}; do
 		if ! kldstat -q -m ${kld} ; then
 			if [ $JAILED -eq 0 ]; then
-				err 1 "Please load the ${kld} module on the hist using \"kldload ${kld}\""
+				err 1 "Please load the ${kld} module on the host using \"kldload ${kld}\""
 			else
 				kldload ${kld} || err 1 "Required kernel module '${kld}' not found"
 			fi
