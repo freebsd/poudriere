@@ -40,7 +40,7 @@ Parameters:
 
 Options:
     -q            -- Quiet (Do not print the header)
-    -n            -- Print only jail name
+    -n            -- Print only jail name (for use with -l)
     -J n          -- Run buildworld in parallel with n jobs.
     -j jailname   -- Specify the jailname
     -v version    -- Specify which version of FreeBSD to install in the jail.
