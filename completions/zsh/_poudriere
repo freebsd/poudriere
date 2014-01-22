@@ -60,6 +60,7 @@ _jail=(
 	'-f[FS name (tank/jails/myjail)]::fs:_files -/' \
 	'-t[version to upgrade to]' \
 	'-M[mountpoint]::mountpoint:_files -/'
+	'-r[rename jail]::'
 )
 
 _options=(
