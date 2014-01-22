@@ -3283,15 +3283,13 @@ prepare_ports() {
 	fi
 
 	if was_a_bulk_run; then
-		if [ ${JAIL_NEEDS_CLEAN} -eq 1 ]; then
-			msg_n "Cleaning all packages due to newer version of the jail..."
-			rm -rf ${PACKAGES}/*
-			rm -rf ${POUDRIERE_DATA}/cache/${MASTERNAME}
-			echo " done"
-		fi
+		[ ${JAIL_NEEDS_CLEAN} -eq 1 ] &&
+		    msg_n "Cleaning all packages due to newer version of the jail..."
 
-		if [ ${CLEAN} -eq 1 ]; then
-			msg_n "(-c): Cleaning all packages..."
+		if [ ${CLEAN} -eq 1 ] &&
+		    msg_n "(-c): Cleaning all packages..."
+
+		if [ ${JAIL_NEEDS_CLEAN} -eq 1 ] || [ ${CLEAN} -eq 1 ]; then
 			rm -rf ${PACKAGES}/*
 			rm -rf ${POUDRIERE_DATA}/cache/${MASTERNAME}
 			echo " done"
