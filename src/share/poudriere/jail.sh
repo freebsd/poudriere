@@ -74,8 +74,13 @@ list_jail() {
 	local j name version arch method mnt
 
 	format='%-20s %-20s %-7s %-7s %s\n'
-	[ ${QUIET} -eq 0 ] &&
-		printf "${format}" "JAILNAME" "VERSION" "ARCH" "METHOD" "PATH"
+	if [ ${QUIET} -eq 0 ]; then
+		if [ ${NAMEONLY} -eq 0 ]; then
+			printf "${format}" "JAILNAME" "VERSION" "ARCH" "METHOD" "PATH"
+		else
+			echo JAILNAME
+		fi
+	fi
 	[ -d ${POUDRIERED}/jails ] || return 0
 	for j in $(find ${POUDRIERED}/jails -type d -maxdepth 1 -mindepth 1 -print); do
 		name=${j##*/}
