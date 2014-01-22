@@ -3505,7 +3505,7 @@ build_repo() {
 			# using SSH with DNSSEC as older hosts don't support
 			# it.
 			${MASTERMNT}/poudriere/pkg-static repo \
-			    -o ${MASERMNT}/tmp/packages ${MASERMNT}/packages \
+			    -o ${MASERMNT}/tmp/packages ${MASTERMNT}/packages \
 			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 		else
 			jstop
