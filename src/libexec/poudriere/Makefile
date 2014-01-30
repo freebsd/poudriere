@@ -1,4 +1,4 @@
-SUBDIR= dirempty dirwatch
+SUBDIR= dirempty dirwatch rename
 
 .if !defined(DRAGONFLY)
 SUBDIR+= make_index cpdup

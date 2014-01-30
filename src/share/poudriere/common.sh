@@ -1081,7 +1081,7 @@ commit_packages() {
 	# Switch latest symlink to new build
 	PACKAGES=${PACKAGES_ROOT}/.latest
 	ln -s ${pkgdir_new} ${PACKAGES_ROOT}/.latest_new
-	mv -fh ${PACKAGES_ROOT}/.latest_new ${PACKAGES}
+	rename ${PACKAGES_ROOT}/.latest_new ${PACKAGES}
 
 	# Look for broken top-level links and remove them, if they reference
 	# the old directory
