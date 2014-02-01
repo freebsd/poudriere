@@ -68,7 +68,7 @@ kill_and_wait() {
 	while [ ${retry} -gt 0 ]; do
 		found_pid=0
 		for pid in ${pids}; do
-			if ! kill -0 ${pid} 2>/dev/null; then
+			if kill -0 ${pid} 2>/dev/null; then
 				sleep 1
 				found_pid=1
 				break
