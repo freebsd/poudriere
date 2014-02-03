@@ -206,15 +206,16 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # packaged to permit testing dependent ports (useful for bulk -t -a)
 # Default: yes
 #PORTTESTING_FATAL=yes
-#
 
 # Define the building jail hostname to be used when building the packages
 # Some port/packages hardcode the hostname of the host during build time
 # This is a necessary setup for reproducible builds.
-#
-# BUILDER_HOSTNAME=pkg.FreeBSD.org
-#
+#BUILDER_HOSTNAME=pkg.FreeBSD.org
 
 # Define to get a predictable timestamp on the ports tree
 # This is a necessary setup for reproducible builds.
-# PRESERVE_TIMESTAMP=yes
+#PRESERVE_TIMESTAMP=yes
+
+# Define to yes to build and stage as a regular user
+# Default: no
+#BUILD_AS_NON_ROOT=yes
