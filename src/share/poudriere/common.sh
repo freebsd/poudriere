@@ -3480,6 +3480,15 @@ clean_restricted() {
 	umount -f ${MASTERMNT}/packages
 	mount_packages
 	injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted >/dev/null
+	# For pkg_install remove packages that have lost one of their dependency
+	if [ ${PKGNG} -eq 0 ]; then
+		msg_verbose "Checking packages for missing dependencies"
+		while :; do
+			sanity_check_pkgs && break
+		done
+
+		delete_stale_symlinks_and_empty_dirs
+	fi
 	# Remount ro
 	umount -f ${MASTERMNT}/packages
 	mount_packages -o ro
