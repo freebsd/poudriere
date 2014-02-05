@@ -3528,24 +3528,11 @@ build_repo() {
 		bset status "index:"
 		OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
 		INDEXF=${PACKAGES}/INDEX-${OSMAJ}
-		INDEXF_JAIL=$(mktemp -u /tmp/index.XXXXXX)
 		rm -f ${INDEXF}.1 2>/dev/null || :
-		for pkg_file in ${PACKAGES}/All/*.tbz; do
-			# Check for non-empty directory with no packages in it
-			[ "${pkg}" = "${PACKAGES}/All/*.tbz" ] && break
-			pkg_get_origin origin "${pkg_file}"
-			msg_verbose "Extracting description for ${origin} ..."
-			[ -d ${MASTERMNT}/usr/ports/${origin} ] &&
-				injail make -C /usr/ports/${origin} describe >> ${INDEXF}.1
-		done
-
-		msg_n "Generating INDEX..."
-		# Move temp INDEX file into the jail. make_index will jail_attach()
-		# to the specified jail
-		mv ${INDEXF}.1 ${MASTERMNT}${INDEXF_JAIL}.1
-		make_index -j ${MASTERNAME} ${INDEXF_JAIL}.1 ${INDEXF_JAIL}
-		mv ${MASTERMNT}${INDEXF_JAIL} ${INDEXF}
-		echo " done"
+		injail env INDEX_JOBS=${PARALLEL_JOBS} INDEXDIR=/ make -C /usr/ports index
+		awk -F\| -v pkgdir=${PACKAGES} \
+			'{ if (system( "[ -f ${PACKAGES}/All/"$1".tbz ] " )  == 0) { print $0 } }' \
+			${MASTERMNT}/INDEX-${OSMAJ} > ${INDEXF}
 
 		[ -f ${INDEXF}.bz2 ] && rm ${INDEXF}.bz2
 		msg_n "Compressing INDEX-${OSMAJ}..."
