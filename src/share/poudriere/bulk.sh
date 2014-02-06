@@ -44,7 +44,8 @@ Options:
     -n          -- Dry-run. Show what wll be done, but do not build
                    any packages.
     -R          -- Clean RESTRICTED packages after building
-    -t          -- Test the specified ports for leftovers
+    -t          -- Test the specified ports for leftovers. Add -r to
+                   recursively test all dependencies as well.
     -r          -- Resursively test all dependencies as well
     -T          -- Try to build broken ports anyway
     -F          -- Only fetch from original master_site (skip FreeBSD mirrors)

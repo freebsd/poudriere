@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd January 22, 2014
+.Dd February 6, 2014
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -174,11 +174,14 @@ Sanity tests are made to check if the ports exists,
 does not have an increased version number, and if the compiled options
 match the current options from the make.conf files and /var/db/options.
 .It Fl t
-Add some testing to the specific ports.
+Add some testing to the specified ports.
+Add
+.Fl r
+to recursively test all port dependencies as well.
 Currently uninstalls the port, and disable parallel
 jobs for make.
 .It Fl r
-Recrusively test all dependencies as well.
+Recursively test all dependencies as well.
 .It Fl T
 Try building BROKEN ports by defining TRYBROKEN for the build.
 .It Fl w
