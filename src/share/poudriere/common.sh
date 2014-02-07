@@ -2734,7 +2734,7 @@ delete_old_pkg() {
 	cache_get_pkgname cached_pkgname "${o}"
 	v2=${cached_pkgname##*-}
 	if [ "$v" != "$v2" ]; then
-		msg "Deleting old version: ${pkg##*/}"
+		msg "Deleting ${pkg##*/}: new version: ${v2}"
 		delete_pkg "${pkg}"
 		return 0
 	fi
