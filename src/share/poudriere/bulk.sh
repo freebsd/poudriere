@@ -65,6 +65,10 @@ EOF
 	exit 1
 }
 
+bulk_cleanup() {
+	[ -n "${CRASHED}" ] && run_hook bulk crashed
+}
+
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 PTNAME="default"
@@ -167,6 +171,8 @@ MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 export MASTERNAME
 export MASTERMNT
 export POUDRIERE_BUILD_TYPE=bulk
+
+CLEANUP_HOOK=bulk_cleanup
 
 read_packages_from_params "$@"
 

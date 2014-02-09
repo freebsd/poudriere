@@ -17,9 +17,17 @@ Subject: ${mail_subject}
 Build URL:      ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}
 EOF
 
-fi
+elif [ "$status" = "crashed" ]; then
+        mail_subject="[${MASTERNAME}] bulk crashed on `hostname`"
 
-if [ "$status" = "done" ]; then
+        sendmail -f ${EMAIL_FROM} ${EMAIL_TO} << EOF
+To: ${EMAIL_TO}
+Subject: ${mail_subject}
+
+Build URL:      ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}
+EOF
+
+elif [ "$status" = "done" ]; then
 	n_built=$1
 	n_failed=$2
 	n_ignored=$3
