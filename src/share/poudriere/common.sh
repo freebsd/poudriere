@@ -1269,15 +1269,11 @@ setup_makeconf() {
 
 jail_stop() {
 	[ $# -ne 0 ] && eargs
-	if ! jail_runs ${MASTERNAME}; then
-		[ -n "${CLEANING_UP}" ] && return 0
-		err 1 "No such jail running: ${MASTERNAME}"
-	fi
 
 	# err() will set status to 'crashed', don't override.
 	[ -n "${CRASHED}" ] || bset status "stop:" 2>/dev/null || :
 
-	jstop
+	jstop || :
 	# Shutdown all builders
 	if [ ${PARALLEL_JOBS} -ne 0 ]; then
 		# - here to only check for unset, {start,stop}_builders will set this to blank if already stopped
@@ -1287,7 +1283,7 @@ jail_stop() {
 		done
 	fi
 	msg "Umounting file systems"
-	destroyfs ${MASTERMNT} jail
+	destroyfs ${MASTERMNT} jail || :
 	rm -rf ${MASTERMNT}/../
 	export STATUS=0
 }

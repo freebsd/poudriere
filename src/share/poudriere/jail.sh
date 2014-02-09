@@ -680,6 +680,8 @@ case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		export MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
+		jail_runs ${MASTERNAME} ||
+		    msg "Jail ${MASTERNAME} not running, but cleaning up anyway"
 		jail_stop
 		;;
 	0001000)
