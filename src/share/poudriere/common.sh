@@ -1273,7 +1273,6 @@ jail_stop() {
 		[ -n "${CLEANING_UP}" ] && return 0
 		err 1 "No such jail running: ${MASTERNAME}"
 	fi
-	local fs=$(zfs_getfs ${MASTERMNT})
 
 	# err() will set status to 'crashed', don't override.
 	[ -n "${CRASHED}" ] || bset status "stop:" 2>/dev/null || :
