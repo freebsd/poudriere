@@ -81,7 +81,7 @@ delete_jail() {
 	jail_runs ${JAILNAME} &&
 		err 1 "Unable to delete jail ${JAILNAME}: it is running"
 	msg_n "Removing ${JAILNAME} jail..."
-	destroyfs ${JAILMNT} jail
+	TMPFS_ALL=0 destroyfs ${JAILMNT} jail
 	rm -rf ${POUDRIERED}/jails/${JAILNAME} || :
 	echo " done"
 }
@@ -506,8 +506,6 @@ SETNAME=""
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
-
-TMPFS_ALL=0
 
 while getopts "J:j:v:a:z:m:n:f:M:sdklqcip:ut:z:P:" FLAG; do
 	case "${FLAG}" in
