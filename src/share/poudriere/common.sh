@@ -1479,6 +1479,8 @@ nohang() {
 		exit $ret
 	) &
 	childpid=$!
+	echo "$childpid" > \
+	    ${MASTERMNT}/poudriere/var/run/${MY_JOBID:-00}_nohang.pid
 
 	# Now wait on the cmd with a timeout on the log's mtime
 	while :; do
@@ -1515,6 +1517,8 @@ nohang() {
 
 	exec 7<&-
 	exec 7>&-
+
+	rm -f ${MASTERMNT}/poudriere/var/run/${MY_JOBID:-00}_nohang.pid
 
 	return $ret
 }
