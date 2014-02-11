@@ -41,7 +41,7 @@ Options:
     -c          -- Clean all the previously built binary packages
     -C          -- Clean only the packages listed on the command line or
                    -f file
-    -n          -- Dry-run. Show what wll be done, but do not build
+    -n          -- Dry-run. Show what will be done, but do not build
                    any packages.
     -R          -- Clean RESTRICTED packages after building
     -t          -- Test the specified ports for leftovers. Add -r to
