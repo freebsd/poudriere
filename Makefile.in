@@ -342,21 +342,22 @@ dtjsdir = $(datatablesdir)/js
 dist_bin_SCRIPTS = src/bin/poudriere.sh
 dist_man_MANS = src/bin/poudriere.8
 sysconf_DATA = conf/poudriere.conf.sample
-dist_pkgdata_DATA = \
-	src/share/poudriere/bulk.sh \
-	src/share/poudriere/clean.sh \
-	src/share/poudriere/common.sh \
-	src/share/poudriere/distclean.sh \
-	src/share/poudriere/jail.sh \
-	src/share/poudriere/options.sh \
-	src/share/poudriere/pkgclean.sh \
-	src/share/poudriere/ports.sh \
-	src/share/poudriere/processonelog.sh \
-	src/share/poudriere/processonelog2.sh \
-	src/share/poudriere/profile.sh \
-	src/share/poudriere/queue.sh \
-	src/share/poudriere/status.sh \
-	src/share/poudriere/testport.sh
+dist_pkgdata_DATA = src/share/poudriere/bulk.sh \
+			src/share/poudriere/clean.sh \
+			src/share/poudriere/common.sh \
+			src/share/poudriere/daemon.sh \
+			src/share/poudriere/common.sh.dragonfly \
+			src/share/poudriere/common.sh.freebsd \
+			src/share/poudriere/distclean.sh \
+			src/share/poudriere/jail.sh \
+			src/share/poudriere/options.sh \
+			src/share/poudriere/pkgclean.sh \
+			src/share/poudriere/ports.sh \
+			src/share/poudriere/processonelog.sh \
+			src/share/poudriere/processonelog2.sh \
+			src/share/poudriere/queue.sh \
+			src/share/poudriere/status.sh \
+			src/share/poudriere/testport.sh
 
 dist_awk_DATA = src/share/poudriere/awk/dependency_loop.awk \
 		src/share/poudriere/awk/humanize.awk \
