@@ -45,7 +45,7 @@ Options:
     -F            -- when used with -c, only create the needed ZFS
                      filesystems and directories, but do not populate
                      them.
-    -p name       -- specifies the name of the portstree we workon . If not
+    -p name       -- specifies the name of the portstree to work on . If not
                      specified, work on a portstree called \"default\".
     -f fs         -- FS name (tank/jails/myjail) if fs is \"none\" then do not
                      create on zfs
