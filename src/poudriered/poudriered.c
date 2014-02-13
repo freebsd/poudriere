@@ -36,7 +36,7 @@ load_conf(void)
 
 	parser = ucl_parser_new(UCL_PARSER_KEY_LOWERCASE);
 
-	if (!ucl_parser_add_file(parser, PREFIX"/etc/artilleur.conf")) {
+	if (!ucl_parser_add_file(parser, PREFIX"/etc/poudriered.conf")) {
 		warnx("Failed to parse configuration file: %s", ucl_parser_get_error(parser));
 		return (NULL);
 	}
