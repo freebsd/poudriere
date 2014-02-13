@@ -16,6 +16,7 @@
 
 
 
+
 VPATH = @srcdir@
 am__is_gnu_make = test -n '$(MAKEFILE_LIST)' && test -n '$(MAKELEVEL)'
 am__make_running_with_option = \
@@ -80,6 +81,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 pkglibexec_PROGRAMS = rename$(EXEEXT) cpdup$(EXEEXT) dirempty$(EXEEXT) \
 	dirwatch$(EXEEXT) make_index$(EXEEXT)
+bin_PROGRAMS = artilleur$(EXEEXT)
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
@@ -97,15 +99,37 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
 mkinstalldirs = $(install_sh) -d
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__installdirs = "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(bindir)" \
-	"$(DESTDIR)$(man8dir)" "$(DESTDIR)$(assetsdir)" \
-	"$(DESTDIR)$(awkdir)" "$(DESTDIR)$(btcssdir)" \
-	"$(DESTDIR)$(btimgdir)" "$(DESTDIR)$(btjsdir)" \
-	"$(DESTDIR)$(dtcssdir)" "$(DESTDIR)$(dtimagesdir)" \
-	"$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(htmldir)" \
-	"$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(sysconfdir)"
-PROGRAMS = $(pkglibexec_PROGRAMS)
+LIBRARIES = $(noinst_LIBRARIES)
+AR = ar
+ARFLAGS = cru
+AM_V_AR = $(am__v_AR_@AM_V@)
+am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
+am__v_AR_0 = @echo "  AR      " $@;
+am__v_AR_1 = 
+libucl_a_AR = $(AR) $(ARFLAGS)
+libucl_a_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
+am_libucl_a_OBJECTS =  \
+	src/artilleur/libucl/src/libucl_a-ucl_emitter.$(OBJEXT) \
+	src/artilleur/libucl/src/libucl_a-ucl_hash.$(OBJEXT) \
+	src/artilleur/libucl/src/libucl_a-ucl_parser.$(OBJEXT) \
+	src/artilleur/libucl/src/libucl_a-ucl_util.$(OBJEXT) \
+	src/artilleur/libucl/src/libucl_a-xxhash.$(OBJEXT)
+libucl_a_OBJECTS = $(am_libucl_a_OBJECTS)
+am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(pkglibexecdir)" \
+	"$(DESTDIR)$(bindir)" "$(DESTDIR)$(man8dir)" \
+	"$(DESTDIR)$(assetsdir)" "$(DESTDIR)$(awkdir)" \
+	"$(DESTDIR)$(btcssdir)" "$(DESTDIR)$(btimgdir)" \
+	"$(DESTDIR)$(btjsdir)" "$(DESTDIR)$(dtcssdir)" \
+	"$(DESTDIR)$(dtimagesdir)" "$(DESTDIR)$(dtjsdir)" \
+	"$(DESTDIR)$(htmldir)" "$(DESTDIR)$(pkgdatadir)" \
+	"$(DESTDIR)$(sysconfdir)"
+PROGRAMS = $(bin_PROGRAMS) $(pkglibexec_PROGRAMS)
+am_artilleur_OBJECTS = src/artilleur/artilleur-artilleur.$(OBJEXT)
+artilleur_OBJECTS = $(am_artilleur_OBJECTS)
+artilleur_DEPENDENCIES = $(top_srcdir)/libucl.a
+artilleur_LINK = $(CCLD) $(artilleur_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_cpdup_OBJECTS = src/libexec/poudriere/cpdup/cpdup-cpdup.$(OBJEXT) \
 	src/libexec/poudriere/cpdup/cpdup-hcproto.$(OBJEXT) \
 	src/libexec/poudriere/cpdup/cpdup-hclink.$(OBJEXT) \
@@ -191,10 +215,12 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(cpdup_SOURCES) $(dirempty_SOURCES) $(dirwatch_SOURCES) \
+SOURCES = $(libucl_a_SOURCES) $(artilleur_SOURCES) $(cpdup_SOURCES) \
+	$(dirempty_SOURCES) $(dirwatch_SOURCES) $(make_index_SOURCES) \
+	$(rename_SOURCES)
+DIST_SOURCES = $(libucl_a_SOURCES) $(artilleur_SOURCES) \
+	$(cpdup_SOURCES) $(dirempty_SOURCES) $(dirwatch_SOURCES) \
 	$(make_index_SOURCES) $(rename_SOURCES)
-DIST_SOURCES = $(cpdup_SOURCES) $(dirempty_SOURCES) \
-	$(dirwatch_SOURCES) $(make_index_SOURCES) $(rename_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -283,6 +309,7 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -391,6 +418,7 @@ dist_dtimages_DATA = src/share/poudriere/html/assets/dataTables/images/back_disa
 			src/share/poudriere/html/assets/dataTables/images/sort_desc.png \
 			src/share/poudriere/html/assets/dataTables/images/sort_desc_disabled.png
 
+noinst_LIBRARIES = libucl.a
 AUTOMAKE_OPTIONS = subdir-objects
 rename_SOURCES = src/libexec/poudriere/rename/rename.c
 cpdup_SOURCES = src/libexec/poudriere/cpdup/cpdup.c \
@@ -406,6 +434,21 @@ dirempty_SOURCES = src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES = src/libexec/poudriere/dirwatch/dirwatch.c
 make_index_SOURCES = src/libexec/poudriere/make_index/make_index.c
 make_index_LDADD = -ljail -lsbuf
+libucl_a_SOURCES = src/artilleur/libucl/src/ucl_emitter.c \
+			src/artilleur/libucl/src/ucl_hash.c \
+			src/artilleur/libucl/src/ucl_parser.c \
+			src/artilleur/libucl/src/ucl_util.c \
+			src/artilleur/libucl/src/xxhash.c
+
+libucl_a_CFLAGS = -I$(top_srcdir)/src/artilleur/libucl/uthash \
+			-I$(top_srcdir)/src/artilleur/libucl/include  \
+			-I$(top_srcdir)/src/artilleur/libucl/src
+
+artilleur_SOURCES = src/artilleur/artilleur.c
+artilleur_CFLAGS = -DPREFIX=\"$(prefix)\" \
+			-I$(top_srcdir)/src/artilleur/libucl/include
+
+artilleur_LDADD = $(top_srcdir)/libucl.a -lsbuf
 all: all-am
 
 .SUFFIXES:
@@ -444,6 +487,77 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	$(am__cd) $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 $(am__aclocal_m4_deps):
+
+clean-noinstLIBRARIES:
+	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
+src/artilleur/libucl/src/$(am__dirstamp):
+	@$(MKDIR_P) src/artilleur/libucl/src
+	@: > src/artilleur/libucl/src/$(am__dirstamp)
+src/artilleur/libucl/src/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/artilleur/libucl/src/$(DEPDIR)
+	@: > src/artilleur/libucl/src/$(DEPDIR)/$(am__dirstamp)
+src/artilleur/libucl/src/libucl_a-ucl_emitter.$(OBJEXT):  \
+	src/artilleur/libucl/src/$(am__dirstamp) \
+	src/artilleur/libucl/src/$(DEPDIR)/$(am__dirstamp)
+src/artilleur/libucl/src/libucl_a-ucl_hash.$(OBJEXT):  \
+	src/artilleur/libucl/src/$(am__dirstamp) \
+	src/artilleur/libucl/src/$(DEPDIR)/$(am__dirstamp)
+src/artilleur/libucl/src/libucl_a-ucl_parser.$(OBJEXT):  \
+	src/artilleur/libucl/src/$(am__dirstamp) \
+	src/artilleur/libucl/src/$(DEPDIR)/$(am__dirstamp)
+src/artilleur/libucl/src/libucl_a-ucl_util.$(OBJEXT):  \
+	src/artilleur/libucl/src/$(am__dirstamp) \
+	src/artilleur/libucl/src/$(DEPDIR)/$(am__dirstamp)
+src/artilleur/libucl/src/libucl_a-xxhash.$(OBJEXT):  \
+	src/artilleur/libucl/src/$(am__dirstamp) \
+	src/artilleur/libucl/src/$(DEPDIR)/$(am__dirstamp)
+
+libucl.a: $(libucl_a_OBJECTS) $(libucl_a_DEPENDENCIES) $(EXTRA_libucl_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libucl.a
+	$(AM_V_AR)$(libucl_a_AR) libucl.a $(libucl_a_OBJECTS) $(libucl_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libucl.a
+install-binPROGRAMS: $(bin_PROGRAMS)
+	@$(NORMAL_INSTALL)
+	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(bindir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(bindir)" || exit 1; \
+	fi; \
+	for p in $$list; do echo "$$p $$p"; done | \
+	sed 's/$(EXEEXT)$$//' | \
+	while read p p1; do if test -f $$p \
+	  ; then echo "$$p"; echo "$$p"; else :; fi; \
+	done | \
+	sed -e 'p;s,.*/,,;n;h' \
+	    -e 's|.*|.|' \
+	    -e 'p;x;s,.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/' | \
+	sed 'N;N;N;s,\n, ,g' | \
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1 } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) files[d] = files[d] " " $$1; \
+	    else { print "f", $$3 "/" $$4, $$1; } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+	    if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	    test -z "$$files" || { \
+	      echo " $(INSTALL_PROGRAM_ENV) $(INSTALL_PROGRAM) $$files '$(DESTDIR)$(bindir)$$dir'"; \
+	      $(INSTALL_PROGRAM_ENV) $(INSTALL_PROGRAM) $$files "$(DESTDIR)$(bindir)$$dir" || exit $$?; \
+	    } \
+	; done
+
+uninstall-binPROGRAMS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \
+	files=`for p in $$list; do echo "$$p"; done | \
+	  sed -e 'h;s,^.*/,,;s/$(EXEEXT)$$//;$(transform)' \
+	      -e 's/$$/$(EXEEXT)/' \
+	`; \
+	test -n "$$list" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(bindir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(bindir)" && rm -f $$files
+
+clean-binPROGRAMS:
+	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
 install-pkglibexecPROGRAMS: $(pkglibexec_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	@list='$(pkglibexec_PROGRAMS)'; test -n "$(pkglibexecdir)" || list=; \
@@ -486,6 +600,19 @@ uninstall-pkglibexecPROGRAMS:
 
 clean-pkglibexecPROGRAMS:
 	-test -z "$(pkglibexec_PROGRAMS)" || rm -f $(pkglibexec_PROGRAMS)
+src/artilleur/$(am__dirstamp):
+	@$(MKDIR_P) src/artilleur
+	@: > src/artilleur/$(am__dirstamp)
+src/artilleur/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/artilleur/$(DEPDIR)
+	@: > src/artilleur/$(DEPDIR)/$(am__dirstamp)
+src/artilleur/artilleur-artilleur.$(OBJEXT):  \
+	src/artilleur/$(am__dirstamp) \
+	src/artilleur/$(DEPDIR)/$(am__dirstamp)
+
+artilleur$(EXEEXT): $(artilleur_OBJECTS) $(artilleur_DEPENDENCIES) $(EXTRA_artilleur_DEPENDENCIES) 
+	@rm -f artilleur$(EXEEXT)
+	$(AM_V_CCLD)$(artilleur_LINK) $(artilleur_OBJECTS) $(artilleur_LDADD) $(LIBS)
 src/libexec/poudriere/cpdup/$(am__dirstamp):
 	@$(MKDIR_P) src/libexec/poudriere/cpdup
 	@: > src/libexec/poudriere/cpdup/$(am__dirstamp)
@@ -604,6 +731,8 @@ uninstall-dist_binSCRIPTS:
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f src/artilleur/*.$(OBJEXT)
+	-rm -f src/artilleur/libucl/src/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/cpdup/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/dirempty/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/dirwatch/*.$(OBJEXT)
@@ -613,6 +742,12 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@src/artilleur/$(DEPDIR)/artilleur-artilleur.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_hash.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/artilleur/libucl/src/$(DEPDIR)/libucl_a-xxhash.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-cpdup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-fsmid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hclink.Po@am__quote@
@@ -639,6 +774,90 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+src/artilleur/libucl/src/libucl_a-ucl_emitter.o: src/artilleur/libucl/src/ucl_emitter.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT src/artilleur/libucl/src/libucl_a-ucl_emitter.o -MD -MP -MF src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Tpo -c -o src/artilleur/libucl/src/libucl_a-ucl_emitter.o `test -f 'src/artilleur/libucl/src/ucl_emitter.c' || echo '$(srcdir)/'`src/artilleur/libucl/src/ucl_emitter.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Tpo src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/artilleur/libucl/src/ucl_emitter.c' object='src/artilleur/libucl/src/libucl_a-ucl_emitter.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o src/artilleur/libucl/src/libucl_a-ucl_emitter.o `test -f 'src/artilleur/libucl/src/ucl_emitter.c' || echo '$(srcdir)/'`src/artilleur/libucl/src/ucl_emitter.c
+
+src/artilleur/libucl/src/libucl_a-ucl_emitter.obj: src/artilleur/libucl/src/ucl_emitter.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT src/artilleur/libucl/src/libucl_a-ucl_emitter.obj -MD -MP -MF src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Tpo -c -o src/artilleur/libucl/src/libucl_a-ucl_emitter.obj `if test -f 'src/artilleur/libucl/src/ucl_emitter.c'; then $(CYGPATH_W) 'src/artilleur/libucl/src/ucl_emitter.c'; else $(CYGPATH_W) '$(srcdir)/src/artilleur/libucl/src/ucl_emitter.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Tpo src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/artilleur/libucl/src/ucl_emitter.c' object='src/artilleur/libucl/src/libucl_a-ucl_emitter.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o src/artilleur/libucl/src/libucl_a-ucl_emitter.obj `if test -f 'src/artilleur/libucl/src/ucl_emitter.c'; then $(CYGPATH_W) 'src/artilleur/libucl/src/ucl_emitter.c'; else $(CYGPATH_W) '$(srcdir)/src/artilleur/libucl/src/ucl_emitter.c'; fi`
+
+src/artilleur/libucl/src/libucl_a-ucl_hash.o: src/artilleur/libucl/src/ucl_hash.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT src/artilleur/libucl/src/libucl_a-ucl_hash.o -MD -MP -MF src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_hash.Tpo -c -o src/artilleur/libucl/src/libucl_a-ucl_hash.o `test -f 'src/artilleur/libucl/src/ucl_hash.c' || echo '$(srcdir)/'`src/artilleur/libucl/src/ucl_hash.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_hash.Tpo src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_hash.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/artilleur/libucl/src/ucl_hash.c' object='src/artilleur/libucl/src/libucl_a-ucl_hash.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o src/artilleur/libucl/src/libucl_a-ucl_hash.o `test -f 'src/artilleur/libucl/src/ucl_hash.c' || echo '$(srcdir)/'`src/artilleur/libucl/src/ucl_hash.c
+
+src/artilleur/libucl/src/libucl_a-ucl_hash.obj: src/artilleur/libucl/src/ucl_hash.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT src/artilleur/libucl/src/libucl_a-ucl_hash.obj -MD -MP -MF src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_hash.Tpo -c -o src/artilleur/libucl/src/libucl_a-ucl_hash.obj `if test -f 'src/artilleur/libucl/src/ucl_hash.c'; then $(CYGPATH_W) 'src/artilleur/libucl/src/ucl_hash.c'; else $(CYGPATH_W) '$(srcdir)/src/artilleur/libucl/src/ucl_hash.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_hash.Tpo src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_hash.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/artilleur/libucl/src/ucl_hash.c' object='src/artilleur/libucl/src/libucl_a-ucl_hash.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o src/artilleur/libucl/src/libucl_a-ucl_hash.obj `if test -f 'src/artilleur/libucl/src/ucl_hash.c'; then $(CYGPATH_W) 'src/artilleur/libucl/src/ucl_hash.c'; else $(CYGPATH_W) '$(srcdir)/src/artilleur/libucl/src/ucl_hash.c'; fi`
+
+src/artilleur/libucl/src/libucl_a-ucl_parser.o: src/artilleur/libucl/src/ucl_parser.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT src/artilleur/libucl/src/libucl_a-ucl_parser.o -MD -MP -MF src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Tpo -c -o src/artilleur/libucl/src/libucl_a-ucl_parser.o `test -f 'src/artilleur/libucl/src/ucl_parser.c' || echo '$(srcdir)/'`src/artilleur/libucl/src/ucl_parser.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Tpo src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/artilleur/libucl/src/ucl_parser.c' object='src/artilleur/libucl/src/libucl_a-ucl_parser.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o src/artilleur/libucl/src/libucl_a-ucl_parser.o `test -f 'src/artilleur/libucl/src/ucl_parser.c' || echo '$(srcdir)/'`src/artilleur/libucl/src/ucl_parser.c
+
+src/artilleur/libucl/src/libucl_a-ucl_parser.obj: src/artilleur/libucl/src/ucl_parser.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT src/artilleur/libucl/src/libucl_a-ucl_parser.obj -MD -MP -MF src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Tpo -c -o src/artilleur/libucl/src/libucl_a-ucl_parser.obj `if test -f 'src/artilleur/libucl/src/ucl_parser.c'; then $(CYGPATH_W) 'src/artilleur/libucl/src/ucl_parser.c'; else $(CYGPATH_W) '$(srcdir)/src/artilleur/libucl/src/ucl_parser.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Tpo src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/artilleur/libucl/src/ucl_parser.c' object='src/artilleur/libucl/src/libucl_a-ucl_parser.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o src/artilleur/libucl/src/libucl_a-ucl_parser.obj `if test -f 'src/artilleur/libucl/src/ucl_parser.c'; then $(CYGPATH_W) 'src/artilleur/libucl/src/ucl_parser.c'; else $(CYGPATH_W) '$(srcdir)/src/artilleur/libucl/src/ucl_parser.c'; fi`
+
+src/artilleur/libucl/src/libucl_a-ucl_util.o: src/artilleur/libucl/src/ucl_util.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT src/artilleur/libucl/src/libucl_a-ucl_util.o -MD -MP -MF src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Tpo -c -o src/artilleur/libucl/src/libucl_a-ucl_util.o `test -f 'src/artilleur/libucl/src/ucl_util.c' || echo '$(srcdir)/'`src/artilleur/libucl/src/ucl_util.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Tpo src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/artilleur/libucl/src/ucl_util.c' object='src/artilleur/libucl/src/libucl_a-ucl_util.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o src/artilleur/libucl/src/libucl_a-ucl_util.o `test -f 'src/artilleur/libucl/src/ucl_util.c' || echo '$(srcdir)/'`src/artilleur/libucl/src/ucl_util.c
+
+src/artilleur/libucl/src/libucl_a-ucl_util.obj: src/artilleur/libucl/src/ucl_util.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT src/artilleur/libucl/src/libucl_a-ucl_util.obj -MD -MP -MF src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Tpo -c -o src/artilleur/libucl/src/libucl_a-ucl_util.obj `if test -f 'src/artilleur/libucl/src/ucl_util.c'; then $(CYGPATH_W) 'src/artilleur/libucl/src/ucl_util.c'; else $(CYGPATH_W) '$(srcdir)/src/artilleur/libucl/src/ucl_util.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Tpo src/artilleur/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/artilleur/libucl/src/ucl_util.c' object='src/artilleur/libucl/src/libucl_a-ucl_util.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o src/artilleur/libucl/src/libucl_a-ucl_util.obj `if test -f 'src/artilleur/libucl/src/ucl_util.c'; then $(CYGPATH_W) 'src/artilleur/libucl/src/ucl_util.c'; else $(CYGPATH_W) '$(srcdir)/src/artilleur/libucl/src/ucl_util.c'; fi`
+
+src/artilleur/libucl/src/libucl_a-xxhash.o: src/artilleur/libucl/src/xxhash.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT src/artilleur/libucl/src/libucl_a-xxhash.o -MD -MP -MF src/artilleur/libucl/src/$(DEPDIR)/libucl_a-xxhash.Tpo -c -o src/artilleur/libucl/src/libucl_a-xxhash.o `test -f 'src/artilleur/libucl/src/xxhash.c' || echo '$(srcdir)/'`src/artilleur/libucl/src/xxhash.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/artilleur/libucl/src/$(DEPDIR)/libucl_a-xxhash.Tpo src/artilleur/libucl/src/$(DEPDIR)/libucl_a-xxhash.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/artilleur/libucl/src/xxhash.c' object='src/artilleur/libucl/src/libucl_a-xxhash.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o src/artilleur/libucl/src/libucl_a-xxhash.o `test -f 'src/artilleur/libucl/src/xxhash.c' || echo '$(srcdir)/'`src/artilleur/libucl/src/xxhash.c
+
+src/artilleur/libucl/src/libucl_a-xxhash.obj: src/artilleur/libucl/src/xxhash.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT src/artilleur/libucl/src/libucl_a-xxhash.obj -MD -MP -MF src/artilleur/libucl/src/$(DEPDIR)/libucl_a-xxhash.Tpo -c -o src/artilleur/libucl/src/libucl_a-xxhash.obj `if test -f 'src/artilleur/libucl/src/xxhash.c'; then $(CYGPATH_W) 'src/artilleur/libucl/src/xxhash.c'; else $(CYGPATH_W) '$(srcdir)/src/artilleur/libucl/src/xxhash.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/artilleur/libucl/src/$(DEPDIR)/libucl_a-xxhash.Tpo src/artilleur/libucl/src/$(DEPDIR)/libucl_a-xxhash.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/artilleur/libucl/src/xxhash.c' object='src/artilleur/libucl/src/libucl_a-xxhash.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o src/artilleur/libucl/src/libucl_a-xxhash.obj `if test -f 'src/artilleur/libucl/src/xxhash.c'; then $(CYGPATH_W) 'src/artilleur/libucl/src/xxhash.c'; else $(CYGPATH_W) '$(srcdir)/src/artilleur/libucl/src/xxhash.c'; fi`
+
+src/artilleur/artilleur-artilleur.o: src/artilleur/artilleur.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(artilleur_CFLAGS) $(CFLAGS) -MT src/artilleur/artilleur-artilleur.o -MD -MP -MF src/artilleur/$(DEPDIR)/artilleur-artilleur.Tpo -c -o src/artilleur/artilleur-artilleur.o `test -f 'src/artilleur/artilleur.c' || echo '$(srcdir)/'`src/artilleur/artilleur.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/artilleur/$(DEPDIR)/artilleur-artilleur.Tpo src/artilleur/$(DEPDIR)/artilleur-artilleur.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/artilleur/artilleur.c' object='src/artilleur/artilleur-artilleur.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(artilleur_CFLAGS) $(CFLAGS) -c -o src/artilleur/artilleur-artilleur.o `test -f 'src/artilleur/artilleur.c' || echo '$(srcdir)/'`src/artilleur/artilleur.c
+
+src/artilleur/artilleur-artilleur.obj: src/artilleur/artilleur.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(artilleur_CFLAGS) $(CFLAGS) -MT src/artilleur/artilleur-artilleur.obj -MD -MP -MF src/artilleur/$(DEPDIR)/artilleur-artilleur.Tpo -c -o src/artilleur/artilleur-artilleur.obj `if test -f 'src/artilleur/artilleur.c'; then $(CYGPATH_W) 'src/artilleur/artilleur.c'; else $(CYGPATH_W) '$(srcdir)/src/artilleur/artilleur.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/artilleur/$(DEPDIR)/artilleur-artilleur.Tpo src/artilleur/$(DEPDIR)/artilleur-artilleur.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/artilleur/artilleur.c' object='src/artilleur/artilleur-artilleur.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(artilleur_CFLAGS) $(CFLAGS) -c -o src/artilleur/artilleur-artilleur.obj `if test -f 'src/artilleur/artilleur.c'; then $(CYGPATH_W) 'src/artilleur/artilleur.c'; else $(CYGPATH_W) '$(srcdir)/src/artilleur/artilleur.c'; fi`
 
 src/libexec/poudriere/cpdup/cpdup-cpdup.o: src/libexec/poudriere/cpdup/cpdup.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/cpdup-cpdup.o -MD -MP -MF src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-cpdup.Tpo -c -o src/libexec/poudriere/cpdup/cpdup-cpdup.o `test -f 'src/libexec/poudriere/cpdup/cpdup.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/cpdup.c
@@ -1220,9 +1439,9 @@ distcleancheck: distclean
 	       exit 1; } >&2
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(MANS) $(DATA)
+all-am: Makefile $(LIBRARIES) $(PROGRAMS) $(SCRIPTS) $(MANS) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(assetsdir)" "$(DESTDIR)$(awkdir)" "$(DESTDIR)$(btcssdir)" "$(DESTDIR)$(btimgdir)" "$(DESTDIR)$(btjsdir)" "$(DESTDIR)$(dtcssdir)" "$(DESTDIR)$(dtimagesdir)" "$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(htmldir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(sysconfdir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(assetsdir)" "$(DESTDIR)$(awkdir)" "$(DESTDIR)$(btcssdir)" "$(DESTDIR)$(btimgdir)" "$(DESTDIR)$(btjsdir)" "$(DESTDIR)$(dtcssdir)" "$(DESTDIR)$(dtimagesdir)" "$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(htmldir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(sysconfdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -1251,6 +1470,10 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f src/artilleur/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/artilleur/$(am__dirstamp)
+	-rm -f src/artilleur/libucl/src/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/artilleur/libucl/src/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/cpdup/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/cpdup/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/$(am__dirstamp)
@@ -1267,11 +1490,12 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-pkglibexecPROGRAMS mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-noinstLIBRARIES \
+	clean-pkglibexecPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/make_index/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR)
+	-rm -rf src/artilleur/$(DEPDIR) src/artilleur/libucl/src/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/make_index/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -1298,8 +1522,8 @@ install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am: install-dist_binSCRIPTS install-pkglibexecPROGRAMS \
-	install-sysconfDATA
+install-exec-am: install-binPROGRAMS install-dist_binSCRIPTS \
+	install-pkglibexecPROGRAMS install-sysconfDATA
 
 install-html: install-html-am
 
@@ -1324,7 +1548,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/make_index/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR)
+	-rm -rf src/artilleur/$(DEPDIR) src/artilleur/libucl/src/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/make_index/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -1340,46 +1564,49 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-dist_assetsDATA uninstall-dist_awkDATA \
-	uninstall-dist_binSCRIPTS uninstall-dist_btcssDATA \
-	uninstall-dist_btimgDATA uninstall-dist_btjsDATA \
-	uninstall-dist_dtcssDATA uninstall-dist_dtimagesDATA \
-	uninstall-dist_dtjsDATA uninstall-dist_htmlDATA \
-	uninstall-dist_pkgdataDATA uninstall-man \
-	uninstall-pkglibexecPROGRAMS uninstall-sysconfDATA
+uninstall-am: uninstall-binPROGRAMS uninstall-dist_assetsDATA \
+	uninstall-dist_awkDATA uninstall-dist_binSCRIPTS \
+	uninstall-dist_btcssDATA uninstall-dist_btimgDATA \
+	uninstall-dist_btjsDATA uninstall-dist_dtcssDATA \
+	uninstall-dist_dtimagesDATA uninstall-dist_dtjsDATA \
+	uninstall-dist_htmlDATA uninstall-dist_pkgdataDATA \
+	uninstall-man uninstall-pkglibexecPROGRAMS \
+	uninstall-sysconfDATA
 
 uninstall-man: uninstall-man8
 
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am am--refresh check check-am clean \
-	clean-cscope clean-generic clean-pkglibexecPROGRAMS cscope \
+	clean-binPROGRAMS clean-cscope clean-generic \
+	clean-noinstLIBRARIES clean-pkglibexecPROGRAMS cscope \
 	cscopelist-am ctags ctags-am dist dist-all dist-bzip2 \
 	dist-gzip dist-lzip dist-shar dist-tarZ dist-xz dist-zip \
 	distcheck distclean distclean-compile distclean-generic \
 	distclean-tags distcleancheck distdir distuninstallcheck dvi \
 	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dist_assetsDATA \
-	install-dist_awkDATA install-dist_binSCRIPTS \
-	install-dist_btcssDATA install-dist_btimgDATA \
-	install-dist_btjsDATA install-dist_dtcssDATA \
-	install-dist_dtimagesDATA install-dist_dtjsDATA \
-	install-dist_htmlDATA install-dist_pkgdataDATA install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-man8 install-pdf install-pdf-am \
-	install-pkglibexecPROGRAMS install-ps install-ps-am \
-	install-strip install-sysconfDATA installcheck installcheck-am \
-	installdirs maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-compile mostlyclean-generic pdf pdf-am \
-	ps ps-am tags tags-am uninstall uninstall-am \
-	uninstall-dist_assetsDATA uninstall-dist_awkDATA \
-	uninstall-dist_binSCRIPTS uninstall-dist_btcssDATA \
-	uninstall-dist_btimgDATA uninstall-dist_btjsDATA \
-	uninstall-dist_dtcssDATA uninstall-dist_dtimagesDATA \
-	uninstall-dist_dtjsDATA uninstall-dist_htmlDATA \
-	uninstall-dist_pkgdataDATA uninstall-man uninstall-man8 \
-	uninstall-pkglibexecPROGRAMS uninstall-sysconfDATA
+	install-binPROGRAMS install-data install-data-am \
+	install-dist_assetsDATA install-dist_awkDATA \
+	install-dist_binSCRIPTS install-dist_btcssDATA \
+	install-dist_btimgDATA install-dist_btjsDATA \
+	install-dist_dtcssDATA install-dist_dtimagesDATA \
+	install-dist_dtjsDATA install-dist_htmlDATA \
+	install-dist_pkgdataDATA install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-man8 \
+	install-pdf install-pdf-am install-pkglibexecPROGRAMS \
+	install-ps install-ps-am install-strip install-sysconfDATA \
+	installcheck installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
+	uninstall-am uninstall-binPROGRAMS uninstall-dist_assetsDATA \
+	uninstall-dist_awkDATA uninstall-dist_binSCRIPTS \
+	uninstall-dist_btcssDATA uninstall-dist_btimgDATA \
+	uninstall-dist_btjsDATA uninstall-dist_dtcssDATA \
+	uninstall-dist_dtimagesDATA uninstall-dist_dtjsDATA \
+	uninstall-dist_htmlDATA uninstall-dist_pkgdataDATA \
+	uninstall-man uninstall-man8 uninstall-pkglibexecPROGRAMS \
+	uninstall-sysconfDATA
 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

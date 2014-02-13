@@ -63,6 +63,8 @@ dist_dtimages_DATA=	src/share/poudriere/html/assets/dataTables/images/back_disab
 			src/share/poudriere/html/assets/dataTables/images/sort_desc_disabled.png
 
 pkglibexec_PROGRAMS= rename cpdup dirempty dirwatch make_index
+bin_PROGRAMS=	artilleur
+noinst_LIBRARIES=	libucl.a
 
 AUTOMAKE_OPTIONS=	subdir-objects
 
@@ -79,3 +81,15 @@ dirempty_SOURCES=	src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
 make_index_SOURCES=	src/libexec/poudriere/make_index/make_index.c
 make_index_LDADD=	-ljail -lsbuf
+libucl_a_SOURCES=	src/artilleur/libucl/src/ucl_emitter.c \
+			src/artilleur/libucl/src/ucl_hash.c \
+			src/artilleur/libucl/src/ucl_parser.c \
+			src/artilleur/libucl/src/ucl_util.c \
+			src/artilleur/libucl/src/xxhash.c
+libucl_a_CFLAGS=	-I$(top_srcdir)/src/artilleur/libucl/uthash \
+			-I$(top_srcdir)/src/artilleur/libucl/include  \
+			-I$(top_srcdir)/src/artilleur/libucl/src
+artilleur_SOURCES=	src/artilleur/artilleur.c
+artilleur_CFLAGS=	-DPREFIX=\"$(prefix)\" \
+			-I$(top_srcdir)/src/artilleur/libucl/include
+artilleur_LDADD=	$(top_srcdir)/libucl.a -lsbuf
