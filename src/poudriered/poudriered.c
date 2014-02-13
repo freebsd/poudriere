@@ -124,12 +124,12 @@ valid_group(ucl_object_t *o, struct client *cl)
 }
 
 static int
-check_argument(ucl_object_t *cmd, struct client *cl, const char *arg) {
+check_subcommand(ucl_object_t *cmd, struct client *cl, const char *arg) {
 
 	ucl_object_t *cred_cmds, *cred, *tmp, *wild, *o;
 	ucl_object_iter_t it = NULL;
 
-	cred_cmds = ucl_object_find_key(cmd, "argument");
+	cred_cmds = ucl_object_find_key(cmd, "subcommand");
 	if (cred_cmds == NULL)
 		return (0);
 
@@ -167,7 +167,7 @@ check_argument(ucl_object_t *cmd, struct client *cl, const char *arg) {
 }
 
 static bool
-is_arguments_allowed(ucl_object_t *a, ucl_object_t *cmd, struct client *cl)
+is_subcommands_allowed(ucl_object_t *a, ucl_object_t *cmd, struct client *cl)
 {
 	ucl_object_t *tmp;
 	ucl_object_iter_t it = NULL;
@@ -180,12 +180,12 @@ is_arguments_allowed(ucl_object_t *a, ucl_object_t *cmd, struct client *cl)
 
 	if (a->type == UCL_STRING) {
 		nbargs++;
-		ok += check_argument(cmd, cl, ucl_object_tostring(a));
+		ok += check_subcommand(cmd, cl, ucl_object_tostring(a));
 	} else {
 		while ((tmp = ucl_iterate_object(a, &it, false))) {
 			nbargs++;
 			if (tmp->type == UCL_STRING)
-				ok += check_argument(cmd, cl, ucl_object_tostring(a));
+				ok += check_subcommand(cmd, cl, ucl_object_tostring(a));
 		}
 	}
 
@@ -267,8 +267,8 @@ client_exec(struct client *cl)
 	cmd_allowed = is_command_allowed(c, cl, &cmd_cred);
 
 	if (!cmd_allowed && cmd_cred != NULL) {
-		c = ucl_object_find_key(cmd, "argument");
-		cmd_allowed = is_arguments_allowed(c, cmd_cred, cl);
+		c = ucl_object_find_key(cmd, "subcommand");
+		cmd_allowed = is_subcommands_allowed(c, cmd_cred, cl);
 	}
 
 	if (!cmd_allowed) {
