@@ -1834,6 +1834,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 						# home directory of users created
 						case " ${homedirs} " in
 						*\ ${path}\ *) continue;;
+						*\ ${path}/*\ *) continue;;
 						esac
 					fi
 					case "${ppath}" in
