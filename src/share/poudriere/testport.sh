@@ -198,7 +198,7 @@ ret=0
 build_port /usr/ports/${ORIGIN} || ret=$?
 if [ ${ret} -ne 0 ]; then
 	if [ ${ret} -eq 2 ]; then
-		failed_phase=$(${SCRIPTPREFIX}/processonelog2.sh \
+		failed_phase=$(/bin/sh ${SCRIPTPREFIX}/processonelog2.sh \
 			${log}/logs/${PKGNAME}.log \
 			2> /dev/null)
 	else
@@ -209,7 +209,7 @@ if [ ${ret} -ne 0 ]; then
 	save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" "${failed_phase}" || :
 
 	ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
-	errortype=$(${SCRIPTPREFIX}/processonelog.sh \
+	errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
 		${log}/logs/errors/${PKGNAME}.log \
 		2> /dev/null)
 	badd ports.failed "${ORIGIN} ${PKGNAME} ${failed_phase} ${errortype}"

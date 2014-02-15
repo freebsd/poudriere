@@ -2372,7 +2372,7 @@ build_pkg() {
 		if [ ${ret} -ne 0 ]; then
 			build_failed=1
 			if [ ${ret} -eq 2 ]; then
-				failed_phase=$(${SCRIPTPREFIX}/processonelog2.sh \
+				failed_phase=$(/bin/sh ${SCRIPTPREFIX}/processonelog2.sh \
 					${log}/logs/${PKGNAME}.log \
 					2> /dev/null)
 			else
@@ -2396,7 +2396,7 @@ build_pkg() {
 		else
 			# Symlink the buildlog into errors/
 			ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
-			errortype=$(${SCRIPTPREFIX}/processonelog.sh \
+			errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
 				${log}/logs/errors/${PKGNAME}.log \
 				2> /dev/null)
 			badd ports.failed "${port} ${PKGNAME} ${failed_phase} ${errortype}"
