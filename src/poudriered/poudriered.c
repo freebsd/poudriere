@@ -16,6 +16,7 @@
 #include <spawn.h>
 #define _WITH_DPRINTF
 #include <stdio.h>
+#include <histedit.h>
 #include <ucl.h>
 #include <unistd.h>
 
@@ -132,12 +133,12 @@ valid_group(ucl_object_t *o, struct client *cl)
 }
 
 static int
-check_subcommand(ucl_object_t *cmd, struct client *cl, const char *arg) {
+check_argument(ucl_object_t *cmd, struct client *cl, const char *arg) {
 
 	ucl_object_t *cred_cmds, *cred, *tmp, *wild, *o;
 	ucl_object_iter_t it = NULL;
 
-	cred_cmds = ucl_object_find_key(cmd, "subcommand");
+	cred_cmds = ucl_object_find_key(cmd, "argument");
 	if (cred_cmds == NULL)
 		return (0);
 
@@ -175,27 +176,36 @@ check_subcommand(ucl_object_t *cmd, struct client *cl, const char *arg) {
 }
 
 static bool
-is_subcommands_allowed(ucl_object_t *a, ucl_object_t *cmd, struct client *cl)
+is_arguments_allowed(ucl_object_t *a, ucl_object_t *cmd, struct client *cl)
 {
 	ucl_object_t *tmp;
 	ucl_object_iter_t it = NULL;
 	int nbargs, ok;
+	const char **argv;
+	int argc;
+	Tokenizer *t = NULL;
 
 	nbargs = ok = 0;
 
 	if (a == NULL)
 		return (false);
 
-	if (a->type == UCL_STRING) {
-		nbargs++;
-		ok += check_subcommand(cmd, cl, ucl_object_tostring(a));
-	} else {
-		while ((tmp = ucl_iterate_object(a, &it, false))) {
-			nbargs++;
-			if (tmp->type == UCL_STRING)
-				ok += check_subcommand(cmd, cl, ucl_object_tostring(a));
-		}
+	t = tok_init(NULL);
+	if (tok_str(t, ucl_object_tostring(a), &argc, &argv) != 0) {
+		dprintf(cl->fd, "Error: bad arguments");
+		tok_end(t);
+		return (false);
 	}
+
+	for (int i = 0; i < argc; i++) {
+		if (argv[i][0] != '-')
+			continue;
+		printf("%s\n", argv[i]);
+		nbargs++;
+		ok += check_argument(cmd, cl, argv[i]);
+	}
+
+	tok_end(t);
 
 	return (ok == nbargs);
 }
@@ -359,8 +369,11 @@ client_exec(struct client *cl)
 	cmd_allowed = is_command_allowed(c, cl, &cmd_cred);
 
 	if (!cmd_allowed && cmd_cred != NULL) {
-		c = ucl_object_find_key(cmd, "subcommand");
-		cmd_allowed = is_subcommands_allowed(c, cmd_cred, cl);
+		c = ucl_object_find_key(cmd, "arguments");
+		if (c && c->type != UCL_STRING)
+			dprintf(cl->fd, "Error: expecting a string for the arguments");
+		if (c && c->type == UCL_STRING)
+			cmd_allowed = is_arguments_allowed(c, cmd_cred, cl);
 	}
 
 	if (!cmd_allowed) {
