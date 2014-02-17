@@ -305,7 +305,7 @@ execute_cmd() {
 	if (running == NULL)
 		return;
 
-	logfd = open("/tmp/test.log", O_CREAT|O_RDWR|O_TRUNC,0644);
+	logfd = open("/tmp/poudriered-test.log", O_CREAT|O_RDWR|O_TRUNC,0644);
 
 	o = ucl_object_find_key(running, "command");
 	a = ucl_object_find_key(running, "arguments");
