@@ -200,7 +200,6 @@ is_arguments_allowed(ucl_object_t *a, ucl_object_t *cmd, struct client *cl)
 	for (int i = 0; i < argc; i++) {
 		if (argv[i][0] != '-')
 			continue;
-		printf("%s\n", argv[i]);
 		nbargs++;
 		ok += check_argument(cmd, cl, argv[i]);
 	}
@@ -297,23 +296,35 @@ execute_cmd() {
 	int logfd;
 	pid_t pid;
 	int error;
-	char *arg[3];
+	const char **argv;
+	int argc;
+	struct sbuf *cmdline;
+	ucl_object_t *o, *a;
+	Tokenizer *t;
 
 	if (running == NULL)
 		return;
 
-	logfd = open("/tmp/test.log", O_CREAT|O_RDWR,0644);
+	logfd = open("/tmp/test.log", O_CREAT|O_RDWR|O_TRUNC,0644);
+
+	o = ucl_object_find_key(running, "command");
+	a = ucl_object_find_key(running, "arguments");
 
 	posix_spawn_file_actions_init(&action);
 	posix_spawn_file_actions_adddup2(&action, logfd, STDOUT_FILENO);
 	posix_spawn_file_actions_adddup2(&action, logfd, STDERR_FILENO);
 
-	arg[0] = "poudriere";
-	arg[1] = "help";
-	arg[2] = NULL;
+	cmdline = sbuf_new_auto();
+	sbuf_printf(cmdline, "poudriere %s", ucl_object_tostring(o));
+	if (a != NULL)
+		sbuf_printf(cmdline, " %s", ucl_object_tostring(a));
+	sbuf_finish(cmdline);
 
-	if ((error = posix_spawn(&pid, PREFIX"/sbin/poudriere",
-		&action, NULL, __DECONST(char **, arg), environ)) != 0) {
+	t = tok_init(NULL);
+	tok_str(t, sbuf_data(cmdline), &argc, &argv);
+
+	if ((error = posix_spawn(&pid, PREFIX"/bin/poudriere",
+		&action, NULL, __DECONST(char **, argv), environ)) != 0) {
 		errno = error;
 		warn("Cannot run poudriere");
 		return;
@@ -330,6 +341,7 @@ process_queue(void) {
 		return;
 
 	running = ucl_array_pop_first(queue);
+
 	execute_cmd();
 }
 
