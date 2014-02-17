@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <sys/event.h>
+#include <sys/param.h>
 #include <sys/time.h>
 #include <sys/sbuf.h>
 #include <sys/socket.h>
@@ -12,13 +13,20 @@
 #include <pwd.h>
 #include <grp.h>
 #include <signal.h>
+#include <spawn.h>
 #define _WITH_DPRINTF
 #include <stdio.h>
 #include <ucl.h>
 #include <unistd.h>
 
 static ucl_object_t *conf;
+static ucl_object_t *queue = NULL;
 static int server_fd = -1;
+static ucl_object_t *running = NULL;
+extern char **environ;
+static int kq;
+static int nbevq = 0;
+static struct kevent ke;
 
 struct client {
 	int fd;
@@ -57,12 +65,12 @@ close_socket(int dummy) {
 	o = ucl_object_find_key(conf, "socket");
 
 	if (o == NULL || o->type != UCL_STRING) {
-		ucl_object_free(conf);
+		ucl_object_unref(conf);
 		exit(dummy);
 	}
 
 	unlink(ucl_object_tostring(o));
-	ucl_object_free(conf);
+	ucl_object_unref(conf);
 
 	exit(dummy);
 }
@@ -241,6 +249,90 @@ is_command_allowed(ucl_object_t *req, struct client *cl, ucl_object_t **ret)
 	return (false);
 }
 
+
+static int
+mkdirs(const char *_path)
+{
+	char path[MAXPATHLEN];
+        char *p;
+
+        strlcpy(path, _path, sizeof(path));
+        p = path;
+        if (*p == '/')
+                p++;
+
+        for (;;) {
+                if ((p = strchr(p, '/')) != NULL)
+                        *p = '\0';
+
+                if (mkdir(path, S_IRWXU | S_IRWXG | S_IRWXO) < 0)
+                        if (errno != EEXIST && errno != EISDIR)
+				err(EXIT_FAILURE, "mkdir");
+
+                /* that was the last element of the path */
+                if (p == NULL)
+                        break;
+
+                *p = '/';
+                p++;
+        }
+
+        return (0);
+}
+
+
+static void
+execute_cmd() {
+	posix_spawn_file_actions_t action;
+	int logfd;
+	pid_t pid;
+	int error;
+	char *arg[3];
+
+	if (running == NULL)
+		return;
+
+	logfd = open("/tmp/test.log", O_CREAT|O_RDWR,0644);
+
+	posix_spawn_file_actions_init(&action);
+	posix_spawn_file_actions_adddup2(&action, logfd, STDOUT_FILENO);
+	posix_spawn_file_actions_adddup2(&action, logfd, STDERR_FILENO);
+
+	arg[0] = "poudriere";
+	arg[1] = "help";
+	arg[2] = NULL;
+
+	if ((error = posix_spawn(&pid, PREFIX"/sbin/poudriere",
+		&action, NULL, __DECONST(char **, arg), environ)) != 0) {
+		errno = error;
+		warn("Cannot run poudriere");
+		return;
+	}
+
+	EV_SET(&ke, pid, EVFILT_PROC, EV_ADD, NOTE_EXIT, 0, &logfd);
+	kevent(kq, &ke, 1, NULL, 0, NULL);
+	nbevq++;
+}
+
+static void
+process_queue(void) {
+	if (running != NULL)
+		return;
+
+	running = ucl_array_pop_first(queue);
+	execute_cmd();
+}
+
+static bool
+append_to_queue(ucl_object_t *cmd)
+{
+	queue = ucl_array_append(queue, cmd);
+
+	process_queue();
+
+	return (true);
+}
+
 static void
 client_exec(struct client *cl)
 {
@@ -260,7 +352,7 @@ client_exec(struct client *cl)
 	c = ucl_object_find_key(cmd, "command");
 	if (c == NULL || c->type != UCL_STRING) {
 		dprintf(cl->fd, "Error: no command specified\n");
-		ucl_object_free(cmd);
+		ucl_object_unref(cmd);
 		return;
 	}
 	/* validate credentials */
@@ -274,11 +366,16 @@ client_exec(struct client *cl)
 	if (!cmd_allowed) {
 		/* still not allowed, let's check per args */
 		dprintf(cl->fd, "Error: permission denied\n");
-		ucl_object_free(cmd);
+		ucl_object_unref(cmd);
 		return;
 	}
 
 	/* ok just proceed */
+	if (!append_to_queue(cmd)) {
+		dprintf(cl->fd, "Error: unknown, command not queued");
+		ucl_object_unref(cmd);
+		return;
+	}
 }
 
 static void
@@ -336,13 +433,10 @@ client_new(int fd)
 
 static void
 serve(void) {
-	int nev, i;
-	int kq;
-	int nbevq = 0;
-	int max_queues = 0;
-	struct kevent ke;
 	struct kevent *evlist = NULL;
 	struct client *cl;
+	int nev, i;
+	int max_queues = 0;
 
 	if ((kq = kqueue()) == -1)
 		err(EXIT_FAILURE, "kqueue");
@@ -381,8 +475,19 @@ serve(void) {
 					continue;
 				}
 				client_read(evlist[i].udata, evlist[i].data);
+				continue;
 			}
+
+			/* process died */
+			if (evlist[i].filter == EVFILT_PROC) {
+				int fd = *(int *)evlist[i].udata;
+				close(fd);
+				ucl_object_unref(running);
+				running = NULL;
+			}
+
 		}
+		process_queue();
 	}
 }
 
@@ -396,29 +501,28 @@ main(void)
 	if ((conf = load_conf()) == NULL)
 		return (EXIT_FAILURE);
 
-
 	if ((o = ucl_object_find_key(conf, "socket")) == NULL) {
 		warnx("'socket' not found in the configuration file");
-		ucl_object_free(conf);
+		ucl_object_unref(conf);
 
 		return (EXIT_FAILURE);
 	}
 
 	memset(&un, 0, sizeof(struct sockaddr_un));
 	if ((server_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
-		ucl_object_free(conf);
+		ucl_object_unref(conf);
 		err(EXIT_FAILURE, "socket()");
 	}
 
 	un.sun_family = AF_UNIX;
 	strlcpy(un.sun_path, ucl_object_tostring(o), sizeof(un.sun_path));
 	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, (int[]){1}, sizeof(int)) < 0) {
-		ucl_object_free(conf);
+		ucl_object_unref(conf);
 		err(EXIT_FAILURE, "setsockopt()");
 	}
 
 	if (bind(server_fd, (struct sockaddr *) &un, sizeof(struct sockaddr_un)) == -1) {
-		ucl_object_free(conf);
+		ucl_object_unref(conf);
 		err(EXIT_FAILURE, "bind()");
 	}
 
