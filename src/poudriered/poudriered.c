@@ -432,6 +432,35 @@ client_new(int fd)
 }
 
 static void
+check_schedules() {
+	struct tm *now;
+	time_t now_t;
+	ucl_object_t *o, *tmp, *cmd, *when, *dateformat;
+	ucl_object_iter_t it = NULL;
+	char datestr[BUFSIZ];
+
+	now_t = time(NULL);
+	now = gmtime(&now_t);
+	o = ucl_object_find_key(conf, "schedule");
+
+	while ((tmp = ucl_iterate_object(o, &it, true))) {
+		when = ucl_object_find_key(tmp, "when");
+		dateformat = ucl_object_find_key(tmp, "format");
+		cmd = ucl_object_find_key(tmp, "cmd");
+		if (cmd == NULL ||
+		    when == NULL ||
+		    dateformat == NULL)
+			continue;
+
+		if (strftime_l(datestr, BUFSIZ, ucl_object_tostring(dateformat), now, NULL) <= 0)
+			continue;
+
+		if (!strcmp(datestr, ucl_object_tostring(when)))
+			queue = ucl_array_append(queue, cmd);
+	}
+}
+
+static void
 serve(void) {
 	struct kevent *evlist = NULL;
 	struct client *cl;
@@ -441,6 +470,11 @@ serve(void) {
 	if ((kq = kqueue()) == -1)
 		err(EXIT_FAILURE, "kqueue");
 
+	if (ucl_object_find_key(conf, "schedule") != NULL) {
+		EV_SET(&ke, 1, EVFILT_TIMER, EV_ADD, 0, 1000, NULL);
+		kevent(kq, &ke, 1, NULL, 0, NULL);
+		nbevq++;
+	}
 	EV_SET(&ke, server_fd,  EVFILT_READ, EV_ADD, 0, 0, NULL);
 	kevent(kq, &ke, 1, NULL, 0, NULL);
 	nbevq++;
@@ -484,7 +518,11 @@ serve(void) {
 				close(fd);
 				ucl_object_unref(running);
 				running = NULL;
+				continue;
 			}
+
+			if (evlist[i].filter == EVFILT_TIMER)
+				check_schedules();
 
 		}
 		process_queue();
