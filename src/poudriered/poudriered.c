@@ -254,30 +254,30 @@ static int
 mkdirs(const char *_path)
 {
 	char path[MAXPATHLEN];
-        char *p;
+	char *p;
 
-        strlcpy(path, _path, sizeof(path));
-        p = path;
-        if (*p == '/')
-                p++;
+	strlcpy(path, _path, sizeof(path));
+	p = path;
+	if (*p == '/')
+		p++;
 
-        for (;;) {
-                if ((p = strchr(p, '/')) != NULL)
-                        *p = '\0';
+	for (;;) {
+		if ((p = strchr(p, '/')) != NULL)
+			*p = '\0';
 
-                if (mkdir(path, S_IRWXU | S_IRWXG | S_IRWXO) < 0)
-                        if (errno != EEXIST && errno != EISDIR)
+		if (mkdir(path, S_IRWXU | S_IRWXG | S_IRWXO) < 0)
+			if (errno != EEXIST && errno != EISDIR)
 				err(EXIT_FAILURE, "mkdir");
 
-                /* that was the last element of the path */
-                if (p == NULL)
-                        break;
+		/* that was the last element of the path */
+		if (p == NULL)
+			break;
 
-                *p = '/';
-                p++;
-        }
+		*p = '/';
+		p++;
+	}
 
-        return (0);
+	return (0);
 }
 
 
