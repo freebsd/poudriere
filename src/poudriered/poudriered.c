@@ -624,7 +624,7 @@ serve(void) {
 			/* Reading from client */
 			if (evlist[i].filter == EVFILT_READ) {
 				if (evlist[i].flags & (EV_ERROR | EV_EOF)) {
-					client_free(cl);
+					client_free(evlist[i].udata);
 					nbevq--;
 					continue;
 				}
@@ -699,7 +699,7 @@ main(void)
 	signal(SIGQUIT, close_socket);
 	signal(SIGTERM, close_socket);
 
-	daemon(0, 0);
+	//daemon(0, 0);
 
 	if (listen(server_fd, 1024) < 0) {
 		warn("listen()");
