@@ -384,7 +384,8 @@ execute_cmd() {
 		return;
 
 	l = ucl_object_find_key(running, "log");
-	mkdirs(ucl_object_tostring(l), true);
+	if (l != NULL)
+		mkdirs(ucl_object_tostring(l), true);
 	logfd = open( l != NULL ? ucl_object_tostring(l) : "/tmp/poudriered.log",
 	    O_CREAT|O_RDWR|O_TRUNC,0644);
 	if (logfd == -1)
