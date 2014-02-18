@@ -205,7 +205,7 @@ check_argument(ucl_object_t *cmd, struct client *cl, const char *arg) {
 static bool
 is_arguments_allowed(ucl_object_t *a, ucl_object_t *cmd, struct client *cl)
 {
-	int nbargs, ok, argc, argvl;
+	int nbargs, ok, argc, argvl, i;
 	char **argv = NULL;
 	char *buf, *tofree, *arg;
 
@@ -224,7 +224,7 @@ is_arguments_allowed(ucl_object_t *a, ucl_object_t *cmd, struct client *cl)
 		argv[argc++] = arg;
 	}
 
-	for (int i = 0; i < argc; i++) {
+	for (i = 0; i < argc; i++) {
 		if (argv[i][0] != '-')
 			continue;
 		nbargs++;
