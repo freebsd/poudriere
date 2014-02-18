@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
+#include <sys/wait.h>
 
 #include <err.h>
 #include <errno.h>
@@ -17,6 +18,8 @@
 #define _WITH_DPRINTF
 #include <stdio.h>
 #include <histedit.h>
+#include <syslog.h>
+#include <stdlib.h>
 #include <ucl.h>
 #include <unistd.h>
 
@@ -349,6 +352,7 @@ static bool
 append_to_queue(ucl_object_t *cmd)
 {
 	queue = ucl_array_append(queue, cmd);
+	syslog(LOG_INFO, "New command queued");
 
 	process_queue();
 
@@ -480,8 +484,10 @@ check_schedules() {
 		if (strftime_l(datestr, BUFSIZ, ucl_object_tostring(dateformat), now, NULL) <= 0)
 			continue;
 
-		if (!strcmp(datestr, ucl_object_tostring(when)))
+		if (!strcmp(datestr, ucl_object_tostring(when))) {
 			queue = ucl_array_append(queue, cmd);
+			syslog(LOG_INFO, "New command queued");
+		}
 	}
 }
 
@@ -539,9 +545,17 @@ serve(void) {
 
 			/* process died */
 			if (evlist[i].filter == EVFILT_PROC) {
+				int status = evlist[i].data;
 				int fd = *(int *)evlist[i].udata;
 				close(fd);
 				ucl_object_unref(running);
+				if (WIFEXITED(status))
+					syslog(LOG_INFO, "Command exited with status: %d", WEXITSTATUS(status));
+				else if (WIFSIGNALED(status))
+					syslog(LOG_INFO, "Command killed by signal %d", WTERMSIG(status));
+				else
+					syslog(LOG_INFO, "Command terminated");
+
 				running = NULL;
 				continue;
 			}
@@ -596,10 +610,14 @@ main(void)
 	signal(SIGQUIT, close_socket);
 	signal(SIGTERM, close_socket);
 
+	daemon(0, 0);
+
 	if (listen(server_fd, 1024) < 0) {
 		warn("listen()");
 		close_socket(EXIT_FAILURE);
 	}
+
+	openlog("poudriered", LOG_PID|LOG_NDELAY, LOG_DAEMON);
 
 	serve();
 
