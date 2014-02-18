@@ -181,8 +181,6 @@ check_argument(ucl_object_t *cmd, struct client *cl, const char *arg) {
 static bool
 is_arguments_allowed(ucl_object_t *a, ucl_object_t *cmd, struct client *cl)
 {
-	ucl_object_t *tmp;
-	ucl_object_iter_t it = NULL;
 	int nbargs, ok;
 	const char **argv;
 	int argc;
@@ -261,6 +259,52 @@ is_command_allowed(ucl_object_t *req, struct client *cl, ucl_object_t **ret)
 	return (false);
 }
 
+static bool
+is_operation_allowed(ucl_object_t *o, struct client *cl)
+{
+	ucl_object_t *creds, *cred, *tmp, *wild, *obj;
+	ucl_object_iter_t it = NULL;
+
+	creds = ucl_object_find_key(conf, "operation");
+	if (creds == NULL)
+		return (false);
+
+	cred = wild = NULL;
+	while ((tmp = ucl_iterate_object(creds, &it, false))) {
+		if ((cred = ucl_object_find_key(tmp, ucl_object_tostring(o))))
+			break;
+		if (!wild)
+			wild = ucl_object_find_key(tmp, "*");
+	}
+
+	if (cred == NULL && wild == NULL)
+		return (false);
+
+	if (!cred)
+		cred = wild;
+
+	/* check groups */
+	obj = ucl_object_find_key(cred, "group");
+	if (obj != NULL) {
+		it = NULL;
+		while ((tmp = ucl_iterate_object(obj, &it, false))) {
+			if (valid_group(tmp, cl))
+				return (true);
+		}
+	}
+
+	/* check users */
+	obj = ucl_object_find_key(cred, "user");
+	if (obj != NULL) {
+		it = NULL;
+		while ((tmp = ucl_iterate_object(obj, &it, false))) {
+			if (valid_user(tmp, cl))
+				return (true);
+		}
+	}
+
+	return (false);
+}
 
 static int
 mkdirs(const char *_path, bool lastisfile)
@@ -387,6 +431,38 @@ client_exec(struct client *cl)
 
 	cmd = ucl_parser_get_object(p);
 	ucl_parser_free(p);
+
+	if ((c = ucl_object_find_key(cmd, "operation"))) {
+		/* The user specified an operation not a command */
+		if (is_operation_allowed(c, cl)) {
+			if (!strcmp(ucl_object_tostring(c), "quit")) {
+				close_socket(EXIT_SUCCESS);
+			} else if (!strcmp(ucl_object_tostring(c), "reload")) {
+				ucl_object_t *nconf = load_conf();
+				if (nconf != NULL) {
+					dprintf(cl->fd, "{ \"reload\": true }\n");
+					ucl_object_unref(conf);
+					conf = nconf;
+				} else {
+					dprintf(cl->fd, "{ \"reload\": false }\n");
+				}
+			} else if (!strcmp(ucl_object_tostring(c), "queue")) {
+				if (queue)
+					dprintf(cl->fd, "%s\n", ucl_object_emit(queue, UCL_EMIT_JSON_COMPACT));
+				else
+					dprintf(cl->fd, "[]\n");
+			} else if (!strcmp(ucl_object_tostring(c), "status")) {
+				dprintf(cl->fd, "{ \"state\": \"%s\", \"data\": %s }\n",
+				    running ? "running" : "idle",
+				    running ? (char *)ucl_object_emit(running, UCL_EMIT_JSON_COMPACT) : "{}");
+			}
+		} else {
+			dprintf(cl->fd, "Error: permission denied\n");
+		}
+		ucl_object_unref(cmd);
+		return;
+	}
+
 	c = ucl_object_find_key(cmd, "command");
 	if (c == NULL || c->type != UCL_STRING) {
 		dprintf(cl->fd, "Error: no command specified\n");
@@ -476,7 +552,7 @@ static void
 check_schedules() {
 	struct tm *now;
 	time_t now_t;
-	ucl_object_t *o, *tmp, *cmd, *when, *dateformat, *timelocale;
+	ucl_object_t *o, *tmp, *cmd, *when, *dateformat;
 	ucl_object_iter_t it = NULL;
 	char datestr[BUFSIZ];
 
@@ -488,15 +564,13 @@ check_schedules() {
 		when = ucl_object_find_key(tmp, "when");
 		dateformat = ucl_object_find_key(tmp, "format");
 		cmd = ucl_object_find_key(tmp, "cmd");
-		timelocale = ucl_object_find_key(tmp, "time_locale");
 		if (cmd == NULL ||
 		    when == NULL ||
 		    dateformat == NULL)
 			continue;
 
 		if (strftime_l(datestr, BUFSIZ, ucl_object_tostring(dateformat),
-		    now, time_locale ? ucl_object_tostring(timelocale) : NULL)
-		    <= 0)
+		    now, NULL) <= 0)
 			continue;
 
 		if (!strcmp(datestr, ucl_object_tostring(when))) {
