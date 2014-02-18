@@ -41,6 +41,17 @@ struct client {
 };
 
 static void
+send_object(struct client *cl, ucl_object_t *o)
+{
+	if (o == NULL)
+		o = ucl_object_typed_new(UCL_OBJECT);
+
+	dprintf(cl->fd, "%s\n", ucl_object_emit(o, UCL_EMIT_JSON_COMPACT));
+
+	ucl_object_unref(o);
+}
+
+static void
 send_error(struct client *cl, const char *msg) {
 	ucl_object_t *umsg = NULL;
 	ucl_object_t *o;
@@ -50,9 +61,7 @@ send_error(struct client *cl, const char *msg) {
 	o = ucl_object_fromstring_common(msg, strlen(msg),UCL_STRING_TRIM);
 	umsg = ucl_object_insert_key(umsg, o, "message", 7, true);
 
-	dprintf(cl->fd, "%s\n", ucl_object_emit(umsg, UCL_EMIT_JSON_COMPACT));
-
-	ucl_object_unref(umsg);
+	send_object(cl, umsg);
 }
 
 static ucl_object_t *
@@ -455,21 +464,21 @@ client_exec(struct client *cl)
 			} else if (!strcmp(ucl_object_tostring(c), "reload")) {
 				ucl_object_t *nconf = load_conf();
 				if (nconf != NULL) {
-					dprintf(cl->fd, "{ \"reload\": true }\n");
 					ucl_object_unref(conf);
 					conf = nconf;
-				} else {
-					dprintf(cl->fd, "{ \"reload\": false }\n");
 				}
+				send_object(cl,
+				    ucl_object_insert_key(NULL, ucl_object_frombool(nconf != NULL),
+				        "reload", 6, true));
 			} else if (!strcmp(ucl_object_tostring(c), "queue")) {
-				if (queue)
-					dprintf(cl->fd, "%s\n", ucl_object_emit(queue, UCL_EMIT_JSON_COMPACT));
-				else
-					dprintf(cl->fd, "[]\n");
+				send_object(cl, queue);
 			} else if (!strcmp(ucl_object_tostring(c), "status")) {
-				dprintf(cl->fd, "{ \"state\": \"%s\", \"data\": %s }\n",
-				    running ? "running" : "idle",
-				    running ? (char *)ucl_object_emit(running, UCL_EMIT_JSON_COMPACT) : "{}");
+				ucl_object_t *msg = NULL;
+				msg = ucl_object_insert_key(msg,
+				    ucl_object_fromstring(running ? "running" : "idle"),
+				    "state", 5, true);
+				msg = ucl_object_insert_key(msg, running ? running : ucl_object_new(), "data", 4, true);
+				send_object(cl, msg);
 			}
 		} else {
 			send_error(cl, "permission denied");
