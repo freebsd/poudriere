@@ -91,16 +91,24 @@ if [ -n "${JAILNAME}" ]; then
 	JOBS="${builders}" siginfo_handler
 else
 	if [ ${SCRIPT_MODE} -eq 0 ]; then
-		format="%-30s %-25s %6s %5s %6s %7s %7s %7s %7s\n"
+		format="%-30s %-25s %6s %5s %6s %7s %7s %7s %s"
 		printf "${format}" "JAIL" "STATUS" "QUEUED" \
 		    "BUILT" "FAILED" "SKIPPED" "IGNORED" "TOBUILD"
+		if [ -n "${URL_BASE}" ]; then
+			echo -n "URL"
+		else
+			echo -n "LOGS"
+		fi
+		echo
 	else
-		format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n"
+		format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"
 	fi
 	for mastermnt in ${POUDRIERE_DATA}/build/*/ref; do
 		[ "${mastermnt}" = "${POUDRIERE_DATA}/build/*/ref" ] && break
 		mastername=${mastermnt#${POUDRIERE_DATA}/build/}
 		MASTERNAME=${mastername%/ref}
+		# Dereference latest into actual buildname
+		BUILDNAME="$(bget buildname)"
 
 		status=$(bget status 2>/dev/null || :)
 		nbqueued=$(bget stats_queued 2>/dev/null || :)
@@ -109,8 +117,14 @@ else
 		nbskipped=$(bget stats_skipped 2>/dev/null || :)
 		nbbuilt=$(bget stats_built 2>/dev/null || :)
 		nbtobuild=$((nbqueued - (nbbuilt + nbfailed + nbskipped + nbignored)))
-		printf "${format}" "${MASTERNAME}" "${status}" "${nbqueued}" \
+		url=
+		if [ -n "${URL_BASE}" ]; then
+			url="${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"
+		else
+			url="$(log_path)"
+		fi
+		printf "${format}\n" "${MASTERNAME}" "${status}" "${nbqueued}" \
 			"${nbbuilt}" "${nbfailed}" "${nbskipped}" "${nbignored}" \
-			"${nbtobuild}"
+			"${nbtobuild}" "${url}"
 	done
 fi
