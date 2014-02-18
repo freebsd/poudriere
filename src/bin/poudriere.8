@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd February 6, 2014
+.Dd February 18, 2014
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -545,6 +545,9 @@ This flag specifies which ports
 .Ar tree
 the build is running on when using
 .Fl j
+.It Fl H
+Do not print headers and separate fields by a single tab instead of arbitrary
+white space.
 .It Fl z Ar set
 This specifies which SET the build is running on when using
 .Fl j

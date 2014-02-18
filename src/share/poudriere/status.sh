@@ -31,6 +31,8 @@ poudriere status [options]
 Options:
     -j name     -- Run on the given jail
     -p tree     -- Specify on which ports tree the configuration will be done
+    -H          -- Script mode. Do not print headers and separate fields by a
+                   single tab instead of arbitrary white space.
     -z set      -- Specify which SET to use
 EOF
 	exit 1
@@ -41,10 +43,11 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 
 PTNAME=default
 SETNAME=""
+SCRIPT_MODE=0
 
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "j:p:z:" FLAG; do
+while getopts "j:p:Hz:" FLAG; do
 	case "${FLAG}" in
 		j)
 			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
@@ -52,6 +55,9 @@ while getopts "j:p:z:" FLAG; do
 			;;
 		p)
 			PTNAME=${OPTARG}
+			;;
+		H)
+			SCRIPT_MODE=1
 			;;
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"
@@ -67,7 +73,7 @@ shift $((OPTIND-1))
 
 if [ $(find ${POUDRIERE_DATA}/build -mindepth 2 -maxdepth 2 2>&1 | wc -l) \
 	-eq 0 ] ; then
-	msg "No running builds"
+	[ ${SCRIPT_MODE} -eq 0 ] && msg "No running builds"
 	exit 0
 fi
 
@@ -84,9 +90,13 @@ if [ -n "${JAILNAME}" ]; then
 
 	JOBS="${builders}" siginfo_handler
 else
-	format="%-30s %-25s %6s %5s %6s %7s %7s %7s %7s\n"
-	printf "${format}" "JAIL" "STATUS" "QUEUED" "BUILT" "FAILED" "SKIPPED" \
-		"IGNORED" "TOBUILD"
+	if [ ${SCRIPT_MODE} -eq 0 ]; then
+		format="%-30s %-25s %6s %5s %6s %7s %7s %7s %7s\n"
+		printf "${format}" "JAIL" "STATUS" "QUEUED" \
+		    "BUILT" "FAILED" "SKIPPED" "IGNORED" "TOBUILD"
+	else
+		format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n"
+	fi
 	for mastermnt in ${POUDRIERE_DATA}/build/*/ref; do
 		[ "${mastermnt}" = "${POUDRIERE_DATA}/build/*/ref" ] && break
 		mastername=${mastermnt#${POUDRIERE_DATA}/build/}
