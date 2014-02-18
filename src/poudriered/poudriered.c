@@ -205,21 +205,23 @@ check_argument(ucl_object_t *cmd, struct client *cl, const char *arg) {
 static bool
 is_arguments_allowed(ucl_object_t *a, ucl_object_t *cmd, struct client *cl)
 {
-	int nbargs, ok;
-	const char **argv;
-	int argc;
-	Tokenizer *t = NULL;
+	int nbargs, ok, argc, argvl;
+	char **argv = NULL;
+	char *buf, *tofree, *arg;
 
-	nbargs = ok = 0;
+	nbargs = ok = argc = argvl = 0;
 
 	if (a == NULL)
 		return (false);
 
-	t = tok_init(NULL);
-	if (tok_str(t, ucl_object_tostring(a), &argc, &argv) != 0) {
-		send_error(cl, "bad arguments");
-		tok_end(t);
-		return (false);
+	buf = strdup(ucl_object_tostring(a));
+	tofree = buf;
+	while ((arg = strsep(&buf, "\t \n")) != NULL) {
+		if (argc > argvl - 2) {
+			argvl += 1024;
+			argv = reallocf(argv, argvl * sizeof(char *));
+		}
+		argv[argc++] = arg;
 	}
 
 	for (int i = 0; i < argc; i++) {
@@ -229,7 +231,8 @@ is_arguments_allowed(ucl_object_t *a, ucl_object_t *cmd, struct client *cl)
 		ok += check_argument(cmd, cl, argv[i]);
 	}
 
-	tok_end(t);
+	free(argv);
+	free(tofree);
 
 	return (ok == nbargs);
 }
@@ -374,11 +377,10 @@ execute_cmd() {
 	int logfd;
 	pid_t pid;
 	int error;
-	const char **argv;
-	int argc;
-	struct sbuf *cmdline;
+	char **argv;
+	char *buf, *tofree, *arg;
+	int argc, argvl;
 	ucl_object_t *o, *a, *l;
-	Tokenizer *t;
 
 	if (running == NULL)
 		return;
@@ -398,21 +400,35 @@ execute_cmd() {
 	posix_spawn_file_actions_adddup2(&action, logfd, STDOUT_FILENO);
 	posix_spawn_file_actions_adddup2(&action, logfd, STDERR_FILENO);
 
-	cmdline = sbuf_new_auto();
-	sbuf_printf(cmdline, "poudriere %s", ucl_object_tostring(o));
-	if (a != NULL)
-		sbuf_printf(cmdline, " %s", ucl_object_tostring(a));
-	sbuf_finish(cmdline);
+	argvl = 1024;
+	argv = malloc(argvl * sizeof(char *));
+	argv[0] = "poudriere";
+	argv[1] = (char *)ucl_object_tostring(o);
+	argc = 2;
+	tofree = NULL;
 
-	t = tok_init(NULL);
-	tok_str(t, sbuf_data(cmdline), &argc, &argv);
+	if (a == NULL) {
+		buf = strdup(ucl_object_tostring(a));
+		tofree = buf;
+		while ((arg = strsep(&buf, "\t \n")) != NULL) {
+			if (argc > argvl -2 ) {
+				argvl += 1024;
+				argv = reallocf(argv, argvl * sizeof(char *));
+			}
+			argv[argc++] = arg;
+		}
+		argv[argc++] = NULL;
+	}
 
 	if ((error = posix_spawn(&pid, PREFIX"/bin/poudriere",
-		&action, NULL, __DECONST(char **, argv), environ)) != 0) {
+		&action, NULL, argv, environ)) != 0) {
 		errno = error;
 		warn("Cannot run poudriere");
 		return;
 	}
+
+	free(tofree);
+	free(argv);
 
 	EV_SET(&ke, pid, EVFILT_PROC, EV_ADD, NOTE_EXIT, 0, &logfd);
 	kevent(kq, &ke, 1, NULL, 0, NULL);
