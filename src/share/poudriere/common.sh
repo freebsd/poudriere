@@ -1148,8 +1148,6 @@ jail_start() {
 	jail_exists ${name} || err 1 "No such jail: ${name}"
 	jail_runs ${MASTERNAME} && err 1 "jail already running: ${MASTERNAME}"
 
-	was_a_bulk_run && bset status "creating_jail:"
-
 	# Block the build dir from being traversed by non-root to avoid
 	# system blowup due to all of the extra mounts
 	mkdir -p ${MASTERMNT%/ref}
