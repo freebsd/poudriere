@@ -476,7 +476,7 @@ static void
 check_schedules() {
 	struct tm *now;
 	time_t now_t;
-	ucl_object_t *o, *tmp, *cmd, *when, *dateformat;
+	ucl_object_t *o, *tmp, *cmd, *when, *dateformat, *timelocale;
 	ucl_object_iter_t it = NULL;
 	char datestr[BUFSIZ];
 
@@ -488,12 +488,15 @@ check_schedules() {
 		when = ucl_object_find_key(tmp, "when");
 		dateformat = ucl_object_find_key(tmp, "format");
 		cmd = ucl_object_find_key(tmp, "cmd");
+		timelocale = ucl_object_find_key(tmp, "time_locale");
 		if (cmd == NULL ||
 		    when == NULL ||
 		    dateformat == NULL)
 			continue;
 
-		if (strftime_l(datestr, BUFSIZ, ucl_object_tostring(dateformat), now, NULL) <= 0)
+		if (strftime_l(datestr, BUFSIZ, ucl_object_tostring(dateformat),
+		    now, time_locale ? ucl_object_tostring(timelocale) : NULL)
+		    <= 0)
 			continue;
 
 		if (!strcmp(datestr, ucl_object_tostring(when))) {
