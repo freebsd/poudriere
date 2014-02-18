@@ -40,6 +40,21 @@ struct client {
 	gid_t gid;
 };
 
+static void
+send_error(struct client *cl, const char *msg) {
+	ucl_object_t *umsg = NULL;
+	ucl_object_t *o;
+	
+	o = ucl_object_fromstring_common("error", 5, 0);
+	umsg = ucl_object_insert_key(umsg, o, "type", 4, true);
+	o = ucl_object_fromstring_common(msg, strlen(msg),UCL_STRING_TRIM);
+	umsg = ucl_object_insert_key(umsg, o, "message", 7, true);
+
+	dprintf(cl->fd, "%s\n", ucl_object_emit(umsg, UCL_EMIT_JSON_COMPACT));
+
+	ucl_object_unref(umsg);
+}
+
 static ucl_object_t *
 load_conf(void)
 {
@@ -193,7 +208,7 @@ is_arguments_allowed(ucl_object_t *a, ucl_object_t *cmd, struct client *cl)
 
 	t = tok_init(NULL);
 	if (tok_str(t, ucl_object_tostring(a), &argc, &argv) != 0) {
-		dprintf(cl->fd, "Error: bad arguments");
+		send_error(cl, "bad arguments");
 		tok_end(t);
 		return (false);
 	}
@@ -424,7 +439,7 @@ client_exec(struct client *cl)
 	/* unpack the command */
 	p = ucl_parser_new(UCL_PARSER_KEY_LOWERCASE);
 	if (!ucl_parser_add_chunk(p, (const unsigned char *)sbuf_data(cl->buf), sbuf_len(cl->buf))) {
-		dprintf(cl->fd, "Error: %s\n", ucl_parser_get_error(p));
+		send_error(cl, ucl_parser_get_error(p));
 		ucl_parser_free(p);
 		return;
 	}
@@ -457,7 +472,7 @@ client_exec(struct client *cl)
 				    running ? (char *)ucl_object_emit(running, UCL_EMIT_JSON_COMPACT) : "{}");
 			}
 		} else {
-			dprintf(cl->fd, "Error: permission denied\n");
+			send_error(cl, "permission denied");
 		}
 		ucl_object_unref(cmd);
 		return;
@@ -465,7 +480,7 @@ client_exec(struct client *cl)
 
 	c = ucl_object_find_key(cmd, "command");
 	if (c == NULL || c->type != UCL_STRING) {
-		dprintf(cl->fd, "Error: no command specified\n");
+		send_error(cl, "No command specified");
 		ucl_object_unref(cmd);
 		return;
 	}
@@ -475,21 +490,21 @@ client_exec(struct client *cl)
 	if (!cmd_allowed && cmd_cred != NULL) {
 		c = ucl_object_find_key(cmd, "arguments");
 		if (c && c->type != UCL_STRING)
-			dprintf(cl->fd, "Error: expecting a string for the arguments");
+			send_error(cl, "Expecting a string for the arguments");
 		if (c && c->type == UCL_STRING)
 			cmd_allowed = is_arguments_allowed(c, cmd_cred, cl);
 	}
 
 	if (!cmd_allowed) {
 		/* still not allowed, let's check per args */
-		dprintf(cl->fd, "Error: permission denied\n");
+		send_error(cl, "Permission denied");
 		ucl_object_unref(cmd);
 		return;
 	}
 
 	/* ok just proceed */
 	if (!append_to_queue(cmd)) {
-		dprintf(cl->fd, "Error: unknown, command not queued");
+		send_error(cl, "unknown, command not queued");
 		ucl_object_unref(cmd);
 		return;
 	}
@@ -699,7 +714,7 @@ main(void)
 	signal(SIGQUIT, close_socket);
 	signal(SIGTERM, close_socket);
 
-	//daemon(0, 0);
+	daemon(0, 0);
 
 	if (listen(server_fd, 1024) < 0) {
 		warn("listen()");
