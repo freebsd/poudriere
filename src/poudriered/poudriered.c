@@ -263,7 +263,7 @@ is_command_allowed(ucl_object_t *req, struct client *cl, ucl_object_t **ret)
 
 
 static int
-mkdirs(const char *_path)
+mkdirs(const char *_path, bool lastisfile)
 {
 	char path[MAXPATHLEN];
 	char *p;
@@ -272,6 +272,13 @@ mkdirs(const char *_path)
 	p = path;
 	if (*p == '/')
 		p++;
+
+	if (lastisfile) {
+		if ((p = strrchr(p, '/')) != NULL)
+			*p = '\0';
+		else
+			return (0);
+	}
 
 	for (;;) {
 		if ((p = strchr(p, '/')) != NULL)
@@ -302,13 +309,18 @@ execute_cmd() {
 	const char **argv;
 	int argc;
 	struct sbuf *cmdline;
-	ucl_object_t *o, *a;
+	ucl_object_t *o, *a, *l;
 	Tokenizer *t;
 
 	if (running == NULL)
 		return;
 
-	logfd = open("/tmp/poudriered-test.log", O_CREAT|O_RDWR|O_TRUNC,0644);
+	l = ucl_object_find_key(running, "log");
+	mkdirs(ucl_object_tostring(l), true);
+	logfd = open( l != NULL ? ucl_object_tostring(l) : "/tmp/poudriered.log",
+	    O_CREAT|O_RDWR|O_TRUNC,0644);
+	if (logfd == -1)
+		logfd = open("/dev/null", O_RDWR);
 
 	o = ucl_object_find_key(running, "command");
 	a = ucl_object_find_key(running, "arguments");
