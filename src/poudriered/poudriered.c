@@ -668,8 +668,12 @@ serve(void) {
 			/* Reading from client */
 			if (evlist[i].filter == EVFILT_READ) {
 				if (evlist[i].flags & (EV_ERROR | EV_EOF)) {
-					client_read(evlist[i].udata,
-					    evlist[i].data);
+					/* Do an extra read on EOF as kqueue
+					 * will send this even if there is 
+					 * data still available. */
+					if (evlist[i].flags & EV_EOF)
+						client_read(evlist[i].udata,
+						    evlist[i].data);
 					client_free(evlist[i].udata);
 					nbevq--;
 					continue;
