@@ -667,6 +667,8 @@ serve(void) {
 			/* Reading from client */
 			if (evlist[i].filter == EVFILT_READ) {
 				if (evlist[i].flags & (EV_ERROR | EV_EOF)) {
+					client_read(evlist[i].udata,
+					    evlist[i].data);
 					client_free(evlist[i].udata);
 					nbevq--;
 					continue;
