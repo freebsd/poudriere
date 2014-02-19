@@ -1,4 +1,5 @@
 socket "/var/run/poudriered.sock"
+pidfile "/var/run/poudriered.pid"
 cachedir /usr/local/poudriere/cache
 logs /usr/local/poudriere/logs
 command ports {

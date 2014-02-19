@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <pwd.h>
 #include <grp.h>
+#include <libutil.h>
 #include <signal.h>
 #include <spawn.h>
 #define _WITH_DPRINTF
@@ -706,17 +707,35 @@ int
 main(void)
 {
 	struct sockaddr_un un;
+	struct pidfh *pfh;
+	pid_t otherpid, childpid;
 
-	ucl_object_t *o;
+	ucl_object_t *sock_path_o, *pidfile_path_o;
 
 	if ((conf = load_conf()) == NULL)
 		return (EXIT_FAILURE);
 
-	if ((o = ucl_object_find_key(conf, "socket")) == NULL) {
+	if ((sock_path_o = ucl_object_find_key(conf, "socket")) == NULL) {
 		warnx("'socket' not found in the configuration file");
 		ucl_object_unref(conf);
-
 		return (EXIT_FAILURE);
+	}
+
+	if ((pidfile_path_o = ucl_object_find_key(conf, "pidfile")) == NULL) {
+		warnx("'pidfile' not found in the configuration file");
+		ucl_object_unref(conf);
+		return (EXIT_FAILURE);
+	}
+
+	pfh = pidfile_open(ucl_object_tostring(pidfile_path_o), 0600,
+	    &otherpid);
+	if (pfh == NULL) {
+		if (errno == EEXIST) {
+			errx(EXIT_FAILURE, "Daemon already running, pid: %jd.",
+			    (intmax_t)otherpid);
+		}
+		/* If we cannot create pidfile from other reasons, only warn. */
+		warn("Cannot open or create pidfile");
 	}
 
 	memset(&un, 0, sizeof(struct sockaddr_un));
@@ -725,8 +744,11 @@ main(void)
 		err(EXIT_FAILURE, "socket()");
 	}
 
+	/* SO_REUSEADDR does not prevent EADDRINUSE, since we are locked by
+	 * a pid, just unlink the old socket if needed. */
+	unlink(ucl_object_tostring(sock_path_o));
 	un.sun_family = AF_UNIX;
-	strlcpy(un.sun_path, ucl_object_tostring(o), sizeof(un.sun_path));
+	strlcpy(un.sun_path, ucl_object_tostring(sock_path_o), sizeof(un.sun_path));
 	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, (int[]){1}, sizeof(int)) < 0) {
 		ucl_object_unref(conf);
 		err(EXIT_FAILURE, "setsockopt()");
@@ -744,7 +766,12 @@ main(void)
 	signal(SIGQUIT, close_socket);
 	signal(SIGTERM, close_socket);
 
-	daemon(0, 0);
+	if (daemon(0, 0) == -1) {
+		pidfile_remove(pfh);
+		err(EXIT_FAILURE, "CAnnot daemonize");
+	}
+
+	pidfile_write(pfh);
 
 	if (listen(server_fd, 1024) < 0) {
 		warn("listen()");

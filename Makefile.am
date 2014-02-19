@@ -93,4 +93,6 @@ libucl_a_CFLAGS=	-I$(top_srcdir)/external/libucl/uthash \
 poudriered_SOURCES=	src/poudriered/poudriered.c
 poudriered_CFLAGS=	-DPREFIX=\"$(prefix)\" \
 			-I$(top_srcdir)/external/libucl/include
-poudriered_LDADD=	$(top_srcdir)/libucl.a -lsbuf
+poudriered_LDADD=	$(top_srcdir)/libucl.a \
+			-lsbuf \
+			-lutil
