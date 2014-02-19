@@ -473,6 +473,8 @@ client_exec(struct client *cl)
 	cmd = ucl_parser_get_object(p);
 	ucl_parser_free(p);
 
+        syslog(LOG_INFO, "uid(%d) sent request: %s", cl->uid, sbuf_data(cl->buf));
+
 	if ((c = ucl_object_find_key(cmd, "operation"))) {
 		/* The user specified an operation not a command */
 		if (is_operation_allowed(c, cl)) {
