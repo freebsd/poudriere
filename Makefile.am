@@ -14,7 +14,8 @@ dist_bin_SCRIPTS=	src/bin/poudriere.sh
 
 dist_man_MANS=	src/bin/poudriere.8
 
-sysconf_DATA=	src/etc/poudriere.conf.sample
+sysconf_DATA=	src/etc/poudriere.conf.sample \
+		src/etc/poudriered.conf.sample
 
 dist_pkgdata_DATA=	src/share/poudriere/bulk.sh \
 			src/share/poudriere/clean.sh \
