@@ -82,15 +82,15 @@ dirempty_SOURCES=	src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
 make_index_SOURCES=	src/libexec/poudriere/make_index/make_index.c
 make_index_LDADD=	-ljail -lsbuf
-libucl_a_SOURCES=	src/poudriered/libucl/src/ucl_emitter.c \
-			src/poudriered/libucl/src/ucl_hash.c \
-			src/poudriered/libucl/src/ucl_parser.c \
-			src/poudriered/libucl/src/ucl_util.c \
-			src/poudriered/libucl/src/xxhash.c
-libucl_a_CFLAGS=	-I$(top_srcdir)/src/poudriered/libucl/uthash \
-			-I$(top_srcdir)/src/poudriered/libucl/include  \
-			-I$(top_srcdir)/src/poudriered/libucl/src
+libucl_a_SOURCES=	external/libucl/src/ucl_emitter.c \
+			external/libucl/src/ucl_hash.c \
+			external/libucl/src/ucl_parser.c \
+			external/libucl/src/ucl_util.c \
+			external/libucl/src/xxhash.c
+libucl_a_CFLAGS=	-I$(top_srcdir)/external/libucl/uthash \
+			-I$(top_srcdir)/external/libucl/include  \
+			-I$(top_srcdir)/external/libucl/src
 poudriered_SOURCES=	src/poudriered/poudriered.c
 poudriered_CFLAGS=	-DPREFIX=\"$(prefix)\" \
-			-I$(top_srcdir)/src/poudriered/libucl/include
+			-I$(top_srcdir)/external/libucl/include
 poudriered_LDADD=	$(top_srcdir)/libucl.a -lsbuf
