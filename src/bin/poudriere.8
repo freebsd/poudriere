@@ -707,6 +707,18 @@ port (the name of the port) containing an 'options' file with lines similar to:
 .Pp
 As a starter, you may want to copy an existing /var/db/ports/ to
 /usr/local/etc/poudriere.d/options.
+.Ss Blacklist ports
+You can also specify a blacklist which will disallow the lists port origins
+from building on the matched jail.
+Any of the following are allowed and will all be used in the order shown:
+.Pp
+.Dl /usr/local/etc/poudriere.d/blacklist
+.Dl /usr/local/etc/poudriere.d/<setname>-blacklist
+.Dl /usr/local/etc/poudriere.d/<tree>-blacklist
+.Dl /usr/local/etc/poudriere.d/<jailname>-blacklist
+.Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-blacklist
+.Dl /usr/local/etc/poudriere.d/<jailname>-<setname>-blacklist
+.Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-blacklist
 .Ss Create optional make.conf
 You can also specify a global make.conf which will be used for all the
 jails.
