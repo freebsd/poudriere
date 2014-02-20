@@ -772,7 +772,7 @@ main(void)
 
 	if (daemon(0, 0) == -1) {
 		pidfile_remove(pfh);
-		err(EXIT_FAILURE, "CAnnot daemonize");
+		err(EXIT_FAILURE, "Cannot daemonize");
 	}
 
 	pidfile_write(pfh);
