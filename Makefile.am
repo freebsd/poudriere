@@ -1,3 +1,5 @@
+CLEANFILES=	$(dist_rc_SCRIPTS)
+
 awkdir=	$(pkgdatadir)/awk
 htmldir= $(pkgdatadir)/html
 assetsdir= $(htmldir)/assets
@@ -9,6 +11,7 @@ datatablesdir= $(assetsdir)/dataTables
 dtcssdir= $(datatablesdir)/css
 dtimagesdir= $(datatablesdir)/images
 dtjsdir= $(datatablesdir)/js
+rcdir= $(sysconfdir)/rc.d
 
 dist_bin_SCRIPTS=	src/bin/poudriere.sh
 
@@ -62,6 +65,12 @@ dist_dtimages_DATA=	src/share/poudriere/html/assets/dataTables/images/back_disab
 			src/share/poudriere/html/assets/dataTables/images/sort_both.png \
 			src/share/poudriere/html/assets/dataTables/images/sort_desc.png \
 			src/share/poudriere/html/assets/dataTables/images/sort_desc_disabled.png
+
+src/etc/rc.d/poudriered: src/etc/rc.d/poudriered.in
+	@echo "  SED     " $@;
+	@sed -e 's,/usr/local,$(prefix),g' src/etc/rc.d/poudriered.in > $@
+
+dist_rc_SCRIPTS=	src/etc/rc.d/poudriered
 
 pkglibexec_PROGRAMS= rename cpdup dirempty dirwatch make_index
 bin_PROGRAMS=	poudriered

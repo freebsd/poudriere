@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# PROVIDE: poudriered
+# REQUIRE: DAEMON
+# KEYWORD: shutdown
+#
+#
+# poudriered_enable="YES"
+#
+
+. /etc/rc.subr
+
+name=poudriered
+rcvar=poudriered_enable
+
+# read configuration
+load_rc_config ${name}
+
+: ${poudriered_enable:=NO}
+: ${poudriered_pidfile:=/var/run/${name}.pid}
+: ${poudriered_socket:=/var/run/${name}.sock}
+: ${poudriered_conf:=/usr/local/etc/${name}.conf}
+
+pidfile="${poudriered_pidfile}"
+command=/usr/local/bin/poudriered
+
+# run service
+run_rc_command "$1"
