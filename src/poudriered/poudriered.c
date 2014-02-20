@@ -740,7 +740,7 @@ main(void)
 {
 	struct sockaddr_un un;
 	struct pidfh *pfh;
-	pid_t otherpid, childpid;
+	pid_t otherpid;
 
 	ucl_object_t *sock_path_o, *pidfile_path_o;
 
