@@ -444,15 +444,18 @@ execute_cmd() {
 		&action, NULL, argv, environ)) != 0) {
 		errno = error;
 		warn("Cannot run poudriere");
-		return;
+		goto done;
 	}
-
-	free(tofree);
-	free(argv);
 
 	EV_SET(&ke, pid, EVFILT_PROC, EV_ADD, NOTE_EXIT, 0, &logfd);
 	kevent(kq, &ke, 1, NULL, 0, NULL);
 	nbevq++;
+
+done:
+	free(tofree);
+	free(argv);
+
+	return;
 }
 
 static void
