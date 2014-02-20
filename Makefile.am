@@ -72,7 +72,14 @@ src/etc/rc.d/poudriered: src/etc/rc.d/poudriered.in
 
 dist_rc_SCRIPTS=	src/etc/rc.d/poudriered
 
-pkglibexec_PROGRAMS= rename cpdup dirempty dirwatch make_index
+pkglibexec_PROGRAMS= \
+		     cpdup \
+		     dirempty \
+		     dirwatch \
+		     make_index \
+		     nc \
+		     rename
+
 bin_PROGRAMS=	poudriered
 noinst_LIBRARIES=	libucl.a
 
@@ -89,6 +96,7 @@ cpdup_LDADD=	-lmd
 cpdup_CFLAGS=	-D_ST_FLAGS_PRESENT_=1
 dirempty_SOURCES=	src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
+nc_SOURCES=		src/libexec/poudriere/nc/nc.c
 make_index_SOURCES=	src/libexec/poudriere/make_index/make_index.c
 make_index_LDADD=	-ljail -lsbuf
 libucl_a_SOURCES=	external/libucl/src/ucl_emitter.c \
