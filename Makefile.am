@@ -89,7 +89,8 @@ libucl_a_SOURCES=	external/libucl/src/ucl_emitter.c \
 			external/libucl/src/xxhash.c
 libucl_a_CFLAGS=	-I$(top_srcdir)/external/libucl/uthash \
 			-I$(top_srcdir)/external/libucl/include  \
-			-I$(top_srcdir)/external/libucl/src
+			-I$(top_srcdir)/external/libucl/src \
+			-Wno-unused-parameter -Wno-pointer-sign
 poudriered_SOURCES=	src/poudriered/poudriered.c
 poudriered_CFLAGS=	-DPREFIX=\"$(prefix)\" \
 			-I$(top_srcdir)/external/libucl/include
