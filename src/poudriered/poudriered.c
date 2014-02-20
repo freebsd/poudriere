@@ -74,7 +74,8 @@ load_conf(void)
 	parser = ucl_parser_new(UCL_PARSER_KEY_LOWERCASE);
 
 	if (!ucl_parser_add_file(parser, PREFIX"/etc/poudriered.conf")) {
-		warnx("Failed to parse configuration file: %s", ucl_parser_get_error(parser));
+		warnx("Failed to parse configuration file: %s",
+		    ucl_parser_get_error(parser));
 		return (NULL);
 	}
 
@@ -389,7 +390,7 @@ execute_cmd() {
 	l = ucl_object_find_key(running, "log");
 	if (l != NULL)
 		mkdirs(ucl_object_tostring(l), true);
-	logfd = open( l != NULL ? ucl_object_tostring(l) : "/tmp/poudriered.log",
+	logfd = open(l != NULL ? ucl_object_tostring(l) : "/tmp/poudriered.log",
 	    O_CREAT|O_RDWR|O_TRUNC,0644);
 	if (logfd == -1)
 		logfd = open("/dev/null", O_RDWR);
@@ -465,7 +466,8 @@ client_exec(struct client *cl)
 	struct ucl_parser *p;
 	/* unpack the command */
 	p = ucl_parser_new(UCL_PARSER_KEY_LOWERCASE);
-	if (!ucl_parser_add_chunk(p, (const unsigned char *)sbuf_data(cl->buf), sbuf_len(cl->buf))) {
+	if (!ucl_parser_add_chunk(p, (const unsigned char *)sbuf_data(cl->buf),
+	    sbuf_len(cl->buf))) {
 		send_error(cl, ucl_parser_get_error(p));
 		ucl_parser_free(p);
 		return;
@@ -474,7 +476,8 @@ client_exec(struct client *cl)
 	cmd = ucl_parser_get_object(p);
 	ucl_parser_free(p);
 
-        syslog(LOG_INFO, "uid(%d) sent request: %s", cl->uid, sbuf_data(cl->buf));
+        syslog(LOG_INFO, "uid(%d) sent request: %s", cl->uid,
+	    sbuf_data(cl->buf));
 
 	if ((c = ucl_object_find_key(cmd, "operation"))) {
 		/* The user specified an operation not a command */
@@ -488,16 +491,19 @@ client_exec(struct client *cl)
 					conf = nconf;
 				}
 				send_object(cl,
-				    ucl_object_insert_key(NULL, ucl_object_frombool(nconf != NULL),
-				        "reload", 6, true));
+				    ucl_object_insert_key(NULL,
+				    ucl_object_frombool(nconf != NULL),
+				    "reload", 6, true));
 			} else if (!strcmp(ucl_object_tostring(c), "queue")) {
 				send_object(cl, queue);
 			} else if (!strcmp(ucl_object_tostring(c), "status")) {
 				ucl_object_t *msg = NULL;
 				msg = ucl_object_insert_key(msg,
-				    ucl_object_fromstring(running ? "running" : "idle"),
-				    "state", 5, true);
-				msg = ucl_object_insert_key(msg, running ? running : ucl_object_new(), "data", 4, true);
+				    ucl_object_fromstring(running ? "running" :
+				    "idle"), "state", 5, true);
+				msg = ucl_object_insert_key(msg, running ?
+				    running : ucl_object_new(), "data", 4,
+				    true);
 				send_object(cl, msg);
 			}
 		} else {
@@ -647,19 +653,22 @@ serve(void) {
 		if (nbevq > max_queues) {
 			max_queues += 1024;
 			free(evlist);
-			if ((evlist = malloc(max_queues * sizeof(struct kevent))) == NULL)
+			if ((evlist = malloc(max_queues *
+			    sizeof(struct kevent))) == NULL)
 				errx(EXIT_FAILURE, "Unable to allocate memory");
 		}
 
 		nev = kevent(kq, NULL, 0, evlist, max_queues, NULL);
 		for (i = 0; i < nev; i++) {
 			/* New client */
-			if (evlist[i].udata == NULL && evlist[i].filter == EVFILT_READ) {
+			if (evlist[i].udata == NULL && evlist[i].filter ==
+			    EVFILT_READ) {
 				/* We are in the listener */
 				if ((cl = client_new(evlist[i].ident)) == NULL)
 					continue;
 
-				EV_SET(&ke, cl->fd, EVFILT_READ, EV_ADD, 0, 0, cl);
+				EV_SET(&ke, cl->fd, EVFILT_READ, EV_ADD, 0, 0,
+				    cl);
 				kevent(kq, &ke, 1, NULL, 0, NULL);
 				nbevq++;
 				continue;
@@ -689,9 +698,11 @@ serve(void) {
 				close(fd);
 				ucl_object_unref(running);
 				if (WIFEXITED(status))
-					syslog(LOG_INFO, "Command exited with status: %d", WEXITSTATUS(status));
+					syslog(LOG_INFO, "Command exited with "
+					    "status: %d", WEXITSTATUS(status));
 				else if (WIFSIGNALED(status))
-					syslog(LOG_INFO, "Command killed by signal %d", WTERMSIG(status));
+					syslog(LOG_INFO, "Command killed by "
+					    "signal %d", WTERMSIG(status));
 				else
 					syslog(LOG_INFO, "Command terminated");
 
@@ -752,13 +763,16 @@ main(void)
 	 * a pid, just unlink the old socket if needed. */
 	unlink(ucl_object_tostring(sock_path_o));
 	un.sun_family = AF_UNIX;
-	strlcpy(un.sun_path, ucl_object_tostring(sock_path_o), sizeof(un.sun_path));
-	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, (int[]){1}, sizeof(int)) < 0) {
+	strlcpy(un.sun_path, ucl_object_tostring(sock_path_o),
+	    sizeof(un.sun_path));
+	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, (int[]){1},
+	    sizeof(int)) < 0) {
 		ucl_object_unref(conf);
 		err(EXIT_FAILURE, "setsockopt()");
 	}
 
-	if (bind(server_fd, (struct sockaddr *) &un, sizeof(struct sockaddr_un)) == -1) {
+	if (bind(server_fd, (struct sockaddr *) &un,
+	    sizeof(struct sockaddr_un)) == -1) {
 		ucl_object_unref(conf);
 		err(EXIT_FAILURE, "bind()");
 	}
