@@ -374,7 +374,7 @@ dtcssdir = $(datatablesdir)/css
 dtimagesdir = $(datatablesdir)/images
 dtjsdir = $(datatablesdir)/js
 rcdir = $(sysconfdir)/rc.d
-dist_bin_SCRIPTS = src/bin/poudriere.sh
+dist_bin_SCRIPTS = src/bin/poudriere
 dist_man_MANS = src/bin/poudriere.8
 sysconf_DATA = src/etc/poudriere.conf.sample \
 		src/etc/poudriered.conf.sample

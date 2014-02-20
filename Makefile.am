@@ -13,7 +13,7 @@ dtimagesdir= $(datatablesdir)/images
 dtjsdir= $(datatablesdir)/js
 rcdir= $(sysconfdir)/rc.d
 
-dist_bin_SCRIPTS=	src/bin/poudriere.sh
+dist_bin_SCRIPTS=	src/bin/poudriere
 
 dist_man_MANS=	src/bin/poudriere.8
 
