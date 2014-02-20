@@ -783,6 +783,7 @@ main(void)
 	signal(SIGKILL, close_socket);
 	signal(SIGQUIT, close_socket);
 	signal(SIGTERM, close_socket);
+	signal(SIGPIPE, SIG_IGN);
 
 	if (daemon(0, 0) == -1) {
 		pidfile_remove(pfh);
