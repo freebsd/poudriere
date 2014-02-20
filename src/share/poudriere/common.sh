@@ -299,6 +299,10 @@ buildlog_start() {
 		echo "--End ${var}--"
 		echo ""
 	done
+	echo "--PLIST_SUB--"
+	echo "$(injail env ${PORT_FLAGS} make -C ${portdir} -V PLIST_SUB | tr ' ' '\n' | grep -v '^$')"
+	echo "--End PLIST_SUB--"
+	echo ""
 	echo "--SUB_LIST--"
 	echo "$(injail env ${PORT_FLAGS} make -C ${portdir} -V SUB_LIST | tr ' ' '\n' | grep -v '^$')"
 	echo "--End SUB_LIST--"
