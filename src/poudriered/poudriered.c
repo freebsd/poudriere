@@ -86,6 +86,24 @@ load_conf(void)
 	return (obj);
 }
 
+ucl_object_t *
+reload() {
+	ucl_object_t *nconf;
+
+	nconf = load_conf();
+	if (nconf != NULL) {
+		ucl_object_unref(conf);
+		conf = nconf;
+	}
+
+	return (nconf);
+}
+
+static void
+reload_signal() {
+	(void)reload();
+}
+
 static void
 close_socket(int dummy) {
 	if (server_fd != -1)
@@ -485,11 +503,7 @@ client_exec(struct client *cl)
 			if (!strcmp(ucl_object_tostring(c), "quit")) {
 				close_socket(EXIT_SUCCESS);
 			} else if (!strcmp(ucl_object_tostring(c), "reload")) {
-				ucl_object_t *nconf = load_conf();
-				if (nconf != NULL) {
-					ucl_object_unref(conf);
-					conf = nconf;
-				}
+				ucl_object_t *nconf = reload();
 				send_object(cl,
 				    ucl_object_insert_key(NULL,
 				    ucl_object_frombool(nconf != NULL),
@@ -784,6 +798,7 @@ main(void)
 	signal(SIGQUIT, close_socket);
 	signal(SIGTERM, close_socket);
 	signal(SIGPIPE, SIG_IGN);
+	signal(SIGHUP, reload_signal);
 
 	if (daemon(0, 0) == -1) {
 		pidfile_remove(pfh);

@@ -23,6 +23,7 @@ load_rc_config ${name}
 
 pidfile="${poudriered_pidfile}"
 command=/usr/local/bin/poudriered
+extra_commands="reload"
 
 # run service
 run_rc_command "$1"
