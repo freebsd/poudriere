@@ -306,7 +306,7 @@ install_from_svn() {
 	else
 		msg_n "Updating the sources from svn..."
 		${SVN_CMD} upgrade ${JAILMNT}/usr/src 2>/dev/null || :
-		${SVN_CMD} -q update ${JAILMNT}/usr/src || err 1 " fail"
+		${SVN_CMD} -q update -r ${TORELEASE:-head} ${JAILMNT}/usr/src || err 1 " fail"
 		echo " done"
 	fi
 	build_and_install_world
