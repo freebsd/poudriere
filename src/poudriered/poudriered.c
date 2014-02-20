@@ -427,7 +427,7 @@ execute_cmd() {
 	argc = 2;
 	tofree = NULL;
 
-	if (a == NULL) {
+	if (a != NULL) {
 		buf = strdup(ucl_object_tostring(a));
 		tofree = buf;
 		while ((arg = strsep(&buf, "\t \n")) != NULL) {
