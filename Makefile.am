@@ -80,7 +80,7 @@ pkglibexec_PROGRAMS= \
 		     nc \
 		     rename
 
-bin_PROGRAMS=	poudriered
+sbin_PROGRAMS=	poudriered
 noinst_LIBRARIES=	libucl.a
 
 AUTOMAKE_OPTIONS=	subdir-objects

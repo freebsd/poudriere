@@ -22,7 +22,7 @@ load_rc_config ${name}
 : ${poudriered_conf:=/usr/local/etc/${name}.conf}
 
 pidfile="${poudriered_pidfile}"
-command=/usr/local/bin/poudriered
+command=/usr/local/sbin/${name}
 extra_commands="reload"
 
 # run service
