@@ -626,7 +626,9 @@ check_schedules() {
 
 	now_t = time(NULL);
 	now = gmtime(&now_t);
-	o = ucl_object_find_key(conf, "schedule");
+
+	if ((o = ucl_object_find_key(conf, "schedule")) == NULL)
+		return;
 
 	while ((tmp = ucl_iterate_object(o, &it, true))) {
 		when = ucl_object_find_key(tmp, "when");
