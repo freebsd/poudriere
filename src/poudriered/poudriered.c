@@ -290,7 +290,7 @@ is_command_allowed(ucl_object_t *req, struct client *cl, ucl_object_t **ret)
 	if (o != NULL) {
 		it = NULL;
 		while ((tmp = ucl_iterate_object(o, &it, false))) {
-			if (valid_group(o, cl))
+			if (valid_group(tmp, cl))
 				return (true);
 		}
 	}
@@ -299,7 +299,7 @@ is_command_allowed(ucl_object_t *req, struct client *cl, ucl_object_t **ret)
 	if (o != NULL) {
 		it = NULL;
 		while ((tmp = ucl_iterate_object(o, &it, false))) {
-			if (valid_user(o, cl))
+			if (valid_user(tmp, cl))
 				return (true);
 		}
 	}
