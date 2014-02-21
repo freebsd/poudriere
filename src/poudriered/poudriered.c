@@ -476,8 +476,6 @@ append_to_queue(ucl_object_t *cmd)
 	queue = ucl_array_append(queue, cmd);
 	syslog(LOG_INFO, "New command queued");
 
-	process_queue();
-
 	return (true);
 }
 
