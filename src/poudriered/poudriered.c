@@ -794,7 +794,8 @@ main(void)
 		err(EXIT_FAILURE, "bind()");
 	}
 
-	chmod(un.sun_path, 0666);
+	if (chmod(un.sun_path, 0666) != 0)
+		err(EXIT_FAILURE, "chmod(socket)");
 
 	signal(SIGINT, close_socket);
 	signal(SIGKILL, close_socket);
