@@ -444,6 +444,7 @@ execute_cmd() {
 	if ((error = posix_spawn(&pid, PREFIX"/bin/poudriere",
 		&action, NULL, argv, environ)) != 0) {
 		errno = error;
+		close(logfd);
 		warn("Cannot run poudriere");
 		goto done;
 	}
