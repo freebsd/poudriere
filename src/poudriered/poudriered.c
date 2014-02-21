@@ -127,7 +127,8 @@ void
 client_free(struct client *cl)
 {
 	sbuf_delete(cl->buf);
-	close(cl->fd);
+	if (cl->fd != -1)
+		close(cl->fd);
 	free(cl);
 }
 
