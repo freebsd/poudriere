@@ -238,6 +238,8 @@ is_arguments_allowed(ucl_object_t *a, ucl_object_t *cmd, struct client *cl)
 	buf = strdup(ucl_object_tostring(a));
 	tofree = buf;
 	while ((arg = strsep(&buf, "\t \n")) != NULL) {
+		if (*arg == '\0')
+			continue;
 		if (argc > argvl - 2) {
 			argvl += 1024;
 			argv = reallocf(argv, argvl * sizeof(char *));
@@ -432,13 +434,15 @@ execute_cmd() {
 		buf = strdup(ucl_object_tostring(a));
 		tofree = buf;
 		while ((arg = strsep(&buf, "\t \n")) != NULL) {
+			if (*arg == '\0')
+				continue;
 			if (argc > argvl -2 ) {
 				argvl += 1024;
 				argv = reallocf(argv, argvl * sizeof(char *));
 			}
 			argv[argc++] = arg;
 		}
-		argv[argc++] = NULL;
+		argv[argc+1] = NULL;
 	}
 
 	if ((error = posix_spawn(&pid, PREFIX"/bin/poudriere",
