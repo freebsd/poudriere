@@ -2,7 +2,7 @@
 # 
 # Copyright (c) 2010-2013 Baptiste Daroussin <bapt@FreeBSD.org>
 # Copyright (c) 2010-2011 Julien Laffaye <jlaffaye@FreeBSD.org>
-# Copyright (c) 2012-2013 Bryan Drewery <bdrewery@FreeBSD.org>
+# Copyright (c) 2012-2014 Bryan Drewery <bdrewery@FreeBSD.org>
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -906,6 +906,82 @@ do_jail_mounts() {
 	fi
 
 	return 0
+}
+
+# Interactive test mode
+enter_interactive() {
+
+	if [ ${ALL} -ne 0 ]; then
+		msg "(-a) Not entering interactive mode."
+		return 0
+	fi
+
+	print_phase_header "Interactive"
+
+	msg "Installing packages"
+	echo "PACKAGES=/packages" >> ${MASTERMNT}/etc/make.conf
+	echo "127.0.0.1 ${MASTERNAME}" >> ${MASTERMNT}/etc/hosts
+
+	# Skip for testport as it has already installed pkg in the ref jail.
+	if [ ${PKGNG} -eq 1 -a "${0##*/}" != "testport.sh" ]; then
+		# Install pkg-static so full pkg package can install
+		ensure_pkg_installed
+		# Install the selected PKGNG package
+		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
+		    PKG_ADD="/poudriere/pkg-static add" \
+		    make -C \
+		    /usr/ports/$(injail make -f /usr/ports/Mk/bsd.port.mk \
+		    -V PKGNG_ORIGIN) install-package
+	fi
+
+	# Enable all selected ports and their run-depends
+	for port in $(listed_ports); do
+		# Install run-depends since this is an interactive test
+		msg "Installing run-depends for ${port}"
+		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
+		    make -C /usr/ports/${port} run-depends ||
+		    msg "Failed to install ${port} run-depends"
+		msg "Installing ${port}"
+		# Only use PKGENV during install as testport will store
+		# the package in a different place than dependencies
+		injail env USE_PACKAGE_DEPENDS_ONLY=1 ${PKGENV} \
+		    make -C /usr/ports/${port} install-package ||
+		    msg "Failed to install ${port}"
+	done
+
+	# Enable networking
+	jstop
+	jstart 1
+
+	# Create a pkgng repo configuration, and disable FreeBSD
+	if [ ${PKGNG} -eq 1 ]; then
+		msg "Installing local Pkg repository to ${LOCALBASE}/etc/pkg/repos"
+		mkdir -p ${MASTERMNT}${LOCALBASE}/etc/pkg/repos
+		cat > ${MASTERMNT}${LOCALBASE}/etc/pkg/repos/local.conf << EOF
+FreeBSD: {
+	enabled: no
+}
+
+local: {
+	url: "file:///packages",
+	enabled: yes
+}
+EOF
+	fi
+
+	if [ ${INTERACTIVE_MODE} -eq 1 ]; then
+		msg "Entering interactive test mode. Type 'exit' when done."
+		injail env -i TERM=${SAVED_TERM} \
+		    /usr/bin/login -fp root || :
+	elif [ ${INTERACTIVE_MODE} -eq 2 ]; then
+		# XXX: Not tested/supported with bulk yet.
+		msg "Leaving jail ${MASTERNAME} running, mounted at ${MASTERMNT} for interactive run testing"
+		msg "To enter jail: jexec ${MASTERNAME} env -i TERM=\$TERM /usr/bin/login -fp root"
+		msg "To stop jail: poudriere jail -k -j ${MASTERNAME}"
+		CLEANED_UP=1
+		return 0
+	fi
+	print_phase_footer
 }
 
 use_options() {

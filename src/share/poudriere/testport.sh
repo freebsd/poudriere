@@ -2,7 +2,7 @@
 # 
 # Copyright (c) 2010-2013 Baptiste Daroussin <bapt@FreeBSD.org>
 # Copyright (c) 2010-2011 Julien Laffaye <jlaffaye@FreeBSD.org>
-# Copyright (c) 2012-2013 Bryan Drewery <bdrewery@FreeBSD.org>
+# Copyright (c) 2012-2014 Bryan Drewery <bdrewery@FreeBSD.org>
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -233,54 +233,24 @@ if [ -f ${MASTERMNT}/tmp/pkgs/${PKGNAME}.${PKG_EXT} ]; then
 	injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT} || :
 fi
 
-# Interactive test mode
-if [ $INTERACTIVE_MODE -gt 0 ]; then
-	print_phase_header "Interactive"
-
+if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 	# Stop the tee process and stop redirecting stdout so that
 	# the terminal can be properly used in the jail
 	log_stop
 
-	msg "Installing run-depends"
-	# Install run-depends since this is an interactive test
-	echo "PACKAGES=/packages" >> ${MASTERMNT}/etc/make.conf
-	echo "127.0.0.1 ${MASTERNAME}" >> ${MASTERMNT}/etc/hosts
-	injail make -C /usr/ports/${ORIGIN} run-depends ||
-		msg "Failed to install RUN_DEPENDS"
+	# Update LISTPORTS so enter_interactive only installs the built port
+	# via listed_ports()
+	LISTPORTS="${ORIGIN}"
+	enter_interactive
 
-	# Enable networking
-	jstop
-	jstart 1
-
-	# Create a pkgng repo configuration, and disable FreeBSD
-	if [ ${PKGNG} -eq 1 ]; then
-		msg "Installing local Pkg repository to ${LOCALBASE}/etc/pkg/repos"
-		mkdir -p ${MASTERMNT}${LOCALBASE}/etc/pkg/repos
-		cat > ${MASTERMNT}${LOCALBASE}/etc/pkg/repos/local.conf << EOF
-FreeBSD: {
-	enabled: no
-}
-
-local: {
-	url: "file:///packages",
-	enabled: yes
-}
-EOF
-	fi
-
-	if [ $INTERACTIVE_MODE -eq 1 ]; then
-		msg "Entering interactive test mode. Type 'exit' when done."
-		injail env -i TERM=${SAVED_TERM} \
-			/usr/bin/login -fp root
-		[ -z "${failed_phase}" ] || err 1 "Build failed in phase: ${failed_phase}"
-	elif [ $INTERACTIVE_MODE -eq 2 ]; then
-		msg "Leaving jail ${MASTERNAME} running, mounted at ${MASTERMNT} for interactive run testing"
-		msg "To enter jail: jexec ${MASTERNAME} env -i TERM=\$TERM /usr/bin/login -fp root"
-		msg "To stop jail: poudriere jail -k -j ${MASTERNAME}"
-		CLEANED_UP=1
+	if [ ${INTERACTIVE_MODE} -eq 1 ]; then
+		# Since failure was skipped earlier, fail now after leaving
+		# jail.
+		[ -z "${failed_phase}" ] ||
+		    err 1 "Build failed in phase: ${failed_phase}"
+	elif [ ${INTERACTIVE_MODE} -eq 2 ]; then
 		exit 0
 	fi
-	print_phase_footer
 fi
 
 msg "Cleaning up"

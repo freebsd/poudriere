@@ -1,7 +1,7 @@
 #!/bin/sh
 # 
 # Copyright (c) 2011-2013 Baptiste Daroussin <bapt@FreeBSD.org>
-# Copyright (c) 2012-2013 Bryan Drewery <bdrewery@FreeBSD.org>
+# Copyright (c) 2012-2014 Bryan Drewery <bdrewery@FreeBSD.org>
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,10 @@ Options:
     -c          -- Clean all the previously built binary packages
     -C          -- Clean only the packages listed on the command line or
                    -f file
+    -i          -- Interactive mode. Enter jail for interactive testing and
+                   automatically cleanup when done.
+    -I          -- Advanced Interactive mode. Leaves jail running with ports
+                   installed after test.
     -n          -- Dry-run. Show what will be done, but do not build
                    any packages.
     -R          -- Clean RESTRICTED packages after building
@@ -79,11 +83,12 @@ CLEAN_LISTED=0
 DRY_RUN=0
 ALL=0
 BUILD_REPO=1
+INTERACTIVE_MODE=0
 . ${SCRIPTPREFIX}/common.sh
 
 [ $# -eq 0 ] && usage
 
-while getopts "B:f:j:J:CcnNp:RFtrTsvwz:a" FLAG; do
+while getopts "B:iIf:j:J:CcnNp:RFtrTsvwz:a" FLAG; do
 	case "${FLAG}" in
 		B)
 			BUILDNAME="${OPTARG}"
@@ -103,6 +108,12 @@ while getopts "B:f:j:J:CcnNp:RFtrTsvwz:a" FLAG; do
 			;;
 		C)
 			CLEAN_LISTED=1
+			;;
+		i)
+			INTERACTIVE_MODE=1
+			;;
+		I)
+			INTERACTIVE_MODE=2
 			;;
 		n)
 			[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] ||
@@ -260,7 +271,6 @@ fi
 [ ${BUILD_REPO} -eq 1 ] && build_repo
 
 commit_packages
-cleanup
 
 if [ $nbbuilt -gt 0 ]; then
 	msg_n "Built ports: "
@@ -283,6 +293,10 @@ if [ $nbskipped -gt 0 ]; then
 	echo ""
 fi
 run_hook bulk done ${nbbuilt} ${nbfailed} ${nbignored} ${nbskipped}
+
+[ ${INTERACTIVE_MODE} -gt 0 ] && enter_interactive
+cleanup
+
 msg "[${MASTERNAME}] $nbbuilt packages built, $nbfailed failures, $nbignored ignored, $nbskipped skipped"
 show_log_info
 

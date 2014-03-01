@@ -157,6 +157,29 @@ The optional second
 .Ar number
 is the number of jobs used for the steps before the build, they are more IO
 bound than CPU bound, so you may want to use a different number.
+.It Fl i
+Interactive mode.
+Enter jail for interactive testing and automatically cleanup when done.
+A local
+.Xr pkg.conf 5
+repository configuration will be installed to
+.Pa LOCALBASE/etc/pkg/repos/local.conf
+so that
+.Xr pkg 8
+can be used with any existing packages built for the jail.
+The FreeBSD repository will be disabled by default.
+.It Fl I
+Advanced Interactive mode.
+Leaves jail running with ports installed after test.
+When done with the jail you will need to manually shut it down:
+.Dl "poudriere jail -k -j JAILNAME" .
+As with
+.Fl i
+this will install a
+.Xr pkg.conf 5
+file for
+.Xr pkg 8
+usage.
 .It Fl n
 Dry run. Show what woud be done, but do not actually build or delete any
 packages.
