@@ -28,6 +28,7 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
 </verbatim>
   *  testport -n should probably become default, or we make a serious effort to cleanup known bad framework or mark them special in poudriere (python,ruby,etc)
   *  testport -I gives wrong msg (needs -jpz): ====>> To stop jail: poudriere jail -k -j exp-91amd64-commit-test
+  *  Incorrect dependency/option rebuilding: [https://forums.freebsd.org/viewtopic.php?f=3&t=44963]
 
 <h2>3.1</h2>
   *  Allow dependency calculation to optionally not exit on first failure. Complex as errors come from many places, reporting all errors at once may be even more complex. (bulk -k)
