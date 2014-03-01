@@ -60,6 +60,7 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
   *  <em>build_pkg/em>: Ports which fail to cleanup (some race where rm -rf dir/ results in "directory not empty" warnings) will cause a jail to fail to cleanup in next build and result in a crashed builder. Ignoring cleanup is not an option as we must rollback the jail on startup to avoid ports affecting later builds. Killing the jail and all processes in it may be enough to fix this. Though the code should work as is now, there seems to be a race or bug with ref counting vnodes. Not tmpfs-specific.
   *  <em>build_pkg</em> crashing near end and not cleaning up the current build from the queue will later end up with a "Stuck queue bug" because the build was lost and later ports think they still need to build it, but it's not in the queue itself.
   *  Fetch retrying is critical. A major port failing to fetch due to intermittent issues leads to the whole tree being skipped. This probably should be fixed in <strong>Mk/bsd.port.mk</strong> as currently <em>make checksum</em> does not retry to fetch on download failure, only checksum failure.
+  *  If poudriere crashes it can leave behind its <em>ref</em> jail which confuses <strong>poudriere status</strong> into thinking a build is still running. This is problematic for automated builds.
 
 <h3>Poudriered</h3>
 
