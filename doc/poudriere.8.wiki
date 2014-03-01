@@ -339,15 +339,15 @@ Run make config for the given port.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;i</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Interactive mode. Enter jail for interactive testing and automatically cleanup when done. The <span class="env">PACKAGESITE</span> environment variable will be set so that <a class="link-man">pkg(8)</a> will be able to be used with any existing packages built for the jail.</dd>
+Interactive mode. Enter jail for interactive testing and automatically cleanup when done. A local <a class="link-man">pkg.conf(5)</a> repository configuration will be installed to <i class="file">LOCALBASE/etc/pkg/repos/local.conf</i> so that <a class="link-man">pkg(8)</a> can be used with any existing packages built for the jail. The FreeBSD repository will be disabled by default.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;I</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
 Advanced Interactive mode. Leaves jail running with port installed after test. When done with the jail you will need to manually shut it down:<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
 <div class="display">
-<code class="lit">poudriere jail -k -j JAILNAME</code></div>
+<code class="lit">poudriere jail -k -j JAILNAME.</code></div>
 </blockquote>
-</dd>
+As with <b class="flag">&#45;i</b> this will install a <a class="link-man">pkg.conf(5)</a> file for <a class="link-man">pkg(8)</a> usage.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;j</b> <i class="arg">name</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
@@ -767,7 +767,7 @@ Be also careful to not begin the name of the jail by a number if you are not in 
 <tbody>
 <tr>
 <td class="foot-date">
-February 18, 2014</td>
+March 1, 2014</td>
 <td class="foot-os" align="right">
 FreeBSD 9.1</td>
 </tr>
