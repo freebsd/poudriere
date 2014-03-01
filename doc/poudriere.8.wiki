@@ -129,6 +129,18 @@ Run the bulk build on the jail named <i class="arg">name</i>.</dd>
 <dd class="list-tag" style="margin-left: 11.00ex;">
 This argument specifies how many <i class="arg">number</i> jobs will run in parallel for a bulk build. The optional second <i class="arg">number</i> is the number of jobs used for the steps before the build, they are more IO bound than CPU bound, so you may want to use a different number.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;i</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Interactive mode. Enter jail for interactive testing and automatically cleanup when done. A local <a class="link-man">pkg.conf(5)</a> repository configuration will be installed to <i class="file">LOCALBASE/etc/pkg/repos/local.conf</i> so that <a class="link-man">pkg(8)</a> can be used with any existing packages built for the jail. The FreeBSD repository will be disabled by default.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;I</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Advanced Interactive mode. Leaves jail running with ports installed after test. When done with the jail you will need to manually shut it down:<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">poudriere jail -k -j JAILNAME.</code></div>
+</blockquote>
+As with <b class="flag">&#45;i</b> this will install a <a class="link-man">pkg.conf(5)</a> file for <a class="link-man">pkg(8)</a> usage.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;n</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
 Dry run. Show what woud be done, but do not actually build or delete any packages.</dd>
@@ -769,7 +781,7 @@ Be also careful to not begin the name of the jail by a number if you are not in 
 <td class="foot-date">
 March 1, 2014</td>
 <td class="foot-os" align="right">
-FreeBSD 9.1</td>
+FreeBSD 11.0</td>
 </tr>
 </tbody>
 </table>
