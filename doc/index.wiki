@@ -77,6 +77,11 @@ and clone the repo:
 
 There is also a git mirror available at https://github.com/bdrewery/poudriere
 
+<h2>Known Issues</h2>
+
+  *  [/reportlist|Tickets]
+  *  [./todo.wiki|TODO]
+
 <h2>Contributing</h2>
 
 Any of these options are available for contributing:
