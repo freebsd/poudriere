@@ -252,10 +252,26 @@ if [ $INTERACTIVE_MODE -gt 0 ]; then
 	jstop
 	jstart 1
 
+	# Create a pkgng repo configuration, and disable FreeBSD
+	if [ ${PKGNG} -eq 1 ]; then
+		msg "Installing local Pkg repository to ${LOCALBASE}/etc/pkg/repos"
+		mkdir -p ${MASTERMNT}${LOCALBASE}/etc/pkg/repos
+		cat > ${MASTERMNT}${LOCALBASE}/etc/pkg/repos/local.conf << EOF
+FreeBSD: {
+	enabled: no
+}
+
+local: {
+	url: "file:///packages",
+	enabled: yes
+}
+EOF
+	fi
+
 	if [ $INTERACTIVE_MODE -eq 1 ]; then
 		msg "Entering interactive test mode. Type 'exit' when done."
 		injail env -i TERM=${SAVED_TERM} \
-			PACKAGESITE="file:///packages" /usr/bin/login -fp root
+			/usr/bin/login -fp root
 		[ -z "${failed_phase}" ] || err 1 "Build failed in phase: ${failed_phase}"
 	elif [ $INTERACTIVE_MODE -eq 2 ]; then
 		msg "Leaving jail ${MASTERNAME} running, mounted at ${MASTERMNT} for interactive run testing"

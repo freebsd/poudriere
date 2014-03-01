@@ -4,7 +4,6 @@
 
 These should be fixed in <strong>trunk</strong> and then merged back to <strong>3.0.x</strong> after enough testing.
 
-  *  testport -i needs local.conf instead of PACKAGESITE.
 <verbatim>
     FreeBSD: { enabled: false }
     local: { url: file:///packages }
