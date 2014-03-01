@@ -1,3 +1,5 @@
+<h1>Todo and Known Issues</h1>
+
 <h2>3.0</h2>
 
 These should be fixed in <strong>trunk</strong> and then merged back to <strong>3.0.x</strong> after enough testing.
