@@ -275,7 +275,7 @@ EOF
 		[ -z "${failed_phase}" ] || err 1 "Build failed in phase: ${failed_phase}"
 	elif [ $INTERACTIVE_MODE -eq 2 ]; then
 		msg "Leaving jail ${MASTERNAME} running, mounted at ${MASTERMNT} for interactive run testing"
-		msg "To enter jail: jexec ${MASTERNAME} /bin/sh"
+		msg "To enter jail: jexec ${MASTERNAME} env -i TERM=\$TERM /usr/bin/login -fp root"
 		msg "To stop jail: poudriere jail -k -j ${MASTERNAME}"
 		CLEANED_UP=1
 		exit 0
