@@ -4,7 +4,7 @@
 
 These should be fixed in <strong>trunk</strong> and then merged back to <strong>3.0.x</strong> after enough testing.
 
-  *  Show strong warning when jail is newer than host
+  *  Show strong sleepy warning when jail is newer than host unless some <em>OPT</em> is set
   *  Refuse to run on 9.1 with ZFS without override like <em>I_AM_READY_FOR_DEADLOCKS</em>
   *  stage-orphan issue: [http://gbpaste.org/omGBx] (@owner root @group root @mode 4555 FILE @owner @group @mode)  (May be fixed by [f08c1158f0])
   *  stage-orphan issue between devel/gettext multimedia/phonon having to do with injail mtree change in [9de071c9ec], see Ticket [940f8cf068]
@@ -29,20 +29,20 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
   *  testport -n should probably become default, or we make a serious effort to cleanup known bad framework or mark them special in poudriere (python,ruby,etc)
   *  testport -I gives wrong msg (needs -jpz): ====>> To stop jail: poudriere jail -k -j exp-91amd64-commit-test
   *  Incorrect dependency/option rebuilding: [https://forums.freebsd.org/viewtopic.php?f=3&t=44963]
+  *  False positive old ver delete seen: ====>> Deleting old version: dovecot-sieve-1.2 0.1.19.txz
+  *  new dependency checking should account for DELETED deps too (might not be an issue)
+  *  options checking needs to account for DELETED options (reported by feld)
 
 <h2>3.1</h2>
   *  Allow dependency calculation to optionally not exit on first failure. Complex as errors come from many places, reporting all errors at once may be even more complex. (bulk -k)
   *  Merge marino's fixes for webui with bdrewery's bootstrap work
-  *  False positive old ver delete seen: ====>> Deleting old version: dovecot-sieve-1.2 0.1.19.txz
   *  convert+import updated processonelog
   *  options needs to be jailed.
   *  <strong>logclean</strong> to cleanup old logs (bdrewery has this started). Note that not easily possible to show "free space" calc due to this involving mostly hard-links.
   *  add hook for ports updating, before/after (status ptname path)
   *  Allow creating jail from existing /usr/src (or other) dir.
   *  Hooks for jail startup/end to be able to customize jail on-demand, see [https://github.com/davehayes/poudriere/commit/721d19562443d4caa61739203139f0da94e0336c]
-  *  new dependency checking should account for DELETED deps too (might not be an issue)
   *  new dependency check should move to <strong>Mk/bsd.port.mk</strong>
-  *  options checking needs to account for DELETED options (reported by feld)
   *  testport with leftovers results in 'crashed'
   *  "soft exit", "exit when idle" mode, SIGUSR1
   *  Merge stage-orphan checking with <em>make check-orphans</em>. Ensure no checks are lost.
