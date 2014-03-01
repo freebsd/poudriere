@@ -114,3 +114,22 @@ poudriered_CFLAGS=	-DPREFIX=\"$(prefix)\" \
 poudriered_LDADD=	libucl.a \
 			-lsbuf \
 			-lutil
+
+.PHONY:	gen-make-wiki
+gen-man-wiki:
+	@if ! which mandoc 2>&1 >/dev/null; then \
+	  echo "Mandoc required, install textproc/mdocml"; \
+	  exit 1; \
+	fi
+	@for man in $(dist_man_MANS); do \
+	  echo "MANDOC doc/$${man##*/}.wiki"; \
+	  ( \
+	    echo "<nowiki>"; \
+	    (mandoc -Thtml $${man} | awk \
+	    '$$1 == "<body>" { seenbody=1; next; }; \
+	     $$1 == "</body>" { seenbody=0; }; \
+	     seenbody == 1 { print };'\
+	    ); \
+	    echo "</nowiki>"; \
+	  ) > doc/$${man##*/}.wiki; \
+	done
