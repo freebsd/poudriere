@@ -1,0 +1,777 @@
+<nowiki>
+<div class="mandoc">
+<table summary="Document Header" class="head" width="100%">
+<col width="30%">
+<col width="30%">
+<col width="30%">
+<tbody>
+<tr>
+<td class="head-ltitle">
+POUDRIERE(8)</td>
+<td class="head-vol" align="center">
+FreeBSD System Manager's Manual</td>
+<td class="head-rtitle" align="right">
+POUDRIERE(8)</td>
+</tr>
+</tbody>
+</table>
+<div class="section">
+<h1 id="x4e414d45">NAME</h1> <b class="name">poudriere</b> &#8212; <span class="desc">bulk package builder and port tester</span></div>
+<div class="section">
+<h1 id="x53594e4f50534953">SYNOPSIS</h1><table class="synopsis">
+<col style="width: 9.00ex;">
+<col>
+<tbody>
+<tr>
+<td>
+poudriere</td>
+<td>
+<b class="flag">command</b> <b class="flag">subcommand</b> &#91;<span class="opt"><i class="arg">options</i></span>&#93;</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section">
+<h1 id="x4445534352495054494f4e">DESCRIPTION</h1> The <b class="name">poudriere</b> tool is used to build packages from the ports tree. It can also be used to test a single port.</div>
+<div class="section">
+<h1 id="x474c4f42414c204f5054494f4e53">GLOBAL OPTIONS</h1> <b class="name">poudriere</b> accepts a global option:<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;e</b> <i class="arg">etcdir</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Path to the directory where poudriere will find its configuration data. See <i class="link-sec"><a class="link-sec" href="#x46494c4553">FILES</a></i> and <i class="link-sec"><a class="link-sec" href="#x454e5649524f4e4d454e54">ENVIRONMENT</a></i> for more information.</dd>
+</dl>
+</div>
+<div class="section">
+<h1 id="x434f4d4d414e4453">COMMANDS</h1> The first argument to <b class="name">poudriere</b> must be a <b class="flag">command</b> from the following list:<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+bulk</dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This command makes a ready-to-export package tree, and fills it with binary packages built from a given list of ports. During the build, hit ^T to send <span class="define">SIGINFO</span> and get stats and progress back.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+jail</dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This command allows you to manage the jails used by <b class="name">poudriere</b> which are building environments differing by OS version and architecture.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+ports</dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This command allows you to manage different portstrees which will be used by <b class="name">poudriere</b> (create, update and delete portstrees).</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+testport</dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This command, mainly targeted at ports developers, launches a test on a given port (useful before submitting/committing a port).</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+options</dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This command allows to configure the options for a given port</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+distclean</dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This command will cleanup old distfiles</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+pkgclean</dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This command will cleanup old and unwanted packages</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+queue</dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This command allows a non-root user to queue <b class="name">poudriere</b> commands.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+status</dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This command shows status of current and previous builds</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+version</dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Show version of poudriere.</dd>
+</dl>
+</div>
+<div class="section">
+<h1 id="x535542434f4d4d414e4453">SUBCOMMANDS</h1> Here are the list of subcommands and associated options supported by <b class="name">poudriere</b>, sorted by <b class="flag">command</b> order.<div class="subsection">
+<h2 id="x62756c6b">bulk</h2> These subcommands are mutually exclusive.<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;a</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Build all ports in the tree.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;f</b> <i class="arg">file</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Absolute path to a file which contains the list of ports to build. Ports must be specified in the form <i class="arg">category/port</i> and shell-style comments are allowed. Multiple <b class="flag">&#45;f</b> <i class="arg">file</i> arguments may be specified at once.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+cat/port cat/port2 ...</dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+A list of ports can be specified directly.</dd>
+</dl>
+<p>
+See <i class="link-sec"><a class="link-sec" href="#x435553544f4d49534154494f4e">CUSTOMISATION</a></i> to know how to build binary packages with options that differs from defaults.<p>
+Here are the options associated with the <b class="flag">bulk</b> command.<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;B</b> <i class="arg">name</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Specify which buildname to use. By default <i class="arg">YYYY-MM-DD_HH:MM:SS</i> will be used. This can be used to resume a previous build and use the same log and URL paths.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;c</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Clean <span class="emph">all</span> previously built packages and logs.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;C</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Clean only the packages specified on the command line or in in the file given in <b class="flag">&#45;f</b> <i class="arg">file</i></dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;F</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Only fetch from original MASTER_SITES. Skip FreeBSD mirrors.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;j</b> <i class="arg">name</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Run the bulk build on the jail named <i class="arg">name</i>.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;J</b> <i class="arg">number[:number]</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This argument specifies how many <i class="arg">number</i> jobs will run in parallel for a bulk build. The optional second <i class="arg">number</i> is the number of jobs used for the steps before the build, they are more IO bound than CPU bound, so you may want to use a different number.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;n</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Dry run. Show what woud be done, but do not actually build or delete any packages.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;N</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Do not build package repository or INDEX when build is completed.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;p</b> <i class="arg">tree</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This flag specifies on which ports <i class="arg">tree</i> the bulk build will be done.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;R</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Clean RESTRICTED packages after building.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;s</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Skip sanity tests. Sanity tests are made to check if the ports exists, does not have an increased version number, and if the compiled options match the current options from the make.conf files and /var/db/options.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;t</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Add some testing to the specified ports. Add <b class="flag">&#45;r</b> to recursively test all port dependencies as well. Currently uninstalls the port, and disable parallel jobs for make.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;r</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Recursively test all dependencies as well.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;T</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Try building BROKEN ports by defining TRYBROKEN for the build.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;w</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Save WRKDIR on build failure. The WRKDIR will be tarred up into <span class="symb">${POUDRIERE_DATA}/wrkdirs</span>.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;v</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This will show more information during the build. Specify twice to enable debug output.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;z</b> <i class="arg">set</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This specifies which SET to use for the build. See <i class="link-sec"><a class="link-sec" href="#x435553544f4d49534154494f4e">CUSTOMISATION</a></i> for examples of how this is used.</dd>
+</dl>
+</div>
+<div class="subsection">
+<h2 id="x6a61696c">jail</h2> These subcommands are mutually exclusive.<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;c</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Creates a jail.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;d</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Deletes a jail.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;l</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+List all available jails.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;n</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+When combined with <b class="flag">&#45;l</b>, only display jail name.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;s</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Starts a jail.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;k</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Kills a jail (stops it).</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;r</b> <i class="arg">name</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Rename a jail to <i class="arg">name</i>.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;u</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Update a jail.</dd>
+</dl>
+<p>
+Except for <b class="flag">&#45;l</b>, all of the subcommands require the <b class="flag">&#45;j</b> option (see below).<p>
+Here are the options associated with the <b class="flag">jail</b> command.<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;J</b> <i class="arg">number</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This argument specifies how many <i class="arg">number</i> jobs will run in parallel for buildworld.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;q</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Remove the header when <b class="flag">&#45;l</b> is the specified mandatory option. Otherwise, it has no effect.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;j</b> <i class="arg">name</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Specifies the <i class="arg">name</i> of the jail.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;v</b> <i class="arg">version</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Specifies which <i class="arg">version</i> of FreeBSD to use in the jail. If you are using method ftp then the <i class="arg">version</i> should in the form of: 9.0-RELEASE. If you are using method csup then the <i class="arg">version</i> should be in the form of cvs branches: RELENG_9 or . for current. If you are using method svn then the <i class="arg">version</i> should be in the form of svn branches: stable/9 or head for current.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;a</b> <i class="arg">architecture</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Specifies which <i class="arg">architecture</i> of FreeBSD to use in the jail. (Default: same as host)</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;m</b> <i class="arg">method</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Specifies which <i class="arg">method</i> to use to create the jail. Can be csup, svn{,+http,+https,+file,+ssh), ftp, allbsd, or url= (Default: ftp). When using url=, specify the URL to the distributions. Any URL supported by <a class="link-man">fetch(1)</a> can be used; for example:<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">poudriere jail -c -j 100amd64 -a amd64 -v 10.0 -m url=file:///mirror/10.0</code></div>
+</blockquote>
+</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;f</b> <i class="arg">filesystem</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Specifies the <i class="arg">filesystem</i> name (${ZPOOL}/jails/filesystem).</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;M</b> <i class="arg">mountpoint</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Gives an alternative <i class="arg">mountpoint</i> when creating jail.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;p</b> <i class="arg">name</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This specifies which port tree to start/stop the jail with.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;t</b> <i class="arg">version</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+instead of upgrading to the latest security fix of the jail version, you can jump to the new specified <i class="arg">version</i>.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;z</b> <i class="arg">set</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This specifies which SET to start/stop the jail with.</dd>
+</dl>
+</div>
+<div class="subsection">
+<h2 id="x706f727473">ports</h2> These subcommands are mutually exclusive.<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;c</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Creates a ports tree.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;d</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Deletes a ports tree.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;u</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Updates a ports tree.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;l</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+List all available ports trees.</dd>
+</dl>
+<p>
+Except for <b class="flag">&#45;l</b>, all of the subcommands require the <b class="flag">&#45;p</b> switch (see below).<p>
+Here are the options associated with the <b class="flag">ports</b> command.<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;q</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Remove the header when <b class="flag">&#45;l</b> is the specified subcommand. Otherwise, it has no effect.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;p</b> <i class="arg">name</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Specifies the <i class="arg">name</i> of the ports tree to use.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;F</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+When used with <b class="flag">&#45;c</b>, only create the needed ZFS file systems and directories, but do not populate them.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;f</b> <i class="arg">filesystem</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Specifies the <i class="arg">filesystem</i> name (${ZPOOL}/jails/filesystem).</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;M</b> <i class="arg">mountpoint</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Gives an alternative <i class="arg">mountpoint</i> when creating ports tree.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;m</b> <i class="arg">method</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Specifies which <i class="arg">method</i> to use to create the ports tree. Could be portsnap, git, svn{,+http,+https,+file,+ssh} (Default: portsnap).</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;v</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Show more verbose output.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;B</b> <i class="arg">branch</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Specifies which <i class="arg">branch</i> to checkout when using the svn method. (Default: head)</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;k</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+When used with <b class="flag">&#45;d</b>, only unregister the ports tree with out removing the files.</dd>
+</dl>
+</div>
+<div class="subsection">
+<h2 id="x74657374706f7274">testport</h2> The specified port will be tested for build and packaging problems. All missing dependencies will first be built in parallel. <span class="env">TRYBROKEN=yes</span> is automatically defined in the environment to test ports marked as <span class="env">BROKEN</span>.<p>
+There is only 1 subcommand for the testport command.<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;o</b> <i class="arg">origin</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Specifies an origin in the ports tree</dd>
+</dl>
+<p>
+Here are the options associated with the <b class="flag">testport</b> command.<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;c</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Run make config for the given port.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;i</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Interactive mode. Enter jail for interactive testing and automatically cleanup when done. The <span class="env">PACKAGESITE</span> environment variable will be set so that <a class="link-man">pkg(8)</a> will be able to be used with any existing packages built for the jail.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;I</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Advanced Interactive mode. Leaves jail running with port installed after test. When done with the jail you will need to manually shut it down:<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">poudriere jail -k -j JAILNAME</code></div>
+</blockquote>
+</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;j</b> <i class="arg">name</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Runs only inside the jail named <i class="arg">name</i>.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;J</b> <i class="arg">number</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This argument specifies how many <i class="arg">number</i> jobs will run in parallel for building the dependencies.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;n</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Do not use custom prefix.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;N</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Do not build package repository or INDEX when build of dependencies is completed.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;p</b> <i class="arg">tree</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Specifies which ports <i class="arg">tree</i> to use.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;s</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Skip sanity tests. Sanity tests are made to check if the ports exists, does not have an increased version number, and if the compiled options match the current options from the make.conf files and /var/db/options.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;v</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This will show more information during the build. Specify twice to enable debug output.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;z</b> <i class="arg">set</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This specifies which SET to use for the build. See <i class="link-sec"><a class="link-sec" href="#x435553544f4d49534154494f4e">CUSTOMISATION</a></i> for examples of how this is used.</dd>
+</dl>
+</div>
+<div class="subsection">
+<h2 id="x64697374636c65616e">distclean</h2> This command accepts the following options:<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;J</b> <i class="arg">number</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This argument specifies how many <i class="arg">number</i> jobs will run in parallel for gathering distfile information.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;n</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Dry run, do not actually delete anything.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;p</b> <i class="arg">tree</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Specifies which ports <i class="arg">tree</i> to use.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;y</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Assume yes, do not confirm and just delete the files.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;v</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This will show more information during the build. Specify twice to enable debug output.</dd>
+</dl>
+</div>
+<div class="subsection">
+<h2 id="x706b67636c65616e">pkgclean</h2> This command is used to delete all packages not specified to build.<p>
+These subcommands are mutually exclusive.<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;a</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Keep all ports in the tree.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;f</b> <i class="arg">file</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Absolute path to a file which contains the list of ports to keep. Ports must be specified in the form <i class="arg">category/port</i> and shell-style comments are allowed. Multiple <b class="flag">&#45;f</b> <i class="arg">file</i> arguments may be specified at once.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+cat/port cat/port2 ...</dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+A list of ports can be specified directly.</dd>
+</dl>
+<p>
+Here are the options associated with the <b class="flag">pkgclean</b> command. This command accepts the following options:<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;j</b> <i class="arg">name</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Jail to use for the packages to inspect.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;J</b> <i class="arg">number</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This argument specifies how many <i class="arg">number</i> jobs will run in parallel for gathering package information.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;n</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Dry run, do not actually delete anything.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;N</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Do not build package repository or INDEX when done cleaning.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;p</b> <i class="arg">tree</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Specifies which ports <i class="arg">tree</i> to use.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;R</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Also clean restricted packages.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;y</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Assume yes, do not confirm and just delete the files.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;v</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This will show more information during the build. Specify twice to enable debug output.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;z</b> <i class="arg">set</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+SET to use for the packages to inspect.</dd>
+</dl>
+</div>
+<div class="subsection">
+<h2 id="x6f7074696f6e73">options</h2> This command accepts the following parameters:<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;f</b> <i class="arg">file</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Absolute path to a file which contains the list of ports to configure. Ports must be specified in the form <i class="arg">category/port</i> and shell-style comments are allowed.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+cat/port cat/port2 ...</dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+A list of ports can be specified directly.</dd>
+</dl>
+<p>
+This command accepts the following options:<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;c</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Use 'config' target, which will always show the dialog for the given ports.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;C</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Use 'config-conditional' target, which will only bring up the dialog on new options for the given ports. (This is the default)</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;j</b> <i class="arg">jailname</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+If given, configure the options only for the given jail.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;p</b> <i class="arg">portstree</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Run the configuration inside the given ports tree (by default uses default)</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;n</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Do not be recursive</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;r</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Remove port options instead of configuring them</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;s</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Show port options instead of configuring them</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;z</b> <i class="arg">set</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This specifies which SET to use for the build. See <i class="link-sec"><a class="link-sec" href="#x435553544f4d49534154494f4e">CUSTOMISATION</a></i> for examples of how this is used.</dd>
+</dl>
+<p>
+The <b class="flag">options</b> subcommand can also take the list of ports to configure thought command line arguments instead of the using a file list.</div>
+<div class="subsection">
+<h2 id="x7175657565">queue</h2> This command takes a <b class="name">poudriere</b> command in argument.<p>
+There are no options associated with the <b class="flag">queue</b> command.</div>
+<div class="subsection">
+<h2 id="x737461747573">status</h2> This command accepts the following options:<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;j</b> <i class="arg">name</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Specifies the <i class="arg">name</i> of the jail to view the status of.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;p</b> <i class="arg">tree</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This flag specifies which ports <i class="arg">tree</i> the build is running on when using <b class="flag">&#45;j</b></dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;H</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Do not print headers and separate fields by a single tab instead of arbitrary white space.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;z</b> <i class="arg">set</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+This specifies which SET the build is running on when using <b class="flag">&#45;j</b></dd>
+</dl>
+</div>
+</div>
+<div class="section">
+<h1 id="x454e5649524f4e4d454e54">ENVIRONMENT</h1> The <b class="name">poudriere</b> command may use the following environment variable:<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<i class="file">POUDRIERE_ETC</i></dt>
+<dd class="list-tag" style="margin-left: 13.00ex;">
+If specified, the path to poudriere's config directory. Defaults to /usr/local/etc.</dd>
+</dl>
+</div>
+<div class="section">
+<h1 id="x46494c4553">FILES</h1><dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 0.00em;">
+<i class="file">POUDRIERE_ETC/poudriere.conf</i></dt>
+<dd class="list-tag" style="margin-left: 32.00ex;">
+See self-documented <i class="arg">/usr/local/etc/poudriere.conf.sample</i> for example.</dd>
+<dt class="list-tag" style="margin-top: 0.00em;">
+<i class="file">POUDRIERE_ETC/poudriere.d</i></dt>
+<dd class="list-tag" style="margin-left: 32.00ex;">
+This directory contains <i class="arg">make.conf</i> files for your different jails.</dd>
+</dl>
+</div>
+<div class="section">
+<h1 id="x4558495420535441545553">EXIT STATUS</h1> The <b class="utility">poudriere</b> utility exits 0 on success, and &gt;0 if an error occurs.</div>
+<div class="section">
+<h1 id="x4558414d504c4553">EXAMPLES</h1><div class="subsection">
+<h2 id="x62756c6b206275696c64206f662062696e617279207061636b61676573">bulk build of binary packages</h2> This first example provides a guide on how to use <b class="name">poudriere</b> for bulk build packages.<p>
+&#91;Prepare infrastructure&#93;<p>
+First you have to create a jail, which will hold all the building infrastructure needs.<p>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">poudriere jail -c -v 8.2-RELEASE -a amd64 -j 82amd64</code></div>
+</blockquote>
+<p>
+A jail will take approximately 3GB of space.<p>
+Of course you can use another version of FreeBSD, regarless on what version you are running. amd64 users can choose i386 arch like in this example:<p>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">poudriere jail -c -v 8.1-RELEASE -a i386 -j 81i386</code></div>
+</blockquote>
+<p>
+This command will fetch and install a minimal jail, small (~400MB) so you can create a lot of them. It will install the jail under the pool you have chosen, at poudriere/jailname.<p>
+You also need to have at least one ports tree to build packages from it, so let us take the default configuration by creating a ports tree.<p>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">poudriere ports -c</code></div>
+</blockquote>
+<p>
+A ports tree will take approximately 4GB of space.<p>
+&#91;Specify a list of ports you want to build&#93;<p>
+Create a flat text file in which you put the ports you want to see built by poudriere.<p>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">echo 'sysutils/screen' &gt; ~/pkglist</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">echo 'editors/vim' &gt;&gt; ~/pkglist</code></div>
+</blockquote>
+<p>
+Any line starting with the hash sign will be treated as a comment.<p>
+&#91;Launch the bulk build&#93;<p>
+Now you can launch the bulk build. You can specify to build for only one arch/version ; by default it will make the bulk build on all the jails created by poudriere.<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">poudriere bulk -f ~/pkglist -j 81i386</code></div>
+</blockquote>
+<p>
+&#91;Find your packages&#93;<p>
+Once the bulk build is over, you can meet your shiny new packages here:<p>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/poudriere_data/packages/81i386</code></div>
+</blockquote>
+<p>
+with 81i386 as the name of the jail.</div>
+<div class="subsection">
+<h2 id="x7465737420612073696e676c6520706f7274">test a single port</h2> This second example show how to use <b class="name">poudriere</b> for a single port.<p>
+Let's take the example of building a single port;<p>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">poudriere testport -o category/port -j myjail</code></div>
+</blockquote>
+<p>
+all the tests will be done in myjail.<p>
+It starts the jail, then mount the ports tree (nullfs), then mounts the package dir (pourdriere_data/packages/&lt;jailname&gt;-&lt;tree&gt;-&lt;setname&gt;), then it mounts the ~/ports-cvs/mybeautifulporttotest (nullfs) it builds all the dependencies (except runtime ones) and log it to poudriere_data/logs/testport/jailname/default/mybeautifulporttotest.log).<p>
+If packages for the dependencies already exists it will use them<p>
+When all the dependencies are built, packages for them are created so that next time it will be faster.<p>
+All the dependency phase is done with PREFIX == LOCALBASE.<p>
+After that it will build the port itself with LOCALBASE != PREFIX and log the build to poudriere_data/logs/testport/jailname/default/mybeautifulporttotest.log<p>
+It will try to: install it, create a package from it, deinstall it, check for cruft left behind and propose the line to add to pkg-plist if needed.<p>
+It is very easy to extend it so that we can easily add other tests if wanted.</div>
+</div>
+<div class="section">
+<h1 id="x435553544f4d49534154494f4e">CUSTOMISATION</h1> For bulk building, you can customize binary packages produced by <b class="name">poudriere</b> by changing build options port by port, and you can also specify building directives in a make.conf file.<div class="subsection">
+<h2 id="x437573746f6d206275696c64206f7074696f6e73">Custom build options</h2> Before building a package, <b class="name">poudriere</b> can mount a directory containing option files if available. <b class="name">poudriere</b> will check for any of these directories in this order:<p>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-&lt;tree&gt;-&lt;setname&gt;-options</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-&lt;setname&gt;-options</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-&lt;tree&gt;-options</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;setname&gt;-options</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;tree&gt;-options</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-options</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/options</code></div>
+</blockquote>
+<p>
+If a directory with this name exists, it is null-mounted into the /var/db/ports/ directory of the jail, thus allowing to build package with custom OPTIONS.<p>
+The <b class="flag">options</b> subcommand can be used to easily configure options in the correct directory.<p>
+This directory has the usual layout for options: it contains one directory per port (the name of the port) containing an 'options' file with lines similar to:<p>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">WITH_FOO=true</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">WITHOUT_BAR=true</code></div>
+</blockquote>
+<p>
+As a starter, you may want to copy an existing /var/db/ports/ to /usr/local/etc/poudriere.d/options.</div>
+<div class="subsection">
+<h2 id="x426c61636b6c69737420706f727473">Blacklist ports</h2> You can also specify a blacklist which will disallow the lists port origins from building on the matched jail. Any of the following are allowed and will all be used in the order shown:<p>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/blacklist</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;setname&gt;-blacklist</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;tree&gt;-blacklist</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-blacklist</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-&lt;tree&gt;-blacklist</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-&lt;setname&gt;-blacklist</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-&lt;tree&gt;-&lt;setname&gt;-blacklist</code></div>
+</blockquote>
+</div>
+<div class="subsection">
+<h2 id="x437265617465206f7074696f6e616c206d616b652e636f6e66">Create optional make.conf</h2> You can also specify a global make.conf which will be used for all the jails. Any of the following are allowed and will all be used in the order shown:<p>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/make.conf</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;setname&gt;-make.conf</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;tree&gt;-make.conf</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-make.conf</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-&lt;tree&gt;-make.conf</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-&lt;setname&gt;-make.conf</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-&lt;tree&gt;-&lt;setname&gt;-make.conf</code></div>
+</blockquote>
+</div>
+<div class="subsection">
+<h2 id="x437265617465206f7074696f6e616c207372632e636f6e66">Create optional src.conf</h2> You can also specify a global src.conf which will be used for building jails with the <b class="flag">jail -c</b> subcommand. Any of the following are allowed and will all be used in the order shown:<p>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/src.conf</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-src.conf</code></div>
+</blockquote>
+</div>
+</div>
+<div class="section">
+<h1 id="x434f4d5041544942494c495459">COMPATIBILITY</h1> The <b class="name">poudriere</b> command must be used on a recent version of FreeBSD, i.e. a version which has ZFS &gt;= v15, and a zpool.</div>
+<div class="section">
+<h1 id="x43415645415453">CAVEATS</h1><div class="subsection">
+<h2 id="x4a61696c6e616d65">Jailname</h2> <b class="flag">&#45;j</b> is the name of the jail which will also be the name of the zfs filesystem.<p>
+Be careful to respects the names supported by jail(8):<p>
+<pre style="margin-left: 0.00ex;" class="lit display">
+    "This is an arbitrary string that identifies a jail (except it 
+     may not contain a '.')"</pre>
+<p>
+Be also careful to not begin the name of the jail by a number if you are not in -stable or current:<p>
+<a class="link-ext" href="http://svn.freebsd.org/viewvc/base?view=revision&amp;revision=209820">http://svn.freebsd.org/viewvc/base?view=revision&amp;revision=209820</a></div>
+</div>
+<div class="section">
+<h1 id="x42554753">BUGS</h1> In case of bugs, feel free to fill<p>
+<a class="link-ext" href="http://fossil.etoilebsd.net/poudriere/reportlist">http://fossil.etoilebsd.net/poudriere/reportlist</a></div>
+<div class="section">
+<h1 id="x415554484f5253">AUTHORS</h1> <span class="author">Baptiste Daroussin</span> &#60;bapt@FreeBSD.org&#62; <span class="author">Bryan Drewery</span> &#60;bdrewery@FreeBSD.org&#62;</div>
+<table summary="Document Footer" class="foot" width="100%">
+<col width="50%">
+<col width="50%">
+<tbody>
+<tr>
+<td class="foot-date">
+February 18, 2014</td>
+<td class="foot-os" align="right">
+FreeBSD 9.1</td>
+</tr>
+</tbody>
+</table>
+</div>
+</nowiki>
