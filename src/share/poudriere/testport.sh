@@ -261,7 +261,7 @@ if [ $INTERACTIVE_MODE -gt 0 ]; then
 		msg "Leaving jail ${MASTERNAME} running, mounted at ${MASTERMNT} for interactive run testing"
 		msg "To enter jail: jexec ${MASTERNAME} /bin/sh"
 		msg "To stop jail: poudriere jail -k -j ${MASTERNAME}"
-		CLEANING_UP=1
+		CLEANED_UP=1
 		exit 0
 	fi
 	print_phase_footer
