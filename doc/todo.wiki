@@ -46,6 +46,7 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
   *  testport with leftovers results in 'crashed'
   *  "soft exit", "exit when idle" mode, SIGUSR1
   *  Merge stage-orphan checking with <em>make check-orphans</em>. Ensure no checks are lost.
+  *  Allow git method for jail
 
 <h3>Stability</h3>
 
