@@ -8,4 +8,4 @@ AC_PROG_RANLIB
 
 AC_CONFIG_FILES(Makefile)
 
-AC_OUTPUT
+AC_OUTPUT([src/etc/rc.d/poudriered])

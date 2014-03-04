@@ -19,10 +19,10 @@ load_rc_config ${name}
 : ${poudriered_enable:=NO}
 : ${poudriered_pidfile:=/var/run/${name}.pid}
 : ${poudriered_socket:=/var/run/${name}.sock}
-: ${poudriered_conf:=/usr/local/etc/${name}.conf}
+: ${poudriered_conf:=@prefix@/etc/${name}.conf}
 
 pidfile="${poudriered_pidfile}"
-command=/usr/local/sbin/${name}
+command=@prefix@/sbin/${name}
 extra_commands="reload"
 
 # run service

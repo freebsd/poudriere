@@ -938,6 +938,8 @@ m4trace:configure.ac:6: -1- m4_pattern_allow([^am__fastdepCC_FALSE$])
 m4trace:configure.ac:6: -1- _AM_SUBST_NOTMAKE([am__fastdepCC_TRUE])
 m4trace:configure.ac:6: -1- _AM_SUBST_NOTMAKE([am__fastdepCC_FALSE])
 m4trace:configure.ac:7: -1- m4_pattern_allow([^RANLIB$])
+m4trace:configure.ac:11: -1- _m4_warn([obsolete], [AC_OUTPUT should be used without arguments.
+You should run autoupdate.], [])
 m4trace:configure.ac:11: -1- m4_pattern_allow([^LIB@&t@OBJS$])
 m4trace:configure.ac:11: -1- m4_pattern_allow([^LTLIBOBJS$])
 m4trace:configure.ac:11: -1- AM_CONDITIONAL([am__EXEEXT], [test -n "$EXEEXT"])

@@ -66,10 +66,6 @@ dist_dtimages_DATA=	src/share/poudriere/html/assets/dataTables/images/back_disab
 			src/share/poudriere/html/assets/dataTables/images/sort_desc.png \
 			src/share/poudriere/html/assets/dataTables/images/sort_desc_disabled.png
 
-src/etc/rc.d/poudriered: src/etc/rc.d/poudriered.in
-	@echo "  SED     " $@;
-	@sed -e 's,/usr/local,$(prefix),g' src/etc/rc.d/poudriered.in > $@
-
 dist_rc_SCRIPTS=	src/etc/rc.d/poudriered
 
 pkglibexec_PROGRAMS= \
