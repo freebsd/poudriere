@@ -1922,6 +1922,9 @@ Try testport with -n to use PREFIX=LOCALBASE"
 					etc/gconf/gconf.xml.defaults/%gconf-tree*.xml) ;;
 					# fc-cache - skip for now
 					/var/db/fontconfig/*) ;;
+					# this leftover has to stay during dbus upgrade
+					# otherwise dbus dies horribly
+					@dirrm\ /var/db/dbus|/var/db/dbus/machine-id) ;;
 					*) echo "${ppath}" >> ${add} ;;
 					esac
 					;;
