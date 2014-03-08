@@ -32,6 +32,7 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
   *  False positive old ver delete seen: ====>> Deleting old version: dovecot-sieve-1.2 0.1.19.txz
   *  new dependency checking should account for DELETED deps too (might not be an issue)
   *  options checking needs to account for DELETED options (reported by feld)
+  *  Document/test portshaker usage
 
 <h2>3.1</h2>
   *  Allow dependency calculation to optionally not exit on first failure. Complex as errors come from many places, reporting all errors at once may be even more complex. (bulk -k)
@@ -79,6 +80,7 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
   *  Main stats landing page
   *  Start building faster, during compute-deps if possible. I.e., <em>ports-mgmt/pkg</em> can build immediately before any dependency checking since it has none. Generalizing this may allow more to build as they are determined to have little dependencies.
   *  Status lacks showing <em>jail -cu</em>
+  *  Speedup dep calculation more. Original idea here was to deteect if ports tree changed and to cache everything. Detecting if the tree changed though is slow with stat(2) all files.
 
 
 <h2>4.0</h2>
