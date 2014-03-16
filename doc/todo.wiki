@@ -47,7 +47,6 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
   *  "soft exit", "exit when idle" mode, SIGUSR1
   *  Merge stage-orphan checking with <em>make check-orphans</em>. Ensure no checks are lost.
   *  Allow git method for jail
-  *  Parse MOVED for -f list
   *  Remove PLIST_SUB magic
 
 <h3>Stability</h3>
