@@ -3047,6 +3047,8 @@ compute_deps() {
 }
 
 listed_ports() {
+	local tell_moved="${1}"
+
 	if [ ${ALL} -eq 1 ]; then
 		PORTSDIR=$(pget ${PTNAME} mnt)
 		[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
@@ -3055,12 +3057,26 @@ listed_ports() {
 		done
 		return 0
 	fi
-	if [ -z "${LISTPORTS}" ]; then
-		[ -n "${LISTPKGS}" ] &&
-			grep -h -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS} | sed 's,/*$,,'
-	else
-		echo ${LISTPORTS} | tr ' ' '\n' | sed 's,/*$,,'
-	fi
+
+	{
+		# -f specified
+		if [ -z "${LISTPORTS}" ]; then
+			[ -n "${LISTPKGS}" ] &&
+			    grep -h -v -E \
+			    '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS} |
+			    sed 's,/*$,,'
+		else
+			# Ports specified on cmdline
+			echo ${LISTPORTS} | tr ' ' '\n' | sed 's,/*$,,'
+		fi
+	} | while read origin; do
+		if check_moved new_origin ${origin}; then
+			[ -n "${tell_moved}" ] && msg \
+			    "MOVED: ${origin} renamed to ${new_origin}" >&2
+			origin=${new_origin}
+		fi
+		echo "${origin}"
+	done
 }
 
 # Port was requested to be built
@@ -3342,7 +3358,7 @@ prepare_ports() {
 
 	:> "${MASTERMNT}/poudriere/port_deps.unsorted"
 	parallel_start
-	for port in $(listed_ports); do
+	for port in $(listed_ports show_moved); do
 		[ -d "${MASTERMNT}/usr/ports/${port}" ] ||
 			err 1 "Invalid port origin listed for build: ${port}"
 		parallel_run compute_deps ${port}
