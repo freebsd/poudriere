@@ -3011,6 +3011,7 @@ fi
 : ${SVN_HOST="svn.FreeBSD.org"}
 : ${GIT_URL="git://github.com/freebsd/freebsd-ports.git"}
 : ${FREEBSD_HOST="http://ftp.FreeBSD.org"}
+: ${SVN_CMD:=$(which svn 2>/dev/null || which svnlite 2>/dev/null)}
 if [ -z "${NO_ZFS}" ]; then
 	: ${ZROOTFS="/poudriere"}
 	case ${ZROOTFS} in
