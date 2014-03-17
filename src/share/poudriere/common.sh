@@ -258,6 +258,8 @@ buildlog_start() {
 	echo "maintained by: $(injail make -C ${portdir} maintainer)"
 	echo "Makefile ident: $(ident ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
 	echo "Poudriere version: ${POUDRIERE_VERSION}"
+	echo "Host OSVERSION: ${HOST_OSVERSION}"
+	echo "Jail OSVERSION: ${JAIL_OSVERSION}"
 	echo
 	if [ ${JAIL_OSVERSION} -gt ${HOST_OSVERSION} ]; then
 		echo
