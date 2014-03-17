@@ -3682,6 +3682,13 @@ if [ -z "${NO_ZFS}" ]; then
 	esac
 fi
 
+if [ -z "${NO_ZFS}" -a -z "${ZFS_DEADLOCK_IGNORED}" ]; then
+	ZOSVERSION=$(awk '/\#define __FreeBSD_version/ { print $3 }' /usr/include/sys/param.h)
+	[ ${ZOSVERSION} -gt 900000 -a ${ZOSVERSION} -le 901502 ] && err 1 \
+	    "FreeBSD 9.1 ZFS is not safe. It is known to deadlock and cause system hang. Either upgrade the host or set ZFS_DEADLOCK_IGNORED=yes in poudriere.conf"
+	unset ZOSVERSION
+fi
+
 [ -n "${MFSSIZE}" -a -n "${USE_TMPFS}" ] && err 1 "You can't use both tmpfs and mdmfs"
 
 for val in ${USE_TMPFS}; do

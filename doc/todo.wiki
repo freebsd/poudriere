@@ -5,7 +5,6 @@
 These should be fixed in <strong>trunk</strong> and then merged back to <strong>3.0.x</strong> after enough testing.
 
   *  Show strong sleepy warning when jail is newer than host unless some <em>OPT</em> is set
-  *  Refuse to run on 9.1 with ZFS without override like <em>I_AM_READY_FOR_DEADLOCKS</em>
   *  stage-orphan issue: [http://gbpaste.org/omGBx] (@owner root @group root @mode 4555 FILE @owner @group @mode)  (May be fixed by [f08c1158f0])
   *  stage-orphan issue between devel/gettext multimedia/phonon having to do with injail mtree change in [9de071c9ec], see Ticket [940f8cf068]
   *  Possibly a ZFS ports tree issue where the tree is checked out before filesystem created - might have been operator error.
