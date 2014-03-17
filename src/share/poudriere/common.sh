@@ -1533,6 +1533,9 @@ Try testport with -n to use PREFIX=LOCALBASE"
 						esac
 					fi
 					case "${ppath}" in
+					# this leftover has to stay during dbus upgrade
+					# otherwise dbus dies horribly
+					@dirrm\ /var/db/dbus|/var/db/dbus/machine-id) ;;
 					*) echo "${ppath}" >> ${add} ;;
 					esac
 					;;
