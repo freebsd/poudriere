@@ -151,6 +151,10 @@ msg_debug() {
 	msg "DEBUG: $1" >&2
 }
 
+warn() {
+	msg "WARNING: $@" >&2
+}
+
 job_msg() {
 	if [ -n "${MY_JOBID}" ]; then
 		msg "[${MY_JOBID}] $1" >&5
@@ -284,7 +288,19 @@ buildlog_start() {
 	echo "maintained by: $(injail make -C ${portdir} maintainer)"
 	echo "Makefile ident: $(ident ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
 	echo "Poudriere version: ${POUDRIERE_VERSION}"
-	echo ""
+	echo
+	if [ ${JAIL_OSVERSION} -gt ${HOST_OSVERSION} ]; then
+		echo
+		echo
+		echo
+		echo "!!! Jail is newer than host. !!!"
+		echo "!!! This is not supported. !!!"
+		echo "!!! Host kernel must be same or newer than jail. !!!"
+		echo "!!! Expect build failures. !!!"
+		echo
+		echo
+		echo
+	fi
 	echo "---Begin Environment---"
 	injail env ${PKGENV} ${PORT_FLAGS}
 	echo "---End Environment---"
@@ -1245,6 +1261,16 @@ jail_start() {
 	echo "src" >> ${tomnt}/usr/.cpignore
 	echo "poudriere" >> ${tomnt}/.cpignore
 	echo " done"
+
+	JAIL_OSVERSION=$(awk '/\#define __FreeBSD_version/ { print $3 }' "${mnt}/usr/include/sys/param.h")
+
+	if [ ${JAIL_OSVERSION} -gt ${HOST_OSVERSION} ]; then
+		warn "!!! Jail is newer than host. !!!"
+		warn "This is not supported."
+		warn "Host kernel must be same or newer than jail."
+		warn "Expect build failures."
+		sleep 5
+	fi
 
 	msg "Mounting system devices for ${MASTERNAME}"
 	do_jail_mounts ${tomnt} ${arch}
@@ -3682,11 +3708,11 @@ if [ -z "${NO_ZFS}" ]; then
 	esac
 fi
 
+HOST_OSVERSION=$(awk '/\#define __FreeBSD_version/ { print $3 }' /usr/include/sys/param.h)
 if [ -z "${NO_ZFS}" -a -z "${ZFS_DEADLOCK_IGNORED}" ]; then
-	ZOSVERSION=$(awk '/\#define __FreeBSD_version/ { print $3 }' /usr/include/sys/param.h)
-	[ ${ZOSVERSION} -gt 900000 -a ${ZOSVERSION} -le 901502 ] && err 1 \
+	[ ${HOST_OSVERSION} -gt 900000 -a \
+	    ${HOST_OSVERSION} -le 901502 ] && err 1 \
 	    "FreeBSD 9.1 ZFS is not safe. It is known to deadlock and cause system hang. Either upgrade the host or set ZFS_DEADLOCK_IGNORED=yes in poudriere.conf"
-	unset ZOSVERSION
 fi
 
 [ -n "${MFSSIZE}" -a -n "${USE_TMPFS}" ] && err 1 "You can't use both tmpfs and mdmfs"
