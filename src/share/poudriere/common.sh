@@ -293,7 +293,7 @@ buildlog_start() {
 		echo
 		echo
 		echo
-		echo "!!! Jail is newer than host. !!!"
+		echo "!!! Jail is newer than host. (Jail: ${JAIL_OSVERSION}, Host: ${HOST_OSVERSION}) !!!"
 		echo "!!! This is not supported. !!!"
 		echo "!!! Host kernel must be same or newer than jail. !!!"
 		echo "!!! Expect build failures. !!!"
@@ -1265,7 +1265,7 @@ jail_start() {
 	JAIL_OSVERSION=$(awk '/\#define __FreeBSD_version/ { print $3 }' "${mnt}/usr/include/sys/param.h")
 
 	if [ ${JAIL_OSVERSION} -gt ${HOST_OSVERSION} ]; then
-		warn "!!! Jail is newer than host. !!!"
+		warn "!!! Jail is newer than host. (Jail: ${JAIL_OSVERSION}, Host: ${HOST_OSVERSION}) !!!"
 		warn "This is not supported."
 		warn "Host kernel must be same or newer than jail."
 		warn "Expect build failures."
