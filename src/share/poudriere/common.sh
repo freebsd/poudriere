@@ -1969,7 +1969,6 @@ Try testport with -n to use PREFIX=LOCALBASE"
 					fi
 					;;
 				M)
-					[ -d "${path}" ] && continue
 					case "${ppath}" in
 					# gconftool-2 --makefile-uninstall-rule is unpredictable
 					etc/gconf/gconf.xml.defaults/%gconf-tree*.xml) ;;
