@@ -192,14 +192,14 @@ update_jail() {
 		msg "csup has been deprecated by FreeBSD. Only use if you are syncing with your own csup repo."
 		install_from_csup
 		update_version_env $(jget ${JAILNAME} version)
-		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
+		make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
 	svn*)
 		install_from_svn version_extra
 		RELEASE=$(update_version "${version_extra}")
 		update_version_env "${RELEASE}"
-		yes | make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT}
+		make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
 	allbsd|gjb|url=*)
