@@ -1632,22 +1632,23 @@ nohang() {
 }
 
 gather_distfiles() {
-	[ $# -eq 2 ] || eargs portdir distfiles
+	[ $# -eq 3 ] || eargs portdir from to
 	local portdir="$1"
-	local distfiles="$2"
-	local sub dists d special
+	local from=$(realpath $2)
+	local to=$(realpath $3)
+	local sub dists d specials special
 	sub=$(injail make -C ${portdir} -VDIST_SUBDIR)
 	dists=$(injail make -C ${portdir} -V_DISTFILES -V_PATCHFILES)
 	specials=$(injail make -C ${portdir} -V_DEPEND_SPECIALS)
-	job_msg_verbose "Status for build ${portdir##/usr/ports/}: distfiles"
+	job_msg_verbose "Status for build ${portdir##/usr/ports/}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
-		[ -f ${DISTFILES_CACHE}/${sub}/${d} ] || continue
-		echo ${DISTFILES_CACHE}/${sub}/${d}
-	done | pax -rw -p p -s ",${DISTFILES_CACHE},,g" ${mnt}/portdistfiles ||
-		return 1
+		[ -f ${from}/${sub}/${d} ] || continue
+		mkdir -p ${to}/${sub} || return 1
+		cpdup ${from}/${sub}/${d} ${to}/${sub}/${d} || return 1
+	done
 
 	for special in ${specials}; do
-		gather_distfiles ${special} ${distfiles}
+		gather_distfiles ${special} ${from} ${to}
 	done
 
 	return 0
@@ -1703,6 +1704,9 @@ _real_build_port() {
 		job_msg_verbose "Status for build ${port}: ${phase}"
 		case ${phase} in
 		fetch)
+			mkdir -p ${mnt}/portdistfiles
+			echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf
+			gather_distfiles ${portdir} ${DISTFILES_CACHE} ${mnt}/portdistfiles || return 1
 			jstop
 			jstart 1
 			JUSER=root
@@ -1894,9 +1898,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 		print_phase_footer
 
 		if [ "${phase}" = "checksum" ]; then
-			mkdir -p ${mnt}/portdistfiles
-			echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf
-			gather_distfiles ${portdir} ${mnt}/portdistfiles || return 1
+			gather_distfiles ${portdir} ${mnt}/portdistfiles ${DISTFILES_CACHE} || return 1
 		fi
 
 		if [ "${phase}" = "deinstall" ]; then
