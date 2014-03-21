@@ -36,7 +36,6 @@
 int
 main(int argc, char **argv) {
 #if __FreeBSD_version > 1000030
-	int i;
 	char **argv2;
 
 	argv2 = malloc((argc + 2) * sizeof(*argv2));
