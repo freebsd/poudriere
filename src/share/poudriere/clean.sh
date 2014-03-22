@@ -50,7 +50,7 @@ clean_rdeps() {
 	local pkgname=$1
 	local clean_rdepends=$2
 	local dep_dir dep_pkgname
-	local deps_to_check
+	local deps_to_check deps_to_clean
 	local rdep_dir
 
 	rdep_dir="${JAILMNT}/poudriere/cleaning/rdeps/${pkgname}"
@@ -77,18 +77,17 @@ clean_rdeps() {
 			dep_pkgname=${dep_dir##*/}
 
 			deps_to_check="${deps_to_check} ${JAILMNT}/poudriere/deps/${dep_pkgname}"
+			deps_to_clean="${deps_to_clean} ${JAILMNT}/poudriere/deps/${dep_pkgname}/${pkgname}"
 		done
 	fi
 
 
 	if [ ${clean_rdepends} -eq 0 ]; then
 		# Remove this package from every package depending on this.
-		# This follows the symlink in rdeps which references
-		# deps/<pkgname>/<this pkg>.
+		# This is removing: deps/<dep_pkgname>/<this pkg>.
 		# Note that this is not needed when recursively cleaning as
 		# the entire /deps/<pkgname> for all my rdeps will be removed.
-		find "${rdep_dir}" -type l 2>/dev/null |
-		    xargs realpath -q | xargs rm -f || :
+		echo ${deps_to_clean} | xargs rm -f || :
 
 		# Look for packages that are now ready to build. They have no
 		# remaining dependencies. Move them to /unbalanced for later
