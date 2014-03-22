@@ -54,13 +54,6 @@ clean_pool() {
 		# handle "impact"/skipping support
 		if [ -z "$(find "${JAILMNT}/poudriere/rdeps/${pkgname}" -type d -maxdepth 0 -empty)" ]; then
 
-			# Remove this package from every package depending on this
-			# This follows the symlink in rdeps which references
-			# deps/<pkgname>/<this pkg>
-			find ${JAILMNT}/poudriere/rdeps/${pkgname} -type l 2>/dev/null | \
-				xargs realpath -q | \
-				xargs rm -f || :
-
 			for dep_dir in ${JAILMNT}/poudriere/rdeps/${pkgname}/*; do
 				[ "${dep_dir}" = "${JAILMNT}/poudriere/rdeps/${pkgname}/*" ] &&
 					break
@@ -81,6 +74,12 @@ clean_pool() {
 					deps_to_check="${deps_to_check} ${JAILMNT}/poudriere/deps/${dep_pkgname}"
 				fi
 			done
+
+			# Remove this package from every package depending on this
+			# This follows the symlink in rdeps which references
+			# deps/<pkgname>/<this pkg>
+			find ${JAILMNT}/poudriere/rdeps/${pkgname} -type l 2>/dev/null |
+			    xargs realpath -q | xargs rm -f || :
 
 			echo ${deps_to_check} | \
 				xargs -J % \

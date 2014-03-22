@@ -16,7 +16,6 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
   *  stop html json querying when build done (may be done already)
   *  show TOBUILD count in SIGINFO
   *  pkg bootstrap skipping sanity is no good, skips all version checks. Need to have a bootstrap mode so it reruns.
-  *  queue clean.sh is very racy, a lock mechanism is needed. If a major port fails, it will start cleaning while the queue continues to build. This can result in a port being moved from the pending queue to ready-to-build queue even though it should be skipped. It later fails to build and gives a cryptic error about not building from source due to USE_PACKAGE_DEPENDS_ONLY. This also impacts exp-runs as these are seen as new failures instead of skipped as the baseline run did.
   *  This is wrong, should skip shell-meta as npm was skipped, not because node failed:
 <verbatim>
      ====>> [01] Finished build of www/node: Failed: build
