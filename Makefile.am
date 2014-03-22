@@ -74,7 +74,8 @@ pkglibexec_PROGRAMS= \
 		     dirwatch \
 		     make_index \
 		     nc \
-		     rename
+		     rename \
+		     tsort
 
 sbin_PROGRAMS=	poudriered
 noinst_LIBRARIES=	libucl.a
@@ -95,6 +96,7 @@ dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
 nc_SOURCES=		src/libexec/poudriere/nc/nc.c
 make_index_SOURCES=	src/libexec/poudriere/make_index/make_index.c
 make_index_LDADD=	-ljail -lsbuf
+tsort_SOURCES=		src/libexec/poudriere/tsort/tsort.c
 libucl_a_SOURCES=	external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_hash.c \
 			external/libucl/src/ucl_parser.c \
