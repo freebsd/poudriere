@@ -2450,7 +2450,7 @@ build_pkg() {
 	# Make sure we start with no network
 	jstart 0
 
-	touch ${mnt}/.need_rollback
+	:> ${mnt}/.need_rollback
 
 	case " ${BLACKLIST} " in
 	*\ ${port}\ *) ignore="Blacklisted" ;;
