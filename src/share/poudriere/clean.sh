@@ -79,10 +79,7 @@ clean_rdeps() {
 			deps_to_check="${deps_to_check} ${JAILMNT}/poudriere/deps/${dep_pkgname}"
 			deps_to_clean="${deps_to_clean} ${JAILMNT}/poudriere/deps/${dep_pkgname}/${pkgname}"
 		done
-	fi
 
-
-	if [ ${clean_rdepends} -eq 0 ]; then
 		# Remove this package from every package depending on this.
 		# This is removing: deps/<dep_pkgname>/<this pkg>.
 		# Note that this is not needed when recursively cleaning as
