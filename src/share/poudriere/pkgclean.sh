@@ -161,7 +161,7 @@ for file in ${PACKAGES}/All/*; do
 done
 
 pkg_compare() {
-	[ $# -eq 2 ] || eargs oldversion newversion
+	[ $# -eq 2 ] || eargs pkg_compare oldversion newversion
 	local oldversion="$1"
 	local newversion="$2"
 

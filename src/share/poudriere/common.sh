@@ -53,7 +53,7 @@ _wait() {
 }
 
 kill_and_wait() {
-	[ $# -eq 2 ] || eargs time pids
+	[ $# -eq 2 ] || eargs kill_and_wait time pids
 	local time="$1"
 	local pids="$2"
 	local ret=0
@@ -91,7 +91,7 @@ kill_and_wait() {
 # Based on Shell Scripting Recipes - Chris F.A. Johnson (c) 2005
 # Replace a pattern without needing a subshell/exec
 _gsub() {
-	[ $# -ne 3 ] && eargs string pattern replacement
+	[ $# -ne 3 ] && eargs _gsub string pattern replacement
 	local string="$1"
 	local pattern="$2"
 	local replacement="$3"
@@ -211,10 +211,12 @@ jstop() {
 }
 
 eargs() {
+	local fname="$1"
+	shift
 	case $# in
-	0) err 1 "No arguments expected" ;;
-	1) err 1 "1 argument expected: $1" ;;
-	*) err 1 "$# arguments expected: $*" ;;
+	0) err 1 "${fname}: No arguments expected" ;;
+	1) err 1 "${fname}: 1 argument expected: $1" ;;
+	*) err 1 "${fname}: $# arguments expected: $*" ;;
 	esac
 }
 
@@ -538,14 +540,14 @@ siginfo_handler() {
 }
 
 jail_exists() {
-	[ $# -ne 1 ] && eargs jailname
+	[ $# -ne 1 ] && eargs jail_exists jailname
 	local jname=$1
 	[ -d ${POUDRIERED}/jails/${jname} ] && return 0
 	return 1
 }
 
 jail_runs() {
-	[ $# -ne 1 ] && eargs jname
+	[ $# -ne 1 ] && eargs jail_runs jname
 	local jname=$1
 	jls -j $jname >/dev/null 2>&1 && return 0
 	return 1
@@ -563,7 +565,7 @@ porttree_list() {
 }
 
 porttree_exists() {
-	[ $# -ne 1 ] && eargs portstree_name
+	[ $# -ne 1 ] && eargs porttree_exists portstree_name
 	porttree_list |
 		awk -v portstree_name=$1 '
 		BEGIN { ret = 1 }
@@ -597,12 +599,12 @@ get_data_dir() {
 }
 
 fetch_file() {
-	[ $# -ne 2 ] && eargs destination source
+	[ $# -ne 2 ] && eargs fetch_file destination source
 	fetch -p -o $1 $2 || fetch -p -o $1 $2 || err 1 "Failed to fetch from $2"
 }
 
 createfs() {
-	[ $# -ne 3 ] && eargs name mnt fs
+	[ $# -ne 3 ] && eargs createfs name mnt fs
 	local name mnt fs
 	name=$1
 	mnt=$(echo $2 | sed -e "s,//,/,g")
@@ -621,7 +623,7 @@ createfs() {
 }
 
 rollbackfs() {
-	[ $# -ne 2 ] && eargs name mnt
+	[ $# -ne 2 ] && eargs rollbackfs name mnt
 	local name=$1
 	local mnt=$2
 	local fs=$(zfs_getfs ${mnt})
@@ -642,7 +644,7 @@ rollbackfs() {
 }
 
 umountfs() {
-	[ $# -lt 1 ] && eargs mnt childonly
+	[ $# -lt 1 ] && eargs umountfs mnt childonly
 	local mnt=$1
 	local childonly=$2
 	local pattern
@@ -664,13 +666,13 @@ umountfs() {
 }
 
 zfs_getfs() {
-	[ $# -ne 1 ] && eargs mnt
+	[ $# -ne 1 ] && eargs zfs_getfs mnt
 	local mnt=$(realpath $1)
 	mount -t zfs | awk -v n="${mnt}" ' $3 == n { print $1 }'
 }
 
 unmarkfs() {
-	[ $# -ne 2 ] && eargs name mnt
+	[ $# -ne 2 ] && eargs unmarkfs name mnt
 	local name=$1
 	local mnt=$(realpath $2)
 
@@ -682,7 +684,7 @@ unmarkfs() {
 }
 
 markfs() {
-	[ $# -lt 2 ] && eargs name mnt path
+	[ $# -lt 2 ] && eargs markfs name mnt path
 	local name=$1
 	local mnt=$(realpath $2)
 	local path="$3"
@@ -797,7 +799,7 @@ EOF
 }
 
 mnt_tmpfs() {
-	[ $# -lt 2 ] && eargs type dst
+	[ $# -lt 2 ] && eargs mnt_tmpfs type dst
 	local type="$1"
 	local dst="$2"
 	local limit size
@@ -819,7 +821,7 @@ mnt_tmpfs() {
 }
 
 clonefs() {
-	[ $# -lt 2 ] && eargs from to snap
+	[ $# -lt 2 ] && eargs clonefs from to snap
 	local from=$1
 	local to=$2
 	local snap=$3
@@ -866,7 +868,7 @@ rm() {
 }
 
 destroyfs() {
-	[ $# -ne 2 ] && eargs name type
+	[ $# -ne 2 ] && eargs destroyfs name type
 	local mnt fs type
 	mnt=$1
 	type=$2
@@ -886,7 +888,7 @@ destroyfs() {
 }
 
 do_jail_mounts() {
-	[ $# -ne 2 ] && eargs mnt arch
+	[ $# -ne 2 ] && eargs do_jail_mounts mnt arch
 	local mnt=$1
 	local arch=$2
 	local devfspath="null zero random urandom stdin stdout stderr fd fd/* bpf* pts pts/*"
@@ -1003,7 +1005,7 @@ EOF
 }
 
 use_options() {
-	[ $# -ne 2 ] && eargs mnt optionsdir
+	[ $# -ne 2 ] && eargs use_options mnt optionsdir
 	local mnt=$1
 	local optionsdir=$2
 
@@ -1030,7 +1032,7 @@ mount_packages() {
 }
 
 do_portbuild_mounts() {
-	[ $# -lt 3 ] && eargs mnt jname ptname setname
+	[ $# -lt 3 ] && eargs do_portbuild_mounts mnt jname ptname setname
 	local mnt=$1
 	local jname=$2
 	local ptname=$3
@@ -1203,7 +1205,7 @@ commit_packages() {
 }
 
 jail_start() {
-	[ $# -lt 2 ] && eargs name ptname setname
+	[ $# -lt 2 ] && eargs jail_start name ptname setname
 	local name=$1
 	local ptname=$2
 	local setname=$3
@@ -1330,7 +1332,7 @@ jail_start() {
 }
 
 load_blacklist() {
-	[ $# -lt 2 ] && eargs name ptname setname
+	[ $# -lt 2 ] && eargs load_blacklist name ptname setname
 	local name=$1
 	local ptname=$2
 	local setname=$3
@@ -1356,7 +1358,7 @@ load_blacklist() {
 }
 
 setup_makeconf() {
-	[ $# -lt 3 ] && eargs dst_makeconf name ptname setname
+	[ $# -lt 3 ] && eargs setup_makeconf dst_makeconf name ptname setname
 	local dst_makeconf=$1
 	local name=$2
 	local ptname=$3
@@ -1372,7 +1374,7 @@ setup_makeconf() {
 }
 
 jail_stop() {
-	[ $# -ne 0 ] && eargs
+	[ $# -ne 0 ] && eargs jail_stop
 
 	# err() will set status to 'crashed', don't override.
 	[ -n "${CRASHED}" ] || bset status "stop:" 2>/dev/null || :
@@ -1447,7 +1449,7 @@ package_dir_exists_and_has_packages() {
 }
 
 sanity_check_pkg() {
-	[ $# -eq 1 ] || eargs pkg
+	[ $# -eq 1 ] || eargs sanity_check_pkg pkg
 	local pkg="$1"
 	local depfile origin
 
@@ -1482,7 +1484,7 @@ sanity_check_pkgs() {
 }
 
 check_leftovers() {
-	[ $# -lt 1 ] && eargs mnt [stagedir]
+	[ $# -lt 1 ] && eargs check_leftovers mnt [stagedir]
 	local mnt=$1
 	local stagedir="$2"
 
@@ -1523,8 +1525,8 @@ check_leftovers() {
 }
 
 check_fs_violation() {
-	[ $# -eq 6 ] || eargs mnt mtree_target port status_msg err_msg \
-	    status_value
+	[ $# -eq 6 ] || eargs check_fs_violation mnt mtree_target port \
+	    status_msg err_msg status_value
 	local mnt="$1"
 	local mtree_target="$2"
 	local port="$3"
@@ -1553,7 +1555,7 @@ check_fs_violation() {
 }
 
 nohang() {
-	[ $# -gt 4 ] || eargs cmd_timeout log_timeout logfile cmd
+	[ $# -gt 4 ] || eargs nohang cmd_timeout log_timeout logfile cmd
 	local cmd_timeout
 	local log_timeout
 	local logfile
@@ -1632,7 +1634,7 @@ nohang() {
 }
 
 gather_distfiles() {
-	[ $# -eq 3 ] || eargs portdir from to
+	[ $# -eq 3 ] || eargs gather_distfiles portdir from to
 	local portdir="$1"
 	local from=$(realpath $2)
 	local to=$(realpath $3)
@@ -1657,7 +1659,7 @@ gather_distfiles() {
 # Build+test port and return 1 on first failure
 # Return 2 on test failure if PORTTESTING_FATAL=no
 _real_build_port() {
-	[ $# -ne 1 ] && eargs portdir
+	[ $# -ne 1 ] && eargs _real_build_port portdir
 	local portdir=$1
 	local port=${portdir##/usr/ports/}
 	local mnt=$(my_path)
@@ -2057,7 +2059,7 @@ build_port() {
 
 # Save wrkdir and return path to file
 save_wrkdir() {
-	[ $# -ne 4 ] && eargs mnt port portdir phase
+	[ $# -ne 4 ] && eargs save_wrkdir mnt port portdir phase
 	local mnt=$1
 	local port="$2"
 	local portdir="$3"
@@ -2197,7 +2199,7 @@ queue_empty() {
 }
 
 mark_done() {
-	[ $# -eq 1 ] || eargs pkgname
+	[ $# -eq 1 ] || eargs mark_done pkgname
 	local pkgname="$1"
 	local origin
 	local cache_dir
@@ -2392,7 +2394,7 @@ parallel_build() {
 }
 
 clean_pool() {
-	[ $# -ne 2 ] && eargs pkgname clean_rdepends
+	[ $# -ne 2 ] && eargs clean_pool pkgname clean_rdepends
 	local pkgname=$1
 	local clean_rdepends=$2
 	local port skipped_origin
@@ -2423,7 +2425,7 @@ print_phase_footer() {
 build_pkg() {
 	# If this first check fails, the pool will not be cleaned up,
 	# since PKGNAME is not yet set.
-	[ $# -ne 1 ] && eargs pkgname
+	[ $# -ne 1 ] && eargs build_pkg pkgname
 	local pkgname="$1"
 	local port portdir
 	local build_failed=0
@@ -2541,7 +2543,7 @@ build_pkg() {
 }
 
 stop_build() {
-	[ $# -eq 1 ] || eargs portdir
+	[ $# -eq 1 ] || eargs stop_build portdir
 	local portdir="$1"
 	local mnt=$(my_path)
 
