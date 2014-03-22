@@ -3075,8 +3075,7 @@ compute_deps() {
 			compute_deps "${dep_port}" "${dep_pkgname}"
 
 		:> "${pkg_pooldir}/${dep_pkgname}"
-		mkdir -p "${MASTERMNT}/poudriere/rdeps/${dep_pkgname}"
-		:> "${MASTERMNT}/poudriere/rdeps/${dep_pkgname}/${pkgname}"
+		echo "${dep_pkgname} ${pkgname}" >> "${MASTERMNT}/poudriere/rdeps.list"
 		echo "${port} ${dep_port}" >> \
 			${MASTERMNT}/poudriere/port_deps.unsorted
 	done
@@ -3348,6 +3347,7 @@ prepare_ports() {
 	local log=$(log_path)
 	local n port pn nbq resuming_build
 	local cache_dir
+	local pkgname dep_pkgname
 
 	mkdir -p "${MASTERMNT}/poudriere"
 	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs data "${MASTERMNT}/poudriere"
@@ -3413,9 +3413,18 @@ prepare_ports() {
 	done
 	parallel_stop
 
+	sort -u "${MASTERMNT}/poudriere/rdeps.list" > \
+	    "${MASTERMNT}/poudriere/rdeps.list.sorted"
+	cd "${MASTERMNT}/poudriere/rdeps"
+	awk '{print $1}' "${MASTERMNT}/poudriere/rdeps.list.sorted" |
+	    sort -u | xargs mkdir
+
+	while read pkgname dep_pkgname; do
+		:> "${MASTERMNT}/poudriere/rdeps/${pkgname}/${dep_pkgname}"
+	done < "${MASTERMNT}/poudriere/rdeps.list.sorted"
+
 	sort -u "${MASTERMNT}/poudriere/port_deps.unsorted" > \
 		"${MASTERMNT}/poudriere/port_deps"
-	rm -f "${MASTERMNT}/poudriere/port_deps.unsorted"
 
 	bset status "sanity:"
 
@@ -3544,6 +3553,10 @@ prepare_ports() {
 	    >> ${MASTERMNT}/etc/make.conf
 
 	jget ${JAILNAME} version > ${PACKAGES}/.jailversion
+
+	rm -f "${MASTERMNT}/poudriere/port_deps.unsorted" \
+	    "${MASTERMNT}/poudriere/rdeps.list" \
+	    "${MASTERMNT}/poudriere/rdeps.list.sorted"
 
 	return 0
 }
