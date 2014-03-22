@@ -3076,8 +3076,7 @@ compute_deps() {
 
 		:> "${pkg_pooldir}/${dep_pkgname}"
 		mkdir -p "${MASTERMNT}/poudriere/rdeps/${dep_pkgname}"
-		ln -sf "${pkg_pooldir}/${dep_pkgname}" \
-			"${MASTERMNT}/poudriere/rdeps/${dep_pkgname}/${pkgname}"
+		:> "${MASTERMNT}/poudriere/rdeps/${dep_pkgname}/${pkgname}"
 		echo "${port} ${dep_port}" >> \
 			${MASTERMNT}/poudriere/port_deps.unsorted
 	done
