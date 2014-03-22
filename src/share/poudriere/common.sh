@@ -3550,8 +3550,13 @@ balance_pool() {
 		dep_count=0
 		# Determine its priority, based on how much depends on it
 		for rdep in ${MASTERMNT}/poudriere/rdeps/${pkgname}/*; do
-			# Empty
-			[ ${rdep} = "${MASTERMNT}/poudriere/rdeps/${pkgname}/*" ] && break
+			# Empty dir
+			case "${rdep}" in
+				"${MASTERMNT}/poudriere/rdeps/${pkgname}/*")
+					break
+					;;
+			esac
+
 			dep_count=$(($dep_count + 1))
 			[ $dep_count -eq $((${POOL_BUCKETS} - 1)) ] && break
 		done

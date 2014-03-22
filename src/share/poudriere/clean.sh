@@ -66,7 +66,7 @@ clean_rdeps() {
 		# Recursively cleanup anything that depends on my package.
 		for dep_dir in ${rdep_dir}/*; do
 			# May be empty if all my reverse deps are now skipped.
-			[ "${dep_dir}" = "${rdep_dir}/*" ] && break
+			case "${dep_dir}" in "${rdep_dir}/*") break ;; esac
 			dep_pkgname=${dep_dir##*/}
 
 			# clean_pool() in common.sh will pick this up and add to SKIPPED
