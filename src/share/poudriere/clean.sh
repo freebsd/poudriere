@@ -56,14 +56,11 @@ clean_rdeps() {
 	rdep_dir="${JAILMNT}/poudriere/cleaning/rdeps/${pkgname}"
 
 	# Exclusively claim the rdeps dir or return, another clean.sh owns it
+	# or there were no reverse deps for this package.
 	mv "${JAILMNT}/poudriere/rdeps/${pkgname}" "${rdep_dir}" 2>/dev/null ||
 	    return 0
 
-	# Note that following code must be safe for an empty rdep_dir.
-
 	for dep_dir in ${rdep_dir}/*; do
-		# Handle empty dir
-		[ "${dep_dir}" = "${rdep_dir}/*" ] && break
 		dep_pkgname=${dep_dir##*/}
 
 		# Determine everything that depends on the given package
