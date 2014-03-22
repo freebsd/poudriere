@@ -80,13 +80,16 @@ clean_rdeps() {
 		done
 	fi
 
-	# Remove this package from every package depending on this
-	# This follows the symlink in rdeps which references
-	# deps/<pkgname>/<this pkg>
-	find "${rdep_dir}" -type l 2>/dev/null |
-	    xargs realpath -q | xargs rm -f || :
 
 	if [ ${clean_rdepends} -eq 0 ]; then
+		# Remove this package from every package depending on this.
+		# This follows the symlink in rdeps which references
+		# deps/<pkgname>/<this pkg>.
+		# Note that this is not needed when recursively cleaning as
+		# the entire /deps/<pkgname> for all my rdeps will be removed.
+		find "${rdep_dir}" -type l 2>/dev/null |
+		    xargs realpath -q | xargs rm -f || :
+
 		# Look for packages that are now ready to build. They have no
 		# remaining dependencies. Move them to /unbalanced for later
 		# processing.
