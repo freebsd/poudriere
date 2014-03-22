@@ -97,7 +97,7 @@ clean_rdeps() {
 		    2>/dev/null || :
 	fi
 
-	rm -rf "${rdep_dir}"
+	rm -rf "${rdep_dir}" &
 
 	return 0
 }
@@ -119,7 +119,8 @@ clean_pool() {
 		if mv "${JAILMNT}/poudriere/deps/${pkgname}" \
 		    "${JAILMNT}/poudriere/cleaning/deps/${pkgname}" \
 		    2>/dev/null; then
-			rm -rf "${JAILMNT}/poudriere/cleaning/deps/${pkgname}"
+			rm -rf \
+			    "${JAILMNT}/poudriere/cleaning/deps/${pkgname}" &
 		fi
 	fi
 
