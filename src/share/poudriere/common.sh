@@ -2224,6 +2224,8 @@ build_queue() {
 
 	msg "Hit CTRL+t at any time to see build progress and stats"
 
+	cd "${MASTERMNT}/poudriere/pool"
+
 	while :; do
 		builders_active=0
 		for j in ${JOBS}; do
@@ -3409,12 +3411,12 @@ prepare_ports() {
 	if [ ${POOL_BUCKETS} -gt 0 ]; then
 		# Add pool/N dirs in reverse order from highest to lowest
 		for n in $(jot ${POOL_BUCKETS} 0 | sort -nr); do
-			POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/${n}"
+			POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} ${n}"
 		done
 	else
-		POOL_BUCKET_DIRS="${MASTERMNT}/poudriere/pool/unbalanced"
+		POOL_BUCKET_DIRS="unbalanced"
 	fi
-	mkdir -p ${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/unbalanced
+	( cd ${MASTERMNT}/poudriere/pool && mkdir -p ${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/unbalanced )
 
 	if was_a_bulk_run; then
 		get_cache_dir cache_dir
