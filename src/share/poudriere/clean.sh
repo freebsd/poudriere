@@ -81,6 +81,7 @@ clean_pool() {
 			find ${JAILMNT}/poudriere/rdeps/${pkgname} -type l 2>/dev/null |
 			    xargs realpath -q | xargs rm -f || :
 
+			# Move ready-to-build packages into unbalanced
 			echo ${deps_to_check} | \
 				xargs -J % \
 				find % -type d -maxdepth 0 -empty 2>/dev/null | \
