@@ -3044,8 +3044,41 @@ cache_get_origin() {
 	setvar "${var_return}" "${_origin}"
 }
 
-# Take optional pkgname to speedup lookup
 compute_deps() {
+	local port pkgname dep_pkgname
+
+	msg "Calculating ports order and dependencies"
+	bset status "computingdeps:"
+
+	:> "${MASTERMNT}/poudriere/port_deps.unsorted"
+	parallel_start
+	for port in $(listed_ports show_moved); do
+		[ -d "${MASTERMNT}/usr/ports/${port}" ] ||
+			err 1 "Invalid port origin listed for build: ${port}"
+		parallel_run compute_deps_port ${port}
+	done
+	parallel_stop
+
+	bset status "computingrdeps:"
+
+	sort -u "${MASTERMNT}/poudriere/rdeps.list" > \
+	    "${MASTERMNT}/poudriere/rdeps.list.sorted"
+	cd "${MASTERMNT}/poudriere/rdeps"
+	awk '{print $1}' "${MASTERMNT}/poudriere/rdeps.list.sorted" |
+	    sort -u | xargs mkdir
+
+	while read pkgname dep_pkgname; do
+		:> "${MASTERMNT}/poudriere/rdeps/${pkgname}/${dep_pkgname}"
+	done < "${MASTERMNT}/poudriere/rdeps.list.sorted"
+
+	sort -u "${MASTERMNT}/poudriere/port_deps.unsorted" > \
+		"${MASTERMNT}/poudriere/port_deps"
+
+	return 0
+}
+
+# Take optional pkgname to speedup lookup
+compute_deps_port() {
 	[ $# -lt 1 ] && eargs port
 	[ $# -gt 2 ] && eargs port pkgnme
 	local port=$1
@@ -3072,7 +3105,7 @@ compute_deps() {
 		# Only do this if it's not already done, and not ALL, as everything will
 		# be touched anyway
 		[ ${ALL} -eq 0 ] && ! [ -d "${MASTERMNT}/poudriere/deps/${dep_pkgname}" ] &&
-			compute_deps "${dep_port}" "${dep_pkgname}"
+			compute_deps_port "${dep_port}" "${dep_pkgname}"
 
 		:> "${pkg_pooldir}/${dep_pkgname}"
 		echo "${dep_pkgname} ${pkgname}" >> "${MASTERMNT}/poudriere/rdeps.list"
@@ -3345,9 +3378,8 @@ check_moved() {
 prepare_ports() {
 	local pkg
 	local log=$(log_path)
-	local n port pn nbq resuming_build
+	local n pn nbq resuming_build
 	local cache_dir
-	local pkgname dep_pkgname
 
 	mkdir -p "${MASTERMNT}/poudriere"
 	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs data "${MASTERMNT}/poudriere"
@@ -3401,30 +3433,7 @@ prepare_ports() {
 
 	load_moved
 
-	msg "Calculating ports order and dependencies"
-	bset status "computingdeps:"
-
-	:> "${MASTERMNT}/poudriere/port_deps.unsorted"
-	parallel_start
-	for port in $(listed_ports show_moved); do
-		[ -d "${MASTERMNT}/usr/ports/${port}" ] ||
-			err 1 "Invalid port origin listed for build: ${port}"
-		parallel_run compute_deps ${port}
-	done
-	parallel_stop
-
-	sort -u "${MASTERMNT}/poudriere/rdeps.list" > \
-	    "${MASTERMNT}/poudriere/rdeps.list.sorted"
-	cd "${MASTERMNT}/poudriere/rdeps"
-	awk '{print $1}' "${MASTERMNT}/poudriere/rdeps.list.sorted" |
-	    sort -u | xargs mkdir
-
-	while read pkgname dep_pkgname; do
-		:> "${MASTERMNT}/poudriere/rdeps/${pkgname}/${dep_pkgname}"
-	done < "${MASTERMNT}/poudriere/rdeps.list.sorted"
-
-	sort -u "${MASTERMNT}/poudriere/port_deps.unsorted" > \
-		"${MASTERMNT}/poudriere/port_deps"
+	compute_deps
 
 	bset status "sanity:"
 
