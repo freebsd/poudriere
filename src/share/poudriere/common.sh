@@ -2176,6 +2176,7 @@ $(find ${MASTERMNT}/poudriere/building ${MASTERMNT}/poudriere/pool ${MASTERMNT}/
 
 queue_empty() {
 	local pool_dir lock dirs
+	local ret=0
 
 	# Lock on balance_pool to avoid race here while it is moving between
 	# /unbalanced and a balanced slot
@@ -2186,13 +2187,13 @@ queue_empty() {
 
 	for pool_dir in ${dirs}; do
 		if ! dirempty ${pool_dir}; then
-			rmdir ${lock}
-			return 1
+			ret=1
+			break
 		fi
 	done
 
 	rmdir ${lock}
-	return 0
+	return ${ret}
 }
 
 mark_done() {
