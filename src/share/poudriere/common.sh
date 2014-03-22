@@ -3051,6 +3051,8 @@ compute_deps() {
 	bset status "computingdeps:"
 
 	:> "${MASTERMNT}/poudriere/port_deps.unsorted"
+	:> "${MASTERMNT}/poudriere/rdeps.list"
+
 	parallel_start
 	for port in $(listed_ports show_moved); do
 		[ -d "${MASTERMNT}/usr/ports/${port}" ] ||
