@@ -88,6 +88,7 @@ struct node_str {
 	int n_arcsize;			/* size of n_arcs[] array */
 	int n_refcnt;			/* # of arcs pointing to this node */
 	int n_flags;			/* NF_* */
+	int n_depth;			/* Depth of tree from this node */
 	char n_name[1];			/* name of this node */
 };
 
@@ -98,7 +99,7 @@ typedef struct _buf {
 
 static DB *db;
 static NODE *graph, **cycle_buf, **longest_cycle;
-static int debug, longest, quiet;
+static int debug, longest, quiet, print_depth;
 
 static void	 add_arc(char *, char *);
 static int	 find_cycle(NODE *, NODE *, int, int);
@@ -119,10 +120,13 @@ main(int argc, char *argv[])
 	BUF bufs[2];
 
 	fp = NULL;
-	while ((ch = getopt(argc, argv, "dlq")) != -1)
+	while ((ch = getopt(argc, argv, "dDlq")) != -1)
 		switch (ch) {
 		case 'd':
 			debug = 1;
+			break;
+		case 'D':
+			print_depth = 1;
 			break;
 		case 'l':
 			longest = 1;
@@ -264,6 +268,7 @@ get_node(char *name)
 	n->n_arcs = NULL;
 	n->n_refcnt = 0;
 	n->n_flags = 0;
+	n->n_depth = 0;
 	bcopy(name, n->n_name, key.size);
 
 	/* Add to linked list. */
@@ -298,8 +303,9 @@ static void
 tsort(void)
 {
 	NODE *n, *next;
-	int cnt, i;
+	int cnt, depth, i;
 
+	depth = 0;
 	while (graph != NULL) {
 		/*
 		 * Keep getting rid of simple cases until there are none left,
@@ -310,10 +316,12 @@ tsort(void)
 			for (cnt = 0, n = graph; n != NULL; n = next) {
 				next = n->n_next;
 				if (n->n_refcnt == 0) {
+					n->n_depth = depth;
 					remove_node(n);
 					++cnt;
 				}
 			}
+			++depth;
 		} while (graph != NULL && cnt);
 
 		if (graph == NULL)
@@ -363,6 +371,8 @@ remove_node(NODE *n)
 	NODE **np;
 	int i;
 
+	if (print_depth)
+		(void)printf("%d ", n->n_depth);
 	(void)printf("%s\n", n->n_name);
 	for (np = n->n_arcs, i = n->n_narcs; --i >= 0; np++)
 		--(*np)->n_refcnt;
