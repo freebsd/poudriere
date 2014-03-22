@@ -3051,7 +3051,7 @@ compute_deps() {
 	bset status "computingdeps:"
 
 	:> "${MASTERMNT}/poudriere/port_deps.unsorted"
-	:> "${MASTERMNT}/poudriere/rdeps.list"
+	:> "${MASTERMNT}/poudriere/pkg_deps.unsorted"
 
 	parallel_start
 	for port in $(listed_ports show_moved); do
@@ -3061,23 +3061,26 @@ compute_deps() {
 	done
 	parallel_stop
 
-	bset status "computingrdeps:"
+	sort -u "${MASTERMNT}/poudriere/pkg_deps.unsorted" > \
+	    "${MASTERMNT}/poudriere/pkg_deps"
 
-	sort -u "${MASTERMNT}/poudriere/rdeps.list" > \
-	    "${MASTERMNT}/poudriere/rdeps.list.sorted"
+	bset status "computingrdeps:"
 
 	# cd into rdeps to allow xargs mkdir to have more args.
 	cd "${MASTERMNT}/poudriere/rdeps"
-	awk '{print $1}' "${MASTERMNT}/poudriere/rdeps.list.sorted" |
+	awk '{print $2}' "${MASTERMNT}/poudriere/pkg_deps" |
 	    sort -u | xargs mkdir
 
 	# xargs|touch was no quicker here.
-	while read pkgname dep_pkgname; do
+	while read dep_pkgname pkgname; do
 		:> "${MASTERMNT}/poudriere/rdeps/${pkgname}/${dep_pkgname}"
-	done < "${MASTERMNT}/poudriere/rdeps.list.sorted"
+	done < "${MASTERMNT}/poudriere/pkg_deps"
 
 	sort -u "${MASTERMNT}/poudriere/port_deps.unsorted" > \
 		"${MASTERMNT}/poudriere/port_deps"
+
+	rm -f "${MASTERMNT}/poudriere/port_deps.unsorted" \
+	    "${MASTERMNT}/poudriere/pkg_deps.unsorted"
 
 	return 0
 }
@@ -3113,7 +3116,8 @@ compute_deps_port() {
 			compute_deps_port "${dep_port}" "${dep_pkgname}"
 
 		:> "${pkg_pooldir}/${dep_pkgname}"
-		echo "${dep_pkgname} ${pkgname}" >> "${MASTERMNT}/poudriere/rdeps.list"
+		echo "${pkgname} ${dep_pkgname}" >> \
+		    "${MASTERMNT}/poudriere/pkg_deps.unsorted"
 		echo "${port} ${dep_port}" >> \
 			${MASTERMNT}/poudriere/port_deps.unsorted
 	done
@@ -3567,10 +3571,6 @@ prepare_ports() {
 	    >> ${MASTERMNT}/etc/make.conf
 
 	jget ${JAILNAME} version > ${PACKAGES}/.jailversion
-
-	rm -f "${MASTERMNT}/poudriere/port_deps.unsorted" \
-	    "${MASTERMNT}/poudriere/rdeps.list" \
-	    "${MASTERMNT}/poudriere/rdeps.list.sorted"
 
 	return 0
 }
