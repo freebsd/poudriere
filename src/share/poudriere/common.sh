@@ -3278,20 +3278,28 @@ parallel_run() {
 find_all_pool_references() {
 	[ $# -ne 1 ] && eargs pkgname
 	local pkgname="$1"
-	local rpn
+	local rpn dep_pkgname
 
 	# Cleanup rdeps/*/${pkgname}
-	for rpn in $(ls "${MASTERMNT}/poudriere/deps/${pkgname}"); do
-		echo "${MASTERMNT}/poudriere/rdeps/${rpn}/${pkgname}"
+	for rpn in ${MASTERMNT}/poudriere/deps/${pkgname}/*; do
+		case "${rpn}" in
+			"${MASTERMNT}/poudriere/deps/${pkgname}/*")
+				break ;;
+		esac
+		dep_pkgname=${rpn##*/}
+		echo "${MASTERMNT}/poudriere/rdeps/${dep_pkgname}/${pkgname}"
 	done
 	echo "${MASTERMNT}/poudriere/deps/${pkgname}"
 	# Cleanup deps/*/${pkgname}
-	if [ -d "${MASTERMNT}/poudriere/rdeps/${pkgname}" ]; then
-		for rpn in $(ls "${MASTERMNT}/poudriere/rdeps/${pkgname}"); do
-			echo "${MASTERMNT}/poudriere/deps/${rpn}/${pkgname}"
-		done
-		echo "${MASTERMNT}/poudriere/rdeps/${pkgname}"
-	fi
+	for rpn in ${MASTERMNT}/poudriere/rdeps/${pkgname}/*; do
+		case "${rpn}" in
+			"${MASTERMNT}/poudriere/rdeps/${pkgname}/*")
+				break ;;
+		esac
+		dep_pkgname=${rpn##*/}
+		echo "${MASTERMNT}/poudriere/deps/${dep_pkgname}/${pkgname}"
+	done
+	echo "${MASTERMNT}/poudriere/rdeps/${pkgname}"
 }
 
 delete_stale_symlinks_and_empty_dirs() {
