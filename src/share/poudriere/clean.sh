@@ -60,24 +60,25 @@ clean_rdeps() {
 	mv "${JAILMNT}/poudriere/rdeps/${pkgname}" "${rdep_dir}" 2>/dev/null ||
 	    return 0
 
-	for dep_dir in ${rdep_dir}/*; do
-		dep_pkgname=${dep_dir##*/}
+	# Cleanup everything that depends on my package
+	# Note 2 loops here to avoid rechecking clean_rdepends every loop.
+	if [ ${clean_rdepends} -eq 1 ]; then
+		# Recursively cleanup anything that depends on my package.
+		for dep_dir in ${rdep_dir}/*; do
+			dep_pkgname=${dep_dir##*/}
 
-		# Determine everything that depends on the given package
-		# Recursively cleanup anything that depends on this port.
-		if [ ${clean_rdepends} -eq 1 ]; then
 			# clean_pool() in common.sh will pick this up and add to SKIPPED
 			echo "${dep_pkgname}"
 
 			clean_pool ${dep_pkgname} ${clean_rdepends}
-			#clean_pool deletes deps/${dep_pkgname} already
-			# no need for below code
-		else
-			# If that packages was just waiting on my package, and
-			# is now ready-to-build, move it to pool/
+		done
+	else
+		for dep_dir in ${rdep_dir}/*; do
+			dep_pkgname=${dep_dir##*/}
+
 			deps_to_check="${deps_to_check} ${JAILMNT}/poudriere/deps/${dep_pkgname}"
-		fi
-	done
+		done
+	fi
 
 	# Remove this package from every package depending on this
 	# This follows the symlink in rdeps which references
