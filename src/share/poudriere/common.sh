@@ -3533,7 +3533,7 @@ prepare_ports() {
 
 	[ ${POOL_BUCKETS} -gt 0 ] &&
 	    tsort -D "${MASTERMNT}/poudriere/port_deps" > \
-	    "${MASTERMNT}/poudriere/ports_deps.depth"
+	    "${MASTERMNT}/poudriere/port_deps.depth"
 
 	# Create a pool of ready-to-build from the deps pool
 	find "${MASTERMNT}/poudriere/deps" -type d -empty -depth 1 | \
@@ -3569,7 +3569,7 @@ balance_pool() {
 	for pkg_dir in ${MASTERMNT}/poudriere/pool/unbalanced/*; do
 		pkgname=${pkg_dir##*/}
 		cache_get_origin origin "${pkgname}"
-		dep_count=$(awk -vport=${origin} '$2 == port {print $1; printed=1} END {if (!printed) print "0"}' "${MASTERMNT}/poudriere/ports_deps.depth")
+		dep_count=$(awk -vport=${origin} '$2 == port {print $1; printed=1} END {if (!printed) print "0"}' "${MASTERMNT}/poudriere/port_deps.depth")
 		[ $dep_count -ge ${POOL_BUCKETS} ] && dep_count=$((${POOL_BUCKETS} - 1))
 		mv ${pkg_dir} ${MASTERMNT}/poudriere/pool/${dep_count}/
 	done
