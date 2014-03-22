@@ -3532,6 +3532,10 @@ prepare_ports() {
 		bset stats_queued ${nbq##* }
 	fi
 
+	[ ${POOL_BUCKETS} -gt 0 ] &&
+	    tsort -D "${MASTERMNT}/poudriere/port_deps" > \
+	    "${MASTERMNT}/poudriere/ports_deps.depth"
+
 	# Create a pool of ready-to-build from the deps pool
 	find "${MASTERMNT}/poudriere/deps" -type d -empty -depth 1 | \
 		xargs -J % mv % "${MASTERMNT}/poudriere/pool/unbalanced"
@@ -3549,7 +3553,7 @@ balance_pool() {
 	# Don't bother if disabled
 	[ ${POOL_BUCKETS} -gt 0 ] || return 0
 
-	local pkgname pkg_dir dep_count rdep lock
+	local pkgname pkg_dir dep_count lock origin
 
 	! dirempty ${MASTERMNT}/poudriere/pool/unbalanced || return 0
 	# Avoid running this in parallel, no need
@@ -3561,23 +3565,14 @@ balance_pool() {
 	else
 		bset status "balancing_pool:"
 	fi
+
 	# For everything ready-to-build...
 	for pkg_dir in ${MASTERMNT}/poudriere/pool/unbalanced/*; do
 		pkgname=${pkg_dir##*/}
-		dep_count=0
-		# Determine its priority, based on how much depends on it
-		for rdep in ${MASTERMNT}/poudriere/rdeps/${pkgname}/*; do
-			# Empty dir
-			case "${rdep}" in
-				"${MASTERMNT}/poudriere/rdeps/${pkgname}/*")
-					break
-					;;
-			esac
-
-			dep_count=$(($dep_count + 1))
-			[ $dep_count -eq $((${POOL_BUCKETS} - 1)) ] && break
-		done
-		mv ${pkg_dir} ${MASTERMNT}/poudriere/pool/${dep_count##* }/ 2>/dev/null || :
+		cache_get_origin origin "${pkgname}"
+		dep_count=$(awk -vport=${origin} '$2 == port {print $1; printed=1} END {if (!printed) print "0"}' "${MASTERMNT}/poudriere/ports_deps.depth")
+		[ $dep_count -ge ${POOL_BUCKETS} ] && dep_count=$((${POOL_BUCKETS} - 1))
+		mv ${pkg_dir} ${MASTERMNT}/poudriere/pool/${dep_count}/
 	done
 
 	rmdir ${lock}
