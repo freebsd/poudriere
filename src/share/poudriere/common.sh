@@ -3363,6 +3363,8 @@ prepare_ports() {
 		for n in $(jot ${POOL_BUCKETS} 0 | sort -nr); do
 			POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/${n}"
 		done
+	else
+		POOL_BUCKET_DIRS="${MASTERMNT}/poudriere/pool/unbalanced"
 	fi
 	mkdir -p ${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/unbalanced
 
