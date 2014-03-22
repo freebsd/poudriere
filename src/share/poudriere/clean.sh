@@ -86,12 +86,16 @@ clean_rdeps() {
 	find "${rdep_dir}" -type l 2>/dev/null |
 	    xargs realpath -q | xargs rm -f || :
 
-	# Move ready-to-build packages into unbalanced
-	echo ${deps_to_check} | \
-	    xargs -J % \
-	    find % -type d -maxdepth 0 -empty 2>/dev/null | \
-	    xargs -J % mv % "${JAILMNT}/poudriere/pool/unbalanced" \
-	    2>/dev/null || :
+	if [ ${clean_rdepends} -eq 0 ]; then
+		# Look for packages that are now ready to build. They have no
+		# remaining dependencies. Move them to /unbalanced for later
+		# processing.
+		echo ${deps_to_check} | \
+		    xargs -J % \
+		    find % -type d -maxdepth 0 -empty 2>/dev/null | \
+		    xargs -J % mv % "${JAILMNT}/poudriere/pool/unbalanced" \
+		    2>/dev/null || :
+	fi
 
 	rm -rf "${rdep_dir}"
 
