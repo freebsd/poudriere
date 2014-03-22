@@ -2480,6 +2480,7 @@ build_pkg() {
 		build_port ${portdir} || ret=$?
 		if [ ${ret} -ne 0 ]; then
 			build_failed=1
+			# ret=2 is a test failure
 			if [ ${ret} -eq 2 ]; then
 				failed_phase=$(/bin/sh ${SCRIPTPREFIX}/processonelog2.sh \
 					${log}/logs/${PKGNAME}.log \
@@ -2512,6 +2513,7 @@ build_pkg() {
 			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
 			run_hook pkgbuild failed "${port}" "${PKGNAME}" "${failed_phase}" \
 				"${log}/logs/errors/${PKGNAME}.log"
+			# ret=2 is a test failure
 			if [ ${ret} -eq 2 ]; then
 				clean_rdepends=0
 			else
