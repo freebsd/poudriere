@@ -2171,7 +2171,7 @@ ${dependency_cycles}"
 
 	# No cycle, there's some unknown poudriere bug
 	err 1 "Unknown stuck queue bug detected. Please submit the entire build output to poudriere developers.
-$(find ${MASTERMNT}/poudriere/building ${MASTERMNT}/poudriere/pool ${MASTERMNT}/poudriere/deps)"
+$(find ${MASTERMNT}/poudriere/building ${MASTERMNT}/poudriere/pool ${MASTERMNT}/poudriere/deps ${MASTERMNT}/poudriere/cleaning)"
 }
 
 queue_empty() {
@@ -3341,6 +3341,7 @@ prepare_ports() {
 		"${MASTERMNT}/poudriere/pool" \
 		"${MASTERMNT}/poudriere/deps" \
 		"${MASTERMNT}/poudriere/rdeps" \
+		"${MASTERMNT}/poudriere/cleaning/rdeps" \
 		"${MASTERMNT}/poudriere/var/run" \
 		"${MASTERMNT}/poudriere/var/cache" \
 		"${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
