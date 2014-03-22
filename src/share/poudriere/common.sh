@@ -3341,6 +3341,7 @@ prepare_ports() {
 		"${MASTERMNT}/poudriere/pool" \
 		"${MASTERMNT}/poudriere/deps" \
 		"${MASTERMNT}/poudriere/rdeps" \
+		"${MASTERMNT}/poudriere/cleaning/deps" \
 		"${MASTERMNT}/poudriere/cleaning/rdeps" \
 		"${MASTERMNT}/poudriere/var/run" \
 		"${MASTERMNT}/poudriere/var/cache" \

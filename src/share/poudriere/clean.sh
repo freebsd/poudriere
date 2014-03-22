@@ -106,7 +106,20 @@ clean_pool() {
 
 	clean_rdeps "${pkgname}" ${clean_rdepends}
 
-	rm -rf "${JAILMNT}/poudriere/deps/${pkgname}" 2>/dev/null || :
+	# Remove this pkg from the needs-to-build list. It will not exist
+	# if this build was sucessful. It only exists if clean_pool is
+	# being called recursively to skip items and in that case it will
+	# not be empty.
+	if [ ${clean_rdepends} -eq 1 ]; then
+		# Atomically remove the dir from deps/ to avoid a race of
+		# another clean.sh process seeing as empty.
+		# Only remove once it is claimed.
+		if mv "${JAILMNT}/poudriere/deps/${pkgname}" \
+		    "${JAILMNT}/poudriere/cleaning/deps/${pkgname}" \
+		    2>/dev/null; then
+			rm -rf "${JAILMNT}/poudriere/cleaning/deps/${pkgname}"
+		fi
+	fi
 
 	return 0
 }
