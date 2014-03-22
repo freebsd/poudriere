@@ -3407,17 +3407,6 @@ prepare_ports() {
 		"${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
 		"${MASTERMNT}/poudriere/var/cache/pkgname-origin"
 
-	POOL_BUCKET_DIRS=""
-	if [ ${POOL_BUCKETS} -gt 0 ]; then
-		# Add pool/N dirs in reverse order from highest to lowest
-		for n in $(jot ${POOL_BUCKETS} 0 | sort -nr); do
-			POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} ${n}"
-		done
-	else
-		POOL_BUCKET_DIRS="unbalanced"
-	fi
-	( cd ${MASTERMNT}/poudriere/pool && mkdir -p ${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/unbalanced )
-
 	if was_a_bulk_run; then
 		get_cache_dir cache_dir
 		mkdir -p ${log}/../../latest-per-pkg ${log}/../latest-per-pkg
@@ -3560,9 +3549,21 @@ prepare_ports() {
 		bset stats_queued ${nbq##* }
 	fi
 
-	[ ${POOL_BUCKETS} -gt 0 ] &&
-	    tsort -D "${MASTERMNT}/poudriere/pkg_deps" > \
-	    "${MASTERMNT}/poudriere/pkg_deps.depth"
+	POOL_BUCKET_DIRS=""
+	if [ ${POOL_BUCKETS} -gt 0 ]; then
+		tsort -D "${MASTERMNT}/poudriere/pkg_deps" > \
+		    "${MASTERMNT}/poudriere/pkg_deps.depth"
+
+		# Create buckets to satisfy the dependency chains, in reverse
+		# order. Not counting here as there may be boosted priorities
+		# at 99 or other high values.
+		POOL_BUCKET_DIRS=$(awk '{print $1}' \
+		    "${MASTERMNT}/poudriere/pkg_deps.depth"|sort -run)
+	else
+		POOL_BUCKET_DIRS="unbalanced"
+	fi
+
+	( cd ${MASTERMNT}/poudriere/pool && mkdir -p ${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/unbalanced )
 
 	# Create a pool of ready-to-build from the deps pool
 	find "${MASTERMNT}/poudriere/deps" -type d -empty -depth 1 | \
@@ -3598,7 +3599,6 @@ balance_pool() {
 	for pkg_dir in ${MASTERMNT}/poudriere/pool/unbalanced/*; do
 		pkgname=${pkg_dir##*/}
 		dep_count=$(awk -vpkgname=${pkgname} '$2 == pkgname {print $1; printed=1} END {if (!printed) print "0"}' "${MASTERMNT}/poudriere/pkg_deps.depth")
-		[ $dep_count -ge ${POOL_BUCKETS} ] && dep_count=$((${POOL_BUCKETS} - 1))
 		mv ${pkg_dir} ${MASTERMNT}/poudriere/pool/${dep_count}/
 	done
 
@@ -3874,7 +3874,8 @@ esac
 
 case ${POOL_BUCKETS} in
 ''|*[!0-9]*)
-	POOL_BUCKETS=10
+	# 1 will auto determine proper size, 0 disables.
+	POOL_BUCKETS=1
 	;;
 esac
 
