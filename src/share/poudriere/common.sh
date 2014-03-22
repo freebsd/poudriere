@@ -2390,6 +2390,8 @@ clean_pool() {
 	local clean_rdepends=$2
 	local port skipped_origin
 
+	[ -n "${MY_JOBID}" ] && bset ${MY_JOBID} status "clean_pool:"
+
 	[ ${clean_rdepends} -eq 1 ] && cache_get_origin port "${pkgname}"
 
 	# Cleaning queue (pool is cleaned here)
