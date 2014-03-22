@@ -1638,14 +1638,15 @@ gather_distfiles() {
 	local portdir="$1"
 	local from=$(realpath $2)
 	local to=$(realpath $3)
-	local sub dists d specials special
+	local sub dists d tosubd specials special
 	sub=$(injail make -C ${portdir} -VDIST_SUBDIR)
 	dists=$(injail make -C ${portdir} -V_DISTFILES -V_PATCHFILES)
 	specials=$(injail make -C ${portdir} -V_DEPEND_SPECIALS)
 	job_msg_verbose "Status for build ${portdir##/usr/ports/}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
 		[ -f ${from}/${sub}/${d} ] || continue
-		mkdir -p ${to}/${sub} || return 1
+		tosubd=${to}/${sub}/${d}
+		mkdir -p ${tosubd%/*} || return 1
 		cpdup ${from}/${sub}/${d} ${to}/${sub}/${d} || return 1
 	done
 
