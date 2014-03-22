@@ -3065,10 +3065,13 @@ compute_deps() {
 
 	sort -u "${MASTERMNT}/poudriere/rdeps.list" > \
 	    "${MASTERMNT}/poudriere/rdeps.list.sorted"
+
+	# cd into rdeps to allow xargs mkdir to have more args.
 	cd "${MASTERMNT}/poudriere/rdeps"
 	awk '{print $1}' "${MASTERMNT}/poudriere/rdeps.list.sorted" |
 	    sort -u | xargs mkdir
 
+	# xargs|touch was no quicker here.
 	while read pkgname dep_pkgname; do
 		:> "${MASTERMNT}/poudriere/rdeps/${pkgname}/${dep_pkgname}"
 	done < "${MASTERMNT}/poudriere/rdeps.list.sorted"
