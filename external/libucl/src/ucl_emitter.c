@@ -21,19 +21,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
+#include <float.h>
+#include <math.h>
 #include "ucl.h"
 #include "ucl_internal.h"
 #include "ucl_chartable.h"
-#ifdef HAVE_FLOAT_H
-#include <float.h>
-#endif
-#ifdef HAVE_MATH_H
-#include <math.h>
-#endif
 
 /**
  * @file rcl_emitter.c
