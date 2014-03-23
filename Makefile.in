@@ -85,6 +85,7 @@ sbin_PROGRAMS = poudriered$(EXEEXT)
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
+	$(top_srcdir)/src/config.h.in \
 	$(top_srcdir)/src/etc/rc.d/poudriered.in $(dist_bin_SCRIPTS) \
 	$(dist_rc_SCRIPTS) depcomp $(dist_man_MANS) \
 	$(dist_assets_DATA) $(dist_awk_DATA) $(dist_btcss_DATA) \
@@ -98,6 +99,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
+CONFIG_HEADER = $(top_builddir)/src/config.h
 CONFIG_CLEAN_FILES = src/etc/rc.d/poudriered
 CONFIG_CLEAN_VPATH_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
@@ -200,7 +202,7 @@ AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
 am__v_at_1 = 
-DEFAULT_INCLUDES = -I.@am__isrc@
+DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
@@ -505,6 +507,21 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	$(am__cd) $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 $(am__aclocal_m4_deps):
+
+src/config.h: src/stamp-h1
+	@test -f $@ || rm -f src/stamp-h1
+	@test -f $@ || $(MAKE) $(AM_MAKEFLAGS) src/stamp-h1
+
+src/stamp-h1: $(top_srcdir)/src/config.h.in $(top_builddir)/config.status
+	@rm -f src/stamp-h1
+	cd $(top_builddir) && $(SHELL) ./config.status src/config.h
+$(top_srcdir)/src/config.h.in:  $(am__configure_deps) 
+	($(am__cd) $(top_srcdir) && $(AUTOHEADER))
+	rm -f src/stamp-h1
+	touch $@
+
+distclean-hdr:
+	-rm -f src/config.h src/stamp-h1
 src/etc/rc.d/poudriered: $(top_builddir)/config.status $(top_srcdir)/src/etc/rc.d/poudriered.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 
@@ -1592,7 +1609,7 @@ distclean: distclean-am
 	-rm -rf external/libucl/src/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-tags
+	distclean-hdr distclean-tags
 
 dvi: dvi-am
 
@@ -1678,31 +1695,32 @@ uninstall-man: uninstall-man8
 	cscopelist-am ctags ctags-am dist dist-all dist-bzip2 \
 	dist-gzip dist-lzip dist-shar dist-tarZ dist-xz dist-zip \
 	distcheck distclean distclean-compile distclean-generic \
-	distclean-tags distcleancheck distdir distuninstallcheck dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dist_assetsDATA \
-	install-dist_awkDATA install-dist_binSCRIPTS \
-	install-dist_btcssDATA install-dist_btimgDATA \
-	install-dist_btjsDATA install-dist_dtcssDATA \
-	install-dist_dtimagesDATA install-dist_dtjsDATA \
-	install-dist_htmlDATA install-dist_pkgdataDATA \
-	install-dist_rcSCRIPTS install-dvi install-dvi-am install-exec \
-	install-exec-am install-hookDATA install-html install-html-am \
-	install-info install-info-am install-man install-man8 \
-	install-pdf install-pdf-am install-pkglibexecPROGRAMS \
-	install-ps install-ps-am install-sbinPROGRAMS install-strip \
-	install-sysconfDATA installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am uninstall-dist_assetsDATA \
-	uninstall-dist_awkDATA uninstall-dist_binSCRIPTS \
-	uninstall-dist_btcssDATA uninstall-dist_btimgDATA \
-	uninstall-dist_btjsDATA uninstall-dist_dtcssDATA \
-	uninstall-dist_dtimagesDATA uninstall-dist_dtjsDATA \
-	uninstall-dist_htmlDATA uninstall-dist_pkgdataDATA \
-	uninstall-dist_rcSCRIPTS uninstall-hookDATA uninstall-man \
-	uninstall-man8 uninstall-pkglibexecPROGRAMS \
-	uninstall-sbinPROGRAMS uninstall-sysconfDATA
+	distclean-hdr distclean-tags distcleancheck distdir \
+	distuninstallcheck dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am \
+	install-dist_assetsDATA install-dist_awkDATA \
+	install-dist_binSCRIPTS install-dist_btcssDATA \
+	install-dist_btimgDATA install-dist_btjsDATA \
+	install-dist_dtcssDATA install-dist_dtimagesDATA \
+	install-dist_dtjsDATA install-dist_htmlDATA \
+	install-dist_pkgdataDATA install-dist_rcSCRIPTS install-dvi \
+	install-dvi-am install-exec install-exec-am install-hookDATA \
+	install-html install-html-am install-info install-info-am \
+	install-man install-man8 install-pdf install-pdf-am \
+	install-pkglibexecPROGRAMS install-ps install-ps-am \
+	install-sbinPROGRAMS install-strip install-sysconfDATA \
+	installcheck installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
+	uninstall-am uninstall-dist_assetsDATA uninstall-dist_awkDATA \
+	uninstall-dist_binSCRIPTS uninstall-dist_btcssDATA \
+	uninstall-dist_btimgDATA uninstall-dist_btjsDATA \
+	uninstall-dist_dtcssDATA uninstall-dist_dtimagesDATA \
+	uninstall-dist_dtjsDATA uninstall-dist_htmlDATA \
+	uninstall-dist_pkgdataDATA uninstall-dist_rcSCRIPTS \
+	uninstall-hookDATA uninstall-man uninstall-man8 \
+	uninstall-pkglibexecPROGRAMS uninstall-sbinPROGRAMS \
+	uninstall-sysconfDATA
 
 
 .PHONY:	gen-make-wiki

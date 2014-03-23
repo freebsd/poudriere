@@ -51,6 +51,10 @@
 #include <ucl.h>
 #include <unistd.h>
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 static ucl_object_t *conf;
 static ucl_object_t *queue = NULL;
 static int server_fd = -1;
@@ -669,8 +673,13 @@ check_schedules() {
 		    dateformat == NULL)
 			continue;
 
+#ifdef HAVE_STRFTIME_L
 		if (strftime_l(datestr, BUFSIZ, ucl_object_tostring(dateformat),
 		    now, NULL) <= 0)
+#else
+		if (strftime(datestr, BUFSIZ, ucl_object_tostring(dateformat),
+		    now) <= 0)
+#endif
 			continue;
 
 		if (!strcmp(datestr, ucl_object_tostring(when))) {
