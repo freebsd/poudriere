@@ -72,7 +72,6 @@ pkglibexec_PROGRAMS= \
 		     cpdup \
 		     dirempty \
 		     dirwatch \
-		     make_index \
 		     nc \
 		     rename \
 		     tsort
@@ -94,8 +93,6 @@ cpdup_CFLAGS=	-D_ST_FLAGS_PRESENT_=1
 dirempty_SOURCES=	src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
 nc_SOURCES=		src/libexec/poudriere/nc/nc.c
-make_index_SOURCES=	src/libexec/poudriere/make_index/make_index.c
-make_index_LDADD=	-ljail -lsbuf
 tsort_SOURCES=		src/libexec/poudriere/tsort/tsort.c
 libucl_a_SOURCES=	external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_hash.c \

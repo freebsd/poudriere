@@ -80,8 +80,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 pkglibexec_PROGRAMS = cpdup$(EXEEXT) dirempty$(EXEEXT) \
-	dirwatch$(EXEEXT) make_index$(EXEEXT) nc$(EXEEXT) \
-	rename$(EXEEXT) tsort$(EXEEXT)
+	dirwatch$(EXEEXT) nc$(EXEEXT) rename$(EXEEXT) tsort$(EXEEXT)
 sbin_PROGRAMS = poudriered$(EXEEXT)
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
@@ -145,10 +144,6 @@ am_dirwatch_OBJECTS =  \
 	src/libexec/poudriere/dirwatch/dirwatch.$(OBJEXT)
 dirwatch_OBJECTS = $(am_dirwatch_OBJECTS)
 dirwatch_LDADD = $(LDADD)
-am_make_index_OBJECTS =  \
-	src/libexec/poudriere/make_index/make_index.$(OBJEXT)
-make_index_OBJECTS = $(am_make_index_OBJECTS)
-make_index_DEPENDENCIES =
 am_nc_OBJECTS = src/libexec/poudriere/nc/nc.$(OBJEXT)
 nc_OBJECTS = $(am_nc_OBJECTS)
 nc_LDADD = $(LDADD)
@@ -225,12 +220,11 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(libucl_a_SOURCES) $(cpdup_SOURCES) $(dirempty_SOURCES) \
-	$(dirwatch_SOURCES) $(make_index_SOURCES) $(nc_SOURCES) \
-	$(poudriered_SOURCES) $(rename_SOURCES) $(tsort_SOURCES)
+	$(dirwatch_SOURCES) $(nc_SOURCES) $(poudriered_SOURCES) \
+	$(rename_SOURCES) $(tsort_SOURCES)
 DIST_SOURCES = $(libucl_a_SOURCES) $(cpdup_SOURCES) \
-	$(dirempty_SOURCES) $(dirwatch_SOURCES) $(make_index_SOURCES) \
-	$(nc_SOURCES) $(poudriered_SOURCES) $(rename_SOURCES) \
-	$(tsort_SOURCES)
+	$(dirempty_SOURCES) $(dirwatch_SOURCES) $(nc_SOURCES) \
+	$(poudriered_SOURCES) $(rename_SOURCES) $(tsort_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -448,8 +442,6 @@ cpdup_CFLAGS = -D_ST_FLAGS_PRESENT_=1
 dirempty_SOURCES = src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES = src/libexec/poudriere/dirwatch/dirwatch.c
 nc_SOURCES = src/libexec/poudriere/nc/nc.c
-make_index_SOURCES = src/libexec/poudriere/make_index/make_index.c
-make_index_LDADD = -ljail -lsbuf
 tsort_SOURCES = src/libexec/poudriere/tsort/tsort.c
 libucl_a_SOURCES = external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_hash.c \
@@ -677,19 +669,6 @@ src/libexec/poudriere/dirwatch/dirwatch.$(OBJEXT):  \
 dirwatch$(EXEEXT): $(dirwatch_OBJECTS) $(dirwatch_DEPENDENCIES) $(EXTRA_dirwatch_DEPENDENCIES) 
 	@rm -f dirwatch$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(dirwatch_OBJECTS) $(dirwatch_LDADD) $(LIBS)
-src/libexec/poudriere/make_index/$(am__dirstamp):
-	@$(MKDIR_P) src/libexec/poudriere/make_index
-	@: > src/libexec/poudriere/make_index/$(am__dirstamp)
-src/libexec/poudriere/make_index/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) src/libexec/poudriere/make_index/$(DEPDIR)
-	@: > src/libexec/poudriere/make_index/$(DEPDIR)/$(am__dirstamp)
-src/libexec/poudriere/make_index/make_index.$(OBJEXT):  \
-	src/libexec/poudriere/make_index/$(am__dirstamp) \
-	src/libexec/poudriere/make_index/$(DEPDIR)/$(am__dirstamp)
-
-make_index$(EXEEXT): $(make_index_OBJECTS) $(make_index_DEPENDENCIES) $(EXTRA_make_index_DEPENDENCIES) 
-	@rm -f make_index$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(make_index_OBJECTS) $(make_index_LDADD) $(LIBS)
 src/libexec/poudriere/nc/$(am__dirstamp):
 	@$(MKDIR_P) src/libexec/poudriere/nc
 	@: > src/libexec/poudriere/nc/$(am__dirstamp)
@@ -819,7 +798,6 @@ mostlyclean-compile:
 	-rm -f src/libexec/poudriere/cpdup/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/dirempty/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/dirwatch/*.$(OBJEXT)
-	-rm -f src/libexec/poudriere/make_index/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/nc/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/rename/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/tsort/*.$(OBJEXT)
@@ -841,7 +819,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-misc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/make_index/$(DEPDIR)/make_index.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/nc/$(DEPDIR)/nc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rename/$(DEPDIR)/rename.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/tsort/$(DEPDIR)/tsort.Po@am__quote@
@@ -1567,8 +1544,6 @@ distclean-generic:
 	-rm -f src/libexec/poudriere/dirempty/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/dirwatch/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/dirwatch/$(am__dirstamp)
-	-rm -f src/libexec/poudriere/make_index/$(DEPDIR)/$(am__dirstamp)
-	-rm -f src/libexec/poudriere/make_index/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/nc/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/nc/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/rename/$(DEPDIR)/$(am__dirstamp)
@@ -1588,7 +1563,7 @@ clean-am: clean-generic clean-noinstLIBRARIES clean-pkglibexecPROGRAMS \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf external/libucl/src/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/make_index/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
+	-rm -rf external/libucl/src/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -1642,7 +1617,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf external/libucl/src/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/make_index/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
+	-rm -rf external/libucl/src/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
