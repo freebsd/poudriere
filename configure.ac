@@ -9,6 +9,26 @@ AC_PROG_RANLIB
 
 AC_CHECK_FUNCS([strftime_l])
 
+AC_CHECK_HEADERS_ONCE([sys/types.h])
+AC_CHECK_HEADERS_ONCE([sys/stat.h])
+AC_CHECK_HEADERS_ONCE([sys/param.h])
+AC_CHECK_HEADERS_ONCE([sys/mman.h])
+AC_CHECK_HEADERS_ONCE([stdlib.h])
+AC_CHECK_HEADERS_ONCE([stddef.h])
+AC_CHECK_HEADERS_ONCE([stdarg.h])
+AC_CHECK_HEADERS_ONCE([stdbool.h])
+AC_CHECK_HEADERS_ONCE([stdint.h])
+AC_CHECK_HEADERS_ONCE([string.h])
+AC_CHECK_HEADERS_ONCE([unistd.h])
+AC_CHECK_HEADERS_ONCE([ctype.h])
+AC_CHECK_HEADERS_ONCE([errno.h])
+AC_CHECK_HEADERS_ONCE([limits.h])
+AC_CHECK_HEADERS_ONCE([libgen.h])
+AC_CHECK_HEADERS_ONCE([stdio.h])
+AC_CHECK_HEADERS_ONCE([float.h])
+AC_CHECK_HEADERS_ONCE([math.h])
+AC_CHECK_HEADERS_ONCE([fcntl.h])
+
 AC_CONFIG_FILES(Makefile)
 
 AC_OUTPUT([src/etc/rc.d/poudriered])
