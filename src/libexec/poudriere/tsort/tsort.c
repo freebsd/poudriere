@@ -303,9 +303,8 @@ static void
 tsort(void)
 {
 	NODE *n, *next;
-	int cnt, depth, i;
+	int cnt, i;
 
-	depth = 0;
 	while (graph != NULL) {
 		/*
 		 * Keep getting rid of simple cases until there are none left,
@@ -316,12 +315,10 @@ tsort(void)
 			for (cnt = 0, n = graph; n != NULL; n = next) {
 				next = n->n_next;
 				if (n->n_refcnt == 0) {
-					n->n_depth = depth;
 					remove_node(n);
 					++cnt;
 				}
 			}
-			++depth;
 		} while (graph != NULL && cnt);
 
 		if (graph == NULL)
@@ -374,8 +371,11 @@ remove_node(NODE *n)
 	if (print_depth)
 		(void)printf("%d ", n->n_depth);
 	(void)printf("%s\n", n->n_name);
-	for (np = n->n_arcs, i = n->n_narcs; --i >= 0; np++)
+	for (np = n->n_arcs, i = n->n_narcs; --i >= 0; np++) {
+		if ((*np)->n_depth < n->n_depth + 1)
+			(*np)->n_depth = n->n_depth + 1;
 		--(*np)->n_refcnt;
+	}
 	n->n_narcs = 0;
 	*n->n_prevp = n->n_next;
 	if (n->n_next)
