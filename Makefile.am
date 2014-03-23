@@ -12,6 +12,7 @@ dtcssdir= $(datatablesdir)/css
 dtimagesdir= $(datatablesdir)/images
 dtjsdir= $(datatablesdir)/js
 rcdir= $(sysconfdir)/rc.d
+hookdir= $(sysconfdir)/poudriere.d/hooks
 
 dist_bin_SCRIPTS=	src/bin/poudriere
 
@@ -19,6 +20,9 @@ dist_man_MANS=	src/bin/poudriere.8
 
 sysconf_DATA=	src/etc/poudriere.conf.sample \
 		src/etc/poudriered.conf.sample
+
+hook_DATA=	src/etc/poudriere.d/hooks/bulk.sh.sample \
+		src/etc/poudriere.d/hooks/pkgbuild.sh.sample
 
 dist_pkgdata_DATA=	src/share/poudriere/bulk.sh \
 			src/share/poudriere/clean.sh \

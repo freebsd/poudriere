@@ -124,7 +124,8 @@ am__installdirs = "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(sbindir)" \
 	"$(DESTDIR)$(btimgdir)" "$(DESTDIR)$(btjsdir)" \
 	"$(DESTDIR)$(dtcssdir)" "$(DESTDIR)$(dtimagesdir)" \
 	"$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(htmldir)" \
-	"$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(sysconfdir)"
+	"$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(hookdir)" \
+	"$(DESTDIR)$(sysconfdir)"
 PROGRAMS = $(pkglibexec_PROGRAMS) $(sbin_PROGRAMS)
 am_cpdup_OBJECTS = src/libexec/poudriere/cpdup/cpdup-cpdup.$(OBJEXT) \
 	src/libexec/poudriere/cpdup/cpdup-hcproto.$(OBJEXT) \
@@ -236,7 +237,7 @@ MANS = $(dist_man_MANS)
 DATA = $(dist_assets_DATA) $(dist_awk_DATA) $(dist_btcss_DATA) \
 	$(dist_btimg_DATA) $(dist_btjs_DATA) $(dist_dtcss_DATA) \
 	$(dist_dtimages_DATA) $(dist_dtjs_DATA) $(dist_html_DATA) \
-	$(dist_pkgdata_DATA) $(sysconf_DATA)
+	$(dist_pkgdata_DATA) $(hook_DATA) $(sysconf_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -372,10 +373,14 @@ dtcssdir = $(datatablesdir)/css
 dtimagesdir = $(datatablesdir)/images
 dtjsdir = $(datatablesdir)/js
 rcdir = $(sysconfdir)/rc.d
+hookdir = $(sysconfdir)/poudriere.d/hooks
 dist_bin_SCRIPTS = src/bin/poudriere
 dist_man_MANS = src/bin/poudriere.8
 sysconf_DATA = src/etc/poudriere.conf.sample \
 		src/etc/poudriered.conf.sample
+
+hook_DATA = src/etc/poudriere.d/hooks/bulk.sh.sample \
+		src/etc/poudriere.d/hooks/pkgbuild.sh.sample
 
 dist_pkgdata_DATA = src/share/poudriere/bulk.sh \
 			src/share/poudriere/clean.sh \
@@ -1260,6 +1265,27 @@ uninstall-dist_pkgdataDATA:
 	@list='$(dist_pkgdata_DATA)'; test -n "$(pkgdatadir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(pkgdatadir)'; $(am__uninstall_files_from_dir)
+install-hookDATA: $(hook_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(hook_DATA)'; test -n "$(hookdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(hookdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(hookdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(hookdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(hookdir)" || exit $$?; \
+	done
+
+uninstall-hookDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(hook_DATA)'; test -n "$(hookdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(hookdir)'; $(am__uninstall_files_from_dir)
 install-sysconfDATA: $(sysconf_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(sysconf_DATA)'; test -n "$(sysconfdir)" || list=; \
@@ -1506,7 +1532,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(LIBRARIES) $(PROGRAMS) $(SCRIPTS) $(MANS) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(rcdir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(assetsdir)" "$(DESTDIR)$(awkdir)" "$(DESTDIR)$(btcssdir)" "$(DESTDIR)$(btimgdir)" "$(DESTDIR)$(btjsdir)" "$(DESTDIR)$(dtcssdir)" "$(DESTDIR)$(dtimagesdir)" "$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(htmldir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(sysconfdir)"; do \
+	for dir in "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(rcdir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(assetsdir)" "$(DESTDIR)$(awkdir)" "$(DESTDIR)$(btcssdir)" "$(DESTDIR)$(btimgdir)" "$(DESTDIR)$(btjsdir)" "$(DESTDIR)$(dtcssdir)" "$(DESTDIR)$(dtimagesdir)" "$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(htmldir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(hookdir)" "$(DESTDIR)$(sysconfdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -1585,7 +1611,7 @@ install-data-am: install-dist_assetsDATA install-dist_awkDATA \
 	install-dist_btjsDATA install-dist_dtcssDATA \
 	install-dist_dtimagesDATA install-dist_dtjsDATA \
 	install-dist_htmlDATA install-dist_pkgdataDATA \
-	install-dist_rcSCRIPTS install-man
+	install-dist_rcSCRIPTS install-hookDATA install-man
 
 install-dvi: install-dvi-am
 
@@ -1639,7 +1665,7 @@ uninstall-am: uninstall-dist_assetsDATA uninstall-dist_awkDATA \
 	uninstall-dist_dtcssDATA uninstall-dist_dtimagesDATA \
 	uninstall-dist_dtjsDATA uninstall-dist_htmlDATA \
 	uninstall-dist_pkgdataDATA uninstall-dist_rcSCRIPTS \
-	uninstall-man uninstall-pkglibexecPROGRAMS \
+	uninstall-hookDATA uninstall-man uninstall-pkglibexecPROGRAMS \
 	uninstall-sbinPROGRAMS uninstall-sysconfDATA
 
 uninstall-man: uninstall-man8
@@ -1661,10 +1687,10 @@ uninstall-man: uninstall-man8
 	install-dist_dtimagesDATA install-dist_dtjsDATA \
 	install-dist_htmlDATA install-dist_pkgdataDATA \
 	install-dist_rcSCRIPTS install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-man8 install-pdf \
-	install-pdf-am install-pkglibexecPROGRAMS install-ps \
-	install-ps-am install-sbinPROGRAMS install-strip \
+	install-exec-am install-hookDATA install-html install-html-am \
+	install-info install-info-am install-man install-man8 \
+	install-pdf install-pdf-am install-pkglibexecPROGRAMS \
+	install-ps install-ps-am install-sbinPROGRAMS install-strip \
 	install-sysconfDATA installcheck installcheck-am installdirs \
 	maintainer-clean maintainer-clean-generic mostlyclean \
 	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
@@ -1674,9 +1700,9 @@ uninstall-man: uninstall-man8
 	uninstall-dist_btjsDATA uninstall-dist_dtcssDATA \
 	uninstall-dist_dtimagesDATA uninstall-dist_dtjsDATA \
 	uninstall-dist_htmlDATA uninstall-dist_pkgdataDATA \
-	uninstall-dist_rcSCRIPTS uninstall-man uninstall-man8 \
-	uninstall-pkglibexecPROGRAMS uninstall-sbinPROGRAMS \
-	uninstall-sysconfDATA
+	uninstall-dist_rcSCRIPTS uninstall-hookDATA uninstall-man \
+	uninstall-man8 uninstall-pkglibexecPROGRAMS \
+	uninstall-sbinPROGRAMS uninstall-sysconfDATA
 
 
 .PHONY:	gen-make-wiki
