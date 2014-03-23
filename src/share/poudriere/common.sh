@@ -3554,7 +3554,7 @@ prepare_ports() {
 
 	POOL_BUCKET_DIRS=""
 	if [ ${POOL_BUCKETS} -gt 0 ]; then
-		tsort -D "${MASTERMNT}/poudriere/pkg_deps" > \
+		tsort -D "${MASTERMNT}/poudriere/pkg_deps" | sort > \
 		    "${MASTERMNT}/poudriere/pkg_deps.depth"
 
 		# Create buckets to satisfy the dependency chains, in reverse
