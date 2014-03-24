@@ -757,6 +757,7 @@ EOF
 ./usr/ports/*
 ./usr/src
 ./var/db/ports/*
+./var/tmp/*
 ./wrkdirs/*
 EOF
 			;;
@@ -788,6 +789,7 @@ EOF
 ./var/log/*
 ./var/mail/*
 ./var/run/*
+./var/tmp/*
 ./wrkdirs/*
 EOF
 		;;
