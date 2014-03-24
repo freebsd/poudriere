@@ -2207,10 +2207,10 @@ mark_done() {
 	local origin
 	local cache_dir
 
-	cache_get_origin origin "${pkgname}"
-	get_cache_dir cache_dir
-
 	if [ "${TRACK_BUILDTIMES}" != "no" ]; then
+		cache_get_origin origin "${pkgname}"
+		get_cache_dir cache_dir
+
 		echo -n "${origin} $(date +%s) " >> ${cache_dir}/buildtimes
 		stat -f "%m" ${MASTERMNT}/poudriere/building/${pkgname} >> \
 			${cache_dir}/buildtimes
