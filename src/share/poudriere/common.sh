@@ -3623,6 +3623,7 @@ prepare_ports() {
 	# Create a pool of ready-to-build from the deps pool
 	find "${MASTERMNT}/poudriere/deps" -type d -empty -depth 1 | \
 		xargs -J % mv % "${MASTERMNT}/poudriere/pool/unbalanced"
+	load_priorities
 	balance_pool
 
 	[ -n "${ALLOW_MAKE_JOBS}" ] || echo "DISABLE_MAKE_JOBS=poudriere" \
@@ -3631,6 +3632,14 @@ prepare_ports() {
 	jget ${JAILNAME} version > ${PACKAGES}/.jailversion
 
 	return 0
+}
+
+load_priorities() {
+	local priority pkgname
+
+	while read priority pkgname; do
+		hash_set "priority" "${pkgname}" ${priority}
+	done < "${MASTERMNT}/poudriere/pkg_deps.depth"
 }
 
 balance_pool() {
@@ -3653,7 +3662,7 @@ balance_pool() {
 	# For everything ready-to-build...
 	for pkg_dir in ${MASTERMNT}/poudriere/pool/unbalanced/*; do
 		pkgname=${pkg_dir##*/}
-		dep_count=$(awk -vpkgname=${pkgname} '$2 == pkgname {print $1; printed=1} END {if (!printed) print "0"}' "${MASTERMNT}/poudriere/pkg_deps.depth")
+		hash_get dep_count "priority" "${pkgname}" || dep_count=0
 		mv ${pkg_dir} ${MASTERMNT}/poudriere/pool/${dep_count}/
 	done
 
