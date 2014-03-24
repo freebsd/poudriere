@@ -3618,12 +3618,14 @@ prepare_ports() {
 		POOL_BUCKET_DIRS="unbalanced"
 	fi
 
-	( cd ${MASTERMNT}/poudriere/pool && mkdir -p ${POOL_BUCKET_DIRS} ${MASTERMNT}/poudriere/pool/unbalanced )
+	mkdir "${MASTERMNT}/poudriere/pool/unbalanced"
 
 	# Create a pool of ready-to-build from the deps pool
 	find "${MASTERMNT}/poudriere/deps" -type d -empty -depth 1 | \
 		xargs -J % mv % "${MASTERMNT}/poudriere/pool/unbalanced"
 	load_priorities
+	# Create buckets after loading priorities in case of boosts.
+	( cd ${MASTERMNT}/poudriere/pool && mkdir ${POOL_BUCKET_DIRS} )
 	balance_pool
 
 	[ -n "${ALLOW_MAKE_JOBS}" ] || echo "DISABLE_MAKE_JOBS=poudriere" \
@@ -3635,11 +3637,31 @@ prepare_ports() {
 }
 
 load_priorities() {
-	local priority pkgname
+	local priority pkgname pkg_boost boosted origin
+	local - # Keep set -f local
 
+	set -f # for PRIORITY_BOOST
+	boosted=0
 	while read priority pkgname; do
+		# Does this pkg have an override?
+		for pkg_boost in ${PRIORITY_BOOST}; do
+			case ${pkgname%-*} in
+				${pkg_boost})
+					cache_get_origin origin "${pkgname}"
+					msg "Boosting priority: ${origin}"
+					priority=99
+					boosted=1
+					break
+					;;
+			esac
+		done
 		hash_set "priority" "${pkgname}" ${priority}
 	done < "${MASTERMNT}/poudriere/pkg_deps.depth"
+
+	# Add 99 into the pool if needed.
+	[ ${boosted} -eq 1 ] && POOL_BUCKET_DIRS="99 ${POOL_BUCKET_DIRS}"
+
+	return 0
 }
 
 balance_pool() {

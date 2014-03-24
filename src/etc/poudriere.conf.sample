@@ -219,3 +219,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Define to yes to build and stage as a regular user
 # Default: no
 #BUILD_AS_NON_ROOT=yes
+
+# Define pkgname globs to boost priority for
+# Default: none
+#PRIORITY_BOOST="pypy openoffice*"
