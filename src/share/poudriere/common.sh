@@ -3453,6 +3453,7 @@ prepare_ports() {
 		"${MASTERMNT}/poudriere/var/cache/pkgname-origin" 2>/dev/null || :
 	mkdir -p "${MASTERMNT}/poudriere/building" \
 		"${MASTERMNT}/poudriere/pool" \
+		"${MASTERMNT}/poudriere/pool/unbalanced" \
 		"${MASTERMNT}/poudriere/deps" \
 		"${MASTERMNT}/poudriere/rdeps" \
 		"${MASTERMNT}/poudriere/cleaning/deps" \
@@ -3618,7 +3619,6 @@ prepare_ports() {
 		POOL_BUCKET_DIRS="unbalanced"
 	fi
 
-	mkdir "${MASTERMNT}/poudriere/pool/unbalanced"
 
 	# Create a pool of ready-to-build from the deps pool
 	find "${MASTERMNT}/poudriere/deps" -type d -empty -depth 1 | \
