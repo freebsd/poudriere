@@ -2643,7 +2643,7 @@ mangle_stderr() {
 }
 
 list_deps() {
-	[ $# -ne 1 ] && eargs directory
+	[ $# -ne 1 ] && eargs list_deps directory
 	local dir="/usr/ports/$1"
 	local makeargs="-VPKG_DEPENDS -VBUILD_DEPENDS -VEXTRACT_DEPENDS -VLIB_DEPENDS -VPATCH_DEPENDS -VFETCH_DEPENDS -VRUN_DEPENDS"
 
@@ -2654,7 +2654,7 @@ list_deps() {
 }
 
 deps_file() {
-	[ $# -ne 2 ] && eargs var_return pkg
+	[ $# -ne 2 ] && eargs deps_file var_return pkg
 	local var_return="$1"
 	local pkg="$2"
 	local pkg_cache_dir
@@ -2675,7 +2675,7 @@ deps_file() {
 }
 
 pkg_get_origin() {
-	[ $# -lt 2 ] && eargs var_return pkg
+	[ $# -lt 2 ] && eargs pkg_get_origin var_return pkg
 	local var_return="$1"
 	local pkg="$2"
 	local _origin=$3
@@ -2707,7 +2707,7 @@ pkg_get_origin() {
 }
 
 pkg_get_dep_origin() {
-	[ $# -ne 2 ] && eargs var_return pkg
+	[ $# -ne 2 ] && eargs pkg_get_dep_origin var_return pkg
 	local var_return="$1"
 	local pkg="$2"
 	local dep_origin_file
@@ -2748,7 +2748,7 @@ pkg_get_dep_origin() {
 }
 
 pkg_get_options() {
-	[ $# -ne 2 ] && eargs var_return pkg
+	[ $# -ne 2 ] && eargs pkg_get_options var_return pkg
 	local var_return="$1"
 	local pkg="$2"
 	local optionsfile
@@ -2795,7 +2795,7 @@ ensure_pkg_installed() {
 }
 
 pkg_cache_data() {
-	[ $# -ne 2 ] && eargs pkg origin
+	[ $# -ne 2 ] && eargs pkg_cache_data pkg origin
 	local - # Make `set +e` local
 	# Ignore errors in here
 	set +e
@@ -2824,7 +2824,7 @@ get_cache_dir() {
 # @param var_return The variable to set the result in
 # @param string pkg $PKGDIR/All/PKGNAME.PKG_EXT
 get_pkg_cache_dir() {
-	[ $# -lt 2 ] && eargs var_return pkg
+	[ $# -lt 2 ] && eargs get_pkg_cache_dir var_return pkg
 	local var_return="$1"
 	local pkg="$2"
 	local use_mtime="${3:-1}"
@@ -2845,7 +2845,7 @@ get_pkg_cache_dir() {
 }
 
 clear_pkg_cache() {
-	[ $# -ne 1 ] && eargs pkg
+	[ $# -ne 1 ] && eargs clear_pkg_cache pkg
 	local pkg="$1"
 	local pkg_cache_dir
 
@@ -2855,7 +2855,7 @@ clear_pkg_cache() {
 }
 
 delete_pkg() {
-	[ $# -ne 1 ] && eargs pkg
+	[ $# -ne 1 ] && eargs delete_pkg pkg
 	local pkg="$1"
 
 	# Delete the package and the depsfile since this package is being deleted,
@@ -2886,7 +2886,7 @@ delete_stale_pkg_cache() {
 }
 
 delete_old_pkg() {
-	[ $# -eq 1 ] || eargs pkgname
+	[ $# -eq 1 ] || eargs delete_old_pkg pkgname
 	local pkg="$1"
 	local mnt pkgname cached_pkgname
 	local o v v2 compiled_options current_options current_deps compiled_deps
@@ -3040,7 +3040,7 @@ next_in_queue() {
 }
 
 lock_acquire() {
-	[ $# -ne 1 ] && eargs lockname
+	[ $# -ne 1 ] && eargs lock_acquire lockname
 	local lockname=$1
 
 	while :; do
@@ -3051,14 +3051,14 @@ lock_acquire() {
 }
 
 lock_release() {
-	[ $# -ne 1 ] && eargs lockname
+	[ $# -ne 1 ] && eargs lock_release lockname
 	local lockname=$1
 
 	rmdir ${POUDRIERE_DATA}/.lock-${MASTERNAME}-${lockname} 2>/dev/null
 }
 
 cache_get_pkgname() {
-	[ $# -ne 2 ] && eargs var_return origin
+	[ $# -ne 2 ] && eargs cache_get_pkgname var_return origin
 	local var_return="$1"
 	local origin=${2%/}
 	local _pkgname="" existing_origin
@@ -3090,7 +3090,7 @@ cache_get_pkgname() {
 }
 
 cache_get_origin() {
-	[ $# -ne 2 ] && eargs var_return pkgname
+	[ $# -ne 2 ] && eargs cache_get_origin var_return pkgname
 	local var_return="$1"
 	local pkgname="$2"
 	local cache_pkgname_origin="${MASTERMNT}/poudriere/var/cache/pkgname-origin/${pkgname}"
@@ -3144,8 +3144,8 @@ compute_deps() {
 
 # Take optional pkgname to speedup lookup
 compute_deps_port() {
-	[ $# -lt 1 ] && eargs port
-	[ $# -gt 2 ] && eargs port pkgnme
+	[ $# -lt 1 ] && eargs compute_deps_port port
+	[ $# -gt 2 ] && eargs compute_deps_port port pkgnme
 	local port=$1
 	local pkgname="$2"
 	local dep_pkgname dep_port
@@ -3215,7 +3215,7 @@ listed_ports() {
 
 # Port was requested to be built
 port_is_listed() {
-	[ $# -eq 1 ] || eargs origin
+	[ $# -eq 1 ] || eargs port_is_listed origin
 	local origin="$1"
 
 	if [ ${ALL} -eq 1 -o ${PORTTESTING_RECURSIVE} -eq 1 ]; then
@@ -3229,7 +3229,7 @@ port_is_listed() {
 
 # Port was requested to be built, or is needed by a port requested to be built
 port_is_needed() {
-	[ $# -eq 1 ] || eargs origin
+	[ $# -eq 1 ] || eargs port_is_needed origin
 	local origin="$1"
 
 	[ ${ALL} -eq 1 ] && return 0
@@ -3240,7 +3240,7 @@ port_is_needed() {
 }
 
 get_porttesting() {
-	[ $# -eq 1 ] || eargs pkgname
+	[ $# -eq 1 ] || eargs get_porttesting pkgname
 	local pkgname="$1"
 	local porttesting
 	local origin
@@ -3373,7 +3373,7 @@ parallel_run() {
 }
 
 find_all_pool_references() {
-	[ $# -ne 1 ] && eargs pkgname
+	[ $# -ne 1 ] && eargs find_all_pool_references pkgname
 	local pkgname="$1"
 	local rpn dep_pkgname
 
@@ -3425,7 +3425,7 @@ load_moved() {
 }
 
 check_moved() {
-	[ $# -lt 2 ] && eargs var_return origin
+	[ $# -lt 2 ] && eargs check_moved var_return origin
 	local var_return="$1"
 	local origin="$2"
 	local _new_origin
@@ -3696,7 +3696,7 @@ balance_pool() {
 }
 
 append_make() {
-	[ $# -ne 2 ] && eargs src_makeconf dst_makeconf
+	[ $# -ne 2 ] && eargs append_make src_makeconf dst_makeconf
 	local src_makeconf=$1
 	local dst_makeconf=$2
 
