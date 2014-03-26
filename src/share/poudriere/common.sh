@@ -3605,27 +3605,10 @@ prepare_ports() {
 		bset stats_queued ${nbq##* }
 	fi
 
-	POOL_BUCKET_DIRS=""
-	if [ ${POOL_BUCKETS} -gt 0 ]; then
-		tsort -D "${MASTERMNT}/poudriere/pkg_deps" > \
-		    "${MASTERMNT}/poudriere/pkg_deps.depth"
-
-		# Create buckets to satisfy the dependency chains, in reverse
-		# order. Not counting here as there may be boosted priorities
-		# at 99 or other high values.
-		POOL_BUCKET_DIRS=$(awk '{print $1}' \
-		    "${MASTERMNT}/poudriere/pkg_deps.depth"|sort -run)
-	else
-		POOL_BUCKET_DIRS="unbalanced"
-	fi
-
-
 	# Create a pool of ready-to-build from the deps pool
 	find "${MASTERMNT}/poudriere/deps" -type d -empty -depth 1 | \
 		xargs -J % mv % "${MASTERMNT}/poudriere/pool/unbalanced"
 	load_priorities
-	# Create buckets after loading priorities in case of boosts.
-	( cd ${MASTERMNT}/poudriere/pool && mkdir ${POOL_BUCKET_DIRS} )
 	balance_pool
 
 	[ -n "${ALLOW_MAKE_JOBS}" ] || echo "DISABLE_MAKE_JOBS=poudriere" \
@@ -3639,6 +3622,26 @@ prepare_ports() {
 load_priorities() {
 	local priority pkgname pkg_boost boosted origin
 	local - # Keep set -f local
+
+	POOL_BUCKET_DIRS=""
+	if [ ${POOL_BUCKETS} -gt 0 ]; then
+		tsort -D "${MASTERMNT}/poudriere/pkg_deps" > \
+		    "${MASTERMNT}/poudriere/pkg_deps.depth"
+
+		# Create buckets to satisfy the dependency chains, in reverse
+		# order. Not counting here as there may be boosted priorities
+		# at 99 or other high values.
+		POOL_BUCKET_DIRS=$(awk '{print $1}' \
+		    "${MASTERMNT}/poudriere/pkg_deps.depth"|sort -run)
+
+		# If there are no buckets then everything to build will fall
+		# into 0 as they depend on nothing and nothing depends on them.
+		# I.e., pkg-devel in -ac or testport on something with no deps
+		# needed.
+		[ -z "${POOL_BUCKET_DIRS}" ] && POOL_BUCKET_DIRS="0"
+	else
+		POOL_BUCKET_DIRS="unbalanced"
+	fi
 
 	set -f # for PRIORITY_BOOST
 	boosted=0
@@ -3660,6 +3663,9 @@ load_priorities() {
 
 	# Add 99 into the pool if needed.
 	[ ${boosted} -eq 1 ] && POOL_BUCKET_DIRS="99 ${POOL_BUCKET_DIRS}"
+
+	# Create buckets after loading priorities in case of boosts.
+	( cd ${MASTERMNT}/poudriere/pool && mkdir ${POOL_BUCKET_DIRS} )
 
 	return 0
 }
