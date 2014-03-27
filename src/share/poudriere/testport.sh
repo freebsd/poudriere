@@ -135,6 +135,7 @@ jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 [ $CONFIGSTR -eq 1 ] && injail env TERM=${SAVED_TERM} make -C /usr/ports/${ORIGIN} config
 
 LISTPORTS=$(list_deps ${ORIGIN} )
+LISTPORTS=${LISTPORTS## *}
 prepare_ports
 markfs prepkg ${MASTERMNT}
 
