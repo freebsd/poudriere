@@ -29,6 +29,8 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
   *  new dependency checking should account for DELETED deps too (might not be an issue)
   *  options checking needs to account for DELETED options (reported by feld)
   *  Document/test portshaker usage
+  *  pkgclean/options MOVED support
+  *  Fix $(()) usage for 8.3
 
 <h2>3.1</h2>
   *  Allow dependency calculation to optionally not exit on first failure. Complex as errors come from many places, reporting all errors at once may be even more complex. (bulk -k)
