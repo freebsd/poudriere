@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 1, 2014
+.Dd March 31, 2014
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -205,6 +205,11 @@ Currently uninstalls the port, and disable parallel
 jobs for make.
 .It Fl r
 Recursively test all dependencies as well.
+.It Fl k
+When using
+.Fl t
+do not consider failures as fatal.
+Do not skip dependent ports on findings.
 .It Fl T
 Try building BROKEN ports by defining TRYBROKEN for the build.
 .It Fl w

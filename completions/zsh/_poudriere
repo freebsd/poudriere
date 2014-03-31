@@ -34,6 +34,7 @@ _bulk=(
         '-I[Advanced interactive mode. Leave jail running but do not enter]'
 	'-n[Dry run. Show what would be done, but do not build any packages]'
 	'-N[Do not build repository or INDEX when done building]'
+        '-k[Keep going when using -t and do not consider failures as fatal]'
 	'-t[Test the specified ports for leftovers]'
 	'-r[Recursively test all dependencies as well]'
 	'-s[Skip sanity]'

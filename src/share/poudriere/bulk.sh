@@ -51,6 +51,8 @@ Options:
     -t          -- Test the specified ports for leftovers. Add -r to
                    recursively test all dependencies as well.
     -r          -- Resursively test all dependencies as well
+    -k          -- When doing testing with -t, don't consider failures as
+                   fatal; don't skip dependent ports on findings.
     -T          -- Try to build broken ports anyway
     -F          -- Only fetch from original master_site (skip FreeBSD mirrors)
     -s          -- Skip sanity checks
@@ -88,7 +90,7 @@ INTERACTIVE_MODE=0
 
 [ $# -eq 0 ] && usage
 
-while getopts "B:iIf:j:J:CcnNp:RFtrTsvwz:a" FLAG; do
+while getopts "B:iIf:j:J:CcknNp:RFtrTsvwz:a" FLAG; do
 	case "${FLAG}" in
 		B)
 			BUILDNAME="${OPTARG}"
@@ -99,6 +101,9 @@ while getopts "B:iIf:j:J:CcnNp:RFtrTsvwz:a" FLAG; do
 			;;
 		r)
 			PORTTESTING_RECURSIVE=1
+			;;
+		k)
+			PORTTESTING_FATAL=no
 			;;
 		T)
 			export TRYBROKEN=yes
