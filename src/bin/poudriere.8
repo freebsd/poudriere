@@ -203,8 +203,15 @@ Add
 to recursively test all port dependencies as well.
 Currently uninstalls the port, and disable parallel
 jobs for make.
+When used with
+.Fl a
+then
+.Fl rk
+are implied.
 .It Fl r
 Recursively test all dependencies as well.
+This flag is automatically set when using
+.Fl at .
 .It Fl k
 When using
 .Fl t
