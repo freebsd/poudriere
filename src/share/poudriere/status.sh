@@ -77,16 +77,15 @@ if [ $(find ${POUDRIERE_DATA}/build -mindepth 2 -maxdepth 2 2>&1 | wc -l) \
 	exit 0
 fi
 
-BUILDNAME=latest
 POUDRIERE_BUILD_TYPE=bulk
 
 if [ -n "${JAILNAME}" ]; then
 	MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 	MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 	jail_runs ${MASTERNAME} || err 1 "Jail ${MASTERNAME} is not running"
-	builders="$(bget builders 2>/dev/null || :)"
 	# Dereference latest into actual buildname
-	BUILDNAME="$(bget buildname)"
+	BUILDNAME="$(BUILDNAME=latest bget buildname)"
+	builders="$(bget builders 2>/dev/null || :)"
 
 	JOBS="${builders}" siginfo_handler
 else
@@ -108,7 +107,7 @@ else
 		mastername=${mastermnt#${POUDRIERE_DATA}/build/}
 		MASTERNAME=${mastername%/ref}
 		# Dereference latest into actual buildname
-		BUILDNAME="$(bget buildname)"
+		BUILDNAME="$(BUILDNAME=latest bget buildname)"
 
 		status=$(bget status 2>/dev/null || :)
 		nbqueued=$(bget stats_queued 2>/dev/null || :)
