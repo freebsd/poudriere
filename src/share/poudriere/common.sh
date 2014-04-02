@@ -1563,7 +1563,10 @@ check_leftovers() {
 			l=${l#./}
 			echo "- ${mnt}/${l% *}"
 			;;
-		*changed) echo "M ${mnt}/${l% *}" ;;
+		*changed)
+			read extra
+			echo "M ${mnt}/${l% *} ${extra}"
+			;;
 		extra:*)
 			if [ -d ${mnt}/${l#* } ]; then
 				find ${mnt}/${l#* } -exec echo "+ {}" \;
@@ -1571,7 +1574,10 @@ check_leftovers() {
 				echo "+ ${mnt}/${l#* }"
 			fi
 			;;
-		*:*) echo "M ${mnt}/${l%:*}" ;;
+		*:*)
+			read extra
+			echo "M ${mnt}/${l%:*} ${extra}"
+			;;
 		esac
 	done
 }
@@ -1843,7 +1849,7 @@ _real_build_port() {
 				local die=0
 
 				check_leftovers ${mnt} ${stagedir} | \
-				    while read modtype path; do
+				    while read modtype path extra; do
 					local ppath
 
 					# If this is a directory, use @dirrm in output
@@ -1976,7 +1982,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 			done
 
 			check_leftovers ${mnt} | \
-				while read modtype path; do
+				while read modtype path extra; do
 				local ppath ignore_path=0
 
 				# If this is a directory, use @dirrm in output
@@ -2045,7 +2051,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 					share/xml/catalog.ports);;
 					# fc-cache - skip for now
 					/var/db/fontconfig/*) ;;
-					*) echo "${ppath}" >> ${mod} ;;
+					*) echo "${ppath} ${extra}" >> ${mod} ;;
 					esac
 					;;
 				esac
