@@ -383,7 +383,9 @@ buildlog_start() {
 }
 
 buildlog_stop() {
+	[ $# -eq 2 ] || eargs buildlog_stop portdir build_failed
 	local portdir=$1
+	local build_failed="$2"
 	local log=$(log_path)
 	local buildtime
 
@@ -395,6 +397,7 @@ buildlog_stop() {
 
 	echo "build of ${portdir} ended at $(date)"
 	echo "build time: ${buildtime}"
+	[ ${build_failed} -gt 0 ] && echo "!!! build failure encountered !!!"
 }
 
 log_stop() {
@@ -1879,7 +1882,7 @@ _real_build_port() {
 				done
 
 				if [ -s "${orphans}" ]; then
-					msg "Files or directories orphaned:"
+					msg "Error: Files or directories orphaned:"
 					die=1
 					grep -v "^@dirrm" ${orphans}
 					grep "^@dirrm" ${orphans} | sort -r
@@ -1908,7 +1911,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 				    injail xargs -0 stat -l |
 				    grep "${portdir}/work/stage" && die=1
 				if [ ${die} -eq 1 ]; then
-					msg "Port is installing absolute symlinks into stagedir"
+					msg "Error: Port is installing absolute symlinks into stagedir"
 					return 1
 				fi
 			fi
@@ -2063,18 +2066,18 @@ Try testport with -n to use PREFIX=LOCALBASE"
 			comm -23 ${add1} ${del1} > ${add}
 			comm -13 ${add1} ${del1} > ${del}
 			if [ -s "${add}" ]; then
-				msg "Files or directories left over:"
+				msg "Error: Files or directories left over:"
 				die=1
 				grep -v "^@dirrm" ${add}
 				grep "^@dirrm" ${add} | sort -r
 			fi
 			if [ -s "${del}" ]; then
-				msg "Files or directories removed:"
+				msg "Error: Files or directories removed:"
 				die=1
 				cat ${del}
 			fi
 			if [ -s "${mod}" ]; then
-				msg "Files or directories modified:"
+				msg "Error: Files or directories modified:"
 				die=1
 				cat ${mod1}
 			fi
@@ -2596,14 +2599,15 @@ build_pkg() {
 
 	bset ${MY_JOBID} status "done:${port}"
 
-	stop_build ${portdir}
+	stop_build ${portdir} ${build_failed}
 
 	echo ${MY_JOBID} >&6
 }
 
 stop_build() {
-	[ $# -eq 1 ] || eargs stop_build portdir
+	[ $# -eq 2 ] || eargs stop_build portdir build_failed
 	local portdir="$1"
+	local build_failed="$2"
 	local mnt=$(my_path)
 
 	umount -f ${mnt}/new_packages 2>/dev/null || :
@@ -2617,7 +2621,7 @@ stop_build() {
 	# Always kill to avoid missing anything
 	injail kill -9 -1 2>/dev/null || :
 
-	buildlog_stop ${portdir}
+	buildlog_stop ${portdir} ${build_failed}
 	log_stop
 
 	bset ${MY_JOBID} status "stopped:"

@@ -216,7 +216,7 @@ if [ ${ret} -ne 0 ]; then
 	update_stats
 
 	if [ ${INTERACTIVE_MODE} -eq 0 ]; then
-		stop_build /usr/ports/${ORIGIN}
+		stop_build /usr/ports/${ORIGIN} 1
 		err 1 "Build failed in phase: ${failed_phase}"
 	fi
 else
@@ -259,7 +259,7 @@ injail make -C /usr/ports/${ORIGIN} clean
 msg "Deinstalling package"
 injail ${PKG_DELETE} ${PKGNAME}
 
-stop_build /usr/ports/${ORIGIN}
+stop_build /usr/ports/${ORIGIN} ${ret}
 
 cleanup
 set +e
