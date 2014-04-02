@@ -398,6 +398,8 @@ buildlog_stop() {
 	echo "build of ${portdir} ended at $(date)"
 	echo "build time: ${buildtime}"
 	[ ${build_failed} -gt 0 ] && echo "!!! build failure encountered !!!"
+
+	return 0
 }
 
 log_stop() {
