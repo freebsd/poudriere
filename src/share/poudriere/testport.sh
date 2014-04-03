@@ -191,6 +191,7 @@ injail install -d -o ${PORTBUILD_USER} /tmp/pkgs
 PORTTESTING=yes
 export TRYBROKEN=yes
 export DEVELOPER_MODE=yes
+export NO_WARNING_PKG_INSTALL_EOL=yes
 sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' ${MASTERMNT}/etc/make.conf
 log_start
 buildlog_start /usr/ports/${ORIGIN}
