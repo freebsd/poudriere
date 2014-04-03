@@ -1730,7 +1730,7 @@ _real_build_port() {
 	local log=$(log_path)
 	local listfilecmd network
 	local hangstatus
-	local pkgenv
+	local pkgenv phaseenv
 	local no_stage=$(injail make -C ${portdir} -VNO_STAGE)
 	local targets install_order
 	local stagedir plistsub_sed
@@ -1752,7 +1752,7 @@ _real_build_port() {
 		install_order="run-depends stage package install-mtree install"
 		stagedir=$(injail make -C ${portdir} -VSTAGEDIR)
 	fi
-	targets="check-config pkg-depends fetch-depends fetch checksum \
+	targets="check-sanity pkg-depends fetch-depends fetch checksum \
 		  extract-depends extract patch-depends patch build-depends \
 		  lib-depends configure build ${install_order} \
 		  ${PORTTESTING:+deinstall}"
@@ -1765,10 +1765,12 @@ _real_build_port() {
 
 	for phase in ${targets}; do
 		max_execution_time=${MAX_EXECUTION_TIME}
+		phaseenv=
 		[ -z "${no_stage}" ] && JUSER=${jailuser}
 		bset ${MY_JOBID} status "${phase}:${port}"
 		job_msg_verbose "Status for build ${port}: ${phase}"
 		case ${phase} in
+		check-sanity) [ -n "${PORTTESTING}" ] && phaseenv="DEVELOPER=1" ;;
 		fetch)
 			mkdir -p ${mnt}/portdistfiles
 			echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf
@@ -1906,7 +1908,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 
 		if [ "${phase#*-}" = "depends" ]; then
 			# No need for nohang or PORT_FLAGS for *-depends
-			injail env USE_PACKAGE_DEPENDS_ONLY=1 \
+			injail env USE_PACKAGE_DEPENDS_ONLY=1 ${phaseenv} \
 			    make -C ${portdir} ${phase} || return 1
 		else
 			# Only set PKGENV during 'package' to prevent
@@ -1922,7 +1924,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 
 			nohang ${max_execution_time} ${NOHANG_TIME} \
 				${log}/logs/${PKGNAME}.log \
-				injail env ${pkgenv} ${PORT_FLAGS} \
+				injail env ${pkgenv} ${phaseenv} ${PORT_FLAGS} \
 				make -C ${portdir} ${phase}
 			hangstatus=$? # This is done as it may return 1 or 2 or 3
 			if [ $hangstatus -ne 0 ]; then
