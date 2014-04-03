@@ -3128,7 +3128,7 @@ compute_deps() {
 			parallel_run compute_deps_port ${port}
 		else
 			if [ ${ALL} -eq 1 ]; then
-				msg "Invalid port origin listed in category Makefiles: ${port}"
+				warn "Invalid port origin listed in category Makefiles: ${port}"
 			else
 				err 1 "Invalid port origin listed for build: ${port}"
 			fi
