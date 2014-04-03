@@ -3124,9 +3124,11 @@ compute_deps() {
 
 	parallel_start
 	for port in $(listed_ports show_moved); do
-		[ -d "${MASTERMNT}/usr/ports/${port}" ] ||
-			err 1 "Invalid port origin listed for build: ${port}"
-		parallel_run compute_deps_port ${port}
+		if [ -d "${MASTERMNT}/usr/ports/${port}" ]; then
+			parallel_run compute_deps_port ${port}
+		else
+			msg "Invalid port origin listed for build: ${port}"
+		fi
 	done
 	parallel_stop
 
