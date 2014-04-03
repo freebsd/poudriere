@@ -99,6 +99,8 @@ while getopts "B:iIf:j:J:CcknNp:RFtrTsvwz:a" FLAG; do
 			PORTTESTING=1
 			export DEVELOPER_MODE=yes
 			export NO_WARNING_PKG_INSTALL_EOL=yes
+			export WARNING_WAIT=0
+			export DEV_WARNING_WAIT=0
 			;;
 		r)
 			PORTTESTING_RECURSIVE=1
