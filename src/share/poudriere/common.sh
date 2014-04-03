@@ -3127,7 +3127,11 @@ compute_deps() {
 		if [ -d "${MASTERMNT}/usr/ports/${port}" ]; then
 			parallel_run compute_deps_port ${port}
 		else
-			msg "Invalid port origin listed for build: ${port}"
+			if [ ${ALL} -eq 1 ]; then
+				msg "Invalid port origin listed in category Makefiles: ${port}"
+			else
+				err 1 "Invalid port origin listed for build: ${port}"
+			fi
 		fi
 	done
 	parallel_stop
