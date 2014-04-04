@@ -190,3 +190,83 @@ parallel_run() {
 	PARALLEL_CHILD=1 parallel_exec $cmd "$@" &
 	PARALLEL_PIDS="${PARALLEL_PIDS} $! "
 }
+
+nohang() {
+	[ $# -gt 5 ] || eargs nohang cmd_timeout log_timeout logfile pidfile cmd
+	local cmd_timeout
+	local log_timeout
+	local logfile
+	local pidfile
+	local childpid
+	local now starttime
+	local fifo
+	local n
+	local read_timeout
+	local ret=0
+
+	cmd_timeout="$1"
+	log_timeout="$2"
+	logfile="$3"
+	pidfile="$4"
+	shift 4
+
+	read_timeout=$((log_timeout / 10))
+
+	fifo=$(mktemp -ut nohang)
+	mkfifo ${fifo}
+	exec 7<> ${fifo}
+	rm -f ${fifo}
+
+	starttime=$(date +%s)
+
+	# Run the actual command in a child subshell
+	(
+		local ret=0
+		"$@" || ret=1
+		# Notify the pipe the command is done
+		echo done >&7 2>/dev/null || :
+		exit $ret
+	) &
+	childpid=$!
+	echo "$childpid" > ${pidfile}
+
+	# Now wait on the cmd with a timeout on the log's mtime
+	while :; do
+		if ! kill -CHLD $childpid 2>/dev/null; then
+			_wait $childpid || ret=1
+			break
+		fi
+
+		lastupdated=$(stat -f "%m" ${logfile})
+		now=$(date +%s)
+
+		# No need to actually kill anything as stop_build()
+		# will be called and kill -9 -1 the jail later
+		if [ $((now - lastupdated)) -gt $log_timeout ]; then
+			ret=2
+			break
+		elif [ $((now - starttime)) -gt $cmd_timeout ]; then
+			ret=3
+			break
+		fi
+
+		# Wait until it is done, but check on it every so often
+		# This is done instead of a 'sleep' as it should recognize
+		# the command has completed right away instead of waiting
+		# on the 'sleep' to finish
+		unset n; until trappedinfo=; read -t $read_timeout n <&7 ||
+			[ -z "$trappedinfo" ]; do :; done
+		if [ "${n}" = "done" ]; then
+			_wait $childpid || ret=1
+			break
+		fi
+		# Not done, was a timeout, check the log time
+	done
+
+	exec 7<&-
+	exec 7>&-
+
+	rm -f ${pidfile}
+
+	return $ret
+}
