@@ -2,6 +2,7 @@ CLEANFILES=	$(dist_rc_SCRIPTS)
 
 awkdir=	$(pkgdatadir)/awk
 htmldir= $(pkgdatadir)/html
+includedir= $(pkgdatadir)/include
 assetsdir= $(htmldir)/assets
 bootstrapdir= $(assetsdir)/bootstrap
 btcssdir= $(bootstrapdir)/css
@@ -40,6 +41,9 @@ dist_pkgdata_DATA=	src/share/poudriere/bulk.sh \
 			src/share/poudriere/queue.sh \
 			src/share/poudriere/status.sh \
 			src/share/poudriere/testport.sh
+
+dist_include_HEADERS= \
+			src/share/poudriere/include/parallel.sh
 
 dist_awk_DATA= src/share/poudriere/awk/dependency_loop.awk \
 		src/share/poudriere/awk/humanize.awk \

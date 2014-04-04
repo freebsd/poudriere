@@ -17,6 +17,7 @@
 
 
 
+
 VPATH = @srcdir@
 am__is_gnu_make = test -n '$(MAKEFILE_LIST)' && test -n '$(MAKELEVEL)'
 am__make_running_with_option = \
@@ -91,7 +92,8 @@ DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(dist_assets_DATA) $(dist_awk_DATA) $(dist_btcss_DATA) \
 	$(dist_btimg_DATA) $(dist_btjs_DATA) $(dist_dtcss_DATA) \
 	$(dist_dtimages_DATA) $(dist_dtjs_DATA) $(dist_html_DATA) \
-	$(dist_pkgdata_DATA) README compile install-sh missing
+	$(dist_pkgdata_DATA) $(dist_include_HEADERS) README compile \
+	install-sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -127,7 +129,7 @@ am__installdirs = "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(sbindir)" \
 	"$(DESTDIR)$(dtcssdir)" "$(DESTDIR)$(dtimagesdir)" \
 	"$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(htmldir)" \
 	"$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(hookdir)" \
-	"$(DESTDIR)$(sysconfdir)"
+	"$(DESTDIR)$(sysconfdir)" "$(DESTDIR)$(includedir)"
 PROGRAMS = $(pkglibexec_PROGRAMS) $(sbin_PROGRAMS)
 am_cpdup_OBJECTS = src/libexec/poudriere/cpdup/cpdup-cpdup.$(OBJEXT) \
 	src/libexec/poudriere/cpdup/cpdup-hcproto.$(OBJEXT) \
@@ -240,6 +242,7 @@ DATA = $(dist_assets_DATA) $(dist_awk_DATA) $(dist_btcss_DATA) \
 	$(dist_btimg_DATA) $(dist_btjs_DATA) $(dist_dtcss_DATA) \
 	$(dist_dtimages_DATA) $(dist_dtjs_DATA) $(dist_html_DATA) \
 	$(dist_pkgdata_DATA) $(hook_DATA) $(sysconf_DATA)
+HEADERS = $(dist_include_HEADERS)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -344,7 +347,7 @@ dvidir = @dvidir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 htmldir = $(pkgdatadir)/html
-includedir = @includedir@
+includedir = $(pkgdatadir)/include
 infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
@@ -403,6 +406,9 @@ dist_pkgdata_DATA = src/share/poudriere/bulk.sh \
 			src/share/poudriere/queue.sh \
 			src/share/poudriere/status.sh \
 			src/share/poudriere/testport.sh
+
+dist_include_HEADERS = \
+			src/share/poudriere/include/parallel.sh
 
 dist_awk_DATA = src/share/poudriere/awk/dependency_loop.awk \
 		src/share/poudriere/awk/humanize.awk \
@@ -1327,6 +1333,27 @@ uninstall-sysconfDATA:
 	@list='$(sysconf_DATA)'; test -n "$(sysconfdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(sysconfdir)'; $(am__uninstall_files_from_dir)
+install-dist_includeHEADERS: $(dist_include_HEADERS)
+	@$(NORMAL_INSTALL)
+	@list='$(dist_include_HEADERS)'; test -n "$(includedir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(includedir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(includedir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_HEADER) $$files '$(DESTDIR)$(includedir)'"; \
+	  $(INSTALL_HEADER) $$files "$(DESTDIR)$(includedir)" || exit $$?; \
+	done
+
+uninstall-dist_includeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_include_HEADERS)'; test -n "$(includedir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(includedir)'; $(am__uninstall_files_from_dir)
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -1550,9 +1577,10 @@ distcleancheck: distclean
 	       exit 1; } >&2
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES) $(PROGRAMS) $(SCRIPTS) $(MANS) $(DATA)
+all-am: Makefile $(LIBRARIES) $(PROGRAMS) $(SCRIPTS) $(MANS) $(DATA) \
+		$(HEADERS)
 installdirs:
-	for dir in "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(rcdir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(assetsdir)" "$(DESTDIR)$(awkdir)" "$(DESTDIR)$(btcssdir)" "$(DESTDIR)$(btimgdir)" "$(DESTDIR)$(btjsdir)" "$(DESTDIR)$(dtcssdir)" "$(DESTDIR)$(dtimagesdir)" "$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(htmldir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(hookdir)" "$(DESTDIR)$(sysconfdir)"; do \
+	for dir in "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(rcdir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(assetsdir)" "$(DESTDIR)$(awkdir)" "$(DESTDIR)$(btcssdir)" "$(DESTDIR)$(btimgdir)" "$(DESTDIR)$(btjsdir)" "$(DESTDIR)$(dtcssdir)" "$(DESTDIR)$(dtimagesdir)" "$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(htmldir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(hookdir)" "$(DESTDIR)$(sysconfdir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -1630,8 +1658,9 @@ install-data-am: install-dist_assetsDATA install-dist_awkDATA \
 	install-dist_btcssDATA install-dist_btimgDATA \
 	install-dist_btjsDATA install-dist_dtcssDATA \
 	install-dist_dtimagesDATA install-dist_dtjsDATA \
-	install-dist_htmlDATA install-dist_pkgdataDATA \
-	install-dist_rcSCRIPTS install-hookDATA install-man
+	install-dist_htmlDATA install-dist_includeHEADERS \
+	install-dist_pkgdataDATA install-dist_rcSCRIPTS \
+	install-hookDATA install-man
 
 install-dvi: install-dvi-am
 
@@ -1684,9 +1713,10 @@ uninstall-am: uninstall-dist_assetsDATA uninstall-dist_awkDATA \
 	uninstall-dist_btimgDATA uninstall-dist_btjsDATA \
 	uninstall-dist_dtcssDATA uninstall-dist_dtimagesDATA \
 	uninstall-dist_dtjsDATA uninstall-dist_htmlDATA \
-	uninstall-dist_pkgdataDATA uninstall-dist_rcSCRIPTS \
-	uninstall-hookDATA uninstall-man uninstall-pkglibexecPROGRAMS \
-	uninstall-sbinPROGRAMS uninstall-sysconfDATA
+	uninstall-dist_includeHEADERS uninstall-dist_pkgdataDATA \
+	uninstall-dist_rcSCRIPTS uninstall-hookDATA uninstall-man \
+	uninstall-pkglibexecPROGRAMS uninstall-sbinPROGRAMS \
+	uninstall-sysconfDATA
 
 uninstall-man: uninstall-man8
 
@@ -1706,20 +1736,21 @@ uninstall-man: uninstall-man8
 	install-dist_btimgDATA install-dist_btjsDATA \
 	install-dist_dtcssDATA install-dist_dtimagesDATA \
 	install-dist_dtjsDATA install-dist_htmlDATA \
-	install-dist_pkgdataDATA install-dist_rcSCRIPTS install-dvi \
-	install-dvi-am install-exec install-exec-am install-hookDATA \
-	install-html install-html-am install-info install-info-am \
-	install-man install-man8 install-pdf install-pdf-am \
-	install-pkglibexecPROGRAMS install-ps install-ps-am \
-	install-sbinPROGRAMS install-strip install-sysconfDATA \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-dist_assetsDATA uninstall-dist_awkDATA \
-	uninstall-dist_binSCRIPTS uninstall-dist_btcssDATA \
-	uninstall-dist_btimgDATA uninstall-dist_btjsDATA \
-	uninstall-dist_dtcssDATA uninstall-dist_dtimagesDATA \
-	uninstall-dist_dtjsDATA uninstall-dist_htmlDATA \
+	install-dist_includeHEADERS install-dist_pkgdataDATA \
+	install-dist_rcSCRIPTS install-dvi install-dvi-am install-exec \
+	install-exec-am install-hookDATA install-html install-html-am \
+	install-info install-info-am install-man install-man8 \
+	install-pdf install-pdf-am install-pkglibexecPROGRAMS \
+	install-ps install-ps-am install-sbinPROGRAMS install-strip \
+	install-sysconfDATA installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
+	tags tags-am uninstall uninstall-am uninstall-dist_assetsDATA \
+	uninstall-dist_awkDATA uninstall-dist_binSCRIPTS \
+	uninstall-dist_btcssDATA uninstall-dist_btimgDATA \
+	uninstall-dist_btjsDATA uninstall-dist_dtcssDATA \
+	uninstall-dist_dtimagesDATA uninstall-dist_dtjsDATA \
+	uninstall-dist_htmlDATA uninstall-dist_includeHEADERS \
 	uninstall-dist_pkgdataDATA uninstall-dist_rcSCRIPTS \
 	uninstall-hookDATA uninstall-man uninstall-man8 \
 	uninstall-pkglibexecPROGRAMS uninstall-sbinPROGRAMS \
