@@ -27,7 +27,7 @@
 # SUCH DAMAGE.
 
 BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
-. $(dirname ${0})/common.sh.${BSDPLATFORM}
+. $(dirname ${0})/include/common.sh.${BSDPLATFORM}
 BLACKLIST=""
 
 # Return true if ran from bulk/testport, ie not daemon/status/jail

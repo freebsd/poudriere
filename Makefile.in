@@ -394,8 +394,6 @@ dist_pkgdata_DATA = src/share/poudriere/bulk.sh \
 			src/share/poudriere/clean.sh \
 			src/share/poudriere/common.sh \
 			src/share/poudriere/daemon.sh \
-			src/share/poudriere/common.sh.dragonfly \
-			src/share/poudriere/common.sh.freebsd \
 			src/share/poudriere/distclean.sh \
 			src/share/poudriere/jail.sh \
 			src/share/poudriere/options.sh \
@@ -408,6 +406,8 @@ dist_pkgdata_DATA = src/share/poudriere/bulk.sh \
 			src/share/poudriere/testport.sh
 
 dist_include_HEADERS = \
+			src/share/poudriere/include/common.sh.dragonfly \
+			src/share/poudriere/include/common.sh.freebsd \
 			src/share/poudriere/include/hash.sh \
 			src/share/poudriere/include/parallel.sh
 
