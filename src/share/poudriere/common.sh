@@ -3822,3 +3822,4 @@ fi
 [ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}
 
 . $(dirname ${0})/include/parallel.sh
+. $(dirname ${0})/include/hash.sh
