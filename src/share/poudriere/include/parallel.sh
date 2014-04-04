@@ -23,6 +23,57 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+_wait() {
+	# Workaround 'wait' builtin possibly returning early due to signals
+	# by using 'pwait' to wait(2) and then 'wait' to collect return code
+	local ret=0 pid
+
+	pwait "$@" 2>/dev/null || :
+	for pid in "$@"; do
+		wait ${pid} || ret=$?
+	done
+
+	return ${ret}
+}
+
+
+kill_and_wait() {
+	[ $# -eq 2 ] || eargs kill_and_wait time pids
+	local time="$1"
+	local pids="$2"
+	local ret=0
+	local pid
+	local found_pid
+	local retry
+
+	[ -z "${pids}" ] && return 0
+
+	# Give children $time seconds to exit and then force kill
+	retry=${time}
+	kill ${pids} 2>/dev/null || :
+
+	while [ ${retry} -gt 0 ]; do
+		found_pid=0
+		for pid in ${pids}; do
+			if kill -0 ${pid} 2>/dev/null; then
+				sleep 1
+				found_pid=1
+				break
+			fi
+		done
+		retry=$((retry - 1))
+		[ ${found_pid} -eq 0 ] && retry=0
+	done
+
+	# Kill all children instead of waiting on them
+	[ ${found_pid} -eq 1 ] && kill -9 ${pids} 2>/dev/null || :
+
+	_wait ${pids} || ret=$?
+
+	return ${ret}
+}
+
+
 parallel_exec() {
 	local cmd="$1"
 	local ret=0
