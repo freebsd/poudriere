@@ -1519,10 +1519,11 @@ check_fs_violation() {
 }
 
 nohang() {
-	[ $# -gt 4 ] || eargs nohang cmd_timeout log_timeout logfile cmd
+	[ $# -gt 5 ] || eargs nohang cmd_timeout log_timeout logfile pidfile cmd
 	local cmd_timeout
 	local log_timeout
 	local logfile
+	local pidfile
 	local childpid
 	local now starttime
 	local fifo
@@ -1533,7 +1534,8 @@ nohang() {
 	cmd_timeout="$1"
 	log_timeout="$2"
 	logfile="$3"
-	shift 3
+	pidfile="$4"
+	shift 4
 
 	read_timeout=$((log_timeout / 10))
 
@@ -1553,8 +1555,7 @@ nohang() {
 		exit $ret
 	) &
 	childpid=$!
-	echo "$childpid" > \
-	    ${MASTERMNT}/poudriere/var/run/${MY_JOBID:-00}_nohang.pid
+	echo "$childpid" > ${pidfile}
 
 	# Now wait on the cmd with a timeout on the log's mtime
 	while :; do
@@ -1592,7 +1593,7 @@ nohang() {
 	exec 7<&-
 	exec 7>&-
 
-	rm -f ${MASTERMNT}/poudriere/var/run/${MY_JOBID:-00}_nohang.pid
+	rm -f ${pidfile}
 
 	return $ret
 }
@@ -1825,6 +1826,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 
 			nohang ${max_execution_time} ${NOHANG_TIME} \
 				${log}/logs/${PKGNAME}.log \
+				${MASTERMNT}/poudriere/var/run/${MY_JOBID:-00}_nohang.pid \
 				injail env ${pkgenv} ${phaseenv} ${PORT_FLAGS} \
 				make -C ${portdir} ${phase}
 			hangstatus=$? # This is done as it may return 1 or 2 or 3
