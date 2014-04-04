@@ -43,6 +43,7 @@ dist_pkgdata_DATA=	src/share/poudriere/bulk.sh \
 			src/share/poudriere/testport.sh
 
 dist_include_HEADERS= \
+			src/share/poudriere/include/hash.sh
 			src/share/poudriere/include/parallel.sh
 
 dist_awk_DATA= src/share/poudriere/awk/dependency_loop.awk \

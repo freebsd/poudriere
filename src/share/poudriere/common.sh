@@ -69,56 +69,6 @@ gsub() {
 	echo "${_gsub}"
 }
 
-_hash_var_name() {
-	# Replace all HASH_VAR_NAME_SUB_GLOB with _
-	_gsub "_HASH_${1}_${2}" ${HASH_VAR_NAME_SUB_GLOB} _
-	_hash_var_name=${_gsub}
-}
-
-hash_get() {
-	[ $# -ne 3 ] && eargs hash_get var_return var key
-	local var_return="$1"
-	local var="$2"
-	local key="$3"
-	local hash_var_name value
-
-	_hash_var_name "${var}" "${key}"
-	hash_var_name=${_hash_var_name}
-
-	# Look value from cache
-	eval "value=\${${hash_var_name}-__null}"
-
-	[ "${value}" = "__null" ] && return 1
-
-	setvar "${var_return}" ${value}
-
-	return 0
-}
-
-hash_set() {
-	[ $# -eq 3 ] || eargs hash_set var key value
-	local var="$1"
-	local key="$2"
-	local value="$3"
-	local hash_var_name
-
-	_hash_var_name "${var}" "${key}"
-	hash_var_name=${_hash_var_name}
-
-	# Set value in cache
-	setvar "${hash_var_name}" "${value}"
-}
-
-hash_unset() {
-	[ $# -eq 2 ] || eargs hash_unset var key
-	local var="$1"
-	local key="$2"
-	local hash_var_name
-
-	_hash_var_name "${var}" "${key}"
-	unset "${_hash_var_name}"
-}
-
 not_for_os() {
 	local os=$1
 	shift
