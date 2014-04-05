@@ -14,6 +14,7 @@ dtimagesdir= $(datatablesdir)/images
 dtjsdir= $(datatablesdir)/js
 rcdir= $(sysconfdir)/rc.d
 hookdir= $(sysconfdir)/poudriere.d/hooks
+mandir= $(prefix)/man
 
 dist_bin_SCRIPTS=	src/bin/poudriere
 
