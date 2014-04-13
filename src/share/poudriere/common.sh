@@ -2234,7 +2234,7 @@ build_pkg() {
 			build_failed=1
 			# ret=2 is a test failure
 			if [ ${ret} -eq 2 ]; then
-				failed_phase=$(/bin/sh ${SCRIPTPREFIX}/processonelog2.sh \
+				failed_phase=$(awk -f ${AWKPREFIX}/processonelog2.awk \
 					${log}/logs/${PKGNAME}.log \
 					2> /dev/null)
 			else

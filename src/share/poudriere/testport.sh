@@ -204,7 +204,7 @@ ret=0
 build_port /usr/ports/${ORIGIN} || ret=$?
 if [ ${ret} -ne 0 ]; then
 	if [ ${ret} -eq 2 ]; then
-		failed_phase=$(/bin/sh ${SCRIPTPREFIX}/processonelog2.sh \
+		failed_phase=$(awk -f ${AWKPREFIX}/processonelog2.awk \
 			${log}/logs/${PKGNAME}.log \
 			2> /dev/null)
 	else

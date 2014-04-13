@@ -36,7 +36,6 @@ dist_pkgdata_DATA=	src/share/poudriere/bulk.sh \
 			src/share/poudriere/pkgclean.sh \
 			src/share/poudriere/ports.sh \
 			src/share/poudriere/processonelog.sh \
-			src/share/poudriere/processonelog2.sh \
 			src/share/poudriere/queue.sh \
 			src/share/poudriere/status.sh \
 			src/share/poudriere/testport.sh
@@ -51,6 +50,7 @@ dist_include_HEADERS= \
 dist_awk_DATA= src/share/poudriere/awk/dependency_loop.awk \
 		src/share/poudriere/awk/humanize.awk \
 		src/share/poudriere/awk/json.awk \
+		src/share/poudriere/awk/processonelog2.awk \
 		src/share/poudriere/awk/siginfo_buildtime.awk
 
 dist_html_DATA= src/share/poudriere/html/index.html
