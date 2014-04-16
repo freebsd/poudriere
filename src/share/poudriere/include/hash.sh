@@ -34,6 +34,7 @@ hash_get() {
 	local var="$2"
 	local key="$3"
 	local hash_var_name value
+	local ret
 
 	_hash_var_name "${var}" "${key}"
 	hash_var_name=${_hash_var_name}
@@ -41,11 +42,16 @@ hash_get() {
 	# Look value from cache
 	eval "value=\${${hash_var_name}-__null}"
 
-	[ "${value}" = "__null" ] && return 1
+	if [ "${value}" = "__null" ]; then
+		value=
+		ret=1
+	else
+		ret=0
+	fi
 
-	setvar "${var_return}" ${value}
+	setvar "${var_return}" "${value}"
 
-	return 0
+	return ${ret}
 }
 
 hash_set() {
