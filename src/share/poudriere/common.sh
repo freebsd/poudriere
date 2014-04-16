@@ -1639,7 +1639,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 			local mod=$(mktemp ${mnt}/tmp/mod.XXXXXX)
 			local mod1=$(mktemp ${mnt}/tmp/mod1.XXXXXX)
 			local die=0
-			local users user homedirs
+			local users user homedirs tmpplist
 
 			# Check stage-qa first
 			if [ -z "${no_stage}" ]; then
@@ -1656,6 +1656,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 			msg "Checking for extra files and directories"
 			bset ${MY_JOBID} status "leftovers:${port}"
 
+			tmpplist=$(injail make -C ${portdir} -VTMPPLIST)
 			users=$(injail make -C ${portdir} -VUSERS)
 			homedirs=""
 			for user in ${users}; do
@@ -1748,7 +1749,14 @@ Try testport with -n to use PREFIX=LOCALBASE"
 				msg "Error: Files or directories left over:"
 				die=1
 				grep -v "^@dirrm" ${add}
-				grep "^@dirrm" ${add} | sort -r
+				# Remove @dirrm for parent dirs already in plist
+				grep "^@dirrm" ${add} | sort -r | while read \
+				    type dir; do
+					grep -qE \
+					    "^@(unexec rmdir \"?(%D/)?${dir}[ \"]|dirrm(try)? ${dir}\$)" \
+					    ${mnt}${tmpplist} ||
+					    echo "${type} ${dir}"
+				done
 			fi
 			if [ -s "${del}" ]; then
 				msg "Error: Files or directories removed:"
