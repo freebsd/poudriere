@@ -1734,7 +1734,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 					share/xml/catalog.ports);;
 					# fc-cache - skip for now
 					/var/db/fontconfig/*) ;;
-					*) echo "${ppath} ${extra}" >> ${mod} ;;
+					*) echo "${ppath#@dirrm } ${extra}" >> ${mod} ;;
 					esac
 					;;
 				esac
