@@ -234,11 +234,6 @@ else
 	update_stats
 fi
 
-if [ -f ${MASTERMNT}/tmp/pkgs/${PKGNAME}.${PKG_EXT} ]; then
-	msg "Installing from package"
-	injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT} || :
-fi
-
 if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 	# Stop the tee process and stop redirecting stdout so that
 	# the terminal can be properly used in the jail
@@ -256,6 +251,11 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 		    err 1 "Build failed in phase: ${failed_phase}"
 	elif [ ${INTERACTIVE_MODE} -eq 2 ]; then
 		exit 0
+	fi
+else
+	if [ -f ${MASTERMNT}/tmp/pkgs/${PKGNAME}.${PKG_EXT} ]; then
+		msg "Installing from package"
+		injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT} || :
 	fi
 fi
 
