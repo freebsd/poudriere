@@ -95,7 +95,7 @@ parallel_exec() {
 		${cmd} "$@"
 	)
 	ret=$?
-	echo >&6 || :
+	echo >&9 || :
 	exit ${ret}
 	# set -e will be restored by 'local -'
 }
@@ -109,10 +109,11 @@ parallel_start() {
 		fifo=$(mktemp -ut parallel)
 	fi
 	mkfifo ${fifo}
-	exec 6<> ${fifo}
+	exec 9<> ${fifo}
 	rm -f ${fifo}
 	export NBPARALLEL=0
 	export PARALLEL_PIDS=""
+	: ${PARALLEL_JOBS:=$(sysctl -n hw.ncpu)}
 	_SHOULD_REAP=0
 }
 
@@ -153,8 +154,8 @@ parallel_stop() {
 		_wait ${PARALLEL_PIDS} || ret=$?
 	fi
 
-	exec 6<&-
-	exec 6>&-
+	exec 9<&-
+	exec 9>&-
 	unset PARALLEL_PIDS
 	unset NBPARALLEL
 
@@ -183,7 +184,7 @@ parallel_run() {
 	# Only read once all slots are taken up; burst jobs until maxed out.
 	# NBPARALLEL is never decreased and only inreased until maxed.
 	if [ ${NBPARALLEL} -eq ${PARALLEL_JOBS} ]; then
-		unset a; until trappedinfo=; read a <&6 || [ -z "$trappedinfo" ]; do :; done
+		unset a; until trappedinfo=; read a <&9 || [ -z "$trappedinfo" ]; do :; done
 	fi
 
 	[ ${NBPARALLEL} -lt ${PARALLEL_JOBS} ] && NBPARALLEL=$((NBPARALLEL + 1))
@@ -214,7 +215,7 @@ nohang() {
 
 	fifo=$(mktemp -ut nohang)
 	mkfifo ${fifo}
-	exec 7<> ${fifo}
+	exec 8<> ${fifo}
 	rm -f ${fifo}
 
 	starttime=$(date +%s)
@@ -224,7 +225,7 @@ nohang() {
 		local ret=0
 		"$@" || ret=1
 		# Notify the pipe the command is done
-		echo done >&7 2>/dev/null || :
+		echo done >&8 2>/dev/null || :
 		exit $ret
 	) &
 	childpid=$!
@@ -254,7 +255,7 @@ nohang() {
 		# This is done instead of a 'sleep' as it should recognize
 		# the command has completed right away instead of waiting
 		# on the 'sleep' to finish
-		unset n; until trappedinfo=; read -t $read_timeout n <&7 ||
+		unset n; until trappedinfo=; read -t $read_timeout n <&8 ||
 			[ -z "$trappedinfo" ]; do :; done
 		if [ "${n}" = "done" ]; then
 			_wait $childpid || ret=1
@@ -263,8 +264,8 @@ nohang() {
 		# Not done, was a timeout, check the log time
 	done
 
-	exec 7<&-
-	exec 7>&-
+	exec 8<&-
+	exec 8>&-
 
 	rm -f ${pidfile}
 
