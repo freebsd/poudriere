@@ -1310,34 +1310,51 @@ check_leftovers() {
 			    -e -L -p /
 		fi
 	} | while read l ; do
-		case ${l} in
-		*extra)
-			if [ -d ${mnt}/${l% *} ]; then
-				find ${mnt}/${l% *} -exec echo "+ {}" \;
-			else
-				echo "+ ${mnt}/${l% *}"
+		local changed read_again
+
+		changed=
+		while :; do
+			read_again=0
+			case ${l} in
+			*extra)
+				if [ -d ${mnt}/${l% *} ]; then
+					find ${mnt}/${l% *} -exec echo "+ {}" \;
+				else
+					echo "+ ${mnt}/${l% *}"
+				fi
+				;;
+			*missing)
+				l=${l#./}
+				echo "- ${mnt}/${l% *}"
+				;;
+			*changed)
+				changed="M ${mnt}/${l% *}"
+				read_again=1
+				;;
+			extra:*)
+				if [ -d ${mnt}/${l#* } ]; then
+					find ${mnt}/${l#* } -exec echo "+ {}" \;
+				else
+					echo "+ ${mnt}/${l#* }"
+				fi
+				;;
+			*:*)
+				changed="M ${mnt}/${l%:*}"
+				read_again=1
+				;;
+			*)
+				changed="${changed} ${l}"
+				read_again=1
+				;;
+			esac
+			if [ ${read_again} -eq 1 ]; then
+				# Need to read again to find all changes
+				read l || break
+				continue
 			fi
-			;;
-		*missing)
-			l=${l#./}
-			echo "- ${mnt}/${l% *}"
-			;;
-		*changed)
-			read extra
-			echo "M ${mnt}/${l% *} ${extra}"
-			;;
-		extra:*)
-			if [ -d ${mnt}/${l#* } ]; then
-				find ${mnt}/${l#* } -exec echo "+ {}" \;
-			else
-				echo "+ ${mnt}/${l#* }"
-			fi
-			;;
-		*:*)
-			read extra
-			echo "M ${mnt}/${l%:*} ${extra}"
-			;;
-		esac
+			[ -n "${changed}" ] && echo "${changed}"
+			break
+		done
 	done
 }
 
