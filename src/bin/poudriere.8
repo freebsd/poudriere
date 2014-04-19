@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 31, 2014
+.Dd April 18, 2014
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -440,6 +440,9 @@ Runs only inside the jail named
 This argument specifies how many
 .Ar number
 jobs will run in parallel for building the dependencies.
+.It Fl k
+Do not consider failures as fatal.
+Find all failures.
 .It Fl n
 Do not use custom prefix.
 .It Fl N

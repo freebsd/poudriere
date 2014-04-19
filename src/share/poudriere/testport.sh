@@ -37,13 +37,14 @@ Parameters:
 
 Options:
     -c          -- Run make config for the given port
-    -J n[:p]    -- Run n jobs in parallel for dependencies, and optionally
-                   run a different number of jobs in parallel while preparing
-                   the build. (Defaults to the number of CPUs)
     -i          -- Interactive mode. Enter jail for interactive testing and
                    automatically cleanup when done.
     -I          -- Advanced Interactive mode. Leaves jail running with port
                    installed after test.
+    -J n[:p]    -- Run n jobs in parallel for dependencies, and optionally
+                   run a different number of jobs in parallel while preparing
+                   the build. (Defaults to the number of CPUs)
+    -k          -- Don't consider failures as fatal; find all failures.
     -n          -- No custom prefix
     -N          -- Do not build package repository or INDEX when build
                    of dependencies completed
@@ -67,7 +68,7 @@ INTERACTIVE_MODE=0
 PTNAME="default"
 BUILD_REPO=1
 
-while getopts "o:cnj:J:iINp:svz:" FLAG; do
+while getopts "o:cniIj:J:kNp:svz:" FLAG; do
 	case "${FLAG}" in
 		c)
 			CONFIGSTR=1
@@ -85,6 +86,9 @@ while getopts "o:cnj:J:iINp:svz:" FLAG; do
 		J)
 			BUILD_PARALLEL_JOBS=${OPTARG%:*}
 			PREPARE_PARALLEL_JOBS=${OPTARG#*:}
+			;;
+		k)
+			PORTTESTING_FATAL=no
 			;;
 		i)
 			INTERACTIVE_MODE=1

@@ -106,6 +106,7 @@ _testport=(
 	'-j[run only inside the given jail]::name:_poudriere_jail'
         '-i[Interactive mode. Enter jail after build and automatically cleanup when done]'
         '-I[Advanced interactive mode. Leave jail running but do not enter]'
+        '-k[Do not consider failures as fatal; find all failures]'
 	'-n[no custom prefix]::'
 	'-N[Do not build repository or INDEX when done building dependencies]'
 	'-p[specify on which portstree we work]::tree:_poudriere_pt'
