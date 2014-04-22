@@ -35,6 +35,7 @@ Options:
                    "latest")
     -j name     -- Run on the given jail
     -p tree     -- Specify on which ports tree the configuration will be done
+    -l          -- Show logs instead of URL.
     -H          -- Script mode. Do not print headers and separate fields by a
                    single tab instead of arbitrary white space.
     -z set      -- Specify which SET to use
@@ -50,10 +51,11 @@ SETNAME=""
 BUILDNAME=latest
 SCRIPT_MODE=0
 ALL=0
+URL=1
 
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "aB:j:p:Hz:" FLAG; do
+while getopts "aB:j:lp:Hz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			ALL=1
@@ -65,6 +67,9 @@ while getopts "aB:j:p:Hz:" FLAG; do
 		j)
 			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
 			JAILNAME=${OPTARG}
+			;;
+		l)
+			URL=0
 			;;
 		p)
 			PTNAME=${OPTARG}
@@ -113,7 +118,7 @@ else
 		format="%-30s %-25s %6s %5s %6s %7s %7s %7s %s"
 		printf "${format}" "JAIL" "STATUS" "QUEUED" \
 		    "BUILT" "FAILED" "SKIPPED" "IGNORED" "TOBUILD"
-		if [ -n "${URL_BASE}" ]; then
+		if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
 			echo -n "URL"
 		else
 			echo -n "LOGS"
@@ -145,7 +150,7 @@ else
 		nbbuilt=$(bget stats_built 2>/dev/null || :)
 		nbtobuild=$((nbqueued - (nbbuilt + nbfailed + nbskipped + nbignored)))
 		url=
-		if [ -n "${URL_BASE}" ]; then
+		if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
 			url="${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"
 		else
 			url="$(log_path)"
