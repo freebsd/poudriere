@@ -432,8 +432,8 @@ siginfo_handler() {
 	local status=$(bget status 2> /dev/null || echo unknown)
 	local nbb=$(bget stats_built 2>/dev/null || echo 0)
 	local nbf=$(bget stats_failed 2>/dev/null || echo 0)
-	local nbi=$(bget stats_ignored 2>/dev/null || echo 0)
 	local nbs=$(bget stats_skipped 2>/dev/null || echo 0)
+	local nbi=$(bget stats_ignored 2>/dev/null || echo 0)
 	local nbq=$(bget stats_queued 2>/dev/null || echo 0)
 	local ndone=$((nbb + nbf + nbi + nbs))
 	local queue_width=2
@@ -453,8 +453,8 @@ siginfo_handler() {
 		queue_width=3
 	fi
 
-	printf "[${MASTERNAME}] [${status}] [%0${queue_width}d/%0${queue_width}d] Built: %-${queue_width}d Failed: %-${queue_width}d  Ignored: %-${queue_width}d  Skipped: %-${queue_width}d  \n" \
-	  ${ndone} ${nbq} ${nbb} ${nbf} ${nbi} ${nbs}
+	printf "[${MASTERNAME}] [${status}] [%0${queue_width}d/%0${queue_width}d] Built: %-${queue_width}d Failed: %-${queue_width}d  Skipped: %-${queue_width}d  Ignored: %-${queue_width}d  \n" \
+	  ${ndone} ${nbq} ${nbb} ${nbf} ${nbs} ${nbi}
 
 	# Skip if stopping or starting jobs
 	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" -a "${status}" != "stopping_jobs:" ]; then
