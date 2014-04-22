@@ -437,9 +437,10 @@ siginfo_handler() {
 	local nbq=$(bget stats_queued 2>/dev/null || echo 0)
 	local ndone=$((nbb + nbf + nbi + nbs))
 	local nbtobuild=$((nbq - ndone))
+	local log=$(log_path)
 	local queue_width=2
 	local now
-	local j
+	local j elapsed
 	local pkgname origin phase buildtime
 	local format_origin_phase format_phase
 
@@ -454,12 +455,16 @@ siginfo_handler() {
 		queue_width=3
 	fi
 
-	printf "[${MASTERNAME}] [${status}] Queued: %-${queue_width}d Built: %-${queue_width}d Failed: %-${queue_width}d  Skipped: %-${queue_width}d  Ignored: %-${queue_width}d  Tobuild: %-${queue_width}d  \n" \
-	    ${nbq} ${nbb} ${nbf} ${nbs} ${nbi} ${nbtobuild}
+	now=$(date +%s)
+	calculate_elapsed ${now} ${log}
+	elapsed=${_elapsed_time}
+	buildtime=$(date -j -u -r ${elapsed} "+%H:%M:%S")
+
+	printf "[${MASTERNAME}] [${status}] Queued: %-${queue_width}d Built: %-${queue_width}d Failed: %-${queue_width}d  Skipped: %-${queue_width}d  Ignored: %-${queue_width}d  Tobuild: %-${queue_width}d  Time: %s  \n" \
+	    ${nbq} ${nbb} ${nbf} ${nbs} ${nbi} ${nbtobuild} "${buildtime}"
 
 	# Skip if stopping or starting jobs
 	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" -a "${status}" != "stopping_jobs:" ]; then
-		now=$(date +%s)
 		format_origin_phase="\t[%s]: %-32s %-15s (%s)\n"
 		format_phase="\t[%s]: %15s\n"
 
@@ -480,6 +485,7 @@ siginfo_handler() {
 			if [ -n "${origin}" -a "${origin}" != "${status}" ]; then
 				cache_get_pkgname pkgname "${origin}"
 				# Find the buildtime for this pkgname
+				buildtime=
 				for pkgname_buildtime in $pkgname_buildtimes; do
 					[ "${pkgname_buildtime%!*}" = "${pkgname}" ] || continue
 					buildtime="${pkgname_buildtime#*!}"
@@ -2085,6 +2091,21 @@ calculate_tobuild() {
 	local nremaining=$((nbq - ndone))
 
 	echo ${nremaining}
+}
+
+calculate_elapsed() {
+	[ $# -eq 2 ] || eargs calculate_elapsed now log
+	local now="$1"
+	local log="$2"
+	start_end_time=$(stat -f '%B %m' ${log}/.poudriere.status)
+	start_time=${start_end_time% *}
+	case "${status}" in
+		sigint:|crashed:|stop:) end_time=${start_end_time#* } ;;
+		*) end_time=${now} ;;
+	esac
+	_start_time=${start_time}
+	_end_time=${end_time}
+	_elapsed_time=$((${end_time} - ${start_time}))
 }
 
 # Build ports in parallel

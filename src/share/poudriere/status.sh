@@ -99,6 +99,7 @@ if [ ${ALL} -eq 0 ] && \
 fi
 
 POUDRIERE_BUILD_TYPE=bulk
+now="$(date +%s)"
 
 if [ -n "${JAILNAME}" ]; then
 	MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
@@ -115,9 +116,10 @@ if [ -n "${JAILNAME}" ]; then
 	JOBS="${builders}" siginfo_handler
 else
 	if [ ${SCRIPT_MODE} -eq 0 ]; then
-		format="%-40s %-25s %6s %5s %6s %7s %7s %7s %s"
+		format="%-40s %-25s %6s %5s %6s %7s %7s %7s %9s %s"
 		printf "${format}" "JAIL" "STATUS" "QUEUED" \
-		    "BUILT" "FAILED" "SKIPPED" "IGNORED" "TOBUILD"
+		    "BUILT" "FAILED" "SKIPPED" "IGNORED" "TOBUILD" \
+		    "TIME"
 		if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
 			echo -n "URL"
 		else
@@ -125,7 +127,7 @@ else
 		fi
 		echo
 	else
-		format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"
+		format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"
 	fi
 	for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
 		# Check empty dir
@@ -149,14 +151,19 @@ else
 		nbskipped=$(bget stats_skipped 2>/dev/null || :)
 		nbbuilt=$(bget stats_built 2>/dev/null || :)
 		nbtobuild=$((nbqueued - (nbbuilt + nbfailed + nbskipped + nbignored)))
-		url=
+
+		log="$(log_path)"
+		calculate_elapsed ${now} ${log}
+		elapsed=${_elapsed_time}
+		time=$(date -j -u -r ${elapsed} "+%H:%M:%S")
+
 		if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
 			url="${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"
 		else
-			url="$(log_path)"
+			url="${log}"
 		fi
 		printf "${format}\n" "${MASTERNAME}" "${status}" "${nbqueued}" \
 			"${nbbuilt}" "${nbfailed}" "${nbskipped}" "${nbignored}" \
-			"${nbtobuild}" "${url}"
+			"${nbtobuild}" "${time}" "${url}"
 	done
 fi
