@@ -3180,6 +3180,7 @@ prepare_ports() {
 	if was_a_bulk_run && [ $resuming_build -eq 0 ]; then
 		nbq=0
 		nbq=$(find ${MASTERMNT}/poudriere/deps -type d -depth 1 | wc -l)
+		[ "${0##*/}" = "testport.sh" ] && nbq=$((${nbq} + 1))
 		bset stats_queued ${nbq##* }
 	fi
 
