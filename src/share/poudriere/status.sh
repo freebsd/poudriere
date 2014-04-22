@@ -115,7 +115,7 @@ if [ -n "${JAILNAME}" ]; then
 	JOBS="${builders}" siginfo_handler
 else
 	if [ ${SCRIPT_MODE} -eq 0 ]; then
-		format="%-30s %-25s %6s %5s %6s %7s %7s %7s %s"
+		format="%-40s %-25s %6s %5s %6s %7s %7s %7s %s"
 		printf "${format}" "JAIL" "STATUS" "QUEUED" \
 		    "BUILT" "FAILED" "SKIPPED" "IGNORED" "TOBUILD"
 		if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
