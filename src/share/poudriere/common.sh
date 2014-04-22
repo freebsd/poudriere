@@ -454,8 +454,8 @@ siginfo_handler() {
 		queue_width=3
 	fi
 
-	printf "[${MASTERNAME}] [${status}] [%0${queue_width}d/%0${queue_width}d] Built: %-${queue_width}d Failed: %-${queue_width}d  Skipped: %-${queue_width}d  Ignored: %-${queue_width}d  Tobuild: %-${queue_width}d  \n" \
-	  ${ndone} ${nbq} ${nbb} ${nbf} ${nbs} ${nbi} ${nbtobuild}
+	printf "[${MASTERNAME}] [${status}] Queued: %-${queue_width}d Built: %-${queue_width}d Failed: %-${queue_width}d  Skipped: %-${queue_width}d  Ignored: %-${queue_width}d  Tobuild: %-${queue_width}d  \n" \
+	    ${nbq} ${nbb} ${nbf} ${nbs} ${nbi} ${nbtobuild}
 
 	# Skip if stopping or starting jobs
 	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" -a "${status}" != "stopping_jobs:" ]; then
