@@ -29,6 +29,10 @@ usage() {
 poudriere status [options]
 
 Options:
+    -a          -- Show all builds, not just running. This is default
+                   if -B is specified.
+    -B name     -- What buildname to use (must be unique, defaults to
+                   "latest")
     -j name     -- Run on the given jail
     -p tree     -- Specify on which ports tree the configuration will be done
     -H          -- Script mode. Do not print headers and separate fields by a
@@ -43,12 +47,21 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 
 PTNAME=default
 SETNAME=""
+BUILDNAME=latest
 SCRIPT_MODE=0
+ALL=0
 
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "j:p:Hz:" FLAG; do
+while getopts "aB:j:p:Hz:" FLAG; do
 	case "${FLAG}" in
+		a)
+			ALL=1
+			;;
+		B)
+			BUILDNAME="${OPTARG}"
+			ALL=1
+			;;
 		j)
 			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
 			JAILNAME=${OPTARG}
@@ -71,7 +84,10 @@ done
 
 shift $((OPTIND-1))
 
-if [ $(find ${POUDRIERE_DATA}/build -mindepth 2 -maxdepth 2 2>&1 | wc -l) \
+ORIG_BUILDNAME="${BUILDNAME}"
+
+if [ ${ALL} -eq 0 ] && \
+    [ $(find ${POUDRIERE_DATA}/build -mindepth 2 -maxdepth 2 2>&1 | wc -l) \
 	-eq 0 ] ; then
 	[ ${SCRIPT_MODE} -eq 0 ] && msg "No running builds"
 	exit 0
@@ -82,9 +98,13 @@ POUDRIERE_BUILD_TYPE=bulk
 if [ -n "${JAILNAME}" ]; then
 	MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 	MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
-	jail_runs ${MASTERNAME} || err 1 "Jail ${MASTERNAME} is not running"
+	if [ ${ALL} -eq 0 ]; then
+		jail_runs ${MASTERNAME} || \
+		    err 1 "Jail ${MASTERNAME} is not running"
+	fi
 	# Dereference latest into actual buildname
-	BUILDNAME="$(BUILDNAME=latest bget buildname)"
+	BUILDNAME="$(BUILDNAME="${ORIG_BUILDNAME}" bget buildname 2>/dev/null || :)"
+	[ -z "${BUILDNAME}" ] && err 1 "No such build ${ORIG_BUILDNAME}"
 	builders="$(bget builders 2>/dev/null || :)"
 
 	JOBS="${builders}" siginfo_handler
@@ -102,12 +122,20 @@ else
 	else
 		format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"
 	fi
-	for mastermnt in ${POUDRIERE_DATA}/build/*/ref; do
-		[ "${mastermnt}" = "${POUDRIERE_DATA}/build/*/ref" ] && break
-		mastername=${mastermnt#${POUDRIERE_DATA}/build/}
-		MASTERNAME=${mastername%/ref}
+	for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
+		# Check empty dir
+		case "${mastermnt}" in
+			"${POUDRIERE_DATA}/logs/bulk/*") break ;;
+		esac
+		MASTERNAME=${mastermnt#${POUDRIERE_DATA}/logs/bulk/}
+		# Skip non-running on ALL=0
+		[ ${ALL} -eq 0 ] && \
+		    ! [ -d "${POUDRIERE_DATA}/build/${MASTERNAME}/ref" ] && \
+		    continue
 		# Dereference latest into actual buildname
-		BUILDNAME="$(BUILDNAME=latest bget buildname)"
+		BUILDNAME="$(BUILDNAME="${ORIG_BUILDNAME}" bget buildname 2>/dev/null || :)"
+		# No matching build, skip.
+		[ -z "${BUILDNAME}" ] && continue
 
 		status=$(bget status 2>/dev/null || :)
 		nbqueued=$(bget stats_queued 2>/dev/null || :)

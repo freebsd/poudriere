@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd April 18, 2014
+.Dd April 22, 2014
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -586,6 +586,17 @@ command.
 .Ss status
 This command accepts the following options:
 .Bl -tag -width "-f conffile"
+.It Fl a
+Show all builds, not just currently running.
+This is implied by the
+.Fl B
+flag.
+.It Fl B Ar name
+Specifies which buildname to match on.
+Defaults to "latest".
+Specifying this implies the
+.Fl a
+flag.
 .It Fl j Ar name
 Specifies the
 .Ar name

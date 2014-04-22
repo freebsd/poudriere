@@ -115,6 +115,8 @@ _testport=(
 )
 
 _status=(
+        '-a[show all builds, not just currently running]'
+        '-B[which build to match on]:buildname'
 	'-j[run only inside the given jail]::name:_poudriere_jail'
 	'-p[specify on which portstree we work]::tree:_poudriere_pt'
         '-H[Do not print headers and separate fields by a single tab instead of arbitrary white space.]'
