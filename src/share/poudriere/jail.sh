@@ -32,6 +32,7 @@ poudriere jail [parameters] [options]
 Parameters:
     -c            -- Create a jail
     -d            -- Delete a jail
+    -i            -- Show information about a jail
     -l            -- List all available jails
     -s            -- Start a jail
     -k            -- Stop a jail
@@ -558,6 +559,61 @@ EOF
 	msg "Jail ${JAILNAME} ${VERSION} ${ARCH} is ready to be used"
 }
 
+info_jail() {
+	local nbb nbf nbi nbq nbs tobuild
+	local building_started status log
+	local elapsed elapsed_days elapsed_hms elapsed_timestamp
+	local now start_time
+	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
+	porttree_exists ${PTNAME} || err 1 "No such tree: ${PTNAME}"
+
+	POUDRIERE_BUILD_TYPE=bulk
+	BUILDNAME=latest
+
+	log=$(log_path)
+	now=$(date +%s)
+
+	status=$(bget status 2>/dev/null || :)
+	nbq=$(bget stats_queued 2>/dev/null || :)
+	nbf=$(bget stats_failed 2>/dev/null || :)
+	nbi=$(bget stats_ignored 2>/dev/null || :)
+	nbs=$(bget stats_skipped 2>/dev/null || :)
+	nbb=$(bget stats_built 2>/dev/null || :)
+	tobuild=$((nbq - nbb - nbf - nbi - nbs))
+
+	echo "Jail name:         ${JAILNAME}"
+	echo "Jail version:      $(jget ${JAILNAME} version)"
+	echo "Jail arch:         $(jget ${JAILNAME} arch)"
+	echo "Jail acquired:     $(jget ${JAILNAME} method)"
+#	echo "Jail built:        $(jget ${JAILNAME} timestamp)"
+	echo "Tree name:         ${PTNAME}"
+	echo "Tree acquired:     $(pget ${PTNAME} method)"
+#	echo "Tree updated:      $(pget ${PTNAME} timestamp)"
+	echo "Status:            ${status}"
+	if calculate_elapsed ${now} ${log}; then
+		start_time=${_start_time}
+		elapsed=${_elapsed_time}
+		building_started=$(date -j -r ${start_time} "+%Y-%m-%d %H:%M:%S")
+		elapsed_days=$((elapsed/86400))
+		elapsed_hms=$(date -j -u -r ${elapsed} "+%H:%M:%S")
+		case ${elapsed_days} in
+			0) elapsed_timestamp="${elapsed_hms}" ;;
+			1) elapsed_timestamp="1 day, ${elapsed_hms}" ;;
+			*) elapsed_timestamp="${elapsed_days} days, ${elapsed_hms}" ;;
+		esac
+		echo "Building started:  ${building_started}"
+		echo "Elapsed time:      ${elapsed_timestamp}"
+		echo "Packages built:    ${nbb}"
+		echo "Packages failed:   ${nbf}"
+		echo "Packages ignored:  ${nbi}"
+		echo "Packages skipped:  ${nbs}"
+		echo "Packages total:    ${nbq}"
+		echo "Packages left:     ${tobuild}"
+	fi
+
+	unset POUDRIERE_BUILD_TYPE
+}
+
 ARCH=`uname -m`
 REALARCH=${ARCH}
 START=0
@@ -577,8 +633,11 @@ SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "J:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:" FLAG; do
+while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:" FLAG; do
 	case "${FLAG}" in
+		i)
+			INFO=1
+			;;
 		j)
 			JAILNAME=${OPTARG}
 			;;
@@ -665,15 +724,21 @@ if [ -n "${JAILNAME}" -a ${CREATE} -eq 0 ]; then
 	JAILMNT=$(jget ${JAILNAME} mnt)
 fi
 
-case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
-	1000000)
+case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
+	10000000)
 		test -z ${JAILNAME} && usage
 		create_jail
 		;;
-	0100000)
+	01000000)
+		test -z ${JAILNAME} && usage
+		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
+		export MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
+		info_jail
+		;;
+	00100000)
 		list_jail
 		;;
-	0010000)
+	00010000)
 		test -z ${JAILNAME} && usage
 		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
@@ -682,7 +747,7 @@ case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		    msg "Jail ${MASTERNAME} not running, but cleaning up anyway"
 		jail_stop
 		;;
-	0001000)
+	00001000)
 		export SET_STATUS_ON_START=0
 		test -z ${JAILNAME} && usage
 		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
@@ -693,15 +758,15 @@ case "${CREATE}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		# Restart with network
 		jstart 1
 		;;
-	0000100)
+	00000100)
 		test -z ${JAILNAME} && usage
 		delete_jail
 		;;
-	0000010)
+	00000010)
 		test -z ${JAILNAME} && usage
 		update_jail
 		;;
-	0000011)
+	00000011)
 		test -z ${JAILNAME} && usage
 		rename_jail
 		;;

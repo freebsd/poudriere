@@ -2097,6 +2097,8 @@ calculate_elapsed() {
 	[ $# -eq 2 ] || eargs calculate_elapsed now log
 	local now="$1"
 	local log="$2"
+
+	[ -f "${log}/.poudriere.status" ] || return 1
 	start_end_time=$(stat -f '%B %m' ${log}/.poudriere.status)
 	start_time=${start_end_time% *}
 	case "${status}" in
@@ -2106,6 +2108,7 @@ calculate_elapsed() {
 	_start_time=${start_time}
 	_end_time=${end_time}
 	_elapsed_time=$((${end_time} - ${start_time}))
+	return 0
 }
 
 # Build ports in parallel
