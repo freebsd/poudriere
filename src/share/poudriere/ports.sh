@@ -56,7 +56,8 @@ Options:
 		     tree. By default it is portsnap, possible alternatives are
 		     "portsnap", "svn", "svn+http", "svn+https",
 		     "svn+file", "svn+ssh", "git"
-    -B branch     -- Which branch to use for SVN method (default: head)
+    -B branch     -- Which branch to use for SVN/GIT method
+                     (default: head/master)
     -q            -- Quiet (Remove the header in the list view)
 EOF
 	exit 1
@@ -70,7 +71,6 @@ LIST=0
 QUIET=0
 VERBOSE=0
 KEEP=0
-BRANCH=head
 while getopts "B:cFudklp:qf:M:m:v" FLAG; do
 	case "${FLAG}" in
 		B)
@@ -134,6 +134,11 @@ git);;
 *) usage;;
 esac
 
+case ${METHOD} in
+svn*) : ${BRANCH:=head} ;;
+git)  : ${BRANCH:=master} ;;
+esac
+
 if [ ${LIST} -eq 1 ]; then
 	format='%-20s %-10s %s\n'
 	[ $QUIET -eq 0 ] &&
@@ -192,7 +197,7 @@ if [ ${CREATE} -eq 1 ]; then
 		git)
 			msg_n "Cloning the ports tree..."
 			[ ${VERBOSE} -gt 0 ] || quiet="-q"
-			git clone --depth=1 ${quiet} ${GIT_URL} ${PTMNT} || err 1 " fail"
+			git clone --depth=1 ${quiet} -b ${BRANCH} ${GIT_URL} ${PTMNT} || err 1 " fail"
 			echo " done"
 			;;
 		esac
