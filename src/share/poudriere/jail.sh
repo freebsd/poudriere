@@ -164,7 +164,7 @@ update_jail() {
 		MASTERNAME=${JAILNAME}
 		[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
 		do_jail_mounts ${JAILMNT} ${ARCH}
-		JNETNAME="network"
+		JNETNAME="n"
 		if [ -z "${TORELEASE}" ]; then
 			injail env PAGER=/bin/cat /usr/sbin/freebsd-update fetch install
 		else
@@ -754,7 +754,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		export MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 		jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
-		JNETNAME="network"
+		JNETNAME="n"
 		;;
 	00000100)
 		test -z ${JAILNAME} && usage

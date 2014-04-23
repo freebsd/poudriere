@@ -1480,7 +1480,7 @@ _real_build_port() {
 			mkdir -p ${mnt}/portdistfiles
 			echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf
 			gather_distfiles ${portdir} ${DISTFILES_CACHE} ${mnt}/portdistfiles || return 1
-			JNETNAME="network"
+			JNETNAME="n"
 			JUSER=root
 			;;
 		extract)
@@ -3392,7 +3392,7 @@ build_repo() {
 			    -o ${MASTERMNT}/tmp/packages ${MASTERMNT}/packages \
 			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 		else
-			JNETNAME="network"
+			JNETNAME="n"
 			injail /poudriere/pkg-static repo -o /tmp/packages \
 			    /packages \
 			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
