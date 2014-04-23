@@ -1966,7 +1966,7 @@ mark_done() {
 
 
 build_queue() {
-	local j name pkgname builders_active queue_empty
+	local j name pkgname builders_active queue_empty status
 
 	mkfifo ${MASTERMNT}/poudriere/builders.pipe
 	exec 6<> ${MASTERMNT}/poudriere/builders.pipe
@@ -1989,7 +1989,8 @@ build_queue() {
 				read pkgname < ${MASTERMNT}/poudriere/var/run/${j}.pkgname
 				rm -f ${MASTERMNT}/poudriere/var/run/${j}.pid \
 					${MASTERMNT}/poudriere/var/run/${j}.pkgname
-				if [ "$(bget ${j} status)" = "stopped:" ]; then
+				status=$(bget ${j} status)
+				if [ "${status%%:*}" = "stopped" ]; then
 					mark_done ${pkgname}
 					bset ${j} status "idle:"
 				else
@@ -2334,7 +2335,7 @@ stop_build() {
 	buildlog_stop ${portdir} ${build_failed}
 	log_stop
 
-	bset ${MY_JOBID} status "stopped:"
+	bset ${MY_JOBID} status "stopped:${portdir#usr/ports}"
 }
 
 # Crazy redirection is to add the portname into stderr.
