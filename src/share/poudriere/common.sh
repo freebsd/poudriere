@@ -1467,6 +1467,8 @@ _real_build_port() {
 			jailuser=${PORTBUILD_USER}
 			chown -R ${jailuser} ${mnt}/wrkdirs
 		fi
+		# XXX: run-depends can come out of here with some bsd.port.mk
+		# changes. Easier once pkg_install is EOL.
 		install_order="run-depends stage package"
 		# Don't need to install if only making packages and not
 		# testing.
