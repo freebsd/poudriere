@@ -116,6 +116,7 @@ _testport=(
 
 _status=(
         '-a[show all builds, not just currently running]'
+        '-b[show builder details]'
         '-B[which build to match on]:buildname'
 	'-j[run only inside the given jail]::name:_poudriere_jail'
         '-l[show logs instead of URL]'

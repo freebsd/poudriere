@@ -31,6 +31,7 @@ poudriere status [options]
 Options:
     -a          -- Show all builds, not just running. This is default
                    if -B is specified.
+    -b          -- Display status of each builder for the matched build.
     -B name     -- What buildname to use (must be unique, defaults to
                    "latest")
     -j name     -- Run on the given jail
@@ -52,13 +53,17 @@ BUILDNAME=latest
 SCRIPT_MODE=0
 ALL=0
 URL=1
+BUILDER_INFO=0
 
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "aB:j:lp:Hz:" FLAG; do
+while getopts "abB:j:lp:Hz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			ALL=1
+			;;
+		b)
+			BUILDER_INFO=1
 			;;
 		B)
 			BUILDNAME="${OPTARG}"
@@ -101,55 +106,46 @@ fi
 POUDRIERE_BUILD_TYPE=bulk
 now="$(date +%s)"
 
-if [ -n "${JAILNAME}" ]; then
-	MASTERNAME=${JAILNAME}-${PTNAME:-default}${SETNAME:+-${SETNAME}}
-	MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
-	if [ ${ALL} -eq 0 ]; then
-		jail_runs ${MASTERNAME} || \
-		    err 1 "Jail ${MASTERNAME} is not running"
+if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
+	format="%-40s %-25s %6s %5s %6s %7s %7s %7s %9s %s"
+	printf "${format}" "JAIL" "STATUS" "QUEUED" \
+	    "BUILT" "FAILED" "SKIPPED" "IGNORED" "TOBUILD" \
+	    "TIME"
+	if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
+		echo -n "URL"
+	else
+		echo -n "LOGS"
 	fi
+	echo
+else
+	format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"
+fi
+for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
+	# Check empty dir
+	case "${mastermnt}" in
+		"${POUDRIERE_DATA}/logs/bulk/*") break ;;
+	esac
+	MASTERNAME=${mastermnt#${POUDRIERE_DATA}/logs/bulk/}
+	# Skip non-running on ALL=0
+	[ ${ALL} -eq 0 ] && ! jail_runs ${MASTERNAME} && continue
 	# Dereference latest into actual buildname
 	BUILDNAME="$(BUILDNAME="${ORIG_BUILDNAME}" bget buildname 2>/dev/null || :)"
-	[ -z "${BUILDNAME}" ] && err 1 "No such build ${ORIG_BUILDNAME}"
-	builders="$(bget builders 2>/dev/null || :)"
-
-	JOBS="${builders}" siginfo_handler
-else
-	if [ ${SCRIPT_MODE} -eq 0 ]; then
-		format="%-40s %-25s %6s %5s %6s %7s %7s %7s %9s %s"
-		printf "${format}" "JAIL" "STATUS" "QUEUED" \
-		    "BUILT" "FAILED" "SKIPPED" "IGNORED" "TOBUILD" \
-		    "TIME"
-		if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
-			echo -n "URL"
-		else
-			echo -n "LOGS"
-		fi
-		echo
-	else
-		format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"
+	# No matching build, skip.
+	[ -z "${BUILDNAME}" ] && continue
+	if [ -n "${JAILNAME}" ]; then
+		jailname=$(bget jailname)
+		[ "${jailname}" = "${JAILNAME}" ] || continue
 	fi
-	for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
-		# Check empty dir
-		case "${mastermnt}" in
-			"${POUDRIERE_DATA}/logs/bulk/*") break ;;
-		esac
-		MASTERNAME=${mastermnt#${POUDRIERE_DATA}/logs/bulk/}
-		# Skip non-running on ALL=0
-		[ ${ALL} -eq 0 ] && ! jail_runs ${MASTERNAME} && continue
-		# Dereference latest into actual buildname
-		BUILDNAME="$(BUILDNAME="${ORIG_BUILDNAME}" bget buildname 2>/dev/null || :)"
-		# No matching build, skip.
-		[ -z "${BUILDNAME}" ] && continue
+	if [ -n "${PTNAME}" ]; then
 		ptname=$(bget ptname)
+		[ "${ptname}" = "${PTNAME}" ] || continue
+	fi
+	if [ -n "${SETNAME}" ]; then
 		setname=$(bget setname)
-		if [ -n "${PTNAME}" ]; then
-			[ "${ptname}" = "${PTNAME}" ] || continue
-		fi
-		if [ -n "${SETNAME}" ]; then
-			[ "${setname}" = "${SETNAME}" ] || continue
-		fi
+		[ "${setname}" = "${SETNAME}" ] || continue
+	fi
 
+	if [ ${BUILDER_INFO} -eq 0 ]; then
 		status=$(bget status 2>/dev/null || :)
 		nbqueued=$(bget stats_queued 2>/dev/null || :)
 		nbfailed=$(bget stats_failed 2>/dev/null || :)
@@ -171,5 +167,10 @@ else
 		printf "${format}\n" "${MASTERNAME}" "${status}" "${nbqueued}" \
 			"${nbbuilt}" "${nbfailed}" "${nbskipped}" "${nbignored}" \
 			"${nbtobuild}" "${time}" "${url}"
-	done
-fi
+	else
+
+		builders="$(bget builders 2>/dev/null || :)"
+
+		JOBS="${builders}" siginfo_handler
+	fi
+done

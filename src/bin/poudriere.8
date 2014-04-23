@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd April 22, 2014
+.Dd April 23, 2014
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -595,6 +595,8 @@ Show all builds, not just currently running.
 This is implied by the
 .Fl B
 flag.
+.It Fl b
+Show details about what each builder for the matched build are doing.
 .It Fl B Ar name
 Specifies which buildname to match on.
 Defaults to "latest".
@@ -604,20 +606,18 @@ flag.
 .It Fl j Ar name
 Specifies the
 .Ar name
-of the jail to view the status of.
+of the jail to filter by.
 .It Fl l
 Show logs instead of URL.
 .It Fl p Ar tree
 This flag specifies which ports
 .Ar tree
-the build is running on when using
-.Fl j
+to filter builds by.
 .It Fl H
 Do not print headers and separate fields by a single tab instead of arbitrary
 white space.
 .It Fl z Ar set
-This specifies which SET the build is running on when using
-.Fl j
+This specifies which SET to filter builds by.
 .El
 .Pp
 .Sh ENVIRONMENT
