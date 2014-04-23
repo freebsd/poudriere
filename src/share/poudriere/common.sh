@@ -1467,7 +1467,11 @@ _real_build_port() {
 			jailuser=${PORTBUILD_USER}
 			chown -R ${jailuser} ${mnt}/wrkdirs
 		fi
-		install_order="run-depends stage package install-mtree install"
+		install_order="run-depends stage package"
+		# Don't need to install if only making packages and not
+		# testing.
+		[ -n "${PORTTESTING}" ] && \
+		    install_order="${install_order} install-mtree install"
 		stagedir=$(injail make -C ${portdir} -VSTAGEDIR)
 	fi
 	targets="check-sanity pkg-depends fetch-depends fetch checksum \
