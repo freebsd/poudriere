@@ -199,6 +199,7 @@ read_packages_from_params "$@"
 
 run_hook bulk start
 
+madvise_protect $$
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
 LOGD=`log_path`

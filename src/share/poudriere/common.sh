@@ -2142,6 +2142,13 @@ calculate_elapsed() {
 	return 0
 }
 
+madvise_protect() {
+	[ $# -eq 1 ] || eargs madvise_protect pid
+	[ -f /usr/bin/protect ] || return 0
+	/usr/bin/protect -p "$1" || :
+	return 0
+}
+
 # Build ports in parallel
 # Returns when all are built.
 parallel_build() {

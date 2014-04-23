@@ -48,7 +48,6 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
     # An attempt to get % memory used, considering ARC_MFU as non-free.
     sysctl -n vm.stats.vm.v_inactive_count vm.stats.vm.v_cache_count vm.stats.vm.v_free_count hw.physmem kstat.zfs.misc.arcstats.size vfs.zfs.mfu_size hw.pagesize|tr '\n' ' '| { read vm1 vm2 vm3 physmem arc arc_mfu pagesize; echo "scale=2;((${physmem} - ((${vm1} + ${vm2} + ${vm3}) * ${pagesize}) - ${arc} + ${arc_mfu}) / ${physmem}) * 100"|bc;}
 </verbatim>
-  *  <em>madvise(2)</em> the main poudriere pid so that OOM will allow poudriere to continue/cleanup.
   *  [http://www.freebsd.org/cgi/man.cgi?query=rctl&sektion=8&manpath=FreeBSD+9.0-RELEASE|rctl(8)] support to limit jail memory usage. This may hurt performance, but will ensure no jail uses all RAM. ulimit -m does not work per-jail, it is only per-process.
   *  Assigning jails cpusets to ensure misbehaving ports don't hog all CPU and only use the expected *1* CPU.
   *  <em>build_pkg</em> startup failure can "crash" a jail and all future builds on it. This can be seen by putting a false a few lines into <em>build_pkg</em>
