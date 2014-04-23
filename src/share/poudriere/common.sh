@@ -449,7 +449,8 @@ siginfo_handler() {
 	local format_origin_phase format_phase
 
 	[ -n "${nbq}" ] || return 0
-	[ "${status}" = "index:" -o "${status}" = "crashed:" ] && return 0
+	[ "${status}" = "index:" -o "${status#stopped:}" = "crashed:" ] && \
+	    return 0
 
 	if [ ${nbq} -gt 9999 ]; then
 		queue_width=5
@@ -1196,9 +1197,12 @@ setup_makeconf() {
 
 jail_stop() {
 	[ $# -ne 0 ] && eargs jail_stop
+	local last_status
 
-	# err() will set status to 'crashed', don't override.
-	[ -n "${CRASHED}" ] || bset status "stopped:" 2>/dev/null || :
+	# Don't override if there is a failure to grab the last status.
+	last_status=$(bget status 2>/dev/null || :)
+	[ -n "${last_status}" ] && bset status "stopped:${last_status}" \
+	    2>/dev/null || :
 
 	jstop || :
 	# Shutdown all builders
@@ -2104,7 +2108,7 @@ calculate_elapsed() {
 	start_end_time=$(stat -f '%B %m' ${log}/.poudriere.status)
 	start_time=${start_end_time% *}
 	case "${status}" in
-		sigterm:|sigint:|crashed:|stop:|stopped:)
+		sigterm:|sigint:|crashed:|stop:|stopped:*)
 			end_time=${start_end_time#* }
 			;;
 		*) end_time=${now} ;;
