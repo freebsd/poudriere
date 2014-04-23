@@ -126,26 +126,29 @@ my_path() {
 my_name() {
 	echo ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}
 }
-
+ 
 log_path() {
 	echo "${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"
 }
 
 injail() {
-	jexec -U ${JUSER:-root} ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}} "$@"
+	jexec -U ${JUSER:-root} ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}${JNETNAME:+-${JNETNAME}} "$@"
 }
 
 jstart() {
-	local enable_networking="$1"
 	local network="${localipargs}"
 
-	[ "${RESTRICT_NETWORKING}" = "yes" ] || enable_networking=1
-	[ ${enable_networking} -eq 1 ] && network="${ipargs}"
+	[ "${RESTRICT_NETWORKING}" = "yes" ] || network="${ipargs}"
 
 	jail -c persist name=${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}} \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}} \
 		${network} \
+		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
+	jail -c persist name=${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}-network \
+		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
+		host.hostname=${BUILDER_HOSTNAME-${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}} \
+		${ipargs} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
 	if ! injail id ${PORTBUILD_USER} >/dev/null 2>&1 ; then
 		msg_n "Creating user/group ${PORTBUILD_USER}"
@@ -159,6 +162,7 @@ jstart() {
 
 jstop() {
 	jail -r ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}} 2>/dev/null || :
+	jail -r ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}-network 2>/dev/null || :
 }
 
 eargs() {
@@ -788,8 +792,7 @@ enter_interactive() {
 	done
 
 	# Enable networking
-	jstop
-	jstart 1
+	JNETNAME="network"
 
 	# Create a pkgng repo configuration, and disable FreeBSD
 	if [ ${PKGNG} -eq 1 ]; then
@@ -1122,7 +1125,7 @@ jail_start() {
 
 	test -n "${RESOLV_CONF}" && cp -v "${RESOLV_CONF}" "${tomnt}/etc/"
 	msg "Starting jail ${MASTERNAME}"
-	jstart 0
+	jstart
 	# Only set STATUS=1 if not turned off
 	# jail -s should not do this or jail will stop on EXIT
 	WITH_PKGNG=$(injail make -f /usr/ports/Mk/bsd.port.mk -V WITH_PKGNG)
@@ -1477,8 +1480,7 @@ _real_build_port() {
 			mkdir -p ${mnt}/portdistfiles
 			echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf
 			gather_distfiles ${portdir} ${DISTFILES_CACHE} ${mnt}/portdistfiles || return 1
-			jstop
-			jstart 1
+			JNETNAME="network"
 			JUSER=root
 			;;
 		extract)
@@ -1588,8 +1590,7 @@ _real_build_port() {
 		fi
 
 		if [ "${phase}" = "checksum" ]; then
-			jstop
-			jstart 0
+			JNETNAME=""
 		fi
 		print_phase_footer
 
@@ -1856,7 +1857,7 @@ start_builder() {
 	markfs prepkg ${mnt} >/dev/null
 	do_jail_mounts ${mnt} ${arch}
 	do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
-	jstart 0
+	jstart
 	bset ${id} status "idle:"
 }
 
@@ -2226,7 +2227,7 @@ build_pkg() {
 	jstop
 	[ -f ${mnt}/.need_rollback ] && rollbackfs prepkg ${mnt}
 	# Make sure we start with no network
-	jstart 0
+	jstart
 
 	:> ${mnt}/.need_rollback
 
@@ -3391,8 +3392,7 @@ build_repo() {
 			    -o ${MASTERMNT}/tmp/packages ${MASTERMNT}/packages \
 			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 		else
-			jstop
-			jstart 1
+			JNETNAME="network"
 			injail /poudriere/pkg-static repo -o /tmp/packages \
 			    /packages \
 			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
