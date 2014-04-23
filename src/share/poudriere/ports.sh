@@ -140,11 +140,15 @@ git)  : ${BRANCH:=master} ;;
 esac
 
 if [ ${LIST} -eq 1 ]; then
-	format='%-20s %-10s %s\n'
+	format='%-20s %-10s %-20s %s\n'
 	[ $QUIET -eq 0 ] &&
-		printf "${format}" "PORTSTREE" "METHOD" "PATH"
+		printf "${format}" "PORTSTREE" "METHOD" "TIMESTAMP" "PATH"
 	porttree_list | while read ptname ptmethod ptpath; do
-		printf "${format}" ${ptname} ${ptmethod} ${ptpath}
+		timestamp=$(pget ${ptname} timestamp 2>/dev/null || :)
+		time=
+		[ -n "${timestamp}" ] && \
+		    time="$(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
+		printf "${format}" ${ptname} ${ptmethod} "${time}" ${ptpath}
 	done
 else
 	[ -z "${PTNAME}" ] && usage
@@ -202,6 +206,7 @@ if [ ${CREATE} -eq 1 ]; then
 			;;
 		esac
 		pset ${PTNAME} method ${METHOD}
+		pset ${PTNAME} timestamp $(date +%s)
 	else
 		pset ${PTNAME} method "-"
 	fi
@@ -262,5 +267,5 @@ if [ ${UPDATE} -eq 1 ]; then
 		;;
 	esac
 
-	date +%s > ${PORTSMNT:-${PTMNT}}/.poudriere.stamp
+	pset ${PTNAME} timestamp $(date +%s)
 fi
