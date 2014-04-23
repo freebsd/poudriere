@@ -145,7 +145,7 @@ jstart() {
 		host.hostname=${BUILDER_HOSTNAME-${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}} \
 		${network} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
-	jail -c persist name=${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}-network \
+	jail -c persist name=${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}-n \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}} \
 		${ipargs} \
@@ -162,7 +162,7 @@ jstart() {
 
 jstop() {
 	jail -r ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}} 2>/dev/null || :
-	jail -r ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}-network 2>/dev/null || :
+	jail -r ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}-n 2>/dev/null || :
 }
 
 eargs() {
