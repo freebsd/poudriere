@@ -120,7 +120,7 @@ function format_setname(setname) {
 
 function process_data(data) {
 	var html, a, n;
-	var table_rows, table_row;
+	var table_rows, table_row, main_status;
 
 	// Redirect from /latest/ to the actual build.
 	if (document.location.href.indexOf('/latest/') != -1) {
@@ -155,6 +155,10 @@ function process_data(data) {
 		table_row.push(format_origin(a[1]));
 		table_row.push(a[0]);
 		table_rows.push(table_row);
+
+		if (builder.id == "main") {
+			main_status = a[0];
+		}
 	}
 	// XXX This could be improved by updating cells in-place
 	$('#builders_table').dataTable().fnClearTable();
@@ -211,7 +215,10 @@ function process_data(data) {
 	}
 
 	first_run = false;
-	setTimeout(update_fields, updateInterval * 1000);
+	// Refresh as long as the build is not stopped
+	if (main_status != "stopped") {
+		setTimeout(update_fields, updateInterval * 1000);
+	}
 }
 
 $(document).ready(function() {

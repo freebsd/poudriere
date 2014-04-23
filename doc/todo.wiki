@@ -13,7 +13,6 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
   *  jail -c does not cleanup jail on failure
   *  failure in jail -u freebsd-update can leave '91amd64' running with no way to stop it
   *  Write out json early, before compute_deps, so the webpage is not blank/loading for several minutes
-  *  stop html json querying when build done (may be done already)
   *  show TOBUILD count in SIGINFO
   *  pkg bootstrap skipping sanity is no good, skips all version checks. Need to have a bootstrap mode so it reruns.
   *  This is wrong, should skip shell-meta as npm was skipped, not because node failed:
