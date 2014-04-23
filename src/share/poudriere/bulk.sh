@@ -292,14 +292,14 @@ if [ $nbfailed -gt 0 ]; then
 	echo ${failed}
 	echo ""
 fi
-if [ $nbignored -gt 0 ]; then
-	msg_n "Ignored ports: "
-	echo ${ignored}
-	echo ""
-fi
 if [ $nbskipped -gt 0 ]; then
 	msg_n "Skipped ports: "
 	echo ${skipped}
+	echo ""
+fi
+if [ $nbignored -gt 0 ]; then
+	msg_n "Ignored ports: "
+	echo ${ignored}
 	echo ""
 fi
 run_hook bulk done ${nbbuilt} ${nbfailed} ${nbignored} ${nbskipped}
@@ -310,7 +310,7 @@ cleanup
 now=$(date +%s)
 calculate_elapsed ${now} ${LOGD}
 time=$(date -j -u -r ${_elapsed_time} "+%H:%M:%S")
-msg "[${MASTERNAME}] $nbbuilt packages built, $nbfailed failures, $nbignored ignored, $nbskipped skipped, ${time} elapsed"
+msg "[${MASTERNAME}] $nbbuilt packages built, $nbfailed failed, $nbskipped skipped, $nbignored ignored, ${time} elapsed"
 show_log_info
 
 set +e
