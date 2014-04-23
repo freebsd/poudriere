@@ -163,11 +163,15 @@ Skip sanity tests. Sanity tests are made to check if the ports exists, does not 
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;t</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Add some testing to the specified ports. Add <b class="flag">&#45;r</b> to recursively test all port dependencies as well. Currently uninstalls the port, and disable parallel jobs for make.</dd>
+Add some testing to the specified ports. Add <b class="flag">&#45;r</b> to recursively test all port dependencies as well. Currently uninstalls the port, and disable parallel jobs for make. When used with <b class="flag">&#45;a</b> then <b class="flag">&#45;rk</b> are implied.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;r</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Recursively test all dependencies as well.</dd>
+Recursively test all dependencies as well. This flag is automatically set when using <b class="flag">&#45;at</b>.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;k</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+When using <b class="flag">&#45;t</b> do not consider failures as fatal. Do not skip dependent ports on findings. This flag is automatically set when using <b class="flag">&#45;at</b>.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;T</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
@@ -196,6 +200,10 @@ Creates a jail.</dd>
 <b class="flag">&#45;d</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
 Deletes a jail.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;i</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Show information about a jail. See also <b class="flag">status</b>.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;l</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
@@ -327,7 +335,7 @@ Show more verbose output.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;B</b> <i class="arg">branch</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Specifies which <i class="arg">branch</i> to checkout when using the svn method. (Default: head)</dd>
+Specifies which <i class="arg">branch</i> to checkout when using the <span class="symb">svn</span> or <span class="symb">git</span> methods. (Default: head/master)</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;k</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
@@ -369,9 +377,13 @@ Runs only inside the jail named <i class="arg">name</i>.</dd>
 <dd class="list-tag" style="margin-left: 11.00ex;">
 This argument specifies how many <i class="arg">number</i> jobs will run in parallel for building the dependencies.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
-<b class="flag">&#45;n</b></dt>
+<b class="flag">&#45;k</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Do not use custom prefix.</dd>
+Do not consider failures as fatal. Find all failures.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;P</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Use custom prefix.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;N</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
@@ -528,13 +540,29 @@ There are no options associated with the <b class="flag">queue</b> command.</div
 <div class="subsection">
 <h2 id="x737461747573">status</h2> This command accepts the following options:<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
 <dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;a</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Show all builds, not just currently running. This is implied by the <b class="flag">&#45;B</b> flag.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;b</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Show details about what each builder for the matched build are doing.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;B</b> <i class="arg">name</i></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Specifies which buildname to match on. Defaults to "latest". Specifying this implies the <b class="flag">&#45;a</b> flag.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;j</b> <i class="arg">name</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Specifies the <i class="arg">name</i> of the jail to view the status of.</dd>
+Specifies the <i class="arg">name</i> of the jail to filter by.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;l</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Show logs instead of URL.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;p</b> <i class="arg">tree</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-This flag specifies which ports <i class="arg">tree</i> the build is running on when using <b class="flag">&#45;j</b></dd>
+This flag specifies which ports <i class="arg">tree</i> to filter builds by.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;H</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
@@ -542,7 +570,7 @@ Do not print headers and separate fields by a single tab instead of arbitrary wh
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;z</b> <i class="arg">set</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-This specifies which SET the build is running on when using <b class="flag">&#45;j</b></dd>
+This specifies which SET to filter builds by.</dd>
 </dl>
 </div>
 </div>
@@ -779,9 +807,9 @@ Be also careful to not begin the name of the jail by a number if you are not in 
 <tbody>
 <tr>
 <td class="foot-date">
-March 1, 2014</td>
+April 23, 2014</td>
 <td class="foot-os" align="right">
-FreeBSD 11.0</td>
+FreeBSD 9.1</td>
 </tr>
 </tbody>
 </table>
