@@ -468,8 +468,10 @@ siginfo_handler() {
 	printf "[${MASTERNAME}] [${status}] Queued: %-${queue_width}d Built: %-${queue_width}d Failed: %-${queue_width}d  Skipped: %-${queue_width}d  Ignored: %-${queue_width}d  Tobuild: %-${queue_width}d  Time: %s  \n" \
 	    ${nbq} ${nbb} ${nbf} ${nbs} ${nbi} ${nbtobuild} "${buildtime}"
 
-	# Skip if stopping or starting jobs
-	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" -a "${status}" != "stopping_jobs:" ]; then
+	# Skip if stopping or starting jobs or stopped.
+	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" \
+	    -a "${status}" != "stopping_jobs:" ] && \
+	    ! status_is_stopped "${status}"; then
 		format_origin_phase="\t[%s]: %-32s %-15s (%s)\n"
 		format_phase="\t[%s]: %15s\n"
 
@@ -2099,6 +2101,15 @@ calculate_tobuild() {
 	echo ${nremaining}
 }
 
+status_is_stopped() {
+	[ $# -eq 1 ] || eargs status_is_stopped status
+	local status="$1"
+	case "${status}" in
+		sigterm:|sigint:|crashed:|stop:|stopped:*) return 0 ;;
+	esac
+	return 1
+}
+
 calculate_elapsed() {
 	[ $# -eq 2 ] || eargs calculate_elapsed now log
 	local now="$1"
@@ -2107,12 +2118,11 @@ calculate_elapsed() {
 	[ -f "${log}/.poudriere.status" ] || return 1
 	start_end_time=$(stat -f '%B %m' ${log}/.poudriere.status)
 	start_time=${start_end_time% *}
-	case "${status}" in
-		sigterm:|sigint:|crashed:|stop:|stopped:*)
-			end_time=${start_end_time#* }
-			;;
-		*) end_time=${now} ;;
-	esac
+	if status_is_stopped "${status}"; then
+		end_time=${start_end_time#* }
+	else
+		end_time=${now}
+	fi
 	_start_time=${start_time}
 	_end_time=${end_time}
 	_elapsed_time=$((${end_time} - ${start_time}))
