@@ -45,10 +45,10 @@ Options:
                    run a different number of jobs in parallel while preparing
                    the build. (Defaults to the number of CPUs)
     -k          -- Don't consider failures as fatal; find all failures.
-    -n          -- No custom prefix
     -N          -- Do not build package repository or INDEX when build
                    of dependencies completed
     -p tree     -- Specify the path to the portstree
+    -P          -- Use custom prefix
     -s          -- Skip sanity checks
     -v          -- Be verbose; show more information. Use twice to enable
                    debug output
@@ -61,14 +61,14 @@ SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 CONFIGSTR=0
 . ${SCRIPTPREFIX}/common.sh
-NOPREFIX=0
+NOPREFIX=1
 SETNAME=""
 SKIPSANITY=0
 INTERACTIVE_MODE=0
 PTNAME="default"
 BUILD_REPO=1
 
-while getopts "o:cniIj:J:kNp:svz:" FLAG; do
+while getopts "o:cniIj:J:kNp:Psvz:" FLAG; do
 	case "${FLAG}" in
 		c)
 			CONFIGSTR=1
@@ -77,7 +77,7 @@ while getopts "o:cniIj:J:kNp:svz:" FLAG; do
 			ORIGIN=${OPTARG}
 			;;
 		n)
-			NOPREFIX=1
+			# Backwards-compat with NOPREFIX=1
 			;;
 		j)
 			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
@@ -103,6 +103,9 @@ while getopts "o:cniIj:J:kNp:svz:" FLAG; do
 			porttree_exists ${OPTARG} ||
 			    err 2 "No such ports tree ${OPTARG}"
 			PTNAME=${OPTARG}
+			;;
+		P)
+			NOPREFIX=0
 			;;
 		s)
 			SKIPSANITY=1
