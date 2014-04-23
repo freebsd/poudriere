@@ -46,8 +46,8 @@ EOF
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 
-PTNAME=default
-SETNAME=""
+PTNAME=
+SETNAME=
 BUILDNAME=latest
 SCRIPT_MODE=0
 ALL=0
@@ -102,7 +102,7 @@ POUDRIERE_BUILD_TYPE=bulk
 now="$(date +%s)"
 
 if [ -n "${JAILNAME}" ]; then
-	MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
+	MASTERNAME=${JAILNAME}-${PTNAME:-default}${SETNAME:+-${SETNAME}}
 	MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 	if [ ${ALL} -eq 0 ]; then
 		jail_runs ${MASTERNAME} || \
@@ -141,6 +141,14 @@ else
 		BUILDNAME="$(BUILDNAME="${ORIG_BUILDNAME}" bget buildname 2>/dev/null || :)"
 		# No matching build, skip.
 		[ -z "${BUILDNAME}" ] && continue
+		ptname=$(bget ptname)
+		setname=$(bget setname)
+		if [ -n "${PTNAME}" ]; then
+			[ "${ptname}" = "${PTNAME}" ] || continue
+		fi
+		if [ -n "${SETNAME}" ]; then
+			[ "${setname}" = "${SETNAME}" ] || continue
+		fi
 
 		status=$(bget status 2>/dev/null || :)
 		nbqueued=$(bget stats_queued 2>/dev/null || :)
