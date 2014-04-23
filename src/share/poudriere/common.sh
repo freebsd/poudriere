@@ -2103,7 +2103,7 @@ calculate_elapsed() {
 	start_end_time=$(stat -f '%B %m' ${log}/.poudriere.status)
 	start_time=${start_end_time% *}
 	case "${status}" in
-		sigint:|crashed:|stop:) end_time=${start_end_time#* } ;;
+		sigterm:|sigint:|crashed:|stop:) end_time=${start_end_time#* } ;;
 		*) end_time=${now} ;;
 	esac
 	_start_time=${start_time}
