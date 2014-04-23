@@ -72,12 +72,13 @@ EOF
 
 list_jail() {
 	local format
-	local j name version arch method mnt
+	local j name version arch method mnt timestamp time
 
-	format='%-20s %-20s %-7s %-7s %s\n'
+	format='%-20s %-20s %-7s %-9s %-20s %s\n'
 	if [ ${QUIET} -eq 0 ]; then
 		if [ ${NAMEONLY} -eq 0 ]; then
-			printf "${format}" "JAILNAME" "VERSION" "ARCH" "METHOD" "PATH"
+			printf "${format}" "JAILNAME" "VERSION" "ARCH" \
+			    "METHOD" "TIMESTAMP" "PATH"
 		else
 			echo JAILNAME
 		fi
@@ -90,7 +91,12 @@ list_jail() {
 			arch=$(jget ${name} arch)
 			method=$(jget ${name} method)
 			mnt=$(jget ${name} mnt)
-			printf "${format}" "${name}" "${version}" "${arch}" "${method}" "${mnt}"
+			timestamp=$(jget ${name} timestamp 2>/dev/null || :)
+			time=
+			[ -n "${timestamp}" ] && \
+			    time="$(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
+			printf "${format}" "${name}" "${version}" "${arch}" \
+			    "${method}" "${time}" "${mnt}"
 		else
 			echo ${name}
 		fi
@@ -213,7 +219,7 @@ update_jail() {
 		err 1 "Unsupported method"
 		;;
 	esac
-
+	jset ${JAILNAME} timestamp $(date +%s)
 }
 
 build_and_install_world() {
@@ -522,6 +528,7 @@ create_jail() {
 	createfs ${JAILNAME} ${JAILMNT} ${JAILFS:-none}
 	[ -n "${JAILFS}" -a "${JAILFS}" != "none" ] && jset ${JAILNAME} fs ${JAILFS}
 	jset ${JAILNAME} version ${VERSION}
+	jset ${JAILNAME} timestamp $(date +%s)
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
 
@@ -566,7 +573,7 @@ info_jail() {
 	local nbb nbf nbi nbq nbs tobuild
 	local building_started status log
 	local elapsed elapsed_days elapsed_hms elapsed_timestamp
-	local now start_time
+	local now start_time timestamp
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	porttree_exists ${PTNAME} || err 1 "No such tree: ${PTNAME}"
 
@@ -588,7 +595,10 @@ info_jail() {
 	echo "Jail version:      $(jget ${JAILNAME} version)"
 	echo "Jail arch:         $(jget ${JAILNAME} arch)"
 	echo "Jail acquired:     $(jget ${JAILNAME} method)"
-#	echo "Jail built:        $(jget ${JAILNAME} timestamp)"
+	timestamp=$(jget ${JAILNAME} timestamp 2>/dev/null || :)
+	if [ -n "${timestamp}" ]; then
+		echo "Jail updated:      $(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
+	fi
 	echo "Tree name:         ${PTNAME}"
 	echo "Tree acquired:     $(pget ${PTNAME} method)"
 #	echo "Tree updated:      $(pget ${PTNAME} timestamp)"
