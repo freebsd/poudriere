@@ -2120,6 +2120,9 @@ parallel_build() {
 	local real_parallel_jobs=${PARALLEL_JOBS}
 	local nremaining=$(calculate_tobuild)
 
+	# Subtract the 1 for the main port to test
+	[ "${0##*/}" = "testport.sh" ] && nremaining=$((${nremaining} - 1))
+
 	# If pool is empty, just return
 	[ ${nremaining} -eq 0 ] && return 0
 
@@ -3205,6 +3208,7 @@ prepare_ports() {
 	if was_a_bulk_run && [ $resuming_build -eq 0 ]; then
 		nbq=0
 		nbq=$(find ${MASTERMNT}/poudriere/deps -type d -depth 1 | wc -l)
+		# Add 1 for the main port to test
 		[ "${0##*/}" = "testport.sh" ] && nbq=$((${nbq} + 1))
 		bset stats_queued ${nbq##* }
 	fi
