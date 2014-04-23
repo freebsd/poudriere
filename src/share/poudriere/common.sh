@@ -1198,7 +1198,7 @@ jail_stop() {
 	[ $# -ne 0 ] && eargs jail_stop
 
 	# err() will set status to 'crashed', don't override.
-	[ -n "${CRASHED}" ] || bset status "stop:" 2>/dev/null || :
+	[ -n "${CRASHED}" ] || bset status "stopped:" 2>/dev/null || :
 
 	jstop || :
 	# Shutdown all builders
@@ -2103,7 +2103,9 @@ calculate_elapsed() {
 	start_end_time=$(stat -f '%B %m' ${log}/.poudriere.status)
 	start_time=${start_end_time% *}
 	case "${status}" in
-		sigterm:|sigint:|crashed:|stop:) end_time=${start_end_time#* } ;;
+		sigterm:|sigint:|crashed:|stop:|stopped:)
+			end_time=${start_end_time#* }
+			;;
 		*) end_time=${now} ;;
 	esac
 	_start_time=${start_time}
