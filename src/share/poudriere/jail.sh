@@ -271,6 +271,9 @@ build_and_install_world() {
 	    err 1 "Failed to 'make distribution'"
 
 	case "${ARCH}" in
+	mips)
+		cp `which qemu-mips` ${JAILMNT}/usr/bin/qemu-mips
+		;;
 	mips64)
 		cp `which qemu-mips64` ${JAILMNT}/usr/bin/qemu-mips64
 		;;
@@ -652,6 +655,9 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:" FLAG; do
 				err 1 "Only amd64 host can choose another architecture"
 			ARCH=${OPTARG}
 			case "${ARCH}" in
+			mips)
+				[ -x `which qemu-mips` ] || err 1 "You need qemu-mips installed on the host"
+				;;
 			mips64)
 				[ -x `which qemu-mips64` ] || err 1 "You need qemu-mips64 installed on the host"
 				;;
