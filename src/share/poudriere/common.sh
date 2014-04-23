@@ -359,8 +359,11 @@ bset() {
 		id=$1
 		shift
 	fi
-	file=.poudriere.${1}${id:+.${id}}
+	property="$1"
+	file=.poudriere.${property}${id:+.${id}}
 	shift
+	[ "${property}" = "status" ] && \
+	    echo "$@" >> ${log}/${file}.journal% || :
 	echo "$@" > ${log}/${file} || :
 }
 
@@ -2067,7 +2070,7 @@ json_main() {
 build_json() {
 	local log=$(log_path)
 	awk \
-		-f ${AWKPREFIX}/json.awk ${log}/.poudriere.* | \
+		-f ${AWKPREFIX}/json.awk ${log}/.poudriere.*[!%] | \
 		awk 'ORS=""; {print}' | \
 		sed  -e 's/,\([]}]\)/\1/g' \
 		> ${log}/.data.json.tmp
@@ -2075,7 +2078,7 @@ build_json() {
 
 	# Build mini json for stats
 	awk -v mini=yes \
-		-f ${AWKPREFIX}/json.awk ${log}/.poudriere.* | \
+		-f ${AWKPREFIX}/json.awk ${log}/.poudriere.*[!%] | \
 		awk 'ORS=""; {print}' | \
 		sed  -e 's/,\([]}]\)/\1/g' \
 		> ${log}/.data.mini.json.tmp
