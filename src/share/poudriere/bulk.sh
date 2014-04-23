@@ -307,7 +307,10 @@ run_hook bulk done ${nbbuilt} ${nbfailed} ${nbignored} ${nbskipped}
 [ ${INTERACTIVE_MODE} -gt 0 ] && enter_interactive
 cleanup
 
-msg "[${MASTERNAME}] $nbbuilt packages built, $nbfailed failures, $nbignored ignored, $nbskipped skipped"
+now=$(date +%s)
+calculate_elapsed ${now} ${LOGD}
+time=$(date -j -u -r ${_elapsed_time} "+%H:%M:%S")
+msg "[${MASTERNAME}] $nbbuilt packages built, $nbfailed failures, $nbignored ignored, $nbskipped skipped, ${time} elapsed"
 show_log_info
 
 set +e
