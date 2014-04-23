@@ -270,6 +270,8 @@ injail ${PKG_DELETE} ${PKGNAME}
 
 stop_build /usr/ports/${ORIGIN} ${ret}
 
+bset status "done:"
+
 cleanup
 set +e
 
