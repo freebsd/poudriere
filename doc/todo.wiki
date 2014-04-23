@@ -4,8 +4,6 @@
 
 These should be fixed in <strong>trunk</strong> and then merged back to <strong>3.0.x</strong> after enough testing.
 
-  *  stage-orphan issue: [http://gbpaste.org/omGBx] (@owner root @group root @mode 4555 FILE @owner @group @mode)  (May be fixed by [f08c1158f0])
-  *  stage-orphan issue between devel/gettext multimedia/phonon having to do with injail mtree change in [9de071c9ec], see Ticket [940f8cf068]
   *  Possibly a ZFS ports tree issue where the tree is checked out before filesystem created - might have been operator error.
   *  Document hooks
   *  Validate 'jail -c -v amd64' is a number!
@@ -13,7 +11,6 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
   *  jail -c does not cleanup jail on failure
   *  failure in jail -u freebsd-update can leave '91amd64' running with no way to stop it
   *  Write out json early, before compute_deps, so the webpage is not blank/loading for several minutes
-  *  show TOBUILD count in SIGINFO
   *  pkg bootstrap skipping sanity is no good, skips all version checks. Need to have a bootstrap mode so it reruns.
   *  This is wrong, should skip shell-meta as npm was skipped, not because node failed:
 <verbatim>
