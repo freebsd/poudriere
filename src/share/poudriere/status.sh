@@ -99,12 +99,19 @@ ORIG_BUILDNAME="${BUILDNAME}"
 if [ ${ALL} -eq 0 ] && \
     [ $(find ${POUDRIERE_DATA}/build -mindepth 2 -maxdepth 2 2>&1 | wc -l) \
 	-eq 0 ] ; then
-	[ ${SCRIPT_MODE} -eq 0 ] && msg "No running builds"
+	[ ${SCRIPT_MODE} -eq 0 ] && msg "No running builds. Use -a to show all."
 	exit 0
 fi
 
 POUDRIERE_BUILD_TYPE=bulk
 now="$(date +%s)"
+
+if [ ${SCRIPT_MODE} -eq 0 ] ; then
+	[ ${ALL} -eq 0 ] && \
+	    msg "==> Only showing running builds Use -a to show all."
+	[ -n "${JAILNAME}" -a ${BUILDER_INFO} -eq 0 ] && \
+	    msg "==> Use -b to show detailed builder output."
+fi
 
 if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
 	format="%-40s %-25s %6s %5s %6s %7s %7s %7s %9s %s"
