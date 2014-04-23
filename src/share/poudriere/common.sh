@@ -132,7 +132,8 @@ log_path() {
 }
 
 injail() {
-	jexec -U ${JUSER:-root} ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}${JNETNAME:+-${JNETNAME}} "$@"
+	jexec -U ${JUSER:-root} ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}${JNETNAME:+-${JNETNAME}} \
+	    ${MAX_MEMORY_JEXEC} "$@"
 }
 
 jstart() {
@@ -3668,6 +3669,7 @@ fi
 
 if [ -n "${MAX_MEMORY}" ]; then
 	MAX_MEMORY_BYTES="$((${MAX_MEMORY} * 1024 * 1024 * 1024))"
+	MAX_MEMORY_JEXEC="/usr/bin/limits -v ${MAX_MEMORY_BYTES}"
 fi
 
 [ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}
