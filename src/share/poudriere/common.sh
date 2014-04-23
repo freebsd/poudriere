@@ -2247,7 +2247,7 @@ build_pkg() {
 	local time_start time_end elapsed
 
 	trap '' SIGTSTP
-	[ -n "${MAX_MEMORY}" ] && ulimit -v $((${MAX_MEMORY} * 1024 * 1024))
+	[ -n "${MAX_MEMORY}" ] && ulimit -v ${MAX_MEMORY_BYTES}
 
 	export PKGNAME="${pkgname}" # set ASAP so cleanup() can use it
 	cache_get_origin port "${pkgname}"
@@ -3665,6 +3665,10 @@ fi
 : ${NO_RESTRICTED:=no}
 
 : ${BUILDNAME:=$(date +%Y-%m-%d_%Hh%Mm%Ss)}
+
+if [ -n "${MAX_MEMORY}" ]; then
+	MAX_MEMORY_BYTES="$((${MAX_MEMORY} * 1024 * 1024 * 1024))"
+fi
 
 [ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}
 
