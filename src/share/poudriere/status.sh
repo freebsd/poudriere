@@ -136,9 +136,7 @@ else
 		esac
 		MASTERNAME=${mastermnt#${POUDRIERE_DATA}/logs/bulk/}
 		# Skip non-running on ALL=0
-		[ ${ALL} -eq 0 ] && \
-		    ! [ -d "${POUDRIERE_DATA}/build/${MASTERNAME}/ref" ] && \
-		    continue
+		[ ${ALL} -eq 0 ] && ! jail_runs ${MASTERNAME} && continue
 		# Dereference latest into actual buildname
 		BUILDNAME="$(BUILDNAME="${ORIG_BUILDNAME}" bget buildname 2>/dev/null || :)"
 		# No matching build, skip.
