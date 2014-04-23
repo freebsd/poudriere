@@ -755,6 +755,7 @@ do_jail_mounts() {
 
 # Interactive test mode
 enter_interactive() {
+	local stopmsg
 
 	if [ ${ALL} -ne 0 ]; then
 		msg "(-a) Not entering interactive mode."
@@ -821,7 +822,10 @@ EOF
 		# XXX: Not tested/supported with bulk yet.
 		msg "Leaving jail ${MASTERNAME} running, mounted at ${MASTERMNT} for interactive run testing"
 		msg "To enter jail: jexec ${MASTERNAME} env -i TERM=\$TERM /usr/bin/login -fp root"
-		msg "To stop jail: poudriere jail -k -j ${MASTERNAME}"
+		stopmsg="-j ${JAILNAME}"
+		[ -n "${SETNAME}" ] && stopmsg="${stopmsg} -z ${SETNAME}"
+		[ -n "${PTNAME#default}" ] && stopmsg="${stopmsg} -p ${PTNAME}"
+		msg "To stop jail: poudriere jail -k ${stopmsg}"
 		CLEANED_UP=1
 		return 0
 	fi
