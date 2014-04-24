@@ -252,14 +252,18 @@ main(int argc, char **argv)
 	pid_t otherpid;
 	int jid, ch;
 	struct pidfh *pfh;
+	bool foreground = false;
 	
-	while ((ch = getopt(argc, argv, "j:d:")) != -1) {
+	while ((ch = getopt(argc, argv, "j:d:f")) != -1) {
 		switch (ch) {
 		case 'd':
 			dir = optarg;
 			break;
 		case 'j':
 			jailname = optarg;
+			break;
+		case 'f':
+			foreground = true;
 			break;
 		}
 	}
@@ -295,7 +299,7 @@ main(int argc, char **argv)
 	    sizeof(struct sockaddr_un)) == -1)
 		err(EXIT_FAILURE, "bind()");
 
-	if (daemon(0, 0) == -1) {
+	if (!foreground && daemon(0, 0) == -1) {
 		pidfile_remove(pfh);
 		err(EXIT_FAILURE, "Cannot daemonize");
 	}
