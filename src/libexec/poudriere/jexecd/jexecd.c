@@ -68,11 +68,6 @@
 		err(1, "getgrouplist: %s", username);			\
 } while (0)
 
-static int kq;
-static int nbevq = 0;
-static int server_fd = -1;
-static struct kevent ke;
-
 struct client {
 	int fd;
 	struct sockaddr_storage ss;
@@ -207,38 +202,21 @@ client_accept(int fd)
 	return;
 }
 static void
-serve(void) {
-	struct kevent *evlist = NULL;
-	int nev, i;
-	int max_queue = 0;
-	int fd, kq;
+serve(int fd) {
+	struct kevent ke;
+	int kq;
 
 	if ((kq = kqueue()) == -1)
 		err(EXIT_FAILURE, "kqueue");
 
-	EV_SET(&ke, server_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+	EV_SET(&ke, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 	kevent(kq, &ke, 1, NULL, 0, NULL);
-	nbevq++;
 
 	for (;;) {
-		if (nbevq > max_queue) {
-			max_queue += 1024;
-			free(evlist);
-			if ((evlist = malloc(max_queue *
-			    sizeof(struct kevent))) == NULL)
-				errx(EXIT_FAILURE, "Unable to allocate memory");
-		}
-
-		nev = kevent(kq, NULL, 0, evlist, max_queue, NULL);
-		for (i = 0; i < nev; i++) {
-			/* New client */
-			if (evlist[i].udata == NULL && evlist[i].filter ==
-			    EVFILT_READ) {
-				/* We are in the listener */
-				client_accept(evlist[i].ident);
-				continue;
-			}
-		}
+		kevent(kq, NULL, 0, &ke, 1, NULL);
+		/* New client */
+		if (ke.filter == EVFILT_READ)
+			client_accept(ke.ident);
 	}
 }
 
@@ -253,6 +231,7 @@ main(int argc, char **argv)
 	int jid, ch;
 	struct pidfh *pfh;
 	bool foreground = false;
+	int server_fd = -1;
 	
 	while ((ch = getopt(argc, argv, "j:d:f")) != -1) {
 		switch (ch) {
@@ -318,5 +297,5 @@ main(int argc, char **argv)
 
 	log_as("root");
 
-	serve();
+	serve(server_fd);
 }
