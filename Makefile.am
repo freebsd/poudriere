@@ -85,7 +85,9 @@ pkglibexec_PROGRAMS= \
 		     dirwatch \
 		     nc \
 		     rename \
-		     tsort
+		     tsort \
+		     jexecd \
+		     rexec
 
 sbin_PROGRAMS=	poudriered
 noinst_LIBRARIES=	libucl.a
@@ -120,6 +122,15 @@ poudriered_CFLAGS=	-DPREFIX=\"$(prefix)\" \
 poudriered_LDADD=	libucl.a \
 			-lsbuf \
 			-lutil
+
+jexecd_SOURCES=	src/libexec/poudriere/jexecd/jexecd.c
+jexecd_LDADD=	-lsbuf \
+		-lutil \
+		-ljail \
+		-lnv
+
+rexec_SOURCES=	src/libexec/poudriere/rexec/rexec.c
+rexec_LDADD=	-lnv
 
 .PHONY:	gen-make-wiki
 gen-man-wiki:
