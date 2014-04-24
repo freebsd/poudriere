@@ -280,7 +280,7 @@ main(int argc, char **argv)
 	}
 
 	memset(&un, 0, sizeof(struct sockaddr_un));
-	if ((server_fd = socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0)) == -1)
+	if ((server_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
 		err(EXIT_FAILURE, "socket()");
 	/* SO_REUSEADDR does not prevent EADDRINUSE, since we are locked by
 	 * a pid, just unlink the old socket if needed. */
