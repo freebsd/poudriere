@@ -182,8 +182,8 @@ client_free(struct client *cl)
 	free(cl);
 }
 
-static pid_t
-client_new(int fd)
+static void
+client_accept(int fd)
 {
 	socklen_t sz;
 	struct client *cl;
@@ -193,9 +193,8 @@ client_new(int fd)
 	connfd = accept(fd, (struct sockaddr *)&(cl->ss), &sz);
 
 	if (connfd < 0) {
-		if (errno == EINTR || errno == EAGAIN || errno == EPROTO) {
-			return (-1);
-		}
+		if (errno == EINTR || errno == EAGAIN || errno == EPROTO)
+			return;
 		err(EXIT_FAILURE, "accept()");
 	}
 
@@ -205,7 +204,7 @@ client_new(int fd)
 		client_exec(cl);
 	}
 
-	return (pid);
+	return;
 }
 static void
 serve(void) {
@@ -236,7 +235,7 @@ serve(void) {
 			if (evlist[i].udata == NULL && evlist[i].filter ==
 			    EVFILT_READ) {
 				/* We are in the listener */
-				client_new(evlist[i].ident);
+				client_accept(evlist[i].ident);
 				continue;
 			}
 		}
