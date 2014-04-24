@@ -194,8 +194,11 @@ Clean RESTRICTED packages after building.
 .It Fl s
 Skip sanity tests.
 Sanity tests are made to check if the ports exists,
-does not have an increased version number, and if the compiled options
-match the current options from the make.conf files and /var/db/options.
+does not have an increased version number, packaged dependencies match,
+pkgname matches, and if the compiled options match the current options from the
+.Pa make.conf
+files and
+.Pa /usr/local/etc/poudriere.d/options .
 .It Fl t
 Add some testing to the specified ports.
 Add
@@ -462,8 +465,11 @@ to use.
 .It Fl s
 Skip sanity tests.
 Sanity tests are made to check if the ports exists,
-does not have an increased version number, and if the compiled options
-match the current options from the make.conf files and /var/db/options.
+does not have an increased version number, packaged dependencies match,
+pkgname matches, and if the compiled options match the current options from the
+.Pa make.conf
+files and
+.Pa /usr/local/etc/poudriere.d/options .
 .It Fl v
 This will show more information during the build.
 Specify twice to enable debug output.
