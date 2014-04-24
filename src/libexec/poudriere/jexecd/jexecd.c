@@ -296,10 +296,10 @@ main(int argc, char **argv)
 	    sizeof(struct sockaddr_un)) == -1)
 		err(EXIT_FAILURE, "bind()");
 
-//	if (daemon(0, 0) == -1) {
-//		pidfile_remove(pfh);
-//		err(EXIT_FAILURE, "Cannot daemonize");
-//	}
+	if (daemon(0, 0) == -1) {
+		pidfile_remove(pfh);
+		err(EXIT_FAILURE, "Cannot daemonize");
+	}
 
 	pidfile_write(pfh);
 
