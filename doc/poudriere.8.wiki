@@ -159,7 +159,11 @@ Clean RESTRICTED packages after building.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;s</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Skip sanity tests. Sanity tests are made to check if the ports exists, does not have an increased version number, and if the compiled options match the current options from the make.conf files and /var/db/options.</dd>
+Skip incremental rebuild and sanity checks. Sanity tests are made to check if the ports exists, does not have an increased version number, packaged dependencies match, pkgname matches, if the compiled options match the current options from the <i class="file">make.conf</i> files and <i class="file">/usr/local/etc/poudriere.d/options</i>, and that its own dependencies did not require rebuild as well.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;S</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Don't recrusively rebuild packages affected by other packages requiring incremental rebuild. This is a subset of <b class="flag">&#45;s</b>. This may result in broken packages if the ones they depend on are updated and are not ABI-compatible.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;t</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
@@ -395,7 +399,11 @@ Specifies which ports <i class="arg">tree</i> to use.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;s</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Skip sanity tests. Sanity tests are made to check if the ports exists, does not have an increased version number, and if the compiled options match the current options from the make.conf files and /var/db/options.</dd>
+Skip incremental rebuild and sanity checks. Sanity tests are made to check if the ports exists, does not have an increased version number, packaged dependencies match, pkgname matches, if the compiled options match the current options from the <i class="file">make.conf</i> files and <i class="file">/usr/local/etc/poudriere.d/options</i>, and that its own dependencies did not require rebuild as well.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;S</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Don't recrusively rebuild packages affected by other packages requiring incremental rebuild. This is a subset of <b class="flag">&#45;s</b>. This may result in broken packages if the ones they depend on are updated and are not ABI-compatible.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;v</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
@@ -809,7 +817,7 @@ Be also careful to not begin the name of the jail by a number if you are not in 
 <td class="foot-date">
 April 23, 2014</td>
 <td class="foot-os" align="right">
-FreeBSD 9.1</td>
+FreeBSD 11.0</td>
 </tr>
 </tbody>
 </table>

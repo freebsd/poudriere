@@ -49,7 +49,11 @@ Options:
                    of dependencies completed
     -p tree     -- Specify the path to the portstree
     -P          -- Use custom prefix
-    -s          -- Skip sanity checks
+    -s          -- Skip incremental rebuild and sanity checks
+    -S          -- Don't recursively rebuild packages affected by other
+                   packages requiring incremental rebuild. This can result
+                   in broken packages if the ones updated do not retain
+                   a stable ABI.
     -v          -- Be verbose; show more information. Use twice to enable
                    debug output
     -z set      -- Specify which SET to use
@@ -64,11 +68,12 @@ CONFIGSTR=0
 NOPREFIX=1
 SETNAME=""
 SKIPSANITY=0
+SKIP_RECURSIVE_REBUILD=0
 INTERACTIVE_MODE=0
 PTNAME="default"
 BUILD_REPO=1
 
-while getopts "o:cniIj:J:kNp:Psvz:" FLAG; do
+while getopts "o:cniIj:J:kNp:PsSvz:" FLAG; do
 	case "${FLAG}" in
 		c)
 			CONFIGSTR=1
@@ -109,6 +114,9 @@ while getopts "o:cniIj:J:kNp:Psvz:" FLAG; do
 			;;
 		s)
 			SKIPSANITY=1
+			;;
+		S)
+			SKIP_RECURSIVE_REBUILD=1
 			;;
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"

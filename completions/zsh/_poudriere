@@ -37,7 +37,8 @@ _bulk=(
         '-k[Keep going when using -t and do not consider failures as fatal]'
 	'-t[Test the specified ports for leftovers]'
 	'-r[Recursively test all dependencies as well]'
-	'-s[Skip sanity]'
+        '-s[skip sanity/incremental rebuild checks]'
+        '-S[skip rebuild of packages for which their dependencies require a rebuild]'
 	'-j[Run only on the given jail]::jail name:_poudriere_jail'
 	'-p[Specify on which ports tree the bulk will be done]::tree:_poudriere_pt'
 	'-T[Try building BROKEN ports]'
@@ -110,6 +111,8 @@ _testport=(
 	'-N[Do not build repository or INDEX when done building dependencies]'
 	'-p[specify on which portstree we work]::tree:_poudriere_pt'
         '-P[use custom prefix]'
+        '-s[skip sanity/incremental rebuild checks]'
+        '-S[skip rebuild of packages for which their dependencies require a rebuild]'
 	'-v[Be verbose; show more information. Specify twice to enable debug output.]'
 	'-z[Specify on which SET to use]::'
 )

@@ -192,13 +192,21 @@ the bulk build will be done.
 .It Fl R
 Clean RESTRICTED packages after building.
 .It Fl s
-Skip sanity tests.
+Skip incremental rebuild and sanity checks.
 Sanity tests are made to check if the ports exists,
 does not have an increased version number, packaged dependencies match,
-pkgname matches, and if the compiled options match the current options from the
+pkgname matches, if the compiled options match the current options from the
 .Pa make.conf
 files and
-.Pa /usr/local/etc/poudriere.d/options .
+.Pa /usr/local/etc/poudriere.d/options ,
+and that its own dependencies did not require rebuild as well.
+.It Fl S
+Don't recrusively rebuild packages affected by other packages requiring
+incremental rebuild.
+This is a subset of
+.Fl s .
+This may result in broken packages if the ones they depend on are updated
+and are not ABI-compatible.
 .It Fl t
 Add some testing to the specified ports.
 Add
@@ -463,13 +471,21 @@ Specifies which ports
 .Ar tree
 to use.
 .It Fl s
-Skip sanity tests.
+Skip incremental rebuild and sanity checks.
 Sanity tests are made to check if the ports exists,
 does not have an increased version number, packaged dependencies match,
-pkgname matches, and if the compiled options match the current options from the
+pkgname matches, if the compiled options match the current options from the
 .Pa make.conf
 files and
-.Pa /usr/local/etc/poudriere.d/options .
+.Pa /usr/local/etc/poudriere.d/options ,
+and that its own dependencies did not require rebuild as well.
+.It Fl S
+Don't recrusively rebuild packages affected by other packages requiring
+incremental rebuild.
+This is a subset of
+.Fl s .
+This may result in broken packages if the ones they depend on are updated
+and are not ABI-compatible.
 .It Fl v
 This will show more information during the build.
 Specify twice to enable debug output.

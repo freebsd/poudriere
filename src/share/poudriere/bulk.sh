@@ -55,7 +55,11 @@ Options:
                    fatal; don't skip dependent ports on findings.
     -T          -- Try to build broken ports anyway
     -F          -- Only fetch from original master_site (skip FreeBSD mirrors)
-    -s          -- Skip sanity checks
+    -s          -- Skip incremental rebuild and sanity checks
+    -S          -- Don't recursively rebuild packages affected by other
+                   packages requiring incremental rebuild. This can result
+                   in broken packages if the ones updated do not retain
+                   a stable ABI.
     -J n[:p]    -- Run n jobs in parallel, and optionally run a different
                    number of jobs in parallel while preparing the build.
                    (Defaults to the number of CPUs)
@@ -79,6 +83,7 @@ SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 PTNAME="default"
 SKIPSANITY=0
+SKIP_RECURSIVE_REBUILD=0
 SETNAME=""
 CLEAN=0
 CLEAN_LISTED=0
@@ -90,7 +95,7 @@ INTERACTIVE_MODE=0
 
 [ $# -eq 0 ] && usage
 
-while getopts "B:iIf:j:J:CcknNp:RFtrTsvwz:a" FLAG; do
+while getopts "B:iIf:j:J:CcknNp:RFtrTsSvwz:a" FLAG; do
 	case "${FLAG}" in
 		B)
 			BUILDNAME="${OPTARG}"
@@ -156,6 +161,9 @@ while getopts "B:iIf:j:J:CcknNp:RFtrTsvwz:a" FLAG; do
 			;;
 		s)
 			SKIPSANITY=1
+			;;
+		S)
+			SKIP_RECURSIVE_REBUILD=1
 			;;
 		w)
 			SAVE_WRKDIR=1

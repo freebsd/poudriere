@@ -3227,13 +3227,19 @@ prepare_ports() {
 		if was_a_bulk_run; then
 			delete_old_pkgs
 
-			msg_verbose "Checking packages for missing dependencies"
-			while :; do
-				sanity_check_pkgs && break
-			done
+			if [ ${SKIP_RECURSIVE_REBUILD} -eq 0 ]; then
+				msg_verbose "Checking packages for missing dependencies"
+				while :; do
+					sanity_check_pkgs && break
+				done
+			else
+				msg "(-S) Skipping recursive rebuild"
+			fi
 
 			delete_stale_symlinks_and_empty_dirs
 		fi
+	else
+		msg "(-s) Skipping incremental rebuild and repository sanity checks"
 	fi
 
 	bset status "cleaning:"
