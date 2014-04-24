@@ -90,7 +90,7 @@ pkglibexec_PROGRAMS= \
 		     rexec
 
 sbin_PROGRAMS=	poudriered
-noinst_LIBRARIES=	libucl.a
+noinst_LIBRARIES=	libucl.a libnv.a
 
 AUTOMAKE_OPTIONS=	subdir-objects
 
@@ -116,6 +116,10 @@ libucl_a_CFLAGS=	-I$(top_srcdir)/external/libucl/uthash \
 			-I$(top_srcdir)/external/libucl/include  \
 			-I$(top_srcdir)/external/libucl/src \
 			-Wno-unused-parameter -Wno-pointer-sign
+libnv_a_SOURCES=	external/libnv/dnvlist.c \
+			external/libnv/msgio.c \
+			external/libnv/nvlist.c \
+			external/libnv/nvpair.c
 poudriered_SOURCES=	src/poudriered/poudriered.c
 poudriered_CFLAGS=	-DPREFIX=\"$(prefix)\" \
 			-I$(top_srcdir)/external/libucl/include
@@ -124,13 +128,13 @@ poudriered_LDADD=	libucl.a \
 			-lutil
 
 jexecd_SOURCES=	src/libexec/poudriere/jexecd/jexecd.c
-jexecd_LDADD=	-lsbuf \
+jexecd_LDADD=	libnv.a \
+		-lsbuf \
 		-lutil \
-		-ljail \
-		-lnv
+		-ljail
 
 rexec_SOURCES=	src/libexec/poudriere/rexec/rexec.c
-rexec_LDADD=	-lnv
+rexec_LDADD=	libnv.a
 
 .PHONY:	gen-make-wiki
 gen-man-wiki:

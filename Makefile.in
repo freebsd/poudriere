@@ -112,9 +112,15 @@ AM_V_AR = $(am__v_AR_@AM_V@)
 am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
 am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
+libnv_a_AR = $(AR) $(ARFLAGS)
+libnv_a_LIBADD =
+am__dirstamp = $(am__leading_dot)dirstamp
+am_libnv_a_OBJECTS = external/libnv/dnvlist.$(OBJEXT) \
+	external/libnv/msgio.$(OBJEXT) external/libnv/nvlist.$(OBJEXT) \
+	external/libnv/nvpair.$(OBJEXT)
+libnv_a_OBJECTS = $(am_libnv_a_OBJECTS)
 libucl_a_AR = $(AR) $(ARFLAGS)
 libucl_a_LIBADD =
-am__dirstamp = $(am__leading_dot)dirstamp
 am_libucl_a_OBJECTS =  \
 	external/libucl/src/libucl_a-ucl_emitter.$(OBJEXT) \
 	external/libucl/src/libucl_a-ucl_hash.$(OBJEXT) \
@@ -152,7 +158,7 @@ dirwatch_OBJECTS = $(am_dirwatch_OBJECTS)
 dirwatch_LDADD = $(LDADD)
 am_jexecd_OBJECTS = src/libexec/poudriere/jexecd/jexecd.$(OBJEXT)
 jexecd_OBJECTS = $(am_jexecd_OBJECTS)
-jexecd_DEPENDENCIES =
+jexecd_DEPENDENCIES = libnv.a
 am_nc_OBJECTS = src/libexec/poudriere/nc/nc.$(OBJEXT)
 nc_OBJECTS = $(am_nc_OBJECTS)
 nc_LDADD = $(LDADD)
@@ -167,7 +173,7 @@ rename_OBJECTS = $(am_rename_OBJECTS)
 rename_LDADD = $(LDADD)
 am_rexec_OBJECTS = src/libexec/poudriere/rexec/rexec.$(OBJEXT)
 rexec_OBJECTS = $(am_rexec_OBJECTS)
-rexec_DEPENDENCIES =
+rexec_DEPENDENCIES = libnv.a
 am_tsort_OBJECTS = src/libexec/poudriere/tsort/tsort.$(OBJEXT)
 tsort_OBJECTS = $(am_tsort_OBJECTS)
 tsort_LDADD = $(LDADD)
@@ -231,11 +237,11 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libucl_a_SOURCES) $(cpdup_SOURCES) $(dirempty_SOURCES) \
-	$(dirwatch_SOURCES) $(jexecd_SOURCES) $(nc_SOURCES) \
-	$(poudriered_SOURCES) $(rename_SOURCES) $(rexec_SOURCES) \
-	$(tsort_SOURCES)
-DIST_SOURCES = $(libucl_a_SOURCES) $(cpdup_SOURCES) \
+SOURCES = $(libnv_a_SOURCES) $(libucl_a_SOURCES) $(cpdup_SOURCES) \
+	$(dirempty_SOURCES) $(dirwatch_SOURCES) $(jexecd_SOURCES) \
+	$(nc_SOURCES) $(poudriered_SOURCES) $(rename_SOURCES) \
+	$(rexec_SOURCES) $(tsort_SOURCES)
+DIST_SOURCES = $(libnv_a_SOURCES) $(libucl_a_SOURCES) $(cpdup_SOURCES) \
 	$(dirempty_SOURCES) $(dirwatch_SOURCES) $(jexecd_SOURCES) \
 	$(nc_SOURCES) $(poudriered_SOURCES) $(rename_SOURCES) \
 	$(rexec_SOURCES) $(tsort_SOURCES)
@@ -454,7 +460,7 @@ dist_dtimages_DATA = src/share/poudriere/html/assets/dataTables/images/back_disa
 			src/share/poudriere/html/assets/dataTables/images/sort_desc_disabled.png
 
 dist_rc_SCRIPTS = src/etc/rc.d/poudriered
-noinst_LIBRARIES = libucl.a
+noinst_LIBRARIES = libucl.a libnv.a
 AUTOMAKE_OPTIONS = subdir-objects
 rename_SOURCES = src/libexec/poudriere/rename/rename.c
 cpdup_SOURCES = src/libexec/poudriere/cpdup/cpdup.c \
@@ -481,6 +487,11 @@ libucl_a_CFLAGS = -I$(top_srcdir)/external/libucl/uthash \
 			-I$(top_srcdir)/external/libucl/src \
 			-Wno-unused-parameter -Wno-pointer-sign
 
+libnv_a_SOURCES = external/libnv/dnvlist.c \
+			external/libnv/msgio.c \
+			external/libnv/nvlist.c \
+			external/libnv/nvpair.c
+
 poudriered_SOURCES = src/poudriered/poudriered.c
 poudriered_CFLAGS = -DPREFIX=\"$(prefix)\" \
 			-I$(top_srcdir)/external/libucl/include
@@ -490,13 +501,13 @@ poudriered_LDADD = libucl.a \
 			-lutil
 
 jexecd_SOURCES = src/libexec/poudriere/jexecd/jexecd.c
-jexecd_LDADD = -lsbuf \
+jexecd_LDADD = libnv.a \
+		-lsbuf \
 		-lutil \
-		-ljail \
-		-lnv
+		-ljail
 
 rexec_SOURCES = src/libexec/poudriere/rexec/rexec.c
-rexec_LDADD = -lnv
+rexec_LDADD = libnv.a
 all: all-am
 
 .SUFFIXES:
@@ -555,6 +566,25 @@ src/etc/rc.d/poudriered: $(top_builddir)/config.status $(top_srcdir)/src/etc/rc.
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
+external/libnv/$(am__dirstamp):
+	@$(MKDIR_P) external/libnv
+	@: > external/libnv/$(am__dirstamp)
+external/libnv/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/libnv/$(DEPDIR)
+	@: > external/libnv/$(DEPDIR)/$(am__dirstamp)
+external/libnv/dnvlist.$(OBJEXT): external/libnv/$(am__dirstamp) \
+	external/libnv/$(DEPDIR)/$(am__dirstamp)
+external/libnv/msgio.$(OBJEXT): external/libnv/$(am__dirstamp) \
+	external/libnv/$(DEPDIR)/$(am__dirstamp)
+external/libnv/nvlist.$(OBJEXT): external/libnv/$(am__dirstamp) \
+	external/libnv/$(DEPDIR)/$(am__dirstamp)
+external/libnv/nvpair.$(OBJEXT): external/libnv/$(am__dirstamp) \
+	external/libnv/$(DEPDIR)/$(am__dirstamp)
+
+libnv.a: $(libnv_a_OBJECTS) $(libnv_a_DEPENDENCIES) $(EXTRA_libnv_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libnv.a
+	$(AM_V_AR)$(libnv_a_AR) libnv.a $(libnv_a_OBJECTS) $(libnv_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libnv.a
 external/libucl/src/$(am__dirstamp):
 	@$(MKDIR_P) external/libucl/src
 	@: > external/libucl/src/$(am__dirstamp)
@@ -870,6 +900,7 @@ uninstall-dist_rcSCRIPTS:
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f external/libnv/*.$(OBJEXT)
 	-rm -f external/libucl/src/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/cpdup/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/dirempty/*.$(OBJEXT)
@@ -884,6 +915,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@external/libnv/$(DEPDIR)/dnvlist.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@external/libnv/$(DEPDIR)/msgio.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@external/libnv/$(DEPDIR)/nvlist.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@external/libnv/$(DEPDIR)/nvpair.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-ucl_hash.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Po@am__quote@
@@ -1659,6 +1694,8 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f external/libnv/$(DEPDIR)/$(am__dirstamp)
+	-rm -f external/libnv/$(am__dirstamp)
 	-rm -f external/libucl/src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f external/libucl/src/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/cpdup/$(DEPDIR)/$(am__dirstamp)
@@ -1690,7 +1727,7 @@ clean-am: clean-generic clean-noinstLIBRARIES clean-pkglibexecPROGRAMS \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf external/libucl/src/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
+	-rm -rf external/libnv/$(DEPDIR) external/libucl/src/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-tags
@@ -1745,7 +1782,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf external/libucl/src/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
+	-rm -rf external/libnv/$(DEPDIR) external/libucl/src/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
