@@ -128,12 +128,14 @@ poudriered_LDADD=	libucl.a \
 			-lutil
 
 jexecd_SOURCES=	src/libexec/poudriere/jexecd/jexecd.c
+jexecd_CFLAGS=	-I$(top_srcdir)/external/libnv
 jexecd_LDADD=	libnv.a \
 		-lsbuf \
 		-lutil \
 		-ljail
 
 rexec_SOURCES=	src/libexec/poudriere/rexec/rexec.c
+rexec_CFLAGS=	-I$(top_srcdir)/external/libnv
 rexec_LDADD=	libnv.a
 
 .PHONY:	gen-make-wiki

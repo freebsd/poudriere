@@ -156,9 +156,12 @@ am_dirwatch_OBJECTS =  \
 	src/libexec/poudriere/dirwatch/dirwatch.$(OBJEXT)
 dirwatch_OBJECTS = $(am_dirwatch_OBJECTS)
 dirwatch_LDADD = $(LDADD)
-am_jexecd_OBJECTS = src/libexec/poudriere/jexecd/jexecd.$(OBJEXT)
+am_jexecd_OBJECTS =  \
+	src/libexec/poudriere/jexecd/jexecd-jexecd.$(OBJEXT)
 jexecd_OBJECTS = $(am_jexecd_OBJECTS)
 jexecd_DEPENDENCIES = libnv.a
+jexecd_LINK = $(CCLD) $(jexecd_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_nc_OBJECTS = src/libexec/poudriere/nc/nc.$(OBJEXT)
 nc_OBJECTS = $(am_nc_OBJECTS)
 nc_LDADD = $(LDADD)
@@ -171,9 +174,11 @@ poudriered_LINK = $(CCLD) $(poudriered_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 am_rename_OBJECTS = src/libexec/poudriere/rename/rename.$(OBJEXT)
 rename_OBJECTS = $(am_rename_OBJECTS)
 rename_LDADD = $(LDADD)
-am_rexec_OBJECTS = src/libexec/poudriere/rexec/rexec.$(OBJEXT)
+am_rexec_OBJECTS = src/libexec/poudriere/rexec/rexec-rexec.$(OBJEXT)
 rexec_OBJECTS = $(am_rexec_OBJECTS)
 rexec_DEPENDENCIES = libnv.a
+rexec_LINK = $(CCLD) $(rexec_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_tsort_OBJECTS = src/libexec/poudriere/tsort/tsort.$(OBJEXT)
 tsort_OBJECTS = $(am_tsort_OBJECTS)
 tsort_LDADD = $(LDADD)
@@ -501,12 +506,14 @@ poudriered_LDADD = libucl.a \
 			-lutil
 
 jexecd_SOURCES = src/libexec/poudriere/jexecd/jexecd.c
+jexecd_CFLAGS = -I$(top_srcdir)/external/libnv
 jexecd_LDADD = libnv.a \
 		-lsbuf \
 		-lutil \
 		-ljail
 
 rexec_SOURCES = src/libexec/poudriere/rexec/rexec.c
+rexec_CFLAGS = -I$(top_srcdir)/external/libnv
 rexec_LDADD = libnv.a
 all: all-am
 
@@ -755,13 +762,13 @@ src/libexec/poudriere/jexecd/$(am__dirstamp):
 src/libexec/poudriere/jexecd/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) src/libexec/poudriere/jexecd/$(DEPDIR)
 	@: > src/libexec/poudriere/jexecd/$(DEPDIR)/$(am__dirstamp)
-src/libexec/poudriere/jexecd/jexecd.$(OBJEXT):  \
+src/libexec/poudriere/jexecd/jexecd-jexecd.$(OBJEXT):  \
 	src/libexec/poudriere/jexecd/$(am__dirstamp) \
 	src/libexec/poudriere/jexecd/$(DEPDIR)/$(am__dirstamp)
 
 jexecd$(EXEEXT): $(jexecd_OBJECTS) $(jexecd_DEPENDENCIES) $(EXTRA_jexecd_DEPENDENCIES) 
 	@rm -f jexecd$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(jexecd_OBJECTS) $(jexecd_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(jexecd_LINK) $(jexecd_OBJECTS) $(jexecd_LDADD) $(LIBS)
 src/libexec/poudriere/nc/$(am__dirstamp):
 	@$(MKDIR_P) src/libexec/poudriere/nc
 	@: > src/libexec/poudriere/nc/$(am__dirstamp)
@@ -807,13 +814,13 @@ src/libexec/poudriere/rexec/$(am__dirstamp):
 src/libexec/poudriere/rexec/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) src/libexec/poudriere/rexec/$(DEPDIR)
 	@: > src/libexec/poudriere/rexec/$(DEPDIR)/$(am__dirstamp)
-src/libexec/poudriere/rexec/rexec.$(OBJEXT):  \
+src/libexec/poudriere/rexec/rexec-rexec.$(OBJEXT):  \
 	src/libexec/poudriere/rexec/$(am__dirstamp) \
 	src/libexec/poudriere/rexec/$(DEPDIR)/$(am__dirstamp)
 
 rexec$(EXEEXT): $(rexec_OBJECTS) $(rexec_DEPENDENCIES) $(EXTRA_rexec_DEPENDENCIES) 
 	@rm -f rexec$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(rexec_OBJECTS) $(rexec_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(rexec_LINK) $(rexec_OBJECTS) $(rexec_LDADD) $(LIBS)
 src/libexec/poudriere/tsort/$(am__dirstamp):
 	@$(MKDIR_P) src/libexec/poudriere/tsort
 	@: > src/libexec/poudriere/tsort/$(am__dirstamp)
@@ -932,10 +939,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-misc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd-jexecd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/nc/$(DEPDIR)/nc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rename/$(DEPDIR)/rename.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rexec/$(DEPDIR)/rexec.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/tsort/$(DEPDIR)/tsort.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriered/$(DEPDIR)/poudriered-poudriered.Po@am__quote@
 
@@ -1109,6 +1116,20 @@ src/libexec/poudriere/cpdup/cpdup-md5.obj: src/libexec/poudriere/cpdup/md5.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/cpdup-md5.obj `if test -f 'src/libexec/poudriere/cpdup/md5.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/md5.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/md5.c'; fi`
 
+src/libexec/poudriere/jexecd/jexecd-jexecd.o: src/libexec/poudriere/jexecd/jexecd.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(jexecd_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/jexecd/jexecd-jexecd.o -MD -MP -MF src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd-jexecd.Tpo -c -o src/libexec/poudriere/jexecd/jexecd-jexecd.o `test -f 'src/libexec/poudriere/jexecd/jexecd.c' || echo '$(srcdir)/'`src/libexec/poudriere/jexecd/jexecd.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd-jexecd.Tpo src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd-jexecd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/jexecd/jexecd.c' object='src/libexec/poudriere/jexecd/jexecd-jexecd.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(jexecd_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/jexecd/jexecd-jexecd.o `test -f 'src/libexec/poudriere/jexecd/jexecd.c' || echo '$(srcdir)/'`src/libexec/poudriere/jexecd/jexecd.c
+
+src/libexec/poudriere/jexecd/jexecd-jexecd.obj: src/libexec/poudriere/jexecd/jexecd.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(jexecd_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/jexecd/jexecd-jexecd.obj -MD -MP -MF src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd-jexecd.Tpo -c -o src/libexec/poudriere/jexecd/jexecd-jexecd.obj `if test -f 'src/libexec/poudriere/jexecd/jexecd.c'; then $(CYGPATH_W) 'src/libexec/poudriere/jexecd/jexecd.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/jexecd/jexecd.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd-jexecd.Tpo src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd-jexecd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/jexecd/jexecd.c' object='src/libexec/poudriere/jexecd/jexecd-jexecd.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(jexecd_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/jexecd/jexecd-jexecd.obj `if test -f 'src/libexec/poudriere/jexecd/jexecd.c'; then $(CYGPATH_W) 'src/libexec/poudriere/jexecd/jexecd.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/jexecd/jexecd.c'; fi`
+
 src/poudriered/poudriered-poudriered.o: src/poudriered/poudriered.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(poudriered_CFLAGS) $(CFLAGS) -MT src/poudriered/poudriered-poudriered.o -MD -MP -MF src/poudriered/$(DEPDIR)/poudriered-poudriered.Tpo -c -o src/poudriered/poudriered-poudriered.o `test -f 'src/poudriered/poudriered.c' || echo '$(srcdir)/'`src/poudriered/poudriered.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriered/$(DEPDIR)/poudriered-poudriered.Tpo src/poudriered/$(DEPDIR)/poudriered-poudriered.Po
@@ -1122,6 +1143,20 @@ src/poudriered/poudriered-poudriered.obj: src/poudriered/poudriered.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriered/poudriered.c' object='src/poudriered/poudriered-poudriered.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(poudriered_CFLAGS) $(CFLAGS) -c -o src/poudriered/poudriered-poudriered.obj `if test -f 'src/poudriered/poudriered.c'; then $(CYGPATH_W) 'src/poudriered/poudriered.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriered/poudriered.c'; fi`
+
+src/libexec/poudriere/rexec/rexec-rexec.o: src/libexec/poudriere/rexec/rexec.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rexec_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/rexec/rexec-rexec.o -MD -MP -MF src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Tpo -c -o src/libexec/poudriere/rexec/rexec-rexec.o `test -f 'src/libexec/poudriere/rexec/rexec.c' || echo '$(srcdir)/'`src/libexec/poudriere/rexec/rexec.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Tpo src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/rexec/rexec.c' object='src/libexec/poudriere/rexec/rexec-rexec.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rexec_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/rexec/rexec-rexec.o `test -f 'src/libexec/poudriere/rexec/rexec.c' || echo '$(srcdir)/'`src/libexec/poudriere/rexec/rexec.c
+
+src/libexec/poudriere/rexec/rexec-rexec.obj: src/libexec/poudriere/rexec/rexec.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rexec_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/rexec/rexec-rexec.obj -MD -MP -MF src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Tpo -c -o src/libexec/poudriere/rexec/rexec-rexec.obj `if test -f 'src/libexec/poudriere/rexec/rexec.c'; then $(CYGPATH_W) 'src/libexec/poudriere/rexec/rexec.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/rexec/rexec.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Tpo src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/rexec/rexec.c' object='src/libexec/poudriere/rexec/rexec-rexec.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rexec_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/rexec/rexec-rexec.obj `if test -f 'src/libexec/poudriere/rexec/rexec.c'; then $(CYGPATH_W) 'src/libexec/poudriere/rexec/rexec.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/rexec/rexec.c'; fi`
 install-man8: $(dist_man_MANS)
 	@$(NORMAL_INSTALL)
 	@list1=''; \
