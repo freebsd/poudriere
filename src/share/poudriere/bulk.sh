@@ -132,7 +132,7 @@ while getopts "B:iIf:j:J:CcknNp:RFtrTsSvwz:a" FLAG; do
 			[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] ||
 			    err 1 "ATOMIC_PACKAGE_REPOSITORY required for dry-run support"
 			DRY_RUN=1
-			DRY_MODE="[Dry Run] "
+			DRY_MODE="${COLOR_DRY_MODE}[Dry Run]${COLOR_RESET} "
 			;;
 		f)
 			LISTPKGS="${LISTPKGS} ${OPTARG}"
@@ -294,32 +294,20 @@ fi
 
 commit_packages
 
-if [ $nbbuilt -gt 0 ]; then
-	msg_n "Built ports: "
-	echo ${built}
-	echo ""
-fi
-if [ $nbfailed -gt 0 ]; then
-	msg_n "Failed ports: "
-	echo ${failed}
-	echo ""
-fi
-if [ $nbskipped -gt 0 ]; then
-	msg_n "Skipped ports: "
-	echo ${skipped}
-	echo ""
-fi
-if [ $nbignored -gt 0 ]; then
-	msg_n "Ignored ports: "
-	echo ${ignored}
-	echo ""
-fi
+[ $nbbuilt -gt 0 ] && COLOR_RESET="${COLOR_SUCCESS}" \
+    msg "${COLOR_SUCCESS}Built ports: ${COLOR_PORT}${built}"
+[ $nbfailed -gt 0 ] && COLOR_RESET="${COLOR_FAIL}" \
+    msg "${COLOR_FAIL}Failed ports: ${COLOR_PORT}${failed}"
+[ $nbskipped -gt 0 ] && COLOR_RESET="${COLOR_SKIP}" \
+    msg "${COLOR_SKIP}Skipped ports: ${COLOR_PORT}${skipped}"
+[ $nbignored -gt 0 ] && COLOR_RESET="${COLOR_IGNORE}" \
+    msg "${COLOR_IGNORE}Ignored ports: ${COLOR_PORT}${ignored}"
 run_hook bulk done ${nbbuilt} ${nbfailed} ${nbignored} ${nbskipped}
 
 [ ${INTERACTIVE_MODE} -gt 0 ] && enter_interactive
 cleanup
 
-msg "[${MASTERNAME}] $nbbuilt packages built, $nbfailed failed, $nbskipped skipped, $nbignored ignored"
+msg "[${MASTERNAME}] ${COLOR_SUCCESS}${nbbuilt} built${COLOR_RESET}, ${COLOR_FAIL}${nbfailed} failed${COLOR_RESET}, ${COLOR_SKIP}${nbskipped} skipped${COLOR_RESET}, ${COLOR_IGNORE}${nbignored} ignored${COLOR_RESET}"
 show_log_info
 
 set +e

@@ -84,9 +84,7 @@ err() {
 	# Don't set it from children failures though, only master
 	[ -z "${PARALLEL_CHILD}" ] && was_a_bulk_run &&
 		bset status "${EXIT_STATUS:-crashed:}" 2>/dev/null || :
-	local err_msg="Error: $2"
-	msg "${err_msg}" >&2
-	[ -n "${MY_JOBID}" ] && job_msg "${err_msg}"
+	msg_error "$2"
 	exit $1
 }
 
@@ -758,16 +756,16 @@ enter_interactive() {
 	# Enable all selected ports and their run-depends
 	for port in $(listed_ports); do
 		# Install run-depends since this is an interactive test
-		msg "Installing run-depends for ${port}"
+		msg "Installing run-depends for ${COLOR_PORT}${port}"
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
 		    make -C /usr/ports/${port} run-depends ||
-		    msg "Failed to install ${port} run-depends"
-		msg "Installing ${port}"
+		    msg_warn "Failed to install ${COLOR_PORT}${port} run-depends"
+		msg "Installing ${COLOR_PORT}${port}"
 		# Only use PKGENV during install as testport will store
 		# the package in a different place than dependencies
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 ${PKGENV} \
 		    make -C /usr/ports/${port} install-package ||
-		    msg "Failed to install ${port}"
+		    msg_warn "Failed to install ${COLOR_PORT}${port}"
 	done
 
 	# Enable networking
@@ -1097,10 +1095,10 @@ jail_start() {
 	JAIL_OSVERSION=$(awk '/\#define __FreeBSD_version/ { print $3 }' "${mnt}/usr/include/sys/param.h")
 
 	if [ ${JAIL_OSVERSION} -gt ${HOST_OSVERSION} ]; then
-		warn "!!! Jail is newer than host. (Jail: ${JAIL_OSVERSION}, Host: ${HOST_OSVERSION}) !!!"
-		warn "This is not supported."
-		warn "Host kernel must be same or newer than jail."
-		warn "Expect build failures."
+		msg_warn "!!! Jail is newer than host. (Jail: ${JAIL_OSVERSION}, Host: ${HOST_OSVERSION}) !!!"
+		msg_warn "This is not supported."
+		msg_warn "Host kernel must be same or newer than jail."
+		msg_warn "Expect build failures."
 		sleep 5
 	fi
 
@@ -1179,7 +1177,7 @@ load_blacklist() {
 			case " ${BLACKLIST} " in
 			*\ ${port}\ *) continue;;
 			esac
-			msg "Blacklisting (from ${POUDRIERED}/${bfile}): ${port}"
+			msg_warn "Blacklisting (from ${POUDRIERED}/${bfile}): ${COLOR_PORT}${port}"
 			BLACKLIST="${BLACKLIST} ${port}"
 		done
 	done
@@ -1403,7 +1401,7 @@ check_fs_violation() {
 		msg "Error: ${err_msg}"
 		cat ${tmpfile}
 		bset ${MY_JOBID} status "${status_value}:${port}"
-		job_msg_verbose "Status for build ${port}: ${status_value}"
+		job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${status_value}"
 		ret=1
 	fi
 	rm -f ${tmpfile}
@@ -1420,7 +1418,7 @@ gather_distfiles() {
 	sub=$(injail make -C ${portdir} -VDIST_SUBDIR)
 	dists=$(injail make -C ${portdir} -V_DISTFILES -V_PATCHFILES)
 	specials=$(injail make -C ${portdir} -V_DEPEND_SPECIALS)
-	job_msg_verbose "Status for build ${portdir##/usr/ports/}: distfiles ${from} -> ${to}"
+	job_msg_verbose "Status for build ${COLOR_PORT}${portdir##/usr/ports/}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
 		[ -f ${from}/${sub}/${d} ] || continue
 		tosubd=${to}/${sub}/${d}
@@ -1489,7 +1487,7 @@ _real_build_port() {
 		phaseenv=
 		[ -z "${no_stage}" ] && JUSER=${jailuser}
 		bset ${MY_JOBID} status "${phase}:${port}"
-		job_msg_verbose "Status for build ${port}: ${phase}"
+		job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
 		case ${phase} in
 		check-sanity) [ -n "${PORTTESTING}" ] && phaseenv="DEVELOPER=1" ;;
 		fetch)
@@ -1595,11 +1593,11 @@ _real_build_port() {
 				if [ $hangstatus -eq 2 ]; then
 					msg "Killing runaway build after ${NOHANG_TIME} seconds with no output"
 					bset ${MY_JOBID} status "${phase}/runaway:${port}"
-					job_msg_verbose "Status for build ${port}: runaway"
+					job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}runaway"
 				elif [ $hangstatus -eq 3 ]; then
 					msg "Killing timed out build after ${MAX_EXECUTION_TIME} seconds"
 					bset ${MY_JOBID} status "${phase}/timeout:${port}"
-					job_msg_verbose "Status for build ${port}: timeout"
+					job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}timeout"
 				fi
 				return 1
 			fi
@@ -1850,7 +1848,7 @@ save_wrkdir() {
 	rm -f ${tarname}
 	tar -s ",${mnted_portdir},," -c${COMPRESSKEY}f ${tarname} ${mnted_portdir}/work > /dev/null 2>&1
 
-	job_msg "Saved ${port} wrkdir to: ${tarname}"
+	job_msg "Saved ${COLOR_PORT}${port}${COLOR_RESET} wrkdir to: ${tarname}"
 }
 
 start_builder() {
@@ -2211,7 +2209,8 @@ clean_pool() {
 	sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT}" "${pkgname}" ${clean_rdepends} | sort -u | while read skipped_pkgname; do
 		cache_get_origin skipped_origin "${skipped_pkgname}"
 		badd ports.skipped "${skipped_origin} ${skipped_pkgname} ${pkgname}"
-		job_msg "Skipping build of ${skipped_origin}: Dependent port ${port} failed"
+		COLOR_RESET="${COLOR_SKIP}" \
+		    job_msg "${COLOR_SKIP}Skipping build of ${COLOR_PORT}${skipped_origin}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${port}${COLOR_SKIP} failed"
 		run_hook pkgbuild skipped "${skipped_origin}" "${skipped_pkgname}" "${port}"
 	done
 
@@ -2250,7 +2249,8 @@ build_pkg() {
 	portdir="/usr/ports/${port}"
 
 	TIME_START_JOB=$(date +%s)
-	job_msg "Starting build of ${port}"
+	colorize_job_id
+	job_msg "Starting build of ${COLOR_PORT}${port}${COLOR_RESET}"
 	bset ${MY_JOBID} status "starting:${port}"
 
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
@@ -2288,7 +2288,7 @@ build_pkg() {
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
 		badd ports.ignored "${port} ${PKGNAME} ${ignore}"
-		job_msg "Finished build of ${port}: Ignored: ${ignore}"
+		COLOR_RESET="${COLOR_IGNORE}" job_msg "${COLOR_IGNORE}Finished build of ${COLOR_PORT}${port}${COLOR_RESET}: Ignored: ${ignore}"
 		clean_rdepends=1
 		run_hook pkgbuild ignored "${port}" "${PKGNAME}" "${ignore}"
 	else
@@ -2315,7 +2315,7 @@ build_pkg() {
 
 		if [ ${build_failed} -eq 0 ]; then
 			badd ports.built "${port} ${PKGNAME}"
-			job_msg "Finished build of ${port}: Success"
+			COLOR_RESET="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished build of ${COLOR_PORT}${port}${COLOR_SUCCESS}: Success"
 			run_hook pkgbuild success "${port}" "${PKGNAME}"
 			# Cache information for next run
 			pkg_cache_data "${PACKAGES}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
@@ -2326,7 +2326,7 @@ build_pkg() {
 				${log}/logs/errors/${PKGNAME}.log \
 				2> /dev/null)
 			badd ports.failed "${port} ${PKGNAME} ${failed_phase} ${errortype}"
-			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
+			COLOR_RESET="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished build of ${COLOR_PORT}${port}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
 			run_hook pkgbuild failed "${port}" "${PKGNAME}" "${failed_phase}" \
 				"${log}/logs/errors/${PKGNAME}.log"
 			# ret=2 is a test failure
@@ -2869,9 +2869,9 @@ compute_deps() {
 			parallel_run compute_deps_port ${port}
 		else
 			if [ ${ALL} -eq 1 ]; then
-				warn "Invalid port origin listed in category Makefiles: ${port}"
+				msg_warn "Invalid port origin listed in category Makefiles: ${COLOR_PORT}${port}"
 			else
-				err 1 "Invalid port origin listed for build: ${port}"
+				err 1 "Invalid port origin listed for build: ${COLOR_PORT}${port}"
 			fi
 		fi
 	done
@@ -2915,10 +2915,10 @@ compute_deps_port() {
 
 	mkdir "${pkg_pooldir}" 2>/dev/null || return 0
 
-	msg_verbose "Computing deps for ${port}"
+	msg_verbose "Computing deps for ${COLOR_PORT}${port}"
 
 	for dep_port in `list_deps ${port}`; do
-		msg_debug "${port} depends on ${dep_port}"
+		msg_debug "${port} depends on ${COLOR_PORT}${dep_port}"
 		[ "${port}" != "${dep_port}" ] ||
 			err 1 "${port} incorrectly depends on itself. Please contact maintainer of the port to fix this."
 		# Detect bad cat/origin/ dependency which pkgng will not register properly
@@ -3663,6 +3663,7 @@ fi
 : ${CHECK_CHANGED_DEPS:=yes}
 : ${CHECK_CHANGED_OPTIONS:=verbose}
 : ${NO_RESTRICTED:=no}
+: ${USE_COLORS:=yes}
 
 : ${BUILDNAME_FORMAT:="%Y-%m-%d_%Hh%Mm%Ss"}
 : ${BUILDNAME:=$(date +${BUILDNAME_FORMAT})}

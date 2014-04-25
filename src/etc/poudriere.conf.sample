@@ -232,3 +232,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Define format for build duration times
 # Default: %H:%M:%S
 #DURATION_FORMAT="%H:%M:%S"
+
+# Use colors when in a TTY
+# Default: yes
+#USE_COLORS=yes

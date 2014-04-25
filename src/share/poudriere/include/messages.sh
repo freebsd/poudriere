@@ -25,12 +25,82 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+if [ -t 0 ] && [ ${USE_COLORS} = "yes" ]; then
+	COLOR_RESET="\033[0;0m"
+	COLOR_RESET_REAL="${COLOR_RESET}"
+	COLOR_BOLD="\033[1m"
+	COLOR_UNDER="\033[4m"
+	COLOR_BLINK="\033[5m"
+	COLOR_BLACK="\033[0;30m"
+	COLOR_RED="\033[0;31m"
+	COLOR_GREEN="\033[0;32m"
+	COLOR_BROWN="\033[0;33m"
+	COLOR_BLUE="\033[0;34m"
+	COLOR_MAGENTA="\033[0;35m"
+	COLOR_CYAN="\033[0;36m"
+	COLOR_LIGHT_GRAY="\033[0;37m"
+	COLOR_DARK_GRAY="\033[1;30m"
+	COLOR_LIGHT_RED="\033[1;31m"
+	COLOR_LIGHT_GREEN="\033[1;32m"
+	COLOR_YELLOW="\033[1;33m"
+	COLOR_LIGHT_BLUE="\033[1;34m"
+	COLOR_LIGHT_MAGENTA="\033[1;35m"
+	COLOR_LIGHT_CYAN="\033[1;36m"
+	COLOR_WHITE="\033[1;37m"
+fi
+
+D_LEFT="${COLOR_BOLD}[${COLOR_RESET}"
+D_RIGHT="${COLOR_BOLD}]${COLOR_RESET}"
+
+: ${COLOR_PORT:=${COLOR_CYAN}}
+: ${COLOR_WARN:=${COLOR_YELLOW}}
+: ${COLOR_DEBUG:=${COLOR_BLUE}}
+: ${COLOR_ERROR:=${COLOR_RED}}
+: ${COLOR_SUCCESS:=${COLOR_GREEN}}
+: ${COLOR_IGNORE:=${COLOR_DARK_GRAY}}
+: ${COLOR_SKIP:=${COLOR_YELLOW}}
+: ${COLOR_FAIL:=${COLOR_RED}}
+: ${COLOR_PHASE:=${COLOR_LIGHT_MAGENTA}}
+: ${COLOR_DRY_MODE:=${COLOR_GREEN}}
+
+colorize_job_id() {
+	local color id usebold
+
+	id=${MY_JOBID#0}
+
+	# Use bold if going over 14, supporting 28 builder colors.
+	if [ ${id} -gt 14 ]; then
+		id=$((${id} - 14))
+		usebold="${COLOR_BOLD}"
+	fi
+
+	case ${id} in
+	1)  color="${COLOR_RED}" ;;
+	2)  color="${COLOR_GREEN}" ;;
+	3)  color="${COLOR_BROWN}" ;;
+	4)  color="${COLOR_BLUE}" ;;
+	5)  color="${COLOR_MAGENTA}" ;;
+	6)  color="${COLOR_CYAN}" ;;
+	7)  color="${COLOR_LIGHT_GRAY}" ;;
+	8)  color="${COLOR_DARK_GRAY}" ;;
+	9)  color="${COLOR_LIGHT_RED}" ;;
+	10) color="${COLOR_LIGHT_GREEN}" ;;
+	11) color="${COLOR_YELLOW}" ;;
+	12) color="${COLOR_LIGHT_BLUE}" ;;
+	13) color="${COLOR_LIGHT_MAGENTA}" ;;
+	14) color="${COLOR_LIGHT_CYAN}" ;;
+	*)  color="${COLOR_RESET}" ;;
+	esac
+
+	COLORED_MY_JOBID="${color}${usebold}${MY_JOBID}${COLOR_RESET}"
+}
+
 msg_n() {
 	local now elapsed
 
 	now=$(date +%s)
 	elapsed="$(date -j -u -r $((${now} - ${TIME_START})) "+${DURATION_FORMAT}")"
-	echo -n "[${elapsed}] ${DRY_MODE}====>> $1";
+	printf "[${elapsed}] ${DRY_MODE}${COLOR_RESET}====>> ${1}${COLOR_RESET_REAL}"
 }
 msg() { msg_n "$@"; echo; }
 msg_verbose() {
@@ -38,13 +108,22 @@ msg_verbose() {
 	msg "$1"
 }
 
-msg_debug() {
-	[ ${VERBOSE} -gt 1 ] || return 0
-	msg "DEBUG: $1" >&2
+msg_error() {
+	COLOR_RESET="${COLOR_ERROR}" \
+	    msg "${COLOR_ERROR}ERROR: $1" >&2
+	[ -n "${MY_JOBID}" ] && COLOR_RESET="${COLOR_ERROR}" \
+	    job_msg "${COLOR_ERROR}ERROR: $1"
 }
 
-warn() {
-	msg "WARNING: $@" >&2
+msg_debug() {
+	[ ${VERBOSE} -gt 1 ] || return 0
+	COLOR_RESET="${COLOR_DEBUG}" \
+	    msg "${COLOR_DEBUG}DEBUG: $@" >&2
+}
+
+msg_warn() {
+	COLOR_RESET="${COLOR_WARN}" \
+	    msg "${COLOR_WARN}WARNING: $@" >&2
 }
 
 job_msg() {
@@ -53,7 +132,7 @@ job_msg() {
 	if [ -n "${MY_JOBID}" ]; then
 		now=$(date +%s)
 		elapsed="$(date -j -u -r $((${now} - ${TIME_START_JOB})) "+${DURATION_FORMAT}")"
-		msg "[${MY_JOBID}][${elapsed}] $1" >&5
+		msg "[${COLORED_MY_JOBID}][${elapsed}] $1" >&5
 	else
 		msg "$1"
 	fi
