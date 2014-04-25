@@ -733,6 +733,8 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:" FLAG; do
 	esac
 done
 
+shift $((OPTIND-1))
+
 METHOD=${METHOD:-ftp}
 if [ -n "${JAILNAME}" -a ${CREATE} -eq 0 ]; then
 	ARCH=$(jget ${JAILNAME} arch)
