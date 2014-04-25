@@ -135,6 +135,8 @@ done
 
 [ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
 
+maybe_run_queued "$@"
+
 shift $((OPTIND-1))
 
 : ${BUILD_PARALLEL_JOBS:=${PARALLEL_JOBS}}

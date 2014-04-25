@@ -120,6 +120,9 @@ done
 
 [ $(( CREATE + UPDATE + DELETE + LIST )) -lt 1 ] && usage
 
+saved_argv="$@"
+shift $((OPTIND-1))
+
 METHOD=${METHOD:-portsnap}
 PTNAME=${PTNAME:-default}
 
@@ -163,6 +166,7 @@ cleanup_new_ports() {
 if [ ${CREATE} -eq 1 ]; then
 	# test if it already exists
 	porttree_exists ${PTNAME} && err 2 "The ports tree, ${PTNAME}, already exists"
+	maybe_run_queued "${saved_argv}"
 	: ${PTMNT="${BASEFS:=/usr/local${ZROOTFS}}/ports/${PTNAME}"}
 	: ${PTFS="${ZPOOL}${ZROOTFS}/ports/${PTNAME}"}
 
@@ -220,6 +224,7 @@ if [ ${DELETE} -eq 1 ]; then
 	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
 	${NULLMOUNT} | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
+	maybe_run_queued "${saved_argv}"
 	msg_n "Deleting portstree \"${PTNAME}\""
 	[ ${KEEP} -eq 0 ] && destroyfs ${PTMNT} ports
 	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
@@ -233,6 +238,7 @@ if [ ${UPDATE} -eq 1 ]; then
 	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
 	${NULLMOUNT} | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
+	maybe_run_queued "${saved_argv}"
 	msg "Updating portstree \"${PTNAME}\""
 	if [ -z "${METHOD}" -o ${METHOD} = "-" ]; then
 		METHOD=portsnap

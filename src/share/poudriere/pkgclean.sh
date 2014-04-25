@@ -109,6 +109,8 @@ while getopts "aj:J:f:nNp:Rvyz:" FLAG; do
 	esac
 done
 
+saved_argv="$@"
+
 shift $((OPTIND-1))
 
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
@@ -123,6 +125,8 @@ PACKAGES=${POUDRIERE_DATA}/packages/${MASTERNAME}
 
 PKG_EXT='*' package_dir_exists_and_has_packages ||
     err 1 "No packages exist for ${MASTERNAME}"
+
+maybe_run_queued "${saved_argv}"
 
 msg "Gathering all expected packages"
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}

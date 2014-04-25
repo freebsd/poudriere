@@ -184,6 +184,7 @@ while getopts "B:iIf:j:J:CcknNp:RFtrTsSvwz:a" FLAG; do
 	esac
 done
 
+saved_argv="$@"
 shift $((OPTIND-1))
 
 [ ${ALL} -eq 1 -a -n "${PORTTESTING}" ] && PORTTESTING_FATAL=no
@@ -193,6 +194,8 @@ shift $((OPTIND-1))
 PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
 
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
+
+maybe_run_queued "${saved_argv}"
 
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref

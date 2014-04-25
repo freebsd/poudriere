@@ -733,6 +733,7 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:" FLAG; do
 	esac
 done
 
+saved_argv="$@"
 shift $((OPTIND-1))
 
 METHOD=${METHOD:-ftp}
@@ -745,6 +746,7 @@ fi
 case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	10000000)
 		test -z ${JAILNAME} && usage
+		maybe_run_queued "${saved_argv}"
 		create_jail
 		;;
 	01000000)
@@ -759,6 +761,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	00010000)
 		test -z ${JAILNAME} && usage
 		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
+		maybe_run_queued "${saved_argv}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		export MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 		jail_runs ${MASTERNAME} ||
@@ -769,6 +772,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		export SET_STATUS_ON_START=0
 		test -z ${JAILNAME} && usage
 		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
+		maybe_run_queued "${saved_argv}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		export MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 		jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
@@ -776,14 +780,17 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		;;
 	00000100)
 		test -z ${JAILNAME} && usage
+		maybe_run_queued "${saved_argv}"
 		delete_jail
 		;;
 	00000010)
 		test -z ${JAILNAME} && usage
+		maybe_run_queued "${saved_argv}"
 		update_jail
 		;;
 	00000011)
 		test -z ${JAILNAME} && usage
+		maybe_run_queued "${saved_argv}"
 		rename_jail
 		;;
 	*)

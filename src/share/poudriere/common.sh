@@ -1036,6 +1036,31 @@ commit_packages() {
 	fi
 }
 
+write_usock() {
+	[ $# -eq 1 ] || eargs write_usock socket
+	local socket="$1"
+	nc -U "${socket}"
+}
+
+# If running as non-root, redirect this command to queue and exit
+maybe_run_queued() {
+	[ $(/usr/bin/id -u) -eq 0 ] && return 0
+	local this_command
+
+	# If poudriered not running then the command cannot be
+	# satisfied.
+	/usr/sbin/service poudriered onestatus >/dev/null 2>&1 || \
+	    err 1 "This command requires root or poudriered running"
+
+	this_command="${0##*/}"
+	this_command="${this_command%.sh}"
+
+	write_usock ${QUEUE_SOCKET} <<- EOF
+	command: "${this_command}", arguments: "$@"
+	EOF
+	exit
+}
+
 jail_start() {
 	[ $# -lt 2 ] && eargs jail_start name ptname setname
 	local name=$1
