@@ -164,8 +164,7 @@ client_exec(struct client *cl)
 			return (-1);
 	}
 
-	if (killpg(pid, SIGTERM) == -1)
-		warn("kikoo");
+	killpg(pid, SIGTERM);
 
 	nvlist_destroy(nv);
 	free(argv);
