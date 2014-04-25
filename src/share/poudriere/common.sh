@@ -90,45 +90,6 @@ err() {
 	exit $1
 }
 
-msg_n() {
-	local now elapsed
-
-	now=$(date +%s)
-	elapsed="$(date -j -u -r $((${now} - ${TIME_START})) "+${DURATION_FORMAT}")"
-	echo -n "[${elapsed}] ${DRY_MODE}====>> $1";
-}
-msg() { msg_n "$@"; echo; }
-msg_verbose() {
-	[ ${VERBOSE} -gt 0 ] || return 0
-	msg "$1"
-}
-
-msg_debug() {
-	[ ${VERBOSE} -gt 1 ] || return 0
-	msg "DEBUG: $1" >&2
-}
-
-warn() {
-	msg "WARNING: $@" >&2
-}
-
-job_msg() {
-	local now elapsed
-
-	if [ -n "${MY_JOBID}" ]; then
-		now=$(date +%s)
-		elapsed="$(date -j -u -r $((${now} - ${TIME_START_JOB})) "+${DURATION_FORMAT}")"
-		msg "[${MY_JOBID}][${elapsed}] $1" >&5
-	else
-		msg "$1"
-	fi
-}
-
-job_msg_verbose() {
-	[ ${VERBOSE} -gt 0 ] || return 0
-	job_msg "$@"
-}
-
 my_path() {
 	echo ${MASTERMNT}${MY_JOBID+/../${MY_JOBID}}
 }
@@ -3716,6 +3677,7 @@ TIME_START=$(date +%s)
 
 [ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}
 
+. $(dirname ${0})/include/messages.sh
 . $(dirname ${0})/include/parallel.sh
 . $(dirname ${0})/include/hash.sh
 . $(dirname ${0})/include/fs.sh

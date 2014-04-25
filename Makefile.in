@@ -428,6 +428,7 @@ dist_include_HEADERS = \
 			src/share/poudriere/include/common.sh.freebsd \
 			src/share/poudriere/include/hash.sh \
 			src/share/poudriere/include/fs.sh \
+			src/share/poudriere/include/messages.sh \
 			src/share/poudriere/include/parallel.sh
 
 dist_awk_DATA = src/share/poudriere/awk/dependency_loop.awk \
