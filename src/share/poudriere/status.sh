@@ -198,7 +198,7 @@ if [ ${BUILDER_INFO} -eq 0 ]; then
 	while read line; do
 		cnt=0
 		for word in ${line}; do
-			hash_get max_length lengths ${cnt} || max_length=0
+			hash_get lengths ${cnt} max_length || max_length=0
 			if [ ${#word} -gt ${max_length} ]; then
 				hash_set lengths ${cnt} ${#word}
 			fi
@@ -212,7 +212,7 @@ if [ ${BUILDER_INFO} -eq 0 ]; then
 		# Set format lengths
 		lengths=
 		for n in $(jot ${columns} 0); do
-			hash_get length lengths ${n}
+			hash_get lengths ${n} length
 			lengths="${lengths} ${length}"
 		done
 		format=$(printf "${format}" ${lengths})

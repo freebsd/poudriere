@@ -3376,7 +3376,7 @@ balance_pool() {
 	# For everything ready-to-build...
 	for pkg_dir in ${MASTERMNT}/poudriere/pool/unbalanced/*; do
 		pkgname=${pkg_dir##*/}
-		hash_get dep_count "priority" "${pkgname}" || dep_count=0
+		hash_get "priority" "${pkgname}" dep_count || dep_count=0
 		mv ${pkg_dir} ${MASTERMNT}/poudriere/pool/${dep_count}/
 	done
 

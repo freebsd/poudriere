@@ -29,10 +29,10 @@ _hash_var_name() {
 }
 
 hash_get() {
-	[ $# -ne 3 ] && eargs hash_get var_return var key
-	local var_return="$1"
-	local var="$2"
-	local key="$3"
+	[ $# -ne 3 ] && eargs hash_get var key var_return
+	local var="$1"
+	local key="$2"
+	local var_return="$3"
 	local hash_var_name value
 	local ret
 
