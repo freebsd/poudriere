@@ -146,6 +146,7 @@ client_exec(struct client *cl)
 		dup2(fdout, STDOUT_FILENO);
 		close(STDERR_FILENO);
 		dup2(fderr, STDERR_FILENO);
+		setsid();
 		if (execvp(argv[0], argv) == -1) {
 			nvlist_destroy(nv);
 			free(argv);
@@ -162,6 +163,9 @@ client_exec(struct client *cl)
 		if (errno != EINTR)
 			return (-1);
 	}
+
+	if (killpg(pid, SIGTERM) == -1)
+		warn("kikoo");
 
 	nvlist_destroy(nv);
 	free(argv);
