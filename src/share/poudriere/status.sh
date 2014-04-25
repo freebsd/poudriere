@@ -113,7 +113,6 @@ if [ ${SCRIPT_MODE} -eq 0 ] && [ -t 0 ]; then
 fi
 
 display=
-columns=11
 add_display() {
 	if [ -z "${display}" ]; then
 		display="$@"
@@ -123,18 +122,19 @@ $@"
 	fi
 }
 
+columns=13
 if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
-	format="%%-%ds %%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds %%-%ds %%-%ds"
+	format="%%-%ds %%-%ds %%-%ds %%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds %%-%ds %%-%ds"
 	if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
 		url_logs="URL"
 	else
 		url_logs="LOGS"
 	fi
-	add_display "JAIL" "STATUS" "QUEUED" \
+	add_display "JAIL" "PORTSTREE" "SET" "STATUS" "QUEUED" \
 	    "BUILT" "FAILED" "SKIPPED" "IGNORED" "TOBUILD" \
 	    "TIME" "BUILD" "${url_logs}"
 else
-	format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"
+	format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"
 fi
 
 for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
@@ -149,16 +149,16 @@ for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
 	BUILDNAME="$(BUILDNAME="${ORIG_BUILDNAME}" bget buildname 2>/dev/null || :)"
 	# No matching build, skip.
 	[ -z "${BUILDNAME}" ] && continue
+	jailname=$(bget jailname)
+	ptname=$(bget ptname)
+	setname=$(bget setname)
 	if [ -n "${JAILNAME}" ]; then
-		jailname=$(bget jailname)
 		[ "${jailname}" = "${JAILNAME}" ] || continue
 	fi
 	if [ -n "${PTNAME}" ]; then
-		ptname=$(bget ptname)
 		[ "${ptname}" = "${PTNAME}" ] || continue
 	fi
 	if [ -n "${SETNAME}" ]; then
-		setname=$(bget setname)
 		[ "${setname}" = "${SETNAME%0}" ] || continue
 	fi
 
@@ -181,7 +181,7 @@ for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
 		else
 			url="${log}"
 		fi
-		add_display "${MASTERNAME}" "${status:-?}" "${nbqueued:-?}" \
+		add_display "${jailname}" "${ptname}" "${setname:-!}" "${status:-?}" "${nbqueued:-?}" \
 		    "${nbbuilt:-?}" "${nbfailed:-?}" "${nbskipped:-?}" \
 		    "${nbignored:-?}" "${nbtobuild:-?}" "${time:-?}" \
 		    "${BUILDNAME}" "${url:-?}"
@@ -219,6 +219,7 @@ if [ ${BUILDER_INFO} -eq 0 ]; then
 	fi
 
 	echo "${display}"|while read line; do
-		printf "${format}\n" ${line}
+		# The ! is to hack around empty values.
+		printf "${format}\n" ${line} | sed -e 's,!, ,g'
 	done
 fi
