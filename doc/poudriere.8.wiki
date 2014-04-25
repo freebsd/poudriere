@@ -578,7 +578,7 @@ Do not print headers and separate fields by a single tab instead of arbitrary wh
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;z</b> <i class="arg">set</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-This specifies which SET to filter builds by.</dd>
+This specifies which SET to filter builds by. Use <span class="symb">0</span> to match on empty SET.</dd>
 </dl>
 </div>
 </div>
@@ -815,7 +815,7 @@ Be also careful to not begin the name of the jail by a number if you are not in 
 <tbody>
 <tr>
 <td class="foot-date">
-April 23, 2014</td>
+April 24, 2014</td>
 <td class="foot-os" align="right">
 FreeBSD 11.0</td>
 </tr>

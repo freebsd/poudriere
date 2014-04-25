@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd April 23, 2014
+.Dd April 24, 2014
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -644,6 +644,9 @@ Do not print headers and separate fields by a single tab instead of arbitrary
 white space.
 .It Fl z Ar set
 This specifies which SET to filter builds by.
+Use
+.Sy 0
+to match on empty SET.
 .El
 .Pp
 .Sh ENVIRONMENT

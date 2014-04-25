@@ -35,11 +35,12 @@ Options:
     -B name     -- What buildname to use (must be unique, defaults to
                    "latest")
     -j name     -- Run on the given jail
-    -p tree     -- Specify on which ports tree the configuration will be done
+    -p tree     -- Specify on which ports tree to match for the build.
     -l          -- Show logs instead of URL.
     -H          -- Script mode. Do not print headers and separate fields by a
                    single tab instead of arbitrary white space.
-    -z set      -- Specify which SET to use
+    -z set      -- Specify which SET to match for the build. Use '0' to only
+                   match on empty sets.
 EOF
 	exit 1
 }
@@ -70,7 +71,6 @@ while getopts "abB:j:lp:Hz:" FLAG; do
 			ALL=1
 			;;
 		j)
-			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
 			JAILNAME=${OPTARG}
 			;;
 		l)
@@ -83,7 +83,6 @@ while getopts "abB:j:lp:Hz:" FLAG; do
 			SCRIPT_MODE=1
 			;;
 		z)
-			[ -n "${OPTARG}" ] || err 1 "Empty set name"
 			SETNAME="${OPTARG}"
 			;;
 		*)
@@ -149,7 +148,7 @@ for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
 	fi
 	if [ -n "${SETNAME}" ]; then
 		setname=$(bget setname)
-		[ "${setname}" = "${SETNAME}" ] || continue
+		[ "${setname}" = "${SETNAME%0}" ] || continue
 	fi
 
 	if [ ${BUILDER_INFO} -eq 0 ]; then
