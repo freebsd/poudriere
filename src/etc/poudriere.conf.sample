@@ -223,3 +223,8 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Define pkgname globs to boost priority for
 # Default: none
 #PRIORITY_BOOST="pypy openoffice*"
+
+# Define format for buildnames
+# Default: %Y-%m-%d_%Hh%Mm%Ss
+# ISO8601:
+#BUILDNAME_FORMAT="%FT%TZ"

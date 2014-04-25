@@ -3696,7 +3696,8 @@ fi
 : ${CHECK_CHANGED_OPTIONS:=verbose}
 : ${NO_RESTRICTED:=no}
 
-: ${BUILDNAME:=$(date +%Y-%m-%d_%Hh%Mm%Ss)}
+: ${BUILDNAME_FORMAT:="%Y-%m-%d_%Hh%Mm%Ss"}
+: ${BUILDNAME:=$(date +${BUILDNAME_FORMAT})}
 
 if [ -n "${MAX_MEMORY}" ]; then
 	MAX_MEMORY_BYTES="$((${MAX_MEMORY} * 1024 * 1024 * 1024))"
