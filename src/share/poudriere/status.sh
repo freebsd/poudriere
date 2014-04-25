@@ -112,20 +112,31 @@ if [ ${SCRIPT_MODE} -eq 0 ] && [ -t 0 ]; then
 	    msg "Use -b to show detailed builder output."
 fi
 
-if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
-	format="%-40s %-25s %6s %5s %6s %7s %7s %7s %9s %s"
-	printf "${format}" "JAIL" "STATUS" "QUEUED" \
-	    "BUILT" "FAILED" "SKIPPED" "IGNORED" "TOBUILD" \
-	    "TIME"
-	if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
-		echo -n "URL"
+display=
+columns=11
+add_display() {
+	if [ -z "${display}" ]; then
+		display="$@"
 	else
-		echo -n "LOGS"
+		display="${display}
+$@"
 	fi
-	echo
+}
+
+if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
+	format="%%-%ds %%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds %%-%ds %%-%ds"
+	if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
+		url_logs="URL"
+	else
+		url_logs="LOGS"
+	fi
+	add_display "JAIL" "STATUS" "QUEUED" \
+	    "BUILT" "FAILED" "SKIPPED" "IGNORED" "TOBUILD" \
+	    "TIME" "BUILD" "${url_logs}"
 else
-	format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"
+	format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"
 fi
+
 for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
 	# Check empty dir
 	case "${mastermnt}" in
@@ -170,9 +181,10 @@ for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
 		else
 			url="${log}"
 		fi
-		printf "${format}\n" "${MASTERNAME}" "${status}" "${nbqueued}" \
-			"${nbbuilt}" "${nbfailed}" "${nbskipped}" "${nbignored}" \
-			"${nbtobuild}" "${time}" "${url}"
+		add_display "${MASTERNAME}" "${status:-?}" "${nbqueued:-?}" \
+		    "${nbbuilt:-?}" "${nbfailed:-?}" "${nbskipped:-?}" \
+		    "${nbignored:-?}" "${nbtobuild:-?}" "${time:-?}" \
+		    "${BUILDNAME}" "${url:-?}"
 	else
 
 		builders="$(bget builders 2>/dev/null || :)"
@@ -180,3 +192,33 @@ for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
 		JOBS="${builders}" siginfo_handler
 	fi
 done
+
+if [ ${BUILDER_INFO} -eq 0 ]; then
+	# Determine optimal format
+	while read line; do
+		cnt=0
+		for word in ${line}; do
+			hash_get max_length lengths ${cnt} || max_length=0
+			if [ ${#word} -gt ${max_length} ]; then
+				hash_set lengths ${cnt} ${#word}
+			fi
+			cnt=$((${cnt} + 1))
+		done
+	done <<-EOF
+	${display}
+	EOF
+
+	if [ ${SCRIPT_MODE} -eq 0 ]; then
+		# Set format lengths
+		lengths=
+		for n in $(jot ${columns} 0); do
+			hash_get length lengths ${n}
+			lengths="${lengths} ${length}"
+		done
+		format=$(printf "${format}" ${lengths})
+	fi
+
+	echo "${display}"|while read line; do
+		printf "${format}\n" ${line}
+	done
+fi
