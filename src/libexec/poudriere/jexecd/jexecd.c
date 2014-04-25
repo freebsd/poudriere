@@ -109,7 +109,7 @@ client_read(struct client *cl)
 	const char *username, *command, *arg;
 	int fdout, fderr, fdin;
 	void *cookie;
-	pid_t pid, gpid;
+	pid_t pid;
 
 	nv = nvlist_recv(cl->fd);
 	if (nv == NULL)
@@ -176,19 +176,16 @@ client_accept(int fd)
 {
 	socklen_t sz;
 	struct client *cl;
-	int connfd;
-	pid_t pid;
 
-	connfd = accept(fd, (struct sockaddr *)&(cl->ss), &sz);
+	cl = calloc(1, sizeof(struct client));
+	cl->fd = accept(fd, (struct sockaddr *)&(cl->ss), &sz);
 
-	if (connfd < 0) {
+	if (cl->fd < 0) {
+		free(cl);
 		if (errno == EINTR || errno == EAGAIN || errno == EPROTO)
 			return (NULL);
 		err(EXIT_FAILURE, "accept()");
 	}
-
-	cl = calloc(1, sizeof(struct client));
-	cl->fd = connfd;
 
 	return (cl);
 }
