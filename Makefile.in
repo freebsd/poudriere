@@ -81,9 +81,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 pkglibexec_PROGRAMS = cpdup$(EXEEXT) dirempty$(EXEEXT) \
-	dirwatch$(EXEEXT) nc$(EXEEXT) rename$(EXEEXT) tsort$(EXEEXT) \
-	jexecd$(EXEEXT) rexec$(EXEEXT)
-sbin_PROGRAMS = poudriered$(EXEEXT)
+	dirwatch$(EXEEXT) nc$(EXEEXT) poudriered$(EXEEXT) \
+	rename$(EXEEXT) tsort$(EXEEXT) jexecd$(EXEEXT) rexec$(EXEEXT)
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
@@ -128,16 +127,16 @@ am_libucl_a_OBJECTS =  \
 	external/libucl/src/libucl_a-ucl_util.$(OBJEXT) \
 	external/libucl/src/libucl_a-xxhash.$(OBJEXT)
 libucl_a_OBJECTS = $(am_libucl_a_OBJECTS)
-am__installdirs = "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(sbindir)" \
-	"$(DESTDIR)$(bindir)" "$(DESTDIR)$(rcdir)" \
-	"$(DESTDIR)$(man8dir)" "$(DESTDIR)$(assetsdir)" \
-	"$(DESTDIR)$(awkdir)" "$(DESTDIR)$(btcssdir)" \
-	"$(DESTDIR)$(btimgdir)" "$(DESTDIR)$(btjsdir)" \
-	"$(DESTDIR)$(dtcssdir)" "$(DESTDIR)$(dtimagesdir)" \
-	"$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(htmldir)" \
-	"$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(hookdir)" \
-	"$(DESTDIR)$(sysconfdir)" "$(DESTDIR)$(includedir)"
-PROGRAMS = $(pkglibexec_PROGRAMS) $(sbin_PROGRAMS)
+am__installdirs = "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(bindir)" \
+	"$(DESTDIR)$(rcdir)" "$(DESTDIR)$(man8dir)" \
+	"$(DESTDIR)$(assetsdir)" "$(DESTDIR)$(awkdir)" \
+	"$(DESTDIR)$(btcssdir)" "$(DESTDIR)$(btimgdir)" \
+	"$(DESTDIR)$(btjsdir)" "$(DESTDIR)$(dtcssdir)" \
+	"$(DESTDIR)$(dtimagesdir)" "$(DESTDIR)$(dtjsdir)" \
+	"$(DESTDIR)$(htmldir)" "$(DESTDIR)$(pkgdatadir)" \
+	"$(DESTDIR)$(hookdir)" "$(DESTDIR)$(sysconfdir)" \
+	"$(DESTDIR)$(includedir)"
+PROGRAMS = $(pkglibexec_PROGRAMS)
 am_cpdup_OBJECTS = src/libexec/poudriere/cpdup/cpdup-cpdup.$(OBJEXT) \
 	src/libexec/poudriere/cpdup/cpdup-hcproto.$(OBJEXT) \
 	src/libexec/poudriere/cpdup/cpdup-hclink.$(OBJEXT) \
@@ -660,48 +659,6 @@ uninstall-pkglibexecPROGRAMS:
 
 clean-pkglibexecPROGRAMS:
 	-test -z "$(pkglibexec_PROGRAMS)" || rm -f $(pkglibexec_PROGRAMS)
-install-sbinPROGRAMS: $(sbin_PROGRAMS)
-	@$(NORMAL_INSTALL)
-	@list='$(sbin_PROGRAMS)'; test -n "$(sbindir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(sbindir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(sbindir)" || exit 1; \
-	fi; \
-	for p in $$list; do echo "$$p $$p"; done | \
-	sed 's/$(EXEEXT)$$//' | \
-	while read p p1; do if test -f $$p \
-	  ; then echo "$$p"; echo "$$p"; else :; fi; \
-	done | \
-	sed -e 'p;s,.*/,,;n;h' \
-	    -e 's|.*|.|' \
-	    -e 'p;x;s,.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/' | \
-	sed 'N;N;N;s,\n, ,g' | \
-	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1 } \
-	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
-	    if ($$2 == $$4) files[d] = files[d] " " $$1; \
-	    else { print "f", $$3 "/" $$4, $$1; } } \
-	  END { for (d in files) print "f", d, files[d] }' | \
-	while read type dir files; do \
-	    if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
-	    test -z "$$files" || { \
-	      echo " $(INSTALL_PROGRAM_ENV) $(INSTALL_PROGRAM) $$files '$(DESTDIR)$(sbindir)$$dir'"; \
-	      $(INSTALL_PROGRAM_ENV) $(INSTALL_PROGRAM) $$files "$(DESTDIR)$(sbindir)$$dir" || exit $$?; \
-	    } \
-	; done
-
-uninstall-sbinPROGRAMS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(sbin_PROGRAMS)'; test -n "$(sbindir)" || list=; \
-	files=`for p in $$list; do echo "$$p"; done | \
-	  sed -e 'h;s,^.*/,,;s/$(EXEEXT)$$//;$(transform)' \
-	      -e 's/$$/$(EXEEXT)/' \
-	`; \
-	test -n "$$list" || exit 0; \
-	echo " ( cd '$(DESTDIR)$(sbindir)' && rm -f" $$files ")"; \
-	cd "$(DESTDIR)$(sbindir)" && rm -f $$files
-
-clean-sbinPROGRAMS:
-	-test -z "$(sbin_PROGRAMS)" || rm -f $(sbin_PROGRAMS)
 src/libexec/poudriere/cpdup/$(am__dirstamp):
 	@$(MKDIR_P) src/libexec/poudriere/cpdup
 	@: > src/libexec/poudriere/cpdup/$(am__dirstamp)
@@ -1699,7 +1656,7 @@ check: check-am
 all-am: Makefile $(LIBRARIES) $(PROGRAMS) $(SCRIPTS) $(MANS) $(DATA) \
 		$(HEADERS)
 installdirs:
-	for dir in "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(rcdir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(assetsdir)" "$(DESTDIR)$(awkdir)" "$(DESTDIR)$(btcssdir)" "$(DESTDIR)$(btimgdir)" "$(DESTDIR)$(btjsdir)" "$(DESTDIR)$(dtcssdir)" "$(DESTDIR)$(dtimagesdir)" "$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(htmldir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(hookdir)" "$(DESTDIR)$(sysconfdir)" "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(rcdir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(assetsdir)" "$(DESTDIR)$(awkdir)" "$(DESTDIR)$(btcssdir)" "$(DESTDIR)$(btimgdir)" "$(DESTDIR)$(btjsdir)" "$(DESTDIR)$(dtcssdir)" "$(DESTDIR)$(dtimagesdir)" "$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(htmldir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(hookdir)" "$(DESTDIR)$(sysconfdir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -1758,7 +1715,7 @@ maintainer-clean-generic:
 clean: clean-am
 
 clean-am: clean-generic clean-noinstLIBRARIES clean-pkglibexecPROGRAMS \
-	clean-sbinPROGRAMS mostlyclean-am
+	mostlyclean-am
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
@@ -1792,7 +1749,7 @@ install-dvi: install-dvi-am
 install-dvi-am:
 
 install-exec-am: install-dist_binSCRIPTS install-pkglibexecPROGRAMS \
-	install-sbinPROGRAMS install-sysconfDATA
+	install-sysconfDATA
 
 install-html: install-html-am
 
@@ -1840,8 +1797,7 @@ uninstall-am: uninstall-dist_assetsDATA uninstall-dist_awkDATA \
 	uninstall-dist_dtjsDATA uninstall-dist_htmlDATA \
 	uninstall-dist_includeHEADERS uninstall-dist_pkgdataDATA \
 	uninstall-dist_rcSCRIPTS uninstall-hookDATA uninstall-man \
-	uninstall-pkglibexecPROGRAMS uninstall-sbinPROGRAMS \
-	uninstall-sysconfDATA
+	uninstall-pkglibexecPROGRAMS uninstall-sysconfDATA
 
 uninstall-man: uninstall-man8
 
@@ -1849,36 +1805,35 @@ uninstall-man: uninstall-man8
 
 .PHONY: CTAGS GTAGS TAGS all all-am am--refresh check check-am clean \
 	clean-cscope clean-generic clean-noinstLIBRARIES \
-	clean-pkglibexecPROGRAMS clean-sbinPROGRAMS cscope \
-	cscopelist-am ctags ctags-am dist dist-all dist-bzip2 \
-	dist-gzip dist-lzip dist-shar dist-tarZ dist-xz dist-zip \
-	distcheck distclean distclean-compile distclean-generic \
-	distclean-hdr distclean-tags distcleancheck distdir \
-	distuninstallcheck dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am \
-	install-dist_assetsDATA install-dist_awkDATA \
-	install-dist_binSCRIPTS install-dist_btcssDATA \
-	install-dist_btimgDATA install-dist_btjsDATA \
-	install-dist_dtcssDATA install-dist_dtimagesDATA \
-	install-dist_dtjsDATA install-dist_htmlDATA \
-	install-dist_includeHEADERS install-dist_pkgdataDATA \
-	install-dist_rcSCRIPTS install-dvi install-dvi-am install-exec \
-	install-exec-am install-hookDATA install-html install-html-am \
-	install-info install-info-am install-man install-man8 \
-	install-pdf install-pdf-am install-pkglibexecPROGRAMS \
-	install-ps install-ps-am install-sbinPROGRAMS install-strip \
-	install-sysconfDATA installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am uninstall-dist_assetsDATA \
-	uninstall-dist_awkDATA uninstall-dist_binSCRIPTS \
-	uninstall-dist_btcssDATA uninstall-dist_btimgDATA \
-	uninstall-dist_btjsDATA uninstall-dist_dtcssDATA \
-	uninstall-dist_dtimagesDATA uninstall-dist_dtjsDATA \
-	uninstall-dist_htmlDATA uninstall-dist_includeHEADERS \
-	uninstall-dist_pkgdataDATA uninstall-dist_rcSCRIPTS \
-	uninstall-hookDATA uninstall-man uninstall-man8 \
-	uninstall-pkglibexecPROGRAMS uninstall-sbinPROGRAMS \
+	clean-pkglibexecPROGRAMS cscope cscopelist-am ctags ctags-am \
+	dist dist-all dist-bzip2 dist-gzip dist-lzip dist-shar \
+	dist-tarZ dist-xz dist-zip distcheck distclean \
+	distclean-compile distclean-generic distclean-hdr \
+	distclean-tags distcleancheck distdir distuninstallcheck dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dist_assetsDATA \
+	install-dist_awkDATA install-dist_binSCRIPTS \
+	install-dist_btcssDATA install-dist_btimgDATA \
+	install-dist_btjsDATA install-dist_dtcssDATA \
+	install-dist_dtimagesDATA install-dist_dtjsDATA \
+	install-dist_htmlDATA install-dist_includeHEADERS \
+	install-dist_pkgdataDATA install-dist_rcSCRIPTS install-dvi \
+	install-dvi-am install-exec install-exec-am install-hookDATA \
+	install-html install-html-am install-info install-info-am \
+	install-man install-man8 install-pdf install-pdf-am \
+	install-pkglibexecPROGRAMS install-ps install-ps-am \
+	install-strip install-sysconfDATA installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-compile mostlyclean-generic pdf pdf-am \
+	ps ps-am tags tags-am uninstall uninstall-am \
+	uninstall-dist_assetsDATA uninstall-dist_awkDATA \
+	uninstall-dist_binSCRIPTS uninstall-dist_btcssDATA \
+	uninstall-dist_btimgDATA uninstall-dist_btjsDATA \
+	uninstall-dist_dtcssDATA uninstall-dist_dtimagesDATA \
+	uninstall-dist_dtjsDATA uninstall-dist_htmlDATA \
+	uninstall-dist_includeHEADERS uninstall-dist_pkgdataDATA \
+	uninstall-dist_rcSCRIPTS uninstall-hookDATA uninstall-man \
+	uninstall-man8 uninstall-pkglibexecPROGRAMS \
 	uninstall-sysconfDATA
 
 

@@ -84,12 +84,12 @@ pkglibexec_PROGRAMS= \
 		     dirempty \
 		     dirwatch \
 		     nc \
+		     poudriered \
 		     rename \
 		     tsort \
 		     jexecd \
 		     rexec
 
-sbin_PROGRAMS=	poudriered
 noinst_LIBRARIES=	libucl.a libnv.a
 
 AUTOMAKE_OPTIONS=	subdir-objects
