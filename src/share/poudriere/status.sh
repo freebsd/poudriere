@@ -107,9 +107,9 @@ now="$(date +%s)"
 
 if [ ${SCRIPT_MODE} -eq 0 ] ; then
 	[ ${ALL} -eq 0 ] && \
-	    msg "==> Only showing running builds Use -a to show all."
+	    msg "Only showing running builds Use -a to show all."
 	[ -n "${JAILNAME}" -a ${BUILDER_INFO} -eq 0 ] && \
-	    msg "==> Use -b to show detailed builder output."
+	    msg "Use -b to show detailed builder output."
 fi
 
 if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
