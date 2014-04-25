@@ -115,8 +115,8 @@ job_msg() {
 }
 
 job_msg_verbose() {
-	[ -n "${MY_JOBID}" ] || return 0
-	msg_verbose "[${MY_JOBID}] $1" >&5
+	[ ${VERBOSE} -gt 0 ] || return 0
+	job_msg "$@"
 }
 
 my_path() {
