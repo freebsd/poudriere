@@ -28,7 +28,6 @@
 #include <sys/event.h>
 #include <sys/param.h>
 #include <sys/time.h>
-#include <sys/sbuf.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
@@ -70,8 +69,8 @@
 
 struct client {
 	int fd;
+	pid_t pid;
 	struct sockaddr_storage ss;
-	struct sbuf *buf;
 };
 
 
@@ -98,10 +97,9 @@ log_as(const char *username) {
 	login_close(lcap);
 }
 
-static int
-client_exec(struct client *cl)
+static pid_t
+client_read(struct client *cl)
 {
-	int pstat, error;
 	char **argv = NULL;
 	int argvl = 0;
 	int argc = 0;
@@ -112,7 +110,6 @@ client_exec(struct client *cl)
 	int fdout, fderr, fdin;
 	void *cookie;
 	pid_t pid, gpid;
-	posix_spawn_file_actions_t action;
 
 	nv = nvlist_recv(cl->fd);
 	if (nv == NULL)
@@ -137,9 +134,9 @@ client_exec(struct client *cl)
 		}
 	}
 
-	log_as(username);
-
 	if ((pid = vfork()) == 0) {
+		log_as(username);
+
 		close(STDIN_FILENO);
 		dup2(fdin, STDIN_FILENO);
 		close(STDOUT_FILENO);
@@ -154,38 +151,27 @@ client_exec(struct client *cl)
 			nvlist_add_number(nv, "return", EXIT_FAILURE);
 			nvlist_send(cl->fd, nv);
 			close(cl->fd);
-			dprintf(fderr, "execvp(): %s\n", strerror(error));
 			exit (0);
 		}
 	}
 
-	while (waitpid(pid, &pstat, 0) == -1) {
-		if (errno != EINTR)
-			return (-1);
-	}
-
-	killpg(pid, SIGTERM);
-
-	nvlist_destroy(nv);
+	cl->pid = pid;
 	free(argv);
-	nv = nvlist_create(0);
-	nvlist_add_number(nv, "return", WEXITSTATUS(pstat));
-	nvlist_send(cl->fd, nv);
-	close(cl->fd);
+	nvlist_destroy(nv);
 
-	exit(0);
+	return (pid);
 }
 
 static void
 client_free(struct client *cl)
 {
-	sbuf_delete(cl->buf);
 	if (cl->fd != -1)
 		close(cl->fd);
 	free(cl);
+	cl = NULL;
 }
 
-static void
+static struct client *
 client_accept(int fd)
 {
 	socklen_t sz;
@@ -197,22 +183,22 @@ client_accept(int fd)
 
 	if (connfd < 0) {
 		if (errno == EINTR || errno == EAGAIN || errno == EPROTO)
-			return;
+			return (NULL);
 		err(EXIT_FAILURE, "accept()");
 	}
 
-	if ((pid = fork()) == 0) {
-		cl = malloc(sizeof(struct client));
-		cl->fd = connfd;
-		client_exec(cl);
-	}
+	cl = calloc(1, sizeof(struct client));
+	cl->fd = connfd;
 
-	return;
+	return (cl);
 }
 static void
 serve(int fd) {
 	struct kevent ke;
+	struct client *cl;
+	nvlist_t *nv;
 	int kq;
+	pid_t pid;
 
 	if ((kq = kqueue()) == -1)
 		err(EXIT_FAILURE, "kqueue");
@@ -223,8 +209,42 @@ serve(int fd) {
 	for (;;) {
 		kevent(kq, NULL, 0, &ke, 1, NULL);
 		/* New client */
-		if (ke.filter == EVFILT_READ)
-			client_accept(ke.ident);
+		if (ke.ident == fd && ke.filter == EVFILT_READ) {
+			cl = client_accept(ke.ident);
+			if (cl != NULL) {
+				EV_SET(&ke, cl->fd, EVFILT_READ, EV_ADD, 0, 0, cl);
+				kevent(kq, &ke, 1, NULL, 0, NULL);
+			}
+			continue;
+		}
+		cl = (struct client *)ke.udata;
+
+		if (ke.filter == EVFILT_READ) {
+			if (ke.flags & (EV_ERROR | EV_EOF)) {
+				EV_SET(&ke, cl->pid, EVFILT_PROC, EV_DELETE, NOTE_EXIT, 0, cl);
+				kevent(kq, &ke, 1, NULL, 0, NULL);
+				killpg(cl->pid, SIGTERM);
+				client_free(cl);
+			} else {
+				pid = client_read(cl);
+				if (pid > 0) {
+					EV_SET(&ke, cl->pid, EVFILT_PROC, EV_ADD, NOTE_EXIT, 0, cl);
+					kevent(kq, &ke, 1, NULL, 0, NULL);
+				}
+			}
+			continue;
+		}
+
+		if (ke.filter == EVFILT_PROC) {
+			killpg(cl->pid, SIGTERM);
+			nv = nvlist_create(0);
+			nvlist_add_number(nv, "return", WEXITSTATUS(cl->pid));
+			nvlist_send(cl->fd, nv);
+			nvlist_destroy(nv);
+			client_free(cl);
+
+			continue;
+		}
 	}
 }
 
