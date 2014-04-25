@@ -2146,7 +2146,7 @@ calculate_elapsed() {
 madvise_protect() {
 	[ $# -eq 1 ] || eargs madvise_protect pid
 	[ -f /usr/bin/protect ] || return 0
-	/usr/bin/protect -p "$1" || :
+	/usr/bin/protect -p "$1" 2>/dev/null || :
 	return 0
 }
 
