@@ -81,6 +81,7 @@ main(int argc, char **argv)
 	nvlist_add_nvlist(nv, "arguments", arguments);
 	nvlist_add_descriptor(nv, "stdout", STDOUT_FILENO);
 	nvlist_add_descriptor(nv, "stderr", STDERR_FILENO);
+	nvlist_add_descriptor(nv, "stdin", STDIN_FILENO);
 
 	if (nvlist_send(fd, nv) < 0) {
 		nvlist_destroy(nv);

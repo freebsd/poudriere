@@ -109,9 +109,9 @@ client_exec(struct client *cl)
 	int type;
 	const nvlist_t *args;
 	const char *username, *command, *arg;
-	int fdout, fderr;
+	int fdout, fderr, fdin;
 	void *cookie;
-	pid_t pid;
+	pid_t pid, gpid;
 	posix_spawn_file_actions_t action;
 
 	nv = nvlist_recv(cl->fd);
@@ -122,6 +122,7 @@ client_exec(struct client *cl)
 	command = nvlist_get_string(nv, "command");
 	fderr = nvlist_take_descriptor(nv, "stderr");
 	fdout = nvlist_take_descriptor(nv, "stdout");
+	fdin = nvlist_take_descriptor(nv, "stdin");
 	args = nvlist_get_nvlist(nv, "arguments");
 
 	cookie = NULL;
@@ -139,7 +140,11 @@ client_exec(struct client *cl)
 	log_as(username);
 
 	if ((pid = vfork()) == 0) {
+		close(STDIN_FILENO);
+		dup2(fdin, STDIN_FILENO);
+		close(STDOUT_FILENO);
 		dup2(fdout, STDOUT_FILENO);
+		close(STDERR_FILENO);
 		dup2(fderr, STDERR_FILENO);
 		if (execvp(argv[0], argv) == -1) {
 			nvlist_destroy(nv);
