@@ -105,7 +105,7 @@ fi
 POUDRIERE_BUILD_TYPE=bulk
 now="$(date +%s)"
 
-if [ ${SCRIPT_MODE} -eq 0 ] ; then
+if [ ${SCRIPT_MODE} -eq 0 ] && [ -t 0 ]; then
 	[ ${ALL} -eq 0 ] && \
 	    msg "Only showing running builds Use -a to show all."
 	[ -n "${JAILNAME}" -a ${BUILDER_INFO} -eq 0 ] && \
