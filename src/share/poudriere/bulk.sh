@@ -294,13 +294,13 @@ fi
 
 commit_packages
 
-[ $nbbuilt -gt 0 ] && COLOR_RESET="${COLOR_SUCCESS}" \
+[ $nbbuilt -gt 0 ] && COLOR_ARROW="${COLOR_SUCCESS}" \
     msg "${COLOR_SUCCESS}Built ports: ${COLOR_PORT}${built}"
-[ $nbfailed -gt 0 ] && COLOR_RESET="${COLOR_FAIL}" \
+[ $nbfailed -gt 0 ] && COLOR_ARROW="${COLOR_FAIL}" \
     msg "${COLOR_FAIL}Failed ports: ${COLOR_PORT}${failed}"
-[ $nbskipped -gt 0 ] && COLOR_RESET="${COLOR_SKIP}" \
+[ $nbskipped -gt 0 ] && COLOR_ARROW="${COLOR_SKIP}" \
     msg "${COLOR_SKIP}Skipped ports: ${COLOR_PORT}${skipped}"
-[ $nbignored -gt 0 ] && COLOR_RESET="${COLOR_IGNORE}" \
+[ $nbignored -gt 0 ] && COLOR_ARROW="${COLOR_IGNORE}" \
     msg "${COLOR_IGNORE}Ignored ports: ${COLOR_PORT}${ignored}"
 run_hook bulk done ${nbbuilt} ${nbfailed} ${nbignored} ${nbskipped}
 

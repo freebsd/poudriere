@@ -100,7 +100,7 @@ msg_n() {
 
 	now=$(date +%s)
 	elapsed="$(date -j -u -r $((${now} - ${TIME_START})) "+${DURATION_FORMAT}")"
-	printf "[${elapsed}] ${DRY_MODE}${COLOR_RESET}====>> ${1}${COLOR_RESET_REAL}"
+	printf "[${elapsed}] ${DRY_MODE}${COLOR_ARROW}====>>${COLOR_RESET} ${1}${COLOR_RESET_REAL}"
 }
 msg() { msg_n "$@"; echo; }
 msg_verbose() {
@@ -109,20 +109,20 @@ msg_verbose() {
 }
 
 msg_error() {
-	COLOR_RESET="${COLOR_ERROR}" \
+	COLOR_ARROW="${COLOR_ERROR}" \
 	    msg "${COLOR_ERROR}ERROR: $1" >&2
-	[ -n "${MY_JOBID}" ] && COLOR_RESET="${COLOR_ERROR}" \
+	[ -n "${MY_JOBID}" ] && COLOR_ARROW="${COLOR_ERROR}" \
 	    job_msg "${COLOR_ERROR}ERROR: $1"
 }
 
 msg_debug() {
 	[ ${VERBOSE} -gt 1 ] || return 0
-	COLOR_RESET="${COLOR_DEBUG}" \
+	COLOR_ARROW="${COLOR_DEBUG}" \
 	    msg "${COLOR_DEBUG}DEBUG: $@" >&2
 }
 
 msg_warn() {
-	COLOR_RESET="${COLOR_WARN}" \
+	COLOR_ARROW="${COLOR_WARN}" \
 	    msg "${COLOR_WARN}WARNING: $@" >&2
 }
 

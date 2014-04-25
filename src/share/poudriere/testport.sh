@@ -168,9 +168,9 @@ if [ $(bget stats_failed) -gt 0 ] || [ $(bget stats_skipped) -gt 0 ]; then
 	cleanup
 
 	msg_warn "Depends failed to build"
-	COLOR_RESET="${COLOR_FAIL}" \
+	COLOR_ARROW="${COLOR_FAIL}" \
 	    msg "${COLOR_FAIL}Failed ports: ${COLOR_PORT}${failed}"
-	[ -n "${skipped}" ] && COLOR_RESET="${COLOR_SKIP}" \
+	[ -n "${skipped}" ] && COLOR_ARROW="${COLOR_SKIP}" \
 	    msg "${COLOR_SKIP}Skipped ports: ${COLOR_PORT}${skipped}"
 
 	exit 1
