@@ -174,7 +174,7 @@ for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
 		log="$(log_path)"
 		calculate_elapsed ${now} ${log}
 		elapsed=${_elapsed_time}
-		time=$(date -j -u -r ${elapsed} "+%H:%M:%S")
+		time=$(date -j -u -r ${elapsed} "+${DURATION_FORMAT}")
 
 		if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
 			url="${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"

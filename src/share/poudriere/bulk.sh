@@ -321,7 +321,7 @@ cleanup
 
 now=$(date +%s)
 calculate_elapsed ${now} ${LOGD}
-time=$(date -j -u -r ${_elapsed_time} "+%H:%M:%S")
+time=$(date -j -u -r ${_elapsed_time} "+${DURATION_FORMAT}")
 msg "[${MASTERNAME}] $nbbuilt packages built, $nbfailed failed, $nbskipped skipped, $nbignored ignored, ${time} elapsed"
 show_log_info
 

@@ -467,7 +467,7 @@ siginfo_handler() {
 	now=$(date +%s)
 	calculate_elapsed ${now} ${log}
 	elapsed=${_elapsed_time}
-	buildtime=$(date -j -u -r ${elapsed} "+%H:%M:%S")
+	buildtime=$(date -j -u -r ${elapsed} "+${DURATION_FORMAT}")
 
 	printf "[${MASTERNAME}] [${status}] Queued: %-${queue_width}d Built: %-${queue_width}d Failed: %-${queue_width}d  Skipped: %-${queue_width}d  Ignored: %-${queue_width}d  Tobuild: %-${queue_width}d  Time: %s  \n" \
 	    ${nbq} ${nbb} ${nbf} ${nbs} ${nbi} ${nbtobuild} "${buildtime}"
@@ -2343,7 +2343,7 @@ build_pkg() {
 
 		injail make -C ${portdir} clean
 		time_end=$(date +%s)
-		elapsed="$(date -j -u -r $((${time_end} - ${time_start})) "+%H:%M:%S")"
+		elapsed="$(date -j -u -r $((${time_end} - ${time_start})) "+${DURATION_FORMAT}")"
 
 		if [ ${build_failed} -eq 0 ]; then
 			badd ports.built "${port} ${PKGNAME}"
@@ -3698,6 +3698,7 @@ fi
 
 : ${BUILDNAME_FORMAT:="%Y-%m-%d_%Hh%Mm%Ss"}
 : ${BUILDNAME:=$(date +${BUILDNAME_FORMAT})}
+: ${DURATION_FORMAT:="%H:%M:%S"}
 
 if [ -n "${MAX_MEMORY}" ]; then
 	MAX_MEMORY_BYTES="$((${MAX_MEMORY} * 1024 * 1024 * 1024))"
