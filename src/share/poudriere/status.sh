@@ -124,15 +124,15 @@ $@"
 
 columns=13
 if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
-	format="%%-%ds %%-%ds %%-%ds %%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds %%-%ds %%-%ds"
+	format="%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds %%-%ds"
 	if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
 		url_logs="URL"
 	else
 		url_logs="LOGS"
 	fi
-	add_display "JAIL" "PORTSTREE" "SET" "STATUS" "QUEUED" \
+	add_display "JAIL" "PORTSTREE" "SET" "BUILD" "STATUS" "QUEUED" \
 	    "BUILT" "FAILED" "SKIPPED" "IGNORED" "TOBUILD" \
-	    "TIME" "BUILD" "${url_logs}"
+	    "TIME" "${url_logs}"
 else
 	format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"
 fi
@@ -181,10 +181,11 @@ for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
 		else
 			url="${log}"
 		fi
-		add_display "${jailname}" "${ptname}" "${setname:-!}" "${status:-?}" "${nbqueued:-?}" \
+		add_display "${jailname}" "${ptname}" "${setname:-!}" \
+		    "${BUILDNAME}" "${status:-?}" "${nbqueued:-?}" \
 		    "${nbbuilt:-?}" "${nbfailed:-?}" "${nbskipped:-?}" \
 		    "${nbignored:-?}" "${nbtobuild:-?}" "${time:-?}" \
-		    "${BUILDNAME}" "${url:-?}"
+		    "${url:-?}"
 	else
 
 		builders="$(bget builders 2>/dev/null || :)"
