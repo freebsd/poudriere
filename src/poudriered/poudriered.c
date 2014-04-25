@@ -808,7 +808,7 @@ main(void)
 		return (EXIT_FAILURE);
 	}
 
-	pfh = pidfile_open(ucl_object_tostring(pidfile_path_o), 0600,
+	pfh = pidfile_open(ucl_object_tostring(pidfile_path_o), 0644,
 	    &otherpid);
 	if (pfh == NULL) {
 		if (errno == EEXIST) {
