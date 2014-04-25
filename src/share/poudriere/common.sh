@@ -90,7 +90,13 @@ err() {
 	exit $1
 }
 
-msg_n() { echo -n "${DRY_MODE}====>> $1"; }
+msg_n() {
+	local now elapsed
+
+	now=$(date +%s)
+	elapsed="$(date -j -u -r $((${now} - ${TIME_START})) "+${DURATION_FORMAT}")"
+	echo -n "[${elapsed}] ${DRY_MODE}====>> $1";
+}
 msg() { msg_n "$@"; echo; }
 msg_verbose() {
 	[ ${VERBOSE} -gt 0 ] || return 0
@@ -107,8 +113,12 @@ warn() {
 }
 
 job_msg() {
+	local now elapsed
+
 	if [ -n "${MY_JOBID}" ]; then
-		msg "[${MY_JOBID}] $1" >&5
+		now=$(date +%s)
+		elapsed="$(date -j -u -r $((${now} - ${TIME_START_JOB})) "+${DURATION_FORMAT}")"
+		msg "[${MY_JOBID}][${elapsed}] $1" >&5
 	else
 		msg "$1"
 	fi
@@ -2270,7 +2280,6 @@ build_pkg() {
 	local ignore
 	local errortype
 	local ret=0
-	local time_start time_end elapsed
 
 	trap '' SIGTSTP
 	[ -n "${MAX_MEMORY}" ] && ulimit -v ${MAX_MEMORY_BYTES}
@@ -2279,9 +2288,9 @@ build_pkg() {
 	cache_get_origin port "${pkgname}"
 	portdir="/usr/ports/${port}"
 
+	TIME_START_JOB=$(date +%s)
 	job_msg "Starting build of ${port}"
 	bset ${MY_JOBID} status "starting:${port}"
-	time_start=$(date +%s)
 
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
 		umount -f ${mnt}/${LOCALBASE:-/usr/local} 2>/dev/null || :
@@ -2342,12 +2351,10 @@ build_pkg() {
 		fi
 
 		injail make -C ${portdir} clean
-		time_end=$(date +%s)
-		elapsed="$(date -j -u -r $((${time_end} - ${time_start})) "+${DURATION_FORMAT}")"
 
 		if [ ${build_failed} -eq 0 ]; then
 			badd ports.built "${port} ${PKGNAME}"
-			job_msg "Finished build in ${elapsed} for ${port}: Success"
+			job_msg "Finished build of ${port}: Success"
 			run_hook pkgbuild success "${port}" "${PKGNAME}"
 			# Cache information for next run
 			pkg_cache_data "${PACKAGES}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
@@ -2358,7 +2365,7 @@ build_pkg() {
 				${log}/logs/errors/${PKGNAME}.log \
 				2> /dev/null)
 			badd ports.failed "${port} ${PKGNAME} ${failed_phase} ${errortype}"
-			job_msg "Finished build in ${elapsed} for ${port}: Failed: ${failed_phase}"
+			job_msg "Finished build of ${port}: Failed: ${failed_phase}"
 			run_hook pkgbuild failed "${port}" "${PKGNAME}" "${failed_phase}" \
 				"${log}/logs/errors/${PKGNAME}.log"
 			# ret=2 is a test failure
@@ -3704,6 +3711,8 @@ if [ -n "${MAX_MEMORY}" ]; then
 	MAX_MEMORY_BYTES="$((${MAX_MEMORY} * 1024 * 1024 * 1024))"
 	MAX_MEMORY_JEXEC="/usr/bin/limits -v ${MAX_MEMORY_BYTES}"
 fi
+
+TIME_START=$(date +%s)
 
 [ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}
 
