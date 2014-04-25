@@ -2318,11 +2318,11 @@ build_pkg() {
 
 		injail make -C ${portdir} clean
 		time_end=$(date +%s)
-		elapsed="[$(date -j -u -r $((${time_end} - ${time_start})) "+%H:%M:%S")]"
+		elapsed="$(date -j -u -r $((${time_end} - ${time_start})) "+%H:%M:%S")"
 
 		if [ ${build_failed} -eq 0 ]; then
 			badd ports.built "${port} ${PKGNAME}"
-			job_msg "Finished build of ${port} ${elapsed}: Success"
+			job_msg "Finished build in ${elapsed} for ${port}: Success"
 			run_hook pkgbuild success "${port}" "${PKGNAME}"
 			# Cache information for next run
 			pkg_cache_data "${PACKAGES}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
@@ -2333,7 +2333,7 @@ build_pkg() {
 				${log}/logs/errors/${PKGNAME}.log \
 				2> /dev/null)
 			badd ports.failed "${port} ${PKGNAME} ${failed_phase} ${errortype}"
-			job_msg "Finished build of ${port} ${elapsed}: Failed: ${failed_phase}"
+			job_msg "Finished build in ${elapsed} for ${port}: Failed: ${failed_phase}"
 			run_hook pkgbuild failed "${port}" "${PKGNAME}" "${failed_phase}" \
 				"${log}/logs/errors/${PKGNAME}.log"
 			# ret=2 is a test failure
