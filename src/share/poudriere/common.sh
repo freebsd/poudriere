@@ -109,7 +109,13 @@ my_name() {
 }
  
 log_path() {
-	echo "${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"
+	local _log_path
+	_log_path _log_path
+	echo "${_log_path}"
+}
+
+_log_path() {
+	setvar "$1" "${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"
 }
 
 injail() {
@@ -347,7 +353,7 @@ _bget() {
 	local var_return id property mnt log file
 
 	var_return="$1"
-	log=$(log_path)
+	_log_path log
 	shift
 	if [ $# -eq 2 ]; then
 		id="$1"
