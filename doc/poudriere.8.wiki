@@ -550,19 +550,23 @@ There are no options associated with the <b class="flag">queue</b> command.</div
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;a</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Show all builds, not just currently running. This is implied by the <b class="flag">&#45;B</b> flag.</dd>
+Show all builds, not just latest. This implies <b class="flag">&#45;f</b>.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;b</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Show details about what each builder for the matched build are doing.</dd>
+Show details about what each builder for the matched builds are doing.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;B</b> <i class="arg">name</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Specifies which buildname to match on. Defaults to "latest". Specifying this implies the <b class="flag">&#45;a</b> flag.</dd>
+Specifies which buildname to match on. This supports shell globbing. Defaults to "latest". Specifying this implies the <b class="flag">&#45;f</b> flag.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;c</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
 Show a more compact output and do not include some columns.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;f</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Show finished builds, not just currently running. This is implied by the <b class="flag">&#45;B</b> and <b class="flag">&#45;a</b> flags.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;j</b> <i class="arg">name</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">

@@ -29,11 +29,12 @@ usage() {
 poudriere status [options]
 
 Options:
-    -a          -- Show all builds, not just running. This is default
-                   if -B is specified.
+    -a          -- Show all builds, not just latest. This implies -f.
+    -f          -- Show finished builds as well. This is default
+                   if -B or -a are specified.
     -b          -- Display status of each builder for the matched build.
     -B name     -- What buildname to use (must be unique, defaults to
-                   "latest")
+                   "latest"). This implies -f.
     -c          -- Compact output (shorter headers and no logs/url)
     -j name     -- Run on the given jail
     -p tree     -- Specify on which ports tree to match for the build.
@@ -51,29 +52,35 @@ SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 
 PTNAME=
 SETNAME=
-BUILDNAME=latest
 SCRIPT_MODE=0
 ALL=0
+SHOW_FINISHED=0
 COMPACT=0
 URL=1
 BUILDER_INFO=0
+BUILDNAME=
 
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "abB:cj:lp:Hz:" FLAG; do
+while getopts "abB:cfj:lp:Hz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			ALL=1
+			SHOW_FINISHED=1
+			BUILDNAME_GLOB="*"
 			;;
 		b)
 			BUILDER_INFO=1
 			;;
 		B)
-			BUILDNAME="${OPTARG}"
-			ALL=1
+			BUILDNAME_GLOB="${OPTARG}"
+			SHOW_FINISHED=1
 			;;
 		c)
 			COMPACT=1
+			;;
+		f)
+			SHOW_FINISHED=1
 			;;
 		j)
 			JAILNAME=${OPTARG}
@@ -98,7 +105,8 @@ done
 
 shift $((OPTIND-1))
 
-ORIG_BUILDNAME="${BUILDNAME}"
+# Default to "latest" if not using -a and no -B specified
+[ ${ALL} -eq 0 ] && : ${BUILDNAME_GLOB:=latest}
 
 POUDRIERE_BUILD_TYPE=bulk
 now="$(date +%s)"
@@ -139,43 +147,19 @@ else
 	[ ${COMPACT} -eq 0 ] && format="${format}\t%s"
 fi
 
-found_jobs=0
-for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
-	# Check empty dir
-	case "${mastermnt}" in
-		"${POUDRIERE_DATA}/logs/bulk/*") break ;;
-	esac
-	MASTERNAME=${mastermnt#${POUDRIERE_DATA}/logs/bulk/}
-	# Skip non-running on ALL=0
-	[ ${ALL} -eq 0 ] && ! jail_runs ${MASTERNAME} && continue
-	# Dereference latest into actual buildname
-	BUILDNAME="$(BUILDNAME="${ORIG_BUILDNAME}" bget buildname 2>/dev/null || :)"
-	# No matching build, skip.
-	[ -z "${BUILDNAME}" ] && continue
-	jailname=$(bget jailname)
-	ptname=$(bget ptname)
-	setname=$(bget setname)
-	if [ -n "${JAILNAME}" ]; then
-		[ "${jailname}" = "${JAILNAME}" ] || continue
-	fi
-	if [ -n "${PTNAME}" ]; then
-		[ "${ptname}" = "${PTNAME}" ] || continue
-	fi
-	if [ -n "${SETNAME}" ]; then
-		[ "${setname}" = "${SETNAME%0}" ] || continue
-	fi
+add_build() {
+	local status nbqueued nbfailed nbignored nbskipped nbbuilt nbtobuild
+	local elapsed time url builders
 
 	if [ ${BUILDER_INFO} -eq 0 ]; then
-		found_jobs=1
-		status=$(bget status 2>/dev/null || :)
-		nbqueued=$(bget stats_queued 2>/dev/null || :)
-		nbfailed=$(bget stats_failed 2>/dev/null || :)
-		nbignored=$(bget stats_ignored 2>/dev/null || :)
-		nbskipped=$(bget stats_skipped 2>/dev/null || :)
-		nbbuilt=$(bget stats_built 2>/dev/null || :)
+		_bget status status 2>/dev/null || :
+		_bget nbqueued stats_queued 2>/dev/null || :
+		_bget nbbuilt stats_built 2>/dev/null || :
+		_bget nbfailed stats_failed 2>/dev/null || :
+		_bget nbignored stats_ignored 2>/dev/null || :
+		_bget nbskipped stats_skipped 2>/dev/null || :
 		nbtobuild=$((nbqueued - (nbbuilt + nbfailed + nbskipped + nbignored)))
 
-		log="$(log_path)"
 		calculate_elapsed ${now} ${log}
 		elapsed=${_elapsed_time}
 		time=$(date -j -u -r ${elapsed} "+${DURATION_FORMAT}")
@@ -195,17 +179,90 @@ for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
 		    "${url}"
 	else
 
-		builders="$(bget builders 2>/dev/null || :)"
+		_bget builders builders 2>/dev/null || :
 
 		JOBS="${builders}" siginfo_handler
 	fi
+}
+
+found_jobs=0
+[ ${SCRIPT_MODE} -eq 0 -a -n "${BUILDNAME_GLOB}" \
+    -a "${BUILDNAME_GLOB}" != "latest" ] && \
+    msg_warn "Looking up all matching builds. This may take a while."
+for mastername in ${POUDRIERE_DATA}/logs/bulk/*; do
+	# Check empty dir
+	case "${mastername}" in
+		"${POUDRIERE_DATA}/logs/bulk/*") break ;;
+	esac
+	[ -L "${mastername}/latest" ] || continue
+	MASTERNAME=${mastername#${POUDRIERE_DATA}/logs/bulk/}
+	[ "${MASTERNAME}" = "latest-per-pkg" ] && continue
+	[ ${SHOW_FINISHED} -eq 0 ] && ! jail_runs ${MASTERNAME} && continue
+
+	# Look for all wanted buildnames (will be 1 or Many(-a)))
+	for buildname in ${mastername}/${BUILDNAME_GLOB}; do
+		# Check for no match. If not using a glob ensure the file exists
+		# otherwise check for the glob coming back
+		if [ "${BUILDNAME_GLOB%\**}" != "${BUILDNAME_GLOB}" ]; then
+			case "${buildname}" in
+				"${mastername}/${BUILDNAME_GLOB}") break ;;
+				# Skip latest if from a glob, let it be found
+				# normally.
+				"${mastername}/latest") break ;;
+				# Don't want latest-per-pkg
+				"${mastername}/latest-per-pkg") break ;;
+			esac
+		else
+			# No match
+			[ -e "${buildname}" ] || break
+		fi
+		buildname="${buildname#${mastername}/}"
+		BUILDNAME="${buildname}"
+		# Unset so later they can be checked for NULL (don't want to
+		# lookup again if value looked up is empty
+		unset jailname ptname setname
+		# Try matching on any given JAILNAME/PTNAME/SETNAME,
+		# and if any don't match skip this MASTERNAME entirely.
+		if [ -n "${JAILNAME}" ]; then
+			_bget jailname jailname 2>/dev/null || :
+			[ "${jailname}" = "${JAILNAME}" ] || continue 2
+		fi
+		if [ -n "${PTNAME}" ]; then
+			_bget ptname ptname 2>/dev/null || :
+			[ "${ptname}" = "${PTNAME}" ] || continue 2
+		fi
+		if [ -n "${SETNAME}" ]; then
+			_bget setname setname 2>/dev/null || :
+			[ "${setname}" = "${SETNAME%0}" ] || continue 2
+		fi
+		# Dereference latest into actual buildname
+		[ "${buildname}" = "latest" ] && \
+		    _bget BUILDNAME buildname 2>/dev/null
+		# May be blank if build is still starting up
+		[ -z "${BUILDNAME}" ] && continue 2
+
+		found_jobs=$((${found_jobs} + 1))
+
+		# Lookup jailname/setname/ptname if needed. Delayed
+		# from earlier for performance for -a
+		[ -z "${jailname+null}" ] && \
+		    _bget jailname jailname 2>/dev/null || :
+		[ -z "${setname+null}" ] && \
+		    _bget setname setname 2>/dev/null || :
+		[ -z "${ptname+null}" ] && \
+		    _bget ptname ptname 2>/dev/null || :
+		log=${mastername}/${BUILDNAME}
+
+		add_build
+	done
+
 done
 
 if [ ${BUILDER_INFO} -eq 0 ]; then
 	if [ ${found_jobs} -eq 0 ]; then
 		if [ ${SCRIPT_MODE} -eq 0 ]; then
-			if [ ${ALL} -eq 0 ]; then
-				msg "No running builds. Use -a to show finished builds."
+			if [ ${SHOW_FINISHED} -eq 0 ]; then
+				msg "No running builds. Use -a or -f to show finished builds."
 			else
 				msg "No matching builds found."
 			fi
@@ -249,7 +306,10 @@ if [ ${BUILDER_INFO} -eq 0 ]; then
 		printf "${format}\n" ${line} | sed -e 's,!, ,g'
 	done
 
-	[ ${SCRIPT_MODE} -eq 0 ] && [ -t 0 ] && \
-	    [ -n "${JAILNAME}" -a ${BUILDER_INFO} -eq 0 ] && \
-	    msg "Use -b to show detailed builder output."
+	if [ ${SCRIPT_MODE} -eq 0 ]; then
+		[ -t 0 ] && \
+		    [ -n "${JAILNAME}" -a ${BUILDER_INFO} -eq 0 ] && \
+		    msg "Use -b to show detailed builder output."
+		msg "Found ${found_jobs} matching builds."
+	fi
 fi

@@ -617,20 +617,27 @@ command.
 This command accepts the following options:
 .Bl -tag -width "-f conffile"
 .It Fl a
-Show all builds, not just currently running.
-This is implied by the
-.Fl B
-flag.
+Show all builds, not just latest.
+This implies
+.Fl f .
 .It Fl b
-Show details about what each builder for the matched build are doing.
+Show details about what each builder for the matched builds are doing.
 .It Fl B Ar name
 Specifies which buildname to match on.
+This supports shell globbing.
 Defaults to "latest".
 Specifying this implies the
-.Fl a
+.Fl f
 flag.
 .It Fl c
 Show a more compact output and do not include some columns.
+.It Fl f
+Show finished builds, not just currently running.
+This is implied by the
+.Fl B
+and
+.Fl a
+flags.
 .It Fl j Ar name
 Specifies the
 .Ar name
