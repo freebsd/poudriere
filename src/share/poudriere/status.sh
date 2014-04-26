@@ -113,6 +113,10 @@ now="$(date +%s)"
 
 display=
 add_display() {
+	if [ ${SCRIPT_MODE} -eq 1 ]; then
+		echo "$@"
+		return 0
+	fi
 	if [ -z "${display}" ]; then
 		display="$@"
 	else
@@ -258,14 +262,12 @@ for mastername in ${POUDRIERE_DATA}/logs/bulk/*; do
 
 done
 
-if [ ${BUILDER_INFO} -eq 0 ]; then
+if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
 	if [ ${found_jobs} -eq 0 ]; then
-		if [ ${SCRIPT_MODE} -eq 0 ]; then
-			if [ ${SHOW_FINISHED} -eq 0 ]; then
-				msg "No running builds. Use -a or -f to show finished builds."
-			else
-				msg "No matching builds found."
-			fi
+		if [ ${SHOW_FINISHED} -eq 0 ]; then
+			msg "No running builds. Use -a or -f to show finished builds."
+		else
+			msg "No matching builds found."
 		fi
 		exit 0
 	fi
@@ -284,15 +286,13 @@ if [ ${BUILDER_INFO} -eq 0 ]; then
 	${display}
 	EOF
 
-	if [ ${SCRIPT_MODE} -eq 0 ]; then
-		# Set format lengths
-		lengths=
-		for n in $(jot ${columns} 0); do
-			hash_get lengths ${n} length
-			lengths="${lengths} ${length}"
-		done
-		format=$(printf "${format}" ${lengths})
-	fi
+	# Set format lengths
+	lengths=
+	for n in $(jot ${columns} 0); do
+		hash_get lengths ${n} length
+		lengths="${lengths} ${length}"
+	done
+	format=$(printf "${format}" ${lengths})
 
 	# Show header separately so it is not sorted
 	echo "${display}"| head -n 1| while read line; do
@@ -306,10 +306,8 @@ if [ ${BUILDER_INFO} -eq 0 ]; then
 		printf "${format}\n" ${line} | sed -e 's,!, ,g'
 	done
 
-	if [ ${SCRIPT_MODE} -eq 0 ]; then
-		[ -t 0 ] && \
-		    [ -n "${JAILNAME}" -a ${BUILDER_INFO} -eq 0 ] && \
-		    msg "Use -b to show detailed builder output."
-		msg "Found ${found_jobs} matching builds."
-	fi
+	[ -t 0 ] && \
+	    [ -n "${JAILNAME}" -a ${BUILDER_INFO} -eq 0 ] && \
+	    msg "Use -b to show detailed builder output."
+	msg "Found ${found_jobs} matching builds."
 fi
