@@ -38,6 +38,18 @@ was_a_bulk_run() {
 was_a_jail_run() {
 	was_a_bulk_run ||  [ "${0##*/}" = "pkgclean.sh" ]
 }
+# Return true if output via msg() should show elapsed time
+should_show_elapsed() {
+	case "${0##*/}" in
+		daemon.sh) ;;
+		help.sh) ;;
+		queue.sh) ;;
+		status.sh) ;;
+		version.sh) ;;
+		*) return 0 ;;
+	esac
+	return 1
+}
 
 # Based on Shell Scripting Recipes - Chris F.A. Johnson (c) 2005
 # Replace a pattern without needing a subshell/exec

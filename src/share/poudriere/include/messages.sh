@@ -98,9 +98,12 @@ colorize_job_id() {
 msg_n() {
 	local now elapsed
 
-	now=$(date +%s)
-	elapsed="$(date -j -u -r $((${now} - ${TIME_START})) "+${DURATION_FORMAT}")"
-	printf "[${elapsed}] ${DRY_MODE}${COLOR_ARROW}====>>${COLOR_RESET} ${1}${COLOR_RESET_REAL}"
+	elapsed=
+	if should_show_elapsed; then
+		now=$(date +%s)
+		elapsed="[$(date -j -u -r $((${now} - ${TIME_START})) "+${DURATION_FORMAT}")] "
+	fi
+	printf "${elapsed}${DRY_MODE}${COLOR_ARROW}====>>${COLOR_RESET} ${1}${COLOR_RESET_REAL}"
 }
 msg() { msg_n "$@"; echo; }
 msg_verbose() {
