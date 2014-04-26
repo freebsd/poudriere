@@ -876,9 +876,6 @@ enter_interactive() {
 		    msg_warn "Failed to install ${COLOR_PORT}${port}"
 	done
 
-	# Enable networking
-	JNETNAME="n"
-
 	# Create a pkgng repo configuration, and disable FreeBSD
 	if [ ${PKGNG} -eq 1 ]; then
 		msg "Installing local Pkg repository to ${LOCALBASE}/etc/pkg/repos"
@@ -897,7 +894,7 @@ EOF
 
 	if [ ${INTERACTIVE_MODE} -eq 1 ]; then
 		msg "Entering interactive test mode. Type 'exit' when done."
-		injail env -i TERM=${SAVED_TERM} \
+		JNETNAME="n" injail env -i TERM=${SAVED_TERM} \
 		    /usr/bin/login -fp root || :
 	elif [ ${INTERACTIVE_MODE} -eq 2 ]; then
 		# XXX: Not tested/supported with bulk yet.
@@ -3577,9 +3574,8 @@ build_repo() {
 			    -o ${MASTERMNT}/tmp/packages ${MASTERMNT}/packages \
 			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 		else
-			JNETNAME="n"
-			injail /poudriere/pkg-static repo -o /tmp/packages \
-			    /packages \
+			JNETNAME="n" injail /poudriere/pkg-static repo \
+			    -o /tmp/packages /packages \
 			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 		fi
 		cp ${MASTERMNT}/tmp/packages/* ${PACKAGES}/
