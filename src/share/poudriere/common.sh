@@ -3501,7 +3501,7 @@ trap sigint_handler SIGINT
 trap sigterm_handler SIGTERM
 trap sig_handler SIGKILL
 trap exit_handler EXIT
-trap siginfo_handler SIGINFO
+was_a_bulk_run && trap siginfo_handler SIGINFO
 
 # Test if zpool exists
 if [ -z "${NO_ZFS}" ]; then
