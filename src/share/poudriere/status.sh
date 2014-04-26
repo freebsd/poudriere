@@ -95,13 +95,6 @@ shift $((OPTIND-1))
 
 ORIG_BUILDNAME="${BUILDNAME}"
 
-if [ ${ALL} -eq 0 ] && \
-    [ $(find ${POUDRIERE_DATA}/build -mindepth 2 -maxdepth 2 2>&1 | wc -l) \
-	-eq 0 ] ; then
-	[ ${SCRIPT_MODE} -eq 0 ] && msg "No running builds. Use -a to show all."
-	exit 0
-fi
-
 POUDRIERE_BUILD_TYPE=bulk
 now="$(date +%s)"
 
@@ -137,6 +130,7 @@ else
 	format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"
 fi
 
+found_jobs=0
 for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
 	# Check empty dir
 	case "${mastermnt}" in
@@ -163,6 +157,7 @@ for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
 	fi
 
 	if [ ${BUILDER_INFO} -eq 0 ]; then
+		found_jobs=1
 		status=$(bget status 2>/dev/null || :)
 		nbqueued=$(bget stats_queued 2>/dev/null || :)
 		nbfailed=$(bget stats_failed 2>/dev/null || :)
@@ -195,6 +190,17 @@ for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
 done
 
 if [ ${BUILDER_INFO} -eq 0 ]; then
+	if [ ${found_jobs} -eq 0 ]; then
+		if [ ${SCRIPT_MODE} -eq 0 ]; then
+			if [ ${ALL} -eq 0 ]; then
+				msg "No running builds."
+			else
+				msg "No matching builds found."
+			fi
+		fi
+		exit 0
+	fi
+
 	# Determine optimal format
 	while read line; do
 		cnt=0
