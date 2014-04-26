@@ -343,16 +343,28 @@ jget() { attr_get jails "$@" ; }
 pget() { attr_get ports "$@" ; }
 
 #build getter/setter
-bget() {
-	local id property mnt
-	local log=$(log_path)
+_bget() {
+	local var_return id property mnt log file
+
+	var_return="$1"
+	log=$(log_path)
+	shift
 	if [ $# -eq 2 ]; then
-		id=$1
+		id="$1"
 		shift
 	fi
-	file=.poudriere.${1}${id:+.${id}}
+	file=".poudriere.${1}${id:+.${id}}"
 
-	cat ${log}/${file} || :
+	read_file "${var_return}" "${log}/${file}" && return 0
+	setvar "${var_return}" ""
+	return 1
+}
+
+bget() {
+	local bget_data
+
+	_bget bget_data "$@" || :
+	[ -n "${bget_data}" ] && echo "${bget_data}"
 }
 
 bset() {
