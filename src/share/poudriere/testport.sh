@@ -214,7 +214,7 @@ export TRYBROKEN=yes
 export DEVELOPER_MODE=yes
 export NO_WARNING_PKG_INSTALL_EOL=yes
 # Disable waits unless running in a tty interactively
-if ! [ -t 0 ]; then
+if ! [ -t 1 ]; then
 	export WARNING_WAIT=0
 	export DEV_WARNING_WAIT=0
 fi
