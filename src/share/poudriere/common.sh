@@ -319,12 +319,14 @@ read_file() {
 	local var_return="$1"
 	local file="$2"
 	local _data
+	local ret
 
 	# Disable SIGINFO while in here to avoid interruption while reading
 	trap - SIGINFO
 
 	_data=
 	_read_file_lines_read=0
+	ret=0
 
 	while read -r line; do
 		_read_file_lines_read=$((${_read_file_lines_read} + 1))
@@ -334,11 +336,13 @@ read_file() {
 			_data="${_data}
 ${line}"
 		fi
-	done < "${file}"
+	done < "${file}" || ret=$?
 
 	setvar "${var_return}" "${_data}"
 
 	enable_siginfo_handler
+
+	return ${ret}
 }
 
 attr_set() {
