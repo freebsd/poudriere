@@ -313,6 +313,9 @@ read_file() {
 	local file="$2"
 	local _data
 
+	# Disable SIGINFO while in here to avoid interruption while reading
+	trap - SIGINFO
+
 	_data=
 	_read_file_lines_read=0
 
@@ -327,6 +330,8 @@ ${line}"
 	done < "${file}"
 
 	setvar "${var_return}" "${_data}"
+
+	enable_siginfo_handler
 }
 
 attr_set() {
@@ -3562,7 +3567,12 @@ trap sigint_handler SIGINT
 trap sigterm_handler SIGTERM
 trap sig_handler SIGKILL
 trap exit_handler EXIT
-was_a_bulk_run && trap siginfo_handler SIGINFO
+# Use a function as it is shared logic with read_file()
+enable_siginfo_handler() {
+	was_a_bulk_run && trap siginfo_handler SIGINFO
+	return 0
+}
+enable_siginfo_handler
 
 # Test if zpool exists
 if [ -z "${NO_ZFS}" ]; then
