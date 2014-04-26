@@ -183,6 +183,13 @@ run_hook() {
 	return 0
 }
 
+add_ts() {
+	while read -r line; do
+		echo "$(date "+%Y%m%d%H%M.%S") ${line}";
+	done
+	return 0
+}
+
 log_start() {
 	local log
 	local latest_log
@@ -207,13 +214,9 @@ log_start() {
 	exec 3>&1 4>&2
 	[ ! -e ${logfile}.pipe ] && mkfifo ${logfile}.pipe
 	{
-		if [ "${TIMESTAMP_LOGS}" = "yes" ]; then
-			tee ${logfile} | while read line; do
-				echo "$(date "+%Y%m%d%H%M.%S") ${line}";
-			done
-		else
-			tee ${logfile}
-		fi
+		local add_ts_pipe
+		[ "${TIMESTAMP_LOGS}" = "yes" ] && add_ts_pipe="add_ts |"
+		eval ${add_ts_pipe} tee ${logfile}
 	} < ${logfile}.pipe >&3 &
 	export tpid=$!
 	exec > ${logfile}.pipe 2>&1
