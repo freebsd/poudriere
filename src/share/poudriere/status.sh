@@ -139,8 +139,8 @@ if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
 		else
 			url_logs="LOGS"
 		fi
-		add_display "SET" "PORTS" "JAIL" "BUILD" "STATUS" "QUEUED" \
-		    "BUILT" "FAILED" "SKIPPED" "IGNORED" "TOBUILD" \
+		add_display "SET" "PORTS" "JAIL" "BUILD" "STATUS" "QUEUE" \
+		    "BUILT" "FAIL" "SKIP" "IGNORE" "REMAIN" \
 		    "TIME" "${url_logs}"
 	else
 		add_display "SET" "PORTS" "JAIL" "BUILD" "STATUS" "Q" \
