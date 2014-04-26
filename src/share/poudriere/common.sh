@@ -2447,7 +2447,7 @@ stop_build() {
 
 	# 2 = HEADER+ps itself
 	if [ $(injail ps aux | wc -l) -ne 2 ]; then
-		msg "Leftover processes:"
+		msg_warn "Leftover processes:"
 		injail ps auxwwd | grep -v 'ps auxwwd'
 	fi
 	# Always kill to avoid missing anything
