@@ -968,6 +968,7 @@ commit_packages() {
 	fi
 
 	msg "Committing packages to repository"
+	bset status "committing:"
 
 	# Find any new top-level files not symlinked yet. This is
 	# mostly incase pkg adds a new top-level repo or the ports framework
