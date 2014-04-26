@@ -215,7 +215,7 @@ log_start() {
 		local stripcolors_pipe add_ts_pipe
 		[ "${USE_COLORS}" = "yes" ] && stripcolors_pipe="stripcolors |"
 		[ "${TIMESTAMP_LOGS}" = "yes" ] && add_ts_pipe="timestamp \"${TIME_START_JOB}\" \"(${DURATION_FORMAT}) \" |"
-		eval ${stripcolors_pipe} ${add_ts_pipe} tee ${logfile}
+		eval ${add_ts_pipe} ${stripcolors_pipe} tee ${logfile}
 	} < ${logfile}.pipe >&3 &
 	export tpid=$!
 	exec > ${logfile}.pipe 2>&1
