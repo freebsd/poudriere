@@ -113,20 +113,20 @@ msg_verbose() {
 
 msg_error() {
 	COLOR_ARROW="${COLOR_ERROR}" \
-	    msg "${COLOR_ERROR}ERROR: $1" >&2
+	    msg "${COLOR_ERROR}Error: $1" >&2
 	[ -n "${MY_JOBID}" ] && COLOR_ARROW="${COLOR_ERROR}" \
-	    job_msg "${COLOR_ERROR}ERROR: $1"
+	    job_msg "${COLOR_ERROR}Error: $1"
 }
 
 msg_debug() {
 	[ ${VERBOSE} -gt 1 ] || return 0
 	COLOR_ARROW="${COLOR_DEBUG}" \
-	    msg "${COLOR_DEBUG}DEBUG: $@" >&2
+	    msg "${COLOR_DEBUG}Debug: $@" >&2
 }
 
 msg_warn() {
 	COLOR_ARROW="${COLOR_WARN}" \
-	    msg "${COLOR_WARN}WARNING: $@" >&2
+	    msg "${COLOR_WARN}Warning: $@" >&2
 }
 
 job_msg() {
