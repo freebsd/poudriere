@@ -877,7 +877,7 @@ enter_interactive() {
 	done
 
 	# Enable networking
-	JNETNAME="network"
+	JNETNAME="n"
 
 	# Create a pkgng repo configuration, and disable FreeBSD
 	if [ ${PKGNG} -eq 1 ]; then
