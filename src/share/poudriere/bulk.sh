@@ -257,8 +257,6 @@ bset status "building:"
 
 parallel_build ${JAILNAME} ${PTNAME} ${SETNAME}
 
-bset status "done:"
-
 failed=$(bget ports.failed | awk '{print $1 ":" $3 }' | xargs echo)
 built=$(bget ports.built | awk '{print $1}' | xargs echo)
 ignored=$(bget ports.ignored | awk '{print $1}' | xargs echo)
@@ -305,6 +303,8 @@ commit_packages
 run_hook bulk done ${nbbuilt} ${nbfailed} ${nbignored} ${nbskipped}
 
 [ ${INTERACTIVE_MODE} -gt 0 ] && enter_interactive
+
+bset status "done:"
 cleanup
 
 msg "[${MASTERNAME}] ${COLOR_SUCCESS}${nbbuilt} built${COLOR_RESET}, ${COLOR_FAIL}${nbfailed} failed${COLOR_RESET}, ${COLOR_SKIP}${nbskipped} skipped${COLOR_RESET}, ${COLOR_IGNORE}${nbignored} ignored${COLOR_RESET}"
