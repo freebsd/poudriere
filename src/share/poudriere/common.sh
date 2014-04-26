@@ -298,6 +298,28 @@ log_stop() {
 	fi
 }
 
+read_file() {
+	[ $# -eq 2 ] || eargs read_file var_return file
+	local var_return="$1"
+	local file="$2"
+	local _data
+
+	_data=
+	_read_file_lines_read=0
+
+	while read -r line; do
+		_read_file_lines_read=$((${_read_file_lines_read} + 1))
+		if [ -z "${_data}" ]; then
+			_data="${line}"
+		else
+			_data="${_data}
+${line}"
+		fi
+	done < "${file}"
+
+	setvar "${var_return}" "${_data}"
+}
+
 attr_set() {
 	local type=$1
 	local name=$2
