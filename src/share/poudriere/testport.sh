@@ -158,7 +158,7 @@ LISTPORTS=$(list_deps ${ORIGIN} )
 prepare_ports
 markfs prepkg ${MASTERMNT}
 
-log=$(log_path)
+_log_path log
 
 POUDRIERE_BUILD_TYPE=bulk parallel_build ${JAILNAME} ${PTNAME} ${SETNAME}
 if [ $(bget stats_failed) -gt 0 ] || [ $(bget stats_skipped) -gt 0 ]; then

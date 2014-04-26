@@ -213,7 +213,7 @@ run_hook bulk start
 madvise_protect $$
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
-LOGD=`log_path`
+_log_path LOGD
 if [ -d ${LOGD} -a ${CLEAN} -eq 1 ]; then
 	msg "Cleaning up old logs"
 	rm -f ${LOGD}/*.log 2>/dev/null

@@ -109,12 +109,6 @@ _my_name() {
 	setvar "$1" "${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}"
 }
  
-log_path() {
-	local _log_path
-	_log_path _log_path
-	echo "${_log_path}"
-}
-
 _log_path() {
 	setvar "$1" "${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"
 }
