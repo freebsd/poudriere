@@ -188,8 +188,11 @@ stripcolors() {
 }
 
 add_ts() {
+	local now elapsed
 	while read -r line; do
-		echo "$(date "+%Y%m%d%H%M.%S") ${line}";
+		now=$(date +%s)
+		elapsed="$(date -j -u -r $((${now} - ${TIME_START_JOB})) "+${DURATION_FORMAT}")"
+		echo "(${elapsed}) ${line}";
 	done
 	return 0
 }
