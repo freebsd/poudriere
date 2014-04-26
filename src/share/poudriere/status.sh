@@ -230,17 +230,40 @@ for mastername in ${POUDRIERE_DATA}/logs/bulk/*; do
 		unset jailname ptname setname
 		# Try matching on any given JAILNAME/PTNAME/SETNAME,
 		# and if any don't match skip this MASTERNAME entirely.
+		# If the file is missing it's a legacy build, skip it
+		# but not the entire mastername if it has a match.
 		if [ -n "${JAILNAME}" ]; then
-			_bget jailname jailname 2>/dev/null || :
-			[ "${jailname}" = "${JAILNAME}" ] || continue 2
+			if _bget jailname jailname 2>/dev/null; then
+				[ "${jailname}" = "${JAILNAME}" ] || continue 2
+			else
+				case "${mastername}" in
+					${JAILNAME}-*) ;;
+					*) continue 2 ;;
+				esac
+				continue
+			fi
 		fi
 		if [ -n "${PTNAME}" ]; then
-			_bget ptname ptname 2>/dev/null || :
-			[ "${ptname}" = "${PTNAME}" ] || continue 2
+			if _bget ptname ptname 2>/dev/null; then
+				[ "${ptname}" = "${PTNAME}" ] || continue 2
+			else
+				case "${mastername}" in
+					*-${PTNAME}) ;;
+					*) continue 2 ;;
+				esac
+				continue
+			fi
 		fi
 		if [ -n "${SETNAME}" ]; then
-			_bget setname setname 2>/dev/null || :
-			[ "${setname}" = "${SETNAME%0}" ] || continue 2
+			if _bget setname setname 2>/dev/null; then
+				[ "${setname}" = "${SETNAME%0}" ] || continue 2
+			else
+				case "${mastername}" in
+					*-${SETNAME%0}) ;;
+					*) continue 2 ;;
+				esac
+				continue
+			fi
 		fi
 		# Dereference latest into actual buildname
 		[ "${buildname}" = "latest" ] && \
