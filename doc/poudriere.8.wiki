@@ -560,6 +560,10 @@ Show details about what each builder for the matched build are doing.</dd>
 <dd class="list-tag" style="margin-left: 11.00ex;">
 Specifies which buildname to match on. Defaults to "latest". Specifying this implies the <b class="flag">&#45;a</b> flag.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;c</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Show a more compact output and do not include some columns.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;j</b> <i class="arg">name</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
 Specifies the <i class="arg">name</i> of the jail to filter by.</dd>
@@ -815,7 +819,7 @@ Be also careful to not begin the name of the jail by a number if you are not in 
 <tbody>
 <tr>
 <td class="foot-date">
-April 24, 2014</td>
+April 25, 2014</td>
 <td class="foot-os" align="right">
 FreeBSD 11.0</td>
 </tr>

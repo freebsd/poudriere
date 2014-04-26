@@ -121,6 +121,7 @@ _status=(
         '-a[show all builds, not just currently running]'
         '-b[show builder details]'
         '-B[which build to match on]:buildname'
+        '-c[show a more compact output]'
 	'-j[run only inside the given jail]::name:_poudriere_jail'
         '-l[show logs instead of URL]'
 	'-p[specify on which portstree we work]::tree:_poudriere_pt'

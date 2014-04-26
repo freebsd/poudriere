@@ -34,6 +34,7 @@ Options:
     -b          -- Display status of each builder for the matched build.
     -B name     -- What buildname to use (must be unique, defaults to
                    "latest")
+    -c          -- Compact output (shorter headers and no logs/url)
     -j name     -- Run on the given jail
     -p tree     -- Specify on which ports tree to match for the build.
     -l          -- Show logs instead of URL.
@@ -53,12 +54,13 @@ SETNAME=
 BUILDNAME=latest
 SCRIPT_MODE=0
 ALL=0
+COMPACT=0
 URL=1
 BUILDER_INFO=0
 
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "abB:j:lp:Hz:" FLAG; do
+while getopts "abB:cj:lp:Hz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			ALL=1
@@ -69,6 +71,9 @@ while getopts "abB:j:lp:Hz:" FLAG; do
 		B)
 			BUILDNAME="${OPTARG}"
 			ALL=1
+			;;
+		c)
+			COMPACT=1
 			;;
 		j)
 			JAILNAME=${OPTARG}
@@ -115,19 +120,30 @@ $@"
 	fi
 }
 
-columns=13
-if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
-	format="%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds %%-%ds"
-	if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
-		url_logs="URL"
-	else
-		url_logs="LOGS"
-	fi
-	add_display "JAIL" "PORTSTREE" "SET" "BUILD" "STATUS" "QUEUED" \
-	    "BUILT" "FAILED" "SKIPPED" "IGNORED" "TOBUILD" \
-	    "TIME" "${url_logs}"
+if [ ${COMPACT} -eq 0 ]; then
+	columns=13
 else
-	format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"
+	columns=12
+fi
+if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
+	format="%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds"
+	[ ${COMPACT} -eq 0 ] && format="${format} %%-%ds"
+	if [ ${COMPACT} -eq 0 ]; then 
+		if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
+			url_logs="URL"
+		else
+			url_logs="LOGS"
+		fi
+		add_display "JAIL" "PORTS" "SET" "BUILD" "STATUS" "QUEUED" \
+		    "BUILT" "FAILED" "SKIPPED" "IGNORED" "TOBUILD" \
+		    "TIME" "${url_logs}"
+	else
+		add_display "JAIL" "PORTS" "SET" "BUILD" "STATUS" "Q" \
+		    "B" "F" "S" "I" "R" "TIME"
+	fi
+else
+	format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"
+	[ ${COMPACT} -eq 0 ] && format="${format}\t%s"
 fi
 
 found_jobs=0
@@ -171,16 +187,19 @@ for mastermnt in ${POUDRIERE_DATA}/logs/bulk/*; do
 		elapsed=${_elapsed_time}
 		time=$(date -j -u -r ${elapsed} "+${DURATION_FORMAT}")
 
-		if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
-			url="${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"
-		else
-			url="${log}"
+		url=
+		if [ ${COMPACT} -eq 0 ]; then
+			if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
+				url="${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"
+			else
+				url="${log}"
+			fi
 		fi
 		add_display "${jailname}" "${ptname}" "${setname:-!}" \
 		    "${BUILDNAME}" "${status:-?}" "${nbqueued:-?}" \
 		    "${nbbuilt:-?}" "${nbfailed:-?}" "${nbskipped:-?}" \
 		    "${nbignored:-?}" "${nbtobuild:-?}" "${time:-?}" \
-		    "${url:-?}"
+		    "${url}"
 	else
 
 		builders="$(bget builders 2>/dev/null || :)"
