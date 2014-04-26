@@ -2462,11 +2462,12 @@ stop_build() {
 # Crazy redirection is to add the portname into stderr.
 # Idea from http://superuser.com/a/453609/34747
 mangle_stderr() {
-	local msg_type="$1"
+	local msg_start="$1"
 	local extra="$2"
+	local msg_end="$3"
 	local - # Make `set +x` local
 
-	shift 2
+	shift 3
 
 	set +x
 
@@ -2478,8 +2479,10 @@ mangle_stderr() {
 				} 2>&3
 			} 3>&1 1>&2 | \
 				awk \
-					-v msg_type="${msg_type}" -v extra="${extra}" \
-					'{print msg_type, extra ":", $0}' 1>&3
+				    -v msg_start="${msg_start}" \
+				    -v msg_end="${msg_end}" \
+				    -v extra="${extra}" \
+				    '{print msg_start, extra ":", $0, msg_end}' 1>&3
 		} 3>&2 2>&1
 	}
 }
@@ -2489,7 +2492,10 @@ list_deps() {
 	local dir="/usr/ports/$1"
 	local makeargs="-VPKG_DEPENDS -VBUILD_DEPENDS -VEXTRACT_DEPENDS -VLIB_DEPENDS -VPATCH_DEPENDS -VFETCH_DEPENDS -VRUN_DEPENDS"
 
-	mangle_stderr "WARNING" "($1)" injail make -C ${dir} $makeargs | \
+	mangle_stderr "${COLOR_WARN}WARNING" \
+		"(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
+		"${COLOR_RESET}" \
+		injail make -C ${dir} $makeargs | \
 		sed -e "s,[[:graph:]]*/usr/ports/,,g" \
 		-e "s,:[[:graph:]]*,,g" -e '/^$/d' | tr ' ' '\n' | \
 		sort -u || err 1 "Makefile broken: $1"
