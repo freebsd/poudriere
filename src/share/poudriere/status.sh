@@ -311,5 +311,4 @@ if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
 	[ -t 0 ] && \
 	    [ -n "${JAILNAME}" -a ${BUILDER_INFO} -eq 0 ] && \
 	    msg "Use -b to show detailed builder output."
-	msg "Found ${found_jobs} matching builds."
 fi
