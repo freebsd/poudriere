@@ -183,6 +183,10 @@ run_hook() {
 	return 0
 }
 
+stripcolors() {
+	cat -uv | sed -lE "s/\^\[\[([0-9]{1,2}(;[0-9]{1,2})?)?[mK]//g"
+}
+
 add_ts() {
 	while read -r line; do
 		echo "$(date "+%Y%m%d%H%M.%S") ${line}";
@@ -214,9 +218,10 @@ log_start() {
 	exec 3>&1 4>&2
 	[ ! -e ${logfile}.pipe ] && mkfifo ${logfile}.pipe
 	{
-		local add_ts_pipe
+		local stripcolors_pipe add_ts_pipe
+		[ "${USE_COLORS}" = "yes" ] && stripcolors_pipe="stripcolors |"
 		[ "${TIMESTAMP_LOGS}" = "yes" ] && add_ts_pipe="add_ts |"
-		eval ${add_ts_pipe} tee ${logfile}
+		eval ${stripcolors_pipe} ${add_ts_pipe} tee ${logfile}
 	} < ${logfile}.pipe >&3 &
 	export tpid=$!
 	exec > ${logfile}.pipe 2>&1

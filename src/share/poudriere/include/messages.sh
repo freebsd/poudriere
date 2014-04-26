@@ -25,7 +25,11 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-if [ -t 1 ] && [ -t 2 ] && [ ${USE_COLORS} = "yes" ]; then
+if ! [ -t 1 ] && ! [ -t 2 ]; then
+	USE_COLORS="no"
+fi
+
+if [ ${USE_COLORS} = "yes" ]; then
 	COLOR_RESET="\033[0;0m"
 	COLOR_RESET_REAL="${COLOR_RESET}"
 	COLOR_BOLD="\033[1m"
