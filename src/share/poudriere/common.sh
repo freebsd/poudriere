@@ -473,7 +473,7 @@ siginfo_handler() {
 	local log
 	local queue_width=2
 	local now
-	local j elapsed
+	local j elapsed job_id_color
 	local pkgname origin phase buildtime
 	local format_origin_phase format_phase
 
@@ -512,9 +512,6 @@ siginfo_handler() {
 	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" \
 	    -a "${status}" != "stopping_jobs:" -a -n "${MASTERMNT}" ] && \
 	    ! status_is_stopped "${status}"; then
-		format_origin_phase="\t[%s]: %-32s %-15s (%s)\n"
-		format_phase="\t[%s]: %15s\n"
-
 		# Collect build stats into a string with minimal execs
 		pkgname_buildtimes=$(find ${MASTERMNT}/poudriere/building -depth 1 \
 			-exec stat -f "%N %m" {} + 2>/dev/null | \
@@ -529,6 +526,12 @@ siginfo_handler() {
 			[ "${status}" = "idle:" ] && continue
 			origin=${status#*:}
 			phase="${status%:*}"
+			colorize_job_id job_id_color "${j}"
+
+			# Must put colors in format
+			format_origin_phase="\t[${job_id_color}%s${COLOR_RESET}]: ${COLOR_PORT}%-32s ${COLOR_PHASE}%-15s${COLOR_RESET} (%s)\n"
+			format_phase="\t[${job_id_color}%s${COLOR_RESET}]: ${COLOR_PHASE}%15s${COLOR_RESET}\n"
+
 			if [ -n "${origin}" -a "${origin}" != "${status}" ]; then
 				cache_get_pkgname pkgname "${origin}"
 				# Find the buildtime for this pkgname
@@ -538,10 +541,10 @@ siginfo_handler() {
 					buildtime="${pkgname_buildtime#*!}"
 					break
 				done
-				printf "${format_origin_phase}" ${j} ${origin} ${phase} \
-					${buildtime}
+				printf "${format_origin_phase}" "${j}" \
+				    "${origin}" "${phase}" ${buildtime}
 			else
-				printf "${format_phase}" ${j} ${phase}
+				printf "${format_phase}" "${j}" "${phase}"
 			fi
 		done
 	fi
@@ -2329,7 +2332,8 @@ build_pkg() {
 	portdir="/usr/ports/${port}"
 
 	TIME_START_JOB=$(date +%s)
-	colorize_job_id
+	colorize_job_id COLOR_JOBID "${MY_JOBID}"
+
 	job_msg "Starting build of ${COLOR_PORT}${port}${COLOR_RESET}"
 	bset ${MY_JOBID} status "starting:${port}"
 

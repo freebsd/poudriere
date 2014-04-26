@@ -64,9 +64,12 @@ D_RIGHT="${COLOR_BOLD}]${COLOR_RESET}"
 : ${COLOR_DRY_MODE:=${COLOR_GREEN}}
 
 colorize_job_id() {
-	local color id usebold
+	[ $# -eq 2 ] || eargs colorize_job_id var_return job_id
+	local var_return="$1"
+	local job_id="$2"
+	local color usebold id
 
-	id=${MY_JOBID#0}
+	id=${job_id#0}
 
 	# Use bold if going over 14, supporting 28 builder colors.
 	if [ ${id} -gt 14 ]; then
@@ -92,7 +95,7 @@ colorize_job_id() {
 	*)  color="${COLOR_RESET}" ;;
 	esac
 
-	COLORED_MY_JOBID="${color}${usebold}${MY_JOBID}${COLOR_RESET}"
+	setvar "${var_return}" "${color}${usebold}"
 }
 
 msg_n() {
@@ -135,7 +138,7 @@ job_msg() {
 	if [ -n "${MY_JOBID}" ]; then
 		now=$(date +%s)
 		elapsed="$(date -j -u -r $((${now} - ${TIME_START_JOB})) "+${DURATION_FORMAT}")"
-		msg "[${COLORED_MY_JOBID}][${elapsed}] $1" >&5
+		msg "[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}][${elapsed}] $1" >&5
 	else
 		msg "$1"
 	fi
