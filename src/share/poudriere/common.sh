@@ -188,16 +188,6 @@ stripcolors() {
 	cat -uv | sed -lE "s/\^\[\[([0-9]{1,2}(;[0-9]{1,2})?)?[mK]//g"
 }
 
-add_ts() {
-	local now elapsed
-	while read -r line; do
-		now=$(date +%s)
-		elapsed="$(date -j -u -r $((${now} - ${TIME_START_JOB})) "+${DURATION_FORMAT}")"
-		echo "(${elapsed}) ${line}";
-	done
-	return 0
-}
-
 log_start() {
 	local log
 	local latest_log
@@ -224,7 +214,7 @@ log_start() {
 	{
 		local stripcolors_pipe add_ts_pipe
 		[ "${USE_COLORS}" = "yes" ] && stripcolors_pipe="stripcolors |"
-		[ "${TIMESTAMP_LOGS}" = "yes" ] && add_ts_pipe="add_ts |"
+		[ "${TIMESTAMP_LOGS}" = "yes" ] && add_ts_pipe="timestamp \"${TIME_START_JOB}\" \"(${DURATION_FORMAT}) \" |"
 		eval ${stripcolors_pipe} ${add_ts_pipe} tee ${logfile}
 	} < ${logfile}.pipe >&3 &
 	export tpid=$!
