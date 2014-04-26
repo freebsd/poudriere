@@ -1013,7 +1013,7 @@ commit_packages() {
 	[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] || return 0
 	if [ "${COMMIT_PACKAGES_ON_FAILURE}" = "no" ] &&
 	    _bget stats_failed stats_failed && [ ${stats_failed} -gt 0 ]; then
-		msg "Not committing packages to repository as failures were encountered"
+		msg_warn "Not committing packages to repository as failures were encountered"
 		return 0
 	fi
 
