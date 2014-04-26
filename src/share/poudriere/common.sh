@@ -105,8 +105,8 @@ _my_path() {
 	setvar "$1" "${MASTERMNT}${MY_JOBID+/../${MY_JOBID}}"
 }
 
-my_name() {
-	echo ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}
+_my_name() {
+	setvar "$1" "${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}"
 }
  
 log_path() {
@@ -120,23 +120,29 @@ _log_path() {
 }
 
 injail() {
-	jexec -U ${JUSER:-root} ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}${JNETNAME:+-${JNETNAME}} \
+	local name
+
+	_my_name name
+	jexec -U ${JUSER:-root} ${name}${JNETNAME:+-${JNETNAME}} \
 	    ${MAX_MEMORY_JEXEC} "$@"
 }
 
 jstart() {
-	local network="${localipargs}"
+	local name network
+
+	network="${localipargs}"
 
 	[ "${RESTRICT_NETWORKING}" = "yes" ] || network="${ipargs}"
 
-	jail -c persist name=${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}} \
+	_my_name name
+	jail -c persist name=${name} \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
-		host.hostname=${BUILDER_HOSTNAME-${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}} \
+		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${network} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
-	jail -c persist name=${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}-n \
+	jail -c persist name=${name}-n \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
-		host.hostname=${BUILDER_HOSTNAME-${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}} \
+		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${ipargs} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
 	if ! injail id ${PORTBUILD_USER} >/dev/null 2>&1 ; then
@@ -150,8 +156,11 @@ jstart() {
 }
 
 jstop() {
-	jail -r ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}} 2>/dev/null || :
-	jail -r ${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}-n 2>/dev/null || :
+	local name
+
+	_my_name name
+	jail -r ${name} 2>/dev/null || :
+	jail -r ${name}-n 2>/dev/null || :
 }
 
 eargs() {
@@ -2321,7 +2330,7 @@ build_pkg() {
 	local pkgname="$1"
 	local port portdir
 	local build_failed=0
-	local name=${MASTERNAME}-job-${MY_JOBID}
+	local name
 	local mnt
 	local failed_status failed_phase cnt
 	local clean_rdepends=0
@@ -2331,6 +2340,7 @@ build_pkg() {
 	local ret=0
 
 	_my_path mnt
+	_my_name name
 	_log_path log
 	trap '' SIGTSTP
 	[ -n "${MAX_MEMORY}" ] && ulimit -v ${MAX_MEMORY_BYTES}
