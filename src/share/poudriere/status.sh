@@ -244,7 +244,14 @@ if [ ${BUILDER_INFO} -eq 0 ]; then
 		format=$(printf "${format}" ${lengths})
 	fi
 
-	echo "${display}"|while read line; do
+	# Show header separately so it is not sorted
+	echo "${display}"| head -n 1| while read line; do
+		printf "${format}\n" ${line}
+	done
+
+	# Sort by SET,PTNAME,JAIL,BUILD
+	echo "${display}" | tail -n +2 | \
+	    sort -d -k3,3 -k2,2 -k1,1V -k4,4n | while read line; do
 		# The ! is to hack around empty values.
 		printf "${format}\n" ${line} | sed -e 's,!, ,g'
 	done
