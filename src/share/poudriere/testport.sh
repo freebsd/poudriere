@@ -223,7 +223,13 @@ TIME_START_JOB="$(date +%s)"
 log_start
 buildlog_start /usr/ports/${ORIGIN}
 ret=0
+
+# Don't show timestamps in msg() which goes to logs, only job_msg()
+# which goes to master
+NO_ELAPSED_IN_MSG=1
 build_port /usr/ports/${ORIGIN} || ret=$?
+unset NO_ELAPSED_IN_MSG
+
 if [ ${ret} -ne 0 ]; then
 	if [ ${ret} -eq 2 ]; then
 		failed_phase=$(awk -f ${AWKPREFIX}/processonelog2.awk \

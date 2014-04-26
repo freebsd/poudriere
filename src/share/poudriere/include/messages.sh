@@ -137,9 +137,10 @@ msg_warn() {
 }
 
 job_msg() {
-	local now elapsed
+	local now elapsed NO_ELAPSED_IN_MSG
 
 	if [ -n "${MY_JOBID}" ]; then
+		NO_ELAPSED_IN_MSG=0
 		now=$(date +%s)
 		elapsed="$(date -j -u -r $((${now} - ${TIME_START_JOB})) "+${DURATION_FORMAT}")"
 		msg "[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}][${elapsed}] $1" >&5

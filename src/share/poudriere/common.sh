@@ -40,6 +40,7 @@ was_a_jail_run() {
 }
 # Return true if output via msg() should show elapsed time
 should_show_elapsed() {
+	[ "${NO_ELAPSED_IN_MSG:-0}" -eq 1 ] && return 1
 	case "${0##*/}" in
 		daemon.sh) ;;
 		help.sh) ;;
@@ -2343,6 +2344,9 @@ build_pkg() {
 	portdir="/usr/ports/${port}"
 
 	TIME_START_JOB=$(date +%s)
+	# Don't show timestamps in msg() which goes to logs, only job_msg()
+	# which goes to master
+	NO_ELAPSED_IN_MSG=1
 	colorize_job_id COLOR_JOBID "${MY_JOBID}"
 
 	job_msg "Starting build of ${COLOR_PORT}${port}${COLOR_RESET}"
