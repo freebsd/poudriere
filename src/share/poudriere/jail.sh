@@ -583,12 +583,12 @@ info_jail() {
 	_log_path log
 	now=$(date +%s)
 
-	status=$(bget status 2>/dev/null || :)
-	nbq=$(bget stats_queued 2>/dev/null || :)
-	nbf=$(bget stats_failed 2>/dev/null || :)
-	nbi=$(bget stats_ignored 2>/dev/null || :)
-	nbs=$(bget stats_skipped 2>/dev/null || :)
-	nbb=$(bget stats_built 2>/dev/null || :)
+	_bget status status 2>/dev/null || :
+	_bget nbq stats_queued 2>/dev/null || nbq=0
+	_bget nbb stats_built 2>/dev/null || nbb=0
+	_bget nbf stats_failed 2>/dev/null || nbf=0
+	_bget nbi stats_ignored 2>/dev/null || nbi=0
+	_bget nbs stats_skipped 2>/dev/null || nbs=0
 	tobuild=$((nbq - nbb - nbf - nbi - nbs))
 
 	echo "Jail name:         ${JAILNAME}"

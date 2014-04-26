@@ -261,14 +261,10 @@ failed=$(bget ports.failed | awk '{print $1 ":" $3 }' | xargs echo)
 built=$(bget ports.built | awk '{print $1}' | xargs echo)
 ignored=$(bget ports.ignored | awk '{print $1}' | xargs echo)
 skipped=$(bget ports.skipped | awk '{print $1}' | sort -u | xargs echo)
-nbfailed=$(bget stats_failed)
-nbignored=$(bget stats_ignored)
-nbskipped=$(bget stats_skipped)
-nbbuilt=$(bget stats_built)
-[ "$nbfailed" = "-" ] && nbfailed=0
-[ "$nbignored" = "-" ] && nbignored=0
-[ "$nbskipped" = "-" ] && nbskipped=0
-[ "$nbbuilt" = "-" ] && nbbuilt=0
+_bget nbbuilt stats_built
+_bget nbfailed stats_failed
+_bget nbignored stats_ignored
+_bget nbskipped stats_skipped
 # Always create repository if it is missing (but still respect -T)
 if [ $PKGNG -eq 1 ] && \
 	[ ! -f ${MASTERMNT}/packages/digests.txz -o \

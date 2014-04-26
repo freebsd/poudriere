@@ -405,9 +405,10 @@ badd() {
 }
 
 update_stats() {
-	local type
+	local type unused
 	for type in built failed ignored; do
-		bset stats_${type} $(bget ports.${type} | wc -l)
+		_bget unused "ports.${type}"
+		bset "stats_${type}" ${_read_file_lines_read}
 	done
 	# Skipped may have duplicates in it
 	bset stats_skipped $(bget ports.skipped | awk '{print $1}' | \
@@ -463,14 +464,7 @@ siginfo_handler() {
 	[ "${POUDRIERE_BUILD_TYPE}" != "bulk" ] && return 0
 
 	trappedinfo=1
-	local status=$(bget status 2> /dev/null || echo unknown)
-	local nbb=$(bget stats_built 2>/dev/null || echo 0)
-	local nbf=$(bget stats_failed 2>/dev/null || echo 0)
-	local nbs=$(bget stats_skipped 2>/dev/null || echo 0)
-	local nbi=$(bget stats_ignored 2>/dev/null || echo 0)
-	local nbq=$(bget stats_queued 2>/dev/null || echo 0)
-	local ndone=$((nbb + nbf + nbi + nbs))
-	local nbtobuild=$((nbq - ndone))
+	local status nbb nbf nbs nbi nbq ndone nbtobuild
 	local log
 	local queue_width=2
 	local now
@@ -478,9 +472,19 @@ siginfo_handler() {
 	local pkgname origin phase buildtime
 	local format_origin_phase format_phase
 
+	_bget nbq stats_queued 2>/dev/null || nbq=0
 	[ -n "${nbq}" ] || return 0
+
+	_bget status status 2>/dev/null || status=unknown
 	[ "${status}" = "index:" -o "${status#stopped:}" = "crashed:" ] && \
 	    return 0
+
+	_bget nbf stats_failed 2>/dev/null || nbf=0
+	_bget nbi stats_ignored 2>/dev/null || nbi=0
+	_bget nbs stats_skipped 2>/dev/null || nbs=0
+	_bget nbb stats_built 2>/dev/null || nbb=0
+	ndone=$((nbb + nbf + nbi + nbs))
+	nbtobuild=$((nbq - ndone))
 
 	if [ ${nbq} -gt 9999 ]; then
 		queue_width=5
@@ -513,7 +517,7 @@ siginfo_handler() {
 
 		for j in ${JOBS}; do
 			# Ignore error here as the zfs dataset may not be cloned yet.
-			status=$(bget ${j} status 2>/dev/null || :)
+			_bget status ${j} status 2>/dev/null || :
 			# Skip builders not started yet
 			[ -z "${status}" ] && continue
 			# Hide idle workers
@@ -1004,11 +1008,11 @@ stash_packages() {
 }
 
 commit_packages() {
-	local pkgdir_old pkgdir_new
+	local pkgdir_old pkgdir_new stats_failed
 
 	[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] || return 0
 	if [ "${COMMIT_PACKAGES_ON_FAILURE}" = "no" ] &&
-	    [ $(bget stats_failed) -gt 0 ]; then
+	    _bget stats_failed stats_failed && [ ${stats_failed} -gt 0 ]; then
 		msg "Not committing packages to repository as failures were encountered"
 		return 0
 	fi
@@ -1266,7 +1270,7 @@ jail_stop() {
 	local last_status
 
 	# Don't override if there is a failure to grab the last status.
-	last_status=$(bget status 2>/dev/null || :)
+	_bget last_status status 2>/dev/null | :
 	[ -n "${last_status}" ] && bset status "stopped:${last_status}" \
 	    2>/dev/null || :
 
@@ -2066,7 +2070,7 @@ build_queue() {
 				read pkgname < ${MASTERMNT}/poudriere/var/run/${j}.pkgname
 				rm -f ${MASTERMNT}/poudriere/var/run/${j}.pid \
 					${MASTERMNT}/poudriere/var/run/${j}.pkgname
-				status=$(bget ${j} status)
+				_bget status ${j} status
 				if [ "${status%%:*}" = "stopped" ]; then
 					mark_done ${pkgname}
 					bset ${j} status "idle:"
@@ -2165,13 +2169,16 @@ stop_html_json() {
 }
 
 calculate_tobuild() {
-	local nbq=$(bget stats_queued)
-	local nbb=$(bget stats_built)
-	local nbf=$(bget stats_failed)
-	local nbi=$(bget stats_ignored)
-	local nbs=$(bget stats_skipped)
-	local ndone=$((nbb + nbf + nbi + nbs))
-	local nremaining=$((nbq - ndone))
+	local nbq nbb nbf nbi nbsndone nremaining
+
+	_bget nbq stats_queued 2>/dev/null || nbq=0
+	_bget nbb stats_built 2>/dev/null || nbb=0
+	_bget nbf stats_failed 2>/dev/null || nbf=0
+	_bget nbi stats_ignored 2>/dev/null || nbi=0
+	_bget nbs stats_skipped 2>/dev/null || nbs=0
+
+	ndone=$((nbb + nbf + nbi + nbs))
+	nremaining=$((nbq - ndone))
 
 	echo ${nremaining}
 }
@@ -2370,7 +2377,7 @@ build_pkg() {
 					${log}/logs/${PKGNAME}.log \
 					2> /dev/null)
 			else
-				failed_status=$(bget ${MY_JOBID} status)
+				_bget failed_status ${MY_JOBID} status
 				failed_phase=${failed_status%:*}
 			fi
 
