@@ -178,7 +178,7 @@ add_build() {
 		fi
 		status="${status#stopped:}"
 		status="${status%:}"
-		add_display "${setname:-!}" "${ptname}" "${jailname}" \
+		add_display "${setname:--}" "${ptname}" "${jailname}" \
 		    "${BUILDNAME}" "${status:-?}" "${nbqueued:-?}" \
 		    "${nbbuilt:-?}" "${nbfailed:-?}" "${nbskipped:-?}" \
 		    "${nbignored:-?}" "${nbtobuild:-?}" "${time:-?}" \
@@ -305,8 +305,7 @@ if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
 	# Sort by SET,PTNAME,JAIL,BUILD
 	echo "${display}" | tail -n +2 | \
 	    sort -d -k1,1V -k2,2 -k3,3 -k4,4n | while read line; do
-		# The ! is to hack around empty values.
-		printf "${format}\n" ${line} | sed -e 's,!, ,g'
+		printf "${format}\n" ${line}
 	done
 
 	[ -t 0 ] && \
