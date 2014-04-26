@@ -185,6 +185,7 @@ add_build() {
 
 		_bget builders builders 2>/dev/null || :
 
+		MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 		JOBS="${builders}" siginfo_handler
 	fi
 }

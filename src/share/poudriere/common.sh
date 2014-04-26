@@ -510,7 +510,7 @@ siginfo_handler() {
 
 	# Skip if stopping or starting jobs or stopped.
 	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" \
-	    -a "${status}" != "stopping_jobs:" ] && \
+	    -a "${status}" != "stopping_jobs:" -a -n "${MASTERMNT}" ] && \
 	    ! status_is_stopped "${status}"; then
 		format_origin_phase="\t[%s]: %-32s %-15s (%s)\n"
 		format_phase="\t[%s]: %15s\n"
