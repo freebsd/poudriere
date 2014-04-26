@@ -2907,16 +2907,16 @@ cache_get_pkgname() {
 	# Add to cache if not found.
 	if [ -z "${_pkgname}" ]; then
 		[ -d "${MASTERMNT}/usr/ports/${origin}" ] ||
-			err 1 "Invalid port origin '${origin}' not found."
+			err 1 "Invalid port origin '${COLOR_PORT}${origin}${COLOR_RESET}' not found."
 		_pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME ||
-			err 1 "Error getting PKGNAME for ${origin}")
-		[ -n "${_pkgname}" ] || err 1 "Missing PKGNAME for ${origin}"
+			err 1 "Error getting PKGNAME for ${COLOR_PORT}${origin}${COLOR_RESET}")
+		[ -n "${_pkgname}" ] || err 1 "Missing PKGNAME for ${COLOR_PORT}${origin}${COLOR_RESET}"
 		# Make sure this origin did not already exist
 		cache_get_origin existing_origin "${_pkgname}" 2>/dev/null || :
 		# It may already exist due to race conditions, it is not harmful. Just ignore.
 		if [ "${existing_origin}" != "${origin}" ]; then
 			[ -n "${existing_origin}" ] &&
-				err 1 "Duplicated origin for ${_pkgname}: ${origin} AND ${existing_origin}. Rerun with -vv to see which ports are depending on these."
+				err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${origin}${COLOR_RESET} AND ${COLOR_PORT}${existing_origin}${COLOR_RESET}. Rerun with -vv to see which ports are depending on these."
 			echo "${_pkgname}" > ${cache_origin_pkgname}
 			cache_pkgname_origin="${MASTERMNT}/poudriere/var/cache/pkgname-origin/${_pkgname}"
 			echo "${origin}" > "${cache_pkgname_origin}"
@@ -3007,7 +3007,7 @@ compute_deps_port() {
 			err 1 "${port} incorrectly depends on itself. Please contact maintainer of the port to fix this."
 		# Detect bad cat/origin/ dependency which pkgng will not register properly
 		[ "${dep_port}" = "${dep_port%/}" ] ||
-			err 1 "${port} depends on bad origin '${dep_port}'; Please contact maintainer of the port to fix this."
+			err 1 "${COLOR_PORT}${port}${COLOR_RESET} depends on bad origin '${COLOR_PORT}${dep_port}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
 		cache_get_pkgname dep_pkgname "${dep_port}"
 
 		# Only do this if it's not already done, and not ALL, as everything will
