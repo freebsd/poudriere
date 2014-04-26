@@ -39,6 +39,10 @@ poudriere</td>
 <b class="flag">&#45;e</b> <i class="arg">etcdir</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
 Path to the directory where poudriere will find its configuration data. See <i class="link-sec"><a class="link-sec" href="#x46494c4553">FILES</a></i> and <i class="link-sec"><a class="link-sec" href="#x454e5649524f4e4d454e54">ENVIRONMENT</a></i> for more information.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;N</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Disable color support.</dd>
 </dl>
 </div>
 <div class="section">
