@@ -580,7 +580,7 @@ info_jail() {
 	POUDRIERE_BUILD_TYPE=bulk
 	BUILDNAME=latest
 
-	log=$(log_path)
+	_log_path log
 	now=$(date +%s)
 
 	status=$(bget status 2>/dev/null || :)

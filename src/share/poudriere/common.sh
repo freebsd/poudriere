@@ -184,8 +184,10 @@ run_hook() {
 }
 
 log_start() {
-	local log=$(log_path)
+	local log
 	local latest_log
+
+	_log_path log
 
 	logfile="${log}/logs/${PKGNAME}.log"
 	latest_log=${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/latest-per-pkg/${PKGNAME%-*}/${PKGNAME##*-}
@@ -279,9 +281,10 @@ buildlog_stop() {
 	[ $# -eq 2 ] || eargs buildlog_stop portdir build_failed
 	local portdir=$1
 	local build_failed="$2"
-	local log=$(log_path)
+	local log
 	local buildtime
 
+	_log_path log
 	buildtime=$( \
 		stat -f '%N %B' ${log}/logs/${PKGNAME}.log  | awk -v now=$(date +%s) \
 		-f ${AWKPREFIX}/siginfo_buildtime.awk |
@@ -375,8 +378,8 @@ bget() {
 
 bset() {
 	was_a_bulk_run || return 0
-	local id property mnt
-	local log=$(log_path)
+	local id property mnt log
+	_log_path log
 	if [ $# -eq 3 ]; then
 		id=$1
 		shift
@@ -390,8 +393,8 @@ bset() {
 }
 
 badd() {
-	local id property mnt
-	local log=$(log_path)
+	local id property mnt log
+	_log_path log
 	if [ $# -eq 3 ]; then
 		id=$1
 		shift
@@ -448,7 +451,9 @@ exit_handler() {
 }
 
 show_log_info() {
-	local log=$(log_path)
+	local log
+
+	_log_path log
 	msg "Logs: ${log}"
 	[ -z "${URL_BASE}" ] ||
 		msg "WWW: ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"
@@ -466,7 +471,7 @@ siginfo_handler() {
 	local nbq=$(bget stats_queued 2>/dev/null || echo 0)
 	local ndone=$((nbb + nbf + nbi + nbs))
 	local nbtobuild=$((nbq - ndone))
-	local log=$(log_path)
+	local log
 	local queue_width=2
 	local now
 	local j elapsed
@@ -485,6 +490,7 @@ siginfo_handler() {
 		queue_width=3
 	fi
 
+	_log_path log
 	now=$(date +%s)
 	calculate_elapsed ${now} ${log}
 	elapsed=${_elapsed_time}
@@ -1496,7 +1502,7 @@ _real_build_port() {
 	local portdir=$1
 	local port=${portdir##/usr/ports/}
 	local mnt=$(my_path)
-	local log=$(log_path)
+	local log
 	local listfilecmd network
 	local hangstatus
 	local pkgenv phaseenv
@@ -1507,6 +1513,7 @@ _real_build_port() {
 	local testfailure=0
 	local max_execution_time
 
+	_log_path log
 	# Must install run-depends as 'actual-package-depends' and autodeps
 	# only consider installed packages as dependencies
 	if [ -n "${no_stage}" ]; then
@@ -2125,7 +2132,9 @@ json_main() {
 }
 
 build_json() {
-	local log=$(log_path)
+	local log
+
+	_log_path log
 	awk \
 		-f ${AWKPREFIX}/json.awk ${log}/.poudriere.*[!%] | \
 		awk 'ORS=""; {print}' | \
@@ -2143,7 +2152,9 @@ build_json() {
 }
 
 stop_html_json() {
-	local log=$(log_path)
+	local log
+
+	_log_path log
 	if [ -n "${JSON_PID}" ]; then
 		kill ${JSON_PID} 2>/dev/null || :
 		_wait ${JSON_PID} 2>/dev/null || :
@@ -2292,11 +2303,12 @@ build_pkg() {
 	local mnt=$(my_path)
 	local failed_status failed_phase cnt
 	local clean_rdepends=0
-	local log=$(log_path)
+	local log
 	local ignore
 	local errortype
 	local ret=0
 
+	_log_path log
 	trap '' SIGTSTP
 	[ -n "${MAX_MEMORY}" ] && ulimit -v ${MAX_MEMORY_BYTES}
 
@@ -3141,10 +3153,11 @@ check_moved() {
 
 prepare_ports() {
 	local pkg
-	local log=$(log_path)
+	local log
 	local n pn nbq resuming_build
 	local cache_dir
 
+	_log_path log
 	mkdir -p "${MASTERMNT}/poudriere"
 	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs data "${MASTERMNT}/poudriere"
 	rm -rf "${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
