@@ -898,8 +898,8 @@ EOF
 		    /usr/bin/login -fp root || :
 	elif [ ${INTERACTIVE_MODE} -eq 2 ]; then
 		# XXX: Not tested/supported with bulk yet.
-		msg "Leaving jail ${MASTERNAME} running, mounted at ${MASTERMNT} for interactive run testing"
-		msg "To enter jail: jexec ${MASTERNAME} env -i TERM=\$TERM /usr/bin/login -fp root"
+		msg "Leaving jail ${MASTERNAME}-n running, mounted at ${MASTERMNT} for interactive run testing"
+		msg "To enter jail: jexec ${MASTERNAME}-n env -i TERM=\$TERM /usr/bin/login -fp root"
 		stopmsg="-j ${JAILNAME}"
 		[ -n "${SETNAME}" ] && stopmsg="${stopmsg} -z ${SETNAME}"
 		[ -n "${PTNAME#default}" ] && stopmsg="${stopmsg} -p ${PTNAME}"
