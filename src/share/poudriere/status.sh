@@ -103,13 +103,6 @@ ORIG_BUILDNAME="${BUILDNAME}"
 POUDRIERE_BUILD_TYPE=bulk
 now="$(date +%s)"
 
-if [ ${SCRIPT_MODE} -eq 0 ] && [ -t 0 ]; then
-	[ ${ALL} -eq 0 ] && \
-	    msg "Only showing running builds Use -a to show all."
-	[ -n "${JAILNAME}" -a ${BUILDER_INFO} -eq 0 ] && \
-	    msg "Use -b to show detailed builder output."
-fi
-
 display=
 add_display() {
 	if [ -z "${display}" ]; then
@@ -212,7 +205,7 @@ if [ ${BUILDER_INFO} -eq 0 ]; then
 	if [ ${found_jobs} -eq 0 ]; then
 		if [ ${SCRIPT_MODE} -eq 0 ]; then
 			if [ ${ALL} -eq 0 ]; then
-				msg "No running builds."
+				msg "No running builds. Use -a to show finished builds."
 			else
 				msg "No matching builds found."
 			fi
@@ -255,4 +248,8 @@ if [ ${BUILDER_INFO} -eq 0 ]; then
 		# The ! is to hack around empty values.
 		printf "${format}\n" ${line} | sed -e 's,!, ,g'
 	done
+
+	[ ${SCRIPT_MODE} -eq 0 ] && [ -t 0 ] && \
+	    [ -n "${JAILNAME}" -a ${BUILDER_INFO} -eq 0 ] && \
+	    msg "Use -b to show detailed builder output."
 fi
