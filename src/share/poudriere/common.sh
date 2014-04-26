@@ -101,8 +101,8 @@ err() {
 	exit $1
 }
 
-my_path() {
-	echo ${MASTERMNT}${MY_JOBID+/../${MY_JOBID}}
+_my_path() {
+	setvar "$1" "${MASTERMNT}${MY_JOBID+/../${MY_JOBID}}"
 }
 
 my_name() {
@@ -228,8 +228,10 @@ log_start() {
 
 buildlog_start() {
 	local portdir=$1
-	local mnt=$(my_path)
+	local mnt
 	local var
+
+	_my_path mnt
 
 	echo "build started at $(date)"
 	echo "port directory: ${portdir}"
@@ -898,7 +900,9 @@ use_options() {
 }
 
 mount_packages() {
-	local mnt=$(my_path)
+	local mnt
+
+	_my_path mnt
 	${NULLMOUNT} "$@" ${PACKAGES} \
 		${mnt}/packages ||
 		err 1 "Failed to mount the packages directory "
@@ -1515,7 +1519,7 @@ _real_build_port() {
 	[ $# -ne 1 ] && eargs _real_build_port portdir
 	local portdir=$1
 	local port=${portdir##/usr/ports/}
-	local mnt=$(my_path)
+	local mnt
 	local log
 	local listfilecmd network
 	local hangstatus
@@ -1527,6 +1531,7 @@ _real_build_port() {
 	local testfailure=0
 	local max_execution_time
 
+	_my_path mnt
 	_log_path log
 	# Must install run-depends as 'actual-package-depends' and autodeps
 	# only consider installed packages as dependencies
@@ -1934,7 +1939,7 @@ start_builder() {
 	local mnt
 
 	export MY_JOBID=${id}
-	mnt=$(my_path)
+	_my_path mnt
 
 	# Jail might be lingering from previous build. Already recursively
 	# destroyed all the builder datasets, so just try stopping the jail
@@ -2317,7 +2322,7 @@ build_pkg() {
 	local port portdir
 	local build_failed=0
 	local name=${MASTERNAME}-job-${MY_JOBID}
-	local mnt=$(my_path)
+	local mnt
 	local failed_status failed_phase cnt
 	local clean_rdepends=0
 	local log
@@ -2325,6 +2330,7 @@ build_pkg() {
 	local errortype
 	local ret=0
 
+	_my_path mnt
 	_log_path log
 	trap '' SIGTSTP
 	[ -n "${MAX_MEMORY}" ] && ulimit -v ${MAX_MEMORY_BYTES}
@@ -2440,8 +2446,9 @@ stop_build() {
 	[ $# -eq 2 ] || eargs stop_build portdir build_failed
 	local portdir="$1"
 	local build_failed="$2"
-	local mnt=$(my_path)
+	local mnt
 
+	_my_path mnt
 	umount -f ${mnt}/new_packages 2>/dev/null || :
 	rm -rf "${PACKAGES}/.new_packages/${PKGNAME}"
 
@@ -2632,8 +2639,9 @@ pkg_get_options() {
 }
 
 ensure_pkg_installed() {
-	local mnt=$(my_path)
+	local mnt
 
+	_my_path mnt
 	[ ${PKGNG} -eq 1 ] || return 0
 	[ -x ${mnt}/poudriere/pkg-static ] && return 0
 	[ -e ${MASTERMNT}/packages/Latest/pkg.txz ] || return 1 #pkg missing
@@ -2742,7 +2750,7 @@ delete_old_pkg() {
 	pkg_get_origin o "${pkg}"
 	port_is_needed "${o}" || return 0
 
-	mnt=$(my_path)
+	_my_path mnt
 
 	if [ ! -d "${mnt}/usr/ports/${o}" ]; then
 		msg "${o} does not exist anymore. Deleting stale ${pkg##*/}"
