@@ -132,7 +132,7 @@ else
 fi
 if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
 	format="%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds"
-	[ ${COMPACT} -eq 0 ] && format="${format} %%-%ds"
+	[ ${COMPACT} -eq 0 ] && format="${format} %%s"
 	if [ ${COMPACT} -eq 0 ]; then 
 		if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
 			url_logs="URL"
@@ -289,7 +289,7 @@ if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
 
 	# Set format lengths
 	lengths=
-	for n in $(jot ${columns} 0); do
+	for n in $(jot $((${columns} - 1)) 0); do
 		hash_get lengths ${n} length
 		lengths="${lengths} ${length}"
 	done
