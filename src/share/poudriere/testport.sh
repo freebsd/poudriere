@@ -244,7 +244,7 @@ if [ ${ret} -ne 0 ]; then
 
 	if [ ${INTERACTIVE_MODE} -eq 0 ]; then
 		stop_build /usr/ports/${ORIGIN} 1
-		err 1 "Build failed in phase: ${failed_phase}"
+		err 1 "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
 	fi
 else
 	badd ports.built "${ORIGIN} ${PKGNAME}"
@@ -269,7 +269,7 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 		# Since failure was skipped earlier, fail now after leaving
 		# jail.
 		[ -z "${failed_phase}" ] ||
-		    err 1 "Build failed in phase: ${failed_phase}"
+		    err 1 "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
 	elif [ ${INTERACTIVE_MODE} -eq 2 ]; then
 		exit 0
 	fi
