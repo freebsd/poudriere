@@ -87,11 +87,11 @@ list_jail() {
 	for j in $(find ${POUDRIERED}/jails -type d -maxdepth 1 -mindepth 1 -print); do
 		name=${j##*/}
 		if [ ${NAMEONLY} -eq 0 ]; then
-			version=$(jget ${name} version)
-			arch=$(jget ${name} arch)
-			method=$(jget ${name} method)
-			mnt=$(jget ${name} mnt)
-			timestamp=$(jget ${name} timestamp 2>/dev/null || :)
+			_jget version ${name} version
+			_jget arch ${name} arch
+			_jget method ${name} method
+			_jget mnt ${name} mnt
+			_jget timestmap ${name} timestamp 2>/dev/null || :
 			time=
 			[ -n "${timestamp}" ] && \
 			    time="$(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
@@ -574,6 +574,8 @@ info_jail() {
 	local building_started status log
 	local elapsed elapsed_days elapsed_hms elapsed_timestamp
 	local now start_time timestamp
+	local jversion jarch jmethod pmethod
+
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	porttree_exists ${PTNAME} || err 1 "No such tree: ${PTNAME}"
 
@@ -591,16 +593,21 @@ info_jail() {
 	_bget nbs stats_skipped 2>/dev/null || nbs=0
 	tobuild=$((nbq - nbb - nbf - nbi - nbs))
 
+	_jget jversion ${JAILNAME} version
+	_jget jarch ${JAILNAME} arch
+	_jget jmethod ${JAILNAME} method
+	_jget timestamp ${JAILNAME} timestamp 2>/dev/null || :
+	_pget pmethod ${PTNAME} method
+
 	echo "Jail name:         ${JAILNAME}"
-	echo "Jail version:      $(jget ${JAILNAME} version)"
-	echo "Jail arch:         $(jget ${JAILNAME} arch)"
-	echo "Jail acquired:     $(jget ${JAILNAME} method)"
-	timestamp=$(jget ${JAILNAME} timestamp 2>/dev/null || :)
+	echo "Jail version:      ${jversion}"
+	echo "Jail arch:         ${jarch}"
+	echo "Jail acquired:     ${jmethod}"
 	if [ -n "${timestamp}" ]; then
 		echo "Jail updated:      $(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
 	fi
 	echo "Tree name:         ${PTNAME}"
-	echo "Tree acquired:     $(pget ${PTNAME} method)"
+	echo "Tree acquired:     ${pmethod:--}"
 #	echo "Tree updated:      $(pget ${PTNAME} timestamp)"
 	echo "Status:            ${status}"
 	if calculate_elapsed ${now} ${log}; then
@@ -738,9 +745,9 @@ shift $((OPTIND-1))
 
 METHOD=${METHOD:-ftp}
 if [ -n "${JAILNAME}" -a ${CREATE} -eq 0 ]; then
-	ARCH=$(jget ${JAILNAME} arch)
-	JAILFS=$(jget ${JAILNAME} fs 2>/dev/null || :)
-	JAILMNT=$(jget ${JAILNAME} mnt)
+	_jget ARCH ${JAILNAME} arch
+	_jget JAILFS ${JAILNAME} fs 2>/dev/null || :
+	_jget JAILMNT ${JAILNAME} mnt
 fi
 
 case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in

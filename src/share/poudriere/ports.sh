@@ -147,7 +147,7 @@ if [ ${LIST} -eq 1 ]; then
 	[ $QUIET -eq 0 ] &&
 		printf "${format}" "PORTSTREE" "METHOD" "TIMESTAMP" "PATH"
 	porttree_list | while read ptname ptmethod ptpath; do
-		timestamp=$(pget ${ptname} timestamp 2>/dev/null || :)
+		_pget timestamp ${ptname} timestamp 2>/dev/null || :
 		time=
 		[ -n "${timestamp}" ] && \
 		    time="$(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"

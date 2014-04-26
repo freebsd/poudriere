@@ -353,15 +353,42 @@ attr_set() {
 jset() { attr_set jails "$@" ; }
 pset() { attr_set ports "$@" ; }
 
+_attr_get() {
+	[ $# -eq 4 ] || eargs _attr_get var_return type name property
+	local var_return="$1"
+	local type="$2"
+	local name="$3"
+	local property="$4"
+
+	read_file "${var_return}" \
+	    "${POUDRIERED}/${type}/${name}/${property}" && return 0
+	setvar "${var_return}" ""
+	return 1
+}
+
 attr_get() {
-	local type=$1
-	local name=$2
-	local property=$3
-	cat ${POUDRIERED}/${type}/${name}/${property} || :
+	local attr_get_data
+
+	_attr_get attr_get_data "$@" || :
+	[ -n "${attr_get_data}" ] && echo "${attr_get_data}"
 }
 
 jget() { attr_get jails "$@" ; }
+_jget() {
+	[ $# -eq 3 ] || eargs _jget var_return ptname property
+	local var_return="$1"
+
+	shift
+	_attr_get "${var_return}" jails "$@"
+}
 pget() { attr_get ports "$@" ; }
+_pget() {
+	[ $# -eq 3 ] || eargs _pget var_return ptname property
+	local var_return="$1"
+
+	shift
+	_attr_get "${var_return}" ports "$@"
+}
 
 #build getter/setter
 _bget() {
@@ -578,8 +605,8 @@ porttree_list() {
 	[ -d ${POUDRIERED}/ports ] || return 0
 	for p in $(find ${POUDRIERED}/ports -type d -maxdepth 1 -mindepth 1 -print); do
 		name=${p##*/}
-		mnt=$(pget ${name} mnt)
-		method=$(pget ${name} method)
+		_pget mnt ${name} mnt 2>/dev/null || :
+		_pget method ${name} method 2>/dev/null || :
 		echo "${name} ${method:--} ${mnt}"
 	done
 }
@@ -917,8 +944,10 @@ do_portbuild_mounts() {
 	local jname=$2
 	local ptname=$3
 	local setname=$4
-	local portsdir=$(pget ${ptname} mnt)
+	local portsdir
 	local optionsdir
+
+	_pget portsdir ${ptname} mnt
 
 	[ -d ${portsdir}/ports ] && portsdir=${portsdir}/ports
 
@@ -1115,13 +1144,16 @@ jail_start() {
 	local name=$1
 	local ptname=$2
 	local setname=$3
-	local portsdir=$(pget ${ptname} mnt)
-	local arch=$(jget ${name} arch)
-	local mnt=$(jget ${name} mnt)
+	local portsdir
+	local arch
+	local mnt
 	local needfs="${NULLFSREF} procfs"
 	local needkld="sem"
-
 	local tomnt=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
+
+	_pget portsdir ${ptname} mnt
+	_jget arch ${name} arch
+	_jget mnt ${name} mnt
 
 	[ -d ${DISTFILES_CACHE:-/nonexistent} ] || err 1 "DISTFILES_CACHE directory does not exist. (c.f. poudriere.conf)"
 
@@ -3050,7 +3082,7 @@ listed_ports() {
 	local tell_moved="${1}"
 
 	if [ ${ALL} -eq 1 ]; then
-		PORTSDIR=$(pget ${PTNAME} mnt)
+		_pget PORTSDIR ${PTNAME} mnt
 		[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 		for cat in $(awk '$1 == "SUBDIR" { print $3}' ${PORTSDIR}/Makefile); do
 			awk -v cat=${cat} '$1 == "SUBDIR" { print cat"/"$3}' ${PORTSDIR}/${cat}/Makefile
