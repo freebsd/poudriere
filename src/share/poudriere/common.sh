@@ -209,13 +209,12 @@ log_start() {
 	ln -f ${logfile} ${log}/../latest-per-pkg/${PKGNAME}.log
 
 	# Tee all of the output to the logfile through a pipe
-	TIME_START_LOG="$(date +%s)"
 	exec 3>&1 4>&2
 	[ ! -e ${logfile}.pipe ] && mkfifo ${logfile}.pipe
 	{
 		local stripcolors_pipe add_ts_pipe
 		[ "${USE_COLORS}" = "yes" ] && stripcolors_pipe="stripcolors |"
-		[ "${TIMESTAMP_LOGS}" = "yes" ] && add_ts_pipe="timestamp \"${TIME_START_LOG}\" \"(${DURATION_FORMAT}) \" |"
+		[ "${TIMESTAMP_LOGS}" = "yes" ] && add_ts_pipe="timestamp \"(${DURATION_FORMAT}) \" |"
 		eval ${add_ts_pipe} ${stripcolors_pipe} tee ${logfile}
 	} < ${logfile}.pipe >&3 &
 	export tpid=$!

@@ -42,13 +42,13 @@ main(int argc, char **argv) {
 	ssize_t linelen;
 	struct tm *t;
 
-	if (argc != 3) {
-		fprintf(stderr, "Usage: timestamp <UTC starttime> <format>\n");
+	if (argc != 2) {
+		fprintf(stderr, "Usage: timestamp <format>\n");
 		exit(1);
 	}
 
-	start = (int)strtol(argv[1], (char **)NULL, 10);
-	format = argv[2];
+	start = time(NULL);
+	format = argv[1];
 	linecap = 0;
 	setlinebuf(stdout);
 
