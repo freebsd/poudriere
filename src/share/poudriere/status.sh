@@ -176,6 +176,8 @@ add_build() {
 				url="${log}"
 			fi
 		fi
+		status="${status#stopped:}"
+		status="${status%:}"
 		add_display "${setname:-!}" "${ptname}" "${jailname}" \
 		    "${BUILDNAME}" "${status:-?}" "${nbqueued:-?}" \
 		    "${nbbuilt:-?}" "${nbfailed:-?}" "${nbskipped:-?}" \
