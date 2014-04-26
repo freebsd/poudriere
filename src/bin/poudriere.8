@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd April 25, 2014
+.Dd April 26, 2014
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -616,6 +616,9 @@ There are no options associated with the
 .Cm queue
 command.
 .Ss status
+.Nm status
+sorts by SETNAME, PORTSTREE, JAILNAME and then BUILDNAME.
+.Pp
 This command accepts the following options:
 .Bl -tag -width "-f conffile"
 .It Fl a

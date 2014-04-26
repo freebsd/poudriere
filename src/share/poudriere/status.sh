@@ -139,11 +139,11 @@ if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
 		else
 			url_logs="LOGS"
 		fi
-		add_display "JAIL" "PORTS" "SET" "BUILD" "STATUS" "QUEUED" \
+		add_display "SET" "PORTS" "JAIL" "BUILD" "STATUS" "QUEUED" \
 		    "BUILT" "FAILED" "SKIPPED" "IGNORED" "TOBUILD" \
 		    "TIME" "${url_logs}"
 	else
-		add_display "JAIL" "PORTS" "SET" "BUILD" "STATUS" "Q" \
+		add_display "SET" "PORTS" "JAIL" "BUILD" "STATUS" "Q" \
 		    "B" "F" "S" "I" "R" "TIME"
 	fi
 else
@@ -176,7 +176,7 @@ add_build() {
 				url="${log}"
 			fi
 		fi
-		add_display "${jailname}" "${ptname}" "${setname:-!}" \
+		add_display "${setname:-!}" "${ptname}" "${jailname}" \
 		    "${BUILDNAME}" "${status:-?}" "${nbqueued:-?}" \
 		    "${nbbuilt:-?}" "${nbfailed:-?}" "${nbskipped:-?}" \
 		    "${nbignored:-?}" "${nbtobuild:-?}" "${time:-?}" \
@@ -302,7 +302,7 @@ if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
 
 	# Sort by SET,PTNAME,JAIL,BUILD
 	echo "${display}" | tail -n +2 | \
-	    sort -d -k3,3 -k2,2 -k1,1V -k4,4n | while read line; do
+	    sort -d -k1,1V -k2,2 -k3,3 -k4,4n | while read line; do
 		# The ! is to hack around empty values.
 		printf "${format}\n" ${line} | sed -e 's,!, ,g'
 	done

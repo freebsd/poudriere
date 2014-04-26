@@ -550,7 +550,8 @@ The <b class="flag">options</b> subcommand can also take the list of ports to co
 <h2 id="x7175657565">queue</h2> This command takes a <b class="name">poudriere</b> command in argument.<p>
 There are no options associated with the <b class="flag">queue</b> command.</div>
 <div class="subsection">
-<h2 id="x737461747573">status</h2> This command accepts the following options:<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<h2 id="x737461747573">status</h2> <b class="name">status</b> sorts by SETNAME, PORTSTREE, JAILNAME and then BUILDNAME.<p>
+This command accepts the following options:<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;a</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
@@ -827,7 +828,7 @@ Be also careful to not begin the name of the jail by a number if you are not in 
 <tbody>
 <tr>
 <td class="foot-date">
-April 25, 2014</td>
+April 26, 2014</td>
 <td class="foot-os" align="right">
 FreeBSD 11.0</td>
 </tr>
