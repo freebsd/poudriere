@@ -220,7 +220,7 @@ log_start() {
 		[ "${TIMESTAMP_LOGS}" = "yes" ] && add_ts_pipe="timestamp \"(${DURATION_FORMAT}) \" |"
 		eval ${add_ts_pipe} ${stripcolors_pipe} tee ${logfile}
 	} < ${logfile}.pipe >&3 &
-	export tpid=$!
+	tpid=$!
 	exec > ${logfile}.pipe 2>&1
 
 	# Remove fifo pipe file right away to avoid orphaning it.
