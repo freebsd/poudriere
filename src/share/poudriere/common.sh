@@ -1320,7 +1320,7 @@ jail_stop() {
 	local last_status
 
 	# Don't override if there is a failure to grab the last status.
-	_bget last_status status 2>/dev/null | :
+	_bget last_status status 2>/dev/null || :
 	[ -n "${last_status}" ] && bset status "stopped:${last_status}" \
 	    2>/dev/null || :
 
