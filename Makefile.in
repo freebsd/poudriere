@@ -445,6 +445,7 @@ dist_awk_DATA = src/share/poudriere/awk/dependency_loop.awk \
 dist_html_DATA = src/share/poudriere/html/index.html
 dist_assets_DATA = src/share/poudriere/html/assets/poudriere.js \
 			src/share/poudriere/html/assets/logo.jpg \
+			src/share/poudriere/html/assets/favicon.ico \
 			src/share/poudriere/html/assets/poudriere.css \
 			src/share/poudriere/html/assets/jquery-1.9.1.min.js
 
