@@ -232,6 +232,10 @@ function process_data(data) {
 	} else {
 		// Hide loading overlay
 		$('#loading_overlay').fadeOut(1400);
+		/* Now that page is loaded, scroll to anchor. */
+		if (location.hash) {
+			$(document).scrollTop($(location.hash).offset().top);
+		}
 	}
 
 	first_run = false;
