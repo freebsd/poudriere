@@ -105,6 +105,11 @@ footer {
 	border-top: 1px solid black;
 }
 
+#logo img {
+	height: 59px;
+	width: 43px;
+}
+
 #stats {
 	float: left;
 }
