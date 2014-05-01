@@ -28,67 +28,65 @@
 		<div id="top" class="anchor"></div>
 		<div id="header" class="navbar navbar-fixed-top">
 			<div class="navbar-inner">
-				<div id="main" class="container-fluid">
-					<div class="row-fluid">
-						<div class="xnav-collapse xcollapse">
-							<ul class="nav nav-pills">
-								<li><a href="#top">Top</a></li>
-								<li><a href="#build_info">Build info</a></li>
-								<li><a href="#builders">Builders</a></li>
-								<li class="dropdown">
-									<a href="#" class="dropdown-toggle" data-toggle="dropdown">Results <b class="caret"></b></a>
-									<ul class="dropdown-menu">
-										<li class="disabled" id="nav_built"><a href="#built">Built</a></li>
-										<li class="disabled" id="nav_failed"><a href="#failed">Failed</a></li>
-										<li class="disabled" id="nav_skipped"><a href="#skipped">Skipped</a></li>
-										<li class="disabled" id="nav_ignored"><a href="#ignored">Ignored</a></li>
-									</ul>
-								</li>
-								<li><a href="logs/" target="logs"><i class="icon-share-alt"></i>All Logs</a></li>
-								<li><a href="logs/errors/" target="logs"><i class="icon-share-alt"></i>Error Logs</a></li>
-							</ul>
-						</div><!-- /.nav-collapse -->
-					</div>
-					<div class="row-fluid">
-						<div class="span6">
-							<table class="layout">
-								<tr>
-									<td>
-										<div id="stats">
-											<table border=1>
-												<thead>
-													<tr>
-														<th>Total</th>
-														<th>Built</th>
-														<th>Failed</th>
-														<th>Skipped</th>
-														<th>Ignored</th>
-														<th>To build</th>
-													</tr>
-												</thead>
+				<div class="row-fluid">
+					<div class="xnav-collapse xcollapse">
+						<ul class="nav nav-pills">
+							<li><a href="#top">Top</a></li>
+							<li><a href="#build_info">Build info</a></li>
+							<li><a href="#builders">Builders</a></li>
+							<li class="dropdown">
+								<a href="#" class="dropdown-toggle" data-toggle="dropdown">Results <b class="caret"></b></a>
+								<ul class="dropdown-menu">
+									<li class="disabled" id="nav_built"><a href="#built">Built</a></li>
+									<li class="disabled" id="nav_failed"><a href="#failed">Failed</a></li>
+									<li class="disabled" id="nav_skipped"><a href="#skipped">Skipped</a></li>
+									<li class="disabled" id="nav_ignored"><a href="#ignored">Ignored</a></li>
+								</ul>
+							</li>
+							<li><a href="logs/" target="logs"><i class="icon-share-alt"></i>All Logs</a></li>
+							<li><a href="logs/errors/" target="logs"><i class="icon-share-alt"></i>Error Logs</a></li>
+						</ul>
+					</div><!-- /.nav-collapse -->
+				</div>
+				<div class="row-fluid">
+					<div class="span6">
+						<table class="layout">
+							<tr>
+								<td>
+									<div id="stats">
+										<table border=1>
+											<thead>
 												<tr>
-													<td id="stats_queued" class="queued"></td>
-													<td id="stats_built" class="built"></td>
-													<td id="stats_failed" class="failed"></td>
-													<td id="stats_skipped" class="skipped"></td>
-													<td id="stats_ignored" class="ignored"></td>
-													<td id="stats_remaining" class="remaining"></td>
+													<th>Total</th>
+													<th>Built</th>
+													<th>Failed</th>
+													<th>Skipped</th>
+													<th>Ignored</th>
+													<th>To build</th>
 												</tr>
-											</table>
-										</div>
-									</td>
-								</tr>
-								<tr id="progress">
-									<td>
-										<span>
-											<canvas id="progressbar" width=507 height=10></canvas>
-										</span>
-									</td>
-								</tr>
-							</table>
-						</div><!-- /span -->
-					</div>
-				</div><!-- /container -->
+											</thead>
+											<tr>
+												<td id="stats_queued" class="queued"></td>
+												<td id="stats_built" class="built"></td>
+												<td id="stats_failed" class="failed"></td>
+												<td id="stats_skipped" class="skipped"></td>
+												<td id="stats_ignored" class="ignored"></td>
+												<td id="stats_remaining" class="remaining"></td>
+											</tr>
+										</table>
+									</div>
+								</td>
+							</tr>
+							<tr id="progress">
+								<td>
+									<span>
+										<canvas id="progressbar" width=507 height=10></canvas>
+									</span>
+								</td>
+							</tr>
+						</table>
+					</div><!-- /span -->
+				</div>
 			</div> <!-- navbar-static-top -->
 		</div><!-- #header, navbar -->
 		<div id="main" class="container-fluid">
