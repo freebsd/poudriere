@@ -59,7 +59,7 @@ dist_assets_DATA=	src/share/poudriere/html/assets/poudriere.js \
 			src/share/poudriere/html/assets/logo.jpg \
 			src/share/poudriere/html/assets/favicon.ico \
 			src/share/poudriere/html/assets/poudriere.css \
-			src/share/poudriere/html/assets/jquery-1.9.1.min.js
+			src/share/poudriere/html/assets/jquery-1.11.0.min.js
 dist_btjs_DATA=	src/share/poudriere/html/assets/bootstrap/js/bootstrap.min.js
 dist_btimg_DATA=	src/share/poudriere/html/assets/bootstrap/img/glyphicons-halflings-white.png \
 			src/share/poudriere/html/assets/bootstrap/img/glyphicons-halflings.png
