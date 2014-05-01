@@ -137,8 +137,8 @@ function process_data(data) {
 	document.title = 'Poudriere bulk results for ' + data.mastername +
 		data.buildname;
 
-	$('#mastername').html(data.mastername);
-	$('#buildname').html(data.buildname);
+	$('#mastername').html('<a href="../">' + data.mastername + '</a>');
+	$('#buildname').html('<a href="#top">' + data.buildname + '</a>');
 	if (data.svn_url)
 		$('#svn_url').html(data.svn_url);
 	else
