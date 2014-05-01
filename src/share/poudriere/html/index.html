@@ -33,6 +33,7 @@
 						<div class="xnav-collapse xcollapse">
 							<ul class="nav nav-pills">
 								<li><a href="#top">Top</a></li>
+								<li><a href="#build_info">Build info</a></li>
 								<li><a href="#builders">Builders</a></li>
 								<li class="dropdown">
 									<a href="#" class="dropdown-toggle" data-toggle="dropdown">Results <b class="caret"></b></a>
@@ -48,16 +49,6 @@
 							</ul>
 						</div><!-- /.nav-collapse -->
 					</div>
-					<div class="span5" id="build_info">
-						<dl class="dl-horizontal">
-							<dt>Jail</dt>
-							<dd id="mastername"></dd>
-							<dt>Build</dt>
-							<dd id="buildname"></dd>
-							<dt>SVN</dt>
-							<dd id="svn_url"></dd>
-						</dl>
-					</div><!-- /span -->
 					<div class="row-fluid">
 						<div class="span6">
 							<table class="layout">
@@ -103,6 +94,21 @@
 		<div id="main" class="container-fluid">
 			<div class="row-fluid">
 				<div class="span4">
+					<div class="row-fluid">
+						<div id="build_info" class="anchor">
+							<h2>Build info
+								<a href="#"><b class="top-icon icon-arrow-up"></b></a>
+							</h2>
+							<dl class="dl-horizontal">
+								<dt>Jail</dt>
+								<dd id="mastername"></dd>
+								<dt>Build</dt>
+								<dd id="buildname"></dd>
+								<dt>SVN</dt>
+								<dd id="svn_url"></dd>
+							</dl>
+						</div><!-- /span -->
+					</div><!-- /row -->
 					<div class="row-fluid">
 						<div id="builders" class="anchor">
 							<h2>Builders
