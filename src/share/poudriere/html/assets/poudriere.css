@@ -154,6 +154,31 @@ br.clear {
 	margin-left: 40px;
 }
 
+#builders_table td {
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap;
+	max-width: 313px;
+}
+
+@media (max-width: 1217px) {
+	#builders_table td {
+		max-width: 220px;
+	}
+}
+
+@media (max-width: 979px) {
+	#builders_table td {
+		max-width: 150px;
+	}
+}
+
+@media (max-width: 869px) {
+	#builders_table td {
+		max-width: 120px;
+	}
+}
+
 table.dataTable.display tbody tr.odd {
 	background-color: #E2E4FF;
 }

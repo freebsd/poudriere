@@ -33,7 +33,7 @@ function format_origin(origin) {
 	return "<a target=\"_new\" title=\"portsmon for " + origin +
 		"\" href=\"http://portsmon.freebsd.org/portoverview.py?category=" +
 		data[0] + "&amp;portname=" + data[1] + "\"><i " +
-		"class=\"icon-share-alt\"></i>"+ origin + "</a></td>";
+		"class=\"icon-share-alt\"></i>"+ data[0] + "/&#8203;" + data[1] + "</a>";
 }
 
 function format_pkgname(pkgname) {
