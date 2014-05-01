@@ -54,19 +54,48 @@ body {
 /* Disabled once screen too small */
 @media (min-width: 979px) {
 	body {
-		padding-top: 150px;
+		padding-top: 135px;
 	}
 	.top-icon {
 		display: none;
 	}
 	/* http://nicolasgallagher.com/jump-links-and-viewport-positioning/demo */
 	.anchor {
-		border-top: 150px solid transparent;
-		margin-top: -150px;
+		border-top: 135px solid transparent;
+		margin-top: -135px;
 		-webkit-background-clip: padding-box;
 		-moz-background-clip: padding;
 		background-clip: padding-box;
 	}
+
+}
+
+/* Prevent excess padding when zoomed in */
+@media (max-width: 979px) {
+	.navbar-fixed-top {
+		margin-bottom: 0px;
+	}
+}
+
+body {
+	line-height: normal;
+}
+
+#progress, #progress td, #progress span, #progress canvas {
+	padding: 0;
+	margin: 0;
+	border: 0;
+	line-height: 0;
+}
+
+#progress span {
+	margin-left: 1px;
+}
+
+.layout table {
+	width: 507px; /* canvas width */
+	margin: 0;
+	line-height: 1;
 }
 
 footer {
@@ -80,7 +109,6 @@ footer {
 	float: left;
 }
 #stats table {
-	width: 502px;/* canvas size */
 	border: 0;
 	margin-bottom: 1px;
 	font-size: 9pt;
@@ -91,7 +119,6 @@ footer {
 	float: left;
 }
 #system table {
-	width: 502px;/* canvas size */
 	border: 0;
 	margin-bottom: 1px;
 	font-size: 9pt;

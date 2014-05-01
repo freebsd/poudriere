@@ -7,21 +7,6 @@ $.ajaxSetup({
 	cache: false
 });
 
-function minidraw(x, context, color, queued, variable) {
-	var pct = variable * 100 / queued;
-	if (pct > 98.0 && pct < 100.0) {
-		pct = 98;
-	} else {
-		pct = Math.ceil(pct);
-	}
-	var newx = pct * 5;
-	context.fillStyle = color;
-	context.fillRect(x + 1, 1, newx, 20);
-
-	return (newx);
-}
-
-
 function update_fields() {
 	$.ajax({
 		url: '.data.json',
@@ -55,6 +40,28 @@ function format_pkgname(pkgname) {
 	return pkgname;
 }
 
+function minidraw(x, height, context, color, queued, variable) {
+	var pct, newx;
+
+	pct = variable * 100 / queued;
+	if (pct > 98.0 && pct < 100.0) {
+		pct = 98;
+	} else {
+		pct = Math.ceil(pct);
+		if (pct == 0) {
+			return 0;
+		}
+	}
+	newx = pct * 5;
+	if (newx == 0) {
+		newx = 1;
+	}
+	context.fillStyle = color;
+	context.fillRect(x, 1, newx, height);
+
+	return (newx);
+}
+
 function update_canvas(stats) {
 	var queued = stats.queued;
 	var built = stats.built;
@@ -62,27 +69,34 @@ function update_canvas(stats) {
 	var skipped = stats.skipped;
 	var ignored = stats.ignored;
 	var remaining = queued - built - failed - skipped - ignored;
+	var height, width, x, context, canvas;
 
-	var canvas = document.getElementById('progressbar');
+	height = 10;
+	width = 502;
+
+	canvas = document.getElementById('progressbar');
 	if (canvas.getContext === undefined) {
 		/* Not supported */
 		return;
 	}
 
-	var context = canvas.getContext('2d');
+	context = canvas.getContext('2d');
 
 	context.beginPath();
-	context.rect(0, 0, 502, 22);
+	/* +5 for sections */
+	context.rect(0, 0, width + 5, height);
+	/* Save 2 pixels for border */
+	height = height - 2;
 	context.fillStyle = '#E3E3E3';
-	context.fillRect(1, 1, 500, 20);
+	context.fillRect(1, 1, width, height);
 	context.lineWidth = 1;
 	context.strokeStyle = 'black';
 	context.stroke();
-	var x = 0;
-	x += minidraw(x, context, "#00CC00", queued, built);
-	x += minidraw(x, context, "#E00000", queued, failed);
-	x += minidraw(x, context, "#FF9900", queued, ignored);
-	x += minidraw(x, context, "#CC6633", queued, skipped);
+	x = 1;
+	x += minidraw(x, height, context, "#00CC00", queued, built);
+	x += minidraw(x, height, context, "#E00000", queued, failed);
+	x += minidraw(x, height, context, "#FF9900", queued, ignored);
+	x += minidraw(x, height, context, "#CC6633", queued, skipped);
 
 	$('#stats_remaining').html(remaining);
 }
