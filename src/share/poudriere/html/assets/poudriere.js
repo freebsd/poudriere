@@ -40,7 +40,7 @@ function format_pkgname(pkgname) {
 	return pkgname;
 }
 
-function minidraw(x, height, context, color, queued, variable) {
+function minidraw(x, height, width, context, color, queued, variable) {
 	var pct, newx;
 
 	pct = variable * 100 / queued;
@@ -55,6 +55,9 @@ function minidraw(x, height, context, color, queued, variable) {
 	newx = pct * 5;
 	if (newx == 0) {
 		newx = 1;
+	}
+	if ((x + newx) >= width) {
+		newx = width - x;
 	}
 	context.fillStyle = color;
 	context.fillRect(x, 1, newx, height);
@@ -72,7 +75,7 @@ function update_canvas(stats) {
 	var height, width, x, context, canvas;
 
 	height = 10;
-	width = 502;
+	width = 500;
 
 	canvas = document.getElementById('progressbar');
 	if (canvas.getContext === undefined) {
@@ -83,20 +86,21 @@ function update_canvas(stats) {
 	context = canvas.getContext('2d');
 
 	context.beginPath();
-	/* +5 for sections */
-	context.rect(0, 0, width + 5, height);
+	context.rect(0, 0, width, height);
 	/* Save 2 pixels for border */
 	height = height - 2;
+	/* Start at 1 and save 1 for border */
+	width = width - 1;
+	x = 1;
 	context.fillStyle = '#E3E3E3';
 	context.fillRect(1, 1, width, height);
 	context.lineWidth = 1;
 	context.strokeStyle = 'black';
 	context.stroke();
-	x = 1;
-	x += minidraw(x, height, context, "#00CC00", queued, built);
-	x += minidraw(x, height, context, "#E00000", queued, failed);
-	x += minidraw(x, height, context, "#FF9900", queued, ignored);
-	x += minidraw(x, height, context, "#CC6633", queued, skipped);
+	x += minidraw(x, height, width, context, "#00CC00", queued, built);
+	x += minidraw(x, height, width, context, "#E00000", queued, failed);
+	x += minidraw(x, height, width, context, "#FF9900", queued, ignored);
+	x += minidraw(x, height, width, context, "#CC6633", queued, skipped);
 
 	$('#stats_remaining').html(remaining);
 }
