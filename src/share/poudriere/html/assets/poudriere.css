@@ -3,13 +3,13 @@
 	background: #FFF;
 	width: 100%;
 	height: 100%;
-	z-index: 3;
+	z-index: 9003;
 	top: 0;
 	left: 0;
 	position: fixed;
 }
 #loading {
-	z-index: 4;
+	z-index: 9004;
 	top: 50%;
 	left: 50%;
 	position: absolute;
@@ -27,6 +27,7 @@ th, td { border: 1px solid black; }
 .layout td {
 	border: 0;
 }
+.queued { background-color: #aaa; }
 .built { background-color: #00CC00; }
 .built .row1 { background-color: #00FF00; }
 .failed { background-color: #E00000; }
@@ -36,76 +37,45 @@ th, td { border: 1px solid black; }
 .ignored { background-color: #FF9900; }
 .ignored .row1 { background-color: #FF6F00; }
 .remaining { background-color: #E3E3E3; }
+.info { background-color: #E3E3E3; }
 .new { display: none; }
 #header {
-	top: 0;
-	height: 95px;
 	border-bottom: 1px solid black;
 }
 
-#header, #footer {
-	background-color: #EEEEEE;
-	z-index: 2;
-	left: 0;
-	width: 100%;
-	position: fixed;
+#header, footer {
+	background-color: #eee;
 }
 
-#header table {
-	font-size: 9pt;
-	text-align: center;
+body {
+	padding-bottom: 25px;
 }
 
-#main {
-	margin-bottom: 22px; /* footer */
-	margin-top: 95px;
-	width: 100%;
-	height: 100%;
+/* Disabled once screen too small */
+@media (min-width: 979px) {
+	body {
+		padding-top: 150px;
+	}
+	.top-icon {
+		display: none;
+	}
+	/* http://nicolasgallagher.com/jump-links-and-viewport-positioning/demo */
+	.anchor {
+		border-top: 150px solid transparent;
+		margin-top: -150px;
+		-webkit-background-clip: padding-box;
+		-moz-background-clip: padding;
+		background-clip: padding-box;
+	}
 }
 
-#footer {
+footer {
 	bottom: 0;
-	height: 22px;
+	height: 17px;
 	margin-top: 5px;
 	border-top: 1px solid black;
 }
 
-/* http://nicolasgallagher.com/jump-links-and-viewport-positioning/demo */
-.anchor {
-	border-top: 95px solid transparent;
-	margin-top: -95px;
-	-webkit-background-clip: padding-box;
-	-moz-background-clip: padding;
-	background-clip: padding-box;
-}
-
-#left {
-	width: 21%;
-	float: left;
-}
-#right {
-	float: left;
-	width: 75%;
-	margin-bottom: 25px;
-	margin-left: 10px;
-}
-#header_left { float: left; }
-#header_right {
-	margin-top: 5px;
-	margin-left: 5px;
-	float: left;
-	width: 80%;
-}
-#nav {
-	float: left;
-}
-#logo {
-	float: left;
-}
-#logo h1 {
-	display: none;
-	margin: 0;
-}
 #stats {
 	float: left;
 }
@@ -113,19 +83,19 @@ th, td { border: 1px solid black; }
 	width: 502px;/* canvas size */
 	border: 0;
 	margin-bottom: 1px;
+	font-size: 9pt;
+	text-align: center;
 }
-#progress {
-	right: 0;
-	position: absolute;
-}
-#build_info {
+
+#system {
 	float: left;
-	margin-right: 5px;
 }
-#build_info table {
+#system table {
+	width: 502px;/* canvas size */
 	border: 0;
-	float: left;
-	text-align: left;
+	margin-bottom: 1px;
+	font-size: 9pt;
+	text-align: center;
 }
 
 h1 {
@@ -143,7 +113,11 @@ br.clear {
 	height: 0;
 	overflow: hidden;
 }
-.ports {
-	float: left;
+
+#build_info dt {
+	width: auto;
 }
-:target { color: #FF0000; }
+
+#build_info dd {
+	margin-left: 40px;
+}

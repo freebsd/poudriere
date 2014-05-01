@@ -37,10 +37,18 @@ function update_fields() {
 }
 
 function format_origin(origin) {
-	var data = origin.split("/");
-	return "<a title=\"portsmon for " + origin +
+	var data;
+
+	if (!origin) {
+		return '';
+	}
+
+	data = origin.split("/");
+
+	return "<a target=\"_new\" title=\"portsmon for " + origin +
 		"\" href=\"http://portsmon.freebsd.org/portoverview.py?category=" +
-		data[0] + "&amp;portname=" + data[1] + "\">"+ origin + "</a></td>";
+		data[0] + "&amp;portname=" + data[1] + "\"><i " +
+		"class=\"icon-share-alt\"></i>"+ origin + "</a></td>";
 }
 
 function format_pkgname(pkgname) {
@@ -82,8 +90,8 @@ function update_canvas(stats) {
 function format_log(pkgname, errors, text) {
 	var html;
 
-	html = '<a href="logs/' + (errors ? 'errors/' : '') +
-		pkgname + '.log">' + text + '</a>';
+	html = '<a target="logs" href="logs/' + (errors ? 'errors/' : '') +
+		pkgname + '.log"><i class="icon-share-alt"></i>' + text + '</a>';
 	return html;
 }
 
@@ -171,13 +179,7 @@ function process_data(data) {
 	/* Stats */
 	if (data.stats) {
 		$.each(data.stats, function(status, count) {
-			if (status == "queued") {
-				html = count;
-			} else {
-				html = '<a href="#' + status + '">' + count + '</a>';
-			}
-
-			$('#stats_' + status).html(html);
+			$('#stats_' + status).html(count);
 		});
 	}
 
@@ -193,6 +195,7 @@ function process_data(data) {
 				if ((n = $('#' + status + '_body').data('index')) === undefined) {
 					n = 0;
 					$('#' + status).show();
+					$('#nav_' + status).removeClass('disabled');
 				}
 				for (; n < data.ports[status].length; n++) {
 					var row = data.ports[status][n];

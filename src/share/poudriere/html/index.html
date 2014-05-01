@@ -1,17 +1,22 @@
-<!-- vim: set sts=4 sw=4 ts=4 noet: -->
-<html>
+<!DOCTYPE html>
+<html lang="en">
 	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta http-equiv="Cache-Control" content="no-cache">
+		<meta http-equiv="Pragma" content="no-cache">
+		<meta http-equiv="Expires" content="0">
+
 		<title>Poudriere bulk results</title>
 
-		<script src="assets/jquery-1.9.1.min.js" type="text/javascript"></script>
 		<link href="assets/dataTables/css/jquery.dataTables.css" rel="stylesheet" type="text/css">
-		<script src="assets/dataTables/js/jquery.dataTables.min.js" type="text/javascript" charset="utf8"></script>
-
-		<script src="assets/poudriere.js" type="text/javascript"></script>
+		<link href="assets/bootstrap/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
 		<link href="assets/poudriere.css" type="text/css" rel="stylesheet" />
-		<META http-equiv="Cache-Control" content="no-cache">
-		<META http-equiv="Pragma" content="no-cache">
-		<META http-equiv="Expires" content="0"> 
+		<link href="assets/bootstrap/css/bootstrap-responsive.min.css" type="text/css" rel="stylesheet" />
+
+		<script src="assets/jquery-1.9.1.min.js" type="text/javascript"></script>
+		<script src="assets/dataTables/js/jquery.dataTables.min.js" type="text/javascript" charset="utf8"></script>
+		<script src="assets/poudriere.js" type="text/javascript"></script>
 		<link rel="shortcut icon" href="assets/favicon.ico">
 	</head>
 	<body>
@@ -21,148 +26,183 @@
 			</div>
 		</div>
 		<div id="top" class="anchor"></div>
-		<div id="header">
-			<div id="header_left">
-				<div id="logo">
-					<img src="assets/logo.jpg" alt="logo" />
-					<h1>Poudriere</h1>
-				</div>
-			</div>
-			<div id="header_right">
-				<table class="layout">
-					<tr>
-						<td rowspan="2">
-							<div id="build_info">
-								<table border=0>
+		<div id="header" class="navbar navbar-fixed-top">
+			<div class="navbar-inner">
+				<div id="main" class="container-fluid">
+					<div class="row-fluid">
+						<div class="xnav-collapse xcollapse">
+							<ul class="nav nav-pills">
+								<li><a href="#top">Top</a></li>
+								<li><a href="#builders">Builders</a></li>
+								<li class="dropdown">
+									<a href="#" class="dropdown-toggle" data-toggle="dropdown">Results <b class="caret"></b></a>
+									<ul class="dropdown-menu">
+										<li class="disabled" id="nav_built"><a href="#built">Built</a></li>
+										<li class="disabled" id="nav_failed"><a href="#failed">Failed</a></li>
+										<li class="disabled" id="nav_skipped"><a href="#skipped">Skipped</a></li>
+										<li class="disabled" id="nav_ignored"><a href="#ignored">Ignored</a></li>
+									</ul>
+								</li>
+								<li><a href="logs/" target="logs"><i class="icon-share-alt"></i>All Logs</a></li>
+								<li><a href="logs/errors/" target="logs"><i class="icon-share-alt"></i>Error Logs</a></li>
+							</ul>
+						</div><!-- /.nav-collapse -->
+					</div>
+					<div class="span5" id="build_info">
+						<dl class="dl-horizontal">
+							<dt>Jail</dt>
+							<dd id="mastername"></dd>
+							<dt>Build</dt>
+							<dd id="buildname"></dd>
+							<dt>SVN</dt>
+							<dd id="svn_url"></dd>
+						</dl>
+					</div><!-- /span -->
+					<div class="row-fluid">
+						<div class="span6">
+							<table class="layout">
+								<tr>
+									<td>
+										<div id="stats">
+											<table border=1>
+												<thead>
+													<tr>
+														<th>Total</th>
+														<th>Built</th>
+														<th>Failed</th>
+														<th>Skipped</th>
+														<th>Ignored</th>
+														<th>To build</th>
+													</tr>
+												</thead>
+												<tr>
+													<td id="stats_queued" class="queued"></td>
+													<td id="stats_built" class="built"></td>
+													<td id="stats_failed" class="failed"></td>
+													<td id="stats_skipped" class="skipped"></td>
+													<td id="stats_ignored" class="ignored"></td>
+													<td id="stats_remaining" class="remaining"></td>
+												</tr>
+											</table>
+										</div>
+									</td>
+								</tr>
+							</table>
+						</div><!-- /span -->
+					</div>
+				</div><!-- /container -->
+			</div> <!-- navbar-static-top -->
+		</div><!-- #header, navbar -->
+		<div id="main" class="container-fluid">
+			<div class="row-fluid">
+				<div class="span4">
+					<div class="row-fluid">
+						<div id="builders" class="anchor">
+							<h2>Builders
+								<a href="#"><b class="top-icon icon-arrow-up"></b></a>
+							</h2>
+							<table id="builders_table">
+								<thead>
 									<tr>
-										<th>Jail:</th>
-										<td id="mastername"></td>
+										<th>Id</th>
+										<th>Origin</th>
+										<th>Status</th>
 									</tr>
+								</thead>
+								<tbody id="builders_body"></tbody>
+							</table>
+						</div><!-- #builders -->
+					</div><!-- /row -->
+					<br class="clear" />
+				</div><!-- /span -->
+				<div class="span8">
+					<div class="row-fluid">
+						<div id="built" class="anchor status">
+							<h2>Built ports
+								<a href="#"><b class="top-icon icon-arrow-up"></b></a>
+							</h2>
+							<table class="built" id="built_table">
+								<thead>
 									<tr>
-										<th>Build:</th>
-										<td id="buildname"></td>
+										<th>Package</th>
+										<th>Origin</th>
+										<th>Log</th>
 									</tr>
+								</thead>
+								<tbody id="built_body"></tbody>
+							</table>
+						</div><!-- #built -->
+					</div><!-- /row -->
+					<div class="row-fluid">
+						<div id="failed" class="anchor status">
+							<h2>Failed ports
+								<a href="#"><b class="top-icon icon-arrow-up"></b></a>
+							</h2>
+							<table class="failed" id="failed_table">
+								<thead>
 									<tr>
-										<th>SVN:</th>
-										<td id="svn_url"></td>
+										<th>Package</th>
+										<th>Origin</th>
+										<th>Phase</th>
+										<th>Skipped</th>
+										<th>Log</th>
 									</tr>
-								</table>
-							</div>
-						</td>
-						<td>
-							<div id="stats">
-								<table border=1>
-									<thead>
-										<tr>
-											<th>Total</th>
-											<th>Built</th>
-											<th>Failed</th>
-											<th>Skipped</th>
-											<th>Ignored</th>
-											<th>To build</th>
-										</tr>
-									</thead>
+								</thead>
+								<tbody id="failed_body"></tbody>
+							</table>
+						</div><!-- #failed -->
+					</div><!-- /row -->
+					<div class="row-fluid">
+						<div id="skipped" class="anchor status">
+							<h2>Skipped ports
+								<a href="#"><b class="top-icon icon-arrow-up"></b></a>
+							</h2>
+							<table class="skipped" id="skipped_table">
+								<thead>
 									<tr>
-										<td id="stats_queued" class="queued"></td>
-										<td id="stats_built" class="built"></td>
-										<td id="stats_failed" class="failed"></td>
-										<td id="stats_skipped" class="skipped"></td>
-										<td id="stats_ignored" class="ignored"></td>
-										<td id="stats_remaining" class="remaining"></td>
+										<th>Package</th>
+										<th>Origin</th>
+										<th>Reason</th>
 									</tr>
-								</table>
-							</div>
-						</td>
-					</tr>
-				</table>
-			</div><!-- #header_right -->
-		</div><!-- #header -->
-		<div id="main">
-			<div id="left">
-				<div id="builders">
-					<h2>Builders</h2>
-					<table id="builders_table">
-						<thead>
-							<tr>
-								<th>Id</th>
-								<th>Origin</th>
-								<th>Status</th>
-							</tr>
-						</thead>
-						<tbody id="builders_body"></tbody>
-					</table>
-				</div>
-				<br class="clear" />
-			</div>
-			<div id="right">
-				<div id="built" class="anchor status">
-					<h2>Built ports</h2>
-					<table class="built" id="built_table">
-						<thead>
-							<tr>
-								<th>Package</th>
-								<th>Origin</th>
-								<th>Log</th>
-							</tr>
-						</thead>
-						<tbody id="built_body"></tbody>
-					</table>
-				</div>
-				<div id="failed" class="anchor status">
-					<h2>Failed ports</h2>
-					<table class="failed" id="failed_table">
-						<thead>
-							<tr>
-								<th>Package</th>
-								<th>Origin</th>
-								<th>Phase</th>
-								<th>Skipped</th>
-								<th>Log</th>
-							</tr>
-						</thead>
-						<tbody id="failed_body"></tbody>
-					</table>
-				</div>
-				<div id="skipped" class="anchor status">
-					<h2>Skipped ports</h2>
-					<table class="skipped" id="skipped_table">
-						<thead>
-							<tr>
-								<th>Package</th>
-								<th>Origin</th>
-								<th>Reason</th>
-							</tr>
-						</thead>
-						<tbody id="skipped_body"></tbody>
-					</table>
-				</div>
-				<div id="ignored" class="anchor status">
-					<h2>Ignored ports</h2>
-					<table class="ignored" id="ignored_table">
-						<thead>
-							<tr>
-								<th>Package</th>
-								<th>Origin</th>
-								<th>Skipped</th>
-								<th>Reason</th>
-							</tr>
-						</thead>
-						<tbody id="ignored_body"></tbody>
-					</table>
-				</div>
-				<br class="clear" />
-			</div><!-- #right -->
+								</thead>
+								<tbody id="skipped_body"></tbody>
+							</table>
+						</div><!-- #skipped -->
+					</div><!-- /row -->
+					<div class="row-fluid">
+						<div id="ignored" class="anchor status">
+							<h2>Ignored ports
+								<a href="#"><b class="top-icon icon-arrow-up"></b></a>
+							</h2>
+							<table class="ignored" id="ignored_table">
+								<thead>
+									<tr>
+										<th>Package</th>
+										<th>Origin</th>
+										<th>Skipped</th>
+										<th>Reason</th>
+									</tr>
+								</thead>
+								<tbody id="ignored_body"></tbody>
+							</table>
+						</div><!-- #ignored -->
+					</div><!-- /row -->
+					<br class="clear" />
+				</div><!-- /span9 -->
+			</div><!-- /row -->
 		</div><!-- #main -->
-		<div id="footer">
-			<div id="nav">
-				<a href="#top" title="top">Top</a>
-				<a href="..">../</a>
-				<a href="logs">All Logs</a>
-				<a href="logs/errors">Error Logs</a>
-			</div>
-			<div id="progress">
-				<canvas id="progressbar" width=502 height=22></canvas>
-			</div>
-		</div>
+		<br class="clear" />
+		<footer class="navbar-fixed-bottom">
+		<div class="container-fluid">
+			<div class="row-fluid">
+				<a target="_new" href="http://fossil.etoilebsd.net/poudriere"><i class="icon-share-alt"></i>Poudriere</a>
+				<span id="progress">
+					<canvas id="progressbar" width=502 height=22></canvas>
+				</span>
+			</div><!-- /row -->
+		</div><!-- /container -->
+		</footer><!-- #footer -->
+		<script src="assets/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
 	</body>
 </html>
+<!-- vim: set sts=4 sw=4 ts=4 noet: -->
