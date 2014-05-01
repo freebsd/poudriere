@@ -2,11 +2,6 @@
 var updateInterval = 8;
 var first_run = true;
 
-/* Disabling jQuery caching */
-$.ajaxSetup({
-	cache: false
-});
-
 function update_fields() {
 	$.ajax({
 		url: '.data.json',
