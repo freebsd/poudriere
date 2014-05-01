@@ -280,11 +280,12 @@ $(document).ready(function() {
 		$('#' + status).hide();
 		$('#' + status + '_table').dataTable({
 			"aaSorting": [], // No initial sorting
-			"bProcessing": true, // Show processing icon
-			"bDeferRender": true, // Defer creating TR/TD until needed
+			"processing": true, // Show processing icon
+			"deferRender": true, // Defer creating TR/TD until needed
 			"aoColumnDefs": columnDefs[status],
-			"bStateSave": true, // Enable cookie for keeping state
-			"aLengthMenu":[5,10,25,50,100],
+			"localStorage": true, // Enable cookie for keeping state
+			"lengthMenu":[[5,10,25,50,100,200, -1],[5,10,25,50,100,200,"All"]],
+			"pageLength": 10,
 		});
 	}
 

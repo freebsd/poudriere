@@ -65,7 +65,7 @@ dist_btimg_DATA=	src/share/poudriere/html/assets/bootstrap/img/glyphicons-halfli
 			src/share/poudriere/html/assets/bootstrap/img/glyphicons-halflings.png
 dist_btcss_DATA=	src/share/poudriere/html/assets/bootstrap/css/bootstrap-responsive.min.css \
 			src/share/poudriere/html/assets/bootstrap/css/bootstrap.min.css
-dist_dtcss_DATA=	src/share/poudriere/html/assets/dataTables/css/jquery.dataTables.css
+dist_dtcss_DATA=	src/share/poudriere/html/assets/dataTables/css/jquery.dataTables.min.css
 dist_dtjs_DATA=		src/share/poudriere/html/assets/dataTables/js/jquery.dataTables.min.js
 dist_dtimages_DATA=	src/share/poudriere/html/assets/dataTables/images/back_disabled.png \
 			src/share/poudriere/html/assets/dataTables/images/back_enabled.png \

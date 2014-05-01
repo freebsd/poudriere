@@ -9,7 +9,7 @@
 
 		<title>Poudriere bulk results</title>
 
-		<link href="assets/dataTables/css/jquery.dataTables.css" rel="stylesheet" type="text/css">
+		<link href="assets/dataTables/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css">
 		<link href="assets/bootstrap/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
 		<link href="assets/bootstrap/css/bootstrap-responsive.min.css" type="text/css" rel="stylesheet" />
 		<link href="assets/poudriere.css" type="text/css" rel="stylesheet" />
@@ -121,7 +121,7 @@
 							<h2>Builders
 								<a href="#"><b class="top-icon icon-chevron-up"></b></a>
 							</h2>
-							<table id="builders_table">
+							<table id="builders_table" class="display">
 								<thead>
 									<tr>
 										<th>Id</th>
@@ -141,7 +141,7 @@
 							<h2>Built ports
 								<a href="#"><b class="top-icon icon-chevron-up"></b></a>
 							</h2>
-							<table class="built" id="built_table">
+							<table class="display built" id="built_table">
 								<thead>
 									<tr>
 										<th>Package</th>
@@ -158,7 +158,7 @@
 							<h2>Failed ports
 								<a href="#"><b class="top-icon icon-chevron-up"></b></a>
 							</h2>
-							<table class="failed" id="failed_table">
+							<table class="display failed" id="failed_table">
 								<thead>
 									<tr>
 										<th>Package</th>
@@ -177,7 +177,7 @@
 							<h2>Skipped ports
 								<a href="#"><b class="top-icon icon-chevron-up"></b></a>
 							</h2>
-							<table class="skipped" id="skipped_table">
+							<table class="display skipped" id="skipped_table">
 								<thead>
 									<tr>
 										<th>Package</th>
@@ -194,7 +194,7 @@
 							<h2>Ignored ports
 								<a href="#"><b class="top-icon icon-chevron-up"></b></a>
 							</h2>
-							<table class="ignored" id="ignored_table">
+							<table class="display ignored" id="ignored_table">
 								<thead>
 									<tr>
 										<th>Package</th>

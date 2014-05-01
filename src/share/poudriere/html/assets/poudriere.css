@@ -153,3 +153,17 @@ br.clear {
 #build_info dd {
 	margin-left: 40px;
 }
+
+table.dataTable.display tbody tr.odd {
+	background-color: #E2E4FF;
+}
+
+table.dataTable.display tbody tr.odd td.sorting_1 {
+	background-color: #C3C6FF;
+}
+
+table.dataTable thead th,
+table.dataTable tbody td {
+	padding-top: 1px;
+	padding-bottom: 1px;
+}
