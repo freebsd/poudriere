@@ -152,13 +152,17 @@ function process_data(data) {
 		table_row.push(builder.id);
 
 		a = builder.status.split(":");
-		table_row.push(format_origin(a[1]));
-		table_row.push(a[0]);
-		table_rows.push(table_row);
 
 		if (builder.id == "main") {
 			main_status = a[0];
+		} else {
+			a[1] = format_origin(a[1]);
 		}
+
+		table_row.push(a[1]);
+		table_row.push(a[0]);
+		table_rows.push(table_row);
+
 	}
 	// XXX This could be improved by updating cells in-place
 	$('#builders_table').dataTable().fnClearTable();
