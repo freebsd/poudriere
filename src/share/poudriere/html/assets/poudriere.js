@@ -148,7 +148,7 @@ function display_pkghour(stats) {
 }
 
 function display_impulse(stats) {
-	var attempted, pkghour, index, tail, d_pkgs, d_secs;
+	var attempted, pkghour, index, tail, d_pkgs, d_secs, title;
 
 	attempted = parseInt(stats.built) + parseInt(stats.failed);
 	pkghour = "--";
@@ -162,14 +162,19 @@ function display_impulse(stats) {
 	if (tracker >= impulse_first_interval) {
 		if (tracker < impulse_interval) {
 			tail = 0;
+			title = "Package build rate over last " + Math.floor((tracker * updateInterval)/60) + " minutes";
 		} else {
 			tail = (tracker - (impulse_interval - 1)) % impulse_interval;
+			title = "Package build rate over last " + (impulse_target_period/60) + " minutes";
 		}
 		d_pkgs = impulseData[index].pkgs - impulseData[tail].pkgs;
 		d_secs = impulseData[index].time - impulseData[tail].time;
 		pkghour = Math.ceil(d_pkgs / (d_secs / 3600));
+	} else {
+		title = "Package build rate. Still calculating..."
 	}
 	tracker++;
+	$('#system .impulse').attr('title', title);
 	$('#stats_impulse').html(pkghour);
 }
 
