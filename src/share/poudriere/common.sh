@@ -492,12 +492,15 @@ exit_handler() {
 
 	if was_a_bulk_run; then
 		log_stop
-		stop_html_json
 	fi
 
 	parallel_shutdown
 
 	[ ${STATUS} -eq 1 ] && cleanup
+
+	if was_a_bulk_run; then
+		stop_html_json
+	fi
 
 	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
 }
@@ -1321,11 +1324,6 @@ jail_stop() {
 	[ $# -ne 0 ] && eargs jail_stop
 	local last_status
 
-	# Don't override if there is a failure to grab the last status.
-	_bget last_status status 2>/dev/null || :
-	[ -n "${last_status}" ] && bset status "stopped:${last_status}" \
-	    2>/dev/null || :
-
 	jstop || :
 	# Shutdown all builders
 	if [ ${PARALLEL_JOBS} -ne 0 ]; then
@@ -1339,9 +1337,16 @@ jail_stop() {
 	destroyfs ${MASTERMNT} jail || :
 	rm -rf ${MASTERMNT}/../
 	export STATUS=0
+
+	# Don't override if there is a failure to grab the last status.
+	_bget last_status status 2>/dev/null || :
+	[ -n "${last_status}" ] && bset status "stopped:${last_status}" \
+	    2>/dev/null || :
 }
 
 cleanup() {
+	local wait_pids
+
 	[ -n "${CLEANED_UP}" ] && return 0
 	# Prevent recursive cleanup on error
 	if [ -n "${CLEANING_UP}" ]; then
@@ -1365,12 +1370,10 @@ cleanup() {
 				# Ensure there is a pidfile to read or break
 				[ "${pid}" = "${MASTERMNT}/poudriere/var/run/*.pid" ] && break
 				pkill -15 -F ${pid} >/dev/null 2>&1 || :
+				wait_pids="${wait_pids} ${pid}"
 			done
+			_wait ${wait_pids} || :
 		fi
-		if was_a_bulk_run; then
-			stop_html_json
-		fi
-		wait
 
 		jail_stop
 
