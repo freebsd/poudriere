@@ -142,7 +142,19 @@ BEGIN {
   } else if (type == "status") {
     print "{"
     print "\"id\":\"" group_id "\","
-    print "\"status\":\"" $0 "\""
+    if (group_id == "main") {
+      print "\"status\":\"" $0 "\""
+    } else {
+        if (split($0, status_a, ":") > 2) {
+          print "\"status\":\""  status_a[1] "\","
+          print "\"origin\":\""  status_a[2] "\","
+          print "\"pkgname\":\"" status_a[3] "\","
+          print "\"started\":\"" status_a[4] "\","
+          print "\"elapsed\":\"" status_a[5] "\""
+        } else {
+          print "\"status\":\"" $0 "\""
+      }
+    }
     print "},"
   } else {
     if (group_id)

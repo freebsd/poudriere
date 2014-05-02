@@ -435,6 +435,14 @@ bset() {
 	echo "$@" > ${log}/${file} || :
 }
 
+bset_job_status() {
+	[ $# -eq 2 ] || eargs bset_job_status status origin
+	local status="$1"
+	local origin="$2"
+
+	bset ${MY_JOBID} status "${status}:${origin}:${PKGNAME}:${TIME_START_JOB:-${TIME_START}}:$(date +%s)"
+}
+
 badd() {
 	local id property mnt log
 	_log_path log
@@ -512,7 +520,7 @@ siginfo_handler() {
 	local queue_width=2
 	local now
 	local j elapsed job_id_color
-	local pkgname origin phase buildtime
+	local pkgname origin phase buildtime started
 	local format_origin_phase format_phase
 
 	_bget nbq stats_queued 2>/dev/null || nbq=0
@@ -550,11 +558,6 @@ siginfo_handler() {
 	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" \
 	    -a "${status}" != "stopping_jobs:" -a -n "${MASTERMNT}" ] && \
 	    ! status_is_stopped "${status}"; then
-		# Collect build stats into a string with minimal execs
-		pkgname_buildtimes=$(find ${MASTERMNT}/poudriere/building -depth 1 \
-			-exec stat -f "%N %m" {} + 2>/dev/null | \
-			awk -v now=${now} -f ${AWKPREFIX}/siginfo_buildtime.awk)
-
 		for j in ${JOBS}; do
 			# Ignore error here as the zfs dataset may not be cloned yet.
 			_bget status ${j} status 2>/dev/null || :
@@ -562,23 +565,23 @@ siginfo_handler() {
 			[ -z "${status}" ] && continue
 			# Hide idle workers
 			[ "${status}" = "idle:" ] && continue
-			origin=${status#*:}
-			phase="${status%:*}"
+			phase="${status%%:*}"
+			status="${status#*:}"
+			origin="${status%%:*}"
+			status="${status#*:}"
+			pkgname="${status%%:*}"
+			status="${status#*:}"
+			started="${status%%:*}"
+
 			colorize_job_id job_id_color "${j}"
 
 			# Must put colors in format
 			format_origin_phase="\t[${job_id_color}%s${COLOR_RESET}]: ${COLOR_PORT}%-32s ${COLOR_PHASE}%-15s${COLOR_RESET} (%s)\n"
 			format_phase="\t[${job_id_color}%s${COLOR_RESET}]: ${COLOR_PHASE}%15s${COLOR_RESET}\n"
 
-			if [ -n "${origin}" -a "${origin}" != "${status}" ]; then
-				cache_get_pkgname pkgname "${origin}"
-				# Find the buildtime for this pkgname
-				buildtime=
-				for pkgname_buildtime in $pkgname_buildtimes; do
-					[ "${pkgname_buildtime%!*}" = "${pkgname}" ] || continue
-					buildtime="${pkgname_buildtime#*!}"
-					break
-				done
+			if [ -n "${pkgname}" ]; then
+				elapsed=$((${now} - ${started}))
+				buildtime=$(date -j -u -r ${elapsed} "+${DURATION_FORMAT}")
 				printf "${format_origin_phase}" "${j}" \
 				    "${origin}" "${phase}" ${buildtime}
 			else
@@ -1516,7 +1519,7 @@ check_fs_violation() {
 	if [ -s ${tmpfile} ]; then
 		msg "Error: ${err_msg}"
 		cat ${tmpfile}
-		bset ${MY_JOBID} status "${status_value}:${port}"
+		bset_job_status "${status_value}" "${port}"
 		job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${status_value}"
 		ret=1
 	fi
@@ -1604,7 +1607,7 @@ _real_build_port() {
 		max_execution_time=${MAX_EXECUTION_TIME}
 		phaseenv=
 		[ -z "${no_stage}" ] && JUSER=${jailuser}
-		bset ${MY_JOBID} status "${phase}:${port}"
+		bset_job_status "${phase}" "${port}"
 		job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
 		case ${phase} in
 		check-sanity) [ -n "${PORTTESTING}" ] && phaseenv="DEVELOPER=1" ;;
@@ -1710,11 +1713,11 @@ _real_build_port() {
 				# 3 = cmd timeout
 				if [ $hangstatus -eq 2 ]; then
 					msg "Killing runaway build after ${NOHANG_TIME} seconds with no output"
-					bset ${MY_JOBID} status "${phase}/runaway:${port}"
+					bset_job_status "${phase}/runaway" "${port}"
 					job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}runaway"
 				elif [ $hangstatus -eq 3 ]; then
 					msg "Killing timed out build after ${MAX_EXECUTION_TIME} seconds"
-					bset ${MY_JOBID} status "${phase}/timeout:${port}"
+					bset_job_status "${phase}/timeout" "${port}"
 					job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}timeout"
 				fi
 				return 1
@@ -1733,7 +1736,7 @@ _real_build_port() {
 		if [ "${phase}" = "stage" -a -n "${PORTTESTING}" ]; then
 			local die=0
 
-			bset ${MY_JOBID} status "stage-qa:${port}"
+			bset_job_status "stage-qa" "${port}"
 			if ! injail env DEVELOPER=1 ${PORT_FLAGS} \
 			    make -C ${portdir} stage-qa; then
 				msg "Error: stage-qa failures detected"
@@ -1742,7 +1745,7 @@ _real_build_port() {
 				die=1
 			fi
 
-			bset ${MY_JOBID} status "check-plist:${port}"
+			bset_job_status "check-plist" "${port}"
 			if ! injail env DEVELOPER=1 ${PORT_FLAGS} \
 			    make -C ${portdir} check-plist; then
 				msg "Error: check-plist failures detected"
@@ -1768,7 +1771,7 @@ _real_build_port() {
 			PREFIX=$(injail env ${PORT_FLAGS} make -C ${portdir} -VPREFIX)
 
 			msg "Checking for extra files and directories"
-			bset ${MY_JOBID} status "leftovers:${port}"
+			bset_job_status "leftovers" "${port}"
 
 			if [ -f "${mnt}/usr/ports/Mk/Scripts/check_leftovers.sh" ]; then
 				check_leftovers ${mnt} | sed -e "s|${mnt}||" |
@@ -2405,7 +2408,7 @@ build_pkg() {
 	colorize_job_id COLOR_JOBID "${MY_JOBID}"
 
 	job_msg "Starting build of ${COLOR_PORT}${port}${COLOR_RESET}"
-	bset ${MY_JOBID} status "starting:${port}"
+	bset_job_status "starting" "${port}"
 
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
 		umount -f ${mnt}/${LOCALBASE:-/usr/local} 2>/dev/null || :
@@ -2457,7 +2460,7 @@ build_pkg() {
 					2> /dev/null)
 			else
 				_bget failed_status ${MY_JOBID} status
-				failed_phase=${failed_status%:*}
+				failed_phase=${failed_status%%:*}
 			fi
 
 			save_wrkdir ${mnt} "${port}" "${portdir}" "${failed_phase}" || :
@@ -2494,7 +2497,7 @@ build_pkg() {
 
 	clean_pool ${PKGNAME} ${clean_rdepends}
 
-	bset ${MY_JOBID} status "done:${port}"
+	bset_job_status "done" "${port}"
 
 	stop_build ${portdir} ${build_failed}
 
@@ -2522,7 +2525,7 @@ stop_build() {
 	buildlog_stop ${portdir} ${build_failed}
 	log_stop
 
-	bset ${MY_JOBID} status "stopped:${portdir#/usr/ports}"
+	bset_job_status "stopped" "${portdir#/usr/ports}"
 }
 
 # Crazy redirection is to add the portname into stderr.

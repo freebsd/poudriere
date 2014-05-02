@@ -186,6 +186,28 @@ function format_log(pkgname, errors, text) {
 	return html;
 }
 
+function format_duration(start, end) {
+    var duration, hours, minutes, seconds;
+
+    duration = end - start;
+    hours = Math.floor(duration / 3600);
+    duration = duration - hours * 3600;
+    minutes = Math.floor(duration / 60);
+    seconds = duration - minutes * 60;
+
+    if (hours < 10) {
+        hours = '0' + hours;
+    }
+    if (minutes < 10) {
+        minutes = '0' + minutes;
+    }
+    if (seconds < 10) {
+        seconds = '0' + seconds;
+    }
+
+    return hours + ':' + minutes + ':' + seconds;
+}
+
 function filter_skipped(pkgname) {
 	var table, search_filter;
 
@@ -253,7 +275,9 @@ function format_setname(setname) {
 
 function process_data(data) {
 	var html, a, n;
-	var table_rows, table_row, main_status;
+	var table_rows, table_row, main_status, builder, now;
+
+	now = Math.floor(new Date().getTime() / 1000);
 
 	// Redirect from /latest/ to the actual build.
 	if (document.location.href.indexOf('/latest/') != -1) {
@@ -282,19 +306,17 @@ function process_data(data) {
 	/* Builder status */
 	table_rows = [];
 	for (n = 0; n < data.status.length; n++) {
-		var builder = data.status[n];
-
-		a = builder.status.split(":");
+		builder = data.status[n];
 
 		if (builder.id != "main") {
-			a[1] = format_origin(a[1]);
 			table_row = [];
 			table_row.push(builder.id);
-			table_row.push(a[1]);
-			table_row.push(a[0]);
+			table_row.push(builder.origin ? format_origin(builder.origin) : "");
+			table_row.push(builder.pkgname ? format_log(builder.pkgname, false, builder.status) : builder.status.split(":")[0]);
+			table_row.push(builder.started ? format_duration(builder.started, now) : "");
 			table_rows.push(table_row);
 		} else {
-			main_status = a[0];
+			main_status = builder.status;
 			$('#build_status').text(main_status);
 		}
 	}
@@ -364,7 +386,7 @@ function process_data(data) {
 
 	first_run = false;
 	// Refresh as long as the build is not stopped
-	if (main_status != "stopped") {
+	if (!main_status.match("^stopped:")) {
 		setTimeout(update_fields, updateInterval * 1000);
 	}
 }
@@ -400,9 +422,10 @@ $(document).ready(function() {
 		"bAutoWidth": false,
 		"aoColumns": [
 			// Smaller ID/Status
-			{"sWidth": "2em"},
+			{"sWidth": "1em"},
 			null,
-			{"sWidth": "7em"},
+			{"sWidth": "8em"},
+			{"sWidth": "3em"},
 		],
 	});
 
