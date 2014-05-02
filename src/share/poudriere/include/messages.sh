@@ -123,6 +123,7 @@ msg_error() {
 	    msg "${COLOR_ERROR}Error: $1" >&2
 	[ -n "${MY_JOBID}" ] && COLOR_ARROW="${COLOR_ERROR}" \
 	    job_msg "${COLOR_ERROR}Error: $1"
+	return 0
 }
 
 msg_debug() {
