@@ -236,7 +236,7 @@ if [ ${ret} -ne 0 ]; then
 			2> /dev/null)
 	else
 		failed_status=$(bget status)
-		failed_phase=${failed_status%:*}
+		failed_phase=${failed_status%%:*}
 	fi
 
 	save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" "${failed_phase}" || :
