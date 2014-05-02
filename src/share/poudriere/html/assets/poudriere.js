@@ -2,6 +2,13 @@
 var updateInterval = 8;
 var first_run = true;
 var canvas_width;
+var impulseData = [];
+var tracker = 0;
+var impulse_first_period =		120;
+var impulse_target_period =		600;
+var impulse_period =			impulse_first_period;
+var impulse_first_interval =	impulse_first_period / updateInterval;
+var impulse_interval = 			impulse_target_period / updateInterval;
 
 function update_fields() {
 	$.ajax({
@@ -126,6 +133,44 @@ function update_canvas(stats) {
 	$('#progresspct').text(pctdone + '%');
 
 	$('#stats_remaining').html(remaining);
+}
+
+function display_pkghour(stats) {
+	var attempted, pkghour, hours;
+
+	attempted = parseInt(stats.built) + parseInt(stats.failed);
+	pkghour = "--";
+	if (attempted > 0) {
+		hours = stats.elapsed / 3600;
+		pkghour = Math.ceil(attempted / hours);
+	}
+	$('#stats_pkghour').html(pkghour);
+}
+
+function display_impulse(stats) {
+	var attempted, pkghour, index, tail, d_pkgs, d_secs;
+
+	attempted = parseInt(stats.built) + parseInt(stats.failed);
+	pkghour = "--";
+	index = tracker % impulse_interval;
+	if (tracker < impulse_interval) {
+		impulseData.push({pkgs: attempted, time: stats.elapsed});
+	} else {
+		impulseData[index].pkgs = attempted;
+		impulseData[index].time = stats.elapsed;
+	}
+	if (tracker >= impulse_first_interval) {
+		if (tracker < impulse_interval) {
+			tail = 0;
+		} else {
+			tail = (tracker - (impulse_interval - 1)) % impulse_interval;
+		}
+		d_pkgs = impulseData[index].pkgs - impulseData[tail].pkgs;
+		d_secs = impulseData[index].time - impulseData[tail].time;
+		pkghour = Math.ceil(d_pkgs / (d_secs / 3600));
+	}
+	tracker++;
+	$('#stats_impulse').html(pkghour);
 }
 
 function format_log(pkgname, errors, text) {
@@ -259,8 +304,10 @@ function process_data(data) {
 		$.each(data.stats, function(status, count) {
 			$('#stats_' + status).html(count);
 		});
+		display_pkghour(data.stats);
+		display_impulse(data.stats);
 		$('#stats').data(data.stats);
-		$('#stats').fadeIn(1400);
+		$('.layout div').fadeIn(1400);
 	}
 
 	/* For each status, track how many of the existing data has been

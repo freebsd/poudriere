@@ -2179,8 +2179,30 @@ start_html_json() {
 	JSON_PID=$!
 }
 
+stress_snapshot() {
+	local loadvg swapinfo elapsed duration now min_load loadpct ncpu
+
+	loadavg=$(sysctl -n vm.loadavg|awk '{print $2,$3,$4}')
+	min_load="${loadavg%% *}"
+	# Use minimum of JOBS and hw.ncpu to determine load%. Exceeding total
+	# of either is 100%.
+	ncpu=${PARALLEL_JOBS}
+	[ ${ncpu} -gt ${NCPU} ] && ncpu=${NCPU}
+	loadpct="$(printf "%2.0f%%" $(echo "scale=20; 100 * (${min_load} / ${ncpu})" | bc))"
+	swapinfo=$(swapinfo -k|awk '/\// {sum+=$2; X+=$3} END {printf "%1.2f%%\n", X*100/sum}')
+	now=$(date +%s)
+	elapsed=$((${now} - ${TIME_START}))
+	duration="$(date -j -u -r ${elapsed} "+${DURATION_FORMAT}")"
+
+	bset stats_loadavg "(${loadpct}) ${loadavg}"
+	bset stats_swapinfo "${swapinfo}"
+	bset stats_elapsed "${elapsed}"
+	bset stats_duration "${duration}"
+}
+
 json_main() {
 	while :; do
+		stress_snapshot
 		build_json
 		sleep 2
 	done
@@ -3755,10 +3777,11 @@ case $IPS in
 	;;
 esac
 
+NCPU=$(sysctl -n hw.ncpu)
 
 case ${PARALLEL_JOBS} in
 ''|*[!0-9]*)
-	PARALLEL_JOBS=$(sysctl -n hw.ncpu)
+	PARALLEL_JOBS=${NCPU}
 	;;
 esac
 
