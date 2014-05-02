@@ -47,7 +47,7 @@ function minidraw(x, height, width, context, color, queued, variable) {
 	var pct, total_pct, newx;
 
 	/* Calculate how much percentage this value should display */
-	pct = Math.ceil(variable * 100 / queued);
+	pct = Math.floor(variable * 100 / queued);
 	if (pct == 0) {
 		return 0;
 	}
@@ -55,10 +55,10 @@ function minidraw(x, height, width, context, color, queued, variable) {
 	if ((x + newx) >= width) {
 		newx = width - x;
 	}
-	/* Cap total bar to 98% so it's clear something is remaining */
+	/* Cap total bar to 99% so it's clear something is remaining */
 	total_pct = ((x + newx) / width) * 100;
-	if (total_pct >= 98.0 && total_pct < 100.0) {
-		newx = width - (Math.ceil(width * (98 / 100)));
+	if (total_pct >= 99.0 && total_pct < 100.0) {
+		newx = (Math.ceil(width * (99 / 100)));
 	}
 	/* Always start at 1 */
 	if (newx == 0) {
