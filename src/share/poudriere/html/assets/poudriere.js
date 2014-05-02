@@ -298,11 +298,13 @@ function process_data(data) {
 			$('#build_status').text(main_status);
 		}
 	}
-	$('#jobs').show();
+	if (table_rows.length) {
+		$('#jobs').show();
 
-	// XXX This could be improved by updating cells in-place
-	$('#builders_table').dataTable().fnClearTable();
-	$('#builders_table').dataTable().fnAddData(table_rows);
+		// XXX This could be improved by updating cells in-place
+		$('#builders_table').dataTable().fnClearTable();
+		$('#builders_table').dataTable().fnAddData(table_rows);
+	}
 
 	/* Stats */
 	if (data.stats) {
