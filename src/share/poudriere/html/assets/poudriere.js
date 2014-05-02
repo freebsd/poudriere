@@ -108,8 +108,42 @@ function format_log(pkgname, errors, text) {
 	return html;
 }
 
+function filter_skipped(pkgname) {
+	var table, search_filter;
+
+	$(document).scrollTop($('#skipped').offset().top);
+	table = $('#skipped_table').dataTable();
+	table.fnFilter(pkgname, 2);
+
+	search_filter = $('#skipped_table_filter input');
+	search_filter.val(pkgname);
+	search_filter.prop('disabled', true);
+	search_filter.css('background-color', '#DDD');
+
+	if (!$('#resetsearch').length) {
+		search_filter.after('<span class="glyphicon glyphicon-remove ' +
+				'pull-right" id="resetsearch"></span>');
+
+		$("#resetsearch").click(function(e) {
+			table.fnFilter('', 2);
+			search_filter.val('');
+			search_filter.prop('disabled', false);
+			search_filter.css('background-color', '');
+			$(this).remove();
+		});
+	}
+}
+
 function format_status_row(status, row) {
 	var table_row = [];
+	var skipped_cnt;
+
+	if (row.skipped_cnt !== undefined && row.skipped_cnt > 0) {
+		skipped_cnt = row.skipped_cnt;
+		row.skipped_cnt = '<a href="#skipped" onclick="filter_skipped(\'' +
+			row.pkgname +'\'); return false;"><span class="glyphicon ' +
+			'glyphicon-filter"></span>' + skipped_cnt + '</a>';
+	}
 
 	if (status == "built") {
 		table_row.push(format_pkgname(row.pkgname));
