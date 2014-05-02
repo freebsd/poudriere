@@ -2195,12 +2195,10 @@ stress_snapshot() {
 	swapinfo=$(swapinfo -k|awk '/\// {sum+=$2; X+=$3} END {printf "%1.2f%%\n", X*100/sum}')
 	now=$(date +%s)
 	elapsed=$((${now} - ${TIME_START}))
-	duration="$(date -j -u -r ${elapsed} "+${DURATION_FORMAT}")"
 
 	bset stats_loadavg "(${loadpct}) ${loadavg}"
 	bset stats_swapinfo "${swapinfo}"
 	bset stats_elapsed "${elapsed}"
-	bset stats_duration "${duration}"
 }
 
 json_main() {

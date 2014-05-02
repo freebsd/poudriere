@@ -189,7 +189,12 @@ function format_log(pkgname, errors, text) {
 function format_duration(start, end) {
     var duration, hours, minutes, seconds;
 
-    duration = end - start;
+	if (end === undefined) {
+		duration = start;
+	} else {
+		duration = end - start;
+	}
+
     hours = Math.floor(duration / 3600);
     duration = duration - hours * 3600;
     minutes = Math.floor(duration / 60);
@@ -331,6 +336,9 @@ function process_data(data) {
 	/* Stats */
 	if (data.stats) {
 		$.each(data.stats, function(status, count) {
+			if (status == "elapsed") {
+				count = format_duration(count);
+			}
 			$('#stats_' + status).html(count);
 		});
 		display_pkghour(data.stats);
