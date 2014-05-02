@@ -2517,7 +2517,7 @@ stop_build() {
 	buildlog_stop ${portdir} ${build_failed}
 	log_stop
 
-	bset_job_status "stopped" "${portdir#/usr/ports}"
+	bset_job_status "stopped" "${portdir#/usr/ports/}"
 }
 
 # Crazy redirection is to add the portname into stderr.
