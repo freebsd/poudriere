@@ -283,20 +283,20 @@ function process_data(data) {
 	table_rows = [];
 	for (n = 0; n < data.status.length; n++) {
 		var builder = data.status[n];
-		table_row = [];
-		table_row.push(builder.id);
 
 		a = builder.status.split(":");
 
-		if (builder.id == "main") {
-			main_status = a[0];
-		} else {
+		if (builder.id != "main") {
 			a[1] = format_origin(a[1]);
+			table_row = [];
+			table_row.push(builder.id);
+			table_row.push(a[1]);
+			table_row.push(a[0]);
+			table_rows.push(table_row);
+		} else {
+			main_status = a[0];
+			$('#build_status').text(main_status);
 		}
-
-		table_row.push(a[1]);
-		table_row.push(a[0]);
-		table_rows.push(table_row);
 	}
 	$('#jobs').show();
 
