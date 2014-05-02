@@ -1231,8 +1231,6 @@ jail_start() {
 
 	do_portbuild_mounts ${tomnt} ${name} ${ptname} ${setname}
 
-	was_a_bulk_run && show_log_info
-
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 		echo "WITH_CCACHE_BUILD=yes" >> ${tomnt}/etc/make.conf
 		echo "CCACHE_DIR=${HOME}/.ccache" >> ${tomnt}/etc/make.conf
@@ -2313,8 +2311,6 @@ parallel_build() {
 	msg "Building ${nremaining} packages using ${PARALLEL_JOBS} builders"
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
 
-	start_html_json
-
 	bset status "starting_jobs:"
 	msg "Starting/Cloning builders"
 	start_builders
@@ -2334,8 +2330,6 @@ parallel_build() {
 
 	# Close the builder socket
 	exec 5>&-
-
-	stop_html_json
 
 	# Restore PARALLEL_JOBS
 	PARALLEL_JOBS=${real_parallel_jobs}
@@ -3291,6 +3285,9 @@ prepare_ports() {
 		bset setname "${SETNAME}"
 		bset ptname "${PTNAME}"
 		bset buildname "${BUILDNAME}"
+
+		show_log_info
+		start_html_json
 	fi
 
 	load_moved
