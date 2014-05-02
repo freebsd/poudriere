@@ -1934,7 +1934,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 		done
 	fi
 
-	bset_job_status "done" "${port}"
+	bset_job_status "build_port_done" "${port}"
 	return ${testfailure}
 }
 
@@ -2130,7 +2130,7 @@ build_queue() {
 				rm -f ${MASTERMNT}/poudriere/var/run/${j}.pid \
 					${MASTERMNT}/poudriere/var/run/${j}.pkgname
 				_bget status ${j} status
-				if [ "${status%%:*}" = "stopped" ]; then
+				if [ "${status%%:*}" = "done" ]; then
 					mark_done ${pkgname}
 					bset ${j} status "idle:"
 				else
@@ -2498,7 +2498,7 @@ build_pkg() {
 
 	stop_build ${portdir} ${build_failed}
 
-	bset ${MY_JOBID} status "idle:"
+	bset ${MY_JOBID} status "done:"
 
 	echo ${MY_JOBID} >&6
 }
