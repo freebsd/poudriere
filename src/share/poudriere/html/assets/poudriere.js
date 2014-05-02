@@ -210,6 +210,9 @@ function process_data(data) {
 					$('#' + status).show();
 					$('#nav_' + status).removeClass('disabled');
 				}
+				if (n == data.ports[status].length) {
+					return;
+				}
 				for (; n < data.ports[status].length; n++) {
 					var row = data.ports[status][n];
 					// Add in skipped counts for failures and ignores
