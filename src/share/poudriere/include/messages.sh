@@ -25,7 +25,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-if ! [ -t 1 ] && ! [ -t 2 ]; then
+if ! [ -t 1 ] || ! [ -t 2 ]; then
 	USE_COLORS="no"
 fi
 
