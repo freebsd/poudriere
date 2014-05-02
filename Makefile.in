@@ -91,7 +91,7 @@ DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/src/etc/rc.d/poudriered.in $(dist_bin_SCRIPTS) \
 	$(dist_rc_SCRIPTS) depcomp $(dist_man_MANS) \
 	$(dist_assets_DATA) $(dist_awk_DATA) $(dist_btcss_DATA) \
-	$(dist_btimg_DATA) $(dist_btjs_DATA) $(dist_dtcss_DATA) \
+	$(dist_btfonts_DATA) $(dist_btjs_DATA) $(dist_dtcss_DATA) \
 	$(dist_dtimages_DATA) $(dist_dtjs_DATA) $(dist_html_DATA) \
 	$(dist_pkgdata_DATA) $(dist_include_HEADERS) README compile \
 	install-sh missing
@@ -131,7 +131,7 @@ libucl_a_OBJECTS = $(am_libucl_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(bindir)" \
 	"$(DESTDIR)$(rcdir)" "$(DESTDIR)$(man8dir)" \
 	"$(DESTDIR)$(assetsdir)" "$(DESTDIR)$(awkdir)" \
-	"$(DESTDIR)$(btcssdir)" "$(DESTDIR)$(btimgdir)" \
+	"$(DESTDIR)$(btcssdir)" "$(DESTDIR)$(btfontsdir)" \
 	"$(DESTDIR)$(btjsdir)" "$(DESTDIR)$(dtcssdir)" \
 	"$(DESTDIR)$(dtimagesdir)" "$(DESTDIR)$(dtjsdir)" \
 	"$(DESTDIR)$(htmldir)" "$(DESTDIR)$(pkgdatadir)" \
@@ -263,7 +263,7 @@ man8dir = $(mandir)/man8
 NROFF = nroff
 MANS = $(dist_man_MANS)
 DATA = $(dist_assets_DATA) $(dist_awk_DATA) $(dist_btcss_DATA) \
-	$(dist_btimg_DATA) $(dist_btjs_DATA) $(dist_dtcss_DATA) \
+	$(dist_btfonts_DATA) $(dist_btjs_DATA) $(dist_dtcss_DATA) \
 	$(dist_dtimages_DATA) $(dist_dtjs_DATA) $(dist_html_DATA) \
 	$(dist_pkgdata_DATA) $(hook_DATA) $(sysconf_DATA)
 HEADERS = $(dist_include_HEADERS)
@@ -399,7 +399,7 @@ assetsdir = $(htmldir)/assets
 bootstrapdir = $(assetsdir)/bootstrap
 btcssdir = $(bootstrapdir)/css
 btjsdir = $(bootstrapdir)/js
-btimgdir = $(bootstrapdir)/img
+btfontsdir = $(bootstrapdir)/fonts
 datatablesdir = $(assetsdir)/dataTables
 dtcssdir = $(datatablesdir)/css
 dtimagesdir = $(datatablesdir)/images
@@ -444,16 +444,18 @@ dist_awk_DATA = src/share/poudriere/awk/dependency_loop.awk \
 
 dist_html_DATA = src/share/poudriere/html/index.html
 dist_assets_DATA = src/share/poudriere/html/assets/poudriere.js \
-			src/share/poudriere/html/assets/logo.jpg \
+			src/share/poudriere/html/assets/logo.svg \
 			src/share/poudriere/html/assets/favicon.ico \
 			src/share/poudriere/html/assets/poudriere.css \
 			src/share/poudriere/html/assets/jquery-1.11.0.min.js
 
 dist_btjs_DATA = src/share/poudriere/html/assets/bootstrap/js/bootstrap.min.js
-dist_btimg_DATA = src/share/poudriere/html/assets/bootstrap/img/glyphicons-halflings-white.png \
-			src/share/poudriere/html/assets/bootstrap/img/glyphicons-halflings.png
+dist_btfonts_DATA = src/share/poudriere/html/assets/bootstrap/fonts/glyphicons-halflings-regular.eot \
+			src/share/poudriere/html/assets/bootstrap/fonts/glyphicons-halflings-regular.svg \
+			src/share/poudriere/html/assets/bootstrap/fonts/glyphicons-halflings-regular.ttf \
+			src/share/poudriere/html/assets/bootstrap/fonts/glyphicons-halflings-regular.woff
 
-dist_btcss_DATA = src/share/poudriere/html/assets/bootstrap/css/bootstrap-responsive.min.css \
+dist_btcss_DATA = src/share/poudriere/html/assets/bootstrap/css/bootstrap-theme.min.css \
 			src/share/poudriere/html/assets/bootstrap/css/bootstrap.min.css
 
 dist_dtcss_DATA = src/share/poudriere/html/assets/dataTables/css/jquery.dataTables.min.css
@@ -1243,27 +1245,27 @@ uninstall-dist_btcssDATA:
 	@list='$(dist_btcss_DATA)'; test -n "$(btcssdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(btcssdir)'; $(am__uninstall_files_from_dir)
-install-dist_btimgDATA: $(dist_btimg_DATA)
+install-dist_btfontsDATA: $(dist_btfonts_DATA)
 	@$(NORMAL_INSTALL)
-	@list='$(dist_btimg_DATA)'; test -n "$(btimgdir)" || list=; \
+	@list='$(dist_btfonts_DATA)'; test -n "$(btfontsdir)" || list=; \
 	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(btimgdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(btimgdir)" || exit 1; \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(btfontsdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(btfontsdir)" || exit 1; \
 	fi; \
 	for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  echo "$$d$$p"; \
 	done | $(am__base_list) | \
 	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(btimgdir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(btimgdir)" || exit $$?; \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(btfontsdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(btfontsdir)" || exit $$?; \
 	done
 
-uninstall-dist_btimgDATA:
+uninstall-dist_btfontsDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(dist_btimg_DATA)'; test -n "$(btimgdir)" || list=; \
+	@list='$(dist_btfonts_DATA)'; test -n "$(btfontsdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(btimgdir)'; $(am__uninstall_files_from_dir)
+	dir='$(DESTDIR)$(btfontsdir)'; $(am__uninstall_files_from_dir)
 install-dist_btjsDATA: $(dist_btjs_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(dist_btjs_DATA)'; test -n "$(btjsdir)" || list=; \
@@ -1679,7 +1681,7 @@ check: check-am
 all-am: Makefile $(LIBRARIES) $(PROGRAMS) $(SCRIPTS) $(MANS) $(DATA) \
 		$(HEADERS)
 installdirs:
-	for dir in "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(rcdir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(assetsdir)" "$(DESTDIR)$(awkdir)" "$(DESTDIR)$(btcssdir)" "$(DESTDIR)$(btimgdir)" "$(DESTDIR)$(btjsdir)" "$(DESTDIR)$(dtcssdir)" "$(DESTDIR)$(dtimagesdir)" "$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(htmldir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(hookdir)" "$(DESTDIR)$(sysconfdir)" "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(rcdir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(assetsdir)" "$(DESTDIR)$(awkdir)" "$(DESTDIR)$(btcssdir)" "$(DESTDIR)$(btfontsdir)" "$(DESTDIR)$(btjsdir)" "$(DESTDIR)$(dtcssdir)" "$(DESTDIR)$(dtimagesdir)" "$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(htmldir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(hookdir)" "$(DESTDIR)$(sysconfdir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -1762,7 +1764,7 @@ info: info-am
 info-am:
 
 install-data-am: install-dist_assetsDATA install-dist_awkDATA \
-	install-dist_btcssDATA install-dist_btimgDATA \
+	install-dist_btcssDATA install-dist_btfontsDATA \
 	install-dist_btjsDATA install-dist_dtcssDATA \
 	install-dist_dtimagesDATA install-dist_dtjsDATA \
 	install-dist_htmlDATA install-dist_includeHEADERS \
@@ -1817,7 +1819,7 @@ ps-am:
 
 uninstall-am: uninstall-dist_assetsDATA uninstall-dist_awkDATA \
 	uninstall-dist_binSCRIPTS uninstall-dist_btcssDATA \
-	uninstall-dist_btimgDATA uninstall-dist_btjsDATA \
+	uninstall-dist_btfontsDATA uninstall-dist_btjsDATA \
 	uninstall-dist_dtcssDATA uninstall-dist_dtimagesDATA \
 	uninstall-dist_dtjsDATA uninstall-dist_htmlDATA \
 	uninstall-dist_includeHEADERS uninstall-dist_pkgdataDATA \
@@ -1838,7 +1840,7 @@ uninstall-man: uninstall-man8
 	dvi-am html html-am info info-am install install-am \
 	install-data install-data-am install-dist_assetsDATA \
 	install-dist_awkDATA install-dist_binSCRIPTS \
-	install-dist_btcssDATA install-dist_btimgDATA \
+	install-dist_btcssDATA install-dist_btfontsDATA \
 	install-dist_btjsDATA install-dist_dtcssDATA \
 	install-dist_dtimagesDATA install-dist_dtjsDATA \
 	install-dist_htmlDATA install-dist_includeHEADERS \
@@ -1853,7 +1855,7 @@ uninstall-man: uninstall-man8
 	ps ps-am tags tags-am uninstall uninstall-am \
 	uninstall-dist_assetsDATA uninstall-dist_awkDATA \
 	uninstall-dist_binSCRIPTS uninstall-dist_btcssDATA \
-	uninstall-dist_btimgDATA uninstall-dist_btjsDATA \
+	uninstall-dist_btfontsDATA uninstall-dist_btjsDATA \
 	uninstall-dist_dtcssDATA uninstall-dist_dtimagesDATA \
 	uninstall-dist_dtjsDATA uninstall-dist_htmlDATA \
 	uninstall-dist_includeHEADERS uninstall-dist_pkgdataDATA \

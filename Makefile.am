@@ -7,7 +7,7 @@ assetsdir= $(htmldir)/assets
 bootstrapdir= $(assetsdir)/bootstrap
 btcssdir= $(bootstrapdir)/css
 btjsdir= $(bootstrapdir)/js
-btimgdir= $(bootstrapdir)/img
+btfontsdir= $(bootstrapdir)/fonts
 datatablesdir= $(assetsdir)/dataTables
 dtcssdir= $(datatablesdir)/css
 dtimagesdir= $(datatablesdir)/images
@@ -56,14 +56,16 @@ dist_awk_DATA= src/share/poudriere/awk/dependency_loop.awk \
 
 dist_html_DATA= src/share/poudriere/html/index.html
 dist_assets_DATA=	src/share/poudriere/html/assets/poudriere.js \
-			src/share/poudriere/html/assets/logo.jpg \
+			src/share/poudriere/html/assets/logo.svg \
 			src/share/poudriere/html/assets/favicon.ico \
 			src/share/poudriere/html/assets/poudriere.css \
 			src/share/poudriere/html/assets/jquery-1.11.0.min.js
-dist_btjs_DATA=	src/share/poudriere/html/assets/bootstrap/js/bootstrap.min.js
-dist_btimg_DATA=	src/share/poudriere/html/assets/bootstrap/img/glyphicons-halflings-white.png \
-			src/share/poudriere/html/assets/bootstrap/img/glyphicons-halflings.png
-dist_btcss_DATA=	src/share/poudriere/html/assets/bootstrap/css/bootstrap-responsive.min.css \
+dist_btjs_DATA=		src/share/poudriere/html/assets/bootstrap/js/bootstrap.min.js
+dist_btfonts_DATA=	src/share/poudriere/html/assets/bootstrap/fonts/glyphicons-halflings-regular.eot \
+			src/share/poudriere/html/assets/bootstrap/fonts/glyphicons-halflings-regular.svg \
+			src/share/poudriere/html/assets/bootstrap/fonts/glyphicons-halflings-regular.ttf \
+			src/share/poudriere/html/assets/bootstrap/fonts/glyphicons-halflings-regular.woff
+dist_btcss_DATA=	src/share/poudriere/html/assets/bootstrap/css/bootstrap-theme.min.css \
 			src/share/poudriere/html/assets/bootstrap/css/bootstrap.min.css
 dist_dtcss_DATA=	src/share/poudriere/html/assets/dataTables/css/jquery.dataTables.min.css
 dist_dtjs_DATA=		src/share/poudriere/html/assets/dataTables/js/jquery.dataTables.min.js

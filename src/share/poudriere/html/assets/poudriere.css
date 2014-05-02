@@ -4,7 +4,6 @@
 	width: 100%;
 	height: 100%;
 	z-index: 9003;
-	top: 0;
 	left: 0;
 	position: fixed;
 }
@@ -15,32 +14,32 @@
 	position: absolute;
 }
 
-table {
-	border-collapse: collapse;
-	border: 2px solid black;
-	margin-top:	5px;
+.top-icon {
+	display: none;
 }
-th, td { border: 1px solid black; }
 
 .layout,
 .layout th,
 .layout td {
 	border: 0;
 }
-.queued { background-color: #aaa; }
-.built { background-color: #00CC00; }
+.queued { background-color: #aaa !important; }
+.built { background-color: #00CC00 !important; }
 .built .row1 { background-color: #00FF00; }
-.failed { background-color: #E00000; }
+.failed { background-color: #E00000 !important; }
 .failed .row1 { background-color: #FF0000; }
-.skipped { background-color: #CC6633; }
+.skipped { background-color: #CC6633 !important; }
 .skipped .row1 { background-color: #AA6734; }
-.ignored { background-color: #FF9900; }
+.ignored { background-color: #FF9900 !important; }
 .ignored .row1 { background-color: #FF6F00; }
-.remaining { background-color: #E3E3E3; }
-.info { background-color: #E3E3E3; }
+.remaining { background-color: #E3E3E3 !important; }
 .new { display: none; }
 #header {
 	border-bottom: 1px solid black;
+}
+
+.navbar-toggle {
+	margin-right: 0;
 }
 
 #header, footer {
@@ -48,37 +47,80 @@ th, td { border: 1px solid black; }
 }
 
 body {
-	padding-bottom: 25px;
+	padding-bottom: 18px;
+	padding-top: 52px;
+}
+/* http://nicolasgallagher.com/jump-links-and-viewport-positioning/demo */
+.anchor {
+	border-top: 52px solid transparent;
+	margin-top: -52px;
+	-webkit-background-clip: padding-box;
+	-moz-background-clip: padding;
+	background-clip: padding-box;
 }
 
-/* Disabled once screen too small */
-@media (min-width: 979px) {
-	body {
-		padding-top: 135px;
+/* Collapse nav at <= sm http://stackoverflow.com/a/22400347/285734 */
+@media (max-width: 991px) {
+    .navbar-header {
+        float: none;
+    }
+    .navbar-toggle {
+        display: block;
+    }
+    .navbar-collapse {
+        border-top: 1px solid transparent;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .navbar-collapse.collapse {
+        display: none!important;
+    }
+	.navbar-collapse.collapse.in {
+		display: block!important;
 	}
-	.top-icon {
-		display: none;
-	}
-	/* http://nicolasgallagher.com/jump-links-and-viewport-positioning/demo */
-	.anchor {
-		border-top: 135px solid transparent;
-		margin-top: -135px;
-		-webkit-background-clip: padding-box;
-		-moz-background-clip: padding;
-		background-clip: padding-box;
-	}
+    .navbar-nav {
+        float: none!important;
+        margin: 7.5px -15px;
+    }
+	/* Keep pills horizontal
+    .navbar-nav>li {
+        float: none;
+    }
+	 */
+    .navbar-nav>li>a {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+}
 
+/* This is the minimum width the site should be displayed at
+ * so the canvas displays. This value is used by poudriere.js
+ * for forcing the viewport to use the minimum width as well to
+ * get mobile devices (such as iPhone portrait) to zoom/scale the
+ * page appropriately.
+ */
+@media (max-width : 570px) {
+	body, #header  {
+		min-width: 570px;
+	}
 }
 
 /* Prevent excess padding when zoomed in */
 @media (max-width: 979px) {
-	.navbar-fixed-top {
+	.navbar-fixed-top, .navbar {
 		margin-bottom: 0px;
 	}
 }
 
 body {
+	font-size: 14px;
+	font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
 	line-height: normal;
+}
+
+/* Avoid loading_overlay shift when scrollbar loads: http://stackoverflow.com/a/3677433/285734 */
+html {
+	overflow-y: scroll;
+	overflow: -moz-scrollbars-vertical;
 }
 
 #progress, #progress td, #progress span, #progress canvas {
@@ -88,46 +130,59 @@ body {
 	line-height: 0;
 }
 
-#progress span {
+#progress {
 	margin-left: 1px;
 }
 
 .layout table {
-	width: 500px; /* canvas width */
+	border: 0;
+	width: 480px;
 	margin: 0;
+	margin-bottom: 1px;
 	line-height: 1;
+	border-collapse: separate;
+	border-spacing: 2px;
+}
+.layout th,
+.layout td {
+	font-family: "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", Monaco, "Lucida Console", monospace;
+	font-size: 9pt;
+	text-align: center;
 }
 
 footer {
 	bottom: 0;
-	height: 17px;
+	/*height: 18px;*/
+	max-height: 20px;
 	margin-top: 5px;
 	border-top: 1px solid black;
 }
 
+#logo {
+	margin-left: -14px;
+}
+
 #logo img {
-	height: 59px;
-	width: 43px;
+	height: 38px;
 }
 
-#stats {
-	float: left;
-}
-#stats table {
-	border: 0;
-	margin-bottom: 1px;
-	font-size: 9pt;
-	text-align: center;
+.navbar {
+	font-size: 13px;
 }
 
-#system {
-	float: left;
+#stats td, #stats th {
+	width: 16.67%;
 }
-#system table {
-	border: 0;
-	margin-bottom: 1px;
-	font-size: 9pt;
-	text-align: center;
+
+#system td, #system th {
+	width: 33%;
+}
+
+.layout {
+	margin-top: 1px;
+}
+.layout table td {
+	background-color: #E3E3E3;
 }
 
 h1 {
@@ -137,46 +192,34 @@ h1 {
 h2 {
 	background-color: #eee;
 }
-.status {
-	padding-bottom: 20px;
+
+.status td {
+	font-family: "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", Monaco, "Lucida Console", monospace;
 }
+
 br.clear {
 	clear: both;
 	height: 0;
 	overflow: hidden;
 }
 
-#build_info dt {
-	width: auto;
+#build_info dt, #build_info dd {
+	line-height: normal;
+	font-size: 13px;
+	font-family: "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", Monaco, "Lucida Console", monospace;
+}
+#build_info dl {
+	margin-bottom: 0;
 }
 
-#build_info dd {
-	margin-left: 40px;
+table.dataTable.display td,
+dd {
+	word-break: break-all;
 }
 
-#builders_table td {
-	text-overflow: ellipsis;
-	overflow: hidden;
-	white-space: nowrap;
-	max-width: 313px;
-}
-
-@media (max-width: 1217px) {
-	#builders_table td {
-		max-width: 220px;
-	}
-}
-
-@media (max-width: 979px) {
-	#builders_table td {
-		max-width: 150px;
-	}
-}
-
-@media (max-width: 869px) {
-	#builders_table td {
-		max-width: 120px;
-	}
+.glyphicon {
+	font-size: 0.75em;
+	text-align: top;
 }
 
 table.dataTable.display tbody tr.odd {
@@ -191,4 +234,9 @@ table.dataTable thead th,
 table.dataTable tbody td {
 	padding-top: 1px;
 	padding-bottom: 1px;
+}
+
+/* Fix webkit render bug - https://stackoverflow.com/questions/14493533/really-weird-redraw-behavior-with-anchor-links-twitter-bootstrap-fixed-navbar */
+.affix,.navbar-fixed-top{
+	-webkit-transform: scale3d(1,1,1);
 }

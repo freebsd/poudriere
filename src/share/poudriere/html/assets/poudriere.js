@@ -1,6 +1,7 @@
 // vim: set sts=4 sw=4 ts=4 noet:
 var updateInterval = 8;
 var first_run = true;
+var canvas_width;
 
 function update_fields() {
 	$.ajax({
@@ -27,8 +28,8 @@ function format_origin(origin) {
 
 	return "<a target=\"_new\" title=\"portsmon for " + origin +
 		"\" href=\"http://portsmon.freebsd.org/portoverview.py?category=" +
-		data[0] + "&amp;portname=" + data[1] + "\"><i " +
-		"class=\"icon-share-alt\"></i>"+ data[0] + "/&#8203;" + data[1] + "</a>";
+		data[0] + "&amp;portname=" + data[1] + "\"><span " +
+		"class=\"glyphicon glyphicon-tasks\"></span>"+ origin + "</a>";
 }
 
 function format_pkgname(pkgname) {
@@ -47,7 +48,7 @@ function minidraw(x, height, width, context, color, queued, variable) {
 			return 0;
 		}
 	}
-	newx = pct * 5;
+	newx = width * (pct / 100);
 	if (newx == 0) {
 		newx = 1;
 	}
@@ -60,23 +61,45 @@ function minidraw(x, height, width, context, color, queued, variable) {
 	return (newx);
 }
 
+function determine_canvas_width() {
+	var width;
+
+	/* Determine width by how much space the column has, minus the size of
+	 * displaying the percentage at 100%
+	 */
+	width = $('#progress_col').width();
+	$('#progresspct').text('100%');
+	width = width - $('#progresspct').width() - 20;
+	$('#progresspct').text('');
+	canvas_width = width;
+}
+
 function update_canvas(stats) {
-	var queued = stats.queued;
-	var built = stats.built;
-	var failed = stats.failed;
-	var skipped = stats.skipped;
-	var ignored = stats.ignored;
-	var remaining = queued - built - failed - skipped - ignored;
+	var queued, built, failed, skipped, ignored, remaining, pctdone;
 	var height, width, x, context, canvas;
 
-	height = 10;
-	width = 500;
+	if (stats.queued === undefined) {
+		return;
+	}
 
 	canvas = document.getElementById('progressbar');
 	if (canvas.getContext === undefined) {
 		/* Not supported */
 		return;
 	}
+
+	height = 10;
+	width = canvas_width;
+
+	canvas.height = height;
+	canvas.width = width;
+
+	queued = stats.queued;
+	built = stats.built;
+	failed = stats.failed;
+	skipped = stats.skipped;
+	ignored = stats.ignored;
+	remaining = queued - built - failed - skipped - ignored;
 
 	context = canvas.getContext('2d');
 
@@ -97,14 +120,17 @@ function update_canvas(stats) {
 	x += minidraw(x, height, width, context, "#FF9900", queued, ignored);
 	x += minidraw(x, height, width, context, "#CC6633", queued, skipped);
 
+	pctdone = Math.floor(((queued - remaining) * 100) / queued);
+	$('#progresspct').text(pctdone + '%');
+
 	$('#stats_remaining').html(remaining);
 }
 
 function format_log(pkgname, errors, text) {
 	var html;
 
-	html = '<a target="logs" href="logs/' + (errors ? 'errors/' : '') +
-		pkgname + '.log"><i class="icon-share-alt"></i>' + text + '</a>';
+	html = '<a target="logs" title="Log for ' + pkgname + '" href="logs/' + (errors ? 'errors/' : '') +
+		pkgname + '.log"><span class="glyphicon glyphicon-file"></span>' + text + '</a>';
 	return html;
 }
 
@@ -148,7 +174,7 @@ function format_status_row(status, row) {
 	if (status == "built") {
 		table_row.push(format_pkgname(row.pkgname));
 		table_row.push(format_origin(row.origin));
-		table_row.push(format_log(row.pkgname, false, "logfile"));
+		table_row.push(format_log(row.pkgname, false, 'success'));
 	} else if (status == "failed") {
 		table_row.push(format_pkgname(row.pkgname));
 		table_row.push(format_origin(row.origin));
@@ -186,6 +212,7 @@ function process_data(data) {
 	}
 
 	if (data.stats) {
+		determine_canvas_width();
 		update_canvas(data.stats);
 	}
 
@@ -198,6 +225,7 @@ function process_data(data) {
 		$('#svn_url').html(data.svn_url);
 	else
 		$('#svn_url').hide();
+	$('#build_info').show();
 
 	/* Builder status */
 	table_rows = [];
@@ -217,8 +245,9 @@ function process_data(data) {
 		table_row.push(a[1]);
 		table_row.push(a[0]);
 		table_rows.push(table_row);
-
 	}
+	$('#jobs').show();
+
 	// XXX This could be improved by updating cells in-place
 	$('#builders_table').dataTable().fnClearTable();
 	$('#builders_table').dataTable().fnAddData(table_rows);
@@ -228,6 +257,8 @@ function process_data(data) {
 		$.each(data.stats, function(status, count) {
 			$('#stats_' + status).html(count);
 		});
+		$('#stats').data(data.stats);
+		$('#stats').fadeIn(1400);
 	}
 
 	/* For each status, track how many of the existing data has been
@@ -282,48 +313,108 @@ function process_data(data) {
 	}
 }
 
-$(document).ready(function() {
-	var columnDefs, status, types, i;
+/* Disable static navbar at the breakpoint */
+function do_resize(win) {
+	/* Redraw canvas to new width */
+	if ($('#stats').data()) {
+		determine_canvas_width();
+		update_canvas($('#stats').data());
+	}
+}
 
-	// Enable LOADING overlay until the page is loaded
-	$('#loading_overlay').show();
+/* Force minimum width on mobile, will zoom to fit. */
+function fix_viewport() {
+	var minimum_width;
+
+	minimum_width = parseInt($('body').css('min-width'));
+	if (minimum_width != 0 && window.innerWidth < minimum_width) {
+		$('meta[name=viewport]').attr('content','width=' + minimum_width);
+	} else {
+		$('meta[name=viewport]').attr('content','width=device-width, initial-scale=1.0');
+	}
+}
+
+$(document).ready(function() {
+	var columns, status, types, i;
+
 	$('#builders_table').dataTable({
 		"bFilter": false,
 		"bInfo": false,
 		"bPaginate": false,
+		"bAutoWidth": false,
+		"aoColumns": [
+			// Smaller ID/Status
+			{"sWidth": "2em"},
+			null,
+			{"sWidth": "7em"},
+		],
 	});
 
-	columnDefs = {
+	columns = {
 		"built": [
-			// Disable sorting/searching on 'logfile' link
-			{"bSortable": false, "aTargets": [2]},
-			{"bSearchable": false, "aTargets": [2]},
+			null,
+			null,
+			{
+				"sWidth": "4.25em",
+				"bSortable": false,
+				"bSearchable": false,
+			},
 		],
 		"failed": [
-			// Skipped count is numeric
-			{"sType": "numeric", "aTargets": [3]},
+			null,
+			null,
+			{
+				"sWidth": "6em",
+			},
+			{
+				"sType": "numeric",
+				"sWidth": "4em",
+			},
+			{
+				"sWidth": "7em",
+			},
 		],
-		"skipped": [],
+		"skipped": [
+			null,
+			null,
+			{
+				"sWidth": "35em",
+			},
+		],
 		"ignored": [
-			// Skipped count is numeric
-			{"sType": "numeric", "aTargets": [2]},
+			null,
+			null,
+			{
+				"sWidth": "4em",
+				"sType": "numeric",
+			},
+			{
+				"sWidth": "35em",
+			},
 		],
 	};
 
 	types = ['built', 'failed', 'skipped', 'ignored'];
 	for (i in types) {
 		status = types[i];
-		$('#' + status).hide();
 		$('#' + status + '_table').dataTable({
 			"aaSorting": [], // No initial sorting
+			"bAutoWidth": false,
 			"processing": true, // Show processing icon
 			"deferRender": true, // Defer creating TR/TD until needed
-			"aoColumnDefs": columnDefs[status],
+			"aoColumns": columns[status],
 			"localStorage": true, // Enable cookie for keeping state
 			"lengthMenu":[[5,10,25,50,100,200, -1],[5,10,25,50,100,200,"All"]],
 			"pageLength": 10,
 		});
 	}
+
+	/* Force minimum width on mobile, will zoom to fit. */
+	$(window).bind('orientationchange', function(e) {fix_viewport();});
+	fix_viewport();
+	/* Handle resize needs */
+	$(window).on('resize', function() {do_resize($(this));});
+	do_resize($(window));
 
 	update_fields();
 });
