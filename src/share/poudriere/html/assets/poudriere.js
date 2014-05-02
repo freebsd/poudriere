@@ -57,7 +57,7 @@ function minidraw(x, height, width, context, color, queued, variable) {
 	}
 	/* Cap total bar to 98% so it's clear something is remaining */
 	total_pct = ((x + newx) / width) * 100;
-	if (total_pct >= 98.0) {
+	if (total_pct >= 98.0 && total_pct < 100.0) {
 		newx = width - (Math.ceil(width * (98 / 100)));
 	}
 	/* Always start at 1 */
