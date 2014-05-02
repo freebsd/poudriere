@@ -847,6 +847,7 @@ enter_interactive() {
 	fi
 
 	print_phase_header "Interactive"
+	bset status "interactive:"
 
 	msg "Installing packages"
 	echo "PACKAGES=/packages" >> ${MASTERMNT}/etc/make.conf
@@ -1365,6 +1366,9 @@ cleanup() {
 				[ "${pid}" = "${MASTERMNT}/poudriere/var/run/*.pid" ] && break
 				pkill -15 -F ${pid} >/dev/null 2>&1 || :
 			done
+		fi
+		if was_a_bulk_run; then
+			stop_html_json
 		fi
 		wait
 
@@ -1927,7 +1931,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 		done
 	fi
 
-	bset ${MY_JOBID} status "idle:"
+	bset_job_status "done" "${port}"
 	return ${testfailure}
 }
 
@@ -2489,9 +2493,9 @@ build_pkg() {
 
 	clean_pool ${PKGNAME} ${clean_rdepends}
 
-	bset_job_status "done" "${port}"
-
 	stop_build ${portdir} ${build_failed}
+
+	bset ${MY_JOBID} status "idle:"
 
 	echo ${MY_JOBID} >&6
 }
@@ -2516,8 +2520,6 @@ stop_build() {
 
 	buildlog_stop ${portdir} ${build_failed}
 	log_stop
-
-	bset_job_status "stopped" "${portdir#/usr/ports/}"
 }
 
 # Crazy redirection is to add the portname into stderr.

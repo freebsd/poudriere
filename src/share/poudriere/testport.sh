@@ -165,14 +165,15 @@ if [ $(bget stats_failed) -gt 0 ] || [ $(bget stats_skipped) -gt 0 ]; then
 	failed=$(bget ports.failed | awk '{print $1 ":" $3 }' | xargs echo)
 	skipped=$(bget ports.skipped | awk '{print $1}' | sort -u | xargs echo)
 
-	cleanup
-
-	msg_warn "Depends failed to build"
+	msg_error "Depends failed to build"
 	COLOR_ARROW="${COLOR_FAIL}" \
 	    msg "${COLOR_FAIL}Failed ports: ${COLOR_PORT}${failed}"
 	[ -n "${skipped}" ] && COLOR_ARROW="${COLOR_SKIP}" \
 	    msg "${COLOR_SKIP}Skipped ports: ${COLOR_PORT}${skipped}"
 
+	bset_job_status "failed/depends" "${ORIGIN}"
+	cleanup
+	set +e
 	exit 1
 fi
 nbbuilt=$(bget stats_built)
@@ -183,7 +184,7 @@ commit_packages
 
 PARALLEL_JOBS=${BUILD_PARALLEL_JOBS}
 
-bset status "testing:"
+bset_job_status "testing" "${ORIGIN}"
 
 PKGNAME=`injail make -C /usr/ports/${ORIGIN} -VPKGNAME`
 LOCALBASE=`injail make -C /usr/ports/${ORIGIN} -VLOCALBASE`
@@ -250,7 +251,11 @@ if [ ${ret} -ne 0 ]; then
 
 	if [ ${INTERACTIVE_MODE} -eq 0 ]; then
 		stop_build /usr/ports/${ORIGIN} 1
-		err 1 "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
+		bset_job_status "failed/${failed_phase}" "${ORIGIN}"
+		msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
+		cleanup
+		set +e
+		exit 1
 	fi
 else
 	badd ports.built "${ORIGIN} ${PKGNAME}"
@@ -274,8 +279,13 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 	if [ ${INTERACTIVE_MODE} -eq 1 ]; then
 		# Since failure was skipped earlier, fail now after leaving
 		# jail.
-		[ -z "${failed_phase}" ] ||
-		    err 1 "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
+		if [ -n "${failed_phase}" ]; then
+			bset_job_status "failed/${failed_phase}" "${ORIGIN}"
+			msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
+			cleanup
+			set +e
+			exit 1
+		fi
 	elif [ ${INTERACTIVE_MODE} -eq 2 ]; then
 		exit 0
 	fi
@@ -293,6 +303,8 @@ msg "Deinstalling package"
 injail ${PKG_DELETE} ${PKGNAME}
 
 stop_build /usr/ports/${ORIGIN} ${ret}
+
+bset_job_status "stopped" "${ORIGIN}"
 
 bset status "done:"
 

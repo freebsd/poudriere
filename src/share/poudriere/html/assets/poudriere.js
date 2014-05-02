@@ -321,7 +321,22 @@ function process_data(data) {
 			table_row.push(builder.started ? format_duration(builder.started, now) : "");
 			table_rows.push(table_row);
 		} else {
-			main_status = builder.status;
+			a = builder.status.split(":");
+			if (a[0] == "stopped") {
+				if (a.length >= 3) {
+					main_status = a[0] + ':' + a[1] + ':' + a[2];
+				} else if (a.length >= 2) {
+					main_status = a[0] + ':' + a[1];
+				} else {
+					main_status = a[0] + ':';
+				}
+			} else {
+				if (a.length >= 2) {
+					main_status = a[0] + ':' + a[1];
+				} else {
+					main_status = a[0] + ':';
+				}
+			}
 			$('#build_status').text(main_status);
 		}
 	}
