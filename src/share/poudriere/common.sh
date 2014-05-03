@@ -1596,7 +1596,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 					*/ls-R);;
 					# xmlcatmgr is constantly updating catalog.ports ignore modification to that file
 					share/xml/catalog.ports);;
-					*) echo "${ppath} ${extra}" >> ${mod} ;;
+					*) echo "${ppath#@dirrm } ${extra}" >> ${mod} ;;
 					esac
 					;;
 				esac
