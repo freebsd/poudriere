@@ -1152,6 +1152,16 @@ check_leftovers() {
 		changed=
 		while :; do
 			read_again=0
+
+			# Handle leftover read from changed paths
+			case ${l} in
+			*extra|*missing|extra:*|*changed|*:*)
+				if [ -n "${changed}" ]; then
+					echo "${changed}"
+					changed=
+				fi
+				;;
+			esac
 			case ${l} in
 			*extra)
 				if [ -d ${mnt}/${l% *} ]; then
@@ -1176,7 +1186,7 @@ check_leftovers() {
 				fi
 				;;
 			*:*)
-				changed="M ${mnt}/${l%:*}"
+				changed="M ${mnt}/${l%:*} ${l#*:}"
 				read_again=1
 				;;
 			*)
@@ -1184,11 +1194,8 @@ check_leftovers() {
 				read_again=1
 				;;
 			esac
-			if [ ${read_again} -eq 1 ]; then
-				# Need to read again to find all changes
-				read l || break
-				continue
-			fi
+			# Need to read again to find all changes
+			[ ${read_again} -eq 1 ] && read l && continue
 			[ -n "${changed}" ] && echo "${changed}"
 			break
 		done
