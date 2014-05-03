@@ -1484,10 +1484,10 @@ build_port() {
 				die=1
 			fi
 
-			bset ${MY_JOBID} status "check-orphans:${port}"
+			bset ${MY_JOBID} status "check-plist:${port}"
 			if ! injail env DEVELOPER=1 ${PORT_FLAGS} \
-			    make -C ${portdir} check-orphans; then
-				msg "Error: check-orphans failures detected"
+			    make -C ${portdir} check-plist; then
+				msg "Error: check-plist failures detected"
 				[ "${PORTTESTING_FATAL}" != "no" ] &&
 					return 1
 				die=1
