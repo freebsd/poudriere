@@ -1164,7 +1164,10 @@ check_leftovers() {
 			l=${l#./}
 			echo "- ${mnt}/${l% *}"
 			;;
-		*changed) echo "M ${mnt}/${l% *}" ;;
+		*changed)
+			read extra
+			echo "M ${mnt}/${l% *} ${extra}"
+			;;
 		extra:*)
 			if [ -d ${mnt}/${l#* } ]; then
 				find ${mnt}/${l#* } -exec echo "+ {}" \;
@@ -1172,7 +1175,10 @@ check_leftovers() {
 				echo "+ ${mnt}/${l#* }"
 			fi
 			;;
-		*:*) echo "M ${mnt}/${l%:*}" ;;
+		*:*)
+			read extra
+			echo "M ${mnt}/${l%:*} ${extra}"
+			;;
 		esac
 	done
 }
@@ -1404,7 +1410,7 @@ build_port() {
 				local die=0
 
 				check_leftovers ${mnt} ${stagedir} | \
-				    while read modtype path; do
+				    while read modtype path extra; do
 					local ppath
 
 					# If this is a directory, use @dirrm in output
@@ -1535,7 +1541,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 			done
 
 			check_leftovers ${mnt} | \
-				while read modtype path; do
+				while read modtype path extra; do
 				local ppath ignore_path=0
 
 				# If this is a directory, use @dirrm in output
@@ -1589,7 +1595,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 					*/ls-R);;
 					# xmlcatmgr is constantly updating catalog.ports ignore modification to that file
 					share/xml/catalog.ports);;
-					*) echo "${ppath}" >> ${mod} ;;
+					*) echo "${ppath} ${extra}" >> ${mod} ;;
 					esac
 					;;
 				esac
