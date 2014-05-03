@@ -86,8 +86,8 @@ _testport=(
 	'-j[run only inside the given jail]::name:_poudriere_jail'
 	'-i[Interactive mode. Enter jail after build and automatically cleanup when done]'
 	'-I[Advanced interactive mode. Leave jail running but do not enter]'
-	'-n[no custom prefix]::'
 	'-p[specify on which portstree we work]::tree:_poudriere_pt'
+	'-P[use custom prefix]::'
 	'-v[Be verbose; show more information. Specify twice to enable debug output.]'
 	'-z[Specify on which SET to use]::'
 )

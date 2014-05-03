@@ -39,8 +39,8 @@ Options:
     -j name     -- Run inside the given jail
     -i          -- Interactive mode. Enter jail for interactive testing and automatically cleanup when done.
     -I          -- Advanced Interactive mode. Leaves jail running with port installed after test.
-    -n          -- No custom prefix
     -p tree     -- Specify the path to the portstree
+    -P          -- Use custom prefix
     -s          -- Skip sanity checks
     -v          -- Be verbose; show more information. Use twice to enable debug output
     -z set      -- Specify which SET to use"
@@ -51,13 +51,13 @@ SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 CONFIGSTR=0
 . ${SCRIPTPREFIX}/common.sh
-NOPREFIX=0
+NOPREFIX=1
 SETNAME=""
 SKIPSANITY=0
 INTERACTIVE_MODE=0
 PTNAME="default"
 
-while getopts "o:cnj:J:iIp:svz:" FLAG; do
+while getopts "o:cnj:J:iIp:Psvz:" FLAG; do
 	case "${FLAG}" in
 		c)
 			CONFIGSTR=1
@@ -66,7 +66,7 @@ while getopts "o:cnj:J:iIp:svz:" FLAG; do
 			ORIGIN=${OPTARG}
 			;;
 		n)
-			NOPREFIX=1
+			# Backwards-compat with NOPREFIX=1
 			;;
 		j)
 			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
@@ -83,6 +83,9 @@ while getopts "o:cnj:J:iIp:svz:" FLAG; do
 			;;
 		p)
 			PTNAME=${OPTARG}
+			;;
+		P)
+			NOPREFIX=0
 			;;
 		s)
 			SKIPSANITY=1
