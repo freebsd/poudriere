@@ -668,7 +668,6 @@ markfs() {
 		;;
 	prebuild|prestage) domtree=1 ;;
 	preinst) domtree=1 ;;
-	poststage) domtree=1 ;;
 	esac
 
 	if [ $dozfs -eq 1 ]; then
@@ -682,7 +681,7 @@ markfs() {
 	mkdir -p ${mnt}/poudriere/
 
 	case "${name}" in
-		prepkg|poststage)
+		prepkg)
 			cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
 .${HOME}/.ccache/*
 ./ccache/*
@@ -1146,9 +1145,6 @@ check_leftovers() {
 			mtree -X ${mnt}/poudriere/mtree.preinstexclude \
 			    -f ${mnt}/poudriere/mtree.preinst \
 			    -p ${mnt}
-		else
-			injail mtree -f /poudriere/mtree.poststage \
-			    -e -L -p /
 		fi
 	} | while read l ; do
 		local changed read_again
@@ -1422,54 +1418,20 @@ build_port() {
 			plistsub_sed=$(injail env ${PORT_FLAGS} make -C ${portdir} -V'PLIST_SUB:C/"//g:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/')
 			PREFIX=$(injail env ${PORT_FLAGS} make -C ${portdir} -VPREFIX)
 			if [ -z "${no_stage}" ]; then
-				msg "Checking for orphaned files and directories in stage directory (missing from plist)"
 				bset ${MY_JOBID} status "stage_orphans:${port}"
-				local orphans=$(mktemp ${mnt}/tmp/orphans.XXXXXX)
 				local die=0
 
-				markfs poststage ${mnt} ${stagedir}
-				check_leftovers ${mnt} ${stagedir} | \
-				    while read modtype path extra; do
-					local ppath
-
-					# If this is a directory, use @dirrm in output
-					if [ -d "${path}" ]; then
-						ppath="@dirrm "`echo $path | sed \
-							-e "s,^${mnt},," \
-							-e "s,^${PREFIX}/,," \
-							${plistsub_sed} \
-						`
-					else
-						ppath=`echo "$path" | sed \
-							-e "s,^${mnt},," \
-							-e "s,^${PREFIX}/,," \
-							${plistsub_sed} \
-						`
-					fi
-
-					[ "${modtype}" = "M" ] && continue
-
-					# Ignore PREFIX as orphan, which
-					# happens via stage-dir if
-					# NO_MTREE is set
-					[ "${path#${mnt}}" != "${PREFIX}" ] &&
-					  [ "${path#${mnt}}" != "/usr" ] &&
-					  [ "${path#${mnt}}" != "/." ] &&
-					    echo "${ppath}" >> ${orphans}
-				done
-
-				if [ -s "${orphans}" ]; then
-					msg "Files or directories orphaned:"
+				if ! injail env DEVELOPER=1 \
+				    make -C ${portdir} check-orphans; then
+					msg "Error: check-orphans failures detected"
 					die=1
-					grep -v "^@dirrm" ${orphans}
-					grep "^@dirrm" ${orphans} | sort -r
 				fi
+
 				[ ${die} -eq 1 -a "${0##*/}" = "testport.sh" -a \
 				    "${PREFIX}" != "${LOCALBASE}" ] && msg \
 				    "This test was done with PREFIX!=LOCALBASE which \
 may show failures if the port does not respect PREFIX. \
 Try testport with -n to use PREFIX=LOCALBASE"
-				rm -f ${orphans}
 				[ $die -eq 0 ] || return 1
 			fi
 		fi
