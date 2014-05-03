@@ -2197,7 +2197,7 @@ stress_snapshot() {
 	ncpu=${PARALLEL_JOBS}
 	[ ${ncpu} -gt ${NCPU} ] && ncpu=${NCPU}
 	loadpct="$(printf "%2.0f%%" $(echo "scale=20; 100 * (${min_load} / ${ncpu})" | bc))"
-	swapinfo=$(swapinfo -k|awk '/\// {sum+=$2; X+=$3} END {printf "%1.2f%%\n", X*100/sum}')
+	swapinfo=$(swapinfo -k|awk '/\// {sum+=$2; X+=$3} END {if (sum) {printf "%1.2f%%\n", X*100/sum}}')
 	now=$(date +%s)
 	elapsed=$((${now} - ${TIME_START}))
 
