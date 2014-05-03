@@ -2146,8 +2146,8 @@ list_deps() {
 	local makeargs="-VPKG_DEPENDS -VBUILD_DEPENDS -VEXTRACT_DEPENDS -VLIB_DEPENDS -VPATCH_DEPENDS -VFETCH_DEPENDS -VRUN_DEPENDS"
 
 	mangle_stderr "WARNING" "($1)" injail make -C ${dir} $makeargs | \
-		tr '\n' ' ' | sed -e "s,[[:graph:]]*/usr/ports/,,g" \
-		-e "s,:[[:graph:]]*,,g" | \
+		sed -e "s,[[:graph:]]*/usr/ports/,,g" \
+		-e "s,:[[:graph:]]*,,g" -e '/^$/d' | tr ' ' '\n' | \
 		sort -u || err 1 "Makefile broken: $1"
 }
 
