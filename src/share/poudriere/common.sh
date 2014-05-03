@@ -1052,6 +1052,9 @@ setup_makeconf() {
 	for opt in ${makeconf}; do
 		append_make ${opt} ${dst_makeconf}
 	done
+
+	# We will handle DEVELOPER for testing when appropriate
+	sed -i '' '/^DEVELOPER=/d' ${dst_makeconf}
 }
 
 jail_stop() {
