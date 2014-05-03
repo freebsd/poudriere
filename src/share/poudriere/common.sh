@@ -1319,7 +1319,7 @@ build_port() {
 	local log=$(log_path)
 	local listfilecmd network
 	local hangstatus
-	local pkgenv
+	local pkgenv phaseenv
 	local no_stage=$(injail make -C ${portdir} -VNO_STAGE)
 	local targets install_order build_fs_violation_check_target
 	local stagedir plistsub_sed
@@ -1334,7 +1334,7 @@ build_port() {
 		build_fs_violation_check_target="run-depends"
 		stagedir=$(injail make -C ${portdir} -VSTAGEDIR)
 	fi
-	targets="check-config pkg-depends fetch-depends fetch checksum \
+	targets="check-sanity pkg-depends fetch-depends fetch checksum \
 		  extract-depends extract patch-depends patch build-depends \
 		  lib-depends configure build ${install_order} \
 		  ${PORTTESTING:+deinstall}"
@@ -1346,6 +1346,7 @@ build_port() {
 	[ -z "${PORTTESTING}" ] && PORT_FLAGS="${PORT_FLAGS} NO_DEPENDS=yes"
 
 	for phase in ${targets}; do
+		phaseenv=
 		bset ${MY_JOBID} status "${phase}:${port}"
 		job_msg_verbose "Status for build ${port}: ${phase}"
 		if [ "${phase}" = "fetch" ]; then
@@ -1353,6 +1354,7 @@ build_port() {
 			jstart 1
 		fi
 		case ${phase} in
+		check-sanity) [ -n "${PORTTESTING}" ] && phaseenv="DEVELOPER=1" ;;
 		configure) [ -n "${PORTTESTING}" ] && markfs prebuild ${mnt} ;;
 		${build_fs_violation_check_target})
 			if [ -n "${PORTTESTING}" ]; then
@@ -1457,7 +1459,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 
 		if [ "${phase#*-}" = "depends" ]; then
 			# No need for nohang or PORT_FLAGS for *-depends
-			injail env USE_PACKAGE_DEPENDS_ONLY=1 \
+			injail env USE_PACKAGE_DEPENDS_ONLY=1 ${phaseenv} \
 			    make -C ${portdir} ${phase} || return 1
 		else
 			# Only set PKGENV during 'package' to prevent
@@ -1474,7 +1476,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 			# 24 hours for 1 command, or 120 minutes with no log update
 			nohang ${MAX_EXECUTION_TIME:-86400} ${NOHANG_TIME:-7200} \
 				${log}/logs/${PKGNAME}.log \
-				injail env ${pkgenv} ${PORT_FLAGS} \
+				injail env ${pkgenv} ${phaseenv} ${PORT_FLAGS} \
 				make -C ${portdir} ${phase}
 			hangstatus=$? # This is done as it may return 1 or 2 or 3
 			if [ $hangstatus -ne 0 ]; then
