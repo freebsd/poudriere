@@ -1421,27 +1421,6 @@ build_port() {
 				${mnt}/new_packages
 		fi
 
-		if [ "${phase}" = "deinstall" ]; then
-			PREFIX=$(injail env ${PORT_FLAGS} make -C ${portdir} -VPREFIX)
-			if [ -z "${no_stage}" ]; then
-				bset ${MY_JOBID} status "stage_orphans:${port}"
-				local die=0
-
-				if ! injail env DEVELOPER=1 \
-				    make -C ${portdir} check-orphans; then
-					msg "Error: check-orphans failures detected"
-					die=1
-				fi
-
-				[ ${die} -eq 1 -a "${0##*/}" = "testport.sh" -a \
-				    "${PREFIX}" != "${LOCALBASE}" ] && msg \
-				    "This test was done with PREFIX!=LOCALBASE which \
-may show failures if the port does not respect PREFIX. \
-Try testport with -n to use PREFIX=LOCALBASE"
-				[ $die -eq 0 ] || return 1
-			fi
-		fi
-
 		if [ "${phase#*-}" = "depends" ]; then
 			# No need for nohang or PORT_FLAGS for *-depends
 			injail env USE_PACKAGE_DEPENDS_ONLY=1 ${phaseenv} \
@@ -1493,6 +1472,33 @@ Try testport with -n to use PREFIX=LOCALBASE"
 			gather_distfiles ${portdir} ${mnt}/portdistfiles || return 1
 		fi
 
+		if [ "${phase}" = "stage" -a -n "${PORTTESTING}" ]; then
+			local die=0
+
+			bset ${MY_JOBID} status "stage-qa:${port}"
+			if ! injail env DEVELOPER=1 ${PORT_FLAGS} \
+			    make -C ${portdir} stage-qa; then
+				msg "Error: stage-qa failures detected"
+				[ "${PORTTESTING_FATAL}" != "no" ] &&
+					return 1
+				die=1
+			fi
+
+			bset ${MY_JOBID} status "check-orphans:${port}"
+			if ! injail env DEVELOPER=1 ${PORT_FLAGS} \
+			    make -C ${portdir} check-orphans; then
+				msg "Error: check-orphans failures detected"
+				[ "${PORTTESTING_FATAL}" != "no" ] &&
+					return 1
+				die=1
+			fi
+
+			if [ ${die} -eq 1 ]; then
+				testfailure=2
+				die=0
+			fi
+		fi
+
 		if [ "${phase}" = "deinstall" ]; then
 			local add=$(mktemp ${mnt}/tmp/add.XXXXXX)
 			local add1=$(mktemp ${mnt}/tmp/add1.XXXXXX)
@@ -1501,18 +1507,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 			local mod=$(mktemp ${mnt}/tmp/mod.XXXXXX)
 			local mod1=$(mktemp ${mnt}/tmp/mod1.XXXXXX)
 			local die=0
-
-			# Check stage-qa first
-			if [ -z "${no_stage}" ]; then
-				bset ${MY_JOBID} status "stage-qa:${port}"
-				if ! injail env DEVELOPER=1 \
-				    make -C ${portdir} stage-qa; then
-					msg "Error: stage-qa failures detected"
-					[ "${PORTTESTING_FATAL}" != "no" ] &&
-						return 1
-					die=1
-				fi
-			fi
+			PREFIX=$(injail env ${PORT_FLAGS} make -C ${portdir} -VPREFIX)
 
 			msg "Checking for extra files and directories"
 			bset ${MY_JOBID} status "leftovers:${port}"
