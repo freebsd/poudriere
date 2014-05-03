@@ -1786,10 +1786,12 @@ queue_empty() {
 mark_done() {
 	[ $# -eq 1 ] || eargs pkgname
 	local pkgname="$1"
-	local origin=$(cache_get_origin "${pkgname}")
-	local cache_dir=$(cache_dir)
+	local origin cache_dir
 
 	if [ "${TRACK_BUILDTIMES:-no}" != "no" ]; then
+		origin=$(cache_get_origin "${pkgname}")
+		cache_dir=$(cache_dir)
+
 		echo -n "${origin} $(date +%s) " >> ${cache_dir}/buildtimes
 		stat -f "%m" ${MASTERMNT}/poudriere/building/${pkgname} >> \
 			${cache_dir}/buildtimes
