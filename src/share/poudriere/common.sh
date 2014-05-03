@@ -1452,21 +1452,6 @@ may show failures if the port does not respect PREFIX. \
 Try testport with -n to use PREFIX=LOCALBASE"
 				rm -f ${orphans}
 				[ $die -eq 0 ] || return 1
-
-				msg "Checking for absolute symlinks into staging directory"
-				bset ${MY_JOBID} status "stage_symlinks:${port}"
-				if [ ${PKGNG} -eq 1 ]; then
-					injail ${PKG_BIN} query %Fp ${PKGNAME}
-				else
-					injail pkg_info -qL ${PKGNAME}
-				fi | tr '\n' '\0' | injail xargs -0 -J % \
-				    find % -type l -print0 |
-				    injail xargs -0 stat -l |
-				    grep "${portdir}/work/stage" && die=1
-				if [ ${die} -eq 1 ]; then
-					msg "Port is installing absolute symlinks into stagedir"
-					return 1
-				fi
 			fi
 		fi
 
@@ -1522,8 +1507,6 @@ Try testport with -n to use PREFIX=LOCALBASE"
 		fi
 
 		if [ "${phase}" = "deinstall" ]; then
-			msg "Checking for extra files and directories"
-			bset ${MY_JOBID} status "leftovers:${port}"
 			local add=$(mktemp ${mnt}/tmp/add.XXXXXX)
 			local add1=$(mktemp ${mnt}/tmp/add1.XXXXXX)
 			local del=$(mktemp ${mnt}/tmp/del.XXXXXX)
@@ -1532,6 +1515,21 @@ Try testport with -n to use PREFIX=LOCALBASE"
 			local mod1=$(mktemp ${mnt}/tmp/mod1.XXXXXX)
 			local die=0
 			local users user homedirs
+
+			# Check stage-qa first
+			if [ -z "${no_stage}" ]; then
+				bset ${MY_JOBID} status "stage-qa:${port}"
+				if ! injail env DEVELOPER=1 \
+				    make -C ${portdir} stage-qa; then
+					msg "Error: stage-qa failures detected"
+					[ "${PORTTESTING_FATAL}" != "no" ] &&
+						return 1
+					die=1
+				fi
+			fi
+
+			msg "Checking for extra files and directories"
+			bset ${MY_JOBID} status "leftovers:${port}"
 
 			users=$(injail make -C ${portdir} -VUSERS)
 			homedirs=""
