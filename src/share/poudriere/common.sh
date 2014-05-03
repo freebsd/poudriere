@@ -1759,7 +1759,7 @@ ${dependency_cycles}"
 
 	# No cycle, there's some unknown poudriere bug
 	err 1 "Unknown stuck queue bug detected. Please submit the entire build output to poudriere developers.
-$(find ${MASTERMNT}/poudriere/building ${MASTERMNT}/poudriere/pool ${MASTERMNT}/poudriere/deps)"
+$(find ${MASTERMNT}/poudriere/building ${MASTERMNT}/poudriere/pool ${MASTERMNT}/poudriere/deps ${MASTERMNT}/poudriere/cleaning)"
 }
 
 queue_empty() {
@@ -1962,6 +1962,8 @@ clean_pool() {
 	local pkgname=$1
 	local clean_rdepends=$2
 	local port skipped_origin
+
+	[ -n "${MY_JOBID}" ] && bset ${MY_JOBID} status "clean_pool:"
 
 	[ ${clean_rdepends} -eq 1 ] && port=$(cache_get_origin "${pkgname}")
 
@@ -2796,6 +2798,8 @@ prepare_ports() {
 		"${MASTERMNT}/poudriere/pool" \
 		"${MASTERMNT}/poudriere/deps" \
 		"${MASTERMNT}/poudriere/rdeps" \
+		"${MASTERMNT}/poudriere/cleaning/deps" \
+		"${MASTERMNT}/poudriere/cleaning/rdeps" \
 		"${MASTERMNT}/poudriere/var/run" \
 		"${MASTERMNT}/poudriere/var/cache" \
 		"${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
