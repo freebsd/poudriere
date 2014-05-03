@@ -1533,7 +1533,6 @@ Try testport with -n to use PREFIX=LOCALBASE"
 			local mod=$(mktemp ${mnt}/tmp/mod.XXXXXX)
 			local mod1=$(mktemp ${mnt}/tmp/mod1.XXXXXX)
 			local die=0
-			local users user homedirs tmpplist
 
 			# Check stage-qa first
 			if [ -z "${no_stage}" ]; then
@@ -1550,74 +1549,91 @@ Try testport with -n to use PREFIX=LOCALBASE"
 			msg "Checking for extra files and directories"
 			bset ${MY_JOBID} status "leftovers:${port}"
 
-			tmpplist=$(injail make -C ${portdir} -VTMPPLIST)
-			users=$(injail make -C ${portdir} -VUSERS)
-			homedirs=""
-			for user in ${users}; do
-				user=$(grep ^${user}: ${mnt}/usr/ports/UIDs | cut -f 9 -d : | sed -e "s|/usr/local|${PREFIX}| ; s|^|${mnt}|")
-				homedirs="${homedirs} ${user}"
-			done
+			if [ -f "${mnt}/usr/ports/Mk/Scripts/check_leftovers.sh" ]; then
+				check_leftovers ${mnt} | sed -e "s|${mnt}||" |
+				    injail env PORTSDIR=/usr/ports \
+				    ${PORT_FLAGS} /bin/sh \
+				    /usr/ports/Mk/Scripts/check_leftovers.sh \
+				    ${port} | while read modtype data; do
+					case "${modtype}" in
+						+) echo "${data}" >> ${add} ;;
+						-) echo "${data}" >> ${del} ;;
+						M) echo "${data}" >> ${mod} ;;
+					esac
+				done
+			else
+				# LEGACY - Support for older ports tree.
+				local users user homedirs
 
-			check_leftovers ${mnt} | \
-				while read modtype path extra; do
-				local ppath ignore_path=0
+				users=$(injail make -C ${portdir} -VUSERS)
+				homedirs=""
+				for user in ${users}; do
+					user=$(grep ^${user}: ${mnt}/usr/ports/UIDs | cut -f 9 -d : | sed -e "s|/usr/local|${PREFIX}| ; s|^|${mnt}|")
+					homedirs="${homedirs} ${user}"
+				done
 
-				# If this is a directory, use @dirrm in output
-				if [ -d "${path}" ]; then
-					ppath="@dirrm "`echo $path | sed \
-						-e "s,^${mnt},," \
-						-e "s,^${PREFIX}/,," \
-						${plistsub_sed} \
-					`
-				else
-					ppath=`echo "$path" | sed \
-						-e "s,^${mnt},," \
-						-e "s,^${PREFIX}/,," \
-						${plistsub_sed} \
-					`
-				fi
-				case $modtype in
-				+)
+				check_leftovers ${mnt} | \
+					while read modtype path extra; do
+					local ppath ignore_path=0
+
+					# If this is a directory, use @dirrm in output
 					if [ -d "${path}" ]; then
-						# home directory of users created
-						case " ${homedirs} " in
-						*\ ${path}\ *) continue;;
-						*\ ${path}/*\ *) continue;;
+						ppath="@dirrm "`echo $path | sed \
+							-e "s,^${mnt},," \
+							-e "s,^${PREFIX}/,," \
+							${plistsub_sed} \
+						`
+					else
+						ppath=`echo "$path" | sed \
+							-e "s,^${mnt},," \
+							-e "s,^${PREFIX}/,," \
+							${plistsub_sed} \
+						`
+					fi
+					case $modtype in
+					+)
+						if [ -d "${path}" ]; then
+							# home directory of users created
+							case " ${homedirs} " in
+							*\ ${path}\ *) continue;;
+							*\ ${path}/*\ *) continue;;
+							esac
+						fi
+						case "${ppath}" in
+						*) echo "${ppath}" >> ${add} ;;
 						esac
-					fi
-					case "${ppath}" in
-					*) echo "${ppath}" >> ${add} ;;
-					esac
-					;;
-				-)
-					# Skip if it is PREFIX and non-LOCALBASE. See misc/kdehier4
-					# or mail/qmail for examples
-					[ "${path#${mnt}}" = "${PREFIX}" -a \
-						"${LOCALBASE}" != "${PREFIX}" ] && ignore_path=1
+						;;
+					-)
+						# Skip if it is PREFIX and non-LOCALBASE. See misc/kdehier4
+						# or mail/qmail for examples
+						[ "${path#${mnt}}" = "${PREFIX}" -a \
+							"${LOCALBASE}" != "${PREFIX}" ] && ignore_path=1
 
-					if [ $ignore_path -eq 0 ]; then
-						echo "${ppath}" >> ${del}
-					fi
-					;;
-				M)
-					[ -d "${path}" ] && continue
-					case "${ppath}" in
-					# This is a cache file for gio modules could be modified for any gio modules
-					lib/gio/modules/giomodule.cache) ;;
-					# removal of info files leaves entry uneasy to cleanup in info/dir
-					# accept a modification of this file
-					info/dir) ;;
-					# The is pear database cache
-					%%PEARDIR%%/.depdb|%%PEARDIR%%/.filemap) ;;
-					#ls-R files from texmf are often regenerated
-					*/ls-R);;
-					# xmlcatmgr is constantly updating catalog.ports ignore modification to that file
-					share/xml/catalog.ports);;
-					*) echo "${ppath#@dirrm } ${extra}" >> ${mod} ;;
+						if [ $ignore_path -eq 0 ]; then
+							echo "${ppath}" >> ${del}
+						fi
+						;;
+					M)
+						[ -d "${path}" ] && continue
+						case "${ppath}" in
+						# This is a cache file for gio modules could be modified for any gio modules
+						lib/gio/modules/giomodule.cache) ;;
+						# removal of info files leaves entry uneasy to cleanup in info/dir
+						# accept a modification of this file
+						info/dir) ;;
+						# The is pear database cache
+						%%PEARDIR%%/.depdb|%%PEARDIR%%/.filemap) ;;
+						#ls-R files from texmf are often regenerated
+						*/ls-R);;
+						# xmlcatmgr is constantly updating catalog.ports ignore modification to that file
+						share/xml/catalog.ports);;
+						*) echo "${ppath#@dirrm } ${extra}" >> ${mod} ;;
+						esac
+						;;
 					esac
-					;;
-				esac
-			done
+				done
+			fi
+
 			sort ${add} > ${add1}
 			sort ${del} > ${del1}
 			sort ${mod} > ${mod1}
