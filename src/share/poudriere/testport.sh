@@ -167,6 +167,11 @@ mkdir -p ${MASTERMNT}/tmp/pkgs
 PORTTESTING=yes
 export DEVELOPER_MODE=yes
 export NO_WARNING_PKG_INSTALL_EOL=yes
+# Disable waits unless running in a tty interactively
+if ! [ -t 1 ]; then
+	export WARNING_WAIT=0
+	export DEV_WARNING_WAIT=0
+fi
 sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' ${MASTERMNT}/etc/make.conf
 log_start
 buildlog_start /usr/ports/${ORIGIN}
