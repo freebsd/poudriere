@@ -1820,8 +1820,12 @@ build_queue() {
 				read pkgname < ${MASTERMNT}/poudriere/var/run/${j}.pkgname
 				rm -f ${MASTERMNT}/poudriere/var/run/${j}.pid \
 					${MASTERMNT}/poudriere/var/run/${j}.pkgname
-				bset ${j} status "idle:"
-				mark_done ${pkgname}
+				if [ "$(bget ${j} status)" = "stopped:" ]; then
+					mark_done ${pkgname}
+					bset ${j} status "idle:"
+				else
+					bset ${j} status "crashed:"
+				fi
 			fi
 
 			[ ${queue_empty} -eq 0 ] || continue
@@ -2100,6 +2104,8 @@ stop_build() {
 
 	buildlog_stop ${portdir}
 	log_stop
+
+	bset ${MY_JOBID} status "stopped:"
 }
 
 # Crazy redirection is to add the portname into stderr.
