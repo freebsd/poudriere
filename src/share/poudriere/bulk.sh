@@ -140,6 +140,7 @@ while getopts "B:f:j:J:CcNp:RFtTsvwz:a" FLAG; do
 		t)
 			export PORTTESTING=1
 			export DEVELOPER_MODE=yes
+			export NO_WARNING_PKG_INSTALL_EOL=yes
 			;;
 		T)
 			export TRYBROKEN=yes
