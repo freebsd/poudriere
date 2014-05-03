@@ -1341,7 +1341,7 @@ build_port() {
 	local pkgenv phaseenv
 	local no_stage=$(injail make -C ${portdir} -VNO_STAGE)
 	local targets install_order build_fs_violation_check_target
-	local stagedir plistsub_sed
+	local stagedir
 
 	# Must install run-depends as 'actual-package-depends' and autodeps
 	# only consider installed packages as dependencies
@@ -1422,7 +1422,6 @@ build_port() {
 		fi
 
 		if [ "${phase}" = "deinstall" ]; then
-			plistsub_sed=$(injail env ${PORT_FLAGS} make -C ${portdir} -V'PLIST_SUB:C/"//g:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/')
 			PREFIX=$(injail env ${PORT_FLAGS} make -C ${portdir} -VPREFIX)
 			if [ -z "${no_stage}" ]; then
 				bset ${MY_JOBID} status "stage_orphans:${port}"
@@ -1532,7 +1531,8 @@ Try testport with -n to use PREFIX=LOCALBASE"
 				done
 			else
 				# LEGACY - Support for older ports tree.
-				local users user homedirs
+				local users user homedirs plistsub_sed
+				plistsub_sed=$(injail env ${PORT_FLAGS} make -C ${portdir} -V'PLIST_SUB:C/"//g:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/')
 
 				users=$(injail make -C ${portdir} -VUSERS)
 				homedirs=""
