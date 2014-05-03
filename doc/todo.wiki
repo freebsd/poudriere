@@ -10,7 +10,6 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
   *  jail has major issues with error handling/cleanup:
   *  jail -c does not cleanup jail on failure
   *  failure in jail -u freebsd-update can leave '91amd64' running with no way to stop it
-  *  Write out json early, before compute_deps, so the webpage is not blank/loading for several minutes
   *  pkg bootstrap skipping sanity is no good, skips all version checks. Need to have a bootstrap mode so it reruns.
   *  This is wrong, should skip shell-meta as npm was skipped, not because node failed:
 <verbatim>
@@ -29,7 +28,6 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
 
 <h2>3.1</h2>
   *  Allow dependency calculation to optionally not exit on first failure. Complex as errors come from many places, reporting all errors at once may be even more complex. (bulk -k)
-  *  Merge marino's fixes for webui with bdrewery's bootstrap work
   *  convert+import updated processonelog
   *  options needs to be jailed.
   *  <strong>logclean</strong> to cleanup old logs (bdrewery has this started). Note that not easily possible to show "free space" calc due to this involving mostly hard-links.
@@ -37,7 +35,6 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
   *  Allow creating jail from existing /usr/src (or other) dir.
   *  Hooks for jail startup/end to be able to customize jail on-demand, see [https://github.com/davehayes/poudriere/commit/721d19562443d4caa61739203139f0da94e0336c]
   *  new dependency check should move to <strong>Mk/bsd.port.mk</strong>
-  *  testport with leftovers results in 'crashed'
   *  "soft exit", "exit when idle" mode, SIGUSR1
   *  Allow git method for jail
 
@@ -84,7 +81,6 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
   *  Sandboxing with [http://www.freebsd.org/cgi/man.cgi?query=capsicum&apropos=0&sektion=0&manpath=FreeBSD+10.0-RELEASE&arch=default&format=html|Capsicum]
   *  Currently poudriere executes everything from the context of the host using jexec. This hurts performance a lot as every jexec and fork/exec creates a lot of lock contention. The jail should spawn up a client and the host (master) should communicate to it with commands. This also improves sandboxing substatially as it avoids accidentlly forgetting <strong>injail</strong> in the code. This architecture lends itself to remote jails/builders as well.
   *  REST daemon
-  *  Separate jail for fetching; only that jail gets networking. No more flipping networking by restarting jails as it leads to a lot of lock contention.
   *  Use automated testing from the start.
 
 <h2>Wishlist</h2>
