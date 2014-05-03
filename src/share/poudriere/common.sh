@@ -1147,7 +1147,6 @@ check_leftovers() {
 			    -f ${mnt}/poudriere/mtree.preinst \
 			    -p ${mnt}
 		else
-			markfs poststage ${mnt} ${stagedir}
 			injail mtree -f /poudriere/mtree.poststage \
 			    -e -L -p /
 		fi
@@ -1411,6 +1410,7 @@ build_port() {
 				local orphans=$(mktemp ${mnt}/tmp/orphans.XXXXXX)
 				local die=0
 
+				markfs poststage ${mnt} ${stagedir}
 				check_leftovers ${mnt} ${stagedir} | \
 				    while read modtype path extra; do
 					local ppath
