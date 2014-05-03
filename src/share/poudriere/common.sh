@@ -2943,10 +2943,14 @@ balance_pool() {
 
 	local pkgname pkg_dir dep_count rdep lock
 
-	! dirempty ${MASTERMNT}/poudriere/pool/unbalanced || return 0
 	# Avoid running this in parallel, no need
 	lock=${MASTERMNT}/poudriere/.lock-balance_pool
 	mkdir ${lock} 2>/dev/null || return 0
+
+	if dirempty ${MASTERMNT}/poudriere/pool/unbalanced; then
+		rmdir ${lock}
+		return 0
+	fi
 
 	if [ -n "${MY_JOBID}" ]; then
 		bset ${MY_JOBID} status "balancing_pool:"
