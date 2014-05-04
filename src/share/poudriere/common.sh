@@ -505,14 +505,22 @@ badd() {
 
 update_stats() {
 	local type unused
+	local -
+
+	set +e
+
+	lock_acquire update_stats
 
 	for type in built failed ignored; do
 		_bget unused "ports.${type}"
 		bset "stats_${type}" ${_read_file_lines_read}
 	done
+
 	# Skipped may have duplicates in it
 	bset stats_skipped $(bget ports.skipped | awk '{print $1}' | \
 		sort -u | wc -l)
+
+	lock_release update_stats
 }
 
 sigint_handler() {
@@ -574,6 +582,8 @@ siginfo_handler() {
 	local j elapsed job_id_color
 	local pkgname origin phase buildtime started
 	local format_origin_phase format_phase
+
+	update_stats
 
 	_bget nbq stats_queued 2>/dev/null || nbq=0
 	[ -n "${nbq}" ] || return 0
@@ -1432,6 +1442,8 @@ cleanup() {
 
 	fi
 
+	rmdir "${POUDRIERE_DATA}/.lock-$$-*" 2>/dev/null || :
+
 	export CLEANED_UP=1
 }
 
@@ -2202,8 +2214,6 @@ build_queue() {
 			fi
 		done
 
-		update_stats
-
 		if [ ${queue_empty} -eq 1 ]; then
 			if [ ${builders_active} -eq 1 ]; then
 				# The queue is empty, but builds are still going.
@@ -2251,6 +2261,7 @@ stress_snapshot() {
 json_main() {
 	while :; do
 		stress_snapshot
+		update_stats
 		build_json
 		sleep 2
 	done
@@ -2375,6 +2386,10 @@ parallel_build() {
 
 	bset status "stopping_jobs:"
 	stop_builders
+
+	bset status "updating_stats:"
+	update_stats
+
 	bset status "idle:"
 
 	# Close the builder socket
@@ -3000,9 +3015,8 @@ lock_acquire() {
 	[ $# -ne 1 ] && eargs lock_acquire lockname
 	local lockname=$1
 
-	while :; do
-		mkdir ${POUDRIERE_DATA}/.lock-${MASTERNAME}-${lockname} 2>/dev/null &&
-			break
+	until mkdir ${POUDRIERE_DATA}/.lock-$$-${MASTERNAME}-${lockname} \
+	    2>/dev/null; do
 		sleep 0.1
 	done
 }
@@ -3011,7 +3025,7 @@ lock_release() {
 	[ $# -ne 1 ] && eargs lock_release lockname
 	local lockname=$1
 
-	rmdir ${POUDRIERE_DATA}/.lock-${MASTERNAME}-${lockname} 2>/dev/null
+	rmdir ${POUDRIERE_DATA}/.lock-$$-${MASTERNAME}-${lockname} 2>/dev/null
 }
 
 cache_get_pkgname() {
