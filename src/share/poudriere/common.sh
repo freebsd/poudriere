@@ -345,6 +345,30 @@ ${line}"
 	return ${ret}
 }
 
+# Read a file until 0 status is found. Partial reads not accepted.
+read_line() {
+	[ $# -eq 2 ] || eargs read_line var_return file
+	local var_return="$1"
+	local file="$2"
+	local max_reads reads
+
+	max_reads=100
+	reads=0
+
+	# Read until a full line is returned.
+	until [ ${reads} -eq ${max_reads} ]; do
+		read -t 1 -r line < "${file}" && break
+		sleep 0.1
+		reads=$((${reads} + 1))
+	done
+
+	[ ${reads} -eq ${max_reads} ] && return 1
+
+	setvar "${var_return}" "${line}"
+
+	return 0
+}
+
 attr_set() {
 	local type=$1
 	local name=$2
