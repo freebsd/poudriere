@@ -339,10 +339,10 @@ read_file() {
 			# Some error or interruption/signal. Reread.
 			*) continue ;;
 		esac
-		_read_file_lines_read=$((${_read_file_lines_read} + 1))
-		[ -n "${_data}" ] && _data="${_data}
+		[ ${_read_file_lines_read} -gt 0 ] && _data="${_data}
 "
 		_data="${_data}${line}"
+		_read_file_lines_read=$((${_read_file_lines_read} + 1))
 	done < "${file}" || ret=$?
 
 	setvar "${var_return}" "${_data}"
