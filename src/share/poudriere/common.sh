@@ -318,7 +318,7 @@ read_file() {
 	[ $# -eq 2 ] || eargs read_file var_return file
 	local var_return="$1"
 	local file="$2"
-	local _data
+	local _data line
 	local ret
 
 	# Disable SIGINFO while in here to avoid interruption while reading
