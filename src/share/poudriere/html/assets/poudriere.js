@@ -289,7 +289,7 @@ function format_setname(setname) {
 
 function process_data(data) {
 	var html, a, n;
-	var table_rows, table_row, main_status, builder, now;
+	var table_rows, table_row, status, builder, now;
 
 	if (data.snap && data.snap.now) {
 		now = data.snap.now;
@@ -322,43 +322,45 @@ function process_data(data) {
 	$('#build_info').show();
 
 	/* Builder status */
-	table_rows = [];
-	for (n = 0; n < data.status.length; n++) {
-		builder = data.status[n];
+	if (data.jobs) {
+		table_rows = [];
+		for (n = 0; n < data.jobs.length; n++) {
+			builder = data.jobs[n];
 
-		if (builder.id != "main") {
 			table_row = [];
 			table_row.push(builder.id);
 			table_row.push(builder.origin ? format_origin(builder.origin) : "");
 			table_row.push(builder.pkgname ? format_log(builder.pkgname, false, builder.status) : builder.status.split(":")[0]);
 			table_row.push(builder.started ? format_duration(builder.started, now) : "");
 			table_rows.push(table_row);
-		} else {
-			a = builder.status.split(":");
-			if (a[0] == "stopped") {
-				if (a.length >= 3) {
-					main_status = a[0] + ':' + a[1] + ':' + a[2];
-				} else if (a.length >= 2) {
-					main_status = a[0] + ':' + a[1];
-				} else {
-					main_status = a[0] + ':';
-				}
-			} else {
-				if (a.length >= 2) {
-					main_status = a[0] + ':' + a[1];
-				} else {
-					main_status = a[0] + ':';
-				}
-			}
-			$('#build_status').text(main_status);
+		}
+		if (table_rows.length) {
+			$('#jobs').show();
+
+			// XXX This could be improved by updating cells in-place
+			$('#builders_table').dataTable().fnClearTable();
+			$('#builders_table').dataTable().fnAddData(table_rows);
 		}
 	}
-	if (table_rows.length) {
-		$('#jobs').show();
 
-		// XXX This could be improved by updating cells in-place
-		$('#builders_table').dataTable().fnClearTable();
-		$('#builders_table').dataTable().fnAddData(table_rows);
+	if (data.status) {
+		a = data.status.split(":");
+		if (a[0] == "stopped") {
+			if (a.length >= 3) {
+				status = a[0] + ':' + a[1] + ':' + a[2];
+			} else if (a.length >= 2) {
+				status = a[0] + ':' + a[1];
+			} else {
+				status = a[0] + ':';
+			}
+		} else {
+			if (a.length >= 2) {
+				status = a[0] + ':' + a[1];
+			} else {
+				status = a[0] + ':';
+			}
+		}
+		$('#status').text(status);
 	}
 
 	/* Stats */
@@ -432,7 +434,7 @@ function process_data(data) {
 
 	first_run = false;
 	// Refresh as long as the build is not stopped
-	if (!main_status.match("^stopped:")) {
+	if (!status.match("^stopped:")) {
 		setTimeout(update_fields, updateInterval * 1000);
 	}
 }

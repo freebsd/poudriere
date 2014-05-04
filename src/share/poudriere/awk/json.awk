@@ -17,8 +17,10 @@ function group_type(type) {
     return "string"
   if (type == "builders")
     return "array"
-  if (type == "status")
+  if (type == "jobs")
     return "array"
+  if (type == "status")
+    return "string"
   return "object"
 }
 
@@ -113,8 +115,8 @@ BEGIN {
   type = file_split[3]
   group_id = file_split[4]
 
-  if (type == "status" && !group_id) {
-    group_id = "main"
+  if (type == "status" && group_id) {
+    type = "jobs"
   } else if (type ~ /^stats/) {
     group_id = substr(type, 7)
     type = "stats"
@@ -124,7 +126,7 @@ BEGIN {
   }
 
   # Skip port list and builder list in mini
-  if (mini && (type == "ports" || type == "status" || type == "snap")) {
+  if (mini && (type == "ports" || type == "jobs" || type == "snap")) {
     next
   }
 
@@ -141,21 +143,17 @@ BEGIN {
     count = ports_count[group_id]++
     # Group each port list into arrays
     ports[group_id, count] = $0
-  } else if (type == "status") {
+  } else if (type == "jobs") {
     print "{"
     print "\"id\":\"" group_id "\","
-    if (group_id == "main") {
-      print "\"status\":\"" $0 "\""
+    if (split($0, status_a, ":") > 2) {
+      print "\"status\":\""  status_a[1] "\","
+      print "\"origin\":\""  status_a[2] "\","
+      print "\"pkgname\":\"" status_a[3] "\","
+      print "\"started\":\"" status_a[4] "\","
+      print "\"elapsed\":\"" status_a[5] "\""
     } else {
-        if (split($0, status_a, ":") > 2) {
-          print "\"status\":\""  status_a[1] "\","
-          print "\"origin\":\""  status_a[2] "\","
-          print "\"pkgname\":\"" status_a[3] "\","
-          print "\"started\":\"" status_a[4] "\","
-          print "\"elapsed\":\"" status_a[5] "\""
-        } else {
-          print "\"status\":\"" $0 "\""
-      }
+      print "\"status\":\"" $0 "\""
     }
     print "},"
   } else {
