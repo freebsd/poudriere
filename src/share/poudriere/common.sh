@@ -2636,7 +2636,7 @@ pkg_get_origin() {
 		fi
 		echo ${_origin} > "${originfile}"
 	else
-		read _origin < "${originfile}"
+		read_line _origin "${originfile}"
 	fi
 
 	check_moved new_origin ${_origin} && _origin=${new_origin}
@@ -3004,7 +3004,7 @@ cache_get_pkgname() {
 	local cache_origin_pkgname=${MASTERMNT}/poudriere/var/cache/origin-pkgname/${origin%%/*}_${origin##*/}
 	local cache_pkgname_origin
 
-	[ -f ${cache_origin_pkgname} ] && read _pkgname < ${cache_origin_pkgname}
+	[ -f ${cache_origin_pkgname} ] && read_line _pkgname "${cache_origin_pkgname}"
 
 	# Add to cache if not found.
 	if [ -z "${_pkgname}" ]; then
@@ -3035,7 +3035,7 @@ cache_get_origin() {
 	local cache_pkgname_origin="${MASTERMNT}/poudriere/var/cache/pkgname-origin/${pkgname}"
 	local _origin
 
-	read _origin < "${cache_pkgname_origin%/}"
+	read_line _origin "${cache_pkgname_origin%/}"
 
 	setvar "${var_return}" "${_origin}"
 }
