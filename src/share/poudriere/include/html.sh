@@ -43,9 +43,9 @@ stress_snapshot() {
 	now=$(date +%s)
 	elapsed=$((${now} - ${TIME_START}))
 
-	bset stats_loadavg "(${loadpct}) ${loadavg}"
-	bset stats_swapinfo "${swapinfo}"
-	bset stats_elapsed "${elapsed}"
+	bset snap_loadavg "(${loadpct}) ${loadavg}"
+	bset snap_swapinfo "${swapinfo}"
+	bset snap_elapsed "${elapsed}"
 }
 
 json_main() {

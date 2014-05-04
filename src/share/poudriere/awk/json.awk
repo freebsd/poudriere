@@ -113,18 +113,20 @@ BEGIN {
   type = file_split[3]
   group_id = file_split[4]
 
-  # Skip port list and builder list in mini
-  if (mini && (type == "ports" || type == "status")) {
-    next
-  }
-
-  if (type == "status" && !group_id)
+  if (type == "status" && !group_id) {
     group_id = "main"
-  if (type ~ /^stats/) {
+  } else if (type ~ /^stats/) {
     group_id = substr(type, 7)
     type = "stats"
+  } else if (type ~ /^snap/) {
+    group_id = substr(type, 6)
+    type = "snap"
   }
 
+  # Skip port list and builder list in mini
+  if (mini && (type == "ports" || type == "status" || type == "snap")) {
+    next
+  }
 
   # New type, close the old
   if (in_type != type) {

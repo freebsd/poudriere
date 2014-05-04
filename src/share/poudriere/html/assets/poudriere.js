@@ -140,29 +140,29 @@ function update_canvas(stats) {
 	$('#stats_remaining').html(remaining);
 }
 
-function display_pkghour(stats) {
+function display_pkghour(stats, snap) {
 	var attempted, pkghour, hours;
 
 	attempted = parseInt(stats.built) + parseInt(stats.failed);
 	pkghour = "--";
 	if (attempted > 0) {
-		hours = stats.elapsed / 3600;
+		hours = snap.elapsed / 3600;
 		pkghour = Math.ceil(attempted / hours);
 	}
-	$('#stats_pkghour').html(pkghour);
+	$('#snap_pkghour').html(pkghour);
 }
 
-function display_impulse(stats) {
+function display_impulse(stats, snap) {
 	var attempted, pkghour, index, tail, d_pkgs, d_secs, title;
 
 	attempted = parseInt(stats.built) + parseInt(stats.failed);
 	pkghour = "--";
 	index = tracker % impulse_interval;
 	if (tracker < impulse_interval) {
-		impulseData.push({pkgs: attempted, time: stats.elapsed});
+		impulseData.push({pkgs: attempted, time: snap.elapsed});
 	} else {
 		impulseData[index].pkgs = attempted;
-		impulseData[index].time = stats.elapsed;
+		impulseData[index].time = snap.elapsed;
 	}
 	if (tracker >= impulse_first_interval) {
 		if (tracker < impulse_interval) {
@@ -179,8 +179,8 @@ function display_impulse(stats) {
 		title = "Package build rate. Still calculating..."
 	}
 	tracker++;
-	$('#system .impulse').attr('title', title);
-	$('#stats_impulse').html(pkghour);
+	$('#snap .impulse').attr('title', title);
+	$('#snap_impulse').html(pkghour);
 }
 
 function format_log(pkgname, errors, text) {
@@ -361,10 +361,20 @@ function process_data(data) {
 			}
 			$('#stats_' + status).html(count);
 		});
-		display_pkghour(data.stats);
-		display_impulse(data.stats);
 		$('#stats').data(data.stats);
-		$('.layout div').fadeIn(1400);
+		$('#stats').fadeIn(1400);
+
+		if (data.snap) {
+			$.each(data.snap, function(status, count) {
+				if (status == "elapsed") {
+					count = format_duration(count);
+				}
+				$('#snap_' + status).html(count);
+			});
+			display_pkghour(data.stats, data.snap);
+			display_impulse(data.stats, data.snap);
+			$('#snap').fadeIn(1400);
+		}
 	}
 
 	/* For each status, track how many of the existing data has been

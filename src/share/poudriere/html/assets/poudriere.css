@@ -174,11 +174,11 @@ footer {
 	width: 16.67%;
 }
 
-#stats_loadavg  { width: 45%; }
-#stats_swapinfo { width: 20%; }
-#stats_duration { width: 15%; }
-#stats_pkghour  { width: 10%; }
-#stats_impulse  { width: 10%; }
+#snap_loadavg  { width: 45%; }
+#snap_swapinfo { width: 20%; }
+#snap_duration { width: 15%; }
+#snap_pkghour  { width: 10%; }
+#snap_impulse  { width: 10%; }
 
 .layout {
 	margin-top: 1px;
