@@ -2234,72 +2234,6 @@ build_queue() {
 	exec 6>&-
 }
 
-start_html_json() {
-	json_main &
-	JSON_PID=$!
-}
-
-stress_snapshot() {
-	local loadvg swapinfo elapsed duration now min_load loadpct ncpu
-
-	loadavg=$(sysctl -n vm.loadavg|awk '{print $2,$3,$4}')
-	min_load="${loadavg%% *}"
-	# Use minimum of JOBS and hw.ncpu to determine load%. Exceeding total
-	# of either is 100%.
-	ncpu=${PARALLEL_JOBS}
-	[ ${ncpu} -gt ${NCPU} ] && ncpu=${NCPU}
-	loadpct="$(printf "%2.0f%%" $(echo "scale=20; 100 * (${min_load} / ${ncpu})" | bc))"
-	swapinfo=$(swapinfo -k|awk '/\// {sum+=$2; X+=$3} END {if (sum) {printf "%1.2f%%\n", X*100/sum}}')
-	now=$(date +%s)
-	elapsed=$((${now} - ${TIME_START}))
-
-	bset stats_loadavg "(${loadpct}) ${loadavg}"
-	bset stats_swapinfo "${swapinfo}"
-	bset stats_elapsed "${elapsed}"
-}
-
-json_main() {
-	while :; do
-		stress_snapshot
-		update_stats
-		build_json
-		sleep 2
-	done
-}
-
-build_json() {
-	local log
-
-	_log_path log
-	awk \
-		-f ${AWKPREFIX}/json.awk ${log}/.poudriere.*[!%] | \
-		awk 'ORS=""; {print}' | \
-		sed  -e 's/,\([]}]\)/\1/g' \
-		> ${log}/.data.json.tmp
-	mv -f ${log}/.data.json.tmp ${log}/.data.json
-
-	# Build mini json for stats
-	awk -v mini=yes \
-		-f ${AWKPREFIX}/json.awk ${log}/.poudriere.*[!%] | \
-		awk 'ORS=""; {print}' | \
-		sed  -e 's/,\([]}]\)/\1/g' \
-		> ${log}/.data.mini.json.tmp
-	mv -f ${log}/.data.mini.json.tmp ${log}/.data.mini.json
-}
-
-stop_html_json() {
-	local log
-
-	_log_path log
-	if [ -n "${JSON_PID}" ]; then
-		kill ${JSON_PID} 2>/dev/null || :
-		_wait ${JSON_PID} 2>/dev/null || :
-		unset JSON_PID
-	fi
-	build_json 2>/dev/null || :
-	rm -f ${log}/.data.json.tmp ${log}/.data.mini.json 2>/dev/null || :
-}
-
 calculate_tobuild() {
 	local nbq nbb nbf nbi nbsndone nremaining
 
@@ -3906,6 +3840,7 @@ TIME_START=$(date +%s)
 [ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}
 
 . $(dirname ${0})/include/display.sh
+. $(dirname ${0})/include/html.sh
 . $(dirname ${0})/include/messages.sh
 . $(dirname ${0})/include/parallel.sh
 . $(dirname ${0})/include/hash.sh

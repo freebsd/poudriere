@@ -44,6 +44,7 @@ dist_include_HEADERS= \
 			src/share/poudriere/include/common.sh.dragonfly \
 			src/share/poudriere/include/common.sh.freebsd \
 			src/share/poudriere/include/display.sh \
+			src/share/poudriere/include/html.sh \
 			src/share/poudriere/include/hash.sh \
 			src/share/poudriere/include/fs.sh \
 			src/share/poudriere/include/messages.sh \
