@@ -148,7 +148,7 @@ fi
 
 add_build() {
 	local status nbqueued nbfailed nbignored nbskipped nbbuilt nbtobuild
-	local elapsed time url builders
+	local elapsed time url builders save_status
 
 	if [ ${BUILDER_INFO} -eq 0 ]; then
 		_bget status status 2>/dev/null || :
@@ -172,7 +172,13 @@ add_build() {
 			fi
 		fi
 		status="${status#stopped:}"
+		# This mess is to pull the first 2 fields: and remove trailing
+		# ':'
+		save_status="${status%%:*}"
+		status="${status#*:}"
+		status="${save_status}:${status%%:*}"
 		status="${status%:}"
+
 		my_display_add "${setname:--}" "${ptname}" "${jailname}" \
 		    "${BUILDNAME}" "${status:-?}" "${nbqueued:-?}" \
 		    "${nbbuilt:-?}" "${nbfailed:-?}" "${nbskipped:-?}" \
