@@ -355,23 +355,29 @@ read_line() {
 	[ $# -eq 2 ] || eargs read_line var_return file
 	local var_return="$1"
 	local file="$2"
-	local max_reads reads
+	local max_reads reads ret line
 
-	max_reads=100
-	reads=0
+	ret=0
+	line=
 
-	# Read until a full line is returned.
-	until [ ${reads} -eq ${max_reads} ]; do
-		read -t 1 -r line < "${file}" && break
-		sleep 0.1
-		reads=$((${reads} + 1))
-	done
+	if [ -f "${file}" ]; then
+		max_reads=100
+		reads=0
 
-	[ ${reads} -eq ${max_reads} ] && return 1
+		# Read until a full line is returned.
+		until [ ${reads} -eq ${max_reads} ] || \
+		    read -t 1 -r line < "${file}"; do
+			sleep 0.1
+			reads=$((${reads} + 1))
+		done
+		[ ${reads} -eq ${max_reads} ] && ret=1
+	else
+		ret=1
+	fi
 
 	setvar "${var_return}" "${line}"
 
-	return 0
+	return ${ret}
 }
 
 attr_set() {
