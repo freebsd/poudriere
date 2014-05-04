@@ -319,28 +319,33 @@ read_file() {
 	local var_return="$1"
 	local file="$2"
 	local _data line
-	local ret
+	local ret -
 
-	# Disable SIGINFO while in here to avoid interruption while reading
-	trap - SIGINFO
-
+	set +e
 	_data=
 	_read_file_lines_read=0
-	ret=0
 
-	while read -r line; do
+	while :; do
+		read -r line
+		ret=$?
+		case ${ret} in
+			# Success, process data and keep reading.
+			0) ;;
+			# EOF
+			1)
+				ret=0
+				break
+				;;
+			# Some error or interruption/signal. Reread.
+			*) continue ;;
+		esac
 		_read_file_lines_read=$((${_read_file_lines_read} + 1))
-		if [ -z "${_data}" ]; then
-			_data="${line}"
-		else
-			_data="${_data}
-${line}"
-		fi
+		[ -n "${_data}" ] && _data="${_data}
+"
+		_data="${_data}${line}"
 	done < "${file}" || ret=$?
 
 	setvar "${var_return}" "${_data}"
-
-	enable_siginfo_handler
 
 	return ${ret}
 }
