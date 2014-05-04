@@ -59,7 +59,19 @@ display_add() {
 }
 
 display_output() {
-	local cnt lengths length format arg
+	local cnt lengths length format arg flag quiet
+
+	quiet=0
+
+	while getopts "q" flag; do
+		case "${flag}" in
+			q)
+				quiet=1
+				;;
+		esac
+	done
+
+	shift $((OPTIND-1))
 
 	format="${_DISPLAY_FORMAT}"
 
@@ -91,10 +103,12 @@ display_output() {
 	format=$(printf "${format}" ${lengths})
 
 	# Show header separately so it is not sorted
-	echo "${_DISPLAY_DATA}"| head -n 1| while read line; do
-		eval "set -- ${line}"
-		printf "${format}\n" "$@"
-	done
+	if [ "${quiet}" -eq 0 ]; then
+		echo "${_DISPLAY_DATA}"| head -n 1 | while read line; do
+			eval "set -- ${line}"
+			printf "${format}\n" "$@"
+		done
+	fi
 
 	# Sort by SET,PTNAME,JAIL,BUILD
 	echo "${_DISPLAY_DATA}" | tail -n +2 | \
