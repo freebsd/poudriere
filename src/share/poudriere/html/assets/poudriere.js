@@ -200,6 +200,10 @@ function format_duration(start, end) {
 		duration = end - start;
 	}
 
+	if (duration < 0) {
+		duration = 0;
+	}
+
     hours = Math.floor(duration / 3600);
     duration = duration - hours * 3600;
     minutes = Math.floor(duration / 60);
