@@ -91,7 +91,7 @@ list_jail() {
 			_jget arch ${name} arch
 			_jget method ${name} method
 			_jget mnt ${name} mnt
-			_jget timestmap ${name} timestamp 2>/dev/null || :
+			_jget timestamp ${name} timestamp 2>/dev/null || :
 			time=
 			[ -n "${timestamp}" ] && \
 			    time="$(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
