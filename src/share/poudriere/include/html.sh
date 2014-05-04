@@ -87,5 +87,5 @@ stop_html_json() {
 		unset JSON_PID
 	fi
 	build_json 2>/dev/null || :
-	rm -f ${log}/.data.json.tmp ${log}/.data.mini.json 2>/dev/null || :
+	rm -f ${log}/.data.json.tmp ${log}/.data.mini.json.tmp 2>/dev/null || :
 }
