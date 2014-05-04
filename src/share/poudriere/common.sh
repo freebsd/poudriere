@@ -325,25 +325,33 @@ read_file() {
 	_data=
 	_read_file_lines_read=0
 
-	while :; do
-		read -r line
-		ret=$?
-		case ${ret} in
-			# Success, process data and keep reading.
-			0) ;;
-			# EOF
-			1)
-				ret=0
-				break
-				;;
-			# Some error or interruption/signal. Reread.
-			*) continue ;;
-		esac
-		[ ${_read_file_lines_read} -gt 0 ] && _data="${_data}
+	if [ ${READ_FILE_USE_CAT:-0} -eq 1 ]; then
+		if [ -f "${file}" ]; then
+			_data="$(cat "${file}")"
+		else
+			ret=1
+		fi
+	else
+		while :; do
+			read -r line
+			ret=$?
+			case ${ret} in
+				# Success, process data and keep reading.
+				0) ;;
+				# EOF
+				1)
+					ret=0
+					break
+					;;
+				# Some error or interruption/signal. Reread.
+				*) continue ;;
+			esac
+			[ ${_read_file_lines_read} -gt 0 ] && _data="${_data}
 "
-		_data="${_data}${line}"
-		_read_file_lines_read=$((${_read_file_lines_read} + 1))
-	done < "${file}" || ret=$?
+			_data="${_data}${line}"
+			_read_file_lines_read=$((${_read_file_lines_read} + 1))
+		done < "${file}" || ret=$?
+	fi
 
 	setvar "${var_return}" "${_data}"
 
