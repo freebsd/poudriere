@@ -143,16 +143,20 @@ git)  : ${BRANCH:=master} ;;
 esac
 
 if [ ${LIST} -eq 1 ]; then
-	format='%-20s %-10s %-20s %s\n'
-	[ $QUIET -eq 0 ] &&
-		printf "${format}" "PORTSTREE" "METHOD" "TIMESTAMP" "PATH"
-	porttree_list | while read ptname ptmethod ptpath; do
+	format='%%-%ds %%-%ds %%-%ds %%s\n'
+	display_setup "${format}" 4 "-d"
+	display_add "PORTSTREE" "METHOD" "TIMESTAMP" "PATH"
+	while read ptname ptmethod ptpath; do
 		_pget timestamp ${ptname} timestamp 2>/dev/null || :
 		time=
 		[ -n "${timestamp}" ] && \
 		    time="$(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
-		printf "${format}" ${ptname} ${ptmethod} "${time}" ${ptpath}
-	done
+		display_add ${ptname} ${ptmethod} "${time}" ${ptpath}
+	done <<- EOF
+	$(porttree_list)
+	EOF
+	[ ${QUIET} -eq 1 ] && quiet="-q"
+	display_output ${quiet}
 else
 	[ -z "${PTNAME}" ] && usage
 fi
