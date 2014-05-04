@@ -59,7 +59,7 @@ display_add() {
 }
 
 display_output() {
-	local cnt lengths format arg
+	local cnt lengths length format arg
 
 	format="${_DISPLAY_FORMAT}"
 
@@ -70,6 +70,10 @@ display_output() {
 		for arg in "$@"; do
 			hash_get lengths ${cnt} max_length || max_length=0
 			if [ ${#arg} -gt ${max_length} ]; then
+				# Keep the hash var local to this function
+				_hash_var_name "lengths" "${cnt}"
+				local ${_hash_var_name}
+				# Set actual value
 				hash_set lengths ${cnt} ${#arg}
 			fi
 			cnt=$((${cnt} + 1))
