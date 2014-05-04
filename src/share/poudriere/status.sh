@@ -111,18 +111,12 @@ shift $((OPTIND-1))
 POUDRIERE_BUILD_TYPE=bulk
 now="$(date +%s)"
 
-display=
-add_display() {
+my_display_add() {
 	if [ ${SCRIPT_MODE} -eq 1 ]; then
 		echo "$@"
 		return 0
 	fi
-	if [ -z "${display}" ]; then
-		display="$@"
-	else
-		display="${display}
-$@"
-	fi
+	display_add "$@"
 }
 
 if [ ${COMPACT} -eq 0 ]; then
@@ -133,17 +127,18 @@ fi
 if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
 	format="%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds"
 	[ ${COMPACT} -eq 0 ] && format="${format} %%s"
+	display_setup "${format}" "${columns}" "-d -k1,1V -k2,2 -k3,3 -k4,4n"
 	if [ ${COMPACT} -eq 0 ]; then 
 		if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
 			url_logs="URL"
 		else
 			url_logs="LOGS"
 		fi
-		add_display "SET" "PORTS" "JAIL" "BUILD" "STATUS" "QUEUE" \
+		my_display_add "SET" "PORTS" "JAIL" "BUILD" "STATUS" "QUEUE" \
 		    "BUILT" "FAIL" "SKIP" "IGNORE" "REMAIN" \
 		    "TIME" "${url_logs}"
 	else
-		add_display "SET" "PORTS" "JAIL" "BUILD" "STATUS" "Q" \
+		my_display_add "SET" "PORTS" "JAIL" "BUILD" "STATUS" "Q" \
 		    "B" "F" "S" "I" "R" "TIME"
 	fi
 else
@@ -178,7 +173,7 @@ add_build() {
 		fi
 		status="${status#stopped:}"
 		status="${status%:}"
-		add_display "${setname:--}" "${ptname}" "${jailname}" \
+		my_display_add "${setname:--}" "${ptname}" "${jailname}" \
 		    "${BUILDNAME}" "${status:-?}" "${nbqueued:-?}" \
 		    "${nbbuilt:-?}" "${nbfailed:-?}" "${nbskipped:-?}" \
 		    "${nbignored:-?}" "${nbtobuild:-?}" "${time:-?}" \
@@ -298,38 +293,7 @@ if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
 		exit 0
 	fi
 
-	# Determine optimal format
-	while read line; do
-		cnt=0
-		for word in ${line}; do
-			hash_get lengths ${cnt} max_length || max_length=0
-			if [ ${#word} -gt ${max_length} ]; then
-				hash_set lengths ${cnt} ${#word}
-			fi
-			cnt=$((${cnt} + 1))
-		done
-	done <<-EOF
-	${display}
-	EOF
-
-	# Set format lengths
-	lengths=
-	for n in $(jot $((${columns} - 1)) 0); do
-		hash_get lengths ${n} length
-		lengths="${lengths} ${length}"
-	done
-	format=$(printf "${format}" ${lengths})
-
-	# Show header separately so it is not sorted
-	echo "${display}"| head -n 1| while read line; do
-		printf "${format}\n" ${line}
-	done
-
-	# Sort by SET,PTNAME,JAIL,BUILD
-	echo "${display}" | tail -n +2 | \
-	    sort -d -k1,1V -k2,2 -k3,3 -k4,4n | while read line; do
-		printf "${format}\n" ${line}
-	done
+	display_output
 
 	[ -t 0 ] && \
 	    [ -n "${JAILNAME}" -a ${BUILDER_INFO} -eq 0 ] && \
