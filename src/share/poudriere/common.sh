@@ -1611,14 +1611,7 @@ build_port() {
 				msg "Files or directories left over:"
 				die=1
 				grep -v "^@dirrm" ${add}
-				# Remove @dirrm for parent dirs already in plist
-				grep "^@dirrm" ${add} | sort -r | while read \
-				    type dir; do
-					grep -qE \
-					    "^@(unexec rmdir \"?(%D/)?${dir}[ \"]|dirrm(try)? ${dir}\$)" \
-					    ${mnt}${tmpplist} ||
-					    echo "${type} ${dir}"
-				done
+				grep "^@dirrm" ${add} | sort -r
 			fi
 			if [ -s "${del}" ]; then
 				msg "Files or directories removed:"
