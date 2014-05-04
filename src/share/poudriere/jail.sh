@@ -74,14 +74,13 @@ list_jail() {
 	local format
 	local j name version arch method mnt timestamp time
 
-	format='%-20s %-20s %-7s %-9s %-20s %s\n'
-	if [ ${QUIET} -eq 0 ]; then
-		if [ ${NAMEONLY} -eq 0 ]; then
-			printf "${format}" "JAILNAME" "VERSION" "ARCH" \
-			    "METHOD" "TIMESTAMP" "PATH"
-		else
-			echo JAILNAME
-		fi
+	format='%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%s'
+	display_setup "${format}" 6 "-d -k2,2V -k3,3d -k1,1d"
+	if [ ${NAMEONLY} -eq 0 ]; then
+		display_add "JAILNAME" "VERSION" "ARCH" "METHOD" \
+		    "TIMESTAMP" "PATH"
+	else
+		display_add JAILNAME
 	fi
 	[ -d ${POUDRIERED}/jails ] || return 0
 	for j in $(find ${POUDRIERED}/jails -type d -maxdepth 1 -mindepth 1 -print); do
@@ -95,12 +94,14 @@ list_jail() {
 			time=
 			[ -n "${timestamp}" ] && \
 			    time="$(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
-			printf "${format}" "${name}" "${version}" "${arch}" \
+			display_add "${name}" "${version}" "${arch}" \
 			    "${method}" "${time}" "${mnt}"
 		else
-			echo ${name}
+			display_add ${name}
 		fi
 	done
+	[ ${QUIET} -eq 1 ] && quiet="-q"
+	display_output ${quiet}
 }
 
 delete_jail() {
