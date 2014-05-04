@@ -328,6 +328,8 @@ read_file() {
 	if [ ${READ_FILE_USE_CAT:-0} -eq 1 ]; then
 		if [ -f "${file}" ]; then
 			_data="$(cat "${file}")"
+			_read_file_lines_read=$(cat "${file}"|wc -l)
+			_read_file_lines_read=${_read_file_lines_read##* }
 		else
 			ret=1
 		fi
@@ -439,7 +441,7 @@ _pget() {
 
 #build getter/setter
 _bget() {
-	local var_return id property mnt log file
+	local var_return id property mnt log file READ_FILE_USE_CAT
 
 	var_return="$1"
 	_log_path log
@@ -449,6 +451,9 @@ _bget() {
 		shift
 	fi
 	file=".poudriere.${1}${id:+.${id}}"
+
+	# Use cat(1) to read long list files.
+	[ -z "${1##ports.*}" ] && READ_FILE_USE_CAT=1
 
 	read_file "${var_return}" "${log}/${file}" && return 0
 	setvar "${var_return}" ""
@@ -500,6 +505,7 @@ badd() {
 
 update_stats() {
 	local type unused
+
 	for type in built failed ignored; do
 		_bget unused "ports.${type}"
 		bset "stats_${type}" ${_read_file_lines_read}
