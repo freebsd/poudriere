@@ -291,7 +291,11 @@ function process_data(data) {
 	var html, a, n;
 	var table_rows, table_row, main_status, builder, now;
 
-	now = Math.floor(new Date().getTime() / 1000);
+	if (data.snap && data.snap.now) {
+		now = data.snap.now;
+	} else {
+		now = Math.floor(new Date().getTime() / 1000);
+	}
 
 	// Redirect from /latest/ to the actual build.
 	if (document.location.href.indexOf('/latest/') != -1) {

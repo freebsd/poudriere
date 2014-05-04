@@ -46,6 +46,7 @@ stress_snapshot() {
 	bset snap_loadavg "(${loadpct}) ${loadavg}"
 	bset snap_swapinfo "${swapinfo}"
 	bset snap_elapsed "${elapsed}"
+	bset snap_now "${now}"
 }
 
 json_main() {
