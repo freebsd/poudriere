@@ -33,26 +33,44 @@ display_setup() {
 }
 
 display_add() {
-	if [ -z "${_DISPLAY_DATA}" ]; then
-		_DISPLAY_DATA="$@"
-	else
-		_DISPLAY_DATA="${_DISPLAY_DATA}
-$@"
-	fi
+	local arg flag newline
+
+	newline=1
+
+	while getopts "n" flag; do
+		case "${flag}" in
+			n)
+				newline=0
+				;;
+		esac
+	done
+
+	shift $((OPTIND-1))
+
+	# Add in newline
+	[ ${newline} -eq 1 -a -n "${_DISPLAY_DATA}" ] && \
+	    _DISPLAY_DATA="${_DISPLAY_DATA}
+"
+	# Quote all arguments
+	for arg do
+		_DISPLAY_DATA="${_DISPLAY_DATA} '${arg}'"
+	done
+	return 0
 }
 
 display_output() {
-	local cnt lengths format
+	local cnt lengths format arg
 
 	format="${_DISPLAY_FORMAT}"
 
 	# Determine optimal format
 	while read line; do
+		eval "set -- ${line}"
 		cnt=0
-		for word in ${line}; do
+		for arg in "$@"; do
 			hash_get lengths ${cnt} max_length || max_length=0
-			if [ ${#word} -gt ${max_length} ]; then
-				hash_set lengths ${cnt} ${#word}
+			if [ ${#arg} -gt ${max_length} ]; then
+				hash_set lengths ${cnt} ${#arg}
 			fi
 			cnt=$((${cnt} + 1))
 		done
@@ -70,13 +88,15 @@ display_output() {
 
 	# Show header separately so it is not sorted
 	echo "${_DISPLAY_DATA}"| head -n 1| while read line; do
-		printf "${format}\n" ${line}
+		eval "set -- ${line}"
+		printf "${format}\n" "$@"
 	done
 
 	# Sort by SET,PTNAME,JAIL,BUILD
 	echo "${_DISPLAY_DATA}" | tail -n +2 | \
 	    sort ${_DISPLAY_COLUMN_SORT} | while read line; do
-		printf "${format}\n" ${line}
+		eval "set -- ${line}"
+		printf "${format}\n" "$@"
 	done
 
 	unset _DISPLAY_DATA _DISPLAY_FORMAT _DISPLAY_COLUMNS \
