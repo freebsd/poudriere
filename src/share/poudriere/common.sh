@@ -1782,7 +1782,7 @@ _real_build_port() {
 					bset_job_status "${phase}/runaway" "${port}"
 					job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}runaway"
 				elif [ $hangstatus -eq 3 ]; then
-					msg "Killing timed out build after ${MAX_EXECUTION_TIME} seconds"
+					msg "Killing timed out build after ${max_execution_time} seconds"
 					bset_job_status "${phase}/timeout" "${port}"
 					job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}timeout"
 				fi
