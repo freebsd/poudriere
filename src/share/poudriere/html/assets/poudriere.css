@@ -40,6 +40,16 @@
 	min-height: 65px;
 }
 
+td.group {
+    background-color: #D1CFD0;
+    border-bottom: 2px solid #A19B9E;
+    border-top: 2px solid #A19B9E;
+}
+
+td.group .title {
+	font-weight: bold;
+}
+
 .error {
 	color: red;
 }

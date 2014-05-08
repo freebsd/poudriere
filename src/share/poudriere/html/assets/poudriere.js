@@ -282,6 +282,10 @@ function format_buildname(mastername, buildname) {
 	return html;
 }
 
+function format_portset(ptname, setname) {
+	return ptname + (setname ? '-' : '') + setname;
+}
+
 function format_log(pkgname, errors, text) {
 	var html;
 
@@ -607,6 +611,7 @@ function process_data_index(data) {
 		for (mastername in data) {
 			table_row = [];
 			master = data[mastername].latest;
+			table_row.push(format_portset(master.ptname, master.setname));
 			table_row.push(master.mastername);
 			table_row.push(master.buildname);
 			table_row.push(master.jailname);
@@ -827,7 +832,7 @@ function setup_jail() {
 }
 
 function setup_index() {
-	var columns, status, types, i, stat_column;
+	var columns, status, types, i, stat_column, table;
 
 	stat_column = {
 		"sWidth": "4em",
@@ -836,6 +841,8 @@ function setup_index() {
 	};
 
 	columns = [
+		{
+		},
 		{
 			"render": function(data, type, row) {
 				return type == "display" ? format_mastername(data) :
@@ -855,18 +862,21 @@ function setup_index() {
 				return type == "display" ? format_jailname(data) : data;
 			},
 			"sWidth": "10em",
+			"visible": false,
 		},
 		{
 			"render": function(data, type, row) {
 				return type == "display" ? format_setname(data) : data;
 			},
 			"sWidth": "10em",
+			"visible": false,
 		},
 		{
 			"render": function(data, type, row) {
 				return type == "display" ? format_ptname(data) : data;
 			},
 			"sWidth": "10em",
+			"visible": false,
 		},
 		stat_column,
 		stat_column,
@@ -883,7 +893,7 @@ function setup_index() {
 		},
 	];
 
-	$('#latest_builds_table').dataTable({
+	table = $('#latest_builds_table').dataTable({
 		"aaSorting": [], // No initial sorting
 		"bAutoWidth": false,
 		"processing": true, // Show processing icon
@@ -892,6 +902,15 @@ function setup_index() {
 		"localStorage": true, // Enable cookie for keeping state
 		"lengthMenu":[[5,10,25,50,100,200, -1],[5,10,25,50,100,200,"All"]],
 		"pageLength": 50,
+		"order": [[2, 'asc']],
+	});
+
+	table.rowGrouping({
+		sGroupLabelPrefix: "Ports Set - ",
+		fnGroupLabelFormat: function(label) {
+			return "<span class='title'>"+ label + "</span>";
+		},
+
 	});
 }
 
