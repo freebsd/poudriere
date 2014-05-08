@@ -1063,7 +1063,9 @@ $(document).ready(function() {
 		});
 		setup_index();
 	} else {
-		$('#loading p').text('Invalid request. Unhandled page type.').addClass('error');
+		$('#loading p').text("Invalid request. Unhandled page type '" +
+				page_type + "'").addClass('error');
+		return;
 	}
 
 	/* Fix nav links to not skip hashchange event when clicking multiple
