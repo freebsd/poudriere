@@ -841,6 +841,7 @@ function setup_index() {
 				return type == "display" ? format_mastername(data) :
 					data;
 			},
+			"sWidth": "22em",
 		},
 		{
 			"render": function(data, type, row) {
@@ -853,16 +854,19 @@ function setup_index() {
 			"render": function(data, type, row) {
 				return type == "display" ? format_jailname(data) : data;
 			},
+			"sWidth": "10em",
 		},
 		{
 			"render": function(data, type, row) {
 				return type == "display" ? format_setname(data) : data;
 			},
+			"sWidth": "10em",
 		},
 		{
 			"render": function(data, type, row) {
 				return type == "display" ? format_ptname(data) : data;
 			},
+			"sWidth": "10em",
 		},
 		stat_column,
 		stat_column,
