@@ -233,7 +233,7 @@ function format_mastername(mastername) {
 			page_type == "jail") {
 		html = '<a href="#top" onclick="scrollToElement(\'#top\'); return false;">' + mastername + '</a>';
 	} else {
-		html = '<a href="' + jail_url(mastername) + '">' +
+		html = '<a title="List builds for ' + mastername + '" href="' + jail_url(mastername) + '">' +
 			mastername + '</a>';
 	}
 
@@ -275,7 +275,7 @@ function format_buildname(mastername, buildname) {
 		page_type == "build") {
 		html = '<a href="#top" onclick="scrollToElement(\'#top\'); return false;">' + buildname + '</a>';
 	} else {
-		html = '<a href="' + build_url(mastername, buildname) + '">' +
+		html = '<a title="Show build results for ' + buildname + '" href="' + build_url(mastername, buildname) + '">' +
 			buildname + '</a>';
 	}
 
