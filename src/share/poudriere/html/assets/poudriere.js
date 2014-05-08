@@ -1,6 +1,9 @@
 // vim: set sts=4 sw=4 ts=4 noet:
 var updateInterval = 8;
 var first_run = true;
+var load_attempts = 0;
+var max_load_attempts = 8;
+var first_load_interval = 2;
 var canvas_width;
 var impulseData = [];
 var tracker = 0;
@@ -40,8 +43,12 @@ function update_fields() {
 			process_data(data);
 		},
 		error: function(data) {
-			/* May not be there yet, try again shortly */
-			setTimeout(update_fields, 2 * 1000);
+			if (++load_attempts < max_load_attempts) {
+				/* May not be there yet, try again shortly */
+				setTimeout(update_fields, first_load_interval * 1000);
+			} else {
+				$('#loading p').text('Invalid build request.').addClass('error');
+			}
 		}
 	});
 }
