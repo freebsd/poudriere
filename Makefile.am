@@ -68,27 +68,27 @@ dist_assets_DATA=	src/share/poudriere/html/assets/poudriere.js \
 			src/share/poudriere/html/assets/favicon.ico \
 			src/share/poudriere/html/assets/poudriere.css \
 			src/share/poudriere/html/assets/jquery-1.11.0.min.js
-dist_btjs_DATA=		src/share/poudriere/html/assets/bootstrap/js/bootstrap.min.js
-dist_btfonts_DATA=	src/share/poudriere/html/assets/bootstrap/fonts/glyphicons-halflings-regular.eot \
-			src/share/poudriere/html/assets/bootstrap/fonts/glyphicons-halflings-regular.svg \
-			src/share/poudriere/html/assets/bootstrap/fonts/glyphicons-halflings-regular.ttf \
-			src/share/poudriere/html/assets/bootstrap/fonts/glyphicons-halflings-regular.woff
-dist_btcss_DATA=	src/share/poudriere/html/assets/bootstrap/css/bootstrap-theme.min.css \
-			src/share/poudriere/html/assets/bootstrap/css/bootstrap.min.css
-dist_dtcss_DATA=	src/share/poudriere/html/assets/dataTables/css/jquery.dataTables.min.css \
-			src/share/poudriere/html/assets/dataTables/css/jquery.dataTables_themeroller.min.css
-dist_dtjs_DATA=		src/share/poudriere/html/assets/dataTables/js/jquery.dataTables.min.js
-dist_dtimages_DATA=	src/share/poudriere/html/assets/dataTables/images/back_disabled.png \
-			src/share/poudriere/html/assets/dataTables/images/back_enabled.png \
-			src/share/poudriere/html/assets/dataTables/images/back_enabled_hover.png \
-			src/share/poudriere/html/assets/dataTables/images/forward_disabled.png \
-			src/share/poudriere/html/assets/dataTables/images/forward_enabled.png \
-			src/share/poudriere/html/assets/dataTables/images/forward_enabled_hover.png \
-			src/share/poudriere/html/assets/dataTables/images/sort_asc.png \
-			src/share/poudriere/html/assets/dataTables/images/sort_asc_disabled.png \
-			src/share/poudriere/html/assets/dataTables/images/sort_both.png \
-			src/share/poudriere/html/assets/dataTables/images/sort_desc.png \
-			src/share/poudriere/html/assets/dataTables/images/sort_desc_disabled.png
+dist_btjs_DATA=		src/share/poudriere/html/assets/bootstrap-3.1.1/js/bootstrap.min.js
+dist_btfonts_DATA=	src/share/poudriere/html/assets/bootstrap-3.1.1/fonts/glyphicons-halflings-regular.eot \
+			src/share/poudriere/html/assets/bootstrap-3.1.1/fonts/glyphicons-halflings-regular.svg \
+			src/share/poudriere/html/assets/bootstrap-3.1.1/fonts/glyphicons-halflings-regular.ttf \
+			src/share/poudriere/html/assets/bootstrap-3.1.1/fonts/glyphicons-halflings-regular.woff
+dist_btcss_DATA=	src/share/poudriere/html/assets/bootstrap-3.1.1/css/bootstrap-theme.min.css \
+			src/share/poudriere/html/assets/bootstrap-3.1.1/css/bootstrap.min.css
+dist_dtcss_DATA=	src/share/poudriere/html/assets/DataTables-1.10.0/css/jquery.dataTables.min.css \
+			src/share/poudriere/html/assets/DataTables-1.10.0/css/jquery.dataTables_themeroller.min.css
+dist_dtjs_DATA=		src/share/poudriere/html/assets/DataTables-1.10.0/js/jquery.dataTables.min.js
+dist_dtimages_DATA=	src/share/poudriere/html/assets/DataTables-1.10.0/images/back_disabled.png \
+			src/share/poudriere/html/assets/DataTables-1.10.0/images/back_enabled.png \
+			src/share/poudriere/html/assets/DataTables-1.10.0/images/back_enabled_hover.png \
+			src/share/poudriere/html/assets/DataTables-1.10.0/images/forward_disabled.png \
+			src/share/poudriere/html/assets/DataTables-1.10.0/images/forward_enabled.png \
+			src/share/poudriere/html/assets/DataTables-1.10.0/images/forward_enabled_hover.png \
+			src/share/poudriere/html/assets/DataTables-1.10.0/images/sort_asc.png \
+			src/share/poudriere/html/assets/DataTables-1.10.0/images/sort_asc_disabled.png \
+			src/share/poudriere/html/assets/DataTables-1.10.0/images/sort_both.png \
+			src/share/poudriere/html/assets/DataTables-1.10.0/images/sort_desc.png \
+			src/share/poudriere/html/assets/DataTables-1.10.0/images/sort_desc_disabled.png
 
 dist_rc_SCRIPTS=	src/etc/rc.d/poudriered
 
