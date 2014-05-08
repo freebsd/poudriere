@@ -5,8 +5,22 @@ function get_value(key) {
   value = substr(key_group, RSTART+2, RLENGTH-3)
   return value
 }
+function print_value(key, end) {
+  printf "\"" key "\":\"" get_value(key) "\"" end
+}
 {
-  buildname = get_value("buildname")
+  split(FILENAME, paths, "/")
+  jail=paths[1]
+  printf "\"" jail "\":{"
+  printf "\"latest\":" $0 ","
+  print_value("mastername", ",")
+  print_value("jailname", ",")
+  print_value("ptname", ",")
+  print_value("setname", ",")
+  print_value("status")
+  print "}"
+  next
+
   if (FILENAME ~ /latest\//) {
     data = "\"" buildname "\""
     buildname = "latest"

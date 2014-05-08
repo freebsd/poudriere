@@ -55,6 +55,7 @@ json_main() {
 		update_stats
 		build_json
 		build_jail_json
+		build_top_json
 		sleep 2
 	done
 }
@@ -94,6 +95,24 @@ build_jail_json() {
 		echo "}"
 	} > ${tmpfile}
 	mv -f ${tmpfile} ${log_path_jail}/.data.json
+}
+
+build_top_json() {
+	local log_path_top tmpfile
+
+	_log_path_top log_path_top
+	tmpfile=$(TMPDIR="${log_path_top}" mktemp -ut json)
+
+	(
+		cd "${log_path_top}"
+		echo "{"
+		echo */latest/.data.mini.json | \
+		    xargs awk -f ${AWKPREFIX}/json_top.awk | \
+		    sed -e '/^$/d' | \
+		    paste -s -d , -
+		echo "}"
+	) > ${tmpfile}
+	mv -f ${tmpfile} ${log_path_top}/.data.json
 }
 
 stop_html_json() {
