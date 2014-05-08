@@ -222,6 +222,10 @@ function jail_url(mastername, buildname) {
 function format_mastername(mastername) {
 	var html;
 
+	if (!mastername) {
+		return '';
+	}
+
 	if (page_mastername && mastername == page_mastername &&
 			page_type == "jail") {
 		html = '<a href="#top">' + mastername + '</a>';
@@ -246,6 +250,9 @@ function format_ptname(ptname) {
 }
 
 function build_url(mastername, buildname) {
+	if (!mastername || !buildname) {
+		return '';
+	}
 	return 'build.html?' +
 		'mastername=' + encodeURIComponent(mastername) + '&' +
 		'build=' + encodeURIComponent(buildname);
@@ -253,6 +260,12 @@ function build_url(mastername, buildname) {
 
 function format_buildname(mastername, buildname) {
 	var html;
+
+	if (!mastername) {
+		return buildname;
+	} else if (!buildname) {
+		return '';
+	}
 
 	if (page_mastername && mastername == page_mastername &&
 		page_buildname && buildname == page_buildname &&
@@ -507,7 +520,8 @@ function process_data_build(data) {
 }
 
 function process_data_jail(data) {
-	var table_rows, table_row, build, buildname, stat, types, latest;
+	var table_rows, table_row, build, buildname, stat, types, latest,
+		remaining;
 
 	if (data.builds) {
 		types = ['queued', 'built', 'failed', 'skipped', 'ignored'];
@@ -521,13 +535,19 @@ function process_data_jail(data) {
 			}
 			table_row.push(format_buildname(build.mastername, buildname));
 			for (stat in types) {
-				table_row.push(build.stats[types[stat]]);
+				table_row.push(build.stats[types[stat]] ?
+						build.stats[types[stat]] :
+						"0");
 			}
-			table_row.push(parseInt(build.stats['queued']) -
-					(parseInt(build.stats['built']) +
-					 parseInt(build.stats['failed']) +
-					 parseInt(build.stats['skipped']) +
-					 parseInt(build.stats['ignored'])));
+			remaining = parseInt(build.stats['queued']) -
+				(parseInt(build.stats['built']) +
+				 parseInt(build.stats['failed']) +
+				 parseInt(build.stats['skipped']) +
+				 parseInt(build.stats['ignored']));
+			if (isNaN(remaining)) {
+				remaining = 0;
+			}
+			table_row.push(remaining);
 			table_row.push(build.status);
 			table_row.push(build.elapsed ? build.elapsed : "");
 			table_rows.push(table_row);
