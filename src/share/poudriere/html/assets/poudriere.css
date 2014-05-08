@@ -33,8 +33,7 @@
 .ignored { background-color: #FF9900 !important; }
 .ignored .row1 { background-color: #FF6F00; }
 .remaining { background-color: #E3E3E3 !important; }
-.new { display: none; }
-.hilight { background-color: #f7Fe4a; }
+.latest { background-color: #f7Fe4a; }
 td.highlight {
 	background-color: whitesmoke !important;
 }

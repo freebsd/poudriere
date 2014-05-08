@@ -419,8 +419,48 @@ function format_status_row(status, row) {
 	return table_row;
 }
 
+function DTRow(table_id, div_id) {
+	this.Table = $('#' + table_id).DataTable();
+	this.new_rows = [];
+	this.first_load = (this.Table.row(0).length == 0);
+	this.div_id = div_id;
+}
+
+DTRow.prototype = {
+	queue: function(row) {
+		var existing_row;
+
+		/* Is this entry already in the list? If so need to
+		 * replace its data. Don't bother with lookups on
+		 * first load.
+		 */
+		row.DT_RowId = 'data_row_' + row.id;
+		if (!this.first_load) {
+			existing_row = this.Table.row('#' + row.DT_RowId);
+		} else {
+			existing_row = {};
+		}
+		if (existing_row.length) {
+			existing_row.data(row);
+		} else {
+			/* Otherwise add it. */
+			this.new_rows.push(row);
+		}
+	},
+	commit: function() {
+		if (this.new_rows.length) {
+			nodes = this.Table.rows.add(this.new_rows).draw().nodes();
+			if (this.first_load) {
+				$('#' + this.div_id).show();
+			} else {
+				nodes.to$().hide().fadeIn(1500);
+			}
+		}
+	},
+};
+
 function process_data_build(data) {
-	var html, a, n, table_rows, table_row, status, builder, now;
+	var html, a, n, table_rows, status, builder, now, row, dtrow;
 
 	if (data.snap && data.snap.now) {
 		now = data.snap.now;
@@ -455,24 +495,22 @@ function process_data_build(data) {
 
 	/* Builder status */
 	if (data.jobs) {
-		table_rows = [];
+		dtrow = new DTRow('builders_table', 'jobs_div');
 		for (n = 0; n < data.jobs.length; n++) {
+			row = {};
 			builder = data.jobs[n];
 
-			table_row = [];
-			table_row.push(builder.id);
-			table_row.push(builder.origin ? format_origin(builder.origin) : "");
-			table_row.push(builder.pkgname ? format_log(builder.pkgname, false, builder.status) : builder.status.split(":")[0]);
-			table_row.push(builder.started ? format_duration(builder.started, now) : "");
-			table_rows.push(table_row);
+			row.id = builder.id;
+			row.job_id = builder.id;
+			row.origin = builder.origin ? format_origin(builder.origin) : "";
+			row.status = builder.pkgname ?
+				format_log(builder.pkgname, false, builder.status) :
+				builder.status.split(":")[0];
+			row.elapsed = builder.started ?
+				format_duration(builder.started, now) : "";
+			dtrow.queue(row);
 		}
-		if (table_rows.length) {
-			$('#jobs_div').show();
-
-			// XXX This could be improved by updating cells in-place
-			$('#builders_table').dataTable().fnClearTable();
-			$('#builders_table').dataTable().fnAddData(table_rows);
-		}
+		dtrow.commit();
 	}
 
 	if (data.status) {
@@ -543,24 +581,25 @@ function process_data_build(data) {
 }
 
 function process_data_jail(data) {
-	var table_rows, table_row, build, buildname, stat, types, latest,
-		remaining;
+	var row, build, buildname, stat, types, latest,	remaining, count, dtrow;
 
 	if (data.builds) {
 		types = ['queued', 'built', 'failed', 'skipped', 'ignored'];
-		table_rows = [];
+		dtrow = new DTRow('builds_table', 'builds_div');
 		for (buildname in data.builds) {
-			table_row = [];
+			row = {};
+
 			build = data.builds[buildname];
 			if (buildname == "latest") {
 				latest = data.builds[build];
 				continue;
 			}
-			table_row.push(buildname);
+
+			row.id = buildname;
+			row.buildname = buildname;
 			for (stat in types) {
-				table_row.push(build.stats[types[stat]] ?
-						build.stats[types[stat]] :
-						"0");
+				count = parseInt(build.stats[types[stat]]);
+				row['stat_' + types[stat]] = isNaN(count) ? 0 : count;
 			}
 			remaining = parseInt(build.stats['queued']) -
 				(parseInt(build.stats['built']) +
@@ -570,31 +609,27 @@ function process_data_jail(data) {
 			if (isNaN(remaining)) {
 				remaining = 0;
 			}
-			table_row.push(remaining);
-			table_row.push(translate_status(build.status));
-			table_row.push(build.elapsed ? build.elapsed : "");
-			table_rows.push(table_row);
-		}
-		if (table_rows.length) {
-			$('#builds_div').show();
+			row.remaining = remaining;
+			row.status = translate_status(build.status);
+			row.elapsed = build.elapsed ? build.elapsed : "";
 
-			if (latest) {
-				$('#mastername').html(format_mastername(latest.mastername));
-				$('#status').text(translate_status(latest.status));
-				$('#jail').html(format_jailname(latest.jailname));
-				$('#setname').html(format_setname(latest.setname));
-				$('#ptname').html(format_ptname(latest.ptname));
-				$('#latest_url').attr('href',
-						build_url(latest.mastername, latest.buildname));
-				$('#latest_build').html(format_buildname(latest.mastername,
-							latest.buildname));
-				$('#masterinfo_div').show();
-			}
-
-			// XXX This could be improved by updating cells in-place
-			$('#builds_table').dataTable().fnClearTable();
-			$('#builds_table').dataTable().fnAddData(table_rows);
+			dtrow.queue(row);
 		}
+
+		if (latest) {
+			$('#mastername').html(format_mastername(latest.mastername));
+			$('#status').text(translate_status(latest.status));
+			$('#jail').html(format_jailname(latest.jailname));
+			$('#setname').html(format_setname(latest.setname));
+			$('#ptname').html(format_ptname(latest.ptname));
+			$('#latest_url').attr('href',
+					build_url(latest.mastername, latest.buildname));
+			$('#latest_build').html(format_buildname(latest.mastername,
+						latest.buildname));
+			$('#masterinfo_div').show();
+		}
+
+		dtrow.commit();
 	}
 
 	// Always reload, no stopping condition.
@@ -602,46 +637,39 @@ function process_data_jail(data) {
 }
 
 function process_data_index(data) {
-	var table_rows, table_row, master, mastername, stat, types, latest,
-		remaining;
+	var master, mastername, stat, types, latest,
+		remaining, row,	count, dtrow;
 
 	if (!$.isEmptyObject(data)) {
 		types = ['queued', 'built', 'failed', 'skipped', 'ignored'];
-		table_rows = [];
+		dtrow = new DTRow('latest_builds_table', 'latest_builds_div');
 		for (mastername in data) {
-			table_row = [];
+			row = {};
 			master = data[mastername].latest;
-			table_row.push(format_portset(master.ptname, master.setname));
-			table_row.push(master.mastername);
-			table_row.push(master.buildname);
-			table_row.push(master.jailname);
-			table_row.push(master.setname);
-			table_row.push(master.ptname);
+
+			row.id = master.mastername;
+			row.portset = format_portset(master.ptname, master.setname);
+			row.mastername = master.mastername;
+			row.buildname = master.buildname;
+			row.jailname = master.jailname;
+			row.setname = master.setname;
+			row.ptname = master.ptname;
 			for (stat in types) {
-				table_row.push(master.stats[types[stat]] ?
-						master.stats[types[stat]] :
-						"0");
+				count = parseInt(master.stats[types[stat]]);
+				row['stat_' + types[stat]] = isNaN(count) ? 0 : count;
 			}
 			remaining = parseInt(master.stats['queued']) -
 				(parseInt(master.stats['built']) +
 				 parseInt(master.stats['failed']) +
 				 parseInt(master.stats['skipped']) +
 				 parseInt(master.stats['ignored']));
-			if (isNaN(remaining)) {
-				remaining = 0;
-			}
-			table_row.push(remaining);
-			table_row.push(translate_status(master.status));
-			table_row.push(master.elapsed ? master.elapsed : "");
-			table_rows.push(table_row);
-		}
-		if (table_rows.length) {
-			$('#latest_builds_div').show();
+			row.stat_remaining = isNaN(remaining) ? 0 : remaining;
+			row.status = translate_status(master.status);
+			row.elapsed = master.elapsed ? master.elapsed : "";
 
-			// XXX This could be improved by updating cells in-place
-			$('#latest_builds_table').dataTable().fnClearTable();
-			$('#latest_builds_table').dataTable().fnAddData(table_rows);
+			dtrow.queue(row);
 		}
+		dtrow.commit();
 	}
 
 	// Always reload, no stopping condition.
@@ -661,9 +689,7 @@ function process_data(data) {
 		should_reload = false;
 	}
 
-	if (first_run == false) {
-		$('.new').fadeIn(1500).removeClass('new');
-	} else {
+	if (first_run) {
 		/* Resize due to full content. */
 		do_resize($(window));
 		// Hide loading overlay
@@ -733,10 +759,28 @@ function setup_build() {
 		"bAutoWidth": false,
 		"aoColumns": [
 			// Smaller ID/Status
-			{"sWidth": "1em"},
-			null,
-			{"sWidth": "8em"},
-			{"sWidth": "3em"},
+			{
+				"data": "job_id",
+				"sWidth": "1em",
+			},
+			{
+				"data": "origin",
+			},
+			{
+				"data": "status",
+				"sWidth": "8em",
+			},
+			{
+				"data": "elapsed",
+				"sWidth": "3em",
+			},
+		],
+		"columnDefs": [
+			{
+				"data": null,
+				"defaultContent": "",
+				"targets": '_all',
+			}
 		],
 	});
 
@@ -811,6 +855,7 @@ function setup_jail() {
 
 	columns = [
 		{
+			"data": "buildname",
 			"render": function(data, type, row) {
 				return type == "display" ?
 					format_buildname(page_mastername, data) :
@@ -818,16 +863,18 @@ function setup_jail() {
 			},
 			"sWidth": "12em",
 		},
-		stat_column,
-		stat_column,
-		stat_column,
-		stat_column,
-		stat_column,
-		stat_column,
+		$.extend({}, stat_column, {"data": "stat_queued"}),
+		$.extend({}, stat_column, {"data": "stat_built"}),
+		$.extend({}, stat_column, {"data": "stat_failed"}),
+		$.extend({}, stat_column, {"data": "stat_skipped"}),
+		$.extend({}, stat_column, {"data": "stat_ignored"}),
+		$.extend({}, stat_column, {"data": "stat_remaining"}),
 		{
+			"data": "status",
 			"sWidth": "8em",
 		},
 		{
+			"data": "elapsed",
 			"bSearchable": false,
 			"sWidth": "3em",
 		},
@@ -842,9 +889,17 @@ function setup_jail() {
 		"stateSave": true, // Enable cookie for keeping state
 		"lengthMenu":[[5,10,25,50,100,200, -1],[5,10,25,50,100,200,"All"]],
 		"pageLength": 50,
+		"columnDefs": [
+			{
+				"data": null,
+				"defaultContent": "",
+				"targets": '_all',
+			}
+		],
 		"createdRow": function(row, data, index) {
-			if (data[0] == $('#latest_build').text()) {
-				$('td', row).addClass('hilight');
+			if (data.buildname == $('#latest_build').text()) {
+				$('td.latest').removeClass('latest');
+				$('td', row).addClass('latest');
 			}
 		},
 	});
@@ -863,9 +918,11 @@ function setup_index() {
 
 	columns = [
 		{
+			"data": "portset",
 			"visible": false,
 		},
 		{
+			"data": "mastername",
 			"render": function(data, type, row) {
 				return type == "display" ? format_mastername(data) :
 					data;
@@ -873,13 +930,15 @@ function setup_index() {
 			"sWidth": "22em",
 		},
 		{
+			"data": "buildname",
 			"render": function(data, type, row) {
-				return type == "display" ? format_buildname(row[0], data) :
-					data;
+				return type == "display" ?
+					format_buildname(row.mastername, data) : data;
 			},
 			"sWidth": "12em",
 		},
 		{
+			"data": "jailname",
 			"render": function(data, type, row) {
 				return type == "display" ? format_jailname(data) : data;
 			},
@@ -887,6 +946,7 @@ function setup_index() {
 			"visible": false,
 		},
 		{
+			"data": "setname",
 			"render": function(data, type, row) {
 				return type == "display" ? format_setname(data) : data;
 			},
@@ -894,22 +954,25 @@ function setup_index() {
 			"visible": false,
 		},
 		{
+			"data": "ptname",
 			"render": function(data, type, row) {
 				return type == "display" ? format_ptname(data) : data;
 			},
 			"sWidth": "10em",
 			"visible": false,
 		},
-		stat_column,
-		stat_column,
-		stat_column,
-		stat_column,
-		stat_column,
-		stat_column,
+		$.extend({}, stat_column, {"data": "stat_queued"}),
+		$.extend({}, stat_column, {"data": "stat_built"}),
+		$.extend({}, stat_column, {"data": "stat_failed"}),
+		$.extend({}, stat_column, {"data": "stat_skipped"}),
+		$.extend({}, stat_column, {"data": "stat_ignored"}),
+		$.extend({}, stat_column, {"data": "stat_remaining"}),
 		{
+			"data": "status",
 			"sWidth": "8em",
 		},
 		{
+			"data": "elapsed",
 			"bSearchable": false,
 			"sWidth": "3em",
 		},
@@ -925,6 +988,13 @@ function setup_index() {
 		"lengthMenu":[[5,10,25,50,100,200, -1],[5,10,25,50,100,200,"All"]],
 		"pageLength": 50,
 		"order": [[2, 'asc']],
+		"columnDefs": [
+			{
+				"data": null,
+				"defaultContent": "",
+				"targets": '_all',
+			}
+		],
 	});
 
 	table.rowGrouping({
