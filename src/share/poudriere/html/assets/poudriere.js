@@ -586,6 +586,52 @@ function process_data_jail(data) {
 	return true;
 }
 
+function process_data_index(data) {
+	var table_rows, table_row, master, mastername, stat, types, latest,
+		remaining;
+
+	if (!$.isEmptyObject(data)) {
+		types = ['queued', 'built', 'failed', 'skipped', 'ignored'];
+		table_rows = [];
+		for (mastername in data) {
+			table_row = [];
+			master = data[mastername].latest;
+			table_row.push(format_mastername(master.mastername));
+			table_row.push(format_buildname(mastername, master.buildname));
+			table_row.push(format_jailname(master.jailname));
+			table_row.push(format_setname(master.setname));
+			table_row.push(format_ptname(master.ptname));
+			for (stat in types) {
+				table_row.push(master.stats[types[stat]] ?
+						master.stats[types[stat]] :
+						"0");
+			}
+			remaining = parseInt(master.stats['queued']) -
+				(parseInt(master.stats['built']) +
+				 parseInt(master.stats['failed']) +
+				 parseInt(master.stats['skipped']) +
+				 parseInt(master.stats['ignored']));
+			if (isNaN(remaining)) {
+				remaining = 0;
+			}
+			table_row.push(remaining);
+			table_row.push(master.status);
+			table_row.push(master.elapsed ? master.elapsed : "");
+			table_rows.push(table_row);
+		}
+		if (table_rows.length) {
+			$('#latest_builds_div').show();
+
+			// XXX This could be improved by updating cells in-place
+			$('#latest_builds_table').dataTable().fnClearTable();
+			$('#latest_builds_table').dataTable().fnAddData(table_rows);
+		}
+	}
+
+	// Always reload, no stopping condition.
+	return true;
+}
+
 function process_data(data) {
 	var should_reload;
 
@@ -593,6 +639,8 @@ function process_data(data) {
 		should_reload = process_data_build(data);
 	} else if (page_type == "jail") {
 		should_reload = process_data_jail(data);
+	} else if (page_type == "index") {
+		should_reload = process_data_index(data);
 	} else {
 		should_reload = false;
 	}
@@ -755,8 +803,54 @@ function setup_jail() {
 	});
 }
 
+function setup_index() {
+	var columns, status, types, i, stat_column;
+
+	stat_column = {
+		"sWidth": "4em",
+		"sType": "numeric",
+		"bSearchable": false,
+	};
+
+	columns = [
+		null,
+		null,
+		null,
+		null,
+		null,
+		stat_column,
+		stat_column,
+		stat_column,
+		stat_column,
+		stat_column,
+		stat_column,
+		{
+			"sWidth": "8em",
+		},
+		{
+			"bSearchable": false,
+			"sWidth": "3em",
+		},
+	];
+
+	$('#latest_builds_table').dataTable({
+		"aaSorting": [], // No initial sorting
+		"bAutoWidth": false,
+		"processing": true, // Show processing icon
+		"deferRender": true, // Defer creating TR/TD until needed
+		"aoColumns": columns,
+		"localStorage": true, // Enable cookie for keeping state
+		"lengthMenu":[[5,10,25,50,100,200, -1],[5,10,25,50,100,200,"All"]],
+		"pageLength": 50,
+	});
+}
+
 $(document).ready(function() {
-	page_type = location.pathname.substr(1, location.pathname.length - 6);
+	if (location.pathname == "/") {
+		page_type = "index";
+	} else {
+		page_type = location.pathname.substr(1, location.pathname.length - 6);
+	}
 	if (page_type == "build") {
 		page_mastername = getParameterByName("mastername");
 		page_buildname = getParameterByName("build");
@@ -785,6 +879,13 @@ $(document).ready(function() {
 		$('#backlink').attr('href', 'index.html');
 		$('#latest_url').attr('href', build_url(page_mastername, 'latest'));
 		setup_jail();
+	} else if (page_type == "index") {
+		data_url = 'data';
+		$('a.data_url').each(function() {
+			var href = $(this).attr('href');
+			$(this).attr('href', data_url + '/' + href);
+		});
+		setup_index();
 	} else {
 		$('#loading p').text('Invalid request. Unhandled page type.').addClass('error');
 	}
