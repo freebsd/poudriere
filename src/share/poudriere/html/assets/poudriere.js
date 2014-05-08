@@ -606,11 +606,11 @@ function process_data_jail(data) {
 					parseInt(build.stats[types[stat]]) : 0;
 				row['stat_' + types[stat]] = isNaN(count) ? 0 : count;
 			}
-			remaining = parseInt(build.stats['queued']) -
+			remaining = build.stats ? (parseInt(build.stats['queued']) -
 				(parseInt(build.stats['built']) +
 				 parseInt(build.stats['failed']) +
 				 parseInt(build.stats['skipped']) +
-				 parseInt(build.stats['ignored']));
+				 parseInt(build.stats['ignored']))) : 0;
 			if (isNaN(remaining)) {
 				remaining = 0;
 			}
@@ -664,11 +664,11 @@ function process_data_index(data) {
 					undefined ? parseInt(master.stats[types[stat]]) : 0;
 				row['stat_' + types[stat]] = isNaN(count) ? 0 : count;
 			}
-			remaining = parseInt(master.stats['queued']) -
+			remaining = master.stats ? (parseInt(master.stats['queued']) -
 				(parseInt(master.stats['built']) +
 				 parseInt(master.stats['failed']) +
 				 parseInt(master.stats['skipped']) +
-				 parseInt(master.stats['ignored']));
+				 parseInt(master.stats['ignored']))) : 0;
 			row.stat_remaining = isNaN(remaining) ? 0 : remaining;
 			row.status = translate_status(master.status);
 			row.elapsed = master.elapsed ? master.elapsed : "";
