@@ -544,7 +544,7 @@ function process_data_jail(data) {
 				latest = data.builds[build];
 				continue;
 			}
-			table_row.push(format_buildname(build.mastername, buildname));
+			table_row.push(buildname);
 			for (stat in types) {
 				table_row.push(build.stats[types[stat]] ?
 						build.stats[types[stat]] :
@@ -599,11 +599,11 @@ function process_data_index(data) {
 		for (mastername in data) {
 			table_row = [];
 			master = data[mastername].latest;
-			table_row.push(format_mastername(master.mastername));
-			table_row.push(format_buildname(mastername, master.buildname));
-			table_row.push(format_jailname(master.jailname));
-			table_row.push(format_setname(master.setname));
-			table_row.push(format_ptname(master.ptname));
+			table_row.push(master.mastername);
+			table_row.push(master.buildname);
+			table_row.push(master.jailname);
+			table_row.push(master.setname);
+			table_row.push(master.ptname);
 			for (stat in types) {
 				table_row.push(master.stats[types[stat]] ?
 						master.stats[types[stat]] :
@@ -778,7 +778,13 @@ function setup_jail() {
 	};
 
 	columns = [
-		null,
+		{
+			"render": function(data, type, row) {
+				return type == "display" ?
+					format_buildname(page_mastername, data) :
+					data;
+			},
+		},
 		stat_column,
 		stat_column,
 		stat_column,
@@ -816,11 +822,33 @@ function setup_index() {
 	};
 
 	columns = [
-		null,
-		null,
-		null,
-		null,
-		null,
+		{
+			"render": function(data, type, row) {
+				return type == "display" ? format_mastername(data) :
+					data;
+			},
+		},
+		{
+			"render": function(data, type, row) {
+				return type == "display" ? format_buildname(row[0], data) :
+					data;
+			},
+		},
+		{
+			"render": function(data, type, row) {
+				return type == "display" ? format_jailname(data) : data;
+			},
+		},
+		{
+			"render": function(data, type, row) {
+				return type == "display" ? format_setname(data) : data;
+			},
+		},
+		{
+			"render": function(data, type, row) {
+				return type == "display" ? format_ptname(data) : data;
+			},
+		},
 		stat_column,
 		stat_column,
 		stat_column,
