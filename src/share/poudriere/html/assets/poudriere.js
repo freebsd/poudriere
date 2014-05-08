@@ -41,6 +41,9 @@ function update_data() {
 	$.ajax({
 		url: data_url + '/.data.json',
 		dataType: 'json',
+		headers: {
+			'Cache-Control': 'max-age=0',
+		},
 		success: function(data) {
 			process_data(data);
 		},
