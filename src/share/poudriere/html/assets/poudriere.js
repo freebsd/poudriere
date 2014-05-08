@@ -499,26 +499,8 @@ function fix_viewport() {
 	}
 }
 
-$(document).ready(function() {
-	var columns, status, types, i, mastername, buildname;
-
-	page_type = location.pathname.substr(1, location.pathname.length - 6);
-	if (page_type == "build") {
-		page_mastername = getParameterByName("mastername");
-		page_buildname = getParameterByName("build");
-		if (!page_buildname || !page_mastername) {
-			$('#loading p').text('Invalid request. Mastername and Build required.').addClass('error');
-			return;
-		}
-		data_url = 'data/' + page_mastername + '/' + page_buildname;
-		$('a.data_url').each(function() {
-			var href = $(this).attr('href');
-			$(this).attr('href', data_url + '/' + href);
-		});
-		$('#backlink').attr('href', 'jail.html?mastername=' + page_mastername);
-	} else {
-		$('#loading p').text('Invalid request. Unhandled page type.').addClass('error');
-	}
+function setup_build() {
+	var columns, status, types, i;
 
 	$('#builders_table').dataTable({
 		"bFilter": false,
@@ -591,6 +573,27 @@ $(document).ready(function() {
 			"lengthMenu":[[5,10,25,50,100,200, -1],[5,10,25,50,100,200,"All"]],
 			"pageLength": 10,
 		});
+	}
+}
+
+$(document).ready(function() {
+	page_type = location.pathname.substr(1, location.pathname.length - 6);
+	if (page_type == "build") {
+		page_mastername = getParameterByName("mastername");
+		page_buildname = getParameterByName("build");
+		if (!page_buildname || !page_mastername) {
+			$('#loading p').text('Invalid request. Mastername and Build required.').addClass('error');
+			return;
+		}
+		data_url = 'data/' + page_mastername + '/' + page_buildname;
+		$('a.data_url').each(function() {
+			var href = $(this).attr('href');
+			$(this).attr('href', data_url + '/' + href);
+		});
+		$('#backlink').attr('href', 'jail.html?mastername=' + page_mastername);
+		setup_build();
+	} else {
+		$('#loading p').text('Invalid request. Unhandled page type.').addClass('error');
 	}
 
 	/* Fix nav links to not skip hashchange event when clicking multiple
