@@ -292,6 +292,14 @@ function format_log(pkgname, errors, text) {
 function format_duration(start, end) {
     var duration, hours, minutes, seconds;
 
+	if (!start) {
+		return '';
+	}
+	start = parseInt(start);
+	if (isNaN(start)) {
+		return '';
+	}
+
 	if (end === undefined) {
 		duration = start;
 	} else {
