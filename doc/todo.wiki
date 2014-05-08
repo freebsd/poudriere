@@ -37,6 +37,7 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
   *  new dependency check should move to <strong>Mk/bsd.port.mk</strong>
   *  "soft exit", "exit when idle" mode, SIGUSR1
   *  Allow git method for jail
+  *  Auto fix manually running pkg-repo in the atomic dir which breaks the symlink
 
 <h3>Stability</h3>
 
