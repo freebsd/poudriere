@@ -585,6 +585,10 @@ function process_data_build(data) {
 	}
 
 	// Refresh as long as the build is not stopped
+	if (!status) {
+		// Unknown status, just keep reading.
+		return true;
+	}
 	return !status.match("^stopped:");
 }
 
