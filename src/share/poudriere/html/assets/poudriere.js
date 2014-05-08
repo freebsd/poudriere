@@ -13,6 +13,8 @@ var impulse_period =			impulse_first_period;
 var impulse_first_interval =	impulse_first_period / updateInterval;
 var impulse_interval = 			impulse_target_period / updateInterval;
 var page_type;
+var page_buildname;
+var page_mastername;
 var data_url;
 
 function getParameterByName(name) {
@@ -329,10 +331,10 @@ function process_data(data) {
 	}
 
 	// Redirect from /latest/ to the actual build.
-	if (document.location.href.indexOf('/latest/') != -1) {
-		document.location.href =
-			document.location.href.replace('/latest/', '/' + 
-			data.buildname + '/');
+	if (page_buildname == "latest") {
+		document.location.href = document.location.pathname + '?' +
+			'mastername=' + encodeURIComponent(page_mastername) + '&' +
+			'build=' + encodeURIComponent(data.buildname);
 		return;
 	}
 
@@ -502,18 +504,18 @@ $(document).ready(function() {
 
 	page_type = location.pathname.substr(1, location.pathname.length - 6);
 	if (page_type == "build") {
-		mastername = getParameterByName("mastername");
-		buildname = getParameterByName("build");
-		if (!buildname || !mastername) {
+		page_mastername = getParameterByName("mastername");
+		page_buildname = getParameterByName("build");
+		if (!page_buildname || !page_mastername) {
 			$('#loading p').text('Invalid request. Mastername and Build required.').addClass('error');
 			return;
 		}
-		data_url = 'data/' + mastername + '/' + buildname;
+		data_url = 'data/' + page_mastername + '/' + page_buildname;
 		$('a.data_url').each(function() {
 			var href = $(this).attr('href');
 			$(this).attr('href', data_url + '/' + href);
 		});
-		$('#backlink').attr('href', 'jail.html?mastername=' + mastername);
+		$('#backlink').attr('href', 'jail.html?mastername=' + page_mastername);
 	} else {
 		$('#loading p').text('Invalid request. Unhandled page type.').addClass('error');
 	}
