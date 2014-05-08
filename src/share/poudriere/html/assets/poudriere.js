@@ -437,6 +437,8 @@ function process_data(data) {
 	if (first_run == false) {
 		$('.new').fadeIn(1500).removeClass('new');
 	} else {
+		/* Resize due to full content. */
+		do_resize($(window));
 		// Hide loading overlay
 		$('#loading_overlay').fadeOut(1400);
 		/* Now that page is loaded, scroll to anchor. */
@@ -459,6 +461,9 @@ function do_resize(win) {
 		determine_canvas_width();
 		update_canvas($('#stats').data());
 	}
+	/* Resize padding for navbar/footer heights */
+	$('body').css('padding-top', $('#header').height())
+		.css('padding-bottom', $('footer').height());
 }
 
 /* Force minimum width on mobile, will zoom to fit. */
