@@ -792,6 +792,7 @@ function setup_jail() {
 					format_buildname(page_mastername, data) :
 					data;
 			},
+			"sWidth": "12em",
 		},
 		stat_column,
 		stat_column,
@@ -846,6 +847,7 @@ function setup_index() {
 				return type == "display" ? format_buildname(row[0], data) :
 					data;
 			},
+			"sWidth": "12em",
 		},
 		{
 			"render": function(data, type, row) {
