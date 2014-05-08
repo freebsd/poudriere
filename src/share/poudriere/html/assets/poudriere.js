@@ -786,7 +786,7 @@ function setup_build() {
 			},
 			{
 				"data": "elapsed",
-				"sWidth": "3em",
+				"sWidth": "4em",
 			},
 		],
 		"columnDefs": [
@@ -890,7 +890,7 @@ function setup_jail() {
 		{
 			"data": "elapsed",
 			"bSearchable": false,
-			"sWidth": "3em",
+			"sWidth": "4em",
 		},
 	];
 
@@ -988,7 +988,7 @@ function setup_index() {
 		{
 			"data": "elapsed",
 			"bSearchable": false,
-			"sWidth": "3em",
+			"sWidth": "4em",
 		},
 	];
 
