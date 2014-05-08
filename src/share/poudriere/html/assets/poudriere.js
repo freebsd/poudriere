@@ -602,7 +602,8 @@ function process_data_jail(data) {
 			row.id = buildname;
 			row.buildname = buildname;
 			for (stat in types) {
-				count = parseInt(build.stats[types[stat]]);
+				count = build.stats && build.stats[types[stat]] !== undefined ?
+					parseInt(build.stats[types[stat]]) : 0;
 				row['stat_' + types[stat]] = isNaN(count) ? 0 : count;
 			}
 			remaining = parseInt(build.stats['queued']) -
@@ -659,7 +660,8 @@ function process_data_index(data) {
 			row.setname = master.setname;
 			row.ptname = master.ptname;
 			for (stat in types) {
-				count = parseInt(master.stats[types[stat]]);
+				count = master.stats && master.stats[types[stat]] !==
+					undefined ?	parseInt(master.stats[types[stat]]) : 0;
 				row['stat_' + types[stat]] = isNaN(count) ? 0 : count;
 			}
 			remaining = parseInt(master.stats['queued']) -
