@@ -441,7 +441,11 @@ DTRow.prototype = {
 			existing_row = {};
 		}
 		if (existing_row.length) {
-			existing_row.data(row);
+			/* Only update the row if it doesn't match the existing. */
+			if (JSON.stringify(row) !==
+				JSON.stringify(existing_row.data())) {
+				existing_row.data(row).nodes().to$().hide().fadeIn(800);
+			}
 		} else {
 			/* Otherwise add it. */
 			this.new_rows.push(row);
