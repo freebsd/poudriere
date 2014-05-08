@@ -364,6 +364,10 @@ function filter_skipped(pkgname) {
 function translate_status(status) {
 	var a;
 
+	if (status === undefined) {
+		return '';
+	}
+
 	a = status.split(":");
 	if (a[0] == "stopped") {
 		if (a.length >= 3) {
