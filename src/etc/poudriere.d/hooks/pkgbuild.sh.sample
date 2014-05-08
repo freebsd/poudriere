@@ -38,8 +38,8 @@ Subject: ${mail_subject}
 Maintainer:     ${maintainer}
 Last committer: ${last_committer}@FreeBSD.org
 Ident:          ${ident#Makefile ident:      }
-Log URL:        ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}/logs/${pkgname}.log
-Build URL:      ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}
+Log URL:        ${LOG_URL}/${pkgname}.log
+Build URL:      ${BUILD_URL}
 Log:
 
 $(awk "${awk_script}" ${log})

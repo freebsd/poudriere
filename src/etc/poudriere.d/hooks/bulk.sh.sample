@@ -14,7 +14,7 @@ if [ "$status" = "start" ]; then
 To: ${EMAIL_TO}
 Subject: ${mail_subject}
 
-Build URL:      ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}
+Build URL:      ${BUILD_URL}
 EOF
 
 elif [ "$status" = "crashed" ]; then
@@ -24,7 +24,7 @@ elif [ "$status" = "crashed" ]; then
 To: ${EMAIL_TO}
 Subject: ${mail_subject}
 
-Build URL:      ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}
+Build URL:      ${BUILD_URL}
 EOF
 
 elif [ "$status" = "done" ]; then
@@ -40,7 +40,7 @@ elif [ "$status" = "done" ]; then
 To: ${EMAIL_TO}
 Subject: ${mail_subject}
 
-Build URL:      ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}
+Build URL:      ${BUILD_URL}
 Built:          ${n_built}
 Failed:         ${n_failed}
 Ignored:        ${n_ignored}

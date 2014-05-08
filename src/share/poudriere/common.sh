@@ -183,10 +183,14 @@ eargs() {
 
 run_hook() {
 	local hookfile=${HOOKDIR}/${1}.sh
+	local build_url log_url
 	shift
 
+	build_url build_url || :
+	log_url log_url || :
 	[ -f ${hookfile} ] &&
-		URL_BASE="${URL_BASE}" \
+		BUILD_URL="${build_url}" \
+		LOG_URL="${log_url}" \
 		POUDRIERE_BUILD_TYPE=${POUDRIERE_BUILD_TYPE} \
 		POUDRIERED="${POUDRIERED}" \
 		POUDRIERE_DATA="${POUDRIERE_DATA}" \
@@ -576,13 +580,29 @@ exit_handler() {
 	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
 }
 
+build_url() {
+	if [ -z "${URL_BASE}" ]; then
+		setvar "$1" ""
+		return 1
+	fi
+	setvar "$1" "${URL_BASE}/build.html?mastername=${MASTERNAME}&build=${BUILDNAME}"
+}
+
+log_url() {
+	if [ -z "${URL_BASE}" ]; then
+		setvar "$1" ""
+		return 1
+	fi
+	setvar "$1" "${URL_BASE}/data/${MASTERNAME}/${BUILDNAME}/logs"
+}
+
 show_log_info() {
-	local log
+	local log build_url
 
 	_log_path log
 	msg "Logs: ${log}"
-	[ -z "${URL_BASE}" ] ||
-		msg "WWW: ${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"
+	build_url build_url && \
+	    msg "WWW: ${build_url}"
 }
 
 siginfo_handler() {

@@ -165,9 +165,7 @@ add_build() {
 
 		url=
 		if [ ${COMPACT} -eq 0 ]; then
-			if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
-				url="${URL_BASE}/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"
-			else
+			if [ ${URL} -eq 0 ] || ! build_url url; then
 				url="${log}"
 			fi
 		fi
