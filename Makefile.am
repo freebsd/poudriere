@@ -1,5 +1,7 @@
 CLEANFILES=	$(dist_rc_SCRIPTS)
 
+AM_CFLAGS=	-Wall -pipe -O2
+
 awkdir=	$(pkgdatadir)/awk
 htmldir= $(pkgdatadir)/html
 includedir= $(pkgdatadir)/include
