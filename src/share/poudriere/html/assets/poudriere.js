@@ -574,10 +574,6 @@ function process_data_jail(data) {
 		if (table_rows.length) {
 			$('#builds_div').show();
 
-			// XXX This could be improved by updating cells in-place
-			$('#builds_table').dataTable().fnClearTable();
-			$('#builds_table').dataTable().fnAddData(table_rows);
-
 			if (latest) {
 				$('#mastername').html(format_mastername(latest.mastername));
 				$('#status').text(translate_status(latest.status));
@@ -590,6 +586,10 @@ function process_data_jail(data) {
 							latest.buildname));
 				$('#masterinfo_div').show();
 			}
+
+			// XXX This could be improved by updating cells in-place
+			$('#builds_table').dataTable().fnClearTable();
+			$('#builds_table').dataTable().fnAddData(table_rows);
 		}
 	}
 
@@ -817,6 +817,11 @@ function setup_jail() {
 		"localStorage": true, // Enable cookie for keeping state
 		"lengthMenu":[[5,10,25,50,100,200, -1],[5,10,25,50,100,200,"All"]],
 		"pageLength": 50,
+		"createdRow": function(row, data, index) {
+			if (data[0] == $('#latest_build').text()) {
+				$('td', row).addClass('hilight');
+			}
+		},
 	});
 }
 
