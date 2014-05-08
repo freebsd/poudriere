@@ -1023,10 +1023,13 @@ function setup_index() {
 }
 
 $(document).ready(function() {
-	if (location.pathname == "/") {
+	var pathname;
+
+	pathname = location.pathname.substring(location.pathname.lastIndexOf("/") + 1);
+	if (pathname == "") {
 		page_type = "index";
 	} else {
-		page_type = location.pathname.substr(1, location.pathname.length - 6);
+		page_type = pathname.substr(0, pathname.length - 5);
 	}
 	if (page_type == "build") {
 		page_mastername = getParameterByName("mastername");
