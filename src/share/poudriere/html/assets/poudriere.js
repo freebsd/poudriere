@@ -1025,7 +1025,7 @@ function setup_index() {
 		},
 		fnOnGrouped: function() {
 			// Hide default set group rows
-			$('#latest_builds_table tbody tr[id^=group-id-latest_builds_table_][id$=_default--]').hide();
+			$('#latest_builds_table tbody tr[id^=group-id-latest_builds_table_][id$=--]').hide();
 		},
 	});
 
