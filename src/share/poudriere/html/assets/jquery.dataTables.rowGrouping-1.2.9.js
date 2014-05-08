@@ -420,9 +420,12 @@
                             sGroup = fnGetGroup(sGroupData);
 
                         if (bUseSecondaryGrouping) {
+                            /*
                             sGroupData2 = oSettings.aoData[oSettings.aiDisplay[iDisplayIndex]]._aData[properties.iGroupingColumnIndex2];
                             if (sGroupData2 == undefined)
                                 sGroupData2 = oSettings.aoData[oSettings.aiDisplay[iDisplayIndex]]._aData[oSettings.aoColumns[properties.iGroupingColumnIndex2].mDataProp];
+                            */
+                            sGroupData2 = this.fnGetData(nTrs[i], properties.iGroupingColumnIndex2);
                             if (properties.sGroupBy2 != "year")
                                 sGroup2 = fnGetGroup(sGroupData2);
                         }
