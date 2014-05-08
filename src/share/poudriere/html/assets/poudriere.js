@@ -47,7 +47,7 @@ function update_fields() {
 				/* May not be there yet, try again shortly */
 				setTimeout(update_fields, first_load_interval * 1000);
 			} else {
-				$('#loading p').text('Invalid build request.').addClass('error');
+				$('#loading p').text('Invalid request.').addClass('error');
 			}
 		}
 	});
@@ -505,7 +505,7 @@ $(document).ready(function() {
 		mastername = getParameterByName("mastername");
 		buildname = getParameterByName("build");
 		if (!buildname || !mastername) {
-			document.write("Mastername and Build parameters are required.");
+			$('#loading p').text('Invalid request. Mastername and Build required.').addClass('error');
 			return;
 		}
 		data_url = 'data/' + mastername + '/' + buildname;
@@ -514,6 +514,8 @@ $(document).ready(function() {
 			$(this).attr('href', data_url + '/' + href);
 		});
 		$('#backlink').attr('href', 'jail.html?mastername=' + mastername);
+	} else {
+		$('#loading p').text('Invalid request. Unhandled page type.').addClass('error');
 	}
 
 	$('#builders_table').dataTable({
