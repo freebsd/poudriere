@@ -109,8 +109,15 @@ _my_name() {
 	setvar "$1" "${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}"
 }
  
+_log_path_jail() {
+	setvar "$1" "${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}"
+}
+
 _log_path() {
-	setvar "$1" "${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/${MASTERNAME}/${BUILDNAME}"
+	local log_path_jail
+
+	_log_path_jail log_path_jail
+	setvar "$1" "${log_path_jail}/${BUILDNAME}"
 }
 
 injail() {

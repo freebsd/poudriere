@@ -54,6 +54,7 @@ json_main() {
 		stress_snapshot
 		update_stats
 		build_json
+		build_jail_json
 		sleep 2
 	done
 }
@@ -76,6 +77,23 @@ build_json() {
 		sed  -e 's/,\([]}]\)/\1/g' \
 		> ${log}/.data.mini.json.tmp
 	mv -f ${log}/.data.mini.json.tmp ${log}/.data.mini.json
+}
+
+build_jail_json() {
+	local log_path_jail tmpfile
+
+	_log_path_jail log_path_jail
+	tmpfile=$(TMPDIR="${log_path_jail}" mktemp -ut json)
+
+	{
+		echo "{"
+		echo ${log_path_jail}/*/.data.mini.json | \
+		    xargs awk -f ${AWKPREFIX}/json_jail.awk | \
+		    sed -e '/^$/d' | \
+		    paste -s -d , -
+		echo "}"
+	} > ${tmpfile}
+	mv -f ${tmpfile} ${log_path_jail}/.data.json
 }
 
 stop_html_json() {
