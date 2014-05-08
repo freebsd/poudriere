@@ -15,6 +15,7 @@ dtjsdir= $(datatablesdir)/js
 rcdir= $(sysconfdir)/rc.d
 hookdir= $(sysconfdir)/poudriere.d/hooks
 mandir= $(prefix)/man
+examplesdir= $(datadir)/examples/$(PACKAGE_NAME)
 
 dist_bin_SCRIPTS=	src/bin/poudriere
 
@@ -22,6 +23,7 @@ dist_man_MANS=	src/bin/poudriere.8
 
 sysconf_DATA=	src/etc/poudriere.conf.sample \
 		src/etc/poudriered.conf.sample
+examples_DATA=	src/share/examples/poudriere/nginx.conf.sample
 
 hook_DATA=	src/etc/poudriere.d/hooks/bulk.sh.sample \
 		src/etc/poudriere.d/hooks/pkgbuild.sh.sample

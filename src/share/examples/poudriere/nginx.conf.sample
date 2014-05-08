@@ -1,0 +1,53 @@
+# Place these sections into the relevant nginx.conf or included files sections.
+
+http {
+	# Allow gzipping js, css, log, svg and json files.
+	gzip on;
+	gzip_http_version 1.0;
+	gzip_comp_level 6;
+	gzip_proxied any;
+	gzip_min_length  1100;
+	gzip_buffers 16 8k;
+	gzip_types text/plain text/css application/x-javascript text/xml application/xml application/xml+rss text/javascript image/gif image/jpeg image/png application/json image/svg+xml;
+
+	types {
+		application/json                     json;
+		text/plain                            log;
+	}
+}
+
+server {
+	listen       0.0.0.0:80 accept_filter=httpready;
+	server_name  poudriere.domain.com accept_filter=httpready;
+	root         /usr/local/share/poudriere/html;
+
+	# Allow caching static resources
+	location ~* ^.+\.(jpg|jpeg|gif|png|ico|svg|woff|css|js|html)$ {
+		add_header Cache-Control "public";
+		expires 2d;
+	}
+
+	location /data {
+		alias /usr/local/poudriere/data/logs/bulk;
+
+		# Allow caching dynamic files but ensure they get rechecked
+		location ~* ^.+\.(log|txz|tbz|bz2|gz)$ {
+			add_header Cache-Control "public, must-revalidate, proxy-revalidate";
+		}
+
+		# Don't log json requests as they come in frequently and ensure
+		# caching works as expected
+		location ~* ^.+\.(json)$ {
+			add_header Cache-Control "public, must-revalidate, proxy-revalidate";
+			access_log off;
+			log_not_found off;
+		}
+
+		# Allow indexing only in log dirs
+		location ~ /data/?.*/(logs|latest-per-pkg)/ {
+			autoindex on;
+		}
+
+		break;
+	}
+}
