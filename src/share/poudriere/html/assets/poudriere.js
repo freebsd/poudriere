@@ -1004,7 +1004,7 @@ function setup_index() {
 	table.rowGrouping({
 		iGroupingColumnIndex2: 4,
 		iGroupingColumnIndex: 5,
-		sGroupLabelPrefix2: "Set &nbsp;&nbsp;- ",
+		sGroupLabelPrefix2: "&nbsp;&nbsp;Set - ",
 		sGroupLabelPrefix: "Ports - ",
 		sEmptyGroupLabel: "",
 		fnGroupLabelFormat: function(label) {
