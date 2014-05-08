@@ -866,7 +866,7 @@ $(document).ready(function() {
 			var href = $(this).attr('href');
 			$(this).attr('href', data_url + '/' + href);
 		});
-		$('#backlink').attr('href', jail_url(page_mastername));
+		$('#master_link').attr('href', jail_url(page_mastername));
 		setup_build();
 	} else if (page_type == "jail") {
 		page_mastername = getParameterByName("mastername");
@@ -879,7 +879,6 @@ $(document).ready(function() {
 			var href = $(this).attr('href');
 			$(this).attr('href', data_url + '/' + href);
 		});
-		$('#backlink').attr('href', 'index.html');
 		$('#latest_url').attr('href', build_url(page_mastername, 'latest'));
 		setup_jail();
 	} else if (page_type == "index") {
