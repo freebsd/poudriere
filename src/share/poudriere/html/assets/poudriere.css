@@ -46,7 +46,13 @@ td.group {
     border-top: 2px solid #A19B9E;
 }
 
-td.group .title {
+td.subgroup {
+    background-color: #D4DFD8;
+    border-bottom: medium solid;
+}
+
+td.group .title,
+td.subgroup .title {
 	font-weight: bold;
 }
 

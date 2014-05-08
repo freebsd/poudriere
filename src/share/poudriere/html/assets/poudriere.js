@@ -842,6 +842,7 @@ function setup_index() {
 
 	columns = [
 		{
+			"visible": false,
 		},
 		{
 			"render": function(data, type, row) {
@@ -906,11 +907,21 @@ function setup_index() {
 	});
 
 	table.rowGrouping({
-		sGroupLabelPrefix: "Ports Set - ",
+		iGroupingColumnIndex2: 4,
+		iGroupingColumnIndex: 5,
+		sGroupLabelPrefix2: "Set &nbsp;&nbsp;- ",
+		sGroupLabelPrefix: "Ports - ",
+		sEmptyGroupLabel: "",
 		fnGroupLabelFormat: function(label) {
 			return "<span class='title'>"+ label + "</span>";
 		},
-
+		fnGroupLabelFormat2: function(label) {
+			return "<span class='title'>"+ label + "</span>";
+		},
+		fnOnGrouped: function() {
+			// Hide default set group rows
+			$('#latest_builds_table tbody tr[id^=group-id-latest_builds_table_][id$=_default--]').hide();
+		},
 	});
 }
 
