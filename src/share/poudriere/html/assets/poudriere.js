@@ -564,8 +564,8 @@ function do_resize(win) {
 		update_canvas($('#stats').data());
 	}
 	/* Resize padding for navbar/footer heights */
-	$('body').css('padding-top', $('#header').height())
-		.css('padding-bottom', $('footer').height());
+	$('body').css('padding-top', $('#header').outerHeight(true))
+		.css('padding-bottom', $('footer').outerHeight(true));
 }
 
 /* Force minimum width on mobile, will zoom to fit. */
