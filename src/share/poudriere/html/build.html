@@ -16,7 +16,7 @@
 		<link rel="shortcut icon" href="assets/favicon.ico">
 	</head>
 	<body>
-		<div id="top" class="anchor"></div>
+		<div id="top"></div>
 		<div id="header" class="navbar navbar-default navbar-fixed-top" role="navigation">
 			<div class="container-fluid">
 				<div class="row">
@@ -123,8 +123,8 @@
 		</div>
 		<div class="row">
 			<div class="col-md-5">
-				<div id="build_info" class="anchor" style="display: none;">
-					<h2>Build
+				<div id="build_info_div" style="display: none;">
+					<h2 id="build_info">Build
 						<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
 					</h2>
 					<dl class="dl-horizontal">
@@ -140,8 +140,8 @@
 				</div><!-- #build_info -->
 			</div><!-- /col -->
 			<div class="col-md-7">
-				<div id="jobs" class="anchor status" style="display: none;">
-					<h2>Jobs
+				<div id="jobs_div" class="status" style="display: none;">
+					<h2 id="jobs">Jobs
 						<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
 					</h2>
 					<table id="builders_table" class="display" style="">
@@ -160,8 +160,8 @@
 		</div><!-- /row -->
 		<div class="row">
 			<div class="col-md-12">
-				<div id="built" class="anchor status" style="display: none;">
-					<h2>Built ports
+				<div id="built_div" class="status" style="display: none;">
+					<h2 id="built">Built ports
 						<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
 					</h2>
 					<table class="display built table-bordered" id="built_table">
@@ -175,8 +175,8 @@
 						<tbody id="built_body"></tbody>
 					</table>
 				</div><!-- #built -->
-				<div id="failed" class="anchor status" style="display: none;">
-					<h2>Failed ports
+				<div id="failed_div" class="status" style="display: none;">
+					<h2 id="failed">Failed ports
 						<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
 					</h2>
 					<table class="display failed table-bordered" id="failed_table">
@@ -192,8 +192,8 @@
 						<tbody id="failed_body"></tbody>
 					</table>
 				</div><!-- #failed -->
-				<div id="skipped" class="anchor status" style="display: none;">
-					<h2>Skipped ports
+				<div id="skipped_div" class="status" style="display: none;">
+					<h2 id="skipped">Skipped ports
 						<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
 					</h2>
 					<table class="display skipped table-bordered" id="skipped_table">
@@ -207,8 +207,8 @@
 						<tbody id="skipped_body"></tbody>
 					</table>
 				</div><!-- #skipped -->
-				<div id="ignored" class="anchor status" style="display: none;">
-					<h2>Ignored ports
+				<div id="ignored_div" class="status" style="display: none;">
+					<h2 id="ignored">Ignored ports
 						<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
 					</h2>
 					<table class="display ignored table-bordered" id="ignored_table">

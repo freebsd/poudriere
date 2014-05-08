@@ -20,6 +20,18 @@ function getParameterByName(name) {
 		decodeURIComponent(results[1].replace(/\+/g, " "));
 }
 
+function scrollOffset() {
+	return -1 * parseFloat($('body').css('padding-top'));
+}
+
+function scrollToElement(element) {
+	var ele = $(element);
+	if (!ele.length) {
+		return;
+	}
+	$('body,html,document').scrollTop(ele.offset().top + scrollOffset());
+}
+
 function update_fields() {
 	$.ajax({
 		url: data_url + '/.data.json',
@@ -237,7 +249,7 @@ function format_duration(start, end) {
 function filter_skipped(pkgname) {
 	var table, search_filter;
 
-	$(document).scrollTop($('#skipped').offset().top);
+	scrollToElement('#skipped');
 	table = $('#skipped_table').dataTable();
 	table.fnFilter(pkgname, 2);
 
@@ -332,7 +344,7 @@ function process_data(data) {
 		$('#svn_url').html(data.svn_url);
 	else
 		$('#svn_url').hide();
-	$('#build_info').show();
+	$('#build_info_div').show();
 
 	/* Builder status */
 	if (data.jobs) {
@@ -348,7 +360,7 @@ function process_data(data) {
 			table_rows.push(table_row);
 		}
 		if (table_rows.length) {
-			$('#jobs').show();
+			$('#jobs_div').show();
 
 			// XXX This could be improved by updating cells in-place
 			$('#builders_table').dataTable().fnClearTable();
@@ -411,7 +423,7 @@ function process_data(data) {
 				table_rows = [];
 				if ((n = $('#' + status + '_body').data('index')) === undefined) {
 					n = 0;
-					$('#' + status).show();
+					$('#' + status + '_div').show();
 					$('#nav_' + status).removeClass('disabled');
 				}
 				if (n == data.ports[status].length) {
@@ -443,7 +455,7 @@ function process_data(data) {
 		$('#loading_overlay').fadeOut(1400);
 		/* Now that page is loaded, scroll to anchor. */
 		if (location.hash) {
-			$(document).scrollTop($(location.hash).offset().top);
+			scrollToElement(location.hash);
 		}
 	}
 
@@ -570,6 +582,20 @@ $(document).ready(function() {
 		});
 	}
 
+	/* Fix nav links to not skip hashchange event when clicking multiple
+	 * times. */
+	$("#header .nav a[href^=#]").each(function(){
+		var href = $(this).attr('href');
+		if (href != '#') {
+			$(this).click(function(e) {
+				e.preventDefault();
+				if (location.hash != href) {
+					location.hash = href;
+				}
+				scrollToElement(href);
+			});
+		}
+	})
 	/* Force minimum width on mobile, will zoom to fit. */
 	$(window).bind('orientationchange', function(e) {fix_viewport();});
 	fix_viewport();

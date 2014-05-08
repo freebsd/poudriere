@@ -46,15 +46,6 @@
 	background-color: #eee;
 }
 
-/* http://nicolasgallagher.com/jump-links-and-viewport-positioning/demo */
-.anchor {
-	border-top: 52px solid transparent;
-	margin-top: -52px;
-	-webkit-background-clip: padding-box;
-	-moz-background-clip: padding;
-	background-clip: padding-box;
-}
-
 /* Collapse nav at <= sm http://stackoverflow.com/a/22400347/285734 */
 @media (max-width: 991px) {
     .navbar-header {
@@ -201,12 +192,12 @@ br.clear {
 	overflow: hidden;
 }
 
-#build_info dt, #build_info dd {
+#build_info_div dt, #build_info_div dd {
 	line-height: normal;
 	font-size: 13px;
 	font-family: "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", Monaco, "Lucida Console", monospace;
 }
-#build_info dl {
+#build_info_div dl {
 	margin-bottom: 0;
 }
 
@@ -237,4 +228,8 @@ table.dataTable tbody td {
 /* Fix webkit render bug - https://stackoverflow.com/questions/14493533/really-weird-redraw-behavior-with-anchor-links-twitter-bootstrap-fixed-navbar */
 .affix,.navbar-fixed-top{
 	-webkit-transform: scale3d(1,1,1);
+}
+
+:target {
+	background-color: #ccc;
 }
