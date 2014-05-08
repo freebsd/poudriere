@@ -704,6 +704,25 @@ function fix_viewport() {
 	}
 }
 
+function applyHovering(table_id) {
+	var lastIdx, Table;
+
+	lastIdx = null;
+	Table = $('#' + table_id).DataTable();
+	$('#' + table_id + ' tbody').on( 'mouseover', 'td', function () {
+		var colIdx = Table.cell(this).index().column;
+
+		if (colIdx !== lastIdx) {
+			$(Table.cells().nodes()).removeClass('highlight');
+			$(Table.column(colIdx).nodes()).addClass('highlight');
+		}
+	})
+	.on('mouseleave', function () {
+		$(Table.cells().nodes()).removeClass('highlight');
+	});
+}
+
+
 function setup_build() {
 	var columns, status, types, i;
 
@@ -829,6 +848,8 @@ function setup_jail() {
 			}
 		},
 	});
+
+	//applyHovering('builds_table');
 }
 
 function setup_index() {
@@ -923,6 +944,8 @@ function setup_index() {
 			$('#latest_builds_table tbody tr[id^=group-id-latest_builds_table_][id$=_default--]').hide();
 		},
 	});
+
+	//applyHovering('latest_builds_table');
 }
 
 $(document).ready(function() {

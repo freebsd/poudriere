@@ -35,6 +35,9 @@
 .remaining { background-color: #E3E3E3 !important; }
 .new { display: none; }
 .hilight { background-color: #f7Fe4a; }
+td.highlight {
+	background-color: whitesmoke !important;
+}
 #header {
 	border-bottom: 1px solid black;
 	min-height: 65px;
