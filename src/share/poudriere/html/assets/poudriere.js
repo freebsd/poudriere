@@ -661,7 +661,7 @@ function process_data_index(data) {
 			row.ptname = master.ptname;
 			for (stat in types) {
 				count = master.stats && master.stats[types[stat]] !==
-					undefined ?	parseInt(master.stats[types[stat]]) : 0;
+					undefined ? parseInt(master.stats[types[stat]]) : 0;
 				row['stat_' + types[stat]] = isNaN(count) ? 0 : count;
 			}
 			remaining = parseInt(master.stats['queued']) -
