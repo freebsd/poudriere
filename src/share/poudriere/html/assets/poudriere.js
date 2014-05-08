@@ -357,6 +357,29 @@ function filter_skipped(pkgname) {
 	}
 }
 
+function translate_status(status) {
+	var a;
+
+	a = status.split(":");
+	if (a[0] == "stopped") {
+		if (a.length >= 3) {
+			status = a[0] + ':' + a[1] + ':' + a[2];
+		} else if (a.length >= 2) {
+			status = a[0] + ':' + a[1];
+		} else {
+			status = a[0] + ':';
+		}
+	} else {
+		if (a.length >= 2) {
+			status = a[0] + ':' + a[1];
+		} else {
+			status = a[0] + ':';
+		}
+	}
+
+	return status;
+}
+
 function format_status_row(status, row) {
 	var table_row = [];
 	var skipped_cnt;
@@ -449,22 +472,7 @@ function process_data_build(data) {
 	}
 
 	if (data.status) {
-		a = data.status.split(":");
-		if (a[0] == "stopped") {
-			if (a.length >= 3) {
-				status = a[0] + ':' + a[1] + ':' + a[2];
-			} else if (a.length >= 2) {
-				status = a[0] + ':' + a[1];
-			} else {
-				status = a[0] + ':';
-			}
-		} else {
-			if (a.length >= 2) {
-				status = a[0] + ':' + a[1];
-			} else {
-				status = a[0] + ':';
-			}
-		}
+		status = translate_status(data.status);
 		$('#status').text(status);
 	}
 
@@ -559,7 +567,7 @@ function process_data_jail(data) {
 				remaining = 0;
 			}
 			table_row.push(remaining);
-			table_row.push(build.status);
+			table_row.push(translate_status(build.status));
 			table_row.push(build.elapsed ? build.elapsed : "");
 			table_rows.push(table_row);
 		}
@@ -572,7 +580,7 @@ function process_data_jail(data) {
 
 			if (latest) {
 				$('#mastername').html(format_mastername(latest.mastername));
-				$('#status').text(latest.status);
+				$('#status').text(translate_status(latest.status));
 				$('#jail').html(format_jailname(latest.jailname));
 				$('#setname').html(format_setname(latest.setname));
 				$('#ptname').html(format_ptname(latest.ptname));
@@ -618,7 +626,7 @@ function process_data_index(data) {
 				remaining = 0;
 			}
 			table_row.push(remaining);
-			table_row.push(master.status);
+			table_row.push(translate_status(master.status));
 			table_row.push(master.elapsed ? master.elapsed : "");
 			table_rows.push(table_row);
 		}
