@@ -603,6 +603,7 @@ show_log_info() {
 	msg "Logs: ${log}"
 	build_url build_url && \
 	    msg "WWW: ${build_url}"
+	return 0
 }
 
 siginfo_handler() {
