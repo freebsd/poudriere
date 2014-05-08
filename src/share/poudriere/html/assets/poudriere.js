@@ -37,7 +37,7 @@ function scrollToElement(element) {
 	$('body,html,document').scrollTop(ele.offset().top + scrollOffset());
 }
 
-function update_fields() {
+function update_data() {
 	$.ajax({
 		url: data_url + '/.data.json',
 		dataType: 'json',
@@ -47,7 +47,7 @@ function update_fields() {
 		error: function(data) {
 			if (++load_attempts < max_load_attempts) {
 				/* May not be there yet, try again shortly */
-				setTimeout(update_fields, first_load_interval * 1000);
+				setTimeout(update_data, first_load_interval * 1000);
 			} else {
 				$('#loading p').text('Invalid request.').addClass('error');
 			}
@@ -214,6 +214,27 @@ function display_impulse(stats, snap) {
 	$('#snap_impulse').html(pkghour);
 }
 
+function jail_url(mastername, buildname) {
+	return 'jail.html?' +
+		'mastername=' + encodeURIComponent(mastername);
+}
+
+function format_mastername(mastername) {
+	return '<a href="' + jail_url(mastername) + '">' +
+		mastername + '</a>';
+}
+
+function build_url(mastername, buildname) {
+	return 'build.html?' +
+		'mastername=' + encodeURIComponent(mastername) + '&' +
+		'build=' + encodeURIComponent(buildname);
+}
+
+function format_buildname(mastername, buildname) {
+	return '<a href="' + build_url(mastername, buildname) + '">' +
+		buildname + '</a>';
+}
+
 function format_log(pkgname, errors, text) {
 	var html;
 
@@ -320,9 +341,8 @@ function format_setname(setname) {
 	return setname ? ('-' + setname) : '';
 }
 
-function process_data(data) {
-	var html, a, n;
-	var table_rows, table_row, status, builder, now;
+function process_data_build(data) {
+	var html, a, n, table_rows, table_row, status, builder, now;
 
 	if (data.snap && data.snap.now) {
 		now = data.snap.now;
@@ -332,9 +352,7 @@ function process_data(data) {
 
 	// Redirect from /latest/ to the actual build.
 	if (page_buildname == "latest") {
-		document.location.href = document.location.pathname + '?' +
-			'mastername=' + encodeURIComponent(page_mastername) + '&' +
-			'build=' + encodeURIComponent(data.buildname);
+		document.location.href = build_url(page_mastername, data.buildname);
 		return;
 	}
 
@@ -346,8 +364,7 @@ function process_data(data) {
 	document.title = 'Poudriere bulk results for ' + data.mastername +
 		data.buildname;
 
-	$('#mastername').html('<a href="jail.html?mastername=' +
-			data.mastername + '">' + data.mastername + '</a>');
+	$('#mastername').html(format_mastername(data.mastername));
 	$('#buildname').html('<a href="#top">' + data.buildname + '</a>');
 	if (data.svn_url)
 		$('#svn_url').html(data.svn_url);
@@ -455,23 +472,87 @@ function process_data(data) {
 		});
 	}
 
+	// Refresh as long as the build is not stopped
+	return !status.match("^stopped:");
+}
+
+function process_data_jail(data) {
+	var table_rows, table_row, build, buildname, stat, types, latest;
+
+	if (data.builds) {
+		types = ['queued', 'built', 'failed', 'skipped', 'ignored'];
+		table_rows = [];
+		for (buildname in data.builds) {
+			table_row = [];
+			build = data.builds[buildname];
+			if (buildname == "latest") {
+				latest = data.builds[build];
+				continue;
+			}
+			table_row.push(format_buildname(build.mastername, buildname));
+			for (stat in types) {
+				table_row.push(build.stats[types[stat]]);
+			}
+			table_row.push(parseInt(build.stats['queued']) -
+					(parseInt(build.stats['built']) +
+					 parseInt(build.stats['failed']) +
+					 parseInt(build.stats['skipped']) +
+					 parseInt(build.stats['ignored'])));
+			table_row.push(build.status);
+			table_row.push(build.elapsed ? build.elapsed : "");
+			table_rows.push(table_row);
+		}
+		if (table_rows.length) {
+			$('#builds_div').show();
+
+			// XXX This could be improved by updating cells in-place
+			$('#builds_table').dataTable().fnClearTable();
+			$('#builds_table').dataTable().fnAddData(table_rows);
+
+			if (latest) {
+				$('#mastername').text(latest.mastername);
+				$('#status').text(latest.status);
+				$('#jail').text(latest.jailname);
+				$('#setname').text(latest.setname);
+				$('#ptname').text(latest.ptname);
+				$('#latest_url').attr('href',
+						build_url(latest.mastername, latest.buildname));
+				$('#latest_build').html(format_buildname(latest.mastername,
+							latest.buildname));
+				$('#masterinfo_div').show();
+			}
+		}
+	}
+
+	// Always reload, no stopping condition.
+	return true;
+}
+
+function process_data(data) {
+	var should_reload;
+
+	if (page_type == "build") {
+		should_reload = process_data_build(data);
+	} else if (page_type == "jail") {
+		should_reload = process_data_jail(data);
+	}
+
 	if (first_run == false) {
 		$('.new').fadeIn(1500).removeClass('new');
 	} else {
 		/* Resize due to full content. */
 		do_resize($(window));
 		// Hide loading overlay
-		$('#loading_overlay').fadeOut(1400);
+		$('#loading_overlay').fadeOut(900);
 		/* Now that page is loaded, scroll to anchor. */
 		if (location.hash) {
 			scrollToElement(location.hash);
 		}
+		first_run = false;
 	}
 
-	first_run = false;
-	// Refresh as long as the build is not stopped
-	if (!status.match("^stopped:")) {
-		setTimeout(update_fields, updateInterval * 1000);
+	if (should_reload) {
+		setTimeout(update_data, updateInterval * 1000);
 	}
 }
 
@@ -576,6 +657,44 @@ function setup_build() {
 	}
 }
 
+function setup_jail() {
+	var columns, status, types, i, stat_column;
+
+	stat_column = {
+		"sWidth": "4em",
+		"sType": "numeric",
+		"bSearchable": false,
+	};
+
+	columns = [
+		null,
+		stat_column,
+		stat_column,
+		stat_column,
+		stat_column,
+		stat_column,
+		stat_column,
+		{
+			"sWidth": "8em",
+		},
+		{
+			"bSearchable": false,
+			"sWidth": "3em",
+		},
+	];
+
+	$('#builds_table').dataTable({
+		"aaSorting": [], // No initial sorting
+		"bAutoWidth": false,
+		"processing": true, // Show processing icon
+		"deferRender": true, // Defer creating TR/TD until needed
+		"aoColumns": columns,
+		"localStorage": true, // Enable cookie for keeping state
+		"lengthMenu":[[5,10,25,50,100,200, -1],[5,10,25,50,100,200,"All"]],
+		"pageLength": 50,
+	});
+}
+
 $(document).ready(function() {
 	page_type = location.pathname.substr(1, location.pathname.length - 6);
 	if (page_type == "build") {
@@ -590,8 +709,22 @@ $(document).ready(function() {
 			var href = $(this).attr('href');
 			$(this).attr('href', data_url + '/' + href);
 		});
-		$('#backlink').attr('href', 'jail.html?mastername=' + page_mastername);
+		$('#backlink').attr('href', jail_url(page_mastername));
 		setup_build();
+	} else if (page_type == "jail") {
+		page_mastername = getParameterByName("mastername");
+		if (!page_mastername) {
+			$('#loading p').text('Invalid request. Mastername required.').addClass('error');
+			return;
+		}
+		data_url = 'data/' + page_mastername;
+		$('a.data_url').each(function() {
+			var href = $(this).attr('href');
+			$(this).attr('href', data_url + '/' + href);
+		});
+		$('#backlink').attr('href', 'index.html');
+		$('#latest_url').attr('href', build_url(page_mastername, 'latest'));
+		setup_jail();
 	} else {
 		$('#loading p').text('Invalid request. Unhandled page type.').addClass('error');
 	}
@@ -617,7 +750,7 @@ $(document).ready(function() {
 	$(window).on('resize', function() {do_resize($(this));});
 	do_resize($(window));
 
-	update_fields();
+	update_data();
 });
 
 $(document).bind("keydown", function(e) {

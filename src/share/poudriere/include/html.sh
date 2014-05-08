@@ -87,12 +87,12 @@ build_jail_json() {
 	tmpfile=$(TMPDIR="${log_path_jail}" mktemp -ut json)
 
 	{
-		echo "{"
+		echo "{\"builds\":{"
 		echo ${log_path_jail}/*/.data.mini.json | \
 		    xargs awk -f ${AWKPREFIX}/json_jail.awk | \
 		    sed -e '/^$/d' | \
 		    paste -s -d , -
-		echo "}"
+		echo "}}"
 	} > ${tmpfile}
 	mv -f ${tmpfile} ${log_path_jail}/.data.json
 }
