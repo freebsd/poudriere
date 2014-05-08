@@ -230,6 +230,16 @@ dd {
 	word-break: break-all;
 }
 
+/* XXX: Remove with bootstrap 3.2.0:
+ * https://github.com/twbs/bootstrap/issues/4062
+ * (3.2): https://github.com/twbs/bootstrap/issues/12736
+ */
+.dl-horizontal > dd:after {
+	display: table;
+	content: "";
+	clear: both;
+}
+
 .glyphicon {
 	font-size: 0.75em;
 	text-align: top;
