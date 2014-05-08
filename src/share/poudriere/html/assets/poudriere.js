@@ -231,7 +231,7 @@ function format_mastername(mastername) {
 
 	if (page_mastername && mastername == page_mastername &&
 			page_type == "jail") {
-		html = '<a href="#top">' + mastername + '</a>';
+		html = '<a href="#top" onclick="scrollToElement(\'#top\'); return false;">' + mastername + '</a>';
 	} else {
 		html = '<a href="' + jail_url(mastername) + '">' +
 			mastername + '</a>';
@@ -273,7 +273,7 @@ function format_buildname(mastername, buildname) {
 	if (page_mastername && mastername == page_mastername &&
 		page_buildname && buildname == page_buildname &&
 		page_type == "build") {
-		html = '<a href="#top">' + buildname + '</a>';
+		html = '<a href="#top" onclick="scrollToElement(\'#top\'); return false;">' + buildname + '</a>';
 	} else {
 		html = '<a href="' + build_url(mastername, buildname) + '">' +
 			buildname + '</a>';
