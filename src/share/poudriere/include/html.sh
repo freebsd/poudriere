@@ -53,11 +53,15 @@ json_main() {
 	while :; do
 		stress_snapshot
 		update_stats
-		build_json
-		build_jail_json
-		build_top_json
+		build_all_json
 		sleep 2
 	done
+}
+
+build_all_json() {
+	build_json
+	build_jail_json
+	build_top_json
 }
 
 build_json() {
@@ -124,6 +128,6 @@ stop_html_json() {
 		_wait ${JSON_PID} 2>/dev/null || :
 		unset JSON_PID
 	fi
-	build_json 2>/dev/null || :
+	build_all_json 2>/dev/null || :
 	rm -f ${log}/.data.json.tmp ${log}/.data.mini.json.tmp 2>/dev/null || :
 }
