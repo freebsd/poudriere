@@ -220,8 +220,29 @@ function jail_url(mastername, buildname) {
 }
 
 function format_mastername(mastername) {
-	return '<a href="' + jail_url(mastername) + '">' +
-		mastername + '</a>';
+	var html;
+
+	if (page_mastername && mastername == page_mastername &&
+			page_type == "jail") {
+		html = '<a href="#top">' + mastername + '</a>';
+	} else {
+		html = '<a href="' + jail_url(mastername) + '">' +
+			mastername + '</a>';
+	}
+
+	return html;
+}
+
+function format_jailname(jailname) {
+	return jailname;
+}
+
+function format_setname(setname) {
+	return setname;
+}
+
+function format_ptname(ptname) {
+	return ptname;
 }
 
 function build_url(mastername, buildname) {
@@ -231,8 +252,18 @@ function build_url(mastername, buildname) {
 }
 
 function format_buildname(mastername, buildname) {
-	return '<a href="' + build_url(mastername, buildname) + '">' +
-		buildname + '</a>';
+	var html;
+
+	if (page_mastername && mastername == page_mastername &&
+		page_buildname && buildname == page_buildname &&
+		page_type == "build") {
+		html = '<a href="#top">' + buildname + '</a>';
+	} else {
+		html = '<a href="' + build_url(mastername, buildname) + '">' +
+			buildname + '</a>';
+	}
+
+	return html;
 }
 
 function format_log(pkgname, errors, text) {
@@ -337,10 +368,6 @@ function format_status_row(status, row) {
 	return table_row;
 }
 
-function format_setname(setname) {
-	return setname ? ('-' + setname) : '';
-}
-
 function process_data_build(data) {
 	var html, a, n, table_rows, table_row, status, builder, now;
 
@@ -365,7 +392,10 @@ function process_data_build(data) {
 		data.buildname;
 
 	$('#mastername').html(format_mastername(data.mastername));
-	$('#buildname').html('<a href="#top">' + data.buildname + '</a>');
+	$('#buildname').html(format_buildname(data.mastername, data.buildname));
+	$('#jail').html(format_jailname(data.jailname));
+	$('#setname').html(format_setname(data.setname));
+	$('#ptname').html(format_ptname(data.ptname));
 	if (data.svn_url)
 		$('#svn_url').html(data.svn_url);
 	else
@@ -510,11 +540,11 @@ function process_data_jail(data) {
 			$('#builds_table').dataTable().fnAddData(table_rows);
 
 			if (latest) {
-				$('#mastername').text(latest.mastername);
+				$('#mastername').html(format_mastername(latest.mastername));
 				$('#status').text(latest.status);
-				$('#jail').text(latest.jailname);
-				$('#setname').text(latest.setname);
-				$('#ptname').text(latest.ptname);
+				$('#jail').html(format_jailname(latest.jailname));
+				$('#setname').html(format_setname(latest.setname));
+				$('#ptname').html(format_ptname(latest.ptname));
 				$('#latest_url').attr('href',
 						build_url(latest.mastername, latest.buildname));
 				$('#latest_build').html(format_buildname(latest.mastername,
@@ -535,6 +565,8 @@ function process_data(data) {
 		should_reload = process_data_build(data);
 	} else if (page_type == "jail") {
 		should_reload = process_data_jail(data);
+	} else {
+		should_reload = false;
 	}
 
 	if (first_run == false) {
