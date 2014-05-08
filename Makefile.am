@@ -58,7 +58,8 @@ dist_awk_DATA= src/share/poudriere/awk/dependency_loop.awk \
 		src/share/poudriere/awk/processonelog2.awk \
 		src/share/poudriere/awk/siginfo_buildtime.awk
 
-dist_html_DATA= src/share/poudriere/html/index.html
+dist_html_DATA= 	src/share/poudriere/html/index.html \
+			src/share/poudriere/html/robots.txt
 dist_assets_DATA=	src/share/poudriere/html/assets/poudriere.js \
 			src/share/poudriere/html/assets/logo.svg \
 			src/share/poudriere/html/assets/favicon.ico \
