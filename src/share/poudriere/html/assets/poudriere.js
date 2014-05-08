@@ -9,10 +9,20 @@ var impulse_target_period =		600;
 var impulse_period =			impulse_first_period;
 var impulse_first_interval =	impulse_first_period / updateInterval;
 var impulse_interval = 			impulse_target_period / updateInterval;
+var page_type;
+var data_url;
+
+function getParameterByName(name) {
+	name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+	var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+		results = regex.exec(location.search);
+	return results == null ? "" :
+		decodeURIComponent(results[1].replace(/\+/g, " "));
+}
 
 function update_fields() {
 	$.ajax({
-		url: '.data.json',
+		url: data_url + '/.data.json',
 		dataType: 'json',
 		success: function(data) {
 			process_data(data);
@@ -186,8 +196,10 @@ function display_impulse(stats, snap) {
 function format_log(pkgname, errors, text) {
 	var html;
 
-	html = '<a target="logs" title="Log for ' + pkgname + '" href="logs/' + (errors ? 'errors/' : '') +
-		pkgname + '.log"><span class="glyphicon glyphicon-file"></span>' + text + '</a>';
+	html = '<a target="logs" title="Log for ' + pkgname + '" href="' +
+		data_url + '/logs/' + (errors ? 'errors/' : '') +
+		pkgname + '.log"><span class="glyphicon glyphicon-file"></span>' +
+		text + '</a>';
 	return html;
 }
 
@@ -313,7 +325,8 @@ function process_data(data) {
 	document.title = 'Poudriere bulk results for ' + data.mastername +
 		data.buildname;
 
-	$('#mastername').html('<a href="../">' + data.mastername + '</a>');
+	$('#mastername').html('<a href="jail.html?mastername=' +
+			data.mastername + '">' + data.mastername + '</a>');
 	$('#buildname').html('<a href="#top">' + data.buildname + '</a>');
 	if (data.svn_url)
 		$('#svn_url').html(data.svn_url);
@@ -461,7 +474,23 @@ function fix_viewport() {
 }
 
 $(document).ready(function() {
-	var columns, status, types, i;
+	var columns, status, types, i, mastername, buildname;
+
+	page_type = location.pathname.substr(1, location.pathname.length - 6);
+	if (page_type == "build") {
+		mastername = getParameterByName("mastername");
+		buildname = getParameterByName("build");
+		if (!buildname || !mastername) {
+			document.write("Mastername and Build parameters are required.");
+			return;
+		}
+		data_url = 'data/' + mastername + '/' + buildname;
+		$('a.data_url').each(function() {
+			var href = $(this).attr('href');
+			$(this).attr('href', data_url + '/' + href);
+		});
+		$('#backlink').attr('href', 'jail.html?mastername=' + mastername);
+	}
 
 	$('#builders_table').dataTable({
 		"bFilter": false,
