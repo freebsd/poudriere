@@ -36,6 +36,7 @@
 .new { display: none; }
 #header {
 	border-bottom: 1px solid black;
+	min-height: 65px;
 }
 
 .navbar-toggle {
