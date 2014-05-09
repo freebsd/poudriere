@@ -175,7 +175,7 @@ parallel_run() {
 	# Occasionally reap dead children. Don't do this too often or it
 	# becomes a bottleneck. Do it too infrequently and there is a risk
 	# of PID reuse/collision
-	_SHOULD_REAP=$((_SHOULD_REAP + 1))
+	_SHOULD_REAP=$((${_SHOULD_REAP} + 1))
 	if [ ${_SHOULD_REAP} -eq 16 ]; then
 		_SHOULD_REAP=0
 		_reap_children || return $?
