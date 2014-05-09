@@ -1023,6 +1023,10 @@ jail_start() {
 		export PKG_BIN="${LOCALBASE:-/usr/local}/sbin/pkg-static"
 		export PKG_ADD="${PKG_BIN} add"
 		export PKG_DELETE="${PKG_BIN} delete -y -f"
+
+		[ -n "${PKG_REPO_SIGNING_KEY}" ] &&
+			! [ -f "${PKG_REPO_SIGNING_KEY}" ] &&
+			err 1 "PKG_REPO_SIGNING_KEY defined but the file is missing."
 	else
 		export PKGNG=0
 		export PKG_ADD=pkg_add

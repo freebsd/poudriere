@@ -78,7 +78,7 @@ build_repo() {
 		# remount rw
 		umount -f ${MASTERMNT}/packages
 		mount_packages
-		if [ -f "${PKG_REPO_SIGNING_KEY:-/nonexistent}" ]; then
+		if [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
 			install -m 0400 ${PKG_REPO_SIGNING_KEY} \
 				${MASTERMNT}/tmp/repo.key
 			### XXX: Update pkg-repo to support -o
