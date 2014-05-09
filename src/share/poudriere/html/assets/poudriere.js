@@ -580,7 +580,8 @@ function process_data_build(data) {
 					table_rows.push(format_status_row(status, row));
 				}
 				$('#' + status + '_body').data('index', n);
-				$('#' + status + '_table').dataTable().fnAddData(table_rows);
+				$('#' + status + '_table').DataTable().rows.add(table_rows)
+					.draw(false);
 			}
 		});
 	}
