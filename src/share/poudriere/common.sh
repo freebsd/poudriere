@@ -1258,6 +1258,7 @@ jail_start() {
 	_jget mnt ${name} mnt
 
 	[ -d ${DISTFILES_CACHE:-/nonexistent} ] || err 1 "DISTFILES_CACHE directory does not exist. (c.f. poudriere.conf)"
+	[ $(sysctl -n kern.securelevel) -lt 1 ] || err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags."
 
 	if [ -z "${NOLINUX}" ]; then
 		if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
