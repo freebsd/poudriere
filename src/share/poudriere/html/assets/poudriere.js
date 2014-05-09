@@ -784,7 +784,7 @@ function setup_build() {
 			},
 			{
 				"data": "status",
-				"sWidth": "8em",
+				"sWidth": "10em",
 			},
 			{
 				"data": "elapsed",
