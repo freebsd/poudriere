@@ -829,7 +829,7 @@ function setup_build() {
 			},
 			{
 				"sType": "numeric",
-				"sWidth": "4em",
+				"sWidth": "2em",
 			},
 			{
 				"sWidth": "7em",
@@ -848,7 +848,7 @@ function setup_build() {
 			null,
 			null,
 			{
-				"sWidth": "4em",
+				"sWidth": "2em",
 				"sType": "numeric",
 			},
 			{
@@ -877,7 +877,7 @@ function setup_jail() {
 	var columns, status, types, i, stat_column;
 
 	stat_column = {
-		"sWidth": "4em",
+		"sWidth": "1em",
 		"sType": "numeric",
 		"bSearchable": false,
 	};
@@ -940,7 +940,7 @@ function setup_index() {
 	var columns, status, types, i, stat_column, table;
 
 	stat_column = {
-		"sWidth": "4em",
+		"sWidth": "1em",
 		"sType": "numeric",
 		"bSearchable": false,
 	};

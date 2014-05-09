@@ -230,6 +230,32 @@ dd {
 	word-break: break-all;
 }
 
+.nobreak,
+/* Build order */
+.ports table tbody tr td:nth-child(1),
+/* Job ID */
+#builders_tables tbody tr td:nth-child(1),
+/* Skipped counts */
+.failed table tbody tr td:nth-child(5),
+.ignored table tbody tr td:nth-child(4),
+/* Stat counts */
+#builds_body tr td:nth-child(2),
+#builds_body tr td:nth-child(3),
+#builds_body tr td:nth-child(4),
+#builds_body tr td:nth-child(5),
+#builds_body tr td:nth-child(6),
+#builds_body tr td:nth-child(7),
+#latest_builds_body tr td:nth-child(3),
+#latest_builds_body tr td:nth-child(4),
+#latest_builds_body tr td:nth-child(5),
+#latest_builds_body tr td:nth-child(6),
+#latest_builds_body tr td:nth-child(7),
+#latest_builds_body tr td:nth-child(8)
+{
+	word-break: normal !important;
+}
+
+
 /* XXX: Remove with bootstrap 3.2.0:
  * https://github.com/twbs/bootstrap/issues/4062
  * (3.2): https://github.com/twbs/bootstrap/issues/12736
