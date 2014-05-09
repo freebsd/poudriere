@@ -23,7 +23,6 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
   *  options checking needs to account for DELETED options (reported by feld)
   *  Document/test portshaker usage
   *  pkgclean/options MOVED support
-  *  Fix $(()) usage for 8.3
   *  Display DEPRECATED ports at end and UNMAINTAINED ports.
 
 <h2>3.1</h2>
