@@ -315,7 +315,7 @@ log_stop() {
 	if [ -n "${tpid}" ]; then
 		exec 1>&3 3>&- 2>&4 4>&-
 		kill $tpid 2>/dev/null || :
-		_wait $tpid 2>/dev/null || :
+		_wait $tpid 2>/dev/null 1>&2 || :
 		unset tpid
 	fi
 }
@@ -1914,7 +1914,7 @@ stop_html_json() {
 	local log=$(log_path)
 	if [ -n "${JSON_PID}" ]; then
 		kill ${JSON_PID} 2>/dev/null || :
-		_wait ${JSON_PID} 2>/dev/null || :
+		_wait ${JSON_PID} 2>/dev/null 1>&2 || :
 		unset JSON_PID
 	fi
 	build_json 2>/dev/null || :
