@@ -1353,6 +1353,10 @@ jail_start() {
 		export PKG_ADD="${PKG_BIN} add"
 		export PKG_DELETE="${PKG_BIN} delete -y -f"
 		export PKG_VERSION="/poudriere/pkg-static version"
+
+		[ -n "${PKG_REPO_SIGNING_KEY}" ] &&
+			! [ -f "${PKG_REPO_SIGNING_KEY}" ] &&
+			err 1 "PKG_REPO_SIGNING_KEY defined but the file is missing."
 	else
 		export PKGNG=0
 		export PKG_ADD=pkg_add
@@ -3608,7 +3612,7 @@ build_repo() {
 		bset status "pkgrepo:"
 		ensure_pkg_installed
 		mkdir -p ${MASTERMNT}/tmp/packages
-		if [ -f "${PKG_REPO_SIGNING_KEY:-/nonexistent}" ]; then
+		if [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
 			install -m 0400 ${PKG_REPO_SIGNING_KEY} \
 				${MASTERMNT}/tmp/repo.key
 			injail /poudriere/pkg-static repo -o /tmp/packages \
