@@ -234,7 +234,7 @@ log_start() {
 	exec 3>&1 4>&2
 	[ ! -e ${logfile}.pipe ] && mkfifo ${logfile}.pipe
 	tee ${logfile} < ${logfile}.pipe >&3 &
-	export tpid=$!
+	tpid=$!
 	exec > ${logfile}.pipe 2>&1
 
 	# Remove fifo pipe file right away to avoid orphaning it.
