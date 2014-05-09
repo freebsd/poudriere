@@ -17,7 +17,6 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
      ====>> [01] Skipping build of www/npm: Dependent port www/node failed
      ====>> [01] Skipping build of local/shell-meta: Dependent port www/node failed
 </verbatim>
-  *  Incorrect dependency/option rebuilding: [https://forums.freebsd.org/viewtopic.php?f=3&t=44963]
   *  False positive old ver delete seen: ====>> Deleting old version: dovecot-sieve-1.2 0.1.19.txz
   *  new dependency checking should account for DELETED deps too (might not be an issue)
   *  options checking needs to account for DELETED options (reported by feld)
