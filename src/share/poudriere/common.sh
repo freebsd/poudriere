@@ -314,7 +314,7 @@ buildlog_stop() {
 log_stop() {
 	if [ -n "${tpid}" ]; then
 		exec 1>&3 3>&- 2>&4 4>&-
-		kill $tpid
+		kill $tpid 2>/dev/null || :
 		_wait $tpid 2>/dev/null || :
 		unset tpid
 	fi
