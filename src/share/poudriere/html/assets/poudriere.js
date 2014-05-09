@@ -1095,6 +1095,9 @@ $(document).ready(function() {
 		return;
 	}
 
+	/* Activate tooltip hovers */
+	$('[data-toggle="tooltip"]').tooltip();
+
 	/* Fix nav links to not skip hashchange event when clicking multiple
 	 * times. */
 	$("#header .nav a[href^=#]").each(function(){
