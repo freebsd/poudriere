@@ -55,7 +55,7 @@ queue_reader_main() {
 stop_queue_reader() {
 	if [ -n "${QUEUE_READER_PID}" ]; then
 		kill ${QUEUE_READER_PID} 2>/dev/null || :
-		_wait ${QUEUE_READER_PID} 2>/dev/null || :
+		_wait ${QUEUE_READER_PID} 2>/dev/null 1>&2 || :
 		unset QUEUE_READER_PID
 	fi
 	rm -f ${QUEUE_SOCKET}

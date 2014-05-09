@@ -125,7 +125,7 @@ stop_html_json() {
 	_log_path log
 	if [ -n "${JSON_PID}" ]; then
 		kill ${JSON_PID} 2>/dev/null || :
-		_wait ${JSON_PID} 2>/dev/null || :
+		_wait ${JSON_PID} 2>/dev/null 1>&2 || :
 		unset JSON_PID
 	fi
 	build_all_json 2>/dev/null || :
