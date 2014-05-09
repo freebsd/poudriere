@@ -70,7 +70,9 @@ dist_assets_DATA=	src/share/poudriere/html/assets/poudriere.js \
 			src/share/poudriere/html/assets/logo.svg \
 			src/share/poudriere/html/assets/favicon.ico \
 			src/share/poudriere/html/assets/poudriere.css \
-			src/share/poudriere/html/assets/jquery-1.11.0.min.js \
+			src/share/poudriere/html/assets/jquery-1.11.1.js \
+			src/share/poudriere/html/assets/jquery-1.11.1.min.js \
+			src/share/poudriere/html/assets/jquery-1.11.1.min.map \
 			src/share/poudriere/html/assets/jquery.dataTables.rowGrouping-1.2.9.js
 dist_btjs_DATA=		src/share/poudriere/html/assets/bootstrap-3.1.1/js/bootstrap.min.js
 dist_btfonts_DATA=	src/share/poudriere/html/assets/bootstrap-3.1.1/fonts/glyphicons-halflings-regular.eot \
