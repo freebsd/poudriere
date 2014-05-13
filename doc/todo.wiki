@@ -36,6 +36,7 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
   *  "soft exit", "exit when idle" mode, SIGUSR1
   *  Allow git method for jail
   *  Auto fix manually running pkg-repo in the atomic dir which breaks the symlink
+  *  Missing poudriere.conf/BASEFS checks fail due to not having msg_error defined yet.
 
 <h3>Stability</h3>
 
