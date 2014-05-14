@@ -618,14 +618,14 @@ siginfo_handler() {
 	local pkgname origin phase buildtime started
 	local format_origin_phase format_phase
 
-	update_stats
-
 	_bget nbq stats_queued 2>/dev/null || nbq=0
 	[ -n "${nbq}" ] || return 0
 
 	_bget status status 2>/dev/null || status=unknown
 	[ "${status}" = "index:" -o "${status#stopped:}" = "crashed:" ] && \
 	    return 0
+
+	update_stats
 
 	_bget nbf stats_failed 2>/dev/null || nbf=0
 	_bget nbi stats_ignored 2>/dev/null || nbi=0
