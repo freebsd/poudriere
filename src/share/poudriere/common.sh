@@ -3300,9 +3300,8 @@ prepare_ports() {
 
 	if was_a_bulk_run; then
 		get_cache_dir cache_dir
-		mkdir -p ${log}/../../latest-per-pkg ${log}/../latest-per-pkg
-		mkdir -p ${log}/logs ${log}/logs/errors ${log}/assets
-		mkdir -p ${cache_dir}
+		mkdir -p ${log}/../../latest-per-pkg ${log}/../latest-per-pkg \
+		    ${log}/logs ${log}/logs/errors ${cache_dir}
 		ln -sfh ${BUILDNAME} ${log%/*}/latest
 
 		# Record the SVN URL@REV in the build
