@@ -37,6 +37,7 @@ These should be fixed in <strong>trunk</strong> and then merged back to <strong>
   *  Allow git method for jail
   *  Auto fix manually running pkg-repo in the atomic dir which breaks the symlink
   *  Missing poudriere.conf/BASEFS checks fail due to not having msg_error defined yet.
+  *  SIGINFO during jail startup crashes due to unable to create status files
 
 <h3>Stability</h3>
 
