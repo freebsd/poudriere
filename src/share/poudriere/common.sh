@@ -3557,6 +3557,8 @@ append_make() {
 
 	[ -f "${src_makeconf}" ] || return 0
 	src_makeconf="$(realpath ${src_makeconf} 2>/dev/null)"
+	# Only append if not already done (-z -p or -j match)
+	grep -q "# ${src_makeconf} #" ${dst_makeconf} && return 0
 	msg "Appending to make.conf: ${src_makeconf}"
 	echo "#### ${src_makeconf} ####" >> ${dst_makeconf}
 	cat "${src_makeconf}" >> ${dst_makeconf}
