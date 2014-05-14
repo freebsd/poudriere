@@ -3392,7 +3392,7 @@ prepare_ports() {
 
 	if ! ensure_pkg_installed && [ ${SKIPSANITY} -eq 0 ]; then
 		msg "pkg package missing, skipping sanity"
-		SKIPSANITY=1
+		SKIPSANITY=2
 	fi
 
 	if [ $SKIPSANITY -eq 0 ]; then
@@ -3425,7 +3425,8 @@ prepare_ports() {
 			delete_stale_symlinks_and_empty_dirs
 		fi
 	else
-		msg "(-s) Skipping incremental rebuild and repository sanity checks"
+		[ ${SKIPSANITY} -eq 1 ] && msg_n "(-s) "
+		msg "Skipping incremental rebuild and repository sanity checks"
 	fi
 
 	bset status "cleaning:"
