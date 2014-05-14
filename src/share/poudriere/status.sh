@@ -127,7 +127,7 @@ fi
 if [ ${SCRIPT_MODE} -eq 0 -a ${BUILDER_INFO} -eq 0 ]; then
 	format="%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds"
 	[ ${COMPACT} -eq 0 ] && format="${format} %%s"
-	display_setup "${format}" "${columns}" "-d -k1,1V -k2,2 -k3,3 -k4,4n"
+	display_setup "${format}" "${columns}" "-d -k1,1 -k2,2 -k3,3n -k4,4n"
 	if [ ${COMPACT} -eq 0 ]; then 
 		if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
 			url_logs="URL"
