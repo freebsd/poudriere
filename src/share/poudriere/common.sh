@@ -2988,10 +2988,14 @@ next_in_queue() {
 lock_acquire() {
 	[ $# -ne 1 ] && eargs lock_acquire lockname
 	local lockname=$1
+	local i
 
 	until mkdir ${POUDRIERE_DATA}/.lock-$$-${MASTERNAME}-${lockname} \
 	    2>/dev/null; do
 		sleep 0.1
+		i=$((i + 1))
+		[ ${i} -gt 200 ] &&
+		    err 1 "Failed to acquire ${lockname} lock"
 	done
 }
 
