@@ -901,17 +901,17 @@ do_jail_mounts() {
 
 	# clone will inherit from the ref jail
 	if [ ${mnt##*/} = "ref" ]; then
-		mkdir -p ${mnt}/proc
-		mkdir -p ${mnt}/dev
-		mkdir -p ${mnt}/compat/linux/proc
-		mkdir -p ${mnt}/usr/ports
-		mkdir -p ${mnt}/wrkdirs
-		mkdir -p ${mnt}/${LOCALBASE:-/usr/local}
-		mkdir -p ${mnt}/distfiles
-		mkdir -p ${mnt}/packages
-		mkdir -p ${mnt}/new_packages
-		mkdir -p ${mnt}${HOME}/.ccache
-		mkdir -p ${mnt}/var/db/ports
+		mkdir -p ${mnt}/proc \
+		    ${mnt}/dev \
+		    ${mnt}/compat/linux/proc \
+		    ${mnt}/usr/ports \
+		    ${mnt}/wrkdirs \
+		    ${mnt}/${LOCALBASE:-/usr/local} \
+		    ${mnt}/distfiles \
+		    ${mnt}/packages \
+		    ${mnt}/new_packages \
+		    ${mnt}${HOME}/.ccache \
+		    ${mnt}/var/db/ports
 	fi
 
 	# ref jail only needs devfs
