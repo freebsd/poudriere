@@ -912,7 +912,6 @@ function setup_jail() {
 	$('#builds_table').dataTable({
 		"bAutoWidth": false,
 		"processing": true, // Show processing icon
-		"deferRender": true, // Defer creating TR/TD until needed
 		"aoColumns": columns,
 		"stateSave": true, // Enable cookie for keeping state
 		"lengthMenu":[[5,10,25,50,100,200, -1],[5,10,25,50,100,200,"All"]],
@@ -1010,7 +1009,6 @@ function setup_index() {
 	table = $('#latest_builds_table').dataTable({
 		"bAutoWidth": false,
 		"processing": true, // Show processing icon
-		"deferRender": true, // Defer creating TR/TD until needed
 		"aoColumns": columns,
 		"stateSave": true, // Enable cookie for keeping state
 		"lengthMenu":[[5,10,25,50,100,200, -1],[5,10,25,50,100,200,"All"]],
