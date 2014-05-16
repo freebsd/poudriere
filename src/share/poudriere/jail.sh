@@ -172,6 +172,7 @@ update_jail() {
 		[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
 		do_jail_mounts ${JAILMNT} ${ARCH}
 		JNETNAME="n"
+		jstart
 		if [ -z "${TORELEASE}" ]; then
 			injail env PAGER=/bin/cat /usr/sbin/freebsd-update fetch install
 		else
