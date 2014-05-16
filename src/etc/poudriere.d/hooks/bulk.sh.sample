@@ -1,8 +1,8 @@
 #!/bin/sh
 # /usr/local/etc/poudriere.d/hooks/bulk.sh
 
-EMAIL_FROM=an@address.com
-EMAIL_TO=another@address.com
+EMAIL_FROM=an@example.com
+EMAIL_TO=another@example.com
 
 status="$1"
 shift
