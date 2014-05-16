@@ -1032,9 +1032,18 @@ nvpair_createv_descriptor(int value, const char *namefmt, va_list nameap)
 		return (NULL);
 	}
 
-	value = fcntl(value, F_DUPFD_CLOEXEC, 0);
-	if (value < 0)
-		return (NULL);
+#ifdef F_DUPFD_CLOEXEC
+        value = fcntl(value, F_DUPFD_CLOEXEC, 0);
+        if (value < 0)
+                return (NULL);
+#else
+        value = fcntl(value, F_DUPFD, 0);
+        if (value < 0)
+                return (NULL);
+        value = fcntl(value, F_SETFD, FD_CLOEXEC);
+        if (value < 0)
+                return (NULL);
+#endif
 
 	nvp = nvpair_allocv(NV_TYPE_DESCRIPTOR, (uint64_t)value,
 	    sizeof(int64_t), namefmt, nameap);
