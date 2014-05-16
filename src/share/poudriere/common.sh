@@ -1668,7 +1668,7 @@ _real_build_port() {
 	local log
 	local listfilecmd network
 	local hangstatus
-	local pkgenv phaseenv
+	local pkgenv phaseenv jpkg
 	local no_stage=$(injail make -C ${portdir} -VNO_STAGE)
 	local targets install_order
 	local stagedir
@@ -1678,6 +1678,18 @@ _real_build_port() {
 
 	_my_path mnt
 	_log_path log
+
+	for jpkg in ${ALLOW_MAKE_JOBS_PACKAGES}; do
+		case "${PKGNAME%-*}" in
+		${jpkg})
+			job_msg "Allowing MAKE_JOBS for this build"
+			sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' \
+			    ${mnt}/etc/make.conf
+			break
+			;;
+		esac
+	done
+
 	# Must install run-depends as 'actual-package-depends' and autodeps
 	# only consider installed packages as dependencies
 	if [ -n "${no_stage}" ]; then
@@ -3869,6 +3881,7 @@ fi
 : ${CHECK_CHANGED_OPTIONS:=verbose}
 : ${NO_RESTRICTED:=no}
 : ${USE_COLORS:=yes}
+: ${ALLOW_MAKE_JOBS_PACKAGES:=pkg ccache}
 
 : ${BUILDNAME_FORMAT:="%Y-%m-%d_%Hh%Mm%Ss"}
 : ${BUILDNAME:=$(date +${BUILDNAME_FORMAT})}
