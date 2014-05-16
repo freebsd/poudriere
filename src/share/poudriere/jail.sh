@@ -168,7 +168,7 @@ update_jail() {
 	case ${METHOD} in
 	ftp|http|ftp-archive)
 		MASTERMNT=${JAILMNT}
-		MASTERNAME=${JAILNAME}
+		MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
 		do_jail_mounts ${JAILMNT} ${ARCH}
 		JNETNAME="n"
