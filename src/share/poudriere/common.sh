@@ -2491,7 +2491,6 @@ build_pkg() {
 		clean_rdepends=1
 		run_hook pkgbuild ignored "${port}" "${PKGNAME}" "${ignore}"
 	else
-		injail make -C ${portdir} clean
 		build_port ${portdir} || ret=$?
 		if [ ${ret} -ne 0 ]; then
 			build_failed=1
