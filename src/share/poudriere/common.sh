@@ -3155,7 +3155,7 @@ listed_ports() {
 		_pget PORTSDIR ${PTNAME} mnt
 		[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 		for cat in $(awk -F= '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print $2}' ${PORTSDIR}/Makefile); do
-			awk -v cat=${cat} '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print cat"/"$2}' ${PORTSDIR}/${cat}/Makefile
+			awk -F= -v cat=${cat} '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print cat"/"$2}' ${PORTSDIR}/${cat}/Makefile
 		done
 		return 0
 	fi
