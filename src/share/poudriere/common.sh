@@ -1250,12 +1250,16 @@ jail_start() {
 	local arch
 	local mnt
 	local needfs="${NULLFSREF} procfs"
-	local needkld="sem"
+	local needkld
 	local tomnt=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 
 	_pget portsdir ${ptname} mnt
 	_jget arch ${name} arch
 	_jget mnt ${name} mnt
+
+	JAIL_OSVERSION=$(awk '/\#define __FreeBSD_version/ { print $3 }' "${mnt}/usr/include/sys/param.h")
+
+	[ ${JAIL_OSVERSION} -lt 900000 ] && needkld="${needkld} sem"
 
 	[ -d ${DISTFILES_CACHE:-/nonexistent} ] || err 1 "DISTFILES_CACHE directory does not exist. (c.f. poudriere.conf)"
 	[ $(sysctl -n kern.securelevel) -lt 1 ] || err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags."
@@ -1306,8 +1310,6 @@ jail_start() {
 	echo "src" >> ${tomnt}/usr/.cpignore
 	echo "poudriere" >> ${tomnt}/.cpignore
 	echo " done"
-
-	JAIL_OSVERSION=$(awk '/\#define __FreeBSD_version/ { print $3 }' "${mnt}/usr/include/sys/param.h")
 
 	if [ ${JAIL_OSVERSION} -gt ${HOST_OSVERSION} ]; then
 		msg_warn "!!! Jail is newer than host. (Jail: ${JAIL_OSVERSION}, Host: ${HOST_OSVERSION}) !!!"
