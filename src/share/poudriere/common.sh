@@ -3360,8 +3360,7 @@ prepare_ports() {
 		    msg_n "(-c): Cleaning all packages..."
 
 		if [ ${JAIL_NEEDS_CLEAN} -eq 1 ] || [ ${CLEAN} -eq 1 ]; then
-			rm -rf ${PACKAGES}/*
-			rm -rf ${POUDRIERE_DATA}/cache/${MASTERNAME}
+			rm -rf ${PACKAGES}/* ${cache_dir}
 			echo " done"
 		fi
 
