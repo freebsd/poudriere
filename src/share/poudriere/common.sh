@@ -214,7 +214,7 @@ log_start() {
 	local latest_log
 
 	_log_path log
-	_log_path_top top
+	_log_path_top log_top
 
 	logfile="${log}/logs/${PKGNAME}.log"
 	latest_log=${log_top}/latest-per-pkg/${PKGNAME%-*}/${PKGNAME##*-}
