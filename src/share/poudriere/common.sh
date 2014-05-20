@@ -210,13 +210,14 @@ stripcolors() {
 }
 
 log_start() {
-	local log
+	local log log_top
 	local latest_log
 
 	_log_path log
+	_log_path_top top
 
 	logfile="${log}/logs/${PKGNAME}.log"
-	latest_log=${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}/latest-per-pkg/${PKGNAME%-*}/${PKGNAME##*-}
+	latest_log=${log_top}/latest-per-pkg/${PKGNAME%-*}/${PKGNAME##*-}
 
 	# Make sure directory exists
 	mkdir -p ${log}/logs ${latest_log}
