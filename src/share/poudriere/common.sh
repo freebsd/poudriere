@@ -741,8 +741,14 @@ get_data_dir() {
 			return
 		fi
 		zfs create -p -o ${NS}:type=data \
+			-o atime=off \
 			-o mountpoint=${BASEFS}/data \
 			${ZPOOL}${ZROOTFS}/data
+		zfs create ${ZPOOL}${ZROOTFS}/data/build
+		zfs create -o compression=off ${ZPOOL}${ZROOTFS}/data/cache
+		zfs create -o compression=lz4 ${ZPOOL}${ZROOTFS}/data/logs
+		zfs create -o compression=off ${ZPOOL}${ZROOTFS}/data/packages
+		zfs create -o compression=off ${ZPOOL}${ZROOTFS}/data/wrkdirs
 	else
 		mkdir -p "${BASEFS}/data"
 	fi
