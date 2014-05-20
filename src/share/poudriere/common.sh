@@ -3259,8 +3259,7 @@ find_all_pool_references() {
 
 delete_stale_symlinks_and_empty_dirs() {
 	msg "Deleting stale symlinks"
-	find -L ${PACKAGES} -type l \
-		-exec rm -f {} +
+	find -L ${PACKAGES} -type l -delete
 
 	msg "Deleting empty directories"
 	find ${PACKAGES} -type d -mindepth 1 \
