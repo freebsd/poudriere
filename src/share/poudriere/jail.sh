@@ -105,13 +105,16 @@ list_jail() {
 }
 
 delete_jail() {
+	local cache_dir
+
 	test -z ${JAILNAME} && usage
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	jail_runs ${JAILNAME} &&
 		err 1 "Unable to delete jail ${JAILNAME}: it is running"
 	msg_n "Removing ${JAILNAME} jail..."
 	TMPFS_ALL=0 destroyfs ${JAILMNT} jail
-	rm -rf ${POUDRIERED}/jails/${JAILNAME} || :
+	get_cache_dir cache_dir
+	rm -rf ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} || :
 	echo " done"
 }
 
