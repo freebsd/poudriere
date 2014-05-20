@@ -130,8 +130,8 @@ fi
 [ -s "${DISTFILES_LIST}.expected" ] || \
 	err 1 "Something went wrong. All distfiles would have been removed."
 
-hsize=$(cat ${DISTFILES_LIST}.unexpected | xargs stat -f %z | \
-	awk '{total += $1} END {print total}' | \
+hsize=$(cat ${DISTFILES_LIST}.unexpected | xargs stat -f '%i %z' | sort -u | \
+	awk '{total += $2} END {print total}' | \
 	awk -f ${AWKPREFIX}/humanize.awk
 )
 
