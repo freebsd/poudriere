@@ -86,9 +86,18 @@ distfiles_cleanup() {
 		2>/dev/null
 }
 
+get_distinfo() {
+	local port="$1"
+
+	mangle_stderr "${COLOR_WARN}WARNING" \
+	    "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
+	    "${COLOR_RESET}" \
+	    make -C "${PORTSDIR}/${port}" -V DISTINFO_FILE
+}
+
 gather_distfiles() {
 	local origin="$1"
-	local distinfo_file="$(make -C ${PORTSDIR}/${origin} -V DISTINFO_FILE)"
+	local distinfo_file="$(get_distinfo ${origin})"
 
 	[ -f "${distinfo_file}" ] || return 0
 
