@@ -32,8 +32,9 @@ poudriere distclean [options]
 
 Options:
     -J n        -- Run n jobs in parallel (Defaults to the number of CPUs)
-    -p tree     -- Specify which ports tree to use for comparing to distfiles
-                   (Defaults to the 'default' tree)
+    -p tree     -- Specify which ports tree to use for comparing to distfiles.
+                   Can be specified multiple times. (Defaults to the 'default'
+                   tree)
     -n          -- Do not actually remove anything, just show what would be
                    removed
     -v          -- Be verbose; show more information. Use twice to enable
@@ -45,7 +46,6 @@ EOF
 
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
-PTNAME=default
 DRY_RUN=0
 ALL=1
 
@@ -60,7 +60,9 @@ while getopts "J:np:vy" FLAG; do
 			DRY_RUN=1
 			;;
 		p)
-			PTNAME=${OPTARG}
+			porttree_exists ${OPTARG} ||
+			    err 1 "No such ports tree: ${OPTARG}"
+			PTNAMES="${PTNAMES} ${OPTARG}"
 			;;
 		v)
 			VERBOSE=$((${VERBOSE} + 1))
@@ -74,16 +76,10 @@ while getopts "J:np:vy" FLAG; do
 	esac
 done
 
+: ${PTNAMES:=default}
+
 shift $((OPTIND-1))
 
-export PORTSDIR=$(pget ${PTNAME} mnt)
-[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
-[ -z "${PORTSDIR}" ] && err 1 "No such ports tree: ${PTNAME}"
-[ -d ${DISTFILES_CACHE:-/nonexistent} ] ||
-	err 1 "The DISTFILES_CACHE directory does not exist (c.f. poudriere.conf)"
-
-DISTFILES_LIST=$(mktemp -t poudriere_distfiles)
-CLEANUP_HOOK=distfiles_cleanup
 distfiles_cleanup() {
 	rm -f ${DISTFILES_LIST} ${DISTFILES_LIST}.expected \
 		${DISTFILES_LIST}.actual ${DISTFILES_LIST}.unexpected \
@@ -102,19 +98,34 @@ gather_distfiles() {
 		"${distinfo_file}" >> ${DISTFILES_LIST}
 }
 
-msg "Gathering all expected distfiles"
-parallel_start
-for origin in $(listed_ports); do
-	parallel_run gather_distfiles ${origin}
+[ -d ${DISTFILES_CACHE:-/nonexistent} ] ||
+    err 1 "The DISTFILES_CACHE directory does not exist (c.f. poudriere.conf)"
+
+DISTFILES_LIST=$(mktemp -t poudriere_distfiles)
+CLEANUP_HOOK=distfiles_cleanup
+
+for PTNAME in ${PTNAMES}; do
+	export PORTSDIR=$(pget ${PTNAME} mnt)
+	[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
+	[ -z "${PORTSDIR}" ] && err 1 "No such ports tree: ${PTNAME}"
+
+	msg "Gathering all expected distfiles for ports tree '${PTNAME}'"
+
+	parallel_start
+	for origin in $(listed_ports); do
+		parallel_run gather_distfiles ${origin}
+	done
+	parallel_stop
 done
-parallel_stop
 
 # Remove duplicates
 sort -u ${DISTFILES_LIST} > ${DISTFILES_LIST}.expected
 
 # Gather list of actual files
 msg "Gathering list of actual distfiles"
-[ -n "${DISTFILES_CACHE}" ] || err 1 "DISTFILES_CACHE must be set (c.f. poudriere.conf)"
+# This is redundant but here for paranoia.
+[ -n "${DISTFILES_CACHE}" ] ||
+    err 1 "DISTFILES_CACHE must be set (c.f. poudriere.conf)"
 find -x ${DISTFILES_CACHE}/ -type f | sort > ${DISTFILES_LIST}.actual
 
 comm -1 -3 ${DISTFILES_LIST}.expected ${DISTFILES_LIST}.actual \

@@ -431,7 +431,7 @@ Dry run, do not actually delete anything.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;p</b> <i class="arg">tree</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Specifies which ports <i class="arg">tree</i> to use.</dd>
+Specifies which ports <i class="arg">tree</i> to use. This can be specified multiple times to consider multiple tress.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;y</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
@@ -828,7 +828,7 @@ Be also careful to not begin the name of the jail by a number if you are not in 
 <tbody>
 <tr>
 <td class="foot-date">
-April 26, 2014</td>
+May 21, 2014</td>
 <td class="foot-os" align="right">
 FreeBSD 11.0</td>
 </tr>
