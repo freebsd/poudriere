@@ -180,7 +180,7 @@ function display_pkghour(stats, snap) {
 
 	attempted = parseInt(stats.built) + parseInt(stats.failed);
 	pkghour = "--";
-	if (attempted > 0) {
+	if (attempted > 0 && snap.elapsed) {
 		hours = snap.elapsed / 3600;
 		pkghour = Math.ceil(attempted / hours);
 	}
