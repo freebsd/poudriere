@@ -115,7 +115,7 @@ sort -u ${DISTFILES_LIST} > ${DISTFILES_LIST}.expected
 # Gather list of actual files
 msg "Gathering list of actual distfiles"
 [ -n "${DISTFILES_CACHE}" ] || err 1 "DISTFILES_CACHE must be set (c.f. poudriere.conf)"
-find -x -s ${DISTFILES_CACHE}/ -type f > ${DISTFILES_LIST}.actual
+find -x ${DISTFILES_CACHE}/ -type f | sort > ${DISTFILES_LIST}.actual
 
 comm -1 -3 ${DISTFILES_LIST}.expected ${DISTFILES_LIST}.actual \
 	> ${DISTFILES_LIST}.unexpected
