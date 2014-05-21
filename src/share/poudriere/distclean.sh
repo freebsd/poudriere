@@ -104,6 +104,7 @@ gather_distfiles() {
 DISTFILES_LIST=$(mktemp -t poudriere_distfiles)
 CLEANUP_HOOK=distfiles_cleanup
 
+parallel_start
 for PTNAME in ${PTNAMES}; do
 	export PORTSDIR=$(pget ${PTNAME} mnt)
 	[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
@@ -111,12 +112,11 @@ for PTNAME in ${PTNAMES}; do
 
 	msg "Gathering all expected distfiles for ports tree '${PTNAME}'"
 
-	parallel_start
 	for origin in $(listed_ports); do
 		parallel_run gather_distfiles ${origin}
 	done
-	parallel_stop
 done
+parallel_stop
 
 # Remove duplicates
 sort -u ${DISTFILES_LIST} > ${DISTFILES_LIST}.expected
