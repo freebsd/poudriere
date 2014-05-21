@@ -389,16 +389,17 @@ function translate_status(status) {
 	return status;
 }
 
+function format_skipped(skipped_cnt, pkgname) {
+	if (skipped_cnt === undefined || skipped_cnt == 0) {
+		return 0;
+	}
+	return '<a href="#skipped" onclick="filter_skipped(\'' +
+		pkgname +'\'); return false;"><span class="glyphicon ' +
+		'glyphicon-filter"></span>' + skipped_cnt + '</a>';
+}
+
 function format_status_row(status, row, n) {
 	var table_row = [];
-	var skipped_cnt;
-
-	if (row.skipped_cnt !== undefined && row.skipped_cnt > 0) {
-		skipped_cnt = row.skipped_cnt;
-		row.skipped_cnt = '<a href="#skipped" onclick="filter_skipped(\'' +
-			row.pkgname +'\'); return false;"><span class="glyphicon ' +
-			'glyphicon-filter"></span>' + skipped_cnt + '</a>';
-	}
 
 	table_row.push(n + 1);
 	if (status == "built") {
@@ -830,6 +831,10 @@ function setup_build() {
 			{
 				"sType": "numeric",
 				"sWidth": "2em",
+				"render": function(data, type, row) {
+					return type == "display" ? format_skipped(data, row[1]) :
+						data;
+				},
 			},
 			{
 				"sWidth": "7em",
@@ -850,6 +855,10 @@ function setup_build() {
 			{
 				"sWidth": "2em",
 				"sType": "numeric",
+				"render": function(data, type, row) {
+					return type == "display" ? format_skipped(data, row[1]) :
+						data;
+				},
 			},
 			{
 				"sWidth": "35em",
