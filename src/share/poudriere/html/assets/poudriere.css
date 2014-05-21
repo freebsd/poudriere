@@ -225,10 +225,15 @@ br.clear {
 	margin-bottom: 0;
 }
 
-table.dataTable.display td,
 dd {
 	word-break: break-all;
 }
+
+/*
+table.dataTable.display td {
+	word-break: break-all;
+}
+*/
 
 .nobreak,
 /* Build order */

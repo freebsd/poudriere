@@ -768,7 +768,8 @@ function applyHovering(table_id) {
 
 
 function setup_build() {
-	var columns, status, types, i, build_order_column;
+	var columns, status, types, i, build_order_column, pkgname_column,
+		origin_column;
 
 	$('#builders_table').dataTable({
 		"bFilter": false,
@@ -810,11 +811,18 @@ function setup_build() {
 		"bSearchable": false,
 	};
 
+	pkgname_column = {
+		"sWidth": "15em",
+	};
+	origin_column = {
+		"sWidth": "17em",
+	};
+
 	columns = {
 		"built": [
 			build_order_column,
-			null,
-			null,
+			pkgname_column,
+			origin_column,
 			{
 				"sWidth": "4.25em",
 				"bSortable": false,
@@ -823,8 +831,8 @@ function setup_build() {
 		],
 		"failed": [
 			build_order_column,
-			null,
-			null,
+			pkgname_column,
+			origin_column,
 			{
 				"sWidth": "6em",
 			},
@@ -842,16 +850,14 @@ function setup_build() {
 		],
 		"skipped": [
 			build_order_column,
-			null,
-			null,
-			{
-				"sWidth": "35em",
-			},
+			pkgname_column,
+			origin_column,
+			pkgname_column,
 		],
 		"ignored": [
 			build_order_column,
-			null,
-			null,
+			pkgname_column,
+			origin_column,
 			{
 				"sWidth": "2em",
 				"sType": "numeric",
@@ -861,7 +867,7 @@ function setup_build() {
 				},
 			},
 			{
-				"sWidth": "35em",
+				"sWidth": "25em",
 			},
 		],
 	};
