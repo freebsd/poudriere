@@ -341,7 +341,7 @@ function filter_skipped(pkgname) {
 
 	scrollToElement('#skipped');
 	table = $('#skipped_table').dataTable();
-	table.fnFilter(pkgname, 2);
+	table.fnFilter(pkgname, 3);
 
 	search_filter = $('#skipped_table_filter input');
 	search_filter.val(pkgname);
@@ -353,7 +353,7 @@ function filter_skipped(pkgname) {
 				'pull-right" id="resetsearch"></span>');
 
 		$("#resetsearch").click(function(e) {
-			table.fnFilter('', 2);
+			table.fnFilter('', 3);
 			search_filter.val('');
 			search_filter.prop('disabled', false);
 			search_filter.css('background-color', '');
