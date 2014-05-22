@@ -1486,6 +1486,7 @@ cleanup() {
 		jail_stop
 
 		rm -rf \
+		    ${PACKAGES}/.new_packages \
 		    ${POUDRIERE_DATA}/packages/${MASTERNAME}/.latest/.new_packages \
 		    2>/dev/null || :
 
