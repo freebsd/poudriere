@@ -148,10 +148,6 @@ elif bzgrep -q "pkg_create: make_dist: tar command failed with code" $1; then
 elif bzgrep -q "Segmentation fault" $1; then
   reason="segfault"
 
-# note: searching for string-not-found here (builds that terminated early)
-elif ! bzgrep -qE "^build of .* ended at" $1; then
-  reason="cluster"
-
 else
   reason="???"
 fi
