@@ -626,7 +626,7 @@ siginfo_handler() {
 	[ "${status}" = "index:" -o "${status#stopped:}" = "crashed:" ] && \
 	    return 0
 
-	update_stats
+	update_stats 2>/dev/null || return 0
 
 	_bget nbf stats_failed 2>/dev/null || nbf=0
 	_bget nbi stats_ignored 2>/dev/null || nbi=0
