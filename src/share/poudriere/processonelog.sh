@@ -9,8 +9,10 @@
 
 filename=$1
 
-if bzgrep -qE "(Error: mtree file ./etc/mtree/BSD.local.dist. is missing|error in pkg_delete|filesystem was touched prior to .make install|list of extra files and directories|list of files present before this port was installed|list of filesystem changes from before and after)" $1; then
+if bzgrep -qE "(Error: mtree file ./etc/mtree/BSD.local.dist. is missing|error in pkg_delete|filesystem was touched prior to .make install|list of extra files and directories|list of files present before this port was installed|list of filesystem changes from before and after|Error: Files or directories left over|Error: Filesystem touched during build)" $1; then
   reason="mtree"
+elif bzgrep -qE "(Error: Filesystem touched during stage|Error: stage-qa failures)" $1; then
+  reason="stage"
 # note: must run before the configure_error check
 elif bzgrep -qE "Configuration .* not supported" $1; then
   reason="arch"
@@ -119,7 +121,7 @@ elif bzgrep -qE "((perl|perl5.6.1):.*(not found|No such file or directory)|cp:.*
   reason="perl"
 elif bzgrep -qE "(Abort trap|Bus error|Error 127|Killed: 9|Signal 1[01])" $1; then
   reason="process_failed"
-elif bzgrep -qE "(USER.*PID.*TIME.*COMMAND|pnohang: killing make package|Killing runaway)" $1; then
+elif bzgrep -qE "(USER.*PID.*TIME.*COMMAND|pnohang: killing make package|Killing runaway|Killing timed out build)" $1; then
   reason="runaway_process"
 elif bzgrep -qE "(/usr/bin/ld: cannot find -l(pthread|XThrStub)|cannot find -lc_r|Error: pthreads are required to build this package|Please install/update your POSIX threads (pthreads) library|requires.*thread support|: The -pthread option is deprecated)" $1; then
   reason="threads"
@@ -143,8 +145,10 @@ elif bzgrep -q "/usr/bin/ld: cannot find -l" $1; then
   reason="linker_error"
 elif bzgrep -q "cd: can't cd to" $1; then
   reason="NFS"
-elif bzgrep -q "pkg_create: make_dist: tar command failed with code" $1; then
+elif bzgrep -qE "(pkg_create: make_dist: tar command failed with code|pkg-static: lstat|pkg-static DEVELOPER_MODE: Plist error:|Error: check-plist failures)" $1; then
   reason="PLIST"
+elif bzgrep -q "pkg-static: package field incomplete" $1; then
+  reason="MANIFEST"
 elif bzgrep -q "Segmentation fault" $1; then
   reason="segfault"
 
