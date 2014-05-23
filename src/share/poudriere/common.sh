@@ -1469,7 +1469,7 @@ cleanup() {
 	if [ -n "${MASTERMNT}" -a -n "${MASTERNAME}" ] && was_a_jail_run; then
 		# If this is a builder, don't cleanup, the master will handle that.
 		if [ -n "${MY_JOBID}" ]; then
-			[ -n "${PKGNAME}" ] && clean_pool ${PKGNAME} 1 || :
+			[ -n "${PKGNAME}" ] && clean_pool ${PKGNAME} "" 1 || :
 			return 0
 		fi
 
@@ -2148,7 +2148,8 @@ stop_builders() {
 
 deadlock_detected() {
 	local always_fail=${1:-1}
-	local crashed_packages dependency_cycles
+	local crashed_packages dependency_cycles deps pkgname origin
+	local failed_phase log
 
 	# If there are still packages marked as "building" they have crashed
 	# and it's likely some poudriere or system bug
@@ -2175,6 +2176,34 @@ ${dependency_cycles}"
 	fi
 
 	[ ${always_fail} -eq 1 ] || return 0
+
+	dead_packages=
+	highest_dep=
+	while read deps pkgname; do
+		[ -z "${highest_dep}" ] && highest_dep=${deps}
+		[ ${deps} -ne ${highest_dep} ] && break
+		dead_packages="${dead_packages} ${pkgname}"
+	done <<-EOF
+	$(find ${MASTERMNT}/poudriere/deps -mindepth 2 | \
+	    sed -e "s,${MASTERMNT}/poudriere/deps/,," -e 's:/: :' | \
+	    tsort -D 2>/dev/null | sort -nr)
+	EOF
+
+	if [ -n "${dead_packages}" ]; then
+		failed_phase="stuck_in_queue"
+		_log_path log
+		for pkgname in ${dead_packages}; do
+			cache_get_origin origin "${pkgname}"
+			badd ports.failed "${origin} ${pkgname} ${failed_phase} ${failed_phase}"
+			COLOR_ARROW="${COLOR_FAIL}" job_msg \
+			    "${COLOR_FAIL}Finished build of ${COLOR_PORT}${origin}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
+			run_hook pkgbuild failed "${origin}" "${pkgname}" \
+			    "${failed_phase}" \
+			    "${log}/logs/errors/${pkgname}.log"
+			clean_pool "${pkgname}" "${origin}" 1
+		done
+		return 0
+	fi
 
 	# No cycle, there's some unknown poudriere bug
 	err 1 "Unknown stuck queue bug detected. Please submit the entire build output to poudriere developers.
@@ -2398,14 +2427,16 @@ parallel_build() {
 }
 
 clean_pool() {
-	[ $# -ne 2 ] && eargs clean_pool pkgname clean_rdepends
+	[ $# -ne 3 ] && eargs clean_pool pkgname origin clean_rdepends
 	local pkgname=$1
-	local clean_rdepends=$2
-	local port skipped_origin
+	local port=$2
+	local clean_rdepends=$3
+	local skipped_origin
 
 	[ -n "${MY_JOBID}" ] && bset ${MY_JOBID} status "clean_pool:"
 
-	[ ${clean_rdepends} -eq 1 ] && cache_get_origin port "${pkgname}"
+	[ -z "${port}" -a ${clean_rdepends} -eq 1 ] && \
+	    cache_get_origin port "${pkgname}"
 
 	# Cleaning queue (pool is cleaned here)
 	sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT}" "${pkgname}" ${clean_rdepends} | sort -u | while read skipped_pkgname; do
@@ -2546,7 +2577,7 @@ build_pkg() {
 		fi
 	fi
 
-	clean_pool ${PKGNAME} ${clean_rdepends}
+	clean_pool ${PKGNAME} ${port} ${clean_rdepends}
 
 	stop_build ${portdir} ${build_failed}
 
