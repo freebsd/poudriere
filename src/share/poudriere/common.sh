@@ -611,7 +611,7 @@ siginfo_handler() {
 	[ "${POUDRIERE_BUILD_TYPE}" != "bulk" ] && return 0
 
 	trappedinfo=1
-	local status nbb nbf nbs nbi nbq ndone nbtobuild
+	local status nbb nbf nbs nbi nbq ndone nbtobuild buildname
 	local log
 	local queue_width=2
 	local now
@@ -649,7 +649,9 @@ siginfo_handler() {
 	elapsed=${_elapsed_time}
 	buildtime=$(date -j -u -r ${elapsed} "+${DURATION_FORMAT}")
 
-	printf "[${MASTERNAME}] [${status}] Queued: %-${queue_width}d Built: %-${queue_width}d Failed: %-${queue_width}d  Skipped: %-${queue_width}d  Ignored: %-${queue_width}d  Tobuild: %-${queue_width}d  Time: %s  \n" \
+	_bget buildname buildname 2>/dev/null || :
+
+	printf "[${MASTERNAME}] [${buildname}] [${status}] Queued: %-${queue_width}d Built: %-${queue_width}d Failed: %-${queue_width}d  Skipped: %-${queue_width}d  Ignored: %-${queue_width}d  Tobuild: %-${queue_width}d  Time: %s  \n" \
 	    ${nbq} ${nbb} ${nbf} ${nbs} ${nbi} ${nbtobuild} "${buildtime}"
 
 	# Skip if stopping or starting jobs or stopped.
