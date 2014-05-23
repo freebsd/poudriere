@@ -133,6 +133,8 @@ elif bzgrep -qi 'read-only file system' $1; then
 # types of errors, and thus need to be evaluated after all the specific
 # cases.
 
+elif bzgrep -qE "\.(c|cc|cxx|cpp|h|y)[0-9:]+ error: .*-Werror" $1; then
+  reason="clang_werror"
 elif bzgrep -qE 'cc1.*warnings being treated as errors' $1; then
   reason="compiler_error"
 elif bzgrep -q 'tar: Error exit delayed from previous errors' $1; then
