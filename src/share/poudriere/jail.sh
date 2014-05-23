@@ -228,14 +228,22 @@ update_jail() {
 }
 
 build_and_install_world() {
+	mkdir -p ${JAILMNT}/usr/bin
 	case "${ARCH}" in
+	mips)
+		cp `which qemu-mips` ${JAILMNT}/usr/bin/qemu-mips
+		export TARGET=mips
+		;;
 	mips64)
+		cp `which qemu-mips64` ${JAILMNT}/usr/bin/qemu-mips64
 		export TARGET=mips
 		;;
 	armv6)
+		cp `which qemu-arm` ${JAILMNT}/usr/bin/qemu-arm
 		export TARGET=arm
 		;;
 	esac
+
 	export TARGET_ARCH=${ARCH}
 	export SRC_BASE=${JAILMNT}/usr/src
 	mkdir -p ${JAILMNT}/etc
@@ -280,18 +288,6 @@ build_and_install_world() {
 	    distrib-dirs || err 1 "Failed to 'make distrib-dirs'"
 	${make_cmd} -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distribution ||
 	    err 1 "Failed to 'make distribution'"
-
-	case "${ARCH}" in
-	mips)
-		cp `which qemu-mips` ${JAILMNT}/usr/bin/qemu-mips
-		;;
-	mips64)
-		cp `which qemu-mips64` ${JAILMNT}/usr/bin/qemu-mips64
-		;;
-	armv6)
-		cp `which qemu-arm` ${JAILMNT}/usr/bin/qemu-arm
-		;;
-	esac
 }
 
 install_from_svn() {
