@@ -1482,7 +1482,7 @@ cleanup() {
 	if [ -n "${MASTERMNT}" -a -n "${MASTERNAME}" ] && was_a_jail_run; then
 		# If this is a builder, don't cleanup, the master will handle that.
 		if [ -n "${MY_JOBID}" ]; then
-			[ -n "${PKGNAME}" ] && clean_pool ${PKGNAME} "" 1 || :
+			[ -n "${PKGNAME}" ] && clean_pool ${PKGNAME} "" "failed" || :
 			return 0
 		fi
 
@@ -2213,7 +2213,7 @@ ${dependency_cycles}"
 			run_hook pkgbuild failed "${origin}" "${pkgname}" \
 			    "${failed_phase}" \
 			    "${log}/logs/errors/${pkgname}.log"
-			clean_pool "${pkgname}" "${origin}" 1
+			clean_pool "${pkgname}" "${origin}" "${failed_phase}" 
 		done
 		return 0
 	fi
@@ -2433,20 +2433,20 @@ clean_pool() {
 	[ $# -ne 3 ] && eargs clean_pool pkgname origin clean_rdepends
 	local pkgname=$1
 	local port=$2
-	local clean_rdepends=$3
+	local clean_rdepends="$3"
 	local skipped_origin
 
 	[ -n "${MY_JOBID}" ] && bset ${MY_JOBID} status "clean_pool:"
 
-	[ -z "${port}" -a ${clean_rdepends} -eq 1 ] && \
+	[ -z "${port}" -a -n "${clean_rdepends}" ] && \
 	    cache_get_origin port "${pkgname}"
 
 	# Cleaning queue (pool is cleaned here)
-	sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT}" "${pkgname}" ${clean_rdepends} | sort -u | while read skipped_pkgname; do
+	sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT}" "${pkgname}" "${clean_rdepends}" | sort -u | while read skipped_pkgname; do
 		cache_get_origin skipped_origin "${skipped_pkgname}"
 		badd ports.skipped "${skipped_origin} ${skipped_pkgname} ${pkgname}"
 		COLOR_ARROW="${COLOR_SKIP}" \
-		    job_msg "${COLOR_SKIP}Skipping build of ${COLOR_PORT}${skipped_origin}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${port}${COLOR_SKIP} failed"
+		    job_msg "${COLOR_SKIP}Skipping build of ${COLOR_PORT}${skipped_origin}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${port}${COLOR_SKIP} ${clean_rdepends}"
 		run_hook pkgbuild skipped "${skipped_origin}" "${skipped_pkgname}" "${port}"
 	done
 
@@ -2471,7 +2471,7 @@ build_pkg() {
 	local name
 	local mnt
 	local failed_status failed_phase cnt
-	local clean_rdepends=0
+	local clean_rdepends
 	local log
 	local ignore
 	local errortype
@@ -2532,7 +2532,7 @@ build_pkg() {
 		msg "Ignoring ${port}: ${ignore}"
 		badd ports.ignored "${port} ${PKGNAME} ${ignore}"
 		COLOR_ARROW="${COLOR_IGNORE}" job_msg "${COLOR_IGNORE}Finished build of ${COLOR_PORT}${port}${COLOR_IGNORE}: Ignored: ${ignore}"
-		clean_rdepends=1
+		clean_rdepends="ignored"
 		run_hook pkgbuild ignored "${port}" "${PKGNAME}" "${ignore}"
 	else
 		build_port ${portdir} || ret=$?
@@ -2573,14 +2573,14 @@ build_pkg() {
 				"${log}/logs/errors/${PKGNAME}.log"
 			# ret=2 is a test failure
 			if [ ${ret} -eq 2 ]; then
-				clean_rdepends=0
+				clean_rdepends=
 			else
-				clean_rdepends=1
+				clean_rdepends="failed"
 			fi
 		fi
 	fi
 
-	clean_pool ${PKGNAME} ${port} ${clean_rdepends}
+	clean_pool ${PKGNAME} ${port} "${clean_rdepends}"
 
 	stop_build ${portdir} ${build_failed}
 
