@@ -2248,17 +2248,7 @@ queue_empty() {
 mark_done() {
 	[ $# -eq 1 ] || eargs mark_done pkgname
 	local pkgname="$1"
-	local origin
-	local cache_dir
 
-	if [ "${TRACK_BUILDTIMES}" != "no" ]; then
-		cache_get_origin origin "${pkgname}"
-		get_cache_dir cache_dir
-
-		echo -n "${origin} $(date +%s) " >> ${cache_dir}/buildtimes
-		stat -f "%m" ${MASTERMNT}/poudriere/building/${pkgname} >> \
-			${cache_dir}/buildtimes
-	fi
 	rmdir ${MASTERMNT}/poudriere/building/${pkgname}
 }
 
@@ -3928,7 +3918,6 @@ fi
 : ${KEEP_OLD_PACKAGES_COUNT:=5}
 : ${COMMIT_PACKAGES_ON_FAILURE:=yes}
 : ${SAVE_WRKDIR:=no}
-: ${TRACK_BUILDTIMES:=no}
 : ${CHECK_CHANGED_DEPS:=yes}
 : ${CHECK_CHANGED_OPTIONS:=verbose}
 : ${NO_RESTRICTED:=no}
