@@ -607,27 +607,14 @@ show_log_info() {
 	return 0
 }
 
-siginfo_handler() {
-	[ "${POUDRIERE_BUILD_TYPE}" != "bulk" ] && return 0
-
-	trappedinfo=1
+show_build_summary() {
 	local status nbb nbf nbs nbi nbq ndone nbtobuild buildname
-	local log
-	local queue_width=2
-	local now
-	local j elapsed job_id_color
-	local pkgname origin phase buildtime started
-	local format_origin_phase format_phase
-
-	_bget nbq stats_queued 2>/dev/null || nbq=0
-	[ -n "${nbq}" ] || return 0
-
-	_bget status status 2>/dev/null || status=unknown
-	[ "${status}" = "index:" -o "${status#stopped:}" = "crashed:" ] && \
-	    return 0
+	local log now elapsed buildtime queue_width
 
 	update_stats 2>/dev/null || return 0
 
+	_bget nbq stats_queued 2>/dev/null || nbq=0
+	_bget status status 2>/dev/null || status=unknown
 	_bget nbf stats_failed 2>/dev/null || nbf=0
 	_bget nbi stats_ignored 2>/dev/null || nbi=0
 	_bget nbs stats_skipped 2>/dev/null || nbs=0
@@ -641,18 +628,42 @@ siginfo_handler() {
 		queue_width=4
 	elif [ ${nbq} -gt 99 ]; then
 		queue_width=3
+	else
+		queue_width=2
 	fi
 
 	_log_path log
+	_bget buildname buildname 2>/dev/null || :
 	now=$(date +%s)
+
 	calculate_elapsed ${now} ${log}
 	elapsed=${_elapsed_time}
 	buildtime=$(date -j -u -r ${elapsed} "+${DURATION_FORMAT}")
 
-	_bget buildname buildname 2>/dev/null || :
-
-	printf "[${MASTERNAME}] [${buildname}] [${status}] Queued: %-${queue_width}d Built: %-${queue_width}d Failed: %-${queue_width}d  Skipped: %-${queue_width}d  Ignored: %-${queue_width}d  Tobuild: %-${queue_width}d  Time: %s  \n" \
+	printf "[${MASTERNAME}] [${buildname}] [${status}] Queued: %-${queue_width}d ${COLOR_SUCCESS}Built: %-${queue_width}d ${COLOR_FAIL}Failed: %-${queue_width}d ${COLOR_SKIP}Skipped: %-${queue_width}d ${COLOR_IGNORE}Ignored: %-${queue_width}d${COLOR_RESET} Tobuild: %-${queue_width}d  Time: %s\n" \
 	    ${nbq} ${nbb} ${nbf} ${nbs} ${nbi} ${nbtobuild} "${buildtime}"
+}
+
+siginfo_handler() {
+	[ "${POUDRIERE_BUILD_TYPE}" != "bulk" ] && return 0
+
+	trappedinfo=1
+	local status
+	local now
+	local j elapsed job_id_color
+	local pkgname origin phase buildtime started
+	local format_origin_phase format_phase
+
+	_bget nbq stats_queued 2>/dev/null || nbq=0
+	[ -n "${nbq}" ] || return 0
+
+	_bget status status 2>/dev/null || status=unknown
+	[ "${status}" = "index:" -o "${status#stopped:}" = "crashed:" ] && \
+	    return 0
+
+	show_build_summary
+
+	now=$(date +%s)
 
 	# Skip if stopping or starting jobs or stopped.
 	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" \

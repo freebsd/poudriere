@@ -303,7 +303,7 @@ run_hook bulk done ${nbbuilt} ${nbfailed} ${nbignored} ${nbskipped}
 bset status "done:"
 cleanup
 
-msg "[${MASTERNAME}] ${COLOR_SUCCESS}${nbbuilt} built${COLOR_RESET}, ${COLOR_FAIL}${nbfailed} failed${COLOR_RESET}, ${COLOR_SKIP}${nbskipped} skipped${COLOR_RESET}, ${COLOR_IGNORE}${nbignored} ignored${COLOR_RESET}"
+show_build_summary
 show_log_info
 
 set +e
