@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd May 21, 2014
+.Dd May 23, 2014
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -491,6 +491,10 @@ and are not ABI-compatible.
 .It Fl v
 This will show more information during the build.
 Specify twice to enable debug output.
+.It Fl w
+Save WRKDIR on build failure.
+The WRKDIR will be tarred up into
+.Sy ${POUDRIERE_DATA}/wrkdirs .
 .It Fl z Ar set
 This specifies which SET to use for the build.
 See

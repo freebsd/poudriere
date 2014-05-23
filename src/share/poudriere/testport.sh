@@ -56,6 +56,7 @@ Options:
                    a stable ABI.
     -v          -- Be verbose; show more information. Use twice to enable
                    debug output
+    -w          -- Save WRKDIR on failed builds
     -z set      -- Specify which SET to use
 EOF
 	exit 1
@@ -73,7 +74,7 @@ INTERACTIVE_MODE=0
 PTNAME="default"
 BUILD_REPO=1
 
-while getopts "o:cniIj:J:kNp:PsSvz:" FLAG; do
+while getopts "o:cniIj:J:kNp:PsSvwz:" FLAG; do
 	case "${FLAG}" in
 		c)
 			CONFIGSTR=1
@@ -117,6 +118,9 @@ while getopts "o:cniIj:J:kNp:PsSvz:" FLAG; do
 			;;
 		S)
 			SKIP_RECURSIVE_REBUILD=1
+			;;
+		w)
+			SAVE_WRKDIR=1
 			;;
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"

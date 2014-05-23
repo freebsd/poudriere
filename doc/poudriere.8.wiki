@@ -413,6 +413,10 @@ Don't recrusively rebuild packages affected by other packages requiring incremen
 <dd class="list-tag" style="margin-left: 11.00ex;">
 This will show more information during the build. Specify twice to enable debug output.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;w</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Save WRKDIR on build failure. The WRKDIR will be tarred up into <span class="symb">${POUDRIERE_DATA}/wrkdirs</span>.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;z</b> <i class="arg">set</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
 This specifies which SET to use for the build. See <i class="link-sec"><a class="link-sec" href="#x435553544f4d49534154494f4e">CUSTOMISATION</a></i> for examples of how this is used.</dd>
@@ -828,7 +832,7 @@ Be also careful to not begin the name of the jail by a number if you are not in 
 <tbody>
 <tr>
 <td class="foot-date">
-May 21, 2014</td>
+May 23, 2014</td>
 <td class="foot-os" align="right">
 FreeBSD 11.0</td>
 </tr>

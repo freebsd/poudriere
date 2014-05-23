@@ -45,6 +45,7 @@ _bulk=(
 	'-J[Specify the number of jobs you want to run in parallel]::'
 	'-R[Remove RESTRICTED packages after building]'
 	'-v[Be verbose; show more information. Specify twice to enable debug output.]'
+        '-w[Save WRKDIR on failed builds]'
 	'-z[Specify on which SET to use]::'
 )
 
@@ -114,6 +115,7 @@ _testport=(
         '-s[skip sanity/incremental rebuild checks]'
         '-S[skip rebuild of packages for which their dependencies require a rebuild]'
 	'-v[Be verbose; show more information. Specify twice to enable debug output.]'
+        '-w[Save WRKDIR on failed builds]'
 	'-z[Specify on which SET to use]::'
 )
 
