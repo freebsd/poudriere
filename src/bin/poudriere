@@ -110,7 +110,7 @@ case "${CMD}" in
 esac
 
 case "${CMD}" in
-	bulk|distclean|daemon|jail|ports|options|pkgclean|queue|status|testport)
+	api|bulk|distclean|daemon|jail|ports|options|pkgclean|queue|status|testport)
 		;;
 	*)
 		echo "Unknown command '${CMD}'"
