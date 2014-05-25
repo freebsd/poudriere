@@ -3665,6 +3665,14 @@ clean_restricted() {
 	mount_packages -o ro
 }
 
+sign_pkg() {
+	[ $# -eq 1 ] || eargs sign_pkg pkgfile
+        local pkgfile="$1"
+
+        rm -f "${pkgfile}.sig"
+        sha256 -q "${pkgfile}" | ${SIGNING_COMMAND} > "${pkgfile}.sig"
+}
+
 build_repo() {
 	local origin
 
@@ -3692,6 +3700,12 @@ build_repo() {
 			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 		fi
 		cp ${MASTERMNT}/tmp/packages/* ${PACKAGES}/
+
+		# Sign the ports-mgmt/pkg package for bootstrap
+		if [ -n "${SIGNING_COMMAND}" ] && \
+		    [ -e "${PACKAGES}/Latest/pkg.txz" ]; then
+			sign_pkg "${PACKAGES}/Latest/pkg.txz"
+		fi
 	else
 		msg "Preparing INDEX"
 		bset status "index:"
