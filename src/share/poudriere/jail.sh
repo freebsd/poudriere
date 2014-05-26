@@ -113,7 +113,7 @@ delete_jail() {
 		err 1 "Unable to delete jail ${JAILNAME}: it is running"
 	msg_n "Removing ${JAILNAME} jail..."
 	TMPFS_ALL=0 destroyfs ${JAILMNT} jail
-	get_cache_dir cache_dir
+	cache_dir="${POUDRIERE_DATA}/cache/${JAILNAME}-*"
 	rm -rf ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} || :
 	echo " done"
 }
