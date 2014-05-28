@@ -849,7 +849,7 @@ markfs() {
 ./compat/linux/proc
 ./dev/*
 ./distfiles/*
-./new_packages/*
+./npkg/*
 ./packages/*
 ./portdistfiles/*
 ./poudriere/*
@@ -866,7 +866,7 @@ EOF
 ./compat/linux/proc
 ./dev/*
 ./distfiles/*
-./new_packages/*
+./npkg/*
 ./packages/*
 ./portdistfiles/*
 ./poudriere/*
@@ -894,7 +894,7 @@ EOF
 ./etc/pwd.db
 ./etc/shells
 ./etc/spwd.db
-./new_packages/*
+./npkg/*
 ./packages/*
 ./portdistfiles/*
 ./poudriere/*
@@ -945,7 +945,7 @@ do_jail_mounts() {
 		    ${mnt}/${LOCALBASE:-/usr/local} \
 		    ${mnt}/distfiles \
 		    ${mnt}/packages \
-		    ${mnt}/new_packages \
+		    ${mnt}/npkg \
 		    ${mnt}${HOME}/.ccache \
 		    ${mnt}/var/db/ports
 	fi
@@ -1520,8 +1520,8 @@ cleanup() {
 		jail_stop
 
 		rm -rf \
-		    ${PACKAGES}/.new_packages \
-		    ${POUDRIERE_DATA}/packages/${MASTERNAME}/.latest/.new_packages \
+		    ${PACKAGES}/.npkg \
+		    ${POUDRIERE_DATA}/packages/${MASTERNAME}/.latest/.npkg \
 		    2>/dev/null || :
 
 	fi
@@ -1837,14 +1837,14 @@ _real_build_port() {
 		print_phase_header ${phase}
 
 		if [ "${phase}" = "package" ]; then
-			echo "PACKAGES=/new_packages" >> ${mnt}/etc/make.conf
+			echo "PACKAGES=/npkg" >> ${mnt}/etc/make.conf
 			# Create sandboxed staging dir for new package for this build
-			rm -rf "${PACKAGES}/.new_packages/${PKGNAME}"
-			mkdir -p "${PACKAGES}/.new_packages/${PKGNAME}"
+			rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
+			mkdir -p "${PACKAGES}/.npkg/${PKGNAME}"
 			${NULLMOUNT} \
-				"${PACKAGES}/.new_packages/${PKGNAME}" \
-				${mnt}/new_packages
-			chown -R ${JUSER} ${mnt}/new_packages
+				"${PACKAGES}/.npkg/${PKGNAME}" \
+				${mnt}/npkg
+			chown -R ${JUSER} ${mnt}/npkg
 		fi
 
 		if [ "${phase#*-}" = "depends" ]; then
@@ -2072,12 +2072,12 @@ Try testport with -n to use PREFIX=LOCALBASE"
 		fi
 	done
 
-	if [ -d "${PACKAGES}/.new_packages/${PKGNAME}" ]; then
+	if [ -d "${PACKAGES}/.npkg/${PKGNAME}" ]; then
 		# everything was fine we can copy package the package to the package
 		# directory
-		find ${PACKAGES}/.new_packages/${PKGNAME} \
+		find ${PACKAGES}/.npkg/${PKGNAME} \
 			-mindepth 1 \( -type f -or -type l \) | while read pkg_path; do
-			pkg_file=${pkg_path#${PACKAGES}/.new_packages/${PKGNAME}}
+			pkg_file=${pkg_path#${PACKAGES}/.npkg/${PKGNAME}}
 			pkg_base=${pkg_file%/*}
 			mkdir -p ${PACKAGES}/${pkg_base}
 			mv ${pkg_path} ${PACKAGES}/${pkg_base}
@@ -2617,8 +2617,8 @@ stop_build() {
 	local mnt
 
 	_my_path mnt
-	umount -f ${mnt}/new_packages 2>/dev/null || :
-	rm -rf "${PACKAGES}/.new_packages/${PKGNAME}"
+	umount -f ${mnt}/npkg 2>/dev/null || :
+	rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
 
 	# 2 = HEADER+ps itself
 	if [ $(injail ps aux | wc -l) -ne 2 ]; then
