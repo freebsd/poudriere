@@ -102,11 +102,26 @@ err() {
 }
 
 _mastermnt() {
-	local hashed_name
+	local hashed_name mnt mnttest mnamelen
 
-	hashed_name=$(sha256 -qs "${MASTERNAME}" | \
-	    awk '{print substr($0, 0, 6)}')
-	setvar "$1" "${POUDRIERE_DATA}/.m/${hashed_name}/ref"
+	mnamelen=$(grep "#define[[:space:]]MNAMELEN" \
+	    /usr/include/sys/mount.h 2>/dev/null | awk '{print $3}')
+
+	mnt="${POUDRIERE_DATA}/.m/${MASTERNAME}/ref"
+	mnttest="${mnt}/var/db/ports"
+
+	if [ -n "${mnamelen}" ] && \
+	    [ ${#mnttest} -ge $((${mnamelen} - 1)) ]; then
+		hashed_name=$(sha256 -qs "${MASTERNAME}" | \
+		    awk '{print substr($0, 0, 6)}')
+		mnt="${POUDRIERE_DATA}/.m/${hashed_name}/ref"
+		mnttest="${mnt}/var/db/ports"
+		[ ${#mnttest} -ge $((${mnamelen} - 1)) ] && \
+		    err 1 "Mountpath '${mnt}' exceeds system MNAMELEN limit of ${mnamelen}. Unable to mount. Try shortening BASEFS."
+		msg_warn "MASTERNAME '${MASTERNAME}' too long for mounting, using hashed version of '${hashed_name}'"
+	fi
+
+	setvar "$1" "${mnt}"
 }
 
 _my_path() {
