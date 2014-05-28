@@ -1477,6 +1477,35 @@ setup_makeconf() {
 	sed -i '' '/^DEVELOPER=/d' ${dst_makeconf}
 }
 
+include_poudriere_confs() {
+	local files file flag
+
+	# Spy on cmdline arguments so this function is not needed in
+	# every new sub-command file, which could lead to missing it.
+	while getopts "j:p:z:" flag 2>/dev/null; do
+		case ${flag} in
+			j) jail="${OPTARG}" ;;
+			p) ptname="${OPTARG}" ;;
+			z) setname="${OPTARG}" ;;
+			*) ;;
+		esac
+	done
+
+	files="${setname} ${ptname} ${jail}"
+	[ -n "${jail}" -a -n "${ptname}" ] && \
+	    files="${files} ${jail}-${ptname}"
+	[ -n "${jail}" -a -n "${setname}" ] && \
+	    files="${files} ${jail}-${setname}"
+	[ -n "${jail}" -a -n "${setname}" -a -n "${ptname}" ] && \
+	    files="${files} ${jail}-${ptname}-${setname}"
+	for file in ${files}; do
+		file="${POUDRIERED}/${file}-poudriere.conf"
+		[ -r "${file}" ] && . "${file}"
+	done
+
+	return 0
+}
+
 jail_stop() {
 	[ $# -ne 0 ] && eargs jail_stop
 	local last_status
@@ -3766,11 +3795,16 @@ STATUS=0 # out of jail #
 
 [ -z "${POUDRIERE_ETC}" ] &&
     POUDRIERE_ETC=$(realpath ${SCRIPTPREFIX}/../../etc)
-[ -f ${POUDRIERE_ETC}/poudriere.conf ] ||
-	err 1 "Unable to find ${POUDRIERE_ETC}/poudriere.conf"
-
-. ${POUDRIERE_ETC}/poudriere.conf
 POUDRIERED=${POUDRIERE_ETC}/poudriere.d
+if [ -r "${POUDRIERE_ETC}/poudriere.conf" ]; then
+	. "${POUDRIERE_ETC}/poudriere.conf"
+elif [ -r "${POUDRIERED}/poudriere.conf" ]; then
+	. "${POUDRIERED}/poudriere.conf"
+else
+	err 1 "Unable to find a readable poudriere.conf in ${POUDRIERE_ETC} or ${POUDRIERED}"
+fi
+include_poudriere_confs "$@"
+
 LIBEXECPREFIX=$(realpath ${SCRIPTPREFIX}/../../libexec/poudriere)
 AWKPREFIX=${SCRIPTPREFIX}/awk
 HTMLPREFIX=${SCRIPTPREFIX}/html

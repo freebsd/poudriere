@@ -611,12 +611,16 @@ If specified, the path to poudriere's config directory. Defaults to /usr/local/e
 <h1 id="x46494c4553">FILES</h1><dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
 <dt class="list-tag" style="margin-top: 0.00em;">
 <i class="file">POUDRIERE_ETC/poudriere.conf</i></dt>
-<dd class="list-tag" style="margin-left: 32.00ex;">
+<dd class="list-tag" style="margin-left: 44.00ex;">
 See self-documented <i class="arg">/usr/local/etc/poudriere.conf.sample</i> for example.</dd>
 <dt class="list-tag" style="margin-top: 0.00em;">
+<i class="file">POUDRIERE_ETC/poudriere.d/poudriere.conf</i></dt>
+<dd class="list-tag" style="margin-left: 44.00ex;">
+The configuration can be stored in the poudriere.d directory as well.</dd>
+<dt class="list-tag" style="margin-top: 0.00em;">
 <i class="file">POUDRIERE_ETC/poudriere.d</i></dt>
-<dd class="list-tag" style="margin-left: 32.00ex;">
-This directory contains <i class="arg">make.conf</i> files for your different jails.</dd>
+<dd class="list-tag" style="margin-left: 44.00ex;">
+This directory contains various configuration files for the different jails.</dd>
 </dl>
 </div>
 <div class="section">
@@ -766,6 +770,37 @@ As a starter, you may want to copy an existing /var/db/ports/ to /usr/local/etc/
 </blockquote>
 </div>
 <div class="subsection">
+<h2 id="x437265617465206f7074696f6e616c20706f756472696572652e636f6e66">Create optional poudriere.conf</h2> You can also specify an optional poudriere.conf that is pulled in depending on the build. Any of the following are allowed and will all be used in the order shown:<p>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/poudriere.conf</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;setname&gt;-poudriere.conf</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;tree&gt;-poudriere.conf</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-poudriere.conf</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-&lt;tree&gt;-poudriere.conf</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-&lt;setname&gt;-poudriere.conf</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-&lt;tree&gt;-&lt;setname&gt;-poudriere.conf</code></div>
+</blockquote>
+</div>
+<div class="subsection">
 <h2 id="x437265617465206f7074696f6e616c206d616b652e636f6e66">Create optional make.conf</h2> You can also specify a global make.conf which will be used for all the jails. Any of the following are allowed and will all be used in the order shown:<p>
 <blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
 <div class="display">
@@ -832,7 +867,7 @@ Be also careful to not begin the name of the jail by a number if you are not in 
 <tbody>
 <tr>
 <td class="foot-date">
-May 23, 2014</td>
+May 27, 2014</td>
 <td class="foot-os" align="right">
 FreeBSD 11.0</td>
 </tr>

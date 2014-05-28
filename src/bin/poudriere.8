@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd May 23, 2014
+.Dd May 27, 2014
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -678,15 +678,15 @@ If specified, the path to poudriere's config directory.
 Defaults to /usr/local/etc.
 .El
 .Sh FILES
-.Bl -tag -width ".Pa POUDRIERE_ETC/poudriere.conf" -compact
+.Bl -tag -width ".Pa POUDRIERE_ETC/poudriere.d/poudriere.conf" -compact
 .It Pa POUDRIERE_ETC/poudriere.conf
 See self-documented
 .Ar /usr/local/etc/poudriere.conf.sample
 for example.
+.It Pa POUDRIERE_ETC/poudriere.d/poudriere.conf
+The configuration can be stored in the poudriere.d directory as well.
 .It Pa POUDRIERE_ETC/poudriere.d
-This directory contains
-.Ar make.conf
-files for your different jails.
+This directory contains various configuration files for the different jails.
 .El
 .Sh EXIT STATUS
 .Ex -std
@@ -834,6 +834,18 @@ Any of the following are allowed and will all be used in the order shown:
 .Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-blacklist
 .Dl /usr/local/etc/poudriere.d/<jailname>-<setname>-blacklist
 .Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-blacklist
+.Ss Create optional poudriere.conf
+You can also specify an optional poudriere.conf that is pulled in
+depending on the build.
+Any of the following are allowed and will all be used in the order shown:
+.Pp
+.Dl /usr/local/etc/poudriere.d/poudriere.conf
+.Dl /usr/local/etc/poudriere.d/<setname>-poudriere.conf
+.Dl /usr/local/etc/poudriere.d/<tree>-poudriere.conf
+.Dl /usr/local/etc/poudriere.d/<jailname>-poudriere.conf
+.Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-poudriere.conf
+.Dl /usr/local/etc/poudriere.d/<jailname>-<setname>-poudriere.conf
+.Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-poudriere.conf
 .Ss Create optional make.conf
 You can also specify a global make.conf which will be used for all the
 jails.
