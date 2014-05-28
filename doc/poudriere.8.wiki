@@ -575,7 +575,11 @@ Show a more compact output and do not include some columns.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;f</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Show finished builds, not just currently running. This is implied by the <b class="flag">&#45;B</b> and <b class="flag">&#45;a</b> flags.</dd>
+Show finished builds, not just currently running. This is implied by the <b class="flag">&#45;a</b>, <b class="flag">&#45;B</b> and <b class="flag">&#45;r</b> flags.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">&#45;H</b></dt>
+<dd class="list-tag" style="margin-left: 11.00ex;">
+Do not print headers and separate fields by a single tab instead of arbitrary white space.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;j</b> <i class="arg">name</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
@@ -589,9 +593,9 @@ Show logs instead of URL.</dd>
 <dd class="list-tag" style="margin-left: 11.00ex;">
 This flag specifies which ports <i class="arg">tree</i> to filter builds by.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
-<b class="flag">&#45;H</b></dt>
+<b class="flag">&#45;r</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Do not print headers and separate fields by a single tab instead of arbitrary white space.</dd>
+Show build results. This implies the <b class="flag">&#45;f</b> flag.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;z</b> <i class="arg">set</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">

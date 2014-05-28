@@ -31,7 +31,7 @@ poudriere status [options]
 Options:
     -a          -- Show all builds, not just latest. This implies -f.
     -f          -- Show finished builds as well. This is default
-                   if -B or -a are specified.
+                   if -a, -B or -r are specified.
     -b          -- Display status of each builder for the matched build.
     -B name     -- What buildname to use (must be unique, defaults to
                    "latest"). This implies -f.
@@ -41,6 +41,7 @@ Options:
     -j name     -- Run on the given jail
     -p tree     -- Specify on which ports tree to match for the build.
     -l          -- Show logs instead of URL.
+    -r          -- Show results. This implies -f.
     -z set      -- Specify which SET to match for the build. Use '0' to only
                    match on empty sets.
 EOF
@@ -59,11 +60,12 @@ COMPACT=0
 URL=1
 BUILDER_INFO=0
 BUILDNAME=
+RESULTS=0
 SUMMARY=0
 
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "abB:cfHj:lp:z:" FLAG; do
+while getopts "abB:cfHj:lp:rz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			ALL=1
@@ -95,6 +97,10 @@ while getopts "abB:cfHj:lp:z:" FLAG; do
 		H)
 			SCRIPT_MODE=1
 			;;
+		r)
+			RESULTS=1
+			SHOW_FINISHED=1
+			;;
 		z)
 			SETNAME="${OPTARG}"
 			;;
@@ -106,7 +112,7 @@ done
 
 shift $((OPTIND-1))
 
-[ ${BUILDER_INFO} -eq 0 ] && \
+[ ${BUILDER_INFO} -eq 0 -a ${RESULTS} -eq 0 ] && \
     SUMMARY=1
 
 # Default to "latest" if not using -a and no -B specified
@@ -336,12 +342,21 @@ show_builder_info() {
 	return 0
 }
 
-case "${SUMMARY}${BUILDER_INFO}" in
-	10)
+show_results() {
+	for_each_job show_build_results
+
+	return 0
+}
+
+case "${SUMMARY}${BUILDER_INFO}${RESULTS}" in
+	100)
 		show_summary
 		;;
-	01)
+	010)
 		show_builder_info
+		;;
+	001)
+		show_results
 		;;
 	*)
 		usage

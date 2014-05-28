@@ -257,14 +257,7 @@ bset status "building:"
 
 parallel_build ${JAILNAME} ${PTNAME} ${SETNAME}
 
-failed=$(bget ports.failed | awk '{print $1 ":" $3 }' | xargs echo)
-built=$(bget ports.built | awk '{print $1}' | xargs echo)
-ignored=$(bget ports.ignored | awk '{print $1}' | xargs echo)
-skipped=$(bget ports.skipped | awk '{print $1}' | sort -u | xargs echo)
 _bget nbbuilt stats_built
-_bget nbfailed stats_failed
-_bget nbignored stats_ignored
-_bget nbskipped stats_skipped
 # Always create repository if it is missing (but still respect -T)
 if [ $PKGNG -eq 1 ] && \
 	[ ! -f ${MASTERMNT}/packages/digests.txz -o \
@@ -288,23 +281,14 @@ fi
 
 commit_packages
 
-[ $nbbuilt -gt 0 ] && COLOR_ARROW="${COLOR_SUCCESS}" \
-    msg "${COLOR_SUCCESS}Built ports: ${COLOR_PORT}${built}"
-[ $nbfailed -gt 0 ] && COLOR_ARROW="${COLOR_FAIL}" \
-    msg "${COLOR_FAIL}Failed ports: ${COLOR_PORT}${failed}"
-[ $nbskipped -gt 0 ] && COLOR_ARROW="${COLOR_SKIP}" \
-    msg "${COLOR_SKIP}Skipped ports: ${COLOR_PORT}${skipped}"
-[ $nbignored -gt 0 ] && COLOR_ARROW="${COLOR_IGNORE}" \
-    msg "${COLOR_IGNORE}Ignored ports: ${COLOR_PORT}${ignored}"
+show_build_results
+
 run_hook bulk done ${nbbuilt} ${nbfailed} ${nbignored} ${nbskipped}
 
 [ ${INTERACTIVE_MODE} -gt 0 ] && enter_interactive
 
 bset status "done:"
 cleanup
-
-show_build_summary
-show_log_info
 
 set +e
 

@@ -644,10 +644,14 @@ Show a more compact output and do not include some columns.
 .It Fl f
 Show finished builds, not just currently running.
 This is implied by the
+.Fl a ,
 .Fl B
 and
-.Fl a
+.Fl r
 flags.
+.It Fl H
+Do not print headers and separate fields by a single tab instead of arbitrary
+white space.
 .It Fl j Ar name
 Specifies the
 .Ar name
@@ -658,9 +662,11 @@ Show logs instead of URL.
 This flag specifies which ports
 .Ar tree
 to filter builds by.
-.It Fl H
-Do not print headers and separate fields by a single tab instead of arbitrary
-white space.
+.It Fl r
+Show build results.
+This implies the
+.Fl f
+flag.
 .It Fl z Ar set
 This specifies which SET to filter builds by.
 Use

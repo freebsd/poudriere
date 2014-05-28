@@ -1267,6 +1267,37 @@ commit_packages() {
 	fi
 }
 
+show_build_results() {
+	local failed built ignored skipped nbbuilt nbfailed nbignored nbskipped
+
+	failed=$(bget ports.failed | awk '{print $1 ":" $3 }' | xargs echo)
+	failed=$(bget ports.failed | \
+	    awk -v color_phase="${COLOR_PHASE}" \
+	    -v color_port="${COLOR_PORT}" \
+	    '{print $1 ":" color_phase $3 color_port }' | xargs echo)
+	built=$(bget ports.built | awk '{print $1}' | xargs echo)
+	ignored=$(bget ports.ignored | awk '{print $1}' | xargs echo)
+	skipped=$(bget ports.skipped | awk '{print $1}' | sort -u | xargs echo)
+	_bget nbbuilt stats_built
+	_bget nbfailed stats_failed
+	_bget nbignored stats_ignored
+	_bget nbskipped stats_skipped
+
+	[ $nbbuilt -gt 0 ] && COLOR_ARROW="${COLOR_SUCCESS}" \
+	    msg "${COLOR_SUCCESS}Built ports: ${COLOR_PORT}${built}"
+	[ $nbfailed -gt 0 ] && COLOR_ARROW="${COLOR_FAIL}" \
+	    msg "${COLOR_FAIL}Failed ports: ${COLOR_PORT}${failed}"
+	[ $nbskipped -gt 0 ] && COLOR_ARROW="${COLOR_SKIP}" \
+	    msg "${COLOR_SKIP}Skipped ports: ${COLOR_PORT}${skipped}"
+	[ $nbignored -gt 0 ] && COLOR_ARROW="${COLOR_IGNORE}" \
+	    msg "${COLOR_IGNORE}Ignored ports: ${COLOR_PORT}${ignored}"
+
+	show_build_summary
+	show_log_info
+
+	return 0
+}
+
 write_usock() {
 	[ $# -eq 1 ] || eargs write_usock socket
 	local socket="$1"
