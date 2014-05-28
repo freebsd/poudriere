@@ -603,12 +603,12 @@ info_jail() {
 	echo "Jail name:         ${JAILNAME}"
 	echo "Jail version:      ${jversion}"
 	echo "Jail arch:         ${jarch}"
-	echo "Jail acquired:     ${jmethod}"
+	echo "Jail method:      ${jmethod}"
 	if [ -n "${timestamp}" ]; then
 		echo "Jail updated:      $(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
 	fi
 	echo "Tree name:         ${PTNAME}"
-	echo "Tree acquired:     ${pmethod:--}"
+	echo "Tree method:       ${pmethod:--}"
 #	echo "Tree updated:      $(pget ${PTNAME} timestamp)"
 	echo "Status:            ${status}"
 	if calculate_elapsed ${now} ${log}; then
