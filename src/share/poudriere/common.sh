@@ -798,7 +798,7 @@ unmarkfs() {
 	if [ -n "$(zfs_getfs ${mnt})" ]; then
 		zfs destroy -f ${fs}@${name} 2>/dev/null || :
 	else
-		rm -f ${mnt}/poudriere/mtree.${name} 2>/dev/null || :
+		rm -f ${mnt}/.p/mtree.${name} 2>/dev/null || :
 	fi
 }
 
@@ -840,11 +840,12 @@ markfs() {
 		echo " done"
 		return 0
 	fi
-	mkdir -p ${mnt}/poudriere/
+	mkdir -p ${mnt}/.p/
 
 	case "${name}" in
 		prepkg)
-			cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
+			cat > ${mnt}/.p/mtree.${name}exclude << EOF
+./.p/*
 .${HOME}/.ccache/*
 ./compat/linux/proc
 ./dev/*
@@ -852,7 +853,6 @@ markfs() {
 ./npkg/*
 ./packages/*
 ./portdistfiles/*
-./poudriere/*
 ./proc
 ./usr/ports/*
 ./usr/src
@@ -861,7 +861,8 @@ markfs() {
 EOF
 			;;
 		prebuild|prestage)
-			cat > ${mnt}/poudriere/mtree.${name}exclude << EOF
+			cat > ${mnt}/.p/mtree.${name}exclude << EOF
+./.p/*
 .${HOME}/.ccache/*
 ./compat/linux/proc
 ./dev/*
@@ -869,7 +870,6 @@ EOF
 ./npkg/*
 ./packages/*
 ./portdistfiles/*
-./poudriere/*
 ./proc
 ./tmp/*
 ./usr/ports/*
@@ -880,7 +880,8 @@ EOF
 EOF
 			;;
 		preinst)
-			cat >  ${mnt}/poudriere/mtree.${name}exclude << EOF
+			cat >  ${mnt}/.p/mtree.${name}exclude << EOF
+./.p/*
 .${HOME}/*
 .${HOME}/.ccache/*
 ./compat/linux/proc
@@ -897,7 +898,6 @@ EOF
 ./npkg/*
 ./packages/*
 ./portdistfiles/*
-./poudriere/*
 ./proc
 ./tmp/*
 ./usr/ports/*
@@ -912,9 +912,9 @@ EOF
 EOF
 		;;
 	esac
-	mtree -X ${mnt}/poudriere/mtree.${name}exclude \
+	mtree -X ${mnt}/.p/mtree.${name}exclude \
 		-cn -k uid,gid,mode,size \
-		-p ${mnt}${path} > ${mnt}/poudriere/mtree.${name}
+		-p ${mnt}${path} > ${mnt}/.p/mtree.${name}
 	echo " done"
 }
 
@@ -1507,10 +1507,10 @@ cleanup() {
 			return 0
 		fi
 
-		if [ -d ${MASTERMNT}/poudriere/var/run ]; then
-			for pid in ${MASTERMNT}/poudriere/var/run/*.pid; do
+		if [ -d ${MASTERMNT}/.p/var/run ]; then
+			for pid in ${MASTERMNT}/.p/var/run/*.pid; do
 				# Ensure there is a pidfile to read or break
-				[ "${pid}" = "${MASTERMNT}/poudriere/var/run/*.pid" ] && break
+				[ "${pid}" = "${MASTERMNT}/.p/var/run/*.pid" ] && break
 				pkill -15 -F ${pid} >/dev/null 2>&1 || :
 				wait_pids="${wait_pids} ${pid}"
 			done
@@ -1588,8 +1588,8 @@ check_leftovers() {
 
 	{
 		if [ -z "${stagedir}" ]; then
-			mtree -X ${mnt}/poudriere/mtree.preinstexclude \
-			    -f ${mnt}/poudriere/mtree.preinst \
+			mtree -X ${mnt}/.p/mtree.preinstexclude \
+			    -f ${mnt}/.p/mtree.preinst \
 			    -p ${mnt}
 		fi
 	} | while read l ; do
@@ -1661,8 +1661,8 @@ check_fs_violation() {
 	local ret=0
 
 	msg_n "${status_msg}..."
-	mtree -X ${mnt}/poudriere/mtree.${mtree_target}exclude \
-		-f ${mnt}/poudriere/mtree.${mtree_target} \
+	mtree -X ${mnt}/.p/mtree.${mtree_target}exclude \
+		-f ${mnt}/.p/mtree.${mtree_target} \
 		-p ${mnt} > ${tmpfile}
 	echo " done"
 
@@ -1865,7 +1865,7 @@ _real_build_port() {
 
 			nohang ${max_execution_time} ${NOHANG_TIME} \
 				${log}/logs/${PKGNAME}.log \
-				${MASTERMNT}/poudriere/var/run/${MY_JOBID:-00}_nohang.pid \
+				${MASTERMNT}/.p/var/run/${MY_JOBID:-00}_nohang.pid \
 				injail env ${pkgenv} ${phaseenv} ${PORT_FLAGS} \
 				make -C ${portdir} ${phase}
 			hangstatus=$? # This is done as it may return 1 or 2 or 3
@@ -2143,7 +2143,7 @@ start_builder() {
 	mkdir -p "${mnt}"
 	clonefs ${MASTERMNT} ${mnt} prepkg
 	# Create the /poudriere so that on zfs rollback does not nukes it
-	mkdir -p ${mnt}/poudriere
+	mkdir -p ${mnt}/.p
 	markfs prepkg ${mnt} >/dev/null
 	do_jail_mounts ${mnt} ${arch}
 	do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
@@ -2167,7 +2167,7 @@ stop_builders() {
 	local mnt
 
 	# wait for the last running processes
-	cat ${MASTERMNT}/poudriere/var/run/*.pid 2>/dev/null | xargs pwait 2>/dev/null
+	cat ${MASTERMNT}/.p/var/run/*.pid 2>/dev/null | xargs pwait 2>/dev/null
 
 	msg "Stopping ${PARALLEL_JOBS} builders"
 
@@ -2188,16 +2188,16 @@ deadlock_detected() {
 	# If there are still packages marked as "building" they have crashed
 	# and it's likely some poudriere or system bug
 	crashed_packages=$( \
-		find ${MASTERMNT}/poudriere/building -type d -mindepth 1 -maxdepth 1 | \
-		sed -e "s,${MASTERMNT}/poudriere/building/,," | tr '\n' ' ' \
+		find ${MASTERMNT}/.p/building -type d -mindepth 1 -maxdepth 1 | \
+		sed -e "s,${MASTERMNT}/.p/building/,," | tr '\n' ' ' \
 	)
 	[ -z "${crashed_packages}" ] ||	\
 		err 1 "Crashed package builds detected: ${crashed_packages}"
 
 	# Check if there's a cycle in the need-to-build queue
 	dependency_cycles=$(\
-		find ${MASTERMNT}/poudriere/deps -mindepth 2 | \
-		sed -e "s,${MASTERMNT}/poudriere/deps/,," -e 's:/: :' | \
+		find ${MASTERMNT}/.p/deps -mindepth 2 | \
+		sed -e "s,${MASTERMNT}/.p/deps/,," -e 's:/: :' | \
 		# Only cycle errors are wanted
 		tsort 2>&1 >/dev/null | \
 		sed -e 's/tsort: //' | \
@@ -2218,8 +2218,8 @@ ${dependency_cycles}"
 		[ ${deps} -ne ${highest_dep} ] && break
 		dead_packages="${dead_packages} ${pkgname}"
 	done <<-EOF
-	$(find ${MASTERMNT}/poudriere/deps -mindepth 2 | \
-	    sed -e "s,${MASTERMNT}/poudriere/deps/,," -e 's:/: :' | \
+	$(find ${MASTERMNT}/.p/deps -mindepth 2 | \
+	    sed -e "s,${MASTERMNT}/.p/deps/,," -e 's:/: :' | \
 	    tsort -D 2>/dev/null | sort -nr)
 	EOF
 
@@ -2241,7 +2241,7 @@ ${dependency_cycles}"
 
 	# No cycle, there's some unknown poudriere bug
 	err 1 "Unknown stuck queue bug detected. Please submit the entire build output to poudriere developers.
-$(find ${MASTERMNT}/poudriere/building ${MASTERMNT}/poudriere/pool ${MASTERMNT}/poudriere/deps ${MASTERMNT}/poudriere/cleaning)"
+$(find ${MASTERMNT}/.p/building ${MASTERMNT}/.p/pool ${MASTERMNT}/.p/deps ${MASTERMNT}/.p/cleaning)"
 }
 
 queue_empty() {
@@ -2250,10 +2250,10 @@ queue_empty() {
 
 	# Lock on balance_pool to avoid race here while it is moving between
 	# /unbalanced and a balanced slot
-	lock=${MASTERMNT}/poudriere/.lock-balance_pool
+	lock=${MASTERMNT}/.p/.lock-balance_pool
 	mkdir ${lock} 2>/dev/null || return 1
 
-	dirs="${MASTERMNT}/poudriere/deps ${MASTERMNT}/poudriere/pool/unbalanced ${POOL_BUCKET_DIRS}"
+	dirs="${MASTERMNT}/.p/deps ${MASTERMNT}/.p/pool/unbalanced ${POOL_BUCKET_DIRS}"
 
 	for pool_dir in ${dirs}; do
 		if ! dirempty ${pool_dir}; then
@@ -2270,34 +2270,34 @@ mark_done() {
 	[ $# -eq 1 ] || eargs mark_done pkgname
 	local pkgname="$1"
 
-	rmdir ${MASTERMNT}/poudriere/building/${pkgname}
+	rmdir ${MASTERMNT}/.p/building/${pkgname}
 }
 
 
 build_queue() {
 	local j name pkgname builders_active queue_empty status
 
-	mkfifo ${MASTERMNT}/poudriere/builders.pipe
-	exec 6<> ${MASTERMNT}/poudriere/builders.pipe
-	rm -f ${MASTERMNT}/poudriere/builders.pipe
+	mkfifo ${MASTERMNT}/.p/builders.pipe
+	exec 6<> ${MASTERMNT}/.p/builders.pipe
+	rm -f ${MASTERMNT}/.p/builders.pipe
 	queue_empty=0
 
 	msg "Hit CTRL+t at any time to see build progress and stats"
 
-	cd "${MASTERMNT}/poudriere/pool"
+	cd "${MASTERMNT}/.p/pool"
 
 	while :; do
 		builders_active=0
 		for j in ${JOBS}; do
 			name="${MASTERNAME}-job-${j}"
-			if [ -f  "${MASTERMNT}/poudriere/var/run/${j}.pid" ]; then
-				if pgrep -qF "${MASTERMNT}/poudriere/var/run/${j}.pid" 2>/dev/null; then
+			if [ -f  "${MASTERMNT}/.p/var/run/${j}.pid" ]; then
+				if pgrep -qF "${MASTERMNT}/.p/var/run/${j}.pid" 2>/dev/null; then
 					builders_active=1
 					continue
 				fi
-				read pkgname < ${MASTERMNT}/poudriere/var/run/${j}.pkgname
-				rm -f ${MASTERMNT}/poudriere/var/run/${j}.pid \
-					${MASTERMNT}/poudriere/var/run/${j}.pkgname
+				read pkgname < ${MASTERMNT}/.p/var/run/${j}.pkgname
+				rm -f ${MASTERMNT}/.p/var/run/${j}.pid \
+					${MASTERMNT}/.p/var/run/${j}.pkgname
 				_bget status ${j} status
 				if [ "${status%%:*}" = "done" ]; then
 					mark_done ${pkgname}
@@ -2320,8 +2320,8 @@ build_queue() {
 			else
 				MY_JOBID="${j}" PORTTESTING=$(get_porttesting "${pkgname}") \
 					build_pkg "${pkgname}" > /dev/null &
-				echo "$!" > ${MASTERMNT}/poudriere/var/run/${j}.pid
-				echo "${pkgname}" > ${MASTERMNT}/poudriere/var/run/${j}.pkgname
+				echo "$!" > ${MASTERMNT}/.p/var/run/${j}.pid
+				echo "${pkgname}" > ${MASTERMNT}/.p/var/run/${j}.pkgname
 
 				# A new job is spawned, try to read the queue
 				# just to keep things moving
@@ -2809,7 +2809,7 @@ ensure_pkg_installed() {
 
 	_my_path mnt
 	[ ${PKGNG} -eq 1 ] || return 0
-	[ -x ${mnt}/poudriere/pkg-static ] && return 0
+	[ -x ${mnt}/.p/pkg-static ] && return 0
 	[ -e ${MASTERMNT}/packages/Latest/pkg.txz ] || return 1 #pkg missing
 	injail tar xf /packages/Latest/pkg.txz -C / \
 		-s ",/.*/,poudriere/,g" "*/pkg-static"
@@ -3049,13 +3049,13 @@ next_in_queue() {
 	local var_return="$1"
 	local p _pkgname
 
-	[ ! -d ${MASTERMNT}/poudriere/pool ] && err 1 "Build pool is missing"
+	[ ! -d ${MASTERMNT}/.p/pool ] && err 1 "Build pool is missing"
 	p=$(find ${POOL_BUCKET_DIRS} -type d -depth 1 -empty -print -quit || :)
 	if [ -n "$p" ]; then
 		_pkgname=${p##*/}
-		mv ${p} ${MASTERMNT}/poudriere/building/${_pkgname}
+		mv ${p} ${MASTERMNT}/.p/building/${_pkgname}
 		# Update timestamp for buildtime accounting
-		touch ${MASTERMNT}/poudriere/building/${_pkgname}
+		touch ${MASTERMNT}/.p/building/${_pkgname}
 	fi
 
 	setvar "${var_return}" "${_pkgname}"
@@ -3087,7 +3087,7 @@ cache_get_pkgname() {
 	local var_return="$1"
 	local origin=${2%/}
 	local _pkgname="" existing_origin
-	local cache_origin_pkgname=${MASTERMNT}/poudriere/var/cache/origin-pkgname/${origin%%/*}_${origin##*/}
+	local cache_origin_pkgname=${MASTERMNT}/.p/var/cache/origin-pkgname/${origin%%/*}_${origin##*/}
 	local cache_pkgname_origin
 
 	[ -f ${cache_origin_pkgname} ] && read_line _pkgname "${cache_origin_pkgname}"
@@ -3106,7 +3106,7 @@ cache_get_pkgname() {
 			[ -n "${existing_origin}" ] &&
 				err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${origin}${COLOR_RESET} AND ${COLOR_PORT}${existing_origin}${COLOR_RESET}. Rerun with -vv to see which ports are depending on these."
 			echo "${_pkgname}" > ${cache_origin_pkgname}
-			cache_pkgname_origin="${MASTERMNT}/poudriere/var/cache/pkgname-origin/${_pkgname}"
+			cache_pkgname_origin="${MASTERMNT}/.p/var/cache/pkgname-origin/${_pkgname}"
 			echo "${origin}" > "${cache_pkgname_origin}"
 		fi
 	fi
@@ -3118,7 +3118,7 @@ cache_get_origin() {
 	[ $# -ne 2 ] && eargs cache_get_origin var_return pkgname
 	local var_return="$1"
 	local pkgname="$2"
-	local cache_pkgname_origin="${MASTERMNT}/poudriere/var/cache/pkgname-origin/${pkgname}"
+	local cache_pkgname_origin="${MASTERMNT}/.p/var/cache/pkgname-origin/${pkgname}"
 	local _origin
 
 	read_line _origin "${cache_pkgname_origin%/}"
@@ -3132,8 +3132,8 @@ compute_deps() {
 	msg "Calculating ports order and dependencies"
 	bset status "computingdeps:"
 
-	:> "${MASTERMNT}/poudriere/port_deps.unsorted"
-	:> "${MASTERMNT}/poudriere/pkg_deps.unsorted"
+	:> "${MASTERMNT}/.p/port_deps.unsorted"
+	:> "${MASTERMNT}/.p/pkg_deps.unsorted"
 
 	parallel_start
 	for port in $(listed_ports show_moved); do
@@ -3149,26 +3149,26 @@ compute_deps() {
 	done
 	parallel_stop
 
-	sort -u "${MASTERMNT}/poudriere/pkg_deps.unsorted" > \
-	    "${MASTERMNT}/poudriere/pkg_deps"
+	sort -u "${MASTERMNT}/.p/pkg_deps.unsorted" > \
+	    "${MASTERMNT}/.p/pkg_deps"
 
 	bset status "computingrdeps:"
 
 	# cd into rdeps to allow xargs mkdir to have more args.
-	cd "${MASTERMNT}/poudriere/rdeps"
-	awk '{print $2}' "${MASTERMNT}/poudriere/pkg_deps" |
+	cd "${MASTERMNT}/.p/rdeps"
+	awk '{print $2}' "${MASTERMNT}/.p/pkg_deps" |
 	    sort -u | xargs mkdir
 
 	# xargs|touch was no quicker here.
 	while read dep_pkgname pkgname; do
-		:> "${MASTERMNT}/poudriere/rdeps/${pkgname}/${dep_pkgname}"
-	done < "${MASTERMNT}/poudriere/pkg_deps"
+		:> "${MASTERMNT}/.p/rdeps/${pkgname}/${dep_pkgname}"
+	done < "${MASTERMNT}/.p/pkg_deps"
 
-	sort -u "${MASTERMNT}/poudriere/port_deps.unsorted" > \
-		"${MASTERMNT}/poudriere/port_deps"
+	sort -u "${MASTERMNT}/.p/port_deps.unsorted" > \
+		"${MASTERMNT}/.p/port_deps"
 
-	rm -f "${MASTERMNT}/poudriere/port_deps.unsorted" \
-	    "${MASTERMNT}/poudriere/pkg_deps.unsorted"
+	rm -f "${MASTERMNT}/.p/port_deps.unsorted" \
+	    "${MASTERMNT}/.p/pkg_deps.unsorted"
 
 	return 0
 }
@@ -3183,7 +3183,7 @@ compute_deps_port() {
 	local pkg_pooldir
 
 	[ -z "${pkgname}" ] && cache_get_pkgname pkgname "${port}"
-	pkg_pooldir="${MASTERMNT}/poudriere/deps/${pkgname}"
+	pkg_pooldir="${MASTERMNT}/.p/deps/${pkgname}"
 
 	mkdir "${pkg_pooldir}" 2>/dev/null || return 0
 
@@ -3200,14 +3200,14 @@ compute_deps_port() {
 
 		# Only do this if it's not already done, and not ALL, as everything will
 		# be touched anyway
-		[ ${ALL} -eq 0 ] && ! [ -d "${MASTERMNT}/poudriere/deps/${dep_pkgname}" ] &&
+		[ ${ALL} -eq 0 ] && ! [ -d "${MASTERMNT}/.p/deps/${dep_pkgname}" ] &&
 			compute_deps_port "${dep_port}" "${dep_pkgname}"
 
 		:> "${pkg_pooldir}/${dep_pkgname}"
 		echo "${pkgname} ${dep_pkgname}" >> \
-		    "${MASTERMNT}/poudriere/pkg_deps.unsorted"
+		    "${MASTERMNT}/.p/pkg_deps.unsorted"
 		echo "${port} ${dep_port}" >> \
-			${MASTERMNT}/poudriere/port_deps.unsorted
+			${MASTERMNT}/.p/port_deps.unsorted
 	done
 }
 
@@ -3267,7 +3267,7 @@ port_is_needed() {
 
 	awk -vorigin="${origin}" '
 	    $1 == origin || $2 == origin { found=1; exit 0 }
-	    END { if (found != 1) exit 1 }' "${MASTERMNT}/poudriere/port_deps"
+	    END { if (found != 1) exit 1 }' "${MASTERMNT}/.p/port_deps"
 }
 
 get_porttesting() {
@@ -3292,25 +3292,25 @@ find_all_pool_references() {
 	local rpn dep_pkgname
 
 	# Cleanup rdeps/*/${pkgname}
-	for rpn in ${MASTERMNT}/poudriere/deps/${pkgname}/*; do
+	for rpn in ${MASTERMNT}/.p/deps/${pkgname}/*; do
 		case "${rpn}" in
-			"${MASTERMNT}/poudriere/deps/${pkgname}/*")
+			"${MASTERMNT}/.p/deps/${pkgname}/*")
 				break ;;
 		esac
 		dep_pkgname=${rpn##*/}
-		echo "${MASTERMNT}/poudriere/rdeps/${dep_pkgname}/${pkgname}"
+		echo "${MASTERMNT}/.p/rdeps/${dep_pkgname}/${pkgname}"
 	done
-	echo "${MASTERMNT}/poudriere/deps/${pkgname}"
+	echo "${MASTERMNT}/.p/deps/${pkgname}"
 	# Cleanup deps/*/${pkgname}
-	for rpn in ${MASTERMNT}/poudriere/rdeps/${pkgname}/*; do
+	for rpn in ${MASTERMNT}/.p/rdeps/${pkgname}/*; do
 		case "${rpn}" in
-			"${MASTERMNT}/poudriere/rdeps/${pkgname}/*")
+			"${MASTERMNT}/.p/rdeps/${pkgname}/*")
 				break ;;
 		esac
 		dep_pkgname=${rpn##*/}
-		echo "${MASTERMNT}/poudriere/deps/${dep_pkgname}/${pkgname}"
+		echo "${MASTERMNT}/.p/deps/${dep_pkgname}/${pkgname}"
 	done
-	echo "${MASTERMNT}/poudriere/rdeps/${pkgname}"
+	echo "${MASTERMNT}/.p/rdeps/${pkgname}"
 }
 
 delete_stale_symlinks_and_empty_dirs() {
@@ -3326,7 +3326,7 @@ delete_stale_symlinks_and_empty_dirs() {
 load_moved() {
 	msg "Loading MOVED"
 	bset status "loading_moved:"
-	mkdir ${MASTERMNT}/poudriere/MOVED
+	mkdir ${MASTERMNT}/.p/MOVED
 	grep -v '^#' ${MASTERMNT}/usr/ports/MOVED | awk \
 	    -F\| '
 		$2 != "" {
@@ -3334,7 +3334,7 @@ load_moved() {
 			print $1,$2;
 		}' | while read old_origin new_origin; do
 			echo ${new_origin} > \
-			    ${MASTERMNT}/poudriere/MOVED/${old_origin}
+			    ${MASTERMNT}/.p/MOVED/${old_origin}
 		done
 }
 
@@ -3345,8 +3345,8 @@ check_moved() {
 	local _new_origin
 
 	_gsub ${origin} "/" "_"
-	[ -f "${MASTERMNT}/poudriere/MOVED/${_gsub}" ] &&
-	    read _new_origin < "${MASTERMNT}/poudriere/MOVED/${_gsub}"
+	[ -f "${MASTERMNT}/.p/MOVED/${_gsub}" ] &&
+	    read _new_origin < "${MASTERMNT}/.p/MOVED/${_gsub}"
 
 	setvar "${var_return}" "${_new_origin}"
 
@@ -3362,21 +3362,21 @@ prepare_ports() {
 	local cache_dir
 
 	_log_path log
-	mkdir -p "${MASTERMNT}/poudriere"
-	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs data "${MASTERMNT}/poudriere"
-	rm -rf "${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
-		"${MASTERMNT}/poudriere/var/cache/pkgname-origin" 2>/dev/null || :
-	mkdir -p "${MASTERMNT}/poudriere/building" \
-		"${MASTERMNT}/poudriere/pool" \
-		"${MASTERMNT}/poudriere/pool/unbalanced" \
-		"${MASTERMNT}/poudriere/deps" \
-		"${MASTERMNT}/poudriere/rdeps" \
-		"${MASTERMNT}/poudriere/cleaning/deps" \
-		"${MASTERMNT}/poudriere/cleaning/rdeps" \
-		"${MASTERMNT}/poudriere/var/run" \
-		"${MASTERMNT}/poudriere/var/cache" \
-		"${MASTERMNT}/poudriere/var/cache/origin-pkgname" \
-		"${MASTERMNT}/poudriere/var/cache/pkgname-origin"
+	mkdir -p "${MASTERMNT}/.p"
+	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs data "${MASTERMNT}/.p"
+	rm -rf "${MASTERMNT}/.p/var/cache/origin-pkgname" \
+		"${MASTERMNT}/.p/var/cache/pkgname-origin" 2>/dev/null || :
+	mkdir -p "${MASTERMNT}/.p/building" \
+		"${MASTERMNT}/.p/pool" \
+		"${MASTERMNT}/.p/pool/unbalanced" \
+		"${MASTERMNT}/.p/deps" \
+		"${MASTERMNT}/.p/rdeps" \
+		"${MASTERMNT}/.p/cleaning/deps" \
+		"${MASTERMNT}/.p/cleaning/rdeps" \
+		"${MASTERMNT}/.p/var/run" \
+		"${MASTERMNT}/.p/var/cache" \
+		"${MASTERMNT}/.p/var/cache/origin-pkgname" \
+		"${MASTERMNT}/.p/var/cache/pkgname-origin"
 
 	if was_a_bulk_run; then
 		get_cache_dir cache_dir
@@ -3511,7 +3511,7 @@ prepare_ports() {
 	bset status "cleaning:"
 	msg "Cleaning the build queue"
 	export LOCALBASE=${LOCALBASE:-/usr/local}
-	for pn in $(ls ${MASTERMNT}/poudriere/deps/); do
+	for pn in $(ls ${MASTERMNT}/.p/deps/); do
 		if [ -f "${MASTERMNT}/packages/All/${pn}.${PKG_EXT}" ]; then
 			find_all_pool_references "${pn}"
 		fi
@@ -3522,15 +3522,15 @@ prepare_ports() {
 
 	if was_a_bulk_run && [ $resuming_build -eq 0 ]; then
 		nbq=0
-		nbq=$(find ${MASTERMNT}/poudriere/deps -type d -depth 1 | wc -l)
+		nbq=$(find ${MASTERMNT}/.p/deps -type d -depth 1 | wc -l)
 		# Add 1 for the main port to test
 		[ "${0##*/}" = "testport.sh" ] && nbq=$((${nbq} + 1))
 		bset stats_queued ${nbq##* }
 	fi
 
 	# Create a pool of ready-to-build from the deps pool
-	find "${MASTERMNT}/poudriere/deps" -type d -empty -depth 1 | \
-		xargs -J % mv % "${MASTERMNT}/poudriere/pool/unbalanced"
+	find "${MASTERMNT}/.p/deps" -type d -empty -depth 1 | \
+		xargs -J % mv % "${MASTERMNT}/.p/pool/unbalanced"
 	load_priorities
 	balance_pool
 
@@ -3548,14 +3548,14 @@ load_priorities() {
 
 	POOL_BUCKET_DIRS=""
 	if [ ${POOL_BUCKETS} -gt 0 ]; then
-		tsort -D "${MASTERMNT}/poudriere/pkg_deps" > \
-		    "${MASTERMNT}/poudriere/pkg_deps.depth"
+		tsort -D "${MASTERMNT}/.p/pkg_deps" > \
+		    "${MASTERMNT}/.p/pkg_deps.depth"
 
 		# Create buckets to satisfy the dependency chains, in reverse
 		# order. Not counting here as there may be boosted priorities
 		# at 99 or other high values.
 		POOL_BUCKET_DIRS=$(awk '{print $1}' \
-		    "${MASTERMNT}/poudriere/pkg_deps.depth"|sort -run)
+		    "${MASTERMNT}/.p/pkg_deps.depth"|sort -run)
 
 		# If there are no buckets then everything to build will fall
 		# into 0 as they depend on nothing and nothing depends on them.
@@ -3582,13 +3582,13 @@ load_priorities() {
 			esac
 		done
 		hash_set "priority" "${pkgname}" ${priority}
-	done < "${MASTERMNT}/poudriere/pkg_deps.depth"
+	done < "${MASTERMNT}/.p/pkg_deps.depth"
 
 	# Add 99 into the pool if needed.
 	[ ${boosted} -eq 1 ] && POOL_BUCKET_DIRS="99 ${POOL_BUCKET_DIRS}"
 
 	# Create buckets after loading priorities in case of boosts.
-	( cd ${MASTERMNT}/poudriere/pool && mkdir ${POOL_BUCKET_DIRS} )
+	( cd ${MASTERMNT}/.p/pool && mkdir ${POOL_BUCKET_DIRS} )
 
 	return 0
 }
@@ -3600,10 +3600,10 @@ balance_pool() {
 	local pkgname pkg_dir dep_count lock
 
 	# Avoid running this in parallel, no need
-	lock=${MASTERMNT}/poudriere/.lock-balance_pool
+	lock=${MASTERMNT}/.p/.lock-balance_pool
 	mkdir ${lock} 2>/dev/null || return 0
 
-	if dirempty ${MASTERMNT}/poudriere/pool/unbalanced; then
+	if dirempty ${MASTERMNT}/.p/pool/unbalanced; then
 		rmdir ${lock}
 		return 0
 	fi
@@ -3615,10 +3615,10 @@ balance_pool() {
 	fi
 
 	# For everything ready-to-build...
-	for pkg_dir in ${MASTERMNT}/poudriere/pool/unbalanced/*; do
+	for pkg_dir in ${MASTERMNT}/.p/pool/unbalanced/*; do
 		pkgname=${pkg_dir##*/}
 		hash_get "priority" "${pkgname}" dep_count || dep_count=0
-		mv ${pkg_dir} ${MASTERMNT}/poudriere/pool/${dep_count}/
+		mv ${pkg_dir} ${MASTERMNT}/.p/pool/${dep_count}/
 	done
 
 	rmdir ${lock}
@@ -3712,7 +3712,7 @@ build_repo() {
 			# Sometimes building repo from host is needed if
 			# using SSH with DNSSEC as older hosts don't support
 			# it.
-			${MASTERMNT}/poudriere/pkg-static repo \
+			${MASTERMNT}/.p/pkg-static repo \
 			    -o ${MASTERMNT}/tmp/packages ${MASTERMNT}/packages \
 			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 		else

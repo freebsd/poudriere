@@ -104,7 +104,7 @@ parallel_start() {
 	local fifo
 
 	if [ -n "${MASTERMNT}" ]; then
-		fifo=${MASTERMNT}/poudriere/parallel.pipe
+		fifo=${MASTERMNT}/.p/parallel.pipe
 	else
 		fifo=$(mktemp -ut parallel)
 	fi

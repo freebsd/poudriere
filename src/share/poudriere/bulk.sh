@@ -233,9 +233,9 @@ if [ ${DRY_RUN} -eq 1 ]; then
 
 		msg_n "Ports to build: "
 		{
-			find ${MASTERMNT}/poudriere/deps/ -mindepth 1 \
+			find ${MASTERMNT}/.p/deps/ -mindepth 1 \
 			    -maxdepth 1
-			find ${MASTERMNT}/poudriere/pool/ -mindepth 2 \
+			find ${MASTERMNT}/.p/pool/ -mindepth 2 \
 			    -maxdepth 2
 		} | while read pkgpath; do
 			pkgname=${pkgpath##*/}

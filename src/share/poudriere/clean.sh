@@ -53,11 +53,11 @@ clean_rdeps() {
 	local deps_to_check deps_to_clean
 	local rdep_dir
 
-	rdep_dir="${JAILMNT}/poudriere/cleaning/rdeps/${pkgname}"
+	rdep_dir="${JAILMNT}/.p/cleaning/rdeps/${pkgname}"
 
 	# Exclusively claim the rdeps dir or return, another clean.sh owns it
 	# or there were no reverse deps for this package.
-	mv "${JAILMNT}/poudriere/rdeps/${pkgname}" "${rdep_dir}" 2>/dev/null ||
+	mv "${JAILMNT}/.p/rdeps/${pkgname}" "${rdep_dir}" 2>/dev/null ||
 	    return 0
 
 	# Cleanup everything that depends on my package
@@ -78,8 +78,8 @@ clean_rdeps() {
 		for dep_dir in ${rdep_dir}/*; do
 			dep_pkgname=${dep_dir##*/}
 
-			deps_to_check="${deps_to_check} ${JAILMNT}/poudriere/deps/${dep_pkgname}"
-			deps_to_clean="${deps_to_clean} ${JAILMNT}/poudriere/deps/${dep_pkgname}/${pkgname}"
+			deps_to_check="${deps_to_check} ${JAILMNT}/.p/deps/${dep_pkgname}"
+			deps_to_clean="${deps_to_clean} ${JAILMNT}/.p/deps/${dep_pkgname}/${pkgname}"
 		done
 
 		# Remove this package from every package depending on this.
@@ -94,7 +94,7 @@ clean_rdeps() {
 		echo ${deps_to_check} | \
 		    xargs -J % \
 		    find % -type d -maxdepth 0 -empty 2>/dev/null | \
-		    xargs -J % mv % "${JAILMNT}/poudriere/pool/unbalanced" \
+		    xargs -J % mv % "${JAILMNT}/.p/pool/unbalanced" \
 		    2>/dev/null || :
 	fi
 
@@ -111,10 +111,10 @@ clean_deps() {
 	local deps_to_check rdeps_to_clean
 	local dir
 
-	dep_dir="${JAILMNT}/poudriere/cleaning/deps/${pkgname}"
+	dep_dir="${JAILMNT}/.p/cleaning/deps/${pkgname}"
 
 	# Exclusively claim the deps dir or return, another clean.sh owns it
-	mv "${JAILMNT}/poudriere/deps/${pkgname}" "${dep_dir}" 2>/dev/null ||
+	mv "${JAILMNT}/.p/deps/${pkgname}" "${dep_dir}" 2>/dev/null ||
 	    return 0
 
 	# Remove myself from all my dependency rdeps to prevent them from
@@ -123,7 +123,7 @@ clean_deps() {
 	for dir in ${dep_dir}/*; do
 		rdep_pkgname=${dir##*/}
 
-		rdeps_to_clean="${rdeps_to_clean} ${JAILMNT}/poudriere/rdeps/${rdep_pkgname}/${pkgname}"
+		rdeps_to_clean="${rdeps_to_clean} ${JAILMNT}/.p/rdeps/${rdep_pkgname}/${pkgname}"
 	done
 
 	echo ${rdeps_to_clean} | xargs rm -f || :
