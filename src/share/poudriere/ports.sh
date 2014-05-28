@@ -167,6 +167,12 @@ cleanup_new_ports() {
 	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
 }
 
+check_portsnap_interactive() {
+	if /usr/sbin/portsnap --help | grep -q -- '--interactive'; then
+		echo "--interactive "
+	fi
+}
+
 if [ ${CREATE} -eq 1 ]; then
 	# test if it already exists
 	porttree_exists ${PTNAME} && err 2 "The ports tree, ${PTNAME}, already exists"
@@ -183,10 +189,12 @@ if [ ${CREATE} -eq 1 ]; then
 	if [ $FAKE -eq 0 ]; then
 		case ${METHOD} in
 		portsnap)
+			# additional portsnap arguments
+			PTARGS=$(check_portsnap_interactive)
 			mkdir ${PTMNT}/.snap
 			msg "Extracting portstree \"${PTNAME}\"..."
-			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract ||
-			/usr/sbin/portsnap -d ${PTMNT}/.snap -p ${PTMNT} fetch extract ||
+			/usr/sbin/portsnap ${PTARGS} -d ${PTMNT}/.snap -p ${PTMNT} fetch extract ||
+			/usr/sbin/portsnap ${PTARGS} -d ${PTMNT}/.snap -p ${PTMNT} fetch extract ||
 			    err 1 " fail"
 			;;
 		svn*)
@@ -250,12 +258,14 @@ if [ ${UPDATE} -eq 1 ]; then
 	fi
 	case ${METHOD} in
 	portsnap|"")
+		# additional portsnap arguments
+		PTARGS=$(check_portsnap_interactive)
 		if [ -d "${PTMNT}/snap" ]; then
 			SNAPDIR=${PTMNT}/snap
 		else
 			SNAPDIR=${PTMNT}/.snap
 		fi
-		/usr/sbin/portsnap -d ${SNAPDIR} -p ${PORTSMNT:-${PTMNT}} ${PSCOMMAND} alfred
+		/usr/sbin/portsnap ${PTARGS} -d ${SNAPDIR} -p ${PORTSMNT:-${PTMNT}} ${PSCOMMAND} alfred
 		;;
 	svn*)
 		msg_n "Updating the ports tree..."
