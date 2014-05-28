@@ -760,7 +760,8 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	01000000)
 		test -z ${JAILNAME} && usage
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
-		export MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
+		_mastermnt MASTERMNT
+		export MASTERMNT
 		info_jail
 		;;
 	00100000)
@@ -771,7 +772,8 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 		maybe_run_queued "${saved_argv}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
-		export MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
+		_mastermnt MASTERMNT
+		export MASTERMNT
 		jail_runs ${MASTERNAME} ||
 		    msg "Jail ${MASTERNAME} not running, but cleaning up anyway"
 		jail_stop
@@ -782,7 +784,8 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 		maybe_run_queued "${saved_argv}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
-		export MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
+		_mastermnt MASTERMNT
+		export MASTERMNT
 		jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 		JNETNAME="n"
 		;;

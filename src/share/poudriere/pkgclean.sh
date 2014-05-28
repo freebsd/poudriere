@@ -114,7 +114,7 @@ saved_argv="$@"
 shift $((OPTIND-1))
 
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
-MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
+_mastermnt MASTERMNT
 
 export MASTERNAME
 export MASTERMNT

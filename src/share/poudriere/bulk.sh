@@ -198,7 +198,7 @@ test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -
 maybe_run_queued "${saved_argv}"
 
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
-MASTERMNT=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
+_mastermnt MASTERMNT
 
 export MASTERNAME
 export MASTERMNT

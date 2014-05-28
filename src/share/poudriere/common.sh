@@ -101,6 +101,10 @@ err() {
 	exit $1
 }
 
+_mastermnt() {
+	setvar "$1" "${POUDRIERE_DATA}/build/${MASTERNAME}/ref"
+}
+
 _my_path() {
 	setvar "$1" "${MASTERMNT}${MY_JOBID+/../${MY_JOBID}}"
 }
@@ -1279,8 +1283,13 @@ jail_start() {
 	local mnt
 	local needfs="${NULLFSREF} procfs"
 	local needkld
-	local tomnt=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
+	local tomnt
 
+	if [ -n "${MASTERMNT}" ]; then
+		tomnt="${MASTERMNT}"
+	else
+		_mastermnt tomnt
+	fi
 	_pget portsdir ${ptname} mnt
 	_jget arch ${name} arch
 	_jget mnt ${name} mnt
