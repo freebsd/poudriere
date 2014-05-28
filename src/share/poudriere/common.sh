@@ -1482,7 +1482,7 @@ include_poudriere_confs() {
 
 	# Spy on cmdline arguments so this function is not needed in
 	# every new sub-command file, which could lead to missing it.
-	while getopts "j:p:z:" flag 2>/dev/null; do
+	while getopts "j:p:z:" flag >/dev/null 2>&1; do
 		case ${flag} in
 			j) jail="${OPTARG}" ;;
 			p) ptname="${OPTARG}" ;;
