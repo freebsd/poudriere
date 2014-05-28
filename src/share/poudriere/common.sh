@@ -763,7 +763,7 @@ get_data_dir() {
 		if zfs get mountpoint ${ZPOOL}${ZROOTFS}/data >/dev/null \
 		    2>&1; then
 			zfs set ${NS}:type=data ${ZPOOL}${ZROOTFS}/data
-			echo "${data}"
+			zfs get -H -o value mountpoint ${ZPOOL}${ZROOTFS}/data
 			return
 		fi
 		zfs create -p -o ${NS}:type=data \
