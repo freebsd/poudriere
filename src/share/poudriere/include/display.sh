@@ -33,22 +33,10 @@ display_setup() {
 }
 
 display_add() {
-	local arg flag newline
-
-	newline=1
-
-	while getopts "n" flag; do
-		case "${flag}" in
-			n)
-				newline=0
-				;;
-		esac
-	done
-
-	shift $((OPTIND-1))
+	local arg
 
 	# Add in newline
-	[ ${newline} -eq 1 -a -n "${_DISPLAY_DATA}" ] && \
+	[ -n "${_DISPLAY_DATA}" ] && \
 	    _DISPLAY_DATA="${_DISPLAY_DATA}
 "
 	# Quote all arguments

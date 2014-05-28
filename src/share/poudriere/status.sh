@@ -180,8 +180,7 @@ add_build() {
 		my_display_add "${setname:--}" "${ptname}" "${jailname}" \
 		    "${BUILDNAME}" "${status:-?}" "${nbqueued:-?}" \
 		    "${nbbuilt:-?}" "${nbfailed:-?}" "${nbskipped:-?}" \
-		    "${nbignored:-?}" "${nbtobuild:-?}" "${time:-?}"
-		[ -n "${url}" ] && my_display_add -n "${url}"
+		    "${nbignored:-?}" "${nbtobuild:-?}" "${time:-?}" ${url}
 	else
 
 		_bget builders builders 2>/dev/null || :
