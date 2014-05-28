@@ -751,7 +751,15 @@ get_data_dir() {
 		data=$(zfs list -rt filesystem -H -o ${NS}:type,mountpoint ${ZPOOL}${ZROOTFS} 2>/dev/null |
 		    awk '$1 == "data" { print $2; exit; }')
 		if [ -n "${data}" ]; then
-			echo $data
+			echo "${data}"
+			return
+		fi
+		# Manually created dataset may be missing type, set it and
+		# don't add more child datasets.
+		if zfs get mountpoint ${ZPOOL}${ZROOTFS}/data >/dev/null \
+		    2>&1; then
+			zfs set ${NS}:type=data ${ZPOOL}${ZROOTFS}/data
+			echo "${data}"
 			return
 		fi
 		zfs create -p -o ${NS}:type=data \
