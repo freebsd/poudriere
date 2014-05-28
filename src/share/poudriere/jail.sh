@@ -746,9 +746,9 @@ shift $((OPTIND-1))
 
 METHOD=${METHOD:-ftp}
 if [ -n "${JAILNAME}" -a ${CREATE} -eq 0 ]; then
-	_jget ARCH ${JAILNAME} arch
+	_jget ARCH ${JAILNAME} arch 2>/dev/null || :
 	_jget JAILFS ${JAILNAME} fs 2>/dev/null || :
-	_jget JAILMNT ${JAILNAME} mnt
+	_jget JAILMNT ${JAILNAME} mnt 2>/dev/null || :
 fi
 
 case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
