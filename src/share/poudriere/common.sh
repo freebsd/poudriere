@@ -102,7 +102,11 @@ err() {
 }
 
 _mastermnt() {
-	setvar "$1" "${POUDRIERE_DATA}/build/${MASTERNAME}/ref"
+	local hashed_name
+
+	hashed_name=$(sha256 -qs "${MASTERNAME}" | \
+	    awk '{print substr($0, 0, 6)}')
+	setvar "$1" "${POUDRIERE_DATA}/.m/${hashed_name}/ref"
 }
 
 _my_path() {
@@ -770,7 +774,7 @@ get_data_dir() {
 			-o atime=off \
 			-o mountpoint=${BASEFS}/data \
 			${ZPOOL}${ZROOTFS}/data
-		zfs create ${ZPOOL}${ZROOTFS}/data/build
+		zfs create ${ZPOOL}${ZROOTFS}/data/.m
 		zfs create -o compression=off ${ZPOOL}${ZROOTFS}/data/cache
 		zfs create -o compression=lz4 ${ZPOOL}${ZROOTFS}/data/logs
 		zfs create -o compression=off ${ZPOOL}${ZROOTFS}/data/packages
@@ -1333,7 +1337,7 @@ jail_start() {
 	# Block the build dir from being traversed by non-root to avoid
 	# system blowup due to all of the extra mounts
 	mkdir -p ${MASTERMNT%/ref}
-	chmod 0755 ${POUDRIERE_DATA}/build
+	chmod 0755 ${POUDRIERE_DATA}/.m
 	chmod 0711 ${MASTERMNT%/ref}
 
 	export HOME=/root
