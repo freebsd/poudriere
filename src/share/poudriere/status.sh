@@ -150,7 +150,7 @@ add_summary_build() {
 	_bget nbskipped stats_skipped 2>/dev/null || :
 	nbtobuild=$((nbqueued - (nbbuilt + nbfailed + nbskipped + nbignored)))
 
-	calculate_elapsed ${now} ${log}
+	calculate_elapsed_from_log ${now} ${log}
 	elapsed=${_elapsed_time}
 	time=$(date -j -u -r ${elapsed} "+${DURATION_FORMAT}")
 

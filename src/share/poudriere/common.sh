@@ -659,7 +659,7 @@ show_build_summary() {
 	_bget buildname buildname 2>/dev/null || :
 	now=$(date +%s)
 
-	calculate_elapsed ${now} ${log}
+	calculate_elapsed_from_log ${now} ${log}
 	elapsed=${_elapsed_time}
 	buildtime=$(date -j -u -r ${elapsed} "+${DURATION_FORMAT}")
 
@@ -2448,8 +2448,8 @@ status_is_stopped() {
 	return 1
 }
 
-calculate_elapsed() {
-	[ $# -eq 2 ] || eargs calculate_elapsed now log
+calculate_elapsed_from_log() {
+	[ $# -eq 2 ] || eargs calculate_elapsed_from_log now log
 	local now="$1"
 	local log="$2"
 

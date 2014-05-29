@@ -611,7 +611,7 @@ info_jail() {
 	echo "Tree method:       ${pmethod:--}"
 #	echo "Tree updated:      $(pget ${PTNAME} timestamp)"
 	echo "Status:            ${status}"
-	if calculate_elapsed ${now} ${log}; then
+	if calculate_elapsed_from_log ${now} ${log}; then
 		start_time=${_start_time}
 		elapsed=${_elapsed_time}
 		building_started=$(date -j -r ${start_time} "+%Y-%m-%d %H:%M:%S")
