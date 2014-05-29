@@ -276,9 +276,9 @@ elif [ $nbbuilt -eq 0 ]; then
 		msg "No package built, no need to update INDEX"
 	fi
 	BUILD_REPO=0
-else
-	[ "${NO_RESTRICTED}" != "no" ] && clean_restricted
 fi
+
+[ "${NO_RESTRICTED}" != "no" ] && clean_restricted
 
 [ ${BUILD_REPO} -eq 1 ] && build_repo
 
