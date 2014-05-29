@@ -83,7 +83,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # If set the ports tree or source tree marked to use svn will use the defined
 # mirror (default: svn0.us-west.FreeBSD.org)
 # The full mirror list is available here:
-# http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/svn-mirrors.html
+# http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/svn.html#svn-mirrors
 #SVN_HOST=svn0.us-west.FreeBSD.org
 
 # Automatic OPTION change detection
