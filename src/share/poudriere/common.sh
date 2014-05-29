@@ -186,6 +186,10 @@ jstart() {
 	fi
 }
 
+jkill() {
+	injail kill -9 -1 2>/dev/null || :
+}
+
 jstop() {
 	local name
 
@@ -2615,12 +2619,10 @@ build_pkg() {
 		mnt_tmpfs localbase ${mnt}/${LOCALBASE:-/usr/local}
 	fi
 
-	# Stop everything first
-	jstop
-	[ -f ${mnt}/.need_rollback ] && rollbackfs prepkg ${mnt}
-	# Make sure we start with no network
-	jstart
+	# Kill everything in jail first
+	jkill
 
+	[ -f ${mnt}/.need_rollback ] && rollbackfs prepkg ${mnt}
 	:> ${mnt}/.need_rollback
 
 	case " ${BLACKLIST} " in
@@ -2719,8 +2721,9 @@ stop_build() {
 		msg_warn "Leftover processes:"
 		injail ps auxwwd | grep -v 'ps auxwwd'
 	fi
+
 	# Always kill to avoid missing anything
-	injail kill -9 -1 2>/dev/null || :
+	jkill
 
 	buildlog_stop ${portdir} ${build_failed}
 	log_stop
