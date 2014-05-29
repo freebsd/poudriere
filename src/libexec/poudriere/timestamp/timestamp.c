@@ -91,9 +91,7 @@ main(int argc, char **argv) {
 			    min(sizeof(buf), pending_len));
 			pending_len -= read_len;
 			for (p = buf; read_len > 0; ++p, --read_len) {
-				if (*p == '\n' || *p == '\r') {
-					newline = true;
-				} else if (newline) {
+				if (newline) {
 					newline = false;
 					now = time(NULL);
 					elapsed = now - start;
@@ -101,6 +99,8 @@ main(int argc, char **argv) {
 					    tlen, elapsed);
 					write(fd_out, timestamp, tlen - 1);
 				}
+				if (*p == '\n' || *p == '\r')
+					newline = true;
 				write(fd_out, p, 1);
 			}
 		}
