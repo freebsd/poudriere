@@ -83,7 +83,7 @@ main(int argc, char **argv) {
 		if (kevent(kq, &ev, 1, &ch, 1, NULL) == -1)
 			err(EXIT_FAILURE, "kevent");
 		fd_in = (int)ch.ident;
-		fd_out = (int)ch.udata;
+		fd_out = (int)(intptr_t)ch.udata;
 		pending_len = (size_t)ch.data;
 
 		while (pending_len > 0) {
