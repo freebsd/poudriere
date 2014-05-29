@@ -2411,6 +2411,7 @@ build_queue() {
 				continue
 			else
 				# All work is done
+				deadlock_detected 0
 				break
 			fi
 		fi
