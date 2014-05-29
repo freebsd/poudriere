@@ -2632,8 +2632,7 @@ build_pkg() {
 	# is a less-common check
 	: ${ignore:=$(injail make -C ${portdir} -VIGNORE)}
 
-	msg "Cleaning up wrkdir"
-	rm -rf ${mnt}/wrkdirs/*
+	rm -rf ${mnt}/wrkdirs/* || :
 
 	log_start
 	msg "Building ${port}"
@@ -2667,8 +2666,6 @@ build_pkg() {
 			save_wrkdir ${mnt} "${port}" "${portdir}" "noneed" ||:
 		fi
 
-		injail make -C ${portdir} clean
-
 		if [ ${build_failed} -eq 0 ]; then
 			badd ports.built "${port} ${PKGNAME}"
 			COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished build of ${COLOR_PORT}${port}${COLOR_SUCCESS}: Success"
@@ -2692,6 +2689,10 @@ build_pkg() {
 				clean_rdepends="failed"
 			fi
 		fi
+
+		msg "Cleaning up wrkdir"
+		injail make -C ${portdir} clean || :
+		rm -rf ${mnt}/wrkdirs/* || :
 	fi
 
 	clean_pool ${PKGNAME} ${port} "${clean_rdepends}"
