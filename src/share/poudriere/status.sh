@@ -231,7 +231,7 @@ for_each_job() {
 					[ "${jailname}" = "${JAILNAME}" ] || \
 					    continue 2
 				else
-					case "${mastername}" in
+					case "${MASTERNAME}" in
 						${JAILNAME}-*) ;;
 						*) continue 2 ;;
 					esac
@@ -243,7 +243,7 @@ for_each_job() {
 					[ "${ptname}" = "${PTNAME}" ] || \
 					    continue 2
 				else
-					case "${mastername}" in
+					case "${MASTERNAME}" in
 						*-${PTNAME}) ;;
 						*) continue 2 ;;
 					esac
@@ -255,7 +255,7 @@ for_each_job() {
 					[ "${setname}" = "${SETNAME%0}" ] || \
 					    continue 2
 				else
-					case "${mastername}" in
+					case "${MASTERNAME}" in
 						*-${SETNAME%0}) ;;
 						*) continue 2 ;;
 					esac
