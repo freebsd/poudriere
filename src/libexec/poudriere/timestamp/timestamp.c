@@ -24,10 +24,13 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define _WITH_GETLINE
+#include <sys/types.h>
+#include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 
 static void
 calculate_duration(char *timestamp, size_t tlen, time_t elapsed)
@@ -49,23 +52,33 @@ int
 main(int argc, char **argv) {
 	const char *format;
 	time_t elapsed, start, now;
-	char *line = NULL;
 	char timestamp[8 + 3 + 1]; /* '[HH:MM:SS] ' + 1 */
-	size_t linecap, tlen;
-	ssize_t linelen;
+	char buf[1];
+	char *p = NULL;
+	bool newline;
+	size_t tlen;
+	ssize_t read_len;
 
 	start = time(NULL);
 	format = argv[1];
-	linecap = 0;
-	setlinebuf(stdout);
 	tlen = sizeof(timestamp);
+	newline = true;
 
-	while ((linelen = getline(&line, &linecap, stdin)) > 0) {
-		now = time(NULL);
-		elapsed = now - start;
-		calculate_duration((char *)&timestamp, tlen, elapsed);
-		fwrite(timestamp, tlen, 1, stdout);
-		fwrite(line, linelen, 1, stdout);
+
+	/* Read 1 char at a time and print duration on new lines */
+	while ((read_len = read(STDIN_FILENO, buf, sizeof(buf))) > 0 ||
+	    errno == EAGAIN) {
+		p = buf;
+		if (*p == '\n' || *p == '\r') {
+			newline = true;
+		} else if (newline) {
+			newline = false;
+			now = time(NULL);
+			elapsed = now - start;
+			calculate_duration((char *)&timestamp, tlen, elapsed);
+			write(STDOUT_FILENO, timestamp, tlen - 1);
+		}
+		write(STDOUT_FILENO, p, 1);
 	}
 
 	return 0;
