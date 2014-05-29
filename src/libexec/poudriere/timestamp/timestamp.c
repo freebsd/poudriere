@@ -25,12 +25,18 @@
  */
 
 #include <sys/types.h>
+#include <sys/event.h>
+#include <sys/time.h>
+
+#include <err.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+
+#define min(a, b) ((a) > (b) ? (b) : (a))
 
 static void
 calculate_duration(char *timestamp, size_t tlen, time_t elapsed)
@@ -50,35 +56,57 @@ calculate_duration(char *timestamp, size_t tlen, time_t elapsed)
  */
 int
 main(int argc, char **argv) {
+	struct kevent ev, ch;
 	const char *format;
 	time_t elapsed, start, now;
 	char timestamp[8 + 3 + 1]; /* '[HH:MM:SS] ' + 1 */
-	char buf[1];
+	char buf[1024];
 	char *p = NULL;
 	bool newline;
-	size_t tlen;
+	size_t tlen, pending_len;
 	ssize_t read_len;
+	int kq, fd_in, fd_out;
 
 	start = time(NULL);
 	format = argv[1];
 	tlen = sizeof(timestamp);
 	newline = true;
 
+	if ((kq = kqueue()) == -1)
+		err(EXIT_FAILURE, "kqueue");
 
-	/* Read 1 char at a time and print duration on new lines */
-	while ((read_len = read(STDIN_FILENO, buf, sizeof(buf))) > 0 ||
-	    errno == EAGAIN) {
-		p = buf;
-		if (*p == '\n' || *p == '\r') {
-			newline = true;
-		} else if (newline) {
-			newline = false;
-			now = time(NULL);
-			elapsed = now - start;
-			calculate_duration((char *)&timestamp, tlen, elapsed);
-			write(STDOUT_FILENO, timestamp, tlen - 1);
+	EV_SET(&ev, STDIN_FILENO, EVFILT_READ, EV_ADD, 0, 0,
+	    (void*)STDOUT_FILENO);
+	kevent(kq, &ev, 1, NULL, 0, NULL);
+
+	for (;;) {
+		if (kevent(kq, &ev, 1, &ch, 1, NULL) == -1)
+			err(EXIT_FAILURE, "kevent");
+		fd_in = (int)ch.ident;
+		fd_out = (int)ch.udata;
+		pending_len = (size_t)ch.data;
+
+		while (pending_len > 0) {
+			read_len = read(fd_in, buf,
+			    min(sizeof(buf), pending_len));
+			pending_len -= read_len;
+			for (p = buf; read_len > 0; ++p, --read_len) {
+				if (*p == '\n' || *p == '\r') {
+					newline = true;
+				} else if (newline) {
+					newline = false;
+					now = time(NULL);
+					elapsed = now - start;
+					calculate_duration((char *)&timestamp,
+					    tlen, elapsed);
+					write(fd_out, timestamp, tlen - 1);
+				}
+				write(fd_out, p, 1);
+			}
 		}
-		write(STDOUT_FILENO, p, 1);
+
+		if (ch.flags & EV_EOF)
+			break;
 	}
 
 	return 0;
