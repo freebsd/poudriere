@@ -108,7 +108,8 @@ msg_n() {
 	elapsed=
 	if should_show_elapsed; then
 		now=$(date +%s)
-		elapsed="[$(date -j -u -r $((${now} - ${TIME_START})) "+${DURATION_FORMAT}")] "
+		calculate_duration elapsed "$((${now} - ${TIME_START}))"
+		elapsed="[${elapsed}] "
 	fi
 	printf "${elapsed}${DRY_MODE}${COLOR_ARROW}====>>${COLOR_RESET} ${1}${COLOR_RESET_REAL}"
 }
@@ -143,7 +144,7 @@ job_msg() {
 	if [ -n "${MY_JOBID}" ]; then
 		NO_ELAPSED_IN_MSG=0
 		now=$(date +%s)
-		elapsed="$(date -j -u -r $((${now} - ${TIME_START_JOB})) "+${DURATION_FORMAT}")"
+		calculate_duration elapsed "$((${now} - ${TIME_START_JOB}))"
 		msg "[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}][${elapsed}] $1" >&5
 	else
 		msg "$1"

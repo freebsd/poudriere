@@ -259,7 +259,7 @@ log_start() {
 	{
 		local stripcolors_pipe add_ts_pipe
 		[ "${USE_COLORS}" = "yes" ] && stripcolors_pipe="stripcolors |"
-		[ "${TIMESTAMP_LOGS}" = "yes" ] && add_ts_pipe="timestamp \"(${DURATION_FORMAT}) \" |"
+		[ "${TIMESTAMP_LOGS}" = "yes" ] && add_ts_pipe="timestamp |"
 		eval ${add_ts_pipe} ${stripcolors_pipe} tee ${logfile}
 	} < ${logfile}.pipe >&3 &
 	tpid=$!
@@ -661,7 +661,7 @@ show_build_summary() {
 
 	calculate_elapsed_from_log ${now} ${log}
 	elapsed=${_elapsed_time}
-	buildtime=$(date -j -u -r ${elapsed} "+${DURATION_FORMAT}")
+	calculate_duration buildtime ${elapsed}
 
 	printf "[${MASTERNAME}] [${buildname}] [${status}] Queued: %-${queue_width}d ${COLOR_SUCCESS}Built: %-${queue_width}d ${COLOR_FAIL}Failed: %-${queue_width}d ${COLOR_SKIP}Skipped: %-${queue_width}d ${COLOR_IGNORE}Ignored: %-${queue_width}d${COLOR_RESET} Tobuild: %-${queue_width}d  Time: %s\n" \
 	    ${nbq} ${nbb} ${nbf} ${nbs} ${nbi} ${nbtobuild} "${buildtime}"
@@ -715,7 +715,7 @@ siginfo_handler() {
 
 			if [ -n "${pkgname}" ]; then
 				elapsed=$((${now} - ${started}))
-				buildtime=$(date -j -u -r ${elapsed} "+${DURATION_FORMAT}")
+				calculate_duration buildtime "${elapsed}"
 				printf "${format_origin_phase}" "${j}" \
 				    "${origin}" "${phase}" ${buildtime}
 			else
@@ -2467,6 +2467,23 @@ calculate_elapsed_from_log() {
 	return 0
 }
 
+calculate_duration() {
+	[ $# -eq 2 ] || eargs calculate_duration var_return elapsed
+	local var_return="$1"
+	local _elapsed="$2"
+	local seconds minutes hours _duration
+
+	[ ${_elapsed} -ge 0 ] || return 1
+
+	seconds=$((${_elapsed} % 60))
+	minutes=$(((${_elapsed} / 60) % 60))
+	hours=$((${_elapsed} / 3600))
+
+	_duration=$(printf "%02d:%02d:%02d" ${hours} ${minutes} ${seconds})
+
+	setvar "${var_return}" "${_duration}"
+}
+
 madvise_protect() {
 	[ $# -eq 1 ] || eargs madvise_protect pid
 	[ -f /usr/bin/protect ] || return 0
@@ -4041,7 +4058,6 @@ fi
 
 : ${BUILDNAME_FORMAT:="%Y-%m-%d_%Hh%Mm%Ss"}
 : ${BUILDNAME:=$(date +${BUILDNAME_FORMAT})}
-: ${DURATION_FORMAT:="%H:%M:%S"}
 
 if [ -n "${MAX_MEMORY}" ]; then
 	MAX_MEMORY_BYTES="$((${MAX_MEMORY} * 1024 * 1024 * 1024))"

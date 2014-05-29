@@ -616,7 +616,7 @@ info_jail() {
 		elapsed=${_elapsed_time}
 		building_started=$(date -j -r ${start_time} "+%Y-%m-%d %H:%M:%S")
 		elapsed_days=$((elapsed/86400))
-		elapsed_hms=$(date -j -u -r ${elapsed} "+${DURATION_FORMAT}")
+		calculate_duration elapsed_hms "${elapsed}"
 		case ${elapsed_days} in
 			0) elapsed_timestamp="${elapsed_hms}" ;;
 			1) elapsed_timestamp="1 day, ${elapsed_hms}" ;;

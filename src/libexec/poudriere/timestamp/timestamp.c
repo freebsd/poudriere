@@ -29,34 +29,41 @@
 #include <stdlib.h>
 #include <time.h>
 
+static void
+calculate_duration(char *timestamp, size_t tlen, time_t elapsed)
+{
+	int hours, minutes, seconds;
+
+	seconds = elapsed % 60;
+	minutes = (elapsed / 60) % 60;
+	hours = elapsed / 3600;
+
+	snprintf(timestamp, tlen, "(%02d:%02d:%02d) ", hours, minutes,
+	    seconds);
+}
+
 /**
- * Timestamp stdout with given format
+ * Timestamp stdout
  */
 int
 main(int argc, char **argv) {
 	const char *format;
 	time_t elapsed, start, now;
 	char *line = NULL;
-	char timestamp[50];
+	char timestamp[8 + 3 + 1]; /* '[HH:MM:SS] ' + 1 */
 	size_t linecap, tlen;
 	ssize_t linelen;
-	struct tm *t;
-
-	if (argc != 2) {
-		fprintf(stderr, "Usage: timestamp <format>\n");
-		exit(1);
-	}
 
 	start = time(NULL);
 	format = argv[1];
 	linecap = 0;
 	setlinebuf(stdout);
+	tlen = sizeof(timestamp);
 
 	while ((linelen = getline(&line, &linecap, stdin)) > 0) {
 		now = time(NULL);
 		elapsed = now - start;
-		t = gmtime(&elapsed);
-		tlen = strftime(timestamp, sizeof(timestamp), format, t);
+		calculate_duration((char *)&timestamp, tlen, elapsed);
 		fwrite(timestamp, tlen, 1, stdout);
 		fwrite(line, linelen, 1, stdout);
 	}

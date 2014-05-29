@@ -152,7 +152,7 @@ add_summary_build() {
 
 	calculate_elapsed_from_log ${now} ${log}
 	elapsed=${_elapsed_time}
-	time=$(date -j -u -r ${elapsed} "+${DURATION_FORMAT}")
+	calculate_duration time "${elapsed}"
 
 	url=
 	if [ ${COMPACT} -eq 0 ]; then
