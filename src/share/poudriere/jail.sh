@@ -55,7 +55,7 @@ Options:
     -m method     -- When used with -c, overrides the default method for
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
-                       allbsd, csup, ftp, http, ftp-archve, null, svn,
+                       allbsd, csup, ftp, http, ftp-archve, null, src, svn,
                        svn+file, svn+http, svn+https, svn+file, svn+ssh
                        tar=PATH, url=SOMEURL
     -P patch      -- Specify a patch to apply to the source before building.
@@ -220,6 +220,13 @@ update_jail() {
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
+	src=*)
+		SRC_BASE="${METHOD#src=}"
+		install_from_src
+		update_version_env $(jget ${JAILNAME} version)
+		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
+		markfs clean ${JAILMNT}
+		;;
 	allbsd|gjb|url=*)
 		[ -z "${VERSION}" ] && VERSION=$(jget ${JAILNAME} version)
 		[ -z "${ARCH}" ] && ARCH=$(jget ${JAILNAME} arch)
@@ -236,9 +243,47 @@ update_jail() {
 	jset ${JAILNAME} timestamp $(date +%s)
 }
 
-build_and_install_world() {
+installworld() {
+	local destdir="${JAILMNT}"
+
+	msg "Starting make installworld"
+	${MAKE_CMD} -C "${SRC_BASE}" installworld DESTDIR=${destdir} \
+	    DB_FROM_SRC=1 || err 1 "Failed to 'make installworld'"
+	${MAKE_CMD} -C "${SRC_BASE}" DESTDIR=${destdir} DB_FROM_SRC=1 \
+	    distrib-dirs || err 1 "Failed to 'make distrib-dirs'"
+	${MAKE_CMD} -C "${SRC_BASE}" DESTDIR=${destdir} distribution ||
+	    err 1 "Failed to 'make distribution'"
+
+	return 0
+}
+
+setup_compat_env() {
 	local osversion hostver
 
+	osversion=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' ${SRC_BASE}/sys/sys/param.h)
+	hostver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' /usr/include/sys/param.h)
+	MAKE_CMD=make
+	if [ ${hostver} -gt 1000000 -a ${osversion} -lt 1000000 ]; then
+		FMAKE=$(which fmake 2>/dev/null)
+		[ -n "${FMAKE}" ] ||
+			err 1 "You need fmake installed on the host: devel/fmake"
+		MAKE_CMD=${FMAKE}
+	fi
+
+	# Don't enable CCACHE for 10, there are still obscure clang and ld
+	# issues
+	if [ ${osversion} -lt 1000000 ]; then
+		: ${CCACHE_PATH:="/usr/local/libexec/ccache"}
+		if [ -n "${CCACHE_DIR}" -a -d ${CCACHE_PATH}/world ]; then
+			export CCACHE_DIR
+			export CC="${CCACHE_PATH}/world/cc"
+			export CXX="${CCACHE_PATH}/world/c++"
+			unset CCACHE_TEMPDIR
+		fi
+	fi
+}
+
+build_and_install_world() {
 	mkdir -p ${JAILMNT}/usr/bin
 
 	[ -n "${EMULATOR}" ] && cp "${EMULATOR}" "${JAILMNT}${EMULATOR}"
@@ -256,38 +301,18 @@ build_and_install_world() {
 	export SRCCONF=${JAILMNT}/etc/src.conf
 	MAKE_JOBS="-j${PARALLEL_JOBS}"
 
-	osversion=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' ${SRC_BASE}/sys/sys/param.h)
-	hostver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' /usr/include/sys/param.h)
-	make_cmd=make
-	if [ ${hostver} -gt 1000000 -a ${osversion} -lt 1000000 ]; then
-		FMAKE=$(which fmake 2>/dev/null)
-		[ -n "${FMAKE}" ] ||
-			err 1 "You need fmake installed on the host: devel/fmake"
-		make_cmd=${FMAKE}
-	fi
-
-	# Don't enable CCACHE for 10, there are still obscure clang and ld
-	# issues
-	if [ ${osversion} -lt 1000000 ]; then
-		: ${CCACHE_PATH:="/usr/local/libexec/ccache"}
-		if [ -n "${CCACHE_DIR}" -a -d ${CCACHE_PATH}/world ]; then
-			export CCACHE_DIR
-			export CC="${CCACHE_PATH}/world/cc"
-			export CXX="${CCACHE_PATH}/world/c++"
-			unset CCACHE_TEMPDIR
-		fi
-	fi
+	setup_compat_env
 
 	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
-	${make_cmd} -C ${SRC_BASE} buildworld ${MAKE_JOBS} \
+	${MAKE_CMD} -C ${SRC_BASE} buildworld ${MAKE_JOBS} \
 	    ${MAKEWORLDARGS} || err 1 "Failed to 'make buildworld'"
-	msg "Starting make installworld"
-	${make_cmd} -C ${SRC_BASE} installworld DESTDIR=${JAILMNT} \
-	    DB_FROM_SRC=1 || err 1 "Failed to 'make installworld'"
-	${make_cmd} -C ${SRC_BASE} DESTDIR=${JAILMNT} DB_FROM_SRC=1 \
-	    distrib-dirs || err 1 "Failed to 'make distrib-dirs'"
-	${make_cmd} -C ${SRC_BASE} DESTDIR=${JAILMNT} distribution ||
-	    err 1 "Failed to 'make distribution'"
+
+	installworld
+}
+
+install_from_src() {
+	setup_compat_env
+	installworld
 }
 
 install_from_svn() {
@@ -538,6 +563,10 @@ create_jail() {
 		esac
 		msg "csup has been depreciated by FreeBSD. Only use if you are syncing with your own csup repo."
 		FCT=install_from_csup
+		;;
+	src=*)
+		SRC_BASE="${METHOD#src=}"
+		FCT=install_from_src
 		;;
 	tar=*)
 		FCT=install_from_tar
