@@ -179,7 +179,7 @@ update_jail() {
 		MASTERMNT=${JAILMNT}
 		MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
-		do_jail_mounts ${JAILMNT} ${ARCH}
+		do_jail_mounts "${JAILMNT}" "${JAILMNT}" ${ARCH}
 		JNETNAME="n"
 		jstart
 		if [ -z "${TORELEASE}" ]; then

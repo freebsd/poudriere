@@ -148,9 +148,6 @@ clonefs() {
 			${zfs_to}
 	else
 		[ ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs all ${to}
-		# Mount /usr/src into target, no need for anything to write to it
-		mkdir -p ${to}/usr/src
-		${NULLMOUNT} -o ro ${from}/usr/src ${to}/usr/src
 		do_clone "${from}" "${to}"
 	fi
 }

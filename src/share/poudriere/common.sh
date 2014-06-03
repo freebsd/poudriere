@@ -949,9 +949,10 @@ rm() {
 }
 
 do_jail_mounts() {
-	[ $# -ne 2 ] && eargs do_jail_mounts mnt arch
-	local mnt=$1
-	local arch=$2
+	[ $# -ne 3 ] && eargs do_jail_mounts from mnt arch
+	local from="$1"
+	local mnt="$2"
+	local arch="$3"
 	local devfspath="null zero random urandom stdin stdout stderr fd fd/* bpf* pts pts/*"
 
 	# clone will inherit from the ref jail
@@ -960,6 +961,7 @@ do_jail_mounts() {
 		    ${mnt}/dev \
 		    ${mnt}/compat/linux/proc \
 		    ${mnt}/usr/ports \
+		    ${mnt}/usr/src \
 		    ${mnt}/wrkdirs \
 		    ${mnt}/${LOCALBASE:-/usr/local} \
 		    ${mnt}/distfiles \
@@ -968,6 +970,9 @@ do_jail_mounts() {
 		    ${mnt}${HOME}/.ccache \
 		    ${mnt}/var/db/ports
 	fi
+
+	# Mount /usr/src into target, no need for anything to write to it
+	${NULLMOUNT} -o ro ${from}/usr/src ${mnt}/usr/src
 
 	# ref jail only needs devfs
 	mount -t devfs devfs ${mnt}/dev
@@ -1409,9 +1414,10 @@ jail_start() {
 
 	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
 	msg_n "Creating the reference jail..."
+	echo "src" >> ${mnt}/usr/.cpignore
 	clonefs ${mnt} ${tomnt} clean
-	echo "src" >> ${tomnt}/usr/.cpignore
-	echo "poudriere" >> ${tomnt}/.cpignore
+	echo "poudriere" >> ${mnt}/.cpignore
+	rm -f ${mnt}/usr/.cpignore
 	echo " done"
 
 	if [ ${JAIL_OSVERSION} -gt ${HOST_OSVERSION} ]; then
@@ -1423,7 +1429,7 @@ jail_start() {
 	fi
 
 	msg "Mounting system devices for ${MASTERNAME}"
-	do_jail_mounts ${tomnt} ${arch}
+	do_jail_mounts "${mnt}" "${tomnt}" ${arch}
 
 	PACKAGES=${POUDRIERE_DATA}/packages/${MASTERNAME}
 
@@ -2253,7 +2259,7 @@ start_builder() {
 	# Create the /poudriere so that on zfs rollback does not nukes it
 	mkdir -p ${mnt}/.p
 	markfs prepkg ${mnt} >/dev/null
-	do_jail_mounts ${mnt} ${arch}
+	do_jail_mounts "${MASTERMNT}" ${mnt} ${arch}
 	do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
 	jstart
 	bset ${id} status "idle:"
