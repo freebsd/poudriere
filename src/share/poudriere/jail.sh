@@ -229,20 +229,21 @@ update_jail() {
 
 build_and_install_world() {
 	mkdir -p ${JAILMNT}/usr/bin
-	case "${ARCH}" in
-	mips)
-		cp ${EMULATOR} ${JAILMNT}${EMULATOR}
-		export TARGET=mips
-		;;
-	mips64)
-		cp ${EMULATOR} ${JAILMNT}${EMULATOR}
-		export TARGET=mips
-		;;
-	armv6)
-		cp ${EMULATOR} ${JAILMNT}${EMULATOR}
-		export TARGET=arm
-		;;
-	esac
+
+	if [ -n "${EMULATOR}" ]; then
+		cp "${EMULATOR}" "${JAILMNT}${EMULATOR}"
+		case "${ARCH}" in
+			mips)
+				export TARGET=mips
+				;;
+			mips64)
+				export TARGET=mips
+				;;
+			armv6)
+				export TARGET=arm
+				;;
+		esac
+	fi
 
 	export TARGET_ARCH=${ARCH}
 	export SRC_BASE=${JAILMNT}/usr/src
@@ -682,6 +683,31 @@ SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
 . ${SCRIPTPREFIX}/common.sh
 
+need_emulation() {
+	[ $# -eq 2 ] || eargs need_emulation real_arch wanted_arch
+	local real_arch="$1"
+	local wanted_arch="$2"
+
+	if [ "${real_arch}" = "amd64" -a "${wanted_arch}" = "i386" ]; then
+		return 1
+	elif [ "${real_arch}" != "${wanted_arch}" ]; then
+		return 0
+	fi
+
+	return 1
+}
+
+check_emulation() {
+	if need_emulation "${REALARCH}" "${ARCH}"; then
+		msg "Cross-building ports for ${ARCH} on ${REALARCH} requires QEMU"
+		[ -x "${BINMISC}" ] || \
+		    err 1 "Cannot find ${BINMISC}. Install ${BINMISC} and restart"
+		EMULATOR=$(${BINMISC} lookup ${ARCH} 2>/dev/null | awk '/interpreter:/ {print $2}')
+		[ -x "${EMULATOR}" ] || \
+		    err 1 "You need to setup an emulator with binmiscctl(8) for ${ARCH}"
+	fi
+}
+
 while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:" FLAG; do
 	case "${FLAG}" in
 		i)
@@ -697,15 +723,7 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:" FLAG; do
 			VERSION=${OPTARG}
 			;;
 		a)
-			[ "${REALARCH}" != "amd64" -a "${REALARCH}" != ${OPTARG} ] &&
-				err 1 "Only amd64 host can choose another architecture"
-
-			[ "${REALARCH}" != ${OPTARG}  -a ! -x "${BINMISC}" ] &&
-				err 1 "Cannot find ${BINMISC}.  Install ${BINMISC} and restart"
-
 			ARCH=${OPTARG}
-			EMULATOR=`${BINMISC} lookup ${ARCH} 2>/dev/null | grep ^interpreter | awk '{print $2}'`
-			[ -x "${EMULATOR}" ] || err 1 "You need to setup an emulator with binmiscctl(8)"
 			;;
 		m)
 			METHOD=${OPTARG}
@@ -777,6 +795,7 @@ fi
 case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	10000000)
 		test -z ${JAILNAME} && usage JAILNAME
+		check_emulation
 		maybe_run_queued "${saved_argv}"
 		create_jail
 		;;
@@ -820,6 +839,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	00000010)
 		test -z ${JAILNAME} && usage JAILNAME
 		maybe_run_queued "${saved_argv}"
+		check_emulation
 		update_jail
 		;;
 	00000011)
