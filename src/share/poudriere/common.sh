@@ -1017,7 +1017,7 @@ enter_interactive() {
 		ensure_pkg_installed
 		# Install the selected PKGNG package
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
-		    PKG_ADD="/poudriere/pkg-static add" \
+		    PKG_ADD="/.p/pkg-static add" \
 		    make -C \
 		    /usr/ports/$(injail make -f /usr/ports/Mk/bsd.port.mk \
 		    -V PKGNG_ORIGIN) install-package
@@ -1482,7 +1482,7 @@ jail_start() {
 		export PKG_BIN="${LOCALBASE:-/usr/local}/sbin/pkg-static"
 		export PKG_ADD="${PKG_BIN} add"
 		export PKG_DELETE="${PKG_BIN} delete -y -f"
-		export PKG_VERSION="/poudriere/pkg-static version"
+		export PKG_VERSION="/.p/pkg-static version"
 
 		[ -n "${PKG_REPO_SIGNING_KEY}" ] &&
 			! [ -f "${PKG_REPO_SIGNING_KEY}" ] &&
@@ -2821,7 +2821,7 @@ deps_file() {
 		if [ "${PKG_EXT}" = "tbz" ]; then
 			injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | awk '$1 == "@pkgdep" { print $2 }' > "${_depfile}"
 		else
-			injail /poudriere/pkg-static info -qdF "/packages/All/${pkg##*/}" > "${_depfile}"
+			injail /.p/pkg-static info -qdF "/packages/All/${pkg##*/}" > "${_depfile}"
 		fi
 	fi
 
@@ -2846,7 +2846,7 @@ pkg_get_origin() {
 				_origin=$(injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | \
 					awk -F: '$1 == "@comment ORIGIN" { print $2 }')
 			else
-				_origin=$(injail /poudriere/pkg-static query -F \
+				_origin=$(injail /.p/pkg-static query -F \
 					"/packages/All/${pkg##*/}" "%o")
 			fi
 		fi
@@ -2877,7 +2877,7 @@ pkg_get_dep_origin() {
 			compiled_dep_origins=$(injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | \
 				awk -F: '$1 == "@comment DEPORIGIN" {print $2}' | tr '\n' ' ')
 		else
-			compiled_dep_origins=$(injail /poudriere/pkg-static query -F \
+			compiled_dep_origins=$(injail /.p/pkg-static query -F \
 				"/packages/All/${pkg##*/}" '%do' | tr '\n' ' ')
 		fi
 		echo "${compiled_dep_origins}" > "${dep_origin_file}"
@@ -2918,7 +2918,7 @@ pkg_get_options() {
 				awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | \
 				sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 		else
-			_compiled_options=$(injail /poudriere/pkg-static query -F \
+			_compiled_options=$(injail /.p/pkg-static query -F \
 				"/packages/All/${pkg##*/}" '%Ov%Ok' | sed '/^off/d;s/^on//' | sort | tr '\n' ' ')
 		fi
 		echo "${_compiled_options}" > "${optionsfile}"
@@ -2945,7 +2945,7 @@ ensure_pkg_installed() {
 	[ -x ${mnt}/.p/pkg-static ] && return 0
 	[ -e ${MASTERMNT}/packages/Latest/pkg.txz ] || return 1 #pkg missing
 	injail tar xf /packages/Latest/pkg.txz -C / \
-		-s ",/.*/,poudriere/,g" "*/pkg-static"
+		-s ",/.*/,.p/,g" "*/pkg-static"
 	return 0
 }
 
@@ -3838,7 +3838,7 @@ build_repo() {
 		if [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
 			install -m 0400 ${PKG_REPO_SIGNING_KEY} \
 				${MASTERMNT}/tmp/repo.key
-			injail /poudriere/pkg-static repo -o /tmp/packages \
+			injail /.p/pkg-static repo -o /tmp/packages \
 				/packages /tmp/repo.key
 			rm -f ${MASTERMNT}/tmp/repo.key
 		elif [ "${PKG_REPO_FROM_HOST:-no}" = "yes" ]; then
@@ -3849,7 +3849,7 @@ build_repo() {
 			    -o ${MASTERMNT}/tmp/packages ${MASTERMNT}/packages \
 			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 		else
-			JNETNAME="n" injail /poudriere/pkg-static repo \
+			JNETNAME="n" injail /.p/pkg-static repo \
 			    -o /tmp/packages /packages \
 			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 		fi
