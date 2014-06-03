@@ -1800,7 +1800,7 @@ gather_distfiles() {
 		[ -f ${from}/${sub}/${d} ] || continue
 		tosubd=${to}/${sub}/${d}
 		mkdir -p ${tosubd%/*} || return 1
-		cpdup ${from}/${sub}/${d} ${to}/${sub}/${d} || return 1
+		do_clone "${from}/${sub}/${d}" "${to}/${sub}/${d}" || return 1
 	done
 
 	for special in ${specials}; do

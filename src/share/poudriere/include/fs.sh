@@ -44,6 +44,10 @@ createfs() {
 	fi
 }
 
+do_clone() {
+	cpdup -i0 -x "${1}" "${2}"
+}
+
 rollbackfs() {
 	[ $# -ne 2 ] && eargs rollbackfs name mnt
 	local name=$1
@@ -62,7 +66,7 @@ rollbackfs() {
 		mtree_mnt="${mnt}"
 	fi
 
-	cpdup -i0 -x ${MASTERMNT} ${mnt}
+	do_clone "${MASTERMNT}" "${mnt}"
 }
 
 umountfs() {
@@ -147,7 +151,7 @@ clonefs() {
 		# Mount /usr/src into target, no need for anything to write to it
 		mkdir -p ${to}/usr/src
 		${NULLMOUNT} -o ro ${from}/usr/src ${to}/usr/src
-		cpdup -x ${from} ${to}
+		do_clone "${from}" "${to}"
 	fi
 }
 
