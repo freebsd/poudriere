@@ -55,7 +55,7 @@ Options:
     -m method     -- When used with -c, overrides the default method for
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
-                       csup, ftp, http, ftp-archve, allbsd, svn, svn+file,
+                       allbsd, csup, ftp, http, ftp-archve, svn, svn+file,
                        svn+http, svn+https, svn+file, svn+ssh, tar=PATH,
                        url=SOMEURL
     -P patch      -- Specify a patch to apply to the source before building.
