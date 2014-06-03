@@ -237,6 +237,8 @@ update_jail() {
 }
 
 build_and_install_world() {
+	local osversion hostver
+
 	mkdir -p ${JAILMNT}/usr/bin
 
 	[ -n "${EMULATOR}" ] && cp "${EMULATOR}" "${JAILMNT}${EMULATOR}"
@@ -254,10 +256,10 @@ build_and_install_world() {
 	export SRCCONF=${JAILMNT}/etc/src.conf
 	MAKE_JOBS="-j${PARALLEL_JOBS}"
 
-	fbsdver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' ${SRC_BASE}/sys/sys/param.h)
-	hostver=$(sysctl -n kern.osreldate)
+	osversion=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' ${SRC_BASE}/sys/sys/param.h)
+	hostver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' /usr/include/sys/param.h)
 	make_cmd=make
-	if [ ${hostver} -gt 1000000 -a ${fbsdver} -lt 1000000 ]; then
+	if [ ${hostver} -gt 1000000 -a ${osversion} -lt 1000000 ]; then
 		FMAKE=$(which fmake 2>/dev/null)
 		[ -n "${FMAKE}" ] ||
 			err 1 "You need fmake installed on the host: devel/fmake"
@@ -266,7 +268,7 @@ build_and_install_world() {
 
 	# Don't enable CCACHE for 10, there are still obscure clang and ld
 	# issues
-	if [ ${fbsdver} -lt 1000000 ]; then
+	if [ ${osversion} -lt 1000000 ]; then
 		: ${CCACHE_PATH:="/usr/local/libexec/ccache"}
 		if [ -n "${CCACHE_DIR}" -a -d ${CCACHE_PATH}/world ]; then
 			export CCACHE_DIR
