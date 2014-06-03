@@ -1634,7 +1634,7 @@ cleanup() {
 
 	fi
 
-	rmdir "${POUDRIERE_DATA}/.lock-$$-*" 2>/dev/null || :
+	rmdir ${POUDRIERE_DATA}/.lock-$$-* 2>/dev/null || :
 
 	export CLEANED_UP=1
 }
