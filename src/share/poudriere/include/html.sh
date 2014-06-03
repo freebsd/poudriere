@@ -52,7 +52,7 @@ stress_snapshot() {
 json_main() {
 	while :; do
 		stress_snapshot
-		update_stats
+		update_stats || :
 		build_all_json
 		sleep 2
 	done

@@ -251,7 +251,7 @@ if [ ${ret} -ne 0 ]; then
 		${log}/logs/errors/${PKGNAME}.log \
 		2> /dev/null)
 	badd ports.failed "${ORIGIN} ${PKGNAME} ${failed_phase} ${errortype}"
-	update_stats
+	update_stats || :
 
 	if [ ${INTERACTIVE_MODE} -eq 0 ]; then
 		stop_build /usr/ports/${ORIGIN} 1
@@ -267,7 +267,7 @@ else
 		save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" \
 		    "noneed" || :
 	fi
-	update_stats
+	update_stats || :
 fi
 
 if [ ${INTERACTIVE_MODE} -gt 0 ]; then

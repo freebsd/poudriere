@@ -555,7 +555,7 @@ update_stats() {
 
 	set +e
 
-	lock_acquire update_stats
+	lock_acquire update_stats || return 1
 
 	for type in built failed ignored; do
 		_bget unused "ports.${type}"
@@ -2563,7 +2563,7 @@ parallel_build() {
 	stop_builders
 
 	bset status "updating_stats:"
-	update_stats
+	update_stats || msg_warn "Error updating build stats"
 
 	bset status "idle:"
 
