@@ -55,7 +55,8 @@ Options:
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
                        csup, ftp, http, ftp-archve, allbsd, svn, svn+file,
-                       svn+http, svn+https, svn+file, svn+ssh, url=SOMEURL
+                       svn+http, svn+https, svn+file, svn+ssh, tar=PATH,
+                       url=SOMEURL
     -P patch      -- Specify a patch to apply to the source before building.
     -t version    -- Version of FreeBSD to upgrade the jail to.
 
@@ -215,6 +216,9 @@ update_jail() {
 		[ -z "${ARCH}" ] && ARCH=$(jget ${JAILNAME} arch)
 		delete_jail
 		create_jail
+		;;
+	tar)
+		err 1 "Upgrade is not supported with tar; to upgrade, please delete and recreate the jail"
 		;;
 	*)
 		err 1 "Unsupported method"
@@ -441,6 +445,12 @@ install_from_ftp() {
 	echo " done"
 }
 
+install_from_tar() {
+	msg_n "Installing ${VERSION} ${ARCH} from ${TARBALL} ..."
+	tar -xpf ${TARBALL} -C ${JAILMNT}/ || err 1 " fail"
+	echo " done"
+}
+
 create_jail() {
 	jail_exists ${JAILNAME} && err 2 "The jail ${JAILNAME} already exists"
 
@@ -517,6 +527,14 @@ create_jail() {
 		msg "csup has been depreciated by FreeBSD. Only use if you are syncing with your own csup repo."
 		FCT=install_from_csup
 		;;
+	tar=*)
+		FCT=install_from_tar
+		TARBALL="${METHOD##*=}"
+		[ -z "${TARBALL}" ] && \
+		    err 1 "Must use format -m tar=/path/to/tarball.tar"
+		[ -r "${TARBALL}" ] || err 1 "Cannot read file ${TARBALL}"
+		METHOD="${METHOD%%=*}"
+		;;
 	*)
 		err 2 "Unknown method to create the jail"
 		;;
@@ -535,7 +553,11 @@ create_jail() {
 	jset ${JAILNAME} method ${METHOD}
 	${FCT} version_extra
 
-	RELEASE=$(update_version "${version_extra}")
+	if [ -r "${JAILMNT}/usr/src/sys/conf/newvers.sh" ]; then
+		RELEASE=$(update_version "${version_extra}")
+	else
+		RELEASE="${VERSION}"
+	fi
 	update_version_env "${RELEASE}"
 
 	if [ "${ARCH}" = "i386" -a "${REALARCH}" = "amd64" ]; then
