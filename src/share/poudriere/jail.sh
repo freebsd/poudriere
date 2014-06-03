@@ -131,7 +131,7 @@ cleanup_new_jail() {
 update_version() {
 	local version_extra="$1"
 
-	eval `grep "^[RB][A-Z]*=" ${JAILMNT}/usr/src/sys/conf/newvers.sh `
+	eval `grep "^[RB][A-Z]*=" ${SRC_BASE}/sys/conf/newvers.sh `
 	RELEASE=${REVISION}-${BRANCH}
 	[ -n "${version_extra}" ] &&
 	    RELEASE="${RELEASE} ${version_extra}"
@@ -167,6 +167,7 @@ update_jail() {
 	jail_runs ${JAILNAME} &&
 		err 1 "Unable to update jail ${JAILNAME}: it is running"
 
+	SRC_BASE="${JAILMNT}/usr/src"
 	METHOD=$(jget ${JAILNAME} method)
 	if [ -z "${METHOD}" -o "${METHOD}" = "-" ]; then
 		METHOD="ftp"
@@ -209,14 +210,14 @@ update_jail() {
 		msg "csup has been deprecated by FreeBSD. Only use if you are syncing with your own csup repo."
 		install_from_csup
 		update_version_env $(jget ${JAILNAME} version)
-		make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
+		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
 	svn*)
 		install_from_svn version_extra
 		RELEASE=$(update_version "${version_extra}")
 		update_version_env "${RELEASE}"
-		make -C ${JAILMNT}/usr/src delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
+		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
 	allbsd|gjb|url=*)
@@ -253,7 +254,7 @@ build_and_install_world() {
 	export SRCCONF=${JAILMNT}/etc/src.conf
 	MAKE_JOBS="-j${PARALLEL_JOBS}"
 
-	fbsdver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' ${JAILMNT}/usr/src/sys/sys/param.h)
+	fbsdver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' ${SRC_BASE}/sys/sys/param.h)
 	hostver=$(sysctl -n kern.osreldate)
 	make_cmd=make
 	if [ ${hostver} -gt 1000000 -a ${fbsdver} -lt 1000000 ]; then
@@ -276,14 +277,14 @@ build_and_install_world() {
 	fi
 
 	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
-	${make_cmd} -C ${JAILMNT}/usr/src buildworld ${MAKE_JOBS} \
+	${make_cmd} -C ${SRC_BASE} buildworld ${MAKE_JOBS} \
 	    ${MAKEWORLDARGS} || err 1 "Failed to 'make buildworld'"
 	msg "Starting make installworld"
-	${make_cmd} -C ${JAILMNT}/usr/src installworld DESTDIR=${JAILMNT} \
+	${make_cmd} -C ${SRC_BASE} installworld DESTDIR=${JAILMNT} \
 	    DB_FROM_SRC=1 || err 1 "Failed to 'make installworld'"
-	${make_cmd} -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} DB_FROM_SRC=1 \
+	${make_cmd} -C ${SRC_BASE} DESTDIR=${JAILMNT} DB_FROM_SRC=1 \
 	    distrib-dirs || err 1 "Failed to 'make distrib-dirs'"
-	${make_cmd} -C ${JAILMNT}/usr/src DESTDIR=${JAILMNT} distribution ||
+	${make_cmd} -C ${SRC_BASE} DESTDIR=${JAILMNT} distribution ||
 	    err 1 "Failed to 'make distribution'"
 }
 
@@ -293,8 +294,11 @@ install_from_svn() {
 	local proto
 	local svn_rev
 
-	[ -d ${JAILMNT}/usr/src ] && UPDATE=1
-	mkdir -p ${JAILMNT}/usr/src
+	if [ -d "${SRC_BASE}" ]; then
+		UPDATE=1
+	else
+		mkdir -p ${SRC_BASE}
+	fi
 	case ${METHOD} in
 	svn+http) proto="http" ;;
 	svn+https) proto="https" ;;
@@ -304,22 +308,22 @@ install_from_svn() {
 	esac
 	if [ ${UPDATE} -eq 0 ]; then
 		msg_n "Checking out the sources from svn..."
-		${SVN_CMD} -q co ${proto}://${SVN_HOST}/base/${VERSION} ${JAILMNT}/usr/src || err 1 " fail"
+		${SVN_CMD} -q co ${proto}://${SVN_HOST}/base/${VERSION} ${SRC_BASE} || err 1 " fail"
 		echo " done"
 		if [ -n "${SRCPATCHFILE}" ]; then
 			msg_n "Patching the sources with ${SRCPATCHFILE}"
-			${SVN_CMD} -q patch ${SRCPATCHFILE} ${JAILMNT}/usr/src || err 1 " fail"
+			${SVN_CMD} -q patch ${SRCPATCHFILE} ${SRC_BASE} || err 1 " fail"
 			echo done
 		fi
 	else
 		msg_n "Updating the sources from svn..."
-		${SVN_CMD} upgrade ${JAILMNT}/usr/src 2>/dev/null || :
-		${SVN_CMD} -q update -r ${TORELEASE:-head} ${JAILMNT}/usr/src || err 1 " fail"
+		${SVN_CMD} upgrade ${SRC_BASE} 2>/dev/null || :
+		${SVN_CMD} -q update -r ${TORELEASE:-head} ${SRC_BASE} || err 1 " fail"
 		echo " done"
 	fi
 	build_and_install_world
 
-	svn_rev=$(${SVN_CMD} info ${JAILMNT}/usr/src |
+	svn_rev=$(${SVN_CMD} info ${SRC_BASE} |
 	    awk '/Last Changed Rev:/ {print $4}')
 	setvar "${var_version_extra}" "r${svn_rev}"
 }
@@ -327,7 +331,7 @@ install_from_svn() {
 install_from_csup() {
 	local var_version_extra="$1"
 	local UPDATE=0
-	[ -d ${JAILMNT}/usr/src ] && UPDATE=1
+	[ -d "${SRC_BASE}" ] && UPDATE=1
 	mkdir -p ${JAILMNT}/etc
 	mkdir -p ${JAILMNT}/var/db
 	mkdir -p ${JAILMNT}/usr
@@ -473,6 +477,8 @@ create_jail() {
 		JAILFS=${ZPOOL}${ZROOTFS}/jails/${JAILNAME}
 	fi
 
+	SRC_BASE="${JAILMNT}/usr/src"
+
 	case ${METHOD} in
 	ftp|http|gjb|ftp-archive|url=*)
 		FCT=install_from_ftp
@@ -561,7 +567,7 @@ create_jail() {
 	jset ${JAILNAME} method ${METHOD}
 	[ -n "${FCT}" ] && ${FCT} version_extra
 
-	if [ -r "${JAILMNT}/usr/src/sys/conf/newvers.sh" ]; then
+	if [ -r "${SRC_BASE}/sys/conf/newvers.sh" ]; then
 		RELEASE=$(update_version "${version_extra}")
 	else
 		RELEASE="${VERSION}"
