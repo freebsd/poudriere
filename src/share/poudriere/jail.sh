@@ -46,7 +46,8 @@ Options:
     -J n          -- Run buildworld in parallel with n jobs.
     -j jailname   -- Specify the jailname
     -v version    -- Specify which version of FreeBSD to install in the jail.
-    -a arch       -- Indicates the architecture of the jail: i386 or amd64
+    -a arch       -- Indicates the TARGET_ARCH of the jail. Such as i386 or
+                     amd64. Format of TARGET.TARGET_ARCH is also supported.
                      (Default: same as the host)
     -f fs         -- FS name (tank/jails/myjail) if fs is "none" then do not
                      create on ZFS.
@@ -140,7 +141,8 @@ update_version_env() {
 	osversion=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILMNT}/usr/include/sys/param.h`
 	login_env=",UNAME_r=${release% *},UNAME_v=FreeBSD ${release},OSVERSION=${osversion}"
 
-	[ "${ARCH}" = "i386" -a "${REALARCH}" = "amd64" ] &&
+	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
+	[ "${ARCH%.*}" = "i386" -a "${REALARCH}" = "amd64" ] &&
 		login_env="${login_env},UNAME_p=i386,UNAME_m=i386"
 
 	sed -i "" -e "s/,UNAME_r.*:/:/ ; s/:\(setenv.*\):/:\1${login_env}:/" ${JAILMNT}/etc/login.conf
@@ -230,22 +232,10 @@ update_jail() {
 build_and_install_world() {
 	mkdir -p ${JAILMNT}/usr/bin
 
-	if [ -n "${EMULATOR}" ]; then
-		cp "${EMULATOR}" "${JAILMNT}${EMULATOR}"
-		case "${ARCH}" in
-			mips)
-				export TARGET=mips
-				;;
-			mips64)
-				export TARGET=mips
-				;;
-			armv6)
-				export TARGET=arm
-				;;
-		esac
-	fi
+	[ -n "${EMULATOR}" ] && cp "${EMULATOR}" "${JAILMNT}${EMULATOR}"
 
-	export TARGET_ARCH=${ARCH}
+	[ "${ARCH%.*}" = "${ARCH#*.}" ] || export TARGET=${ARCH%.*}
+	export TARGET_ARCH=${ARCH#*.}
 	export SRC_BASE=${JAILMNT}/usr/src
 	mkdir -p ${JAILMNT}/etc
 	[ -f ${JAILMNT}/etc/src.conf ] && rm -f ${JAILMNT}/etc/src.conf
@@ -561,7 +551,8 @@ create_jail() {
 	fi
 	update_version_env "${RELEASE}"
 
-	if [ "${ARCH}" = "i386" -a "${REALARCH}" = "amd64" ]; then
+	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
+	if [ "${ARCH%.*}" = "i386" -a "${REALARCH}" = "amd64" ]; then
 		cat > ${JAILMNT}/etc/make.conf << EOF
 ARCH=i386
 MACHINE=i386
@@ -663,7 +654,9 @@ info_jail() {
 	unset POUDRIERE_BUILD_TYPE
 }
 
-ARCH=`uname -m`
+ARCH="$(uname -m).$(uname -p)"
+# If TARGET=TARGET_ARCH trim it away and just use TARGET_ARCH
+[ "${ARCH%.*}" = "${ARCH#*.}" ] && ARCH="${ARCH#*.}"
 REALARCH=${ARCH}
 START=0
 STOP=0
@@ -688,13 +681,20 @@ need_emulation() {
 	local real_arch="$1"
 	local wanted_arch="$2"
 
-	if [ "${real_arch}" = "amd64" -a "${wanted_arch}" = "i386" ]; then
+	# Returning 1 means no emulation required.
+
+	# Check for host=amd64 and TARGET=i386 (not TARGET_ARCH due to
+	# pc98/i386)
+	if [ "${real_arch}" = "amd64" \
+	    -a "${wanted_arch%.*}" = "i386" ]; then
 		return 1
-	elif [ "${real_arch}" != "${wanted_arch}" ]; then
-		return 0
+	# TARGET_ARCH matches
+	elif [ "${real_arch#*.}" = "${wanted_arch#*.}" ]; then
+		return 1
 	fi
 
-	return 1
+	# Emulation is required
+	return 0
 }
 
 check_emulation() {
@@ -724,6 +724,9 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:" FLAG; do
 			;;
 		a)
 			ARCH=${OPTARG}
+			# If TARGET=TARGET_ARCH trim it away and just use
+			# TARGET_ARCH
+			[ "${ARCH%.*}" = "${ARCH#*.}" ] && ARCH="${ARCH#*.}"
 			;;
 		m)
 			METHOD=${OPTARG}
