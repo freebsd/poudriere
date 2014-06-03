@@ -26,6 +26,7 @@
 # SUCH DAMAGE.
 
 usage() {
+	[ $# -gt 0 ] && echo "Missing: $@" >&2
 	cat << EOF
 poudriere jail [parameters] [options]
 
@@ -102,7 +103,7 @@ list_jail() {
 delete_jail() {
 	local cache_dir
 
-	test -z ${JAILNAME} && usage
+	test -z ${JAILNAME} && usage JAILNAME
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	jail_runs ${JAILNAME} &&
 		err 1 "Unable to delete jail ${JAILNAME}: it is running"
@@ -443,7 +444,7 @@ install_from_ftp() {
 create_jail() {
 	jail_exists ${JAILNAME} && err 2 "The jail ${JAILNAME} already exists"
 
-	test -z ${VERSION} && usage
+	test -z ${VERSION} && usage VERSION
 
 	[ "${JAILNAME#*.*}" = "${JAILNAME}" ] ||
 		err 1 "The jailname can not contain a period (.). See jail(8)"
@@ -748,12 +749,12 @@ fi
 
 case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	10000000)
-		test -z ${JAILNAME} && usage
+		test -z ${JAILNAME} && usage JAILNAME
 		maybe_run_queued "${saved_argv}"
 		create_jail
 		;;
 	01000000)
-		test -z ${JAILNAME} && usage
+		test -z ${JAILNAME} && usage JAILNAME
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		_mastermnt MASTERMNT
 		export MASTERMNT
@@ -763,7 +764,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		list_jail
 		;;
 	00010000)
-		test -z ${JAILNAME} && usage
+		test -z ${JAILNAME} && usage JAILNAME
 		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 		maybe_run_queued "${saved_argv}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
@@ -775,7 +776,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		;;
 	00001000)
 		export SET_STATUS_ON_START=0
-		test -z ${JAILNAME} && usage
+		test -z ${JAILNAME} && usage JAILNAME
 		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 		maybe_run_queued "${saved_argv}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
@@ -785,17 +786,17 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		JNETNAME="n"
 		;;
 	00000100)
-		test -z ${JAILNAME} && usage
+		test -z ${JAILNAME} && usage JAILNAME
 		maybe_run_queued "${saved_argv}"
 		delete_jail
 		;;
 	00000010)
-		test -z ${JAILNAME} && usage
+		test -z ${JAILNAME} && usage JAILNAME
 		maybe_run_queued "${saved_argv}"
 		update_jail
 		;;
 	00000011)
-		test -z ${JAILNAME} && usage
+		test -z ${JAILNAME} && usage JAILNAME
 		maybe_run_queued "${saved_argv}"
 		rename_jail
 		;;
