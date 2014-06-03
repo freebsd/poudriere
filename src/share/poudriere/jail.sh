@@ -584,7 +584,16 @@ EOF
 	jail -U root -c path=${JAILMNT} command=/sbin/ldconfig -m /lib /usr/lib /usr/lib/compat
 
 	markfs clean ${JAILMNT}
+
+	# Always update when using FreeBSD dists
+	case ${METHOD} in
+		ftp|http|ftp-archive)
+			update_jail
+			;;
+	esac
+
 	unset CLEANUP_HOOK
+
 	msg "Jail ${JAILNAME} ${VERSION} ${ARCH} is ready to be used"
 }
 
