@@ -120,13 +120,22 @@ build_top_json() {
 }
 
 stop_html_json() {
-	local log
+	local log have_lock
 
 	_log_path log
 	if [ -n "${JSON_PID}" ]; then
+		# First acquire the update_stats lock to ensure the process
+		# doesn't get killed while holding it
+		have_lock=0
+		lock_acquire update_stats && have_lock=1
+
 		kill ${JSON_PID} 2>/dev/null || :
 		_wait ${JSON_PID} 2>/dev/null 1>&2 || :
 		unset JSON_PID
+
+		if [ ${have_lock} -eq 1 ]; then
+			lock_release update_stats || :
+		fi
 	fi
 	build_all_json 2>/dev/null || :
 	rm -f ${log}/.data.json.tmp ${log}/.data.mini.json.tmp 2>/dev/null || :
