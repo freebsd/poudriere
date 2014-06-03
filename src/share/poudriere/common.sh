@@ -1634,7 +1634,7 @@ cleanup() {
 
 	fi
 
-	rmdir ${POUDRIERE_DATA}/.lock-$$-* 2>/dev/null || :
+	rmdir /tmp/.poudriere-lock-$$-* 2>/dev/null || :
 
 	export CLEANED_UP=1
 }
@@ -3192,7 +3192,7 @@ lock_acquire() {
 	local lockname=$1
 	local i
 
-	until mkdir ${POUDRIERE_DATA}/.lock-$$-${MASTERNAME}-${lockname} \
+	until mkdir /tmp/.poudriere-lock-$$-${MASTERNAME}-${lockname} \
 	    2>/dev/null; do
 		sleep 0.1
 		i=$((i + 1))
@@ -3205,7 +3205,7 @@ lock_release() {
 	[ $# -ne 1 ] && eargs lock_release lockname
 	local lockname=$1
 
-	rmdir ${POUDRIERE_DATA}/.lock-$$-${MASTERNAME}-${lockname} 2>/dev/null
+	rmdir /tmp/.poudriere-lock-$$-${MASTERNAME}-${lockname} 2>/dev/null
 }
 
 cache_get_pkgname() {
