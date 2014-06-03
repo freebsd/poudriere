@@ -864,12 +864,12 @@ markfs() {
 	case "${name}" in
 		prepkg)
 			cat > ${mnt}/.p/mtree.${name}exclude << EOF
+./.npkg/*
 ./.p/*
 .${HOME}/.ccache/*
 ./compat/linux/proc
 ./dev/*
 ./distfiles/*
-./npkg/*
 ./packages/*
 ./portdistfiles/*
 ./proc
@@ -881,12 +881,12 @@ EOF
 			;;
 		prebuild|prestage)
 			cat > ${mnt}/.p/mtree.${name}exclude << EOF
+./.npkg/*
 ./.p/*
 .${HOME}/.ccache/*
 ./compat/linux/proc
 ./dev/*
 ./distfiles/*
-./npkg/*
 ./packages/*
 ./portdistfiles/*
 ./proc
@@ -900,6 +900,7 @@ EOF
 			;;
 		preinst)
 			cat >  ${mnt}/.p/mtree.${name}exclude << EOF
+./.npkg/*
 ./.p/*
 .${HOME}/*
 .${HOME}/.ccache/*
@@ -914,7 +915,6 @@ EOF
 ./etc/pwd.db
 ./etc/shells
 ./etc/spwd.db
-./npkg/*
 ./packages/*
 ./portdistfiles/*
 ./proc
@@ -964,7 +964,7 @@ do_jail_mounts() {
 		    ${mnt}/${LOCALBASE:-/usr/local} \
 		    ${mnt}/distfiles \
 		    ${mnt}/packages \
-		    ${mnt}/npkg \
+		    ${mnt}/.npkg \
 		    ${mnt}${HOME}/.ccache \
 		    ${mnt}/var/db/ports
 	fi
@@ -1916,14 +1916,14 @@ _real_build_port() {
 		print_phase_header ${phase}
 
 		if [ "${phase}" = "package" ]; then
-			echo "PACKAGES=/npkg" >> ${mnt}/etc/make.conf
+			echo "PACKAGES=/.npkg" >> ${mnt}/etc/make.conf
 			# Create sandboxed staging dir for new package for this build
 			rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
 			mkdir -p "${PACKAGES}/.npkg/${PKGNAME}"
 			${NULLMOUNT} \
 				"${PACKAGES}/.npkg/${PKGNAME}" \
-				${mnt}/npkg
-			chown -R ${JUSER} ${mnt}/npkg
+				${mnt}/.npkg
+			chown -R ${JUSER} ${mnt}/.npkg
 		fi
 
 		if [ "${phase#*-}" = "depends" ]; then
@@ -2713,7 +2713,7 @@ stop_build() {
 	local mnt
 
 	_my_path mnt
-	umount -f ${mnt}/npkg 2>/dev/null || :
+	umount -f ${mnt}/.npkg 2>/dev/null || :
 	rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
 
 	# 2 = HEADER+ps itself
