@@ -55,9 +55,9 @@ Options:
     -m method     -- When used with -c, overrides the default method for
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
-                       allbsd, csup, ftp, http, ftp-archve, svn, svn+file,
-                       svn+http, svn+https, svn+file, svn+ssh, tar=PATH,
-                       url=SOMEURL
+                       allbsd, csup, ftp, http, ftp-archve, null, svn,
+                       svn+file, svn+http, svn+https, svn+file, svn+ssh
+                       tar=PATH, url=SOMEURL
     -P patch      -- Specify a patch to apply to the source before building.
     -t version    -- Version of FreeBSD to upgrade the jail to.
 
@@ -103,14 +103,20 @@ list_jail() {
 }
 
 delete_jail() {
-	local cache_dir
+	local cache_dir method
 
 	test -z ${JAILNAME} && usage JAILNAME
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	jail_runs ${JAILNAME} &&
 		err 1 "Unable to delete jail ${JAILNAME}: it is running"
 	msg_n "Removing ${JAILNAME} jail..."
-	TMPFS_ALL=0 destroyfs ${JAILMNT} jail
+	method=$(jget ${JAILNAME} method)
+	if [ "${method}" = "null" ]; then
+		mv -f ${JAILMNT}/etc/login.conf.orig \
+		    ${JAILMNT}/etc/login.conf
+	else
+		TMPFS_ALL=0 destroyfs ${JAILMNT} jail
+	fi
 	cache_dir="${POUDRIERE_DATA}/cache/${JAILNAME}-*"
 	rm -rf ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} || :
 	echo " done"
@@ -219,8 +225,8 @@ update_jail() {
 		delete_jail
 		create_jail
 		;;
-	tar)
-		err 1 "Upgrade is not supported with tar; to upgrade, please delete and recreate the jail"
+	null|tar)
+		err 1 "Upgrade is not supported with ${METHOD}; to upgrade, please delete and recreate the jail"
 		;;
 	*)
 		err 1 "Unsupported method"
@@ -450,6 +456,13 @@ create_jail() {
 	[ "${JAILNAME#*.*}" = "${JAILNAME}" ] ||
 		err 1 "The jailname can not contain a period (.). See jail(8)"
 
+	if [ "${METHOD}" = "null" ]; then
+		[ -z "${JAILMNT}" ] && \
+		    err 1 "Must set -M to path of jail to use"
+		[ "${JAILMNT}" = "/" ] && \
+		    err 1 "Cannot use /"
+	fi
+
 	if [ -z ${JAILMNT} ]; then
 		[ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
 		JAILMNT=${BASEFS}/jails/${JAILNAME}
@@ -526,6 +539,10 @@ create_jail() {
 		[ -r "${TARBALL}" ] || err 1 "Cannot read file ${TARBALL}"
 		METHOD="${METHOD%%=*}"
 		;;
+	null)
+		JAILFS=none
+		FCT=
+		;;
 	*)
 		err 2 "Unknown method to create the jail"
 		;;
@@ -542,13 +559,15 @@ create_jail() {
 	# if any error is encountered
 	CLEANUP_HOOK=cleanup_new_jail
 	jset ${JAILNAME} method ${METHOD}
-	${FCT} version_extra
+	[ -n "${FCT}" ] && ${FCT} version_extra
 
 	if [ -r "${JAILMNT}/usr/src/sys/conf/newvers.sh" ]; then
 		RELEASE=$(update_version "${version_extra}")
 	else
 		RELEASE="${VERSION}"
 	fi
+
+	cp -f "${JAILMNT}/etc/login.conf" "${JAILMNT}/etc/login.conf.orig"
 	update_version_env "${RELEASE}"
 
 	pwd_mkdb -d ${JAILMNT}/etc/ -p ${JAILMNT}/etc/master.passwd
