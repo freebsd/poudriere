@@ -231,15 +231,15 @@ build_and_install_world() {
 	mkdir -p ${JAILMNT}/usr/bin
 	case "${ARCH}" in
 	mips)
-		cp `which qemu-mips` ${JAILMNT}/usr/bin/qemu-mips
+		cp ${EMULATOR} ${JAILMNT}${EMULATOR}
 		export TARGET=mips
 		;;
 	mips64)
-		cp `which qemu-mips64` ${JAILMNT}/usr/bin/qemu-mips64
+		cp ${EMULATOR} ${JAILMNT}${EMULATOR}
 		export TARGET=mips
 		;;
 	armv6)
-		cp `which qemu-arm` ${JAILMNT}/usr/bin/qemu-arm
+		cp ${EMULATOR} ${JAILMNT}${EMULATOR}
 		export TARGET=arm
 		;;
 	esac
@@ -676,6 +676,7 @@ INFO=0
 UPDATE=0
 PTNAME=default
 SETNAME=""
+BINMISC="/usr/sbin/binmiscctl"
 
 SCRIPTPATH=`realpath $0`
 SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
@@ -698,18 +699,13 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:" FLAG; do
 		a)
 			[ "${REALARCH}" != "amd64" -a "${REALARCH}" != ${OPTARG} ] &&
 				err 1 "Only amd64 host can choose another architecture"
+
+			[ "${REALARCH}" != ${OPTARG}  -a ! -x "${BINMISC}" ] &&
+				err 1 "Cannot find ${BINMISC}.  Install ${BINMISC} and restart"
+
 			ARCH=${OPTARG}
-			case "${ARCH}" in
-			mips)
-				[ -x `which qemu-mips` ] || err 1 "You need qemu-mips installed on the host"
-				;;
-			mips64)
-				[ -x `which qemu-mips64` ] || err 1 "You need qemu-mips64 installed on the host"
-				;;
-			armv6)
-				[ -x `which qemu-arm` ] || err 1 "You need qemu-arm installed on the host"
-				;;
-			esac
+			EMULATOR=`${BINMISC} lookup ${ARCH} 2>/dev/null | grep ^interpreter | awk '{print $2}'`
+			[ -x "${EMULATOR}" ] || err 1 "You need to setup an emulator with binmiscctl(8)"
 			;;
 		m)
 			METHOD=${OPTARG}
