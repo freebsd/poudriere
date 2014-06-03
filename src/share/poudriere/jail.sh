@@ -1,7 +1,7 @@
 #!/bin/sh
 # 
 # Copyright (c) 2010-2013 Baptiste Daroussin <bapt@FreeBSD.org>
-# Copyright (c) 2012-2013 Bryan Drewery <bdrewery@FreeBSD.org>
+# Copyright (c) 2012-2014 Bryan Drewery <bdrewery@FreeBSD.org>
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -50,16 +50,11 @@ Options:
     -f fs         -- FS name (tank/jails/myjail) if fs is "none" then do not
                      create on ZFS.
     -M mountpoint -- Mountpoint
-    -m method     -- When used with -c, overrides the default method (ftp).
-                     Could also be "http", "svn", "svn+http",
-                     "svn+https", "svn+file", "svn+ssh", "csup".
-                     Please note that with the svn and csup methods the world
-                     will be built. Note that building from sources can use
-                     src.conf and jailname-src.conf in
-                     /usr/local/etc/poudriere.d/.  Other possible method are:
-                     "allbsd" (Retrieve a snapshot from allbsd.org's website)
-                     or "ftp-archive" (Retrieve an old release that is no
-                     longer available on "ftp").
+    -m method     -- When used with -c, overrides the default method for
+                     obtaining and building the jail. See poudriere(8) for more
+                     details. Can be one of:
+                       csup, ftp, http, ftp-archve, allbsd, svn, svn+file,
+                       svn+http, svn+https, svn+file, svn+ssh, url=SOMEURL
     -P patch      -- Specify a patch to apply to the source before building.
     -t version    -- Version of FreeBSD to upgrade the jail to.
 
