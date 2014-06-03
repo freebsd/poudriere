@@ -972,7 +972,8 @@ do_jail_mounts() {
 	fi
 
 	# Mount /usr/src into target, no need for anything to write to it
-	${NULLMOUNT} -o ro ${from}/usr/src ${mnt}/usr/src
+	[ -d "${from}/usr/src" ] && \
+	    ${NULLMOUNT} -o ro ${from}/usr/src ${mnt}/usr/src
 
 	# ref jail only needs devfs
 	mount -t devfs devfs ${mnt}/dev
