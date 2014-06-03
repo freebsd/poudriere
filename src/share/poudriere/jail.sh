@@ -551,28 +551,7 @@ create_jail() {
 	fi
 	update_version_env "${RELEASE}"
 
-	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
-	if [ "${ARCH%.*}" = "i386" -a "${REALARCH}" = "amd64" ]; then
-		cat > ${JAILMNT}/etc/make.conf << EOF
-ARCH=i386
-MACHINE=i386
-MACHINE_ARCH=i386
-EOF
-
-	fi
-
 	pwd_mkdb -d ${JAILMNT}/etc/ -p ${JAILMNT}/etc/master.passwd
-
-	cat >> ${JAILMNT}/etc/make.conf << EOF
-USE_PACKAGE_DEPENDS=yes
-BATCH=yes
-WRKDIRPREFIX=/wrkdirs
-EOF
-
-	mkdir -p ${JAILMNT}/usr/ports
-	mkdir -p ${JAILMNT}/wrkdirs
-	mkdir -p ${POUDRIERE_DATA}/logs
-
 	jail -U root -c path=${JAILMNT} command=/sbin/ldconfig -m /lib /usr/lib /usr/lib/compat
 
 	markfs clean ${JAILMNT}
@@ -654,9 +633,11 @@ info_jail() {
 	unset POUDRIERE_BUILD_TYPE
 }
 
-ARCH="$(uname -m).$(uname -p)"
-# If TARGET=TARGET_ARCH trim it away and just use TARGET_ARCH
-[ "${ARCH%.*}" = "${ARCH#*.}" ] && ARCH="${ARCH#*.}"
+SCRIPTPATH=`realpath $0`
+SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
+. ${SCRIPTPREFIX}/common.sh
+
+get_host_arch ARCH
 REALARCH=${ARCH}
 START=0
 STOP=0
@@ -671,10 +652,6 @@ UPDATE=0
 PTNAME=default
 SETNAME=""
 BINMISC="/usr/sbin/binmiscctl"
-
-SCRIPTPATH=`realpath $0`
-SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
-. ${SCRIPTPREFIX}/common.sh
 
 need_emulation() {
 	[ $# -eq 2 ] || eargs need_emulation real_arch wanted_arch
