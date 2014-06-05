@@ -284,9 +284,10 @@ setup_compat_env() {
 }
 
 build_and_install_world() {
-	mkdir -p ${JAILMNT}/usr/bin
-
-	[ -n "${EMULATOR}" ] && cp "${EMULATOR}" "${JAILMNT}${EMULATOR}"
+	if [ -n "${EMULATOR}" ]; then
+		mkdir -p ${JAILMNT}${EMULATOR%/*}
+		cp "${EMULATOR}" "${JAILMNT}${EMULATOR}"
+	fi
 
 	[ "${ARCH%.*}" = "${ARCH#*.}" ] || export TARGET=${ARCH%.*}
 	export TARGET_ARCH=${ARCH#*.}
