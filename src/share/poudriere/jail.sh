@@ -160,6 +160,8 @@ rename_jail() {
 	msg_n "Renaming '${JAILNAME}' in '${NEWJAILNAME}'"
 	mv ${POUDRIERED}/jails/${JAILNAME} ${POUDRIERED}/jails/${NEWJAILNAME}
 	echo " done"
+	msg_warn "The packages, logs and filesystems have not been renamed."
+	msg_warn "If you choose to rename the filesystem then modify the 'mnt' and 'fs' files in ${POUDRIERED}/jails/${NEWJAILNAME}"
 }
 
 update_jail() {
