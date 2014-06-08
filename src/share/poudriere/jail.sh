@@ -156,9 +156,13 @@ update_version_env() {
 }
 
 rename_jail() {
+	local cache_dir
+
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	msg_n "Renaming '${JAILNAME}' in '${NEWJAILNAME}'"
 	mv ${POUDRIERED}/jails/${JAILNAME} ${POUDRIERED}/jails/${NEWJAILNAME}
+	cache_dir="${POUDRIERE_DATA}/cache/${JAILNAME}-*"
+	rm -rf ${cache_dir} >/dev/null 2>&1 || :
 	echo " done"
 	msg_warn "The packages, logs and filesystems have not been renamed."
 	msg_warn "If you choose to rename the filesystem then modify the 'mnt' and 'fs' files in ${POUDRIERED}/jails/${NEWJAILNAME}"
