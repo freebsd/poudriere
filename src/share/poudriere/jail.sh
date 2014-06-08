@@ -158,7 +158,7 @@ update_version_env() {
 rename_jail() {
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	msg_n "Renaming '${JAILNAME}' in '${NEWJAILNAME}'"
-	mv ${POUDRIERED}/jails/${JAILNAME} ${POUDRIERED}/jail/${NEWJAILNAME}
+	mv ${POUDRIERED}/jails/${JAILNAME} ${POUDRIERED}/jails/${NEWJAILNAME}
 	echo " done"
 }
 
@@ -879,7 +879,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		check_emulation
 		update_jail
 		;;
-	00000011)
+	00000001)
 		test -z ${JAILNAME} && usage JAILNAME
 		maybe_run_queued "${saved_argv}"
 		rename_jail
