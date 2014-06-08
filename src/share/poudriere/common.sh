@@ -3323,7 +3323,7 @@ compute_deps_port() {
 	msg_verbose "Computing deps for ${COLOR_PORT}${port}"
 
 	for dep_port in `list_deps ${port}`; do
-		msg_debug "${port} depends on ${COLOR_PORT}${dep_port}"
+		msg_debug "${COLOR_PORT}${port}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_port}"
 		[ "${port}" != "${dep_port}" ] ||
 			err 1 "${port} incorrectly depends on itself. Please contact maintainer of the port to fix this."
 		# Detect bad cat/origin/ dependency which pkgng will not register properly
