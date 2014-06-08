@@ -3203,8 +3203,10 @@ lock_acquire() {
 	    2>/dev/null; do
 		sleep 0.1
 		i=$((i + 1))
-		[ ${i} -gt 200 ] &&
-		    err 1 "Failed to acquire ${lockname} lock"
+		if [ ${i} -gt 200 ]; then
+			msg_warn "Failed to acquire ${lockname} lock"
+			return 1
+		fi
 	done
 }
 
