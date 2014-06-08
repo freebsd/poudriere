@@ -3419,6 +3419,25 @@ get_porttesting() {
 	echo $porttesting
 }
 
+find_all_deps() {
+	[ $# -ne 1 ] && eargs find_all_deps pkgname
+	local pkgname="$1"
+	local dep_pkgname
+
+	#msg_debug "find_all_deps ${pkgname}"
+
+	# Show deps/*/${pkgname}
+	for pn in ${MASTERMNT}/.p/deps/${pkgname}/*; do
+		case "${pn}" in
+			"${MASTERMNT}/.p/deps/${pkgname}/*") break ;;
+		esac
+		dep_pkgname=${pn##*/}
+		echo "${MASTERMNT}/.p/deps/${dep_pkgname}"
+		find_all_deps "${dep_pkgname}"
+	done
+	echo "${MASTERMNT}/.p/deps/${pkgname}"
+}
+
 find_all_pool_references() {
 	[ $# -ne 1 ] && eargs find_all_pool_references pkgname
 	local pkgname="$1"
@@ -3487,6 +3506,39 @@ check_moved() {
 	[ -n "${_new_origin}" ]
 }
 
+clean_build_queue() {
+	local tmp pn
+
+	bset status "cleaning:"
+	msg "Cleaning the build queue"
+
+	# Delete from the queue all that already have a current package.
+	for pn in $(ls ${MASTERMNT}/.p/deps/); do
+		[ -f "${MASTERMNT}/packages/All/${pn}.${PKG_EXT}" ] && \
+		    find_all_pool_references "${pn}"
+	done | xargs rm -rf
+
+	# Delete from the queue orphaned build deps. This can happen if
+	# the specified-to-build ports have all their deps satisifed
+	# but one of their run deps has missing build deps packages which
+	# causes the build deps to be in the queue at this point.
+
+	if [ ${ALL} -eq 0 ]; then
+		tmp=$(mktemp ${MASTERMNT}/tmp/queue.XXXXXX)
+		listed_ports | while read port; do
+			cache_get_pkgname pkgname "${port}"
+			echo "${pkgname}"
+		done | while read pkgname; do
+			find_all_deps "${pkgname}"
+		done | sort -u > ${tmp}
+		find ${MASTERMNT}/.p/deps -type d -mindepth 1 -maxdepth 1 | \
+		    sort > ${tmp}.actual
+		comm -13 ${tmp} ${tmp}.actual | while read pd; do
+			find_all_pool_references "${pd##*/}"
+		done | xargs rm -rf
+		rm -f ${tmp} ${tmp}.actual
+	fi
+}
 
 prepare_ports() {
 	local pkg
@@ -3641,14 +3693,9 @@ prepare_ports() {
 		msg "Skipping incremental rebuild and repository sanity checks"
 	fi
 
-	bset status "cleaning:"
-	msg "Cleaning the build queue"
 	export LOCALBASE=${LOCALBASE:-/usr/local}
-	for pn in $(ls ${MASTERMNT}/.p/deps/); do
-		if [ -f "${MASTERMNT}/packages/All/${pn}.${PKG_EXT}" ]; then
-			find_all_pool_references "${pn}"
-		fi
-	done | xargs rm -rf
+
+	clean_build_queue
 
 	# Call the deadlock code as non-fatal which will check for cycles
 	deadlock_detected 0
