@@ -2634,6 +2634,7 @@ build_pkg() {
 	_my_path mnt
 	_my_name name
 	_log_path log
+	clean_rdepends=
 	trap '' SIGTSTP
 	[ -n "${MAX_MEMORY}" ] && ulimit -v ${MAX_MEMORY_BYTES}
 
