@@ -3427,14 +3427,19 @@ find_all_deps() {
 	local pkgname="$1"
 	local dep_pkgname
 
+	FIND_ALL_DEPS="${FIND_ALL_DEPS} ${pkgname}"
+
 	#msg_debug "find_all_deps ${pkgname}"
 
 	# Show deps/*/${pkgname}
 	for pn in ${MASTERMNT}/.p/deps/${pkgname}/*; do
+		dep_pkgname=${pn##*/}
+		case " ${FIND_ALL_DEPS} " in
+			*\ ${dep_pkgname}\ *) continue ;;
+		esac
 		case "${pn}" in
 			"${MASTERMNT}/.p/deps/${pkgname}/*") break ;;
 		esac
-		dep_pkgname=${pn##*/}
 		echo "${MASTERMNT}/.p/deps/${dep_pkgname}"
 		find_all_deps "${dep_pkgname}"
 	done
@@ -3531,9 +3536,12 @@ clean_build_queue() {
 		listed_ports | while read port; do
 			cache_get_pkgname pkgname "${port}"
 			echo "${pkgname}"
-		done | while read pkgname; do
-			find_all_deps "${pkgname}"
-		done | sort -u > ${tmp}
+		done | {
+			FIND_ALL_DEPS=
+			while read pkgname; do
+				find_all_deps "${pkgname}"
+			done | sort -u > ${tmp}
+		}
 		find ${MASTERMNT}/.p/deps -type d -mindepth 1 -maxdepth 1 | \
 		    sort > ${tmp}.actual
 		comm -13 ${tmp} ${tmp}.actual | while read pd; do
