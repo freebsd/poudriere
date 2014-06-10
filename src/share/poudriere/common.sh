@@ -3531,7 +3531,7 @@ clean_build_queue() {
 	# but one of their run deps has missing build deps packages which
 	# causes the build deps to be in the queue at this point.
 
-	if [ ${ALL} -eq 0 ] && false; then
+	if [ ${ALL} -eq 0 ]; then
 		tmp=$(mktemp ${MASTERMNT}/tmp/queue.XXXXXX)
 		listed_ports | while read port; do
 			cache_get_pkgname pkgname "${port}"
