@@ -1419,7 +1419,7 @@ jail_start() {
 	echo "debug" >> ${mnt}/usr/lib/.cpignore
 	clonefs ${mnt} ${tomnt} clean
 	echo "poudriere" >> ${mnt}/.cpignore
-	rm -f ${mnt}/usr/.cpignore
+	rm -f ${mnt}/usr/.cpignore ${mnt}/usr/lib/.cpignore
 	echo " done"
 
 	if [ ${JAIL_OSVERSION} -gt ${HOST_OSVERSION} ]; then
