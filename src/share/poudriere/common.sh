@@ -1418,7 +1418,7 @@ jail_start() {
 	echo "src" >> ${mnt}/usr/.cpignore
 	echo "debug" >> ${mnt}/usr/lib/.cpignore
 	clonefs ${mnt} ${tomnt} clean
-	echo "poudriere" >> ${mnt}/.cpignore
+	echo ".p" >> ${tomnt}/.cpignore
 	rm -f ${mnt}/usr/.cpignore ${mnt}/usr/lib/.cpignore
 	echo " done"
 
