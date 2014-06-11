@@ -1416,6 +1416,7 @@ jail_start() {
 	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
 	msg_n "Creating the reference jail..."
 	echo "src" >> ${mnt}/usr/.cpignore
+	echo "debug" >> ${mnt}/usr/lib/.cpignore
 	clonefs ${mnt} ${tomnt} clean
 	echo "poudriere" >> ${mnt}/.cpignore
 	rm -f ${mnt}/usr/.cpignore
