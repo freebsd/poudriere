@@ -155,6 +155,10 @@ client_read(struct client *cl)
 		}
 	}
 
+	close(fderr);
+	close(fdin);
+	close(fdout);
+
 	cl->pid = pid;
 	free(argv);
 	nvlist_destroy(nv);
