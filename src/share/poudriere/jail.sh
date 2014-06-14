@@ -696,26 +696,6 @@ info_jail() {
 	unset POUDRIERE_BUILD_TYPE
 }
 
-SCRIPTPATH=`realpath $0`
-SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
-. ${SCRIPTPREFIX}/common.sh
-
-get_host_arch ARCH
-REALARCH=${ARCH}
-START=0
-STOP=0
-LIST=0
-DELETE=0
-CREATE=0
-RENAME=0
-QUIET=0
-NAMEONLY=0
-INFO=0
-UPDATE=0
-PTNAME=default
-SETNAME=""
-BINMISC="/usr/sbin/binmiscctl"
-
 need_emulation() {
 	[ $# -eq 2 ] || eargs need_emulation real_arch wanted_arch
 	local real_arch="$1"
@@ -747,6 +727,26 @@ check_emulation() {
 		    err 1 "You need to setup an emulator with binmiscctl(8) for ${ARCH}"
 	fi
 }
+
+SCRIPTPATH=`realpath $0`
+SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
+. ${SCRIPTPREFIX}/common.sh
+
+get_host_arch ARCH
+REALARCH=${ARCH}
+START=0
+STOP=0
+LIST=0
+DELETE=0
+CREATE=0
+RENAME=0
+QUIET=0
+NAMEONLY=0
+INFO=0
+UPDATE=0
+PTNAME=default
+SETNAME=""
+BINMISC="/usr/sbin/binmiscctl"
 
 while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:" FLAG; do
 	case "${FLAG}" in
