@@ -4227,9 +4227,9 @@ TIME_START=$(date +%s)
 
 [ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}
 
+. $(dirname ${0})/include/colors.sh
 . $(dirname ${0})/include/display.sh
 . $(dirname ${0})/include/html.sh
-. $(dirname ${0})/include/messages.sh
 . $(dirname ${0})/include/parallel.sh
 . $(dirname ${0})/include/hash.sh
 . $(dirname ${0})/include/fs.sh
