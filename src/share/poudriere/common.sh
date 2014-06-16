@@ -1550,11 +1550,13 @@ setup_makeconf() {
 }
 
 include_poudriere_confs() {
-	local files file flag
+	local files file flag args_hack
 
 	# Spy on cmdline arguments so this function is not needed in
 	# every new sub-command file, which could lead to missing it.
-	while getopts "j:p:z:" flag >/dev/null 2>&1; do
+	args_hack=$(echo " $@"|grep -o -- ' -[^ ]*\([jpz]\) \([^ ]*\)'|tr '\n' ' '|sed -e 's, -[^ ]*\([jpz]\) \([^ ]*\),-\1 \2,g')
+	set -- ${args_hack}
+	while getopts "j:p:z:" flag; do
 		case ${flag} in
 			j) jail="${OPTARG}" ;;
 			p) ptname="${OPTARG}" ;;
