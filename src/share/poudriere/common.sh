@@ -40,6 +40,7 @@ was_a_jail_run() {
 }
 # Return true if output via msg() should show elapsed time
 should_show_elapsed() {
+	[ -z "${TIME_START}" ] && return 1
 	[ "${NO_ELAPSED_IN_MSG:-0}" -eq 1 ] && return 1
 	case "${0##*/}" in
 		daemon.sh) ;;
@@ -99,6 +100,62 @@ err() {
 		bset status "${EXIT_STATUS:-crashed:}" 2>/dev/null || :
 	msg_error "$2"
 	exit $1
+}
+
+msg_n() {
+	local now elapsed
+
+	elapsed=
+	if should_show_elapsed; then
+		now=$(date +%s)
+		calculate_duration elapsed "$((${now} - ${TIME_START}))"
+		elapsed="[${elapsed}] "
+	fi
+	printf "${elapsed}${DRY_MODE}${COLOR_ARROW}====>>${COLOR_RESET} ${1}${COLOR_RESET_REAL}"
+}
+
+msg() { msg_n "$@"; echo; }
+
+msg_verbose() {
+	[ ${VERBOSE} -gt 0 ] || return 0
+	msg "$1"
+}
+
+msg_error() {
+	COLOR_ARROW="${COLOR_ERROR}" \
+	    msg "${COLOR_ERROR}Error: $1" >&2
+	[ -n "${MY_JOBID}" ] && COLOR_ARROW="${COLOR_ERROR}" \
+	    job_msg "${COLOR_ERROR}Error: $1"
+	return 0
+}
+
+msg_debug() {
+	[ ${VERBOSE} -gt 1 ] || return 0
+	COLOR_ARROW="${COLOR_DEBUG}" \
+	    msg "${COLOR_DEBUG}Debug: $@" >&2
+}
+
+msg_warn() {
+	COLOR_ARROW="${COLOR_WARN}" \
+	    msg "${COLOR_WARN}Warning: $@" >&2
+}
+
+job_msg() {
+	local now elapsed NO_ELAPSED_IN_MSG
+
+	if [ -n "${MY_JOBID}" ]; then
+		NO_ELAPSED_IN_MSG=0
+		now=$(date +%s)
+		calculate_duration elapsed "$((${now} - ${TIME_START_JOB}))"
+		msg "[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}][${elapsed}] $1" >&5
+	else
+		msg "$1"
+	fi
+}
+
+job_msg_verbose() {
+	[ ${VERBOSE} -gt 0 ] || return 0
+	job_msg "$@"
 }
 
 _mastermnt() {
