@@ -261,7 +261,7 @@ _bget nbbuilt stats_built
 _bget nbfailed stats_failed
 _bget nbskipped stats_skipped
 _bget nbignored stats_ignored
-# Always create repository if it is missing (but still respect -T)
+# Always create repository if it is missing (but still respect -N)
 if [ $PKGNG -eq 1 ] && \
 	[ ! -f ${MASTERMNT}/packages/digests.txz -o \
 	  ! -f ${MASTERMNT}/packages/packagesite.txz ]; then
