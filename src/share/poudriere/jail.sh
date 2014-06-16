@@ -56,8 +56,8 @@ Options:
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
                        allbsd, csup, ftp, http, ftp-archve, null, src, svn,
-                       svn+file, svn+http, svn+https, svn+file, svn+ssh
-                       tar=PATH, url=SOMEURL
+                       svn+file, svn+http, svn+https, svn+ssh, tar=PATH
+                       url=SOMEURL
     -P patch      -- Specify a patch to apply to the source before building.
     -t version    -- Version of FreeBSD to upgrade the jail to.
 
