@@ -263,10 +263,58 @@ Specifies which <i class="arg">architecture</i> of FreeBSD to use in the jail. (
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;m</b> <i class="arg">method</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Specifies which <i class="arg">method</i> to use to create the jail. Can be csup, svn{,+http,+https,+file,+ssh), ftp, allbsd, or url= (Default: ftp). When using url=, specify the URL to the distributions. Any URL supported by <a class="link-man">fetch(1)</a> can be used; for example:<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+Specifies which <i class="arg">method</i> to use to create the jail. (default: <span class="symb">ftp</span>)<p>
+Pre-built distribution options:<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<span class="symb">allbsd</span></dt>
+<dd class="list-tag" style="margin-left: 17.00ex;">
+Use <a class="link-ext" href="www.allbsd.org.">www.allbsd.org.</a></dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<span class="symb">ftp</span> <span class="symb">http</span></dt>
+<dd class="list-tag" style="margin-left: 17.00ex;">
+Fetch from configured <span class="symb">FREEBSD_HOST</span> variable from <i class="file">poudriere.conf</i>.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<span class="symb">freebsd-archive</span></dt>
+<dd class="list-tag" style="margin-left: 17.00ex;">
+Fetch from <a class="link-ext" href="ftp-archive.freebsd.org.">ftp-archive.freebsd.org.</a></dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<span class="symb">null</span></dt>
+<dd class="list-tag" style="margin-left: 17.00ex;">
+This option can be used to import an existing directory that already contains an installed system. The path must be specified with <b class="flag">&#45;M</b> <i class="arg">path</i>. It is expected that this directory be installed to with the following:<p>
+<pre style="margin-left: 5.00ex;" class="lit display">
+/usr/src# make installworld DESTDIR=PATH DB_FROM_SRC=1 
+/usr/src# make distrib-dirs DESTDIR=PATH DB_FROM_SRC=1 
+/usr/src# make distribution DESTDIR=PATH DB_FROM_SRC=1</pre>
+<p>
+The path will be null-mounted during builds. It will not be copied at the time of running <b class="name">jail</b>. Deleting the jail will attempt to revert any files changed by poudriere.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<span class="symb">src=PATH</span></dt>
+<dd class="list-tag" style="margin-left: 17.00ex;">
+Install from the given src directory at <span class="symb">PATH</span>. This directory will not be built from. It is expected that it is already built and maps to a corresponding <i class="file">/usr/obj</i> directory. Note that this will not copy the given src directory into the destination jail currently so building ports requiring modules will not be possible.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<span class="symb">tar=PATH</span></dt>
+<dd class="list-tag" style="margin-left: 17.00ex;">
+Install from the tarball at the given <span class="symb">PATH</span>. Note that this method requires the tarball contains the <i class="file">/usr/src</i> files as well if you plan to build any port containing modules.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<span class="symb">url=PATH</span></dt>
+<dd class="list-tag" style="margin-left: 17.00ex;">
+Fetch from given <span class="symb">PATH</span>. Any URL supported by <a class="link-man">fetch(1)</a> can be used. For example:<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
 <div class="display">
-<code class="lit">poudriere jail -c -j 100amd64 -a amd64 -v 10.0 -m url=file:///mirror/10.0</code></div>
+<code class="lit">url=file:///mirror/10.0</code></div>
 </blockquote>
+</dd>
+</dl>
+<p>
+Build from source options:<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<span class="symb">csup</span></dt>
+<dd class="list-tag" style="margin-left: 17.00ex;">
+Use legacy CVS repository.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<span class="symb">svn</span> <span class="symb">svn+file</span> <span class="symb">svn+http</span> <span class="symb">svn+https</span></dt>
+<dd class="list-tag" style="margin-left: 17.00ex;">
+Use SVN. This will use the <span class="symb">SVN_HOST</span> variable in <i class="file">poudriere.conf</i>.</dd>
+</dl>
 </dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;f</b> <i class="arg">filesystem</i></dt>
@@ -871,7 +919,7 @@ Be also careful to not begin the name of the jail by a number if you are not in 
 <tbody>
 <tr>
 <td class="foot-date">
-May 27, 2014</td>
+June 16, 2014</td>
 <td class="foot-os" align="right">
 FreeBSD 11.0</td>
 </tr>

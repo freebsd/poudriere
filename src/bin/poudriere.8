@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd May 27, 2014
+.Dd June 16, 2014
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -320,12 +320,72 @@ of FreeBSD to use in the jail. (Default: same as host)
 Specifies which
 .Ar method
 to use to create the jail.
-Can be csup, svn{,+http,+https,+file,+ssh), ftp, allbsd, or url= (Default: ftp).
-When using url=, specify the URL to the distributions.
+(default:
+.Sy ftp )
+.Pp
+Pre-built distribution options:
+.Bl -tag -width "freebsd-archiveXX"
+.It Sy allbsd
+Use
+.Lk www.allbsd.org.
+.It Sy ftp Sy http
+Fetch from configured
+.Sy FREEBSD_HOST
+variable from
+.Pa poudriere.conf .
+.It Sy freebsd-archive
+Fetch from
+.Lk ftp-archive.freebsd.org.
+.It Sy null
+This option can be used to import an existing directory that already contains an installed system.
+The path must be specified with
+.Fl M Ar path .
+It is expected that this directory be installed to with the following:
+.Bd -literal -offset indent
+/usr/src# make installworld DESTDIR=PATH DB_FROM_SRC=1
+/usr/src# make distrib-dirs DESTDIR=PATH DB_FROM_SRC=1
+/usr/src# make distribution DESTDIR=PATH DB_FROM_SRC=1
+.Ed
+.Pp
+The path will be null-mounted during builds.
+It will not be copied at the time of running
+.Nm jail .
+Deleting the jail will attempt to revert any files changed by poudriere.
+.It Sy src=PATH
+Install from the given src directory at
+.Sy PATH .
+This directory will not be built from.
+It is expected that it is already built and maps to a corresponding
+.Pa /usr/obj
+directory.
+Note that this will not copy the given src directory into the destination jail currently so building ports requiring modules will not be possible.
+.It Sy tar=PATH
+Install from the tarball at the given
+.Sy PATH .
+Note that this method requires the tarball contains the
+.Pa /usr/src
+files as well if you plan to build any port containing modules.
+.It Sy url=PATH
+Fetch from given
+.Sy PATH .
 Any URL supported by
 .Xr fetch 1
-can be used; for example:
-.Dl "poudriere jail -c -j 100amd64 -a amd64 -v 10.0 -m url=file:///mirror/10.0"
+can be used.
+For example:
+.Dl "url=file:///mirror/10.0"
+.El
+.Pp
+Build from source options:
+.Bl -tag -width "freebsd-archiveXX"
+.It Sy csup
+Use legacy CVS repository.
+.It Sy svn Sy svn+file Sy svn+http Sy svn+https
+Use SVN.
+This will use the
+.Sy SVN_HOST
+variable in
+.Pa poudriere.conf .
+.El
 .It Fl f Ar filesystem
 Specifies the
 .Ar filesystem
