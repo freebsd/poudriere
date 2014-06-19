@@ -3351,9 +3351,11 @@ compute_deps() {
 	bset status "computingrdeps:"
 
 	# cd into rdeps to allow xargs mkdir to have more args.
-	cd "${MASTERMNT}/.p/rdeps"
-	awk '{print $2}' "${MASTERMNT}/.p/pkg_deps" |
-	    sort -u | xargs mkdir
+	(
+		cd "${MASTERMNT}/.p/rdeps"
+		awk '{print $2}' "${MASTERMNT}/.p/pkg_deps" |
+		    sort -u | xargs mkdir
+	)
 
 	# xargs|touch was no quicker here.
 	while read dep_pkgname pkgname; do
