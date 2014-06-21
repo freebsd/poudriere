@@ -626,7 +626,7 @@ function process_data_jail(data) {
 			if (isNaN(remaining)) {
 				remaining = 0;
 			}
-			row.remaining = remaining;
+			row.stat_remaining = remaining;
 			row.status = translate_status(build.status);
 			row.elapsed = build.elapsed ? build.elapsed : "";
 
