@@ -1432,7 +1432,7 @@ jail_start() {
 
 	if [ -z "${NOLINUX}" ]; then
 		if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
-			needfs="${needfs} linprocfs linsysfs"
+			needfs="${needfs} linprocfs"
 			sysctl -n compat.linux.osrelease >/dev/null 2>&1 || kldload linux
 		fi
 	fi
