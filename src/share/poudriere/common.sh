@@ -1041,8 +1041,10 @@ do_jail_mounts() {
 		done
 	fi
 	if [ "${mnt##*/}" != "ref" ]; then
-		[ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ] && mount -t fdescfs fdesc ${mnt}/dev/fd
-		mount -t procfs proc ${mnt}/proc
+		[ "${USE_FDESCFS}" = "yes" ] && \
+		    [ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ] && \
+		    mount -t fdescfs fdesc ${mnt}/dev/fd
+		[ "${USE_PROCFS}" = "yes" ] && mount -t procfs proc ${mnt}/proc
 		if [ -z "${NOLINUX}" ]; then
 			[ "${arch}" = "i386" -o "${arch}" = "amd64" ] &&
 				mount -t linprocfs linprocfs ${mnt}/compat/linux/proc
@@ -1409,7 +1411,7 @@ jail_start() {
 	local portsdir
 	local arch host_arch
 	local mnt
-	local needfs="${NULLFSREF} procfs"
+	local needfs="${NULLFSREF}"
 	local needkld
 	local tomnt
 
@@ -1437,7 +1439,10 @@ jail_start() {
 		fi
 	fi
 	[ -n "${USE_TMPFS}" ] && needfs="${needfs} tmpfs"
-	[ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ] && needfs="${needfs} fdescfs"
+	[ "${USE_PROCFS}" = "yes" ] && needfs="${needfs} procfs"
+	[ "${USE_FDESCFS}" = "yes" ] && \
+	    [ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ] && \
+	    needfs="${needfs} fdescfs"
 	for fs in ${needfs}; do
 		if ! lsvfs $fs >/dev/null 2>&1; then
 			if [ $JAILED -eq 0 ]; then
@@ -4199,6 +4204,8 @@ fi
 : ${PORTTESTING_FATAL:=yes}
 : ${PORTTESTING_RECURSIVE:=0}
 : ${RESTRICT_NETWORKING:=yes}
+: ${USE_PROCFS:=yes}
+: ${USE_FDESCFS:=yes}
 # - must be last
 : ${HASH_VAR_NAME_SUB_GLOB:="[/.+,-]"}
 
