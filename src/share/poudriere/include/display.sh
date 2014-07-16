@@ -82,13 +82,15 @@ display_output() {
 	${_DISPLAY_DATA}
 	EOF
 
-	# Set format lengths
-	lengths=
-	for n in $(jot $((${_DISPLAY_COLUMNS} - 1)) 0); do
-		hash_get lengths ${n} length
-		lengths="${lengths} ${length}"
-	done
-	format=$(printf "${format}" ${lengths})
+	# Set format lengths if format is dynamic width
+	if [ "${format##*%%*}" != "${format}" ]; then
+		lengths=
+		for n in $(jot $((${_DISPLAY_COLUMNS} - 1)) 0); do
+			hash_get lengths ${n} length
+			lengths="${lengths} ${length}"
+		done
+		format=$(printf "${format}" ${lengths})
+	fi
 
 	# Show header separately so it is not sorted
 	if [ "${quiet}" -eq 0 ]; then
@@ -98,7 +100,7 @@ display_output() {
 		done
 	fi
 
-	# Sort by SET,PTNAME,JAIL,BUILD
+	# Sort as configured in display_setup()
 	echo "${_DISPLAY_DATA}" | tail -n +2 | \
 	    sort ${_DISPLAY_COLUMN_SORT} | while read line; do
 		eval "set -- ${line}"

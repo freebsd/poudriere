@@ -121,14 +121,6 @@ shift $((OPTIND-1))
 POUDRIERE_BUILD_TYPE=bulk
 now="$(date +%s)"
 
-my_display_add() {
-	if [ ${SCRIPT_MODE} -eq 1 ]; then
-		echo "$@"
-		return 0
-	fi
-	display_add "$@"
-}
-
 output_builder_info() {
 	local builders
 
@@ -168,7 +160,7 @@ add_summary_build() {
 	status="${save_status}:${status%%:*}"
 	status="${status%:}"
 
-	my_display_add "${setname:--}" "${ptname}" "${jailname}" \
+	display_add "${setname:--}" "${ptname}" "${jailname}" \
 	    "${BUILDNAME}" "${status:-?}" "${nbqueued:-?}" \
 	    "${nbbuilt:-?}" "${nbfailed:-?}" "${nbskipped:-?}" \
 	    "${nbignored:-?}" "${nbtobuild:-?}" "${time:-?}" ${url}
@@ -295,24 +287,27 @@ show_summary() {
 	if [ ${SCRIPT_MODE} -eq 0 ]; then
 		format="%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds"
 		[ ${COMPACT} -eq 0 ] && format="${format} %%s"
-		display_setup \
-		    "${format}" "${columns}" "-d -k1,1 -k2,2 -k3,3n -k4,4n"
-		if [ ${COMPACT} -eq 0 ]; then
-			if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
-				url_logs="URL"
-			else
-				url_logs="LOGS"
-			fi
-			my_display_add "SET" "PORTS" "JAIL" "BUILD" "STATUS" \
-			    "QUEUE" "BUILT" "FAIL" "SKIP" "IGNORE" "REMAIN" \
-			    "TIME" "${url_logs}"
-		else
-			my_display_add "SET" "PORTS" "JAIL" "BUILD" "STATUS" \
-			    "Q" "B" "F" "S" "I" "R" "TIME"
-		fi
 	else
+		#format="%%s\t%%s\t%%s\t%%s\t%%s\t%%s\t%%s\t%%s\t%%s\t%%s\t%%s\t%%s"
+		#[ ${COMPACT} -eq 0 ] && format="${format}\t%%s"
 		format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"
 		[ ${COMPACT} -eq 0 ] && format="${format}\t%s"
+	fi
+
+	display_setup "${format}" "${columns}" "-d -k1,1 -k2,2 -k3,3n -k4,4n"
+
+	if [ ${COMPACT} -eq 0 ]; then
+		if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
+			url_logs="URL"
+		else
+			url_logs="LOGS"
+		fi
+		display_add "SET" "PORTS" "JAIL" "BUILD" "STATUS" \
+		    "QUEUE" "BUILT" "FAIL" "SKIP" "IGNORE" "REMAIN" \
+		    "TIME" "${url_logs}"
+	else
+		display_add "SET" "PORTS" "JAIL" "BUILD" "STATUS" \
+		    "Q" "B" "F" "S" "I" "R" "TIME"
 	fi
 
 	for_each_job add_summary_build
@@ -331,6 +326,8 @@ show_summary() {
 
 		[ -t 0 ] && [ -n "${JAILNAME}" ] && \
 		    msg "Use -b to show detailed builder output."
+	else
+		display_output -q
 	fi
 
 	return 0
