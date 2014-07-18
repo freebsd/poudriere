@@ -129,6 +129,8 @@ nc_SOURCES=		src/libexec/poudriere/nc/nc.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
 tsort_SOURCES=		src/libexec/poudriere/tsort/tsort.c
 libucl_a_SOURCES=	external/libucl/src/ucl_emitter.c \
+			external/libucl/src/ucl_emitter_streamline.c \
+			external/libucl/src/ucl_emitter_utils.c \
 			external/libucl/src/ucl_hash.c \
 			external/libucl/src/ucl_parser.c \
 			external/libucl/src/ucl_util.c \
