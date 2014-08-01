@@ -2254,7 +2254,7 @@ pkg_get_options() {
 				sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 		else
 			compiled_options=$(injail /poudriere/pkg-static query -F \
-				"/packages/All/${pkg##*/}" '%Ov%Ok' | sed '/^off/d;s/^on//' | sort | tr '\n' ' ')
+				"/packages/All/${pkg##*/}" '%Ov%Ok' | sed '/^off/d;/^false/d;s/^on//;s/^true//' | sort | tr '\n' ' ')
 		fi
 		echo "${compiled_options}" > "${optionsfile}"
 		echo "${compiled_options}"
