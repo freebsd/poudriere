@@ -29,7 +29,7 @@ LC_ALL=C
 unset SHELL
 SAVED_TERM=$TERM
 unset TERM
-POUDRIERE_VERSION="3.0.16"
+POUDRIERE_VERSION="3.0.17"
 
 usage() {
 	echo "Usage: poudriere command [options]
