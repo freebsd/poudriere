@@ -597,7 +597,7 @@ Show port options instead of configuring them</dd>
 This specifies which SET to use for the build. See <i class="link-sec"><a class="link-sec" href="#x435553544f4d49534154494f4e">CUSTOMISATION</a></i> for examples of how this is used.</dd>
 </dl>
 <p>
-The <b class="flag">options</b> subcommand can also take the list of ports to configure thought command line arguments instead of the using a file list.</div>
+The <b class="flag">options</b> subcommand can also take the list of ports to configure through command line arguments instead of the using a file list.</div>
 <div class="subsection">
 <h2 id="x7175657565">queue</h2> This command takes a <b class="name">poudriere</b> command in argument.<p>
 There are no options associated with the <b class="flag">queue</b> command.</div>
