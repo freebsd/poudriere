@@ -3360,9 +3360,10 @@ compute_deps() {
 			parallel_run compute_deps_port ${port}
 		else
 			if [ ${ALL} -eq 1 ]; then
-				msg_warn "Invalid port origin listed in category Makefiles: ${COLOR_PORT}${port}"
+				msg_warn "Nonexistent port listed in category Makefiles: ${COLOR_PORT}${port}"
 			else
-				err 1 "Invalid port origin listed for build: ${COLOR_PORT}${port}"
+				msg_error "Nonexistent port listed for build: ${COLOR_PORT}${port}"
+				set_dep_fatal_error
 			fi
 		fi
 	done
