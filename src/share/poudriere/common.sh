@@ -3327,6 +3327,18 @@ cache_get_origin() {
 	setvar "${var_return}" "${_origin}"
 }
 
+set_dep_fatal_error() {
+	[ -n "${DEP_FATAL_ERROR}" ] && return 0
+	DEP_FATAL_ERROR=1
+	# Mark the fatal error flag. Must do it like this as this may be
+	# running in a sub-shell.
+	: > ${MASTERMNT}/.p/dep_fatal_error
+}
+
+check_dep_fatal_error() {
+	[ -f ${MASTERMNT}/.p/dep_fatal_error ]
+}
+
 compute_deps() {
 	local port pkgname dep_pkgname
 
@@ -3372,6 +3384,9 @@ compute_deps() {
 
 	rm -f "${MASTERMNT}/.p/port_deps.unsorted" \
 	    "${MASTERMNT}/.p/pkg_deps.unsorted"
+
+	check_dep_fatal_error && \
+	    err 1 "Fatal errors encountered calculating dependencies"
 
 	return 0
 }
