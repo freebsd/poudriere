@@ -3865,8 +3865,10 @@ load_priorities() {
 		for pkg_boost in ${PRIORITY_BOOST}; do
 			case ${pkgname%-*} in
 				${pkg_boost})
+					[ -d ${MASTERMNT}/.p/deps/${pkgname} ] \
+					    || continue
 					cache_get_origin origin "${pkgname}"
-					msg "Boosting priority: ${origin}"
+					msg "Boosting priority: ${COLOR_PORT}${origin}"
 					priority=99
 					boosted=1
 					break
