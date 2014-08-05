@@ -3995,11 +3995,18 @@ build_repo() {
 		msg "Creating pkgng repository"
 		bset status "pkgrepo:"
 		ensure_pkg_installed
+		if [ -r "${PKG_REPO_META_FILE:-/nonexistent}" ]; then
+			PKG_META="-m /tmp/pkgmeta"
+			PKG_META_MASTERMNT="-m ${MASTERMNT}/tmp/pkgmeta"
+			install -m 0400 "${PKG_REPO_META_FILE}" \
+			    ${MASTERMNT}/tmp/pkgmeta
+		fi
 		mkdir -p ${MASTERMNT}/tmp/packages
 		if [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
 			install -m 0400 ${PKG_REPO_SIGNING_KEY} \
 				${MASTERMNT}/tmp/repo.key
 			injail /.p/pkg-static repo -o /tmp/packages \
+				${PKG_META} \
 				/packages /tmp/repo.key
 			rm -f ${MASTERMNT}/tmp/repo.key
 		elif [ "${PKG_REPO_FROM_HOST:-no}" = "yes" ]; then
@@ -4007,11 +4014,12 @@ build_repo() {
 			# using SSH with DNSSEC as older hosts don't support
 			# it.
 			${MASTERMNT}/.p/pkg-static repo \
-			    -o ${MASTERMNT}/tmp/packages ${MASTERMNT}/packages \
+			    -o ${MASTERMNT}/tmp/packages ${PKG_META_MASTERMNT} \
+			    ${MASTERMNT}/packages \
 			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 		else
 			JNETNAME="n" injail /.p/pkg-static repo \
-			    -o /tmp/packages /packages \
+			    -o /tmp/packages ${PKG_META} /packages \
 			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 		fi
 		cp ${MASTERMNT}/tmp/packages/* ${PACKAGES}/
