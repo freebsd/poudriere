@@ -3395,7 +3395,7 @@ compute_deps_port() {
 	for dep_port in `list_deps ${port}`; do
 		msg_debug "${COLOR_PORT}${port}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_port}"
 		[ "${port}" != "${dep_port}" ] ||
-			err 1 "${port} incorrectly depends on itself. Please contact maintainer of the port to fix this."
+			err 1 "${COLOR_PORT}${port}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
 		# Detect bad cat/origin/ dependency which pkgng will not register properly
 		[ "${dep_port}" = "${dep_port%/}" ] ||
 			err 1 "${COLOR_PORT}${port}${COLOR_RESET} depends on bad origin '${COLOR_PORT}${dep_port}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
@@ -3440,7 +3440,7 @@ listed_ports() {
 	} | while read origin; do
 		if check_moved new_origin ${origin}; then
 			[ -n "${tell_moved}" ] && msg \
-			    "MOVED: ${origin} renamed to ${new_origin}" >&2
+			    "MOVED: ${COLOR_PORT}${origin}${COLOR_RESET} renamed to ${COLOR_PORT}${new_origin}${COLOR_RESET}" >&2
 			origin=${new_origin}
 		fi
 		echo "${origin}"
