@@ -3284,9 +3284,10 @@ lock_release() {
 }
 
 cache_get_pkgname() {
-	[ $# -ne 2 ] && eargs cache_get_pkgname var_return origin
+	[ $# -lt 2 ] && eargs cache_get_pkgname var_return origin fatal
 	local var_return="$1"
 	local origin=${2%/}
+	local fatal="${3:-1}"
 	local _pkgname="" existing_origin
 	local cache_origin_pkgname=${MASTERMNT}/.p/var/cache/origin-pkgname/${origin%%/*}_${origin##*/}
 	local cache_pkgname_origin
@@ -3295,8 +3296,13 @@ cache_get_pkgname() {
 
 	# Add to cache if not found.
 	if [ -z "${_pkgname}" ]; then
-		[ -d "${MASTERMNT}/usr/ports/${origin}" ] ||
-			err 1 "Invalid port origin '${COLOR_PORT}${origin}${COLOR_RESET}' not found."
+		if ! [ -d "${MASTERMNT}/usr/ports/${origin}" ]; then
+			if [ ${fatal} -eq 1 ]; then
+				err 1 "Invalid port origin '${COLOR_PORT}${origin}${COLOR_RESET}' not found."
+			else
+				return 1
+			fi
+		fi
 		_pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME ||
 			err 1 "Error getting PKGNAME for ${COLOR_PORT}${origin}${COLOR_RESET}")
 		[ -n "${_pkgname}" ] || err 1 "Missing PKGNAME for ${COLOR_PORT}${origin}${COLOR_RESET}"
@@ -3360,7 +3366,9 @@ compute_deps() {
 			fi
 		fi
 	done
-	parallel_stop
+	if ! parallel_stop || check_dep_fatal_error; then
+		err 1 "Fatal errors encountered calculating dependencies"
+	fi
 
 	sort -u "${MASTERMNT}/.p/pkg_deps.unsorted" > \
 	    "${MASTERMNT}/.p/pkg_deps"
@@ -3384,9 +3392,6 @@ compute_deps() {
 
 	rm -f "${MASTERMNT}/.p/port_deps.unsorted" \
 	    "${MASTERMNT}/.p/pkg_deps.unsorted"
-
-	check_dep_fatal_error && \
-	    err 1 "Fatal errors encountered calculating dependencies"
 
 	return 0
 }
@@ -3414,7 +3419,11 @@ compute_deps_port() {
 		# Detect bad cat/origin/ dependency which pkgng will not register properly
 		[ "${dep_port}" = "${dep_port%/}" ] ||
 			err 1 "${COLOR_PORT}${port}${COLOR_RESET} depends on bad origin '${COLOR_PORT}${dep_port}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
-		cache_get_pkgname dep_pkgname "${dep_port}"
+		if ! cache_get_pkgname dep_pkgname "${dep_port}" 0; then
+			msg_error "${COLOR_PORT}${port}${COLOR_RESET} depends on nonexistent origin '${COLOR_PORT}${dep_port}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
+			set_dep_fatal_error
+			return 1
+		fi
 
 		# Only do this if it's not already done, and not ALL, as everything will
 		# be touched anyway
