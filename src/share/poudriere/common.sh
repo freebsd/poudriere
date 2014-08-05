@@ -3415,11 +3415,17 @@ compute_deps_port() {
 
 	for dep_port in `list_deps ${port}`; do
 		msg_debug "${COLOR_PORT}${port}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_port}"
-		[ "${port}" != "${dep_port}" ] ||
-			err 1 "${COLOR_PORT}${port}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
+		if [ "${port}" = "${dep_port}" ]; then
+			msg_error "${COLOR_PORT}${port}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
+			set_dep_fatal_error
+			return 1
+		fi
 		# Detect bad cat/origin/ dependency which pkgng will not register properly
-		[ "${dep_port}" = "${dep_port%/}" ] ||
-			err 1 "${COLOR_PORT}${port}${COLOR_RESET} depends on bad origin '${COLOR_PORT}${dep_port}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
+		if ! [ "${dep_port}" = "${dep_port%/}" ]; then
+			msg_error "${COLOR_PORT}${port}${COLOR_RESET} depends on bad origin '${COLOR_PORT}${dep_port}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
+			set_dep_fatal_error
+			return 1
+		fi
 		if ! cache_get_pkgname dep_pkgname "${dep_port}" 0; then
 			msg_error "${COLOR_PORT}${port}${COLOR_RESET} depends on nonexistent origin '${COLOR_PORT}${dep_port}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
 			set_dep_fatal_error
