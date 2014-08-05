@@ -1315,6 +1315,11 @@ commit_packages() {
 	# the old directory
 	find -L ${PACKAGES_ROOT}/ -mindepth 1 -maxdepth 1 ! -name '.*' -type l |
 	    while read path; do
+		# Protect All/ and Latest/ from removal
+		case ${path##*/} in
+			All) continue ;;
+			Latest) continue ;;
+		esac
 		link=$(readlink ${path})
 		# Skip if link does not reference inside latest
 		[ "${link##.latest}" != "${link}" ] || continue
@@ -1500,7 +1505,7 @@ jail_start() {
 	[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
 	msg "Mounting ports/packages/distfiles"
 
-	mkdir -p ${PACKAGES}/All ${PACKAGES}/Latest
+	mkdir -p ${PACKAGES}/All/ ${PACKAGES}/Latest/
 	was_a_bulk_run && stash_packages
 
 	do_portbuild_mounts ${tomnt} ${name} ${ptname} ${setname}
