@@ -1608,7 +1608,10 @@ setup_makeconf() {
 	done
 
 	# We will handle DEVELOPER for testing when appropriate
-	sed -i '' '/^DEVELOPER=/d' ${dst_makeconf}
+	if grep -q '^DEVELOPER=' ${dst_makeconf}; then
+		msg_warn "DEVELOPER=yes ignored from make.conf. Use 'bulk -t' or 'testport' for testing instead."
+		sed -i '' '/^DEVELOPER=/d' ${dst_makeconf}
+	fi
 }
 
 include_poudriere_confs() {
