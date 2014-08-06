@@ -4272,7 +4272,7 @@ fi
 : ${CHECK_CHANGED_OPTIONS:=verbose}
 : ${NO_RESTRICTED:=no}
 : ${USE_COLORS:=yes}
-: ${ALLOW_MAKE_JOBS_PACKAGES:=pkg ccache}
+: ${ALLOW_MAKE_JOBS_PACKAGES=pkg ccache}
 
 : ${BUILDNAME_FORMAT:="%Y-%m-%d_%Hh%Mm%Ss"}
 : ${BUILDNAME:=$(date +${BUILDNAME_FORMAT})}
