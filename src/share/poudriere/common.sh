@@ -1073,7 +1073,7 @@ enter_interactive() {
 	# Skip for testport as it has already installed pkg in the ref jail.
 	if [ ${PKGNG} -eq 1 -a "${0##*/}" != "testport.sh" ]; then
 		# Install pkg-static so full pkg package can install
-		ensure_pkg_installed
+		ensure_pkg_installed force_extract
 		# Install the selected PKGNG package
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
 		    PKG_ADD="/.p/pkg-static add" \
@@ -3012,11 +3012,12 @@ pkg_get_options() {
 }
 
 ensure_pkg_installed() {
+	local force="$1"
 	local mnt
 
 	_my_path mnt
 	[ ${PKGNG} -eq 1 ] || return 0
-	[ -x ${mnt}/.p/pkg-static ] && return 0
+	[ -z "${force}" ] && [ -x "${mnt}/.p/pkg-static" ] && return 0
 	[ -e ${MASTERMNT}/packages/Latest/pkg.txz ] || return 1 #pkg missing
 	injail tar xf /packages/Latest/pkg.txz -C / \
 		-s ",/.*/,.p/,g" "*/pkg-static"
@@ -3999,7 +4000,7 @@ build_repo() {
 	if [ $PKGNG -eq 1 ]; then
 		msg "Creating pkgng repository"
 		bset status "pkgrepo:"
-		ensure_pkg_installed
+		ensure_pkg_installed force_extract
 		if [ -r "${PKG_REPO_META_FILE:-/nonexistent}" ]; then
 			PKG_META="-m /tmp/pkgmeta"
 			PKG_META_MASTERMNT="-m ${MASTERMNT}/tmp/pkgmeta"
