@@ -280,10 +280,9 @@ fi
 
 [ "${NO_RESTRICTED}" != "no" ] && clean_restricted
 
-if [ ${BUILD_REPO} -eq 1 ]; then
-	build_repo
-	commit_packages
-fi
+[ ${BUILD_REPO} -eq 1 ] && build_repo
+
+commit_packages
 
 show_build_results
 
