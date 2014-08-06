@@ -1295,6 +1295,10 @@ commit_packages() {
 	    while read path; do
 		name=${path##*/}
 		[ ! -L "${PACKAGES_ROOT}/${name}" ] || continue
+		if [ -e "${PACKAGES_ROOT}/${name}" ]; then
+			msg_error "${PACKAGES_ROOT}/${name} shadows repository file in .latest/${name}. Remove the top-level one and symlink to .latest/${name}"
+			continue
+		fi
 		ln -s .latest/${name} ${PACKAGES_ROOT}/${name}
 	done
 
