@@ -3621,7 +3621,7 @@ check_moved() {
 }
 
 clean_build_queue() {
-	local tmp pn
+	local tmp pn port
 
 	bset status "cleaning:"
 	msg "Cleaning the build queue"
@@ -3639,10 +3639,19 @@ clean_build_queue() {
 
 	if [ ${ALL} -eq 0 ]; then
 		tmp=$(mktemp ${MASTERMNT}/tmp/queue.XXXXXX)
-		listed_ports | while read port; do
-			cache_get_pkgname pkgname "${port}"
-			echo "${pkgname}"
-		done | {
+		{
+			listed_ports | while read port; do
+				cache_get_pkgname pkgname "${port}"
+				echo "${pkgname}"
+			done
+			# Pkg is a special case. It may not have been requested,
+			# but it should always be rebuilt if missing.
+			for port in ports-mgmt/pkg ports-mgmt/pkg-devel; do
+				cache_get_pkgname pkgname "${port}" 0 \
+				    > /dev/null 2>&1 && \
+				    echo "${pkgname}"
+			done
+		} | {
 			FIND_ALL_DEPS=
 			while read pkgname; do
 				find_all_deps "${pkgname}"
