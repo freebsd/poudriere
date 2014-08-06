@@ -1958,8 +1958,13 @@ _real_build_port() {
 		[ -z "${no_stage}" ] && JUSER=${jailuser}
 		bset_job_status "${phase}" "${port}"
 		job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
+		[ -n "${PORTTESTING}" ] && \
+		    phaseenv="${phaseenv} DEVELOPER_MODE=yes"
 		case ${phase} in
-		check-sanity) [ -n "${PORTTESTING}" ] && phaseenv="DEVELOPER=1" ;;
+		check-sanity)
+			[ -n "${PORTTESTING}" ] && \
+			    phaseenv="${phaseenv} DEVELOPER=1"
+			;;
 		fetch)
 			mkdir -p ${mnt}/portdistfiles
 			echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf

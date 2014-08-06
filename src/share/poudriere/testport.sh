@@ -216,7 +216,6 @@ PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
 injail install -d -o ${PORTBUILD_USER} /tmp/pkgs
 PORTTESTING=yes
 export TRYBROKEN=yes
-export DEVELOPER_MODE=yes
 export NO_WARNING_PKG_INSTALL_EOL=yes
 # Disable waits unless running in a tty interactively
 if ! [ -t 1 ]; then
