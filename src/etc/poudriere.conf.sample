@@ -241,3 +241,9 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Use colors when in a TTY
 # Default: yes
 #USE_COLORS=yes
+
+# Only build what is requested. Do not rebuild build deps if nothing requested
+# depends on them. This can create an inconsistent repository if you often
+# build one-off packages but expect the repository to stay consistent.
+# Defaut: yes
+#TRIM_ORPHANED_BUILD_DEPS=yes

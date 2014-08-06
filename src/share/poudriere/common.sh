@@ -3637,7 +3637,7 @@ clean_build_queue() {
 	# but one of their run deps has missing build deps packages which
 	# causes the build deps to be in the queue at this point.
 
-	if [ ${ALL} -eq 0 ]; then
+	if [ ${TRIM_ORPHANED_BUILD_DEPS} = "yes" -a ${ALL} -eq 0 ]; then
 		tmp=$(mktemp ${MASTERMNT}/tmp/queue.XXXXXX)
 		{
 			listed_ports | while read port; do
@@ -4262,6 +4262,7 @@ fi
 : ${PORTTESTING_FATAL:=yes}
 : ${PORTTESTING_RECURSIVE:=0}
 : ${RESTRICT_NETWORKING:=yes}
+: ${TRIM_ORPHANED_BUILD_DEPS:=yes}
 : ${USE_PROCFS:=yes}
 : ${USE_FDESCFS:=yes}
 # - must be last
