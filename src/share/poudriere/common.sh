@@ -1076,7 +1076,6 @@ enter_interactive() {
 		ensure_pkg_installed force_extract
 		# Install the selected PKGNG package
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
-		    PKG_ADD="/.p/pkg-static add" \
 		    make -C \
 		    /usr/ports/$(injail make -f /usr/ports/Mk/bsd.port.mk \
 		    -V PKGNG_ORIGIN) install-package
@@ -1546,10 +1545,10 @@ jail_start() {
 	if [ -n "${WITH_PKGNG}" ]; then
 		PKGNG=1
 		PKG_EXT="txz"
-		PKG_BIN="${LOCALBASE:-/usr/local}/sbin/pkg-static"
+		PKG_BIN="/.p/pkg-static"
 		PKG_ADD="${PKG_BIN} add"
 		PKG_DELETE="${PKG_BIN} delete -y -f"
-		PKG_VERSION="/.p/pkg-static version"
+		PKG_VERSION="${PKG_BIN} version"
 
 		[ -n "${PKG_REPO_SIGNING_KEY}" ] &&
 			! [ -f "${PKG_REPO_SIGNING_KEY}" ] &&

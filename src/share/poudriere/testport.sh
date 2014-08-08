@@ -295,6 +295,7 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 else
 	if [ -f ${MASTERMNT}/tmp/pkgs/${PKGNAME}.${PKG_EXT} ]; then
 		msg "Installing from package"
+		ensure_pkg_installed
 		injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT} || :
 	fi
 fi
@@ -303,6 +304,7 @@ msg "Cleaning up"
 injail make -C /usr/ports/${ORIGIN} clean
 
 msg "Deinstalling package"
+ensure_pkg_installed
 injail ${PKG_DELETE} ${PKGNAME}
 
 stop_build /usr/ports/${ORIGIN} ${ret}
