@@ -2898,7 +2898,7 @@ deps_file() {
 		if [ "${PKG_EXT}" = "tbz" ]; then
 			injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | awk '$1 == "@pkgdep" { print $2 }' > "${_depfile}"
 		else
-			injail /.p/pkg-static info -qdF "/packages/All/${pkg##*/}" > "${_depfile}"
+			injail ${PKG_BIN} info -qdF "/packages/All/${pkg##*/}" > "${_depfile}"
 		fi
 	fi
 
@@ -2923,7 +2923,7 @@ pkg_get_origin() {
 				_origin=$(injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | \
 					awk -F: '$1 == "@comment ORIGIN" { print $2 }')
 			else
-				_origin=$(injail /.p/pkg-static query -F \
+				_origin=$(injail ${PKG_BIN} query -F \
 					"/packages/All/${pkg##*/}" "%o")
 			fi
 		fi
@@ -2954,7 +2954,7 @@ pkg_get_dep_origin() {
 			compiled_dep_origins=$(injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | \
 				awk -F: '$1 == "@comment DEPORIGIN" {print $2}' | tr '\n' ' ')
 		else
-			compiled_dep_origins=$(injail /.p/pkg-static query -F \
+			compiled_dep_origins=$(injail ${PKG_BIN} query -F \
 				"/packages/All/${pkg##*/}" '%do' | tr '\n' ' ')
 		fi
 		echo "${compiled_dep_origins}" > "${dep_origin_file}"
@@ -2995,7 +2995,7 @@ pkg_get_options() {
 				awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | \
 				sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 		else
-			_compiled_options=$(injail /.p/pkg-static query -F \
+			_compiled_options=$(injail ${PKG_BIN} query -F \
 				"/packages/All/${pkg##*/}" '%Ov%Ok' | sed '/^off/d;/^false/d;s/^on//;s/^true//' | sort | tr '\n' ' ')
 		fi
 		echo "${_compiled_options}" > "${optionsfile}"
@@ -4023,7 +4023,7 @@ build_repo() {
 		if [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
 			install -m 0400 ${PKG_REPO_SIGNING_KEY} \
 				${MASTERMNT}/tmp/repo.key
-			injail /.p/pkg-static repo -o /tmp/packages \
+			injail ${PKG_BIN} repo -o /tmp/packages \
 				${PKG_META} \
 				/packages /tmp/repo.key
 			rm -f ${MASTERMNT}/tmp/repo.key
@@ -4031,12 +4031,12 @@ build_repo() {
 			# Sometimes building repo from host is needed if
 			# using SSH with DNSSEC as older hosts don't support
 			# it.
-			${MASTERMNT}/.p/pkg-static repo \
+			${MASTERMNT}${PKG_BIN} repo \
 			    -o ${MASTERMNT}/tmp/packages ${PKG_META_MASTERMNT} \
 			    ${MASTERMNT}/packages \
 			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 		else
-			JNETNAME="n" injail /.p/pkg-static repo \
+			JNETNAME="n" injail ${PKG_BIN} repo \
 			    -o /tmp/packages ${PKG_META} /packages \
 			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 		fi
