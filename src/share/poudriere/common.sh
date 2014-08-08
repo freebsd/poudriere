@@ -1544,22 +1544,22 @@ jail_start() {
 	# jail -s should not do this or jail will stop on EXIT
 	WITH_PKGNG=$(injail make -f /usr/ports/Mk/bsd.port.mk -V WITH_PKGNG)
 	if [ -n "${WITH_PKGNG}" ]; then
-		export PKGNG=1
-		export PKG_EXT="txz"
-		export PKG_BIN="${LOCALBASE:-/usr/local}/sbin/pkg-static"
-		export PKG_ADD="${PKG_BIN} add"
-		export PKG_DELETE="${PKG_BIN} delete -y -f"
-		export PKG_VERSION="/.p/pkg-static version"
+		PKGNG=1
+		PKG_EXT="txz"
+		PKG_BIN="${LOCALBASE:-/usr/local}/sbin/pkg-static"
+		PKG_ADD="${PKG_BIN} add"
+		PKG_DELETE="${PKG_BIN} delete -y -f"
+		PKG_VERSION="/.p/pkg-static version"
 
 		[ -n "${PKG_REPO_SIGNING_KEY}" ] &&
 			! [ -f "${PKG_REPO_SIGNING_KEY}" ] &&
 			err 1 "PKG_REPO_SIGNING_KEY defined but the file is missing."
 	else
-		export PKGNG=0
-		export PKG_ADD=pkg_add
-		export PKG_DELETE=pkg_delete
-		export PKG_VERSION=pkg_version
-		export PKG_EXT="tbz"
+		PKGNG=0
+		PKG_ADD=pkg_add
+		PKG_DELETE=pkg_delete
+		PKG_VERSION=pkg_version
+		PKG_EXT="tbz"
 	fi
 
 	# 8.3 did not have distrib-dirs ran on it, so various
