@@ -138,6 +138,8 @@ done
 [ -z ${ORIGIN} ] && usage
 
 [ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
+_pget portsdir ${PTNAME} mnt
+[ -d "${portsdir}/${ORIGIN}" ] || err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
 
 maybe_run_queued "$@"
 
