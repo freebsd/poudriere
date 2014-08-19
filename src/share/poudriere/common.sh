@@ -279,6 +279,7 @@ run_hook() {
 		POUDRIERED="${POUDRIERED}" \
 		POUDRIERE_DATA="${POUDRIERE_DATA}" \
 		MASTERNAME="${MASTERNAME}" \
+		MASTERMNT="${MASTERMNT}" \
 		BUILDNAME="${BUILDNAME}" \
 		JAILNAME="${JAILNAME}" \
 		PTNAME="${PTNAME}" \
@@ -1568,6 +1569,10 @@ jail_start() {
 		injail mtree -eu -f /etc/mtree/BSD.var.dist -p /var >/dev/null 2>&1 || :
 		injail mtree -eu -f /etc/mtree/BSD.usr.dist -p /usr >/dev/null 2>&1 || :
 	fi
+
+	run_hook jail start
+
+	return 0
 }
 
 load_blacklist() {
