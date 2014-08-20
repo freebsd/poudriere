@@ -1041,7 +1041,9 @@ do_jail_mounts() {
 			devfs -m ${mnt}/dev/ rule apply path "${p}" unhide
 		done
 	fi
-	if [ "${mnt##*/}" != "ref" ]; then
+
+	# Only do this in cloned build jails. from==mnt is via jail -u
+	if [ "${mnt##*/}" != "ref" -a "${from}" != "${mnt}" ]; then
 		[ "${USE_FDESCFS}" = "yes" ] && \
 		    [ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ] && \
 		    mount -t fdescfs fdesc ${mnt}/dev/fd
