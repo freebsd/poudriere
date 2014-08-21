@@ -4,7 +4,7 @@ AM_INIT_AUTOMAKE([1.11 foreign -Wall -Wno-portability no-dist-gzip dist-xz])
 AM_SILENT_RULES([yes])
 AC_CONFIG_HEADER(src/config.h)
 
-AM_MAINTAINER_MODE([enable])
+AM_MAINTAINER_MODE([disable])
 
 AC_PROG_CC
 AC_PROG_RANLIB

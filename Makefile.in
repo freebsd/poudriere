@@ -93,8 +93,8 @@ DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(dist_assets_DATA) $(dist_awk_DATA) $(dist_btcss_DATA) \
 	$(dist_btfonts_DATA) $(dist_btjs_DATA) $(dist_dtcss_DATA) \
 	$(dist_dtimages_DATA) $(dist_dtjs_DATA) $(dist_html_DATA) \
-	$(dist_pkgdata_DATA) $(dist_include_HEADERS) README ar-lib \
-	compile config.guess config.sub install-sh missing ltmain.sh
+	$(dist_pkgdata_DATA) $(dist_include_HEADERS) README compile \
+	install-sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
