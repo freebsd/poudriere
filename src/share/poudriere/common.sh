@@ -3994,7 +3994,8 @@ clean_restricted() {
 	# mount_nullfs does not support mount -u
 	umount -f ${MASTERMNT}/packages
 	mount_packages
-	injail make -C /usr/ports -j ${PARALLEL_JOBS} clean-restricted >/dev/null
+	injail make -s -C /usr/ports -j ${PARALLEL_JOBS} \
+	    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
 	# For pkg_install remove packages that have lost one of their dependency
 	if [ ${PKGNG} -eq 0 ]; then
 		msg_verbose "Checking packages for missing dependencies"
