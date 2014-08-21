@@ -342,7 +342,7 @@ build_and_install_world() {
 		RANLIB=/nxb-bin/usr/bin/ranlib
 		YACC=/nxb-bin/usr/bin/yacc
 		NM=/nxb-bin/usr/bin/nm
-		MAKE=/nxb-bin/usr/bin/make
+		#MAKE=/nxb-bin/usr/bin/make
 		STRINGS=/nxb-bin/usr/bin/strings
 		AWK=/nxb-bin/usr/bin/awk
 		FLEX=/nxb-bin/usr/bin/flex
