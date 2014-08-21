@@ -2027,8 +2027,9 @@ _real_build_port() {
 				msg "Checking shared library dependencies"
 				listfilecmd="grep -v '^@' /var/db/pkg/${PKGNAME}/+CONTENTS"
 				[ ${PKGNG} -eq 1 ] && listfilecmd="pkg query '%Fp' ${PKGNAME}"
-				injail ${listfilecmd} | injail xargs ldd 2>&1 |
-					awk '/=>/ { print $3 }' | sort -u
+				injail ${listfilecmd} | \
+				    injail xargs readelf -d 2>/dev/null | \
+				    grep NEEDED | sort -u
 			fi
 			;;
 		esac
