@@ -3605,6 +3605,7 @@ delete_stale_symlinks_and_empty_dirs() {
 }
 
 load_moved() {
+	[ -f ${MASTERMNT}/usr/ports/MOVED ] || return 0
 	msg "Loading MOVED"
 	bset status "loading_moved:"
 	mkdir ${MASTERMNT}/.p/MOVED
