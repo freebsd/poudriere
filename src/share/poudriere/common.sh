@@ -323,7 +323,7 @@ log_start() {
 		[ "${USE_COLORS}" = "yes" ] && stripcolors_pipe="stripcolors |"
 		[ "${TIMESTAMP_LOGS}" = "yes" ] && add_ts_pipe="timestamp |"
 		eval ${add_ts_pipe} ${stripcolors_pipe} tee ${logfile}
-	} < ${logfile}.pipe >&3 &
+	} < ${logfile}.pipe &
 	tpid=$!
 	exec > ${logfile}.pipe 2>&1
 
