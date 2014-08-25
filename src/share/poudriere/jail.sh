@@ -640,7 +640,6 @@ info_jail() {
 	local jversion jarch jmethod pmethod
 
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
-	porttree_exists ${PTNAME} || err 1 "No such tree: ${PTNAME}"
 
 	POUDRIERE_BUILD_TYPE=bulk
 	BUILDNAME=latest
@@ -660,38 +659,40 @@ info_jail() {
 	_jget jarch ${JAILNAME} arch
 	_jget jmethod ${JAILNAME} method
 	_jget timestamp ${JAILNAME} timestamp 2>/dev/null || :
-	_pget pmethod ${PTNAME} method
 
 	echo "Jail name:         ${JAILNAME}"
 	echo "Jail version:      ${jversion}"
 	echo "Jail arch:         ${jarch}"
-	echo "Jail method:      ${jmethod}"
+	echo "Jail method:       ${jmethod}"
 	if [ -n "${timestamp}" ]; then
 		echo "Jail updated:      $(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
 	fi
-	echo "Tree name:         ${PTNAME}"
-	echo "Tree method:       ${pmethod:--}"
-#	echo "Tree updated:      $(pget ${PTNAME} timestamp)"
-	echo "Status:            ${status}"
-	if calculate_elapsed_from_log ${now} ${log}; then
-		start_time=${_start_time}
-		elapsed=${_elapsed_time}
-		building_started=$(date -j -r ${start_time} "+%Y-%m-%d %H:%M:%S")
-		elapsed_days=$((elapsed/86400))
-		calculate_duration elapsed_hms "${elapsed}"
-		case ${elapsed_days} in
-			0) elapsed_timestamp="${elapsed_hms}" ;;
-			1) elapsed_timestamp="1 day, ${elapsed_hms}" ;;
-			*) elapsed_timestamp="${elapsed_days} days, ${elapsed_hms}" ;;
-		esac
-		echo "Building started:  ${building_started}"
-		echo "Elapsed time:      ${elapsed_timestamp}"
-		echo "Packages built:    ${nbb}"
-		echo "Packages failed:   ${nbf}"
-		echo "Packages ignored:  ${nbi}"
-		echo "Packages skipped:  ${nbs}"
-		echo "Packages total:    ${nbq}"
-		echo "Packages left:     ${tobuild}"
+	if porttree_exists ${PTNAME}; then
+		_pget pmethod ${PTNAME} method
+		echo "Tree name:         ${PTNAME}"
+		echo "Tree method:       ${pmethod:--}"
+#		echo "Tree updated:      $(pget ${PTNAME} timestamp)"
+		echo "Status:            ${status}"
+		if calculate_elapsed_from_log ${now} ${log}; then
+			start_time=${_start_time}
+			elapsed=${_elapsed_time}
+			building_started=$(date -j -r ${start_time} "+%Y-%m-%d %H:%M:%S")
+			elapsed_days=$((elapsed/86400))
+			calculate_duration elapsed_hms "${elapsed}"
+			case ${elapsed_days} in
+				0) elapsed_timestamp="${elapsed_hms}" ;;
+				1) elapsed_timestamp="1 day, ${elapsed_hms}" ;;
+				*) elapsed_timestamp="${elapsed_days} days, ${elapsed_hms}" ;;
+			esac
+			echo "Building started:  ${building_started}"
+			echo "Elapsed time:      ${elapsed_timestamp}"
+			echo "Packages built:    ${nbb}"
+			echo "Packages failed:   ${nbf}"
+			echo "Packages ignored:  ${nbi}"
+			echo "Packages skipped:  ${nbs}"
+			echo "Packages total:    ${nbq}"
+			echo "Packages left:     ${tobuild}"
+		fi
 	fi
 
 	unset POUDRIERE_BUILD_TYPE
