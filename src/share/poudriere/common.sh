@@ -1081,7 +1081,7 @@ enter_interactive() {
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
 		    make -C \
 		    /usr/ports/$(injail make -f /usr/ports/Mk/bsd.port.mk \
-		    -V PKGNG_ORIGIN) install-package
+		    -V PKGNG_ORIGIN) PKG_BIN="${PKG_BIN}" install-package
 	fi
 
 	# Enable all selected ports and their run-depends
