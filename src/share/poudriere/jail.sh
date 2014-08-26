@@ -875,7 +875,7 @@ fi
 case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	10000000)
 		test -z ${JAILNAME} && usage JAILNAME
-		check_emulation ${ARCH} ${REALARCH}
+		check_emulation
 		maybe_run_queued "${saved_argv}"
 		create_jail
 		;;
@@ -919,7 +919,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	00000010)
 		test -z ${JAILNAME} && usage JAILNAME
 		maybe_run_queued "${saved_argv}"
-		check_emulation ${ARCH} ${REALARCH}
+		check_emulation
 		update_jail
 		;;
 	00000001)
