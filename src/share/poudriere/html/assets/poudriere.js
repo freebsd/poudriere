@@ -165,6 +165,9 @@ function update_canvas(stats) {
 	x += minidraw(x, height, width, context, "#CC6633", queued, skipped);
 
 	pctdone = ((queued - remaining) * 100) / queued;
+	if (isNaN(pctdone)) {
+		pctdone = 0;
+	}
 	if (pctdone < 1.0 && pctdone != 0) {
 		pctdonetxt = "< 1";
 	} else {
