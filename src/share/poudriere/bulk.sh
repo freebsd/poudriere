@@ -37,7 +37,8 @@ Parameters:
 
 Options:
     -B name     -- What buildname to use (must be unique, defaults to
-                   YYYY-MM-DD_HH:MM:SS)
+                   YYYY-MM-DD_HH:MM:SS). Resuming a previous build will not
+                   retry built/failed/skipped/ignored packages.
     -c          -- Clean all the previously built binary packages
     -C          -- Clean only the packages listed on the command line or
                    -f file

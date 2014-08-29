@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd June 16, 2014
+.Dd August 29, 2014
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -137,6 +137,7 @@ By default
 .Ar YYYY-MM-DD_HH:MM:SS
 will be used.
 This can be used to resume a previous build and use the same log and URL paths.
+Resuming a build will not retry built/failed/skipped/ignored packages.
 .It Fl c
 Clean
 .Em all

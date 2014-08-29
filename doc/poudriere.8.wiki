@@ -111,7 +111,7 @@ Here are the options associated with the <b class="flag">bulk</b> command.<dl st
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;B</b> <i class="arg">name</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Specify which buildname to use. By default <i class="arg">YYYY-MM-DD_HH:MM:SS</i> will be used. This can be used to resume a previous build and use the same log and URL paths.</dd>
+Specify which buildname to use. By default <i class="arg">YYYY-MM-DD_HH:MM:SS</i> will be used. This can be used to resume a previous build and use the same log and URL paths. Resuming a build will not retry built/failed/skipped/ignored packages.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;c</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
@@ -919,7 +919,7 @@ Be also careful to not begin the name of the jail by a number if you are not in 
 <tbody>
 <tr>
 <td class="foot-date">
-June 16, 2014</td>
+August 29, 2014</td>
 <td class="foot-os" align="right">
 FreeBSD 11.0</td>
 </tr>
