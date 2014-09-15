@@ -48,6 +48,7 @@ The comments inside the configuration file should be sufficient.
 <h2>Documentation</h2>
 
   *  See [./poudriere.8.wiki|poudriere(8)].
+  *  [./relnotes.wiki|Release notes].
 
 <h1>How-to...</h1>
 
