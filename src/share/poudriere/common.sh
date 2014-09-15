@@ -627,6 +627,11 @@ update_stats() {
 	lock_release update_stats
 }
 
+sigpipe_handler() {
+	EXIT_STATUS="sigpipe:"
+	sig_handler
+}
+
 sigint_handler() {
 	EXIT_STATUS="sigint:"
 	sig_handler
@@ -4109,6 +4114,7 @@ PATH="${LIBEXECPREFIX}:${PATH}:/sbin:/usr/sbin"
 [ -z "${NO_ZFS}" -a -z ${ZPOOL} ] && err 1 "ZPOOL variable is not set"
 [ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
 
+trap sigpipe_handler SIGPIPE
 trap sigint_handler SIGINT
 trap sigterm_handler SIGTERM
 trap exit_handler EXIT
