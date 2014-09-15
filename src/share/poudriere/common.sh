@@ -987,7 +987,6 @@ EOF
 ./var/tmp/*
 ./wrkdirs/*
 EOF
-		(cd ${mnt} ;  find ./usr/local -type d )>> ${mnt}/.p/mtree.${name}exclude
 		;;
 	esac
 	mtree -X ${mnt}/.p/mtree.${name}exclude \
