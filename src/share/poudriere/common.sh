@@ -639,7 +639,7 @@ sigterm_handler() {
 
 
 sig_handler() {
-	trap - SIGTERM SIGKILL
+	trap - SIGTERM
 	# Ignore SIGINT while cleaning up
 	trap '' SIGINT
 	err 1 "Signal caught, cleaning up and exiting"
@@ -647,7 +647,7 @@ sig_handler() {
 
 exit_handler() {
 	# Avoid recursively cleaning up here
-	trap - EXIT SIGTERM SIGKILL
+	trap - EXIT SIGTERM
 	# Ignore SIGINT while cleaning up
 	trap '' SIGINT
 
@@ -4110,7 +4110,6 @@ PATH="${LIBEXECPREFIX}:${PATH}:/sbin:/usr/sbin"
 
 trap sigint_handler SIGINT
 trap sigterm_handler SIGTERM
-trap sig_handler SIGKILL
 trap exit_handler EXIT
 # Use a function as it is shared logic with read_file()
 enable_siginfo_handler() {
