@@ -1,6 +1,6 @@
 <h1>Release notes</h1>
 
-<h2>3.1 [DRAFT]</h2>
+<h2>3.1 (DRAFT)</h2>
 
 <verbatim>
  * New HTML interface. There is now a top-level and jail-level interface that
