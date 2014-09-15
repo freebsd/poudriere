@@ -1,0 +1,8 @@
+Alias /poudriere/data "/usr/local/poudriere/data/logs/bulk"
+
+Alias /poudriere "/usr/local/share/poudriere/html"
+
+<Location /poudriere>
+        Allow from all
+        Options Indexes
+</Location>
