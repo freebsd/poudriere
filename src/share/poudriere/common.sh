@@ -98,7 +98,7 @@ err() {
 	# Don't set it from children failures though, only master
 	[ -z "${PARALLEL_CHILD}" ] && was_a_bulk_run &&
 		bset status "${EXIT_STATUS:-crashed:}" 2>/dev/null || :
-	msg_error "$2"
+	msg_error "$2" || :
 	exit $1
 }
 
@@ -639,15 +639,22 @@ sigterm_handler() {
 
 
 sig_handler() {
+	# Reset SIGTERM handler, just exit if another is received.
 	trap - SIGTERM
+	# Ignore SIGPIPE for messages
+	trap '' SIGPIPE
 	# Ignore SIGINT while cleaning up
 	trap '' SIGINT
 	err 1 "Signal caught, cleaning up and exiting"
 }
 
 exit_handler() {
+	# Ignore errors while cleaning up
+	set +e
 	# Avoid recursively cleaning up here
 	trap - EXIT SIGTERM
+	# Ignore SIGPIPE for messages
+	trap '' SIGPIPE
 	# Ignore SIGINT while cleaning up
 	trap '' SIGINT
 
@@ -1684,12 +1691,6 @@ cleanup() {
 	local wait_pids
 
 	[ -n "${CLEANED_UP}" ] && return 0
-	# Prevent recursive cleanup on error
-	if [ -n "${CLEANING_UP}" ]; then
-		echo "Failure cleaning up. Giving up." >&2
-		return
-	fi
-	export CLEANING_UP=1
 	msg "Cleaning up"
 
 	# Only bother with this if using jails as this may be being ran
