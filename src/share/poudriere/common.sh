@@ -629,16 +629,19 @@ update_stats() {
 
 sigpipe_handler() {
 	EXIT_STATUS="sigpipe:"
+	SIGNAL="SIGPIPE"
 	sig_handler
 }
 
 sigint_handler() {
 	EXIT_STATUS="sigint:"
+	SIGNAL="SIGINT"
 	sig_handler
 }
 
 sigterm_handler() {
 	EXIT_STATUS="sigterm:"
+	SIGNAL="SIGTERM"
 	sig_handler
 }
 
@@ -650,7 +653,7 @@ sig_handler() {
 	trap '' SIGPIPE
 	# Ignore SIGINT while cleaning up
 	trap '' SIGINT
-	err 1 "Signal caught, cleaning up and exiting"
+	err 1 "Signal ${SIGNAL} caught, cleaning up and exiting"
 }
 
 exit_handler() {
