@@ -654,6 +654,8 @@ sig_handler() {
 }
 
 exit_handler() {
+	local -
+
 	# Ignore errors while cleaning up
 	set +e
 	# Avoid recursively cleaning up here
