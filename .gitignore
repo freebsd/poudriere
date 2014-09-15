@@ -19,6 +19,7 @@
 /poudriere_statsd
 /rename
 /rexec
+/timeout
 /timestamp
 /tsort
 Makefile
