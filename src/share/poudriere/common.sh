@@ -267,7 +267,6 @@ jstart() {
 		${ipargs} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
 	jexecd -j ${name}-n -d ${MASTERMNT}/.p/
-	injail id ${PORTBUILD_USER} ; echo $?
 	if ! injail id ${PORTBUILD_USER} >/dev/null 2>&1 ; then
 		msg_n "Creating user/group ${PORTBUILD_USER}"
 		injail pw groupadd ${PORTBUILD_USER} -g 65532 || \
