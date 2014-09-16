@@ -2483,25 +2483,25 @@ $(find ${MASTERMNT}/.p/building ${MASTERMNT}/.p/pool ${MASTERMNT}/.p/deps ${MAST
 }
 
 queue_empty() {
-	local pool_dir lock dirs
-	local ret=0
+	local pool_dir dirs
+	local n
 
-	# Lock on balance_pool to avoid race here while it is moving between
-	# /unbalanced and a balanced slot
-	lock=${MASTERMNT}/.p/.lock-balance_pool
-	mkdir ${lock} 2>/dev/null || return 1
+	dirs="${MASTERMNT}/.p/deps ${POOL_BUCKET_DIRS}"
 
-	dirs="${MASTERMNT}/.p/deps ${MASTERMNT}/.p/pool/unbalanced ${POOL_BUCKET_DIRS}"
-
-	for pool_dir in ${dirs}; do
-		if ! dirempty ${pool_dir}; then
-			ret=1
-			break
-		fi
+	n=0
+	# Check twice that the queue is empty. This avoids racing with
+	# clean.sh and balance_pool() moving files between the dirs.
+	while [ ${n} -lt 2 ]; do
+		for pool_dir in ${dirs}; do
+			if ! dirempty ${pool_dir}; then
+				return 1
+			fi
+		done
+		n=$((n + 1))
 	done
 
-	rmdir ${lock}
-	return ${ret}
+	# Queue is empty
+	return 0
 }
 
 mark_done() {
@@ -2544,6 +2544,8 @@ build_queue() {
 					bset ${j} status "crashed:"
 				fi
 			fi
+
+			# Some builder is idle
 
 			[ ${queue_empty} -eq 0 ] || continue
 
@@ -3313,7 +3315,20 @@ next_in_queue() {
 	p=$(find ${POOL_BUCKET_DIRS} -type d -depth 1 -empty -print -quit || :)
 	if [ -n "$p" ]; then
 		_pkgname=${p##*/}
-		mv ${p} ${MASTERMNT}/.p/building/${_pkgname}
+		if ! mv ${p} ${MASTERMNT}/.p/building/${_pkgname} \
+		    2>/dev/null; then
+			# Was the failure from /unbalanced?
+			if [ -z "${p%%*/unbalanced/*}" ]; then
+				# We lost the race with a child running
+				# balance_queue(). The file is already
+				# gone and moved to a bucket. Try again.
+				next_in_queue "${var_return}"
+				return $?
+			else
+				# Failure to move a balanced item??
+				return 1
+			fi
+		fi
 		# Update timestamp for buildtime accounting
 		touch ${MASTERMNT}/.p/building/${_pkgname}
 	fi
@@ -3923,8 +3938,6 @@ load_priorities() {
 		# I.e., pkg-devel in -ac or testport on something with no deps
 		# needed.
 		[ -z "${POOL_BUCKET_DIRS}" ] && POOL_BUCKET_DIRS="0"
-	else
-		POOL_BUCKET_DIRS="unbalanced"
 	fi
 
 	set -f # for PRIORITY_BOOST
@@ -3953,6 +3966,8 @@ load_priorities() {
 	# Create buckets after loading priorities in case of boosts.
 	( cd ${MASTERMNT}/.p/pool && mkdir ${POOL_BUCKET_DIRS} )
 
+	POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} unbalanced"
+
 	return 0
 }
 
@@ -3962,7 +3977,9 @@ balance_pool() {
 
 	local pkgname pkg_dir dep_count lock
 
-	# Avoid running this in parallel, no need
+	# Avoid running this in parallel, no need. Note that this lock is
+	# not on the unbalanced/ dir, but only this function. clean.sh writes
+	# to unbalanced/, queue_empty() and next_in_queue() both read from it.
 	lock=${MASTERMNT}/.p/.lock-balance_pool
 	mkdir ${lock} 2>/dev/null || return 0
 
@@ -3983,6 +4000,8 @@ balance_pool() {
 		hash_get "priority" "${pkgname}" dep_count || dep_count=0
 		mv ${pkg_dir} ${MASTERMNT}/.p/pool/${dep_count}/
 	done
+	# New files may have been added in unbalanced/ via clean.sh due to not
+	# being locked. These will be picked up in the next run.
 
 	rmdir ${lock}
 }
