@@ -67,7 +67,7 @@ main(int argc, char **argv)
 	strlcpy(un.sun_path, sock, sizeof(un.sun_path));
 
 	if (connect(fd, (struct sockaddr *) &un, sizeof(struct sockaddr_un)) == -1)
-		err(EXIT_FAILURE, "connect()");
+		err(EXIT_FAILURE, "connect(%s)", sock);
 
 	nv = nvlist_create(0);
 	arguments = nvlist_create(0);

@@ -239,7 +239,7 @@ serve(int fd) {
 		if (ke.filter == EVFILT_PROC) {
 			killpg(cl->pid, SIGTERM);
 			nv = nvlist_create(0);
-			nvlist_add_number(nv, "return", WEXITSTATUS(cl->pid));
+			nvlist_add_number(nv, "return", WEXITSTATUS(ke.data));
 			nvlist_send(cl->fd, nv);
 			nvlist_destroy(nv);
 			client_free(cl);
@@ -287,7 +287,7 @@ main(int argc, char **argv)
 			    (intmax_t)otherpid);
 		}
 		/* If we cannot create pidfile from other reasons, only warn. */
-		warn("Cannot open or create pidfile");
+		warn("Cannot open or create pidfile: '%s'", path);
 	}
 
 	memset(&un, 0, sizeof(struct sockaddr_un));
