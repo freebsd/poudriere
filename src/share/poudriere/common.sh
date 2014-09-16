@@ -3398,7 +3398,8 @@ compute_deps() {
 	parallel_start
 	for port in $(listed_ports show_moved); do
 		if [ -d "${MASTERMNT}/usr/ports/${port}" ]; then
-			parallel_run compute_deps_port ${port}
+			parallel_run compute_deps_port ${port} || \
+			    set_dep_fatal_error
 		else
 			if [ ${ALL} -eq 1 ]; then
 				msg_warn "Nonexistent port listed in category Makefiles: ${COLOR_PORT}${port}"
