@@ -2542,9 +2542,10 @@ build_queue() {
 
 		if [ ${queue_empty} -eq 1 ]; then
 			if [ ${builders_active} -eq 1 ]; then
-				# The queue is empty, but builds are still going.
-				# Wait on them.
-				continue
+				# The queue is empty, but builds are still
+				# going. Wait on them below.
+
+				# FALLTHROUGH
 			else
 				# All work is done
 				deadlock_detected 0
@@ -2552,6 +2553,7 @@ build_queue() {
 			fi
 		fi
 
+		# If builders are idle then there is a problem.
 		[ ${builders_active} -eq 1 ] || deadlock_detected
 
 		unset jobid; until trappedinfo=; read -t 30 jobid <&6 ||
