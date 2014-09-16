@@ -294,10 +294,6 @@ run_hook() {
 	return 0
 }
 
-stripcolors() {
-	cat -uv | sed -lE "s/\^\[\[([0-9]{1,2}(;[0-9]{1,2})?)?[mK]//g"
-}
-
 log_start() {
 	local log log_top
 	local latest_log
@@ -323,10 +319,9 @@ log_start() {
 	exec 3>&1 4>&2
 	[ ! -e ${logfile}.pipe ] && mkfifo ${logfile}.pipe
 	{
-		local stripcolors_pipe add_ts_pipe
-		[ "${USE_COLORS}" = "yes" ] && stripcolors_pipe="stripcolors |"
+		local add_ts_pipe
 		[ "${TIMESTAMP_LOGS}" = "yes" ] && add_ts_pipe="timestamp |"
-		eval ${add_ts_pipe} ${stripcolors_pipe} tee ${logfile}
+		eval ${add_ts_pipe} tee ${logfile}
 	} < ${logfile}.pipe &
 	tpid=$!
 	exec > ${logfile}.pipe 2>&1
