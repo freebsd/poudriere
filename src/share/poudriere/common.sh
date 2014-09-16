@@ -941,6 +941,9 @@ jail_start() {
 
 	local tomnt=${POUDRIERE_DATA}/build/${MASTERNAME}/ref
 
+	[ -L ${POUDRIERE_DATA}/packages/${MASTERNAME}/.latest ] && \
+	    err 1 "Your repository is in the Poudriere 3.1 format. Downgrading not supported."
+
 	[ -d ${DISTFILES_CACHE:-/nonexistent} ] || err 1 "DISTFILES_CACHE directory does not exist. (c.f. poudriere.conf)"
 	[ ${TMPFS_ALL} -ne 1 ] && [ $(sysctl -n kern.securelevel) -ge 1 ] && \
 	    err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags. USE_TMPFS=all can override this."
