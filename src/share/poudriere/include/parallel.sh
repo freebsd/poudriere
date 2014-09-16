@@ -100,9 +100,11 @@ kill_and_wait() {
 	if ! timed_wait ${time} ${pids}; then
 		# Kill remaining children instead of waiting on them
 		kill -9 ${pids} 2>/dev/null || :
+		_wait ${pids} || ret=$?
+	else
+		# Nothing running, collect status directly.
+		wait ${pids} || ret=$?
 	fi
-
-	_wait ${pids} || ret=$?
 
 	return ${ret}
 }
