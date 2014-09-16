@@ -1511,7 +1511,7 @@ jail_start() {
 		msg_warn "This is not supported."
 		msg_warn "Host kernel must be same or newer than jail."
 		msg_warn "Expect build failures."
-		sleep 5
+		sleep 1
 	fi
 
 	msg "Mounting system devices for ${MASTERNAME}"
