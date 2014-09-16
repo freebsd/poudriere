@@ -2547,7 +2547,7 @@ build_queue() {
 				# is done before checking the queue again
 			else
 				MY_JOBID="${j}" PORTTESTING=$(get_porttesting "${pkgname}") \
-					build_pkg "${pkgname}" > /dev/null &
+					build_pkg "${pkgname}" &
 				echo "$!" > ${MASTERMNT}/.p/var/run/${j}.pid
 				echo "${pkgname}" > ${MASTERMNT}/.p/var/run/${j}.pkgname
 
