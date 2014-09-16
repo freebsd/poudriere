@@ -194,7 +194,7 @@ parallel_stop() {
 }
 
 parallel_shutdown() {
-	kill_and_wait 30 "${PARALLEL_PIDS}" 2>/dev/null || :
+	kill_and_wait 30 "${PARALLEL_PIDS}" || :
 	# Reap the pids
 	parallel_stop 0 2>/dev/null || :
 }
