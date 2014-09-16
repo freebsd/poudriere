@@ -99,7 +99,13 @@ err() {
 	[ -z "${PARALLEL_CHILD}" ] && was_a_bulk_run &&
 		bset status "${EXIT_STATUS:-crashed:}" 2>/dev/null || :
 	msg_error "$2" || :
-	exit $1
+	# Avoid recursive err()->exit_handler()->err()... Just let
+	# exit_handler() cleanup.
+	if [ ${ERRORS_ARE_FATAL:-1} -eq 1 ]; then
+		exit $1
+	else
+		return 0
+	fi
 }
 
 msg_n() {
@@ -659,6 +665,7 @@ sig_handler() {
 exit_handler() {
 	# Ignore errors while cleaning up
 	set +e
+	ERRORS_ARE_FATAL=0
 	# Avoid recursively cleaning up here
 	trap - EXIT SIGTERM
 	# Ignore SIGPIPE for messages
