@@ -154,8 +154,6 @@ job_msg() {
 		now=$(date +%s)
 		calculate_duration elapsed "$((${now} - ${TIME_START_JOB}))"
 		msg "[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}][${elapsed}] $1" >&5
-	else
-		msg "$1"
 	fi
 }
 
