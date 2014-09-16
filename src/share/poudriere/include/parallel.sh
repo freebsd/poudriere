@@ -37,7 +37,7 @@ _wait() {
 }
 
 timed_wait_and_kill() {
-	[ $# -eq 2 ] || eargs timed_wait time pids
+	[ $# -eq 2 ] || eargs timed_wait_and_kill time pids
 	local time="$1"
 	local pids="$2"
 	local status ret
@@ -45,7 +45,7 @@ timed_wait_and_kill() {
 	ret=0
 
 	# Wait for the pids.
-	if ! timed_wait ${time} ${pids}; then
+	if ! timed_wait ${time} "${pids}"; then
 		# Something still running, be more dramatic.
 		kill_and_wait 1 "${pids}" || ret=$?
 	else
@@ -85,14 +85,13 @@ kill_and_wait() {
 	local time="$1"
 	local pids="$2"
 	local ret=0
-	local pid
 
 	[ -z "${pids}" ] && return 0
 
 	kill ${pids} 2>/dev/null || :
 
 	# Wait for the pids. Non-zero status means something is still running.
-	if ! timed_wait ${time} ${pids}; then
+	if ! timed_wait ${time} "${pids}"; then
 		# Kill remaining children instead of waiting on them
 		kill -9 ${pids} 2>/dev/null || :
 		_wait ${pids} || ret=$?
