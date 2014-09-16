@@ -36,22 +36,38 @@ _wait() {
 	return ${ret}
 }
 
-
-kill_and_wait() {
-	[ $# -eq 2 ] || eargs kill_and_wait time pids
+timed_wait_and_kill() {
+	[ $# -eq 2 ] || eargs timed_wait time pids
 	local time="$1"
 	local pids="$2"
-	local ret=0
-	local pid
-	local found_pid
-	local retry
+	local status ret
+
+	ret=0
+
+	# Wait for the pids.
+	if ! timed_wait ${time} ${pids}; then
+		# Something still running, be more dramatic.
+		kill_and_wait 1 "${pids}" || ret=$?
+	else
+		# Nothing running, collect their status.
+		wait ${pids} || ret=$?
+	fi
+
+	return ${ret}
+}
+
+timed_wait() {
+	[ $# -eq 2 ] || eargs timed_wait time pids
+	local time="$1"
+	local pids="$2"
+	local retry found_pid
 
 	[ -z "${pids}" ] && return 0
 
 	# Give children $time seconds to exit and then force kill
 	retry=${time}
-	kill ${pids} 2>/dev/null || :
 
+	found_pid=0
 	while [ ${retry} -gt 0 ]; do
 		found_pid=0
 		for pid in ${pids}; do
@@ -65,8 +81,26 @@ kill_and_wait() {
 		[ ${found_pid} -eq 0 ] && retry=0
 	done
 
-	# Kill all children instead of waiting on them
-	[ ${found_pid} -eq 1 ] && kill -9 ${pids} 2>/dev/null || :
+	return ${found_pid}
+}
+
+
+kill_and_wait() {
+	[ $# -eq 2 ] || eargs kill_and_wait time pids
+	local time="$1"
+	local pids="$2"
+	local ret=0
+	local pid
+
+	[ -z "${pids}" ] && return 0
+
+	kill ${pids} 2>/dev/null || :
+
+	# Wait for the pids. Non-zero status means something is still running.
+	if ! timed_wait ${time} ${pids}; then
+		# Kill remaining children instead of waiting on them
+		kill -9 ${pids} 2>/dev/null || :
+	fi
 
 	_wait ${pids} || ret=$?
 
