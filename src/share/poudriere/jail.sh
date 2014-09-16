@@ -319,6 +319,25 @@ build_and_install_world() {
 }
 
 install_from_src() {
+	local cpignore_flag cpignore
+
+	msg_n "Copying ${SRC_BASE} to ${JAILMNT}/usr/src..."
+	mkdir -p ${JAILMNT}/usr/src
+	if [ -f ${SRC_BASE}/usr/src/.cpignore ]; then
+		cpignore_flag="-x"
+	else
+		cpignore=$(mktemp /tmp/cpignore.XXXXXX)
+		cpignore_flag="-X ${cpignore}"
+		# Ignore some files
+		cat > ${cpignore} <<-EOF
+		.git
+		.svn
+		EOF
+	fi
+	cpdup ${cpignore_flag} ${SRC_BASE} ${JAILMNT}/usr/src
+	[ -n "${cpignore}" ] && rm -f ${cpignore}
+	echo " done"
+
 	setup_compat_env
 	installworld
 }

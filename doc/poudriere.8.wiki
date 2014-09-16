@@ -290,7 +290,7 @@ The path will be null-mounted during builds. It will not be copied at the time o
 <dt class="list-tag" style="margin-top: 1.00em;">
 <span class="symb">src=PATH</span></dt>
 <dd class="list-tag" style="margin-left: 17.00ex;">
-Install from the given src directory at <span class="symb">PATH</span>. This directory will not be built from. It is expected that it is already built and maps to a corresponding <i class="file">/usr/obj</i> directory. Note that this will not copy the given src directory into the destination jail currently so building ports requiring modules will not be possible.</dd>
+Install from the given src directory at <span class="symb">PATH</span>. This directory will not be built from. It is expected that it is already built and maps to a corresponding <i class="file">/usr/obj</i> directory.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <span class="symb">tar=PATH</span></dt>
 <dd class="list-tag" style="margin-left: 17.00ex;">
@@ -919,7 +919,7 @@ Be also careful to not begin the name of the jail by a number if you are not in 
 <tbody>
 <tr>
 <td class="foot-date">
-August 29, 2014</td>
+September 15, 2014</td>
 <td class="foot-os" align="right">
 FreeBSD 11.0</td>
 </tr>
