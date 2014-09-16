@@ -2821,9 +2821,6 @@ build_pkg() {
 		mnt_tmpfs localbase ${mnt}/${LOCALBASE:-/usr/local}
 	fi
 
-	# Kill everything in jail first
-	jkill
-
 	[ -f ${mnt}/.need_rollback ] && rollbackfs prepkg ${mnt}
 	:> ${mnt}/.need_rollback
 
@@ -2925,9 +2922,6 @@ stop_build() {
 		msg_warn "Leftover processes:"
 		injail ps auxwwd | grep -v 'ps auxwwd'
 	fi
-
-	# Always kill to avoid missing anything
-	jkill
 
 	buildlog_stop "${pkgname}" ${origin} ${build_failed}
 	log_stop
