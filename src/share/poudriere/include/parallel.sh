@@ -44,7 +44,7 @@ timed_wait_and_kill() {
 
 	ret=0
 
-	# Wait for the pids.
+	# Give children $time seconds to exit and then force kill
 	if ! timed_wait ${time} "${pids}"; then
 		# Something still running, be more dramatic.
 		kill_and_wait 1 "${pids}" || ret=$?
@@ -64,8 +64,8 @@ timed_wait() {
 
 	[ -z "${pids}" ] && return 0
 
-	# Give children $time seconds to exit and then force kill
 	status=0
+	# Wait for the pids.
 	timeout ${time} pwait ${pids} 2>/dev/null >&1 || status=$?
 	if [ ${status} -eq 124 ]; then
 		# Timeout reached, something still running.
