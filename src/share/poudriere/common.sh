@@ -3383,7 +3383,7 @@ set_dep_fatal_error() {
 }
 
 check_dep_fatal_error() {
-	[ -f ${MASTERMNT}/.p/dep_fatal_error ]
+	[ -n "${DEP_FATAL_ERROR}" ] || [ -f ${MASTERMNT}/.p/dep_fatal_error ]
 }
 
 compute_deps() {
