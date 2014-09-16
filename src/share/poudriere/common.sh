@@ -110,6 +110,14 @@ err() {
 
 msg_n() {
 	local now elapsed
+	local COLOR_ARROW COLOR_RESET COLOR_RESET_REAL
+
+	# Don't add colors if in a job
+	if [ -z "${KEEP_COLORS}" ] && [ -n "${MY_JOBID}" ]; then
+		COLOR_ARROW=
+		COLOR_RESET=
+		COLOR_RESET_REAL=
+	fi
 
 	elapsed=
 	if should_show_elapsed; then
@@ -153,7 +161,9 @@ job_msg() {
 		NO_ELAPSED_IN_MSG=0
 		now=$(date +%s)
 		calculate_duration elapsed "$((${now} - ${TIME_START_JOB}))"
-		msg "[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}][${elapsed}] $1" >&5
+		KEEP_COLORS=1 msg \
+		    "[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}][${elapsed}] $1" \
+		    >&5
 	fi
 }
 
