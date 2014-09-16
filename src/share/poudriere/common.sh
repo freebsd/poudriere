@@ -412,8 +412,8 @@ buildlog_stop() {
 log_stop() {
 	if [ -n "${tpid}" ]; then
 		exec 1>&3 3>&- 2>&4 4>&-
-		kill $tpid 2>/dev/null || :
-		_wait $tpid 2>/dev/null 1>&2 || :
+		# Give tee a moment to flush buffers
+		timed_wait_and_kill 5 $tpid
 		unset tpid
 	fi
 }
