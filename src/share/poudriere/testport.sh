@@ -225,7 +225,7 @@ if ! [ -t 1 ]; then
 	export DEV_WARNING_WAIT=0
 fi
 sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' ${MASTERMNT}/etc/make.conf
-log_start
+log_start 1
 buildlog_start /usr/ports/${ORIGIN}
 ret=0
 

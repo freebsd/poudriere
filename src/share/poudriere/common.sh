@@ -295,6 +295,8 @@ run_hook() {
 }
 
 log_start() {
+	[ $# -eq 1 ] || eargs log_start need_tee
+	local need_tee="$1"
 	local log log_top
 	local latest_log
 
@@ -317,20 +319,31 @@ log_start() {
 
 	# Save stdout/stderr for restoration later for bulk/testport -i
 	exec 3>&1 4>&2
+	OUTPUT_REDIRECTED=1
 	# Pipe output to tee(1) or timestamp if needed.
-	[ ! -e ${logfile}.pipe ] && mkfifo ${logfile}.pipe
-	if [ "${TIMESTAMP_LOGS}" = "yes" ]; then
-		timestamp < ${logfile}.pipe | tee ${logfile} &
-	else
-		tee ${logfile} < ${logfile}.pipe &
-	fi
-	tpid=$!
-	exec > ${logfile}.pipe 2>&1
+	if [ ${need_tee} -eq 1 ] || [ "${TIMESTAMP_LOGS}" = "yes" ]; then
+		[ ! -e ${logfile}.pipe ] && mkfifo ${logfile}.pipe
+		if [ ${need_tee} -eq 1 ]; then
+			if [ "${TIMESTAMP_LOGS}" = "yes" ]; then
+				timestamp < ${logfile}.pipe | tee ${logfile} &
+			else
+				tee ${logfile} < ${logfile}.pipe &
+			fi
+		elif [ "${TIMESTAMP_LOGS}" = "yes" ]; then
+			timestamp > ${logfile} < ${logfile}.pipe &
+		fi
+		tpid=$!
+		exec > ${logfile}.pipe 2>&1
 
-	# Remove fifo pipe file right away to avoid orphaning it.
-	# The pipe will continue to work as long as we keep
-	# the FD open to it.
-	rm -f ${logfile}.pipe
+		# Remove fifo pipe file right away to avoid orphaning it.
+		# The pipe will continue to work as long as we keep
+		# the FD open to it.
+		rm -f ${logfile}.pipe
+	else
+		# Send output directly to file.
+		tpid=
+		exec > ${logfile} 2>&1
+	fi
 }
 
 buildlog_start() {
@@ -410,8 +423,11 @@ buildlog_stop() {
 }
 
 log_stop() {
-	if [ -n "${tpid}" ]; then
+	if [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
 		exec 1>&3 3>&- 2>&4 4>&-
+		OUTPUT_REDIRECTED=0
+	fi
+	if [ -n "${tpid}" ]; then
 		# Give tee a moment to flush buffers
 		timed_wait_and_kill 5 $tpid
 		unset tpid
@@ -2772,7 +2788,7 @@ build_pkg() {
 
 	rm -rf ${mnt}/wrkdirs/* || :
 
-	log_start
+	log_start 0
 	msg "Building ${port}"
 	buildlog_start ${portdir}
 
