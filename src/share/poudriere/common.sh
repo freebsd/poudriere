@@ -315,14 +315,15 @@ log_start() {
 	# Link to JAIL/latest-per-pkg/PKGNAME.log
 	ln -f ${logfile} ${log}/../latest-per-pkg/${PKGNAME}.log
 
-	# Tee all of the output to the logfile through a pipe
+	# Save stdout/stderr for restoration later for bulk/testport -i
 	exec 3>&1 4>&2
+	# Pipe output to tee(1) or timestamp if needed.
 	[ ! -e ${logfile}.pipe ] && mkfifo ${logfile}.pipe
-	{
-		local add_ts_pipe
-		[ "${TIMESTAMP_LOGS}" = "yes" ] && add_ts_pipe="timestamp |"
-		eval ${add_ts_pipe} tee ${logfile}
-	} < ${logfile}.pipe &
+	if [ "${TIMESTAMP_LOGS}" = "yes" ]; then
+		timestamp < ${logfile}.pipe | tee ${logfile} &
+	else
+		tee ${logfile} < ${logfile}.pipe &
+	fi
 	tpid=$!
 	exec > ${logfile}.pipe 2>&1
 
