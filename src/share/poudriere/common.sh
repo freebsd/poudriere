@@ -1118,7 +1118,8 @@ enter_interactive() {
 	# Skip for testport as it has already installed pkg in the ref jail.
 	if [ ${PKGNG} -eq 1 -a "${0##*/}" != "testport.sh" ]; then
 		# Install pkg-static so full pkg package can install
-		ensure_pkg_installed force_extract
+		ensure_pkg_installed force_extract || \
+		    err 1 "Unable to extract pkg."
 		# Install the selected PKGNG package
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
 		    make -C \
@@ -3092,7 +3093,8 @@ pkg_cache_data() {
 	get_pkg_cache_dir pkg_cache_dir "${pkg}"
 	originfile="${pkg_cache_dir}/origin"
 
-	ensure_pkg_installed
+	ensure_pkg_installed || \
+	    err 1 "Unable to extract pkg."
 	pkg_get_options _ignored "${pkg}" > /dev/null
 	pkg_get_origin _ignored "${pkg}" ${origin} > /dev/null
 	pkg_get_dep_origin _ignored "${pkg}" > /dev/null
@@ -4083,7 +4085,8 @@ build_repo() {
 	if [ $PKGNG -eq 1 ]; then
 		msg "Creating pkgng repository"
 		bset status "pkgrepo:"
-		ensure_pkg_installed force_extract
+		ensure_pkg_installed force_extract || \
+		    err 1 "Unable to extract pkg."
 		if [ -r "${PKG_REPO_META_FILE:-/nonexistent}" ]; then
 			PKG_META="-m /tmp/pkgmeta"
 			PKG_META_MASTERMNT="-m ${MASTERMNT}/tmp/pkgmeta"
