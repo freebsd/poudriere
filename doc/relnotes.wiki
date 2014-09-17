@@ -25,7 +25,7 @@
    USE_COLOR=no or 'poudriere -N'. It is automatically disabled if not running
    in a tty.
  * There is a new 'queue' command that uses a 'poudriered' backend. Commands
-   will automatically be queued if ran from root and 'poudriere' is running.
+   will automatically be queued if ran from non-root and 'poudriere' is running.
    This is still under development though and is expected to be documented and
    improved for 3.2.
  * The queue is now prioritized based on the depth of the dependency chain for
