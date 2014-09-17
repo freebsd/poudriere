@@ -1064,7 +1064,7 @@ setup_makeconf() {
 
 	# We will handle DEVELOPER for testing when appropriate
 	if grep -q '^DEVELOPER=' ${dst_makeconf}; then
-		msg_warn "DEVELOPER=yes ignored from make.conf. Use 'bulk -t' or 'testport' for testing instead."
+		msg "DEVELOPER=yes ignored from make.conf. Use 'bulk -t' or 'testport' for testing instead."
 		sed -i '' '/^DEVELOPER=/d' ${dst_makeconf}
 	fi
 }
