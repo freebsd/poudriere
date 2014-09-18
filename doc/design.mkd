@@ -1,5 +1,7 @@
 # Design of poudriere
 
+!!! This is not updated for 3.1 !!!
+
 Poudriere is a port builder tool, it has 2 main frontends:
 
   * testport
