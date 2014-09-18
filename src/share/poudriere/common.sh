@@ -3207,6 +3207,8 @@ delete_old_pkg() {
 		# 'make actual-run-depends-list' after enough testing,
 		# which will avoida all of the injail hacks
 
+		# XXX: This is redundant with list_deps. Hash/caching the
+		# deps can prevent double lookup
 		for td in LIB RUN; do
 			raw_deps=$(injail make -C /usr/ports/${o} -V${td}_DEPENDS)
 			for d in ${raw_deps}; do
