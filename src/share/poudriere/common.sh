@@ -3981,7 +3981,8 @@ balance_pool() {
 
 	# Avoid running this in parallel, no need. Note that this lock is
 	# not on the unbalanced/ dir, but only this function. clean.sh writes
-	# to unbalanced/, queue_empty() and next_in_queue() both read from it.
+	# to unbalanced/, queue_empty() reads from it, and next_in_queue()
+	# moves from it.
 	lock=${MASTERMNT}/.p/.lock-balance_pool
 	mkdir ${lock} 2>/dev/null || return 0
 
@@ -4000,7 +4001,10 @@ balance_pool() {
 	for pkg_dir in ${MASTERMNT}/.p/pool/unbalanced/*; do
 		pkgname=${pkg_dir##*/}
 		hash_get "priority" "${pkgname}" dep_count || dep_count=0
-		mv ${pkg_dir} ${MASTERMNT}/.p/pool/${dep_count}/
+		# This races with next_in_queue(), just ignore failure
+		# to move it.
+		mv ${pkg_dir} ${MASTERMNT}/.p/pool/${dep_count}/ \
+		    2>/dev/null || :
 	done
 	# New files may have been added in unbalanced/ via clean.sh due to not
 	# being locked. These will be picked up in the next run.
