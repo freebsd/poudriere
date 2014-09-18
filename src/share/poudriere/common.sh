@@ -3313,7 +3313,7 @@ delete_old_pkgs() {
 ## This is only ran from 1 process
 next_in_queue() {
 	local var_return="$1"
-	local p _pkgname
+	local p _pkgname ret
 
 	[ ! -d ${MASTERMNT}/.p/pool ] && err 1 "Build pool is missing"
 	p=$(find ${POOL_BUCKET_DIRS} -type d -depth 1 -empty -print -quit || :)
@@ -3326,8 +3326,9 @@ next_in_queue() {
 				# We lost the race with a child running
 				# balance_queue(). The file is already
 				# gone and moved to a bucket. Try again.
-				next_in_queue "${var_return}"
-				return $?
+				ret=0
+				next_in_queue "${var_return}" || ret=$?
+				return ${ret}
 			else
 				# Failure to move a balanced item??
 				return 1
