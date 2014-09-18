@@ -3331,7 +3331,7 @@ next_in_queue() {
 				return ${ret}
 			else
 				# Failure to move a balanced item??
-				return 1
+				err 1 "next_in_queue: Failed to mv ${p} to ${MASTERMNT}/.p/building/${_pkgname}"
 			fi
 		fi
 		# Update timestamp for buildtime accounting
