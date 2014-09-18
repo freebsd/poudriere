@@ -101,12 +101,12 @@ Fetch and install the latest poudriere
 # jexec -U root poudriere sh
 poudriere# fetch -o - http://fossil.etoilebsd.net/poudriere/tarball/poudriere-trunk.tar.gz?uuid=trunk | tar xf -
 poudriere# cd poudriere-trunk
-poduriere# make install
+poudriere# make install
 </verbatim>
 
 You can now play normally with poudriere
 <verbatim>
-poudriere# poduriere ports -c -m svn
+poudriere# poudriere ports -c -m svn
 poudriere# poudriere jails -c -j test -v HEAD -m allbsd
 ...
 </verbatim>

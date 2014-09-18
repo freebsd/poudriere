@@ -303,14 +303,14 @@ The following directories are created inside the /poudriere directory:
   * /poudriere/deps # this is the pool of left ports which at least depend on one port not already built
   * /poudriere/rdeps # this is a reference of reverse dependencies. Each package dir contains a link to each package depending on it
   * /poudriere/var/run # This will receive the pids of the running builders
-  * /poduriere/var/cache/origin-pkgname #cache to quickly figure out package name out of an origin
+  * /poudriere/var/cache/origin-pkgname #cache to quickly figure out package name out of an origin
   * /poudriere/var/cache/pkgname-origin #cache to quickly figure out origin out of a packagename
 
 It initializes the log directory in
 
   * ${POUDRIERE\_DATA}/logs/bulk/\<MASTERNAME\>/\<STARTTIME\>
 
-POUDRIERE\_DATA being /usr/local/poduriere/data by default
+POUDRIERE\_DATA being /usr/local/poudriere/data by default
 
 MASTERNAME being if setname is set: \<jailname\>-\<portstreename\>-\<setname\> otherwise  \<jailname\>-\<portstreename\>
 STARTTIME begin the time of the beginning of the build is the following format: date +%Y-%m-%d\_%H:%M:%S
