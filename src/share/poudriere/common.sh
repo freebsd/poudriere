@@ -3324,7 +3324,7 @@ next_in_queue() {
 		if ! mv ${p} ${MASTERMNT}/.p/building/${_pkgname} \
 		    2>/dev/null; then
 			# Was the failure from /unbalanced?
-			if [ -z "${p%%*/unbalanced/*}" ]; then
+			if [ -z "${p%%*unbalanced/*}" ]; then
 				# We lost the race with a child running
 				# balance_queue(). The file is already
 				# gone and moved to a bucket. Try again.
