@@ -35,7 +35,8 @@
  * 9.1, to rename a symlink and not move it.
  */
 int
-main(int argc, char **argv) {
+main(int argc, char **argv)
+{
 
 	if (argc != 3)
 		errx(EX_USAGE, "Usage: rename src dst");
@@ -43,5 +44,5 @@ main(int argc, char **argv) {
 	if (rename(argv[1], argv[2]))
 		err(EXIT_FAILURE, NULL);
 
-	return 0;
+	return (0);
 }
