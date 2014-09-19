@@ -2550,7 +2550,9 @@ build_queue() {
 
 			[ ${queue_empty} -eq 0 ] || continue
 
-			next_in_queue pkgname
+			next_in_queue pkgname || \
+			    err 1 "Failed to find a package from the queue."
+
 			if [ -z "${pkgname}" ]; then
 				# Check if the ready-to-build pool and need-to-build pools
 				# are empty
