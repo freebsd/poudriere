@@ -13,7 +13,7 @@ Where is the documentation?
 
 The canonical documentation is located at:
 
-http://fossil.etoilebsd.net/poudriere/doc/trunk/doc/index.wiki
+https://github.com/freebsd/poudriere/wiki
 
 A copy of this documentation could be found in the doc directory.
 
