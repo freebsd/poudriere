@@ -200,7 +200,10 @@ parallel_shutdown() {
 
 parallel_run() {
 	local cmd="$1"
+	local ret
 	shift 1
+
+	ret=0
 
 	# Occasionally reap dead children. Don't do this too often or it
 	# becomes a bottleneck. Do it too infrequently and there is a risk
@@ -208,7 +211,7 @@ parallel_run() {
 	_SHOULD_REAP=$((${_SHOULD_REAP} + 1))
 	if [ ${_SHOULD_REAP} -eq 16 ]; then
 		_SHOULD_REAP=0
-		_reap_children || return $?
+		_reap_children || ret=$?
 	fi
 
 	# Only read once all slots are taken up; burst jobs until maxed out.
@@ -220,6 +223,8 @@ parallel_run() {
 	[ ${NBPARALLEL} -lt ${PARALLEL_JOBS} ] && NBPARALLEL=$((NBPARALLEL + 1))
 	PARALLEL_CHILD=1 parallel_exec $cmd "$@" &
 	PARALLEL_PIDS="${PARALLEL_PIDS} $! "
+
+	return ${ret}
 }
 
 nohang() {
