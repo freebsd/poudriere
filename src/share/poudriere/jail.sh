@@ -114,6 +114,7 @@ delete_jail() {
 	if [ "${method}" = "null" ]; then
 		mv -f ${JAILMNT}/etc/login.conf.orig \
 		    ${JAILMNT}/etc/login.conf
+		cap_mkdb ${JAILMNT}/etc/login.conf
 	else
 		TMPFS_ALL=0 destroyfs ${JAILMNT} jail
 	fi
