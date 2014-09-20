@@ -2468,7 +2468,7 @@ ${dependency_cycles}"
 			# Symlink the buildlog into errors/
 			ln -s "../${pkgname}.log" "${log}/logs/errors/${pkgname}.log"
 			badd ports.failed "${origin} ${pkgname} ${failed_phase} ${failed_phase}"
-			COLOR_ARROW="${COLOR_FAIL}" job_msg \
+			COLOR_ARROW="${COLOR_FAIL}" msg \
 			    "${COLOR_FAIL}Finished build of ${COLOR_PORT}${origin}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
 			run_hook pkgbuild failed "${origin}" "${pkgname}" \
 			    "${failed_phase}" \
