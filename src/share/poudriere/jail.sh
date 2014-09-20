@@ -504,10 +504,6 @@ install_from_tar() {
 }
 
 create_jail() {
-	jail_exists ${JAILNAME} && err 2 "The jail ${JAILNAME} already exists"
-
-	test -z ${VERSION} && usage VERSION
-
 	[ "${JAILNAME#*.*}" = "${JAILNAME}" ] ||
 		err 1 "The jailname can not contain a period (.). See jail(8)"
 
@@ -856,6 +852,9 @@ fi
 case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	10000000)
 		test -z ${JAILNAME} && usage JAILNAME
+		test -z ${VERSION} && usage VERSION
+		jail_exists ${JAILNAME} && \
+		    err 2 "The jail ${JAILNAME} already exists"
 		check_emulation
 		maybe_run_queued "${saved_argv}"
 		create_jail
