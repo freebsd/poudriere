@@ -2467,6 +2467,9 @@ ${dependency_cycles}"
 		for pkgname in ${dead_packages}; do
 			cache_get_origin origin "${pkgname}"
 			# Symlink the buildlog into errors/
+			[ -f "${log}/logs/${pkgname}.log" ] || \
+			    echo "Build failed: ${failed_phase}" >> \
+			    "${log}/logs/${pkgname}.log"
 			ln -s "../${pkgname}.log" "${log}/logs/errors/${pkgname}.log"
 			badd ports.failed "${origin} ${pkgname} ${failed_phase} ${failed_phase}"
 			COLOR_ARROW="${COLOR_FAIL}" msg \
