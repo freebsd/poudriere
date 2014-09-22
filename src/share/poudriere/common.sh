@@ -138,10 +138,18 @@ msg_verbose() {
 }
 
 msg_error() {
-	COLOR_ARROW="${COLOR_ERROR}" \
-	    msg "${COLOR_ERROR}Error: $1" >&2
-	[ -n "${MY_JOBID}" ] && COLOR_ARROW="${COLOR_ERROR}" \
-	    job_msg "${COLOR_ERROR}Error: $1"
+	if [ -n "${MY_JOBID}" ]; then
+		# Send colored msg to bulk log...
+		COLOR_ARROW="${COLOR_ERROR}" job_msg "${COLOR_ERROR}Error: $1"
+		# And non-colored to buld log
+		msg "Error: $1" >&2
+	elif [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
+		# Send to true stderr
+		COLOR_ARROW="${COLOR_ERROR}" msg "${COLOR_ERROR}Error: $1" >&4
+	else
+		# Likely in a build log, avoid colors.
+		msg "Error: $1" >&2
+	fi
 	return 0
 }
 
