@@ -493,7 +493,7 @@ function process_data_build(data) {
 		update_canvas(data.stats);
 	}
 
-	document.title = 'Poudriere bulk results for ' + data.mastername +
+	document.title = 'Poudriere bulk results for ' + data.mastername + ' ' +
 		data.buildname;
 
 	$('#mastername').html(format_mastername(data.mastername));
