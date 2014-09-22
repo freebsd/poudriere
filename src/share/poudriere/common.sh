@@ -419,15 +419,16 @@ buildlog_start() {
 }
 
 buildlog_stop() {
-	[ $# -eq 2 ] || eargs buildlog_stop origin build_failed
-	local origin=$1
-	local build_failed="$2"
+	[ $# -eq 3 ] || eargs buildlog_stop pkgname origin build_failed
+	local pkgname="$1"
+	local origin=$2
+	local build_failed="$3"
 	local log
 	local buildtime
 
 	_log_path log
 	buildtime=$( \
-		stat -f '%N %B' ${log}/logs/${PKGNAME}.log  | awk -v now=$(date +%s) \
+		stat -f '%N %B' ${log}/logs/${pkgname}.log  | awk -v now=$(date +%s) \
 		-f ${AWKPREFIX}/siginfo_buildtime.awk |
 		awk -F'!' '{print $2}' \
 	)
@@ -2731,7 +2732,7 @@ crashed_build() {
 	    "${failed_phase}" \
 	    "${log}/logs/errors/${pkgname}.log"
 	clean_pool "${pkgname}" "${origin}" "${failed_phase}"
-	stop_build "${origin}" 1 >> "${log}/logs/${pkgname}.log"
+	stop_build "${pkgname}" "${origin}" 1 >> "${log}/logs/${pkgname}.log"
 }
 
 clean_pool() {
@@ -2887,7 +2888,7 @@ build_pkg() {
 
 	clean_pool ${PKGNAME} ${port} "${clean_rdepends}"
 
-	stop_build ${port} ${build_failed}
+	stop_build "${PKGNAME}" ${port} ${build_failed}
 
 	bset ${MY_JOBID} status "done:"
 
@@ -2895,9 +2896,10 @@ build_pkg() {
 }
 
 stop_build() {
-	[ $# -eq 2 ] || eargs stop_build origin build_failed
-	local origin="$1"
-	local build_failed="$2"
+	[ $# -eq 3 ] || eargs stop_build pkgname origin build_failed
+	local pkgname="$1"
+	local origin="$2"
+	local build_failed="$3"
 	local mnt
 
 	_my_path mnt
@@ -2913,7 +2915,7 @@ stop_build() {
 	# Always kill to avoid missing anything
 	jkill
 
-	buildlog_stop ${origin} ${build_failed}
+	buildlog_stop "${pkgname}" ${origin} ${build_failed}
 	log_stop
 }
 
