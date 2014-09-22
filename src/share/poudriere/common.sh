@@ -96,8 +96,14 @@ err() {
 	fi
 	# Try to set status so other processes know this crashed
 	# Don't set it from children failures though, only master
-	[ -z "${PARALLEL_CHILD}" ] && was_a_bulk_run &&
-		bset status "${EXIT_STATUS:-crashed:}" 2>/dev/null || :
+	if [ -z "${PARALLEL_CHILD}" ] && was_a_bulk_run; then
+		if [ -n "${MY_JOBID}" ]; then
+			bset ${MY_JOBID} status "${EXIT_STATUS:-crashed:}" \
+			    2>/dev/null || :
+		else
+			bset status "${EXIT_STATUS:-crashed:}" 2>/dev/null || :
+		fi
+	fi
 	msg_error "$2" || :
 	# Avoid recursive err()->exit_handler()->err()... Just let
 	# exit_handler() cleanup.
