@@ -168,7 +168,7 @@ job_msg() {
 		    >&5
 	elif [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
 		# Send to true stdout (not any build log)
-		msg "$@" >&4
+		msg "$@" >&3
 	else
 		msg "$@"
 	fi
