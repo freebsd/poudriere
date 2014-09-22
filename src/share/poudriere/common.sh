@@ -419,8 +419,8 @@ buildlog_start() {
 }
 
 buildlog_stop() {
-	[ $# -eq 2 ] || eargs buildlog_stop portdir build_failed
-	local portdir=$1
+	[ $# -eq 2 ] || eargs buildlog_stop origin build_failed
+	local origin=$1
 	local build_failed="$2"
 	local log
 	local buildtime
@@ -432,7 +432,7 @@ buildlog_stop() {
 		awk -F'!' '{print $2}' \
 	)
 
-	echo "build of ${portdir} ended at $(date)"
+	echo "build of ${origin} ended at $(date)"
 	echo "build time: ${buildtime}"
 	[ ${build_failed} -gt 0 ] && echo "!!! build failure encountered !!!"
 
@@ -2884,7 +2884,7 @@ build_pkg() {
 
 	clean_pool ${PKGNAME} ${port} "${clean_rdepends}"
 
-	stop_build ${portdir} ${build_failed}
+	stop_build ${port} ${build_failed}
 
 	bset ${MY_JOBID} status "done:"
 
@@ -2892,8 +2892,8 @@ build_pkg() {
 }
 
 stop_build() {
-	[ $# -eq 2 ] || eargs stop_build portdir build_failed
-	local portdir="$1"
+	[ $# -eq 2 ] || eargs stop_build origin build_failed
+	local origin="$1"
 	local build_failed="$2"
 	local mnt
 
@@ -2910,7 +2910,7 @@ stop_build() {
 	# Always kill to avoid missing anything
 	jkill
 
-	buildlog_stop ${portdir} ${build_failed}
+	buildlog_stop ${origin} ${build_failed}
 	log_stop
 }
 
