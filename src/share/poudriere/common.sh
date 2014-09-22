@@ -2717,8 +2717,8 @@ crashed_build() {
 	local origin log
 
 	_log_path log
-
 	cache_get_origin origin "${pkgname}"
+
 	echo "Build failed: ${failed_phase}" >> "${log}/logs/${pkgname}.log"
 	# Symlink the buildlog into errors/
 	ln -s "../${pkgname}.log" "${log}/logs/errors/${pkgname}.log"
@@ -2729,6 +2729,7 @@ crashed_build() {
 	    "${failed_phase}" \
 	    "${log}/logs/errors/${pkgname}.log"
 	clean_pool "${pkgname}" "${origin}" "${failed_phase}"
+	stop_build "${origin}" 1 >> "${log}/logs/${pkgname}.log"
 }
 
 clean_pool() {
