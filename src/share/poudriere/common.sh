@@ -3106,7 +3106,7 @@ ensure_pkg_installed() {
 
 	_my_path mnt
 	[ ${PKGNG} -eq 1 ] || return 0
-	[ -z "${force}" ] && [ -x "${mnt}/.p/pkg-static" ] && return 0
+	[ -z "${force}" ] && [ -x "${mnt}${PKG_BIN}" ] && return 0
 	[ -e ${MASTERMNT}/packages/Latest/pkg.txz ] || return 1 #pkg missing
 	injail tar xf /packages/Latest/pkg.txz -C / \
 		-s ",/.*/,.p/,g" "*/pkg-static"
