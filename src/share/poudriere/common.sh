@@ -2719,9 +2719,7 @@ crashed_build() {
 	_log_path log
 
 	cache_get_origin origin "${pkgname}"
-	[ -f "${log}/logs/${pkgname}.log" ] || \
-	    echo "Build failed: ${failed_phase}" >> \
-	    "${log}/logs/${pkgname}.log"
+	echo "Build failed: ${failed_phase}" >> "${log}/logs/${pkgname}.log"
 	# Symlink the buildlog into errors/
 	ln -s "../${pkgname}.log" "${log}/logs/errors/${pkgname}.log"
 	badd ports.failed "${origin} ${pkgname} ${failed_phase} ${failed_phase}"
