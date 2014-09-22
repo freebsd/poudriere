@@ -3303,7 +3303,7 @@ delete_old_pkg() {
 
 delete_old_pkgs() {
 
-	msg_verbose "Checking packages for incremental rebuild needed"
+	msg "Checking packages for incremental rebuild needed"
 
 	package_dir_exists_and_has_packages || return 0
 
