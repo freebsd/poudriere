@@ -147,8 +147,7 @@ msg_error() {
 		# Send to true stderr
 		COLOR_ARROW="${COLOR_ERROR}" msg "${COLOR_ERROR}Error: $1" >&4
 	else
-		# Likely in a build log, avoid colors.
-		msg "Error: $1" >&2
+		COLOR_ARROW="${COLOR_ERROR}" msg "${COLOR_ERROR}Error: $1" >&2
 	fi
 	return 0
 }
