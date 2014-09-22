@@ -2937,6 +2937,7 @@ mangle_stderr() {
 
 	shift 3
 
+	# Must always disable xtrace here or it gets confused
 	set +x
 
 	{
