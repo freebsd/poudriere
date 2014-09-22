@@ -2536,8 +2536,8 @@ build_queue() {
 				rm -f ${MASTERMNT}/.p/var/run/${j}.pid \
 					${MASTERMNT}/.p/var/run/${j}.pkgname
 				_bget status ${j} status
+				mark_done ${pkgname}
 				if [ "${status%%:*}" = "done" ]; then
-					mark_done ${pkgname}
 					bset ${j} status "idle:"
 				else
 					crashed_build "${pkgname}" \
