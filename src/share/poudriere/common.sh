@@ -3531,6 +3531,11 @@ compute_deps_port() {
 		echo "${port} ${dep_port}" >> \
 			${MASTERMNT}/.p/port_deps.unsorted
 	done
+
+	[ ${ALL} -eq 0 ] && echo "${port} ${port}" >> \
+	    ${MASTERMNT}/.p/port_deps.unsorted
+
+	return 0
 }
 
 listed_ports() {
