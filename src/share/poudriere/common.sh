@@ -2539,6 +2539,8 @@ build_queue() {
 					mark_done ${pkgname}
 					bset ${j} status "idle:"
 				else
+					crashed_build "${pkgname}" \
+					    "${status%%:*}"
 					bset ${j} status "crashed:"
 				fi
 			fi
