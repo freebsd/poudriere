@@ -2427,7 +2427,7 @@ stop_builders() {
 deadlock_detected() {
 	local always_fail=${1:-1}
 	local crashed_packages dependency_cycles deps pkgname origin
-	local failed_phase log
+	local failed_phase
 
 	# If there are still packages marked as "building" they have crashed
 	# and it's likely some poudriere or system bug
@@ -2469,21 +2469,8 @@ ${dependency_cycles}"
 
 	if [ -n "${dead_packages}" ]; then
 		failed_phase="stuck_in_queue"
-		_log_path log
 		for pkgname in ${dead_packages}; do
-			cache_get_origin origin "${pkgname}"
-			# Symlink the buildlog into errors/
-			[ -f "${log}/logs/${pkgname}.log" ] || \
-			    echo "Build failed: ${failed_phase}" >> \
-			    "${log}/logs/${pkgname}.log"
-			ln -s "../${pkgname}.log" "${log}/logs/errors/${pkgname}.log"
-			badd ports.failed "${origin} ${pkgname} ${failed_phase} ${failed_phase}"
-			COLOR_ARROW="${COLOR_FAIL}" msg \
-			    "${COLOR_FAIL}Finished build of ${COLOR_PORT}${origin}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
-			run_hook pkgbuild failed "${origin}" "${pkgname}" \
-			    "${failed_phase}" \
-			    "${log}/logs/errors/${pkgname}.log"
-			clean_pool "${pkgname}" "${origin}" "${failed_phase}" 
+			crashed_build "${pkgname}" "${failed_phase}"
 		done
 		return 0
 	fi
@@ -2721,6 +2708,29 @@ parallel_build() {
 	PARALLEL_JOBS=${real_parallel_jobs}
 
 	return 0
+}
+
+crashed_build() {
+	[ $# -eq 2 ] || eargs crashed_build pkgname failed_phase
+	local pkgname="$1"
+	local failed_phase="$2"
+	local origin log
+
+	_log_path log
+
+	cache_get_origin origin "${pkgname}"
+	[ -f "${log}/logs/${pkgname}.log" ] || \
+	    echo "Build failed: ${failed_phase}" >> \
+	    "${log}/logs/${pkgname}.log"
+	# Symlink the buildlog into errors/
+	ln -s "../${pkgname}.log" "${log}/logs/errors/${pkgname}.log"
+	badd ports.failed "${origin} ${pkgname} ${failed_phase} ${failed_phase}"
+	COLOR_ARROW="${COLOR_FAIL}" msg \
+	    "${COLOR_FAIL}Finished build of ${COLOR_PORT}${origin}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
+	run_hook pkgbuild failed "${origin}" "${pkgname}" \
+	    "${failed_phase}" \
+	    "${log}/logs/errors/${pkgname}.log"
+	clean_pool "${pkgname}" "${origin}" "${failed_phase}"
 }
 
 clean_pool() {
