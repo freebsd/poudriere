@@ -4041,6 +4041,10 @@ balance_pool() {
 
 	# For everything ready-to-build...
 	for pkg_dir in ${MASTERMNT}/.p/pool/unbalanced/*; do
+		# May be empty due to racing with next_in_queue()
+		case "${pkg_dir}" in
+			"${MASTERMNT}/.p/pool/unbalanced/*") break ;;
+		esac
 		pkgname=${pkg_dir##*/}
 		hash_get "priority" "${pkgname}" dep_count || dep_count=0
 		# This races with next_in_queue(), just ignore failure
