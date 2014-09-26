@@ -93,7 +93,7 @@ DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(dist_assets_DATA) $(dist_awk_DATA) $(dist_btcss_DATA) \
 	$(dist_btfonts_DATA) $(dist_btjs_DATA) $(dist_dtcss_DATA) \
 	$(dist_dtimages_DATA) $(dist_dtjs_DATA) $(dist_html_DATA) \
-	$(dist_pkgdata_DATA) $(dist_include_HEADERS) README compile \
+	$(dist_pkgdata_DATA) $(dist_include_HEADERS) compile \
 	install-sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -1978,13 +1978,11 @@ gen-man-wiki:
 	@for man in $(dist_man_MANS); do \
 	  echo "MANDOC doc/$${man##*/}.wiki"; \
 	  ( \
-	    echo "<nowiki>"; \
-	    (mandoc -Thtml $${man} | awk \
+	    (mandoc -Txhtml $${man} | awk \
 	    '$$1 == "<body>" { seenbody=1; next; }; \
 	     $$1 == "</body>" { seenbody=0; }; \
 	     seenbody == 1 { print };'\
 	    ); \
-	    echo "</nowiki>"; \
 	  ) > doc/$${man##*/}.wiki; \
 	done
 

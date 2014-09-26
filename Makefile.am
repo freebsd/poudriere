@@ -173,12 +173,10 @@ gen-man-wiki:
 	@for man in $(dist_man_MANS); do \
 	  echo "MANDOC doc/$${man##*/}.wiki"; \
 	  ( \
-	    echo "<nowiki>"; \
-	    (mandoc -Thtml $${man} | awk \
+	    (mandoc -Txhtml $${man} | awk \
 	    '$$1 == "<body>" { seenbody=1; next; }; \
 	     $$1 == "</body>" { seenbody=0; }; \
 	     seenbody == 1 { print };'\
 	    ); \
-	    echo "</nowiki>"; \
 	  ) > doc/$${man##*/}.wiki; \
 	done
