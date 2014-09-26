@@ -166,17 +166,21 @@ rexec_LDADD=	libnv.a
 
 .PHONY:	gen-make-wiki
 gen-man-wiki:
+	@if [ ! -e wiki/poudriere.8.md ]; then \
+	  echo "You must clone https://github.com/freebsd/poudriere.wiki.git to wiki/"; \
+	  exit 1; \
+	fi
 	@if ! which mandoc 2>&1 >/dev/null; then \
 	  echo "Mandoc required, install textproc/mdocml"; \
 	  exit 1; \
 	fi
 	@for man in $(dist_man_MANS); do \
-	  echo "MANDOC doc/$${man##*/}.wiki"; \
+	  echo "MANDOC wiki/$${man##*/}.md"; \
 	  ( \
 	    (mandoc -Txhtml $${man} | awk \
 	    '$$1 == "<body>" { seenbody=1; next; }; \
 	     $$1 == "</body>" { seenbody=0; }; \
 	     seenbody == 1 { print };'\
 	    ); \
-	  ) > doc/$${man##*/}.wiki; \
+	  ) > wiki/$${man##*/}.md; \
 	done
