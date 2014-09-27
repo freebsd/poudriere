@@ -3250,7 +3250,7 @@ delete_old_pkg() {
 				dpath=${d#*:/usr/ports/}
 				case ${td} in
 				LIB)
-					[ -n "${liblist}" ] || liblist=$(injail ldconfig -r | awk '$1 ~ /:-l/ { gsub(/.*-l/, "", $2); printf("%s ",$1) } END { printf("\n") }')
+					[ -n "${liblist}" ] || liblist=$(injail ldconfig -r | awk '$1 ~ /:-l/ { gsub(/.*-l/, "", $1); printf("%s ",$1) } END { printf("\n") }')
 					case ${key} in
 					lib*)
 						unset found
