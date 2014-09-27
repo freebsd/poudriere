@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD$
+ * $FreeBSD: head/lib/libnv/nv.h 271579 2014-09-14 09:30:09Z pjd $
  */
 
 #ifndef	_NV_H_
@@ -82,6 +82,8 @@ nvlist_t *nvlist_recv(int sock);
 nvlist_t *nvlist_xfer(int sock, nvlist_t *nvl);
 
 const char *nvlist_next(const nvlist_t *nvl, int *typep, void **cookiep);
+
+const nvlist_t *nvlist_get_parent(const nvlist_t *nvl);
 
 /*
  * The nvlist_exists functions check if the given name (optionally of the given

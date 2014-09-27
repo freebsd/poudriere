@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD$
+ * $FreeBSD: head/lib/libnv/nv_impl.h 271579 2014-09-14 09:30:09Z pjd $
  */
 
 #ifndef	_NV_IMPL_H_
@@ -38,6 +38,8 @@ struct nvpair;
 
 typedef struct nvpair nvpair_t;
 #endif
+
+#define	NV_TYPE_NVLIST_UP		255
 
 #define	NV_TYPE_FIRST		NV_TYPE_NULL
 #define	NV_TYPE_LAST		NV_TYPE_BINARY
@@ -54,6 +56,8 @@ nvpair_t *nvlist_prev_nvpair(const nvlist_t *nvl, const nvpair_t *nvp);
 void nvlist_add_nvpair(nvlist_t *nvl, const nvpair_t *nvp);
 
 void nvlist_move_nvpair(nvlist_t *nvl, nvpair_t *nvp);
+
+void nvlist_set_parent(nvlist_t *nvl, nvpair_t *parent);
 
 const nvpair_t *nvlist_get_nvpair(const nvlist_t *nvl, const char *name);
 

@@ -28,7 +28,7 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+__FBSDID("$FreeBSD: head/lib/libnv/dnvlist.c 258065 2013-11-12 19:39:14Z pjd $");
 
 #include <stdarg.h>
 #include <stdbool.h>

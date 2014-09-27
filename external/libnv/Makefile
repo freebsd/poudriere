@@ -1,7 +1,10 @@
-# $FreeBSD$
+# $FreeBSD: head/lib/libnv/Makefile 271241 2014-09-07 22:56:57Z ngie $
+
+SHLIBDIR?= /lib
+
+.include <src.opts.mk>
 
 LIB=	nv
-SHLIBDIR?= /lib
 SHLIB_MAJOR= 0
 
 SRCS=	dnvlist.c
@@ -157,5 +160,9 @@ MLINKS+=nv.3 nvlist_existsv.3 \
 	nv.3 nvlist_freev_binary.3
 
 WARNS?=	6
+
+.if ${MK_TESTS} != "no"
+SUBDIR+=	tests
+.endif
 
 .include <bsd.lib.mk>

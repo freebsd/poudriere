@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD$
+ * $FreeBSD: head/lib/libnv/dnv.h 258065 2013-11-12 19:39:14Z pjd $
  */
 
 #ifndef	_DNV_H_
