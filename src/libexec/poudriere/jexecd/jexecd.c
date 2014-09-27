@@ -224,7 +224,7 @@ serve(int fd) {
 			if (ke.flags & (EV_ERROR | EV_EOF)) {
 				EV_SET(&ke, cl->pid, EVFILT_PROC, EV_DELETE, NOTE_EXIT, 0, cl);
 				kevent(kq, &ke, 1, NULL, 0, NULL);
-				killpg(cl->pid, SIGTERM);
+				killpg(cl->pid, SIGKILL);
 				client_free(cl);
 			} else {
 				pid = client_read(cl);
@@ -237,7 +237,7 @@ serve(int fd) {
 		}
 
 		if (ke.filter == EVFILT_PROC) {
-			killpg(cl->pid, SIGTERM);
+			killpg(cl->pid, SIGKILL);
 			nv = nvlist_create(0);
 			nvlist_add_number(nv, "return", WEXITSTATUS(ke.data));
 			nvlist_send(cl->fd, nv);
