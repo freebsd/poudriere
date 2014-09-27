@@ -134,7 +134,7 @@ client_read(struct client *cl)
 		}
 	}
 
-	if ((pid = vfork()) == 0) {
+	if ((pid = fork()) == 0) {
 		log_as(username);
 
 		close(STDIN_FILENO);
