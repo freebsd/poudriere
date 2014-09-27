@@ -207,6 +207,8 @@ serve(int fd) {
 	EV_SET(&ke, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 	kevent(kq, &ke, 1, NULL, 0, NULL);
 
+	signal(SIGCHLD, SIG_IGN);
+
 	for (;;) {
 		kevent(kq, NULL, 0, &ke, 1, NULL);
 		/* New client */
