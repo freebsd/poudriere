@@ -60,6 +60,10 @@ Options:
                        url=SOMEURL
     -P patch      -- Specify a patch to apply to the source before building.
     -t version    -- Version of FreeBSD to upgrade the jail to.
+    -x            -- Build and setup native-xtools cross compile tools in jail when
+                     building for a different TARGET ARCH than the host.
+                     Only applies if TARGET_ARCH and HOST_ARCH are different.
+                     Will only be used if -m is svn*.
 
 Options for -s and -k:
     -p tree       -- Specify which ports tree the jail to start/stop with.
@@ -313,6 +317,34 @@ build_and_install_world() {
 	    ${MAKEWORLDARGS} || err 1 "Failed to 'make buildworld'"
 
 	installworld
+
+	if [ ${XDEV} -eq 1 ]; then
+		msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
+		${MAKE_CMD} -C ${SRC_BASE} native-xtools ${MAKE_JOBS} \
+		    ${MAKEWORLDARGS} NO_SHARED=y || err 1 "Failed to 'make native-xtools'"
+		XDEV_TOOLS=/usr/obj/${ARCH}/nxb-bin
+		mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
+		cat >> ${JAILMNT}/etc/make.conf <<- EOF
+		CC=/nxb-bin/usr/bin/cc
+		CPP=/nxb-bin/usr/bin/cpp
+		CXX=/nxb-bin/usr/bin/c++
+		AS=/nxb-bin/usr/bin/as
+		NM=/nxb-bin/usr/bin/nm
+		LD=/nxb-bin/usr/bin/ld
+		OBJCOPY=/nxb-bin/usr/bin/objcopy
+		SIZE=/nxb-bin/usr/bin/size
+		STRIPBIN=/nxb-bin/usr/bin/strip
+		SED=/nxb-bin/usr/bin/sed
+		READELF=/nxb-bin/usr/bin/readelf
+		RANLIB=/nxb-bin/usr/bin/ranlib
+		YACC=/nxb-bin/usr/bin/yacc
+		NM=/nxb-bin/usr/bin/nm
+		MAKE=/nxb-bin/usr/bin/make
+		STRINGS=/nxb-bin/usr/bin/strings
+		AWK=/nxb-bin/usr/bin/awk
+		FLEX=/nxb-bin/usr/bin/flex
+		EOF
+	fi
 }
 
 install_from_src() {
@@ -736,9 +768,9 @@ check_emulation() {
 		msg "Cross-building ports for ${ARCH} on ${REALARCH} requires QEMU"
 		[ -x "${BINMISC}" ] || \
 		    err 1 "Cannot find ${BINMISC}. Install ${BINMISC} and restart"
-		EMULATOR=$(${BINMISC} lookup ${ARCH} 2>/dev/null | awk '/interpreter:/ {print $2}')
+		EMULATOR=$(${BINMISC} lookup ${ARCH#*.} 2>/dev/null | awk '/interpreter:/ {print $2}')
 		[ -x "${EMULATOR}" ] || \
-		    err 1 "You need to setup an emulator with binmiscctl(8) for ${ARCH}"
+		    err 1 "You need to setup an emulator with binmiscctl(8) for ${ARCH#*.}"
 	fi
 }
 
@@ -761,8 +793,9 @@ UPDATE=0
 PTNAME=default
 SETNAME=""
 BINMISC="/usr/sbin/binmiscctl"
+XDEV=0
 
-while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:" FLAG; do
+while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:x" FLAG; do
 	case "${FLAG}" in
 		i)
 			INFO=1
@@ -828,6 +861,9 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:" FLAG; do
 			;;
 		t)
 			TORELEASE=${OPTARG}
+			;;
+		x)
+			XDEV=1
 			;;
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"
