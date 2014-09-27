@@ -4205,7 +4205,8 @@ else
 fi
 include_poudriere_confs "$@"
 
-LIBEXECPREFIX=$(realpath ${SCRIPTPREFIX}/../../libexec/poudriere)
+: ${LIBEXECPREFIX:=${SCRIPTPREFIX}/../../libexec/poudriere}
+LIBEXECPREFIX=$(realpath ${LIBEXECPREFIX})
 AWKPREFIX=${SCRIPTPREFIX}/awk
 HTMLPREFIX=${SCRIPTPREFIX}/html
 HOOKDIR=${POUDRIERED}/hooks
