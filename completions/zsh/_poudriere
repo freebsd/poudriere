@@ -66,6 +66,7 @@ _jail=(
 	'-t[version to upgrade to]' \
 	'-M[mountpoint]::mountpoint:_files -/'
 	'-r[rename jail]::'
+	'-x[build xdev]::'
 )
 
 _options=(
