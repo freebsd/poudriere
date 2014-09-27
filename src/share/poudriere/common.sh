@@ -259,7 +259,6 @@ jstart() {
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${network} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
-	mkdir -p ${MASTERMNT}/.p/
 	jexecd -j ${name} -d ${MASTERMNT}/.p/
 	jail -c persist name=${name}-n \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
@@ -980,6 +979,7 @@ markfs() {
 		echo " done"
 		return 0
 	fi
+	# XXX: Is this needed?
 	mkdir -p ${mnt}/.p/
 
 	case "${name}" in
@@ -1565,6 +1565,10 @@ jail_start() {
 
 	msg "Mounting system devices for ${MASTERNAME}"
 	do_jail_mounts "${mnt}" "${tomnt}" ${arch}
+
+	# Create our data space
+	mkdir -p "${tomnt}/.p"
+	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs data "${tomnt}/.p"
 
 	PACKAGES=${POUDRIERE_DATA}/packages/${MASTERNAME}
 
@@ -3787,8 +3791,6 @@ prepare_ports() {
 	local cache_dir
 
 	_log_path log
-	mkdir -p "${MASTERMNT}/.p"
-	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs data "${MASTERMNT}/.p"
 	rm -rf "${MASTERMNT}/.p/var/cache/origin-pkgname" \
 		"${MASTERMNT}/.p/var/cache/pkgname-origin" 2>/dev/null || :
 	mkdir -p "${MASTERMNT}/.p/building" \
