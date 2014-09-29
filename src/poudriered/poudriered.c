@@ -679,10 +679,11 @@ client_new(int fd)
 	if (getpeereid(cl->fd, &cl->uid, &cl->gid) != 0)
 		err(EXIT_FAILURE, "getpeereid()");
 
-	if (-1 == (flags = fcntl(cl->fd, F_GETFL, 0)))
+	if ((flags = fcntl(cl->fd, F_GETFL, 0)) == -1)
 		flags = 0;
 
-	fcntl(cl->fd, F_SETFL, flags | O_NONBLOCK);
+	if ((fcntl(cl->fd, F_SETFL, flags | O_NONBLOCK)) == -1)
+		err(EXIT_FAILURE, "fcntl(O_NONBLOCK)");
 
 	return (cl);
 }
