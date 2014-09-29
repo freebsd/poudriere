@@ -243,6 +243,14 @@ injail() {
 		-u ${JUSER:-root} ${MAX_MEMORY_JEXEC} "$@"
 }
 
+injail_tty() {
+	local name
+
+	_my_name name
+	jexec -U ${JUSER:-root} ${name}${JNETNAME:+-${JNETNAME}} \
+	    ${MAX_MEMORY_JEXEC} "$@"
+}
+
 jstart() {
 	local name network
 
@@ -1178,7 +1186,7 @@ EOF
 
 	if [ ${INTERACTIVE_MODE} -eq 1 ]; then
 		msg "Entering interactive test mode. Type 'exit' when done."
-		JNETNAME="n" injail env -i TERM=${SAVED_TERM} \
+		JNETNAME="n" injail_tty env -i TERM=${SAVED_TERM} \
 		    /usr/bin/login -fp root || :
 	elif [ ${INTERACTIVE_MODE} -eq 2 ]; then
 		# XXX: Not tested/supported with bulk yet.
