@@ -240,7 +240,7 @@ injail() {
 
 	_my_name name
 	rexec -s ${MASTERMNT}/.p/${name}${JNETNAME:+-${JNETNAME}}.sock \
-		-u ${JUSER:-root} ${MAX_MEMORY_JEXEC} $@
+		-u ${JUSER:-root} ${MAX_MEMORY_JEXEC} "$@"
 }
 
 jstart() {
