@@ -236,9 +236,7 @@ serve(int fd) {
 				}
 			}
 			continue;
-		}
-
-		if (ke.filter == EVFILT_PROC) {
+		} else if (ke.filter == EVFILT_PROC) {
 			killpg(cl->pid, SIGKILL);
 			nv = nvlist_create(0);
 			nvlist_add_number(nv, "return", WEXITSTATUS(ke.data));
