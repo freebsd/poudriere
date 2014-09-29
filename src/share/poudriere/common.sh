@@ -3932,7 +3932,7 @@ prepare_ports() {
 		fi
 	else
 		[ ${SKIPSANITY} -eq 1 ] && sflag="(-s): "
-		msg "${sflag} Skipping incremental rebuild and repository sanity checks"
+		msg "${sflag}Skipping incremental rebuild and repository sanity checks"
 	fi
 
 	export LOCALBASE=${LOCALBASE:-/usr/local}
