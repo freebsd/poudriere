@@ -3788,7 +3788,7 @@ prepare_ports() {
 	local pkg
 	local log
 	local n pn nbq resuming_build
-	local cache_dir
+	local cache_dir sflag
 
 	_log_path log
 	rm -rf "${MASTERMNT}/.p/var/cache/origin-pkgname" \
@@ -3931,8 +3931,8 @@ prepare_ports() {
 			delete_stale_symlinks_and_empty_dirs
 		fi
 	else
-		[ ${SKIPSANITY} -eq 1 ] && msg_n "(-s) "
-		msg "Skipping incremental rebuild and repository sanity checks"
+		[ ${SKIPSANITY} -eq 1 ] && sflag="(-s): "
+		msg "${sflag} Skipping incremental rebuild and repository sanity checks"
 	fi
 
 	export LOCALBASE=${LOCALBASE:-/usr/local}
