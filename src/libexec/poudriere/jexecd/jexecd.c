@@ -163,6 +163,7 @@ client_read(struct client *cl)
 	close(fdin);
 	close(fdout);
 
+err:
 	if (pid != -1)
 		cl->pid = pid;
 	free(argv);
