@@ -8,21 +8,6 @@ _poudriere_pt() {
 	_values "poudriere portstrees" ${${(f)"$(${service} ports -lq)"}%% *}
 }
 
-# shamelessely stolen from
-# /usr/local/share/zsh/4.3.12/functions/Completion/BSD/_portmaster
-_poudriere_ports() {
-  local ret=1 _fbsd_ports _fbsd_cat
-   _fbsd_cat=(${PORTSDIR:-/usr/local/poudriere/ports/default/ports}/[a-z]*(/:t))
-   if [[ $PREFIX != */* ]] ; then
-     _wanted cat_packages expl 'category/ports' compadd -S '/' $_fbsd_cat
-   else
-     compset -P '*/'
-     _fbsd_ports=(${PORTSDIR:-/usr/local/poudriere/ports/default/ports}/$IPREFIX/*(/:t))
-     _wanted cat_packages expl 'category/ports' compadd $_fbsd_ports
-   fi
-  return ret
-}
-
 _bulk=(
 	'-a[Build all ports in the tree]'
 	'-B[What buildname to use]:buildname'
