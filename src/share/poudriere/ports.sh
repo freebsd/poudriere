@@ -47,6 +47,7 @@ Options:
                      them.
     -k            -- when used with -d, only unregister the directory from
                      the ports tree list, but keep the files.
+    -n            -- Print only tree name (for use with -l)
     -p name       -- specifies the name of the portstree to work on . If not
                      specified, work on a portstree called "default".
     -f fs         -- FS name (tank/jails/myjail) if fs is "none" then do not
@@ -68,10 +69,11 @@ FAKE=0
 UPDATE=0
 DELETE=0
 LIST=0
+NAMEONLY=0
 QUIET=0
 VERBOSE=0
 KEEP=0
-while getopts "B:cFudklp:qf:M:m:v" FLAG; do
+while getopts "B:cFudklp:qf:nM:m:v" FLAG; do
 	case "${FLAG}" in
 		B)
 			BRANCH="${OPTARG}"
@@ -84,6 +86,9 @@ while getopts "B:cFudklp:qf:M:m:v" FLAG; do
 			;;
 		u)
 			UPDATE=1
+			;;
+		n)
+			NAMEONLY=1
 			;;
 		p)
 			PTNAME=${OPTARG}
@@ -145,13 +150,21 @@ esac
 if [ ${LIST} -eq 1 ]; then
 	format='%%-%ds %%-%ds %%-%ds %%s\n'
 	display_setup "${format}" 4 "-d"
-	display_add "PORTSTREE" "METHOD" "TIMESTAMP" "PATH"
+	if [ ${NAMEONLY} -eq 0 ]; then
+		display_add "PORTSTREE" "METHOD" "TIMESTAMP" "PATH"
+	else
+		display_add "PORTSTREE"
+	fi
 	while read ptname ptmethod ptpath; do
-		_pget timestamp ${ptname} timestamp 2>/dev/null || :
-		time=
-		[ -n "${timestamp}" ] && \
-		    time="$(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
-		display_add ${ptname} ${ptmethod} "${time}" ${ptpath}
+		if [ ${NAMEONLY} -eq 0 ]; then
+			_pget timestamp ${ptname} timestamp 2>/dev/null || :
+			time=
+			[ -n "${timestamp}" ] && \
+			    time="$(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
+			display_add ${ptname} ${ptmethod} "${time}" ${ptpath}
+		else
+			display_add ${ptname}
+		fi
 	done <<- EOF
 	$(porttree_list)
 	EOF
