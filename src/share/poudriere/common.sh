@@ -121,12 +121,12 @@ msg_n() {
 	if should_show_elapsed; then
 		now=$(date +%s)
 		calculate_duration elapsed "$((${now} - ${TIME_START}))"
-		elapsed="[${elapsed}] "
+		elapsed="${elapsed} "
 	fi
 	if [ -n "${COLOR_ARROW}" ] || [ -z "${1##*\033[*}" ]; then
-		printf "${elapsed}${DRY_MODE}${COLOR_ARROW}====>>${COLOR_RESET} ${1}${COLOR_RESET_REAL}"
+		printf "${elapsed}${DRY_MODE}${COLOR_ARROW}=> ${COLOR_RESET}${1}${COLOR_RESET_REAL}"
 	else
-		printf "${elapsed}${DRY_MODE}====>> ${1}"
+		printf "${elapsed}${DRY_MODE}=> ${1}"
 	fi
 }
 
@@ -154,13 +154,11 @@ msg_error() {
 
 msg_debug() {
 	[ ${VERBOSE} -gt 1 ] || return 0
-	COLOR_ARROW="${COLOR_DEBUG}" \
-	    msg "${COLOR_DEBUG}Debug: $@" >&2
+	msg "${COLOR_DEBUG}Debug: $@" >&2
 }
 
 msg_warn() {
-	COLOR_ARROW="${COLOR_WARN}" \
-	    msg "${COLOR_WARN}Warning: $@" >&2
+	msg "${COLOR_WARN}Warning: $@" >&2
 }
 
 job_msg() {
@@ -171,7 +169,7 @@ job_msg() {
 		now=$(date +%s)
 		calculate_duration elapsed "$((${now} - ${TIME_START_JOB}))"
 		msg \
-		    "[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}][${elapsed}] $1" \
+		    "[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}] ${elapsed} $1" \
 		    >&5
 	elif [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
 		# Send to true stdout (not any build log)
@@ -792,8 +790,14 @@ show_build_summary() {
 	elapsed=${_elapsed_time}
 	calculate_duration buildtime ${elapsed}
 
-	printf "[${MASTERNAME}] [${buildname}] [${status}] Queued: %-${queue_width}d ${COLOR_SUCCESS}Built: %-${queue_width}d ${COLOR_FAIL}Failed: %-${queue_width}d ${COLOR_SKIP}Skipped: %-${queue_width}d ${COLOR_IGNORE}Ignored: %-${queue_width}d${COLOR_RESET} Tobuild: %-${queue_width}d  Time: %s\n" \
-	    ${nbq} ${nbb} ${nbf} ${nbs} ${nbi} ${nbtobuild} "${buildtime}"
+	printf "[${MASTERNAME}] [${buildname}] [${status}]  Time: %s\n\
+Initially: %-${queue_width}d  \
+Built: ${COLOR_SUCCESS}%-${queue_width}d${COLOR_RESET}  \
+Failed: ${COLOR_FAIL}%-${queue_width}d${COLOR_RESET}  \
+Skipped: ${COLOR_SKIP}%-${queue_width}d${COLOR_RESET}  \
+Ignored: ${COLOR_IGNORE}%-${queue_width}d${COLOR_RESET}\n\
+Remaining: %-${queue_width}d\n"  \
+	"${buildtime}" ${nbq} ${nbb} ${nbf} ${nbs} ${nbi} ${nbtobuild}
 }
 
 siginfo_handler() {
@@ -839,8 +843,8 @@ siginfo_handler() {
 			colorize_job_id job_id_color "${j}"
 
 			# Must put colors in format
-			format_origin_phase="\t[${job_id_color}%s${COLOR_RESET}]: ${COLOR_PORT}%-32s ${COLOR_PHASE}%-15s${COLOR_RESET} (%s)\n"
-			format_phase="\t[${job_id_color}%s${COLOR_RESET}]: ${COLOR_PHASE}%15s${COLOR_RESET}\n"
+			format_origin_phase="  [${job_id_color}%s${COLOR_RESET}] ${COLOR_PORT}%-45s ${COLOR_PHASE}%-15s${COLOR_RESET} (%s)\n"
+			format_phase="  [${job_id_color}%s${COLOR_RESET}] %-45s ${COLOR_PHASE}%-15s${COLOR_RESET}\n"
 
 			if [ -n "${pkgname}" ]; then
 				elapsed=$((${now} - ${started}))
@@ -848,7 +852,7 @@ siginfo_handler() {
 				printf "${format_origin_phase}" "${j}" \
 				    "${origin}" "${phase}" ${buildtime}
 			else
-				printf "${format_phase}" "${j}" "${phase}"
+				printf "${format_phase}" "${j}" "" "${phase}"
 			fi
 		done
 	fi
@@ -1427,13 +1431,13 @@ show_build_results() {
 	_bget nbignored stats_ignored
 	_bget nbskipped stats_skipped
 
-	[ $nbbuilt -gt 0 ] && COLOR_ARROW="${COLOR_SUCCESS}" \
+	[ $nbbuilt -gt 0 ] && \
 	    msg "${COLOR_SUCCESS}Built ports: ${COLOR_PORT}${built}"
-	[ $nbfailed -gt 0 ] && COLOR_ARROW="${COLOR_FAIL}" \
+	[ $nbfailed -gt 0 ] && \
 	    msg "${COLOR_FAIL}Failed ports: ${COLOR_PORT}${failed}"
-	[ $nbskipped -gt 0 ] && COLOR_ARROW="${COLOR_SKIP}" \
+	[ $nbskipped -gt 0 ] && \
 	    msg "${COLOR_SKIP}Skipped ports: ${COLOR_PORT}${skipped}"
-	[ $nbignored -gt 0 ] && COLOR_ARROW="${COLOR_IGNORE}" \
+	[ $nbignored -gt 0 ] && \
 	    msg "${COLOR_IGNORE}Ignored ports: ${COLOR_PORT}${ignored}"
 
 	show_build_summary
@@ -1925,7 +1929,7 @@ check_fs_violation() {
 		msg "Error: ${err_msg}"
 		cat ${tmpfile}
 		bset_job_status "${status_value}" "${port}"
-		job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${status_value}"
+		job_msg_verbose "Status   ${COLOR_PORT}${port}${COLOR_RESET}: ${status_value}"
 		ret=1
 	fi
 	rm -f ${tmpfile}
@@ -1942,7 +1946,7 @@ gather_distfiles() {
 	sub=$(injail make -C ${portdir} -VDIST_SUBDIR)
 	dists=$(injail make -C ${portdir} -V_DISTFILES -V_PATCHFILES)
 	specials=$(injail make -C ${portdir} -V_DEPEND_SPECIALS)
-	job_msg_verbose "Status for build ${COLOR_PORT}${portdir##/usr/ports/}${COLOR_RESET}: distfiles ${from} -> ${to}"
+	#job_msg_verbose "Status   ${COLOR_PORT}${portdir##/usr/ports/}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
 		[ -f ${from}/${sub}/${d} ] || continue
 		tosubd=${to}/${sub}/${d}
@@ -2025,7 +2029,7 @@ _real_build_port() {
 		phaseenv=
 		[ -z "${no_stage}" ] && JUSER=${jailuser}
 		bset_job_status "${phase}" "${port}"
-		job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
+		job_msg_verbose "Status   ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
 		[ -n "${PORTTESTING}" ] && \
 		    phaseenv="${phaseenv} DEVELOPER_MODE=yes"
 		case ${phase} in
@@ -2137,11 +2141,11 @@ _real_build_port() {
 				if [ $hangstatus -eq 2 ]; then
 					msg "Killing runaway build after ${NOHANG_TIME} seconds with no output"
 					bset_job_status "${phase}/runaway" "${port}"
-					job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}runaway"
+					job_msg_verbose "Status   ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}runaway"
 				elif [ $hangstatus -eq 3 ]; then
 					msg "Killing timed out build after ${max_execution_time} seconds"
 					bset_job_status "${phase}/timeout" "${port}"
-					job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}timeout"
+					job_msg_verbose "Status   ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}timeout"
 				fi
 				return 1
 			fi
@@ -2742,8 +2746,7 @@ crashed_build() {
 	# Symlink the buildlog into errors/
 	ln -s "../${pkgname}.log" "${log}/logs/errors/${pkgname}.log"
 	badd ports.failed "${origin} ${pkgname} ${failed_phase} ${failed_phase}"
-	COLOR_ARROW="${COLOR_FAIL}" msg \
-	    "${COLOR_FAIL}Finished build of ${COLOR_PORT}${origin}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
+	msg "Finished ${COLOR_PORT}${origin}${COLOR_RESET}: ${COLOR_FAIL}Failed: ${COLOR_PHASE}${failed_phase}"
 	run_hook pkgbuild failed "${origin}" "${pkgname}" \
 	    "${failed_phase}" \
 	    "${log}/logs/errors/${pkgname}.log"
@@ -2767,8 +2770,7 @@ clean_pool() {
 	sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT}" "${pkgname}" "${clean_rdepends}" | sort -u | while read skipped_pkgname; do
 		cache_get_origin skipped_origin "${skipped_pkgname}"
 		badd ports.skipped "${skipped_origin} ${skipped_pkgname} ${pkgname}"
-		COLOR_ARROW="${COLOR_SKIP}" \
-		    job_msg "${COLOR_SKIP}Skipping build of ${COLOR_PORT}${skipped_origin}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${port}${COLOR_SKIP} ${clean_rdepends}"
+		job_msg "${COLOR_SKIP}Skipping ${COLOR_PORT}${skipped_origin}${COLOR_RESET}: Dependent port ${COLOR_PORT}${port}${COLOR_SKIP} ${clean_rdepends}"
 		run_hook pkgbuild skipped "${skipped_origin}" "${skipped_pkgname}" "${port}"
 	done
 
@@ -2816,7 +2818,7 @@ build_pkg() {
 	NO_ELAPSED_IN_MSG=1
 	colorize_job_id COLOR_JOBID "${MY_JOBID}"
 
-	job_msg "Starting build of ${COLOR_PORT}${port}${COLOR_RESET}"
+	job_msg "Starting ${COLOR_PORT}${port}${COLOR_RESET} build"
 	bset_job_status "starting" "${port}"
 
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
@@ -2848,7 +2850,7 @@ build_pkg() {
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
 		badd ports.ignored "${port} ${PKGNAME} ${ignore}"
-		COLOR_ARROW="${COLOR_IGNORE}" job_msg "${COLOR_IGNORE}Finished build of ${COLOR_PORT}${port}${COLOR_IGNORE}: Ignored: ${ignore}"
+		job_msg "Finished ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_IGNORE}Ignored: ${ignore}"
 		clean_rdepends="ignored"
 		run_hook pkgbuild ignored "${port}" "${PKGNAME}" "${ignore}"
 	else
@@ -2872,7 +2874,7 @@ build_pkg() {
 
 		if [ ${build_failed} -eq 0 ]; then
 			badd ports.built "${port} ${PKGNAME}"
-			COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished build of ${COLOR_PORT}${port}${COLOR_SUCCESS}: Success"
+			job_msg "Finished ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_SUCCESS}Success"
 			run_hook pkgbuild success "${port}" "${PKGNAME}"
 			# Cache information for next run
 			# XXX: Make this async for processing in another thread.
@@ -2884,7 +2886,7 @@ build_pkg() {
 				${log}/logs/errors/${PKGNAME}.log \
 				2> /dev/null)
 			badd ports.failed "${port} ${PKGNAME} ${failed_phase} ${errortype}"
-			COLOR_ARROW="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished build of ${COLOR_PORT}${port}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
+			job_msg "Finished ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_FAIL}Failed: ${COLOR_PHASE}${failed_phase}"
 			run_hook pkgbuild failed "${port}" "${PKGNAME}" "${failed_phase}" \
 				"${log}/logs/errors/${PKGNAME}.log"
 			# ret=2 is a test failure
