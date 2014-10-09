@@ -1955,7 +1955,6 @@ _real_build_port() {
 	local pkgenv phaseenv jpkg
 	local no_stage=$(injail make -C ${portdir} -VNO_STAGE)
 	local targets install_order
-	local stagedir
 	local jailuser
 	local testfailure=0
 	local max_execution_time
@@ -1992,7 +1991,6 @@ _real_build_port() {
 		# testing.
 		[ -n "${PORTTESTING}" ] && \
 		    install_order="${install_order} install-mtree install"
-		stagedir=$(injail make -C ${portdir} -VSTAGEDIR)
 	fi
 	targets="check-sanity pkg-depends fetch-depends fetch checksum \
 		  extract-depends extract patch-depends patch build-depends \
