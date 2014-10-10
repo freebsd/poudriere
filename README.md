@@ -31,6 +31,6 @@ Getting started with poudriere
 1. Install it by typing "make install" at the top-level directory
 2. Copy /usr/local/etc/poudriere.conf.sample to /usr/local/etc/poudriere.conf
 3. Edit it to suit your needs
-4. man poudriere, search for EXAMPLES
+4. man poudriere, search for EXAMPLES, read the wiki https://github.com/freebsd/poudriere/wiki
 5. Follow "bulk build of binary packages" steps
 6. Enjoy your new fresh binary packages!
