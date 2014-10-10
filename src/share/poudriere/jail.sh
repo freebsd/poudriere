@@ -297,7 +297,6 @@ build_and_install_world() {
 		cp "${EMULATOR}" "${JAILMNT}${EMULATOR}"
 	fi
 
-	
 	#######################################################################
 	# Logic used to copy the XDEV tool chain to the jail:
 	# if -a is in the form ARCH.TARGET_ARCH and they are the same
@@ -306,6 +305,7 @@ build_and_install_world() {
 	# if -a is in the form ARCH.TARGET_ARCH and they differ
 	# split ARCH on the '.' and assign the second half to TARGET_ARCH
 	#######################################################################
+	export TARGET=${ARCH%.*}
 	if [ "${ARCH%.*}" = "${ARCH#*.}" ]; then
         	export TARGET_ARCH=${ARCH%.*}
 	else
@@ -335,7 +335,7 @@ build_and_install_world() {
 		msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
 		${MAKE_CMD} -C ${SRC_BASE} native-xtools ${MAKE_JOBS} \
 		    ${MAKEWORLDARGS} NO_SHARED=y || err 1 "Failed to 'make native-xtools'"
-		XDEV_TOOLS=/usr/obj/${ARCH%.*}.${TARGET_ARCH}/nxb-bin
+		XDEV_TOOLS=/usr/obj/${TARGET}.${TARGET_ARCH}/nxb-bin
 		mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
 		cat >> ${JAILMNT}/etc/make.conf <<- EOF
 		CC=/nxb-bin/usr/bin/cc
