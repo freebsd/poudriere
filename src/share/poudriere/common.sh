@@ -1718,6 +1718,8 @@ jail_stop() {
 	[ $# -ne 0 ] && eargs jail_stop
 	local last_status
 
+	run_hook jail stop
+
 	jstop || :
 	# Shutdown all builders
 	if [ ${PARALLEL_JOBS} -ne 0 ]; then
