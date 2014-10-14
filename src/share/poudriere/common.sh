@@ -258,6 +258,8 @@ jstart() {
 
 	[ "${RESTRICT_NETWORKING}" = "yes" ] || network="${ipargs}"
 
+	[ -d ${MASTERMNT}/.p ] || mkdir -p ${MASTERMNT}/.p
+
 	_my_name name
 	jail -c persist name=${name} \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
