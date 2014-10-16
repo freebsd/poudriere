@@ -1369,8 +1369,18 @@ commit_packages() {
 		name=${path##*/}
 		[ ! -L "${PACKAGES_ROOT}/${name}" ] || continue
 		if [ -e "${PACKAGES_ROOT}/${name}" ]; then
-			msg_error "${PACKAGES_ROOT}/${name} shadows repository file in .latest/${name}. Remove the top-level one and symlink to .latest/${name}"
-			continue
+			case "${name}" in
+			meta.txz|digests.txz|packagesite.txz|All|Latest)
+				# Auto fix pkg-owned files
+				rm -f "${PACKAGES_ROOT}/${name}"
+				;;
+			*)
+				msg_error "${PACKAGES_ROOT}/${name}
+shadows repository file in .latest/${name}. Remove the top-level one and
+symlink to .latest/${name}"
+				continue
+				;;
+			esac
 		fi
 		ln -s .latest/${name} ${PACKAGES_ROOT}/${name}
 	done
