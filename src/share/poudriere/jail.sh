@@ -297,20 +297,8 @@ build_and_install_world() {
 		cp "${EMULATOR}" "${JAILMNT}${EMULATOR}"
 	fi
 
-	#######################################################################
-	# Logic used to copy the XDEV tool chain to the jail:
-	# if -a is in the form ARCH.TARGET_ARCH and they are the same
-	# or if -a is in the form of ARCH, set TARGET_ARCH = ARCH
-	#
-	# if -a is in the form ARCH.TARGET_ARCH and they differ
-	# split ARCH on the '.' and assign the second half to TARGET_ARCH
-	#######################################################################
 	export TARGET=${ARCH%.*}
-	if [ "${ARCH%.*}" = "${ARCH#*.}" ]; then
-		export TARGET_ARCH=${ARCH%.*}
-	else
-		export TARGET_ARCH=${ARCH#*.}
-	fi
+	export TARGET_ARCH=${ARCH#*.}
 
 	export SRC_BASE=${JAILMNT}/usr/src
 	mkdir -p ${JAILMNT}/etc
