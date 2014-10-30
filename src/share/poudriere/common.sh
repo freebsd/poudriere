@@ -1206,10 +1206,18 @@ use_options() {
 	fi
 	[ -d "${optionsdir}" ] || return 1
 	optionsdir=$(realpath ${optionsdir} 2>/dev/null)
-	[ "${mnt##*/}" = "ref" ] &&
-		msg "Mounting /var/db/ports from: ${optionsdir}"
-	${NULLMOUNT} -o ro ${optionsdir} ${mnt}/var/db/ports ||
-		err 1 "Failed to mount OPTIONS directory"
+	if [ -z "$CONFIGSTR" -o $CONFIGSTR -eq 0 ]; then
+		[ "${mnt##*/}" = "ref" ] &&
+			msg "Mounting /var/db/ports from: ${optionsdir}"
+		${NULLMOUNT} -o ro ${optionsdir} ${mnt}/var/db/ports ||
+			err 1 "Failed to mount OPTIONS directory"
+	else
+		[ "${mnt##*/}" = "ref" ] &&
+			msg "Copying /var/db/ports from: ${optionsdir}"
+		[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs config ${mnt}/var/db/ports
+		do_clone ${optionsdir} ${mnt}/var/db/ports ||
+			err 1 "Failed to copy OPTIONS directory"
+	fi
 
 	return 0
 }
