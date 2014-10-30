@@ -158,7 +158,14 @@ export POUDRIERE_BUILD_TYPE=bulk
 madvise_protect $$
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
-[ $CONFIGSTR -eq 1 ] && injail env TERM=${SAVED_TERM} make -C /usr/ports/${ORIGIN} config
+if [ $CONFIGSTR -eq 1 ]; then
+	which dialog4ports >/dev/null 2>&1 || err 1 "You must have ports-mgmt/dialog4ports installed on the host to use -c."
+	export PORTSDIR=${portsdir} \
+		PORT_DBDIR=${MASTERMNT}/var/db/ports \
+		TERM=${SAVED_TERM}
+	make -C ${PORTSDIR}/${ORIGIN} config
+	unset PORTSDIR PORT_DBDIR TERM
+fi
 
 LISTPORTS=$(list_deps ${ORIGIN} )
 prepare_ports
