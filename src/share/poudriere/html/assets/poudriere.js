@@ -127,7 +127,7 @@ function update_canvas(stats) {
 	}
 
 	canvas = document.getElementById('progressbar');
-	if (canvas.getContext === undefined) {
+	if (!canvas || canvas.getContext === undefined) {
 		/* Not supported */
 		return;
 	}
