@@ -474,7 +474,7 @@ DTRow.prototype = {
 };
 
 function process_data_build(data) {
-	var html, a, n, table_rows, status, builder, now, row, dtrow;
+	var html, a, n, table_rows, status, builder, now, row, dtrow, is_stopped;
 
 	if (data.snap && data.snap.now) {
 		now = data.snap.now;
@@ -507,6 +507,14 @@ function process_data_build(data) {
 		$('#svn_url').hide();
 	$('#build_info_div').show();
 
+	if (data.status) {
+		status = translate_status(data.status);
+		$('#status').text(status);
+	}
+
+	// Unknown status, assume not stopped.
+	is_stopped = status ? status.match("^stopped:") : false;
+
 	/* Builder status */
 	if (data.jobs) {
 		dtrow = new DTRow('builders_table', 'jobs_div');
@@ -522,14 +530,13 @@ function process_data_build(data) {
 				builder.status.split(":")[0];
 			row.elapsed = builder.started ?
 				format_duration(builder.started, now) : "";
-			dtrow.queue(row);
+
+			/* Hide idle builders when the build is stopped. */
+			if (!is_stopped || (row.status != "idle")) {
+				dtrow.queue(row);
+			}
 		}
 		dtrow.commit();
-	}
-
-	if (data.status) {
-		status = translate_status(data.status);
-		$('#status').text(status);
 	}
 
 	/* Stats */
@@ -591,12 +598,7 @@ function process_data_build(data) {
 		});
 	}
 
-	// Refresh as long as the build is not stopped
-	if (!status) {
-		// Unknown status, just keep reading.
-		return true;
-	}
-	return !status.match("^stopped:");
+	return !is_stopped;
 }
 
 function process_data_jail(data) {
