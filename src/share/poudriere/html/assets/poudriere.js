@@ -662,12 +662,12 @@ function process_data_index(data) {
 	var master, mastername, stat, types, latest,
 		remaining, row,	count, dtrow;
 
-	if (!$.isEmptyObject(data)) {
+	if (data.masternames) {
 		types = ['queued', 'built', 'failed', 'skipped', 'ignored'];
 		dtrow = new DTRow('latest_builds_table', 'latest_builds_div');
-		for (mastername in data) {
+		for (mastername in data.masternames) {
 			row = {};
-			master = data[mastername].latest;
+			master = data.masternames[mastername].latest;
 
 			row.id = master.mastername;
 			row.portset = format_portset(master.ptname, master.setname);

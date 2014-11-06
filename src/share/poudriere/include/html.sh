@@ -109,12 +109,12 @@ build_top_json() {
 
 	(
 		cd "${log_path_top}"
-		echo "{"
+		echo "{\"masternames\":{"
 		echo */latest/.data.mini.json | \
 		    xargs awk -f ${AWKPREFIX}/json_top.awk | \
 		    sed -e '/^$/d' | \
 		    paste -s -d , -
-		echo "}"
+		echo "}}"
 	) > ${tmpfile}
 	mv -f ${tmpfile} ${log_path_top}/.data.json
 }
