@@ -171,3 +171,18 @@ destroyfs() {
 		rm -rf ${mnt}
 	fi
 }
+
+# Create/Update a base dir and then hardlink-copy the files into the
+# dest dir. This is used for HTML copying to keep space usage efficient.
+hardlink_base_cp() {
+	[ $# -eq 3 ] || eargs hardlink_base_cp src base dest
+	local src="$1"
+	local base="$2"
+	local dest="$3"
+
+	# Update the base copy
+	cpdup -i0 -x "${src}" "${base}"
+	# Hardlink-copy the base into the destination dir.
+	cp -xal "${base}" "${dest}"
+	return 0
+}

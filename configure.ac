@@ -33,4 +33,8 @@ AC_CHECK_HEADERS_ONCE([fcntl.h])
 
 AC_CONFIG_FILES(Makefile)
 
+# Preserve timestamps for install. This is needed to preserve hardlinks
+# for HTML files.
+AC_SUBST([INSTALL], ["${ac_cv_path_install% -c} -Cp"])
+
 AC_OUTPUT([src/etc/rc.d/poudriered])
