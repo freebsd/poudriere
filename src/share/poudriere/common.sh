@@ -3797,7 +3797,7 @@ clean_build_queue() {
 
 prepare_ports() {
 	local pkg
-	local log
+	local log log_top
 	local n pn nbq resuming_build
 	local cache_dir sflag
 
@@ -3817,9 +3817,18 @@ prepare_ports() {
 		"${MASTERMNT}/.p/var/cache/pkgname-origin"
 
 	if was_a_bulk_run; then
+		_log_path_top log_top
 		get_cache_dir cache_dir
-		mkdir -p ${log}/../../latest-per-pkg ${log}/../latest-per-pkg \
-		    ${log}/logs ${log}/logs/errors ${cache_dir}
+
+		# Sync in HTML files through a base dir
+		hardlink_base_cp "${HTMLPREFIX}" "${log_top}/.html" "${log}"
+		# Create log dirs
+		mkdir -p ${log}/../../latest-per-pkg \
+		    ${log}/../latest-per-pkg \
+		    ${log}/logs \
+		    ${log}/logs/errors \
+		    ${cache_dir}
+		# Link this build as the /latest
 		ln -sfh ${BUILDNAME} ${log%/*}/latest
 
 		# Record the SVN URL@REV in the build
