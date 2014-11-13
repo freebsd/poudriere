@@ -2440,7 +2440,7 @@ stop_builders() {
 	local mnt
 
 	# wait for the last running processes
-	cat ${MASTERMNT}/.p/var/run/*.pid 3>/dev/null | xargs pwait 2>/dev/null
+	cat ${MASTERMNT}/.p/var/run/*.pid 2>/dev/null | xargs pwait 2>/dev/null
 
 	msg "Stopping ${PARALLEL_JOBS} builders"
 
