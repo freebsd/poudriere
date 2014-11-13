@@ -110,7 +110,8 @@ pkglibexec_PROGRAMS= \
 		     timestamp \
 		     tsort \
 		     jexecd \
-		     rexec
+		     rexec \
+		     cached
 
 noinst_LIBRARIES=	libucl.a libnv.a
 
@@ -163,6 +164,10 @@ jexecd_LDADD=	libnv.a \
 rexec_SOURCES=	src/libexec/poudriere/rexec/rexec.c
 rexec_CFLAGS=	-I$(top_srcdir)/external/libnv
 rexec_LDADD=	libnv.a
+
+cached_SOURCES=	src/libexec/poudriere/cached/cached.c
+cached_CFLAGS=	-I$(top_srcdir)/external/uthash
+cached_LDADD=	-lutil
 
 .PHONY:	gen-make-wiki
 gen-man-wiki:

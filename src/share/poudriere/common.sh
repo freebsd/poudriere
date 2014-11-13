@@ -1565,6 +1565,9 @@ jail_start() {
 
 	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
 	msg_n "Creating the reference jail..."
+	export CACHESOCK=${MASTERMNT%/ref}/cache.sock
+	export CACHEPID=${MASTERMNT%/ref}/cache.pid
+	cached -s ${CACHESOCK} -p ${CACHEPID} -n ${MASTERNAME}
 	echo "src" >> ${mnt}/usr/.cpignore
 	echo "debug" >> ${mnt}/usr/lib/.cpignore
 	clonefs ${mnt} ${tomnt} clean
@@ -1756,6 +1759,7 @@ jail_stop() {
 			destroyfs ${MASTERMNT}/../${j} jail || :
 		done
 	fi
+	pkill -15 -F ${CACHEPID} >/dev/null 2>&1 || :
 	msg "Umounting file systems"
 	destroyfs ${MASTERMNT} jail || :
 	rm -rf ${MASTERMNT}/../
@@ -3419,10 +3423,7 @@ cache_get_pkgname() {
 	local origin=${2%/}
 	local fatal="${3:-1}"
 	local _pkgname="" existing_origin
-	local cache_origin_pkgname=${MASTERMNT}/.p/var/cache/origin-pkgname/${origin%%/*}_${origin##*/}
-	local cache_pkgname_origin
-
-	[ -f ${cache_origin_pkgname} ] && read_line _pkgname "${cache_origin_pkgname}"
+	_pkgname=$(echo "get ${origin}" | nc -U ${CACHESOCK})
 
 	# Add to cache if not found.
 	if [ -z "${_pkgname}" ]; then
@@ -3442,9 +3443,9 @@ cache_get_pkgname() {
 		if [ "${existing_origin}" != "${origin}" ]; then
 			[ -n "${existing_origin}" ] &&
 				err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${origin}${COLOR_RESET} AND ${COLOR_PORT}${existing_origin}${COLOR_RESET}. Rerun with -vv to see which ports are depending on these."
-			echo "${_pkgname}" > ${cache_origin_pkgname}
-			cache_pkgname_origin="${MASTERMNT}/.p/var/cache/pkgname-origin/${_pkgname}"
-			echo "${origin}" > "${cache_pkgname_origin}"
+			write_usock ${CACHESOCK} <<-EOF
+			set ${_pkgname} ${origin}
+			EOF
 		fi
 	fi
 
@@ -3455,10 +3456,9 @@ cache_get_origin() {
 	[ $# -ne 2 ] && eargs cache_get_origin var_return pkgname
 	local var_return="$1"
 	local pkgname="$2"
-	local cache_pkgname_origin="${MASTERMNT}/.p/var/cache/pkgname-origin/${pkgname}"
 	local _origin
 
-	read_line _origin "${cache_pkgname_origin%/}"
+	_origin=$(echo "get ${pkgname}" | nc -U ${CACHESOCK})
 
 	setvar "${var_return}" "${_origin}"
 }

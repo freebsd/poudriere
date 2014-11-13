@@ -83,7 +83,7 @@ POST_UNINSTALL = :
 pkglibexec_PROGRAMS = cpdup$(EXEEXT) dirempty$(EXEEXT) \
 	dirwatch$(EXEEXT) nc$(EXEEXT) poudriered$(EXEEXT) \
 	rename$(EXEEXT) timeout$(EXEEXT) timestamp$(EXEEXT) \
-	tsort$(EXEEXT) jexecd$(EXEEXT) rexec$(EXEEXT)
+	tsort$(EXEEXT) jexecd$(EXEEXT) rexec$(EXEEXT) cached$(EXEEXT)
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
@@ -140,6 +140,12 @@ am__installdirs = "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(bindir)" \
 	"$(DESTDIR)$(examplesdir)" "$(DESTDIR)$(hookdir)" \
 	"$(DESTDIR)$(sysconfdir)" "$(DESTDIR)$(includedir)"
 PROGRAMS = $(pkglibexec_PROGRAMS)
+am_cached_OBJECTS =  \
+	src/libexec/poudriere/cached/cached-cached.$(OBJEXT)
+cached_OBJECTS = $(am_cached_OBJECTS)
+cached_DEPENDENCIES =
+cached_LINK = $(CCLD) $(cached_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_cpdup_OBJECTS = src/libexec/poudriere/cpdup/cpdup-cpdup.$(OBJEXT) \
 	src/libexec/poudriere/cpdup/cpdup-hcproto.$(OBJEXT) \
 	src/libexec/poudriere/cpdup/cpdup-hclink.$(OBJEXT) \
@@ -251,16 +257,16 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libnv_a_SOURCES) $(libucl_a_SOURCES) $(cpdup_SOURCES) \
-	$(dirempty_SOURCES) $(dirwatch_SOURCES) $(jexecd_SOURCES) \
-	$(nc_SOURCES) $(poudriered_SOURCES) $(rename_SOURCES) \
-	$(rexec_SOURCES) $(timeout_SOURCES) $(timestamp_SOURCES) \
-	$(tsort_SOURCES)
-DIST_SOURCES = $(libnv_a_SOURCES) $(libucl_a_SOURCES) $(cpdup_SOURCES) \
-	$(dirempty_SOURCES) $(dirwatch_SOURCES) $(jexecd_SOURCES) \
-	$(nc_SOURCES) $(poudriered_SOURCES) $(rename_SOURCES) \
-	$(rexec_SOURCES) $(timeout_SOURCES) $(timestamp_SOURCES) \
-	$(tsort_SOURCES)
+SOURCES = $(libnv_a_SOURCES) $(libucl_a_SOURCES) $(cached_SOURCES) \
+	$(cpdup_SOURCES) $(dirempty_SOURCES) $(dirwatch_SOURCES) \
+	$(jexecd_SOURCES) $(nc_SOURCES) $(poudriered_SOURCES) \
+	$(rename_SOURCES) $(rexec_SOURCES) $(timeout_SOURCES) \
+	$(timestamp_SOURCES) $(tsort_SOURCES)
+DIST_SOURCES = $(libnv_a_SOURCES) $(libucl_a_SOURCES) \
+	$(cached_SOURCES) $(cpdup_SOURCES) $(dirempty_SOURCES) \
+	$(dirwatch_SOURCES) $(jexecd_SOURCES) $(nc_SOURCES) \
+	$(poudriered_SOURCES) $(rename_SOURCES) $(rexec_SOURCES) \
+	$(timeout_SOURCES) $(timestamp_SOURCES) $(tsort_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -554,6 +560,9 @@ jexecd_LDADD = libnv.a \
 rexec_SOURCES = src/libexec/poudriere/rexec/rexec.c
 rexec_CFLAGS = -I$(top_srcdir)/external/libnv
 rexec_LDADD = libnv.a
+cached_SOURCES = src/libexec/poudriere/cached/cached.c
+cached_CFLAGS = -I$(top_srcdir)/external/uthash
+cached_LDADD = -lutil
 all: all-am
 
 .SUFFIXES:
@@ -705,6 +714,19 @@ uninstall-pkglibexecPROGRAMS:
 
 clean-pkglibexecPROGRAMS:
 	-test -z "$(pkglibexec_PROGRAMS)" || rm -f $(pkglibexec_PROGRAMS)
+src/libexec/poudriere/cached/$(am__dirstamp):
+	@$(MKDIR_P) src/libexec/poudriere/cached
+	@: > src/libexec/poudriere/cached/$(am__dirstamp)
+src/libexec/poudriere/cached/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/libexec/poudriere/cached/$(DEPDIR)
+	@: > src/libexec/poudriere/cached/$(DEPDIR)/$(am__dirstamp)
+src/libexec/poudriere/cached/cached-cached.$(OBJEXT):  \
+	src/libexec/poudriere/cached/$(am__dirstamp) \
+	src/libexec/poudriere/cached/$(DEPDIR)/$(am__dirstamp)
+
+cached$(EXEEXT): $(cached_OBJECTS) $(cached_DEPENDENCIES) $(EXTRA_cached_DEPENDENCIES) 
+	@rm -f cached$(EXEEXT)
+	$(AM_V_CCLD)$(cached_LINK) $(cached_OBJECTS) $(cached_LDADD) $(LIBS)
 src/libexec/poudriere/cpdup/$(am__dirstamp):
 	@$(MKDIR_P) src/libexec/poudriere/cpdup
 	@: > src/libexec/poudriere/cpdup/$(am__dirstamp)
@@ -938,6 +960,7 @@ mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f external/libnv/*.$(OBJEXT)
 	-rm -f external/libucl/src/*.$(OBJEXT)
+	-rm -f src/libexec/poudriere/cached/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/cpdup/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/dirempty/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/dirwatch/*.$(OBJEXT)
@@ -964,6 +987,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-xxhash.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cached/$(DEPDIR)/cached-cached.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-cpdup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-fsmid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hclink.Po@am__quote@
@@ -1094,6 +1118,20 @@ external/libucl/src/libucl_a-xxhash.obj: external/libucl/src/xxhash.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/xxhash.c' object='external/libucl/src/libucl_a-xxhash.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_a-xxhash.obj `if test -f 'external/libucl/src/xxhash.c'; then $(CYGPATH_W) 'external/libucl/src/xxhash.c'; else $(CYGPATH_W) '$(srcdir)/external/libucl/src/xxhash.c'; fi`
+
+src/libexec/poudriere/cached/cached-cached.o: src/libexec/poudriere/cached/cached.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cached_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cached/cached-cached.o -MD -MP -MF src/libexec/poudriere/cached/$(DEPDIR)/cached-cached.Tpo -c -o src/libexec/poudriere/cached/cached-cached.o `test -f 'src/libexec/poudriere/cached/cached.c' || echo '$(srcdir)/'`src/libexec/poudriere/cached/cached.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cached/$(DEPDIR)/cached-cached.Tpo src/libexec/poudriere/cached/$(DEPDIR)/cached-cached.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cached/cached.c' object='src/libexec/poudriere/cached/cached-cached.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cached_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cached/cached-cached.o `test -f 'src/libexec/poudriere/cached/cached.c' || echo '$(srcdir)/'`src/libexec/poudriere/cached/cached.c
+
+src/libexec/poudriere/cached/cached-cached.obj: src/libexec/poudriere/cached/cached.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cached_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cached/cached-cached.obj -MD -MP -MF src/libexec/poudriere/cached/$(DEPDIR)/cached-cached.Tpo -c -o src/libexec/poudriere/cached/cached-cached.obj `if test -f 'src/libexec/poudriere/cached/cached.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cached/cached.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cached/cached.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cached/$(DEPDIR)/cached-cached.Tpo src/libexec/poudriere/cached/$(DEPDIR)/cached-cached.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cached/cached.c' object='src/libexec/poudriere/cached/cached-cached.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cached_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cached/cached-cached.obj `if test -f 'src/libexec/poudriere/cached/cached.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cached/cached.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cached/cached.c'; fi`
 
 src/libexec/poudriere/cpdup/cpdup-cpdup.o: src/libexec/poudriere/cpdup/cpdup.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/cpdup-cpdup.o -MD -MP -MF src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-cpdup.Tpo -c -o src/libexec/poudriere/cpdup/cpdup-cpdup.o `test -f 'src/libexec/poudriere/cpdup/cpdup.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/cpdup.c
@@ -1817,6 +1855,8 @@ distclean-generic:
 	-rm -f external/libnv/$(am__dirstamp)
 	-rm -f external/libucl/src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f external/libucl/src/$(am__dirstamp)
+	-rm -f src/libexec/poudriere/cached/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/libexec/poudriere/cached/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/cpdup/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/cpdup/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/$(am__dirstamp)
@@ -1850,7 +1890,7 @@ clean-am: clean-generic clean-noinstLIBRARIES clean-pkglibexecPROGRAMS \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf external/libnv/$(DEPDIR) external/libucl/src/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
+	-rm -rf external/libnv/$(DEPDIR) external/libucl/src/$(DEPDIR) src/libexec/poudriere/cached/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-tags
@@ -1905,7 +1945,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf external/libnv/$(DEPDIR) external/libucl/src/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
+	-rm -rf external/libnv/$(DEPDIR) external/libucl/src/$(DEPDIR) src/libexec/poudriere/cached/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
