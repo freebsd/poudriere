@@ -25,6 +25,7 @@
 Makefile
 _FOSSIL_
 config.status
+config.log
 host-upgrade.sh
 poudriere.fossil
 poudriered
