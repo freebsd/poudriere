@@ -184,6 +184,6 @@ hardlink_base_cp() {
 	cpdup -i0 -x "${src}" "${base}"
 	mkdir -p "${dest}"
 	# Hardlink-copy the base into the destination dir.
-	cp -xal "${base}" "${dest}"
+	cp -xal "${base}/" "${dest}/"
 	return 0
 }
