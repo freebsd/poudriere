@@ -239,7 +239,7 @@ injail() {
 	local name
 
 	_my_name name
-	rexec -s ${MASTERMNT}/.p/${name}${JNETNAME:+-${JNETNAME}}.sock \
+	rexec -s ${MASTERMNT}/../${name}${JNETNAME:+-${JNETNAME}}.sock \
 		-u ${JUSER:-root} ${MAX_MEMORY_JEXEC} "$@"
 }
 
@@ -266,13 +266,13 @@ jstart() {
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${network} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
-	jexecd -j ${name} -d ${MASTERMNT}/.p/
+	jexecd -j ${name} -d ${MASTERMNT}/../
 	jail -c persist name=${name}-n \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${ipargs} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
-	jexecd -j ${name}-n -d ${MASTERMNT}/.p/
+	jexecd -j ${name}-n -d ${MASTERMNT}/../
 	if ! injail id ${PORTBUILD_USER} >/dev/null 2>&1 ; then
 		msg_n "Creating user/group ${PORTBUILD_USER}"
 		injail pw groupadd ${PORTBUILD_USER} -g 65532 || \
@@ -2440,7 +2440,7 @@ stop_builders() {
 	local mnt
 
 	# wait for the last running processes
-	cat ${MASTERMNT}/.p/var/run/*.pid 2>/dev/null | xargs pwait 2>/dev/null
+	cat ${MASTERMNT}/.p/var/run/*.pid 3>/dev/null | xargs pwait 2>/dev/null
 
 	msg "Stopping ${PARALLEL_JOBS} builders"
 
