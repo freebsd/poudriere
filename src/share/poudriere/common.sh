@@ -3423,7 +3423,7 @@ cache_get_pkgname() {
 	local origin=${2%/}
 	local fatal="${3:-1}"
 	local _pkgname="" existing_origin
-	_pkgname=$(echo "get ${origin}" | nc -U ${CACHESOCK})
+	_pkgname=$(echo "get ${origin}" | write_usock ${CACHESOCK})
 
 	# Add to cache if not found.
 	if [ -z "${_pkgname}" ]; then
@@ -3458,7 +3458,7 @@ cache_get_origin() {
 	local pkgname="$2"
 	local _origin
 
-	_origin=$(echo "get ${pkgname}" | nc -U ${CACHESOCK})
+	_origin=$(echo "get ${pkgname}" | write_usock ${CACHESOCK})
 
 	setvar "${var_return}" "${_origin}"
 }
