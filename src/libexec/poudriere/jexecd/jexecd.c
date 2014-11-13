@@ -285,6 +285,7 @@ main(int argc, char **argv)
 	if (!jailname || !dir)
 		errx(EXIT_FAILURE, "usage: jexecd -j jailname -d working_directory");
 
+	setproctitle("poudriere(%s)", jailname);
 	snprintf(path, sizeof(path), "%s/%s.pid", dir, jailname);
 	pfh = pidfile_open(path, 0600, &otherpid);
 	if (pfh == NULL) {
