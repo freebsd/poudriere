@@ -1455,9 +1455,12 @@ show_build_results() {
 }
 
 write_usock() {
-	[ $# -eq 1 ] || eargs write_usock socket
+	[ $# -gt 1 ] || eargs write_usock socket msg
 	local socket="$1"
-	nc -U "${socket}"
+	shift
+	nc -U "${socket}" <<- EOF
+	$@
+	EOF
 }
 
 # If running as non-root, redirect this command to queue and exit
@@ -1473,10 +1476,7 @@ maybe_run_queued() {
 	this_command="${0##*/}"
 	this_command="${this_command%.sh}"
 
-	write_usock ${QUEUE_SOCKET} <<- EOF
-	command: "${this_command}", arguments: "$@"
-	EOF
-	exit
+	write_usock ${QUEUE_SOCKET} command: "${this_command}", arguments: "$@"
 }
 
 get_host_arch() {
@@ -3423,7 +3423,7 @@ cache_get_pkgname() {
 	local origin=${2%/}
 	local fatal="${3:-1}"
 	local _pkgname="" existing_origin
-	_pkgname=$(echo "get ${origin}" | write_usock ${CACHESOCK})
+	_pkgname=$(write_usock ${CACHESOCK} get ${origin})
 
 	# Add to cache if not found.
 	if [ -z "${_pkgname}" ]; then
@@ -3443,9 +3443,7 @@ cache_get_pkgname() {
 		if [ "${existing_origin}" != "${origin}" ]; then
 			[ -n "${existing_origin}" ] &&
 				err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${origin}${COLOR_RESET} AND ${COLOR_PORT}${existing_origin}${COLOR_RESET}. Rerun with -vv to see which ports are depending on these."
-			write_usock ${CACHESOCK} <<-EOF
-			set ${_pkgname} ${origin}
-			EOF
+			write_usock ${CACHESOCK} set ${_pkgname} ${origin}
 		fi
 	fi
 
@@ -3458,7 +3456,7 @@ cache_get_origin() {
 	local pkgname="$2"
 	local _origin
 
-	_origin=$(echo "get ${pkgname}" | write_usock ${CACHESOCK})
+	_origin=$(write_usock ${CACHESOCK} get ${pkgname})
 
 	setvar "${var_return}" "${_origin}"
 }
