@@ -521,7 +521,7 @@ execute_cmd()
 	    &action, NULL, argv, environ)) != 0) {
 		errno = error;
 		close(logfd);
-		syslog(LOG_ERR, "Cannot run poudriere");
+		syslog(LOG_ERR, "Cannot run poudriere: %s", strerror(errno));
 		ucl_object_unref(running);
 		running = NULL;
 		goto done;
