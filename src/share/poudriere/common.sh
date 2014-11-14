@@ -1477,6 +1477,7 @@ maybe_run_queued() {
 	this_command="${this_command%.sh}"
 
 	write_usock ${QUEUE_SOCKET} command: "${this_command}", arguments: "$@"
+	exit
 }
 
 get_host_arch() {
