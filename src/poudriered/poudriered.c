@@ -514,14 +514,13 @@ execute_cmd()
 			}
 			argv[argc++] = arg;
 		}
-		argv[argc+1] = NULL;
 	}
+	argv[argc] = NULL;
 
 	if ((error = posix_spawn(&pid, PREFIX "/bin/poudriere",
 	    &action, NULL, argv, environ)) != 0) {
-		errno = error;
 		close(logfd);
-		syslog(LOG_ERR, "Cannot run poudriere: %s", strerror(errno));
+		syslog(LOG_ERR, "Cannot run poudriere: %s", strerror(error));
 		ucl_object_unref(running);
 		running = NULL;
 		goto done;
