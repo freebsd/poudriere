@@ -657,7 +657,6 @@ client_new(int fd)
 {
 	socklen_t sz;
 	struct client *cl;
-	int flags;
 
 	if ((cl = malloc(sizeof(struct client))) == NULL)
 		errx(EXIT_FAILURE, "Unable to allocate memory");
@@ -678,12 +677,6 @@ client_new(int fd)
 
 	if (getpeereid(cl->fd, &cl->uid, &cl->gid) != 0)
 		err(EXIT_FAILURE, "getpeereid()");
-
-	if ((flags = fcntl(cl->fd, F_GETFL, 0)) == -1)
-		flags = 0;
-
-	if ((fcntl(cl->fd, F_SETFL, flags | O_NONBLOCK)) == -1)
-		err(EXIT_FAILURE, "fcntl(O_NONBLOCK)");
 
 	return (cl);
 }
@@ -826,8 +819,9 @@ main(void)
 	struct sockaddr_un un;
 	struct pidfh *pfh;
 	pid_t otherpid;
+	bool foreground = false;
 
-	const ucl_object_t *sock_path_o, *pidfile_path_o;
+	const ucl_object_t *sock_path_o, *pidfile_path_o, *foreground_o;
 
 	if ((conf = load_conf()) == NULL)
 		return (EXIT_FAILURE);
@@ -843,6 +837,9 @@ main(void)
 		ucl_object_unref(conf);
 		return (EXIT_FAILURE);
 	}
+
+	if ((foreground_o = ucl_object_find_key(conf, "foreground")) != NULL)
+		foreground = ucl_object_toboolean(foreground_o);
 
 	pfh = pidfile_open(ucl_object_tostring(pidfile_path_o), 0644,
 		&otherpid);
@@ -888,7 +885,7 @@ main(void)
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGHUP, reload_signal);
 
-	if (daemon(0, 0) == -1) {
+	if (!foreground && daemon(0, 0) == -1) {
 		pidfile_remove(pfh);
 		err(EXIT_FAILURE, "Cannot daemonize");
 	}
