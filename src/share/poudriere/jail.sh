@@ -150,7 +150,7 @@ update_version_env() {
 	local login_env osversion
 
 	osversion=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILMNT}/usr/include/sys/param.h`
-	login_env=",UNAME_r=${release% *},UNAME_v=FreeBSD ${release},OSVERSION=${osversion},PKG_ENV=ABI_FILE=\/usr\/lib\/crt1.o"
+	login_env=",UNAME_r=${release% *},UNAME_v=FreeBSD ${release},OSVERSION=${osversion},ABI_FILE=\/usr\/lib\/crt1.o"
 
 	# XXX - Need to support qemu here
 	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
@@ -351,6 +351,7 @@ build_and_install_world() {
 		STRINGS=/nxb-bin/usr/bin/strings
 		AWK=/nxb-bin/usr/bin/awk
 		FLEX=/nxb-bin/usr/bin/flex
+		PKG_ENV=/usr/lib/crt1.o
 		EOF
 	fi
 }
