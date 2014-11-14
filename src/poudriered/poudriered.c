@@ -564,7 +564,7 @@ append_to_queue(const ucl_object_t *cmd)
 static void
 client_exec(struct client *cl)
 {
-	const ucl_object_t *c, *cmd_cred;
+	const ucl_object_t *c, *cmd_cred, *a;
 	bool cmd_allowed = false;
 	struct ucl_parser *p;
 	ucl_object_t *cmd, *msg;
@@ -623,10 +623,14 @@ client_exec(struct client *cl)
 	/* validate credentials */
 	cmd_allowed = is_command_allowed(c, cl, &cmd_cred);
 
+	c = ucl_object_find_key(cmd, "arguments");
+	if (c && (c->type != UCL_STRING)) {
+		send_error(cl, "Expecting a string for the arguments");
+		ucl_object_unref(cmd);
+		return;
+	}
+
 	if (!cmd_allowed && (cmd_cred != NULL)) {
-		c = ucl_object_find_key(cmd, "arguments");
-		if (c && (c->type != UCL_STRING))
-			send_error(cl, "Expecting a string for the arguments");
 		if (c && (c->type == UCL_STRING))
 			cmd_allowed = is_arguments_allowed(c, cmd_cred, cl);
 	}
