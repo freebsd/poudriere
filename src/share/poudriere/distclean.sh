@@ -44,8 +44,8 @@ EOF
 	exit 1
 }
 
-SCRIPTPATH=`realpath $0`
-SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
+SCRIPTPATH=$(realpath $0)
+SCRIPTPREFIX=${SCRIPTPATH%/*}
 DRY_RUN=0
 ALL=1
 

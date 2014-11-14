@@ -62,8 +62,8 @@ stop_queue_reader() {
 }
 
 
-SCRIPTPATH=`realpath $0`
-SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
+SCRIPTPATH=$(realpath $0)
+SCRIPTPREFIX=${SCRIPTPATH%/*}
 PTNAME="default"
 NODAEMONIZE=0
 KILL=0
