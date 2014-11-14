@@ -27,7 +27,7 @@
 # SUCH DAMAGE.
 
 BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
-. $(dirname ${0})/include/common.sh.${BSDPLATFORM}
+. ${SCRIPTPREFIX}/include/common.sh.${BSDPLATFORM}
 BLACKLIST=""
 
 # Return true if ran from bulk/testport, ie not daemon/status/jail
@@ -4437,9 +4437,9 @@ TIME_START=$(date +%s)
 
 [ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}
 
-. $(dirname ${0})/include/colors.sh
-. $(dirname ${0})/include/display.sh
-. $(dirname ${0})/include/html.sh
-. $(dirname ${0})/include/parallel.sh
-. $(dirname ${0})/include/hash.sh
-. $(dirname ${0})/include/fs.sh
+. ${SCRIPTPREFIX}/include/colors.sh
+. ${SCRIPTPREFIX}/include/display.sh
+. ${SCRIPTPREFIX}/include/html.sh
+. ${SCRIPTPREFIX}/include/parallel.sh
+. ${SCRIPTPREFIX}/include/hash.sh
+. ${SCRIPTPREFIX}/include/fs.sh
