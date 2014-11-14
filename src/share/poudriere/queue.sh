@@ -31,8 +31,8 @@ usage() {
 	exit 1
 }
 
-SCRIPTPATH=`realpath $0`
-SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
+SCRIPTPATH=$(realpath $0)
+SCRIPTPREFIX=${SCRIPTPATH%/*}
 . ${SCRIPTPREFIX}/common.sh
 
 [ $# -le 2 ] && usage

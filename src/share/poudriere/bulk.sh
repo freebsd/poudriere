@@ -80,8 +80,8 @@ bulk_cleanup() {
 	[ -n "${CRASHED}" ] && run_hook bulk crashed
 }
 
-SCRIPTPATH=`realpath $0`
-SCRIPTPREFIX=`dirname ${SCRIPTPATH}`
+SCRIPTPATH=$(realpath $0)
+SCRIPTPREFIX=${SCRIPTPATH%/*}
 PTNAME="default"
 SKIPSANITY=0
 SKIP_RECURSIVE_REBUILD=0
