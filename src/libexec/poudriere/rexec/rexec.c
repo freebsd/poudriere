@@ -42,8 +42,8 @@ main(int argc, char **argv)
 	int ch;
 	int fd;
 	int i;
-	char *sock;
-	char *user;
+	char *sock = NULL;
+	char *user = NULL;
 	nvlist_t *nv, *arguments;
 	char key[4];
 
@@ -59,6 +59,9 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
+	if (!sock)
+		errx(EXIT_FAILURE, "rexec -s <socketpath> [-u user] <cmd>");
+
 	if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
 		err(EXIT_FAILURE, "socket()");
 
@@ -72,7 +75,9 @@ main(int argc, char **argv)
 	nv = nvlist_create(0);
 	arguments = nvlist_create(0);
 
-	nvlist_add_string(nv, "user", user);
+	if (user)
+		nvlist_add_string(nv, "user", user);
+
 	nvlist_add_string(nv, "command", argv[0]);
 	for (i = 0; i < argc; i++) {
 		snprintf(key, sizeof(key), "%d", i);
