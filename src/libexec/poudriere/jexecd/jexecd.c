@@ -117,7 +117,10 @@ client_read(struct client *cl)
 	if (nv == NULL)
 		err(EXIT_FAILURE, "nvlist_recv() failed");
 
-	username = nvlist_get_string(nv, "user");
+	if (nvlist_exists_string(nv, "user"))
+		username = nvlist_get_string(nv, "user");
+	else
+		username = "root";
 	command = nvlist_get_string(nv, "command");
 	fderr = nvlist_take_descriptor(nv, "stderr");
 	fdout = nvlist_take_descriptor(nv, "stdout");
