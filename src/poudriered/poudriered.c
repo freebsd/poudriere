@@ -83,6 +83,20 @@ send_object(struct client *cl, ucl_object_t *o)
 	ucl_object_unref(o);
 }
 
+static void
+send_ok(struct client *cl, const char *msg)
+{
+	ucl_object_t *umsg = NULL;
+	ucl_object_t *o;
+
+	umsg = ucl_object_typed_new(UCL_OBJECT);
+	o = ucl_object_fromstring_common("ok", 2, 0);
+	ucl_object_insert_key(umsg, o, "type", 4, true);
+	o = ucl_object_fromstring_common(msg, strlen(msg), UCL_STRING_TRIM);
+	ucl_object_insert_key(umsg, o, "message", 7, true);
+
+	send_object(cl, umsg);
+}
 
 static void
 send_error(struct client *cl, const char *msg)
@@ -507,7 +521,9 @@ execute_cmd()
 	    &action, NULL, argv, environ)) != 0) {
 		errno = error;
 		close(logfd);
-		warn("Cannot run poudriere");
+		syslog(LOG_ERR, "Cannot run poudriere");
+		ucl_object_unref(running);
+		running = NULL;
 		goto done;
 	}
 
@@ -629,6 +645,8 @@ client_exec(struct client *cl)
 		ucl_object_unref(cmd);
 		return;
 	}
+
+	send_ok(cl, "command queued");
 }
 
 
