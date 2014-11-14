@@ -28,6 +28,7 @@
 #include <sys/event.h>
 #include <sys/param.h>
 #include <sys/time.h>
+#include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
@@ -267,8 +268,10 @@ main(int argc, char **argv)
 	struct pidfh *pfh;
 	bool foreground = false;
 	int server_fd = -1;
+	uint64_t	mem = 0;
+	struct rlimit limits;
 	
-	while ((ch = getopt(argc, argv, "j:d:f")) != -1) {
+	while ((ch = getopt(argc, argv, "j:d:fm:")) != -1) {
 		switch (ch) {
 		case 'd':
 			dir = optarg;
@@ -279,11 +282,24 @@ main(int argc, char **argv)
 		case 'f':
 			foreground = true;
 			break;
+		case 'm':
+			if (expand_number(optarg, &mem) < 0)
+				errx(EXIT_FAILURE, "Unrecognized value for "
+				    "memory: '%s'", optarg);
 		}
 	}
 
 	if (!jailname || !dir)
 		errx(EXIT_FAILURE, "usage: jexecd -j jailname -d working_directory");
+
+	if (mem > 0) {
+		if (getrlimit(RLIMIT_AS, &limits) < 0)
+			errx(EXIT_FAILURE, "Unable to get the memory limits");
+		limits.rlim_cur = mem;
+		limits.rlim_max = mem;
+		if (setrlimit(RLIMIT_AS, &limits) < 0)
+			errx(EXIT_FAILURE, "Unable the set the memory limits");
+	}
 
 	setproctitle("poudriere(%s)", jailname);
 	snprintf(path, sizeof(path), "%s/%s.pid", dir, jailname);

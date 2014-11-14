@@ -240,7 +240,7 @@ injail() {
 
 	_my_name name
 	rexec -s ${MASTERMNT}/../${name}${JNETNAME:+-${JNETNAME}}.sock \
-		-u ${JUSER:-root} ${MAX_MEMORY_JEXEC} "$@"
+		-u ${JUSER:-root} "$@"
 }
 
 injail_tty() {
@@ -266,13 +266,13 @@ jstart() {
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${network} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
-	jexecd -j ${name} -d ${MASTERMNT}/../
+	jexecd -j ${name} -d ${MASTERMNT}/../ ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}}
 	jail -c persist name=${name}-n \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${ipargs} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
-	jexecd -j ${name}-n -d ${MASTERMNT}/../
+	jexecd -j ${name}-n -d ${MASTERMNT}/../ ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}}
 	if ! injail id ${PORTBUILD_USER} >/dev/null 2>&1 ; then
 		msg_n "Creating user/group ${PORTBUILD_USER}"
 		injail pw groupadd ${PORTBUILD_USER} -g 65532 || \
