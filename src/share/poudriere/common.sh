@@ -3820,7 +3820,7 @@ prepare_ports() {
 		get_cache_dir cache_dir
 
 		# Sync in HTML files through a base dir
-		hardlink_base_cp "${HTMLPREFIX}" "${log_top}/.html" "${log}"
+		install_html_files "${HTMLPREFIX}" "${log_top}/.html" "${log}"
 		# Create log dirs
 		mkdir -p ${log}/../../latest-per-pkg \
 		    ${log}/../latest-per-pkg \

@@ -15,7 +15,7 @@ var impulse_interval = 			impulse_target_period / updateInterval;
 var page_type;
 var page_buildname;
 var page_mastername;
-var data_url;
+var data_url = '';
 
 function getParameterByName(name) {
 	name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
@@ -39,7 +39,7 @@ function scrollToElement(element) {
 
 function update_data() {
 	$.ajax({
-		url: data_url + '/.data.json',
+		url: data_url + '.data.json',
 		dataType: 'json',
 		headers: {
 			'Cache-Control': 'max-age=0',
@@ -221,9 +221,16 @@ function display_impulse(stats, snap) {
 	$('#snap_impulse').html(pkghour);
 }
 
-function jail_url(mastername, buildname) {
-	return 'jail.html?' +
-		'mastername=' + encodeURIComponent(mastername);
+function jail_url(mastername) {
+	if (server_style == "hosted") {
+		if (mastername) {
+			return 'jail.html?mastername=' + encodeURIComponent(mastername);
+		} else {
+			return '#';
+		}
+	} else {
+		return '../';
+	}
 }
 
 function format_mastername(mastername) {
@@ -294,7 +301,7 @@ function format_log(pkgname, errors, text) {
 	var html;
 
 	html = '<a target="logs" title="Log for ' + pkgname + '" href="' +
-		data_url + '/logs/' + (errors ? 'errors/' : '') +
+		data_url + 'logs/' + (errors ? 'errors/' : '') +
 		pkgname + '.log"><span class="glyphicon glyphicon-file"></span>' +
 		text + '</a>';
 	return html;
@@ -702,6 +709,33 @@ function process_data_index(data) {
 function process_data(data) {
 	var should_reload;
 
+	// Determine what kind of data this file actually is. Due to handling
+	// file:// and inline-style setups, it may be unknown what was fetched.
+	if (data.buildname) {
+		// If the current page is not build.html, then redirect for the
+		// sake of file:// loading.
+		if (page_type != "build") {
+			location.href = "build.html";
+			return;
+		}
+		page_type = 'build';
+		if (data.buildname) {
+			page_buildname = data.buildname;
+		}
+	} else if (data.builds) {
+		page_type = 'jail';
+	} else if (data.masternames) {
+		page_type = 'index';
+	} else {
+		$('#loading p').text("Invalid request. Unknown data type.")
+			.addClass('error');
+		return;
+	}
+
+	if (data.mastername) {
+		page_mastername = data.mastername;
+	}
+
 	if (page_type == "build") {
 		should_reload = process_data_build(data);
 	} else if (page_type == "jail") {
@@ -1073,39 +1107,52 @@ $(document).ready(function() {
 	} else {
 		page_type = pathname.substr(0, pathname.length - 5);
 	}
+
 	if (page_type == "build") {
-		page_mastername = getParameterByName("mastername");
-		page_buildname = getParameterByName("build");
-		if (!page_buildname || !page_mastername) {
-			$('#loading p').text('Invalid request. Mastername and Build required.').addClass('error');
-			return;
+		if (server_style == "hosted") {
+			page_mastername = getParameterByName("mastername");
+			page_buildname = getParameterByName("build");
+			if (!page_mastername || !page_buildname) {
+				$('#loading p').text('Invalid request. Mastername and Build required.').addClass('error');
+				return;
+			}
+			data_url = 'data/' + page_mastername + '/' +
+			    page_buildname + '/';
+			$('a.data_url').each(function() {
+				var href = $(this).attr('href');
+				$(this).attr('href', data_url + href);
+			});
+			$('#master_link').attr('href', jail_url(page_mastername));
+		} else if (server_style == "inline") {
+			$('#master_link').attr('href', '../');
+			$('#index_link').attr('href', '../../');
 		}
-		data_url = 'data/' + page_mastername + '/' + page_buildname;
-		$('a.data_url').each(function() {
-			var href = $(this).attr('href');
-			$(this).attr('href', data_url + '/' + href);
-		});
-		$('#master_link').attr('href', jail_url(page_mastername));
 		setup_build();
 	} else if (page_type == "jail") {
-		page_mastername = getParameterByName("mastername");
-		if (!page_mastername) {
-			$('#loading p').text('Invalid request. Mastername required.').addClass('error');
-			return;
+		if (server_style == "hosted") {
+			page_mastername = getParameterByName("mastername");
+			if (!page_mastername) {
+				$('#loading p').text('Invalid request. Mastername required.').addClass('error');
+				return;
+			}
+			data_url = 'data/' + page_mastername + '/';
+			$('a.data_url').each(function() {
+				var href = $(this).attr('href');
+				$(this).attr('href', data_url + href);
+			});
+			$('#latest_url').attr('href', build_url(page_mastername, 'latest'));
+		} else if (server_style == "inline") {
+			$('#index_link').attr('href', '../');
 		}
-		data_url = 'data/' + page_mastername;
-		$('a.data_url').each(function() {
-			var href = $(this).attr('href');
-			$(this).attr('href', data_url + '/' + href);
-		});
-		$('#latest_url').attr('href', build_url(page_mastername, 'latest'));
 		setup_jail();
 	} else if (page_type == "index") {
-		data_url = 'data';
-		$('a.data_url').each(function() {
-			var href = $(this).attr('href');
-			$(this).attr('href', data_url + '/' + href);
-		});
+		if (server_style == "hosted") {
+			data_url = 'data/';
+			$('a.data_url').each(function() {
+				var href = $(this).attr('href');
+				$(this).attr('href', data_url + href);
+			});
+		}
 		setup_index();
 	} else {
 		$('#loading p').text("Invalid request. Unhandled page type '" +

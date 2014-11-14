@@ -140,3 +140,37 @@ stop_html_json() {
 	build_all_json 2>/dev/null || :
 	rm -f ${log}/.data.json.tmp ${log}/.data.mini.json.tmp 2>/dev/null || :
 }
+
+# Create/Update a base dir and then hardlink-copy the files into the
+# dest dir. This is used for HTML copying to keep space usage efficient.
+install_html_files() {
+	[ $# -eq 3 ] || eargs install_html_files src base dest
+	local src="$1"
+	local base="$2"
+	local dest="$3"
+
+	# Update the base copy
+	cpdup -i0 -x "${src}" "${base}"
+
+	# Mark this HTML as inline rather than hosted. This means
+	# it will support Indexes and file://, rather than the
+	# aliased /data dir. This can easily be auto-detected via JS
+	# but due to FF file:// restrictions requires a hack which
+	# results in a 404 for every page load.
+	if grep -q 'server_style = "hosted"' \
+	    "${log_top}/.html/index.html"; then
+		sed -i '' -e \
+		's/server_style = "hosted"/server_style = "inline"/' \
+		${log_top}/.html/*.html
+	fi
+
+	mkdir -p "${dest}"
+	# Hardlink-copy the base into the destination dir.
+	cp -xal "${base}/" "${dest}/"
+
+	# Symlink the build properly
+	ln -fs build.html "${dest}/index.html"
+	rm -f "${dest}/jail.html"
+
+	return 0
+}
