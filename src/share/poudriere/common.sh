@@ -32,17 +32,18 @@ BLACKLIST=""
 
 # Return true if ran from bulk/testport, ie not daemon/status/jail
 was_a_bulk_run() {
-	[ "${0##*/}" = "bulk.sh" -o "${0##*/}" = "testport.sh" ]
+	[ "${SCRIPTPATH##*/}" = "bulk.sh" -o "${SCRIPTPATH##*/}" \
+	    = "testport.sh" ]
 }
 # Return true if in a bulk or other jail run that needs to shutdown the jail
 was_a_jail_run() {
-	was_a_bulk_run ||  [ "${0##*/}" = "pkgclean.sh" ]
+	was_a_bulk_run ||  [ "${SCRIPTPATH##*/}" = "pkgclean.sh" ]
 }
 # Return true if output via msg() should show elapsed time
 should_show_elapsed() {
 	[ -z "${TIME_START}" ] && return 1
 	[ "${NO_ELAPSED_IN_MSG:-0}" -eq 1 ] && return 1
-	case "${0##*/}" in
+	case "${SCRIPTPATH##*/}" in
 		daemon.sh) ;;
 		help.sh) ;;
 		queue.sh) ;;
@@ -1144,7 +1145,7 @@ enter_interactive() {
 	echo "127.0.0.1 ${MASTERNAME}" >> ${MASTERMNT}/etc/hosts
 
 	# Skip for testport as it has already installed pkg in the ref jail.
-	if [ ${PKGNG} -eq 1 -a "${0##*/}" != "testport.sh" ]; then
+	if [ ${PKGNG} -eq 1 -a "${SCRIPTPATH##*/}" != "testport.sh" ]; then
 		# Install pkg-static so full pkg package can install
 		ensure_pkg_installed force_extract || \
 		    err 1 "Unable to extract pkg."
@@ -1473,7 +1474,7 @@ maybe_run_queued() {
 	/usr/sbin/service poudriered onestatus >/dev/null 2>&1 || \
 	    err 1 "This command requires root or poudriered running"
 
-	this_command="${0##*/}"
+	this_command="${SCRIPTPATH##*/}"
 	this_command="${this_command%.sh}"
 
 	write_usock ${QUEUE_SOCKET} command: "${this_command}", arguments: "$@"
@@ -2336,8 +2337,8 @@ _real_build_port() {
 				die=1
 				cat ${mod1}
 			fi
-			[ ${die} -eq 1 -a "${0##*/}" = "testport.sh" -a \
-			    "${PREFIX}" != "${LOCALBASE}" ] && msg \
+			[ ${die} -eq 1 -a "${SCRIPTPATH##*/}" = "testport.sh" \
+			    -a "${PREFIX}" != "${LOCALBASE}" ] && msg \
 			    "This test was done with PREFIX!=LOCALBASE which \
 may show failures if the port does not respect PREFIX. \
 Try testport with -n to use PREFIX=LOCALBASE"
@@ -2705,7 +2706,8 @@ parallel_build() {
 	local nremaining=$(calculate_tobuild)
 
 	# Subtract the 1 for the main port to test
-	[ "${0##*/}" = "testport.sh" ] && nremaining=$((${nremaining} - 1))
+	[ "${SCRIPTPATH##*/}" = "testport.sh" ] && \
+	    nremaining=$((${nremaining} - 1))
 
 	# If pool is empty, just return
 	[ ${nremaining} -eq 0 ] && return 0
@@ -3965,7 +3967,7 @@ prepare_ports() {
 		nbq=0
 		nbq=$(find ${MASTERMNT}/.p/deps -type d -depth 1 | wc -l)
 		# Add 1 for the main port to test
-		[ "${0##*/}" = "testport.sh" ] && nbq=$((${nbq} + 1))
+		[ "${SCRIPTPATH##*/}" = "testport.sh" ] && nbq=$((${nbq} + 1))
 		bset stats_queued ${nbq##* }
 	fi
 
