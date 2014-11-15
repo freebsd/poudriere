@@ -483,8 +483,13 @@ execute_cmd()
 		mkdirs(ucl_object_tostring(l), true);
 	logfd = open(l != NULL ? ucl_object_tostring(l) : "/tmp/poudriered.log",
 		O_CREAT|O_RDWR|O_TRUNC, 0644);
+	if (logfd == -1) {
+		syslog(LOG_ERR, "Unable to open %s: %s",
+		    l != NULL ? ucl_object_tostring(l) : "/tmp/poudriered.log",
+		    strerror(errno));
+	}
 	if (logfd == -1 && (logfd = open("/dev/null", O_RDWR)) == -1) {
-		warn("Unable to open /dev/null");
+		syslog(LOG_ERR, "Unable to open /dev/null");
 		return;
 	}
 
