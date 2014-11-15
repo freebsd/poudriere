@@ -584,6 +584,18 @@ append_to_queue(const ucl_object_t *cmd)
 
 	return (true);
 }
+static void
+keep(const ucl_object_t *c, struct client *cl)
+{
+	if (c != NULL && (c->type == UCL_BOOLEAN) &&
+	    ucl_object_toboolean(c)) {
+		return;
+	}
+
+	if (cl->fd != -1)
+		close(cl->fd);
+	cl->fd = -1;
+}
 
 static void
 client_exec(struct client *cl)
@@ -631,9 +643,11 @@ client_exec(struct client *cl)
 				send_object(cl, msg);
 			} else if (!strcmp(ucl_object_tostring(c), "exit")) {
 				close(cl->fd);
+				cl->fd = -1;
 			}
 		} else
 			send_error(cl, "permission denied");
+		keep(ucl_object_find_key(cmd, "keep"), cl);
 		ucl_object_unref(cmd);
 		return;
 	}
@@ -641,6 +655,7 @@ client_exec(struct client *cl)
 	c = ucl_object_find_key(cmd, "command");
 	if ((c == NULL) || (c->type != UCL_STRING)) {
 		send_error(cl, "No command specified");
+		keep(ucl_object_find_key(cmd, "keep"), cl);
 		ucl_object_unref(cmd);
 		return;
 	}
@@ -650,6 +665,7 @@ client_exec(struct client *cl)
 	c = ucl_object_find_key(cmd, "arguments");
 	if (c && (c->type != UCL_STRING)) {
 		send_error(cl, "Expecting a string for the arguments");
+		keep(ucl_object_find_key(cmd, "keep"), cl);
 		ucl_object_unref(cmd);
 		return;
 	}
@@ -662,6 +678,7 @@ client_exec(struct client *cl)
 	if (!cmd_allowed) {
 		/* still not allowed, let's check per args */
 		send_error(cl, "Permission denied");
+		keep(ucl_object_find_key(cmd, "keep"), cl);
 		ucl_object_unref(cmd);
 		return;
 	}
@@ -669,11 +686,13 @@ client_exec(struct client *cl)
 	/* ok just proceed */
 	if (!append_to_queue(cmd)) {
 		send_error(cl, "unknown, command not queued");
+		keep(ucl_object_find_key(cmd, "keep"), cl);
 		ucl_object_unref(cmd);
 		return;
 	}
 
 	send_ok(cl, "command queued");
+	keep(ucl_object_find_key(cmd, "keep"), cl);
 }
 
 static void
