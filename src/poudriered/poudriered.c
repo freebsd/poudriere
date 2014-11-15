@@ -467,7 +467,7 @@ static void
 execute_cmd()
 {
 	posix_spawn_file_actions_t action;
-	int logfd;
+	int fds[3];
 	pid_t pid;
 	int error;
 	char **argv;
@@ -481,17 +481,18 @@ execute_cmd()
 	l = ucl_object_find_key(running, "log");
 	if (l != NULL)
 		mkdirs(ucl_object_tostring(l), true);
-	logfd = open(l != NULL ? ucl_object_tostring(l) : "/tmp/poudriered.log",
+	fds[0] = open(l != NULL ? ucl_object_tostring(l) : "/tmp/poudriered.log",
 		O_CREAT|O_RDWR|O_TRUNC, 0644);
-	if (logfd == -1) {
+	if (fds[0] == -1) {
 		syslog(LOG_ERR, "Unable to open %s: %s",
 		    l != NULL ? ucl_object_tostring(l) : "/tmp/poudriered.log",
 		    strerror(errno));
 	}
-	if (logfd == -1 && (logfd = open("/dev/null", O_RDWR)) == -1) {
+	if (fds[0] == -1 && (fds[0] = open("/dev/null", O_RDWR)) == -1) {
 		syslog(LOG_ERR, "Unable to open /dev/null");
 		return;
 	}
+	openpty(&fds[1], &fds[2], NULL, NULL, NULL);
 
 	o = ucl_object_find_key(running, "command");
 	a = ucl_object_find_key(running, "arguments");
@@ -499,8 +500,9 @@ execute_cmd()
 	    ucl_object_tostring(a));
 
 	posix_spawn_file_actions_init(&action);
-	posix_spawn_file_actions_adddup2(&action, logfd, STDOUT_FILENO);
-	posix_spawn_file_actions_adddup2(&action, logfd, STDERR_FILENO);
+	posix_spawn_file_actions_adddup2(&action, fds[2], STDIN_FILENO);
+	posix_spawn_file_actions_adddup2(&action, fds[0], STDOUT_FILENO);
+	posix_spawn_file_actions_adddup2(&action, fds[0], STDERR_FILENO);
 
 	argvl = 1024;
 	argv = malloc(argvl * sizeof(char *));
@@ -526,15 +528,20 @@ execute_cmd()
 
 	if ((error = posix_spawn(&pid, PREFIX "/bin/poudriere",
 	    &action, NULL, argv, environ)) != 0) {
-		close(logfd);
+		close(fds[0]);
+		close(fds[1]);
+		close(fds[2]);
 		syslog(LOG_ERR, "Cannot run poudriere: %s", strerror(error));
 		ucl_object_unref(running);
 		running = NULL;
 		setproctitle("idle");
 		goto done;
 	}
+	close(fds[0]);
+	close(fds[1]);
+	close(fds[2]);
 
-	EV_SET(&ke, pid, EVFILT_PROC, EV_ADD, NOTE_EXIT, 0, &logfd);
+	EV_SET(&ke, pid, EVFILT_PROC, EV_ADD, NOTE_EXIT, 0, NULL);
 	kevent(kq, &ke, 1, NULL, 0, NULL);
 	nbevq++;
 
@@ -818,8 +825,6 @@ serve(void)
 			/* process died */
 			if (evlist[i].filter == EVFILT_PROC) {
 				int status = evlist[i].data;
-				int fd = *(int *)evlist[i].udata;
-				close(fd);
 				ucl_object_unref(running);
 				if (WIFEXITED(status))
 					syslog(LOG_INFO, "Command exited with "
