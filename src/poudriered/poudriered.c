@@ -490,6 +490,8 @@ execute_cmd()
 
 	o = ucl_object_find_key(running, "command");
 	a = ucl_object_find_key(running, "arguments");
+	setproctitle("running(%s %s)", ucl_object_tostring(o),
+	    ucl_object_tostring(a));
 
 	posix_spawn_file_actions_init(&action);
 	posix_spawn_file_actions_adddup2(&action, logfd, STDOUT_FILENO);
@@ -523,6 +525,7 @@ execute_cmd()
 		syslog(LOG_ERR, "Cannot run poudriere: %s", strerror(error));
 		ucl_object_unref(running);
 		running = NULL;
+		setproctitle("idle");
 		goto done;
 	}
 
@@ -823,6 +826,7 @@ serve(void)
 					syslog(LOG_INFO, "Command terminated");
 
 				running = NULL;
+				setproctitle("idle");
 				continue;
 			}
 
@@ -910,6 +914,8 @@ main(void)
 		pidfile_remove(pfh);
 		err(EXIT_FAILURE, "Cannot daemonize");
 	}
+
+	setproctitle("idle");
 
 	pidfile_write(pfh);
 
