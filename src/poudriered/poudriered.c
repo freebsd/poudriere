@@ -168,6 +168,7 @@ reload()
 
 	nconf = load_conf();
 	if (nconf != NULL) {
+		syslog(LOG_INFO, "Configuration reloaded");
 		ucl_object_unref(conf);
 		conf = nconf;
 	}
