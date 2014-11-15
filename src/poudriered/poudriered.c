@@ -76,7 +76,7 @@ struct client {
 };
 
 static void
-maybe_restart()
+maybe_restart(void)
 {
 	struct stat st;
 	char *argv[4];
@@ -162,7 +162,7 @@ load_conf(void)
 }
 
 ucl_object_t *
-reload()
+reload(void)
 {
 	ucl_object_t *nconf;
 
@@ -177,7 +177,7 @@ reload()
 }
 
 static void
-reload_signal()
+reload_signal(void)
 {
 	(void)reload();
 }
@@ -479,7 +479,7 @@ mkdirs(const char *_path, bool lastisfile)
 }
 
 static void
-execute_cmd()
+execute_cmd(void)
 {
 	posix_spawn_file_actions_t action;
 	int fds[3];
@@ -749,7 +749,7 @@ client_new(int fd)
 }
 
 static void
-check_schedules()
+check_schedules(void)
 {
 	struct tm *now;
 	time_t now_t;
