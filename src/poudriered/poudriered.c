@@ -629,12 +629,10 @@ client_exec(struct client *cl)
 			if (!strcmp(ucl_object_tostring(c), "quit"))
 				close_socket(EXIT_SUCCESS);
 			else if (!strcmp(ucl_object_tostring(c), "reload")) {
-				ucl_object_t *nconf = reload();
-				msg = ucl_object_typed_new(UCL_OBJECT);
-				ucl_object_insert_key(msg,
-				    ucl_object_frombool(nconf != NULL),
-				    "reload", 6, true);
-				send_object(cl, msg);
+				if (!reload())
+					send_error(cl, "failed to reload");
+				else
+					send_ok(cl, "reloaded");
 			} else if (!strcmp(ucl_object_tostring(c), "queue"))
 				send_object(cl, queue);
 			else if (!strcmp(ucl_object_tostring(c), "status")) {
