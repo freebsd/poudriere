@@ -31,6 +31,7 @@
 #include <sys/time.h>
 #include <sys/sbuf.h>
 #include <sys/socket.h>
+#include <sys/sysctl.h>
 #include <sys/stat.h>
 #include <sys/un.h>
 #include <sys/wait.h>
@@ -63,6 +64,8 @@ extern char **environ;
 static int kq;
 static int nbevq = 0;
 static struct kevent ke;
+char mypath[MAXPATHLEN];
+time_t mytime;
 
 struct client {
 	int fd;
@@ -71,6 +74,30 @@ struct client {
 	uid_t uid;
 	gid_t gid;
 };
+
+static void
+maybe_restart()
+{
+	struct stat st;
+	char *argv[4];
+
+	if (stat(mypath, &st) < 0) {
+		syslog(LOG_WARNING, "Cannot self find");
+		return;
+	}
+
+	if (mytime >= st.st_mtime)
+		return;
+
+	syslog(LOG_WARNING, "Restarting");
+
+	argv[0] = "poudriered";
+	argv[1] = "-q";
+	argv[2] = (char *)ucl_object_emit(queue, UCL_EMIT_CONFIG);
+	argv[3] = NULL;
+
+	execve(mypath, argv, environ);
+}
 
 static void
 send_object(struct client *cl, ucl_object_t *o)
@@ -566,9 +593,6 @@ process_queue(void)
 static bool
 append_to_queue(const ucl_object_t *cmd)
 {
-	if (queue == NULL)
-		queue = ucl_object_typed_new(UCL_ARRAY);
-
 	ucl_array_append(queue, ucl_object_ref(cmd));
 	syslog(LOG_INFO, "New command queued");
 
@@ -700,7 +724,12 @@ client_new(int fd)
 	sz = sizeof(cl->ss);
 	cl->buf = sbuf_new_auto();
 
+#ifdef SOCK_CLOEXEC
+	cl->fd = accept4(fd, (struct sockaddr *)&(cl->ss), &sz, SOCK_CLOEXEC);
+#else
 	cl->fd = accept(fd, (struct sockaddr *)&(cl->ss), &sz);
+	fcntl(cl->fd, F_SETFD, FD_CLOEXEC);
+#endif
 
 	if (cl->fd < 0) {
 		if ((errno == EINTR) || (errno == EAGAIN) ||
@@ -843,20 +872,56 @@ serve(void)
 			if (evlist[i].filter == EVFILT_TIMER)
 				check_schedules();
 		}
+		if (running == NULL)
+			maybe_restart();
+
 		process_queue();
 	}
 }
 
-
 int
-main(void)
+main(int argc, char **argv)
 {
 	struct sockaddr_un un;
 	struct pidfh *pfh;
 	pid_t otherpid;
 	bool foreground = false;
+	int mib[4];
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_PROC;
+	mib[2] = KERN_PROC_PATHNAME;
+	mib[3] = -1;
+	size_t cb = sizeof(mypath);
+	struct stat st;
+	bool restarting = false;
 
 	const ucl_object_t *sock_path_o, *pidfile_path_o, *foreground_o;
+
+	if (argc == 3) {
+		struct ucl_parser *parser = NULL;
+
+		parser = ucl_parser_new(0);
+
+		if (!ucl_parser_add_chunk(parser,
+		    (const unsigned char *)argv[2], strlen(argv[2]))) {
+			syslog(LOG_ERR, "Failed to read the queue %s",
+			    ucl_parser_get_error(parser));
+			return (EXIT_FAILURE);
+		}
+		queue = ucl_parser_get_object(parser);
+		ucl_parser_free(parser);
+
+		restarting = true;
+	} else {
+		queue = ucl_object_typed_new(UCL_ARRAY);
+	}
+
+	sysctl(mib, 4, mypath, &cb, NULL, 0);
+
+	if (stat(mypath, &st) < 0)
+		err(EXIT_FAILURE, "Cannot self find");
+
+	mytime = st.st_mtime;
 
 	if ((conf = load_conf()) == NULL)
 		return (EXIT_FAILURE);
@@ -876,14 +941,16 @@ main(void)
 	if ((foreground_o = ucl_object_find_key(conf, "foreground")) != NULL)
 		foreground = ucl_object_toboolean(foreground_o);
 
-	pfh = pidfile_open(ucl_object_tostring(pidfile_path_o), 0644,
-		&otherpid);
-	if (pfh == NULL) {
-		if (errno == EEXIST)
-			errx(EXIT_FAILURE, "Daemon already running, pid: %jd.",
-			    (intmax_t)otherpid);
-		/* If we cannot create pidfile from other reasons, only warn. */
-		warn("Cannot open or create pidfile");
+	if (!restarting) {
+		pfh = pidfile_open(ucl_object_tostring(pidfile_path_o), 0644,
+		    &otherpid);
+		if (pfh == NULL) {
+			if (errno == EEXIST)
+				errx(EXIT_FAILURE, "Daemon already running, pid: %jd.",
+				    (intmax_t)otherpid);
+			/* If we cannot create pidfile from other reasons, only warn. */
+			warn("Cannot open or create pidfile");
+		}
 	}
 
 	memset(&un, 0, sizeof(struct sockaddr_un));
@@ -891,6 +958,7 @@ main(void)
 		ucl_object_unref(conf);
 		err(EXIT_FAILURE, "socket()");
 	}
+	fcntl(server_fd, F_SETFD, FD_CLOEXEC);
 
 	/* SO_REUSEADDR does not prevent EADDRINUSE, since we are locked by
 	 * a pid, just unlink the old socket if needed. */
@@ -920,14 +988,15 @@ main(void)
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGHUP, reload_signal);
 
-	if (!foreground && daemon(0, 0) == -1) {
+	if (!restarting && !foreground && daemon(0, 0) == -1) {
 		pidfile_remove(pfh);
 		err(EXIT_FAILURE, "Cannot daemonize");
 	}
 
 	setproctitle("idle");
 
-	pidfile_write(pfh);
+	if (!restarting)
+		pidfile_write(pfh);
 
 	if (listen(server_fd, 1024) < 0) {
 		warn("listen()");
