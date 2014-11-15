@@ -140,7 +140,6 @@ send_error(struct client *cl, const char *msg)
 	send_object(cl, umsg);
 }
 
-
 static ucl_object_t *
 load_conf(void)
 {
@@ -162,7 +161,6 @@ load_conf(void)
 	return (obj);
 }
 
-
 ucl_object_t *
 reload()
 {
@@ -177,13 +175,11 @@ reload()
 	return (nconf);
 }
 
-
 static void
 reload_signal()
 {
 	(void)reload();
 }
-
 
 static void
 close_socket(int dummy)
@@ -205,7 +201,6 @@ close_socket(int dummy)
 	exit(dummy);
 }
 
-
 void
 client_free(struct client *cl)
 {
@@ -214,7 +209,6 @@ client_free(struct client *cl)
 		close(cl->fd);
 	free(cl);
 }
-
 
 static bool
 valid_user(const ucl_object_t *o, struct client *cl)
@@ -245,7 +239,6 @@ valid_user(const ucl_object_t *o, struct client *cl)
 	return (false);
 }
 
-
 static bool
 valid_group(const ucl_object_t *o, struct client *cl)
 {
@@ -274,7 +267,6 @@ valid_group(const ucl_object_t *o, struct client *cl)
 
 	return (false);
 }
-
 
 static int
 check_argument(const ucl_object_t *cmd, struct client *cl, const char *arg)
@@ -317,7 +309,6 @@ check_argument(const ucl_object_t *cmd, struct client *cl, const char *arg)
 	return (0);
 }
 
-
 static bool
 is_arguments_allowed(const ucl_object_t *a, const ucl_object_t *cmd,
     struct client *cl)
@@ -355,7 +346,6 @@ is_arguments_allowed(const ucl_object_t *a, const ucl_object_t *cmd,
 
 	return (ok == nbargs);
 }
-
 
 static bool
 is_command_allowed(const ucl_object_t *req, struct client *cl,
@@ -405,7 +395,6 @@ is_command_allowed(const ucl_object_t *req, struct client *cl,
 	return (false);
 }
 
-
 static bool
 is_operation_allowed(const ucl_object_t *o, struct client *cl)
 {
@@ -451,7 +440,6 @@ is_operation_allowed(const ucl_object_t *o, struct client *cl)
 	return (false);
 }
 
-
 static int
 mkdirs(const char *_path, bool lastisfile)
 {
@@ -489,7 +477,6 @@ mkdirs(const char *_path, bool lastisfile)
 	return (0);
 }
 
-
 static void
 execute_cmd()
 {
@@ -508,8 +495,8 @@ execute_cmd()
 	l = ucl_object_find_key(running, "log");
 	if (l != NULL)
 		mkdirs(ucl_object_tostring(l), true);
-	fds[0] = open(l != NULL ? ucl_object_tostring(l) : "/tmp/poudriered.log",
-		O_CREAT|O_RDWR|O_TRUNC, 0644);
+	fds[0] = open(l != NULL ? ucl_object_tostring(l) :
+	    "/tmp/poudriered.log", O_CREAT|O_RDWR|O_TRUNC, 0644);
 	if (fds[0] == -1) {
 		syslog(LOG_ERR, "Unable to open %s: %s",
 		    l != NULL ? ucl_object_tostring(l) : "/tmp/poudriered.log",
@@ -577,7 +564,6 @@ done:
 	free(argv);
 }
 
-
 static void
 process_queue(void)
 {
@@ -589,7 +575,6 @@ process_queue(void)
 	execute_cmd();
 }
 
-
 static bool
 append_to_queue(const ucl_object_t *cmd)
 {
@@ -598,7 +583,6 @@ append_to_queue(const ucl_object_t *cmd)
 
 	return (true);
 }
-
 
 static void
 client_exec(struct client *cl)
@@ -691,7 +675,6 @@ client_exec(struct client *cl)
 	send_ok(cl, "command queued");
 }
 
-
 static void
 client_read(struct client *cl, long len)
 {
@@ -710,7 +693,6 @@ client_read(struct client *cl, long len)
 		sbuf_clear(cl->buf);
 	}
 }
-
 
 static struct client *
 client_new(int fd)
@@ -745,7 +727,6 @@ client_new(int fd)
 
 	return (cl);
 }
-
 
 static void
 check_schedules()
@@ -786,7 +767,6 @@ check_schedules()
 		}
 	}
 }
-
 
 static void
 serve(void)
@@ -946,9 +926,12 @@ main(int argc, char **argv)
 		    &otherpid);
 		if (pfh == NULL) {
 			if (errno == EEXIST)
-				errx(EXIT_FAILURE, "Daemon already running, pid: %jd.",
-				    (intmax_t)otherpid);
-			/* If we cannot create pidfile from other reasons, only warn. */
+				errx(EXIT_FAILURE, "Daemon already running, "
+				    "pid: %jd.", (intmax_t)otherpid);
+			/*
+			 * If we cannot create pidfile from other reasons, only
+			 * warn.
+			 */
 			warn("Cannot open or create pidfile");
 		}
 	}
