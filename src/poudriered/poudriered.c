@@ -86,7 +86,7 @@ maybe_restart()
 		return;
 	}
 
-	if (mytime >= st.st_mtime)
+	if (mytime == st.st_mtime)
 		return;
 
 	syslog(LOG_WARNING, "Restarting");
