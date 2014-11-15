@@ -644,6 +644,8 @@ client_exec(struct client *cl)
 				    running : ucl_object_new(), "data", 4,
 				    true);
 				send_object(cl, msg);
+			} else if (!strcmp(ucl_object_tostring(c), "exit")) {
+				close(cl->fd);
 			}
 		} else
 			send_error(cl, "permission denied");
