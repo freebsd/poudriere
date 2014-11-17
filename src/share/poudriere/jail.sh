@@ -369,6 +369,14 @@ build_and_install_world() {
 			rm -f ${JAILMNT}/${file}
 			sh -c "cd ${JAILMNT} && ln ./nxb-bin/${file} ${file}"
 		done
+		# Fixup /root/.profile and /root/.cshrc as some commands are 
+		# really launching interactive shells.
+                xdev_paths="\/nxb-bin\/usr\/bin \/nxb-bin\/usr\/sbin \/nxb-bin\/bin"
+                sed -i "" -e "s/\(set path \= (\)/\1${xdev_paths}/" ${JAILMNT}/root/.cshrc
+
+		# set path = (/sbin /bin /usr/sbin /usr/bin /usr/games /usr/local/sbin /usr/local/bin $HOME/bin)
+                xdev_paths="\/nxb-bin\/usr\/bin:\/nxb-bin\/usr\/sbin:\/nxb-bin\/bin:"
+                sed -i "" -e "s/\(set path \=\)/\1${xdev_paths}/" ${JAILMNT}/root/.profile
 	fi
 }
 
