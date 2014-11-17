@@ -352,6 +352,23 @@ build_and_install_world() {
 		AWK=/nxb-bin/usr/bin/awk
 		FLEX=/nxb-bin/usr/bin/flex
 		EOF
+		# hardlink these files to capture scripts and tools
+		# that explicitly call them instead of using paths.
+		HLINK_FILES="usr/bin/env usr/bin/gzip usr/bin/id \
+				usr/bin/make usr/bin/dirname usr/bin/diff \
+				usr/bin/find usr/bin/gzcat usr/bin/awk \
+				usr/bin/touch usr/bin/sed usr/bin/patch \
+				usr/bin/install usr/bin/gunzip usr/bin/sort \
+				usr/bin/tar usr/bin/xargs usr/sbin/chown bin/cp \
+				bin/cat bin/chmod bin/csh bin/echo bin/expr \
+				bin/hostname bin/ln bin/ls bin/mkdir bin/mv \
+				bin/realpath bin/rm bin/rmdir bin/sleep bin/sh \
+				sbin/sha256 sbin/sha512 sbin/sysctl sbin/md5 \
+				sbin/sha1"
+		for file in ${HLINK_FILES}; do
+			rm -f ${JAILMNT}/${file}
+			sh -c "cd ${JAILMNT} && ln ./nxb-bin/${file} ${file}"
+		done
 	fi
 }
 
