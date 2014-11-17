@@ -4215,9 +4215,16 @@ build_repo() {
 
 RESOLV_CONF=""
 STATUS=0 # out of jail #
+# cd into / to avoid foot-shooting if running from deleted dirs or
+# NFS dir which root has no access to.
+SAVED_PWD="${PWD}"
+cd /
 
 [ -z "${POUDRIERE_ETC}" ] &&
     POUDRIERE_ETC=$(realpath ${SCRIPTPREFIX}/../../etc)
+# If this is a relative path, add in ${PWD} as a cd / is done.
+[ "${POUDRIERE_ETC#/}" = "${POUDRIERE_ETC}" ] && \
+    POUDRIERE_ETC="${SAVED_PWD}/${POUDRIERE_ETC}"
 POUDRIERED=${POUDRIERE_ETC}/poudriere.d
 if [ -r "${POUDRIERE_ETC}/poudriere.conf" ]; then
 	. "${POUDRIERE_ETC}/poudriere.conf"
