@@ -93,7 +93,7 @@ CMD_ENV="PATH=${PATH} POUDRIERE_VERSION=${POUDRIERE_VERSION}"
 [ -n "${POUDRIERE_ETC}" ] && CMD_ENV="${CMD_ENV} POUDRIERE_ETC=${POUDRIERE_ETC}"
 [ -n "${USE_COLORS}" ] && CMD_ENV="${CMD_ENV} USE_COLORS=${USE_COLORS}"
 # Support running from checkout.
-[ "$0" = "src/bin/poudriere" ] && CMD_ENV="${CMD_ENV} LIBEXECPREFIX=."
+[ "$0" = "src/bin/poudriere" ] && CMD_ENV="${CMD_ENV} LIBEXECPREFIX=${PWD}"
 
 # Handle special-case commands first.
 case "${CMD}" in

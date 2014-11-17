@@ -135,6 +135,10 @@ while getopts "B:iIf:j:J:CcknNp:RFtrTsSvwz:a" FLAG; do
 			DRY_MODE="${COLOR_DRY_MODE}[Dry Run]${COLOR_RESET} "
 			;;
 		f)
+			# If this is a relative path, add in ${PWD} as
+			# a cd / was done.
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			LISTPKGS="${LISTPKGS} ${OPTARG}"
 			;;
 		F)

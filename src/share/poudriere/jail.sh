@@ -855,7 +855,11 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:x" FLAG; do
 			;;
 		P)
 			[ -f ${OPTARG} ] || err 1 "No such patch"
-			SRCPATCHFILE=${OPTARG}
+			# If this is a relative path, add in ${PWD} as
+			# a cd / was done.
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			    OPTARG="${SAVED_PWD}/${OPTARG}"
+			SRCPATCHFILE="${OPTARG}"
 			;;
 		q)
 			QUIET=1
