@@ -163,7 +163,7 @@ update_version_env() {
 		# to ensure we pickup the amd64 toolchain for the architecture.  This makes things
 		# stop using so much emulation during the builds.
 		xdev_paths="\/nxb-bin\/usr\/bin \/nxb-bin\/usr\/sbin \/nxb-bin\/bin"
-		sed -i "" -e "s/\(\:path\=\)/\1${xdev_paths}/" ${JAILMNT}/etc/login.conf
+		sed -i "" -e "s/\(\:path\=\)/\1${xdev_paths} /" ${JAILMNT}/etc/login.conf
 	fi
 	cap_mkdb ${JAILMNT}/etc/login.conf
 }
