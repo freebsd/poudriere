@@ -150,6 +150,7 @@ install_html_files() {
 	local dest="$3"
 
 	# Update the base copy
+	mkdir -p "${base}"
 	cpdup -i0 -x "${src}" "${base}"
 
 	# Mark this HTML as inline rather than hosted. This means
