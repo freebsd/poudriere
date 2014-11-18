@@ -73,7 +73,11 @@ while getopts "cCj:f:p:nrsz:" FLAG; do
 			JAILNAME=${OPTARG}
 			;;
 		f)
-			BULK_LIST=${OPTARG}
+			# If this is a relative path, add in ${PWD} as
+			# a cd / was done.
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			    OPTARG="${SAVED_PWD}/${OPTARG}"
+			BULK_LIST="${OPTARG}"
 			;;
 		p)
 			porttree_exists ${OPTARG} ||
