@@ -77,6 +77,10 @@ while getopts "aj:J:f:nNp:Rvyz:" FLAG; do
 			PARALLEL_JOBS=${OPTARG}
 			;;
 		f)
+			# If this is a relative path, add in ${PWD} as
+			# a cd / was done.
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			LISTPKGS="${LISTPKGS} ${OPTARG}"
 			;;
 		n)
