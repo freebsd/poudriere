@@ -352,6 +352,12 @@ build_and_install_world() {
 		AWK=/nxb-bin/usr/bin/awk
 		FLEX=/nxb-bin/usr/bin/flex
 		EOF
+
+		# strip is broken on mips64, avoid it until its fixed
+		if [ ${TARGET_ARCH} = "mips64" ]; then
+			echo "WITH_DEBUG=y" >> ${JAILMNT}/etc/make.conf
+		fi
+
 		# hardlink these files to capture scripts and tools
 		# that explicitly call them instead of using paths.
 		HLINK_FILES="usr/bin/env usr/bin/gzip usr/bin/id \
