@@ -158,13 +158,6 @@ update_version_env() {
 		login_env="${login_env},UNAME_p=i386,UNAME_m=i386"
 
 	sed -i "" -e "s/,UNAME_r.*:/:/ ; s/:\(setenv.*\):/:\1${login_env}:/" ${JAILMNT}/etc/login.conf
-	if [ ${XDEV} -eq 1 ]; then
-		# If we are using the XDEV tool chain, prepend /nxb-bin to the login.conf path
-		# to ensure we pickup the amd64 toolchain for the architecture.  This makes things
-		# stop using so much emulation during the builds.
-		xdev_paths="\/nxb-bin\/usr\/bin \/nxb-bin\/usr\/sbin \/nxb-bin\/bin"
-		sed -i "" -e "s/\(\:path\=\)/\1${xdev_paths} /" ${JAILMNT}/etc/login.conf
-	fi
 	cap_mkdb ${JAILMNT}/etc/login.conf
 }
 
@@ -375,14 +368,6 @@ build_and_install_world() {
 			rm -f ${JAILMNT}/${file}
 			sh -c "cd ${JAILMNT} && ln ./nxb-bin/${file} ${file}"
 		done
-		# Fixup /root/.profile and /root/.cshrc as some commands are 
-		# really launching interactive shells.
-                xdev_paths="\/nxb-bin\/usr\/bin \/nxb-bin\/usr\/sbin \/nxb-bin\/bin"
-                sed -i "" -e "s/\(set path \= (\)/\1${xdev_paths}/" ${JAILMNT}/root/.cshrc
-
-		# set path = (/sbin /bin /usr/sbin /usr/bin /usr/games /usr/local/sbin /usr/local/bin $HOME/bin)
-                xdev_paths="\/nxb-bin\/usr\/bin:\/nxb-bin\/usr\/sbin:\/nxb-bin\/bin:"
-                sed -i "" -e "s/\(set path \=\)/\1${xdev_paths}/" ${JAILMNT}/root/.profile
 	fi
 }
 
