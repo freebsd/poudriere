@@ -152,19 +152,17 @@ update_version_env() {
 	osversion=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILMNT}/usr/include/sys/param.h`
 	login_env=",UNAME_r=${release% *},UNAME_v=FreeBSD ${release},OSVERSION=${osversion},ABI_FILE=\/usr\/lib\/crt1.o"
 
-	# XXX - Need to support qemu here
 	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
 	[ "${ARCH%.*}" = "i386" -a "${REALARCH}" = "amd64" ] &&
 		login_env="${login_env},UNAME_p=i386,UNAME_m=i386"
 
-	sed -i "" -e "s/,UNAME_r.*:/:/ ; s/:\(setenv.*\):/:\1${login_env}:/" ${JAILMNT}/etc/login.conf
-	if [ ${XDEV} -eq 1 ]; then
-		# If we are using the XDEV tool chain, prepend /nxb-bin to the login.conf path
-		# to ensure we pickup the amd64 toolchain for the architecture.  This makes things
-		# stop using so much emulation during the builds.
-		xdev_paths="\/nxb-bin\/usr\/bin \/nxb-bin\/usr\/sbin \/nxb-bin\/bin"
-		sed -i "" -e "s/\(\:path\=\)/\1${xdev_paths} /" ${JAILMNT}/etc/login.conf
+	if need_emulation "${REALARCH}" "${ARCH}"; then
+		# QEMU/emulator support here.  Setup MACHINE/MACHINE_ARCH for bmake to be happy.
+		# UNAME variables are currently handled by QEMU, no need to override
+		login_env="${login_env},MACHINE=${ARCH%.*},MACHINE_ARCH=${ARCH#*.}"
 	fi
+	
+	sed -i "" -e "s/,UNAME_r.*:/:/ ; s/:\(setenv.*\):/:\1${login_env}:/" ${JAILMNT}/etc/login.conf
 	cap_mkdb ${JAILMNT}/etc/login.conf
 }
 
@@ -352,6 +350,12 @@ build_and_install_world() {
 		AWK=/nxb-bin/usr/bin/awk
 		FLEX=/nxb-bin/usr/bin/flex
 		EOF
+
+		# strip is broken on mips64, avoid it until its fixed
+		if [ ${TARGET_ARCH} = "mips64" ]; then
+			echo "WITH_DEBUG=y" >> ${JAILMNT}/etc/make.conf
+		fi
+
 		# hardlink these files to capture scripts and tools
 		# that explicitly call them instead of using paths.
 		HLINK_FILES="usr/bin/env usr/bin/gzip usr/bin/id \
@@ -363,20 +367,11 @@ build_and_install_world() {
 				bin/cat bin/chmod bin/csh bin/echo bin/expr \
 				bin/hostname bin/ln bin/ls bin/mkdir bin/mv \
 				bin/realpath bin/rm bin/rmdir bin/sleep bin/sh \
-				sbin/sha256 sbin/sha512 sbin/sysctl sbin/md5 \
-				sbin/sha1"
+				sbin/sha256 sbin/sha512 sbin/md5 sbin/sha1"
 		for file in ${HLINK_FILES}; do
 			rm -f ${JAILMNT}/${file}
 			sh -c "cd ${JAILMNT} && ln ./nxb-bin/${file} ${file}"
 		done
-		# Fixup /root/.profile and /root/.cshrc as some commands are 
-		# really launching interactive shells.
-                xdev_paths="\/nxb-bin\/usr\/bin \/nxb-bin\/usr\/sbin \/nxb-bin\/bin"
-                sed -i "" -e "s/\(set path \= (\)/\1${xdev_paths}/" ${JAILMNT}/root/.cshrc
-
-		# set path = (/sbin /bin /usr/sbin /usr/bin /usr/games /usr/local/sbin /usr/local/bin $HOME/bin)
-                xdev_paths="\/nxb-bin\/usr\/bin:\/nxb-bin\/usr\/sbin:\/nxb-bin\/bin:"
-                sed -i "" -e "s/\(set path \=\)/\1${xdev_paths}/" ${JAILMNT}/root/.profile
 	fi
 }
 
