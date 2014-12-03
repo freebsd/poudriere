@@ -352,7 +352,7 @@ build_and_install_world() {
 		EOF
 
 		# strip is broken on mips64, avoid it until its fixed
-		if [ ${TARGET_ARCH} = "mips64" ]; then
+		if [ ${TARGET} = "mips" ]; then
 			echo "WITH_DEBUG=y" >> ${JAILMNT}/etc/make.conf
 		fi
 
