@@ -51,6 +51,9 @@ if [ ${USE_COLORS} = "yes" ]; then
 	COLOR_LIGHT_MAGENTA="\033[1;35m"
 	COLOR_LIGHT_CYAN="\033[1;36m"
 	COLOR_WHITE="\033[1;37m"
+
+	color_hookfile=${HOOKDIR}/localcolors.sh
+        [ -f ${color_hookfile} ] && . ${color_hookfile} 	
 fi
 
 D_LEFT="${COLOR_BOLD}[${COLOR_RESET}"
