@@ -369,10 +369,22 @@ build_and_install_world() {
 				usr/bin/touch usr/bin/sed usr/bin/patch \
 				usr/bin/install usr/bin/gunzip usr/bin/sort \
 				usr/bin/tar usr/bin/xargs usr/sbin/chown bin/cp \
-				bin/cat bin/chmod bin/csh bin/echo bin/expr \
+				bin/cat bin/chmod bin/echo bin/expr \
 				bin/hostname bin/ln bin/ls bin/mkdir bin/mv \
-				bin/realpath bin/rm bin/rmdir bin/sleep bin/sh \
+				bin/realpath bin/rm bin/rmdir bin/sleep \
 				sbin/sha256 sbin/sha512 sbin/md5 sbin/sha1"
+
+		# Endian issues on mips/mips64 are not handling exec of 64bit shells
+		# from emulated environments correctly.  This works just fine on ARM
+		# because of the same issue, so allow it for now.
+		if [ ${TARGET} != "mips" ]; then
+			HLINK_SHELLS="bin/sh bin/csh"
+			for file in ${HLINK_SHELLS}; do
+				rm -f ${JAILMNT}/${file}
+				sh -c "cd ${JAILMNT} && ln ./nxb-bin/${file} ${file}"
+			done
+		fi
+
 		for file in ${HLINK_FILES}; do
 			if [ -f "${JAILMNT}/nxb-bin/${file}" ]; then
 				rm -f ${JAILMNT}/${file}
