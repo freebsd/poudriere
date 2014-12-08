@@ -150,7 +150,7 @@ update_version_env() {
 	local login_env osversion
 
 	osversion=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILMNT}/usr/include/sys/param.h`
-	login_env=",UNAME_r=${release% *},UNAME_v=FreeBSD ${release},OSVERSION=${osversion},ABI_FILE=\/usr\/lib\/crt1.o"
+	login_env=",UNAME_r=${release% *},UNAME_v=FreeBSD ${release},OSVERSION=${osversion}"
 
 	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
 	[ "${ARCH%.*}" = "i386" -a "${REALARCH}" = "amd64" ] &&
@@ -159,7 +159,7 @@ update_version_env() {
 	if need_emulation "${REALARCH}" "${ARCH}"; then
 		# QEMU/emulator support here.  Setup MACHINE/MACHINE_ARCH for bmake to be happy.
 		# UNAME variables are currently handled by QEMU, no need to override
-		login_env="${login_env},MACHINE=${ARCH%.*},MACHINE_ARCH=${ARCH#*.}"
+		login_env="${login_env},ABI_FILE=\/usr\/lib\/crt1.o,MACHINE=${ARCH%.*},MACHINE_ARCH=${ARCH#*.}"
 	fi
 	
 	sed -i "" -e "s/,UNAME_r.*:/:/ ; s/:\(setenv.*\):/:\1${login_env}:/" ${JAILMNT}/etc/login.conf
