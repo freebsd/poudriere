@@ -120,4 +120,4 @@ case "${CMD}" in
 		;;
 esac
 
-exec env -i ${CMD_ENV} /bin/sh ${SETX} "${POUDRIEREPREFIX}/${CMD}.sh" $@
+exec env -i ${CMD_ENV} /bin/sh ${SETX} "${POUDRIEREPREFIX}/${CMD}.sh" "$@"
