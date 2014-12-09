@@ -313,6 +313,11 @@ build_and_install_world() {
 	[ -n "${SETNAME}" ] && [ -f ${POUDRIERED}/${SETNAME}-src.conf ] && \
 	    cat ${POUDRIERED}/${SETNAME}-src.conf >> ${JAILMNT}/etc/src.conf
 	[ -f ${POUDRIERED}/${JAILNAME}-src.conf ] && cat ${POUDRIERED}/${JAILNAME}-src.conf >> ${JAILMNT}/etc/src.conf
+
+	if [ ${XDEV} -eq 1 ]; then
+		echo "WITH_ELFTOOLCHAIN_TOOLS=y" >> ${JAILMNT}/etc/src.conf
+	fi
+
 	unset MAKEOBJPREFIX
 	export __MAKE_CONF=/dev/null
 	export SRCCONF=${JAILMNT}/etc/src.conf
