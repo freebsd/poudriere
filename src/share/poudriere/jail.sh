@@ -445,7 +445,7 @@ install_from_git() {
 	fi
 	build_and_install_world
 
-	git_sha=$(${GIT_CMD} git rev-parse --short HEAD)
+	git_sha=$(${GIT_CMD} rev-parse --short HEAD)
 	setvar "${var_version_extra}" "${git_sha}"
 }
 
