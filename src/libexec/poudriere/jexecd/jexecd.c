@@ -209,7 +209,7 @@ client_accept(int fd)
 	return (cl);
 }
 
-#ifdef PROC_REAP_ACQUIRE
+#ifdef PROC_REAP_KILL
 static void
 killall(void)
 {
@@ -264,7 +264,7 @@ serve(int fd) {
 			if (ke.flags & (EV_ERROR | EV_EOF)) {
 				EV_SET(&ke, cl->pid, EVFILT_PROC, EV_DELETE, NOTE_EXIT, 0, cl);
 				kevent(kq, &ke, 1, NULL, 0, NULL);
-#ifdef PROC_REAP_ACQUIRE
+#ifdef PROC_REAP_KILL
 				killall();
 #else
 				killpg(cl->pid, SIGKILL);
@@ -279,7 +279,7 @@ serve(int fd) {
 			}
 			continue;
 		} else if (ke.filter == EVFILT_PROC) {
-#ifdef PROC_REAP_ACQUIRE
+#ifdef PROC_REAP_KILL
 			killall();
 #else
 			killpg(cl->pid, SIGKILL);
@@ -388,7 +388,7 @@ main(int argc, char **argv)
 
 	log_as("root");
 
-#ifdef PROC_REAP_ACQUIRE
+#ifdef PROC_REAP_KILL
 	/* Acquire the reaper */
 	procctl(P_PID, getpid(), PROC_REAP_ACQUIRE, NULL);
 #endif
