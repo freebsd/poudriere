@@ -215,7 +215,6 @@ killall(void)
 {
 	struct procctl_reaper_status info;
 	struct procctl_reaper_kill killemall;
-	int r;
 
 	procctl(P_PID, getpid(), PROC_REAP_STATUS, &info);
 	if (info.rs_children == 0)
