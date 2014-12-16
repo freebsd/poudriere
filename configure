@@ -1994,6 +1994,7 @@ fi
 as_fn_append ac_header_list " sys/types.h"
 as_fn_append ac_header_list " sys/stat.h"
 as_fn_append ac_header_list " sys/param.h"
+as_fn_append ac_header_list " sys/procctl.h"
 as_fn_append ac_header_list " sys/mman.h"
 as_fn_append ac_header_list " stdlib.h"
 as_fn_append ac_header_list " stddef.h"
@@ -4310,6 +4311,9 @@ _ACEOF
 fi
 
 done
+
+
+
 
 
 
