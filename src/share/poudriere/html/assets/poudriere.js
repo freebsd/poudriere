@@ -79,25 +79,15 @@ function format_pkgname(pkgname) {
 }
 
 function minidraw(x, height, width, context, color, queued, variable) {
-	var pct, total_pct, newx;
+	var newx;
 
-	/* Calculate how much percentage this value should display */
-	pct = Math.floor(variable * 100 / queued);
-	if (pct == 0) {
+	if (variable == 0) {
 		return 0;
 	}
-	newx = width * (pct / 100);
+	/* Calculate how much percentage this value should display */
+	newx = Math.round(width * variable / queued);
 	if ((x + newx) >= width) {
 		newx = width - x;
-	}
-	/* Cap total bar to 99% so it's clear something is remaining */
-	total_pct = ((x + newx) / width) * 100;
-	if (total_pct >= 99.0 && total_pct < 100.0) {
-		newx = (Math.ceil(width * (99 / 100)));
-	}
-	/* Always start at 1 */
-	if (newx == 0) {
-		newx = 1;
 	}
 	context.fillStyle = color;
 	context.fillRect(x, 1, newx, height);
