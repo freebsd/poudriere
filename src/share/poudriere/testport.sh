@@ -297,7 +297,7 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 else
 	if [ -f ${MASTERMNT}/tmp/pkgs/${PKGNAME}.${PKG_EXT} ]; then
 		msg "Installing from package"
-		ensure_pkg_installed
+		ensure_pkg_installed || err 1 "Unable to extract pkg."
 		injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT} || :
 	fi
 fi
