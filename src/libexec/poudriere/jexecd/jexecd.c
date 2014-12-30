@@ -24,6 +24,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "config.h"
+
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/param.h>
@@ -34,6 +36,9 @@
 #include <sys/un.h>
 #include <sys/wait.h>
 #include <sys/jail.h>
+#ifdef HAVE_SYS_PROCCTL_H
+#include <sys/procctl.h>
+#endif
 #include <spawn.h>
 
 #include <unistd.h>
@@ -203,6 +208,28 @@ client_accept(int fd)
 
 	return (cl);
 }
+
+#ifdef PROC_REAP_KILL
+static void
+killall(void)
+{
+	struct procctl_reaper_status info;
+	struct procctl_reaper_kill killemall;
+
+	procctl(P_PID, getpid(), PROC_REAP_STATUS, &info);
+	if (info.rs_children == 0)
+		return;
+
+	killemall.rk_sig = SIGKILL;
+	killemall.rk_flags = 0;
+
+	if (procctl(P_PID, getpid(), PROC_REAP_KILL, &killemall) != 0) {
+		warnx("Fail to kill children");
+		return;
+	}
+}
+#endif
+
 static void
 serve(int fd) {
 	struct kevent ke;
@@ -236,7 +263,11 @@ serve(int fd) {
 			if (ke.flags & (EV_ERROR | EV_EOF)) {
 				EV_SET(&ke, cl->pid, EVFILT_PROC, EV_DELETE, NOTE_EXIT, 0, cl);
 				kevent(kq, &ke, 1, NULL, 0, NULL);
+#ifdef PROC_REAP_KILL
+				killall();
+#else
 				killpg(cl->pid, SIGKILL);
+#endif
 				client_free(cl);
 			} else {
 				pid = client_read(cl);
@@ -247,7 +278,11 @@ serve(int fd) {
 			}
 			continue;
 		} else if (ke.filter == EVFILT_PROC) {
+#ifdef PROC_REAP_KILL
+			killall();
+#else
 			killpg(cl->pid, SIGKILL);
+#endif
 			nv = nvlist_create(0);
 			nvlist_add_number(nv, "return", WEXITSTATUS(ke.data));
 			nvlist_send(cl->fd, nv);
@@ -351,6 +386,11 @@ main(int argc, char **argv)
 	chdir("/");
 
 	log_as("root");
+
+#ifdef PROC_REAP_KILL
+	/* Acquire the reaper */
+	procctl(P_PID, getpid(), PROC_REAP_ACQUIRE, NULL);
+#endif
 
 	serve(server_fd);
 }
