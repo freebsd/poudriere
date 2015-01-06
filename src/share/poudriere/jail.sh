@@ -357,7 +357,6 @@ build_and_install_world() {
 		AWK=/nxb-bin/usr/bin/awk
 		FLEX=/nxb-bin/usr/bin/flex
 		_MAKE_JOBS=-j1
-		DISABLE_MAKE_JOBS=y
 		MAKE_JOBS_NUMBER=1
 		EOF
 
