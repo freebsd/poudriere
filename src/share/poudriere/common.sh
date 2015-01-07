@@ -2534,7 +2534,7 @@ setup_makeconf() {
 	local name=$2
 	local ptname=$3
 	local setname=$4
-	local makeconf opt
+	local makeconf opt plugin_dir
 	local arch host_arch
 
 	get_host_arch host_arch
@@ -2561,8 +2561,19 @@ setup_makeconf() {
 	[ -n "${setname}" ] && makeconf="${makeconf} ${name}-${setname} \
 		    ${name}-${ptname}-${setname}"
 	for opt in ${makeconf}; do
-		append_make ${opt} ${dst_makeconf}
+		append_make "${POUDRIERED}" "${opt}" "${dst_makeconf}"
 	done
+
+	# Check for and load plugin make.conf files
+	if [ -d "${HOOKDIR}/plugins" ]; then
+		for plugin_dir in ${HOOKDIR}/plugins/*; do
+			# Check empty dir
+			case "${plugin_dir}" in
+			"${HOOKDIR}/plugins/*") break ;;
+			esac
+			append_make "${plugin_dir}" "-" "${dst_makeconf}"
+		done
+	fi
 
 	# We will handle DEVELOPER for testing when appropriate
 	if grep -q '^DEVELOPER=' ${dst_makeconf}; then
@@ -6742,14 +6753,15 @@ balance_pool() {
 }
 
 append_make() {
-	[ $# -ne 2 ] && eargs append_make src_makeconf dst_makeconf
-	local src_makeconf=$1
-	local dst_makeconf=$2
+	[ $# -ne 3 ] && eargs append_make srcdir src_makeconf dst_makeconf
+	local srcdir="$1"
+	local src_makeconf=$2
+	local dst_makeconf=$3
 
 	if [ "${src_makeconf}" = "-" ]; then
-		src_makeconf="${POUDRIERED}/make.conf"
+		src_makeconf="${srcdir}/make.conf"
 	else
-		src_makeconf="${POUDRIERED}/${src_makeconf}-make.conf"
+		src_makeconf="${srcdir}/${src_makeconf}-make.conf"
 	fi
 
 	[ -f "${src_makeconf}" ] || return 0
