@@ -608,33 +608,64 @@ eargs() {
 }
 
 run_hook() {
-	local hookfile="${HOOKDIR}/${1}.sh"
-	local build_url log_url
-	shift
+	[ $# -ge 2 ] || eargs run_hook hook event args
+	local hook="$1"
+	local event="$2"
+	local build_url log_url plugin_dir
+
+	shift 2
 
 	build_url build_url || :
 	log_url log_url || :
-	if [ -f "${hookfile}" ]; then
-		(
-			cd /
 
-			BUILD_URL="${build_url}" \
-			LOG_URL="${log_url}" \
-			POUDRIERE_BUILD_TYPE=${POUDRIERE_BUILD_TYPE} \
-			POUDRIERED="${POUDRIERED}" \
-			POUDRIERE_DATA="${POUDRIERE_DATA}" \
-			MASTERNAME="${MASTERNAME}" \
-			MASTERMNT="${MASTERMNT}" \
-			MY_JOBID="${MY_JOBID}" \
-			BUILDNAME="${BUILDNAME}" \
-			JAILNAME="${JAILNAME}" \
-			PTNAME="${PTNAME}" \
-			SETNAME="${SETNAME}" \
-			PACKAGES="${PACKAGES}" \
-			PACKAGES_ROOT="${PACKAGES_ROOT}" \
-			/bin/sh "${hookfile}" "$@"
-		)
+	run_hook_file "${HOOKDIR}/${hook}.sh" "${hook}" "${event}" \
+	    "${build_url}" "${log_url}" "$@"
+
+	if [ -d "${HOOKDIR}/plugins" ]; then
+		for plugin_dir in ${HOOKDIR}/plugins/*; do
+			# Check empty dir
+			case "${plugin_dir}" in
+			"${HOOKDIR}/plugins/*") break ;;
+			esac
+			run_hook_file "${plugin_dir}/${hook}.sh" "${hook}" \
+			    "${event}" "${build_url}" "${log_url}" "$@"
+		done
 	fi
+}
+
+run_hook_file() {
+	[ $# -ge 5 ] || eargs run_hook_file hookfile hook event build_url \
+	    log_url args
+	local hookfile="$1"
+	local hook="$2"
+	local event="$3"
+	local build_url="$4"
+	local log_url="$5"
+	[ -f "${hookfile}" ] || return 0
+
+	shift 5
+
+	job_msg_dev "Running ${hookfile} for event '${hook}:${event}' args: ${@:-(null)}"
+
+	(
+		set +e
+		cd /
+		BUILD_URL="${build_url}" \
+		    LOG_URL="${log_url}" \
+		    POUDRIERE_BUILD_TYPE=${POUDRIERE_BUILD_TYPE} \
+		    POUDRIERED="${POUDRIERED}" \
+		    POUDRIERE_DATA="${POUDRIERE_DATA}" \
+		    MASTERNAME="${MASTERNAME}" \
+		    MASTERMNT="${MASTERMNT}" \
+		    MY_JOBID="${MY_JOBID}" \
+		    BUILDNAME="${BUILDNAME}" \
+		    JAILNAME="${JAILNAME}" \
+		    PTNAME="${PTNAME}" \
+		    SETNAME="${SETNAME}" \
+		    PACKAGES="${PACKAGES}" \
+		    PACKAGES_ROOT="${PACKAGES_ROOT}" \
+		    /bin/sh "${hookfile}" "${event}" "$@"
+	) || err 1 "Hook ${hookfile} for '${hook}:${event}' returned non-zero"
 	return 0
 }
 
