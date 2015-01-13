@@ -2406,6 +2406,7 @@ start_builder() {
 	do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
 	jstart
 	bset ${id} status "idle:"
+	run_hook builder start "${id}" "${mnt}"
 }
 
 start_builders() {
@@ -2427,6 +2428,8 @@ stop_builders() {
 	cat ${MASTERMNT}/.p/var/run/*.pid 2>/dev/null | xargs pwait 2>/dev/null
 
 	msg "Stopping ${PARALLEL_JOBS} builders"
+
+	run_hook builder stop "${id}" "${mnt}"
 
 	for j in ${JOBS}; do
 		MY_JOBID=${j} jstop
