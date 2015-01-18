@@ -2083,7 +2083,7 @@ _real_build_port() {
 			if [ "${PKGNAME%%*linux*}" != "" ]; then
 				msg "Checking shared library dependencies"
 				listfilecmd="grep -v '^@' /var/db/pkg/${PKGNAME}/+CONTENTS"
-				[ ${PKGNG} -eq 1 ] && listfilecmd="pkg query '%Fp' ${PKGNAME}"
+				[ ${PKGNG} -eq 1 ] && listfilecmd="${PKG_BIN} query '%Fp' ${PKGNAME}"
 				injail ${listfilecmd} | \
 				    injail xargs readelf -d 2>/dev/null | \
 				    grep NEEDED | sort -u
