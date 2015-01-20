@@ -29,7 +29,7 @@
 FREEBSD_HOST=_PROTO_://_CHANGE_THIS_
 
 # By default the jails have no /etc/resolv.conf, you will need to set
-# REVOLV_CONF to a file on your hosts system that will be copied has
+# RESOLV_CONF to a file on your hosts system that will be copied has
 # /etc/resolv.conf for the jail, except if you don't need it (using an http
 # proxy for example)
 RESOLV_CONF=/etc/resolv.conf
