@@ -1,15 +1,18 @@
-<h1>creating pkgng repositories</h1>
+# Creating pkg(8) repositories
 
 Install poudriere on the build host. This should be newer or the same version
 of all the target machines. Cross-building is supported with an amd64 host
 for i386 jails.
 
-    <verbatim>make -C /usr/ports/ports-mgmt/poudriere install clean</verbatim>
+```
+pkg install poudriere
+```
 
 Create a default configuration in the ${LOCALBASE}/etc/poudriere.conf
 configuration file: 
 
-    <verbatim>BASEFS=/poudriere
+```
+BASEFS=/poudriere
 # Only 1 of the 2 following options is needed
 # For ZFS:
 ZPOOL=myzpool
@@ -17,20 +20,25 @@ ZPOOL=myzpool
 NO_ZFS=yes
 
 FREEBSD_HOST=ftp://ftp.freebsd.org
-POUDRIERE_DATA=/poudriere_data
+POUDRIERE_DATA=${BASEFS}/data
 RESOLV_CONF=/etc/resolv.conf
-DISTFILES_CACHE=/usr/ports/distfiles</verbatim>
+DISTFILES_CACHE=/usr/ports/distfiles
+```
 
 poudriere is now ready to be used.
 
 First create a ports tree to be used by poudriere:
 
-    <verbatim>poudriere ports -c</verbatim>
+```
+poudriere ports -c
+```
 
 Create jails for the target versions you want to build packages for:
 
-    <verbatim>poudriere jail -c -j 91amd64 -v 9.1-RELEASE -a amd64
-poudriere jail -c -j 10i386 -v head -a i386 -m svn</verbatim>
+```
+poudriere jail -c -j 91amd64 -v 9.1-RELEASE -a amd64
+poudriere jail -c -j current -v head -a i386 -m svn
+```
 
 The first will create a 9.1-RELEASE amd64 jail from the official sets (fetched
 from FREEBSD_HOST) The second will create a current jail using svn and build
@@ -39,24 +47,32 @@ from source for i386.
 As poudriere works for both legacy pkg_* and pkgng you need to make it pkgng
 aware: 
 
-    <verbatim>mkdir /usr/local/etc/poudriere.d
+```
+mkdir /usr/local/etc/poudriere.d
 echo "WITH_PKGNG=yes" > /usr/local/etc/poudriere.d/91amd64-make.conf
-echo "WITH_PKGNG=yes" > /usr/local/etc/poudriere.d/10i386-make.conf</verbatim>
+echo "WITH_PKGNG=yes" > /usr/local/etc/poudriere.d/10i386-make.conf
+```
 
 Create the list of packages you want to see built by poudriere:
 
-    <verbatim>cat ~/mylist1
+```
+cat ~/mylist1
 editors/vim-lite
-www/nginx</verbatim>
+www/nginx
+```
 
-    <verbatim>cat ~/mylist2
+```
+cat ~/mylist2
 www/firefox
-editors/libreoffice</verbatim>
+editors/libreoffice
+```
 
-Start a poudriere build run:
+Start a poudriere build run for each list:
 
-    <verbatim>poudriere bulk -f ~/mylist1 -j 91amd64
-poudriere bulk -f ~/mylist2 -j 10i386</verbatim>
+```
+poudriere bulk -f ~/mylist1 -j 91amd64
+poudriere bulk -f ~/mylist2 -j 10i386
+```
 
 This will build two pkgng repositories:
 
@@ -68,25 +84,41 @@ Configure an http server to serve these directories.
 On your user boxes: (if you use the automatic bootstrap it will take
 care of creating this file)
 
-    <verbatim>echo "packagesite: http://yoururl/10i386-default" >> /usr/local/etc/pkg.conf</verbatim>
-    <verbatim>echo "packagesite: http://yoururl/91amd64-default" >> /usr/local/etc/pkg.conf</verbatim>
+```
+echo "packagesite: http://yoururl/10i386-default" >> /usr/local/etc/pkg.conf
+```
+
+```
+echo "packagesite: http://yoururl/91amd64-default" >> /usr/local/etc/pkg.conf
+```
 
 From FreeBSD 9.1 and later it is possible to directly bootstrap from the base:
 
-    <verbatim>PACKAGESITE="http://yoururl/10i386-default" pkg update</verbatim>
+```
+PACKAGESITE="http://yoururl/10i386-default" pkg update
+```
 
 Before FreeBSD 9.1, it is necessary to bootstrap by hand:
 
-    <verbatim>fetch http://yoururl/91amd64-default/Latest/pkg.txz
+```
+fetch http://yoururl/91amd64-default/Latest/pkg.txz
 tar xf ./pkg.txz -s ",/.*/,,g" "*/pkg-static"
-./pkg-static add ./pkg.txz</verbatim>
+./pkg-static add ./pkg.txz
+```
 
 Normal operation after the needed build jails have been created looks like:
  * Update the poudriere ports tree:
-    <verbatim>poudriere ports -u</verbatim>
+
+```
+poudriere ports -u
+```
+
  * Run an incremental build on both build jails:
-    <verbatim>poudriere bulk -f ~/mylist1 -j 91amd64
-poudriere bulk -f ~/mylist2 -j 10i386</verbatim>
+
+```
+poudriere bulk -f ~/mylist1 -j 91amd64
+poudriere bulk -f ~/mylist2 -j 10i386
+```
 
 It might become necessary to do a full fresh build, use the -c flag to bulk to
 clear all packages and build fresh. This is normally not required though as

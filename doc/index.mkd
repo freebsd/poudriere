@@ -1,0 +1,106 @@
+# What is poudriere?
+
+poudriere is a BSD-2 licensed tool primarily designed to test package production on
+FreeBSD. However, most people will find it useful to bulk build ports
+for FreeBSD.
+
+Its goals are to use modern facilities present in FreeBSD, to be easy to use,
+to depend only on base, and to be parallel.
+
+It is able to build the whole portstree like tinderbox does.
+
+poudriere is able to build packages for versions of FreeBSD that are
+different from the box on which it is installed, and also to build
+packages for i386 if the host is an amd64 box.
+
+Once the package building is done, the packages will be in a layout
+identical to the official mirrors. Therefore they will be useable by any
+package management tool (pkg_add, portmaster, and so on).
+
+# What does poudriere require?
+
+  *  Recent FreeBSD (>= 8.3)
+  *  Root access
+
+That is all. For more comfort, we recommend to have quite a lot of RAM
+in order to make the builds in a VM resident filesystem.
+
+# How to install it?
+
+Just run:
+
+```
+pkg install poudriere
+```
+
+# What do I need to configure before being able to start using it?
+
+## Create a mandatory configuration file
+
+Poudriere will look for a configuration file in /usr/local/etc.
+
+Copy the default configuration file:
+
+```
+cp /usr/local/etc/poudriere.conf.sample /usr/local/etc/poudriere.conf
+```
+
+then edit it:
+
+```
+$EDITOR /usr/local/etc/poudriere.conf
+```
+
+The comments inside the configuration file should be sufficient.
+
+## Documentation
+
+  *  [poudriere(8)](./poudriere.8.wiki).
+  *  [Release notes](./relnotes.mkd).
+
+## How-to...
+
+  *  [...manage poudriere ports using portshaker](./portshaker.mkd)
+  *  [...create and maintain pkgng repositories](./pkgng_repos.mkd)
+  *  [...use the generated packages with portmaster](./portmaster.mkd)
+  *  [...use ccache with poudriere](./ccache.mkd)
+  *  [...easily generate options](./config.mkd)
+  *  [...use the system ports tree in poudriere](./use_system_ports_tree.mkd)
+  *  [...using testport to test ports](./using_testport.mkd)
+
+## Quick Links
+
+  *  [View difference between trunk and 3.0.x branch]
+  *  [View difference between trunk and dragonfly branch]
+
+## Hacking
+
+To hack on poudriere you first need to install git:
+
+```
+# pkg install git
+```
+
+and clone the repo:
+
+```
+# git clone https://github.com/freebsd/poudriere
+# cd poudriere
+```
+
+## Known Issues
+
+  *  [Tickets](https://github.com/freebsd/poudriere/issues)
+  *  [Todo](./todo.mkd)
+
+## Contributing
+
+Any of these options are available for contributing:
+
+  *  Send github Pull Request
+  *  Post link to patch in #poudriere on freenode
+  *  Post patch to freebsd-pkg@FreeBSD.org
+
+Happy FreeBSDing!
+
+Join us on IRC: #poudriere on Freenode

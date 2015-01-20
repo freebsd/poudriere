@@ -1,15 +1,18 @@
-<h1>Using testport</h1>
+# Using testport
 
 Install poudriere on the build host. This should be newer or the same version
 of all the target machines. Cross-building is supported with an amd64 host
 for i386 jails.
 
-    <verbatim>make -C /usr/ports/ports-mgmt/poudriere install clean</verbatim>
+```
+make -C /usr/ports/ports-mgmt/poudriere install clean
+```
 
 Create a default configuration in the ${LOCALBASE}/etc/poudriere.conf
 configuration file: 
 
-    <verbatim>BASEFS=/poudriere
+```
+BASEFS=/poudriere
 # Only 1 of the 2 following options is needed
 # For ZFS:
 ZPOOL=myzpool
@@ -19,32 +22,43 @@ NO_ZFS=yes
 FREEBSD_HOST=ftp://ftp.freebsd.org
 POUDRIERE_DATA=/poudriere_data
 RESOLV_CONF=/etc/resolv.conf
-DISTFILES_CACHE=/usr/ports/distfiles</verbatim>
+DISTFILES_CACHE=/usr/ports/distfiles
+```
 
 poudriere is now ready to be used.
 
 Create jails for the target versions you want to build packages for:
 
-    <verbatim>poudriere jail -c -j 91amd64 -v 9.1-RELEASE -a amd64
-poudriere jail -c -j 10i386 -v head -a i386 -m svn</verbatim>
+```
+poudriere jail -c -j 91amd64 -v 9.1-RELEASE -a amd64
+poudriere jail -c -j current -v head -a i386 -m svn
+```
 
 Then create a ports tree to be used by poudriere:
 
-    <verbatim>poudriere ports -c -m svn+https</verbatim>
+```
+poudriere ports -c -m svn+https
+```
 
 This will create a ports tree that can be easily modified to create
 patches for submitting into The Ports Collection.
 
 To modify a port, locate the ports tree by running:
 
-    <verbatim>poudriere ports -l</verbatim>
+```
+    poudriere ports -l
+```
 
 Once the location of the ports tree, modify the ports tree as needed
 and then launch a test by running the following:
 
-    <verbatim>poudriere testport -j <jailname> -o <category>/<portname></verbatim>
+```
+    poudriere testport -j <jailname> -o <category>/<portname>
+```
 
 See the help page for other options by running:
 
-    <verbatim>poudriere testport help</verbatim>
+```
+    poudriere testport help
+```
 

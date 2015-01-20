@@ -1,13 +1,16 @@
-<h1>Use the generated packages with portmaster</h1>
+# Use the generated packages with portmaster
 
 First, install portmaster from the void:
 
-    <verbatim>fetch -o - http://ftp.fr.freebsd.org/pub/FreeBSD/ports/packages/All/portmaster-3.9.tbz | \
-pkg_add -r -</verbatim>
+```
+fetch -o - http://ftp.fr.freebsd.org/pub/FreeBSD/ports/packages/All/portmaster-3.9.tbz | \
+pkg_add -r -
+```
 
 Then, configure it:
 
-    <verbatim>mkdir -p /usr/ports/Mk
+```
+mkdir -p /usr/ports/Mk
 touch /usr/ports/Mk/bsd.port.mk
 
 cat > /usr/local/etc/portmaster.rc<<EOF
@@ -18,12 +21,13 @@ PM_PACKAGES=only
 PM_INDEX=yes
 PM_INDEX_ONLY=pm_index_only
 EOF
-</verbatim>
+```
 
 Of course you have to install a HTTP server, with /82i386/ an alias to
 /usr/local/poudriere_data/packages/bulk-82i386.
 
 You are now ready to invoke portmaster:
 
-    <verbatim>portmaster editors/vim</verbatim>
-
+```
+portmaster editors/vim
+```
