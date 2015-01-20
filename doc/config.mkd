@@ -1,0 +1,10 @@
+# easily generate options
+
+Use the <em>options</em> subcommand.
+
+```
+poudriere options -j <jail> -f ~/mylist
+poudriere options -j <jail> cat/port1 cat/port2
+```
+
+See <em>man poudriere</em> and <em>poudriere options</em> usage for more information.
