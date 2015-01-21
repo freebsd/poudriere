@@ -313,6 +313,11 @@ build_and_install_world() {
 	[ -n "${SETNAME}" ] && [ -f ${POUDRIERED}/${SETNAME}-src.conf ] && \
 	    cat ${POUDRIERED}/${SETNAME}-src.conf >> ${JAILMNT}/etc/src.conf
 	[ -f ${POUDRIERED}/${JAILNAME}-src.conf ] && cat ${POUDRIERED}/${JAILNAME}-src.conf >> ${JAILMNT}/etc/src.conf
+
+	if [ ${TARGET} = "mips" ]; then
+		echo "WITH_ELFTOOLCHAIN_TOOLS=y" >> ${JAILMNT}/etc/src.conf
+	fi
+
 	unset MAKEOBJPREFIX
 	export __MAKE_CONF=/dev/null
 	export SRCCONF=${JAILMNT}/etc/src.conf
@@ -351,12 +356,9 @@ build_and_install_world() {
 		STRINGS=/nxb-bin/usr/bin/strings
 		AWK=/nxb-bin/usr/bin/awk
 		FLEX=/nxb-bin/usr/bin/flex
+		_MAKE_JOBS=-j1
+		MAKE_JOBS_NUMBER=1
 		EOF
-
-		# strip is broken on mips64, avoid it until its fixed
-		if [ ${TARGET_ARCH} = "mips64" ]; then
-			echo "WITH_DEBUG=y" >> ${JAILMNT}/etc/make.conf
-		fi
 
 		# hardlink these files to capture scripts and tools
 		# that explicitly call them instead of using paths.
@@ -366,10 +368,22 @@ build_and_install_world() {
 				usr/bin/touch usr/bin/sed usr/bin/patch \
 				usr/bin/install usr/bin/gunzip usr/bin/sort \
 				usr/bin/tar usr/bin/xargs usr/sbin/chown bin/cp \
-				bin/cat bin/chmod bin/csh bin/echo bin/expr \
+				bin/cat bin/chmod bin/echo bin/expr \
 				bin/hostname bin/ln bin/ls bin/mkdir bin/mv \
-				bin/realpath bin/rm bin/rmdir bin/sleep bin/sh \
+				bin/realpath bin/rm bin/rmdir bin/sleep \
 				sbin/sha256 sbin/sha512 sbin/md5 sbin/sha1"
+
+		# Endian issues on mips/mips64 are not handling exec of 64bit shells
+		# from emulated environments correctly.  This works just fine on ARM
+		# because of the same issue, so allow it for now.
+		if [ ${TARGET} != "mips" ]; then
+			HLINK_SHELLS="bin/sh bin/csh"
+			for file in ${HLINK_SHELLS}; do
+				rm -f ${JAILMNT}/${file}
+				sh -c "cd ${JAILMNT} && ln ./nxb-bin/${file} ${file}"
+			done
+		fi
+
 		for file in ${HLINK_FILES}; do
 			rm -f ${JAILMNT}/${file}
 			sh -c "cd ${JAILMNT} && ln ./nxb-bin/${file} ${file}"
