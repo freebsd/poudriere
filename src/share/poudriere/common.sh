@@ -134,6 +134,7 @@ msg_n() {
 msg() { msg_n "$@"; echo; }
 
 msg_verbose() {
+	[ -n "${DEBUG_LOG}" ] && msg "$1" >> "${DEBUG_LOG}"
 	[ ${VERBOSE} -gt 0 ] || return 0
 	msg "$1"
 }
@@ -146,20 +147,24 @@ msg_error() {
 		msg "Error: $1" >&2
 	elif [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
 		# Send to true stderr
+		[ -n "${DEBUG_LOG}" ] && msg "Error: $1" >> "${DEBUG_LOG}"
 		COLOR_ARROW="${COLOR_ERROR}" msg "${COLOR_ERROR}Error: $1" >&4
 	else
+		[ -n "${DEBUG_LOG}" ] && msg "Error: $1" >> "${DEBUG_LOG}"
 		COLOR_ARROW="${COLOR_ERROR}" msg "${COLOR_ERROR}Error: $1" >&2
 	fi
 	return 0
 }
 
 msg_debug() {
+	[ -n "${DEBUG_LOG}" ] && msg "Debug: $@" >> "${DEBUG_LOG}"
 	[ ${VERBOSE} -gt 1 ] || return 0
 	COLOR_ARROW="${COLOR_DEBUG}" \
 	    msg "${COLOR_DEBUG}Debug: $@" >&2
 }
 
 msg_warn() {
+	[ -n "${DEBUG_LOG}" ] && msg "Warning: $@" >> "${DEBUG_LOG}"
 	COLOR_ARROW="${COLOR_WARN}" \
 	    msg "${COLOR_WARN}Warning: $@" >&2
 }
@@ -3843,6 +3848,8 @@ prepare_ports() {
 		    ${cache_dir}
 		# Link this build as the /latest
 		ln -sfh ${BUILDNAME} ${log%/*}/latest
+
+		DEBUG_LOG=${log}/logs/debug.log
 
 		# Record the SVN URL@REV in the build
 		[ -d ${MASTERMNT}/usr/ports/.svn ] && bset svn_url $(
