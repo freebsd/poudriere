@@ -35,31 +35,31 @@ usage() {
 poudriere ports [parameters] [options]
 
 Parameters:
-    -c            -- Create a portstree
-    -d            -- Delete a portstree
-    -u            -- Update a portstree
-    -l            -- List all available portstrees
-    -v            -- Be verbose; show more information.
+    -c            -- Create a ports tree.
+    -d            -- Delete a ports tree.
+    -l            -- List all available ports trees.
+    -u            -- Update a ports tree.
 
 Options:
-    -F            -- when used with -c, only create the needed ZFS
-                     filesystems and directories, but do not populate
-                     them.
-    -k            -- when used with -d, only unregister the directory from
-                     the ports tree list, but keep the files.
-    -n            -- Print only tree name (for use with -l)
-    -p name       -- specifies the name of the portstree to work on . If not
-                     specified, work on a portstree called "default".
-    -f fs         -- FS name (tank/jails/myjail) if fs is "none" then do not
-                     create on zfs
-    -M mountpoint -- mountpoint
-    -m method     -- when used with -c, specify the method used to create the
-		     tree. By default it is portsnap, possible alternatives are
-		     "portsnap", "svn", "svn+http", "svn+https",
-		     "svn+file", "svn+ssh", "git"
-    -B branch     -- Which branch to use for SVN/GIT method
-                     (default: head/master)
-    -q            -- Quiet (Remove the header in the list view)
+    -B branch     -- Which branch to use for the svn or git methods.  Defaults
+                     to 'head/master'.
+    -F            -- When used with -c, only create the needed filesystems
+                     (for ZFS) and directories, but do not populate them.
+    -M path       -- The path to the source of a ports tree.
+    -f filesystem -- The name of the filesystem to create for the ports tree.
+                     If 'none' then do not create the filesystem.  The default
+                     is: 'poudriere/ports/default'.
+    -k            -- When used with -d, only unregister the ports tree without
+                     removing the files.
+    -m method     -- When used with -c, specify the method used to create the
+                     ports tree. Possible methods are 'portsnap', 'svn',
+                     'svn+http', 'svn+https', 'svn+file', 'svn+ssh', 'git'.
+                     The default is 'portsnap'.
+    -n            -- When used with -l, only print the name of the ports tree
+    -p name       -- Specifies the name of the ports tree to work on.  The
+                     default is 'default'.
+    -q            -- When used with -l, remove the header in the list view.
+    -v            -- Show more verbose output.
 EOF
 	exit 1
 }
