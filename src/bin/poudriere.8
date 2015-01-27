@@ -419,10 +419,10 @@ These subcommands are mutually exclusive.
 Creates a ports tree.
 .It Fl d
 Deletes a ports tree.
-.It Fl u
-Updates a ports tree.
 .It Fl l
 List all available ports trees.
+.It Fl u
+Update a ports tree.
 .El
 .Pp
 Except for
@@ -435,40 +435,6 @@ Here are the options associated with the
 .Cm ports
 command.
 .Bl -tag -width "-f conffile"
-.It Fl q
-Remove the header when
-.Fl l
-is the specified subcommand.
-Otherwise, it has no effect.
-.It Fl p Ar name
-Specifies the
-.Ar name
-of the ports tree to use.
-.It Fl F
-When used with
-.Fl c ,
-only create the needed ZFS file systems and directories, but do not
-populate them.
-.It Fl f Ar filesystem
-Specifies the
-.Ar filesystem
-name (${ZPOOL}/jails/filesystem).
-.It Fl n
-When combined with
-.Fl l ,
-only display ports tree name.
-.It Fl M Ar mountpoint
-Gives an alternative
-.Ar mountpoint
-when creating ports tree.
-.It Fl m Ar method
-Specifies which
-.Ar method
-to use to create the ports tree.
-Could be portsnap, git, svn{,+http,+https,+file,+ssh} (Default:
-portsnap).
-.It Fl v
-Show more verbose output.
 .It Fl B Ar branch
 Specifies which
 .Ar branch
@@ -478,10 +444,45 @@ or
 .Sy git
 methods.
 (Default: head/master)
+.It Fl F
+When used with
+.Fl c ,
+only create the needed file systems (for ZFS) and directories, but do
+not populate them.
+.It Fl M Ar mountpoint
+Path to the source of a ports tree.
+.It Fl f Ar filesystem
+The name of the
+.Ar filesystem
+to create for the ports tree.
+If 'none' then do not create a filesystem.
+Defaults to poudriere/ports/default.
 .It Fl k
 When used with
 .Fl d ,
-only unregister the ports tree with out removing the files.
+only unregister the ports tree without removing the files.
+.It Fl m Ar method
+When used with
+.Fl c ,
+specify which
+.Ar method
+to use to create the ports tree.
+Could be portsnap, git, svn{,+http,+https,+file,+ssh}.
+The default is portsnap.
+.It Fl n
+When combined with
+.Fl l ,
+only display the name of the ports tree.
+.It Fl p Ar name
+Specifies the
+.Ar name
+of the ports tree to use.
+.It Fl q
+When used with
+.Fl l ,
+remove the header in the list view.
+.It Fl v
+Show more verbose output.
 .El
 .Ss testport
 .Pp
@@ -969,9 +970,9 @@ not in -stable or current:
 .Pp
 .Lk http://svn.freebsd.org/viewvc/base?view=revision&revision=209820
 .Sh BUGS
-In case of bugs, feel free to fill
+In case of bugs, feel free to file a report:
 .Pp
-.Lk http://fossil.etoilebsd.net/poudriere/reportlist
+.Lk https://github.com/freebsd/poudriere/issues
 .Sh AUTHORS
 .An Baptiste Daroussin Aq bapt@FreeBSD.org
 .An Bryan Drewery Aq bdrewery@FreeBSD.org
