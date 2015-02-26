@@ -1570,11 +1570,7 @@ jail_start() {
 	#export CACHESOCK=${MASTERMNT%/ref}/cache.sock
 	#export CACHEPID=${MASTERMNT%/ref}/cache.pid
 	#cached -s ${CACHESOCK} -p ${CACHEPID} -n ${MASTERNAME}
-	echo "src" >> ${mnt}/usr/.cpignore
-	echo "debug" >> ${mnt}/usr/lib/.cpignore
 	clonefs ${mnt} ${tomnt} clean
-	echo ".p" >> ${tomnt}/.cpignore
-	rm -f ${mnt}/usr/.cpignore ${mnt}/usr/lib/.cpignore
 	echo " done"
 
 	if [ ${JAIL_OSVERSION} -gt ${HOST_OSVERSION} ]; then
