@@ -949,6 +949,27 @@ unmarkfs() {
 	fi
 }
 
+common_mtree() {
+	mtreefile=$1
+	cat > ${mtreefile} <<EOF
+./.npkg/*
+./.p/*
+.p4config
+.${HOME}/.ccache/*
+./compat/linux/proc
+./dev/*
+./distfiles/*
+./packages/*
+./portdistfiles/*
+./proc/*
+./usr/home/*
+./usr/ports/*
+./usr/src
+./var/db/ports/*
+./wrkdirs/*
+EOF
+}
+
 markfs() {
 	[ $# -lt 2 ] && eargs markfs name mnt path
 	local name=$1
@@ -989,53 +1010,18 @@ markfs() {
 	fi
 	# XXX: Is this needed?
 	mkdir -p ${mnt}/.p/
+	mtreefile=${mnt}/.p/mtree.${name}exclude
 
+	common_mtree ${mtreefile}
 	case "${name}" in
 		prepkg)
-			cat > ${mnt}/.p/mtree.${name}exclude << EOF
-./.npkg/*
-./.p/*
-.${HOME}/.ccache/*
-./compat/linux/proc
-./dev/*
-./distfiles/*
-./packages/*
-./portdistfiles/*
-./proc
-./usr/ports/*
-./usr/src
-./var/db/ports/*
-./wrkdirs/*
-EOF
+			echo './portdistfiles/*' >> ${mtreefile}
 			;;
 		prebuild|prestage)
-			cat > ${mnt}/.p/mtree.${name}exclude << EOF
-./.npkg/*
-./.p/*
-.${HOME}/.ccache/*
-./compat/linux/proc
-./dev/*
-./distfiles/*
-./packages/*
-./portdistfiles/*
-./proc
-./tmp/*
-./usr/ports/*
-./usr/src
-./var/db/ports/*
-./var/tmp/*
-./wrkdirs/*
-EOF
+			echo './tmp/*' >> ${mtreefile}
 			;;
 		preinst)
 			cat >  ${mnt}/.p/mtree.${name}exclude << EOF
-./.npkg/*
-./.p/*
-.${HOME}/*
-.${HOME}/.ccache/*
-./compat/linux/proc
-./dev/*
-./distfiles/*
 ./etc/group
 ./etc/make.conf
 ./etc/make.conf.bak
@@ -1044,19 +1030,12 @@ EOF
 ./etc/pwd.db
 ./etc/shells
 ./etc/spwd.db
-./packages/*
-./portdistfiles/*
-./proc
 ./tmp/*
-./usr/ports/*
-./usr/src
 ./var/db/pkg/*
-./var/db/ports/*
 ./var/log/*
 ./var/mail/*
 ./var/run/*
 ./var/tmp/*
-./wrkdirs/*
 EOF
 		;;
 	esac
