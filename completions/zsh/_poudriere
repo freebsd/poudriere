@@ -50,6 +50,7 @@ _jail=(
 	'-f[FS name (tank/jails/myjail)]::fs:_files -/' \
 	'-t[version to upgrade to]' \
 	'-M[mountpoint]::mountpoint:_files -/'
+	'-S[FreeBSD source path to be mounted inside the jail]::'
 	'-r[rename jail]::'
 	'-x[build xdev]::'
 )

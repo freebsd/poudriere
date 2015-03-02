@@ -1059,10 +1059,11 @@ rm() {
 }
 
 do_jail_mounts() {
-	[ $# -ne 3 ] && eargs do_jail_mounts from mnt arch
+	[ $# -ne 4 ] && eargs do_jail_mounts from mnt arch name
 	local from="$1"
 	local mnt="$2"
 	local arch="$3"
+	local name="$4"
 	local devfspath="null zero random urandom stdin stdout stderr fd fd/* bpf* pts pts/*"
 
 	# clone will inherit from the ref jail
@@ -1081,9 +1082,10 @@ do_jail_mounts() {
 		    ${mnt}/var/db/ports
 	fi
 
-	# Mount /usr/src into target, no need for anything to write to it
-	[ -d "${from}/usr/src" -a "${from}" != "${mnt}" ] && \
-	    ${NULLMOUNT} -o ro ${from}/usr/src ${mnt}/usr/src
+	# Mount /usr/src into target if it exists and not overridden
+	srcpath=$(jget ${name} srcpath)
+	[ -d "${from}/usr/src" -a "${from}" != "${mnt}" -a -z "${srcpath}" ] &&
+		srcpath="${from}/usr/src"
 
 	# ref jail only needs devfs
 	mount -t devfs devfs ${mnt}/dev
@@ -1100,6 +1102,8 @@ do_jail_mounts() {
 		    [ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ] && \
 		    mount -t fdescfs fdesc ${mnt}/dev/fd
 		[ "${USE_PROCFS}" = "yes" ] && mount -t procfs proc ${mnt}/proc
+		[ -d "${srcpath}" ] &&
+			${NULLMOUNT} -o ro ${srcpath} ${mnt}/usr/src
 		if [ -z "${NOLINUX}" ]; then
 			[ "${arch}" = "i386" -o "${arch}" = "amd64" ] &&
 				mount -t linprocfs linprocfs ${mnt}/compat/linux/proc
@@ -1567,7 +1571,7 @@ jail_start() {
 	fi
 
 	msg "Mounting system devices for ${MASTERNAME}"
-	do_jail_mounts "${mnt}" "${tomnt}" ${arch}
+	do_jail_mounts "${mnt}" "${tomnt}" ${arch} ${name}
 
 	# Create our data space
 	mkdir -p "${tomnt}/.p"
@@ -2405,7 +2409,7 @@ start_builder() {
 	# Create the /poudriere so that on zfs rollback does not nukes it
 	mkdir -p ${mnt}/.p
 	markfs prepkg ${mnt} >/dev/null
-	do_jail_mounts "${MASTERMNT}" ${mnt} ${arch}
+	do_jail_mounts "${MASTERMNT}" ${mnt} ${arch} ${jname}
 	do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
 	jstart
 	bset ${id} status "idle:"

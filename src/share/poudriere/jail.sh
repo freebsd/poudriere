@@ -59,6 +59,7 @@ Options:
                        svn+file, svn+http, svn+https, svn+ssh, tar=PATH
                        url=SOMEURL
     -P patch      -- Specify a patch to apply to the source before building.
+    -S srcpath    -- Specify a path to the source tree to be used.
     -t version    -- Version of FreeBSD to upgrade the jail to.
     -x            -- Build and setup native-xtools cross compile tools in jail when
                      building for a different TARGET ARCH than the host.
@@ -472,6 +473,12 @@ install_from_ftp() {
 	5.[0-4]*) HASH=MD5 ;;
 	*) HASH=SHA256 ;;
 	esac
+
+	DISTS="${DISTS} base"
+	[ -z "${SRCPATH}" ] && DISTS="${DISTS} src"
+	[ "${ARCH}" = "amd64" ] && DISTS="${DISTS} lib32"
+	DISTS="${DISTS} ${EXTRA_DISTS}"
+
 	if [ ${V%%.*} -lt 9 ]; then
 		msg "Fetching sets for FreeBSD ${V} ${ARCH}"
 		case ${METHOD} in
@@ -492,8 +499,7 @@ install_from_ftp() {
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
 		ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
 		esac
-		DISTS="base dict src games"
-		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32"
+		DISTS="${DISTS} dict games"
 		for dist in ${DISTS}; do
 			fetch_file ${JAILMNT}/fromftp/ ${URL}/$dist/CHECKSUM.${HASH} ||
 				err 1 "Fail to fetch checksum file"
@@ -544,18 +550,17 @@ install_from_ftp() {
 			ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
 			url=*) URL=${METHOD##url=} ;;
 		esac
-		DISTS="base.txz src.txz"
 
 		# Games check - Removed from HEAD in r278616
 		fetch_file ${JAILMNT}/fromftp/MANIFEST ${URL}/MANIFEST
-		grep -q games ${JAILMNT}/fromftp/MANIFEST && DISTS="${DISTS} games.txz"
+		grep -q games ${JAILMNT}/fromftp/MANIFEST &&
+			DISTS="${DISTS} games"
 
-		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
 		for dist in ${DISTS}; do
 			msg "Fetching ${dist} for FreeBSD ${V} ${ARCH}"
-			fetch_file ${JAILMNT}/fromftp/${dist} ${URL}/${dist}
+			fetch_file ${JAILMNT}/fromftp/${dist}.txz ${URL}/${dist}.txz
 			msg_n "Extracting ${dist}..."
-			tar -xpf ${JAILMNT}/fromftp/${dist} -C  ${JAILMNT}/ || err 1 " fail"
+			tar -xpf ${JAILMNT}/fromftp/${dist}.txz -C  ${JAILMNT}/ || err 1 " fail"
 			echo " done"
 		done
 	fi
@@ -679,6 +684,7 @@ create_jail() {
 	jset ${JAILNAME} timestamp $(date +%s)
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
+	[ -n "$SRCPATH" ] && jset ${JAILNAME} srcpath ${SRCPATH}
 
 	# Wrap the jail creation in a special cleanup hook that will remove the jail
 	# if any error is encountered
@@ -831,7 +837,7 @@ SETNAME=""
 BINMISC="/usr/sbin/binmiscctl"
 XDEV=0
 
-while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:x" FLAG; do
+while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:S:x" FLAG; do
 	case "${FLAG}" in
 		i)
 			INFO=1
@@ -889,6 +895,10 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:x" FLAG; do
 			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			SRCPATCHFILE="${OPTARG}"
 			;;
+		S)
+			[ -d ${OPTARG} ] || err 1 "No such directory ${OPTARG}"
+			SRCPATH=${OPTARG}
+			;;
 		q)
 			QUIET=1
 			;;
@@ -910,6 +920,7 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:x" FLAG; do
 			SETNAME="${OPTARG}"
 			;;
 		*)
+			echo "Unknown flag '${FLAG}'"
 			usage
 			;;
 	esac
