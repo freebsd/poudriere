@@ -53,7 +53,8 @@ Options:
                      removing the files.
     -m method     -- When used with -c, specify the method used to create the
                      ports tree. Possible methods are 'portsnap', 'svn',
-                     'svn+http', 'svn+https', 'svn+file', 'svn+ssh', 'git'.
+                     'svn+http', 'svn+https', 'svn+file', 'svn+ssh', 'git',
+                     or 'none'.
                      The default is 'portsnap'.
     -n            -- When used with -l, only print the name of the ports tree
     -p name       -- Specifies the name of the ports tree to work on.  The
@@ -139,6 +140,7 @@ svn+ssh);;
 svn+file);;
 svn);;
 git);;
+none);;
 *) usage;;
 esac
 
@@ -295,6 +297,7 @@ if [ ${UPDATE} -eq 1 ]; then
 		cd ${PORTSMNT:-${PTMNT}} && git pull ${quiet}
 		echo " done"
 		;;
+	none)	;;
 	*)
 		err 1 "Undefined upgrade method"
 		;;

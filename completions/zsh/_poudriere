@@ -129,7 +129,7 @@ _ports=(
 	'-p[specify the name of the portstree we work on]::tree:_poudriere_pt'
 	'-f[FS name (tank/jails/myjail)]::fs:_files -/'
 	'-M[mountpoint]::mountpoint:_files -/'
-	'-m[method]::method:((portsnap svn svn+http svn+ssh git))'
+	'-m[method]::method:((portsnap svn svn+http svn+ssh git none))'
 	'-v[Be verbose; show more information.]'
 )
 

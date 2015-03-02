@@ -1505,7 +1505,9 @@ jail_start() {
 
 	[ ${JAIL_OSVERSION} -lt 900000 ] && needkld="${needkld} sem"
 
-	[ -d ${DISTFILES_CACHE:-/nonexistent} ] || err 1 "DISTFILES_CACHE directory does not exist. (c.f. poudriere.conf)"
+	if [ "${DISTFILES_CACHE}" != "no" -a ! -d "${DISTFILES_CACHE}" ]; then
+		err 1 "DISTFILES_CACHE directory does not exist. (c.f.  poudriere.conf)"
+	fi
 	[ ${TMPFS_ALL} -ne 1 ] && [ $(sysctl -n kern.securelevel) -ge 1 ] && \
 	    err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags. USE_TMPFS=all can override this."
 
@@ -2040,8 +2042,10 @@ _real_build_port() {
 			;;
 		fetch)
 			mkdir -p ${mnt}/portdistfiles
-			echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf
-			gather_distfiles ${portdir} ${DISTFILES_CACHE} ${mnt}/portdistfiles || return 1
+			if [ "${DISTFILES_CACHE}" != "no" ]; then
+				echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf
+				gather_distfiles ${portdir} ${DISTFILES_CACHE} ${mnt}/portdistfiles || return 1
+			fi
 			JNETNAME="n"
 			JUSER=root
 			;;
@@ -2157,7 +2161,7 @@ _real_build_port() {
 		fi
 		print_phase_footer
 
-		if [ "${phase}" = "checksum" ]; then
+		if [ "${phase}" = "checksum" -a "${DISTFILES_CACHE}" != "no" ]; then
 			gather_distfiles ${portdir} ${mnt}/portdistfiles ${DISTFILES_CACHE} || return 1
 		fi
 
@@ -4234,6 +4238,7 @@ else
 fi
 include_poudriere_confs "$@"
 
+: ${DISTFILES_CACHE:=/nonexistent}
 : ${LIBEXECPREFIX:=${SCRIPTPREFIX}/../../libexec/poudriere}
 LIBEXECPREFIX=$(realpath ${LIBEXECPREFIX})
 AWKPREFIX=${SCRIPTPREFIX}/awk
