@@ -1156,6 +1156,8 @@ do_jail_mounts() {
 		fi
 	fi
 
+	run_hook jail mount ${mnt}
+
 	return 0
 }
 
