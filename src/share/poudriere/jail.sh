@@ -372,8 +372,10 @@ build_and_install_world() {
 				bin/realpath bin/rm bin/rmdir bin/sleep bin/sh \
 				sbin/sha256 sbin/sha512 sbin/md5 sbin/sha1"
 		for file in ${HLINK_FILES}; do
-			rm -f ${JAILMNT}/${file}
-			sh -c "cd ${JAILMNT} && ln ./nxb-bin/${file} ${file}"
+			if [ -f "${JAILMNT}/nxb-bin/${file}" ]; then
+				rm -f ${JAILMNT}/${file}
+				sh -c "cd ${JAILMNT} && ln ./nxb-bin/${file} ${file}"
+			fi
 		done
 	fi
 }
