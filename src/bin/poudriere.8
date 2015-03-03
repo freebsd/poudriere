@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd December 18, 2014
+.Dd March 31, 2015
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -385,6 +385,13 @@ This will use the
 .Sy SVN_HOST
 variable in
 .Pa poudriere.conf .
+.It Sy git git+file git+ssh git+https git+http
+Use Git.
+Its behavior is configured by the 
+.Fl b 
+and 
+.Fl U 
+options.
 .El
 .It Fl f Ar filesystem
 Specifies the
@@ -408,6 +415,18 @@ as the FreeBSD source tree mounted inside the jail.
 instead of upgrading to the latest security fix of the jail version, you can
 jump to the new specified
 .Ar version .
+.It Fl b Ar branch 
+specify the 
+.Ar branch 
+for
+.Fl m Sy git
+to use.
+.It Fl U Ar url
+specify the
+.Ar url
+for
+.Fl m Sy git 
+to clone from.
 .It Fl z Ar set
 This specifies which SET to start/stop the jail with.
 .It Fl x
