@@ -262,6 +262,8 @@ jstart() {
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${ipargs} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
+	injail id >/dev/null 2>&1 || \
+	    err 1 "Unable to execute id(1) in jail. Emulation or ABI wrong."
 	if ! injail id ${PORTBUILD_USER} >/dev/null 2>&1 ; then
 		msg_n "Creating user/group ${PORTBUILD_USER}"
 		injail pw groupadd ${PORTBUILD_USER} -g 65532 || \
