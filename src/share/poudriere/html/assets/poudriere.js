@@ -120,7 +120,7 @@ function determine_canvas_width() {
 
 function update_canvas(stats) {
 	var queued, built, failed, skipped, ignored, remaining, pctdone;
-	var height, width, x, context, canvas, pctdonetxt;
+	var height, width, x, context, canvas;
 
 	if (stats.queued === undefined) {
 		return;
@@ -168,12 +168,7 @@ function update_canvas(stats) {
 	if (isNaN(pctdone)) {
 		pctdone = 0;
 	}
-	if (pctdone < 1.0 && pctdone != 0) {
-		pctdonetxt = "< 1";
-	} else {
-		pctdonetxt = Math.floor(pctdone);
-	}
-	$('#progresspct').text(pctdone + '%');
+	$('#progresspct').text(pctdone.toFixed(2) + '%');
 
 	$('#stats_remaining').html(remaining);
 }
