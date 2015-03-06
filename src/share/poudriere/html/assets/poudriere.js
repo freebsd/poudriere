@@ -173,7 +173,7 @@ function update_canvas(stats) {
 	} else {
 		pctdonetxt = Math.floor(pctdone);
 	}
-	$('#progresspct').text(pctdone + '%');
+	$('#progresspct').text(pctdonetxt + '%');
 
 	$('#stats_remaining').html(remaining);
 }
