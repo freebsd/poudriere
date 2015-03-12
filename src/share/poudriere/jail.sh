@@ -492,7 +492,7 @@ install_from_ftp() {
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
 		ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
 		esac
-		DISTS="base dict src"
+		DISTS="base dict src games"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32"
 		for dist in ${DISTS}; do
 			fetch_file ${JAILMNT}/fromftp/ ${URL}/$dist/CHECKSUM.${HASH} ||
@@ -545,6 +545,11 @@ install_from_ftp() {
 			url=*) URL=${METHOD##url=} ;;
 		esac
 		DISTS="base.txz src.txz"
+
+		# Games check - Removed from HEAD in r278616
+		fetch_file ${JAILMNT}/fromftp/MANIFEST ${URL}/MANIFEST
+		grep games ${JAILMNT}/fromftp/MANIFEST > /dev/null && DISTS="${DISTS} games.txz"
+
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
 		for dist in ${DISTS}; do
 			msg "Fetching ${dist} for FreeBSD ${V} ${ARCH}"
