@@ -548,7 +548,7 @@ install_from_ftp() {
 
 		# Games check - Removed from HEAD in r278616
 		fetch_file ${JAILMNT}/fromftp/MANIFEST ${URL}/MANIFEST
-		grep games ${JAILMNT}/fromftp/MANIFEST > /dev/null && DISTS="${DISTS} games.txz"
+		grep -q games ${JAILMNT}/fromftp/MANIFEST && DISTS="${DISTS} games.txz"
 
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
 		for dist in ${DISTS}; do
