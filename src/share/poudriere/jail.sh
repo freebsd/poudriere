@@ -474,10 +474,8 @@ install_from_ftp() {
 	*) HASH=SHA256 ;;
 	esac
 
-	DISTS="${DISTS} base"
+	DISTS="${DISTS} base games"
 	[ -z "${SRCPATH}" ] && DISTS="${DISTS} src"
-	[ "${NO_LIB32:-no}" = "no" -a "${ARCH}" = "amd64" ] &&
-		DISTS="${DISTS} lib32"
 	DISTS="${DISTS} ${EXTRA_DISTS}"
 
 	if [ ${V%%.*} -lt 9 ]; then
@@ -500,7 +498,9 @@ install_from_ftp() {
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
 		ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
 		esac
-		DISTS="${DISTS} dict games"
+		DISTS="${DISTS} dict"
+		[ "${NO_LIB32:-no}" = "no" -a "${ARCH}" = "amd64" ] &&
+			DISTS="${DISTS} lib32"
 		for dist in ${DISTS}; do
 			fetch_file ${JAILMNT}/fromftp/ ${URL}/$dist/CHECKSUM.${HASH} ||
 				err 1 "Fail to fetch checksum file"
@@ -553,11 +553,10 @@ install_from_ftp() {
 		esac
 
 		# Games check - Removed from HEAD in r278616
+		DISTS="${DISTS} lib32"
 		fetch_file ${JAILMNT}/fromftp/MANIFEST ${URL}/MANIFEST
-		grep -q games ${JAILMNT}/fromftp/MANIFEST &&
-			DISTS="${DISTS} games"
-
 		for dist in ${DISTS}; do
+			grep -q ${dist} ${JAILMNT}/fromftp/MANIFEST || continue
 			msg "Fetching ${dist} for FreeBSD ${V} ${ARCH}"
 			fetch_file ${JAILMNT}/fromftp/${dist}.txz ${URL}/${dist}.txz
 			msg_n "Extracting ${dist}..."
