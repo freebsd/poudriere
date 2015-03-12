@@ -143,10 +143,11 @@ libucl_a_CFLAGS=	-I$(top_srcdir)/external/libucl/uthash \
 			-I$(top_srcdir)/external/libucl/include  \
 			-I$(top_srcdir)/external/libucl/src \
 			-Wno-unused-parameter -Wno-pointer-sign
-libnv_a_SOURCES=	external/libnv/dnvlist.c \
+libnv_a_CFLAGS=		-I$(top_srcdir)/external/libnv/
+libnv_a_SOURCES=	external/libnv/subr_dnvlist.c \
 			external/libnv/msgio.c \
-			external/libnv/nvlist.c \
-			external/libnv/nvpair.c
+			external/libnv/subr_nvlist.c \
+			external/libnv/subr_nvpair.c
 poudriered_SOURCES=	src/poudriered/poudriered.c
 poudriered_CFLAGS=	-DPREFIX=\"$(prefix)\" \
 			-I$(top_srcdir)/external/libucl/include
@@ -155,14 +156,14 @@ poudriered_LDADD=	libucl.a \
 			-lutil
 
 jexecd_SOURCES=	src/libexec/poudriere/jexecd/jexecd.c
-jexecd_CFLAGS=	-I$(top_srcdir)/external/libnv
+jexecd_CFLAGS=	-I$(top_srcdir)/external/libnv/sys
 jexecd_LDADD=	libnv.a \
 		-lsbuf \
 		-lutil \
 		-ljail
 
 rexec_SOURCES=	src/libexec/poudriere/rexec/rexec.c
-rexec_CFLAGS=	-I$(top_srcdir)/external/libnv
+rexec_CFLAGS=	-I$(top_srcdir)/external/libnv/sys
 rexec_LDADD=	libnv.a
 
 cached_SOURCES=	src/libexec/poudriere/cached/cached.c

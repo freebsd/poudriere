@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD: head/lib/libnv/nv_impl.h 271579 2014-09-14 09:30:09Z pjd $
+ * $FreeBSD: head/sys/sys/nv_impl.h 279439 2015-03-01 00:34:27Z rstone $
  */
 
 #ifndef	_NV_IMPL_H_
@@ -45,6 +45,37 @@ typedef struct nvpair nvpair_t;
 #define	NV_TYPE_LAST		NV_TYPE_BINARY
 
 #define	NV_FLAG_BIG_ENDIAN		0x80
+
+#ifdef _KERNEL
+#define	nv_malloc(size)			malloc((size), M_NVLIST, M_NOWAIT)
+#define	nv_calloc(n, size)		malloc((n) * (size), M_NVLIST, \
+					    M_NOWAIT | M_ZERO)
+#define	nv_realloc(buf, size)		realloc((buf), (size), M_NVLIST, \
+					    M_NOWAIT)
+#define	nv_free(buf)			free((buf), M_NVLIST)
+#define	nv_strdup(buf)			strdup((buf), M_NVLIST)
+#define	nv_vasprintf(ptr, ...)		vasprintf(ptr, M_NVLIST, __VA_ARGS__)
+
+#define	SAVE_ERRNO(var)			((void)(var))
+#define	RESTORE_ERRNO(var)		((void)(var))
+
+#define	ERRNO_OR_DEFAULT(default)	(default)
+
+#else
+
+#define	nv_malloc(size)			malloc((size))
+#define	nv_calloc(n, size)		calloc((n), (size))
+#define	nv_realloc(buf, size)		realloc((buf), (size))
+#define	nv_free(buf)			free((buf))
+#define	nv_strdup(buf)			strdup((buf))
+#define	nv_vasprintf(ptr, ...)		vasprintf(ptr, __VA_ARGS__)
+
+#define	SAVE_ERRNO(var) 		(var) = errno
+#define	RESTORE_ERRNO(var) 		errno = (var)
+
+#define	ERRNO_OR_DEFAULT(default)	(errno == 0 ? (default) : errno)
+
+#endif
 
 int	*nvlist_descriptors(const nvlist_t *nvl, size_t *nitemsp);
 size_t	 nvlist_ndescriptors(const nvlist_t *nvl);
@@ -96,14 +127,6 @@ int		 nvpair_get_descriptor(const nvpair_t *nvp);
 const void	*nvpair_get_binary(const nvpair_t *nvp, size_t *sizep);
 
 void nvpair_free(nvpair_t *nvp);
-
-const nvpair_t *nvlist_getf_nvpair(const nvlist_t *nvl, const char *namefmt, ...) __printflike(2, 3);
-
-const nvpair_t *nvlist_getv_nvpair(const nvlist_t *nvl, const char *namefmt, va_list nameap) __printflike(2, 0);
-
-nvpair_t *nvlist_takef_nvpair(nvlist_t *nvl, const char *namefmt, ...) __printflike(2, 3);
-
-nvpair_t *nvlist_takev_nvpair(nvlist_t *nvl, const char *namefmt, va_list nameap) __printflike(2, 0);
 
 nvpair_t *nvpair_createf_null(const char *namefmt, ...) __printflike(1, 2);
 nvpair_t *nvpair_createf_bool(bool value, const char *namefmt, ...) __printflike(2, 3);
