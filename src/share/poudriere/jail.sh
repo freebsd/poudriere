@@ -476,7 +476,8 @@ install_from_ftp() {
 
 	DISTS="${DISTS} base"
 	[ -z "${SRCPATH}" ] && DISTS="${DISTS} src"
-	[ "${ARCH}" = "amd64" ] && DISTS="${DISTS} lib32"
+	[ "${NO_LIB32:-no}" = "no" -a "${ARCH}" = "amd64" ] &&
+		DISTS="${DISTS} lib32"
 	DISTS="${DISTS} ${EXTRA_DISTS}"
 
 	if [ ${V%%.*} -lt 9 ]; then
