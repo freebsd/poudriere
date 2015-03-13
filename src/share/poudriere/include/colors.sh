@@ -56,15 +56,15 @@ fi
 D_LEFT="${COLOR_BOLD}[${COLOR_RESET}"
 D_RIGHT="${COLOR_BOLD}]${COLOR_RESET}"
 
-: ${COLOR_PORT:=${COLOR_CYAN}}
+: ${COLOR_PORT:=${COLOR_LIGHT_CYAN}}
 : ${COLOR_WARN:=${COLOR_YELLOW}}
 : ${COLOR_DEBUG:=${COLOR_BLUE}}
-: ${COLOR_ERROR:=${COLOR_RED}}
-: ${COLOR_SUCCESS:=${COLOR_GREEN}}
+: ${COLOR_ERROR:=${COLOR_LIGHT_RED}}
+: ${COLOR_SUCCESS:=${COLOR_LIGHT_GREEN}}
 : ${COLOR_IGNORE:=${COLOR_DARK_GRAY}}
 : ${COLOR_SKIP:=${COLOR_YELLOW}}
-: ${COLOR_FAIL:=${COLOR_RED}}
-: ${COLOR_PHASE:=${COLOR_LIGHT_MAGENTA}}
+: ${COLOR_FAIL:=${COLOR_LIGHT_RED}}
+: ${COLOR_PHASE:=${COLOR_DARK_GRAY}}
 : ${COLOR_DRY_MODE:=${COLOR_GREEN}}
 
 colorize_job_id() {
@@ -82,20 +82,20 @@ colorize_job_id() {
 	fi
 
 	case ${id} in
-	1)  color="${COLOR_RED}" ;;
-	2)  color="${COLOR_GREEN}" ;;
-	3)  color="${COLOR_BROWN}" ;;
-	4)  color="${COLOR_BLUE}" ;;
-	5)  color="${COLOR_MAGENTA}" ;;
-	6)  color="${COLOR_CYAN}" ;;
-	7)  color="${COLOR_LIGHT_GRAY}" ;;
+	1)  color="${COLOR_WHITE}" ;;
+	2)  color="${COLOR_LIGHT_GREEN}" ;;
+	3)  color="${COLOR_LIGHT_MAGENTA}" ;;
+	4)  color="${COLOR_YELLOW}" ;;
+	5)  color="${COLOR_LIGHT_BLUE}" ;;
+	6)  color="${COLOR_LIGHT_RED}" ;;
+	7)  color="${COLOR_LIGHT_CYAN}" ;;
 	8)  color="${COLOR_DARK_GRAY}" ;;
-	9)  color="${COLOR_LIGHT_RED}" ;;
-	10) color="${COLOR_LIGHT_GREEN}" ;;
-	11) color="${COLOR_YELLOW}" ;;
-	12) color="${COLOR_LIGHT_BLUE}" ;;
-	13) color="${COLOR_LIGHT_MAGENTA}" ;;
-	14) color="${COLOR_LIGHT_CYAN}" ;;
+	9)  color="${COLOR_GREEN}" ;;
+	10) color="${COLOR_MAGENTA}" ;;
+	11) color="${COLOR_BROWN}" ;;
+	12) color="${COLOR_BLUE}" ;;
+	13) color="${COLOR_RED}" ;;
+	14) color="${COLOR_CYAN}" ;;
 	*)  color="${COLOR_RESET}" ;;
 	esac
 
