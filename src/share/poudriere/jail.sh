@@ -470,7 +470,7 @@ install_from_git() {
 			echo done
 		fi
 	else
-		msg_n "Updating the sources from svn..."
+		msg_n "Updating the sources from git..."
 		( cd "${SRC_BASE}" && ${GIT_CMD} pull ) || err 1 " fail"
 		echo " done"
 	fi
