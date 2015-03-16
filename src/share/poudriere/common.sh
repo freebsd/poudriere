@@ -1065,6 +1065,7 @@ do_jail_mounts() {
 	local arch="$3"
 	local name="$4"
 	local devfspath="null zero random urandom stdin stdout stderr fd fd/* bpf* pts pts/*"
+	local srcpath
 
 	# clone will inherit from the ref jail
 	if [ ${mnt##*/} = "ref" ]; then
@@ -1083,9 +1084,9 @@ do_jail_mounts() {
 	fi
 
 	# Mount /usr/src into target if it exists and not overridden
-	srcpath=$(jget ${name} srcpath)
-	[ -d "${from}/usr/src" -a "${from}" != "${mnt}" -a -z "${srcpath}" ] &&
-		srcpath="${from}/usr/src"
+	_jget srcpath ${name} srcpath 2>/dev/null || srcpath="${from}/usr/src"
+	[ -d "${srcpath}" -a "${from}" != "${mnt}" ] && \
+	    ${NULLMOUNT} -o ro ${srcpath} ${mnt}/usr/src
 
 	# ref jail only needs devfs
 	mount -t devfs devfs ${mnt}/dev
@@ -1102,8 +1103,6 @@ do_jail_mounts() {
 		    [ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ] && \
 		    mount -t fdescfs fdesc ${mnt}/dev/fd
 		[ "${USE_PROCFS}" = "yes" ] && mount -t procfs proc ${mnt}/proc
-		[ -d "${srcpath}" ] &&
-			${NULLMOUNT} -o ro ${srcpath} ${mnt}/usr/src
 		if [ -z "${NOLINUX}" ]; then
 			[ "${arch}" = "i386" -o "${arch}" = "amd64" ] &&
 				mount -t linprocfs linprocfs ${mnt}/compat/linux/proc
