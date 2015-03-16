@@ -434,16 +434,5 @@ main(int argc, char **argv)
 
 	log_as("root");
 
-#ifdef PROC_REAP_KILL
-	if (0) /*
-		* XXX: Need this for proper cleanup but it causes panic.
-		* XXX: Also need a signal handler for SIGTERM to cleanup
-		*      children to utilize this.
-		*/
-	/* Acquire the reaper */
-	if (procctl(P_PID, getpid(), PROC_REAP_ACQUIRE, NULL) == -1)
-		err(EXIT_FAILURE, "procctl(PROC_REAP_ACQUIRE)");
-#endif
-
 	serve(server_fd);
 }
