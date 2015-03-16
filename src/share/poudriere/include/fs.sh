@@ -148,7 +148,11 @@ clonefs() {
 			${zfs_to}
 	else
 		[ ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs all ${to}
+		echo "src" >> "$from/usr/.cpignore"
+		echo "debug" >> "$from/usr/lib/.cpignore"
 		do_clone "${from}" "${to}"
+		echo ".p" >> "$to/.cpignore"
+		rm -f "$from/usr/.cpignore" "$from/usr/lib/.cpignore"
 	fi
 }
 
