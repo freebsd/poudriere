@@ -211,7 +211,7 @@ client_accept(int fd)
 
 #ifdef PROC_REAP_KILL
 static void
-killall(void)
+killall(int sig)
 {
 	struct procctl_reaper_status info;
 	struct procctl_reaper_kill killemall;
@@ -221,7 +221,7 @@ killall(void)
 	if (info.rs_children == 0)
 		return;
 
-	killemall.rk_sig = SIGKILL;
+	killemall.rk_sig = sig;
 	killemall.rk_flags = 0;
 
 	if (procctl(P_PID, getpid(), PROC_REAP_KILL, &killemall) == -1) {
@@ -265,7 +265,7 @@ serve(int fd) {
 				EV_SET(&ke, cl->pid, EVFILT_PROC, EV_DELETE, NOTE_EXIT, 0, cl);
 				kevent(kq, &ke, 1, NULL, 0, NULL);
 #ifdef PROC_REAP_KILL
-				killall();
+				killall(SIGKILL);
 #else
 				killpg(cl->pid, SIGKILL);
 #endif
@@ -280,7 +280,7 @@ serve(int fd) {
 			continue;
 		} else if (ke.filter == EVFILT_PROC) {
 #ifdef PROC_REAP_KILL
-			killall();
+			killall(SIGKILL);
 #else
 			killpg(cl->pid, SIGKILL);
 #endif
