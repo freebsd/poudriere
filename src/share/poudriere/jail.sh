@@ -375,7 +375,7 @@ build_and_install_world() {
 		for file in ${HLINK_FILES}; do
 			if [ -f "${JAILMNT}/nxb-bin/${file}" ]; then
 				rm -f ${JAILMNT}/${file}
-				sh -c "cd ${JAILMNT} && ln ./nxb-bin/${file} ${file}"
+				ln ./nxb-bin/${file} ${JAILMNT}/${file}
 			fi
 		done
 	fi
