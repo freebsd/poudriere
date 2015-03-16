@@ -120,7 +120,7 @@ mnt_tmpfs() {
 }
 
 clonefs() {
-	[ $# -lt 2 ] && eargs clonefs from to snap
+	[ $# -ne 3 ] && eargs clonefs from to snap
 	local from=$1
 	local to=$2
 	local snap=$3
@@ -148,11 +148,16 @@ clonefs() {
 			${zfs_to}
 	else
 		[ ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs all ${to}
-		echo "src" >> "$from/usr/.cpignore"
-		echo "debug" >> "$from/usr/lib/.cpignore"
+		if [ "${snap}" = "clean" ]; then
+			echo "src" >> "${from}/usr/.cpignore" || :
+			echo "debug" >> "${from}/usr/lib/.cpignore" || :
+		fi
 		do_clone "${from}" "${to}"
-		echo ".p" >> "$to/.cpignore"
-		rm -f "$from/usr/.cpignore" "$from/usr/lib/.cpignore"
+		if [ "${snap}" = "clean" ]; then
+			rm -f "${from}/usr/.cpignore" \
+			    "${from}/usr/lib/.cpignore"
+			echo ".p" >> "${to}/.cpignore"
+		fi
 	fi
 }
 
