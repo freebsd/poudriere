@@ -216,14 +216,15 @@ killall(void)
 	struct procctl_reaper_status info;
 	struct procctl_reaper_kill killemall;
 
-	procctl(P_PID, getpid(), PROC_REAP_STATUS, &info);
+	if (procctl(P_PID, getpid(), PROC_REAP_STATUS, &info) == -1)
+		err(EXIT_FAILURE, "procctl(PROC_REAP_STATUS)");
 	if (info.rs_children == 0)
 		return;
 
 	killemall.rk_sig = SIGKILL;
 	killemall.rk_flags = 0;
 
-	if (procctl(P_PID, getpid(), PROC_REAP_KILL, &killemall) != 0) {
+	if (procctl(P_PID, getpid(), PROC_REAP_KILL, &killemall) == -1) {
 		warnx("Fail to kill children");
 		return;
 	}
@@ -389,7 +390,8 @@ main(int argc, char **argv)
 
 #ifdef PROC_REAP_KILL
 	/* Acquire the reaper */
-	procctl(P_PID, getpid(), PROC_REAP_ACQUIRE, NULL);
+	if (procctl(P_PID, getpid(), PROC_REAP_ACQUIRE, NULL) == -1)
+		err(EXIT_FAILURE, "procctl(PROC_REAP_ACQUIRE)");
 #endif
 
 	serve(server_fd);
