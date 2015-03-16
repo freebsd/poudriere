@@ -1023,7 +1023,7 @@ markfs() {
 			echo './tmp/*' >> ${mtreefile}
 			;;
 		preinst)
-			cat >  ${mnt}/.p/mtree.${name}exclude << EOF
+			cat >> ${mnt}/.p/mtree.${name}exclude << EOF
 ./etc/group
 ./etc/make.conf
 ./etc/make.conf.bak
