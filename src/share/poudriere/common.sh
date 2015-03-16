@@ -2928,8 +2928,8 @@ stop_build() {
 	umount -f ${mnt}/.npkg 2>/dev/null || :
 	rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
 
-	# 3 = HEADER+jexecd+ps itself
-	if [ $(injail ps aux | wc -l) -ne 3 ]; then
+	# 4 = HEADER+jexecd+reaper+ps itself
+	if [ $(injail ps aux | wc -l) -ne 4 ]; then
 		msg_warn "Leftover processes:"
 		injail ps auxwwd | egrep -v '(ps auxwwd|jexecd)'
 	fi
