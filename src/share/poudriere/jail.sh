@@ -433,7 +433,7 @@ install_from_git() {
 	esac
 	if [ ${UPDATE} -eq 0 ]; then
 		msg_n "Checking out the sources using git..."
-		${GIT_CMD} clone --depth 1 ${SCM_BRANCH:+-b ${SCM_BRANCH}}  ${proto}://${SCM_URL} ${SRC_BASE} || err 1 " fail"
+		${GIT_CMD} clone --depth 1 ${SCM_BRANCH:+-b ${SCM_BRANCH}}  ${SCM_URL} ${SRC_BASE} || err 1 " fail"
 		echo " done"
 		if [ -n "${SRCPATCHFILE}" ]; then
 			msg_n "Patching the sources with ${SRCPATCHFILE}"
