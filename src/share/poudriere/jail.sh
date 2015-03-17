@@ -735,7 +735,7 @@ create_jail() {
 	CLEANUP_HOOK=cleanup_new_jail
 	jset ${JAILNAME} method ${METHOD}
 	[ -n "${SCM_BRANCH}" ] && jset ${JAILNAME} scm_branch ${SCM_BRANCH}
-	[ -n "${SCM_URL}" ] && jset ${JAILNAME} scm_branch ${SCM_URL}
+	[ -n "${SCM_URL}" ] && jset ${JAILNAME} scm_url ${SCM_URL}
 	[ -n "${FCT}" ] && ${FCT} version_extra
 
 	if [ -r "${SRC_BASE}/sys/conf/newvers.sh" ]; then
