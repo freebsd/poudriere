@@ -2830,6 +2830,8 @@ build_pkg() {
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
 		umount -f ${mnt}/${LOCALBASE:-/usr/local} 2>/dev/null || :
 		mnt_tmpfs localbase ${mnt}/${LOCALBASE:-/usr/local}
+		do_clone "${MASTERMNT}/${LOCALBASE:-/usr/local}" \
+		    "${mnt}/${LOCALBASE:-/usr/local}"
 	fi
 
 	[ -f ${mnt}/.need_rollback ] && rollbackfs prepkg ${mnt}
