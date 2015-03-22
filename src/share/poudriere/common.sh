@@ -255,12 +255,12 @@ jstart() {
 	jail -c persist name=${name} \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
-		${network} \
+		${network} ${JAIL_PARAMS} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
 	jail -c persist name=${name}-n \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
-		${ipargs} \
+		${ipargs} ${JAIL_PARAMS} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
 	injail id >/dev/null 2>&1 || \
 	    err 1 "Unable to execute id(1) in jail. Emulation or ABI wrong."
