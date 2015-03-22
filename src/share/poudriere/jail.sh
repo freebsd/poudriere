@@ -337,6 +337,7 @@ build_and_install_world() {
 		${MAKE_CMD} -C ${SRC_BASE} native-xtools ${MAKE_JOBS} \
 		    ${MAKEWORLDARGS} NO_SHARED=y || err 1 "Failed to 'make native-xtools'"
 		XDEV_TOOLS=/usr/obj/${TARGET}.${TARGET_ARCH}/nxb-bin
+		rm -rf ${JAILMNT}/nxb-bin || err 1 "Failed to remove old native-xtools"
 		mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
 		cat >> ${JAILMNT}/etc/make.conf <<- EOF
 		CC=/nxb-bin/usr/bin/cc
