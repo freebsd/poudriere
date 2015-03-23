@@ -1206,18 +1206,10 @@ use_options() {
 	fi
 	[ -d "${optionsdir}" ] || return 1
 	optionsdir=$(realpath ${optionsdir} 2>/dev/null)
-	if [ -z "$CONFIGSTR" -o $CONFIGSTR -eq 0 ]; then
-		[ "${mnt##*/}" = "ref" ] &&
-			msg "Mounting /var/db/ports from: ${optionsdir}"
-		${NULLMOUNT} -o ro ${optionsdir} ${mnt}/var/db/ports ||
-			err 1 "Failed to mount OPTIONS directory"
-	else
-		[ "${mnt##*/}" = "ref" ] &&
-			msg "Copying /var/db/ports from: ${optionsdir}"
-		[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs config ${mnt}/var/db/ports
-		do_clone ${optionsdir} ${mnt}/var/db/ports ||
-			err 1 "Failed to copy OPTIONS directory"
-	fi
+	[ "${mnt##*/}" = "ref" ] && \
+	    msg "Copying /var/db/ports from: ${optionsdir}"
+	do_clone "${optionsdir}" "${mnt}/var/db/ports" || \
+	    err 1 "Failed to copy OPTIONS directory"
 
 	return 0
 }
@@ -1261,13 +1253,23 @@ do_portbuild_mounts() {
 	${NULLMOUNT} ${DISTFILES_CACHE} ${mnt}/distfiles ||
 		err 1 "Failed to mount the distfiles cache directory"
 
-	optionsdir="${MASTERNAME}"
-	[ -n "${setname}" ] && optionsdir="${optionsdir} ${jname}-${setname}"
-	optionsdir="${optionsdir} ${jname}-${ptname} ${setname} ${ptname} ${jname} -"
+	# Copy in the options for the ref jail, but just ro nullmount it
+	# in builders.
+	if [ "${mnt##*/}" = "ref" ]; then
+		[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] && \
+		    mnt_tmpfs config "${mnt}/var/db/ports"
+		optionsdir="${MASTERNAME}"
+		[ -n "${setname}" ] && optionsdir="${optionsdir} ${jname}-${setname}"
+		optionsdir="${optionsdir} ${jname}-${ptname} ${setname} ${ptname} ${jname} -"
 
-	for opt in ${optionsdir}; do
-		use_options ${mnt} ${opt} && break || continue
-	done
+		for opt in ${optionsdir}; do
+			use_options ${mnt} ${opt} && break || continue
+		done
+	else
+		${NULLMOUNT} -o ro ${MASTERMNT}/var/db/ports \
+		    ${mnt}/var/db/ports || \
+		    err 1 "Failed to mount the options directory"
+	fi
 
 	return 0
 }
