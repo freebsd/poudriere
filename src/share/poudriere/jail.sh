@@ -375,7 +375,7 @@ build_and_install_world() {
 		# Endian issues on mips/mips64 are not handling exec of 64bit shells
 		# from emulated environments correctly.  This works just fine on ARM
 		# because of the same issue, so allow it for now.
-		[ ${TARGET} != "mips" ] && \
+		[ ${TARGET} = "mips" ] || \
 		    HLINK_FILES="${HLINK_FILES} bin/sh bin/csh"
 
 		for file in ${HLINK_FILES}; do
