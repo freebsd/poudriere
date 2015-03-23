@@ -4215,6 +4215,7 @@ STATUS=0 # out of jail #
 SAVED_PWD="${PWD}"
 cd /
 
+. ${SCRIPTPREFIX}/include/colors.pre.sh
 [ -z "${POUDRIERE_ETC}" ] &&
     POUDRIERE_ETC=$(realpath ${SCRIPTPREFIX}/../../etc)
 # If this is a relative path, add in ${PWD} as a cd / is done.
