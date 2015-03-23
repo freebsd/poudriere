@@ -381,7 +381,7 @@ build_and_install_world() {
 			HLINK_SHELLS="bin/sh bin/csh"
 			for file in ${HLINK_SHELLS}; do
 				rm -f ${JAILMNT}/${file}
-				sh -c "cd ${JAILMNT} && ln ./nxb-bin/${file} ${file}"
+				ln ./nxb-bin/${file} ${JAILMNT}/${file}
 			done
 		fi
 
