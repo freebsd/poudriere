@@ -377,13 +377,8 @@ build_and_install_world() {
 		# Endian issues on mips/mips64 are not handling exec of 64bit shells
 		# from emulated environments correctly.  This works just fine on ARM
 		# because of the same issue, so allow it for now.
-		if [ ${TARGET} != "mips" ]; then
-			HLINK_SHELLS="bin/sh bin/csh"
-			for file in ${HLINK_SHELLS}; do
-				rm -f ${JAILMNT}/${file}
-				ln ./nxb-bin/${file} ${JAILMNT}/${file}
-			done
-		fi
+		[ ${TARGET} != "mips" ] && \
+		    HLINK_FILES="${HLINK_FILES} bin/sh bin/csh"
 
 		for file in ${HLINK_FILES}; do
 			if [ -f "${JAILMNT}/nxb-bin/${file}" ]; then
