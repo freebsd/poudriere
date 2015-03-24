@@ -726,7 +726,7 @@ info_jail() {
 	local building_started status log
 	local elapsed elapsed_days elapsed_hms elapsed_timestamp
 	local now start_time timestamp
-	local jversion jarch jmethod pmethod
+	local jversion jarch jmethod pmethod mnt fs
 
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 
@@ -748,11 +748,15 @@ info_jail() {
 	_jget jarch ${JAILNAME} arch
 	_jget jmethod ${JAILNAME} method
 	_jget timestamp ${JAILNAME} timestamp 2>/dev/null || :
+	_jget mnt ${JAILNAME} mnt 2>/dev/null || :
+	_jget fs ${JAILNAME} fs 2>/dev/null || fs=""
 
 	echo "Jail name:         ${JAILNAME}"
 	echo "Jail version:      ${jversion}"
 	echo "Jail arch:         ${jarch}"
 	echo "Jail method:       ${jmethod}"
+	echo "Jail mount:        ${mnt}"
+	echo "Jail fs:           ${fs}"
 	if [ -n "${timestamp}" ]; then
 		echo "Jail updated:      $(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
 	fi
