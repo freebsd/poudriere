@@ -49,14 +49,15 @@ do_clone() {
 }
 
 rollbackfs() {
-	[ $# -ne 2 ] && eargs rollbackfs name mnt
+	[ $# -lt 2 ] && eargs rollbackfs name mnt [fs]
 	local name=$1
 	local mnt=$2
-	local fs=$(zfs_getfs ${mnt})
+	local fs="${3:-$(zfs_getfs ${mnt})}"
 	local mtree_mnt
 
 	if [ -n "${fs}" ]; then
-		zfs rollback -r ${fs}@${name}  || err 1 "Unable to rollback ${fs}"
+		zfs rollback -r "${fs}@${name}" || \
+		    err 1 "Unable to rollback ${fs}"
 		return
 	fi
 
@@ -130,7 +131,13 @@ clonefs() {
 	destroyfs ${to} jail
 	mkdir -p ${to}
 	to=$(realpath ${to})
-	[ ${TMPFS_ALL} -eq 1 ] && unset fs
+	# When using TMPFS, there is no need to clone the originating FS from
+	# a snapshot as the destination will be tmpfs. We do however need to
+	# ensure the originating FS is rolled back to the expected snapshot.
+	if [ ${TMPFS_ALL} -eq 1 ]; then
+		rollbackfs "${snap}" "${from}" "${fs}"
+		unset fs
+	fi
 	if [ -n "${fs}" ]; then
 		name=${to##*/}
 
