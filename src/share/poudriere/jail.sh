@@ -185,8 +185,8 @@ rename_jail() {
 update_jail() {
 	SRC_BASE="${JAILMNT}/usr/src"
 	METHOD=$(jget ${JAILNAME} method)
-	SCM_BRANCH=$(jget ${JAILNAME} scm_branch 2>/dev/null)
-	SCM_URL=$(jget ${JAILNAME} scm_url 2>/dev/null)
+	GIT_BRANCH=$(jget ${JAILNAME} git_branch 2>/dev/null)
+	GIT_URL=$(jget ${JAILNAME} git_url 2>/dev/null)
 	_jget ARCH ${JAILNAME} arch
 	if [ -z "${METHOD}" -o "${METHOD}" = "-" ]; then
 		METHOD="ftp"
@@ -250,8 +250,8 @@ update_jail() {
 	git*)
 		install_from_git version_extra
 		RELEASE=$(update_version "${version_extra}")
-		jset ${JAILNAME} scm_branch "${SCM_BRANCH}"
-		jset ${JAILNAME} scm_url "${SCM_URL}"
+		jset ${JAILNAME} git_branch "${GIT_BRANCH}"
+		jset ${JAILNAME} git_url "${GIT_URL}"
 		update_version_env "${RELEASE}"
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
@@ -445,7 +445,6 @@ install_from_src() {
 install_from_git() {
 	local var_version_extra="$1"
 	local UPDATE=0
-	local proto
 	local git_sha
 
 	if [ -d "${SRC_BASE}" ]; then
@@ -453,16 +452,9 @@ install_from_git() {
 	else
 		mkdir -p ${SRC_BASE}
 	fi
-	case ${METHOD} in
-	git+http) proto="http" ;;
-	git+https) proto="https" ;;
-	git+ssh) proto="git+ssh" ;;
-	git+file) proto="file" ;;
-	git) proto="git" ;;
-	esac
 	if [ ${UPDATE} -eq 0 ]; then
 		msg_n "Checking out the sources using git..."
-		${GIT_CMD} clone --depth 1 ${SCM_BRANCH:+-b ${SCM_BRANCH}}  ${SCM_URL} ${SRC_BASE} || err 1 " fail"
+		${GIT_CMD} clone --depth 1 ${GIT_BRANCH:+-b ${GIT_BRANCH}}  ${GIT_URL} ${SRC_BASE} || err 1 " fail"
 		echo " done"
 		if [ -n "${SRCPATCHFILE}" ]; then
 			msg_n "Patching the sources with ${SRCPATCHFILE}"
@@ -694,11 +686,10 @@ create_jail() {
 		IFS=${OIFS}
 		RELEASE="${ALLBSDVER}-JPSNAP/ftp"
 		;;
-	git*)
-		test -z "${GIT_CMD}" && err 1 "You need git on your host to use svn method"
-		test -z "${SCM_BRANCH}" && err 1 "You need to specify an SCM_BRANCH (-b) for git"
-		test -z "${SCM_URL}" && err 1 "You need to specify an SCM_URL (-U) for git"
-		FCT=install_from_git
+	git)
+        test -z "${GIT_CMD}" && err 1 "please install git or specify GIT_CMD"
+        ${GIT_BRANCH:=master}
+        FCT=install_from_git
 		;;
 	svn*)
 		test -z "${SVN_CMD}" && err 1 "You need svn on your host to use svn method"
@@ -773,8 +764,8 @@ create_jail() {
 	# if any error is encountered
 	CLEANUP_HOOK=cleanup_new_jail
 	jset ${JAILNAME} method ${METHOD}
-	[ -n "${SCM_BRANCH}" ] && jset ${JAILNAME} scm_branch ${SCM_BRANCH}
-	[ -n "${SCM_URL}" ] && jset ${JAILNAME} scm_url ${SCM_URL}
+	[ -n "${GIT_BRANCH}" ] && jset ${JAILNAME} git_branch ${GIT_BRANCH}
+	[ -n "${GIT_URL}" ] && jset ${JAILNAME} git_url ${GIT_URL}
 	[ -n "${FCT}" ] && ${FCT} version_extra
 
 	if [ -r "${SRC_BASE}/sys/conf/newvers.sh" ]; then
@@ -926,7 +917,7 @@ SETNAME=""
 BINMISC="/usr/sbin/binmiscctl"
 XDEV=0
 
-while getopts "iJ:j:v:a:b:z:m:nf:M:sdklqcip:r:uU:t:z:P:S:x" FLAG; do
+while getopts "iJ:j:v:a:B:z:m:nf:M:sdklqcip:r:uU:t:z:P:S:x" FLAG; do
 	case "${FLAG}" in
 		i)
 			INFO=1
@@ -946,11 +937,11 @@ while getopts "iJ:j:v:a:b:z:m:nf:M:sdklqcip:r:uU:t:z:P:S:x" FLAG; do
 			# TARGET_ARCH
 			[ "${ARCH%.*}" = "${ARCH#*.}" ] && ARCH="${ARCH#*.}"
 			;;
-		b)
-			SCM_BRANCH=${OPTARG}
+		B)
+			GIT_BRANCH=${OPTARG}
 			;;
 		U)
-			SCM_URL=${OPTARG}
+			GIT_URL=${OPTARG}
 			;;
 		m)
 			METHOD=${OPTARG}

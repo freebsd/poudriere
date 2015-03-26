@@ -115,6 +115,9 @@ while getopts "B:cFudklp:qf:nM:m:v" FLAG; do
 		m)
 			METHOD=${OPTARG}
 			;;
+        U)
+            GIT_URL=${OPTARG}
+            ;;
 		v)
 			VERBOSE=$((${VERBOSE} + 1))
 			;;
