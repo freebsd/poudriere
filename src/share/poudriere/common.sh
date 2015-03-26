@@ -1385,7 +1385,7 @@ symlink to .latest/${name}"
 		ln -s .latest/${name} ${PACKAGES_ROOT}/${name}
 	done
 
-	pkgdir_old=$(realpath ${PACKAGES_ROOT}/.latest)
+	pkgdir_old=$(realpath ${PACKAGES_ROOT}/.latest 2>/dev/null || :)
 
 	# Rename shadow dir to a production name
 	pkgdir_new=.real_$(date +%s)
@@ -1419,7 +1419,7 @@ symlink to .latest/${name}"
 		    xargs rm -rf 2>/dev/null || :
 	else
 		# Remove old and shadow dir
-		rm -rf ${pkgdir_old} 2>/dev/null || :
+		[ -n "${pkgdir_old}" ] && rm -rf ${pkgdir_old} 2>/dev/null || :
 	fi
 }
 
