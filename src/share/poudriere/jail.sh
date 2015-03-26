@@ -196,23 +196,36 @@ update_jail() {
 		do_jail_mounts "${JAILMNT}" "${JAILMNT}" "${ARCH}" "${JAILNAME}"
 		JNETNAME="n"
 		jstart
+		# Fix freebsd-update to not check for TTY and to allow
+		# EOL branches to still get updates.
+		sed \
+		    -e 's/! -t 0/1 -eq 0/' \
+		    -e 's/-t 0/1 -eq 1/' \
+		    -e 's,\(fetch_warn_eol ||\) return 1,\1 :,' \
+		    ${JAILMNT}/usr/sbin/freebsd-update >
+		    ${JAILMNT}/usr/sbin/freebsd-update.fixed
 		if [ -z "${TORELEASE}" ]; then
-			injail env PAGER=/bin/cat /usr/sbin/freebsd-update fetch install
+			injail env PAGER=/bin/cat \
+			    /usr/sbin/freebsd-update.fixed fetch install
 		else
 			# Install new kernel
-			injail env PAGER=/bin/cat /usr/sbin/freebsd-update -r ${TORELEASE} upgrade install ||
-				err 1 "Fail to upgrade system"
+			injail env PAGER=/bin/cat \
+			    /usr/sbin/freebsd-update.fixed -r ${TORELEASE} \
+			    upgrade install || err 1 "Fail to upgrade system"
 			# Reboot
 			update_version_env ${TORELEASE}
 			# Install new world
-			injail env PAGER=/bin/cat /usr/sbin/freebsd-update install ||
-				err 1 "Fail to upgrade system"
+			injail env PAGER=/bin/cat \
+			    /usr/sbin/freebsd-update.fixed install || \
+			    err 1 "Fail to upgrade system"
 			# Reboot
 			update_version_env ${TORELEASE}
 			# Remove stale files
-			injail env PAGER=/bin/cat /usr/sbin/freebsd-update install || :
+			injail env PAGER=/bin/cat \
+			    /usr/sbin/freebsd-update.fixed install || :
 			jset ${JAILNAME} version ${TORELEASE}
 		fi
+		rm -f ${JAILMNT}/usr/sbin/freebsd-update.fixed
 		jstop
 		umountfs ${JAILMNT} 1
 		update_version
