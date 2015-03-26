@@ -3827,34 +3827,43 @@ prepare_ports() {
 		"${MASTERMNT}/.p/var/cache/origin-pkgname" \
 		"${MASTERMNT}/.p/var/cache/pkgname-origin"
 
+	if [ -e "${log}/.poudriere.ports.built" ]; then
+		resuming_build=1
+	else
+		resuming_build=0
+	fi
+
 	if was_a_bulk_run; then
 		_log_path_top log_top
 		get_cache_dir cache_dir
 
-		# Sync in HTML files through a base dir
-		install_html_files "${HTMLPREFIX}" "${log_top}/.html" "${log}"
-		# Create log dirs
-		mkdir -p ${log}/../../latest-per-pkg \
-		    ${log}/../latest-per-pkg \
-		    ${log}/logs \
-		    ${log}/logs/errors \
-		    ${cache_dir}
-		# Link this build as the /latest
-		ln -sfh ${BUILDNAME} ${log%/*}/latest
+		if [ ${resuming_build} -eq 0 ] || ! [ -d "${log}" ]; then
+			# Sync in HTML files through a base dir
+			install_html_files "${HTMLPREFIX}" "${log_top}/.html" \
+			    "${log}"
+			# Create log dirs
+			mkdir -p ${log}/../../latest-per-pkg \
+			    ${log}/../latest-per-pkg \
+			    ${log}/logs \
+			    ${log}/logs/errors \
+			    ${cache_dir}
+			# Link this build as the /latest
+			ln -sfh ${BUILDNAME} ${log%/*}/latest
 
-		# Record the SVN URL@REV in the build
-		[ -d ${MASTERMNT}/usr/ports/.svn ] && bset svn_url $(
-			${SVN_CMD} info ${MASTERMNT}/usr/ports | awk '
-				/^URL: / {URL=substr($0, 6)}
-				/Revision: / {REVISION=substr($0, 11)}
-				END { print URL "@" REVISION }
-			')
+			# Record the SVN URL@REV in the build
+			[ -d ${MASTERMNT}/usr/ports/.svn ] && bset svn_url $(
+				${SVN_CMD} info ${MASTERMNT}/usr/ports | awk '
+					/^URL: / {URL=substr($0, 6)}
+					/Revision: / {REVISION=substr($0, 11)}
+					END { print URL "@" REVISION }
+				')
 
-		bset mastername "${MASTERNAME}"
-		bset jailname "${JAILNAME}"
-		bset setname "${SETNAME}"
-		bset ptname "${PTNAME}"
-		bset buildname "${BUILDNAME}"
+			bset mastername "${MASTERNAME}"
+			bset jailname "${JAILNAME}"
+			bset setname "${SETNAME}"
+			bset ptname "${PTNAME}"
+			bset buildname "${BUILDNAME}"
+		fi
 
 		show_log_info
 		start_html_json
@@ -3897,11 +3906,9 @@ prepare_ports() {
 			done
 		fi
 
-		# If the build dir already exists, it is being resumed and any
-		# packages already built/failed/skipped/ignored should not
-		# be rebuilt
-		if [ -e ${log}/.poudriere.ports.built ]; then
-			resuming_build=1
+		# If the build is being resumed then packages already
+		# built/failed/skipped/ignored should not be rebuilt.
+		if [ ${resuming_build} -eq 1 ]; then
 			awk '{print $2}' \
 				${log}/.poudriere.ports.built \
 				${log}/.poudriere.ports.failed \
@@ -3912,7 +3919,6 @@ prepare_ports() {
 			done | xargs rm -rf
 		else
 			# New build
-			resuming_build=0
 			bset stats_queued 0
 			bset stats_built 0
 			bset stats_failed 0
