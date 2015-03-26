@@ -203,6 +203,7 @@ update_jail() {
 		    -e 's,\(fetch_warn_eol ||\) return 1,\1 :,' \
 		    ${JAILMNT}/usr/sbin/freebsd-update > \
 		    ${JAILMNT}/usr/sbin/freebsd-update.fixed
+		chmod +x ${JAILMNT}/usr/sbin/freebsd-update.fixed
 		if [ -z "${TORELEASE}" ]; then
 			injail env PAGER=/bin/cat \
 			    /usr/sbin/freebsd-update.fixed fetch install
