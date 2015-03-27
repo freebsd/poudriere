@@ -202,6 +202,7 @@ update_jail() {
 		    -e 's/! -t 0/1 -eq 0/' \
 		    -e 's/-t 0/1 -eq 1/' \
 		    -e 's,\(fetch_warn_eol ||\) return 1,\1 :,' \
+		    -e 's,sysctl -n kern.bootfile,echo /boot/kernel/kernel,' \
 		    ${JAILMNT}/usr/sbin/freebsd-update > \
 		    ${JAILMNT}/usr/sbin/freebsd-update.fixed
 		chmod +x ${JAILMNT}/usr/sbin/freebsd-update.fixed
