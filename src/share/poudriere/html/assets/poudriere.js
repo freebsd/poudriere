@@ -514,6 +514,17 @@ function process_data_build(data) {
 		$('#svn_url').hide();
 	$('#build_info_div').show();
 
+	/* Backwards compatibility */
+	if (data.status && data.status instanceof Array && !data.jobs) {
+		data.jobs = data.status;
+		if (data.jobs[0] && data.jobs[0].id == "main") {
+			data.status = data.jobs[0].status;
+			data.jobs.splice(0, 1);
+		} else {
+			data.status = undefined;
+		}
+	}
+
 	if (data.status) {
 		status = translate_status(data.status);
 		$('#status').text(status);
