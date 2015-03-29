@@ -54,7 +54,7 @@ Options:
     -m method     -- When used with -c, specify the method used to create the
                      ports tree. Possible methods are 'portsnap', 'svn',
                      'svn+http', 'svn+https', 'svn+file', 'svn+ssh', 'git',
-                     or 'none'.
+                     'local', or 'none'.
                      The default is 'portsnap'.
     -n            -- When used with -l, only print the name of the ports tree
     -p name       -- Specifies the name of the ports tree to work on.  The
@@ -140,6 +140,7 @@ svn+ssh);;
 svn+file);;
 svn);;
 git);;
+local);;
 none);;
 *) usage;;
 esac
@@ -235,6 +236,11 @@ if [ ${CREATE} -eq 1 ]; then
 			git clone --depth=1 ${quiet} -b ${BRANCH} ${GIT_URL} ${PTMNT} || err 1 " fail"
 			echo " done"
 			;;
+		local)
+			msg_n "Copying the ports tree..."
+			cp -R /usr/ports/* ${PTMNT} || err 1 " fail"
+ 			echo " done"
+ 			;;
 		esac
 		pset ${PTNAME} method ${METHOD}
 		pset ${PTNAME} timestamp $(date +%s)
@@ -297,6 +303,11 @@ if [ ${UPDATE} -eq 1 ]; then
 		cd ${PORTSMNT:-${PTMNT}} && git pull ${quiet}
 		echo " done"
 		;;
+	local)
+		msg_n "Copying the ports tree..."
+		rm -rf ${PTMNT}/* || err 1 " fail"
+		cp -R /usr/ports/* ${PORTSMNT:-${PTMNT}} || err 1 " fail"
+ 		echo " done"
 	none)	;;
 	*)
 		err 1 "Undefined upgrade method"
