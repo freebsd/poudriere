@@ -764,6 +764,14 @@ show_log_info() {
 	return 0
 }
 
+show_colored_count() {
+	if [ $4 -gt 0 ]; then
+		printf "${1}${2}: %-${3}d" ${4}
+	else
+		printf "${COLOR_LIGHT_GRAY}${2}: %-${3}d" ${4}
+	fi
+}
+
 show_build_summary() {
 	local status nbb nbf nbs nbi nbq ndone nbtobuild buildname
 	local log now elapsed buildtime queue_width
@@ -797,8 +805,14 @@ show_build_summary() {
 	elapsed=${_elapsed_time}
 	calculate_duration buildtime ${elapsed}
 
-	printf "[${MASTERNAME}] [${buildname}] [${status}] Queued: %-${queue_width}d ${COLOR_SUCCESS}Built: %-${queue_width}d ${COLOR_FAIL}Failed: %-${queue_width}d ${COLOR_SKIP}Skipped: %-${queue_width}d ${COLOR_IGNORE}Ignored: %-${queue_width}d${COLOR_RESET} Tobuild: %-${queue_width}d  Time: %s\n" \
-	    ${nbq} ${nbb} ${nbf} ${nbs} ${nbi} ${nbtobuild} "${buildtime}"
+	printf "[${MASTERNAME}] [${buildname}] [${status}] %s %s %s %s %s %s${COLOR_RESET}  Time: %s\n" \
+	    "$(show_colored_count ${COLOR_BLACK}   'Queued'  ${queue_width} ${nbq})" \
+	    "$(show_colored_count ${COLOR_SUCCESS} 'Built'   ${queue_width} ${nbb})" \
+	    "$(show_colored_count ${COLOR_FAIL}    'Failed'  ${queue_width} ${nbf})" \
+	    "$(show_colored_count ${COLOR_SKIP}    'Skipped' ${queue_width} ${nbs})" \
+	    "$(show_colored_count ${COLOR_IGNORE}  'Ignored' ${queue_width} ${nbi})" \
+	    "$(show_colored_count ${COLOR_BLACK}   'Tobuild' ${queue_width} ${nbtobuild})" \
+	    "${buildtime}"
 }
 
 siginfo_handler() {
