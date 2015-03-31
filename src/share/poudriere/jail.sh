@@ -56,8 +56,8 @@ Options:
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
                        allbsd, csup, ftp, http, ftp-archive, null, src, svn,
-                       svn+file, svn+http, svn+https, svn+ssh, git, git+file, 
-                       git+http, git+https, git+ssh, tar=PATH, url=SOMEURL
+                       svn+file, svn+http, svn+https, svn+ssh, git, tar=PATH, 
+                       url=SOMEURL
     -B branch     -- specify branch for -m git
     -U url        -- specify host for -m git
     -P patch      -- Specify a patch to apply to the source before building.
