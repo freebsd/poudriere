@@ -1,4 +1,4 @@
-#!/bin/sh
+:!/bin/sh
 # 
 # Copyright (c) 2010-2013 Baptiste Daroussin <bapt@FreeBSD.org>
 # Copyright (c) 2012-2014 Bryan Drewery <bdrewery@FreeBSD.org>
@@ -58,7 +58,7 @@ Options:
                        allbsd, csup, ftp, http, ftp-archive, null, src, svn,
                        svn+file, svn+http, svn+https, svn+ssh, git, git+file, 
                        git+http, git+https, git+ssh, tar=PATH, url=SOMEURL
-    -b branch     -- specify branch for -m git
+    -B branch     -- specify branch for -m git
     -U url        -- specify host for -m git
     -P patch      -- Specify a patch to apply to the source before building.
     -S srcpath    -- Specify a path to the source tree to be used.
@@ -186,7 +186,7 @@ update_jail() {
 	SRC_BASE="${JAILMNT}/usr/src"
 	METHOD=$(jget ${JAILNAME} method)
 	GIT_BRANCH=$(jget ${JAILNAME} git_branch 2>/dev/null)
-	GIT_URL=$(jget ${JAILNAME} git_url 2>/dev/null)
+	GIT_JAILS_URL=$(jget ${JAILNAME} git_url 2>/dev/null)
 	_jget ARCH ${JAILNAME} arch
 	if [ -z "${METHOD}" -o "${METHOD}" = "-" ]; then
 		METHOD="ftp"
@@ -251,7 +251,7 @@ update_jail() {
 		install_from_git version_extra
 		RELEASE=$(update_version "${version_extra}")
 		jset ${JAILNAME} git_branch "${GIT_BRANCH}"
-		jset ${JAILNAME} git_url "${GIT_URL}"
+		jset ${JAILNAME} git_url "${GIT_JAILS_URL}"
 		update_version_env "${RELEASE}"
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
@@ -454,7 +454,7 @@ install_from_git() {
 	fi
 	if [ ${UPDATE} -eq 0 ]; then
 		msg_n "Checking out the sources using git..."
-		${GIT_CMD} clone --depth 1 ${GIT_BRANCH:+-b ${GIT_BRANCH}}  ${GIT_URL} ${SRC_BASE} || err 1 " fail"
+		${GIT_CMD} clone --depth 1 ${GIT_BRANCH:+-b ${GIT_BRANCH}}  ${GIT_JAILS_URL} ${SRC_BASE} || err 1 " fail"
 		echo " done"
 		if [ -n "${SRCPATCHFILE}" ]; then
 			msg_n "Patching the sources with ${SRCPATCHFILE}"
@@ -765,7 +765,7 @@ create_jail() {
 	CLEANUP_HOOK=cleanup_new_jail
 	jset ${JAILNAME} method ${METHOD}
 	[ -n "${GIT_BRANCH}" ] && jset ${JAILNAME} git_branch ${GIT_BRANCH}
-	[ -n "${GIT_URL}" ] && jset ${JAILNAME} git_url ${GIT_URL}
+	[ -n "${GIT_JAILS_URL}" ] && jset ${JAILNAME} git_url ${GIT_JAILS_URL}
 	[ -n "${FCT}" ] && ${FCT} version_extra
 
 	if [ -r "${SRC_BASE}/sys/conf/newvers.sh" ]; then
@@ -941,7 +941,7 @@ while getopts "iJ:j:v:a:B:z:m:nf:M:sdklqcip:r:uU:t:z:P:S:x" FLAG; do
 			GIT_BRANCH=${OPTARG}
 			;;
 		U)
-			GIT_URL=${OPTARG}
+			GIT_JAILS_URL=${OPTARG}
 			;;
 		m)
 			METHOD=${OPTARG}

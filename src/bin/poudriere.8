@@ -385,10 +385,10 @@ This will use the
 .Sy SVN_HOST
 variable in
 .Pa poudriere.conf .
-.It Sy git git+file git+ssh git+https git+http
+.It Sy git 
 Use Git.
-Its behavior is configured by the 
-.Fl b 
+Its behavior can be configured by the 
+.Fl B 
 and 
 .Fl U 
 options.
@@ -415,20 +415,21 @@ as the FreeBSD source tree mounted inside the jail.
 instead of upgrading to the latest security fix of the jail version, you can
 jump to the new specified
 .Ar version .
-.It Fl b Ar branch 
+.It Fl B Ar branch 
 specify the 
 .Ar branch 
 for
 .Fl m Sy git
 to use.
+Defaults to 'master'.
 .It Fl U Ar url
 specify the
 .Ar url
 for
 .Fl m Sy git 
-to clone from, Ex.
+to clone from, defaults to:
 .Bd -literal -offset indent
--U git@github.com:freebsd/poudriere.git
+git@github.com:freebsd/freebsd.git
 .Ed 
 .It Fl z Ar set
 This specifies which SET to start/stop the jail with.
@@ -483,6 +484,15 @@ The name of the
 to create for the ports tree.
 If 'none' then do not create a filesystem.
 Defaults to poudriere/ports/default.
+.It Fl U Ar url
+specify the
+.Ar url
+for
+.Fl m Sy git
+Defaults to:
+.Bd -literal -offset indent
+git://github.com/freebsd/freebsd-ports.git
+.Ed
 .It Fl k
 When used with
 .Fl d ,
