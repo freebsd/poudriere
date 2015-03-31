@@ -43,6 +43,7 @@ Parameters:
 Options:
     -B branch     -- Which branch to use for the svn or git methods.  Defaults
                      to 'head/master'.
+    -U url        -- specify the host to use for the git method
     -F            -- When used with -c, only create the needed filesystems
                      (for ZFS) and directories, but do not populate them.
     -M path       -- The path to the source of a ports tree.
@@ -74,7 +75,7 @@ NAMEONLY=0
 QUIET=0
 VERBOSE=0
 KEEP=0
-while getopts "B:cFudklp:qf:nM:m:v" FLAG; do
+while getopts "B:cFudklp:qf:nM:m:v:U" FLAG; do
 	case "${FLAG}" in
 		B)
 			BRANCH="${OPTARG}"
