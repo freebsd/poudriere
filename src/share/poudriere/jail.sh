@@ -1,4 +1,4 @@
-:!/bin/sh
+#!/bin/sh
 # 
 # Copyright (c) 2010-2013 Baptiste Daroussin <bapt@FreeBSD.org>
 # Copyright (c) 2012-2014 Bryan Drewery <bdrewery@FreeBSD.org>
@@ -688,7 +688,7 @@ create_jail() {
 		;;
 	git)
         test -z "${GIT_CMD}" && err 1 "please install git or specify GIT_CMD"
-        ${GIT_BRANCH:=master}
+        : ${GIT_BRANCH:="master"}
         FCT=install_from_git
 		;;
 	svn*)
