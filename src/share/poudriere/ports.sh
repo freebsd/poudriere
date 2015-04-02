@@ -75,7 +75,7 @@ NAMEONLY=0
 QUIET=0
 VERBOSE=0
 KEEP=0
-while getopts "B:cFudklp:qf:nM:m:v:U" FLAG; do
+while getopts "B:cFudklp:qf:nM:m:U:v" FLAG; do
 	case "${FLAG}" in
 		B)
 			BRANCH="${OPTARG}"
@@ -116,9 +116,10 @@ while getopts "B:cFudklp:qf:nM:m:v:U" FLAG; do
 		m)
 			METHOD=${OPTARG}
 			;;
-        U)
-            GIT_PORTS_URL=${OPTARG}
-            ;;
+        	U)
+			msg "setting git ports url to ${OPTARG}"
+            		GIT_PORTS_URL=${OPTARG}
+            		;;
 		v)
 			VERBOSE=$((${VERBOSE} + 1))
 			;;
