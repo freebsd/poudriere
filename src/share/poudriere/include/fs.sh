@@ -127,7 +127,7 @@ clonefs() {
 	# When using TMPFS, there is no need to clone the originating FS from
 	# a snapshot as the destination will be tmpfs. We do however need to
 	# ensure the originating FS is rolled back to the expected snapshot.
-	if [ ${TMPFS_ALL} -eq 1 ]; then
+	if [ -n "${fs}" -a ${TMPFS_ALL} -eq 1 ]; then
 		rollbackfs "${snap}" "${from}" "${fs}"
 		unset fs
 	fi
