@@ -53,18 +53,11 @@ rollbackfs() {
 	local name=$1
 	local mnt=$2
 	local fs="${3:-$(zfs_getfs ${mnt})}"
-	local mtree_mnt
 
 	if [ -n "${fs}" ]; then
 		zfs rollback -r "${fs}@${name}" || \
 		    err 1 "Unable to rollback ${fs}"
 		return
-	fi
-
-	if [ "${name}" = "prepkg" ]; then
-		mtree_mnt="${MASTERMNT}"
-	else
-		mtree_mnt="${mnt}"
 	fi
 
 	do_clone "${MASTERMNT}" "${mnt}"
