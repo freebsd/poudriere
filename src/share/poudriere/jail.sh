@@ -818,6 +818,9 @@ need_emulation() {
 	if [ "${real_arch}" = "amd64" \
 	    -a "${wanted_arch%.*}" = "i386" ]; then
 		return 1
+	elif [ "${real_arch#*.}" = "powerpc64" -a \
+		"${wanted_arch#*.}" = "powerpc" ]; then
+		return 1
 	# TARGET_ARCH matches
 	elif [ "${real_arch#*.}" = "${wanted_arch#*.}" ]; then
 		return 1
