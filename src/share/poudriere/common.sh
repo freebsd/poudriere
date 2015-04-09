@@ -1597,11 +1597,12 @@ jail_start() {
 	do_portbuild_mounts ${tomnt} ${name} ${ptname} ${setname}
 
 	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
-	if [ "${arch%.*}" = "i386" -a "${host_arch}" = "amd64" ]; then
+	if [ "${arch%.*}" = "i386" -a "${host_arch}" = "amd64" ] || \
+	    [ "${arch#*.}" = "powerpc" -a "${host_arch#*.}" = "powerpc64" ]; then
 		cat >> "${tomnt}/etc/make.conf" <<-EOF
-		ARCH=i386
-		MACHINE=i386
-		MACHINE_ARCH=i386
+		MACHINE=${arch%.*}
+		MACHINE_ARCH=${arch#*.}
+		ARCH=\${MACHINE_ARCH}
 		EOF
 	fi
 
