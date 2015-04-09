@@ -1519,6 +1519,12 @@ jail_start() {
 	[ -d ${DISTFILES_CACHE:-/nonexistent} ] || err 1 "DISTFILES_CACHE directory does not exist. (c.f. poudriere.conf)"
 	[ ${TMPFS_ALL} -ne 1 ] && [ $(sysctl -n kern.securelevel) -ge 1 ] && \
 	    err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags. USE_TMPFS=all can override this."
+	[ "${name#*.*}" = "${name}" ] ||
+		err 1 "The jail name cannot contain a period (.). See jail(8)"
+	[ "${ptname#*.*}" = "${ptname}" ] ||
+		err 1 "The ports name cannot contain a period (.). See jail(8)"
+	[ "${setname#*.*}" = "${setname}" ] ||
+		err 1 "The set name cannot contain a period (.). See jail(8)"
 
 	if [ -z "${NOLINUX}" ]; then
 		if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
