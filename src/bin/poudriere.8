@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd December 18, 2014
+.Dd April 9, 2014
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -954,11 +954,13 @@ command must be used on a recent version of FreeBSD, i.e. a version
 which has ZFS >= v15, and a zpool.
 .Sh CAVEATS
 .Ss Jailname
-.Fl j
-is the name of the jail which will also be the name of the zfs
-filesystem.
+.Fl j ,
+.Fl z
+and
+.Fl p
+are all used in the name of the jail.
 .Pp
-Be careful to respects the names supported by jail(8):
+Be careful to respect the names supported by jail(8):
 .Pp
 .Bd -literal
     "This is an arbitrary string that identifies a jail (except it
