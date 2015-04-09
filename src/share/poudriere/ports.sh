@@ -198,7 +198,7 @@ if [ ${CREATE} -eq 1 ]; then
 	CLEANUP_HOOK=cleanup_new_ports
 
 	[ "${PTNAME#*.*}" = "${PTNAME}" ] ||
-		err 1 "The ports name can not contain a period (.). See jail(8)"
+		err 1 "The ports name cannot contain a period (.). See jail(8)"
 	createfs ${PTNAME} ${PTMNT} ${PTFS}
 	pset ${PTNAME} mnt ${PTMNT}
 	if [ $FAKE -eq 0 ]; then
