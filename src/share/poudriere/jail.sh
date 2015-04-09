@@ -398,7 +398,7 @@ build_and_install_world() {
 		for file in ${HLINK_FILES}; do
 			if [ -f "${JAILMNT}/nxb-bin/${file}" ]; then
 				rm -f ${JAILMNT}/${file}
-				ln ./nxb-bin/${file} ${JAILMNT}/${file}
+				ln ${JAILMNT}/nxb-bin/${file} ${JAILMNT}/${file}
 			fi
 		done
 	fi
