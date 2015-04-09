@@ -43,6 +43,7 @@ Parameters:
 Options:
     -B branch     -- Which branch to use for the svn or git methods.  Defaults
                      to 'head/master'.
+    -U url        -- specify the host to use for the git method
     -F            -- When used with -c, only create the needed filesystems
                      (for ZFS) and directories, but do not populate them.
     -M path       -- The path to the source of a ports tree.
@@ -74,7 +75,7 @@ NAMEONLY=0
 QUIET=0
 VERBOSE=0
 KEEP=0
-while getopts "B:cFudklp:qf:nM:m:v" FLAG; do
+while getopts "B:cFudklp:qf:nM:m:U:v" FLAG; do
 	case "${FLAG}" in
 		B)
 			BRANCH="${OPTARG}"
@@ -115,6 +116,10 @@ while getopts "B:cFudklp:qf:nM:m:v" FLAG; do
 		m)
 			METHOD=${OPTARG}
 			;;
+        	U)
+			msg "setting git ports url to ${OPTARG}"
+            		GIT_PORTS_URL=${OPTARG}
+            		;;
 		v)
 			VERBOSE=$((${VERBOSE} + 1))
 			;;
@@ -232,7 +237,7 @@ if [ ${CREATE} -eq 1 ]; then
 		git)
 			msg_n "Cloning the ports tree..."
 			[ ${VERBOSE} -gt 0 ] || quiet="-q"
-			git clone --depth=1 ${quiet} -b ${BRANCH} ${GIT_URL} ${PTMNT} || err 1 " fail"
+			git clone --depth=1 ${quiet} -b ${BRANCH} ${GIT_PORTS_URL} ${PTMNT} || err 1 " fail"
 			echo " done"
 			;;
 		esac
@@ -283,7 +288,7 @@ if [ ${UPDATE} -eq 1 ]; then
 		/usr/sbin/portsnap ${PTARGS} -d ${SNAPDIR} -p ${PORTSMNT:-${PTMNT}} ${PSCOMMAND} alfred
 		;;
 	svn*)
-		msg_n "Updating the ports tree..."
+		msg_n "Updating the ports tree from svn..."
 		[ ${VERBOSE} -gt 0 ] || quiet="-q"
 		${SVN_CMD} upgrade ${PORTSMNT:-${PTMNT}} 2>/dev/null || :
 		${SVN_CMD} ${quiet} update \
@@ -292,7 +297,7 @@ if [ ${UPDATE} -eq 1 ]; then
 		echo " done"
 		;;
 	git)
-		msg "Pulling from ${GIT_URL}"
+		msg "Updating ports tree from git..."
 		[ ${VERBOSE} -gt 0 ] || quiet="-q"
 		cd ${PORTSMNT:-${PTMNT}} && git pull ${quiet}
 		echo " done"

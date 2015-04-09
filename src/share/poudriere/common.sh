@@ -4286,7 +4286,8 @@ if [ -z "${NO_ZFS}" ]; then
 fi
 
 : ${SVN_HOST="svn0.us-west.freebsd.org"}
-: ${GIT_URL="git://github.com/freebsd/freebsd-ports.git"}
+: ${GIT_PORTS_URL="git://github.com/freebsd/freebsd-ports.git"}
+: ${GIT_JAILS_URL="git://github.com/freebsd/freebsd.git"}
 : ${FREEBSD_HOST="http://ftp.FreeBSD.org"}
 if [ -z "${NO_ZFS}" ]; then
 	: ${ZROOTFS="/poudriere"}
@@ -4427,6 +4428,7 @@ fi
 : ${PORTBUILD_USER:=nobody}
 : ${BUILD_AS_NON_ROOT:=no}
 : ${SVN_CMD:=$(which svn 2>/dev/null || which svnlite 2>/dev/null)}
+: ${GIT_CMD:=$(which git 2>/dev/null)}
 # 24 hours for 1 command
 : ${MAX_EXECUTION_TIME:=86400}
 # 120 minutes with no log update
