@@ -727,7 +727,6 @@ create_jail() {
 	update_version_env "${RELEASE}"
 
 	pwd_mkdb -d ${JAILMNT}/etc/ -p ${JAILMNT}/etc/master.passwd
-	jail -U root -c path=${JAILMNT} command=/sbin/ldconfig -m /lib /usr/lib /usr/lib/compat
 
 	markfs clean ${JAILMNT}
 

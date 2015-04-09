@@ -1634,6 +1634,8 @@ jail_start() {
 	[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${tomnt}/etc/"
 	msg "Starting jail ${MASTERNAME}"
 	jstart
+	injail service ldconfig start >/dev/null || \
+	    err 1 "Failed to set ldconfig paths."
 	# Only set STATUS=1 if not turned off
 	# jail -s should not do this or jail will stop on EXIT
 	WITH_PKGNG=$(injail make -f /usr/ports/Mk/bsd.port.mk -V WITH_PKGNG)
