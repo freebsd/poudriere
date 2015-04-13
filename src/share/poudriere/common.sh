@@ -1514,6 +1514,18 @@ need_emulation() {
 	return 0
 }
 
+need_cross_build() {
+	[ $# -eq 2 ] || eargs need_cross_build real_arch wanted_arch
+	local real_arch="$1"
+	local wanted_arch="$2"
+
+	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
+	[ "${wanted_arch%.*}" = "i386" -a "${real_arch}" = "amd64" ] || \
+	    [ "${wanted_arch#*.}" = "powerpc" -a \
+	    "${real_arch#*.}" = "powerpc64" ] || \
+	    need_emulation "${real_arch}" "${wanted_arch}"
+}
+
 jail_start() {
 	[ $# -lt 2 ] && eargs jail_start name ptname setname
 	local name=$1
@@ -1619,10 +1631,7 @@ jail_start() {
 
 	do_portbuild_mounts ${tomnt} ${name} ${ptname} ${setname}
 
-	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
-	if [ "${arch%.*}" = "i386" -a "${host_arch}" = "amd64" ] || \
-	    [ "${arch#*.}" = "powerpc" -a "${host_arch#*.}" = "powerpc64" ] || \
-	    need_emulation "${host_arch}" "${arch}"; then
+	if need_cross_build "${host_arch}" "${arch}"; then
 		cat >> "${tomnt}/etc/make.conf" <<-EOF
 		MACHINE=${arch%.*}
 		MACHINE_ARCH=${arch#*.}
