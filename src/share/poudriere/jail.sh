@@ -159,9 +159,9 @@ update_version_env() {
 	fi
 
 	if need_emulation "${REALARCH}" "${ARCH}"; then
-		# QEMU/emulator support here.  Setup MACHINE/MACHINE_ARCH for bmake to be happy.
+		# QEMU/emulator support here.
 		# UNAME variables are currently handled by QEMU, no need to override
-		login_env="${login_env},ABI_FILE=\/usr\/lib\/crt1.o,MACHINE=${ARCH%.*},MACHINE_ARCH=${ARCH#*.}"
+		login_env="${login_env},ABI_FILE=\/usr\/lib\/crt1.o"
 	fi
 	
 	sed -i "" -e "s/,UNAME_r.*:/:/ ; s/:\(setenv.*\):/:\1${login_env}:/" ${JAILMNT}/etc/login.conf
