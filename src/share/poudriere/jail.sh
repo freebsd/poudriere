@@ -807,30 +807,6 @@ info_jail() {
 	unset POUDRIERE_BUILD_TYPE
 }
 
-need_emulation() {
-	[ $# -eq 2 ] || eargs need_emulation real_arch wanted_arch
-	local real_arch="$1"
-	local wanted_arch="$2"
-
-	# Returning 1 means no emulation required.
-
-	# Check for host=amd64 and TARGET=i386 (not TARGET_ARCH due to
-	# pc98/i386)
-	if [ "${real_arch}" = "amd64" \
-	    -a "${wanted_arch%.*}" = "i386" ]; then
-		return 1
-	elif [ "${real_arch#*.}" = "powerpc64" -a \
-		"${wanted_arch#*.}" = "powerpc" ]; then
-		return 1
-	# TARGET_ARCH matches
-	elif [ "${real_arch#*.}" = "${wanted_arch#*.}" ]; then
-		return 1
-	fi
-
-	# Emulation is required
-	return 0
-}
-
 check_emulation() {
 	if need_emulation "${REALARCH}" "${ARCH}"; then
 		msg "Cross-building ports for ${ARCH} on ${REALARCH} requires QEMU"

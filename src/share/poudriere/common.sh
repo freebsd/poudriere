@@ -1490,6 +1490,30 @@ get_host_arch() {
 	setvar "${var_return}" "${_arch}"
 }
 
+need_emulation() {
+	[ $# -eq 2 ] || eargs need_emulation real_arch wanted_arch
+	local real_arch="$1"
+	local wanted_arch="$2"
+
+	# Returning 1 means no emulation required.
+
+	# Check for host=amd64 and TARGET=i386 (not TARGET_ARCH due to
+	# pc98/i386)
+	if [ "${real_arch}" = "amd64" \
+	    -a "${wanted_arch%.*}" = "i386" ]; then
+		return 1
+	elif [ "${real_arch#*.}" = "powerpc64" -a \
+		"${wanted_arch#*.}" = "powerpc" ]; then
+		return 1
+	# TARGET_ARCH matches
+	elif [ "${real_arch#*.}" = "${wanted_arch#*.}" ]; then
+		return 1
+	fi
+
+	# Emulation is required
+	return 0
+}
+
 jail_start() {
 	[ $# -lt 2 ] && eargs jail_start name ptname setname
 	local name=$1
@@ -1597,7 +1621,8 @@ jail_start() {
 
 	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
 	if [ "${arch%.*}" = "i386" -a "${host_arch}" = "amd64" ] || \
-	    [ "${arch#*.}" = "powerpc" -a "${host_arch#*.}" = "powerpc64" ]; then
+	    [ "${arch#*.}" = "powerpc" -a "${host_arch#*.}" = "powerpc64" ] || \
+	    need_emulation "${host_arch}" "${arch}"; then
 		cat >> "${tomnt}/etc/make.conf" <<-EOF
 		MACHINE=${arch%.*}
 		MACHINE_ARCH=${arch#*.}
