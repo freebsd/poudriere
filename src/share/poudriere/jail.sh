@@ -154,8 +154,10 @@ update_version_env() {
 	login_env=",UNAME_r=${release% *},UNAME_v=FreeBSD ${release},OSVERSION=${osversion}"
 
 	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
-	[ "${ARCH%.*}" = "i386" -a "${REALARCH}" = "amd64" ] &&
-		login_env="${login_env},UNAME_p=i386,UNAME_m=i386"
+	if [ "${ARCH%.*}" = "i386" -a "${REALARCH}" = "amd64" ] || \
+	    [ "${ARCH#*.}" = "powerpc" -a "${REALARCH#*.}" = "powerpc64" ]; then
+		login_env="${login_env},UNAME_m=${ARCH%.*},UNAME_p=${ARCH#*.}"
+	fi
 
 	if need_emulation "${REALARCH}" "${ARCH}"; then
 		# QEMU/emulator support here.  Setup MACHINE/MACHINE_ARCH for bmake to be happy.
