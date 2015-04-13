@@ -148,23 +148,27 @@ update_version() {
 # Set specified version into login.conf
 update_version_env() {
 	local release="$1"
-	local login_env osversion
+	local login_env osversion need_emu
 
 	osversion=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILMNT}/usr/include/sys/param.h`
 	login_env=",UNAME_r=${release% *},UNAME_v=FreeBSD ${release},OSVERSION=${osversion}"
 
+	if need_emulation "${REALARCH}" "${ARCH}"; then
+		need_emu=1
+		# Tell pkg(8) to not use /bin/sh for the ELF ABI since it is
+		# a native version.
+		login_env="${login_env},ABI_FILE=\/usr\/lib\/crt1.o"
+	else
+		need_emu=0
+	fi
+
 	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
 	if [ "${ARCH%.*}" = "i386" -a "${REALARCH}" = "amd64" ] || \
-	    [ "${ARCH#*.}" = "powerpc" -a "${REALARCH#*.}" = "powerpc64" ]; then
+	    [ "${ARCH#*.}" = "powerpc" -a "${REALARCH#*.}" = "powerpc64" ] || \
+	    [ ${need_emu} -eq 1 ]; then
 		login_env="${login_env},UNAME_m=${ARCH%.*},UNAME_p=${ARCH#*.}"
 	fi
 
-	if need_emulation "${REALARCH}" "${ARCH}"; then
-		# QEMU/emulator support here.
-		# UNAME variables are currently handled by QEMU, no need to override
-		login_env="${login_env},ABI_FILE=\/usr\/lib\/crt1.o"
-	fi
-	
 	sed -i "" -e "s/,UNAME_r.*:/:/ ; s/:\(setenv.*\):/:\1${login_env}:/" ${JAILMNT}/etc/login.conf
 	cap_mkdb ${JAILMNT}/etc/login.conf
 }
