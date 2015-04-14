@@ -2581,16 +2581,29 @@ queue_empty() {
 	return 0
 }
 
-mark_done() {
-	[ $# -eq 1 ] || eargs mark_done pkgname
-	local pkgname="$1"
+job_done() {
+	[ $# -eq 1 ] || eargs job_done j
+	local j="$1"
+	local pkgname status
 
+	hash_unset builder_pids "${j}"
+	hash_get builder_pkgnames "${j}" pkgname
+	hash_unset builder_pkgnames "${j}"
+	rm -f ${MASTERMNT}/.p/var/run/${j}.pid
+	_bget status ${j} status
 	rmdir ${MASTERMNT}/.p/building/${pkgname}
+	if [ "${status%%:*}" = "done" ]; then
+		bset ${j} status "idle:"
+	else
+		# Try to cleanup and mark build crashed
+		MY_JOBID="${j}" crashed_build "${pkgname}" "${status%%:*}"
+		bset ${j} status "crashed:"
+	fi
 }
 
-
 build_queue() {
-	local j name pid pkgname builders_active queue_empty status
+	local j jobid pid pkgname builders_active queue_empty
+	local idle_only
 
 	mkfifo ${MASTERMNT}/.p/builders.pipe
 	exec 6<> ${MASTERMNT}/.p/builders.pipe
@@ -2601,33 +2614,24 @@ build_queue() {
 
 	cd "${MASTERMNT}/.p/pool"
 
+	idle_only=0
 	while :; do
 		builders_active=0
 		for j in ${JOBS}; do
-			name="${MASTERNAME}-job-${j}"
+			# Check if pid is alive. A job will have no PID if it
+			# is idle. idle_only=1 is a quick check for giving
+			# new work only to idle workers.
 			if hash_get builder_pids "${j}" pid; then
-				# Check if pid is alive.
-				if kill -0 ${pid} 2>/dev/null; then
+				if [ ${idle_only} -eq 1 ] ||
+				    kill -0 ${pid} 2>/dev/null; then
+					# Job still active or skipping busy.
 					builders_active=1
 					continue
 				fi
-				hash_unset builder_pids "${j}"
-				hash_get builder_pkgnames "${j}" pkgname
-				hash_unset builder_pkgnames "${j}"
-				rm -f ${MASTERMNT}/.p/var/run/${j}.pid
-				_bget status ${j} status
-				mark_done ${pkgname}
-				if [ "${status%%:*}" = "done" ]; then
-					bset ${j} status "idle:"
-				else
-					# Try to cleanup and mark build crashed
-					MY_JOBID="${j}" crashed_build \
-					    "${pkgname}" "${status%%:*}"
-					bset ${j} status "crashed:"
-				fi
+				job_done "${j}"
 			fi
 
-			# Some builder is idle
+			# This builder is idle and needs work.
 
 			[ ${queue_empty} -eq 0 ] || continue
 
@@ -2671,8 +2675,21 @@ build_queue() {
 		# If builders are idle then there is a problem.
 		[ ${builders_active} -eq 1 ] || deadlock_detected
 
+		# Wait for an event from a child. All builders are busy.
 		unset jobid; until trappedinfo=; read -t 30 jobid <&6 ||
 			[ -z "$trappedinfo" ]; do :; done
+		if [ -n "${jobid}" ]; then
+			# A job just finished.
+			job_done "${jobid}"
+			# Do a quick scan to try dispatching ready-to-build
+			# to idle builders.
+			idle_only=1
+		else
+			# No event found. The next scan will check for
+			# crashed builders and deadlocks by validating
+			# every builder is really non-idle.
+			idle_only=0
+		fi
 	done
 	exec 6<&-
 	exec 6>&-
