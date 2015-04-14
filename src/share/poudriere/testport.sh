@@ -263,6 +263,7 @@ if [ ${ret} -ne 0 ]; then
 
 	if [ ${INTERACTIVE_MODE} -eq 0 ]; then
 		stop_build "${PKGNAME}" ${ORIGIN} 1
+		log_stop
 		bset_job_status "failed/${failed_phase}" "${ORIGIN}"
 		msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
 		cleanup
@@ -317,6 +318,7 @@ ensure_pkg_installed
 injail ${PKG_DELETE} ${PKGNAME}
 
 stop_build "${PKGNAME}" ${ORIGIN} ${ret}
+log_stop
 
 bset_job_status "stopped" "${ORIGIN}"
 
