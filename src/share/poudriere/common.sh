@@ -2823,7 +2823,7 @@ clean_pool() {
 		run_hook pkgbuild skipped "${skipped_origin}" "${skipped_pkgname}" "${port}"
 	done
 
-	balance_pool
+	balance_pool || :
 }
 
 print_phase_header() {
