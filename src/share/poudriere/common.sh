@@ -2608,8 +2608,9 @@ build_queue() {
 				if [ "${status%%:*}" = "done" ]; then
 					bset ${j} status "idle:"
 				else
-					crashed_build "${pkgname}" \
-					    "${status%%:*}"
+					# Try to cleanup and mark build crashed
+					MY_JOBID="${j}" crashed_build \
+					    "${pkgname}" "${status%%:*}"
 					bset ${j} status "crashed:"
 				fi
 			fi
