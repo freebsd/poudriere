@@ -2590,7 +2590,7 @@ mark_done() {
 
 
 build_queue() {
-	local j name pkgname builders_active queue_empty status
+	local j name pid pkgname builders_active queue_empty status
 
 	mkfifo ${MASTERMNT}/.p/builders.pipe
 	exec 6<> ${MASTERMNT}/.p/builders.pipe
@@ -2605,14 +2605,16 @@ build_queue() {
 		builders_active=0
 		for j in ${JOBS}; do
 			name="${MASTERNAME}-job-${j}"
-			if [ -f  "${MASTERMNT}/.p/var/run/${j}.pid" ]; then
-				if pgrep -qF "${MASTERMNT}/.p/var/run/${j}.pid" 2>/dev/null; then
+			if hash_get builder_pids "${j}" pid; then
+				# Check if pid is alive.
+				if kill -0 ${pid} 2>/dev/null; then
 					builders_active=1
 					continue
 				fi
-				read pkgname < ${MASTERMNT}/.p/var/run/${j}.pkgname
-				rm -f ${MASTERMNT}/.p/var/run/${j}.pid \
-					${MASTERMNT}/.p/var/run/${j}.pkgname
+				hash_unset builder_pids "${j}"
+				hash_get builder_pkgnames "${j}" pkgname
+				hash_unset builder_pkgnames "${j}"
+				rm -f ${MASTERMNT}/.p/var/run/${j}.pid
 				_bget status ${j} status
 				mark_done ${pkgname}
 				if [ "${status%%:*}" = "done" ]; then
@@ -2642,8 +2644,10 @@ build_queue() {
 			else
 				MY_JOBID="${j}" PORTTESTING=$(get_porttesting "${pkgname}") \
 					build_pkg "${pkgname}" &
-				echo "$!" > ${MASTERMNT}/.p/var/run/${j}.pid
-				echo "${pkgname}" > ${MASTERMNT}/.p/var/run/${j}.pkgname
+				pid=$!
+				echo "${pid}" > ${MASTERMNT}/.p/var/run/${j}.pid
+				hash_set builder_pids "${j}" "${pid}"
+				hash_set builder_pkgnames "${j}" "${pkgname}"
 
 				# A new job is spawned, try to read the queue
 				# just to keep things moving
