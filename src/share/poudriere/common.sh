@@ -1821,7 +1821,9 @@ cleanup() {
 	if [ -n "${MASTERMNT}" -a -n "${MASTERNAME}" ] && was_a_jail_run; then
 		# If this is a builder, don't cleanup, the master will handle that.
 		if [ -n "${MY_JOBID}" ]; then
-			[ -n "${PKGNAME}" ] && clean_pool ${PKGNAME} "" "failed" || :
+			if [ -n "${PKGNAME}" ]; then
+				clean_pool "${PKGNAME}" "" "failed" || :
+			fi
 			return 0
 		fi
 
