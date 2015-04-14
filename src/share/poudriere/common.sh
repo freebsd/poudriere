@@ -2988,14 +2988,16 @@ stop_build() {
 	local build_failed="$3"
 	local mnt
 
-	_my_path mnt
-	umount -f ${mnt}/.npkg 2>/dev/null || :
-	rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
+	if [ -n "${MY_JOBID}" ]; then
+		_my_path mnt
+		umount -f ${mnt}/.npkg 2>/dev/null || :
+		rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
 
-	# 4 = HEADER+jexecd+reaper+ps itself
-	if [ $(injail ps aux | wc -l) -ne 4 ]; then
-		msg_warn "Leftover processes:"
-		injail ps auxwwd | egrep -v '(ps auxwwd|jexecd)'
+		# 4 = HEADER+jexecd+reaper+ps itself
+		if [ $(injail ps aux | wc -l) -ne 4 ]; then
+			msg_warn "Leftover processes:"
+			injail ps auxwwd | egrep -v '(ps auxwwd|jexecd)'
+		fi
 	fi
 
 	buildlog_stop "${pkgname}" ${origin} ${build_failed}
