@@ -2799,15 +2799,22 @@ crashed_build() {
 	_log_path log
 	cache_get_origin origin "${pkgname}"
 
-	echo "Build failed: ${failed_phase}" >> "${log}/logs/${pkgname}.log"
-	# Symlink the buildlog into errors/
-	ln -s "../${pkgname}.log" "${log}/logs/errors/${pkgname}.log"
-	badd ports.failed "${origin} ${pkgname} ${failed_phase} ${failed_phase}"
-	COLOR_ARROW="${COLOR_FAIL}" msg \
-	    "${COLOR_FAIL}Finished build of ${COLOR_PORT}${origin}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
-	run_hook pkgbuild failed "${origin}" "${pkgname}" \
-	    "${failed_phase}" \
-	    "${log}/logs/errors/${pkgname}.log"
+	echo "Build crashed: ${failed_phase}" >> "${log}/logs/${pkgname}.log"
+
+	# If the file already exists then all of this handling was done in
+	# build_pkg() already; The port failed already. What crashed
+	# came after.
+	if ! [ -e "${log}/logs/errors/${pkgname}.log" ]; then
+		# Symlink the buildlog into errors/
+		ln -s "../${pkgname}.log" "${log}/logs/errors/${pkgname}.log"
+		badd ports.failed \
+		    "${origin} ${pkgname} ${failed_phase} ${failed_phase}"
+		COLOR_ARROW="${COLOR_FAIL}" msg \
+		    "${COLOR_FAIL}Finished build of ${COLOR_PORT}${origin}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
+		run_hook pkgbuild failed "${origin}" "${pkgname}" \
+		    "${failed_phase}" \
+		    "${log}/logs/errors/${pkgname}.log"
+	fi
 	clean_pool "${pkgname}" "${origin}" "${failed_phase}"
 	stop_build "${pkgname}" "${origin}" 1 >> "${log}/logs/${pkgname}.log"
 }
