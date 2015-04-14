@@ -2960,6 +2960,8 @@ build_pkg() {
 
 	stop_build "${PKGNAME}" ${port} ${build_failed}
 
+	log_stop
+
 	bset ${MY_JOBID} status "done:"
 
 	echo ${MY_JOBID} >&6
@@ -2986,7 +2988,6 @@ stop_build() {
 	jkill
 
 	buildlog_stop "${pkgname}" ${origin} ${build_failed}
-	log_stop
 }
 
 # Crazy redirection is to add the portname into stderr.
