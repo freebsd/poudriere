@@ -2576,8 +2576,9 @@ job_done() {
 	local j="$1"
 	local pkgname status
 
+	# Failure to find this indicates the job is already done.
+	hash_get builder_pkgnames "${j}" pkgname || return 1
 	hash_unset builder_pids "${j}"
-	hash_get builder_pkgnames "${j}" pkgname
 	hash_unset builder_pkgnames "${j}"
 	rm -f ${MASTERMNT}/.p/var/run/${j}.pid
 	_bget status ${j} status
@@ -2670,10 +2671,14 @@ build_queue() {
 			[ -z "$trappedinfo" ]; do :; done
 		if [ -n "${jobid}" ]; then
 			# A job just finished.
-			job_done "${jobid}"
-			# Do a quick scan to try dispatching ready-to-build
-			# to idle builders.
-			idle_only=1
+			if job_done "${jobid}"; then
+				# Do a quick scan to try dispatching
+				# ready-to-build to idle builders.
+				idle_only=1
+			else
+				# The job is already done. It was found to be
+				# done by a kill -0 check in a scan.
+			fi
 		else
 			# No event found. The next scan will check for
 			# crashed builders and deadlocks by validating
