@@ -342,8 +342,8 @@ coprocess_stop() {
 		hash_unset coprocess_locks "${name}"
 		for lockname in ${locks}; do
 			# Does this process already have the lock?
-			lock_have "${name}" && continue
-			if lock_acquire "${name}"; then
+			lock_have "${lockname}" && continue
+			if lock_acquire "${lockname}"; then
 				took_locks="${took_locks} ${lockname}"
 			else
 				msg_warn "Failed to acquire lock ${lockname} while shutting down ${name}"
