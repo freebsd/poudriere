@@ -2594,7 +2594,7 @@ job_done() {
 
 build_queue() {
 	local j jobid pid pkgname builders_active queue_empty
-	local idle_only
+	local builders_idle idle_only timeout
 
 	mkfifo ${MASTERMNT}/.p/builders.pipe
 	exec 6<> ${MASTERMNT}/.p/builders.pipe
@@ -2608,6 +2608,8 @@ build_queue() {
 	idle_only=0
 	while :; do
 		builders_active=0
+		builders_idle=0
+		timeout=30
 		for j in ${JOBS}; do
 			# Check if pid is alive. A job will have no PID if it
 			# is idle. idle_only=1 is a quick check for giving
@@ -2620,6 +2622,10 @@ build_queue() {
 					continue
 				fi
 				job_done "${j}"
+				# Set a 0 timeout to quickly rescan for idle
+				# builders to toss a job at.
+				[ ${queue_empty} -eq 0 -a \
+				    ${builders_idle} -eq 1 ] && timeout=0
 			fi
 
 			# This builder is idle and needs work.
@@ -2636,6 +2642,7 @@ build_queue() {
 
 				# Pool is waiting on dep, wait until a build
 				# is done before checking the queue again
+				builders_idle=1
 			else
 				MY_JOBID="${j}" PORTTESTING=$(get_porttesting "${pkgname}") \
 					build_pkg "${pkgname}" &
@@ -2667,7 +2674,7 @@ build_queue() {
 		[ ${builders_active} -eq 1 ] || deadlock_detected
 
 		# Wait for an event from a child. All builders are busy.
-		unset jobid; until trappedinfo=; read -t 30 jobid <&6 ||
+		unset jobid; until trappedinfo=; read -t ${timeout} jobid <&6 ||
 			[ -z "$trappedinfo" ]; do :; done
 		if [ -n "${jobid}" ]; then
 			# A job just finished.
