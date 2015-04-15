@@ -732,8 +732,8 @@ exit_handler() {
 	[ ${STATUS} -eq 1 ] && cleanup
 
 	if was_a_bulk_run; then
-		stop_html_json
-		stop_pkg_cacher
+		coprocess_stop html_json
+		coprocess_stop pkg_cacher
 	fi
 
 	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
@@ -3259,6 +3259,7 @@ pkg_cacher_queue() {
 pkg_cacher_main() {
 	local pkg pkgname origin work
 
+	mkfifo ${MASTERMNT}/.p/pkg_cacher.pipe
 	exec 6<> ${MASTERMNT}/.p/pkg_cacher.pipe
 
 	# Wait for packages to process.
@@ -3274,19 +3275,8 @@ pkg_cacher_main() {
 	done
 }
 
-start_pkg_cacher() {
-	mkfifo ${MASTERMNT}/.p/pkg_cacher.pipe
-	pkg_cacher_main &
-	PKG_CACHER_PID=$!
-}
-
-stop_pkg_cacher() {
-	if [ -n "${PKG_CACHER_PID}" ]; then
-		kill ${PKG_CACHER_PID} 2>/dev/null || :
-		_wait ${PKG_CACHER_PID} 2>/dev/null 1>&2 || :
-		unset PKG_CACHER_PID
-		rm -f ${MASTERMNT}/.p/pkg_cacher.pipe
-	fi
+pkg_cacher_cleanup() {
+	rm -f ${MASTERMNT}/.p/pkg_cacher.pipe
 }
 
 get_cache_dir() {
@@ -3543,6 +3533,7 @@ lock_acquire() {
 			return 1
 		fi
 	done
+	hash_set have_lock "${lockname}" 1
 }
 
 lock_release() {
@@ -3550,6 +3541,14 @@ lock_release() {
 	local lockname=$1
 
 	rmdir /tmp/.poudriere-lock-$$-${MASTERNAME}-${lockname} 2>/dev/null
+	hash_unset have_lock "${lockname}"
+}
+
+lock_have() {
+	[ $# -ne 1 ] && eargs lock_have lockname
+	local _ignored
+
+	hash_get have_lock "${lockname}" _ignored
 }
 
 cache_get_pkgname() {
@@ -3997,8 +3996,10 @@ prepare_ports() {
 		fi
 
 		show_log_info
-		start_html_json
-		start_pkg_cacher
+		# Must acquire "update_stats" on shutdown to ensure
+		# the process is not killed while holding it.
+		coprocess_start html_json html_json_cleanup "update_stats"
+		coprocess_start pkg_cacher pkg_cacher_cleanup
 	fi
 
 	load_moved

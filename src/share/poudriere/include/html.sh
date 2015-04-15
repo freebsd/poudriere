@@ -24,11 +24,6 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-start_html_json() {
-	json_main &
-	JSON_PID=$!
-}
-
 stress_snapshot() {
 	local loadvg swapinfo elapsed duration now min_load loadpct ncpu
 
@@ -49,7 +44,7 @@ stress_snapshot() {
 	bset snap_now "${now}"
 }
 
-json_main() {
+html_json_main() {
 	while :; do
 		stress_snapshot
 		update_stats || :
@@ -119,24 +114,10 @@ build_top_json() {
 	mv -f ${tmpfile} ${log_path_top}/.data.json
 }
 
-stop_html_json() {
-	local log have_lock
+html_json_cleanup() {
+	local log
 
 	_log_path log
-	if [ -n "${JSON_PID}" ]; then
-		# First acquire the update_stats lock to ensure the process
-		# doesn't get killed while holding it
-		have_lock=0
-		lock_acquire update_stats && have_lock=1
-
-		kill ${JSON_PID} 2>/dev/null || :
-		_wait ${JSON_PID} 2>/dev/null 1>&2 || :
-		unset JSON_PID
-
-		if [ ${have_lock} -eq 1 ]; then
-			lock_release update_stats || :
-		fi
-	fi
 	build_all_json 2>/dev/null || :
 	rm -f ${log}/.data.json.tmp ${log}/.data.mini.json.tmp 2>/dev/null || :
 }
