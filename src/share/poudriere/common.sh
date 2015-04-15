@@ -2136,8 +2136,11 @@ _real_build_port() {
 			# Skip for all linux ports, they are not safe
 			if [ "${PKGNAME%%*linux*}" != "" ]; then
 				msg "Checking shared library dependencies"
-				listfilecmd="grep -v '^@' /var/db/pkg/${PKGNAME}/+CONTENTS"
-				[ ${PKGNG} -eq 1 ] && listfilecmd="${PKG_BIN} query '%Fp' ${PKGNAME}"
+				if [ ${PKGNG} -eq 1 ]; then
+					listfilecmd="${LOCALBASE}/sbin/pkg query '%Fp' ${PKGNAME}"
+				else
+					listfilecmd="grep -v '^@' /var/db/pkg/${PKGNAME}/+CONTENTS"
+				fi
 				injail ${listfilecmd} | \
 				    injail xargs readelf -d 2>/dev/null | \
 				    grep NEEDED | sort -u
