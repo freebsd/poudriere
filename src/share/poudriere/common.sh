@@ -733,6 +733,7 @@ exit_handler() {
 
 	if was_a_bulk_run; then
 		stop_html_json
+		stop_pkg_cacher
 	fi
 
 	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
@@ -2985,8 +2986,7 @@ build_pkg() {
 			COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished build of ${COLOR_PORT}${port}${COLOR_SUCCESS}: Success"
 			run_hook pkgbuild success "${port}" "${PKGNAME}"
 			# Cache information for next run
-			# XXX: Make this async for processing in another thread.
-			pkg_cache_data "${PACKAGES}/All/${PKGNAME}.${PKG_EXT}" ${port} || :
+			pkg_cacher_queue "${port}" "${pkgname}" || :
 		else
 			# Symlink the buildlog into errors/
 			ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
@@ -3108,7 +3108,7 @@ deps_file() {
 }
 
 pkg_get_origin() {
-	[ $# -lt 2 ] && eargs pkg_get_origin var_return pkg
+	[ $# -lt 2 ] && eargs pkg_get_origin var_return pkg [origin]
 	local var_return="$1"
 	local pkg="$2"
 	local _origin=$3
@@ -3231,24 +3231,59 @@ ensure_pkg_installed() {
 
 pkg_cache_data() {
 	[ $# -ne 2 ] && eargs pkg_cache_data pkg origin
-	local - # Make `set +e` local
-	# Ignore errors in here
-	set +e
-
 	local pkg="$1"
-	local origin=$2
-	local pkg_cache_dir
-	local originfile
+	local origin="$2"
+	local pkg_cache_dir originfile
 
 	get_pkg_cache_dir pkg_cache_dir "${pkg}"
 	originfile="${pkg_cache_dir}/origin"
 
-	ensure_pkg_installed || \
-	    err 1 "Unable to extract pkg."
+	ensure_pkg_installed || return 1
 	pkg_get_options _ignored "${pkg}" > /dev/null
-	pkg_get_origin _ignored "${pkg}" ${origin} > /dev/null
+	pkg_get_origin _ignored "${pkg}" "${origin}" > /dev/null
 	pkg_get_dep_origin _ignored "${pkg}" > /dev/null
 	deps_file _ignored "${pkg}" > /dev/null
+}
+
+pkg_cacher_queue() {
+	[ $# -eq 2 ] || eargs pkg_cacher_queue origin pkgname
+	local origin="$1"
+	local pkgname="$2"
+
+	echo "${origin} ${pkgname}" > ${MASTERMNT}/.p/pkg_cacher.pipe
+}
+
+pkg_cacher_main() {
+	local pkg pkgname origin work
+
+	exec 6<> ${MASTERMNT}/.p/pkg_cacher.pipe
+
+	# Wait for packages to process.
+	while :; do
+		read -r work <&6
+		set -- ${work}
+		origin="$1"
+		pkgname="$2"
+		pkg="${PACKAGES}/All/${pkgname}.${PKG_EXT}"
+		if [ -f "${pkg}" ]; then
+			pkg_cache_data "${pkg}" "${origin}"
+		fi
+	done
+}
+
+start_pkg_cacher() {
+	mkfifo ${MASTERMNT}/.p/pkg_cacher.pipe
+	pkg_cacher_main &
+	PKG_CACHER_PID=$!
+}
+
+stop_pkg_cacher() {
+	if [ -n "${PKG_CACHER_PID}" ]; then
+		kill ${PKG_CACHER_PID} 2>/dev/null || :
+		_wait ${PKG_CACHER_PID} 2>/dev/null 1>&2 || :
+		unset PKG_CACHER_PID
+		rm -f ${MASTERMNT}/.p/pkg_cacher.pipe
+	fi
 }
 
 get_cache_dir() {
@@ -3960,6 +3995,7 @@ prepare_ports() {
 
 		show_log_info
 		start_html_json
+		start_pkg_cacher
 	fi
 
 	load_moved
