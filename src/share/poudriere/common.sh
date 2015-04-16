@@ -3548,19 +3548,15 @@ next_in_queue() {
 }
 
 lock_acquire() {
-	[ $# -ne 1 ] && eargs lock_acquire lockname
+	[ $# -ge 1 ] || eargs lock_acquire lockname [waittime]
 	local lockname=$1
-	local i
+	local waittime="${2:-30}"
 
-	until mkdir /tmp/.poudriere-lock-$$-${MASTERNAME}-${lockname} \
-	    2>/dev/null; do
-		sleep 0.1
-		i=$((i + 1))
-		if [ ${i} -gt 200 ]; then
-			msg_warn "Failed to acquire ${lockname} lock"
-			return 1
-		fi
-	done
+	if ! locked_mkdir "${waittime}" \
+	    "/tmp/.poudriere-lock-$$-${MASTERNAME}-${lockname}"; then
+		msg_warn "Failed to acquire ${lockname} lock"
+		return 1
+	fi
 	hash_set have_lock "${lockname}" 1
 }
 

@@ -107,6 +107,7 @@ pkglibexec_PROGRAMS= \
 		     nc \
 		     poudriered \
 		     rename \
+		     locked_mkdir \
 		     timeout \
 		     timestamp \
 		     tsort \
@@ -129,6 +130,7 @@ cpdup_LDADD=	-lmd
 cpdup_CFLAGS=	-D_ST_FLAGS_PRESENT_=1
 dirempty_SOURCES=	src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
+locked_mkdir_SOURCES=	src/libexec/poudriere/locked_mkdir/locked_mkdir.c
 nc_SOURCES=		src/libexec/poudriere/nc/nc.c
 timeout_SOURCES=	src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
