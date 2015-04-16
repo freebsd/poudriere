@@ -13,6 +13,7 @@
 /cpdup
 /dirempty
 /dirwatch
+/locked_mkdir
 /jexecd
 /make_index
 /nc
