@@ -489,6 +489,7 @@ read_file() {
 			_data="$(cat "${file}")"
 			_read_file_lines_read=$(wc -l < "${file}")
 			_read_file_lines_read=${_read_file_lines_read##* }
+			ret=0
 		else
 			ret=1
 		fi
