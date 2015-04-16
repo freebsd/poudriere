@@ -487,7 +487,7 @@ read_file() {
 	if [ ${READ_FILE_USE_CAT:-0} -eq 1 ]; then
 		if [ -f "${file}" ]; then
 			_data="$(cat "${file}")"
-			_read_file_lines_read=$(cat "${file}"|wc -l)
+			_read_file_lines_read=$(wc -l < "${file}")
 			_read_file_lines_read=${_read_file_lines_read##* }
 		else
 			ret=1
