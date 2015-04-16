@@ -29,6 +29,7 @@ _hash_var_name() {
 }
 
 hash_get() {
+	local -; set +x
 	[ $# -ne 3 ] && eargs hash_get var key var_return
 	local var="$1"
 	local key="$2"
@@ -55,6 +56,7 @@ hash_get() {
 }
 
 hash_set() {
+	local -; set +x
 	[ $# -eq 3 ] || eargs hash_set var key value
 	local var="$1"
 	local key="$2"
@@ -69,6 +71,7 @@ hash_set() {
 }
 
 hash_unset() {
+	local -; set +x
 	[ $# -eq 2 ] || eargs hash_unset var key
 	local var="$1"
 	local key="$2"

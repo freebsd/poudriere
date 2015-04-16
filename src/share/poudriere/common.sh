@@ -116,6 +116,7 @@ err() {
 }
 
 msg_n() {
+	local -; set +x
 	local now elapsed
 
 	elapsed=
@@ -131,14 +132,20 @@ msg_n() {
 	fi
 }
 
-msg() { msg_n "$@"; echo; }
+msg() {
+	local -; set +x
+	msg_n "$@"
+	echo
+}
 
 msg_verbose() {
+	local -; set +x
 	[ ${VERBOSE} -gt 0 ] || return 0
 	msg "$1"
 }
 
 msg_error() {
+	local -; set +x
 	if [ -n "${MY_JOBID}" ]; then
 		# Send colored msg to bulk log...
 		COLOR_ARROW="${COLOR_ERROR}" job_msg "${COLOR_ERROR}Error: $1"
@@ -154,17 +161,20 @@ msg_error() {
 }
 
 msg_debug() {
+	local -; set +x
 	[ ${VERBOSE} -gt 1 ] || return 0
 	COLOR_ARROW="${COLOR_DEBUG}" \
 	    msg "${COLOR_DEBUG}Debug: $@" >&2
 }
 
 msg_warn() {
+	local -; set +x
 	COLOR_ARROW="${COLOR_WARN}" \
 	    msg "${COLOR_WARN}Warning: $@" >&2
 }
 
 job_msg() {
+	local -; set +x
 	local now elapsed NO_ELAPSED_IN_MSG
 
 	if [ -n "${MY_JOBID}" ]; then
@@ -183,6 +193,7 @@ job_msg() {
 }
 
 job_msg_verbose() {
+	local -; set +x
 	[ ${VERBOSE} -gt 0 ] || return 0
 	job_msg "$@"
 }
