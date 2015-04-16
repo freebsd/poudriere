@@ -791,21 +791,30 @@ show_build_summary() {
 }
 
 siginfo_handler() {
-	[ "${POUDRIERE_BUILD_TYPE}" != "bulk" ] && return 0
-
 	trappedinfo=1
+	[ "${POUDRIERE_BUILD_TYPE}" != "bulk" ] && return 0
 	local status
 	local now
 	local j elapsed job_id_color
 	local pkgname origin phase buildtime started
 	local format_origin_phase format_phase
+	local -
 
-	_bget nbq stats_queued 2>/dev/null || nbq=0
-	[ -n "${nbq}" ] || return 0
+	set +e
+
+	trap '' SIGINFO
 
 	_bget status status 2>/dev/null || status=unknown
-	[ "${status}" = "index:" -o "${status#stopped:}" = "crashed:" ] && \
-	    return 0
+	if [ "${status}" = "index:" -o "${status#stopped:}" = "crashed:" ]; then
+		enable_siginfo_handler
+		return 0
+	fi
+
+	_bget nbq stats_queued 2>/dev/null || nbq=0
+	if [ -z "${nbq}" ]; then
+		enable_siginfo_handler
+		return 0
+	fi
 
 	show_build_summary
 
@@ -848,6 +857,7 @@ siginfo_handler() {
 	fi
 
 	show_log_info
+	enable_siginfo_handler
 }
 
 jail_exists() {
