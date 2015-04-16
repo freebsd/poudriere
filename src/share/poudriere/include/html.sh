@@ -45,6 +45,8 @@ stress_snapshot() {
 }
 
 html_json_main() {
+	# This is too noisy and hurts reading debug output.
+	local -; set +x
 	while :; do
 		stress_snapshot
 		update_stats || :
