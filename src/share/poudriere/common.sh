@@ -91,6 +91,7 @@ not_for_os() {
 }
 
 err() {
+	trap '' SIGINFO
 	export CRASHED=1
 	if [ $# -ne 2 ]; then
 		err 1 "err expects 2 arguments: exit_number \"message\""
@@ -715,6 +716,7 @@ sig_handler() {
 	trap '' SIGPIPE
 	# Ignore SIGINT while cleaning up
 	trap '' SIGINT
+	trap '' SIGINFO
 	err 1 "Signal ${SIGNAL} caught, cleaning up and exiting"
 }
 
@@ -722,6 +724,7 @@ exit_handler() {
 	# Ignore errors while cleaning up
 	set +e
 	ERRORS_ARE_FATAL=0
+	trap '' SIGINFO
 	# Avoid recursively cleaning up here
 	trap - EXIT SIGTERM
 	# Ignore SIGPIPE for messages
