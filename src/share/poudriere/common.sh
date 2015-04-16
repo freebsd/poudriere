@@ -577,8 +577,11 @@ _attr_get() {
 attr_get() {
 	local attr_get_data
 
-	_attr_get attr_get_data "$@" || :
-	[ -n "${attr_get_data}" ] && echo "${attr_get_data}"
+	if _attr_get attr_get_data "$@"; then
+		[ -n "${attr_get_data}" ] && echo "${attr_get_data}"
+		return 0
+	fi
+	return 1
 }
 
 jget() { attr_get jails "$@" ; }
@@ -622,8 +625,11 @@ _bget() {
 bget() {
 	local bget_data
 
-	_bget bget_data "$@" || :
-	[ -n "${bget_data}" ] && echo "${bget_data}"
+	if _bget bget_data "$@"; then
+		[ -n "${bget_data}" ] && echo "${bget_data}"
+		return 0
+	fi
+	return 1
 }
 
 bset() {
