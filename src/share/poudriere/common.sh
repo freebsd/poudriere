@@ -1109,10 +1109,10 @@ do_jail_mounts() {
 		    ${mnt}/.npkg \
 		    ${mnt}${HOME}/.ccache \
 		    ${mnt}/var/db/ports
-
-		[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] &&
-		    mnt_tmpfs data "${mnt}/.p"
 	fi
+
+	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] &&
+	    mnt_tmpfs data "${mnt}/.p"
 
 	# Mount /usr/src into target if it exists and not overridden
 	_jget srcpath ${name} srcpath 2>/dev/null || srcpath="${from}/usr/src"
