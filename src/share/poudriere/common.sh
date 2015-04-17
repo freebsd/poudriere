@@ -2682,8 +2682,9 @@ build_queue() {
 				# is done before checking the queue again
 				builders_idle=1
 			else
-				MY_JOBID="${j}" PORTTESTING=$(get_porttesting "${pkgname}") \
-					build_pkg "${pkgname}" &
+				MY_JOBID="${j}" \
+				    PORTTESTING=$(get_porttesting "${pkgname}") \
+				    spawn build_pkg "${pkgname}"
 				pid=$!
 				echo "${pid}" > ${MASTERMNT}/.p/var/run/${j}.pid
 				hash_set builder_pids "${j}" "${pid}"
@@ -2793,13 +2794,6 @@ calculate_duration() {
 	_duration=$(printf "%02d:%02d:%02d" ${hours} ${minutes} ${seconds})
 
 	setvar "${var_return}" "${_duration}"
-}
-
-madvise_protect() {
-	[ $# -eq 1 ] || eargs madvise_protect pid
-	[ -f /usr/bin/protect ] || return 0
-	/usr/bin/protect -p "$1" 2>/dev/null || :
-	return 0
 }
 
 # Build ports in parallel
