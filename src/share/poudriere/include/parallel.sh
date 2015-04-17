@@ -30,7 +30,7 @@ _wait() {
 
 	pwait "$@" 2>/dev/null || :
 	for pid in "$@"; do
-		wait ${pid} || ret=$?
+		wait ${pid} 2>/dev/null 1>&2 || ret=$?
 	done
 
 	return ${ret}
@@ -50,7 +50,7 @@ timed_wait_and_kill() {
 		kill_and_wait 1 "${pids}" || ret=$?
 	else
 		# Nothing running, collect their status.
-		wait ${pids} || ret=$?
+		wait ${pids} 2>/dev/null 1>&2 || ret=$?
 	fi
 
 	return ${ret}
@@ -97,7 +97,7 @@ kill_and_wait() {
 		_wait ${pids} || ret=$?
 	else
 		# Nothing running, collect status directly.
-		wait ${pids} || ret=$?
+		wait ${pids} 2>/dev/null 1>&2 || ret=$?
 	fi
 
 	return ${ret}
