@@ -410,7 +410,7 @@ install_from_src() {
 	if [ -f ${SRC_BASE}/usr/src/.cpignore ]; then
 		cpignore_flag="-x"
 	else
-		cpignore=$(mktemp /tmp/cpignore.XXXXXX)
+		cpignore=$(mktemp -t cpignore)
 		cpignore_flag="-X ${cpignore}"
 		# Ignore some files
 		cat > ${cpignore} <<-EOF

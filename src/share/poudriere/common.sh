@@ -969,6 +969,16 @@ fetch_file() {
 	fetch -p -o $1 $2 || fetch -p -o $1 $2 || err 1 "Failed to fetch from $2"
 }
 
+# Workaround not using 'env -i' for all make(1) calls. Need TMPDIR in children
+# for mktemp(1).
+mktemp() {
+	if [ -z "${TMPDIR}" -a -n "${MASTERMNT}" -a ${STATUS} -eq 1 ]; then
+		_my_path mnt
+		export TMPDIR="${mnt}/.p/tmp"
+	fi
+	exec command mktemp "$@"
+}
+
 unmarkfs() {
 	[ $# -ne 2 ] && eargs unmarkfs name mnt
 	local name=$1
@@ -1113,6 +1123,8 @@ do_jail_mounts() {
 
 	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] &&
 	    mnt_tmpfs data "${mnt}/.p"
+
+	mkdir -p "${mnt}/.p/tmp"
 
 	# Mount /usr/src into target if it exists and not overridden
 	_jget srcpath ${name} srcpath 2>/dev/null || srcpath="${from}/usr/src"
@@ -2273,12 +2285,12 @@ _real_build_port() {
 		fi
 
 		if [ "${phase}" = "deinstall" ]; then
-			local add=$(mktemp ${mnt}/tmp/add.XXXXXX)
-			local add1=$(mktemp ${mnt}/tmp/add1.XXXXXX)
-			local del=$(mktemp ${mnt}/tmp/del.XXXXXX)
-			local del1=$(mktemp ${mnt}/tmp/del1.XXXXXX)
-			local mod=$(mktemp ${mnt}/tmp/mod.XXXXXX)
-			local mod1=$(mktemp ${mnt}/tmp/mod1.XXXXXX)
+			local add=$(mktemp -t lo.add)
+			local add1=$(mktemp -t lo.add1)
+			local del=$(mktemp -t lo.del)
+			local del1=$(mktemp -t lo.del1)
+			local mod=$(mktemp -t lo.mod)
+			local mod1=$(mktemp -t lo.mod1)
 			local die=0
 			PREFIX=$(injail env ${PORT_FLAGS} make -C ${portdir} -VPREFIX)
 
@@ -3922,7 +3934,7 @@ clean_build_queue() {
 	# causes the build deps to be in the queue at this point.
 
 	if [ ${TRIM_ORPHANED_BUILD_DEPS} = "yes" -a ${ALL} -eq 0 ]; then
-		tmp=$(mktemp ${MASTERMNT}/tmp/queue.XXXXXX)
+		tmp=$(mktemp -t queue)
 		{
 			listed_ports | while read port; do
 				cache_get_pkgname pkgname "${port}"

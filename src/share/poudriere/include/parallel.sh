@@ -133,11 +133,7 @@ parallel_exec() {
 parallel_start() {
 	local fifo
 
-	if [ -n "${MASTERMNT}" ]; then
-		fifo=${MASTERMNT}/.p/parallel.pipe
-	else
-		fifo=$(mktemp -ut parallel)
-	fi
+	fifo=$(mktemp -ut parallel.pipe)
 	mkfifo ${fifo}
 	exec 9<> ${fifo}
 	rm -f ${fifo}
@@ -248,7 +244,7 @@ nohang() {
 
 	read_timeout=$((log_timeout / 10))
 
-	fifo=$(mktemp -ut nohang)
+	fifo=$(mktemp -ut nohang.pipe)
 	mkfifo ${fifo}
 	exec 8<> ${fifo}
 	rm -f ${fifo}
