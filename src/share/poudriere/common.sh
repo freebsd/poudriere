@@ -3963,8 +3963,6 @@ prepare_ports() {
 	local cache_dir sflag
 
 	_log_path log
-	rm -rf "${MASTERMNT}/.p/var/cache/origin-pkgname" \
-		"${MASTERMNT}/.p/var/cache/pkgname-origin" 2>/dev/null || :
 	mkdir -p "${MASTERMNT}/.p/building" \
 		"${MASTERMNT}/.p/pool" \
 		"${MASTERMNT}/.p/pool/unbalanced" \
