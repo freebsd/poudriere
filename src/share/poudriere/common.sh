@@ -2696,7 +2696,7 @@ build_queue() {
 			else
 				MY_JOBID="${j}" \
 				    PORTTESTING=$(get_porttesting "${pkgname}") \
-				    spawn build_pkg "${pkgname}"
+				    spawn_protected build_pkg "${pkgname}"
 				pid=$!
 				echo "${pid}" > ${MASTERMNT}/.p/var/run/${j}.pid
 				hash_set builder_pids "${j}" "${pid}"

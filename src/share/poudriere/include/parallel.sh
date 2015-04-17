@@ -217,7 +217,7 @@ parallel_run() {
 	fi
 
 	[ ${NBPARALLEL} -lt ${PARALLEL_JOBS} ] && NBPARALLEL=$((NBPARALLEL + 1))
-	PARALLEL_CHILD=1 parallel_exec $cmd "$@" &
+	PARALLEL_CHILD=1 spawn parallel_exec $cmd "$@"
 	PARALLEL_PIDS="${PARALLEL_PIDS} $! "
 
 	return ${ret}
@@ -254,7 +254,7 @@ nohang() {
 	# Run the actual command in a child subshell
 	(
 		local ret=0
-		"$@" || ret=1
+		_spawn_wrapper "$@" || ret=1
 		# Notify the pipe the command is done
 		echo done >&8 2>/dev/null || :
 		exit $ret
@@ -313,8 +313,21 @@ madvise_protect() {
 	return 0
 }
 
+_spawn_wrapper() {
+	# Reset SIGINT to the default to undo POSIX's SIG_IGN in
+	# 2.11 "Signals and Error Handling". This will ensure no
+	# foreground process is left around on SIGINT.
+	trap - INT
+
+	"$@"
+}
+
 spawn() {
-	"$@" &
+	_spawn_wrapper "$@" &
+}
+
+spawn_protected() {
+	_spawn_wrapper "$@" &
 	madvise_protect $! || :
 }
 
@@ -330,7 +343,7 @@ coprocess_start() {
 	local main pid
 
 	main="${name}_main"
-	spawn ${main}
+	spawn_protected ${main}
 	pid=$!
 
 	hash_set coprocess_pid "${name}" "${pid}"
