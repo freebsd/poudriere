@@ -1118,10 +1118,10 @@ do_jail_mounts() {
 		    ${mnt}/.npkg \
 		    ${mnt}${HOME}/.ccache \
 		    ${mnt}/var/db/ports
-
-		[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] &&
-		    mnt_tmpfs data "${mnt}/.p"
 	fi
+
+	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] &&
+	    mnt_tmpfs data "${mnt}/.p"
 
 	# Mount /usr/src into target, no need for anything to write to it
 	[ -d "${from}/usr/src" -a "${from}" != "${mnt}" ] && \
