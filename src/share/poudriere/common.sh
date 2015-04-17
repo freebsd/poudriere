@@ -1009,7 +1009,6 @@ markfs() {
 		echo " done"
 		return 0
 	fi
-	mkdir -p ${mnt}/.p/
 
 	case "${name}" in
 		prepkg)
@@ -1119,6 +1118,9 @@ do_jail_mounts() {
 		    ${mnt}/.npkg \
 		    ${mnt}${HOME}/.ccache \
 		    ${mnt}/var/db/ports
+
+		[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] &&
+		    mnt_tmpfs data "${mnt}/.p"
 	fi
 
 	# Mount /usr/src into target, no need for anything to write to it
@@ -2487,8 +2489,6 @@ start_builder() {
 	destroyfs ${mnt} jail
 	mkdir -p "${mnt}"
 	clonefs ${MASTERMNT} ${mnt} prepkg
-	# Create the /poudriere so that on zfs rollback does not nukes it
-	mkdir -p ${mnt}/.p
 	markfs prepkg ${mnt} >/dev/null
 	do_jail_mounts "${MASTERMNT}" ${mnt} ${arch}
 	do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
@@ -3963,8 +3963,6 @@ prepare_ports() {
 	local cache_dir sflag
 
 	_log_path log
-	mkdir -p "${MASTERMNT}/.p"
-	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs data "${MASTERMNT}/.p"
 	rm -rf "${MASTERMNT}/.p/var/cache/origin-pkgname" \
 		"${MASTERMNT}/.p/var/cache/pkgname-origin" 2>/dev/null || :
 	mkdir -p "${MASTERMNT}/.p/building" \
