@@ -155,7 +155,6 @@ export MASTERNAME
 export MASTERMNT
 export POUDRIERE_BUILD_TYPE=bulk
 
-madvise_protect $$
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
 if [ $CONFIGSTR -eq 1 ]; then

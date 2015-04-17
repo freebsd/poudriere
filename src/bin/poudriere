@@ -121,4 +121,7 @@ case "${CMD}" in
 		;;
 esac
 
-exec env -i ${CMD_ENV} /bin/sh ${SETX} "${POUDRIEREPREFIX}/${CMD}.sh" "$@"
+[ -f /usr/bin/protect ] && [ $(/usr/bin/id -u) -eq 0 ] &&
+    PROTECT=/usr/bin/protect
+exec env -i ${CMD_ENV} ${PROTECT} /bin/sh ${SETX} \
+    "${POUDRIEREPREFIX}/${CMD}.sh" "$@"
