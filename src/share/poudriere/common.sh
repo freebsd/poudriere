@@ -2954,6 +2954,19 @@ build_pkg() {
 	job_msg "Starting build of ${COLOR_PORT}${port}${COLOR_RESET}"
 	bset_job_status "starting" "${port}"
 
+	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
+		umount -f ${mnt}/${LOCALBASE:-/usr/local} 2>/dev/null || :
+		mnt_tmpfs localbase ${mnt}/${LOCALBASE:-/usr/local}
+		do_clone "${MASTERMNT}/${LOCALBASE:-/usr/local}" \
+		    "${mnt}/${LOCALBASE:-/usr/local}"
+	fi
+
+	# Kill everything in jail first
+	jkill
+
+	[ -f ${mnt}/.need_rollback ] && rollbackfs prepkg ${mnt}
+	:> ${mnt}/.need_rollback
+
 	case " ${BLACKLIST} " in
 	*\ ${port}\ *) ignore="Blacklisted" ;;
 	esac
@@ -2963,31 +2976,14 @@ build_pkg() {
 	# is a less-common check
 	: ${ignore:=$(injail make -C ${portdir} -VIGNORE)}
 
-	# Avoid rollbacks/cloning if this is just going to exit right away.
-	if [ -z "${ignore}" ]; then
-		if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
-			umount -f ${mnt}/${LOCALBASE:-/usr/local} 2>/dev/null || :
-			mnt_tmpfs localbase ${mnt}/${LOCALBASE:-/usr/local}
-			do_clone "${MASTERMNT}/${LOCALBASE:-/usr/local}" \
-			    "${mnt}/${LOCALBASE:-/usr/local}"
-		fi
-
-		# Kill everything in jail first
-		jkill
-
-		[ -f ${mnt}/.need_rollback ] && rollbackfs prepkg ${mnt}
-		:> ${mnt}/.need_rollback
-
-		rm -rf ${mnt}/wrkdirs/* || :
-
-		# Ensure /dev/null exists (kern/139014)
-		[ ${JAILED} -eq 0 ] &&
-		    devfs -m ${mnt}/dev rule apply path null unhide
-	fi
+	rm -rf ${mnt}/wrkdirs/* || :
 
 	log_start 0
 	msg "Building ${port}"
 	buildlog_start ${portdir}
+
+	# Ensure /dev/null exists (kern/139014)
+	[ ${JAILED} -eq 0 ] && devfs -m ${mnt}/dev rule apply path null unhide
 
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
