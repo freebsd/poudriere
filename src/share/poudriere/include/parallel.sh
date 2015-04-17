@@ -307,12 +307,24 @@ nohang() {
 	return $ret
 }
 
+madvise_protect() {
+	[ $# -eq 1 ] || eargs madvise_protect pid
+	[ -f /usr/bin/protect ] || return 0
+	/usr/bin/protect -p "$1" 2>/dev/null || :
+	return 0
+}
+
+spawn() {
+	"$@" &
+	madvise_protect $!
+}
+
 # Start a background process from function 'name'. The 'atexit' function
 # will be called from the main process after the coprocess is killed.
 # 'locks' will be acquired before killing, which can be used to not kill
 # a process in the middle of an operation.
 coprocess_start() {
-	[ $# -ge 1 ] || earags coprocess_start name [atexit] [locks]
+	[ $# -ge 1 ] || eargs coprocess_start name [atexit] [locks]
 	local name="$1"
 	local atexit="$2"
 	local locks="$3"
