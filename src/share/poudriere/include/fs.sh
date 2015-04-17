@@ -159,6 +159,8 @@ clonefs() {
 			echo ".p" >> "${to}/.cpignore"
 		fi
 	fi
+	# Create our data dir.
+	mkdir -p "${to}/.p"
 }
 
 destroyfs() {

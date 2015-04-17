@@ -271,8 +271,6 @@ jstart() {
 
 	[ "${RESTRICT_NETWORKING}" = "yes" ] || network="${ipargs}"
 
-	[ -d ${MASTERMNT}/.p ] || mkdir -p ${MASTERMNT}/.p
-
 	_my_name name
 	jail -c persist name=${name} \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
@@ -1042,8 +1040,6 @@ markfs() {
 		echo " done"
 		return 0
 	fi
-	# XXX: Is this needed?
-	mkdir -p ${mnt}/.p/
 	mtreefile=${mnt}/.p/mtree.${name}exclude
 
 	common_mtree ${mtreefile}
@@ -1113,6 +1109,9 @@ do_jail_mounts() {
 		    ${mnt}/.npkg \
 		    ${mnt}${HOME}/.ccache \
 		    ${mnt}/var/db/ports
+
+		[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] &&
+		    mnt_tmpfs data "${mnt}/.p"
 	fi
 
 	# Mount /usr/src into target if it exists and not overridden
@@ -1655,10 +1654,6 @@ jail_start() {
 
 	msg "Mounting system devices for ${MASTERNAME}"
 	do_jail_mounts "${mnt}" "${tomnt}" ${arch} ${name}
-
-	# Create our data space
-	mkdir -p "${tomnt}/.p"
-	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs data "${tomnt}/.p"
 
 	PACKAGES=${POUDRIERE_DATA}/packages/${MASTERNAME}
 
@@ -2497,8 +2492,6 @@ start_builder() {
 	destroyfs ${mnt} jail
 	mkdir -p "${mnt}"
 	clonefs ${MASTERMNT} ${mnt} prepkg
-	# Create the /poudriere so that on zfs rollback does not nukes it
-	mkdir -p ${mnt}/.p
 	markfs prepkg ${mnt} >/dev/null
 	do_jail_mounts "${MASTERMNT}" ${mnt} ${arch} ${jname}
 	do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
