@@ -3068,27 +3068,32 @@ stop_build() {
 	buildlog_stop "${pkgname}" ${origin} ${build_failed}
 }
 
-# Crazy redirection is to add the portname into stderr.
-# Idea from http://superuser.com/a/453609/34747
-mangle_stderr() {
+prefix_stderr() {
 	local -; set +x
 	local extra="$1"
-
 	shift 1
 
-	{
-		{
-			{
-				{
-					"$@"
-				} 2>&3
-			} 3>&1 1>&2 | {
-				while read -r line; do
-					msg_warn "${extra}: ${line}" 2>&3
-				done
-			}
-		} 3>&2 2>&1
-	}
+	{ { "$@"; } 2>&1 1>&3 | while read -r line; do
+		msg_warn "${extra}: ${line}"
+	done } 3>&1
+}
+
+prefix_stdout() {
+	local -; set +x
+	local extra="$1"
+	shift 1
+
+	{ "$@"; } | while read -r line; do
+		msg "${extra}: ${line}"
+	done
+}
+
+prefix_output() {
+	local -; set +x
+	local extra="$1"
+	shift 1
+
+	prefix_stderr "${extra}" prefix_stdout "${extra}" "$@"
 }
 
 list_deps() {
@@ -3096,7 +3101,7 @@ list_deps() {
 	local dir="/usr/ports/$1"
 	local makeargs="-VPKG_DEPENDS -VBUILD_DEPENDS -VEXTRACT_DEPENDS -VLIB_DEPENDS -VPATCH_DEPENDS -VFETCH_DEPENDS -VRUN_DEPENDS"
 
-	mangle_stderr "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
+	prefix_stderr "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
 		injail make -C ${dir} $makeargs | \
 		sed -e "s,[[:graph:]]*/usr/ports/,,g" \
 		-e "s,:[[:graph:]]*,,g" -e '/^$/d' | tr ' ' '\n' | \
