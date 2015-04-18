@@ -54,36 +54,6 @@ should_show_elapsed() {
 	return 1
 }
 
-# Based on Shell Scripting Recipes - Chris F.A. Johnson (c) 2005
-# Replace a pattern without needing a subshell/exec
-_gsub() {
-	[ $# -ne 3 ] && eargs _gsub string pattern replacement
-	local string="$1"
-	local pattern="$2"
-	local replacement="$3"
-	local result_l= result_r="${string}"
-
-	while :; do
-		case ${result_r} in
-			*${pattern}*)
-				result_l=${result_l}${result_r%%${pattern}*}${replacement}
-				result_r=${result_r#*${pattern}}
-				;;
-			*)
-				break
-				;;
-		esac
-	done
-
-	_gsub="${result_l}${result_r}"
-}
-
-
-gsub() {
-	_gsub "$@"
-	echo "${_gsub}"
-}
-
 not_for_os() {
 	local os=$1
 	shift
@@ -4587,8 +4557,6 @@ fi
 : ${TRIM_ORPHANED_BUILD_DEPS:=yes}
 : ${USE_PROCFS:=yes}
 : ${USE_FDESCFS:=yes}
-# - must be last
-: ${HASH_VAR_NAME_SUB_GLOB:="[/.+,-]"}
 
 # Be sure to update poudriere.conf to document the default when changing these
 : ${MAX_EXECUTION_TIME:=86400}         # 24 hours for 1 command
