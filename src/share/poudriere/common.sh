@@ -3586,9 +3586,8 @@ cache_get_pkgname() {
 				return 1
 			fi
 		fi
-		_pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME ||
-			err 1 "Error getting PKGNAME for ${COLOR_PORT}${origin}${COLOR_RESET}")
-		[ -n "${_pkgname}" ] || err 1 "Missing PKGNAME for ${COLOR_PORT}${origin}${COLOR_RESET}"
+		_pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME || echo)
+		[ -n "${_pkgname}" ] || err 1 "Error getting PKGNAME for ${COLOR_PORT}${origin}${COLOR_RESET}"
 		# Make sure this origin did not already exist
 		cache_get_origin existing_origin "${_pkgname}" 2>/dev/null || :
 		# It may already exist due to race conditions, it is not harmful. Just ignore.
