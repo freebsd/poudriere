@@ -89,7 +89,7 @@ distfiles_cleanup() {
 get_distinfo() {
 	local port="$1"
 
-	mangle_stderr "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
+	prefix_stderr "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
 	    make -C "${PORTSDIR}/${port}" -V DISTINFO_FILE
 }
 
