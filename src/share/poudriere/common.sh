@@ -135,8 +135,7 @@ msg_n() {
 
 msg() {
 	local -; set +x
-	msg_n "$@"
-	echo
+	msg_n "$@""\n"
 }
 
 msg_verbose() {
