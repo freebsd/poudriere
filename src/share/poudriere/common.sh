@@ -182,8 +182,7 @@ job_msg() {
 		now=$(date +%s)
 		calculate_duration elapsed "$((${now} - ${TIME_START_JOB}))"
 		msg \
-		    "[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}][${elapsed}] $1" \
-		    >&5
+		    "[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}][${elapsed}] $1"
 	elif [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
 		# Send to true stdout (not any build log)
 		msg "$@" >&3
@@ -2830,11 +2829,6 @@ parallel_build() {
 	msg "Starting/Cloning builders"
 	start_builders
 
-	# Duplicate stdout to socket 5 so the child process can send
-	# status information back on it since we redirect its
-	# stdout to /dev/null
-	exec 5<&1
-
 	bset status "parallel_build:"
 
 	build_queue
@@ -2846,9 +2840,6 @@ parallel_build() {
 	update_stats || msg_warn "Error updating build stats"
 
 	bset status "idle:"
-
-	# Close the builder socket
-	exec 5>&-
 
 	# Restore PARALLEL_JOBS
 	PARALLEL_JOBS=${real_parallel_jobs}
