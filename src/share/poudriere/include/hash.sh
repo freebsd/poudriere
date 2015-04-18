@@ -22,6 +22,48 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+# - must be last
+: ${HASH_VAR_NAME_SUB_GLOB:="[/.+,-]"}
+
+if ! type eargs 2>/dev/null; then
+	eargs() {
+		local badcmd="$1"
+		shift
+		echo "Bad arguments, ${badcmd}: ""$@" >&2
+		exit 1
+	}
+fi
+
+# Based on Shell Scripting Recipes - Chris F.A. Johnson (c) 2005
+# Replace a pattern without needing a subshell/exec
+_gsub() {
+	[ $# -ne 3 ] && eargs _gsub string pattern replacement
+	local string="$1"
+	local pattern="$2"
+	local replacement="$3"
+	local result_l= result_r="${string}"
+
+	while :; do
+		case ${result_r} in
+			*${pattern}*)
+				result_l=${result_l}${result_r%%${pattern}*}${replacement}
+				result_r=${result_r#*${pattern}}
+				;;
+			*)
+				break
+				;;
+		esac
+	done
+
+	_gsub="${result_l}${result_r}"
+}
+
+
+gsub() {
+	_gsub "$@"
+	echo "${_gsub}"
+}
+
 _hash_var_name() {
 	# Replace all HASH_VAR_NAME_SUB_GLOB with _
 	_gsub "_HASH_${1}_${2}" ${HASH_VAR_NAME_SUB_GLOB} _
