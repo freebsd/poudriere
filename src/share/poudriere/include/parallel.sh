@@ -133,6 +133,10 @@ parallel_exec() {
 parallel_start() {
 	local fifo
 
+	if [ -n "${NBPARALLEL}" ]; then
+		echo "parallel_start: Already started" >&2
+		return 1
+	fi
 	fifo=$(mktemp -ut parallel.pipe)
 	mkfifo ${fifo}
 	exec 9<> ${fifo}
