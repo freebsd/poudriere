@@ -112,6 +112,21 @@ hash_set() {
 	setvar "${hash_var_name}" "${value}"
 }
 
+hash_remove() {
+	local -; set +x
+	[ $# -ne 3 ] && eargs hash_get var key var_return
+	local var="$1"
+	local key="$2"
+	local ret
+
+	ret=0
+	hash_get "$@" || ret=$?
+	if [ ${ret} -eq 0 ]; then
+		hash_unset "${var}" "${key}"
+	fi
+	return ${ret}
+}
+
 hash_unset() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs hash_unset var key
