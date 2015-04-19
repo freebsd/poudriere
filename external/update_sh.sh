@@ -13,7 +13,8 @@ DESTDIR_REAL="$(realpath "${DESTDIR}")"
 ORIG_PWD="${PWD}"
 cd "${SH_DIR}"
 export MK_TESTS=no
-make clean cleanobj
+make cleanobj
+make clean cleandepend
 make depend
 paths=$(make -V '${.PATH:N.*bltin*}'|xargs realpath)
 for src in *.h $(make -V SRCS); do
@@ -26,6 +27,7 @@ for src in *.h $(make -V SRCS); do
 	fi
 done | sort -u | tar -c -T - --exclude bltin -s ",.*/,,g" -f - | tar -C "${DESTDIR_REAL}" -xf -
 cp -R "${SH_DIR}/bltin" "${DESTDIR_REAL}/bltin"
+make clean cleandepend
 cd "${ORIG_PWD}"
 git add -A "${DESTDIR}"
 echo "sh_SOURCES= \\"
