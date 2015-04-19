@@ -20,6 +20,7 @@
 /poudriere_statsd
 /rename
 /rexec
+/sh
 /timeout
 /timestamp
 /tsort
