@@ -25,7 +25,7 @@
 # - must be last
 : ${HASH_VAR_NAME_SUB_GLOB:="[/.+,-]"}
 
-if ! type eargs 2>/dev/null; then
+if ! type eargs 2>/dev/null >&2; then
 	eargs() {
 		local badcmd="$1"
 		shift
