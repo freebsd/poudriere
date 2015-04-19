@@ -52,8 +52,6 @@ queue_reader_cleanup() {
 }
 
 
-SCRIPTPATH=$(realpath $0)
-SCRIPTPREFIX=${SCRIPTPATH%/*}
 PTNAME="default"
 NODAEMONIZE=0
 KILL=0

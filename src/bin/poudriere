@@ -85,7 +85,7 @@ shift $((OPTIND-1))
 
 POUDRIEREPATH=`realpath $0`
 POUDRIEREPREFIX=${POUDRIEREPATH%\/bin/*}
-POUDRIEREPREFIX=${POUDRIEREPREFIX}/share/poudriere
+SCRIPTPREFIX=${POUDRIEREPREFIX}/share/poudriere
 
 CMD=$1
 shift
@@ -117,6 +117,9 @@ case "${CMD}" in
 		CMD_ENV="${CMD_ENV} SAVED_TERM=${SAVED_TERM}"
 esac
 
+SCRIPTPATH="${SCRIPTPREFIX}/${CMD}.sh"
+CMD_ENV="${CMD_ENV} SCRIPTPATH=${SCRIPTPATH} SCRIPTPREFIX=${SCRIPTPREFIX}"
+
 case "${CMD}" in
 	api|bulk|distclean|daemon|jail|ports|options|pkgclean|queue|status|testport)
 		;;
@@ -128,5 +131,4 @@ esac
 
 [ -f /usr/bin/protect ] && [ $(/usr/bin/id -u) -eq 0 ] &&
     PROTECT=/usr/bin/protect
-exec env -i ${CMD_ENV} ${PROTECT} sh ${SETX} \
-    "${POUDRIEREPREFIX}/${CMD}.sh" "$@"
+exec env -i ${CMD_ENV} ${PROTECT} sh ${SETX} "${SCRIPTPATH}" "$@"
