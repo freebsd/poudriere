@@ -24,5 +24,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+#### This file is experimental and may change without notice.
+
 . ${SCRIPTPREFIX}/common.sh
 "$@"
