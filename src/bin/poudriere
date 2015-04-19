@@ -94,10 +94,12 @@ shift
 # Support running from checkout.
 if [ "${POUDRIEREPATH%src/bin/poudriere}" != "${POUDRIEREPATH}" ]; then
 	LIBEXECPREFIX="${POUDRIEREPATH%src/bin/poudriere}"
-	CMD_ENV="${CMD_ENV} LIBEXECPREFIX=${POUDRIEREPATH%src/bin/poudriere}"
-	PATH="${LIBEXECPREFIX}:${PATH}"
+else
+	LIBEXECPREFIX="${POUDRIEREPREFIX}/libexec/poudriere"
 fi
-CMD_ENV="${CMD_ENV} PATH=${PATH} POUDRIERE_VERSION=${POUDRIERE_VERSION}"
+CMD_ENV="${CMD_ENV} LIBEXECPREFIX=${LIBEXECPREFIX}"
+CMD_ENV="${CMD_ENV} PATH=${LIBEXECPREFIX}:${PATH}"
+CMD_ENV="${CMD_ENV} POUDRIERE_VERSION=${POUDRIERE_VERSION}"
 
 # Handle special-case commands first.
 case "${CMD}" in
