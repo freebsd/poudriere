@@ -89,12 +89,15 @@ POUDRIEREPREFIX=${POUDRIEREPREFIX}/share/poudriere
 
 CMD=$1
 shift
-CMD_ENV="PATH=${PATH} POUDRIERE_VERSION=${POUDRIERE_VERSION}"
 [ -n "${POUDRIERE_ETC}" ] && CMD_ENV="${CMD_ENV} POUDRIERE_ETC=${POUDRIERE_ETC}"
 [ -n "${USE_COLORS}" ] && CMD_ENV="${CMD_ENV} USE_COLORS=${USE_COLORS}"
 # Support running from checkout.
-[ "${POUDRIEREPATH%src/bin/poudriere}" != "${POUDRIEREPATH}" ] && \
-    CMD_ENV="${CMD_ENV} LIBEXECPREFIX=${POUDRIEREPATH%src/bin/poudriere}"
+if [ "${POUDRIEREPATH%src/bin/poudriere}" != "${POUDRIEREPATH}" ]; then
+	LIBEXECPREFIX="${POUDRIEREPATH%src/bin/poudriere}"
+	CMD_ENV="${CMD_ENV} LIBEXECPREFIX=${POUDRIEREPATH%src/bin/poudriere}"
+	PATH="${LIBEXECPREFIX}:${PATH}"
+fi
+CMD_ENV="${CMD_ENV} PATH=${PATH} POUDRIERE_VERSION=${POUDRIERE_VERSION}"
 
 # Handle special-case commands first.
 case "${CMD}" in
@@ -123,5 +126,5 @@ esac
 
 [ -f /usr/bin/protect ] && [ $(/usr/bin/id -u) -eq 0 ] &&
     PROTECT=/usr/bin/protect
-exec env -i ${CMD_ENV} ${PROTECT} /bin/sh ${SETX} \
+exec env -i ${CMD_ENV} ${PROTECT} sh ${SETX} \
     "${POUDRIEREPREFIX}/${CMD}.sh" "$@"
