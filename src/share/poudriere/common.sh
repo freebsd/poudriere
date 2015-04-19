@@ -4367,7 +4367,6 @@ else
 fi
 include_poudriere_confs "$@"
 
-: ${DISTFILES_CACHE:=/nonexistent}
 AWKPREFIX=${SCRIPTPREFIX}/awk
 HTMLPREFIX=${SCRIPTPREFIX}/html
 HOOKDIR=${POUDRIERED}/hooks
@@ -4537,6 +4536,7 @@ fi
 : ${QUEUE_SOCKET:=/var/run/poudriered.sock}
 : ${PORTBUILD_USER:=nobody}
 : ${BUILD_AS_NON_ROOT:=no}
+: ${DISTFILES_CACHE:=/nonexistent}
 : ${SVN_CMD:=$(which svn 2>/dev/null || which svnlite 2>/dev/null)}
 # 24 hours for 1 command
 : ${MAX_EXECUTION_TIME:=86400}
