@@ -62,8 +62,6 @@ EOF
 	exit 1
 }
 
-SCRIPTPATH=$(realpath $0)
-SCRIPTPREFIX=${SCRIPTPATH%/*}
 CONFIGSTR=0
 . ${SCRIPTPREFIX}/common.sh
 NOPREFIX=1

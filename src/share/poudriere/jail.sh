@@ -821,8 +821,6 @@ check_emulation() {
 	fi
 }
 
-SCRIPTPATH=$(realpath $0)
-SCRIPTPREFIX=${SCRIPTPATH%/*}
 . ${SCRIPTPREFIX}/common.sh
 
 get_host_arch ARCH
