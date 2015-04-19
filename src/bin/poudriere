@@ -129,6 +129,14 @@ case "${CMD}" in
 		;;
 esac
 
+case "${CMD}" in
+	jail|ports|daemon|status|options)
+		;;
+	*)
+		SET_ERREXIT=-e
+		;;
+esac
+
 [ -f /usr/bin/protect ] && [ $(/usr/bin/id -u) -eq 0 ] &&
     PROTECT=/usr/bin/protect
-exec env -i ${CMD_ENV} ${PROTECT} sh ${SETX} "${SCRIPTPATH}" "$@"
+exec env -i ${CMD_ENV} ${PROTECT} sh ${SET_ERREXIT} ${SETX} "${SCRIPTPATH}" "$@"
