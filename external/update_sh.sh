@@ -29,6 +29,10 @@ done | sort -u | tar -c -T - --exclude bltin -s ",.*/,,g" -f - | tar -C "${DESTD
 cp -R "${SH_DIR}/bltin" "${DESTDIR_REAL}/bltin"
 make clean cleandepend
 cd "${ORIG_PWD}"
+
+# Fix backwards compat for st_mtim
+sed -i '' -e 's,st_mtim\.tv_sec,st_mtime,g' "${DESTDIR}/test.c"
+
 git add -A "${DESTDIR}"
 echo "sh_SOURCES= \\"
 find "${DESTDIR}" -name '*.c'|sed -e 's,$, \\,'
