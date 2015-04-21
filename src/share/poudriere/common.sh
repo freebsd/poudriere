@@ -1624,9 +1624,11 @@ jail_start() {
 
 	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
 	msg_n "Creating the reference jail..."
-	#export CACHESOCK=${MASTERMNT%/ref}/cache.sock
-	#export CACHEPID=${MASTERMNT%/ref}/cache.pid
-	#cached -s ${CACHESOCK} -p ${CACHEPID} -n ${MASTERNAME}
+	if [ ${USE_CACHED} = "yes" ]; then
+		export CACHESOCK=${MASTERMNT%/ref}/cache.sock
+		export CACHEPID=${MASTERMNT%/ref}/cache.pid
+		cached -s ${CACHESOCK} -p ${CACHEPID} -n ${MASTERNAME}
+	fi
 	clonefs ${mnt} ${tomnt} clean
 	echo " done"
 
@@ -3549,8 +3551,11 @@ cache_get_pkgname() {
 	local cache_origin_pkgname=${MASTERMNT}/.p/var/cache/origin-pkgname/${origin%%/*}_${origin##*/}
 	local cache_pkgname_origin
 
-	[ -f ${cache_origin_pkgname} ] && read_line _pkgname "${cache_origin_pkgname}"
-	#_pkgname=$(write_usock ${CACHESOCK} get ${origin})
+	if [ ${USE_CACHED} = "yes" ]; then
+		_pkgname=$(write_usock ${CACHESOCK} get ${origin})
+	else
+		[ -f ${cache_origin_pkgname} ] && read_line _pkgname "${cache_origin_pkgname}"
+	fi
 
 	# Add to cache if not found.
 	if [ -z "${_pkgname}" ]; then
@@ -3569,10 +3574,13 @@ cache_get_pkgname() {
 		if [ "${existing_origin}" != "${origin}" ]; then
 			[ -n "${existing_origin}" ] &&
 				err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${origin}${COLOR_RESET} AND ${COLOR_PORT}${existing_origin}${COLOR_RESET}. Rerun with -vv to see which ports are depending on these."
-			echo "${_pkgname}" > ${cache_origin_pkgname}
-			cache_pkgname_origin="${MASTERMNT}/.p/var/cache/pkgname-origin/${_pkgname}"
-			echo "${origin}" > "${cache_pkgname_origin}"                                                    
-	#		write_usock ${CACHESOCK} set ${_pkgname} ${origin}
+			if [ ${USE_CACHED} = "yes" ]; then
+				write_usock ${CACHESOCK} set ${_pkgname} ${origin}
+			else
+				echo "${_pkgname}" > ${cache_origin_pkgname}
+				cache_pkgname_origin="${MASTERMNT}/.p/var/cache/pkgname-origin/${_pkgname}"
+				echo "${origin}" > "${cache_pkgname_origin}"                                                    
+			fi
 		fi
 	fi
 
@@ -3586,8 +3594,11 @@ cache_get_origin() {
 	local cache_pkgname_origin="${MASTERMNT}/.p/var/cache/pkgname-origin/${pkgname}"
 	local _origin
 
-#	_origin=$(write_usock ${CACHESOCK} get ${pkgname})
-	read_line _origin "${cache_pkgname_origin%/}"
+	if [ ${USE_CACHED} = "yes" ]; then
+		_origin=$(write_usock ${CACHESOCK} get ${pkgname})
+	else
+		read_line _origin "${cache_pkgname_origin%/}"
+	fi
 
 	setvar "${var_return}" "${_origin}"
 }
@@ -4573,6 +4584,8 @@ fi
 : ${NO_RESTRICTED:=no}
 : ${USE_COLORS:=yes}
 : ${ALLOW_MAKE_JOBS_PACKAGES=pkg ccache}
+
+: ${USE_CACHED:=no}
 
 : ${BUILDNAME_FORMAT:="%Y-%m-%d_%Hh%Mm%Ss"}
 : ${BUILDNAME:=$(date +${BUILDNAME_FORMAT})}
