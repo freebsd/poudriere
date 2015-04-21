@@ -1813,7 +1813,9 @@ jail_stop() {
 			destroyfs ${MASTERMNT}/../${j} jail || :
 		done
 	fi
-	#pkill -15 -F ${CACHEPID} >/dev/null 2>&1 || :
+	if [ ${USE_CACHED} = "yes" ]; then
+		pkill -15 -F ${CACHEPID} >/dev/null 2>&1 || :
+	fi
 	msg "Umounting file systems"
 	destroyfs ${MASTERMNT} jail || :
 	rm -rf ${MASTERMNT}/../
