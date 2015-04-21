@@ -188,10 +188,14 @@ check_portsnap_interactive() {
 
 if [ ${CREATE} -eq 1 ]; then
 	# test if it already exists
-	porttree_exists ${PTNAME} && err 2 "The ports tree, ${PTNAME}, already exists"
-	maybe_run_queued "${saved_argv}"
 	: ${PTMNT="${BASEFS:=/usr/local${ZROOTFS}}/ports/${PTNAME}"}
 	: ${PTFS="${ZPOOL}${ZROOTFS}/ports/${PTNAME}"}
+	porttree_exists ${PTNAME}
+	if [ $? -eq 0 ]; then
+		run_hook ports create_done ${PTMNT} fail
+		err 2 "The ports tree, ${PTNAME}, already exists"
+	fi
+	maybe_run_queued "${saved_argv}"
 
 	# Wrap the ports creation in a special cleanup hook that will remove it
 	# if any error is encountered
@@ -243,6 +247,7 @@ if [ ${CREATE} -eq 1 ]; then
 	fi
 
 	unset CLEANUP_HOOK
+	run_hook ports create_done ${PTMNT} success
 fi
 
 if [ ${DELETE} -eq 1 ]; then
@@ -271,6 +276,7 @@ if [ ${UPDATE} -eq 1 ]; then
 		METHOD=portsnap
 		pset ${PTNAME} method ${METHOD}
 	fi
+	run_hook ports update_start ${PTMNT}
 	case ${METHOD} in
 	portsnap|"")
 		# additional portsnap arguments
@@ -304,4 +310,5 @@ if [ ${UPDATE} -eq 1 ]; then
 	esac
 
 	pset ${PTNAME} timestamp $(date +%s)
+	run_hook ports update_stop ${PTMNT}
 fi
