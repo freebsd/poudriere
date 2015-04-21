@@ -2087,7 +2087,11 @@ _real_build_port() {
 	# When testing, check depends twice to ensure they depend on
 	# proper files, otherwise they'll hit 'package already installed'
 	# errors.
-	[ -z "${PORTTESTING}" ] && PORT_FLAGS="${PORT_FLAGS} NO_DEPENDS=yes"
+	if [ -z "${PORTTESTING}" ]; then
+		PORT_FLAGS="${PORT_FLAGS} NO_DEPENDS=yes"
+	else
+		PORT_FLAGS="${PORT_FLAGS} STRICT_DEPENDS=yes"
+	fi
 
 	for phase in ${targets}; do
 		max_execution_time=${MAX_EXECUTION_TIME}
