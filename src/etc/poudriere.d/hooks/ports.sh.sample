@@ -1,0 +1,38 @@
+#!/bin/sh
+# /usr/local/etc/poudriere.d/hooks/ports.sh
+#
+# Author: Emanuel Haupt <ehaupt@FreeBSD.org>
+#
+# This hook makes sure the updated/created ports tree is always pristine and
+# hasn't been tampered with or hasn't been modified otherwise by maintaining zfs
+# filesystem snapshots of the created ports trees.
+
+status="$1"
+shift
+
+mountpoint="$1"
+
+zfs_vol="$(df ${mountpoint} | tail -1 | awk '{print $1}')"
+
+case ${status} in
+	create_done)
+		if [ "$2" = "success" ]; then
+			zfs snapshot ${zfs_vol}@clean
+		fi
+	;;
+
+	update_start)
+		zfs rollback ${zfs_vol}@clean 2>/dev/null || :
+	;;
+
+	update_stop)
+		zfs destroy -r ${zfs_vol}@clean 2>/dev/null || :
+		zfs snapshot ${zfs_vol}@clean
+	;;
+
+	*)
+		echo "Unknown status!"
+	;;
+esac
+
+exit 0
