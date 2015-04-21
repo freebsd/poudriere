@@ -31,7 +31,7 @@ make clean cleandepend
 cd "${ORIG_PWD}"
 
 # Fix backwards compat for st_mtim
-sed -i '' -e 's,st_mtim\.tv_sec,st_mtime,g' "${DESTDIR}/test.c"
+sed -i '' -e 's,[[:<:]]st_mtim[[:>:]],st_mtimespec,g' "${DESTDIR}/test.c"
 
 git add -A "${DESTDIR}"
 echo "sh_SOURCES= \\"
