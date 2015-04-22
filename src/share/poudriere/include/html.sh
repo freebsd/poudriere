@@ -104,7 +104,7 @@ build_top_json() {
 	_log_path_top log_path_top
 	tmpfile=$(TMPDIR="${log_path_top}" mktemp -ut json)
 
-	{
+	(
 		cd "${log_path_top}"
 		echo "{\"masternames\":{"
 		echo */latest/.data.mini.json | \
@@ -112,7 +112,7 @@ build_top_json() {
 		    sed -e '/^$/d' | \
 		    paste -s -d , -
 		echo "}}"
-	} > ${tmpfile}
+	) > ${tmpfile}
 	mv -f ${tmpfile} ${log_path_top}/.data.json
 }
 
