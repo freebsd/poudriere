@@ -1,19 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<meta http-equiv="Cache-Control" content="no-cache">
-		<meta http-equiv="Pragma" content="no-cache">
-		<meta http-equiv="Expires" content="0">
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta http-equiv="Cache-Control" content="no-cache" />
+		<meta http-equiv="Pragma" content="no-cache" />
+		<meta http-equiv="Expires" content="0" />
 
 		<title>Poudriere Index</title>
 
-		<link href="assets/DataTables-1.10.0/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css">
+		<link href="assets/DataTables-1.10.0/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
 		<link href="assets/bootstrap-3.1.1/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
 		<link href="assets/poudriere.css" type="text/css" rel="stylesheet" />
 
-		<link rel="shortcut icon" href="assets/favicon.ico">
+		<link rel="shortcut icon" href="assets/favicon.ico" />
 	</head>
 	<body>
 		<div id="top"></div>
@@ -39,62 +39,61 @@
 					</div><!-- /col -->
 				</div><!-- /row -->
 			</div><!-- /container -->
-		</div> <!-- navbar-static-top -->
-	</div><!-- #header, navbar -->
-	<div id="main" class="container-fluid">
-		<div id="loading_overlay">
-			<div id="loading">
-				<p>Loading...</p>
+		</div><!-- #header, navbar -->
+		<div id="main" class="container-fluid">
+			<div id="loading_overlay">
+				<div id="loading">
+					<p>Loading...</p>
+				</div>
 			</div>
-		</div>
-		<div class="row">
-			<div class="col-md-12">
-				<div id="latest_builds_div" class="status" style="display: none;">
-					<h2 id="latest_builds">Latest Builds
-						<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
-					</h2>
-					<table class="display latest_builds table-bordered" id="latest_builds_table">
-						<thead>
-							<tr>
-								<th>Portset</th>
-								<th>Master</th>
-								<th>Build</th>
-								<th>Jail</th>
-								<th>Set</th>
-								<th>Ports</th>
-								<th class="queued" title="Queued" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Queued</span><span class="hidden-md hidden-lg">Q</th>
-								<th class="built" title="Built" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Built</span><span class="hidden-md hidden-lg">B</th>
-								<th class="failed" title="Failed" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Failed</span><span class="hidden-md hidden-lg">F</th>
-								<th class="skipped" title="Skipped" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Skipped</span><span class="hidden-md hidden-lg">S</th>
-								<th class="ignored" title="Ignored" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Ignored</span><span class="hidden-md hidden-lg">I</th>
-								<th class="remaining" title="Remaining" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Remaining</span><span class="hidden-md hidden-lg">R</th>
-								<th>Status</th>
-								<th>Elapsed</th>
-							</tr>
-						</thead>
-						<tbody id="latest_builds_body"></tbody>
-					</table>
-				</div><!-- #latest_builds -->
-				<br class="clear" />
-			</div><!-- /col -->
-		</div><!-- /row -->
-	</div><!-- #main -->
-	<br class="clear" />
-	<footer class="navbar-fixed-bottom">
-		<div class="container-fluid">
 			<div class="row">
 				<div class="col-md-12">
-					<a class="pull-right" target="_new" href="http://fossil.etoilebsd.net/poudriere"><span class="glyphicon glyphicon-share-alt"></span>Poudriere</a>
+					<div id="latest_builds_div" class="status" style="display: none;">
+						<h2 id="latest_builds">Latest Builds
+							<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
+						</h2>
+						<table class="display latest_builds table-bordered" id="latest_builds_table">
+							<thead>
+								<tr>
+									<th>Portset</th>
+									<th>Master</th>
+									<th>Build</th>
+									<th>Jail</th>
+									<th>Set</th>
+									<th>Ports</th>
+									<th class="queued" title="Queued" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Queued</span><span class="hidden-md hidden-lg">Q</span></th>
+									<th class="built" title="Built" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Built</span><span class="hidden-md hidden-lg">Bi</span></th>
+									<th class="failed" title="Failed" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Failed</span><span class="hidden-md hidden-lg">F</span></th>
+									<th class="skipped" title="Skipped" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Skipped</span><span class="hidden-md hidden-lg">S</span></th>
+									<th class="ignored" title="Ignored" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Ignored</span><span class="hidden-md hidden-lg">I</span></th>
+									<th class="remaining" title="Remaining" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Remaining</span><span class="hidden-md hidden-lg">R</span></th>
+									<th>Status</th>
+									<th>Elapsed</th>
+								</tr>
+							</thead>
+							<tbody id="latest_builds_body"></tbody>
+						</table>
+					</div><!-- #latest_builds -->
+					<br class="clear" />
 				</div><!-- /col -->
 			</div><!-- /row -->
-		</div><!-- /container-fluid -->
-	</footer><!-- #footer -->
-	<script src="assets/jquery-1.11.1.min.js" type="text/javascript"></script>
-	<script src="assets/DataTables-1.10.0/js/jquery.dataTables.min.js" type="text/javascript" charset="utf8"></script>
-	<script src="assets/bootstrap-3.1.1/js/bootstrap.min.js" type="text/javascript"></script>
-	<script src="assets/jquery.dataTables.rowGrouping-1.2.9.js" type="text/javascript"></script>
-	<script type="text/javascript">server_style = "hosted";</script>
-	<script src="assets/poudriere.js" type="text/javascript"></script>
-</body>
+		</div><!-- #main -->
+		<br class="clear" />
+		<footer class="navbar-fixed-bottom">
+			<div class="container-fluid">
+				<div class="row">
+					<div class="col-md-12">
+						<a class="pull-right" target="_new" href="http://fossil.etoilebsd.net/poudriere"><span class="glyphicon glyphicon-share-alt"></span>Poudriere</a>
+					</div><!-- /col -->
+				</div><!-- /row -->
+			</div><!-- /container-fluid -->
+		</footer><!-- #footer -->
+		<script src="assets/jquery-1.11.1.min.js" type="text/javascript"></script>
+		<script src="assets/DataTables-1.10.0/js/jquery.dataTables.min.js" type="text/javascript" charset="utf8"></script>
+		<script src="assets/bootstrap-3.1.1/js/bootstrap.min.js" type="text/javascript"></script>
+		<script src="assets/jquery.dataTables.rowGrouping-1.2.9.js" type="text/javascript"></script>
+		<script type="text/javascript">server_style = "inline";</script>
+		<script src="assets/poudriere.js" type="text/javascript"></script>
+	</body>
 </html>
 <!-- vim: set sts=4 sw=4 ts=4 noet: -->
