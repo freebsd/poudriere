@@ -268,7 +268,7 @@ function build_url(mastername, buildname) {
 		return '';
 	}
 	return 'build.html?' +
-		'mastername=' + encodeURIComponent(mastername) + '&' +
+		'mastername=' + encodeURIComponent(mastername) + '&amp;' +
 		'build=' + encodeURIComponent(buildname);
 }
 
@@ -1091,7 +1091,7 @@ function setup_index() {
 	table.rowGrouping({
 		iGroupingColumnIndex2: 4,
 		iGroupingColumnIndex: 5,
-		sGroupLabelPrefix2: "&nbsp;&nbsp;Set - ",
+		sGroupLabelPrefix2: "&#160;;&#160;Set - ",
 		sGroupLabelPrefix: "Ports - ",
 		sEmptyGroupLabel: "",
 		fnGroupLabelFormat: function(label) {
