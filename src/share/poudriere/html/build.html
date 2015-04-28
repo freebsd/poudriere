@@ -106,151 +106,151 @@
 					</div><!-- /col -->
 				</div><!-- /row -->
 			</div><!-- /container -->
-	</div><!-- #header, navbar -->
-	<div id="main" class="container-fluid">
-		<div id="loading_overlay">
-			<div id="loading">
-				<p>Loading...</p>
+		</div><!-- #header, navbar -->
+		<div id="main" class="container-fluid">
+			<div id="loading_overlay">
+				<div id="loading">
+					<p>Loading...</p>
+				</div>
 			</div>
-		</div>
-		<div class="row">
-			<div class="col-md-5">
-				<div id="build_info_div" style="display: none;">
-					<h2 id="build_info">Build
-						<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
-					</h2>
-					<dl class="dl-horizontal">
-						<dt>Master</dt>
-						<dd id="mastername"></dd>
-						<dt>Build</dt>
-						<dd id="buildname"></dd>
-						<dt>Status</dt>
-						<dd id="status"></dd>
-						<dt>Jail</dt>
-						<dd id="jail"></dd>
-						<dt>Set</dt>
-						<dd id="setname"></dd>
-						<dt>Ports Tree</dt>
-						<dd id="ptname"></dd>
-						<dt>SVN</dt>
-						<dd id="svn_url"></dd>
-					</dl>
-				</div><!-- #build_info -->
-			</div><!-- /col -->
-			<div class="col-md-7">
-				<div id="jobs_div" class="status" style="display: none;">
-					<h2 id="jobs">Jobs
-						<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
-					</h2>
-					<table id="builders_table" class="display" style="">
-						<thead>
-							<tr>
-								<th>Id</th>
-								<th>Origin</th>
-								<th>Status</th>
-								<th>Elapsed</th>
-							</tr>
-						</thead>
-						<tbody id="builders_body"></tbody>
-					</table>
-				</div><!-- #jobs -->
-			</div><!-- /col -->
-		</div><!-- /row -->
-		<div class="row">
-			<div class="col-md-12">
-				<div id="built_div" class="status" style="display: none;">
-					<h2 id="built">Built ports
-						<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
-					</h2>
-					<table class="display built ports table-bordered" id="built_table">
-						<thead>
-							<tr>
-								<th>#</th>
-								<th>Package</th>
-								<th>Origin</th>
-								<th>Log</th>
-							</tr>
-						</thead>
-						<tbody id="built_body"></tbody>
-					</table>
-				</div><!-- #built -->
-				<div id="failed_div" class="status" style="display: none;">
-					<h2 id="failed">Failed ports
-						<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
-					</h2>
-					<table class="display failed ports table-bordered" id="failed_table">
-						<thead>
-							<tr>
-								<th>#</th>
-								<th>Package</th>
-								<th>Origin</th>
-								<th>Phase</th>
-								<th>Skipped</th>
-								<th>Log</th>
-							</tr>
-						</thead>
-						<tbody id="failed_body"></tbody>
-					</table>
-				</div><!-- #failed -->
-				<div id="skipped_div" class="status" style="display: none;">
-					<h2 id="skipped">Skipped ports
-						<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
-					</h2>
-					<table class="display skipped ports table-bordered" id="skipped_table">
-						<thead>
-							<tr>
-								<th>#</th>
-								<th>Package</th>
-								<th>Origin</th>
-								<th>Reason</th>
-							</tr>
-						</thead>
-						<tbody id="skipped_body"></tbody>
-					</table>
-				</div><!-- #skipped -->
-				<div id="ignored_div" class="status" style="display: none;">
-					<h2 id="ignored">Ignored ports
-						<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
-					</h2>
-					<table class="display ignored ports table-bordered" id="ignored_table">
-						<thead>
-							<tr>
-								<th>#</th>
-								<th>Package</th>
-								<th>Origin</th>
-								<th>Skipped</th>
-								<th>Reason</th>
-							</tr>
-						</thead>
-						<tbody id="ignored_body"></tbody>
-					</table>
-				</div><!-- #ignored -->
-				<br class="clear" />
-			</div><!-- /col -->
-		</div><!-- /row -->
-	</div><!-- #main -->
-	<br class="clear" />
-	<footer class="navbar-fixed-bottom">
-		<div class="container-fluid">
 			<div class="row">
-				<div class="col-md-10 col-sm-9 col-xs-9" id="progress_col">
-					<span id="progress">
-						<canvas id="progressbar"></canvas>
-						<span id="progresspct"></span>
-					</span>
+				<div class="col-md-5">
+					<div id="build_info_div" style="display: none;">
+						<h2 id="build_info">Build
+							<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
+						</h2>
+						<dl class="dl-horizontal">
+							<dt>Master</dt>
+							<dd id="mastername"></dd>
+							<dt>Build</dt>
+							<dd id="buildname"></dd>
+							<dt>Status</dt>
+							<dd id="status"></dd>
+							<dt>Jail</dt>
+							<dd id="jail"></dd>
+							<dt>Set</dt>
+							<dd id="setname"></dd>
+							<dt>Ports Tree</dt>
+							<dd id="ptname"></dd>
+							<dt>SVN</dt>
+							<dd id="svn_url"></dd>
+						</dl>
+					</div><!-- #build_info -->
 				</div><!-- /col -->
-				<div class="col-md-2 col-sm-3 col-xs-3">
-					<a class="pull-right" target="_new" href="http://fossil.etoilebsd.net/poudriere"><span class="glyphicon glyphicon-share-alt"></span>Poudriere</a>
+				<div class="col-md-7">
+					<div id="jobs_div" class="status" style="display: none;">
+						<h2 id="jobs">Jobs
+							<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
+						</h2>
+						<table id="builders_table" class="display" style="">
+							<thead>
+								<tr>
+									<th>Id</th>
+									<th>Origin</th>
+									<th>Status</th>
+									<th>Elapsed</th>
+								</tr>
+							</thead>
+							<tbody id="builders_body"></tbody>
+						</table>
+					</div><!-- #jobs -->
 				</div><!-- /col -->
 			</div><!-- /row -->
-		</div><!-- /container-fluid -->
-	</footer><!-- #footer -->
-	<script src="assets/jquery-1.11.1.min.js" type="text/javascript"></script>
-	<script src="assets/DataTables-1.10.0/js/jquery.dataTables.min.js" type="text/javascript" charset="utf8"></script>
-	<script src="assets/bootstrap-3.1.1/js/bootstrap.min.js" type="text/javascript"></script>
-	<script src="assets/jquery.dataTables.rowGrouping-1.2.9.js" type="text/javascript"></script>
-	<script type="text/javascript">server_style = "hosted";</script>
-	<script src="assets/poudriere.js" type="text/javascript"></script>
-</body>
+			<div class="row">
+				<div class="col-md-12">
+					<div id="built_div" class="status" style="display: none;">
+						<h2 id="built">Built ports
+							<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
+						</h2>
+						<table class="display built ports table-bordered" id="built_table">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>Package</th>
+									<th>Origin</th>
+									<th>Log</th>
+								</tr>
+							</thead>
+							<tbody id="built_body"></tbody>
+						</table>
+					</div><!-- #built -->
+					<div id="failed_div" class="status" style="display: none;">
+						<h2 id="failed">Failed ports
+							<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
+						</h2>
+						<table class="display failed ports table-bordered" id="failed_table">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>Package</th>
+									<th>Origin</th>
+									<th>Phase</th>
+									<th>Skipped</th>
+									<th>Log</th>
+								</tr>
+							</thead>
+							<tbody id="failed_body"></tbody>
+						</table>
+					</div><!-- #failed -->
+					<div id="skipped_div" class="status" style="display: none;">
+						<h2 id="skipped">Skipped ports
+							<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
+						</h2>
+						<table class="display skipped ports table-bordered" id="skipped_table">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>Package</th>
+									<th>Origin</th>
+									<th>Reason</th>
+								</tr>
+							</thead>
+							<tbody id="skipped_body"></tbody>
+						</table>
+					</div><!-- #skipped -->
+					<div id="ignored_div" class="status" style="display: none;">
+						<h2 id="ignored">Ignored ports
+							<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
+						</h2>
+						<table class="display ignored ports table-bordered" id="ignored_table">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>Package</th>
+									<th>Origin</th>
+									<th>Skipped</th>
+									<th>Reason</th>
+								</tr>
+							</thead>
+							<tbody id="ignored_body"></tbody>
+						</table>
+					</div><!-- #ignored -->
+					<br class="clear" />
+				</div><!-- /col -->
+			</div><!-- /row -->
+		</div><!-- #main -->
+		<br class="clear" />
+		<footer class="navbar-fixed-bottom">
+			<div class="container-fluid">
+				<div class="row">
+					<div class="col-md-10 col-sm-9 col-xs-9" id="progress_col">
+						<span id="progress">
+							<canvas id="progressbar"></canvas>
+							<span id="progresspct"></span>
+						</span>
+					</div><!-- /col -->
+					<div class="col-md-2 col-sm-3 col-xs-3">
+						<a class="pull-right" target="_new" href="http://fossil.etoilebsd.net/poudriere"><span class="glyphicon glyphicon-share-alt"></span>Poudriere</a>
+					</div><!-- /col -->
+				</div><!-- /row -->
+			</div><!-- /container-fluid -->
+		</footer><!-- #footer -->
+		<script src="assets/jquery-1.11.1.min.js" type="text/javascript"></script>
+		<script src="assets/DataTables-1.10.0/js/jquery.dataTables.min.js" type="text/javascript" charset="utf8"></script>
+		<script src="assets/bootstrap-3.1.1/js/bootstrap.min.js" type="text/javascript"></script>
+		<script src="assets/jquery.dataTables.rowGrouping-1.2.9.js" type="text/javascript"></script>
+		<script type="text/javascript">server_style = "hosted";</script>
+		<script src="assets/poudriere.js" type="text/javascript"></script>
+	</body>
 </html>
 <!-- vim: set sts=4 sw=4 ts=4 noet: -->
