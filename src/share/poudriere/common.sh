@@ -948,8 +948,9 @@ fetch_file() {
 mktemp() {
 	if [ -z "${TMPDIR}" -a -n "${MASTERMNT}" -a ${STATUS} -eq 1 ]; then
 		_my_path mnt
-		export TMPDIR="${mnt}/.p/tmp"
+		TMPDIR="${mnt}/.p/tmp"
 	fi
+	[ -n "${TMPDIR}" ] && export TMPDIR
 	exec command mktemp "$@"
 }
 
