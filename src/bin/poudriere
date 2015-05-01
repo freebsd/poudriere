@@ -137,6 +137,4 @@ case "${CMD}" in
 		;;
 esac
 
-[ -f /usr/bin/protect ] && [ $(/usr/bin/id -u) -eq 0 ] &&
-    PROTECT=/usr/bin/protect
-exec env -i ${CMD_ENV} ${PROTECT} sh ${SET_ERREXIT} ${SETX} "${SCRIPTPATH}" "$@"
+exec env -i ${CMD_ENV} sh ${SET_ERREXIT} ${SETX} "${SCRIPTPATH}" "$@"
