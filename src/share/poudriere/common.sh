@@ -1569,6 +1569,9 @@ jail_start() {
 	get_host_arch host_arch
 	_jget mnt ${name} mnt
 
+	# Protect ourselves from OOM
+	madvise_protect $$ || :
+
 	JAIL_OSVERSION=$(awk '/\#define __FreeBSD_version/ { print $3 }' "${mnt}/usr/include/sys/param.h")
 
 	[ ${JAIL_OSVERSION} -lt 900000 ] && needkld="${needkld} sem"
