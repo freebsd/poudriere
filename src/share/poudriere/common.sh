@@ -3055,19 +3055,36 @@ prefix_stderr() {
 	local extra="$1"
 	shift 1
 
-	{ { "$@"; } 2>&1 1>&3 | while read -r line; do
-		msg_warn "${extra}: ${line}"
-	done } 3>&1
+	prefixpipe=$(mktemp -ut prefix_stderr.pipe)
+	mkfifo "${prefixpipe}"
+	(
+		while read -r line; do
+			msg_warn "${extra}: ${line}"
+		done
+	) < ${prefixpipe} &
+	exec 2> "${prefixpipe}"
+	rm -f "${prefixpipe}"
+
+	"$@"
 }
 
 prefix_stdout() {
 	local -; set +x
 	local extra="$1"
 	shift 1
+	local prefixpipe
 
-	{ "$@"; } | while read -r line; do
-		msg "${extra}: ${line}"
-	done
+	prefixpipe=$(mktemp -ut prefix_stdout.pipe)
+	mkfifo "${prefixpipe}"
+	(
+		while read -r line; do
+			msg "${extra}: ${line}"
+		done
+	) < ${prefixpipe} &
+	exec > "${prefixpipe}"
+	rm -f "${prefixpipe}"
+
+	"$@"
 }
 
 prefix_output() {
