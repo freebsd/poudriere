@@ -3049,6 +3049,16 @@ stop_build() {
 	buildlog_stop "${pkgname}" ${origin} ${build_failed}
 }
 
+prefix_stderr_quick() {
+	local -; set +x
+	local extra="$1"
+	shift 1
+
+	{ { "$@"; } 2>&1 1>&3 | while read -r line; do
+		msg_warn "${extra}: ${line}"
+	done } 3>&1
+}
+
 prefix_stderr() {
 	local -; set +x
 	local extra="$1"
@@ -3099,7 +3109,7 @@ list_deps() {
 	local dir="/usr/ports/$1"
 	local makeargs="-VPKG_DEPENDS -VBUILD_DEPENDS -VEXTRACT_DEPENDS -VLIB_DEPENDS -VPATCH_DEPENDS -VFETCH_DEPENDS -VRUN_DEPENDS"
 
-	prefix_stderr "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
+	prefix_stderr_quick "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
 		injail make -C ${dir} $makeargs | \
 		sed -e "s,[[:graph:]]*/usr/ports/,,g" \
 		-e "s,:[[:graph:]]*,,g" -e '/^$/d' | tr ' ' '\n' | \
