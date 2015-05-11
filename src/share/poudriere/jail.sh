@@ -416,7 +416,7 @@ install_from_src() {
 		.svn
 		EOF
 	fi
-	cpdup ${cpignore_flag} ${SRC_BASE} ${JAILMNT}/usr/src
+	cpdup -i0 ${cpignore_flag} ${SRC_BASE} ${JAILMNT}/usr/src
 	[ -n "${cpignore}" ] && rm -f ${cpignore}
 	echo " done"
 
