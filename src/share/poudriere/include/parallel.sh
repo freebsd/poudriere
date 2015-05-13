@@ -133,7 +133,7 @@ parallel_exec() {
 parallel_start() {
 	local fifo
 
-	if [ -n "${NBPARALLEL}" ]; then
+	if [ -n "${NBPARALLEL:+1}" ]; then
 		echo "parallel_start: Already started" >&2
 		return 1
 	fi
