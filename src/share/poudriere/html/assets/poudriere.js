@@ -268,7 +268,7 @@ function build_url(mastername, buildname) {
 		return '';
 	}
 	return 'build.html?' +
-		'mastername=' + encodeURIComponent(mastername) + '&amp;' +
+		'mastername=' + encodeURIComponent(mastername) + '&' +
 		'build=' + encodeURIComponent(buildname);
 }
 
