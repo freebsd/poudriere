@@ -151,11 +151,13 @@ clonefs() {
 		if [ "${snap}" = "clean" ]; then
 			echo "src" >> "${from}/usr/.cpignore" || :
 			echo "debug" >> "${from}/usr/lib/.cpignore" || :
+			echo "freebsd-update" >> "${from}/var/db/.cpignore" || :
 		fi
 		do_clone "${from}" "${to}"
 		if [ "${snap}" = "clean" ]; then
 			rm -f "${from}/usr/.cpignore" \
-			    "${from}/usr/lib/.cpignore"
+			    "${from}/usr/lib/.cpignore" \
+			    "${from}/var/db/.cpignore"
 			echo ".p" >> "${to}/.cpignore"
 		fi
 	fi
