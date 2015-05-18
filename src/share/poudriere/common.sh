@@ -1055,6 +1055,7 @@ EOF
 ./tmp/*
 ./usr/ports/*
 ./usr/src
+./var/db/freebsd-update/*
 ./var/db/pkg/*
 ./var/db/ports/*
 ./var/log/*
