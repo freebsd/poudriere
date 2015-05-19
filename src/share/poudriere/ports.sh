@@ -25,8 +25,6 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-SCRIPTPATH=$(realpath $0)
-SCRIPTPREFIX=${SCRIPTPATH%/*}
 . ${SCRIPTPREFIX}/common.sh
 
 # test if there is any args
@@ -200,6 +198,8 @@ if [ ${CREATE} -eq 1 ]; then
 	# if any error is encountered
 	CLEANUP_HOOK=cleanup_new_ports
 
+	[ "${PTNAME#*.*}" = "${PTNAME}" ] ||
+		err 1 "The ports name cannot contain a period (.). See jail(8)"
 	createfs ${PTNAME} ${PTMNT} ${PTFS}
 	pset ${PTNAME} mnt ${PTMNT}
 	if [ $FAKE -eq 0 ]; then

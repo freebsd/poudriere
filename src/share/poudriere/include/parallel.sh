@@ -30,7 +30,7 @@ _wait() {
 
 	pwait "$@" 2>/dev/null || :
 	for pid in "$@"; do
-		wait ${pid} || ret=$?
+		wait ${pid} 2>/dev/null 1>&2 || ret=$?
 	done
 
 	return ${ret}
@@ -50,7 +50,7 @@ timed_wait_and_kill() {
 		kill_and_wait 1 "${pids}" || ret=$?
 	else
 		# Nothing running, collect their status.
-		wait ${pids} || ret=$?
+		wait ${pids} 2>/dev/null 1>&2 || ret=$?
 	fi
 
 	return ${ret}
@@ -97,7 +97,7 @@ kill_and_wait() {
 		_wait ${pids} || ret=$?
 	else
 		# Nothing running, collect status directly.
-		wait ${pids} || ret=$?
+		wait ${pids} 2>/dev/null 1>&2 || ret=$?
 	fi
 
 	return ${ret}
@@ -133,11 +133,11 @@ parallel_exec() {
 parallel_start() {
 	local fifo
 
-	if [ -n "${MASTERMNT}" ]; then
-		fifo=${MASTERMNT}/.p/parallel.pipe
-	else
-		fifo=$(mktemp -ut parallel)
+	if [ -n "${NBPARALLEL:+1}" ]; then
+		echo "parallel_start: Already started" >&2
+		return 1
 	fi
+	fifo=$(mktemp -ut parallel.pipe)
 	mkfifo ${fifo}
 	exec 9<> ${fifo}
 	rm -f ${fifo}
@@ -221,7 +221,7 @@ parallel_run() {
 	fi
 
 	[ ${NBPARALLEL} -lt ${PARALLEL_JOBS} ] && NBPARALLEL=$((NBPARALLEL + 1))
-	PARALLEL_CHILD=1 parallel_exec $cmd "$@" &
+	PARALLEL_CHILD=1 spawn parallel_exec $cmd "$@"
 	PARALLEL_PIDS="${PARALLEL_PIDS} $! "
 
 	return ${ret}
@@ -248,7 +248,7 @@ nohang() {
 
 	read_timeout=$((log_timeout / 10))
 
-	fifo=$(mktemp -ut nohang)
+	fifo=$(mktemp -ut nohang.pipe)
 	mkfifo ${fifo}
 	exec 8<> ${fifo}
 	rm -f ${fifo}
@@ -258,7 +258,7 @@ nohang() {
 	# Run the actual command in a child subshell
 	(
 		local ret=0
-		"$@" || ret=1
+		_spawn_wrapper "$@" || ret=1
 		# Notify the pipe the command is done
 		echo done >&8 2>/dev/null || :
 		exit $ret
@@ -305,4 +305,91 @@ nohang() {
 	rm -f ${pidfile}
 
 	return $ret
+}
+
+[ -f /usr/bin/protect ] && [ $(/usr/bin/id -u) -eq 0 ] &&
+    PROTECT=/usr/bin/protect
+madvise_protect() {
+	[ $# -eq 1 ] || eargs madvise_protect pid
+	if [ -n "${PROTECT}" ]; then
+		${PROTECT} -p "$1" 2>/dev/null || :
+	fi
+	return 0
+}
+
+_spawn_wrapper() {
+	# Reset SIGINT to the default to undo POSIX's SIG_IGN in
+	# 2.11 "Signals and Error Handling". This will ensure no
+	# foreground process is left around on SIGINT.
+	trap - INT
+
+	"$@"
+}
+
+spawn() {
+	_spawn_wrapper "$@" &
+}
+
+spawn_protected() {
+	_spawn_wrapper "$@" &
+	madvise_protect $! || :
+}
+
+# Start a background process from function 'name'. The 'atexit' function
+# will be called from the main process after the coprocess is killed.
+# 'locks' will be acquired before killing, which can be used to not kill
+# a process in the middle of an operation.
+coprocess_start() {
+	[ $# -ge 1 ] || eargs coprocess_start name [atexit] [locks]
+	local name="$1"
+	local atexit="$2"
+	local locks="$3"
+	local main pid
+
+	main="${name}_main"
+	spawn_protected ${main}
+	pid=$!
+
+	hash_set coprocess_pid "${name}" "${pid}"
+	[ -n "${atexit}" ] && hash_set coprocess_atexit "${name}" "${atexit}"
+	[ -n "${locks}" ] && hash_set coprocess_locks "${name}" "${locks}"
+
+	return 0
+}
+
+coprocess_stop() {
+	[ $# -eq 1 ] || eargs coprocess_stop name
+	local name="$1"
+	local pid atexit lockname locks took_locks
+
+	hash_get coprocess_pid "${name}" pid || return 0
+	hash_unset coprocess_pid "${name}"
+
+	# Grab locks
+	if hash_get coprocess_locks "${name}" locks; then
+		hash_unset coprocess_locks "${name}"
+		for lockname in ${locks}; do
+			# Does this process already have the lock?
+			lock_have "${lockname}" && continue
+			if lock_acquire "${lockname}"; then
+				took_locks="${took_locks} ${lockname}"
+			else
+				msg_warn "Failed to acquire lock ${lockname} while shutting down ${name}"
+			fi
+		done
+	fi
+
+	# kill -> timeout wait -> kill -9
+	kill_and_wait 30 "${pid}" || :
+
+	# Release locks
+	for lockname in ${took_locks}; do
+		lock_release "${lockname}"
+	done
+
+	# Run atexit functions
+	if hash_get coprocess_atexit "${name}" atexit; then
+		hash_unset coprocess_atexit "${name}"
+		${atexit}
+	fi
 }

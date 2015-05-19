@@ -47,9 +47,6 @@ EOF
 	exit 1
 }
 
-SCRIPTPATH=$(realpath $0)
-SCRIPTPREFIX=${SCRIPTPATH%/*}
-
 PTNAME=default
 SETNAME=""
 DO_RECURSE=y

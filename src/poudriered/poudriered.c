@@ -177,7 +177,7 @@ reload(void)
 }
 
 static void
-reload_signal(void)
+reload_signal(int sig __unused)
 {
 	(void)reload();
 }

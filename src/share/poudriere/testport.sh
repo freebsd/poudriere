@@ -25,7 +25,6 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
-set -e
 
 usage() {
 	cat << EOF
@@ -62,8 +61,6 @@ EOF
 	exit 1
 }
 
-SCRIPTPATH=$(realpath $0)
-SCRIPTPREFIX=${SCRIPTPATH%/*}
 CONFIGSTR=0
 . ${SCRIPTPREFIX}/common.sh
 NOPREFIX=1
@@ -139,7 +136,9 @@ done
 
 [ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
 _pget portsdir ${PTNAME} mnt
-[ -d "${portsdir}/${ORIGIN}" ] || err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
+if [ ! -f "${portsdir}/${ORIGIN}/Makefile" ] || [ -d "${portsdir}/${ORIGIN}/../Mk" ]; then
+	err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
+fi
 
 maybe_run_queued "$@"
 
@@ -155,7 +154,6 @@ export MASTERNAME
 export MASTERMNT
 export POUDRIERE_BUILD_TYPE=bulk
 
-madvise_protect $$
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
 if [ $CONFIGSTR -eq 1 ]; then
@@ -263,6 +261,7 @@ if [ ${ret} -ne 0 ]; then
 
 	if [ ${INTERACTIVE_MODE} -eq 0 ]; then
 		stop_build "${PKGNAME}" ${ORIGIN} 1
+		log_stop
 		bset_job_status "failed/${failed_phase}" "${ORIGIN}"
 		msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
 		cleanup
@@ -317,6 +316,7 @@ ensure_pkg_installed
 injail ${PKG_DELETE} ${PKGNAME}
 
 stop_build "${PKGNAME}" ${ORIGIN} ${ret}
+log_stop
 
 bset_job_status "stopped" "${ORIGIN}"
 

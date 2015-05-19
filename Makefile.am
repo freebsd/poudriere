@@ -31,7 +31,9 @@ examples_DATA=	src/share/examples/poudriere/nginx.conf.sample \
 hook_DATA=	src/etc/poudriere.d/hooks/bulk.sh.sample \
 		src/etc/poudriere.d/hooks/pkgbuild.sh.sample
 
-dist_pkgdata_DATA=	src/share/poudriere/bulk.sh \
+dist_pkgdata_DATA=	\
+			src/share/poudriere/api.sh \
+			src/share/poudriere/bulk.sh \
 			src/share/poudriere/clean.sh \
 			src/share/poudriere/common.sh \
 			src/share/poudriere/daemon.sh \
@@ -107,6 +109,8 @@ pkglibexec_PROGRAMS= \
 		     nc \
 		     poudriered \
 		     rename \
+		     locked_mkdir \
+		     sh \
 		     timeout \
 		     timestamp \
 		     tsort \
@@ -129,10 +133,44 @@ cpdup_LDADD=	-lmd
 cpdup_CFLAGS=	-D_ST_FLAGS_PRESENT_=1
 dirempty_SOURCES=	src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
+locked_mkdir_SOURCES=	src/libexec/poudriere/locked_mkdir/locked_mkdir.c
 nc_SOURCES=		src/libexec/poudriere/nc/nc.c
 timeout_SOURCES=	src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
 tsort_SOURCES=		src/libexec/poudriere/tsort/tsort.c
+sh_CFLAGS=		-DSHELL -DNO_HISTORY \
+			-I$(top_srcdir)/external/sh
+sh_SOURCES=		\
+			external/sh/redir.c \
+			external/sh/syntax.c \
+			external/sh/mail.c \
+			external/sh/cd.c \
+			external/sh/show.c \
+			external/sh/error.c \
+			external/sh/builtins.c \
+			external/sh/eval.c \
+			external/sh/jobs.c \
+			external/sh/main.c \
+			external/sh/memalloc.c \
+			external/sh/arith_yacc.c \
+			external/sh/histedit.c \
+			external/sh/output.c \
+			external/sh/alias.c \
+			external/sh/var.c \
+			external/sh/expand.c \
+			external/sh/kill.c \
+			external/sh/nodes.c \
+			external/sh/mystring.c \
+			external/sh/miscbltin.c \
+			external/sh/trap.c \
+			external/sh/arith_yylex.c \
+			external/sh/printf.c \
+			external/sh/exec.c \
+			external/sh/options.c \
+			external/sh/parser.c \
+			external/sh/input.c \
+			external/sh/test.c \
+			external/sh/bltin/echo.c
 libucl_a_SOURCES=	external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_emitter_streamline.c \
 			external/libucl/src/ucl_emitter_utils.c \

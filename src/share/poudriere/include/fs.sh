@@ -53,18 +53,11 @@ rollbackfs() {
 	local name=$1
 	local mnt=$2
 	local fs="${3:-$(zfs_getfs ${mnt})}"
-	local mtree_mnt
 
 	if [ -n "${fs}" ]; then
 		zfs rollback -r "${fs}@${name}" || \
 		    err 1 "Unable to rollback ${fs}"
 		return
-	fi
-
-	if [ "${name}" = "prepkg" ]; then
-		mtree_mnt="${MASTERMNT}"
-	else
-		mtree_mnt="${mnt}"
 	fi
 
 	do_clone "${MASTERMNT}" "${mnt}"
@@ -134,7 +127,7 @@ clonefs() {
 	# When using TMPFS, there is no need to clone the originating FS from
 	# a snapshot as the destination will be tmpfs. We do however need to
 	# ensure the originating FS is rolled back to the expected snapshot.
-	if [ ${TMPFS_ALL} -eq 1 ]; then
+	if [ -n "${fs}" -a ${TMPFS_ALL} -eq 1 ]; then
 		rollbackfs "${snap}" "${from}" "${fs}"
 		unset fs
 	fi
@@ -158,14 +151,18 @@ clonefs() {
 		if [ "${snap}" = "clean" ]; then
 			echo "src" >> "${from}/usr/.cpignore" || :
 			echo "debug" >> "${from}/usr/lib/.cpignore" || :
+			echo "freebsd-update" >> "${from}/var/db/.cpignore" || :
 		fi
 		do_clone "${from}" "${to}"
 		if [ "${snap}" = "clean" ]; then
 			rm -f "${from}/usr/.cpignore" \
-			    "${from}/usr/lib/.cpignore"
+			    "${from}/usr/lib/.cpignore" \
+			    "${from}/var/db/.cpignore"
 			echo ".p" >> "${to}/.cpignore"
 		fi
 	fi
+	# Create our data dir.
+	mkdir -p "${to}/.p"
 }
 
 destroyfs() {

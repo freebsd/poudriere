@@ -24,15 +24,12 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
-set -e
 
 usage() {
 	echo "poudriere queue queuename poudriere_command"
 	exit 1
 }
 
-SCRIPTPATH=$(realpath $0)
-SCRIPTPREFIX=${SCRIPTPATH%/*}
 . ${SCRIPTPREFIX}/common.sh
 
 [ $# -le 2 ] && usage

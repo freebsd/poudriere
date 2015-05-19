@@ -13,12 +13,14 @@
 /cpdup
 /dirempty
 /dirwatch
+/locked_mkdir
 /jexecd
 /make_index
 /nc
 /poudriere_statsd
 /rename
 /rexec
+/sh
 /timeout
 /timestamp
 /tsort

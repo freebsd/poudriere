@@ -153,16 +153,14 @@ update_version_env() {
 	osversion=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILMNT}/usr/include/sys/param.h`
 	login_env=",UNAME_r=${release% *},UNAME_v=FreeBSD ${release},OSVERSION=${osversion}"
 
-	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
-	[ "${ARCH%.*}" = "i386" -a "${REALARCH}" = "amd64" ] &&
-		login_env="${login_env},UNAME_p=i386,UNAME_m=i386"
+	# Tell pkg(8) to not use /bin/sh for the ELF ABI since it is native.
+	need_emulation "${REALARCH}" "${ARCH}" && \
+	    login_env="${login_env},ABI_FILE=\/usr\/lib\/crt1.o"
 
-	if need_emulation "${REALARCH}" "${ARCH}"; then
-		# QEMU/emulator support here.  Setup MACHINE/MACHINE_ARCH for bmake to be happy.
-		# UNAME variables are currently handled by QEMU, no need to override
-		login_env="${login_env},ABI_FILE=\/usr\/lib\/crt1.o,MACHINE=${ARCH%.*},MACHINE_ARCH=${ARCH#*.}"
-	fi
-	
+	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
+	need_cross_build "${REALARCH}" "${ARCH}" && \
+	    login_env="${login_env},UNAME_m=${ARCH%.*},UNAME_p=${ARCH#*.}"
+
 	sed -i "" -e "s/,UNAME_r.*:/:/ ; s/:\(setenv.*\):/:\1${login_env}:/" ${JAILMNT}/etc/login.conf
 	cap_mkdb ${JAILMNT}/etc/login.conf
 }
@@ -398,7 +396,7 @@ build_and_install_world() {
 		for file in ${HLINK_FILES}; do
 			if [ -f "${JAILMNT}/nxb-bin/${file}" ]; then
 				rm -f ${JAILMNT}/${file}
-				ln ./nxb-bin/${file} ${JAILMNT}/${file}
+				ln ${JAILMNT}/nxb-bin/${file} ${JAILMNT}/${file}
 			fi
 		done
 	fi
@@ -412,7 +410,7 @@ install_from_src() {
 	if [ -f ${SRC_BASE}/usr/src/.cpignore ]; then
 		cpignore_flag="-x"
 	else
-		cpignore=$(mktemp /tmp/cpignore.XXXXXX)
+		cpignore=$(mktemp -t cpignore)
 		cpignore_flag="-X ${cpignore}"
 		# Ignore some files
 		cat > ${cpignore} <<-EOF
@@ -420,7 +418,7 @@ install_from_src() {
 		.svn
 		EOF
 	fi
-	cpdup ${cpignore_flag} ${SRC_BASE} ${JAILMNT}/usr/src
+	cpdup -i0 ${cpignore_flag} ${SRC_BASE} ${JAILMNT}/usr/src
 	[ -n "${cpignore}" ] && rm -f ${cpignore}
 	echo " done"
 
@@ -603,7 +601,7 @@ install_from_tar() {
 
 create_jail() {
 	[ "${JAILNAME#*.*}" = "${JAILNAME}" ] ||
-		err 1 "The jailname can not contain a period (.). See jail(8)"
+		err 1 "The jailname cannot contain a period (.). See jail(8)"
 
 	if [ "${METHOD}" = "null" ]; then
 		[ -z "${JAILMNT}" ] && \
@@ -727,7 +725,6 @@ create_jail() {
 	update_version_env "${RELEASE}"
 
 	pwd_mkdb -d ${JAILMNT}/etc/ -p ${JAILMNT}/etc/master.passwd
-	jail -U root -c path=${JAILMNT} command=/sbin/ldconfig -m /lib /usr/lib /usr/lib/compat
 
 	markfs clean ${JAILMNT}
 
@@ -813,27 +810,6 @@ info_jail() {
 	unset POUDRIERE_BUILD_TYPE
 }
 
-need_emulation() {
-	[ $# -eq 2 ] || eargs need_emulation real_arch wanted_arch
-	local real_arch="$1"
-	local wanted_arch="$2"
-
-	# Returning 1 means no emulation required.
-
-	# Check for host=amd64 and TARGET=i386 (not TARGET_ARCH due to
-	# pc98/i386)
-	if [ "${real_arch}" = "amd64" \
-	    -a "${wanted_arch%.*}" = "i386" ]; then
-		return 1
-	# TARGET_ARCH matches
-	elif [ "${real_arch#*.}" = "${wanted_arch#*.}" ]; then
-		return 1
-	fi
-
-	# Emulation is required
-	return 0
-}
-
 check_emulation() {
 	if need_emulation "${REALARCH}" "${ARCH}"; then
 		msg "Cross-building ports for ${ARCH} on ${REALARCH} requires QEMU"
@@ -845,8 +821,6 @@ check_emulation() {
 	fi
 }
 
-SCRIPTPATH=$(realpath $0)
-SCRIPTPREFIX=${SCRIPTPATH%/*}
 . ${SCRIPTPREFIX}/common.sh
 
 get_host_arch ARCH

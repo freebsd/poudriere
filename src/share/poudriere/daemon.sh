@@ -37,11 +37,6 @@ EOF
 	exit 1
 }
 
-start_queue_reader() {
-	queue_reader_main &
-	QUEUE_READER_PID=$!
-}
-
 queue_reader_main() {
 	# Read from the socket and then write the command
 	# to the watchdir. This is done so non-privileged users
@@ -52,18 +47,11 @@ queue_reader_main() {
 	done
 }
 
-stop_queue_reader() {
-	if [ -n "${QUEUE_READER_PID}" ]; then
-		kill ${QUEUE_READER_PID} 2>/dev/null || :
-		_wait ${QUEUE_READER_PID} 2>/dev/null 1>&2 || :
-		unset QUEUE_READER_PID
-	fi
+queue_reader_cleanup() {
 	rm -f ${QUEUE_SOCKET}
 }
 
 
-SCRIPTPATH=$(realpath $0)
-SCRIPTPREFIX=${SCRIPTPATH%/*}
 PTNAME="default"
 NODAEMONIZE=0
 KILL=0
@@ -102,11 +90,11 @@ if [ -z "${DAEMON_ARGS_PARSED}" ]; then
 fi
 
 # Start the queue reader
-start_queue_reader
+coprocess_start queue_reader queue_reader_cleanup
 
 CLEANUP_HOOK=daemon_cleanup
 daemon_cleanup() {
-	stop_queue_reader
+	coprocess_stop queue_reader
 }
 
 while :; do
