@@ -30,6 +30,8 @@ BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
 . ${SCRIPTPREFIX}/include/common.sh.${BSDPLATFORM}
 BLACKLIST=""
 
+GEN_PREFIXES="py|ruby"
+
 # Return true if ran from bulk/testport, ie not daemon/status/jail
 was_a_bulk_run() {
 	[ "${SCRIPTPATH##*/}" = "bulk.sh" -o "${SCRIPTPATH##*/}" \
@@ -2040,15 +2042,16 @@ gather_distfiles() {
 # Build+test port and return 1 on first failure
 # Return 2 on test failure if PORTTESTING_FATAL=no
 _real_build_port() {
-	[ $# -ne 1 ] && eargs _real_build_port portdir
+	[ $# -ne 1 -a $# -ne 2] && eargs _real_build_port portdir
 	local portdir=$1
 	local port=${portdir##/usr/ports/}
+	local gen="$2"
 	local mnt
 	local log
 	local listfilecmd network
 	local hangstatus
 	local pkgenv phaseenv jpkg
-	local no_stage=$(injail make -C ${portdir} -VNO_STAGE)
+	local no_stage=$(injail_port_make ${port} "${gen}" -VNO_STAGE)
 	local targets install_order
 	local jailuser
 	local testfailure=0
@@ -2075,7 +2078,7 @@ _real_build_port() {
 	else
 		jailuser=root
 		if [ "${BUILD_AS_NON_ROOT}" = "yes" ] &&
-		    [ -z "$(injail make -C ${portdir} -VNEED_ROOT)" ]; then
+		    [ -z "$(injail_port_make ${port} "${gen}" -VNEED_ROOT)" ]; then
 			jailuser=${PORTBUILD_USER}
 			chown -R ${jailuser} ${mnt}/wrkdirs
 		fi
@@ -2197,8 +2200,8 @@ _real_build_port() {
 
 		if [ "${phase#*-}" = "depends" ]; then
 			# No need for nohang or PORT_FLAGS for *-depends
-			injail env USE_PACKAGE_DEPENDS_ONLY=1 ${phaseenv} \
-			    make -C ${portdir} ${phase} || return 1
+			injail_port_make_env "USE_PACKAGE_DEPENDS_ONLY=1 ${phaseenv}" \
+			    ${port} "${gen}" ${phase} || return 1
 		else
 			# Only set PKGENV during 'package' to prevent
 			# testport-built packages from going into the main repo
@@ -2214,8 +2217,8 @@ _real_build_port() {
 			nohang ${max_execution_time} ${NOHANG_TIME} \
 				${log}/logs/${PKGNAME}.log \
 				${MASTERMNT}/.p/var/run/${MY_JOBID:-00}_nohang.pid \
-				injail env ${pkgenv} ${phaseenv} ${PORT_FLAGS} \
-				make -C ${portdir} ${phase}
+				injail_port_make_env "${pkgenv} ${phaseenv} ${PORT_FLAGS}" \
+					${port} "${gen}" ${phase}
 			hangstatus=$? # This is done as it may return 1 or 2 or 3
 			if [ $hangstatus -ne 0 ]; then
 				# 1 = cmd failed, not a timeout
@@ -2247,8 +2250,8 @@ _real_build_port() {
 			local die=0
 
 			bset_job_status "stage-qa" "${port}"
-			if ! injail env DEVELOPER=1 ${PORT_FLAGS} \
-			    make -C ${portdir} stage-qa; then
+			if ! injail_port_make_env "DEVELOPER=1 ${PORT_FLAGS}" \
+			    ${port} "${gen}" stage-qa; then
 				msg "Error: stage-qa failures detected"
 				[ "${PORTTESTING_FATAL}" != "no" ] &&
 					return 1
@@ -2256,8 +2259,8 @@ _real_build_port() {
 			fi
 
 			bset_job_status "check-plist" "${port}"
-			if ! injail env DEVELOPER=1 ${PORT_FLAGS} \
-			    make -C ${portdir} check-plist; then
+			if ! injail_port_make_env "DEVELOPER=1 ${PORT_FLAGS}" \
+			    ${port} "${gen}" check-plist; then
 				msg "Error: check-plist failures detected"
 				[ "${PORTTESTING_FATAL}" != "no" ] &&
 					return 1
@@ -2278,7 +2281,7 @@ _real_build_port() {
 			local mod=$(mktemp -t lo.mod)
 			local mod1=$(mktemp -t lo.mod1)
 			local die=0
-			PREFIX=$(injail env ${PORT_FLAGS} make -C ${portdir} -VPREFIX)
+			PREFIX=$(injail_port_make_env "${PORT_FLAGS}" ${port} "${gen}" -VPREFIX)
 
 			msg "Checking for extra files and directories"
 			bset_job_status "leftovers" "${port}"
@@ -2298,9 +2301,9 @@ _real_build_port() {
 			else
 				# LEGACY - Support for older ports tree.
 				local users user homedirs plistsub_sed
-				plistsub_sed=$(injail env ${PORT_FLAGS} make -C ${portdir} -V'PLIST_SUB:C/"//g:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/')
+				plistsub_sed=$(injail_port_make_env "${PORT_FLAGS}" ${port} "${gen}" -V'PLIST_SUB:C/"//g:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/')
 
-				users=$(injail make -C ${portdir} -VUSERS)
+				users=$(injail_port_make ${port} "${gen}" -VUSERS)
 				homedirs=""
 				for user in ${users}; do
 					user=$(grep ^${user}: ${mnt}/usr/ports/UIDs | cut -f 9 -d : | sed -e "s|/usr/local|${PREFIX}| ; s|^|${mnt}|")
@@ -2439,7 +2442,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 # Wrapper to ensure JUSER is reset and any other cleanup needed
 build_port() {
 	local ret
-	_real_build_port "$@" || ret=$?
+	_real_build_port "$1" "$2" || ret=$?
 	JUSER=root
 	return ${ret}
 }
@@ -2899,6 +2902,23 @@ print_phase_footer() {
 	echo "==========================================================================="
 }
 
+injail_port_make() {
+	local port="$1"
+	local gen="$2"
+	local args="$3"
+
+	injail env $(make_env_gen ${port} ${gen}) make -C "/usr/ports/${port}" $args
+}
+
+injail_port_make_env() {
+	local env="$1"
+	local port="$2"
+	local gen="$3"
+	local args="$4"
+
+	injail env ${env} $(make_env_gen ${port} ${gen}) make -C "/usr/ports/${port}" $args
+}
+
 build_pkg() {
 	# If this first check fails, the pool will not be cleaned up,
 	# since PKGNAME is not yet set.
@@ -2924,6 +2944,7 @@ build_pkg() {
 
 	export PKGNAME="${pkgname}" # set ASAP so cleanup() can use it
 	cache_get_origin port "${pkgname}"
+	pkg_get_gen gen "${pkgname}"
 	portdir="/usr/ports/${port}"
 
 	TIME_START_JOB=$(date +%s)
@@ -2952,7 +2973,7 @@ build_pkg() {
 	# This is checked here instead of when building the queue
 	# as the list may start big but become very small, so here
 	# is a less-common check
-	: ${ignore:=$(injail make -C ${portdir} -VIGNORE)}
+	: ${ignore:=$(injail_port_make "${port}" "${gen}" -VIGNORE)}
 
 	rm -rf ${mnt}/wrkdirs/* || :
 
@@ -2970,7 +2991,7 @@ build_pkg() {
 		clean_rdepends="ignored"
 		run_hook pkgbuild ignored "${port}" "${PKGNAME}" "${ignore}"
 	else
-		build_port ${portdir} || ret=$?
+		build_port ${portdir} "${gen}" || ret=$?
 		if [ ${ret} -ne 0 ]; then
 			build_failed=1
 			# ret=2 is a test failure
@@ -3013,7 +3034,7 @@ build_pkg() {
 		fi
 
 		msg "Cleaning up wrkdir"
-		injail make -C ${portdir} clean || :
+		injail_port_make "${port}" "${gen}" clean || :
 		rm -rf ${mnt}/wrkdirs/* || :
 	fi
 
@@ -3105,16 +3126,61 @@ prefix_output() {
 	prefix_stderr "${extra}" prefix_stdout "${extra}" "$@"
 }
 
+filter_raw_port_deps() {
+	tr ' ' '\n' | \
+	sed -E "s,(((${GEN_PREFIXES})[0-9]+)-.*)/(${GEN_PREFIXES})-(.*),\1/\2-\5,g" | \
+	sed -e "s,[[:graph:]]*/usr/ports/,,g" \
+	-e "s,:[[:graph:]]*,,g" -e '/^$/d' | \
+	sort -u
+}
+
+filter_raw_pkg_deps() {
+	sed -E "s,(((${GEN_PREFIXES})[0-9]+)-.*)/(${GEN_PREFIXES})-(.*),\1/\2-\5,g" | \
+	sed -e "s,.*:,,g"
+}
+
 list_deps() {
-	[ $# -ne 1 ] && eargs list_deps directory
+	[ $# -ne 2 ] && eargs list_deps directory gen
 	local dir="/usr/ports/$1"
 	local makeargs="-VPKG_DEPENDS -VBUILD_DEPENDS -VEXTRACT_DEPENDS -VLIB_DEPENDS -VPATCH_DEPENDS -VFETCH_DEPENDS -VRUN_DEPENDS"
 
 	prefix_stderr_quick "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
-		injail make -C ${dir} $makeargs | \
-		sed -e "s,[[:graph:]]*/usr/ports/,,g" \
-		-e "s,:[[:graph:]]*,,g" -e '/^$/d' | tr ' ' '\n' | \
-		sort -u || err 1 "Makefile broken: $1"
+		injail_port_make ${1} "${2}" "$makeargs" | \
+		filter_raw_port_deps || err 1 "Makefile broken: $1"
+}
+
+genport_extract_port() {
+	echo "$1" | sed -E "s,/((${GEN_PREFIXES})[0-9]+)-,/\2-,g"
+}
+
+genport_extract_gen() {
+	local str=$(echo "$1" | sed -E "s,^.*/(${GEN_PREFIXES})([0-9]*)-.*$,\2,g")
+	[ "$str" != "$1" ] && echo "$str"
+        return 0
+}
+
+genport_extract_prefix() {
+	local str=$(echo "$1" | sed -E "s,^(.*/)(${GEN_PREFIXES})([0-9]*)-.*$,\2,g")
+	[ "$str" != "$1" ] && echo "$str"
+        return 0
+}
+
+genport_construct() {
+	local port="$1"
+	local gen="$2"
+	echo "$1" | sed -E "s,^(.*/)(${GEN_PREFIXES})-(.*)$,\1\2${gen}-\3,g"
+}
+
+make_env_gen() {
+	local port="$1"
+	local gen="$2"
+	[ -z "${gen}" ] && return
+	case $(genport_extract_prefix $1) in
+		py) echo "PYTHON_VERSION=$(echo $gen | sed -E "s/(.)(.)/\1.\2/g")"
+		;;
+		ruby) echo "RUBY_VERSION=$gen"
+		;;
+	esac
 }
 
 deps_file() {
@@ -3170,6 +3236,17 @@ pkg_get_origin() {
 	setvar "${var_return}" "${_origin}"
 }
 
+pkg_get_gen() {
+	[ $# -lt 2 ] && eargs pkg_get_gen var_return pkg
+	local var_return="$1"
+	local pkg="$2"
+
+	local _gen=$(echo "$pkg" | sed -E "s,^(${GEN_PREFIXES})([0-9]+)-(.+)$,\2,g")
+	[ "$_gen" = "$pkg" ] && _gen=""
+
+	setvar "${var_return}" "${_gen}"
+}
+
 pkg_get_dep_origin() {
 	[ $# -ne 2 ] && eargs pkg_get_dep_origin var_return pkg
 	local var_return="$1"
@@ -3209,6 +3286,48 @@ pkg_get_dep_origin() {
 	done
 
 	setvar "${var_return}" "${compiled_dep_origins}"
+}
+
+pkg_get_dep_genport() {
+	[ $# -ne 2 ] && eargs pkg_get_dep_origin var_return pkg
+	local var_return="$1"
+	local pkg="$2"
+	local dep_genport_file
+	local pkg_cache_dir
+	local compiled_dep_genports
+	local genport port gen new_origin _old_dep_origins
+
+	get_pkg_cache_dir pkg_cache_dir "${pkg}"
+	dep_genport_file="${pkg_cache_dir}/dep_genport"
+
+	if [ ! -f "${dep_genport_file}" ]; then
+		if [ "${PKG_EXT}" = "tbz" ]; then
+                        err 1 "What is tbz?"
+		else
+			compiled_dep_genports=$(injail ${PKG_BIN} query -F \
+				"/packages/All/${pkg##*/}" '%dn:%do' | filter_raw_pkg_deps)
+		fi
+		echo "${compiled_dep_genports}" > "${dep_genport_file}"
+	else
+		while read line; do
+			compiled_dep_genports="${compiled_dep_genports} ${line}"
+		done < "${dep_genport_file}"
+	fi
+
+	# Check MOVED
+	_old_dep_genports="${compiled_dep_genports}"
+	compiled_dep_genports=
+	for genport in ${_old_dep_genports}; do
+                gen=$(genport_extract_gen ${genport})
+       		port=$(genport_extract_port ${genport})
+		if check_moved new_origin "${port}"; then
+			compiled_dep_genports="${compiled_dep_genports} $(genport_construct ${new_origin} ${gen})"
+		else
+			compiled_dep_genports="${compiled_dep_genports} $(genport_construct ${port} ${gen})"
+		fi
+	done
+
+	setvar "${var_return}" "${compiled_dep_genports}"
 }
 
 pkg_get_options() {
@@ -3379,28 +3498,30 @@ delete_stale_pkg_cache() {
 
 delete_old_pkg() {
 	[ $# -eq 1 ] || eargs delete_old_pkg pkgname
-	local pkg="$1"
-	local mnt pkgname cached_pkgname
+	local pkgpath="$1"
+	local pkgname=${pkgpath##*/}
+	local mnt pkgname cached_pkgname genport port gen
 	local o v v2 compiled_options current_options current_deps compiled_deps
 
-	pkg_get_origin o "${pkg}"
+	pkg_get_origin o "${pkgpath}"
+	pkg_get_gen gen "${pkgname}"
 	port_is_needed "${o}" || return 0
 
 	_my_path mnt
 
 	if [ ! -d "${mnt}/usr/ports/${o}" ]; then
-		msg "${o} does not exist anymore. Deleting stale ${pkg##*/}"
-		delete_pkg "${pkg}"
+		msg "${o} does not exist anymore. Deleting stale ${pkgname}"
+		delete_pkg "${pkgpath}"
 		return 0
 	fi
 
-	v="${pkg##*-}"
+	v="${pkgpath##*-}"
 	v=${v%.*}
-	cache_get_pkgname cached_pkgname "${o}"
+	cache_get_pkgname cached_pkgname "${o}" "${gen}"
 	v2=${cached_pkgname##*-}
 	if [ "$v" != "$v2" ]; then
-		msg "Deleting ${pkg##*/}: new version: ${v2}"
-		delete_pkg "${pkg}"
+		msg "Deleting ${pkgname}: new version: ${v2}"
+		delete_pkg "${pkgpath}"
 		return 0
 	fi
 
@@ -3416,10 +3537,11 @@ delete_old_pkg() {
 		# XXX: This is redundant with list_deps. Hash/caching the
 		# deps can prevent double lookup
 		for td in LIB RUN; do
-			raw_deps=$(injail make -C /usr/ports/${o} -V${td}_DEPENDS)
-			for d in ${raw_deps}; do
+			for d in $(injail_port_make ${o} "${gen}" -V${td}_DEPENDS); do
 				key=${d%:*}
-				dpath=${d#*:/usr/ports/}
+				genport=$(echo $d | filter_raw_port_deps)
+				port=$(genport_extract_port $genport)
+				gen=$(genport_extract_gen ${genport})
 				case ${td} in
 				LIB)
 					[ -n "${liblist}" ] || liblist=$(injail ldconfig -r | awk '$1 ~ /:-l/ { gsub(/.*-l/, "", $1); printf("%s ",$1) } END { printf("\n") }')
@@ -3432,12 +3554,12 @@ delete_old_pkg() {
 								break;
 							fi
 						done
-						[ -n "${found}" ] || current_deps="${current_deps} ${dpath}"
+						[ -n "${found}" ] || current_deps="${current_deps} ${genport}"
 						;;
 					*.*)
 						case " ${liblist} " in
 							*\ ${key}\ *) ;;
-							*) current_deps="${current_deps} ${dpath}" ;;
+							*) current_deps="${current_deps} ${genport}" ;;
 						esac
 						;;
 					*)
@@ -3448,27 +3570,27 @@ delete_old_pkg() {
 								break;
 							fi
 						done
-						[ -n "${found}" ] || current_deps="${current_deps} ${dpath}"
+						[ -n "${found}" ] || current_deps="${current_deps} ${genport}"
 						;;
 					esac
 					;;
 				RUN)
 					case $key in
-					/*) [ -e ${mnt}/${key} ] || current_deps="${current_deps} ${dpath}" ;;
-					*) [ -n "$(injail which ${key})" ] || current_deps="${current_deps} ${dpath}" ;;
+					/*) [ -e ${mnt}/${key} ] || current_deps="${current_deps} ${genport}" ;;
+					*) [ -n "$(injail which ${key})" ] || current_deps="${current_deps} ${genport}" ;;
 					esac
 					;;
 				esac
 			done
 		done
-		pkg_get_dep_origin compiled_deps "${pkg}"
-
+		pkg_get_dep_genport compiled_deps "${pkgpath}"
+echo "pkg=$pkgname: current_deps=$current_deps compiled_deps=$compiled_deps" >> /tmp/yuri-deps.txt
 		for d in ${current_deps}; do
 			case " $compiled_deps " in
 			*\ $d\ *) ;;
 			*)
-				msg "Deleting ${pkg##*/}: new dependency: ${d}"
-				delete_pkg "${pkg}"
+				msg "Deleting ${pkgname}: new dependency: ${d}"
+				delete_pkg "${pkgpath}"
 				return 0
 				;;
 			esac
@@ -3477,26 +3599,25 @@ delete_old_pkg() {
 
 	# Check if the compiled options match the current options from make.conf and /var/db/ports
 	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
-		current_options=$(injail make -C /usr/ports/${o} pretty-print-config | \
+		current_options=$(injail_port_make ${o} "${gen}" pretty-print-config | \
 			tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort -u | tr '\n' ' ')
-		pkg_get_options compiled_options "${pkg}"
+		pkg_get_options compiled_options "${pkgpath}"
 
 		if [ "${compiled_options}" != "${current_options}" ]; then
-			msg "Deleting ${pkg##*/}: changed options"
+			msg "Deleting ${pkgname}: changed options"
 			if [ "${CHECK_CHANGED_OPTIONS}" = "verbose" ]; then
 				msg "Pkg: ${compiled_options}"
 				msg "New: ${current_options}"
 			fi
-			delete_pkg "${pkg}"
+			delete_pkg "${pkgpath}"
 			return 0
 		fi
 	fi
 
-	pkgname="${pkg##*/}"
 	# XXX: Check if the pkgname has changed and rename in the repo
 	if [ "${pkgname%-*}" != "${cached_pkgname%-*}" ]; then
-		msg "Deleting ${pkg##*/}: package name changed to '${cached_pkgname%-*}'"
-		delete_pkg "${pkg}"
+		msg "Deleting ${pkgname}: package name changed to '${cached_pkgname%-*}'"
+		delete_pkg "${pkgpath}"
 		return 0
 	fi
 }
@@ -3576,19 +3697,16 @@ lock_have() {
 }
 
 cache_get_pkgname() {
-	[ $# -lt 2 ] && eargs cache_get_pkgname var_return origin fatal
+	[ $# -lt 3 ] && eargs cache_get_pkgname var_return origin gen fatal
 	local var_return="$1"
 	local origin=${2%/}
-	local fatal="${3:-1}"
+	local gen="$3"
+	local fatal="${4:-1}"
 	local _pkgname="" existing_origin
 	local cache_origin_pkgname=${MASTERMNT}/.p/var/cache/origin-pkgname/${origin%%/*}_${origin##*/}
 	local cache_pkgname_origin
 
-	if [ ${USE_CACHED} = "yes" ]; then
-		_pkgname=$(write_usock ${CACHESOCK} get ${origin})
-	else
-		[ -f ${cache_origin_pkgname} ] && read_line _pkgname "${cache_origin_pkgname}"
-	fi
+	[ -f ${cache_origin_pkgname} ] && read_line _pkgname "${cache_origin_pkgname}"
 
 	# Add to cache if not found.
 	if [ -z "${_pkgname}" ]; then
@@ -3599,7 +3717,7 @@ cache_get_pkgname() {
 				return 1
 			fi
 		fi
-		_pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME || echo)
+		_pkgname=$(injail_port_make ${origin} "${gen}" -VPKGNAME || echo)
 		[ -n "${_pkgname}" ] || err 1 "Error getting PKGNAME for ${COLOR_PORT}${origin}${COLOR_RESET}"
 		# Make sure this origin did not already exist
 		cache_get_origin existing_origin "${_pkgname}" 2>/dev/null || :
@@ -3649,7 +3767,7 @@ check_dep_fatal_error() {
 }
 
 compute_deps() {
-	local port pkgname dep_pkgname
+	local genport port gen pkgname dep_pkgname
 
 	msg "Calculating ports order and dependencies"
 	bset status "computingdeps:"
@@ -3658,15 +3776,17 @@ compute_deps() {
 	:> "${MASTERMNT}/.p/pkg_deps.unsorted"
 
 	parallel_start
-	for port in $(listed_ports show_moved); do
+	for genport in $(listed_ports show_moved); do
+		port=$(genport_extract_port ${genport})
+		gen=$(genport_extract_gen ${genport})
 		if [ -d "${MASTERMNT}/usr/ports/${port}" ]; then
-			parallel_run compute_deps_port ${port} || \
+			parallel_run compute_deps_port "${port}" "${gen}" || \
 			    set_dep_fatal_error
 		else
 			if [ ${ALL} -eq 1 ]; then
-				msg_warn "Nonexistent port listed in category Makefiles: ${COLOR_PORT}${port}"
+				msg_warn "Nonexistent port listed in category Makefiles: ${COLOR_PORT}${genport}"
 			else
-				msg_error "Nonexistent port listed for build: ${COLOR_PORT}${port}"
+				msg_error "Nonexistent port listed for build: ${COLOR_PORT}${genport}"
 				set_dep_fatal_error
 			fi
 		fi
@@ -3703,22 +3823,26 @@ compute_deps() {
 
 # Take optional pkgname to speedup lookup
 compute_deps_port() {
-	[ $# -lt 1 ] && eargs compute_deps_port port
-	[ $# -gt 2 ] && eargs compute_deps_port port pkgnme
+	[ $# -lt 2 ] && eargs compute_deps_port port gen
+	[ $# -gt 3 ] && eargs compute_deps_port port gen pkgname
 	local port=$1
-	local pkgname="$2"
-	local dep_pkgname dep_port
+	local gen=$2
+	local pkgname="$3"
+	local dep_pkgname dep_genport dep_port dep_gen
 	local pkg_pooldir
 
-	[ -z "${pkgname}" ] && cache_get_pkgname pkgname "${port}"
+	[ -z "${pkgname}" ] && cache_get_pkgname pkgname "${port}" "${gen}"
 	pkg_pooldir="${MASTERMNT}/.p/deps/${pkgname}"
 
 	mkdir "${pkg_pooldir}" 2>/dev/null || return 0
 
 	msg_verbose "Computing deps for ${COLOR_PORT}${port}"
 
-	for dep_port in `list_deps ${port}`; do
-		msg_debug "${COLOR_PORT}${port}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_port}"
+	for dep_genport in `list_deps "${port}" "${gen}"`; do
+		dep_port=$(genport_extract_port $dep_genport)
+		dep_gen=$(genport_extract_gen $dep_genport)
+
+		msg_debug "${COLOR_PORT}${port}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_genport}"
 		if [ "${port}" = "${dep_port}" ]; then
 			msg_error "${COLOR_PORT}${port}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
 			set_dep_fatal_error
@@ -3730,7 +3854,7 @@ compute_deps_port() {
 			set_dep_fatal_error
 			return 1
 		fi
-		if ! cache_get_pkgname dep_pkgname "${dep_port}" 0; then
+		if ! cache_get_pkgname dep_pkgname "${dep_port}" "${dep_gen}" 0; then
 			msg_error "${COLOR_PORT}${port}${COLOR_RESET} depends on nonexistent origin '${COLOR_PORT}${dep_port}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
 			set_dep_fatal_error
 			return 1
@@ -3739,7 +3863,7 @@ compute_deps_port() {
 		# Only do this if it's not already done, and not ALL, as everything will
 		# be touched anyway
 		[ ${ALL} -eq 0 ] && ! [ -d "${MASTERMNT}/.p/deps/${dep_pkgname}" ] &&
-			compute_deps_port "${dep_port}" "${dep_pkgname}"
+			compute_deps_port "${dep_port}" "${dep_gen}" "${dep_pkgname}"
 
 		:> "${pkg_pooldir}/${dep_pkgname}"
 		echo "${pkgname} ${dep_pkgname}" >> \
@@ -3923,7 +4047,7 @@ check_moved() {
 }
 
 clean_build_queue() {
-	local tmp pn port
+	local tmp pn genport port gen
 
 	bset status "cleaning:"
 	msg "Cleaning the build queue"
@@ -3942,14 +4066,16 @@ clean_build_queue() {
 	if [ ${TRIM_ORPHANED_BUILD_DEPS} = "yes" -a ${ALL} -eq 0 ]; then
 		tmp=$(mktemp -t queue)
 		{
-			listed_ports | while read port; do
-				cache_get_pkgname pkgname "${port}"
+			listed_ports | while read genport; do
+				port=$(genport_extract_port $genport)
+				gen=$(genport_extract_gen $genport)
+				cache_get_pkgname pkgname "${port}" "${gen}"
 				echo "${pkgname}"
 			done
 			# Pkg is a special case. It may not have been requested,
 			# but it should always be rebuilt if missing.
 			for port in ports-mgmt/pkg ports-mgmt/pkg-devel; do
-				cache_get_pkgname pkgname "${port}" 0 \
+				cache_get_pkgname pkgname "${port}" "" 0 \
 				    > /dev/null 2>&1 && \
 				    echo "${pkgname}"
 			done
@@ -4059,8 +4185,10 @@ prepare_ports() {
 
 		if [ ${CLEAN_LISTED} -eq 1 ]; then
 			msg "(-C) Cleaning specified ports to build"
-			listed_ports | while read port; do
-				cache_get_pkgname pkgname "${port}"
+			listed_ports | while read genport; do
+				gen=$(genport_extract_gen ${genport})
+				port=$(genport_extract_port ${genport})
+				cache_get_pkgname pkgname "${port}" "${gen}"
 				pkg="${PACKAGES}/All/${pkgname}.${PKG_EXT}"
 				if [ -f "${pkg}" ]; then
 					msg "(-C) Deleting existing package: ${pkg##*/}"
