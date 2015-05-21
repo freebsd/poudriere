@@ -448,16 +448,18 @@ install_from_svn() {
 		msg_n "Checking out the sources from svn..."
 		${SVN_CMD} -q co ${proto}://${SVN_HOST}/base/${VERSION} ${SRC_BASE} || err 1 " fail"
 		echo " done"
-		if [ -n "${SRCPATCHFILE}" ]; then
-			msg_n "Patching the sources with ${SRCPATCHFILE}"
-			${SVN_CMD} -q patch ${SRCPATCHFILE} ${SRC_BASE} || err 1 " fail"
-			echo done
-		fi
 	else
 		msg_n "Updating the sources from svn..."
 		${SVN_CMD} upgrade ${SRC_BASE} 2>/dev/null || :
+		${SVN_CMD} revert -R ${SRC_BASE} 2>/dev/null || :
+		${SVN_CMD} status ${SRC_BASE} | grep ^\? | cut -c9- | xargs rm -r 2>/dev/null || :
 		${SVN_CMD} -q update -r ${TORELEASE:-head} ${SRC_BASE} || err 1 " fail"
 		echo " done"
+	fi
+	if [ -n "${SRCPATCHFILE}" ]; then
+		msg_n "Patching the sources with ${SRCPATCHFILE}"
+		${SVN_CMD} -q patch ${SRCPATCHFILE} ${SRC_BASE} || err 1 " fail"
+		echo done
 	fi
 	build_and_install_world
 
