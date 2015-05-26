@@ -451,7 +451,7 @@ install_from_svn() {
 	else
 		msg_n "Updating the sources from svn..."
 		${SVN_CMD} upgrade ${SRC_BASE} 2>/dev/null || :
-		${SVN_CMD} revert -R ${SRC_BASE} 2>/dev/null || :
+		${SVN_CMD} revert -q -R ${SRC_BASE} 2>/dev/null || :
 		${SVN_CMD} status ${SRC_BASE} | grep ^\? | cut -c9- | xargs rm -r 2>/dev/null || :
 		${SVN_CMD} -q update -r ${TORELEASE:-head} ${SRC_BASE} || err 1 " fail"
 		echo " done"
