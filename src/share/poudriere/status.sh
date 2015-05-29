@@ -189,17 +189,18 @@ for_each_job() {
 			if [ "${BUILDNAME_GLOB%\**}" != \
 			    "${BUILDNAME_GLOB}" ]; then
 				case "${buildname}" in
+					# Check no results
 					"${mastername}/${BUILDNAME_GLOB}")
 						break
 						;;
 					# Skip latest if from a glob, let it be
 					# found normally.
 					"${mastername}/latest")
-						break
+						continue
 						;;
 					# Don't want latest-per-pkg
 					"${mastername}/latest-per-pkg")
-						break
+						continue
 						;;
 				esac
 			else
