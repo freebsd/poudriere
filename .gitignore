@@ -10,6 +10,7 @@
 .dirstamp/
 .fslckout
 /autom4te.cache
+/clock_monotonic
 /cpdup
 /dirempty
 /dirwatch
