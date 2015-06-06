@@ -17,6 +17,7 @@ function print_value(key, end) {
   print_value("jailname", ",")
   print_value("ptname", ",")
   print_value("setname", ",")
+  print_value("started", ",")
   print_value("status")
   print "}"
   next
