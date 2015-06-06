@@ -92,7 +92,7 @@ msg_n() {
 
 	elapsed=
 	if should_show_elapsed; then
-		now=$(date +%s)
+		now=$(clock_monotonic)
 		calculate_duration elapsed "$((${now} - ${TIME_START}))"
 		elapsed="[${elapsed}] "
 	fi
@@ -158,7 +158,7 @@ job_msg() {
 
 	if [ -n "${MY_JOBID}" ]; then
 		NO_ELAPSED_IN_MSG=0
-		now=$(date +%s)
+		now=$(clock_monotonic)
 		calculate_duration elapsed "$((${now} - ${TIME_START_JOB}))"
 		_msg_redirected \
 		    "[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}][${elapsed}] $1"
@@ -639,7 +639,7 @@ bset_job_status() {
 	local status="$1"
 	local origin="$2"
 
-	bset ${MY_JOBID} status "${status}:${origin}:${PKGNAME}:${TIME_START_JOB:-${TIME_START}}:$(date +%s)"
+	bset ${MY_JOBID} status "${status}:${origin}:${PKGNAME}:${TIME_START_JOB:-${TIME_START}}:$(clock_monotonic)"
 }
 
 badd() {
@@ -823,7 +823,7 @@ siginfo_handler() {
 
 	show_build_summary
 
-	now=$(date +%s)
+	now=$(clock_monotonic)
 
 	# Skip if stopping or starting jobs or stopped.
 	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" \
@@ -2927,7 +2927,7 @@ build_pkg() {
 	cache_get_origin port "${pkgname}"
 	portdir="/usr/ports/${port}"
 
-	TIME_START_JOB=$(date +%s)
+	TIME_START_JOB=$(clock_monotonic)
 	# Don't show timestamps in msg() which goes to logs, only job_msg()
 	# which goes to master
 	NO_ELAPSED_IN_MSG=1
@@ -4629,7 +4629,7 @@ if [ -n "${MAX_MEMORY}" ]; then
 	MAX_MEMORY_JEXEC="/usr/bin/limits -v ${MAX_MEMORY_BYTES}"
 fi
 
-TIME_START=$(date +%s)
+TIME_START=$(clock_monotonic)
 
 [ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}
 
