@@ -4024,6 +4024,7 @@ prepare_ports() {
 			bset setname "${SETNAME}"
 			bset ptname "${PTNAME}"
 			bset buildname "${BUILDNAME}"
+			bset started "${EPOCH_START}"
 		fi
 
 		show_log_info
@@ -4630,6 +4631,7 @@ if [ -n "${MAX_MEMORY}" ]; then
 fi
 
 TIME_START=$(clock_monotonic)
+EPOCH_START=$(date +%s)
 
 [ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}
 
