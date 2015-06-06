@@ -111,13 +111,15 @@ pkglibexec_PROGRAMS= \
 		     poudriered \
 		     rename \
 		     locked_mkdir \
-		     sh \
+		     @SH@ \
 		     timeout \
 		     timestamp \
 		     tsort \
 		     jexecd \
 		     rexec \
 		     cached
+EXTRA_PROGRAMS= \
+		sh
 
 noinst_LIBRARIES=	libucl.a libnv.a
 
