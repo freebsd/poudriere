@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd April 9, 2014
+.Dd June 6, 2015
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -917,6 +917,9 @@ Any of the following are allowed and will all be used in the order shown:
 .Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-blacklist
 .Dl /usr/local/etc/poudriere.d/<jailname>-<setname>-blacklist
 .Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-blacklist
+.Pp
+If QEMU is being used then a special qemu blacklist is also loaded.
+.Dl /usr/local/etc/poudriere.d/qemu-blacklist
 .Ss Create optional poudriere.conf
 You can also specify an optional poudriere.conf that is pulled in
 depending on the build.
