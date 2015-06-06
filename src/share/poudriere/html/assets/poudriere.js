@@ -484,8 +484,10 @@ function process_data_build(data) {
 	var html, a, n, table_rows, status, builder, now, row, dtrow, is_stopped;
 
 	if (data.snap && data.snap.now) {
+		// New data is relative to the 'job.started' time, not epoch.
 		now = data.snap.now;
 	} else {
+		// Legacy data based on epoch time.
 		now = Math.floor(new Date().getTime() / 1000);
 	}
 
