@@ -154,7 +154,7 @@ update_version_env() {
 	login_env=",UNAME_r=${release% *},UNAME_v=FreeBSD ${release},OSVERSION=${osversion}"
 
 	# Tell pkg(8) to not use /bin/sh for the ELF ABI since it is native.
-	need_emulation "${REALARCH}" "${ARCH}" && \
+	need_emulation  "${ARCH}" && \
 	    login_env="${login_env},ABI_FILE=\/usr\/lib\/crt1.o"
 
 	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
@@ -811,7 +811,7 @@ info_jail() {
 }
 
 check_emulation() {
-	if need_emulation "${REALARCH}" "${ARCH}"; then
+	if need_emulation "${ARCH}"; then
 		msg "Cross-building ports for ${ARCH} on ${REALARCH} requires QEMU"
 		[ -x "${BINMISC}" ] || \
 		    err 1 "Cannot find ${BINMISC}. Install ${BINMISC} and restart"

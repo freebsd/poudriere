@@ -1507,27 +1507,19 @@ get_host_arch() {
 }
 
 need_emulation() {
-	[ $# -eq 2 ] || eargs need_emulation real_arch wanted_arch
-	local real_arch="$1"
-	local wanted_arch="$2"
+	[ $# -eq 1 ] || eargs need_emulation wanted_arch
+	local wanted_arch="$1"
 
-	# Returning 1 means no emulation required.
-
-	# Check for host=amd64 and TARGET=i386 (not TARGET_ARCH due to
-	# pc98/i386)
-	if [ "${real_arch}" = "amd64" \
-	    -a "${wanted_arch%.*}" = "i386" ]; then
+	# Check the list of supported archs from the kernel.
+	# DragonFly does not have kern.supported_archs, fallback to
+	# uname -m (advised by dillon)
+	if { sysctl -n kern.supported_archs 2>/dev/null || uname -m; } | \
+	    grep -qw "${wanted_arch}"; then
 		return 1
-	elif [ "${real_arch#*.}" = "powerpc64" -a \
-		"${wanted_arch#*.}" = "powerpc" ]; then
-		return 1
-	# TARGET_ARCH matches
-	elif [ "${real_arch#*.}" = "${wanted_arch#*.}" ]; then
-		return 1
+	else
+		# Returning 1 means no emulation required.
+		return 0
 	fi
-
-	# Emulation is required
-	return 0
 }
 
 need_cross_build() {
@@ -1539,7 +1531,7 @@ need_cross_build() {
 	[ "${wanted_arch%.*}" = "i386" -a "${real_arch}" = "amd64" ] || \
 	    [ "${wanted_arch#*.}" = "powerpc" -a \
 	    "${real_arch#*.}" = "powerpc64" ] || \
-	    need_emulation "${real_arch}" "${wanted_arch}"
+	    need_emulation "${wanted_arch}"
 }
 
 jail_start() {
