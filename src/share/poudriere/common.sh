@@ -1729,7 +1729,7 @@ load_blacklist() {
 	local bl b bfile
 
 	bl="- ${setname} ${ptname} ${name} ${name}-${ptname}"
-	[ -n "${setname}" ] && bl="${bl} ${bl}-${setname} \
+	[ -n "${setname}" ] && bl="${bl} ${name}-${setname} \
 		${name}-${ptname}-${setname}"
 	for b in ${bl} ; do
 		if [ "${b}" = "-" ]; then
