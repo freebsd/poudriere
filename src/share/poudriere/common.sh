@@ -2107,7 +2107,7 @@ load_blacklist() {
 	local bl b bfile
 
 	bl="- ${setname} ${ptname} ${name} ${name}-${ptname}"
-	[ -n "${setname}" ] && bl="${bl} ${bl}-${setname} \
+	[ -n "${setname}" ] && bl="${bl} ${name}-${setname} \
 		${name}-${ptname}-${setname}"
 	# If emulating always load a qemu-blacklist as it has special needs.
 	[ ${QEMU_EMULATING} -eq 1 ] && bl="${bl} qemu"
