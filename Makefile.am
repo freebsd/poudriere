@@ -103,6 +103,7 @@ dist_dtimages_DATA=	src/share/poudriere/html/assets/DataTables-1.10.0/images/bac
 dist_rc_SCRIPTS=	src/etc/rc.d/poudriered
 
 pkglibexec_PROGRAMS= \
+		     clock_monotonic \
 		     cpdup \
 		     dirempty \
 		     dirwatch \
@@ -123,6 +124,7 @@ noinst_LIBRARIES=	libucl.a libnv.a
 AUTOMAKE_OPTIONS=	subdir-objects
 
 rename_SOURCES=	src/libexec/poudriere/rename/rename.c
+clock_monotonic_SOURCES=	src/libexec/poudriere/clock_monotonic/clock_monotonic.c
 cpdup_SOURCES=	src/libexec/poudriere/cpdup/cpdup.c \
 		src/libexec/poudriere/cpdup/hcproto.c \
 		src/libexec/poudriere/cpdup/hclink.c \
