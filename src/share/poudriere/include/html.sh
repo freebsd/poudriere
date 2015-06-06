@@ -116,10 +116,12 @@ build_top_json() {
 	mv -f ${tmpfile} ${log_path_top}/.data.json
 }
 
+# This is called at the end
 html_json_cleanup() {
 	local log
 
 	_log_path log
+	bset ended "$(date +%s)" || :
 	build_all_json 2>/dev/null || :
 	rm -f ${log}/.data.json.tmp ${log}/.data.mini.json.tmp 2>/dev/null || :
 }
