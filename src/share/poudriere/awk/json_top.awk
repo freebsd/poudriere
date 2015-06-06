@@ -18,6 +18,7 @@ function print_value(key, end) {
   print_value("ptname", ",")
   print_value("setname", ",")
   print_value("started", ",")
+  print_value("ended", ",")
   print_value("status")
   print "}"
   next
