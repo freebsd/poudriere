@@ -39,7 +39,7 @@ main(int argc, char **argv)
 	struct timespec ts;
 
 #ifndef CLOCK_MONOTONIC_FAST
-# define CLOCK_MONOTONIC_FAST CLOCK_MONOTONIC_FAST
+# define CLOCK_MONOTONIC_FAST CLOCK_MONOTONIC
 #endif
 	if (clock_gettime(CLOCK_MONOTONIC_FAST, &ts))
 		err(EXIT_FAILURE, "clock_gettime");
