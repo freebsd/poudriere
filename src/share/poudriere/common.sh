@@ -1655,6 +1655,13 @@ jail_start() {
 		EOF
 	fi
 
+	# QEMU is really slow. Extend the time significantly.
+	if need_emulation "${arch}"; then
+		msg "Raising MAX_EXECUTION_TIME and NOHANG_TIME for QEMU"
+		MAX_EXECUTION_TIME=864000
+		NOHANG_TIME=72000
+	fi
+
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 		cat >> "${tomnt}/etc/make.conf" <<-EOF
 		WITH_CCACHE_BUILD=yes
