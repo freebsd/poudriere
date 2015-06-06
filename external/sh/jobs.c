@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)jobs.c	8.5 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/jobs.c 279508 2015-03-01 22:32:23Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/jobs.c 281982 2015-04-25 13:34:25Z jilles $");
 
 #include <sys/ioctl.h>
 #include <sys/param.h>
@@ -1057,7 +1057,7 @@ waitforjob(struct job *jp, int *origstatus)
 			CLEAR_PENDING_INT;
 	}
 #if JOBS
-	else if (rootshell && iflag && propagate_int &&
+	else if (rootshell && propagate_int &&
 			WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
 		kill(getpid(), SIGINT);
 #endif
