@@ -2783,8 +2783,6 @@ calculate_duration() {
 	local _elapsed="$2"
 	local seconds minutes hours _duration
 
-	[ ${_elapsed} -ge 0 ] || return 1
-
 	seconds=$((${_elapsed} % 60))
 	minutes=$(((${_elapsed} / 60) % 60))
 	hours=$((${_elapsed} / 3600))
