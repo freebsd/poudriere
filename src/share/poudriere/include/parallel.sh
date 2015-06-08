@@ -253,7 +253,7 @@ nohang() {
 	exec 8<> ${fifo}
 	rm -f ${fifo}
 
-	starttime=$(clock_monotonic)
+	starttime=$(date +%s)
 
 	# Run the actual command in a child subshell
 	(
@@ -274,7 +274,7 @@ nohang() {
 		fi
 
 		lastupdated=$(stat -f "%m" ${logfile})
-		now=$(clock_monotonic)
+		now=$(date +%s)
 
 		# No need to actually kill anything as stop_build()
 		# will be called and kill -9 -1 the jail later
