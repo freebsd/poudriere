@@ -641,7 +641,7 @@ create_jail() {
 		RELEASE="${ALLBSDVER}-JPSNAP/ftp"
 		;;
 	svn*)
-		test -z "${SVN_CMD}" && err 1 "You need svn on your host to use svn method"
+		test -x "${SVN_CMD}" || err 1 "svn or svnlite not installed. Perhaps you need to 'pkg install subversion'"
 		case ${VERSION} in
 			stable/*![0-9]*)
 				err 1 "bad version number for stable version"
