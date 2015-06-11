@@ -219,6 +219,10 @@ if [ ${CREATE} -eq 1 ]; then
 			svn) proto="svn" ;;
 			esac
 
+			if [ ! -x "${SVN_CMD}" ]; then
+				err 1 "svn or svnlite not installed. Perhaps you need to 'pkg install subversion'"
+			fi
+
 			msg_n "Checking out the ports tree..."
 			[ ${VERBOSE} -gt 0 ] || quiet="-q"
 			${SVN_CMD} ${quiet} co \
