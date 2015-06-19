@@ -67,7 +67,7 @@ Options:
                      Will only be used if -m is svn*.
 
 Options for -s and -k:
-    -p tree       -- Specify which ports tree the jail to start/stop with.
+    -p tree       -- Specify which ports tree to start/stop the jail with.
     -z set        -- Specify which SET the jail to start/stop with.
 EOF
 	exit 1
