@@ -7,9 +7,22 @@
 # poudriere will use tank/${ZROOTFS} as its root
 #
 # You need at least 7GB of free space in this pool to have a working
-# poudriere.
+# poudriere. 
 #
 #ZPOOL=tank
+
+# You may also optionally define ZJAIL and/or ZPORTS.  If unset they
+# default to ZPOOL. If set, ZJAIL will cause poudriere jail to use this
+# pool and ZPORTS will cause poudriere ports to use this pool.  This
+# would be useful if you have a fast temporary store, and slower permenant
+# store. For instance, in Amazon Web Servers(AWS) Elastic Compute Cloud(EC2)
+# the emphemeral storage will disappear when the instance dies.  It makes
+# sense to put POUDRIERE_DATA on the emphemeral storage, but it is
+# better to put jails and ports on something more permenant like an 
+# Elastic Block Storage (EBS).
+#
+#ZJAIL=tank
+#ZPORTS=tank
 
 ### NO ZFS
 # To not use ZFS, define NO_ZFS=yes

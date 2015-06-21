@@ -617,6 +617,7 @@ create_jail() {
 
 	if [ -z "${JAILFS}" -a -z "${NO_ZFS}" ]; then
 		[ -z ${ZPOOL} ] && err 1 "Please provide a ZPOOL variable in your poudriere.conf"
+                [ -n ${ZJAIL} ] && ZPOOL=$ZJAIL
 		JAILFS=${ZPOOL}${ZROOTFS}/jails/${JAILNAME}
 	fi
 
