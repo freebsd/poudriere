@@ -347,7 +347,7 @@ build_and_install_world() {
 
 	if [ ${XDEV} -eq 1 ]; then
 		msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
-		${MAKE_CMD} -C ${SRC_BASE} native-xtools ${MAKE_JOBS} \
+		${MAKE_CMD} -C /usr/src native-xtools ${MAKE_JOBS} \
 		    ${MAKEWORLDARGS} NO_SHARED=y || err 1 "Failed to 'make native-xtools'"
 		XDEV_TOOLS=/usr/obj/${TARGET}.${TARGET_ARCH}/nxb-bin
 		rm -rf ${JAILMNT}/nxb-bin || err 1 "Failed to remove old native-xtools"
