@@ -3111,9 +3111,8 @@ list_deps() {
 	local makeargs="-VPKG_DEPENDS -VBUILD_DEPENDS -VEXTRACT_DEPENDS -VLIB_DEPENDS -VPATCH_DEPENDS -VFETCH_DEPENDS -VRUN_DEPENDS"
 
 	prefix_stderr_quick "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
-		injail make -C ${dir} $makeargs | \
-		sed -e "s,[[:graph:]]*/usr/ports/,,g" \
-		-e "s,:[[:graph:]]*,,g" -e '/^$/d' | tr ' ' '\n' | \
+		injail make -C ${dir} $makeargs | tr ' ' '\n' | \
+		awk -F: '{ gsub(/\/usr\/ports\//,"", $2); print $2 }' | \
 		sort -u || err 1 "Makefile broken: $1"
 }
 
