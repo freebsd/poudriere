@@ -59,6 +59,7 @@ Options:
                        svn+file, svn+http, svn+https, svn+ssh, tar=PATH
                        url=SOMEURL
     -P patch      -- Specify a patch to apply to the source before building.
+    -S srcpath    -- Specify a path to the source tree to be used.
     -t version    -- Version of FreeBSD to upgrade the jail to.
     -x            -- Build and setup native-xtools cross compile tools in jail when
                      building for a different TARGET ARCH than the host.
@@ -66,7 +67,7 @@ Options:
                      Will only be used if -m is svn*.
 
 Options for -s and -k:
-    -p tree       -- Specify which ports tree the jail to start/stop with.
+    -p tree       -- Specify which ports tree to start/stop the jail with.
     -z set        -- Specify which SET the jail to start/stop with.
 EOF
 	exit 1
@@ -152,16 +153,14 @@ update_version_env() {
 	osversion=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILMNT}/usr/include/sys/param.h`
 	login_env=",UNAME_r=${release% *},UNAME_v=FreeBSD ${release},OSVERSION=${osversion}"
 
-	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
-	[ "${ARCH%.*}" = "i386" -a "${REALARCH}" = "amd64" ] &&
-		login_env="${login_env},UNAME_p=i386,UNAME_m=i386"
+	# Tell pkg(8) to not use /bin/sh for the ELF ABI since it is native.
+	need_emulation  "${ARCH}" && \
+	    login_env="${login_env},ABI_FILE=\/usr\/lib\/crt1.o"
 
-	if need_emulation "${REALARCH}" "${ARCH}"; then
-		# QEMU/emulator support here.  Setup MACHINE/MACHINE_ARCH for bmake to be happy.
-		# UNAME variables are currently handled by QEMU, no need to override
-		login_env="${login_env},ABI_FILE=\/usr\/lib\/crt1.o,MACHINE=${ARCH%.*},MACHINE_ARCH=${ARCH#*.}"
-	fi
-	
+	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
+	need_cross_build "${REALARCH}" "${ARCH}" && \
+	    login_env="${login_env},UNAME_m=${ARCH%.*},UNAME_p=${ARCH#*.}"
+
 	sed -i "" -e "s/,UNAME_r.*:/:/ ; s/:\(setenv.*\):/:\1${login_env}:/" ${JAILMNT}/etc/login.conf
 	cap_mkdb ${JAILMNT}/etc/login.conf
 }
@@ -192,26 +191,41 @@ update_jail() {
 		MASTERMNT=${JAILMNT}
 		MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
-		do_jail_mounts "${JAILMNT}" "${JAILMNT}" ${ARCH}
+		do_jail_mounts "${JAILMNT}" "${JAILMNT}" "${ARCH}" "${JAILNAME}"
 		JNETNAME="n"
 		jstart
+		# Fix freebsd-update to not check for TTY and to allow
+		# EOL branches to still get updates.
+		sed \
+		    -e 's/! -t 0/1 -eq 0/' \
+		    -e 's/-t 0/1 -eq 1/' \
+		    -e 's,\(fetch_warn_eol ||\) return 1,\1 :,' \
+		    -e 's,sysctl -n kern.bootfile,echo /boot/kernel/kernel,' \
+		    ${JAILMNT}/usr/sbin/freebsd-update > \
+		    ${JAILMNT}/usr/sbin/freebsd-update.fixed
+		chmod +x ${JAILMNT}/usr/sbin/freebsd-update.fixed
 		if [ -z "${TORELEASE}" ]; then
-			injail env PAGER=/bin/cat /usr/sbin/freebsd-update fetch install
+			injail env PAGER=/bin/cat \
+			    /usr/sbin/freebsd-update.fixed fetch install
 		else
 			# Install new kernel
-			injail env PAGER=/bin/cat /usr/sbin/freebsd-update -r ${TORELEASE} upgrade install ||
-				err 1 "Fail to upgrade system"
+			injail env PAGER=/bin/cat \
+			    /usr/sbin/freebsd-update.fixed -r ${TORELEASE} \
+			    upgrade install || err 1 "Fail to upgrade system"
 			# Reboot
 			update_version_env ${TORELEASE}
 			# Install new world
-			injail env PAGER=/bin/cat /usr/sbin/freebsd-update install ||
-				err 1 "Fail to upgrade system"
+			injail env PAGER=/bin/cat \
+			    /usr/sbin/freebsd-update.fixed install || \
+			    err 1 "Fail to upgrade system"
 			# Reboot
 			update_version_env ${TORELEASE}
 			# Remove stale files
-			injail env PAGER=/bin/cat /usr/sbin/freebsd-update install || :
+			injail env PAGER=/bin/cat \
+			    /usr/sbin/freebsd-update.fixed install || :
 			jset ${JAILNAME} version ${TORELEASE}
 		fi
+		rm -f ${JAILMNT}/usr/sbin/freebsd-update.fixed
 		jstop
 		umountfs ${JAILMNT} 1
 		update_version
@@ -314,7 +328,7 @@ build_and_install_world() {
 	    cat ${POUDRIERED}/${SETNAME}-src.conf >> ${JAILMNT}/etc/src.conf
 	[ -f ${POUDRIERED}/${JAILNAME}-src.conf ] && cat ${POUDRIERED}/${JAILNAME}-src.conf >> ${JAILMNT}/etc/src.conf
 
-	if [ ${TARGET} -eq "mips" ]; then
+	if [ "${TARGET}" = "mips" ]; then
 		echo "WITH_ELFTOOLCHAIN_TOOLS=y" >> ${JAILMNT}/etc/src.conf
 	fi
 
@@ -333,9 +347,10 @@ build_and_install_world() {
 
 	if [ ${XDEV} -eq 1 ]; then
 		msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
-		${MAKE_CMD} -C ${SRC_BASE} native-xtools ${MAKE_JOBS} \
+		${MAKE_CMD} -C /usr/src native-xtools ${MAKE_JOBS} \
 		    ${MAKEWORLDARGS} NO_SHARED=y || err 1 "Failed to 'make native-xtools'"
 		XDEV_TOOLS=/usr/obj/${TARGET}.${TARGET_ARCH}/nxb-bin
+		rm -rf ${JAILMNT}/nxb-bin || err 1 "Failed to remove old native-xtools"
 		mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
 		cat >> ${JAILMNT}/etc/make.conf <<- EOF
 		CC=/nxb-bin/usr/bin/cc
@@ -367,13 +382,22 @@ build_and_install_world() {
 				usr/bin/touch usr/bin/sed usr/bin/patch \
 				usr/bin/install usr/bin/gunzip usr/bin/sort \
 				usr/bin/tar usr/bin/xargs usr/sbin/chown bin/cp \
-				bin/cat bin/chmod bin/csh bin/echo bin/expr \
+				bin/cat bin/chmod bin/echo bin/expr \
 				bin/hostname bin/ln bin/ls bin/mkdir bin/mv \
-				bin/realpath bin/rm bin/rmdir bin/sleep bin/sh \
+				bin/realpath bin/rm bin/rmdir bin/sleep \
 				sbin/sha256 sbin/sha512 sbin/md5 sbin/sha1"
+
+		# Endian issues on mips/mips64 are not handling exec of 64bit shells
+		# from emulated environments correctly.  This works just fine on ARM
+		# because of the same issue, so allow it for now.
+		[ ${TARGET} = "mips" ] || \
+		    HLINK_FILES="${HLINK_FILES} bin/sh bin/csh"
+
 		for file in ${HLINK_FILES}; do
-			rm -f ${JAILMNT}/${file}
-			sh -c "cd ${JAILMNT} && ln ./nxb-bin/${file} ${file}"
+			if [ -f "${JAILMNT}/nxb-bin/${file}" ]; then
+				rm -f ${JAILMNT}/${file}
+				ln ${JAILMNT}/nxb-bin/${file} ${JAILMNT}/${file}
+			fi
 		done
 	fi
 }
@@ -386,7 +410,7 @@ install_from_src() {
 	if [ -f ${SRC_BASE}/usr/src/.cpignore ]; then
 		cpignore_flag="-x"
 	else
-		cpignore=$(mktemp /tmp/cpignore.XXXXXX)
+		cpignore=$(mktemp -t cpignore)
 		cpignore_flag="-X ${cpignore}"
 		# Ignore some files
 		cat > ${cpignore} <<-EOF
@@ -394,7 +418,7 @@ install_from_src() {
 		.svn
 		EOF
 	fi
-	cpdup ${cpignore_flag} ${SRC_BASE} ${JAILMNT}/usr/src
+	cpdup -i0 ${cpignore_flag} ${SRC_BASE} ${JAILMNT}/usr/src
 	[ -n "${cpignore}" ] && rm -f ${cpignore}
 	echo " done"
 
@@ -472,6 +496,11 @@ install_from_ftp() {
 	5.[0-4]*) HASH=MD5 ;;
 	*) HASH=SHA256 ;;
 	esac
+
+	DISTS="${DISTS} base games"
+	[ -z "${SRCPATH}" ] && DISTS="${DISTS} src"
+	DISTS="${DISTS} ${EXTRA_DISTS}"
+
 	if [ ${V%%.*} -lt 9 ]; then
 		msg "Fetching sets for FreeBSD ${V} ${ARCH}"
 		case ${METHOD} in
@@ -492,8 +521,9 @@ install_from_ftp() {
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
 		ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
 		esac
-		DISTS="base dict src games"
-		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32"
+		DISTS="${DISTS} dict"
+		[ "${NO_LIB32:-no}" = "no" -a "${ARCH}" = "amd64" ] &&
+			DISTS="${DISTS} lib32"
 		for dist in ${DISTS}; do
 			fetch_file ${JAILMNT}/fromftp/ ${URL}/$dist/CHECKSUM.${HASH} ||
 				err 1 "Fail to fetch checksum file"
@@ -544,13 +574,16 @@ install_from_ftp() {
 			ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
 			url=*) URL=${METHOD##url=} ;;
 		esac
-		DISTS="base.txz src.txz games.txz"
-		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
+
+		# Games check - Removed from HEAD in r278616
+		DISTS="${DISTS} lib32"
+		fetch_file ${JAILMNT}/fromftp/MANIFEST ${URL}/MANIFEST
 		for dist in ${DISTS}; do
+			grep -q ${dist} ${JAILMNT}/fromftp/MANIFEST || continue
 			msg "Fetching ${dist} for FreeBSD ${V} ${ARCH}"
-			fetch_file ${JAILMNT}/fromftp/${dist} ${URL}/${dist}
+			fetch_file ${JAILMNT}/fromftp/${dist}.txz ${URL}/${dist}.txz
 			msg_n "Extracting ${dist}..."
-			tar -xpf ${JAILMNT}/fromftp/${dist} -C  ${JAILMNT}/ || err 1 " fail"
+			tar -xpf ${JAILMNT}/fromftp/${dist}.txz -C  ${JAILMNT}/ || err 1 " fail"
 			echo " done"
 		done
 	fi
@@ -568,7 +601,7 @@ install_from_tar() {
 
 create_jail() {
 	[ "${JAILNAME#*.*}" = "${JAILNAME}" ] ||
-		err 1 "The jailname can not contain a period (.). See jail(8)"
+		err 1 "The jailname cannot contain a period (.). See jail(8)"
 
 	if [ "${METHOD}" = "null" ]; then
 		[ -z "${JAILMNT}" ] && \
@@ -608,7 +641,7 @@ create_jail() {
 		RELEASE="${ALLBSDVER}-JPSNAP/ftp"
 		;;
 	svn*)
-		test -z "${SVN_CMD}" && err 1 "You need svn on your host to use svn method"
+		test -x "${SVN_CMD}" || err 1 "svn or svnlite not installed. Perhaps you need to 'pkg install subversion'"
 		case ${VERSION} in
 			stable/*![0-9]*)
 				err 1 "bad version number for stable version"
@@ -674,6 +707,7 @@ create_jail() {
 	jset ${JAILNAME} timestamp $(date +%s)
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
+	[ -n "$SRCPATH" ] && jset ${JAILNAME} srcpath ${SRCPATH}
 
 	# Wrap the jail creation in a special cleanup hook that will remove the jail
 	# if any error is encountered
@@ -691,7 +725,6 @@ create_jail() {
 	update_version_env "${RELEASE}"
 
 	pwd_mkdb -d ${JAILMNT}/etc/ -p ${JAILMNT}/etc/master.passwd
-	jail -U root -c path=${JAILMNT} command=/sbin/ldconfig -m /lib /usr/lib /usr/lib/compat
 
 	markfs clean ${JAILMNT}
 
@@ -712,7 +745,7 @@ info_jail() {
 	local building_started status log
 	local elapsed elapsed_days elapsed_hms elapsed_timestamp
 	local now start_time timestamp
-	local jversion jarch jmethod pmethod
+	local jversion jarch jmethod pmethod mnt fs
 
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 
@@ -734,11 +767,15 @@ info_jail() {
 	_jget jarch ${JAILNAME} arch
 	_jget jmethod ${JAILNAME} method
 	_jget timestamp ${JAILNAME} timestamp 2>/dev/null || :
+	_jget mnt ${JAILNAME} mnt 2>/dev/null || :
+	_jget fs ${JAILNAME} fs 2>/dev/null || fs=""
 
 	echo "Jail name:         ${JAILNAME}"
 	echo "Jail version:      ${jversion}"
 	echo "Jail arch:         ${jarch}"
 	echo "Jail method:       ${jmethod}"
+	echo "Jail mount:        ${mnt}"
+	echo "Jail fs:           ${fs}"
 	if [ -n "${timestamp}" ]; then
 		echo "Jail updated:      $(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
 	fi
@@ -773,29 +810,8 @@ info_jail() {
 	unset POUDRIERE_BUILD_TYPE
 }
 
-need_emulation() {
-	[ $# -eq 2 ] || eargs need_emulation real_arch wanted_arch
-	local real_arch="$1"
-	local wanted_arch="$2"
-
-	# Returning 1 means no emulation required.
-
-	# Check for host=amd64 and TARGET=i386 (not TARGET_ARCH due to
-	# pc98/i386)
-	if [ "${real_arch}" = "amd64" \
-	    -a "${wanted_arch%.*}" = "i386" ]; then
-		return 1
-	# TARGET_ARCH matches
-	elif [ "${real_arch#*.}" = "${wanted_arch#*.}" ]; then
-		return 1
-	fi
-
-	# Emulation is required
-	return 0
-}
-
 check_emulation() {
-	if need_emulation "${REALARCH}" "${ARCH}"; then
+	if need_emulation "${ARCH}"; then
 		msg "Cross-building ports for ${ARCH} on ${REALARCH} requires QEMU"
 		[ -x "${BINMISC}" ] || \
 		    err 1 "Cannot find ${BINMISC}. Install ${BINMISC} and restart"
@@ -805,8 +821,6 @@ check_emulation() {
 	fi
 }
 
-SCRIPTPATH=$(realpath $0)
-SCRIPTPREFIX=${SCRIPTPATH%/*}
 . ${SCRIPTPREFIX}/common.sh
 
 get_host_arch ARCH
@@ -826,7 +840,7 @@ SETNAME=""
 BINMISC="/usr/sbin/binmiscctl"
 XDEV=0
 
-while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:x" FLAG; do
+while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:S:x" FLAG; do
 	case "${FLAG}" in
 		i)
 			INFO=1
@@ -884,6 +898,10 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:x" FLAG; do
 			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			SRCPATCHFILE="${OPTARG}"
 			;;
+		S)
+			[ -d ${OPTARG} ] || err 1 "No such directory ${OPTARG}"
+			SRCPATH=${OPTARG}
+			;;
 		q)
 			QUIET=1
 			;;
@@ -905,6 +923,7 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:x" FLAG; do
 			SETNAME="${OPTARG}"
 			;;
 		*)
+			echo "Unknown flag '${FLAG}'"
 			usage
 			;;
 	esac

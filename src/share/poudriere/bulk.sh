@@ -24,7 +24,6 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
-set -e
 
 usage() {
 	cat << EOF
@@ -80,8 +79,6 @@ bulk_cleanup() {
 	[ -n "${CRASHED}" ] && run_hook bulk crashed
 }
 
-SCRIPTPATH=$(realpath $0)
-SCRIPTPREFIX=${SCRIPTPATH%/*}
 PTNAME="default"
 SKIPSANITY=0
 SKIP_RECURSIVE_REBUILD=0
@@ -214,7 +211,6 @@ read_packages_from_params "$@"
 
 run_hook bulk start
 
-madvise_protect $$
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
 _log_path LOGD

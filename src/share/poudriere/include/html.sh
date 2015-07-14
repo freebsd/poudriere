@@ -24,11 +24,6 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-start_html_json() {
-	json_main &
-	JSON_PID=$!
-}
-
 stress_snapshot() {
 	local loadvg swapinfo elapsed duration now min_load loadpct ncpu
 
@@ -40,7 +35,7 @@ stress_snapshot() {
 	[ ${ncpu} -gt ${NCPU} ] && ncpu=${NCPU}
 	loadpct="$(printf "%2.0f%%" $(echo "scale=20; 100 * (${min_load} / ${ncpu})" | bc))"
 	swapinfo=$(swapinfo -k|awk '/\// {sum+=$2; X+=$3} END {if (sum) {printf "%1.2f%%\n", X*100/sum}}')
-	now=$(date +%s)
+	now=$(clock_monotonic)
 	elapsed=$((${now} - ${TIME_START}))
 
 	bset snap_loadavg "(${loadpct}) ${loadavg}"
@@ -49,12 +44,14 @@ stress_snapshot() {
 	bset snap_now "${now}"
 }
 
-json_main() {
+html_json_main() {
+	# This is too noisy and hurts reading debug output.
+	local -; set +x
 	while :; do
 		stress_snapshot
 		update_stats || :
 		build_all_json
-		sleep 2
+		sleep 2 2>/dev/null
 	done
 }
 
@@ -119,24 +116,12 @@ build_top_json() {
 	mv -f ${tmpfile} ${log_path_top}/.data.json
 }
 
-stop_html_json() {
-	local log have_lock
+# This is called at the end
+html_json_cleanup() {
+	local log
 
 	_log_path log
-	if [ -n "${JSON_PID}" ]; then
-		# First acquire the update_stats lock to ensure the process
-		# doesn't get killed while holding it
-		have_lock=0
-		lock_acquire update_stats && have_lock=1
-
-		kill ${JSON_PID} 2>/dev/null || :
-		_wait ${JSON_PID} 2>/dev/null 1>&2 || :
-		unset JSON_PID
-
-		if [ ${have_lock} -eq 1 ]; then
-			lock_release update_stats || :
-		fi
-	fi
+	bset ended "$(date +%s)" || :
 	build_all_json 2>/dev/null || :
 	rm -f ${log}/.data.json.tmp ${log}/.data.mini.json.tmp 2>/dev/null || :
 }

@@ -74,6 +74,8 @@ USE_TMPFS=yes
 
 # If set the given directory will be used for the distfiles
 # This allows to share the distfiles between jails and ports tree
+# If this is "no", poudriere must be supplied a ports tree that already has
+# the required distfiles.
 DISTFILES_CACHE=/usr/ports/distfiles
 
 # If set the ports or source tree marked to use csup method will use the defined mirror

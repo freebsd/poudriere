@@ -31,7 +31,9 @@ examples_DATA=	src/share/examples/poudriere/nginx.conf.sample \
 hook_DATA=	src/etc/poudriere.d/hooks/bulk.sh.sample \
 		src/etc/poudriere.d/hooks/pkgbuild.sh.sample
 
-dist_pkgdata_DATA=	src/share/poudriere/bulk.sh \
+dist_pkgdata_DATA=	\
+			src/share/poudriere/api.sh \
+			src/share/poudriere/bulk.sh \
 			src/share/poudriere/clean.sh \
 			src/share/poudriere/common.sh \
 			src/share/poudriere/daemon.sh \
@@ -47,6 +49,7 @@ dist_pkgdata_DATA=	src/share/poudriere/bulk.sh \
 
 dist_include_HEADERS= \
 			src/share/poudriere/include/colors.sh \
+			src/share/poudriere/include/colors.pre.sh \
 			src/share/poudriere/include/common.sh.dragonfly \
 			src/share/poudriere/include/common.sh.freebsd \
 			src/share/poudriere/include/display.sh \
@@ -100,24 +103,30 @@ dist_dtimages_DATA=	src/share/poudriere/html/assets/DataTables-1.10.0/images/bac
 dist_rc_SCRIPTS=	src/etc/rc.d/poudriered
 
 pkglibexec_PROGRAMS= \
+		     clock_monotonic \
 		     cpdup \
 		     dirempty \
 		     dirwatch \
 		     nc \
 		     poudriered \
 		     rename \
+		     locked_mkdir \
+		     @SH@ \
 		     timeout \
 		     timestamp \
 		     tsort \
 		     jexecd \
 		     rexec \
 		     cached
+EXTRA_PROGRAMS= \
+		sh
 
 noinst_LIBRARIES=	libucl.a libnv.a
 
 AUTOMAKE_OPTIONS=	subdir-objects
 
 rename_SOURCES=	src/libexec/poudriere/rename/rename.c
+clock_monotonic_SOURCES=	src/libexec/poudriere/clock_monotonic/clock_monotonic.c
 cpdup_SOURCES=	src/libexec/poudriere/cpdup/cpdup.c \
 		src/libexec/poudriere/cpdup/hcproto.c \
 		src/libexec/poudriere/cpdup/hclink.c \
@@ -128,10 +137,44 @@ cpdup_LDADD=	-lmd
 cpdup_CFLAGS=	-D_ST_FLAGS_PRESENT_=1
 dirempty_SOURCES=	src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
+locked_mkdir_SOURCES=	src/libexec/poudriere/locked_mkdir/locked_mkdir.c
 nc_SOURCES=		src/libexec/poudriere/nc/nc.c
 timeout_SOURCES=	src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
 tsort_SOURCES=		src/libexec/poudriere/tsort/tsort.c
+sh_CFLAGS=		-DSHELL -DNO_HISTORY \
+			-I$(top_srcdir)/external/sh
+sh_SOURCES=		\
+			external/sh/redir.c \
+			external/sh/syntax.c \
+			external/sh/mail.c \
+			external/sh/cd.c \
+			external/sh/show.c \
+			external/sh/error.c \
+			external/sh/builtins.c \
+			external/sh/eval.c \
+			external/sh/jobs.c \
+			external/sh/main.c \
+			external/sh/memalloc.c \
+			external/sh/arith_yacc.c \
+			external/sh/histedit.c \
+			external/sh/output.c \
+			external/sh/alias.c \
+			external/sh/var.c \
+			external/sh/expand.c \
+			external/sh/kill.c \
+			external/sh/nodes.c \
+			external/sh/mystring.c \
+			external/sh/miscbltin.c \
+			external/sh/trap.c \
+			external/sh/arith_yylex.c \
+			external/sh/printf.c \
+			external/sh/exec.c \
+			external/sh/options.c \
+			external/sh/parser.c \
+			external/sh/input.c \
+			external/sh/test.c \
+			external/sh/bltin/echo.c
 libucl_a_SOURCES=	external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_emitter_streamline.c \
 			external/libucl/src/ucl_emitter_utils.c \
@@ -140,13 +183,15 @@ libucl_a_SOURCES=	external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_util.c \
 			external/libucl/src/xxhash.c
 libucl_a_CFLAGS=	-I$(top_srcdir)/external/libucl/uthash \
+			-I$(top_srcdir)/external/libucl/klib  \
 			-I$(top_srcdir)/external/libucl/include  \
 			-I$(top_srcdir)/external/libucl/src \
 			-Wno-unused-parameter -Wno-pointer-sign
-libnv_a_SOURCES=	external/libnv/dnvlist.c \
+libnv_a_CFLAGS=		-I$(top_srcdir)/external/libnv/
+libnv_a_SOURCES=	external/libnv/subr_dnvlist.c \
 			external/libnv/msgio.c \
-			external/libnv/nvlist.c \
-			external/libnv/nvpair.c
+			external/libnv/subr_nvlist.c \
+			external/libnv/subr_nvpair.c
 poudriered_SOURCES=	src/poudriered/poudriered.c
 poudriered_CFLAGS=	-DPREFIX=\"$(prefix)\" \
 			-I$(top_srcdir)/external/libucl/include
@@ -155,14 +200,14 @@ poudriered_LDADD=	libucl.a \
 			-lutil
 
 jexecd_SOURCES=	src/libexec/poudriere/jexecd/jexecd.c
-jexecd_CFLAGS=	-I$(top_srcdir)/external/libnv
+jexecd_CFLAGS=	-I$(top_srcdir)/external/libnv/sys
 jexecd_LDADD=	libnv.a \
 		-lsbuf \
 		-lutil \
 		-ljail
 
 rexec_SOURCES=	src/libexec/poudriere/rexec/rexec.c
-rexec_CFLAGS=	-I$(top_srcdir)/external/libnv
+rexec_CFLAGS=	-I$(top_srcdir)/external/libnv/sys
 rexec_LDADD=	libnv.a
 
 cached_SOURCES=	src/libexec/poudriere/cached/cached.c

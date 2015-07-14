@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd December 18, 2014
+.Dd June 6, 2015
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -400,6 +400,10 @@ This specifies which port tree to start/stop the jail with.
 Apply the specified
 .Ar patch
 to the source tree before building the jail.
+.It Fl S Ar srcpath
+Use the specified
+.Ar srcpath
+as the FreeBSD source tree mounted inside the jail.
 .It Fl t Ar version
 instead of upgrading to the latest security fix of the jail version, you can
 jump to the new specified
@@ -419,10 +423,10 @@ These subcommands are mutually exclusive.
 Creates a ports tree.
 .It Fl d
 Deletes a ports tree.
-.It Fl u
-Updates a ports tree.
 .It Fl l
 List all available ports trees.
+.It Fl u
+Update a ports tree.
 .El
 .Pp
 Except for
@@ -435,40 +439,6 @@ Here are the options associated with the
 .Cm ports
 command.
 .Bl -tag -width "-f conffile"
-.It Fl q
-Remove the header when
-.Fl l
-is the specified subcommand.
-Otherwise, it has no effect.
-.It Fl p Ar name
-Specifies the
-.Ar name
-of the ports tree to use.
-.It Fl F
-When used with
-.Fl c ,
-only create the needed ZFS file systems and directories, but do not
-populate them.
-.It Fl f Ar filesystem
-Specifies the
-.Ar filesystem
-name (${ZPOOL}/jails/filesystem).
-.It Fl n
-When combined with
-.Fl l ,
-only display ports tree name.
-.It Fl M Ar mountpoint
-Gives an alternative
-.Ar mountpoint
-when creating ports tree.
-.It Fl m Ar method
-Specifies which
-.Ar method
-to use to create the ports tree.
-Could be portsnap, git, svn{,+http,+https,+file,+ssh} (Default:
-portsnap).
-.It Fl v
-Show more verbose output.
 .It Fl B Ar branch
 Specifies which
 .Ar branch
@@ -478,10 +448,45 @@ or
 .Sy git
 methods.
 (Default: head/master)
+.It Fl F
+When used with
+.Fl c ,
+only create the needed file systems (for ZFS) and directories, but do
+not populate them.
+.It Fl M Ar mountpoint
+Path to the source of a ports tree.
+.It Fl f Ar filesystem
+The name of the
+.Ar filesystem
+to create for the ports tree.
+If 'none' then do not create a filesystem.
+Defaults to poudriere/ports/default.
 .It Fl k
 When used with
 .Fl d ,
-only unregister the ports tree with out removing the files.
+only unregister the ports tree without removing the files.
+.It Fl m Ar method
+When used with
+.Fl c ,
+specify which
+.Ar method
+to use to create the ports tree.
+Could be portsnap, git, none, svn{,+http,+https,+file,+ssh}.
+The default is portsnap.
+.It Fl n
+When combined with
+.Fl l ,
+only display the name of the ports tree.
+.It Fl p Ar name
+Specifies the
+.Ar name
+of the ports tree to use.
+.It Fl q
+When used with
+.Fl l ,
+remove the header in the list view.
+.It Fl v
+Show more verbose output.
 .El
 .Ss testport
 .Pp
@@ -912,6 +917,9 @@ Any of the following are allowed and will all be used in the order shown:
 .Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-blacklist
 .Dl /usr/local/etc/poudriere.d/<jailname>-<setname>-blacklist
 .Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-blacklist
+.Pp
+If QEMU is being used then a special qemu blacklist is also loaded.
+.Dl /usr/local/etc/poudriere.d/qemu-blacklist
 .Ss Create optional poudriere.conf
 You can also specify an optional poudriere.conf that is pulled in
 depending on the build.
@@ -953,11 +961,13 @@ command must be used on a recent version of FreeBSD, i.e. a version
 which has ZFS >= v15, and a zpool.
 .Sh CAVEATS
 .Ss Jailname
-.Fl j
-is the name of the jail which will also be the name of the zfs
-filesystem.
+.Fl j ,
+.Fl z
+and
+.Fl p
+are all used in the name of the jail.
 .Pp
-Be careful to respects the names supported by jail(8):
+Be careful to respect the names supported by jail(8):
 .Pp
 .Bd -literal
     "This is an arbitrary string that identifies a jail (except it
@@ -969,9 +979,9 @@ not in -stable or current:
 .Pp
 .Lk http://svn.freebsd.org/viewvc/base?view=revision&revision=209820
 .Sh BUGS
-In case of bugs, feel free to fill
+In case of bugs, feel free to file a report:
 .Pp
-.Lk http://fossil.etoilebsd.net/poudriere/reportlist
+.Lk https://github.com/freebsd/poudriere/issues
 .Sh AUTHORS
 .An Baptiste Daroussin Aq bapt@FreeBSD.org
 .An Bryan Drewery Aq bdrewery@FreeBSD.org

@@ -15,6 +15,10 @@ function group_type(type) {
     return "string"
   if (type == "mastername")
     return "string"
+  if (type == "started")
+    return "string"
+  if (type == "ended")
+    return "string"
   if (type == "builders")
     return "array"
   if (type == "jobs")

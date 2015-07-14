@@ -57,6 +57,11 @@
 #include <inttypes.h>
 #include <nv.h>
 
+#ifdef PROC_REAP_KILL
+static void killall(int sig);
+#endif
+static char *jailname = NULL;
+
 #define GET_USER_INFO do {						\
 	pwd = getpwnam(username);					\
 	if (pwd == NULL) {						\
@@ -103,6 +108,16 @@ log_as(const char *username) {
 	login_close(lcap);
 }
 
+#ifdef PROC_REAP_KILL
+static void
+killchildren(int ignored __unused)
+{
+
+	killall(SIGKILL);
+	exit(EXIT_FAILURE);
+}
+#endif
+
 static pid_t
 client_read(struct client *cl)
 {
@@ -148,14 +163,41 @@ client_read(struct client *cl)
 		goto err;
 
 	if ((pid = fork()) == 0) {
-		log_as(username);
-
+		signal(SIGCHLD, SIG_DFL);
 		close(STDIN_FILENO);
 		dup2(fdin, STDIN_FILENO);
 		close(STDOUT_FILENO);
 		dup2(fdout, STDOUT_FILENO);
 		close(STDERR_FILENO);
 		dup2(fderr, STDERR_FILENO);
+
+#ifdef PROC_REAP_KILL
+		/*
+		 * Do a double fork here to have a reaper process for
+		 * all children. jexecd is used not only for 1 process
+		 * per jail but multiple processes when computing deps.
+		 */
+		/* Acquire the reaper before fork to avoid races. */
+		if (procctl(P_PID, getpid(), PROC_REAP_ACQUIRE, NULL)
+		    == -1)
+			err(EXIT_FAILURE, "procctl(PROC_REAP_ACQUIRE)");
+		if ((pid = fork()) != 0) {
+			int status;
+
+			setproctitle("-reaper: poudriere(%s)", jailname);
+			signal(SIGTERM, killchildren);
+
+			/* Wait for the process to complete. */
+			if (waitpid(pid, &status, 0) < 0)
+				err(EXIT_FAILURE, "waitpid");
+			/* Now kill all of its descendants. */
+			killall(SIGKILL);
+			/* Return the original status back to jexecd master. */
+			exit(WEXITSTATUS(status));
+		}
+#endif
+
+		log_as(username);
 		setsid();
 		if (execvp(argv[0], argv) == -1) {
 			nvlist_destroy(nv);
@@ -211,19 +253,20 @@ client_accept(int fd)
 
 #ifdef PROC_REAP_KILL
 static void
-killall(void)
+killall(int sig)
 {
 	struct procctl_reaper_status info;
 	struct procctl_reaper_kill killemall;
 
-	procctl(P_PID, getpid(), PROC_REAP_STATUS, &info);
+	if (procctl(P_PID, getpid(), PROC_REAP_STATUS, &info) == -1)
+		err(EXIT_FAILURE, "procctl(PROC_REAP_STATUS)");
 	if (info.rs_children == 0)
 		return;
 
-	killemall.rk_sig = SIGKILL;
+	killemall.rk_sig = sig;
 	killemall.rk_flags = 0;
 
-	if (procctl(P_PID, getpid(), PROC_REAP_KILL, &killemall) != 0) {
+	if (procctl(P_PID, getpid(), PROC_REAP_KILL, &killemall) == -1) {
 		warnx("Fail to kill children");
 		return;
 	}
@@ -264,7 +307,8 @@ serve(int fd) {
 				EV_SET(&ke, cl->pid, EVFILT_PROC, EV_DELETE, NOTE_EXIT, 0, cl);
 				kevent(kq, &ke, 1, NULL, 0, NULL);
 #ifdef PROC_REAP_KILL
-				killall();
+				/* Signal reaper to kill children and exit. */
+				kill(cl->pid, SIGTERM);
 #else
 				killpg(cl->pid, SIGKILL);
 #endif
@@ -279,7 +323,11 @@ serve(int fd) {
 			continue;
 		} else if (ke.filter == EVFILT_PROC) {
 #ifdef PROC_REAP_KILL
-			killall();
+			/*
+			 * No need to kill children when using reaper as
+			 * the reaper manages it; The process returned here
+			 * is the repear.
+			 */
 #else
 			killpg(cl->pid, SIGKILL);
 #endif
@@ -298,7 +346,6 @@ int
 main(int argc, char **argv)
 {
 	struct sockaddr_un un;
-	char *jailname = NULL;
        	char *dir = NULL;
 	char path[MAXPATHLEN];
 	pid_t otherpid;
@@ -386,11 +433,6 @@ main(int argc, char **argv)
 	chdir("/");
 
 	log_as("root");
-
-#ifdef PROC_REAP_KILL
-	/* Acquire the reaper */
-	procctl(P_PID, getpid(), PROC_REAP_ACQUIRE, NULL);
-#endif
 
 	serve(server_fd);
 }

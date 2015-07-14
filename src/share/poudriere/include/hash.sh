@@ -22,6 +22,48 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+# - must be last
+: ${HASH_VAR_NAME_SUB_GLOB:="[/.+,-]"}
+
+if ! type eargs 2>/dev/null >&2; then
+	eargs() {
+		local badcmd="$1"
+		shift
+		echo "Bad arguments, ${badcmd}: ""$@" >&2
+		exit 1
+	}
+fi
+
+# Based on Shell Scripting Recipes - Chris F.A. Johnson (c) 2005
+# Replace a pattern without needing a subshell/exec
+_gsub() {
+	[ $# -ne 3 ] && eargs _gsub string pattern replacement
+	local string="$1"
+	local pattern="$2"
+	local replacement="$3"
+	local result_l= result_r="${string}"
+
+	while :; do
+		case ${result_r} in
+			*${pattern}*)
+				result_l=${result_l}${result_r%%${pattern}*}${replacement}
+				result_r=${result_r#*${pattern}}
+				;;
+			*)
+				break
+				;;
+		esac
+	done
+
+	_gsub="${result_l}${result_r}"
+}
+
+
+gsub() {
+	_gsub "$@"
+	echo "${_gsub}"
+}
+
 _hash_var_name() {
 	# Replace all HASH_VAR_NAME_SUB_GLOB with _
 	_gsub "_HASH_${1}_${2}" ${HASH_VAR_NAME_SUB_GLOB} _
@@ -29,6 +71,7 @@ _hash_var_name() {
 }
 
 hash_get() {
+	local -; set +x
 	[ $# -ne 3 ] && eargs hash_get var key var_return
 	local var="$1"
 	local key="$2"
@@ -55,6 +98,7 @@ hash_get() {
 }
 
 hash_set() {
+	local -; set +x
 	[ $# -eq 3 ] || eargs hash_set var key value
 	local var="$1"
 	local key="$2"
@@ -68,7 +112,23 @@ hash_set() {
 	setvar "${hash_var_name}" "${value}"
 }
 
+hash_remove() {
+	local -; set +x
+	[ $# -ne 3 ] && eargs hash_get var key var_return
+	local var="$1"
+	local key="$2"
+	local ret
+
+	ret=0
+	hash_get "$@" || ret=$?
+	if [ ${ret} -eq 0 ]; then
+		hash_unset "${var}" "${key}"
+	fi
+	return ${ret}
+}
+
 hash_unset() {
+	local -; set +x
 	[ $# -eq 2 ] || eargs hash_unset var key
 	local var="$1"
 	local key="$2"

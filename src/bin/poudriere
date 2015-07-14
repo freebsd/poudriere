@@ -85,15 +85,21 @@ shift $((OPTIND-1))
 
 POUDRIEREPATH=`realpath $0`
 POUDRIEREPREFIX=${POUDRIEREPATH%\/bin/*}
-POUDRIEREPREFIX=${POUDRIEREPREFIX}/share/poudriere
+SCRIPTPREFIX=${POUDRIEREPREFIX}/share/poudriere
 
 CMD=$1
 shift
-CMD_ENV="PATH=${PATH} POUDRIERE_VERSION=${POUDRIERE_VERSION}"
 [ -n "${POUDRIERE_ETC}" ] && CMD_ENV="${CMD_ENV} POUDRIERE_ETC=${POUDRIERE_ETC}"
 [ -n "${USE_COLORS}" ] && CMD_ENV="${CMD_ENV} USE_COLORS=${USE_COLORS}"
 # Support running from checkout.
-[ "$0" = "src/bin/poudriere" ] && CMD_ENV="${CMD_ENV} LIBEXECPREFIX=${PWD}"
+if [ "${POUDRIEREPATH%src/bin/poudriere}" != "${POUDRIEREPATH}" ]; then
+	LIBEXECPREFIX="${POUDRIEREPATH%src/bin/poudriere}"
+else
+	LIBEXECPREFIX="${POUDRIEREPREFIX}/libexec/poudriere"
+fi
+CMD_ENV="${CMD_ENV} LIBEXECPREFIX=${LIBEXECPREFIX}"
+CMD_ENV="${CMD_ENV} PATH=${LIBEXECPREFIX}:${PATH}:/sbin:/usr/sbin"
+CMD_ENV="${CMD_ENV} POUDRIERE_VERSION=${POUDRIERE_VERSION}"
 
 # Handle special-case commands first.
 case "${CMD}" in
@@ -111,6 +117,9 @@ case "${CMD}" in
 		CMD_ENV="${CMD_ENV} SAVED_TERM=${SAVED_TERM}"
 esac
 
+SCRIPTPATH="${SCRIPTPREFIX}/${CMD}.sh"
+CMD_ENV="${CMD_ENV} SCRIPTPATH=${SCRIPTPATH} SCRIPTPREFIX=${SCRIPTPREFIX}"
+
 case "${CMD}" in
 	api|bulk|distclean|daemon|jail|ports|options|pkgclean|queue|status|testport)
 		;;
@@ -120,4 +129,12 @@ case "${CMD}" in
 		;;
 esac
 
-exec env -i ${CMD_ENV} /bin/sh ${SETX} "${POUDRIEREPREFIX}/${CMD}.sh" $@
+case "${CMD}" in
+	jail|ports|daemon|status|options)
+		;;
+	*)
+		SET_ERREXIT=-e
+		;;
+esac
+
+exec env -i ${CMD_ENV} sh ${SET_ERREXIT} ${SETX} "${SCRIPTPATH}" "$@"

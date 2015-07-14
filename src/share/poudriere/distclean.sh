@@ -24,7 +24,6 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
-set -e
 
 usage() {
 	cat <<EOF
@@ -44,8 +43,6 @@ EOF
 	exit 1
 }
 
-SCRIPTPATH=$(realpath $0)
-SCRIPTPREFIX=${SCRIPTPATH%/*}
 DRY_RUN=0
 ALL=1
 
@@ -89,9 +86,7 @@ distfiles_cleanup() {
 get_distinfo() {
 	local port="$1"
 
-	mangle_stderr "${COLOR_WARN}WARNING" \
-	    "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
-	    "${COLOR_RESET}" \
+	prefix_stderr_quick "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
 	    make -C "${PORTSDIR}/${port}" -V DISTINFO_FILE
 }
 

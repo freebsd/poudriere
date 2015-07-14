@@ -173,7 +173,7 @@ function update_canvas(stats) {
 	} else {
 		pctdonetxt = Math.floor(pctdone);
 	}
-	$('#progresspct').text(pctdone + '%');
+	$('#progresspct').text(pctdonetxt + '%');
 
 	$('#stats_remaining').html(remaining);
 }
@@ -484,8 +484,10 @@ function process_data_build(data) {
 	var html, a, n, table_rows, status, builder, now, row, dtrow, is_stopped;
 
 	if (data.snap && data.snap.now) {
+		// New data is relative to the 'job.started' time, not epoch.
 		now = data.snap.now;
 	} else {
+		// Legacy data based on epoch time.
 		now = Math.floor(new Date().getTime() / 1000);
 	}
 
@@ -513,6 +515,17 @@ function process_data_build(data) {
 	else
 		$('#svn_url').hide();
 	$('#build_info_div').show();
+
+	/* Backwards compatibility */
+	if (data.status && data.status instanceof Array && !data.jobs) {
+		data.jobs = data.status;
+		if (data.jobs[0] && data.jobs[0].id == "main") {
+			data.status = data.jobs[0].status;
+			data.jobs.splice(0, 1);
+		} else {
+			data.status = undefined;
+		}
+	}
 
 	if (data.status) {
 		status = translate_status(data.status);
