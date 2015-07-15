@@ -1690,6 +1690,9 @@ jail_start() {
 	jstart
 	injail service ldconfig start >/dev/null || \
 	    err 1 "Failed to set ldconfig paths."
+
+	run_hook jail start
+
 	WITH_PKGNG=$(injail make -f /usr/ports/Mk/bsd.port.mk -V WITH_PKGNG)
 	if [ -n "${WITH_PKGNG}" ]; then
 		PKGNG=1
@@ -1709,8 +1712,6 @@ jail_start() {
 		PKG_VERSION=pkg_version
 		PKG_EXT="tbz"
 	fi
-
-	run_hook jail start
 
 	return 0
 }
