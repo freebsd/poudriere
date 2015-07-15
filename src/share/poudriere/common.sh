@@ -1619,6 +1619,8 @@ jail_start() {
 	[ -z "${NO_FORCE_PACKAGE}" ] && export FORCE_PACKAGE=yes
 	[ -z "${NO_PACKAGE_BUILDING}" ] && export PACKAGE_BUILDING=yes
 
+	# Only set STATUS=1 if not turned off
+	# jail -s should not do this or jail will stop on EXIT
 	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
 	msg_n "Creating the reference jail..."
 	if [ ${USE_CACHED} = "yes" ]; then
@@ -1690,8 +1692,6 @@ jail_start() {
 	jstart
 	injail service ldconfig start >/dev/null || \
 	    err 1 "Failed to set ldconfig paths."
-	# Only set STATUS=1 if not turned off
-	# jail -s should not do this or jail will stop on EXIT
 	WITH_PKGNG=$(injail make -f /usr/ports/Mk/bsd.port.mk -V WITH_PKGNG)
 	if [ -n "${WITH_PKGNG}" ]; then
 		PKGNG=1
