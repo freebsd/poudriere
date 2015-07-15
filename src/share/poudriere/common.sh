@@ -1712,13 +1712,6 @@ jail_start() {
 		PKG_EXT="tbz"
 	fi
 
-	# 8.3 did not have distrib-dirs ran on it, so various
-	# /usr and /var dirs are missing. Namely /var/games
-	if [ "$(injail uname -r | cut -d - -f 1 )" = "8.3" ]; then
-		injail mtree -eu -f /etc/mtree/BSD.var.dist -p /var >/dev/null 2>&1 || :
-		injail mtree -eu -f /etc/mtree/BSD.usr.dist -p /usr >/dev/null 2>&1 || :
-	fi
-
 	run_hook jail start
 
 	return 0
