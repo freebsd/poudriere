@@ -14,10 +14,13 @@
 /cpdup
 /dirempty
 /dirwatch
+/libnv.a
+/libucl.a
 /locked_mkdir
 /jexecd
 /make_index
 /nc
+/poudriered
 /poudriere_statsd
 /rename
 /rexec
@@ -31,7 +34,6 @@ config.status
 config.log
 host-upgrade.sh
 poudriere.fossil
-poudriered
 src/bin/poudriere.8.gz
 src/config.h
 src/etc/rc.d/poudriered
