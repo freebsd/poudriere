@@ -167,7 +167,7 @@ Skip incremental rebuild and sanity checks. Sanity tests are made to check if th
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;S</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Don't recrusively rebuild packages affected by other packages requiring incremental rebuild. This is a subset of <b class="flag">&#45;s</b>. This may result in broken packages if the ones they depend on are updated and are not ABI-compatible.</dd>
+Don't recursively rebuild packages affected by other packages requiring incremental rebuild. This is a subset of <b class="flag">&#45;s</b>. This may result in broken packages if the ones they depend on are updated and are not ABI-compatible.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;t</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
@@ -455,7 +455,7 @@ Skip incremental rebuild and sanity checks. Sanity tests are made to check if th
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;S</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Don't recrusively rebuild packages affected by other packages requiring incremental rebuild. This is a subset of <b class="flag">&#45;s</b>. This may result in broken packages if the ones they depend on are updated and are not ABI-compatible.</dd>
+Don't recursively rebuild packages affected by other packages requiring incremental rebuild. This is a subset of <b class="flag">&#45;s</b>. This may result in broken packages if the ones they depend on are updated and are not ABI-compatible.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;v</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
