@@ -283,7 +283,7 @@ installworld() {
 	return 0
 }
 
-setup_compat_env() {
+setup_build_env() {
 	local osversion hostver
 
 	osversion=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' ${SRC_BASE}/sys/sys/param.h)
@@ -307,6 +307,9 @@ setup_compat_env() {
 			unset CCACHE_TEMPDIR
 		fi
 	fi
+
+	export TARGET=${ARCH%.*}
+	export TARGET_ARCH=${ARCH#*.}
 }
 
 build_and_install_world() {
@@ -314,9 +317,6 @@ build_and_install_world() {
 		mkdir -p ${JAILMNT}${EMULATOR%/*}
 		cp "${EMULATOR}" "${JAILMNT}${EMULATOR}"
 	fi
-
-	export TARGET=${ARCH%.*}
-	export TARGET_ARCH=${ARCH#*.}
 
 	export SRC_BASE=${JAILMNT}/usr/src
 	mkdir -p ${JAILMNT}/etc
@@ -336,7 +336,7 @@ build_and_install_world() {
 	export SRCCONF=${JAILMNT}/etc/src.conf
 	MAKE_JOBS="-j${PARALLEL_JOBS}"
 
-	setup_compat_env
+	setup_build_env
 
 	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
 	${MAKE_CMD} -C ${SRC_BASE} buildworld ${MAKE_JOBS} \
@@ -420,7 +420,7 @@ install_from_src() {
 	[ -n "${cpignore}" ] && rm -f ${cpignore}
 	echo " done"
 
-	setup_compat_env
+	setup_build_env
 	installworld
 }
 
