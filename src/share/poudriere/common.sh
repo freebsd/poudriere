@@ -1619,6 +1619,8 @@ jail_start() {
 	[ -z "${NO_FORCE_PACKAGE}" ] && export FORCE_PACKAGE=yes
 	[ -z "${NO_PACKAGE_BUILDING}" ] && export PACKAGE_BUILDING=yes
 
+	# Only set STATUS=1 if not turned off
+	# jail -s should not do this or jail will stop on EXIT
 	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
 	msg_n "Creating the reference jail..."
 	if [ ${USE_CACHED} = "yes" ]; then
@@ -1690,8 +1692,9 @@ jail_start() {
 	jstart
 	injail service ldconfig start >/dev/null || \
 	    err 1 "Failed to set ldconfig paths."
-	# Only set STATUS=1 if not turned off
-	# jail -s should not do this or jail will stop on EXIT
+
+	run_hook jail start
+
 	WITH_PKGNG=$(injail make -f /usr/ports/Mk/bsd.port.mk -V WITH_PKGNG)
 	if [ -n "${WITH_PKGNG}" ]; then
 		PKGNG=1
@@ -1711,15 +1714,6 @@ jail_start() {
 		PKG_VERSION=pkg_version
 		PKG_EXT="tbz"
 	fi
-
-	# 8.3 did not have distrib-dirs ran on it, so various
-	# /usr and /var dirs are missing. Namely /var/games
-	if [ "$(injail uname -r | cut -d - -f 1 )" = "8.3" ]; then
-		injail mtree -eu -f /etc/mtree/BSD.var.dist -p /var >/dev/null 2>&1 || :
-		injail mtree -eu -f /etc/mtree/BSD.usr.dist -p /usr >/dev/null 2>&1 || :
-	fi
-
-	run_hook jail start
 
 	return 0
 }
