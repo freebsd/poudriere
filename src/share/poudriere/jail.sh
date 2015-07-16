@@ -405,6 +405,9 @@ build_and_install_world() {
 install_from_src() {
 	local cpignore_flag cpignore
 
+	export TARGET=${ARCH%.*}
+	export TARGET_ARCH=${ARCH#*.}
+
 	msg_n "Copying ${SRC_BASE} to ${JAILMNT}/usr/src..."
 	mkdir -p ${JAILMNT}/usr/src
 	if [ -f ${SRC_BASE}/usr/src/.cpignore ]; then
