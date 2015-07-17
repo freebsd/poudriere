@@ -78,10 +78,6 @@ USE_TMPFS=yes
 # the required distfiles.
 DISTFILES_CACHE=/usr/ports/distfiles
 
-# If set the ports or source tree marked to use csup method will use the defined mirror
-# Note: csup is deprecated. Use svn instead.
-#CSUP_HOST=cvsup._CHANGE_THIS_.freebsd.org
-
 # If set the ports tree or source tree marked to use svn will use the defined
 # mirror (default: svn0.us-west.FreeBSD.org)
 # The full mirror list is available here:

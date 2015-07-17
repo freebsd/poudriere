@@ -55,7 +55,7 @@ Options:
     -m method     -- When used with -c, overrides the default method for
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
-                       allbsd, csup, ftp, http, ftp-archive, null, src, svn,
+                       allbsd, ftp, http, ftp-archive, null, src, svn,
                        svn+file, svn+http, svn+https, svn+ssh, tar=PATH
                        url=SOMEURL
     -P patch      -- Specify a patch to apply to the source before building.
@@ -233,13 +233,6 @@ update_jail() {
 		update_version_env $(jget ${JAILNAME} version)
 		markfs clean ${JAILMNT}
 		;;
-	csup)
-		msg "csup has been deprecated by FreeBSD. Only use if you are syncing with your own csup repo."
-		install_from_csup
-		update_version_env $(jget ${JAILNAME} version)
-		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
-		markfs clean ${JAILMNT}
-		;;
 	svn*)
 		install_from_svn version_extra
 		RELEASE=$(update_version "${version_extra}")
@@ -260,7 +253,7 @@ update_jail() {
 		delete_jail
 		create_jail
 		;;
-	null|tar)
+	csup|null|tar)
 		err 1 "Upgrade is not supported with ${METHOD}; to upgrade, please delete and recreate the jail"
 		;;
 	*)
@@ -466,25 +459,6 @@ install_from_svn() {
 	setvar "${var_version_extra}" "r${svn_rev}"
 }
 
-install_from_csup() {
-	local var_version_extra="$1"
-	local UPDATE=0
-	[ -d "${SRC_BASE}" ] && UPDATE=1
-	mkdir -p ${JAILMNT}/etc
-	mkdir -p ${JAILMNT}/var/db
-	mkdir -p ${JAILMNT}/usr
-	[ -z ${CSUP_HOST} ] && err 2 "CSUP_HOST has to be defined in the configuration to use csup"
-	if [ "${UPDATE}" -eq 0 ]; then
-		echo "*default base=${JAILMNT}/var/db
-*default prefix=${JAILMNT}/usr
-*default release=cvs tag=${VERSION}
-*default delete use-rel-suffix
-src-all" > ${JAILMNT}/etc/supfile
-	fi
-	csup -z -h ${CSUP_HOST} ${JAILMNT}/etc/supfile || err 1 "Fail to fetch sources"
-	build_and_install_world
-}
-
 install_from_ftp() {
 	local var_version_extra="$1"
 	mkdir ${JAILMNT}/fromftp
@@ -661,24 +635,6 @@ create_jail() {
 				;;
 		esac
 		FCT=install_from_svn
-		;;
-	csup)
-		case ${VERSION} in
-			.)
-				;;
-			RELENG_*![0-9]*_[0-9])
-				err 1 "bad version number for RELENG"
-				;;
-			RELENG_*![0-9]*)
-				err 1 "bad version number for RELENG"
-				;;
-			RELENG_*|.) ;;
-			*)
-				err 1 "version with csup should be: . or RELENG_N or RELEASE_N"
-				;;
-		esac
-		msg "csup has been depreciated by FreeBSD. Only use if you are syncing with your own csup repo."
-		FCT=install_from_csup
 		;;
 	src=*)
 		SRC_BASE="${METHOD#src=}"
