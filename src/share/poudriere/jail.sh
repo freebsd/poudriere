@@ -180,6 +180,9 @@ rename_jail() {
 update_jail() {
 	SRC_BASE="${JAILMNT}/usr/src"
 	METHOD=$(jget ${JAILNAME} method)
+	SCM_BRANCH=$(jget ${JAILNAME} scm_branch 2>/dev/null)
+	SCM_URL=$(jget ${JAILNAME} scm_url 2>/dev/null)
+	_jget ARCH ${JAILNAME} arch
 	if [ -z "${METHOD}" -o "${METHOD}" = "-" ]; then
 		METHOD="ftp"
 		jset ${JAILNAME} method ${METHOD}
@@ -236,6 +239,15 @@ update_jail() {
 		msg "csup has been deprecated by FreeBSD. Only use if you are syncing with your own csup repo."
 		install_from_csup
 		update_version_env $(jget ${JAILNAME} version)
+		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
+		markfs clean ${JAILMNT}
+		;;
+	git*)
+		install_from_git version_extra
+		RELEASE=$(update_version "${version_extra}")
+		jset ${JAILNAME} scm_branch "${SCM_BRANCH}"
+		jset ${JAILNAME} scm_url "${SCM_URL}"
+		update_version_env "${RELEASE}"
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
@@ -422,6 +434,44 @@ install_from_src() {
 
 	setup_build_env
 	installworld
+}
+
+install_from_git() {
+	local var_version_extra="$1"
+	local UPDATE=0
+	local proto
+	local git_sha
+
+	if [ -d "${SRC_BASE}" ]; then
+		UPDATE=1
+	else
+		mkdir -p ${SRC_BASE}
+	fi
+	case ${METHOD} in
+	git+http) proto="http" ;;
+	git+https) proto="https" ;;
+	git+ssh) proto="git+ssh" ;;
+	git+file) proto="file" ;;
+	git) proto="git" ;;
+	esac
+	if [ ${UPDATE} -eq 0 ]; then
+		msg_n "Checking out the sources using git..."
+		${GIT_CMD} clone --depth 1 ${SCM_BRANCH:+-b ${SCM_BRANCH}}  ${proto}://${SCM_URL} ${SRC_BASE} || err 1 " fail"
+		echo " done"
+		if [ -n "${SRCPATCHFILE}" ]; then
+			msg_n "Patching the sources with ${SRCPATCHFILE}"
+			( cd ${SRC_BASE} && patch -p0 < "${SRCPATCHFILE}") || err 1 " fail"
+			echo done
+		fi
+	else
+		msg_n "Updating the sources from svn..."
+		( cd "${SRC_BASE}" && ${GIT_CMD} pull ) || err 1 " fail"
+		echo " done"
+	fi
+	build_and_install_world
+
+	git_sha=$(${GIT_CMD} rev-parse --short HEAD)
+	setvar "${var_version_extra}" "${git_sha}"
 }
 
 install_from_svn() {
@@ -634,6 +684,12 @@ create_jail() {
 		IFS=${OIFS}
 		RELEASE="${ALLBSDVER}-JPSNAP/ftp"
 		;;
+	git*)
+		test -z "${GIT_CMD}" && err 1 "You need git on your host to use svn method"
+		test -z "${SCM_BRANCH}" && err 1 "You need to specify an SCM_BRANCH (-b) for git"
+		test -z "${SCM_URL}" && err 1 "You need to specify an SCM_URL (-U) for git"
+		FCT=install_from_git
+		;;
 	svn*)
 		test -x "${SVN_CMD}" || err 1 "svn or svnlite not installed. Perhaps you need to 'pkg install subversion'"
 		case ${VERSION} in
@@ -706,6 +762,8 @@ create_jail() {
 	# if any error is encountered
 	CLEANUP_HOOK=cleanup_new_jail
 	jset ${JAILNAME} method ${METHOD}
+	[ -n "${SCM_BRANCH}" ] && jset ${JAILNAME} scm_branch ${SCM_BRANCH}
+	[ -n "${SCM_URL}" ] && jset ${JAILNAME} scm_branch ${SCM_URL}
 	[ -n "${FCT}" ] && ${FCT} version_extra
 
 	if [ -r "${SRC_BASE}/sys/conf/newvers.sh" ]; then
@@ -833,7 +891,7 @@ SETNAME=""
 BINMISC="/usr/sbin/binmiscctl"
 XDEV=0
 
-while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:x" FLAG; do
+while getopts "iJ:j:v:a:b:z:m:nf:M:sdklqcip:r:uU:t:z:P:x" FLAG; do
 	case "${FLAG}" in
 		i)
 			INFO=1
@@ -852,6 +910,12 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:x" FLAG; do
 			# If TARGET=TARGET_ARCH trim it away and just use
 			# TARGET_ARCH
 			[ "${ARCH%.*}" = "${ARCH#*.}" ] && ARCH="${ARCH#*.}"
+			;;
+		b)
+			SCM_BRANCH=${OPTARG}
+			;;
+		U)
+			SCM_URL=${OPTARG}
 			;;
 		m)
 			METHOD=${OPTARG}

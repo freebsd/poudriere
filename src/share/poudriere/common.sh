@@ -4567,6 +4567,7 @@ fi
 : ${PORTBUILD_USER:=nobody}
 : ${BUILD_AS_NON_ROOT:=no}
 : ${SVN_CMD:=$(which svn 2>/dev/null || which svnlite 2>/dev/null)}
+: ${GIT_CMD:=$(which git 2>/dev/null)}
 # 24 hours for 1 command
 : ${MAX_EXECUTION_TIME:=86400}
 # 120 minutes with no log update
