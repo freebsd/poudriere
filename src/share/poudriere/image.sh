@@ -141,7 +141,6 @@ mkdir -p ${WRKDIR}/out
 cat >> ${excludelist} << EOF
 usr/src
 EOF
-cat ${excludelist}
 # Use of tar given cpdup has a pretty useless -X option for this case
 tar -C ${mnt} -X ${excludelist} -cf - . | tar -xf - -C ${WRKDIR}/world
 mkdir -p ${WRKDIR}/world/etc/rc.conf.d
@@ -173,13 +172,21 @@ esac
 
 case ${MEDIATYPE} in
 iso*)
-	set -x
+	FINALIMAGE=${IMAGENAME}.iso
 	makefs -t cd9660 -o rockridge -o label=${IMAGENAME} \
 		-o publisher="poudriere" \
 		-o bootimage="i386;${WRKDIR}/out/boot/cdboot" \
-		-o no-emul-boot ${OUTPUTDIR}/${IMAGENAME}.iso ${WRKDIR}/out
-	FINALIMAGE=${IMAGENAME}.iso
-	set +x
+		-o no-emul-boot ${OUTPUTDIR}/${FINALIMAGE} ${WRKDIR}/out
+	;;
+usb+mfs)
+	FINALIMAGE=${IMAGENAME}.img
+	makefs -B little ${WRKDIR}/img.part ${WRKDIR}/out
+	mkimg -s gpt -b ${WRKDIR}/out/boot/pmbr \
+		-p efi:=${WRKDIR}/out/boot/boot1.efifat \
+		-p freebsd-boot:=${WRKDIR}/out/boot/gptboot \
+		-p freebsd-ufs:=${WRKDIR}/img.part \
+		-p freebsd-swap::1M \
+		-o ${OUTPUTDIR}/${FINALIMAGE}
 	;;
 esac
 
