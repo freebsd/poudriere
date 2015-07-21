@@ -51,6 +51,7 @@ Options:
                      (Default: same as the host)
     -f fs         -- FS name (tank/jails/myjail) if fs is "none" then do not
                      create on ZFS.
+    -K kernel     -- Build the jail with the kernel
     -M mountpoint -- Mountpoint
     -m method     -- When used with -c, overrides the default method for
                      obtaining and building the jail. See poudriere(8) for more
@@ -273,6 +274,11 @@ installworld() {
 	    distrib-dirs || err 1 "Failed to 'make distrib-dirs'"
 	${MAKE_CMD} -C "${SRC_BASE}" DESTDIR=${destdir} distribution ||
 	    err 1 "Failed to 'make distribution'"
+	if [ -n "${KERNEL}" ]; then
+		msg "Starting make installkernel"
+		${MAKE_CMD} -C "${SRC_BASE}" installkernel DESTDIR=${destdir} \
+			|| err 1 "Failed to 'make installkernel'"
+	fi
 
 	return 0
 }
@@ -335,6 +341,13 @@ build_and_install_world() {
 	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
 	${MAKE_CMD} -C ${SRC_BASE} buildworld ${MAKE_JOBS} \
 	    ${MAKEWORLDARGS} || err 1 "Failed to 'make buildworld'"
+
+	if [ -n "${KERNEL}" ]; then
+		msg "Starting make buildkernel with ${PARALLEL_JOBS} jobs"
+		${MAKE_CMD} -C ${SRC_BASE} buildkernel ${MAKE_JOBS} \
+			KERNCONF=${KERNEL} ${MAKEWORLDARGS} || \
+			err 1 "Failed to 'make buildkernel'"
+	fi
 
 	installworld
 
@@ -498,6 +511,7 @@ install_from_ftp() {
 		DISTS="${DISTS} dict"
 		[ "${NO_LIB32:-no}" = "no" -a "${ARCH}" = "amd64" ] &&
 			DISTS="${DISTS} lib32"
+		[ -n "${KERNEL}" ] && DISTS="${DISTS} kernels"
 		for dist in ${DISTS}; do
 			fetch_file ${JAILMNT}/fromftp/ ${URL}/$dist/CHECKSUM.${HASH} ||
 				err 1 "Fail to fetch checksum file"
@@ -551,6 +565,7 @@ install_from_ftp() {
 
 		# Games check - Removed from HEAD in r278616
 		DISTS="${DISTS} lib32"
+		[ -n "${KERNEL}" ] && DISTS="${DISTS} kernel"
 		fetch_file ${JAILMNT}/fromftp/MANIFEST ${URL}/MANIFEST
 		for dist in ${DISTS}; do
 			grep -q ${dist} ${JAILMNT}/fromftp/MANIFEST || continue
@@ -796,7 +811,7 @@ SETNAME=""
 BINMISC="/usr/sbin/binmiscctl"
 XDEV=0
 
-while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:S:x" FLAG; do
+while getopts "iJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:ut:z:P:S:x" FLAG; do
 	case "${FLAG}" in
 		i)
 			INFO=1
@@ -833,6 +848,9 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:S:x" FLAG; do
 			;;
 		k)
 			STOP=1
+			;;
+		K)
+			KERNEL=${OPTARG:-GENERIC}
 			;;
 		l)
 			LIST=1

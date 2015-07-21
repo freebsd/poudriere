@@ -390,6 +390,14 @@ variable in
 Specifies the
 .Ar filesystem
 name (${ZPOOL}/jails/filesystem).
+.It Fl K Ar kernelname
+Install the jail with a kernel.
+If the
+.Ar kernelname
+is an empty string GENERIC will be used.
+If installing from ftp then the default kernel will be installed what ever the
+.Ar kernelname
+value is.
 .It Fl M Ar mountpoint
 Gives an alternative
 .Ar mountpoint
