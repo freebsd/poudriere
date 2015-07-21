@@ -59,24 +59,24 @@ EOF
 
 SETX=""
 while getopts "e:Nx" FLAG; do
-        case "${FLAG}" in
-		e)
-			if [ ! -d "$OPTARG" ]; then
-				echo "Error: argument '$OPTARG' not a directory"
-				exit 1
-			fi
-			export POUDRIERE_ETC=$OPTARG
-			;;
-		N)
-			USE_COLORS="no"
-			;;
-                x)
-                        SETX="-x"
-                        ;;
-                *)
-                        usage
-                        ;;
-        esac
+	case "${FLAG}" in
+	e)
+		if [ ! -d "$OPTARG" ]; then
+			echo "Error: argument '$OPTARG' not a directory"
+			exit 1
+		fi
+		export POUDRIERE_ETC=$OPTARG
+		;;
+	N)
+		USE_COLORS="no"
+		;;
+	x)
+		SETX="-x"
+		;;
+	*)
+		usage
+		;;
+	esac
 done
 
 shift $((OPTIND-1))
@@ -103,38 +103,38 @@ CMD_ENV="${CMD_ENV} POUDRIERE_VERSION=${POUDRIERE_VERSION}"
 
 # Handle special-case commands first.
 case "${CMD}" in
-	version)
-		echo "${POUDRIERE_VERSION}"
-		exit 0
-		;;
-	help)
-		usage
-		;;
-	jails)
-		CMD="jail"
-		;;
-	options|testport|bulk)
-		CMD_ENV="${CMD_ENV} SAVED_TERM=${SAVED_TERM}"
+version)
+	echo "${POUDRIERE_VERSION}"
+	exit 0
+	;;
+help)
+	usage
+	;;
+jails)
+	CMD="jail"
+	;;
+options|testport|bulk)
+	CMD_ENV="${CMD_ENV} SAVED_TERM=${SAVED_TERM}"
 esac
 
 SCRIPTPATH="${SCRIPTPREFIX}/${CMD}.sh"
 CMD_ENV="${CMD_ENV} SCRIPTPATH=${SCRIPTPATH} SCRIPTPREFIX=${SCRIPTPREFIX}"
 
 case "${CMD}" in
-	api|bulk|distclean|daemon|jail|ports|options|pkgclean|queue|status|testport)
-		;;
-	*)
-		echo "Unknown command '${CMD}'"
-		usage
-		;;
+api|bulk|distclean|daemon|jail|ports|options|pkgclean|queue|status|testport)
+	;;
+*)
+	echo "Unknown command '${CMD}'"
+	usage
+	;;
 esac
 
 case "${CMD}" in
-	jail|ports|daemon|status|options)
-		;;
-	*)
-		SET_ERREXIT=-e
-		;;
+jail|ports|daemon|status|options)
+	;;
+*)
+	SET_ERREXIT=-e
+	;;
 esac
 
 exec env -i ${CMD_ENV} sh ${SET_ERREXIT} ${SETX} "${SCRIPTPATH}" "$@"
