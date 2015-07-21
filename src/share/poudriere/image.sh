@@ -34,6 +34,7 @@ Parameters:
     -j jail         -- Jail
     -p portstree    -- Ports tree
     -z set          -- Set
+    -s size         -- Set the image size
     -n imagename    -- the name of the generated image
     -h hostname     -- the image hostname
     -t type         -- Type of image can be one of (default iso+mfs):
@@ -55,7 +56,7 @@ cleanup_image() {
 	delete_image
 }
 
-while getopts "o:j:p:z:n:t:X:f:c:h:" FLAG; do
+while getopts "o:j:p:z:n:t:X:f:c:h:S:" FLAG; do
 	case "${FLAG}" in
 		o)
 			OUTPUTDIR=${OPTARG}
@@ -86,6 +87,9 @@ while getopts "o:j:p:z:n:t:X:f:c:h:" FLAG; do
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"
 			SETNAME="${OPTARG}"
+			;;
+		s)
+			IMAGESIZE="${OPTARG}"
 			;;
 		f)
 			[ -f "${OPTARG}" ] || err 1 "No such package list: ${OPTARG}"
@@ -153,7 +157,7 @@ case ${MEDIATYPE} in
 	/dev/ufs/${IMAGENAME} / ufs rw 0 0
 	tmpfs /tmp tmpfs rw,mode=1777 0 0
 	EOF
-	makefs -B little -o label=${IMAGENAME} ${WRKDIR}/out/mfsroot ${WRKDIR}/world
+	makefs -B little ${IMAGESIZE:+-s ${IMAGESIZE}} -o label=${IMAGENAME} ${WRKDIR}/out/mfsroot ${WRKDIR}/world
 	if which -s pigz; then
 		GZCMD=pigz
 	fi
@@ -188,6 +192,7 @@ usb+mfs)
 		-p freebsd-swap::1M \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
 	;;
+
 esac
 
 msg "Image available at: ${OUTPUTDIR}${FINALIMAGE}"
