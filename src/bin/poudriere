@@ -45,6 +45,7 @@ Commands:
     distclean   -- Remove old distfiles
     daemon      -- Launch the poudriere daemon
     help        -- Show usage
+    image       -- Generate images
     jail        -- Manage the jails used by poudriere
     ports       -- Create, update or delete the portstrees used by poudriere
     pkgclean    -- Remove packages that are no longer needed
@@ -121,7 +122,7 @@ SCRIPTPATH="${SCRIPTPREFIX}/${CMD}.sh"
 CMD_ENV="${CMD_ENV} SCRIPTPATH=${SCRIPTPATH} SCRIPTPREFIX=${SCRIPTPREFIX}"
 
 case "${CMD}" in
-api|bulk|distclean|daemon|jail|ports|options|pkgclean|queue|status|testport)
+api|bulk|distclean|daemon|image|jail|ports|options|pkgclean|queue|status|testport)
 	;;
 *)
 	echo "Unknown command '${CMD}'"
