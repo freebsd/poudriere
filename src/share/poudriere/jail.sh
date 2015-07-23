@@ -653,6 +653,7 @@ create_jail() {
 		;;
 	src=*)
 		SRC_BASE="${METHOD#src=}"
+		test -d ${SRC_BASE} || err 1 "No such source directory"
 		FCT=install_from_src
 		;;
 	tar=*)
