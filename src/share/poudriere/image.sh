@@ -38,7 +38,7 @@ Parameters:
     -n imagename    -- the name of the generated image
     -h hostname     -- the image hostname
     -t type         -- Type of image can be one of (default iso+mfs):
-                       iso, usb, usb+mfs, iso+mfs, rawdisk, tar
+                       iso, usb, usb+mfs, iso+mfs, rawdisk, tar, firmware
     -X exclude      -- file containing the list in cpdup format
     -f packagelist  -- list of packages to install
     -c extradir     -- the content of the directory will copied in the target
@@ -72,7 +72,7 @@ while getopts "o:j:p:z:n:t:X:f:c:h:s:" FLAG; do
 		t)
 			MEDIATYPE=${OPTARG}
 			case ${MEDIATYPE} in
-			iso|usb|usb+mfs|iso+mfs|rawdisk|tar) ;;
+			iso|usb|usb+mfs|iso+mfs|rawdisk|tar|firmware) ;;
 			*) err 1 "invalid mediatype: ${MEDIATYPE}"
 			esac
 			;;
@@ -153,7 +153,7 @@ cat >> ${excludelist} << EOF
 usr/src
 EOF
 case "${MEDIATYPE}" in
-usb)
+usb|firmware)
 	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
 	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
 	newfs -j -L ${IMAGENAME} /dev/${md}
@@ -193,6 +193,11 @@ usb)
 	/dev/ufs/${IMAGENAME} / ufs rw 1 1
 	EOF
 	;;
+firmware)
+	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
+	/dev/gpt/${IMAGENAME}0 / ufs ro 1 1
+	/dev/gpt/swap none sw 0 0
+	EOF
 esac
 
 case ${MEDIATYPE} in
@@ -219,6 +224,21 @@ usb)
 		-p freebsd-boot:=${WRKDIR}/world/boot/gptboot \
 		-p freebsd-ufs:=${WRKDIR}/raw.img \
 		-p freebsd-swap::1M \
+		-o ${OUTPUTDIR}/${FINALIMAGE}
+	umount ${WRKDIR}/world
+	/sbin/mdconfig -d -u ${md#md}
+	;;
+firmware)
+	FINALIMAGE=${IMAGENAME}.img
+	mkimg -s gpt -b ${WRKDIR}/world/boot/pmbr \
+		-p efi:=${WRKDIR}/world/boot/boot1.efifat \
+		-p freebsd-boot:=${WRKDIR}/world/boot/gptboot \
+		-p freebsd-ufs/${IMAGENAME}0:=${WRKDIR}/raw.img \
+		-p freebsd-ufs/${IMAGENAME}1::${IMAGESIZE} \
+		-p freebsd-swap/swap::1G \
+		-p freebsd-ufs/cfg0::32M \
+		-p freebsd-ufs/cfg1::32M \
+		-p freebsd-ufs/data::200M \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
 	umount ${WRKDIR}/world
 	/sbin/mdconfig -d -u ${md#md}
