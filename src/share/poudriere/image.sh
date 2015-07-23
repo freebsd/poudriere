@@ -196,7 +196,7 @@ usb)
 firmware)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
 	/dev/gpt/${IMAGENAME}0 / ufs ro 1 1
-	/dev/gpt/swap none sw 0 0
+	/dev/gpt/swap none swap sw 0 0
 	EOF
 esac
 
@@ -211,17 +211,17 @@ iso*)
 usb+mfs)
 	FINALIMAGE=${IMAGENAME}.img
 	makefs -B little ${WRKDIR}/img.part ${WRKDIR}/out
-	mkimg -s gpt -b ${WRKDIR}/out/boot/pmbr \
-		-p efi:=${WRKDIR}/out/boot/boot1.efifat \
-		-p freebsd-boot:=${WRKDIR}/out/boot/gptboot \
+	mkimg -s gpt -b ${mnt}/boot/pmbr \
+		-p efi:=${mnt}/boot/boot1.efifat \
+		-p freebsd-boot:=${mnt}/boot/gptboot \
 		-p freebsd-ufs:=${WRKDIR}/img.part \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
 	;;
 usb)
 	FINALIMAGE=${IMAGENAME}.img
-	mkimg -s gpt -b ${WRKDIR}/world/boot/pmbr \
-		-p efi:=${WRKDIR}/world/boot/boot1.efifat \
-		-p freebsd-boot:=${WRKDIR}/world/boot/gptboot \
+	mkimg -s gpt -b ${mnt}/boot/pmbr \
+		-p efi:=${mnt}/boot/boot1.efifat \
+		-p freebsd-boot:=${mnt}/boot/gptboot \
 		-p freebsd-ufs:=${WRKDIR}/raw.img \
 		-p freebsd-swap::1M \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
@@ -230,9 +230,11 @@ usb)
 	;;
 firmware)
 	FINALIMAGE=${IMAGENAME}.img
-	mkimg -s gpt -b ${WRKDIR}/world/boot/pmbr \
-		-p efi:=${WRKDIR}/world/boot/boot1.efifat \
-		-p freebsd-boot:=${WRKDIR}/world/boot/gptboot \
+	umount ${WRKDIR}/world
+	/sbin/mdconfig -d -u ${md#md}
+	mkimg -s gpt -b ${mnt}/boot/pmbr \
+		-p efi:=${mnt}/boot/boot1.efifat \
+		-p freebsd-boot:=${mnt}/boot/gptboot \
 		-p freebsd-ufs/${IMAGENAME}0:=${WRKDIR}/raw.img \
 		-p freebsd-ufs/${IMAGENAME}1::${IMAGESIZE} \
 		-p freebsd-swap/swap::1G \
@@ -240,8 +242,6 @@ firmware)
 		-p freebsd-ufs/cfg1::32M \
 		-p freebsd-ufs/data::200M \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
-	umount ${WRKDIR}/world
-	/sbin/mdconfig -d -u ${md#md}
 	;;
 esac
 
