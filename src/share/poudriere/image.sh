@@ -210,7 +210,6 @@ usb+mfs)
 		-p efi:=${WRKDIR}/out/boot/boot1.efifat \
 		-p freebsd-boot:=${WRKDIR}/out/boot/gptboot \
 		-p freebsd-ufs:=${WRKDIR}/img.part \
-		-p freebsd-swap::1M \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
 	;;
 usb)
