@@ -48,7 +48,7 @@ EOF
 
 delete_image() {
 	[ ! -f "${excludelist}" ] || rm -f ${excludelist}
-	[ ! -z "${md}" ] || /sbin/mdconfig -d -u ${md#md}
+	[ -z "${md}" ] || /sbin/mdconfig -d -u ${md#md}
 
 	destroyfs ${WRKDIR} image
 }
@@ -163,6 +163,11 @@ esac
 
 # Use of tar given cpdup has a pretty useless -X option for this case
 tar -C ${mnt} -X ${excludelist} -cf - . | tar -xf - -C ${WRKDIR}/world
+[ ! -f ${POUDRIERED}/src.conf ] || cat ${POUDRIERED}/src.conf > ${WRKDIR}/src.conf
+[ ! -f ${POUDRIERED}/${JAILNAME}-src.conf ] || cat ${POUDRIERED}/${JAILNAME}-src.conf >> ${WRKDIR}/src.conf
+[ ! -f ${POUDRIERED}/image-${JAILNAME}-src.conf ] || cat ${POUDRIERED}/image-${JAILNAME}-src.conf >> ${WRKDIR}/src.conf
+make -C ${mnt}/usr/src DESTDIR=${WRKDIR}/world BATCH_DELETE_OLD_FILES=yes SRCCONF=${WRKDIR}/src.conf delete-old delete-old-libs
+
 mkdir -p ${WRKDIR}/world/etc/rc.conf.d
 echo "${HOSTNAME:-poudriere-image}" > ${WRKDIR}/world/etc/rc.conf.d/hostname
 [ ! -d "${EXTRADIR}" ] || cpdup -i0 ${EXTRADIR} ${WRKDIR}/world
