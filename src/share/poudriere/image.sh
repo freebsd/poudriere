@@ -171,7 +171,7 @@ tar -C ${mnt} -X ${excludelist} -cf - . | tar -xf - -C ${WRKDIR}/world
 make -C ${mnt}/usr/src DESTDIR=${WRKDIR}/world BATCH_DELETE_OLD_FILES=yes SRCCONF=${WRKDIR}/src.conf delete-old delete-old-libs
 
 mkdir -p ${WRKDIR}/world/etc/rc.conf.d
-echo "${HOSTNAME:-poudriere-image}" > ${WRKDIR}/world/etc/rc.conf.d/hostname
+echo "hostname=${HOSTNAME:-poudriere-image}" > ${WRKDIR}/world/etc/rc.conf.d/hostname
 [ ! -d "${EXTRADIR}" ] || cpdup -i0 ${EXTRADIR} ${WRKDIR}/world
 
 # install packages if any is needed
