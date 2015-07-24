@@ -4307,10 +4307,10 @@ clean_restricted() {
 
 sign_pkg() {
 	[ $# -eq 1 ] || eargs sign_pkg pkgfile
-        local pkgfile="$1"
+	local pkgfile="$1"
 
-        rm -f "${pkgfile}.sig"
-        sha256 -q "${pkgfile}" | ${SIGNING_COMMAND} > "${pkgfile}.sig"
+	rm -f "${pkgfile}.sig"
+	sha256 -q "${pkgfile}" | ${SIGNING_COMMAND} > "${pkgfile}.sig"
 }
 
 build_repo() {
