@@ -99,7 +99,7 @@ while getopts "o:j:p:z:n:t:X:f:c:h:s:" FLAG; do
 			;;
 		c)
 			[ -d "${OPTARG}" ] || err 1 "No such extract directory: ${OPTARG}"
-			EXTRADIR=${OPTARG}
+			EXTRADIR=$(realpath ${OPTARG})
 			;;
 		*)
 			echo "Unknown flag '${FLAG}'"
@@ -172,7 +172,7 @@ make -C ${mnt}/usr/src DESTDIR=${WRKDIR}/world BATCH_DELETE_OLD_FILES=yes SRCCON
 
 mkdir -p ${WRKDIR}/world/etc/rc.conf.d
 echo "hostname=${HOSTNAME:-poudriere-image}" > ${WRKDIR}/world/etc/rc.conf.d/hostname
-[ ! -d "${EXTRADIR}" ] || cpdup -i0 ${EXTRADIR} ${WRKDIR}/world
+[ ! -d "${EXTRADIR}" ] || cpdup -o ${EXTRADIR} ${WRKDIR}/world
 
 # install packages if any is needed
 if [ -n "${PACKAGELIST}" ]; then
