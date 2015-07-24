@@ -95,7 +95,7 @@ while getopts "o:j:p:z:n:t:X:f:c:h:s:" FLAG; do
 			;;
 		f)
 			[ -f "${OPTARG}" ] || err 1 "No such package list: ${OPTARG}"
-			PACKAGELIST=${OPTARG}
+			PACKAGELIST=$(realpath ${OPTARG})
 			;;
 		c)
 			[ -d "${OPTARG}" ] || err 1 "No such extract directory: ${OPTARG}"
@@ -114,11 +114,13 @@ shift $((OPTIND-1))
 
 
 : ${MEDIATYPE:=iso+mfs}
+: ${PTNAME:=default}
 
 [ -n "${JAILNAME}" ] || usage
 
 : ${OUTPUTDIR:=${POUDRIERE_DATA}/images/}
 : ${IMAGENAME:=poudriereimage}
+MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 
 # Limitation on isos
 case "${IMAGENAME}" in
@@ -171,6 +173,21 @@ make -C ${mnt}/usr/src DESTDIR=${WRKDIR}/world BATCH_DELETE_OLD_FILES=yes SRCCON
 mkdir -p ${WRKDIR}/world/etc/rc.conf.d
 echo "${HOSTNAME:-poudriere-image}" > ${WRKDIR}/world/etc/rc.conf.d/hostname
 [ ! -d "${EXTRADIR}" ] || cpdup -i0 ${EXTRADIR} ${WRKDIR}/world
+
+# install packages if any is needed
+if [ -n "${PACKAGELIST}" ]; then
+	mkdir -p ${WRKDIR}/world/tmp/packages
+	mount -t nullfs ${POUDRIERE_DATA}/packages/${MASTERNAME} ${WRKDIR}/world/tmp/packages
+	cat > ${WRKDIR}/world/tmp/repo.conf <<-EOF
+	FreeBSD: { enabled: false }
+	local: { url: file:///tmp/packages }
+	EOF
+	cat ${PACKAGELIST} | xargs chroot ${WRKDIR}/world env ASSUME_ALWAYS_YES=yes REPOS_DIR=/tmp pkg install
+	rm -rf ${WRKDIR}/world/var/cache/pkg
+	umount ${WRKDIR}/world/tmp/packages
+	rmdir ${WRKDIR}/world/tmp/packages
+	rm ${WRKDIR}/world/var/db/pkg/repo-*
+fi
 
 case ${MEDIATYPE} in
 *mfs)
