@@ -1515,12 +1515,16 @@ get_host_arch() {
 need_emulation() {
 	[ $# -eq 1 ] || eargs need_emulation wanted_arch
 	local wanted_arch="$1"
+	local target_arch
+
+	# kern.supported_archs is a list of TARGET_ARCHs.
+	target_arch="${wanted_arch#*.}"
 
 	# Check the list of supported archs from the kernel.
 	# DragonFly does not have kern.supported_archs, fallback to
 	# uname -m (advised by dillon)
 	if { sysctl -n kern.supported_archs 2>/dev/null || uname -m; } | \
-	    grep -qw "${wanted_arch}"; then
+	    grep -qw "${target_arch}"; then
 		return 1
 	else
 		# Returning 1 means no emulation required.
