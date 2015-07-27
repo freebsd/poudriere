@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd June 6, 2015
+.Dd July 27, 2015
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -307,9 +307,6 @@ of FreeBSD to use in the jail.
 If you are using method ftp then the
 .Ar version
 should in the form of: 9.0-RELEASE.
-If you are using method csup then the
-.Ar version
-should be in the form of cvs branches: RELENG_9 or . for current.
 If you are using method svn then the
 .Ar version
 should be in the form of svn branches: stable/9 or head for current.
@@ -377,8 +374,6 @@ For example:
 .Pp
 Build from source options:
 .Bl -tag -width "ftp-archiveXX"
-.It Sy csup
-Use legacy CVS repository.
 .It Sy svn Sy svn+file Sy svn+http Sy svn+https
 Use SVN.
 This will use the

@@ -46,7 +46,7 @@ _jail=(
 	'-j[Specifies the jailname]::jailname:_poudriere_jail' \
 	'-v[Specifies which version of FreeBSD we want in jail]::version' \
 	'-a[Indicates architecture of the jail: i386 or amd64(same as host by default)]::arch:(amd64 i386)' \
-	'-m[Method used to create jail, specify NONE if you want to use your home made jail(ftp by default)]::method:((ftp svn svn+http svn+ssh csup))' \
+	'-m[Method used to create jail, specify NONE if you want to use your home made jail(ftp by default)]::method:((ftp svn svn+http svn+ssh))' \
 	'-f[FS name (tank/jails/myjail)]::fs:_files -/' \
 	'-t[version to upgrade to]' \
 	'-M[mountpoint]::mountpoint:_files -/'
