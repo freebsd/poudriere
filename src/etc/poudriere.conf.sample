@@ -81,10 +81,10 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #CSUP_HOST=cvsup._CHANGE_THIS_.freebsd.org
 
 # If set the ports tree or source tree marked to use svn will use the defined
-# mirror (default: svn0.us-west.FreeBSD.org)
+# mirror (default: svn.FreeBSD.org)
 # The full mirror list is available here:
 # http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/svn.html#svn-mirrors
-#SVN_HOST=svn0.us-west.FreeBSD.org
+#SVN_HOST=svn.FreeBSD.org
 
 # Automatic OPTION change detection
 # When bulk building packages, compare the options from kept packages to
