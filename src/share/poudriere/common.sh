@@ -1436,7 +1436,7 @@ symlink to .latest/${name}"
 	if [ "${KEEP_OLD_PACKAGES}" = "yes" ]; then
 		keep_cnt=$((${KEEP_OLD_PACKAGES_COUNT} + 1))
 		find ${PACKAGES_ROOT}/ -type d -mindepth 1 -maxdepth 1 \
-		    -name '.real_*' | sort -Vr |
+		    -name '.real_*' | sort -dr |
 		    sed -n "${keep_cnt},\$p" |
 		    xargs rm -rf 2>/dev/null || :
 	else
