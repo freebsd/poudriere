@@ -132,6 +132,9 @@ while getopts "o:cniIj:J:kNp:PsSvwz:" FLAG; do
 	esac
 done
 
+saved_argv="$@"
+shift $((OPTIND-1))
+
 [ -z ${ORIGIN} ] && usage
 
 [ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
@@ -141,8 +144,6 @@ if [ ! -f "${portsdir}/${ORIGIN}/Makefile" ] || [ -d "${portsdir}/${ORIGIN}/../M
 fi
 
 maybe_run_queued "$@"
-
-shift $((OPTIND-1))
 
 : ${BUILD_PARALLEL_JOBS:=${PARALLEL_JOBS}}
 : ${PREPARE_PARALLEL_JOBS:=${PARALLEL_JOBS}}
