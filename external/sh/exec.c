@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)exec.c	8.4 (Berkeley) 6/8/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/exec.c 268920 2014-07-20 12:06:52Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/exec.c 284779 2015-06-24 20:51:48Z jilles $");
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -522,17 +522,16 @@ static struct tblentry **lastcmdentry;
 static struct tblentry *
 cmdlookup(const char *name, int add)
 {
-	int hashval;
+	unsigned int hashval;
 	const char *p;
 	struct tblentry *cmdp;
 	struct tblentry **pp;
 	size_t len;
 
 	p = name;
-	hashval = *p << 4;
+	hashval = (unsigned char)*p << 4;
 	while (*p)
 		hashval += *p++;
-	hashval &= 0x7FFF;
 	pp = &cmdtable[hashval % CMDTABLESIZE];
 	for (cmdp = *pp ; cmdp ; cmdp = cmdp->next) {
 		if (equal(cmdp->cmdname, name))
