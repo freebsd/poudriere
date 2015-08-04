@@ -35,6 +35,7 @@
 #include <sys/jail.h>
 #include <spawn.h>
 
+#include <libgen.h>
 #include <unistd.h>
 #define _WITH_DPRINTF
 #include <stdio.h>
@@ -298,7 +299,9 @@ main(int argc, char **argv)
 	snprintf(path, sizeof(path), "%s/%s.sock", dir, jailname);
 	unlink(path);
 	un.sun_family = AF_UNIX;
-	strlcpy(un.sun_path, path, sizeof(un.sun_path));
+	if (chdir(dirname(path)))
+		err(EXIT_FAILURE, "chdir()");
+	strlcpy(un.sun_path, basename(path), sizeof(un.sun_path));
 	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, (int[]){1},
 	    sizeof(int)) < 0)
 		err(EXIT_FAILURE, "setsockopt()");
