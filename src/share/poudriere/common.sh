@@ -143,27 +143,23 @@ msg_warn() {
 	    msg "${COLOR_WARN}Warning: $@" >&2
 }
 
-_msg_redirected() {
-	if [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
-		# Send to true stdout (not any build log)
-		msg "$@" >&3
-	else
-		msg "$@"
-	fi
-}
-
 job_msg() {
 	local -; set +x
-	local now elapsed NO_ELAPSED_IN_MSG
+	local now elapsed NO_ELAPSED_IN_MSG output
 
 	if [ -n "${MY_JOBID}" ]; then
 		NO_ELAPSED_IN_MSG=0
 		now=$(clock_monotonic)
 		calculate_duration elapsed "$((${now} - ${TIME_START_JOB}))"
-		_msg_redirected \
-		    "[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}][${elapsed}] $1"
+		output="[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}][${elapsed}] $1"
 	else
-		_msg_redirected "$@"
+		output="$@"
+	fi
+	if [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
+		# Send to true stdout (not any build log)
+		msg "${output}" >&3
+	else
+		msg "${output}"
 	fi
 }
 
