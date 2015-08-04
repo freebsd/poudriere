@@ -76,6 +76,7 @@ done
 : ${PTNAMES:=default}
 
 shift $((OPTIND-1))
+post_getopts
 
 distfiles_cleanup() {
 	rm -f ${DISTFILES_LIST} ${DISTFILES_LIST}.expected \

@@ -86,6 +86,8 @@ err() {
 	fi
 }
 
+# Message functions that depend on VERBOSE are stubbed out in post_getopts.
+
 msg_n() {
 	local -; set +x
 	local now elapsed
@@ -104,13 +106,10 @@ msg_n() {
 }
 
 msg() {
-	local -; set +x
 	msg_n "$@""\n"
 }
 
 msg_verbose() {
-	local -; set +x
-	[ ${VERBOSE} -gt 0 ] || return 0
 	msg_n "$@""\n"
 }
 
@@ -131,8 +130,6 @@ msg_error() {
 }
 
 msg_debug() {
-	local -; set +x
-	[ ${VERBOSE} -gt 1 ] || return 0
 	COLOR_ARROW="${COLOR_DEBUG}" \
 	    msg_n "${COLOR_DEBUG}Debug: $@""\n" >&2
 }
@@ -162,10 +159,22 @@ job_msg() {
 	fi
 }
 
+# Stubbed until post_getopts
 job_msg_verbose() {
 	local -; set +x
-	[ ${VERBOSE} -gt 0 ] || return 0
 	job_msg "$@"
+}
+
+# Handle needs after processing arguments.
+post_getopts() {
+	# Short-circuit verbose functions to save CPU
+	if ! [ ${VERBOSE} -gt 1 ]; then
+		msg_debug() { }
+	fi
+	if ! [ ${VERBOSE} -gt 0 ]; then
+		msg_verbose() { }
+		job_msg_verbose() { }
+	fi
 }
 
 _mastermnt() {

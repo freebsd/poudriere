@@ -112,6 +112,7 @@ done
 
 saved_argv="$@"
 shift $((OPTIND-1))
+post_getopts
 
 : ${MEDIATYPE:=iso+mfs}
 : ${PTNAME:=default}

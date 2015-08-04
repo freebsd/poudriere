@@ -111,8 +111,8 @@ while getopts "aj:J:f:nNp:Rvyz:" FLAG; do
 done
 
 saved_argv="$@"
-
 shift $((OPTIND-1))
+post_getopts
 
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 _mastermnt MASTERMNT

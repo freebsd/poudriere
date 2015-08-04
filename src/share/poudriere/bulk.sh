@@ -187,6 +187,7 @@ done
 
 saved_argv="$@"
 shift $((OPTIND-1))
+post_getopts
 
 [ ${ALL} -eq 1 -a -n "${PORTTESTING}" ] && PORTTESTING_FATAL=no
 

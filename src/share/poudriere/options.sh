@@ -103,6 +103,7 @@ while getopts "cCj:f:p:nrsz:" FLAG; do
 done
 
 shift $((OPTIND-1))
+post_getopts
 
 export PORTSDIR=`pget ${PTNAME} mnt`
 [ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"

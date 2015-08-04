@@ -126,6 +126,7 @@ done
 
 saved_argv="$@"
 shift $((OPTIND-1))
+post_getopts
 
 METHOD=${METHOD:-portsnap}
 PTNAME=${PTNAME:-default}

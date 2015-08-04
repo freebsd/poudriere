@@ -906,6 +906,7 @@ done
 
 saved_argv="$@"
 shift $((OPTIND-1))
+post_getopts
 
 METHOD=${METHOD:-ftp}
 if [ -n "${JAILNAME}" -a ${CREATE} -eq 0 ]; then

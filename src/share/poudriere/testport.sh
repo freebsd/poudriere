@@ -134,6 +134,7 @@ done
 
 saved_argv="$@"
 shift $((OPTIND-1))
+post_getopts
 
 [ -z ${ORIGIN} ] && usage
 
