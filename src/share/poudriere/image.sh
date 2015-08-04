@@ -58,6 +58,8 @@ cleanup_image() {
 	delete_image
 }
 
+. ${SCRIPTPREFIX}/common.sh
+
 while getopts "o:j:p:z:n:t:X:f:c:h:s:" FLAG; do
 	case "${FLAG}" in
 		o)
@@ -110,8 +112,6 @@ done
 
 saved_argv="$@"
 shift $((OPTIND-1))
-. ${SCRIPTPREFIX}/common.sh
-
 
 : ${MEDIATYPE:=iso+mfs}
 : ${PTNAME:=default}
