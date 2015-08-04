@@ -111,7 +111,7 @@ msg() {
 msg_verbose() {
 	local -; set +x
 	[ ${VERBOSE} -gt 0 ] || return 0
-	msg "$1"
+	msg_n "$@""\n"
 }
 
 msg_error() {
@@ -134,13 +134,12 @@ msg_debug() {
 	local -; set +x
 	[ ${VERBOSE} -gt 1 ] || return 0
 	COLOR_ARROW="${COLOR_DEBUG}" \
-	    msg "${COLOR_DEBUG}Debug: $@" >&2
+	    msg_n "${COLOR_DEBUG}Debug: $@""\n" >&2
 }
 
 msg_warn() {
-	local -; set +x
 	COLOR_ARROW="${COLOR_WARN}" \
-	    msg "${COLOR_WARN}Warning: $@" >&2
+	    msg_n "${COLOR_WARN}Warning: $@""\n" >&2
 }
 
 job_msg() {
@@ -157,9 +156,9 @@ job_msg() {
 	fi
 	if [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
 		# Send to true stdout (not any build log)
-		msg "${output}" >&3
+		msg_n "${output}\n" >&3
 	else
-		msg "${output}"
+		msg_n "${output}\n"
 	fi
 }
 
