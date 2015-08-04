@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)alias.c	8.3 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/alias.c 263777 2014-03-26 20:43:40Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/alias.c 284779 2015-06-24 20:51:48Z jilles $");
 
 #include <stdlib.h>
 #include "shell.h"
@@ -248,7 +248,7 @@ hashalias(const char *p)
 {
 	unsigned int hashval;
 
-	hashval = *p << 4;
+	hashval = (unsigned char)*p << 4;
 	while (*p)
 		hashval+= *p++;
 	return &atab[hashval % ATABSIZE];
