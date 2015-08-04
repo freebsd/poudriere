@@ -30,6 +30,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#include <libgen.h>
 #include <unistd.h>
 #define _WITH_DPRINTF
 #include <stdio.h>
@@ -193,7 +194,9 @@ main(int argc, char **argv)
 	 * a pid, just unlink the old socket if needed. */
 	unlink(socketpath);
 	un.sun_family = AF_UNIX;
-	strlcpy(un.sun_path, socketpath, sizeof(un.sun_path));
+	if (chdir(dirname(socketpath)))
+		err(EXIT_FAILURE, "chdir()");
+	strlcpy(un.sun_path, basename(socketpath), sizeof(un.sun_path));
 	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (int[]){1},
 	    sizeof(int)) < 0)
 		err(EXIT_FAILURE, "setsockopt()");
@@ -201,7 +204,6 @@ main(int argc, char **argv)
 	if (bind(fd, (struct sockaddr *) &un,
 	    sizeof(struct sockaddr_un)) == -1)
 		err(EXIT_FAILURE, "bind()");
-
 
 	if (!foreground && daemon(0, 0) == -1) {
 		pidfile_remove(pfh);
