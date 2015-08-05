@@ -214,7 +214,7 @@ run_hook bulk start
 
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
-_log_path_jail LOGD
+_log_path LOGD
 if [ -d ${LOGD} -a ${CLEAN} -eq 1 ]; then
 	msg "Cleaning up old logs in ${LOGD}"
 	[ ${DRY_RUN} -eq 0 ] && rm -f ${LOGD} 2>/dev/null
