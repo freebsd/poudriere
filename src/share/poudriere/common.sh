@@ -3912,7 +3912,7 @@ check_moved() {
 	[ $# -lt 2 ] && eargs check_moved var_return origin
 	local var_return="$1"
 	local origin="$2"
-	local _new_origin
+	local _new_origin _gsub
 
 	_gsub ${origin} "/" "_"
 	[ -f "${MASTERMNT}/.p/MOVED/${_gsub}" ] &&
