@@ -76,14 +76,13 @@ hash_get() {
 	local var="$1"
 	local key="$2"
 	local var_return="$3"
-	local hash_var_name value
+	local _hash_var_name value
 	local ret
 
 	_hash_var_name "${var}" "${key}"
-	hash_var_name=${_hash_var_name}
 
 	# Look value from cache
-	eval "value=\${${hash_var_name}-__null}"
+	eval "value=\${${_hash_var_name}-__null}"
 
 	if [ "${value}" = "__null" ]; then
 		value=
@@ -103,13 +102,12 @@ hash_set() {
 	local var="$1"
 	local key="$2"
 	local value="$3"
-	local hash_var_name
+	local _hash_var_name
 
 	_hash_var_name "${var}" "${key}"
-	hash_var_name=${_hash_var_name}
 
 	# Set value in cache
-	setvar "${hash_var_name}" "${value}"
+	setvar "${_hash_var_name}" "${value}"
 }
 
 hash_remove() {
@@ -132,7 +130,7 @@ hash_unset() {
 	[ $# -eq 2 ] || eargs hash_unset var key
 	local var="$1"
 	local key="$2"
-	local hash_var_name
+	local _hash_var_name
 
 	_hash_var_name "${var}" "${key}"
 	unset "${_hash_var_name}"
