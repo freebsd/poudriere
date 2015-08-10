@@ -60,11 +60,15 @@ _gsub() {
 
 
 gsub() {
+	local _gsub
+
 	_gsub "$@"
 	echo "${_gsub}"
 }
 
 _hash_var_name() {
+	local _gsub
+
 	# Replace all HASH_VAR_NAME_SUB_GLOB with _
 	_gsub "_HASH_${1}_${2}" ${HASH_VAR_NAME_SUB_GLOB} _
 	_hash_var_name=${_gsub}
