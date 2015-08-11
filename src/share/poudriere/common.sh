@@ -95,7 +95,7 @@ msg_n() {
 	elapsed=
 	if should_show_elapsed; then
 		now=$(clock_monotonic)
-		calculate_duration elapsed "$((${now} - ${TIME_START}))"
+		calculate_duration elapsed "$((${now} - ${TIME_START:-0}))"
 		elapsed="[${elapsed}] "
 	fi
 	if [ -n "${COLOR_ARROW}" ] || [ -z "${1##*\033[*}" ]; then
@@ -146,7 +146,7 @@ job_msg() {
 	if [ -n "${MY_JOBID}" ]; then
 		NO_ELAPSED_IN_MSG=0
 		now=$(clock_monotonic)
-		calculate_duration elapsed "$((${now} - ${TIME_START_JOB}))"
+		calculate_duration elapsed "$((${now} - ${TIME_START_JOB:-${TIME_START:-0}}))"
 		output="[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}][${elapsed}] $1"
 	else
 		output="$@"
