@@ -130,6 +130,11 @@ msg_error() {
 	return 0
 }
 
+msg_dev() {
+	COLOR_ARROW="${COLOR_DEV}" \
+	    msg_n "${COLOR_DEV}Dev: $@""\n" >&2
+}
+
 msg_debug() {
 	COLOR_ARROW="${COLOR_DEBUG}" \
 	    msg_n "${COLOR_DEBUG}Debug: $@""\n" >&2
@@ -193,6 +198,9 @@ confirm_if_tty() {
 # Handle needs after processing arguments.
 post_getopts() {
 	# Short-circuit verbose functions to save CPU
+	if ! [ ${VERBOSE} -gt 2 ]; then
+		msg_dev() { }
+	fi
 	if ! [ ${VERBOSE} -gt 1 ]; then
 		msg_debug() { }
 	fi
