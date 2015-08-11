@@ -99,7 +99,7 @@ main(int argc, char **argv)
 
 	nv = nvlist_recv(fd);
 	if (nv == NULL)
-		err(1, "nvlist_rect() failed");
+		err(1, "nvlist_recv() failed");
 
 	i = nvlist_get_number(nv, "return");
 
