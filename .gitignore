@@ -38,3 +38,5 @@ src/bin/poudriere.8.gz
 src/config.h
 src/etc/rc.d/poudriered
 src/stamp-h1
+test/*.log
+test/etc
