@@ -139,3 +139,21 @@ hash_unset() {
 	_hash_var_name "${var}" "${key}"
 	unset "${_hash_var_name}"
 }
+
+list_remove() {
+	[ $# -eq 2 ] || eargs list_remove var item
+	local var="$1"
+	local item="$2"
+	local values
+
+	eval "values=\" \${${var}:-} \""
+	# There's probably a better way to do this...
+	values_L=${values%% ${item} *}
+	values_L=${values_L% }
+	values_L=${values_L# }
+	values_R=${values##* ${item} }
+	values_R=${values_R% }
+	values_R=${values_R# }
+	values="${values_L}${values_L:+ }${values_R}"
+	setvar "${var}" "${values}"
+}

@@ -159,15 +159,7 @@ _reap_children() {
 		if ! kill -0 ${pid} 2>/dev/null; then
 			# This will error out if the return status is non-zero
 			_wait ${pid} || ret=$?
-			# Remove pid from PARALLEL_PIDS and strip away all
-			# spaces
-			PARALLEL_PIDS_L=${PARALLEL_PIDS%% ${pid} *}
-			PARALLEL_PIDS_L=${PARALLEL_PIDS_L% }
-			PARALLEL_PIDS_L=${PARALLEL_PIDS_L# }
-			PARALLEL_PIDS_R=${PARALLEL_PIDS##* ${pid} }
-			PARALLEL_PIDS_R=${PARALLEL_PIDS_R% }
-			PARALLEL_PIDS_R=${PARALLEL_PIDS_R# }
-			PARALLEL_PIDS=" ${PARALLEL_PIDS_L} ${PARALLEL_PIDS_R} "
+			list_remove PARALLEL_PIDS "${pid}"
 		fi
 	done
 
