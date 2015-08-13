@@ -791,7 +791,7 @@ show_build_summary() {
 	_bget buildname buildname 2>/dev/null || :
 	now=$(date +%s)
 
-	calculate_elapsed_from_log ${now} ${log}
+	calculate_elapsed_from_log ${now} ${log} || return 1
 	elapsed=${_elapsed_time}
 	calculate_duration buildtime ${elapsed}
 
