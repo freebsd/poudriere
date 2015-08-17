@@ -383,7 +383,7 @@ Gives an alternative <i class="arg">mountpoint</i> when creating ports tree.</dd
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;m</b> <i class="arg">method</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Specifies which <i class="arg">method</i> to use to create the ports tree. Could be portsnap, git, svn{,+http,+https,+file,+ssh} (Default: portsnap).</dd>
+Specifies which <i class="arg">method</i> to use to create the ports tree. Could be portsnap, git, svn{,+http,+https,+file,+ssh}, local (Default: portsnap).</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;v</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
