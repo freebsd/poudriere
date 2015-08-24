@@ -39,6 +39,7 @@ Parameters:
     -u            -- Update a ports tree.
 
 Options:
+    -U url        -- URL where to fetch the ports tree from.
     -B branch     -- Which branch to use for the svn or git methods.  Defaults
                      to 'head/master'.
     -F            -- When used with -c, only create the needed filesystems
@@ -72,7 +73,7 @@ NAMEONLY=0
 QUIET=0
 VERBOSE=0
 KEEP=0
-while getopts "B:cFudklp:qf:nM:m:v" FLAG; do
+while getopts "B:cFuU:dklp:qf:nM:m:v" FLAG; do
 	case "${FLAG}" in
 		B)
 			BRANCH="${OPTARG}"
@@ -85,6 +86,9 @@ while getopts "B:cFudklp:qf:nM:m:v" FLAG; do
 			;;
 		u)
 			UPDATE=1
+			;;
+		U)
+			SOURCES_URL=${OPTARG}
 			;;
 		n)
 			NAMEONLY=1
@@ -131,21 +135,56 @@ post_getopts
 METHOD=${METHOD:-portsnap}
 PTNAME=${PTNAME:-default}
 
-case ${METHOD} in
-portsnap);;
-svn+http);;
-svn+https);;
-svn+ssh);;
-svn+file);;
-svn);;
-git);;
-none);;
-*) usage;;
-esac
+if [ -n "${SOURCES_URL}" ]; then
+	case "${METHOD}" in
+	svn*)
+		case "${SOURCES_URL}" in
+		http://*) METHOD="svn+http" ;;
+		https://*) METHOD="svn+https" ;;
+		file://*) METHOD="svn+file" ;;
+		svn+ssh://*) METHOD="svn+ssh" ;;
+		svn://*) METHOD="svn" ;;
+		*) err 1 "Invalid svn url" ;;
+		esac
+		;;
+	git*)
+		case "${SOURCES_URL}" in
+		ssh://*) METHOD="git+ssh" ;;
+		https://*) METHOD="git+https" ;;
+		git://*) METHOD="git" ;;
+		*) err 1 "Invalid git url" ;;
+		esac
+		;;
+	*)
+		err 1 "-U only valid with git and svn methods"
+	esac
+	SVN_FULLURL=${SOURCES_URL}
+	GIT_FULLURL=${SOURCES_URL}
+else
+	case ${METHOD} in
+	portsnap);;
+	svn+http) proto="http" ;;
+	svn+https) proto="https" ;;
+	svn+ssh) proto="svn+ssh" ;;
+	svn+file) proto="file" ;;
+	svn) proto="svn" ;;
+	git+https) proto="https" ;;
+	git+ssh) proto="ssh" ;;
+	git) proto="git";;
+	none);;
+	*) usage;;
+	esac
+	SVN_FULLURL=${proto}://${SVN_HOST}/base
+	if [ -n "${GIT_URL}" ]; then
+		GIT_FULLURL=${GIT_URL}
+	else
+		GIT_FULLURL=${proto}://${GIT_PORTSURL}
+	fi
+fi
 
 case ${METHOD} in
 svn*) : ${BRANCH:=head} ;;
-git)  : ${BRANCH:=master} ;;
+git*)  : ${BRANCH:=master} ;;
 esac
 
 if [ ${LIST} -eq 1 ]; then
@@ -214,14 +253,6 @@ if [ ${CREATE} -eq 1 ]; then
 			    err 1 " fail"
 			;;
 		svn*)
-			case ${METHOD} in
-			svn+http) proto="http" ;;
-			svn+https) proto="https" ;;
-			svn+ssh) proto="svn+ssh" ;;
-			svn+file) proto="file" ;;
-			svn) proto="svn" ;;
-			esac
-
 			if [ ! -x "${SVN_CMD}" ]; then
 				err 1 "svn or svnlite not installed. Perhaps you need to 'pkg install subversion'"
 			fi
@@ -230,14 +261,14 @@ if [ ${CREATE} -eq 1 ]; then
 			[ ${VERBOSE} -gt 0 ] || quiet="-q"
 			${SVN_CMD} ${quiet} co \
 				${SVN_PRESERVE_TIMESTAMP} \
-				${proto}://${SVN_HOST}/ports/${BRANCH} \
+				${SVN_FULLURL}/${BRANCH} \
 				${PTMNT} || err 1 " fail"
 			echo " done"
 			;;
-		git)
+		git*)
 			msg_n "Cloning the ports tree..."
 			[ ${VERBOSE} -gt 0 ] || quiet="-q"
-			git clone --depth=1 ${quiet} -b ${BRANCH} ${GIT_URL} ${PTMNT} || err 1 " fail"
+			git clone --depth=1 ${quiet} -b ${BRANCH} ${GIT_FULLURL} ${PTMNT} || err 1 " fail"
 			echo " done"
 			;;
 		esac
@@ -296,10 +327,10 @@ if [ ${UPDATE} -eq 1 ]; then
 			${PORTSMNT:-${PTMNT}}
 		echo " done"
 		;;
-	git)
-		msg "Pulling from ${GIT_URL}"
+	git*)
+		msg "Updating the ports tree"
 		[ ${VERBOSE} -gt 0 ] || quiet="-q"
-		cd ${PORTSMNT:-${PTMNT}} && git pull ${quiet}
+		git -C ${PORTSMNT:-${PTMNT}} pull ${quiet}
 		echo " done"
 		;;
 	none)	;;
