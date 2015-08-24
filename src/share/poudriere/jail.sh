@@ -466,6 +466,9 @@ install_from_vcs() {
 			fi
 			;;
 		git*)
+			if [ -n "${SRCPATCHFILE}" ]; then
+				err 1 "Patch files not supported with git, please use feature branches"
+			fi
 			msg_n "Checking out the sources from git..."
 			git clone --depth=1 -q -b ${VERSION} ${proto}://${GIT_BASEURL} ${SRC_BASE} || err 1 " fail"
 			echo " done"
