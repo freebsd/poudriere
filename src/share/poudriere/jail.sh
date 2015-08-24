@@ -968,6 +968,9 @@ if [ -n "${SOURCES_URL}" ]; then
 		*) err 1 "Invalid git url" ;;
 		esac
 		;;
+	*)
+		err 1 "-U only valid with git and svn methods"
+		;;
 	esac
 	SVN_FULLURL=${SOURCES_URL}
 	GIT_FULLURL=${SOURCES_URL}
