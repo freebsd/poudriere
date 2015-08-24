@@ -58,7 +58,7 @@ Options:
                      details. Can be one of:
                        allbsd, ftp, http, ftp-archive, null, src, svn,
                        svn+file, svn+http, svn+https, svn+ssh, tar=PATH
-                       url=SOMEURL
+                       url=SOMEURL or git.
     -P patch      -- Specify a patch to apply to the source before building.
     -S srcpath    -- Specify a path to the source tree to be used.
     -t version    -- Version of FreeBSD to upgrade the jail to.
@@ -234,8 +234,8 @@ update_jail() {
 		update_version_env $(jget ${JAILNAME} version)
 		markfs clean ${JAILMNT}
 		;;
-	svn*)
-		install_from_svn version_extra
+	svn*|git*)
+		install_from_vcs version_extra
 		RELEASE=$(update_version "${version_extra}")
 		update_version_env "${RELEASE}"
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
@@ -432,7 +432,7 @@ install_from_src() {
 	installworld
 }
 
-install_from_svn() {
+install_from_vcs() {
 	local var_version_extra="$1"
 	local UPDATE=0
 	local proto
@@ -449,27 +449,59 @@ install_from_svn() {
 	svn+ssh) proto="svn+ssh" ;;
 	svn+file) proto="file" ;;
 	svn) proto="svn" ;;
+	git+ssh) proto="ssh" ;;
+	git+https) proto="https" ;;
+	git) proto="git" ;;
 	esac
 	if [ ${UPDATE} -eq 0 ]; then
-		msg_n "Checking out the sources from svn..."
-		${SVN_CMD} -q co ${proto}://${SVN_HOST}/base/${VERSION} ${SRC_BASE} || err 1 " fail"
-		echo " done"
-		if [ -n "${SRCPATCHFILE}" ]; then
-			msg_n "Patching the sources with ${SRCPATCHFILE}"
-			${SVN_CMD} -q patch ${SRCPATCHFILE} ${SRC_BASE} || err 1 " fail"
-			echo done
-		fi
+		case ${METHOD} in
+		svn*)
+			msg_n "Checking out the sources from svn..."
+			${SVN_CMD} -q co ${proto}://${SVN_HOST}/base/${VERSION} ${SRC_BASE} || err 1 " fail"
+			echo " done"
+			if [ -n "${SRCPATCHFILE}" ]; then
+				msg_n "Patching the sources with ${SRCPATCHFILE}"
+				${SVN_CMD} -q patch ${SRCPATCHFILE} ${SRC_BASE} || err 1 " fail"
+				echo done
+			fi
+			;;
+		git*)
+			msg_n "Checking out the sources from git..."
+			git clone --depth=1 -q -b ${VERSION} ${proto}://${GIT_BASEURL} ${SRC_BASE} || err 1 " fail"
+			echo " done"
+			# No support for patches, using feature branches is recommanded"
+			;;
+		esac
 	else
-		msg_n "Updating the sources from svn..."
-		${SVN_CMD} upgrade ${SRC_BASE} 2>/dev/null || :
-		${SVN_CMD} -q update -r ${TORELEASE:-head} ${SRC_BASE} || err 1 " fail"
-		echo " done"
+		case ${METHOD} in
+		svn*)
+			msg_n "Updating the sources from svn..."
+			${SVN_CMD} upgrade ${SRC_BASE} 2>/dev/null || :
+			${SVN_CMD} -q update -r ${TORELEASE:-head} ${SRC_BASE} || err 1 " fail"
+			echo " done"
+			;;
+		git*)
+			git -C ${SRC_BASE} pull -q || err 1 " fail"
+			if [ -n "${TORELEASE}" ]; then
+				git checkout -q "${TORELEASE}" || err 1 " fail"
+			fi
+			echo " done"
+			;;
+		esac
 	fi
 	build_and_install_world
 
-	svn_rev=$(${SVN_CMD} info ${SRC_BASE} |
-	    awk '/Last Changed Rev:/ {print $4}')
-	setvar "${var_version_extra}" "r${svn_rev}"
+	case ${METHOD} in
+	svn*)
+		svn_rev=$(${SVN_CMD} info ${SRC_BASE} |
+		    awk '/Last Changed Rev:/ {print $4}')
+		setvar "${var_version_extra}" "r${svn_rev}"
+	;;
+	git*)
+		git_sha=$(git -C ${SRC_BASE} rev-parse --short HEAD)
+		setvar "${var_version_extra}" "${git_sha}"
+	;;
+	esac
 }
 
 install_from_ftp() {
@@ -649,7 +681,11 @@ create_jail() {
 				err 1 "version with svn should be: head[@rev], stable/N, release/N, releng/N or projects/X"
 				;;
 		esac
-		FCT=install_from_svn
+		FCT=install_from_vcs
+		;;
+	git*)
+		# Do not check valid version given one can have a specific branch
+		FCT=install_from_vcs
 		;;
 	src=*)
 		SRC_BASE="${METHOD#src=}"
