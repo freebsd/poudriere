@@ -62,6 +62,7 @@ Options:
     -P patch      -- Specify a patch to apply to the source before building.
     -S srcpath    -- Specify a path to the source tree to be used.
     -t version    -- Version of FreeBSD to upgrade the jail to.
+    -U url        -- Specify a url to fetch the sources (with method git and/or svn).
     -x            -- Build and setup native-xtools cross compile tools in jail when
                      building for a different TARGET ARCH than the host.
                      Only applies if TARGET_ARCH and HOST_ARCH are different.
@@ -443,21 +444,11 @@ install_from_vcs() {
 	else
 		mkdir -p ${SRC_BASE}
 	fi
-	case ${METHOD} in
-	svn+http) proto="http" ;;
-	svn+https) proto="https" ;;
-	svn+ssh) proto="svn+ssh" ;;
-	svn+file) proto="file" ;;
-	svn) proto="svn" ;;
-	git+ssh) proto="ssh" ;;
-	git+https) proto="https" ;;
-	git) proto="git" ;;
-	esac
 	if [ ${UPDATE} -eq 0 ]; then
 		case ${METHOD} in
 		svn*)
 			msg_n "Checking out the sources from svn..."
-			${SVN_CMD} -q co ${proto}://${SVN_HOST}/base/${VERSION} ${SRC_BASE} || err 1 " fail"
+			${SVN_CMD} -q co ${SVN_FULLURL}/${VERSION} ${SRC_BASE} || err 1 " fail"
 			echo " done"
 			if [ -n "${SRCPATCHFILE}" ]; then
 				msg_n "Patching the sources with ${SRCPATCHFILE}"
@@ -470,7 +461,7 @@ install_from_vcs() {
 				err 1 "Patch files not supported with git, please use feature branches"
 			fi
 			msg_n "Checking out the sources from git..."
-			git clone --depth=1 -q -b ${VERSION} ${proto}://${GIT_BASEURL} ${SRC_BASE} || err 1 " fail"
+			git clone --depth=1 -q -b ${VERSION} ${GIT_FULLURL} ${SRC_BASE} || err 1 " fail"
 			echo " done"
 			# No support for patches, using feature branches is recommanded"
 			;;
@@ -851,7 +842,7 @@ SETNAME=""
 BINMISC="/usr/sbin/binmiscctl"
 XDEV=0
 
-while getopts "iJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:ut:z:P:S:x" FLAG; do
+while getopts "iJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:x" FLAG; do
 	case "${FLAG}" in
 		i)
 			INFO=1
@@ -922,6 +913,9 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:ut:z:P:S:x" FLAG; do
 		u)
 			UPDATE=1
 			;;
+		U)
+			SOURCES_URL=${OPTARG}
+			;;
 		r)
 			RENAME=1;
 			NEWJAILNAME=${OPTARG}
@@ -953,6 +947,45 @@ if [ -n "${JAILNAME}" -a ${CREATE} -eq 0 ]; then
 	_jget JAILFS ${JAILNAME} fs 2>/dev/null || :
 	_jget JAILMNT ${JAILNAME} mnt 2>/dev/null || :
 fi
+
+if [ -n "${SOURCES_URL}" ]; then
+	case "${METHOD}" in
+	svn*)
+		case "${SOURCES_URL}" in
+		http://*) METHOD="svn+http" ;;
+		https://*) METHOD="svn+https" ;;
+		file://*) METHOD="svn+file" ;;
+		svn+ssh://*) METHOD="svn+ssh" ;;
+		svn://*) METHOD="svn" ;;
+		*) err 1 "Invalid svn url" ;;
+		esac
+		;;
+	git*)
+		case "${SOURCES_URL}" in
+		ssh://*) METHOD="git+ssh" ;;
+		https://*) METHOD="git+https" ;;
+		git://*) METHOD="git" ;;
+		*) err 1 "Invalid git url" ;;
+		esac
+		;;
+	esac
+	SVN_FULLURL=${SOURCES_URL}
+	GIT_FULLURL=${SOURCES_URL}
+else
+	case ${METHOD} in
+	svn+http) proto="http" ;;
+	svn+https) proto="https" ;;
+	svn+ssh) proto="svn+ssh" ;;
+	svn+file) proto="file" ;;
+	svn) proto="svn" ;;
+	git+ssh) proto="ssh" ;;
+	git+https) proto="https" ;;
+	git) proto="git" ;;
+	esac
+	SVN_FULLURL=${proto}://${SVN_HOST}/base
+	GIT_FULLURL=${proto}://${GIT_BASEURL}
+fi
+
 
 case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	10000000)
