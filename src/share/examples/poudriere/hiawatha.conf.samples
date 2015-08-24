@@ -1,0 +1,12 @@
+Please copy this to your hiwatha.conf
+
+VirtualHost {
+	Hostname = example.com 
+	WebsiteRoot = /usr/local/share/poudriere/html
+	StartFile = index.html
+	AccessLogfile = /var/log/www/access.log
+	ErrorLogfile = /var/log/www/error.log
+	UseGZfile = yes
+	AllowDotFiles = yes
+	Alias = /data:/usr/local/poudriere/data/logs/bulk
+}
