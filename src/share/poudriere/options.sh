@@ -141,9 +141,9 @@ for origin in ${LISTPORTS}; do
 
 	if [ -n "${DO_RECURSE}" ]; then
 		make PORT_DBDIR=${PORT_DBDIR} \
-			PKG_BIN=/usr/local/sbin/pkg-static \
-			DIALOG4PORTS=/usr/local/bin/dialog4ports \
-			LOCALBASE=/dev/null \
+			PKG_BIN=`which pkg-static` \
+			DIALOG4PORTS=`which dialog4ports` \
+			LOCALBASE=/nonexistent \
 			-C ${PORTSDIR}/${origin} \
 			${RECURSE_COMMAND}
 	fi
