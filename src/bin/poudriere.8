@@ -847,10 +847,10 @@ Let's take the example of building a single port;
 all the tests will be done in myjail.
 .Pp
 It starts the jail, then mount the ports tree (nullfs), then mounts the
-package dir (pourdriere/data/packages/<jailname>-<tree>-<setname>), then it mounts the
-~/ports-cvs/mybeautifulporttotest (nullfs) it builds all the dependencies
+package dir (${POUDRIERE_DATA}/packages/<jailname>-<tree>-<setname>), then it mounts the
+${POUDRIERED}/ports/default/category/port (nullfs) it builds all the dependencies
 (except runtime ones) and log it to
-poudriere/data/logs/testport/jailname/default/mybeautifulporttotest.log).
+${POUDRIERE_DATA}/logs/testport/jailname-default/YYYY-MM-DD_HH:MM:SS/port.log).
 .Pp
 If packages for the dependencies already exists it will use them
 .Pp
@@ -861,7 +861,7 @@ All the dependency phase is done with PREFIX == LOCALBASE.
 .Pp
 After that it will build the port itself with LOCALBASE != PREFIX
 and log the build to
-poudriere/data/logs/testport/jailname/default/mybeautifulporttotest.log
+${POUDRIERE_DATA}/logs/testport/jailname-default/YYYY-MM-DD_HH:MM:SS/port.log
 .Pp
 It will try to:
 install it,
