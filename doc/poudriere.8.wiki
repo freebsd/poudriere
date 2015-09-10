@@ -737,11 +737,11 @@ Let's take the example of building a single port;<p>
 </blockquote>
 <p>
 all the tests will be done in myjail.<p>
-It starts the jail, then mount the ports tree (nullfs), then mounts the package dir (${POUDRIERE_DATA}/packages/&lt;jailname&gt;-&lt;tree&gt;-&lt;setname&gt;), then it mounts the ${POUDRIERED}/ports/mybeautifulporttotest (nullfs) it builds all the dependencies (except runtime ones) and log it to ${POUDRIERE_DATA}/logs/testport/jailname-default/YYYY-MM-DD_HH:MM:SS/mybeautifulporttotest.log).<p>
+It starts the jail, then mount the ports tree (nullfs), then mounts the package dir (${POUDRIERE_DATA}/packages/&lt;jailname&gt;-&lt;tree&gt;-&lt;setname&gt;), then it mounts the ${POUDRIERED}/ports/default/category/port (nullfs) it builds all the dependencies (except runtime ones) and log it to ${POUDRIERE_DATA}/logs/testport/jailname-default/YYYY-MM-DD_HH:MM:SS/port.log).<p>
 If packages for the dependencies already exists it will use them<p>
 When all the dependencies are built, packages for them are created so that next time it will be faster.<p>
 All the dependency phase is done with PREFIX == LOCALBASE.<p>
-After that it will build the port itself with LOCALBASE != PREFIX and log the build to ${POUDRIERE_DATA}/logs/testport/jailname-default/YYYY-MM-DD_HH:MM:SS/mybeautifulporttotest.log<p>
+After that it will build the port itself with LOCALBASE != PREFIX and log the build to ${POUDRIERE_DATA}/logs/testport/jailname-default/YYYY-MM-DD_HH:MM:SS/port.log<p>
 It will try to: install it, create a package from it, deinstall it, check for cruft left behind and propose the line to add to pkg-plist if needed.<p>
 It is very easy to extend it so that we can easily add other tests if wanted.</div>
 </div>
