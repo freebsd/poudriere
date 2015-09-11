@@ -684,14 +684,14 @@ This directory contains various configuration files for the different jails.</dd
 First you have to create a jail, which will hold all the building infrastructure needs.<p>
 <blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
 <div class="display">
-<code class="lit">poudriere jail -c -v 8.2-RELEASE -a amd64 -j 82amd64</code></div>
+<code class="lit">poudriere jail -c -v 10.2-RELEASE -a amd64 -j 102amd64</code></div>
 </blockquote>
 <p>
 A jail will take approximately 3GB of space.<p>
 Of course you can use another version of FreeBSD, regarless on what version you are running. amd64 users can choose i386 arch like in this example:<p>
 <blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
 <div class="display">
-<code class="lit">poudriere jail -c -v 8.1-RELEASE -a i386 -j 81i386</code></div>
+<code class="lit">poudriere jail -c -v 10.2-RELEASE -a i386 -j 102i386</code></div>
 </blockquote>
 <p>
 This command will fetch and install a minimal jail, small (~400MB) so you can create a lot of them. It will install the jail under the pool you have chosen, at poudriere/jailname.<p>
@@ -717,17 +717,17 @@ Any line starting with the hash sign will be treated as a comment.<p>
 &#91;Launch the bulk build&#93;<p>
 Now you can launch the bulk build. You can specify to build for only one arch/version ; by default it will make the bulk build on all the jails created by poudriere.<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
 <div class="display">
-<code class="lit">poudriere bulk -f ~/pkglist -j 81i386</code></div>
+<code class="lit">poudriere bulk -f ~/pkglist -j 102i386</code></div>
 </blockquote>
 <p>
 &#91;Find your packages&#93;<p>
 Once the bulk build is over, you can meet your shiny new packages here:<p>
 <blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
 <div class="display">
-<code class="lit">/usr/local/poudriere_data/packages/81i386</code></div>
+<code class="lit">${POUDRIERE_DATA}/packages/102i386</code></div>
 </blockquote>
 <p>
-with 81i386 as the name of the jail.</div>
+with 102i386 as the name of the jail.</div>
 <div class="subsection">
 <h2 id="x7465737420612073696e676c6520706f7274">test a single port</h2> This second example show how to use <b class="name">poudriere</b> for a single port.<p>
 Let's take the example of building a single port;<p>
