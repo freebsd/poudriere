@@ -255,7 +255,7 @@ Specifies the <i class="arg">name</i> of the jail.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;v</b> <i class="arg">version</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Specifies which <i class="arg">version</i> of FreeBSD to use in the jail. If you are using method ftp then the <i class="arg">version</i> should in the form of: 9.0-RELEASE. If you are using method csup then the <i class="arg">version</i> should be in the form of cvs branches: RELENG_9 or . for current. If you are using method svn then the <i class="arg">version</i> should be in the form of svn branches: stable/9 or head for current.</dd>
+Specifies which <i class="arg">version</i> of FreeBSD to use in the jail.  If you are using method ftp then the <i class="arg">version</i> should in the form of: 9.0-RELEASE. If you are using method svn then the <i class="arg">version</i> should be in the form of svn branches: stable/9 or head for current.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;a</b> <i class="arg">architecture</i></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
