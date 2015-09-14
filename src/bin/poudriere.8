@@ -848,7 +848,7 @@ all the tests will be done in myjail.
 .Pp
 It starts the jail, then mount the ports tree (nullfs), then mounts the
 package dir (${POUDRIERE_DATA}/packages/<jailname>-<tree>-<setname>), then it mounts the
-${POUDRIERED}/ports/default/category/port (nullfs) it builds all the dependencies
+${POUDRIERED}/ports/default (nullfs) it builds all the dependencies
 (except runtime ones) and log it to
 ${POUDRIERE_DATA}/logs/testport/jailname-default/YYYY-MM-DD_HH:MM:SS/port.log).
 .Pp
