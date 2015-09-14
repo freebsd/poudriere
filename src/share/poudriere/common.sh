@@ -4327,11 +4327,19 @@ clean_restricted() {
 }
 
 sign_pkg() {
-	[ $# -eq 1 ] || eargs sign_pkg pkgfile
-	local pkgfile="$1"
+	[ $# -eq 2 ] || eargs sign_pkg sigtype pkgfile
+	local sigtype="$1"
+	local pkgfile="$2"
 
-	rm -f "${pkgfile}.sig"
-	sha256 -q "${pkgfile}" | ${SIGNING_COMMAND} > "${pkgfile}.sig"
+	if [ "${sigtype}" = "fingerprint" ]; then
+		rm -f "${pkgfile}.sig"
+		sha256 -q "${pkgfile}" | ${SIGNING_COMMAND} > "${pkgfile}.sig"
+	elif [ "${sigtype}" = "pubkey" ]; then
+		rm -f "${pkgfile}.pubkeysig"
+		echo -n $(sha256 -q "${pkgfile}") | \
+		    openssl dgst -sha256 -sign "${PKG_REPO_SIGNING_KEY}" \
+		    -binary -out "${pkgfile}.pubkeysig"
+	fi
 }
 
 build_repo() {
@@ -4372,9 +4380,12 @@ build_repo() {
 		cp ${MASTERMNT}/tmp/packages/* ${PACKAGES}/
 
 		# Sign the ports-mgmt/pkg package for bootstrap
-		if [ -n "${SIGNING_COMMAND}" ] && \
-		    [ -e "${PACKAGES}/Latest/pkg.txz" ]; then
-			sign_pkg "${PACKAGES}/Latest/pkg.txz"
+		if [ -e "${PACKAGES}/Latest/pkg.txz" ]; then
+			if [ -n "${SIGNING_COMMAND}" ]; then
+				sign_pkg fingerprint "${PACKAGES}/Latest/pkg.txz"
+			elif [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
+				sign_pkg pubkey "${PACKAGES}/Latest/pkg.txz"
+			fi
 		fi
 	else
 		msg "Preparing INDEX"
