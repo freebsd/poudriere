@@ -406,7 +406,7 @@ buildlog_start() {
 	echo "---End Environment---"
 	echo ""
 	echo "---Begin OPTIONS List---"
-	injail make -C ${portdir} showconfig
+	injail make -C ${portdir} showconfig || :
 	echo "---End OPTIONS List---"
 	echo ""
 	for var in CONFIGURE_ARGS CONFIGURE_ENV MAKE_ENV; do
