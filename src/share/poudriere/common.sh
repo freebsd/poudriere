@@ -1005,6 +1005,7 @@ markfs() {
 ./proc
 ./usr/ports/*
 ./usr/src
+./var/db/freebsd-update/*
 ./var/db/ports/*
 ./wrkdirs/*
 EOF
@@ -1023,6 +1024,7 @@ EOF
 ./tmp/*
 ./usr/ports/*
 ./usr/src
+./var/db/freebsd-update/*
 ./var/db/ports/*
 ./var/tmp/*
 ./wrkdirs/*
