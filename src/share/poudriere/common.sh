@@ -3614,7 +3614,7 @@ cache_get_pkgname() {
 			else
 				echo "${_pkgname}" > ${cache_origin_pkgname}
 				cache_pkgname_origin="${MASTERMNT}/.p/var/cache/pkgname-origin/${_pkgname}"
-				echo "${origin}" > "${cache_pkgname_origin}"                                                    
+				echo "${origin}" > "${cache_pkgname_origin}"
 			fi
 		fi
 	fi
