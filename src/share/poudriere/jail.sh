@@ -485,7 +485,7 @@ install_from_ftp() {
 			fi
 			URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH}/${V}" ;;
 		url=*) URL=${METHOD##url=} ;;
-		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
+		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
 		ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
 		esac
 		DISTS="base dict src games"
@@ -534,10 +534,10 @@ install_from_ftp() {
 					FREEBSD_HOST="http://ftp.freebsd.org"
 				fi
 
-				URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH}/${ARCH}/${V}"
+				URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH%%.*}/${ARCH##*.}/${V}"
 				;;
-			allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
-			ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
+			allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
+			ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH%%.*}/${ARCH##*.}/${V}" ;;
 			url=*) URL=${METHOD##url=} ;;
 		esac
 		DISTS="base.txz src.txz"
