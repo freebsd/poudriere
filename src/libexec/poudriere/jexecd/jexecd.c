@@ -74,9 +74,6 @@ static char *jailname = NULL;
 	lcap = login_getpwclass(pwd);					\
 	if (lcap == NULL)						\
 		err(1, "getpwclass: %s", username);			\
-	ngroups = ngroups_max;						\
-	if (getgrouplist(username, pwd->pw_gid, groups, &ngroups) != 0)	\
-		err(1, "getgrouplist: %s", username);			\
 } while (0)
 
 struct client {
@@ -85,22 +82,14 @@ struct client {
 	struct sockaddr_storage ss;
 };
 
-
 static void
 log_as(const char *username) {
 	login_cap_t *lcap = NULL;
-	gid_t *groups = NULL;
 	struct passwd *pwd = NULL;
-	int ngroups;
-	long ngroups_max;
-
-	ngroups_max = sysconf(_SC_NGROUPS_MAX) + 1;
-	if ((groups = malloc(sizeof(gid_t) * ngroups_max)) == NULL)
-		err(1, "malloc");
 
 	GET_USER_INFO;
-	if (setgroups(ngroups, groups) != 0)
-		err(1, "setgroups");
+	if (initgroups(username, pwd->pw_gid) != 0)
+		err(1, "initgroups");
 	if (setgid(pwd->pw_gid) != 0)
 		err(1, "setgid");
 	if (setusercontext(lcap, pwd, pwd->pw_uid,
