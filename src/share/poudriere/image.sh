@@ -37,8 +37,9 @@ Parameters:
     -s size         -- Set the image size
     -n imagename    -- the name of the generated image
     -h hostname     -- the image hostname
-    -t type         -- Type of image can be one of (default iso+mfs):
-                       iso, usb, usb+mfs, iso+mfs, rawdisk, tar, firmware
+    -t type         -- Type of image can be one of (default iso+zmfs):
+                    -- iso, iso+mfs, iso+zmfs, usb, usb+mfs, usb+zmfs,
+                       rawdisk, zrawdisk, tar, firmware, rawfirmware
     -X exclude      -- file containing the list in cpdup format
     -f packagelist  -- list of packages to install
     -c extradir     -- the content of the directory will copied in the target
@@ -48,6 +49,7 @@ EOF
 
 delete_image() {
 	[ ! -f "${excludelist}" ] || rm -f ${excludelist}
+	[ -z "${zroot}" ] || zpool destroy -f ${zroot}
 	[ -z "${md}" ] || /sbin/mdconfig -d -u ${md#md}
 
 	destroyfs ${WRKDIR} image
@@ -74,7 +76,8 @@ while getopts "o:j:p:z:n:t:X:f:c:h:s:" FLAG; do
 		t)
 			MEDIATYPE=${OPTARG}
 			case ${MEDIATYPE} in
-			iso|usb|usb+mfs|iso+mfs|rawdisk|tar|firmware) ;;
+			iso|iso+mfs|iso+zmfs|usb|usb+mfs|usb+mfs) ;;
+			rawdisk|zrawdisk|tar|firmware|rawfirmware) ;;
 			*) err 1 "invalid mediatype: ${MEDIATYPE}"
 			esac
 			;;
@@ -114,7 +117,7 @@ saved_argv="$@"
 shift $((OPTIND-1))
 post_getopts
 
-: ${MEDIATYPE:=iso+mfs}
+: ${MEDIATYPE:=iso+zmfs}
 : ${PTNAME:=default}
 
 [ -n "${JAILNAME}" ] || usage
@@ -156,16 +159,54 @@ cat >> ${excludelist} << EOF
 usr/src
 EOF
 case "${MEDIATYPE}" in
-usb|firmware)
+usb|*firmware|rawdisk)
 	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
 	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
 	newfs -j -L ${IMAGENAME} /dev/${md}
 	mount /dev/${md} ${WRKDIR}/world
 	;;
+zrawdisk)
+	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
+	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
+	zroot=${IMAGENAME}root
+	zpool create \
+		-O mountpoint=none \
+		-O compression=lz4 \
+		-O atime=off \
+		-R ${WRKDIR}/world ${zroot} /dev/${md}
+	zfs create -o mountpoint=none ${zroot}/ROOT
+	zfs create -o mountpoint=/ ${zroot}/ROOT/default
+	zfs create -o mountpoint=/var ${zroot}/var
+	zfs create -o mountpoint=/var/tmp -o setuid=off ${zroot}/var/tmp
+	zfs create -o mountpoint=/tmp -o setuid=off ${zroot}/tmp
+	zfs create -o mountpoint=/home ${zroot}/home
+	chmod 1777 ${WRKDIR}/world/tmp ${WRKDIR}/world/var/tmp
+	zfs create -o mountpoint=/var/crash \
+		-o exec=off -o setuid=off \
+		${zroot}/var/crash
+	zfs create -o mountpoint=/var/log \
+		-o exec=off -o setuid=off \
+		${zroot}/var/log
+	zfs create -o mountpoint=/var/run \
+		-o exec=off -o setuid=off \
+		${zroot}/var/run
+	zfs create -o mountpoint=/var/db \
+		-o exec=off -o setuid=off \
+		${zroot}/var/db
+	zfs create -o mountpoint=/var/mail \
+		-o exec=off -o setuid=off \
+		${zroot}/var/mail
+	zfs create -o mountpoint=/var/cache \
+		-o compression=off \
+		-o exec=off -o setuid=off \
+		${zroot}/var/cache
+	zfs create -o mountpoint=/var/empty ${zroot}/var/empty
+	;;
 esac
 
 # Use of tar given cpdup has a pretty useless -X option for this case
 tar -C ${mnt} -X ${excludelist} -cf - . | tar -xf - -C ${WRKDIR}/world
+touch ${WRKDIR}/src.conf
 [ ! -f ${POUDRIERED}/src.conf ] || cat ${POUDRIERED}/src.conf > ${WRKDIR}/src.conf
 [ ! -f ${POUDRIERED}/${JAILNAME}-src.conf ] || cat ${POUDRIERED}/${JAILNAME}-src.conf >> ${WRKDIR}/src.conf
 [ ! -f ${POUDRIERED}/image-${JAILNAME}-src.conf ] || cat ${POUDRIERED}/image-${JAILNAME}-src.conf >> ${WRKDIR}/src.conf
@@ -174,7 +215,9 @@ make -C ${mnt}/usr/src DESTDIR=${WRKDIR}/world BATCH_DELETE_OLD_FILES=yes SRCCON
 
 mkdir -p ${WRKDIR}/world/etc/rc.conf.d
 echo "hostname=${HOSTNAME:-poudriere-image}" > ${WRKDIR}/world/etc/rc.conf.d/hostname
-[ ! -d "${EXTRADIR}" ] || cpdup -o ${EXTRADIR} ${WRKDIR}/world
+[ ! -d "${EXTRADIR}" ] || cp -fRLp ${EXTRADIR}/ ${WRKDIR}/world/
+mv ${WRKDIR}/world/etc/login.conf.orig ${WRKDIR}/world/etc/login.conf
+cap_mkdb ${WRKDIR}/world/etc/login.conf
 
 # install packages if any is needed
 if [ -n "${PACKAGELIST}" ]; then
@@ -201,10 +244,11 @@ case ${MEDIATYPE} in
 	if which -s pigz; then
 		GZCMD=pigz
 	fi
-	${GZCMD:-gzip} -9 ${WRKDIR}/out/mfsroot
+	case "${MEDIATYPE}" in
+	*zmfs) ${GZCMD:-gzip} -9 ${WRKDIR}/out/mfsroot ;;
+	esac
 	cpdup -i0 ${WRKDIR}/world/boot ${WRKDIR}/out/boot
 	cat >> ${WRKDIR}/out/boot/loader.conf <<-EOF
-	geom_uzip_load="YES"
 	tmpfs_load="YES"
 	mfs_load="YES"
 	mfs_type="mfs_root"
@@ -212,15 +256,23 @@ case ${MEDIATYPE} in
 	vfs.root.mountfrom="ufs:/dev/ufs/${IMAGENAME}"
 	EOF
 	;;
-usb)
+usb|rawdisk)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
 	/dev/ufs/${IMAGENAME} / ufs rw 1 1
 	EOF
 	;;
-firmware)
+*firmware)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
 	/dev/gpt/${IMAGENAME}0 / ufs ro 1 1
 	EOF
+	mkdir -p ${WRKDIR}/world/conf/base
+	tar -C ${WRKDIR}/world -X ${excludelist} -cf - etc | tar -xf - -C ${WRKDIR}/world/conf/base
+	;;
+zrawdisk)
+	cat >> ${WRKDIR}/world/boot/loader.conf <<-EOF
+	vfs.root.mountfrom="zfs:${zroot}/ROOT/default"
+	EOF
+	;;
 esac
 
 case ${MEDIATYPE} in
@@ -231,7 +283,7 @@ iso*)
 		-o bootimage="i386;${WRKDIR}/out/boot/cdboot" \
 		-o no-emul-boot ${OUTPUTDIR}/${FINALIMAGE} ${WRKDIR}/out
 	;;
-usb+mfs)
+usb+*mfs)
 	FINALIMAGE=${IMAGENAME}.img
 	makefs -B little ${WRKDIR}/img.part ${WRKDIR}/out
 	mkimg -s gpt -b ${mnt}/boot/pmbr \
@@ -251,6 +303,10 @@ usb)
 	umount ${WRKDIR}/world
 	/sbin/mdconfig -d -u ${md#md}
 	;;
+tar)
+	FINALIMAGE=${IMAGENAME}.txz
+	tar -f ${OUTDIR}/${FINALIMAGE} -cJ -C ${WRKDIR}/out .
+	;;
 firmware)
 	FINALIMAGE=${IMAGENAME}.img
 	umount ${WRKDIR}/world
@@ -261,12 +317,40 @@ firmware)
 		-p freebsd-boot:=${mnt}/boot/gptboot \
 		-p freebsd-ufs/${IMAGENAME}0:=${WRKDIR}/raw.img \
 		-p freebsd-ufs/${IMAGENAME}1::${IMAGESIZE} \
-		-p freebsd-ufs/cfg0::32M \
-		-p freebsd-ufs/cfg1::32M \
+		-p freebsd-ufs/cfg::32M \
 		-p freebsd-ufs/data::200M \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
+	;;
+rawfirmware)
+	FINALIMAGE=${IMAGENAME}.raw
+	umount ${WRKDIR}/world
+	/sbin/mdconfig -d -u ${md#md}
+	md=
+	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
+	;;
+rawdisk)
+	FINALIMAGE=${IMAGENAME}.img
+	umount ${WRKDIR}/world
+	/sbin/mdconfig -d -u ${md#md}
+	md=
+	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
+	;;
+zrawdisk)
+	FINALIMAGE=${IMAGENAME}.img
+	zfs umount -f ${zroot}/ROOT/default
+	zfs set mountpoint=none ${zroot}/ROOT/default
+	zfs set readonly=on ${zroot}/var/empty
+	zpool set bootfs=${zroot}/ROOT/default ${zroot}
+	zpool set autoexpand=on ${zroot}
+	zpool export ${zroot}
+	zroot=
+	dd if=${mnt}/boot/zfsboot of=/dev/${md} count=1
+	dd if=${mnt}/boot/zfsboot of=/dev/${md} iseek=1 oseek=1024
+	/sbin/mdconfig -d -u ${md#md}
+	md=
+	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
 	;;
 esac
 
 CLEANUP_HOOK=delete_image
-msg "Image available at: ${OUTPUTDIR}${FINALIMAGE}"
+msg "Image available at: ${OUTPUTDIR}/${FINALIMAGE}"
