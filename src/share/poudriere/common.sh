@@ -3712,6 +3712,17 @@ compute_deps() {
 	:> "${MASTERMNT}/.p/port_deps.unsorted"
 	:> "${MASTERMNT}/.p/pkg_deps.unsorted"
 
+	# Suck in ports environment to avoid redundant fork/exec for each
+	# child.
+	if [ -f "${MASTERMNT}/usr/ports/Mk/Scripts/ports_env.sh" ]; then
+		eval "$(injail env \
+		    SCRIPTSDIR=/usr/ports/Mk/Scripts \
+		    PORTSDIR=/usr/ports \
+		    MAKE=make \
+		    /bin/sh /usr/ports/Mk/Scripts/ports_env.sh | \
+		    grep '^export [^;&]*')"
+	fi
+
 	parallel_start
 	for port in $(listed_ports show_moved); do
 		if [ -d "${MASTERMNT}/usr/ports/${port}" ]; then
@@ -3752,6 +3763,11 @@ compute_deps() {
 
 	rm -f "${MASTERMNT}/.p/port_deps.unsorted" \
 	    "${MASTERMNT}/.p/pkg_deps.unsorted"
+
+	# Don't leak ports-env UID as it may conflict with BUILD_AS_NON_ROOT
+	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
+		unset UID
+	fi
 
 	return 0
 }
