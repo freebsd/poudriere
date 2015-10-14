@@ -3421,7 +3421,10 @@ delete_old_pkg() {
 			raw_deps=$(injail make -C /usr/ports/${o} -V${td}_DEPENDS)
 			for d in ${raw_deps}; do
 				key=${d%:*}
-				dpath=${d#*:/usr/ports/}
+				dpath=${d#*:}
+				case "${dpath}" in
+				/usr/ports/*) dpath=${dpath#/usr/ports/} ;;
+				esac
 				case ${td} in
 				LIB)
 					[ -n "${liblist}" ] || liblist=$(injail ldconfig -r | awk '$1 ~ /:-l/ { gsub(/.*-l/, "", $1); printf("%s ",$1) } END { printf("\n") }')
