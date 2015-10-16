@@ -2344,7 +2344,12 @@ _real_build_port() {
 					bset_job_status "${phase}/timeout" "${port}"
 					job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}timeout"
 				fi
-				return 1
+				if [ "${phase}" = "test" -a "${PORTTESTING_FATAL}" = "no" ]; then
+					msg "Error: test failures detected"
+					testfailure=2
+				else
+					return 1
+				fi
 			fi
 		fi
 
