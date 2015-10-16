@@ -2199,7 +2199,7 @@ _real_build_port() {
 		# Don't need to install if only making packages and not
 		# testing.
 		[ -n "${PORTTESTING}" ] && \
-		    install_order="${install_order} install-mtree install"
+		    install_order="${install_order} test install-mtree install"
 	fi
 	targets="check-sanity pkg-depends fetch-depends fetch checksum \
 		  extract-depends extract patch-depends patch build-depends \
