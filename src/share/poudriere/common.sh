@@ -365,7 +365,7 @@ buildlog_start() {
 	echo "build started at $(date)"
 	echo "port directory: ${portdir}"
 	echo "building for: $(injail uname -a)"
-	echo "maintained by: $(injail make -C ${portdir} maintainer)"
+	echo "maintained by: $(injail /usr/bin/make -C ${portdir} maintainer)"
 	echo "Makefile ident: $(ident ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
 	echo "Poudriere version: ${POUDRIERE_VERSION}"
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
@@ -388,7 +388,7 @@ buildlog_start() {
 	echo "---End Environment---"
 	echo ""
 	echo "---Begin OPTIONS List---"
-	injail make -C ${portdir} showconfig || :
+	injail /usr/bin/make -C ${portdir} showconfig || :
 	echo "---End OPTIONS List---"
 	echo ""
 	for var in CONFIGURE_ARGS CONFIGURE_ENV MAKE_ENV; do
@@ -1161,8 +1161,9 @@ enter_interactive() {
 		# Install the selected PKGNG package
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
 		    make -C \
-		    /usr/ports/$(injail make -f /usr/ports/Mk/bsd.port.mk \
-		    -V PKGNG_ORIGIN) PKG_BIN="${PKG_BIN}" install-package
+		    /usr/ports/$(injail /usr/bin/make \
+		    -f /usr/ports/Mk/bsd.port.mk -V PKGNG_ORIGIN) \
+		    PKG_BIN="${PKG_BIN}" install-package
 	fi
 
 	# Enable all selected ports and their run-depends
@@ -1695,7 +1696,8 @@ jail_start() {
 
 	run_hook jail start
 
-	WITH_PKGNG=$(injail make -f /usr/ports/Mk/bsd.port.mk -V WITH_PKGNG)
+	WITH_PKGNG=$(injail /usr/bin/make -f /usr/ports/Mk/bsd.port.mk \
+	    -V WITH_PKGNG)
 	if [ -n "${WITH_PKGNG}" ]; then
 		PKGNG=1
 		PKG_EXT="txz"
@@ -2013,9 +2015,9 @@ gather_distfiles() {
 	local from=$(realpath $2)
 	local to=$(realpath $3)
 	local sub dists d tosubd specials special
-	sub=$(injail make -C ${portdir} -VDIST_SUBDIR)
-	dists=$(injail make -C ${portdir} -V_DISTFILES -V_PATCHFILES)
-	specials=$(injail make -C ${portdir} -V_DEPEND_SPECIALS)
+	sub=$(injail /usr/bin/make -C ${portdir} -VDIST_SUBDIR)
+	dists=$(injail /usr/bin/make -C ${portdir} -V_DISTFILES -V_PATCHFILES)
+	specials=$(injail /usr/bin/make -C ${portdir} -V_DEPEND_SPECIALS)
 	job_msg_verbose "Status for build ${COLOR_PORT}${portdir##/usr/ports/}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
 		[ -f ${from}/${sub}/${d} ] || continue
@@ -2042,7 +2044,7 @@ _real_build_port() {
 	local listfilecmd network
 	local hangstatus
 	local pkgenv phaseenv jpkg
-	local no_stage=$(injail make -C ${portdir} -VNO_STAGE)
+	local no_stage=$(injail /usr/bin/make -C ${portdir} -VNO_STAGE)
 	local targets install_order
 	local jailuser
 	local testfailure=0
@@ -2069,7 +2071,7 @@ _real_build_port() {
 	else
 		jailuser=root
 		if [ "${BUILD_AS_NON_ROOT}" = "yes" ] &&
-		    [ -z "$(injail make -C ${portdir} -VNEED_ROOT)" ]; then
+		    [ -z "$(injail /usr/bin/make -C ${portdir} -VNEED_ROOT)" ]; then
 			jailuser=${PORTBUILD_USER}
 			chown -R ${jailuser} ${mnt}/wrkdirs
 		fi
@@ -2292,7 +2294,7 @@ _real_build_port() {
 				local users user homedirs plistsub_sed
 				plistsub_sed=$(injail env ${PORT_FLAGS} make -C ${portdir} -V'PLIST_SUB:C/"//g:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/')
 
-				users=$(injail make -C ${portdir} -VUSERS)
+				users=$(injail /usr/bin/make -C ${portdir} -VUSERS)
 				homedirs=""
 				for user in ${users}; do
 					user=$(grep ^${user}: ${mnt}/usr/ports/UIDs | cut -f 9 -d : | sed -e "s|/usr/local|${PREFIX}| ; s|^|${mnt}|")
@@ -2945,7 +2947,7 @@ build_pkg() {
 	# This is checked here instead of when building the queue
 	# as the list may start big but become very small, so here
 	# is a less-common check
-	: ${ignore:=$(injail make -C ${portdir} -VIGNORE)}
+	: ${ignore:=$(injail /usr/bin/make -C ${portdir} -VIGNORE)}
 
 	rm -rf ${mnt}/wrkdirs/* || :
 
@@ -3006,7 +3008,7 @@ build_pkg() {
 		fi
 
 		msg "Cleaning up wrkdir"
-		injail make -C ${portdir} clean || :
+		injail /usr/bin/make -C ${portdir} clean || :
 		rm -rf ${mnt}/wrkdirs/* || :
 	fi
 
@@ -3107,7 +3109,7 @@ list_deps() {
 	local makeargs="-VPKG_DEPENDS -VBUILD_DEPENDS -VEXTRACT_DEPENDS -VLIB_DEPENDS -VPATCH_DEPENDS -VFETCH_DEPENDS -VRUN_DEPENDS"
 
 	prefix_stderr_quick "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
-		injail make -C ${dir} $makeargs | tr ' ' '\n' | \
+		injail /usr/bin/make -C ${dir} $makeargs | tr ' ' '\n' | \
 		awk -F: '{ gsub(/\/usr\/ports\//,"", $2); print $2 }' | \
 		sort -u || err 1 "Makefile broken: $1"
 }
@@ -3411,7 +3413,8 @@ delete_old_pkg() {
 		# XXX: This is redundant with list_deps. Hash/caching the
 		# deps can prevent double lookup
 		for td in LIB RUN; do
-			raw_deps=$(injail make -C /usr/ports/${o} -V${td}_DEPENDS)
+			raw_deps=$(injail /usr/bin/make -C /usr/ports/${o} \
+			    -V${td}_DEPENDS)
 			for d in ${raw_deps}; do
 				key=${d%:*}
 				dpath=${d#*:}
@@ -3475,8 +3478,9 @@ delete_old_pkg() {
 
 	# Check if the compiled options match the current options from make.conf and /var/db/ports
 	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
-		current_options=$(injail make -C /usr/ports/${o} pretty-print-config | \
-			tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort -u | tr '\n' ' ')
+		current_options=$(injail /usr/bin/make -C /usr/ports/${o} \
+		    pretty-print-config | tr ' ' '\n' | \
+		    sed -n 's/^\+\(.*\)/\1/p' | sort -u | tr '\n' ' ')
 		pkg_get_options compiled_options "${pkg}"
 
 		if [ "${compiled_options}" != "${current_options}" ]; then
@@ -3593,7 +3597,8 @@ cache_get_pkgname() {
 				return 1
 			fi
 		fi
-		_pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME || echo)
+		_pkgname=$(injail /usr/bin/make -C /usr/ports/${origin} \
+		    -VPKGNAME || echo)
 		[ -n "${_pkgname}" ] || err 1 "Error getting PKGNAME for ${COLOR_PORT}${origin}${COLOR_RESET}"
 		# Make sure this origin did not already exist
 		cache_get_origin existing_origin "${_pkgname}" 2>/dev/null || :
@@ -4294,7 +4299,7 @@ clean_restricted() {
 	# mount_nullfs does not support mount -u
 	umount -f ${MASTERMNT}/packages
 	mount_packages
-	injail make -s -C /usr/ports -j ${PARALLEL_JOBS} \
+	injail /usr/bin/make -s -C /usr/ports -j ${PARALLEL_JOBS} \
 	    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
 	# For pkg_install remove packages that have lost one of their dependency
 	if [ ${PKGNG} -eq 0 ]; then
