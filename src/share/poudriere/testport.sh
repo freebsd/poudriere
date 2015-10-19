@@ -199,9 +199,9 @@ PARALLEL_JOBS=${BUILD_PARALLEL_JOBS}
 
 bset_job_status "testing" "${ORIGIN}"
 
-PKGNAME=`injail make -C /usr/ports/${ORIGIN} -VPKGNAME`
-LOCALBASE=`injail make -C /usr/ports/${ORIGIN} -VLOCALBASE`
-: ${PREFIX:=$(injail make -C /usr/ports/${ORIGIN} -VPREFIX)}
+PKGNAME=`injail /usr/bin/make -C /usr/ports/${ORIGIN} -VPKGNAME`
+LOCALBASE=`injail /usr/bin/make -C /usr/ports/${ORIGIN} -VLOCALBASE`
+: ${PREFIX:=$(injail /usr/bin/make -C /usr/ports/${ORIGIN} -VPREFIX)}
 if [ "${USE_PORTLINT}" = "yes" ]; then
 	[ ! -x `which portlint` ] &&
 		err 2 "First install portlint if you want USE_PORTLINT to work as expected"
@@ -311,7 +311,7 @@ else
 fi
 
 msg "Cleaning up"
-injail make -C /usr/ports/${ORIGIN} clean
+injail /usr/bin/make -C /usr/ports/${ORIGIN} clean
 
 msg "Deinstalling package"
 ensure_pkg_installed
