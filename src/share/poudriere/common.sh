@@ -3673,7 +3673,7 @@ compute_deps() {
 		eval "$(injail env \
 		    SCRIPTSDIR=/usr/ports/Mk/Scripts \
 		    PORTSDIR=/usr/ports \
-		    MAKE=make \
+		    MAKE=/usr/bin/make \
 		    /bin/sh /usr/ports/Mk/Scripts/ports_env.sh | \
 		    grep '^export [^;&]*')"
 	fi
