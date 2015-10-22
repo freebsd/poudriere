@@ -161,16 +161,7 @@ if [ ${DRY_RUN} -eq 1 ];  then
 fi
 
 if [ -z "${answer}" ]; then
-	msg_n "Proceed? [y/N] "
-	read answer
-	case $answer in
-		[Yy][Ee][Ss]|[Yy][Ee]|[Yy])
-			answer=yes
-			;;
-		*)
-			answer=no
-			;;
-	esac
+	prompt "Proceed?" && answer="yes"
 fi
 
 if [ "${answer}" = "yes" ]; then

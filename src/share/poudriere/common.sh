@@ -165,6 +165,22 @@ job_msg_verbose() {
 	job_msg "$@"
 }
 
+prompt() {
+	[ $# -eq 1 ] || eargs prompt message
+	local message="$1"
+	local answer
+
+	msg_n "${message} [y/N] "
+	read answer
+	case "${answer}" in
+		[Yy][Ee][Ss]|[Yy][Ee]|[Yy])
+			return 0
+			;;
+	esac
+
+	return 1
+}
+
 # Handle needs after processing arguments.
 post_getopts() {
 	# Short-circuit verbose functions to save CPU
