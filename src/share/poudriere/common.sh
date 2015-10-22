@@ -169,6 +169,22 @@ job_msg_verbose() {
 	job_msg "$@"
 }
 
+prompt() {
+	[ $# -eq 1 ] || eargs prompt message
+	local message="$1"
+	local answer
+
+	msg_n "${message} [y/N] "
+	read answer
+	case "${answer}" in
+		[Yy][Ee][Ss]|[Yy][Ee]|[Yy])
+			return 0
+			;;
+	esac
+
+	return 1
+}
+
 _mastermnt() {
 	local hashed_name mnt mnttest mnamelen
 
