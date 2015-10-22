@@ -32,7 +32,7 @@ poudriere testport [parameters] [options]
 
 Parameters:
     -j jailname -- Run inside the given jail
-    -o origin   -- Specify an origin in the portstree
+    [-o] origin   -- Specify an origin in the portstree
 
 Options:
     -c          -- Run make config for the given port
@@ -136,7 +136,12 @@ saved_argv="$@"
 shift $((OPTIND-1))
 post_getopts
 
-[ -z ${ORIGIN} ] && usage
+if [ -z ${ORIGIN} ]; then
+	if [ $# -ne 1 ]; then
+		usage
+	fi
+	ORIGIN="${1}"
+fi
 
 [ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
 _pget portsdir ${PTNAME} mnt
