@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd July 27, 2015
+.Dd October 15, 2015
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -487,9 +487,8 @@ All missing dependencies will first be built in parallel.
 is automatically defined in the environment to test ports marked as
 .Ev BROKEN .
 .Pp
-There is only 1 subcommand for the testport command.
 .Bl -tag -width "-f conffile"
-.It Fl o Ar origin
+.It Fl Oo o Oc Ar origin
 Specifies an origin in the ports tree
 .El
 .Pp
