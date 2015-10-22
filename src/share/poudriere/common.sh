@@ -4678,3 +4678,7 @@ EPOCH_START=$(date +%s)
 . ${SCRIPTPREFIX}/include/parallel.sh
 . ${SCRIPTPREFIX}/include/hash.sh
 . ${SCRIPTPREFIX}/include/fs.sh
+
+if [ -e /nonexistent ]; then
+	err 1 "You may not have a /nonexistent.  Please remove it."
+fi
