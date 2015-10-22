@@ -48,8 +48,8 @@ USE_PORTLINT=no
 
 # When building packages, a memory device can be used to speedup the build.
 # Only one of MFSSIZE or USE_TMPFS is supported. TMPFS is generally faster
-# and will expand to the needed amount of RAM. MFS is a bit slower, but is
-# more mature and can have its memory usage capped.
+# and will expand to the needed amount of RAM. MFS is a slower since it
+# uses UFS and several abstraction layers.
 
 # If set WRKDIRPREFIX will be mdmfs of the given size (mM or gG)
 #MFSSIZE=4G
