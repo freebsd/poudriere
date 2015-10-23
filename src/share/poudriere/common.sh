@@ -424,7 +424,7 @@ buildlog_start() {
 	echo "---Begin make.conf---"
 	cat ${mnt}/etc/make.conf
 	echo "---End make.conf---"
-	if [ -f "${mnt}/make.nxb.conf" ]; then
+	if [ -f "${mnt}/etc/make.nxb.conf" ]; then
 		echo "---Begin make.nxb.conf---"
 		cat ${mnt}/etc/make.conf
 		echo "---End make.nxb.conf---"
