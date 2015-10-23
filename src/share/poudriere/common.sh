@@ -424,6 +424,11 @@ buildlog_start() {
 	echo "---Begin make.conf---"
 	cat ${mnt}/etc/make.conf
 	echo "---End make.conf---"
+	if [ -f "${mnt}/make.nxb.conf" ]; then
+		echo "---Begin make.nxb.conf---"
+		cat ${mnt}/etc/make.conf
+		echo "---End make.nxb.conf---"
+	fi
 }
 
 buildlog_stop() {
@@ -1058,6 +1063,7 @@ EOF
 ./etc/group
 ./etc/make.conf
 ./etc/make.conf.bak
+./etc/make.nxb.conf
 ./etc/master.passwd
 ./etc/passwd
 ./etc/pwd.db
@@ -1674,6 +1680,7 @@ jail_start() {
 		MACHINE=${arch%.*}
 		MACHINE_ARCH=${arch#*.}
 		ARCH=\${MACHINE_ARCH}
+		.include "/etc/make.nxb.conf"
 		EOF
 	fi
 
