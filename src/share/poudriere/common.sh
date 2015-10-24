@@ -1680,7 +1680,6 @@ jail_start() {
 		MACHINE=${arch%.*}
 		MACHINE_ARCH=${arch#*.}
 		ARCH=\${MACHINE_ARCH}
-		.include "/etc/make.nxb.conf"
 		EOF
 	fi
 
@@ -1690,6 +1689,9 @@ jail_start() {
 		MAX_EXECUTION_TIME=864000
 		NOHANG_TIME=72000
 		EMULATING=1
+		cat >> "${tomnt}/etc/make.conf" <<-EOF
+		.sinclude "/etc/make.nxb.conf"
+		EOF
 	fi
 
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
