@@ -172,7 +172,7 @@ if [ $CONFIGSTR -eq 1 ]; then
 	unset PORTSDIR PORT_DBDIR TERM
 fi
 
-LISTPORTS=$(list_deps ${ORIGIN} )
+LISTPORTS=$(list_deps ${ORIGIN} testing )
 prepare_ports
 markfs prepkg ${MASTERMNT}
 
