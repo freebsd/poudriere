@@ -1240,7 +1240,6 @@ enter_interactive() {
 	bset status "interactive:"
 
 	msg "Installing packages"
-	echo "PACKAGES=/packages" >> ${MASTERMNT}/etc/make.conf
 	echo "127.0.0.1 ${MASTERNAME}" >> ${MASTERMNT}/etc/hosts
 
 	# Skip for testport as it has already installed pkg in the ref jail.
@@ -2387,6 +2386,10 @@ _real_build_port() {
 				testfailure=2
 				die=0
 			fi
+		fi
+
+		if [ "${phase}" = "package" ]; then
+			sed -i '' -e "/PACKAGES=\/.npkg/d" ${mnt}/etc/make.conf
 		fi
 
 		if [ "${phase}" = "deinstall" ]; then
