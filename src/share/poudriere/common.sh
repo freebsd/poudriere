@@ -1901,6 +1901,7 @@ cleanup() {
 	fi
 
 	rmdir /tmp/.poudriere-lock-$$-* 2>/dev/null || :
+	rm -f /tmp/.poudriere-lock-$$-*.flock 2>/dev/null || :
 
 	export CLEANED_UP=1
 }
