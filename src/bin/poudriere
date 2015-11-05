@@ -49,6 +49,7 @@ Commands:
     help        -- Show usage
     image       -- Generate images
     jail        -- Manage the jails used by poudriere
+    logclean    -- Remove old logfiles
     ports       -- Create, update or delete the portstrees used by poudriere
     pkgclean    -- Remove packages that are no longer needed
     options     -- Configure ports options
@@ -159,7 +160,7 @@ SCRIPTPATH="${SCRIPTPREFIX}/${CMD}.sh"
 CMD_ENV="${CMD_ENV} SCRIPTPATH=${SCRIPTPATH} SCRIPTPREFIX=${SCRIPTPREFIX}"
 
 case "${CMD}" in
-api|bulk|distclean|daemon|image|jail|ports|options|pkgclean|queue|status|testport)
+api|bulk|distclean|daemon|image|jail|logclean|ports|options|pkgclean|queue|status|testport)
 	;;
 *)
 	echo "Unknown command '${CMD}'"

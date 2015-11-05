@@ -538,6 +538,7 @@ dist_pkgdata_DATA = \
 			src/share/poudriere/distclean.sh \
 			src/share/poudriere/image.sh \
 			src/share/poudriere/jail.sh \
+			src/share/poudriere/logclean.sh \
 			src/share/poudriere/options.sh \
 			src/share/poudriere/pkgclean.sh \
 			src/share/poudriere/ports.sh \
