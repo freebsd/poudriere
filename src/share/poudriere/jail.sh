@@ -300,7 +300,12 @@ setup_build_env() {
 	: ${CCACHE_BIN:="/usr/local/libexec/ccache"}
 	if [ -n "${CCACHE_DIR}" -a -d ${CCACHE_BIN}/world ]; then
 		export CCACHE_DIR
-		export PATH="${CCACHE_BIN}/world:${PATH}"
+		if [ ${osversion} -gt 1100086 ]; then
+			export WITH_CCACHE_BUILD=yes
+		else
+			export PATH="${CCACHE_BIN}/world:${PATH}"
+		fi
+		# Avoid using a ports-specific directory
 		unset CCACHE_TEMPDIR
 	fi
 
