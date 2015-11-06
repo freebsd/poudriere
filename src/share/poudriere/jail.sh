@@ -270,15 +270,15 @@ installworld() {
 
 	msg "Starting make installworld"
 	${MAKE_CMD} -C "${SRC_BASE}" installworld DESTDIR=${destdir} \
-	    DB_FROM_SRC=1 || err 1 "Failed to 'make installworld'"
+	    ${MAKE_JOBS} DB_FROM_SRC=1 || err 1 "Failed to 'make installworld'"
 	${MAKE_CMD} -C "${SRC_BASE}" DESTDIR=${destdir} DB_FROM_SRC=1 \
-	    distrib-dirs || err 1 "Failed to 'make distrib-dirs'"
+	    ${MAKE_JOBS} distrib-dirs || err 1 "Failed to 'make distrib-dirs'"
 	${MAKE_CMD} -C "${SRC_BASE}" DESTDIR=${destdir} distribution ||
-	    err 1 "Failed to 'make distribution'"
+	    ${MAKE_JOBS} err 1 "Failed to 'make distribution'"
 	if [ -n "${KERNEL}" ]; then
 		msg "Starting make installkernel"
 		${MAKE_CMD} -C "${SRC_BASE}" installkernel DESTDIR=${destdir} \
-			|| err 1 "Failed to 'make installkernel'"
+		    ${MAKE_JOBS} || err 1 "Failed to 'make installkernel'"
 	fi
 
 	return 0
