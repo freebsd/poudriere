@@ -289,10 +289,10 @@ setup_build_env() {
 		MAKE_CMD=${FMAKE}
 	fi
 
-	: ${CCACHE_PATH:="/usr/local/libexec/ccache"}
-	if [ -n "${CCACHE_DIR}" -a -d ${CCACHE_PATH}/world ]; then
+	: ${CCACHE_BIN:="/usr/local/libexec/ccache"}
+	if [ -n "${CCACHE_DIR}" -a -d ${CCACHE_BIN}/world ]; then
 		export CCACHE_DIR
-		export PATH="${CCACHE_PATH}/world:${PATH}"
+		export PATH="${CCACHE_BIN}/world:${PATH}"
 		unset CCACHE_TEMPDIR
 	fi
 
