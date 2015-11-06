@@ -303,6 +303,7 @@ setup_build_env() {
 
 	export TARGET=${ARCH%.*}
 	export TARGET_ARCH=${ARCH#*.}
+	export WITH_FAST_DEPEND=yes
 }
 
 build_and_install_world() {
