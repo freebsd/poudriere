@@ -263,28 +263,33 @@ update_jail() {
 }
 
 installworld() {
+	local make_jobs
 	local destdir="${JAILMNT}"
 
+	if [ ${JAIL_OSVERSION} -gt 1100086 ]; then
+		make_jobs="${MAKE_JOBS}"
+	fi
+
 	msg "Starting make installworld"
-	${MAKE_CMD} -C "${SRC_BASE}" ${MAKE_JOBS} installworld \
+	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} installworld \
 	    DESTDIR=${destdir} DB_FROM_SRC=1 || \
 	    err 1 "Failed to 'make installworld'"
-	${MAKE_CMD} -C "${SRC_BASE}" ${MAKE_JOBS} DESTDIR=${destdir} \
+	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} DESTDIR=${destdir} \
 	    DB_FROM_SRC=1 distrib-dirs || \
 	    err 1 "Failed to 'make distrib-dirs'"
-	${MAKE_CMD} -C "${SRC_BASE}" ${MAKE_JOBS} DESTDIR=${destdir} \
+	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} DESTDIR=${destdir} \
 	    distribution || err 1 "Failed to 'make distribution'"
 
 	return 0
 }
 
 setup_build_env() {
-	local osversion hostver
+	local hostver
 
-	osversion=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' ${SRC_BASE}/sys/sys/param.h)
+	JAIL_OSVERSION=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' ${SRC_BASE}/sys/sys/param.h)
 	hostver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' /usr/include/sys/param.h)
 	MAKE_CMD=make
-	if [ ${hostver} -gt 1000000 -a ${osversion} -lt 1000000 ]; then
+	if [ ${hostver} -gt 1000000 -a ${JAIL_OSVERSION} -lt 1000000 ]; then
 		FMAKE=$(which fmake 2>/dev/null)
 		[ -n "${FMAKE}" ] ||
 			err 1 "You need fmake installed on the host: devel/fmake"
@@ -294,7 +299,7 @@ setup_build_env() {
 	: ${CCACHE_BIN:="/usr/local/libexec/ccache"}
 	if [ -n "${CCACHE_DIR}" -a -d ${CCACHE_BIN}/world ]; then
 		export CCACHE_DIR
-		if [ ${osversion} -gt 1100086 ]; then
+		if [ ${JAIL_OSVERSION} -gt 1100086 ]; then
 			export WITH_CCACHE_BUILD=yes
 		else
 			export PATH="${CCACHE_BIN}/world:${PATH}"
