@@ -56,9 +56,9 @@ Options:
     -m method     -- When used with -c, overrides the default method for
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
-                       allbsd, ftp, http, ftp-archive, null, src, svn,
+                       allbsd, ftp-archive, ftp, git, http, null, src, svn,
                        svn+file, svn+http, svn+https, svn+ssh, tar=PATH
-                       url=SOMEURL or git.
+                       url=SOMEURL.
     -P patch      -- Specify a patch to apply to the source before building.
     -S srcpath    -- Specify a path to the source tree to be used.
     -t version    -- Version of FreeBSD to upgrade the jail to.

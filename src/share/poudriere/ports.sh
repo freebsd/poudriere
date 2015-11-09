@@ -51,9 +51,8 @@ Options:
     -k            -- When used with -d, only unregister the ports tree without
                      removing the files.
     -m method     -- When used with -c, specify the method used to create the
-                     ports tree. Possible methods are 'portsnap', 'svn',
-                     'svn+http', 'svn+https', 'svn+file', 'svn+ssh', 'git',
-                     or 'none'.
+                     ports tree. Possible methods are 'git', none', 'portsnap',
+                     'svn', 'svn+http', 'svn+https', 'svn+file', or 'svn+ssh'.
                      The default is 'portsnap'.
     -n            -- When used with -l, only print the name of the ports tree
     -p name       -- Specifies the name of the ports tree to work on.  The
