@@ -181,6 +181,6 @@ destroyfs() {
 		rmdir ${mnt}
 	else
 		chflags -R noschg ${mnt}
-		rm -rf ${mnt}
+		rm -rfx ${mnt}
 	fi
 }
