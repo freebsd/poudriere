@@ -1846,8 +1846,7 @@ jail_stop() {
 	if [ ${PARALLEL_JOBS} -ne 0 ]; then
 		# - here to only check for unset, {start,stop}_builders will set this to blank if already stopped
 		for j in ${JOBS-$(jot -w %02d ${PARALLEL_JOBS})}; do
-			MY_JOBID=${j} jstop
-			destroyfs ${MASTERMNT}/../${j} jail || :
+			stop_builder "${j}" || :
 		done
 	fi
 	if [ ${USE_CACHED} = "yes" ]; then
@@ -2520,8 +2519,7 @@ start_builder() {
 	# Jail might be lingering from previous build. Already recursively
 	# destroyed all the builder datasets, so just try stopping the jail
 	# and ignore any errors
-	jstop
-	destroyfs ${mnt} jail
+	stop_builder "${id}"
 	mkdir -p "${mnt}"
 	clonefs ${MASTERMNT} ${mnt} prepkg
 	markfs prepkg ${mnt} >/dev/null
@@ -2544,6 +2542,16 @@ start_builders() {
 	parallel_stop
 }
 
+stop_builder() {
+	[ $# -eq 1 ] || eargs stop_builder jobid
+	local jobid="$1"
+	local mnt
+
+	_my_path mnt
+	MY_JOBID=${jobid} jstop
+	destroyfs "${mnt}" jail
+}
+
 stop_builders() {
 	local mnt
 
@@ -2555,8 +2563,7 @@ stop_builders() {
 	run_hook builder stop "${id}" "${mnt}"
 
 	for j in ${JOBS}; do
-		MY_JOBID=${j} jstop
-		destroyfs ${MASTERMNT}/../${j} jail
+		stop_builder "${j}"
 	done
 
 	# No builders running, unset JOBS
