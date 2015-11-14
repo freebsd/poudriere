@@ -2560,9 +2560,8 @@ stop_builders() {
 
 	msg "Stopping ${PARALLEL_JOBS} builders"
 
-	run_hook builder stop "${id}" "${mnt}"
-
 	for j in ${JOBS}; do
+		run_hook builder stop "${j}" "${mnt}"
 		stop_builder "${j}"
 	done
 
