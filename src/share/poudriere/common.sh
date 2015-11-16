@@ -1854,7 +1854,7 @@ jail_stop() {
 	fi
 	msg "Umounting file systems"
 	destroyfs ${MASTERMNT} jail || :
-	rm -rf ${MASTERMNT}/../
+	rm -rfx ${MASTERMNT}/../
 	export STATUS=0
 
 	# Don't override if there is a failure to grab the last status.
@@ -2545,10 +2545,11 @@ start_builders() {
 stop_builder() {
 	[ $# -eq 1 ] || eargs stop_builder jobid
 	local jobid="$1"
-	local mnt
+	local mnt MY_JOBID
 
+	MY_JOBID="${jobid}"
 	_my_path mnt
-	MY_JOBID=${jobid} jstop
+	jstop
 	destroyfs "${mnt}" jail
 }
 
