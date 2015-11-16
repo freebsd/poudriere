@@ -28,7 +28,7 @@ Mailing list: freebsd-pkg@FreeBSD.org
 Getting started with poudriere
 ------------------------------
 
-1. Install it by typing "make install" at the top-level directory
+1. Install it by typing "./configure", "make" and "make install" at the top-level directory
 2. Copy /usr/local/etc/poudriere.conf.sample to /usr/local/etc/poudriere.conf
 3. Edit it to suit your needs
 4. man poudriere, search for EXAMPLES, read the wiki https://github.com/freebsd/poudriere/wiki
