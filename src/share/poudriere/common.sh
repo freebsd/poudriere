@@ -2539,6 +2539,7 @@ stop_builder() {
 
 	MY_JOBID="${jobid}"
 	_my_path mnt
+	run_hook builder stop "${jobid}" "${mnt}"
 	jstop
 	destroyfs "${mnt}" jail
 }
@@ -2552,7 +2553,6 @@ stop_builders() {
 	msg "Stopping ${PARALLEL_JOBS} builders"
 
 	for j in ${JOBS}; do
-		run_hook builder stop "${j}" "${mnt}"
 		stop_builder "${j}"
 	done
 
