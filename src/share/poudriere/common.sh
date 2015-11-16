@@ -327,6 +327,7 @@ run_hook() {
 		POUDRIERE_DATA="${POUDRIERE_DATA}" \
 		MASTERNAME="${MASTERNAME}" \
 		MASTERMNT="${MASTERMNT}" \
+		MY_JOBID="${MY_JOBID}" \
 		BUILDNAME="${BUILDNAME}" \
 		JAILNAME="${JAILNAME}" \
 		PTNAME="${PTNAME}" \
@@ -2511,9 +2512,9 @@ save_wrkdir() {
 start_builder() {
 	local id=$1
 	local arch=$2
-	local mnt
+	local mnt MY_JOBID
 
-	export MY_JOBID=${id}
+	MY_JOBID=${id}
 	_my_path mnt
 
 	# Jail might be lingering from previous build. Already recursively
