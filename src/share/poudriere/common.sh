@@ -29,6 +29,7 @@
 BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
 . ${SCRIPTPREFIX}/include/common.sh.${BSDPLATFORM}
 BLACKLIST=""
+EX_SOFTWARE=70
 
 # Return true if ran from bulk/testport, ie not daemon/status/jail
 was_a_bulk_run() {
@@ -306,9 +307,9 @@ eargs() {
 	local fname="$1"
 	shift
 	case $# in
-	0) err 1 "${fname}: No arguments expected" ;;
-	1) err 1 "${fname}: 1 argument expected: $1" ;;
-	*) err 1 "${fname}: $# arguments expected: $*" ;;
+	0) err ${EX_SOFTWARE} "${fname}: No arguments expected" ;;
+	1) err ${EX_SOFTWARE} "${fname}: 1 argument expected: $1" ;;
+	*) err ${EX_SOFTWARE} "${fname}: $# arguments expected: $*" ;;
 	esac
 }
 
