@@ -1692,7 +1692,7 @@ jail_start() {
 		msg "Raising MAX_EXECUTION_TIME and NOHANG_TIME for QEMU"
 		MAX_EXECUTION_TIME=864000
 		NOHANG_TIME=72000
-		EMULATING=1
+		export QEMU_EMULATING=1
 		cat >> "${tomnt}/etc/make.conf" <<-EOF
 		.sinclude "/etc/make.nxb.conf"
 		EOF
@@ -1760,7 +1760,7 @@ load_blacklist() {
 	[ -n "${setname}" ] && bl="${bl} ${name}-${setname} \
 		${name}-${ptname}-${setname}"
 	# If emulating always load a qemu-blacklist as it has special needs.
-	[ ${EMULATING:-0} -eq 1 ] && bl="${bl} qemu"
+	[ ${QEMU_EMULATING:-0} -eq 1 ] && bl="${bl} qemu"
 	for b in ${bl} ; do
 		if [ "${b}" = "-" ]; then
 			unset b
