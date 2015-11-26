@@ -429,16 +429,16 @@ buildlog_start() {
 	echo ""
 	for var in CONFIGURE_ARGS CONFIGURE_ENV MAKE_ENV; do
 		echo "--${var}--"
-		echo "$(injail env ${PORT_FLAGS} make -C ${portdir} -V ${var})"
+		echo "$(injail env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V ${var})"
 		echo "--End ${var}--"
 		echo ""
 	done
 	echo "--PLIST_SUB--"
-	echo "$(injail env ${PORT_FLAGS} make -C ${portdir} -V PLIST_SUB | tr ' ' '\n' | grep -v '^$')"
+	echo "$(injail env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V PLIST_SUB | tr ' ' '\n' | grep -v '^$')"
 	echo "--End PLIST_SUB--"
 	echo ""
 	echo "--SUB_LIST--"
-	echo "$(injail env ${PORT_FLAGS} make -C ${portdir} -V SUB_LIST | tr ' ' '\n' | grep -v '^$')"
+	echo "$(injail env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V SUB_LIST | tr ' ' '\n' | grep -v '^$')"
 	echo "--End SUB_LIST--"
 	echo ""
 	echo "---Begin make.conf---"
@@ -1184,7 +1184,7 @@ enter_interactive() {
 		    err 1 "Unable to extract pkg."
 		# Install the selected PKGNG package
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
-		    make -C \
+		    /usr/bin/make -C \
 		    /usr/ports/$(injail /usr/bin/make \
 		    -f /usr/ports/Mk/bsd.port.mk -V PKGNG_ORIGIN) \
 		    PKG_BIN="${PKG_BIN}" install-package
@@ -1195,13 +1195,13 @@ enter_interactive() {
 		# Install run-depends since this is an interactive test
 		msg "Installing run-depends for ${COLOR_PORT}${port}"
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
-		    make -C /usr/ports/${port} run-depends ||
+		    /usr/bin/make -C /usr/ports/${port} run-depends ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port} run-depends"
 		msg "Installing ${COLOR_PORT}${port}"
 		# Only use PKGENV during install as testport will store
 		# the package in a different place than dependencies
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 ${PKGENV} \
-		    make -C /usr/ports/${port} install-package ||
+		    /usr/bin/make -C /usr/ports/${port} install-package ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port}"
 	done
 
@@ -2233,7 +2233,7 @@ _real_build_port() {
 		if [ "${phase#*-}" = "depends" ]; then
 			# No need for nohang or PORT_FLAGS for *-depends
 			injail env USE_PACKAGE_DEPENDS_ONLY=1 ${phaseenv} \
-			    make -C ${portdir} ${phase} || return 1
+			    /usr/bin/make -C ${portdir} ${phase} || return 1
 		else
 			# Only set PKGENV during 'package' to prevent
 			# testport-built packages from going into the main repo
@@ -2250,7 +2250,7 @@ _real_build_port() {
 				${log}/logs/${PKGNAME}.log \
 				${MASTERMNT}/.p/var/run/${MY_JOBID:-00}_nohang.pid \
 				injail env ${pkgenv} ${phaseenv} ${PORT_FLAGS} \
-				make -C ${portdir} ${phase}
+				/usr/bin/make -C ${portdir} ${phase}
 			hangstatus=$? # This is done as it may return 1 or 2 or 3
 			if [ $hangstatus -ne 0 ]; then
 				# 1 = cmd failed, not a timeout
@@ -2283,7 +2283,7 @@ _real_build_port() {
 
 			bset_job_status "stage-qa" "${port}"
 			if ! injail env DEVELOPER=1 ${PORT_FLAGS} \
-			    make -C ${portdir} stage-qa; then
+			    /usr/bin/make -C ${portdir} stage-qa; then
 				msg "Error: stage-qa failures detected"
 				[ "${PORTTESTING_FATAL}" != "no" ] &&
 					return 1
@@ -2292,7 +2292,7 @@ _real_build_port() {
 
 			bset_job_status "check-plist" "${port}"
 			if ! injail env DEVELOPER=1 ${PORT_FLAGS} \
-			    make -C ${portdir} check-plist; then
+			    /usr/bin/make -C ${portdir} check-plist; then
 				msg "Error: check-plist failures detected"
 				[ "${PORTTESTING_FATAL}" != "no" ] &&
 					return 1
@@ -2313,7 +2313,7 @@ _real_build_port() {
 			local mod=$(mktemp -t lo.mod)
 			local mod1=$(mktemp -t lo.mod1)
 			local die=0
-			PREFIX=$(injail env ${PORT_FLAGS} make -C ${portdir} -VPREFIX)
+			PREFIX=$(injail env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -VPREFIX)
 
 			msg "Checking for extra files and directories"
 			bset_job_status "leftovers" "${port}"
@@ -2333,7 +2333,7 @@ _real_build_port() {
 			else
 				# LEGACY - Support for older ports tree.
 				local users user homedirs plistsub_sed
-				plistsub_sed=$(injail env ${PORT_FLAGS} make -C ${portdir} -V'PLIST_SUB:C/"//g:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/')
+				plistsub_sed=$(injail env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V'PLIST_SUB:C/"//g:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/')
 
 				users=$(injail /usr/bin/make -C ${portdir} -VUSERS)
 				homedirs=""
@@ -4459,7 +4459,7 @@ build_repo() {
 		OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
 		INDEXF=${PACKAGES}/INDEX-${OSMAJ}
 		rm -f ${INDEXF}.1 2>/dev/null || :
-		injail env INDEX_JOBS=${PARALLEL_JOBS} INDEXDIR=/ make -C /usr/ports index
+		injail env INDEX_JOBS=${PARALLEL_JOBS} INDEXDIR=/ /usr/bin/make -C /usr/ports index
 		awk -F\| -v pkgdir=${PACKAGES} \
 			'{ if (system( "[ -f ${PACKAGES}/All/"$1".tbz ] " )  == 0) { print $0 } }' \
 			${MASTERMNT}/INDEX-${OSMAJ} > ${INDEXF}
