@@ -2093,7 +2093,7 @@ _real_build_port() {
 	_log_path log
 
 	# Use bootstrap PKG when not building pkg itself.
-	if [ ${QEMU_EMULATING:-0} -eq 1 ]; then
+	if false && [ ${QEMU_EMULATING:-0} -eq 1 ]; then
 		case "${port}" in
 		ports-mgmt/pkg|ports-mgmt/pkg-devel) ;;
 		*)
