@@ -2092,6 +2092,18 @@ _real_build_port() {
 	_my_path mnt
 	_log_path log
 
+	# Use bootstrap PKG when not building pkg itself.
+	if [ ${QEMU_EMULATING:-0} -eq 1 ]; then
+		case "${port}" in
+		ports-mgmt/pkg|ports-mgmt/pkg-devel) ;;
+		*)
+			if ensure_pkg_installed; then
+				export PKG_BIN="/.p/pkg-static"
+			fi
+			;;
+		esac
+	fi
+
 	for jpkg in ${ALLOW_MAKE_JOBS_PACKAGES}; do
 		case "${PKGNAME%-*}" in
 		${jpkg})
