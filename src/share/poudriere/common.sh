@@ -3301,13 +3301,13 @@ ensure_pkg_installed() {
 	_my_path mnt
 	[ ${PKGNG} -eq 1 ] || return 0
 	[ -z "${force}" ] && [ -x "${mnt}${PKG_BIN}" ] && return 0
-	[ -e ${MASTERMNT}/packages/Latest/pkg.txz ] || return 1 #pkg missing
 	# Hack, speed up QEMU usage on pkg-repo.
 	if [ ${QEMU_EMULATING:-0} -eq 1 ] && \
 	    [ -f /usr/local/sbin/pkg-static ]; then
 		cp -f /usr/local/sbin/pkg-static "${mnt}/.p/pkg-static"
 		return 0
 	fi
+	[ -e ${MASTERMNT}/packages/Latest/pkg.txz ] || return 1 #pkg missing
 	injail tar xf /packages/Latest/pkg.txz -C / \
 		-s ",/.*/,.p/,g" "*/pkg-static"
 	return 0
