@@ -186,6 +186,14 @@ prompt() {
 	return 1
 }
 
+confirm_if_tty() {
+	[ $# -eq 1 ] || eargs confirm_if_tty message
+	local message="${1}"
+
+	[ -t 0 ] || return 0
+	prompt "${message}"
+}
+
 _mastermnt() {
 	local hashed_name mnt mnttest mnamelen
 
