@@ -182,6 +182,14 @@ prompt() {
 	return 1
 }
 
+confirm_if_tty() {
+	[ $# -eq 1 ] || eargs confirm_if_tty message
+	local message="${1}"
+
+	[ -t 0 ] || return 0
+	prompt "${message}"
+}
+
 # Handle needs after processing arguments.
 post_getopts() {
 	# Short-circuit verbose functions to save CPU

@@ -1043,6 +1043,8 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		;;
 	00000100)
 		test -z ${JAILNAME} && usage JAILNAME
+		confirm_if_tty "Are you sure you want to delete the jail?" || \
+		    err 1 "Not deleting jail"
 		maybe_run_queued "${saved_argv}"
 		delete_jail
 		;;
