@@ -252,6 +252,8 @@ _log_path() {
 }
 
 injail() {
+	injail_tty "$@"
+	return
 	local name
 
 	_my_name name
@@ -280,13 +282,13 @@ jstart() {
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${network} ${JAIL_PARAMS} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
-	jexecd -j ${name} -d ${MASTERMNT}/../ ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}}
+	#jexecd -j ${name} -d ${MASTERMNT}/../ ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}}
 	jail -c persist name=${name}-n \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${ipargs} ${JAIL_PARAMS} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
-	jexecd -j ${name}-n -d ${MASTERMNT}/../ ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}}
+	#jexecd -j ${name}-n -d ${MASTERMNT}/../ ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}}
 	injail id >/dev/null 2>&1 || \
 	    err 1 "Unable to execute id(1) in jail. Emulation or ABI wrong."
 	if ! injail id ${PORTBUILD_USER} >/dev/null 2>&1 ; then
