@@ -596,6 +596,7 @@ install_from_ftp() {
 		DISTS="${DISTS} lib32"
 		[ -n "${KERNEL}" ] && DISTS="${DISTS} kernel"
 		fetch_file ${JAILMNT}/fromftp/MANIFEST ${URL}/MANIFEST
+		[ -s ${URL}/MANIFEST ] || err 1 "Empty MANIFEST file."
 		for dist in ${DISTS}; do
 			grep -q ${dist} ${JAILMNT}/fromftp/MANIFEST || continue
 			msg "Fetching ${dist} for FreeBSD ${V} ${ARCH}"
