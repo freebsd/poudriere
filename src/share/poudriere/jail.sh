@@ -314,11 +314,6 @@ setup_build_env() {
 }
 
 build_and_install_world() {
-	if [ -n "${EMULATOR}" ]; then
-		mkdir -p ${JAILMNT}${EMULATOR%/*}
-		cp "${EMULATOR}" "${JAILMNT}${EMULATOR}"
-	fi
-
 	export SRC_BASE=${JAILMNT}/usr/src
 	mkdir -p ${JAILMNT}/etc
 	[ -f ${JAILMNT}/etc/src.conf ] && rm -f ${JAILMNT}/etc/src.conf
@@ -665,6 +660,11 @@ create_jail() {
 	jset ${JAILNAME} timestamp $(date +%s)
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
+
+	if [ -n "${EMULATOR}" ]; then
+		mkdir -p ${JAILMNT}${EMULATOR%/*}
+		cp "${EMULATOR}" "${JAILMNT}${EMULATOR}"
+	fi
 
 	# Wrap the jail creation in a special cleanup hook that will remove the jail
 	# if any error is encountered
