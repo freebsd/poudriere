@@ -150,20 +150,30 @@ update_version() {
 # Set specified version into login.conf
 update_version_env() {
 	local release="$1"
-	local login_env osversion
+	local login_env path_env
+	local osversion
 
 	osversion=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILMNT}/usr/include/sys/param.h`
 	login_env=",UNAME_r=${release% *},UNAME_v=FreeBSD ${release},OSVERSION=${osversion}"
 
 	# Tell pkg(8) to not use /bin/sh for the ELF ABI since it is native.
-	need_emulation  "${ARCH}" && \
-	    login_env="${login_env},ABI_FILE=\/usr\/lib\/crt1.o"
+	if need_emulation "${ARCH}"; then
+		login_env="${login_env},ABI_FILE=\/usr\/lib\/crt1.o"
+
+		# Check if we have native-xtools.
+		for p in sbin bin usr/sbin usr/bin; do
+			[ -d "${JAILMNT}/nxb-bin/${p}" ] &&
+			    path_env="${path_env}/nxb-bin/${p} "
+		done
+	fi
 
 	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
 	need_cross_build "${REALARCH}" "${ARCH}" && \
 	    login_env="${login_env},UNAME_m=${ARCH%.*},UNAME_p=${ARCH#*.}"
 
-	sed -i "" -e "s/,UNAME_r.*:/:/ ; s/:\(setenv.*\):/:\1${login_env}:/" ${JAILMNT}/etc/login.conf
+	sed -E -i "" -e "s|,UNAME_r.*:|:| ; s|:(setenv=.*):|:\1${login_env}:|" \
+	    -e "s|/nxb-bin(/usr)?/s?bin ||g ; s|:path=|&${path_env}|" \
+	    ${JAILMNT}/etc/login.conf
 	cap_mkdb ${JAILMNT}/etc/login.conf
 }
 
@@ -363,9 +373,6 @@ build_and_install_world() {
 		rm -rf ${JAILMNT}/nxb-bin || err 1 "Failed to remove old native-xtools"
 		mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
 		cat > ${JAILMNT}/etc/make.nxb.conf <<- EOF
-		CC=/nxb-bin/usr/bin/cc
-		CPP=/nxb-bin/usr/bin/cpp
-		CXX=/nxb-bin/usr/bin/c++
 		AS=/nxb-bin/usr/bin/as
 		NM=/nxb-bin/usr/bin/nm
 		LD=/nxb-bin/usr/bin/ld
