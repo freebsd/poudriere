@@ -173,7 +173,7 @@ else
 	none);;
 	*) usage;;
 	esac
-	SVN_FULLURL=${proto}://${SVN_HOST}/base
+	SVN_FULLURL=${proto}://${SVN_HOST}/ports
 	if [ -n "${GIT_URL}" ]; then
 		GIT_FULLURL=${GIT_URL}
 	else
