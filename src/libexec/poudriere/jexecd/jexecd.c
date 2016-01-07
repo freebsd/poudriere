@@ -123,7 +123,7 @@ client_read(struct client *cl)
 	pid_t pid;
 
 	pid = -1;
-	nv = nvlist_recv(cl->fd);
+	nv = nvlist_recv(cl->fd, 0);
 	if (nv == NULL)
 		err(EXIT_FAILURE, "nvlist_recv() failed");
 

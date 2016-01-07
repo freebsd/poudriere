@@ -1,5 +1,6 @@
 /*-
  * Copyright (c) 2009-2013 The FreeBSD Foundation
+ * Copyright (c) 2013-2015 Mariusz Zaborski <oshogbo@FreeBSD.org>
  * All rights reserved.
  *
  * This software was developed by Pawel Jakub Dawidek under sponsorship from
@@ -26,19 +27,18 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD: head/sys/sys/nvpair_impl.h 279439 2015-03-01 00:34:27Z rstone $
+ * $FreeBSD$
  */
 
 #ifndef	_NVPAIR_IMPL_H_
 #define	_NVPAIR_IMPL_H_
 
+#include <sys/nv.h>
 #include <sys/queue.h>
 
 #ifndef _KERNEL
 #include <stdint.h>
 #endif
-
-#include "nv.h"
 
 TAILQ_HEAD(nvl_head, nvpair);
 
@@ -72,6 +72,15 @@ unsigned char *nvpair_pack_descriptor(const nvpair_t *nvp, unsigned char *ptr,
 unsigned char *nvpair_pack_binary(const nvpair_t *nvp, unsigned char *ptr,
     size_t *leftp);
 unsigned char *nvpair_pack_nvlist_up(unsigned char *ptr, size_t *leftp);
+unsigned char *nvpair_pack_bool_array(const nvpair_t *nvp, unsigned char *ptr,
+    size_t *leftp);
+unsigned char *nvpair_pack_number_array(const nvpair_t *nvp, unsigned char *ptr,
+    size_t *leftp);
+unsigned char *nvpair_pack_string_array(const nvpair_t *nvp, unsigned char *ptr,
+    size_t *leftp);
+unsigned char *nvpair_pack_descriptor_array(const nvpair_t *nvp,
+    unsigned char *ptr, int64_t *fdidxp, size_t *leftp);
+unsigned char *nvpair_pack_nvlist_array_next(unsigned char *ptr, size_t *leftp);
 
 /* Unpack data functions. */
 const unsigned char *nvpair_unpack_header(bool isbe, nvpair_t *nvp,
@@ -85,10 +94,20 @@ const unsigned char *nvpair_unpack_number(bool isbe, nvpair_t *nvp,
 const unsigned char *nvpair_unpack_string(bool isbe, nvpair_t *nvp,
     const unsigned char *ptr, size_t *leftp);
 const unsigned char *nvpair_unpack_nvlist(bool isbe, nvpair_t *nvp,
-    const unsigned char *ptr, size_t *leftp, size_t nvlist, nvlist_t **child);
+    const unsigned char *ptr, size_t *leftp, size_t nfds, nvlist_t **child);
 const unsigned char *nvpair_unpack_descriptor(bool isbe, nvpair_t *nvp,
     const unsigned char *ptr, size_t *leftp, const int *fds, size_t nfds);
 const unsigned char *nvpair_unpack_binary(bool isbe, nvpair_t *nvp,
     const unsigned char *ptr, size_t *leftp);
+const unsigned char *nvpair_unpack_bool_array(bool isbe, nvpair_t *nvp,
+    const unsigned char *ptr, size_t *leftp);
+const unsigned char *nvpair_unpack_number_array(bool isbe, nvpair_t *nvp,
+    const unsigned char *ptr, size_t *leftp);
+const unsigned char *nvpair_unpack_string_array(bool isbe, nvpair_t *nvp,
+    const unsigned char *ptr, size_t *leftp);
+const unsigned char *nvpair_unpack_descriptor_array(bool isbe, nvpair_t *nvp,
+    const unsigned char *ptr, size_t *leftp, const int *fds, size_t nfds);
+const unsigned char *nvpair_unpack_nvlist_array(bool isbe, nvpair_t *nvp,
+    const unsigned char *ptr, size_t *leftp, nvlist_t **firstel);
 
 #endif	/* !_NVPAIR_IMPL_H_ */

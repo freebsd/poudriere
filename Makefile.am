@@ -188,11 +188,11 @@ libucl_a_CFLAGS=	-I$(top_srcdir)/external/libucl/uthash \
 			-I$(top_srcdir)/external/libucl/include  \
 			-I$(top_srcdir)/external/libucl/src \
 			-Wno-unused-parameter -Wno-pointer-sign
-libnv_a_CFLAGS=		-I$(top_srcdir)/external/libnv/
-libnv_a_SOURCES=	external/libnv/subr_dnvlist.c \
+libnv_a_CFLAGS=		-isystem $(top_srcdir)/external/libnv/ -std=gnu99
+libnv_a_SOURCES=	external/libnv/sys/dnvlist.c \
 			external/libnv/msgio.c \
-			external/libnv/subr_nvlist.c \
-			external/libnv/subr_nvpair.c
+			external/libnv/sys/nvlist.c \
+			external/libnv/sys/nvpair.c
 poudriered_SOURCES=	src/poudriered/poudriered.c
 poudriered_CFLAGS=	-DPREFIX=\"$(prefix)\" \
 			-I$(top_srcdir)/external/libucl/include

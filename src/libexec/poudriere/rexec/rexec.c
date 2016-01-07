@@ -97,7 +97,7 @@ main(int argc, char **argv)
 	}
 	nvlist_destroy(nv);
 
-	nv = nvlist_recv(fd);
+	nv = nvlist_recv(fd, 0);
 	if (nv == NULL)
 		err(1, "nvlist_recv() failed");
 

@@ -124,10 +124,10 @@ am__v_AR_1 =
 libnv_a_AR = $(AR) $(ARFLAGS)
 libnv_a_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
-am_libnv_a_OBJECTS = external/libnv/libnv_a-subr_dnvlist.$(OBJEXT) \
+am_libnv_a_OBJECTS = external/libnv/sys/libnv_a-dnvlist.$(OBJEXT) \
 	external/libnv/libnv_a-msgio.$(OBJEXT) \
-	external/libnv/libnv_a-subr_nvlist.$(OBJEXT) \
-	external/libnv/libnv_a-subr_nvpair.$(OBJEXT)
+	external/libnv/sys/libnv_a-nvlist.$(OBJEXT) \
+	external/libnv/sys/libnv_a-nvpair.$(OBJEXT)
 libnv_a_OBJECTS = $(am_libnv_a_OBJECTS)
 libucl_a_AR = $(AR) $(ARFLAGS)
 libucl_a_LIBADD =
@@ -629,11 +629,11 @@ libucl_a_CFLAGS = -I$(top_srcdir)/external/libucl/uthash \
 			-I$(top_srcdir)/external/libucl/src \
 			-Wno-unused-parameter -Wno-pointer-sign
 
-libnv_a_CFLAGS = -I$(top_srcdir)/external/libnv/
-libnv_a_SOURCES = external/libnv/subr_dnvlist.c \
+libnv_a_CFLAGS = -I $(top_srcdir)/external/libnv/ -std=gnu99
+libnv_a_SOURCES = external/libnv/sys/dnvlist.c \
 			external/libnv/msgio.c \
-			external/libnv/subr_nvlist.c \
-			external/libnv/subr_nvpair.c
+			external/libnv/sys/nvlist.c \
+			external/libnv/sys/nvpair.c
 
 poudriered_SOURCES = src/poudriered/poudriered.c
 poudriered_CFLAGS = -DPREFIX=\"$(prefix)\" \
@@ -713,24 +713,30 @@ src/etc/rc.d/poudriered: $(top_builddir)/config.status $(top_srcdir)/src/etc/rc.
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
+external/libnv/sys/$(am__dirstamp):
+	@$(MKDIR_P) external/libnv/sys
+	@: > external/libnv/sys/$(am__dirstamp)
+external/libnv/sys/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/libnv/sys/$(DEPDIR)
+	@: > external/libnv/sys/$(DEPDIR)/$(am__dirstamp)
+external/libnv/sys/libnv_a-dnvlist.$(OBJEXT):  \
+	external/libnv/sys/$(am__dirstamp) \
+	external/libnv/sys/$(DEPDIR)/$(am__dirstamp)
 external/libnv/$(am__dirstamp):
 	@$(MKDIR_P) external/libnv
 	@: > external/libnv/$(am__dirstamp)
 external/libnv/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) external/libnv/$(DEPDIR)
 	@: > external/libnv/$(DEPDIR)/$(am__dirstamp)
-external/libnv/libnv_a-subr_dnvlist.$(OBJEXT):  \
-	external/libnv/$(am__dirstamp) \
-	external/libnv/$(DEPDIR)/$(am__dirstamp)
 external/libnv/libnv_a-msgio.$(OBJEXT):  \
 	external/libnv/$(am__dirstamp) \
 	external/libnv/$(DEPDIR)/$(am__dirstamp)
-external/libnv/libnv_a-subr_nvlist.$(OBJEXT):  \
-	external/libnv/$(am__dirstamp) \
-	external/libnv/$(DEPDIR)/$(am__dirstamp)
-external/libnv/libnv_a-subr_nvpair.$(OBJEXT):  \
-	external/libnv/$(am__dirstamp) \
-	external/libnv/$(DEPDIR)/$(am__dirstamp)
+external/libnv/sys/libnv_a-nvlist.$(OBJEXT):  \
+	external/libnv/sys/$(am__dirstamp) \
+	external/libnv/sys/$(DEPDIR)/$(am__dirstamp)
+external/libnv/sys/libnv_a-nvpair.$(OBJEXT):  \
+	external/libnv/sys/$(am__dirstamp) \
+	external/libnv/sys/$(DEPDIR)/$(am__dirstamp)
 
 libnv.a: $(libnv_a_OBJECTS) $(libnv_a_DEPENDENCIES) $(EXTRA_libnv_a_DEPENDENCIES) 
 	$(AM_V_at)-rm -f libnv.a
@@ -1158,6 +1164,7 @@ uninstall-dist_rcSCRIPTS:
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f external/libnv/*.$(OBJEXT)
+	-rm -f external/libnv/sys/*.$(OBJEXT)
 	-rm -f external/libucl/src/*.$(OBJEXT)
 	-rm -f external/sh/*.$(OBJEXT)
 	-rm -f external/sh/bltin/*.$(OBJEXT)
@@ -1180,9 +1187,9 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@external/libnv/$(DEPDIR)/libnv_a-msgio.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@external/libnv/$(DEPDIR)/libnv_a-subr_dnvlist.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@external/libnv/$(DEPDIR)/libnv_a-subr_nvlist.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@external/libnv/$(DEPDIR)/libnv_a-subr_nvpair.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@external/libnv/sys/$(DEPDIR)/libnv_a-dnvlist.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@external/libnv/sys/$(DEPDIR)/libnv_a-nvlist.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@external/libnv/sys/$(DEPDIR)/libnv_a-nvpair.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_streamline.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_utils.Po@am__quote@
@@ -1256,19 +1263,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-external/libnv/libnv_a-subr_dnvlist.o: external/libnv/subr_dnvlist.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/libnv_a-subr_dnvlist.o -MD -MP -MF external/libnv/$(DEPDIR)/libnv_a-subr_dnvlist.Tpo -c -o external/libnv/libnv_a-subr_dnvlist.o `test -f 'external/libnv/subr_dnvlist.c' || echo '$(srcdir)/'`external/libnv/subr_dnvlist.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/$(DEPDIR)/libnv_a-subr_dnvlist.Tpo external/libnv/$(DEPDIR)/libnv_a-subr_dnvlist.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/subr_dnvlist.c' object='external/libnv/libnv_a-subr_dnvlist.o' libtool=no @AMDEPBACKSLASH@
+external/libnv/sys/libnv_a-dnvlist.o: external/libnv/sys/dnvlist.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/sys/libnv_a-dnvlist.o -MD -MP -MF external/libnv/sys/$(DEPDIR)/libnv_a-dnvlist.Tpo -c -o external/libnv/sys/libnv_a-dnvlist.o `test -f 'external/libnv/sys/dnvlist.c' || echo '$(srcdir)/'`external/libnv/sys/dnvlist.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/sys/$(DEPDIR)/libnv_a-dnvlist.Tpo external/libnv/sys/$(DEPDIR)/libnv_a-dnvlist.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/sys/dnvlist.c' object='external/libnv/sys/libnv_a-dnvlist.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/libnv_a-subr_dnvlist.o `test -f 'external/libnv/subr_dnvlist.c' || echo '$(srcdir)/'`external/libnv/subr_dnvlist.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/sys/libnv_a-dnvlist.o `test -f 'external/libnv/sys/dnvlist.c' || echo '$(srcdir)/'`external/libnv/sys/dnvlist.c
 
-external/libnv/libnv_a-subr_dnvlist.obj: external/libnv/subr_dnvlist.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/libnv_a-subr_dnvlist.obj -MD -MP -MF external/libnv/$(DEPDIR)/libnv_a-subr_dnvlist.Tpo -c -o external/libnv/libnv_a-subr_dnvlist.obj `if test -f 'external/libnv/subr_dnvlist.c'; then $(CYGPATH_W) 'external/libnv/subr_dnvlist.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/subr_dnvlist.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/$(DEPDIR)/libnv_a-subr_dnvlist.Tpo external/libnv/$(DEPDIR)/libnv_a-subr_dnvlist.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/subr_dnvlist.c' object='external/libnv/libnv_a-subr_dnvlist.obj' libtool=no @AMDEPBACKSLASH@
+external/libnv/sys/libnv_a-dnvlist.obj: external/libnv/sys/dnvlist.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/sys/libnv_a-dnvlist.obj -MD -MP -MF external/libnv/sys/$(DEPDIR)/libnv_a-dnvlist.Tpo -c -o external/libnv/sys/libnv_a-dnvlist.obj `if test -f 'external/libnv/sys/dnvlist.c'; then $(CYGPATH_W) 'external/libnv/sys/dnvlist.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/sys/dnvlist.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/sys/$(DEPDIR)/libnv_a-dnvlist.Tpo external/libnv/sys/$(DEPDIR)/libnv_a-dnvlist.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/sys/dnvlist.c' object='external/libnv/sys/libnv_a-dnvlist.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/libnv_a-subr_dnvlist.obj `if test -f 'external/libnv/subr_dnvlist.c'; then $(CYGPATH_W) 'external/libnv/subr_dnvlist.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/subr_dnvlist.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/sys/libnv_a-dnvlist.obj `if test -f 'external/libnv/sys/dnvlist.c'; then $(CYGPATH_W) 'external/libnv/sys/dnvlist.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/sys/dnvlist.c'; fi`
 
 external/libnv/libnv_a-msgio.o: external/libnv/msgio.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/libnv_a-msgio.o -MD -MP -MF external/libnv/$(DEPDIR)/libnv_a-msgio.Tpo -c -o external/libnv/libnv_a-msgio.o `test -f 'external/libnv/msgio.c' || echo '$(srcdir)/'`external/libnv/msgio.c
@@ -1284,33 +1291,33 @@ external/libnv/libnv_a-msgio.obj: external/libnv/msgio.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/libnv_a-msgio.obj `if test -f 'external/libnv/msgio.c'; then $(CYGPATH_W) 'external/libnv/msgio.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/msgio.c'; fi`
 
-external/libnv/libnv_a-subr_nvlist.o: external/libnv/subr_nvlist.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/libnv_a-subr_nvlist.o -MD -MP -MF external/libnv/$(DEPDIR)/libnv_a-subr_nvlist.Tpo -c -o external/libnv/libnv_a-subr_nvlist.o `test -f 'external/libnv/subr_nvlist.c' || echo '$(srcdir)/'`external/libnv/subr_nvlist.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/$(DEPDIR)/libnv_a-subr_nvlist.Tpo external/libnv/$(DEPDIR)/libnv_a-subr_nvlist.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/subr_nvlist.c' object='external/libnv/libnv_a-subr_nvlist.o' libtool=no @AMDEPBACKSLASH@
+external/libnv/sys/libnv_a-nvlist.o: external/libnv/sys/nvlist.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/sys/libnv_a-nvlist.o -MD -MP -MF external/libnv/sys/$(DEPDIR)/libnv_a-nvlist.Tpo -c -o external/libnv/sys/libnv_a-nvlist.o `test -f 'external/libnv/sys/nvlist.c' || echo '$(srcdir)/'`external/libnv/sys/nvlist.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/sys/$(DEPDIR)/libnv_a-nvlist.Tpo external/libnv/sys/$(DEPDIR)/libnv_a-nvlist.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/sys/nvlist.c' object='external/libnv/sys/libnv_a-nvlist.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/libnv_a-subr_nvlist.o `test -f 'external/libnv/subr_nvlist.c' || echo '$(srcdir)/'`external/libnv/subr_nvlist.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/sys/libnv_a-nvlist.o `test -f 'external/libnv/sys/nvlist.c' || echo '$(srcdir)/'`external/libnv/sys/nvlist.c
 
-external/libnv/libnv_a-subr_nvlist.obj: external/libnv/subr_nvlist.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/libnv_a-subr_nvlist.obj -MD -MP -MF external/libnv/$(DEPDIR)/libnv_a-subr_nvlist.Tpo -c -o external/libnv/libnv_a-subr_nvlist.obj `if test -f 'external/libnv/subr_nvlist.c'; then $(CYGPATH_W) 'external/libnv/subr_nvlist.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/subr_nvlist.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/$(DEPDIR)/libnv_a-subr_nvlist.Tpo external/libnv/$(DEPDIR)/libnv_a-subr_nvlist.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/subr_nvlist.c' object='external/libnv/libnv_a-subr_nvlist.obj' libtool=no @AMDEPBACKSLASH@
+external/libnv/sys/libnv_a-nvlist.obj: external/libnv/sys/nvlist.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/sys/libnv_a-nvlist.obj -MD -MP -MF external/libnv/sys/$(DEPDIR)/libnv_a-nvlist.Tpo -c -o external/libnv/sys/libnv_a-nvlist.obj `if test -f 'external/libnv/sys/nvlist.c'; then $(CYGPATH_W) 'external/libnv/sys/nvlist.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/sys/nvlist.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/sys/$(DEPDIR)/libnv_a-nvlist.Tpo external/libnv/sys/$(DEPDIR)/libnv_a-nvlist.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/sys/nvlist.c' object='external/libnv/sys/libnv_a-nvlist.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/libnv_a-subr_nvlist.obj `if test -f 'external/libnv/subr_nvlist.c'; then $(CYGPATH_W) 'external/libnv/subr_nvlist.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/subr_nvlist.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/sys/libnv_a-nvlist.obj `if test -f 'external/libnv/sys/nvlist.c'; then $(CYGPATH_W) 'external/libnv/sys/nvlist.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/sys/nvlist.c'; fi`
 
-external/libnv/libnv_a-subr_nvpair.o: external/libnv/subr_nvpair.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/libnv_a-subr_nvpair.o -MD -MP -MF external/libnv/$(DEPDIR)/libnv_a-subr_nvpair.Tpo -c -o external/libnv/libnv_a-subr_nvpair.o `test -f 'external/libnv/subr_nvpair.c' || echo '$(srcdir)/'`external/libnv/subr_nvpair.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/$(DEPDIR)/libnv_a-subr_nvpair.Tpo external/libnv/$(DEPDIR)/libnv_a-subr_nvpair.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/subr_nvpair.c' object='external/libnv/libnv_a-subr_nvpair.o' libtool=no @AMDEPBACKSLASH@
+external/libnv/sys/libnv_a-nvpair.o: external/libnv/sys/nvpair.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/sys/libnv_a-nvpair.o -MD -MP -MF external/libnv/sys/$(DEPDIR)/libnv_a-nvpair.Tpo -c -o external/libnv/sys/libnv_a-nvpair.o `test -f 'external/libnv/sys/nvpair.c' || echo '$(srcdir)/'`external/libnv/sys/nvpair.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/sys/$(DEPDIR)/libnv_a-nvpair.Tpo external/libnv/sys/$(DEPDIR)/libnv_a-nvpair.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/sys/nvpair.c' object='external/libnv/sys/libnv_a-nvpair.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/libnv_a-subr_nvpair.o `test -f 'external/libnv/subr_nvpair.c' || echo '$(srcdir)/'`external/libnv/subr_nvpair.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/sys/libnv_a-nvpair.o `test -f 'external/libnv/sys/nvpair.c' || echo '$(srcdir)/'`external/libnv/sys/nvpair.c
 
-external/libnv/libnv_a-subr_nvpair.obj: external/libnv/subr_nvpair.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/libnv_a-subr_nvpair.obj -MD -MP -MF external/libnv/$(DEPDIR)/libnv_a-subr_nvpair.Tpo -c -o external/libnv/libnv_a-subr_nvpair.obj `if test -f 'external/libnv/subr_nvpair.c'; then $(CYGPATH_W) 'external/libnv/subr_nvpair.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/subr_nvpair.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/$(DEPDIR)/libnv_a-subr_nvpair.Tpo external/libnv/$(DEPDIR)/libnv_a-subr_nvpair.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/subr_nvpair.c' object='external/libnv/libnv_a-subr_nvpair.obj' libtool=no @AMDEPBACKSLASH@
+external/libnv/sys/libnv_a-nvpair.obj: external/libnv/sys/nvpair.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/sys/libnv_a-nvpair.obj -MD -MP -MF external/libnv/sys/$(DEPDIR)/libnv_a-nvpair.Tpo -c -o external/libnv/sys/libnv_a-nvpair.obj `if test -f 'external/libnv/sys/nvpair.c'; then $(CYGPATH_W) 'external/libnv/sys/nvpair.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/sys/nvpair.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/sys/$(DEPDIR)/libnv_a-nvpair.Tpo external/libnv/sys/$(DEPDIR)/libnv_a-nvpair.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/sys/nvpair.c' object='external/libnv/sys/libnv_a-nvpair.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/libnv_a-subr_nvpair.obj `if test -f 'external/libnv/subr_nvpair.c'; then $(CYGPATH_W) 'external/libnv/subr_nvpair.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/subr_nvpair.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/sys/libnv_a-nvpair.obj `if test -f 'external/libnv/sys/nvpair.c'; then $(CYGPATH_W) 'external/libnv/sys/nvpair.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/sys/nvpair.c'; fi`
 
 external/libucl/src/libucl_a-ucl_emitter.o: external/libucl/src/ucl_emitter.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_a-ucl_emitter.o -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Tpo -c -o external/libucl/src/libucl_a-ucl_emitter.o `test -f 'external/libucl/src/ucl_emitter.c' || echo '$(srcdir)/'`external/libucl/src/ucl_emitter.c
@@ -2565,6 +2572,8 @@ distclean-generic:
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
 	-rm -f external/libnv/$(DEPDIR)/$(am__dirstamp)
 	-rm -f external/libnv/$(am__dirstamp)
+	-rm -f external/libnv/sys/$(DEPDIR)/$(am__dirstamp)
+	-rm -f external/libnv/sys/$(am__dirstamp)
 	-rm -f external/libucl/src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f external/libucl/src/$(am__dirstamp)
 	-rm -f external/sh/$(DEPDIR)/$(am__dirstamp)
@@ -2610,7 +2619,7 @@ clean-am: clean-generic clean-noinstLIBRARIES clean-pkglibexecPROGRAMS \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf external/libnv/$(DEPDIR) external/libucl/src/$(DEPDIR) external/sh/$(DEPDIR) external/sh/bltin/$(DEPDIR) src/libexec/poudriere/cached/$(DEPDIR) src/libexec/poudriere/clock_monotonic/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/locked_mkdir/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
+	-rm -rf external/libnv/$(DEPDIR) external/libnv/sys/$(DEPDIR) external/libucl/src/$(DEPDIR) external/sh/$(DEPDIR) external/sh/bltin/$(DEPDIR) src/libexec/poudriere/cached/$(DEPDIR) src/libexec/poudriere/clock_monotonic/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/locked_mkdir/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-tags
@@ -2665,7 +2674,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf external/libnv/$(DEPDIR) external/libucl/src/$(DEPDIR) external/sh/$(DEPDIR) external/sh/bltin/$(DEPDIR) src/libexec/poudriere/cached/$(DEPDIR) src/libexec/poudriere/clock_monotonic/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/locked_mkdir/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
+	-rm -rf external/libnv/$(DEPDIR) external/libnv/sys/$(DEPDIR) external/libucl/src/$(DEPDIR) external/sh/$(DEPDIR) external/sh/bltin/$(DEPDIR) src/libexec/poudriere/cached/$(DEPDIR) src/libexec/poudriere/clock_monotonic/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/locked_mkdir/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
