@@ -30,7 +30,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)options.h	8.2 (Berkeley) 5/4/95
- * $FreeBSD: head/bin/sh/options.h 279503 2015-03-01 21:46:55Z jilles $
+ * $FreeBSD: head/bin/sh/options.h 287296 2015-08-29 19:41:47Z jilles $
  */
 
 struct shparam {
@@ -64,8 +64,10 @@ struct shparam {
 #define	Tflag optlist[16].val
 #define	Pflag optlist[17].val
 #define	hflag optlist[18].val
+#define	nologflag optlist[19].val
 
-#define NOPTS	19
+#define NSHORTOPTS	19
+#define NOPTS		20
 
 struct optent {
 	const char *name;
@@ -95,6 +97,7 @@ struct optent optlist[NOPTS] = {
 	{ "trapsasync",	'T',	0 },
 	{ "physical",	'P',	0 },
 	{ "trackall",	'h',	0 },
+	{ "nolog",	'\0',	0 },
 };
 #endif
 
