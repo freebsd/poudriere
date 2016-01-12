@@ -1142,16 +1142,28 @@ do_jail_mounts() {
 
 	mkdir -p "${mnt}/.p/tmp"
 
-	# Mount /usr/src into target, no need for anything to write to it
-	[ -d "${from}/usr/src" -a "${from}" != "${mnt}" ] && \
-	    ${NULLMOUNT} -o ro ${from}/usr/src ${mnt}/usr/src
-
 	# Mount some paths read-only from the ref-jail if possible.
 	nullpaths="/nxb-bin /rescue"
+	if [ "${MUTABLE_BASE}" = "no" ]; then
+		# Need to keep /usr/src and /usr/ports on their own.
+		nullpaths="${nullpaths} /usr/bin /usr/include /usr/lib \
+		    /usr/lib32 /usr/libdata /usr/libexec /usr/local /usr/obj \
+		    /usr/sbin /usr/share /usr/tests /bin /sbin /lib /libexec"
+		# Do a real copy for the ref jail since we need to modify
+		# or create directories in them.
+		if [ "${mnt##*/}" != "ref" ]; then
+			nullpaths="${nullpaths} /etc"
+		fi
+
+	fi
 	for nullpath in ${nullpaths}; do
 		[ -d "${nullpath}" -a "${from}" != "${mnt}" ] && \
 		    ${NULLMOUNT} -o ro "${from}${nullpath}" "${mnt}/${nullpath}"
 	done
+
+	# Mount /usr/src into target, no need for anything to write to it
+	[ -d "${from}/usr/src" -a "${from}" != "${mnt}" ] && \
+	    ${NULLMOUNT} -o ro ${from}/usr/src ${mnt}/usr/src
 
 	# ref jail only needs devfs
 	mount -t devfs devfs ${mnt}/dev
@@ -4692,6 +4704,7 @@ fi
 : ${TRIM_ORPHANED_BUILD_DEPS:=yes}
 : ${USE_PROCFS:=yes}
 : ${USE_FDESCFS:=yes}
+: ${MUTABLE_BASE:=yes}
 
 # Be sure to update poudriere.conf to document the default when changing these
 : ${MAX_EXECUTION_TIME:=86400}         # 24 hours for 1 command
