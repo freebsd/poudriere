@@ -1117,7 +1117,7 @@ do_jail_mounts() {
 	local arch="$3"
 	local name="$4"
 	local devfspath="null zero random urandom stdin stdout stderr fd fd/* bpf* pts pts/*"
-	local srcpath
+	local srcpath nullpaths nullpath
 
 	# clone will inherit from the ref jail
 	if [ ${mnt##*/} = "ref" ]; then
@@ -1144,6 +1144,13 @@ do_jail_mounts() {
 	_jget srcpath ${name} srcpath 2>/dev/null || srcpath="${from}/usr/src"
 	[ -d "${srcpath}" -a "${from}" != "${mnt}" ] && \
 	    ${NULLMOUNT} -o ro ${srcpath} ${mnt}/usr/src
+
+	# Mount some paths read-only from the ref-jail if possible.
+	nullpaths="/nxb-bin /rescue"
+	for nullpath in ${nullpaths}; do
+		[ -d "${nullpath}" -a "${from}" != "${mnt}" ] && \
+		    ${NULLMOUNT} -o ro "${from}${nullpath}" "${mnt}/${nullpath}"
+	done
 
 	# ref jail only needs devfs
 	mount -t devfs devfs ${mnt}/dev
