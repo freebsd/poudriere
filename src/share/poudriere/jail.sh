@@ -528,10 +528,10 @@ install_from_ftp() {
 			# Check that the defaults have been changed
 			echo ${FREEBSD_HOST} | egrep -E "(_PROTO_|_CHANGE_THIS_)" > /dev/null
 			if [ $? -eq 0 ]; then
-				msg "FREEBSD_HOST from config invalid; defaulting to http://ftp.freebsd.org"
-				FREEBSD_HOST="http://ftp.freebsd.org"
+				msg "FREEBSD_HOST from config invalid; defaulting to https://download.FreeBSD.org"
+				FREEBSD_HOST="https://download.FreeBSD.org"
 			fi
-			URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH}/${V}" ;;
+			URL="${FREEBSD_HOST}/ftp/${type}/${ARCH}/${V}" ;;
 		url=*) URL=${METHOD##url=} ;;
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
 		ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
@@ -580,11 +580,11 @@ install_from_ftp() {
 				# Check that the defaults have been changed
 				echo ${FREEBSD_HOST} | egrep -E "(_PROTO_|_CHANGE_THIS_)" > /dev/null
 				if [ $? -eq 0 ]; then
-					msg "FREEBSD_HOST from config invalid; defaulting to http://ftp.freebsd.org"
-					FREEBSD_HOST="http://ftp.freebsd.org"
+					msg "FREEBSD_HOST from config invalid; defaulting to https://download.FreeBSD.org"
+					FREEBSD_HOST="https://download.FreeBSD.org"
 				fi
 
-				URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH%%.*}/${ARCH##*.}/${V}"
+				URL="${FREEBSD_HOST}/ftp/${type}/${ARCH%%.*}/${ARCH##*.}/${V}"
 				;;
 			allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
 			ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH%%.*}/${ARCH##*.}/${V}" ;;

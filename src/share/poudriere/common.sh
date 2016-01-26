@@ -4567,7 +4567,7 @@ fi
 : ${SVN_HOST="svn.freebsd.org"}
 : ${GIT_BASEURL="github.com/freebsd/freebsd.git"}
 : ${GIT_PORTSURL="github.com/freebsd/freebsd-ports.git"}
-: ${FREEBSD_HOST="http://ftp.FreeBSD.org"}
+: ${FREEBSD_HOST="https://download.FreeBSD.org"}
 if [ -z "${NO_ZFS}" ]; then
 	: ${ZROOTFS="/poudriere"}
 	case ${ZROOTFS} in
