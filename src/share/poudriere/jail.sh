@@ -601,7 +601,6 @@ install_from_ftp() {
 			fetch_file ${JAILMNT}/fromftp/MANIFEST ${URL}/MANIFEST
 		fi
 
-		# Games check - Removed from HEAD in r278616
 		DISTS="${DISTS} lib32"
 		[ -n "${KERNEL}" ] && DISTS="${DISTS} kernel"
 		[ -s "${JAILMNT}/fromftp/MANIFEST" ] || err 1 "Empty MANIFEST file."
