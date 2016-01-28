@@ -591,10 +591,19 @@ install_from_ftp() {
 			url=*) URL=${METHOD##url=} ;;
 		esac
 
+		# Copy release MANIFEST from the preinstalled set if we have it;
+		# if not, download it.
+		if [ -f ${SCRIPTPREFIX}/MANIFESTS/${ARCH%%.*}-${ARCH##*.}-${V} ]; then
+			msg "Using pre-distributed MANIFEST for FreeBSD ${V} ${ARCH}"
+			cp ${SCRIPTPREFIX}/MANIFESTS/${ARCH%%.*}-${ARCH##*.}-${V} ${JAILMNT}/fromftp/MANIFEST
+		else
+			msg "Fetching MANIFEST for FreeBSD ${V} ${ARCH}"
+			fetch_file ${JAILMNT}/fromftp/MANIFEST ${URL}/MANIFEST
+		fi
+
 		# Games check - Removed from HEAD in r278616
 		DISTS="${DISTS} lib32"
 		[ -n "${KERNEL}" ] && DISTS="${DISTS} kernel"
-		fetch_file ${JAILMNT}/fromftp/MANIFEST ${URL}/MANIFEST
 		[ -s "${JAILMNT}/fromftp/MANIFEST" ] || err 1 "Empty MANIFEST file."
 		for dist in ${DISTS}; do
 			grep -q ${dist} ${JAILMNT}/fromftp/MANIFEST || continue
