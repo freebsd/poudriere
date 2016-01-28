@@ -591,15 +591,28 @@ install_from_ftp() {
 			url=*) URL=${METHOD##url=} ;;
 		esac
 
-		# Games check - Removed from HEAD in r278616
+		# Copy release MANIFEST from the preinstalled set if we have it;
+		# if not, download it.
+		if [ -f ${SCRIPTPREFIX}/MANIFESTS/${ARCH%%.*}-${ARCH##*.}-${V} ]; then
+			msg "Using pre-distributed MANIFEST for FreeBSD ${V} ${ARCH}"
+			cp ${SCRIPTPREFIX}/MANIFESTS/${ARCH%%.*}-${ARCH##*.}-${V} ${JAILMNT}/fromftp/MANIFEST
+		else
+			msg "Fetching MANIFEST for FreeBSD ${V} ${ARCH}"
+			fetch_file ${JAILMNT}/fromftp/MANIFEST ${URL}/MANIFEST
+		fi
+
 		DISTS="${DISTS} lib32"
 		[ -n "${KERNEL}" ] && DISTS="${DISTS} kernel"
-		fetch_file ${JAILMNT}/fromftp/MANIFEST ${URL}/MANIFEST
 		[ -s "${JAILMNT}/fromftp/MANIFEST" ] || err 1 "Empty MANIFEST file."
 		for dist in ${DISTS}; do
 			grep -q ${dist} ${JAILMNT}/fromftp/MANIFEST || continue
 			msg "Fetching ${dist} for FreeBSD ${V} ${ARCH}"
 			fetch_file ${JAILMNT}/fromftp/${dist}.txz ${URL}/${dist}.txz
+			MHASH=`awk "/^${dist}/ { print \\$2 }" ${JAILMNT}/fromftp/MANIFEST`
+			FHASH=`sha256 -q ${JAILMNT}/fromftp/${dist}`
+			if [ ${MHASH} != ${FHASH} ]; then
+				err 1 "${dist} checksum mismatch"
+			fi
 			msg_n "Extracting ${dist}..."
 			tar -xpf ${JAILMNT}/fromftp/${dist}.txz -C  ${JAILMNT}/ || err 1 " fail"
 			echo " done"
