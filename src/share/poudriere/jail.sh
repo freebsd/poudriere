@@ -600,6 +600,11 @@ install_from_ftp() {
 			grep -q ${dist} ${JAILMNT}/fromftp/MANIFEST || continue
 			msg "Fetching ${dist} for FreeBSD ${V} ${ARCH}"
 			fetch_file ${JAILMNT}/fromftp/${dist}.txz ${URL}/${dist}.txz
+			MHASH=`awk "/^${dist}/ { print \\$2 }" ${JAILMNT}/fromftp/MANIFEST`
+			FHASH=`sha256 -q ${JAILMNT}/fromftp/${dist}`
+			if [ ${MHASH} != ${FHASH} ]; then
+				err 1 "${dist} checksum mismatch"
+			fi
 			msg_n "Extracting ${dist}..."
 			tar -xpf ${JAILMNT}/fromftp/${dist}.txz -C  ${JAILMNT}/ || err 1 " fail"
 			echo " done"
