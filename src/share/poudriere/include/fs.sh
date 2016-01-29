@@ -45,7 +45,16 @@ createfs() {
 }
 
 do_clone() {
-	cpdup -i0 -x "${1}" "${2}"
+	local src dst common
+	set -- $(relpath "${1}" "${2}")
+	common="${1}"
+	src="${2}"
+	dst="${3}"
+
+	(
+		cd "${common}"
+		cpdup -i0 -x "${src}" "${dst}"
+	)
 }
 
 rollbackfs() {
