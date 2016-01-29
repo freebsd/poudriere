@@ -96,7 +96,14 @@ umountfs() {
 
 zfs_getfs() {
 	[ $# -ne 1 ] && eargs zfs_getfs mnt
-	local mnt=$(realpath $1)
+	local mnt
+
+	# Don't waste time with mount(8) if not needed.
+	if [ -n "${NO_ZFS}" -o ${TMPFS_ALL} -eq 1 ]; then
+		return
+	fi
+
+	mnt=$(realpath $1)
 	mount -t zfs | awk -v n="${mnt}" ' $3 == n { print $1 }'
 }
 
