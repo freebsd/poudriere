@@ -289,14 +289,15 @@ relpath() {
 }
 
 injail() {
-	injail_tty "$@"
-	return
-	# !!! If enabling jexecd also fix stop_build ps count.
-	local name
+	if [ "${USE_JEXECD}" = "no" ]; then
+		injail_tty "$@"
+	else
+		local name
 
-	_my_name name
-	rexec -s ${MASTERMNT}/../${name}${JNETNAME:+-${JNETNAME}}.sock \
-		-u ${JUSER:-root} "$@"
+		_my_name name
+		rexec -s ${MASTERMNT}/../${name}${JNETNAME:+-${JNETNAME}}.sock \
+			-u ${JUSER:-root} "$@"
+	fi
 }
 
 injail_tty() {
@@ -320,13 +321,15 @@ jstart() {
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${network} ${JAIL_PARAMS} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
-	#jexecd -j ${name} -d ${MASTERMNT}/../ ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}}
+	[ "${USE_JEXECD}" = "yes" ] && \
+	    jexecd -j ${name} -d ${MASTERMNT}/../ ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}}
 	jail -c persist name=${name}-n \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${ipargs} ${JAIL_PARAMS} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
-	#jexecd -j ${name}-n -d ${MASTERMNT}/../ ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}}
+	[ "${USE_JEXECD}" = "yes" ] && \
+	    jexecd -j ${name}-n -d ${MASTERMNT}/../ ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}}
 	injail id >/dev/null 2>&1 || \
 	    err 1 "Unable to execute id(1) in jail. Emulation or ABI wrong."
 	if ! injail id ${PORTBUILD_USER} >/dev/null 2>&1 ; then
@@ -3064,6 +3067,11 @@ build_pkg() {
 		    "${mnt}/${LOCALBASE:-/usr/local}"
 	fi
 
+	if [ "${USE_JEXECD}" = "no" ]; then
+		# Kill everything in jail first
+		jkill
+	fi
+
 	[ -f ${mnt}/.need_rollback ] && rollbackfs prepkg ${mnt}
 	:> ${mnt}/.need_rollback
 
@@ -3155,7 +3163,7 @@ stop_build() {
 	local pkgname="$1"
 	local origin="$2"
 	local build_failed="$3"
-	local mnt
+	local mnt pscnt
 
 	if [ -n "${MY_JOBID}" ]; then
 		_my_path mnt
@@ -3163,10 +3171,17 @@ stop_build() {
 		rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
 
 		# 2 = HEADER+ps itself
+		pscnt=2
 		# 4 = HEADER+jexecd+reaper+ps itself
-		if [ $(injail ps aux | wc -l) -ne 2 ]; then
+		[ "${USE_JEXECD}" = "yes" ] && pscnt=4
+		if [ $(injail ps aux | wc -l) -ne ${pscnt} ]; then
 			msg_warn "Leftover processes:"
 			injail ps auxwwd | egrep -v '(ps auxwwd|jexecd)'
+		fi
+
+		if [ "${USE_JEXECD}" = "no" ]; then
+			# Always kill to avoid missing anything
+			jkill
 		fi
 	fi
 
@@ -4763,6 +4778,7 @@ fi
 : ${PORTTESTING_RECURSIVE:=0}
 : ${RESTRICT_NETWORKING:=yes}
 : ${TRIM_ORPHANED_BUILD_DEPS:=yes}
+: ${USE_JEXECD:=no}
 : ${USE_PROCFS:=yes}
 : ${USE_FDESCFS:=yes}
 : ${MUTABLE_BASE:=yes}
