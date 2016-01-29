@@ -222,8 +222,11 @@ _mastermnt() {
 _my_path() {
 	if [ -z "${MY_JOBID}" ]; then
 		setvar "$1" "${MASTERMNT}"
-	else
+	elif [ -n "${MASTERMNTROOT}" ]; then
 		setvar "$1" "${MASTERMNTROOT}/${MY_JOBID}"
+	else
+		setvar "$1" "${MASTERMNT}/../${MY_JOBID}"
+
 	fi
 }
 
