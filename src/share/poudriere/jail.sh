@@ -380,7 +380,6 @@ build_and_install_world() {
 		STRINGS=/nxb-bin/usr/bin/strings
 		AWK=/nxb-bin/usr/bin/awk
 		FLEX=/nxb-bin/usr/bin/flex
-		_MAKE_JOBS=-j1
 		EOF
 
 		# hardlink these files to capture scripts and tools
