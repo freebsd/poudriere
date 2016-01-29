@@ -1031,8 +1031,10 @@ mktemp() {
 }
 
 common_mtree() {
-	mtreefile=$1
-	cat > ${mtreefile} <<EOF
+	[ $# -eq 1 ] || eargs common_mtree mtreefile
+	local mtreefile="$1"
+
+	cat > "${mtreefile}" <<EOF
 ./.npkg/*
 ./.p/*
 .p4config
@@ -1059,6 +1061,7 @@ markfs() {
 	local fs="$(zfs_getfs ${mnt})"
 	local dozfs=0
 	local domtree=0
+	local common_mtree
 
 	msg_n "Recording filesystem state for ${name}..."
 
