@@ -215,10 +215,16 @@ _mastermnt() {
 	fi
 
 	setvar "$1" "${mnt}"
+	# MASTERMNTROOT
+	setvar "${1}ROOT" "${mnt%/ref}"
 }
 
 _my_path() {
-	setvar "$1" "${MASTERMNT}${MY_JOBID+/../${MY_JOBID}}"
+	if [ -z "${MY_JOBID}" ]; then
+		setvar "$1" "${MASTERMNT}"
+	else
+		setvar "$1" "${MASTERMNTROOT}/${MY_JOBID}"
+	fi
 }
 
 _my_name() {
