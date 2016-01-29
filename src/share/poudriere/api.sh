@@ -27,4 +27,4 @@
 #### This file is experimental and may change without notice.
 
 . ${SCRIPTPREFIX}/common.sh
-"$@"
+eval "$@"
