@@ -1121,9 +1121,9 @@ markfs() {
 EOF
 		;;
 	esac
-	mtree -X ${mnt}/.p/mtree.${name}exclude \
+	( cd "${mnt}${path}" && mtree -X ${mnt}/.p/mtree.${name}exclude \
 		-cn -k uid,gid,mode,size \
-		-p ${mnt}${path} > ${mnt}/.p/mtree.${name}
+		-p . ) > ${mnt}/.p/mtree.${name}
 	echo " done"
 }
 
@@ -2016,10 +2016,11 @@ sanity_check_pkgs() {
 
 check_leftovers() {
 	[ $# -eq 1 ] || eargs check_leftovers mnt
-	local mnt=$1
+	local mnt="${1}"
 
-	mtree -X ${mnt}/.p/mtree.preinstexclude -f ${mnt}/.p/mtree.preinst \
-	    -p ${mnt} | while read l; do
+	( cd "${mnt}" && \
+	    mtree -X ${mnt}/.p/mtree.preinstexclude -f ${mnt}/.p/mtree.preinst \
+	    -p . ) | while read l; do
 		local changed read_again
 
 		changed=
@@ -2088,9 +2089,9 @@ check_fs_violation() {
 	local ret=0
 
 	msg_n "${status_msg}..."
-	mtree -X ${mnt}/.p/mtree.${mtree_target}exclude \
+	( cd "${mnt}" && mtree -X ${mnt}/.p/mtree.${mtree_target}exclude \
 		-f ${mnt}/.p/mtree.${mtree_target} \
-		-p ${mnt} > ${tmpfile}
+		-p . ) > ${tmpfile}
 	echo " done"
 
 	if [ -s ${tmpfile} ]; then
