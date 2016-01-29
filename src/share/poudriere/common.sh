@@ -253,8 +253,8 @@ _log_path() {
 
 relpath() {
 	[ $# -eq 2 ] || eargs relpath dir1 dir2
-	local dir1=$(realpath "${1}")
-	local dir2=$(realpath "${2}")
+	local dir1=$(realpath -q "$1" || echo "${1}")
+	local dir2=$(realpath -q "$2" || echo "${2}")
 	local common
 
 	if [ "${#dir1}" -ge "${#dir2}" ]; then
