@@ -1061,7 +1061,7 @@ markfs() {
 	local fs="$(zfs_getfs ${mnt})"
 	local dozfs=0
 	local domtree=0
-	local common_mtree
+	local mtreefile
 
 	msg_n "Recording filesystem state for ${name}..."
 
