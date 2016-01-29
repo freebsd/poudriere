@@ -99,7 +99,7 @@ zfs_getfs() {
 	local mnt="${1}"
 	local result mntres
 
-	if hash_get zfs_getfs "${mnt}" result; then
+	if false && hash_get zfs_getfs "${mnt}" result; then
 		echo "${result}"
 		return
 	fi

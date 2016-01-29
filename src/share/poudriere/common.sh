@@ -2598,7 +2598,7 @@ start_builders() {
 	for j in ${JOBS}; do
 		MY_JOBID=${j} _my_path mnt
 		# Cache some stuff in global env that will pass down.
-		zfs_getfs "${mnt}" >/dev/null 2>&1 || :
+		#zfs_getfs "${mnt}" >/dev/null 2>&1 || :
 
 		parallel_run start_builder ${j} ${arch} "${mnt}"
 	done
