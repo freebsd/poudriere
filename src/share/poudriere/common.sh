@@ -291,6 +291,7 @@ relpath() {
 injail() {
 	injail_tty "$@"
 	return
+	# !!! If enabling jexecd also fix stop_build ps count.
 	local name
 
 	_my_name name
@@ -3161,8 +3162,9 @@ stop_build() {
 		umount -f ${mnt}/.npkg 2>/dev/null || :
 		rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
 
+		# 2 = HEADER+ps itself
 		# 4 = HEADER+jexecd+reaper+ps itself
-		if [ $(injail ps aux | wc -l) -ne 4 ]; then
+		if [ $(injail ps aux | wc -l) -ne 2 ]; then
 			msg_warn "Leftover processes:"
 			injail ps auxwwd | egrep -v '(ps auxwwd|jexecd)'
 		fi
