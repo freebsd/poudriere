@@ -856,7 +856,11 @@ show_build_summary() {
 	elapsed=${_elapsed_time}
 	calculate_duration buildtime ${elapsed}
 
-	printf "[${MASTERNAME}] [${buildname}] [${status}] Queued: %-${queue_width}d ${COLOR_SUCCESS}Built: %-${queue_width}d ${COLOR_FAIL}Failed: %-${queue_width}d ${COLOR_SKIP}Skipped: %-${queue_width}d ${COLOR_IGNORE}Ignored: %-${queue_width}d${COLOR_RESET} Tobuild: %-${queue_width}d  Time: %s\n" \
+	printf "[${MASTERNAME}] [${buildname}] [${status}] \
+Queued: %-${queue_width}d ${COLOR_SUCCESS}Built: %-${queue_width}d \
+${COLOR_FAIL}Failed: %-${queue_width}d ${COLOR_SKIP}Skipped: \
+%-${queue_width}d ${COLOR_IGNORE}Ignored: %-${queue_width}d${COLOR_RESET} \
+Tobuild: %-${queue_width}d  Time: %s\n" \
 	    ${nbq} ${nbb} ${nbf} ${nbs} ${nbi} ${nbtobuild} "${buildtime}"
 }
 
