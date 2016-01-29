@@ -1016,6 +1016,7 @@ fetch_file() {
 # for mktemp(1).
 mktemp() {
 	if [ -z "${TMPDIR}" -a -n "${MASTERMNT}" -a ${STATUS} -eq 1 ]; then
+		local mnt
 		_my_path mnt
 		TMPDIR="${mnt}/.p/tmp"
 	fi
