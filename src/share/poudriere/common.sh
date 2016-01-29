@@ -243,6 +243,34 @@ _log_path() {
 	setvar "$1" "${log_path_jail}/${BUILDNAME}"
 }
 
+relpath() {
+	[ $# -eq 2 ] || eargs relpath dir1 dir2
+	local dir1=$(realpath "${1}")
+	local dir2=$(realpath "${2}")
+	local common
+
+	if [ "${#dir1}" -ge "${#dir2}" ]; then
+		common="${dir1}"
+		other="${dir2}"
+	else
+		common="${dir2}"
+		other="${dir1}"
+	fi
+	# Trim away path components until they match
+	while [ "${other#${common}}" = "${other}" -a -n "${common}" ]; do
+		common="${common%/*}"
+	done
+	common="${common:-/}"
+	dir1="${dir1#${common}}"
+	dir1="${dir1#/}"
+	dir1="${dir1:-.}"
+	dir2="${dir2#${common}}"
+	dir2="${dir2#/}"
+	dir2="${dir2:-.}"
+
+	echo "${common} ${dir1} ${dir2}"
+}
+
 injail() {
 	local name
 
