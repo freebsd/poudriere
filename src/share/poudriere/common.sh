@@ -2587,10 +2587,10 @@ save_wrkdir() {
 start_builder() {
 	local id=$1
 	local arch=$2
-	local mnt MY_JOBID
+	local mnt="${3}"
+	local MY_JOBID
 
 	MY_JOBID=${id}
-	_my_path mnt
 
 	# Jail might be lingering from previous build. Already recursively
 	# destroyed all the builder datasets, so just try stopping the jail
@@ -2608,12 +2608,17 @@ start_builder() {
 
 start_builders() {
 	local arch=$(injail uname -p)
+	local mnt
 
 	bset builders "${JOBS}"
 	bset status "starting_builders:"
 	parallel_start
 	for j in ${JOBS}; do
-		parallel_run start_builder ${j} ${arch}
+		MY_JOBID=${j} _my_path mnt
+		# Cache some stuff in global env that will pass down.
+		zfs_getfs "${mnt}" >/dev/null 2>&1 || :
+
+		parallel_run start_builder ${j} ${arch} "${mnt}"
 	done
 	parallel_stop
 }
