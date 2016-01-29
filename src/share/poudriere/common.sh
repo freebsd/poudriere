@@ -1030,18 +1030,6 @@ mktemp() {
 	exec command mktemp "$@"
 }
 
-unmarkfs() {
-	[ $# -ne 2 ] && eargs unmarkfs name mnt
-	local name=$1
-	local mnt="${2}"
-
-	if [ -n "$(zfs_getfs ${mnt})" ]; then
-		zfs destroy -f ${fs}@${name} 2>/dev/null || :
-	else
-		rm -f ${mnt}/.p/mtree.${name} 2>/dev/null || :
-	fi
-}
-
 common_mtree() {
 	mtreefile=$1
 	cat > ${mtreefile} <<EOF
