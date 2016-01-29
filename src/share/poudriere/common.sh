@@ -2090,13 +2090,13 @@ check_fs_violation() {
 	local status_msg="$4"
 	local err_msg="$5"
 	local status_value="$6"
-	local tmpfile=${mnt}/tmp/check_fs_violation
+	local tmpfile=$(mktemp -t check_fs_violation)
 	local ret=0
 
 	msg_n "${status_msg}..."
 	( cd "${mnt}" && mtree -X ${mnt}/.p/mtree.${mtree_target}exclude \
 		-f ${mnt}/.p/mtree.${mtree_target} \
-		-p . ) > ${tmpfile}
+		-p . ) >> ${tmpfile}
 	echo " done"
 
 	if [ -s ${tmpfile} ]; then
