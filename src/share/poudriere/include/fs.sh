@@ -184,7 +184,6 @@ destroyfs() {
 	mnt=$1
 	type=$2
 	[ -d ${mnt} ] || return 0
-	mnt=$(realpath ${mnt})
 	fs=$(zfs_getfs ${mnt})
 	umountfs ${mnt} 1
 	if [ ${TMPFS_ALL} -eq 1 ]; then

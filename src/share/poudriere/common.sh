@@ -1002,7 +1002,7 @@ mktemp() {
 unmarkfs() {
 	[ $# -ne 2 ] && eargs unmarkfs name mnt
 	local name=$1
-	local mnt=$(realpath $2)
+	local mnt="${2}"
 
 	if [ -n "$(zfs_getfs ${mnt})" ]; then
 		zfs destroy -f ${fs}@${name} 2>/dev/null || :
@@ -1014,7 +1014,7 @@ unmarkfs() {
 markfs() {
 	[ $# -lt 2 ] && eargs markfs name mnt path
 	local name=$1
-	local mnt=$(realpath $2)
+	local mnt="${2}"
 	local path="$3"
 	local fs="$(zfs_getfs ${mnt})"
 	local dozfs=0
