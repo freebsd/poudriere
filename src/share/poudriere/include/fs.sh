@@ -63,10 +63,6 @@ rollbackfs() {
 	local mnt=$2
 	local fs="${3-$(zfs_getfs ${mnt})}"
 
-	# Don't waste time with mount(8) if not needed.
-	if [ -z "${fs}" -a -z "${NO_ZFS}" -a ${TMPFS_ALL} -ne 1 ]; then
-		fs=$(zfs_getfs "${mnt}")
-	fi
 	if [ -n "${fs}" ]; then
 		zfs rollback -r "${fs}@${name}" || \
 		    err 1 "Unable to rollback ${fs}"
@@ -100,8 +96,17 @@ umountfs() {
 
 zfs_getfs() {
 	[ $# -ne 1 ] && eargs zfs_getfs mnt
-	local mnt=$(realpath $1)
-	mount -t zfs | awk -v n="${mnt}" ' $3 == n { print $1 }'
+	local mnt="${1}"
+	local result mntres
+
+	if hash_get zfs_getfs "${mnt}" result; then
+		echo "${result}"
+		return
+	fi
+	mntres=$(realpath "${mnt}")
+	result=$(mount -t zfs | awk -v n="${mntres}" ' $3 == n { print $1 }')
+	hash_set zfs_getfs "${mnt}" "${result}"
+	echo "${result}"
 }
 
 mnt_tmpfs() {
