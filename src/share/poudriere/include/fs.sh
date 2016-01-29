@@ -61,8 +61,12 @@ rollbackfs() {
 	[ $# -lt 2 ] && eargs rollbackfs name mnt [fs]
 	local name=$1
 	local mnt=$2
-	local fs="${3:-$(zfs_getfs ${mnt})}"
+	local fs="${3}"
 
+	# Don't waste time with mount(8) if not needed.
+	if [ -z "${fs}" -a -z "${NO_ZFS}" -a ${TMPFS_ALL} -ne 1 ]; then
+		fs=$(zfs_getfs "${mnt}")
+	fi
 	if [ -n "${fs}" ]; then
 		zfs rollback -r "${fs}@${name}" || \
 		    err 1 "Unable to rollback ${fs}"
