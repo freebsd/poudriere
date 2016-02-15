@@ -530,7 +530,16 @@ install_from_ftp() {
 				msg "FREEBSD_HOST from config invalid; defaulting to https://download.FreeBSD.org"
 				FREEBSD_HOST="https://download.FreeBSD.org"
 			fi
-			URL="${FREEBSD_HOST}/ftp/${type}/${ARCH}/${V}" ;;
+			case $(echo "${FREEBSD_HOST}" | \
+			    tr '[:upper:]' '[:lower:]') in
+				*download.freebsd.org)
+					URL="${FREEBSD_HOST}/ftp/${type}/${ARCH}/${V}"
+					;;
+				*)
+					URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH}/${V}"
+					;;
+			esac
+			;;
 		url=*) URL=${METHOD##url=} ;;
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
 		ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
@@ -583,7 +592,15 @@ install_from_ftp() {
 					FREEBSD_HOST="https://download.FreeBSD.org"
 				fi
 
-				URL="${FREEBSD_HOST}/ftp/${type}/${ARCH%%.*}/${ARCH##*.}/${V}"
+				case $(echo "${FREEBSD_HOST}" | \
+				    tr '[:upper:]' '[:lower:]') in
+					*download.freebsd.org)
+						URL="${FREEBSD_HOST}/ftp/${type}/${ARCH%%.*}/${ARCH##*.}/${V}"
+						;;
+					*)
+						URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH%%.*}/${ARCH##*.}/${V}"
+						;;
+				esac
 				;;
 			allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
 			ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH%%.*}/${ARCH##*.}/${V}" ;;
