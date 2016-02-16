@@ -22,8 +22,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-# - must be last
-: ${HASH_VAR_NAME_SUB_GLOB:="[/.+,-]"}
+# Taken from bin/sh/mksyntax.sh is_in_name()
+: ${HASH_VAR_NAME_SUB_GLOB:="[!a-zA-Z0-9_]"}
 
 if ! type eargs 2>/dev/null >&2; then
 	eargs() {
@@ -69,7 +69,7 @@ gsub() {
 _hash_var_name() {
 	local _gsub
 
-	# Replace all HASH_VAR_NAME_SUB_GLOB with _
+	# Replace anything not HASH_VAR_NAME_SUB_GLOB with _
 	_gsub "_HASH_${1}_${2}" ${HASH_VAR_NAME_SUB_GLOB} _
 	_hash_var_name=${_gsub}
 }
