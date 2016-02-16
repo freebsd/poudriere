@@ -3060,16 +3060,16 @@ build_pkg() {
 	job_msg "Starting build of ${COLOR_PORT}${port}${COLOR_RESET}"
 	bset_job_status "starting" "${port}"
 
+	if [ "${USE_JEXECD}" = "no" ]; then
+		# Kill everything in jail first
+		jkill
+	fi
+
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
 		umount -f ${mnt}/${LOCALBASE:-/usr/local} 2>/dev/null || :
 		mnt_tmpfs localbase ${mnt}/${LOCALBASE:-/usr/local}
 		do_clone "${MASTERMNT}/${LOCALBASE:-/usr/local}" \
 		    "${mnt}/${LOCALBASE:-/usr/local}"
-	fi
-
-	if [ "${USE_JEXECD}" = "no" ]; then
-		# Kill everything in jail first
-		jkill
 	fi
 
 	[ -f ${mnt}/.need_rollback ] && rollbackfs prepkg ${mnt}
