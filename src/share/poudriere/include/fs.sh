@@ -97,16 +97,10 @@ umountfs() {
 zfs_getfs() {
 	[ $# -ne 1 ] && eargs zfs_getfs mnt
 	local mnt="${1}"
-	local result mntres
+	local mntres
 
-	if false && hash_get zfs_getfs "${mnt}" result; then
-		echo "${result}"
-		return
-	fi
 	mntres=$(realpath "${mnt}")
-	result=$(mount -t zfs | awk -v n="${mntres}" ' $3 == n { print $1 }')
-	hash_set zfs_getfs "${mnt}" "${result}"
-	echo "${result}"
+	mount -t zfs | awk -v n="${mntres}" ' $3 == n { print $1 }'
 }
 
 mnt_tmpfs() {
