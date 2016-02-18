@@ -215,7 +215,7 @@ fi
 
 cleanup_new_ports() {
 	msg "Error while creating ports tree, cleaning up." >&2
-	destroyfs ${PTMNT} ports
+	destroyfs ${PTMNT} ports || :
 	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
 }
 
@@ -288,7 +288,9 @@ if [ ${DELETE} -eq 1 ]; then
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	maybe_run_queued "${saved_argv}"
 	msg_n "Deleting portstree \"${PTNAME}\""
-	[ ${KEEP} -eq 0 ] && destroyfs ${PTMNT} ports
+	if [ ${KEEP} -eq 0 ]; then
+		destroyfs ${PTMNT} ports || :
+	fi
 	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
 	echo " done"
 fi
