@@ -329,7 +329,7 @@ if [ ${UPDATE} -eq 1 ]; then
 	git*)
 		msg "Updating the ports tree"
 		[ ${VERBOSE} -gt 0 ] || quiet="-q"
-		git -C ${PORTSMNT:-${PTMNT}} pull ${quiet}
+		git -C ${PORTSMNT:-${PTMNT}} pull --rebase ${quiet}
 		echo " done"
 		;;
 	none)	;;
