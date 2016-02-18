@@ -191,7 +191,8 @@ destroyfs() {
 		zfs destroy -rf ${fs}
 		rmdir ${mnt}
 	else
-		chflags -R noschg ${mnt}
+		rm -rfx ${mnt} 2>/dev/null || :
+		chflags -R 0 ${mnt}
 		rm -rfx ${mnt}
 	fi
 }
