@@ -192,6 +192,6 @@ destroyfs() {
 		rmdir ${mnt}
 	else
 		chflags -R noschg ${mnt}
-		rm -rfx ${mnt}
+		find -x "${mnt}" -mindepth 1 -delete
 	fi
 }
