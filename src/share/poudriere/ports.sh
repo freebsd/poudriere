@@ -296,7 +296,7 @@ if [ ${UPDATE} -eq 1 ]; then
 	git)
 		msg "Pulling from ${GIT_URL}"
 		[ ${VERBOSE} -gt 0 ] || quiet="-q"
-		cd ${PORTSMNT:-${PTMNT}} && git pull ${quiet}
+		cd ${PORTSMNT:-${PTMNT}} && git pull --rebase ${quiet}
 		echo " done"
 		;;
 	*)
