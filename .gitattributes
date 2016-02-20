@@ -1,0 +1,4 @@
+# These minified files are really bothersome on 'git grep'.
+src/share/poudriere/html/assets/bootstrap-3.1.1/js/bootstrap.min.js binary
+src/share/poudriere/html/assets/jquery-1.11.1.min.js binary
+src/share/poudriere/html/assets/jquery-1.11.1.min.map binary
