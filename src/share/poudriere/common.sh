@@ -1152,21 +1152,8 @@ do_jail_mounts() {
 		mkdir -p ${mnt}/proc \
 		    ${mnt}/dev \
 		    ${mnt}/compat/linux/proc \
-		    ${mnt}/usr/ports \
-		    ${mnt}/usr/src \
-		    ${mnt}/wrkdirs \
-		    ${mnt}/${LOCALBASE:-/usr/local} \
-		    ${mnt}/distfiles \
-		    ${mnt}/packages \
-		    ${mnt}/.npkg \
-		    ${mnt}${HOME}/.ccache \
-		    ${mnt}/var/db/ports
+		    ${mnt}/usr/src
 	fi
-
-	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] &&
-	    mnt_tmpfs data "${mnt}/.p"
-
-	mkdir -p "${mnt}/.p/tmp"
 
 	# Mount some paths read-only from the ref-jail if possible.
 	nullpaths="/nxb-bin /rescue"
@@ -1336,6 +1323,22 @@ do_portbuild_mounts() {
 	_pget portsdir ${ptname} mnt
 
 	[ -d ${portsdir}/ports ] && portsdir=${portsdir}/ports
+
+	# clone will inherit from the ref jail
+	if [ ${mnt##*/} = "ref" ]; then
+		mkdir -p "${mnt}/usr/ports" \
+		    "${mnt}/wrkdirs" \
+		    "${mnt}/${LOCALBASE:-/usr/local}" \
+		    "${mnt}/distfiles" \
+		    "${mnt}/packages" \
+		    "${mnt}/.npkg" \
+		    "${mnt}/var/db/ports" \
+		    "${mnt}${HOME}/.ccache"
+	fi
+	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] &&
+	    mnt_tmpfs data "${mnt}/.p"
+
+	mkdir -p "${mnt}/.p/tmp"
 
 	[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
 		${NULLMOUNT} ${CCACHE_DIR} ${mnt}${HOME}/.ccache
