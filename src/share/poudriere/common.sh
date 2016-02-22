@@ -1320,10 +1320,6 @@ do_portbuild_mounts() {
 	local portsdir
 	local optionsdir
 
-	_pget portsdir ${ptname} mnt
-
-	[ -d ${portsdir}/ports ] && portsdir=${portsdir}/ports
-
 	# clone will inherit from the ref jail
 	if [ ${mnt##*/} = "ref" ]; then
 		mkdir -p "${mnt}/usr/ports" \
@@ -1351,6 +1347,8 @@ do_portbuild_mounts() {
 		msg "Mounting packages from: ${PACKAGES_ROOT}"
 	fi
 
+	_pget portsdir ${ptname} mnt
+	[ -d ${portsdir}/ports ] && portsdir=${portsdir}/ports
 	${NULLMOUNT} -o ro ${portsdir} ${mnt}/usr/ports ||
 		err 1 "Failed to mount the ports directory "
 	mount_packages -o ro
