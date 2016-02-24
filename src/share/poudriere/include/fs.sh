@@ -191,8 +191,10 @@ destroyfs() {
 		zfs destroy -rf ${fs}
 		rmdir ${mnt}
 	else
-		rm -rfx ${mnt}/* 2>/dev/null || :
-		chflags -R 0 ${mnt}
-		rm -rfx ${mnt}
+		rm -rfx ${mnt} || :
+		if [ -d "${mnt}" ]; then
+			chflags -R 0 ${mnt}
+			rm -rfx ${mnt}
+		fi
 	fi
 }
