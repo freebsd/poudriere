@@ -1878,7 +1878,7 @@ include_poudriere_confs() {
 
 	# Spy on cmdline arguments so this function is not needed in
 	# every new sub-command file, which could lead to missing it.
-	args_hack=$(echo " $@"|grep -o -- ' -[^ ]*\([jpz]\) \([^ ]*\)'|tr '\n' ' '|sed -e 's, -[^ ]*\([jpz]\) \([^ ]*\),-\1 \2,g')
+	args_hack=$(echo " $@"|grep -Eo -- ' -[^ ]*([jpz]) ?([^ ]*)'|tr '\n' ' '|sed -Ee 's, -[^ ]*([jpz]) ?([^ ]*),-\1 \2,g')
 	set -- ${args_hack}
 	while getopts "j:p:z:" flag; do
 		case ${flag} in
