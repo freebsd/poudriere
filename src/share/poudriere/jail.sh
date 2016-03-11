@@ -289,6 +289,60 @@ installworld() {
 		    err 1 "Failed to 'make installkernel'"
 	fi
 
+	if [ ${XDEV} -eq 1 ]; then
+		msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
+		${MAKE_CMD} -C ${SRC_BASE} native-xtools ${MAKE_JOBS} \
+		    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools'"
+		XDEV_TOOLS=/usr/obj/${TARGET}.${TARGET_ARCH}/nxb-bin
+		rm -rf ${JAILMNT}/nxb-bin || err 1 "Failed to remove old native-xtools"
+		mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
+		cat > ${JAILMNT}/etc/make.nxb.conf <<- EOF
+		CC=/nxb-bin/usr/bin/cc
+		CPP=/nxb-bin/usr/bin/cpp
+		CXX=/nxb-bin/usr/bin/c++
+		AS=/nxb-bin/usr/bin/as
+		NM=/nxb-bin/usr/bin/nm
+		LD=/nxb-bin/usr/bin/ld
+		OBJCOPY=/nxb-bin/usr/bin/objcopy
+		SIZE=/nxb-bin/usr/bin/size
+		STRIPBIN=/nxb-bin/usr/bin/strip
+		SED=/nxb-bin/usr/bin/sed
+		READELF=/nxb-bin/usr/bin/readelf
+		RANLIB=/nxb-bin/usr/bin/ranlib
+		YACC=/nxb-bin/usr/bin/yacc
+		MAKE=/nxb-bin/usr/bin/make
+		STRINGS=/nxb-bin/usr/bin/strings
+		AWK=/nxb-bin/usr/bin/awk
+		FLEX=/nxb-bin/usr/bin/flex
+		EOF
+
+		# hardlink these files to capture scripts and tools
+		# that explicitly call them instead of using paths.
+		HLINK_FILES="usr/bin/env usr/bin/gzip usr/bin/id \
+				usr/bin/make usr/bin/dirname usr/bin/diff \
+				usr/bin/find usr/bin/gzcat usr/bin/awk \
+				usr/bin/touch usr/bin/sed usr/bin/patch \
+				usr/bin/install usr/bin/gunzip usr/bin/sort \
+				usr/bin/tar usr/bin/xargs usr/sbin/chown bin/cp \
+				bin/cat bin/chmod bin/echo bin/expr \
+				bin/hostname bin/ln bin/ls bin/mkdir bin/mv \
+				bin/realpath bin/rm bin/rmdir bin/sleep \
+				sbin/sha256 sbin/sha512 sbin/md5 sbin/sha1"
+
+		# Endian issues on mips/mips64 are not handling exec of 64bit shells
+		# from emulated environments correctly.  This works just fine on ARM
+		# because of the same issue, so allow it for now.
+		[ ${TARGET} = "mips" ] || \
+		    HLINK_FILES="${HLINK_FILES} bin/sh bin/csh"
+
+		for file in ${HLINK_FILES}; do
+			if [ -f "${JAILMNT}/nxb-bin/${file}" ]; then
+				rm -f ${JAILMNT}/${file}
+				ln ${JAILMNT}/nxb-bin/${file} ${JAILMNT}/${file}
+			fi
+		done
+	fi
+
 	return 0
 }
 
@@ -354,60 +408,6 @@ build_and_install_world() {
 	fi
 
 	installworld
-
-	if [ ${XDEV} -eq 1 ]; then
-		msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
-		${MAKE_CMD} -C /usr/src native-xtools ${MAKE_JOBS} \
-		    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools'"
-		XDEV_TOOLS=/usr/obj/${TARGET}.${TARGET_ARCH}/nxb-bin
-		rm -rf ${JAILMNT}/nxb-bin || err 1 "Failed to remove old native-xtools"
-		mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
-		cat > ${JAILMNT}/etc/make.nxb.conf <<- EOF
-		CC=/nxb-bin/usr/bin/cc
-		CPP=/nxb-bin/usr/bin/cpp
-		CXX=/nxb-bin/usr/bin/c++
-		AS=/nxb-bin/usr/bin/as
-		NM=/nxb-bin/usr/bin/nm
-		LD=/nxb-bin/usr/bin/ld
-		OBJCOPY=/nxb-bin/usr/bin/objcopy
-		SIZE=/nxb-bin/usr/bin/size
-		STRIPBIN=/nxb-bin/usr/bin/strip
-		SED=/nxb-bin/usr/bin/sed
-		READELF=/nxb-bin/usr/bin/readelf
-		RANLIB=/nxb-bin/usr/bin/ranlib
-		YACC=/nxb-bin/usr/bin/yacc
-		MAKE=/nxb-bin/usr/bin/make
-		STRINGS=/nxb-bin/usr/bin/strings
-		AWK=/nxb-bin/usr/bin/awk
-		FLEX=/nxb-bin/usr/bin/flex
-		EOF
-
-		# hardlink these files to capture scripts and tools
-		# that explicitly call them instead of using paths.
-		HLINK_FILES="usr/bin/env usr/bin/gzip usr/bin/id \
-				usr/bin/make usr/bin/dirname usr/bin/diff \
-				usr/bin/find usr/bin/gzcat usr/bin/awk \
-				usr/bin/touch usr/bin/sed usr/bin/patch \
-				usr/bin/install usr/bin/gunzip usr/bin/sort \
-				usr/bin/tar usr/bin/xargs usr/sbin/chown bin/cp \
-				bin/cat bin/chmod bin/echo bin/expr \
-				bin/hostname bin/ln bin/ls bin/mkdir bin/mv \
-				bin/realpath bin/rm bin/rmdir bin/sleep \
-				sbin/sha256 sbin/sha512 sbin/md5 sbin/sha1"
-
-		# Endian issues on mips/mips64 are not handling exec of 64bit shells
-		# from emulated environments correctly.  This works just fine on ARM
-		# because of the same issue, so allow it for now.
-		[ ${TARGET} = "mips" ] || \
-		    HLINK_FILES="${HLINK_FILES} bin/sh bin/csh"
-
-		for file in ${HLINK_FILES}; do
-			if [ -f "${JAILMNT}/nxb-bin/${file}" ]; then
-				rm -f ${JAILMNT}/${file}
-				ln ${JAILMNT}/nxb-bin/${file} ${JAILMNT}/${file}
-			fi
-		done
-	fi
 }
 
 install_from_src() {
