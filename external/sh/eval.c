@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)eval.c	8.9 (Berkeley) 6/8/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/eval.c 293359 2016-01-07 20:48:24Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/eval.c 293635 2016-01-10 16:31:28Z jilles $");
 
 #include <paths.h>
 #include <signal.h>
@@ -1039,12 +1039,12 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 		reffunc(cmdentry.u.func);
 		savehandler = handler;
 		if (setjmp(jmploc.loc)) {
-			freeparam(&shellparam);
-			shellparam = saveparam;
 			popredir();
 			unreffunc(cmdentry.u.func);
 			poplocalvars();
 			localvars = savelocalvars;
+			freeparam(&shellparam);
+			shellparam = saveparam;
 			funcnest--;
 			handler = savehandler;
 			longjmp(handler->loc, 1);

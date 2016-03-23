@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)histedit.c	8.2 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/histedit.c 279508 2015-03-01 22:32:23Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/histedit.c 296429 2016-03-06 17:24:02Z jilles $");
 
 #include <sys/param.h>
 #include <limits.h>
@@ -359,7 +359,7 @@ histcmd(int argc, char **argv __unused)
 					 * cursor, set it back to the current
 					 * entry.
 					 */
-					retval = history(hist, &he,
+					history(hist, &he,
 					    H_NEXT_EVENT, oldhistnum);
 				}
 			} else

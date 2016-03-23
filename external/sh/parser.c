@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)parser.c	8.7 (Berkeley) 5/16/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/parser.c 288430 2015-09-30 21:32:29Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/parser.c 296327 2016-03-02 22:52:54Z jilles $");
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -1671,7 +1671,7 @@ varname:
 					c = pgetc_linecont();
 				} while (is_digit(c));
 			} else {
-				STPUTC(c, out);
+				USTPUTC(c, out);
 				c = pgetc_linecont();
 			}
 		} else if (is_special(c)) {
@@ -1930,6 +1930,8 @@ static void
 setprompt(int which)
 {
 	whichprompt = which;
+	if (which == 0)
+		return;
 
 #ifndef NO_HISTORY
 	if (!el)

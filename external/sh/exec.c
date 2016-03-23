@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)exec.c	8.4 (Berkeley) 6/8/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/exec.c 293118 2016-01-03 21:30:22Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/exec.c 296813 2016-03-13 22:54:14Z jilles $");
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -332,6 +332,7 @@ find_command(const char *name, struct cmdentry *entry, int act,
 	if (strchr(name, '/') != NULL) {
 		entry->cmdtype = CMDNORMAL;
 		entry->u.index = 0;
+		entry->special = 0;
 		return;
 	}
 
@@ -408,6 +409,7 @@ find_command(const char *name, struct cmdentry *entry, int act,
 			cmdp = &loc_cmd;
 		cmdp->cmdtype = CMDNORMAL;
 		cmdp->param.index = idx;
+		cmdp->special = 0;
 		INTON;
 		goto success;
 	}
@@ -420,6 +422,7 @@ find_command(const char *name, struct cmdentry *entry, int act,
 	}
 	entry->cmdtype = CMDUNKNOWN;
 	entry->u.index = 0;
+	entry->special = 0;
 	return;
 
 success:
@@ -588,6 +591,7 @@ addcmdentry(const char *name, struct cmdentry *entry)
 	}
 	cmdp->cmdtype = entry->cmdtype;
 	cmdp->param = entry->u;
+	cmdp->special = entry->special;
 	INTON;
 }
 
@@ -604,6 +608,7 @@ defun(const char *name, union node *func)
 	INTOFF;
 	entry.cmdtype = CMDFUNCTION;
 	entry.u.func = copyfunc(func);
+	entry.special = 0;
 	addcmdentry(name, &entry);
 	INTON;
 }

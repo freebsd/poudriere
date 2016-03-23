@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)miscbltin.c	8.4 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/miscbltin.c 287308 2015-08-30 17:24:22Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/miscbltin.c 296723 2016-03-12 14:54:34Z kib $");
 
 /*
  * Miscellaneous builtins.
@@ -414,6 +414,9 @@ static const struct limits limits[] = {
 #ifdef RLIMIT_KQUEUES
 	{ "kqueues",		(char *)0,	RLIMIT_KQUEUES,	   1, 'k' },
 #endif
+#ifdef RLIMIT_UMTXP
+	{ "umtxp",		(char *)0,	RLIMIT_UMTXP,	   1, 'o' },
+#endif
 	{ (char *) 0,		(char *)0,	0,		   0, '\0' }
 };
 
@@ -449,7 +452,7 @@ ulimitcmd(int argc __unused, char **argv __unused)
 	struct rlimit	limit;
 
 	what = 'f';
-	while ((optc = nextopt("HSatfdsmcnuvlbpwk")) != '\0')
+	while ((optc = nextopt("HSatfdsmcnuvlbpwko")) != '\0')
 		switch (optc) {
 		case 'H':
 			how = HARD;
