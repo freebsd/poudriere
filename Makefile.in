@@ -204,28 +204,28 @@ rexec_OBJECTS = $(am_rexec_OBJECTS)
 rexec_DEPENDENCIES = libnv.a
 rexec_LINK = $(CCLD) $(rexec_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am_sh_OBJECTS = external/sh/sh-redir.$(OBJEXT) \
-	external/sh/sh-syntax.$(OBJEXT) external/sh/sh-mail.$(OBJEXT) \
-	external/sh/sh-cd.$(OBJEXT) external/sh/sh-show.$(OBJEXT) \
-	external/sh/sh-error.$(OBJEXT) \
-	external/sh/sh-builtins.$(OBJEXT) \
-	external/sh/sh-eval.$(OBJEXT) external/sh/sh-jobs.$(OBJEXT) \
+am_sh_OBJECTS = external/sh/sh-alias.$(OBJEXT) \
+	external/sh/sh-arith_yacc.$(OBJEXT) \
+	external/sh/sh-arith_yylex.$(OBJEXT) \
+	external/sh/bltin/sh-echo.$(OBJEXT) \
+	external/sh/sh-builtins.$(OBJEXT) external/sh/sh-cd.$(OBJEXT) \
+	external/sh/sh-error.$(OBJEXT) external/sh/sh-eval.$(OBJEXT) \
+	external/sh/sh-exec.$(OBJEXT) external/sh/sh-expand.$(OBJEXT) \
+	external/sh/sh-histedit.$(OBJEXT) \
+	external/sh/sh-input.$(OBJEXT) external/sh/sh-jobs.$(OBJEXT) \
+	external/sh/sh-kill.$(OBJEXT) external/sh/sh-mail.$(OBJEXT) \
 	external/sh/sh-main.$(OBJEXT) \
 	external/sh/sh-memalloc.$(OBJEXT) \
-	external/sh/sh-arith_yacc.$(OBJEXT) \
-	external/sh/sh-histedit.$(OBJEXT) \
-	external/sh/sh-output.$(OBJEXT) external/sh/sh-alias.$(OBJEXT) \
-	external/sh/sh-var.$(OBJEXT) external/sh/sh-expand.$(OBJEXT) \
-	external/sh/sh-kill.$(OBJEXT) external/sh/sh-nodes.$(OBJEXT) \
-	external/sh/sh-mystring.$(OBJEXT) \
 	external/sh/sh-miscbltin.$(OBJEXT) \
-	external/sh/sh-trap.$(OBJEXT) \
-	external/sh/sh-arith_yylex.$(OBJEXT) \
-	external/sh/sh-printf.$(OBJEXT) external/sh/sh-exec.$(OBJEXT) \
+	external/sh/sh-mystring.$(OBJEXT) \
+	external/sh/sh-nodes.$(OBJEXT) \
 	external/sh/sh-options.$(OBJEXT) \
-	external/sh/sh-parser.$(OBJEXT) external/sh/sh-input.$(OBJEXT) \
-	external/sh/sh-test.$(OBJEXT) \
-	external/sh/bltin/sh-echo.$(OBJEXT)
+	external/sh/sh-output.$(OBJEXT) \
+	external/sh/sh-parser.$(OBJEXT) \
+	external/sh/sh-printf.$(OBJEXT) external/sh/sh-redir.$(OBJEXT) \
+	external/sh/sh-show.$(OBJEXT) external/sh/sh-syntax.$(OBJEXT) \
+	external/sh/sh-test.$(OBJEXT) external/sh/sh-trap.$(OBJEXT) \
+	external/sh/sh-var.$(OBJEXT)
 sh_OBJECTS = $(am_sh_OBJECTS)
 sh_LDADD = $(LDADD)
 sh_LINK = $(CCLD) $(sh_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
@@ -584,36 +584,36 @@ sh_CFLAGS = -DSHELL -DNO_HISTORY \
 			-I$(top_srcdir)/external/sh
 
 sh_SOURCES = \
-			external/sh/redir.c \
-			external/sh/syntax.c \
-			external/sh/mail.c \
-			external/sh/cd.c \
-			external/sh/show.c \
-			external/sh/error.c \
+			external/sh/alias.c \
+			external/sh/arith_yacc.c \
+			external/sh/arith_yylex.c \
+			external/sh/bltin/echo.c \
 			external/sh/builtins.c \
+			external/sh/cd.c \
+			external/sh/error.c \
 			external/sh/eval.c \
+			external/sh/exec.c \
+			external/sh/expand.c \
+			external/sh/histedit.c \
+			external/sh/input.c \
 			external/sh/jobs.c \
+			external/sh/kill.c \
+			external/sh/mail.c \
 			external/sh/main.c \
 			external/sh/memalloc.c \
-			external/sh/arith_yacc.c \
-			external/sh/histedit.c \
-			external/sh/output.c \
-			external/sh/alias.c \
-			external/sh/var.c \
-			external/sh/expand.c \
-			external/sh/kill.c \
-			external/sh/nodes.c \
-			external/sh/mystring.c \
 			external/sh/miscbltin.c \
-			external/sh/trap.c \
-			external/sh/arith_yylex.c \
-			external/sh/printf.c \
-			external/sh/exec.c \
+			external/sh/mystring.c \
+			external/sh/nodes.c \
 			external/sh/options.c \
+			external/sh/output.c \
 			external/sh/parser.c \
-			external/sh/input.c \
+			external/sh/printf.c \
+			external/sh/redir.c \
+			external/sh/show.c \
+			external/sh/syntax.c \
 			external/sh/test.c \
-			external/sh/bltin/echo.c
+			external/sh/trap.c \
+			external/sh/var.c
 
 libucl_a_SOURCES = external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_emitter_streamline.c \
@@ -629,7 +629,7 @@ libucl_a_CFLAGS = -I$(top_srcdir)/external/libucl/uthash \
 			-I$(top_srcdir)/external/libucl/src \
 			-Wno-unused-parameter -Wno-pointer-sign
 
-libnv_a_CFLAGS = -I $(top_srcdir)/external/libnv/ -std=gnu99
+libnv_a_CFLAGS = -isystem $(top_srcdir)/external/libnv/ -std=gnu99
 libnv_a_SOURCES = external/libnv/sys/dnvlist.c \
 			external/libnv/msgio.c \
 			external/libnv/sys/nvlist.c \
@@ -980,63 +980,11 @@ external/sh/$(am__dirstamp):
 external/sh/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) external/sh/$(DEPDIR)
 	@: > external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-redir.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-syntax.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-mail.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-cd.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-show.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-error.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-builtins.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-eval.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-jobs.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-main.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-memalloc.$(OBJEXT): external/sh/$(am__dirstamp) \
+external/sh/sh-alias.$(OBJEXT): external/sh/$(am__dirstamp) \
 	external/sh/$(DEPDIR)/$(am__dirstamp)
 external/sh/sh-arith_yacc.$(OBJEXT): external/sh/$(am__dirstamp) \
 	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-histedit.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-output.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-alias.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-var.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-expand.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-kill.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-nodes.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-mystring.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-miscbltin.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-trap.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
 external/sh/sh-arith_yylex.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-printf.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-exec.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-options.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-parser.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-input.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-test.$(OBJEXT): external/sh/$(am__dirstamp) \
 	external/sh/$(DEPDIR)/$(am__dirstamp)
 external/sh/bltin/$(am__dirstamp):
 	@$(MKDIR_P) external/sh/bltin
@@ -1047,6 +995,58 @@ external/sh/bltin/$(DEPDIR)/$(am__dirstamp):
 external/sh/bltin/sh-echo.$(OBJEXT):  \
 	external/sh/bltin/$(am__dirstamp) \
 	external/sh/bltin/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-builtins.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-cd.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-error.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-eval.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-exec.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-expand.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-histedit.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-input.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-jobs.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-kill.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-mail.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-main.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-memalloc.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-miscbltin.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-mystring.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-nodes.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-options.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-output.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-parser.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-printf.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-redir.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-show.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-syntax.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-test.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-trap.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh/sh-var.$(OBJEXT): external/sh/$(am__dirstamp) \
+	external/sh/$(DEPDIR)/$(am__dirstamp)
 
 sh$(EXEEXT): $(sh_OBJECTS) $(sh_DEPENDENCIES) $(EXTRA_sh_DEPENDENCIES) 
 	@rm -f sh$(EXEEXT)
@@ -1557,89 +1557,61 @@ src/libexec/poudriere/rexec/rexec-rexec.obj: src/libexec/poudriere/rexec/rexec.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rexec_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/rexec/rexec-rexec.obj `if test -f 'src/libexec/poudriere/rexec/rexec.c'; then $(CYGPATH_W) 'src/libexec/poudriere/rexec/rexec.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/rexec/rexec.c'; fi`
 
-external/sh/sh-redir.o: external/sh/redir.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-redir.o -MD -MP -MF external/sh/$(DEPDIR)/sh-redir.Tpo -c -o external/sh/sh-redir.o `test -f 'external/sh/redir.c' || echo '$(srcdir)/'`external/sh/redir.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-redir.Tpo external/sh/$(DEPDIR)/sh-redir.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/redir.c' object='external/sh/sh-redir.o' libtool=no @AMDEPBACKSLASH@
+external/sh/sh-alias.o: external/sh/alias.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-alias.o -MD -MP -MF external/sh/$(DEPDIR)/sh-alias.Tpo -c -o external/sh/sh-alias.o `test -f 'external/sh/alias.c' || echo '$(srcdir)/'`external/sh/alias.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-alias.Tpo external/sh/$(DEPDIR)/sh-alias.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/alias.c' object='external/sh/sh-alias.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-redir.o `test -f 'external/sh/redir.c' || echo '$(srcdir)/'`external/sh/redir.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-alias.o `test -f 'external/sh/alias.c' || echo '$(srcdir)/'`external/sh/alias.c
 
-external/sh/sh-redir.obj: external/sh/redir.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-redir.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-redir.Tpo -c -o external/sh/sh-redir.obj `if test -f 'external/sh/redir.c'; then $(CYGPATH_W) 'external/sh/redir.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/redir.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-redir.Tpo external/sh/$(DEPDIR)/sh-redir.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/redir.c' object='external/sh/sh-redir.obj' libtool=no @AMDEPBACKSLASH@
+external/sh/sh-alias.obj: external/sh/alias.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-alias.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-alias.Tpo -c -o external/sh/sh-alias.obj `if test -f 'external/sh/alias.c'; then $(CYGPATH_W) 'external/sh/alias.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/alias.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-alias.Tpo external/sh/$(DEPDIR)/sh-alias.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/alias.c' object='external/sh/sh-alias.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-redir.obj `if test -f 'external/sh/redir.c'; then $(CYGPATH_W) 'external/sh/redir.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/redir.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-alias.obj `if test -f 'external/sh/alias.c'; then $(CYGPATH_W) 'external/sh/alias.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/alias.c'; fi`
 
-external/sh/sh-syntax.o: external/sh/syntax.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-syntax.o -MD -MP -MF external/sh/$(DEPDIR)/sh-syntax.Tpo -c -o external/sh/sh-syntax.o `test -f 'external/sh/syntax.c' || echo '$(srcdir)/'`external/sh/syntax.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-syntax.Tpo external/sh/$(DEPDIR)/sh-syntax.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/syntax.c' object='external/sh/sh-syntax.o' libtool=no @AMDEPBACKSLASH@
+external/sh/sh-arith_yacc.o: external/sh/arith_yacc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-arith_yacc.o -MD -MP -MF external/sh/$(DEPDIR)/sh-arith_yacc.Tpo -c -o external/sh/sh-arith_yacc.o `test -f 'external/sh/arith_yacc.c' || echo '$(srcdir)/'`external/sh/arith_yacc.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-arith_yacc.Tpo external/sh/$(DEPDIR)/sh-arith_yacc.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/arith_yacc.c' object='external/sh/sh-arith_yacc.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-syntax.o `test -f 'external/sh/syntax.c' || echo '$(srcdir)/'`external/sh/syntax.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-arith_yacc.o `test -f 'external/sh/arith_yacc.c' || echo '$(srcdir)/'`external/sh/arith_yacc.c
 
-external/sh/sh-syntax.obj: external/sh/syntax.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-syntax.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-syntax.Tpo -c -o external/sh/sh-syntax.obj `if test -f 'external/sh/syntax.c'; then $(CYGPATH_W) 'external/sh/syntax.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/syntax.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-syntax.Tpo external/sh/$(DEPDIR)/sh-syntax.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/syntax.c' object='external/sh/sh-syntax.obj' libtool=no @AMDEPBACKSLASH@
+external/sh/sh-arith_yacc.obj: external/sh/arith_yacc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-arith_yacc.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-arith_yacc.Tpo -c -o external/sh/sh-arith_yacc.obj `if test -f 'external/sh/arith_yacc.c'; then $(CYGPATH_W) 'external/sh/arith_yacc.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/arith_yacc.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-arith_yacc.Tpo external/sh/$(DEPDIR)/sh-arith_yacc.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/arith_yacc.c' object='external/sh/sh-arith_yacc.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-syntax.obj `if test -f 'external/sh/syntax.c'; then $(CYGPATH_W) 'external/sh/syntax.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/syntax.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-arith_yacc.obj `if test -f 'external/sh/arith_yacc.c'; then $(CYGPATH_W) 'external/sh/arith_yacc.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/arith_yacc.c'; fi`
 
-external/sh/sh-mail.o: external/sh/mail.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-mail.o -MD -MP -MF external/sh/$(DEPDIR)/sh-mail.Tpo -c -o external/sh/sh-mail.o `test -f 'external/sh/mail.c' || echo '$(srcdir)/'`external/sh/mail.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-mail.Tpo external/sh/$(DEPDIR)/sh-mail.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/mail.c' object='external/sh/sh-mail.o' libtool=no @AMDEPBACKSLASH@
+external/sh/sh-arith_yylex.o: external/sh/arith_yylex.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-arith_yylex.o -MD -MP -MF external/sh/$(DEPDIR)/sh-arith_yylex.Tpo -c -o external/sh/sh-arith_yylex.o `test -f 'external/sh/arith_yylex.c' || echo '$(srcdir)/'`external/sh/arith_yylex.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-arith_yylex.Tpo external/sh/$(DEPDIR)/sh-arith_yylex.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/arith_yylex.c' object='external/sh/sh-arith_yylex.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-mail.o `test -f 'external/sh/mail.c' || echo '$(srcdir)/'`external/sh/mail.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-arith_yylex.o `test -f 'external/sh/arith_yylex.c' || echo '$(srcdir)/'`external/sh/arith_yylex.c
 
-external/sh/sh-mail.obj: external/sh/mail.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-mail.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-mail.Tpo -c -o external/sh/sh-mail.obj `if test -f 'external/sh/mail.c'; then $(CYGPATH_W) 'external/sh/mail.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/mail.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-mail.Tpo external/sh/$(DEPDIR)/sh-mail.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/mail.c' object='external/sh/sh-mail.obj' libtool=no @AMDEPBACKSLASH@
+external/sh/sh-arith_yylex.obj: external/sh/arith_yylex.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-arith_yylex.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-arith_yylex.Tpo -c -o external/sh/sh-arith_yylex.obj `if test -f 'external/sh/arith_yylex.c'; then $(CYGPATH_W) 'external/sh/arith_yylex.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/arith_yylex.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-arith_yylex.Tpo external/sh/$(DEPDIR)/sh-arith_yylex.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/arith_yylex.c' object='external/sh/sh-arith_yylex.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-mail.obj `if test -f 'external/sh/mail.c'; then $(CYGPATH_W) 'external/sh/mail.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/mail.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-arith_yylex.obj `if test -f 'external/sh/arith_yylex.c'; then $(CYGPATH_W) 'external/sh/arith_yylex.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/arith_yylex.c'; fi`
 
-external/sh/sh-cd.o: external/sh/cd.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-cd.o -MD -MP -MF external/sh/$(DEPDIR)/sh-cd.Tpo -c -o external/sh/sh-cd.o `test -f 'external/sh/cd.c' || echo '$(srcdir)/'`external/sh/cd.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-cd.Tpo external/sh/$(DEPDIR)/sh-cd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/cd.c' object='external/sh/sh-cd.o' libtool=no @AMDEPBACKSLASH@
+external/sh/bltin/sh-echo.o: external/sh/bltin/echo.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/bltin/sh-echo.o -MD -MP -MF external/sh/bltin/$(DEPDIR)/sh-echo.Tpo -c -o external/sh/bltin/sh-echo.o `test -f 'external/sh/bltin/echo.c' || echo '$(srcdir)/'`external/sh/bltin/echo.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/bltin/$(DEPDIR)/sh-echo.Tpo external/sh/bltin/$(DEPDIR)/sh-echo.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/bltin/echo.c' object='external/sh/bltin/sh-echo.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-cd.o `test -f 'external/sh/cd.c' || echo '$(srcdir)/'`external/sh/cd.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/bltin/sh-echo.o `test -f 'external/sh/bltin/echo.c' || echo '$(srcdir)/'`external/sh/bltin/echo.c
 
-external/sh/sh-cd.obj: external/sh/cd.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-cd.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-cd.Tpo -c -o external/sh/sh-cd.obj `if test -f 'external/sh/cd.c'; then $(CYGPATH_W) 'external/sh/cd.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/cd.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-cd.Tpo external/sh/$(DEPDIR)/sh-cd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/cd.c' object='external/sh/sh-cd.obj' libtool=no @AMDEPBACKSLASH@
+external/sh/bltin/sh-echo.obj: external/sh/bltin/echo.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/bltin/sh-echo.obj -MD -MP -MF external/sh/bltin/$(DEPDIR)/sh-echo.Tpo -c -o external/sh/bltin/sh-echo.obj `if test -f 'external/sh/bltin/echo.c'; then $(CYGPATH_W) 'external/sh/bltin/echo.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/bltin/echo.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/bltin/$(DEPDIR)/sh-echo.Tpo external/sh/bltin/$(DEPDIR)/sh-echo.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/bltin/echo.c' object='external/sh/bltin/sh-echo.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-cd.obj `if test -f 'external/sh/cd.c'; then $(CYGPATH_W) 'external/sh/cd.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/cd.c'; fi`
-
-external/sh/sh-show.o: external/sh/show.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-show.o -MD -MP -MF external/sh/$(DEPDIR)/sh-show.Tpo -c -o external/sh/sh-show.o `test -f 'external/sh/show.c' || echo '$(srcdir)/'`external/sh/show.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-show.Tpo external/sh/$(DEPDIR)/sh-show.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/show.c' object='external/sh/sh-show.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-show.o `test -f 'external/sh/show.c' || echo '$(srcdir)/'`external/sh/show.c
-
-external/sh/sh-show.obj: external/sh/show.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-show.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-show.Tpo -c -o external/sh/sh-show.obj `if test -f 'external/sh/show.c'; then $(CYGPATH_W) 'external/sh/show.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/show.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-show.Tpo external/sh/$(DEPDIR)/sh-show.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/show.c' object='external/sh/sh-show.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-show.obj `if test -f 'external/sh/show.c'; then $(CYGPATH_W) 'external/sh/show.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/show.c'; fi`
-
-external/sh/sh-error.o: external/sh/error.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-error.o -MD -MP -MF external/sh/$(DEPDIR)/sh-error.Tpo -c -o external/sh/sh-error.o `test -f 'external/sh/error.c' || echo '$(srcdir)/'`external/sh/error.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-error.Tpo external/sh/$(DEPDIR)/sh-error.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/error.c' object='external/sh/sh-error.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-error.o `test -f 'external/sh/error.c' || echo '$(srcdir)/'`external/sh/error.c
-
-external/sh/sh-error.obj: external/sh/error.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-error.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-error.Tpo -c -o external/sh/sh-error.obj `if test -f 'external/sh/error.c'; then $(CYGPATH_W) 'external/sh/error.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/error.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-error.Tpo external/sh/$(DEPDIR)/sh-error.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/error.c' object='external/sh/sh-error.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-error.obj `if test -f 'external/sh/error.c'; then $(CYGPATH_W) 'external/sh/error.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/error.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/bltin/sh-echo.obj `if test -f 'external/sh/bltin/echo.c'; then $(CYGPATH_W) 'external/sh/bltin/echo.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/bltin/echo.c'; fi`
 
 external/sh/sh-builtins.o: external/sh/builtins.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-builtins.o -MD -MP -MF external/sh/$(DEPDIR)/sh-builtins.Tpo -c -o external/sh/sh-builtins.o `test -f 'external/sh/builtins.c' || echo '$(srcdir)/'`external/sh/builtins.c
@@ -1655,6 +1627,34 @@ external/sh/sh-builtins.obj: external/sh/builtins.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-builtins.obj `if test -f 'external/sh/builtins.c'; then $(CYGPATH_W) 'external/sh/builtins.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/builtins.c'; fi`
 
+external/sh/sh-cd.o: external/sh/cd.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-cd.o -MD -MP -MF external/sh/$(DEPDIR)/sh-cd.Tpo -c -o external/sh/sh-cd.o `test -f 'external/sh/cd.c' || echo '$(srcdir)/'`external/sh/cd.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-cd.Tpo external/sh/$(DEPDIR)/sh-cd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/cd.c' object='external/sh/sh-cd.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-cd.o `test -f 'external/sh/cd.c' || echo '$(srcdir)/'`external/sh/cd.c
+
+external/sh/sh-cd.obj: external/sh/cd.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-cd.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-cd.Tpo -c -o external/sh/sh-cd.obj `if test -f 'external/sh/cd.c'; then $(CYGPATH_W) 'external/sh/cd.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/cd.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-cd.Tpo external/sh/$(DEPDIR)/sh-cd.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/cd.c' object='external/sh/sh-cd.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-cd.obj `if test -f 'external/sh/cd.c'; then $(CYGPATH_W) 'external/sh/cd.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/cd.c'; fi`
+
+external/sh/sh-error.o: external/sh/error.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-error.o -MD -MP -MF external/sh/$(DEPDIR)/sh-error.Tpo -c -o external/sh/sh-error.o `test -f 'external/sh/error.c' || echo '$(srcdir)/'`external/sh/error.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-error.Tpo external/sh/$(DEPDIR)/sh-error.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/error.c' object='external/sh/sh-error.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-error.o `test -f 'external/sh/error.c' || echo '$(srcdir)/'`external/sh/error.c
+
+external/sh/sh-error.obj: external/sh/error.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-error.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-error.Tpo -c -o external/sh/sh-error.obj `if test -f 'external/sh/error.c'; then $(CYGPATH_W) 'external/sh/error.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/error.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-error.Tpo external/sh/$(DEPDIR)/sh-error.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/error.c' object='external/sh/sh-error.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-error.obj `if test -f 'external/sh/error.c'; then $(CYGPATH_W) 'external/sh/error.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/error.c'; fi`
+
 external/sh/sh-eval.o: external/sh/eval.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-eval.o -MD -MP -MF external/sh/$(DEPDIR)/sh-eval.Tpo -c -o external/sh/sh-eval.o `test -f 'external/sh/eval.c' || echo '$(srcdir)/'`external/sh/eval.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-eval.Tpo external/sh/$(DEPDIR)/sh-eval.Po
@@ -1669,6 +1669,62 @@ external/sh/sh-eval.obj: external/sh/eval.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-eval.obj `if test -f 'external/sh/eval.c'; then $(CYGPATH_W) 'external/sh/eval.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/eval.c'; fi`
 
+external/sh/sh-exec.o: external/sh/exec.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-exec.o -MD -MP -MF external/sh/$(DEPDIR)/sh-exec.Tpo -c -o external/sh/sh-exec.o `test -f 'external/sh/exec.c' || echo '$(srcdir)/'`external/sh/exec.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-exec.Tpo external/sh/$(DEPDIR)/sh-exec.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/exec.c' object='external/sh/sh-exec.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-exec.o `test -f 'external/sh/exec.c' || echo '$(srcdir)/'`external/sh/exec.c
+
+external/sh/sh-exec.obj: external/sh/exec.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-exec.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-exec.Tpo -c -o external/sh/sh-exec.obj `if test -f 'external/sh/exec.c'; then $(CYGPATH_W) 'external/sh/exec.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/exec.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-exec.Tpo external/sh/$(DEPDIR)/sh-exec.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/exec.c' object='external/sh/sh-exec.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-exec.obj `if test -f 'external/sh/exec.c'; then $(CYGPATH_W) 'external/sh/exec.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/exec.c'; fi`
+
+external/sh/sh-expand.o: external/sh/expand.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-expand.o -MD -MP -MF external/sh/$(DEPDIR)/sh-expand.Tpo -c -o external/sh/sh-expand.o `test -f 'external/sh/expand.c' || echo '$(srcdir)/'`external/sh/expand.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-expand.Tpo external/sh/$(DEPDIR)/sh-expand.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/expand.c' object='external/sh/sh-expand.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-expand.o `test -f 'external/sh/expand.c' || echo '$(srcdir)/'`external/sh/expand.c
+
+external/sh/sh-expand.obj: external/sh/expand.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-expand.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-expand.Tpo -c -o external/sh/sh-expand.obj `if test -f 'external/sh/expand.c'; then $(CYGPATH_W) 'external/sh/expand.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/expand.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-expand.Tpo external/sh/$(DEPDIR)/sh-expand.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/expand.c' object='external/sh/sh-expand.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-expand.obj `if test -f 'external/sh/expand.c'; then $(CYGPATH_W) 'external/sh/expand.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/expand.c'; fi`
+
+external/sh/sh-histedit.o: external/sh/histedit.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-histedit.o -MD -MP -MF external/sh/$(DEPDIR)/sh-histedit.Tpo -c -o external/sh/sh-histedit.o `test -f 'external/sh/histedit.c' || echo '$(srcdir)/'`external/sh/histedit.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-histedit.Tpo external/sh/$(DEPDIR)/sh-histedit.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/histedit.c' object='external/sh/sh-histedit.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-histedit.o `test -f 'external/sh/histedit.c' || echo '$(srcdir)/'`external/sh/histedit.c
+
+external/sh/sh-histedit.obj: external/sh/histedit.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-histedit.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-histedit.Tpo -c -o external/sh/sh-histedit.obj `if test -f 'external/sh/histedit.c'; then $(CYGPATH_W) 'external/sh/histedit.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/histedit.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-histedit.Tpo external/sh/$(DEPDIR)/sh-histedit.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/histedit.c' object='external/sh/sh-histedit.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-histedit.obj `if test -f 'external/sh/histedit.c'; then $(CYGPATH_W) 'external/sh/histedit.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/histedit.c'; fi`
+
+external/sh/sh-input.o: external/sh/input.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-input.o -MD -MP -MF external/sh/$(DEPDIR)/sh-input.Tpo -c -o external/sh/sh-input.o `test -f 'external/sh/input.c' || echo '$(srcdir)/'`external/sh/input.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-input.Tpo external/sh/$(DEPDIR)/sh-input.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/input.c' object='external/sh/sh-input.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-input.o `test -f 'external/sh/input.c' || echo '$(srcdir)/'`external/sh/input.c
+
+external/sh/sh-input.obj: external/sh/input.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-input.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-input.Tpo -c -o external/sh/sh-input.obj `if test -f 'external/sh/input.c'; then $(CYGPATH_W) 'external/sh/input.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/input.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-input.Tpo external/sh/$(DEPDIR)/sh-input.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/input.c' object='external/sh/sh-input.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-input.obj `if test -f 'external/sh/input.c'; then $(CYGPATH_W) 'external/sh/input.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/input.c'; fi`
+
 external/sh/sh-jobs.o: external/sh/jobs.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-jobs.o -MD -MP -MF external/sh/$(DEPDIR)/sh-jobs.Tpo -c -o external/sh/sh-jobs.o `test -f 'external/sh/jobs.c' || echo '$(srcdir)/'`external/sh/jobs.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-jobs.Tpo external/sh/$(DEPDIR)/sh-jobs.Po
@@ -1682,6 +1738,34 @@ external/sh/sh-jobs.obj: external/sh/jobs.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/jobs.c' object='external/sh/sh-jobs.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-jobs.obj `if test -f 'external/sh/jobs.c'; then $(CYGPATH_W) 'external/sh/jobs.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/jobs.c'; fi`
+
+external/sh/sh-kill.o: external/sh/kill.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-kill.o -MD -MP -MF external/sh/$(DEPDIR)/sh-kill.Tpo -c -o external/sh/sh-kill.o `test -f 'external/sh/kill.c' || echo '$(srcdir)/'`external/sh/kill.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-kill.Tpo external/sh/$(DEPDIR)/sh-kill.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/kill.c' object='external/sh/sh-kill.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-kill.o `test -f 'external/sh/kill.c' || echo '$(srcdir)/'`external/sh/kill.c
+
+external/sh/sh-kill.obj: external/sh/kill.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-kill.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-kill.Tpo -c -o external/sh/sh-kill.obj `if test -f 'external/sh/kill.c'; then $(CYGPATH_W) 'external/sh/kill.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/kill.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-kill.Tpo external/sh/$(DEPDIR)/sh-kill.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/kill.c' object='external/sh/sh-kill.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-kill.obj `if test -f 'external/sh/kill.c'; then $(CYGPATH_W) 'external/sh/kill.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/kill.c'; fi`
+
+external/sh/sh-mail.o: external/sh/mail.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-mail.o -MD -MP -MF external/sh/$(DEPDIR)/sh-mail.Tpo -c -o external/sh/sh-mail.o `test -f 'external/sh/mail.c' || echo '$(srcdir)/'`external/sh/mail.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-mail.Tpo external/sh/$(DEPDIR)/sh-mail.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/mail.c' object='external/sh/sh-mail.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-mail.o `test -f 'external/sh/mail.c' || echo '$(srcdir)/'`external/sh/mail.c
+
+external/sh/sh-mail.obj: external/sh/mail.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-mail.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-mail.Tpo -c -o external/sh/sh-mail.obj `if test -f 'external/sh/mail.c'; then $(CYGPATH_W) 'external/sh/mail.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/mail.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-mail.Tpo external/sh/$(DEPDIR)/sh-mail.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/mail.c' object='external/sh/sh-mail.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-mail.obj `if test -f 'external/sh/mail.c'; then $(CYGPATH_W) 'external/sh/mail.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/mail.c'; fi`
 
 external/sh/sh-main.o: external/sh/main.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-main.o -MD -MP -MF external/sh/$(DEPDIR)/sh-main.Tpo -c -o external/sh/sh-main.o `test -f 'external/sh/main.c' || echo '$(srcdir)/'`external/sh/main.c
@@ -1711,117 +1795,19 @@ external/sh/sh-memalloc.obj: external/sh/memalloc.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-memalloc.obj `if test -f 'external/sh/memalloc.c'; then $(CYGPATH_W) 'external/sh/memalloc.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/memalloc.c'; fi`
 
-external/sh/sh-arith_yacc.o: external/sh/arith_yacc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-arith_yacc.o -MD -MP -MF external/sh/$(DEPDIR)/sh-arith_yacc.Tpo -c -o external/sh/sh-arith_yacc.o `test -f 'external/sh/arith_yacc.c' || echo '$(srcdir)/'`external/sh/arith_yacc.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-arith_yacc.Tpo external/sh/$(DEPDIR)/sh-arith_yacc.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/arith_yacc.c' object='external/sh/sh-arith_yacc.o' libtool=no @AMDEPBACKSLASH@
+external/sh/sh-miscbltin.o: external/sh/miscbltin.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-miscbltin.o -MD -MP -MF external/sh/$(DEPDIR)/sh-miscbltin.Tpo -c -o external/sh/sh-miscbltin.o `test -f 'external/sh/miscbltin.c' || echo '$(srcdir)/'`external/sh/miscbltin.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-miscbltin.Tpo external/sh/$(DEPDIR)/sh-miscbltin.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/miscbltin.c' object='external/sh/sh-miscbltin.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-arith_yacc.o `test -f 'external/sh/arith_yacc.c' || echo '$(srcdir)/'`external/sh/arith_yacc.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-miscbltin.o `test -f 'external/sh/miscbltin.c' || echo '$(srcdir)/'`external/sh/miscbltin.c
 
-external/sh/sh-arith_yacc.obj: external/sh/arith_yacc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-arith_yacc.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-arith_yacc.Tpo -c -o external/sh/sh-arith_yacc.obj `if test -f 'external/sh/arith_yacc.c'; then $(CYGPATH_W) 'external/sh/arith_yacc.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/arith_yacc.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-arith_yacc.Tpo external/sh/$(DEPDIR)/sh-arith_yacc.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/arith_yacc.c' object='external/sh/sh-arith_yacc.obj' libtool=no @AMDEPBACKSLASH@
+external/sh/sh-miscbltin.obj: external/sh/miscbltin.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-miscbltin.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-miscbltin.Tpo -c -o external/sh/sh-miscbltin.obj `if test -f 'external/sh/miscbltin.c'; then $(CYGPATH_W) 'external/sh/miscbltin.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/miscbltin.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-miscbltin.Tpo external/sh/$(DEPDIR)/sh-miscbltin.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/miscbltin.c' object='external/sh/sh-miscbltin.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-arith_yacc.obj `if test -f 'external/sh/arith_yacc.c'; then $(CYGPATH_W) 'external/sh/arith_yacc.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/arith_yacc.c'; fi`
-
-external/sh/sh-histedit.o: external/sh/histedit.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-histedit.o -MD -MP -MF external/sh/$(DEPDIR)/sh-histedit.Tpo -c -o external/sh/sh-histedit.o `test -f 'external/sh/histedit.c' || echo '$(srcdir)/'`external/sh/histedit.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-histedit.Tpo external/sh/$(DEPDIR)/sh-histedit.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/histedit.c' object='external/sh/sh-histedit.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-histedit.o `test -f 'external/sh/histedit.c' || echo '$(srcdir)/'`external/sh/histedit.c
-
-external/sh/sh-histedit.obj: external/sh/histedit.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-histedit.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-histedit.Tpo -c -o external/sh/sh-histedit.obj `if test -f 'external/sh/histedit.c'; then $(CYGPATH_W) 'external/sh/histedit.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/histedit.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-histedit.Tpo external/sh/$(DEPDIR)/sh-histedit.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/histedit.c' object='external/sh/sh-histedit.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-histedit.obj `if test -f 'external/sh/histedit.c'; then $(CYGPATH_W) 'external/sh/histedit.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/histedit.c'; fi`
-
-external/sh/sh-output.o: external/sh/output.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-output.o -MD -MP -MF external/sh/$(DEPDIR)/sh-output.Tpo -c -o external/sh/sh-output.o `test -f 'external/sh/output.c' || echo '$(srcdir)/'`external/sh/output.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-output.Tpo external/sh/$(DEPDIR)/sh-output.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/output.c' object='external/sh/sh-output.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-output.o `test -f 'external/sh/output.c' || echo '$(srcdir)/'`external/sh/output.c
-
-external/sh/sh-output.obj: external/sh/output.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-output.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-output.Tpo -c -o external/sh/sh-output.obj `if test -f 'external/sh/output.c'; then $(CYGPATH_W) 'external/sh/output.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/output.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-output.Tpo external/sh/$(DEPDIR)/sh-output.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/output.c' object='external/sh/sh-output.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-output.obj `if test -f 'external/sh/output.c'; then $(CYGPATH_W) 'external/sh/output.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/output.c'; fi`
-
-external/sh/sh-alias.o: external/sh/alias.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-alias.o -MD -MP -MF external/sh/$(DEPDIR)/sh-alias.Tpo -c -o external/sh/sh-alias.o `test -f 'external/sh/alias.c' || echo '$(srcdir)/'`external/sh/alias.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-alias.Tpo external/sh/$(DEPDIR)/sh-alias.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/alias.c' object='external/sh/sh-alias.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-alias.o `test -f 'external/sh/alias.c' || echo '$(srcdir)/'`external/sh/alias.c
-
-external/sh/sh-alias.obj: external/sh/alias.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-alias.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-alias.Tpo -c -o external/sh/sh-alias.obj `if test -f 'external/sh/alias.c'; then $(CYGPATH_W) 'external/sh/alias.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/alias.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-alias.Tpo external/sh/$(DEPDIR)/sh-alias.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/alias.c' object='external/sh/sh-alias.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-alias.obj `if test -f 'external/sh/alias.c'; then $(CYGPATH_W) 'external/sh/alias.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/alias.c'; fi`
-
-external/sh/sh-var.o: external/sh/var.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-var.o -MD -MP -MF external/sh/$(DEPDIR)/sh-var.Tpo -c -o external/sh/sh-var.o `test -f 'external/sh/var.c' || echo '$(srcdir)/'`external/sh/var.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-var.Tpo external/sh/$(DEPDIR)/sh-var.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/var.c' object='external/sh/sh-var.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-var.o `test -f 'external/sh/var.c' || echo '$(srcdir)/'`external/sh/var.c
-
-external/sh/sh-var.obj: external/sh/var.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-var.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-var.Tpo -c -o external/sh/sh-var.obj `if test -f 'external/sh/var.c'; then $(CYGPATH_W) 'external/sh/var.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/var.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-var.Tpo external/sh/$(DEPDIR)/sh-var.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/var.c' object='external/sh/sh-var.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-var.obj `if test -f 'external/sh/var.c'; then $(CYGPATH_W) 'external/sh/var.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/var.c'; fi`
-
-external/sh/sh-expand.o: external/sh/expand.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-expand.o -MD -MP -MF external/sh/$(DEPDIR)/sh-expand.Tpo -c -o external/sh/sh-expand.o `test -f 'external/sh/expand.c' || echo '$(srcdir)/'`external/sh/expand.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-expand.Tpo external/sh/$(DEPDIR)/sh-expand.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/expand.c' object='external/sh/sh-expand.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-expand.o `test -f 'external/sh/expand.c' || echo '$(srcdir)/'`external/sh/expand.c
-
-external/sh/sh-expand.obj: external/sh/expand.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-expand.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-expand.Tpo -c -o external/sh/sh-expand.obj `if test -f 'external/sh/expand.c'; then $(CYGPATH_W) 'external/sh/expand.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/expand.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-expand.Tpo external/sh/$(DEPDIR)/sh-expand.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/expand.c' object='external/sh/sh-expand.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-expand.obj `if test -f 'external/sh/expand.c'; then $(CYGPATH_W) 'external/sh/expand.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/expand.c'; fi`
-
-external/sh/sh-kill.o: external/sh/kill.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-kill.o -MD -MP -MF external/sh/$(DEPDIR)/sh-kill.Tpo -c -o external/sh/sh-kill.o `test -f 'external/sh/kill.c' || echo '$(srcdir)/'`external/sh/kill.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-kill.Tpo external/sh/$(DEPDIR)/sh-kill.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/kill.c' object='external/sh/sh-kill.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-kill.o `test -f 'external/sh/kill.c' || echo '$(srcdir)/'`external/sh/kill.c
-
-external/sh/sh-kill.obj: external/sh/kill.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-kill.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-kill.Tpo -c -o external/sh/sh-kill.obj `if test -f 'external/sh/kill.c'; then $(CYGPATH_W) 'external/sh/kill.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/kill.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-kill.Tpo external/sh/$(DEPDIR)/sh-kill.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/kill.c' object='external/sh/sh-kill.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-kill.obj `if test -f 'external/sh/kill.c'; then $(CYGPATH_W) 'external/sh/kill.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/kill.c'; fi`
-
-external/sh/sh-nodes.o: external/sh/nodes.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-nodes.o -MD -MP -MF external/sh/$(DEPDIR)/sh-nodes.Tpo -c -o external/sh/sh-nodes.o `test -f 'external/sh/nodes.c' || echo '$(srcdir)/'`external/sh/nodes.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-nodes.Tpo external/sh/$(DEPDIR)/sh-nodes.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/nodes.c' object='external/sh/sh-nodes.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-nodes.o `test -f 'external/sh/nodes.c' || echo '$(srcdir)/'`external/sh/nodes.c
-
-external/sh/sh-nodes.obj: external/sh/nodes.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-nodes.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-nodes.Tpo -c -o external/sh/sh-nodes.obj `if test -f 'external/sh/nodes.c'; then $(CYGPATH_W) 'external/sh/nodes.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/nodes.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-nodes.Tpo external/sh/$(DEPDIR)/sh-nodes.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/nodes.c' object='external/sh/sh-nodes.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-nodes.obj `if test -f 'external/sh/nodes.c'; then $(CYGPATH_W) 'external/sh/nodes.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/nodes.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-miscbltin.obj `if test -f 'external/sh/miscbltin.c'; then $(CYGPATH_W) 'external/sh/miscbltin.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/miscbltin.c'; fi`
 
 external/sh/sh-mystring.o: external/sh/mystring.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-mystring.o -MD -MP -MF external/sh/$(DEPDIR)/sh-mystring.Tpo -c -o external/sh/sh-mystring.o `test -f 'external/sh/mystring.c' || echo '$(srcdir)/'`external/sh/mystring.c
@@ -1837,75 +1823,19 @@ external/sh/sh-mystring.obj: external/sh/mystring.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-mystring.obj `if test -f 'external/sh/mystring.c'; then $(CYGPATH_W) 'external/sh/mystring.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/mystring.c'; fi`
 
-external/sh/sh-miscbltin.o: external/sh/miscbltin.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-miscbltin.o -MD -MP -MF external/sh/$(DEPDIR)/sh-miscbltin.Tpo -c -o external/sh/sh-miscbltin.o `test -f 'external/sh/miscbltin.c' || echo '$(srcdir)/'`external/sh/miscbltin.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-miscbltin.Tpo external/sh/$(DEPDIR)/sh-miscbltin.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/miscbltin.c' object='external/sh/sh-miscbltin.o' libtool=no @AMDEPBACKSLASH@
+external/sh/sh-nodes.o: external/sh/nodes.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-nodes.o -MD -MP -MF external/sh/$(DEPDIR)/sh-nodes.Tpo -c -o external/sh/sh-nodes.o `test -f 'external/sh/nodes.c' || echo '$(srcdir)/'`external/sh/nodes.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-nodes.Tpo external/sh/$(DEPDIR)/sh-nodes.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/nodes.c' object='external/sh/sh-nodes.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-miscbltin.o `test -f 'external/sh/miscbltin.c' || echo '$(srcdir)/'`external/sh/miscbltin.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-nodes.o `test -f 'external/sh/nodes.c' || echo '$(srcdir)/'`external/sh/nodes.c
 
-external/sh/sh-miscbltin.obj: external/sh/miscbltin.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-miscbltin.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-miscbltin.Tpo -c -o external/sh/sh-miscbltin.obj `if test -f 'external/sh/miscbltin.c'; then $(CYGPATH_W) 'external/sh/miscbltin.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/miscbltin.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-miscbltin.Tpo external/sh/$(DEPDIR)/sh-miscbltin.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/miscbltin.c' object='external/sh/sh-miscbltin.obj' libtool=no @AMDEPBACKSLASH@
+external/sh/sh-nodes.obj: external/sh/nodes.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-nodes.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-nodes.Tpo -c -o external/sh/sh-nodes.obj `if test -f 'external/sh/nodes.c'; then $(CYGPATH_W) 'external/sh/nodes.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/nodes.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-nodes.Tpo external/sh/$(DEPDIR)/sh-nodes.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/nodes.c' object='external/sh/sh-nodes.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-miscbltin.obj `if test -f 'external/sh/miscbltin.c'; then $(CYGPATH_W) 'external/sh/miscbltin.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/miscbltin.c'; fi`
-
-external/sh/sh-trap.o: external/sh/trap.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-trap.o -MD -MP -MF external/sh/$(DEPDIR)/sh-trap.Tpo -c -o external/sh/sh-trap.o `test -f 'external/sh/trap.c' || echo '$(srcdir)/'`external/sh/trap.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-trap.Tpo external/sh/$(DEPDIR)/sh-trap.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/trap.c' object='external/sh/sh-trap.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-trap.o `test -f 'external/sh/trap.c' || echo '$(srcdir)/'`external/sh/trap.c
-
-external/sh/sh-trap.obj: external/sh/trap.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-trap.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-trap.Tpo -c -o external/sh/sh-trap.obj `if test -f 'external/sh/trap.c'; then $(CYGPATH_W) 'external/sh/trap.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/trap.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-trap.Tpo external/sh/$(DEPDIR)/sh-trap.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/trap.c' object='external/sh/sh-trap.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-trap.obj `if test -f 'external/sh/trap.c'; then $(CYGPATH_W) 'external/sh/trap.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/trap.c'; fi`
-
-external/sh/sh-arith_yylex.o: external/sh/arith_yylex.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-arith_yylex.o -MD -MP -MF external/sh/$(DEPDIR)/sh-arith_yylex.Tpo -c -o external/sh/sh-arith_yylex.o `test -f 'external/sh/arith_yylex.c' || echo '$(srcdir)/'`external/sh/arith_yylex.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-arith_yylex.Tpo external/sh/$(DEPDIR)/sh-arith_yylex.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/arith_yylex.c' object='external/sh/sh-arith_yylex.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-arith_yylex.o `test -f 'external/sh/arith_yylex.c' || echo '$(srcdir)/'`external/sh/arith_yylex.c
-
-external/sh/sh-arith_yylex.obj: external/sh/arith_yylex.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-arith_yylex.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-arith_yylex.Tpo -c -o external/sh/sh-arith_yylex.obj `if test -f 'external/sh/arith_yylex.c'; then $(CYGPATH_W) 'external/sh/arith_yylex.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/arith_yylex.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-arith_yylex.Tpo external/sh/$(DEPDIR)/sh-arith_yylex.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/arith_yylex.c' object='external/sh/sh-arith_yylex.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-arith_yylex.obj `if test -f 'external/sh/arith_yylex.c'; then $(CYGPATH_W) 'external/sh/arith_yylex.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/arith_yylex.c'; fi`
-
-external/sh/sh-printf.o: external/sh/printf.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-printf.o -MD -MP -MF external/sh/$(DEPDIR)/sh-printf.Tpo -c -o external/sh/sh-printf.o `test -f 'external/sh/printf.c' || echo '$(srcdir)/'`external/sh/printf.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-printf.Tpo external/sh/$(DEPDIR)/sh-printf.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/printf.c' object='external/sh/sh-printf.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-printf.o `test -f 'external/sh/printf.c' || echo '$(srcdir)/'`external/sh/printf.c
-
-external/sh/sh-printf.obj: external/sh/printf.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-printf.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-printf.Tpo -c -o external/sh/sh-printf.obj `if test -f 'external/sh/printf.c'; then $(CYGPATH_W) 'external/sh/printf.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/printf.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-printf.Tpo external/sh/$(DEPDIR)/sh-printf.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/printf.c' object='external/sh/sh-printf.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-printf.obj `if test -f 'external/sh/printf.c'; then $(CYGPATH_W) 'external/sh/printf.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/printf.c'; fi`
-
-external/sh/sh-exec.o: external/sh/exec.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-exec.o -MD -MP -MF external/sh/$(DEPDIR)/sh-exec.Tpo -c -o external/sh/sh-exec.o `test -f 'external/sh/exec.c' || echo '$(srcdir)/'`external/sh/exec.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-exec.Tpo external/sh/$(DEPDIR)/sh-exec.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/exec.c' object='external/sh/sh-exec.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-exec.o `test -f 'external/sh/exec.c' || echo '$(srcdir)/'`external/sh/exec.c
-
-external/sh/sh-exec.obj: external/sh/exec.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-exec.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-exec.Tpo -c -o external/sh/sh-exec.obj `if test -f 'external/sh/exec.c'; then $(CYGPATH_W) 'external/sh/exec.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/exec.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-exec.Tpo external/sh/$(DEPDIR)/sh-exec.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/exec.c' object='external/sh/sh-exec.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-exec.obj `if test -f 'external/sh/exec.c'; then $(CYGPATH_W) 'external/sh/exec.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/exec.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-nodes.obj `if test -f 'external/sh/nodes.c'; then $(CYGPATH_W) 'external/sh/nodes.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/nodes.c'; fi`
 
 external/sh/sh-options.o: external/sh/options.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-options.o -MD -MP -MF external/sh/$(DEPDIR)/sh-options.Tpo -c -o external/sh/sh-options.o `test -f 'external/sh/options.c' || echo '$(srcdir)/'`external/sh/options.c
@@ -1921,6 +1851,20 @@ external/sh/sh-options.obj: external/sh/options.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-options.obj `if test -f 'external/sh/options.c'; then $(CYGPATH_W) 'external/sh/options.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/options.c'; fi`
 
+external/sh/sh-output.o: external/sh/output.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-output.o -MD -MP -MF external/sh/$(DEPDIR)/sh-output.Tpo -c -o external/sh/sh-output.o `test -f 'external/sh/output.c' || echo '$(srcdir)/'`external/sh/output.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-output.Tpo external/sh/$(DEPDIR)/sh-output.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/output.c' object='external/sh/sh-output.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-output.o `test -f 'external/sh/output.c' || echo '$(srcdir)/'`external/sh/output.c
+
+external/sh/sh-output.obj: external/sh/output.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-output.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-output.Tpo -c -o external/sh/sh-output.obj `if test -f 'external/sh/output.c'; then $(CYGPATH_W) 'external/sh/output.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/output.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-output.Tpo external/sh/$(DEPDIR)/sh-output.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/output.c' object='external/sh/sh-output.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-output.obj `if test -f 'external/sh/output.c'; then $(CYGPATH_W) 'external/sh/output.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/output.c'; fi`
+
 external/sh/sh-parser.o: external/sh/parser.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-parser.o -MD -MP -MF external/sh/$(DEPDIR)/sh-parser.Tpo -c -o external/sh/sh-parser.o `test -f 'external/sh/parser.c' || echo '$(srcdir)/'`external/sh/parser.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-parser.Tpo external/sh/$(DEPDIR)/sh-parser.Po
@@ -1935,19 +1879,61 @@ external/sh/sh-parser.obj: external/sh/parser.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-parser.obj `if test -f 'external/sh/parser.c'; then $(CYGPATH_W) 'external/sh/parser.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/parser.c'; fi`
 
-external/sh/sh-input.o: external/sh/input.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-input.o -MD -MP -MF external/sh/$(DEPDIR)/sh-input.Tpo -c -o external/sh/sh-input.o `test -f 'external/sh/input.c' || echo '$(srcdir)/'`external/sh/input.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-input.Tpo external/sh/$(DEPDIR)/sh-input.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/input.c' object='external/sh/sh-input.o' libtool=no @AMDEPBACKSLASH@
+external/sh/sh-printf.o: external/sh/printf.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-printf.o -MD -MP -MF external/sh/$(DEPDIR)/sh-printf.Tpo -c -o external/sh/sh-printf.o `test -f 'external/sh/printf.c' || echo '$(srcdir)/'`external/sh/printf.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-printf.Tpo external/sh/$(DEPDIR)/sh-printf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/printf.c' object='external/sh/sh-printf.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-input.o `test -f 'external/sh/input.c' || echo '$(srcdir)/'`external/sh/input.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-printf.o `test -f 'external/sh/printf.c' || echo '$(srcdir)/'`external/sh/printf.c
 
-external/sh/sh-input.obj: external/sh/input.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-input.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-input.Tpo -c -o external/sh/sh-input.obj `if test -f 'external/sh/input.c'; then $(CYGPATH_W) 'external/sh/input.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/input.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-input.Tpo external/sh/$(DEPDIR)/sh-input.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/input.c' object='external/sh/sh-input.obj' libtool=no @AMDEPBACKSLASH@
+external/sh/sh-printf.obj: external/sh/printf.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-printf.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-printf.Tpo -c -o external/sh/sh-printf.obj `if test -f 'external/sh/printf.c'; then $(CYGPATH_W) 'external/sh/printf.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/printf.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-printf.Tpo external/sh/$(DEPDIR)/sh-printf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/printf.c' object='external/sh/sh-printf.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-input.obj `if test -f 'external/sh/input.c'; then $(CYGPATH_W) 'external/sh/input.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/input.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-printf.obj `if test -f 'external/sh/printf.c'; then $(CYGPATH_W) 'external/sh/printf.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/printf.c'; fi`
+
+external/sh/sh-redir.o: external/sh/redir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-redir.o -MD -MP -MF external/sh/$(DEPDIR)/sh-redir.Tpo -c -o external/sh/sh-redir.o `test -f 'external/sh/redir.c' || echo '$(srcdir)/'`external/sh/redir.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-redir.Tpo external/sh/$(DEPDIR)/sh-redir.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/redir.c' object='external/sh/sh-redir.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-redir.o `test -f 'external/sh/redir.c' || echo '$(srcdir)/'`external/sh/redir.c
+
+external/sh/sh-redir.obj: external/sh/redir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-redir.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-redir.Tpo -c -o external/sh/sh-redir.obj `if test -f 'external/sh/redir.c'; then $(CYGPATH_W) 'external/sh/redir.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/redir.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-redir.Tpo external/sh/$(DEPDIR)/sh-redir.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/redir.c' object='external/sh/sh-redir.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-redir.obj `if test -f 'external/sh/redir.c'; then $(CYGPATH_W) 'external/sh/redir.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/redir.c'; fi`
+
+external/sh/sh-show.o: external/sh/show.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-show.o -MD -MP -MF external/sh/$(DEPDIR)/sh-show.Tpo -c -o external/sh/sh-show.o `test -f 'external/sh/show.c' || echo '$(srcdir)/'`external/sh/show.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-show.Tpo external/sh/$(DEPDIR)/sh-show.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/show.c' object='external/sh/sh-show.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-show.o `test -f 'external/sh/show.c' || echo '$(srcdir)/'`external/sh/show.c
+
+external/sh/sh-show.obj: external/sh/show.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-show.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-show.Tpo -c -o external/sh/sh-show.obj `if test -f 'external/sh/show.c'; then $(CYGPATH_W) 'external/sh/show.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/show.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-show.Tpo external/sh/$(DEPDIR)/sh-show.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/show.c' object='external/sh/sh-show.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-show.obj `if test -f 'external/sh/show.c'; then $(CYGPATH_W) 'external/sh/show.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/show.c'; fi`
+
+external/sh/sh-syntax.o: external/sh/syntax.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-syntax.o -MD -MP -MF external/sh/$(DEPDIR)/sh-syntax.Tpo -c -o external/sh/sh-syntax.o `test -f 'external/sh/syntax.c' || echo '$(srcdir)/'`external/sh/syntax.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-syntax.Tpo external/sh/$(DEPDIR)/sh-syntax.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/syntax.c' object='external/sh/sh-syntax.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-syntax.o `test -f 'external/sh/syntax.c' || echo '$(srcdir)/'`external/sh/syntax.c
+
+external/sh/sh-syntax.obj: external/sh/syntax.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-syntax.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-syntax.Tpo -c -o external/sh/sh-syntax.obj `if test -f 'external/sh/syntax.c'; then $(CYGPATH_W) 'external/sh/syntax.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/syntax.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-syntax.Tpo external/sh/$(DEPDIR)/sh-syntax.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/syntax.c' object='external/sh/sh-syntax.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-syntax.obj `if test -f 'external/sh/syntax.c'; then $(CYGPATH_W) 'external/sh/syntax.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/syntax.c'; fi`
 
 external/sh/sh-test.o: external/sh/test.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-test.o -MD -MP -MF external/sh/$(DEPDIR)/sh-test.Tpo -c -o external/sh/sh-test.o `test -f 'external/sh/test.c' || echo '$(srcdir)/'`external/sh/test.c
@@ -1963,19 +1949,33 @@ external/sh/sh-test.obj: external/sh/test.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-test.obj `if test -f 'external/sh/test.c'; then $(CYGPATH_W) 'external/sh/test.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/test.c'; fi`
 
-external/sh/bltin/sh-echo.o: external/sh/bltin/echo.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/bltin/sh-echo.o -MD -MP -MF external/sh/bltin/$(DEPDIR)/sh-echo.Tpo -c -o external/sh/bltin/sh-echo.o `test -f 'external/sh/bltin/echo.c' || echo '$(srcdir)/'`external/sh/bltin/echo.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/bltin/$(DEPDIR)/sh-echo.Tpo external/sh/bltin/$(DEPDIR)/sh-echo.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/bltin/echo.c' object='external/sh/bltin/sh-echo.o' libtool=no @AMDEPBACKSLASH@
+external/sh/sh-trap.o: external/sh/trap.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-trap.o -MD -MP -MF external/sh/$(DEPDIR)/sh-trap.Tpo -c -o external/sh/sh-trap.o `test -f 'external/sh/trap.c' || echo '$(srcdir)/'`external/sh/trap.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-trap.Tpo external/sh/$(DEPDIR)/sh-trap.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/trap.c' object='external/sh/sh-trap.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/bltin/sh-echo.o `test -f 'external/sh/bltin/echo.c' || echo '$(srcdir)/'`external/sh/bltin/echo.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-trap.o `test -f 'external/sh/trap.c' || echo '$(srcdir)/'`external/sh/trap.c
 
-external/sh/bltin/sh-echo.obj: external/sh/bltin/echo.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/bltin/sh-echo.obj -MD -MP -MF external/sh/bltin/$(DEPDIR)/sh-echo.Tpo -c -o external/sh/bltin/sh-echo.obj `if test -f 'external/sh/bltin/echo.c'; then $(CYGPATH_W) 'external/sh/bltin/echo.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/bltin/echo.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/bltin/$(DEPDIR)/sh-echo.Tpo external/sh/bltin/$(DEPDIR)/sh-echo.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/bltin/echo.c' object='external/sh/bltin/sh-echo.obj' libtool=no @AMDEPBACKSLASH@
+external/sh/sh-trap.obj: external/sh/trap.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-trap.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-trap.Tpo -c -o external/sh/sh-trap.obj `if test -f 'external/sh/trap.c'; then $(CYGPATH_W) 'external/sh/trap.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/trap.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-trap.Tpo external/sh/$(DEPDIR)/sh-trap.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/trap.c' object='external/sh/sh-trap.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/bltin/sh-echo.obj `if test -f 'external/sh/bltin/echo.c'; then $(CYGPATH_W) 'external/sh/bltin/echo.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/bltin/echo.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-trap.obj `if test -f 'external/sh/trap.c'; then $(CYGPATH_W) 'external/sh/trap.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/trap.c'; fi`
+
+external/sh/sh-var.o: external/sh/var.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-var.o -MD -MP -MF external/sh/$(DEPDIR)/sh-var.Tpo -c -o external/sh/sh-var.o `test -f 'external/sh/var.c' || echo '$(srcdir)/'`external/sh/var.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-var.Tpo external/sh/$(DEPDIR)/sh-var.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/var.c' object='external/sh/sh-var.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-var.o `test -f 'external/sh/var.c' || echo '$(srcdir)/'`external/sh/var.c
+
+external/sh/sh-var.obj: external/sh/var.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-var.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-var.Tpo -c -o external/sh/sh-var.obj `if test -f 'external/sh/var.c'; then $(CYGPATH_W) 'external/sh/var.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/var.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-var.Tpo external/sh/$(DEPDIR)/sh-var.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/var.c' object='external/sh/sh-var.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-var.obj `if test -f 'external/sh/var.c'; then $(CYGPATH_W) 'external/sh/var.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/var.c'; fi`
 install-man8: $(dist_man_MANS)
 	@$(NORMAL_INSTALL)
 	@list1=''; \

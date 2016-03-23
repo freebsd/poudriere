@@ -1,4 +1,5 @@
 #! /bin/sh
+export LC_ALL=C
 set -e
 
 SH_DIR=$1
@@ -35,4 +36,4 @@ sed -i '' -e 's,[[:<:]]st_mtim[[:>:]],st_mtimespec,g' "${DESTDIR}/test.c"
 
 git add -A "${DESTDIR}"
 echo "sh_SOURCES= \\"
-find "${DESTDIR}" -name '*.c'|sed -e 's,$, \\,'
+find "${DESTDIR}" -name '*.c'|sed -e 's,$, \\,'|sort
