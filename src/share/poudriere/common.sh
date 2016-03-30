@@ -2204,7 +2204,9 @@ _real_build_port() {
 	fi
 	targets="check-sanity pkg-depends fetch-depends fetch checksum \
 		  extract-depends extract patch-depends patch build-depends \
-		  lib-depends configure build ${install_order} \
+		  lib-depends configure build \
+		  ${PORTTESTING:+test} \
+		  ${install_order} \
 		  ${PORTTESTING:+deinstall}"
 
 	# If not testing, then avoid rechecking deps in build/install;
@@ -2257,6 +2259,9 @@ _real_build_port() {
 					testfailure=2
 				fi
 			fi
+			;;
+		test)
+			max_execution_time=3600
 			;;
 		checksum|*-depends|install-mtree) JUSER=root ;;
 		stage) [ -n "${PORTTESTING}" ] && markfs prestage ${mnt} ;;
@@ -2345,7 +2350,11 @@ _real_build_port() {
 					bset_job_status "${phase}/timeout" "${port}"
 					job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}timeout"
 				fi
-				return 1
+				if [ "${phase}" != "test" -o "${PORTTESTING_FATAL}" != "no" ]; then
+					return 1
+				else
+					testfailure=2
+				fi
 			fi
 		fi
 

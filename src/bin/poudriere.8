@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd November 9, 2015
+.Dd March 30, 2016
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -499,6 +499,9 @@ Show more verbose output.
 .Ss testport
 .Pp
 The specified port will be tested for build and packaging problems.
+This includes running its test target.
+Some ports might require you to also set the TEST option
+to provide a meaningful test target.
 All missing dependencies will first be built in parallel.
 .Ev TRYBROKEN=yes
 is automatically defined in the environment to test ports marked as

@@ -48,8 +48,8 @@ Options:
     -n          -- Dry-run. Show what will be done, but do not build
                    any packages.
     -R          -- Clean RESTRICTED packages after building
-    -t          -- Test the specified ports for leftovers. Add -r to
-                   recursively test all dependencies as well.
+    -t          -- Run test target and test the specified ports for leftovers.
+                   Add -r to recursively test all dependencies as well.
     -r          -- Resursively test all dependencies as well
     -k          -- When doing testing with -t, don't consider failures as
                    fatal; don't skip dependent ports on findings.
