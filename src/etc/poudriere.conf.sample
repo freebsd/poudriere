@@ -221,8 +221,8 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #PRESERVE_TIMESTAMP=yes
 
 # Define to yes to build and stage as a regular user
-# Default: no
-#BUILD_AS_NON_ROOT=yes
+# Default: yes
+#BUILD_AS_NON_ROOT=no
 
 # Define pkgname globs to boost priority for
 # Default: none

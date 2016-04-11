@@ -4762,7 +4762,7 @@ fi
 : ${PIDFILE:=${POUDRIERE_DATA}/daemon.pid}
 : ${QUEUE_SOCKET:=/var/run/poudriered.sock}
 : ${PORTBUILD_USER:=nobody}
-: ${BUILD_AS_NON_ROOT:=no}
+: ${BUILD_AS_NON_ROOT:=yes}
 : ${DISTFILES_CACHE:=/nonexistent}
 : ${SVN_CMD:=$(which svn 2>/dev/null || which svnlite 2>/dev/null)}
 # 24 hours for 1 command
