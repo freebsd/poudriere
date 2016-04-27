@@ -19,40 +19,37 @@
 #define EXPORTCMD 13
 #define FALSECMD 14
 #define FGCMD 15
-#define GETOPTSCMD 16
-#define HASHCMD 17
-#define HISTCMD 18
-#define JOBIDCMD 19
-#define JOBSCMD 20
-#define KILLCMD 21
-#define LOCALCMD 22
-#define PRINTFCMD 23
-#define PWDCMD 24
-#define READCMD 25
-#define RETURNCMD 26
-#define SETCMD 27
-#define SETVARCMD 28
-#define SHIFTCMD 29
-#define TESTCMD 30
-#define TIMESCMD 31
-#define TRAPCMD 32
-#define TRUECMD 33
-#define TYPECMD 34
-#define ULIMITCMD 35
-#define UMASKCMD 36
-#define UNALIASCMD 37
-#define UNSETCMD 38
-#define WAITCMD 39
-#define WORDEXPCMD 40
+#define FREEBSD_WORDEXPCMD 16
+#define GETOPTSCMD 17
+#define HASHCMD 18
+#define HISTCMD 19
+#define JOBIDCMD 20
+#define JOBSCMD 21
+#define KILLCMD 22
+#define LOCALCMD 23
+#define PRINTFCMD 24
+#define PWDCMD 25
+#define READCMD 26
+#define RETURNCMD 27
+#define SETCMD 28
+#define SETVARCMD 29
+#define SHIFTCMD 30
+#define TESTCMD 31
+#define TIMESCMD 32
+#define TRAPCMD 33
+#define TRUECMD 34
+#define TYPECMD 35
+#define ULIMITCMD 36
+#define UMASKCMD 37
+#define UNALIASCMD 38
+#define UNSETCMD 39
+#define WAITCMD 40
+#define WORDEXPCMD 41
 
-struct builtincmd {
-      const char *name;
-      int code;
-      int special;
-};
+#define BUILTIN_SPECIAL 0x80
 
 extern int (*const builtinfunc[])(int, char **);
-extern const struct builtincmd builtincmd[];
+extern const unsigned char builtincmd[];
 
 int bltincmd(int, char **);
 int aliascmd(int, char **);
@@ -70,6 +67,7 @@ int letcmd(int, char **);
 int exportcmd(int, char **);
 int falsecmd(int, char **);
 int fgcmd(int, char **);
+int freebsd_wordexpcmd(int, char **);
 int getoptscmd(int, char **);
 int hashcmd(int, char **);
 int histcmd(int, char **);

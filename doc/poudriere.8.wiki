@@ -167,7 +167,7 @@ Skip incremental rebuild and sanity checks. Sanity tests are made to check if th
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;S</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Don't recrusively rebuild packages affected by other packages requiring incremental rebuild. This is a subset of <b class="flag">&#45;s</b>. This may result in broken packages if the ones they depend on are updated and are not ABI-compatible.</dd>
+Don't recursively rebuild packages affected by other packages requiring incremental rebuild. This is a subset of <b class="flag">&#45;s</b>. This may result in broken packages if the ones they depend on are updated and are not ABI-compatible.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;t</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
@@ -455,7 +455,7 @@ Skip incremental rebuild and sanity checks. Sanity tests are made to check if th
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;S</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Don't recrusively rebuild packages affected by other packages requiring incremental rebuild. This is a subset of <b class="flag">&#45;s</b>. This may result in broken packages if the ones they depend on are updated and are not ABI-compatible.</dd>
+Don't recursively rebuild packages affected by other packages requiring incremental rebuild. This is a subset of <b class="flag">&#45;s</b>. This may result in broken packages if the ones they depend on are updated and are not ABI-compatible.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;v</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
@@ -910,7 +910,7 @@ Be also careful to not begin the name of the jail by a number if you are not in 
 </div>
 <div class="section">
 <h1 id="x42554753">BUGS</h1> In case of bugs, feel free to fill<p>
-<a class="link-ext" href="http://fossil.etoilebsd.net/poudriere/reportlist">http://fossil.etoilebsd.net/poudriere/reportlist</a></div>
+<a class="link-ext" href="https://github.com/freebsd/poudriere/issues">https://github.com/freebsd/poudriere/issues</a></div>
 <div class="section">
 <h1 id="x415554484f5253">AUTHORS</h1> <span class="author">Baptiste Daroussin</span> &#60;bapt@FreeBSD.org&#62; <span class="author">Bryan Drewery</span> &#60;bdrewery@FreeBSD.org&#62;</div>
 <table summary="Document Footer" class="foot" width="100%">

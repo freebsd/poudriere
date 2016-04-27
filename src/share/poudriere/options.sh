@@ -103,6 +103,7 @@ while getopts "cCj:f:p:nrsz:" FLAG; do
 done
 
 shift $((OPTIND-1))
+post_getopts
 
 export PORTSDIR=`pget ${PTNAME} mnt`
 [ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
@@ -140,6 +141,9 @@ for origin in ${LISTPORTS}; do
 
 	if [ -n "${DO_RECURSE}" ]; then
 		make PORT_DBDIR=${PORT_DBDIR} \
+			PKG_BIN=`which pkg-static` \
+			DIALOG4PORTS=`which dialog4ports` \
+			LOCALBASE=/nonexistent \
 			-C ${PORTSDIR}/${origin} \
 			${RECURSE_COMMAND}
 	fi

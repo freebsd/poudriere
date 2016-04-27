@@ -51,16 +51,18 @@ Options:
                      (Default: same as the host)
     -f fs         -- FS name (tank/jails/myjail) if fs is "none" then do not
                      create on ZFS.
+    -K kernel     -- Build the jail with the kernel
     -M mountpoint -- Mountpoint
     -m method     -- When used with -c, overrides the default method for
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
-                       allbsd, csup, ftp, http, ftp-archive, null, src, svn,
+                       allbsd, ftp-archive, ftp, git, http, null, src, svn,
                        svn+file, svn+http, svn+https, svn+ssh, tar=PATH
-                       url=SOMEURL
+                       url=SOMEURL.
     -P patch      -- Specify a patch to apply to the source before building.
     -S srcpath    -- Specify a path to the source tree to be used.
     -t version    -- Version of FreeBSD to upgrade the jail to.
+    -U url        -- Specify a url to fetch the sources (with method git and/or svn).
     -x            -- Build and setup native-xtools cross compile tools in jail when
                      building for a different TARGET ARCH than the host.
                      Only applies if TARGET_ARCH and HOST_ARCH are different.
@@ -121,7 +123,7 @@ delete_jail() {
 		    ${JAILMNT}/etc/login.conf
 		cap_mkdb ${JAILMNT}/etc/login.conf
 	else
-		TMPFS_ALL=0 destroyfs ${JAILMNT} jail
+		TMPFS_ALL=0 destroyfs ${JAILMNT} jail || :
 	fi
 	cache_dir="${POUDRIERE_DATA}/cache/${JAILNAME}-*"
 	rm -rf ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} || :
@@ -233,15 +235,8 @@ update_jail() {
 		update_version_env $(jget ${JAILNAME} version)
 		markfs clean ${JAILMNT}
 		;;
-	csup)
-		msg "csup has been deprecated by FreeBSD. Only use if you are syncing with your own csup repo."
-		install_from_csup
-		update_version_env $(jget ${JAILNAME} version)
-		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
-		markfs clean ${JAILMNT}
-		;;
-	svn*)
-		install_from_svn version_extra
+	svn*|git*)
+		install_from_vcs version_extra
 		RELEASE=$(update_version "${version_extra}")
 		update_version_env "${RELEASE}"
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
@@ -260,7 +255,7 @@ update_jail() {
 		delete_jail
 		create_jail
 		;;
-	null|tar)
+	csup|null|tar)
 		err 1 "Upgrade is not supported with ${METHOD}; to upgrade, please delete and recreate the jail"
 		;;
 	*)
@@ -271,54 +266,63 @@ update_jail() {
 }
 
 installworld() {
+	local make_jobs
 	local destdir="${JAILMNT}"
 
+	if [ ${JAIL_OSVERSION} -gt 1100086 ]; then
+		make_jobs="${MAKE_JOBS}"
+	fi
+
 	msg "Starting make installworld"
-	${MAKE_CMD} -C "${SRC_BASE}" installworld DESTDIR=${destdir} \
-	    DB_FROM_SRC=1 || err 1 "Failed to 'make installworld'"
-	${MAKE_CMD} -C "${SRC_BASE}" DESTDIR=${destdir} DB_FROM_SRC=1 \
-	    distrib-dirs || err 1 "Failed to 'make distrib-dirs'"
-	${MAKE_CMD} -C "${SRC_BASE}" DESTDIR=${destdir} distribution ||
-	    err 1 "Failed to 'make distribution'"
+	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} installworld \
+	    DESTDIR=${destdir} DB_FROM_SRC=1 || \
+	    err 1 "Failed to 'make installworld'"
+	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} DESTDIR=${destdir} \
+	    DB_FROM_SRC=1 distrib-dirs || \
+	    err 1 "Failed to 'make distrib-dirs'"
+	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} DESTDIR=${destdir} \
+	    distribution || err 1 "Failed to 'make distribution'"
+	if [ -n "${KERNEL}" ]; then
+		msg "Starting make installkernel"
+		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} installkernel \
+		    DESTDIR=${destdir} || \
+		    err 1 "Failed to 'make installkernel'"
+	fi
 
 	return 0
 }
 
-setup_compat_env() {
-	local osversion hostver
+setup_build_env() {
+	local hostver
 
-	osversion=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' ${SRC_BASE}/sys/sys/param.h)
+	JAIL_OSVERSION=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' ${SRC_BASE}/sys/sys/param.h)
 	hostver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' /usr/include/sys/param.h)
 	MAKE_CMD=make
-	if [ ${hostver} -gt 1000000 -a ${osversion} -lt 1000000 ]; then
+	if [ ${hostver} -gt 1000000 -a ${JAIL_OSVERSION} -lt 1000000 ]; then
 		FMAKE=$(which fmake 2>/dev/null)
 		[ -n "${FMAKE}" ] ||
 			err 1 "You need fmake installed on the host: devel/fmake"
 		MAKE_CMD=${FMAKE}
 	fi
 
-	# Don't enable CCACHE for 10, there are still obscure clang and ld
-	# issues
-	if [ ${osversion} -lt 1000000 ]; then
-		: ${CCACHE_PATH:="/usr/local/libexec/ccache"}
-		if [ -n "${CCACHE_DIR}" -a -d ${CCACHE_PATH}/world ]; then
-			export CCACHE_DIR
-			export CC="${CCACHE_PATH}/world/cc"
-			export CXX="${CCACHE_PATH}/world/c++"
-			unset CCACHE_TEMPDIR
+	: ${CCACHE_BIN:="/usr/local/libexec/ccache"}
+	if [ -n "${CCACHE_DIR}" -a -d ${CCACHE_BIN}/world ]; then
+		export CCACHE_DIR
+		if [ ${JAIL_OSVERSION} -gt 1100086 ]; then
+			export WITH_CCACHE_BUILD=yes
+		else
+			export PATH="${CCACHE_BIN}/world:${PATH}"
 		fi
-	fi
-}
-
-build_and_install_world() {
-	if [ -n "${EMULATOR}" ]; then
-		mkdir -p ${JAILMNT}${EMULATOR%/*}
-		cp "${EMULATOR}" "${JAILMNT}${EMULATOR}"
+		# Avoid using a ports-specific directory
+		unset CCACHE_TEMPDIR
 	fi
 
 	export TARGET=${ARCH%.*}
 	export TARGET_ARCH=${ARCH#*.}
+	export WITH_FAST_DEPEND=yes
+}
 
+build_and_install_world() {
 	export SRC_BASE=${JAILMNT}/usr/src
 	mkdir -p ${JAILMNT}/etc
 	[ -f ${JAILMNT}/etc/src.conf ] && rm -f ${JAILMNT}/etc/src.conf
@@ -332,27 +336,33 @@ build_and_install_world() {
 		echo "WITH_ELFTOOLCHAIN_TOOLS=y" >> ${JAILMNT}/etc/src.conf
 	fi
 
-	unset MAKEOBJPREFIX
 	export __MAKE_CONF=/dev/null
 	export SRCCONF=${JAILMNT}/etc/src.conf
 	MAKE_JOBS="-j${PARALLEL_JOBS}"
 
-	setup_compat_env
+	setup_build_env
 
 	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
 	${MAKE_CMD} -C ${SRC_BASE} buildworld ${MAKE_JOBS} \
 	    ${MAKEWORLDARGS} || err 1 "Failed to 'make buildworld'"
+
+	if [ -n "${KERNEL}" ]; then
+		msg "Starting make buildkernel with ${PARALLEL_JOBS} jobs"
+		${MAKE_CMD} -C ${SRC_BASE} buildkernel ${MAKE_JOBS} \
+			KERNCONF=${KERNEL} ${MAKEWORLDARGS} || \
+			err 1 "Failed to 'make buildkernel'"
+	fi
 
 	installworld
 
 	if [ ${XDEV} -eq 1 ]; then
 		msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
 		${MAKE_CMD} -C /usr/src native-xtools ${MAKE_JOBS} \
-		    ${MAKEWORLDARGS} NO_SHARED=y || err 1 "Failed to 'make native-xtools'"
+		    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools'"
 		XDEV_TOOLS=/usr/obj/${TARGET}.${TARGET_ARCH}/nxb-bin
 		rm -rf ${JAILMNT}/nxb-bin || err 1 "Failed to remove old native-xtools"
 		mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
-		cat >> ${JAILMNT}/etc/make.conf <<- EOF
+		cat > ${JAILMNT}/etc/make.nxb.conf <<- EOF
 		CC=/nxb-bin/usr/bin/cc
 		CPP=/nxb-bin/usr/bin/cpp
 		CXX=/nxb-bin/usr/bin/c++
@@ -366,12 +376,10 @@ build_and_install_world() {
 		READELF=/nxb-bin/usr/bin/readelf
 		RANLIB=/nxb-bin/usr/bin/ranlib
 		YACC=/nxb-bin/usr/bin/yacc
-		NM=/nxb-bin/usr/bin/nm
 		MAKE=/nxb-bin/usr/bin/make
 		STRINGS=/nxb-bin/usr/bin/strings
 		AWK=/nxb-bin/usr/bin/awk
 		FLEX=/nxb-bin/usr/bin/flex
-		_MAKE_JOBS=-j1
 		EOF
 
 		# hardlink these files to capture scripts and tools
@@ -422,11 +430,11 @@ install_from_src() {
 	[ -n "${cpignore}" ] && rm -f ${cpignore}
 	echo " done"
 
-	setup_compat_env
+	setup_build_env
 	installworld
 }
 
-install_from_svn() {
+install_from_vcs() {
 	local var_version_extra="$1"
 	local UPDATE=0
 	local proto
@@ -437,52 +445,58 @@ install_from_svn() {
 	else
 		mkdir -p ${SRC_BASE}
 	fi
-	case ${METHOD} in
-	svn+http) proto="http" ;;
-	svn+https) proto="https" ;;
-	svn+ssh) proto="svn+ssh" ;;
-	svn+file) proto="file" ;;
-	svn) proto="svn" ;;
-	esac
 	if [ ${UPDATE} -eq 0 ]; then
-		msg_n "Checking out the sources from svn..."
-		${SVN_CMD} -q co ${proto}://${SVN_HOST}/base/${VERSION} ${SRC_BASE} || err 1 " fail"
-		echo " done"
-		if [ -n "${SRCPATCHFILE}" ]; then
-			msg_n "Patching the sources with ${SRCPATCHFILE}"
-			${SVN_CMD} -q patch ${SRCPATCHFILE} ${SRC_BASE} || err 1 " fail"
-			echo done
-		fi
+		case ${METHOD} in
+		svn*)
+			msg_n "Checking out the sources from svn..."
+			${SVN_CMD} -q co ${SVN_FULLURL}/${VERSION} ${SRC_BASE} || err 1 " fail"
+			echo " done"
+			if [ -n "${SRCPATCHFILE}" ]; then
+				msg_n "Patching the sources with ${SRCPATCHFILE}"
+				${SVN_CMD} -q patch ${SRCPATCHFILE} ${SRC_BASE} || err 1 " fail"
+				echo done
+			fi
+			;;
+		git*)
+			if [ -n "${SRCPATCHFILE}" ]; then
+				err 1 "Patch files not supported with git, please use feature branches"
+			fi
+			msg_n "Checking out the sources from git..."
+			git clone --depth=1 -q -b ${VERSION} ${GIT_FULLURL} ${SRC_BASE} || err 1 " fail"
+			echo " done"
+			# No support for patches, using feature branches is recommanded"
+			;;
+		esac
 	else
-		msg_n "Updating the sources from svn..."
-		${SVN_CMD} upgrade ${SRC_BASE} 2>/dev/null || :
-		${SVN_CMD} -q update -r ${TORELEASE:-head} ${SRC_BASE} || err 1 " fail"
-		echo " done"
+		case ${METHOD} in
+		svn*)
+			msg_n "Updating the sources from svn..."
+			${SVN_CMD} upgrade ${SRC_BASE} 2>/dev/null || :
+			${SVN_CMD} -q update -r ${TORELEASE:-head} ${SRC_BASE} || err 1 " fail"
+			echo " done"
+			;;
+		git*)
+			git -C ${SRC_BASE} pull --rebase -q || err 1 " fail"
+			if [ -n "${TORELEASE}" ]; then
+				git checkout -q "${TORELEASE}" || err 1 " fail"
+			fi
+			echo " done"
+			;;
+		esac
 	fi
 	build_and_install_world
 
-	svn_rev=$(${SVN_CMD} info ${SRC_BASE} |
-	    awk '/Last Changed Rev:/ {print $4}')
-	setvar "${var_version_extra}" "r${svn_rev}"
-}
-
-install_from_csup() {
-	local var_version_extra="$1"
-	local UPDATE=0
-	[ -d "${SRC_BASE}" ] && UPDATE=1
-	mkdir -p ${JAILMNT}/etc
-	mkdir -p ${JAILMNT}/var/db
-	mkdir -p ${JAILMNT}/usr
-	[ -z ${CSUP_HOST} ] && err 2 "CSUP_HOST has to be defined in the configuration to use csup"
-	if [ "${UPDATE}" -eq 0 ]; then
-		echo "*default base=${JAILMNT}/var/db
-*default prefix=${JAILMNT}/usr
-*default release=cvs tag=${VERSION}
-*default delete use-rel-suffix
-src-all" > ${JAILMNT}/etc/supfile
-	fi
-	csup -z -h ${CSUP_HOST} ${JAILMNT}/etc/supfile || err 1 "Fail to fetch sources"
-	build_and_install_world
+	case ${METHOD} in
+	svn*)
+		svn_rev=$(${SVN_CMD} info ${SRC_BASE} |
+		    awk '/Last Changed Rev:/ {print $4}')
+		setvar "${var_version_extra}" "r${svn_rev}"
+	;;
+	git*)
+		git_sha=$(git -C ${SRC_BASE} rev-parse --short HEAD)
+		setvar "${var_version_extra}" "${git_sha}"
+	;;
+	esac
 }
 
 install_from_ftp() {
@@ -513,17 +527,27 @@ install_from_ftp() {
 			# Check that the defaults have been changed
 			echo ${FREEBSD_HOST} | egrep -E "(_PROTO_|_CHANGE_THIS_)" > /dev/null
 			if [ $? -eq 0 ]; then
-				msg "FREEBSD_HOST from config invalid; defaulting to http://ftp.freebsd.org"
-				FREEBSD_HOST="http://ftp.freebsd.org"
+				msg "FREEBSD_HOST from config invalid; defaulting to https://download.FreeBSD.org"
+				FREEBSD_HOST="https://download.FreeBSD.org"
 			fi
-			URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH}/${V}" ;;
+			case $(echo "${FREEBSD_HOST}" | \
+			    tr '[:upper:]' '[:lower:]') in
+				*download.freebsd.org)
+					URL="${FREEBSD_HOST}/ftp/${type}/${ARCH}/${V}"
+					;;
+				*)
+					URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH}/${V}"
+					;;
+			esac
+			;;
 		url=*) URL=${METHOD##url=} ;;
-		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
+		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
 		ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
 		esac
 		DISTS="${DISTS} dict"
 		[ "${NO_LIB32:-no}" = "no" -a "${ARCH}" = "amd64" ] &&
 			DISTS="${DISTS} lib32"
+		[ -n "${KERNEL}" ] && DISTS="${DISTS} kernels"
 		for dist in ${DISTS}; do
 			fetch_file ${JAILMNT}/fromftp/ ${URL}/$dist/CHECKSUM.${HASH} ||
 				err 1 "Fail to fetch checksum file"
@@ -564,24 +588,47 @@ install_from_ftp() {
 				# Check that the defaults have been changed
 				echo ${FREEBSD_HOST} | egrep -E "(_PROTO_|_CHANGE_THIS_)" > /dev/null
 				if [ $? -eq 0 ]; then
-					msg "FREEBSD_HOST from config invalid; defaulting to http://ftp.freebsd.org"
-					FREEBSD_HOST="http://ftp.freebsd.org"
+					msg "FREEBSD_HOST from config invalid; defaulting to https://download.FreeBSD.org"
+					FREEBSD_HOST="https://download.FreeBSD.org"
 				fi
 
-				URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH}/${ARCH}/${V}"
+				case $(echo "${FREEBSD_HOST}" | \
+				    tr '[:upper:]' '[:lower:]') in
+					*download.freebsd.org)
+						URL="${FREEBSD_HOST}/ftp/${type}/${ARCH%%.*}/${ARCH##*.}/${V}"
+						;;
+					*)
+						URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH%%.*}/${ARCH##*.}/${V}"
+						;;
+				esac
 				;;
-			allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/${V}-JPSNAP/ftp" ;;
-			ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
+			allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
+			ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH%%.*}/${ARCH##*.}/${V}" ;;
 			url=*) URL=${METHOD##url=} ;;
 		esac
 
-		# Games check - Removed from HEAD in r278616
+		# Copy release MANIFEST from the preinstalled set if we have it;
+		# if not, download it.
+		if [ -f ${SCRIPTPREFIX}/MANIFESTS/${ARCH%%.*}-${ARCH##*.}-${V} ]; then
+			msg "Using pre-distributed MANIFEST for FreeBSD ${V} ${ARCH}"
+			cp ${SCRIPTPREFIX}/MANIFESTS/${ARCH%%.*}-${ARCH##*.}-${V} ${JAILMNT}/fromftp/MANIFEST
+		else
+			msg "Fetching MANIFEST for FreeBSD ${V} ${ARCH}"
+			fetch_file ${JAILMNT}/fromftp/MANIFEST ${URL}/MANIFEST
+		fi
+
 		DISTS="${DISTS} lib32"
-		fetch_file ${JAILMNT}/fromftp/MANIFEST ${URL}/MANIFEST
+		[ -n "${KERNEL}" ] && DISTS="${DISTS} kernel"
+		[ -s "${JAILMNT}/fromftp/MANIFEST" ] || err 1 "Empty MANIFEST file."
 		for dist in ${DISTS}; do
 			grep -q ${dist} ${JAILMNT}/fromftp/MANIFEST || continue
 			msg "Fetching ${dist} for FreeBSD ${V} ${ARCH}"
 			fetch_file ${JAILMNT}/fromftp/${dist}.txz ${URL}/${dist}.txz
+			MHASH=`awk "/^${dist}\.txz/ { print \\$2 }" ${JAILMNT}/fromftp/MANIFEST`
+			FHASH=`sha256 -q ${JAILMNT}/fromftp/${dist}.txz`
+			if [ ${MHASH} != ${FHASH} ]; then
+				err 1 "${dist}.txz checksum mismatch"
+			fi
 			msg_n "Extracting ${dist}..."
 			tar -xpf ${JAILMNT}/fromftp/${dist}.txz -C  ${JAILMNT}/ || err 1 " fail"
 			echo " done"
@@ -660,28 +707,15 @@ create_jail() {
 				err 1 "version with svn should be: head[@rev], stable/N, release/N, releng/N or projects/X"
 				;;
 		esac
-		FCT=install_from_svn
+		FCT=install_from_vcs
 		;;
-	csup)
-		case ${VERSION} in
-			.)
-				;;
-			RELENG_*![0-9]*_[0-9])
-				err 1 "bad version number for RELENG"
-				;;
-			RELENG_*![0-9]*)
-				err 1 "bad version number for RELENG"
-				;;
-			RELENG_*|.) ;;
-			*)
-				err 1 "version with csup should be: . or RELENG_N or RELEASE_N"
-				;;
-		esac
-		msg "csup has been depreciated by FreeBSD. Only use if you are syncing with your own csup repo."
-		FCT=install_from_csup
+	git*)
+		# Do not check valid version given one can have a specific branch
+		FCT=install_from_vcs
 		;;
 	src=*)
 		SRC_BASE="${METHOD#src=}"
+		test -d ${SRC_BASE} || err 1 "No such source directory"
 		FCT=install_from_src
 		;;
 	tar=*)
@@ -708,6 +742,11 @@ create_jail() {
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
 	[ -n "$SRCPATH" ] && jset ${JAILNAME} srcpath ${SRCPATH}
+
+	if [ -n "${EMULATOR}" ]; then
+		mkdir -p ${JAILMNT}${EMULATOR%/*}
+		cp "${EMULATOR}" "${JAILMNT}${EMULATOR}"
+	fi
 
 	# Wrap the jail creation in a special cleanup hook that will remove the jail
 	# if any error is encountered
@@ -840,7 +879,7 @@ SETNAME=""
 BINMISC="/usr/sbin/binmiscctl"
 XDEV=0
 
-while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:S:x" FLAG; do
+while getopts "iJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:x" FLAG; do
 	case "${FLAG}" in
 		i)
 			INFO=1
@@ -878,6 +917,9 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:S:x" FLAG; do
 		k)
 			STOP=1
 			;;
+		K)
+			KERNEL=${OPTARG:-GENERIC}
+			;;
 		l)
 			LIST=1
 			;;
@@ -908,6 +950,9 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:S:x" FLAG; do
 		u)
 			UPDATE=1
 			;;
+		U)
+			SOURCES_URL=${OPTARG}
+			;;
 		r)
 			RENAME=1;
 			NEWJAILNAME=${OPTARG}
@@ -931,6 +976,7 @@ done
 
 saved_argv="$@"
 shift $((OPTIND-1))
+post_getopts
 
 METHOD=${METHOD:-ftp}
 if [ -n "${JAILNAME}" -a ${CREATE} -eq 0 ]; then
@@ -938,6 +984,48 @@ if [ -n "${JAILNAME}" -a ${CREATE} -eq 0 ]; then
 	_jget JAILFS ${JAILNAME} fs 2>/dev/null || :
 	_jget JAILMNT ${JAILNAME} mnt 2>/dev/null || :
 fi
+
+if [ -n "${SOURCES_URL}" ]; then
+	case "${METHOD}" in
+	svn*)
+		case "${SOURCES_URL}" in
+		http://*) METHOD="svn+http" ;;
+		https://*) METHOD="svn+https" ;;
+		file://*) METHOD="svn+file" ;;
+		svn+ssh://*) METHOD="svn+ssh" ;;
+		svn://*) METHOD="svn" ;;
+		*) err 1 "Invalid svn url" ;;
+		esac
+		;;
+	git*)
+		case "${SOURCES_URL}" in
+		ssh://*) METHOD="git+ssh" ;;
+		https://*) METHOD="git+https" ;;
+		git://*) METHOD="git" ;;
+		*) err 1 "Invalid git url" ;;
+		esac
+		;;
+	*)
+		err 1 "-U only valid with git and svn methods"
+		;;
+	esac
+	SVN_FULLURL=${SOURCES_URL}
+	GIT_FULLURL=${SOURCES_URL}
+else
+	case ${METHOD} in
+	svn+http) proto="http" ;;
+	svn+https) proto="https" ;;
+	svn+ssh) proto="svn+ssh" ;;
+	svn+file) proto="file" ;;
+	svn) proto="svn" ;;
+	git+ssh) proto="ssh" ;;
+	git+https) proto="https" ;;
+	git) proto="git" ;;
+	esac
+	SVN_FULLURL=${proto}://${SVN_HOST}/base
+	GIT_FULLURL=${proto}://${GIT_BASEURL}
+fi
+
 
 case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	10000000)
@@ -983,6 +1071,8 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		;;
 	00000100)
 		test -z ${JAILNAME} && usage JAILNAME
+		confirm_if_tty "Are you sure you want to delete the jail?" || \
+		    err 1 "Not deleting jail"
 		maybe_run_queued "${saved_argv}"
 		delete_jail
 		;;

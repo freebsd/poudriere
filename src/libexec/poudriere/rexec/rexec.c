@@ -29,6 +29,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#include <libgen.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -67,7 +68,9 @@ main(int argc, char **argv)
 
 	memset(&un, 0, sizeof(struct sockaddr_un));
 	un.sun_family = AF_UNIX;
-	strlcpy(un.sun_path, sock, sizeof(un.sun_path));
+	if (chdir(dirname(sock)))
+		err(EXIT_FAILURE, "chdir()");
+	strlcpy(un.sun_path, basename(sock), sizeof(un.sun_path));
 
 	if (connect(fd, (struct sockaddr *) &un, sizeof(struct sockaddr_un)) == -1)
 		err(EXIT_FAILURE, "connect(%s)", sock);
@@ -94,9 +97,9 @@ main(int argc, char **argv)
 	}
 	nvlist_destroy(nv);
 
-	nv = nvlist_recv(fd);
+	nv = nvlist_recv(fd, 0);
 	if (nv == NULL)
-		err(1, "nvlist_rect() failed");
+		err(1, "nvlist_recv() failed");
 
 	i = nvlist_get_number(nv, "return");
 

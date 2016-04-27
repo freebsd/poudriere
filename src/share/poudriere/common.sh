@@ -29,6 +29,7 @@
 BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
 . ${SCRIPTPREFIX}/include/common.sh.${BSDPLATFORM}
 BLACKLIST=""
+EX_SOFTWARE=70
 
 # Return true if ran from bulk/testport, ie not daemon/status/jail
 was_a_bulk_run() {
@@ -86,6 +87,8 @@ err() {
 	fi
 }
 
+# Message functions that depend on VERBOSE are stubbed out in post_getopts.
+
 msg_n() {
 	local -; set +x
 	local now elapsed
@@ -93,7 +96,7 @@ msg_n() {
 	elapsed=
 	if should_show_elapsed; then
 		now=$(clock_monotonic)
-		calculate_duration elapsed "$((${now} - ${TIME_START}))"
+		calculate_duration elapsed "$((${now} - ${TIME_START:-0}))"
 		elapsed="[${elapsed}] "
 	fi
 	if [ -n "${COLOR_ARROW}" ] || [ -z "${1##*\033[*}" ]; then
@@ -104,15 +107,12 @@ msg_n() {
 }
 
 msg() {
-	local -; set +x
 	msg_n "$@""\n"
 }
 
 msg_verbose() {
-	local -; set +x
 	[ -n "${DEBUG_LOG}" ] && msg "$1" >> "${DEBUG_LOG}"
-	[ ${VERBOSE} -gt 0 ] || return 0
-	msg "$1"
+	msg_n "$@""\n"
 }
 
 msg_error() {
@@ -134,48 +134,77 @@ msg_error() {
 }
 
 msg_debug() {
-	local -; set +x
 	[ -n "${DEBUG_LOG}" ] && msg "Debug: $@" >> "${DEBUG_LOG}"
-	[ ${VERBOSE} -gt 1 ] || return 0
 	COLOR_ARROW="${COLOR_DEBUG}" \
-	    msg "${COLOR_DEBUG}Debug: $@" >&2
+	    msg_n "${COLOR_DEBUG}Debug: $@""\n" >&2
 }
 
 msg_warn() {
-	local -; set +x
 	[ -n "${DEBUG_LOG}" ] && msg "Warning: $@" >> "${DEBUG_LOG}"
 	COLOR_ARROW="${COLOR_WARN}" \
-	    msg "${COLOR_WARN}Warning: $@" >&2
-}
-
-_msg_redirected() {
-	if [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
-		# Send to true stdout (not any build log)
-		msg "$@" >&3
-	else
-		msg "$@"
-	fi
+	    msg_n "${COLOR_WARN}Warning: $@""\n" >&2
 }
 
 job_msg() {
 	local -; set +x
-	local now elapsed NO_ELAPSED_IN_MSG
+	local now elapsed NO_ELAPSED_IN_MSG output
 
 	if [ -n "${MY_JOBID}" ]; then
 		NO_ELAPSED_IN_MSG=0
 		now=$(clock_monotonic)
-		calculate_duration elapsed "$((${now} - ${TIME_START_JOB}))"
-		_msg_redirected \
-		    "[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}][${elapsed}] $1"
+		calculate_duration elapsed "$((${now} - ${TIME_START_JOB:-${TIME_START:-0}}))"
+		output="[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}][${elapsed}] $1"
 	else
-		_msg_redirected "$@"
+		output="$@"
+	fi
+	if [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
+		# Send to true stdout (not any build log)
+		msg_n "${output}\n" >&3
+	else
+		msg_n "${output}\n"
 	fi
 }
 
+# Stubbed until post_getopts
 job_msg_verbose() {
 	local -; set +x
-	[ ${VERBOSE} -gt 0 ] || return 0
 	job_msg "$@"
+}
+
+prompt() {
+	[ $# -eq 1 ] || eargs prompt message
+	local message="$1"
+	local answer
+
+	msg_n "${message} [y/N] "
+	read answer
+	case "${answer}" in
+		[Yy][Ee][Ss]|[Yy][Ee]|[Yy])
+			return 0
+			;;
+	esac
+
+	return 1
+}
+
+confirm_if_tty() {
+	[ $# -eq 1 ] || eargs confirm_if_tty message
+	local message="${1}"
+
+	[ -t 0 ] || return 0
+	prompt "${message}"
+}
+
+# Handle needs after processing arguments.
+post_getopts() {
+	# Short-circuit verbose functions to save CPU
+	if ! [ ${VERBOSE} -gt 1 ]; then
+		msg_debug() { }
+	fi
+	if ! [ ${VERBOSE} -gt 0 ]; then
+		msg_verbose() { }
+		job_msg_verbose() { }
+	fi
 }
 
 _mastermnt() {
@@ -199,10 +228,19 @@ _mastermnt() {
 	fi
 
 	setvar "$1" "${mnt}"
+	# MASTERMNTROOT
+	setvar "${1}ROOT" "${mnt%/ref}"
 }
 
 _my_path() {
-	setvar "$1" "${MASTERMNT}${MY_JOBID+/../${MY_JOBID}}"
+	if [ -z "${MY_JOBID}" ]; then
+		setvar "$1" "${MASTERMNT}"
+	elif [ -n "${MASTERMNTROOT}" ]; then
+		setvar "$1" "${MASTERMNTROOT}/${MY_JOBID}"
+	else
+		setvar "$1" "${MASTERMNT}/../${MY_JOBID}"
+
+	fi
 }
 
 _my_name() {
@@ -227,12 +265,44 @@ _log_path() {
 	setvar "$1" "${log_path_jail}/${BUILDNAME}"
 }
 
-injail() {
-	local name
+relpath() {
+	[ $# -eq 2 ] || eargs relpath dir1 dir2
+	local dir1=$(realpath -q "$1" || echo "${1}")
+	local dir2=$(realpath -q "$2" || echo "${2}")
+	local common
 
-	_my_name name
-	rexec -s ${MASTERMNT}/../${name}${JNETNAME:+-${JNETNAME}}.sock \
-		-u ${JUSER:-root} "$@"
+	if [ "${#dir1}" -ge "${#dir2}" ]; then
+		common="${dir1}"
+		other="${dir2}"
+	else
+		common="${dir2}"
+		other="${dir1}"
+	fi
+	# Trim away path components until they match
+	while [ "${other#${common}}" = "${other}" -a -n "${common}" ]; do
+		common="${common%/*}"
+	done
+	common="${common:-/}"
+	dir1="${dir1#${common}}"
+	dir1="${dir1#/}"
+	dir1="${dir1:-.}"
+	dir2="${dir2#${common}}"
+	dir2="${dir2#/}"
+	dir2="${dir2:-.}"
+
+	echo "${common} ${dir1} ${dir2}"
+}
+
+injail() {
+	if [ "${USE_JEXECD}" = "no" ]; then
+		injail_tty "$@"
+	else
+		local name
+
+		_my_name name
+		rexec -s ${MASTERMNT}/../${name}${JNETNAME:+-${JNETNAME}}.sock \
+			-u ${JUSER:-root} "$@"
+	fi
 }
 
 injail_tty() {
@@ -256,13 +326,15 @@ jstart() {
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${network} ${JAIL_PARAMS} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
-	jexecd -j ${name} -d ${MASTERMNT}/../ ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}}
+	[ "${USE_JEXECD}" = "yes" ] && \
+	    jexecd -j ${name} -d ${MASTERMNT}/../ ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}}
 	jail -c persist name=${name}-n \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${ipargs} ${JAIL_PARAMS} \
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
-	jexecd -j ${name}-n -d ${MASTERMNT}/../ ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}}
+	[ "${USE_JEXECD}" = "yes" ] && \
+	    jexecd -j ${name}-n -d ${MASTERMNT}/../ ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}}
 	injail id >/dev/null 2>&1 || \
 	    err 1 "Unable to execute id(1) in jail. Emulation or ABI wrong."
 	if ! injail id ${PORTBUILD_USER} >/dev/null 2>&1 ; then
@@ -291,9 +363,9 @@ eargs() {
 	local fname="$1"
 	shift
 	case $# in
-	0) err 1 "${fname}: No arguments expected" ;;
-	1) err 1 "${fname}: 1 argument expected: $1" ;;
-	*) err 1 "${fname}: $# arguments expected: $*" ;;
+	0) err ${EX_SOFTWARE} "${fname}: No arguments expected" ;;
+	1) err ${EX_SOFTWARE} "${fname}: 1 argument expected: $1" ;;
+	*) err ${EX_SOFTWARE} "${fname}: $# arguments expected: $*" ;;
 	esac
 }
 
@@ -312,6 +384,7 @@ run_hook() {
 		POUDRIERE_DATA="${POUDRIERE_DATA}" \
 		MASTERNAME="${MASTERNAME}" \
 		MASTERMNT="${MASTERMNT}" \
+		MY_JOBID="${MY_JOBID}" \
 		BUILDNAME="${BUILDNAME}" \
 		JAILNAME="${JAILNAME}" \
 		PTNAME="${PTNAME}" \
@@ -384,7 +457,7 @@ buildlog_start() {
 	echo "build started at $(date)"
 	echo "port directory: ${portdir}"
 	echo "building for: $(injail uname -a)"
-	echo "maintained by: $(injail make -C ${portdir} maintainer)"
+	echo "maintained by: $(injail /usr/bin/make -C ${portdir} maintainer)"
 	echo "Makefile ident: $(ident ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
 	echo "Poudriere version: ${POUDRIERE_VERSION}"
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
@@ -407,26 +480,31 @@ buildlog_start() {
 	echo "---End Environment---"
 	echo ""
 	echo "---Begin OPTIONS List---"
-	injail make -C ${portdir} showconfig
+	injail /usr/bin/make -C ${portdir} showconfig || :
 	echo "---End OPTIONS List---"
 	echo ""
 	for var in CONFIGURE_ARGS CONFIGURE_ENV MAKE_ENV; do
 		echo "--${var}--"
-		echo "$(injail env ${PORT_FLAGS} make -C ${portdir} -V ${var})"
+		echo "$(injail env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V ${var})"
 		echo "--End ${var}--"
 		echo ""
 	done
 	echo "--PLIST_SUB--"
-	echo "$(injail env ${PORT_FLAGS} make -C ${portdir} -V PLIST_SUB | tr ' ' '\n' | grep -v '^$')"
+	echo "$(injail env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V PLIST_SUB | tr ' ' '\n' | grep -v '^$')"
 	echo "--End PLIST_SUB--"
 	echo ""
 	echo "--SUB_LIST--"
-	echo "$(injail env ${PORT_FLAGS} make -C ${portdir} -V SUB_LIST | tr ' ' '\n' | grep -v '^$')"
+	echo "$(injail env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V SUB_LIST | tr ' ' '\n' | grep -v '^$')"
 	echo "--End SUB_LIST--"
 	echo ""
 	echo "---Begin make.conf---"
 	cat ${mnt}/etc/make.conf
 	echo "---End make.conf---"
+	if [ -f "${mnt}/etc/make.nxb.conf" ]; then
+		echo "---Begin make.nxb.conf---"
+		cat ${mnt}/etc/make.nxb.conf
+		echo "---End make.nxb.conf---"
+	fi
 }
 
 buildlog_stop() {
@@ -792,11 +870,15 @@ show_build_summary() {
 	_bget buildname buildname 2>/dev/null || :
 	now=$(date +%s)
 
-	calculate_elapsed_from_log ${now} ${log}
+	calculate_elapsed_from_log ${now} ${log} || return 1
 	elapsed=${_elapsed_time}
 	calculate_duration buildtime ${elapsed}
 
-	printf "[${MASTERNAME}] [${buildname}] [${status}] Queued: %-${queue_width}d ${COLOR_SUCCESS}Built: %-${queue_width}d ${COLOR_FAIL}Failed: %-${queue_width}d ${COLOR_SKIP}Skipped: %-${queue_width}d ${COLOR_IGNORE}Ignored: %-${queue_width}d${COLOR_RESET} Tobuild: %-${queue_width}d  Time: %s\n" \
+	printf "[${MASTERNAME}] [${buildname}] [${status}] \
+Queued: %-${queue_width}d ${COLOR_SUCCESS}Built: %-${queue_width}d \
+${COLOR_FAIL}Failed: %-${queue_width}d ${COLOR_SKIP}Skipped: \
+%-${queue_width}d ${COLOR_IGNORE}Ignored: %-${queue_width}d${COLOR_RESET} \
+Tobuild: %-${queue_width}d  Time: %s\n" \
 	    ${nbq} ${nbb} ${nbf} ${nbs} ${nbi} ${nbtobuild} "${buildtime}"
 }
 
@@ -952,6 +1034,7 @@ fetch_file() {
 # for mktemp(1).
 mktemp() {
 	if [ -z "${TMPDIR}" -a -n "${MASTERMNT}" -a ${STATUS} -eq 1 ]; then
+		local mnt
 		_my_path mnt
 		TMPDIR="${mnt}/.p/tmp"
 	fi
@@ -959,21 +1042,11 @@ mktemp() {
 	exec command mktemp "$@"
 }
 
-unmarkfs() {
-	[ $# -ne 2 ] && eargs unmarkfs name mnt
-	local name=$1
-	local mnt=$(realpath $2)
-
-	if [ -n "$(zfs_getfs ${mnt})" ]; then
-		zfs destroy -f ${fs}@${name} 2>/dev/null || :
-	else
-		rm -f ${mnt}/.p/mtree.${name} 2>/dev/null || :
-	fi
-}
-
 common_mtree() {
-	mtreefile=$1
-	cat > ${mtreefile} <<EOF
+	[ $# -eq 1 ] || eargs common_mtree mtreefile
+	local mtreefile="$1"
+
+	cat > "${mtreefile}" <<EOF
 ./.npkg/*
 ./.p/*
 .p4config
@@ -995,11 +1068,12 @@ EOF
 markfs() {
 	[ $# -lt 2 ] && eargs markfs name mnt path
 	local name=$1
-	local mnt=$(realpath $2)
+	local mnt="${2}"
 	local path="$3"
 	local fs="$(zfs_getfs ${mnt})"
 	local dozfs=0
 	local domtree=0
+	local mtreefile
 
 	msg_n "Recording filesystem state for ${name}..."
 
@@ -1045,6 +1119,7 @@ markfs() {
 ./etc/group
 ./etc/make.conf
 ./etc/make.conf.bak
+./etc/make.nxb.conf
 ./etc/master.passwd
 ./etc/passwd
 ./etc/pwd.db
@@ -1060,9 +1135,9 @@ markfs() {
 EOF
 		;;
 	esac
-	mtree -X ${mnt}/.p/mtree.${name}exclude \
+	( cd "${mnt}${path}" && mtree -X ${mnt}/.p/mtree.${name}exclude \
 		-cn -k uid,gid,mode,size \
-		-p ${mnt}${path} > ${mnt}/.p/mtree.${name}
+		-p . ) > ${mnt}/.p/mtree.${name}
 	echo " done"
 }
 
@@ -1084,28 +1159,34 @@ do_jail_mounts() {
 	local arch="$3"
 	local name="$4"
 	local devfspath="null zero random urandom stdin stdout stderr fd fd/* bpf* pts pts/*"
-	local srcpath
+	local srcpath nullpaths nullpath
 
 	# clone will inherit from the ref jail
 	if [ ${mnt##*/} = "ref" ]; then
 		mkdir -p ${mnt}/proc \
 		    ${mnt}/dev \
 		    ${mnt}/compat/linux/proc \
-		    ${mnt}/usr/ports \
-		    ${mnt}/usr/src \
-		    ${mnt}/wrkdirs \
-		    ${mnt}/${LOCALBASE:-/usr/local} \
-		    ${mnt}/distfiles \
-		    ${mnt}/packages \
-		    ${mnt}/.npkg \
-		    ${mnt}${HOME}/.ccache \
-		    ${mnt}/var/db/ports
+		    ${mnt}/usr/src
 	fi
 
-	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] &&
-	    mnt_tmpfs data "${mnt}/.p"
+	# Mount some paths read-only from the ref-jail if possible.
+	nullpaths="/nxb-bin /rescue"
+	if [ "${MUTABLE_BASE}" = "no" ]; then
+		# Need to keep /usr/src and /usr/ports on their own.
+		nullpaths="${nullpaths} /usr/bin /usr/include /usr/lib \
+		    /usr/lib32 /usr/libdata /usr/libexec /usr/local /usr/obj \
+		    /usr/sbin /usr/share /usr/tests /bin /sbin /lib /libexec"
+		# Do a real copy for the ref jail since we need to modify
+		# or create directories in them.
+		if [ "${mnt##*/}" != "ref" ]; then
+			nullpaths="${nullpaths} /etc"
+		fi
 
-	mkdir -p "${mnt}/.p/tmp"
+	fi
+	for nullpath in ${nullpaths}; do
+		[ -d "${nullpath}" -a "${from}" != "${mnt}" ] && \
+		    ${NULLMOUNT} -o ro "${from}${nullpath}" "${mnt}/${nullpath}"
+	done
 
 	# Mount /usr/src into target if it exists and not overridden
 	_jget srcpath ${name} srcpath 2>/dev/null || srcpath="${from}/usr/src"
@@ -1161,9 +1242,10 @@ enter_interactive() {
 		    err 1 "Unable to extract pkg."
 		# Install the selected PKGNG package
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
-		    make -C \
-		    /usr/ports/$(injail make -f /usr/ports/Mk/bsd.port.mk \
-		    -V PKGNG_ORIGIN) PKG_BIN="${PKG_BIN}" install-package
+		    /usr/bin/make -C \
+		    /usr/ports/$(injail /usr/bin/make \
+		    -f /usr/ports/Mk/bsd.port.mk -V PKGNG_ORIGIN) \
+		    PKG_BIN="${PKG_BIN}" install-package
 	fi
 
 	# Enable all selected ports and their run-depends
@@ -1171,13 +1253,13 @@ enter_interactive() {
 		# Install run-depends since this is an interactive test
 		msg "Installing run-depends for ${COLOR_PORT}${port}"
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
-		    make -C /usr/ports/${port} run-depends ||
+		    /usr/bin/make -C /usr/ports/${port} run-depends ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port} run-depends"
 		msg "Installing ${COLOR_PORT}${port}"
 		# Only use PKGENV during install as testport will store
 		# the package in a different place than dependencies
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 ${PKGENV} \
-		    make -C /usr/ports/${port} install-package ||
+		    /usr/bin/make -C /usr/ports/${port} install-package ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port}"
 	done
 
@@ -1253,9 +1335,21 @@ do_portbuild_mounts() {
 	local portsdir
 	local optionsdir
 
-	_pget portsdir ${ptname} mnt
+	# clone will inherit from the ref jail
+	if [ ${mnt##*/} = "ref" ]; then
+		mkdir -p "${mnt}/usr/ports" \
+		    "${mnt}/wrkdirs" \
+		    "${mnt}/${LOCALBASE:-/usr/local}" \
+		    "${mnt}/distfiles" \
+		    "${mnt}/packages" \
+		    "${mnt}/.npkg" \
+		    "${mnt}/var/db/ports" \
+		    "${mnt}${HOME}/.ccache"
+	fi
+	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] &&
+	    mnt_tmpfs data "${mnt}/.p"
 
-	[ -d ${portsdir}/ports ] && portsdir=${portsdir}/ports
+	mkdir -p "${mnt}/.p/tmp"
 
 	[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
 		${NULLMOUNT} ${CCACHE_DIR} ${mnt}${HOME}/.ccache
@@ -1268,6 +1362,8 @@ do_portbuild_mounts() {
 		msg "Mounting packages from: ${PACKAGES_ROOT}"
 	fi
 
+	_pget portsdir ${ptname} mnt
+	[ -d ${portsdir}/ports ] && portsdir=${portsdir}/ports
 	${NULLMOUNT} -o ro ${portsdir} ${mnt}/usr/ports ||
 		err 1 "Failed to mount the ports directory "
 	mount_packages -o ro
@@ -1435,7 +1531,7 @@ symlink to .latest/${name}"
 	if [ "${KEEP_OLD_PACKAGES}" = "yes" ]; then
 		keep_cnt=$((${KEEP_OLD_PACKAGES_COUNT} + 1))
 		find ${PACKAGES_ROOT}/ -type d -mindepth 1 -maxdepth 1 \
-		    -name '.real_*' | sort -Vr |
+		    -name '.real_*' | sort -dr |
 		    sed -n "${keep_cnt},\$p" |
 		    xargs rm -rf 2>/dev/null || :
 	else
@@ -1515,12 +1611,16 @@ get_host_arch() {
 need_emulation() {
 	[ $# -eq 1 ] || eargs need_emulation wanted_arch
 	local wanted_arch="$1"
+	local target_arch
+
+	# kern.supported_archs is a list of TARGET_ARCHs.
+	target_arch="${wanted_arch#*.}"
 
 	# Check the list of supported archs from the kernel.
 	# DragonFly does not have kern.supported_archs, fallback to
 	# uname -m (advised by dillon)
 	if { sysctl -n kern.supported_archs 2>/dev/null || uname -m; } | \
-	    grep -qw "${wanted_arch}"; then
+	    grep -qw "${target_arch}"; then
 		return 1
 	else
 		# Returning 1 means no emulation required.
@@ -1624,6 +1724,8 @@ jail_start() {
 	[ -z "${NO_FORCE_PACKAGE}" ] && export FORCE_PACKAGE=yes
 	[ -z "${NO_PACKAGE_BUILDING}" ] && export PACKAGE_BUILDING=yes
 
+	# Only set STATUS=1 if not turned off
+	# jail -s should not do this or jail will stop on EXIT
 	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
 	msg_n "Creating the reference jail..."
 	if [ ${USE_CACHED} = "yes" ]; then
@@ -1668,7 +1770,10 @@ jail_start() {
 		msg "Raising MAX_EXECUTION_TIME and NOHANG_TIME for QEMU"
 		MAX_EXECUTION_TIME=864000
 		NOHANG_TIME=72000
-		EMULATING=1
+		export QEMU_EMULATING=1
+		cat >> "${tomnt}/etc/make.conf" <<-EOF
+		.sinclude "/etc/make.nxb.conf"
+		EOF
 	fi
 
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
@@ -1695,9 +1800,11 @@ jail_start() {
 	jstart
 	injail service ldconfig start >/dev/null || \
 	    err 1 "Failed to set ldconfig paths."
-	# Only set STATUS=1 if not turned off
-	# jail -s should not do this or jail will stop on EXIT
-	WITH_PKGNG=$(injail make -f /usr/ports/Mk/bsd.port.mk -V WITH_PKGNG)
+
+	run_hook jail start
+
+	WITH_PKGNG=$(injail /usr/bin/make -f /usr/ports/Mk/bsd.port.mk \
+	    -V WITH_PKGNG)
 	if [ -n "${WITH_PKGNG}" ]; then
 		PKGNG=1
 		PKG_EXT="txz"
@@ -1717,15 +1824,6 @@ jail_start() {
 		PKG_EXT="tbz"
 	fi
 
-	# 8.3 did not have distrib-dirs ran on it, so various
-	# /usr and /var dirs are missing. Namely /var/games
-	if [ "$(injail uname -r | cut -d - -f 1 )" = "8.3" ]; then
-		injail mtree -eu -f /etc/mtree/BSD.var.dist -p /var >/dev/null 2>&1 || :
-		injail mtree -eu -f /etc/mtree/BSD.usr.dist -p /usr >/dev/null 2>&1 || :
-	fi
-
-	run_hook jail start
-
 	return 0
 }
 
@@ -1740,14 +1838,15 @@ load_blacklist() {
 	[ -n "${setname}" ] && bl="${bl} ${bl}-${setname} \
 		${name}-${ptname}-${setname}"
 	# If emulating always load a qemu-blacklist as it has special needs.
-	[ ${EMULATING:-0} -eq 1 ] && bl="${bl} qemu"
+	[ ${QEMU_EMULATING:-0} -eq 1 ] && bl="${bl} qemu"
 	for b in ${bl} ; do
 		if [ "${b}" = "-" ]; then
 			unset b
 		fi
 		bfile=${b:+${b}-}blacklist
 		[ -f ${POUDRIERED}/${bfile} ] || continue
-		for port in `grep -h -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${POUDRIERED}/${bfile}`; do
+		for port in $(grep -h -v -E '(^[[:space:]]*#|^[[:space:]]*$)' \
+		    ${POUDRIERED}/${bfile} | sed -e 's|[[:space:]]*#.*||'); do
 			case " ${BLACKLIST} " in
 			*\ ${port}\ *) continue;;
 			esac
@@ -1784,7 +1883,7 @@ include_poudriere_confs() {
 
 	# Spy on cmdline arguments so this function is not needed in
 	# every new sub-command file, which could lead to missing it.
-	args_hack=$(echo " $@"|grep -o -- ' -[^ ]*\([jpz]\) \([^ ]*\)'|tr '\n' ' '|sed -e 's, -[^ ]*\([jpz]\) \([^ ]*\),-\1 \2,g')
+	args_hack=$(echo " $@"|grep -Eo -- ' -[^ ]*([jpz]) ?([^ ]*)'|tr '\n' ' '|sed -Ee 's, -[^ ]*([jpz]) ?([^ ]*),-\1 \2,g')
 	set -- ${args_hack}
 	while getopts "j:p:z:" flag; do
 		case ${flag} in
@@ -1821,8 +1920,7 @@ jail_stop() {
 	if [ ${PARALLEL_JOBS} -ne 0 ]; then
 		# - here to only check for unset, {start,stop}_builders will set this to blank if already stopped
 		for j in ${JOBS-$(jot -w %02d ${PARALLEL_JOBS})}; do
-			MY_JOBID=${j} jstop
-			destroyfs ${MASTERMNT}/../${j} jail || :
+			stop_builder "${j}" || :
 		done
 	fi
 	if [ ${USE_CACHED} = "yes" ]; then
@@ -1830,7 +1928,7 @@ jail_stop() {
 	fi
 	msg "Umounting file systems"
 	destroyfs ${MASTERMNT} jail || :
-	rm -rf ${MASTERMNT}/../
+	rm -rfx ${MASTERMNT}/../
 	export STATUS=0
 
 	# Don't override if there is a failure to grab the last status.
@@ -1875,6 +1973,7 @@ cleanup() {
 
 	fi
 
+	rm -f /tmp/.poudriere-lock-$$-*.flock 2>/dev/null || :
 	rmdir /tmp/.poudriere-lock-$$-* 2>/dev/null || :
 
 	export CLEANED_UP=1
@@ -1932,10 +2031,11 @@ sanity_check_pkgs() {
 
 check_leftovers() {
 	[ $# -eq 1 ] || eargs check_leftovers mnt
-	local mnt=$1
+	local mnt="${1}"
 
-	mtree -X ${mnt}/.p/mtree.preinstexclude -f ${mnt}/.p/mtree.preinst \
-	    -p ${mnt} | while read l; do
+	( cd "${mnt}" && \
+	    mtree -X ${mnt}/.p/mtree.preinstexclude -f ${mnt}/.p/mtree.preinst \
+	    -p . ) | while read l; do
 		local changed read_again
 
 		changed=
@@ -2000,13 +2100,13 @@ check_fs_violation() {
 	local status_msg="$4"
 	local err_msg="$5"
 	local status_value="$6"
-	local tmpfile=${mnt}/tmp/check_fs_violation
+	local tmpfile=$(mktemp -t check_fs_violation)
 	local ret=0
 
 	msg_n "${status_msg}..."
-	mtree -X ${mnt}/.p/mtree.${mtree_target}exclude \
+	( cd "${mnt}" && mtree -X ${mnt}/.p/mtree.${mtree_target}exclude \
 		-f ${mnt}/.p/mtree.${mtree_target} \
-		-p ${mnt} > ${tmpfile}
+		-p . ) >> ${tmpfile}
 	echo " done"
 
 	if [ -s ${tmpfile} ]; then
@@ -2027,9 +2127,9 @@ gather_distfiles() {
 	local from=$(realpath $2)
 	local to=$(realpath $3)
 	local sub dists d tosubd specials special
-	sub=$(injail make -C ${portdir} -VDIST_SUBDIR)
-	dists=$(injail make -C ${portdir} -V_DISTFILES -V_PATCHFILES)
-	specials=$(injail make -C ${portdir} -V_DEPEND_SPECIALS)
+	sub=$(injail /usr/bin/make -C ${portdir} -VDIST_SUBDIR)
+	dists=$(injail /usr/bin/make -C ${portdir} -V_DISTFILES -V_PATCHFILES)
+	specials=$(injail /usr/bin/make -C ${portdir} -V_DEPEND_SPECIALS)
 	job_msg_verbose "Status for build ${COLOR_PORT}${portdir##/usr/ports/}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
 		[ -f ${from}/${sub}/${d} ] || continue
@@ -2056,7 +2156,7 @@ _real_build_port() {
 	local listfilecmd network
 	local hangstatus
 	local pkgenv phaseenv jpkg
-	local no_stage=$(injail make -C ${portdir} -VNO_STAGE)
+	local no_stage=$(injail /usr/bin/make -C ${portdir} -VNO_STAGE)
 	local targets install_order
 	local jailuser
 	local testfailure=0
@@ -2064,6 +2164,18 @@ _real_build_port() {
 
 	_my_path mnt
 	_log_path log
+
+	# Use bootstrap PKG when not building pkg itself.
+	if false && [ ${QEMU_EMULATING:-0} -eq 1 ]; then
+		case "${port}" in
+		ports-mgmt/pkg|ports-mgmt/pkg-devel) ;;
+		*)
+			if ensure_pkg_installed; then
+				export PKG_BIN="/.p/pkg-static"
+			fi
+			;;
+		esac
+	fi
 
 	for jpkg in ${ALLOW_MAKE_JOBS_PACKAGES}; do
 		case "${PKGNAME%-*}" in
@@ -2083,7 +2195,7 @@ _real_build_port() {
 	else
 		jailuser=root
 		if [ "${BUILD_AS_NON_ROOT}" = "yes" ] &&
-		    [ -z "$(injail make -C ${portdir} -VNEED_ROOT)" ]; then
+		    [ -z "$(injail /usr/bin/make -C ${portdir} -VNEED_ROOT)" ]; then
 			jailuser=${PORTBUILD_USER}
 			chown -R ${jailuser} ${mnt}/wrkdirs
 		fi
@@ -2206,7 +2318,7 @@ _real_build_port() {
 		if [ "${phase#*-}" = "depends" ]; then
 			# No need for nohang or PORT_FLAGS for *-depends
 			injail env USE_PACKAGE_DEPENDS_ONLY=1 ${phaseenv} \
-			    make -C ${portdir} ${phase} || return 1
+			    /usr/bin/make -C ${portdir} ${phase} || return 1
 		else
 			# Only set PKGENV during 'package' to prevent
 			# testport-built packages from going into the main repo
@@ -2223,7 +2335,7 @@ _real_build_port() {
 				${log}/logs/${PKGNAME}.log \
 				${MASTERMNT}/.p/var/run/${MY_JOBID:-00}_nohang.pid \
 				injail env ${pkgenv} ${phaseenv} ${PORT_FLAGS} \
-				make -C ${portdir} ${phase}
+				/usr/bin/make -C ${portdir} ${phase}
 			hangstatus=$? # This is done as it may return 1 or 2 or 3
 			if [ $hangstatus -ne 0 ]; then
 				# 1 = cmd failed, not a timeout
@@ -2256,7 +2368,7 @@ _real_build_port() {
 
 			bset_job_status "stage-qa" "${port}"
 			if ! injail env DEVELOPER=1 ${PORT_FLAGS} \
-			    make -C ${portdir} stage-qa; then
+			    /usr/bin/make -C ${portdir} stage-qa; then
 				msg "Error: stage-qa failures detected"
 				[ "${PORTTESTING_FATAL}" != "no" ] &&
 					return 1
@@ -2265,7 +2377,7 @@ _real_build_port() {
 
 			bset_job_status "check-plist" "${port}"
 			if ! injail env DEVELOPER=1 ${PORT_FLAGS} \
-			    make -C ${portdir} check-plist; then
+			    /usr/bin/make -C ${portdir} check-plist; then
 				msg "Error: check-plist failures detected"
 				[ "${PORTTESTING_FATAL}" != "no" ] &&
 					return 1
@@ -2286,7 +2398,7 @@ _real_build_port() {
 			local mod=$(mktemp -t lo.mod)
 			local mod1=$(mktemp -t lo.mod1)
 			local die=0
-			PREFIX=$(injail env ${PORT_FLAGS} make -C ${portdir} -VPREFIX)
+			PREFIX=$(injail env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -VPREFIX)
 
 			msg "Checking for extra files and directories"
 			bset_job_status "leftovers" "${port}"
@@ -2306,9 +2418,9 @@ _real_build_port() {
 			else
 				# LEGACY - Support for older ports tree.
 				local users user homedirs plistsub_sed
-				plistsub_sed=$(injail env ${PORT_FLAGS} make -C ${portdir} -V'PLIST_SUB:C/"//g:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/')
+				plistsub_sed=$(injail env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V'PLIST_SUB:C/"//g:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/')
 
-				users=$(injail make -C ${portdir} -VUSERS)
+				users=$(injail /usr/bin/make -C ${portdir} -VUSERS)
 				homedirs=""
 				for user in ${users}; do
 					user=$(grep ^${user}: ${mnt}/usr/ports/UIDs | cut -f 9 -d : | sed -e "s|/usr/local|${PREFIX}| ; s|^|${mnt}|")
@@ -2486,16 +2598,15 @@ save_wrkdir() {
 start_builder() {
 	local id=$1
 	local arch=$2
-	local mnt
+	local mnt="${3}"
+	local MY_JOBID
 
-	export MY_JOBID=${id}
-	_my_path mnt
+	MY_JOBID=${id}
 
 	# Jail might be lingering from previous build. Already recursively
 	# destroyed all the builder datasets, so just try stopping the jail
 	# and ignore any errors
-	jstop
-	destroyfs ${mnt} jail
+	stop_builder "${id}"
 	mkdir -p "${mnt}"
 	clonefs ${MASTERMNT} ${mnt} prepkg
 	markfs prepkg ${mnt} >/dev/null
@@ -2508,14 +2619,31 @@ start_builder() {
 
 start_builders() {
 	local arch=$(injail uname -p)
+	local mnt
 
 	bset builders "${JOBS}"
 	bset status "starting_builders:"
 	parallel_start
 	for j in ${JOBS}; do
-		parallel_run start_builder ${j} ${arch}
+		MY_JOBID=${j} _my_path mnt
+		# Cache some stuff in global env that will pass down.
+		zfs_getfs "${mnt}" >/dev/null 2>&1 || :
+
+		parallel_run start_builder ${j} ${arch} "${mnt}"
 	done
 	parallel_stop
+}
+
+stop_builder() {
+	[ $# -eq 1 ] || eargs stop_builder jobid
+	local jobid="$1"
+	local mnt MY_JOBID
+
+	MY_JOBID="${jobid}"
+	_my_path mnt
+	run_hook builder stop "${jobid}" "${mnt}"
+	jstop
+	destroyfs "${mnt}" jail
 }
 
 stop_builders() {
@@ -2526,11 +2654,8 @@ stop_builders() {
 
 	msg "Stopping ${PARALLEL_JOBS} builders"
 
-	run_hook builder stop "${id}" "${mnt}"
-
 	for j in ${JOBS}; do
-		MY_JOBID=${j} jstop
-		destroyfs ${MASTERMNT}/../${j} jail
+		stop_builder "${j}"
 	done
 
 	# No builders running, unset JOBS
@@ -2941,6 +3066,11 @@ build_pkg() {
 	job_msg "Starting build of ${COLOR_PORT}${port}${COLOR_RESET}"
 	bset_job_status "starting" "${port}"
 
+	if [ "${USE_JEXECD}" = "no" ]; then
+		# Kill everything in jail first
+		jkill
+	fi
+
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
 		umount -f ${mnt}/${LOCALBASE:-/usr/local} 2>/dev/null || :
 		mnt_tmpfs localbase ${mnt}/${LOCALBASE:-/usr/local}
@@ -2958,7 +3088,7 @@ build_pkg() {
 	# This is checked here instead of when building the queue
 	# as the list may start big but become very small, so here
 	# is a less-common check
-	: ${ignore:=$(injail make -C ${portdir} -VIGNORE)}
+	: ${ignore:=$(injail /usr/bin/make -C ${portdir} -VIGNORE)}
 
 	rm -rf ${mnt}/wrkdirs/* || :
 
@@ -3019,7 +3149,7 @@ build_pkg() {
 		fi
 
 		msg "Cleaning up wrkdir"
-		injail make -C ${portdir} clean || :
+		injail /usr/bin/make -C ${portdir} clean || :
 		rm -rf ${mnt}/wrkdirs/* || :
 	fi
 
@@ -3039,17 +3169,25 @@ stop_build() {
 	local pkgname="$1"
 	local origin="$2"
 	local build_failed="$3"
-	local mnt
+	local mnt pscnt
 
 	if [ -n "${MY_JOBID}" ]; then
 		_my_path mnt
 		umount -f ${mnt}/.npkg 2>/dev/null || :
 		rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
 
+		# 2 = HEADER+ps itself
+		pscnt=2
 		# 4 = HEADER+jexecd+reaper+ps itself
-		if [ $(injail ps aux | wc -l) -ne 4 ]; then
+		[ "${USE_JEXECD}" = "yes" ] && pscnt=4
+		if [ $(injail ps aux | wc -l) -ne ${pscnt} ]; then
 			msg_warn "Leftover processes:"
 			injail ps auxwwd | egrep -v '(ps auxwwd|jexecd)'
+		fi
+
+		if [ "${USE_JEXECD}" = "no" ]; then
+			# Always kill to avoid missing anything
+			jkill
 		fi
 	fi
 
@@ -3117,7 +3255,7 @@ list_deps() {
 	local makeargs="-VPKG_DEPENDS -VBUILD_DEPENDS -VEXTRACT_DEPENDS -VLIB_DEPENDS -VPATCH_DEPENDS -VFETCH_DEPENDS -VRUN_DEPENDS"
 
 	prefix_stderr_quick "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
-		injail make -C ${dir} $makeargs | tr ' ' '\n' | \
+		injail /usr/bin/make -C ${dir} $makeargs | tr ' ' '\n' | \
 		awk -F: '{ gsub(/\/usr\/ports\//,"", $2); print $2 }' | \
 		sort -u || err 1 "Makefile broken: $1"
 }
@@ -3259,6 +3397,12 @@ ensure_pkg_installed() {
 	_my_path mnt
 	[ ${PKGNG} -eq 1 ] || return 0
 	[ -z "${force}" ] && [ -x "${mnt}${PKG_BIN}" ] && return 0
+	# Hack, speed up QEMU usage on pkg-repo.
+	if [ ${QEMU_EMULATING:-0} -eq 1 ] && \
+	    [ -f /usr/local/sbin/pkg-static ]; then
+		cp -f /usr/local/sbin/pkg-static "${mnt}/.p/pkg-static"
+		return 0
+	fi
 	[ -e ${MASTERMNT}/packages/Latest/pkg.txz ] || return 1 #pkg missing
 	injail tar xf /packages/Latest/pkg.txz -C / \
 		-s ",/.*/,.p/,g" "*/pkg-static"
@@ -3421,10 +3565,14 @@ delete_old_pkg() {
 		# XXX: This is redundant with list_deps. Hash/caching the
 		# deps can prevent double lookup
 		for td in LIB RUN; do
-			raw_deps=$(injail make -C /usr/ports/${o} -V${td}_DEPENDS)
+			raw_deps=$(injail /usr/bin/make -C /usr/ports/${o} \
+			    -V${td}_DEPENDS)
 			for d in ${raw_deps}; do
 				key=${d%:*}
-				dpath=${d#*:/usr/ports/}
+				dpath=${d#*:}
+				case "${dpath}" in
+				/usr/ports/*) dpath=${dpath#/usr/ports/} ;;
+				esac
 				case ${td} in
 				LIB)
 					[ -n "${liblist}" ] || liblist=$(injail ldconfig -r | awk '$1 ~ /:-l/ { gsub(/.*-l/, "", $1); printf("%s ",$1) } END { printf("\n") }')
@@ -3482,8 +3630,9 @@ delete_old_pkg() {
 
 	# Check if the compiled options match the current options from make.conf and /var/db/ports
 	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
-		current_options=$(injail make -C /usr/ports/${o} pretty-print-config | \
-			tr ' ' '\n' | sed -n 's/^\+\(.*\)/\1/p' | sort -u | tr '\n' ' ')
+		current_options=$(injail /usr/bin/make -C /usr/ports/${o} \
+		    pretty-print-config | tr ' ' '\n' | \
+		    sed -n 's/^\+\(.*\)/\1/p' | sort -u | tr '\n' ' ')
 		pkg_get_options compiled_options "${pkg}"
 
 		if [ "${compiled_options}" != "${current_options}" ]; then
@@ -3604,7 +3753,8 @@ cache_get_pkgname() {
 				return 1
 			fi
 		fi
-		_pkgname=$(injail make -C /usr/ports/${origin} -VPKGNAME || echo)
+		_pkgname=$(injail /usr/bin/make -C /usr/ports/${origin} \
+		    -VPKGNAME || echo)
 		[ -n "${_pkgname}" ] || err 1 "Error getting PKGNAME for ${COLOR_PORT}${origin}${COLOR_RESET}"
 		# Make sure this origin did not already exist
 		cache_get_origin existing_origin "${_pkgname}" 2>/dev/null || :
@@ -3617,7 +3767,7 @@ cache_get_pkgname() {
 			else
 				echo "${_pkgname}" > ${cache_origin_pkgname}
 				cache_pkgname_origin="${MASTERMNT}/.p/var/cache/pkgname-origin/${_pkgname}"
-				echo "${origin}" > "${cache_pkgname_origin}"                                                    
+				echo "${origin}" > "${cache_pkgname_origin}"
 			fi
 		fi
 	fi
@@ -3662,6 +3812,17 @@ compute_deps() {
 	:> "${MASTERMNT}/.p/port_deps.unsorted"
 	:> "${MASTERMNT}/.p/pkg_deps.unsorted"
 
+	# Suck in ports environment to avoid redundant fork/exec for each
+	# child.
+	if [ -f "${MASTERMNT}/usr/ports/Mk/Scripts/ports_env.sh" ]; then
+		eval "$(injail env \
+		    SCRIPTSDIR=/usr/ports/Mk/Scripts \
+		    PORTSDIR=/usr/ports \
+		    MAKE=/usr/bin/make \
+		    /bin/sh /usr/ports/Mk/Scripts/ports_env.sh | \
+		    grep '^export [^;&]*')"
+	fi
+
 	parallel_start
 	for port in $(listed_ports show_moved); do
 		if [ -d "${MASTERMNT}/usr/ports/${port}" ]; then
@@ -3702,6 +3863,11 @@ compute_deps() {
 
 	rm -f "${MASTERMNT}/.p/port_deps.unsorted" \
 	    "${MASTERMNT}/.p/pkg_deps.unsorted"
+
+	# Don't leak ports-env UID as it may conflict with BUILD_AS_NON_ROOT
+	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
+		unset UID
+	fi
 
 	return 0
 }
@@ -3915,7 +4081,7 @@ check_moved() {
 	[ $# -lt 2 ] && eargs check_moved var_return origin
 	local var_return="$1"
 	local origin="$2"
-	local _new_origin
+	local _new_origin _gsub
 
 	_gsub ${origin} "/" "_"
 	[ -f "${MASTERMNT}/.p/MOVED/${_gsub}" ] &&
@@ -4315,7 +4481,7 @@ clean_restricted() {
 	# mount_nullfs does not support mount -u
 	umount -f ${MASTERMNT}/packages
 	mount_packages
-	injail make -s -C /usr/ports -j ${PARALLEL_JOBS} \
+	injail /usr/bin/make -s -C /usr/ports -j ${PARALLEL_JOBS} \
 	    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
 	# For pkg_install remove packages that have lost one of their dependency
 	if [ ${PKGNG} -eq 0 ]; then
@@ -4332,11 +4498,19 @@ clean_restricted() {
 }
 
 sign_pkg() {
-	[ $# -eq 1 ] || eargs sign_pkg pkgfile
-        local pkgfile="$1"
+	[ $# -eq 2 ] || eargs sign_pkg sigtype pkgfile
+	local sigtype="$1"
+	local pkgfile="$2"
 
-        rm -f "${pkgfile}.sig"
-        sha256 -q "${pkgfile}" | ${SIGNING_COMMAND} > "${pkgfile}.sig"
+	if [ "${sigtype}" = "fingerprint" ]; then
+		rm -f "${pkgfile}.sig"
+		sha256 -q "${pkgfile}" | ${SIGNING_COMMAND} > "${pkgfile}.sig"
+	elif [ "${sigtype}" = "pubkey" ]; then
+		rm -f "${pkgfile}.pubkeysig"
+		echo -n $(sha256 -q "${pkgfile}") | \
+		    openssl dgst -sha256 -sign "${PKG_REPO_SIGNING_KEY}" \
+		    -binary -out "${pkgfile}.pubkeysig"
+	fi
 }
 
 build_repo() {
@@ -4377,9 +4551,12 @@ build_repo() {
 		cp ${MASTERMNT}/tmp/packages/* ${PACKAGES}/
 
 		# Sign the ports-mgmt/pkg package for bootstrap
-		if [ -n "${SIGNING_COMMAND}" ] && \
-		    [ -e "${PACKAGES}/Latest/pkg.txz" ]; then
-			sign_pkg "${PACKAGES}/Latest/pkg.txz"
+		if [ -e "${PACKAGES}/Latest/pkg.txz" ]; then
+			if [ -n "${SIGNING_COMMAND}" ]; then
+				sign_pkg fingerprint "${PACKAGES}/Latest/pkg.txz"
+			elif [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
+				sign_pkg pubkey "${PACKAGES}/Latest/pkg.txz"
+			fi
 		fi
 	else
 		msg "Preparing INDEX"
@@ -4387,7 +4564,7 @@ build_repo() {
 		OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
 		INDEXF=${PACKAGES}/INDEX-${OSMAJ}
 		rm -f ${INDEXF}.1 2>/dev/null || :
-		injail env INDEX_JOBS=${PARALLEL_JOBS} INDEXDIR=/ make -C /usr/ports index
+		injail env INDEX_JOBS=${PARALLEL_JOBS} INDEXDIR=/ /usr/bin/make -C /usr/ports index
 		awk -F\| -v pkgdir=${PACKAGES} \
 			'{ if (system( "[ -f ${PACKAGES}/All/"$1".tbz ] " )  == 0) { print $0 } }' \
 			${MASTERMNT}/INDEX-${OSMAJ} > ${INDEXF}
@@ -4451,9 +4628,10 @@ if [ -z "${NO_ZFS}" ]; then
 	zpool list ${ZPOOL} >/dev/null 2>&1 || err 1 "No such zpool: ${ZPOOL}"
 fi
 
-: ${SVN_HOST="svn0.us-west.freebsd.org"}
-: ${GIT_URL="git://github.com/freebsd/freebsd-ports.git"}
-: ${FREEBSD_HOST="http://ftp.FreeBSD.org"}
+: ${SVN_HOST="svn.freebsd.org"}
+: ${GIT_BASEURL="github.com/freebsd/freebsd.git"}
+: ${GIT_PORTSURL="github.com/freebsd/freebsd-ports.git"}
+: ${FREEBSD_HOST="https://download.FreeBSD.org"}
 if [ -z "${NO_ZFS}" ]; then
 	: ${ZROOTFS="/poudriere"}
 	case ${ZROOTFS} in
@@ -4591,7 +4769,7 @@ fi
 : ${PIDFILE:=${POUDRIERE_DATA}/daemon.pid}
 : ${QUEUE_SOCKET:=/var/run/poudriered.sock}
 : ${PORTBUILD_USER:=nobody}
-: ${BUILD_AS_NON_ROOT:=no}
+: ${BUILD_AS_NON_ROOT:=yes}
 : ${DISTFILES_CACHE:=/nonexistent}
 : ${SVN_CMD:=$(which svn 2>/dev/null || which svnlite 2>/dev/null)}
 # 24 hours for 1 command
@@ -4608,8 +4786,10 @@ fi
 : ${PORTTESTING_RECURSIVE:=0}
 : ${RESTRICT_NETWORKING:=yes}
 : ${TRIM_ORPHANED_BUILD_DEPS:=yes}
+: ${USE_JEXECD:=no}
 : ${USE_PROCFS:=yes}
 : ${USE_FDESCFS:=yes}
+: ${MUTABLE_BASE:=yes}
 
 # Be sure to update poudriere.conf to document the default when changing these
 : ${MAX_EXECUTION_TIME:=86400}         # 24 hours for 1 command
@@ -4647,3 +4827,7 @@ EPOCH_START=$(date +%s)
 . ${SCRIPTPREFIX}/include/parallel.sh
 . ${SCRIPTPREFIX}/include/hash.sh
 . ${SCRIPTPREFIX}/include/fs.sh
+
+if [ -e /nonexistent ]; then
+	err 1 "You may not have a /nonexistent.  Please remove it."
+fi

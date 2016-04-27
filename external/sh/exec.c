@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)exec.c	8.4 (Berkeley) 6/8/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/exec.c 268920 2014-07-20 12:06:52Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/exec.c 296813 2016-03-13 22:54:14Z jilles $");
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -332,6 +332,7 @@ find_command(const char *name, struct cmdentry *entry, int act,
 	if (strchr(name, '/') != NULL) {
 		entry->cmdtype = CMDNORMAL;
 		entry->u.index = 0;
+		entry->special = 0;
 		return;
 	}
 
@@ -408,6 +409,7 @@ find_command(const char *name, struct cmdentry *entry, int act,
 			cmdp = &loc_cmd;
 		cmdp->cmdtype = CMDNORMAL;
 		cmdp->param.index = idx;
+		cmdp->special = 0;
 		INTON;
 		goto success;
 	}
@@ -420,6 +422,7 @@ find_command(const char *name, struct cmdentry *entry, int act,
 	}
 	entry->cmdtype = CMDUNKNOWN;
 	entry->u.index = 0;
+	entry->special = 0;
 	return;
 
 success:
@@ -439,12 +442,14 @@ success:
 int
 find_builtin(const char *name, int *special)
 {
-	const struct builtincmd *bp;
+	const unsigned char *bp;
+	size_t len;
 
-	for (bp = builtincmd ; bp->name ; bp++) {
-		if (*bp->name == *name && equal(bp->name, name)) {
-			*special = bp->special;
-			return bp->code;
+	len = strlen(name);
+	for (bp = builtincmd ; *bp ; bp += 2 + bp[0]) {
+		if (bp[0] == len && memcmp(bp + 2, name, len) == 0) {
+			*special = (bp[1] & BUILTIN_SPECIAL) != 0;
+			return bp[1] & ~BUILTIN_SPECIAL;
 		}
 	}
 	return -1;
@@ -522,17 +527,16 @@ static struct tblentry **lastcmdentry;
 static struct tblentry *
 cmdlookup(const char *name, int add)
 {
-	int hashval;
+	unsigned int hashval;
 	const char *p;
 	struct tblentry *cmdp;
 	struct tblentry **pp;
 	size_t len;
 
 	p = name;
-	hashval = *p << 4;
+	hashval = (unsigned char)*p << 4;
 	while (*p)
 		hashval += *p++;
-	hashval &= 0x7FFF;
 	pp = &cmdtable[hashval % CMDTABLESIZE];
 	for (cmdp = *pp ; cmdp ; cmdp = cmdp->next) {
 		if (equal(cmdp->cmdname, name))
@@ -587,6 +591,7 @@ addcmdentry(const char *name, struct cmdentry *entry)
 	}
 	cmdp->cmdtype = entry->cmdtype;
 	cmdp->param = entry->u;
+	cmdp->special = entry->special;
 	INTON;
 }
 
@@ -603,6 +608,7 @@ defun(const char *name, union node *func)
 	INTOFF;
 	entry.cmdtype = CMDFUNCTION;
 	entry.u.func = copyfunc(func);
+	entry.special = 0;
 	addcmdentry(name, &entry);
 	INTON;
 }

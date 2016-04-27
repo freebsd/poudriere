@@ -45,14 +45,23 @@ createfs() {
 }
 
 do_clone() {
-	cpdup -i0 -x "${1}" "${2}"
+	local src dst common
+	set -- $(relpath "${1}" "${2}")
+	common="${1}"
+	src="${2}"
+	dst="${3}"
+
+	(
+		cd "${common}"
+		cpdup -i0 -x "${src}" "${dst}"
+	)
 }
 
 rollbackfs() {
 	[ $# -lt 2 ] && eargs rollbackfs name mnt [fs]
 	local name=$1
 	local mnt=$2
-	local fs="${3:-$(zfs_getfs ${mnt})}"
+	local fs="${3-$(zfs_getfs ${mnt})}"
 
 	if [ -n "${fs}" ]; then
 		zfs rollback -r "${fs}@${name}" || \
@@ -87,8 +96,11 @@ umountfs() {
 
 zfs_getfs() {
 	[ $# -ne 1 ] && eargs zfs_getfs mnt
-	local mnt=$(realpath $1)
-	mount -t zfs | awk -v n="${mnt}" ' $3 == n { print $1 }'
+	local mnt="${1}"
+	local mntres
+
+	mntres=$(realpath "${mnt}")
+	mount -t zfs | awk -v n="${mntres}" ' $3 == n { print $1 }'
 }
 
 mnt_tmpfs() {
@@ -171,7 +183,6 @@ destroyfs() {
 	mnt=$1
 	type=$2
 	[ -d ${mnt} ] || return 0
-	mnt=$(realpath ${mnt})
 	fs=$(zfs_getfs ${mnt})
 	umountfs ${mnt} 1
 	if [ ${TMPFS_ALL} -eq 1 ]; then
@@ -180,7 +191,10 @@ destroyfs() {
 		zfs destroy -rf ${fs}
 		rmdir ${mnt}
 	else
-		chflags -R noschg ${mnt}
-		rm -rf ${mnt}
+		rm -rfx ${mnt} || :
+		if [ -d "${mnt}" ]; then
+			chflags -R 0 ${mnt}
+			rm -rfx ${mnt}
+		fi
 	fi
 }

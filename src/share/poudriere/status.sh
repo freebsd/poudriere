@@ -108,6 +108,7 @@ while getopts "abB:cfHj:lp:rz:" FLAG; do
 done
 
 shift $((OPTIND-1))
+post_getopts
 
 [ ${BUILDER_INFO} -eq 0 -a ${RESULTS} -eq 0 ] && \
     SUMMARY=1

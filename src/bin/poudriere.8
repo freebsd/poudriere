@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd June 6, 2015
+.Dd November 9, 2015
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -92,6 +92,11 @@ This command will cleanup old and unwanted packages
 This command allows a non-root user to queue
 .Nm
 commands.
+It is currently
+.Sy EXPERIMENTAL .
+Using it requires starting
+.Sy poudriered
+via the provided rc script.
 .It status
 This command shows status of current and previous builds
 .It version
@@ -204,7 +209,7 @@ files and
 .Pa /usr/local/etc/poudriere.d/options ,
 and that its own dependencies did not require rebuild as well.
 .It Fl S
-Don't recrusively rebuild packages affected by other packages requiring
+Don't recursively rebuild packages affected by other packages requiring
 incremental rebuild.
 This is a subset of
 .Fl s .
@@ -307,9 +312,6 @@ of FreeBSD to use in the jail.
 If you are using method ftp then the
 .Ar version
 should in the form of: 9.0-RELEASE.
-If you are using method csup then the
-.Ar version
-should be in the form of cvs branches: RELENG_9 or . for current.
 If you are using method svn then the
 .Ar version
 should be in the form of svn branches: stable/9 or head for current.
@@ -377,8 +379,6 @@ For example:
 .Pp
 Build from source options:
 .Bl -tag -width "ftp-archiveXX"
-.It Sy csup
-Use legacy CVS repository.
 .It Sy svn Sy svn+file Sy svn+http Sy svn+https
 Use SVN.
 This will use the
@@ -390,6 +390,14 @@ variable in
 Specifies the
 .Ar filesystem
 name (${ZPOOL}/jails/filesystem).
+.It Fl K Ar kernelname
+Install the jail with a kernel.
+If the
+.Ar kernelname
+is an empty string GENERIC will be used.
+If installing from ftp then the default kernel will be installed what ever the
+.Ar kernelname
+value is.
 .It Fl M Ar mountpoint
 Gives an alternative
 .Ar mountpoint
@@ -496,9 +504,8 @@ All missing dependencies will first be built in parallel.
 is automatically defined in the environment to test ports marked as
 .Ev BROKEN .
 .Pp
-There is only 1 subcommand for the testport command.
 .Bl -tag -width "-f conffile"
-.It Fl o Ar origin
+.It Fl Oo o Oc Ar origin
 Specifies an origin in the ports tree
 .El
 .Pp
@@ -559,7 +566,7 @@ files and
 .Pa /usr/local/etc/poudriere.d/options ,
 and that its own dependencies did not require rebuild as well.
 .It Fl S
-Don't recrusively rebuild packages affected by other packages requiring
+Don't recursively rebuild packages affected by other packages requiring
 incremental rebuild.
 This is a subset of
 .Fl s .
@@ -954,11 +961,6 @@ Any of the following are allowed and will all be used in the order shown:
 .Dl /usr/local/etc/poudriere.d/src.conf
 .Dl /usr/local/etc/poudriere.d/<setname>-src.conf
 .Dl /usr/local/etc/poudriere.d/<jailname>-src.conf
-.Sh COMPATIBILITY
-The
-.Nm
-command must be used on a recent version of FreeBSD, i.e. a version
-which has ZFS >= v15, and a zpool.
 .Sh CAVEATS
 .Ss Jailname
 .Fl j ,

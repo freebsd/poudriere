@@ -22,8 +22,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-# - must be last
-: ${HASH_VAR_NAME_SUB_GLOB:="[/.+,-]"}
+# Taken from bin/sh/mksyntax.sh is_in_name()
+: ${HASH_VAR_NAME_SUB_GLOB:="[!a-zA-Z0-9_]"}
 
 if ! type eargs 2>/dev/null >&2; then
 	eargs() {
@@ -60,13 +60,17 @@ _gsub() {
 
 
 gsub() {
+	local _gsub
+
 	_gsub "$@"
 	echo "${_gsub}"
 }
 
 _hash_var_name() {
-	# Replace all HASH_VAR_NAME_SUB_GLOB with _
-	_gsub "_HASH_${1}_${2}" ${HASH_VAR_NAME_SUB_GLOB} _
+	local _gsub
+
+	# Replace anything not HASH_VAR_NAME_SUB_GLOB with _
+	_gsub "_HASH_${1}_${2}" "${HASH_VAR_NAME_SUB_GLOB}" _
 	_hash_var_name=${_gsub}
 }
 
@@ -76,14 +80,13 @@ hash_get() {
 	local var="$1"
 	local key="$2"
 	local var_return="$3"
-	local hash_var_name value
+	local _hash_var_name value
 	local ret
 
 	_hash_var_name "${var}" "${key}"
-	hash_var_name=${_hash_var_name}
 
 	# Look value from cache
-	eval "value=\${${hash_var_name}-__null}"
+	eval "value=\${${_hash_var_name}-__null}"
 
 	if [ "${value}" = "__null" ]; then
 		value=
@@ -103,13 +106,12 @@ hash_set() {
 	local var="$1"
 	local key="$2"
 	local value="$3"
-	local hash_var_name
+	local _hash_var_name
 
 	_hash_var_name "${var}" "${key}"
-	hash_var_name=${_hash_var_name}
 
 	# Set value in cache
-	setvar "${hash_var_name}" "${value}"
+	setvar "${_hash_var_name}" "${value}"
 }
 
 hash_remove() {
@@ -132,7 +134,7 @@ hash_unset() {
 	[ $# -eq 2 ] || eargs hash_unset var key
 	local var="$1"
 	local key="$2"
-	local hash_var_name
+	local _hash_var_name
 
 	_hash_var_name "${var}" "${key}"
 	unset "${_hash_var_name}"

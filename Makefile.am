@@ -38,6 +38,7 @@ dist_pkgdata_DATA=	\
 			src/share/poudriere/common.sh \
 			src/share/poudriere/daemon.sh \
 			src/share/poudriere/distclean.sh \
+			src/share/poudriere/image.sh \
 			src/share/poudriere/jail.sh \
 			src/share/poudriere/options.sh \
 			src/share/poudriere/pkgclean.sh \
@@ -145,36 +146,36 @@ tsort_SOURCES=		src/libexec/poudriere/tsort/tsort.c
 sh_CFLAGS=		-DSHELL -DNO_HISTORY \
 			-I$(top_srcdir)/external/sh
 sh_SOURCES=		\
-			external/sh/redir.c \
-			external/sh/syntax.c \
-			external/sh/mail.c \
-			external/sh/cd.c \
-			external/sh/show.c \
-			external/sh/error.c \
+			external/sh/alias.c \
+			external/sh/arith_yacc.c \
+			external/sh/arith_yylex.c \
+			external/sh/bltin/echo.c \
 			external/sh/builtins.c \
+			external/sh/cd.c \
+			external/sh/error.c \
 			external/sh/eval.c \
+			external/sh/exec.c \
+			external/sh/expand.c \
+			external/sh/histedit.c \
+			external/sh/input.c \
 			external/sh/jobs.c \
+			external/sh/kill.c \
+			external/sh/mail.c \
 			external/sh/main.c \
 			external/sh/memalloc.c \
-			external/sh/arith_yacc.c \
-			external/sh/histedit.c \
-			external/sh/output.c \
-			external/sh/alias.c \
-			external/sh/var.c \
-			external/sh/expand.c \
-			external/sh/kill.c \
-			external/sh/nodes.c \
-			external/sh/mystring.c \
 			external/sh/miscbltin.c \
-			external/sh/trap.c \
-			external/sh/arith_yylex.c \
-			external/sh/printf.c \
-			external/sh/exec.c \
+			external/sh/mystring.c \
+			external/sh/nodes.c \
 			external/sh/options.c \
+			external/sh/output.c \
 			external/sh/parser.c \
-			external/sh/input.c \
+			external/sh/printf.c \
+			external/sh/redir.c \
+			external/sh/show.c \
+			external/sh/syntax.c \
 			external/sh/test.c \
-			external/sh/bltin/echo.c
+			external/sh/trap.c \
+			external/sh/var.c
 libucl_a_SOURCES=	external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_emitter_streamline.c \
 			external/libucl/src/ucl_emitter_utils.c \
@@ -187,11 +188,11 @@ libucl_a_CFLAGS=	-I$(top_srcdir)/external/libucl/uthash \
 			-I$(top_srcdir)/external/libucl/include  \
 			-I$(top_srcdir)/external/libucl/src \
 			-Wno-unused-parameter -Wno-pointer-sign
-libnv_a_CFLAGS=		-I$(top_srcdir)/external/libnv/
-libnv_a_SOURCES=	external/libnv/subr_dnvlist.c \
+libnv_a_CFLAGS=		-isystem $(top_srcdir)/external/libnv/ -std=gnu99
+libnv_a_SOURCES=	external/libnv/sys/dnvlist.c \
 			external/libnv/msgio.c \
-			external/libnv/subr_nvlist.c \
-			external/libnv/subr_nvpair.c
+			external/libnv/sys/nvlist.c \
+			external/libnv/sys/nvpair.c
 poudriered_SOURCES=	src/poudriered/poudriered.c
 poudriered_CFLAGS=	-DPREFIX=\"$(prefix)\" \
 			-I$(top_srcdir)/external/libucl/include

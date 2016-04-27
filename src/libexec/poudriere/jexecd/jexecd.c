@@ -41,6 +41,7 @@
 #endif
 #include <spawn.h>
 
+#include <libgen.h>
 #include <unistd.h>
 #define _WITH_DPRINTF
 #include <stdio.h>
@@ -73,9 +74,6 @@ static char *jailname = NULL;
 	lcap = login_getpwclass(pwd);					\
 	if (lcap == NULL)						\
 		err(1, "getpwclass: %s", username);			\
-	ngroups = ngroups_max;						\
-	if (getgrouplist(username, pwd->pw_gid, groups, &ngroups) != 0)	\
-		err(1, "getgrouplist: %s", username);			\
 } while (0)
 
 struct client {
@@ -84,22 +82,14 @@ struct client {
 	struct sockaddr_storage ss;
 };
 
-
 static void
 log_as(const char *username) {
 	login_cap_t *lcap = NULL;
-	gid_t *groups = NULL;
 	struct passwd *pwd = NULL;
-	int ngroups;
-	long ngroups_max;
-
-	ngroups_max = sysconf(_SC_NGROUPS_MAX) + 1;
-	if ((groups = malloc(sizeof(gid_t) * ngroups_max)) == NULL)
-		err(1, "malloc");
 
 	GET_USER_INFO;
-	if (setgroups(ngroups, groups) != 0)
-		err(1, "setgroups");
+	if (initgroups(username, pwd->pw_gid) != 0)
+		err(1, "initgroups");
 	if (setgid(pwd->pw_gid) != 0)
 		err(1, "setgid");
 	if (setusercontext(lcap, pwd, pwd->pw_uid,
@@ -133,7 +123,7 @@ client_read(struct client *cl)
 	pid_t pid;
 
 	pid = -1;
-	nv = nvlist_recv(cl->fd);
+	nv = nvlist_recv(cl->fd, 0);
 	if (nv == NULL)
 		err(EXIT_FAILURE, "nvlist_recv() failed");
 
@@ -406,7 +396,9 @@ main(int argc, char **argv)
 	snprintf(path, sizeof(path), "%s/%s.sock", dir, jailname);
 	unlink(path);
 	un.sun_family = AF_UNIX;
-	strlcpy(un.sun_path, path, sizeof(un.sun_path));
+	if (chdir(dirname(path)))
+		err(EXIT_FAILURE, "chdir()");
+	strlcpy(un.sun_path, basename(path), sizeof(un.sun_path));
 	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, (int[]){1},
 	    sizeof(int)) < 0)
 		err(EXIT_FAILURE, "setsockopt()");

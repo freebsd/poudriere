@@ -111,8 +111,8 @@ while getopts "aj:J:f:nNp:Rvyz:" FLAG; do
 done
 
 saved_argv="$@"
-
 shift $((OPTIND-1))
+post_getopts
 
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 _mastermnt MASTERMNT
@@ -226,7 +226,7 @@ END {
 				# against the real PKGNAME and decide which
 				# to keep
 				[ -z "${real_pkgname}" ] && real_pkgname=$( \
-				    injail make -C /usr/ports/${origin} \
+				    injail /usr/bin/make -C /usr/ports/${origin} \
 				    -V PKGNAME)
 				if [ "${real_pkgname}.${PKG_EXT}" = \
 				    "${pkg##*/}" ]; then
@@ -266,16 +266,7 @@ if [ ${DRY_RUN} -eq 1 ];  then
 fi
 
 if [ -z "${answer}" ]; then
-	msg_n "Proceed? [y/N] "
-	read answer
-	case $answer in
-		[Yy][Ee][Ss]|[Yy][Ee]|[Yy])
-			answer=yes
-			;;
-		*)
-			answer=no
-			;;
-	esac
+	prompt "Proceed?" && answer="yes"
 fi
 
 deleted_files=0

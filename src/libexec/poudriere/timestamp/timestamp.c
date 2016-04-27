@@ -57,7 +57,6 @@ calculate_duration(char *timestamp, size_t tlen, time_t elapsed)
 int
 main(int argc, char **argv) {
 	struct kevent ev, ch;
-	const char *format;
 	time_t elapsed, start, now;
 	char timestamp[8 + 3 + 1]; /* '[HH:MM:SS] ' + 1 */
 	char buf[1024];
@@ -68,7 +67,6 @@ main(int argc, char **argv) {
 	int kq, fd_in, fd_out;
 
 	start = time(NULL);
-	format = argv[1];
 	tlen = sizeof(timestamp);
 	newline = true;
 

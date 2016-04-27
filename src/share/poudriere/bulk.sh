@@ -38,7 +38,7 @@ Options:
     -B name     -- What buildname to use (must be unique, defaults to
                    YYYY-MM-DD_HH:MM:SS). Resuming a previous build will not
                    retry built/failed/skipped/ignored packages.
-    -c          -- Clean all the previously built binary packages
+    -c          -- Clean all the previously built binary packages and logs.
     -C          -- Clean only the packages listed on the command line or
                    -f file
     -i          -- Interactive mode. Enter jail for interactive testing and
@@ -187,6 +187,7 @@ done
 
 saved_argv="$@"
 shift $((OPTIND-1))
+post_getopts
 
 [ ${ALL} -eq 1 -a -n "${PORTTESTING}" ] && PORTTESTING_FATAL=no
 
@@ -215,8 +216,8 @@ jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
 _log_path LOGD
 if [ -d ${LOGD} -a ${CLEAN} -eq 1 ]; then
-	msg "Cleaning up old logs"
-	rm -f ${LOGD}/*.log 2>/dev/null
+	msg "Cleaning up old logs in ${LOGD}"
+	[ ${DRY_RUN} -eq 0 ] && rm -Rf ${LOGD} 2>/dev/null
 fi
 
 prepare_ports

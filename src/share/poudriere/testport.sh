@@ -32,7 +32,7 @@ poudriere testport [parameters] [options]
 
 Parameters:
     -j jailname -- Run inside the given jail
-    -o origin   -- Specify an origin in the portstree
+    [-o] origin   -- Specify an origin in the portstree
 
 Options:
     -c          -- Run make config for the given port
@@ -132,7 +132,16 @@ while getopts "o:cniIj:J:kNp:PsSvwz:" FLAG; do
 	esac
 done
 
-[ -z ${ORIGIN} ] && usage
+saved_argv="$@"
+shift $((OPTIND-1))
+post_getopts
+
+if [ -z ${ORIGIN} ]; then
+	if [ $# -ne 1 ]; then
+		usage
+	fi
+	ORIGIN="${1}"
+fi
 
 [ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
 _pget portsdir ${PTNAME} mnt
@@ -141,8 +150,6 @@ if [ ! -f "${portsdir}/${ORIGIN}/Makefile" ] || [ -d "${portsdir}/${ORIGIN}/../M
 fi
 
 maybe_run_queued "$@"
-
-shift $((OPTIND-1))
 
 : ${BUILD_PARALLEL_JOBS:=${PARALLEL_JOBS}}
 : ${PREPARE_PARALLEL_JOBS:=${PARALLEL_JOBS}}
@@ -197,9 +204,9 @@ PARALLEL_JOBS=${BUILD_PARALLEL_JOBS}
 
 bset_job_status "testing" "${ORIGIN}"
 
-PKGNAME=`injail make -C /usr/ports/${ORIGIN} -VPKGNAME`
-LOCALBASE=`injail make -C /usr/ports/${ORIGIN} -VLOCALBASE`
-: ${PREFIX:=$(injail make -C /usr/ports/${ORIGIN} -VPREFIX)}
+PKGNAME=`injail /usr/bin/make -C /usr/ports/${ORIGIN} -VPKGNAME`
+LOCALBASE=`injail /usr/bin/make -C /usr/ports/${ORIGIN} -VLOCALBASE`
+: ${PREFIX:=$(injail /usr/bin/make -C /usr/ports/${ORIGIN} -VPREFIX)}
 if [ "${USE_PORTLINT}" = "yes" ]; then
 	[ ! -x `which portlint` ] &&
 		err 2 "First install portlint if you want USE_PORTLINT to work as expected"
@@ -309,7 +316,7 @@ else
 fi
 
 msg "Cleaning up"
-injail make -C /usr/ports/${ORIGIN} clean
+injail /usr/bin/make -C /usr/ports/${ORIGIN} clean
 
 msg "Deinstalling package"
 ensure_pkg_installed

@@ -26,6 +26,7 @@
 #
 # Also note that every protocols supported by fetch(1) are supported here, even
 # file:///
+# Suggested: https://download.FreeBSD.org
 FREEBSD_HOST=_PROTO_://_CHANGE_THIS_
 
 # By default the jails have no /etc/resolv.conf, you will need to set
@@ -48,8 +49,8 @@ USE_PORTLINT=no
 
 # When building packages, a memory device can be used to speedup the build.
 # Only one of MFSSIZE or USE_TMPFS is supported. TMPFS is generally faster
-# and will expand to the needed amount of RAM. MFS is a bit slower, but is
-# more mature and can have its memory usage capped.
+# and will expand to the needed amount of RAM. MFS is a slower since it
+# uses UFS and several abstraction layers.
 
 # If set WRKDIRPREFIX will be mdmfs of the given size (mM or gG)
 #MFSSIZE=4G
@@ -78,15 +79,11 @@ USE_TMPFS=yes
 # the required distfiles.
 DISTFILES_CACHE=/usr/ports/distfiles
 
-# If set the ports or source tree marked to use csup method will use the defined mirror
-# Note: csup is deprecated. Use svn instead.
-#CSUP_HOST=cvsup._CHANGE_THIS_.freebsd.org
-
 # If set the ports tree or source tree marked to use svn will use the defined
-# mirror (default: svn0.us-west.FreeBSD.org)
+# mirror (default: svn.FreeBSD.org)
 # The full mirror list is available here:
 # http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/svn.html#svn-mirrors
-#SVN_HOST=svn0.us-west.FreeBSD.org
+#SVN_HOST=svn.FreeBSD.org
 
 # Automatic OPTION change detection
 # When bulk building packages, compare the options from kept packages to
@@ -224,8 +221,8 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #PRESERVE_TIMESTAMP=yes
 
 # Define to yes to build and stage as a regular user
-# Default: no
-#BUILD_AS_NON_ROOT=yes
+# Default: yes
+#BUILD_AS_NON_ROOT=no
 
 # Define pkgname globs to boost priority for
 # Default: none
