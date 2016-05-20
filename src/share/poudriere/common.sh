@@ -199,10 +199,11 @@ confirm_if_tty() {
 post_getopts() {
 	# Short-circuit verbose functions to save CPU
 	if ! [ ${VERBOSE} -gt 1 ]; then
-		msg_debug() { }
+		msg_debug() { [ -n "${DEBUG_LOG}" ] && msg "$1" >> "${DEBUG_LOG}"; }
 	fi
 	if ! [ ${VERBOSE} -gt 0 ]; then
-		msg_verbose() { }
+		msg_debug() { [ -n "${DEBUG_LOG}" ] && msg "$1" >> "${DEBUG_LOG}"; }
+		msg_verbose() { [ -n "${DEBUG_LOG}" ] && msg "$1" >> "${DEBUG_LOG}"; }
 		job_msg_verbose() { }
 	fi
 }
