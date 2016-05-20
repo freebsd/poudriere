@@ -144,8 +144,10 @@ timeout_SOURCES=	src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
 tsort_SOURCES=		src/libexec/poudriere/tsort/tsort.c
 sh_CFLAGS=		-DSHELL -DNO_HISTORY \
+			-include $(top_srcdir)/external/sh_compat/compat.h \
+			-I$(top_srcdir)/src \
 			-I$(top_srcdir)/external/sh
-sh_SOURCES=		\
+sh_SOURCES=		external/sh_compat/compat.c \
 			external/sh/alias.c \
 			external/sh/arith_yacc.c \
 			external/sh/arith_yylex.c \
