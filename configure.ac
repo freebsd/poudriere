@@ -9,7 +9,7 @@ AM_MAINTAINER_MODE([disable])
 AC_PROG_CC
 AC_PROG_RANLIB
 
-AC_CHECK_FUNCS([strftime_l])
+AC_CHECK_FUNCS([strftime_l strchrnul])
 
 AC_CHECK_HEADERS_ONCE([sys/types.h])
 AC_CHECK_HEADERS_ONCE([sys/stat.h])
