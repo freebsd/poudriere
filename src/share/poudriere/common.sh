@@ -209,7 +209,7 @@ _mastermnt() {
 	    /usr/include/sys/mount.h 2>/dev/null | awk '{print $3}')
 
 	mnt="${POUDRIERE_DATA}/.m/${MASTERNAME}/ref"
-	mnttest="${mnt}/var/db/ports"
+	mnttest="${mnt}/compat/linux/proc"
 
 	if [ -n "${mnamelen}" ] && \
 	    [ ${#mnttest} -ge $((${mnamelen} - 1)) ]; then
