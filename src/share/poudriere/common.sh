@@ -317,9 +317,9 @@ jstart() {
 	portbuild_uid=$(injail id -u ${PORTBUILD_USER} 2>&1)
 	if [ -z "${portbuild_uid}" -a $? -ne 0 ]; then
 		msg_n "Creating user/group ${PORTBUILD_USER}"
-		injail pw groupadd ${PORTBUILD_USER} -g 65532 || \
+		injail pw groupadd ${PORTBUILD_USER} -g ${PORTBUILD_UID} || \
 		err 1 "Unable to create group ${PORTBUILD_USER}"
-		injail pw useradd ${PORTBUILD_USER} -u 65532 -d /nonexistent -c "Package builder" || \
+		injail pw useradd ${PORTBUILD_USER} -u ${PORTBUILD_UID} -d /nonexistent -c "Package builder" || \
 		err 1 "Unable to create user ${PORTBUILD_USER}"
 		echo " done"
 	else
@@ -4958,7 +4958,18 @@ fi
 : ${WATCHDIR:=${POUDRIERE_DATA}/queue}
 : ${PIDFILE:=${POUDRIERE_DATA}/daemon.pid}
 : ${QUEUE_SOCKET:=/var/run/poudriered.sock}
+: ${PORTBUILD_UID:=65532}
 : ${PORTBUILD_USER:=nobody}
+: ${CCACHE_DIR_NON_ROOT_SAFE:=no}
+if [ -n "${CCACHE_DIR}" ] && [ "${CCACHE_DIR_NON_ROOT_SAFE}" = "no" ]; then
+	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
+		msg_warn "BUILD_AS_NON_ROOT and CCACHE_DIR are potentially incompatible."
+		msg_warn "Either disable one or set CCACHE_DIR_NON_ROOT_SAFE=yes and chown -R CCACHE_DIR to the user ${PORTBUILD_USER} (uid: ${PORTBUILD_UID})"
+	fi
+	# Default off with CCACHE_DIR.
+	: ${BUILD_AS_NON_ROOT:=no}
+fi
+# Default off otherwise (3.1-specific).
 : ${BUILD_AS_NON_ROOT:=no}
 : ${SVN_CMD:=$(which svn 2>/dev/null || which svnlite 2>/dev/null)}
 : ${BINMISC:=/usr/sbin/binmiscctl}
