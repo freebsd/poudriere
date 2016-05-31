@@ -1169,9 +1169,10 @@ do_jail_mounts() {
 		fi
 
 	fi
+	( cd "${mnt}" && mkdir -p ${nullpaths} )
 	for nullpath in ${nullpaths}; do
-		[ -d "${nullpath}" -a "${from}" != "${mnt}" ] && \
-		    ${NULLMOUNT} -o ro "${from}${nullpath}" "${mnt}/${nullpath}"
+		[ -d "${from}${nullpath}" -a "${from}" != "${mnt}" ] && \
+		    ${NULLMOUNT} -o ro "${from}${nullpath}" "${mnt}${nullpath}"
 	done
 
 	# Mount /usr/src into target, no need for anything to write to it
