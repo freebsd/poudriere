@@ -4764,6 +4764,10 @@ fi
 : ${QUEUE_SOCKET:=/var/run/poudriered.sock}
 : ${PORTBUILD_USER:=nobody}
 : ${BUILD_AS_NON_ROOT:=yes}
+if [ -n "${CCACHE_DIR}" -a "${BUILD_AS_NON_ROOT}" = "yes" ]; then
+	msg_warn "BUILD_AS_NON_ROOT and CCACHE_DIR are incompatible.  Disabling BUILD_AS_NON_ROOT."
+	BUILD_AS_NON_ROOT=no
+fi
 : ${DISTFILES_CACHE:=/nonexistent}
 : ${SVN_CMD:=$(which svn 2>/dev/null || which svnlite 2>/dev/null)}
 # 24 hours for 1 command
