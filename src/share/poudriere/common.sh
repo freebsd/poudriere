@@ -4172,11 +4172,11 @@ prepare_ports() {
 	fi
 
 	if was_a_bulk_run; then
-		[ ${JAIL_NEEDS_CLEAN} -eq 1 ] &&
-		    msg_n "Cleaning all packages due to newer version of the jail..."
-
-		[ ${CLEAN} -eq 1 ] &&
-		    msg_n "(-c) Cleaning all packages..."
+		if [ ${JAIL_NEEDS_CLEAN} -eq 1 ]; then
+			msg_n "Cleaning all packages due to newer version of the jail..."
+		elif [ ${CLEAN} -eq 1 ]; then
+			msg_n "(-c) Cleaning all packages..."
+		fi
 
 		if [ ${JAIL_NEEDS_CLEAN} -eq 1 ] || [ ${CLEAN} -eq 1 ]; then
 			rm -rf ${PACKAGES}/* ${cache_dir}
