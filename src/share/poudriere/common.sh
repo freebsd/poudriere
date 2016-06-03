@@ -1604,6 +1604,23 @@ get_host_arch() {
 	setvar "${var_return}" "${_arch}"
 }
 
+check_emulation() {
+	[ $# -eq 2 ] || eargs check_emulation real_arch wanted_arch
+	local real_arch="${1}"
+	local wanted_arch="${2}"
+
+	if need_emulation "${wanted_arch}"; then
+		msg "Cross-building ports for ${wanted_arch} on ${real_arch} requires QEMU"
+		[ -x "${BINMISC}" ] || \
+		    err 1 "Cannot find ${BINMISC}. Install ${BINMISC} and restart"
+		EMULATOR=$(${BINMISC} lookup ${wanted_arch#*.} 2>/dev/null | \
+		    awk '/interpreter:/ {print $2}')
+		[ -x "${EMULATOR}" ] || \
+		    err 1 "You need to setup an emulator with binmiscctl(8) for ${wanted_arch#*.}"
+		export QEMU_EMULATING=1
+	fi
+}
+
 need_emulation() {
 	[ $# -eq 1 ] || eargs need_emulation wanted_arch
 	local wanted_arch="$1"
@@ -1708,6 +1725,7 @@ jail_start() {
 	done
 	jail_exists ${name} || err 1 "No such jail: ${name}"
 	jail_runs ${MASTERNAME} && err 1 "jail already running: ${MASTERNAME}"
+	check_emulation "${host_arch}" "${arch}"
 
 	# Block the build dir from being traversed by non-root to avoid
 	# system blowup due to all of the extra mounts
@@ -1761,15 +1779,20 @@ jail_start() {
 		EOF
 	fi
 
-	# QEMU is really slow. Extend the time significantly.
-	if need_emulation "${arch}"; then
+	# Handle special QEMU needs.
+	if [ ${QEMU_EMULATING} -eq 1 ]; then
+		# QEMU is really slow. Extend the time significantly.
 		msg "Raising MAX_EXECUTION_TIME and NOHANG_TIME for QEMU"
 		MAX_EXECUTION_TIME=864000
 		NOHANG_TIME=72000
-		export QEMU_EMULATING=1
+		# Setup native-xtools overrides.
 		cat >> "${tomnt}/etc/make.conf" <<-EOF
 		.sinclude "/etc/make.nxb.conf"
 		EOF
+		# Copy in the latest version of the emulator.
+		msg "Copying latest version of the emulator from: ${EMULATOR}"
+		mkdir -p "${tomnt}${EMULATOR%/*}"
+		cp -f "${EMULATOR}" "${tomnt}${EMULATOR}"
 	fi
 
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
@@ -1834,7 +1857,7 @@ load_blacklist() {
 	[ -n "${setname}" ] && bl="${bl} ${bl}-${setname} \
 		${name}-${ptname}-${setname}"
 	# If emulating always load a qemu-blacklist as it has special needs.
-	[ ${QEMU_EMULATING:-0} -eq 1 ] && bl="${bl} qemu"
+	[ ${QEMU_EMULATING} -eq 1 ] && bl="${bl} qemu"
 	for b in ${bl} ; do
 		if [ "${b}" = "-" ]; then
 			unset b
@@ -2162,7 +2185,7 @@ _real_build_port() {
 	_log_path log
 
 	# Use bootstrap PKG when not building pkg itself.
-	if false && [ ${QEMU_EMULATING:-0} -eq 1 ]; then
+	if false && [ ${QEMU_EMULATING} -eq 1 ]; then
 		case "${port}" in
 		ports-mgmt/pkg|ports-mgmt/pkg-devel) ;;
 		*)
@@ -3394,7 +3417,7 @@ ensure_pkg_installed() {
 	[ ${PKGNG} -eq 1 ] || return 0
 	[ -z "${force}" ] && [ -x "${mnt}${PKG_BIN}" ] && return 0
 	# Hack, speed up QEMU usage on pkg-repo.
-	if [ ${QEMU_EMULATING:-0} -eq 1 ] && \
+	if [ ${QEMU_EMULATING} -eq 1 ] && \
 	    [ -f /usr/local/sbin/pkg-static ]; then
 		cp -f /usr/local/sbin/pkg-static "${mnt}/.p/pkg-static"
 		return 0
@@ -4774,6 +4797,7 @@ fi
 : ${BUILD_AS_NON_ROOT:=yes}
 : ${DISTFILES_CACHE:=/nonexistent}
 : ${SVN_CMD:=$(which svn 2>/dev/null || which svnlite 2>/dev/null)}
+: ${BINMISC:=/usr/sbin/binmiscctl}
 # 24 hours for 1 command
 : ${MAX_EXECUTION_TIME:=86400}
 # 120 minutes with no log update
@@ -4784,6 +4808,7 @@ fi
 : ${CLEAN_LISTED:=0}
 : ${JAIL_NEEDS_CLEAN:=0}
 : ${VERBOSE:=0}
+: ${QEMU_EMULATING:=0}
 : ${PORTTESTING_FATAL:=yes}
 : ${PORTTESTING_RECURSIVE:=0}
 : ${RESTRICT_NETWORKING:=yes}
