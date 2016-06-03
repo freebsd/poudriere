@@ -691,11 +691,6 @@ create_jail() {
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
 
-	if [ -n "${EMULATOR}" ]; then
-		mkdir -p ${JAILMNT}${EMULATOR%/*}
-		cp "${EMULATOR}" "${JAILMNT}${EMULATOR}"
-	fi
-
 	# Wrap the jail creation in a special cleanup hook that will remove the jail
 	# if any error is encountered
 	CLEANUP_HOOK=cleanup_new_jail
@@ -797,17 +792,6 @@ info_jail() {
 	unset POUDRIERE_BUILD_TYPE
 }
 
-check_emulation() {
-	if need_emulation "${ARCH}"; then
-		msg "Cross-building ports for ${ARCH} on ${REALARCH} requires QEMU"
-		[ -x "${BINMISC}" ] || \
-		    err 1 "Cannot find ${BINMISC}. Install ${BINMISC} and restart"
-		EMULATOR=$(${BINMISC} lookup ${ARCH#*.} 2>/dev/null | awk '/interpreter:/ {print $2}')
-		[ -x "${EMULATOR}" ] || \
-		    err 1 "You need to setup an emulator with binmiscctl(8) for ${ARCH#*.}"
-	fi
-}
-
 . ${SCRIPTPREFIX}/common.sh
 
 get_host_arch ARCH
@@ -824,7 +808,6 @@ INFO=0
 UPDATE=0
 PTNAME=default
 SETNAME=""
-BINMISC="/usr/sbin/binmiscctl"
 XDEV=0
 
 while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:x" FLAG; do
@@ -927,7 +910,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		test -z ${VERSION} && usage VERSION
 		jail_exists ${JAILNAME} && \
 		    err 2 "The jail ${JAILNAME} already exists"
-		check_emulation
+		check_emulation "${REALARCH}" "${ARCH}"
 		maybe_run_queued "${saved_argv}"
 		create_jail
 		;;
@@ -976,7 +959,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		maybe_run_queued "${saved_argv}"
 		jail_runs ${JAILNAME} && \
 		    err 1 "Unable to update jail ${JAILNAME}: it is running"
-		check_emulation
+		check_emulation "${REALARCH}" "${ARCH}"
 		update_jail
 		;;
 	00000001)
