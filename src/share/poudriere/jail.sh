@@ -533,7 +533,7 @@ install_from_ftp() {
 		case ${METHOD} in
 			ftp|http|gjb)
 				case ${VERSION} in
-					*-CURRENT|*-PRERELEASE|*-STABLE) type=snapshots ;;
+					*-CURRENT|*-ALPHA*|*-PRERELEASE|*-STABLE) type=snapshots ;;
 					*) type=releases ;;
 				esac
 
