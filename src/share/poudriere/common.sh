@@ -3792,10 +3792,17 @@ compute_deps() {
 	# Suck in ports environment to avoid redundant fork/exec for each
 	# child.
 	if [ -f "${MASTERMNT}/usr/ports/Mk/Scripts/ports_env.sh" ]; then
+		local make
+
+		if [ -x "${MASTERMNT}/usr/bin/bmake" ]; then
+			make=/usr/bin/bmake
+		else
+			make=/usr/bin/make
+		fi
 		eval "$(injail env \
 		    SCRIPTSDIR=/usr/ports/Mk/Scripts \
 		    PORTSDIR=/usr/ports \
-		    MAKE=/usr/bin/make \
+		    MAKE=${make} \
 		    /bin/sh /usr/ports/Mk/Scripts/ports_env.sh | \
 		    grep '^export [^;&]*')"
 	fi
