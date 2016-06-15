@@ -2537,7 +2537,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 	done
 
 	if [ -d "${PACKAGES}/.npkg/${PKGNAME}" ]; then
-		# everything was fine we can copy package the package to the package
+		# everything was fine we can copy the package to the package
 		# directory
 		find ${PACKAGES}/.npkg/${PKGNAME} \
 			-mindepth 1 \( -type f -or -type l \) | while read pkg_path; do
