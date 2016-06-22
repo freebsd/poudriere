@@ -3898,17 +3898,9 @@ cache_get_pkgname() {
 	local origin=${2%/}
 	local fatal="${3:-1}"
 	local _pkgname="" existing_origin
-	local cache_origin_pkgname=${MASTERMNT}/.p/var/cache/origin-pkgname/${origin%%/*}_${origin##*/}
-	local cache_pkgname_origin
-
-	if [ ${USE_CACHED} = "yes" ]; then
-		_pkgname=$(cachec -s /${MASTERNAME} "get ${origin}")
-	else
-		[ -f ${cache_origin_pkgname} ] && read_line _pkgname "${cache_origin_pkgname}"
-	fi
 
 	# Add to cache if not found.
-	if [ -z "${_pkgname}" ]; then
+	if ! shash_get origin-pkgname "${origin}" _pkgname; then
 		if ! [ -d "${MASTERMNT}/usr/ports/${origin}" ]; then
 			if [ ${fatal} -eq 1 ]; then
 				err 1 "Invalid port origin '${COLOR_PORT}${origin}${COLOR_RESET}' not found."
@@ -3925,13 +3917,8 @@ cache_get_pkgname() {
 		if [ "${existing_origin}" != "${origin}" ]; then
 			[ -n "${existing_origin}" ] &&
 				err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${origin}${COLOR_RESET} AND ${COLOR_PORT}${existing_origin}${COLOR_RESET}. Rerun with -vv to see which ports are depending on these."
-			if [ ${USE_CACHED} = "yes" ]; then
-				cachec -s /${MASTERNAME} "set ${_pkgname} ${origin}"
-			else
-				echo "${_pkgname}" > ${cache_origin_pkgname}
-				cache_pkgname_origin="${MASTERMNT}/.p/var/cache/pkgname-origin/${_pkgname}"
-				echo "${origin}" > "${cache_pkgname_origin}"
-			fi
+			shash_set origin-pkgname "${origin}" "${_pkgname}"
+			shash_set pkgname-origin "${_pkgname}" "${origin}"
 		fi
 	fi
 
@@ -3942,14 +3929,9 @@ cache_get_origin() {
 	[ $# -ne 2 ] && eargs cache_get_origin var_return pkgname
 	local var_return="$1"
 	local pkgname="$2"
-	local cache_pkgname_origin="${MASTERMNT}/.p/var/cache/pkgname-origin/${pkgname}"
 	local _origin
 
-	if [ ${USE_CACHED} = "yes" ]; then
-		_origin=$(cachec -s /${MASTERNAME} "get ${pkgname}")
-	else
-		read_line _origin "${cache_pkgname_origin%/}"
-	fi
+	shash_get pkgname-origin "${pkgname}" _origin
 
 	setvar "${var_return}" "${_origin}"
 }
@@ -4303,9 +4285,7 @@ prepare_ports() {
 		"${MASTERMNT}/.p/cleaning/deps" \
 		"${MASTERMNT}/.p/cleaning/rdeps" \
 		"${MASTERMNT}/.p/var/run" \
-		"${MASTERMNT}/.p/var/cache" \
-		"${MASTERMNT}/.p/var/cache/origin-pkgname" \
-		"${MASTERMNT}/.p/var/cache/pkgname-origin"
+		"${MASTERMNT}/.p/var/cache"
 
 	SHASH_VAR_PATH="${MASTERMNT}/.p/var/cache"
 
