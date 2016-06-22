@@ -116,7 +116,7 @@ hash_set() {
 
 hash_remove() {
 	local -; set +x
-	[ $# -ne 3 ] && eargs hash_get var key var_return
+	[ $# -ne 3 ] && eargs hash_remove var key var_return
 	local var="$1"
 	local key="$2"
 	local ret
