@@ -1,6 +1,7 @@
 TESTS=\
 	locks.sh \
 	relpath.sh \
+	shash_basic.sh \
 
 all: check
 

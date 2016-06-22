@@ -4307,6 +4307,8 @@ prepare_ports() {
 		"${MASTERMNT}/.p/var/cache/origin-pkgname" \
 		"${MASTERMNT}/.p/var/cache/pkgname-origin"
 
+	SHASH_VAR_PATH="${MASTERMNT}/.p/var/cache"
+
 	if [ -e "${log}/.poudriere.ports.built" ]; then
 		resuming_build=1
 	else
@@ -5039,6 +5041,7 @@ EPOCH_START=$(clock -epoch)
 . ${SCRIPTPREFIX}/include/html.sh
 . ${SCRIPTPREFIX}/include/parallel.sh
 . ${SCRIPTPREFIX}/include/hash.sh
+. ${SCRIPTPREFIX}/include/shared_hash.sh
 . ${SCRIPTPREFIX}/include/fs.sh
 
 if [ -e /nonexistent ]; then
