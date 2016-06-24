@@ -3794,24 +3794,25 @@ delete_stale_pkg_cache() {
 delete_old_pkg() {
 	[ $# -eq 1 ] || eargs delete_old_pkg pkgname
 	local pkg="$1"
-	local mnt pkgname cached_pkgname
-	local o v v2 compiled_options current_options current_deps compiled_deps
+	local mnt pkgname new_pkgname
+	local origin v v2 compiled_options current_options current_deps compiled_deps
 
-	pkg_get_origin o "${pkg}"
-	port_is_needed "${o}" || return 0
+	pkg_get_origin origin "${pkg}"
+	port_is_needed "${origin}" || return 0
 
 	_my_path mnt
 
-	if [ ! -d "${mnt}${PORTSDIR}/${o}" ]; then
-		msg "${o} does not exist anymore. Deleting stale ${pkg##*/}"
+	if [ ! -d "${mnt}${PORTSDIR}/${origin}" ]; then
+		msg "${origin} does not exist anymore. Deleting stale ${pkg##*/}"
 		delete_pkg "${pkg}"
 		return 0
 	fi
 
-	v="${pkg##*-}"
+	pkgname="${pkg##*/}"
+	v="${pkgname##*-}"
 	v=${v%.*}
-	cache_get_pkgname cached_pkgname "${o}"
-	v2=${cached_pkgname##*-}
+	cache_get_pkgname new_pkgname "${origin}"
+	v2=${new_pkgname##*-}
 	if [ "$v" != "$v2" ]; then
 		msg "Deleting ${pkg##*/}: new version: ${v2}"
 		delete_pkg "${pkg}"
@@ -3830,7 +3831,7 @@ delete_old_pkg() {
 		# XXX: This is redundant with list_deps. Hash/caching the
 		# deps can prevent double lookup
 		for td in LIB RUN; do
-			raw_deps=$(injail /usr/bin/make -C ${PORTSDIR}/${o} \
+			raw_deps=$(injail /usr/bin/make -C ${PORTSDIR}/${origin} \
 			    -V${td}_DEPENDS)
 			for d in ${raw_deps}; do
 				key=${d%:*}
@@ -3895,7 +3896,7 @@ delete_old_pkg() {
 
 	# Check if the compiled options match the current options from make.conf and /var/db/ports
 	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
-		current_options=$(injail /usr/bin/make -C ${PORTSDIR}/${o} \
+		current_options=$(injail /usr/bin/make -C ${PORTSDIR}/${origin} \
 		    pretty-print-config | tr ' ' '\n' | \
 		    sed -n 's/^\+\(.*\)/\1/p' | sort -u | tr '\n' ' ')
 		pkg_get_options compiled_options "${pkg}"
@@ -3911,10 +3912,9 @@ delete_old_pkg() {
 		fi
 	fi
 
-	pkgname="${pkg##*/}"
 	# XXX: Check if the pkgname has changed and rename in the repo
-	if [ "${pkgname%-*}" != "${cached_pkgname%-*}" ]; then
-		msg "Deleting ${pkg##*/}: package name changed to '${cached_pkgname%-*}'"
+	if [ "${pkgname%-*}" != "${new_pkgname%-*}" ]; then
+		msg "Deleting ${pkg##*/}: package name changed to '${new_pkgname%-*}'"
 		delete_pkg "${pkg}"
 		return 0
 	fi
