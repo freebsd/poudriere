@@ -49,7 +49,7 @@ shash_get() {
 	local var="$1"
 	local key="$2"
 	local var_return="$3"
-	local _shash_varkey_file _value
+	local _shash_varkey_file _f _value _values
 	local ret
 
 	ret=1
@@ -59,20 +59,26 @@ shash_get() {
 		[ "${var}" = "pkgname-origin" ] || \
 		    [ "${var}" = "origin-pkgname" ] || \
 		    err 1 "shash_get with USE_CACHED does not support ${var}"
-		_value="$(cachec -s "/${MASTERNAME}" "get ${key}")"
-		if [ -n "${_value}" ]; then
+		_values="$(cachec -s "/${MASTERNAME}" "get ${key}")"
+		if [ -n "${_values}" ]; then
 			ret=0
 		fi
 	else
 		_shash_varkey_file "${var}" "${key}"
-		if [ -f "${_shash_varkey_file}" ]; then
-			if read_line _value "${_shash_varkey_file}"; then
+		# This assumes globbing works
+		for _f in ${_shash_varkey_file}; do
+			case "${_f}" in
+			"*") break ;; # no file found
+			esac
+			if read_line _value "${_f}"; then
+				_values="${_values}${_values:+ }${_value}"
 				ret=0
+			else
 			fi
-		fi
+		done
 	fi
 
-	setvar "${var_return}" "${_value}"
+	setvar "${var_return}" "${_values}"
 
 	return ${ret}
 }
@@ -125,6 +131,6 @@ shash_unset() {
 		cachec -s /${MASTERNAME} "unset ${var}-${key}"
 	else
 		_shash_varkey_file "${var}" "${key}"
-		rm -f "${_shash_varkey_file}"
+		rm -f ${_shash_varkey_file}
 	fi
 }
