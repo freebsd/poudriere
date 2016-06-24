@@ -1170,7 +1170,7 @@ do_jail_mounts() {
 
 	fi
 	echo ${nullpaths} | tr ' ' '\n' | sed -e "s,^/,${mnt}/," | \
-	    xargs mkdir -vp
+	    xargs mkdir -p
 	for nullpath in ${nullpaths}; do
 		[ -d "${from}${nullpath}" -a "${from}" != "${mnt}" ] && \
 		    ${NULLMOUNT} -o ro "${from}${nullpath}" "${mnt}${nullpath}"
