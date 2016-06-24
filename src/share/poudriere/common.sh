@@ -2199,10 +2199,12 @@ package_dir_exists_and_has_packages() {
 sanity_check_pkg() {
 	[ $# -eq 1 ] || eargs sanity_check_pkg pkg
 	local pkg="$1"
-	local depfile origin
+	local depfile origin pkgname
 
 	pkg_get_origin origin "${pkg}"
-	port_is_needed "${origin}" || return 0
+	pkgname="${pkg##*/}"
+	pkgname="${pkgname%.*}"
+	pkg_is_needed "${pkgname}" || return 0
 	deps_file depfile "${pkg}"
 	while read dep; do
 		if [ ! -e "${PACKAGES}/All/${dep}.${PKG_EXT}" ]; then
@@ -3797,9 +3799,11 @@ delete_old_pkg() {
 	local mnt pkgname new_pkgname
 	local origin v v2 compiled_options current_options current_deps compiled_deps
 
-	pkg_get_origin origin "${pkg}"
-	port_is_needed "${origin}" || return 0
+	pkgname="${pkg##*/}"
+	pkgname="${pkgname%.*}"
+	pkg_is_needed "${pkgname}" || return 0
 
+	pkg_get_origin origin "${pkg}"
 	_my_path mnt
 
 	if [ ! -d "${mnt}${PORTSDIR}/${origin}" ]; then
@@ -3808,9 +3812,7 @@ delete_old_pkg() {
 		return 0
 	fi
 
-	pkgname="${pkg##*/}"
 	v="${pkgname##*-}"
-	v=${v%.*}
 	cache_get_pkgname new_pkgname "${origin}"
 	v2=${new_pkgname##*-}
 	if [ "$v" != "$v2" ]; then
@@ -4311,7 +4313,6 @@ compute_deps() {
 	msg "Calculating ports order and dependencies"
 	bset status "computingdeps:"
 
-	:> "port_deps.unsorted"
 	:> "pkg_deps.unsorted"
 
 	clear_dep_fatal_error
@@ -4335,9 +4336,7 @@ compute_deps() {
 		awk '{print $2 "/" $1}' "../pkg_deps" | xargs touch
 	)
 
-	sort -u "port_deps.unsorted" > "port_deps"
-
-	rm -f "port_deps.unsorted" "pkg_deps.unsorted"
+	rm -f "pkg_deps.unsorted"
 
 	return 0
 }
@@ -4347,12 +4346,10 @@ compute_deps_pkg() {
 	    err 1 "compute_deps_pkgname requires PWD=${MASTERMNT}/.p"
 	[ $# -lt 1 ] && eargs compute_deps_pkg pkgname
 	local pkgname="$1"
-	local pkg_pooldir deps origin dep_origin dep_pkgname
+	local pkg_pooldir deps dep_origin dep_pkgname
 
 	shash_get pkgname-deps "${pkgname}" deps || \
 	    err 1 "compute_deps_pkg failed to find deps for ${pkgname}"
-	shash_get pkgname-origin "${pkgname}" origin || \
-	    err 1 "compute_deps_pkg failed to find origin for ${pkgname}"
 
 	pkg_pooldir="deps/${pkgname}"
 	mkdir "${pkg_pooldir}" || \
@@ -4363,10 +4360,7 @@ compute_deps_pkg() {
 		    err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_origin} processing package ${pkgname}"
 		:> "${pkg_pooldir}/${dep_pkgname}"
 		echo "${pkgname} ${dep_pkgname}" >> "pkg_deps.unsorted"
-		echo "${origin} ${dep_origin}" >> "port_deps.unsorted"
 	done
-
-	[ ${ALL} -eq 0 ] && echo "${origin} ${origin}" >> "port_deps.unsorted"
 
 	return 0
 }
@@ -4420,15 +4414,27 @@ port_is_listed() {
 }
 
 # Port was requested to be built, or is needed by a port requested to be built
-port_is_needed() {
-	[ $# -eq 1 ] || eargs port_is_needed origin
-	local origin="$1"
+pkg_is_needed() {
+	[ $# -eq 1 ] || eargs pkg_is_needed pkgname
+	local pkgname="$1"
+	local pkgbase
 
 	[ ${ALL} -eq 1 ] && return 0
 
-	awk -vorigin="${origin}" '
-	    $1 == origin || $2 == origin { found=1; exit 0 }
-	    END { if (found != 1) exit 1 }' "${MASTERMNT}/.p/port_deps"
+	# We check on PKGBASE rather than PKGNAME from pkg_deps
+	# since the caller may be passing in a different version
+	# compared to what is in the queue to build for.
+	pkgbase="${pkgname%-*}"
+
+	awk -vpkgbase="${pkgbase}" '
+	    $1 ~ pkgbase "[0-9_,]*" || $2 ~ pkgbase "[0-9_,]" {
+		found=1
+		exit 0
+	    }
+	    END {
+		if (found != 1)
+			exit 1
+	    }' "${MASTERMNT}/.p/pkg_deps"
 }
 
 get_porttesting() {

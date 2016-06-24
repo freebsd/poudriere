@@ -152,10 +152,12 @@ FOUND_ORIGINS=$(mktemp -t poudriere_pkgclean)
 for file in ${PACKAGES}/All/*; do
 	case ${file} in
 		*.${PKG_EXT})
+			pkgname="${file##*/}"
+			pkgname="${pkgname%.*}"
 			if ! pkg_get_origin origin "${file}"; then
 				msg_verbose "Found corrupt package: ${file}"
 				echo "${file}" >> ${BADFILES_LIST}
-			elif ! port_is_needed "${origin}"; then
+			elif ! pkg_is_needed "${pkgname}"; then
 				msg_verbose "Found unwanted package: ${file}"
 				echo "${file}" >> ${BADFILES_LIST}
 			else
