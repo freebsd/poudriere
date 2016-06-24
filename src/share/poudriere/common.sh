@@ -619,36 +619,6 @@ read_file() {
 	return ${ret}
 }
 
-# Read a file until 0 status is found. Partial reads not accepted.
-read_line() {
-	[ $# -eq 2 ] || eargs read_line var_return file
-	local var_return="$1"
-	local file="$2"
-	local max_reads reads ret line
-
-	ret=0
-	line=
-
-	if [ -f "${file}" ]; then
-		max_reads=100
-		reads=0
-
-		# Read until a full line is returned.
-		until [ ${reads} -eq ${max_reads} ] || \
-		    read -t 1 -r line < "${file}"; do
-			sleep 0.1
-			reads=$((${reads} + 1))
-		done
-		[ ${reads} -eq ${max_reads} ] && ret=1
-	else
-		ret=1
-	fi
-
-	setvar "${var_return}" "${line}"
-
-	return ${ret}
-}
-
 attr_set() {
 	local type=$1
 	local name=$2
@@ -5063,6 +5033,7 @@ EPOCH_START=$(clock -epoch)
 
 [ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}
 
+. ${SCRIPTPREFIX}/include/util.sh
 . ${SCRIPTPREFIX}/include/colors.sh
 . ${SCRIPTPREFIX}/include/display.sh
 . ${SCRIPTPREFIX}/include/html.sh

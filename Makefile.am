@@ -57,7 +57,8 @@ dist_include_HEADERS= \
 			src/share/poudriere/include/html.sh \
 			src/share/poudriere/include/hash.sh \
 			src/share/poudriere/include/fs.sh \
-			src/share/poudriere/include/parallel.sh
+			src/share/poudriere/include/parallel.sh \
+			src/share/poudriere/include/util.sh
 
 dist_awk_DATA= src/share/poudriere/awk/dependency_loop.awk \
 		src/share/poudriere/awk/humanize.awk \
