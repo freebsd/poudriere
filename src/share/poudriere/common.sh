@@ -3896,6 +3896,32 @@ lock_have() {
 	hash_get have_lock "${lockname}" _ignored
 }
 
+# Fetch vars from the Makefile and set them locally.
+# port_var_fetch ports-mgmt/pkg PKGNAME pkgname PKGBASE pkgbase ...
+port_var_fetch() {
+	[ $# -gt 3 ] || eargs port_var_fetch origin PORTVAR var_set ...
+	local origin="$1"
+	local _makeflags _vars
+	local _portvar _var _line
+
+	shift
+	[ $((${#} % 2)) -eq 0 ] || eargs port_var_fetch origin PORTVAR var_set ...
+	while [ $# -ge 2 ]; do
+		_portvar="$1"
+		_var="$2"
+		_makeflags="${_makeflags}${_makeflags:+ }-V${_portvar}"
+		_vars="${_vars}${_vars:+ }${_var}"
+		shift 2
+	done
+	set -- ${_vars}
+	while read -r _line; do
+		setvar "$1" "${_line}"
+		shift
+	done <<-EOF
+	$(injail /usr/bin/make -C "/usr/ports/${origin}" ${_makeflags} || echo)
+	EOF
+}
+
 cache_get_pkgname() {
 	[ $# -lt 2 ] && eargs cache_get_pkgname var_return origin fatal
 	local var_return="$1"
