@@ -80,22 +80,22 @@ hash_get() {
 	local var="$1"
 	local key="$2"
 	local var_return="$3"
-	local _hash_var_name value
+	local _hash_var_name _value
 	local ret
 
 	_hash_var_name "${var}" "${key}"
 
 	# Look value from cache
-	eval "value=\${${_hash_var_name}-__null}"
+	eval "_value=\${${_hash_var_name}-__null}"
 
-	if [ "${value}" = "__null" ]; then
-		value=
+	if [ "${_value}" = "__null" ]; then
+		_value=
 		ret=1
 	else
 		ret=0
 	fi
 
-	setvar "${var_return}" "${value}"
+	setvar "${var_return}" "${_value}"
 
 	return ${ret}
 }
