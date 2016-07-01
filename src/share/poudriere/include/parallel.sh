@@ -250,6 +250,9 @@ nohang() {
 
 	fifo=$(mktemp -ut nohang.pipe)
 	mkfifo ${fifo}
+	# If the fifo is over NFS, newly created fifos have the server's
+	# mtime not the client's mtime until the client writes to it
+	touch ${fifo}
 	exec 8<> ${fifo}
 	rm -f ${fifo}
 
