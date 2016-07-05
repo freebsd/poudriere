@@ -117,6 +117,21 @@ options|testport|bulk)
 	CMD_ENV="${CMD_ENV} SAVED_TERM=${SAVED_TERM}"
 esac
 
+# Allow proxy env to pass through for fetching jails/ports
+case "${CMD}" in
+ports|jail)
+	while read envvar envvalue; do
+		case "${envvar}" in
+		FTP_*|ftp_*|HTTP_*|http_*|SSL_|NO_PROXY|no_proxy)
+			CMD_ENV="${CMD_ENV} ${envvar}=${envvalue}"
+			;;
+		esac
+	done <<-EOF
+	$(env | sed -Ee 's,^([^=]*)=(.*),\1 \2,')
+	EOF
+	;;
+esac
+
 SCRIPTPATH="${SCRIPTPREFIX}/${CMD}.sh"
 CMD_ENV="${CMD_ENV} SCRIPTPATH=${SCRIPTPATH} SCRIPTPREFIX=${SCRIPTPREFIX}"
 
