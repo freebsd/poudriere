@@ -622,7 +622,11 @@ install_from_ftp() {
 		[ -n "${KERNEL}" ] && DISTS="${DISTS} kernel"
 		[ -s "${JAILMNT}/fromftp/MANIFEST" ] || err 1 "Empty MANIFEST file."
 		for dist in ${DISTS}; do
-			grep -q "${dist}" ${JAILMNT}/fromftp/MANIFEST || continue
+			awk -vdist="${dist}.txz" '\
+			    BEGIN {ret=1} \
+			    $1 == dist {ret=0;exit} \
+			    END {exit ret} \
+			    ' "${JAILMNT}/fromftp/MANIFEST" || continue
 			msg "Fetching ${dist} for FreeBSD ${V} ${ARCH}"
 			fetch_file "${JAILMNT}/fromftp/${dist}.txz" "${URL}/${dist}.txz"
 			MHASH="$(awk -vdist="${dist}.txz" '$1 == dist { print $2 }' ${JAILMNT}/fromftp/MANIFEST)"
