@@ -502,14 +502,14 @@ install_from_ftp() {
 		DISTS="base dict src games"
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32"
 		for dist in ${DISTS}; do
-			fetch_file ${JAILMNT}/fromftp/ ${URL}/$dist/CHECKSUM.${HASH} ||
+			fetch_file ${JAILMNT}/fromftp/ "${URL}/$dist/CHECKSUM.${HASH}" ||
 				err 1 "Fail to fetch checksum file"
 			sed -n "s/.*(\(.*\...\)).*/\1/p" \
 				${JAILMNT}/fromftp/CHECKSUM.${HASH} | \
 				while read pkg; do
 				[ ${pkg} = "install.sh" ] && continue
 				# Let's retry at least one time
-				fetch_file ${JAILMNT}/fromftp/ ${URL}/${dist}/${pkg}
+				fetch_file ${JAILMNT}/fromftp/ "${URL}/${dist}/${pkg}"
 			done
 		done
 
@@ -579,14 +579,14 @@ install_from_ftp() {
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
 		for dist in ${DISTS}; do
 			msg "Fetching ${dist} for FreeBSD ${V} ${ARCH}"
-			fetch_file ${JAILMNT}/fromftp/${dist} ${URL}/${dist}
-			MHASH=`awk "/^${dist}/ { print \\$2 }" ${JAILMNT}/fromftp/MANIFEST`
-			FHASH=`sha256 -q ${JAILMNT}/fromftp/${dist}`
-			if [ ${MHASH} != ${FHASH} ]; then
+			fetch_file "${JAILMNT}/fromftp/${dist}" "${URL}/${dist}"
+			MHASH="$(awk -vdist="${dist}" '$1 == dist { print $2 }' ${JAILMNT}/fromftp/MANIFEST)"
+			FHASH="$(sha256 -q ${JAILMNT}/fromftp/${dist})"
+			if [ "${MHASH}" != "${FHASH}" ]; then
 				err 1 "${dist} checksum mismatch"
 			fi
 			msg_n "Extracting ${dist}..."
-			tar -xpf ${JAILMNT}/fromftp/${dist} -C  ${JAILMNT}/ || err 1 " fail"
+			tar -xpf "${JAILMNT}/fromftp/${dist}" -C  ${JAILMNT}/ || err 1 " fail"
 			echo " done"
 		done
 	fi
