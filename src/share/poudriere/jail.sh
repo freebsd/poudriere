@@ -550,14 +550,14 @@ install_from_ftp() {
 			DISTS="${DISTS} lib32"
 		[ -n "${KERNEL}" ] && DISTS="${DISTS} kernels"
 		for dist in ${DISTS}; do
-			fetch_file ${JAILMNT}/fromftp/ ${URL}/$dist/CHECKSUM.${HASH} ||
+			fetch_file ${JAILMNT}/fromftp/ "${URL}/$dist/CHECKSUM.${HASH}" ||
 				err 1 "Fail to fetch checksum file"
 			sed -n "s/.*(\(.*\...\)).*/\1/p" \
 				${JAILMNT}/fromftp/CHECKSUM.${HASH} | \
 				while read pkg; do
 				[ ${pkg} = "install.sh" ] && continue
 				# Let's retry at least one time
-				fetch_file ${JAILMNT}/fromftp/ ${URL}/${dist}/${pkg}
+				fetch_file ${JAILMNT}/fromftp/ "${URL}/${dist}/${pkg}"
 			done
 		done
 
@@ -622,16 +622,16 @@ install_from_ftp() {
 		[ -n "${KERNEL}" ] && DISTS="${DISTS} kernel"
 		[ -s "${JAILMNT}/fromftp/MANIFEST" ] || err 1 "Empty MANIFEST file."
 		for dist in ${DISTS}; do
-			grep -q ${dist} ${JAILMNT}/fromftp/MANIFEST || continue
+			grep -q "${dist}" ${JAILMNT}/fromftp/MANIFEST || continue
 			msg "Fetching ${dist} for FreeBSD ${V} ${ARCH}"
-			fetch_file ${JAILMNT}/fromftp/${dist}.txz ${URL}/${dist}.txz
-			MHASH=`awk "/^${dist}\.txz/ { print \\$2 }" ${JAILMNT}/fromftp/MANIFEST`
-			FHASH=`sha256 -q ${JAILMNT}/fromftp/${dist}.txz`
-			if [ ${MHASH} != ${FHASH} ]; then
+			fetch_file "${JAILMNT}/fromftp/${dist}.txz" "${URL}/${dist}.txz"
+			MHASH="$(awk -vdist="${dist}.txz" '$1 == dist { print $2 }' ${JAILMNT}/fromftp/MANIFEST)"
+			FHASH="$(sha256 -q ${JAILMNT}/fromftp/${dist}.txz)"
+			if [ "${MHASH}" != "${FHASH}" ]; then
 				err 1 "${dist}.txz checksum mismatch"
 			fi
 			msg_n "Extracting ${dist}..."
-			tar -xpf ${JAILMNT}/fromftp/${dist}.txz -C  ${JAILMNT}/ || err 1 " fail"
+			tar -xpf "${JAILMNT}/fromftp/${dist}.txz" -C  ${JAILMNT}/ || err 1 " fail"
 			echo " done"
 		done
 	fi
