@@ -578,6 +578,11 @@ install_from_ftp() {
 
 		[ ${ARCH} = "amd64" ] && DISTS="${DISTS} lib32.txz"
 		for dist in ${DISTS}; do
+			awk -vdist="${dist}" '\
+			    BEGIN {ret=1} \
+			    $1 == dist {ret=0;exit} \
+			    END {exit ret} \
+			    ' "${JAILMNT}/fromftp/MANIFEST" || continue
 			msg "Fetching ${dist} for FreeBSD ${V} ${ARCH}"
 			fetch_file "${JAILMNT}/fromftp/${dist}" "${URL}/${dist}"
 			MHASH="$(awk -vdist="${dist}" '$1 == dist { print $2 }' ${JAILMNT}/fromftp/MANIFEST)"
