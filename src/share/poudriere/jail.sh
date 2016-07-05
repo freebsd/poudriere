@@ -571,6 +571,8 @@ install_from_ftp() {
 			fetch_file ${JAILMNT}/fromftp/MANIFEST ${URL}/MANIFEST
 		fi
 
+		[ -s "${JAILMNT}/fromftp/MANIFEST" ] || err 1 "Empty MANIFEST file."
+
 		# Games check - Removed from HEAD in r278616
 		grep -q games ${JAILMNT}/fromftp/MANIFEST && DISTS="${DISTS} games.txz"
 
