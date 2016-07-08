@@ -245,6 +245,7 @@ update_jail() {
 	src=*)
 		SRC_BASE="${METHOD#src=}"
 		install_from_src
+		update_version
 		update_version_env $(jget ${JAILNAME} version)
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
