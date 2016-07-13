@@ -1701,7 +1701,7 @@ jail_start() {
 			sysctl -n compat.linux.osrelease >/dev/null 2>&1 || kldload linux
 		fi
 	fi
-	[ -n "${USE_TMPFS}" ] && needfs="${needfs} tmpfs"
+	[ -n "${USE_TMPFS}" -a "${USE_TMPFS}" != "no" ] && needfs="${needfs} tmpfs"
 	[ "${USE_PROCFS}" = "yes" ] && needfs="${needfs} procfs"
 	[ "${USE_FDESCFS}" = "yes" ] && \
 	    [ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ] && \
@@ -4671,7 +4671,7 @@ if [ -z "${NO_ZFS}" -a -z "${ZFS_DEADLOCK_IGNORED}" ]; then
 	    "FreeBSD 9.1 ZFS is not safe. It is known to deadlock and cause system hang. Either upgrade the host or set ZFS_DEADLOCK_IGNORED=yes in poudriere.conf"
 fi
 
-[ -n "${MFSSIZE}" -a -n "${USE_TMPFS}" ] && err 1 "You can't use both tmpfs and mdmfs"
+[ -n "${MFSSIZE}" -a -n "${USE_TMPFS}" -a "${USE_TMPFS}" != "no" ] && err 1 "You can't use both tmpfs and mdmfs"
 
 for val in ${USE_TMPFS}; do
 	case ${val} in
@@ -4679,7 +4679,8 @@ for val in ${USE_TMPFS}; do
 	data) TMPFS_DATA=1 ;;
 	all) TMPFS_ALL=1 ;;
 	localbase) TMPFS_LOCALBASE=1 ;;
-	*) err 1 "Unknown value for USE_TMPFS can be a combination of wrkdir,data,all,yes,localbase" ;;
+	no) ;;
+	*) err 1 "Unknown value for USE_TMPFS can be a combination of wrkdir,data,all,yes,no,localbase" ;;
 	esac
 done
 
