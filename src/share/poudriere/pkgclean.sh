@@ -134,6 +134,8 @@ jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 prepare_ports
 bset status "pkgclean:"
 
+[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] && PACKAGES="${PACKAGES}/.latest"
+
 # Some packages may exist that are stale, but are still the latest version
 # built. Don't delete those, bulk will incrementally delete them. We only
 # want to delete packages that are duplicated and old, non-packages, and
