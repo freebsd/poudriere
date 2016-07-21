@@ -3328,9 +3328,11 @@ pkg_get_origin() {
 		read_line _origin "${originfile}"
 	fi
 
-	check_moved new_origin ${_origin} && _origin=${new_origin}
+	check_moved new_origin "${_origin}" && _origin=${new_origin}
 
 	setvar "${var_return}" "${_origin}"
+
+	[ -n "${_origin}" ]
 }
 
 pkg_get_dep_origin() {
@@ -4110,7 +4112,7 @@ check_moved() {
 	local origin="$2"
 	local _new_origin _gsub
 
-	_gsub ${origin} "/" "_"
+	_gsub "${origin}" "/" "_"
 	[ -f "${MASTERMNT}/.p/MOVED/${_gsub}" ] &&
 	    read _new_origin < "${MASTERMNT}/.p/MOVED/${_gsub}"
 
