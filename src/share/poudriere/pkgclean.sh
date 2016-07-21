@@ -283,3 +283,4 @@ if [ $deleted_files -eq 1 ]; then
 	delete_stale_symlinks_and_empty_dirs
 	[ ${BUILD_REPO} -eq 1 ] && build_repo
 fi
+run_hook pkgclean done ${deleted_files} ${BUILD_REPO}
