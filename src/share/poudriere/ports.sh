@@ -151,6 +151,7 @@ if [ -n "${SOURCES_URL}" ]; then
 		ssh://*) METHOD="git+ssh" ;;
 		https://*) METHOD="git+https" ;;
 		git://*) METHOD="git" ;;
+		file:///*) METHOD="git" ;;
 		*) err 1 "Invalid git url" ;;
 		esac
 		;;
