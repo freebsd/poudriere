@@ -1193,7 +1193,7 @@ do_jail_mounts() {
 	# ref jail only needs devfs
 	mount -t devfs devfs ${mnt}/dev
 	if [ ${JAILED} -eq 0 ]; then
-	        # dtrace(1) needs /dev/drace/* in order to operate
+	        # dtrace(1) needs /dev/dtrace/* in order to operate
 	        if [ "${USE_DTRACE}" = "yes" ]; then
 	                devfspath="${devfspath} dtrace dtrace/*"
 		fi
