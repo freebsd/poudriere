@@ -1372,6 +1372,19 @@ do_portbuild_mounts() {
 	${NULLMOUNT} ${DISTFILES_CACHE} ${mnt}/distfiles ||
 		err 1 "Failed to mount the distfiles cache directory"
 
+	# dtrace(1) needs to read the kernel binary and various
+	# loadable modules (at least on FreeBSD 10.x and below.  Not
+	# sure about 11.x) so null-mount the directories containing
+	# them from the host system.
+	if [ "${USE_DTRACE}" = "yes" ]; then
+	        kerndirs=$( sysctl -n kern.module_path | tr ';' ' ' )
+
+		for kdir in ${kerndirs}; do
+		        ${NULLMOUNT} -o ro ${kdir} ${mnt}${kdir} ||
+		                err 1 "Failed to mount the kernel directories"
+		done
+	fi
+
 	# Copy in the options for the ref jail, but just ro nullmount it
 	# in builders.
 	if [ "${mnt##*/}" = "ref" ]; then
