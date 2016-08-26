@@ -1701,6 +1701,9 @@ jail_start() {
 			sysctl -n compat.linux.osrelease >/dev/null 2>&1 || kldload linux
 		fi
 	fi
+	if [ "${USE_DTRACE}" = "yes" ]; then
+	        sysctl -n debug.dtrace.providers >/dev/null 2>&1 || kldload dtraceall
+	fi
 	[ "${USE_TMPFS}" != "no" ] && needfs="${needfs} tmpfs"
 	[ "${USE_PROCFS}" = "yes" ] && needfs="${needfs} procfs"
 	[ "${USE_FDESCFS}" = "yes" ] && \
