@@ -259,3 +259,9 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # build one-off packages but expect the repository to stay consistent.
 # Defaut: yes
 #TRIM_ORPHANED_BUILD_DEPS=yes
+
+# Enable the use of dtrace(1) while building.  This is necessary in
+# order to build software with userland dtrace probes.  Use of this
+# setting will result in dtrace kernel modules being loaded, which
+# will persist after poudriere has finished running.
+#USE_DTRACE=yes
