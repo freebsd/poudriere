@@ -1777,6 +1777,15 @@ jail_start() {
 		mkdir -p "${tomnt}${EMULATOR%/*}"
 		cp -f "${EMULATOR}" "${tomnt}${EMULATOR}"
 	fi
+	# Handle special ARM64 needs
+	if [ "${arch#*.}" = "aarch64" ] && ! [ -f "${tomnt}/usr/bin/ld" ]; then
+		if [ -f /usr/local/aarch64-freebsd/bin/ld ]; then
+			cp -f /usr/local/aarch64-freebsd/bin/ld \
+			    "${tomnt}/usr/bin/ld"
+		else
+			err 1 "Arm64 requires aarch64-binutils to be installed."
+		fi
+	 fi
 
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 		cat >> "${tomnt}/etc/make.conf" <<-EOF
