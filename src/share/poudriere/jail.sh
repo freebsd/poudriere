@@ -664,7 +664,7 @@ create_jail() {
 			releng/*![0-9]*.[0-9])
 				err 1 "bad version number for releng version"
 				;;
-			stable/*|head*|release/*|releng/*.[0-9]|projects/*) ;;
+			stable/*|head*|release/*|releng/*.[0-9]*|projects/*) ;;
 			*)
 				err 1 "version with svn should be: head[@rev], stable/N, release/N, releng/N or projects/X"
 				;;
