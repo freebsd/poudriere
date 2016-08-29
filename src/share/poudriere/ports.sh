@@ -253,6 +253,8 @@ if [ ${DELETE} -eq 1 ]; then
 	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
 	${NULLMOUNT} | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
+	confirm_if_tty "Are you sure you want to delete the ports tree ${PTNAME} at ${PTMNT}?" || \
+	    err 1 "Not deleting ports tree"
 	maybe_run_queued "${saved_argv}"
 	msg_n "Deleting portstree \"${PTNAME}\""
 	if [ ${KEEP} -eq 0 ]; then
