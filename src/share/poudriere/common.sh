@@ -1377,12 +1377,10 @@ do_portbuild_mounts() {
 	# sure about 11.x) so null-mount the directories containing
 	# them from the host system.
 	if [ "${USE_DTRACE}" = "yes" ]; then
-	        kerndirs=$( sysctl -n kern.module_path | tr ';' ' ' )
-
-		for kdir in ${kerndirs}; do
-		        ${NULLMOUNT} -o ro ${kdir} ${mnt}${kdir} ||
-		                err 1 "Failed to mount the kernel directories"
-		done
+	        kerndir=$( dirname $( sysctl -n kern.bootfile ))
+		
+		${NULLMOUNT} -o ro ${kdir} ${mnt}${kdir} ||
+		        err 1 "Failed to mount the kernel directories"
 	fi
 
 	# Copy in the options for the ref jail, but just ro nullmount it
