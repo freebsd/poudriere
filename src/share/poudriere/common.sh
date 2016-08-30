@@ -1377,7 +1377,7 @@ do_portbuild_mounts() {
 	# sure about 11.x) so null-mount the directories containing
 	# them from the host system.
 	if [ "${USE_DTRACE}" = "yes" ]; then
-	        kerndir=$( dirname $( sysctl -n kern.bootfile ))
+	        kdir=$( dirname $( sysctl -n kern.bootfile ))
 		
 		${NULLMOUNT} -o ro ${kdir} ${mnt}${kdir} ||
 		        err 1 "Failed to mount the kernel directories"
