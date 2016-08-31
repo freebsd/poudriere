@@ -1378,7 +1378,7 @@ do_portbuild_mounts() {
 	# them from the host system.
 	if [ "${USE_DTRACE}" = "yes" ]; then
 	        kdir=$( dirname $( sysctl -n kern.bootfile ))
-		
+
 		${NULLMOUNT} -o ro ${kdir} ${mnt}${kdir} ||
 		        err 1 "Failed to mount the kernel directories"
 	fi
