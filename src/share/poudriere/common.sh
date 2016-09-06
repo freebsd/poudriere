@@ -1772,14 +1772,6 @@ jail_start() {
 
 	do_portbuild_mounts ${tomnt} ${name} ${ptname} ${setname}
 
-	if need_cross_build "${host_arch}" "${arch}"; then
-		cat >> "${tomnt}/etc/make.conf" <<-EOF
-		MACHINE=${arch%.*}
-		MACHINE_ARCH=${arch#*.}
-		ARCH=\${MACHINE_ARCH}
-		EOF
-	fi
-
 	# Handle special QEMU needs.
 	if [ ${QEMU_EMULATING} -eq 1 ]; then
 		# QEMU is really slow. Extend the time significantly.
@@ -1892,6 +1884,18 @@ setup_makeconf() {
 	local ptname=$3
 	local setname=$4
 	local makeconf opt
+	local arch host_arch
+
+	_jget arch "${name}" arch
+	get_host_arch host_arch
+
+	if need_cross_build "${host_arch}" "${arch}"; then
+		cat >> "${dst_makeconf}" <<-EOF
+		MACHINE=${arch%.*}
+		MACHINE_ARCH=${arch#*.}
+		ARCH=\${MACHINE_ARCH}
+		EOF
+	fi
 
 	makeconf="- ${setname} ${ptname} ${name} ${name}-${ptname}"
 	[ -n "${setname}" ] && makeconf="${makeconf} ${name}-${setname} \
