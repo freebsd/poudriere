@@ -2664,9 +2664,11 @@ stop_builders() {
 
 	msg "Stopping ${PARALLEL_JOBS} builders"
 
+	parallel_start
 	for j in ${JOBS}; do
-		stop_builder "${j}"
+		parallel_run stop_builder "${j}"
 	done
+	parallel_stop
 
 	# No builders running, unset JOBS
 	JOBS=""
