@@ -222,7 +222,7 @@ cap_mkdb ${WRKDIR}/world/etc/login.conf
 # install packages if any is needed
 if [ -n "${PACKAGELIST}" ]; then
 	mkdir -p ${WRKDIR}/world/tmp/packages
-	mount -t nullfs ${POUDRIERE_DATA}/packages/${MASTERNAME} ${WRKDIR}/world/tmp/packages
+	${NULLMOUNT} ${POUDRIERE_DATA}/packages/${MASTERNAME} ${WRKDIR}/world/tmp/packages
 	cat > ${WRKDIR}/world/tmp/repo.conf <<-EOF
 	FreeBSD: { enabled: false }
 	local: { url: file:///tmp/packages }
