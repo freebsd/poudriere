@@ -709,7 +709,7 @@ bset() {
 	shift
 	[ "${property}" = "status" ] && \
 	    echo "$@" >> ${log}/${file}.journal% || :
-	echo "$@" > ${log}/${file} || :
+	echo "$@" > ${log}/${file}
 }
 
 bset_job_status() {
