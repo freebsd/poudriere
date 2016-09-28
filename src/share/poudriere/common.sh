@@ -1149,6 +1149,8 @@ do_jail_mounts() {
 	local devfspath="null zero random urandom stdin stdout stderr fd fd/* bpf* pts pts/*"
 	local srcpath nullpaths nullpath
 
+	# from==mnt is via jail -u
+
 	# clone will inherit from the ref jail
 	if [ ${mnt##*/} = "ref" ]; then
 		mkdir -p ${mnt}/proc \
@@ -1182,7 +1184,6 @@ do_jail_mounts() {
 	[ -d "${from}/usr/src" -a "${from}" != "${mnt}" ] && \
 	    ${NULLMOUNT} -o ro ${from}/usr/src ${mnt}/usr/src
 
-	# ref jail only needs devfs
 	mount -t devfs devfs ${mnt}/dev
 	if [ ${JAILED} -eq 0 ]; then
 		devfs -m ${mnt}/dev rule apply hide
@@ -1191,17 +1192,14 @@ do_jail_mounts() {
 		done
 	fi
 
-	# Only do this in cloned build jails. from==mnt is via jail -u
-	if [ "${mnt##*/}" != "ref" -a "${from}" != "${mnt}" ]; then
-		[ "${USE_FDESCFS}" = "yes" ] && \
-		    [ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ] && \
-		    mount -t fdescfs fdesc ${mnt}/dev/fd
-		[ "${USE_PROCFS}" = "yes" ] && mount -t procfs proc ${mnt}/proc
-		if [ -z "${NOLINUX}" ]; then
-			[ "${arch}" = "i386" -o "${arch}" = "amd64" ] &&
-				mount -t linprocfs linprocfs ${mnt}/compat/linux/proc
-		fi
-	fi
+	[ "${USE_FDESCFS}" = "yes" ] && \
+	    [ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ] && \
+	    mount -t fdescfs fdesc "${mnt}/dev/fd"
+	[ "${USE_PROCFS}" = "yes" ] && \
+	    mount -t procfs proc "${mnt}/proc"
+	[ -z "${NOLINUX}" ] && \
+	    [ "${arch}" = "i386" -o "${arch}" = "amd64" ] && \
+	    mount -t linprocfs linprocfs "${mnt}/compat/linux/proc"
 
 	run_hook jail mount ${mnt}
 
