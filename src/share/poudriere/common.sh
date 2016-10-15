@@ -2172,6 +2172,10 @@ gather_distfiles() {
 	done
 
 	for special in ${specials}; do
+		case "${special}" in
+		/usr/ports/*) ;;
+		*) special=/usr/ports/${special}
+		esac
 		gather_distfiles ${special} ${from} ${to}
 	done
 
