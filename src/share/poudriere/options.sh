@@ -49,6 +49,7 @@ EOF
 
 PTNAME=default
 SETNAME=""
+PTNAME_TMP=""
 DO_RECURSE=y
 COMMAND=config-conditional
 RECURSE_COMMAND=config-recursive
@@ -80,6 +81,7 @@ while getopts "cCj:f:p:nrsz:" FLAG; do
 			porttree_exists ${OPTARG} ||
 			    err 2 "No such ports tree: ${OPTARG}"
 			PTNAME=${OPTARG}
+			PTNAME_TMP=${OPTARG}
 			;;
 		n)
 			DO_RECURSE=
@@ -120,7 +122,7 @@ else
 	LISTPORTS="$@"
 fi
 
-PORT_DBDIR=${POUDRIERED}/${JAILNAME}${JAILNAME:+-}${SETNAME}${SETNAME:+-}options
+PORT_DBDIR=${POUDRIERED}/${JAILNAME}${JAILNAME:+-}${PTNAME_TMP}${PTNAME_TMP:+-}${SETNAME}${SETNAME:+-}options
 
 mkdir -p ${PORT_DBDIR}
 
