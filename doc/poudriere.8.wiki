@@ -762,6 +762,10 @@ It is very easy to extend it so that we can easily add other tests if wanted.</d
 </blockquote>
 <blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
 <div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;tree&gt;-&lt;setname&gt;-options</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
 <code class="lit">/usr/local/etc/poudriere.d/&lt;setname&gt;-options</code></div>
 </blockquote>
 <blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
@@ -810,6 +814,10 @@ As a starter, you may want to copy an existing /var/db/ports/ to /usr/local/etc/
 </blockquote>
 <blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
 <div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;tree&gt;-&lt;setname&gt;-blacklist</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
 <code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-&lt;tree&gt;-blacklist</code></div>
 </blockquote>
 <blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
@@ -841,6 +849,10 @@ As a starter, you may want to copy an existing /var/db/ports/ to /usr/local/etc/
 </blockquote>
 <blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
 <div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;tree&gt;-&lt;setname&gt;-poudriere.conf</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
 <code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-&lt;tree&gt;-poudriere.conf</code></div>
 </blockquote>
 <blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
@@ -869,6 +881,10 @@ As a starter, you may want to copy an existing /var/db/ports/ to /usr/local/etc/
 <blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
 <div class="display">
 <code class="lit">/usr/local/etc/poudriere.d/&lt;jailname&gt;-make.conf</code></div>
+</blockquote>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">/usr/local/etc/poudriere.d/&lt;tree&gt;-&lt;setname&gt;-make.conf</code></div>
 </blockquote>
 <blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
 <div class="display">

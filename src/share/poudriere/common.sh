@@ -1374,7 +1374,9 @@ do_portbuild_mounts() {
 		    mnt_tmpfs config "${mnt}/var/db/ports"
 		optionsdir="${MASTERNAME}"
 		[ -n "${setname}" ] && optionsdir="${optionsdir} ${jname}-${setname}"
-		optionsdir="${optionsdir} ${jname}-${ptname} ${setname} ${ptname} ${jname} -"
+		optionsdir="${optionsdir} ${jname}-${ptname}"
+		[ -n "${setname}" ] && optionsdir="${optionsdir} ${ptname}-${setname} ${setname}"
+		optionsdir="${optionsdir} ${ptname} ${jname} -"
 
 		for opt in ${optionsdir}; do
 			use_options ${mnt} ${opt} && break || continue
@@ -1855,8 +1857,10 @@ load_blacklist() {
 	local setname=$3
 	local bl b bfile
 
-	bl="- ${setname} ${ptname} ${name} ${name}-${ptname}"
-	[ -n "${setname}" ] && bl="${bl} ${bl}-${setname} \
+	bl="- ${setname} ${ptname} ${name}"
+	[ -n "${setname}" ] && bl="${bl} ${ptname}-${setname}"
+	bl="${bl} ${name}-${ptname}"
+	[ -n "${setname}" ] && bl="${bl} ${name}-${setname} \
 		${name}-${ptname}-${setname}"
 	# If emulating always load a qemu-blacklist as it has special needs.
 	[ ${QEMU_EMULATING} -eq 1 ] && bl="${bl} qemu"
@@ -1897,7 +1901,9 @@ setup_makeconf() {
 		EOF
 	fi
 
-	makeconf="- ${setname} ${ptname} ${name} ${name}-${ptname}"
+	makeconf="- ${setname} ${ptname} ${name}"
+	[ -n "${setname}" ] && makeconf="${makeconf} ${ptname}-${setname}"
+	makeconf="${makeconf} ${name}-${ptname}"
 	[ -n "${setname}" ] && makeconf="${makeconf} ${name}-${setname} \
 		    ${name}-${ptname}-${setname}"
 	for opt in ${makeconf}; do
@@ -1928,6 +1934,8 @@ include_poudriere_confs() {
 	done
 
 	files="${setname} ${ptname} ${jail}"
+	[ -n "${ptname}" -a -n "${setname}" ] && \
+	    files="${files} ${ptname}-${setname}"
 	[ -n "${jail}" -a -n "${ptname}" ] && \
 	    files="${files} ${jail}-${ptname}"
 	[ -n "${jail}" -a -n "${setname}" ] && \
