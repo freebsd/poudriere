@@ -3082,10 +3082,13 @@ build_pkg() {
 	jkill
 
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
-		umount ${mnt}/${LOCALBASE:-/usr/local}
+		if [ -f "${mnt}/${LOCALBASE:-/usr/local}/.mounted" ]; then
+			umount ${mnt}/${LOCALBASE:-/usr/local}
+		fi
 		mnt_tmpfs localbase ${mnt}/${LOCALBASE:-/usr/local}
 		do_clone "${MASTERMNT}/${LOCALBASE:-/usr/local}" \
 		    "${mnt}/${LOCALBASE:-/usr/local}"
+		:> "${mnt}/${LOCALBASE:-/usr/local}/.mounted"
 	fi
 
 	[ -f ${mnt}/.need_rollback ] && rollbackfs prepkg ${mnt}
