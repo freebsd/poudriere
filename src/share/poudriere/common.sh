@@ -3082,7 +3082,7 @@ build_pkg() {
 	jkill
 
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
-		umount -f ${mnt}/${LOCALBASE:-/usr/local} 2>/dev/null || :
+		umount ${mnt}/${LOCALBASE:-/usr/local}
 		mnt_tmpfs localbase ${mnt}/${LOCALBASE:-/usr/local}
 		do_clone "${MASTERMNT}/${LOCALBASE:-/usr/local}" \
 		    "${mnt}/${LOCALBASE:-/usr/local}"
@@ -3183,7 +3183,7 @@ stop_build() {
 
 	if [ -n "${MY_JOBID}" ]; then
 		_my_path mnt
-		umount -f ${mnt}/.npkg 2>/dev/null || :
+		umount ${mnt}/.npkg
 		rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
 
 		# 2 = HEADER+ps itself
