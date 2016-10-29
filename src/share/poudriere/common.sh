@@ -3190,7 +3190,7 @@ stop_build() {
 
 	if [ -n "${MY_JOBID}" ]; then
 		_my_path mnt
-		umount ${mnt}/.npkg
+		umount -f ${mnt}/.npkg 2>/dev/null || :
 		rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
 
 		# 2 = HEADER+ps itself
