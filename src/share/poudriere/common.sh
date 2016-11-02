@@ -1890,8 +1890,12 @@ setup_makeconf() {
 	local makeconf opt
 	local arch host_arch
 
-	_jget arch "${name}" arch
 	get_host_arch host_arch
+	if [ -z "${name}" ]; then
+		arch="${host_arch}"
+	else
+		_jget arch "${name}" arch
+	fi
 
 	if need_cross_build "${host_arch}" "${arch}"; then
 		cat >> "${dst_makeconf}" <<-EOF
