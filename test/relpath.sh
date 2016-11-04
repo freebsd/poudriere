@@ -10,6 +10,8 @@ dirs="\
 /prefix/a/b/c /prefix/a/b - /prefix/a/b c . \
 /prefix/a/b /prefix/a/b/c - /prefix/a/b . c \
 /prefix/a/b/c /root/a - / prefix/a/b/c root/a \
+/prefix/a/b/c / - / prefix/a/b/c . \
+/ /prefix/a/b/c - / . prefix/a/b/c \
 /tmp/../tmp /tmp - /tmp . . \
 /tmp/.. /tmp/../tmp/ - / . tmp \
 /tmp/../tmp/../tmp /tmp/../tmp/ - /tmp . . \
