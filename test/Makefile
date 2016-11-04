@@ -1,4 +1,5 @@
 TESTS=\
+	relpath.sh \
 
 all: check
 
