@@ -13,6 +13,7 @@ dirs="\
 /tmp/../tmp /tmp - /tmp . . \
 /tmp/.. /tmp/../tmp/ - / . tmp \
 /tmp/../tmp/../tmp /tmp/../tmp/ - /tmp . . \
+/appdata/poudriere/data/.m/101x64-adm5-default/ref/var/db/ports /appdata/poudriere-etc/poudriere.d/101x64-adm5-options - /appdata poudriere/data/.m/101x64-adm5-default/ref/var/db/ports poudriere-etc/poudriere.d/101x64-adm5-options \
 "
 
 set -- ${dirs}
