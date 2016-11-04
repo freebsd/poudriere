@@ -126,10 +126,14 @@ post_getopts
 : ${IMAGENAME:=poudriereimage}
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 
-# Limitation on isos
-case "${IMAGENAME}" in
-''|*[!A-Za-z0-9]*)
-	err 1 "Name can only contain alphanumeric characters"
+case "${MEDIATYPE}" in
+*iso*)
+	# Limitation on isos
+	case "${IMAGENAME}" in
+	''|*[!A-Za-z0-9]*)
+		err 1 "Name can only contain alphanumeric characters"
+		;;
+	esac
 	;;
 esac
 
