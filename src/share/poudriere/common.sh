@@ -264,7 +264,7 @@ relpath() {
 	[ $# -eq 2 ] || eargs relpath dir1 dir2
 	local dir1=$(realpath -q "$1" || echo "${1}")
 	local dir2=$(realpath -q "$2" || echo "${2}")
-	local common
+	local common newother
 
 	if [ "${#dir1}" -ge "${#dir2}" ]; then
 		common="${dir1}"
@@ -274,7 +274,16 @@ relpath() {
 		other="${dir1}"
 	fi
 	# Trim away path components until they match
-	while [ "${other#${common}}" = "${other}" -a -n "${common}" ]; do
+	while true; do
+		if [ "${other#${common}}" != "${other}" ]; then
+			newother="${other#${common}}"
+			if [ "${newother#/}" != "${newother}" ]; then
+				break
+			fi
+		fi
+		if [ -z "${common}" ]; then
+			break;
+		fi
 		common="${common%/*}"
 	done
 	common="${common:-/}"
