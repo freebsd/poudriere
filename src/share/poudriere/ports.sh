@@ -174,7 +174,7 @@ fi
 
 cleanup_new_ports() {
 	msg "Error while creating ports tree, cleaning up." >&2
-	destroyfs ${PTMNT} ports || :
+	TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
 	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
 }
 
@@ -258,7 +258,7 @@ if [ ${DELETE} -eq 1 ]; then
 	maybe_run_queued "${saved_argv}"
 	msg_n "Deleting portstree \"${PTNAME}\""
 	if [ ${KEEP} -eq 0 ]; then
-		destroyfs ${PTMNT} ports || :
+		TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
 	fi
 	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
 	echo " done"
