@@ -386,7 +386,7 @@ build_and_install_world() {
 
 		# hardlink these files to capture scripts and tools
 		# that explicitly call them instead of using paths.
-		HLINK_FILES="usr/bin/env usr/bin/gzip usr/bin/id \
+		HLINK_FILES="usr/bin/env usr/bin/gzip usr/bin/id usr/bin/limits \
 				usr/bin/make usr/bin/dirname usr/bin/diff \
 				usr/bin/find usr/bin/gzcat usr/bin/awk \
 				usr/bin/touch usr/bin/sed usr/bin/patch \
