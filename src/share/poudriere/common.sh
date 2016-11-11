@@ -438,6 +438,7 @@ buildlog_start() {
 	echo "Poudriere version: ${POUDRIERE_VERSION}"
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
 	echo "Jail OSVERSION: ${JAIL_OSVERSION}"
+	echo "Job Id: ${MY_JOBID}"
 	echo
 	if [ ${JAIL_OSVERSION} -gt ${HOST_OSVERSION} ]; then
 		echo
