@@ -458,7 +458,7 @@ buildlog_start() {
 	echo "port directory: ${portdir}"
 	echo "building for: $(injail uname -a)"
 	echo "maintained by: $(injail /usr/bin/make -C ${portdir} maintainer)"
-	echo "Makefile ident: $(ident ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
+	echo "Makefile ident: $(ident -q ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
 	echo "Poudriere version: ${POUDRIERE_VERSION}"
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
 	echo "Jail OSVERSION: ${JAIL_OSVERSION}"
