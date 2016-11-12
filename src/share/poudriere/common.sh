@@ -2356,6 +2356,7 @@ _real_build_port() {
 				"${PACKAGES}/.npkg/${PKGNAME}" \
 				${mnt}/.npkg
 			chown -R ${JUSER} ${mnt}/.npkg
+			:> "${mnt}/.npkg_mounted"
 		fi
 
 		if [ "${phase#*-}" = "depends" ]; then
@@ -3221,7 +3222,11 @@ stop_build() {
 
 	if [ -n "${MY_JOBID}" ]; then
 		_my_path mnt
-		umount -f ${mnt}/.npkg 2>/dev/null || :
+
+		if [ -f "${mnt}/.npkg_mounted" ]; then
+			umount "${mnt}/.npkg"
+			rm -f "${mnt}/.npkg_mounted"
+		fi
 		rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
 
 		# 2 = HEADER+ps itself
