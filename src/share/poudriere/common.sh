@@ -4497,7 +4497,7 @@ clean_restricted() {
 	bset status "clean_restricted:"
 	# Remount rw
 	# mount_nullfs does not support mount -u
-	umount -f ${MASTERMNT}/packages
+	umount ${MASTERMNT}/packages
 	mount_packages
 	injail /usr/bin/make -s -C /usr/ports -j ${PARALLEL_JOBS} \
 	    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
@@ -4511,7 +4511,7 @@ clean_restricted() {
 		delete_stale_symlinks_and_empty_dirs
 	fi
 	# Remount ro
-	umount -f ${MASTERMNT}/packages
+	umount ${MASTERMNT}/packages
 	mount_packages -o ro
 }
 
