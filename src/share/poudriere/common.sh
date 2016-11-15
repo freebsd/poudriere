@@ -2800,7 +2800,9 @@ queue_empty() {
 	local pool_dir dirs
 	local n
 
-	dirs="${MASTERMNT}/.p/deps ${POOL_BUCKET_DIRS}"
+	# CWD is MASTERMNT/.p/pool
+
+	dirs="../deps ${POOL_BUCKET_DIRS}"
 
 	n=0
 	# Check twice that the queue is empty. This avoids racing with
@@ -2823,13 +2825,15 @@ job_done() {
 	local j="$1"
 	local pkgname status
 
+	# CWD is MASTERMNT/.p/pool
+
 	# Failure to find this indicates the job is already done.
 	hash_get builder_pkgnames "${j}" pkgname || return 1
 	hash_unset builder_pids "${j}"
 	hash_unset builder_pkgnames "${j}"
-	rm -f ${MASTERMNT}/.p/var/run/${j}.pid
+	rm -f "../var/run/${j}.pid"
 	_bget status ${j} status
-	rmdir ${MASTERMNT}/.p/building/${pkgname}
+	rmdir "../building/${pkgname}"
 	if [ "${status%%:*}" = "done" ]; then
 		bset ${j} status "idle:"
 	else
@@ -2850,6 +2854,7 @@ build_queue() {
 
 	msg "Hit CTRL+t at any time to see build progress and stats"
 
+	[ ! -d "${MASTERMNT}/.p/pool" ] && err 1 "Build pool is missing"
 	cd "${MASTERMNT}/.p/pool"
 
 	idle_only=0
@@ -2895,7 +2900,7 @@ build_queue() {
 				    PORTTESTING=$(get_porttesting "${pkgname}") \
 				    spawn_protected build_pkg "${pkgname}"
 				pid=$!
-				echo "${pid}" > ${MASTERMNT}/.p/var/run/${j}.pid
+				echo "${pid}" > "../var/run/${j}.pid"
 				hash_set builder_pids "${j}" "${pid}"
 				hash_set builder_pkgnames "${j}" "${pkgname}"
 
@@ -3758,11 +3763,12 @@ next_in_queue() {
 	local var_return="$1"
 	local p _pkgname ret
 
-	[ ! -d ${MASTERMNT}/.p/pool ] && err 1 "Build pool is missing"
+	# CWD is MASTERMNT/.p/pool
+
 	p=$(find ${POOL_BUCKET_DIRS} -type d -depth 1 -empty -print -quit || :)
 	if [ -n "$p" ]; then
 		_pkgname=${p##*/}
-		if ! mv ${p} ${MASTERMNT}/.p/building/${_pkgname} \
+		if ! mv ${p} ../building/${_pkgname} \
 		    2>/dev/null; then
 			# Was the failure from /unbalanced?
 			if [ -z "${p%%*unbalanced/*}" ]; then
@@ -3778,7 +3784,7 @@ next_in_queue() {
 			fi
 		fi
 		# Update timestamp for buildtime accounting
-		touch ${MASTERMNT}/.p/building/${_pkgname}
+		touch "../building/${_pkgname}"
 	fi
 
 	setvar "${var_return}" "${_pkgname}"
