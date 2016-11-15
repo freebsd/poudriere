@@ -2743,21 +2743,24 @@ stop_builders() {
 deadlock_detected() {
 	local always_fail=${1:-1}
 	local crashed_packages dependency_cycles deps pkgname origin
-	local failed_phase
+	local failed_phase pwd
+
+	pwd="${PWD}"
+	cd "${MASTERMNT}/.p"
 
 	# If there are still packages marked as "building" they have crashed
 	# and it's likely some poudriere or system bug
 	crashed_packages=$( \
-		find ${MASTERMNT}/.p/building -type d -mindepth 1 -maxdepth 1 | \
-		sed -e "s,${MASTERMNT}/.p/building/,," | tr '\n' ' ' \
+		find building -type d -mindepth 1 -maxdepth 1 | \
+		sed -e "s,^building/,," | tr '\n' ' ' \
 	)
 	[ -z "${crashed_packages}" ] ||	\
 		err 1 "Crashed package builds detected: ${crashed_packages}"
 
 	# Check if there's a cycle in the need-to-build queue
 	dependency_cycles=$(\
-		find ${MASTERMNT}/.p/deps -mindepth 2 | \
-		sed -e "s,${MASTERMNT}/.p/deps/,," -e 's:/: :' | \
+		find deps -mindepth 2 | \
+		sed -e "s,^deps/,," -e 's:/: :' | \
 		# Only cycle errors are wanted
 		tsort 2>&1 >/dev/null | \
 		sed -e 's/tsort: //' | \
@@ -2769,7 +2772,10 @@ deadlock_detected() {
 ${dependency_cycles}"
 	fi
 
-	[ ${always_fail} -eq 1 ] || return 0
+	if [ ${always_fail} -eq 0 ]; then
+		cd "${pwd}"
+		return 0
+	fi
 
 	dead_packages=
 	highest_dep=
@@ -2778,8 +2784,8 @@ ${dependency_cycles}"
 		[ ${deps} -ne ${highest_dep} ] && break
 		dead_packages="${dead_packages} ${pkgname}"
 	done <<-EOF
-	$(find ${MASTERMNT}/.p/deps -mindepth 2 | \
-	    sed -e "s,${MASTERMNT}/.p/deps/,," -e 's:/: :' | \
+	$(find deps -mindepth 2 | \
+	    sed -e "s,^deps/,," -e 's:/: :' | \
 	    tsort -D 2>/dev/null | sort -nr)
 	EOF
 
@@ -2788,6 +2794,7 @@ ${dependency_cycles}"
 		for pkgname in ${dead_packages}; do
 			crashed_build "${pkgname}" "${failed_phase}"
 		done
+		cd "${pwd}"
 		return 0
 	fi
 
