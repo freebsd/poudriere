@@ -72,6 +72,22 @@ rollbackfs() {
 	do_clone "${MASTERMNT}" "${mnt}"
 }
 
+findmounts() {
+	local mnt="$1"
+	local pattern="$2"
+
+	mount | sort -r -k 2 | while read dev on pt opts; do
+		case "${pt}" in
+		${mnt}${pattern}*)
+			echo "${pt}"
+			if [ "${dev#/dev/md*}" != "${dev}" ]; then
+				mdconfig -d -u ${dev#/dev/md*}
+			fi
+		;;
+		esac
+	done
+}
+
 umountfs() {
 	[ $# -lt 1 ] && eargs umountfs mnt childonly
 	local mnt=$1
@@ -82,16 +98,9 @@ umountfs() {
 
 	[ -d "${mnt}" ] || return 0
 	mnt=$(realpath ${mnt})
-	mount | sort -r -k 2 | while read dev on pt opts; do
-		case ${pt} in
-		${mnt}${pattern}*)
-			if ! umount -n "${pt}"; then
-				umount -f "${pt}" 2>/dev/null || :
-			fi
-			[ "${dev#/dev/md*}" != "${dev}" ] && mdconfig -d -u ${dev#/dev/md*}
-		;;
-		esac
-	done
+	if ! findmounts "${mnt}" "${pattern}" | xargs umount -n; then
+		findmounts "${mnt}" "${pattern}" | xargs umount -fv || :
+	fi
 
 	return 0
 }
