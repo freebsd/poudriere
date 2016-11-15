@@ -833,6 +833,9 @@ exit_handler() {
 	parallel_shutdown
 
 	if was_a_bulk_run; then
+		# build_queue socket
+		exec 6<&- 2>/dev/null || :
+		exec 6>&- 2>/dev/null || :
 		coprocess_stop pkg_cacher
 	fi
 
