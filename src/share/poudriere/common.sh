@@ -1994,7 +1994,7 @@ jail_stop() {
 	if [ ${USE_CACHED} = "yes" ]; then
 		pkill -15 -F ${CACHEPID} >/dev/null 2>&1 || :
 	fi
-	msg "Umounting file systems"
+	msg "Unmounting file systems"
 	destroyfs ${MASTERMNT} jail || :
 	rm -rfx ${MASTERMNT}/../
 	export STATUS=0
