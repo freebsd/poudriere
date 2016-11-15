@@ -1972,7 +1972,7 @@ jail_stop() {
 
 	jstop || :
 	stop_builders >/dev/null || :
-	msg "Umounting file systems"
+	msg "Unmounting file systems"
 	destroyfs ${MASTERMNT} jail || :
 	rm -rfx ${MASTERMNT}/../
 	export STATUS=0
