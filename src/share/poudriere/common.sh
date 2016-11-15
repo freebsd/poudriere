@@ -1966,6 +1966,10 @@ jail_stop() {
 
 	run_hook jail stop
 
+	# Make sure CWD is not inside the jail or MASTERMNT/.p, which may
+	# cause EBUSY from umount.
+	cd /
+
 	jstop || :
 	stop_builders >/dev/null || :
 	msg "Umounting file systems"
