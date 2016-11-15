@@ -247,7 +247,6 @@ if [ ${DRY_RUN} -eq 1 ]; then
 		msg "No packages would be built"
 	fi
 
-	cleanup
 	exit 0
 fi
 
@@ -291,7 +290,6 @@ run_hook bulk done ${nbbuilt} ${nbfailed} ${nbignored} ${nbskipped}
 [ ${INTERACTIVE_MODE} -gt 0 ] && enter_interactive
 
 bset status "done:"
-cleanup
 
 set +e
 

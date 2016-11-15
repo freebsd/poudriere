@@ -189,7 +189,6 @@ if [ $(bget stats_failed) -gt 0 ] || [ $(bget stats_skipped) -gt 0 ]; then
 	    msg "${COLOR_SKIP}Skipped ports: ${COLOR_PORT}${skipped}"
 
 	bset_job_status "failed/depends" "${ORIGIN}"
-	cleanup
 	set +e
 	exit 1
 fi
@@ -270,7 +269,6 @@ if [ ${ret} -ne 0 ]; then
 		log_stop
 		bset_job_status "failed/${failed_phase}" "${ORIGIN}"
 		msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
-		cleanup
 		set +e
 		exit 1
 	fi
@@ -299,7 +297,6 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 		if [ -n "${failed_phase}" ]; then
 			bset_job_status "failed/${failed_phase}" "${ORIGIN}"
 			msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
-			cleanup
 			set +e
 			exit 1
 		fi
@@ -328,7 +325,6 @@ bset_job_status "stopped" "${ORIGIN}"
 
 bset status "done:"
 
-cleanup
 set +e
 
 exit 0
