@@ -85,7 +85,9 @@ umountfs() {
 	mount | sort -r -k 2 | while read dev on pt opts; do
 		case ${pt} in
 		${mnt}${pattern}*)
-			umount -f ${pt} || :
+			if ! umount "${pt}"; then
+				umount -f "${pt}" 2>/dev/null || :
+			fi
 			[ "${dev#/dev/md*}" != "${dev}" ] && mdconfig -d -u ${dev#/dev/md*}
 		;;
 		esac
@@ -186,7 +188,11 @@ destroyfs() {
 	fs=$(zfs_getfs ${mnt})
 	umountfs ${mnt} 1
 	if [ ${TMPFS_ALL} -eq 1 ]; then
-		umount -f ${mnt} 2>/dev/null || :
+		if [ -d "${mnt}" ]; then
+			if ! umount "${mnt}" 2>/dev/null; then
+				umount -f "${mnt}" 2>/dev/null || :
+			fi
+		fi
 	elif [ -n "${fs}" -a "${fs}" != "none" ]; then
 		zfs destroy -rf ${fs}
 		rmdir ${mnt}
