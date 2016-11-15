@@ -807,11 +807,14 @@ exit_handler() {
 
 	parallel_shutdown
 
+	if was_a_bulk_run; then
+		coprocess_stop pkg_cacher
+	fi
+
 	[ ${STATUS} -eq 1 ] && cleanup
 
 	if was_a_bulk_run; then
 		coprocess_stop html_json
-		coprocess_stop pkg_cacher
 	fi
 
 	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
