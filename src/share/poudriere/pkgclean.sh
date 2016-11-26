@@ -134,6 +134,8 @@ jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 prepare_ports
 bset status "pkgclean:"
 
+[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] && PACKAGES="${PACKAGES}/.latest"
+
 # Some packages may exist that are stale, but are still the latest version
 # built. Don't delete those, bulk will incrementally delete them. We only
 # want to delete packages that are duplicated and old, non-packages, and
@@ -150,8 +152,10 @@ FOUND_ORIGINS=$(mktemp -t poudriere_pkgclean)
 for file in ${PACKAGES}/All/*; do
 	case ${file} in
 		*.${PKG_EXT})
-			pkg_get_origin origin "${file}"
-			if ! port_is_needed "${origin}"; then
+			if ! pkg_get_origin origin "${file}"; then
+				msg_verbose "Found corrupt package: ${file}"
+				echo "${file}" >> ${BADFILES_LIST}
+			elif ! port_is_needed "${origin}"; then
 				msg_verbose "Found unwanted package: ${file}"
 				echo "${file}" >> ${BADFILES_LIST}
 			else
@@ -283,3 +287,4 @@ if [ $deleted_files -eq 1 ]; then
 	delete_stale_symlinks_and_empty_dirs
 	[ ${BUILD_REPO} -eq 1 ] && build_repo
 fi
+run_hook pkgclean done ${deleted_files} ${BUILD_REPO}

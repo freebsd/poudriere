@@ -35,5 +35,5 @@ cd "${ORIG_PWD}"
 sed -i '' -e 's,[[:<:]]st_mtim[[:>:]],st_mtimespec,g' "${DESTDIR}/test.c"
 
 git add -A "${DESTDIR}"
-echo "sh_SOURCES= \\"
+echo "sh_SOURCES= external/sh_compat/compat.c \\"
 find "${DESTDIR}" -name '*.c'|sed -e 's,$, \\,'|sort

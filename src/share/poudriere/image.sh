@@ -126,10 +126,14 @@ post_getopts
 : ${IMAGENAME:=poudriereimage}
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 
-# Limitation on isos
-case "${IMAGENAME}" in
-''|*[!A-Za-z0-9]*)
-	err 1 "Name can only contain alphanumeric characters"
+case "${MEDIATYPE}" in
+*iso*)
+	# Limitation on isos
+	case "${IMAGENAME}" in
+	''|*[!A-Za-z0-9]*)
+		err 1 "Name can only contain alphanumeric characters"
+		;;
+	esac
 	;;
 esac
 
@@ -222,7 +226,7 @@ cap_mkdb ${WRKDIR}/world/etc/login.conf
 # install packages if any is needed
 if [ -n "${PACKAGELIST}" ]; then
 	mkdir -p ${WRKDIR}/world/tmp/packages
-	mount -t nullfs ${POUDRIERE_DATA}/packages/${MASTERNAME} ${WRKDIR}/world/tmp/packages
+	${NULLMOUNT} ${POUDRIERE_DATA}/packages/${MASTERNAME} ${WRKDIR}/world/tmp/packages
 	cat > ${WRKDIR}/world/tmp/repo.conf <<-EOF
 	FreeBSD: { enabled: false }
 	local: { url: file:///tmp/packages }

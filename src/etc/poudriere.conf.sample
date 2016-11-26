@@ -62,6 +62,7 @@ USE_PORTLINT=no
 # localbase - Use tmpfs(5) for LOCALBASE (installing ports for packaging/testing)
 # all       - Run the entire build in memory, including builder jails.
 # yes       - Only enables tmpfs(5) for wrkdir
+# no        - Disable use of tmpfs(5)
 # EXAMPLE: USE_TMPFS="wrkdir data"
 USE_TMPFS=yes
 
@@ -81,8 +82,8 @@ DISTFILES_CACHE=/usr/ports/distfiles
 
 # If set the ports tree or source tree marked to use svn will use the defined
 # mirror (default: svn.FreeBSD.org)
-# The full mirror list is available here:
-# http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/svn.html#svn-mirrors
+# The SSL fingerprints are published here:
+# https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/svn.html#svn-mirrors
 #SVN_HOST=svn.FreeBSD.org
 
 # Automatic OPTION change detection
@@ -221,8 +222,20 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #PRESERVE_TIMESTAMP=yes
 
 # Define to yes to build and stage as a regular user
-# Default: yes
+# Default: yes, unless CCACHE_DIR is set and CCACHE_DIR_NON_ROOT_SAFE is not
+# set.  Note that to use ccache with BUILD_AS_NON_ROOT you will need to
+# use a non-shared CCACHE_DIR that is only built by PORTBUILD_USER and chowned
+# to that user.  Then set CCACHE_DIR_NON_ROOT_SAFE to yes.
 #BUILD_AS_NON_ROOT=no
+
+# Define to the username to build as when BUILD_AS_NON_ROOT is yes.
+# Default: nobody (uid PORTBUILD_UID)
+#PORTBUILD_USER=nobody
+
+# Define to the uid to use for PORTBUILD_USER if the user does not
+# already exist in the jail.
+# Default: 65532
+#PORTBUILD_UID=65534
 
 # Define pkgname globs to boost priority for
 # Default: none

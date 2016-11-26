@@ -1,5 +1,19 @@
 # These minified files are really bothersome on 'git grep'.
-src/share/poudriere/html/assets/bootstrap-3.1.1/js/bootstrap.min.js binary
+src/share/poudriere/html/assets/DataTables-1.10.0/images/back_disabled.png binary
+src/share/poudriere/html/assets/DataTables-1.10.0/images/back_enabled.png binary
+src/share/poudriere/html/assets/DataTables-1.10.0/images/back_enabled_hover.png binary
+src/share/poudriere/html/assets/DataTables-1.10.0/images/forward_disabled.png binary
+src/share/poudriere/html/assets/DataTables-1.10.0/images/forward_enabled.png binary
+src/share/poudriere/html/assets/DataTables-1.10.0/images/forward_enabled_hover.png binary
+src/share/poudriere/html/assets/DataTables-1.10.0/images/sort_asc.png binary
+src/share/poudriere/html/assets/DataTables-1.10.0/images/sort_asc_disabled.png binary
+src/share/poudriere/html/assets/DataTables-1.10.0/images/sort_both.png binary
+src/share/poudriere/html/assets/DataTables-1.10.0/images/sort_desc.png binary
+src/share/poudriere/html/assets/DataTables-1.10.0/images/sort_desc_disabled.png binary
 src/share/poudriere/html/assets/DataTables-1.10.0/js/jquery.dataTables.min.js binary
+src/share/poudriere/html/assets/bootstrap-3.1.1/css/bootstrap.min.css binary
+src/share/poudriere/html/assets/bootstrap-3.1.1/fonts/glyphicons-halflings-regular.svg binary
+src/share/poudriere/html/assets/bootstrap-3.1.1/js/bootstrap.min.js binary
 src/share/poudriere/html/assets/jquery-1.11.1.min.js binary
 src/share/poudriere/html/assets/jquery-1.11.1.min.map binary
+src/share/poudriere/html/assets/logo.svg binary

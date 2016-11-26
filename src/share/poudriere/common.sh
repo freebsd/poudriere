@@ -215,7 +215,7 @@ _mastermnt() {
 	    /usr/include/sys/mount.h 2>/dev/null | awk '{print $3}')
 
 	mnt="${POUDRIERE_DATA}/.m/${MASTERNAME}/ref"
-	mnttest="${mnt}/var/db/ports"
+	mnttest="${mnt}/compat/linux/proc"
 
 	if [ -n "${mnamelen}" ] && \
 	    [ ${#mnttest} -ge $((${mnamelen} - 1)) ]; then
@@ -272,6 +272,8 @@ relpath() {
 	local dir2=$(realpath -q "$2" || echo "${2}")
 	local common
 
+	dir1="${dir1%/}/"
+	dir2="${dir2%/}/"
 	if [ "${#dir1}" -ge "${#dir2}" ]; then
 		common="${dir1}"
 		other="${dir2}"
@@ -280,15 +282,18 @@ relpath() {
 		other="${dir1}"
 	fi
 	# Trim away path components until they match
-	while [ "${other#${common}}" = "${other}" -a -n "${common}" ]; do
+	while [ "${other#${common%/}/}" = "${other}" -a -n "${common}" ]; do
 		common="${common%/*}"
 	done
+	common="${common%/}"
 	common="${common:-/}"
-	dir1="${dir1#${common}}"
+	dir1="${dir1#${common}/}"
 	dir1="${dir1#/}"
+	dir1="${dir1%/}"
 	dir1="${dir1:-.}"
-	dir2="${dir2#${common}}"
+	dir2="${dir2#${common}/}"
 	dir2="${dir2#/}"
+	dir2="${dir2%/}"
 	dir2="${dir2:-.}"
 
 	echo "${common} ${dir1} ${dir2}"
@@ -340,9 +345,9 @@ jstart() {
 	    err 1 "Unable to execute id(1) in jail. Emulation or ABI wrong."
 	if ! injail id ${PORTBUILD_USER} >/dev/null 2>&1 ; then
 		msg_n "Creating user/group ${PORTBUILD_USER}"
-		injail pw groupadd ${PORTBUILD_USER} -g 65532 || \
+		injail pw groupadd ${PORTBUILD_USER} -g ${PORTBUILD_UID} || \
 		err 1 "Unable to create group ${PORTBUILD_USER}"
-		injail pw useradd ${PORTBUILD_USER} -u 65532 -d /nonexistent -c "Package builder" || \
+		injail pw useradd ${PORTBUILD_USER} -u ${PORTBUILD_UID} -d /nonexistent -c "Package builder" || \
 		err 1 "Unable to create user ${PORTBUILD_USER}"
 		echo " done"
 	fi
@@ -459,10 +464,11 @@ buildlog_start() {
 	echo "port directory: ${portdir}"
 	echo "building for: $(injail uname -a)"
 	echo "maintained by: $(injail /usr/bin/make -C ${portdir} maintainer)"
-	echo "Makefile ident: $(ident ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
+	echo "Makefile ident: $(ident -q ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
 	echo "Poudriere version: ${POUDRIERE_VERSION}"
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
 	echo "Jail OSVERSION: ${JAIL_OSVERSION}"
+	echo "Job Id: ${MY_JOBID}"
 	echo
 	if [ ${JAIL_OSVERSION} -gt ${HOST_OSVERSION} ]; then
 		echo
@@ -715,7 +721,9 @@ bset() {
 	shift
 	[ "${property}" = "status" ] && \
 	    echo "$@" >> ${log}/${file}.journal% || :
-	echo "$@" > ${log}/${file} || :
+	if echo "$@" > ${log}/.tmp.${file}; then
+		mv -f ${log}/.tmp.${file} ${log}/${file}
+	fi
 }
 
 bset_job_status() {
@@ -1162,6 +1170,8 @@ do_jail_mounts() {
 	local devfspath="null zero random urandom stdin stdout stderr fd fd/* bpf* pts pts/*"
 	local srcpath nullpaths nullpath
 
+	# from==mnt is via jail -u
+
 	# clone will inherit from the ref jail
 	if [ ${mnt##*/} = "ref" ]; then
 		mkdir -p ${mnt}/proc \
@@ -1184,9 +1194,11 @@ do_jail_mounts() {
 		fi
 
 	fi
+	echo ${nullpaths} | tr ' ' '\n' | sed -e "s,^/,${mnt}/," | \
+	    xargs mkdir -p
 	for nullpath in ${nullpaths}; do
-		[ -d "${nullpath}" -a "${from}" != "${mnt}" ] && \
-		    ${NULLMOUNT} -o ro "${from}${nullpath}" "${mnt}/${nullpath}"
+		[ -d "${from}${nullpath}" -a "${from}" != "${mnt}" ] && \
+		    ${NULLMOUNT} -o ro "${from}${nullpath}" "${mnt}${nullpath}"
 	done
 
 	# Mount /usr/src into target if it exists and not overridden
@@ -1194,7 +1206,6 @@ do_jail_mounts() {
 	[ -d "${srcpath}" -a "${from}" != "${mnt}" ] && \
 	    ${NULLMOUNT} -o ro ${srcpath} ${mnt}/usr/src
 
-	# ref jail only needs devfs
 	mount -t devfs devfs ${mnt}/dev
 	if [ ${JAILED} -eq 0 ]; then
 		devfs -m ${mnt}/dev rule apply hide
@@ -1203,17 +1214,14 @@ do_jail_mounts() {
 		done
 	fi
 
-	# Only do this in cloned build jails. from==mnt is via jail -u
-	if [ "${mnt##*/}" != "ref" -a "${from}" != "${mnt}" ]; then
-		[ "${USE_FDESCFS}" = "yes" ] && \
-		    [ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ] && \
-		    mount -t fdescfs fdesc ${mnt}/dev/fd
-		[ "${USE_PROCFS}" = "yes" ] && mount -t procfs proc ${mnt}/proc
-		if [ -z "${NOLINUX}" ]; then
-			[ "${arch}" = "i386" -o "${arch}" = "amd64" ] &&
-				mount -t linprocfs linprocfs ${mnt}/compat/linux/proc
-		fi
-	fi
+	[ "${USE_FDESCFS}" = "yes" ] && \
+	    [ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ] && \
+	    mount -t fdescfs fdesc "${mnt}/dev/fd"
+	[ "${USE_PROCFS}" = "yes" ] && \
+	    mount -t procfs proc "${mnt}/proc"
+	[ -z "${NOLINUX}" ] && \
+	    [ "${arch}" = "i386" -o "${arch}" = "amd64" ] && \
+	    mount -t linprocfs linprocfs "${mnt}/compat/linux/proc"
 
 	run_hook jail mount ${mnt}
 
@@ -1609,6 +1617,23 @@ get_host_arch() {
 	setvar "${var_return}" "${_arch}"
 }
 
+check_emulation() {
+	[ $# -eq 2 ] || eargs check_emulation real_arch wanted_arch
+	local real_arch="${1}"
+	local wanted_arch="${2}"
+
+	if need_emulation "${wanted_arch}"; then
+		msg "Cross-building ports for ${wanted_arch} on ${real_arch} requires QEMU"
+		[ -x "${BINMISC}" ] || \
+		    err 1 "Cannot find ${BINMISC}. Install ${BINMISC} and restart"
+		EMULATOR=$(${BINMISC} lookup ${wanted_arch#*.} 2>/dev/null | \
+		    awk '/interpreter:/ {print $2}')
+		[ -x "${EMULATOR}" ] || \
+		    err 1 "You need to setup an emulator with binmiscctl(8) for ${wanted_arch#*.}"
+		export QEMU_EMULATING=1
+	fi
+}
+
 need_emulation() {
 	[ $# -eq 1 ] || eargs need_emulation wanted_arch
 	local wanted_arch="$1"
@@ -1688,7 +1713,7 @@ jail_start() {
 			sysctl -n compat.linux.osrelease >/dev/null 2>&1 || kldload linux
 		fi
 	fi
-	[ -n "${USE_TMPFS}" ] && needfs="${needfs} tmpfs"
+	[ "${USE_TMPFS}" != "no" ] && needfs="${needfs} tmpfs"
 	[ "${USE_PROCFS}" = "yes" ] && needfs="${needfs} procfs"
 	[ "${USE_FDESCFS}" = "yes" ] && \
 	    [ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ] && \
@@ -1713,6 +1738,7 @@ jail_start() {
 	done
 	jail_exists ${name} || err 1 "No such jail: ${name}"
 	jail_runs ${MASTERNAME} && err 1 "jail already running: ${MASTERNAME}"
+	check_emulation "${host_arch}" "${arch}"
 
 	# Block the build dir from being traversed by non-root to avoid
 	# system blowup due to all of the extra mounts
@@ -1758,24 +1784,30 @@ jail_start() {
 
 	do_portbuild_mounts ${tomnt} ${name} ${ptname} ${setname}
 
-	if need_cross_build "${host_arch}" "${arch}"; then
-		cat >> "${tomnt}/etc/make.conf" <<-EOF
-		MACHINE=${arch%.*}
-		MACHINE_ARCH=${arch#*.}
-		ARCH=\${MACHINE_ARCH}
-		EOF
-	fi
-
-	# QEMU is really slow. Extend the time significantly.
-	if need_emulation "${arch}"; then
+	# Handle special QEMU needs.
+	if [ ${QEMU_EMULATING} -eq 1 ]; then
+		# QEMU is really slow. Extend the time significantly.
 		msg "Raising MAX_EXECUTION_TIME and NOHANG_TIME for QEMU"
 		MAX_EXECUTION_TIME=864000
 		NOHANG_TIME=72000
-		export QEMU_EMULATING=1
+		# Setup native-xtools overrides.
 		cat >> "${tomnt}/etc/make.conf" <<-EOF
 		.sinclude "/etc/make.nxb.conf"
 		EOF
+		# Copy in the latest version of the emulator.
+		msg "Copying latest version of the emulator from: ${EMULATOR}"
+		mkdir -p "${tomnt}${EMULATOR%/*}"
+		cp -f "${EMULATOR}" "${tomnt}${EMULATOR}"
 	fi
+	# Handle special ARM64 needs
+	if [ "${arch#*.}" = "aarch64" ] && ! [ -f "${tomnt}/usr/bin/ld" ]; then
+		if [ -f /usr/local/aarch64-freebsd/bin/ld ]; then
+			cp -f /usr/local/aarch64-freebsd/bin/ld \
+			    "${tomnt}/usr/bin/ld"
+		else
+			err 1 "Arm64 requires aarch64-binutils to be installed."
+		fi
+	 fi
 
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 		cat >> "${tomnt}/etc/make.conf" <<-EOF
@@ -1839,7 +1871,7 @@ load_blacklist() {
 	[ -n "${setname}" ] && bl="${bl} ${bl}-${setname} \
 		${name}-${ptname}-${setname}"
 	# If emulating always load a qemu-blacklist as it has special needs.
-	[ ${QEMU_EMULATING:-0} -eq 1 ] && bl="${bl} qemu"
+	[ ${QEMU_EMULATING} -eq 1 ] && bl="${bl} qemu"
 	for b in ${bl} ; do
 		if [ "${b}" = "-" ]; then
 			unset b
@@ -1864,6 +1896,18 @@ setup_makeconf() {
 	local ptname=$3
 	local setname=$4
 	local makeconf opt
+	local arch host_arch
+
+	_jget arch "${name}" arch
+	get_host_arch host_arch
+
+	if need_cross_build "${host_arch}" "${arch}"; then
+		cat >> "${dst_makeconf}" <<-EOF
+		MACHINE=${arch%.*}
+		MACHINE_ARCH=${arch#*.}
+		ARCH=\${MACHINE_ARCH}
+		EOF
+	fi
 
 	makeconf="- ${setname} ${ptname} ${name} ${name}-${ptname}"
 	[ -n "${setname}" ] && makeconf="${makeconf} ${name}-${setname} \
@@ -2140,6 +2184,10 @@ gather_distfiles() {
 	done
 
 	for special in ${specials}; do
+		case "${special}" in
+		/usr/ports/*) ;;
+		*) special=/usr/ports/${special}
+		esac
 		gather_distfiles ${special} ${from} ${to}
 	done
 
@@ -2167,7 +2215,7 @@ _real_build_port() {
 	_log_path log
 
 	# Use bootstrap PKG when not building pkg itself.
-	if false && [ ${QEMU_EMULATING:-0} -eq 1 ]; then
+	if false && [ ${QEMU_EMULATING} -eq 1 ]; then
 		case "${port}" in
 		ports-mgmt/pkg|ports-mgmt/pkg-devel) ;;
 		*)
@@ -2314,6 +2362,7 @@ _real_build_port() {
 				"${PACKAGES}/.npkg/${PKGNAME}" \
 				${mnt}/.npkg
 			chown -R ${JUSER} ${mnt}/.npkg
+			:> "${mnt}/.npkg_mounted"
 		fi
 
 		if [ "${phase#*-}" = "depends" ]; then
@@ -2542,7 +2591,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 	done
 
 	if [ -d "${PACKAGES}/.npkg/${PKGNAME}" ]; then
-		# everything was fine we can copy package the package to the package
+		# everything was fine we can copy the package to the package
 		# directory
 		find ${PACKAGES}/.npkg/${PKGNAME} \
 			-mindepth 1 \( -type f -or -type l \) | while read pkg_path; do
@@ -2655,9 +2704,11 @@ stop_builders() {
 
 	msg "Stopping ${PARALLEL_JOBS} builders"
 
+	parallel_start
 	for j in ${JOBS}; do
-		stop_builder "${j}"
+		parallel_run stop_builder "${j}"
 	done
+	parallel_stop
 
 	# No builders running, unset JOBS
 	JOBS=""
@@ -3073,10 +3124,13 @@ build_pkg() {
 	fi
 
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
-		umount -f ${mnt}/${LOCALBASE:-/usr/local} 2>/dev/null || :
+		if [ -f "${mnt}/${LOCALBASE:-/usr/local}/.mounted" ]; then
+			umount ${mnt}/${LOCALBASE:-/usr/local}
+		fi
 		mnt_tmpfs localbase ${mnt}/${LOCALBASE:-/usr/local}
 		do_clone "${MASTERMNT}/${LOCALBASE:-/usr/local}" \
 		    "${mnt}/${LOCALBASE:-/usr/local}"
+		:> "${mnt}/${LOCALBASE:-/usr/local}/.mounted"
 	fi
 
 	[ -f ${mnt}/.need_rollback ] && rollbackfs prepkg ${mnt}
@@ -3174,7 +3228,11 @@ stop_build() {
 
 	if [ -n "${MY_JOBID}" ]; then
 		_my_path mnt
-		umount -f ${mnt}/.npkg 2>/dev/null || :
+
+		if [ -f "${mnt}/.npkg_mounted" ]; then
+			umount "${mnt}/.npkg"
+			rm -f "${mnt}/.npkg_mounted"
+		fi
 		rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
 
 		# 2 = HEADER+ps itself
@@ -3309,9 +3367,11 @@ pkg_get_origin() {
 		read_line _origin "${originfile}"
 	fi
 
-	check_moved new_origin ${_origin} && _origin=${new_origin}
+	check_moved new_origin "${_origin}" && _origin=${new_origin}
 
 	setvar "${var_return}" "${_origin}"
+
+	[ -n "${_origin}" ]
 }
 
 pkg_get_dep_origin() {
@@ -3399,7 +3459,7 @@ ensure_pkg_installed() {
 	[ ${PKGNG} -eq 1 ] || return 0
 	[ -z "${force}" ] && [ -x "${mnt}${PKG_BIN}" ] && return 0
 	# Hack, speed up QEMU usage on pkg-repo.
-	if [ ${QEMU_EMULATING:-0} -eq 1 ] && \
+	if [ ${QEMU_EMULATING} -eq 1 ] && \
 	    [ -f /usr/local/sbin/pkg-static ]; then
 		cp -f /usr/local/sbin/pkg-static "${mnt}/.p/pkg-static"
 		return 0
@@ -3816,10 +3876,17 @@ compute_deps() {
 	# Suck in ports environment to avoid redundant fork/exec for each
 	# child.
 	if [ -f "${MASTERMNT}/usr/ports/Mk/Scripts/ports_env.sh" ]; then
+		local make
+
+		if [ -x "${MASTERMNT}/usr/bin/bmake" ]; then
+			make=/usr/bin/bmake
+		else
+			make=/usr/bin/make
+		fi
 		eval "$(injail env \
 		    SCRIPTSDIR=/usr/ports/Mk/Scripts \
 		    PORTSDIR=/usr/ports \
-		    MAKE=/usr/bin/make \
+		    MAKE=${make} \
 		    /bin/sh /usr/ports/Mk/Scripts/ports_env.sh | \
 		    grep '^export [^;&]*')"
 	fi
@@ -4084,7 +4151,7 @@ check_moved() {
 	local origin="$2"
 	local _new_origin _gsub
 
-	_gsub ${origin} "/" "_"
+	_gsub "${origin}" "/" "_"
 	[ -f "${MASTERMNT}/.p/MOVED/${_gsub}" ] &&
 	    read _new_origin < "${MASTERMNT}/.p/MOVED/${_gsub}"
 
@@ -4221,11 +4288,11 @@ prepare_ports() {
 	fi
 
 	if was_a_bulk_run; then
-		[ ${JAIL_NEEDS_CLEAN} -eq 1 ] &&
-		    msg_n "Cleaning all packages due to newer version of the jail..."
-
-		[ ${CLEAN} -eq 1 ] &&
-		    msg_n "(-c) Cleaning all packages..."
+		if [ ${JAIL_NEEDS_CLEAN} -eq 1 ]; then
+			msg_n "Cleaning all packages due to newer version of the jail..."
+		elif [ ${CLEAN} -eq 1 ]; then
+			msg_n "(-c) Cleaning all packages..."
+		fi
 
 		if [ ${JAIL_NEEDS_CLEAN} -eq 1 ] || [ ${CLEAN} -eq 1 ]; then
 			rm -rf ${PACKAGES}/* ${cache_dir}
@@ -4480,7 +4547,7 @@ clean_restricted() {
 	bset status "clean_restricted:"
 	# Remount rw
 	# mount_nullfs does not support mount -u
-	umount -f ${MASTERMNT}/packages
+	umount ${MASTERMNT}/packages
 	mount_packages
 	injail /usr/bin/make -s -C /usr/ports -j ${PARALLEL_JOBS} \
 	    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
@@ -4494,7 +4561,7 @@ clean_restricted() {
 		delete_stale_symlinks_and_empty_dirs
 	fi
 	# Remount ro
-	umount -f ${MASTERMNT}/packages
+	umount ${MASTERMNT}/packages
 	mount_packages -o ro
 }
 
@@ -4647,7 +4714,8 @@ if [ -z "${NO_ZFS}" -a -z "${ZFS_DEADLOCK_IGNORED}" ]; then
 	    "FreeBSD 9.1 ZFS is not safe. It is known to deadlock and cause system hang. Either upgrade the host or set ZFS_DEADLOCK_IGNORED=yes in poudriere.conf"
 fi
 
-[ -n "${MFSSIZE}" -a -n "${USE_TMPFS}" ] && err 1 "You can't use both tmpfs and mdmfs"
+: ${USE_TMPFS:=no}
+[ -n "${MFSSIZE}" -a "${USE_TMPFS}" != "no" ] && err 1 "You can't use both tmpfs and mdmfs"
 
 for val in ${USE_TMPFS}; do
 	case ${val} in
@@ -4655,7 +4723,8 @@ for val in ${USE_TMPFS}; do
 	data) TMPFS_DATA=1 ;;
 	all) TMPFS_ALL=1 ;;
 	localbase) TMPFS_LOCALBASE=1 ;;
-	*) err 1 "Unknown value for USE_TMPFS can be a combination of wrkdir,data,all,yes,localbase" ;;
+	no) ;;
+	*) err 1 "Unknown value for USE_TMPFS can be a combination of wrkdir,data,all,yes,no,localbase" ;;
 	esac
 done
 
@@ -4769,10 +4838,22 @@ fi
 : ${WATCHDIR:=${POUDRIERE_DATA}/queue}
 : ${PIDFILE:=${POUDRIERE_DATA}/daemon.pid}
 : ${QUEUE_SOCKET:=/var/run/poudriered.sock}
+: ${PORTBUILD_UID:=65532}
 : ${PORTBUILD_USER:=nobody}
+: ${CCACHE_DIR_NON_ROOT_SAFE:=no}
+if [ -n "${CCACHE_DIR}" ] && [ "${CCACHE_DIR_NON_ROOT_SAFE}" = "no" ]; then
+	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
+		msg_warn "BUILD_AS_NON_ROOT and CCACHE_DIR are potentially incompatible.  Disabling BUILD_AS_NON_ROOT"
+		msg_warn "Either disable one or set CCACHE_DIR_NON_ROOT_SAFE=yes and chown -R CCACHE_DIR to the user ${PORTBUILD_USER} (uid: ${PORTBUILD_UID})"
+	fi
+	# Default off with CCACHE_DIR.
+	: ${BUILD_AS_NON_ROOT:=no}
+fi
+# Default on otherwise.
 : ${BUILD_AS_NON_ROOT:=yes}
 : ${DISTFILES_CACHE:=/nonexistent}
 : ${SVN_CMD:=$(which svn 2>/dev/null || which svnlite 2>/dev/null)}
+: ${BINMISC:=/usr/sbin/binmiscctl}
 # 24 hours for 1 command
 : ${MAX_EXECUTION_TIME:=86400}
 # 120 minutes with no log update
@@ -4783,6 +4864,7 @@ fi
 : ${CLEAN_LISTED:=0}
 : ${JAIL_NEEDS_CLEAN:=0}
 : ${VERBOSE:=0}
+: ${QEMU_EMULATING:=0}
 : ${PORTTESTING_FATAL:=yes}
 : ${PORTTESTING_RECURSIVE:=0}
 : ${RESTRICT_NETWORKING:=yes}

@@ -56,7 +56,7 @@ Options:
     -m method     -- When used with -c, overrides the default method for
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
-                       allbsd, ftp-archive, ftp, git, http, null, src, svn,
+                       allbsd, ftp-archive, ftp, git, http, null, src=PATH, svn,
                        svn+file, svn+http, svn+https, svn+ssh, tar=PATH
                        url=SOMEURL.
     -P patch      -- Specify a patch to apply to the source before building.
@@ -245,6 +245,7 @@ update_jail() {
 	src=*)
 		SRC_BASE="${METHOD#src=}"
 		install_from_src
+		update_version
 		update_version_env $(jget ${JAILNAME} version)
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
@@ -359,7 +360,8 @@ build_and_install_world() {
 		msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
 		${MAKE_CMD} -C /usr/src native-xtools ${MAKE_JOBS} \
 		    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools'"
-		XDEV_TOOLS=/usr/obj/${TARGET}.${TARGET_ARCH}/nxb-bin
+		XDEV_TOOLS=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
+		    ${MAKE_CMD} -C /usr/src -f Makefile.inc1 -V NXBDESTDIR)
 		rm -rf ${JAILMNT}/nxb-bin || err 1 "Failed to remove old native-xtools"
 		mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
 		cat > ${JAILMNT}/etc/make.nxb.conf <<- EOF
@@ -384,7 +386,7 @@ build_and_install_world() {
 
 		# hardlink these files to capture scripts and tools
 		# that explicitly call them instead of using paths.
-		HLINK_FILES="usr/bin/env usr/bin/gzip usr/bin/id \
+		HLINK_FILES="usr/bin/env usr/bin/gzip usr/bin/id usr/bin/limits \
 				usr/bin/make usr/bin/dirname usr/bin/diff \
 				usr/bin/find usr/bin/gzcat usr/bin/awk \
 				usr/bin/touch usr/bin/sed usr/bin/patch \
@@ -549,14 +551,14 @@ install_from_ftp() {
 			DISTS="${DISTS} lib32"
 		[ -n "${KERNEL}" ] && DISTS="${DISTS} kernels"
 		for dist in ${DISTS}; do
-			fetch_file ${JAILMNT}/fromftp/ ${URL}/$dist/CHECKSUM.${HASH} ||
+			fetch_file ${JAILMNT}/fromftp/ "${URL}/$dist/CHECKSUM.${HASH}" ||
 				err 1 "Fail to fetch checksum file"
 			sed -n "s/.*(\(.*\...\)).*/\1/p" \
 				${JAILMNT}/fromftp/CHECKSUM.${HASH} | \
 				while read pkg; do
 				[ ${pkg} = "install.sh" ] && continue
 				# Let's retry at least one time
-				fetch_file ${JAILMNT}/fromftp/ ${URL}/${dist}/${pkg}
+				fetch_file ${JAILMNT}/fromftp/ "${URL}/${dist}/${pkg}"
 			done
 		done
 
@@ -581,7 +583,7 @@ install_from_ftp() {
 		case ${METHOD} in
 			ftp|http|gjb)
 				case ${VERSION} in
-					*-CURRENT|*-PRERELEASE|*-STABLE) type=snapshots ;;
+					*-CURRENT|*-ALPHA*|*-PRERELEASE|*-STABLE) type=snapshots ;;
 					*) type=releases ;;
 				esac
 
@@ -621,16 +623,20 @@ install_from_ftp() {
 		[ -n "${KERNEL}" ] && DISTS="${DISTS} kernel"
 		[ -s "${JAILMNT}/fromftp/MANIFEST" ] || err 1 "Empty MANIFEST file."
 		for dist in ${DISTS}; do
-			grep -q ${dist} ${JAILMNT}/fromftp/MANIFEST || continue
+			awk -vdist="${dist}.txz" '\
+			    BEGIN {ret=1} \
+			    $1 == dist {ret=0;exit} \
+			    END {exit ret} \
+			    ' "${JAILMNT}/fromftp/MANIFEST" || continue
 			msg "Fetching ${dist} for FreeBSD ${V} ${ARCH}"
-			fetch_file ${JAILMNT}/fromftp/${dist}.txz ${URL}/${dist}.txz
-			MHASH=`awk "/^${dist}\.txz/ { print \\$2 }" ${JAILMNT}/fromftp/MANIFEST`
-			FHASH=`sha256 -q ${JAILMNT}/fromftp/${dist}.txz`
-			if [ ${MHASH} != ${FHASH} ]; then
+			fetch_file "${JAILMNT}/fromftp/${dist}.txz" "${URL}/${dist}.txz"
+			MHASH="$(awk -vdist="${dist}.txz" '$1 == dist { print $2 }' ${JAILMNT}/fromftp/MANIFEST)"
+			FHASH="$(sha256 -q ${JAILMNT}/fromftp/${dist}.txz)"
+			if [ "${MHASH}" != "${FHASH}" ]; then
 				err 1 "${dist}.txz checksum mismatch"
 			fi
 			msg_n "Extracting ${dist}..."
-			tar -xpf ${JAILMNT}/fromftp/${dist}.txz -C  ${JAILMNT}/ || err 1 " fail"
+			tar -xpf "${JAILMNT}/fromftp/${dist}.txz" -C  ${JAILMNT}/ || err 1 " fail"
 			echo " done"
 		done
 	fi
@@ -702,7 +708,7 @@ create_jail() {
 			releng/*![0-9]*.[0-9])
 				err 1 "bad version number for releng version"
 				;;
-			stable/*|head*|release/*|releng/*.[0-9]|projects/*) ;;
+			stable/*|head*|release/*|releng/*.[0-9]*|projects/*) ;;
 			*)
 				err 1 "version with svn should be: head[@rev], stable/N, release/N, releng/N or projects/X"
 				;;
@@ -742,11 +748,6 @@ create_jail() {
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
 	[ -n "$SRCPATH" ] && jset ${JAILNAME} srcpath ${SRCPATH}
-
-	if [ -n "${EMULATOR}" ]; then
-		mkdir -p ${JAILMNT}${EMULATOR%/*}
-		cp "${EMULATOR}" "${JAILMNT}${EMULATOR}"
-	fi
 
 	# Wrap the jail creation in a special cleanup hook that will remove the jail
 	# if any error is encountered
@@ -849,17 +850,6 @@ info_jail() {
 	unset POUDRIERE_BUILD_TYPE
 }
 
-check_emulation() {
-	if need_emulation "${ARCH}"; then
-		msg "Cross-building ports for ${ARCH} on ${REALARCH} requires QEMU"
-		[ -x "${BINMISC}" ] || \
-		    err 1 "Cannot find ${BINMISC}. Install ${BINMISC} and restart"
-		EMULATOR=$(${BINMISC} lookup ${ARCH#*.} 2>/dev/null | awk '/interpreter:/ {print $2}')
-		[ -x "${EMULATOR}" ] || \
-		    err 1 "You need to setup an emulator with binmiscctl(8) for ${ARCH#*.}"
-	fi
-}
-
 . ${SCRIPTPREFIX}/common.sh
 
 get_host_arch ARCH
@@ -876,7 +866,6 @@ INFO=0
 UPDATE=0
 PTNAME=default
 SETNAME=""
-BINMISC="/usr/sbin/binmiscctl"
 XDEV=0
 
 while getopts "iJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:x" FLAG; do
@@ -1033,7 +1022,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		test -z ${VERSION} && usage VERSION
 		jail_exists ${JAILNAME} && \
 		    err 2 "The jail ${JAILNAME} already exists"
-		check_emulation
+		check_emulation "${REALARCH}" "${ARCH}"
 		maybe_run_queued "${saved_argv}"
 		create_jail
 		;;
@@ -1082,7 +1071,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		maybe_run_queued "${saved_argv}"
 		jail_runs ${JAILNAME} && \
 		    err 1 "Unable to update jail ${JAILNAME}: it is running"
-		check_emulation
+		check_emulation "${REALARCH}" "${ARCH}"
 		update_jail
 		;;
 	00000001)
