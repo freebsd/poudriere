@@ -35,14 +35,15 @@ Parameters:
     -p portstree    -- Ports tree
     -z set          -- Set
     -s size         -- Set the image size
-    -n imagename    -- the name of the generated image
-    -h hostname     -- the image hostname
+    -n imagename    -- The name of the generated image
+    -h hostname     -- The image hostname
     -t type         -- Type of image can be one of (default iso+zmfs):
                     -- iso, iso+mfs, iso+zmfs, usb, usb+mfs, usb+zmfs,
                        rawdisk, zrawdisk, tar, firmware, rawfirmware
-    -X exclude      -- file containing the list in cpdup format
-    -f packagelist  -- list of packages to install
-    -c extradir     -- the content of the directory will copied in the target
+    -X excludefile  -- File containing the list in cpdup format
+    -f packagelist  -- List of packages to install
+    -c overlaydir   -- The content of the overlay directory will copied into
+                       the image
 EOF
 	exit 1
 }
@@ -139,7 +140,7 @@ esac
 
 mkdir -p ${OUTPUTDIR}
 
-jail_exists ${JAILNAME} || err 1 "The jail ${JAILNAME} does not exists"
+jail_exists ${JAILNAME} || err 1 "The jail ${JAILNAME} does not exist"
 case "${MEDIATYPE}" in
 usb)
 	[ -n "${IMAGESIZE}" ] || err 1 "Please specify the imagesize"
