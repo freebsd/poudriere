@@ -989,6 +989,7 @@ if [ -n "${SOURCES_URL}" ]; then
 	git*)
 		case "${SOURCES_URL}" in
 		ssh://*) METHOD="git+ssh" ;;
+		http://*) METHOD="git+http" ;;
 		https://*) METHOD="git+https" ;;
 		git://*) METHOD="git" ;;
 		*) err 1 "Invalid git url" ;;
@@ -1008,6 +1009,7 @@ else
 	svn+file) proto="file" ;;
 	svn) proto="svn" ;;
 	git+ssh) proto="ssh" ;;
+	git+http) proto="http" ;;
 	git+https) proto="https" ;;
 	git) proto="git" ;;
 	esac

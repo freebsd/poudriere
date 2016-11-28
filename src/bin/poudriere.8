@@ -380,9 +380,13 @@ For example:
 .Pp
 Build from source options:
 .Bl -tag -width "ftp-archiveXX"
+.It Sy git Sy git+http Sy git+https Sy git+ssh
+Will use git and the
+.Sy GIT_BASEURL
+variable in
+.Pa poudriere.conf .
 .It Sy svn Sy svn+file Sy svn+http Sy svn+https
-Use SVN.
-This will use the
+Will use SVN and the
 .Sy SVN_HOST
 variable in
 .Pa poudriere.conf .
