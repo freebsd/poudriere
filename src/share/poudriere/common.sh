@@ -266,6 +266,8 @@ relpath() {
 	local dir2=$(realpath -q "$2" || echo "${2}")
 	local common
 
+	dir1="${dir1%/}/"
+	dir2="${dir2%/}/"
 	if [ "${#dir1}" -ge "${#dir2}" ]; then
 		common="${dir1}"
 		other="${dir2}"
@@ -274,15 +276,18 @@ relpath() {
 		other="${dir1}"
 	fi
 	# Trim away path components until they match
-	while [ "${other#${common}}" = "${other}" -a -n "${common}" ]; do
+	while [ "${other#${common%/}/}" = "${other}" -a -n "${common}" ]; do
 		common="${common%/*}"
 	done
+	common="${common%/}"
 	common="${common:-/}"
-	dir1="${dir1#${common}}"
+	dir1="${dir1#${common}/}"
 	dir1="${dir1#/}"
+	dir1="${dir1%/}"
 	dir1="${dir1:-.}"
-	dir2="${dir2#${common}}"
+	dir2="${dir2#${common}/}"
 	dir2="${dir2#/}"
+	dir2="${dir2%/}"
 	dir2="${dir2:-.}"
 
 	echo "${common} ${dir1} ${dir2}"
@@ -453,10 +458,11 @@ buildlog_start() {
 	echo "port directory: ${portdir}"
 	echo "building for: $(injail uname -a)"
 	echo "maintained by: $(injail /usr/bin/make -C ${portdir} maintainer)"
-	echo "Makefile ident: $(ident ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
+	echo "Makefile ident: $(ident -q ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
 	echo "Poudriere version: ${POUDRIERE_VERSION}"
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
 	echo "Jail OSVERSION: ${JAIL_OSVERSION}"
+	echo "Job Id: ${MY_JOBID}"
 	echo
 	if [ ${JAIL_OSVERSION} -gt ${HOST_OSVERSION} ]; then
 		echo
@@ -2362,6 +2368,7 @@ _real_build_port() {
 				"${PACKAGES}/.npkg/${PKGNAME}" \
 				${mnt}/.npkg
 			chown -R ${JUSER} ${mnt}/.npkg
+			:> "${mnt}/.npkg_mounted"
 		fi
 
 		if [ "${phase#*-}" = "depends" ]; then
@@ -3227,7 +3234,11 @@ stop_build() {
 
 	if [ -n "${MY_JOBID}" ]; then
 		_my_path mnt
-		umount -f ${mnt}/.npkg 2>/dev/null || :
+
+		if [ -f "${mnt}/.npkg_mounted" ]; then
+			umount "${mnt}/.npkg"
+			rm -f "${mnt}/.npkg_mounted"
+		fi
 		rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
 
 		# 2 = HEADER+ps itself
@@ -4540,7 +4551,7 @@ clean_restricted() {
 	bset status "clean_restricted:"
 	# Remount rw
 	# mount_nullfs does not support mount -u
-	umount -f ${MASTERMNT}/packages
+	umount ${MASTERMNT}/packages
 	mount_packages
 	injail /usr/bin/make -s -C /usr/ports -j ${PARALLEL_JOBS} \
 	    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
@@ -4554,7 +4565,7 @@ clean_restricted() {
 		delete_stale_symlinks_and_empty_dirs
 	fi
 	# Remount ro
-	umount -f ${MASTERMNT}/packages
+	umount ${MASTERMNT}/packages
 	mount_packages -o ro
 }
 

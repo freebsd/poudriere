@@ -46,7 +46,7 @@ assert() {
 	EXITVAL=$((${EXITVAL:-0} + 1))
 
 	if [ "${actual}" != "${expected}" ]; then
-		aecho "${msg}: expected: ${expected}, actual: ${actual}"
+		aecho "${msg}: expected: '${expected}', actual: '${actual}'"
 		exit ${EXITVAL}
 	fi
 

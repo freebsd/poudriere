@@ -149,6 +149,7 @@ if [ -n "${SOURCES_URL}" ]; then
 	git*)
 		case "${SOURCES_URL}" in
 		ssh://*) METHOD="git+ssh" ;;
+		http://*) METHOD="git+http" ;;
 		https://*) METHOD="git+https" ;;
 		git://*) METHOD="git" ;;
 		*) err 1 "Invalid git url" ;;
@@ -215,7 +216,7 @@ fi
 
 cleanup_new_ports() {
 	msg "Error while creating ports tree, cleaning up." >&2
-	destroyfs ${PTMNT} ports || :
+	TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
 	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
 }
 
@@ -282,6 +283,7 @@ fi
 
 if [ ${DELETE} -eq 1 ]; then
 	porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
+	PTMETHOD=$(pget ${PTNAME} method)
 	PTMNT=$(pget ${PTNAME} mnt)
 	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
 	${NULLMOUNT} | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
@@ -290,8 +292,8 @@ if [ ${DELETE} -eq 1 ]; then
 	    err 1 "Not deleting ports tree"
 	maybe_run_queued "${saved_argv}"
 	msg_n "Deleting portstree \"${PTNAME}\""
-	if [ ${KEEP} -eq 0 ]; then
-		destroyfs ${PTMNT} ports || :
+	if [ ${KEEP} -eq 0 -a ${PTMETHOD} != "none" -a ${PTMETHOD} != "-" ]; then
+		TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
 	fi
 	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
 	echo " done"
