@@ -312,9 +312,9 @@ of FreeBSD to use in the jail.
 If you are using method ftp then the
 .Ar version
 should in the form of: 9.0-RELEASE.
-If you are using method svn then the
+If you are using method of svn then the
 .Ar version
-should be in the form of svn branches: stable/9 or head for current.
+should be in the form of git or svn branches: stable/9 or head for CURRENT.
 Other methods only use the value for display.
 .It Fl a Ar architecture
 Specifies which
@@ -381,7 +381,7 @@ For example:
 Build from source options:
 .Bl -tag -width "ftp-archiveXX"
 .It Sy git Sy git+http Sy git+https Sy git+ssh
-Will use git and the
+Will use git, the -v flag to set the branch name and the
 .Sy GIT_BASEURL
 variable in
 .Pa poudriere.conf .
