@@ -154,6 +154,7 @@ esac
 msg "Preparing the image '${IMAGENAME}'"
 md=""
 CLEANUP_HOOK=cleanup_image
+test -d ${POUDRIERE_DATA}/images || mkdir ${POUDRIERE_DATA}/images
 WRKDIR=$(mktemp -d ${POUDRIERE_DATA}/images/${IMAGENAME}-XXXX)
 _jget mnt ${JAILNAME} mnt
 excludelist=$(mktemp -t excludelist)
