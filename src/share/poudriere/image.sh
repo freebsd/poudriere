@@ -142,7 +142,7 @@ mkdir -p ${OUTPUTDIR}
 
 jail_exists ${JAILNAME} || err 1 "The jail ${JAILNAME} does not exist"
 case "${MEDIATYPE}" in
-usb)
+usb|*firmware|rawdisk)
 	[ -n "${IMAGESIZE}" ] || err 1 "Please specify the imagesize"
 	;;
 iso*|usb*|raw*)
