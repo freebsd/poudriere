@@ -239,7 +239,13 @@ if [ ${CREATE} -eq 1 ]; then
 
 	[ "${PTNAME#*.*}" = "${PTNAME}" ] ||
 		err 1 "The ports name cannot contain a period (.). See jail(8)"
-	createfs ${PTNAME} ${PTMNT} ${PTFS}
+
+	if [ ${METHOD} != "none" ]; then
+		createfs ${PTNAME} ${PTMNT} ${PTFS}
+	else
+		echo "Not creating fs for method=none"
+	fi
+
 	pset ${PTNAME} mnt ${PTMNT}
 	if [ $FAKE -eq 0 ]; then
 		case ${METHOD} in

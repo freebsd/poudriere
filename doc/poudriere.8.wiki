@@ -147,7 +147,7 @@ As with <b class="flag">&#45;i</b> this will install a <a class="link-man">pkg.c
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;n</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">
-Dry run. Show what woud be done, but do not actually build or delete any packages.</dd>
+Dry run. Show what would be done, but do not actually build or delete any packages.</dd>
 <dt class="list-tag" style="margin-top: 1.00em;">
 <b class="flag">&#45;N</b></dt>
 <dd class="list-tag" style="margin-left: 11.00ex;">

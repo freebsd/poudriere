@@ -51,7 +51,6 @@ EOF
 delete_image() {
 	[ ! -f "${excludelist}" ] || rm -f ${excludelist}
 	[ -z "${zroot}" ] || zpool destroy -f ${zroot}
-	[ -z "${md}" ] || /sbin/mdconfig -d -u ${md#md}
 
 	destroyfs ${WRKDIR} image
 }
@@ -142,7 +141,7 @@ mkdir -p ${OUTPUTDIR}
 
 jail_exists ${JAILNAME} || err 1 "The jail ${JAILNAME} does not exist"
 case "${MEDIATYPE}" in
-usb)
+usb|*firmware|rawdisk)
 	[ -n "${IMAGESIZE}" ] || err 1 "Please specify the imagesize"
 	;;
 iso*|usb*|raw*)
@@ -154,6 +153,7 @@ esac
 msg "Preparing the image '${IMAGENAME}'"
 md=""
 CLEANUP_HOOK=cleanup_image
+test -d ${POUDRIERE_DATA}/images || mkdir ${POUDRIERE_DATA}/images
 WRKDIR=$(mktemp -d ${POUDRIERE_DATA}/images/${IMAGENAME}-XXXX)
 _jget mnt ${JAILNAME} mnt
 excludelist=$(mktemp -t excludelist)
