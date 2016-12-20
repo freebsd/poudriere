@@ -65,7 +65,7 @@ cleanup_image() {
 while getopts "o:j:p:z:n:t:X:f:c:h:s:" FLAG; do
 	case "${FLAG}" in
 		o)
-			OUTPUTDIR=${OPTARG}
+			OUTPUTDIR=$(realpath ${OPTARG})
 			;;
 		j)
 			JAILNAME=${OPTARG}
