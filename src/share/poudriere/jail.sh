@@ -768,8 +768,6 @@ create_jail() {
 	if [ "${METHOD}" = "null" ]; then
 		[ -z "${JAILMNT}" ] && \
 		    err 1 "Must set -M to path of jail to use"
-		[ "${JAILMNT}" = "/" ] && \
-		    err 1 "Cannot use / for -M"
 	fi
 
 	if [ -z ${JAILMNT} ]; then
