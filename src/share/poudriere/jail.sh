@@ -41,6 +41,7 @@ Parameters:
     -r newname    -- Rename a jail
 
 Options:
+    -b            -- Build the OS (for use with -m src)
     -q            -- Quiet (Do not print the header)
     -n            -- Print only jail name (for use with -l)
     -J n          -- Run buildworld in parallel with n jobs.
@@ -425,7 +426,11 @@ install_from_src() {
 	echo " done"
 
 	setup_build_env
-	installworld
+	if [ ${BUILD} -eq 0 ]; then
+		installworld
+	else
+		build_and_install_world
+	fi
 }
 
 install_from_svn() {
@@ -830,9 +835,13 @@ UPDATE=0
 PTNAME=default
 SETNAME=""
 XDEV=0
+BUILD=0
 
-while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:x" FLAG; do
+while getopts "biJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:x" FLAG; do
 	case "${FLAG}" in
+		b)
+			BUILD=1
+			;;
 		i)
 			INFO=1
 			;;
