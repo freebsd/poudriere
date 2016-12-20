@@ -847,6 +847,10 @@ create_jail() {
 	null)
 		JAILFS=none
 		FCT=
+		if [ -f "${JAILMNT}/bin/freebsd-version" ]; then
+			# Override VERSION with what the jail contains
+			VERSION=$(chroot "${JAILMNT}" /bin/freebsd-version -u)
+		fi
 		;;
 	*)
 		err 2 "Unknown method to create the jail"
@@ -1158,10 +1162,8 @@ else
 	GIT_FULLURL=${proto}://${GIT_BASEURL}
 fi
 
-
 case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	10000000)
-		test -z ${JAILNAME} && usage JAILNAME
 		case ${METHOD} in
 			src=*|null|tar) ;;
 			*) test -z ${VERSION} && usage VERSION ;;
