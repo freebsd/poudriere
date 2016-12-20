@@ -130,7 +130,9 @@ delete_jail() {
 		err 1 "Unable to delete jail ${JAILNAME}: it is running"
 	msg_n "Removing ${JAILNAME} jail..."
 	method=$(jget ${JAILNAME} method)
-	if [ "${method}" = "null" ]; then
+	mnt=$(jget ${JAILNAME} mnt)
+	# login.conf was not patched if mnt=/
+	if [ "${method}" = "null" -a "${mnt}" != "/" ]; then
 		mv -f ${JAILMNT}/etc/login.conf.orig \
 		    ${JAILMNT}/etc/login.conf
 		cap_mkdb ${JAILMNT}/etc/login.conf
@@ -885,12 +887,15 @@ create_jail() {
 		RELEASE="${VERSION}"
 	fi
 
-	cp -f "${JAILMNT}/etc/login.conf" "${JAILMNT}/etc/login.conf.orig"
-	update_version_env "${RELEASE}"
+	# Don't do quite a few things if JAILMNT=/
+	if [ "${JAILMNT}" != "/" ]; then
+		cp -f "${JAILMNT}/etc/login.conf" "${JAILMNT}/etc/login.conf.orig"
+		update_version_env "${RELEASE}"
 
-	pwd_mkdb -d ${JAILMNT}/etc/ -p ${JAILMNT}/etc/master.passwd
+		pwd_mkdb -d ${JAILMNT}/etc/ -p ${JAILMNT}/etc/master.passwd
 
-	markfs clean ${JAILMNT}
+		markfs clean ${JAILMNT}
+	fi
 
 	# Check VERSION before running 'update_jail' on jails created using FreeBSD dists.
 	case ${METHOD} in
