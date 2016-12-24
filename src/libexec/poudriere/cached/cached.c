@@ -25,23 +25,17 @@
  */
 
 #include <sys/types.h>
-#include <sys/event.h>
-#include <sys/param.h>
-#include <sys/socket.h>
-#include <sys/un.h>
 
-#include <libgen.h>
 #include <unistd.h>
-#define _WITH_DPRINTF
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <libutil.h>
 #include <err.h>
 #include <errno.h>
-#include <inttypes.h>
 #include <uthash.h>
+#include <mqueue.h>
+#include <fcntl.h>
 
 #define HASH_FIND_OSTR(head,findstr,out)                                          \
     HASH_FIND(ohh,head,findstr,strlen(findstr),out)
@@ -57,47 +51,44 @@ struct cache {
 
 static struct cache *namecache = NULL;
 static struct cache *origincache = NULL;
+static mqd_t qserver = (mqd_t)-1;
+static const char *queuepath = NULL;
 
 static void
-parse_command(int fd)
+close_mq(int sig __unused)
 {
-	char buf[4096];
-	int r;
+	if (qserver != (mqd_t)-1) {
+		mq_close(qserver);
+		mq_unlink(queuepath);
+	}
+	exit(0);
+}
+
+static void
+parse_command(char *msg)
+{
 	char *name, *origin, *pattern;
 	struct cache *c;
+	char client[BUFSIZ];
+	char *buf;
+	pid_t pid;
+	mqd_t qclient;
 
-	r = read(fd, buf, sizeof(buf));
-	if (r <= 0)
-		return;
-	buf[r - 1] = '\0';
-	if (strncasecmp(buf, "get ", 4) == 0) {
-		pattern = buf + 4;
-		if (strchr(buf, '/') != NULL) {
-			HASH_FIND_OSTR(origincache, pattern,c);
-			if (c != NULL)
-				dprintf(fd, "%s\n", c->name);
-		} else {
-			HASH_FIND_STR(namecache, pattern, c);
-			if (c != NULL)
-				dprintf(fd, "%s\n", c->origin);
-		}
-	} else if (strncasecmp(buf, "set ", 4) == 0) {
+	buf = msg;
+	if (strncasecmp(buf, "set ", 4) == 0) {
 		name = buf + 4;
 		origin = strchr(name, ' ');
 		if (origin == NULL) {
-			close(fd);
 			return;
 		}
 		origin[0] = '\0';
 		origin++;
 		HASH_FIND_STR(namecache, name, c);
 		if (c != NULL) {
-			close(fd);
 			return;
 		}
 		HASH_FIND_OSTR(origincache, origin, c);
 		if (c != NULL) {
-			close(fd);
 			return;
 		}
 		c = malloc(sizeof(struct cache));
@@ -105,50 +96,56 @@ parse_command(int fd)
 		c->origin = strdup(origin);
 		HASH_ADD_STR(namecache, name, c);
 		HASH_ADD_OSTR(origincache, origin, c);
-	} else {
-		dprintf(fd, "Unknown command '%s'\n", buf);
+		return;
 	}
-	close(fd);
+
+	pid = strtol(msg, &buf, 10);
+	if (pid == 0)
+		return;
+
+	if (strncasecmp(buf, "get ", 4) != 0)
+		return;
+
+	snprintf(client, sizeof(client), "%s%ld", queuepath, (long) pid);
+	qclient = mq_open(client, O_WRONLY);
+	if (qclient == (mqd_t)-1)
+		return;
+
+	pattern = buf + 4;
+	if (strchr(buf, '/') != NULL) {
+		HASH_FIND_OSTR(origincache, pattern, c);
+		if (c != NULL) {
+			mq_send(qclient, c->name, strlen(c->name), 0);
+		} else {
+			mq_send(qclient, "", 0, 0);
+		}
+	} else {
+		HASH_FIND_STR(namecache, pattern, c);
+		if (c != NULL)
+			mq_send(qclient, c->origin, strlen(c->origin), 0);
+		else
+			mq_send(qclient, "", 0, 0);
+	}
+	mq_close(qclient);
 }
 
 static void
-serve(int fd) {
-	socklen_t sz;
-	struct kevent ke;
-	int kq, clfd;
-	pid_t pid;
-	struct sockaddr_storage ss;
-
-	if ((kq = kqueue()) == -1)
-		err(EXIT_FAILURE, "kqueue");
-
-	EV_SET(&ke, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-	kevent(kq, &ke, 1, NULL, 0, NULL);
+serve(void) {
+	char msg[BUFSIZ];
+	ssize_t sz;
 
 	for (;;) {
-		kevent(kq, NULL, 0, &ke, 1, NULL);
-		/* New client */
-		if (ke.ident == fd && ke.filter == EVFILT_READ) {
-			clfd = accept(ke.ident, (struct sockaddr *)&ss, &sz);
-			if (clfd < 0) {
-				if (errno == EINTR || errno == EAGAIN || errno == EPROTO)
-					continue;
-				err(EXIT_FAILURE, "accept()");
-			}
-			EV_SET(&ke, clfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-			kevent(kq, &ke, 1, NULL, 0, NULL);
-		} else if (ke.flags & (EV_ERROR | EV_EOF))
-			close(ke.ident);
-		else
-			parse_command(ke.ident);
+		if ((sz = mq_receive (qserver, msg, BUFSIZ, NULL)) == -1) {
+			 err(EXIT_FAILURE, "Cached: mq_received");
+		}
+		msg[sz] = '\0';
+		parse_command(msg);
 	}
 }
 
 int
 main(int argc, char **argv)
 {
-	struct sockaddr_un un;
-	char *socketpath = NULL;
 	char *pidfile = NULL;
 	char *name = NULL;
 	struct pidfh *pfh;
@@ -159,7 +156,7 @@ main(int argc, char **argv)
 	while ((ch = getopt(argc, argv, "s:fp:n:")) != -1) {
 		switch (ch) {
 		case 's':
-			socketpath = optarg;
+			queuepath = optarg;
 			break;
 		case 'f':
 			foreground = true;
@@ -171,8 +168,8 @@ main(int argc, char **argv)
 			name = optarg;
 		}
 	}
-	if (!pidfile || !socketpath)
-		errx(EXIT_FAILURE, "usage: cached [-f] -s socketpath -p pidfile");
+	if (!pidfile || !queuepath)
+		errx(EXIT_FAILURE, "usage: cached [-f] -s queuepath -p pidfile");
 
 	if (name)
 		setproctitle("poudriere(%s)", name);
@@ -185,34 +182,27 @@ main(int argc, char **argv)
 		/* If we cannot create pidfile for other reasons, only warn. */
 		warn("Cannot open or create pidfile: '%s'", pidfile);
 	}
-	
-	memset(&un, 0, sizeof(struct sockaddr_un));
-	if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
-		err(EXIT_FAILURE, "socket()");
+	struct mq_attr attr;
+	attr.mq_flags = 0;
+	attr.mq_maxmsg = 100;
+	attr.mq_msgsize = BUFSIZ;
+	attr.mq_curmsgs = 0;
 
-	/* SO_REUSEADDR does not prevent EADDRINUSE, since we are locked by
-	 * a pid, just unlink the old socket if needed. */
-	unlink(socketpath);
-	un.sun_family = AF_UNIX;
-	if (chdir(dirname(socketpath)))
-		err(EXIT_FAILURE, "chdir()");
-	strlcpy(un.sun_path, basename(socketpath), sizeof(un.sun_path));
-	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (int[]){1},
-	    sizeof(int)) < 0)
-		err(EXIT_FAILURE, "setsockopt()");
-
-	if (bind(fd, (struct sockaddr *) &un,
-	    sizeof(struct sockaddr_un)) == -1)
-		err(EXIT_FAILURE, "bind()");
+	if (kld_load("mqueuefs") == 0 && errno != EEXIST) {
+		err(EXIT_FAILURE, "Unable to use POSIX mqueues");
+	}
 
 	if (!foreground && daemon(0, 0) == -1) {
 		pidfile_remove(pfh);
 		err(EXIT_FAILURE, "Cannot daemonize");
 	}
 
-	pidfile_write(pfh);
-	if (listen(fd, 1024) < 0)
-		err(EXIT_FAILURE, "listen()");
+	qserver = mq_open(queuepath, O_RDONLY | O_CREAT, 0666, &attr);
+	signal(SIGINT, close_mq);
+	signal(SIGTERM, close_mq);
+	signal(SIGQUIT, close_mq);
+	signal(SIGKILL, close_mq);
 
-	serve(fd);
+	pidfile_write(pfh);
+	serve();
 }
