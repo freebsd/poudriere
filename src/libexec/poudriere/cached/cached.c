@@ -33,24 +33,42 @@
 #include <libutil.h>
 #include <err.h>
 #include <errno.h>
-#include <uthash.h>
+#include <khash.h>
 #include <mqueue.h>
 #include <fcntl.h>
-
-#define HASH_FIND_OSTR(head,findstr,out)                                          \
-    HASH_FIND(ohh,head,findstr,strlen(findstr),out)
-#define HASH_ADD_OSTR(head,strfield,add)                                          \
-    HASH_ADD(ohh,head,strfield[0],strlen(add->strfield),add)
 
 struct cache {
 	char *name;
 	char *origin;
-	UT_hash_handle hh;
-	UT_hash_handle ohh;
 };
+KHASH_MAP_INIT_STR(namecache, struct cache *);
+KHASH_MAP_INIT_STR(origincache, struct cache *);
 
-static struct cache *namecache = NULL;
-static struct cache *origincache = NULL;
+#define kh_add(name, h, val, k) do {         \
+	int __ret;                                      \
+	khint_t __i;                                    \
+	if (!h) h = kh_init_##name();                   \
+	__i = kh_put_##name(h, k, &__ret);              \
+	if (__ret != 0)                                 \
+		kh_val(h, __i) = val;                   \
+} while (0)
+
+#define kh_find(name, h, k, ret) do {                   \
+	khint_t __k;                                    \
+	ret = NULL;                                     \
+	if (h != NULL) {                                \
+		__k = kh_get(name, h, k);               \
+		if (__k != kh_end(h)) {                 \
+			ret = kh_value(h, __k);         \
+		}                                       \
+	}                                               \
+} while (0)
+
+
+#define kh_contains(name, h, v) ((h)?(kh_get_##name(h, v) != kh_end(h)):false)
+
+static kh_namecache_t *namecache = NULL;
+static kh_origincache_t *origincache = NULL;
 static mqd_t qserver = (mqd_t)-1;
 static const char *queuepath = NULL;
 
@@ -83,19 +101,15 @@ parse_command(char *msg)
 		}
 		origin[0] = '\0';
 		origin++;
-		HASH_FIND_STR(namecache, name, c);
-		if (c != NULL) {
+		if (kh_contains(namecache, namecache, name))
 			return;
-		}
-		HASH_FIND_OSTR(origincache, origin, c);
-		if (c != NULL) {
+		if (kh_contains(origincache, origincache, origin))
 			return;
-		}
 		c = malloc(sizeof(struct cache));
 		c->name = strdup(name);
 		c->origin = strdup(origin);
-		HASH_ADD_STR(namecache, name, c);
-		HASH_ADD_OSTR(origincache, origin, c);
+		kh_add(namecache, namecache, c, c->name);
+		kh_add(origincache, origincache, c, c->origin);
 		return;
 	}
 
@@ -113,14 +127,14 @@ parse_command(char *msg)
 
 	pattern = buf + 4;
 	if (strchr(buf, '/') != NULL) {
-		HASH_FIND_OSTR(origincache, pattern, c);
+		kh_find(origincache, origincache, pattern, c);
 		if (c != NULL) {
 			mq_send(qclient, c->name, strlen(c->name), 0);
 		} else {
 			mq_send(qclient, "", 0, 0);
 		}
 	} else {
-		HASH_FIND_STR(namecache, pattern, c);
+		kh_find(namecache, namecache, pattern, c);
 		if (c != NULL)
 			mq_send(qclient, c->origin, strlen(c->origin), 0);
 		else

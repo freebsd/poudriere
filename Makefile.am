@@ -215,7 +215,7 @@ rexec_CFLAGS=	-I$(top_srcdir)/external/libnv/sys
 rexec_LDADD=	libnv.a
 
 cached_SOURCES=	src/libexec/poudriere/cached/cached.c
-cached_CFLAGS=	-I$(top_srcdir)/external/uthash
+cached_CFLAGS=	-I$(top_srcdir)/external/klib
 cached_LDADD=	-lutil -lrt
 
 cachec_SOURCES=	src/libexec/poudriere/cachec/cachec.c
