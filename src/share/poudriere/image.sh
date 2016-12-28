@@ -65,7 +65,11 @@ cleanup_image() {
 while getopts "o:j:p:z:n:t:X:f:c:h:s:" FLAG; do
 	case "${FLAG}" in
 		o)
-			OUTPUTDIR=$(realpath ${OPTARG})
+			# If this is a relative path, add in ${PWD} as
+			# a cd / was done.
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			    OPTARG="${SAVED_PWD}/${OPTARG}"
+			OUTPUTDIR=${OPTARG}
 			;;
 		j)
 			JAILNAME=${OPTARG}
@@ -99,8 +103,12 @@ while getopts "o:j:p:z:n:t:X:f:c:h:s:" FLAG; do
 			IMAGESIZE="${OPTARG}"
 			;;
 		f)
+			# If this is a relative path, add in ${PWD} as
+			# a cd / was done.
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			[ -f "${OPTARG}" ] || err 1 "No such package list: ${OPTARG}"
-			PACKAGELIST=$(realpath ${OPTARG})
+			PACKAGELIST=${OPTARG}
 			;;
 		c)
 			[ -d "${OPTARG}" ] || err 1 "No such extract directory: ${OPTARG}"
