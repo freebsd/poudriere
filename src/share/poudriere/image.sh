@@ -254,7 +254,7 @@ case ${MEDIATYPE} in
 	tmpfs /tmp tmpfs rw,mode=1777 0 0
 	EOF
 	makefs -B little ${IMAGESIZE:+-s ${IMAGESIZE}} -o label=${IMAGENAME} ${WRKDIR}/out/mfsroot ${WRKDIR}/world
-	if which -s pigz; then
+	if command -v pigz >/dev/null; then
 		GZCMD=pigz
 	fi
 	case "${MEDIATYPE}" in

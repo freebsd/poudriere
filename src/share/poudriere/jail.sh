@@ -301,7 +301,7 @@ setup_build_env() {
 	hostver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' /usr/include/sys/param.h)
 	MAKE_CMD=make
 	if [ ${hostver} -gt 1000000 -a ${JAIL_OSVERSION} -lt 1000000 ]; then
-		FMAKE=$(which fmake 2>/dev/null)
+		FMAKE=$(command -v fmake 2>/dev/null)
 		[ -n "${FMAKE}" ] ||
 			err 1 "You need fmake installed on the host: devel/fmake"
 		MAKE_CMD=${FMAKE}
