@@ -110,7 +110,7 @@ post_getopts
 export PORTSDIR=`pget ${PTNAME} mnt`
 [ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 [ -z "${PORTSDIR}" ] && err 1 "No such ports tree: ${PTNAME}"
-which dialog4ports >/dev/null 2>&1 || err 1 "You must have ports-mgmt/dialog4ports installed on the host to use this command."
+command -v dialog4ports >/dev/null 2>&1 || err 1 "You must have ports-mgmt/dialog4ports installed on the host to use this command."
 
 if [ $# -eq 0 ]; then
 	[ -n "${BULK_LIST}" ] || err 1 "No packages specified"

@@ -118,7 +118,8 @@ pkglibexec_PROGRAMS= \
 		     tsort \
 		     jexecd \
 		     rexec \
-		     cached
+		     cached \
+		     cachec
 EXTRA_PROGRAMS= \
 		sh
 
@@ -214,8 +215,11 @@ rexec_CFLAGS=	-I$(top_srcdir)/external/libnv/sys
 rexec_LDADD=	libnv.a
 
 cached_SOURCES=	src/libexec/poudriere/cached/cached.c
-cached_CFLAGS=	-I$(top_srcdir)/external/uthash
-cached_LDADD=	-lutil
+cached_CFLAGS=	-I$(top_srcdir)/external/klib
+cached_LDADD=	-lutil -lrt
+
+cachec_SOURCES=	src/libexec/poudriere/cachec/cachec.c
+cachec_LDADD=	-lrt
 
 .PHONY:	gen-make-wiki
 gen-man-wiki:

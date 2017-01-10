@@ -65,6 +65,10 @@ cleanup_image() {
 while getopts "o:j:p:z:n:t:X:f:c:h:s:" FLAG; do
 	case "${FLAG}" in
 		o)
+			# If this is a relative path, add in ${PWD} as
+			# a cd / was done.
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			OUTPUTDIR=${OPTARG}
 			;;
 		j)
@@ -99,8 +103,12 @@ while getopts "o:j:p:z:n:t:X:f:c:h:s:" FLAG; do
 			IMAGESIZE="${OPTARG}"
 			;;
 		f)
+			# If this is a relative path, add in ${PWD} as
+			# a cd / was done.
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			[ -f "${OPTARG}" ] || err 1 "No such package list: ${OPTARG}"
-			PACKAGELIST=$(realpath ${OPTARG})
+			PACKAGELIST=${OPTARG}
 			;;
 		c)
 			[ -d "${OPTARG}" ] || err 1 "No such extract directory: ${OPTARG}"
@@ -246,7 +254,7 @@ case ${MEDIATYPE} in
 	tmpfs /tmp tmpfs rw,mode=1777 0 0
 	EOF
 	makefs -B little ${IMAGESIZE:+-s ${IMAGESIZE}} -o label=${IMAGENAME} ${WRKDIR}/out/mfsroot ${WRKDIR}/world
-	if which -s pigz; then
+	if command -v pigz >/dev/null; then
 		GZCMD=pigz
 	fi
 	case "${MEDIATYPE}" in

@@ -1754,7 +1754,7 @@ jail_start() {
 	if [ ${USE_CACHED} = "yes" ]; then
 		export CACHESOCK=${MASTERMNT%/ref}/cache.sock
 		export CACHEPID=${MASTERMNT%/ref}/cache.pid
-		cached -s ${CACHESOCK} -p ${CACHEPID} -n ${MASTERNAME}
+		cached -s /${MASTERNAME} -p ${CACHEPID} -n ${MASTERNAME}
 	fi
 	clonefs ${mnt} ${tomnt} clean
 	echo " done"
@@ -3806,7 +3806,7 @@ cache_get_pkgname() {
 	local cache_pkgname_origin
 
 	if [ ${USE_CACHED} = "yes" ]; then
-		_pkgname=$(write_usock ${CACHESOCK} get ${origin})
+		_pkgname=$(cachec -s /${MASTERNAME} "get ${origin}")
 	else
 		[ -f ${cache_origin_pkgname} ] && read_line _pkgname "${cache_origin_pkgname}"
 	fi
@@ -3830,7 +3830,7 @@ cache_get_pkgname() {
 			[ -n "${existing_origin}" ] &&
 				err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${origin}${COLOR_RESET} AND ${COLOR_PORT}${existing_origin}${COLOR_RESET}. Rerun with -vv to see which ports are depending on these."
 			if [ ${USE_CACHED} = "yes" ]; then
-				write_usock ${CACHESOCK} set ${_pkgname} ${origin}
+				cachec -s /${MASTERNAME} "set ${_pkgname} ${origin}"
 			else
 				echo "${_pkgname}" > ${cache_origin_pkgname}
 				cache_pkgname_origin="${MASTERMNT}/.p/var/cache/pkgname-origin/${_pkgname}"
@@ -3850,7 +3850,7 @@ cache_get_origin() {
 	local _origin
 
 	if [ ${USE_CACHED} = "yes" ]; then
-		_origin=$(write_usock ${CACHESOCK} get ${pkgname})
+		_origin=$(cachec /${MASTERNAME} "get ${pkgname}")
 	else
 		read_line _origin "${cache_pkgname_origin%/}"
 	fi

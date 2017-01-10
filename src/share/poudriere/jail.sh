@@ -41,6 +41,7 @@ Parameters:
     -r newname    -- Rename a jail
 
 Options:
+    -b            -- Build the OS (for use with -m src)
     -q            -- Quiet (Do not print the header)
     -n            -- Print only jail name (for use with -l)
     -J n          -- Run buildworld in parallel with n jobs.
@@ -300,7 +301,7 @@ setup_build_env() {
 	hostver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' /usr/include/sys/param.h)
 	MAKE_CMD=make
 	if [ ${hostver} -gt 1000000 -a ${JAIL_OSVERSION} -lt 1000000 ]; then
-		FMAKE=$(which fmake 2>/dev/null)
+		FMAKE=$(command -v fmake 2>/dev/null)
 		[ -n "${FMAKE}" ] ||
 			err 1 "You need fmake installed on the host: devel/fmake"
 		MAKE_CMD=${FMAKE}
@@ -433,7 +434,11 @@ install_from_src() {
 	echo " done"
 
 	setup_build_env
-	installworld
+	if [ ${BUILD} -eq 0 ]; then
+		installworld
+	else
+		build_and_install_world
+	fi
 }
 
 install_from_vcs() {
@@ -867,9 +872,13 @@ UPDATE=0
 PTNAME=default
 SETNAME=""
 XDEV=0
+BUILD=0
 
-while getopts "iJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:x" FLAG; do
+while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:x" FLAG; do
 	case "${FLAG}" in
+		b)
+			BUILD=1
+			;;
 		i)
 			INFO=1
 			;;

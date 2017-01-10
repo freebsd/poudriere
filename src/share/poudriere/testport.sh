@@ -164,7 +164,7 @@ export POUDRIERE_BUILD_TYPE=bulk
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
 if [ $CONFIGSTR -eq 1 ]; then
-	which dialog4ports >/dev/null 2>&1 || err 1 "You must have ports-mgmt/dialog4ports installed on the host to use -c."
+	command -v dialog4ports >/dev/null 2>&1 || err 1 "You must have ports-mgmt/dialog4ports installed on the host to use -c."
 	export PORTSDIR=${portsdir} \
 		PORT_DBDIR=${MASTERMNT}/var/db/ports \
 		TERM=${SAVED_TERM}
@@ -208,7 +208,7 @@ PKGNAME=`injail /usr/bin/make -C /usr/ports/${ORIGIN} -VPKGNAME`
 LOCALBASE=`injail /usr/bin/make -C /usr/ports/${ORIGIN} -VLOCALBASE`
 : ${PREFIX:=$(injail /usr/bin/make -C /usr/ports/${ORIGIN} -VPREFIX)}
 if [ "${USE_PORTLINT}" = "yes" ]; then
-	[ ! -x `which portlint` ] &&
+	[ ! -x `command -v portlint` ] &&
 		err 2 "First install portlint if you want USE_PORTLINT to work as expected"
 	msg "Portlint check"
 	set +e
