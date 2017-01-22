@@ -1795,6 +1795,10 @@ jail_start() {
 		msg "Copying latest version of the emulator from: ${EMULATOR}"
 		mkdir -p "${tomnt}${EMULATOR%/*}"
 		cp -f "${EMULATOR}" "${tomnt}${EMULATOR}"
+		# Copy in the latest version of pkg-static
+		msg "Copying latest version of pkg-static from: ${LOCALBASE:-/usr/local}/sbin/pkg-static"
+		cp -f "${LOCALBASE:-/usr/local}/sbin/pkg-static" "${tomnt}/usr/sbin/pkg-static"
+		echo "PKG_BIN=/usr/sbin/pkg-static" >> "${tomnt}/etc/make.conf" 
 	fi
 	# Handle special ARM64 needs
 	if [ "${arch#*.}" = "aarch64" ] && ! [ -f "${tomnt}/usr/bin/ld" ]; then
