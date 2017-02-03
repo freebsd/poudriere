@@ -293,9 +293,10 @@ Here are the options associated with the
 command.
 .Bl -tag -width "-f conffile"
 .It Fl J Ar number
-This argument specifies how many
+The
 .Ar number
-jobs will run in parallel for buildworld.
+of make jobs will run in parallel for buildworld.
+Defaults to the number of CPUs reported by:  sysctl hw.ncpu.
 .It Fl q
 Remove the header when
 .Fl l
