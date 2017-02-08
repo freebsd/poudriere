@@ -2256,6 +2256,7 @@ _real_build_port() {
 	targets="check-sanity pkg-depends fetch-depends fetch checksum \
 		  extract-depends extract patch-depends patch build-depends \
 		  lib-depends configure build ${install_order} \
+		  ${PORTTESTING:+test} \
 		  ${PORTTESTING:+deinstall}"
 
 	# If not testing, then avoid rechecking deps in build/install;
