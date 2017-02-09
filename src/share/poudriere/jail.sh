@@ -287,7 +287,7 @@ installworld() {
 	if [ -n "${KERNEL}" ]; then
 		msg "Starting make installkernel"
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} installkernel \
-		    DESTDIR=${destdir} || \
+		    KERNCONF=${KERNEL} DESTDIR=${destdir} || \
 		    err 1 "Failed to 'make installkernel'"
 	fi
 
