@@ -4890,7 +4890,7 @@ fi
 : ${BUILDNAME:=$(date +${BUILDNAME_FORMAT})}
 
 if [ -n "${MAX_MEMORY}" ]; then
-	MAX_MEMORY_BYTES="$((${MAX_MEMORY} * 1024 * 1024 * 1024))"
+	MAX_MEMORY_BYTES=`bc -e "${MAX_MEMORY} * 1024 * 1024 * 1024" -e quit`
 	MAX_MEMORY_JEXEC="/usr/bin/limits -v ${MAX_MEMORY_BYTES}"
 fi
 
