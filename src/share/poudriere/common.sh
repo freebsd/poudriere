@@ -347,8 +347,32 @@ jstart() {
 	fi
 }
 
-jkill() {
+jail_has_processes() {
+	local pscnt
+
+	# 2 = HEADER+ps itself
+	pscnt=2
+	[ "${USE_JEXECD}" = "yes" ] && pscnt=4
+	# Cannot use ps -J here as not all versions support it.
+	if [ $(injail ps aux | wc -l) -ne ${pscnt} ]; then
+		return 0
+	fi
+	return 1
+}
+
+jkill_wait() {
 	injail kill -9 -1 2>/dev/null || :
+	while jail_has_processes; do
+		sleep 1
+		injail kill -9 -1 2>/dev/null || :
+	done
+}
+
+# Kill everything in the jail and ensure it is free of any processes
+# before returning.
+jkill() {
+	jkill_wait
+	JNETNAME="n" jkill_wait
 }
 
 jstop() {
@@ -3221,7 +3245,7 @@ stop_build() {
 	local pkgname="$1"
 	local origin="$2"
 	local build_failed="$3"
-	local mnt pscnt
+	local mnt
 
 	if [ -n "${MY_JOBID}" ]; then
 		_my_path mnt
@@ -3232,11 +3256,7 @@ stop_build() {
 		fi
 		rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
 
-		# 2 = HEADER+ps itself
-		pscnt=2
-		# 4 = HEADER+jexecd+reaper+ps itself
-		[ "${USE_JEXECD}" = "yes" ] && pscnt=4
-		if [ $(injail ps aux | wc -l) -ne ${pscnt} ]; then
+		if jail_has_processes; then
 			msg_warn "Leftover processes:"
 			injail ps auxwwd | egrep -v '(ps auxwwd|jexecd)'
 		fi
