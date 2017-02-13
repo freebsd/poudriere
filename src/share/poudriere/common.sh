@@ -323,8 +323,31 @@ jstart() {
 	fi
 }
 
-jkill() {
+jail_has_processes() {
+	local pscnt
+
+	# 2 = HEADER+ps itself
+	pscnt=2
+	# Cannot use ps -J here as not all versions support it.
+	if [ $(injail ps aux | wc -l) -ne ${pscnt} ]; then
+		return 0
+	fi
+	return 1
+}
+
+jkill_wait() {
 	injail kill -9 -1 2>/dev/null || :
+	while jail_has_processes; do
+		sleep 1
+		injail kill -9 -1 2>/dev/null || :
+	done
+}
+
+# Kill everything in the jail and ensure it is free of any processes
+# before returning.
+jkill() {
+	jkill_wait
+	JNETNAME="n" jkill_wait
 }
 
 jstop() {
@@ -3207,8 +3230,7 @@ stop_build() {
 		fi
 		rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
 
-		# 2 = HEADER+ps itself
-		if [ $(injail ps aux | wc -l) -ne 2 ]; then
+		if jail_has_processes; then
 			msg_warn "Leftover processes:"
 			injail ps auxwwd | grep -v 'ps auxwwd'
 		fi
