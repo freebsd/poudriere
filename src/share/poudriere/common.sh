@@ -3251,6 +3251,10 @@ stop_build() {
 			msg_warn "Leftover processes:"
 			injail ps auxwwd | grep -v 'ps auxwwd'
 		fi
+		if JNETNAME="n" jail_has_processes; then
+			msg_warn "Leftover processes (network jail):"
+			JNETNAME="n" injail ps auxwwd | egrep -v '(ps auxwwd|jexecd)'
+		fi
 
 		# Always kill to avoid missing anything
 		jkill
