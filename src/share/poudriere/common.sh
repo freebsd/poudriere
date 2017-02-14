@@ -846,6 +846,9 @@ exit_handler() {
 	fi
 
 	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
+
+	rm -f /tmp/.poudriere-lock-$$-*.flock 2>/dev/null || :
+	rmdir /tmp/.poudriere-lock-$$-* 2>/dev/null || :
 }
 
 build_url() {
@@ -2043,9 +2046,6 @@ cleanup() {
 		    2>/dev/null || :
 
 	fi
-
-	rm -f /tmp/.poudriere-lock-$$-*.flock 2>/dev/null || :
-	rmdir /tmp/.poudriere-lock-$$-* 2>/dev/null || :
 
 	export CLEANED_UP=1
 }
