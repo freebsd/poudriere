@@ -194,7 +194,8 @@ update_jail() {
 		MASTERMNT=${JAILMNT}
 		MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
-		do_jail_mounts "${JAILMNT}" "${JAILMNT}" "${ARCH}" "${JAILNAME}"
+		MUTABLE_BASE=yes do_jail_mounts "${JAILMNT}" "${JAILMNT}" \
+		    "${ARCH}" "${JAILNAME}"
 		JNETNAME="n"
 		jstart
 		# Fix freebsd-update to not check for TTY and to allow
