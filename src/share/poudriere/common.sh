@@ -839,7 +839,7 @@ exit_handler() {
 		coprocess_stop pkg_cacher
 	fi
 
-	[ ${STATUS} -eq 1 ] && cleanup
+	[ ${STATUS} -eq 1 ] && jail_cleanup
 
 	if was_a_bulk_run; then
 		coprocess_stop html_json
@@ -2011,7 +2011,7 @@ jail_stop() {
 	    2>/dev/null || :
 }
 
-cleanup() {
+jail_cleanup() {
 	local wait_pids
 
 	[ -n "${CLEANED_UP}" ] && return 0
@@ -3143,7 +3143,7 @@ build_pkg() {
 	trap '' SIGTSTP
 	[ -n "${MAX_MEMORY}" ] && ulimit -v ${MAX_MEMORY_BYTES}
 
-	export PKGNAME="${pkgname}" # set ASAP so cleanup() can use it
+	export PKGNAME="${pkgname}" # set ASAP so jail_cleanup() can use it
 	cache_get_origin port "${pkgname}"
 	portdir="/usr/ports/${port}"
 
