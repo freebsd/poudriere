@@ -1963,13 +1963,7 @@ jail_stop() {
 	run_hook jail stop
 
 	jstop || :
-	# Shutdown all builders
-	if [ ${PARALLEL_JOBS} -ne 0 ]; then
-		# - here to only check for unset, {start,stop}_builders will set this to blank if already stopped
-		for j in ${JOBS-$(jot -w %02d ${PARALLEL_JOBS})}; do
-			stop_builder "${j}" || :
-		done
-	fi
+	stop_builders >/dev/null || :
 	msg "Umounting file systems"
 	destroyfs ${MASTERMNT} jail || :
 	rm -rfx ${MASTERMNT}/../
@@ -2694,18 +2688,18 @@ stop_builder() {
 }
 
 stop_builders() {
-	local mnt
-
 	# wait for the last running processes
 	cat ${MASTERMNT}/.p/var/run/*.pid 2>/dev/null | xargs pwait 2>/dev/null
 
-	msg "Stopping ${PARALLEL_JOBS} builders"
+	if [ ${PARALLEL_JOBS} -ne 0 ]; then
+		msg "Stopping ${PARALLEL_JOBS} builders"
 
-	parallel_start
-	for j in ${JOBS}; do
-		parallel_run stop_builder "${j}"
-	done
-	parallel_stop
+		parallel_start
+		for j in ${JOBS-$(jot -w %02d ${PARALLEL_JOBS})}; do
+			parallel_run stop_builder "${j}"
+		done
+		parallel_stop
+	fi
 
 	# No builders running, unset JOBS
 	JOBS=""
