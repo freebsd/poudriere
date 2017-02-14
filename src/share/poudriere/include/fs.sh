@@ -85,7 +85,7 @@ umountfs() {
 	mount | sort -r -k 2 | while read dev on pt opts; do
 		case ${pt} in
 		${mnt}${pattern}*)
-			if ! umount "${pt}"; then
+			if ! umount -n "${pt}"; then
 				umount -f "${pt}" 2>/dev/null || :
 			fi
 			[ "${dev#/dev/md*}" != "${dev}" ] && mdconfig -d -u ${dev#/dev/md*}
@@ -189,7 +189,7 @@ destroyfs() {
 	umountfs ${mnt} 1
 	if [ ${TMPFS_ALL} -eq 1 ]; then
 		if [ -d "${mnt}" ]; then
-			if ! umount "${mnt}" 2>/dev/null; then
+			if ! umount -n "${mnt}" 2>/dev/null; then
 				umount -f "${mnt}" 2>/dev/null || :
 			fi
 		fi

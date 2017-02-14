@@ -3137,7 +3137,7 @@ build_pkg() {
 
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
 		if [ -f "${mnt}/${LOCALBASE:-/usr/local}/.mounted" ]; then
-			umount ${mnt}/${LOCALBASE:-/usr/local}
+			umount -n ${mnt}/${LOCALBASE:-/usr/local}
 		fi
 		mnt_tmpfs localbase ${mnt}/${LOCALBASE:-/usr/local}
 		do_clone "${MASTERMNT}/${LOCALBASE:-/usr/local}" \
@@ -3242,7 +3242,7 @@ stop_build() {
 		_my_path mnt
 
 		if [ -f "${mnt}/.npkg_mounted" ]; then
-			umount "${mnt}/.npkg"
+			umount -n "${mnt}/.npkg"
 			rm -f "${mnt}/.npkg_mounted"
 		fi
 		rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
@@ -4544,7 +4544,7 @@ clean_restricted() {
 	bset status "clean_restricted:"
 	# Remount rw
 	# mount_nullfs does not support mount -u
-	umount ${MASTERMNT}/packages
+	umount -n ${MASTERMNT}/packages
 	mount_packages
 	injail /usr/bin/make -s -C /usr/ports -j ${PARALLEL_JOBS} \
 	    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
@@ -4558,7 +4558,7 @@ clean_restricted() {
 		delete_stale_symlinks_and_empty_dirs
 	fi
 	# Remount ro
-	umount ${MASTERMNT}/packages
+	umount -n ${MASTERMNT}/packages
 	mount_packages -o ro
 }
 
