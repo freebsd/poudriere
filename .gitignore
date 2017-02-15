@@ -16,12 +16,14 @@
 /dirwatch
 /libnv.a
 /libucl.a
+/libptsort.a
 /locked_mkdir
 /jexecd
 /make_index
 /nc
 /poudriered
 /poudriere_statsd
+/ptsort
 /rename
 /rexec
 /sh
