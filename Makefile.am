@@ -117,13 +117,14 @@ pkglibexec_PROGRAMS= \
 		     timestamp \
 		     tsort \
 		     jexecd \
+		     ptsort \
 		     rexec \
 		     cached \
 		     cachec
 EXTRA_PROGRAMS= \
 		sh
 
-noinst_LIBRARIES=	libucl.a libnv.a
+noinst_LIBRARIES=	libucl.a libnv.a libptsort.a
 
 AUTOMAKE_OPTIONS=	subdir-objects
 
@@ -191,6 +192,14 @@ libucl_a_CFLAGS=	-I$(top_srcdir)/external/libucl/uthash \
 			-I$(top_srcdir)/external/libucl/include  \
 			-I$(top_srcdir)/external/libucl/src \
 			-Wno-unused-parameter -Wno-pointer-sign
+
+libptsort_a_SOURCES=	external/ptsort/lib/aa_tree.c \
+			external/ptsort/lib/fline.c \
+libptsort_a_CPPFLAGS=	-I$(top_srcdir)/external/ptsort/lib
+ptsort_SOURCES=		external/ptsort/bin/ptsort.c
+ptsort_LDADD=		libptsort.a
+ptsort_CPPFLAGS=	-I$(top_srcdir)/external/ptsort/lib
+
 libnv_a_CFLAGS=		-isystem $(top_srcdir)/external/libnv/ -std=gnu99
 libnv_a_SOURCES=	external/libnv/sys/dnvlist.c \
 			external/libnv/msgio.c \
