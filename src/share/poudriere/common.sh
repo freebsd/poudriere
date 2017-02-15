@@ -2716,7 +2716,7 @@ stop_builders() {
 	JOBS=""
 }
 
-deadlock_detected() {
+sanity_check_queue() {
 	local always_fail=${1:-1}
 	local crashed_packages dependency_cycles deps pkgname origin
 	local failed_phase pwd
@@ -2901,13 +2901,13 @@ build_queue() {
 				# FALLTHROUGH
 			else
 				# All work is done
-				deadlock_detected 0
+				sanity_check_queue 0
 				break
 			fi
 		fi
 
 		# If builders are idle then there is a problem.
-		[ ${builders_active} -eq 1 ] || deadlock_detected
+		[ ${builders_active} -eq 1 ] || sanity_check_queue
 
 		# Wait for an event from a child. All builders are busy.
 		unset jobid; until trappedinfo=; read -t ${timeout} jobid <&6 ||
@@ -4379,7 +4379,7 @@ prepare_ports() {
 	clean_build_queue
 
 	# Call the deadlock code as non-fatal which will check for cycles
-	deadlock_detected 0
+	sanity_check_queue 0
 
 	if was_a_bulk_run && [ $resuming_build -eq 0 ]; then
 		nbq=0
