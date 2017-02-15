@@ -94,7 +94,7 @@ pkglibexec_PROGRAMS = clock_monotonic$(EXEEXT) cpdup$(EXEEXT) \
 	dirempty$(EXEEXT) dirwatch$(EXEEXT) nc$(EXEEXT) \
 	poudriered$(EXEEXT) rename$(EXEEXT) locked_mkdir$(EXEEXT) @SH@ \
 	timeout$(EXEEXT) timestamp$(EXEEXT) tsort$(EXEEXT) \
-	jexecd$(EXEEXT) rexec$(EXEEXT)
+	jexecd$(EXEEXT) ptsort$(EXEEXT) rexec$(EXEEXT)
 EXTRA_PROGRAMS = sh$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -128,6 +128,11 @@ am_libnv_a_OBJECTS = external/libnv/dnvlist.$(OBJEXT) \
 	external/libnv/msgio.$(OBJEXT) external/libnv/nvlist.$(OBJEXT) \
 	external/libnv/nvpair.$(OBJEXT)
 libnv_a_OBJECTS = $(am_libnv_a_OBJECTS)
+libptsort_a_AR = $(AR) $(ARFLAGS)
+libptsort_a_LIBADD =
+am_libptsort_a_OBJECTS = external/ptsort/lib/aa_tree.$(OBJEXT) \
+	external/ptsort/lib/fline.$(OBJEXT)
+libptsort_a_OBJECTS = $(am_libptsort_a_OBJECTS)
 libucl_a_AR = $(AR) $(ARFLAGS)
 libucl_a_LIBADD =
 am_libucl_a_OBJECTS =  \
@@ -189,6 +194,9 @@ poudriered_OBJECTS = $(am_poudriered_OBJECTS)
 poudriered_DEPENDENCIES = libucl.a
 poudriered_LINK = $(CCLD) $(poudriered_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
+am_ptsort_OBJECTS = external/ptsort/bin/ptsort-ptsort.$(OBJEXT)
+ptsort_OBJECTS = $(am_ptsort_OBJECTS)
+ptsort_DEPENDENCIES = libptsort.a
 am_rename_OBJECTS = src/libexec/poudriere/rename/rename.$(OBJEXT)
 rename_OBJECTS = $(am_rename_OBJECTS)
 rename_LDADD = $(LDADD)
@@ -294,18 +302,20 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libnv_a_SOURCES) $(libucl_a_SOURCES) \
-	$(clock_monotonic_SOURCES) $(cpdup_SOURCES) \
-	$(dirempty_SOURCES) $(dirwatch_SOURCES) $(jexecd_SOURCES) \
-	$(locked_mkdir_SOURCES) $(nc_SOURCES) $(poudriered_SOURCES) \
-	$(rename_SOURCES) $(rexec_SOURCES) $(sh_SOURCES) \
-	$(timeout_SOURCES) $(timestamp_SOURCES) $(tsort_SOURCES)
-DIST_SOURCES = $(libnv_a_SOURCES) $(libucl_a_SOURCES) \
-	$(clock_monotonic_SOURCES) $(cpdup_SOURCES) \
-	$(dirempty_SOURCES) $(dirwatch_SOURCES) $(jexecd_SOURCES) \
-	$(locked_mkdir_SOURCES) $(nc_SOURCES) $(poudriered_SOURCES) \
-	$(rename_SOURCES) $(rexec_SOURCES) $(sh_SOURCES) \
-	$(timeout_SOURCES) $(timestamp_SOURCES) $(tsort_SOURCES)
+SOURCES = $(libnv_a_SOURCES) $(libptsort_a_SOURCES) \
+	$(libucl_a_SOURCES) $(clock_monotonic_SOURCES) \
+	$(cpdup_SOURCES) $(dirempty_SOURCES) $(dirwatch_SOURCES) \
+	$(jexecd_SOURCES) $(locked_mkdir_SOURCES) $(nc_SOURCES) \
+	$(poudriered_SOURCES) $(ptsort_SOURCES) $(rename_SOURCES) \
+	$(rexec_SOURCES) $(sh_SOURCES) $(timeout_SOURCES) \
+	$(timestamp_SOURCES) $(tsort_SOURCES)
+DIST_SOURCES = $(libnv_a_SOURCES) $(libptsort_a_SOURCES) \
+	$(libucl_a_SOURCES) $(clock_monotonic_SOURCES) \
+	$(cpdup_SOURCES) $(dirempty_SOURCES) $(dirwatch_SOURCES) \
+	$(jexecd_SOURCES) $(locked_mkdir_SOURCES) $(nc_SOURCES) \
+	$(poudriered_SOURCES) $(ptsort_SOURCES) $(rename_SOURCES) \
+	$(rexec_SOURCES) $(sh_SOURCES) $(timeout_SOURCES) \
+	$(timestamp_SOURCES) $(tsort_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -553,7 +563,7 @@ dist_dtimages_DATA = src/share/poudriere/html/assets/DataTables-1.10.0/images/ba
 			src/share/poudriere/html/assets/DataTables-1.10.0/images/sort_desc_disabled.png
 
 dist_rc_SCRIPTS = src/etc/rc.d/poudriered
-noinst_LIBRARIES = libucl.a libnv.a
+noinst_LIBRARIES = libucl.a libnv.a libptsort.a
 AUTOMAKE_OPTIONS = subdir-objects
 rename_SOURCES = src/libexec/poudriere/rename/rename.c
 clock_monotonic_SOURCES = src/libexec/poudriere/clock_monotonic/clock_monotonic.c
@@ -623,6 +633,13 @@ libucl_a_CFLAGS = -I$(top_srcdir)/external/libucl/uthash \
 			-I$(top_srcdir)/external/libucl/src \
 			-Wno-unused-parameter -Wno-pointer-sign
 
+libptsort_a_SOURCES = external/ptsort/lib/aa_tree.c \
+			external/ptsort/lib/fline.c \
+libptsort_a_CPPFLAGS=	-I$(top_srcdir)/external/ptsort/lib
+
+ptsort_SOURCES = external/ptsort/bin/ptsort.c
+ptsort_LDADD = libptsort.a
+ptsort_CPPFLAGS = -I$(top_srcdir)/external/ptsort/lib
 libnv_a_SOURCES = external/libnv/dnvlist.c \
 			external/libnv/msgio.c \
 			external/libnv/nvlist.c \
@@ -722,6 +739,23 @@ libnv.a: $(libnv_a_OBJECTS) $(libnv_a_DEPENDENCIES) $(EXTRA_libnv_a_DEPENDENCIES
 	$(AM_V_at)-rm -f libnv.a
 	$(AM_V_AR)$(libnv_a_AR) libnv.a $(libnv_a_OBJECTS) $(libnv_a_LIBADD)
 	$(AM_V_at)$(RANLIB) libnv.a
+external/ptsort/lib/$(am__dirstamp):
+	@$(MKDIR_P) external/ptsort/lib
+	@: > external/ptsort/lib/$(am__dirstamp)
+external/ptsort/lib/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/ptsort/lib/$(DEPDIR)
+	@: > external/ptsort/lib/$(DEPDIR)/$(am__dirstamp)
+external/ptsort/lib/aa_tree.$(OBJEXT):  \
+	external/ptsort/lib/$(am__dirstamp) \
+	external/ptsort/lib/$(DEPDIR)/$(am__dirstamp)
+external/ptsort/lib/fline.$(OBJEXT):  \
+	external/ptsort/lib/$(am__dirstamp) \
+	external/ptsort/lib/$(DEPDIR)/$(am__dirstamp)
+
+libptsort.a: $(libptsort_a_OBJECTS) $(libptsort_a_DEPENDENCIES) $(EXTRA_libptsort_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libptsort.a
+	$(AM_V_AR)$(libptsort_a_AR) libptsort.a $(libptsort_a_OBJECTS) $(libptsort_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libptsort.a
 external/libucl/src/$(am__dirstamp):
 	@$(MKDIR_P) external/libucl/src
 	@: > external/libucl/src/$(am__dirstamp)
@@ -915,6 +949,19 @@ src/poudriered/poudriered-poudriered.$(OBJEXT):  \
 poudriered$(EXEEXT): $(poudriered_OBJECTS) $(poudriered_DEPENDENCIES) $(EXTRA_poudriered_DEPENDENCIES) 
 	@rm -f poudriered$(EXEEXT)
 	$(AM_V_CCLD)$(poudriered_LINK) $(poudriered_OBJECTS) $(poudriered_LDADD) $(LIBS)
+external/ptsort/bin/$(am__dirstamp):
+	@$(MKDIR_P) external/ptsort/bin
+	@: > external/ptsort/bin/$(am__dirstamp)
+external/ptsort/bin/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/ptsort/bin/$(DEPDIR)
+	@: > external/ptsort/bin/$(DEPDIR)/$(am__dirstamp)
+external/ptsort/bin/ptsort-ptsort.$(OBJEXT):  \
+	external/ptsort/bin/$(am__dirstamp) \
+	external/ptsort/bin/$(DEPDIR)/$(am__dirstamp)
+
+ptsort$(EXEEXT): $(ptsort_OBJECTS) $(ptsort_DEPENDENCIES) $(EXTRA_ptsort_DEPENDENCIES) 
+	@rm -f ptsort$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(ptsort_OBJECTS) $(ptsort_LDADD) $(LIBS)
 src/libexec/poudriere/rename/$(am__dirstamp):
 	@$(MKDIR_P) src/libexec/poudriere/rename
 	@: > src/libexec/poudriere/rename/$(am__dirstamp)
@@ -1141,6 +1188,8 @@ mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f external/libnv/*.$(OBJEXT)
 	-rm -f external/libucl/src/*.$(OBJEXT)
+	-rm -f external/ptsort/bin/*.$(OBJEXT)
+	-rm -f external/ptsort/lib/*.$(OBJEXT)
 	-rm -f external/sh/*.$(OBJEXT)
 	-rm -f external/sh/bltin/*.$(OBJEXT)
 	-rm -f external/sh_compat/*.$(OBJEXT)
@@ -1172,6 +1221,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-xxhash.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/lib/$(DEPDIR)/aa_tree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/lib/$(DEPDIR)/fline.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh/$(DEPDIR)/sh-alias.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh/$(DEPDIR)/sh-arith_yacc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh/$(DEPDIR)/sh-arith_yylex.Po@am__quote@
@@ -1447,6 +1499,20 @@ src/poudriered/poudriered-poudriered.obj: src/poudriered/poudriered.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriered/poudriered.c' object='src/poudriered/poudriered-poudriered.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(poudriered_CFLAGS) $(CFLAGS) -c -o src/poudriered/poudriered-poudriered.obj `if test -f 'src/poudriered/poudriered.c'; then $(CYGPATH_W) 'src/poudriered/poudriered.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriered/poudriered.c'; fi`
+
+external/ptsort/bin/ptsort-ptsort.o: external/ptsort/bin/ptsort.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ptsort_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external/ptsort/bin/ptsort-ptsort.o -MD -MP -MF external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Tpo -c -o external/ptsort/bin/ptsort-ptsort.o `test -f 'external/ptsort/bin/ptsort.c' || echo '$(srcdir)/'`external/ptsort/bin/ptsort.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Tpo external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/ptsort/bin/ptsort.c' object='external/ptsort/bin/ptsort-ptsort.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ptsort_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external/ptsort/bin/ptsort-ptsort.o `test -f 'external/ptsort/bin/ptsort.c' || echo '$(srcdir)/'`external/ptsort/bin/ptsort.c
+
+external/ptsort/bin/ptsort-ptsort.obj: external/ptsort/bin/ptsort.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ptsort_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external/ptsort/bin/ptsort-ptsort.obj -MD -MP -MF external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Tpo -c -o external/ptsort/bin/ptsort-ptsort.obj `if test -f 'external/ptsort/bin/ptsort.c'; then $(CYGPATH_W) 'external/ptsort/bin/ptsort.c'; else $(CYGPATH_W) '$(srcdir)/external/ptsort/bin/ptsort.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Tpo external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/ptsort/bin/ptsort.c' object='external/ptsort/bin/ptsort-ptsort.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ptsort_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external/ptsort/bin/ptsort-ptsort.obj `if test -f 'external/ptsort/bin/ptsort.c'; then $(CYGPATH_W) 'external/ptsort/bin/ptsort.c'; else $(CYGPATH_W) '$(srcdir)/external/ptsort/bin/ptsort.c'; fi`
 
 src/libexec/poudriere/rexec/rexec-rexec.o: src/libexec/poudriere/rexec/rexec.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rexec_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/rexec/rexec-rexec.o -MD -MP -MF src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Tpo -c -o src/libexec/poudriere/rexec/rexec-rexec.o `test -f 'src/libexec/poudriere/rexec/rexec.c' || echo '$(srcdir)/'`src/libexec/poudriere/rexec/rexec.c
@@ -2493,6 +2559,10 @@ distclean-generic:
 	-rm -f external/libnv/$(am__dirstamp)
 	-rm -f external/libucl/src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f external/libucl/src/$(am__dirstamp)
+	-rm -f external/ptsort/bin/$(DEPDIR)/$(am__dirstamp)
+	-rm -f external/ptsort/bin/$(am__dirstamp)
+	-rm -f external/ptsort/lib/$(DEPDIR)/$(am__dirstamp)
+	-rm -f external/ptsort/lib/$(am__dirstamp)
 	-rm -f external/sh/$(DEPDIR)/$(am__dirstamp)
 	-rm -f external/sh/$(am__dirstamp)
 	-rm -f external/sh/bltin/$(DEPDIR)/$(am__dirstamp)
@@ -2536,7 +2606,7 @@ clean-am: clean-generic clean-noinstLIBRARIES clean-pkglibexecPROGRAMS \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf external/libnv/$(DEPDIR) external/libucl/src/$(DEPDIR) external/sh/$(DEPDIR) external/sh/bltin/$(DEPDIR) external/sh_compat/$(DEPDIR) src/libexec/poudriere/clock_monotonic/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/locked_mkdir/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
+	-rm -rf external/libnv/$(DEPDIR) external/libucl/src/$(DEPDIR) external/ptsort/bin/$(DEPDIR) external/ptsort/lib/$(DEPDIR) external/sh/$(DEPDIR) external/sh/bltin/$(DEPDIR) external/sh_compat/$(DEPDIR) src/libexec/poudriere/clock_monotonic/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/locked_mkdir/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-tags
@@ -2591,7 +2661,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf external/libnv/$(DEPDIR) external/libucl/src/$(DEPDIR) external/sh/$(DEPDIR) external/sh/bltin/$(DEPDIR) external/sh_compat/$(DEPDIR) src/libexec/poudriere/clock_monotonic/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/locked_mkdir/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
+	-rm -rf external/libnv/$(DEPDIR) external/libucl/src/$(DEPDIR) external/ptsort/bin/$(DEPDIR) external/ptsort/lib/$(DEPDIR) external/sh/$(DEPDIR) external/sh/bltin/$(DEPDIR) external/sh_compat/$(DEPDIR) src/libexec/poudriere/clock_monotonic/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/locked_mkdir/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriered/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
