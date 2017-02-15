@@ -40,3 +40,5 @@ src/etc/rc.d/poudriered
 src/stamp-h1
 test/*.log
 test/etc
+external/ptsort/.git
+external/ptsort/.gitignore

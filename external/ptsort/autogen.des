@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+. ./autogen.sh
+
+./configure \
+	--enable-developer-warnings \
+	--enable-debugging-symbols \
+	--enable-werror \
+	"$@"
