@@ -1208,7 +1208,7 @@ do_jail_mounts() {
 	fi
 
 	# Mount some paths read-only from the ref-jail if possible.
-	nullpaths="/nxb-bin /rescue"
+	nullpaths="/rescue"
 	if [ "${MUTABLE_BASE}" = "no" ]; then
 		# Need to keep /usr/src and /usr/ports on their own.
 		nullpaths="${nullpaths} /usr/bin /usr/include /usr/lib \
