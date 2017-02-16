@@ -1835,6 +1835,14 @@ jail_start() {
 		if [ -f /usr/local/aarch64-freebsd/bin/ld ]; then
 			cp -f /usr/local/aarch64-freebsd/bin/ld \
 			    "${tomnt}/usr/bin/ld"
+			if [ -d "${tomnt}/nxb-bin/usr/bin" ]; then
+				# Create a symlink to satisfy the LD in
+				# make.nxb.conf and because running
+				# /nxb-bin/usr/bin/cc defaults to looking for
+				# /nxb-bin/usr/bin/ld.
+				ln -f "${tomnt}/usr/bin/ld" \
+				    "${tomnt}/nxb-bin/usr/bin/ld"
+			fi
 		else
 			err 1 "Arm64 requires aarch64-binutils to be installed."
 		fi
