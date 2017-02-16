@@ -1833,6 +1833,7 @@ jail_start() {
 	# Handle special ARM64 needs
 	if [ "${arch#*.}" = "aarch64" ] && ! [ -f "${tomnt}/usr/bin/ld" ]; then
 		if [ -f /usr/local/aarch64-freebsd/bin/ld ]; then
+			msg "Copying aarch64-binutils ld from /usr/local/aarch64-freebsd/bin/ld"
 			cp -f /usr/local/aarch64-freebsd/bin/ld \
 			    "${tomnt}/usr/bin/ld"
 			if [ -d "${tomnt}/nxb-bin/usr/bin" ]; then
