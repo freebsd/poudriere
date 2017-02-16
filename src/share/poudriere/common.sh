@@ -4916,7 +4916,7 @@ fi
 : ${TRIM_ORPHANED_BUILD_DEPS:=yes}
 : ${USE_PROCFS:=yes}
 : ${USE_FDESCFS:=yes}
-: ${USE_PTSORT:=yes}
+: ${USE_PTSORT:=no}
 : ${MUTABLE_BASE:=yes}
 
 # Be sure to update poudriere.conf to document the default when changing these
