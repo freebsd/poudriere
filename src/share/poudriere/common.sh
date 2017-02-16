@@ -3989,6 +3989,8 @@ compute_deps_port() {
 	[ ${ALL} -eq 0 ] && echo "${port} ${port}" >> \
 	    ${MASTERMNT}/.p/port_deps.unsorted
 
+	echo "${pkgname}" >> ${MASTERMNT}/.p/all_pkgs
+
 	return 0
 }
 
@@ -4403,27 +4405,19 @@ prepare_ports() {
 	return 0
 }
 
-load_priorities() {
+load_priorities_tsortD() {
 	local priority pkgname pkg_boost boosted origin
 	local - # Keep set -f local
 
-	POOL_BUCKET_DIRS=""
-	if [ ${POOL_BUCKETS} -gt 0 ]; then
-		tsort -D "${MASTERMNT}/.p/pkg_deps" > \
-		    "${MASTERMNT}/.p/pkg_deps.depth"
+	tsort -D "${MASTERMNT}/.p/pkg_deps" > \
+	    "${MASTERMNT}/.p/pkg_deps.depth"
 
-		# Create buckets to satisfy the dependency chains, in reverse
-		# order. Not counting here as there may be boosted priorities
-		# at 99 or other high values.
-		POOL_BUCKET_DIRS=$(awk '{print $1}' \
-		    "${MASTERMNT}/.p/pkg_deps.depth"|sort -run)
+	# Create buckets to satisfy the dependency chains, in reverse
+	# order. Not counting here as there may be boosted priorities
+	# at 99 or other high values.
 
-		# If there are no buckets then everything to build will fall
-		# into 0 as they depend on nothing and nothing depends on them.
-		# I.e., pkg-devel in -ac or testport on something with no deps
-		# needed.
-		[ -z "${POOL_BUCKET_DIRS}" ] && POOL_BUCKET_DIRS="0"
-	fi
+	POOL_BUCKET_DIRS=$(awk '{print $1}' \
+	    "${MASTERMNT}/.p/pkg_deps.depth"|sort -run)
 
 	set -f # for PRIORITY_BOOST
 	boosted=0
@@ -4436,7 +4430,7 @@ load_priorities() {
 					    || continue
 					cache_get_origin origin "${pkgname}"
 					msg "Boosting priority: ${COLOR_PORT}${origin}"
-					priority=99
+					priority=${PRIORITY_BOOST_VALUE}
 					boosted=1
 					break
 					;;
@@ -4445,12 +4439,78 @@ load_priorities() {
 		hash_set "priority" "${pkgname}" ${priority}
 	done < "${MASTERMNT}/.p/pkg_deps.depth"
 
-	# Add 99 into the pool if needed.
-	[ ${boosted} -eq 1 ] && POOL_BUCKET_DIRS="99 ${POOL_BUCKET_DIRS}"
+	# Add ${PRIORITY_BOOST_VALUE} into the pool if needed.
+	[ ${boosted} -eq 1 ] && POOL_BUCKET_DIRS="${PRIORITY_BOOST_VALUE} ${POOL_BUCKET_DIRS}"
+
+	return 0
+}
+
+load_priorities_ptsort() {
+	local priority pkgname pkg_boost origin
+	local - # Keep set -f local
+
+	set -f # for PRIORITY_BOOST
+
+	awk '{print $2 " " $1}' "${MASTERMNT}/.p/pkg_deps" > \
+	    "${MASTERMNT}/.p/pkg_deps.ptsort"
+
+	# Add in boosts before running ptsort
+	while read pkgname; do
+		# Does this pkg have an override?
+		for pkg_boost in ${PRIORITY_BOOST}; do
+			case ${pkgname%-*} in
+				${pkg_boost})
+					[ -d ${MASTERMNT}/.p/deps/${pkgname} ] \
+					    || continue
+					cache_get_origin origin "${pkgname}"
+					msg "Boosting priority: ${COLOR_PORT}${origin}"
+					echo "${pkgname} ${PRIORITY_BOOST_VALUE}" >> \
+					    "${MASTERMNT}/.p/pkg_deps.ptsort"
+					break
+					;;
+			esac
+		done
+	done <<- EOF
+	$(sort -u "${MASTERMNT}/.p/all_pkgs")
+	EOF
+
+	ptsort -p "${MASTERMNT}/.p/pkg_deps.ptsort" > \
+	    "${MASTERMNT}/.p/pkg_deps.priority"
+
+	# Create buckets to satisfy the dependency chain priorities.
+	POOL_BUCKET_DIRS=$(awk '{print $1}' \
+	    "${MASTERMNT}/.p/pkg_deps.priority"|sort -run)
+
+	# Read all priorities into the "priority" hash
+	while read priority pkgname; do
+		hash_set "priority" "${pkgname}" ${priority}
+	done < "${MASTERMNT}/.p/pkg_deps.priority"
+
+	return 0
+}
+
+load_priorities() {
+	POOL_BUCKET_DIRS=""
+
+	if [ ${POOL_BUCKETS} -gt 0 ]; then
+		if [ "${USE_PTSORT}" = "yes" ]; then
+			load_priorities_ptsort
+		else
+			load_priorities_tsortD
+		fi
+	fi
+
+	# If there are no buckets then everything to build will fall
+	# into 0 as they depend on nothing and nothing depends on them.
+	# I.e., pkg-devel in -ac or testport on something with no deps
+	# needed.
+	[ -z "${POOL_BUCKET_DIRS}" ] && POOL_BUCKET_DIRS="0"
 
 	# Create buckets after loading priorities in case of boosts.
 	( cd ${MASTERMNT}/.p/pool && mkdir ${POOL_BUCKET_DIRS} )
 
+	# unbalanced is where everything starts at.  Items are moved in
+	# balance_pool based on their priority in the "priority" hash.
 	POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} unbalanced"
 
 	return 0
@@ -4851,10 +4911,12 @@ fi
 : ${QEMU_EMULATING:=0}
 : ${PORTTESTING_FATAL:=yes}
 : ${PORTTESTING_RECURSIVE:=0}
+: ${PRIORITY_BOOST_VALUE:=99}
 : ${RESTRICT_NETWORKING:=yes}
 : ${TRIM_ORPHANED_BUILD_DEPS:=yes}
 : ${USE_PROCFS:=yes}
 : ${USE_FDESCFS:=yes}
+: ${USE_PTSORT:=yes}
 : ${MUTABLE_BASE:=yes}
 
 # Be sure to update poudriere.conf to document the default when changing these
