@@ -1876,6 +1876,29 @@ jail_start() {
 
 	run_hook jail start
 
+	# Suck in ports environment to avoid redundant fork/exec for each
+	# child.
+	if [ -f "${tomnt}/usr/ports/Mk/Scripts/ports_env.sh" ]; then
+		local make
+
+		if [ -x "${tomnt}/usr/bin/bmake" ]; then
+			make=/usr/bin/bmake
+		else
+			make=/usr/bin/make
+		fi
+		{
+			echo "#### /usr/ports/Mk/Scripts/ports_env.sh ####"
+			injail env \
+			    SCRIPTSDIR=/usr/ports/Mk/Scripts \
+			    PORTSDIR=/usr/ports \
+			    MAKE=${make} \
+			    /bin/sh /usr/ports/Mk/Scripts/ports_env.sh | \
+			    grep '^export [^;&]*' | \
+			    sed -e 's,^export ,,' -e 's,=",=,' -e 's,"$,,'
+			echo "#### Misc Poudriere ####"
+		} >> ${tomnt}/etc/make.conf
+	fi
+
 	WITH_PKGNG=$(injail /usr/bin/make -f /usr/ports/Mk/bsd.port.mk \
 	    -V WITH_PKGNG)
 	if [ -n "${WITH_PKGNG}" ]; then
@@ -3920,29 +3943,6 @@ compute_deps() {
 
 	:> "${MASTERMNT}/.p/port_deps.unsorted"
 	:> "${MASTERMNT}/.p/pkg_deps.unsorted"
-
-	# Suck in ports environment to avoid redundant fork/exec for each
-	# child.
-	if [ -f "${MASTERMNT}/usr/ports/Mk/Scripts/ports_env.sh" ]; then
-		local make
-
-		if [ -x "${MASTERMNT}/usr/bin/bmake" ]; then
-			make=/usr/bin/bmake
-		else
-			make=/usr/bin/make
-		fi
-		{
-			echo "#### /usr/ports/Mk/Scripts/ports_env.sh ####"
-			injail env \
-			    SCRIPTSDIR=/usr/ports/Mk/Scripts \
-			    PORTSDIR=/usr/ports \
-			    MAKE=${make} \
-			    /bin/sh /usr/ports/Mk/Scripts/ports_env.sh | \
-			    grep '^export [^;&]*' | \
-			    sed -e 's,^export ,,' -e 's,=",=,' -e 's,"$,,'
-			echo "#### Misc Poudriere ####"
-		} >> ${MASTERMNT}/etc/make.conf
-	fi
 
 	parallel_start
 	for port in $(listed_ports show_moved); do
