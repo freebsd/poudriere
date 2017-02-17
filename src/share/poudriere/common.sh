@@ -3949,11 +3949,6 @@ compute_deps() {
 	rm -f "${MASTERMNT}/.p/port_deps.unsorted" \
 	    "${MASTERMNT}/.p/pkg_deps.unsorted"
 
-	# Don't leak ports-env UID as it may conflict with BUILD_AS_NON_ROOT
-	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
-		unset UID
-	fi
-
 	return 0
 }
 
@@ -4417,6 +4412,11 @@ prepare_ports() {
 
 	[ -n "${ALLOW_MAKE_JOBS}" ] || echo "DISABLE_MAKE_JOBS=poudriere" \
 	    >> ${MASTERMNT}/etc/make.conf
+	# Don't leak ports-env UID as it conflicts with BUILD_AS_NON_ROOT
+	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
+		sed -i '' '/^UID=0$/d' "${MASTERMNT}/etc/make.conf"
+		unset UID
+	fi
 
 	jget ${JAILNAME} version > ${PACKAGES}/.jailversion
 
