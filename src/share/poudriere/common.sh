@@ -1277,11 +1277,11 @@ enter_interactive() {
 	echo "127.0.0.1 ${MASTERNAME}" >> ${MASTERMNT}/etc/hosts
 
 	# Skip for testport as it has already installed pkg in the ref jail.
-	if [ ${PKGNG} -eq 1 -a "${SCRIPTPATH##*/}" != "testport.sh" ]; then
+	if [ "${SCRIPTPATH##*/}" != "testport.sh" ]; then
 		# Install pkg-static so full pkg package can install
 		ensure_pkg_installed force_extract || \
 		    err 1 "Unable to extract pkg."
-		# Install the selected PKGNG package
+		# Install the selected pkg package
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
 		    /usr/bin/make -C \
 		    /usr/ports/$(injail /usr/bin/make \
@@ -1304,11 +1304,10 @@ enter_interactive() {
 		    msg_warn "Failed to install ${COLOR_PORT}${port}"
 	done
 
-	# Create a pkgng repo configuration, and disable FreeBSD
-	if [ ${PKGNG} -eq 1 ]; then
-		msg "Installing local Pkg repository to ${LOCALBASE}/etc/pkg/repos"
-		mkdir -p ${MASTERMNT}${LOCALBASE}/etc/pkg/repos
-		cat > ${MASTERMNT}${LOCALBASE}/etc/pkg/repos/local.conf << EOF
+	# Create a pkg repo configuration, and disable FreeBSD
+	msg "Installing local Pkg repository to ${LOCALBASE}/etc/pkg/repos"
+	mkdir -p ${MASTERMNT}${LOCALBASE}/etc/pkg/repos
+	cat > ${MASTERMNT}${LOCALBASE}/etc/pkg/repos/local.conf << EOF
 FreeBSD: {
 	enabled: no
 }
@@ -1318,7 +1317,6 @@ local: {
 	enabled: yes
 }
 EOF
-	fi
 
 	if [ ${INTERACTIVE_MODE} -eq 1 ]; then
 		msg "Entering interactive test mode. Type 'exit' when done."
@@ -1903,26 +1901,15 @@ jail_start() {
 		} >> ${tomnt}/etc/make.conf
 	fi
 
-	WITH_PKGNG=$(injail /usr/bin/make -f /usr/ports/Mk/bsd.port.mk \
-	    -V WITH_PKGNG)
-	if [ -n "${WITH_PKGNG}" ]; then
-		PKGNG=1
-		PKG_EXT="txz"
-		PKG_BIN="/.p/pkg-static"
-		PKG_ADD="${PKG_BIN} add"
-		PKG_DELETE="${PKG_BIN} delete -y -f"
-		PKG_VERSION="${PKG_BIN} version"
+	PKG_EXT="txz"
+	PKG_BIN="/.p/pkg-static"
+	PKG_ADD="${PKG_BIN} add"
+	PKG_DELETE="${PKG_BIN} delete -y -f"
+	PKG_VERSION="${PKG_BIN} version"
 
-		[ -n "${PKG_REPO_SIGNING_KEY}" ] &&
-			! [ -f "${PKG_REPO_SIGNING_KEY}" ] &&
-			err 1 "PKG_REPO_SIGNING_KEY defined but the file is missing."
-	else
-		PKGNG=0
-		PKG_ADD=pkg_add
-		PKG_DELETE=pkg_delete
-		PKG_VERSION=pkg_version
-		PKG_EXT="tbz"
-	fi
+	[ -n "${PKG_REPO_SIGNING_KEY}" ] &&
+		! [ -f "${PKG_REPO_SIGNING_KEY}" ] &&
+		err 1 "PKG_REPO_SIGNING_KEY defined but the file is missing."
 
 	return 0
 }
@@ -2401,11 +2388,7 @@ _real_build_port() {
 			# Skip for all linux ports, they are not safe
 			if [ "${PKGNAME%%*linux*}" != "" ]; then
 				msg "Checking shared library dependencies"
-				if [ ${PKGNG} -eq 1 ]; then
-					listfilecmd="${LOCALBASE}/sbin/pkg query '%Fp' ${PKGNAME}"
-				else
-					listfilecmd="grep -v '^@' /var/db/pkg/${PKGNAME}/+CONTENTS"
-				fi
+				listfilecmd="${LOCALBASE}/sbin/pkg query '%Fp' ${PKGNAME}"
 				injail ${listfilecmd} | \
 				    injail xargs readelf -d 2>/dev/null | \
 				    grep NEEDED | sort -u
@@ -2436,8 +2419,7 @@ _real_build_port() {
 			# testport-built packages from going into the main repo
 			# Also enable during stage/install since it now
 			# uses a pkg for pkg_tools
-			if [ "${phase}" = "package" ] || [ -z "${no_stage}" \
-			    -a "${phase}" = "install" -a $PKGNG -eq 0 ]; then
+			if [ "${phase}" = "package" ]; then
 				pkgenv="${PKGENV}"
 			else
 				pkgenv=
@@ -3530,7 +3512,6 @@ ensure_pkg_installed() {
 	local mnt
 
 	_my_path mnt
-	[ ${PKGNG} -eq 1 ] || return 0
 	[ -z "${force}" ] && [ -x "${mnt}${PKG_BIN}" ] && return 0
 	# Hack, speed up QEMU usage on pkg-repo.
 	if [ ${QEMU_EMULATING} -eq 1 ] && \
@@ -4666,15 +4647,6 @@ clean_restricted() {
 	mount_packages
 	injail /usr/bin/make -s -C /usr/ports -j ${PARALLEL_JOBS} \
 	    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
-	# For pkg_install remove packages that have lost one of their dependency
-	if [ ${PKGNG} -eq 0 ]; then
-		msg_verbose "Checking packages for missing dependencies"
-		while :; do
-			sanity_check_pkgs && break
-		done
-
-		delete_stale_symlinks_and_empty_dirs
-	fi
 	# Remount ro
 	umount -n ${MASTERMNT}/packages
 	mount_packages -o ro
@@ -4699,63 +4671,46 @@ sign_pkg() {
 build_repo() {
 	local origin
 
-	if [ $PKGNG -eq 1 ]; then
-		msg "Creating pkgng repository"
-		bset status "pkgrepo:"
-		ensure_pkg_installed force_extract || \
-		    err 1 "Unable to extract pkg."
-		if [ -r "${PKG_REPO_META_FILE:-/nonexistent}" ]; then
-			PKG_META="-m /tmp/pkgmeta"
-			PKG_META_MASTERMNT="-m ${MASTERMNT}/tmp/pkgmeta"
-			install -m 0400 "${PKG_REPO_META_FILE}" \
-			    ${MASTERMNT}/tmp/pkgmeta
-		fi
-		mkdir -p ${MASTERMNT}/tmp/packages
-		if [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
-			install -m 0400 ${PKG_REPO_SIGNING_KEY} \
-				${MASTERMNT}/tmp/repo.key
-			injail ${PKG_BIN} repo -o /tmp/packages \
-				${PKG_META} \
-				/packages /tmp/repo.key
-			rm -f ${MASTERMNT}/tmp/repo.key
-		elif [ "${PKG_REPO_FROM_HOST:-no}" = "yes" ]; then
-			# Sometimes building repo from host is needed if
-			# using SSH with DNSSEC as older hosts don't support
-			# it.
-			${MASTERMNT}${PKG_BIN} repo \
-			    -o ${MASTERMNT}/tmp/packages ${PKG_META_MASTERMNT} \
-			    ${MASTERMNT}/packages \
-			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
-		else
-			JNETNAME="n" injail ${PKG_BIN} repo \
-			    -o /tmp/packages ${PKG_META} /packages \
-			    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
-		fi
-		cp ${MASTERMNT}/tmp/packages/* ${PACKAGES}/
-
-		# Sign the ports-mgmt/pkg package for bootstrap
-		if [ -e "${PACKAGES}/Latest/pkg.txz" ]; then
-			if [ -n "${SIGNING_COMMAND}" ]; then
-				sign_pkg fingerprint "${PACKAGES}/Latest/pkg.txz"
-			elif [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
-				sign_pkg pubkey "${PACKAGES}/Latest/pkg.txz"
-			fi
-		fi
+	msg "Creating pkgng repository"
+	bset status "pkgrepo:"
+	ensure_pkg_installed force_extract || \
+	    err 1 "Unable to extract pkg."
+	if [ -r "${PKG_REPO_META_FILE:-/nonexistent}" ]; then
+		PKG_META="-m /tmp/pkgmeta"
+		PKG_META_MASTERMNT="-m ${MASTERMNT}/tmp/pkgmeta"
+		install -m 0400 "${PKG_REPO_META_FILE}" \
+		    ${MASTERMNT}/tmp/pkgmeta
+	fi
+	mkdir -p ${MASTERMNT}/tmp/packages
+	if [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
+		install -m 0400 ${PKG_REPO_SIGNING_KEY} \
+			${MASTERMNT}/tmp/repo.key
+		injail ${PKG_BIN} repo -o /tmp/packages \
+			${PKG_META} \
+			/packages /tmp/repo.key
+		rm -f ${MASTERMNT}/tmp/repo.key
+	elif [ "${PKG_REPO_FROM_HOST:-no}" = "yes" ]; then
+		# Sometimes building repo from host is needed if
+		# using SSH with DNSSEC as older hosts don't support
+		# it.
+		${MASTERMNT}${PKG_BIN} repo \
+		    -o ${MASTERMNT}/tmp/packages ${PKG_META_MASTERMNT} \
+		    ${MASTERMNT}/packages \
+		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 	else
-		msg "Preparing INDEX"
-		bset status "index:"
-		OSMAJ=`injail uname -r | awk -F. '{ print $1 }'`
-		INDEXF=${PACKAGES}/INDEX-${OSMAJ}
-		rm -f ${INDEXF}.1 2>/dev/null || :
-		injail env INDEX_JOBS=${PARALLEL_JOBS} INDEXDIR=/ /usr/bin/make -C /usr/ports index
-		awk -F\| -v pkgdir=${PACKAGES} \
-			'{ if (system( "[ -f ${PACKAGES}/All/"$1".tbz ] " )  == 0) { print $0 } }' \
-			${MASTERMNT}/INDEX-${OSMAJ} > ${INDEXF}
+		JNETNAME="n" injail ${PKG_BIN} repo \
+		    -o /tmp/packages ${PKG_META} /packages \
+		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
+	fi
+	cp ${MASTERMNT}/tmp/packages/* ${PACKAGES}/
 
-		[ -f ${INDEXF}.bz2 ] && rm ${INDEXF}.bz2
-		msg_n "Compressing INDEX-${OSMAJ}..."
-		bzip2 -9 ${INDEXF}
-		echo " done"
+	# Sign the ports-mgmt/pkg package for bootstrap
+	if [ -e "${PACKAGES}/Latest/pkg.txz" ]; then
+		if [ -n "${SIGNING_COMMAND}" ]; then
+			sign_pkg fingerprint "${PACKAGES}/Latest/pkg.txz"
+		elif [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
+			sign_pkg pubkey "${PACKAGES}/Latest/pkg.txz"
+		fi
 	fi
 }
 

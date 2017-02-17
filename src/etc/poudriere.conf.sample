@@ -104,7 +104,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #CHECK_CHANGED_DEPS=yes
 
 
-# Path to the RSA key to sign the PKGNG repo with. See pkg-repo(8)
+# Path to the RSA key to sign the PKG repo with. See pkg-repo(8)
 #PKG_REPO_SIGNING_KEY=/etc/ssl/keys/repo.key
 
 
