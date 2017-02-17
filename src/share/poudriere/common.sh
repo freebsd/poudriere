@@ -3891,12 +3891,17 @@ compute_deps() {
 		else
 			make=/usr/bin/make
 		fi
-		eval "$(injail env \
-		    SCRIPTSDIR=/usr/ports/Mk/Scripts \
-		    PORTSDIR=/usr/ports \
-		    MAKE=${make} \
-		    /bin/sh /usr/ports/Mk/Scripts/ports_env.sh | \
-		    grep '^export [^;&]*')"
+		{
+			echo "#### /usr/ports/Mk/Scripts/ports_env.sh ####"
+			injail env \
+			    SCRIPTSDIR=/usr/ports/Mk/Scripts \
+			    PORTSDIR=/usr/ports \
+			    MAKE=${make} \
+			    /bin/sh /usr/ports/Mk/Scripts/ports_env.sh | \
+			    grep '^export [^;&]*' | \
+			    sed -e 's,^export ,,' -e 's,=",=,' -e 's,"$,,'
+			echo "#### Misc Poudriere ####"
+		} >> ${MASTERMNT}/etc/make.conf
 	fi
 
 	parallel_start
