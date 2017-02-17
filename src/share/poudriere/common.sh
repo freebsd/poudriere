@@ -294,7 +294,7 @@ injail() {
 }
 
 jstart() {
-	local name network
+	local name network portbuild_uid
 
 	network="${localipargs}"
 
@@ -313,13 +313,17 @@ jstart() {
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
 	injail id >/dev/null 2>&1 || \
 	    err 1 "Unable to execute id(1) in jail. Emulation or ABI wrong."
-	if ! injail id ${PORTBUILD_USER} >/dev/null 2>&1 ; then
+
+	portbuild_uid=$(injail id -u ${PORTBUILD_USER} 2>&1)
+	if [ -z "${portbuild_uid}" -a $? -ne 0 ]; then
 		msg_n "Creating user/group ${PORTBUILD_USER}"
 		injail pw groupadd ${PORTBUILD_USER} -g 65532 || \
 		err 1 "Unable to create group ${PORTBUILD_USER}"
 		injail pw useradd ${PORTBUILD_USER} -u 65532 -d /nonexistent -c "Package builder" || \
 		err 1 "Unable to create user ${PORTBUILD_USER}"
 		echo " done"
+	else
+		PORTBUILD_UID=${portbuild_uid}
 	fi
 }
 
