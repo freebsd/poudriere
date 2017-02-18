@@ -2407,6 +2407,12 @@ _real_build_port() {
 			:> "${mnt}/.npkg_mounted"
 		fi
 
+		if [ "${JUSER}" = "root" ]; then
+			export UID=0
+		else
+			export UID=${PORTBUILD_UID}
+		fi
+
 		if [ "${phase#*-}" = "depends" ]; then
 			# No need for nohang or PORT_FLAGS for *-depends
 			injail env USE_PACKAGE_DEPENDS_ONLY=1 ${phaseenv} \
@@ -4427,7 +4433,8 @@ prepare_ports() {
 	# Don't leak ports-env UID as it conflicts with BUILD_AS_NON_ROOT
 	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
 		sed -i '' '/^UID=0$/d' "${MASTERMNT}/etc/make.conf"
-		unset UID
+		# Will handle manually for now on until build_port.
+		export UID=0
 	fi
 
 	jget ${JAILNAME} version > ${PACKAGES}/.jailversion
