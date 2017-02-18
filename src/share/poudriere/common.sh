@@ -2251,7 +2251,7 @@ _real_build_port() {
 	local port=${portdir##/usr/ports/}
 	local mnt
 	local log
-	local listfilecmd network
+	local network
 	local hangstatus
 	local pkgenv phaseenv jpkg
 	local no_stage=$(injail /usr/bin/make -C ${portdir} -VNO_STAGE)
@@ -2388,8 +2388,8 @@ _real_build_port() {
 			# Skip for all linux ports, they are not safe
 			if [ "${PKGNAME%%*linux*}" != "" ]; then
 				msg "Checking shared library dependencies"
-				listfilecmd="${LOCALBASE}/sbin/pkg query '%Fp' ${PKGNAME}"
-				injail ${listfilecmd} | \
+				# Not using PKG_BIN to avoid bootstrap issues.
+				injail "${LOCALBASE}/sbin/pkg query '%Fp' ${PKGNAME}" | \
 				    injail xargs readelf -d 2>/dev/null | \
 				    grep NEEDED | sort -u
 			fi
