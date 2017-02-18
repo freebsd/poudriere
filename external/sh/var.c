@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)var.c	8.3 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/var.c 294593 2016-01-22 20:10:08Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/var.c 306843 2016-10-08 13:40:12Z jilles $");
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -186,6 +186,7 @@ initvar(void)
 		}
 	}
 	setvareq_const("OPTIND=1", 0);
+	setvareq_const("IFS= \t\n", 0);
 }
 
 /*

@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)trap.c	8.5 (Berkeley) 6/5/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/trap.c 281718 2015-04-18 23:49:57Z bdrewery $");
+__FBSDID("$FreeBSD: head/bin/sh/trap.c 297360 2016-03-28 18:58:40Z jilles $");
 
 #include <signal.h>
 #include <unistd.h>
@@ -412,6 +412,7 @@ onsig(int signo)
 void
 dotrap(void)
 {
+	struct stackmark smark;
 	int i;
 	int savestatus, prev_evalskip, prev_skipcount;
 
@@ -445,7 +446,9 @@ dotrap(void)
 
 					last_trapsig = i;
 					savestatus = exitstatus;
-					evalstring(trap[i], 0);
+					setstackmark(&smark);
+					evalstring(stsavestr(trap[i]), 0);
+					popstackmark(&smark);
 
 					/*
 					 * If such a command was not

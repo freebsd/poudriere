@@ -15,7 +15,7 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/test/test.c 295082 2016-01-30 19:59:58Z jilles $");
+__FBSDID("$FreeBSD: head/bin/test/test.c 298232 2016-04-19 00:38:07Z araujo $");
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -465,7 +465,7 @@ t_lex(char *s)
 {
 	int num;
 
-	if (s == 0) {
+	if (s == NULL) {
 		return EOI;
 	}
 	num = find_op(s);
