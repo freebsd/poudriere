@@ -46,6 +46,7 @@ main(int argc, char **argv)
 	char out[BUFSIZ];
 	char spath[BUFSIZ];
 	ssize_t sz;
+	size_t outlen;
 	bool set = false;
 
 	while ((ch = getopt(argc, argv, "s:")) != -1) {
@@ -75,15 +76,16 @@ main(int argc, char **argv)
 		snprintf(out, sizeof(out), "%s", argv[0]);
 	else
 		snprintf(out, sizeof(out), "%d%s", getpid(), argv[0]);
+	outlen = strlen(out);
 
 	if (set) {
-		mq_send(qserver, out, strlen(out), 0);
+		mq_send(qserver, out, outlen, 0);
 		return (0);
 	}
 
 	snprintf(spath, sizeof(spath),"%s%d", queuepath, getpid());
 	qme = mq_open(spath, O_RDONLY | O_CREAT, 0600, &attr);
-	mq_send(qserver, out, strlen(out), 0);
+	mq_send(qserver, out, outlen, 0);
 	sz = mq_receive(qme, out, sizeof(out), NULL);
 	if (sz > 0) {
 		out[sz] = '\0';
