@@ -30,6 +30,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <err.h>
+
+#ifdef SHELL
+#define main diremptycmd
+#include "bltin/bltin.h"
+#endif
  
 static bool
 dir_empty(const char *path)
