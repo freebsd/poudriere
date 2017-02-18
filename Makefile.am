@@ -187,7 +187,8 @@ CLEANFILES+=		\
 			external/sh/builtins.h
 sh_SOURCES+=		\
 			src/libexec/poudriere/clock_monotonic/clock_monotonic.c \
-			src/libexec/poudriere/dirempty/dirempty.c
+			src/libexec/poudriere/dirempty/dirempty.c \
+			src/libexec/poudriere/locked_mkdir/locked_mkdir.c
 external/sh/builtins.def: external/sh/builtins.def.sh src/poudriere-sh/builtins.def
 	cat external/sh/builtins.def.sh src/poudriere-sh/builtins.def > $@
 
