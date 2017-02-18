@@ -140,7 +140,7 @@ bset status "pkgclean:"
 # built. Don't delete those, bulk will incrementally delete them. We only
 # want to delete packages that are duplicated and old, non-packages, and
 # packages that are not in the cmdline-specified port list or in their
-# dependencies and finally packages in the wrong format (pkgng vs pkg_install).
+# dependencies and finally packages in the wrong format.
 
 CLEANUP_HOOK=pkgclean_cleanup
 pkgclean_cleanup() {

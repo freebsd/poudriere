@@ -3996,7 +3996,7 @@ compute_deps_port() {
 			set_dep_fatal_error
 			return 1
 		fi
-		# Detect bad cat/origin/ dependency which pkgng will not register properly
+		# Detect bad cat/origin/ dependency which pkg will not register properly
 		if ! [ "${dep_port}" = "${dep_port%/}" ]; then
 			msg_error "${COLOR_PORT}${port}${COLOR_RESET} depends on bad origin '${COLOR_PORT}${dep_port}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
 			set_dep_fatal_error
@@ -4671,7 +4671,7 @@ sign_pkg() {
 build_repo() {
 	local origin
 
-	msg "Creating pkgng repository"
+	msg "Creating pkg repository"
 	bset status "pkgrepo:"
 	ensure_pkg_installed force_extract || \
 	    err 1 "Unable to extract pkg."
