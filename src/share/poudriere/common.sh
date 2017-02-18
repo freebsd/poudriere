@@ -2393,7 +2393,7 @@ _real_build_port() {
 			if [ "${PKGNAME%%*linux*}" != "" ]; then
 				msg "Checking shared library dependencies"
 				# Not using PKG_BIN to avoid bootstrap issues.
-				injail "${LOCALBASE}/sbin/pkg query '%Fp' ${PKGNAME}" | \
+				injail "${LOCALBASE}/sbin/pkg" query '%Fp' "${PKGNAME}" | \
 				    injail xargs readelf -d 2>/dev/null | \
 				    grep NEEDED | sort -u
 			fi
