@@ -202,7 +202,7 @@ main(int argc, char **argv)
 	attr.mq_msgsize = BUFSIZ;
 	attr.mq_curmsgs = 0;
 
-	if (kld_load("mqueuefs") == 0 && errno != EEXIST) {
+	if (kld_load("mqueuefs") != 0 && errno != EEXIST) {
 		err(EXIT_FAILURE, "Unable to use POSIX mqueues");
 	}
 
