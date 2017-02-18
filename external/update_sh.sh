@@ -18,15 +18,24 @@ make cleanobj
 make clean cleandepend
 make depend
 paths=$(make -V '${.PATH:N.*bltin*}'|xargs realpath)
-for src in *.h $(make -V SRCS); do
-	if [ -f "${src}" ]; then
-		echo "${PWD}/${src}"
-	else
-		for p in ${paths}; do
-			[ -f "${p}/${src}" ] && echo "${p}/${src}" && break
-		done
-	fi
-done | sort -u | tar -c -T - --exclude bltin -s ",.*/,,g" -f - | tar -C "${DESTDIR_REAL}" -xf -
+{
+	echo builtins.def
+	echo mkbuiltins
+	for src in *.h $(make -V SRCS); do
+		if [ -f "${src}" ]; then
+			echo "${PWD}/${src}"
+		else
+			for p in ${paths}; do
+				[ -f "${p}/${src}" ] && echo "${p}/${src}" && break
+			done
+		fi
+	done
+} | sort -u | \
+    tar -c -T - \
+    --exclude bltin \
+    --exclude builtins.c \
+    --exclude builtins.h \
+    -s ",.*/,,g" -f - | tar -C "${DESTDIR_REAL}" -xf -
 cp -R "${SH_DIR}/bltin" "${DESTDIR_REAL}/bltin"
 make clean cleandepend
 cd "${ORIG_PWD}"
