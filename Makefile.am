@@ -177,9 +177,14 @@ sh_SOURCES=		external/sh_compat/compat.c \
 			external/sh/test.c \
 			external/sh/trap.c \
 			external/sh/var.c
+# Extra builtins
 CLEANFILES+=		\
 			external/sh/builtins.c \
+			external/sh/builtins.def \
 			external/sh/builtins.h
+external/sh/builtins.def: external/sh/builtins.def.sh src/sh/builtins.def
+	cat external/sh/builtins.def.sh src/sh/builtins.def > $@
+
 external/sh/builtins.h: external/sh/builtins.def external/sh/mkbuiltins
 	cd external/sh && sh mkbuiltins .
 ${sh_SOURCES}:		external/sh/builtins.h

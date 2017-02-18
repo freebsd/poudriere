@@ -43,6 +43,7 @@ src/stamp-h1
 test/*.log
 test/etc
 external/sh/builtins.c
+external/sh/builtins.def
 external/sh/builtins.h
 external/ptsort/.git
 external/ptsort/.gitignore
