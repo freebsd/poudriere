@@ -72,6 +72,8 @@ main(int argc, char **argv)
 	attr.mq_curmsgs = 0;
 
 	qserver = mq_open(queuepath, O_WRONLY);
+	if (qserver == (mqd_t)-1)
+		err(EXIT_FAILURE, "mq_open");
 	if (set)
 		snprintf(out, sizeof(out), "%s", argv[0]);
 	else
