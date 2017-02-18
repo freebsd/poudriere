@@ -29,6 +29,11 @@
 #include <stdlib.h>
 #include <time.h>
 
+#ifdef SHELL
+#define main clock_monotoniccmd
+#include "bltin/bltin.h"
+#endif
+
 /*
  * Simple helper to return clock_gettime(CLOCK_MONOTONIC) for duration
  * display purposes. Faster than `date +%s` and ensures a monotonic time.

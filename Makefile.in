@@ -238,7 +238,8 @@ am_sh_OBJECTS = external/sh_compat/sh-compat.$(OBJEXT) \
 	external/sh/sh-printf.$(OBJEXT) external/sh/sh-redir.$(OBJEXT) \
 	external/sh/sh-show.$(OBJEXT) external/sh/sh-syntax.$(OBJEXT) \
 	external/sh/sh-test.$(OBJEXT) external/sh/sh-trap.$(OBJEXT) \
-	external/sh/sh-var.$(OBJEXT)
+	external/sh/sh-var.$(OBJEXT) \
+	src/libexec/poudriere/clock_monotonic/sh-clock_monotonic.$(OBJEXT)
 sh_OBJECTS = $(am_sh_OBJECTS)
 sh_LDADD = $(LDADD)
 sh_LINK = $(CCLD) $(sh_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
@@ -604,38 +605,19 @@ sh_CFLAGS = -DSHELL -DNO_HISTORY \
 			-I$(top_srcdir)/src \
 			-I$(top_srcdir)/external/sh
 
-sh_SOURCES = external/sh_compat/compat.c \
-			external/sh/alias.c \
-			external/sh/arith_yacc.c \
-			external/sh/arith_yylex.c \
-			external/sh/bltin/echo.c \
-			external/sh/builtins.c \
-			external/sh/cd.c \
-			external/sh/error.c \
-			external/sh/eval.c \
-			external/sh/exec.c \
-			external/sh/expand.c \
-			external/sh/histedit.c \
-			external/sh/input.c \
-			external/sh/jobs.c \
-			external/sh/kill.c \
-			external/sh/mail.c \
-			external/sh/main.c \
-			external/sh/memalloc.c \
-			external/sh/miscbltin.c \
-			external/sh/mystring.c \
-			external/sh/nodes.c \
-			external/sh/options.c \
-			external/sh/output.c \
-			external/sh/parser.c \
-			external/sh/printf.c \
-			external/sh/redir.c \
-			external/sh/show.c \
-			external/sh/syntax.c \
-			external/sh/test.c \
-			external/sh/trap.c \
-			external/sh/var.c
-
+sh_SOURCES = external/sh_compat/compat.c external/sh/alias.c \
+	external/sh/arith_yacc.c external/sh/arith_yylex.c \
+	external/sh/bltin/echo.c external/sh/builtins.c \
+	external/sh/cd.c external/sh/error.c external/sh/eval.c \
+	external/sh/exec.c external/sh/expand.c external/sh/histedit.c \
+	external/sh/input.c external/sh/jobs.c external/sh/kill.c \
+	external/sh/mail.c external/sh/main.c external/sh/memalloc.c \
+	external/sh/miscbltin.c external/sh/mystring.c \
+	external/sh/nodes.c external/sh/options.c external/sh/output.c \
+	external/sh/parser.c external/sh/printf.c external/sh/redir.c \
+	external/sh/show.c external/sh/syntax.c external/sh/test.c \
+	external/sh/trap.c external/sh/var.c \
+	src/libexec/poudriere/clock_monotonic/clock_monotonic.c
 libucl_a_SOURCES = external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_emitter_streamline.c \
 			external/libucl/src/ucl_emitter_utils.c \
@@ -1129,6 +1111,9 @@ external/sh/sh-trap.$(OBJEXT): external/sh/$(am__dirstamp) \
 	external/sh/$(DEPDIR)/$(am__dirstamp)
 external/sh/sh-var.$(OBJEXT): external/sh/$(am__dirstamp) \
 	external/sh/$(DEPDIR)/$(am__dirstamp)
+src/libexec/poudriere/clock_monotonic/sh-clock_monotonic.$(OBJEXT):  \
+	src/libexec/poudriere/clock_monotonic/$(am__dirstamp) \
+	src/libexec/poudriere/clock_monotonic/$(DEPDIR)/$(am__dirstamp)
 
 sh$(EXEEXT): $(sh_OBJECTS) $(sh_DEPENDENCIES) $(EXTRA_sh_DEPENDENCIES) 
 	@rm -f sh$(EXEEXT)
@@ -1320,6 +1305,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cachec/$(DEPDIR)/cachec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cached/$(DEPDIR)/cached-cached.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/clock_monotonic/$(DEPDIR)/clock_monotonic.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/clock_monotonic/$(DEPDIR)/sh-clock_monotonic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-cpdup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-fsmid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hclink.Po@am__quote@
@@ -2095,6 +2081,20 @@ external/sh/sh-var.obj: external/sh/var.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/var.c' object='external/sh/sh-var.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-var.obj `if test -f 'external/sh/var.c'; then $(CYGPATH_W) 'external/sh/var.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/var.c'; fi`
+
+src/libexec/poudriere/clock_monotonic/sh-clock_monotonic.o: src/libexec/poudriere/clock_monotonic/clock_monotonic.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/clock_monotonic/sh-clock_monotonic.o -MD -MP -MF src/libexec/poudriere/clock_monotonic/$(DEPDIR)/sh-clock_monotonic.Tpo -c -o src/libexec/poudriere/clock_monotonic/sh-clock_monotonic.o `test -f 'src/libexec/poudriere/clock_monotonic/clock_monotonic.c' || echo '$(srcdir)/'`src/libexec/poudriere/clock_monotonic/clock_monotonic.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/clock_monotonic/$(DEPDIR)/sh-clock_monotonic.Tpo src/libexec/poudriere/clock_monotonic/$(DEPDIR)/sh-clock_monotonic.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/clock_monotonic/clock_monotonic.c' object='src/libexec/poudriere/clock_monotonic/sh-clock_monotonic.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/clock_monotonic/sh-clock_monotonic.o `test -f 'src/libexec/poudriere/clock_monotonic/clock_monotonic.c' || echo '$(srcdir)/'`src/libexec/poudriere/clock_monotonic/clock_monotonic.c
+
+src/libexec/poudriere/clock_monotonic/sh-clock_monotonic.obj: src/libexec/poudriere/clock_monotonic/clock_monotonic.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/clock_monotonic/sh-clock_monotonic.obj -MD -MP -MF src/libexec/poudriere/clock_monotonic/$(DEPDIR)/sh-clock_monotonic.Tpo -c -o src/libexec/poudriere/clock_monotonic/sh-clock_monotonic.obj `if test -f 'src/libexec/poudriere/clock_monotonic/clock_monotonic.c'; then $(CYGPATH_W) 'src/libexec/poudriere/clock_monotonic/clock_monotonic.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/clock_monotonic/clock_monotonic.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/clock_monotonic/$(DEPDIR)/sh-clock_monotonic.Tpo src/libexec/poudriere/clock_monotonic/$(DEPDIR)/sh-clock_monotonic.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/clock_monotonic/clock_monotonic.c' object='src/libexec/poudriere/clock_monotonic/sh-clock_monotonic.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/clock_monotonic/sh-clock_monotonic.obj `if test -f 'src/libexec/poudriere/clock_monotonic/clock_monotonic.c'; then $(CYGPATH_W) 'src/libexec/poudriere/clock_monotonic/clock_monotonic.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/clock_monotonic/clock_monotonic.c'; fi`
 install-man8: $(dist_man_MANS)
 	@$(NORMAL_INSTALL)
 	@list1=''; \
