@@ -2300,7 +2300,6 @@ _real_build_port() {
 		if [ "${BUILD_AS_NON_ROOT}" = "yes" ] &&
 		    [ -z "$(injail /usr/bin/make -C ${portdir} -VNEED_ROOT)" ]; then
 			jailuser=${PORTBUILD_USER}
-			chown -R ${jailuser} ${mnt}/wrkdirs
 		fi
 		# XXX: run-depends can come out of here with some bsd.port.mk
 		# changes. Easier once pkg_install is EOL.
