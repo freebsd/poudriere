@@ -3157,7 +3157,11 @@ build_pkg() {
 	_log_path log
 	clean_rdepends=
 	trap '' SIGTSTP
-	[ -n "${MAX_MEMORY}" ] && ulimit -v ${MAX_MEMORY_BYTES}
+	if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
+		ulimit \
+		    ${MAX_MEMORY_BYTES:+-v ${MAX_MEMORY_BYTES}} \
+		    ${MAX_FILES:+-n ${MAX_FILES}}
+	fi
 
 	export PKGNAME="${pkgname}" # set ASAP so jail_cleanup() can use it
 	cache_get_origin port "${pkgname}"
@@ -4963,6 +4967,7 @@ if [ -n "${MAX_MEMORY}" ]; then
 	MAX_MEMORY_BYTES="$((${MAX_MEMORY} * 1024 * 1024 * 1024))"
 	MAX_MEMORY_JEXEC="/usr/bin/limits -v ${MAX_MEMORY_BYTES}"
 fi
+: ${MAX_FILES:=1024}
 
 TIME_START=$(clock_monotonic)
 EPOCH_START=$(date +%s)

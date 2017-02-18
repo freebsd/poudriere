@@ -74,6 +74,9 @@ USE_TMPFS=yes
 # in GiB (default: none)
 #MAX_MEMORY=8
 
+# How many file descriptors to limit each jail process to (default: 1024)
+#MAX_FILES=1024
+
 # If set the given directory will be used for the distfiles
 # This allows to share the distfiles between jails and ports tree
 DISTFILES_CACHE=/usr/ports/distfiles
