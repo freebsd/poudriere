@@ -2348,7 +2348,9 @@ _real_build_port() {
 			;;
 		extract)
 			max_execution_time=3600
-			chown -R ${JUSER} ${mnt}/wrkdirs
+			if [ "${JUSER}" != "root" ]; then
+				chown -R ${JUSER} ${mnt}/wrkdirs
+			fi
 			;;
 		configure) [ -n "${PORTTESTING}" ] && markfs prebuild ${mnt} ;;
 		run-depends)
