@@ -46,6 +46,11 @@
 #include <sysexits.h>
 #include <unistd.h>
 
+#ifdef SHELL
+#define main locked_mkdircmd
+#include "bltin/bltin.h"
+#endif
+
 static int lockfd = -1;
 static volatile sig_atomic_t timed_out;
 
@@ -115,7 +120,7 @@ main(int argc, char **argv)
 		lockfd = acquire_lock(flock);
 	waitsec = alarm(0);
 	if (lockfd == -1)		/* We failed to acquire the lock. */
-		exit(EX_TEMPFAIL);
+		return (EX_TEMPFAIL);
 
 	/* At this point, we own the lock. */
 	if (atexit(cleanup) == -1)
@@ -125,7 +130,7 @@ main(int argc, char **argv)
 	fd = open(path, O_RDONLY);
 	if (fd == -1 && errno == ENOENT) {
 		if (mkdir(path, S_IRWXU) == 0)
-			exit(0);
+			return (0);
 		if (errno != EEXIST)
 			err(1, "mkdir()");
 	}
@@ -141,18 +146,24 @@ main(int argc, char **argv)
 	EV_SET(&change, fd, EVFILT_VNODE, EV_ADD | EV_ENABLE |
 	    EV_ONESHOT, NOTE_DELETE, 0, 0);
 
+#ifdef SHELL
+	INTOFF;
+#endif
 	switch (kevent(kq, &change, 1, &event, 1, &timeout)) {
 	    case -1:
 		err(1, "kevent()");
 		/* NOTREACHED */
 	    case 0:
 		/* Timeout */
-		exit(1);
+		close(fd);
+		return (1);
 		/* NOTREACHED */
 	    default:
 		break;
 	}
-
+#ifdef SHELL
+	INTON;
+#endif
 	close(fd);
 
 	/* This is expected to succeed. */
