@@ -3900,7 +3900,7 @@ cache_get_origin() {
 	local _origin
 
 	if [ ${USE_CACHED} = "yes" ]; then
-		_origin=$(cachec /${MASTERNAME} "get ${pkgname}")
+		_origin=$(cachec -s /${MASTERNAME} "get ${pkgname}")
 	else
 		read_line _origin "${cache_pkgname_origin%/}"
 	fi
