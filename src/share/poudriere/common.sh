@@ -534,6 +534,10 @@ buildlog_start() {
 		cat ${mnt}/etc/make.nxb.conf
 		echo "---End make.nxb.conf---"
 	fi
+
+	echo "--Resource limits--"
+	ulimit -a
+	echo "--End resource limits--"
 }
 
 buildlog_stop() {
