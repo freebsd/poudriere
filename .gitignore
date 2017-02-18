@@ -42,5 +42,7 @@ src/etc/rc.d/poudriered
 src/stamp-h1
 test/*.log
 test/etc
+external/sh/builtins.c
+external/sh/builtins.h
 external/ptsort/.git
 external/ptsort/.gitignore

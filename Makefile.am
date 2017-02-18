@@ -177,6 +177,13 @@ sh_SOURCES=		external/sh_compat/compat.c \
 			external/sh/test.c \
 			external/sh/trap.c \
 			external/sh/var.c
+CLEANFILES+=		\
+			external/sh/builtins.c \
+			external/sh/builtins.h
+external/sh/builtins.h: external/sh/builtins.def external/sh/mkbuiltins
+	cd external/sh && sh mkbuiltins .
+${sh_SOURCES}:		external/sh/builtins.h
+
 libucl_a_SOURCES=	external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_emitter_streamline.c \
 			external/libucl/src/ucl_emitter_utils.c \

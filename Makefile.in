@@ -462,7 +462,8 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-CLEANFILES = $(dist_rc_SCRIPTS)
+CLEANFILES = $(dist_rc_SCRIPTS) external/sh/builtins.c \
+	external/sh/builtins.h
 AM_CFLAGS = -Wall -pipe -O2
 awkdir = $(pkgdatadir)/awk
 assetsdir = $(htmldir)/assets
@@ -2726,6 +2727,9 @@ uninstall-man: uninstall-man8
 
 .PRECIOUS: Makefile
 
+external/sh/builtins.h: external/sh/builtins.def external/sh/mkbuiltins
+	cd external/sh && sh mkbuiltins .
+${sh_SOURCES}:		external/sh/builtins.h
 
 .PHONY:	gen-make-wiki
 gen-man-wiki:
