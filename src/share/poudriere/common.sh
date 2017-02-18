@@ -314,7 +314,7 @@ injail_tty() {
 }
 
 jstart() {
-	local name network portbuild_uid
+	local name network
 
 	network="${localipargs}"
 
@@ -335,20 +335,7 @@ jstart() {
 		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
 	[ "${USE_JEXECD}" = "yes" ] && \
 	    jexecd -j ${name}-n -d ${MASTERMNT}/../ ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}}
-	injail id >/dev/null 2>&1 || \
-	    err 1 "Unable to execute id(1) in jail. Emulation or ABI wrong."
-
-	portbuild_uid=$(injail id -u ${PORTBUILD_USER} 2>&1)
-	if [ -z "${portbuild_uid}" -a $? -ne 0 ]; then
-		msg_n "Creating user/group ${PORTBUILD_USER}"
-		injail pw groupadd ${PORTBUILD_USER} -g ${PORTBUILD_UID} || \
-		err 1 "Unable to create group ${PORTBUILD_USER}"
-		injail pw useradd ${PORTBUILD_USER} -u ${PORTBUILD_UID} -d /nonexistent -c "Package builder" || \
-		err 1 "Unable to create user ${PORTBUILD_USER}"
-		echo " done"
-	else
-		PORTBUILD_UID=${portbuild_uid}
-	fi
+	return 0
 }
 
 jail_has_processes() {
@@ -1711,6 +1698,7 @@ jail_start() {
 	local needfs="${NULLFSREF}"
 	local needkld
 	local tomnt
+	local portbuild_uid
 
 	if [ -n "${MASTERMNT}" ]; then
 		tomnt="${MASTERMNT}"
@@ -1877,6 +1865,19 @@ jail_start() {
 	[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${tomnt}/etc/"
 	msg "Starting jail ${MASTERNAME}"
 	jstart
+	injail id >/dev/null 2>&1 || \
+	    err 1 "Unable to execute id(1) in jail. Emulation or ABI wrong."
+	portbuild_uid=$(injail id -u ${PORTBUILD_USER} 2>&1)
+	if [ -z "${portbuild_uid}" -a $? -ne 0 ]; then
+		msg_n "Creating user/group ${PORTBUILD_USER}"
+		injail pw groupadd ${PORTBUILD_USER} -g ${PORTBUILD_UID} || \
+		err 1 "Unable to create group ${PORTBUILD_USER}"
+		injail pw useradd ${PORTBUILD_USER} -u ${PORTBUILD_UID} -d /nonexistent -c "Package builder" || \
+		err 1 "Unable to create user ${PORTBUILD_USER}"
+		echo " done"
+	else
+		PORTBUILD_UID=${portbuild_uid}
+	fi
 	injail service ldconfig start >/dev/null || \
 	    err 1 "Failed to set ldconfig paths."
 
