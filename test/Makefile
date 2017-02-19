@@ -4,4 +4,7 @@ TESTS=\
 all: check
 
 check: .PHONY
-	@sh runtests.sh ${TESTS}
+	@echo "Running tests against stock /bin/sh"
+	@sh runtests.sh /bin/sh ${TESTS}
+	@echo "Running tests against modified sh"
+	@../sh runtests.sh sh ${TESTS}
