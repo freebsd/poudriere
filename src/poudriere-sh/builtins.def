@@ -2,3 +2,4 @@ cacheccmd cachec
 clock_monotoniccmd clock_monotonic
 diremptycmd dirempty
 #locked_mkdircmd locked_mkdir
+realpathcmd realpath
