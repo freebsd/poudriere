@@ -1264,7 +1264,6 @@ enter_interactive() {
 	bset status "interactive:"
 
 	msg "Installing packages"
-	echo "PACKAGES=/packages" >> ${MASTERMNT}/etc/make.conf
 	echo "127.0.0.1 ${MASTERNAME}" >> ${MASTERMNT}/etc/hosts
 
 	# Skip for testport as it has already installed pkg in the ref jail.
@@ -2307,7 +2306,7 @@ _real_build_port() {
 		# Don't need to install if only making packages and not
 		# testing.
 		[ -n "${PORTTESTING}" ] && \
-		    install_order="${install_order} install-mtree install"
+		    install_order="${install_order} test-depends test install-mtree install"
 	fi
 	targets="check-sanity pkg-depends fetch-depends fetch checksum \
 		  extract-depends extract patch-depends patch build-depends \
@@ -2456,7 +2455,12 @@ _real_build_port() {
 					bset_job_status "${phase}/timeout" "${port}"
 					job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}timeout"
 				fi
-				return 1
+				if [ "${phase}" = "test" -a "${PORTTESTING_FATAL}" = "no" ]; then
+					msg "Error: test failures detected"
+					testfailure=2
+				else
+					return 1
+				fi
 			fi
 		fi
 
@@ -2494,6 +2498,10 @@ _real_build_port() {
 				testfailure=2
 				die=0
 			fi
+		fi
+
+		if [ "${phase}" = "package" ]; then
+			sed -i '' -e "/PACKAGES=\/.npkg/d" ${mnt}/etc/make.conf
 		fi
 
 		if [ "${phase}" = "deinstall" ]; then
@@ -3385,9 +3393,12 @@ prefix_output() {
 }
 
 list_deps() {
-	[ $# -ne 1 ] && eargs list_deps directory
+	[ $# -ne 1 -a $# -ne 2 ] && eargs list_deps directory '[testing]'
 	local dir="/usr/ports/$1"
 	local makeargs="-VPKG_DEPENDS -VBUILD_DEPENDS -VEXTRACT_DEPENDS -VLIB_DEPENDS -VPATCH_DEPENDS -VFETCH_DEPENDS -VRUN_DEPENDS"
+
+	[ -n "$2" ] && \
+		makeargs="${makeargs} -VTEST_DEPENDS"
 
 	prefix_stderr_quick "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
 		injail /usr/bin/make -C ${dir} $makeargs | tr ' ' '\n' | \
@@ -4009,7 +4020,7 @@ compute_deps_port() {
 
 	msg_verbose "Computing deps for ${COLOR_PORT}${port}"
 
-	for dep_port in `list_deps ${port}`; do
+	for dep_port in `list_deps ${port} ${PORTTESTING}`; do
 		msg_debug "${COLOR_PORT}${port}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_port}"
 		if [ "${port}" = "${dep_port}" ]; then
 			msg_error "${COLOR_PORT}${port}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
