@@ -37,6 +37,13 @@
 #include <mqueue.h>
 #include <fcntl.h>
 
+#ifdef SHELL
+#define main cacheccmd
+#include "bltin/bltin.h"
+#include "options.h"
+#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+#endif
+
 int
 main(int argc, char **argv)
 {
@@ -49,6 +56,17 @@ main(int argc, char **argv)
 	size_t outlen;
 	bool set = false;
 
+#ifdef SHELL
+	while ((ch = nextopt("s:")) != '\0') {
+		switch (ch) {
+		case 's':
+			queuepath = shoptarg;
+			break;
+		}
+	}
+	argc -= argptr - argv;
+	argv = argptr;
+#else
 	while ((ch = getopt(argc, argv, "s:")) != -1) {
 		switch (ch) {
 		case 's':
@@ -58,6 +76,7 @@ main(int argc, char **argv)
 	}
 	argc -= optind;
 	argv += optind;
+#endif
 
 	if (!queuepath || argc < 1)
 		errx(EXIT_FAILURE, "usage: cachec -s queuepath \"msg\"");
@@ -73,7 +92,7 @@ main(int argc, char **argv)
 
 	qserver = mq_open(queuepath, O_WRONLY);
 	if (qserver == (mqd_t)-1)
-		err(EXIT_FAILURE, "mq_open");
+		err(EXIT_FAILURE, "%s", "mq_open");
 	if (set)
 		snprintf(out, sizeof(out), "%s", argv[0]);
 	else
@@ -87,8 +106,14 @@ main(int argc, char **argv)
 
 	snprintf(spath, sizeof(spath),"%s%d", queuepath, getpid());
 	qme = mq_open(spath, O_RDONLY | O_CREAT, 0600, &attr);
+#ifdef SHELL
+	INTOFF;
+#endif
 	mq_send(qserver, out, outlen, 0);
 	sz = mq_receive(qme, out, sizeof(out), NULL);
+#ifdef SHELL
+	INTON;
+#endif
 	if (sz > 0) {
 		out[sz] = '\0';
 		printf("%s\n", out);

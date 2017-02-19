@@ -149,6 +149,7 @@ sh_CFLAGS=		-DSHELL -DNO_HISTORY \
 			-include $(top_srcdir)/external/sh_compat/compat.h \
 			-I$(top_srcdir)/src \
 			-I$(top_srcdir)/external/sh
+sh_LDADD=
 sh_SOURCES=		external/sh_compat/compat.c \
 			external/sh/alias.c \
 			external/sh/arith_yacc.c \
@@ -186,9 +187,12 @@ CLEANFILES+=		\
 			external/sh/builtins.def \
 			external/sh/builtins.h
 sh_SOURCES+=		\
+			src/libexec/poudriere/cachec/cachec.c \
 			src/libexec/poudriere/clock_monotonic/clock_monotonic.c \
 			src/libexec/poudriere/dirempty/dirempty.c \
 			src/libexec/poudriere/locked_mkdir/locked_mkdir.c
+# cachec
+sh_LDADD+=		-lrt
 external/sh/builtins.def: external/sh/builtins.def.sh src/poudriere-sh/builtins.def
 	cat external/sh/builtins.def.sh src/poudriere-sh/builtins.def > $@
 
