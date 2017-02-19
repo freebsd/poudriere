@@ -26,21 +26,18 @@
 # SUCH DAMAGE.
 
 usage() {
-	echo "poudriere queue queuename poudriere_command"
+	echo "poudriere queue poudriere_command"
 	exit 1
 }
 
 . ${SCRIPTPREFIX}/common.sh
 
-[ $# -le 2 ] && usage
-name=$1
-shift
-[ -f ${WATCHDIR}/${name} ] && err 1 "A jobs named ${name} is already in queue"
+[ $# -lt 2 ] && usage
 
 case $1 in
-bulk|testport) ;;
+bulk|testport) cmd=$1 ; shift ;;
 *) err 1 "$2 command cannot be queued" ;;
 esac
 
 # Queue the command through the poudriered socket
-echo "${name} POUDRIERE_ARGS: $@" | nc -U ${QUEUE_SOCKET}
+echo "opeeration = queue; command = $cmd; arguments = $@;" | nc -U ${QUEUE_SOCKET}
