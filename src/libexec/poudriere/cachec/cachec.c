@@ -90,9 +90,16 @@ main(int argc, char **argv)
 	attr.mq_msgsize = BUFSIZ;
 	attr.mq_curmsgs = 0;
 
+#ifdef SHELL
+	INTOFF;
+#endif
 	qserver = mq_open(queuepath, O_WRONLY);
-	if (qserver == (mqd_t)-1)
+	if (qserver == (mqd_t)-1) {
+#ifdef SHELL
+	INTON;
+#endif
 		err(EXIT_FAILURE, "%s", "mq_open");
+	}
 	if (set)
 		snprintf(out, sizeof(out), "%s", argv[0]);
 	else
@@ -102,14 +109,14 @@ main(int argc, char **argv)
 	if (set) {
 		mq_send(qserver, out, outlen, 0);
 		mq_close(qserver);
+#ifdef SHELL
+	INTON;
+#endif
 		return (0);
 	}
 
 	snprintf(spath, sizeof(spath),"%s%d", queuepath, getpid());
 	qme = mq_open(spath, O_RDONLY | O_CREAT, 0600, &attr);
-#ifdef SHELL
-	INTOFF;
-#endif
 	mq_send(qserver, out, outlen, 0);
 	sz = mq_receive(qme, out, sizeof(out), NULL);
 #ifdef SHELL
