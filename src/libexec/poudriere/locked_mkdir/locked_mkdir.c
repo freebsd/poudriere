@@ -54,6 +54,7 @@
 
 static int lockfd = -1;
 static volatile sig_atomic_t timed_out;
+struct sigaction oact;
 
 /*
  * Try to acquire a lock on the given file, creating the file if
@@ -78,8 +79,20 @@ acquire_lock(const char *name)
 static void
 cleanup(void)
 {
+#ifdef SHELL
+	int serrno;
 
-	flock(lockfd, LOCK_UN);
+	serrno = errno;
+#endif
+	if (lockfd != -1) {
+		flock(lockfd, LOCK_UN);
+		close(lockfd);
+		lockfd = -1;
+	}
+#ifdef SHELL
+	sigaction(SIGALRM, &oact, NULL);
+	errno = serrno;
+#endif
 }
 
 /*
@@ -101,6 +114,13 @@ main(int argc, char **argv)
 	const char *path;
 	char flock[MAXPATHLEN];
 	int kq, fd, waitsec;
+#ifdef SHELL
+	int serrno;
+
+	lockfd = -1;
+	timed_out = 0;
+	memset(&oact, sizeof(oact), 0);
+#endif
 
 	if (argc != 3)
 		errx(1, "Usage: <timeout> <directory>");
@@ -108,10 +128,13 @@ main(int argc, char **argv)
 	waitsec = atoi(argv[1]);
 	path = argv[2];
 
+#ifdef SHELL
+	INTOFF;
+#endif
 	act.sa_handler = sig_timeout;
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = 0;	/* Note that we do not set SA_RESTART. */
-	sigaction(SIGALRM, &act, NULL);
+	sigaction(SIGALRM, &act, &oact);
 	alarm(waitsec);
 
 	/* Open a file lock to serialize other locked_mkdir processes. */
@@ -120,20 +143,37 @@ main(int argc, char **argv)
 	while (lockfd == -1 && !timed_out)
 		lockfd = acquire_lock(flock);
 	waitsec = alarm(0);
-	if (lockfd == -1)		/* We failed to acquire the lock. */
+	if (lockfd == -1) {		/* We failed to acquire the lock. */
+#ifdef SHELL
+		cleanup();
+		INTON;
+#endif
 		return (EX_TEMPFAIL);
+	}
 
 	/* At this point, we own the lock. */
+#ifndef SHELL
 	if (atexit(cleanup) == -1)
 		err(EX_OSERR, "%s", "atexit failed");
+#endif
 
 	/* Try creating the directory. */
 	fd = open(path, O_RDONLY);
 	if (fd == -1 && errno == ENOENT) {
-		if (mkdir(path, S_IRWXU) == 0)
+		if (mkdir(path, S_IRWXU) == 0) {
+#ifdef SHELL
+			cleanup();
+			INTON;
+#endif
 			return (0);
-		if (errno != EEXIST)
+		}
+		if (errno != EEXIST) {
+#ifdef SHELL
+			cleanup();
+			INTON;
+#endif
 			err(1, "%s", "mkdir()");
+		}
 	}
 
 	/* Failed, the directory already exists. */
@@ -141,35 +181,63 @@ main(int argc, char **argv)
 	timeout.tv_sec = waitsec;
 	timeout.tv_nsec = 0;
 
-	if ((kq = kqueue()) == -1)
+	if ((kq = kqueue()) == -1) {
+#ifdef SHELL
+		serrno = errno;
+		close(fd);
+		cleanup();
+		INTON;
+		errno = serrno;
+#endif
 		err(1, "%s", "kqueue()");
+	}
 
 	EV_SET(&change, fd, EVFILT_VNODE, EV_ADD | EV_ENABLE |
 	    EV_ONESHOT, NOTE_DELETE, 0, 0);
 
-#ifdef SHELL
-	INTOFF;
-#endif
 	switch (kevent(kq, &change, 1, &event, 1, &timeout)) {
 	    case -1:
+#ifdef SHELL
+		serrno = errno;
+		close(kq);
+		close(fd);
+		cleanup();
+		INTON;
+		errno = serrno;
+#endif
 		err(1, "%s", "kevent()");
 		/* NOTREACHED */
 	    case 0:
 		/* Timeout */
+#ifdef SHELL
+		close(kq);
 		close(fd);
+		cleanup();
+		INTON;
+#endif
 		return (1);
 		/* NOTREACHED */
 	    default:
 		break;
 	}
 #ifdef SHELL
-	INTON;
+	close(kq);
 #endif
 	close(fd);
+#ifdef SHELL
+	INTON;
+#endif
 
 	/* This is expected to succeed. */
-	if (mkdir(path, S_IRWXU) != 0)
+	if (mkdir(path, S_IRWXU) != 0) {
+#ifdef SHELL
+		cleanup();
+#endif
 		err(1, "%s", "mkdir()");
+	}
 
+#ifdef SHELL
+	cleanup();
+#endif
 	return (0);
 }
