@@ -32,6 +32,8 @@
 #ifdef SHELL
 #define main clock_monotoniccmd
 #include "bltin/bltin.h"
+#include <errno.h>
+#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
 #endif
 
 /*
@@ -47,7 +49,7 @@ main(int argc, char **argv)
 # define CLOCK_MONOTONIC_FAST CLOCK_MONOTONIC
 #endif
 	if (clock_gettime(CLOCK_MONOTONIC_FAST, &ts))
-		err(EXIT_FAILURE, "clock_gettime");
+		err(EXIT_FAILURE, "%s", "clock_gettime");
 	printf("%ld\n", (long)ts.tv_sec);
 	return (EXIT_SUCCESS);
 }

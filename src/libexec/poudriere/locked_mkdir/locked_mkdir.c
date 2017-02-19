@@ -49,6 +49,7 @@
 #ifdef SHELL
 #define main locked_mkdircmd
 #include "bltin/bltin.h"
+#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
 #endif
 
 static int lockfd = -1;
@@ -124,7 +125,7 @@ main(int argc, char **argv)
 
 	/* At this point, we own the lock. */
 	if (atexit(cleanup) == -1)
-		err(EX_OSERR, "atexit failed");
+		err(EX_OSERR, "%s", "atexit failed");
 
 	/* Try creating the directory. */
 	fd = open(path, O_RDONLY);
@@ -132,7 +133,7 @@ main(int argc, char **argv)
 		if (mkdir(path, S_IRWXU) == 0)
 			return (0);
 		if (errno != EEXIST)
-			err(1, "mkdir()");
+			err(1, "%s", "mkdir()");
 	}
 
 	/* Failed, the directory already exists. */
@@ -141,7 +142,7 @@ main(int argc, char **argv)
 	timeout.tv_nsec = 0;
 
 	if ((kq = kqueue()) == -1)
-		err(1, "kqueue()");
+		err(1, "%s", "kqueue()");
 
 	EV_SET(&change, fd, EVFILT_VNODE, EV_ADD | EV_ENABLE |
 	    EV_ONESHOT, NOTE_DELETE, 0, 0);
@@ -151,7 +152,7 @@ main(int argc, char **argv)
 #endif
 	switch (kevent(kq, &change, 1, &event, 1, &timeout)) {
 	    case -1:
-		err(1, "kevent()");
+		err(1, "%s", "kevent()");
 		/* NOTREACHED */
 	    case 0:
 		/* Timeout */
@@ -168,7 +169,7 @@ main(int argc, char **argv)
 
 	/* This is expected to succeed. */
 	if (mkdir(path, S_IRWXU) != 0)
-		err(1, "mkdir()");
+		err(1, "%s", "mkdir()");
 
 	return (0);
 }
