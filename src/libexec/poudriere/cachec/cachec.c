@@ -101,6 +101,7 @@ main(int argc, char **argv)
 
 	if (set) {
 		mq_send(qserver, out, outlen, 0);
+		mq_close(qserver);
 		return (0);
 	}
 
