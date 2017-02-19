@@ -1,4 +1,5 @@
 TESTS=\
+	locks.sh \
 	relpath.sh \
 
 all: check
