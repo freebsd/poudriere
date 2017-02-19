@@ -59,7 +59,7 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if (!queuepath)
+	if (!queuepath || argc < 1)
 		errx(EXIT_FAILURE, "usage: cachec -s queuepath \"msg\"");
 
 	if (strncasecmp(argv[0], "set ", 4) == 0)
