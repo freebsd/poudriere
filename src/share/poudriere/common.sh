@@ -3841,11 +3841,11 @@ next_in_queue() {
 
 lock_acquire() {
 	[ $# -ge 1 ] || eargs lock_acquire lockname [waittime]
-	local lockname=$1
+	local lockname="$1"
 	local waittime="${2:-30}"
 
 	# Don't take locks inside siginfo_handler
-	[ ${in_siginfo_handler} -eq 1 ] && lock_have ${lockname} && \
+	[ ${in_siginfo_handler} -eq 1 ] && lock_have "${lockname}" && \
 	    return 1
 
 	if ! locked_mkdir "${waittime}" \
@@ -3858,7 +3858,7 @@ lock_acquire() {
 
 lock_release() {
 	[ $# -ne 1 ] && eargs lock_release lockname
-	local lockname=$1
+	local lockname="$1"
 
 	rmdir /tmp/.poudriere-lock-$$-${MASTERNAME}-${lockname} 2>/dev/null
 	hash_unset have_lock "${lockname}"
@@ -3866,6 +3866,7 @@ lock_release() {
 
 lock_have() {
 	[ $# -ne 1 ] && eargs lock_have lockname
+	local lockname="$1"
 	local _ignored
 
 	hash_get have_lock "${lockname}" _ignored

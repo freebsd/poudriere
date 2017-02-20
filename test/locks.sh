@@ -19,10 +19,16 @@ LOCK=$(mktemp -ut poudriere-locks)
 		result=nowait
 	fi
 	assert nowait ${result} "lock_acquire(TEST) should not have slept, elapsed: ${elapsed}"
+
+	lock_have TEST
+	assert 0 $? "lock_have(TEST) should be true"
 }
 
 # Acquire second lock TEST2
 {
+	lock_have TEST2
+	assert 1 $? "lock_have(TEST2) should be false"
+
 	time=$(date +%s)
 	lock_acquire TEST2 ${SLEEPTIME}
 	assert 0 $? "lock_acquire failed"
@@ -49,12 +55,19 @@ LOCK=$(mktemp -ut poudriere-locks)
 		result=nowait
 	fi
 	assert slept ${result} "lock_acquire(TEST) should have slept, elapsed: ${elapsed}"
+
+	lock_have TEST
+	assert 0 $? "lock_have(TEST) should be true"
 }
 
 # Release TEST, but releasing return status is unreliable.
 {
 	lock_release TEST
 	assert 0 $? "lock_release(TEST) did not succeed"
+	lock_have TEST
+	assert 1 $? "lock_have(TEST) should be false"
+	lock_have TEST2
+	assert 0 $? "lock_have(TEST2) should be true"
 }
 
 # Reacquire TEST to ensure it was released
