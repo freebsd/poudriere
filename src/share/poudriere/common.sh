@@ -4783,7 +4783,6 @@ trap sigpipe_handler SIGPIPE
 trap sigint_handler SIGINT
 trap sigterm_handler SIGTERM
 trap exit_handler EXIT
-# Use a function as it is shared logic with read_file()
 enable_siginfo_handler() {
 	was_a_bulk_run && trap siginfo_handler SIGINFO
 	in_siginfo_handler=0
