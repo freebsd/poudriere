@@ -899,6 +899,7 @@ show_build_summary() {
 
 siginfo_handler() {
 	trappedinfo=1
+	in_siginfo_handler=1
 	[ "${POUDRIERE_BUILD_TYPE}" != "bulk" ] && return 0
 	local status
 	local now
@@ -3832,6 +3833,10 @@ lock_acquire() {
 	local lockname=$1
 	local waittime="${2:-30}"
 
+	# Don't take locks inside siginfo_handler
+	[ ${in_siginfo_handler} -eq 1 ] && lock_have ${lockname} && \
+	    return 1
+
 	if ! locked_mkdir "${waittime}" \
 	    "/tmp/.poudriere-lock-$$-${MASTERNAME}-${lockname}"; then
 		msg_warn "Failed to acquire ${lockname} lock"
@@ -4781,6 +4786,7 @@ trap exit_handler EXIT
 # Use a function as it is shared logic with read_file()
 enable_siginfo_handler() {
 	was_a_bulk_run && trap siginfo_handler SIGINFO
+	in_siginfo_handler=0
 	return 0
 }
 enable_siginfo_handler
