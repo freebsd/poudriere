@@ -568,13 +568,18 @@ read_file() {
 	local _data line
 	local ret -
 
+	# var_return may be empty if only $_read_file_lines_read is being
+	# used.
+
 	set +e
 	_data=
 	_read_file_lines_read=0
 
 	if [ ${READ_FILE_USE_CAT:-0} -eq 1 ]; then
 		if [ -f "${file}" ]; then
-			_data="$(cat "${file}")"
+			if [ -n "${var_return}" ]; then
+				_data="$(cat "${file}")"
+			fi
 			_read_file_lines_read=$(wc -l < "${file}")
 			_read_file_lines_read=${_read_file_lines_read##* }
 			ret=0
@@ -596,14 +601,20 @@ read_file() {
 				# Some error or interruption/signal. Reread.
 				*) continue ;;
 			esac
-			[ ${_read_file_lines_read} -gt 0 ] && _data="${_data}
+			if [ -n "${var_return}" ]; then
+				# Add extra newline
+				[ ${_read_file_lines_read} -gt 0 ] && \
+				    _data="${_data}
 "
-			_data="${_data}${line}"
+				_data="${_data}${line}"
+			fi
 			_read_file_lines_read=$((${_read_file_lines_read} + 1))
 		done < "${file}" || ret=$?
 	fi
 
-	setvar "${var_return}" "${_data}"
+	if [ -n "${var_return}" ]; then
+		setvar "${var_return}" "${_data}"
+	fi
 
 	return ${ret}
 }
@@ -707,7 +718,11 @@ _bget() {
 	[ -z "${1##ports.*}" ] && READ_FILE_USE_CAT=1
 
 	read_file "${var_return}" "${log}/${file}" && return 0
-	setvar "${var_return}" ""
+	# It may be empty if only a count was being looked up
+	# via $_read_file_lines_read hack.
+	if [ -n "${var_return}" ]; then
+		setvar "${var_return}" ""
+	fi
 	return 1
 }
 
@@ -768,7 +783,7 @@ update_stats() {
 	lock_acquire update_stats || return 1
 
 	for type in built failed ignored; do
-		_bget unused "ports.${type}"
+		_bget '' "ports.${type}"
 		bset "stats_${type}" ${_read_file_lines_read}
 	done
 
