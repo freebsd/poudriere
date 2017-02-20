@@ -11,7 +11,7 @@
 .fslckout
 /autom4te.cache
 /cached
-/clock_monotonic
+/clock
 /cpdup
 /dirempty
 /dirwatch

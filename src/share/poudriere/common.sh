@@ -95,7 +95,7 @@ msg_n() {
 
 	elapsed=
 	if should_show_elapsed; then
-		now=$(clock_monotonic)
+		now=$(clock -monotonic)
 		calculate_duration elapsed "$((${now} - ${TIME_START:-0}))"
 		elapsed="[${elapsed}] "
 	fi
@@ -146,7 +146,7 @@ job_msg() {
 
 	if [ -n "${MY_JOBID}" ]; then
 		NO_ELAPSED_IN_MSG=0
-		now=$(clock_monotonic)
+		now=$(clock -monotonic)
 		calculate_duration elapsed "$((${now} - ${TIME_START_JOB:-${TIME_START:-0}}))"
 		output="[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}][${elapsed}] $1"
 	else
@@ -537,7 +537,7 @@ buildlog_stop() {
 
 	_log_path log
 	buildtime=$( \
-		stat -f '%N %B' ${log}/logs/${pkgname}.log  | awk -v now=$(date +%s) \
+		stat -f '%N %B' ${log}/logs/${pkgname}.log  | awk -v now=$(clock -epoch) \
 		-f ${AWKPREFIX}/siginfo_buildtime.awk |
 		awk -F'!' '{print $2}' \
 	)
@@ -744,7 +744,7 @@ bset_job_status() {
 	local status="$1"
 	local origin="$2"
 
-	bset ${MY_JOBID} status "${status}:${origin}:${PKGNAME}:${TIME_START_JOB:-${TIME_START}}:$(clock_monotonic)"
+	bset ${MY_JOBID} status "${status}:${origin}:${PKGNAME}:${TIME_START_JOB:-${TIME_START}}:$(clock -monotonic)"
 }
 
 badd() {
@@ -899,7 +899,7 @@ show_build_summary() {
 
 	_log_path log
 	_bget buildname buildname 2>/dev/null || :
-	now=$(date +%s)
+	now=$(clock -epoch)
 
 	calculate_elapsed_from_log ${now} ${log} || return 1
 	elapsed=${_elapsed_time}
@@ -942,7 +942,7 @@ siginfo_handler() {
 
 	show_build_summary
 
-	now=$(clock_monotonic)
+	now=$(clock -monotonic)
 
 	# Skip if stopping or starting jobs or stopped.
 	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" \
@@ -1433,7 +1433,7 @@ convert_repository() {
 
 	msg "Converting package repository to new format"
 
-	pkgdir=.real_$(date +%s)
+	pkgdir=.real_$(clock -epoch)
 	mkdir ${PACKAGES}/${pkgdir}
 
 	# Move all top-level dirs into .real
@@ -1536,7 +1536,7 @@ symlink to .latest/${name}"
 	pkgdir_old=$(realpath ${PACKAGES_ROOT}/.latest 2>/dev/null || :)
 
 	# Rename shadow dir to a production name
-	pkgdir_new=.real_$(date +%s)
+	pkgdir_new=.real_$(clock -epoch)
 	mv ${PACKAGES_ROOT}/.building ${PACKAGES_ROOT}/${pkgdir_new}
 
 	# XXX: Copy in packages that failed to build
@@ -3185,7 +3185,7 @@ build_pkg() {
 	cache_get_origin port "${pkgname}"
 	portdir="/usr/ports/${port}"
 
-	TIME_START_JOB=$(clock_monotonic)
+	TIME_START_JOB=$(clock -monotonic)
 	# Don't show timestamps in msg() which goes to logs, only job_msg()
 	# which goes to master
 	NO_ELAPSED_IN_MSG=1
@@ -5003,8 +5003,8 @@ if [ -n "${MAX_MEMORY}" ]; then
 fi
 : ${MAX_FILES:=1024}
 
-TIME_START=$(clock_monotonic)
-EPOCH_START=$(date +%s)
+TIME_START=$(clock -monotonic)
+EPOCH_START=$(clock -epoch)
 
 [ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}
 

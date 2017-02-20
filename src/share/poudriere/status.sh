@@ -117,7 +117,7 @@ post_getopts
 [ ${ALL} -eq 0 ] && : ${BUILDNAME_GLOB:=latest}
 
 POUDRIERE_BUILD_TYPE=bulk
-now="$(date +%s)"
+now="$(clock -epoch)"
 
 output_builder_info() {
 	local builders
