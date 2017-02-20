@@ -1893,6 +1893,7 @@ jail_start() {
 		echo " done"
 	else
 		PORTBUILD_UID=${portbuild_uid}
+		PORTBUILD_GID=$(injail id -g ${PORTBUILD_USER} 2>&1)
 	fi
 	injail service ldconfig start >/dev/null || \
 	    err 1 "Failed to set ldconfig paths."
@@ -1919,6 +1920,9 @@ jail_start() {
 			    grep '^export [^;&]*' | \
 			    sed -e 's,^export ,,' -e 's,=",=,' -e 's,"$,,'
 			echo "#### Misc Poudriere ####"
+			# This is not set by ports_env as older Poudriere
+			# would not handle it right.
+			echo "GID=0"
 		} >> ${tomnt}/etc/make.conf
 	fi
 
@@ -2428,8 +2432,10 @@ _real_build_port() {
 
 		if [ "${JUSER}" = "root" ]; then
 			export UID=0
+			export GID=0
 		else
 			export UID=${PORTBUILD_UID}
+			export GID=${PORTBUILD_UID}
 		fi
 
 		if [ "${phase#*-}" = "depends" ]; then
@@ -4477,8 +4483,10 @@ prepare_ports() {
 	# Don't leak ports-env UID as it conflicts with BUILD_AS_NON_ROOT
 	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
 		sed -i '' '/^UID=0$/d' "${MASTERMNT}/etc/make.conf"
+		sed -i '' '/^GID=0$/d' "${MASTERMNT}/etc/make.conf"
 		# Will handle manually for now on until build_port.
 		export UID=0
+		export GID=0
 	fi
 
 	jget ${JAILNAME} version > ${PACKAGES}/.jailversion
@@ -4951,6 +4959,7 @@ fi
 : ${PIDFILE:=${POUDRIERE_DATA}/daemon.pid}
 : ${QUEUE_SOCKET:=/var/run/poudriered.sock}
 : ${PORTBUILD_UID:=65532}
+: ${PORTBUILD_GID:=${PORTBUILD_UID}}
 : ${PORTBUILD_USER:=nobody}
 : ${CCACHE_DIR_NON_ROOT_SAFE:=no}
 if [ -n "${CCACHE_DIR}" ] && [ "${CCACHE_DIR_NON_ROOT_SAFE}" = "no" ]; then
