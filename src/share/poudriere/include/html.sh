@@ -35,7 +35,7 @@ stress_snapshot() {
 	[ ${ncpu} -gt ${NCPU} ] && ncpu=${NCPU}
 	loadpct="$(printf "%2.0f%%" $(echo "scale=20; 100 * (${min_load} / ${ncpu})" | bc))"
 	swapinfo=$(swapinfo -k|awk '/\// {sum+=$2; X+=$3} END {if (sum) {printf "%1.2f%%\n", X*100/sum}}')
-	now=$(clock_monotonic)
+	now=$(clock -monotonic)
 	elapsed=$((${now} - ${TIME_START}))
 
 	bset snap_loadavg "(${loadpct}) ${loadavg}"
@@ -121,7 +121,7 @@ html_json_cleanup() {
 	local log
 
 	_log_path log
-	bset ended "$(date +%s)" || :
+	bset ended "$(clock -epoch)" || :
 	build_all_json 2>/dev/null || :
 	rm -f ${log}/.data.json.tmp ${log}/.data.mini.json.tmp 2>/dev/null || :
 }

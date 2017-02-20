@@ -239,7 +239,7 @@ if [ ${CREATE} -eq 1 ]; then
 			;;
 		esac
 		pset ${PTNAME} method ${METHOD}
-		pset ${PTNAME} timestamp $(date +%s)
+		pset ${PTNAME} timestamp $(clock -epoch)
 	else
 		pset ${PTNAME} method "-"
 	fi
@@ -309,5 +309,5 @@ if [ ${UPDATE} -eq 1 ]; then
 		;;
 	esac
 
-	pset ${PTNAME} timestamp $(date +%s)
+	pset ${PTNAME} timestamp $(clock -epoch)
 fi

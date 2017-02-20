@@ -261,7 +261,7 @@ update_jail() {
 		err 1 "Unsupported method"
 		;;
 	esac
-	jset ${JAILNAME} timestamp $(date +%s)
+	jset ${JAILNAME} timestamp $(clock -epoch)
 }
 
 installworld() {
@@ -697,7 +697,7 @@ create_jail() {
 	createfs ${JAILNAME} ${JAILMNT} ${JAILFS:-none}
 	[ -n "${JAILFS}" -a "${JAILFS}" != "none" ] && jset ${JAILNAME} fs ${JAILFS}
 	jset ${JAILNAME} version ${VERSION}
-	jset ${JAILNAME} timestamp $(date +%s)
+	jset ${JAILNAME} timestamp $(clock -epoch)
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
 
@@ -745,7 +745,7 @@ info_jail() {
 	BUILDNAME=latest
 
 	_log_path log
-	now=$(date +%s)
+	now=$(clock -epoch)
 
 	_bget status status 2>/dev/null || :
 	_bget nbq stats_queued 2>/dev/null || nbq=0

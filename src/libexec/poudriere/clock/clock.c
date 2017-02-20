@@ -27,15 +27,23 @@
 #include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
+#include <sysexits.h>
 
 #ifdef SHELL
-#define main clock_monotoniccmd
+#define main clockcmd
 #include "bltin/bltin.h"
 #include <errno.h>
 #define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
 #endif
 
+static void
+usage(void)
+{
+
+		errx(EX_USAGE, "Usage: clock [-monotonic | -epoch]");
+}
 /*
  * Simple helper to return clock_gettime(CLOCK_MONOTONIC) for duration
  * display purposes. Faster than `date +%s` and ensures a monotonic time.
@@ -45,11 +53,20 @@ main(int argc, char **argv)
 {
 	struct timespec ts;
 
+	if (argc != 2)
+		usage();
+
 #ifndef CLOCK_MONOTONIC_FAST
 # define CLOCK_MONOTONIC_FAST CLOCK_MONOTONIC
 #endif
-	if (clock_gettime(CLOCK_MONOTONIC_FAST, &ts))
-		err(EXIT_FAILURE, "%s", "clock_gettime");
+	if (strcmp(argv[1], "-monotonic") == 0) {
+		if (clock_gettime(CLOCK_MONOTONIC_FAST, &ts))
+			err(EXIT_FAILURE, "%s", "clock_gettime");
+	} else if  (strcmp(argv[1], "-epoch") == 0) {
+		if (clock_gettime(CLOCK_REALTIME_FAST, &ts))
+			err(EXIT_FAILURE, "%s", "clock_gettime");
+	} else
+		usage();
 	printf("%ld\n", (long)ts.tv_sec);
 	return (EXIT_SUCCESS);
 }
