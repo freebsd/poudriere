@@ -51,7 +51,7 @@ html_json_main() {
 		stress_snapshot
 		update_stats || :
 		build_all_json
-		sleep 2 2>/dev/null
+		sleep ${HTML_JSON_UPDATE_INTERVAL} 2>/dev/null
 	done
 }
 
