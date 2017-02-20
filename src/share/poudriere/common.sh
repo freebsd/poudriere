@@ -4305,7 +4305,11 @@ prepare_ports() {
 		show_log_info
 		# Must acquire "update_stats" on shutdown to ensure
 		# the process is not killed while holding it.
-		coprocess_start html_json html_json_cleanup "update_stats"
+		if [ ${HTML_JSON_UPDATE_INTERVAL} -ne 0 ]; then
+			coprocess_start html_json html_json_cleanup "update_stats"
+		else
+			msg "HTML UI updates are disabled by HTML_JSON_UPDATE_INTERVAL being 0"
+		fi
 		coprocess_start pkg_cacher pkg_cacher_cleanup
 	fi
 
@@ -4960,6 +4964,7 @@ fi
 : ${USE_FDESCFS:=yes}
 : ${USE_PTSORT:=no}
 : ${MUTABLE_BASE:=yes}
+: ${HTML_JSON_UPDATE_INTERVAL:=2}
 
 # Be sure to update poudriere.conf to document the default when changing these
 : ${MAX_EXECUTION_TIME:=86400}         # 24 hours for 1 command
