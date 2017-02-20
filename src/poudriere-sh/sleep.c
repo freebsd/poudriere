@@ -99,6 +99,7 @@ main(int argc, char *argv[])
 	time_to_sleep.tv_nsec = 1e9 * (d - time_to_sleep.tv_sec);
 
 #ifdef SHELL
+	memset(&oact, sizeof(oact), 0);
 	act.sa_handler = report_request;
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = SA_RESTART;

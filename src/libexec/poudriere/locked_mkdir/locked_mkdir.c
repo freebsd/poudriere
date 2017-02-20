@@ -49,12 +49,16 @@
 #ifdef SHELL
 #define main locked_mkdircmd
 #include "bltin/bltin.h"
+#include "helpers.h"
 #define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
 #endif
 
 static int lockfd = -1;
 static volatile sig_atomic_t timed_out;
 struct sigaction oact;
+#ifdef SHELL
+struct sigaction oact_siginfo;
+#endif
 
 /*
  * Try to acquire a lock on the given file, creating the file if
@@ -91,6 +95,7 @@ cleanup(void)
 	}
 #ifdef SHELL
 	sigaction(SIGALRM, &oact, NULL);
+	siginfo_pop(&oact_siginfo);
 	errno = serrno;
 #endif
 }
@@ -130,6 +135,7 @@ main(int argc, char **argv)
 
 #ifdef SHELL
 	INTOFF;
+	siginfo_push(&oact_siginfo);
 #endif
 	act.sa_handler = sig_timeout;
 	sigemptyset(&act.sa_mask);

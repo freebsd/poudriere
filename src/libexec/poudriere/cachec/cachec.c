@@ -41,6 +41,7 @@
 #define main cacheccmd
 #include "bltin/bltin.h"
 #include "options.h"
+#include "helpers.h"
 #define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
 #endif
 
@@ -55,8 +56,9 @@ main(int argc, char **argv)
 	ssize_t sz;
 	size_t outlen;
 	bool set = false;
-
 #ifdef SHELL
+	struct sigaction oact;
+
 	while ((ch = nextopt("s:")) != '\0') {
 		switch (ch) {
 		case 's':
@@ -92,11 +94,13 @@ main(int argc, char **argv)
 
 #ifdef SHELL
 	INTOFF;
+	siginfo_push(&oact);
 #endif
 	qserver = mq_open(queuepath, O_WRONLY);
 	if (qserver == (mqd_t)-1) {
 #ifdef SHELL
-	INTON;
+		INTON;
+		siginfo_pop(&oact);
 #endif
 		err(EXIT_FAILURE, "%s", "mq_open");
 	}
@@ -110,7 +114,8 @@ main(int argc, char **argv)
 		mq_send(qserver, out, outlen, 0);
 		mq_close(qserver);
 #ifdef SHELL
-	INTON;
+		INTON;
+		siginfo_pop(&oact);
 #endif
 		return (0);
 	}
@@ -119,14 +124,15 @@ main(int argc, char **argv)
 	qme = mq_open(spath, O_RDONLY | O_CREAT, 0600, &attr);
 	mq_send(qserver, out, outlen, 0);
 	sz = mq_receive(qme, out, sizeof(out), NULL);
-#ifdef SHELL
-	INTON;
-#endif
 	if (sz > 0) {
 		out[sz] = '\0';
 		printf("%s\n", out);
 	}
 	mq_close(qme);
 	mq_unlink(spath);
+#ifdef SHELL
+	INTON;
+	siginfo_pop(&oact);
+#endif
 	return (0);
 }
