@@ -3,3 +3,4 @@ clockcmd clock
 diremptycmd dirempty
 locked_mkdircmd locked_mkdir
 realpathcmd realpath
+sleepcmd sleep

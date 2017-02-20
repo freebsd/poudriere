@@ -191,7 +191,8 @@ sh_SOURCES+=		\
 			src/libexec/poudriere/clock/clock.c \
 			src/libexec/poudriere/dirempty/dirempty.c \
 			src/libexec/poudriere/locked_mkdir/locked_mkdir.c \
-			src/poudriere-sh/realpath.c
+			src/poudriere-sh/realpath.c \
+			src/poudriere-sh/sleep.c
 # cachec
 sh_LDADD+=		-lrt
 external/sh/builtins.def: external/sh/builtins.def.sh src/poudriere-sh/builtins.def
