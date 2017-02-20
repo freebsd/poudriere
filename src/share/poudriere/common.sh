@@ -2275,7 +2275,6 @@ _real_build_port() {
 	local network
 	local hangstatus
 	local pkgenv phaseenv jpkg
-	local no_stage=$(injail /usr/bin/make -C ${portdir} -VNO_STAGE)
 	local targets install_order
 	local jailuser
 	local testfailure=0
@@ -2309,22 +2308,18 @@ _real_build_port() {
 
 	# Must install run-depends as 'actual-package-depends' and autodeps
 	# only consider installed packages as dependencies
-	if [ -n "${no_stage}" ]; then
-		install_order="run-depends install-mtree install package"
-	else
-		jailuser=root
-		if [ "${BUILD_AS_NON_ROOT}" = "yes" ] &&
-		    [ -z "$(injail /usr/bin/make -C ${portdir} -VNEED_ROOT)" ]; then
-			jailuser=${PORTBUILD_USER}
-		fi
-		# XXX: run-depends can come out of here with some bsd.port.mk
-		# changes. Easier once pkg_install is EOL.
-		install_order="run-depends stage package"
-		# Don't need to install if only making packages and not
-		# testing.
-		[ -n "${PORTTESTING}" ] && \
-		    install_order="${install_order} install-mtree install"
+	jailuser=root
+	if [ "${BUILD_AS_NON_ROOT}" = "yes" ] &&
+	    [ -z "$(injail /usr/bin/make -C ${portdir} -VNEED_ROOT)" ]; then
+		jailuser=${PORTBUILD_USER}
 	fi
+	# XXX: run-depends can come out of here with some bsd.port.mk
+	# changes. Easier once pkg_install is EOL.
+	install_order="run-depends stage package"
+	# Don't need to install if only making packages and not
+	# testing.
+	[ -n "${PORTTESTING}" ] && \
+	    install_order="${install_order} install-mtree install"
 	targets="check-sanity pkg-depends fetch-depends fetch checksum \
 		  extract-depends extract patch-depends patch build-depends \
 		  lib-depends configure build ${install_order} \
@@ -2343,7 +2338,7 @@ _real_build_port() {
 	for phase in ${targets}; do
 		max_execution_time=${MAX_EXECUTION_TIME}
 		phaseenv=
-		[ -z "${no_stage}" ] && JUSER=${jailuser}
+		JUSER=${jailuser}
 		bset_job_status "${phase}" "${port}"
 		job_msg_verbose "Status for build ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
 		[ -n "${PORTTESTING}" ] && \
@@ -2392,8 +2387,7 @@ _real_build_port() {
 			;;
 		package)
 			max_execution_time=3600
-			if [ -n "${PORTTESTING}" ] &&
-			    [ -z "${no_stage}" ]; then
+			if [ -n "${PORTTESTING}" ]; then
 				check_fs_violation ${mnt} prestage "${port}" \
 				    "Checking for staging violations" \
 				    "Filesystem touched during stage (files must install to \${STAGEDIR}):" \
