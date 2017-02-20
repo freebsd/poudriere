@@ -3394,9 +3394,11 @@ list_deps() {
 	local makeargs="-VPKG_DEPENDS -VBUILD_DEPENDS -VEXTRACT_DEPENDS -VLIB_DEPENDS -VPATCH_DEPENDS -VFETCH_DEPENDS -VRUN_DEPENDS"
 
 	prefix_stderr_quick "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
-		injail /usr/bin/make -C ${dir} $makeargs | tr ' ' '\n' | \
-		awk -F: '{ gsub(/\/usr\/ports\//,"", $2); print $2 }' | \
-		sort -u || err 1 "Makefile broken: $1"
+		injail /usr/bin/make -C ${dir} $makeargs | \
+		/usr/bin/tr ' ' '\n' | \
+		/usr/bin/awk -F: '{ gsub(/\/usr\/ports\//,"", $2); print $2 }' | \
+		/usr/bin/sort -u || \
+		err 1 "Makefile broken: $1"
 }
 
 deps_file() {
@@ -4003,7 +4005,7 @@ compute_deps_port() {
 	[ -z "${pkgname}" ] && cache_get_pkgname pkgname "${port}"
 	pkg_pooldir="${MASTERMNT}/.p/deps/${pkgname}"
 
-	mkdir "${pkg_pooldir}" 2>/dev/null || return 0
+	/bin/mkdir "${pkg_pooldir}" 2>/dev/null || return 0
 
 	msg_verbose "Computing deps for ${COLOR_PORT}${port}"
 
