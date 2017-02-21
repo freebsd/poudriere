@@ -230,6 +230,7 @@ if [ ${CREATE} -eq 1 ]; then
 	# test if it already exists
 	porttree_exists ${PTNAME} && err 2 "The ports tree, ${PTNAME}, already exists"
 	maybe_run_queued "${saved_argv}"
+        [ -n ${ZPORTS} ] && ZPOOL=$ZPORTS
 	: ${PTMNT="${BASEFS:=/usr/local${ZROOTFS}}/ports/${PTNAME}"}
 	: ${PTFS="${ZPOOL}${ZROOTFS}/ports/${PTNAME}"}
 
