@@ -195,6 +195,7 @@ sh_SOURCES+=		\
 			src/libexec/poudriere/locked_mkdir/locked_mkdir.c \
 			src/libexec/poudriere/pwait/pwait.c \
 			src/poudriere-sh/helpers.c \
+			src/poudriere-sh/mkdir.c \
 			src/poudriere-sh/realpath.c \
 			src/poudriere-sh/sleep.c
 sh_CFLAGS+=		-I$(top_srcdir)/src/poudriere-sh

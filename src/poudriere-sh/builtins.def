@@ -2,6 +2,7 @@ cacheccmd cachec
 clockcmd clock
 diremptycmd dirempty
 locked_mkdircmd locked_mkdir
+mkdircmd mkdir
 pwaitcmd pwait
 realpathcmd realpath
 sleepcmd sleep

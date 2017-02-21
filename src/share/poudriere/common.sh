@@ -4028,7 +4028,7 @@ compute_deps_port() {
 	[ -z "${pkgname}" ] && cache_get_pkgname pkgname "${port}"
 	pkg_pooldir="${MASTERMNT}/.p/deps/${pkgname}"
 
-	/bin/mkdir "${pkg_pooldir}" 2>/dev/null || return 0
+	mkdir "${pkg_pooldir}" 2>/dev/null || return 0
 
 	msg_verbose "Computing deps for ${COLOR_PORT}${port}"
 
