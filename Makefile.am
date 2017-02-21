@@ -119,6 +119,7 @@ pkglibexec_PROGRAMS= \
 		     tsort \
 		     jexecd \
 		     ptsort \
+		     setproctitle \
 		     rexec \
 		     cached \
 		     cachec
@@ -144,6 +145,7 @@ dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
 locked_mkdir_SOURCES=	src/libexec/poudriere/locked_mkdir/locked_mkdir.c
 nc_SOURCES=		src/libexec/poudriere/nc/nc.c
 pwait_SOURCES=		src/libexec/poudriere/pwait/pwait.c
+setproctitle_SOURCES=	src/libexec/poudriere/setproctitle/setproctitle.c
 timeout_SOURCES=	src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
 tsort_SOURCES=		src/libexec/poudriere/tsort/tsort.c
@@ -195,6 +197,7 @@ sh_SOURCES+=		\
 			src/libexec/poudriere/locked_mkdir/locked_mkdir.c \
 			src/libexec/poudriere/pwait/pwait.c \
 			src/libexec/poudriere/rename/rename.c \
+			src/libexec/poudriere/setproctitle/setproctitle.c \
 			src/poudriere-sh/helpers.c \
 			src/poudriere-sh/mkdir.c \
 			src/poudriere-sh/realpath.c \

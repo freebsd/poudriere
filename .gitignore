@@ -28,6 +28,7 @@
 /pwait
 /rename
 /rexec
+/setproctitle
 /sh
 /timeout
 /timestamp
