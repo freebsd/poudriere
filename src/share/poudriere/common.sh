@@ -750,7 +750,7 @@ bset() {
 	[ "${property}" = "status" ] && \
 	    echo "$@" >> ${log}/${file}.journal% || :
 	if echo "$@" > ${log}/.tmp.${file}; then
-		mv -f ${log}/.tmp.${file} ${log}/${file}
+		rename ${log}/.tmp.${file} ${log}/${file}
 	fi
 }
 
@@ -3834,7 +3834,7 @@ next_in_queue() {
 	p=$(find ${POOL_BUCKET_DIRS} -type d -depth 1 -empty -print -quit || :)
 	if [ -n "$p" ]; then
 		_pkgname=${p##*/}
-		if ! mv ${p} ../building/${_pkgname} \
+		if ! rename "${p}" "../building/${_pkgname}" \
 		    2>/dev/null; then
 			# Was the failure from /unbalanced?
 			if [ -z "${p%%*unbalanced/*}" ]; then
@@ -4639,7 +4639,8 @@ balance_pool() {
 		hash_get "priority" "${pkgname}" dep_count || dep_count=0
 		# This races with next_in_queue(), just ignore failure
 		# to move it.
-		mv ${pkg_dir} ${MASTERMNT}/.p/pool/${dep_count}/ \
+		rename "${pkg_dir}" \
+		    "${MASTERMNT}/.p/pool/${dep_count}/${pkgname}" \
 		    2>/dev/null || :
 	done
 	# New files may have been added in unbalanced/ via clean.sh due to not

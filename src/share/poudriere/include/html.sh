@@ -70,7 +70,7 @@ build_json() {
 		awk 'ORS=""; {print}' | \
 		sed  -e 's/,\([]}]\)/\1/g' \
 		> ${log}/.data.json.tmp
-	mv -f ${log}/.data.json.tmp ${log}/.data.json
+	rename ${log}/.data.json.tmp ${log}/.data.json
 
 	# Build mini json for stats
 	awk -v mini=yes \
@@ -78,7 +78,7 @@ build_json() {
 		awk 'ORS=""; {print}' | \
 		sed  -e 's/,\([]}]\)/\1/g' \
 		> ${log}/.data.mini.json.tmp
-	mv -f ${log}/.data.mini.json.tmp ${log}/.data.mini.json
+	rename ${log}/.data.mini.json.tmp ${log}/.data.mini.json
 }
 
 build_jail_json() {
@@ -95,7 +95,7 @@ build_jail_json() {
 		    paste -s -d , -
 		echo "}}"
 	} > ${tmpfile}
-	mv -f ${tmpfile} ${log_path_jail}/.data.json
+	rename ${tmpfile} ${log_path_jail}/.data.json
 }
 
 build_top_json() {
@@ -113,7 +113,7 @@ build_top_json() {
 		    paste -s -d , -
 		echo "}}"
 	) > ${tmpfile}
-	mv -f ${tmpfile} ${log_path_top}/.data.json
+	rename ${tmpfile} ${log_path_top}/.data.json
 }
 
 # This is called at the end

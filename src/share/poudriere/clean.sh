@@ -57,7 +57,7 @@ clean_rdeps() {
 
 	# Exclusively claim the rdeps dir or return, another clean.sh owns it
 	# or there were no reverse deps for this package.
-	mv "${JAILMNT}/.p/rdeps/${pkgname}" "${rdep_dir}" 2>/dev/null ||
+	rename "${JAILMNT}/.p/rdeps/${pkgname}" "${rdep_dir}" 2>/dev/null ||
 	    return 0
 
 	# Cleanup everything that depends on my package
@@ -114,7 +114,7 @@ clean_deps() {
 	dep_dir="${JAILMNT}/.p/cleaning/deps/${pkgname}"
 
 	# Exclusively claim the deps dir or return, another clean.sh owns it
-	mv "${JAILMNT}/.p/deps/${pkgname}" "${dep_dir}" 2>/dev/null ||
+	rename "${JAILMNT}/.p/deps/${pkgname}" "${dep_dir}" 2>/dev/null ||
 	    return 0
 
 	# Remove myself from all my dependency rdeps to prevent them from
