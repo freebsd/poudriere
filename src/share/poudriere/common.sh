@@ -778,6 +778,10 @@ update_stats() {
 	local type unused
 	local -
 
+	if [ -n "${update_stats_done}" ]; then
+		return 0
+	fi
+
 	set +e
 
 	lock_acquire update_stats || return 1
@@ -3096,6 +3100,7 @@ parallel_build() {
 
 	bset status "updating_stats:"
 	update_stats || msg_warn "Error updating build stats"
+	update_stats_done=1
 
 	bset status "idle:"
 
