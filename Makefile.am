@@ -194,6 +194,7 @@ sh_SOURCES+=		\
 			src/libexec/poudriere/dirempty/dirempty.c \
 			src/libexec/poudriere/locked_mkdir/locked_mkdir.c \
 			src/libexec/poudriere/pwait/pwait.c \
+			src/libexec/poudriere/rename/rename.c \
 			src/poudriere-sh/helpers.c \
 			src/poudriere-sh/mkdir.c \
 			src/poudriere-sh/realpath.c \

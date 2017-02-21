@@ -5,4 +5,5 @@ locked_mkdircmd locked_mkdir
 mkdircmd mkdir
 pwaitcmd pwait
 realpathcmd realpath
+renamecmd rename
 sleepcmd sleep
