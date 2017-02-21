@@ -57,21 +57,42 @@ usage(void)
 	exit(EX_USAGE);
 }
 
+static double
+parse_duration(const char *duration)
+{
+	char *end;
+	double ret;
+
+	ret = strtod(duration, &end);
+	if (ret == 0 && end == duration)
+		errx(EX_DATAERR, "invalid duration");
+	if (end == NULL || *end == '\0')
+		return (ret);
+	errx(EX_DATAERR, "invalid duration");
+}
+
 /*
  * pwait - wait for processes to terminate
  */
 int
 main(int argc, char *argv[])
 {
+	struct timespec tspec;
 	int kq;
 	struct kevent *e;
-	int verbose = 0;
+	int tflag, verbose;
 	int opt, nleft, n, i, duplicate, status;
 	long pid;
 	char *s, *end;
 
-	while ((opt = getopt(argc, argv, "v")) != -1) {
+	tflag = verbose = 0;
+	tspec.tv_sec = tspec.tv_nsec = 0;
+	while ((opt = getopt(argc, argv, "t:v")) != -1) {
 		switch (opt) {
+		case 't':
+			tflag = 1;
+			tspec.tv_sec = parse_duration(optarg);
+			break;
 		case 'v':
 			verbose = 1;
 			break;
@@ -120,9 +141,11 @@ main(int argc, char *argv[])
 	}
 
 	while (nleft > 0) {
-		n = kevent(kq, NULL, 0, e, nleft, NULL);
+		n = kevent(kq, NULL, 0, e, nleft, tflag == 1 ? &tspec : NULL);
 		if (n == -1)
 			err(1, "kevent");
+		else if (n == 0)
+			exit(124);
 		if (verbose)
 			for (i = 0; i < n; i++) {
 				status = e[i].data;
