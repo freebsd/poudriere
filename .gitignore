@@ -25,6 +25,7 @@
 /poudriere_statsd
 /poudriere
 /ptsort
+/pwait
 /rename
 /rexec
 /rm

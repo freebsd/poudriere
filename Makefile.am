@@ -112,6 +112,7 @@ pkglibexec_PROGRAMS= \
 		     poudriered \
 		     rename \
 		     locked_mkdir \
+		     pwait \
 		     @SH@ \
 		     @RM@ \
 		     timeout \
@@ -143,6 +144,7 @@ dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
 locked_mkdir_SOURCES=	src/libexec/poudriere/locked_mkdir/locked_mkdir.c
 nc_SOURCES=		src/libexec/poudriere/nc/nc.c
 rm_SOURCES=		src/libexec/poudriere/rm/rm.c
+pwait_SOURCES=		src/libexec/poudriere/pwait/pwait.c
 timeout_SOURCES=	src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
 tsort_SOURCES=		src/libexec/poudriere/tsort/tsort.c
