@@ -49,12 +49,24 @@ __FBSDID("$FreeBSD$");
 #include <sysexits.h>
 #include <unistd.h>
 
+#ifdef SHELL
+#define main pwaitcmd
+#include "bltin/bltin.h"
+#include "options.h"
+#include "helpers.h"
+#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+#endif
+
 static void
 usage(void)
 {
 
 	fprintf(stderr, "usage: pwait [-v] pid ...\n");
+#ifdef SHELL
+	error(NULL);
+#else
 	exit(EX_USAGE);
+#endif
 }
 
 static double
@@ -77,6 +89,9 @@ parse_duration(const char *duration)
 int
 main(int argc, char *argv[])
 {
+#ifdef SHELL
+	struct sigaction oact;
+#endif
 	struct timespec tspec;
 	int kq;
 	struct kevent *e;
@@ -87,11 +102,19 @@ main(int argc, char *argv[])
 
 	tflag = verbose = 0;
 	tspec.tv_sec = tspec.tv_nsec = 0;
+#ifdef SHELL
+	while ((opt = nextopt("t:v")) != '\0') {
+#else
 	while ((opt = getopt(argc, argv, "t:v")) != -1) {
+#endif
 		switch (opt) {
 		case 't':
 			tflag = 1;
+#ifdef SHELL
+			tspec.tv_sec = parse_duration(shoptarg);
+#else
 			tspec.tv_sec = parse_duration(optarg);
+#endif
 			break;
 		case 'v':
 			verbose = 1;
@@ -101,20 +124,31 @@ main(int argc, char *argv[])
 			/* NOTREACHED */
 		}
 	}
-
+#ifdef SHELL
+	argc -= argptr - argv;
+	argv = argptr;
+#else
 	argc -= optind;
 	argv += optind;
+#endif
 
 	if (argc == 0)
 		usage();
-
+#ifdef SHELL
+	INTOFF;
+	siginfo_push(&oact);
+#endif
 	kq = kqueue();
 	if (kq == -1)
-		err(1, "kqueue");
+		err(1, "%s", "kqueue");
 
 	e = malloc(argc * sizeof(struct kevent));
-	if (e == NULL)
-		err(1, "malloc");
+	if (e == NULL) {
+#ifdef SHELL
+		close(kq);
+#endif
+		err(1, "%s", "malloc");
+	}
 	nleft = 0;
 	for (n = 0; n < argc; n++) {
 		s = argv[n];
@@ -142,10 +176,23 @@ main(int argc, char *argv[])
 
 	while (nleft > 0) {
 		n = kevent(kq, NULL, 0, e, nleft, tflag == 1 ? &tspec : NULL);
-		if (n == -1)
-			err(1, "kevent");
-		else if (n == 0)
-			exit(124);
+		if (n == -1) {
+#ifdef SHELL
+			free(e);
+			close(kq);
+			INTON;
+			siginfo_pop(&oact);
+#endif
+			err(1, "%s", "kevent");
+		} else if (n == 0) {
+#ifdef SHELL
+			free(e);
+			close(kq);
+			INTON;
+			siginfo_pop(&oact);
+#endif
+			return(124);
+		}
 		if (verbose)
 			for (i = 0; i < n; i++) {
 				status = e[i].data;
@@ -163,6 +210,11 @@ main(int argc, char *argv[])
 			}
 		nleft -= n;
 	}
-
-	exit(EX_OK);
+#ifdef SHELL
+	free(e);
+	close(kq);
+	INTON;
+	siginfo_pop(&oact);
+#endif
+	return(EX_OK);
 }
