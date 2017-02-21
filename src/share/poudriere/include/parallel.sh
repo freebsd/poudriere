@@ -66,13 +66,13 @@ timed_wait() {
 
 	status=0
 	# Wait for the pids.
-	timeout ${time} pwait ${pids} 2>/dev/null >&1 || status=$?
+	pwait -t ${time} ${pids} 2>/dev/null >&1 || status=$?
 	if [ ${status} -eq 124 ]; then
 		# Timeout reached, something still running.
 		return 1
-	elif [ ${status} -gt 128 ]; then
-		# XXX: Some signal interrupted the timeout check. Consider
-		# it a failure.
+	elif [ ${status} -gt 0 ]; then
+		# XXX: Some signal interrupted the timeout check or some
+		# other error was encountered. Consider it a failure.
 		return 1
 	fi
 
