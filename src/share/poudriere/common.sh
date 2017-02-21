@@ -2489,7 +2489,7 @@ _real_build_port() {
 			local die=0
 
 			bset_job_status "stage-qa" "${port}"
-			if ! injail env DEVELOPER=1 ${PORT_FLAGS} \
+			if ! injail env PROXYDEPS_FATAL=1 DEVELOPER=1 ${PORT_FLAGS} \
 			    /usr/bin/make -C ${portdir} stage-qa; then
 				msg "Error: stage-qa failures detected"
 				[ "${PORTTESTING_FATAL}" != "no" ] &&
