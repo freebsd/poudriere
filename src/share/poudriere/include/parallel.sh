@@ -276,6 +276,18 @@ nohang() {
 			break
 		fi
 
+		# Wait until it is done, but check on it every so often
+		# This is done instead of a 'sleep' as it should recognize
+		# the command has completed right away instead of waiting
+		# on the 'sleep' to finish
+		unset n; until trappedinfo=; read -t $read_timeout n <&8 ||
+			[ -z "$trappedinfo" ]; do :; done
+		if [ "${n}" = "done" ]; then
+			_wait $childpid || ret=1
+			break
+		fi
+
+		# Not done, was a timeout, check the log time
 		lastupdated=$(stat -f "%m" ${logfile})
 		now=$(clock -epoch)
 
@@ -288,18 +300,6 @@ nohang() {
 			ret=3
 			break
 		fi
-
-		# Wait until it is done, but check on it every so often
-		# This is done instead of a 'sleep' as it should recognize
-		# the command has completed right away instead of waiting
-		# on the 'sleep' to finish
-		unset n; until trappedinfo=; read -t $read_timeout n <&8 ||
-			[ -z "$trappedinfo" ]; do :; done
-		if [ "${n}" = "done" ]; then
-			_wait $childpid || ret=1
-			break
-		fi
-		# Not done, was a timeout, check the log time
 	done
 
 	exec 8<&-
