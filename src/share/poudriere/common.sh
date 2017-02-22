@@ -3205,6 +3205,8 @@ build_pkg() {
 	cache_get_origin port "${pkgname}"
 	portdir="/usr/ports/${port}"
 
+	setproctitle "build_pkg (${pkgname})" || :
+
 	TIME_START_JOB=$(clock -monotonic)
 	# Don't show timestamps in msg() which goes to logs, only job_msg()
 	# which goes to master
