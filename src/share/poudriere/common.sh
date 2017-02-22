@@ -2824,6 +2824,8 @@ $(find ${MASTERMNT}/.p/building ${MASTERMNT}/.p/pool ${MASTERMNT}/.p/deps ${MAST
 }
 
 queue_empty() {
+	[ "${PWD}" = "${MASTERMNT}/.p/pool" ] || \
+	    err 1 "queue_empty requires PWD=${MASTERMNT}/.p/pool"
 	local pool_dir dirs
 	local n
 
@@ -2848,6 +2850,8 @@ queue_empty() {
 }
 
 job_done() {
+	[ "${PWD}" = "${MASTERMNT}/.p/pool" ] || \
+	    err 1 "job_done requires PWD=${MASTERMNT}/.p/pool"
 	[ $# -eq 1 ] || eargs job_done j
 	local j="$1"
 	local pkgname status
@@ -3130,7 +3134,10 @@ clean_pool() {
 		run_hook pkgbuild skipped "${skipped_origin}" "${skipped_pkgname}" "${port}"
 	done
 
-	balance_pool || :
+	(
+		cd "${MASTERMNT}/.p"
+		balance_pool || :
+	)
 }
 
 print_phase_header() {
@@ -3803,6 +3810,8 @@ delete_old_pkgs() {
 ## Then move the package to the "building" dir in building/
 ## This is only ran from 1 process
 next_in_queue() {
+	[ "${PWD}" = "${MASTERMNT}/.p/pool" ] || \
+	    err 1 "next_in_queue requires PWD=${MASTERMNT}/.p/pool"
 	local var_return="$1"
 	local p _pkgname ret
 
@@ -4270,6 +4279,7 @@ clean_build_queue() {
 	fi
 }
 
+# PWD will be MASTERMNT/.p after this
 prepare_ports() {
 	local pkg
 	local log log_top
@@ -4288,6 +4298,7 @@ prepare_ports() {
 		"${MASTERMNT}/.p/var/cache"
 
 	SHASH_VAR_PATH="${MASTERMNT}/.p/var/cache"
+	cd "${MASTERMNT}/.p"
 
 	if [ -e "${log}/.poudriere.ports.built" ]; then
 		resuming_build=1
@@ -4451,15 +4462,15 @@ prepare_ports() {
 
 	if was_a_bulk_run && [ $resuming_build -eq 0 ]; then
 		nbq=0
-		nbq=$(find ${MASTERMNT}/.p/deps -type d -depth 1 | wc -l)
+		nbq=$(find deps -type d -depth 1 | wc -l)
 		# Add 1 for the main port to test
 		[ "${SCRIPTPATH##*/}" = "testport.sh" ] && nbq=$((${nbq} + 1))
 		bset stats_queued ${nbq##* }
 	fi
 
 	# Create a pool of ready-to-build from the deps pool
-	find "${MASTERMNT}/.p/deps" -type d -empty -depth 1 | \
-		xargs -J % mv % "${MASTERMNT}/.p/pool/unbalanced"
+	find deps -type d -empty -depth 1 | \
+		xargs -J % mv % pool/unbalanced
 	load_priorities
 	balance_pool
 
@@ -4483,15 +4494,13 @@ load_priorities_tsortD() {
 	local priority pkgname pkg_boost boosted origin
 	local - # Keep set -f local
 
-	tsort -D "${MASTERMNT}/.p/pkg_deps" > \
-	    "${MASTERMNT}/.p/pkg_deps.depth"
+	tsort -D "pkg_deps" > "pkg_deps.depth"
 
 	# Create buckets to satisfy the dependency chains, in reverse
 	# order. Not counting here as there may be boosted priorities
 	# at 99 or other high values.
 
-	POOL_BUCKET_DIRS=$(awk '{print $1}' \
-	    "${MASTERMNT}/.p/pkg_deps.depth"|sort -run)
+	POOL_BUCKET_DIRS=$(awk '{print $1}' "pkg_deps.depth"|sort -run)
 
 	set -f # for PRIORITY_BOOST
 	boosted=0
@@ -4500,7 +4509,7 @@ load_priorities_tsortD() {
 		for pkg_boost in ${PRIORITY_BOOST}; do
 			case ${pkgname%-*} in
 				${pkg_boost})
-					[ -d ${MASTERMNT}/.p/deps/${pkgname} ] \
+					[ -d "deps/${pkgname}" ] \
 					    || continue
 					cache_get_origin origin "${pkgname}"
 					msg "Boosting priority: ${COLOR_PORT}${origin}"
@@ -4511,7 +4520,7 @@ load_priorities_tsortD() {
 			esac
 		done
 		hash_set "priority" "${pkgname}" ${priority}
-	done < "${MASTERMNT}/.p/pkg_deps.depth"
+	done < "pkg_deps.depth"
 
 	# Add ${PRIORITY_BOOST_VALUE} into the pool if needed.
 	[ ${boosted} -eq 1 ] && POOL_BUCKET_DIRS="${PRIORITY_BOOST_VALUE} ${POOL_BUCKET_DIRS}"
@@ -4525,8 +4534,7 @@ load_priorities_ptsort() {
 
 	set -f # for PRIORITY_BOOST
 
-	awk '{print $2 " " $1}' "${MASTERMNT}/.p/pkg_deps" > \
-	    "${MASTERMNT}/.p/pkg_deps.ptsort"
+	awk '{print $2 " " $1}' "pkg_deps" > "pkg_deps.ptsort"
 
 	# Add in boosts before running ptsort
 	while read pkgname; do
@@ -4534,36 +4542,39 @@ load_priorities_ptsort() {
 		for pkg_boost in ${PRIORITY_BOOST}; do
 			case ${pkgname%-*} in
 				${pkg_boost})
-					[ -d ${MASTERMNT}/.p/deps/${pkgname} ] \
+					[ -d "deps/${pkgname}" ] \
 					    || continue
 					cache_get_origin origin "${pkgname}"
 					msg "Boosting priority: ${COLOR_PORT}${origin}"
 					echo "${pkgname} ${PRIORITY_BOOST_VALUE}" >> \
-					    "${MASTERMNT}/.p/pkg_deps.ptsort"
+					    "pkg_deps.ptsort"
 					break
 					;;
 			esac
 		done
 	done <<- EOF
-	$(sort -u "${MASTERMNT}/.p/all_pkgs")
+	$(sort -u "all_pkgs")
 	EOF
 
-	ptsort -p "${MASTERMNT}/.p/pkg_deps.ptsort" > \
-	    "${MASTERMNT}/.p/pkg_deps.priority"
+	ptsort -p "pkg_deps.ptsort" > \
+	    "pkg_deps.priority"
 
 	# Create buckets to satisfy the dependency chain priorities.
 	POOL_BUCKET_DIRS=$(awk '{print $1}' \
-	    "${MASTERMNT}/.p/pkg_deps.priority"|sort -run)
+	    "pkg_deps.priority"|sort -run)
 
 	# Read all priorities into the "priority" hash
 	while read priority pkgname; do
 		hash_set "priority" "${pkgname}" ${priority}
-	done < "${MASTERMNT}/.p/pkg_deps.priority"
+	done < "pkg_deps.priority"
 
 	return 0
 }
 
 load_priorities() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "load_priorities requires PWD=${MASTERMNT}/.p"
+
 	POOL_BUCKET_DIRS=""
 
 	if [ ${POOL_BUCKETS} -gt 0 ]; then
@@ -4581,7 +4592,7 @@ load_priorities() {
 	[ -z "${POOL_BUCKET_DIRS}" ] && POOL_BUCKET_DIRS="0"
 
 	# Create buckets after loading priorities in case of boosts.
-	( cd ${MASTERMNT}/.p/pool && mkdir ${POOL_BUCKET_DIRS} )
+	( cd pool && mkdir ${POOL_BUCKET_DIRS} )
 
 	# unbalanced is where everything starts at.  Items are moved in
 	# balance_pool based on their priority in the "priority" hash.
@@ -4593,6 +4604,8 @@ load_priorities() {
 balance_pool() {
 	# Don't bother if disabled
 	[ ${POOL_BUCKETS} -gt 0 ] || return 0
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "balance_pool requires PWD=${MASTERMNT}/.p"
 
 	local pkgname pkg_dir dep_count lock
 
@@ -4600,10 +4613,10 @@ balance_pool() {
 	# not on the unbalanced/ dir, but only this function. clean.sh writes
 	# to unbalanced/, queue_empty() reads from it, and next_in_queue()
 	# moves from it.
-	lock=${MASTERMNT}/.p/.lock-balance_pool
+	lock=.lock-balance_pool
 	mkdir ${lock} 2>/dev/null || return 0
 
-	if dirempty ${MASTERMNT}/.p/pool/unbalanced; then
+	if dirempty pool/unbalanced; then
 		rmdir ${lock}
 		return 0
 	fi
@@ -4615,17 +4628,17 @@ balance_pool() {
 	fi
 
 	# For everything ready-to-build...
-	for pkg_dir in ${MASTERMNT}/.p/pool/unbalanced/*; do
+	for pkg_dir in pool/unbalanced/*; do
 		# May be empty due to racing with next_in_queue()
 		case "${pkg_dir}" in
-			"${MASTERMNT}/.p/pool/unbalanced/*") break ;;
+			"pool/unbalanced/*") break ;;
 		esac
 		pkgname=${pkg_dir##*/}
 		hash_get "priority" "${pkgname}" dep_count || dep_count=0
 		# This races with next_in_queue(), just ignore failure
 		# to move it.
 		rename "${pkg_dir}" \
-		    "${MASTERMNT}/.p/pool/${dep_count}/${pkgname}" \
+		    "pool/${dep_count}/${pkgname}" \
 		    2>/dev/null || :
 	done
 	# New files may have been added in unbalanced/ via clean.sh due to not
