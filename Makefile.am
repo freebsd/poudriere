@@ -120,6 +120,7 @@ pkglibexec_PROGRAMS= \
 		     pwait \
 		     rename \
 		     rexec \
+		     rm \
 		     setproctitle \
 		     timeout \
 		     timestamp \
@@ -147,6 +148,7 @@ locked_mkdir_SOURCES=	src/libexec/poudriere/locked_mkdir/locked_mkdir.c
 nc_SOURCES=		src/libexec/poudriere/nc/nc.c
 pwait_SOURCES=		src/libexec/poudriere/pwait/pwait.c
 rename_SOURCES=		src/libexec/poudriere/rename/rename.c
+rm_SOURCES=		src/libexec/poudriere/rm/rm.c
 setproctitle_SOURCES=	src/libexec/poudriere/setproctitle/setproctitle.c
 timeout_SOURCES=	src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
