@@ -27,14 +27,14 @@
 stress_snapshot() {
 	local loadvg swapinfo elapsed duration now min_load loadpct ncpu
 
-	loadavg=$(sysctl -n vm.loadavg|awk '{print $2,$3,$4}')
+	loadavg=$(/sbin/sysctl -n vm.loadavg|/usr/bin/awk '{print $2,$3,$4}')
 	min_load="${loadavg%% *}"
 	# Use minimum of JOBS and hw.ncpu to determine load%. Exceeding total
 	# of either is 100%.
 	ncpu=${PARALLEL_JOBS}
 	[ ${ncpu} -gt ${NCPU} ] && ncpu=${NCPU}
 	loadpct="$(printf "%2.0f%%" $(echo "scale=20; 100 * (${min_load} / ${ncpu})" | bc))"
-	swapinfo=$(swapinfo -k|awk '/\// {sum+=$2; X+=$3} END {if (sum) {printf "%1.2f%%\n", X*100/sum}}')
+	swapinfo=$(/usr/sbin/swapinfo -k|/usr/bin/awk '/\// {sum+=$2; X+=$3} END {if (sum) {printf "%1.2f%%\n", X*100/sum}}')
 	now=$(clock -monotonic)
 	elapsed=$((${now} - ${TIME_START}))
 
@@ -68,18 +68,18 @@ build_json() {
 	local log
 
 	_log_path log
-	awk \
+	/usr/bin/awk \
 		-f ${AWKPREFIX}/json.awk ${log}/.poudriere.*[!%] | \
-		awk 'ORS=""; {print}' | \
-		sed  -e 's/,\([]}]\)/\1/g' \
+		/usr/bin/awk 'ORS=""; {print}' | \
+		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' \
 		> ${log}/.data.json.tmp
 	rename ${log}/.data.json.tmp ${log}/.data.json
 
 	# Build mini json for stats
-	awk -v mini=yes \
+	/usr/bin/awk -v mini=yes \
 		-f ${AWKPREFIX}/json.awk ${log}/.poudriere.*[!%] | \
-		awk 'ORS=""; {print}' | \
-		sed  -e 's/,\([]}]\)/\1/g' \
+		/usr/bin/awk 'ORS=""; {print}' | \
+		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' \
 		> ${log}/.data.mini.json.tmp
 	rename ${log}/.data.mini.json.tmp ${log}/.data.mini.json
 }
@@ -93,8 +93,8 @@ build_jail_json() {
 	{
 		echo "{\"builds\":{"
 		echo ${log_path_jail}/*/.data.mini.json | \
-		    xargs awk -f ${AWKPREFIX}/json_jail.awk | \
-		    sed -e '/^$/d' | \
+		    xargs /usr/bin/awk -f ${AWKPREFIX}/json_jail.awk | \
+		    /usr/bin/sed -e '/^$/d' | \
 		    paste -s -d , -
 		echo "}}"
 	} > ${tmpfile}
@@ -111,8 +111,8 @@ build_top_json() {
 		cd "${log_path_top}"
 		echo "{\"masternames\":{"
 		echo */latest/.data.mini.json | \
-		    xargs awk -f ${AWKPREFIX}/json_top.awk | \
-		    sed -e '/^$/d' | \
+		    xargs /usr/bin/awk -f ${AWKPREFIX}/json_top.awk | \
+		    /usr/bin/sed -e '/^$/d' | \
 		    paste -s -d , -
 		echo "}}"
 	) > ${tmpfile}
