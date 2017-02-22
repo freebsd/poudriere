@@ -6,5 +6,6 @@ mkdircmd mkdir
 pwaitcmd pwait
 realpathcmd realpath
 renamecmd rename
+rmdircmd rmdir
 setproctitlecmd setproctitle
 sleepcmd sleep
