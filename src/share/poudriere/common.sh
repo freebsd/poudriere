@@ -1051,16 +1051,27 @@ fetch_file() {
 	fetch -p -o $1 $2 || fetch -p -o $1 $2 || err 1 "Failed to fetch from $2"
 }
 
-# Workaround not using 'env -i' for all make(1) calls. Need TMPDIR in children
-# for mktemp(1).
+# Export handling is different in builtin vs external
+if [ "$(type mktemp)" = "mktemp is a shell builtin" ]; then
+	MKTEMP_BUILTIN=1
+fi
+# Wrap mktemp to put most tmpfiles in mnt/.p/tmp rather than system /tmp.
 mktemp() {
+	local ret
+
 	if [ -z "${TMPDIR}" -a -n "${MASTERMNT}" -a ${STATUS} -eq 1 ]; then
 		local mnt
 		_my_path mnt
 		TMPDIR="${mnt}/.p/tmp"
 	fi
-	[ -n "${TMPDIR}" ] && export TMPDIR
-	exec command mktemp "$@"
+	[ -n "${TMPDIR-blank}" ] && TMPDIR="${TMPDIR}"
+	if [ -n "${MKTEMP_BUILTIN}" ]; then
+		# No export needed here since TMPDIR is set above in scope.
+		builtin mktemp "$@"
+	else
+		export TMPDIR
+		command mktemp "$@"
+	fi
 }
 
 common_mtree() {

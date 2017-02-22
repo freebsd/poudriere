@@ -3,6 +3,7 @@ clockcmd clock
 diremptycmd dirempty
 locked_mkdircmd locked_mkdir
 mkdircmd mkdir
+mktempcmd mktemp
 pwaitcmd pwait
 realpathcmd realpath
 renamecmd rename
