@@ -10,6 +10,7 @@
 .dirstamp/
 .fslckout
 /autom4te.cache
+/cachec
 /cached
 /clock
 /cpdup
