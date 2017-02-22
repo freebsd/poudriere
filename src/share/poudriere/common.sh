@@ -492,7 +492,7 @@ buildlog_start() {
 		echo
 	fi
 	echo "---Begin Environment---"
-	injail env ${PKGENV} ${PORT_FLAGS}
+	injail /usr/bin/env ${PKGENV} ${PORT_FLAGS}
 	echo "---End Environment---"
 	echo ""
 	echo "---Begin OPTIONS List---"
@@ -501,16 +501,16 @@ buildlog_start() {
 	echo ""
 	for var in CONFIGURE_ARGS CONFIGURE_ENV MAKE_ENV; do
 		echo "--${var}--"
-		echo "$(injail env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V ${var})"
+		echo "$(injail /usr/bin/env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V ${var})"
 		echo "--End ${var}--"
 		echo ""
 	done
 	echo "--PLIST_SUB--"
-	echo "$(injail env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V PLIST_SUB | tr ' ' '\n' | grep -v '^$')"
+	echo "$(injail /usr/bin/env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V PLIST_SUB | tr ' ' '\n' | grep -v '^$')"
 	echo "--End PLIST_SUB--"
 	echo ""
 	echo "--SUB_LIST--"
-	echo "$(injail env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V SUB_LIST | tr ' ' '\n' | grep -v '^$')"
+	echo "$(injail /usr/bin/env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V SUB_LIST | tr ' ' '\n' | grep -v '^$')"
 	echo "--End SUB_LIST--"
 	echo ""
 	echo "---Begin make.conf---"
@@ -2431,7 +2431,7 @@ _real_build_port() {
 
 		if [ "${phase#*-}" = "depends" ]; then
 			# No need for nohang or PORT_FLAGS for *-depends
-			injail env USE_PACKAGE_DEPENDS_ONLY=1 ${phaseenv} \
+			injail /usr/bin/env USE_PACKAGE_DEPENDS_ONLY=1 ${phaseenv} \
 			    /usr/bin/make -C ${portdir} ${phase} || return 1
 		else
 			# Only set PKGENV during 'package' to prevent
@@ -2447,7 +2447,7 @@ _real_build_port() {
 			nohang ${max_execution_time} ${NOHANG_TIME} \
 				${log}/logs/${PKGNAME}.log \
 				${MASTERMNT}/.p/var/run/${MY_JOBID:-00}_nohang.pid \
-				injail env ${pkgenv} ${phaseenv} ${PORT_FLAGS} \
+				injail /usr/bin/env ${pkgenv} ${phaseenv} ${PORT_FLAGS} \
 				/usr/bin/make -C ${portdir} ${phase}
 			hangstatus=$? # This is done as it may return 1 or 2 or 3
 			if [ $hangstatus -ne 0 ]; then
@@ -2480,7 +2480,7 @@ _real_build_port() {
 			local die=0
 
 			bset_job_status "stage-qa" "${port}"
-			if ! injail env DEVELOPER=1 ${PORT_FLAGS} \
+			if ! injail /usr/bin/env DEVELOPER=1 ${PORT_FLAGS} \
 			    /usr/bin/make -C ${portdir} stage-qa; then
 				msg "Error: stage-qa failures detected"
 				[ "${PORTTESTING_FATAL}" != "no" ] &&
@@ -2489,7 +2489,7 @@ _real_build_port() {
 			fi
 
 			bset_job_status "check-plist" "${port}"
-			if ! injail env DEVELOPER=1 ${PORT_FLAGS} \
+			if ! injail /usr/bin/env DEVELOPER=1 ${PORT_FLAGS} \
 			    /usr/bin/make -C ${portdir} check-plist; then
 				msg "Error: check-plist failures detected"
 				[ "${PORTTESTING_FATAL}" != "no" ] &&
@@ -2511,14 +2511,14 @@ _real_build_port() {
 			local mod=$(mktemp -t lo.mod)
 			local mod1=$(mktemp -t lo.mod1)
 			local die=0
-			PREFIX=$(injail env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -VPREFIX)
+			PREFIX=$(injail /usr/bin/env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -VPREFIX)
 
 			msg "Checking for extra files and directories"
 			bset_job_status "leftovers" "${port}"
 
 			if [ -f "${mnt}/usr/ports/Mk/Scripts/check_leftovers.sh" ]; then
 				check_leftovers ${mnt} | sed -e "s|${mnt}||" |
-				    injail env PORTSDIR=/usr/ports \
+				    injail /usr/bin/env PORTSDIR=/usr/ports \
 				    ${PORT_FLAGS} /bin/sh \
 				    /usr/ports/Mk/Scripts/check_leftovers.sh \
 				    ${port} | while read modtype data; do
@@ -2531,7 +2531,7 @@ _real_build_port() {
 			else
 				# LEGACY - Support for older ports tree.
 				local users user homedirs plistsub_sed
-				plistsub_sed=$(injail env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V'PLIST_SUB:C/"//g:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/')
+				plistsub_sed=$(injail /usr/bin/env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V'PLIST_SUB:C/"//g:NLIB32*:NPERL_*:NPREFIX*:N*="":N*="@comment*:C/(.*)=(.*)/-es!\2!%%\1%%!g/')
 
 				users=$(injail /usr/bin/make -C ${portdir} -VUSERS)
 				homedirs=""
