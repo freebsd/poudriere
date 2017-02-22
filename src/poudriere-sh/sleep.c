@@ -57,6 +57,7 @@ __FBSDID("$FreeBSD: head/bin/sleep/sleep.c 308432 2016-11-08 05:31:01Z cem $");
 #ifdef SHELL
 #define main sleepcmd
 #include "bltin/bltin.h"
+#include <errno.h>
 #define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
 #endif
 
