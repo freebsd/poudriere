@@ -1703,6 +1703,12 @@ jail_start() {
 	# Protect ourselves from OOM
 	madvise_protect $$ || :
 
+	# Determine if umount -n can be used.
+	if grep -q "#define[[:space:]]MNT_NONBUSY" /usr/include/sys/mount.h \
+	    2>/dev/null; then
+		UMOUNT_NONBUSY="-n"
+	fi
+
 	JAIL_OSVERSION=$(awk '/\#define __FreeBSD_version/ { print $3 }' "${mnt}/usr/include/sys/param.h")
 
 	[ ${JAIL_OSVERSION} -lt 900000 ] && needkld="${needkld} sem"
@@ -3200,7 +3206,7 @@ build_pkg() {
 
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
 		if [ -f "${mnt}/${LOCALBASE:-/usr/local}/.mounted" ]; then
-			umount -n ${mnt}/${LOCALBASE:-/usr/local}
+			umount ${UMOUNT_NONBUSY} ${mnt}/${LOCALBASE:-/usr/local}
 		fi
 		mnt_tmpfs localbase ${mnt}/${LOCALBASE:-/usr/local}
 		do_clone "${MASTERMNT}/${LOCALBASE:-/usr/local}" \
@@ -3306,7 +3312,7 @@ stop_build() {
 		_my_path mnt
 
 		if [ -f "${mnt}/.npkg_mounted" ]; then
-			umount -n "${mnt}/.npkg"
+			umount ${UMOUNT_NONBUSY} "${mnt}/.npkg"
 			rm -f "${mnt}/.npkg_mounted"
 		fi
 		rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
@@ -4692,12 +4698,12 @@ clean_restricted() {
 	bset status "clean_restricted:"
 	# Remount rw
 	# mount_nullfs does not support mount -u
-	umount -n ${MASTERMNT}/packages
+	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages
 	mount_packages
 	injail /usr/bin/make -s -C /usr/ports -j ${PARALLEL_JOBS} \
 	    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
 	# Remount ro
-	umount -n ${MASTERMNT}/packages
+	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages
 	mount_packages -o ro
 }
 
