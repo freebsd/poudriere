@@ -56,15 +56,16 @@ __FBSDID("$FreeBSD$");
 static int	build(char *, mode_t);
 static void	usage(void);
 
-static int	vflag;
-
 #ifdef SHELL
 #define main mkdircmd
 #include "bltin/bltin.h"
 #include "options.h"
+#undef vflag
 #include <errno.h>
 #define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
 #endif
+
+static int	vflag;
 
 int
 main(int argc, char *argv[])
