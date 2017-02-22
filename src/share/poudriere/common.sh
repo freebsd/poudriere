@@ -1210,7 +1210,7 @@ rm() {
 		[ "${arg%/}" = "/bin" ] && err 1 "Tried to rm /*"
 	done
 
-	/bin/rm "$@"
+	command rm "$@"
 }
 
 do_jail_mounts() {

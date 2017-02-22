@@ -92,9 +92,9 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 pkglibexec_PROGRAMS = clock$(EXEEXT) cpdup$(EXEEXT) dirempty$(EXEEXT) \
 	dirwatch$(EXEEXT) nc$(EXEEXT) poudriered$(EXEEXT) \
-	rename$(EXEEXT) locked_mkdir$(EXEEXT) @SH@ timeout$(EXEEXT) \
-	timestamp$(EXEEXT) tsort$(EXEEXT) jexecd$(EXEEXT) \
-	ptsort$(EXEEXT) rexec$(EXEEXT)
+	rename$(EXEEXT) locked_mkdir$(EXEEXT) @SH@ rm$(EXEEXT) \
+	timeout$(EXEEXT) timestamp$(EXEEXT) tsort$(EXEEXT) \
+	jexecd$(EXEEXT) ptsort$(EXEEXT) rexec$(EXEEXT)
 EXTRA_PROGRAMS = sh$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -206,6 +206,9 @@ rexec_OBJECTS = $(am_rexec_OBJECTS)
 rexec_DEPENDENCIES = libnv.a
 rexec_LINK = $(CCLD) $(rexec_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
+am_rm_OBJECTS = src/libexec/poudriere/rm/rm.$(OBJEXT)
+rm_OBJECTS = $(am_rm_OBJECTS)
+rm_LDADD = $(LDADD)
 am_sh_OBJECTS = external/sh_compat/sh-compat.$(OBJEXT) \
 	external/sh/sh-alias.$(OBJEXT) \
 	external/sh/sh-arith_yacc.$(OBJEXT) \
@@ -315,15 +318,15 @@ SOURCES = $(libnv_a_SOURCES) $(libptsort_a_SOURCES) \
 	$(dirempty_SOURCES) $(dirwatch_SOURCES) $(jexecd_SOURCES) \
 	$(locked_mkdir_SOURCES) $(nc_SOURCES) $(poudriered_SOURCES) \
 	$(ptsort_SOURCES) $(rename_SOURCES) $(rexec_SOURCES) \
-	$(sh_SOURCES) $(timeout_SOURCES) $(timestamp_SOURCES) \
-	$(tsort_SOURCES)
+	$(rm_SOURCES) $(sh_SOURCES) $(timeout_SOURCES) \
+	$(timestamp_SOURCES) $(tsort_SOURCES)
 DIST_SOURCES = $(libnv_a_SOURCES) $(libptsort_a_SOURCES) \
 	$(libucl_a_SOURCES) $(clock_SOURCES) $(cpdup_SOURCES) \
 	$(dirempty_SOURCES) $(dirwatch_SOURCES) $(jexecd_SOURCES) \
 	$(locked_mkdir_SOURCES) $(nc_SOURCES) $(poudriered_SOURCES) \
 	$(ptsort_SOURCES) $(rename_SOURCES) $(rexec_SOURCES) \
-	$(sh_SOURCES) $(timeout_SOURCES) $(timestamp_SOURCES) \
-	$(tsort_SOURCES)
+	$(rm_SOURCES) $(sh_SOURCES) $(timeout_SOURCES) \
+	$(timestamp_SOURCES) $(tsort_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -592,6 +595,7 @@ dirempty_SOURCES = src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES = src/libexec/poudriere/dirwatch/dirwatch.c
 locked_mkdir_SOURCES = src/libexec/poudriere/locked_mkdir/locked_mkdir.c
 nc_SOURCES = src/libexec/poudriere/nc/nc.c
+rm_SOURCES = src/libexec/poudriere/rm/rm.c
 timeout_SOURCES = src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES = src/libexec/poudriere/timestamp/timestamp.c
 tsort_SOURCES = src/libexec/poudriere/tsort/tsort.c
@@ -984,6 +988,19 @@ src/libexec/poudriere/rexec/rexec-rexec.$(OBJEXT):  \
 rexec$(EXEEXT): $(rexec_OBJECTS) $(rexec_DEPENDENCIES) $(EXTRA_rexec_DEPENDENCIES) 
 	@rm -f rexec$(EXEEXT)
 	$(AM_V_CCLD)$(rexec_LINK) $(rexec_OBJECTS) $(rexec_LDADD) $(LIBS)
+src/libexec/poudriere/rm/$(am__dirstamp):
+	@$(MKDIR_P) src/libexec/poudriere/rm
+	@: > src/libexec/poudriere/rm/$(am__dirstamp)
+src/libexec/poudriere/rm/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/libexec/poudriere/rm/$(DEPDIR)
+	@: > src/libexec/poudriere/rm/$(DEPDIR)/$(am__dirstamp)
+src/libexec/poudriere/rm/rm.$(OBJEXT):  \
+	src/libexec/poudriere/rm/$(am__dirstamp) \
+	src/libexec/poudriere/rm/$(DEPDIR)/$(am__dirstamp)
+
+rm$(EXEEXT): $(rm_OBJECTS) $(rm_DEPENDENCIES) $(EXTRA_rm_DEPENDENCIES) 
+	@rm -f rm$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(rm_OBJECTS) $(rm_LDADD) $(LIBS)
 external/sh_compat/$(am__dirstamp):
 	@$(MKDIR_P) external/sh_compat
 	@: > external/sh_compat/$(am__dirstamp)
@@ -1222,6 +1239,7 @@ mostlyclean-compile:
 	-rm -f src/libexec/poudriere/nc/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/rename/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/rexec/*.$(OBJEXT)
+	-rm -f src/libexec/poudriere/rm/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/timeout/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/timestamp/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/tsort/*.$(OBJEXT)
@@ -1292,6 +1310,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/nc/$(DEPDIR)/nc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rename/$(DEPDIR)/rename.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rm/$(DEPDIR)/rm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/timeout/$(DEPDIR)/timeout.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/tsort/$(DEPDIR)/tsort.Po@am__quote@
@@ -2727,6 +2746,8 @@ distclean-generic:
 	-rm -f src/libexec/poudriere/rename/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/rexec/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/rexec/$(am__dirstamp)
+	-rm -f src/libexec/poudriere/rm/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/libexec/poudriere/rm/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/timeout/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/timeout/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/timestamp/$(DEPDIR)/$(am__dirstamp)
@@ -2748,7 +2769,7 @@ clean-am: clean-generic clean-noinstLIBRARIES clean-pkglibexecPROGRAMS \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf external/libnv/$(DEPDIR) external/libucl/src/$(DEPDIR) external/ptsort/bin/$(DEPDIR) external/ptsort/lib/$(DEPDIR) external/sh/$(DEPDIR) external/sh/bltin/$(DEPDIR) external/sh_compat/$(DEPDIR) src/libexec/poudriere/clock/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/locked_mkdir/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriere-sh/$(DEPDIR) src/poudriered/$(DEPDIR)
+	-rm -rf external/libnv/$(DEPDIR) external/libucl/src/$(DEPDIR) external/ptsort/bin/$(DEPDIR) external/ptsort/lib/$(DEPDIR) external/sh/$(DEPDIR) external/sh/bltin/$(DEPDIR) external/sh_compat/$(DEPDIR) src/libexec/poudriere/clock/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/locked_mkdir/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/rm/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriere-sh/$(DEPDIR) src/poudriered/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-tags
@@ -2803,7 +2824,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf external/libnv/$(DEPDIR) external/libucl/src/$(DEPDIR) external/ptsort/bin/$(DEPDIR) external/ptsort/lib/$(DEPDIR) external/sh/$(DEPDIR) external/sh/bltin/$(DEPDIR) external/sh_compat/$(DEPDIR) src/libexec/poudriere/clock/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/locked_mkdir/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriere-sh/$(DEPDIR) src/poudriered/$(DEPDIR)
+	-rm -rf external/libnv/$(DEPDIR) external/libucl/src/$(DEPDIR) external/ptsort/bin/$(DEPDIR) external/ptsort/lib/$(DEPDIR) external/sh/$(DEPDIR) external/sh/bltin/$(DEPDIR) external/sh_compat/$(DEPDIR) src/libexec/poudriere/clock/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/locked_mkdir/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/rm/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriere-sh/$(DEPDIR) src/poudriered/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

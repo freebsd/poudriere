@@ -27,6 +27,7 @@
 /ptsort
 /rename
 /rexec
+/rm
 /sh
 /timeout
 /timestamp
