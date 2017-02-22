@@ -98,7 +98,8 @@ umountfs() {
 
 	[ -d "${mnt}" ] || return 0
 	mnt=$(realpath ${mnt})
-	if ! findmounts "${mnt}" "${pattern}" | xargs umount -n; then
+	if ! findmounts "${mnt}" "${pattern}" | \
+	    xargs umount ${UMOUNT_NONBUSY}; then
 		findmounts "${mnt}" "${pattern}" | xargs umount -fv || :
 	fi
 
@@ -198,7 +199,7 @@ destroyfs() {
 	umountfs ${mnt} 1
 	if [ ${TMPFS_ALL} -eq 1 ]; then
 		if [ -d "${mnt}" ]; then
-			if ! umount -n "${mnt}" 2>/dev/null; then
+			if ! umount ${UMOUNT_NONBUSY} "${mnt}" 2>/dev/null; then
 				umount -f "${mnt}" 2>/dev/null || :
 			fi
 		fi
