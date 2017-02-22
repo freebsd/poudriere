@@ -106,25 +106,25 @@ dist_dtimages_DATA=	src/share/poudriere/html/assets/DataTables-1.10.0/images/bac
 dist_rc_SCRIPTS=	src/etc/rc.d/poudriered
 
 pkglibexec_PROGRAMS= \
+		     cachec \
+		     cached \
 		     clock \
 		     cpdup \
 		     dirempty \
 		     dirwatch \
+		     jexecd \
+		     locked_mkdir \
 		     nc \
 		     poudriered \
-		     rename \
-		     locked_mkdir \
+		     ptsort \
 		     pwait \
-		     @SH@ \
+		     rename \
+		     rexec \
+		     setproctitle \
 		     timeout \
 		     timestamp \
 		     tsort \
-		     jexecd \
-		     ptsort \
-		     setproctitle \
-		     rexec \
-		     cached \
-		     cachec
+		     @SH@
 EXTRA_PROGRAMS= \
 		sh
 
@@ -132,7 +132,6 @@ noinst_LIBRARIES=	libucl.a libnv.a libptsort.a
 
 AUTOMAKE_OPTIONS=	subdir-objects
 
-rename_SOURCES=	src/libexec/poudriere/rename/rename.c
 clock_SOURCES=	src/libexec/poudriere/clock/clock.c
 cpdup_SOURCES=	src/libexec/poudriere/cpdup/cpdup.c \
 		src/libexec/poudriere/cpdup/hcproto.c \
@@ -147,10 +146,12 @@ dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
 locked_mkdir_SOURCES=	src/libexec/poudriere/locked_mkdir/locked_mkdir.c
 nc_SOURCES=		src/libexec/poudriere/nc/nc.c
 pwait_SOURCES=		src/libexec/poudriere/pwait/pwait.c
+rename_SOURCES=		src/libexec/poudriere/rename/rename.c
 setproctitle_SOURCES=	src/libexec/poudriere/setproctitle/setproctitle.c
 timeout_SOURCES=	src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
 tsort_SOURCES=		src/libexec/poudriere/tsort/tsort.c
+
 sh_CFLAGS=		-DSHELL -DNO_HISTORY \
 			-include $(top_srcdir)/external/sh_compat/compat.h \
 			-I$(top_srcdir)/src \

@@ -90,12 +90,12 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-pkglibexec_PROGRAMS = clock$(EXEEXT) cpdup$(EXEEXT) dirempty$(EXEEXT) \
-	dirwatch$(EXEEXT) nc$(EXEEXT) poudriered$(EXEEXT) \
-	rename$(EXEEXT) locked_mkdir$(EXEEXT) pwait$(EXEEXT) @SH@ \
-	timeout$(EXEEXT) timestamp$(EXEEXT) tsort$(EXEEXT) \
-	jexecd$(EXEEXT) ptsort$(EXEEXT) setproctitle$(EXEEXT) \
-	rexec$(EXEEXT) cached$(EXEEXT) cachec$(EXEEXT)
+pkglibexec_PROGRAMS = cachec$(EXEEXT) cached$(EXEEXT) clock$(EXEEXT) \
+	cpdup$(EXEEXT) dirempty$(EXEEXT) dirwatch$(EXEEXT) \
+	jexecd$(EXEEXT) locked_mkdir$(EXEEXT) nc$(EXEEXT) \
+	poudriered$(EXEEXT) ptsort$(EXEEXT) pwait$(EXEEXT) \
+	rename$(EXEEXT) rexec$(EXEEXT) setproctitle$(EXEEXT) \
+	timeout$(EXEEXT) timestamp$(EXEEXT) tsort$(EXEEXT) @SH@
 EXTRA_PROGRAMS = sh$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -601,7 +601,6 @@ dist_dtimages_DATA = src/share/poudriere/html/assets/DataTables-1.10.0/images/ba
 dist_rc_SCRIPTS = src/etc/rc.d/poudriered
 noinst_LIBRARIES = libucl.a libnv.a libptsort.a
 AUTOMAKE_OPTIONS = subdir-objects
-rename_SOURCES = src/libexec/poudriere/rename/rename.c
 clock_SOURCES = src/libexec/poudriere/clock/clock.c
 cpdup_SOURCES = src/libexec/poudriere/cpdup/cpdup.c \
 		src/libexec/poudriere/cpdup/hcproto.c \
@@ -617,6 +616,7 @@ dirwatch_SOURCES = src/libexec/poudriere/dirwatch/dirwatch.c
 locked_mkdir_SOURCES = src/libexec/poudriere/locked_mkdir/locked_mkdir.c
 nc_SOURCES = src/libexec/poudriere/nc/nc.c
 pwait_SOURCES = src/libexec/poudriere/pwait/pwait.c
+rename_SOURCES = src/libexec/poudriere/rename/rename.c
 setproctitle_SOURCES = src/libexec/poudriere/setproctitle/setproctitle.c
 timeout_SOURCES = src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES = src/libexec/poudriere/timestamp/timestamp.c
