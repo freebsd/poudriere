@@ -497,7 +497,7 @@ buildlog_start() {
 	fi
 
 	echo "--Resource limits--"
-	ulimit -a
+	injail ulimit -a
 	echo "--End resource limits--"
 }
 
