@@ -3171,14 +3171,6 @@ print_phase_footer() {
 	echo "==========================================================================="
 }
 
-apply_limits() {
-	if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
-		ulimit \
-		    ${MAX_MEMORY_BYTES:+-v ${MAX_MEMORY_BYTES}} \
-		    ${MAX_FILES:+-n ${MAX_FILES}}
-	fi
-}
-
 build_pkg() {
 	# If this first check fails, the pool will not be cleaned up,
 	# since PKGNAME is not yet set.
@@ -3200,7 +3192,6 @@ build_pkg() {
 	_log_path log
 	clean_rdepends=
 	trap '' SIGTSTP
-	apply_limits
 	export PKGNAME="${pkgname}" # set ASAP so jail_cleanup() can use it
 	cache_get_origin port "${pkgname}"
 	portdir="/usr/ports/${port}"
