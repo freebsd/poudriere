@@ -1099,7 +1099,7 @@ common_mtree() {
 ./portdistfiles/*
 ./proc/*
 ./usr/home/*
-./usr/ports/*
+.${PORTSDIR}/*
 ./usr/src
 ./var/db/ports/*
 ./wrkdirs/*
@@ -1285,8 +1285,8 @@ enter_interactive() {
 		# Install the selected pkg package
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
 		    /usr/bin/make -C \
-		    /usr/ports/$(injail /usr/bin/make \
-		    -f /usr/ports/Mk/bsd.port.mk -V PKGNG_ORIGIN) \
+		    ${PORTSDIR}/$(injail /usr/bin/make \
+		    -f ${PORTSDIR}/Mk/bsd.port.mk -V PKGNG_ORIGIN) \
 		    PKG_BIN="${PKG_BIN}" install-package
 	fi
 
@@ -1295,13 +1295,13 @@ enter_interactive() {
 		# Install run-depends since this is an interactive test
 		msg "Installing run-depends for ${COLOR_PORT}${port}"
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
-		    /usr/bin/make -C /usr/ports/${port} run-depends ||
+		    /usr/bin/make -C ${PORTSDIR}/${port} run-depends ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port} run-depends"
 		msg "Installing ${COLOR_PORT}${port}"
 		# Only use PKGENV during install as testport will store
 		# the package in a different place than dependencies
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 ${PKGENV} \
-		    /usr/bin/make -C /usr/ports/${port} install-package ||
+		    /usr/bin/make -C ${PORTSDIR}/${port} install-package ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port}"
 	done
 
@@ -1377,7 +1377,7 @@ do_portbuild_mounts() {
 
 	# clone will inherit from the ref jail
 	if [ ${mnt##*/} = "ref" ]; then
-		mkdir -p "${mnt}/usr/ports" \
+		mkdir -p "${mnt}${PORTSDIR}" \
 		    "${mnt}/wrkdirs" \
 		    "${mnt}/${LOCALBASE:-/usr/local}" \
 		    "${mnt}/distfiles" \
@@ -1404,7 +1404,7 @@ do_portbuild_mounts() {
 
 	_pget portsdir ${ptname} mnt
 	[ -d ${portsdir}/ports ] && portsdir=${portsdir}/ports
-	${NULLMOUNT} -o ro ${portsdir} ${mnt}/usr/ports ||
+	${NULLMOUNT} -o ro ${portsdir} ${mnt}${PORTSDIR} ||
 		err 1 "Failed to mount the ports directory "
 	mount_packages -o ro
 	${NULLMOUNT} ${DISTFILES_CACHE} ${mnt}/distfiles ||
@@ -1729,6 +1729,8 @@ jail_start() {
 		UMOUNT_NONBUSY="-n"
 	fi
 
+	PORTSDIR="/usr/ports"
+
 	JAIL_OSVERSION=$(awk '/\#define __FreeBSD_version/ { print $3 }' "${mnt}/usr/include/sys/param.h")
 
 	[ ${JAIL_OSVERSION} -lt 900000 ] && needkld="${needkld} sem"
@@ -1870,7 +1872,7 @@ jail_start() {
 	USE_PACKAGE_DEPENDS=yes
 	BATCH=yes
 	WRKDIRPREFIX=/wrkdirs
-	PORTSDIR=/usr/ports
+	PORTSDIR=${PORTSDIR}
 	PACKAGES=/packages
 	DISTDIR=/distfiles
 	EOF
@@ -1902,7 +1904,7 @@ jail_start() {
 
 	# Suck in ports environment to avoid redundant fork/exec for each
 	# child.
-	if [ -f "${tomnt}/usr/ports/Mk/Scripts/ports_env.sh" ]; then
+	if [ -f "${tomnt}${PORTSDIR}/Mk/Scripts/ports_env.sh" ]; then
 		local make
 
 		if [ -x "${tomnt}/usr/bin/bmake" ]; then
@@ -1913,10 +1915,10 @@ jail_start() {
 		{
 			echo "#### /usr/ports/Mk/Scripts/ports_env.sh ####"
 			injail env \
-			    SCRIPTSDIR=/usr/ports/Mk/Scripts \
-			    PORTSDIR=/usr/ports \
+			    SCRIPTSDIR=${PORTSDIR}/Mk/Scripts \
+			    PORTSDIR=${PORTSDIR} \
 			    MAKE=${make} \
-			    /bin/sh /usr/ports/Mk/Scripts/ports_env.sh | \
+			    /bin/sh ${PORTSDIR}/Mk/Scripts/ports_env.sh | \
 			    grep '^export [^;&]*' | \
 			    sed -e 's,^export ,,' -e 's,=",=,' -e 's,"$,,'
 			echo "#### Misc Poudriere ####"
@@ -2249,7 +2251,7 @@ gather_distfiles() {
 	sub=$(injail /usr/bin/make -C ${portdir} -VDIST_SUBDIR)
 	dists=$(injail /usr/bin/make -C ${portdir} -V_DISTFILES -V_PATCHFILES)
 	specials=$(injail /usr/bin/make -C ${portdir} -V_DEPEND_SPECIALS)
-	job_msg_verbose "Status for build ${COLOR_PORT}${portdir##/usr/ports/}${COLOR_RESET}: distfiles ${from} -> ${to}"
+	job_msg_verbose "Status for build ${COLOR_PORT}${portdir##${PORTSDIR}/}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
 		[ -f ${from}/${sub}/${d} ] || continue
 		tosubd=${to}/${sub}/${d}
@@ -2259,8 +2261,8 @@ gather_distfiles() {
 
 	for special in ${specials}; do
 		case "${special}" in
-		/usr/ports/*) ;;
-		*) special=/usr/ports/${special}
+		${PORTSDIR}/*) ;;
+		*) special=${PORTSDIR}/${special}
 		esac
 		gather_distfiles ${special} ${from} ${to}
 	done
@@ -2273,7 +2275,7 @@ gather_distfiles() {
 _real_build_port() {
 	[ $# -ne 1 ] && eargs _real_build_port portdir
 	local portdir=$1
-	local port=${portdir##/usr/ports/}
+	local port=${portdir##${PORTSDIR}/}
 	local mnt
 	local log
 	local network
@@ -2525,11 +2527,11 @@ _real_build_port() {
 			msg "Checking for extra files and directories"
 			bset_job_status "leftovers" "${port}"
 
-			if [ -f "${mnt}/usr/ports/Mk/Scripts/check_leftovers.sh" ]; then
+			if [ -f "${mnt}${PORTSDIR}/Mk/Scripts/check_leftovers.sh" ]; then
 				check_leftovers ${mnt} | sed -e "s|${mnt}||" |
-				    injail /usr/bin/env PORTSDIR=/usr/ports \
+				    injail /usr/bin/env PORTSDIR=${PORTSDIR} \
 				    ${PORT_FLAGS} /bin/sh \
-				    /usr/ports/Mk/Scripts/check_leftovers.sh \
+				    ${PORTSDIR}/Mk/Scripts/check_leftovers.sh \
 				    ${port} | while read modtype data; do
 					case "${modtype}" in
 						+) echo "${data}" >> ${add} ;;
@@ -2545,7 +2547,7 @@ _real_build_port() {
 				users=$(injail /usr/bin/make -C ${portdir} -VUSERS)
 				homedirs=""
 				for user in ${users}; do
-					user=$(grep ^${user}: ${mnt}/usr/ports/UIDs | cut -f 9 -d : | sed -e "s|/usr/local|${PREFIX}| ; s|^|${mnt}|")
+					user=$(grep ^${user}: ${mnt}${PORTSDIR}/UIDs | cut -f 9 -d : | sed -e "s|/usr/local|${PREFIX}| ; s|^|${mnt}|")
 					homedirs="${homedirs} ${user}"
 				done
 
@@ -3197,7 +3199,7 @@ build_pkg() {
 	trap '' SIGTSTP
 	export PKGNAME="${pkgname}" # set ASAP so jail_cleanup() can use it
 	cache_get_origin port "${pkgname}"
-	portdir="/usr/ports/${port}"
+	portdir="${PORTSDIR}/${port}"
 
 	setproctitle "build_pkg (${pkgname})" || :
 
@@ -3690,7 +3692,7 @@ delete_old_pkg() {
 
 	_my_path mnt
 
-	if [ ! -d "${mnt}/usr/ports/${o}" ]; then
+	if [ ! -d "${mnt}${PORTSDIR}/${o}" ]; then
 		msg "${o} does not exist anymore. Deleting stale ${pkg##*/}"
 		delete_pkg "${pkg}"
 		return 0
@@ -3718,13 +3720,13 @@ delete_old_pkg() {
 		# XXX: This is redundant with list_deps. Hash/caching the
 		# deps can prevent double lookup
 		for td in LIB RUN; do
-			raw_deps=$(injail /usr/bin/make -C /usr/ports/${o} \
+			raw_deps=$(injail /usr/bin/make -C ${PORTSDIR}/${o} \
 			    -V${td}_DEPENDS)
 			for d in ${raw_deps}; do
 				key=${d%:*}
 				dpath=${d#*:}
 				case "${dpath}" in
-				/usr/ports/*) dpath=${dpath#/usr/ports/} ;;
+				${PORTSDIR}/*) dpath=${dpath#${PORTSDIR}/} ;;
 				esac
 				case ${td} in
 				LIB)
@@ -3783,7 +3785,7 @@ delete_old_pkg() {
 
 	# Check if the compiled options match the current options from make.conf and /var/db/ports
 	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
-		current_options=$(injail /usr/bin/make -C /usr/ports/${o} \
+		current_options=$(injail /usr/bin/make -C ${PORTSDIR}/${o} \
 		    pretty-print-config | tr ' ' '\n' | \
 		    sed -n 's/^\+\(.*\)/\1/p' | sort -u | tr '\n' ' ')
 		pkg_get_options compiled_options "${pkg}"
@@ -3959,14 +3961,14 @@ cache_get_pkgname() {
 
 	# Add to cache if not found.
 	if ! shash_get origin-pkgname "${origin}" _pkgname; then
-		if ! [ -d "${MASTERMNT}/usr/ports/${origin}" ]; then
+		if ! [ -d "${MASTERMNT}${PORTSDIR}/${origin}" ]; then
 			if [ ${fatal} -eq 1 ]; then
 				err 1 "Invalid port origin '${COLOR_PORT}${origin}${COLOR_RESET}' not found."
 			else
 				return 1
 			fi
 		fi
-		_pkgname=$(injail /usr/bin/make -C /usr/ports/${origin} \
+		_pkgname=$(injail /usr/bin/make -C ${PORTSDIR}/${origin} \
 		    -VPKGNAME || echo)
 		[ -n "${_pkgname}" ] || err 1 "Error getting PKGNAME for ${COLOR_PORT}${origin}${COLOR_RESET}"
 		# Make sure this origin did not already exist
@@ -4017,7 +4019,7 @@ compute_deps() {
 
 	parallel_start
 	for port in $(listed_ports show_moved); do
-		if [ -d "${MASTERMNT}/usr/ports/${port}" ]; then
+		if [ -d "${MASTERMNT}${PORTSDIR}/${port}" ]; then
 			parallel_run compute_deps_port ${port} || \
 			    set_dep_fatal_error
 		else
@@ -4116,12 +4118,13 @@ compute_deps_port() {
 
 listed_ports() {
 	local tell_moved="${1}"
+	local portsdir
 
 	if [ ${ALL} -eq 1 ]; then
-		_pget PORTSDIR ${PTNAME} mnt
-		[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
-		for cat in $(awk -F= '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print $2}' ${PORTSDIR}/Makefile); do
-			awk -F= -v cat=${cat} '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print cat"/"$2}' ${PORTSDIR}/${cat}/Makefile
+		_pget portsdir ${PTNAME} mnt
+		[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
+		for cat in $(awk -F= '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print $2}' ${portsdir}/Makefile); do
+			awk -F= -v cat=${cat} '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print cat"/"$2}' ${portsdir}/${cat}/Makefile
 		done
 		return 0
 	fi
@@ -4251,11 +4254,11 @@ delete_stale_symlinks_and_empty_dirs() {
 }
 
 load_moved() {
-	[ -f ${MASTERMNT}/usr/ports/MOVED ] || return 0
+	[ -f ${MASTERMNT}${PORTSDIR}/MOVED ] || return 0
 	msg "Loading MOVED"
 	bset status "loading_moved:"
 	mkdir ${MASTERMNT}/.p/MOVED
-	grep -v '^#' ${MASTERMNT}/usr/ports/MOVED | awk \
+	grep -v '^#' ${MASTERMNT}${PORTSDIR}/MOVED | awk \
 	    -F\| '
 		$2 != "" {
 			sub("/", "_", $1);
@@ -4373,8 +4376,8 @@ prepare_ports() {
 			ln -sfh ${BUILDNAME} ${log%/*}/latest
 
 			# Record the SVN URL@REV in the build
-			[ -d ${MASTERMNT}/usr/ports/.svn ] && bset svn_url $(
-				${SVN_CMD} info ${MASTERMNT}/usr/ports | awk '
+			[ -d ${MASTERMNT}${PORTSDIR}/.svn ] && bset svn_url $(
+				${SVN_CMD} info ${MASTERMNT}${PORTSDIR} | awk '
 					/^URL: / {URL=substr($0, 6)}
 					/Revision: / {REVISION=substr($0, 11)}
 					END { print URL "@" REVISION }
@@ -4743,7 +4746,7 @@ clean_restricted() {
 	# mount_nullfs does not support mount -u
 	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages
 	mount_packages
-	injail /usr/bin/make -s -C /usr/ports -j ${PARALLEL_JOBS} \
+	injail /usr/bin/make -s -C ${PORTSDIR} -j ${PARALLEL_JOBS} \
 	    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
 	# Remount ro
 	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages

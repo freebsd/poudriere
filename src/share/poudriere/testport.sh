@@ -203,16 +203,16 @@ PARALLEL_JOBS=${BUILD_PARALLEL_JOBS}
 
 bset_job_status "testing" "${ORIGIN}"
 
-PKGNAME=`injail /usr/bin/make -C /usr/ports/${ORIGIN} -VPKGNAME`
-LOCALBASE=`injail /usr/bin/make -C /usr/ports/${ORIGIN} -VLOCALBASE`
-: ${PREFIX:=$(injail /usr/bin/make -C /usr/ports/${ORIGIN} -VPREFIX)}
+PKGNAME=`injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -VPKGNAME`
+LOCALBASE=`injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -VLOCALBASE`
+: ${PREFIX:=$(injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -VPREFIX)}
 if [ "${USE_PORTLINT}" = "yes" ]; then
 	[ ! -x `command -v portlint` ] &&
 		err 2 "First install portlint if you want USE_PORTLINT to work as expected"
 	msg "Portlint check"
 	set +e
-	cd ${MASTERMNT}/usr/ports/${ORIGIN} &&
-		PORTSDIR="${MASTERMNT}/usr/ports" portlint -C | \
+	cd ${MASTERMNT}${PORTSDIR}/${ORIGIN} &&
+		PORTSDIR="${MASTERMNT}${PORTSDIR}" portlint -C | \
 		tee ${log}/logs/${PKGNAME}.portlint.log
 	set -e
 fi
@@ -237,13 +237,13 @@ if ! [ -t 1 ]; then
 fi
 sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' ${MASTERMNT}/etc/make.conf
 log_start 1
-buildlog_start /usr/ports/${ORIGIN}
+buildlog_start ${PORTSDIR}/${ORIGIN}
 ret=0
 
 # Don't show timestamps in msg() which goes to logs, only job_msg()
 # which goes to master
 NO_ELAPSED_IN_MSG=1
-build_port /usr/ports/${ORIGIN} || ret=$?
+build_port ${PORTSDIR}/${ORIGIN} || ret=$?
 unset NO_ELAPSED_IN_MSG
 
 if [ ${ret} -ne 0 ]; then
@@ -256,7 +256,7 @@ if [ ${ret} -ne 0 ]; then
 		failed_phase=${failed_status%%:*}
 	fi
 
-	save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" "${failed_phase}" || :
+	save_wrkdir ${MASTERMNT} "${PKGNAME}" "${PORTSDIR}/${ORIGIN}" "${failed_phase}" || :
 
 	ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
 	errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
@@ -275,8 +275,8 @@ if [ ${ret} -ne 0 ]; then
 	fi
 else
 	badd ports.built "${ORIGIN} ${PKGNAME}"
-	if [ -f ${MASTERMNT}/usr/ports/${ORIGIN}/.keep ]; then
-		save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" \
+	if [ -f ${MASTERMNT}${PORTSDIR}/${ORIGIN}/.keep ]; then
+		save_wrkdir ${MASTERMNT} "${PKGNAME}" "${PORTSDIR}/${ORIGIN}" \
 		    "noneed" || :
 	fi
 	update_stats || :
@@ -313,7 +313,7 @@ else
 fi
 
 msg "Cleaning up"
-injail /usr/bin/make -C /usr/ports/${ORIGIN} clean
+injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} clean
 
 msg "Deinstalling package"
 ensure_pkg_installed

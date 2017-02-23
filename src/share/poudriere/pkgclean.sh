@@ -230,7 +230,7 @@ END {
 				# against the real PKGNAME and decide which
 				# to keep
 				[ -z "${real_pkgname}" ] && real_pkgname=$( \
-				    injail /usr/bin/make -C /usr/ports/${origin} \
+				    injail /usr/bin/make -C ${PORTSDIR}/${origin} \
 				    -V PKGNAME)
 				if [ "${real_pkgname}.${PKG_EXT}" = \
 				    "${pkg##*/}" ]; then
