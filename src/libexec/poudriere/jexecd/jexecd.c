@@ -336,7 +336,7 @@ int
 main(int argc, char **argv)
 {
 	struct sockaddr_un un;
-       	char *dir = NULL;
+	char *dir = NULL, *end = NULL;
 	char path[MAXPATHLEN];
 	pid_t otherpid;
 	int jid, ch;
@@ -344,9 +344,10 @@ main(int argc, char **argv)
 	bool foreground = false;
 	int server_fd = -1;
 	uint64_t	mem = 0;
+	uint64_t	openfiles = 0;
 	struct rlimit limits;
 	
-	while ((ch = getopt(argc, argv, "j:d:fm:")) != -1) {
+	while ((ch = getopt(argc, argv, "j:d:fm:n:")) != -1) {
 		switch (ch) {
 		case 'd':
 			dir = optarg;
@@ -361,6 +362,13 @@ main(int argc, char **argv)
 			if (expand_number(optarg, &mem) < 0)
 				errx(EXIT_FAILURE, "Unrecognized value for "
 				    "memory: '%s'", optarg);
+			break;
+		case 'n':
+			openfiles = strtoul(optarg, &end, 10);
+			if (*end != '\0')
+				errx(EXIT_FAILURE, "Unrecognized value for "
+				    "openfiles: '%s'", optarg);
+			break;
 		}
 	}
 
@@ -374,6 +382,15 @@ main(int argc, char **argv)
 		limits.rlim_max = mem;
 		if (setrlimit(RLIMIT_AS, &limits) < 0)
 			errx(EXIT_FAILURE, "Unable the set the memory limits");
+	}
+
+	if (openfiles > 0) {
+		if (getrlimit(RLIMIT_NOFILE, &limits) < 0)
+			errx(EXIT_FAILURE, "Unable to get the openfiles limits");
+		limits.rlim_cur = openfiles;
+		limits.rlim_max = openfiles;
+		if (setrlimit(RLIMIT_NOFILE, &limits) < 0)
+			errx(EXIT_FAILURE, "Unable the set the openfiles limits");
 	}
 
 	setproctitle("poudriere(%s)", jailname);
