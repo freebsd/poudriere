@@ -30,7 +30,6 @@
 /rename
 /rexec
 /rm
-/setproctitle
 /sh
 /timeout
 /timestamp

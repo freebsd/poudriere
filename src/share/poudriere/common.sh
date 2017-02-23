@@ -4780,6 +4780,14 @@ build_repo() {
 	fi
 }
 
+# Builtin-only functions
+_BUILTIN_ONLY="setproctitle"
+for _var in ${_BUILTIN_ONLY}; do
+	if ! [ "$(type ${_var} 2>/dev/null)" = \
+		"${_var} is a shell builtin" ]; then
+		eval "${_var}() { return 0; }"
+	fi
+done
 
 RESOLV_CONF=""
 STATUS=0 # out of jail #

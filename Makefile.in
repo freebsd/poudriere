@@ -94,9 +94,8 @@ pkglibexec_PROGRAMS = cachec$(EXEEXT) cached$(EXEEXT) clock$(EXEEXT) \
 	cpdup$(EXEEXT) dirempty$(EXEEXT) dirwatch$(EXEEXT) \
 	jexecd$(EXEEXT) locked_mkdir$(EXEEXT) nc$(EXEEXT) \
 	poudriered$(EXEEXT) ptsort$(EXEEXT) pwait$(EXEEXT) \
-	rename$(EXEEXT) rexec$(EXEEXT) rm$(EXEEXT) \
-	setproctitle$(EXEEXT) timeout$(EXEEXT) timestamp$(EXEEXT) \
-	tsort$(EXEEXT) @SH@
+	rename$(EXEEXT) rexec$(EXEEXT) rm$(EXEEXT) timeout$(EXEEXT) \
+	timestamp$(EXEEXT) tsort$(EXEEXT) @SH@
 EXTRA_PROGRAMS = sh$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -223,10 +222,6 @@ rexec_LINK = $(CCLD) $(rexec_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 am_rm_OBJECTS = src/libexec/poudriere/rm/rm.$(OBJEXT)
 rm_OBJECTS = $(am_rm_OBJECTS)
 rm_LDADD = $(LDADD)
-am_setproctitle_OBJECTS =  \
-	src/libexec/poudriere/setproctitle/setproctitle.$(OBJEXT)
-setproctitle_OBJECTS = $(am_setproctitle_OBJECTS)
-setproctitle_LDADD = $(LDADD)
 am_sh_OBJECTS = external/sh_compat/sh-compat.$(OBJEXT) \
 	external/sh/sh-alias.$(OBJEXT) \
 	external/sh/sh-arith_yacc.$(OBJEXT) \
@@ -256,12 +251,12 @@ am_sh_OBJECTS = external/sh_compat/sh-compat.$(OBJEXT) \
 	src/libexec/poudriere/locked_mkdir/sh-locked_mkdir.$(OBJEXT) \
 	src/libexec/poudriere/pwait/sh-pwait.$(OBJEXT) \
 	src/libexec/poudriere/rename/sh-rename.$(OBJEXT) \
-	src/libexec/poudriere/setproctitle/sh-setproctitle.$(OBJEXT) \
 	src/poudriere-sh/sh-helpers.$(OBJEXT) \
 	src/poudriere-sh/sh-mkdir.$(OBJEXT) \
 	src/poudriere-sh/sh-mktemp.$(OBJEXT) \
 	src/poudriere-sh/sh-realpath.$(OBJEXT) \
 	src/poudriere-sh/sh-rmdir.$(OBJEXT) \
+	src/poudriere-sh/sh-setproctitle.$(OBJEXT) \
 	src/poudriere-sh/sh-sleep.$(OBJEXT)
 sh_OBJECTS = $(am_sh_OBJECTS)
 sh_DEPENDENCIES =
@@ -343,16 +338,16 @@ SOURCES = $(libnv_a_SOURCES) $(libptsort_a_SOURCES) \
 	$(dirwatch_SOURCES) $(jexecd_SOURCES) $(locked_mkdir_SOURCES) \
 	$(nc_SOURCES) $(poudriered_SOURCES) $(ptsort_SOURCES) \
 	$(pwait_SOURCES) $(rename_SOURCES) $(rexec_SOURCES) \
-	$(rm_SOURCES) $(setproctitle_SOURCES) $(sh_SOURCES) \
-	$(timeout_SOURCES) $(timestamp_SOURCES) $(tsort_SOURCES)
+	$(rm_SOURCES) $(sh_SOURCES) $(timeout_SOURCES) \
+	$(timestamp_SOURCES) $(tsort_SOURCES)
 DIST_SOURCES = $(libnv_a_SOURCES) $(libptsort_a_SOURCES) \
 	$(libucl_a_SOURCES) $(cachec_SOURCES) $(cached_SOURCES) \
 	$(clock_SOURCES) $(cpdup_SOURCES) $(dirempty_SOURCES) \
 	$(dirwatch_SOURCES) $(jexecd_SOURCES) $(locked_mkdir_SOURCES) \
 	$(nc_SOURCES) $(poudriered_SOURCES) $(ptsort_SOURCES) \
 	$(pwait_SOURCES) $(rename_SOURCES) $(rexec_SOURCES) \
-	$(rm_SOURCES) $(setproctitle_SOURCES) $(sh_SOURCES) \
-	$(timeout_SOURCES) $(timestamp_SOURCES) $(tsort_SOURCES)
+	$(rm_SOURCES) $(sh_SOURCES) $(timeout_SOURCES) \
+	$(timestamp_SOURCES) $(tsort_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -624,7 +619,6 @@ nc_SOURCES = src/libexec/poudriere/nc/nc.c
 pwait_SOURCES = src/libexec/poudriere/pwait/pwait.c
 rename_SOURCES = src/libexec/poudriere/rename/rename.c
 rm_SOURCES = src/libexec/poudriere/rm/rm.c
-setproctitle_SOURCES = src/libexec/poudriere/setproctitle/setproctitle.c
 timeout_SOURCES = src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES = src/libexec/poudriere/timestamp/timestamp.c
 tsort_SOURCES = src/libexec/poudriere/tsort/tsort.c
@@ -651,10 +645,10 @@ sh_SOURCES = external/sh_compat/compat.c external/sh/alias.c \
 	src/libexec/poudriere/locked_mkdir/locked_mkdir.c \
 	src/libexec/poudriere/pwait/pwait.c \
 	src/libexec/poudriere/rename/rename.c \
-	src/libexec/poudriere/setproctitle/setproctitle.c \
 	src/poudriere-sh/helpers.c src/poudriere-sh/mkdir.c \
 	src/poudriere-sh/mktemp.c src/poudriere-sh/realpath.c \
-	src/poudriere-sh/rmdir.c src/poudriere-sh/sleep.c
+	src/poudriere-sh/rmdir.c src/poudriere-sh/setproctitle.c \
+	src/poudriere-sh/sleep.c
 libucl_a_SOURCES = external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_emitter_streamline.c \
 			external/libucl/src/ucl_emitter_utils.c \
@@ -1092,19 +1086,6 @@ src/libexec/poudriere/rm/rm.$(OBJEXT):  \
 rm$(EXEEXT): $(rm_OBJECTS) $(rm_DEPENDENCIES) $(EXTRA_rm_DEPENDENCIES) 
 	@rm -f rm$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(rm_OBJECTS) $(rm_LDADD) $(LIBS)
-src/libexec/poudriere/setproctitle/$(am__dirstamp):
-	@$(MKDIR_P) src/libexec/poudriere/setproctitle
-	@: > src/libexec/poudriere/setproctitle/$(am__dirstamp)
-src/libexec/poudriere/setproctitle/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) src/libexec/poudriere/setproctitle/$(DEPDIR)
-	@: > src/libexec/poudriere/setproctitle/$(DEPDIR)/$(am__dirstamp)
-src/libexec/poudriere/setproctitle/setproctitle.$(OBJEXT):  \
-	src/libexec/poudriere/setproctitle/$(am__dirstamp) \
-	src/libexec/poudriere/setproctitle/$(DEPDIR)/$(am__dirstamp)
-
-setproctitle$(EXEEXT): $(setproctitle_OBJECTS) $(setproctitle_DEPENDENCIES) $(EXTRA_setproctitle_DEPENDENCIES) 
-	@rm -f setproctitle$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(setproctitle_OBJECTS) $(setproctitle_LDADD) $(LIBS)
 external/sh_compat/$(am__dirstamp):
 	@$(MKDIR_P) external/sh_compat
 	@: > external/sh_compat/$(am__dirstamp)
@@ -1205,9 +1186,6 @@ src/libexec/poudriere/pwait/sh-pwait.$(OBJEXT):  \
 src/libexec/poudriere/rename/sh-rename.$(OBJEXT):  \
 	src/libexec/poudriere/rename/$(am__dirstamp) \
 	src/libexec/poudriere/rename/$(DEPDIR)/$(am__dirstamp)
-src/libexec/poudriere/setproctitle/sh-setproctitle.$(OBJEXT):  \
-	src/libexec/poudriere/setproctitle/$(am__dirstamp) \
-	src/libexec/poudriere/setproctitle/$(DEPDIR)/$(am__dirstamp)
 src/poudriere-sh/$(am__dirstamp):
 	@$(MKDIR_P) src/poudriere-sh
 	@: > src/poudriere-sh/$(am__dirstamp)
@@ -1226,6 +1204,9 @@ src/poudriere-sh/sh-realpath.$(OBJEXT):  \
 	src/poudriere-sh/$(am__dirstamp) \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
 src/poudriere-sh/sh-rmdir.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
+	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
+src/poudriere-sh/sh-setproctitle.$(OBJEXT):  \
+	src/poudriere-sh/$(am__dirstamp) \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
 src/poudriere-sh/sh-sleep.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
@@ -1366,7 +1347,6 @@ mostlyclean-compile:
 	-rm -f src/libexec/poudriere/rename/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/rexec/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/rm/*.$(OBJEXT)
-	-rm -f src/libexec/poudriere/setproctitle/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/timeout/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/timestamp/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/tsort/*.$(OBJEXT)
@@ -1445,8 +1425,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rename/$(DEPDIR)/sh-rename.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rm/$(DEPDIR)/rm.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/setproctitle/$(DEPDIR)/setproctitle.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/setproctitle/$(DEPDIR)/sh-setproctitle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/timeout/$(DEPDIR)/timeout.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/tsort/$(DEPDIR)/tsort.Po@am__quote@
@@ -1455,6 +1433,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-mktemp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-realpath.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-rmdir.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-sleep.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriered/$(DEPDIR)/poudriered-poudriered.Po@am__quote@
 
@@ -2300,20 +2279,6 @@ src/libexec/poudriere/rename/sh-rename.obj: src/libexec/poudriere/rename/rename.
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/rename/sh-rename.obj `if test -f 'src/libexec/poudriere/rename/rename.c'; then $(CYGPATH_W) 'src/libexec/poudriere/rename/rename.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/rename/rename.c'; fi`
 
-src/libexec/poudriere/setproctitle/sh-setproctitle.o: src/libexec/poudriere/setproctitle/setproctitle.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/setproctitle/sh-setproctitle.o -MD -MP -MF src/libexec/poudriere/setproctitle/$(DEPDIR)/sh-setproctitle.Tpo -c -o src/libexec/poudriere/setproctitle/sh-setproctitle.o `test -f 'src/libexec/poudriere/setproctitle/setproctitle.c' || echo '$(srcdir)/'`src/libexec/poudriere/setproctitle/setproctitle.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/setproctitle/$(DEPDIR)/sh-setproctitle.Tpo src/libexec/poudriere/setproctitle/$(DEPDIR)/sh-setproctitle.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/setproctitle/setproctitle.c' object='src/libexec/poudriere/setproctitle/sh-setproctitle.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/setproctitle/sh-setproctitle.o `test -f 'src/libexec/poudriere/setproctitle/setproctitle.c' || echo '$(srcdir)/'`src/libexec/poudriere/setproctitle/setproctitle.c
-
-src/libexec/poudriere/setproctitle/sh-setproctitle.obj: src/libexec/poudriere/setproctitle/setproctitle.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/setproctitle/sh-setproctitle.obj -MD -MP -MF src/libexec/poudriere/setproctitle/$(DEPDIR)/sh-setproctitle.Tpo -c -o src/libexec/poudriere/setproctitle/sh-setproctitle.obj `if test -f 'src/libexec/poudriere/setproctitle/setproctitle.c'; then $(CYGPATH_W) 'src/libexec/poudriere/setproctitle/setproctitle.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/setproctitle/setproctitle.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/setproctitle/$(DEPDIR)/sh-setproctitle.Tpo src/libexec/poudriere/setproctitle/$(DEPDIR)/sh-setproctitle.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/setproctitle/setproctitle.c' object='src/libexec/poudriere/setproctitle/sh-setproctitle.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/setproctitle/sh-setproctitle.obj `if test -f 'src/libexec/poudriere/setproctitle/setproctitle.c'; then $(CYGPATH_W) 'src/libexec/poudriere/setproctitle/setproctitle.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/setproctitle/setproctitle.c'; fi`
-
 src/poudriere-sh/sh-helpers.o: src/poudriere-sh/helpers.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-helpers.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-helpers.Tpo -c -o src/poudriere-sh/sh-helpers.o `test -f 'src/poudriere-sh/helpers.c' || echo '$(srcdir)/'`src/poudriere-sh/helpers.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-helpers.Tpo src/poudriere-sh/$(DEPDIR)/sh-helpers.Po
@@ -2383,6 +2348,20 @@ src/poudriere-sh/sh-rmdir.obj: src/poudriere-sh/rmdir.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/rmdir.c' object='src/poudriere-sh/sh-rmdir.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-rmdir.obj `if test -f 'src/poudriere-sh/rmdir.c'; then $(CYGPATH_W) 'src/poudriere-sh/rmdir.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/rmdir.c'; fi`
+
+src/poudriere-sh/sh-setproctitle.o: src/poudriere-sh/setproctitle.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-setproctitle.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Tpo -c -o src/poudriere-sh/sh-setproctitle.o `test -f 'src/poudriere-sh/setproctitle.c' || echo '$(srcdir)/'`src/poudriere-sh/setproctitle.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Tpo src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/setproctitle.c' object='src/poudriere-sh/sh-setproctitle.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-setproctitle.o `test -f 'src/poudriere-sh/setproctitle.c' || echo '$(srcdir)/'`src/poudriere-sh/setproctitle.c
+
+src/poudriere-sh/sh-setproctitle.obj: src/poudriere-sh/setproctitle.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-setproctitle.obj -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Tpo -c -o src/poudriere-sh/sh-setproctitle.obj `if test -f 'src/poudriere-sh/setproctitle.c'; then $(CYGPATH_W) 'src/poudriere-sh/setproctitle.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/setproctitle.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Tpo src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/setproctitle.c' object='src/poudriere-sh/sh-setproctitle.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-setproctitle.obj `if test -f 'src/poudriere-sh/setproctitle.c'; then $(CYGPATH_W) 'src/poudriere-sh/setproctitle.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/setproctitle.c'; fi`
 
 src/poudriere-sh/sh-sleep.o: src/poudriere-sh/sleep.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-sleep.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-sleep.Tpo -c -o src/poudriere-sh/sh-sleep.o `test -f 'src/poudriere-sh/sleep.c' || echo '$(srcdir)/'`src/poudriere-sh/sleep.c
@@ -3033,8 +3012,6 @@ distclean-generic:
 	-rm -f src/libexec/poudriere/rexec/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/rm/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/rm/$(am__dirstamp)
-	-rm -f src/libexec/poudriere/setproctitle/$(DEPDIR)/$(am__dirstamp)
-	-rm -f src/libexec/poudriere/setproctitle/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/timeout/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/timeout/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/timestamp/$(DEPDIR)/$(am__dirstamp)
@@ -3056,7 +3033,7 @@ clean-am: clean-generic clean-noinstLIBRARIES clean-pkglibexecPROGRAMS \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf external/libnv/$(DEPDIR) external/libnv/sys/$(DEPDIR) external/libucl/src/$(DEPDIR) external/ptsort/bin/$(DEPDIR) external/ptsort/lib/$(DEPDIR) external/sh/$(DEPDIR) external/sh/bltin/$(DEPDIR) external/sh_compat/$(DEPDIR) src/libexec/poudriere/cachec/$(DEPDIR) src/libexec/poudriere/cached/$(DEPDIR) src/libexec/poudriere/clock/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/locked_mkdir/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/pwait/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/rm/$(DEPDIR) src/libexec/poudriere/setproctitle/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriere-sh/$(DEPDIR) src/poudriered/$(DEPDIR)
+	-rm -rf external/libnv/$(DEPDIR) external/libnv/sys/$(DEPDIR) external/libucl/src/$(DEPDIR) external/ptsort/bin/$(DEPDIR) external/ptsort/lib/$(DEPDIR) external/sh/$(DEPDIR) external/sh/bltin/$(DEPDIR) external/sh_compat/$(DEPDIR) src/libexec/poudriere/cachec/$(DEPDIR) src/libexec/poudriere/cached/$(DEPDIR) src/libexec/poudriere/clock/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/locked_mkdir/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/pwait/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/rm/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriere-sh/$(DEPDIR) src/poudriered/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-tags
@@ -3111,7 +3088,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf external/libnv/$(DEPDIR) external/libnv/sys/$(DEPDIR) external/libucl/src/$(DEPDIR) external/ptsort/bin/$(DEPDIR) external/ptsort/lib/$(DEPDIR) external/sh/$(DEPDIR) external/sh/bltin/$(DEPDIR) external/sh_compat/$(DEPDIR) src/libexec/poudriere/cachec/$(DEPDIR) src/libexec/poudriere/cached/$(DEPDIR) src/libexec/poudriere/clock/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/locked_mkdir/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/pwait/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/rm/$(DEPDIR) src/libexec/poudriere/setproctitle/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriere-sh/$(DEPDIR) src/poudriered/$(DEPDIR)
+	-rm -rf external/libnv/$(DEPDIR) external/libnv/sys/$(DEPDIR) external/libucl/src/$(DEPDIR) external/ptsort/bin/$(DEPDIR) external/ptsort/lib/$(DEPDIR) external/sh/$(DEPDIR) external/sh/bltin/$(DEPDIR) external/sh_compat/$(DEPDIR) src/libexec/poudriere/cachec/$(DEPDIR) src/libexec/poudriere/cached/$(DEPDIR) src/libexec/poudriere/clock/$(DEPDIR) src/libexec/poudriere/cpdup/$(DEPDIR) src/libexec/poudriere/dirempty/$(DEPDIR) src/libexec/poudriere/dirwatch/$(DEPDIR) src/libexec/poudriere/jexecd/$(DEPDIR) src/libexec/poudriere/locked_mkdir/$(DEPDIR) src/libexec/poudriere/nc/$(DEPDIR) src/libexec/poudriere/pwait/$(DEPDIR) src/libexec/poudriere/rename/$(DEPDIR) src/libexec/poudriere/rexec/$(DEPDIR) src/libexec/poudriere/rm/$(DEPDIR) src/libexec/poudriere/timeout/$(DEPDIR) src/libexec/poudriere/timestamp/$(DEPDIR) src/libexec/poudriere/tsort/$(DEPDIR) src/poudriere-sh/$(DEPDIR) src/poudriered/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
