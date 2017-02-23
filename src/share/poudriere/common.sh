@@ -310,7 +310,7 @@ injail_tty() {
 
 	_my_name name
 	jexec -U ${JUSER:-root} ${name}${JNETNAME:+-${JNETNAME}} \
-	    ${MAX_MEMORY_JEXEC} "$@"
+	    ${JEXEC_LIMITS} "$@"
 }
 
 jstart() {
@@ -5046,9 +5046,14 @@ fi
 
 if [ -n "${MAX_MEMORY}" ]; then
 	MAX_MEMORY_BYTES="$((${MAX_MEMORY} * 1024 * 1024 * 1024))"
-	MAX_MEMORY_JEXEC="/usr/bin/limits -v ${MAX_MEMORY_BYTES}"
 fi
 : ${MAX_FILES:=1024}
+if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
+	JEXEC_LIMITS="/usr/bin/limits \
+	    ${MAX_MEMORY_BYTES:+-v ${MAX_MEMORY_BYTES}} \
+	    ${MAX_FILES:+-n ${MAX_FILES}} \
+	    "
+fi
 
 TIME_START=$(clock -monotonic)
 EPOCH_START=$(clock -epoch)
