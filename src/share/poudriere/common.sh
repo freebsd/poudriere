@@ -3404,14 +3404,12 @@ prefix_output() {
 list_deps() {
 	[ $# -ne 1 ] && eargs list_deps directory
 	local dir="/usr/ports/$1"
-	local makeargs="-VPKG_DEPENDS -VBUILD_DEPENDS -VEXTRACT_DEPENDS -VLIB_DEPENDS -VPATCH_DEPENDS -VFETCH_DEPENDS -VRUN_DEPENDS"
 
 	prefix_stderr_quick "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
-		injail /usr/bin/make -C ${dir} $makeargs | \
-		/usr/bin/tr ' ' '\n' | \
-		/usr/bin/awk -F: '{ gsub(/\/usr\/ports\//,"", $2); print $2 }' | \
-		/usr/bin/sort -u || \
-		err 1 "Makefile broken: $1"
+	    injail /usr/bin/make -C ${dir} \
+	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
+	    -V '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' || \
+	    err 1 "Makefile broken: $1"
 }
 
 deps_file() {
