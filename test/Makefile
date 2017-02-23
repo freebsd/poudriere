@@ -1,5 +1,6 @@
 TESTS=\
 	locks.sh \
+	port_var_fetch.sh \
 	relpath.sh \
 	shash_basic.sh \
 

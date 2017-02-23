@@ -293,6 +293,8 @@ relpath() {
 	echo "${common} ${dir1} ${dir2}"
 }
 
+# It may be defined as a NOP for tests
+if ! type injail >/dev/null 2>&1; then
 injail() {
 	if [ "${USE_JEXECD}" = "no" ]; then
 		injail_tty "$@"
@@ -304,6 +306,7 @@ injail() {
 			-u ${JUSER:-root} "$@"
 	fi
 }
+fi
 
 injail_tty() {
 	local name
@@ -3887,28 +3890,62 @@ lock_have() {
 
 # Fetch vars from the Makefile and set them locally.
 # port_var_fetch ports-mgmt/pkg PKGNAME pkgname PKGBASE pkgbase ...
+# Assignments are supported as well, without a subsequent variable for storage.
 port_var_fetch() {
-	[ $# -gt 3 ] || eargs port_var_fetch origin PORTVAR var_set ...
+	[ $# -ge 3 ] || eargs port_var_fetch origin PORTVAR var_set ...
 	local origin="$1"
 	local _makeflags _vars
-	local _portvar _var _line
+	local _portvar _var _line _canary
+	# Use a tab rather than space to allow FOO='BLAH BLAH' assignments
+	# and lookups like -V'${PKG_DEPENDS} ${BUILD_DEPENDS}'
+	local IFS sep="	"
 
 	shift
-	[ $((${#} % 2)) -eq 0 ] || eargs port_var_fetch origin PORTVAR var_set ...
+
+	# Use a canary to detect exit status errors
+	_makeflags="-V!canary"
+	_vars="_canary"
+
 	while [ $# -ge 2 ]; do
 		_portvar="$1"
 		_var="$2"
-		_makeflags="${_makeflags}${_makeflags:+ }-V${_portvar}"
-		_vars="${_vars}${_vars:+ }${_var}"
-		shift 2
+		if [ -z "${_portvar%%*=*}" ]; then
+			# This is an assignment, no associated variable
+			# for storage.
+			_makeflags="${_makeflags}${_makeflags:+${sep}}${_portvar}"
+			# Use invalid shell var character '!' to ensure we
+			# don't setvar it later.
+			_vars="${_vars}${_vars:+ }!"
+			shift 1
+		else
+			_makeflags="${_makeflags}${_makeflags:+${sep}}-V${_portvar}"
+			_vars="${_vars}${_vars:+ }${_var}"
+			# Clear the value in case the make fails
+			setvar "${_var}" ""
+			shift 2
+		fi
 	done
+	[ $# -eq 0 ] || eargs port_var_fetch origin PORTVAR var_set ...
 	set -- ${_vars}
 	while read -r _line; do
+		while [ "${1}" = "!" ]; do
+			shift
+		done
 		setvar "$1" "${_line}"
+		if [ "$1" = "_canary" -a -n "${_line}" ]; then
+			# Encountered an error, abort parsing anything further.
+			break
+		fi
 		shift
 	done <<-EOF
-	$(injail /usr/bin/make -C "/usr/ports/${origin}" ${_makeflags} || echo)
+	$(IFS="${sep}"; injail /usr/bin/make -C "${PORTSDIR}/${origin}" ${_makeflags} || echo "canary")
 	EOF
+
+	if [ "${_canary}" = "canary" ]; then
+		return 1
+	fi
+
+	return 0
 }
 
 cache_get_pkgname() {
