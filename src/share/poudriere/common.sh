@@ -302,6 +302,7 @@ injail() {
 		local name
 
 		_my_name name
+		[ -n "${name}" ] || err 1 "No jail setup"
 		rexec -s ${MASTERMNT}/../${name}${JNETNAME:+-${JNETNAME}}.sock \
 			-u ${JUSER:-root} "$@"
 	fi
@@ -312,6 +313,7 @@ injail_tty() {
 	local name
 
 	_my_name name
+	[ -n "${name}" ] || err 1 "No jail setup"
 	jexec -U ${JUSER:-root} ${name}${JNETNAME:+-${JNETNAME}} \
 	    ${JEXEC_LIMITS} "$@"
 }
