@@ -289,6 +289,7 @@ injail() {
 	local name
 
 	_my_name name
+	[ -n "${name}" ] || err 1 "No jail setup"
 	jexec -U ${JUSER:-root} ${name}${JNETNAME:+-${JNETNAME}} \
 	    ${JEXEC_LIMITS+/usr/bin/limits} \
 	    ${MAX_MEMORY_BYTES:+-v ${MAX_MEMORY_BYTES}} \
