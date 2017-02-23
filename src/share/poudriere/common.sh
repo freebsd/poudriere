@@ -290,7 +290,10 @@ injail() {
 
 	_my_name name
 	jexec -U ${JUSER:-root} ${name}${JNETNAME:+-${JNETNAME}} \
-	    ${JEXEC_LIMITS} "$@"
+	    ${JEXEC_LIMITS+/usr/bin/limits} \
+	    ${MAX_MEMORY_BYTES:+-v ${MAX_MEMORY_BYTES}} \
+	    ${MAX_FILES:+-n ${MAX_FILES}} \
+	    "$@"
 }
 
 jstart() {
@@ -5030,10 +5033,7 @@ if [ -n "${MAX_MEMORY}" ]; then
 fi
 : ${MAX_FILES:=1024}
 if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
-	JEXEC_LIMITS="/usr/bin/limits \
-	    ${MAX_MEMORY_BYTES:+-v ${MAX_MEMORY_BYTES}} \
-	    ${MAX_FILES:+-n ${MAX_FILES}} \
-	    "
+	JEXEC_LIMITS=1
 fi
 
 TIME_START=$(clock -monotonic)
