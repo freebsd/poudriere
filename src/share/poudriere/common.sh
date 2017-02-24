@@ -4022,17 +4022,19 @@ check_dep_fatal_error() {
 }
 
 compute_deps() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "compute_deps requires PWD=${MASTERMNT}/.p"
 	local port pkgname dep_pkgname
 
 	msg "Calculating ports order and dependencies"
 	bset status "computingdeps:"
 
-	:> "${MASTERMNT}/.p/port_deps.unsorted"
-	:> "${MASTERMNT}/.p/pkg_deps.unsorted"
+	:> "port_deps.unsorted"
+	:> "pkg_deps.unsorted"
 
 	parallel_start
 	for port in $(listed_ports show_moved); do
-		if [ -d "${MASTERMNT}${PORTSDIR}/${port}" ]; then
+		if [ -d "../${PORTSDIR}/${port}" ]; then
 			parallel_run compute_deps_port ${port} || \
 			    set_dep_fatal_error
 		else
@@ -4048,34 +4050,32 @@ compute_deps() {
 		err 1 "Fatal errors encountered calculating dependencies"
 	fi
 
-	sort -u "${MASTERMNT}/.p/pkg_deps.unsorted" > \
-	    "${MASTERMNT}/.p/pkg_deps"
+	sort -u "pkg_deps.unsorted" > "pkg_deps"
 
 	bset status "computingrdeps:"
 
 	# cd into rdeps to allow xargs mkdir to have more args.
 	(
-		cd "${MASTERMNT}/.p/rdeps"
-		awk '{print $2}' "${MASTERMNT}/.p/pkg_deps" |
-		    sort -u | xargs mkdir
+		cd "rdeps"
+		awk '{print $2}' "../pkg_deps" | sort -u | xargs mkdir
 	)
 
 	# xargs|touch was no quicker here.
 	while read dep_pkgname pkgname; do
-		:> "${MASTERMNT}/.p/rdeps/${pkgname}/${dep_pkgname}"
-	done < "${MASTERMNT}/.p/pkg_deps"
+		:> "rdeps/${pkgname}/${dep_pkgname}"
+	done < "pkg_deps"
 
-	sort -u "${MASTERMNT}/.p/port_deps.unsorted" > \
-		"${MASTERMNT}/.p/port_deps"
+	sort -u "port_deps.unsorted" > "port_deps"
 
-	rm -f "${MASTERMNT}/.p/port_deps.unsorted" \
-	    "${MASTERMNT}/.p/pkg_deps.unsorted"
+	rm -f "port_deps.unsorted" "pkg_deps.unsorted"
 
 	return 0
 }
 
 # Take optional pkgname to speedup lookup
 compute_deps_port() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "compute_deps_port requires PWD=${MASTERMNT}/.p"
 	[ $# -lt 1 ] && eargs compute_deps_port port
 	[ $# -gt 3 ] && eargs compute_deps_port port pkgname deps
 	local port="$1"
@@ -4087,7 +4087,7 @@ compute_deps_port() {
 	# No need to check this for -a as this function is only called once
 	# per origin, not recursively per dependency.
 	if [ ${ALL} -eq 0 ] && \
-	    ! [ -d "${MASTERMNT}${PORTSDIR}/${port}" ]; then
+	    ! [ -d "../${PORTSDIR}/${port}" ]; then
 		err 1 "Invalid port origin '${COLOR_PORT}${port}${COLOR_RESET}' not found."
 	fi
 
@@ -4097,7 +4097,7 @@ compute_deps_port() {
 		    err 1 "Error fetching dependencies for ${port}"
 	fi
 	[ -n "${pkgname}" ] || err 1 "compute_deps: Error fetching PKGNAME for ${port}"
-	pkg_pooldir="${MASTERMNT}/.p/deps/${pkgname}"
+	pkg_pooldir="deps/${pkgname}"
 
 	# -a should always succeed since it is not recursive
 	# -f may fail if another worker is processing this port.
@@ -4122,7 +4122,7 @@ compute_deps_port() {
 			set_dep_fatal_error
 			return 1
 		fi
-		if ! [ -d "${MASTERMNT}${PORTSDIR}/${dep_port}" ]; then
+		if ! [ -d "../${PORTSDIR}/${dep_port}" ]; then
 			msg_error "${COLOR_PORT}${port}${COLOR_RESET} depends on nonexistent origin '${COLOR_PORT}${dep_port}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
 			set_dep_fatal_error
 			return 1
@@ -4143,21 +4143,18 @@ compute_deps_port() {
 		# Only do this if it's not already done, and not ALL, as
 		# everything will be visited later.
 		if [ ${ALL} -eq 0 ] && \
-		    ! [ -d "${MASTERMNT}/.p/deps/${dep_pkgname}" ]; then
+		    ! [ -d "deps/${dep_pkgname}" ]; then
 			compute_deps_port "${dep_port}" "${dep_pkgname}" "${dep_deps}"
 		fi
 
 		:> "${pkg_pooldir}/${dep_pkgname}"
-		echo "${pkgname} ${dep_pkgname}" >> \
-		    "${MASTERMNT}/.p/pkg_deps.unsorted"
-		echo "${port} ${dep_port}" >> \
-			${MASTERMNT}/.p/port_deps.unsorted
+		echo "${pkgname} ${dep_pkgname}" >> "pkg_deps.unsorted"
+		echo "${port} ${dep_port}" >> "port_deps.unsorted"
 	done
 
-	[ ${ALL} -eq 0 ] && echo "${port} ${port}" >> \
-	    ${MASTERMNT}/.p/port_deps.unsorted
+	[ ${ALL} -eq 0 ] && echo "${port} ${port}" >> "port_deps.unsorted"
 
-	echo "${pkgname}" >> ${MASTERMNT}/.p/all_pkgs
+	echo "${pkgname}" >> "all_pkgs"
 
 	return 0
 }
