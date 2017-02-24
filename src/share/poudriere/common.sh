@@ -2918,6 +2918,7 @@ build_queue() {
 
 	[ ! -d "${MASTERMNT}/.p/pool" ] && err 1 "Build pool is missing"
 	cd "${MASTERMNT}/.p/pool"
+	SHASH_VAR_PATH="../var/cache"
 
 	idle_only=0
 	while :; do
@@ -3167,6 +3168,7 @@ clean_pool() {
 
 	(
 		cd "${MASTERMNT}/.p"
+		SHASH_VAR_PATH="var/cache"
 		balance_pool || :
 	)
 }
@@ -4392,8 +4394,8 @@ prepare_ports() {
 		"${MASTERMNT}/.p/var/run" \
 		"${MASTERMNT}/.p/var/cache"
 
-	SHASH_VAR_PATH="${MASTERMNT}/.p/var/cache"
 	cd "${MASTERMNT}/.p"
+	SHASH_VAR_PATH="var/cache"
 
 	if [ -e "${log}/.poudriere.ports.built" ]; then
 		resuming_build=1
