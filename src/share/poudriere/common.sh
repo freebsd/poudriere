@@ -4234,6 +4234,8 @@ get_porttesting() {
 }
 
 find_all_deps() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "find_all_deps requires PWD=${MASTERMNT}/.p"
 	[ $# -ne 1 ] && eargs find_all_deps pkgname
 	local pkgname="$1"
 	local dep_pkgname
@@ -4243,45 +4245,47 @@ find_all_deps() {
 	#msg_debug "find_all_deps ${pkgname}"
 
 	# Show deps/*/${pkgname}
-	for pn in ${MASTERMNT}/.p/deps/${pkgname}/*; do
+	for pn in deps/${pkgname}/*; do
 		dep_pkgname=${pn##*/}
 		case " ${FIND_ALL_DEPS} " in
 			*\ ${dep_pkgname}\ *) continue ;;
 		esac
 		case "${pn}" in
-			"${MASTERMNT}/.p/deps/${pkgname}/*") break ;;
+			"deps/${pkgname}/*") break ;;
 		esac
-		echo "${MASTERMNT}/.p/deps/${dep_pkgname}"
+		echo "deps/${dep_pkgname}"
 		find_all_deps "${dep_pkgname}"
 	done
-	echo "${MASTERMNT}/.p/deps/${pkgname}"
+	echo "deps/${pkgname}"
 }
 
 find_all_pool_references() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "find_all_pool_references requires PWD=${MASTERMNT}/.p"
 	[ $# -ne 1 ] && eargs find_all_pool_references pkgname
 	local pkgname="$1"
 	local rpn dep_pkgname
 
 	# Cleanup rdeps/*/${pkgname}
-	for rpn in ${MASTERMNT}/.p/deps/${pkgname}/*; do
+	for rpn in deps/${pkgname}/*; do
 		case "${rpn}" in
-			"${MASTERMNT}/.p/deps/${pkgname}/*")
+			"deps/${pkgname}/*")
 				break ;;
 		esac
 		dep_pkgname=${rpn##*/}
-		echo "${MASTERMNT}/.p/rdeps/${dep_pkgname}/${pkgname}"
+		echo "rdeps/${dep_pkgname}/${pkgname}"
 	done
-	echo "${MASTERMNT}/.p/deps/${pkgname}"
+	echo "deps/${pkgname}"
 	# Cleanup deps/*/${pkgname}
-	for rpn in ${MASTERMNT}/.p/rdeps/${pkgname}/*; do
+	for rpn in rdeps/${pkgname}/*; do
 		case "${rpn}" in
-			"${MASTERMNT}/.p/rdeps/${pkgname}/*")
+			"rdeps/${pkgname}/*")
 				break ;;
 		esac
 		dep_pkgname=${rpn##*/}
-		echo "${MASTERMNT}/.p/deps/${dep_pkgname}/${pkgname}"
+		echo "deps/${dep_pkgname}/${pkgname}"
 	done
-	echo "${MASTERMNT}/.p/rdeps/${pkgname}"
+	echo "rdeps/${pkgname}"
 }
 
 delete_stale_symlinks_and_empty_dirs() {
@@ -4327,14 +4331,16 @@ check_moved() {
 }
 
 clean_build_queue() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "clean_build_queue requires PWD=${MASTERMNT}/.p"
 	local tmp pn port
 
 	bset status "cleaning:"
 	msg "Cleaning the build queue"
 
 	# Delete from the queue all that already have a current package.
-	for pn in $(ls ${MASTERMNT}/.p/deps/); do
-		[ -f "${MASTERMNT}/packages/All/${pn}.${PKG_EXT}" ] && \
+	for pn in $(ls deps/); do
+		[ -f "../packages/All/${pn}.${PKG_EXT}" ] && \
 		    find_all_pool_references "${pn}"
 	done | xargs rm -rf
 
@@ -4363,7 +4369,7 @@ clean_build_queue() {
 				find_all_deps "${pkgname}"
 			done | sort -u > ${tmp}
 		}
-		find ${MASTERMNT}/.p/deps -type d -mindepth 1 -maxdepth 1 | \
+		find deps -type d -mindepth 1 -maxdepth 1 | \
 		    sort > ${tmp}.actual
 		comm -13 ${tmp} ${tmp}.actual | while read pd; do
 			find_all_pool_references "${pd##*/}"
