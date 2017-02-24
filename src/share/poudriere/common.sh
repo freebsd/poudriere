@@ -4220,6 +4220,8 @@ gather_port_vars() {
 }
 
 gather_port_vars_port() {
+	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
+	    err 1 "gather_port_vars_port requires SHASH_VAR_PATH=var/cache"
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "gather_port_vars_port requires PWD=${MASTERMNT}/.p"
 	[ $# -lt 1 ] && eargs gather_port_vars_port origin [inqueue]
@@ -4278,6 +4280,8 @@ gather_port_vars_port() {
 }
 
 gather_port_vars_process_depqueue() {
+	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
+	    err 1 "gather_port_vars_process_depqueue requires SHASH_VAR_PATH=var/cache"
 	[ $# -ne 1 ] && eargs gather_port_vars_process_depqueue qorigin
 	local qorigin="$1"
 	local origin pkgname deps dep_origin dep_pkgname
@@ -4342,6 +4346,8 @@ compute_deps() {
 }
 
 compute_deps_pkg() {
+	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
+	    err 1 "compute_deps_pkg requires SHASH_VAR_PATH=var/cache"
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "compute_deps_pkgname requires PWD=${MASTERMNT}/.p"
 	[ $# -lt 1 ] && eargs compute_deps_pkg pkgname
