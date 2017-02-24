@@ -3979,12 +3979,8 @@ compute_deps() {
 		cd "${MASTERMNT}/.p/rdeps"
 		awk '{print $2}' "${MASTERMNT}/.p/pkg_deps" |
 		    sort -u | xargs mkdir
+		awk '{print $2 "/" $1}' "${MASTERMNT}/.p/pkg_deps" | xargs touch
 	)
-
-	# xargs|touch was no quicker here.
-	while read dep_pkgname pkgname; do
-		:> "${MASTERMNT}/.p/rdeps/${pkgname}/${dep_pkgname}"
-	done < "${MASTERMNT}/.p/pkg_deps"
 
 	sort -u "${MASTERMNT}/.p/port_deps.unsorted" > \
 		"${MASTERMNT}/.p/port_deps"
