@@ -54,6 +54,25 @@ assert() {
 
 }
 
+assert_not() {
+	[ $# -eq 3 ] || eargs assert_not notexpected actual msg
+	local notexpected="$1"
+	local actual="$2"
+	local msg="$3"
+
+	: ${EXITVAL:=0}
+
+	EXITVAL=$((${EXITVAL:-0} + 1))
+
+	if [ "${actual}" = "${notexpected}" ]; then
+		aecho "${msg}: notexpected: '${notexpected}', actual: '${actual}'"
+		exit ${EXITVAL}
+	fi
+
+	return 0
+
+}
+
 assert_ret() {
 	local expected="$1"
 	local ret
