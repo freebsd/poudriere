@@ -3097,6 +3097,8 @@ parallel_build() {
 	msg "Starting/Cloning builders"
 	start_builders
 
+	coprocess_start pkg_cacher pkg_cacher_cleanup
+
 	bset status "parallel_build:"
 
 	build_queue
@@ -4447,7 +4449,6 @@ prepare_ports() {
 		else
 			msg "HTML UI updates are disabled by HTML_JSON_UPDATE_INTERVAL being 0"
 		fi
-		coprocess_start pkg_cacher pkg_cacher_cleanup
 	fi
 
 	load_moved
