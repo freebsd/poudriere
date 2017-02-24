@@ -3406,15 +3406,43 @@ prefix_output() {
 	prefix_stderr "${extra}" prefix_stdout "${extra}" "$@"
 }
 
-list_deps() {
-	[ $# -ne 1 ] && eargs list_deps directory
-	local dir="/usr/ports/$1"
+deps_fetch_vars() {
+	[ $# -ne 3 ] && eargs deps_fetch_vars origin deps_var pkgname_var
+	local origin="$1"
+	local deps_var="$2"
+	local pkgname_var="$3"
+	local _pkgname _pkg_deps
+	local _existing_pkgname _existing_origin
 
-	prefix_stderr_quick "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
-	    injail /usr/bin/make -C ${dir} \
-	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
-	    -V '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' || \
-	    err 1 "Makefile broken: $1"
+	port_var_fetch "${origin}"\
+	    PKGNAME _pkgname \
+	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' '' \
+	    '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
+	    _pkg_deps || \
+	    err 1 "Makefile broken: ${origin}"
+
+	setvar "${deps_var}" "${_pkg_deps}"
+	setvar "${pkgname_var}" "${_pkgname}"
+
+	if ! shash_get origin-pkgname "${origin}" _existing_pkgname; then
+		# Make sure this origin did not already exist
+		cache_get_origin _existing_origin "${_pkgname}" 2>/dev/null || :
+		# It may already exist due to race conditions, it is not
+		# harmful. Just ignore.
+		if [ "${_existing_origin}" != "${origin}" ]; then
+			[ -n "${_existing_origin}" ] && \
+			    err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${origin}${COLOR_RESET} AND ${COLOR_PORT}${_existing_origin}${COLOR_RESET}. Rerun with -vv to see which ports are depending on these."
+			shash_set origin-pkgname "${origin}" "${_pkgname}"
+			shash_set pkgname-origin "${_pkgname}" "${origin}"
+		fi
+	else
+		# compute_deps raced and managed to process the same port
+		# before creating its pool dir.  This is wasted time
+		# but is harmless.  We could add some kind of locking
+		# based on the origin name, but it's probably not
+		# worth it.  The same race exists in the above case.
+		return 0
+	fi
 }
 
 deps_file() {
@@ -3964,25 +3992,7 @@ cache_get_pkgname() {
 
 	# Add to cache if not found.
 	if ! shash_get origin-pkgname "${origin}" _pkgname; then
-		if ! [ -d "${MASTERMNT}${PORTSDIR}/${origin}" ]; then
-			if [ ${fatal} -eq 1 ]; then
-				err 1 "Invalid port origin '${COLOR_PORT}${origin}${COLOR_RESET}' not found."
-			else
-				return 1
-			fi
-		fi
-		_pkgname=$(injail /usr/bin/make -C ${PORTSDIR}/${origin} \
-		    -VPKGNAME || echo)
-		[ -n "${_pkgname}" ] || err 1 "Error getting PKGNAME for ${COLOR_PORT}${origin}${COLOR_RESET}"
-		# Make sure this origin did not already exist
-		cache_get_origin existing_origin "${_pkgname}" 2>/dev/null || :
-		# It may already exist due to race conditions, it is not harmful. Just ignore.
-		if [ "${existing_origin}" != "${origin}" ]; then
-			[ -n "${existing_origin}" ] &&
-				err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${origin}${COLOR_RESET} AND ${COLOR_PORT}${existing_origin}${COLOR_RESET}. Rerun with -vv to see which ports are depending on these."
-			shash_set origin-pkgname "${origin}" "${_pkgname}"
-			shash_set pkgname-origin "${_pkgname}" "${origin}"
-		fi
+		err 1 "cache_get_pkgname failed for ${origin}: This should not happen (${fatal})"
 	fi
 
 	setvar "${var_return}" "${_pkgname}"
@@ -4067,20 +4077,39 @@ compute_deps() {
 # Take optional pkgname to speedup lookup
 compute_deps_port() {
 	[ $# -lt 1 ] && eargs compute_deps_port port
-	[ $# -gt 2 ] && eargs compute_deps_port port pkgnme
-	local port=$1
+	[ $# -gt 3 ] && eargs compute_deps_port port pkgname deps
+	local port="$1"
 	local pkgname="$2"
-	local dep_pkgname dep_port
+	local deps="$3"
+	local dep_pkgname dep_port dep_deps
 	local pkg_pooldir
 
-	[ -z "${pkgname}" ] && cache_get_pkgname pkgname "${port}"
+	# No need to check this for -a as this function is only called once
+	# per origin, not recursively per dependency.
+	if [ ${ALL} -eq 0 ] && \
+	    ! [ -d "${MASTERMNT}${PORTSDIR}/${port}" ]; then
+		err 1 "Invalid port origin '${COLOR_PORT}${port}${COLOR_RESET}' not found."
+	fi
+
+	# It may have been passed in from the parent compute_deps
+	if [ -z "${pkgname}" ]; then
+		deps_fetch_vars "${port}" deps pkgname || \
+		    err 1 "Error fetching dependencies for ${port}"
+	fi
+	[ -n "${pkgname}" ] || err 1 "compute_deps: Error fetching PKGNAME for ${port}"
 	pkg_pooldir="${MASTERMNT}/.p/deps/${pkgname}"
 
-	mkdir "${pkg_pooldir}" 2>/dev/null || return 0
+	# -a should always succeed since it is not recursive
+	# -f may fail if another worker is processing this port.
+	if [ ${ALL} -eq 1 ]; then
+		mkdir "${pkg_pooldir}" || err 1 "compute_deps: Error creating pool dir for ${port}"
+	else
+		mkdir "${pkg_pooldir}" 2>/dev/null || return 0
+	fi
 
 	msg_verbose "Computing deps for ${COLOR_PORT}${port}"
 
-	for dep_port in `list_deps ${port}`; do
+	for dep_port in ${deps}; do
 		msg_debug "${COLOR_PORT}${port}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_port}"
 		if [ "${port}" = "${dep_port}" ]; then
 			msg_error "${COLOR_PORT}${port}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
@@ -4093,16 +4122,30 @@ compute_deps_port() {
 			set_dep_fatal_error
 			return 1
 		fi
-		if ! cache_get_pkgname dep_pkgname "${dep_port}" 0; then
+		if ! [ -d "${MASTERMNT}${PORTSDIR}/${dep_port}" ]; then
 			msg_error "${COLOR_PORT}${port}${COLOR_RESET} depends on nonexistent origin '${COLOR_PORT}${dep_port}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
 			set_dep_fatal_error
 			return 1
 		fi
 
-		# Only do this if it's not already done, and not ALL, as everything will
-		# be touched anyway
-		[ ${ALL} -eq 0 ] && ! [ -d "${MASTERMNT}/.p/deps/${dep_pkgname}" ] &&
-			compute_deps_port "${dep_port}" "${dep_pkgname}"
+		# Lookup pkgname+deps for this dependency.  This is mostly
+		# because we need the pkgname at this point, and we can
+		# save time by fetching the dependencies at the same time.
+		# For the -a case we can try to find the pkgname in the cache
+		# first to avoid more ports interactions, since we will
+		# visit the port later to process deps.
+		if [ ${ALL} -eq 0 ] || \
+		    ! shash_get origin-pkgname "${dep_port}" dep_pkgname; then
+			deps_fetch_vars "${dep_port}" dep_deps dep_pkgname || \
+			    err 1 "Error fetching dependencies for ${port} dependency ${dep_port}"
+		fi
+
+		# Only do this if it's not already done, and not ALL, as
+		# everything will be visited later.
+		if [ ${ALL} -eq 0 ] && \
+		    ! [ -d "${MASTERMNT}/.p/deps/${dep_pkgname}" ]; then
+			compute_deps_port "${dep_port}" "${dep_pkgname}" "${dep_deps}"
+		fi
 
 		:> "${pkg_pooldir}/${dep_pkgname}"
 		echo "${pkgname} ${dep_pkgname}" >> \
