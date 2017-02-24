@@ -53,12 +53,10 @@ shash_get() {
 	local ret
 
 	ret=1
-	if [ "${USE_CACHED}" = "yes" ]; then
+	if [ "${USE_CACHED}" = "yes" ] && \
+	    [ "${var}" = "pkgname-origin" -o "${var}" = "origin-pkgname" ]; then
 		# XXX: This is ignoring var
 		# XXX: This only supports origin-pkgname and pkgname-origin
-		[ "${var}" = "pkgname-origin" ] || \
-		    [ "${var}" = "origin-pkgname" ] || \
-		    err 1 "shash_get with USE_CACHED does not support ${var}"
 		_values="$(cachec -s "/${MASTERNAME}" "get ${key}")"
 		if [ -n "${_values}" ]; then
 			ret=0
@@ -91,12 +89,10 @@ shash_set() {
 	local value="$3"
 	local _shash_varkey_file
 
-	if [ "${USE_CACHED}" = "yes" ]; then
+	if [ "${USE_CACHED}" = "yes" ] && \
+	    [ "${var}" = "pkgname-origin" -o "${var}" = "origin-pkgname" ]; then
 		# XXX: This is ignoring var
 		# XXX: This only supports origin-pkgname and pkgname-origin
-		[ "${var}" = "pkgname-origin" ] || \
-		    [ "${var}" = "origin-pkgname" ] || \
-		    err 1 "shash_set with USE_CACHED does not support ${var}"
 		cachec -s "/${MASTERNAME}" "set ${key} ${value}"
 	else
 		_shash_varkey_file "${var}" "${key}"
