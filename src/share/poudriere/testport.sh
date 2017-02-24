@@ -172,7 +172,7 @@ if [ $CONFIGSTR -eq 1 ]; then
 	unset PORTSDIR PORT_DBDIR TERM
 fi
 
-LISTPORTS=$(list_deps ${ORIGIN} )
+deps_fetch_vars "${ORIGIN}" LISTPORTS PKGNAME
 prepare_ports
 markfs prepkg ${MASTERMNT}
 
@@ -203,7 +203,6 @@ PARALLEL_JOBS=${BUILD_PARALLEL_JOBS}
 
 bset_job_status "testing" "${ORIGIN}"
 
-PKGNAME=`injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -VPKGNAME`
 LOCALBASE=`injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -VLOCALBASE`
 : ${PREFIX:=$(injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -VPREFIX)}
 if [ "${USE_PORTLINT}" = "yes" ]; then
