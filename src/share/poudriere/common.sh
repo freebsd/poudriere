@@ -4060,12 +4060,8 @@ compute_deps() {
 	(
 		cd "rdeps"
 		awk '{print $2}' "../pkg_deps" | sort -u | xargs mkdir
+		awk '{print $2 "/" $1}' "../pkg_deps" | xargs touch
 	)
-
-	# xargs|touch was no quicker here.
-	while read dep_pkgname pkgname; do
-		:> "rdeps/${pkgname}/${dep_pkgname}"
-	done < "pkg_deps"
 
 	sort -u "port_deps.unsorted" > "port_deps"
 
