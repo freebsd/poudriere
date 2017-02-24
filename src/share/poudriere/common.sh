@@ -4196,17 +4196,8 @@ gather_port_vars() {
 			esac
 			origin="${qorigin#*/}"
 			origin="${origin%!*}/${origin#*!}"
-			if [ -d "../${PORTSDIR}/${origin}" ]; then
-				parallel_run gather_port_vars_port \
-				    "${origin}" inqueue || set_dep_fatal_error
-			else
-				if [ ${ALL} -eq 1 ]; then
-					msg_warn "Nonexistent origin listed in category Makefiles: ${COLOR_PORT}${origin}"
-				else
-					msg_error "Nonexistent origin listed for build: ${COLOR_PORT}${origin}"
-					set_dep_fatal_error
-				fi
-			fi
+			parallel_run gather_port_vars_port \
+			    "${origin}" inqueue || set_dep_fatal_error
 		done
 		if ! parallel_stop || check_dep_fatal_error; then
 			err 1 "Fatal errors encountered gathering ports metadata"
