@@ -4239,6 +4239,9 @@ gather_port_vars_port() {
 		return 1
 	fi
 
+	[ -n "${pkgname}" ] || \
+	    err 1 "gather_port_vars_port: failed to get PKGNAME for ${origin}"
+
 	echo "${pkgname}" >> "all_pkgs"
 	[ ${ALL} -eq 0 ] && echo "${pkgname%-*}" >> "all_pkgbases"
 
