@@ -3932,6 +3932,7 @@ lock_have() {
 # port_var_fetch ports-mgmt/pkg PKGNAME pkgname PKGBASE pkgbase ...
 # Assignments are supported as well, without a subsequent variable for storage.
 port_var_fetch() {
+	local -; set +x
 	[ $# -ge 3 ] || eargs port_var_fetch origin PORTVAR var_set ...
 	local origin="$1"
 	local _makeflags _vars
