@@ -4284,8 +4284,10 @@ gather_port_vars_process_depqueue() {
 	rmdir "${qorigin}"
 
 	# Add all of this origin's deps into the gatherqueue to reprocess
-	shash_get origin-pkgname "${origin}" pkgname
-	shash_get pkgname-deps "${pkgname}" deps
+	shash_get origin-pkgname "${origin}" pkgname || \
+	    err 1 "gather_port_vars_process_depqueue failed to find pkgname for origin ${origin}"
+	shash_get pkgname-deps "${pkgname}" deps || \
+	    err 1 "gather_port_vars_process_depqueue failed to find deps for pkg ${pkgname}"
 
 	for dep_origin in ${deps}; do
 		# Add this origin into the gatherqueue if not already done.
