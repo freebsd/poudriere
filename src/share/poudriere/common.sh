@@ -4143,6 +4143,11 @@ gather_port_vars() {
 	msg "Gathering ports metadata"
 	bset status "gatheringportvars:"
 
+	:> "all_pkgs"
+	if [ ${ALL} -eq 0 ]; then
+		:> "all_pkgbases"
+	fi
+
 	rm -rf gqueue dqueue 2>/dev/null || :
 	mkdir gqueue dqueue
 
@@ -4235,6 +4240,9 @@ gather_port_vars_port() {
 		err 1 "Error fetching metadata for ${origin}"
 
 	echo "${pkgname}" >> "all_pkgs"
+	if [ ${ALL} -eq 0 ]; then
+		echo "${pkgname%-*}" >> "all_pkgbases"
+	fi
 
 	# If there are no deps for this port then there's nothing left to do.
 	if [ -z "${deps}" ]; then
@@ -4426,14 +4434,14 @@ pkg_is_needed() {
 	pkgbase="${pkgname%-*}"
 
 	awk -vpkgbase="${pkgbase}" '
-	    $1 ~ pkgbase "-[^-]+$" || $2 ~ pkgbase "-[^-]+$" {
+	    $1 == pkgbase {
 		found=1
 		exit 0
 	    }
 	    END {
 		if (found != 1)
 			exit 1
-	    }' "pkg_deps"
+	    }' "all_pkgbases"
 }
 
 get_porttesting() {
