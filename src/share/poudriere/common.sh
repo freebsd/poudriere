@@ -839,6 +839,7 @@ exit_handler() {
 
 	if was_a_bulk_run; then
 		coprocess_stop html_json
+		update_stats || :
 	fi
 
 	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
