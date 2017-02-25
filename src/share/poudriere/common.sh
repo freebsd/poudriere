@@ -4412,6 +4412,8 @@ port_is_listed() {
 
 # Port was requested to be built, or is needed by a port requested to be built
 pkg_is_needed() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkg_is_needed requires PWD=${MASTERMNT}/.p"
 	[ $# -eq 1 ] || eargs pkg_is_needed pkgname
 	local pkgname="$1"
 	local pkgbase
@@ -4431,7 +4433,7 @@ pkg_is_needed() {
 	    END {
 		if (found != 1)
 			exit 1
-	    }' "${MASTERMNT}/.p/pkg_deps"
+	    }' "pkg_deps"
 }
 
 get_porttesting() {
