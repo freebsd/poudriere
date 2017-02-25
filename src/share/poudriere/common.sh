@@ -4426,7 +4426,7 @@ pkg_is_needed() {
 	pkgbase="${pkgname%-*}"
 
 	awk -vpkgbase="${pkgbase}" '
-	    $1 ~ pkgbase "[0-9_,]*" || $2 ~ pkgbase "[0-9_,]" {
+	    $1 ~ pkgbase "-[^-]+$" || $2 ~ pkgbase "-[^-]+$" {
 		found=1
 		exit 0
 	    }
