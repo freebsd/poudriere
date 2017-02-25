@@ -3497,12 +3497,14 @@ deps_fetch_vars() {
 	local _pkgname _pkg_deps
 	local _existing_pkgname _existing_origin
 
-	port_var_fetch "${origin}"\
+	if ! port_var_fetch "${origin}"\
 	    PKGNAME _pkgname \
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' '' \
 	    '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
-	    _pkg_deps || \
-	    err 1 "Makefile broken: ${origin}"
+	    _pkg_deps; then
+		msg_error "Error fetching dependencies for ${COLOR_PORT}${origin}${COLOR_RESET}"
+		return 1
+	fi
 
 	setvar "${deps_var}" "${_pkg_deps}"
 	setvar "${pkgname_var}" "${_pkgname}"
@@ -4231,8 +4233,11 @@ gather_port_vars_port() {
 	shash_get origin-pkgname "${origin}" pkgname && \
 	    err 1 "gather_port_vars_port: Already had ${origin}"
 
-	deps_fetch_vars "${origin}" deps pkgname || \
-	    err 1 "Error fetching metadata for ${origin}"
+	if ! deps_fetch_vars "${origin}" deps pkgname; then
+		# An error is printed from deps_fetch_vars
+		set_dep_fatal_error
+		return 1
+	fi
 
 	echo "${pkgname}" >> "all_pkgs"
 	[ ${ALL} -eq 0 ] && echo "${pkgname%-*}" >> "all_pkgbases"
