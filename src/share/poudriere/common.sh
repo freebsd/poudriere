@@ -3932,20 +3932,18 @@ lock_have() {
 # port_var_fetch ports-mgmt/pkg PKGNAME pkgname PKGBASE pkgbase ...
 # Assignments are supported as well, without a subsequent variable for storage.
 port_var_fetch() {
-	local -; set +x
 	[ $# -ge 3 ] || eargs port_var_fetch origin PORTVAR var_set ...
 	local origin="$1"
 	local _makeflags _vars
-	local _portvar _var _line _canary
+	local _portvar _var _line _errexit
 	# Use a tab rather than space to allow FOO='BLAH BLAH' assignments
 	# and lookups like -V'${PKG_DEPENDS} ${BUILD_DEPENDS}'
 	local IFS sep="	"
+	# Use invalid shell var character '!' to ensure we
+	# don't setvar it later.
+	local assign_var="!"
 
 	shift
-
-	# Use a canary to detect exit status errors
-	_makeflags="-V!canary"
-	_vars="_canary"
 
 	while [ $# -ge 2 ]; do
 		_portvar="$1"
@@ -3954,9 +3952,7 @@ port_var_fetch() {
 			# This is an assignment, no associated variable
 			# for storage.
 			_makeflags="${_makeflags}${_makeflags:+${sep}}${_portvar}"
-			# Use invalid shell var character '!' to ensure we
-			# don't setvar it later.
-			_vars="${_vars}${_vars:+ }!"
+			_vars="${_vars}${_vars:+ }${assign_var}"
 			shift 1
 		else
 			_makeflags="${_makeflags}${_makeflags:+${sep}}-V${_portvar}"
@@ -3966,27 +3962,43 @@ port_var_fetch() {
 			shift 2
 		fi
 	done
+
 	[ $# -eq 0 ] || eargs port_var_fetch origin PORTVAR var_set ...
+
+	_errexit="!errexit!"
+	ret=0
+
 	set -- ${_vars}
 	while read -r _line; do
-		while [ "${1}" = "!" ]; do
+		if [ "${_line% *}" = "${_errexit}" ]; then
+			ret=${_line#* }
+			# Encountered an error, abort parsing anything further.
+			# Cleanup already-set vars of 'make: stopped in'
+			# stuff in case the caller is ignoring our non-0
+			# return status.
+			set -- ${_vars}
+			while [ $# -gt 0 ]; do
+				# Skip assignment vars
+				while [ "${1}" = "${assign_var}" ]; do
+					shift
+				done
+				setvar "$1" ""
+				shift
+			done
+			break
+		fi
+		# This var was just an assignment, no actual value to read from
+		# stdout.  Shift until we find an actual -V var.
+		while [ "${1}" = "${assign_var}" ]; do
 			shift
 		done
 		setvar "$1" "${_line}"
-		if [ "$1" = "_canary" -a -n "${_line}" ]; then
-			# Encountered an error, abort parsing anything further.
-			break
-		fi
 		shift
 	done <<-EOF
-	$(IFS="${sep}"; injail /usr/bin/make -C "${PORTSDIR}/${origin}" ${_makeflags} || echo "canary")
+	$(IFS="${sep}"; injail /usr/bin/make -C "${PORTSDIR}/${origin}" ${_makeflags} || echo "${_errexit} $?")
 	EOF
 
-	if [ "${_canary}" = "canary" ]; then
-		return 1
-	fi
-
-	return 0
+	return ${ret}
 }
 
 cache_get_pkgname() {
