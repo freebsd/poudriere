@@ -4144,9 +4144,7 @@ gather_port_vars() {
 	bset status "gatheringportvars:"
 
 	:> "all_pkgs"
-	if [ ${ALL} -eq 0 ]; then
-		:> "all_pkgbases"
-	fi
+	[ ${ALL} -eq 0 ] && :> "all_pkgbases"
 
 	rm -rf gqueue dqueue 2>/dev/null || :
 	mkdir gqueue dqueue
@@ -4227,27 +4225,20 @@ gather_port_vars_port() {
 	local dep_origin deps pkgname
 
 	msg_debug "gather_port_vars_port (${origin}): LOOKUP"
-	if [ -n "${inqueue}" ]; then
-		# Remove queue entry
-		rmdir "gqueue/${origin%/*}!${origin#*/}"
-	fi
+	# Remove queue entry
+	[ -n "${inqueue}" ] && rmdir "gqueue/${origin%/*}!${origin#*/}"
 
-	if shash_get origin-pkgname "${origin}" pkgname; then
-		err 1 "gather_port_vars_port: Already had ${origin}"
-	fi
+	shash_get origin-pkgname "${origin}" pkgname && \
+	    err 1 "gather_port_vars_port: Already had ${origin}"
 
 	deps_fetch_vars "${origin}" deps pkgname || \
-		err 1 "Error fetching metadata for ${origin}"
+	    err 1 "Error fetching metadata for ${origin}"
 
 	echo "${pkgname}" >> "all_pkgs"
-	if [ ${ALL} -eq 0 ]; then
-		echo "${pkgname%-*}" >> "all_pkgbases"
-	fi
+	[ ${ALL} -eq 0 ] && echo "${pkgname%-*}" >> "all_pkgbases"
 
 	# If there are no deps for this port then there's nothing left to do.
-	if [ -z "${deps}" ]; then
-		return 0
-	fi
+	[ -z "${deps}" ] && return 0
 
 	# Assert some policy before proceeding to process these deps
 	# further.
