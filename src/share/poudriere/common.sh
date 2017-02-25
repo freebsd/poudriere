@@ -4155,7 +4155,10 @@ gather_port_vars() {
 	parallel_start
 	for origin in $(listed_ports show_moved); do
 		if [ -d "../${PORTSDIR}/${origin}" ]; then
-			parallel_run gather_port_vars_port "${origin}" || \
+			parallel_run \
+			prefix_stderr_quick \
+			"(${COLOR_PORT}${origin}${COLOR_RESET})${COLOR_WARN}" \
+			gather_port_vars_port "${origin}" || \
 			    set_dep_fatal_error
 		else
 			if [ ${ALL} -eq 1 ]; then
