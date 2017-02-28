@@ -3604,10 +3604,6 @@ pkg_cache_data() {
 	[ $# -ne 2 ] && eargs pkg_cache_data pkg origin
 	local pkg="$1"
 	local origin="$2"
-	local pkg_cache_dir originfile
-
-	get_pkg_cache_dir pkg_cache_dir "${pkg}"
-	originfile="${pkg_cache_dir}/origin"
 
 	ensure_pkg_installed || return 1
 	pkg_get_options _ignored "${pkg}" > /dev/null
