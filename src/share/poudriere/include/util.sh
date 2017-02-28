@@ -380,6 +380,98 @@ read_line() {
 	return ${ret}
 }
 
+# SIGINFO traps won't abort the read.
+read_blocking() {
+	[ $# -ge 1 ] || eargs read_blocking read_args
+	local ret
+
+	while :; do
+		ret=0
+		read "$@" || ret=$?
+		case ${ret} in
+			# Read again on SIGINFO interrupts
+			157) continue ;;
+			# Valid EOF
+			1) break ;;
+			# Success
+			0) break ;;
+			# Unknown problem or signal, just return the error.
+			*) break ;;
+		esac
+	done
+	return ${ret}
+}
+
+# Same as read_blocking() but it reads an entire raw line.
+# Needed because 'IFS= read_blocking' doesn't reset IFS like the normal read
+# builtin does.
+read_blocking_line() {
+	[ $# -ge 1 ] || eargs read_blocking_line read_args
+	local ret
+
+	while :; do
+		ret=0
+		IFS= read -r "$@" || ret=$?
+		case ${ret} in
+			# Read again on SIGINFO interrupts
+			157) continue ;;
+			# Valid EOF
+			1) break ;;
+			# Success
+			0) break ;;
+			# Unknown problem or signal, just return the error.
+			*) break ;;
+		esac
+	done
+	return ${ret}
+}
+
+# SIGINFO traps won't abort the read, and if the pipe goes away or
+# turns into a file then an error is returned.
+read_pipe() {
+	[ $# -ge 2 ] || eargs read_pipe fifo read_args
+	local fifo="$1"
+	local ret resread resopen
+	shift
+
+	ret=0
+	while :; do
+		if ! [ -p "${fifo}" ]; then
+			ret=32
+			break
+		fi
+		# Separately handle open(2) and read(builtin) errors
+		# since opening the pipe blocks and may be interrupted.
+		resread=0
+		resopen=0
+		{ { read "$@" || resread=$?; } < "${fifo}" || resopen=$?; } \
+		    2>/dev/null
+		msg_dev "read_pipe ${fifo}: resread=${resread} resopen=${resopen}"
+		# First check the open errors
+		case ${resopen} in
+			# Open error.  We do a test -p in every iteration,
+			# so it was either a race or an interrupt.  Retry
+			# in case it was just an interrupt.
+			2) continue ;;
+			# Success
+			0) ;;
+			# Unknown problem or signal, just return the error.
+			*) ret=${resopen}; break ;;
+		esac
+		case ${resread} in
+			# Read again on SIGINFO interrupts
+			157) continue ;;
+			# Valid EOF
+			1) ret=${resread}; break ;;
+			# Success
+			0) break ;;
+			# Unknown problem or signal, just return the error.
+			*) ret=${resread}; break ;;
+		esac
+	done
+	return ${ret}
+}
+
 # This uses open(O_CREAT), woot.
 noclobber() {
 	local -
