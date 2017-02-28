@@ -100,6 +100,7 @@ main(int argc, char *argv[])
 	time_to_sleep.tv_nsec = 1e9 * (d - time_to_sleep.tv_sec);
 
 #ifdef SHELL
+	INTOFF;
 	memset(&oact, sizeof(oact), 0);
 	act.sa_handler = report_request;
 	sigemptyset(&act.sa_mask);
@@ -123,12 +124,14 @@ main(int argc, char *argv[])
 		} else if (errno != EINTR) {
 #ifdef SHELL
 			sigaction(SIGINFO, &oact, NULL);
+			INTON;
 #endif
 			err(1, "%s", "nanosleep");
 		}
 	}
 #ifdef SHELL
 	sigaction(SIGINFO, &oact, NULL);
+	INTON;
 #endif
 	return (0);
 }

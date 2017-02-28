@@ -180,16 +180,16 @@ main(int argc, char *argv[])
 #ifdef SHELL
 			free(e);
 			close(kq);
-			INTON;
 			siginfo_pop(&oact);
+			INTON;
 #endif
 			err(1, "%s", "kevent");
 		} else if (n == 0) {
 #ifdef SHELL
 			free(e);
 			close(kq);
-			INTON;
 			siginfo_pop(&oact);
+			INTON;
 #endif
 			return(124);
 		}
@@ -213,8 +213,8 @@ main(int argc, char *argv[])
 #ifdef SHELL
 	free(e);
 	close(kq);
-	INTON;
 	siginfo_pop(&oact);
+	INTON;
 #endif
 	return(EX_OK);
 }
