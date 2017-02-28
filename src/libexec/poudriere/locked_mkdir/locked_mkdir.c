@@ -230,20 +230,19 @@ main(int argc, char **argv)
 	close(kq);
 #endif
 	close(fd);
-#ifdef SHELL
-	INTON;
-#endif
 
 	/* This is expected to succeed. */
 	if (mkdir(path, S_IRWXU) != 0) {
 #ifdef SHELL
 		cleanup();
+		INTON;
 #endif
 		err(1, "%s", "mkdir()");
 	}
 
 #ifdef SHELL
 	cleanup();
+	INTON;
 #endif
 	return (0);
 }
