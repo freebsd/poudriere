@@ -530,7 +530,7 @@ prefix_stderr() {
 		(
 			set +x
 			setproctitle "${PROC_TITLE} (prefix_stderr)"
-			while IFS= read -r line; do
+			while read_blocking_line line; do
 				msg_warn "${extra}: ${line}"
 			done
 		) < ${prefixpipe} &
@@ -574,7 +574,7 @@ prefix_stdout() {
 		(
 			set +x
 			setproctitle "${PROC_TITLE} (prefix_stdout)"
-			while IFS= read -r line; do
+			while read_blocking_line line; do
 				msg "${extra}: ${line}"
 			done
 		) < ${prefixpipe} &
