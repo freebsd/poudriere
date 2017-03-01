@@ -822,11 +822,6 @@ exit_handler() {
 	# Ignore SIGINT while cleaning up
 	trap '' SIGINT
 
-	if [ ${CREATED_JLOCK:-0} -eq 0 ]; then
-		# We didn't start anything, don't touch anything!
-		exit
-	fi
-
 	if was_a_bulk_run; then
 		log_stop
 	fi
@@ -843,7 +838,9 @@ exit_handler() {
 
 	if was_a_bulk_run; then
 		coprocess_stop html_json
-		update_stats || :
+		if [ ${CREATED_JLOCK:-0} -eq 1 ]; then
+			update_stats || :
+		fi
 	fi
 
 	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
