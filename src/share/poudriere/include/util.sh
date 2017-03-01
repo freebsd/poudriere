@@ -160,6 +160,37 @@ relpath() {
 	echo "${_relpath}"
 }
 
+trap_push() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs trap_push signal var_return
+	local signal="$1"
+	local var_return="$2"
+	local _trap ltrap ldash lhandler lsig
+
+	_trap=
+	while read -r ltrap ldash lhandler lsig; do
+		[ "${lsig}" = "${signal}" ] || continue
+		_trap="${lhandler}"
+		trap - ${signal}
+		break
+	done <<-EOF
+	$(trap)
+	EOF
+
+	setvar "${var_return}" "${_trap}"
+}
+
+trap_pop() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs trap_pop signal saved_trap
+	local signal="$1"
+	local _trap="$2"
+
+	if [ -n "${_trap}" ]; then
+		trap -- "${_trap}" ${signal} || :
+	fi
+}
+
 # Read a file until 0 status is found. Partial reads not accepted.
 read_line() {
 	[ $# -eq 2 ] || eargs read_line var_return file
