@@ -3532,7 +3532,7 @@ deps_fetch_vars() {
 		# harmful. Just ignore.
 		if [ "${_existing_origin}" != "${origin}" ]; then
 			[ -n "${_existing_origin}" ] && \
-			    err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${origin}${COLOR_RESET} AND ${COLOR_PORT}${_existing_origin}${COLOR_RESET}. Rerun with -vv to see which ports are depending on these."
+			    err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${origin}${COLOR_RESET} AND ${COLOR_PORT}${_existing_origin}${COLOR_RESET}. Rerun with -v to see which ports are depending on these."
 			shash_set origin-pkgname "${origin}" "${_pkgname}"
 			shash_set pkgname-origin "${_pkgname}" "${origin}"
 		fi
@@ -4270,7 +4270,7 @@ gather_port_vars_port() {
 	# Assert some policy before proceeding to process these deps
 	# further.
 	for dep_origin in ${deps}; do
-		msg_debug "${COLOR_PORT}${origin}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_origin}"
+		msg_verbose "${COLOR_PORT}${origin}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_origin}"
 		if [ "${origin}" = "${dep_origin}" ]; then
 			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
 			set_dep_fatal_error
