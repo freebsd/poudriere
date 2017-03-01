@@ -105,11 +105,9 @@ kill_and_wait() {
 
 
 parallel_exec() {
-	local cmd="$1"
 	local ret=0
 	local - # Make `set +e` local
 	local errexit=0
-	shift 1
 
 	# Disable -e so that the actual execution failing does not
 	# return early and prevent notifying the FIFO that the
@@ -122,7 +120,7 @@ parallel_exec() {
 		# was set -e as well. Using 'if cmd' or 'cmd || '
 		# here would disable set -e in the cmd execution
 		[ $errexit -eq 1 ] && set -e
-		${cmd} "$@"
+		"$@"
 	)
 	ret=$?
 	echo >&9 || :
@@ -190,9 +188,7 @@ parallel_shutdown() {
 }
 
 parallel_run() {
-	local cmd="$1"
 	local ret
-	shift 1
 
 	ret=0
 
@@ -212,7 +208,7 @@ parallel_run() {
 	fi
 
 	[ ${NBPARALLEL} -lt ${PARALLEL_JOBS} ] && NBPARALLEL=$((NBPARALLEL + 1))
-	PARALLEL_CHILD=1 spawn parallel_exec $cmd "$@"
+	PARALLEL_CHILD=1 spawn parallel_exec "$@"
 	PARALLEL_PIDS="${PARALLEL_PIDS} $! "
 
 	return ${ret}
