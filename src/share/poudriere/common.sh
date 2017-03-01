@@ -3351,6 +3351,7 @@ prefix_stderr() {
 	local -; set +x
 	local extra="$1"
 	shift 1
+	local prefixpipe
 
 	prefixpipe=$(mktemp -ut prefix_stderr.pipe)
 	mkfifo "${prefixpipe}"
