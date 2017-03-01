@@ -27,6 +27,11 @@ msg_debug() {
 	fi
 	msg "[DEBUG] $@" >&2
 }
+
+msg_warn() {
+	msg "[WARN] $@" >&2
+}
+
 msg_dev() {
 	if [ ${VERBOSE} -le 2 ]; then
 		msg_dev() { }
