@@ -3447,7 +3447,7 @@ prefix_stderr_quick() {
 prefix_stderr() {
 	local extra="$1"
 	shift 1
-	local prefixpipe
+	local prefixpipe prefixpid ret
 
 	prefixpipe=$(mktemp -ut prefix_stderr.pipe)
 	mkfifo "${prefixpipe}"
@@ -3457,16 +3457,24 @@ prefix_stderr() {
 			msg_warn "${extra}: ${line}"
 		done
 	) < ${prefixpipe} &
+	prefixpid=$!
+	exec 4>&2
 	exec 2> "${prefixpipe}"
 	rm -f "${prefixpipe}"
 
-	"$@"
+	ret=0
+	"$@" || ret=$?
+
+	exec 2>&4 4>&-
+	wait ${prefixpid}
+
+	return ${ret}
 }
 
 prefix_stdout() {
 	local extra="$1"
 	shift 1
-	local prefixpipe
+	local prefixpipe prefixpid ret
 
 	prefixpipe=$(mktemp -ut prefix_stdout.pipe)
 	mkfifo "${prefixpipe}"
@@ -3476,10 +3484,18 @@ prefix_stdout() {
 			msg "${extra}: ${line}"
 		done
 	) < ${prefixpipe} &
+	prefixpid=$!
+	exec 3>&1
 	exec > "${prefixpipe}"
 	rm -f "${prefixpipe}"
 
-	"$@"
+	ret=0
+	"$@" || ret=$?
+
+	exec 1>&3 3>&-
+	wait ${prefixpid}
+
+	return ${ret}
 }
 
 prefix_output() {
