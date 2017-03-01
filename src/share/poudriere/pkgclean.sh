@@ -152,10 +152,12 @@ FOUND_ORIGINS=$(mktemp -t poudriere_pkgclean)
 for file in ${PACKAGES}/All/*; do
 	case ${file} in
 		*.${PKG_EXT})
+			pkgname="${file##*/}"
+			pkgname="${pkgname%.*}"
 			if ! pkg_get_origin origin "${file}"; then
 				msg_verbose "Found corrupt package: ${file}"
 				echo "${file}" >> ${BADFILES_LIST}
-			elif ! port_is_needed "${origin}"; then
+			elif ! pkg_is_needed "${pkgname}"; then
 				msg_verbose "Found unwanted package: ${file}"
 				echo "${file}" >> ${BADFILES_LIST}
 			else
@@ -182,27 +184,34 @@ pkg_compare() {
 }
 
 # Check for duplicated origins (older packages) and keep only newer ones
+# This also groups by pkgbase to respect DEPENDS_ARGS / PKGNAME uniqueness
 sort ${FOUND_ORIGINS} | awk '
 {
 	pkg = $1
 	origin = $2
-	if (!origin_count[origin])
-		origin_count[origin] = 0
-	if (packages[origin])
-		packages[origin] = packages[origin] " " pkg
+	# Determine pkgbase to group by
+	n = split(pkg, a, "/")
+	pkgbase = a[n]
+	sub(/-[^-]*$/, "", pkgbase)
+
+	origins[pkgbase] = origin
+
+	if (!origin_count[pkgbase])
+		origin_count[pkgbase] = 0
+	if (packages[pkgbase])
+		packages[pkgbase] = packages[pkgbase] " " pkg
 	else
-		packages[origin] = pkg
-	origin_count[origin] += 1
+		packages[pkgbase] = pkg
+	origin_count[pkgbase] += 1
 }
 END {
-	for (origin in origin_count)
-		if (origin_count[origin] > 1)
-			print origin,packages[origin]
+	for (pkgbase in origin_count)
+		if (origin_count[pkgbase] > 1)
+			print origins[pkgbase],packages[pkgbase]
 }
 ' | while read origin packages; do
 	lastpkg=
 	lastver=0
-	real_pkgname=
 	for pkg in $packages; do
 		pkgversion="${pkg##*-}"
 		pkgversion="${pkgversion%.*}"
@@ -226,22 +235,12 @@ END {
 				echo "${pkg}" >> ${BADFILES_LIST}
 				;;
 			'=')
-				# Version is the same, it's a duplicate. Compare
-				# against the real PKGNAME and decide which
-				# to keep
-				[ -z "${real_pkgname}" ] && real_pkgname=$( \
-				    injail /usr/bin/make -C ${PORTSDIR}/${origin} \
-				    -V PKGNAME)
-				if [ "${real_pkgname}.${PKG_EXT}" = \
-				    "${pkg##*/}" ]; then
-					msg_verbose \
-					    "Found duplicate renamed package: ${lastpkg}"
-					echo "${lastpkg}" >> ${BADFILES_LIST}
-				else
-					msg_verbose \
-					    "Found duplicate renamed package: ${pkg}"
-					echo "${pkg}" >> ${BADFILES_LIST}
-				fi
+				# This should be impossible now due to the
+				# earlier pkg_is_needed() comparison
+				# (by PKGBASE) and that this check is grouped
+				# by PKGBASE.  Any renamed package is trimmed
+				# out by the failed pkg_is_needed() check.
+				err 1 "Found duplicated packages ${pkg} vs ${lastpkg} with origin ${origin}"
 				;;
 		esac
 	done

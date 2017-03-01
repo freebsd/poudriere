@@ -2199,10 +2199,12 @@ package_dir_exists_and_has_packages() {
 sanity_check_pkg() {
 	[ $# -eq 1 ] || eargs sanity_check_pkg pkg
 	local pkg="$1"
-	local depfile origin
+	local depfile origin pkgname
 
 	pkg_get_origin origin "${pkg}"
-	port_is_needed "${origin}" || return 0
+	pkgname="${pkg##*/}"
+	pkgname="${pkgname%.*}"
+	pkg_is_needed "${pkgname}" || return 0
 	deps_file depfile "${pkg}"
 	while read dep; do
 		if [ ! -e "${PACKAGES}/All/${dep}.${PKG_EXT}" ]; then
@@ -3495,12 +3497,14 @@ deps_fetch_vars() {
 	local _pkgname _pkg_deps
 	local _existing_pkgname _existing_origin
 
-	port_var_fetch "${origin}"\
+	if ! port_var_fetch "${origin}"\
 	    PKGNAME _pkgname \
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' '' \
 	    '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
-	    _pkg_deps || \
-	    err 1 "Makefile broken: ${origin}"
+	    _pkg_deps; then
+		msg_error "Error fetching dependencies for ${COLOR_PORT}${origin}${COLOR_RESET}"
+		return 1
+	fi
 
 	setvar "${deps_var}" "${_pkg_deps}"
 	setvar "${pkgname_var}" "${_pkgname}"
@@ -3524,6 +3528,8 @@ deps_fetch_vars() {
 		# worth it.  The same race exists in the above case.
 		return 0
 	fi
+
+	shash_set pkgname-deps "${_pkgname}" "${_pkg_deps}"
 }
 
 deps_file() {
@@ -3792,24 +3798,25 @@ delete_stale_pkg_cache() {
 delete_old_pkg() {
 	[ $# -eq 1 ] || eargs delete_old_pkg pkgname
 	local pkg="$1"
-	local mnt pkgname cached_pkgname
-	local o v v2 compiled_options current_options current_deps compiled_deps
+	local mnt pkgname new_pkgname
+	local origin v v2 compiled_options current_options current_deps compiled_deps
 
-	pkg_get_origin o "${pkg}"
-	port_is_needed "${o}" || return 0
+	pkgname="${pkg##*/}"
+	pkgname="${pkgname%.*}"
+	pkg_is_needed "${pkgname}" || return 0
 
+	pkg_get_origin origin "${pkg}"
 	_my_path mnt
 
-	if [ ! -d "${mnt}${PORTSDIR}/${o}" ]; then
-		msg "${o} does not exist anymore. Deleting stale ${pkg##*/}"
+	if [ ! -d "${mnt}${PORTSDIR}/${origin}" ]; then
+		msg "${origin} does not exist anymore. Deleting stale ${pkg##*/}"
 		delete_pkg "${pkg}"
 		return 0
 	fi
 
-	v="${pkg##*-}"
-	v=${v%.*}
-	cache_get_pkgname cached_pkgname "${o}"
-	v2=${cached_pkgname##*-}
+	v="${pkgname##*-}"
+	cache_get_pkgname new_pkgname "${origin}"
+	v2=${new_pkgname##*-}
 	if [ "$v" != "$v2" ]; then
 		msg "Deleting ${pkg##*/}: new version: ${v2}"
 		delete_pkg "${pkg}"
@@ -3828,7 +3835,7 @@ delete_old_pkg() {
 		# XXX: This is redundant with list_deps. Hash/caching the
 		# deps can prevent double lookup
 		for td in LIB RUN; do
-			raw_deps=$(injail /usr/bin/make -C ${PORTSDIR}/${o} \
+			raw_deps=$(injail /usr/bin/make -C ${PORTSDIR}/${origin} \
 			    -V${td}_DEPENDS)
 			for d in ${raw_deps}; do
 				key=${d%:*}
@@ -3893,7 +3900,7 @@ delete_old_pkg() {
 
 	# Check if the compiled options match the current options from make.conf and /var/db/ports
 	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
-		current_options=$(injail /usr/bin/make -C ${PORTSDIR}/${o} \
+		current_options=$(injail /usr/bin/make -C ${PORTSDIR}/${origin} \
 		    pretty-print-config | tr ' ' '\n' | \
 		    sed -n 's/^\+\(.*\)/\1/p' | sort -u | tr '\n' ' ')
 		pkg_get_options compiled_options "${pkg}"
@@ -3909,10 +3916,9 @@ delete_old_pkg() {
 		fi
 	fi
 
-	pkgname="${pkg##*/}"
 	# XXX: Check if the pkgname has changed and rename in the repo
-	if [ "${pkgname%-*}" != "${cached_pkgname%-*}" ]; then
-		msg "Deleting ${pkg##*/}: package name changed to '${cached_pkgname%-*}'"
+	if [ "${pkgname%-*}" != "${new_pkgname%-*}" ]; then
+		msg "Deleting ${pkg##*/}: package name changed to '${new_pkgname%-*}'"
 		delete_pkg "${pkg}"
 		return 0
 	fi
@@ -4108,35 +4114,220 @@ set_dep_fatal_error() {
 	: > dep_fatal_error
 }
 
+clear_dep_fatal_error() {
+	unset DEP_FATAL_ERROR
+	rm -f dep_fatal_error 2>/dev/null || :
+}
+
 check_dep_fatal_error() {
 	[ -n "${DEP_FATAL_ERROR}" ] || [ -f dep_fatal_error ]
 }
 
-compute_deps() {
+gather_port_vars() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "compute_deps requires PWD=${MASTERMNT}/.p"
-	local port pkgname dep_pkgname
+	    err 1 "gather_port_vars requires PWD=${MASTERMNT}/.p"
+	local origin qorigin
 
-	msg "Calculating ports order and dependencies"
-	bset status "computingdeps:"
+	# A. Lookup all port vars/deps from the given list of ports.
+	# B. For every dependency found (depqueue):
+	#   1. Add it into the depqueue, which will then process
+	#      each dependency into the gatherqueue if it was not
+	#      already gathered by the previous iteration.
+	# C. Lookup all port vars/deps from the gatherqueue
+	# D. If the depqueue is empty, done, otherwise go to B.
+	#
+	# This 2-queue solution is to avoid excessive races that cause
+	# make -V to be ran multiple times per port.  We only want to
+	# process each port once without explicit locking.
+	# For the -a case the depqueue is not needed since all ports will be
+	# visited once in the first pass and make it into the gatherqueue.
 
-	:> "port_deps.unsorted"
-	:> "pkg_deps.unsorted"
+	msg "Gathering ports metadata"
+	bset status "gatheringportvars:"
 
+	:> "all_pkgs"
+	[ ${ALL} -eq 0 ] && :> "all_pkgbases"
+
+	rm -rf gqueue dqueue 2>/dev/null || :
+	mkdir gqueue dqueue
+
+	clear_dep_fatal_error
 	parallel_start
-	for port in $(listed_ports show_moved); do
-		if [ -d "../${PORTSDIR}/${port}" ]; then
-			parallel_run compute_deps_port ${port} || \
+	for origin in $(listed_ports show_moved); do
+		if [ -d "../${PORTSDIR}/${origin}" ]; then
+			parallel_run \
+			prefix_stderr_quick \
+			"(${COLOR_PORT}${origin}${COLOR_RESET})${COLOR_WARN}" \
+			gather_port_vars_port "${origin}" || \
 			    set_dep_fatal_error
 		else
 			if [ ${ALL} -eq 1 ]; then
-				msg_warn "Nonexistent port listed in category Makefiles: ${COLOR_PORT}${port}"
+				msg_warn "Nonexistent origin listed in category Makefiles: ${COLOR_PORT}${origin}"
 			else
-				msg_error "Nonexistent port listed for build: ${COLOR_PORT}${port}"
+				msg_error "Nonexistent origin listed for build: ${COLOR_PORT}${origin}"
 				set_dep_fatal_error
 			fi
 		fi
 	done
+	if ! parallel_stop || check_dep_fatal_error; then
+		err 1 "Fatal errors encountered gathering initial ports metadata"
+	fi
+
+	until dirempty dqueue && dirempty gqueue; do
+		# Process all newly found deps into the gatherqueue
+		clear_dep_fatal_error
+		msg_debug "Processing depqueue"
+		parallel_start
+		for qorigin in dqueue/*; do
+			case "${qorigin}" in
+				"dqueue/*") break ;;
+			esac
+			parallel_run \
+			    gather_port_vars_process_depqueue "${qorigin}" || \
+			    set_dep_fatal_error
+		done
+		if ! parallel_stop || check_dep_fatal_error; then
+			err 1 "Fatal errors encountered processing gathered ports metadata"
+		fi
+
+		# Now process the gatherqueue
+
+		# Now rerun until the work queue is empty
+		# XXX: If the initial run were to use an efficient work queue then
+		#      this could be avoided.
+		clear_dep_fatal_error
+		parallel_start
+		msg_debug "Processing gatherqueue"
+		for qorigin in gqueue/*; do
+			case "${qorigin}" in
+				"gqueue/*") break ;;
+			esac
+			origin="${qorigin#*/}"
+			origin="${origin%!*}/${origin#*!}"
+			parallel_run gather_port_vars_port \
+			    "${origin}" inqueue || set_dep_fatal_error
+		done
+		if ! parallel_stop || check_dep_fatal_error; then
+			err 1 "Fatal errors encountered gathering ports metadata"
+		fi
+	done
+
+	if ! rmdir gqueue || ! rmdir dqueue; then
+		ls gqueue dqueue 2>/dev/null || :
+		err 1 "Gather port queues not empty"
+	fi
+}
+
+gather_port_vars_port() {
+	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
+	    err 1 "gather_port_vars_port requires SHASH_VAR_PATH=var/cache"
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "gather_port_vars_port requires PWD=${MASTERMNT}/.p"
+	[ $# -lt 1 ] && eargs gather_port_vars_port origin [inqueue]
+	[ $# -gt 2 ] && eargs gather_port_vars_port origin [inqueue]
+	local origin="$1"
+	local inqueue="$2"
+	local dep_origin deps pkgname
+
+	msg_debug "gather_port_vars_port (${origin}): LOOKUP"
+	# Remove queue entry
+	[ -n "${inqueue}" ] && rmdir "gqueue/${origin%/*}!${origin#*/}"
+
+	shash_get origin-pkgname "${origin}" pkgname && \
+	    err 1 "gather_port_vars_port: Already had ${origin}"
+
+	if ! deps_fetch_vars "${origin}" deps pkgname; then
+		# An error is printed from deps_fetch_vars
+		set_dep_fatal_error
+		return 1
+	fi
+
+	[ -n "${pkgname}" ] || \
+	    err 1 "gather_port_vars_port: failed to get PKGNAME for ${origin}"
+
+	echo "${pkgname}" >> "all_pkgs"
+	[ ${ALL} -eq 0 ] && echo "${pkgname%-*}" >> "all_pkgbases"
+
+	# If there are no deps for this port then there's nothing left to do.
+	[ -z "${deps}" ] && return 0
+
+	# Assert some policy before proceeding to process these deps
+	# further.
+	for dep_origin in ${deps}; do
+		msg_debug "${COLOR_PORT}${origin}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_origin}"
+		if [ "${origin}" = "${dep_origin}" ]; then
+			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
+			set_dep_fatal_error
+			return 1
+		fi
+		# Detect bad cat/origin/ dependency which pkg will not register properly
+		if ! [ "${dep_origin}" = "${dep_origin%/}" ]; then
+			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} depends on bad origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
+			set_dep_fatal_error
+			return 1
+		fi
+		if ! [ -d "../${PORTSDIR}/${dep_origin}" ]; then
+			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} depends on nonexistent origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
+			set_dep_fatal_error
+			return 1
+		fi
+	done
+
+	if [ ${ALL} -eq 0 ]; then
+		msg_debug "gather_port_vars_port (${origin}): Adding to depqueue"
+		mkdir "dqueue/${origin%/*}!${origin#*/}" || \
+			err 1 "gather_port_vars_port: Failed to add ${origin} to depqueue"
+	fi
+}
+
+gather_port_vars_process_depqueue() {
+	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
+	    err 1 "gather_port_vars_process_depqueue requires SHASH_VAR_PATH=var/cache"
+	[ $# -ne 1 ] && eargs gather_port_vars_process_depqueue qorigin
+	local qorigin="$1"
+	local origin pkgname deps dep_origin dep_pkgname
+
+	origin="${qorigin#*/}"
+	origin="${origin%!*}/${origin#*!}"
+
+	msg_debug "gather_port_vars_process_depqueue (${origin})"
+	# Remove queue entry
+	rmdir "${qorigin}"
+
+	# Add all of this origin's deps into the gatherqueue to reprocess
+	shash_get origin-pkgname "${origin}" pkgname || \
+	    err 1 "gather_port_vars_process_depqueue failed to find pkgname for origin ${origin}"
+	shash_get pkgname-deps "${pkgname}" deps || \
+	    err 1 "gather_port_vars_process_depqueue failed to find deps for pkg ${pkgname}"
+
+	for dep_origin in ${deps}; do
+		# Add this origin into the gatherqueue if not already done.
+		if ! shash_get origin-pkgname "${dep_origin}" dep_pkgname; then
+			msg_debug "gather_port_vars_process_depqueue (${origin}): Adding ${dep_origin} into the gatherqueue"
+			# Another worker may have created it
+			mkdir "gqueue/${dep_origin%/*}!${dep_origin#*/}" \
+			    2>/dev/null || :
+		fi
+	done
+}
+
+
+compute_deps() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "compute_deps requires PWD=${MASTERMNT}/.p"
+	local pkgname dep_pkgname
+
+	msg "Calculating ports order and dependencies"
+	bset status "computingdeps:"
+
+	:> "pkg_deps.unsorted"
+
+	clear_dep_fatal_error
+	parallel_start
+	while read pkgname; do
+		parallel_run compute_deps_pkg "${pkgname}" || \
+			set_dep_fatal_error
+	done < "all_pkgs"
 	if ! parallel_stop || check_dep_fatal_error; then
 		err 1 "Fatal errors encountered calculating dependencies"
 	fi
@@ -4152,96 +4343,33 @@ compute_deps() {
 		awk '{print $2 "/" $1}' "../pkg_deps" | xargs touch
 	)
 
-	sort -u "port_deps.unsorted" > "port_deps"
-
-	rm -f "port_deps.unsorted" "pkg_deps.unsorted"
+	rm -f "pkg_deps.unsorted"
 
 	return 0
 }
 
-# Take optional pkgname to speedup lookup
-compute_deps_port() {
+compute_deps_pkg() {
+	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
+	    err 1 "compute_deps_pkg requires SHASH_VAR_PATH=var/cache"
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "compute_deps_port requires PWD=${MASTERMNT}/.p"
-	[ $# -lt 1 ] && eargs compute_deps_port port
-	[ $# -gt 3 ] && eargs compute_deps_port port pkgname deps
-	local port="$1"
-	local pkgname="$2"
-	local deps="$3"
-	local dep_pkgname dep_port dep_deps
-	local pkg_pooldir
+	    err 1 "compute_deps_pkgname requires PWD=${MASTERMNT}/.p"
+	[ $# -lt 1 ] && eargs compute_deps_pkg pkgname
+	local pkgname="$1"
+	local pkg_pooldir deps dep_origin dep_pkgname
 
-	# No need to check this for -a as this function is only called once
-	# per origin, not recursively per dependency.
-	if [ ${ALL} -eq 0 ] && \
-	    ! [ -d "../${PORTSDIR}/${port}" ]; then
-		err 1 "Invalid port origin '${COLOR_PORT}${port}${COLOR_RESET}' not found."
-	fi
+	shash_get pkgname-deps "${pkgname}" deps || \
+	    err 1 "compute_deps_pkg failed to find deps for ${pkgname}"
 
-	# It may have been passed in from the parent compute_deps
-	if [ -z "${pkgname}" ]; then
-		deps_fetch_vars "${port}" deps pkgname || \
-		    err 1 "Error fetching dependencies for ${port}"
-	fi
-	[ -n "${pkgname}" ] || err 1 "compute_deps: Error fetching PKGNAME for ${port}"
 	pkg_pooldir="deps/${pkgname}"
+	mkdir "${pkg_pooldir}" || \
+	    err 1 "compute_deps_pkg: Error creating pool dir for ${pkgname}"
 
-	# -a should always succeed since it is not recursive
-	# -f may fail if another worker is processing this port.
-	if [ ${ALL} -eq 1 ]; then
-		mkdir "${pkg_pooldir}" || err 1 "compute_deps: Error creating pool dir for ${port}"
-	else
-		mkdir "${pkg_pooldir}" 2>/dev/null || return 0
-	fi
-
-	msg_verbose "Computing deps for ${COLOR_PORT}${port}"
-
-	for dep_port in ${deps}; do
-		msg_debug "${COLOR_PORT}${port}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_port}"
-		if [ "${port}" = "${dep_port}" ]; then
-			msg_error "${COLOR_PORT}${port}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
-			set_dep_fatal_error
-			return 1
-		fi
-		# Detect bad cat/origin/ dependency which pkg will not register properly
-		if ! [ "${dep_port}" = "${dep_port%/}" ]; then
-			msg_error "${COLOR_PORT}${port}${COLOR_RESET} depends on bad origin '${COLOR_PORT}${dep_port}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
-			set_dep_fatal_error
-			return 1
-		fi
-		if ! [ -d "../${PORTSDIR}/${dep_port}" ]; then
-			msg_error "${COLOR_PORT}${port}${COLOR_RESET} depends on nonexistent origin '${COLOR_PORT}${dep_port}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
-			set_dep_fatal_error
-			return 1
-		fi
-
-		# Lookup pkgname+deps for this dependency.  This is mostly
-		# because we need the pkgname at this point, and we can
-		# save time by fetching the dependencies at the same time.
-		# For the -a case we can try to find the pkgname in the cache
-		# first to avoid more ports interactions, since we will
-		# visit the port later to process deps.
-		if [ ${ALL} -eq 0 ] || \
-		    ! shash_get origin-pkgname "${dep_port}" dep_pkgname; then
-			deps_fetch_vars "${dep_port}" dep_deps dep_pkgname || \
-			    err 1 "Error fetching dependencies for ${port} dependency ${dep_port}"
-		fi
-
-		# Only do this if it's not already done, and not ALL, as
-		# everything will be visited later.
-		if [ ${ALL} -eq 0 ] && \
-		    ! [ -d "deps/${dep_pkgname}" ]; then
-			compute_deps_port "${dep_port}" "${dep_pkgname}" "${dep_deps}"
-		fi
-
+	for dep_origin in ${deps}; do
+		shash_get origin-pkgname "${dep_origin}" dep_pkgname || \
+		    err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_origin} processing package ${pkgname}"
 		:> "${pkg_pooldir}/${dep_pkgname}"
 		echo "${pkgname} ${dep_pkgname}" >> "pkg_deps.unsorted"
-		echo "${port} ${dep_port}" >> "port_deps.unsorted"
 	done
-
-	[ ${ALL} -eq 0 ] && echo "${port} ${port}" >> "port_deps.unsorted"
-
-	echo "${pkgname}" >> "all_pkgs"
 
 	return 0
 }
@@ -4295,15 +4423,29 @@ port_is_listed() {
 }
 
 # Port was requested to be built, or is needed by a port requested to be built
-port_is_needed() {
-	[ $# -eq 1 ] || eargs port_is_needed origin
-	local origin="$1"
+pkg_is_needed() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkg_is_needed requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 1 ] || eargs pkg_is_needed pkgname
+	local pkgname="$1"
+	local pkgbase
 
 	[ ${ALL} -eq 1 ] && return 0
 
-	awk -vorigin="${origin}" '
-	    $1 == origin || $2 == origin { found=1; exit 0 }
-	    END { if (found != 1) exit 1 }' "${MASTERMNT}/.p/port_deps"
+	# We check on PKGBASE rather than PKGNAME from pkg_deps
+	# since the caller may be passing in a different version
+	# compared to what is in the queue to build for.
+	pkgbase="${pkgname%-*}"
+
+	awk -vpkgbase="${pkgbase}" '
+	    $1 == pkgbase {
+		found=1
+		exit 0
+	    }
+	    END {
+		if (found != 1)
+			exit 1
+	    }' "all_pkgbases"
 }
 
 get_porttesting() {
@@ -4539,6 +4681,8 @@ prepare_ports() {
 
 	load_moved
 
+	gather_port_vars
+
 	compute_deps
 
 	bset status "sanity:"
@@ -4739,9 +4883,7 @@ load_priorities_ptsort() {
 					;;
 			esac
 		done
-	done <<- EOF
-	$(sort -u "all_pkgs")
-	EOF
+	done < "all_pkgs"
 
 	ptsort -p "pkg_deps.ptsort" > \
 	    "pkg_deps.priority"
