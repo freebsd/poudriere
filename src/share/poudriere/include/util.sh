@@ -472,6 +472,30 @@ read_pipe() {
 	return ${ret}
 }
 
+# This is avoiding EINTR errors when writing to a pipe due to SIGINFO traps
+write_pipe() {
+	[ $# -ge 1 ] || eargs write_pipe fifo [write_args]
+	local fifo="$1"
+	local ret siginfo_trap
+	shift
+
+	# If this is not a pipe then return an error immediately
+	if ! [ -p "${fifo}" ]; then
+		msg_dev "write_pipe FAILED to send to ${fifo} (NOT A PIPE? ret=2): $@"
+		return 2
+	fi
+
+	msg_dev "write_pipe ${fifo}: $@"
+	ret=0
+	echo "$@" > "${fifo}" || ret=$?
+
+	if [ ${ret} -ne 0 ]; then
+		err 1 "write_pipe FAILED to send to ${fifo} (ret: ${ret}): $@"
+	fi
+
+	return ${ret}
+}
+
 # This uses open(O_CREAT), woot.
 noclobber() {
 	local -
