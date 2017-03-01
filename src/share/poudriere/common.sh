@@ -1084,6 +1084,7 @@ mktemp() {
 		local mnt
 		_my_path mnt
 		TMPDIR="${mnt}/.p/tmp"
+		[ -d "${TMPDIR}" ] || unset TMPDIR
 	fi
 	[ -n "${TMPDIR-blank}" ] && TMPDIR="${TMPDIR}"
 	if [ -n "${MKTEMP_BUILTIN}" ]; then
