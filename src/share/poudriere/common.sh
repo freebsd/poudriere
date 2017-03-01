@@ -839,7 +839,7 @@ exit_handler() {
 	if was_a_bulk_run; then
 		coprocess_stop html_json
 		if [ ${CREATED_JLOCK:-0} -eq 1 ]; then
-			update_stats || :
+			update_stats >/dev/null 2>&1 || :
 		fi
 	fi
 
