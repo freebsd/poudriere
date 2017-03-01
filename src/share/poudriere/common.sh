@@ -822,6 +822,11 @@ exit_handler() {
 	# Ignore SIGINT while cleaning up
 	trap '' SIGINT
 
+	if [ ${CREATED_JLOCK:-0} -eq 0 ]; then
+		# We didn't start anything, don't touch anything!
+		exit
+	fi
+
 	if was_a_bulk_run; then
 		log_stop
 	fi
@@ -845,6 +850,10 @@ exit_handler() {
 
 	rm -f /tmp/.poudriere-lock-$$-*.flock 2>/dev/null || :
 	rmdir /tmp/.poudriere-lock-$$-* 2>/dev/null || :
+	if [ ${CREATED_JLOCK:-0} -eq 1 ]; then
+		_jlock jlock
+		rm -rf "${jlock}" 2>/dev/null || :
+	fi
 }
 
 build_url() {
@@ -1700,6 +1709,68 @@ need_cross_build() {
 	    need_emulation "${wanted_arch}"
 }
 
+_jlock() {
+	setvar "$1" "/var/run/poudriere/poudriere.${MASTERNAME}.lock"
+}
+
+lock_jail() {
+	local jlock jlockf jlockpid
+
+	_jlock jlock
+	jlockf="${jlock}/pid"
+	mkdir -p /var/run/poudriere >/dev/null 2>&1 || :
+	# Ensure no other processes are trying to start this jail
+	if ! mkdir "${jlock}" 2>/dev/null; then
+		if [ -d "${jlock}" ]; then
+			jlockpid=
+			if [ -f "${jlockf}" ]; then
+				if locked_mkdir 5 "${jlock}.pid"; then
+					read jlockpid < "${jlockf}" || :
+					rmdir "${jlock}.pid"
+				else
+					# Something went wrong, just try again
+					lock_jail
+					return
+				fi
+			fi
+			if [ -n "${jlockpid}" ]; then
+				if ! kill -0 ${jlockpid} >/dev/null 2>&1; then
+					# The process is dead;
+					# the lock is stale
+					rm -rf "${jlock}"
+					# Try to get the lock again
+					lock_jail
+					return
+				else
+					# The lock is currently held
+					err 1 "jail currently starting: ${MASTERNAME}"
+				fi
+			else
+				# This shouldn't happen due to the
+				# use of locking on the file, just
+				# blow it away and try again.
+				rm -rf "${jlock}"
+				lock_jail
+				return
+			fi
+		else
+			err 1 "Unable to create jail lock ${jlock}"
+		fi
+	else
+		# We're safe to start the jail and to later remove the lock.
+		if locked_mkdir 5 "${jlock}.pid"; then
+			CREATED_JLOCK=1
+			echo "$$" > "${jlock}/pid"
+			rmdir "${jlock}.pid"
+			return 0
+		else
+			# Something went wrong, just try again
+			lock_jail
+			return
+		fi
+	fi
+}
+
 jail_start() {
 	[ $# -lt 2 ] && eargs jail_start name ptname setname
 	local name=$1
@@ -1712,6 +1783,8 @@ jail_start() {
 	local needkld
 	local tomnt
 	local portbuild_uid
+
+	lock_jail
 
 	if [ -n "${MASTERMNT}" ]; then
 		tomnt="${MASTERMNT}"
@@ -1886,6 +1959,10 @@ jail_start() {
 	[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${tomnt}/etc/"
 	msg "Starting jail ${MASTERNAME}"
 	jstart
+	if [ ${CREATED_JLOCK:-0} -eq 1 ]; then
+		_jlock jlock
+		rm -rf "${jlock}" 2>/dev/null || :
+	fi
 	injail id >/dev/null 2>&1 || \
 	    err 1 "Unable to execute id(1) in jail. Emulation or ABI wrong."
 	portbuild_uid=$(injail id -u ${PORTBUILD_USER} 2>&1)
