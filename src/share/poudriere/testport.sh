@@ -235,6 +235,9 @@ if ! [ -t 1 ]; then
 	export DEV_WARNING_WAIT=0
 fi
 sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' ${MASTERMNT}/etc/make.conf
+if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
+	JEXEC_LIMITS=1
+fi
 log_start 1
 buildlog_start ${PORTSDIR}/${ORIGIN}
 ret=0
