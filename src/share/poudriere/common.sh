@@ -3519,6 +3519,9 @@ deps_fetch_vars() {
 		return 1
 	fi
 
+	[ -n "${_pkgname}" ] || \
+	    err 1 "deps_fetch_vars: failed to get PKGNAME for ${origin}"
+
 	setvar "${deps_var}" "${_pkg_deps}"
 	setvar "${pkgname_var}" "${_pkgname}"
 
@@ -4254,9 +4257,6 @@ gather_port_vars_port() {
 		set_dep_fatal_error
 		return 1
 	fi
-
-	[ -n "${pkgname}" ] || \
-	    err 1 "gather_port_vars_port: failed to get PKGNAME for ${origin}"
 
 	echo "${pkgname}" >> "all_pkgs"
 	[ ${ALL} -eq 0 ] && echo "${pkgname%-*}" >> "all_pkgbases"
