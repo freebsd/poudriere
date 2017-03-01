@@ -4061,8 +4061,6 @@ port_var_fetch() {
 		else
 			_makeflags="${_makeflags}${_makeflags:+${sep}}-V${_portvar}"
 			_vars="${_vars}${_vars:+ }${_var}"
-			# Clear the value in case the make fails
-			setvar "${_var}" ""
 			shift 2
 		fi
 	done
