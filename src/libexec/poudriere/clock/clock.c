@@ -59,6 +59,9 @@ main(int argc, char **argv)
 #ifndef CLOCK_MONOTONIC_FAST
 # define CLOCK_MONOTONIC_FAST CLOCK_MONOTONIC
 #endif
+#ifndef CLOCK_REALTIME_FAST
+# define CLOCK_REALTIME_FAST CLOCK_REALTIME
+#endif
 	if (strcmp(argv[1], "-monotonic") == 0) {
 		if (clock_gettime(CLOCK_MONOTONIC_FAST, &ts))
 			err(EXIT_FAILURE, "%s", "clock_gettime");
