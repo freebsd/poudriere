@@ -3367,7 +3367,6 @@ prefix_stderr_quick() {
 }
 
 prefix_stderr() {
-	local -; set +x
 	local extra="$1"
 	shift 1
 	local prefixpipe
@@ -3375,6 +3374,7 @@ prefix_stderr() {
 	prefixpipe=$(mktemp -ut prefix_stderr.pipe)
 	mkfifo "${prefixpipe}"
 	(
+		set +x
 		while read -r line; do
 			msg_warn "${extra}: ${line}"
 		done
@@ -3386,7 +3386,6 @@ prefix_stderr() {
 }
 
 prefix_stdout() {
-	local -; set +x
 	local extra="$1"
 	shift 1
 	local prefixpipe
@@ -3394,6 +3393,7 @@ prefix_stdout() {
 	prefixpipe=$(mktemp -ut prefix_stdout.pipe)
 	mkfifo "${prefixpipe}"
 	(
+		set +x
 		while read -r line; do
 			msg "${extra}: ${line}"
 		done
@@ -3405,7 +3405,6 @@ prefix_stdout() {
 }
 
 prefix_output() {
-	local -; set +x
 	local extra="$1"
 	shift 1
 
