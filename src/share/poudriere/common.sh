@@ -3312,7 +3312,7 @@ build_pkg() {
 		fi
 
 		msg "Cleaning up wrkdir"
-		injail /usr/bin/make -C ${portdir} clean || :
+		injail /usr/bin/make -C "${portdir}" -DNOCLEANDEPENDS clean || :
 		rm -rf ${mnt}/wrkdirs/* || :
 	fi
 
