@@ -553,10 +553,14 @@ usage.
 .It Fl j Ar name
 Runs only inside the jail named
 .Ar name .
-.It Fl J Ar number
+.It Fl J Ar number[:number]
 This argument specifies how many
 .Ar number
 jobs will run in parallel for building the dependencies.
+The optional second
+.Ar number
+is the number of jobs used for the steps before the build, they are more IO
+bound than CPU bound, so you may want to use a different number.
 .It Fl k
 Do not consider failures as fatal.
 Find all failures.
