@@ -3533,14 +3533,20 @@ deps_fetch_vars() {
 	local origin="$1"
 	local deps_var="$2"
 	local pkgname_var="$3"
-	local _pkgname _pkg_deps _lib_depends _run_depends _selected_options
+	local _pkgname _pkg_deps _lib_depends= _run_depends= _selected_options=
+	local _changed_options= _changed_deps=
 	local _existing_pkgname _existing_origin
 
+	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
+		_changed_options="SELECTED_OPTIONS:O _selected_options"
+	fi
+	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
+		_changed_deps="LIB_DEPENDS _lib_depends RUN_DEPENDS _run_depends"
+	fi
 	if ! port_var_fetch "${origin}" \
 	    PKGNAME _pkgname \
-	    LIB_DEPENDS _lib_depends \
-	    RUN_DEPENDS _run_depends \
-	    SELECTED_OPTIONS:O _selected_options \
+	    ${_changed_deps} \
+	    ${_changed_options} \
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' '' \
 	    '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
 	    _pkg_deps; then
