@@ -315,7 +315,7 @@ else
 fi
 
 msg "Cleaning up"
-injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} clean
+injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -DNOCLEANDEPENDS clean
 
 msg "Deinstalling package"
 ensure_pkg_installed
