@@ -472,6 +472,21 @@ read_pipe() {
 	return ${ret}
 }
 
+# Ignore EOF
+read_pipe_noeof() {
+	[ $# -ge 2 ] || eargs read_pipe_noeof fifo read_args
+	local fifo="$1"
+	local ret
+	shift
+
+	while :; do
+		ret=0
+		read_pipe "${fifo}" "$@" || ret=$?
+		[ ${ret} -eq 1 ] || break
+	done
+	return ${ret}
+}
+
 # This is avoiding EINTR errors when writing to a pipe due to SIGINFO traps
 write_pipe() {
 	[ $# -ge 1 ] || eargs write_pipe fifo [write_args]
