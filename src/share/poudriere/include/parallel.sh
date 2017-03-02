@@ -331,13 +331,10 @@ spawn_protected() {
 
 # Start a background process from function 'name'. The 'atexit' function
 # will be called from the main process after the coprocess is killed.
-# 'locks' will be acquired before killing, which can be used to not kill
-# a process in the middle of an operation.
 coprocess_start() {
-	[ $# -ge 1 ] || eargs coprocess_start name [atexit] [locks]
+	[ $# -ge 1 ] || eargs coprocess_start name [atexit]
 	local name="$1"
 	local atexit="$2"
-	local locks="$3"
 	local main pid
 
 	main="${name}_main"
@@ -346,7 +343,6 @@ coprocess_start() {
 
 	hash_set coprocess_pid "${name}" "${pid}"
 	[ -n "${atexit}" ] && hash_set coprocess_atexit "${name}" "${atexit}"
-	[ -n "${locks}" ] && hash_set coprocess_locks "${name}" "${locks}"
 
 	return 0
 }
@@ -354,32 +350,13 @@ coprocess_start() {
 coprocess_stop() {
 	[ $# -eq 1 ] || eargs coprocess_stop name
 	local name="$1"
-	local pid atexit lockname locks took_locks
+	local pid atexit lockname
 
 	hash_get coprocess_pid "${name}" pid || return 0
 	hash_unset coprocess_pid "${name}"
 
-	# Grab locks
-	if hash_get coprocess_locks "${name}" locks; then
-		hash_unset coprocess_locks "${name}"
-		for lockname in ${locks}; do
-			# Does this process already have the lock?
-			lock_have "${lockname}" && continue
-			if lock_acquire "${lockname}"; then
-				took_locks="${took_locks} ${lockname}"
-			else
-				msg_warn "Failed to acquire lock ${lockname} while shutting down ${name}"
-			fi
-		done
-	fi
-
 	# kill -> timeout wait -> kill -9
 	kill_and_wait 30 "${pid}" || :
-
-	# Release locks
-	for lockname in ${took_locks}; do
-		lock_release "${lockname}"
-	done
 
 	# Run atexit functions
 	if hash_get coprocess_atexit "${name}" atexit; then

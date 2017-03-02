@@ -4118,6 +4118,7 @@ lock_acquire() {
 	[ $# -ge 1 ] || eargs lock_acquire lockname [waittime]
 	local lockname="$1"
 	local waittime="${2:-30}"
+	local saved_term saved_int
 
 	# Don't take locks inside siginfo_handler
 	[ ${in_siginfo_handler} -eq 1 ] && lock_have "${lockname}" && \
@@ -4129,14 +4130,48 @@ lock_acquire() {
 		return 1
 	fi
 	hash_set have_lock "${lockname}" 1
+
+	# Delay TERM/INT while holding the lock
+	lock_nest=$((${lock_nest:-0} + 1))
+
+	trap_push INT saved_int
+	: ${lock_caught_int:=0}
+	trap 'lock_caught_int=1' INT
+	hash_set have_lock_int "${lockname}" "${saved_int}"
+
+	trap_push TERM saved_term
+	: ${lock_caught_term:=0}
+	trap 'lock_caught_term=1' TERM
+	hash_set have_lock_term "${lockname}" "${saved_term}"
 }
 
 lock_release() {
 	[ $# -ne 1 ] && eargs lock_release lockname
 	local lockname="$1"
+	local saved_term saved_int
 
+	hash_unset have_lock "${lockname}" || \
+	    err 1 "Releasing unheld lock ${lockname}"
 	rmdir /tmp/.poudriere-lock-$$-${MASTERNAME}-${lockname} 2>/dev/null
-	hash_unset have_lock "${lockname}"
+
+	# Restore and deliver INT/TERM signals
+	lock_nest=$((${lock_nest} - 1))
+	if hash_remove have_lock_int "${lockname}" saved_int; then
+		trap_pop INT "${saved_int}"
+	fi
+	if hash_remove have_lock_term "${lockname}" saved_term; then
+		trap_pop TERM "${saved_term}"
+	fi
+	# Deliver the signals if this was the last lock held.  Send
+	# The signal to our real PID, not the rootshell.
+	if [ ${lock_caught_int} -eq 1 -a ${lock_nest} -eq 0 ]; then
+		lock_caught_int=0
+		kill -INT $(sh -c 'echo ${PPID}')
+	fi
+	if [ ${lock_caught_term} -eq 1 -a ${lock_nest} -eq 0 ]; then
+		lock_caught_term=0
+		kill -TERM $(sh -c 'echo ${PPID}')
+	fi
 }
 
 lock_have() {
@@ -4826,7 +4861,7 @@ prepare_ports() {
 		# Must acquire "update_stats" on shutdown to ensure
 		# the process is not killed while holding it.
 		if [ ${HTML_JSON_UPDATE_INTERVAL} -ne 0 ]; then
-			coprocess_start html_json html_json_cleanup "update_stats"
+			coprocess_start html_json html_json_cleanup
 		else
 			msg "HTML UI updates are disabled by HTML_JSON_UPDATE_INTERVAL being 0"
 		fi
