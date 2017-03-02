@@ -3512,9 +3512,14 @@ prefix_stderr_quick() {
 	local extra="$1"
 	shift 1
 
-	{ { "$@"; } 2>&1 1>&3 | while read -r line; do
-		msg_warn "${extra}: ${line}"
-	done } 3>&1
+	{
+		{ "$@"; } 2>&1 1>&3 | {
+			setproctitle "${PROC_TITLE} (prefix_stderr_quick)"
+			while read -r line; do
+				msg_warn "${extra}: ${line}"
+			done
+		}
+	} 3>&1
 }
 
 prefix_stderr() {
@@ -3526,6 +3531,7 @@ prefix_stderr() {
 	mkfifo "${prefixpipe}"
 	(
 		set +x
+		setproctitle "${PROC_TITLE} (prefix_stderr)"
 		while read -r line; do
 			msg_warn "${extra}: ${line}"
 		done
@@ -3553,6 +3559,7 @@ prefix_stdout() {
 	mkfifo "${prefixpipe}"
 	(
 		set +x
+		setproctitle "${PROC_TITLE} (prefix_stdout)"
 		while read -r line; do
 			msg "${extra}: ${line}"
 		done
