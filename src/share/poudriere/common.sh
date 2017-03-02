@@ -2868,12 +2868,17 @@ stop_builder() {
 }
 
 stop_builders() {
+	local PARALLEL_JOBS
 	# wait for the last running processes
 	cat ${MASTERMNT}/.p/var/run/*.pid 2>/dev/null | xargs pwait 2>/dev/null
 
 	if [ ${PARALLEL_JOBS} -ne 0 ]; then
 		msg "Stopping ${PARALLEL_JOBS} builders"
 
+		if [ ${UMOUNT_BATCHING} -eq 0 ]; then
+			# Limit builders
+			PARALLEL_JOBS=2
+		fi
 		parallel_start
 		for j in ${JOBS-$(jot -w %02d ${PARALLEL_JOBS})}; do
 			parallel_run stop_builder "${j}"
@@ -5338,6 +5343,14 @@ case $IPS in
 esac
 
 NCPU=$(sysctl -n hw.ncpu)
+
+# Check if parallel umount will contend on the vnode free list lock
+if sysctl -n vfs.mnt_free_list_batch >/dev/null 2>&1; then
+	# Nah, parallel umount should be fine.
+	UMOUNT_BATCHING=1
+else
+	UMOUNT_BATCHING=0
+fi
 
 case ${PARALLEL_JOBS} in
 ''|*[!0-9]*)
