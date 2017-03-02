@@ -4,7 +4,6 @@ SLEEPTIME=5
 
 . common.sh
 . ${SCRIPTPREFIX}/common.sh
-LOCK=$(mktemp -ut poudriere-locks)
 
 # Acquire TEST
 {
