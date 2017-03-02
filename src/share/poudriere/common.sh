@@ -5181,11 +5181,13 @@ for _var in ${_BUILTIN_ONLY}; do
 		eval "${_var}() { return 0; }"
 	fi
 done
-if [ "$(type setproctitle)" = "setproctitle is a shell builtin" ]; then
+if [ "$(type setproctitle 2>/dev/null)" = "setproctitle is a shell builtin" ]; then
 	setproctitle() {
 		PROC_TITLE="$@"
 		command setproctitle "poudriere${MASTERNAME:+[${MASTERNAME}]}${MY_JOBID:+[${MY_JOBID}]}: $@"
 	}
+else
+	setproctitle() { }
 fi
 
 RESOLV_CONF=""
