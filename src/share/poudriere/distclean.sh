@@ -30,7 +30,8 @@ usage() {
 poudriere distclean [options]
 
 Options:
-    -J n        -- Run n jobs in parallel (Defaults to the number of CPUs)
+    -J n        -- Run n jobs in parallel (Defaults to the number of CPUs
+                   times 1.25)
     -p tree     -- Specify which ports tree to use for comparing to distfiles.
                    Can be specified multiple times. (Defaults to the 'default'
                    tree)
@@ -77,7 +78,7 @@ done
 
 shift $((OPTIND-1))
 
-: ${PREPARE_PARALLEL_JOBS:=${PARALLEL_JOBS}}
+: ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}
 PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
 
 distfiles_cleanup() {

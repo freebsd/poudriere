@@ -62,7 +62,7 @@ Options:
                    a stable ABI.
     -J n[:p]    -- Run n jobs in parallel, and optionally run a different
                    number of jobs in parallel while preparing the build.
-                   (Defaults to the number of CPUs)
+                   (Defaults to the number of CPUs for n and 1.25 times n for p)
     -j name     -- Run only on the given jail
     -N          -- Do not build package repository or INDEX when build
                    completed
@@ -191,7 +191,7 @@ shift $((OPTIND-1))
 [ ${ALL} -eq 1 -a -n "${PORTTESTING}" ] && PORTTESTING_FATAL=no
 
 : ${BUILD_PARALLEL_JOBS:=${PARALLEL_JOBS}}
-: ${PREPARE_PARALLEL_JOBS:=${PARALLEL_JOBS}}
+: ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}
 PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
 
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
