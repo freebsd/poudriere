@@ -4288,7 +4288,10 @@ gather_port_vars() {
 			esac
 			origin="${qorigin#*/}"
 			origin="${origin%!*}/${origin#*!}"
-			parallel_run gather_port_vars_port \
+			parallel_run \
+			    prefix_stderr_quick \
+			    "(${COLOR_PORT}${origin}${COLOR_RESET})${COLOR_WARN}" \
+			    gather_port_vars_port \
 			    "${origin}" inqueue || set_dep_fatal_error
 		done
 		if ! parallel_stop || check_dep_fatal_error; then
