@@ -71,7 +71,7 @@ while getopts "aj:J:f:nNp:Rvyz:" FLAG; do
 			JAILNAME=${OPTARG}
 			;;
 		J)
-			PARALLEL_JOBS=${OPTARG}
+			PREPARE_PARALLEL_JOBS=${OPTARG}
 			;;
 		f)
 			# If this is a relative path, add in ${PWD} as
@@ -119,6 +119,9 @@ _mastermnt MASTERMNT
 
 export MASTERNAME
 export MASTERMNT
+
+: ${PREPARE_PARALLEL_JOBS:=${PARALLEL_JOBS}}
+PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
 
 read_packages_from_params "$@"
 
