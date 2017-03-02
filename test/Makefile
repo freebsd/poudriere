@@ -1,6 +1,8 @@
 TESTS=\
 	encode_args.sh \
 	locks.sh \
+	locks_critical_section.sh \
+	locks_critical_section_nested.sh \
 	port_var_fetch.sh \
 	relpath.sh \
 	relpath_common.sh \
