@@ -124,6 +124,11 @@ main(int argc, char *argv[])
 			sigaction(SIGINFO, &oact, NULL);
 #endif
 			err(1, "%s", "nanosleep");
+#ifdef SHELL
+		} else if (errno == EINTR) {
+			/* Don't ignore interrupts that aren't SIGINFO. */
+			break;
+#endif
 		}
 	}
 #ifdef SHELL
