@@ -40,7 +40,7 @@ main(int argc, char **argv)
 	if (argc != 2)
 		errx(EXIT_USAGE, "%s", "Usage: setproctitle <name>");
 
-	setproctitle("poudriere: %s", argv[1]);
+	setproctitle("%s", argv[1]);
 #endif
 
 	return (0);
