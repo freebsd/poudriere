@@ -260,8 +260,8 @@ _log_path() {
 	setvar "$1" "${log_path_jail}/${BUILDNAME}"
 }
 
-relpath() {
-	[ $# -eq 2 ] || eargs relpath dir1 dir2
+_relpath() {
+	[ $# -eq 2 ] || eargs _relpath dir1 dir2
 	local dir1=$(realpath -q "$1" || echo "${1}")
 	local dir2=$(realpath -q "$2" || echo "${2}")
 	local common
@@ -290,7 +290,18 @@ relpath() {
 	dir2="${dir2%/}"
 	dir2="${dir2:-.}"
 
-	echo "${common} ${dir1} ${dir2}"
+	_relpath_common="${common}"
+	_relpath_dir1="${dir1}"
+	_relpath_dir2="${dir2}"
+}
+
+relpath() {
+	[ $# -eq 2 ] || eargs relpath dir1 dir2
+	local dir1=$(realpath -q "$1" || echo "${1}")
+	local dir2=$(realpath -q "$2" || echo "${2}")
+
+	_relpath "${dir1}" "${dir2}"
+	echo "${_relpath_common} ${_relpath_dir1} ${_relpath_dir2}"
 }
 
 # It may be defined as a NOP for tests
