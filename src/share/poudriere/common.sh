@@ -3670,8 +3670,19 @@ pkg_get_options() {
 				awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | \
 				sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
 		else
-			_compiled_options=$(injail ${PKG_BIN} query -F \
-				"/packages/All/${pkg##*/}" '%Ov%Ok' | sed '/^off/d;/^false/d;s/^on//;s/^true//' | sort | tr '\n' ' ')
+			_compiled_options=
+			while read key value; do
+				case "${value}" in
+					off|false) continue ;;
+				esac
+				_compiled_options="${_compiled_options}${_compiled_options:+ }${key}"
+			done <<-EOF
+			$(injail ${PKG_BIN} query -F "/packages/All/${pkg##*/}" '%Ok %Ov' | sort)
+			EOF
+			# Compat with pretty-print-config
+			if [ -n "${_compiled_options}" ]; then
+				_compiled_options="${_compiled_options} "
+			fi
 		fi
 		echo "${_compiled_options}" > "${optionsfile}"
 		setvar "${var_return}" "${_compiled_options}"
