@@ -6,6 +6,7 @@ TESTS=\
 	relpath_common.sh \
 	shash_basic.sh \
 	shash_get_cached.sh \
+	trap_save.sh \
 
 all: check
 

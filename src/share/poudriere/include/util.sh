@@ -1,4 +1,4 @@
-# Copyright (c) 2016 Bryan Drewery <bdrewery@FreeBSD.org>
+# Copyright (c) 2016-2017 Bryan Drewery <bdrewery@FreeBSD.org>
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -169,6 +169,12 @@ trap_push() {
 
 	_trap="-"
 	while read -r ltrap ldash lhandler lsig; do
+		if [ -z "${lsig%%* *}" ]; then
+			# Multi-word handler, need to shift it back into
+			# lhandler and find the real lsig
+			lhandler="${lhandler} ${lsig% *}"
+			lsig="${lsig##* }"
+		fi
 		[ "${lsig}" = "${signal}" ] || continue
 		_trap="${lhandler}"
 		trap - ${signal}
@@ -187,7 +193,9 @@ trap_pop() {
 	local _trap="$2"
 
 	if [ -n "${_trap}" ]; then
-		trap -- "${_trap}" ${signal} || :
+		eval trap -- ${_trap} ${signal} || :
+	else
+		return 1
 	fi
 }
 
