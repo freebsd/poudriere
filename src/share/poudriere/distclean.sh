@@ -51,7 +51,7 @@ ALL=1
 while getopts "J:np:vy" FLAG; do
 	case "${FLAG}" in
 		J)
-			PARALLEL_JOBS=${OPTARG}
+			PREPARE_PARALLEL_JOBS=${OPTARG}
 			;;
 		n)
 			DRY_RUN=1
@@ -76,6 +76,9 @@ done
 : ${PTNAMES:=default}
 
 shift $((OPTIND-1))
+
+: ${PREPARE_PARALLEL_JOBS:=${PARALLEL_JOBS}}
+PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
 
 distfiles_cleanup() {
 	rm -f ${DISTFILES_LIST} ${DISTFILES_LIST}.expected \
