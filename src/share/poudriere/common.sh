@@ -3528,11 +3528,13 @@ deps_fetch_vars() {
 	local origin="$1"
 	local deps_var="$2"
 	local pkgname_var="$3"
-	local _pkgname _pkg_deps _selected_options
+	local _pkgname _pkg_deps _lib_depends _run_depends _selected_options
 	local _existing_pkgname _existing_origin
 
 	if ! port_var_fetch "${origin}" \
 	    PKGNAME _pkgname \
+	    LIB_DEPENDS _lib_depends \
+	    RUN_DEPENDS _run_depends \
 	    SELECTED_OPTIONS:O _selected_options \
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' '' \
 	    '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
@@ -3569,6 +3571,12 @@ deps_fetch_vars() {
 
 	shash_set pkgname-deps "${_pkgname}" "${_pkg_deps}"
 	# Store for delete_old_pkg
+	if [ -n "${_lib_depends}" ]; then
+		shash_set pkgname-lib_deps "${_pkgname}" "${_lib_depends}"
+	fi
+	if [ -n "${_run_depends}" ]; then
+		shash_set pkgname-run_deps "${_pkgname}" "${_run_depends}"
+	fi
 	if [ -n "${_selected_options}" ]; then
 		shash_set pkgname-options "${_pkgname}" "${_selected_options}"
 	fi
@@ -3885,11 +3893,8 @@ delete_old_pkg() {
 		# 'make actual-run-depends-list' after enough testing,
 		# which will avoida all of the injail hacks
 
-		# XXX: This is redundant with list_deps. Hash/caching the
-		# deps can prevent double lookup
-		for td in LIB RUN; do
-			raw_deps=$(injail /usr/bin/make -C ${PORTSDIR}/${origin} \
-			    -V${td}_DEPENDS)
+		for td in lib run; do
+			shash_get pkgname-${td}_deps "${new_pkgname}" raw_deps || raw_deps=
 			for d in ${raw_deps}; do
 				key=${d%:*}
 				dpath=${d#*:}
@@ -3897,7 +3902,7 @@ delete_old_pkg() {
 				${PORTSDIR}/*) dpath=${dpath#${PORTSDIR}/} ;;
 				esac
 				case ${td} in
-				LIB)
+				lib)
 					[ -n "${liblist}" ] || liblist=$(injail ldconfig -r | awk '$1 ~ /:-l/ { gsub(/.*-l/, "", $1); printf("%s ",$1) } END { printf("\n") }')
 					case ${key} in
 					lib*)
@@ -3928,7 +3933,7 @@ delete_old_pkg() {
 						;;
 					esac
 					;;
-				RUN)
+				run)
 					case $key in
 					/*) [ -e ${mnt}/${key} ] || current_deps="${current_deps} ${dpath}" ;;
 					*) [ -n "$(injail which ${key})" ] || current_deps="${current_deps} ${dpath}" ;;
