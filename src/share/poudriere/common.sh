@@ -368,28 +368,33 @@ eargs() {
 }
 
 run_hook() {
-	local hookfile=${HOOKDIR}/${1}.sh
+	local hookfile="${HOOKDIR}/${1}.sh"
 	local build_url log_url
 	shift
 
 	build_url build_url || :
 	log_url log_url || :
-	[ -f ${hookfile} ] &&
-		BUILD_URL="${build_url}" \
-		LOG_URL="${log_url}" \
-		POUDRIERE_BUILD_TYPE=${POUDRIERE_BUILD_TYPE} \
-		POUDRIERED="${POUDRIERED}" \
-		POUDRIERE_DATA="${POUDRIERE_DATA}" \
-		MASTERNAME="${MASTERNAME}" \
-		MASTERMNT="${MASTERMNT}" \
-		MY_JOBID="${MY_JOBID}" \
-		BUILDNAME="${BUILDNAME}" \
-		JAILNAME="${JAILNAME}" \
-		PTNAME="${PTNAME}" \
-		SETNAME="${SETNAME}" \
-		PACKAGES="${PACKAGES}" \
-		PACKAGES_ROOT="${PACKAGES_ROOT}" \
-		/bin/sh ${hookfile} "$@"
+	if [ -f "${hookfile}" ]; then
+		(
+			cd /
+
+			BUILD_URL="${build_url}" \
+			LOG_URL="${log_url}" \
+			POUDRIERE_BUILD_TYPE=${POUDRIERE_BUILD_TYPE} \
+			POUDRIERED="${POUDRIERED}" \
+			POUDRIERE_DATA="${POUDRIERE_DATA}" \
+			MASTERNAME="${MASTERNAME}" \
+			MASTERMNT="${MASTERMNT}" \
+			MY_JOBID="${MY_JOBID}" \
+			BUILDNAME="${BUILDNAME}" \
+			JAILNAME="${JAILNAME}" \
+			PTNAME="${PTNAME}" \
+			SETNAME="${SETNAME}" \
+			PACKAGES="${PACKAGES}" \
+			PACKAGES_ROOT="${PACKAGES_ROOT}" \
+			/bin/sh "${hookfile}" "$@"
+		)
+	fi
 	return 0
 }
 
