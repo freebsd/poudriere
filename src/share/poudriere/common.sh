@@ -2010,6 +2010,18 @@ jail_start() {
 			echo "GID=0"
 		} >> ${tomnt}/etc/make.conf
 	fi
+	# Determine if the ports tree supports SELECTED_OPTIONS from
+	# r403743
+	if [ -f "${tomnt}${PORTSDIR}/Mk/bsd.options.mk" ] && \
+	    grep -m1 -q SELECTED_OPTIONS \
+	    "${tomnt}${PORTSDIR}/Mk/bsd.options.mk"; then
+		PORTS_HAS_SELECTED_OPTIONS=1
+	else
+		# Fallback on pretty-print-config.
+		PORTS_HAS_SELECTED_OPTIONS=0
+		# XXX: If we know we can use bmake then this would work
+		# make _SELECTED_OPTIONS='${ALL_OPTIONS:@opt@${PORT_OPTIONS:M${opt}}@} ${MULTI GROUP SINGLE RADIO:L:@otype@${OPTIONS_${otype}:@m@${OPTIONS_${otype}_${m}:@opt@${PORT_OPTIONS:M${opt}}@}@}@}' -V _SELECTED_OPTIONS:O
+	fi
 
 	PKG_EXT="txz"
 	PKG_BIN="/.p/pkg-static"
@@ -3516,11 +3528,12 @@ deps_fetch_vars() {
 	local origin="$1"
 	local deps_var="$2"
 	local pkgname_var="$3"
-	local _pkgname _pkg_deps
+	local _pkgname _pkg_deps _selected_options
 	local _existing_pkgname _existing_origin
 
-	if ! port_var_fetch "${origin}"\
+	if ! port_var_fetch "${origin}" \
 	    PKGNAME _pkgname \
+	    SELECTED_OPTIONS:O _selected_options \
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' '' \
 	    '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
 	    _pkg_deps; then
@@ -3555,6 +3568,10 @@ deps_fetch_vars() {
 	fi
 
 	shash_set pkgname-deps "${_pkgname}" "${_pkg_deps}"
+	# Store for delete_old_pkg
+	if [ -n "${_selected_options}" ]; then
+		shash_set pkgname-options "${_pkgname}" "${_selected_options}"
+	fi
 }
 
 deps_file() {
@@ -3936,9 +3953,21 @@ delete_old_pkg() {
 
 	# Check if the compiled options match the current options from make.conf and /var/db/ports
 	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
-		current_options=$(injail /usr/bin/make -C ${PORTSDIR}/${origin} \
-		    pretty-print-config | tr ' ' '\n' | \
-		    sed -n 's/^\+\(.*\)/\1/p' | sort -u | tr '\n' ' ')
+		if [ ${PORTS_HAS_SELECTED_OPTIONS} -eq 1 ]; then
+			shash_get pkgname-options "${new_pkgname}" \
+			    current_options || current_options=
+			# pretty-print-config has a trailing space, so
+			# pkg_get_options does as well.  Add in for compat.
+			if [ -n "${current_options}" ]; then
+				current_options="${current_options} "
+			fi
+		else
+			# Backwards-compat
+			current_options=$(injail /usr/bin/make -C \
+			    ${PORTSDIR}/${origin} \
+			    pretty-print-config | tr ' ' '\n' | \
+			    sed -n 's/^\+\(.*\)/\1/p' | sort -u | tr '\n' ' ')
+		fi
 		pkg_get_options compiled_options "${pkg}"
 
 		if [ "${compiled_options}" != "${current_options}" ]; then
