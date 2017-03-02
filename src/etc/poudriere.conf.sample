@@ -126,7 +126,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # PARALLEL_JOBS=1
 
 # How many jobs should be used for preparing the build? These tend to
-# be more IO bound and may be worth tweaking. Default: Same as PARALLEL_JOBS
+# be more IO bound and may be worth tweaking. Default: PARALLEL_JOBS * 1.25
 # PREPARE_PARALLEL_JOBS=1
 
 

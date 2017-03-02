@@ -35,7 +35,8 @@ Parameters:
     [ports...]  -- List of ports to keep on the command line
 
 Options:
-    -J n        -- Run n jobs in parallel (Defaults to the number of CPUs)
+    -J n        -- Run n jobs in parallel (Defaults to the number of
+                   CPUs times 1.25)
     -n          -- Do not actually remove anything, just show what would be
                    removed
     -N          -- Do not build the package repository or INDEX when clean
@@ -120,7 +121,7 @@ _mastermnt MASTERMNT
 export MASTERNAME
 export MASTERMNT
 
-: ${PREPARE_PARALLEL_JOBS:=${PARALLEL_JOBS}}
+: ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}
 PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
 
 read_packages_from_params "$@"

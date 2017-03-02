@@ -165,6 +165,7 @@ The optional second
 .Ar number
 is the number of jobs used for the steps before the build, they are more IO
 bound than CPU bound, so you may want to use a different number.
+The default pre-build value is 1.25 times the value of the build value.
 .It Fl i
 Interactive mode.
 Enter jail for interactive testing and automatically cleanup when done.
@@ -561,6 +562,7 @@ The optional second
 .Ar number
 is the number of jobs used for the steps before the build, they are more IO
 bound than CPU bound, so you may want to use a different number.
+The default pre-build value is 1.25 times the value of the build value.
 .It Fl k
 Do not consider failures as fatal.
 Find all failures.

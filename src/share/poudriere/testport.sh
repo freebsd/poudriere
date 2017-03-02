@@ -42,7 +42,8 @@ Options:
                    installed after test.
     -J n[:p]    -- Run n jobs in parallel for dependencies, and optionally
                    run a different number of jobs in parallel while preparing
-                   the build. (Defaults to the number of CPUs)
+                   the build. (Defaults to the number of CPUs for n and
+                   1.25 times n for p)
     -k          -- Don't consider failures as fatal; find all failures.
     -N          -- Do not build package repository or INDEX when build
                    of dependencies completed
@@ -152,7 +153,7 @@ fi
 maybe_run_queued "$@"
 
 : ${BUILD_PARALLEL_JOBS:=${PARALLEL_JOBS}}
-: ${PREPARE_PARALLEL_JOBS:=${PARALLEL_JOBS}}
+: ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}
 PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
 
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
