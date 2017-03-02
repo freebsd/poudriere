@@ -167,7 +167,7 @@ trap_push() {
 	local var_return="$2"
 	local _trap ltrap ldash lhandler lsig
 
-	_trap=
+	_trap="-"
 	while read -r ltrap ldash lhandler lsig; do
 		[ "${lsig}" = "${signal}" ] || continue
 		_trap="${lhandler}"
