@@ -319,10 +319,15 @@ madvise_protect() {
 }
 
 _spawn_wrapper() {
-	# Reset SIGINT to the default to undo POSIX's SIG_IGN in
-	# 2.11 "Signals and Error Handling". This will ensure no
-	# foreground process is left around on SIGINT.
-	trap - INT
+	case $- in
+		# Job control
+		*m*) ;;
+		# No job control
+		# Reset SIGINT to the default to undo POSIX's SIG_IGN in
+		# 2.11 "Signals and Error Handling". This will ensure no
+		# foreground process is left around on SIGINT.
+		*) trap - INT ;;
+	esac
 
 	"$@"
 }
