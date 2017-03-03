@@ -27,4 +27,9 @@
 #### This file is experimental and may change without notice.
 
 . ${SCRIPTPREFIX}/common.sh
-eval "$@"
+
+if [ $# -gt 0 ]; then
+	eval "$@"
+else
+	. /dev/stdin
+fi
