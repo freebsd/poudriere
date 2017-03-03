@@ -845,6 +845,14 @@ exit_handler() {
 
 	if was_a_bulk_run; then
 		log_stop
+		# build_queue may have done cd MASTERMNT/.p/pool,
+		# but some of the cleanup here assumes we are
+		# PWD=MASTERMNT/.p.  Switch back if possible.
+		# It will be changed to / in jail_cleanup
+		if [ -d "${MASTERMNT}/.p" ]; then
+			cd "${MASTERMNT}/.p"
+			SHASH_VAR_PATH="var/cache"
+		fi
 	fi
 
 	parallel_shutdown
@@ -3021,6 +3029,8 @@ job_done() {
 }
 
 build_queue() {
+	[ "${PWD}" = "${MASTERMNT}/.p/pool" ] || \
+	    err 1 "build_queue requires PWD=${MASTERMNT}/.p/pool"
 	local j jobid pid pkgname builders_active queue_empty
 	local builders_idle idle_only timeout
 
@@ -3030,10 +3040,6 @@ build_queue() {
 	queue_empty=0
 
 	msg "Hit CTRL+t at any time to see build progress and stats"
-
-	[ ! -d "${MASTERMNT}/.p/pool" ] && err 1 "Build pool is missing"
-	cd "${MASTERMNT}/.p/pool"
-	SHASH_VAR_PATH="../var/cache"
 
 	idle_only=0
 	while :; do
@@ -3215,7 +3221,14 @@ parallel_build() {
 
 	bset status "parallel_build:"
 
+	[ ! -d "${MASTERMNT}/.p/pool" ] && err 1 "Build pool is missing"
+	cd "${MASTERMNT}/.p/pool"
+	SHASH_VAR_PATH="../var/cache"
+
 	build_queue
+
+	cd "${MASTERMNT}/.p"
+	SHASH_VAR_PATH="var/cache"
 
 	bset status "stopping_jobs:"
 	stop_builders
