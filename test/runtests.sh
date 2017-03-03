@@ -11,7 +11,7 @@ FAILED_TESTS=
 for test in ${TESTS}; do
 	status=0
 	echo -n "Running ${test} ... "
-	/usr/bin/timeout ${TIMEOUT} ${SH} ${test} > ${test}.stdout.log 2> ${test}.stderr.log || status=$?
+	${SH} runtest.sh ${test} > ${test}.stdout.log 2> ${test}.stderr.log
 	if [ ${status} -ne 0 ]; then
 		if [ ${status} -eq 124 ]; then
 			status="124 (timeout)"
