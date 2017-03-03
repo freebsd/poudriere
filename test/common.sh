@@ -1,11 +1,13 @@
 THISDIR=$(realpath $(dirname $0))
 CMD=$(basename $0)
-POUDRIEREPATH=$(realpath ${THISDIR}/../src)
-POUDRIERE_ETC=${THISDIR}/etc
-SCRIPTPREFIX=${POUDRIEREPATH}/share/poudriere
-SCRIPTPATH="${SCRIPTPREFIX}/${CMD}.sh"
+POUDRIEREPATH=$(realpath ${THISDIR}/../src/bin/poudriere)
+POUDRIEREPREFIX=${POUDRIEREPATH%\/bin/*}
+SCRIPTPREFIX=${POUDRIEREPREFIX}/share/poudriere
 
-LIBEXECPREFIX=$(realpath ${POUDRIEREPATH}/..)
+SCRIPTPATH="${SCRIPTPREFIX}/${CMD}"
+POUDRIERE_ETC=${THISDIR}/etc
+
+LIBEXECPREFIX="${POUDRIEREPATH%src/bin/poudriere}"
 export PATH=${LIBEXECPREFIX}:${PATH}:/sbin:/usr/sbin
 
 mkdir -p ${POUDRIERE_ETC}/poudriere.d
