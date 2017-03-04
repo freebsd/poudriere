@@ -15,7 +15,7 @@
 # 2. Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
-# 4. Neither the name of the University nor the names of its contributors
+# 3. Neither the name of the University nor the names of its contributors
 #    may be used to endorse or promote products derived from this software
 #    without specific prior written permission.
 #
@@ -32,7 +32,7 @@
 # SUCH DAMAGE.
 #
 #	@(#)builtins.def	8.4 (Berkeley) 5/4/95
-# $FreeBSD: head/bin/sh/builtins.def 288430 2015-09-30 21:32:29Z jilles $
+# $FreeBSD: head/bin/sh/builtins.def 314436 2017-02-28 23:42:47Z imp $
 
 #
 # This file lists all the builtin commands.  The first column is the name

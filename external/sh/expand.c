@@ -17,7 +17,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -40,7 +40,7 @@ static char sccsid[] = "@(#)expand.c	8.5 (Berkeley) 5/15/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/expand.c 303586 2016-07-31 13:11:34Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/expand.c 314686 2017-03-04 22:58:34Z jilles $");
 
 #include <sys/types.h>
 #include <sys/time.h>
@@ -460,7 +460,6 @@ expbackq(union node *cmd, int quoted, int flag, struct worddest *dst)
 	p = grabstackstr(dest);
 	evalbackcmd(cmd, &in);
 	ungrabstackstr(p, dest);
-	argbackq = saveargbackq;
 
 	p = in.buf;
 	nnl = 0;
@@ -514,12 +513,16 @@ expbackq(union node *cmd, int quoted, int flag, struct worddest *dst)
 		close(in.fd);
 	if (in.buf)
 		ckfree(in.buf);
-	if (in.jp)
+	if (in.jp) {
+		p = grabstackstr(dest);
 		exitstatus = waitforjob(in.jp, (int *)NULL);
+		ungrabstackstr(p, dest);
+	}
 	TRACE(("expbackq: size=%td: \"%.*s\"\n",
 		((dest - stackblock()) - startloc),
 		(int)((dest - stackblock()) - startloc),
 		stackblock() + startloc));
+	argbackq = saveargbackq;
 	expdest = dest;
 	INTON;
 }
