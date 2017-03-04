@@ -27,12 +27,16 @@
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 
 #include <err.h>
 #include <errno.h>
+#include <paths.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -51,61 +55,136 @@ calculate_duration(char *timestamp, size_t tlen, time_t elapsed)
 	    seconds);
 }
 
+static void
+prefix_output(int fd_in, int fd_out, size_t pending_len, time_t start)
+{
+	char timestamp[8 + 3 + 1]; /* '[HH:MM:SS] ' + 1 */
+	char buf[1024];
+	char *p = NULL;
+	time_t elapsed, now;
+	size_t read_len, tlen;
+	bool newline;
+	tlen = sizeof(timestamp);
+
+	newline = true;
+	while (pending_len > 0) {
+		read_len = read(fd_in, buf, min(sizeof(buf),
+		    pending_len));
+		pending_len -= read_len;
+		for (p = buf; read_len > 0;
+		    ++p, --read_len) {
+			if (newline) {
+				newline = false;
+				now = time(NULL);
+				elapsed = now - start;
+				calculate_duration((char *)&timestamp,
+				    tlen, elapsed);
+				write(fd_out, timestamp, tlen - 1);
+			}
+			if (*p == '\n' || *p == '\r')
+				newline = true;
+			write(fd_out, p, 1);
+		}
+	}
+}
+
 /**
  * Timestamp stdout
  */
 int
-main(int argc, char **argv) {
-	struct kevent ev, ch;
-	time_t elapsed, start, now;
-	char timestamp[8 + 3 + 1]; /* '[HH:MM:SS] ' + 1 */
-	char buf[1024];
-	char *p = NULL;
-	bool newline;
-	size_t tlen, pending_len;
-	ssize_t read_len;
-	int kq, fd_in, fd_out;
+main(int argc, char **argv)
+{
+	struct kevent *ev;
+	time_t start;
+	size_t pending_len;
+	pid_t child_pid;
+	int child_stdout[2], child_stderr[2];
+	int kq, fd_in, fd_out, nevents, nev, kn, i, status, ret, done;
 
+	ev = NULL;
+	nev = nevents = 0;
+	child_pid = -1;
 	start = time(NULL);
-	tlen = sizeof(timestamp);
-	newline = true;
+	ret = 0;
+	done = 0;
+
+	if (argc > 1) {
+		if (pipe(child_stdout) != 0)
+			err(EXIT_FAILURE, "pipe");
+		if (pipe(child_stderr) != 0)
+			err(EXIT_FAILURE, "pipe");
+
+		child_pid = vfork();
+		if (child_pid == -1)
+			err(EXIT_FAILURE, "fork");
+		if (child_pid == 0) {
+			close(child_stdout[0]);
+			dup2(child_stdout[1], STDOUT_FILENO);
+			close(child_stdout[1]);
+
+			close(child_stderr[0]);
+			dup2(child_stderr[1], STDERR_FILENO);
+			close(child_stderr[1]);
+
+			execvp(argv[1], &argv[1]);
+			_exit(127);
+		}
+		close(STDIN_FILENO);
+		close(child_stdout[1]);
+		close(child_stderr[1]);
+		nev = 3;
+	} else
+		nev = 1;
 
 	if ((kq = kqueue()) == -1)
 		err(EXIT_FAILURE, "kqueue");
+	ev = calloc(sizeof(struct kevent), nev);
+	if (ev == NULL)
+		err(EXIT_FAILURE, "malloc");
 
-	EV_SET(&ev, STDIN_FILENO, EVFILT_READ, EV_ADD, 0, 0,
-	    (void*)STDOUT_FILENO);
-	kevent(kq, &ev, 1, NULL, 0, NULL);
+	if (child_pid != -1) {
+		EV_SET(ev + nevents++, child_pid, EVFILT_PROC, EV_ADD,
+		    NOTE_EXIT, 0, NULL);
+		EV_SET(ev + nevents++, child_stdout[0], EVFILT_READ, EV_ADD,
+		    0, 0, (void*)STDOUT_FILENO);
+		EV_SET(ev + nevents++, child_stderr[0], EVFILT_READ, EV_ADD,
+		    0, 0, (void*)STDERR_FILENO);
+	} else
+		EV_SET(ev + nevents++, STDIN_FILENO, EVFILT_READ, EV_ADD, 0, 0,
+		    (void*)STDOUT_FILENO);
+
+	kevent(kq, ev, nevents, NULL, 0, NULL);
 
 	for (;;) {
-		if (kevent(kq, &ev, 1, &ch, 1, NULL) == -1)
+		if ((kn = kevent(kq, NULL, 0, ev, nevents, NULL)) == -1)
 			err(EXIT_FAILURE, "kevent");
-		fd_in = (int)ch.ident;
-		fd_out = (int)(intptr_t)ch.udata;
-		pending_len = (size_t)ch.data;
-
-		while (pending_len > 0) {
-			read_len = read(fd_in, buf,
-			    min(sizeof(buf), pending_len));
-			pending_len -= read_len;
-			for (p = buf; read_len > 0; ++p, --read_len) {
-				if (newline) {
-					newline = false;
-					now = time(NULL);
-					elapsed = now - start;
-					calculate_duration((char *)&timestamp,
-					    tlen, elapsed);
-					write(fd_out, timestamp, tlen - 1);
-				}
-				if (*p == '\n' || *p == '\r')
-					newline = true;
-				write(fd_out, p, 1);
+		for (i = 0; i < kn; i++) {
+			if (ev[i].filter == EVFILT_READ) {
+				fd_in = (int)ev[i].ident;
+				fd_out = (int)(intptr_t)ev[i].udata;
+				pending_len = (size_t)ev[i].data;
+				prefix_output(fd_in, fd_out, pending_len,
+				    start);
+#if 0
+				if (ev[i].flags & EV_EOF)
+					done = 1;
+#endif
+			} else if (ev[i].filter == EVFILT_PROC) {
+				/* Pwait code here */
+				status = ev[i].data;
+				if (WIFEXITED(status))
+					ret = WEXITSTATUS(status);
+				else if (WIFSTOPPED(status))
+					ret = WSTOPSIG(status) + 128;
+				else
+					ret = WTERMSIG(status) + 128;
+				done = 1;
 			}
 		}
-
-		if (ch.flags & EV_EOF)
+		if (done == 1)
 			break;
 	}
 
-	return 0;
+	free(ev);
+	return (ret);
 }
