@@ -1140,6 +1140,7 @@ common_mtree() {
 ./usr/home/*
 .${PORTSDIR}/*
 ./usr/src
+./var/db/freebsd-update/*
 ./var/db/ports/*
 ./wrkdirs/*
 EOF
@@ -1206,7 +1207,6 @@ markfs() {
 ./etc/shells
 ./etc/spwd.db
 ./tmp/*
-./var/db/freebsd-update/*
 ./var/db/pkg/*
 ./var/log/*
 ./var/mail/*
