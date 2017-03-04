@@ -4169,7 +4169,7 @@ port_var_fetch() {
 				while [ "${1}" = "${assign_var}" ]; do
 					shift
 				done
-				setvar "$1" ""
+				setvar "$1" "" || return $?
 				shift
 			done
 			break
@@ -4179,8 +4179,12 @@ port_var_fetch() {
 		while [ "${1}" = "${assign_var}" ]; do
 			shift
 		done
-		setvar "$1" "${_line}"
-		shift
+		# We may have more lines than expected on an error, but our
+		# errexit output is last, so keep reading until then.
+		if [ $# -gt 0 ]; then
+			setvar "$1" "${_line}" || return $?
+			shift
+		fi
 	done <<-EOF
 	$(IFS="${sep}"; injail /usr/bin/make -C "${PORTSDIR}/${origin}" ${_makeflags} || echo "${_errexit} $?")
 	EOF

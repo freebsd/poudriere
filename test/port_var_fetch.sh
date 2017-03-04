@@ -59,7 +59,7 @@ assert "" "${pkgname}" "PKGNAME shouldn't have gotten a value in a failed lookup
 pkgname=
 port_var_fetch "devel/port_var_fetch_syntax_error" \
     PKGNAME pkgname 2>/dev/null
-assert_not 0 $? "port_var_fetch should detect make syntax error failure"
+assert 1 $? "port_var_fetch should detect make syntax error failure"
 assert "" "${pkgname}" "PKGNAME shouldn't have gotten a value in a failed lookup"
 
 # Lookup multiple vars to ensure the make errors to stdout don't cause confusion
@@ -68,8 +68,15 @@ port_var_fetch "devel/port_var_fetch_syntax_error" \
     BUILD_DEPENDS build_depends \
     FETCH_DEPENDS fetch_depends \
     PKGNAME pkgname 2>/dev/null
-assert_not 0 $? "port_var_fetch should detect make syntax error failure"
+assert 1 $? "port_var_fetch should detect make syntax error failure"
 assert "" "${pkg_depends}" "PKG_DEPENDS shouldn't have gotten a value in a failed lookup"
 assert "" "${pkg_depends}" "BUILD_DEPENDS shouldn't have gotten a value in a failed lookup"
 assert "" "${build_depends}" "BUILD_DEPENDS shouldn't have gotten a value in a failed lookup"
 assert "" "${fetch_depends}" "FETCH_DEPENDS shouldn't have gotten a value in a failed lookup"
+assert "" "${pkgname}" "PKGNAME shouldn't have gotten a value in a failed lookup"
+
+# Lookup 1 value with multiple errors returned
+port_var_fetch "devel/port_var_fetch_syntax_error" \
+    PKGNAME pkgname 2>/dev/null
+assert 1 $? "port_var_fetch should detect make syntax error with 1 -V"
+assert "" "${pkgname}" "PKGNAME shouldn't have gotten a value in a failed lookup"
