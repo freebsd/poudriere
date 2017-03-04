@@ -1885,8 +1885,7 @@ jail_start() {
 	jstart
 	injail id >/dev/null 2>&1 || \
 	    err 1 "Unable to execute id(1) in jail. Emulation or ABI wrong."
-
-	portbuild_uid=$(injail id -u ${PORTBUILD_USER} 2>&1)
+	portbuild_uid=$(injail id -u ${PORTBUILD_USER} 2>/dev/null || :)
 	if [ -z "${portbuild_uid}" -a $? -ne 0 ]; then
 		msg_n "Creating user/group ${PORTBUILD_USER}"
 		injail pw groupadd ${PORTBUILD_USER} -g ${PORTBUILD_UID} || \
@@ -1896,7 +1895,7 @@ jail_start() {
 		echo " done"
 	else
 		PORTBUILD_UID=${portbuild_uid}
-		PORTBUILD_GID=$(injail id -g ${PORTBUILD_USER} 2>&1)
+		PORTBUILD_GID=$(injail id -g ${PORTBUILD_USER})
 	fi
 	injail service ldconfig start >/dev/null || \
 	    err 1 "Failed to set ldconfig paths."
