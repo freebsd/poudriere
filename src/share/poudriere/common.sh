@@ -1993,7 +1993,7 @@ jail_start() {
 	injail id >/dev/null 2>&1 || \
 	    err 1 "Unable to execute id(1) in jail. Emulation or ABI wrong."
 	portbuild_uid=$(injail id -u ${PORTBUILD_USER} 2>/dev/null || :)
-	if [ -z "${portbuild_uid}" -a $? -ne 0 ]; then
+	if [ -z "${portbuild_uid}" ]; then
 		msg_n "Creating user/group ${PORTBUILD_USER}"
 		injail pw groupadd ${PORTBUILD_USER} -g ${PORTBUILD_UID} || \
 		err 1 "Unable to create group ${PORTBUILD_USER}"
