@@ -6,7 +6,7 @@ AC_CONFIG_HEADER(src/config.h)
 
 AM_MAINTAINER_MODE([disable])
 
-AC_PROG_CC
+AC_PROG_CC([cc clang gcc])
 AC_PROG_RANLIB
 
 AC_CHECK_FUNCS([strftime_l strchrnul])
