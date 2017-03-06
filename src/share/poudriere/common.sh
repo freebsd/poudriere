@@ -4202,21 +4202,6 @@ port_var_fetch() {
 	return ${ret}
 }
 
-cache_get_pkgname() {
-	[ $# -lt 2 ] && eargs cache_get_pkgname var_return origin fatal
-	local var_return="$1"
-	local origin=${2%/}
-	local fatal="${3:-1}"
-	local _pkgname="" existing_origin
-
-	# Add to cache if not found.
-	if ! shash_get origin-pkgname "${origin}" _pkgname; then
-		err 1 "cache_get_pkgname failed for ${origin}: This should not happen (${fatal})"
-	fi
-
-	setvar "${var_return}" "${_pkgname}"
-}
-
 cache_get_origin() {
 	[ $# -ne 2 ] && eargs cache_get_origin var_return pkgname
 	local var_return="$1"
@@ -4706,7 +4691,8 @@ clean_build_queue() {
 		tmp=$(mktemp -t queue)
 		{
 			listed_ports | while read port; do
-				cache_get_pkgname pkgname "${port}"
+				shash_get origin-pkgname "${port}" pkgname || \
+				    err 1 "Failed to lookup PKGNAME for ${port}"
 				echo "${pkgname}"
 			done
 			# Pkg is a special case. It may not have been requested,
@@ -4832,7 +4818,8 @@ prepare_ports() {
 		if [ ${CLEAN_LISTED} -eq 1 ]; then
 			msg "(-C) Cleaning specified ports to build"
 			listed_ports | while read port; do
-				cache_get_pkgname pkgname "${port}"
+				shash_get origin-pkgname "${port}" pkgname || \
+				    err 1 "Failed to lookup PKGNAME for ${port}"
 				pkg="${PACKAGES}/All/${pkgname}.${PKG_EXT}"
 				if [ -f "${pkg}" ]; then
 					msg "(-C) Deleting existing package: ${pkg##*/}"
