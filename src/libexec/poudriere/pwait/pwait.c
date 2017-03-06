@@ -56,12 +56,13 @@ __FBSDID("$FreeBSD$");
 #include "helpers.h"
 #define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
 #endif
+static int got_alarm;
 
 static void
 usage(void)
 {
 
-	fprintf(stderr, "usage: pwait [-v] pid ...\n");
+	fprintf(stderr, "usage: pwait [-t timeout] [-v] pid ...\n");
 #ifdef SHELL
 	error(NULL);
 #else
@@ -69,18 +70,11 @@ usage(void)
 #endif
 }
 
-static double
-parse_duration(const char *duration)
+static void
+sigalarm_handler(int signo __unused)
 {
-	char *end;
-	double ret;
 
-	ret = strtod(duration, &end);
-	if (ret == 0 && end == duration)
-		errx(EX_DATAERR, "invalid duration");
-	if (end == NULL || *end == '\0')
-		return (ret);
-	errx(EX_DATAERR, "invalid duration");
+	got_alarm = 1;
 }
 
 /*
@@ -92,17 +86,19 @@ main(int argc, char *argv[])
 #ifdef SHELL
 	struct sigaction oact;
 #endif
-	struct timespec tspec;
+	struct itimerval itv;
 	int kq;
 	struct kevent *e;
 	int tflag, verbose;
 	int opt, nleft, n, i, duplicate, status;
 	long pid;
 	char *s, *end;
+	double timeout;
 
 	tflag = verbose = 0;
-	tspec.tv_sec = tspec.tv_nsec = 0;
+	memset(&itv, 0, sizeof(itv));
 #ifdef SHELL
+	got_alarm = 0;
 	while ((opt = nextopt("t:v")) != '\0') {
 #else
 	while ((opt = getopt(argc, argv, "t:v")) != -1) {
@@ -110,11 +106,36 @@ main(int argc, char *argv[])
 		switch (opt) {
 		case 't':
 			tflag = 1;
+			errno = 0;
 #ifdef SHELL
-			tspec.tv_sec = parse_duration(shoptarg);
+			timeout = strtod(shoptarg, &end);
+			if (end == shoptarg || errno == ERANGE ||
+			    timeout < 0)
 #else
-			tspec.tv_sec = parse_duration(optarg);
+			timeout = strtod(optarg, &end);
+			if (end == optarg || errno == ERANGE ||
+			    timeout < 0)
 #endif
+				errx(EX_DATAERR, "timeout value");
+			switch(*end) {
+			case 0:
+			case 's':
+				break;
+			case 'h':
+				timeout *= 60;
+				/* FALLTHROUGH */
+			case 'm':
+				timeout *= 60;
+				break;
+			default:
+				errx(EX_DATAERR, "timeout unit");
+			}
+			if (timeout > 100000000L)
+				errx(EX_DATAERR, "timeout value");
+			itv.it_value.tv_sec = (time_t)timeout;
+			timeout -= (time_t)timeout;
+			itv.it_value.tv_usec =
+			    (suseconds_t)(timeout * 1000000UL);
 			break;
 		case 'v':
 			verbose = 1;
@@ -181,26 +202,47 @@ main(int argc, char *argv[])
 		}
 	}
 
-	while (nleft > 0) {
-		n = kevent(kq, NULL, 0, e, nleft, tflag == 1 ? &tspec : NULL);
-		if (n == -1) {
+	if (tflag) {
+		/*
+		 * Setup a SIGALRM handler so that an exit status of 124
+		 * can be returned rather than 142.
+		 */
+		if (setitimer(ITIMER_REAL, &itv, NULL) == -1) {
 #ifdef SHELL
-			free(e);
 			close(kq);
+			free(e);
+			siginfo_pop(&oact);
+			INTON;
+#endif
+			err(EX_OSERR, "%s", "setitimer");
+		}
+		signal(SIGALRM, sigalarm_handler);
+	}
+	while (nleft > 0) {
+		if (got_alarm) {
+gotalarm:
+			if (verbose)
+				printf("timeout\n");
+#ifdef SHELL
+			close(kq);
+			free(e);
+			siginfo_pop(&oact);
+			INTON;
+#endif
+			return (124);
+		}
+		n = kevent(kq, NULL, 0, e, nleft, NULL);
+		if (n == -1) {
+			if (errno == EINTR && got_alarm)
+				goto gotalarm;
+#ifdef SHELL
+			close(kq);
+			free(e);
 			siginfo_pop(&oact);
 			INTON;
 #endif
 			err(1, "%s", "kevent");
-		} else if (n == 0) {
-#ifdef SHELL
-			free(e);
-			close(kq);
-			siginfo_pop(&oact);
-			INTON;
-#endif
-			return(124);
-		}
-		if (verbose)
+		} else if (verbose) {
 			for (i = 0; i < n; i++) {
 				status = e[i].data;
 				if (WIFEXITED(status))
@@ -215,13 +257,14 @@ main(int argc, char *argv[])
 					printf("%ld: terminated.\n",
 					    (long)e[i].ident);
 			}
+		}
 		nleft -= n;
 	}
 #ifdef SHELL
-	free(e);
 	close(kq);
+	free(e);
 	siginfo_pop(&oact);
 	INTON;
 #endif
-	return(EX_OK);
+	return (EX_OK);
 }
