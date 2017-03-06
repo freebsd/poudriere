@@ -4712,8 +4712,7 @@ clean_build_queue() {
 			# Pkg is a special case. It may not have been requested,
 			# but it should always be rebuilt if missing.
 			for port in ports-mgmt/pkg ports-mgmt/pkg-devel; do
-				cache_get_pkgname pkgname "${port}" 0 \
-				    > /dev/null 2>&1 && \
+				cache_get_pkgname pkgname "${port}" 0 && \
 				    echo "${pkgname}"
 			done
 		} | {
