@@ -139,13 +139,20 @@ main(int argc, char *argv[])
 	siginfo_push(&oact);
 #endif
 	kq = kqueue();
-	if (kq == -1)
+	if (kq == -1) {
+#ifdef SHELL
+		siginfo_pop(&oact);
+		INTON;
+#endif
 		err(1, "%s", "kqueue");
+	}
 
 	e = malloc(argc * sizeof(struct kevent));
 	if (e == NULL) {
 #ifdef SHELL
 		close(kq);
+		siginfo_pop(&oact);
+		INTON;
 #endif
 		err(1, "%s", "malloc");
 	}
