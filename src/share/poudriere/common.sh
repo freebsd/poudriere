@@ -3916,7 +3916,17 @@ delete_old_pkg() {
 	fi
 
 	v="${pkgname##*-}"
-	cache_get_pkgname new_pkgname "${origin}"
+	if ! shash_get origin-pkgname "${origin}" new_pkgname; then
+		# This origin was not looked up in gather_port_vars.  It is
+		# a stale package with the same PKGBASE as one we want, but
+		# with a different origin.  Such as lang/perl5.20 vs
+		# lang/perl5.22 both with 'perl5' as PKGBASE.  A pkgclean
+		# would handle removing this.
+		msg "Deleting ${pkg##*/}: stale package: unwanted origin ${origin}"
+		delete_pkg "${pkg}"
+		return 0
+	fi
+
 	v2=${new_pkgname##*-}
 	if [ "$v" != "$v2" ]; then
 		msg "Deleting ${pkg##*/}: new version: ${v2}"
