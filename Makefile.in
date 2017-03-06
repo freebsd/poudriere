@@ -92,10 +92,10 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 pkglibexec_PROGRAMS = clock$(EXEEXT) cpdup$(EXEEXT) dirempty$(EXEEXT) \
 	dirwatch$(EXEEXT) nc$(EXEEXT) poudriered$(EXEEXT) \
-	rename$(EXEEXT) locked_mkdir$(EXEEXT) @SH@ rm$(EXEEXT) \
+	rename$(EXEEXT) locked_mkdir$(EXEEXT) @SH@ @RM@ \
 	timeout$(EXEEXT) timestamp$(EXEEXT) tsort$(EXEEXT) \
 	jexecd$(EXEEXT) ptsort$(EXEEXT) rexec$(EXEEXT)
-EXTRA_PROGRAMS = sh$(EXEEXT)
+EXTRA_PROGRAMS = rm$(EXEEXT) sh$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -426,6 +426,7 @@ PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 RANLIB = @RANLIB@
+RM = @RM@
 SET_MAKE = @SET_MAKE@
 SH = @SH@
 SHELL = @SHELL@

@@ -113,7 +113,7 @@ pkglibexec_PROGRAMS= \
 		     rename \
 		     locked_mkdir \
 		     @SH@ \
-		     rm \
+		     @RM@ \
 		     timeout \
 		     timestamp \
 		     tsort \
@@ -121,6 +121,7 @@ pkglibexec_PROGRAMS= \
 		     ptsort \
 		     rexec
 EXTRA_PROGRAMS= \
+		rm \
 		sh
 
 noinst_LIBRARIES=	libucl.a libnv.a libptsort.a
