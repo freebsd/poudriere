@@ -32,6 +32,20 @@ AC_CHECK_HEADERS_ONCE([float.h])
 AC_CHECK_HEADERS_ONCE([math.h])
 AC_CHECK_HEADERS_ONCE([fcntl.h])
 
+# Look for rm -x support.  Exit status 64 is bad argument, 1 is
+# bad file.  So as long as it is not 64 it should be fine.
+AC_CACHE_CHECK([whether rm -x works], [ac_cv_rm_x_works],
+	       [ac_cv_rm_x_works=no
+		rm -x /nonexistent 2>/dev/null
+		test $? -eq 1 && ac_cv_rm_x_works=yes])
+if test "$ac_cv_rm_x_works" = yes; then
+  RM=
+else
+  # Need bundled
+  RM=rm
+fi
+AC_SUBST([RM])
+
 AC_CHECK_DECLS([F_DUPFD_CLOEXEC], [ac_have_f_dupfd_cloexec=1],
     [ac_have_f_dupfd_cloexec=0], [[#include <fcntl.h>]])
 

@@ -94,9 +94,9 @@ pkglibexec_PROGRAMS = cachec$(EXEEXT) cached$(EXEEXT) clock$(EXEEXT) \
 	cpdup$(EXEEXT) dirempty$(EXEEXT) dirwatch$(EXEEXT) \
 	jexecd$(EXEEXT) locked_mkdir$(EXEEXT) nc$(EXEEXT) \
 	poudriered$(EXEEXT) ptsort$(EXEEXT) pwait$(EXEEXT) \
-	rename$(EXEEXT) rexec$(EXEEXT) rm$(EXEEXT) timeout$(EXEEXT) \
+	rename$(EXEEXT) rexec$(EXEEXT) @RM@ timeout$(EXEEXT) \
 	timestamp$(EXEEXT) tsort$(EXEEXT) @SH@
-EXTRA_PROGRAMS = sh$(EXEEXT)
+EXTRA_PROGRAMS = rm$(EXEEXT) sh$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -447,6 +447,7 @@ PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 RANLIB = @RANLIB@
+RM = @RM@
 SET_MAKE = @SET_MAKE@
 SH = @SH@
 SHELL = @SHELL@
