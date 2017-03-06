@@ -4710,9 +4710,11 @@ clean_build_queue() {
 				echo "${pkgname}"
 			done
 			# Pkg is a special case. It may not have been requested,
-			# but it should always be rebuilt if missing.
+			# but it should always be rebuilt if missing.  The
+			# origin-pkgname lookup may fail if it wasn't
+			# in the build queue.
 			for port in ports-mgmt/pkg ports-mgmt/pkg-devel; do
-				cache_get_pkgname pkgname "${port}" 0 && \
+				shash_get origin-pkgname "${port}" pkgname && \
 				    echo "${pkgname}"
 			done
 		} | {
