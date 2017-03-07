@@ -3359,7 +3359,7 @@ build_pkg() {
 			umount ${UMOUNT_NONBUSY} ${mnt}/${LOCALBASE:-/usr/local}
 		fi
 		mnt_tmpfs localbase ${mnt}/${LOCALBASE:-/usr/local}
-		do_clone "${MASTERMNT}/${LOCALBASE:-/usr/local}" \
+		do_clone -r "${MASTERMNT}/${LOCALBASE:-/usr/local}" \
 		    "${mnt}/${LOCALBASE:-/usr/local}"
 		:> "${mnt}/${LOCALBASE:-/usr/local}/.mounted"
 	fi
