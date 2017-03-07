@@ -1129,7 +1129,6 @@ common_mtree() {
 	cat > "${mtreefile}" <<EOF
 ./.npkg/*
 ./.p/*
-.p4config
 .${HOME}/.ccache/*
 ./compat/linux/proc
 ./dev/*
