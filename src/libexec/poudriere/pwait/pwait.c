@@ -56,7 +56,6 @@ __FBSDID("$FreeBSD$");
 #include "helpers.h"
 #define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
 #endif
-static int got_alarm;
 
 static void
 usage(void)
@@ -68,13 +67,6 @@ usage(void)
 #else
 	exit(EX_USAGE);
 #endif
-}
-
-static void
-sigalarm_handler(int signo __unused)
-{
-
-	got_alarm = 1;
 }
 
 /*
@@ -98,7 +90,6 @@ main(int argc, char *argv[])
 	tflag = verbose = 0;
 	memset(&itv, 0, sizeof(itv));
 #ifdef SHELL
-	got_alarm = 0;
 	while ((opt = nextopt("t:v")) != '\0') {
 #else
 	while ((opt = getopt(argc, argv, "t:v")) != -1) {
@@ -168,7 +159,7 @@ main(int argc, char *argv[])
 		err(1, "%s", "kqueue");
 	}
 
-	e = malloc(argc * sizeof(struct kevent));
+	e = malloc((argc + tflag) * sizeof(struct kevent));
 	if (e == NULL) {
 #ifdef SHELL
 		close(kq);
@@ -204,10 +195,21 @@ main(int argc, char *argv[])
 
 	if (tflag) {
 		/*
-		 * Setup a SIGALRM handler so that an exit status of 124
+		 * Explicitly detect SIGALRM so that an exit status of 124
 		 * can be returned rather than 142.
 		 */
-		signal(SIGALRM, sigalarm_handler);
+		EV_SET(e + nleft, SIGALRM, EVFILT_SIGNAL, EV_ADD, 0, 0, NULL);
+		if (kevent(kq, e + nleft, 1, NULL, 0, NULL) == -1) {
+#ifdef SHELL
+			close(kq);
+			free(e);
+			siginfo_pop(&oact);
+			INTON;
+#endif
+			err(EX_OSERR, "%s", "kevent");
+		}
+		/* Ignore SIGALRM to not interrupt kevent(2). */
+		signal(SIGALRM, SIG_IGN);
 		if (setitimer(ITIMER_REAL, &itv, NULL) == -1) {
 #ifdef SHELL
 			close(kq);
@@ -219,22 +221,8 @@ main(int argc, char *argv[])
 		}
 	}
 	while (nleft > 0) {
-		if (got_alarm) {
-gotalarm:
-			if (verbose)
-				printf("timeout\n");
-#ifdef SHELL
-			close(kq);
-			free(e);
-			siginfo_pop(&oact);
-			INTON;
-#endif
-			return (124);
-		}
-		n = kevent(kq, NULL, 0, e, nleft, NULL);
+		n = kevent(kq, NULL, 0, e, nleft + tflag, NULL);
 		if (n == -1) {
-			if (errno == EINTR && got_alarm)
-				goto gotalarm;
 #ifdef SHELL
 			close(kq);
 			free(e);
@@ -242,8 +230,20 @@ gotalarm:
 			INTON;
 #endif
 			err(1, "%s", "kevent");
-		} else if (verbose) {
-			for (i = 0; i < n; i++) {
+		}
+		for (i = 0; i < n; i++) {
+			if (e[i].filter == EVFILT_SIGNAL) {
+				if (verbose)
+					printf("timeout\n");
+#ifdef SHELL
+				close(kq);
+				free(e);
+				siginfo_pop(&oact);
+				INTON;
+#endif
+				return (124);
+			}
+			if (verbose) {
 				status = e[i].data;
 				if (WIFEXITED(status))
 					printf("%ld: exited with status %d.\n",
@@ -257,8 +257,8 @@ gotalarm:
 					printf("%ld: terminated.\n",
 					    (long)e[i].ident);
 			}
+			--nleft;
 		}
-		nleft -= n;
 	}
 #ifdef SHELL
 	close(kq);
