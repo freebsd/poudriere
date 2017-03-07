@@ -261,6 +261,7 @@ _log_path() {
 }
 
 _relpath() {
+	local -; set +x
 	[ $# -eq 2 ] || eargs _relpath dir1 dir2
 	local dir1=$(realpath -q "$1" || echo "${1}")
 	local dir2=$(realpath -q "$2" || echo "${2}")
@@ -296,6 +297,7 @@ _relpath() {
 }
 
 relpath() {
+	local -; set +x
 	[ $# -eq 2 ] || eargs relpath dir1 dir2
 	local dir1=$(realpath -q "$1" || echo "${1}")
 	local dir2=$(realpath -q "$2" || echo "${2}")
