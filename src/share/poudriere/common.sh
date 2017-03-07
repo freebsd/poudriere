@@ -1191,7 +1191,10 @@ markfs() {
 			echo './portdistfiles/*' >> ${mtreefile}
 			;;
 		prebuild|prestage)
-			echo './tmp/*' >> ${mtreefile}
+			cat >> ${mtreefile} <<-EOF
+			./tmp/*
+			./var/tmp/*
+			EOF
 			;;
 		preinst)
 			cat >> ${mnt}/.p/mtree.${name}exclude << EOF
