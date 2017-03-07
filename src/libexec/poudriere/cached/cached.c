@@ -37,6 +37,7 @@
 #include <khash.h>
 #include <mqueue.h>
 #include <fcntl.h>
+#include <signal.h>
 
 struct cache {
 	char *name;
