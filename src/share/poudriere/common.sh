@@ -4173,19 +4173,9 @@ port_var_fetch() {
 			# Encountered an error, abort parsing anything further.
 			# Cleanup already-set vars of 'make: stopped in'
 			# stuff in case the caller is ignoring our non-0
-			# return status.
-			set -- ${_vars}
-			while [ $# -gt 0 ]; do
-				# Skip assignment vars
-				while [ "${1}" = "${assign_var}" ]; do
-					shift
-					shiftcnt=$((shiftcnt + 1))
-				done
-				setvar "$1" "" || return $?
-				shift
-				shiftcnt=$((shiftcnt + 1))
-			done
-
+			# return status.  The shiftcnt handler can deal with
+			# this all itself.
+			shiftcnt=0
 			break
 		fi
 		# This var was just an assignment, no actual value to read from
@@ -4207,7 +4197,7 @@ port_var_fetch() {
 
 	# If the entire output was blank, then $() ate all of the excess
 	# newlines, which resulted in some vars not getting setvar'd.
-	# Fix that.
+	# This could also be cleaning up after the errexit case.
 	if [ ${shiftcnt} -ne ${varcnt} ]; then
 		set -- ${_vars}
 		# Be sure to start at the last setvar'd value.
