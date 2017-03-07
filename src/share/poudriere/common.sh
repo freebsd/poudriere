@@ -1127,20 +1127,20 @@ common_mtree() {
 	local mtreefile="$1"
 
 	cat > "${mtreefile}" <<EOF
-./.npkg/*
-./.p/*
-.${HOME}/.ccache/*
+./.npkg
+./.p
+.${HOME}/.ccache
 ./compat/linux/proc
 ./dev
-./distfiles/*
-./packages/*
-./portdistfiles/*
+./distfiles
+./packages
+./portdistfiles
 ./proc
-.${PORTSDIR}/*
+.${PORTSDIR}
 ./usr/src
-./var/db/freebsd-update/*
-./var/db/ports/*
-./wrkdirs/*
+./var/db/freebsd-update
+./var/db/ports
+./wrkdirs
 EOF
 }
 
@@ -1189,8 +1189,8 @@ markfs() {
 	case "${name}" in
 		prebuild|prestage)
 			cat >> ${mtreefile} <<-EOF
-			./tmp/*
-			./var/tmp/*
+			./tmp
+			./var/tmp
 			EOF
 			;;
 		preinst)
@@ -1203,12 +1203,12 @@ markfs() {
 ./etc/pwd.db
 ./etc/shells
 ./etc/spwd.db
-./tmp/*
-./var/db/pkg/*
-./var/log/*
-./var/mail/*
-./var/run/*
-./var/tmp/*
+./tmp
+./var/db/pkg
+./var/log
+./var/mail
+./var/run
+./var/tmp
 EOF
 		;;
 	esac
