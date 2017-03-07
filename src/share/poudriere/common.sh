@@ -1131,7 +1131,7 @@ common_mtree() {
 ./.p/*
 .${HOME}/.ccache/*
 ./compat/linux/proc
-./dev/*
+./dev
 ./distfiles/*
 ./packages/*
 ./portdistfiles/*
