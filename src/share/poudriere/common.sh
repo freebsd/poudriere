@@ -1187,9 +1187,6 @@ markfs() {
 
 	common_mtree ${mtreefile}
 	case "${name}" in
-		prepkg)
-			echo './portdistfiles/*' >> ${mtreefile}
-			;;
 		prebuild|prestage)
 			cat >> ${mtreefile} <<-EOF
 			./tmp/*
