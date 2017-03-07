@@ -42,6 +42,36 @@ assert "" "${unknown}" "_UNKNOWN"
 assert "databases/sqlrelay devel/ccache devel/gmake lang/perl5.20 lang/python34 ports-mgmt/pkg" \
     "${pkg_deps}" "PKG_DEPS eval"
 
+# Check that old values are cleared out
+ignore="bad whitespace not cleared"
+port_var_fetch "devel/port_var_fetch2" \
+	PKGNAME pkgname \
+	IGNORE ignore \
+	FOO foo \
+	_PDEPS='' \
+	_PDEPS pdeps
+assert 0 $? "port_var_fetch should succeed"
+assert '' "${pkgname}" "pkgname var should now be empty"
+assert '' "${ignore}" "ignore var should now be empty"
+assert '' "${foo}" "foo var should now be empty"
+assert '' "${pdeps}" "pdeps var should now be empty"
+
+# Check that whitespace values don't break other vars
+port_var_fetch "devel/port_var_fetch2" \
+	IGNORE ignore \
+	PKG_DEPENDS pkg_depends
+assert 0 $? "port_var_fetch should succeed"
+assert '' "${ignore}" "ignore var should be empty with bad whitespace before"
+assert '/usr/local/sbin/pkg:ports-mgmt/pkg' "${pkg_depends}" "PKG_DEPENDS should match with bad whitespace before"
+
+# Check that whitespace values don't break other vars
+port_var_fetch "devel/port_var_fetch2" \
+	PKG_DEPENDS pkg_depends \
+	IGNORE ignore
+assert 0 $? "port_var_fetch should succeed"
+assert '/usr/local/sbin/pkg:ports-mgmt/pkg' "${pkg_depends}" "PKG_DEPENDS should match with bad whitespace after"
+assert '' "${ignore}" "ignore var should be empty with bad whitespace after"
+
 pkgname=
 port_var_fetch "foo" \
     PKGNAME pkgname 2>/dev/null
@@ -70,7 +100,6 @@ port_var_fetch "devel/port_var_fetch_syntax_error" \
     PKGNAME pkgname 2>/dev/null
 assert 1 $? "port_var_fetch should detect make syntax error failure"
 assert "" "${pkg_depends}" "PKG_DEPENDS shouldn't have gotten a value in a failed lookup"
-assert "" "${pkg_depends}" "BUILD_DEPENDS shouldn't have gotten a value in a failed lookup"
 assert "" "${build_depends}" "BUILD_DEPENDS shouldn't have gotten a value in a failed lookup"
 assert "" "${fetch_depends}" "FETCH_DEPENDS shouldn't have gotten a value in a failed lookup"
 assert "" "${pkgname}" "PKGNAME shouldn't have gotten a value in a failed lookup"

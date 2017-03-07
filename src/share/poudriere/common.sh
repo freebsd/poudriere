@@ -4133,7 +4133,7 @@ port_var_fetch() {
 	[ $# -ge 3 ] || eargs port_var_fetch origin PORTVAR var_set ...
 	local origin="$1"
 	local _makeflags _vars
-	local _portvar _var _line _errexit
+	local _portvar _var _line _errexit shiftcnt varcnt
 	# Use a tab rather than space to allow FOO='BLAH BLAH' assignments
 	# and lookups like -V'${PKG_DEPENDS} ${BUILD_DEPENDS}'
 	local IFS sep="	"
@@ -4165,6 +4165,8 @@ port_var_fetch() {
 	ret=0
 
 	set -- ${_vars}
+	varcnt=$#
+	shiftcnt=0
 	while read -r _line; do
 		if [ "${_line% *}" = "${_errexit}" ]; then
 			ret=${_line#* }
@@ -4177,26 +4179,50 @@ port_var_fetch() {
 				# Skip assignment vars
 				while [ "${1}" = "${assign_var}" ]; do
 					shift
+					shiftcnt=$((shiftcnt + 1))
 				done
 				setvar "$1" "" || return $?
 				shift
+				shiftcnt=$((shiftcnt + 1))
 			done
+
 			break
 		fi
 		# This var was just an assignment, no actual value to read from
 		# stdout.  Shift until we find an actual -V var.
 		while [ "${1}" = "${assign_var}" ]; do
 			shift
+			shiftcnt=$((shiftcnt + 1))
 		done
 		# We may have more lines than expected on an error, but our
 		# errexit output is last, so keep reading until then.
 		if [ $# -gt 0 ]; then
 			setvar "$1" "${_line}" || return $?
 			shift
+			shiftcnt=$((shiftcnt + 1))
 		fi
 	done <<-EOF
 	$(IFS="${sep}"; injail /usr/bin/make -C "${PORTSDIR}/${origin}" ${_makeflags} || echo "${_errexit} $?")
 	EOF
+
+	# If the entire output was blank, then $() ate all of the excess
+	# newlines, which resulted in some vars not getting setvar'd.
+	# Fix that.
+	if [ ${shiftcnt} -ne ${varcnt} ]; then
+		set -- ${_vars}
+		# Be sure to start at the last setvar'd value.
+		if [ ${shiftcnt} -gt 0 ]; then
+			shift ${shiftcnt}
+		fi
+		while [ $# -gt 0 ]; do
+			# Skip assignment vars
+			while [ "${1}" = "${assign_var}" ]; do
+				shift
+			done
+			setvar "$1" "" || return $?
+			shift
+		done
+	fi
 
 	return ${ret}
 }
