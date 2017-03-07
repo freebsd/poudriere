@@ -1137,7 +1137,6 @@ common_mtree() {
 ./packages/*
 ./portdistfiles/*
 ./proc
-./usr/home/*
 .${PORTSDIR}/*
 ./usr/src
 ./var/db/freebsd-update/*
