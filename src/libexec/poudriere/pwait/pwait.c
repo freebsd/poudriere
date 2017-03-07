@@ -207,6 +207,7 @@ main(int argc, char *argv[])
 		 * Setup a SIGALRM handler so that an exit status of 124
 		 * can be returned rather than 142.
 		 */
+		signal(SIGALRM, sigalarm_handler);
 		if (setitimer(ITIMER_REAL, &itv, NULL) == -1) {
 #ifdef SHELL
 			close(kq);
@@ -216,7 +217,6 @@ main(int argc, char *argv[])
 #endif
 			err(EX_OSERR, "%s", "setitimer");
 		}
-		signal(SIGALRM, sigalarm_handler);
 	}
 	while (nleft > 0) {
 		if (got_alarm) {
