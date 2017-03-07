@@ -45,16 +45,29 @@ createfs() {
 }
 
 do_clone() {
-	local src dst common
-	set -- $(relpath "${1}" "${2}")
-	common="${1}"
-	src="${2}"
-	dst="${3}"
+	[ $# -lt 2 ] && eargs do_clone [-r] src dst
+	[ $# -gt 3 ] && eargs do_clone [-r] src dst
+	local src dst common relative FLAG
 
-	(
+	relative=0
+	while getopts "r" FLAG; do
+		case "${FLAG}" in
+			r) relative=1 ;;
+		esac
+	done
+
+	if [ ${relative} -eq 1 ]; then
+		set -- $(relpath "${1}" "${2}")
+		common="${1}"
+		src="${2}"
+		dst="${3}"
+		(
 		cd "${common}"
 		cpdup -i0 -x "${src}" "${dst}"
-	)
+		)
+	else
+		cpdup -i0 -x "${1}" "${2}"
+	fi
 }
 
 rollbackfs() {
@@ -69,7 +82,7 @@ rollbackfs() {
 		return
 	fi
 
-	do_clone "${MASTERMNT}" "${mnt}"
+	do_clone -r "${MASTERMNT}" "${mnt}"
 }
 
 findmounts() {
@@ -181,7 +194,7 @@ clonefs() {
 			echo "debug" >> "${from}/usr/lib/.cpignore" || :
 			echo "freebsd-update" >> "${from}/var/db/.cpignore" || :
 		fi
-		do_clone "${from}" "${to}"
+		do_clone -r "${from}" "${to}"
 		if [ "${snap}" = "clean" ]; then
 			rm -f "${from}/usr/.cpignore" \
 			    "${from}/usr/lib/.cpignore" \
