@@ -2363,15 +2363,19 @@ check_fs_violation() {
 }
 
 gather_distfiles() {
-	[ $# -eq 3 ] || eargs gather_distfiles portdir from to
-	local portdir="$1"
+	[ $# -eq 3 ] || eargs gather_distfiles origin from to
+	local origin="$1"
 	local from=$(realpath $2)
 	local to=$(realpath $3)
 	local sub dists d tosubd specials special
-	sub=$(injail /usr/bin/make -C ${portdir} -VDIST_SUBDIR)
-	dists=$(injail /usr/bin/make -C ${portdir} -V_DISTFILES -V_PATCHFILES)
-	specials=$(injail /usr/bin/make -C ${portdir} -V_DEPEND_SPECIALS)
-	job_msg_verbose "Status   ${COLOR_PORT}${portdir##${PORTSDIR}/}${COLOR_RESET}: distfiles ${from} -> ${to}"
+
+	port_var_fetch "${origin}" \
+	    DIST_SUBDIR sub \
+	    ALLFILES dists \
+	    _DEPEND_SPECIALS specials || \
+	    err 1 "Failed to lookup distfiles for ${origin}"
+
+	job_msg_verbose "Status   ${COLOR_PORT}${origin}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
 		[ -f ${from}/${sub}/${d} ] || continue
 		tosubd=${to}/${sub}/${d}
@@ -2381,8 +2385,7 @@ gather_distfiles() {
 
 	for special in ${specials}; do
 		case "${special}" in
-		${PORTSDIR}/*) ;;
-		*) special=${PORTSDIR}/${special}
+		${PORTSDIR}/*) special=${special#${PORTSDIR}/} ;;
 		esac
 		gather_distfiles ${special} ${from} ${to}
 	done
@@ -2478,7 +2481,7 @@ _real_build_port() {
 			mkdir -p ${mnt}/portdistfiles
 			if [ "${DISTFILES_CACHE}" != "no" ]; then
 				echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf
-				gather_distfiles ${portdir} ${DISTFILES_CACHE} ${mnt}/portdistfiles || return 1
+				gather_distfiles "${port}" ${DISTFILES_CACHE} ${mnt}/portdistfiles || return 1
 			fi
 			JNETNAME="n"
 			JUSER=root
@@ -2604,7 +2607,7 @@ _real_build_port() {
 		print_phase_footer
 
 		if [ "${phase}" = "checksum" -a "${DISTFILES_CACHE}" != "no" ]; then
-			gather_distfiles ${portdir} ${mnt}/portdistfiles ${DISTFILES_CACHE} || return 1
+			gather_distfiles "${port}" ${mnt}/portdistfiles ${DISTFILES_CACHE} || return 1
 		fi
 
 		if [ "${phase}" = "stage" -a -n "${PORTTESTING}" ]; then
