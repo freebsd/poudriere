@@ -1198,7 +1198,6 @@ markfs() {
 ./etc/group
 ./etc/make.conf
 ./etc/make.conf.bak
-./etc/make.nxb.conf
 ./etc/master.passwd
 ./etc/passwd
 ./etc/pwd.db
