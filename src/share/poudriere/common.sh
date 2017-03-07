@@ -1136,7 +1136,7 @@ common_mtree() {
 ./distfiles/*
 ./packages/*
 ./portdistfiles/*
-./proc/*
+./proc
 ./usr/home/*
 .${PORTSDIR}/*
 ./usr/src
