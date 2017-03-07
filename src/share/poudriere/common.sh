@@ -1119,7 +1119,7 @@ markfs() {
 ./.p/*
 .${HOME}/.ccache/*
 ./compat/linux/proc
-./dev/*
+./dev
 ./distfiles/*
 ./packages/*
 ./portdistfiles/*
@@ -1137,7 +1137,7 @@ EOF
 ./.p/*
 .${HOME}/.ccache/*
 ./compat/linux/proc
-./dev/*
+./dev
 ./distfiles/*
 ./packages/*
 ./portdistfiles/*
@@ -1158,7 +1158,7 @@ EOF
 .${HOME}/*
 .${HOME}/.ccache/*
 ./compat/linux/proc
-./dev/*
+./dev
 ./distfiles/*
 ./etc/group
 ./etc/make.conf
