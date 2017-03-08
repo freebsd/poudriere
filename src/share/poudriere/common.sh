@@ -3386,7 +3386,7 @@ build_pkg() {
 	buildlog_start ${portdir}
 
 	# Ensure /dev/null exists (kern/139014)
-	[ ${JAILED} -eq 0 ] && ! [ -d "${mnt}/dev/null" ] && \
+	[ ${JAILED} -eq 0 ] && ! [ -c "${mnt}/dev/null" ] && \
 	    devfs -m ${mnt}/dev rule apply path null unhide
 
 	if [ -n "${ignore}" ]; then
