@@ -2907,6 +2907,7 @@ poudriere: $(top_srcdir)/src/bin/poudriere
 	    echo "POUDRIERE_VERSION=$${gitver} > $@"; \
 	    sed -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
 	      $^${.ALLSRC} > $@; \
+	    chmod +x $@; \
 	else \
 	    cp -f $^${.ALLSRC} $@; \
 	fi;
