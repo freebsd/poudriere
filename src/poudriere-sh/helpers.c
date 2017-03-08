@@ -29,12 +29,13 @@
 #include <string.h>
 
 /*
- * Allow SIGINFO to use SA_RESTART.  The trapcmd always registers
+ * Allow signal to use SA_RESTART.  The trapcmd always registers
  * traps without SA_RESTART, but for the builtins we do want that
- * behavior on SIGINFO.
+ * behavior on SIGINFO.  This is also for restoring signal handlers
+ * that are modified temporarily in the builtin.
  */
 void
-siginfo_push(struct sigaction *oact)
+trap_push(int signo, struct sigaction *oact)
 {
 	struct sigaction act;
 
@@ -43,15 +44,15 @@ siginfo_push(struct sigaction *oact)
 	act.sa_handler = SIG_IGN;
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = SA_RESTART;
-	sigaction(SIGINFO, &act, oact);
+	sigaction(signo, &act, oact);
 }
 
 void
-siginfo_pop(struct sigaction *oact)
+trap_pop(int signo, struct sigaction *oact)
 {
 	int serrno;
 
 	serrno = errno;
-	sigaction(SIGINFO, oact, NULL);
+	sigaction(signo, oact, NULL);
 	errno = serrno;
 }

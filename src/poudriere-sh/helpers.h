@@ -26,5 +26,7 @@
 
 #include <signal.h>
 
-void siginfo_push(struct sigaction *oact);
-void siginfo_pop(struct sigaction *oact);
+void trap_push(int signo, struct sigaction *oact);
+void trap_pop(int signo, struct sigaction *oact);
+#define siginfo_push(oact) trap_push(SIGINFO, oact)
+#define siginfo_pop(oact) trap_pop(SIGINFO, oact)
