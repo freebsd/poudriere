@@ -228,9 +228,9 @@ am_sh_OBJECTS = external/sh_compat/sh-strchrnul.$(OBJEXT) \
 	external/sh/sh-arith_yacc.$(OBJEXT) \
 	external/sh/sh-arith_yylex.$(OBJEXT) \
 	external/sh/bltin/sh-echo.$(OBJEXT) \
-	external/sh/sh-builtins.$(OBJEXT) external/sh/sh-cd.$(OBJEXT) \
-	external/sh/sh-error.$(OBJEXT) external/sh/sh-eval.$(OBJEXT) \
-	external/sh/sh-exec.$(OBJEXT) external/sh/sh-expand.$(OBJEXT) \
+	external/sh/sh-cd.$(OBJEXT) external/sh/sh-error.$(OBJEXT) \
+	external/sh/sh-eval.$(OBJEXT) external/sh/sh-exec.$(OBJEXT) \
+	external/sh/sh-expand.$(OBJEXT) \
 	external/sh/sh-histedit.$(OBJEXT) \
 	external/sh/sh-input.$(OBJEXT) external/sh/sh-jobs.$(OBJEXT) \
 	external/sh/sh-kill.$(OBJEXT) external/sh/sh-mail.$(OBJEXT) \
@@ -259,7 +259,8 @@ am_sh_OBJECTS = external/sh_compat/sh-strchrnul.$(OBJEXT) \
 	src/poudriere-sh/sh-rmdir.$(OBJEXT) \
 	src/poudriere-sh/sh-setproctitle.$(OBJEXT) \
 	src/poudriere-sh/sh-sleep.$(OBJEXT) \
-	src/poudriere-sh/sh-touch.$(OBJEXT)
+	src/poudriere-sh/sh-touch.$(OBJEXT) \
+	src/poudriere-sh/sh-builtins.$(OBJEXT)
 sh_OBJECTS = $(am_sh_OBJECTS)
 sh_DEPENDENCIES =
 sh_LINK = $(CCLD) $(sh_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
@@ -498,8 +499,10 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 # Extra builtins
-CLEANFILES = $(dist_rc_SCRIPTS) external/sh/builtins.c \
-	external/sh/builtins.def external/sh/builtins.h
+CLEANFILES = $(dist_rc_SCRIPTS) src/poudriere-sh/builtins.c \
+	src/poudriere-sh/builtins.def src/poudriere-sh/builtins.h \
+	src/poudriere-sh/shell.h
+MOSTLYCLEANFILES = poudriere
 AM_CFLAGS = -Wall -pipe -O2
 awkdir = $(pkgdatadir)/awk
 assetsdir = $(htmldir)/assets
@@ -514,7 +517,7 @@ dtjsdir = $(datatablesdir)/js
 rcdir = $(sysconfdir)/rc.d
 hookdir = $(sysconfdir)/poudriere.d/hooks
 examplesdir = $(datadir)/examples/$(PACKAGE_NAME)
-dist_bin_SCRIPTS = src/bin/poudriere
+dist_bin_SCRIPTS = poudriere
 dist_man_MANS = src/bin/poudriere.8
 sysconf_DATA = src/etc/poudriere.conf.sample \
 		src/etc/poudriered.conf.sample
@@ -627,19 +630,20 @@ timestamp_SOURCES = src/libexec/poudriere/timestamp/timestamp.c
 tsort_SOURCES = src/libexec/poudriere/tsort/tsort.c
 sh_CFLAGS = -DSHELL -DNO_HISTORY -include \
 	$(top_srcdir)/external/sh_compat/compat.h -I$(top_srcdir)/src \
-	-I$(top_srcdir)/external/sh -I$(top_srcdir)/src/poudriere-sh
+	-I$(top_srcdir)/external/sh -I$(top_srcdir)/src/poudriere-sh \
+	-I$(top_builddir)/src/poudriere-sh
 # cachec
 sh_LDADD = -lrt
 sh_SOURCES = external/sh_compat/strchrnul.c \
 	external/sh_compat/utimensat.c external/sh/alias.c \
 	external/sh/arith_yacc.c external/sh/arith_yylex.c \
-	external/sh/bltin/echo.c external/sh/builtins.c \
-	external/sh/cd.c external/sh/error.c external/sh/eval.c \
-	external/sh/exec.c external/sh/expand.c external/sh/histedit.c \
-	external/sh/input.c external/sh/jobs.c external/sh/kill.c \
-	external/sh/mail.c external/sh/main.c external/sh/memalloc.c \
-	external/sh/miscbltin.c external/sh/mystring.c \
-	external/sh/nodes.c external/sh/options.c external/sh/output.c \
+	external/sh/bltin/echo.c external/sh/cd.c external/sh/error.c \
+	external/sh/eval.c external/sh/exec.c external/sh/expand.c \
+	external/sh/histedit.c external/sh/input.c external/sh/jobs.c \
+	external/sh/kill.c external/sh/mail.c external/sh/main.c \
+	external/sh/memalloc.c external/sh/miscbltin.c \
+	external/sh/mystring.c external/sh/nodes.c \
+	external/sh/options.c external/sh/output.c \
 	external/sh/parser.c external/sh/printf.c external/sh/redir.c \
 	external/sh/show.c external/sh/syntax.c external/sh/test.c \
 	external/sh/trap.c external/sh/var.c \
@@ -652,7 +656,8 @@ sh_SOURCES = external/sh_compat/strchrnul.c \
 	src/poudriere-sh/helpers.c src/poudriere-sh/mkdir.c \
 	src/poudriere-sh/mktemp.c src/poudriere-sh/realpath.c \
 	src/poudriere-sh/rmdir.c src/poudriere-sh/setproctitle.c \
-	src/poudriere-sh/sleep.c src/poudriere-sh/touch.c
+	src/poudriere-sh/sleep.c src/poudriere-sh/touch.c \
+	src/poudriere-sh/builtins.c
 libucl_a_SOURCES = external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_emitter_streamline.c \
 			external/libucl/src/ucl_emitter_utils.c \
@@ -1123,8 +1128,6 @@ external/sh/bltin/$(DEPDIR)/$(am__dirstamp):
 external/sh/bltin/sh-echo.$(OBJEXT):  \
 	external/sh/bltin/$(am__dirstamp) \
 	external/sh/bltin/$(DEPDIR)/$(am__dirstamp)
-external/sh/sh-builtins.$(OBJEXT): external/sh/$(am__dirstamp) \
-	external/sh/$(DEPDIR)/$(am__dirstamp)
 external/sh/sh-cd.$(OBJEXT): external/sh/$(am__dirstamp) \
 	external/sh/$(DEPDIR)/$(am__dirstamp)
 external/sh/sh-error.$(OBJEXT): external/sh/$(am__dirstamp) \
@@ -1218,6 +1221,9 @@ src/poudriere-sh/sh-setproctitle.$(OBJEXT):  \
 src/poudriere-sh/sh-sleep.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
 src/poudriere-sh/sh-touch.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
+	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
+src/poudriere-sh/sh-builtins.$(OBJEXT):  \
+	src/poudriere-sh/$(am__dirstamp) \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
 
 sh$(EXEEXT): $(sh_OBJECTS) $(sh_DEPENDENCIES) $(EXTRA_sh_DEPENDENCIES) 
@@ -1382,7 +1388,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh/$(DEPDIR)/sh-alias.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh/$(DEPDIR)/sh-arith_yacc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh/$(DEPDIR)/sh-arith_yylex.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@external/sh/$(DEPDIR)/sh-builtins.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh/$(DEPDIR)/sh-cd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh/$(DEPDIR)/sh-error.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh/$(DEPDIR)/sh-eval.Po@am__quote@
@@ -1438,6 +1443,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/timeout/$(DEPDIR)/timeout.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/tsort/$(DEPDIR)/tsort.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-builtins.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-helpers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-mkdir.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-mktemp.Po@am__quote@
@@ -1855,20 +1861,6 @@ external/sh/bltin/sh-echo.obj: external/sh/bltin/echo.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/bltin/echo.c' object='external/sh/bltin/sh-echo.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/bltin/sh-echo.obj `if test -f 'external/sh/bltin/echo.c'; then $(CYGPATH_W) 'external/sh/bltin/echo.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/bltin/echo.c'; fi`
-
-external/sh/sh-builtins.o: external/sh/builtins.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-builtins.o -MD -MP -MF external/sh/$(DEPDIR)/sh-builtins.Tpo -c -o external/sh/sh-builtins.o `test -f 'external/sh/builtins.c' || echo '$(srcdir)/'`external/sh/builtins.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-builtins.Tpo external/sh/$(DEPDIR)/sh-builtins.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/builtins.c' object='external/sh/sh-builtins.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-builtins.o `test -f 'external/sh/builtins.c' || echo '$(srcdir)/'`external/sh/builtins.c
-
-external/sh/sh-builtins.obj: external/sh/builtins.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-builtins.obj -MD -MP -MF external/sh/$(DEPDIR)/sh-builtins.Tpo -c -o external/sh/sh-builtins.obj `if test -f 'external/sh/builtins.c'; then $(CYGPATH_W) 'external/sh/builtins.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/builtins.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-builtins.Tpo external/sh/$(DEPDIR)/sh-builtins.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/builtins.c' object='external/sh/sh-builtins.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-builtins.obj `if test -f 'external/sh/builtins.c'; then $(CYGPATH_W) 'external/sh/builtins.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/builtins.c'; fi`
 
 external/sh/sh-cd.o: external/sh/cd.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-cd.o -MD -MP -MF external/sh/$(DEPDIR)/sh-cd.Tpo -c -o external/sh/sh-cd.o `test -f 'external/sh/cd.c' || echo '$(srcdir)/'`external/sh/cd.c
@@ -2415,6 +2407,20 @@ src/poudriere-sh/sh-touch.obj: src/poudriere-sh/touch.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/touch.c' object='src/poudriere-sh/sh-touch.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-touch.obj `if test -f 'src/poudriere-sh/touch.c'; then $(CYGPATH_W) 'src/poudriere-sh/touch.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/touch.c'; fi`
+
+src/poudriere-sh/sh-builtins.o: src/poudriere-sh/builtins.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-builtins.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-builtins.Tpo -c -o src/poudriere-sh/sh-builtins.o `test -f 'src/poudriere-sh/builtins.c' || echo '$(srcdir)/'`src/poudriere-sh/builtins.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-builtins.Tpo src/poudriere-sh/$(DEPDIR)/sh-builtins.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/builtins.c' object='src/poudriere-sh/sh-builtins.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-builtins.o `test -f 'src/poudriere-sh/builtins.c' || echo '$(srcdir)/'`src/poudriere-sh/builtins.c
+
+src/poudriere-sh/sh-builtins.obj: src/poudriere-sh/builtins.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-builtins.obj -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-builtins.Tpo -c -o src/poudriere-sh/sh-builtins.obj `if test -f 'src/poudriere-sh/builtins.c'; then $(CYGPATH_W) 'src/poudriere-sh/builtins.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/builtins.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-builtins.Tpo src/poudriere-sh/$(DEPDIR)/sh-builtins.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/builtins.c' object='src/poudriere-sh/sh-builtins.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-builtins.obj `if test -f 'src/poudriere-sh/builtins.c'; then $(CYGPATH_W) 'src/poudriere-sh/builtins.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/builtins.c'; fi`
 install-man8: $(dist_man_MANS)
 	@$(NORMAL_INSTALL)
 	@list1=''; \
@@ -3002,6 +3008,7 @@ install-strip:
 	    "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'" install; \
 	fi
 mostlyclean-generic:
+	-test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
 
 clean-generic:
 	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
@@ -3103,8 +3110,7 @@ install-dvi-am:
 
 install-exec-am: install-dist_binSCRIPTS install-pkglibexecPROGRAMS \
 	install-sysconfDATA
-	@$(NORMAL_INSTALL)
-	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
+
 install-html: install-html-am
 
 install-html-am:
@@ -3156,7 +3162,7 @@ uninstall-am: uninstall-dist_assetsDATA uninstall-dist_awkDATA \
 
 uninstall-man: uninstall-man8
 
-.MAKE: install-am install-exec-am install-strip
+.MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am am--refresh check check-am clean \
 	clean-cscope clean-generic clean-noinstLIBRARIES \
@@ -3174,15 +3180,14 @@ uninstall-man: uninstall-man8
 	install-dist_htmlDATA install-dist_includeHEADERS \
 	install-dist_pkgdataDATA install-dist_rcSCRIPTS install-dvi \
 	install-dvi-am install-examplesDATA install-exec \
-	install-exec-am install-exec-hook install-hookDATA \
-	install-html install-html-am install-info install-info-am \
-	install-man install-man8 install-pdf install-pdf-am \
-	install-pkglibexecPROGRAMS install-ps install-ps-am \
-	install-strip install-sysconfDATA installcheck installcheck-am \
-	installdirs maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-compile mostlyclean-generic pdf pdf-am \
-	ps ps-am tags tags-am uninstall uninstall-am \
-	uninstall-dist_assetsDATA uninstall-dist_awkDATA \
+	install-exec-am install-hookDATA install-html install-html-am \
+	install-info install-info-am install-man install-man8 \
+	install-pdf install-pdf-am install-pkglibexecPROGRAMS \
+	install-ps install-ps-am install-strip install-sysconfDATA \
+	installcheck installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
+	uninstall-am uninstall-dist_assetsDATA uninstall-dist_awkDATA \
 	uninstall-dist_binSCRIPTS uninstall-dist_btcssDATA \
 	uninstall-dist_btfontsDATA uninstall-dist_btjsDATA \
 	uninstall-dist_dtcssDATA uninstall-dist_dtimagesDATA \
@@ -3194,12 +3199,16 @@ uninstall-man: uninstall-man8
 
 .PRECIOUS: Makefile
 
-external/sh/builtins.def: external/sh/builtins.def.sh src/poudriere-sh/builtins.def
-	cat external/sh/builtins.def.sh src/poudriere-sh/builtins.def > $@
-
-external/sh/builtins.h: external/sh/builtins.def external/sh/mkbuiltins
-	cd external/sh && sh mkbuiltins .
-${sh_SOURCES}:		external/sh/builtins.h
+src/poudriere-sh/builtins.def: $(top_srcdir)/external/sh/builtins.def \
+    $(top_srcdir)/src/poudriere-sh/builtins-poudriere.def
+	cat $> > $@
+src/poudriere-sh/shell.h:
+	@ln -fs ../../$(top_srcdir)/external/sh/shell.h $@
+src/poudriere-sh/builtins.h: src/poudriere-sh/builtins.def \
+      src/poudriere-sh/shell.h $(top_srcdir)/external/sh/mkbuiltins
+	cd $(top_builddir)/src/poudriere-sh && \
+	    sh ../../$(top_srcdir)/external/sh/mkbuiltins .
+${sh_SOURCES}:		src/poudriere-sh/builtins.h
 
 .PHONY:	gen-make-wiki
 gen-man-wiki:
@@ -3221,14 +3230,13 @@ gen-man-wiki:
 	    ); \
 	  ) > wiki/$${man##*/}.md; \
 	done
-
-install-exec-hook:
+poudriere: $(top_srcdir)/src/bin/poudriere .PHONY
 	@if which git >/dev/null 2>&1 && [ -d $(top_srcdir)/.git ]; then \
-	    cd $(top_srcdir); \
-	    gitver=$$(git describe --tags HEAD); \
-	    sed -i '' -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
-	      $(DESTDIR)$(bindir)/poudriere && \
-	      echo "Updating $(bindir)/poudriere with POUDRIERE_VERSION=$${gitver}"; \
+	    gitver=$$(git -C "$(top_srcdir)" describe --tags HEAD); \
+	    sed -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
+	      $> > $@; \
+	else \
+	    cp -f $> $@; \
 	fi;
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

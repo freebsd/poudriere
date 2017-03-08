@@ -25,6 +25,7 @@
 /nc
 /poudriere_statsd
 /poudriered
+/poudriere
 /ptsort
 /pwait
 /rename
@@ -46,8 +47,9 @@ src/etc/rc.d/poudriered
 src/stamp-h1
 test/*.log
 test/etc
-external/sh/builtins.c
-external/sh/builtins.def
-external/sh/builtins.h
+src/poudriere-sh/builtins-poudriere.def
+src/poudriere-sh/builtins.c
+src/poudriere-sh/builtins.h
+src/poudriere-sh/shell.h
 external/ptsort/.git
 external/ptsort/.gitignore

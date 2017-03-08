@@ -1,4 +1,5 @@
 CLEANFILES=	$(dist_rc_SCRIPTS)
+MOSTLYCLEANFILES=
 
 AM_CFLAGS=	-Wall -pipe -O2
 
@@ -19,7 +20,7 @@ hookdir= $(sysconfdir)/poudriere.d/hooks
 mandir= $(prefix)/man
 examplesdir= $(datadir)/examples/$(PACKAGE_NAME)
 
-dist_bin_SCRIPTS=	src/bin/poudriere
+dist_bin_SCRIPTS=	poudriere
 
 dist_man_MANS=	src/bin/poudriere.8
 
@@ -164,7 +165,6 @@ sh_SOURCES=		external/sh_compat/strchrnul.c \
 			external/sh/arith_yacc.c \
 			external/sh/arith_yylex.c \
 			external/sh/bltin/echo.c \
-			external/sh/builtins.c \
 			external/sh/cd.c \
 			external/sh/error.c \
 			external/sh/eval.c \
@@ -192,9 +192,10 @@ sh_SOURCES=		external/sh_compat/strchrnul.c \
 			external/sh/var.c
 # Extra builtins
 CLEANFILES+=		\
-			external/sh/builtins.c \
-			external/sh/builtins.def \
-			external/sh/builtins.h
+			src/poudriere-sh/builtins.c \
+			src/poudriere-sh/builtins.def \
+			src/poudriere-sh/builtins.h \
+			src/poudriere-sh/shell.h
 sh_SOURCES+=		\
 			src/libexec/poudriere/cachec/cachec.c \
 			src/libexec/poudriere/clock/clock.c \
@@ -210,15 +211,21 @@ sh_SOURCES+=		\
 			src/poudriere-sh/setproctitle.c \
 			src/poudriere-sh/sleep.c \
 			src/poudriere-sh/touch.c
-sh_CFLAGS+=		-I$(top_srcdir)/src/poudriere-sh
+sh_CFLAGS+=		-I$(top_srcdir)/src/poudriere-sh \
+			-I$(top_builddir)/src/poudriere-sh
 # cachec
 sh_LDADD+=		-lrt
-external/sh/builtins.def: external/sh/builtins.def.sh src/poudriere-sh/builtins.def
-	cat external/sh/builtins.def.sh src/poudriere-sh/builtins.def > $@
-
-external/sh/builtins.h: external/sh/builtins.def external/sh/mkbuiltins
-	cd external/sh && sh mkbuiltins .
-${sh_SOURCES}:		external/sh/builtins.h
+src/poudriere-sh/builtins.def: $(top_srcdir)/external/sh/builtins.def \
+    $(top_srcdir)/src/poudriere-sh/builtins-poudriere.def
+	cat $> > $@
+src/poudriere-sh/shell.h:
+	@ln -fs ../../$(top_srcdir)/external/sh/shell.h $@
+src/poudriere-sh/builtins.h: src/poudriere-sh/builtins.def \
+      src/poudriere-sh/shell.h $(top_srcdir)/external/sh/mkbuiltins
+	cd $(top_builddir)/src/poudriere-sh && \
+	    sh ../../$(top_srcdir)/external/sh/mkbuiltins .
+sh_SOURCES+=		src/poudriere-sh/builtins.c
+${sh_SOURCES}:		src/poudriere-sh/builtins.h
 
 libucl_a_SOURCES=	external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_emitter_streamline.c \
@@ -291,11 +298,12 @@ gen-man-wiki:
 	  ) > wiki/$${man##*/}.md; \
 	done
 
-install-exec-hook:
+MOSTLYCLEANFILES+=	poudriere
+poudriere: $(top_srcdir)/src/bin/poudriere .PHONY
 	@if which git >/dev/null 2>&1 && [ -d $(top_srcdir)/.git ]; then \
-	    cd $(top_srcdir); \
-	    gitver=$$(git describe --tags HEAD); \
-	    sed -i '' -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
-	      $(DESTDIR)$(bindir)/poudriere && \
-	      echo "Updating $(bindir)/poudriere with POUDRIERE_VERSION=$${gitver}"; \
+	    gitver=$$(git -C "$(top_srcdir)" describe --tags HEAD); \
+	    sed -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
+	      $> > $@; \
+	else \
+	    cp -f $> $@; \
 	fi;
