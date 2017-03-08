@@ -158,7 +158,8 @@ sh_CFLAGS=		-DSHELL -DNO_HISTORY \
 			-I$(top_srcdir)/src \
 			-I$(top_srcdir)/external/sh
 sh_LDADD=
-sh_SOURCES=		external/sh_compat/compat.c \
+sh_SOURCES=		external/sh_compat/strchrnul.c \
+			external/sh_compat/utimensat.c \
 			external/sh/alias.c \
 			external/sh/arith_yacc.c \
 			external/sh/arith_yylex.c \
