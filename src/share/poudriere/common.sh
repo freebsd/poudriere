@@ -4523,7 +4523,7 @@ listed_ports() {
 			# Ports specified on cmdline
 			echo ${LISTPORTS} | tr ' ' '\n' | sed 's,/*$,,'
 		fi
-	} | while read origin; do
+	} | sort -u | while read origin; do
 		if check_moved new_origin ${origin}; then
 			[ -n "${tell_moved}" ] && msg \
 			    "MOVED: ${COLOR_PORT}${origin}${COLOR_RESET} renamed to ${COLOR_PORT}${new_origin}${COLOR_RESET}" >&2
