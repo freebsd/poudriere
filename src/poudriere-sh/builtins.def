@@ -10,3 +10,4 @@ renamecmd rename
 rmdircmd rmdir
 setproctitlecmd setproctitle
 sleepcmd sleep
+touchcmd touch

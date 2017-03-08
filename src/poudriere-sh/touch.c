@@ -56,6 +56,16 @@ static const char sccsid[] = "@(#)touch.c	8.1 (Berkeley) 6/6/93";
 #include <time.h>
 #include <unistd.h>
 
+#ifdef SHELL
+#define main touchcmd
+#include "bltin/bltin.h"
+#include "options.h"
+#undef aflag
+#undef mflag
+#include <errno.h>
+#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+#endif
+
 static void	stime_arg1(const char *, struct timespec *);
 static void	stime_arg2(const char *, int, struct timespec *);
 static void	stime_darg(const char *, struct timespec *);
@@ -72,6 +82,9 @@ main(int argc, char *argv[])
 	int Aflag, aflag, cflag, mflag, ch, fd, len, rval, timeset;
 	char *p;
 	char *myname;
+#ifdef SHELL
+	char *optarg;
+#endif
 
 	myname = basename(argv[0]);
 	Aflag = aflag = cflag = mflag = timeset = 0;
@@ -79,7 +92,12 @@ main(int argc, char *argv[])
 	ts[0].tv_sec = ts[1].tv_sec = 0;
 	ts[0].tv_nsec = ts[1].tv_nsec = UTIME_NOW;
 
+#ifdef SHELL
+	while ((ch = nextopt("A:acd:fhmr:t:")) != '\0') {
+		optarg = shoptarg;
+#else
 	while ((ch = getopt(argc, argv, "A:acd:fhmr:t:")) != -1)
+#endif
 		switch(ch) {
 		case 'A':
 			Aflag = timeoffset(optarg);
@@ -115,8 +133,14 @@ main(int argc, char *argv[])
 		default:
 			usage(myname);
 		}
+#ifdef SHELL
+	}
+	argc -= argptr - argv;
+	argv = argptr;
+#else
 	argc -= optind;
 	argv += optind;
+#endif
 
 	if (aflag == 0 && mflag == 0)
 		aflag = mflag = 1;
@@ -209,7 +233,7 @@ main(int argc, char *argv[])
 		rval = 1;
 		warn("%s", *argv);
 	}
-	exit(rval);
+	return (rval);
 }
 
 #define	ATOI2(ar)	((ar)[0] - '0') * 10 + ((ar)[1] - '0'); (ar) += 2;
@@ -224,7 +248,7 @@ stime_arg1(const char *arg, struct timespec *tvp)
 
 	now = time(NULL);
 	if ((t = localtime(&now)) == NULL)
-		err(1, "localtime");
+		err(1, "%s", "localtime");
 					/* [[CC]YY]MMDDhhmm[.SS] */
 	if ((p = strchr(arg, '.')) == NULL)
 		t->tm_sec = 0;		/* Seconds defaults to 0. */
@@ -286,7 +310,7 @@ stime_arg2(const char *arg, int year, struct timespec *tvp)
 
 	now = time(NULL);
 	if ((t = localtime(&now)) == NULL)
-		err(1, "localtime");
+		err(1, "%s", "localtime");
 
 	t->tm_mon = ATOI2(arg);		/* MMDDhhmm[yy] */
 	--t->tm_mon;			/* Convert from 01-12 to 00-11 */
@@ -400,5 +424,9 @@ usage(const char *myname)
 		"[-t [[CC]YY]MMDDhhmm[.SS]]\n"
 		"       [-d YYYY-MM-DDThh:mm:SS[.frac][tz]] "
 		"file ...\n", myname);
+#ifdef SHELL
+	error(NULL);
+#else
 	exit(1);
+#endif
 }

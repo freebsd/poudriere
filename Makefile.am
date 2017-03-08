@@ -207,7 +207,8 @@ sh_SOURCES+=		\
 			src/poudriere-sh/realpath.c \
 			src/poudriere-sh/rmdir.c \
 			src/poudriere-sh/setproctitle.c \
-			src/poudriere-sh/sleep.c
+			src/poudriere-sh/sleep.c \
+			src/poudriere-sh/touch.c
 sh_CFLAGS+=		-I$(top_srcdir)/src/poudriere-sh
 # cachec
 sh_LDADD+=		-lrt
