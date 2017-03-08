@@ -55,6 +55,7 @@ do_clone() {
 			r) relative=1 ;;
 		esac
 	done
+	shift $((OPTIND-1))
 
 	if [ ${relative} -eq 1 ]; then
 		set -- $(relpath "${1}" "${2}")
