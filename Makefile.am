@@ -217,15 +217,16 @@ sh_CFLAGS+=		-I$(top_srcdir)/src/poudriere-sh \
 sh_LDADD+=		-lrt
 src/poudriere-sh/builtins.def: $(top_srcdir)/external/sh/builtins.def \
     $(top_srcdir)/src/poudriere-sh/builtins-poudriere.def
-	cat $> > $@
+	cat $^${.ALLSRC} > $@
 src/poudriere-sh/shell.h:
 	@ln -fs ../../$(top_srcdir)/external/sh/shell.h $@
 src/poudriere-sh/builtins.h: src/poudriere-sh/builtins.def \
       src/poudriere-sh/shell.h $(top_srcdir)/external/sh/mkbuiltins
 	cd $(top_builddir)/src/poudriere-sh && \
 	    sh ../../$(top_srcdir)/external/sh/mkbuiltins .
+src/poudriere-sh/builtins.c: src/poudriere-sh/builtins.h
 sh_SOURCES+=		src/poudriere-sh/builtins.c
-${sh_SOURCES}:		src/poudriere-sh/builtins.h
+${sh_OBJECTS}:		src/poudriere-sh/builtins.h
 
 libucl_a_SOURCES=	external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_emitter_streamline.c \
@@ -241,7 +242,7 @@ libucl_a_CFLAGS=	-I$(top_srcdir)/external/libucl/uthash \
 			-Wno-unused-parameter -Wno-pointer-sign
 
 libptsort_a_SOURCES=	external/ptsort/lib/aa_tree.c \
-			external/ptsort/lib/fline.c \
+			external/ptsort/lib/fline.c
 libptsort_a_CPPFLAGS=	-I$(top_srcdir)/external/ptsort/lib
 ptsort_SOURCES=		external/ptsort/bin/ptsort.c
 ptsort_LDADD=		libptsort.a
@@ -299,11 +300,13 @@ gen-man-wiki:
 	done
 
 MOSTLYCLEANFILES+=	poudriere
-poudriere: $(top_srcdir)/src/bin/poudriere .PHONY
+.PHONY: poudriere
+poudriere: $(top_srcdir)/src/bin/poudriere
 	@if which git >/dev/null 2>&1 && [ -d $(top_srcdir)/.git ]; then \
 	    gitver=$$(git -C "$(top_srcdir)" describe --tags HEAD); \
+	    echo "POUDRIERE_VERSION=$${gitver} > $@"; \
 	    sed -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
-	      $> > $@; \
+	      $^${.ALLSRC} > $@; \
 	else \
-	    cp -f $> $@; \
+	    cp -f $^${.ALLSRC} $@; \
 	fi;

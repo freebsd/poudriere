@@ -132,8 +132,9 @@ am_libnv_a_OBJECTS = external/libnv/sys/libnv_a-dnvlist.$(OBJEXT) \
 libnv_a_OBJECTS = $(am_libnv_a_OBJECTS)
 libptsort_a_AR = $(AR) $(ARFLAGS)
 libptsort_a_LIBADD =
-am_libptsort_a_OBJECTS = external/ptsort/lib/aa_tree.$(OBJEXT) \
-	external/ptsort/lib/fline.$(OBJEXT)
+am_libptsort_a_OBJECTS =  \
+	external/ptsort/lib/libptsort_a-aa_tree.$(OBJEXT) \
+	external/ptsort/lib/libptsort_a-fline.$(OBJEXT)
 libptsort_a_OBJECTS = $(am_libptsort_a_OBJECTS)
 libucl_a_AR = $(AR) $(ARFLAGS)
 libucl_a_LIBADD =
@@ -673,9 +674,9 @@ libucl_a_CFLAGS = -I$(top_srcdir)/external/libucl/uthash \
 			-Wno-unused-parameter -Wno-pointer-sign
 
 libptsort_a_SOURCES = external/ptsort/lib/aa_tree.c \
-			external/ptsort/lib/fline.c \
-libptsort_a_CPPFLAGS=	-I$(top_srcdir)/external/ptsort/lib
+			external/ptsort/lib/fline.c
 
+libptsort_a_CPPFLAGS = -I$(top_srcdir)/external/ptsort/lib
 ptsort_SOURCES = external/ptsort/bin/ptsort.c
 ptsort_LDADD = libptsort.a
 ptsort_CPPFLAGS = -I$(top_srcdir)/external/ptsort/lib
@@ -800,10 +801,10 @@ external/ptsort/lib/$(am__dirstamp):
 external/ptsort/lib/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) external/ptsort/lib/$(DEPDIR)
 	@: > external/ptsort/lib/$(DEPDIR)/$(am__dirstamp)
-external/ptsort/lib/aa_tree.$(OBJEXT):  \
+external/ptsort/lib/libptsort_a-aa_tree.$(OBJEXT):  \
 	external/ptsort/lib/$(am__dirstamp) \
 	external/ptsort/lib/$(DEPDIR)/$(am__dirstamp)
-external/ptsort/lib/fline.$(OBJEXT):  \
+external/ptsort/lib/libptsort_a-fline.$(OBJEXT):  \
 	external/ptsort/lib/$(am__dirstamp) \
 	external/ptsort/lib/$(DEPDIR)/$(am__dirstamp)
 
@@ -1383,8 +1384,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-xxhash.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/lib/$(DEPDIR)/aa_tree.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/lib/$(DEPDIR)/fline.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/lib/$(DEPDIR)/libptsort_a-aa_tree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/lib/$(DEPDIR)/libptsort_a-fline.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh/$(DEPDIR)/sh-alias.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh/$(DEPDIR)/sh-arith_yacc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh/$(DEPDIR)/sh-arith_yylex.Po@am__quote@
@@ -1525,6 +1526,34 @@ external/libnv/sys/libnv_a-nvpair.obj: external/libnv/sys/nvpair.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/sys/nvpair.c' object='external/libnv/sys/libnv_a-nvpair.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/sys/libnv_a-nvpair.obj `if test -f 'external/libnv/sys/nvpair.c'; then $(CYGPATH_W) 'external/libnv/sys/nvpair.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/sys/nvpair.c'; fi`
+
+external/ptsort/lib/libptsort_a-aa_tree.o: external/ptsort/lib/aa_tree.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external/ptsort/lib/libptsort_a-aa_tree.o -MD -MP -MF external/ptsort/lib/$(DEPDIR)/libptsort_a-aa_tree.Tpo -c -o external/ptsort/lib/libptsort_a-aa_tree.o `test -f 'external/ptsort/lib/aa_tree.c' || echo '$(srcdir)/'`external/ptsort/lib/aa_tree.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/ptsort/lib/$(DEPDIR)/libptsort_a-aa_tree.Tpo external/ptsort/lib/$(DEPDIR)/libptsort_a-aa_tree.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/ptsort/lib/aa_tree.c' object='external/ptsort/lib/libptsort_a-aa_tree.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external/ptsort/lib/libptsort_a-aa_tree.o `test -f 'external/ptsort/lib/aa_tree.c' || echo '$(srcdir)/'`external/ptsort/lib/aa_tree.c
+
+external/ptsort/lib/libptsort_a-aa_tree.obj: external/ptsort/lib/aa_tree.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external/ptsort/lib/libptsort_a-aa_tree.obj -MD -MP -MF external/ptsort/lib/$(DEPDIR)/libptsort_a-aa_tree.Tpo -c -o external/ptsort/lib/libptsort_a-aa_tree.obj `if test -f 'external/ptsort/lib/aa_tree.c'; then $(CYGPATH_W) 'external/ptsort/lib/aa_tree.c'; else $(CYGPATH_W) '$(srcdir)/external/ptsort/lib/aa_tree.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/ptsort/lib/$(DEPDIR)/libptsort_a-aa_tree.Tpo external/ptsort/lib/$(DEPDIR)/libptsort_a-aa_tree.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/ptsort/lib/aa_tree.c' object='external/ptsort/lib/libptsort_a-aa_tree.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external/ptsort/lib/libptsort_a-aa_tree.obj `if test -f 'external/ptsort/lib/aa_tree.c'; then $(CYGPATH_W) 'external/ptsort/lib/aa_tree.c'; else $(CYGPATH_W) '$(srcdir)/external/ptsort/lib/aa_tree.c'; fi`
+
+external/ptsort/lib/libptsort_a-fline.o: external/ptsort/lib/fline.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external/ptsort/lib/libptsort_a-fline.o -MD -MP -MF external/ptsort/lib/$(DEPDIR)/libptsort_a-fline.Tpo -c -o external/ptsort/lib/libptsort_a-fline.o `test -f 'external/ptsort/lib/fline.c' || echo '$(srcdir)/'`external/ptsort/lib/fline.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/ptsort/lib/$(DEPDIR)/libptsort_a-fline.Tpo external/ptsort/lib/$(DEPDIR)/libptsort_a-fline.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/ptsort/lib/fline.c' object='external/ptsort/lib/libptsort_a-fline.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external/ptsort/lib/libptsort_a-fline.o `test -f 'external/ptsort/lib/fline.c' || echo '$(srcdir)/'`external/ptsort/lib/fline.c
+
+external/ptsort/lib/libptsort_a-fline.obj: external/ptsort/lib/fline.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external/ptsort/lib/libptsort_a-fline.obj -MD -MP -MF external/ptsort/lib/$(DEPDIR)/libptsort_a-fline.Tpo -c -o external/ptsort/lib/libptsort_a-fline.obj `if test -f 'external/ptsort/lib/fline.c'; then $(CYGPATH_W) 'external/ptsort/lib/fline.c'; else $(CYGPATH_W) '$(srcdir)/external/ptsort/lib/fline.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/ptsort/lib/$(DEPDIR)/libptsort_a-fline.Tpo external/ptsort/lib/$(DEPDIR)/libptsort_a-fline.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/ptsort/lib/fline.c' object='external/ptsort/lib/libptsort_a-fline.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external/ptsort/lib/libptsort_a-fline.obj `if test -f 'external/ptsort/lib/fline.c'; then $(CYGPATH_W) 'external/ptsort/lib/fline.c'; else $(CYGPATH_W) '$(srcdir)/external/ptsort/lib/fline.c'; fi`
 
 external/libucl/src/libucl_a-ucl_emitter.o: external/libucl/src/ucl_emitter.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_a-ucl_emitter.o -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Tpo -c -o external/libucl/src/libucl_a-ucl_emitter.o `test -f 'external/libucl/src/ucl_emitter.c' || echo '$(srcdir)/'`external/libucl/src/ucl_emitter.c
@@ -3201,14 +3230,15 @@ uninstall-man: uninstall-man8
 
 src/poudriere-sh/builtins.def: $(top_srcdir)/external/sh/builtins.def \
     $(top_srcdir)/src/poudriere-sh/builtins-poudriere.def
-	cat $> > $@
+	cat $^${.ALLSRC} > $@
 src/poudriere-sh/shell.h:
 	@ln -fs ../../$(top_srcdir)/external/sh/shell.h $@
 src/poudriere-sh/builtins.h: src/poudriere-sh/builtins.def \
       src/poudriere-sh/shell.h $(top_srcdir)/external/sh/mkbuiltins
 	cd $(top_builddir)/src/poudriere-sh && \
 	    sh ../../$(top_srcdir)/external/sh/mkbuiltins .
-${sh_SOURCES}:		src/poudriere-sh/builtins.h
+src/poudriere-sh/builtins.c: src/poudriere-sh/builtins.h
+${sh_OBJECTS}:		src/poudriere-sh/builtins.h
 
 .PHONY:	gen-make-wiki
 gen-man-wiki:
@@ -3230,13 +3260,15 @@ gen-man-wiki:
 	    ); \
 	  ) > wiki/$${man##*/}.md; \
 	done
-poudriere: $(top_srcdir)/src/bin/poudriere .PHONY
+.PHONY: poudriere
+poudriere: $(top_srcdir)/src/bin/poudriere
 	@if which git >/dev/null 2>&1 && [ -d $(top_srcdir)/.git ]; then \
 	    gitver=$$(git -C "$(top_srcdir)" describe --tags HEAD); \
+	    echo "POUDRIERE_VERSION=$${gitver} > $@"; \
 	    sed -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
-	      $> > $@; \
+	      $^${.ALLSRC} > $@; \
 	else \
-	    cp -f $> $@; \
+	    cp -f $^${.ALLSRC} $@; \
 	fi;
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
