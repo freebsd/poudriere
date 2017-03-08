@@ -128,6 +128,8 @@ zfs_getfs() {
 	local mnt="${1}"
 	local mntres
 
+	[ -n "${NO_ZFS}" ] && return 0
+
 	mntres=$(realpath "${mnt}")
 	mount -t zfs | awk -v n="${mntres}" ' $3 == n { print $1 }'
 }
