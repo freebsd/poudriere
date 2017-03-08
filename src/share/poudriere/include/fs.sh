@@ -130,6 +130,7 @@ zfs_getfs() {
 	local mntres
 
 	[ -n "${NO_ZFS}" ] && return 0
+	[ ${TMPFS_ALL} -eq 1 ] && return 0
 
 	mntres=$(realpath "${mnt}")
 	zfs list -rt filesystem -H -o name,mountpoint ${ZPOOL}${ZROOTFS} | \
