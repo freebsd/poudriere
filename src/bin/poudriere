@@ -85,7 +85,23 @@ shift $((OPTIND-1))
 [ $# -lt 1 ] && usage
 
 POUDRIEREPATH=`realpath $0`
-POUDRIEREPREFIX=${POUDRIEREPATH%\/bin/*}
+if [ "${POUDRIEREPATH%src/bin/poudriere}" != "${POUDRIEREPATH}" ]; then
+	# It is running from src/bin/poudriere in checkout
+	POUDRIEREPREFIX=${POUDRIEREPATH%/bin/*}
+	LIBEXECPREFIX="${POUDRIEREPATH%/src/bin/poudriere}"
+elif [ "${POUDRIEREPATH%\/bin/*}" = "${POUDRIEREPATH}" ]; then
+	# It is running in a build directory or the source checkout as
+	# ./poudriere.  Lookup VPATH to resolve to source checkout if in
+	# build directory.
+	[ -f Makefile ] && VPATH="$(make -V VPATH)"
+	POUDRIEREPREFIX="${POUDRIEREPATH%/poudriere}${VPATH:+/${VPATH}}/src"
+	[ -n "${VPATH}" ] && POUDRIEREPREFIX="$(realpath "${POUDRIEREPREFIX}")"
+	LIBEXECPREFIX="${POUDRIEREPATH%/poudriere}"
+else
+	# Running from PREFIX/bin/poudriere
+	POUDRIEREPREFIX=${POUDRIEREPATH%/bin/*}
+	LIBEXECPREFIX="${POUDRIEREPREFIX}/libexec/poudriere"
+fi
 SCRIPTPREFIX=${POUDRIEREPREFIX}/share/poudriere
 
 CMD=$1
@@ -93,12 +109,6 @@ shift
 CMD_ENV=
 [ -n "${POUDRIERE_ETC}" ] && CMD_ENV="${CMD_ENV} POUDRIERE_ETC=${POUDRIERE_ETC}"
 [ -n "${USE_COLORS}" ] && CMD_ENV="${CMD_ENV} USE_COLORS=${USE_COLORS}"
-# Support running from checkout.
-if [ "${POUDRIEREPATH%src/bin/poudriere}" != "${POUDRIEREPATH}" ]; then
-	LIBEXECPREFIX="${POUDRIEREPATH%src/bin/poudriere}"
-else
-	LIBEXECPREFIX="${POUDRIEREPREFIX}/libexec/poudriere"
-fi
 CMD_ENV="${CMD_ENV} LIBEXECPREFIX=${LIBEXECPREFIX}"
 CMD_ENV="${CMD_ENV} PATH=${LIBEXECPREFIX}:${PATH}:/sbin:/usr/sbin"
 CMD_ENV="${CMD_ENV} POUDRIERE_VERSION=${POUDRIERE_VERSION}"
