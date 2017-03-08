@@ -3083,7 +3083,8 @@ install-dvi-am:
 
 install-exec-am: install-dist_binSCRIPTS install-pkglibexecPROGRAMS \
 	install-sysconfDATA
-
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
 install-html: install-html-am
 
 install-html-am:
@@ -3135,7 +3136,7 @@ uninstall-am: uninstall-dist_assetsDATA uninstall-dist_awkDATA \
 
 uninstall-man: uninstall-man8
 
-.MAKE: install-am install-strip
+.MAKE: install-am install-exec-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am am--refresh check check-am clean \
 	clean-cscope clean-generic clean-noinstLIBRARIES \
@@ -3153,14 +3154,15 @@ uninstall-man: uninstall-man8
 	install-dist_htmlDATA install-dist_includeHEADERS \
 	install-dist_pkgdataDATA install-dist_rcSCRIPTS install-dvi \
 	install-dvi-am install-examplesDATA install-exec \
-	install-exec-am install-hookDATA install-html install-html-am \
-	install-info install-info-am install-man install-man8 \
-	install-pdf install-pdf-am install-pkglibexecPROGRAMS \
-	install-ps install-ps-am install-strip install-sysconfDATA \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-dist_assetsDATA uninstall-dist_awkDATA \
+	install-exec-am install-exec-hook install-hookDATA \
+	install-html install-html-am install-info install-info-am \
+	install-man install-man8 install-pdf install-pdf-am \
+	install-pkglibexecPROGRAMS install-ps install-ps-am \
+	install-strip install-sysconfDATA installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-compile mostlyclean-generic pdf pdf-am \
+	ps ps-am tags tags-am uninstall uninstall-am \
+	uninstall-dist_assetsDATA uninstall-dist_awkDATA \
 	uninstall-dist_binSCRIPTS uninstall-dist_btcssDATA \
 	uninstall-dist_btfontsDATA uninstall-dist_btjsDATA \
 	uninstall-dist_dtcssDATA uninstall-dist_dtimagesDATA \
@@ -3199,6 +3201,15 @@ gen-man-wiki:
 	    ); \
 	  ) > wiki/$${man##*/}.md; \
 	done
+
+install-exec-hook:
+	@if which git >/dev/null 2>&1 && [ -d $(top_srcdir)/.git ]; then \
+	    cd $(top_srcdir); \
+	    gitver=$$(git describe --tags HEAD); \
+	    sed -i '' -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
+	      $(DESTDIR)$(bindir)/poudriere && \
+	      echo "Updating $(bindir)/poudriere with POUDRIERE_VERSION=$${gitver}"; \
+	fi;
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
