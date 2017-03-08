@@ -63,8 +63,8 @@ do_clone() {
 		src="${2}"
 		dst="${3}"
 		(
-		cd "${common}"
-		cpdup -i0 -x "${src}" "${dst}"
+			cd "${common}"
+			cpdup -i0 -x "${src}" "${dst}"
 		)
 	else
 		cpdup -i0 -x "${1}" "${2}"
