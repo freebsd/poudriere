@@ -258,3 +258,12 @@ gen-man-wiki:
 	    ); \
 	  ) > wiki/$${man##*/}.md; \
 	done
+
+install-exec-hook:
+	@if which git >/dev/null 2>&1 && [ -d $(top_srcdir)/.git ]; then \
+	    cd $(top_srcdir); \
+	    gitver=$$(git describe --tags HEAD); \
+	    sed -i '' -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
+	      $(DESTDIR)$(bindir)/poudriere && \
+	      echo "Updating $(bindir)/poudriere with POUDRIERE_VERSION=$${gitver}"; \
+	fi;
