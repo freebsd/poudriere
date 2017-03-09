@@ -1145,7 +1145,6 @@ EOF
 	for exclude in ${LOCAL_MTREE_EXCLUDES}; do
 		echo "${exclude#.}" >> "${mtreefile}"
 	done
-	cat "${mtreefile}"
 }
 
 markfs() {
