@@ -86,7 +86,7 @@ clean_rdeps() {
 		# This is removing: deps/<dep_pkgname>/<this pkg>.
 		# Note that this is not needed when recursively cleaning as
 		# the entire /deps/<pkgname> for all my rdeps will be removed.
-		echo ${deps_to_clean} | xargs rm -f || :
+		echo ${deps_to_clean} | xargs rm -f >/dev/null 2>&1 || :
 
 		# Look for packages that are now ready to build. They have no
 		# remaining dependencies. Move them to /unbalanced for later
@@ -98,7 +98,7 @@ clean_rdeps() {
 		    2>/dev/null || :
 	fi
 
-	rm -rf "${rdep_dir}" &
+	rm -rf "${rdep_dir}" >/dev/null 2>&1 &
 
 	return 0
 }
@@ -126,9 +126,9 @@ clean_deps() {
 		rdeps_to_clean="${rdeps_to_clean} ${JAILMNT}/.p/rdeps/${rdep_pkgname}/${pkgname}"
 	done
 
-	echo ${rdeps_to_clean} | xargs rm -f || :
+	echo ${rdeps_to_clean} | xargs rm -f >/dev/null 2>&1 || :
 
-	rm -rf "${dep_dir}" &
+	rm -rf "${dep_dir}" >/dev/null 2>&1 &
 
 	return 0
 }
