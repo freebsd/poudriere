@@ -1124,6 +1124,7 @@ mktemp() {
 common_mtree() {
 	[ $# -eq 1 ] || eargs common_mtree mtreefile
 	local mtreefile="$1"
+	local exclude
 
 	cat > "${mtreefile}" <<EOF
 ./.npkg
@@ -1141,6 +1142,10 @@ common_mtree() {
 ./var/db/ports
 ./wrkdirs
 EOF
+	for exclude in ${LOCAL_MTREE_EXCLUDES}; do
+		echo "${exclude#.}" >> "${mtreefile}"
+	done
+	cat "${mtreefile}"
 }
 
 markfs() {

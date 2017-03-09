@@ -262,3 +262,10 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # build one-off packages but expect the repository to stay consistent.
 # Defaut: yes
 #TRIM_ORPHANED_BUILD_DEPS=yes
+
+# A list of directories to exclude from leftover and filesystem violation
+# mtree checks.  Ccache is used here as an example but is already
+# excluded by default.  There is no need to add it here unless a
+# special configuration is used where it is a problem.
+# Default: none
+#LOCAL_MTREE_EXCLUDES="/usr/obj /var/tmp/ccache"
