@@ -1112,12 +1112,11 @@ mktemp() {
 		TMPDIR="${mnt}/.p/tmp"
 		[ -d "${TMPDIR}" ] || unset TMPDIR
 	fi
-	[ -n "${TMPDIR-blank}" ] && TMPDIR="${TMPDIR}"
 	if [ -n "${MKTEMP_BUILTIN}" ]; then
 		# No export needed here since TMPDIR is set above in scope.
 		builtin mktemp "$@"
 	else
-		export TMPDIR
+		[ -n "${TMPDIR}" ] && export TMPDIR
 		command mktemp "$@"
 	fi
 }
