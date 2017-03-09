@@ -1962,7 +1962,7 @@ jail_start() {
 		else
 			err 1 "Arm64 requires aarch64-binutils to be installed."
 		fi
-	 fi
+	fi
 
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 		cat >> "${tomnt}/etc/make.conf" <<-EOF
