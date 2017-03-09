@@ -113,7 +113,19 @@ DISTFILES_CACHE=/usr/ports/distfiles
 
 # ccache support. Supply the path to your ccache cache directory.
 # It will be mounted into the jail and be shared among all jails.
+# It is recommended that extra ccache configuration be done with
+# ccache -o rather than from the environment.
 #CCACHE_DIR=/var/cache/ccache
+
+# Static ccache support from host.  This uses the existing
+# ccache from the host in the build jail.  This is useful for
+# using ccache+memcached which cannot easily be bootstrapped
+# otherwise.  The path to the PREFIX where ccache was installed
+# must be used here, and ccache must have been built statically.
+# Note also that ccache+memcached will require network access
+# which is normally disabled.  Separately setting RESTRICT_NETWORKING=no
+# may be required for non-localhost memcached servers.
+#CCACHE_STATIC_PREFIX=/usr/local
 
 # The jails normally only allow network access during the 'make fetch'
 # phase.  This is a security restriction to prevent random things

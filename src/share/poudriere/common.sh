@@ -1798,6 +1798,54 @@ lock_jail() {
 	fi
 }
 
+setup_ccache() {
+	[ $# -eq 1 ] || eargs setup_ccache tomnt
+	local tomnt="$1"
+	local ccacheprefix
+
+	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
+		cat >> "${tomnt}/etc/make.conf" <<-EOF
+		WITH_CCACHE_BUILD=yes
+		CCACHE_DIR=${HOME}/.ccache
+		EOF
+	fi
+	# A static host version may have been requested.
+	if [ -n "${CCACHE_STATIC_PREFIX}" ] && \
+	    [ -x "${CCACHE_STATIC_PREFIX}/bin/ccache" ]; then
+		file "${CCACHE_STATIC_PREFIX}/bin/ccache" | \
+		    grep -q "statically linked" || \
+		    err 1 "CCACHE_STATIC_PREFIX used but ${CCACHE_STATIC_PREFIX}/bin/ccache is not static."
+		ccacheprefix=/ccache
+		mkdir -p "${tomnt}${ccacheprefix}/libexec/ccache/world" \
+		    "${tomnt}${ccacheprefix}/bin"
+		msg "Copying host static ccache from ${CCACHE_STATIC_PREFIX}/bin/ccache"
+		cp -f "${CCACHE_STATIC_PREFIX}/bin/ccache" \
+		    "${CCACHE_STATIC_PREFIX}/bin/ccache-update-links" \
+		    "${tomnt}${ccacheprefix}/bin/"
+		cp -f "${CCACHE_STATIC_PREFIX}/libexec/ccache/world/ccache" \
+		    "${tomnt}${ccacheprefix}/libexec/ccache/world/ccache"
+		# Tell the ports framework that we don't need it to add
+		# a BUILD_DEPENDS on everything for ccache.
+		# Also set it up to look in our ccacheprefix location for the
+		# wrappers.
+		cat >> "${tomnt}/etc/make.conf" <<-EOF
+		NO_CCACHE_DEPEND=1
+		CCACHE_WRAPPER_PATH=	${ccacheprefix}/libexec/ccache
+		EOF
+		# Link the wrapper update script to /sbin so that
+		# any package trying to update the links will find it
+		# rather than an actual ccache package in the jail.
+		ln -fs "../${ccacheprefix}/bin/ccache-update-links" \
+		    "${tomnt}/sbin/ccache-update-links"
+		# Fix the wrapper update script to always make the links
+		# in the new prefix.
+		sed -i '' -e "s,^\(PREFIX\)=.*,\1=\"${ccacheprefix}\"," \
+		    "${tomnt}${ccacheprefix}/bin/ccache-update-links"
+		# Create base compiler links
+		injail "${ccacheprefix}/bin/ccache-update-links"
+	fi
+}
+
 jail_start() {
 	[ $# -lt 2 ] && eargs jail_start name ptname setname
 	local name=$1
@@ -1964,13 +2012,6 @@ jail_start() {
 		fi
 	fi
 
-	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
-		cat >> "${tomnt}/etc/make.conf" <<-EOF
-		WITH_CCACHE_BUILD=yes
-		CCACHE_DIR=${HOME}/.ccache
-		EOF
-	fi
-
 	cat >> "${tomnt}/etc/make.conf" <<-EOF
 	USE_PACKAGE_DEPENDS=yes
 	BATCH=yes
@@ -2006,6 +2047,8 @@ jail_start() {
 	fi
 	injail service ldconfig start >/dev/null || \
 	    err 1 "Failed to set ldconfig paths."
+
+	setup_ccache "${tomnt}"
 
 	# We want this hook to run before any make -V executions in case
 	# a hook modifies ports or the jail somehow relevant.
