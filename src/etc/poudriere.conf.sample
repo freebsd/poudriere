@@ -114,7 +114,12 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # ccache support. Supply the path to your ccache cache directory.
 # It will be mounted into the jail and be shared among all jails.
 #CCACHE_DIR=/var/cache/ccache
-#
+
+# The jails normally only allow network access during the 'make fetch'
+# phase.  This is a security restriction to prevent random things
+# ran during a build from accessing the network.  Disabling this
+# is not advised.
+#RESTRICT_NETWORKING=yes
 
 # parallel build support.
 #
