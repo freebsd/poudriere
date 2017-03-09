@@ -1910,6 +1910,8 @@ jail_start() {
 	injail service ldconfig start >/dev/null || \
 	    err 1 "Failed to set ldconfig paths."
 
+	# We want this hook to run before any make -V executions in case
+	# a hook modifies ports or the jail somehow relevant.
 	run_hook jail start
 
 	# Suck in ports environment to avoid redundant fork/exec for each
