@@ -53,6 +53,7 @@ shash_get() {
 	local ret
 
 	ret=1
+	_values=
 	if [ "${USE_CACHED}" = "yes" ] && \
 	    [ "${var}" = "pkgname-origin" -o "${var}" = "origin-pkgname" ]; then
 		# XXX: This is ignoring var
