@@ -232,8 +232,8 @@ main(int argc, char *argv[])
 			free(e);
 			trap_pop(SIGINFO, &info_oact);
 			if (tflag) {
-				trap_pop(SIGALRM, &alrm_oact);
 				alarm(0);
+				trap_pop(SIGALRM, &alrm_oact);
 			}
 			INTON;
 #endif
@@ -248,8 +248,8 @@ main(int argc, char *argv[])
 				free(e);
 				trap_pop(SIGINFO, &info_oact);
 				if (tflag) {
-					trap_pop(SIGALRM, &alrm_oact);
 					alarm(0);
+					trap_pop(SIGALRM, &alrm_oact);
 				}
 				INTON;
 #endif
@@ -277,8 +277,8 @@ main(int argc, char *argv[])
 	free(e);
 	trap_pop(SIGINFO, &info_oact);
 	if (tflag) {
-		trap_pop(SIGALRM, &alrm_oact);
 		alarm(0);
+		trap_pop(SIGALRM, &alrm_oact);
 	}
 	INTON;
 #endif

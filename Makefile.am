@@ -122,13 +122,14 @@ pkglibexec_PROGRAMS= \
 		     rename \
 		     rexec \
 		     @RM@ \
-		     timeout \
+		     @TIMEOUT@ \
 		     timestamp \
 		     tsort \
 		     @SH@
 EXTRA_PROGRAMS= \
 		rm \
-		sh
+		sh \
+		timeout
 
 noinst_LIBRARIES=	libucl.a libnv.a libptsort.a
 
