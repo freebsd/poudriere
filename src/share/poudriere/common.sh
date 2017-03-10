@@ -4581,7 +4581,7 @@ listed_ports() {
 		if check_moved new_origin ${origin}; then
 			[ -n "${tell_moved}" ] && msg \
 			    "MOVED: ${COLOR_PORT}${origin}${COLOR_RESET} renamed to ${COLOR_PORT}${new_origin}${COLOR_RESET}" >&2
-			origin=${new_origin}
+			origin="${new_origin}"
 		fi
 		echo "${origin}"
 	done
@@ -4709,18 +4709,19 @@ delete_stale_symlinks_and_empty_dirs() {
 }
 
 load_moved() {
+	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
+	    err 1 "load_moved requires SHASH_VAR_PATH=var/cache"
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "load_moved requires PWD=${MASTERMNT}/.p"
 	[ -f ${MASTERMNT}${PORTSDIR}/MOVED ] || return 0
 	msg "Loading MOVED"
 	bset status "loading_moved:"
-	mkdir ${MASTERMNT}/.p/MOVED
 	grep -v '^#' ${MASTERMNT}${PORTSDIR}/MOVED | awk \
 	    -F\| '
 		$2 != "" {
-			sub("/", "_", $1);
 			print $1,$2;
 		}' | while read old_origin new_origin; do
-			echo ${new_origin} > \
-			    ${MASTERMNT}/.p/MOVED/${old_origin}
+			shash_set origin-moved "${old_origin}" "${new_origin}"
 		done
 }
 
@@ -4728,16 +4729,8 @@ check_moved() {
 	[ $# -lt 2 ] && eargs check_moved var_return origin
 	local var_return="$1"
 	local origin="$2"
-	local _new_origin _gsub
 
-	_gsub "${origin}" "/" "_"
-	[ -f "${MASTERMNT}/.p/MOVED/${_gsub}" ] &&
-	    read _new_origin < "${MASTERMNT}/.p/MOVED/${_gsub}"
-
-	setvar "${var_return}" "${_new_origin}"
-
-	# Return 0 if blank
-	[ -n "${_new_origin}" ]
+	shash_get origin-moved "${origin}" "${var_return}"
 }
 
 clean_build_queue() {
