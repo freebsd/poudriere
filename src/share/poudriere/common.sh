@@ -4502,7 +4502,7 @@ compute_deps_pkg() {
 
 listed_ports() {
 	local tell_moved="${1}"
-	local portsdir
+	local portsdir origin file
 
 	if [ ${ALL} -eq 1 ]; then
 		_pget portsdir ${PTNAME} mnt
@@ -4516,13 +4516,20 @@ listed_ports() {
 	{
 		# -f specified
 		if [ -z "${LISTPORTS}" ]; then
-			[ -n "${LISTPKGS}" ] &&
-			    grep -h -v -E \
-			    '(^[[:space:]]*#|^[[:space:]]*$)' ${LISTPKGS} |
-			    sed 's,/*$,,'
+			for file in ${LISTPKGS}; do
+				while read origin; do
+					# Skip blank lines and comments
+					[ -z "${origin%%#*}" ] && continue
+					# Remove trailing slash for historical reasons.
+					echo "${origin%/}"
+				done < "${file}"
+			done
 		else
 			# Ports specified on cmdline
-			echo ${LISTPORTS} | tr ' ' '\n' | sed 's,/*$,,'
+			for origin in ${LISTPORTS}; do
+				# Remove trailing slash for historical reasons.
+				echo "${origin%/}"
+			done
 		fi
 	} | sort -u | while read origin; do
 		if check_moved new_origin ${origin}; then
