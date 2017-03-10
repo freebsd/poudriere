@@ -4491,7 +4491,7 @@ compute_deps_pkg() {
 
 	pkg_pooldir="deps/${pkgname}"
 	mkdir "${pkg_pooldir}" || \
-	    err 1 "compute_deps_pkg: Error creating pool dir for ${pkgname}"
+	    err 1 "compute_deps_pkg: Error creating pool dir for ${pkgname}: There may be a duplicate origin in a category Makefile"
 
 	for dep_origin in ${deps}; do
 		shash_get origin-pkgname "${dep_origin}" dep_pkgname || \
