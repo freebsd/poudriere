@@ -3209,7 +3209,7 @@ calculate_elapsed_from_log() {
 	local log="$2"
 
 	[ -f "${log}/.poudriere.status" ] || return 1
-	start_end_time=$(stat -f '%B %m' ${log}/.poudriere.status)
+	start_end_time=$(stat -f '%B %m' ${log}/.poudriere.status.journal%)
 	start_time=${start_end_time% *}
 	if status_is_stopped "${status}"; then
 		end_time=${start_end_time#* }
