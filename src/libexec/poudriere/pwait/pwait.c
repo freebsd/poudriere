@@ -231,8 +231,10 @@ main(int argc, char *argv[])
 			close(kq);
 			free(e);
 			trap_pop(SIGINFO, &info_oact);
-			if (tflag)
+			if (tflag) {
 				trap_pop(SIGALRM, &alrm_oact);
+				alarm(0);
+			}
 			INTON;
 #endif
 			err(1, "%s", "kevent");
@@ -245,8 +247,10 @@ main(int argc, char *argv[])
 				close(kq);
 				free(e);
 				trap_pop(SIGINFO, &info_oact);
-				if (tflag)
+				if (tflag) {
 					trap_pop(SIGALRM, &alrm_oact);
+					alarm(0);
+				}
 				INTON;
 #endif
 				return (124);
@@ -272,8 +276,10 @@ main(int argc, char *argv[])
 	close(kq);
 	free(e);
 	trap_pop(SIGINFO, &info_oact);
-	if (tflag)
+	if (tflag) {
 		trap_pop(SIGALRM, &alrm_oact);
+		alarm(0);
+	}
 	INTON;
 #endif
 	return (EX_OK);
