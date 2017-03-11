@@ -4812,6 +4812,8 @@ prepare_ports() {
 
 	cd "${MASTERMNT}/.p"
 	SHASH_VAR_PATH="var/cache"
+	# No prefix needed since we're unique in MASTERMNT.
+	SHASH_VAR_PREFIX=
 
 	if [ -e "${log}/.poudriere.ports.built" ]; then
 		resuming_build=1

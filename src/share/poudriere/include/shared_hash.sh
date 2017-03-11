@@ -26,6 +26,7 @@
 
 : ${SHASH_VAR_NAME_SUB_GLOB:="[ /]"}
 : ${SHASH_VAR_PATH:=${TMPDIR:-/tmp}}
+: ${SHASH_VAR_PREFIX:=$$}
 
 _shash_var_name() {
 	local var="${1}"
@@ -40,7 +41,7 @@ _shash_varkey_file() {
 	local varkey="${1}%${2}"
 
 	_shash_var_name "${varkey}"
-	_shash_varkey_file="${SHASH_VAR_PATH}/${_shash_var_name}"
+	_shash_varkey_file="${SHASH_VAR_PATH}/${SHASH_VAR_PREFIX}${_shash_var_name}"
 }
 
 shash_get() {
