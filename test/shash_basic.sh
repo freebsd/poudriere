@@ -8,7 +8,7 @@
 MASTERMNT=$(mktemp -d)
 
 echo "Working on ${MASTERMNT}"
-mkdir -p "${MASTERMNT}/.p/var/cache/"
+SHASH_VAR_PATH="${MASTERMNT}"
 assert_ret 1 shash_remove pkgname-origin "pkg-1.7" value
 assert_ret 0 shash_unset pkgname-origin "pkg-1.7"
 assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
