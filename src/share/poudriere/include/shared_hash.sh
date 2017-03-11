@@ -132,3 +132,73 @@ shash_unset() {
 		rm -f ${_shash_varkey_file}
 	fi
 }
+
+# Execute a function and store its results in the cache.  Use the
+# cached value after that.
+# Usage: shash_get_cached result_var function args
+shash_get_cached() {
+	local -; set +x
+	[ $# -ge 2 ] || eargs shash_get_cached var_return function [params]
+	local var_return="$1"
+	local function="$2"
+	shift 2
+	local -; set +e # Need to capture error without ||
+	local var key _value ret
+
+	# If the value is not already in the cache then
+	# look it up and store the result in the cache.
+	var="cached-${function}"
+	encode_args key "$@"
+
+	if ! shash_get "${var}" "${key}" "${var_return}"; then
+		msg_dev "shash_get_cached: Fetching ${function}($@)"
+		_value=$(${function} "$@")
+		ret=$?
+		shash_set "${var}" "${key}" "${_value}"
+		setvar "${var_return}" "${_value}"
+	else
+		msg_dev "shash_get_cached: Using cached ${function}($@)"
+		ret=0
+		# Value set by shash_get already
+	fi
+	return ${ret}
+}
+
+# Same as shash_get_cached but it is for functions that use
+# setvar/var_return for returning their results rather than stdout.
+# Usage: shash_get_cached_sv result_var function sv_value args
+# The sv_value should be used where the result would normally be
+# from the function.
+shash_get_cached_sv() {
+	local -; set +x
+	[ $# -ge 2 ] || eargs shash_get_cached_sv var_return function [params] [sv_value for return var]
+	local var_return="$1"
+	local function="$2"
+	shift 2
+	local -; set +e # Need to capture error without ||
+	local var key sv_value ret
+
+	# If the value is not already in the cache then
+	# look it up and store the result in the cache.
+	var="cached-${function}"
+	encode_args key "$@"
+
+	if ! shash_get "${var}" "${key}" "${var_return}"; then
+		msg_dev "shash_get_cached_sv: Fetching ${function}($@)"
+		sv_value=__null
+		${function} "$@"
+		ret=$?
+		if [ "${sv_value}" = "__null" ] && [ ${ret} -eq 0 ]; then
+			# Function did not properly set sv_value,
+			# so ensure ret is >0
+			ret=76
+		fi
+		shash_set "${var}" "${key}" "${sv_value}"
+		setvar "${var_return}" "${sv_value}"
+	else
+		msg_dev "shash_get_cached_sv: Using cached ${function}($@)"
+		ret=0
+		# Value set by shash_get already
+	fi
+	return ${ret}
+}

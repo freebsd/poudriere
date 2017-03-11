@@ -5,6 +5,7 @@ TESTS=\
 	relpath.sh \
 	relpath_common.sh \
 	shash_basic.sh \
+	shash_get_cached.sh \
 
 all: check
 
