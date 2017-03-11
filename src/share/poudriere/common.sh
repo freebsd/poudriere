@@ -313,8 +313,8 @@ _relpath_common() {
 relpath_common() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs relpath_common dir1 dir2
-	local dir1=$(realpath -q "$1" || echo "${1}")
-	local dir2=$(realpath -q "$2" || echo "${2}")
+	local dir1="$1"
+	local dir2="$2"
 	local _relpath_common _relpath_common_dir1 _relpath_common_dir2
 
 	_relpath_common "${dir1}" "${dir2}"
