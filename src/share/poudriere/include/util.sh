@@ -22,6 +22,44 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+: ${ENCODE_SEP:=$'\002'}
+
+# Encode $@ for later decoding
+encode_args() {
+	local -; set +x
+	[ $# -ge 1 ] || eargs encode_args var_return [args]
+	local var_return="$1"
+	shift
+	local _args lastempty
+
+	_args=
+	lastempty=0
+	while [ $# -gt 0 ]; do
+		_args="${_args}${_args:+${ENCODE_SEP}}${1}"
+		[ $# -eq 1 -a -z "$1" ] && lastempty=1
+		shift
+	done
+	# If the string ends in ENCODE_SEP then add another to
+	# fix 'set' later eating it.
+	[ ${lastempty} -eq 1 ] && _args="${_args}${_args:+${ENCODE_SEP}}"
+
+	setvar "${var_return}" "${_args}"
+}
+
+# Decode data from encode_args
+# Usage: eval $(decode_args data_var_name)
+decode_args() {
+	local -; set +x
+	[ $# -eq 1 ] || eargs decode_args encoded_args_var
+	local encoded_args_var="$1"
+
+	# IFS="${ENCODE_SEP}"
+	# set -- ${data}
+	# unset IFS
+
+	echo "IFS=\"\${ENCODE_SEP}\"; set -- \${${encoded_args_var}}; unset IFS"
+}
+
 # Read a file until 0 status is found. Partial reads not accepted.
 read_line() {
 	[ $# -eq 2 ] || eargs read_line var_return file
