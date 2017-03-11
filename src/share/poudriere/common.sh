@@ -4184,7 +4184,7 @@ port_var_fetch() {
 	local _portvar _var _line _errexit shiftcnt varcnt
 	# Use a tab rather than space to allow FOO='BLAH BLAH' assignments
 	# and lookups like -V'${PKG_DEPENDS} ${BUILD_DEPENDS}'
-	local IFS sep="	"
+	local IFS sep=$'\t'
 	# Use invalid shell var character '!' to ensure we
 	# don't setvar it later.
 	local assign_var="!"
