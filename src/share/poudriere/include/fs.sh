@@ -132,8 +132,7 @@ zfs_getfs() {
 	[ -n "${NO_ZFS}" ] && return 0
 
 	mntres=$(realpath "${mnt}")
-	zfs list -rt filesystem -H -o name,mountpoint ${ZPOOL}${ZROOTFS} | \
-	    awk -vmnt="${mntres}" '$2 == mnt {print $1}'
+	mount -t zfs | awk -v n="${mntres}" ' $3 == n { print $1 }'
 }
 
 mnt_tmpfs() {
