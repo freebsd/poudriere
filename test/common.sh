@@ -44,8 +44,8 @@ msg_dev() {
 
 assert() {
 	[ $# -eq 3 ] || eargs assert expected actual msg
-	local expected="$1"
-	local actual="$2"
+	local expected="$(echo "$1" | cat -v)"
+	local actual="$(echo "$2" | cat -v)"
 	local msg="$3"
 
 	: ${EXITVAL:=0}
@@ -63,8 +63,8 @@ assert() {
 
 assert_not() {
 	[ $# -eq 3 ] || eargs assert_not notexpected actual msg
-	local notexpected="$1"
-	local actual="$2"
+	local noexpected="$(echo "$1" | cat -v)"
+	local actual="$(echo "$2" | cat -v)"
 	local msg="$3"
 
 	: ${EXITVAL:=0}
