@@ -1293,6 +1293,7 @@ do_jail_mounts() {
 	    mount -t procfs proc "${mnt}/proc"
 	[ -z "${NOLINUX}" ] && \
 	    [ "${arch}" = "i386" -o "${arch}" = "amd64" ] && \
+	    [ -d "${mnt}/compat" ] && \
 	    mount -t linprocfs linprocfs "${mnt}/compat/linux/proc"
 
 	run_hook jail mount ${mnt}
