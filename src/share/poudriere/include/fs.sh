@@ -131,7 +131,6 @@ zfs_getfs() {
 
 	[ -n "${NO_ZFS}" ] && return 0
 	[ -z "${ZPOOL}${ZROOTFS}" ] && return 0
-	[ ${TMPFS_ALL} -eq 1 ] && return 0
 
 	mntres=$(realpath "${mnt}")
 	zfs list -rt filesystem -H -o name,mountpoint ${ZPOOL}${ZROOTFS} | \
@@ -166,7 +165,7 @@ clonefs() {
 	local to=$2
 	local snap=$3
 	local name zfs_to
-	local fs=$(TMPFS_ALL=0 zfs_getfs ${from})
+	local fs=$(zfs_getfs ${from})
 
 	destroyfs ${to} jail
 	mkdir -p ${to}
