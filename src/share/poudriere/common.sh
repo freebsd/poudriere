@@ -813,7 +813,6 @@ exit_handler() {
 		# It will be changed to / in jail_cleanup
 		if [ -d "${MASTERMNT}/.p" ]; then
 			cd "${MASTERMNT}/.p"
-			SHASH_VAR_PATH="var/cache"
 		fi
 	fi
 
@@ -1192,6 +1191,22 @@ rm() {
 	done
 
 	command rm "$@"
+}
+
+# Handle relative path change needs
+cd() {
+	local ret
+
+	ret=0
+	command cd "$@" || ret=$?
+	# Handle fixing relative paths
+	if [ "${OLDPWD}" != "${PWD}" ]; then
+		if [ -n "${SHASH_VAR_PATH}" ]; then
+			_relpath "${OLDPWD}/${SHASH_VAR_PATH}" "${PWD}"
+			SHASH_VAR_PATH="${_relpath}"
+		fi
+	fi
+	return ${ret}
 }
 
 do_jail_mounts() {
@@ -3232,12 +3247,10 @@ parallel_build() {
 
 	[ ! -d "${MASTERMNT}/.p/pool" ] && err 1 "Build pool is missing"
 	cd "${MASTERMNT}/.p/pool"
-	SHASH_VAR_PATH="../var/cache"
 
 	build_queue
 
-	cd "${MASTERMNT}/.p"
-	SHASH_VAR_PATH="var/cache"
+	cd ..
 
 	bset status "stopping_jobs:"
 	stop_builders
@@ -3306,7 +3319,6 @@ clean_pool() {
 
 	(
 		cd "${MASTERMNT}/.p"
-		SHASH_VAR_PATH="var/cache"
 		balance_pool || :
 	)
 }
