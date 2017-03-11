@@ -39,6 +39,9 @@ createfs() {
 			-o atime=off \
 			-o mountpoint=${mnt} ${fs} || err 1 " fail"
 		echo " done"
+		# Must invalidate the zfs_getfs cache now in case of a
+		# negative entry.
+		shash_invalidate_cached _zfs_getfs "${mnt}"
 	else
 		mkdir -p ${mnt}
 	fi
@@ -124,17 +127,25 @@ umountfs() {
 	return 0
 }
 
-zfs_getfs() {
-	[ $# -ne 1 ] && eargs zfs_getfs mnt
+_zfs_getfs() {
+	[ $# -ne 1 ] && eargs _zfs_getfs mnt
 	local mnt="${1}"
-	local mntres
-
-	[ -n "${NO_ZFS}" ] && return 0
-	[ -z "${ZPOOL}${ZROOTFS}" ] && return 0
 
 	mntres=$(realpath "${mnt}")
 	zfs list -rt filesystem -H -o name,mountpoint ${ZPOOL}${ZROOTFS} | \
 	    awk -vmnt="${mntres}" '$2 == mnt {print $1}'
+}
+
+zfs_getfs() {
+	[ $# -ne 1 ] && eargs zfs_getfs mnt
+	local mnt="${1}"
+	local value
+
+	[ -n "${NO_ZFS}" ] && return 0
+	[ -z "${ZPOOL}${ZROOTFS}" ] && return 0
+
+	shash_get_cached value _zfs_getfs "${mnt}"
+	echo "${value}"
 }
 
 mnt_tmpfs() {
@@ -192,6 +203,11 @@ clonefs() {
 			-o compression=off \
 			${fs}@${snap} \
 			${zfs_to}
+		# Must invalidate the zfs_getfs cache now in case of a
+		# negative entry.
+		shash_invalidate_cached _zfs_getfs "${to}"
+		# Insert this into the zfs_getfs cache.
+		shash_set_cached "${zfs_to}" _zfs_getfs "${to}"
 	else
 		[ ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs all ${to}
 		if [ "${snap}" = "clean" ]; then
@@ -229,6 +245,8 @@ destroyfs() {
 		if [ -n "${fs}" -a "${fs}" != "none" ]; then
 			zfs destroy -rf ${fs}
 			rmdir ${mnt}
+			# Must invalidate the zfs_getfs cache.
+			shash_invalidate_cached _zfs_getfs "${mnt}"
 		else
 			rm -rfx ${mnt} 2>/dev/null || :
 			if [ -d "${mnt}" ]; then
