@@ -321,6 +321,51 @@ relpath_common() {
 	echo "${_relpath_common} ${_relpath_common_dir1} ${_relpath_common_dir2}"
 }
 
+# Given 2 paths, return the relative path from the 2nd to the first
+_relpath() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs _relpath dir1 dir2
+	local dir1="$1"
+	local dir2="$2"
+	local _relpath_common _relpath_common_dir1 _relpath_common_dir2
+	local newpath IFS
+
+	# Find the common prefix
+	_relpath_common "${dir1}" "${dir2}"
+
+	if [ "${_relpath_common_dir2}" = "." ]; then
+		newpath="${_relpath_common_dir1}"
+	else
+		# Replace each component in _relpath_common_dir2 with
+		# a ..
+		IFS="/"
+		if [ "${_relpath_common_dir1}" != "." ]; then
+			newpath="${_relpath_common_dir1}"
+		else
+			newpath=
+		fi
+		set -- ${_relpath_common_dir2}
+		while [ $# -gt 0 ]; do
+			newpath="..${newpath:+/}${newpath}"
+			shift
+		done
+	fi
+
+	_relpath="${newpath}"
+}
+
+# See _relpath
+relpath() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs relpath dir1 dir2
+	local dir1="$1"
+	local dir2="$2"
+	local _relpath
+
+	_relpath "${dir1}" "${dir2}"
+	echo "${_relpath}"
+}
+
 # It may be defined as a NOP for tests
 if ! type injail >/dev/null 2>&1; then
 injail() {

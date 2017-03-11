@@ -2,6 +2,7 @@ TESTS=\
 	encode_args.sh \
 	locks.sh \
 	port_var_fetch.sh \
+	relpath.sh \
 	relpath_common.sh \
 	shash_basic.sh \
 
