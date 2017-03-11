@@ -60,6 +60,106 @@ decode_args() {
 	echo "IFS=\"\${ENCODE_SEP}\"; set -- \${${encoded_args_var}}; unset IFS"
 }
 
+# Given 2 directories, make both of them relative to their
+# common directory.
+# $1 = _relpath_common = common directory
+# $2 = _relpath_common_dir1 = dir1 relative to common
+# $3 = _relpath_common_dir2 = dir2 relative to common
+_relpath_common() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs _relpath_common dir1 dir2
+	local dir1=$(realpath -q "$1" || echo "${1}")
+	local dir2=$(realpath -q "$2" || echo "${2}")
+	local common
+
+	dir1="${dir1%/}/"
+	dir2="${dir2%/}/"
+	if [ "${#dir1}" -ge "${#dir2}" ]; then
+		common="${dir1}"
+		other="${dir2}"
+	else
+		common="${dir2}"
+		other="${dir1}"
+	fi
+	# Trim away path components until they match
+	_rel_found=0
+	while [ "${other#${common%/}/}" = "${other}" -a -n "${common}" ]; do
+		common="${common%/*}"
+		_rel_found=$((_rel_found + 1))
+	done
+	common="${common%/}"
+	common="${common:-/}"
+	dir1="${dir1#${common}/}"
+	dir1="${dir1#/}"
+	dir1="${dir1%/}"
+	dir1="${dir1:-.}"
+	dir2="${dir2#${common}/}"
+	dir2="${dir2#/}"
+	dir2="${dir2%/}"
+	dir2="${dir2:-.}"
+
+	_relpath_common="${common}"
+	_relpath_common_dir1="${dir1}"
+	_relpath_common_dir2="${dir2}"
+}
+
+# See _relpath_common
+relpath_common() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs relpath_common dir1 dir2
+	local dir1="$1"
+	local dir2="$2"
+	local _relpath_common _relpath_common_dir1 _relpath_common_dir2
+
+	_relpath_common "${dir1}" "${dir2}"
+	echo "${_relpath_common} ${_relpath_common_dir1} ${_relpath_common_dir2}"
+}
+
+# Given 2 paths, return the relative path from the 2nd to the first
+_relpath() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs _relpath dir1 dir2
+	local dir1="$1"
+	local dir2="$2"
+	local _relpath_common _relpath_common_dir1 _relpath_common_dir2
+	local newpath IFS
+
+	# Find the common prefix
+	_relpath_common "${dir1}" "${dir2}"
+
+	if [ "${_relpath_common_dir2}" = "." ]; then
+		newpath="${_relpath_common_dir1}"
+	else
+		# Replace each component in _relpath_common_dir2 with
+		# a ..
+		IFS="/"
+		if [ "${_relpath_common_dir1}" != "." ]; then
+			newpath="${_relpath_common_dir1}"
+		else
+			newpath=
+		fi
+		set -- ${_relpath_common_dir2}
+		while [ $# -gt 0 ]; do
+			newpath="..${newpath:+/}${newpath}"
+			shift
+		done
+	fi
+
+	_relpath="${newpath}"
+}
+
+# See _relpath
+relpath() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs relpath dir1 dir2
+	local dir1="$1"
+	local dir2="$2"
+	local _relpath
+
+	_relpath "${dir1}" "${dir2}"
+	echo "${_relpath}"
+}
+
 # Read a file until 0 status is found. Partial reads not accepted.
 read_line() {
 	[ $# -eq 2 ] || eargs read_line var_return file
