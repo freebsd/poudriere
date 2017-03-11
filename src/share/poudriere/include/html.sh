@@ -59,9 +59,11 @@ html_json_main() {
 }
 
 build_all_json() {
+	critical_start
 	build_json
 	build_jail_json
 	build_top_json
+	critical_end
 }
 
 build_json() {
@@ -89,7 +91,6 @@ build_jail_json() {
 
 	_log_path_jail log_path_jail
 	tmpfile=$(TMPDIR="${log_path_jail}" mktemp -ut json)
-
 	{
 		echo "{\"builds\":{"
 		echo ${log_path_jail}/*/.data.mini.json | \
@@ -106,7 +107,6 @@ build_top_json() {
 
 	_log_path_top log_path_top
 	tmpfile=$(TMPDIR="${log_path_top}" mktemp -ut json)
-
 	(
 		cd "${log_path_top}"
 		echo "{\"masternames\":{"
