@@ -39,7 +39,8 @@ Options:
     -e etcdir   -- Specify an alternate etc/ dir where poudriere configuration
                    resides.
     -N          -- Disable colors
-
+    -v          -- Be verbose; show more information. Use twice to enable
+                   debug output
 Commands:
     bulk        -- Generate packages for given ports
     distclean   -- Remove old distfiles
@@ -59,7 +60,7 @@ EOF
 }
 
 SETX=""
-while getopts "e:Nx" FLAG; do
+while getopts "e:Nvx" FLAG; do
 	case "${FLAG}" in
 	e)
 		if [ ! -d "$OPTARG" ]; then
@@ -70,6 +71,9 @@ while getopts "e:Nx" FLAG; do
 		;;
 	N)
 		USE_COLORS="no"
+		;;
+	v)
+		VERBOSE=$((${VERBOSE:-0} + 1))
 		;;
 	x)
 		SETX="-x"
@@ -113,6 +117,7 @@ CMD_ENV="${CMD_ENV} LIBEXECPREFIX=${LIBEXECPREFIX}"
 CMD_ENV="${CMD_ENV} PATH=${LIBEXECPREFIX}:${PATH}:/sbin:/usr/sbin"
 CMD_ENV="${CMD_ENV} POUDRIERE_VERSION=${POUDRIERE_VERSION}"
 CMD_ENV="${CMD_ENV} POUDRIEREPATH=${POUDRIEREPATH}"
+[ -n "${VERBOSE}" ] && CMD_ENV="${CMD_ENV} VERBOSE=${VERBOSE}"
 
 # Handle special-case commands first.
 case "${CMD}" in
