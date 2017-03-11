@@ -239,6 +239,66 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	assert 1 ${lookup} "real_func_sv_2 1 lookup count 2"
 }
 
+# Invalidation test
+{
+	# First lookup, will call into the real function
+	lookup=0
+	value=
+	shash_get_cached value real_func "1"
+	assert 0 $? "real_func 1 return status"
+	argcnt=${value%% *}
+	value="${value#[0-9] }"
+	assert 1 "${argcnt}" "real_func 1 argcnt"
+	assert "1" "${value}" "real_func 1 value"
+	get_lookup_cnt lookup real_func "1"
+	assert 0 $? "lookupcnt real_func-1"
+	assert 1 ${lookup} "real_func 1 lookup count"
+
+	# now invalidate the cache and ensure it is looked up again.
+	shash_invalidate_cached real_func "1"
+
+	shash_get_cached value real_func "1"
+	assert 0 $? "real_func 1 return status - invalidated"
+	argcnt=${value%% *}
+	value="${value#[0-9] }"
+	assert 1 "${argcnt}" "real_func 1 argcnt - invalidated"
+	assert "1" "${value}" "real_func 1 value - invalidated"
+	get_lookup_cnt lookup real_func "1"
+	assert 0 $? "lookupcnt real_func-1 - invalidated"
+	assert 2 ${lookup} "real_func 1 lookup count - invalidated"
+}
+
+# Forced cached set test
+{
+	# First lookup, will call into the real function
+	lookup=0
+	value=
+	shash_get_cached value real_func "5"
+	assert 0 $? "real_func 5 return status"
+	argcnt=${value%% *}
+	value="${value#[0-9] }"
+	assert 1 "${argcnt}" "real_func 5 argcnt"
+	assert "5" "${value}" "real_func 5 value"
+	get_lookup_cnt lookup real_func "5"
+	assert 0 $? "lookupcnt real_func-5"
+	assert 1 ${lookup} "real_func 5 lookup count"
+
+	# now change the value in the cache ("1 " is due to real_func
+	# adding in its $#)
+	shash_set_cached "1 SET-5-SET" real_func "5"
+
+	shash_get_cached value real_func "5"
+	assert 0 $? "real_func 5 return status - set"
+	argcnt=${value%% *}
+	value="${value#[0-9] }"
+	assert 1 "${argcnt}" "real_func 5 argcnt - set"
+	assert "SET-5-SET" "${value}" "real_func 5 value - set"
+	get_lookup_cnt lookup real_func "5"
+	assert 0 $? "lookupcnt real_func-5 - set"
+	# Should not have called the real func
+	assert 1 ${lookup} "real_func 5 lookup count - set"
+}
+
 
 rm -rf "${MASTERMNT}"
 exit 0

@@ -133,6 +133,39 @@ shash_unset() {
 	fi
 }
 
+shash_invalidate_cached() {
+	local -; set +x
+	[ $# -ge 1 ] || eargs shash_invalidate_cached function [params]
+	local function="$1"
+	shift
+	local var key
+
+	# SHASH_USE_CACHE not checked here as it may have been disabled
+	# since having a value cached.  Still respect an invalidation
+	# request.
+
+	var="cached-${function}"
+	encode_args key "$@"
+	msg_dev "shash_invalidate_cached: Invalidating ${function}($@)"
+	shash_unset "${var}" "${key}" || :
+}
+
+shash_set_cached() {
+	local -; set +x
+	[ $# -ge 2 ] || eargs shash_set_cached value function [params]
+	local value="$1"
+	local function="$2"
+	shift 2
+	local var key
+
+	[ ${SHASH_USE_CACHE:-0} -eq 0 ] && return 0
+
+	var="cached-${function}"
+	encode_args key "$@"
+	msg_dev "shash_set_cached: Caching value for ${function}($@)"
+	shash_set "${var}" "${key}" "${value}" || :
+}
+
 # Execute a function and store its results in the cache.  Use the
 # cached value after that.
 # Usage: shash_get_cached result_var function args
