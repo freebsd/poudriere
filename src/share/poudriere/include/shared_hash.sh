@@ -150,7 +150,8 @@ shash_get_cached() {
 	var="cached-${function}"
 	encode_args key "$@"
 
-	if ! shash_get "${var}" "${key}" "${var_return}"; then
+	if [ ${SHASH_USE_CACHE:-0} -eq 0 ] || \
+	    ! shash_get "${var}" "${key}" "${var_return}"; then
 		msg_dev "shash_get_cached: Fetching ${function}($@)"
 		_value=$(${function} "$@")
 		ret=$?
@@ -183,7 +184,8 @@ shash_get_cached_sv() {
 	var="cached-${function}"
 	encode_args key "$@"
 
-	if ! shash_get "${var}" "${key}" "${var_return}"; then
+	if [ ${SHASH_USE_CACHE:-0} -eq 0 ] || \
+	    ! shash_get "${var}" "${key}" "${var_return}"; then
 		msg_dev "shash_get_cached_sv: Fetching ${function}($@)"
 		sv_value=__null
 		${function} "$@"

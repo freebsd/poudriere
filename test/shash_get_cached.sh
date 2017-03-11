@@ -5,6 +5,8 @@
 . ${SCRIPTPREFIX}/include/hash.sh
 . ${SCRIPTPREFIX}/include/shared_hash.sh
 
+SHASH_USE_CACHE=1
+
 MASTERMNT=$(mktemp -d)
 
 _lookup_key() {
