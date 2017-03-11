@@ -28,14 +28,14 @@ while [ $# -gt 0 ]; do
 	shift 6
 	saved="$@"
 
-	set -- $(relpath "${dir1}" "${dir2}")
+	set -- $(relpath_common "${dir1}" "${dir2}")
 	actual_common="$1"
 	actual_reldir1="$2"
 	actual_reldir2="$3"
 
 	assert "${expected_common}" "${actual_common}" "(common) dir1: '${dir1}' dir2: '${dir2}'"
 	assert "${expected_reldir1}" "${actual_reldir1}" "(reldir1) dir1: '${dir1}' dir2: '${dir2}'"
-	assert "${expected_reldir2}" "${actual_reldir2}" "(reldir2) dir2: '${dir1}' dir2: '${dir2}'"
+	assert "${expected_reldir2}" "${actual_reldir2}" "(reldir2) dir1: '${dir1}' dir2: '${dir2}'"
 
 	set -- ${saved}
 done

@@ -58,7 +58,7 @@ do_clone() {
 	shift $((OPTIND-1))
 
 	if [ ${relative} -eq 1 ]; then
-		set -- $(relpath "${1}" "${2}")
+		set -- $(relpath_common "${1}" "${2}")
 		common="${1}"
 		src="${2}"
 		dst="${3}"
