@@ -47,9 +47,23 @@ stress_snapshot() {
 html_json_main() {
 	# This is too noisy and hurts reading debug output.
 	local -; set +x
+	local _relpath
 
-	# Ensure we are not sitting in the MASTERMNT/.p directory.
-	cd /
+	# Ensure we are not sitting in the MASTERMNT/.p directory and
+	# move into the logdir for relative operations.
+	_log_path_top log_path_top
+	cd "${log_path_top}"
+	log_path_top="."
+
+	# Determine relative paths
+	_log_path_jail log_path_jail
+	_relpath "${log_path_jail}" "${log_path_top}"
+	log_path_jail="${_relpath}"
+
+	_log_path log_path
+	_relpath "${log_path}" "${log_path_top}"
+	log_path="${_relpath}"
+
 	while :; do
 		stress_snapshot
 		update_stats || :
@@ -67,29 +81,23 @@ build_all_json() {
 }
 
 build_json() {
-	local log
-
-	_log_path log
 	/usr/bin/awk \
-		-f ${AWKPREFIX}/json.awk ${log}/.poudriere.*[!%] | \
+		-f ${AWKPREFIX}/json.awk ${log_path}/.poudriere.*[!%] | \
 		/usr/bin/awk 'ORS=""; {print}' | \
 		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' \
-		> ${log}/.data.json.tmp
-	rename ${log}/.data.json.tmp ${log}/.data.json
+		> ${log_path}/.data.json.tmp
+	rename ${log_path}/.data.json.tmp ${log_path}/.data.json
 
 	# Build mini json for stats
 	/usr/bin/awk -v mini=yes \
-		-f ${AWKPREFIX}/json.awk ${log}/.poudriere.*[!%] | \
+		-f ${AWKPREFIX}/json.awk ${log_path}/.poudriere.*[!%] | \
 		/usr/bin/awk 'ORS=""; {print}' | \
 		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' \
-		> ${log}/.data.mini.json.tmp
-	rename ${log}/.data.mini.json.tmp ${log}/.data.mini.json
+		> ${log_path}/.data.mini.json.tmp
+	rename ${log_path}/.data.mini.json.tmp ${log_path}/.data.mini.json
 }
 
 build_jail_json() {
-	local log_path_jail tmpfile
-
-	_log_path_jail log_path_jail
 	tmpfile=$(TMPDIR="${log_path_jail}" mktemp -ut json)
 	{
 		echo "{\"builds\":{"
@@ -103,9 +111,6 @@ build_jail_json() {
 }
 
 build_top_json() {
-	local log_path_top tmpfile
-
-	_log_path_top log_path_top
 	tmpfile=$(TMPDIR="${log_path_top}" mktemp -ut json)
 	(
 		cd "${log_path_top}"
