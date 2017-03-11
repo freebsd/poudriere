@@ -199,6 +199,52 @@ trap_pop() {
 	fi
 }
 
+# Start a "critical section", disable INT/TERM while in here and delay until
+# critical_end is called.
+critical_start() {
+	local -; set +x
+	local saved_int saved_term
+
+	_CRITSNEST=$((${_CRITSNEST:-0} + 1))
+
+	trap_push INT saved_int
+	: ${_crit_caught_int:=0}
+	trap '_crit_caught_int=1' INT
+	hash_set crit_saved_trap "INT-${_CRITSNEST}" "${saved_int}"
+
+	trap_push TERM saved_term
+	: ${_crit_caught_term:=0}
+	trap '_crit_caught_term=1' TERM
+	hash_set crit_saved_trap "TERM-${_CRITSNEST}" "${saved_term}"
+}
+
+critical_end() {
+	local -; set +x
+	local saved_int saved_term oldnest
+
+	[ ${_CRITSNEST:--1} -ne -1 ] || \
+	    err 1 "critical_end called without critical_start"
+
+	oldnest=${_CRITSNEST}
+	_CRITSNEST=$((${_CRITSNEST} - 1))
+	if hash_remove crit_saved_trap "INT-${oldnest}" saved_int; then
+		trap_pop INT "${saved_int}"
+	fi
+	if hash_remove crit_saved_trap "TERM-${oldnest}" saved_term; then
+		trap_pop TERM "${saved_term}"
+	fi
+	# Deliver the signals if this was the last critical section block.
+	# Send the signal to our real PID, not the rootshell.
+	if [ ${_crit_caught_int} -eq 1 -a ${_CRITSNEST} -eq 0 ]; then
+		_crit_caught_int=0
+		kill -INT $(sh -c 'echo ${PPID}')
+	fi
+	if [ ${_crit_caught_term} -eq 1 -a ${_CRITSNEST} -eq 0 ]; then
+		_crit_caught_term=0
+		kill -TERM $(sh -c 'echo ${PPID}')
+	fi
+}
+
 # Read a file until 0 status is found. Partial reads not accepted.
 read_line() {
 	[ $# -eq 2 ] || eargs read_line var_return file
