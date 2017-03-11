@@ -146,6 +146,12 @@ fi
 
 [ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
 _pget portsdir ${PTNAME} mnt
+new_origin=$(grep -v '^#' ${portsdir}/MOVED | awk -vorigin="${ORIGIN}" \
+    -F\| '$1 == origin && $2 != "" {print $2}')
+if [ -n "${new_origin}" ]; then
+	msg "MOVED: ${COLOR_PORT}${ORIGIN}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
+	ORIGIN="${new_origin}"
+fi
 if [ ! -f "${portsdir}/${ORIGIN}/Makefile" ] || [ -d "${portsdir}/${ORIGIN}/../Mk" ]; then
 	err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
 fi
