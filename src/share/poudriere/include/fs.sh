@@ -217,7 +217,6 @@ destroyfs() {
 	mnt=$1
 	type=$2
 	[ -d ${mnt} ] || return 0
-	fs=$(zfs_getfs ${mnt})
 	umountfs ${mnt} 1
 	if [ ${TMPFS_ALL} -eq 1 ]; then
 		if [ -d "${mnt}" ]; then
@@ -225,14 +224,17 @@ destroyfs() {
 				umount -f "${mnt}" 2>/dev/null || :
 			fi
 		fi
-	elif [ -n "${fs}" -a "${fs}" != "none" ]; then
-		zfs destroy -rf ${fs}
-		rmdir ${mnt}
 	else
-		rm -rfx ${mnt} 2>/dev/null || :
-		if [ -d "${mnt}" ]; then
-			chflags -R 0 ${mnt}
-			rm -rfx ${mnt}
+		[ "${fs}" != "none" ] && fs=$(zfs_getfs ${mnt})
+		if [ -n "${fs}" -a "${fs}" != "none" ]; then
+			zfs destroy -rf ${fs}
+			rmdir ${mnt}
+		else
+			rm -rfx ${mnt} 2>/dev/null || :
+			if [ -d "${mnt}" ]; then
+				chflags -R 0 ${mnt}
+				rm -rfx ${mnt}
+			fi
 		fi
 	fi
 }
