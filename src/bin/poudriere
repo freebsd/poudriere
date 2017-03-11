@@ -36,6 +36,7 @@ usage() {
 Usage: poudriere [-e etcdir] [-N] command [options]
 
 Options:
+    -A          -- Force colors, even if not in a TTY
     -e etcdir   -- Specify an alternate etc/ dir where poudriere configuration
                    resides.
     -N          -- Disable colors
@@ -60,8 +61,11 @@ EOF
 }
 
 SETX=""
-while getopts "e:Nvx" FLAG; do
+while getopts "Ae:Nvx" FLAG; do
 	case "${FLAG}" in
+	A)
+		FORCE_COLORS=1
+		;;
 	e)
 		if [ ! -d "$OPTARG" ]; then
 			echo "Error: argument '$OPTARG' not a directory"
@@ -118,6 +122,7 @@ CMD_ENV="${CMD_ENV} PATH=${LIBEXECPREFIX}:${PATH}:/sbin:/usr/sbin"
 CMD_ENV="${CMD_ENV} POUDRIERE_VERSION=${POUDRIERE_VERSION}"
 CMD_ENV="${CMD_ENV} POUDRIEREPATH=${POUDRIEREPATH}"
 [ -n "${VERBOSE}" ] && CMD_ENV="${CMD_ENV} VERBOSE=${VERBOSE}"
+[ -n "${FORCE_COLORS}" ] && CMD_ENV="${CMD_ENV} FORCE_COLORS=${FORCE_COLORS}"
 
 # Handle special-case commands first.
 case "${CMD}" in
