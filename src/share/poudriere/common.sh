@@ -5531,6 +5531,8 @@ fi
 : ${BUILDNAME_FORMAT:="%Y-%m-%d_%Hh%Mm%Ss"}
 : ${BUILDNAME:=$(date +${BUILDNAME_FORMAT})}
 
+: ${HTML_TYPE:=inline}
+
 if [ -n "${MAX_MEMORY}" ]; then
 	MAX_MEMORY_BYTES="$((${MAX_MEMORY} * 1024 * 1024 * 1024))"
 fi

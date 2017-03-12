@@ -286,3 +286,8 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # special configuration is used where it is a problem.
 # Default: none
 #LOCAL_MTREE_EXCLUDES="/usr/obj /var/tmp/ccache"
+
+# Set to hosted to use the /data directory instead of inline style HTML
+# Default: inline
+#HTML_TYPE="hosted"
+
