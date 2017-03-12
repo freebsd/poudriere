@@ -4,6 +4,7 @@
 . ${SCRIPTPREFIX}/include/util.sh
 . ${SCRIPTPREFIX}/include/hash.sh
 . ${SCRIPTPREFIX}/include/shared_hash.sh
+. ${SCRIPTPREFIX}/include/cache.sh
 
 SHASH_USE_CACHE=1
 
@@ -80,7 +81,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	# First lookup, will call into the real function
 	lookup=0
 	value=
-	shash_get_cached value real_func "1"
+	cache_call value real_func "1"
 	assert 0 $? "real_func 1 return status"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -92,7 +93,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 
 	# Second lookup, should not call into the function
 	value=
-	shash_get_cached value real_func "1"
+	cache_call value real_func "1"
 	assert 0 $? "real_func 1 return status 2"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -109,7 +110,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	lookup=0
 	get_lookup_cnt lookup real_func "1" "2.0" "3 4"
 	value=
-	shash_get_cached value real_func "1" "2.0" "3 4"
+	cache_call value real_func "1" "2.0" "3 4"
 	assert 0 $? "real_func 1 2.0 '3 4' return status"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -121,7 +122,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 
 	# Second lookup, should not call into the function
 	value=
-	shash_get_cached value real_func "1" "2.0" "3 4"
+	cache_call value real_func "1" "2.0" "3 4"
 	assert 0 $? "real_func 1 2.0 '3 4' return status 2"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -142,7 +143,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	# Third lookup with trailing empty argument
 	lookup=0
 	value=
-	shash_get_cached value real_func "1" "2.0" "3" "4" ""
+	cache_call value real_func "1" "2.0" "3" "4" ""
 	assert 0 $? "real_func 1 2.0 3 4 _ return status"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -157,7 +158,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 
 	lookup=0
 	value=
-	shash_get_cached value real_func "1" "2.0" "3" "4"
+	cache_call value real_func "1" "2.0" "3" "4"
 	assert 0 $? "real_func 1 2.0 3 4 return status"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -171,7 +172,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 
 	lookup=0
 	value=
-	shash_get_cached value real_func "1" "2.0" "3 " "4"
+	cache_call value real_func "1" "2.0" "3 " "4"
 	assert 0 $? "real_func 1 2.0 3_ 4 return status"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -187,7 +188,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	# First lookup, will call into the real function
 	lookup=0
 	value=
-	shash_get_cached_sv value real_func_sv sv_value "1"
+	cache_call_sv value real_func_sv sv_value "1"
 	assert 0 $? "real_func_sv 1 return status"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -199,7 +200,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 
 	# Second lookup, should not call into the function
 	value=
-	shash_get_cached_sv value real_func_sv sv_value "1"
+	cache_call_sv value real_func_sv sv_value "1"
 	assert 0 $? "real_func_sv 1 return status 2"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -216,7 +217,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	# First lookup, will call into the real function
 	lookup=0
 	value=
-	shash_get_cached_sv value real_func_sv_2 "1" sv_value
+	cache_call_sv value real_func_sv_2 "1" sv_value
 	assert 0 $? "real_func_sv_2 1 return status"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -228,7 +229,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 
 	# Second lookup, should not call into the function
 	value=
-	shash_get_cached_sv value real_func_sv_2 "1" sv_value
+	cache_call_sv value real_func_sv_2 "1" sv_value
 	assert 0 $? "real_func_sv_2 1 return status 2"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -244,7 +245,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	# First lookup, will call into the real function
 	lookup=0
 	value=
-	shash_get_cached value real_func "1"
+	cache_call value real_func "1"
 	assert 0 $? "real_func 1 return status"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -255,9 +256,9 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	assert 1 ${lookup} "real_func 1 lookup count"
 
 	# now invalidate the cache and ensure it is looked up again.
-	shash_invalidate_cached real_func "1"
+	cache_invalidate real_func "1"
 
-	shash_get_cached value real_func "1"
+	cache_call value real_func "1"
 	assert 0 $? "real_func 1 return status - invalidated"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -273,7 +274,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	# First lookup, will call into the real function
 	lookup=0
 	value=
-	shash_get_cached value real_func "5"
+	cache_call value real_func "5"
 	assert 0 $? "real_func 5 return status"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -285,9 +286,9 @@ SHASH_VAR_PATH="${MASTERMNT}"
 
 	# now change the value in the cache ("1 " is due to real_func
 	# adding in its $#)
-	shash_set_cached "1 SET-5-SET" real_func "5"
+	cache_set "1 SET-5-SET" real_func "5"
 
-	shash_get_cached value real_func "5"
+	cache_call value real_func "5"
 	assert 0 $? "real_func 5 return status - set"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"

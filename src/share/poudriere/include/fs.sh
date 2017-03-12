@@ -41,7 +41,7 @@ createfs() {
 		echo " done"
 		# Must invalidate the zfs_getfs cache now in case of a
 		# negative entry.
-		shash_invalidate_cached _zfs_getfs "${mnt}"
+		cache_invalidate _zfs_getfs "${mnt}"
 	else
 		mkdir -p ${mnt}
 	fi
@@ -144,7 +144,7 @@ zfs_getfs() {
 	[ -n "${NO_ZFS}" ] && return 0
 	[ -z "${ZPOOL}${ZROOTFS}" ] && return 0
 
-	shash_get_cached value _zfs_getfs "${mnt}"
+	cache_call value _zfs_getfs "${mnt}"
 	echo "${value}"
 }
 
@@ -205,9 +205,9 @@ clonefs() {
 			${zfs_to}
 		# Must invalidate the zfs_getfs cache now in case of a
 		# negative entry.
-		shash_invalidate_cached _zfs_getfs "${to}"
+		cache_invalidate _zfs_getfs "${to}"
 		# Insert this into the zfs_getfs cache.
-		shash_set_cached "${zfs_to}" _zfs_getfs "${to}"
+		cache_set "${zfs_to}" _zfs_getfs "${to}"
 	else
 		[ ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs all ${to}
 		if [ "${snap}" = "clean" ]; then
@@ -246,7 +246,7 @@ destroyfs() {
 			zfs destroy -rf ${fs}
 			rmdir ${mnt}
 			# Must invalidate the zfs_getfs cache.
-			shash_invalidate_cached _zfs_getfs "${mnt}"
+			cache_invalidate _zfs_getfs "${mnt}"
 		else
 			rm -rfx ${mnt} 2>/dev/null || :
 			if [ -d "${mnt}" ]; then

@@ -5548,6 +5548,7 @@ EPOCH_START=$(clock -epoch)
 . ${SCRIPTPREFIX}/include/parallel.sh
 . ${SCRIPTPREFIX}/include/hash.sh
 . ${SCRIPTPREFIX}/include/shared_hash.sh
+. ${SCRIPTPREFIX}/include/cache.sh
 . ${SCRIPTPREFIX}/include/fs.sh
 
 if [ -e /nonexistent ]; then
