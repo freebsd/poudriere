@@ -4788,7 +4788,7 @@ prepare_ports() {
 	# No prefix needed since we're unique in MASTERMNT.
 	SHASH_VAR_PREFIX=
 	# Allow caching values now
-	SHASH_USE_CACHE=1
+	USE_CACHE_CALL=1
 
 	if [ -e "${log}/.poudriere.ports.built" ]; then
 		resuming_build=1

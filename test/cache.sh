@@ -6,7 +6,7 @@
 . ${SCRIPTPREFIX}/include/shared_hash.sh
 . ${SCRIPTPREFIX}/include/cache.sh
 
-SHASH_USE_CACHE=1
+USE_CACHE_CALL=1
 
 MASTERMNT=$(mktemp -d)
 
