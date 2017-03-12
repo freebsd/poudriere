@@ -151,11 +151,13 @@ install_html_files() {
 	# aliased /data dir. This can easily be auto-detected via JS
 	# but due to FF file:// restrictions requires a hack which
 	# results in a 404 for every page load.
-	if grep -q 'server_style = "hosted"' \
-	    "${log_top}/.html/index.html"; then
-		sed -i '' -e \
-		's/server_style = "hosted"/server_style = "inline"/' \
-		${log_top}/.html/*.html
+	if [ "${HTML_TYPE}" = "inline" ]; then
+	    if grep -q 'server_style = "hosted"' \
+		"${log_top}/.html/index.html"; then
+		    sed -i '' -e \
+		    's/server_style = "hosted"/server_style = "inline"/' \
+		    ${log_top}/.html/*.html
+	    fi
 	fi
 
 	mkdir -p "${dest}"
