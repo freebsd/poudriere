@@ -175,7 +175,7 @@ if [ $CONFIGSTR -eq 1 ]; then
 	PORTSDIR=${portsdir} \
 	    PORT_DBDIR=${MASTERMNT}/var/db/ports \
 	    TERM=${SAVED_TERM} \
-	    make -C ${PORTSDIR}/${ORIGIN} config
+	    make -C ${portsdir}/${ORIGIN} config
 fi
 
 deps_fetch_vars "${ORIGIN}" LISTPORTS PKGNAME
