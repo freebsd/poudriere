@@ -130,8 +130,10 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # The jails normally only allow network access during the 'make fetch'
 # phase.  This is a security restriction to prevent random things
 # ran during a build from accessing the network.  Disabling this
-# is not advised.
+# is not advised.  ALLOW_NETWORKING_PACKAGES may be used to allow networking
+# for a subset of packages only.
 #RESTRICT_NETWORKING=yes
+#ALLOW_NETWORKING_PACKAGES="npm-foo"
 
 # parallel build support.
 #

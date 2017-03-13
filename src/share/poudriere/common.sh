@@ -171,6 +171,11 @@ job_msg_verbose() {
 	job_msg "$@"
 }
 
+job_msg_warn() {
+	COLOR_ARROW="${COLOR_WARN}" \
+	    job_msg "${COLOR_WARN}Warning: $@"
+}
+
 prompt() {
 	[ $# -eq 1 ] || eargs prompt message
 	local message="$1"
@@ -2434,7 +2439,7 @@ _real_build_port() {
 	local targets install_order
 	local jailuser
 	local testfailure=0
-	local max_execution_time
+	local max_execution_time allownetworking
 
 	_my_path mnt
 	_log_path log
@@ -2457,6 +2462,18 @@ _real_build_port() {
 			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port}${COLOR_RESET}"
 			sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' \
 			    ${mnt}/etc/make.conf
+			break
+			;;
+		esac
+	done
+	allownetworking=0
+	for jpkg in ${ALLOW_NETWORKING_PACKAGES}; do
+		case "${PKGNAME%-*}" in
+		${jpkg})
+			job_msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${COLOR_RESET}"
+			msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${COLOR_RESET}"
+			allownetworking=1
+			JNETNAME="n"
 			break
 			;;
 		esac
@@ -2628,7 +2645,8 @@ _real_build_port() {
 			fi
 		fi
 
-		if [ "${phase}" = "checksum" ]; then
+		if [ "${phase}" = "checksum" ] && \
+		    [ ${allownetworking} -eq 0 ]; then
 			JNETNAME=""
 		fi
 		print_phase_footer
