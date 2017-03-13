@@ -5043,7 +5043,7 @@ fi
 : ${TRIM_ORPHANED_BUILD_DEPS:=yes}
 : ${USE_PROCFS:=yes}
 : ${USE_FDESCFS:=yes}
-: ${USE_PTSORT:=no}
+: ${USE_PTSORT:=yes}
 : ${MUTABLE_BASE:=yes}
 : ${HTML_JSON_UPDATE_INTERVAL:=2}
 
