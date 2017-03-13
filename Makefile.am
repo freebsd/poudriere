@@ -292,6 +292,7 @@ gen-man-wiki:
 	@for man in $(dist_man_MANS); do \
 	  echo "MANDOC wiki/$${man##*/}.md"; \
 	  ( \
+	    echo "### This page is auto-generated from $(dist_man_MANS)"; \
 	    (mandoc -Txhtml $${man} | awk \
 	    '$$1 == "<body>" { seenbody=1; next; }; \
 	     $$1 == "</body>" { seenbody=0; }; \
