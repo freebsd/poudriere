@@ -79,10 +79,50 @@ rollbackfs() {
 	local name=$1
 	local mnt=$2
 	local fs="${3-$(zfs_getfs ${mnt})}"
+	local sfile tries hadfile
 
 	if [ -n "${fs}" ]; then
-		zfs rollback -r "${fs}@${name}" || \
-		    err 1 "Unable to rollback ${fs}"
+		# ZFS has a race with rollback+snapshot.  If ran concurrently
+		# it is possible that the rollback will "succeed" but the
+		# dataset will be on the newly created snapshot.  Avoid this
+		# by creating a file that we know won't be in the expected
+		# snapshot and trying a few times before considering it a
+		# failure.  https://www.illumos.org/issues/7600
+		sfile="${mnt}/.poudriere-not-rolledback-${name}"
+		# It's possible the file already exists if a previous rollback
+		# crashed before cleaning up.  If the file is stuck in the
+		# snapshot then the user must fix it.
+		hadfile=0
+		if [ -f "${sfile}" ]; then
+			hadfile=1
+		fi
+		if ! : > "${sfile}"; then
+			# Cannot create our race check file, so just try
+			# and assume it is OK.
+			zfs rollback -r "${fs}@${name}" || \
+				err 1 "Unable to rollback ${fs}"
+			return
+		fi
+		tries=0
+		while :; do
+			if ! zfs rollback -r "${fs}@${name}"; then
+				rm -f "${sfile}"
+				err 1 "Unable to rollback ${fs} to ${name}"
+			fi
+			# Success
+			if ! [ -f "${sfile}" ]; then
+				break
+			fi
+			tries=$((tries + 1))
+			if [ ${tries} -eq 20 ]; then
+				if [ ${hadfile} -eq 1 ]; then
+					err 1 "Timeout rolling back ${fs} to ${name}: Remove ${sfile} from snapshot."
+				fi
+				rm -f "${sfile}"
+				err 1 "Timeout rolling back ${fs} to ${name}"
+			fi
+			sleep 1
+		done
 		return
 	fi
 
