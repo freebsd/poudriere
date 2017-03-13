@@ -172,11 +172,10 @@ jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
 if [ $CONFIGSTR -eq 1 ]; then
 	command -v dialog4ports >/dev/null 2>&1 || err 1 "You must have ports-mgmt/dialog4ports installed on the host to use -c."
-	export PORTSDIR=${portsdir} \
-		PORT_DBDIR=${MASTERMNT}/var/db/ports \
-		TERM=${SAVED_TERM}
-	make -C ${PORTSDIR}/${ORIGIN} config
-	unset PORTSDIR PORT_DBDIR TERM
+	PORTSDIR=${portsdir} \
+	    PORT_DBDIR=${MASTERMNT}/var/db/ports \
+	    TERM=${SAVED_TERM} \
+	    make -C ${PORTSDIR}/${ORIGIN} config
 fi
 
 deps_fetch_vars "${ORIGIN}" LISTPORTS PKGNAME
