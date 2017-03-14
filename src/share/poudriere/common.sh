@@ -1838,7 +1838,7 @@ jail_start() {
 	local arch host_arch
 	local mnt
 	local needfs="${NULLFSREF}"
-	local needkld
+	local needkld kldpair kld kldmodname
 	local tomnt
 	local portbuild_uid
 
@@ -1884,11 +1884,10 @@ jail_start() {
 	if [ -z "${NOLINUX}" ]; then
 		if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
 			needfs="${needfs} linprocfs"
-			kldstat -q -m linuxelf || kldload linux
+			needkld="${needkld} linuxelf:linux"
 			if [ "${arch}" = "amd64" ] && \
 			    [ ${HOST_OSVERSION} -ge 1002507 ]; then
-				kldstat -q -m linux64elf || \
-				kldstat -q -m linux64elf || kldload linux64
+				needkld="${needkld} linux64elf:linux64"
 			fi
 		fi
 	fi
@@ -1906,10 +1905,13 @@ jail_start() {
 			fi
 		fi
 	done
-	for kld in ${needkld}; do
-		if ! kldstat -q -m ${kld} ; then
+	for kldpair in ${needkld}; do
+		kldmodname="${kldpair%:*}"
+		kld="${kldpair#*:}"
+		if ! kldstat -q -m "${kldmodname}" ; then
 			if [ $JAILED -eq 0 ]; then
-				kldload ${kld} || err 1 "Required kernel module '${kld}' not found"
+				kldload "${kld}" || \
+				    err 1 "Required kernel module '${kld}' not found"
 			else
 				err 1 "Please load the ${kld} module on the host using \"kldload ${kld}\""
 			fi
