@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 11, 2017
+.Dd March 14, 2017
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -531,6 +531,13 @@ Here are the options associated with the
 .Cm testport
 command.
 .Bl -tag -width "-f conffile"
+.It Fl B Ar name
+Specify which buildname to use.
+By default
+.Ar YYYY-MM-DD_HH:MM:SS
+will be used.
+This can be used to resume a previous build and use the same log and URL paths.
+Resuming a build will not retry built/failed/skipped/ignored packages.
 .It Fl c
 Run make config for the given port.
 .It Fl i
