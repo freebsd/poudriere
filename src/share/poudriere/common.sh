@@ -1885,7 +1885,9 @@ jail_start() {
 		if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
 			needfs="${needfs} linprocfs"
 			kldstat -q -m linuxelf || kldload linux
-			if [ "${arch}" = "amd64" ]; then
+			if [ "${arch}" = "amd64" ] && \
+			    [ ${HOST_OSVERSION} -ge 1002507 ]; then
+				kldstat -q -m linux64elf || \
 				kldstat -q -m linux64elf || kldload linux64
 			fi
 		fi
