@@ -35,6 +35,9 @@ Parameters:
     [-o] origin   -- Specify an origin in the portstree
 
 Options:
+    -B name     -- What buildname to use (must be unique, defaults to
+                   YYYY-MM-DD_HH:MM:SS). Resuming a previous build will not
+                   retry built/failed/skipped/ignored packages.
     -c          -- Run make config for the given port
     -i          -- Interactive mode. Enter jail for interactive testing and
                    automatically cleanup when done.
@@ -74,6 +77,9 @@ BUILD_REPO=1
 
 while getopts "o:cniIj:J:kNp:PsSvwz:" FLAG; do
 	case "${FLAG}" in
+		B)
+			BUILDNAME="${OPTARG}"
+			;;
 		c)
 			CONFIGSTR=1
 			;;
