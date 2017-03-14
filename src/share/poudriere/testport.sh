@@ -45,6 +45,7 @@ Options:
                    the build. (Defaults to the number of CPUs for n and
                    1.25 times n for p)
     -k          -- Don't consider failures as fatal; find all failures.
+    -K          -- Kill jail if running.
     -N          -- Do not build package repository or INDEX when build
                    of dependencies completed
     -p tree     -- Specify the path to the portstree
@@ -69,10 +70,11 @@ SETNAME=""
 SKIPSANITY=0
 SKIP_RECURSIVE_REBUILD=0
 INTERACTIVE_MODE=0
+KILL_JAIL=no
 PTNAME="default"
 BUILD_REPO=1
 
-while getopts "o:cniIj:J:kNp:PsSvwz:" FLAG; do
+while getopts "o:cniIj:J:kKNp:PsSvwz:" FLAG; do
 	case "${FLAG}" in
 		c)
 			CONFIGSTR=1
@@ -93,6 +95,9 @@ while getopts "o:cniIj:J:kNp:PsSvwz:" FLAG; do
 			;;
 		k)
 			PORTTESTING_FATAL=no
+			;;
+		K)
+			KILL_JAIL=yes
 			;;
 		i)
 			INTERACTIVE_MODE=1
@@ -168,6 +173,7 @@ export MASTERNAME
 export MASTERMNT
 export POUDRIERE_BUILD_TYPE=bulk
 
+[ "$KILL_JAIL" = "yes" ] && jail_stop
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
 if [ $CONFIGSTR -eq 1 ]; then
