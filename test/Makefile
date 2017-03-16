@@ -15,5 +15,6 @@ all: check
 check: .PHONY
 	@echo "Running tests against stock /bin/sh"
 	@sh runtests.sh /bin/sh ${TESTS}
+	@echo
 	@echo "Running tests against modified sh"
 	@sh runtests.sh sh ${TESTS}
