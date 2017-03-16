@@ -122,7 +122,6 @@ assert_traps "${CRITICAL}" "critical traps should match"
 
 # Restore 0 trap and ensure the rest match
 echo "Restore 0 - bad INFO"
-EXPECTED_0=$(mktemp -ut trap_save)
 cp "${CRITICAL}" "${EXPECTED_0}"
 trap_pop INFO ""
 assert 1 $? "trap_pop INFO blank"
@@ -131,7 +130,6 @@ assert_traps "${EXPECTED_0}" "restore 0 traps should match"
 
 # Restore 1 trap and ensure the rest match
 echo "Restore 1 - INFO"
-EXPECTED_1=$(mktemp -ut trap_save)
 # Must construct manually due to ordering
 cat > "${EXPECTED_1}" <<'EOF'
 trap -- 'echo ignore' TERM
@@ -146,7 +144,6 @@ assert_traps "${EXPECTED_1}" "restore 1 traps should match"
 
 # Restore 2 trap and ensure the rest match
 echo "Restore 2 - USR1"
-EXPECTED_2=$(mktemp -ut trap_save)
 # Must construct manually due to ordering
 cat > "${EXPECTED_2}" <<'EOF'
 trap -- 'echo ignore' TERM
@@ -161,7 +158,6 @@ assert_traps "${EXPECTED_2}" "restore 2 traps should match"
 
 # Restore 3 trap and ensure the rest match
 echo "Restore 3 - TERM"
-EXPECTED_3=$(mktemp -ut trap_save)
 # Must construct manually due to ordering
 cat > "${EXPECTED_3}" <<'EOF'
 trap -- '' TERM
