@@ -3921,7 +3921,7 @@ delete_pkg() {
 
 	# Delete the package and the depsfile since this package is being deleted,
 	# which will force it to be recreated
-	rm -f "${pkg}"
+	rm -rf "${pkg}"
 	clear_pkg_cache "${pkg}"
 }
 
