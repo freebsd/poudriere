@@ -3250,6 +3250,8 @@ build_pkg() {
 	fi
 
 	[ -f ${mnt}/.need_rollback ] && rollbackfs prepkg ${mnt}
+	[ -f ${mnt}/.need_rollback ] && \
+	    err 1 "Failed to rollback ${mnt} to prepkg"
 	:> ${mnt}/.need_rollback
 
 	case " ${BLACKLIST} " in
