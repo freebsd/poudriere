@@ -1092,6 +1092,7 @@ markfs() {
 	local fs="$(zfs_getfs ${mnt})"
 	local dozfs=0
 	local domtree=0
+	local snapfile
 
 	msg_n "Recording filesystem state for ${name}..."
 
@@ -1114,8 +1115,13 @@ markfs() {
 	if [ $dozfs -eq 1 ]; then
 		# remove old snapshot if exists
 		zfs destroy -r ${fs}@${name} 2>/dev/null || :
+		rollback_file "${mnt}" "${name}" snapfile
+		rm -f "${snapfile}" >/dev/null 2>&1 || :
 		#create new snapshot
 		zfs snapshot ${fs}@${name}
+		# Mark that we are in this snapshot, which rollbackfs
+		# will check for not existing when rolling back later.
+		: > "${snapfile}"
 	fi
 
 	if [ $domtree -eq 0 ]; then
@@ -1128,6 +1134,7 @@ markfs() {
 			cat > ${mnt}/.p/mtree.${name}exclude << EOF
 ./.npkg
 ./.p
+./.poudriere-snap-*
 .${HOME}/.ccache
 ./compat/linux/proc
 ./dev
@@ -1146,6 +1153,7 @@ EOF
 			cat > ${mnt}/.p/mtree.${name}exclude << EOF
 ./.npkg
 ./.p
+./.poudriere-snap-*
 .${HOME}/.ccache
 ./compat/linux/proc
 ./dev
@@ -1166,6 +1174,7 @@ EOF
 			cat >  ${mnt}/.p/mtree.${name}exclude << EOF
 ./.npkg
 ./.p
+./.poudriere-snap-*
 .${HOME}
 .${HOME}/.ccache
 ./compat/linux/proc
