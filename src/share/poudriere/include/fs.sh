@@ -74,6 +74,15 @@ do_clone() {
 	fi
 }
 
+rollback_file() {
+	[ $# -eq 3 ] || eargs rollback_file mnt snapshot var_return
+	local mnt="$1"
+	local snapshot="$2"
+	local var_return="$3"
+
+	setvar "${var_return}" "${mnt}/.poudriere-snap-${snapshot}"
+}
+
 rollbackfs() {
 	[ $# -lt 2 ] && eargs rollbackfs name mnt [fs]
 	local name=$1
@@ -88,23 +97,16 @@ rollbackfs() {
 		# by creating a file that we know won't be in the expected
 		# snapshot and trying a few times before considering it a
 		# failure.  https://www.illumos.org/issues/7600
-		sfile="${mnt}/.poudriere-not-rolledback-${name}"
-		# It's possible the file already exists if a previous rollback
-		# crashed before cleaning up.  If the file is stuck in the
-		# snapshot then the user must fix it.
-		if [ -f "${sfile}" ]; then
-			zfs rollback -r "${fs}@${name}" || \
-			    err 1 "Unable to rollback ${fs}"
-			[ -f "${sfile}" ] && \
-			    err 1 "Failed to rollback ${fs} to ${name}: File ${sfile} is in snapshot."
-			# It worked.
-			return 0
-		fi
-		if ! : > "${sfile}"; then
+		rollback_file "${mnt}" "${name}" sfile
+		# The file should already exist from a markfs call.  If it
+		# doesn't for some reason, make it here.  The reason
+		# for markfs to create it is to avoid just hitting race that
+		# this extra code is trying to avoid in the first place.
+		if ! [ -f "${sfile}" ] && ! : > "${sfile}"; then
 			# Cannot create our race check file, so just try
 			# and assume it is OK.
 			zfs rollback -r "${fs}@${name}" || \
-				err 1 "Unable to rollback ${fs}"
+			    err 1 "Unable to rollback ${fs}"
 			return
 		fi
 		tries=0
