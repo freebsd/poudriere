@@ -1742,12 +1742,6 @@ jail_start() {
 	# Protect ourselves from OOM
 	madvise_protect $$ || :
 
-	# Determine if umount -n can be used.
-	if grep -q "#define[[:space:]]MNT_NONBUSY" /usr/include/sys/mount.h \
-	    2>/dev/null; then
-		UMOUNT_NONBUSY="-n"
-	fi
-
 	JAIL_OSVERSION=$(awk '/\#define __FreeBSD_version/ { print $3 }' "${mnt}/usr/include/sys/param.h")
 
 	[ ${JAIL_OSVERSION} -lt 900000 ] && needkld="${needkld} sem"
@@ -4991,6 +4985,11 @@ if sysctl -n vfs.mnt_free_list_batch >/dev/null 2>&1; then
 	UMOUNT_BATCHING=1
 else
 	UMOUNT_BATCHING=0
+fi
+# Determine if umount -n can be used.
+if grep -q "#define[[:space:]]MNT_NONBUSY" /usr/include/sys/mount.h \
+    2>/dev/null; then
+	UMOUNT_NONBUSY="-n"
 fi
 
 case ${PARALLEL_JOBS} in
