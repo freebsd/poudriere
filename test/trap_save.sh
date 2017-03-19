@@ -32,15 +32,37 @@ assert_traps() {
 	    "${extra}: trap count does not match actual"
 }
 
-ORIGINAL=$(mktemp -ut trap_save)
-cat > "${ORIGINAL}" <<'EOF'
+# Older /bin/sh (before r275766 and r275346) did not qoute assignments
+# always, so our expected "trap -- 'gotint=1' INT" may come out as
+# "trap -- gotint=1 INT".  Check for which version it is first.
+trap - INT
 trap -- 'gotint=1' INT
-trap -- '' TERM
+sh_quotes_assignments=0
+while read -r line; do
+	case "${line}" in
+		*"'gotint=1'"*) sh_quotes_assignments=1 ;;
+	esac
+done <<-EOF
+$(trap)
+EOF
+if [ ${sh_quotes_assignments} -eq 1 ]; then
+	orig_intrap="'gotint=1'"
+else
+	orig_intrap="gotint=1"
+fi
+trap - INT
+
+ORIGINAL=$(mktemp -ut trap_save)
+echo "trap -- ${orig_intrap} INT" > "${ORIGINAL}"
+echo "trap -- '' TERM" >> "${ORIGINAL}"
+if [ ${sh_quotes_assignments} -eq 1 ]; then
+cat >> "${ORIGINAL}" <<'EOF'
 # This chaos is to ensure that trap_push and trap_pop don't execute anything
 # in the trap since an eval is required.  It's also testing all of the
 # various quoting needs.
 trap -- $'var="gotusr1"; evalled_usr1=1; [ -z $dokill ] && `kill -9 $$`; setvar "${var}" \'1\'' USR1
 EOF
+fi
 
 while read -r line; do
 	eval ${line}
@@ -49,12 +71,14 @@ done < "${ORIGINAL}"
 # Verify our traps match expections
 assert_traps "${ORIGINAL}" "initial traps should match"
 
+if [ ${sh_quotes_assignments} -eq 1 ]; then
 # Verify the USR1 trap works, it will be tried later too
 gotusr1=0
 dokill=0
 kill -USR1 $$
 unset dokill
 assert 1 ${gotusr1} "initial USR1 trap should work"
+fi
 
 # Save 0 traps and ensure the rest match
 echo "Save 0 - INFO"
@@ -73,7 +97,7 @@ EXPECTED_1=$(mktemp -ut trap_save)
 awk '$NF != "INT"' "${ORIGINAL}" > "${EXPECTED_1}"
 trap_push INT oact_int
 assert 0 $? "trap_push INT"
-assert "'gotint=1'" "${oact_int}" "INT trap should match"
+assert "${orig_intrap}" "${oact_int}" "INT trap should match"
 assert_traps "${EXPECTED_1}" "saved 1 traps should match"
 
 # Save 2 trap and ensure the rest match
@@ -82,10 +106,12 @@ trap
 EXPECTED_2=$(mktemp -ut trap_save)
 awk '$NF != "INT" && $NF != "USR1"' "${ORIGINAL}" > "${EXPECTED_2}"
 evalled_usr1=0
+if [ ${sh_quotes_assignments} -eq 1 ]; then
 trap_push USR1 oact_usr1
 assert 0 $? "trap_push USR1"
 assert 0 ${evalled_usr1} "trap_push USR1 should not have evalled it"
 assert $'$\'var="gotusr1"; evalled_usr1=1; [ -z $dokill ] && `kill -9 $$`; setvar "${var}" \\\'1\\\'\'' "${oact_usr1}" "USR1 trap should match"
+fi
 assert_traps "${EXPECTED_2}" "saved 2 traps should match"
 
 # Save 3 trap and ensure the rest match
@@ -147,12 +173,18 @@ echo "Restore 2 - USR1"
 # Must construct manually due to ordering
 cat > "${EXPECTED_2}" <<'EOF'
 trap -- 'echo ignore' TERM
+EOF
+if [ ${sh_quotes_assignments} -eq 1 ]; then
+cat >> "${EXPECTED_2}" <<'EOF'
 trap -- $'var="gotusr1"; evalled_usr1=1; [ -z $dokill ] && `kill -9 $$`; setvar "${var}" \'1\'' USR1
 EOF
 evalled_usr1=0
 trap_pop USR1 "${oact_usr1}"
 assert 0 $? "trap_pop USR1"
 assert 0 ${evalled_usr1} "trap_pop USR1 should not have evalled it"
+else
+trap - USR1
+fi
 trap
 assert_traps "${EXPECTED_2}" "restore 2 traps should match"
 
@@ -161,8 +193,12 @@ echo "Restore 3 - TERM"
 # Must construct manually due to ordering
 cat > "${EXPECTED_3}" <<'EOF'
 trap -- '' TERM
+EOF
+if [ ${sh_quotes_assignments} -eq 1 ]; then
+cat >> "${EXPECTED_3}" <<'EOF'
 trap -- $'var="gotusr1"; evalled_usr1=1; [ -z $dokill ] && `kill -9 $$`; setvar "${var}" \'1\'' USR1
 EOF
+fi
 trap_pop TERM "${oact_term}"
 assert 0 $? "trap_pop TERM"
 trap
@@ -179,11 +215,13 @@ trap
 assert_traps "${EXPECTED_4}" "restore 4 traps should match"
 
 # Now that everything is restored, test that they work
+if [ ${sh_quotes_assignments} -eq 1 ]; then
 gotusr1=0
 dokill=0
 kill -USR1 $$
 unset dokill
 assert 1 ${gotusr1} "restored USR1 trap should work"
+fi
 
 trap '' EXIT
 trap '' INT
