@@ -76,7 +76,7 @@ rollbackfs() {
 	local name=$1
 	local mnt=$2
 	local fs="${3-$(zfs_getfs ${mnt})}"
-	local sfile tries hadfile
+	local sfile tries
 
 	if [ -n "${fs}" ]; then
 		# ZFS has a race with rollback+snapshot.  If ran concurrently
@@ -89,9 +89,13 @@ rollbackfs() {
 		# It's possible the file already exists if a previous rollback
 		# crashed before cleaning up.  If the file is stuck in the
 		# snapshot then the user must fix it.
-		hadfile=0
 		if [ -f "${sfile}" ]; then
-			hadfile=1
+			zfs rollback -r "${fs}@${name}" || \
+			    err 1 "Unable to rollback ${fs}"
+			[ -f "${sfile}" ] && \
+			    err 1 "Failed to rollback ${fs} to ${name}: File ${sfile} is in snapshot."
+			# It worked.
+			return 0
 		fi
 		if ! : > "${sfile}"; then
 			# Cannot create our race check file, so just try
@@ -112,9 +116,6 @@ rollbackfs() {
 			fi
 			tries=$((tries + 1))
 			if [ ${tries} -eq 20 ]; then
-				if [ ${hadfile} -eq 1 ]; then
-					err 1 "Timeout rolling back ${fs} to ${name}: Remove ${sfile} from snapshot."
-				fi
 				rm -f "${sfile}"
 				err 1 "Timeout rolling back ${fs} to ${name}"
 			fi
