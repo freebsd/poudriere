@@ -2932,19 +2932,21 @@ stop_builder() {
 }
 
 stop_builders() {
-	local PARALLEL_JOBS
+	local PARALLEL_JOBS real_parallel_jobs
+
 	# wait for the last running processes
 	cat ${MASTERMNT}/.p/var/run/*.pid 2>/dev/null | xargs pwait 2>/dev/null
 
 	if [ ${PARALLEL_JOBS} -ne 0 ]; then
 		msg "Stopping ${PARALLEL_JOBS} builders"
 
+		real_parallel_jobs=${PARALLEL_JOBS}
 		if [ ${UMOUNT_BATCHING} -eq 0 ]; then
 			# Limit builders
 			PARALLEL_JOBS=2
 		fi
 		parallel_start
-		for j in ${JOBS-$(jot -w %02d ${PARALLEL_JOBS})}; do
+		for j in ${JOBS-$(jot -w %02d ${real_parallel_jobs})}; do
 			parallel_run stop_builder "${j}"
 		done
 		parallel_stop
