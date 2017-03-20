@@ -356,7 +356,7 @@ coprocess_stop() {
 	hash_unset coprocess_pid "${name}"
 
 	# kill -> timeout wait -> kill -9
-	kill_and_wait 30 "${pid}" || :
+	kill_and_wait 60 "${pid}" || :
 
 	# Run atexit functions
 	if hash_get coprocess_atexit "${name}" atexit; then
