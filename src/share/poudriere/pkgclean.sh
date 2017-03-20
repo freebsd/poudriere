@@ -251,40 +251,18 @@ END {
 	msg_verbose "Keeping latest package: ${lastpkg##*/}"
 done
 
-file_cnt=$(wc -l ${BADFILES_LIST} | awk '{print $1}')
-
-if [ ${file_cnt} -eq 0 ]; then
-	msg "No stale packages to cleanup"
+ret=0
+do_confirm_delete "${BADFILES_LIST}" "stale packages" \
+    "${answer}" "${DRY_RUN}" || ret=$?
+if [ ${ret} -eq 2 ]; then
 	exit 0
-fi
-
-hsize=$(cat ${BADFILES_LIST} | stat_humanize)
-
-msg "Files to be deleted:"
-cat ${BADFILES_LIST}
-msg "Cleaning these will free: ${hsize}"
-
-if [ ${DRY_RUN} -eq 1 ];  then
-	msg "Dry run: not cleaning anything."
-	exit 0
-fi
-
-if [ -z "${answer}" ]; then
-	prompt "Proceed?" && answer="yes"
-fi
-
-deleted_files=0
-if [ "${answer}" = "yes" ]; then
-	msg "Cleaning files"
-	cat ${BADFILES_LIST} | xargs rm -f
-	deleted_files=1
 fi
 
 # After deleting stale files, need to remake repo.
 
-if [ $deleted_files -eq 1 ]; then
+if [ $ret -eq 1 ]; then
 	[ "${NO_RESTRICTED}" != "no" ] && clean_restricted
 	delete_stale_symlinks_and_empty_dirs
 	[ ${BUILD_REPO} -eq 1 ] && build_repo
 fi
-run_hook pkgclean done ${deleted_files} ${BUILD_REPO}
+run_hook pkgclean done ${ret} ${BUILD_REPO}

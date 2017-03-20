@@ -397,10 +397,57 @@ for_each_build() {
 }
 
 stat_humanize() {
-	xargs stat -f '%i %z' | \
+	xargs -0 stat -f '%i %z' | \
 	    sort -u | \
 	    awk '{total += $2} END {print total}' | \
 	    awk -f ${AWKPREFIX}/humanize.awk
+}
+
+do_confirm_delete() {
+	[ $# -eq 4 ] || eargs do_confirm_delete badfiles_list \
+	    reason_plural_object answer DRY_RUN
+	local filelist="$1"
+	local reason="$2"
+	local answer="$3"
+	local DRY_RUN="$4"
+	local file_cnt hsize ret
+
+	file_cnt=$(wc -l ${filelist} | awk '{print $1}')
+	if [ ${file_cnt} -eq 0 ]; then
+		msg "No ${reason} to cleanup"
+		return 2
+	fi
+
+	msg_n "Calculating size for found files..."
+	hsize=$(cat ${filelist} | \
+	    tr '\n' '\000' | \
+	    xargs -0 -J % find % -print0 | \
+	    stat_humanize)
+	echo " done"
+
+	msg "These ${reason} will be deleted:"
+	cat ${filelist}
+	msg "Cleaning these ${reason} will free: ${hsize}"
+
+	if [ ${DRY_RUN} -eq 1 ];  then
+		msg "Dry run: not cleaning anything."
+		return 2
+	fi
+
+	if [ -z "${answer}" ]; then
+		prompt "Proceed?" && answer="yes"
+	fi
+
+	ret=0
+	if [ "${answer}" = "yes" ]; then
+		msg_n "Cleaning files..."
+		cat ${filelist} | tr '\n' '\000' | \
+		    xargs -0 -J % \
+		    find % -mindepth 0 -maxdepth 0 -exec rm -rf {} +
+		echo " done"
+		ret=1
+	fi
+	return ${ret}
 }
 
 # It may be defined as a NOP for tests
