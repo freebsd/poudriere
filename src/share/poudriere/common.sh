@@ -1216,7 +1216,8 @@ cd() {
 	command cd "$@" || ret=$?
 	# Handle fixing relative paths
 	if [ "${OLDPWD}" != "${PWD}" ]; then
-		if [ -n "${SHASH_VAR_PATH}" ]; then
+		# Only change if it is relative
+		if [ -n "${SHASH_VAR_PATH##/*}" ]; then
 			_relpath "${OLDPWD}/${SHASH_VAR_PATH}" "${PWD}"
 			SHASH_VAR_PATH="${_relpath}"
 		fi
