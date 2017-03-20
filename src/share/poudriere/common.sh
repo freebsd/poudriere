@@ -3272,7 +3272,7 @@ parallel_build() {
 	msg "Starting/Cloning builders"
 	start_builders
 
-	coprocess_start pkg_cacher pkg_cacher_cleanup
+	coprocess_start pkg_cacher
 
 	bset status "parallel_build:"
 
@@ -3869,6 +3869,9 @@ pkg_cacher_main() {
 
 	mkfifo ${MASTERMNT}/.p/pkg_cacher.pipe
 	exec 6<> ${MASTERMNT}/.p/pkg_cacher.pipe
+
+	trap exit TERM
+	trap pkg_cacher_cleanup EXIT
 
 	# Wait for packages to process.
 	while :; do

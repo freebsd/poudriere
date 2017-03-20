@@ -329,12 +329,10 @@ spawn_protected() {
 	madvise_protect $! || :
 }
 
-# Start a background process from function 'name'. The 'atexit' function
-# will be called from the main process after the coprocess is killed.
+# Start a background process from function 'name'.
 coprocess_start() {
-	[ $# -ge 1 ] || eargs coprocess_start name [atexit]
+	[ $# -eq 1 ] || eargs coprocess_start name
 	local name="$1"
-	local atexit="$2"
 	local main pid
 
 	main="${name}_main"
@@ -342,7 +340,6 @@ coprocess_start() {
 	pid=$!
 
 	hash_set coprocess_pid "${name}" "${pid}"
-	[ -n "${atexit}" ] && hash_set coprocess_atexit "${name}" "${atexit}"
 
 	return 0
 }
@@ -350,17 +347,10 @@ coprocess_start() {
 coprocess_stop() {
 	[ $# -eq 1 ] || eargs coprocess_stop name
 	local name="$1"
-	local pid atexit lockname
 
 	hash_get coprocess_pid "${name}" pid || return 0
 	hash_unset coprocess_pid "${name}"
 
 	# kill -> timeout wait -> kill -9
 	kill_and_wait 60 "${pid}" || :
-
-	# Run atexit functions
-	if hash_get coprocess_atexit "${name}" atexit; then
-		hash_unset coprocess_atexit "${name}"
-		${atexit}
-	fi
 }
