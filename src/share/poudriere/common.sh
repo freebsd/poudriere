@@ -273,6 +273,130 @@ _log_path() {
 	setvar "$1" "${log_path_jail}/${BUILDNAME}"
 }
 
+# Call function with vars set:
+# log MASTERNAME BUILDNAME jailname ptname setname
+for_each_build() {
+	[ -n "${BUILDNAME_GLOB}" ] || \
+	    err 1 "for_each_build requires BUILDNAME_GLOB"
+	[ -n "${SHOW_FINISHED}" ] || \
+	    err 1 "for_each_build requires SHOW_FINISHED"
+	[ $# -eq 1 ] || eargs for_each_build action
+	local action="$1"
+	local MASTERNAME BUILDNAME buildname jailname ptname setname
+	local log_top
+
+	POUDRIERE_BUILD_TYPE="bulk" _log_path_top log_top
+	[ -d "${log_top}" ] || err 1 "Log path ${log_top} does not exist."
+	cd ${log_top}
+
+	found_jobs=0
+	for mastername in *; do
+		# Check empty dir
+		case "${mastername}" in
+			"*") break ;;
+		esac
+		[ -L "${mastername}/latest" ] || continue
+		MASTERNAME=${mastername}
+		[ "${MASTERNAME}" = "latest-per-pkg" ] && continue
+		[ ${SHOW_FINISHED} -eq 0 ] && ! jail_runs ${MASTERNAME} && \
+		    continue
+
+		# Look for all wanted buildnames (will be 1 or Many(-a)))
+		for buildname in ${mastername}/${BUILDNAME_GLOB}; do
+			# Check for no match. If not using a glob ensure the
+			# file exists otherwise check for the glob coming back
+			if [ "${BUILDNAME_GLOB%\**}" != \
+			    "${BUILDNAME_GLOB}" ]; then
+				case "${buildname}" in
+					# Check no results
+					"${mastername}/${BUILDNAME_GLOB}")
+						break
+						;;
+					# Skip latest if from a glob, let it be
+					# found normally.
+					"${mastername}/latest")
+						continue
+						;;
+					# Don't want latest-per-pkg
+					"${mastername}/latest-per-pkg")
+						continue
+						;;
+				esac
+			else
+				# No match
+				[ -e "${buildname}" ] || break
+			fi
+			buildname="${buildname#${mastername}/}"
+			BUILDNAME="${buildname}"
+			# Unset so later they can be checked for NULL (don't
+			# want to lookup again if value looked up is empty
+			unset jailname ptname setname
+			# Try matching on any given JAILNAME/PTNAME/SETNAME,
+			# and if any don't match skip this MASTERNAME entirely.
+			# If the file is missing it's a legacy build, skip it
+			# but not the entire mastername if it has a match.
+			if [ -n "${JAILNAME}" ]; then
+				if _bget jailname jailname 2>/dev/null; then
+					[ "${jailname}" = "${JAILNAME}" ] || \
+					    continue 2
+				else
+					case "${MASTERNAME}" in
+						${JAILNAME}-*) ;;
+						*) continue 2 ;;
+					esac
+					continue
+				fi
+			fi
+			if [ -n "${PTNAME}" ]; then
+				if _bget ptname ptname 2>/dev/null; then
+					[ "${ptname}" = "${PTNAME}" ] || \
+					    continue 2
+				else
+					case "${MASTERNAME}" in
+						*-${PTNAME}) ;;
+						*) continue 2 ;;
+					esac
+					continue
+				fi
+			fi
+			if [ -n "${SETNAME}" ]; then
+				if _bget setname setname 2>/dev/null; then
+					[ "${setname}" = "${SETNAME%0}" ] || \
+					    continue 2
+				else
+					case "${MASTERNAME}" in
+						*-${SETNAME%0}) ;;
+						*) continue 2 ;;
+					esac
+					continue
+				fi
+			fi
+			# Dereference latest into actual buildname
+			[ "${buildname}" = "latest" ] && \
+			    _bget BUILDNAME buildname 2>/dev/null
+			# May be blank if build is still starting up
+			[ -z "${BUILDNAME}" ] && continue 2
+
+			found_jobs=$((${found_jobs} + 1))
+
+			# Lookup jailname/setname/ptname if needed. Delayed
+			# from earlier for performance for -a
+			[ -z "${jailname+null}" ] && \
+			    _bget jailname jailname 2>/dev/null || :
+			[ -z "${setname+null}" ] && \
+			    _bget setname setname 2>/dev/null || :
+			[ -z "${ptname+null}" ] && \
+			    _bget ptname ptname 2>/dev/null || :
+			log=${mastername}/${BUILDNAME}
+
+			${action}
+		done
+
+	done
+	cd ${OLDPWD}
+}
+
+
 # It may be defined as a NOP for tests
 if ! type injail >/dev/null 2>&1; then
 injail() {
