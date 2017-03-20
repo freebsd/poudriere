@@ -26,7 +26,7 @@
 
 : ${SHASH_VAR_NAME_SUB_GLOB:="[ /]"}
 : ${SHASH_VAR_PATH:=${TMPDIR:-/tmp}}
-: ${SHASH_VAR_PREFIX:=$$}
+: ${SHASH_VAR_PREFIX=$$}
 
 _shash_var_name() {
 	local var="${1}"

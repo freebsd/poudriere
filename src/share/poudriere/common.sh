@@ -840,12 +840,11 @@ exit_handler() {
 
 	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
 
-	rm -f /tmp/.poudriere-lock-$$-*.flock 2>/dev/null || :
-	rmdir /tmp/.poudriere-lock-$$-* 2>/dev/null || :
 	if [ ${CREATED_JLOCK:-0} -eq 1 ]; then
 		_jlock jlock
 		rm -rf "${jlock}" 2>/dev/null || :
 	fi
+	rm -rf "${POUDRIERE_TMPDIR}" >/dev/null 2>&1 || :
 }
 
 build_url() {
@@ -1072,11 +1071,15 @@ fi
 mktemp() {
 	local ret
 
-	if [ -z "${TMPDIR}" -a -n "${MASTERMNT}" -a ${STATUS} -eq 1 ]; then
-		local mnt
-		_my_path mnt
-		TMPDIR="${mnt}/.p/tmp"
-		[ -d "${TMPDIR}" ] || unset TMPDIR
+	if [ -z "${TMPDIR}" ]; then
+		if [ -n "${MASTERMNT}" -a ${STATUS} -eq 1 ]; then
+			local mnt
+			_my_path mnt
+			TMPDIR="${mnt}/.p/tmp"
+			[ -d "${TMPDIR}" ] || unset TMPDIR
+		else
+			TMPDIR="${POUDRIERE_TMPDIR}"
+		fi
 	fi
 	if [ -n "${MKTEMP_BUILTIN}" ]; then
 		# No export needed here since TMPDIR is set above in scope.
@@ -4158,7 +4161,7 @@ lock_acquire() {
 	    return 1
 
 	if ! locked_mkdir "${waittime}" \
-	    "/tmp/.poudriere-lock-$$-${MASTERNAME}-${lockname}"; then
+	    "${POUDRIERE_TMPDIR}/lock-${MASTERNAME}-${lockname}"; then
 		msg_warn "Failed to acquire ${lockname} lock"
 		return 1
 	fi
@@ -4174,7 +4177,7 @@ lock_release() {
 
 	hash_unset have_lock "${lockname}" || \
 	    err 1 "Releasing unheld lock ${lockname}"
-	rmdir /tmp/.poudriere-lock-$$-${MASTERNAME}-${lockname} 2>/dev/null
+	rmdir "${POUDRIERE_TMPDIR}/lock-${MASTERNAME}-${lockname}" 2>/dev/null
 
 	# Restore and deliver INT/TERM signals
 	critical_end
@@ -5564,6 +5567,10 @@ fi
 : ${NO_RESTRICTED:=no}
 : ${USE_COLORS:=yes}
 : ${ALLOW_MAKE_JOBS_PACKAGES=pkg ccache}
+
+: ${POUDRIERE_TMPDIR:=$(command mktemp -dt poudriere)}
+: ${SHASH_VAR_PATH:=${POUDRIERE_TMPDIR}}
+: ${SHASH_VAR_PREFIX:=sh-}
 
 : ${USE_CACHED:=no}
 
