@@ -396,6 +396,12 @@ for_each_build() {
 	cd ${OLDPWD}
 }
 
+stat_humanize() {
+	xargs stat -f '%i %z' | \
+	    sort -u | \
+	    awk '{total += $2} END {print total}' | \
+	    awk -f ${AWKPREFIX}/humanize.awk
+}
 
 # It may be defined as a NOP for tests
 if ! type injail >/dev/null 2>&1; then

@@ -258,10 +258,7 @@ if [ ${file_cnt} -eq 0 ]; then
 	exit 0
 fi
 
-hsize=$(cat ${BADFILES_LIST} | xargs stat -f '%i %z' | sort -u | \
-	awk '{total += $2} END {print total}' | \
-	awk -f ${AWKPREFIX}/humanize.awk
-)
+hsize=$(cat ${BADFILES_LIST} | stat_humanize)
 
 msg "Files to be deleted:"
 cat ${BADFILES_LIST}
