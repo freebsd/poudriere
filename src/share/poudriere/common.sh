@@ -819,6 +819,8 @@ exit_handler() {
 		if [ -d "${MASTERMNT}/.p" ]; then
 			cd "${MASTERMNT}/.p"
 		fi
+		# Don't use jail for any caching in cleanup
+		SHASH_VAR_PATH="${SHASH_VAR_PATH_DEFAULT}"
 	fi
 
 	parallel_shutdown
@@ -5570,7 +5572,8 @@ fi
 : ${ALLOW_MAKE_JOBS_PACKAGES=pkg ccache}
 
 : ${POUDRIERE_TMPDIR:=$(command mktemp -dt poudriere)}
-: ${SHASH_VAR_PATH:=${POUDRIERE_TMPDIR}}
+: ${SHASH_VAR_PATH_DEFAULT:=${POUDRIERE_TMPDIR}}
+: ${SHASH_VAR_PATH:=${SHASH_VAR_PATH_DEFAULT}}
 : ${SHASH_VAR_PREFIX:=sh-}
 
 : ${USE_CACHED:=no}
