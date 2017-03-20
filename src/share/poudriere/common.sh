@@ -4873,7 +4873,7 @@ prepare_ports() {
 		# Must acquire "update_stats" on shutdown to ensure
 		# the process is not killed while holding it.
 		if [ ${HTML_JSON_UPDATE_INTERVAL} -ne 0 ]; then
-			coprocess_start html_json html_json_cleanup
+			coprocess_start html_json
 		else
 			msg "HTML UI updates are disabled by HTML_JSON_UPDATE_INTERVAL being 0"
 		fi

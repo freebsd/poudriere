@@ -64,6 +64,9 @@ html_json_main() {
 	_relpath "${log_path}" "${log_path_top}"
 	log_path="${_relpath}"
 
+	trap exit TERM
+	trap html_json_cleanup EXIT
+
 	while :; do
 		stress_snapshot
 		update_stats || :
