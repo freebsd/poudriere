@@ -5384,10 +5384,14 @@ fi
 
 for val in ${USE_TMPFS}; do
 	case ${val} in
-	wrkdir|yes) TMPFS_WRKDIR=1 ;;
+	wrkdir) TMPFS_WRKDIR=1 ;;
 	data) TMPFS_DATA=1 ;;
 	all) TMPFS_ALL=1 ;;
 	localbase) TMPFS_LOCALBASE=1 ;;
+	yes)
+		TMPFS_WRKDIR=1
+		TMPFS_DATA=1
+		;;
 	no) ;;
 	*) err 1 "Unknown value for USE_TMPFS can be a combination of wrkdir,data,all,yes,no,localbase" ;;
 	esac
