@@ -332,6 +332,7 @@ build_and_install_world() {
 
 	export __MAKE_CONF=/dev/null
 	export SRCCONF=${JAILMNT}/etc/src.conf
+	export SRC_ENV_CONF=/dev/null
 	MAKE_JOBS="-j${PARALLEL_JOBS}"
 
 	setup_build_env
