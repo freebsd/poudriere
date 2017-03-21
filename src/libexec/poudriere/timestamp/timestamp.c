@@ -165,10 +165,10 @@ main(int argc, char **argv)
 				pending_len = (size_t)ev[i].data;
 				prefix_output(fd_in, fd_out, pending_len,
 				    start);
-#if 0
-				if (ev[i].flags & EV_EOF)
+				if (child_pid == -1 &&
+				    ev[i].ident == STDIN_FILENO &&
+				    ev[i].flags & EV_EOF)
 					done = 1;
-#endif
 			} else if (ev[i].filter == EVFILT_PROC) {
 				/* Pwait code here */
 				status = ev[i].data;
