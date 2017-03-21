@@ -4901,13 +4901,15 @@ find_all_pool_references() {
 }
 
 delete_stale_symlinks_and_empty_dirs() {
-	msg "Deleting stale symlinks"
+	msg_n "Deleting stale symlinks..."
 	find -L ${PACKAGES} -type l \
 		-exec rm -f {} +
+	echo " done"
 
-	msg "Deleting empty directories"
+	msg_n "Deleting empty directories..."
 	find ${PACKAGES} -type d -mindepth 1 \
 		-empty -delete
+	echo " done"
 }
 
 load_moved() {
