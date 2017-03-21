@@ -53,11 +53,11 @@ clean_rdeps() {
 	local deps_to_check deps_to_clean
 	local rdep_dir
 
-	rdep_dir="${JAILMNT}/.p/cleaning/rdeps/${pkgname}"
+	rdep_dir="cleaning/rdeps/${pkgname}"
 
 	# Exclusively claim the rdeps dir or return, another clean.sh owns it
 	# or there were no reverse deps for this package.
-	mv "${JAILMNT}/.p/rdeps/${pkgname}" "${rdep_dir}" 2>/dev/null ||
+	rename "rdeps/${pkgname}" "${rdep_dir}" 2>/dev/null ||
 	    return 0
 
 	# Cleanup everything that depends on my package
@@ -78,15 +78,15 @@ clean_rdeps() {
 		for dep_dir in ${rdep_dir}/*; do
 			dep_pkgname=${dep_dir##*/}
 
-			deps_to_check="${deps_to_check} ${JAILMNT}/.p/deps/${dep_pkgname}"
-			deps_to_clean="${deps_to_clean} ${JAILMNT}/.p/deps/${dep_pkgname}/${pkgname}"
+			deps_to_check="${deps_to_check} deps/${dep_pkgname}"
+			deps_to_clean="${deps_to_clean} deps/${dep_pkgname}/${pkgname}"
 		done
 
 		# Remove this package from every package depending on this.
 		# This is removing: deps/<dep_pkgname>/<this pkg>.
 		# Note that this is not needed when recursively cleaning as
 		# the entire /deps/<pkgname> for all my rdeps will be removed.
-		echo ${deps_to_clean} | xargs rm -f || :
+		echo ${deps_to_clean} | xargs rm -f >/dev/null 2>&1 || :
 
 		# Look for packages that are now ready to build. They have no
 		# remaining dependencies. Move them to /unbalanced for later
@@ -94,11 +94,11 @@ clean_rdeps() {
 		echo ${deps_to_check} | \
 		    xargs -J % \
 		    find % -type d -maxdepth 0 -empty 2>/dev/null | \
-		    xargs -J % mv % "${JAILMNT}/.p/pool/unbalanced" \
+		    xargs -J % mv % "pool/unbalanced" \
 		    2>/dev/null || :
 	fi
 
-	rm -rf "${rdep_dir}" &
+	rm -rf "${rdep_dir}" >/dev/null 2>&1 &
 
 	return 0
 }
@@ -111,10 +111,10 @@ clean_deps() {
 	local deps_to_check rdeps_to_clean
 	local dir
 
-	dep_dir="${JAILMNT}/.p/cleaning/deps/${pkgname}"
+	dep_dir="cleaning/deps/${pkgname}"
 
 	# Exclusively claim the deps dir or return, another clean.sh owns it
-	mv "${JAILMNT}/.p/deps/${pkgname}" "${dep_dir}" 2>/dev/null ||
+	rename "deps/${pkgname}" "${dep_dir}" 2>/dev/null ||
 	    return 0
 
 	# Remove myself from all my dependency rdeps to prevent them from
@@ -123,12 +123,12 @@ clean_deps() {
 	for dir in ${dep_dir}/*; do
 		rdep_pkgname=${dir##*/}
 
-		rdeps_to_clean="${rdeps_to_clean} ${JAILMNT}/.p/rdeps/${rdep_pkgname}/${pkgname}"
+		rdeps_to_clean="${rdeps_to_clean} rdeps/${rdep_pkgname}/${pkgname}"
 	done
 
-	echo ${rdeps_to_clean} | xargs rm -f || :
+	echo ${rdeps_to_clean} | xargs rm -f >/dev/null 2>&1 || :
 
-	rm -rf "${dep_dir}" &
+	rm -rf "${dep_dir}" >/dev/null 2>&1 &
 
 	return 0
 }
@@ -149,4 +149,5 @@ clean_pool() {
 	return 0
 }
 
+cd "${JAILMNT}/.p"
 clean_pool "${PKGNAME}" "${CLEAN_RDEPENDS}"

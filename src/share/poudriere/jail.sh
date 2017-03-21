@@ -194,7 +194,8 @@ update_jail() {
 		MASTERMNT=${JAILMNT}
 		MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
-		do_jail_mounts "${JAILMNT}" "${JAILMNT}" "${ARCH}" "${JAILNAME}"
+		MUTABLE_BASE=yes do_jail_mounts "${JAILMNT}" "${JAILMNT}" \
+		    "${ARCH}" "${JAILNAME}"
 		JNETNAME="n"
 		jstart
 		# Fix freebsd-update to not check for TTY and to allow
@@ -264,7 +265,7 @@ update_jail() {
 		err 1 "Unsupported method"
 		;;
 	esac
-	jset ${JAILNAME} timestamp $(date +%s)
+	jset ${JAILNAME} timestamp $(clock -epoch)
 }
 
 installworld() {
@@ -287,7 +288,7 @@ installworld() {
 	if [ -n "${KERNEL}" ]; then
 		msg "Starting make installkernel"
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} installkernel \
-		    DESTDIR=${destdir} || \
+		    KERNCONF=${KERNEL} DESTDIR=${destdir} || \
 		    err 1 "Failed to 'make installkernel'"
 	fi
 
@@ -549,7 +550,7 @@ install_from_ftp() {
 			;;
 		url=*) URL=${METHOD##url=} ;;
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
-		ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
+		ftp-archive) URL="http://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
 		esac
 		DISTS="${DISTS} dict"
 		[ "${NO_LIB32:-no}" = "no" -a "${ARCH}" = "amd64" ] &&
@@ -610,7 +611,7 @@ install_from_ftp() {
 				esac
 				;;
 			allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
-			ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH%%.*}/${ARCH##*.}/${V}" ;;
+			ftp-archive) URL="http://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH%%.*}/${ARCH##*.}/${V}" ;;
 			url=*) URL=${METHOD##url=} ;;
 		esac
 
@@ -749,7 +750,7 @@ create_jail() {
 	createfs ${JAILNAME} ${JAILMNT} ${JAILFS:-none}
 	[ -n "${JAILFS}" -a "${JAILFS}" != "none" ] && jset ${JAILNAME} fs ${JAILFS}
 	jset ${JAILNAME} version ${VERSION}
-	jset ${JAILNAME} timestamp $(date +%s)
+	jset ${JAILNAME} timestamp $(clock -epoch)
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
 	[ -n "$SRCPATH" ] && jset ${JAILNAME} srcpath ${SRCPATH}
@@ -798,7 +799,7 @@ info_jail() {
 	BUILDNAME=latest
 
 	_log_path log
-	now=$(date +%s)
+	now=$(clock -epoch)
 
 	_bget status status 2>/dev/null || :
 	_bget nbq stats_queued 2>/dev/null || nbq=0

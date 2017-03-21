@@ -62,7 +62,7 @@ Options:
                    a stable ABI.
     -J n[:p]    -- Run n jobs in parallel, and optionally run a different
                    number of jobs in parallel while preparing the build.
-                   (Defaults to the number of CPUs)
+                   (Defaults to the number of CPUs for n and 1.25 times n for p)
     -j name     -- Run only on the given jail
     -N          -- Do not build package repository or INDEX when build
                    completed
@@ -192,7 +192,7 @@ post_getopts
 [ ${ALL} -eq 1 -a -n "${PORTTESTING}" ] && PORTTESTING_FATAL=no
 
 : ${BUILD_PARALLEL_JOBS:=${PARALLEL_JOBS}}
-: ${PREPARE_PARALLEL_JOBS:=${PARALLEL_JOBS}}
+: ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}
 PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
 
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
@@ -248,7 +248,6 @@ if [ ${DRY_RUN} -eq 1 ]; then
 		msg "No packages would be built"
 	fi
 
-	cleanup
 	exit 0
 fi
 
@@ -263,19 +262,14 @@ _bget nbfailed stats_failed
 _bget nbskipped stats_skipped
 _bget nbignored stats_ignored
 # Always create repository if it is missing (but still respect -N)
-if [ $PKGNG -eq 1 ] && \
-	[ ! -f ${MASTERMNT}/packages/digests.txz -o \
+if 	[ ! -f ${MASTERMNT}/packages/digests.txz -o \
 	  ! -f ${MASTERMNT}/packages/packagesite.txz ]; then
 	[ $nbbuilt -eq 0 -a ${BUILD_REPO} -eq 1 ] && 
 		msg "No package built, but repository needs to be created"
 	# This block mostly to avoid next
 # Package all newly built ports
 elif [ $nbbuilt -eq 0 ]; then
-	if [ $PKGNG -eq 1 ]; then
-		msg "No package built, no need to update the repository"
-	else
-		msg "No package built, no need to update INDEX"
-	fi
+	msg "No package built, no need to update the repository"
 	BUILD_REPO=0
 fi
 
@@ -292,7 +286,6 @@ run_hook bulk done ${nbbuilt} ${nbfailed} ${nbignored} ${nbskipped}
 [ ${INTERACTIVE_MODE} -gt 0 ] && enter_interactive
 
 bset status "done:"
-cleanup
 
 set +e
 

@@ -17,7 +17,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -40,7 +40,7 @@ static char sccsid[] = "@(#)expand.c	8.5 (Berkeley) 5/15/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/expand.c 296429 2016-03-06 17:24:02Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/expand.c 315005 2017-03-10 16:04:00Z jilles $");
 
 #include <sys/types.h>
 #include <sys/time.h>
@@ -460,7 +460,6 @@ expbackq(union node *cmd, int quoted, int flag, struct worddest *dst)
 	p = grabstackstr(dest);
 	evalbackcmd(cmd, &in);
 	ungrabstackstr(p, dest);
-	argbackq = saveargbackq;
 
 	p = in.buf;
 	nnl = 0;
@@ -473,7 +472,8 @@ expbackq(union node *cmd, int quoted, int flag, struct worddest *dst)
 		if (--in.nleft < 0) {
 			if (in.fd < 0)
 				break;
-			while ((i = read(in.fd, buf, sizeof buf)) < 0 && errno == EINTR);
+			while ((i = read(in.fd, buf, sizeof buf)) < 0 && errno == EINTR)
+				;
 			TRACE(("expbackq: read returns %d\n", i));
 			if (i <= 0)
 				break;
@@ -513,12 +513,16 @@ expbackq(union node *cmd, int quoted, int flag, struct worddest *dst)
 		close(in.fd);
 	if (in.buf)
 		ckfree(in.buf);
-	if (in.jp)
+	if (in.jp) {
+		p = grabstackstr(dest);
 		exitstatus = waitforjob(in.jp, (int *)NULL);
+		ungrabstackstr(p, dest);
+	}
 	TRACE(("expbackq: size=%td: \"%.*s\"\n",
 		((dest - stackblock()) - startloc),
 		(int)((dest - stackblock()) - startloc),
 		stackblock() + startloc));
+	argbackq = saveargbackq;
 	expdest = dest;
 	INTON;
 }
@@ -765,8 +769,10 @@ again: /* jump here after setting a variable with ${var=text} */
 	case VSTRIMLEFTMAX:
 	case VSTRIMRIGHT:
 	case VSTRIMRIGHTMAX:
-		if (!set)
+		if (!set) {
+			set = 1;
 			break;
+		}
 		/*
 		 * Terminate the string and start recording the pattern
 		 * right after it
@@ -1196,7 +1202,7 @@ expsortcmp(const void *p1, const void *p2)
 	const char *s1 = *(const char * const *)p1;
 	const char *s2 = *(const char * const *)p2;
 
-	return (strcmp(s1, s2));
+	return (strcoll(s1, s2));
 }
 
 

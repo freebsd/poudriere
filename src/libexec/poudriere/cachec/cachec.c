@@ -37,6 +37,14 @@
 #include <mqueue.h>
 #include <fcntl.h>
 
+#ifdef SHELL
+#define main cacheccmd
+#include "bltin/bltin.h"
+#include "options.h"
+#include "helpers.h"
+#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+#endif
+
 int
 main(int argc, char **argv)
 {
@@ -46,8 +54,21 @@ main(int argc, char **argv)
 	char out[BUFSIZ];
 	char spath[BUFSIZ];
 	ssize_t sz;
+	size_t outlen;
 	bool set = false;
+#ifdef SHELL
+	struct sigaction oact;
 
+	while ((ch = nextopt("s:")) != '\0') {
+		switch (ch) {
+		case 's':
+			queuepath = shoptarg;
+			break;
+		}
+	}
+	argc -= argptr - argv;
+	argv = argptr;
+#else
 	while ((ch = getopt(argc, argv, "s:")) != -1) {
 		switch (ch) {
 		case 's':
@@ -57,8 +78,9 @@ main(int argc, char **argv)
 	}
 	argc -= optind;
 	argv += optind;
+#endif
 
-	if (!queuepath)
+	if (!queuepath || argc < 1)
 		errx(EXIT_FAILURE, "usage: cachec -s queuepath \"msg\"");
 
 	if (strncasecmp(argv[0], "set ", 4) == 0)
@@ -70,20 +92,37 @@ main(int argc, char **argv)
 	attr.mq_msgsize = BUFSIZ;
 	attr.mq_curmsgs = 0;
 
+#ifdef SHELL
+	INTOFF;
+	siginfo_push(&oact);
+#endif
 	qserver = mq_open(queuepath, O_WRONLY);
+	if (qserver == (mqd_t)-1) {
+#ifdef SHELL
+		siginfo_pop(&oact);
+		INTON;
+#endif
+		err(EXIT_FAILURE, "%s", "mq_open");
+	}
 	if (set)
 		snprintf(out, sizeof(out), "%s", argv[0]);
 	else
 		snprintf(out, sizeof(out), "%d%s", getpid(), argv[0]);
+	outlen = strlen(out);
 
 	if (set) {
-		mq_send(qserver, out, strlen(out), 0);
+		mq_send(qserver, out, outlen, 0);
+		mq_close(qserver);
+#ifdef SHELL
+		siginfo_pop(&oact);
+		INTON;
+#endif
 		return (0);
 	}
 
 	snprintf(spath, sizeof(spath),"%s%d", queuepath, getpid());
 	qme = mq_open(spath, O_RDONLY | O_CREAT, 0600, &attr);
-	mq_send(qserver, out, strlen(out), 0);
+	mq_send(qserver, out, outlen, 0);
 	sz = mq_receive(qme, out, sizeof(out), NULL);
 	if (sz > 0) {
 		out[sz] = '\0';
@@ -91,5 +130,9 @@ main(int argc, char **argv)
 	}
 	mq_close(qme);
 	mq_unlink(spath);
+#ifdef SHELL
+	siginfo_pop(&oact);
+	INTON;
+#endif
 	return (0);
 }

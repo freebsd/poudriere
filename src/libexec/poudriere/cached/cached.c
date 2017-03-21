@@ -26,6 +26,7 @@
 
 #include <sys/types.h>
 
+#include <inttypes.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
@@ -36,6 +37,7 @@
 #include <khash.h>
 #include <mqueue.h>
 #include <fcntl.h>
+#include <signal.h>
 
 struct cache {
 	char *name;
@@ -85,7 +87,7 @@ close_mq(int sig __unused)
 static void
 parse_command(char *msg)
 {
-	char *name, *origin, *pattern;
+	char *name, *origin, *pattern, *p;
 	struct cache *c;
 	char client[BUFSIZ];
 	char *buf;
@@ -101,6 +103,12 @@ parse_command(char *msg)
 		}
 		origin[0] = '\0';
 		origin++;
+		if (strchr(origin, '/') == NULL && strchr(name, '/') != NULL) {
+			/* Swap to support origin-pkgname */
+			p = name;
+			name = origin;
+			origin = p;
+		}
 		if (kh_contains(namecache, namecache, name))
 			return;
 		if (kh_contains(origincache, origincache, origin))
@@ -202,7 +210,7 @@ main(int argc, char **argv)
 	attr.mq_msgsize = BUFSIZ;
 	attr.mq_curmsgs = 0;
 
-	if (kld_load("mqueuefs") == 0 && errno != EEXIST) {
+	if (kld_load("mqueuefs") != 0 && errno != EEXIST) {
 		err(EXIT_FAILURE, "Unable to use POSIX mqueues");
 	}
 

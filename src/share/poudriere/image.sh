@@ -151,6 +151,8 @@ jail_exists ${JAILNAME} || err 1 "The jail ${JAILNAME} does not exist"
 case "${MEDIATYPE}" in
 usb|*firmware|rawdisk)
 	[ -n "${IMAGESIZE}" ] || err 1 "Please specify the imagesize"
+	_jget mnt ${JAILNAME} mnt
+	test -f ${mnt}/boot/kernel/kernel || err 1 "The ${MEDIATYPE} media type requires a jail with a kernel"
 	;;
 iso*|usb*|raw*)
 	_jget mnt ${JAILNAME} mnt

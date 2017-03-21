@@ -35,6 +35,9 @@ Parameters:
     [-o] origin   -- Specify an origin in the portstree
 
 Options:
+    -B name     -- What buildname to use (must be unique, defaults to
+                   YYYY-MM-DD_HH:MM:SS). Resuming a previous build will not
+                   retry built/failed/skipped/ignored packages.
     -c          -- Run make config for the given port
     -i          -- Interactive mode. Enter jail for interactive testing and
                    automatically cleanup when done.
@@ -42,7 +45,8 @@ Options:
                    installed after test.
     -J n[:p]    -- Run n jobs in parallel for dependencies, and optionally
                    run a different number of jobs in parallel while preparing
-                   the build. (Defaults to the number of CPUs)
+                   the build. (Defaults to the number of CPUs for n and
+                   1.25 times n for p)
     -k          -- Don't consider failures as fatal; find all failures.
     -N          -- Do not build package repository or INDEX when build
                    of dependencies completed
@@ -73,6 +77,9 @@ BUILD_REPO=1
 
 while getopts "o:cniIj:J:kNp:PsSvwz:" FLAG; do
 	case "${FLAG}" in
+		B)
+			BUILDNAME="${OPTARG}"
+			;;
 		c)
 			CONFIGSTR=1
 			;;
@@ -145,6 +152,12 @@ fi
 
 [ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
 _pget portsdir ${PTNAME} mnt
+new_origin=$(grep -v '^#' ${portsdir}/MOVED | awk -vorigin="${ORIGIN}" \
+    -F\| '$1 == origin && $2 != "" {print $2}')
+if [ -n "${new_origin}" ]; then
+	msg "MOVED: ${COLOR_PORT}${ORIGIN}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
+	ORIGIN="${new_origin}"
+fi
 if [ ! -f "${portsdir}/${ORIGIN}/Makefile" ] || [ -d "${portsdir}/${ORIGIN}/../Mk" ]; then
 	err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
 fi
@@ -152,7 +165,7 @@ fi
 maybe_run_queued "$@"
 
 : ${BUILD_PARALLEL_JOBS:=${PARALLEL_JOBS}}
-: ${PREPARE_PARALLEL_JOBS:=${PARALLEL_JOBS}}
+: ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}
 PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
 
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
@@ -165,14 +178,13 @@ jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
 if [ $CONFIGSTR -eq 1 ]; then
 	command -v dialog4ports >/dev/null 2>&1 || err 1 "You must have ports-mgmt/dialog4ports installed on the host to use -c."
-	export PORTSDIR=${portsdir} \
-		PORT_DBDIR=${MASTERMNT}/var/db/ports \
-		TERM=${SAVED_TERM}
-	make -C ${PORTSDIR}/${ORIGIN} config
-	unset PORTSDIR PORT_DBDIR TERM
+	PORTSDIR=${portsdir} \
+	    PORT_DBDIR=${MASTERMNT}/var/db/ports \
+	    TERM=${SAVED_TERM} \
+	    make -C ${portsdir}/${ORIGIN} config
 fi
 
-LISTPORTS=$(list_deps ${ORIGIN} )
+deps_fetch_vars "${ORIGIN}" LISTPORTS PKGNAME
 prepare_ports
 markfs prepkg ${MASTERMNT}
 
@@ -190,7 +202,6 @@ if [ $(bget stats_failed) -gt 0 ] || [ $(bget stats_skipped) -gt 0 ]; then
 	    msg "${COLOR_SKIP}Skipped ports: ${COLOR_PORT}${skipped}"
 
 	bset_job_status "failed/depends" "${ORIGIN}"
-	cleanup
 	set +e
 	exit 1
 fi
@@ -204,16 +215,15 @@ PARALLEL_JOBS=${BUILD_PARALLEL_JOBS}
 
 bset_job_status "testing" "${ORIGIN}"
 
-PKGNAME=`injail /usr/bin/make -C /usr/ports/${ORIGIN} -VPKGNAME`
-LOCALBASE=`injail /usr/bin/make -C /usr/ports/${ORIGIN} -VLOCALBASE`
-: ${PREFIX:=$(injail /usr/bin/make -C /usr/ports/${ORIGIN} -VPREFIX)}
+LOCALBASE=`injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -VLOCALBASE`
+: ${PREFIX:=$(injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -VPREFIX)}
 if [ "${USE_PORTLINT}" = "yes" ]; then
 	[ ! -x `command -v portlint` ] &&
 		err 2 "First install portlint if you want USE_PORTLINT to work as expected"
 	msg "Portlint check"
 	set +e
-	cd ${MASTERMNT}/usr/ports/${ORIGIN} &&
-		PORTSDIR="${MASTERMNT}/usr/ports" portlint -C | \
+	cd ${MASTERMNT}${PORTSDIR}/${ORIGIN} &&
+		PORTSDIR="${MASTERMNT}${PORTSDIR}" portlint -C | \
 		tee ${log}/logs/${PKGNAME}.portlint.log
 	set -e
 fi
@@ -237,14 +247,17 @@ if ! [ -t 1 ]; then
 	export DEV_WARNING_WAIT=0
 fi
 sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' ${MASTERMNT}/etc/make.conf
+if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
+	JEXEC_LIMITS=1
+fi
 log_start 1
-buildlog_start /usr/ports/${ORIGIN}
+buildlog_start ${PORTSDIR}/${ORIGIN}
 ret=0
 
 # Don't show timestamps in msg() which goes to logs, only job_msg()
 # which goes to master
 NO_ELAPSED_IN_MSG=1
-build_port /usr/ports/${ORIGIN} || ret=$?
+build_port ${PORTSDIR}/${ORIGIN} || ret=$?
 unset NO_ELAPSED_IN_MSG
 
 if [ ${ret} -ne 0 ]; then
@@ -257,7 +270,7 @@ if [ ${ret} -ne 0 ]; then
 		failed_phase=${failed_status%%:*}
 	fi
 
-	save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" "${failed_phase}" || :
+	save_wrkdir ${MASTERMNT} "${PKGNAME}" "${PORTSDIR}/${ORIGIN}" "${failed_phase}" || :
 
 	ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
 	errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
@@ -271,14 +284,13 @@ if [ ${ret} -ne 0 ]; then
 		log_stop
 		bset_job_status "failed/${failed_phase}" "${ORIGIN}"
 		msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
-		cleanup
 		set +e
 		exit 1
 	fi
 else
 	badd ports.built "${ORIGIN} ${PKGNAME}"
-	if [ -f ${MASTERMNT}/usr/ports/${ORIGIN}/.keep ]; then
-		save_wrkdir ${MASTERMNT} "${PKGNAME}" "/usr/ports/${ORIGIN}" \
+	if [ -f ${MASTERMNT}${PORTSDIR}/${ORIGIN}/.keep ]; then
+		save_wrkdir ${MASTERMNT} "${PKGNAME}" "${PORTSDIR}/${ORIGIN}" \
 		    "noneed" || :
 	fi
 	update_stats || :
@@ -300,7 +312,6 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 		if [ -n "${failed_phase}" ]; then
 			bset_job_status "failed/${failed_phase}" "${ORIGIN}"
 			msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
-			cleanup
 			set +e
 			exit 1
 		fi
@@ -316,7 +327,7 @@ else
 fi
 
 msg "Cleaning up"
-injail /usr/bin/make -C /usr/ports/${ORIGIN} clean
+injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -DNOCLEANDEPENDS clean
 
 msg "Deinstalling package"
 ensure_pkg_installed
@@ -329,7 +340,6 @@ bset_job_status "stopped" "${ORIGIN}"
 
 bset status "done:"
 
-cleanup
 set +e
 
 exit 0

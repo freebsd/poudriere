@@ -35,7 +35,8 @@ Parameters:
     [ports...]  -- List of ports to keep on the command line
 
 Options:
-    -J n        -- Run n jobs in parallel (Defaults to the number of CPUs)
+    -J n        -- Run n jobs in parallel (Defaults to the number of
+                   CPUs times 1.25)
     -n          -- Do not actually remove anything, just show what would be
                    removed
     -N          -- Do not build the package repository or INDEX when clean
@@ -71,7 +72,7 @@ while getopts "aj:J:f:nNp:Rvyz:" FLAG; do
 			JAILNAME=${OPTARG}
 			;;
 		J)
-			PARALLEL_JOBS=${OPTARG}
+			PREPARE_PARALLEL_JOBS=${OPTARG}
 			;;
 		f)
 			# If this is a relative path, add in ${PWD} as
@@ -120,6 +121,9 @@ _mastermnt MASTERMNT
 export MASTERNAME
 export MASTERMNT
 
+: ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}
+PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
+
 read_packages_from_params "$@"
 
 PACKAGES=${POUDRIERE_DATA}/packages/${MASTERNAME}
@@ -140,7 +144,7 @@ bset status "pkgclean:"
 # built. Don't delete those, bulk will incrementally delete them. We only
 # want to delete packages that are duplicated and old, non-packages, and
 # packages that are not in the cmdline-specified port list or in their
-# dependencies and finally packages in the wrong format (pkgng vs pkg_install).
+# dependencies and finally packages in the wrong format.
 
 CLEANUP_HOOK=pkgclean_cleanup
 pkgclean_cleanup() {
@@ -152,10 +156,12 @@ FOUND_ORIGINS=$(mktemp -t poudriere_pkgclean)
 for file in ${PACKAGES}/All/*; do
 	case ${file} in
 		*.${PKG_EXT})
+			pkgname="${file##*/}"
+			pkgname="${pkgname%.*}"
 			if ! pkg_get_origin origin "${file}"; then
 				msg_verbose "Found corrupt package: ${file}"
 				echo "${file}" >> ${BADFILES_LIST}
-			elif ! port_is_needed "${origin}"; then
+			elif ! pkg_is_needed "${pkgname}"; then
 				msg_verbose "Found unwanted package: ${file}"
 				echo "${file}" >> ${BADFILES_LIST}
 			else
@@ -182,27 +188,34 @@ pkg_compare() {
 }
 
 # Check for duplicated origins (older packages) and keep only newer ones
+# This also groups by pkgbase to respect DEPENDS_ARGS / PKGNAME uniqueness
 sort ${FOUND_ORIGINS} | awk '
 {
 	pkg = $1
 	origin = $2
-	if (!origin_count[origin])
-		origin_count[origin] = 0
-	if (packages[origin])
-		packages[origin] = packages[origin] " " pkg
+	# Determine pkgbase to group by
+	n = split(pkg, a, "/")
+	pkgbase = a[n]
+	sub(/-[^-]*$/, "", pkgbase)
+
+	origins[pkgbase] = origin
+
+	if (!origin_count[pkgbase])
+		origin_count[pkgbase] = 0
+	if (packages[pkgbase])
+		packages[pkgbase] = packages[pkgbase] " " pkg
 	else
-		packages[origin] = pkg
-	origin_count[origin] += 1
+		packages[pkgbase] = pkg
+	origin_count[pkgbase] += 1
 }
 END {
-	for (origin in origin_count)
-		if (origin_count[origin] > 1)
-			print origin,packages[origin]
+	for (pkgbase in origin_count)
+		if (origin_count[pkgbase] > 1)
+			print origins[pkgbase],packages[pkgbase]
 }
 ' | while read origin packages; do
 	lastpkg=
 	lastver=0
-	real_pkgname=
 	for pkg in $packages; do
 		pkgversion="${pkg##*-}"
 		pkgversion="${pkgversion%.*}"
@@ -226,65 +239,31 @@ END {
 				echo "${pkg}" >> ${BADFILES_LIST}
 				;;
 			'=')
-				# Version is the same, it's a duplicate. Compare
-				# against the real PKGNAME and decide which
-				# to keep
-				[ -z "${real_pkgname}" ] && real_pkgname=$( \
-				    injail /usr/bin/make -C /usr/ports/${origin} \
-				    -V PKGNAME)
-				if [ "${real_pkgname}.${PKG_EXT}" = \
-				    "${pkg##*/}" ]; then
-					msg_verbose \
-					    "Found duplicate renamed package: ${lastpkg}"
-					echo "${lastpkg}" >> ${BADFILES_LIST}
-				else
-					msg_verbose \
-					    "Found duplicate renamed package: ${pkg}"
-					echo "${pkg}" >> ${BADFILES_LIST}
-				fi
+				# This should be impossible now due to the
+				# earlier pkg_is_needed() comparison
+				# (by PKGBASE) and that this check is grouped
+				# by PKGBASE.  Any renamed package is trimmed
+				# out by the failed pkg_is_needed() check.
+				err 1 "Found duplicated packages ${pkg} vs ${lastpkg} with origin ${origin}"
 				;;
 		esac
 	done
 	msg_verbose "Keeping latest package: ${lastpkg##*/}"
 done
 
-file_cnt=$(wc -l ${BADFILES_LIST} | awk '{print $1}')
-
-if [ ${file_cnt} -eq 0 ]; then
-	msg "No stale packages to cleanup"
+ret=0
+do_confirm_delete "${BADFILES_LIST}" "stale packages" \
+    "${answer}" "${DRY_RUN}" || ret=$?
+if [ ${ret} -eq 2 ]; then
 	exit 0
-fi
-
-hsize=$(cat ${BADFILES_LIST} | xargs stat -f '%i %z' | sort -u | \
-	awk '{total += $2} END {print total}' | \
-	awk -f ${AWKPREFIX}/humanize.awk
-)
-
-msg "Files to be deleted:"
-cat ${BADFILES_LIST}
-msg "Cleaning these will free: ${hsize}"
-
-if [ ${DRY_RUN} -eq 1 ];  then
-	msg "Dry run: not cleaning anything."
-	exit 0
-fi
-
-if [ -z "${answer}" ]; then
-	prompt "Proceed?" && answer="yes"
-fi
-
-deleted_files=0
-if [ "${answer}" = "yes" ]; then
-	msg "Cleaning files"
-	cat ${BADFILES_LIST} | xargs rm -f
-	deleted_files=1
 fi
 
 # After deleting stale files, need to remake repo.
 
-if [ $deleted_files -eq 1 ]; then
+if [ $ret -eq 1 ]; then
 	[ "${NO_RESTRICTED}" != "no" ] && clean_restricted
 	delete_stale_symlinks_and_empty_dirs
+	delete_stale_pkg_cache
 	[ ${BUILD_REPO} -eq 1 ] && build_repo
 fi
-run_hook pkgclean done ${deleted_files} ${BUILD_REPO}
+run_hook pkgclean done ${ret} ${BUILD_REPO}

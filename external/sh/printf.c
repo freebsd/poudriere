@@ -12,7 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -46,7 +46,7 @@ static char const copyright[] =
 static char const sccsid[] = "@(#)printf.c	8.1 (Berkeley) 7/20/93";
 #endif
 static const char rcsid[] =
-  "$FreeBSD: head/usr.bin/printf/printf.c 279503 2015-03-01 21:46:55Z jilles $";
+  "$FreeBSD: head/usr.bin/printf/printf.c 314436 2017-02-28 23:42:47Z imp $";
 #endif /* not lint */
 
 #include <sys/types.h>

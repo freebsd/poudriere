@@ -1,0 +1,11 @@
+The ptsort utility is a variant of the standard tsort (topological
+sort) utility which allows nodes to be prioritized, moving them and
+all their predecessors up in the final order.
+
+The latest version of the source code is available from Github:
+
+  https://github.com/dag-erling/ptsort
+
+Bugs can be reported as issues in Github:
+
+  https://github.com/dag-erling/ptsort/issues

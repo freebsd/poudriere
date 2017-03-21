@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd June 1, 2016
+.Dd March 30, 2017
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -49,13 +49,18 @@ accepts a global option:
 .Bl -tag -width "-f conffile"
 .It Fl e Ar etcdir
 Path to the directory where poudriere will find its configuration data.
-See 
+See
 .Sx FILES
 and
 .Sx ENVIRONMENT
 for more information.
+.It Fl A
+Force color support, even if not in a TTY.
 .It Fl N
 Disable color support.
+.It Fl v
+This will show more information during the build.
+Specify twice to enable debug output.
 .El
 .Sh COMMANDS
 The first argument to
@@ -84,6 +89,8 @@ This command, mainly targeted at ports developers, launches a
 test on a given port (useful before submitting/committing a port).
 .It options
 This command allows to configure the options for a given port
+.It logclean
+This command will cleanup old logfiles
 .It distclean
 This command will cleanup old distfiles
 .It pkgclean
@@ -138,7 +145,7 @@ command.
 .Bl -tag -width "-f conffile"
 .It Fl B Ar name
 Specify which buildname to use.
-By default 
+By default
 .Ar YYYY-MM-DD_HH:MM:SS
 will be used.
 This can be used to resume a previous build and use the same log and URL paths.
@@ -165,6 +172,7 @@ The optional second
 .Ar number
 is the number of jobs used for the steps before the build, they are more IO
 bound than CPU bound, so you may want to use a different number.
+The default pre-build value is 1.25 times the value of the build value.
 .It Fl i
 Interactive mode.
 Enter jail for interactive testing and automatically cleanup when done.
@@ -266,7 +274,7 @@ Show information about a jail.
 See also
 .Cm status .
 .It Fl l
-List all available jails.
+List all poudriere jails.
 .It Fl n
 When combined with
 .Fl l ,
@@ -292,10 +300,13 @@ Here are the options associated with the
 .Cm jail
 command.
 .Bl -tag -width "-f conffile"
+.It Fl b
+Build the source provided with the -m src=PATH option.
 .It Fl J Ar number
-This argument specifies how many
+The
 .Ar number
-jobs will run in parallel for buildworld.
+of make jobs will run in parallel for buildworld.
+Defaults to the number of CPUs reported by:  sysctl hw.ncpu.
 .It Fl q
 Remove the header when
 .Fl l
@@ -331,7 +342,7 @@ Pre-built distribution options:
 .Bl -tag -width "ftp-archiveXX"
 .It Sy allbsd
 Use
-.Lk www.allbsd.org.
+.Lk http://www.allbsd.org.
 .It Sy ftp Sy http
 Fetch from configured
 .Sy FREEBSD_HOST
@@ -339,7 +350,7 @@ variable from
 .Pa poudriere.conf .
 .It Sy ftp-archive
 Fetch from
-.Lk ftp-archive.freebsd.org.
+.Lk http://ftp-archive.freebsd.org.
 .It Sy null
 This option can be used to import an existing directory that already contains an installed system.
 The path must be specified with
@@ -522,6 +533,13 @@ Here are the options associated with the
 .Cm testport
 command.
 .Bl -tag -width "-f conffile"
+.It Fl B Ar name
+Specify which buildname to use.
+By default
+.Ar YYYY-MM-DD_HH:MM:SS
+will be used.
+This can be used to resume a previous build and use the same log and URL paths.
+Resuming a build will not retry built/failed/skipped/ignored packages.
 .It Fl c
 Run make config for the given port.
 .It Fl i
@@ -550,10 +568,15 @@ usage.
 .It Fl j Ar name
 Runs only inside the jail named
 .Ar name .
-.It Fl J Ar number
+.It Fl J Ar number[:number]
 This argument specifies how many
 .Ar number
 jobs will run in parallel for building the dependencies.
+The optional second
+.Ar number
+is the number of jobs used for the steps before the build, they are more IO
+bound than CPU bound, so you may want to use a different number.
+The default pre-build value is 1.25 times the value of the build value.
 .It Fl k
 Do not consider failures as fatal.
 Find all failures.
@@ -594,6 +617,28 @@ See
 .Sx CUSTOMISATION
 for examples of how this is used.
 .El
+.Ss logclean
+.Bl -tag -width "-f conffile"
+.It Ar days
+How many days old of logfiles to keep.
+.El
+.Pp
+This command accepts the following options:
+.Bl -tag -width "-f conffile"
+.It Fl n
+Dry run, do not actually delete anything.
+.It Fl p Ar tree
+Specifies which ports
+.Ar tree
+to use.
+This can be specified multiple times to consider multiple tress.
+.It Fl y
+Assume yes, do not confirm and just delete the files.
+.It Fl v
+This will show more information during the build.
+Specify twice to enable debug output.
+.El
+.Pp
 .Ss distclean
 This command accepts the following options:
 .Bl -tag -width "-f conffile"

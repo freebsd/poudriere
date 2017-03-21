@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2015 Bryan Drewery <bdrewery@FreeBSD.org>
+ * Copyright (c) 2017 Bryan Drewery <bdrewery@FreeBSD.org>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -24,25 +24,24 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <err.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#include <sysexits.h>
 
-/*
- * Simple helper to return clock_gettime(CLOCK_MONOTONIC) for duration
- * display purposes. Faster than `date +%s` and ensures a monotonic time.
- */
+#ifdef SHELL
+#define main setproctitlecmd
+#include "bltin/bltin.h"
+#include <errno.h>
+#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+#endif
+
 int
 main(int argc, char **argv)
 {
-	struct timespec ts;
+#ifdef SHELL
+	if (argc != 2)
+		errx(EXIT_USAGE, "%s", "Usage: setproctitle <name>");
 
-#ifndef CLOCK_MONOTONIC_FAST
-# define CLOCK_MONOTONIC_FAST CLOCK_MONOTONIC
+	setproctitle("%s", argv[1]);
 #endif
-	if (clock_gettime(CLOCK_MONOTONIC_FAST, &ts))
-		err(EXIT_FAILURE, "clock_gettime");
-	printf("%ld\n", (long)ts.tv_sec);
-	return (EXIT_SUCCESS);
+
+	return (0);
 }

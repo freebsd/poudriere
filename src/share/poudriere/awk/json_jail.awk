@@ -6,12 +6,13 @@ function get_value(key) {
   return value
 }
 {
-  buildname = get_value("buildname")
   if (FILENAME ~ /latest\//) {
     data = "\"" buildname "\""
     buildname = "latest"
   } else {
     data = $0
+    buildname = get_value("buildname")
   }
-  print "\"" buildname "\":" data "" | "sort -n -k1,1 -t :"
+  if (buildname && data)
+    print "\"" buildname "\":" data "" | "sort -n -k1,1 -t :"
 }

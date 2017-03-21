@@ -1,0 +1,12 @@
+language: c
+
+compiler:
+  - clang
+  - gcc
+
+before_script:
+  - ./autogen.sh
+
+script:
+  - ./configure --enable-developer-warnings --enable-werror
+  - make check
