@@ -3671,7 +3671,7 @@ get_pkg_cache_dir() {
 	local pkg_file="${pkg##*/}"
 	local pkg_dir
 	local cache_dir
-	local pkg_mtime
+	local pkg_mtime=
 
 	get_cache_dir cache_dir
 
@@ -3679,7 +3679,9 @@ get_pkg_cache_dir() {
 
 	pkg_dir="${cache_dir}/${pkg_file}/${pkg_mtime}"
 
-	[ -d "${pkg_dir}" ] || mkdir -p "${pkg_dir}"
+	if [ ${use_mtime} -eq 1 ]; then
+		[ -d "${pkg_dir}" ] || mkdir -p "${pkg_dir}"
+	fi
 
 	setvar "${var_return}" "${pkg_dir}"
 }
