@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 30, 2017
+.Dd March 21, 2017
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -626,8 +626,10 @@ for examples of how this is used.
 .El
 .Ss logclean
 .Bl -tag -width "-f conffile"
+.It Fl a
+Remove all logfiles matching the filter.
 .It Ar days
-How many days old of logfiles to keep.
+How many days old of logfiles to keep matching the filter.
 .El
 .Pp
 This command accepts the following options:

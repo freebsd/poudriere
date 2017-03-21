@@ -26,10 +26,11 @@
 
 usage() {
 	cat <<EOF
-poudriere logclean [options] days
+poudriere logclean [options] <days | -a>
 
 Parameters:
-    days        -- How many days old of logfiles to keep
+    -a          -- Remove all logfiles matching the filter
+    days        -- How many days old of logfiles to keep matching the filter
 
 Options:
     -j jail     -- Which jail to use for log directories
@@ -48,12 +49,15 @@ EOF
 PTNAME=
 SETNAME=
 DRY_RUN=0
-ALL=1
+DAYS=
 
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "j:p:nvyz:" FLAG; do
+while getopts "aj:p:nvyz:" FLAG; do
 	case "${FLAG}" in
+		a)
+			DAYS=0
+			;;
 		j)
 			JAILNAME=${OPTARG}
 			;;
@@ -82,10 +86,10 @@ done
 shift $((OPTIND-1))
 post_getopts
 
-if [ $# -eq 0 ]; then
+if [ -z "${DAYS}" -a $# -eq 0 ]; then
 	usage
 fi
-DAYS=$1
+: ${DAYS:=$1}
 
 POUDRIERE_BUILD_TYPE="bulk"
 _log_path_top log_top
@@ -139,7 +143,11 @@ echo_logdir() {
 	printf "${log}\000"
 }
 
-reason="builds older than ${DAYS} days in ${log_top} (filtered)"
+if [ ${DAYS} -eq 0 ]; then
+	reason="all builds in ${log_top} (filtered)"
+else
+	reason="builds older than ${DAYS} days in ${log_top} (filtered)"
+fi
 msg_n "Looking for ${reason}..."
 {
 	# Find build directories older than DAYS
