@@ -84,6 +84,8 @@ build_all_json() {
 }
 
 build_json() {
+	[ -n "${log_path}" ] || \
+	    err 1 "build_jail_json requires log_path set"
 	/usr/bin/awk \
 		-f ${AWKPREFIX}/json.awk ${log_path}/.poudriere.*[!%] | \
 		/usr/bin/awk 'ORS=""; {print}' | \
@@ -101,6 +103,8 @@ build_json() {
 }
 
 build_jail_json() {
+	[ -n "${log_path_jail}" ] || \
+	    err 1 "build_jail_json requires log_path_jail set"
 	tmpfile=$(TMPDIR="${log_path_jail}" mktemp -ut json)
 	{
 		echo "{\"builds\":{"
@@ -114,6 +118,8 @@ build_jail_json() {
 }
 
 build_top_json() {
+	[ -n "${log_path_top}" ] || \
+	    err 1 "build_top_json requires log_path_top set"
 	tmpfile=$(TMPDIR="${log_path_top}" mktemp -ut json)
 	(
 		cd "${log_path_top}"
