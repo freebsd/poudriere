@@ -427,7 +427,7 @@ do_confirm_delete() {
 
 	msg "These ${reason} will be deleted:"
 	cat ${filelist}
-	msg "Cleaning these ${reason} will free: ${hsize}"
+	msg "Removing these ${reason} will free: ${hsize}"
 
 	if [ ${DRY_RUN} -eq 1 ];  then
 		msg "Dry run: not cleaning anything."
@@ -440,7 +440,7 @@ do_confirm_delete() {
 
 	ret=0
 	if [ "${answer}" = "yes" ]; then
-		msg_n "Cleaning files..."
+		msg_n "Removing files..."
 		cat ${filelist} | tr '\n' '\000' | \
 		    xargs -0 -J % \
 		    find % -mindepth 0 -maxdepth 0 -exec rm -rf {} +
