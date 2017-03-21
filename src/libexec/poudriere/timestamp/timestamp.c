@@ -42,6 +42,8 @@
 
 #define min(a, b) ((a) > (b) ? (b) : (a))
 
+static bool newline;
+
 static void
 calculate_duration(char *timestamp, size_t tlen, time_t elapsed)
 {
@@ -63,10 +65,8 @@ prefix_output(int fd_in, int fd_out, size_t pending_len, time_t start)
 	char *p = NULL;
 	time_t elapsed, now;
 	size_t read_len, tlen;
-	bool newline;
 	tlen = sizeof(timestamp);
 
-	newline = true;
 	while (pending_len > 0) {
 		read_len = read(fd_in, buf, min(sizeof(buf),
 		    pending_len));
@@ -107,6 +107,7 @@ main(int argc, char **argv)
 	start = time(NULL);
 	ret = 0;
 	done = 0;
+	newline = true;
 
 	if (argc > 1) {
 		if (pipe(child_stdout) != 0)
