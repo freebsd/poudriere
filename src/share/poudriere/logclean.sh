@@ -185,14 +185,19 @@ do_confirm_delete "${OLDLOGS}" \
     "${reason}" \
     "${answer}" "${DRY_RUN}" || ret=$?
 
-msg_n "Removing broken legacy latest-per-pkg symlinks (no filter)..."
-# Now we can cleanup dead links and empty directories.  Empty
-# directories will take 2 passes to complete.
-delete_broken_latest_per_pkg_old_symlinks
-echo " done"
-msg_n "Removing empty latest-per-pkg directories (no filter)..."
-delete_empty_latest_per_pkg
-echo " done"
+if [ ${DRY_RUN} -eq 0 ]; then
+	msg_n "Removing broken legacy latest-per-pkg symlinks (no filter)..."
+	# Now we can cleanup dead links and empty directories.  Empty
+	# directories will take 2 passes to complete.
+	delete_broken_latest_per_pkg_old_symlinks
+	echo " done"
+	msg_n "Removing empty latest-per-pkg directories (no filter)..."
+	delete_empty_latest_per_pkg
+	echo " done"
+else
+	msg "[Dry Run] Would remove broken legacy latest-per-pkg symlinks (no filter)..."
+	msg "[Dry Run] Would remove empty latest-per-pkg directories (no filter)..."
+fi
 
 if [ ${logs_deleted} -eq 1 ]; then
 	msg_n "Removing empty build log directories..."
