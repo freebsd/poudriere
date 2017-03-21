@@ -127,7 +127,8 @@ delete_jail() {
 		TMPFS_ALL=0 destroyfs ${JAILMNT} jail || :
 	fi
 	cache_dir="${POUDRIERE_DATA}/cache/${JAILNAME}-*"
-	rm -rf ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} || :
+	rm -rf ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} \
+		${POUDRIERE_DATA}/.m/${JAILNAME}-* || :
 	echo " done"
 }
 
