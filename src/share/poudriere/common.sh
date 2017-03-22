@@ -2318,11 +2318,15 @@ setup_makeconf() {
 	local makeconf opt
 	local arch host_arch
 
+	get_host_arch host_arch
 	# The jail may be empty for poudriere-options.
 	if [ -n "${name}" ]; then
 		_jget arch "${name}" arch
-		get_host_arch host_arch
+	elif [ -n "$ARCH" ]; then
+		arch=$ARCH
+	fi
 
+	if [ -n "$arch" ];
 		if need_cross_build "${host_arch}" "${arch}"; then
 			cat >> "${dst_makeconf}" <<-EOF
 			MACHINE=${arch%.*}
