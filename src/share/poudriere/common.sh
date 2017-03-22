@@ -283,13 +283,14 @@ for_each_build() {
 	[ $# -eq 1 ] || eargs for_each_build action
 	local action="$1"
 	local MASTERNAME BUILDNAME buildname jailname ptname setname
-	local log_top
+	local log_top ret
 
 	POUDRIERE_BUILD_TYPE="bulk" _log_path_top log_top
 	[ -d "${log_top}" ] || err 1 "Log path ${log_top} does not exist."
 	cd ${log_top}
 
 	found_jobs=0
+	ret=0
 	for mastername in *; do
 		# Check empty dir
 		case "${mastername}" in
@@ -389,11 +390,16 @@ for_each_build() {
 			    _bget ptname ptname 2>/dev/null || :
 			log=${mastername}/${BUILDNAME}
 
-			${action}
+			${action} || ret=$?
+			# Skip the rest of this build if return = 100
+			[ ${ret} -eq 100 ] && continue 2
+			# Halt if the function requests it
+			[ ${ret} -eq 101 ] && break 2
 		done
 
 	done
 	cd ${OLDPWD}
+	return ${ret}
 }
 
 stat_humanize() {
@@ -735,7 +741,7 @@ log_stop() {
 	fi
 	if [ -n "${tpid}" ]; then
 		# Give tee a moment to flush buffers
-		timed_wait_and_kill 5 $tpid
+		timed_wait_and_kill 5 $tpid || :
 		unset tpid
 	fi
 }

@@ -127,7 +127,8 @@ delete_jail() {
 		TMPFS_ALL=0 destroyfs ${JAILMNT} jail || :
 	fi
 	cache_dir="${POUDRIERE_DATA}/cache/${JAILNAME}-*"
-	rm -rf ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} || :
+	rm -rf ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} \
+		${POUDRIERE_DATA}/.m/${JAILNAME}-* || :
 	echo " done"
 }
 
@@ -341,6 +342,7 @@ build_and_install_world() {
 
 	export __MAKE_CONF=/dev/null
 	export SRCCONF=${JAILMNT}/etc/src.conf
+	export SRC_ENV_CONF=/dev/null
 	MAKE_JOBS="-j${PARALLEL_JOBS}"
 
 	setup_build_env

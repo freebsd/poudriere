@@ -139,9 +139,12 @@ findmounts() {
 	mount | sort -r -k 2 | while read dev on pt opts; do
 		case "${pt}" in
 		${mnt}${pattern}*)
-			echo "${pt}"
 			if [ "${dev#/dev/md*}" != "${dev}" ]; then
+				umount ${UMOUNT_NONBUSY} "${pt}" || \
+				    umount -f "${pt}" || :
 				mdconfig -d -u ${dev#/dev/md*}
+			else
+				echo "${pt}"
 			fi
 		;;
 		esac
@@ -156,8 +159,7 @@ umountfs() {
 
 	[ -n "${childonly}" ] && pattern="/"
 
-	[ -d "${mnt}" ] || return 0
-	mnt=$(realpath ${mnt})
+	mnt=$(realpath "${mnt}" 2>/dev/null || echo "${mnt}")
 	xargsmax=
 	if [ ${UMOUNT_BATCHING} -eq 0 ]; then
 		xargsmax="-n 2"
@@ -174,7 +176,7 @@ _zfs_getfs() {
 	[ $# -ne 1 ] && eargs _zfs_getfs mnt
 	local mnt="${1}"
 
-	mntres=$(realpath "${mnt}")
+	mntres=$(realpath "${mnt}" 2>/dev/null || echo "${mnt}")
 	zfs list -rt filesystem -H -o name,mountpoint ${ZPOOL}${ZROOTFS} | \
 	    awk -vmnt="${mntres}" '$2 == mnt {print $1}'
 }
@@ -272,10 +274,10 @@ clonefs() {
 
 destroyfs() {
 	[ $# -ne 2 ] && eargs destroyfs name type
-	local mnt fs type
-	mnt=$1
-	type=$2
-	[ -d ${mnt} ] || return 0
+	local mnt="$1"
+	local type="$2"
+	local fs
+
 	umountfs ${mnt} 1
 	if [ ${TMPFS_ALL} -eq 1 ]; then
 		if [ -d "${mnt}" ]; then
@@ -287,10 +289,11 @@ destroyfs() {
 		[ "${fs}" != "none" ] && fs=$(zfs_getfs ${mnt})
 		if [ -n "${fs}" -a "${fs}" != "none" ]; then
 			zfs destroy -rf ${fs}
-			rmdir ${mnt}
+			rmdir ${mnt} || :
 			# Must invalidate the zfs_getfs cache.
 			cache_invalidate _zfs_getfs "${mnt}"
 		else
+			[ -d ${mnt} ] || return 0
 			rm -rfx ${mnt} 2>/dev/null || :
 			if [ -d "${mnt}" ]; then
 				chflags -R 0 ${mnt}

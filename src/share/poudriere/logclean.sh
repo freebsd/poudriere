@@ -26,10 +26,13 @@
 
 usage() {
 	cat <<EOF
-poudriere logclean [options] days
+poudriere logclean [options] <days | -a | -N count>
 
 Parameters:
-    days        -- How many days old of logfiles to keep
+    -a          -- Remove all logfiles matching the filter
+    days        -- How many days old of logfiles to keep matching the filter
+    -N count    -- How many logfiles to keep matching the filter per
+                   jail/tree/set combination.
 
 Options:
     -j jail     -- Which jail to use for log directories
@@ -48,17 +51,24 @@ EOF
 PTNAME=
 SETNAME=
 DRY_RUN=0
-ALL=1
+DAYS=
+MAX_COUNT=
 
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "j:p:nvyz:" FLAG; do
+while getopts "aj:p:nN:vyz:" FLAG; do
 	case "${FLAG}" in
+		a)
+			DAYS=0
+			;;
 		j)
 			JAILNAME=${OPTARG}
 			;;
 		n)
 			DRY_RUN=1
+			;;
+		N)
+			MAX_COUNT=${OPTARG}
 			;;
 		p)
 			PTNAME=${OPTARG}
@@ -82,10 +92,10 @@ done
 shift $((OPTIND-1))
 post_getopts
 
-if [ $# -eq 0 ]; then
+if [ -z "${DAYS}" -a -z "${MAX_COUNT}" -a $# -eq 0 ]; then
 	usage
 fi
-DAYS=$1
+: ${DAYS:=$1}
 
 POUDRIERE_BUILD_TYPE="bulk"
 _log_path_top log_top
@@ -136,18 +146,52 @@ delete_empty_latest_per_pkg() {
 }
 
 echo_logdir() {
-	printf "${log}\000"
+	if [ -n "${MAX_COUNT}" ]; then
+		echo "${log}"
+	else
+		printf "${log}\000"
+	fi
 }
 
-reason="builds older than ${DAYS} days in ${log_top} (filtered)"
+if [ -n "${MAX_COUNT}" ]; then
+	reason="builds over max of ${MAX_COUNT} in ${log_top} (filtered)"
+elif [ ${DAYS} -eq 0 ]; then
+	reason="all builds in ${log_top} (filtered)"
+else
+	reason="builds older than ${DAYS} days in ${log_top} (filtered)"
+fi
 msg_n "Looking for ${reason}..."
-{
+if [ -n "${MAX_COUNT}" ]; then
+	# Find build directories up to limit MAX_COUNT per mastername
+	BUILDNAME_GLOB="*" SHOW_FINISHED=1 \
+	    for_each_build echo_logdir | sort -d | \
+	    /usr/local/bin/gawk -vMAX_COUNT="${MAX_COUNT}" -F / '
+	{
+		if (out[$1])
+			out[$1] = out[$1] "\t" $0
+		else
+			out[$1] = $0
+	}
+	END {
+		for (mastername in out) {
+			total = split(out[mastername], a, "\t")
+			for (n in a) {
+				if (total <= MAX_COUNT)
+					break
+				print a[n]
+				total = total - 1
+			}
+		}
+	}
+	' > "${OLDLOGS}"
+else
 	# Find build directories older than DAYS
 	BUILDNAME_GLOB="*" SHOW_FINISHED=1 \
 	    for_each_build echo_logdir | \
 	    xargs -0 -J {} \
-	    find {} -mindepth 0 -maxdepth 0 -Btime +${DAYS}d
-} > "${OLDLOGS}"
+	    find {} -type d -mindepth 0 -maxdepth 0 -Btime +${DAYS}d \
+	    > "${OLDLOGS}"
+fi
 echo " done"
 # Confirm these logs are safe to delete.
 ret=0
@@ -177,14 +221,19 @@ do_confirm_delete "${OLDLOGS}" \
     "${reason}" \
     "${answer}" "${DRY_RUN}" || ret=$?
 
-msg_n "Removing broken legacy latest-per-pkg symlinks (no filter)..."
-# Now we can cleanup dead links and empty directories.  Empty
-# directories will take 2 passes to complete.
-delete_broken_latest_per_pkg_old_symlinks
-echo " done"
-msg_n "Removing empty latest-per-pkg directories (no filter)..."
-delete_empty_latest_per_pkg
-echo " done"
+if [ ${DRY_RUN} -eq 0 ]; then
+	msg_n "Removing broken legacy latest-per-pkg symlinks (no filter)..."
+	# Now we can cleanup dead links and empty directories.  Empty
+	# directories will take 2 passes to complete.
+	delete_broken_latest_per_pkg_old_symlinks
+	echo " done"
+	msg_n "Removing empty latest-per-pkg directories (no filter)..."
+	delete_empty_latest_per_pkg
+	echo " done"
+else
+	msg "[Dry Run] Would remove broken legacy latest-per-pkg symlinks (no filter)..."
+	msg "[Dry Run] Would remove empty latest-per-pkg directories (no filter)..."
+fi
 
 if [ ${logs_deleted} -eq 1 ]; then
 	msg_n "Removing empty build log directories..."

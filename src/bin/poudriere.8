@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 30, 2017
+.Dd March 21, 2017
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -439,7 +439,14 @@ jump to the new specified
 .It Fl z Ar set
 This specifies which SET to start/stop the jail with.
 .It Fl x
-Build the native-xbuild target and copy this into the jail.
+Build the native-xtools target using the host's
+.Pa /usr/src
+tree and copy this
+into the jail.
+The use of
+.Pa /usr/src
+is due to a bug in the native-xtools build which does not allow it to be
+built from the jail's own source.
 Used exclusively
 for cross building a ports set, typically via qemu-user tools.
 .El
@@ -619,8 +626,13 @@ for examples of how this is used.
 .El
 .Ss logclean
 .Bl -tag -width "-f conffile"
+.It Fl a
+Remove all logfiles matching the filter.
 .It Ar days
-How many days old of logfiles to keep.
+How many days old of logfiles to keep matching the filter.
+.It Fl N Ar count
+How many logfiles to keep matching the filter per
+jail/tree/set combination.
 .El
 .Pp
 This command accepts the following options:
