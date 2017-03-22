@@ -322,6 +322,18 @@ setup_build_env() {
 	export WITH_FAST_DEPEND=yes
 }
 
+check_xdev() {
+	# Check that we can theoretically build xdev and error out
+	# if we clearly cannot.
+	if [ ${QEMU_EMULATING} -eq 1 ] && [ ${NO_XDEV} -ne 0 ]; then
+		if [ ! -f /usr/src/Makefile ] || [ ! -f /usr/src/Makefile.inc1 ]; then
+			err 1 "/usr/src must be a working src tree to build native-xtools. Perhaps you meant to specify -X?"
+		fi
+
+		XDEV=1
+	fi
+}
+
 build_and_install_world() {
 	export SRC_BASE=${JAILMNT}/usr/src
 	mkdir -p ${JAILMNT}/etc
@@ -336,16 +348,13 @@ build_and_install_world() {
 		echo "WITH_ELFTOOLCHAIN_TOOLS=y" >> ${JAILMNT}/etc/src.conf
 	fi
 
-	if [ ${QEMU_EMULATING} -eq 1 ]; then
-		XDEV=1
-	fi
-
 	export __MAKE_CONF=/dev/null
 	export SRCCONF=${JAILMNT}/etc/src.conf
 	export SRC_ENV_CONF=/dev/null
 	MAKE_JOBS="-j${PARALLEL_JOBS}"
 
 	setup_build_env
+	check_xdev
 
 	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
 	${MAKE_CMD} -C ${SRC_BASE} buildworld ${MAKE_JOBS} \
@@ -875,9 +884,10 @@ UPDATE=0
 PTNAME=default
 SETNAME=""
 XDEV=0
+NO_XDEV=0
 BUILD=0
 
-while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:x" FLAG; do
+while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:X" FLAG; do
 	case "${FLAG}" in
 		b)
 			BUILD=1
@@ -961,8 +971,8 @@ while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:x" FLAG; do
 		t)
 			TORELEASE=${OPTARG}
 			;;
-		x)
-			XDEV=1
+		X)
+			NO_XDEV=1
 			;;
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"
