@@ -1509,12 +1509,14 @@ enter_interactive() {
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
 		    /usr/bin/make -C ${PORTSDIR}/${port} run-depends ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port} run-depends"
-		msg "Installing ${COLOR_PORT}${port}"
-		# Only use PKGENV during install as testport will store
-		# the package in a different place than dependencies
-		injail env USE_PACKAGE_DEPENDS_ONLY=1 ${PKGENV} \
-		    /usr/bin/make -C ${PORTSDIR}/${port} install-package ||
-		    msg_warn "Failed to install ${COLOR_PORT}${port}"
+		if [ -z "${POUDRIERE_INTERACTIVE_NO_INSTALL}" ]; then
+			msg "Installing ${COLOR_PORT}${port}"
+			# Only use PKGENV during install as testport will store
+			# the package in a different place than dependencies
+			injail env USE_PACKAGE_DEPENDS_ONLY=1 ${PKGENV} \
+			    /usr/bin/make -C ${PORTSDIR}/${port} install-package ||
+			    msg_warn "Failed to install ${COLOR_PORT}${port}"
+		fi
 	done
 
 	# Create a pkg repo configuration, and disable FreeBSD
