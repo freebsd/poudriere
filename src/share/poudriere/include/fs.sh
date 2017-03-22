@@ -139,9 +139,12 @@ findmounts() {
 	mount | sort -r -k 2 | while read dev on pt opts; do
 		case "${pt}" in
 		${mnt}${pattern}*)
-			echo "${pt}"
 			if [ "${dev#/dev/md*}" != "${dev}" ]; then
+				umount ${UMOUNT_NONBUSY} "${pt}" || \
+				    umount -f "${pt}" || :
 				mdconfig -d -u ${dev#/dev/md*}
+			else
+				echo "${pt}"
 			fi
 		;;
 		esac
