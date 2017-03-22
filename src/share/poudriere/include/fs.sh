@@ -107,6 +107,7 @@ rollbackfs() {
 			# and assume it is OK.
 			zfs rollback -r "${fs}@${name}" || \
 			    err 1 "Unable to rollback ${fs}"
+			: > "${sfile}" || :
 			return
 		fi
 		tries=0
@@ -126,6 +127,8 @@ rollbackfs() {
 			fi
 			sleep 1
 		done
+		# Need to create the file to note which snapshot we're in.
+		: > "${sfile}"
 		return
 	fi
 
