@@ -340,6 +340,10 @@ build_and_install_world() {
 		echo "WITH_ELFTOOLCHAIN_TOOLS=y" >> ${JAILMNT}/etc/src.conf
 	fi
 
+	if [ ${QEMU_EMULATING} -eq 1 ]; then
+		XDEV=1
+	fi
+
 	export __MAKE_CONF=/dev/null
 	export SRCCONF=${JAILMNT}/etc/src.conf
 	export SRC_ENV_CONF=/dev/null
