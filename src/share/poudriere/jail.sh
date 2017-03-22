@@ -64,10 +64,6 @@ Options:
     -S srcpath    -- Specify a path to the source tree to be used.
     -t version    -- Version of FreeBSD to upgrade the jail to.
     -U url        -- Specify a url to fetch the sources (with method git and/or svn).
-    -x            -- Build and setup native-xtools cross compile tools in jail when
-                     building for a different TARGET ARCH than the host.
-                     Only applies if TARGET_ARCH and HOST_ARCH are different.
-                     Will only be used if -m is svn*.
 
 Options for -s and -k:
     -p tree       -- Specify which ports tree to start/stop the jail with.

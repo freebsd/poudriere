@@ -438,17 +438,6 @@ jump to the new specified
 .Ar version .
 .It Fl z Ar set
 This specifies which SET to start/stop the jail with.
-.It Fl x
-Build the native-xtools target using the host's
-.Pa /usr/src
-tree and copy this
-into the jail.
-The use of
-.Pa /usr/src
-is due to a bug in the native-xtools build which does not allow it to be
-built from the jail's own source.
-Used exclusively
-for cross building a ports set, typically via qemu-user tools.
 .El
 .Ss ports
 .Pp
