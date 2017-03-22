@@ -259,8 +259,8 @@ if [ ${file_cnt} -eq 0 ]; then
 	exit 0
 fi
 
-hsize=$(cat ${BADFILES_LIST} | xargs stat -f '%i %z' | sort -u | \
-	awk '{total += $2} END {print total}' | \
+hsize=$(cat ${BADFILES_LIST} | xargs stat -f '%i %b' | sort -u | \
+	awk -vbsize=512 '{total += $2} END {print total*bsize}' | \
 	awk -f ${AWKPREFIX}/humanize.awk
 )
 
