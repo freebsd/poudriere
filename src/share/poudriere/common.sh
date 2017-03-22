@@ -403,9 +403,9 @@ for_each_build() {
 }
 
 stat_humanize() {
-	xargs -0 stat -f '%i %z' | \
+	xargs -0 stat -f '%i %b' | \
 	    sort -u | \
-	    awk '{total += $2} END {print total}' | \
+	    awk -vbsize=512 '{total += $2} END {print total*bsize}' | \
 	    awk -f ${AWKPREFIX}/humanize.awk
 }
 
