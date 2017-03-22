@@ -274,9 +274,9 @@ clonefs() {
 
 destroyfs() {
 	[ $# -ne 2 ] && eargs destroyfs name type
-	local mnt fs type
-	mnt=$1
-	type=$2
+	local mnt="$1"
+	local type="$2"
+	local fs
 
 	umountfs ${mnt} 1
 	if [ ${TMPFS_ALL} -eq 1 ]; then
