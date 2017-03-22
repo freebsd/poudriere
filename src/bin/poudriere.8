@@ -735,6 +735,12 @@ A list of ports can be specified directly.
 .Pp
 This command accepts the following options:
 .Bl -tag -width "-f conffile"
+.It Fl a Ar architecture
+Specifies which
+.Ar architecture
+of FreeBSD to use to show options. (Default: the one of jail
+.Ar jailname
+)
 .It Fl c
 Use 'config' target, which will always show the dialog for the given ports.
 .It Fl C
