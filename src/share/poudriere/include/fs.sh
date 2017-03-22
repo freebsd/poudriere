@@ -156,8 +156,7 @@ umountfs() {
 
 	[ -n "${childonly}" ] && pattern="/"
 
-	[ -d "${mnt}" ] || return 0
-	mnt=$(realpath ${mnt})
+	mnt=$(realpath "${mnt}" 2>/dev/null || echo "${mnt}")
 	xargsmax=
 	if [ ${UMOUNT_BATCHING} -eq 0 ]; then
 		xargsmax="-n 2"
@@ -175,7 +174,7 @@ zfs_getfs() {
 	local mnt="${1}"
 	local mntres
 
-	mntres=$(realpath "${mnt}")
+	mntres=$(realpath "${mnt}" 2>/dev/null || echo "${mnt}")
 	mount -t zfs | awk -v n="${mntres}" ' $3 == n { print $1 }'
 }
 
@@ -258,7 +257,7 @@ destroyfs() {
 	local mnt fs type
 	mnt=$1
 	type=$2
-	[ -d ${mnt} ] || return 0
+
 	fs=$(zfs_getfs ${mnt})
 	umountfs ${mnt} 1
 	if [ ${TMPFS_ALL} -eq 1 ]; then
@@ -269,8 +268,9 @@ destroyfs() {
 		fi
 	elif [ -n "${fs}" -a "${fs}" != "none" ]; then
 		zfs destroy -rf ${fs}
-		rmdir ${mnt}
+		rmdir ${mnt} || :
 	else
+		[ -d ${mnt} ] || return 0
 		rm -rfx ${mnt} 2>/dev/null || :
 		if [ -d "${mnt}" ]; then
 			chflags -R 0 ${mnt}
