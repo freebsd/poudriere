@@ -21,13 +21,4 @@ function print_value(key, end) {
   print_value("ended", ",")
   print_value("status")
   print "}"
-  next
-
-  if (FILENAME ~ /latest\//) {
-    data = "\"" buildname "\""
-    buildname = "latest"
-  } else {
-    data = $0
-  }
-  print "\"" buildname "\":" data "" | "sort -n -k1,1 -t :"
 }
