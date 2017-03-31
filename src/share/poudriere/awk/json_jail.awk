@@ -5,14 +5,23 @@ function get_value(key) {
   value = substr(key_group, RSTART+2, RLENGTH-3)
   return value
 }
+function print_build(buildname, data) {
+  if (buildname && data)
+    print "\"" buildname "\":" data "" | "sort -n -k1,1 -t :"
+}
 {
-  if (FILENAME ~ /latest\//) {
-    data = "\"" buildname "\""
-    buildname = "latest"
-  } else {
+  if (FILENAME ~ /latest\//)
+    next
+  else {
     data = $0
     buildname = get_value("buildname")
   }
-  if (buildname && data)
-    print "\"" buildname "\":" data "" | "sort -n -k1,1 -t :"
+  print_build(buildname, data)
+}
+END {
+  if (buildname) {
+    data = "\"" buildname "\""
+    buildname = "latest"
+    print_build(buildname, data)
+  }
 }
