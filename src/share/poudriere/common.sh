@@ -2424,7 +2424,7 @@ _real_build_port() {
 			[ -n "${PORTTESTING}" ] && markfs preinst ${mnt}
 			;;
 		package)
-			max_execution_time=3600
+			max_execution_time=7200
 			if [ -n "${PORTTESTING}" ] &&
 			    [ -z "${no_stage}" ]; then
 				check_fs_violation ${mnt} prestage "${port}" \
