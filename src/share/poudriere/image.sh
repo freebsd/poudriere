@@ -174,12 +174,6 @@ cat >> ${excludelist} << EOF
 usr/src
 EOF
 case "${MEDIATYPE}" in
-usb|*firmware|rawdisk)
-	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
-	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
-	newfs -j -L ${IMAGENAME} /dev/${md}
-	mount /dev/${md} ${WRKDIR}/world
-	;;
 zrawdisk)
 	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
 	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
@@ -275,6 +269,8 @@ usb|rawdisk)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
 	/dev/ufs/${IMAGENAME} / ufs rw 1 1
 	EOF
+	makefs -B little ${IMAGESIZE:+-S ${IMAGESIZE}} -o label=${IMAGENAME} \
+		-o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world
 	;;
 *firmware)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
@@ -282,6 +278,8 @@ usb|rawdisk)
 	EOF
 	mkdir -p ${WRKDIR}/world/conf/base
 	tar -C ${WRKDIR}/world -X ${excludelist} -cf - etc | tar -xf - -C ${WRKDIR}/world/conf/base
+	makefs -B little ${IMAGESIZE:+-S ${IMAGESIZE}} -o label=${IMAGENAME} \
+		-o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world
 	;;
 zrawdisk)
 	cat >> ${WRKDIR}/world/boot/loader.conf <<-EOF
@@ -315,8 +313,6 @@ usb)
 		-p freebsd-ufs:=${WRKDIR}/raw.img \
 		-p freebsd-swap::1M \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
-	umount ${WRKDIR}/world
-	/sbin/mdconfig -d -u ${md#md}
 	;;
 tar)
 	FINALIMAGE=${IMAGENAME}.txz
@@ -324,9 +320,6 @@ tar)
 	;;
 firmware)
 	FINALIMAGE=${IMAGENAME}.img
-	umount ${WRKDIR}/world
-	/sbin/mdconfig -d -u ${md#md}
-	md=
 	mkimg -s gpt -b ${mnt}/boot/pmbr \
 		-p efi:=${mnt}/boot/boot1.efifat \
 		-p freebsd-boot:=${mnt}/boot/gptboot \
@@ -338,16 +331,10 @@ firmware)
 	;;
 rawfirmware)
 	FINALIMAGE=${IMAGENAME}.raw
-	umount ${WRKDIR}/world
-	/sbin/mdconfig -d -u ${md#md}
-	md=
 	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
 	;;
 rawdisk)
 	FINALIMAGE=${IMAGENAME}.img
-	umount ${WRKDIR}/world
-	/sbin/mdconfig -d -u ${md#md}
-	md=
 	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
 	;;
 zrawdisk)
