@@ -2686,7 +2686,7 @@ _real_build_port() {
 	# Don't need to install if only making packages and not
 	# testing.
 	[ -n "${PORTTESTING}" ] && \
-	    install_order="${install_order} install-mtree install"
+	    install_order="${install_order} install"
 	targets="check-sanity pkg-depends fetch-depends fetch checksum \
 		  extract-depends extract patch-depends patch build-depends \
 		  lib-depends configure build ${install_order} \
@@ -2745,7 +2745,7 @@ _real_build_port() {
 				fi
 			fi
 			;;
-		checksum|*-depends|install-mtree) JUSER=root ;;
+		checksum|*-depends) JUSER=root ;;
 		stage) [ -n "${PORTTESTING}" ] && markfs prestage ${mnt} ;;
 		install)
 			max_execution_time=3600
