@@ -4705,7 +4705,7 @@ append_make() {
 
 read_packages_from_params()
 {
-	if [ $# -eq 0 ]; then
+	if [ $# -eq 0 -o -z "$1" ]; then
 		[ -n "${LISTPKGS}" -o ${ALL} -eq 1 ] ||
 		    err 1 "No packages specified"
 		if [ ${ALL} -eq 0 ]; then
