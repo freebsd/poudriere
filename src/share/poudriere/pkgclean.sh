@@ -124,7 +124,12 @@ export MASTERMNT
 : ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}
 PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
 
-read_packages_from_params "$@"
+if [ ${ALL} -eq 1 ]; then
+	LISTPORTS=
+	ALL=0
+else
+	read_packages_from_params "$@"
+fi
 
 PACKAGES=${POUDRIERE_DATA}/packages/${MASTERNAME}
 
