@@ -304,5 +304,8 @@ if [ $deleted_files -eq 1 ]; then
 			build_repo
 		fi
 	fi
+	if [ ${DO_ALL} -eq 1 ]; then
+		msg "Cleaned all packages but ${PACKAGES} may need to be removed manually."
+	fi
 fi
 run_hook pkgclean done ${deleted_files} ${BUILD_REPO}
