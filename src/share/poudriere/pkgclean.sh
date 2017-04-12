@@ -54,7 +54,7 @@ EOF
 PTNAME=default
 SETNAME=""
 DRY_RUN=0
-ALL=0
+DO_ALL=0
 BUILD_REPO=1
 SKIPSANITY=0
 
@@ -65,7 +65,7 @@ SKIPSANITY=0
 while getopts "aj:J:f:nNp:Rvyz:" FLAG; do
 	case "${FLAG}" in
 		a)
-			ALL=1
+			DO_ALL=1
 			;;
 		j)
 			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
@@ -124,9 +124,8 @@ export MASTERMNT
 : ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}
 PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
 
-if [ ${ALL} -eq 1 ]; then
+if [ ${DO_ALL} -eq 1 ]; then
 	LISTPORTS=
-	ALL=0
 else
 	read_packages_from_params "$@"
 fi
@@ -269,6 +268,15 @@ if [ $ret -eq 1 ]; then
 	[ "${NO_RESTRICTED}" != "no" ] && clean_restricted
 	delete_stale_symlinks_and_empty_dirs
 	delete_stale_pkg_cache
-	[ ${BUILD_REPO} -eq 1 ] && build_repo
+	if [ ${BUILD_REPO} -eq 1 ]; then
+		if [ ${DO_ALL} -eq 1 ]; then
+			msg "Removing pkg repository files"
+			rm -f "${PACKAGES}/meta.txz" \
+				"${PACKAGES}/digests.txz" \
+				"${PACKAGES}/packagesite.txz"
+		else
+			build_repo
+		fi
+	fi
 fi
 run_hook pkgclean done ${ret} ${BUILD_REPO}
