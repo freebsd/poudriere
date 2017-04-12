@@ -77,7 +77,11 @@ err() {
 			bset status "${EXIT_STATUS:-crashed:}" 2>/dev/null || :
 		fi
 	fi
-	msg_error "$2" || :
+	if [ ${1} -eq 0 ]; then
+		msg "$2" || :
+	else
+		msg_error "$2" || :
+	fi
 	# Avoid recursive err()->exit_handler()->err()... Just let
 	# exit_handler() cleanup.
 	if [ ${ERRORS_ARE_FATAL:-1} -eq 1 ]; then
