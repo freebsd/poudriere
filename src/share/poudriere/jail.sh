@@ -62,6 +62,7 @@ Options:
                        url=SOMEURL.
     -P patch      -- Specify a patch to apply to the source before building.
     -S srcpath    -- Specify a path to the source tree to be used.
+    -D            -- Do a full git clone without --depth (default: --depth=1)
     -t version    -- Version of FreeBSD to upgrade the jail to.
     -U url        -- Specify a url to fetch the sources (with method git and/or svn).
     -x            -- Build and setup native-xtools cross compile tools in jail when
@@ -472,7 +473,7 @@ install_from_vcs() {
 				err 1 "Patch files not supported with git, please use feature branches"
 			fi
 			msg_n "Checking out the sources from git..."
-			git clone --depth=1 -q -b ${VERSION} ${GIT_FULLURL} ${SRC_BASE} || err 1 " fail"
+			git clone ${GIT_DEPTH} -q -b ${VERSION} ${GIT_FULLURL} ${SRC_BASE} || err 1 " fail"
 			echo " done"
 			# No support for patches, using feature branches is recommanded"
 			;;
@@ -876,8 +877,9 @@ PTNAME=default
 SETNAME=""
 XDEV=0
 BUILD=0
+GIT_DETPH=--depth=1
 
-while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:x" FLAG; do
+while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:Dx" FLAG; do
 	case "${FLAG}" in
 		b)
 			BUILD=1
@@ -944,6 +946,9 @@ while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:x" FLAG; do
 		S)
 			[ -d ${OPTARG} ] || err 1 "No such directory ${OPTARG}"
 			SRCPATH=${OPTARG}
+			;;
+		D)
+			GIT_DEPTH=""
 			;;
 		q)
 			QUIET=1
