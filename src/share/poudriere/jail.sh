@@ -877,7 +877,7 @@ PTNAME=default
 SETNAME=""
 XDEV=0
 BUILD=0
-GIT_DETPH=--depth=1
+GIT_DEPTH=--depth=1
 
 while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:Dx" FLAG; do
 	case "${FLAG}" in
