@@ -712,7 +712,7 @@ buildlog_start() {
 	fi
 
 	echo "--Resource limits--"
-	injail /bin/sh -c "ulimit -a"
+	injail /bin/sh -c "ulimit -a" || :
 	echo "--End resource limits--"
 }
 
