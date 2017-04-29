@@ -1302,7 +1302,7 @@ common_mtree() {
 ./wrkdirs
 EOF
 	for exclude in ${LOCAL_MTREE_EXCLUDES}; do
-		echo "${exclude#.}" >> "${mtreefile}"
+		echo ".${exclude#.}" >> "${mtreefile}"
 	done
 }
 
