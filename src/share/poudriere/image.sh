@@ -269,7 +269,7 @@ usb|rawdisk)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
 	/dev/ufs/${IMAGENAME} / ufs rw 1 1
 	EOF
-	makefs -B little ${IMAGESIZE:+-S ${IMAGESIZE}} -o label=${IMAGENAME} \
+	makefs -B little ${IMAGESIZE:+-s ${IMAGESIZE}} -o label=${IMAGENAME} \
 		-o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world
 	;;
 *firmware)
@@ -278,7 +278,7 @@ usb|rawdisk)
 	EOF
 	mkdir -p ${WRKDIR}/world/conf/base
 	tar -C ${WRKDIR}/world -X ${excludelist} -cf - etc | tar -xf - -C ${WRKDIR}/world/conf/base
-	makefs -B little ${IMAGESIZE:+-S ${IMAGESIZE}} -o label=${IMAGENAME} \
+	makefs -B little ${IMAGESIZE:+-s ${IMAGESIZE}} -o label=${IMAGENAME} \
 		-o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world
 	;;
 zrawdisk)
