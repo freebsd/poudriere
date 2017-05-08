@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)trap.c	8.5 (Berkeley) 6/5/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/trap.c 314436 2017-02-28 23:42:47Z imp $");
+__FBSDID("$FreeBSD: head/bin/sh/trap.c 317298 2017-04-22 21:31:37Z jilles $");
 
 #include <signal.h>
 #include <unistd.h>
@@ -478,19 +478,14 @@ dotrap(void)
 
 
 /*
- * Controls whether the shell is interactive or not.
+ * Controls whether the shell is interactive or not based on iflag.
  */
 void
-setinteractive(int on)
+setinteractive(void)
 {
-	static int is_interactive = -1;
-
-	if (on == is_interactive)
-		return;
 	setsignal(SIGINT);
 	setsignal(SIGQUIT);
 	setsignal(SIGTERM);
-	is_interactive = on;
 }
 
 

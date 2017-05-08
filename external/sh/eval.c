@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)eval.c	8.9 (Berkeley) 6/8/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/eval.c 314436 2017-02-28 23:42:47Z imp $");
+__FBSDID("$FreeBSD: head/bin/sh/eval.c 317882 2017-05-06 13:28:42Z jilles $");
 
 #include <paths.h>
 #include <signal.h>
@@ -1222,7 +1222,7 @@ bltincmd(int argc, char **argv)
 		return 127;
 	}
 	/*
-	 * Preserve exitstatus of a previous possible redirection
+	 * Preserve exitstatus of a previous possible command substitution
 	 * as POSIX mandates
 	 */
 	return exitstatus;

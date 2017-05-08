@@ -46,7 +46,7 @@ static char const copyright[] =
 static char const sccsid[] = "@(#)printf.c	8.1 (Berkeley) 7/20/93";
 #endif
 static const char rcsid[] =
-  "$FreeBSD: head/usr.bin/printf/printf.c 314436 2017-02-28 23:42:47Z imp $";
+  "$FreeBSD: head/usr.bin/printf/printf.c 317598 2017-04-29 21:48:11Z jilles $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -70,20 +70,15 @@ static const char rcsid[] =
 #endif
 
 #define	PF(f, func) do {						\
-	char *b = NULL;							\
 	if (havewidth)							\
 		if (haveprec)						\
-			(void)asprintf(&b, f, fieldwidth, precision, func); \
+			(void)printf(f, fieldwidth, precision, func);	\
 		else							\
-			(void)asprintf(&b, f, fieldwidth, func);	\
+			(void)printf(f, fieldwidth, func);		\
 	else if (haveprec)						\
-		(void)asprintf(&b, f, precision, func);			\
+		(void)printf(f, precision, func);			\
 	else								\
-		(void)asprintf(&b, f, func);				\
-	if (b) {							\
-		(void)fputs(b, stdout);					\
-		free(b);						\
-	}								\
+		(void)printf(f, func);					\
 } while (0)
 
 static int	 asciicode(void);
@@ -394,7 +389,8 @@ printf_doformat(char *fmt, int *rval)
 		char p;
 
 		p = getchr();
-		PF(start, p);
+		if (p != '\0')
+			PF(start, p);
 		break;
 	}
 	case 's': {
