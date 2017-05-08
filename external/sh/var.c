@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)var.c	8.3 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/var.c 314436 2017-02-28 23:42:47Z imp $");
+__FBSDID("$FreeBSD: head/bin/sh/var.c 317912 2017-05-07 19:49:46Z jilles $");
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -513,7 +513,7 @@ bltinunsetlocale(void)
 		if (localevar(cmdenviron->args[i])) {
 			setlocale(LC_ALL, "");
 			updatecharset();
-			return;
+			break;
 		}
 	}
 	INTON;

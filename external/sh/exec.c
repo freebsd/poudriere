@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)exec.c	8.4 (Berkeley) 6/8/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/exec.c 314436 2017-02-28 23:42:47Z imp $");
+__FBSDID("$FreeBSD: head/bin/sh/exec.c 317882 2017-05-06 13:28:42Z jilles $");
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -338,7 +338,7 @@ find_command(const char *name, struct cmdentry *entry, int act,
 
 	cd = 0;
 
-	/* If name is in the table, and not invalidated by cd, we're done */
+	/* If name is in the table, we're done */
 	if ((cmdp = cmdlookup(name, 0)) != NULL) {
 		if (cmdp->cmdtype == CMDFUNCTION && act & DO_NOFUNC)
 			cmdp = NULL;
@@ -485,8 +485,7 @@ changepath(const char *newval __unused)
 
 
 /*
- * Clear out command entries.  The argument specifies the first entry in
- * PATH which has changed.
+ * Clear out cached utility locations.
  */
 
 void
