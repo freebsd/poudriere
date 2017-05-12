@@ -146,7 +146,7 @@ rm_SOURCES=		src/libexec/poudriere/rm/rm.c
 timeout_SOURCES=	src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
 tsort_SOURCES=		src/libexec/poudriere/tsort/tsort.c
-sh_CFLAGS=		-DSHELL -DNO_HISTORY \
+sh_CFLAGS=		-DSHELL -DNO_HISTORY -std=gnu99 \
 			-include $(top_srcdir)/external/sh_compat/compat.h \
 			-I$(top_srcdir)/src \
 			-I$(top_srcdir)/external/sh
