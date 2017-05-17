@@ -44,6 +44,8 @@ Options:
                      to 'head/master'.
     -F            -- When used with -c, only create the needed filesystems
                      (for ZFS) and directories, but do not populate them.
+    -x            -- Force delete portstree if created with "-F" and
+                     method is ="none" or ="-". Can only be used with "-d".
     -M path       -- The path to the source of a ports tree.
     -f filesystem -- The name of the filesystem to create for the ports tree.
                      If 'none' then do not create the filesystem.  The default
@@ -66,13 +68,14 @@ EOF
 CREATE=0
 FAKE=0
 UPDATE=0
+FORCE=0
 DELETE=0
 LIST=0
 NAMEONLY=0
 QUIET=0
 VERBOSE=0
 KEEP=0
-while getopts "B:cFuU:dklp:qf:nM:m:v" FLAG; do
+while getopts "B:cFuU:dklpx:qf:nM:m:v" FLAG; do
 	case "${FLAG}" in
 		B)
 			BRANCH="${OPTARG}"
@@ -118,6 +121,9 @@ while getopts "B:cFuU:dklp:qf:nM:m:v" FLAG; do
 			;;
 		v)
 			VERBOSE=$((${VERBOSE} + 1))
+			;;
+		x)
+			FORCE=1
 			;;
 		*)
 			usage
@@ -298,7 +304,9 @@ if [ ${DELETE} -eq 1 ]; then
 	    err 1 "Not deleting ports tree"
 	maybe_run_queued "${saved_argv}"
 	msg_n "Deleting portstree \"${PTNAME}\""
-	if [ ${KEEP} -eq 0 -a ${PTMETHOD} != "none" -a ${PTMETHOD} != "-" ]; then
+	if [ ${FORCE} -eq 1 ]; then
+		TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
+	elif [ ${KEEP} -eq 0 -a ${PTMETHOD} != "none" -a ${PTMETHOD} != "-" ]; then
 		TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
 	fi
 	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
