@@ -174,6 +174,12 @@ cat >> ${excludelist} << EOF
 usr/src
 EOF
 case "${MEDIATYPE}" in
+rawdisk)
+	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
+	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
+	newfs -j -L ${IMAGENAME} /dev/${md}
+	mount /dev/${md} ${WRKDIR}/world
+	;;
 zrawdisk)
 	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
 	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
@@ -265,7 +271,12 @@ case ${MEDIATYPE} in
 	vfs.root.mountfrom="ufs:/dev/ufs/${IMAGENAME}"
 	EOF
 	;;
-usb|rawdisk)
+rawdisk)
+	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
+	/dev/ufs/${IMAGENAME} / ufs rw 1 1
+	EOF
+	;;
+usb)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
 	/dev/ufs/${IMAGENAME} / ufs rw 1 1
 	EOF
@@ -335,6 +346,9 @@ rawfirmware)
 	;;
 rawdisk)
 	FINALIMAGE=${IMAGENAME}.img
+	umount ${WRKDIR}/world
+	/sbin/mdconfig -d -u ${md#md}
+	md=
 	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
 	;;
 zrawdisk)
