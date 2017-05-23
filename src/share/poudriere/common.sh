@@ -2076,14 +2076,13 @@ jail_stop() {
 	[ $# -ne 0 ] && eargs jail_stop
 	local last_status
 
-	run_hook jail stop
-
 	# Make sure CWD is not inside the jail or MASTERMNT/.p, which may
 	# cause EBUSY from umount.
 	cd /
 
-	jstop || :
 	stop_builders >/dev/null || :
+	run_hook jail stop
+	jstop || :
 	msg "Unmounting file systems"
 	destroyfs ${MASTERMNT} jail || :
 	rm -rfx ${MASTERMNT}/../
