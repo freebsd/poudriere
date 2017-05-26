@@ -89,6 +89,8 @@ list_jail() {
 		name=${j##*/}
 		if [ ${NAMEONLY} -eq 0 ]; then
 			_jget version ${name} version
+			_jget version_vcs ${name} version_vcs 2>/dev/null || \
+			    version_vcs=
 			_jget arch ${name} arch
 			_jget method ${name} method
 			_jget mnt ${name} mnt
@@ -96,6 +98,9 @@ list_jail() {
 			time=
 			[ -n "${timestamp}" ] && \
 			    time="$(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
+			if [ -n "${version_vcs}" ]; then
+				version="${version} ${version_vcs}"
+			fi
 			display_add "${name}" "${version}" "${arch}" \
 			    "${method}" "${time}" "${mnt}"
 		else
@@ -758,6 +763,7 @@ info_jail() {
 	tobuild=$((nbq - nbb - nbf - nbi - nbs))
 
 	_jget jversion ${JAILNAME} version
+	_jget jversion_vcs ${JAILNAME} version_vcs 2>/dev/null || jversion_vcs=
 	_jget jarch ${JAILNAME} arch
 	_jget jmethod ${JAILNAME} method
 	_jget timestamp ${JAILNAME} timestamp 2>/dev/null || :
@@ -766,6 +772,9 @@ info_jail() {
 
 	echo "Jail name:         ${JAILNAME}"
 	echo "Jail version:      ${jversion}"
+	if [ -n "${jversion_vcs}" ]; then
+		echo "Jail vcs version:  ${jversion_vcs}"
+	fi
 	echo "Jail arch:         ${jarch}"
 	echo "Jail method:       ${jmethod}"
 	echo "Jail mount:        ${mnt}"
