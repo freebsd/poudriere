@@ -1817,8 +1817,6 @@ jail_start() {
 
 	export HOME=/root
 	export USER=root
-	[ -z "${NO_FORCE_PACKAGE}" ] && export FORCE_PACKAGE=yes
-	[ -z "${NO_PACKAGE_BUILDING}" ] && export PACKAGE_BUILDING=yes
 
 	# Only set STATUS=1 if not turned off
 	# jail -s should not do this or jail will stop on EXIT
@@ -1897,6 +1895,10 @@ jail_start() {
 	PACKAGES=/packages
 	DISTDIR=/distfiles
 	EOF
+	[ -z "${NO_FORCE_PACKAGE}" ] && \
+	    echo "FORCE_PACKAGE=yes" >> "${tomnt}/etc/make.conf"
+	[ -z "${NO_PACKAGE_BUILDING}" ] && \
+	    echo "PACKAGE_BUILDING=yes" >> "${tomnt}/etc/make.conf"
 
 	setup_makeconf ${tomnt}/etc/make.conf ${name} ${ptname} ${setname}
 	load_blacklist ${name} ${ptname} ${setname}
