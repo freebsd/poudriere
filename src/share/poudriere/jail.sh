@@ -254,9 +254,9 @@ update_jail() {
 		;;
 	src=*)
 		SRC_BASE="${METHOD#src=}"
-		install_from_src
-		update_version
-		update_version_env $(jget ${JAILNAME} version)
+		install_from_src version_extra
+		RELEASE=$(update_version "${version_extra}")
+		update_version_env "${RELEASE}"
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
@@ -424,6 +424,7 @@ build_and_install_world() {
 }
 
 install_from_src() {
+	local var_version_extra="$1"
 	local cpignore_flag cpignore
 
 	msg_n "Copying ${SRC_BASE} to ${JAILMNT}/usr/src..."
@@ -449,13 +450,17 @@ install_from_src() {
 	else
 		build_and_install_world
 	fi
+	# Use __FreeBSD_version as our version_extra
+	setvar "${var_version_extra}" \
+	    "$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' \
+	    ${JAILMNT}/usr/include/sys/param.h)"
 }
 
 install_from_vcs() {
 	local var_version_extra="$1"
 	local UPDATE=0
-	local proto
-	local svn_rev
+	local proto version_vcs
+	local git_sha svn_rev
 
 	if [ -d "${SRC_BASE}" ]; then
 		UPDATE=1
@@ -507,17 +512,21 @@ install_from_vcs() {
 	svn*)
 		svn_rev=$(${SVN_CMD} info ${SRC_BASE} |
 		    awk '/Last Changed Rev:/ {print $4}')
-		setvar "${var_version_extra}" "r${svn_rev}"
+		version_vcs="r${svn_rev}"
 	;;
 	git*)
 		git_sha=$(git -C ${SRC_BASE} rev-parse --short HEAD)
-		setvar "${var_version_extra}" "${git_sha}"
+		version_vcs="${git_sha}"
 	;;
 	esac
+	jset ${JAILNAME} version_vcs "${version_vcs}"
+	# Use __FreeBSD_version as our version_extra
+	setvar "${var_version_extra}" \
+	    "$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' \
+	    ${JAILMNT}/usr/include/sys/param.h)"
 }
 
 install_from_ftp() {
-	local var_version_extra="$1"
 	mkdir ${JAILMNT}/fromftp
 	local URL V
 
