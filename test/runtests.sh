@@ -7,6 +7,8 @@ SH="$1"
 shift
 TESTS="$@"
 
+echo "Running in ${PWD}"
+
 FAILED_TESTS=
 for test in ${TESTS}; do
 	status=0
