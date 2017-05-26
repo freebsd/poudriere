@@ -331,6 +331,7 @@ setup_build_env() {
 	export TARGET=${ARCH%.*}
 	export TARGET_ARCH=${ARCH#*.}
 	export WITH_FAST_DEPEND=yes
+	MAKE_JOBS="-j${PARALLEL_JOBS}"
 }
 
 build_and_install_world() {
@@ -350,7 +351,6 @@ build_and_install_world() {
 	export __MAKE_CONF=/dev/null
 	export SRCCONF=${JAILMNT}/etc/src.conf
 	export SRC_ENV_CONF=/dev/null
-	MAKE_JOBS="-j${PARALLEL_JOBS}"
 
 	setup_build_env
 
