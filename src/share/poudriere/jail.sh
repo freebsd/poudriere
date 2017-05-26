@@ -767,7 +767,9 @@ create_jail() {
 
 	createfs ${JAILNAME} ${JAILMNT} ${JAILFS:-none}
 	[ -n "${JAILFS}" -a "${JAILFS}" != "none" ] && jset ${JAILNAME} fs ${JAILFS}
-	jset ${JAILNAME} version ${VERSION}
+	if [ -n "${VERSION}" ]; then
+		jset ${JAILNAME} version ${VERSION}
+	fi
 	jset ${JAILNAME} timestamp $(clock -epoch)
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
@@ -801,7 +803,7 @@ create_jail() {
 
 	unset CLEANUP_HOOK
 
-	msg "Jail ${JAILNAME} ${VERSION} ${ARCH} is ready to be used"
+	msg "Jail ${JAILNAME} ${RELEASE} ${ARCH} is ready to be used"
 }
 
 info_jail() {
@@ -1057,7 +1059,10 @@ fi
 case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	10000000)
 		test -z ${JAILNAME} && usage JAILNAME
-		test -z ${VERSION} && usage VERSION
+		case ${METHOD} in
+			src=*|null|tar) ;;
+			*) test -z ${VERSION} && usage VERSION ;;
+		esac
 		jail_exists ${JAILNAME} && \
 		    err 2 "The jail ${JAILNAME} already exists"
 		check_emulation "${REALARCH}" "${ARCH}"
