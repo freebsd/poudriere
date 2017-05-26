@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)eval.c	8.9 (Berkeley) 6/8/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/eval.c 317882 2017-05-06 13:28:42Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/eval.c 318501 2017-05-18 21:44:14Z jilles $");
 
 #include <paths.h>
 #include <signal.h>
@@ -1080,9 +1080,7 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 #endif
 		mode = (cmdentry.u.index == EXECCMD)? 0 : REDIR_PUSH;
 		if (flags == EV_BACKCMD) {
-			memout.nleft = 0;
 			memout.nextc = memout.buf;
-			memout.bufsize = 64;
 			mode |= REDIR_BACKQ;
 		}
 		savecmdname = commandname;
@@ -1134,8 +1132,12 @@ cmddone:
 			exitshell(exitstatus);
 		if (flags == EV_BACKCMD) {
 			backcmd->buf = memout.buf;
-			backcmd->nleft = memout.nextc - memout.buf;
+			backcmd->nleft = memout.buf != NULL ?
+			    memout.nextc - memout.buf : 0;
 			memout.buf = NULL;
+			memout.nextc = NULL;
+			memout.bufend = NULL;
+			memout.bufsize = 64;
 		}
 		if (cmdentry.u.index != EXECCMD)
 			popredir();
