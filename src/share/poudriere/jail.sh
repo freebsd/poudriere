@@ -444,8 +444,8 @@ install_from_src() {
 	[ -n "${cpignore}" ] && rm -f ${cpignore}
 	echo " done"
 
-	setup_build_env
 	if [ ${BUILD} -eq 0 ]; then
+		setup_build_env
 		installworld
 	else
 		build_and_install_world
