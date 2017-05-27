@@ -2,7 +2,7 @@
 
 export PATH=..:${PATH}
 
-SH="$1"
+export SH="$1"
 : ${TIMEOUT:=30}
 shift
 TESTS="$@"
