@@ -173,6 +173,9 @@ if [ $CONFIGSTR -eq 1 ]; then
 fi
 
 LISTPORTS=$(list_deps ${ORIGIN} )
+for dep_origin in ${LISTPORTS}; do
+	msg_debug "${COLOR_PORT}${ORIGIN}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_origin}"
+done
 prepare_ports
 markfs prepkg ${MASTERMNT}
 
