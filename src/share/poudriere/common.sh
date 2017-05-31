@@ -3841,14 +3841,56 @@ prefix_output() {
 	prefix_stderr "${extra}" prefix_stdout "${extra}" "$@"
 }
 
+: ${ORIGINSPEC_SEP:="@"}
+
+# ORIGINSPEC is: ORIGIN!DEPENDS_ARGS
+originspec_decode() {
+	local -; set +x
+	[ $# -ne 3 ] && eargs originspec_decode originspec \
+	    var_return_origin var_return_dep_args
+	local _originspec="$1"
+	local var_return_origin="$2"
+	local var_return_dep_args="$3"
+	local _origin _dep_args IFS
+
+	IFS="${ORIGINSPEC_SEP}"
+	set -- ${_originspec}
+
+	_origin="${1}"
+	_dep_args="${2}"
+
+	if [ -n "${var_return_origin}" ]; then
+		setvar "${var_return_origin}" "${_origin}"
+	fi
+	if [ -n "${var_return_dep_args}" ]; then
+		setvar "${var_return_dep_args}" "${_dep_args}"
+	fi
+}
+
+originspec_encode() {
+	local -; set +x
+	[ $# -ne 3 ] && eargs originspec_encode var_return origin dep_args
+	# We want this to be fast, so avoid copies.
+	#local var_return="$1"
+	#local _origin="$2"
+	#local _dep_args="$3"
+
+	setvar "${1}" "${2}${ORIGINSPEC_SEP}${3}"
+}
+
 deps_fetch_vars() {
-	[ $# -ne 3 ] && eargs deps_fetch_vars origin deps_var pkgname_var
-	local origin="$1"
+	[ $# -ne 4 ] && eargs deps_fetch_vars originspec deps_var \
+	    pkgname_var dep_args_var
+	local originspec="$1"
 	local deps_var="$2"
 	local pkgname_var="$3"
+	local dep_args_var="$4"
 	local _pkgname _pkg_deps _lib_depends= _run_depends= _selected_options=
 	local _changed_options= _changed_deps=
-	local _existing_pkgname _existing_origin
+	local _existing_pkgname _existing_origin _existing_originspec
+	local origin _dep_args
+
+	originspec_decode "${originspec}" origin ''
 
 	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
 		_changed_options="SELECTED_OPTIONS:O _selected_options"
@@ -3856,33 +3898,60 @@ deps_fetch_vars() {
 	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
 		_changed_deps="LIB_DEPENDS _lib_depends RUN_DEPENDS _run_depends"
 	fi
-	if ! port_var_fetch "${origin}" \
+	if ! port_var_fetch_originspec "${originspec}" \
 	    PKGNAME _pkgname \
+	    DEPENDS_ARGS _dep_args \
 	    ${_changed_deps} \
 	    ${_changed_options} \
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
 	    '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
 	    _pkg_deps; then
-		msg_error "Error fetching dependencies for ${COLOR_PORT}${origin}${COLOR_RESET}"
+		msg_error "Error fetching dependencies for ${COLOR_PORT}${originspec}${COLOR_RESET}"
 		return 1
 	fi
 
 	[ -n "${_pkgname}" ] || \
-	    err 1 "deps_fetch_vars: failed to get PKGNAME for ${origin}"
+	    err 1 "deps_fetch_vars: failed to get PKGNAME for ${originspec}"
 
 	setvar "${deps_var}" "${_pkg_deps}"
 	setvar "${pkgname_var}" "${_pkgname}"
+	setvar "${dep_args_var}" "${_dep_args}"
 
-	if ! shash_get origin-pkgname "${origin}" _existing_pkgname; then
+	if ! shash_get originspec-pkgname "${originspec}" _existing_pkgname; then
 		# Make sure this origin did not already exist
-		cache_get_origin _existing_origin "${_pkgname}" 2>/dev/null || :
+		cache_get_originspec _existing_originspec "${_pkgname}" 2>/dev/null || :
 		# It may already exist due to race conditions, it is not
 		# harmful. Just ignore.
-		if [ "${_existing_origin}" != "${origin}" ]; then
-			[ -n "${_existing_origin}" ] && \
-			    err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${origin}${COLOR_RESET} AND ${COLOR_PORT}${_existing_origin}${COLOR_RESET}. Rerun with -v to see which ports are depending on these."
-			shash_set origin-pkgname "${origin}" "${_pkgname}"
-			shash_set pkgname-origin "${_pkgname}" "${origin}"
+		if [ "${_existing_originspec}" != "${originspec}" ]; then
+			if [ -n "${_existing_originspec}" ]; then
+				originspec_decode "${_existing_originspec}" \
+				    _existing_origin ''
+				if [ "${_existing_origin}" = "${origin}" ]; then
+					# The DEPENDS_ARGS had no impact
+					# on the resulting PKGNAME from
+					# this origin, just ignore this
+					# excess lookup.
+					msg_debug "deps_fetch_vars: ${originspec} existed as ${_existing_originspec}"
+					# Signal to caller to dump this :S
+					setvar "${pkgname_var}" \
+					    "!ignore_duplicate"
+					# Map this originspec back to the
+					# known pkgname.
+					shash_set originspec-pkgname \
+					    "${originspec}" \
+					    "${_pkgname}"
+					return 0
+				fi
+				# The origins are different? This probably
+				# is a bogus assertion now.
+				err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${originspec}${COLOR_RESET} AND ${COLOR_PORT}${_existing_originspec}${COLOR_RESET}. Rerun with -v to see which ports are depending on these."
+			fi
+			shash_set originspec-pkgname "${originspec}" \
+			    "${_pkgname}"
+			shash_set pkgname-originspec "${_pkgname}" \
+			    "${originspec}"
+			shash_set pkgname-dep_args "${_pkgname}" \
+			    "${_dep_args}"
 		fi
 	else
 		# compute_deps raced and managed to process the same port
@@ -4517,15 +4586,40 @@ port_var_fetch() {
 	return ${ret}
 }
 
+port_var_fetch_originspec() {
+	local -; set +x
+	[ $# -ge 4 ] || eargs port_var_fetch_originspec originspec \
+	    PORTVAR var_set ...
+	local originspec="$1"
+	shift
+	local origin dep_args
+
+	originspec_decode "${originspec}" origin dep_args
+	if [ -n "${dep_args}" ]; then
+		msg_debug "port_var_fetch_originspec: processing ${originspec}"
+	fi
+	port_var_fetch "${origin}" "$@" ${dep_args}
+}
+
+cache_get_originspec() {
+	[ $# -ne 2 ] && eargs cache_get_originspec var_return pkgname
+	local var_return="$1"
+	local pkgname="$2"
+	local _originspec
+
+	shash_get pkgname-originspec "${pkgname}" _originspec
+
+	setvar "${var_return}" "${_originspec}"
+}
+
 cache_get_origin() {
 	[ $# -ne 2 ] && eargs cache_get_origin var_return pkgname
 	local var_return="$1"
 	local pkgname="$2"
-	local _origin
+	local originspec
 
-	shash_get pkgname-origin "${pkgname}" _origin
-
-	setvar "${var_return}" "${_origin}"
+	cache_get_originspec originspec "${pkgname}"
+	originspec_decode "${originspec}" "${var_return}" ""
 }
 
 set_dep_fatal_error() {
@@ -4550,7 +4644,7 @@ check_dep_fatal_error() {
 gather_port_vars() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "gather_port_vars requires PWD=${MASTERMNT}/.p"
-	local origin qorigin log rdep
+	local origin qorigin log rdep originspec
 
 	# A. Lookup all port vars/deps from the given list of ports.
 	# B. For every dependency found (depqueue):
@@ -4580,14 +4674,15 @@ gather_port_vars() {
 	parallel_start
 	for origin in $(listed_ports show_moved); do
 		if [ -d "../${PORTSDIR}/${origin}" ]; then
+			originspec_encode originspec "${origin}" ''
 			if was_a_bulk_run; then
 				echo "${origin} listed" >> \
 				    "${log}/.poudriere.ports.queued"
 			fi
 			parallel_run \
 			    prefix_stderr_quick \
-			    "(${COLOR_PORT}${origin}${COLOR_RESET})${COLOR_WARN}" \
-			    gather_port_vars_port "${origin}" || \
+			    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
+			    gather_port_vars_port "${originspec}" || \
 			    set_dep_fatal_error
 		else
 			if [ ${ALL} -eq 1 ]; then
@@ -4632,7 +4727,10 @@ gather_port_vars() {
 				"gqueue/*") break ;;
 			esac
 			origin="${qorigin#*/}"
+			# origin is really originspec, but fixup
+			# the substitued '/'
 			origin="${origin%!*}/${origin#*!}"
+			originspec="${origin}"
 			if was_a_bulk_run; then
 				read_line rdep "${qorigin}/rdep"
 				echo "${origin} ${rdep}" >> \
@@ -4640,9 +4738,9 @@ gather_port_vars() {
 			fi
 			parallel_run \
 			    prefix_stderr_quick \
-			    "(${COLOR_PORT}${origin}${COLOR_RESET})${COLOR_WARN}" \
+			    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
 			    gather_port_vars_port \
-			    "${origin}" inqueue || set_dep_fatal_error
+			    "${originspec}" inqueue || set_dep_fatal_error
 		done
 		if ! parallel_stop || check_dep_fatal_error; then
 			err 1 "Fatal errors encountered gathering ports metadata"
@@ -4660,23 +4758,27 @@ gather_port_vars_port() {
 	    err 1 "gather_port_vars_port requires SHASH_VAR_PATH=var/cache"
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "gather_port_vars_port requires PWD=${MASTERMNT}/.p"
-	[ $# -lt 1 ] && eargs gather_port_vars_port origin [inqueue]
-	[ $# -gt 2 ] && eargs gather_port_vars_port origin [inqueue]
-	local origin="$1"
+	[ $# -lt 1 ] && eargs gather_port_vars_port originspec [inqueue]
+	[ $# -gt 2 ] && eargs gather_port_vars_port originspec [inqueue]
+	local originspec="$1"
 	local inqueue="$2"
-	local dep_origin deps pkgname
+	local origin dep_origin deps pkgname dep_args dep_originspec
 
-	msg_debug "gather_port_vars_port (${origin}): LOOKUP"
+	msg_debug "gather_port_vars_port (${originspec}): LOOKUP"
+	originspec_decode "${originspec}" origin ''
 	# Remove queue entry
-	[ -n "${inqueue}" ] && rm -rf "gqueue/${origin%/*}!${origin#*/}"
+	[ -n "${inqueue}" ] && rm -rf "gqueue/${originspec%/*}!${originspec#*/}"
 
-	shash_get origin-pkgname "${origin}" pkgname && \
-	    err 1 "gather_port_vars_port: Already had ${origin}"
+	shash_get originspec-pkgname "${originspec}" pkgname && \
+	    err 1 "gather_port_vars_port: Already had ${originspec}"
 
-	if ! deps_fetch_vars "${origin}" deps pkgname; then
+	if ! deps_fetch_vars "${originspec}" deps pkgname dep_args; then
 		# An error is printed from deps_fetch_vars
 		set_dep_fatal_error
 		return 1
+	fi
+	if [ "${pkgname}" = "!ignore_duplicate" ]; then
+		return 0
 	fi
 
 	echo "${pkgname}" >> "all_pkgs"
@@ -4688,7 +4790,9 @@ gather_port_vars_port() {
 	# Assert some policy before proceeding to process these deps
 	# further.
 	for dep_origin in ${deps}; do
-		msg_verbose "${COLOR_PORT}${origin}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_origin}"
+		originspec_encode dep_originspec "${dep_origin}" \
+		    "${dep_args}"
+		msg_verbose "${COLOR_PORT}${originspec}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_originspec}"
 		if [ "${origin}" = "${dep_origin}" ]; then
 			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
 			set_dep_fatal_error
@@ -4711,9 +4815,9 @@ gather_port_vars_port() {
 	# since we are going to visit all ports from the category Makefiles
 	# anyway.
 	if [ ${ALL} -eq 0 ]; then
-		msg_debug "gather_port_vars_port (${origin}): Adding to depqueue"
-		mkdir "dqueue/${origin%/*}!${origin#*/}" || \
-			err 1 "gather_port_vars_port: Failed to add ${origin} to depqueue"
+		msg_debug "gather_port_vars_port (${originspec}): Adding to depqueue"
+		mkdir "dqueue/${originspec%/*}!${originspec#*/}" || \
+			err 1 "gather_port_vars_port: Failed to add ${originspec} to depqueue"
 	fi
 }
 
@@ -4722,30 +4826,37 @@ gather_port_vars_process_depqueue() {
 	    err 1 "gather_port_vars_process_depqueue requires SHASH_VAR_PATH=var/cache"
 	[ $# -ne 1 ] && eargs gather_port_vars_process_depqueue qorigin
 	local qorigin="$1"
-	local origin pkgname deps dep_origin dep_pkgname
+	local origin originspec pkgname deps dep_origin dep_pkgname
+	local dep_args dep_originspec
 
-	origin="${qorigin#*/}"
-	origin="${origin%!*}/${origin#*!}"
+	originspec="${qorigin#*/}"
+	originspec="${originspec%!*}/${originspec#*!}"
+	originspec_decode "${originspec}" origin ''
 
-	msg_debug "gather_port_vars_process_depqueue (${origin})"
+	msg_debug "gather_port_vars_process_depqueue (${originspec})"
 	# Remove queue entry
 	rmdir "${qorigin}"
 
 	# Add all of this origin's deps into the gatherqueue to reprocess
-	shash_get origin-pkgname "${origin}" pkgname || \
-	    err 1 "gather_port_vars_process_depqueue failed to find pkgname for origin ${origin}"
+	shash_get originspec-pkgname "${originspec}" pkgname || \
+	    err 1 "gather_port_vars_process_depqueue failed to find pkgname for origin ${originspec}"
 	shash_get pkgname-deps "${pkgname}" deps || \
 	    err 1 "gather_port_vars_process_depqueue failed to find deps for pkg ${pkgname}"
+	shash_get pkgname-dep_args "${pkgname}" dep_args || dep_args=
 
 	for dep_origin in ${deps}; do
+		originspec_encode dep_originspec "${dep_origin}" \
+		    "${dep_args}"
 		# Add this origin into the gatherqueue if not already done.
-		if ! shash_get origin-pkgname "${dep_origin}" dep_pkgname; then
-			msg_debug "gather_port_vars_process_depqueue (${origin}): Adding ${dep_origin} into the gatherqueue"
+		if ! shash_get originspec-pkgname "${dep_originspec}" \
+		    dep_pkgname; then
+			msg_debug "gather_port_vars_process_depqueue (${originspec}): Adding ${dep_originspec} into the gatherqueue"
 			# Another worker may have created it
-			if mkdir "gqueue/${dep_origin%/*}!${dep_origin#*/}" \
+			if mkdir \
+			    "gqueue/${dep_originspec%/*}!${dep_originspec#*/}" \
 			    2>/dev/null; then
 				echo "${origin}" > \
-				    "gqueue/${dep_origin%/*}!${dep_origin#*/}/rdep"
+				    "gqueue/${dep_originspec%/*}!${dep_originspec#*/}/rdep"
 			fi
 		fi
 	done
@@ -4795,18 +4906,24 @@ compute_deps_pkg() {
 	    err 1 "compute_deps_pkgname requires PWD=${MASTERMNT}/.p"
 	[ $# -lt 1 ] && eargs compute_deps_pkg pkgname
 	local pkgname="$1"
-	local pkg_pooldir deps dep_origin dep_pkgname
+	local pkg_pooldir deps dep_origin dep_pkgname dep_originspec
+	local dep_args
 
 	shash_get pkgname-deps "${pkgname}" deps || \
 	    err 1 "compute_deps_pkg failed to find deps for ${pkgname}"
+
+	shash_get pkgname-dep_args "${pkgname}" dep_args || dep_args=
 
 	pkg_pooldir="deps/${pkgname}"
 	mkdir "${pkg_pooldir}" || \
 	    err 1 "compute_deps_pkg: Error creating pool dir for ${pkgname}: There may be a duplicate origin in a category Makefile"
 
 	for dep_origin in ${deps}; do
-		shash_get origin-pkgname "${dep_origin}" dep_pkgname || \
-		    err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_origin} processing package ${pkgname}"
+		originspec_encode dep_originspec "${dep_origin}" \
+		    "${dep_args}"
+		shash_get originspec-pkgname "${dep_originspec}" dep_pkgname || \
+		    err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname}"
+		msg_debug "compute_deps_pkg: Will build ${dep_originspec} for ${pkgname}"
 		:> "${pkg_pooldir}/${dep_pkgname}"
 		echo "${pkgname} ${dep_pkgname}" >> "pkg_deps.unsorted"
 	done
