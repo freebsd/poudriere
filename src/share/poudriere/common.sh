@@ -1500,7 +1500,7 @@ do_jail_mounts() {
 
 # Interactive test mode
 enter_interactive() {
-	local stopmsg
+	local stopmsg pkgname port originspec dep_args
 
 	if [ ${ALL} -ne 0 ]; then
 		msg "(-a) Not entering interactive mode."
@@ -1528,17 +1528,21 @@ enter_interactive() {
 	fi
 
 	# Enable all selected ports and their run-depends
-	for port in $(listed_ports); do
+	for pkgname in $(listed_pkgnames); do
+		cache_get_originspec originspec "${pkgname}"
+		originspec_decode "${originspec}" port dep_args
 		# Install run-depends since this is an interactive test
 		msg "Installing run-depends for ${COLOR_PORT}${port}"
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
-		    /usr/bin/make -C ${PORTSDIR}/${port} run-depends ||
+		    /usr/bin/make -C ${PORTSDIR}/${port} ${dep_args} \
+		    run-depends ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port} run-depends"
 		msg "Installing ${COLOR_PORT}${port}"
 		# Only use PKGENV during install as testport will store
 		# the package in a different place than dependencies
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 ${PKGENV} \
-		    /usr/bin/make -C ${PORTSDIR}/${port} install-package ||
+		    /usr/bin/make -C ${PORTSDIR}/${port} ${dep_args} \
+		    install-package ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port}"
 	done
 
