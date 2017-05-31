@@ -68,7 +68,7 @@ shash_get() {
 		# This assumes globbing works
 		for _f in ${_shash_varkey_file}; do
 			case "${_f}" in
-			"*") break ;; # no file found
+			*"*"*) break ;; # no file found
 			esac
 			if read_line _value "${_f}"; then
 				_values="${_values}${_values:+ }${_value}"
