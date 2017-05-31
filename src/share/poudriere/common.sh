@@ -4405,7 +4405,7 @@ port_var_fetch() {
 
 	shift
 
-	while [ $# -ge 2 ]; do
+	while [ $# -gt 0 ]; do
 		_portvar="$1"
 		_var="$2"
 		if [ -z "${_portvar%%*=*}" ]; then
@@ -4415,6 +4415,7 @@ port_var_fetch() {
 			_vars="${_vars}${_vars:+ }${assign_var}"
 			shift 1
 		else
+			[ $# -eq 1 ] && break
 			_makeflags="${_makeflags}${_makeflags:+${sep}}-V${_portvar}"
 			_vars="${_vars}${_vars:+ }${_var}"
 			shift 2
@@ -4471,8 +4472,10 @@ port_var_fetch() {
 			while [ "${1}" = "${assign_var}" ]; do
 				shift
 			done
-			setvar "$1" "" || return $?
-			shift
+			if [ $# -gt 0 ]; then
+				setvar "$1" "" || return $?
+				shift
+			fi
 		done
 	fi
 

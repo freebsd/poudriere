@@ -49,7 +49,8 @@ port_var_fetch "devel/port_var_fetch2" \
 	IGNORE ignore \
 	FOO foo \
 	_PDEPS='' \
-	_PDEPS pdeps
+	_PDEPS pdeps \
+	_FOO=''
 assert 0 $? "port_var_fetch should succeed"
 assert '' "${pkgname}" "pkgname var should now be empty"
 assert '' "${ignore}" "ignore var should now be empty"
