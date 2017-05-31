@@ -4972,6 +4972,22 @@ listed_ports() {
 	done
 }
 
+listed_pkgnames() {
+	local originspec origin _pkgnames pkgname
+
+	listed_ports | while read origin; do
+		# Origins can map to multiple PKGNAMES
+		# of listed packages somewhere via dep_queue
+		originspec_encode originspec "${origin}" "*"
+		shash_get originspec-pkgname "${originspec}" \
+		    _pkgnames || \
+		    err 1 "Failed to lookup PKGNAME for ${origin}"
+		for pkgname in ${_pkgnames}; do
+			echo "${pkgname}"
+		done
+	done
+}
+
 # Port was requested to be built
 port_is_listed() {
 	[ $# -eq 1 ] || eargs port_is_listed origin
@@ -5123,7 +5139,7 @@ check_moved() {
 clean_build_queue() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "clean_build_queue requires PWD=${MASTERMNT}/.p"
-	local tmp pn port
+	local tmp pn port originspec
 
 	bset status "cleaning:"
 	msg "Cleaning the build queue"
@@ -5142,17 +5158,15 @@ clean_build_queue() {
 	if [ ${TRIM_ORPHANED_BUILD_DEPS} = "yes" -a ${ALL} -eq 0 ]; then
 		tmp=$(mktemp -t queue)
 		{
-			listed_ports | while read port; do
-				shash_get origin-pkgname "${port}" pkgname || \
-				    err 1 "Failed to lookup PKGNAME for ${port}"
-				echo "${pkgname}"
-			done
+			listed_pkgnames
 			# Pkg is a special case. It may not have been requested,
 			# but it should always be rebuilt if missing.  The
-			# origin-pkgname lookup may fail if it wasn't
+			# originspec-pkgname lookup may fail if it wasn't
 			# in the build queue.
 			for port in ports-mgmt/pkg ports-mgmt/pkg-devel; do
-				shash_get origin-pkgname "${port}" pkgname && \
+				originspec_encode originspec "${port}" ""
+				shash_get originspec-pkgname "${port}" \
+				    pkgname && \
 				    echo "${pkgname}"
 			done
 		} | {
@@ -5276,9 +5290,7 @@ prepare_ports() {
 
 		if [ ${CLEAN_LISTED} -eq 1 ]; then
 			msg "(-C) Cleaning specified ports to build"
-			listed_ports | while read port; do
-				shash_get origin-pkgname "${port}" pkgname || \
-				    err 1 "Failed to lookup PKGNAME for ${port}"
+			listed_pkgnames | while read pkgname; do
 				pkg="${PACKAGES}/All/${pkgname}.${PKG_EXT}"
 				if [ -f "${pkg}" ]; then
 					msg "(-C) Deleting existing package: ${pkg##*/}"
