@@ -693,21 +693,26 @@ buildlog_start() {
 	echo "---End Poudriere Port Flags/Env---"
 	echo ""
 	echo "---Begin OPTIONS List---"
-	injail /usr/bin/make -C ${portdir} showconfig || :
+	injail /usr/bin/make -C ${portdir} ${DEPENDS_ARGS} showconfig || :
 	echo "---End OPTIONS List---"
 	echo ""
 	for var in CONFIGURE_ARGS CONFIGURE_ENV MAKE_ENV; do
 		echo "--${var}--"
-		echo "$(injail /usr/bin/env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V ${var})"
+		echo "$(injail /usr/bin/env ${PORT_FLAGS} \
+		    /usr/bin/make -C ${portdir} ${DEPENDS_ARGS} -V ${var})"
 		echo "--End ${var}--"
 		echo ""
 	done
 	echo "--PLIST_SUB--"
-	echo "$(injail /usr/bin/env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V PLIST_SUB | tr ' ' '\n' | grep -v '^$')"
+	echo "$(injail /usr/bin/env ${PORT_FLAGS} \
+	    /usr/bin/make -C ${portdir} ${DEPENDS_ARGS} \
+	    -V PLIST_SUB | tr ' ' '\n' | grep -v '^$')"
 	echo "--End PLIST_SUB--"
 	echo ""
 	echo "--SUB_LIST--"
-	echo "$(injail /usr/bin/env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -V SUB_LIST | tr ' ' '\n' | grep -v '^$')"
+	echo "$(injail /usr/bin/env ${PORT_FLAGS} \
+	    /usr/bin/make -C ${portdir} ${DEPENDS_ARGS} \
+	    -V SUB_LIST | tr ' ' '\n' | grep -v '^$')"
 	echo "--End SUB_LIST--"
 	echo ""
 	echo "---Begin make.conf---"
@@ -2697,7 +2702,8 @@ _real_build_port() {
 	# only consider installed packages as dependencies
 	jailuser=root
 	if [ "${BUILD_AS_NON_ROOT}" = "yes" ] &&
-	    [ -z "$(injail /usr/bin/make -C ${portdir} -VNEED_ROOT)" ]; then
+	    [ -z "$(injail /usr/bin/make -C ${portdir} \
+	        -VNEED_ROOT)" ]; then
 		jailuser=${PORTBUILD_USER}
 	fi
 	# XXX: run-depends can come out of here with some bsd.port.mk
@@ -2824,7 +2830,8 @@ _real_build_port() {
 		if [ "${phase#*-}" = "depends" ]; then
 			# No need for nohang or PORT_FLAGS for *-depends
 			injail /usr/bin/env USE_PACKAGE_DEPENDS_ONLY=1 ${phaseenv} \
-			    /usr/bin/make -C ${portdir} ${phase} || return 1
+			    /usr/bin/make -C ${portdir} ${DEPENDS_ARGS} \
+			    ${phase} || return 1
 		else
 			# Only set PKGENV during 'package' to prevent
 			# testport-built packages from going into the main repo
@@ -2840,7 +2847,8 @@ _real_build_port() {
 				${log}/logs/${PKGNAME}.log \
 				${MASTERMNT}/.p/var/run/${MY_JOBID:-00}_nohang.pid \
 				injail /usr/bin/env ${pkgenv} ${phaseenv} ${PORT_FLAGS} \
-				/usr/bin/make -C ${portdir} ${phase}
+				/usr/bin/make -C ${portdir} ${DEPENDS_ARGS} \
+				${phase}
 			hangstatus=$? # This is done as it may return 1 or 2 or 3
 			if [ $hangstatus -ne 0 ]; then
 				# 1 = cmd failed, not a timeout
@@ -2874,7 +2882,8 @@ _real_build_port() {
 
 			bset_job_status "stage-qa" "${port}"
 			if ! injail /usr/bin/env DEVELOPER=1 ${PORT_FLAGS} \
-			    /usr/bin/make -C ${portdir} stage-qa; then
+			    /usr/bin/make -C ${portdir} ${DEPENDS_ARGS} \
+			    stage-qa; then
 				msg "Error: stage-qa failures detected"
 				[ "${PORTTESTING_FATAL}" != "no" ] &&
 					return 1
@@ -2883,7 +2892,8 @@ _real_build_port() {
 
 			bset_job_status "check-plist" "${port}"
 			if ! injail /usr/bin/env DEVELOPER=1 ${PORT_FLAGS} \
-			    /usr/bin/make -C ${portdir} check-plist; then
+			    /usr/bin/make -C ${portdir} ${DEPENDS_ARGS} \
+			    check-plist; then
 				msg "Error: check-plist failures detected"
 				[ "${PORTTESTING_FATAL}" != "no" ] &&
 					return 1
@@ -3586,7 +3596,7 @@ build_pkg() {
 	# since PKGNAME is not yet set.
 	[ $# -ne 1 ] && eargs build_pkg pkgname
 	local pkgname="$1"
-	local port portdir
+	local port portdir originspec
 	local build_failed=0
 	local name
 	local mnt
@@ -3604,7 +3614,8 @@ build_pkg() {
 	clean_rdepends=
 	trap '' SIGTSTP
 	PKGNAME="${pkgname}" # set ASAP so jail_cleanup() can use it
-	cache_get_origin port "${pkgname}"
+	cache_get_originspec originspec "${pkgname}"
+	originspec_decode "${originspec}" port DEPENDS_ARGS
 	portdir="${PORTSDIR}/${port}"
 
 	if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
@@ -3649,7 +3660,8 @@ build_pkg() {
 	# This is checked here instead of when building the queue
 	# as the list may start big but become very small, so here
 	# is a less-common check
-	: ${ignore:=$(injail /usr/bin/make -C ${portdir} -VIGNORE)}
+	: ${ignore:=$(injail /usr/bin/make -C ${portdir} ${DEPENDS_ARGS} \
+	    -VIGNORE)}
 
 	rm -rf ${mnt}/wrkdirs/* || :
 
@@ -3714,7 +3726,8 @@ build_pkg() {
 		fi
 
 		msg "Cleaning up wrkdir"
-		injail /usr/bin/make -C "${portdir}" -DNOCLEANDEPENDS clean || :
+		injail /usr/bin/make -C "${portdir}" ${DEPENDS_ARGS} \
+		    -DNOCLEANDEPENDS clean || :
 		rm -rf ${mnt}/wrkdirs/* || :
 	fi
 

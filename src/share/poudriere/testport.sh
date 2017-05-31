@@ -185,7 +185,7 @@ if [ $CONFIGSTR -eq 1 ]; then
 	    make -C ${portsdir}/${ORIGIN} config
 fi
 
-deps_fetch_vars "${ORIGIN}" LISTPORTS PKGNAME dep_args
+deps_fetch_vars "${ORIGIN}" LISTPORTS PKGNAME DEPENDS_ARGS
 for dep_origin in ${LISTPORTS}; do
 	msg_verbose "${COLOR_PORT}${ORIGINSPEC}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_origin}"
 done
