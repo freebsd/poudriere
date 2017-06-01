@@ -1011,6 +1011,8 @@ exit_handler() {
 		if [ -d "${MASTERMNT}/.p" ]; then
 			cd "${MASTERMNT}/.p"
 		fi
+	fi
+	if was_a_jail_run; then
 		# Don't use jail for any caching in cleanup
 		SHASH_VAR_PATH="${SHASH_VAR_PATH_DEFAULT}"
 	fi
