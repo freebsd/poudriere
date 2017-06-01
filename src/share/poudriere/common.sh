@@ -681,8 +681,13 @@ buildlog_start() {
 		echo
 	fi
 	echo "---Begin Environment---"
-	injail /usr/bin/env ${PKGENV} ${PORT_FLAGS}
+	injail /usr/bin/env
 	echo "---End Environment---"
+	echo ""
+	echo "---Begin Poudriere Port Flags/Env---"
+	echo "PORT_FLAGS=${PORT_FLAGS}"
+	echo "PKGENV=${PKGENV}"
+	echo "---End Poudriere Port Flags/Env---"
 	echo ""
 	echo "---Begin OPTIONS List---"
 	injail /usr/bin/make -C ${portdir} showconfig || :
