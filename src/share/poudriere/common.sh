@@ -4276,6 +4276,7 @@ delete_old_pkg() {
 	local pkg="$1"
 	local mnt pkgname new_pkgname
 	local origin v v2 compiled_options current_options current_deps compiled_deps
+	local pkgbase originspec _pkgnames
 
 	pkgname="${pkg##*/}"
 	pkgname="${pkgname%.*}"
@@ -4291,7 +4292,10 @@ delete_old_pkg() {
 	fi
 
 	v="${pkgname##*-}"
-	if ! shash_get origin-pkgname "${origin}" new_pkgname; then
+	# Check if any originspec was looked up for this origin
+	# to map it to a new pkgname/version.
+	originspec_encode originspec "${origin}" "*"
+	if ! shash_get originspec-pkgname "${originspec}" _pkgnames; then
 		# This origin was not looked up in gather_port_vars.  It is
 		# a stale package with the same PKGBASE as one we want, but
 		# with a different origin.  Such as lang/perl5.20 vs
@@ -4301,6 +4305,17 @@ delete_old_pkg() {
 		delete_pkg "${pkg}"
 		return 0
 	fi
+	# The previous _pkgnames lookup may have returned multiple
+	# packages built from this origin.  Find the closest matching
+	# to our old pkgbase.
+	pkgbase="${pkgname%-*}"
+	for new_pkgname in ${_pkgnames}; do
+		if [ "${pkgbase}" = "${new_pkgname%-*}" ]; then
+			break
+		fi
+	done
+	# A 'changed PKGNAME' check is done later for the case of
+	# not finding a relevant pkgbase match.
 
 	v2=${new_pkgname##*-}
 	if [ "$v" != "$v2" ]; then
