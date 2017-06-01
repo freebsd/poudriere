@@ -4516,24 +4516,27 @@ prepare_ports() {
 		bset stats_queued ${nbq##* }
 	fi
 
-	# Create a pool of ready-to-build from the deps pool
-	find "${MASTERMNT}/.p/deps" -type d -empty -depth 1 | \
-		xargs -J % mv % "${MASTERMNT}/.p/pool/unbalanced"
-	load_priorities
-	balance_pool
+	if was_a_bulk_run; then
+		# Create a pool of ready-to-build from the deps pool
+		find "${MASTERMNT}/.p/deps" -type d -empty -depth 1 | \
+			xargs -J % mv % "${MASTERMNT}/.p/pool/unbalanced"
+		load_priorities
+		balance_pool
 
-	[ -n "${ALLOW_MAKE_JOBS}" ] || echo "DISABLE_MAKE_JOBS=poudriere" \
-	    >> ${MASTERMNT}/etc/make.conf
-	# Don't leak ports-env UID as it conflicts with BUILD_AS_NON_ROOT
-	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
-		sed -i '' '/^UID=0$/d' "${MASTERMNT}/etc/make.conf"
-		sed -i '' '/^GID=0$/d' "${MASTERMNT}/etc/make.conf"
-		# Will handle manually for now on until build_port.
-		export UID=0
-		export GID=0
+		[ -n "${ALLOW_MAKE_JOBS}" ] || \
+		    echo "DISABLE_MAKE_JOBS=poudriere" \
+		    >> ${MASTERMNT}/etc/make.conf
+		# Don't leak ports-env UID as it conflicts with BUILD_AS_NON_ROOT
+		if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
+			sed -i '' '/^UID=0$/d' "${MASTERMNT}/etc/make.conf"
+			sed -i '' '/^GID=0$/d' "${MASTERMNT}/etc/make.conf"
+			# Will handle manually for now on until build_port.
+			export UID=0
+			export GID=0
+		fi
+
+		jget ${JAILNAME} version > ${PACKAGES}/.jailversion
 	fi
-
-	jget ${JAILNAME} version > ${PACKAGES}/.jailversion
 
 	return 0
 }
