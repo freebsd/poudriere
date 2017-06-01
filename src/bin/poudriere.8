@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 21, 2017
+.Dd June 1, 2017
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -680,8 +680,10 @@ This command is used to delete all packages not specified to build.
 .Pp
 These subcommands are mutually exclusive.
 .Bl -tag -width "-f conffile"
+.It Fl A
+Remove all packages.
 .It Fl a
-Keep all ports in the tree.
+Keep all known ports in the tree.
 .It Fl f Ar file
 Absolute path to a file which contains the list of ports to keep.
 Ports must be specified in the form

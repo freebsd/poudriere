@@ -29,12 +29,13 @@ usage() {
 poudriere pkgclean [options] [-f file|cat/port ...]
 
 Parameters:
-    -a          -- Clean the whole ports tree
-    -j jail     -- Which jail to use for packages
+    -A          -- Remove all packages
+    -a          -- Keep all known ports
     -f file     -- Get the list of ports to keep from a file
     [ports...]  -- List of ports to keep on the command line
 
 Options:
+    -j jail     -- Which jail to use for packages
     -J n        -- Run n jobs in parallel (Defaults to the number of
                    CPUs times 1.25)
     -n          -- Do not actually remove anything, just show what would be
@@ -62,10 +63,13 @@ SKIPSANITY=0
 
 [ $# -eq 0 ] && usage
 
-while getopts "aj:J:f:nNp:Rvyz:" FLAG; do
+while getopts "Aaj:J:f:nNp:Rvyz:" FLAG; do
 	case "${FLAG}" in
-		a)
+		A)
 			DO_ALL=1
+			;;
+		a)
+			ALL=1
 			;;
 		j)
 			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
