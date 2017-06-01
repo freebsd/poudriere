@@ -690,6 +690,7 @@ buildlog_start() {
 	echo "---Begin Poudriere Port Flags/Env---"
 	echo "PORT_FLAGS=${PORT_FLAGS}"
 	echo "PKGENV=${PKGENV}"
+	echo "DEPENDS_ARGS=${DEPENDS_ARGS}"
 	echo "---End Poudriere Port Flags/Env---"
 	echo ""
 	echo "---Begin OPTIONS List---"
