@@ -1172,14 +1172,15 @@ siginfo_handler() {
 			colorize_job_id job_id_color "${j}"
 
 			# Must put colors in format
-			format_origin_phase="\t[${job_id_color}%s${COLOR_RESET}]: ${COLOR_PORT}%-32s ${COLOR_PHASE}%-15s${COLOR_RESET} (%s)\n"
+			format_origin_phase="\t[${job_id_color}%s${COLOR_RESET}]: ${COLOR_PORT}%-32s | %-20s${COLOR_PHASE}%-15s${COLOR_RESET} (%s)\n"
 			format_phase="\t[${job_id_color}%s${COLOR_RESET}]: ${COLOR_PHASE}%15s${COLOR_RESET}\n"
 
 			if [ -n "${pkgname}" ]; then
 				elapsed=$((${now} - ${started}))
 				calculate_duration buildtime "${elapsed}"
 				printf "${format_origin_phase}" "${j}" \
-				    "${origin}" "${phase}" ${buildtime}
+				    "${origin}" "${pkgname}" "${phase}" \
+				    ${buildtime}
 			else
 				printf "${format_phase}" "${j}" "${phase}"
 			fi
@@ -1533,18 +1534,18 @@ enter_interactive() {
 		cache_get_originspec originspec "${pkgname}"
 		originspec_decode "${originspec}" port dep_args
 		# Install run-depends since this is an interactive test
-		msg "Installing run-depends for ${COLOR_PORT}${port}"
+		msg "Installing run-depends for ${COLOR_PORT}${port} | ${pkgname}"
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
 		    /usr/bin/make -C ${PORTSDIR}/${port} ${dep_args} \
 		    run-depends ||
-		    msg_warn "Failed to install ${COLOR_PORT}${port} run-depends"
-		msg "Installing ${COLOR_PORT}${port}"
+		    msg_warn "Failed to install ${COLOR_PORT}${port} | ${pkgname}${COLOR_RESET} run-depends"
+		msg "Installing ${COLOR_PORT}${port} | ${pkgname}"
 		# Only use PKGENV during install as testport will store
 		# the package in a different place than dependencies
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 ${PKGENV} \
 		    /usr/bin/make -C ${PORTSDIR}/${port} ${dep_args} \
 		    install-package ||
-		    msg_warn "Failed to install ${COLOR_PORT}${port}"
+		    msg_warn "Failed to install ${COLOR_PORT}${port} | ${pkgname}"
 	done
 
 	# Create a pkg repo configuration, and disable FreeBSD
@@ -2610,7 +2611,7 @@ check_fs_violation() {
 		msg "Error: ${err_msg}"
 		cat ${tmpfile}
 		bset_job_status "${status_value}" "${port}"
-		job_msg_verbose "Status   ${COLOR_PORT}${port}${COLOR_RESET}: ${status_value}"
+		job_msg_verbose "Status   ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}: ${status_value}"
 		ret=1
 	fi
 	rm -f ${tmpfile}
@@ -2635,7 +2636,7 @@ gather_distfiles() {
 
 	originspec_decode "${originspec}" origin ''
 
-	job_msg_verbose "Status   ${COLOR_PORT}${origin}${COLOR_RESET}: distfiles ${from} -> ${to}"
+	job_msg_verbose "Status   ${COLOR_PORT}${origin} | ${PKGNAME}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
 		[ -f ${from}/${sub}/${d} ] || continue
 		tosubd=${to}/${sub}/${d}
@@ -2691,7 +2692,7 @@ _real_build_port() {
 	for jpkg in ${ALLOW_MAKE_JOBS_PACKAGES}; do
 		case "${PKGNAME%-*}" in
 		${jpkg})
-			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port}${COLOR_RESET}"
+			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}"
 			sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' \
 			    ${mnt}/etc/make.conf
 			break
@@ -2702,8 +2703,8 @@ _real_build_port() {
 	for jpkg in ${ALLOW_NETWORKING_PACKAGES}; do
 		case "${PKGNAME%-*}" in
 		${jpkg})
-			job_msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${COLOR_RESET}"
-			msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${COLOR_RESET}"
+			job_msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}"
+			msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}"
 			allownetworking=1
 			JNETNAME="n"
 			break
@@ -2746,7 +2747,7 @@ _real_build_port() {
 		phaseenv=
 		JUSER=${jailuser}
 		bset_job_status "${phase}" "${port}"
-		job_msg_verbose "Status   ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
+		job_msg_verbose "Status   ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
 		[ -n "${PORTTESTING}" ] && \
 		    phaseenv="${phaseenv} DEVELOPER_MODE=yes"
 		case ${phase} in
@@ -2872,11 +2873,11 @@ _real_build_port() {
 				if [ $hangstatus -eq 2 ]; then
 					msg "Killing runaway build after ${NOHANG_TIME} seconds with no output"
 					bset_job_status "${phase}/runaway" "${port}"
-					job_msg_verbose "Status   ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}runaway"
+					job_msg_verbose "Status   ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}runaway"
 				elif [ $hangstatus -eq 3 ]; then
 					msg "Killing timed out build after ${max_execution_time} seconds"
 					bset_job_status "${phase}/timeout" "${port}"
-					job_msg_verbose "Status   ${COLOR_PORT}${port}${COLOR_RESET}: ${COLOR_PHASE}timeout"
+					job_msg_verbose "Status   ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}timeout"
 				fi
 				return 1
 			fi
@@ -3124,7 +3125,7 @@ save_wrkdir() {
 	rm -f ${tarname}
 	tar -s ",${mnted_portdir},," -c${COMPRESSKEY}f ${tarname} ${mnted_portdir}/work > /dev/null 2>&1
 
-	job_msg "Saved ${COLOR_PORT}${port}${COLOR_RESET} wrkdir to: ${tarname}"
+	job_msg "Saved ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET} wrkdir to: ${tarname}"
 }
 
 start_builder() {
@@ -3563,7 +3564,7 @@ crashed_build() {
 		badd ports.failed \
 		    "${origin} ${pkgname} ${failed_phase} ${failed_phase}"
 		COLOR_ARROW="${COLOR_FAIL}" msg \
-		    "${COLOR_FAIL}Finished ${COLOR_PORT}${origin}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
+		    "${COLOR_FAIL}Finished ${COLOR_PORT}${origin} | ${pkgname}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
 		run_hook pkgbuild failed "${origin}" "${pkgname}" \
 		    "${failed_phase}" \
 		    "${log}/logs/errors/${pkgname}.log"
@@ -3589,7 +3590,7 @@ clean_pool() {
 		cache_get_origin skipped_origin "${skipped_pkgname}"
 		badd ports.skipped "${skipped_origin} ${skipped_pkgname} ${pkgname}"
 		COLOR_ARROW="${COLOR_SKIP}" \
-		    job_msg "${COLOR_SKIP}Skipping ${COLOR_PORT}${skipped_origin}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${port}${COLOR_SKIP} ${clean_rdepends}"
+		    job_msg "${COLOR_SKIP}Skipping ${COLOR_PORT}${skipped_origin} | ${skipped_pkgname}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${port} | ${pkgname}${COLOR_SKIP} ${clean_rdepends}"
 		run_hook pkgbuild skipped "${skipped_origin}" "${skipped_pkgname}" "${port}"
 	done
 
@@ -3646,7 +3647,7 @@ build_pkg() {
 	NO_ELAPSED_IN_MSG=1
 	colorize_job_id COLOR_JOBID "${MY_JOBID}"
 
-	job_msg "Building ${COLOR_PORT}${port}${COLOR_RESET}"
+	job_msg "Building ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}"
 	bset_job_status "starting" "${port}"
 
 	if [ "${USE_JEXECD}" = "no" ]; then
@@ -3692,7 +3693,7 @@ build_pkg() {
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
 		badd ports.ignored "${port} ${PKGNAME} ${ignore}"
-		COLOR_ARROW="${COLOR_IGNORE}" job_msg "${COLOR_IGNORE}Finished ${COLOR_PORT}${port}${COLOR_IGNORE}: Ignored: ${ignore}"
+		COLOR_ARROW="${COLOR_IGNORE}" job_msg "${COLOR_IGNORE}Finished ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_IGNORE}: Ignored: ${ignore}"
 		clean_rdepends="ignored"
 		run_hook pkgbuild ignored "${port}" "${PKGNAME}" "${ignore}"
 	else
@@ -3719,7 +3720,7 @@ build_pkg() {
 
 		if [ ${build_failed} -eq 0 ]; then
 			badd ports.built "${port} ${PKGNAME} ${elapsed}"
-			COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished ${COLOR_PORT}${port}${COLOR_SUCCESS}: Success"
+			COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_SUCCESS}: Success"
 			run_hook pkgbuild success "${port}" "${PKGNAME}"
 			# Cache information for next run
 			pkg_cacher_queue "${port}" "${pkgname}" || :
@@ -3730,7 +3731,7 @@ build_pkg() {
 				${log}/logs/errors/${PKGNAME}.log \
 				2> /dev/null)
 			badd ports.failed "${port} ${PKGNAME} ${failed_phase} ${errortype} ${elapsed}"
-			COLOR_ARROW="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished ${COLOR_PORT}${port}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
+			COLOR_ARROW="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
 			run_hook pkgbuild failed "${port}" "${PKGNAME}" "${failed_phase}" \
 				"${log}/logs/errors/${PKGNAME}.log"
 			# ret=2 is a test failure
