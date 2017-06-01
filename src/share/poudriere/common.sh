@@ -3579,7 +3579,7 @@ build_pkg() {
 	_log_path log
 	clean_rdepends=
 	trap '' SIGTSTP
-	export PKGNAME="${pkgname}" # set ASAP so jail_cleanup() can use it
+	PKGNAME="${pkgname}" # set ASAP so jail_cleanup() can use it
 	cache_get_origin port "${pkgname}"
 	portdir="${PORTSDIR}/${port}"
 
