@@ -2618,17 +2618,21 @@ check_fs_violation() {
 }
 
 gather_distfiles() {
-	[ $# -eq 3 ] || eargs gather_distfiles origin from to
-	local origin="$1"
+	[ $# -eq 3 ] || eargs gather_distfiles originspec from to
+	local originspec="$1"
 	local from=$(realpath $2)
 	local to=$(realpath $3)
-	local sub dists d tosubd specials special
+	local sub dists d tosubd specials special origin dep_args
+	local dep_originspec
 
-	port_var_fetch "${origin}" \
+	port_var_fetch_originspec "${originspec}" \
 	    DIST_SUBDIR sub \
 	    ALLFILES dists \
+	    DEPENDS_ARGS dep_args \
 	    _DEPEND_SPECIALS specials || \
-	    err 1 "Failed to lookup distfiles for ${origin}"
+	    err 1 "Failed to lookup distfiles for ${originspec}"
+
+	originspec_decode "${originspec}" origin ''
 
 	job_msg_verbose "Status   ${COLOR_PORT}${origin}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
@@ -2642,7 +2646,8 @@ gather_distfiles() {
 		case "${special}" in
 		${PORTSDIR}/*) special=${special#${PORTSDIR}/} ;;
 		esac
-		gather_distfiles ${special} ${from} ${to}
+		originspec_encode dep_originspec "${special}" "${dep_args}"
+		gather_distfiles "${dep_originspec}" "${from}" "${to}"
 	done
 
 	return 0
@@ -2651,9 +2656,9 @@ gather_distfiles() {
 # Build+test port and return 1 on first failure
 # Return 2 on test failure if PORTTESTING_FATAL=no
 _real_build_port() {
-	[ $# -ne 1 ] && eargs _real_build_port portdir
-	local portdir=$1
-	local port=${portdir##${PORTSDIR}/}
+	[ $# -ne 1 ] && eargs _real_build_port originspec
+	local originspec=$1
+	local port portdir
 	local mnt
 	local log
 	local network
@@ -2666,6 +2671,9 @@ _real_build_port() {
 
 	_my_path mnt
 	_log_path log
+
+	originspec_decode "${originspec}" port ''
+	portdir="/usr/ports/${port}"
 
 	# Use bootstrap PKG when not building pkg itself.
 	if false && [ ${QEMU_EMULATING} -eq 1 ]; then
@@ -2749,7 +2757,9 @@ _real_build_port() {
 			mkdir -p ${mnt}/portdistfiles
 			if [ "${DISTFILES_CACHE}" != "no" ]; then
 				echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf
-				gather_distfiles "${port}" ${DISTFILES_CACHE} ${mnt}/portdistfiles || return 1
+				gather_distfiles "${originspec}" \
+				    ${DISTFILES_CACHE} ${mnt}/portdistfiles \
+				    || return 1
 			fi
 			JNETNAME="n"
 			JUSER=root
@@ -2878,7 +2888,8 @@ _real_build_port() {
 		print_phase_footer
 
 		if [ "${phase}" = "checksum" -a "${DISTFILES_CACHE}" != "no" ]; then
-			gather_distfiles "${port}" ${mnt}/portdistfiles ${DISTFILES_CACHE} || return 1
+			gather_distfiles "${originspec}" ${mnt}/portdistfiles \
+			    ${DISTFILES_CACHE} || return 1
 		fi
 
 		if [ "${phase}" = "stage" -a -n "${PORTTESTING}" ]; then
@@ -3684,7 +3695,7 @@ build_pkg() {
 		clean_rdepends="ignored"
 		run_hook pkgbuild ignored "${port}" "${PKGNAME}" "${ignore}"
 	else
-		build_port ${portdir} || ret=$?
+		build_port "${originspec}" || ret=$?
 		if [ ${ret} -ne 0 ]; then
 			build_failed=1
 			# ret=2 is a test failure

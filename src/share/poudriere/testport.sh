@@ -158,7 +158,7 @@ if [ -n "${new_origin}" ]; then
 	msg "MOVED: ${COLOR_PORT}${ORIGIN}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
 	ORIGIN="${new_origin}"
 fi
-ORIGINSPEC="${ORIGIN}"
+originspec_encode ORIGINSPEC "${ORIGIN}" ""
 if [ ! -f "${portsdir}/${ORIGIN}/Makefile" ] || [ -d "${portsdir}/${ORIGIN}/../Mk" ]; then
 	err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
 fi
@@ -261,7 +261,7 @@ ret=0
 # Don't show timestamps in msg() which goes to logs, only job_msg()
 # which goes to master
 NO_ELAPSED_IN_MSG=1
-build_port ${PORTSDIR}/${ORIGIN} || ret=$?
+build_port "${ORIGINSPEC}" || ret=$?
 unset NO_ELAPSED_IN_MSG
 
 if [ ${ret} -ne 0 ]; then
