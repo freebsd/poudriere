@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd June 1, 2017
+.Dd June 3, 2017
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -1032,6 +1032,16 @@ Any of the following are allowed and will all be used in the order shown:
 .Dl /usr/local/etc/poudriere.d/src.conf
 .Dl /usr/local/etc/poudriere.d/<setname>-src.conf
 .Dl /usr/local/etc/poudriere.d/<jailname>-src.conf
+.Ss Create optional src-env.conf
+You can also specify a global src-env.conf which will be used for building
+jails with the
+.Cm jail -c
+subcommand.
+Any of the following are allowed and will all be used in the order shown:
+.Pp
+.Dl /usr/local/etc/poudriere.d/src-env.conf
+.Dl /usr/local/etc/poudriere.d/<setname>-src-env.conf
+.Dl /usr/local/etc/poudriere.d/<jailname>-src-env.conf
 .Sh CAVEATS
 .Ss Jailname
 .Fl j ,
