@@ -72,6 +72,7 @@ NAMEONLY=0
 QUIET=0
 VERBOSE=0
 KEEP=0
+CREATED_FS=0
 while getopts "B:cFuU:dklp:qf:nM:m:v" FLAG; do
 	case "${FLAG}" in
 		B)
@@ -216,7 +217,9 @@ fi
 
 cleanup_new_ports() {
 	msg "Error while creating ports tree, cleaning up." >&2
-	TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
+	if [ "${CREATED_FS}" -eq 1 ]; then
+		TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
+	fi
 	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
 }
 
@@ -233,18 +236,28 @@ if [ ${CREATE} -eq 1 ]; then
 	: ${PTMNT="${BASEFS:=/usr/local${ZROOTFS}}/ports/${PTNAME}"}
 	: ${PTFS="${ZPOOL}${ZROOTFS}/ports/${PTNAME}"}
 
-	# Wrap the ports creation in a special cleanup hook that will remove it
-	# if any error is encountered
-	CLEANUP_HOOK=cleanup_new_ports
-
 	[ "${PTNAME#*.*}" = "${PTNAME}" ] ||
 		err 1 "The ports name cannot contain a period (.). See jail(8)"
 
+	[ -d "${PTMNT}" ] && \
+	    err 1 "Directory ${PTMNT} already exists"
+
 	if [ ${METHOD} != "none" ]; then
+		# This will exit if it fails to zfs create...
 		createfs ${PTNAME} ${PTMNT} ${PTFS}
+		# Ports runs without -e, but even if it did let's not
+		# short-circuit all of -e support in createfs.  It
+		# should have exited on error with err(), but be sure.
+		if [ $? -eq 0 ]; then
+			CREATED_FS=1
+		fi
 	else
 		echo "Not creating fs for method=none"
 	fi
+
+	# Wrap the ports creation in a special cleanup hook that will remove it
+	# if any error is encountered
+	CLEANUP_HOOK=cleanup_new_ports
 
 	pset ${PTNAME} mnt ${PTMNT}
 	if [ $FAKE -eq 0 ]; then
