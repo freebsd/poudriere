@@ -65,6 +65,7 @@
 										<li class="disabled" id="nav_failed"><a href="#failed">Failed</a></li>
 										<li class="disabled" id="nav_skipped"><a href="#skipped">Skipped</a></li>
 										<li class="disabled" id="nav_ignored"><a href="#ignored">Ignored</a></li>
+										<li class="disabled" id="nav_remaining"><a href="#remaining">Remaining</a></li>
 									</ul>
 								</li>
 								<li class="dropdown">
@@ -252,6 +253,20 @@
 							<tbody id="ignored_body"></tbody>
 						</table>
 					</div><!-- #ignored -->
+					<div id="remaining_div" class="status" style="display: none;">
+						<h2 id="remaining">Remaining ports
+							<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
+						</h2>
+						<table class="display remaining ports table-bordered" id="remaining_table">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>Package</th>
+								</tr>
+							</thead>
+							<tbody id="remaining_body"></tbody>
+						</table>
+					</div><!-- #remaining -->
 					<br class="clear" />
 				</div><!-- /col -->
 			</div><!-- /row -->

@@ -457,6 +457,8 @@ function format_status_row(status, row, n) {
 		table_row.push(format_origin(row.origin));
 		table_row.push(row.skipped_cnt);
 		table_row.push(row.reason);
+	} else if (status == "remaining") {
+		table_row.push(format_pkgname(row.pkgname));
 	}
 
 	return table_row;
@@ -948,9 +950,13 @@ function setup_build() {
 				"sWidth": "25em",
 			},
 		],
+		"remaining": [
+			build_order_column,
+			pkgname_column,
+		],
 	};
 
-	types = ['built', 'failed', 'skipped', 'ignored'];
+	types = ['built', 'failed', 'skipped', 'ignored', 'remaining'];
 	for (i in types) {
 		status = types[i];
 		$('#' + status + '_table').dataTable({

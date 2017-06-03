@@ -293,3 +293,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Default: inline
 #HTML_TYPE="hosted"
 
+# Set to track remaining ports in the HTML interface.  This can slow down
+# processing of the queue slightly, especially for bulk -a bulds.
+# Default: 0
+#HTML_TRACK_REMAINING=1

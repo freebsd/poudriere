@@ -53,11 +53,15 @@ function end_type() {
       for (port_status_type in ports_count) {
 	print "\"" port_status_type "\":["
 	for (i = 0; i < ports_count[port_status_type]; i++) {
-	  split(ports[port_status_type, i], build_reasons, " ")
-	  origin = build_reasons[1]
-	  pkgname = build_reasons[2]
 	  print "{"
-	  print "\"origin\":\"" origin "\","
+          split(ports[port_status_type, i], build_reasons, " ")
+          if (port_status_type != "remaining") {
+            print "\"origin\":\"" origin "\","
+            origin = build_reasons[1]
+            pkgname = build_reasons[2]
+          } else {
+            pkgname = build_reasons[1]
+          }
 	  print "\"pkgname\":\"" pkgname "\","
 	  if (port_status_type == "failed") {
 	    print "\"phase\":\"" build_reasons[3] "\","
