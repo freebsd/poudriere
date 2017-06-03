@@ -337,7 +337,7 @@ setup_src_conf() {
 	[ -f ${POUDRIERED}/${JAILNAME}-${src}.conf ] && \
 	    cat ${POUDRIERED}/${JAILNAME}-${src}.conf >> \
 	    ${JAILMNT}/etc/${src}.conf
-fi
+}
 
 build_and_install_world() {
 	export SRC_BASE=${JAILMNT}/usr/src
