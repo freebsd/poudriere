@@ -1048,6 +1048,7 @@ if [ -n "${SOURCES_URL}" ]; then
 		http://*) METHOD="git+http" ;;
 		https://*) METHOD="git+https" ;;
 		git://*) METHOD="git" ;;
+		file://*) METHOD="git" ;;
 		*) err 1 "Invalid git url" ;;
 		esac
 		;;
