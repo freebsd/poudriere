@@ -3365,7 +3365,7 @@ build_queue() {
 		# If builders are idle then there is a problem.
 		[ ${builders_active} -eq 1 ] || sanity_check_queue
 
-		if [ ${HTML_TRACK_REMAINING} -eq 1 ]; then
+		if [ "${HTML_TRACK_REMAINING}" = "yes" ]; then
 			{
 				# Find items in pool ready-to-build
 				find . -type d -depth 2
@@ -5796,7 +5796,7 @@ fi
 : ${USE_PTSORT:=yes}
 : ${MUTABLE_BASE:=yes}
 : ${HTML_JSON_UPDATE_INTERVAL:=2}
-: ${HTML_TRACK_REMAINING:=0}
+: ${HTML_TRACK_REMAINING:=no}
 
 # Be sure to update poudriere.conf to document the default when changing these
 : ${MAX_EXECUTION_TIME:=86400}         # 24 hours for 1 command
