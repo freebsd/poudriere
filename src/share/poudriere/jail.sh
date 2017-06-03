@@ -715,6 +715,11 @@ create_jail() {
 		;;
 	esac
 
+	if [ "${JAILFS}" != "none" ]; then
+		[ -d "${JAILMNT}" ] && \
+		    err 1 "Directory ${JAILMNT} already exists"
+	fi
+
 	createfs ${JAILNAME} ${JAILMNT} ${JAILFS:-none}
 	[ -n "${JAILFS}" -a "${JAILFS}" != "none" ] && jset ${JAILNAME} fs ${JAILFS}
 	if [ -n "${VERSION}" ]; then
