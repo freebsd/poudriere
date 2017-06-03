@@ -193,7 +193,9 @@ zfs_getfs() {
 	[ -z "${ZPOOL}${ZROOTFS}" ] && return 0
 
 	cache_call value _zfs_getfs "${mnt}"
-	echo "${value}"
+	if [ -n "${value}" ]; then
+		echo "${value}"
+	fi
 }
 
 mnt_tmpfs() {
