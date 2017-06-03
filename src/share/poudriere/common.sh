@@ -3589,6 +3589,7 @@ build_pkg() {
 	local ignore
 	local errortype
 	local ret=0
+	local elapsed now
 
 	_my_path mnt
 	_my_name name
@@ -3678,8 +3679,11 @@ build_pkg() {
 			save_wrkdir ${mnt} "${port}" "${portdir}" "noneed" ||:
 		fi
 
+		now=$(clock -monotonic)
+		elapsed=$((${now} - ${TIME_START_JOB}))
+
 		if [ ${build_failed} -eq 0 ]; then
-			badd ports.built "${port} ${PKGNAME}"
+			badd ports.built "${port} ${PKGNAME} ${elapsed}"
 			COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished ${COLOR_PORT}${port}${COLOR_SUCCESS}: Success"
 			run_hook pkgbuild success "${port}" "${PKGNAME}"
 			# Cache information for next run
@@ -3690,7 +3694,7 @@ build_pkg() {
 			errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
 				${log}/logs/errors/${PKGNAME}.log \
 				2> /dev/null)
-			badd ports.failed "${port} ${PKGNAME} ${failed_phase} ${errortype}"
+			badd ports.failed "${port} ${PKGNAME} ${failed_phase} ${errortype} ${elapsed}"
 			COLOR_ARROW="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished ${COLOR_PORT}${port}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
 			run_hook pkgbuild failed "${port}" "${PKGNAME}" "${failed_phase}" \
 				"${log}/logs/errors/${PKGNAME}.log"

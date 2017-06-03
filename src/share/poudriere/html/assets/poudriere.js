@@ -333,8 +333,8 @@ function format_log(pkgname, errors, text) {
 	return html;
 }
 
-function format_duration(start, end) {
-    var duration, hours, minutes, seconds;
+function format_start_to_end(start, end) {
+	var duration;
 
 	if (!start) {
 		return '';
@@ -353,6 +353,12 @@ function format_duration(start, end) {
 	if (duration < 0) {
 		duration = 0;
 	}
+
+	return format_duration(duration);
+}
+
+function format_duration(duration) {
+	var hours, minutes, seconds;
 
     hours = Math.floor(duration / 3600);
     duration = duration - hours * 3600;
@@ -442,12 +448,14 @@ function format_status_row(status, row, n) {
 		table_row.push(format_pkgname(row.pkgname));
 		table_row.push(format_origin(row.origin));
 		table_row.push(format_log(row.pkgname, false, 'success'));
+		table_row.push(format_duration(row.elapsed));
 	} else if (status == "failed") {
 		table_row.push(format_pkgname(row.pkgname));
 		table_row.push(format_origin(row.origin));
 		table_row.push(row.phase);
 		table_row.push(row.skipped_cnt);
 		table_row.push(format_log(row.pkgname, true, row.errortype));
+		table_row.push(format_duration(row.elapsed));
 	} else if (status == "skipped") {
 		table_row.push(format_pkgname(row.pkgname));
 		table_row.push(format_origin(row.origin));
@@ -584,7 +592,7 @@ function process_data_build(data) {
 				format_log(builder.pkgname, false, builder.status) :
 				builder.status.split(":")[0];
 			row.elapsed = builder.started ?
-				format_duration(builder.started, now) : "";
+				format_start_to_end(builder.started, now) : "";
 
 			/* Hide idle builders when the build is stopped. */
 			if (!is_stopped || (row.status != "idle")) {
@@ -598,7 +606,7 @@ function process_data_build(data) {
 	if (data.stats) {
 		$.each(data.stats, function(status, count) {
 			if (status == "elapsed") {
-				count = format_duration(count);
+				count = format_start_to_end(count);
 			}
 			$('#stats_' + status).html(count);
 		});
@@ -608,7 +616,7 @@ function process_data_build(data) {
 		if (data.snap) {
 			$.each(data.snap, function(status, count) {
 				if (status == "elapsed") {
-					count = format_duration(count);
+					count = format_start_to_end(count);
 				}
 				$('#snap_' + status).html(count);
 			});
@@ -915,6 +923,10 @@ function setup_build() {
 				"bSortable": false,
 				"bSearchable": false,
 			},
+			{
+				"bSearchable": false,
+				"sWidth": "3em",
+			},
 		],
 		"failed": [
 			build_order_column,
@@ -933,6 +945,10 @@ function setup_build() {
 			},
 			{
 				"sWidth": "7em",
+			},
+			{
+				"bSearchable": false,
+				"sWidth": "3em",
 			},
 		],
 		"skipped": [
