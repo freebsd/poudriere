@@ -139,7 +139,7 @@ html_json_cleanup() {
 
 	_log_path log
 	bset ended "$(clock -epoch)" || :
-	build_all_json 2>/dev/null || :
+	build_all_json || :
 	rm -f ${log}/.data.json.tmp ${log}/.data.mini.json.tmp 2>/dev/null || :
 }
 
