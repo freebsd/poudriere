@@ -40,4 +40,4 @@ bulk|testport) cmd=$1 ; shift ;;
 esac
 
 # Queue the command through the poudriered socket
-echo "opeeration = queue; command = $cmd; arguments = $@;" | nc -U ${QUEUE_SOCKET}
+write_usock "${QUEUE_SOCKET}" "operation = queue; command = $cmd; arguments = $@;"
