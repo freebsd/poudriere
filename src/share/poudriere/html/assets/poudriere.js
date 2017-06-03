@@ -1,6 +1,6 @@
 // vim: set sts=4 sw=4 ts=4 noet:
 /*
- * Copyright (c) 2013-2015 Bryan Drewery <bdrewery@FreeBSD.org>
+ * Copyright (c) 2013-2017 Bryan Drewery <bdrewery@FreeBSD.org>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without

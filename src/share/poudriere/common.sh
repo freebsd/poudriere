@@ -2,7 +2,7 @@
 # 
 # Copyright (c) 2010-2013 Baptiste Daroussin <bapt@FreeBSD.org>
 # Copyright (c) 2010-2011 Julien Laffaye <jlaffaye@FreeBSD.org>
-# Copyright (c) 2012-2014 Bryan Drewery <bdrewery@FreeBSD.org>
+# Copyright (c) 2012-2017 Bryan Drewery <bdrewery@FreeBSD.org>
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
