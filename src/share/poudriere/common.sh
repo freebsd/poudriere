@@ -3368,9 +3368,11 @@ build_queue() {
 		if [ "${HTML_TRACK_REMAINING}" = "yes" ]; then
 			{
 				# Find items in pool ready-to-build
-				find . -type d -depth 2
+				find . -type d -depth 2 | \
+				    sed -e 's,$, ready-to-build,'
 				# Find items in queue not ready-to-build.
-				find ../deps -type d -depth 1
+				find ../deps -type d -depth 1 | \
+				    sed -e 's,$, waiting-on-dependency,'
 			} | sed -e 's,.*/,,' > \
 			    "${log}/.poudriere.ports.remaining.tmp"
 			mv -f "${log}/.poudriere.ports.remaining.tmp" \

@@ -467,6 +467,7 @@ function format_status_row(status, row, n) {
 		table_row.push(row.reason);
 	} else if (status == "remaining") {
 		table_row.push(format_pkgname(row.pkgname));
+		table_row.push(row.status);
 	} else if (status == "queued") {
 		table_row.push(format_origin(row.origin));
 		if (row.reason == "listed") {
@@ -976,6 +977,9 @@ function setup_build() {
 		"remaining": [
 			build_order_column,
 			pkgname_column,
+			{
+				"sWidth": "7em",
+			},
 		],
 		"queued": [
 			build_order_column,

@@ -94,6 +94,8 @@ function end_type() {
           }
           if (port_status_type == "built" ) {
 	    print "\"elapsed\":\"" build_reasons[3] "\","
+          } else if (port_status_type == "remaining") {
+	    print "\"status\":\"" build_reasons[2] "\","
           } else if (port_status_type == "failed") {
 	    print "\"phase\":\"" build_reasons[3] "\","
 	    print "\"errortype\":\"" build_reasons[4] "\","
