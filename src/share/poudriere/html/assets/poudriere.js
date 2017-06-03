@@ -459,6 +459,13 @@ function format_status_row(status, row, n) {
 		table_row.push(row.reason);
 	} else if (status == "remaining") {
 		table_row.push(format_pkgname(row.pkgname));
+	} else if (status == "queued") {
+		table_row.push(format_origin(row.origin));
+		if (row.reason == "listed") {
+			table_row.push(row.reason);
+		} else {
+			table_row.push(format_origin(row.reason));
+		}
 	}
 
 	return table_row;
@@ -954,9 +961,14 @@ function setup_build() {
 			build_order_column,
 			pkgname_column,
 		],
+		"queued": [
+			build_order_column,
+			origin_column,
+			origin_column,
+		],
 	};
 
-	types = ['built', 'failed', 'skipped', 'ignored', 'remaining'];
+	types = ['built', 'failed', 'skipped', 'ignored', 'remaining', 'queued'];
 	for (i in types) {
 		status = types[i];
 		$('#' + status + '_table').dataTable({

@@ -4537,7 +4537,7 @@ check_dep_fatal_error() {
 gather_port_vars() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "gather_port_vars requires PWD=${MASTERMNT}/.p"
-	local origin qorigin
+	local origin qorigin log rdep
 
 	# A. Lookup all port vars/deps from the given list of ports.
 	# B. For every dependency found (depqueue):
@@ -4555,6 +4555,7 @@ gather_port_vars() {
 
 	msg "Gathering ports metadata"
 	bset status "gatheringportvars:"
+	_log_path log
 
 	:> "all_pkgs"
 	[ ${ALL} -eq 0 ] && :> "all_pkgbases"
@@ -4566,6 +4567,8 @@ gather_port_vars() {
 	parallel_start
 	for origin in $(listed_ports show_moved); do
 		if [ -d "../${PORTSDIR}/${origin}" ]; then
+			echo "${origin} listed" >> \
+			    "${log}/.poudriere.ports.queued"
 			parallel_run \
 			    prefix_stderr_quick \
 			    "(${COLOR_PORT}${origin}${COLOR_RESET})${COLOR_WARN}" \
@@ -4615,6 +4618,9 @@ gather_port_vars() {
 			esac
 			origin="${qorigin#*/}"
 			origin="${origin%!*}/${origin#*!}"
+			read_line rdep "${qorigin}/rdep"
+			echo "${origin} ${rdep}" >> \
+			    "${log}/.poudriere.ports.queued"
 			parallel_run \
 			    prefix_stderr_quick \
 			    "(${COLOR_PORT}${origin}${COLOR_RESET})${COLOR_WARN}" \
@@ -4645,7 +4651,7 @@ gather_port_vars_port() {
 
 	msg_debug "gather_port_vars_port (${origin}): LOOKUP"
 	# Remove queue entry
-	[ -n "${inqueue}" ] && rmdir "gqueue/${origin%/*}!${origin#*/}"
+	[ -n "${inqueue}" ] && rm -rf "gqueue/${origin%/*}!${origin#*/}"
 
 	shash_get origin-pkgname "${origin}" pkgname && \
 	    err 1 "gather_port_vars_port: Already had ${origin}"
@@ -4719,8 +4725,11 @@ gather_port_vars_process_depqueue() {
 		if ! shash_get origin-pkgname "${dep_origin}" dep_pkgname; then
 			msg_debug "gather_port_vars_process_depqueue (${origin}): Adding ${dep_origin} into the gatherqueue"
 			# Another worker may have created it
-			mkdir "gqueue/${dep_origin%/*}!${dep_origin#*/}" \
-			    2>/dev/null || :
+			if mkdir "gqueue/${dep_origin%/*}!${dep_origin#*/}" \
+			    2>/dev/null; then
+				echo "${origin}" > \
+				    "gqueue/${dep_origin%/*}!${dep_origin#*/}/rdep"
+			fi
 		fi
 	done
 }

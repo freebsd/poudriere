@@ -62,7 +62,11 @@ function end_type() {
           } else {
             pkgname = build_reasons[1]
           }
-	  print "\"pkgname\":\"" pkgname "\","
+          if (port_status_type == "queued") {
+            print "\"reason\":\"" pkgname "\","
+          } else {
+            print "\"pkgname\":\"" pkgname "\","
+          }
 	  if (port_status_type == "failed") {
 	    print "\"phase\":\"" build_reasons[3] "\","
 	    print "\"errortype\":\"" build_reasons[4] "\","

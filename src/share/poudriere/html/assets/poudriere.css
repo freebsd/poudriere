@@ -48,7 +48,6 @@
 .layout td {
 	border: 0;
 }
-.queued { background-color: #aaa !important; }
 .built { background-color: #00CC00 !important; }
 .built .row1 { background-color: #00FF00; }
 .failed { background-color: #E00000 !important; }
@@ -59,6 +58,8 @@
 .ignored .row1 { background-color: #FF6F00; }
 .remaining { background-color: #E3E3E3 !important; }
 .remaining .row1 { background-color: #BCBCBC; }
+.queued { background-color: #aaa !important; }
+.queued .row1 { background-color: #BBBBBB; }
 .latest { background-color: #f7Fe4a; }
 td.highlight {
 	background-color: whitesmoke !important;
