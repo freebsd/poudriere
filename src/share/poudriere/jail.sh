@@ -761,10 +761,10 @@ create_jail() {
 
 	markfs clean ${JAILMNT}
 
-	# Always update when using FreeBSD dists
+	# Check VERSION before running 'update_jail' on FreeBSD dists.
 	case ${METHOD} in
 		ftp|http|ftp-archive)
-			update_jail
+			[ ${VERSION#*-RELEAS*} != ${VERSION} ] && update_jail
 			;;
 	esac
 
