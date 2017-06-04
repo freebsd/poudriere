@@ -81,8 +81,8 @@ function end_type() {
 	  print "{"
           split(ports[port_status_type, i], build_reasons, " ")
           if (port_status_type != "remaining") {
-            print "\"origin\":\"" origin "\","
             origin = build_reasons[1]
+            print "\"origin\":\"" origin "\","
             pkgname = build_reasons[2]
           } else {
             pkgname = build_reasons[1]
