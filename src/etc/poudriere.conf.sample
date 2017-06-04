@@ -297,3 +297,9 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # processing of the queue slightly, especially for bulk -a bulds.
 # Default: no
 #HTML_TRACK_REMAINING=yes
+
+# Enable the use of dtrace(1) while building.  This is necessary in
+# order to build software with userland dtrace probes.  Use of this
+# setting will result in dtrace kernel modules being loaded, which
+# will persist after poudriere has finished running.
+#USE_DTRACE=yes

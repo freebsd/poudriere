@@ -1469,6 +1469,11 @@ do_jail_mounts() {
 
 	mount -t devfs devfs ${mnt}/dev
 	if [ ${JAILED} -eq 0 ]; then
+	        # dtrace(1) needs /dev/dtrace/* in order to operate
+	        if [ "${USE_DTRACE}" = "yes" ]; then
+	                devfspath="${devfspath} dtrace dtrace/*"
+		fi
+
 		devfs -m ${mnt}/dev rule apply hide
 		for p in ${devfspath} ; do
 			devfs -m ${mnt}/dev/ rule apply path "${p}" unhide
@@ -1638,6 +1643,17 @@ do_portbuild_mounts() {
 	mount_packages -o ro
 	${NULLMOUNT} ${DISTFILES_CACHE} ${mnt}/distfiles ||
 		err 1 "Failed to mount the distfiles cache directory"
+
+	# dtrace(1) needs to read the kernel binary and various
+	# loadable modules (at least on FreeBSD 10.x and below.  Not
+	# sure about 11.x) so null-mount the directories containing
+	# them from the host system.
+	if [ "${USE_DTRACE}" = "yes" ]; then
+	        kdir=$( dirname $( sysctl -n kern.bootfile ))
+
+		${NULLMOUNT} -o ro ${kdir} ${mnt}${kdir} ||
+		        err 1 "Failed to mount the kernel directories"
+	fi
 
 	# Copy in the options for the ref jail, but just ro nullmount it
 	# in builders.
@@ -2094,6 +2110,9 @@ jail_start() {
 				needkld="${needkld} linux64elf:linux64"
 			fi
 		fi
+	fi
+	if [ "${USE_DTRACE}" = "yes" ]; then
+	        sysctl -n debug.dtrace.providers >/dev/null 2>&1 || kldload dtraceall
 	fi
 	[ "${USE_TMPFS}" != "no" ] && needfs="${needfs} tmpfs"
 	[ "${USE_PROCFS}" = "yes" ] && needfs="${needfs} procfs"
