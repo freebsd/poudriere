@@ -633,16 +633,26 @@ function process_data_build(data) {
 	 * may involve looping 24000 times. */
 
 	if (data.ports) {
+		if (data.ports["remaining"] === undefined) {
+			data.ports["remaining"] = [];
+		}
 		$.each(data.ports, function(status, ports) {
-			if (data.ports[status] && data.ports[status].length > 0) {
+			if (data.ports[status] &&
+				(data.ports[status].length > 0 || status == "remaining")) {
 				table_rows = [];
-				if ((n = $('#' + status + '_body').data('index')) === undefined) {
-					n = 0;
+				if (status != "remaining") {
+					if ((n = $('#' + status + '_body').data('index')) === undefined) {
+						n = 0;
+						$('#' + status + '_div').show();
+						$('#nav_' + status).removeClass('disabled');
+					}
+					if (n == data.ports[status].length) {
+						return;
+					}
+				} else {
 					$('#' + status + '_div').show();
 					$('#nav_' + status).removeClass('disabled');
-				}
-				if (n == data.ports[status].length) {
-					return;
+					n = 0;
 				}
 				for (; n < data.ports[status].length; n++) {
 					var row = data.ports[status][n];
@@ -655,9 +665,15 @@ function process_data_build(data) {
 
 					table_rows.push(format_status_row(status, row, n));
 				}
-				$('#' + status + '_body').data('index', n);
-				$('#' + status + '_table').DataTable().rows.add(table_rows)
-					.draw(false);
+				if (status != "remaining") {
+					$('#' + status + '_body').data('index', n);
+					$('#' + status + '_table').DataTable().rows.add(table_rows)
+						.draw(false);
+				} else {
+					$('#' + status + '_table').DataTable().clear().draw();
+					$('#' + status + '_table').DataTable().rows.add(table_rows)
+						.draw(false);
+				}
 			}
 		});
 	}
