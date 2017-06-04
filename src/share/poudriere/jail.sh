@@ -69,6 +69,10 @@ Options:
                      building for a different TARGET ARCH than the host.
                      Only applies if TARGET_ARCH and HOST_ARCH are different.
                      Will only be used if -m is svn*.
+    -X            -- Build and setup native-xtools cross compile tools in jails
+                     which were built from ISO or snapshot for a different TARGET
+                     arch than HOST_ARCH.
+
 
 Options for -s and -k:
     -p tree       -- Specify which ports tree to start/stop the jail with.
@@ -273,6 +277,11 @@ update_jail() {
 		err 1 "Unsupported method"
 		;;
 	esac
+
+	if [ ${XDEV} -eq 1 ]; then
+		install_xdev_standalone
+	fi
+
 	jset ${JAILNAME} timestamp $(clock -epoch)
 }
 
@@ -436,6 +445,72 @@ build_and_install_world() {
 	fi
 }
 
+install_xdev_standalone() {
+	# Needed to install xtools into jails built from ISO/Snapshots
+	# This is commonly needed with arm64
+	export __MAKE_CONF=/dev/null
+	export SRCCONF=${JAILMNT}/etc/src.conf
+	export SRC_ENV_CONF=/dev/null
+	MAKE_JOBS="-j${PARALLEL_JOBS}"
+	
+	setup_build_env
+
+	if [ ${XDEV} -eq 1 ]; then
+		msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
+		${MAKE_CMD} -C /usr/src native-xtools ${MAKE_JOBS} \
+			${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools'"
+		XDEV_TOOLS=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
+			${MAKE_CMD} -C /usr/src -f Makefile.inc1 -V NXBDESTDIR)
+		rm -rf ${JAILMNT}/nxb-bin || err 1 "Failed to remove old native-xtools"
+		mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
+		cat > ${JAILMNT}/etc/make.nxb.conf <<- EOF
+		CC=/nxb-bin/usr/bin/cc
+		CPP=/nxb-bin/usr/bin/cpp
+		CXX=/nxb-bin/usr/bin/c++
+		AS=/nxb-bin/usr/bin/as
+		NM=/nxb-bin/usr/bin/nm
+		LD=/nxb-bin/usr/bin/ld
+		OBJCOPY=/nxb-bin/usr/bin/objcopy
+		SIZE=/nxb-bin/usr/bin/size
+		STRIPBIN=/nxb-bin/usr/bin/strip
+		SED=/nxb-bin/usr/bin/sed
+		READELF=/nxb-bin/usr/bin/readelf
+		RANLIB=/nxb-bin/usr/bin/ranlib
+		YACC=/nxb-bin/usr/bin/yacc
+		MAKE=/nxb-bin/usr/bin/make
+		STRINGS=/nxb-bin/usr/bin/strings
+		AWK=/nxb-bin/usr/bin/awk
+		FLEX=/nxb-bin/usr/bin/flex
+		EOF
+
+		# hardlink these files to capture scripts and tools
+		# that explicitly call them instead of using paths.
+		HLINK_FILES="usr/bin/env usr/bin/gzip usr/bin/id usr/bin/limits \
+				usr/bin/make usr/bin/dirname usr/bin/diff \
+				usr/bin/find usr/bin/gzcat usr/bin/awk \
+				usr/bin/touch usr/bin/sed usr/bin/patch \
+				usr/bin/install usr/bin/gunzip usr/bin/sort \
+				usr/bin/tar usr/bin/xargs usr/sbin/chown bin/cp \
+				bin/cat bin/chmod bin/echo bin/expr \
+				bin/hostname bin/ln bin/ls bin/mkdir bin/mv \
+				bin/realpath bin/rm bin/rmdir bin/sleep \
+				sbin/sha256 sbin/sha512 sbin/md5 sbin/sha1"
+
+		# Endian issues on mips/mips64 are not handling exec of 64bit shells
+		# from emulated environments correctly.  This works just fine on ARM
+		# because of the same issue, so allow it for now.
+		[ ${TARGET} = "mips" ] || \
+			HLINK_FILES="${HLINK_FILES} bin/sh bin/csh"
+ 
+		for file in ${HLINK_FILES}; do
+			if [ -f "${JAILMNT}/nxb-bin/${file}" ]; then
+				rm -f ${JAILMNT}/${file}
+				ln ${JAILMNT}/nxb-bin/${file} ${JAILMNT}/${file}
+			fi
+		done
+	fi
+}
+
 install_from_src() {
 	local var_version_extra="$1"
 	local cpignore_flag cpignore
@@ -531,7 +606,7 @@ install_from_vcs() {
 		git_sha=$(git -C ${SRC_BASE} rev-parse --short HEAD)
 		version_vcs="${git_sha}"
 	;;
-	esac
+	esac	
 	jset ${JAILNAME} version_vcs "${version_vcs}"
 	# Use __FreeBSD_version as our version_extra
 	setvar "${var_version_extra}" \
@@ -677,7 +752,11 @@ install_from_ftp() {
 			echo " done"
 		done
 	fi
-
+	
+	if [ ${XDEV} -eq 1 ]; then
+		install_xdev_standalone
+	fi
+ 
 	msg_n "Cleaning up..."
 	rm -rf ${JAILMNT}/fromftp/
 	echo " done"
@@ -686,6 +765,11 @@ install_from_ftp() {
 install_from_tar() {
 	msg_n "Installing ${VERSION} ${ARCH} from ${TARBALL} ..."
 	tar -xpf ${TARBALL} -C ${JAILMNT}/ || err 1 " fail"
+	
+	if [ ${XDEV} -eq 1 ]; then
+		install_xdev_standalone
+	fi
+	
 	echo " done"
 }
 
@@ -918,7 +1002,7 @@ XDEV=0
 BUILD=0
 GIT_DEPTH=--depth=1
 
-while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:Dx" FLAG; do
+while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxX" FLAG; do
 	case "${FLAG}" in
 		b)
 			BUILD=1
@@ -1006,6 +1090,9 @@ while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:Dx" FLAG; do
 			TORELEASE=${OPTARG}
 			;;
 		x)
+			XDEV=1
+			;;
+		X)
 			XDEV=1
 			;;
 		z)
