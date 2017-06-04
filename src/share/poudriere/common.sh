@@ -4573,8 +4573,10 @@ gather_port_vars() {
 	parallel_start
 	for origin in $(listed_ports show_moved); do
 		if [ -d "../${PORTSDIR}/${origin}" ]; then
-			echo "${origin} listed" >> \
-			    "${log}/.poudriere.ports.queued"
+			if was_a_bulk_run; then
+				echo "${origin} listed" >> \
+				    "${log}/.poudriere.ports.queued"
+			fi
 			parallel_run \
 			    prefix_stderr_quick \
 			    "(${COLOR_PORT}${origin}${COLOR_RESET})${COLOR_WARN}" \
@@ -4624,9 +4626,11 @@ gather_port_vars() {
 			esac
 			origin="${qorigin#*/}"
 			origin="${origin%!*}/${origin#*!}"
-			read_line rdep "${qorigin}/rdep"
-			echo "${origin} ${rdep}" >> \
-			    "${log}/.poudriere.ports.queued"
+			if was_a_bulk_run; then
+				read_line rdep "${qorigin}/rdep"
+				echo "${origin} ${rdep}" >> \
+				    "${log}/.poudriere.ports.queued"
+			fi
 			parallel_run \
 			    prefix_stderr_quick \
 			    "(${COLOR_PORT}${origin}${COLOR_RESET})${COLOR_WARN}" \
