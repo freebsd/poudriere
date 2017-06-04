@@ -41,6 +41,7 @@ Parameters:
     -r newname    -- Rename a jail
 
 Options:
+    -b            -- Build the OS (for use with -m src)
     -q            -- Quiet (Do not print the header)
     -n            -- Print only jail name (for use with -l)
     -J n          -- Run buildworld in parallel with n jobs.
@@ -61,6 +62,7 @@ Options:
                        url=SOMEURL.
     -P patch      -- Specify a patch to apply to the source before building.
     -S srcpath    -- Specify a path to the source tree to be used.
+    -D            -- Do a full git clone without --depth (default: --depth=1)
     -t version    -- Version of FreeBSD to upgrade the jail to.
     -U url        -- Specify a url to fetch the sources (with method git and/or svn).
     -x            -- Build and setup native-xtools cross compile tools in jail when
@@ -92,6 +94,8 @@ list_jail() {
 		name=${j##*/}
 		if [ ${NAMEONLY} -eq 0 ]; then
 			_jget version ${name} version
+			_jget version_vcs ${name} version_vcs 2>/dev/null || \
+			    version_vcs=
 			_jget arch ${name} arch
 			_jget method ${name} method
 			_jget mnt ${name} mnt
@@ -99,6 +103,9 @@ list_jail() {
 			time=
 			[ -n "${timestamp}" ] && \
 			    time="$(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
+			if [ -n "${version_vcs}" ]; then
+				version="${version} ${version_vcs}"
+			fi
 			display_add "${name}" "${version}" "${arch}" \
 			    "${method}" "${time}" "${mnt}"
 		else
@@ -126,7 +133,8 @@ delete_jail() {
 		TMPFS_ALL=0 destroyfs ${JAILMNT} jail || :
 	fi
 	cache_dir="${POUDRIERE_DATA}/cache/${JAILNAME}-*"
-	rm -rf ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} || :
+	rm -rf ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} \
+		${POUDRIERE_DATA}/.m/${JAILNAME}-* || :
 	echo " done"
 }
 
@@ -193,7 +201,9 @@ update_jail() {
 		MASTERMNT=${JAILMNT}
 		MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
-		do_jail_mounts "${JAILMNT}" "${JAILMNT}" "${ARCH}" "${JAILNAME}"
+		MUTABLE_BASE=yes NOLINUX=yes \
+		    do_jail_mounts "${JAILMNT}" "${JAILMNT}" "${ARCH}" \
+		    "${JAILNAME}"
 		JNETNAME="n"
 		jstart
 		# Fix freebsd-update to not check for TTY and to allow
@@ -244,9 +254,9 @@ update_jail() {
 		;;
 	src=*)
 		SRC_BASE="${METHOD#src=}"
-		install_from_src
-		update_version
-		update_version_env $(jget ${JAILNAME} version)
+		install_from_src version_extra
+		RELEASE=$(update_version "${version_extra}")
+		update_version_env "${RELEASE}"
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
@@ -263,7 +273,7 @@ update_jail() {
 		err 1 "Unsupported method"
 		;;
 	esac
-	jset ${JAILNAME} timestamp $(date +%s)
+	jset ${JAILNAME} timestamp $(clock -epoch)
 }
 
 installworld() {
@@ -286,7 +296,7 @@ installworld() {
 	if [ -n "${KERNEL}" ]; then
 		msg "Starting make installkernel"
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} installkernel \
-		    DESTDIR=${destdir} || \
+		    KERNCONF=${KERNEL} DESTDIR=${destdir} || \
 		    err 1 "Failed to 'make installkernel'"
 	fi
 
@@ -300,7 +310,7 @@ setup_build_env() {
 	hostver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' /usr/include/sys/param.h)
 	MAKE_CMD=make
 	if [ ${hostver} -gt 1000000 -a ${JAIL_OSVERSION} -lt 1000000 ]; then
-		FMAKE=$(which fmake 2>/dev/null)
+		FMAKE=$(command -v fmake 2>/dev/null)
 		[ -n "${FMAKE}" ] ||
 			err 1 "You need fmake installed on the host: devel/fmake"
 		MAKE_CMD=${FMAKE}
@@ -321,17 +331,30 @@ setup_build_env() {
 	export TARGET=${ARCH%.*}
 	export TARGET_ARCH=${ARCH#*.}
 	export WITH_FAST_DEPEND=yes
+	MAKE_JOBS="-j${PARALLEL_JOBS}"
+}
+
+setup_src_conf() {
+	local src="$1"
+
+	[ -f ${JAILMNT}/etc/${src}.conf ] && rm -f ${JAILMNT}/etc/${src}.conf
+	touch ${JAILMNT}/etc/${src}.conf
+	[ -f ${POUDRIERED}/${src}.conf ] && \
+	    cat ${POUDRIERED}/${src}.conf > ${JAILMNT}/etc/${src}.conf
+	[ -n "${SETNAME}" ] && \
+	    [ -f ${POUDRIERED}/${SETNAME}-${src}.conf ] && \
+	    cat ${POUDRIERED}/${SETNAME}-${src}.conf >> \
+	    ${JAILMNT}/etc/${src}.conf
+	[ -f ${POUDRIERED}/${JAILNAME}-${src}.conf ] && \
+	    cat ${POUDRIERED}/${JAILNAME}-${src}.conf >> \
+	    ${JAILMNT}/etc/${src}.conf
 }
 
 build_and_install_world() {
 	export SRC_BASE=${JAILMNT}/usr/src
 	mkdir -p ${JAILMNT}/etc
-	[ -f ${JAILMNT}/etc/src.conf ] && rm -f ${JAILMNT}/etc/src.conf
-	touch ${JAILMNT}/etc/src.conf
-	[ -f ${POUDRIERED}/src.conf ] && cat ${POUDRIERED}/src.conf > ${JAILMNT}/etc/src.conf
-	[ -n "${SETNAME}" ] && [ -f ${POUDRIERED}/${SETNAME}-src.conf ] && \
-	    cat ${POUDRIERED}/${SETNAME}-src.conf >> ${JAILMNT}/etc/src.conf
-	[ -f ${POUDRIERED}/${JAILNAME}-src.conf ] && cat ${POUDRIERED}/${JAILNAME}-src.conf >> ${JAILMNT}/etc/src.conf
+	setup_src_conf "src"
+	setup_src_conf "src-env"
 
 	if [ "${TARGET}" = "mips" ]; then
 		echo "WITH_ELFTOOLCHAIN_TOOLS=y" >> ${JAILMNT}/etc/src.conf
@@ -339,7 +362,7 @@ build_and_install_world() {
 
 	export __MAKE_CONF=/dev/null
 	export SRCCONF=${JAILMNT}/etc/src.conf
-	MAKE_JOBS="-j${PARALLEL_JOBS}"
+	export SRC_ENV_CONF=${JAILMNT}/etc/src-env.conf
 
 	setup_build_env
 
@@ -386,8 +409,9 @@ build_and_install_world() {
 
 		# hardlink these files to capture scripts and tools
 		# that explicitly call them instead of using paths.
-		HLINK_FILES="usr/bin/env usr/bin/gzip usr/bin/id \
+		HLINK_FILES="usr/bin/env usr/bin/gzip usr/bin/id usr/bin/limits \
 				usr/bin/make usr/bin/dirname usr/bin/diff \
+				usr/bin/makewhatis \
 				usr/bin/find usr/bin/gzcat usr/bin/awk \
 				usr/bin/touch usr/bin/sed usr/bin/patch \
 				usr/bin/install usr/bin/gunzip usr/bin/sort \
@@ -413,6 +437,7 @@ build_and_install_world() {
 }
 
 install_from_src() {
+	local var_version_extra="$1"
 	local cpignore_flag cpignore
 
 	msg_n "Copying ${SRC_BASE} to ${JAILMNT}/usr/src..."
@@ -432,15 +457,23 @@ install_from_src() {
 	[ -n "${cpignore}" ] && rm -f ${cpignore}
 	echo " done"
 
-	setup_build_env
-	installworld
+	if [ ${BUILD} -eq 0 ]; then
+		setup_build_env
+		installworld
+	else
+		build_and_install_world
+	fi
+	# Use __FreeBSD_version as our version_extra
+	setvar "${var_version_extra}" \
+	    "$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' \
+	    ${JAILMNT}/usr/include/sys/param.h)"
 }
 
 install_from_vcs() {
 	local var_version_extra="$1"
 	local UPDATE=0
-	local proto
-	local svn_rev
+	local proto version_vcs
+	local git_sha svn_rev
 
 	if [ -d "${SRC_BASE}" ]; then
 		UPDATE=1
@@ -464,7 +497,7 @@ install_from_vcs() {
 				err 1 "Patch files not supported with git, please use feature branches"
 			fi
 			msg_n "Checking out the sources from git..."
-			git clone --depth=1 -q -b ${VERSION} ${GIT_FULLURL} ${SRC_BASE} || err 1 " fail"
+			git clone ${GIT_DEPTH} -q -b ${VERSION} ${GIT_FULLURL} ${SRC_BASE} || err 1 " fail"
 			echo " done"
 			# No support for patches, using feature branches is recommanded"
 			;;
@@ -492,17 +525,21 @@ install_from_vcs() {
 	svn*)
 		svn_rev=$(${SVN_CMD} info ${SRC_BASE} |
 		    awk '/Last Changed Rev:/ {print $4}')
-		setvar "${var_version_extra}" "r${svn_rev}"
+		version_vcs="r${svn_rev}"
 	;;
 	git*)
 		git_sha=$(git -C ${SRC_BASE} rev-parse --short HEAD)
-		setvar "${var_version_extra}" "${git_sha}"
+		version_vcs="${git_sha}"
 	;;
 	esac
+	jset ${JAILNAME} version_vcs "${version_vcs}"
+	# Use __FreeBSD_version as our version_extra
+	setvar "${var_version_extra}" \
+	    "$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' \
+	    ${JAILMNT}/usr/include/sys/param.h)"
 }
 
 install_from_ftp() {
-	local var_version_extra="$1"
 	mkdir ${JAILMNT}/fromftp
 	local URL V
 
@@ -544,7 +581,7 @@ install_from_ftp() {
 			;;
 		url=*) URL=${METHOD##url=} ;;
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
-		ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
+		ftp-archive) URL="http://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
 		esac
 		DISTS="${DISTS} dict"
 		[ "${NO_LIB32:-no}" = "no" -a "${ARCH}" = "amd64" ] &&
@@ -605,7 +642,7 @@ install_from_ftp() {
 				esac
 				;;
 			allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
-			ftp-archive) URL="ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH%%.*}/${ARCH##*.}/${V}" ;;
+			ftp-archive) URL="http://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH%%.*}/${ARCH##*.}/${V}" ;;
 			url=*) URL=${METHOD##url=} ;;
 		esac
 
@@ -741,10 +778,17 @@ create_jail() {
 		;;
 	esac
 
+	if [ "${JAILFS}" != "none" ]; then
+		[ -d "${JAILMNT}" ] && \
+		    err 1 "Directory ${JAILMNT} already exists"
+	fi
+
 	createfs ${JAILNAME} ${JAILMNT} ${JAILFS:-none}
 	[ -n "${JAILFS}" -a "${JAILFS}" != "none" ] && jset ${JAILNAME} fs ${JAILFS}
-	jset ${JAILNAME} version ${VERSION}
-	jset ${JAILNAME} timestamp $(date +%s)
+	if [ -n "${VERSION}" ]; then
+		jset ${JAILNAME} version ${VERSION}
+	fi
+	jset ${JAILNAME} timestamp $(clock -epoch)
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
 	[ -n "$SRCPATH" ] && jset ${JAILNAME} srcpath ${SRCPATH}
@@ -777,7 +821,7 @@ create_jail() {
 
 	unset CLEANUP_HOOK
 
-	msg "Jail ${JAILNAME} ${VERSION} ${ARCH} is ready to be used"
+	msg "Jail ${JAILNAME} ${RELEASE} ${ARCH} is ready to be used"
 }
 
 info_jail() {
@@ -793,7 +837,7 @@ info_jail() {
 	BUILDNAME=latest
 
 	_log_path log
-	now=$(date +%s)
+	now=$(clock -epoch)
 
 	_bget status status 2>/dev/null || :
 	_bget nbq stats_queued 2>/dev/null || nbq=0
@@ -804,6 +848,7 @@ info_jail() {
 	tobuild=$((nbq - nbb - nbf - nbi - nbs))
 
 	_jget jversion ${JAILNAME} version
+	_jget jversion_vcs ${JAILNAME} version_vcs 2>/dev/null || jversion_vcs=
 	_jget jarch ${JAILNAME} arch
 	_jget jmethod ${JAILNAME} method
 	_jget timestamp ${JAILNAME} timestamp 2>/dev/null || :
@@ -812,6 +857,9 @@ info_jail() {
 
 	echo "Jail name:         ${JAILNAME}"
 	echo "Jail version:      ${jversion}"
+	if [ -n "${jversion_vcs}" ]; then
+		echo "Jail vcs version:  ${jversion_vcs}"
+	fi
 	echo "Jail arch:         ${jarch}"
 	echo "Jail method:       ${jmethod}"
 	echo "Jail mount:        ${mnt}"
@@ -867,9 +915,14 @@ UPDATE=0
 PTNAME=default
 SETNAME=""
 XDEV=0
+BUILD=0
+GIT_DEPTH=--depth=1
 
-while getopts "iJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:x" FLAG; do
+while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:Dx" FLAG; do
 	case "${FLAG}" in
+		b)
+			BUILD=1
+			;;
 		i)
 			INFO=1
 			;;
@@ -933,6 +986,9 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:x" FLAG; do
 			[ -d ${OPTARG} ] || err 1 "No such directory ${OPTARG}"
 			SRCPATH=${OPTARG}
 			;;
+		D)
+			GIT_DEPTH=""
+			;;
 		q)
 			QUIET=1
 			;;
@@ -989,8 +1045,10 @@ if [ -n "${SOURCES_URL}" ]; then
 	git*)
 		case "${SOURCES_URL}" in
 		ssh://*) METHOD="git+ssh" ;;
+		http://*) METHOD="git+http" ;;
 		https://*) METHOD="git+https" ;;
 		git://*) METHOD="git" ;;
+		file://*) METHOD="git" ;;
 		*) err 1 "Invalid git url" ;;
 		esac
 		;;
@@ -1008,6 +1066,7 @@ else
 	svn+file) proto="file" ;;
 	svn) proto="svn" ;;
 	git+ssh) proto="ssh" ;;
+	git+http) proto="http" ;;
 	git+https) proto="https" ;;
 	git) proto="git" ;;
 	esac
@@ -1019,7 +1078,10 @@ fi
 case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	10000000)
 		test -z ${JAILNAME} && usage JAILNAME
-		test -z ${VERSION} && usage VERSION
+		case ${METHOD} in
+			src=*|null|tar) ;;
+			*) test -z ${VERSION} && usage VERSION ;;
+		esac
 		jail_exists ${JAILNAME} && \
 		    err 2 "The jail ${JAILNAME} already exists"
 		check_emulation "${REALARCH}" "${ARCH}"

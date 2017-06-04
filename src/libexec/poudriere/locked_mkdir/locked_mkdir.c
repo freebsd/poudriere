@@ -46,8 +46,19 @@
 #include <sysexits.h>
 #include <unistd.h>
 
+#ifdef SHELL
+#define main locked_mkdircmd
+#include "bltin/bltin.h"
+#include "helpers.h"
+#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+#endif
+
 static int lockfd = -1;
 static volatile sig_atomic_t timed_out;
+struct sigaction oact;
+#ifdef SHELL
+struct sigaction oact_siginfo;
+#endif
 
 /*
  * Try to acquire a lock on the given file, creating the file if
@@ -72,8 +83,21 @@ acquire_lock(const char *name)
 static void
 cleanup(void)
 {
+#ifdef SHELL
+	int serrno;
 
-	flock(lockfd, LOCK_UN);
+	serrno = errno;
+#endif
+	if (lockfd != -1) {
+		flock(lockfd, LOCK_UN);
+		close(lockfd);
+		lockfd = -1;
+	}
+#ifdef SHELL
+	sigaction(SIGALRM, &oact, NULL);
+	siginfo_pop(&oact_siginfo);
+	errno = serrno;
+#endif
 }
 
 /*
@@ -95,6 +119,13 @@ main(int argc, char **argv)
 	const char *path;
 	char flock[MAXPATHLEN];
 	int kq, fd, waitsec;
+#ifdef SHELL
+	int serrno;
+
+	lockfd = -1;
+	timed_out = 0;
+	memset(&oact, sizeof(oact), 0);
+#endif
 
 	if (argc != 3)
 		errx(1, "Usage: <timeout> <directory>");
@@ -102,10 +133,14 @@ main(int argc, char **argv)
 	waitsec = atoi(argv[1]);
 	path = argv[2];
 
+#ifdef SHELL
+	INTOFF;
+	siginfo_push(&oact_siginfo);
+#endif
 	act.sa_handler = sig_timeout;
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = 0;	/* Note that we do not set SA_RESTART. */
-	sigaction(SIGALRM, &act, NULL);
+	sigaction(SIGALRM, &act, &oact);
 	alarm(waitsec);
 
 	/* Open a file lock to serialize other locked_mkdir processes. */
@@ -114,20 +149,37 @@ main(int argc, char **argv)
 	while (lockfd == -1 && !timed_out)
 		lockfd = acquire_lock(flock);
 	waitsec = alarm(0);
-	if (lockfd == -1)		/* We failed to acquire the lock. */
-		exit(EX_TEMPFAIL);
+	if (lockfd == -1) {		/* We failed to acquire the lock. */
+#ifdef SHELL
+		cleanup();
+		INTON;
+#endif
+		return (EX_TEMPFAIL);
+	}
 
 	/* At this point, we own the lock. */
+#ifndef SHELL
 	if (atexit(cleanup) == -1)
-		err(EX_OSERR, "atexit failed");
+		err(EX_OSERR, "%s", "atexit failed");
+#endif
 
 	/* Try creating the directory. */
 	fd = open(path, O_RDONLY);
 	if (fd == -1 && errno == ENOENT) {
-		if (mkdir(path, S_IRWXU) == 0)
-			exit(0);
-		if (errno != EEXIST)
-			err(1, "mkdir()");
+		if (mkdir(path, S_IRWXU) == 0) {
+#ifdef SHELL
+			cleanup();
+			INTON;
+#endif
+			return (0);
+		}
+		if (errno != EEXIST) {
+#ifdef SHELL
+			cleanup();
+			INTON;
+#endif
+			err(1, "%s", "mkdir()");
+		}
 	}
 
 	/* Failed, the directory already exists. */
@@ -135,29 +187,62 @@ main(int argc, char **argv)
 	timeout.tv_sec = waitsec;
 	timeout.tv_nsec = 0;
 
-	if ((kq = kqueue()) == -1)
-		err(1, "kqueue()");
+	if ((kq = kqueue()) == -1) {
+#ifdef SHELL
+		serrno = errno;
+		close(fd);
+		cleanup();
+		INTON;
+		errno = serrno;
+#endif
+		err(1, "%s", "kqueue()");
+	}
 
 	EV_SET(&change, fd, EVFILT_VNODE, EV_ADD | EV_ENABLE |
 	    EV_ONESHOT, NOTE_DELETE, 0, 0);
 
 	switch (kevent(kq, &change, 1, &event, 1, &timeout)) {
 	    case -1:
-		err(1, "kevent()");
+#ifdef SHELL
+		serrno = errno;
+		close(kq);
+		close(fd);
+		cleanup();
+		INTON;
+		errno = serrno;
+#endif
+		err(1, "%s", "kevent()");
 		/* NOTREACHED */
 	    case 0:
 		/* Timeout */
-		exit(1);
+#ifdef SHELL
+		close(kq);
+		close(fd);
+		cleanup();
+		INTON;
+#endif
+		return (1);
 		/* NOTREACHED */
 	    default:
 		break;
 	}
-
+#ifdef SHELL
+	close(kq);
+#endif
 	close(fd);
 
 	/* This is expected to succeed. */
-	if (mkdir(path, S_IRWXU) != 0)
-		err(1, "mkdir()");
+	if (mkdir(path, S_IRWXU) != 0) {
+#ifdef SHELL
+		cleanup();
+		INTON;
+#endif
+		err(1, "%s", "mkdir()");
+	}
 
+#ifdef SHELL
+	cleanup();
+	INTON;
+#endif
 	return (0);
 }

@@ -1,6 +1,6 @@
 #!/bin/sh
 # 
-# Copyright (c) 2012-2014 Bryan Drewery <bdrewery@FreeBSD.org>
+# Copyright (c) 2012-2017 Bryan Drewery <bdrewery@FreeBSD.org>
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -27,15 +27,15 @@
 stress_snapshot() {
 	local loadvg swapinfo elapsed duration now min_load loadpct ncpu
 
-	loadavg=$(sysctl -n vm.loadavg|awk '{print $2,$3,$4}')
+	loadavg=$(/sbin/sysctl -n vm.loadavg|/usr/bin/awk '{print $2,$3,$4}')
 	min_load="${loadavg%% *}"
 	# Use minimum of JOBS and hw.ncpu to determine load%. Exceeding total
 	# of either is 100%.
 	ncpu=${PARALLEL_JOBS}
 	[ ${ncpu} -gt ${NCPU} ] && ncpu=${NCPU}
 	loadpct="$(printf "%2.0f%%" $(echo "scale=20; 100 * (${min_load} / ${ncpu})" | bc))"
-	swapinfo=$(swapinfo -k|awk '/\// {sum+=$2; X+=$3} END {if (sum) {printf "%1.2f%%\n", X*100/sum}}')
-	now=$(clock_monotonic)
+	swapinfo=$(/usr/sbin/swapinfo -k|/usr/bin/awk '/\// {sum+=$2; X+=$3} END {if (sum) {printf "%1.2f%%\n", X*100/sum}}')
+	now=$(clock -monotonic)
 	elapsed=$((${now} - ${TIME_START}))
 
 	bset snap_loadavg "(${loadpct}) ${loadavg}"
@@ -47,73 +47,90 @@ stress_snapshot() {
 html_json_main() {
 	# This is too noisy and hurts reading debug output.
 	local -; set +x
+	local _relpath
+
+	# Ensure we are not sitting in the MASTERMNT/.p directory and
+	# move into the logdir for relative operations.
+	_log_path_top log_path_top
+	cd "${log_path_top}"
+	log_path_top="."
+
+	# Determine relative paths
+	_log_path_jail log_path_jail
+	_relpath "${log_path_jail}" "${log_path_top}"
+	log_path_jail="${_relpath}"
+
+	_log_path log_path
+	_relpath "${log_path}" "${log_path_top}"
+	log_path="${_relpath}"
+
+	trap exit TERM
+	trap html_json_cleanup EXIT
+
 	while :; do
 		stress_snapshot
 		update_stats || :
 		build_all_json
-		sleep 2 2>/dev/null
+		sleep ${HTML_JSON_UPDATE_INTERVAL} 2>/dev/null
 	done
 }
 
 build_all_json() {
+	critical_start
 	build_json
 	build_jail_json
 	build_top_json
+	critical_end
 }
 
 build_json() {
-	local log
-
-	_log_path log
-	awk \
-		-f ${AWKPREFIX}/json.awk ${log}/.poudriere.*[!%] | \
-		awk 'ORS=""; {print}' | \
-		sed  -e 's/,\([]}]\)/\1/g' \
-		> ${log}/.data.json.tmp
-	mv -f ${log}/.data.json.tmp ${log}/.data.json
+	[ -n "${log_path}" ] || \
+	    err 1 "build_jail_json requires log_path set"
+	/usr/bin/awk \
+		-f ${AWKPREFIX}/json.awk ${log_path}/.poudriere.*[!%] | \
+		/usr/bin/awk 'ORS=""; {print}' | \
+		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' \
+		> ${log_path}/.data.json.tmp
+	rename ${log_path}/.data.json.tmp ${log_path}/.data.json
 
 	# Build mini json for stats
-	awk -v mini=yes \
-		-f ${AWKPREFIX}/json.awk ${log}/.poudriere.*[!%] | \
-		awk 'ORS=""; {print}' | \
-		sed  -e 's/,\([]}]\)/\1/g' \
-		> ${log}/.data.mini.json.tmp
-	mv -f ${log}/.data.mini.json.tmp ${log}/.data.mini.json
+	/usr/bin/awk -v mini=yes \
+		-f ${AWKPREFIX}/json.awk ${log_path}/.poudriere.*[!%] | \
+		/usr/bin/awk 'ORS=""; {print}' | \
+		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' \
+		> ${log_path}/.data.mini.json.tmp
+	rename ${log_path}/.data.mini.json.tmp ${log_path}/.data.mini.json
 }
 
 build_jail_json() {
-	local log_path_jail tmpfile
-
-	_log_path_jail log_path_jail
+	[ -n "${log_path_jail}" ] || \
+	    err 1 "build_jail_json requires log_path_jail set"
 	tmpfile=$(TMPDIR="${log_path_jail}" mktemp -ut json)
-
 	{
 		echo "{\"builds\":{"
 		echo ${log_path_jail}/*/.data.mini.json | \
-		    xargs awk -f ${AWKPREFIX}/json_jail.awk | \
-		    sed -e '/^$/d' | \
+		    xargs /usr/bin/awk -f ${AWKPREFIX}/json_jail.awk | \
+		    /usr/bin/sed -e '/^$/d' | \
 		    paste -s -d , -
 		echo "}}"
 	} > ${tmpfile}
-	mv -f ${tmpfile} ${log_path_jail}/.data.json
+	rename ${tmpfile} ${log_path_jail}/.data.json
 }
 
 build_top_json() {
-	local log_path_top tmpfile
-
-	_log_path_top log_path_top
+	[ -n "${log_path_top}" ] || \
+	    err 1 "build_top_json requires log_path_top set"
 	tmpfile=$(TMPDIR="${log_path_top}" mktemp -ut json)
-
 	(
 		cd "${log_path_top}"
 		echo "{\"masternames\":{"
 		echo */latest/.data.mini.json | \
-		    xargs awk -f ${AWKPREFIX}/json_top.awk | \
-		    sed -e '/^$/d' | \
+		    xargs /usr/bin/awk -f ${AWKPREFIX}/json_top.awk | \
+		    /usr/bin/sed -e '/^$/d' | \
 		    paste -s -d , -
 		echo "}}"
 	) > ${tmpfile}
-	mv -f ${tmpfile} ${log_path_top}/.data.json
+	rename ${tmpfile} ${log_path_top}/.data.json
 }
 
 # This is called at the end
@@ -121,8 +138,8 @@ html_json_cleanup() {
 	local log
 
 	_log_path log
-	bset ended "$(date +%s)" || :
-	build_all_json 2>/dev/null || :
+	bset ended "$(clock -epoch)" || :
+	build_all_json || :
 	rm -f ${log}/.data.json.tmp ${log}/.data.mini.json.tmp 2>/dev/null || :
 }
 
@@ -143,11 +160,13 @@ install_html_files() {
 	# aliased /data dir. This can easily be auto-detected via JS
 	# but due to FF file:// restrictions requires a hack which
 	# results in a 404 for every page load.
-	if grep -q 'server_style = "hosted"' \
-	    "${log_top}/.html/index.html"; then
-		sed -i '' -e \
-		's/server_style = "hosted"/server_style = "inline"/' \
-		${log_top}/.html/*.html
+	if [ "${HTML_TYPE}" = "inline" ]; then
+	    if grep -q 'server_style = "hosted"' \
+		"${log_top}/.html/index.html"; then
+		    sed -i '' -e \
+		    's/server_style = "hosted"/server_style = "inline"/' \
+		    ${log_top}/.html/*.html
+	    fi
 	fi
 
 	mkdir -p "${dest}"

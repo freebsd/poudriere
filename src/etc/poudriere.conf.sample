@@ -61,7 +61,7 @@ USE_PORTLINT=no
 # data      - Use tmpfs(5) for poudriere cache/temp build data
 # localbase - Use tmpfs(5) for LOCALBASE (installing ports for packaging/testing)
 # all       - Run the entire build in memory, including builder jails.
-# yes       - Only enables tmpfs(5) for wrkdir
+# yes       - Enables tmpfs(5) for wrkdir and data
 # no        - Disable use of tmpfs(5)
 # EXAMPLE: USE_TMPFS="wrkdir data"
 USE_TMPFS=yes
@@ -73,6 +73,9 @@ USE_TMPFS=yes
 # How much memory to limit jail processes to for *each builder*
 # in GiB (default: none)
 #MAX_MEMORY=8
+
+# How many file descriptors to limit each jail process to (default: 1024)
+#MAX_FILES=1024
 
 # If set the given directory will be used for the distfiles
 # This allows to share the distfiles between jails and ports tree
@@ -104,14 +107,33 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #CHECK_CHANGED_DEPS=yes
 
 
-# Path to the RSA key to sign the PKGNG repo with. See pkg-repo(8)
+# Path to the RSA key to sign the PKG repo with. See pkg-repo(8)
 #PKG_REPO_SIGNING_KEY=/etc/ssl/keys/repo.key
 
 
 # ccache support. Supply the path to your ccache cache directory.
 # It will be mounted into the jail and be shared among all jails.
+# It is recommended that extra ccache configuration be done with
+# ccache -o rather than from the environment.
 #CCACHE_DIR=/var/cache/ccache
-#
+
+# Static ccache support from host.  This uses the existing
+# ccache from the host in the build jail.  This is useful for
+# using ccache+memcached which cannot easily be bootstrapped
+# otherwise.  The path to the PREFIX where ccache was installed
+# must be used here, and ccache must have been built statically.
+# Note also that ccache+memcached will require network access
+# which is normally disabled.  Separately setting RESTRICT_NETWORKING=no
+# may be required for non-localhost memcached servers.
+#CCACHE_STATIC_PREFIX=/usr/local
+
+# The jails normally only allow network access during the 'make fetch'
+# phase.  This is a security restriction to prevent random things
+# ran during a build from accessing the network.  Disabling this
+# is not advised.  ALLOW_NETWORKING_PACKAGES may be used to allow networking
+# for a subset of packages only.
+#RESTRICT_NETWORKING=yes
+#ALLOW_NETWORKING_PACKAGES="npm-foo"
 
 # parallel build support.
 #
@@ -123,7 +145,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # PARALLEL_JOBS=1
 
 # How many jobs should be used for preparing the build? These tend to
-# be more IO bound and may be worth tweaking. Default: Same as PARALLEL_JOBS
+# be more IO bound and may be worth tweaking. Default: PARALLEL_JOBS * 1.25
 # PREPARE_PARALLEL_JOBS=1
 
 
@@ -259,6 +281,22 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # build one-off packages but expect the repository to stay consistent.
 # Defaut: yes
 #TRIM_ORPHANED_BUILD_DEPS=yes
+
+# A list of directories to exclude from leftover and filesystem violation
+# mtree checks.  Ccache is used here as an example but is already
+# excluded by default.  There is no need to add it here unless a
+# special configuration is used where it is a problem.
+# Default: none
+#LOCAL_MTREE_EXCLUDES="/usr/obj /var/tmp/ccache"
+
+# Set to hosted to use the /data directory instead of inline style HTML
+# Default: inline
+#HTML_TYPE="hosted"
+
+# Set to track remaining ports in the HTML interface.  This can slow down
+# processing of the queue slightly, especially for bulk -a bulds.
+# Default: no
+#HTML_TRACK_REMAINING=yes
 
 # Enable the use of dtrace(1) while building.  This is necessary in
 # order to build software with userland dtrace probes.  Use of this

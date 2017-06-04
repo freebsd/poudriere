@@ -25,7 +25,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-if ! [ -t 1 ] || ! [ -t 2 ]; then
+if [ -z "${FORCE_COLORS}" ] && ! [ -t 1 ] || ! [ -t 2 ]; then
 	USE_COLORS="no"
 fi
 
@@ -70,6 +70,7 @@ if [ ${USE_COLORS} = "no" ]; then
 	COLOR_PORT=
 	COLOR_WARN=
 	COLOR_DEBUG=
+	COLOR_DEV=
 	COLOR_ERROR=
 	COLOR_SUCCESS=
 	COLOR_IGNORE=
@@ -85,6 +86,7 @@ else
 	: ${COLOR_PORT:=${COLOR_CYAN}}
 	: ${COLOR_WARN:=${COLOR_YELLOW}}
 	: ${COLOR_DEBUG:=${COLOR_BLUE}}
+	: ${COLOR_DEV:=${COLOR_LIGHT_RED}}
 	: ${COLOR_ERROR:=${COLOR_RED}}
 	: ${COLOR_SUCCESS:=${COLOR_GREEN}}
 	: ${COLOR_IGNORE:=${COLOR_DARK_GRAY}}

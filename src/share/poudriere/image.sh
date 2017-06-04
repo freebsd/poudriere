@@ -35,14 +35,15 @@ Parameters:
     -p portstree    -- Ports tree
     -z set          -- Set
     -s size         -- Set the image size
-    -n imagename    -- the name of the generated image
-    -h hostname     -- the image hostname
+    -n imagename    -- The name of the generated image
+    -h hostname     -- The image hostname
     -t type         -- Type of image can be one of (default iso+zmfs):
                     -- iso, iso+mfs, iso+zmfs, usb, usb+mfs, usb+zmfs,
                        rawdisk, zrawdisk, tar, firmware, rawfirmware
-    -X exclude      -- file containing the list in cpdup format
-    -f packagelist  -- list of packages to install
-    -c extradir     -- the content of the directory will copied in the target
+    -X excludefile  -- File containing the list in cpdup format
+    -f packagelist  -- List of packages to install
+    -c overlaydir   -- The content of the overlay directory will copied into
+                       the image
 EOF
 	exit 1
 }
@@ -50,7 +51,6 @@ EOF
 delete_image() {
 	[ ! -f "${excludelist}" ] || rm -f ${excludelist}
 	[ -z "${zroot}" ] || zpool destroy -f ${zroot}
-	[ -z "${md}" ] || /sbin/mdconfig -d -u ${md#md}
 
 	destroyfs ${WRKDIR} image
 }
@@ -65,6 +65,10 @@ cleanup_image() {
 while getopts "o:j:p:z:n:t:X:f:c:h:s:" FLAG; do
 	case "${FLAG}" in
 		o)
+			# If this is a relative path, add in ${PWD} as
+			# a cd / was done.
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			OUTPUTDIR=${OPTARG}
 			;;
 		j)
@@ -99,8 +103,12 @@ while getopts "o:j:p:z:n:t:X:f:c:h:s:" FLAG; do
 			IMAGESIZE="${OPTARG}"
 			;;
 		f)
+			# If this is a relative path, add in ${PWD} as
+			# a cd / was done.
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			[ -f "${OPTARG}" ] || err 1 "No such package list: ${OPTARG}"
-			PACKAGELIST=$(realpath ${OPTARG})
+			PACKAGELIST=${OPTARG}
 			;;
 		c)
 			[ -d "${OPTARG}" ] || err 1 "No such extract directory: ${OPTARG}"
@@ -126,19 +134,25 @@ post_getopts
 : ${IMAGENAME:=poudriereimage}
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 
-# Limitation on isos
-case "${IMAGENAME}" in
-''|*[!A-Za-z0-9]*)
-	err 1 "Name can only contain alphanumeric characters"
+case "${MEDIATYPE}" in
+*iso*)
+	# Limitation on isos
+	case "${IMAGENAME}" in
+	''|*[!A-Za-z0-9]*)
+		err 1 "Name can only contain alphanumeric characters"
+		;;
+	esac
 	;;
 esac
 
 mkdir -p ${OUTPUTDIR}
 
-jail_exists ${JAILNAME} || err 1 "The jail ${JAILNAME} does not exists"
+jail_exists ${JAILNAME} || err 1 "The jail ${JAILNAME} does not exist"
 case "${MEDIATYPE}" in
-usb)
+usb|*firmware|rawdisk)
 	[ -n "${IMAGESIZE}" ] || err 1 "Please specify the imagesize"
+	_jget mnt ${JAILNAME} mnt
+	test -f ${mnt}/boot/kernel/kernel || err 1 "The ${MEDIATYPE} media type requires a jail with a kernel"
 	;;
 iso*|usb*|raw*)
 	_jget mnt ${JAILNAME} mnt
@@ -149,6 +163,7 @@ esac
 msg "Preparing the image '${IMAGENAME}'"
 md=""
 CLEANUP_HOOK=cleanup_image
+test -d ${POUDRIERE_DATA}/images || mkdir ${POUDRIERE_DATA}/images
 WRKDIR=$(mktemp -d ${POUDRIERE_DATA}/images/${IMAGENAME}-XXXX)
 _jget mnt ${JAILNAME} mnt
 excludelist=$(mktemp -t excludelist)
@@ -159,7 +174,7 @@ cat >> ${excludelist} << EOF
 usr/src
 EOF
 case "${MEDIATYPE}" in
-usb|*firmware|rawdisk)
+rawdisk)
 	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
 	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
 	newfs -j -L ${IMAGENAME} /dev/${md}
@@ -222,7 +237,7 @@ cap_mkdb ${WRKDIR}/world/etc/login.conf
 # install packages if any is needed
 if [ -n "${PACKAGELIST}" ]; then
 	mkdir -p ${WRKDIR}/world/tmp/packages
-	mount -t nullfs ${POUDRIERE_DATA}/packages/${MASTERNAME} ${WRKDIR}/world/tmp/packages
+	${NULLMOUNT} ${POUDRIERE_DATA}/packages/${MASTERNAME} ${WRKDIR}/world/tmp/packages
 	cat > ${WRKDIR}/world/tmp/repo.conf <<-EOF
 	FreeBSD: { enabled: false }
 	local: { url: file:///tmp/packages }
@@ -241,7 +256,7 @@ case ${MEDIATYPE} in
 	tmpfs /tmp tmpfs rw,mode=1777 0 0
 	EOF
 	makefs -B little ${IMAGESIZE:+-s ${IMAGESIZE}} -o label=${IMAGENAME} ${WRKDIR}/out/mfsroot ${WRKDIR}/world
-	if which -s pigz; then
+	if command -v pigz >/dev/null; then
 		GZCMD=pigz
 	fi
 	case "${MEDIATYPE}" in
@@ -256,10 +271,17 @@ case ${MEDIATYPE} in
 	vfs.root.mountfrom="ufs:/dev/ufs/${IMAGENAME}"
 	EOF
 	;;
-usb|rawdisk)
+rawdisk)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
 	/dev/ufs/${IMAGENAME} / ufs rw 1 1
 	EOF
+	;;
+usb)
+	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
+	/dev/ufs/${IMAGENAME} / ufs rw 1 1
+	EOF
+	makefs -B little ${IMAGESIZE:+-s ${IMAGESIZE}} -o label=${IMAGENAME} \
+		-o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world
 	;;
 *firmware)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
@@ -267,6 +289,8 @@ usb|rawdisk)
 	EOF
 	mkdir -p ${WRKDIR}/world/conf/base
 	tar -C ${WRKDIR}/world -X ${excludelist} -cf - etc | tar -xf - -C ${WRKDIR}/world/conf/base
+	makefs -B little ${IMAGESIZE:+-s ${IMAGESIZE}} -o label=${IMAGENAME} \
+		-o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world
 	;;
 zrawdisk)
 	cat >> ${WRKDIR}/world/boot/loader.conf <<-EOF
@@ -300,8 +324,6 @@ usb)
 		-p freebsd-ufs:=${WRKDIR}/raw.img \
 		-p freebsd-swap::1M \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
-	umount ${WRKDIR}/world
-	/sbin/mdconfig -d -u ${md#md}
 	;;
 tar)
 	FINALIMAGE=${IMAGENAME}.txz
@@ -309,9 +331,6 @@ tar)
 	;;
 firmware)
 	FINALIMAGE=${IMAGENAME}.img
-	umount ${WRKDIR}/world
-	/sbin/mdconfig -d -u ${md#md}
-	md=
 	mkimg -s gpt -b ${mnt}/boot/pmbr \
 		-p efi:=${mnt}/boot/boot1.efifat \
 		-p freebsd-boot:=${mnt}/boot/gptboot \
@@ -323,9 +342,6 @@ firmware)
 	;;
 rawfirmware)
 	FINALIMAGE=${IMAGENAME}.raw
-	umount ${WRKDIR}/world
-	/sbin/mdconfig -d -u ${md#md}
-	md=
 	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
 	;;
 rawdisk)

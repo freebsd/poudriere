@@ -66,13 +66,13 @@ timed_wait() {
 
 	status=0
 	# Wait for the pids.
-	timeout ${time} pwait ${pids} 2>/dev/null >&1 || status=$?
+	pwait -t ${time} ${pids} 2>/dev/null >&1 || status=$?
 	if [ ${status} -eq 124 ]; then
 		# Timeout reached, something still running.
 		return 1
-	elif [ ${status} -gt 128 ]; then
-		# XXX: Some signal interrupted the timeout check. Consider
-		# it a failure.
+	elif [ ${status} -gt 0 ]; then
+		# XXX: Some signal interrupted the timeout check or some
+		# other error was encountered. Consider it a failure.
 		return 1
 	fi
 
@@ -105,11 +105,9 @@ kill_and_wait() {
 
 
 parallel_exec() {
-	local cmd="$1"
 	local ret=0
 	local - # Make `set +e` local
 	local errexit=0
-	shift 1
 
 	# Disable -e so that the actual execution failing does not
 	# return early and prevent notifying the FIFO that the
@@ -122,7 +120,7 @@ parallel_exec() {
 		# was set -e as well. Using 'if cmd' or 'cmd || '
 		# here would disable set -e in the cmd execution
 		[ $errexit -eq 1 ] && set -e
-		${cmd} "$@"
+		"$@"
 	)
 	ret=$?
 	echo >&9 || :
@@ -159,15 +157,7 @@ _reap_children() {
 		if ! kill -0 ${pid} 2>/dev/null; then
 			# This will error out if the return status is non-zero
 			_wait ${pid} || ret=$?
-			# Remove pid from PARALLEL_PIDS and strip away all
-			# spaces
-			PARALLEL_PIDS_L=${PARALLEL_PIDS%% ${pid} *}
-			PARALLEL_PIDS_L=${PARALLEL_PIDS_L% }
-			PARALLEL_PIDS_L=${PARALLEL_PIDS_L# }
-			PARALLEL_PIDS_R=${PARALLEL_PIDS##* ${pid} }
-			PARALLEL_PIDS_R=${PARALLEL_PIDS_R% }
-			PARALLEL_PIDS_R=${PARALLEL_PIDS_R# }
-			PARALLEL_PIDS=" ${PARALLEL_PIDS_L} ${PARALLEL_PIDS_R} "
+			list_remove PARALLEL_PIDS "${pid}"
 		fi
 	done
 
@@ -184,8 +174,7 @@ parallel_stop() {
 		_wait ${PARALLEL_PIDS} || ret=$?
 	fi
 
-	exec 9<&-
-	exec 9>&-
+	exec 9<&- 9>&-
 	unset PARALLEL_PIDS
 	unset NBPARALLEL
 
@@ -199,9 +188,7 @@ parallel_shutdown() {
 }
 
 parallel_run() {
-	local cmd="$1"
 	local ret
-	shift 1
 
 	ret=0
 
@@ -221,7 +208,7 @@ parallel_run() {
 	fi
 
 	[ ${NBPARALLEL} -lt ${PARALLEL_JOBS} ] && NBPARALLEL=$((NBPARALLEL + 1))
-	PARALLEL_CHILD=1 spawn parallel_exec $cmd "$@"
+	PARALLEL_CHILD=1 spawn parallel_exec "$@"
 	PARALLEL_PIDS="${PARALLEL_PIDS} $! "
 
 	return ${ret}
@@ -256,7 +243,7 @@ nohang() {
 	exec 8<> ${fifo}
 	rm -f ${fifo}
 
-	starttime=$(date +%s)
+	starttime=$(clock -epoch)
 
 	# Run the actual command in a child subshell
 	(
@@ -276,19 +263,6 @@ nohang() {
 			break
 		fi
 
-		lastupdated=$(stat -f "%m" ${logfile})
-		now=$(date +%s)
-
-		# No need to actually kill anything as stop_build()
-		# will be called and kill -9 -1 the jail later
-		if [ $((now - lastupdated)) -gt $log_timeout ]; then
-			ret=2
-			break
-		elif [ $((now - starttime)) -gt $cmd_timeout ]; then
-			ret=3
-			break
-		fi
-
 		# Wait until it is done, but check on it every so often
 		# This is done instead of a 'sleep' as it should recognize
 		# the command has completed right away instead of waiting
@@ -299,11 +273,23 @@ nohang() {
 			_wait $childpid || ret=1
 			break
 		fi
+
 		# Not done, was a timeout, check the log time
+		lastupdated=$(stat -f "%m" ${logfile})
+		now=$(clock -epoch)
+
+		# No need to actually kill anything as stop_build()
+		# will be called and kill -9 -1 the jail later
+		if [ $((now - lastupdated)) -gt $log_timeout ]; then
+			ret=2
+			break
+		elif [ $((now - starttime)) -gt $cmd_timeout ]; then
+			ret=3
+			break
+		fi
 	done
 
-	exec 8<&-
-	exec 8>&-
+	exec 8<&- 8>&-
 
 	rm -f ${pidfile}
 
@@ -321,10 +307,15 @@ madvise_protect() {
 }
 
 _spawn_wrapper() {
-	# Reset SIGINT to the default to undo POSIX's SIG_IGN in
-	# 2.11 "Signals and Error Handling". This will ensure no
-	# foreground process is left around on SIGINT.
-	trap - INT
+	case $- in
+		# Job control
+		*m*) ;;
+		# No job control
+		# Reset SIGINT to the default to undo POSIX's SIG_IGN in
+		# 2.11 "Signals and Error Handling". This will ensure no
+		# foreground process is left around on SIGINT.
+		*) trap - INT ;;
+	esac
 
 	"$@"
 }
@@ -338,15 +329,10 @@ spawn_protected() {
 	madvise_protect $! || :
 }
 
-# Start a background process from function 'name'. The 'atexit' function
-# will be called from the main process after the coprocess is killed.
-# 'locks' will be acquired before killing, which can be used to not kill
-# a process in the middle of an operation.
+# Start a background process from function 'name'.
 coprocess_start() {
-	[ $# -ge 1 ] || eargs coprocess_start name [atexit] [locks]
+	[ $# -eq 1 ] || eargs coprocess_start name
 	local name="$1"
-	local atexit="$2"
-	local locks="$3"
 	local main pid
 
 	main="${name}_main"
@@ -354,8 +340,6 @@ coprocess_start() {
 	pid=$!
 
 	hash_set coprocess_pid "${name}" "${pid}"
-	[ -n "${atexit}" ] && hash_set coprocess_atexit "${name}" "${atexit}"
-	[ -n "${locks}" ] && hash_set coprocess_locks "${name}" "${locks}"
 
 	return 0
 }
@@ -363,36 +347,10 @@ coprocess_start() {
 coprocess_stop() {
 	[ $# -eq 1 ] || eargs coprocess_stop name
 	local name="$1"
-	local pid atexit lockname locks took_locks
 
 	hash_get coprocess_pid "${name}" pid || return 0
 	hash_unset coprocess_pid "${name}"
 
-	# Grab locks
-	if hash_get coprocess_locks "${name}" locks; then
-		hash_unset coprocess_locks "${name}"
-		for lockname in ${locks}; do
-			# Does this process already have the lock?
-			lock_have "${lockname}" && continue
-			if lock_acquire "${lockname}"; then
-				took_locks="${took_locks} ${lockname}"
-			else
-				msg_warn "Failed to acquire lock ${lockname} while shutting down ${name}"
-			fi
-		done
-	fi
-
 	# kill -> timeout wait -> kill -9
-	kill_and_wait 30 "${pid}" || :
-
-	# Release locks
-	for lockname in ${took_locks}; do
-		lock_release "${lockname}"
-	done
-
-	# Run atexit functions
-	if hash_get coprocess_atexit "${name}" atexit; then
-		hash_unset coprocess_atexit "${name}"
-		${atexit}
-	fi
+	kill_and_wait 60 "${pid}" || :
 }

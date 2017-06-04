@@ -1,3 +1,28 @@
+# Copyright (c) 2012-2017 Bryan Drewery <bdrewery@FreeBSD.org>
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+
+
 # Parse the .poudriere files created during build into a JSON format
 # that the web interface can fetch and use with jQuery. See
 # common.sh build_json() for how it is used
@@ -53,15 +78,28 @@ function end_type() {
       for (port_status_type in ports_count) {
 	print "\"" port_status_type "\":["
 	for (i = 0; i < ports_count[port_status_type]; i++) {
-	  split(ports[port_status_type, i], build_reasons, " ")
-	  origin = build_reasons[1]
-	  pkgname = build_reasons[2]
 	  print "{"
-	  print "\"origin\":\"" origin "\","
-	  print "\"pkgname\":\"" pkgname "\","
-	  if (port_status_type == "failed") {
+          split(ports[port_status_type, i], build_reasons, " ")
+          if (port_status_type != "remaining") {
+            origin = build_reasons[1]
+            print "\"origin\":\"" origin "\","
+            pkgname = build_reasons[2]
+          } else {
+            pkgname = build_reasons[1]
+          }
+          if (port_status_type == "queued") {
+            print "\"reason\":\"" pkgname "\","
+          } else {
+            print "\"pkgname\":\"" pkgname "\","
+          }
+          if (port_status_type == "built" ) {
+	    print "\"elapsed\":\"" build_reasons[3] "\","
+          } else if (port_status_type == "remaining") {
+	    print "\"status\":\"" build_reasons[2] "\","
+          } else if (port_status_type == "failed") {
 	    print "\"phase\":\"" build_reasons[3] "\","
 	    print "\"errortype\":\"" build_reasons[4] "\","
+	    print "\"elapsed\":\"" build_reasons[5] "\","
 	  } else if (port_status_type == "ignored") {
 	    reason_length = length(build_reasons)
 	    for (n = 3; n <= reason_length; n++) {

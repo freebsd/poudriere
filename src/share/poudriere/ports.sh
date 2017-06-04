@@ -72,6 +72,7 @@ NAMEONLY=0
 QUIET=0
 VERBOSE=0
 KEEP=0
+CREATED_FS=0
 while getopts "B:cFuU:dklp:qf:nM:m:v" FLAG; do
 	case "${FLAG}" in
 		B)
@@ -149,8 +150,10 @@ if [ -n "${SOURCES_URL}" ]; then
 	git*)
 		case "${SOURCES_URL}" in
 		ssh://*) METHOD="git+ssh" ;;
+		http://*) METHOD="git+http" ;;
 		https://*) METHOD="git+https" ;;
 		git://*) METHOD="git" ;;
+		file:///*) METHOD="git" ;;
 		*) err 1 "Invalid git url" ;;
 		esac
 		;;
@@ -215,7 +218,9 @@ fi
 
 cleanup_new_ports() {
 	msg "Error while creating ports tree, cleaning up." >&2
-	destroyfs ${PTMNT} ports || :
+	if [ "${CREATED_FS}" -eq 1 ]; then
+		TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
+	fi
 	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
 }
 
@@ -232,13 +237,29 @@ if [ ${CREATE} -eq 1 ]; then
 	: ${PTMNT="${BASEFS:=/usr/local${ZROOTFS}}/ports/${PTNAME}"}
 	: ${PTFS="${ZPOOL}${ZROOTFS}/ports/${PTNAME}"}
 
+	[ "${PTNAME#*.*}" = "${PTNAME}" ] ||
+		err 1 "The ports name cannot contain a period (.). See jail(8)"
+
+	[ -d "${PTMNT}" ] && \
+	    err 1 "Directory ${PTMNT} already exists"
+
+	if [ ${METHOD} != "none" ]; then
+		# This will exit if it fails to zfs create...
+		createfs ${PTNAME} ${PTMNT} ${PTFS}
+		# Ports runs without -e, but even if it did let's not
+		# short-circuit all of -e support in createfs.  It
+		# should have exited on error with err(), but be sure.
+		if [ $? -eq 0 ]; then
+			CREATED_FS=1
+		fi
+	else
+		echo "Not creating fs for method=none"
+	fi
+
 	# Wrap the ports creation in a special cleanup hook that will remove it
 	# if any error is encountered
 	CLEANUP_HOOK=cleanup_new_ports
 
-	[ "${PTNAME#*.*}" = "${PTNAME}" ] ||
-		err 1 "The ports name cannot contain a period (.). See jail(8)"
-	createfs ${PTNAME} ${PTMNT} ${PTFS}
 	pset ${PTNAME} mnt ${PTMNT}
 	if [ $FAKE -eq 0 ]; then
 		case ${METHOD} in
@@ -272,7 +293,7 @@ if [ ${CREATE} -eq 1 ]; then
 			;;
 		esac
 		pset ${PTNAME} method ${METHOD}
-		pset ${PTNAME} timestamp $(date +%s)
+		pset ${PTNAME} timestamp $(clock -epoch)
 	else
 		pset ${PTNAME} method "-"
 	fi
@@ -282,6 +303,7 @@ fi
 
 if [ ${DELETE} -eq 1 ]; then
 	porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
+	PTMETHOD=$(pget ${PTNAME} method)
 	PTMNT=$(pget ${PTNAME} mnt)
 	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
 	${NULLMOUNT} | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
@@ -290,8 +312,8 @@ if [ ${DELETE} -eq 1 ]; then
 	    err 1 "Not deleting ports tree"
 	maybe_run_queued "${saved_argv}"
 	msg_n "Deleting portstree \"${PTNAME}\""
-	if [ ${KEEP} -eq 0 ]; then
-		destroyfs ${PTMNT} ports || :
+	if [ ${KEEP} -eq 0 -a ${PTMETHOD} != "none" -a ${PTMETHOD} != "-" ]; then
+		TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
 	fi
 	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
 	echo " done"
@@ -342,5 +364,5 @@ if [ ${UPDATE} -eq 1 ]; then
 		;;
 	esac
 
-	pset ${PTNAME} timestamp $(date +%s)
+	pset ${PTNAME} timestamp $(clock -epoch)
 fi

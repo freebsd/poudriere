@@ -42,6 +42,8 @@ queue_reader_main() {
 	# to the watchdir. This is done so non-privileged users
 	# do not need write access to the real queue dir
 	umask 0111 # Create rw-rw-rw
+	trap exit TERM
+	trap queue_reader_cleanup EXIT
 	nc -klU ${QUEUE_SOCKET} | while read name command; do
 		echo "${command}" > ${WATCHDIR}/${name}
 	done
@@ -90,7 +92,7 @@ if [ -z "${DAEMON_ARGS_PARSED}" ]; then
 fi
 
 # Start the queue reader
-coprocess_start queue_reader queue_reader_cleanup
+coprocess_start queue_reader
 
 CLEANUP_HOOK=daemon_cleanup
 daemon_cleanup() {
