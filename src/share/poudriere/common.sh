@@ -82,6 +82,9 @@ err() {
 	else
 		msg_error "$2" || :
 	fi
+	if [ -n "${ERRORS_ARE_DEP_FATAL}" ]; then
+		set_dep_fatal_error
+	fi
 	# Avoid recursive err()->exit_handler()->err()... Just let
 	# exit_handler() cleanup.
 	if [ ${ERRORS_ARE_FATAL:-1} -eq 1 ]; then
@@ -4534,9 +4537,11 @@ set_dep_fatal_error() {
 clear_dep_fatal_error() {
 	unset DEP_FATAL_ERROR
 	rm -f dep_fatal_error 2>/dev/null || :
+	export ERRORS_ARE_DEP_FATAL=1
 }
 
 check_dep_fatal_error() {
+	unset ERRORS_ARE_DEP_FATAL
 	[ -n "${DEP_FATAL_ERROR}" ] || [ -f dep_fatal_error ]
 }
 
