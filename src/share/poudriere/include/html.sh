@@ -136,12 +136,9 @@ build_top_json() {
 # This is called at the end
 html_json_cleanup() {
 	local log
-	local now
 
 	_log_path log
-	now="$(clock -epoch)" || err 0 "avoided sh subst bug"
-	[ -z "${now}" ] && err 0 "avoided sh subst bug2"
-	bset ended "${now}" || :
+	bset ended "$(clock -epoch)" || :
 	build_all_json || :
 	rm -f ${log}/.data.json.tmp ${log}/.data.mini.json.tmp 2>/dev/null || :
 }
