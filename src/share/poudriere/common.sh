@@ -2214,8 +2214,10 @@ jail_start() {
 	EOF
 	[ -z "${NO_FORCE_PACKAGE}" ] && \
 	    echo "FORCE_PACKAGE=yes" >> "${tomnt}/etc/make.conf"
-	[ -z "${NO_PACKAGE_BUILDING}" ] && \
-	    echo "PACKAGE_BUILDING=yes" >> "${tomnt}/etc/make.conf"
+	if [ -z "${NO_PACKAGE_BUILDING}" ]; then
+		echo "PACKAGE_BUILDING=yes" >> "${tomnt}/etc/make.conf"
+		echo "PACKAGE_BUILDING_FLAVORS=yes" >> "${tomnt}/etc/make.conf"
+	fi
 
 	setup_makeconf ${tomnt}/etc/make.conf ${name} ${ptname} ${setname}
 	load_blacklist ${name} ${ptname} ${setname}
