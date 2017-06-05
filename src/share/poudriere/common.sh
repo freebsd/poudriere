@@ -4718,6 +4718,7 @@ gather_port_vars() {
 	bset status "gatheringportvars:"
 	_log_path log
 
+	:> "listed_pkgs"
 	:> "all_pkgs"
 	[ ${ALL} -eq 0 ] && :> "all_pkgbases"
 
@@ -4857,6 +4858,7 @@ gather_port_vars_port() {
 	esac
 
 	echo "${pkgname}" >> "all_pkgs"
+	[ -z "${inqueue}" ] && echo "${pkgname}" >> "listed_pkgs"
 	[ ${ALL} -eq 0 ] && echo "${pkgname%-*}" >> "all_pkgbases"
 
 	# If there are no deps for this port then there's nothing left to do.
@@ -5105,10 +5107,17 @@ _all_pkgnames_for_origin() {
 }
 
 listed_pkgnames() {
+	if [ ${ALL} -eq 1 ]; then
+		cat "${MASTERMNT}/.p/listed_pkgs"
+		return
+	fi
+	# For specific builds just assume all flavors of the origins
+	# listed were actually listed.
 	listed_ports | while read origin; do
 		# Origins can map to multiple PKGNAMES
 		# of listed packages somewhere via dep_queue
-		_all_pkgnames_for_origin "${origin}" _pkgnames
+		_all_pkgnames_for_origin "${origin}" _pkgnames || \
+		    err 1 "Failed to lookup PKGNAME for ${origin}"
 		for pkgname in ${_pkgnames}; do
 			echo "${pkgname}"
 		done
