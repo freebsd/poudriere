@@ -3974,13 +3974,6 @@ deps_fetch_vars() {
 			if [ "${_pkgname}" = "${_default_pkgname}" ]; then
 				# This originspec is superfluous, just ignore.
 				msg_debug "deps_fetch_vars: originspec ${originspec} is superfluous for PKGNAME ${_pkgname}"
-				# Set this for compute_deps since it will
-				# blindly apply a port's DEPEND_ARGS to
-				# all dependencies when looking up the
-				# dependency's PKGNAME.
-				shash_set originspec-pkgname \
-				    "${originspec}" \
-				    "${_pkgname}"
 				return 2
 			fi
 
@@ -5008,7 +5001,7 @@ compute_deps_pkg() {
 	[ $# -lt 1 ] && eargs compute_deps_pkg pkgname
 	local pkgname="$1"
 	local pkg_pooldir deps dep_origin dep_pkgname dep_originspec
-	local dep_args
+	local dep_originspec_default dep_args
 
 	shash_get pkgname-deps "${pkgname}" deps || \
 	    err 1 "compute_deps_pkg failed to find deps for ${pkgname}"
@@ -5020,11 +5013,22 @@ compute_deps_pkg() {
 	    err 1 "compute_deps_pkg: Error creating pool dir for ${pkgname}: There may be a duplicate origin in a category Makefile"
 
 	for dep_origin in ${deps}; do
+		# Depend on our specific DEPENDS_ARGS version of this
+		# dependency.  If there is none then it was coalesced
+		# with the default.
 		originspec_encode dep_originspec "${dep_origin}" \
 		    "${dep_args}"
-		shash_get originspec-pkgname "${dep_originspec}" dep_pkgname || \
-		    err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname}"
-		msg_debug "compute_deps_pkg: Will build ${dep_originspec} for ${pkgname}"
+		if ! shash_get originspec-pkgname "${dep_originspec}" \
+		    dep_pkgname; then
+			originspec_encode dep_originspec_default \
+			    "${dep_origin}" ''
+			shash_get originspec-pkgname \
+			    "${dep_originspec_default}" dep_pkgname || \
+			    err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname}"
+			msg_debug "compute_deps_pkg: Will build ${dep_originspec_default} for ${pkgname}"
+		else
+			msg_debug "compute_deps_pkg: Will build ${dep_originspec} for ${pkgname}"
+		fi
 		:> "${pkg_pooldir}/${dep_pkgname}"
 		echo "${pkgname} ${dep_pkgname}" >> "pkg_deps.unsorted"
 	done
