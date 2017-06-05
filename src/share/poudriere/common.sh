@@ -3874,17 +3874,12 @@ deps_fetch_vars() {
 	setvar "${deps_var}" "${_pkg_deps}"
 	setvar "${pkgname_var}" "${_pkgname}"
 
-	# Make sure this origin did not already exist
-	shash_get pkgname-origin "${_pkgname}" _existing_origin || \
-	    _existing_origin=
-	# It may already exist due to race conditions, it is not
-	# harmful. Just ignore.
-	if [ "${_existing_origin}" != "${origin}" ]; then
-		[ -n "${_existing_origin}" ] && \
-		    err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${origin}${COLOR_RESET} AND ${COLOR_PORT}${_existing_origin}${COLOR_RESET}. Rerun with -v to see which ports are depending on these."
-		shash_set origin-pkgname "${origin}" "${_pkgname}"
-		shash_set pkgname-origin "${_pkgname}" "${origin}"
-	fi
+	# Make sure this PKGNAME did not already exist.
+	shash_get pkgname-origin "${_pkgname}" _existing_origin && \
+	    err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${origin}${COLOR_RESET} AND ${COLOR_PORT}${_existing_origin}${COLOR_RESET}. Rerun with -v to see which ports are depending on these."
+
+	shash_set origin-pkgname "${origin}" "${_pkgname}"
+	shash_set pkgname-origin "${_pkgname}" "${origin}"
 
 	shash_set pkgname-deps "${_pkgname}" "${_pkg_deps}"
 	# Store for delete_old_pkg
