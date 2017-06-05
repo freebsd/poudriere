@@ -3875,7 +3875,8 @@ deps_fetch_vars() {
 	setvar "${pkgname_var}" "${_pkgname}"
 
 	# Make sure this origin did not already exist
-	cache_get_origin _existing_origin "${_pkgname}" 2>/dev/null || :
+	cache_get_origin _existing_origin "${_pkgname}" 2>/dev/null || \
+	    _existing_origin=
 	# It may already exist due to race conditions, it is not
 	# harmful. Just ignore.
 	if [ "${_existing_origin}" != "${origin}" ]; then
