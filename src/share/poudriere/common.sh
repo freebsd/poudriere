@@ -4700,8 +4700,9 @@ gather_port_vars() {
 	# This 2-queue solution is to avoid excessive races that cause
 	# make -V to be ran multiple times per port.  We only want to
 	# process each port once without explicit locking.
-	# For the -a case the depqueue is not needed since all ports will be
-	# visited once in the first pass and make it into the gatherqueue.
+	# For the -a case the depqueue is only used for non-default originspecs
+	# as the default originspecs will be visited once in the first pass
+	# and make it into the gatherqueue.
 	#
 	# This idea was extended with a flavorqueue that allows originspec
 	# items to be processed.  It is possible that a DEPENDS_ARGS or
@@ -4709,6 +4710,9 @@ gather_port_vars() {
 	# just want to ignore it.  If it provides a new unique PKGNAME though
 	# we want to keep it.  This separate queue is done to again avoid
 	# processing the same origin concurrently in the previous queues.
+	# For the -a case the flavorqueue is not needed since all ports
+	# are visited in the gatherqueue for *their default* originspec
+	# before processing any dependencies.
 
 	msg "Gathering ports metadata"
 	bset status "gatheringportvars:"
@@ -4882,11 +4886,11 @@ gather_port_vars_port() {
 		fi
 	done
 
-	# In the -a case, there's no need to gather the vars for these deps
-	# since we are going to visit all ports from the category Makefiles
-	# anyway.
-	if [ ${ALL} -eq 0 ]; then
-		msg_debug "gather_port_vars_port (${originspec}): Adding to depqueue"
+	# In the -a case, there's no need to gather the vars for dependencies
+	# without a DEPENDS_ARGS for them since the default ones will be
+	# visited from the category Makefiles anyway.
+	if [ ${ALL} -eq 0 ] || [ -n "${dep_args}" ] ; then
+		msg_debug "gather_port_vars_port (${originspec}): Adding to depqueue (DEPENDS_ARGS=${dep_args})"
 		mkdir "dqueue/${originspec%/*}!${originspec#*/}" || \
 			err 1 "gather_port_vars_port: Failed to add ${originspec} to depqueue"
 	fi
@@ -4924,7 +4928,7 @@ gather_port_vars_process_depqueue() {
 	[ $# -ne 1 ] && eargs gather_port_vars_process_depqueue qorigin
 	local qorigin="$1"
 	local originspec pkgname deps dep_origin
-	local dep_args dep_originspec
+	local dep_args dep_originspec queue
 
 	originspec="${qorigin#*/}"
 	originspec="${originspec%!*}/${originspec#*!}"
@@ -4941,17 +4945,28 @@ gather_port_vars_process_depqueue() {
 	shash_get pkgname-dep_args "${pkgname}" dep_args || dep_args=
 
 	for dep_origin in ${deps}; do
-		# First queue the default origin into the gatherqueue if needed
-		originspec_encode dep_originspec "${dep_origin}" ''
-		gather_port_vars_process_depqueue_enqueue \
-		    "${originspec}" "${dep_originspec}" gqueue
+		# First queue the default origin into the gatherqueue if
+		# needed.  For the -a case we're guaranteed to already
+		# have done this via the category Makefiles.
+		if [ ${ALL} -eq 0 ]; then
+			originspec_encode dep_originspec "${dep_origin}" ''
+			gather_port_vars_process_depqueue_enqueue \
+			    "${originspec}" "${dep_originspec}" gqueue
+		fi
 
 		# And place any flavor-specific origin into the flavorqueue
 		if [ -n "${dep_args}" ]; then
 			originspec_encode dep_originspec "${dep_origin}" \
 			    "${dep_args}"
+			# For the -a case we can skip the flavorqueue since
+			# we've already processed all default origins
+			if [ ${ALL} -eq 1 ]; then
+				queue=gqueue
+			else
+				queue=fqueue
+			fi
 			gather_port_vars_process_depqueue_enqueue \
-			    "${originspec}" "${dep_originspec}" fqueue
+			    "${originspec}" "${dep_originspec}" "${queue}"
 		fi
 	done
 }
