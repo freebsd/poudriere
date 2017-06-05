@@ -4857,7 +4857,7 @@ gather_port_vars_port() {
 		;;
 	esac
 
-	echo "${pkgname}" >> "all_pkgs"
+	echo "${pkgname} ${originspec}" >> "all_pkgs"
 	[ -z "${inqueue}" ] && echo "${pkgname}" >> "listed_pkgs"
 	[ ${ALL} -eq 0 ] && echo "${pkgname%-*}" >> "all_pkgbases"
 
@@ -4977,7 +4977,7 @@ gather_port_vars_process_depqueue() {
 compute_deps() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "compute_deps requires PWD=${MASTERMNT}/.p"
-	local pkgname dep_pkgname
+	local pkgname originspec dep_pkgname
 
 	msg "Calculating ports order and dependencies"
 	bset status "computingdeps:"
@@ -4986,7 +4986,7 @@ compute_deps() {
 
 	clear_dep_fatal_error
 	parallel_start
-	while read pkgname; do
+	while read pkgname originspec; do
 		parallel_run compute_deps_pkg "${pkgname}" || \
 			set_dep_fatal_error
 	done < "all_pkgs"
@@ -5098,12 +5098,14 @@ _all_pkgnames_for_origin() {
 	[ $# -eq 2 ] || eargs _all_pkgnames_for_origin origin var_return_pkgnames
 	local origin="${1}"
 	local var_return_pkgnames="${2}"
-	local originspec
+	local originspec results
 
-	originspec_encode originspec "${origin}" "*"
-	shash_get originspec-pkgname "${originspec}" \
-	    "${var_return_pkgnames}" || \
-	    err 1 "Failed to lookup PKGNAME for ${origin}"
+	originspec_encode originspec "${origin}" '.*'
+	_gsub "${originspec}" '+' '\\+'
+	results=$(awk -voriginspec="${_gsub}" '
+	    $2 ~ originspec { print $1 }' "all_pkgs")
+	setvar "${var_return_pkgnames}" "${results}"
+	[ -n "${results}" ]
 }
 
 listed_pkgnames() {
@@ -5580,7 +5582,7 @@ load_priorities_tsortD() {
 }
 
 load_priorities_ptsort() {
-	local priority pkgname pkg_boost origin
+	local priority pkgname originspec pkg_boost origin
 	local - # Keep set -f local
 
 	set -f # for PRIORITY_BOOST
@@ -5588,7 +5590,7 @@ load_priorities_ptsort() {
 	awk '{print $2 " " $1}' "pkg_deps" > "pkg_deps.ptsort"
 
 	# Add in boosts before running ptsort
-	while read pkgname; do
+	while read pkgname originspec; do
 		# Does this pkg have an override?
 		for pkg_boost in ${PRIORITY_BOOST}; do
 			case ${pkgname%-*} in
