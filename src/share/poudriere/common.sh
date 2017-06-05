@@ -3848,6 +3848,9 @@ deps_fetch_vars() {
 	local _changed_options= _changed_deps=
 	local _existing_pkgname _existing_origin
 
+	shash_get origin-pkgname "${origin}" _existing_pkgname && \
+	    err 1 "deps_fetch_vars: already had ${origin} as ${_existing_pkgname}"
+
 	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
 		_changed_options="SELECTED_OPTIONS:O _selected_options"
 	fi
@@ -3871,24 +3874,15 @@ deps_fetch_vars() {
 	setvar "${deps_var}" "${_pkg_deps}"
 	setvar "${pkgname_var}" "${_pkgname}"
 
-	if ! shash_get origin-pkgname "${origin}" _existing_pkgname; then
-		# Make sure this origin did not already exist
-		cache_get_origin _existing_origin "${_pkgname}" 2>/dev/null || :
-		# It may already exist due to race conditions, it is not
-		# harmful. Just ignore.
-		if [ "${_existing_origin}" != "${origin}" ]; then
-			[ -n "${_existing_origin}" ] && \
-			    err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${origin}${COLOR_RESET} AND ${COLOR_PORT}${_existing_origin}${COLOR_RESET}. Rerun with -v to see which ports are depending on these."
-			shash_set origin-pkgname "${origin}" "${_pkgname}"
-			shash_set pkgname-origin "${_pkgname}" "${origin}"
-		fi
-	else
-		# compute_deps raced and managed to process the same port
-		# before creating its pool dir.  This is wasted time
-		# but is harmless.  We could add some kind of locking
-		# based on the origin name, but it's probably not
-		# worth it.  The same race exists in the above case.
-		return 0
+	# Make sure this origin did not already exist
+	cache_get_origin _existing_origin "${_pkgname}" 2>/dev/null || :
+	# It may already exist due to race conditions, it is not
+	# harmful. Just ignore.
+	if [ "${_existing_origin}" != "${origin}" ]; then
+		[ -n "${_existing_origin}" ] && \
+		    err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${origin}${COLOR_RESET} AND ${COLOR_PORT}${_existing_origin}${COLOR_RESET}. Rerun with -v to see which ports are depending on these."
+		shash_set origin-pkgname "${origin}" "${_pkgname}"
+		shash_set pkgname-origin "${_pkgname}" "${origin}"
 	fi
 
 	shash_set pkgname-deps "${_pkgname}" "${_pkg_deps}"
