@@ -4571,6 +4571,7 @@ gather_port_vars() {
 	parallel_start
 	for origin in $(listed_ports show_moved); do
 		if [ -d "../${PORTSDIR}/${origin}" ]; then
+			echo "${origin}" >> "all_origins"
 			if was_a_bulk_run; then
 				echo "${origin} listed" >> \
 				    "${log}/.poudriere.ports.queued"
@@ -4809,6 +4810,10 @@ listed_ports() {
 	local tell_moved="${1}"
 	local portsdir origin file
 
+	if [ -f "${MASTERMNT}/.p/all_origins" ]; then
+		cat "${MASTERMNT}/.p/all_origins"
+		return
+	fi
 	if [ ${ALL} -eq 1 ]; then
 		_pget portsdir ${PTNAME} mnt
 		[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
