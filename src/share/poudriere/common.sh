@@ -4695,9 +4695,9 @@ gather_port_vars_port() {
 		fi
 	done
 
-	# In the -a case, there's no need to gather the vars for these deps
-	# since we are going to visit all ports from the category Makefiles
-	# anyway.
+	# In the -a case, there's no need to use the depqueue to add
+	# dependencies into the gatherqueue since we are going to visit
+	# all ports from the category Makefiles anyway.
 	if [ ${ALL} -eq 0 ]; then
 		msg_debug "gather_port_vars_port (${origin}): Adding to depqueue"
 		mkdir "dqueue/${origin%/*}!${origin#*/}" || \
