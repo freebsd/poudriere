@@ -221,7 +221,6 @@ if [ -d ${LOGD} -a ${CLEAN} -eq 1 ]; then
 fi
 
 prepare_ports
-markfs prepkg ${MASTERMNT}
 
 if [ ${DRY_RUN} -eq 1 ]; then
 	msg "Dry run mode, cleaning up and exiting"
@@ -249,6 +248,8 @@ if [ ${DRY_RUN} -eq 1 ]; then
 
 	exit 0
 fi
+
+markfs prepkg ${MASTERMNT}
 
 PARALLEL_JOBS=${BUILD_PARALLEL_JOBS}
 
