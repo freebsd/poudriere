@@ -3918,9 +3918,23 @@ deps_fetch_vars() {
 	local _pkgname _pkg_deps _lib_depends= _run_depends= _selected_options=
 	local _changed_options= _changed_deps=
 	local _existing_pkgname _existing_origin _existing_originspec
-	local origin _dep_args
+	local _default_originspec _default_pkgname
+	local origin _origin_dep_args _dep_args
 
-	originspec_decode "${originspec}" origin ''
+	shash_get originspec-pkgname "${originspec}" _existing_pkgname && \
+	    err 1 "deps_fetch_vars: already had ${originspec} as ${_existing_pkgname}"
+
+	originspec_decode "${originspec}" origin _origin_dep_args
+	# If we were passed in DEPENDS_ARGS then we better have already
+	# looked up the default for this port.
+	if [ -n "${_origin_dep_args}" ]; then
+		originspec_encode _default_originspec "${origin}" ''
+		shash_get originspec-pkgname "${_default_originspec}" \
+		    _default_pkgname || \
+		    err 1 "deps_fetch_vars: Lookup of ${originspec} failed to already have ${_default_originspec}"
+	else
+		_default_originspec="${originspec}"
+	fi
 
 	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
 		_changed_options="SELECTED_OPTIONS:O _selected_options"
@@ -3943,54 +3957,46 @@ deps_fetch_vars() {
 	[ -n "${_pkgname}" ] || \
 	    err 1 "deps_fetch_vars: failed to get PKGNAME for ${originspec}"
 
+	# Check if this PKGNAME already exists, which is sometimes fatal.
+	# Two different originspecs of the same origin but with
+	# different DEPENDS_ARGS may result in the same PKGNAME.
+	# It can happen if something like devel/foo@ does not
+	# support python but is passed DEPENDS_ARGS=PYTHON_VERSION=3.2
+	# from a reverse dependency. Just ignore it in that case.
+	# Otherwise it is fatal due to duplicated PKGNAME.
+	shash_get pkgname-originspec "${_pkgname}" _existing_originspec || \
+	    _existing_originspec=
+	if [ -n "${_existing_originspec}" ]; then
+		[ "${_existing_originspec}" = "${originspec}" ] && \
+		    err 1 "deps_fetch_vars: ${originspec} already known without a PKGNAME?"
+		originspec_decode "${_existing_originspec}" _existing_origin ''
+		if [ "${_existing_origin}" = "${origin}" ]; then
+			if [ "${_pkgname}" = "${_default_pkgname}" ]; then
+				# This originspec is superfluous, just ignore.
+				msg_debug "deps_fetch_vars: originspec ${originspec} is superfluous for PKGNAME ${_pkgname}"
+				# Set this for compute_deps since it will
+				# blindly apply a port's DEPEND_ARGS to
+				# all dependencies when looking up the
+				# dependency's PKGNAME.
+				shash_set originspec-pkgname \
+				    "${originspec}" \
+				    "${_pkgname}"
+				return 2
+			fi
+
+		fi
+		err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${originspec}${COLOR_RESET} AND ${COLOR_PORT}${_existing_originspec}${COLOR_RESET}. Rerun with -v to see which ports are depending on these."
+	fi
+
 	setvar "${deps_var}" "${_pkg_deps}"
 	setvar "${pkgname_var}" "${_pkgname}"
 	setvar "${dep_args_var}" "${_dep_args}"
 
-	if ! shash_get originspec-pkgname "${originspec}" _existing_pkgname; then
-		# Make sure this origin did not already exist
-		cache_get_originspec _existing_originspec "${_pkgname}" 2>/dev/null || :
-		# It may already exist due to race conditions, it is not
-		# harmful. Just ignore.
-		if [ "${_existing_originspec}" != "${originspec}" ]; then
-			if [ -n "${_existing_originspec}" ]; then
-				originspec_decode "${_existing_originspec}" \
-				    _existing_origin ''
-				if [ "${_existing_origin}" = "${origin}" ]; then
-					# The DEPENDS_ARGS had no impact
-					# on the resulting PKGNAME from
-					# this origin, just ignore this
-					# excess lookup.
-					msg_debug "deps_fetch_vars: ${originspec} existed as ${_existing_originspec}"
-					# Signal to caller to dump this :S
-					setvar "${pkgname_var}" \
-					    "!ignore_duplicate"
-					# Map this originspec back to the
-					# known pkgname.
-					shash_set originspec-pkgname \
-					    "${originspec}" \
-					    "${_pkgname}"
-					return 0
-				fi
-				# The origins are different? This probably
-				# is a bogus assertion now.
-				err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${originspec}${COLOR_RESET} AND ${COLOR_PORT}${_existing_originspec}${COLOR_RESET}. Rerun with -v to see which ports are depending on these."
-			fi
-			shash_set originspec-pkgname "${originspec}" \
-			    "${_pkgname}"
-			shash_set pkgname-originspec "${_pkgname}" \
-			    "${originspec}"
-			shash_set pkgname-dep_args "${_pkgname}" \
-			    "${_dep_args}"
-		fi
-	else
-		# compute_deps raced and managed to process the same port
-		# before creating its pool dir.  This is wasted time
-		# but is harmless.  We could add some kind of locking
-		# based on the origin name, but it's probably not
-		# worth it.  The same race exists in the above case.
-		return 0
-	fi
+	# Discovered a new originspec->pkgname mapping.
+	msg_debug "deps_fetch_vars: discovered ${originspec} is ${_pkgname}"
+	shash_set originspec-pkgname "${originspec}" "${_pkgname}"
+	shash_set pkgname-originspec "${_pkgname}" "${originspec}"
+	shash_set pkgname-dep_args "${_pkgname}" "${_dep_args}"
 
 	shash_set pkgname-deps "${_pkgname}" "${_pkg_deps}"
 	# Store for delete_old_pkg
@@ -4704,6 +4710,13 @@ gather_port_vars() {
 	# process each port once without explicit locking.
 	# For the -a case the depqueue is not needed since all ports will be
 	# visited once in the first pass and make it into the gatherqueue.
+	#
+	# This idea was extended with a flavorqueue that allows originspec
+	# items to be processed.  It is possible that a DEPENDS_ARGS or
+	# FLAVOR argument to an origin matches the default, and thus we
+	# just want to ignore it.  If it provides a new unique PKGNAME though
+	# we want to keep it.  This separate queue is done to again avoid
+	# processing the same origin concurrently in the previous queues.
 
 	msg "Gathering ports metadata"
 	bset status "gatheringportvars:"
@@ -4712,8 +4725,8 @@ gather_port_vars() {
 	:> "all_pkgs"
 	[ ${ALL} -eq 0 ] && :> "all_pkgbases"
 
-	rm -rf gqueue dqueue 2>/dev/null || :
-	mkdir gqueue dqueue
+	rm -rf gqueue dqueue fqueue 2>/dev/null || :
+	mkdir gqueue dqueue fqueue
 
 	clear_dep_fatal_error
 	parallel_start
@@ -4742,7 +4755,7 @@ gather_port_vars() {
 		err 1 "Fatal errors encountered gathering initial ports metadata"
 	fi
 
-	until dirempty dqueue && dirempty gqueue; do
+	until dirempty dqueue && dirempty gqueue && dirempty fqueue; do
 		# Process all newly found deps into the gatherqueue
 		clear_dep_fatal_error
 		msg_debug "Processing depqueue"
@@ -4790,10 +4803,19 @@ gather_port_vars() {
 		if ! parallel_stop || check_dep_fatal_error; then
 			err 1 "Fatal errors encountered gathering ports metadata"
 		fi
+
+		# Process flavor queue to lookup newly discovered originspecs
+		msg_debug "Processing flavorqueue"
+		# Just move all items to the gatherqueue.  We've looked up
+		# the default flavor for each of these origins already and
+		# can now try to identify alt flavors for the origins.
+		find fqueue -depth 1 -print0 | \
+		    xargs -J % -0 mv % gqueue/ || \
+		    err 1 "Failed moving fqueue items to gqueue"
 	done
 
-	if ! rmdir gqueue || ! rmdir dqueue; then
-		ls gqueue dqueue 2>/dev/null || :
+	if ! rmdir gqueue || ! rmdir dqueue || ! rmdir fqueue; then
+		ls gqueue dqueue fqueue 2>/dev/null || :
 		err 1 "Gather port queues not empty"
 	fi
 }
@@ -4808,6 +4830,7 @@ gather_port_vars_port() {
 	local originspec="$1"
 	local inqueue="$2"
 	local origin dep_origin deps pkgname dep_args dep_originspec
+	local dep_ret
 
 	msg_debug "gather_port_vars_port (${originspec}): LOOKUP"
 	originspec_decode "${originspec}" origin ''
@@ -4817,14 +4840,25 @@ gather_port_vars_port() {
 	shash_get originspec-pkgname "${originspec}" pkgname && \
 	    err 1 "gather_port_vars_port: Already had ${originspec}"
 
-	if ! deps_fetch_vars "${originspec}" deps pkgname dep_args; then
+	dep_ret=0
+	deps_fetch_vars "${originspec}" deps pkgname dep_args || dep_ret=$?
+	case ${dep_ret} in
+	0) ;;
+	# Non-fatal duplicate should be ignored
+	2)
+		# The previous depqueue run may have readded this originspec
+		# into the flavorqueue.  Expunge it.
+		[ -n "${inqueue}" ] && \
+		    rm -rf "fqueue/${originspec%/*}!${originspec#*/}"
+		return 0
+		;;
+	# Fatal error
+	*)
 		# An error is printed from deps_fetch_vars
 		set_dep_fatal_error
 		return 1
-	fi
-	if [ "${pkgname}" = "!ignore_duplicate" ]; then
-		return 0
-	fi
+		;;
+	esac
 
 	echo "${pkgname}" >> "all_pkgs"
 	[ ${ALL} -eq 0 ] && echo "${pkgname%-*}" >> "all_pkgbases"
@@ -4866,17 +4900,42 @@ gather_port_vars_port() {
 	fi
 }
 
+gather_port_vars_process_depqueue_enqueue() {
+	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
+	    err 1 "gather_port_vars_process_depqueue_enqueue requires SHASH_VAR_PATH=var/cache"
+	[ $# -ne 3 ] && eargs gather_port_vars_process_depqueue_enqueue \
+	    originspec dep_originspec queue
+	local originspec="$1"
+	local dep_originspec="$2"
+	local queue="$3"
+	local origin dep_pkgname
+
+	# Add this origin into the gatherqueue if not already done.
+	if shash_get originspec-pkgname "${dep_originspec}" dep_pkgname; then
+		return 0
+	fi
+
+	msg_debug "gather_port_vars_process_depqueue_enqueue (${originspec}): Adding ${dep_originspec} into the ${queue}"
+	# Another worker may have created it
+	if mkdir "${queue}/${dep_originspec%/*}!${dep_originspec#*/}" \
+	    2>/dev/null; then
+		originspec_decode "${originspec}" origin ''
+
+		echo "${origin}" > \
+		    "${queue}/${dep_originspec%/*}!${dep_originspec#*/}/rdep"
+	fi
+}
+
 gather_port_vars_process_depqueue() {
 	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
 	    err 1 "gather_port_vars_process_depqueue requires SHASH_VAR_PATH=var/cache"
 	[ $# -ne 1 ] && eargs gather_port_vars_process_depqueue qorigin
 	local qorigin="$1"
-	local origin originspec pkgname deps dep_origin dep_pkgname
+	local originspec pkgname deps dep_origin
 	local dep_args dep_originspec
 
 	originspec="${qorigin#*/}"
 	originspec="${originspec%!*}/${originspec#*!}"
-	originspec_decode "${originspec}" origin ''
 
 	msg_debug "gather_port_vars_process_depqueue (${originspec})"
 	# Remove queue entry
@@ -4890,19 +4949,17 @@ gather_port_vars_process_depqueue() {
 	shash_get pkgname-dep_args "${pkgname}" dep_args || dep_args=
 
 	for dep_origin in ${deps}; do
-		originspec_encode dep_originspec "${dep_origin}" \
-		    "${dep_args}"
-		# Add this origin into the gatherqueue if not already done.
-		if ! shash_get originspec-pkgname "${dep_originspec}" \
-		    dep_pkgname; then
-			msg_debug "gather_port_vars_process_depqueue (${originspec}): Adding ${dep_originspec} into the gatherqueue"
-			# Another worker may have created it
-			if mkdir \
-			    "gqueue/${dep_originspec%/*}!${dep_originspec#*/}" \
-			    2>/dev/null; then
-				echo "${origin}" > \
-				    "gqueue/${dep_originspec%/*}!${dep_originspec#*/}/rdep"
-			fi
+		# First queue the default origin into the gatherqueue if needed
+		originspec_encode dep_originspec "${dep_origin}" ''
+		gather_port_vars_process_depqueue_enqueue \
+		    "${originspec}" "${dep_originspec}" gqueue
+
+		# And place any flavor-specific origin into the flavorqueue
+		if [ -n "${dep_args}" ]; then
+			originspec_encode dep_originspec "${dep_origin}" \
+			    "${dep_args}"
+			gather_port_vars_process_depqueue_enqueue \
+			    "${originspec}" "${dep_originspec}" fqueue
 		fi
 	done
 }
