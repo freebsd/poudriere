@@ -4295,7 +4295,7 @@ delete_old_pkg() {
 	local pkg="$1"
 	local mnt pkgname new_pkgname
 	local origin v v2 compiled_options current_options current_deps compiled_deps
-	local pkgbase originspec _pkgnames
+	local pkgbase _pkgnames
 
 	pkgname="${pkg##*/}"
 	pkgname="${pkgname%.*}"
@@ -4311,10 +4311,9 @@ delete_old_pkg() {
 	fi
 
 	v="${pkgname##*-}"
-	# Check if any originspec was looked up for this origin
-	# to map it to a new pkgname/version.
-	originspec_encode originspec "${origin}" "*"
-	if ! shash_get originspec-pkgname "${originspec}" _pkgnames; then
+	# Check if any packages were queried for this origin to map it to a
+	# new pkgname/version.
+	if ! _all_pkgnames_for_origin "${origin}" _pkgnames; then
 		# This origin was not looked up in gather_port_vars.  It is
 		# a stale package with the same PKGBASE as one we want, but
 		# with a different origin.  Such as lang/perl5.20 vs
@@ -5074,16 +5073,23 @@ listed_ports() {
 	done
 }
 
-listed_pkgnames() {
-	local originspec origin _pkgnames pkgname
+_all_pkgnames_for_origin() {
+	[ $# -eq 2 ] || eargs _all_pkgnames_for_origin origin var_return_pkgnames
+	local origin="${1}"
+	local var_return_pkgnames="${2}"
+	local originspec
 
+	originspec_encode originspec "${origin}" "*"
+	shash_get originspec-pkgname "${originspec}" \
+	    "${var_return_pkgnames}" || \
+	    err 1 "Failed to lookup PKGNAME for ${origin}"
+}
+
+listed_pkgnames() {
 	listed_ports | while read origin; do
 		# Origins can map to multiple PKGNAMES
 		# of listed packages somewhere via dep_queue
-		originspec_encode originspec "${origin}" "*"
-		shash_get originspec-pkgname "${originspec}" \
-		    _pkgnames || \
-		    err 1 "Failed to lookup PKGNAME for ${origin}"
+		_all_pkgnames_for_origin "${origin}" _pkgnames
 		for pkgname in ${_pkgnames}; do
 			echo "${pkgname}"
 		done
