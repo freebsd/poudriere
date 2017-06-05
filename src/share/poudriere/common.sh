@@ -5231,15 +5231,16 @@ prepare_ports() {
 	# Call the deadlock code as non-fatal which will check for cycles
 	sanity_check_queue 0
 
-	if was_a_bulk_run && [ $resuming_build -eq 0 ]; then
-		nbq=0
-		nbq=$(find deps -type d -depth 1 | wc -l)
-		# Add 1 for the main port to test
-		[ "${SCRIPTPATH##*/}" = "testport.sh" ] && nbq=$((${nbq} + 1))
-		bset stats_queued ${nbq##* }
-	fi
-
 	if was_a_bulk_run; then
+		if [ $resuming_build -eq 0 ]; then
+			nbq=0
+			nbq=$(find deps -type d -depth 1 | wc -l)
+			# Add 1 for the main port to test
+			[ "${SCRIPTPATH##*/}" = "testport.sh" ] && \
+			    nbq=$((${nbq} + 1))
+			bset stats_queued ${nbq##* }
+		fi
+
 		# Create a pool of ready-to-build from the deps pool
 		find deps -type d -empty -depth 1 | \
 			xargs -J % mv % pool/unbalanced
