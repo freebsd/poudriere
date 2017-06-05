@@ -75,6 +75,8 @@ binary packages built from a given list of ports.
 During the build, hit ^T to send
 .Dv SIGINFO
 and get stats and progress back.
+.It image
+This command allows you to create images.
 .It jail
 This command allows you to manage the jails used by
 .Nm
@@ -260,6 +262,61 @@ This specifies which SET to use for the build.
 See
 .Sx CUSTOMISATION
 for examples of how this is used.
+.El
+.Ss image
+.Bl -tag -width "-f packagelist"
+.It Fl o Ar outputdir
+This argument specifies directory where the resulting image will be created.
+.It Fl j Ar name
+This argument specifies the name of the jail that is used.
+.It Fl p Ar tree
+This argument specifies the name of the ports tree that is used.
+.It Fl z Ar set
+This specifies which SET to use for the build.
+.It Fl s Ar size
+This specifies the maximum size of the image that gets build.
+.It Fl n Ar name
+This specifies the name of the resulting image.
+.It Fl h Ar hostname
+This specifies the hostname used for the image.
+Defaults to
+.Ar poudriere-image .
+.It Fl t Ar type
+This specifies the type of image to create:
+.Bl -tag -width "rawfirmware"
+.It iso
+ISO 9660 format image
+.It iso+mfs
+ISO 9660 format image where the root filesystem gets MFS mounted
+.It iso+zmfs
+ISO 9660 format image where the root filesystem is LZ77 compressed and gets MFS
+mounted
+.It usb
+a GPT-layout prepared UFS2 image containing a UEFI boot loader
+.It usb+mfs
+a GPT-layout prepared UFS2 image containing a UEFI boot loader where the root
+filesystem gets MFS mounted
+.It usb+zmfs
+a GPT-layout prepared UFS2 image containing a UEFI boot loader where the root
+filesystem is LZ77 compressed and gets MFS mounted
+.It rawdisk
+a raw UFS2, softupdates-enabled, disk image
+.It zrawdisk
+a raw ZFS disk image
+.It tar
+an XZ-compressed tarball
+.It firmware
+a GPT-layout prepared disk image containing an UEFI boot loader
+.It rawfirmware
+a raw disk image
+.El
+.It Fl X Ar excludefile
+This specifies a list of files to exclude from the final image.
+.It Fl f Ar packagelist
+This specifies a list of packages to be pre-installed in the final image.
+.It Fl c Ar overlaydir
+This specifies an extra directory whose contents will be copied directly into
+the final image, starting from the root.
 .El
 .Ss jail
 .Pp
