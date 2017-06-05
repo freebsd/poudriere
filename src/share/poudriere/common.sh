@@ -860,6 +860,9 @@ exit_handler() {
 
 	if was_a_bulk_run; then
 		coprocess_stop html_json
+		if [ ${DRY_RUN} -eq 1 ] && [ -n "${PACKAGES_ROOT}" ]; then
+			rm -rf "${PACKAGES_ROOT}/.building" || :
+		fi
 	fi
 
 	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
@@ -5080,6 +5083,7 @@ fi
 : ${USE_PTSORT:=yes}
 : ${MUTABLE_BASE:=yes}
 : ${HTML_JSON_UPDATE_INTERVAL:=2}
+DRY_RUN=0
 
 # Be sure to update poudriere.conf to document the default when changing these
 : ${MAX_EXECUTION_TIME:=86400}         # 24 hours for 1 command

@@ -224,7 +224,6 @@ markfs prepkg ${MASTERMNT}
 
 if [ ${DRY_RUN} -eq 1 ]; then
 	msg "Dry run mode, cleaning up and exiting"
-	rm -rf ${PACKAGES_ROOT}/.building
 	tobuild=$(calculate_tobuild)
 	if [ ${tobuild} -gt 0 ]; then
 		[ ${PARALLEL_JOBS} -gt ${tobuild} ] &&
