@@ -3984,34 +3984,9 @@ deps_fetch_vars() {
 	fi
 
 	if [ -n "${_pkg_deps}" -a -z "${_pkg_deps%%*py3*}" ]; then
-		# Before Poudriere added DEPENDS_ARGS and FLAVORS support
-		# many slave ports were added that are now redundant.
-		# Replace them with the proper main port dependency.
-		# Also see listed_ports() blacklisting
 		unset _new_pkg_deps
 		for _dep in ${_pkg_deps}; do
-			case "${_dep}" in
-				databases/py36-sqlite3)
-					_dep="databases/py-sqlite3" ;;
-				devel/py3-setuptools_scm)
-					_dep="devel/py-setuptools_scm" ;;
-				dns/py3-dnspython)
-					_dep="dns/py-dnspython" ;;
-				graphics/py3-pillow)
-					_dep="graphics/py-pillow" ;;
-				net/py3-netifaces)
-					_dep="net/py-netifaces" ;;
-				security/py3-pycrypto)
-					_dep="security/py-pycrypto" ;;
-				textproc/py3-docutils)
-					_dep="textproc/py-docutils" ;;
-				www/py3-cssutils)
-					_dep="www/py-cssutils" ;;
-				www/py3-requests)
-					_dep="www/py-requests" ;;
-				x11-toolkits/py36-tkinter)
-					_dep="x11-toolkits/py-tkinter" ;;
-			esac
+			is_bad_flavor_slave_port "${_dep}" _dep || :
 			_new_pkg_deps="${_new_pkg_deps:+${_new_pkg_deps} }${_dep}"
 		done
 		_pkg_deps="${_new_pkg_deps}"
@@ -5090,6 +5065,41 @@ compute_deps_pkg() {
 	return 0
 }
 
+# Before Poudriere added DEPENDS_ARGS and FLAVORS support many slave ports
+# were added that are now redundant.  Replace them with the proper main port
+# dependency.
+is_bad_flavor_slave_port() {
+	[ $# -eq 2 ] || eargs is_bad_flavor_slave_port origin var_return
+	local _origin="$1"
+	local var_return="$2"
+
+	case "${_origin}" in
+		databases/py36-sqlite3)
+			_origin="databases/py-sqlite3" ;;
+		devel/py3-setuptools_scm)
+			_origin="devel/py-setuptools_scm" ;;
+		dns/py3-dnspython)
+			_origin="dns/py-dnspython" ;;
+		graphics/py3-pillow)
+			_origin="graphics/py-pillow" ;;
+		net/py3-netifaces)
+			_origin="net/py-netifaces" ;;
+		security/py3-pycrypto)
+			_origin="security/py-pycrypto" ;;
+		textproc/py3-docutils)
+			_origin="textproc/py-docutils" ;;
+		www/py3-cssutils)
+			_origin="www/py-cssutils" ;;
+		www/py3-requests)
+			_origin="www/py-requests" ;;
+		x11-toolkits/py36-tkinter)
+			_origin="x11-toolkits/py-tkinter" ;;
+		*) return 1 ;;
+	esac
+	setvar "${var_return}" "${_origin}"
+	return 0
+}
+
 listed_ports() {
 	if [ -f "${MASTERMNT}/.p/all_origins" ]; then
 		cat "${MASTERMNT}/.p/all_origins"
@@ -5097,22 +5107,8 @@ listed_ports() {
 	fi
 
 	_listed_ports | while read origin; do
-		# Before Poudriere added DEPENDS_ARGS and FLAVORS support
-		# many slave ports were added that are now redundant.
-		# Trim those out in favor of the main port.
-		case "${origin}" in
-			databases/py36-sqlite3) ;;
-			devel/py3-setuptools_scm) ;;
-			dns/py3-dnspython) ;;
-			graphics/py3-pillow) ;;
-			net/py3-netifaces) ;;
-			security/py3-pycrypto) ;;
-			textproc/py3-docutils) ;;
-			www/py3-cssutils) ;;
-			www/py3-requests) ;;
-			x11-toolkits/py36-tkinter) ;;
-			*) echo "${origin}" ;;
-		esac
+		is_bad_flavor_slave_port "${origin}" origin && continue
+		echo "${origin}"
 	done
 }
 _listed_ports() {
