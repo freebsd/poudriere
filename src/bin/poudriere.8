@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd June 3, 2017
+.Dd June 5, 2017
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -156,8 +156,11 @@ Clean
 previously built packages and logs.
 .It Fl C
 Clean only the packages specified on the command line or in in the file given in
-.Fl f Ar file
-.
+.Fl f Ar file .
+Implies
+.Fl c
+for
+.Fl a .
 .It Fl F
 Only fetch from original MASTER_SITES.
 Skip FreeBSD mirrors.
