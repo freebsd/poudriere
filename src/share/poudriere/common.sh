@@ -4929,7 +4929,7 @@ gather_port_vars_port() {
 	# for them since the default ones will be visited from the category
 	# Makefiles anyway.
 	if [ ${ALL} -eq 0 ] || [ -n "${dep_args}" ] ; then
-		msg_debug "gather_port_vars_port (${originspec}): Adding to depqueue (DEPENDS_ARGS=${dep_args})"
+		msg_debug "gather_port_vars_port (${originspec}): Adding to depqueue${dep_args:+ (DEPENDS_ARGS=${dep_args})}"
 		mkdir "dqueue/${originspec%/*}!${originspec#*/}" || \
 			err 1 "gather_port_vars_port: Failed to add ${originspec} to depqueue"
 	fi
