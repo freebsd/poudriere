@@ -5078,26 +5078,16 @@ is_bad_flavor_slave_port() {
 	local var_return="$2"
 
 	case "${_origin}" in
-		databases/py36-sqlite3)
-			_origin="databases/py-sqlite3" ;;
-		devel/py3-setuptools_scm)
-			_origin="devel/py-setuptools_scm" ;;
-		dns/py3-dnspython)
-			_origin="dns/py-dnspython" ;;
-		graphics/py3-pillow)
-			_origin="graphics/py-pillow" ;;
-		net/py3-netifaces)
-			_origin="net/py-netifaces" ;;
-		security/py3-pycrypto)
-			_origin="security/py-pycrypto" ;;
-		textproc/py3-docutils)
-			_origin="textproc/py-docutils" ;;
-		www/py3-cssutils)
-			_origin="www/py-cssutils" ;;
-		www/py3-requests)
-			_origin="www/py-requests" ;;
-		x11-toolkits/py36-tkinter)
-			_origin="x11-toolkits/py-tkinter" ;;
+		databases/py36-sqlite3)		_origin="databases/py-sqlite3" ;;
+		devel/py3-setuptools_scm)	_origin="devel/py-setuptools_scm" ;;
+		dns/py3-dnspython)		_origin="dns/py-dnspython" ;;
+		graphics/py3-pillow)		_origin="graphics/py-pillow" ;;
+		net/py3-netifaces)		_origin="net/py-netifaces" ;;
+		security/py3-pycrypto)		_origin="security/py-pycrypto" ;;
+		textproc/py3-docutils)		_origin="textproc/py-docutils" ;;
+		www/py3-cssutils)		_origin="www/py-cssutils" ;;
+		www/py3-requests)		_origin="www/py-requests" ;;
+		x11-toolkits/py36-tkinter)	_origin="x11-toolkits/py-tkinter" ;;
 		*) return 1 ;;
 	esac
 	setvar "${var_return}" "${_origin}"
