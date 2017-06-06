@@ -165,7 +165,7 @@ if [ -n "${MAX_COUNT}" ]; then
 	# Find build directories up to limit MAX_COUNT per mastername
 	BUILDNAME_GLOB="*" SHOW_FINISHED=1 \
 	    for_each_build echo_logdir | sort -d | \
-	    /usr/local/bin/gawk -vMAX_COUNT="${MAX_COUNT}" -F / '
+	    awk -vMAX_COUNT="${MAX_COUNT}" -F / '
 	{
 		if (out[$1])
 			out[$1] = out[$1] "\t" $0
