@@ -1041,6 +1041,9 @@ exit_handler() {
 		if [ ${CREATED_JLOCK:-0} -eq 1 ]; then
 			update_stats >/dev/null 2>&1 || :
 		fi
+		if [ ${DRY_RUN} -eq 1 ] && [ -n "${PACKAGES_ROOT}" ]; then
+			rm -rf "${PACKAGES_ROOT}/.building" || :
+		fi
 	fi
 
 	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
@@ -4729,6 +4732,7 @@ gather_port_vars() {
 	parallel_start
 	for origin in $(listed_ports show_moved); do
 		if [ -d "../${PORTSDIR}/${origin}" ]; then
+			echo "${origin}" >> "all_origins"
 			originspec_encode originspec "${origin}" ''
 			if was_a_bulk_run; then
 				echo "${origin} listed" >> \
@@ -4888,9 +4892,10 @@ gather_port_vars_port() {
 		fi
 	done
 
-	# In the -a case, there's no need to gather the vars for dependencies
-	# without a DEPENDS_ARGS for them since the default ones will be
-	# visited from the category Makefiles anyway.
+	# In the -a case, there's no need to use the depqueue to add
+	# dependencies into the gatherqueue for those without a DEPENDS_ARGS
+	# for them since the default ones will be visited from the category
+	# Makefiles anyway.
 	if [ ${ALL} -eq 0 ] || [ -n "${dep_args}" ] ; then
 		msg_debug "gather_port_vars_port (${originspec}): Adding to depqueue (DEPENDS_ARGS=${dep_args})"
 		mkdir "dqueue/${originspec%/*}!${originspec#*/}" || \
@@ -5057,6 +5062,10 @@ listed_ports() {
 	local tell_moved="${1}"
 	local portsdir origin file
 
+	if [ -f "${MASTERMNT}/.p/all_origins" ]; then
+		cat "${MASTERMNT}/.p/all_origins"
+		return
+	fi
 	if [ ${ALL} -eq 1 ]; then
 		_pget portsdir ${PTNAME} mnt
 		[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
@@ -5510,15 +5519,16 @@ prepare_ports() {
 	# Call the deadlock code as non-fatal which will check for cycles
 	sanity_check_queue 0
 
-	if was_a_bulk_run && [ $resuming_build -eq 0 ]; then
-		nbq=0
-		nbq=$(find deps -type d -depth 1 | wc -l)
-		# Add 1 for the main port to test
-		[ "${SCRIPTPATH##*/}" = "testport.sh" ] && nbq=$((${nbq} + 1))
-		bset stats_queued ${nbq##* }
-	fi
-
 	if was_a_bulk_run; then
+		if [ $resuming_build -eq 0 ]; then
+			nbq=0
+			nbq=$(find deps -type d -depth 1 | wc -l)
+			# Add 1 for the main port to test
+			[ "${SCRIPTPATH##*/}" = "testport.sh" ] && \
+			    nbq=$((${nbq} + 1))
+			bset stats_queued ${nbq##* }
+		fi
+
 		# Create a pool of ready-to-build from the deps pool
 		find deps -type d -empty -depth 1 | \
 			xargs -J % mv % pool/unbalanced
@@ -6081,6 +6091,7 @@ fi
 : ${MUTABLE_BASE:=yes}
 : ${HTML_JSON_UPDATE_INTERVAL:=2}
 : ${HTML_TRACK_REMAINING:=no}
+DRY_RUN=0
 
 # Be sure to update poudriere.conf to document the default when changing these
 : ${MAX_EXECUTION_TIME:=86400}         # 24 hours for 1 command

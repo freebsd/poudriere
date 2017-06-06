@@ -80,7 +80,7 @@ while getopts "o:j:p:z:n:t:X:f:c:h:s:" FLAG; do
 		t)
 			MEDIATYPE=${OPTARG}
 			case ${MEDIATYPE} in
-			iso|iso+mfs|iso+zmfs|usb|usb+mfs|usb+mfs) ;;
+			iso|iso+mfs|iso+zmfs|usb|usb+mfs|usb+zmfs) ;;
 			rawdisk|zrawdisk|tar|firmware|rawfirmware) ;;
 			*) err 1 "invalid mediatype: ${MEDIATYPE}"
 			esac
