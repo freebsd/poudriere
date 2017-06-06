@@ -40,7 +40,7 @@ Options:
                    retry built/failed/skipped/ignored packages.
     -c          -- Clean all the previously built binary packages and logs.
     -C          -- Clean only the packages listed on the command line or
-                   -f file
+                   -f file.  Implies -c for -a.
     -i          -- Interactive mode. Enter jail for interactive testing and
                    automatically cleanup when done.
     -I          -- Advanced Interactive mode. Leaves jail running with ports
@@ -184,6 +184,11 @@ while getopts "B:iIf:j:J:CcknNp:RFtrTsSvwz:a" FLAG; do
 			;;
 	esac
 done
+
+if [ ${ALL} -eq 1 -a ${CLEAN_LISTED} -eq 1 ]; then
+	CLEAN=1
+	CLEAN_LISTED=0
+fi
 
 saved_argv="$@"
 shift $((OPTIND-1))
