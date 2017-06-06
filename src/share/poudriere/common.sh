@@ -3922,7 +3922,7 @@ deps_fetch_vars() {
 	local _changed_options= _changed_deps=
 	local _existing_pkgname _existing_origin _existing_originspec
 	local _default_originspec _default_pkgname
-	local origin _origin_dep_args _dep_args
+	local origin _origin_dep_args _dep_args _dep _new_pkg_deps
 
 	shash_get originspec-pkgname "${originspec}" _existing_pkgname && \
 	    err 1 "deps_fetch_vars: already had ${originspec} as ${_existing_pkgname}"
@@ -3981,6 +3981,40 @@ deps_fetch_vars() {
 			fi
 		fi
 		err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${originspec}${COLOR_RESET} AND ${COLOR_PORT}${_existing_originspec}${COLOR_RESET}. Rerun with -v to see which ports are depending on these."
+	fi
+
+	if [ -n "${_pkg_deps}" -a -z "${_pkg_deps%%*py3*}" ]; then
+		# Before Poudriere added DEPENDS_ARGS and FLAVORS support
+		# many slave ports were added that are now redundant.
+		# Replace them with the proper main port dependency.
+		# Also see listed_ports() blacklisting
+		unset _new_pkg_deps
+		for _dep in ${_pkg_deps}; do
+			case "${_dep}" in
+				databases/py36-sqlite3)
+					_dep="databases/py-sqlite3" ;;
+				devel/py3-setuptools_scm)
+					_dep="devel/py-setuptools_scm" ;;
+				dns/py3-dnspython)
+					_dep="dns/py-dnspython" ;;
+				graphics/py3-pillow)
+					_dep="graphics/py-pillow" ;;
+				net/py3-netifaces)
+					_dep="net/py-netifaces" ;;
+				security/py3-pycrypto)
+					_dep="security/py-pycrypto" ;;
+				textproc/py3-docutils)
+					_dep="textproc/py-docutils" ;;
+				www/py3-cssutils)
+					_dep="www/py-cssutils" ;;
+				www/py3-requests)
+					_dep="www/py-requests" ;;
+				x11-toolkits/py36-tkinter)
+					_dep="x11-toolkits/py-tkinter" ;;
+			esac
+			_new_pkg_deps="${_new_pkg_deps:+${_new_pkg_deps} }${_dep}"
+		done
+		_pkg_deps="${_new_pkg_deps}"
 	fi
 
 	setvar "${deps_var}" "${_pkg_deps}"
@@ -5057,13 +5091,34 @@ compute_deps_pkg() {
 }
 
 listed_ports() {
-	local tell_moved="${1}"
-	local portsdir origin file
-
 	if [ -f "${MASTERMNT}/.p/all_origins" ]; then
 		cat "${MASTERMNT}/.p/all_origins"
 		return
 	fi
+
+	_listed_ports | while read origin; do
+		# Before Poudriere added DEPENDS_ARGS and FLAVORS support
+		# many slave ports were added that are now redundant.
+		# Trim those out in favor of the main port.
+		case "${origin}" in
+			databases/py36-sqlite3) ;;
+			devel/py3-setuptools_scm) ;;
+			dns/py3-dnspython) ;;
+			graphics/py3-pillow) ;;
+			net/py3-netifaces) ;;
+			security/py3-pycrypto) ;;
+			textproc/py3-docutils) ;;
+			www/py3-cssutils) ;;
+			www/py3-requests) ;;
+			x11-toolkits/py36-tkinter) ;;
+			*) echo "${origin}" ;;
+		esac
+	done
+}
+_listed_ports() {
+	local tell_moved="${1}"
+	local portsdir origin file
+
 	if [ ${ALL} -eq 1 ]; then
 		_pget portsdir ${PTNAME} mnt
 		[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
