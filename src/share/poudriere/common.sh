@@ -3979,7 +3979,6 @@ deps_fetch_vars() {
 				msg_debug "deps_fetch_vars: originspec ${originspec} is superfluous for PKGNAME ${_pkgname}"
 				return 2
 			fi
-
 		fi
 		err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${originspec}${COLOR_RESET} AND ${COLOR_PORT}${_existing_originspec}${COLOR_RESET}. Rerun with -v to see which ports are depending on these."
 	fi
@@ -3993,7 +3992,6 @@ deps_fetch_vars() {
 	shash_set originspec-pkgname "${originspec}" "${_pkgname}"
 	shash_set pkgname-originspec "${_pkgname}" "${originspec}"
 	shash_set pkgname-dep_args "${_pkgname}" "${_dep_args}"
-
 	shash_set pkgname-deps "${_pkgname}" "${_pkg_deps}"
 	# Store for delete_old_pkg
 	if [ -n "${_lib_depends}" ]; then
