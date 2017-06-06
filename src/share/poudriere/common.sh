@@ -4697,7 +4697,7 @@ check_dep_fatal_error() {
 gather_port_vars() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "gather_port_vars requires PWD=${MASTERMNT}/.p"
-	local origin qorigin log rdep originspec
+	local origin qorigin log originspec
 
 	# A. Lookup all port vars/deps from the given list of ports.
 	# B. For every dependency found (depqueue):
@@ -4795,13 +4795,7 @@ gather_port_vars() {
 			origin="${qorigin#*/}"
 			# origin is really originspec, but fixup
 			# the substitued '/'
-			origin="${origin%!*}/${origin#*!}"
-			originspec="${origin}"
-			if was_a_bulk_run; then
-				read_line rdep "${qorigin}/rdep"
-				echo "${origin} ${rdep}" >> \
-				    "${log}/.poudriere.ports.queued"
-			fi
+			originspec="${origin%!*}/${origin#*!}"
 			parallel_run \
 			    prefix_stderr_quick \
 			    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
@@ -4838,12 +4832,11 @@ gather_port_vars_port() {
 	local originspec="$1"
 	local inqueue="$2"
 	local origin dep_origin deps pkgname dep_args dep_originspec
-	local dep_ret
+	local qorigin rdep dep_ret log
 
 	msg_debug "gather_port_vars_port (${originspec}): LOOKUP"
 	originspec_decode "${originspec}" origin ''
-	# Remove queue entry
-	[ -n "${inqueue}" ] && rm -rf "gqueue/${originspec%/*}!${originspec#*/}"
+	qorigin="gqueue/${originspec%/*}!${originspec#*/}"
 
 	shash_get originspec-pkgname "${originspec}" pkgname && \
 	    err 1 "gather_port_vars_port: Already had ${originspec}"
@@ -4856,17 +4849,28 @@ gather_port_vars_port() {
 	2)
 		# The previous depqueue run may have readded this originspec
 		# into the flavorqueue.  Expunge it.
-		[ -n "${inqueue}" ] && \
-		    rm -rf "fqueue/${originspec%/*}!${originspec#*/}"
+		if [ -n "${inqueue}" ]; then
+			rm -rfv "fqueue/${originspec%/*}!${originspec#*/}" \
+			    "${qorigin}"
+		fi
 		return 0
 		;;
 	# Fatal error
 	*)
 		# An error is printed from deps_fetch_vars
 		set_dep_fatal_error
+		[ -n "${inqueue}" ] && rm -rf "${qorigin}"
 		return 1
 		;;
 	esac
+
+	if [ -n "${inqueue}" ]; then
+		_log_path log
+		read_line rdep "${qorigin}/rdep"
+		echo "${origin} ${rdep}" >> \
+		    "${log}/.poudriere.ports.queued"
+		rm -rf "${qorigin}"
+	fi
 
 	echo "${pkgname} ${originspec}" >> "all_pkgs"
 	[ -z "${inqueue}" ] && echo "${pkgname}" >> "listed_pkgs"
