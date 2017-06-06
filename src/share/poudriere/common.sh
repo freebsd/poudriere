@@ -5058,10 +5058,9 @@ compute_deps_pkg() {
 			shash_get originspec-pkgname \
 			    "${dep_originspec_default}" dep_pkgname || \
 			    err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname}"
-			msg_debug "compute_deps_pkg: Will build ${dep_originspec_default} for ${pkgname}"
-		else
-			msg_debug "compute_deps_pkg: Will build ${dep_originspec} for ${pkgname}"
+			dep_originspec="${dep_originspec_default}"
 		fi
+		msg_debug "compute_deps_pkg: Will build ${dep_originspec} for ${pkgname}"
 		:> "${pkg_pooldir}/${dep_pkgname}"
 		echo "${pkgname} ${dep_pkgname}" >> "pkg_deps.unsorted"
 	done
