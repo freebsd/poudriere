@@ -4859,24 +4859,23 @@ gather_port_vars_port() {
 		;;
 	esac
 
-	if [ -n "${inqueue}" ]; then
-		if was_a_bulk_run; then
-			_log_path log
+	if was_a_bulk_run; then
+		_log_path log
+		if [ -n "${inqueue}" ]; then
 			read_line rdep "${qorigin}/rdep"
-			echo "${origin} ${pkgname} ${rdep}" >> \
-			    "${log}/.poudriere.ports.queued"
+		else
+			rdep="listed"
 		fi
-		rm -rf "${qorigin}"
-	else
-		if was_a_bulk_run; then
-			_log_path log
-			echo "${origin} ${pkgname} listed" >> \
-			    "${log}/.poudriere.ports.queued"
-		fi
+		echo "${origin} ${pkgname} ${rdep}" >> \
+		    "${log}/.poudriere.ports.queued"
 	fi
 
 	echo "${pkgname} ${originspec}" >> "all_pkgs"
-	[ -z "${inqueue}" ] && echo "${pkgname}" >> "listed_pkgs"
+	if [ -n "${inqueue}" ]; then
+		rm -rf "${qorigin}"
+	else
+		echo "${pkgname}" >> "listed_pkgs"
+	fi
 	[ ${ALL} -eq 0 ] && echo "${pkgname%-*}" >> "all_pkgbases"
 
 	# If there are no deps for this port then there's nothing left to do.
