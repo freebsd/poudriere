@@ -3923,13 +3923,14 @@ originspec_encode() {
 }
 
 deps_fetch_vars() {
-	[ $# -ne 5 ] && eargs deps_fetch_vars originspec deps_var \
-	    pkgname_var dep_args_var flavor_var
+	[ $# -ne 6 ] && eargs deps_fetch_vars originspec deps_var \
+	    pkgname_var dep_args_var flavor_var flavors_var
 	local originspec="$1"
 	local deps_var="$2"
 	local pkgname_var="$3"
 	local dep_args_var="$4"
 	local flavor_var="$5"
+	local flavors_var="$6"
 	local _pkgname _pkg_deps _lib_depends= _run_depends= _selected_options=
 	local _changed_options= _changed_deps=
 	local _existing_pkgname _existing_origin _existing_originspec
@@ -4013,6 +4014,7 @@ deps_fetch_vars() {
 	setvar "${pkgname_var}" "${_pkgname}"
 	setvar "${dep_args_var}" "${_dep_args}"
 	setvar "${flavor_var}" "${_flavor}"
+	setvar "${flavors_var}" "${_flavors}"
 
 	# Discovered a new originspec->pkgname mapping.
 	msg_debug "deps_fetch_vars: discovered ${originspec} is ${_pkgname}"
@@ -4849,19 +4851,20 @@ gather_port_vars_port() {
 	[ $# -gt 2 ] && eargs gather_port_vars_port originspec [inqueue]
 	local originspec="$1"
 	local inqueue="$2"
-	local origin dep_origin deps pkgname dep_args dep_originspec
-	local qorigin rdep dep_ret log flavor
+	local dep_origin deps pkgname dep_args dep_originspec
+	local qorigin rdep dep_ret log flavor flavors dep_flavor
+	local origin origin_dep_args origin_flavor
 
 	msg_debug "gather_port_vars_port (${originspec}): LOOKUP"
-	originspec_decode "${originspec}" origin '' ''
+	originspec_decode "${originspec}" origin origin_dep_args origin_flavor
 	qorigin="gqueue/${originspec%/*}!${originspec#*/}"
 
 	shash_get originspec-pkgname "${originspec}" pkgname && \
 	    err 1 "gather_port_vars_port: Already had ${originspec}"
 
 	dep_ret=0
-	deps_fetch_vars "${originspec}" deps pkgname dep_args flavor || \
-	    dep_ret=$?
+	deps_fetch_vars "${originspec}" deps pkgname dep_args flavor \
+	    flavors || dep_ret=$?
 	case ${dep_ret} in
 	0) ;;
 	# Non-fatal duplicate should be ignored
@@ -4901,6 +4904,28 @@ gather_port_vars_port() {
 		echo "${pkgname}" >> "listed_pkgs"
 	fi
 	[ ${ALL} -eq 0 ] && echo "${pkgname%-*}" >> "all_pkgbases"
+
+	# Add all of the discovered FLAVORS into the flavorqueue if
+	# this was the default originspec and this originspec was
+	# listed to build.
+	if [ -z "${inqueue}" -a \
+	    -z "${origin_flavor}" -a -n "${flavors}" ]; then
+		for dep_flavor in ${flavors}; do
+			# Skip default FLAVOR
+			[ "${flavor}" = "${dep_flavor}" ] && continue
+			originspec_encode dep_originspec "${origin}" \
+			    "${origin_dep_args}" "${dep_flavor}"
+			msg_debug "gather_port_vars_port (${originspec}): Adding to flavorqueue FLAVOR=${dep_flavor}${dep_args:+ (DEPENDS_ARGS=${dep_args})}"
+			mkdir "fqueue/${dep_originspec%/*}!${dep_originspec#*/}" || \
+				err 1 "gather_port_vars_port: Failed to add ${dep_originspec} to flavorqueue"
+			# Copy our own reverse dep over.  This should always
+			# just be "listed" in this case (-z $inqueue) but
+			# use the actual value to reduce maintenance.
+			echo "${rdep}" > \
+			    "fqueue/${dep_originspec%/*}!${dep_originspec#*/}/rdep"
+		done
+
+	fi
 
 	# If there are no deps for this port then there's nothing left to do.
 	[ -z "${deps}" ] && return 0
