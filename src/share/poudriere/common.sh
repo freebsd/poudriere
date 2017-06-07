@@ -5300,8 +5300,10 @@ _all_pkgnames_for_origin() {
 }
 
 listed_pkgnames() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "listed_pkgnames requires PWD=${MASTERMNT}/.p"
 	if [ ${ALL} -eq 1 ]; then
-		cat "${MASTERMNT}/.p/listed_pkgs"
+		cat "listed_pkgs"
 		return
 	fi
 	# For specific builds just assume all flavors of the origins
