@@ -4925,14 +4925,14 @@ gather_port_vars_port() {
 			[ "${flavor}" = "${dep_flavor}" ] && continue
 			originspec_encode dep_originspec "${origin}" \
 			    "${origin_dep_args}" "${dep_flavor}"
-			msg_debug "gather_port_vars_port (${originspec}): Adding to flavorqueue FLAVOR=${dep_flavor}${dep_args:+ (DEPENDS_ARGS=${dep_args})}"
-			mkdir "fqueue/${dep_originspec%/*}!${dep_originspec#*/}" || \
-				err 1 "gather_port_vars_port: Failed to add ${dep_originspec} to flavorqueue"
+			msg_debug "gather_port_vars_port (${originspec}): Adding to gatherqueue FLAVOR=${dep_flavor}${dep_args:+ (DEPENDS_ARGS=${dep_args})}"
+			mkdir "gqueue/${dep_originspec%/*}!${dep_originspec#*/}" || \
+				err 1 "gather_port_vars_port: Failed to add ${dep_originspec} to gatherqueue"
 			# Copy our own reverse dep over.  This should always
 			# just be "listed" in this case (-z $inqueue) but
 			# use the actual value to reduce maintenance.
 			echo "${rdep}" > \
-			    "fqueue/${dep_originspec%/*}!${dep_originspec#*/}/rdep"
+			    "gqueue/${dep_originspec%/*}!${dep_originspec#*/}/rdep"
 		done
 
 	fi
@@ -4942,9 +4942,10 @@ gather_port_vars_port() {
 
 	# Assert some policy before proceeding to process these deps
 	# further.
-	for dep_origin in ${deps}; do
+	for dep_originspec in ${deps}; do
+		originspec_decode "${dep_originspec}" dep_origin '' dep_flavor
 		originspec_encode dep_originspec "${dep_origin}" \
-		    "${dep_args}" ''
+		    "${dep_args}" "${dep_flavor}"
 		msg_verbose "${COLOR_PORT}${originspec}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_originspec}"
 		if [ "${origin}" = "${dep_origin}" ]; then
 			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
@@ -5007,7 +5008,7 @@ gather_port_vars_process_depqueue() {
 	[ $# -ne 1 ] && eargs gather_port_vars_process_depqueue qorigin
 	local qorigin="$1"
 	local originspec pkgname deps dep_origin
-	local dep_args dep_originspec queue
+	local dep_args dep_originspec dep_flavor queue
 
 	originspec="${qorigin#*/}"
 	originspec="${originspec%!*}/${originspec#*!}"
@@ -5023,12 +5024,14 @@ gather_port_vars_process_depqueue() {
 	    err 1 "gather_port_vars_process_depqueue failed to find deps for pkg ${pkgname}"
 	shash_get pkgname-dep_args "${pkgname}" dep_args || dep_args=
 
-	for dep_origin in ${deps}; do
+	for dep_originspec in ${deps}; do
+		originspec_decode "${dep_originspec}" dep_origin '' dep_flavor
 		# First queue the default origin into the gatherqueue if
 		# needed.  For the -a case we're guaranteed to already
 		# have done this via the category Makefiles.
 		if [ ${ALL} -eq 0 ]; then
-			originspec_encode dep_originspec "${dep_origin}" '' ''
+			originspec_encode dep_originspec "${dep_origin}" '' \
+			    "${dep_flavor}"
 			gather_port_vars_process_depqueue_enqueue \
 			    "${originspec}" "${dep_originspec}" gqueue
 		fi
@@ -5037,7 +5040,7 @@ gather_port_vars_process_depqueue() {
 		# flavorqueue
 		if [ -n "${dep_args}" ]; then
 			originspec_encode dep_originspec "${dep_origin}" \
-			    "${dep_args}" ''
+			    "${dep_args}" "${dep_flavor}"
 			# For the -a case we can skip the flavorqueue since
 			# we've already processed all default origins
 			if [ ${ALL} -eq 1 ]; then
@@ -5096,7 +5099,7 @@ compute_deps_pkg() {
 	[ $# -lt 1 ] && eargs compute_deps_pkg pkgname
 	local pkgname="$1"
 	local pkg_pooldir deps dep_origin dep_pkgname dep_originspec
-	local dep_originspec_default dep_args
+	local dep_originspec_default dep_args dep_flavor
 
 	shash_get pkgname-deps "${pkgname}" deps || \
 	    err 1 "compute_deps_pkg failed to find deps for ${pkgname}"
@@ -5107,12 +5110,13 @@ compute_deps_pkg() {
 	mkdir "${pkg_pooldir}" || \
 	    err 1 "compute_deps_pkg: Error creating pool dir for ${pkgname}: There may be a duplicate origin in a category Makefile"
 
-	for dep_origin in ${deps}; do
-		# Depend on our specific DEPENDS_ARGS version of this
+	for dep_originspec in ${deps}; do
+		originspec_decode "${dep_originspec}" dep_origin '' dep_flavor
+		# Depend on our specific DEPENDS_ARGS/FLAVOR version of this
 		# dependency.  If there is none then it was coalesced
 		# with the default.
 		originspec_encode dep_originspec "${dep_origin}" \
-		    "${dep_args}" ''
+		    "${dep_args}" "${dep_flavor}"
 		if ! shash_get originspec-pkgname "${dep_originspec}" \
 		    dep_pkgname; then
 			originspec_encode dep_originspec_default \
