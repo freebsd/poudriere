@@ -5282,6 +5282,8 @@ _listed_ports() {
 }
 
 _all_pkgnames_for_origin() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "_all_pkgnames_for_origin requires PWD=${MASTERMNT}/.p"
 	[ $# -eq 2 ] || eargs _all_pkgnames_for_origin origin var_return_pkgnames
 	local origin="${1}"
 	local var_return_pkgnames="${2}"
