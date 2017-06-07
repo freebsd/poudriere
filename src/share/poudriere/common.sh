@@ -3639,6 +3639,9 @@ build_pkg() {
 	PKGNAME="${pkgname}" # set ASAP so jail_cleanup() can use it
 	cache_get_originspec originspec "${pkgname}"
 	originspec_decode "${originspec}" port DEPENDS_ARGS FLAVOR
+	if [ -z "${FLAVOR}" ]; then
+		shash_get pkgname-flavor "${pkgname}" FLAVOR || FLAVOR=
+	fi
 	MAKE_ARGS="${DEPENDS_ARGS} FLAVOR=${FLAVOR}"
 	portdir="${PORTSDIR}/${port}"
 
