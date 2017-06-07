@@ -690,6 +690,7 @@ buildlog_start() {
 	echo "---Begin Poudriere Port Flags/Env---"
 	echo "PORT_FLAGS=${PORT_FLAGS}"
 	echo "PKGENV=${PKGENV}"
+	echo "FLAVOR=${FLAVOR}"
 	echo "DEPENDS_ARGS=${DEPENDS_ARGS}"
 	echo "MAKE_ARGS=${MAKE_ARGS}"
 	echo "---End Poudriere Port Flags/Env---"
@@ -1506,7 +1507,7 @@ do_jail_mounts() {
 
 # Interactive test mode
 enter_interactive() {
-	local stopmsg pkgname port originspec dep_args
+	local stopmsg pkgname port originspec dep_args flavor
 
 	if [ ${ALL} -ne 0 ]; then
 		msg "(-a) Not entering interactive mode."
@@ -1536,19 +1537,19 @@ enter_interactive() {
 	# Enable all selected ports and their run-depends
 	for pkgname in $(listed_pkgnames); do
 		cache_get_originspec originspec "${pkgname}"
-		originspec_decode "${originspec}" port dep_args
+		originspec_decode "${originspec}" port dep_args flavor
 		# Install run-depends since this is an interactive test
 		msg "Installing run-depends for ${COLOR_PORT}${port} | ${pkgname}"
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
 		    /usr/bin/make -C ${PORTSDIR}/${port} ${dep_args} \
-		    run-depends ||
+		    FLAVOR=${flavor} run-depends ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port} | ${pkgname}${COLOR_RESET} run-depends"
 		msg "Installing ${COLOR_PORT}${port} | ${pkgname}"
 		# Only use PKGENV during install as testport will store
 		# the package in a different place than dependencies
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 ${PKGENV} \
 		    /usr/bin/make -C ${PORTSDIR}/${port} ${dep_args} \
-		    install-package ||
+		    FLAVOR=${flavor} install-package ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port} | ${pkgname}"
 	done
 
@@ -2628,7 +2629,7 @@ gather_distfiles() {
 	local originspec="$1"
 	local from=$(realpath $2)
 	local to=$(realpath $3)
-	local sub dists d tosubd specials special origin dep_args
+	local sub dists d tosubd specials special origin dep_args flavor
 	local dep_originspec
 
 	port_var_fetch_originspec "${originspec}" \
@@ -2638,7 +2639,7 @@ gather_distfiles() {
 	    _DEPEND_SPECIALS specials || \
 	    err 1 "Failed to lookup distfiles for ${originspec}"
 
-	originspec_decode "${originspec}" origin ''
+	originspec_decode "${originspec}" origin '' flavor
 
 	job_msg_verbose "Status   ${COLOR_PORT}${origin} | ${PKGNAME}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
@@ -2652,7 +2653,8 @@ gather_distfiles() {
 		case "${special}" in
 		${PORTSDIR}/*) special=${special#${PORTSDIR}/} ;;
 		esac
-		originspec_encode dep_originspec "${special}" "${dep_args}"
+		originspec_encode dep_originspec "${special}" "${dep_args}" \
+		    "${flavor}"
 		gather_distfiles "${dep_originspec}" "${from}" "${to}"
 	done
 
@@ -2678,7 +2680,7 @@ _real_build_port() {
 	_my_path mnt
 	_log_path log
 
-	originspec_decode "${originspec}" port ''
+	originspec_decode "${originspec}" port '' ''
 	portdir="/usr/ports/${port}"
 
 	# Use bootstrap PKG when not building pkg itself.
@@ -3636,8 +3638,8 @@ build_pkg() {
 	trap '' SIGTSTP
 	PKGNAME="${pkgname}" # set ASAP so jail_cleanup() can use it
 	cache_get_originspec originspec "${pkgname}"
-	originspec_decode "${originspec}" port DEPENDS_ARGS
-	MAKE_ARGS="${DEPENDS_ARGS}"
+	originspec_decode "${originspec}" port DEPENDS_ARGS FLAVOR
+	MAKE_ARGS="${DEPENDS_ARGS} FLAVOR=${FLAVOR}"
 	portdir="${PORTSDIR}/${port}"
 
 	if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
@@ -3878,21 +3880,23 @@ prefix_output() {
 
 : ${ORIGINSPEC_SEP:="@"}
 
-# ORIGINSPEC is: ORIGIN!DEPENDS_ARGS
+# ORIGINSPEC is: ORIGIN!DEPENDS_ARGS!FLAVOR
 originspec_decode() {
 	local -; set +x
-	[ $# -ne 3 ] && eargs originspec_decode originspec \
-	    var_return_origin var_return_dep_args
+	[ $# -ne 4 ] && eargs originspec_decode originspec \
+	    var_return_origin var_return_dep_args var_return_flavor
 	local _originspec="$1"
 	local var_return_origin="$2"
 	local var_return_dep_args="$3"
-	local _origin _dep_args IFS
+	local var_return_flavor="$4"
+	local _origin _dep_args _flavor IFS
 
 	IFS="${ORIGINSPEC_SEP}"
 	set -- ${_originspec}
 
 	_origin="${1}"
 	_dep_args="${2}"
+	_flavor="${3}"
 
 	if [ -n "${var_return_origin}" ]; then
 		setvar "${var_return_origin}" "${_origin}"
@@ -3900,40 +3904,48 @@ originspec_decode() {
 	if [ -n "${var_return_dep_args}" ]; then
 		setvar "${var_return_dep_args}" "${_dep_args}"
 	fi
+	if [ -n "${var_return_flavor}" ]; then
+		setvar "${var_return_flavor}" "${_flavor}"
+	fi
 }
 
 originspec_encode() {
 	local -; set +x
-	[ $# -ne 3 ] && eargs originspec_encode var_return origin dep_args
+	[ $# -ne 4 ] && eargs originspec_encode var_return origin dep_args \
+	    flavor
 	# We want this to be fast, so avoid copies.
 	#local var_return="$1"
 	#local _origin="$2"
 	#local _dep_args="$3"
+	#local _flavor="$4"
 
-	setvar "${1}" "${2}${ORIGINSPEC_SEP}${3}"
+	setvar "${1}" "${2}${ORIGINSPEC_SEP}${3}${ORIGINSPEC_SEP}${4}"
 }
 
 deps_fetch_vars() {
-	[ $# -ne 4 ] && eargs deps_fetch_vars originspec deps_var \
-	    pkgname_var dep_args_var
+	[ $# -ne 5 ] && eargs deps_fetch_vars originspec deps_var \
+	    pkgname_var dep_args_var flavor_var
 	local originspec="$1"
 	local deps_var="$2"
 	local pkgname_var="$3"
 	local dep_args_var="$4"
+	local flavor_var="$5"
 	local _pkgname _pkg_deps _lib_depends= _run_depends= _selected_options=
 	local _changed_options= _changed_deps=
 	local _existing_pkgname _existing_origin _existing_originspec
 	local _default_originspec _default_pkgname
 	local origin _origin_dep_args _dep_args _dep _new_pkg_deps
+	local _origin_flavor _flavor _flavors
 
 	shash_get originspec-pkgname "${originspec}" _existing_pkgname && \
 	    err 1 "deps_fetch_vars: already had ${originspec} as ${_existing_pkgname}"
 
-	originspec_decode "${originspec}" origin _origin_dep_args
-	# If we were passed in DEPENDS_ARGS then we better have already
-	# looked up the default for this port.
-	if [ -n "${_origin_dep_args}" ]; then
-		originspec_encode _default_originspec "${origin}" ''
+	originspec_decode "${originspec}" origin _origin_dep_args \
+	    _origin_flavor
+	# If we were passed in DEPENDS_ARGS or FLAVOR then we better have
+	# already looked up the default for this port.
+	if [ -n "${_origin_dep_args}" ] || [ -n "${_origin_flavor}" ]; then
+		originspec_encode _default_originspec "${origin}" '' ''
 		shash_get originspec-pkgname "${_default_originspec}" \
 		    _default_pkgname || \
 		    err 1 "deps_fetch_vars: Lookup of ${originspec} failed to already have ${_default_originspec}"
@@ -3950,6 +3962,8 @@ deps_fetch_vars() {
 	if ! port_var_fetch_originspec "${originspec}" \
 	    PKGNAME _pkgname \
 	    DEPENDS_ARGS _dep_args \
+	    FLAVOR _flavor \
+	    FLAVORS _flavors \
 	    ${_changed_deps} \
 	    ${_changed_options} \
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
@@ -3974,7 +3988,8 @@ deps_fetch_vars() {
 	if [ -n "${_existing_originspec}" ]; then
 		[ "${_existing_originspec}" = "${originspec}" ] && \
 		    err 1 "deps_fetch_vars: ${originspec} already known without a PKGNAME?"
-		originspec_decode "${_existing_originspec}" _existing_origin ''
+		originspec_decode "${_existing_originspec}" \
+		    _existing_origin '' ''
 		if [ "${_existing_origin}" = "${origin}" ]; then
 			if [ "${_pkgname}" = "${_default_pkgname}" ]; then
 				# This originspec is superfluous, just ignore.
@@ -3997,12 +4012,15 @@ deps_fetch_vars() {
 	setvar "${deps_var}" "${_pkg_deps}"
 	setvar "${pkgname_var}" "${_pkgname}"
 	setvar "${dep_args_var}" "${_dep_args}"
+	setvar "${flavor_var}" "${_flavor}"
 
 	# Discovered a new originspec->pkgname mapping.
 	msg_debug "deps_fetch_vars: discovered ${originspec} is ${_pkgname}"
 	shash_set originspec-pkgname "${originspec}" "${_pkgname}"
 	shash_set pkgname-originspec "${_pkgname}" "${originspec}"
 	shash_set pkgname-dep_args "${_pkgname}" "${_dep_args}"
+	shash_set pkgname-flavor "${_pkgname}" "${_flavor}"
+	shash_set pkgname-flavors "${_pkgname}" "${_flavors}"
 	shash_set pkgname-deps "${_pkgname}" "${_pkg_deps}"
 	# Store for delete_old_pkg
 	if [ -n "${_lib_depends}" ]; then
@@ -4647,13 +4665,13 @@ port_var_fetch_originspec() {
 	    PORTVAR var_set ...
 	local originspec="$1"
 	shift
-	local origin dep_args
+	local origin dep_args flavor
 
-	originspec_decode "${originspec}" origin dep_args
+	originspec_decode "${originspec}" origin dep_args flavor
 	if [ -n "${dep_args}" ]; then
 		msg_debug "port_var_fetch_originspec: processing ${originspec}"
 	fi
-	port_var_fetch "${origin}" "$@" ${dep_args}
+	port_var_fetch "${origin}" "$@" ${dep_args} ${flavor:+FLAVOR=${flavor}}
 }
 
 cache_get_originspec() {
@@ -4674,7 +4692,7 @@ cache_get_origin() {
 	local originspec
 
 	cache_get_originspec originspec "${pkgname}"
-	originspec_decode "${originspec}" "${var_return}" ""
+	originspec_decode "${originspec}" "${var_return}" '' ''
 }
 
 set_dep_fatal_error() {
@@ -4741,7 +4759,7 @@ gather_port_vars() {
 	for origin in $(listed_ports show_moved); do
 		if [ -d "../${PORTSDIR}/${origin}" ]; then
 			echo "${origin}" >> "all_origins"
-			originspec_encode originspec "${origin}" ''
+			originspec_encode originspec "${origin}" '' ''
 			parallel_run \
 			    prefix_stderr_quick \
 			    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
@@ -4829,17 +4847,18 @@ gather_port_vars_port() {
 	local originspec="$1"
 	local inqueue="$2"
 	local origin dep_origin deps pkgname dep_args dep_originspec
-	local qorigin rdep dep_ret log
+	local qorigin rdep dep_ret log flavor
 
 	msg_debug "gather_port_vars_port (${originspec}): LOOKUP"
-	originspec_decode "${originspec}" origin ''
+	originspec_decode "${originspec}" origin '' ''
 	qorigin="gqueue/${originspec%/*}!${originspec#*/}"
 
 	shash_get originspec-pkgname "${originspec}" pkgname && \
 	    err 1 "gather_port_vars_port: Already had ${originspec}"
 
 	dep_ret=0
-	deps_fetch_vars "${originspec}" deps pkgname dep_args || dep_ret=$?
+	deps_fetch_vars "${originspec}" deps pkgname dep_args flavor || \
+	    dep_ret=$?
 	case ${dep_ret} in
 	0) ;;
 	# Non-fatal duplicate should be ignored
@@ -4887,7 +4906,7 @@ gather_port_vars_port() {
 	# further.
 	for dep_origin in ${deps}; do
 		originspec_encode dep_originspec "${dep_origin}" \
-		    "${dep_args}"
+		    "${dep_args}" ''
 		msg_verbose "${COLOR_PORT}${originspec}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_originspec}"
 		if [ "${origin}" = "${dep_origin}" ]; then
 			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
@@ -4937,7 +4956,7 @@ gather_port_vars_process_depqueue_enqueue() {
 	# Another worker may have created it
 	if mkdir "${queue}/${dep_originspec%/*}!${dep_originspec#*/}" \
 	    2>/dev/null; then
-		originspec_decode "${originspec}" origin ''
+		originspec_decode "${originspec}" origin '' ''
 
 		echo "${origin}" > \
 		    "${queue}/${dep_originspec%/*}!${dep_originspec#*/}/rdep"
@@ -4971,15 +4990,16 @@ gather_port_vars_process_depqueue() {
 		# needed.  For the -a case we're guaranteed to already
 		# have done this via the category Makefiles.
 		if [ ${ALL} -eq 0 ]; then
-			originspec_encode dep_originspec "${dep_origin}" ''
+			originspec_encode dep_originspec "${dep_origin}" '' ''
 			gather_port_vars_process_depqueue_enqueue \
 			    "${originspec}" "${dep_originspec}" gqueue
 		fi
 
-		# And place any flavor-specific origin into the flavorqueue
+		# And place any DEPENDS_ARGS-specific origin into the
+		# flavorqueue
 		if [ -n "${dep_args}" ]; then
 			originspec_encode dep_originspec "${dep_origin}" \
-			    "${dep_args}"
+			    "${dep_args}" ''
 			# For the -a case we can skip the flavorqueue since
 			# we've already processed all default origins
 			if [ ${ALL} -eq 1 ]; then
@@ -5054,11 +5074,11 @@ compute_deps_pkg() {
 		# dependency.  If there is none then it was coalesced
 		# with the default.
 		originspec_encode dep_originspec "${dep_origin}" \
-		    "${dep_args}"
+		    "${dep_args}" ''
 		if ! shash_get originspec-pkgname "${dep_originspec}" \
 		    dep_pkgname; then
 			originspec_encode dep_originspec_default \
-			    "${dep_origin}" ''
+			    "${dep_origin}" '' ''
 			shash_get originspec-pkgname \
 			    "${dep_originspec_default}" dep_pkgname || \
 			    err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname}"
@@ -5239,7 +5259,7 @@ _all_pkgnames_for_origin() {
 	local var_return_pkgnames="${2}"
 	local originspec results
 
-	originspec_encode originspec "${origin}" '.*'
+	originspec_encode originspec "${origin}" '.*' '.*'
 	_gsub "${originspec}" '+' '\\+'
 	results=$(awk -voriginspec="${_gsub}" '
 	    $2 ~ originspec { print $1 }' "all_pkgs")
@@ -5441,7 +5461,7 @@ clean_build_queue() {
 			# originspec-pkgname lookup may fail if it wasn't
 			# in the build queue.
 			for port in ports-mgmt/pkg ports-mgmt/pkg-devel; do
-				originspec_encode originspec "${port}" ""
+				originspec_encode originspec "${port}" '' ''
 				shash_get originspec-pkgname "${port}" \
 				    pkgname && \
 				    echo "${pkgname}"

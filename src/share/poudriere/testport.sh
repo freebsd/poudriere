@@ -158,7 +158,7 @@ if [ -n "${new_origin}" ]; then
 	msg "MOVED: ${COLOR_PORT}${ORIGIN}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
 	ORIGIN="${new_origin}"
 fi
-originspec_encode ORIGINSPEC "${ORIGIN}" ""
+originspec_encode ORIGINSPEC "${ORIGIN}" '' ''
 if [ ! -f "${portsdir}/${ORIGIN}/Makefile" ] || [ -d "${portsdir}/${ORIGIN}/../Mk" ]; then
 	err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
 fi
@@ -185,7 +185,7 @@ if [ $CONFIGSTR -eq 1 ]; then
 	    make -C ${portsdir}/${ORIGIN} config
 fi
 
-deps_fetch_vars "${ORIGIN}" LISTPORTS PKGNAME DEPENDS_ARGS
+deps_fetch_vars "${ORIGIN}" LISTPORTS PKGNAME DEPENDS_ARGS FLAVOR FLAVORS
 for dep_origin in ${LISTPORTS}; do
 	msg_verbose "${COLOR_PORT}${ORIGINSPEC}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_origin}"
 done
