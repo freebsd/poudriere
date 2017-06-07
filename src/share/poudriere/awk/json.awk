@@ -87,13 +87,11 @@ function end_type() {
           } else {
             pkgname = build_reasons[1]
           }
-          if (port_status_type == "queued") {
-            print "\"reason\":\"" pkgname "\","
-          } else {
-            print "\"pkgname\":\"" pkgname "\","
-          }
+          print "\"pkgname\":\"" pkgname "\","
           if (port_status_type == "built" ) {
 	    print "\"elapsed\":\"" build_reasons[3] "\","
+          } else if (port_status_type == "queued") {
+            print "\"reason\":\"" build_reasons[3] "\","
           } else if (port_status_type == "remaining") {
 	    print "\"status\":\"" build_reasons[2] "\","
           } else if (port_status_type == "failed") {

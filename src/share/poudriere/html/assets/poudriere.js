@@ -469,6 +469,7 @@ function format_status_row(status, row, n) {
 		table_row.push(format_pkgname(row.pkgname));
 		table_row.push(row.status);
 	} else if (status == "queued") {
+		table_row.push(format_pkgname(row.pkgname));
 		table_row.push(format_origin(row.origin));
 		if (row.reason == "listed") {
 			table_row.push(row.reason);
@@ -999,6 +1000,7 @@ function setup_build() {
 		],
 		"queued": [
 			build_order_column,
+			pkgname_column,
 			origin_column,
 			origin_column,
 		],

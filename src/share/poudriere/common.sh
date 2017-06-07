@@ -4863,13 +4863,14 @@ gather_port_vars_port() {
 		if was_a_bulk_run; then
 			_log_path log
 			read_line rdep "${qorigin}/rdep"
-			echo "${origin} ${rdep}" >> \
+			echo "${origin} ${pkgname} ${rdep}" >> \
 			    "${log}/.poudriere.ports.queued"
 		fi
 		rm -rf "${qorigin}"
 	else
 		if was_a_bulk_run; then
-			echo "${origin} listed" >> \
+			_log_path log
+			echo "${origin} ${pkgname} listed" >> \
 			    "${log}/.poudriere.ports.queued"
 		fi
 	fi
