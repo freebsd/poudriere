@@ -691,28 +691,29 @@ buildlog_start() {
 	echo "PORT_FLAGS=${PORT_FLAGS}"
 	echo "PKGENV=${PKGENV}"
 	echo "DEPENDS_ARGS=${DEPENDS_ARGS}"
+	echo "MAKE_ARGS=${MAKE_ARGS}"
 	echo "---End Poudriere Port Flags/Env---"
 	echo ""
 	echo "---Begin OPTIONS List---"
-	injail /usr/bin/make -C ${portdir} ${DEPENDS_ARGS} showconfig || :
+	injail /usr/bin/make -C ${portdir} ${MAKE_ARGS} showconfig || :
 	echo "---End OPTIONS List---"
 	echo ""
 	for var in CONFIGURE_ARGS CONFIGURE_ENV MAKE_ENV; do
 		echo "--${var}--"
 		echo "$(injail /usr/bin/env ${PORT_FLAGS} \
-		    /usr/bin/make -C ${portdir} ${DEPENDS_ARGS} -V ${var})"
+		    /usr/bin/make -C ${portdir} ${MAKE_ARGS} -V ${var})"
 		echo "--End ${var}--"
 		echo ""
 	done
 	echo "--PLIST_SUB--"
 	echo "$(injail /usr/bin/env ${PORT_FLAGS} \
-	    /usr/bin/make -C ${portdir} ${DEPENDS_ARGS} \
+	    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 	    -V PLIST_SUB | tr ' ' '\n' | grep -v '^$')"
 	echo "--End PLIST_SUB--"
 	echo ""
 	echo "--SUB_LIST--"
 	echo "$(injail /usr/bin/env ${PORT_FLAGS} \
-	    /usr/bin/make -C ${portdir} ${DEPENDS_ARGS} \
+	    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 	    -V SUB_LIST | tr ' ' '\n' | grep -v '^$')"
 	echo "--End SUB_LIST--"
 	echo ""
@@ -2849,7 +2850,7 @@ _real_build_port() {
 		if [ "${phase#*-}" = "depends" ]; then
 			# No need for nohang or PORT_FLAGS for *-depends
 			injail /usr/bin/env USE_PACKAGE_DEPENDS_ONLY=1 ${phaseenv} \
-			    /usr/bin/make -C ${portdir} ${DEPENDS_ARGS} \
+			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    ${phase} || return 1
 		else
 			# Only set PKGENV during 'package' to prevent
@@ -2866,7 +2867,7 @@ _real_build_port() {
 				${log}/logs/${PKGNAME}.log \
 				${MASTERMNT}/.p/var/run/${MY_JOBID:-00}_nohang.pid \
 				injail /usr/bin/env ${pkgenv} ${phaseenv} ${PORT_FLAGS} \
-				/usr/bin/make -C ${portdir} ${DEPENDS_ARGS} \
+				/usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 				${phase}
 			hangstatus=$? # This is done as it may return 1 or 2 or 3
 			if [ $hangstatus -ne 0 ]; then
@@ -2902,7 +2903,7 @@ _real_build_port() {
 
 			bset_job_status "stage-qa" "${port}"
 			if ! injail /usr/bin/env DEVELOPER=1 ${PORT_FLAGS} \
-			    /usr/bin/make -C ${portdir} ${DEPENDS_ARGS} \
+			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    stage-qa; then
 				msg "Error: stage-qa failures detected"
 				[ "${PORTTESTING_FATAL}" != "no" ] &&
@@ -2912,7 +2913,7 @@ _real_build_port() {
 
 			bset_job_status "check-plist" "${port}"
 			if ! injail /usr/bin/env DEVELOPER=1 ${PORT_FLAGS} \
-			    /usr/bin/make -C ${portdir} ${DEPENDS_ARGS} \
+			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    check-plist; then
 				msg "Error: check-plist failures detected"
 				[ "${PORTTESTING_FATAL}" != "no" ] &&
@@ -3636,6 +3637,7 @@ build_pkg() {
 	PKGNAME="${pkgname}" # set ASAP so jail_cleanup() can use it
 	cache_get_originspec originspec "${pkgname}"
 	originspec_decode "${originspec}" port DEPENDS_ARGS
+	MAKE_ARGS="${DEPENDS_ARGS}"
 	portdir="${PORTSDIR}/${port}"
 
 	if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
@@ -3680,7 +3682,7 @@ build_pkg() {
 	# This is checked here instead of when building the queue
 	# as the list may start big but become very small, so here
 	# is a less-common check
-	: ${ignore:=$(injail /usr/bin/make -C ${portdir} ${DEPENDS_ARGS} \
+	: ${ignore:=$(injail /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 	    -VIGNORE)}
 
 	rm -rf ${mnt}/wrkdirs/* || :
@@ -3746,7 +3748,7 @@ build_pkg() {
 		fi
 
 		msg "Cleaning up wrkdir"
-		injail /usr/bin/make -C "${portdir}" ${DEPENDS_ARGS} \
+		injail /usr/bin/make -C "${portdir}" ${MAKE_ARGS} \
 		    -DNOCLEANDEPENDS clean || :
 		rm -rf ${mnt}/wrkdirs/* || :
 	fi
