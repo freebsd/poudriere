@@ -3642,7 +3642,7 @@ build_pkg() {
 	if [ -z "${FLAVOR}" ]; then
 		shash_get pkgname-flavor "${pkgname}" FLAVOR || FLAVOR=
 	fi
-	MAKE_ARGS="${DEPENDS_ARGS} FLAVOR=${FLAVOR}"
+	MAKE_ARGS="${DEPENDS_ARGS}${FLAVOR:+ FLAVOR=${FLAVOR}}"
 	portdir="${PORTSDIR}/${port}"
 
 	if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
