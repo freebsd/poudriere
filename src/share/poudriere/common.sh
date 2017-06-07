@@ -5289,7 +5289,9 @@ _all_pkgnames_for_origin() {
 	local var_return_pkgnames="${2}"
 	local originspec results
 
-	originspec_encode originspec "${origin}" '.*' '.*'
+	originspec_encode originspec "${origin}" \
+	    "[^${ORIGINSPEC_SEP}]*" \
+	    "[^${ORIGINSPEC_SEP}]*"
 	_gsub "${originspec}" '+' '\\+'
 	results=$(awk -voriginspec="${_gsub}" '
 	    $2 ~ originspec { print $1 }' "all_pkgs")
