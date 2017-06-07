@@ -3883,7 +3883,7 @@ prefix_output() {
 
 : ${ORIGINSPEC_SEP:="@"}
 
-# ORIGINSPEC is: ORIGIN!DEPENDS_ARGS!FLAVOR
+# ORIGINSPEC is: ORIGIN@FLAVOR@DEPENDS_ARGS
 originspec_decode() {
 	local -; set +x
 	[ $# -ne 4 ] && eargs originspec_decode originspec \
@@ -3898,8 +3898,8 @@ originspec_decode() {
 	set -- ${_originspec}
 
 	_origin="${1}"
-	_dep_args="${2}"
-	_flavor="${3}"
+	_flavor="${2}"
+	_dep_args="${3}"
 
 	if [ -n "${var_return_origin}" ]; then
 		setvar "${var_return_origin}" "${_origin}"
@@ -3912,6 +3912,7 @@ originspec_decode() {
 	fi
 }
 
+# !!! NOTE that the encoded originspec may not match the parameter ordering.
 originspec_encode() {
 	local -; set +x
 	[ $# -ne 4 ] && eargs originspec_encode var_return origin dep_args \
@@ -3922,7 +3923,7 @@ originspec_encode() {
 	#local _dep_args="$3"
 	#local _flavor="$4"
 
-	setvar "${1}" "${2}${ORIGINSPEC_SEP}${3}${ORIGINSPEC_SEP}${4}"
+	setvar "${1}" "${2}${ORIGINSPEC_SEP}${4}${ORIGINSPEC_SEP}${3}"
 }
 
 deps_fetch_vars() {
