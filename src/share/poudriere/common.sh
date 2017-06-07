@@ -4018,9 +4018,12 @@ deps_fetch_vars() {
 	msg_debug "deps_fetch_vars: discovered ${originspec} is ${_pkgname}"
 	shash_set originspec-pkgname "${originspec}" "${_pkgname}"
 	shash_set pkgname-originspec "${_pkgname}" "${originspec}"
-	shash_set pkgname-dep_args "${_pkgname}" "${_dep_args}"
-	shash_set pkgname-flavor "${_pkgname}" "${_flavor}"
-	shash_set pkgname-flavors "${_pkgname}" "${_flavors}"
+	[ -n "${_dep_args}" ] && \
+	    shash_set pkgname-dep_args "${_pkgname}" "${_dep_args}"
+	[ -n "${_flavor}" ] && \
+	    shash_set pkgname-flavor "${_pkgname}" "${_flavor}"
+	[ -n "${_flavors}" ] && \
+	    shash_set pkgname-flavors "${_pkgname}" "${_flavors}"
 	shash_set pkgname-deps "${_pkgname}" "${_pkg_deps}"
 	# Store for delete_old_pkg
 	if [ -n "${_lib_depends}" ]; then
