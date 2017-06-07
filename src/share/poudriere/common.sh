@@ -4865,10 +4865,12 @@ gather_port_vars_port() {
 	esac
 
 	if [ -n "${inqueue}" ]; then
-		_log_path log
-		read_line rdep "${qorigin}/rdep"
-		echo "${origin} ${rdep}" >> \
-		    "${log}/.poudriere.ports.queued"
+		if was_a_bulk_run; then
+			_log_path log
+			read_line rdep "${qorigin}/rdep"
+			echo "${origin} ${rdep}" >> \
+			    "${log}/.poudriere.ports.queued"
+		fi
 		rm -rf "${qorigin}"
 	fi
 
