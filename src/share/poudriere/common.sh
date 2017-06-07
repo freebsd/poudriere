@@ -3917,13 +3917,19 @@ originspec_encode() {
 	local -; set +x
 	[ $# -ne 4 ] && eargs originspec_encode var_return origin dep_args \
 	    flavor
-	# We want this to be fast, so avoid copies.
-	#local var_return="$1"
-	#local _origin="$2"
-	#local _dep_args="$3"
-	#local _flavor="$4"
+	local _var_return="$1"
+	local _origin="$2"
+	local _dep_args="$3"
+	local _flavor="$4"
+	local output
 
-	setvar "${1}" "${2}${ORIGINSPEC_SEP}${4}${ORIGINSPEC_SEP}${3}"
+	output="${_origin}"
+	# Only add in FLAVOR and DEPENDS_ARGS if they are needed,
+	# if neither are then don't even add in the ORIGINSPEC_SEP.
+	if [ -n "${_dep_args}" -o -n "${_flavor}" ]; then
+		output="${output}${ORIGINSPEC_SEP}${_flavor}${_dep_args:+${ORIGINSPEC_SEP}${_dep_args}}"
+	fi
+	setvar "${_var_return}" "${output}"
 }
 
 deps_fetch_vars() {
@@ -5294,8 +5300,8 @@ _all_pkgnames_for_origin() {
 	local originspec results
 
 	originspec_encode originspec "${origin}" \
-	    "[^${ORIGINSPEC_SEP}]*" \
-	    "[^${ORIGINSPEC_SEP}]*"
+	    "?[^${ORIGINSPEC_SEP}]*" \
+	    "?[^${ORIGINSPEC_SEP}]*"
 	_gsub "${originspec}" '+' '\\+'
 	results=$(awk -voriginspec="${_gsub}" '
 	    $2 ~ originspec { print $1 }' "all_pkgs")
