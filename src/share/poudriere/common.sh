@@ -4726,7 +4726,6 @@ gather_port_vars() {
 
 	msg "Gathering ports metadata"
 	bset status "gatheringportvars:"
-	_log_path log
 
 	:> "listed_pkgs"
 	:> "all_pkgs"
@@ -4741,10 +4740,6 @@ gather_port_vars() {
 		if [ -d "../${PORTSDIR}/${origin}" ]; then
 			echo "${origin}" >> "all_origins"
 			originspec_encode originspec "${origin}" ''
-			if was_a_bulk_run; then
-				echo "${origin} listed" >> \
-				    "${log}/.poudriere.ports.queued"
-			fi
 			parallel_run \
 			    prefix_stderr_quick \
 			    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
@@ -4872,6 +4867,11 @@ gather_port_vars_port() {
 			    "${log}/.poudriere.ports.queued"
 		fi
 		rm -rf "${qorigin}"
+	else
+		if was_a_bulk_run; then
+			echo "${origin} listed" >> \
+			    "${log}/.poudriere.ports.queued"
+		fi
 	fi
 
 	echo "${pkgname} ${originspec}" >> "all_pkgs"
