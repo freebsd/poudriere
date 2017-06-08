@@ -5155,6 +5155,7 @@ prepare_ports() {
 
 		if [ ${CLEAN_LISTED} -eq 1 ]; then
 			msg "(-C) Cleaning specified ports to build"
+			clear_dep_fatal_error
 			listed_ports | while read port; do
 				shash_get origin-pkgname "${port}" pkgname || \
 				    err 1 "Failed to lookup PKGNAME for ${port}"
@@ -5164,6 +5165,8 @@ prepare_ports() {
 					delete_pkg "${pkg}"
 				fi
 			done
+			check_dep_fatal_error && \
+			    err 1 "Error processing -C packages"
 		fi
 
 		# If the build is being resumed then packages already
