@@ -4882,7 +4882,7 @@ gather_port_vars_port() {
 		# The previous depqueue run may have readded this originspec
 		# into the flavorqueue.  Expunge it.
 		if [ -n "${inqueue}" ]; then
-			rm -rfv "fqueue/${originspec%/*}!${originspec#*/}" \
+			rm -rf "fqueue/${originspec%/*}!${originspec#*/}" \
 			    "${qorigin}"
 		fi
 		return 0
