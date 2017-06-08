@@ -4428,6 +4428,7 @@ prepare_ports() {
 
 		if [ ${CLEAN_LISTED} -eq 1 ]; then
 			msg "(-C) Cleaning specified ports to build"
+			clear_dep_fatal_error
 			listed_ports | while read port; do
 				cache_get_pkgname pkgname "${port}"
 				pkg="${PACKAGES}/All/${pkgname}.${PKG_EXT}"
@@ -4436,6 +4437,8 @@ prepare_ports() {
 					delete_pkg "${pkg}"
 				fi
 			done
+			check_dep_fatal_error && \
+			    err 1 "Error processing -C packages"
 		fi
 
 		# If the build is being resumed then packages already
