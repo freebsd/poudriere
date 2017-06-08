@@ -3987,6 +3987,8 @@ deps_fetch_vars() {
 	[ -n "${_pkgname}" ] || \
 	    err 1 "deps_fetch_vars: failed to get PKGNAME for ${originspec}"
 
+	setvar "${pkgname_var}" "${_pkgname}"
+
 	# Check if this PKGNAME already exists, which is sometimes fatal.
 	# Two different originspecs of the same origin but with
 	# different DEPENDS_ARGS may result in the same PKGNAME.
@@ -4021,7 +4023,6 @@ deps_fetch_vars() {
 	fi
 
 	setvar "${deps_var}" "${_pkg_deps}"
-	setvar "${pkgname_var}" "${_pkgname}"
 	setvar "${dep_args_var}" "${_dep_args}"
 	setvar "${flavor_var}" "${_flavor}"
 	setvar "${flavors_var}" "${_flavors}"
@@ -4732,7 +4733,7 @@ check_dep_fatal_error() {
 gather_port_vars() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "gather_port_vars requires PWD=${MASTERMNT}/.p"
-	local origin qorigin log originspec
+	local origin qorigin log originspec flavor rdep
 
 	# A. Lookup all port vars/deps from the given list of ports.
 	# B. For every dependency found (depqueue):
@@ -4771,15 +4772,59 @@ gather_port_vars() {
 
 	clear_dep_fatal_error
 	parallel_start
-	for origin in $(listed_ports show_moved); do
+	for originspec in $(listed_ports show_moved); do
+		originspec_decode "${originspec}" origin '' flavor
 		if [ -d "../${PORTSDIR}/${origin}" ]; then
-			echo "${origin}" >> "all_origins"
-			originspec_encode originspec "${origin}" '' ''
-			parallel_run \
-			    prefix_stderr_quick \
-			    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
-			    gather_port_vars_port "${originspec}" || \
-			    set_dep_fatal_error
+			rdep="listed"
+			# For -a we skip the initial gatherqueue
+			if [ ${ALL} -eq 1 ]; then
+				[ -n "${flavor}" ] && \
+				    err 1 "Flavor ${originspec} with ALL=1"
+				parallel_run \
+				    prefix_stderr_quick \
+				    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
+				    gather_port_vars_port "${originspec}" \
+				    "${rdep}" || \
+				    set_dep_fatal_error
+				continue
+			fi
+			# Otherwise let's utilize the gatherqueue to simplify
+			# FLAVOR handling.
+			qorigin="gqueue/${origin%/*}!${origin#*/}"
+
+			# If we were passed a FLAVOR-specific origin, we
+			# need to delay it into the flavorqueue because
+			# it is possible the list has multiple FLAVORS
+			# of the origin specified or even the main port.
+			# We want to ensure that the main port is looked up
+			# first and then FLAVOR-specific ones are processed.
+			if [ -n "${flavor}" ]; then
+				# We will delay the FLAVOR-specific into
+				# the flavorqueue and process the main port
+				# here as long as it hasn't already.
+				# Don't worry about duplicates from user list.
+				mkdir -p \
+				    "fqueue/${originspec%/*}!${originspec#*/}"
+				echo "${rdep}" > \
+				    "fqueue/${originspec%/*}!${originspec#*/}/rdep"
+				msg_debug "queueing into flavorqueue ${originspec} with ${rdep}"
+				# Now handle adding the main port without
+				# FLAVOR.  Only do this if the main port
+				# wasn't already listed.  The 'metadata'
+				# will cause gather_port_vars_port to not
+				# actually queue it for build unless it
+				# is discovered to be the default.
+				if [ -d "${qorigin}" ]; then
+					rdep=
+				else
+					rdep="metadata ${flavor}"
+				fi
+			fi
+
+			# Duplicate are possible from a user list, it's fine.
+			mkdir -p "${qorigin}"
+			msg_debug "queueing ${origin} with ${rdep}"
+			[ -n "${rdep}" ] && echo "${rdep}" > "${qorigin}/rdep"
 		else
 			if [ ${ALL} -eq 1 ]; then
 				msg_warn "Nonexistent origin listed in category Makefiles: ${COLOR_PORT}${origin}"
@@ -4796,7 +4841,7 @@ gather_port_vars() {
 	until dirempty dqueue && dirempty gqueue && dirempty fqueue; do
 		# Process all newly found deps into the gatherqueue
 		clear_dep_fatal_error
-		msg_debug "Processing depqueue"
+		dirempty dqueue || msg_debug "Processing depqueue"
 		parallel_start
 		for qorigin in dqueue/*; do
 			case "${qorigin}" in
@@ -4817,7 +4862,7 @@ gather_port_vars() {
 		#      this could be avoided.
 		clear_dep_fatal_error
 		parallel_start
-		msg_debug "Processing gatherqueue"
+		dirempty gqueue || msg_debug "Processing gatherqueue"
 		for qorigin in gqueue/*; do
 			case "${qorigin}" in
 				"gqueue/*") break ;;
@@ -4826,11 +4871,15 @@ gather_port_vars() {
 			# origin is really originspec, but fixup
 			# the substitued '/'
 			originspec="${origin%!*}/${origin#*!}"
+			read_line rdep "${qorigin}/rdep" || \
+			    err 1 "gather_port_vars: Failed to read rdep for ${originspec}"
 			parallel_run \
 			    prefix_stderr_quick \
 			    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
 			    gather_port_vars_port \
-			    "${originspec}" inqueue || set_dep_fatal_error
+			    "${originspec}" "${rdep}" || \
+			    set_dep_fatal_error
+			rm -rf "${qorigin}"
 		done
 		if ! parallel_stop || check_dep_fatal_error; then
 			err 1 "Fatal errors encountered gathering ports metadata"
@@ -4840,7 +4889,7 @@ gather_port_vars() {
 			continue
 		fi
 		# Process flavor queue to lookup newly discovered originspecs
-		msg_debug "Processing flavorqueue"
+		dirempty fqueue || msg_debug "Processing flavorqueue"
 		# Just move all items to the gatherqueue.  We've looked up
 		# the default flavor for each of these origins already and
 		# can now try to identify alt flavors for the origins.
@@ -4860,17 +4909,15 @@ gather_port_vars_port() {
 	    err 1 "gather_port_vars_port requires SHASH_VAR_PATH=var/cache"
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "gather_port_vars_port requires PWD=${MASTERMNT}/.p"
-	[ $# -lt 1 ] && eargs gather_port_vars_port originspec [inqueue]
-	[ $# -gt 2 ] && eargs gather_port_vars_port originspec [inqueue]
+	[ $# -eq 2 ] || eargs gather_port_vars_port originspec rdep
 	local originspec="$1"
-	local inqueue="$2"
+	local rdep="$2"
 	local dep_origin deps pkgname dep_args dep_originspec
-	local qorigin rdep dep_ret log flavor flavors dep_flavor
+	local dep_ret log flavor flavors dep_flavor
 	local origin origin_dep_args origin_flavor
 
 	msg_debug "gather_port_vars_port (${originspec}): LOOKUP"
 	originspec_decode "${originspec}" origin origin_dep_args origin_flavor
-	qorigin="gqueue/${originspec%/*}!${originspec#*/}"
 
 	shash_get originspec-pkgname "${originspec}" pkgname && \
 	    err 1 "gather_port_vars_port: Already had ${originspec}"
@@ -4884,44 +4931,63 @@ gather_port_vars_port() {
 	2)
 		# The previous depqueue run may have readded this originspec
 		# into the flavorqueue.  Expunge it.
-		if [ -n "${inqueue}" ]; then
-			rm -rf "fqueue/${originspec%/*}!${originspec#*/}" \
-			    "${qorigin}"
-		fi
+		rm -rf "fqueue/${originspec%/*}!${originspec#*/}"
 		return 0
 		;;
 	# Fatal error
 	*)
 		# An error is printed from deps_fetch_vars
 		set_dep_fatal_error
-		[ -n "${inqueue}" ] && rm -rf "${qorigin}"
 		return 1
 		;;
 	esac
 
+	# If this originspec was added purely for metadata lookups then
+	# there's nothing more to do.  Unless it is the default FLAVOR
+	# which is also listed to build since the FLAVOR-specific one
+	# will be found superfluous later.  None of this is possible with -a
+	if [ ${ALL} -eq 0 ] && [ "${rdep%% *}" = "metadata" ]; then
+		if [ -z "${flavors}" ]; then
+			msg_debug "SKIPPING ${originspec} - no FLAVORS"
+			return 0
+		fi
+		local default_flavor queued_flavor queuespec
+
+		default_flavor="${flavors%% *}"
+		queued_flavor="${rdep#* }"
+		if [ "${queued_flavor}" != "${default_flavor}" ]; then
+			msg_debug "SKIPPING ${originspec}"
+			return 0
+		fi
+		# We're keeping this metadata lookup as a listed one
+		# but we need to prevent forcing all FLAVORS to build
+		# later, so reset our flavor and originspec.
+		rdep="listed"
+		origin_flavor="${queued_flavor}"
+		originspec_encode queuespec "${origin}" "${origin_dep_args}" \
+		    "${origin_flavor}"
+		msg_debug "gather_port_vars_port: Fixing up ${originspec} to be ${queuespec}"
+		rm -rf "fqueue/${queuespec%/*}!${queuespec#*/}"
+	fi
+
 	if was_a_bulk_run; then
 		_log_path log
-		if [ -n "${inqueue}" ]; then
-			read_line rdep "${qorigin}/rdep"
-		else
-			rdep="listed"
-		fi
 		echo "${origin} ${pkgname} ${rdep}" >> \
 		    "${log}/.poudriere.ports.queued"
 	fi
 
+	msg_debug "WILL BUILD ${originspec}"
 	echo "${pkgname} ${originspec}" >> "all_pkgs"
-	if [ -n "${inqueue}" ]; then
-		rm -rf "${qorigin}"
-	else
+	if [ "${rdep}" = "listed" ]; then
 		echo "${pkgname}" >> "listed_pkgs"
+		echo "${originspec}" >> "listed_origins"
 	fi
 	[ ${ALL} -eq 0 ] && echo "${pkgname%-*}" >> "all_pkgbases"
 
 	# Add all of the discovered FLAVORS into the flavorqueue if
 	# this was the default originspec and this originspec was
 	# listed to build.
-	if [ -z "${inqueue}" -a \
+	if [ "${rdep}" = "listed" -a \
 	    -z "${origin_flavor}" -a -n "${flavors}" ]; then
 		for dep_flavor in ${flavors}; do
 			# Skip default FLAVOR
@@ -4932,7 +4998,7 @@ gather_port_vars_port() {
 			mkdir -p "fqueue/${dep_originspec%/*}!${dep_originspec#*/}" || \
 				err 1 "gather_port_vars_port: Failed to add ${dep_originspec} to flavorqueue"
 			# Copy our own reverse dep over.  This should always
-			# just be "listed" in this case (-z $inqueue) but
+			# just be "listed" in this case ($rdep == listed) but
 			# use the actual value to reduce maintenance.
 			echo "${rdep}" > \
 			    "fqueue/${dep_originspec%/*}!${dep_originspec#*/}/rdep"
@@ -4982,11 +5048,12 @@ gather_port_vars_port() {
 gather_port_vars_process_depqueue_enqueue() {
 	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
 	    err 1 "gather_port_vars_process_depqueue_enqueue requires SHASH_VAR_PATH=var/cache"
-	[ $# -ne 3 ] && eargs gather_port_vars_process_depqueue_enqueue \
-	    originspec dep_originspec queue
+	[ $# -ne 4 ] && eargs gather_port_vars_process_depqueue_enqueue \
+	    originspec dep_originspec queue rdep
 	local originspec="$1"
 	local dep_originspec="$2"
 	local queue="$3"
+	local rdep="$4"
 	local origin dep_pkgname
 
 	# Add this origin into the gatherqueue if not already done.
@@ -4994,13 +5061,13 @@ gather_port_vars_process_depqueue_enqueue() {
 		return 0
 	fi
 
-	msg_debug "gather_port_vars_process_depqueue_enqueue (${originspec}): Adding ${dep_originspec} into the ${queue}"
+	msg_debug "gather_port_vars_process_depqueue_enqueue (${originspec}): Adding ${dep_originspec} into the ${queue} (rdep=${rdep})"
 	# Another worker may have created it
 	if mkdir "${queue}/${dep_originspec%/*}!${dep_originspec#*/}" \
 	    2>/dev/null; then
 		originspec_decode "${originspec}" origin '' ''
 
-		echo "${origin}" > \
+		echo "${rdep}" > \
 		    "${queue}/${dep_originspec%/*}!${dep_originspec#*/}/rdep"
 	fi
 }
@@ -5010,8 +5077,8 @@ gather_port_vars_process_depqueue() {
 	    err 1 "gather_port_vars_process_depqueue requires SHASH_VAR_PATH=var/cache"
 	[ $# -ne 1 ] && eargs gather_port_vars_process_depqueue qorigin
 	local qorigin="$1"
-	local originspec pkgname deps dep_origin
-	local dep_args dep_originspec dep_flavor queue
+	local originspec origin pkgname deps dep_origin
+	local dep_args dep_originspec dep_flavor queue rdep
 
 	originspec="${qorigin#*/}"
 	originspec="${originspec%!*}/${originspec#*!}"
@@ -5027,21 +5094,31 @@ gather_port_vars_process_depqueue() {
 	    err 1 "gather_port_vars_process_depqueue failed to find deps for pkg ${pkgname}"
 	shash_get pkgname-dep_args "${pkgname}" dep_args || dep_args=
 
+	originspec_decode "${originspec}" origin '' ''
 	for dep_originspec in ${deps}; do
 		originspec_decode "${dep_originspec}" dep_origin '' dep_flavor
 		# First queue the default origin into the gatherqueue if
 		# needed.  For the -a case we're guaranteed to already
 		# have done this via the category Makefiles.
 		if [ ${ALL} -eq 0 ]; then
-			originspec_encode dep_originspec "${dep_origin}" '' \
-			    "${dep_flavor}"
+			if [ -n "${dep_args}" -o -n "${dep_flavor}" ]; then
+				queue=fqueue
+				rdep="metadata ${dep_flavor}"
+			else
+				queue=gqueue
+				rdep="${origin}"
+			fi
+
+			originspec_encode dep_originspec "${dep_origin}" '' ''
+			msg_debug "Will enqueue default ${dep_originspec} rdep=${rdep} into ${queue}"
 			gather_port_vars_process_depqueue_enqueue \
-			    "${originspec}" "${dep_originspec}" gqueue
+			    "${originspec}" "${dep_originspec}" gqueue \
+			    "${rdep}"
 		fi
 
 		# And place any DEPENDS_ARGS-specific origin into the
 		# flavorqueue
-		if [ -n "${dep_args}" ]; then
+		if [ -n "${dep_args}" -o -n "${dep_flavor}" ]; then
 			originspec_encode dep_originspec "${dep_origin}" \
 			    "${dep_args}" "${dep_flavor}"
 			# For the -a case we can skip the flavorqueue since
@@ -5051,8 +5128,10 @@ gather_port_vars_process_depqueue() {
 			else
 				queue=fqueue
 			fi
+			msg_debug "Will enqueue ${dep_originspec} rdep=${origin} into ${queue}"
 			gather_port_vars_process_depqueue_enqueue \
-			    "${originspec}" "${dep_originspec}" "${queue}"
+			    "${originspec}" "${dep_originspec}" "${queue}" \
+			    "${origin}"
 		fi
 	done
 }
@@ -5110,6 +5189,7 @@ compute_deps_pkg() {
 	shash_get pkgname-dep_args "${pkgname}" dep_args || dep_args=
 
 	pkg_pooldir="deps/${pkgname}"
+	msg_debug "compute_deps_pkg: Will build ${pkgname}"
 	mkdir "${pkg_pooldir}" || \
 	    err 1 "compute_deps_pkg: Error creating pool dir for ${pkgname}: There may be a duplicate origin in a category Makefile"
 
@@ -5248,14 +5328,15 @@ is_bad_flavor_slave_port() {
 }
 
 listed_ports() {
-	if [ -f "${MASTERMNT}/.p/all_origins" ]; then
-		cat "${MASTERMNT}/.p/all_origins"
+	if [ -f "${MASTERMNT}/.p/listed_origins" ]; then
+		cat "${MASTERMNT}/.p/listed_origins"
 		return
 	fi
 
-	_listed_ports | while read origin; do
+	_listed_ports | while read originspec; do
+		originspec_decode "${originspec}" origin '' ''
 		is_bad_flavor_slave_port "${origin}" origin && continue
-		echo "${origin}"
+		echo "${originspec}"
 	done
 }
 _listed_ports() {
@@ -5289,13 +5370,15 @@ _listed_ports() {
 				echo "${origin%/}"
 			done
 		fi
-	} | sort -u | while read origin; do
+	} | sort -u | while read originspec; do
+		originspec_decode "${originspec}" origin '' flavor
 		if check_moved new_origin ${origin}; then
 			[ -n "${tell_moved}" ] && msg \
 			    "MOVED: ${COLOR_PORT}${origin}${COLOR_RESET} renamed to ${COLOR_PORT}${new_origin}${COLOR_RESET}" >&2
 			origin="${new_origin}"
+			originspec_encode originspec "${origin}" '' "${flavor}"
 		fi
-		echo "${origin}"
+		echo "${originspec}"
 	done
 }
 
@@ -5318,37 +5401,25 @@ _all_pkgnames_for_origin() {
 }
 
 listed_pkgnames() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "listed_pkgnames requires PWD=${MASTERMNT}/.p"
-	if [ ${ALL} -eq 1 ]; then
-		cat "listed_pkgs"
-		return
-	fi
-	# For specific builds just assume all flavors of the origins
-	# listed were actually listed.
-	listed_ports | while read origin; do
-		# Origins can map to multiple PKGNAMES
-		# of listed packages somewhere via dep_queue
-		_all_pkgnames_for_origin "${origin}" _pkgnames || \
-		    err 1 "Failed to lookup PKGNAME for ${origin}"
-		for pkgname in ${_pkgnames}; do
-			echo "${pkgname}"
-		done
-	done
+	cat "listed_pkgs"
 }
 
-# Port was requested to be built
-port_is_listed() {
-	[ $# -eq 1 ] || eargs port_is_listed origin
-	local origin="$1"
+# Pkgname was listed to be built
+pkgname_is_listed() {
+	[ $# -eq 1 ] || eargs pkgname_is_listed pkgname
+	local pkgname="$1"
 
-	if [ ${ALL} -eq 1 -o ${PORTTESTING_RECURSIVE} -eq 1 ]; then
-		return 0
-	fi
+	[ ${ALL} -eq 1 ] && return 0
 
-	listed_ports | grep -q "^${origin}\$" && return 0
-
-	return 1
+	awk -vpkgname="${pkgname}" '
+	    $1 == pkgname {
+		found=1
+		exit 0
+	    }
+	    END {
+		if (found != 1)
+			exit 1
+	    }' "${MASTERMNT}/.p/listed_pkgs"
 }
 
 # Port was requested to be built, or is needed by a port requested to be built
@@ -5381,16 +5452,16 @@ get_porttesting() {
 	[ $# -eq 1 ] || eargs get_porttesting pkgname
 	local pkgname="$1"
 	local porttesting
-	local origin
 
+	porttesting=
 	if [ -n "${PORTTESTING}" ]; then
-		cache_get_origin origin "${pkgname}"
-		if port_is_listed "${origin}"; then
+		if [ ${ALL} -eq 1 -o ${PORTTESTING_RECURSIVE} -eq 1 ]; then
+			porttesting=1
+		elif pkgname_is_listed "${pkgname}"; then
 			porttesting=1
 		fi
 	fi
-
-	echo $porttesting
+	echo "${porttesting}"
 }
 
 find_all_deps() {
