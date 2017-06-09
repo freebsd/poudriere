@@ -5892,7 +5892,8 @@ load_priorities_ptsort() {
 				${pkg_boost})
 					[ -d "deps/${pkgname}" ] \
 					    || continue
-					cache_get_origin origin "${pkgname}"
+					originspec_decode "${originspec}" \
+					    origin '' ''
 					msg "Boosting priority: ${COLOR_PORT}${origin} | ${pkgname}"
 					echo "${pkgname} ${PRIORITY_BOOST_VALUE}" >> \
 					    "pkg_deps.ptsort"
