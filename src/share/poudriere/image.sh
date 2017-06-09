@@ -39,7 +39,8 @@ Parameters:
     -h hostname     -- The image hostname
     -t type         -- Type of image can be one of (default iso+zmfs):
                     -- iso, iso+mfs, iso+zmfs, usb, usb+mfs, usb+zmfs,
-                       rawdisk, zrawdisk, tar, firmware, rawfirmware
+                       rawdisk, zrawdisk, tar, firmware, rawfirmware,
+                       embedded
     -X excludefile  -- File containing the list in cpdup format
     -f packagelist  -- List of packages to install
     -c overlaydir   -- The content of the overlay directory will be copied into
