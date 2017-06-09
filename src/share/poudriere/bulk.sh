@@ -236,16 +236,12 @@ if [ ${DRY_RUN} -eq 1 ]; then
 		msg "Would build ${tobuild} packages using ${PARALLEL_JOBS} builders"
 
 		msg_n "Ports to build: "
-		{
-			find ${MASTERMNT}/.p/deps/ -mindepth 1 \
-			    -maxdepth 1
-			find ${MASTERMNT}/.p/pool/ -mindepth 2 \
-			    -maxdepth 2
-		} | while read pkgpath; do
-			pkgname=${pkgpath##*/}
-			cache_get_originspec_flavor originspec "${pkgname}"
+		cat "${MASTERMNT}/.p/all_pkgs" | \
+		    while read pkgname originspec; do
+			originspec_decode "${originspec}" origin '' flavor
+			originspec_encode originspec "${origin}" '' "${flavor}"
 			echo "${originspec}"
-		done | sort -u | tr '\n' ' '
+		done | sort | tr '\n' ' '
 		echo
 	else
 		msg "No packages would be built"
