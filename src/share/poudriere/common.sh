@@ -5508,6 +5508,8 @@ build_repo() {
 	bset status "pkgrepo:"
 	ensure_pkg_installed force_extract || \
 	    err 1 "Unable to extract pkg."
+	run_hook pkgrepo sign "${PACKAGES}" "${PKG_REPO_SIGNING_KEY}" \
+	    "${PKG_REPO_FROM_HOST:-no}" "${PKG_REPO_META_FILE}"
 	if [ -r "${PKG_REPO_META_FILE:-/nonexistent}" ]; then
 		PKG_META="-m /tmp/pkgmeta"
 		PKG_META_MASTERMNT="-m ${MASTERMNT}/tmp/pkgmeta"
