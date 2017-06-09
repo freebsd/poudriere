@@ -42,7 +42,7 @@ Parameters:
                        rawdisk, zrawdisk, tar, firmware, rawfirmware
     -X excludefile  -- File containing the list in cpdup format
     -f packagelist  -- List of packages to install
-    -c overlaydir   -- The content of the overlay directory will copied into
+    -c overlaydir   -- The content of the overlay directory will be copied into
                        the image
 EOF
 	exit 1
