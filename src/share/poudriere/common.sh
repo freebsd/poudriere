@@ -4711,6 +4711,17 @@ cache_get_origin() {
 	originspec_decode "${originspec}" "${var_return}" '' ''
 }
 
+cache_get_originspec_flavor() {
+	[ $# -ne 2 ] && eargs cache_get_originspec_flavor var_return pkgname
+	local var_return="$1"
+	local pkgname="$2"
+	local _originspec origin flavor
+
+	shash_get pkgname-originspec "${pkgname}" _originspec
+	originspec_decode "${_originspec}" origin '' flavor
+	originspec_encode "${var_return}" "${origin}" '' "${flavor}"
+}
+
 set_dep_fatal_error() {
 	[ -n "${DEP_FATAL_ERROR}" ] && return 0
 	DEP_FATAL_ERROR=1
