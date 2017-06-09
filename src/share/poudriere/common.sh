@@ -5193,6 +5193,7 @@ is_bad_flavor_slave_port() {
 		devel/py3-pyicu)		_origin="devel/py-pyicu" ;;
 		devel/py3-pylru-cache)		_origin="devel/py-pylru-cache" ;;
 		devel/py3-pytest)		_origin="devel/py-pytest" ;;
+		devel/py3-pytest-capturelog)	_origin="devel/py-pytest-capturelog" ;;
 		devel/py3-pytest-runner)	_origin="devel/py-pytest-runner" ;;
 		devel/py3-python-magic)		_origin="devel/py-python-magic" ;;
 		devel/py3-pytz)			_origin="devel/py-pytz" ;;
