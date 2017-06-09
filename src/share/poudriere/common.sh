@@ -4676,7 +4676,7 @@ port_var_fetch() {
 
 port_var_fetch_originspec() {
 	local -; set +x
-	[ $# -ge 4 ] || eargs port_var_fetch_originspec originspec \
+	[ $# -ge 3 ] || eargs port_var_fetch_originspec originspec \
 	    PORTVAR var_set ...
 	local originspec="$1"
 	shift
