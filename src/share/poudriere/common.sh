@@ -3893,23 +3893,23 @@ originspec_decode() {
 	local var_return_origin="$2"
 	local var_return_dep_args="$3"
 	local var_return_flavor="$4"
-	local _origin _dep_args _flavor IFS
+	local __origin __dep_args __flavor IFS
 
 	IFS="${ORIGINSPEC_SEP}"
 	set -- ${_originspec}
 
-	_origin="${1}"
-	_flavor="${2}"
-	_dep_args="${3}"
+	__origin="${1}"
+	__flavor="${2}"
+	__dep_args="${3}"
 
 	if [ -n "${var_return_origin}" ]; then
-		setvar "${var_return_origin}" "${_origin}"
+		setvar "${var_return_origin}" "${__origin}"
 	fi
 	if [ -n "${var_return_dep_args}" ]; then
-		setvar "${var_return_dep_args}" "${_dep_args}"
+		setvar "${var_return_dep_args}" "${__dep_args}"
 	fi
 	if [ -n "${var_return_flavor}" ]; then
-		setvar "${var_return_flavor}" "${_flavor}"
+		setvar "${var_return_flavor}" "${__flavor}"
 	fi
 }
 
