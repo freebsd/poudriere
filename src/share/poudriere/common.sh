@@ -4836,6 +4836,9 @@ gather_port_vars() {
 			err 1 "Fatal errors encountered gathering ports metadata"
 		fi
 
+		if ! dirempty gqueue || ! dirempty dqueue; then
+			continue
+		fi
 		# Process flavor queue to lookup newly discovered originspecs
 		msg_debug "Processing flavorqueue"
 		# Just move all items to the gatherqueue.  We've looked up
@@ -4925,14 +4928,14 @@ gather_port_vars_port() {
 			[ "${flavor}" = "${dep_flavor}" ] && continue
 			originspec_encode dep_originspec "${origin}" \
 			    "${origin_dep_args}" "${dep_flavor}"
-			msg_debug "gather_port_vars_port (${originspec}): Adding to gatherqueue FLAVOR=${dep_flavor}${dep_args:+ (DEPENDS_ARGS=${dep_args})}"
-			mkdir "gqueue/${dep_originspec%/*}!${dep_originspec#*/}" || \
-				err 1 "gather_port_vars_port: Failed to add ${dep_originspec} to gatherqueue"
+			msg_debug "gather_port_vars_port (${originspec}): Adding to flavorqueue FLAVOR=${dep_flavor}${dep_args:+ (DEPENDS_ARGS=${dep_args})}"
+			mkdir -p "fqueue/${dep_originspec%/*}!${dep_originspec#*/}" || \
+				err 1 "gather_port_vars_port: Failed to add ${dep_originspec} to flavorqueue"
 			# Copy our own reverse dep over.  This should always
 			# just be "listed" in this case (-z $inqueue) but
 			# use the actual value to reduce maintenance.
 			echo "${rdep}" > \
-			    "gqueue/${dep_originspec%/*}!${dep_originspec#*/}/rdep"
+			    "fqueue/${dep_originspec%/*}!${dep_originspec#*/}/rdep"
 		done
 
 	fi
