@@ -1178,7 +1178,7 @@ siginfo_handler() {
 				printf "${format_origin_phase}" "${j}" \
 				    "${origin}" "${phase}" ${buildtime}
 			else
-				printf "${format_phase}" "${j}" "${phase}"
+				printf "${format_phase}" "${j}" '' "${phase}"
 			fi
 		done
 	fi
