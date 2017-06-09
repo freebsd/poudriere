@@ -663,6 +663,7 @@ buildlog_start() {
 
 	echo "build started at $(date)"
 	echo "port directory: ${portdir}"
+	echo "package name: ${PKGNAME}"
 	echo "building for: $(injail uname -a)"
 	echo "maintained by: $(injail /usr/bin/make -C ${portdir} maintainer)"
 	echo "Makefile ident: $(ident -q ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
@@ -747,7 +748,7 @@ buildlog_stop() {
 		awk -F'!' '{print $2}' \
 	)
 
-	echo "build of ${origin} ended at $(date)"
+	echo "build of ${origin} | ${pkgname} ended at $(date)"
 	echo "build time: ${buildtime}"
 	[ ${build_failed} -gt 0 ] && echo "!!! build failure encountered !!!"
 
@@ -5859,7 +5860,7 @@ load_priorities_tsortD() {
 					[ -d "deps/${pkgname}" ] \
 					    || continue
 					cache_get_origin origin "${pkgname}"
-					msg "Boosting priority: ${COLOR_PORT}${origin}"
+					msg "Boosting priority: ${COLOR_PORT}${origin} | ${pkgname}"
 					priority=${PRIORITY_BOOST_VALUE}
 					boosted=1
 					break
@@ -5892,7 +5893,7 @@ load_priorities_ptsort() {
 					[ -d "deps/${pkgname}" ] \
 					    || continue
 					cache_get_origin origin "${pkgname}"
-					msg "Boosting priority: ${COLOR_PORT}${origin}"
+					msg "Boosting priority: ${COLOR_PORT}${origin} | ${pkgname}"
 					echo "${pkgname} ${PRIORITY_BOOST_VALUE}" >> \
 					    "pkg_deps.ptsort"
 					break
