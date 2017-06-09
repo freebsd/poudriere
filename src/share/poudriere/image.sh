@@ -127,7 +127,7 @@ saved_argv="$@"
 shift $((OPTIND-1))
 post_getopts
 
-: ${MEDIATYPE:=iso+zmfs}
+: ${MEDIATYPE:=none}
 : ${PTNAME:=default}
 
 [ -n "${JAILNAME}" ] || usage
@@ -144,6 +144,9 @@ case "${MEDIATYPE}" in
 		err 1 "Name can only contain alphanumeric characters"
 		;;
 	esac
+	;;
+none)
+	err 1 "Missing -t option"
 	;;
 esac
 
