@@ -2636,11 +2636,11 @@ gather_distfiles() {
 	port_var_fetch_originspec "${originspec}" \
 	    DIST_SUBDIR sub \
 	    ALLFILES dists \
-	    DEPENDS_ARGS dep_args \
 	    _DEPEND_SPECIALS specials || \
 	    err 1 "Failed to lookup distfiles for ${originspec}"
 
 	originspec_decode "${originspec}" origin '' flavor
+	shash_get pkgname-dep_args "${pkgname}" dep_args || dep_args=
 
 	job_msg_verbose "Status   ${COLOR_PORT}${origin} | ${PKGNAME}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
@@ -3988,6 +3988,36 @@ deps_fetch_vars() {
 	[ -n "${_pkgname}" ] || \
 	    err 1 "deps_fetch_vars: failed to get PKGNAME for ${originspec}"
 
+	# Determine if the port's claimed DEPENDS_ARGS even matter.  If it
+	# matches the PYTHON_DEFAULT_VERSION then we can ignore it.  If it
+	# is for RUBY then it can be ignored as well since it was never
+	# implemented in the tree.  If it is anything else it is an error.
+	case "${_dep_args}" in
+	PYTHON_VERSION=${P_PYTHON_DEFAULT_VERSION})
+		# Matches the default, no reason to waste time looking up
+		# dependencies with this bogus value.
+		msg_debug "deps_fetch_vars: Trimmed superfluous DEPENDS_ARGS=${_dep_args} for ${originspec}"
+		_dep_args=
+		;;
+	PYTHON_VERSION=*)
+		# It wants to use a non-default Python.  We'll allow it.
+		;;
+	RUBY_VER=*)
+		# Ruby never used this so just trim it.
+		_dep_args=
+		;;
+	*WITH_*=yes)
+		# dns/unbound had these but they do nothing anymore, ignore.
+		_dep_args=
+		;;
+	'')
+		# Blank value, great!
+		;;
+	*)
+		err 1 "deps_fetch_vars: Unknown or invalid DEPENDS_ARGS (${_dep_args}) for ${originspec}"
+		;;
+	esac
+
 	setvar "${pkgname_var}" "${_pkgname}"
 
 	# Check if this PKGNAME already exists, which is sometimes fatal.
@@ -5045,8 +5075,13 @@ gather_port_vars_port() {
 	# further.
 	for dep_originspec in ${deps}; do
 		originspec_decode "${dep_originspec}" dep_origin '' dep_flavor
-		originspec_encode dep_originspec "${dep_origin}" \
-		    "${dep_args}" "${dep_flavor}"
+		if origin_should_use_dep_args "${dep_origin}"; then
+			originspec_encode dep_originspec "${dep_origin}" \
+			    "${dep_args}" "${dep_flavor}"
+		else
+			originspec_encode dep_originspec "${dep_origin}" \
+			    '' "${dep_flavor}"
+		fi
 		msg_verbose "${COLOR_PORT}${originspec}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_originspec}"
 		if [ "${origin}" = "${dep_origin}" ]; then
 			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
@@ -5110,7 +5145,7 @@ gather_port_vars_process_depqueue() {
 	[ $# -ne 1 ] && eargs gather_port_vars_process_depqueue originspec
 	local originspec="$1"
 	local origin pkgname deps dep_origin
-	local dep_args dep_originspec dep_flavor queue rdep
+	local dep_args_save dep_args dep_originspec dep_flavor queue rdep
 
 	msg_debug "gather_port_vars_process_depqueue (${originspec})"
 
@@ -5120,10 +5155,15 @@ gather_port_vars_process_depqueue() {
 	shash_get pkgname-deps "${pkgname}" deps || \
 	    err 1 "gather_port_vars_process_depqueue failed to find deps for pkg ${pkgname}"
 	shash_get pkgname-dep_args "${pkgname}" dep_args || dep_args=
+	dep_args_save="${dep_args}"
 
 	originspec_decode "${originspec}" origin '' ''
 	for dep_originspec in ${deps}; do
 		originspec_decode "${dep_originspec}" dep_origin '' dep_flavor
+		dep_args="${dep_args_save}"
+		if ! origin_should_use_dep_args "${dep_origin}"; then
+			dep_args=
+		fi
 		# First queue the default origin into the gatherqueue if
 		# needed.  For the -a case we're guaranteed to already
 		# have done this via the category Makefiles.
@@ -5225,8 +5265,13 @@ compute_deps_pkg() {
 		# Depend on our specific DEPENDS_ARGS/FLAVOR version of this
 		# dependency.  If there is none then it was coalesced
 		# with the default.
-		originspec_encode dep_originspec "${dep_origin}" \
-		    "${dep_args}" "${dep_flavor}"
+		if origin_should_use_dep_args "${dep_origin}"; then
+			originspec_encode dep_originspec "${dep_origin}" \
+			    "${dep_args}" "${dep_flavor}"
+		else
+			originspec_encode dep_originspec "${dep_origin}" \
+			    '' "${dep_flavor}"
+		fi
 		if ! shash_get originspec-pkgname "${dep_originspec}" \
 		    dep_pkgname; then
 			originspec_encode dep_originspec_default \
@@ -5352,6 +5397,22 @@ is_bad_flavor_slave_port() {
 	esac
 	setvar "${var_return}" "${_origin}"
 	return 0
+}
+
+origin_should_use_dep_args() {
+	[ $# -eq 1 ] || eargs _origin_should_use_dep_args origin
+	local origin="${1}"
+
+	# Only use DEPENDS_ARGS on py[!3] ports where it will
+	# make an impact.  This is a big assumption and may not
+	# prove workable.
+	case "${origin}" in
+	*/python*) ;;
+	*/py[^3]*)
+		return 0
+		;;
+	esac
+	return 1
 }
 
 listed_ports() {
@@ -5707,9 +5768,20 @@ prepare_ports() {
 
 	load_moved
 
+	# Before we start, determine the default PYTHON version to
+	# deal with any use of DEPENDS_ARGS involving it.  DEPENDS_ARGS
+	# was a hack only actually used for python ports.
+	port_var_fetch '' \
+	    'USES=python' \
+	    PYTHON_DEFAULT_VERSION P_PYTHON_DEFAULT_VERSION \
+	    err 1 "Error looking up pre-build ports vars"
+	export P_PYTHON_DEFAULT_VERSION
+
 	gather_port_vars
 
 	compute_deps
+
+	unset P_PYTHON_DEFAULT_VERSION
 
 	bset status "sanity:"
 
