@@ -303,6 +303,14 @@ case ${MEDIATYPE} in
 	vfs.root.mountfrom="ufs:/dev/ufs/${IMAGENAME}"
 	EOF
 	;;
+iso)
+	imageupper=$(echo ${IMAGENAME} | tr '[:lower:]' '[:upper:]')
+	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
+	/dev/iso9660/${imageupper} / cd9660 ro 0 0
+	tmpfs /tmp tmpfs rw,mode=1777 0 0
+	EOF
+	cpdup -i0 ${WRKDIR}/world/boot ${WRKDIR}/out/boot
+	;;
 rawdisk)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
 	/dev/ufs/${IMAGENAME} / ufs rw 1 1
@@ -341,7 +349,14 @@ zrawdisk)
 esac
 
 case ${MEDIATYPE} in
-iso*)
+iso)
+	FINALIMAGE=${IMAGENAME}.iso
+	makefs -t cd9660 -o rockridge -o label=${IMAGENAME} \
+		-o publisher="poudriere" \
+		-o bootimage="i386;${WRKDIR}/out/boot/cdboot" \
+		-o no-emul-boot ${OUTPUTDIR}/${FINALIMAGE} ${WRKDIR}/world
+	;;
+iso+*mfs)
 	FINALIMAGE=${IMAGENAME}.iso
 	makefs -t cd9660 -o rockridge -o label=${IMAGENAME} \
 		-o publisher="poudriere" \
