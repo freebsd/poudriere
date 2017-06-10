@@ -41,6 +41,24 @@ cache_invalidate() {
 	shash_unset "${var}" "${key}" || :
 }
 
+_cache_set() {
+	local -; set +x
+	[ $# -eq 3 ] || eargs _cache_set var key value
+	local var="${1}"
+	local key="${2}"
+	local value="${3}"
+
+	# The main difference between these is that -vvv (dev) will see
+	# the shash_set error while normally it will be hidden.  It can
+	# happen with SIGINT races and is non-fatal.
+	if [ ${VERBOSE} -gt 2 ]; then
+		shash_set "${var}" "${key}" "${value}" || \
+		    msg_dev "_cache_set: Failed to set value for V: ${var} K: ${key}"
+	else
+		shash_set "${var}" "${key}" "${value}" 2>/dev/null || :
+	fi
+}
+
 cache_set() {
 	local -; set +x
 	[ $# -ge 2 ] || eargs cache_set value function [params]
@@ -54,7 +72,7 @@ cache_set() {
 	var="cached-${function}"
 	encode_args key "$@"
 	msg_dev "cache_set: Caching value for ${function}($@)"
-	shash_set "${var}" "${key}" "${value}" || :
+	_cache_set "${var}" "${key}" "${value}"
 }
 
 # Execute a function and store its results in the cache.  Use the
@@ -79,7 +97,7 @@ cache_call() {
 		msg_dev "cache_call: Fetching ${function}($@)"
 		_value=$(${function} "$@")
 		ret=$?
-		shash_set "${var}" "${key}" "${_value}"
+		_cache_set "${var}" "${key}" "${_value}"
 		setvar "${var_return}" "${_value}"
 	else
 		msg_dev "cache_call: Using cached ${function}($@)"
