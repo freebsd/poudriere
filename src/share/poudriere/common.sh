@@ -4588,7 +4588,7 @@ port_var_fetch() {
 	local -; set +x
 	[ $# -ge 3 ] || eargs port_var_fetch origin PORTVAR var_set ...
 	local origin="$1"
-	local _makeflags _vars
+	local _make_origin _makeflags _vars
 	local _portvar _var _line _errexit shiftcnt varcnt
 	# Use a tab rather than space to allow FOO='BLAH BLAH' assignments
 	# and lookups like -V'${PKG_DEPENDS} ${BUILD_DEPENDS}'
@@ -4596,6 +4596,12 @@ port_var_fetch() {
 	# Use invalid shell var character '!' to ensure we
 	# don't setvar it later.
 	local assign_var="!"
+
+	if [ -n "${origin}" ]; then
+		_make_origin="-C${sep}${PORTSDIR}/${origin}"
+	else
+		_make_origin="-f${sep}${PORTSDIR}/Mk/bsd.port.mk"
+	fi
 
 	shift
 
@@ -4649,7 +4655,7 @@ port_var_fetch() {
 			shiftcnt=$((shiftcnt + 1))
 		fi
 	done <<-EOF
-	$(IFS="${sep}"; injail /usr/bin/make -C "${PORTSDIR}/${origin}" ${_makeflags} || echo "${_errexit} $?")
+	$(IFS="${sep}"; injail /usr/bin/make ${_make_origin} ${_makeflags} || echo "${_errexit} $?")
 	EOF
 
 	# If the entire output was blank, then $() ate all of the excess

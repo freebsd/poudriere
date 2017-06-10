@@ -20,6 +20,12 @@ port_var_fetch "devel/port_var_fetch1" \
     PKGNAME pkgname
 assert "py34-sqlrelay-1.0.0_2" "${pkgname}" "PKGNAME"
 
+# Test -f Mk/bsd.port.mk usage
+pkgname=
+port_var_fetch '' \
+    PKGNAME pkgname
+assert "works" "${pkgname}" "PKGNAME from -f Mk/bsd.port.mk"
+
 port_var_fetch "devel/port_var_fetch1" \
 	FOO='BLAH BLAH ${PKGNAME}' \
 	PKGNAME pkgname \
