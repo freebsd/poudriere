@@ -3954,9 +3954,10 @@ deps_fetch_vars() {
 
 	originspec_decode "${originspec}" origin _origin_dep_args \
 	    _origin_flavor
-	# If we were passed in DEPENDS_ARGS or FLAVOR then we better have
-	# already looked up the default for this port.
-	if [ -n "${_origin_dep_args}" ] || [ -n "${_origin_flavor}" ]; then
+	# If we were passed in a FLAVOR then we better have already looked up
+	# the default for this port.  This is to avoid making the default port
+	# become superfluous.
+	if [ -n "${_origin_flavor}" ]; then
 		originspec_encode _default_originspec "${origin}" '' ''
 		shash_get originspec-pkgname "${_default_originspec}" \
 		    _default_pkgname || \
@@ -4781,7 +4782,7 @@ check_dep_fatal_error() {
 gather_port_vars() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "gather_port_vars requires PWD=${MASTERMNT}/.p"
-	local origin qorigin log originspec flavor rdep qlist
+	local origin qorigin log originspec dep_args flavor rdep qlist
 
 	# A. Lookup all port vars/deps from the given list of ports.
 	# B. For every dependency found (depqueue):
@@ -4822,7 +4823,7 @@ gather_port_vars() {
 	clear_dep_fatal_error
 	parallel_start
 	for originspec in $(listed_ports show_moved); do
-		originspec_decode "${originspec}" origin '' flavor
+		originspec_decode "${originspec}" origin dep_args flavor
 		if [ -d "../${PORTSDIR}/${origin}" ]; then
 			rdep="listed"
 			# For -a we skip the initial gatherqueue
@@ -4847,7 +4848,7 @@ gather_port_vars() {
 			# of the origin specified or even the main port.
 			# We want to ensure that the main port is looked up
 			# first and then FLAVOR-specific ones are processed.
-			if [ -n "${flavor}" ]; then
+			if [ -n "${flavor}" ] || [ -n "${dep_args}" ]; then
 				# We will delay the FLAVOR-specific into
 				# the flavorqueue and process the main port
 				# here as long as it hasn't already.
@@ -4865,8 +4866,10 @@ gather_port_vars() {
 				# is discovered to be the default.
 				if [ -d "${qorigin}" ]; then
 					rdep=
-				else
+				elif [ -n "${flavor}" ]; then
 					rdep="metadata ${flavor}"
+				elif [ -n "${dep_args}" ]; then
+					continue
 				fi
 			fi
 
@@ -5167,8 +5170,8 @@ gather_port_vars_process_depqueue() {
 		# First queue the default origin into the gatherqueue if
 		# needed.  For the -a case we're guaranteed to already
 		# have done this via the category Makefiles.
-		if [ ${ALL} -eq 0 ]; then
-			if [ -n "${dep_args}" -o -n "${dep_flavor}" ]; then
+		if [ ${ALL} -eq 0 ] && [ -z "${dep_args}" ]; then
+			if [ -n "${dep_flavor}" ]; then
 				queue=fqueue
 				rdep="metadata ${dep_flavor}"
 			else
