@@ -4745,7 +4745,7 @@ check_dep_fatal_error() {
 gather_port_vars() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "gather_port_vars requires PWD=${MASTERMNT}/.p"
-	local origin qorigin log originspec flavor rdep
+	local origin qorigin log originspec flavor rdep qlist
 
 	# A. Lookup all port vars/deps from the given list of ports.
 	# B. For every dependency found (depqueue):
@@ -4781,6 +4781,7 @@ gather_port_vars() {
 
 	rm -rf gqueue dqueue fqueue 2>/dev/null || :
 	mkdir gqueue dqueue fqueue
+	qlist=$(mktemp -t poudriere.qlist)
 
 	clear_dep_fatal_error
 	parallel_start
@@ -4852,6 +4853,7 @@ gather_port_vars() {
 
 	until dirempty dqueue && dirempty gqueue && dirempty fqueue; do
 		# Process all newly found deps into the gatherqueue
+		:> "${qlist}"
 		clear_dep_fatal_error
 		dirempty dqueue || msg_debug "Processing depqueue"
 		parallel_start
@@ -4859,19 +4861,27 @@ gather_port_vars() {
 			case "${qorigin}" in
 				"dqueue/*") break ;;
 			esac
+			echo "${qorigin}" >> "${qlist}"
+			origin="${qorigin#*/}"
+			# origin is really originspec, but fixup
+			# the substitued '/'
+			originspec="${origin%!*}/${origin#*!}"
 			parallel_run \
-			    gather_port_vars_process_depqueue "${qorigin}" || \
+			    gather_port_vars_process_depqueue \
+			    "${originspec}" || \
 			    set_dep_fatal_error
 		done
 		if ! parallel_stop || check_dep_fatal_error; then
 			err 1 "Fatal errors encountered processing gathered ports metadata"
 		fi
+		cat "${qlist}" | tr '\n' '\000' | xargs -0 rmdir
 
 		# Now process the gatherqueue
 
 		# Now rerun until the work queue is empty
 		# XXX: If the initial run were to use an efficient work queue then
 		#      this could be avoided.
+		:> "${qlist}"
 		clear_dep_fatal_error
 		parallel_start
 		dirempty gqueue || msg_debug "Processing gatherqueue"
@@ -4879,6 +4889,7 @@ gather_port_vars() {
 			case "${qorigin}" in
 				"gqueue/*") break ;;
 			esac
+			echo "${qorigin}" >> "${qlist}"
 			origin="${qorigin#*/}"
 			# origin is really originspec, but fixup
 			# the substitued '/'
@@ -4891,11 +4902,11 @@ gather_port_vars() {
 			    gather_port_vars_port \
 			    "${originspec}" "${rdep}" || \
 			    set_dep_fatal_error
-			rm -rf "${qorigin}"
 		done
 		if ! parallel_stop || check_dep_fatal_error; then
 			err 1 "Fatal errors encountered gathering ports metadata"
 		fi
+		cat "${qlist}" | tr '\n' '\000' | xargs -0 rm -rf
 
 		if ! dirempty gqueue || ! dirempty dqueue; then
 			continue
@@ -4914,6 +4925,7 @@ gather_port_vars() {
 		ls gqueue dqueue fqueue 2>/dev/null || :
 		err 1 "Gather port queues not empty"
 	fi
+	rm -f "${qlist}" || :
 }
 
 gather_port_vars_port() {
@@ -5089,17 +5101,12 @@ gather_port_vars_process_depqueue_enqueue() {
 gather_port_vars_process_depqueue() {
 	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
 	    err 1 "gather_port_vars_process_depqueue requires SHASH_VAR_PATH=var/cache"
-	[ $# -ne 1 ] && eargs gather_port_vars_process_depqueue qorigin
-	local qorigin="$1"
-	local originspec origin pkgname deps dep_origin
+	[ $# -ne 1 ] && eargs gather_port_vars_process_depqueue originspec
+	local originspec="$1"
+	local origin pkgname deps dep_origin
 	local dep_args dep_originspec dep_flavor queue rdep
 
-	originspec="${qorigin#*/}"
-	originspec="${originspec%!*}/${originspec#*!}"
-
 	msg_debug "gather_port_vars_process_depqueue (${originspec})"
-	# Remove queue entry
-	rmdir "${qorigin}"
 
 	# Add all of this origin's deps into the gatherqueue to reprocess
 	shash_get originspec-pkgname "${originspec}" pkgname || \
