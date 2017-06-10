@@ -4155,6 +4155,23 @@ delete_pkg() {
 	clear_pkg_cache "${pkg}"
 }
 
+# Keep in sync with delete_pkg
+delete_pkg_xargs() {
+	[ $# -ne 2 ] && eargs delete_pkg listfile pkg
+	local listfile="$1"
+	local pkg="$2"
+	local pkg_cache_dir
+
+	get_pkg_cache_dir pkg_cache_dir "${pkg}" 0
+
+	# Delete the package and the depsfile since this package is being deleted,
+	# which will force it to be recreated
+	{
+		echo "${pkg}"
+		echo "${pkg_cache_dir}"
+	} >> "${listfile}"
+}
+
 # Deleted cached information for stale packages (manually removed)
 delete_stale_pkg_cache() {
 	local pkgname
@@ -5054,7 +5071,7 @@ prepare_ports() {
 	local pkg
 	local log log_top
 	local n pn nbq resuming_build
-	local cache_dir sflag
+	local cache_dir sflag delete_pkg_list
 
 	_log_path log
 	mkdir -p "${MASTERMNT}/.p/building" \
@@ -5154,7 +5171,8 @@ prepare_ports() {
 		fi
 
 		if [ ${CLEAN_LISTED} -eq 1 ]; then
-			msg "(-C) Cleaning specified ports to build"
+			msg "(-C) Cleaning specified packages to build"
+			delete_pkg_list=$(mktemp -t poudriere.cleanC)
 			clear_dep_fatal_error
 			listed_ports | while read port; do
 				shash_get origin-pkgname "${port}" pkgname || \
@@ -5162,11 +5180,16 @@ prepare_ports() {
 				pkg="${PACKAGES}/All/${pkgname}.${PKG_EXT}"
 				if [ -f "${pkg}" ]; then
 					msg "(-C) Deleting existing package: ${pkg##*/}"
-					delete_pkg "${pkg}"
+					delete_pkg_xargs "${delete_pkg_list}" \
+					    "${pkg}"
 				fi
 			done
 			check_dep_fatal_error && \
 			    err 1 "Error processing -C packages"
+			msg "(-C) Flushing package deletions"
+			cat "${delete_pkg_list}" | tr '\n' '\000' | \
+			    xargs -0 rm -rf
+			rm -f "${delete_pkg_list}" || :
 		fi
 
 		# If the build is being resumed then packages already
