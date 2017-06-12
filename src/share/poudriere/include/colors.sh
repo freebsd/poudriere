@@ -25,8 +25,10 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-if [ -z "${FORCE_COLORS}" ] && ! [ -t 1 ] || ! [ -t 2 ]; then
-	USE_COLORS="no"
+if [ -z "${FORCE_COLORS}" ]; then
+	if ! [ -t 1 ] || ! [ -t 2 ]; then
+		USE_COLORS="no"
+	fi
 fi
 
 # The number of hardcoded color sets supported for colorize_job_id
