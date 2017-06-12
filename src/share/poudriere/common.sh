@@ -4048,7 +4048,10 @@ deps_fetch_vars() {
 	if [ -n "${_pkg_deps}" -a -z "${_pkg_deps%%*py3*}" ]; then
 		unset _new_pkg_deps
 		for _dep in ${_pkg_deps}; do
-			is_bad_flavor_slave_port "${_dep}" _dep || :
+			originspec_encode _dep_originspec "${_dep}" '' ''
+			is_bad_flavor_slave_port "${_dep_originspec}" \
+			    _dep_originspec || :
+			originspec_decode "${_dep_originspec}" _dep '' ''
 			_new_pkg_deps="${_new_pkg_deps:+${_new_pkg_deps} }${_dep}"
 		done
 		_pkg_deps="${_new_pkg_deps}"
@@ -5296,115 +5299,101 @@ compute_deps_pkg() {
 # were added that are now redundant.  Replace them with the proper main port
 # dependency.
 is_bad_flavor_slave_port() {
-	[ $# -eq 2 ] || eargs is_bad_flavor_slave_port origin var_return
-	local _origin="$1"
-	local var_return="$2"
+	[ $# -eq 2 ] || eargs is_bad_flavor_slave_port originspec \
+	    var_return_originspec
+	local _originspec="$1"
+	local var_return_originspec="$2"
+	local origin dep_args flavor mapped_origin pyreg pyver
 
-	case "${_origin}" in
-		accessibility/py3-atspi)	_origin="accessibility/py-atspi" ;;
-		archivers/py3-libarchive-c)	_origin="archivers/py-libarchive-c" ;;
-		audio/py3-mutagen)		_origin="audio/py-mutagen" ;;
-		audio/py3-pylast)		_origin="audio/py-pylast" ;;
-		databases/py3-apsw)		_origin="databases/py-apsw" ;;
-		databases/py3-bsddb3)		_origin="databases/py-bsddb3" ;;
-		databases/py3-mysqlclient)	_origin="databases/py-mysqlclient" ;;
-		databases/py3-psycopg2)		_origin="databases/py-psycopg2" ;;
-		databases/py33-gdbm)		_origin="databases/py-gdbm" ;;
-		databases/py33-sqlite3)		_origin="databases/py-sqlite3" ;;
-		databases/py34-gdbm)		_origin="databases/py-gdbm" ;;
-		databases/py34-sqlite3)		_origin="databases/py-sqlite3" ;;
-		databases/py35-gdbm)		_origin="databases/py-gdbm" ;;
-		databases/py35-sqlite3)		_origin="databases/py-sqlite3" ;;
-		databases/py36-gdbm)		_origin="databases/py-gdbm" ;;
-		databases/py36-sqlite3)		_origin="databases/py-sqlite3" ;;
-		devel/py3-Jinja2)		_origin="devel/py-Jinja2" ;;
-		devel/py3-babel)		_origin="devel/py-babel" ;;
-		devel/py3-click)		_origin="devel/py-click" ;;
-		devel/py3-click-log)		_origin="devel/py-click-log" ;;
-		devel/py3-click-threading)	_origin="devel/py-click-threading" ;;
-		devel/py3-colorama)		_origin="devel/py-colorama" ;;
-		devel/py3-dbus)			_origin="devel/py-dbus" ;;
-		devel/py3-defusedxml)		_origin="devel/py-defusedxml" ;;
-		devel/py3-docopt)		_origin="devel/py-docopt" ;;
-		devel/py3-flake8)		_origin="devel/py-flake8" ;;
-		devel/py3-flake8-builtins)	_origin="devel/py-flake8-builtins" ;;
-		devel/py3-flake8-docstrings)	_origin="devel/py-flake8-docstrings" ;;
-		devel/py3-flake8-import-order)	_origin="devel/py-flake8-import-order" ;;
-		devel/py3-flake8-polyfill)	_origin="devel/py-flake8-polyfill" ;;
-		devel/py3-flake8-quotes)	_origin="devel/py-flake8-quotes" ;;
-		devel/py3-gobject3)		_origin="devel/py-gobject3" ;;
-		devel/py3-hgtools)		_origin="devel/py-hgtools" ;;
-		devel/py3-jedi)			_origin="devel/py-jedi" ;;
-		devel/py3-jsonschema)		_origin="devel/py-jsonschema" ;;
-		devel/py3-libpeas)		_origin="devel/py-libpeas" ;;
-		devel/py3-libzfs)		_origin="devel/py-libzfs" ;;
-		devel/py3-llfuse)		_origin="devel/py-llfuse" ;;
-		devel/py3-lxml)			_origin="devel/py-lxml" ;;
-		devel/py3-mccabe)		_origin="devel/py-mccabe" ;;
-		devel/py3-nose)			_origin="devel/py-nose" ;;
-		devel/py3-ply)			_origin="devel/py-ply" ;;
-		devel/py3-prompt_toolkit)	_origin="devel/py-prompt_toolkit" ;;
-		devel/py3-py)			_origin="devel/py-py" ;;
-		devel/py3-pycodestyle)		_origin="devel/py-pycodestyle" ;;
-		devel/py3-pydocstyle)		_origin="devel/py-pydocstyle" ;;
-		devel/py3-pyflakes)		_origin="devel/py-pyflakes" ;;
-		devel/py3-pyicu)		_origin="devel/py-pyicu" ;;
-		devel/py3-pylru-cache)		_origin="devel/py-pylru-cache" ;;
-		devel/py3-pytest)		_origin="devel/py-pytest" ;;
-		devel/py3-pytest-capturelog)	_origin="devel/py-pytest-capturelog" ;;
-		devel/py3-pytest-runner)	_origin="devel/py-pytest-runner" ;;
-		devel/py3-python-magic)		_origin="devel/py-python-magic" ;;
-		devel/py3-pytz)			_origin="devel/py-pytz" ;;
-		devel/py3-rubymarshal)		_origin="devel/py-rubymarshal" ;;
-		devel/py3-setproctitle)		_origin="devel/py-setproctitle" ;;
-		devel/py3-setuptools_scm)	_origin="devel/py-setuptools_scm" ;;
-		devel/py3-simplejson)		_origin="devel/py-simplejson" ;;
-		devel/py3-six)			_origin="devel/py-six" ;;
-		devel/py3-tabulate)		_origin="devel/py-tabulate" ;;
-		devel/py3-vcversioner)		_origin="devel/py-vcversioner" ;;
-		devel/py3-wcwidth)		_origin="devel/py-wcwidth" ;;
-		devel/py3-xdg)			_origin="devel/py-xdg" ;;
-		devel/py3-yaml)			_origin="devel/py-yaml" ;;
-		devel/py3-yaml)			_origin="devel/py3-yaml" ;;
-		dns/py3-dnspython)		_origin="dns/py-dnspython" ;;
-		graphics/py3-cairo)		_origin="graphics/py-cairo" ;;
-		graphics/py3-imagesize)		_origin="graphics/py-imagesize" ;;
-		graphics/py3-pillow)		_origin="graphics/py-pillow" ;;
-		graphics/py3-pygraphviz)	_origin="graphics/py-pygraphviz" ;;
-		misc/py3-tqdm)			_origin="misc/py-tqdm" ;;
-		multimedia/py3-gstreamer1)	_origin="multimedia/py-gstreamer1" ;;
-		net/py3-netifaces)		_origin="net/py-netifaces" ;;
-		print/py3-fonttools)		_origin="print/py-fonttools" ;;
-		print/py3-pycups)		_origin="print/py-pycups" ;;
-		security/py3-libnacl)		_origin="security/py-libnacl" ;;
-		security/py3-pycrypto)		_origin="security/py-pycrypto" ;;
-		sysutils/py3-iocage)		_origin="sysutils/py-iocage" ;;
-		textproc/py3-MarkupSafe)	_origin="textproc/py-MarkupSafe" ;;
-		textproc/py3-alabaster)		_origin="textproc/py-alabaster" ;;
-		textproc/py3-chardet)		_origin="textproc/py-chardet" ;;
-		textproc/py3-docutils)		_origin="textproc/py-docutils" ;;
-		textproc/py3-hunspell)		_origin="textproc/py-hunspell" ;;
-		textproc/py3-libxml2)		_origin="textproc/py-libxml2" ;;
-		textproc/py3-pygments)		_origin="textproc/py-pygments" ;;
-		textproc/py3-pystemmer)		_origin="textproc/py-pystemmer" ;;
-		textproc/py3-snowballstemmer)	_origin="textproc/py-snowballstemmer" ;;
-		textproc/py3-sphinx_rtd_theme)	_origin="textproc/py-sphinx_rtd_theme" ;;
-		textproc/py3-texttable)		_origin="textproc/py-texttable" ;;
-		www/py3-cssutils)		_origin="www/py-cssutils" ;;
-		www/py3-requests)		_origin="www/py-requests" ;;
-		x11-toolkits/py33-tkinter)	_origin="x11-toolkits/py-tkinter" ;;
-		x11-toolkits/py34-tkinter)	_origin="x11-toolkits/py-tkinter" ;;
-		x11-toolkits/py35-tkinter)	_origin="x11-toolkits/py-tkinter" ;;
-		x11-toolkits/py36-tkinter)	_origin="x11-toolkits/py-tkinter" ;;
+	originspec_decode "${_originspec}" origin dep_args flavor
+
+	# If there's already a DEPENDS_ARGS or FLAVOR just assume it
+	# is working with the new framework or is not in need of
+	# remapping.
+	if [ -n "${dep_args}" ] || [ -n "${flavor}" ]; then
+		return 1
+	fi
+
+	# Some ports don't need mapping.  They need to be renamed in ports.
+	case "${origin}" in
+		accessibility/py3-speech-dispatcher)	return 1 ;;
+		devel/py*-setuptools)			return 1 ;;
+		devel/py3-threema-msgapi)		return 1 ;;
+		net-mgmt/py3-dnsdiag)			return 1 ;;
+		textproc/py3-asciinema)			return 1 ;;
+		textproc/py3-pager)			return 1 ;;
+	esac
+
+	# These ports need to have their main port properly made into
+	# a variable port - which comes naturally which will come
+	# with the FLAVORS conversion.  They have no MASTERDIR now
+	# but seemingly do -- OR they have a MASTERDIR that is not
+	# otherwise a dependency for anything and does not cause a
+	# DEPENDS_ARGS-generated py3 package.
+	case "${origin}" in
+		accessibility/py3-atspi)	return 1 ;;
+		audio/py3-pylast)		return 1 ;;
+		devel/py3-babel)		return 1 ;;
+		devel/py3-dbus)			return 1 ;;
+		devel/py3-gobject3)		return 1 ;;
+		devel/py3-jsonschema)		return 1 ;;
+		devel/py3-libpeas)		return 1 ;;
+		devel/py3-vcversioner)		return 1 ;;
+		devel/py3-xdg)			return 1 ;;
+		graphics/py3-cairo)		return 1 ;;
+		multimedia/py3-gstreamer1)	return 1 ;;
+		sysutils/py3-iocage)		return 1 ;;
+		textproc/py3-libxml2)		return 1 ;;
+	esac
+
+	[ -n "${P_PYTHON3_DEFAULT}" ] || \
+	    err 1 "P_PYTHON3_DEFAULT not set"
+
+	case "${origin}" in
+		*/py3-*)
+			pyver="${P_PYTHON3_DEFAULT}"
+			pyreg='/py3-'
+			pymaster_prefix='py-'
+			;;
+		*/py3[0-9]-*)
+			pyreg='/py3[0-9]-'
+			pyver="${origin#*py3}"
+			pyver="3.${pyver%%-*}"
+			pymaster_prefix='py-'
+			;;
 		*) return 1 ;;
 	esac
-	setvar "${var_return}" "${_origin}"
-	return 0
+	mapped_origin="${origin%%${pyreg}*}/${pymaster_prefix}${origin#*${pyreg}}${pymaster_suffix}"
+	# Verify the port even exists or else we need a special case above.
+	[ -d "${MASTERMNT}${PORTSDIR}/${mapped_origin}" ] || \
+	    err 1 "is_bad_flavor_slave_port: Mapping ${_originspec} found no existing ${mapped_origin}"
+	dep_args="PYTHON_VERSION=python${pyver}"
+	msg_debug "Mapping ${origin} to ${mapped_origin} with DEPENDS_ARGS=${dep_args}"
+	originspec_encode "${var_return_originspec}" "${mapped_origin}" \
+	    "${dep_args}" ''
+	return 1
 }
 
 origin_should_use_dep_args() {
 	[ $# -eq 1 ] || eargs _origin_should_use_dep_args origin
 	local origin="${1}"
+
+	# These are forcing python3 already
+	case "${origin}" in
+		devel/py-typed-ast)		return 1 ;;
+		misc/py-spdx)			return 1 ;;
+		misc/py-spdx-lookup)		return 1 ;;
+		net-im/py-sleekxmpp)		return 1 ;;
+		net/py-dugong)			return 1 ;;
+		www/py-aiohttp)			return 1 ;;
+	esac
+	# Their corresponding MASTERDIRS do not support DEPENDS_ARGS
+	case "${origin}" in
+		devel/pydbus-common)		return 1 ;;
+		devel/pygobject3-common)	return 1 ;;
+		devel/py-dbus)			return 1 ;;
+		devel/py-gobject3)		return 1 ;;
+	esac
 
 	# Only use DEPENDS_ARGS on py[!3] ports where it will
 	# make an impact.  This is a big assumption and may not
@@ -5425,8 +5414,7 @@ listed_ports() {
 	fi
 
 	_listed_ports | while read originspec; do
-		originspec_decode "${originspec}" origin '' ''
-		is_bad_flavor_slave_port "${origin}" origin && continue
+		is_bad_flavor_slave_port "${originspec}" originspec && continue
 		echo "${originspec}"
 	done
 }
@@ -5777,14 +5765,15 @@ prepare_ports() {
 	port_var_fetch '' \
 	    'USES=python' \
 	    PYTHON_DEFAULT_VERSION P_PYTHON_DEFAULT_VERSION \
+	    PYTHON3_DEFAULT P_PYTHON3_DEFAULT || \
 	    err 1 "Error looking up pre-build ports vars"
-	export P_PYTHON_DEFAULT_VERSION
+	export P_PYTHON_DEFAULT_VERSION P_PYTHON3_DEFAULT
 
 	gather_port_vars
 
 	compute_deps
 
-	unset P_PYTHON_DEFAULT_VERSION
+	unset P_PYTHON_DEFAULT_VERSION P_PYTHON3_DEFAULT
 
 	bset status "sanity:"
 
