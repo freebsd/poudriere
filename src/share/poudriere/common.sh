@@ -3205,11 +3205,6 @@ sanity_check_queue() {
 ${dependency_cycles}"
 	fi
 
-	if [ ${always_fail} -eq 0 ]; then
-		cd "${pwd}"
-		return 0
-	fi
-
 	dead_all=$(mktemp -t dead_packages.all)
 	dead_deps=$(mktemp -t dead_packages.deps)
 	dead_top=$(mktemp -t dead_packages.top)
@@ -3221,6 +3216,14 @@ ${dependency_cycles}"
 	# Find all packages only listed as dependencies (not in queue)
 	dead_packages=$(comm -13 "${dead_top}" "${dead_deps}")
 	rm -f "${dead_all}" "${dead_deps}" "${dead_top}" || :
+
+	if [ ${always_fail} -eq 0 ]; then
+		if [ -n "${dead_packages}" ]; then
+			err 1 "Packages stuck in queue (depended on but not in queue): ${dead_packages}"
+		fi
+		cd "${pwd}"
+		return 0
+	fi
 
 	if [ -n "${dead_packages}" ]; then
 		failed_phase="stuck_in_queue"
