@@ -3176,7 +3176,7 @@ stop_builders() {
 sanity_check_queue() {
 	local always_fail=${1:-1}
 	local crashed_packages dependency_cycles deps pkgname origin
-	local failed_phase pwd
+	local failed_phase pwd dead_all dead_deps dead_top dead_packages
 
 	pwd="${PWD}"
 	cd "${MASTERMNT}/.p"
@@ -3210,17 +3210,17 @@ ${dependency_cycles}"
 		return 0
 	fi
 
-	dead_packages=
-	highest_dep=
-	while read deps pkgname; do
-		[ -z "${highest_dep}" ] && highest_dep=${deps}
-		[ ${deps} -ne ${highest_dep} ] && break
-		dead_packages="${dead_packages} ${pkgname}"
-	done <<-EOF
-	$(find deps -mindepth 2 | \
-	    sed -e "s,^deps/,," -e 's:/: :' | \
-	    tsort -D 2>/dev/null | sort -nr)
-	EOF
+	dead_all=$(mktemp -t dead_packages.all)
+	dead_deps=$(mktemp -t dead_packages.deps)
+	dead_top=$(mktemp -t dead_packages.top)
+	find deps -mindepth 1 > "${dead_all}"
+	# All packages in the queue
+	cut -d / -f 2 "${dead_all}" | sort -u > "${dead_top}"
+	# All packages with dependencies
+	cut -d / -f 3 "${dead_all}" | sort -u | sed -e '/^$/d' > "${dead_deps}"
+	# Find all packages only listed as dependencies (not in queue)
+	dead_packages=$(comm -13 "${dead_top}" "${dead_deps}")
+	rm -f "${dead_all}" "${dead_deps}" "${dead_top}" || :
 
 	if [ -n "${dead_packages}" ]; then
 		failed_phase="stuck_in_queue"
