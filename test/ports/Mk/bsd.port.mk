@@ -1062,6 +1062,9 @@ _PORTS_DIRECTORIES+=	${PKG_DBDIR} ${PREFIX} ${WRKDIR} ${EXTRACT_WRKDIR} \
 
 .include "${PORTSDIR}/Mk/bsd.commands.mk"
 
+# Do not leak flavors to childs make
+.MAKEOVERRIDES:=		${MAKEOVERRIDES:NFLAVOR=*}
+
 .if defined(CROSS_TOOLCHAIN)
 .if !defined(CROSS_SYSROOT)
 IGNORE=	CROSS_SYSROOT should be defined

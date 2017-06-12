@@ -126,6 +126,16 @@ for _line in ${dp_RAWDEPENDS} ; do
 	*) origin="${PORTSDIR}/${origin}" ;;
 	esac
 
+	case "${origin}" in
+	*@*)
+		flavor="${origin#*@}"
+		origin="${origin%@*}"
+		export FLAVOR=${flavor}
+		echo "Fixed origin to ${origin} and flavor to ${flavor}" >&2
+		;;
+	*) ;;
+	esac
+
 	depends_args="${dp_DEPENDS_ARGS}"
 	target=${dp_DEPENDS_TARGET}
 	if [ -n "${last}" ]; then
