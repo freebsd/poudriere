@@ -4879,6 +4879,12 @@ gather_port_vars() {
 				echo "${rdep}" > \
 				    "fqueue/${originspec%/*}!${originspec#*/}/rdep"
 				msg_debug "queueing into flavorqueue ${originspec} with ${rdep}"
+				# For DEPENDS_ARGS we can skip bothering with
+				# the gatherqueue just simply delay into the
+				# flavorqueue.
+				if [ -n "${dep_args}" ]; then
+					continue
+				fi
 				# Now handle adding the main port without
 				# FLAVOR.  Only do this if the main port
 				# wasn't already listed.  The 'metadata'
@@ -4889,8 +4895,6 @@ gather_port_vars() {
 					rdep=
 				elif [ -n "${flavor}" ]; then
 					rdep="metadata ${flavor}"
-				elif [ -n "${dep_args}" ]; then
-					continue
 				fi
 			fi
 
