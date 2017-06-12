@@ -75,6 +75,8 @@ binary packages built from a given list of ports.
 During the build, hit ^T to send
 .Dv SIGINFO
 and get stats and progress back.
+.It image
+This command allows you to create images.
 .It jail
 This command allows you to manage the jails used by
 .Nm
@@ -107,8 +109,8 @@ via the provided rc script.
 .It status
 This command shows status of current and previous builds
 .It version
-Show version of poudriere.
-.Nm.
+Show version of
+.Nm .
 .El
 .Sh SUBCOMMANDS
 Here are the list of subcommands and associated options supported by
@@ -117,7 +119,6 @@ sorted by
 .Cm command
 order.
 .Ss bulk
-.Pp
 These subcommands are mutually exclusive.
 .Bl -tag -width "-f conffile"
 .It Fl a
@@ -163,7 +164,9 @@ for
 .Fl a .
 .It Fl F
 Only fetch from original MASTER_SITES.
-Skip FreeBSD mirrors.
+Skip
+.Fx
+mirrors.
 .It Fl j Ar name
 Run the bulk build on the jail named
 .Ar name .
@@ -186,7 +189,9 @@ repository configuration will be installed to
 so that
 .Xr pkg 8
 can be used with any existing packages built for the jail.
-The FreeBSD repository will be disabled by default.
+The
+.Fx
+repository will be disabled by default.
 .It Fl I
 Advanced Interactive mode.
 Leaves jail running with ports installed after test.
@@ -200,7 +205,8 @@ file for
 .Xr pkg 8
 usage.
 .It Fl n
-Dry run. Show what would be done, but do not actually build or delete any
+Dry run.
+Show what would be done, but do not actually build or delete any
 packages.
 .It Fl N
 Do not build package repository or INDEX when build is completed.
@@ -264,8 +270,65 @@ See
 .Sx CUSTOMISATION
 for examples of how this is used.
 .El
+.Ss image
+WARNING: This is still considered as ALPHA.
+.Bl -tag -width "-f packagelist"
+.It Fl o Ar outputdir
+This argument specifies directory where the resulting image will be created.
+.It Fl j Ar name
+This argument specifies the name of the jail that is used.
+.It Fl p Ar tree
+This argument specifies the name of the ports tree that is used.
+.It Fl z Ar set
+This specifies which SET to use for the build.
+.It Fl s Ar size
+This specifies the maximum size of the image that gets build.
+.It Fl n Ar name
+This specifies the name of the resulting image.
+.It Fl h Ar hostname
+This specifies the hostname used for the image.
+Defaults to
+.Ar poudriere-image .
+.It Fl t Ar type
+This specifies the type of image to create:
+.Bl -tag -width "rawfirmware"
+.It iso
+ISO 9660 format image
+.It iso+mfs
+ISO 9660 format image where the root filesystem gets MFS mounted
+.It iso+zmfs
+ISO 9660 format image where the root filesystem is LZ77 compressed and gets MFS
+mounted
+.It usb
+a GPT-layout prepared UFS2 image containing a UEFI boot loader
+.It usb+mfs
+a GPT-layout prepared UFS2 image containing a UEFI boot loader where the root
+filesystem gets MFS mounted
+.It usb+zmfs
+a GPT-layout prepared UFS2 image containing a UEFI boot loader where the root
+filesystem is LZ77 compressed and gets MFS mounted
+.It rawdisk
+a raw UFS2, softupdates-enabled, disk image
+.It zrawdisk
+a raw ZFS disk image
+.It tar
+an XZ-compressed tarball
+.It firmware
+a GPT-layout prepared disk image containing an UEFI boot loader
+.It rawfirmware
+a raw disk image
+.It embedded
+Create a u-boot ready embedded image
+.El
+.It Fl X Ar excludefile
+This specifies a list of files to exclude from the final image.
+.It Fl f Ar packagelist
+This specifies a list of packages to be pre-installed in the final image.
+.It Fl c Ar overlaydir
+This specifies an extra directory whose contents will be copied directly into
+the final image, starting from the root.
+.El
 .Ss jail
-.Pp
 These subcommands are mutually exclusive.
 .Bl -tag -width "-f conffile"
 .It Fl c
@@ -322,7 +385,9 @@ of the jail.
 .It Fl v Ar version
 Specifies which
 .Ar version
-of FreeBSD to use in the jail.
+of
+.Fx
+to use in the jail.
 If you are using method ftp then the
 .Ar version
 should in the form of: 9.0-RELEASE.
@@ -333,7 +398,9 @@ Other methods only use the value for display.
 .It Fl a Ar architecture
 Specifies which
 .Ar architecture
-of FreeBSD to use in the jail. (Default: same as host)
+of
+.Fx
+to use in the jail. (Default: same as host)
 .It Fl m Ar method
 Specifies which
 .Ar method
@@ -434,7 +501,9 @@ to the source tree before building the jail.
 .It Fl S Ar srcpath
 Use the specified
 .Ar srcpath
-as the FreeBSD source tree mounted inside the jail.
+as the
+.Fx
+source tree mounted inside the jail.
 .It Fl t Ar version
 instead of upgrading to the latest security fix of the jail version, you can
 jump to the new specified
@@ -457,7 +526,6 @@ When creating the jail from a git checkout, clone it with the full history
 instead of a --depth=1.
 .El
 .Ss ports
-.Pp
 These subcommands are mutually exclusive.
 .Bl -tag -width "-f conffile"
 .It Fl c
@@ -530,13 +598,11 @@ remove the header in the list view.
 Show more verbose output.
 .El
 .Ss testport
-.Pp
 The specified port will be tested for build and packaging problems.
 All missing dependencies will first be built in parallel.
 .Ev TRYBROKEN=yes
 is automatically defined in the environment to test ports marked as
 .Ev BROKEN .
-.Pp
 .Bl -tag -width "-f conffile"
 .It Fl Oo o Oc Ar origin
 Specifies an origin in the ports tree
@@ -565,7 +631,9 @@ repository configuration will be installed to
 so that
 .Xr pkg 8
 can be used with any existing packages built for the jail.
-The FreeBSD repository will be disabled by default.
+The
+.Fx
+repository will be disabled by default.
 .It Fl I
 Advanced Interactive mode.
 Leaves jail running with port installed after test.
@@ -656,7 +724,6 @@ Assume yes, do not confirm and just delete the files.
 This will show more information during the build.
 Specify twice to enable debug output.
 .El
-.Pp
 .Ss distclean
 This command accepts the following options:
 .Bl -tag -width "-f conffile"
@@ -677,7 +744,6 @@ Assume yes, do not confirm and just delete the files.
 This will show more information during the build.
 Specify twice to enable debug output.
 .El
-.Pp
 .Ss pkgclean
 This command is used to delete all packages not specified to build.
 .Pp
@@ -728,7 +794,6 @@ Specify twice to enable debug output.
 .It Fl z Ar set
 SET to use for the packages to inspect.
 .El
-.Pp
 .Ss options
 This command accepts the following parameters:
 .Bl -tag -width "-f conffile"
@@ -770,7 +835,6 @@ The
 subcommand can also take the list of ports to configure through command line
 arguments instead of the using a file list.
 .Ss queue
-.Pp
 This command takes a
 .Nm
 command in argument.
@@ -831,7 +895,6 @@ Use
 .Sy 0
 to match on empty SET.
 .El
-.Pp
 .Sh ENVIRONMENT
 The
 .Nm
@@ -869,8 +932,9 @@ infrastructure needs.
 .Pp
 A jail will take approximately 3GB of space.
 .Pp
-Of course you can use another version of FreeBSD, regarless on what
-version you are running.
+Of course you can use another version of
+.Fx ,
+regarless on what version you are running.
 amd64 users can choose i386 arch like in this
 example:
 .Pp
@@ -1054,7 +1118,6 @@ and
 are all used in the name of the jail.
 .Pp
 Be careful to respect the names supported by jail(8):
-.Pp
 .Bd -literal
     "This is an arbitrary string that identifies a jail (except it
      may not contain a '.')"
