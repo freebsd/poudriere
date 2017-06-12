@@ -1,0 +1,4 @@
+# Mk/Uses/python.mk includes this file, don't remove it!
+# $FreeBSD: head/lang/python27/Makefile.version 429470 2016-12-26 01:01:04Z wen $
+
+PYTHON_PORTVERSION=	2.7.13
