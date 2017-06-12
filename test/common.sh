@@ -10,10 +10,14 @@ POUDRIERE_ETC=${THISDIR}/etc
 LIBEXECPREFIX="${POUDRIEREPATH%src/bin/poudriere}"
 export PATH=${LIBEXECPREFIX}:${PATH}:/sbin:/usr/sbin
 
+: ${DISTFILES_CACHE:=/distfiles}
+
 mkdir -p ${POUDRIERE_ETC}/poudriere.d
 cat > ${POUDRIERE_ETC}/poudriere.conf << EOF
 NO_ZFS=yes
 BASEFS=${POUDRIERE_ETC}
+DISTFILES_CACHE=${DISTFILES_CACHE}
+TMPFS_ALL=1
 EOF
 
 : ${VERBOSE:=1}
