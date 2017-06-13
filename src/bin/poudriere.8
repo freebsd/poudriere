@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd June 5, 2017
+.Dd June 12, 2017
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -713,6 +713,9 @@ This command accepts the following options:
 .Bl -tag -width "-f conffile"
 .It Fl n
 Dry run, do not actually delete anything.
+.It Fl B Ar name
+Specifies which buildname to match on.
+May be a glob.
 .It Fl p Ar tree
 Specifies which ports
 .Ar tree

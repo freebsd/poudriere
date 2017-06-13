@@ -35,6 +35,7 @@ Parameters:
                    jail/tree/set combination.
 
 Options:
+    -B name     -- Build name glob to match on (defaults to *)
     -j jail     -- Which jail to use for log directories
     -p tree     -- Specify which ports tree to use for log directories
                    (Defaults to the 'default' tree)
@@ -48,6 +49,7 @@ EOF
 	exit 1
 }
 
+BUILDNAME_GLOB="*"
 PTNAME=
 SETNAME=
 DRY_RUN=0
@@ -56,10 +58,13 @@ MAX_COUNT=
 
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "aj:p:nN:vyz:" FLAG; do
+while getopts "aB:j:p:nN:vyz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			DAYS=0
+			;;
+		B)
+			BUILDNAME_GLOB="${OPTARG}"
 			;;
 		j)
 			JAILNAME=${OPTARG}
@@ -163,7 +168,7 @@ fi
 msg_n "Looking for ${reason}..."
 if [ -n "${MAX_COUNT}" ]; then
 	# Find build directories up to limit MAX_COUNT per mastername
-	BUILDNAME_GLOB="*" SHOW_FINISHED=1 \
+	BUILDNAME_GLOB="${BUILDNAME_GLOB}" SHOW_FINISHED=1 \
 	    for_each_build echo_logdir | sort -d | \
 	    awk -vMAX_COUNT="${MAX_COUNT}" -F / '
 	{
@@ -186,7 +191,7 @@ if [ -n "${MAX_COUNT}" ]; then
 	' > "${OLDLOGS}"
 else
 	# Find build directories older than DAYS
-	BUILDNAME_GLOB="*" SHOW_FINISHED=1 \
+	BUILDNAME_GLOB="${BUILDNAME_GLOB}" SHOW_FINISHED=1 \
 	    for_each_build echo_logdir | \
 	    xargs -0 -J {} \
 	    find {} -type d -mindepth 0 -maxdepth 0 -Btime +${DAYS}d \
