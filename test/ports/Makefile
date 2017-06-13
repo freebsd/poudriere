@@ -2,3 +2,4 @@
 #SUBDIR += devel
 SUBDIR += lang
 SUBDIR += ports-mgmt
+SUBDIR += misc
