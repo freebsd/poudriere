@@ -112,6 +112,8 @@ logclean_cleanup() {
 }
 OLDLOGS=$(mktemp -t poudriere_logclean)
 
+[ -d "${log_top}" ] || err 0 "No logs present"
+
 cd ${log_top}
 
 # Logfiles in latest-per-pkg should have 3 links total.
