@@ -4056,7 +4056,7 @@ deps_fetch_vars() {
 	    _existing_originspec=
 	if [ -n "${_existing_originspec}" ]; then
 		[ "${_existing_originspec}" = "${originspec}" ] && \
-		    err 1 "deps_fetch_vars: ${originspec} already known without a PKGNAME?"
+		    err 1 "deps_fetch_vars: ${originspec} already known as ${pkgname}"
 		originspec_decode "${_existing_originspec}" \
 		    _existing_origin '' ''
 		if [ "${_existing_origin}" = "${origin}" ]; then
