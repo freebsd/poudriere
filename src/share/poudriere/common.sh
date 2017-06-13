@@ -5272,6 +5272,8 @@ prepare_ports() {
 	clean_build_queue
 
 	# Call the deadlock code as non-fatal which will check for cycles
+	msg "Sanity checking build queue"
+	bset status "sanity_check_queue:"
 	sanity_check_queue 0
 
 	if was_a_bulk_run; then
@@ -5288,6 +5290,7 @@ prepare_ports() {
 		find deps -type d -empty -depth 1 | \
 			xargs -J % mv % pool/unbalanced
 		load_priorities
+		msg "Balancing pool"
 		balance_pool
 
 		[ -n "${ALLOW_MAKE_JOBS}" ] || \
@@ -5390,6 +5393,9 @@ load_priorities_ptsort() {
 load_priorities() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "load_priorities requires PWD=${MASTERMNT}/.p"
+
+	msg "Processing PRIORITY_BOOST"
+	bset status "load_priorities:"
 
 	POOL_BUCKET_DIRS=""
 

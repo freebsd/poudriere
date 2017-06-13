@@ -228,6 +228,7 @@ fi
 prepare_ports
 
 if [ ${DRY_RUN} -eq 1 ]; then
+	bset status "done:"
 	msg "Dry run mode, cleaning up and exiting"
 	tobuild=$(calculate_tobuild)
 	if [ ${tobuild} -gt 0 ]; then
