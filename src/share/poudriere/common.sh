@@ -3960,7 +3960,7 @@ deps_fetch_vars() {
 	local _existing_origin _existing_originspec
 	local _default_originspec _default_pkgname
 	local origin _origin_dep_args _dep_args _dep _new_pkg_deps
-	local _origin_flavor _flavor _flavors
+	local _origin_flavor _flavor _flavors _dep_arg _new_dep_args
 
 	originspec_decode "${originspec}" origin _origin_dep_args \
 	    _origin_flavor
@@ -4008,31 +4008,38 @@ deps_fetch_vars() {
 	# matches the PYTHON_DEFAULT_VERSION then we can ignore it.  If it
 	# is for RUBY then it can be ignored as well since it was never
 	# implemented in the tree.  If it is anything else it is an error.
-	case "${_dep_args}" in
-	PYTHON_VERSION=${P_PYTHON_DEFAULT_VERSION})
-		# Matches the default, no reason to waste time looking up
-		# dependencies with this bogus value.
-		msg_debug "deps_fetch_vars: Trimmed superfluous DEPENDS_ARGS=${_dep_args} for ${originspec}"
-		_dep_args=
-		;;
-	PYTHON_VERSION=*)
-		# It wants to use a non-default Python.  We'll allow it.
-		;;
-	RUBY_VER=*)
-		# Ruby never used this so just trim it.
-		_dep_args=
-		;;
-	*WITH_*=yes)
-		# dns/unbound had these but they do nothing anymore, ignore.
-		_dep_args=
-		;;
-	'')
-		# Blank value, great!
-		;;
-	*)
-		err 1 "deps_fetch_vars: Unknown or invalid DEPENDS_ARGS (${_dep_args}) for ${originspec}"
-		;;
-	esac
+	_new_dep_args=
+	for _dep_arg in ${_dep_args}; do
+		case "${_dep_arg}" in
+		PYTHON_VERSION=${P_PYTHON_DEFAULT_VERSION})
+			# Matches the default, no reason to waste time looking
+			# up dependencies with this bogus value.
+			msg_debug "deps_fetch_vars: Trimmed superfluous DEPENDS_ARGS=${_dep_arg} for ${originspec}"
+			_dep_arg=
+			;;
+		PYTHON_VERSION=*)
+			# It wants to use a non-default Python.  We'll allow
+			it.
+			;;
+		RUBY_VER=*)
+			# Ruby never used this so just trim it.
+			_dep_arg=
+			;;
+		*WITH_*=yes)
+			# dns/unbound had these but they do nothing anymore,
+			# ignore.
+			_dep_arg=
+			;;
+		'')
+			# Blank value, great!
+			;;
+		*)
+			err 1 "deps_fetch_vars: Unknown or invalid DEPENDS_ARGS (${_dep_arg}) for ${originspec}"
+			;;
+		esac
+		_new_dep_args="${_new_dep_args}${_new_dep_args:+ }${_dep_arg}"
+	done
+	_dep_args="${_new_dep_args}"
 
 	setvar "${pkgname_var}" "${_pkgname}"
 	if [ -n "${_pkg_deps}" -a -z "${_pkg_deps%%*py3*}" ]; then
