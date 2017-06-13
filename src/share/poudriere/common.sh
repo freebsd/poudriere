@@ -1504,7 +1504,7 @@ do_jail_mounts() {
 
 # Interactive test mode
 enter_interactive() {
-	local stopmsg
+	local stopmsg ports
 
 	if [ ${ALL} -ne 0 ]; then
 		msg "(-a) Not entering interactive mode."
@@ -1532,7 +1532,12 @@ enter_interactive() {
 	fi
 
 	# Enable all selected ports and their run-depends
-	for port in $(listed_ports); do
+	if [ "${SCRIPTPATH##*/}" != "testport.sh" ]; then
+		ports="$(listed_ports)"
+	else
+		ports="${LISTPORTS}"
+	fi
+	for port in ${ports}; do
 		# Install run-depends since this is an interactive test
 		msg "Installing run-depends for ${COLOR_PORT}${port}"
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
