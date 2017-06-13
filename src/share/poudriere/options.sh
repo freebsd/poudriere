@@ -133,11 +133,12 @@ options_cleanup() {
 setup_makeconf ${__MAKE_CONF} "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 
 export TERM=${SAVED_TERM}
-for origin in ${LISTPORTS}; do
+for originspec in ${LISTPORTS}; do
+	originspec_decode "${originspec}" origin '' flavor
 	[ -d ${PORTSDIR}/${origin} ] || err 1 "No such port: ${origin}"
 	make PORT_DBDIR=${PORT_DBDIR} \
 		-C ${PORTSDIR}/${origin} \
-		${COMMAND}
+		${COMMAND} ${flavor:+FLAVOR=${flavor}}
 
 	if [ -n "${DO_RECURSE}" ]; then
 		make PORT_DBDIR=${PORT_DBDIR} \
@@ -145,6 +146,6 @@ for origin in ${LISTPORTS}; do
 			DIALOG4PORTS=`which dialog4ports` \
 			LOCALBASE=/nonexistent \
 			-C ${PORTSDIR}/${origin} \
-			${RECURSE_COMMAND}
+			${RECURSE_COMMAND} ${flavor:+FLAVOR=${flavor}}
 	fi
 done
