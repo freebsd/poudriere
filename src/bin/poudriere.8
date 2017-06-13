@@ -711,6 +711,10 @@ jail/tree/set combination.
 .Pp
 This command accepts the following options:
 .Bl -tag -width "-f conffile"
+.It Fl j Ar name
+Specifies the
+.Ar name
+of the jail to filter by.
 .It Fl n
 Dry run, do not actually delete anything.
 .It Fl B Ar name
@@ -726,6 +730,11 @@ Assume yes, do not confirm and just delete the files.
 .It Fl v
 This will show more information during the build.
 Specify twice to enable debug output.
+.It Fl z Ar set
+This specifies which SET to filter builds by.
+Use
+.Sy 0
+to match on empty SET.
 .El
 .Ss distclean
 This command accepts the following options:

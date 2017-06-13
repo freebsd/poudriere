@@ -44,7 +44,8 @@ Options:
     -v          -- Be verbose; show more information. Use twice to enable
                    debug output
     -y          -- Assume yes when deleting and do not prompt for confirmation
-    -z set      -- Specify which SET to use for log directories
+    -z set      -- Specify which SET to match for logs. Use '0' to only
+                   match on empty sets.
 EOF
 	exit 1
 }
