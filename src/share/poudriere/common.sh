@@ -4887,7 +4887,7 @@ gather_port_vars() {
 				    "fqueue/${originspec%/*}!${originspec#*/}"
 				echo "${rdep}" > \
 				    "fqueue/${originspec%/*}!${originspec#*/}/rdep"
-				msg_debug "queueing into flavorqueue ${originspec} with ${rdep}"
+				msg_debug "queueing ${originspec} into flavorqueue (rdep=${rdep})"
 				# For DEPENDS_ARGS we can skip bothering with
 				# the gatherqueue just simply delay into the
 				# flavorqueue.
@@ -4909,7 +4909,7 @@ gather_port_vars() {
 
 			# Duplicate are possible from a user list, it's fine.
 			mkdir -p "${qorigin}"
-			msg_debug "queueing ${origin} with ${rdep}"
+			msg_debug "queueing ${origin} into gatherqueue (rdep=${rdep})"
 			[ -n "${rdep}" ] && echo "${rdep}" > "${qorigin}/rdep"
 		else
 			if [ ${ALL} -eq 1 ]; then
