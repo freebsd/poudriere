@@ -4149,6 +4149,33 @@ pkg_get_origin() {
 	[ -n "${_origin}" ]
 }
 
+pkg_get_flavor() {
+	[ $# -eq 2 ] || eargs pkg_get_flavor var_return pkg
+	local var_return="$1"
+	local pkg="$2"
+	local pkg_cache_dir
+	local _flavor cachefile
+
+	get_pkg_cache_dir pkg_cache_dir "${pkg}"
+	cachefile="${pkg_cache_dir}/flavor"
+
+	if [ ! -f "${cachefile}" ]; then
+		if [ -z "${_flavor}" ]; then
+			if [ "${PKG_EXT}" != "tbz" ]; then
+				_flavor=$(injail ${PKG_BIN} query -F \
+					"/packages/All/${pkg##*/}" \
+					'%At %Av' | \
+					awk '$1 == "flavor" {print $2}')
+			fi
+		fi
+		echo ${_flavor} > "${cachefile}"
+	else
+		read_line _flavor "${cachefile}"
+	fi
+
+	setvar "${var_return}" "${_flavor}"
+}
+
 pkg_get_dep_origin() {
 	[ $# -ne 2 ] && eargs pkg_get_dep_origin var_return pkg
 	local var_return="$1"
@@ -4259,10 +4286,12 @@ pkg_cache_data() {
 	[ $# -ne 2 ] && eargs pkg_cache_data pkg origin
 	local pkg="$1"
 	local origin="$2"
+	local _ignored
 
 	ensure_pkg_installed || return 1
 	pkg_get_options _ignored "${pkg}" > /dev/null
 	pkg_get_origin _ignored "${pkg}" "${origin}" > /dev/null
+	pkg_get_flavor _ignored "${pkg}" > /dev/null
 	pkg_get_dep_origin _ignored "${pkg}" > /dev/null
 	deps_file _ignored "${pkg}" > /dev/null
 }
@@ -4395,7 +4424,7 @@ delete_old_pkg() {
 	local pkg="$1"
 	local mnt pkgname new_pkgname
 	local origin v v2 compiled_options current_options current_deps compiled_deps
-	local pkgbase _pkgnames
+	local pkgbase _pkgnames flavor pkg_flavor
 
 	pkgname="${pkg##*/}"
 	pkgname="${pkgname%.*}"
@@ -4547,6 +4576,14 @@ delete_old_pkg() {
 	# XXX: Check if the pkgname has changed and rename in the repo
 	if [ "${pkgname%-*}" != "${new_pkgname%-*}" ]; then
 		msg "Deleting ${pkg##*/}: package name changed to '${new_pkgname%-*}'"
+		delete_pkg "${pkg}"
+		return 0
+	fi
+
+	shash_get pkgname-flavor "${pkgname}" flavor || flavor=
+	pkg_get_flavor pkg_flavor "${pkg}"
+	if [ "${pkg_flavor}" != "${flavor}" ]; then
+		msg "Deleting ${pkg##*/}: FLAVOR changed to '${flavor}' from '${pkg_flavor}'"
 		delete_pkg "${pkg}"
 		return 0
 	fi
