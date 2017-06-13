@@ -4046,7 +4046,9 @@ deps_fetch_vars() {
 			if [ "${_pkgname}" = "${_default_pkgname}" ]; then
 				# This originspec is superfluous, just ignore.
 				msg_debug "deps_fetch_vars: originspec ${originspec} is superfluous for PKGNAME ${_pkgname}"
-				return 2
+				[ ${ALL} -eq 0 ] && \
+				    [ -z "${_origin_dep_args}" ] && \
+				    return 2
 			fi
 		fi
 		err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${originspec}${COLOR_RESET} AND ${COLOR_PORT}${_existing_originspec}${COLOR_RESET}. Rerun with -v to see which ports are depending on these."
