@@ -5162,6 +5162,7 @@ gather_port_vars_process_depqueue_enqueue() {
 
 	# Add this origin into the gatherqueue if not already done.
 	if shash_get originspec-pkgname "${dep_originspec}" dep_pkgname; then
+		msg_debug "gather_port_vars_process_depqueue_enqueue (${originspec}): Already had ${dep_originspec}, not enqueueing into ${queue} (rdep=${rdep})"
 		return 0
 	fi
 
@@ -5214,7 +5215,7 @@ gather_port_vars_process_depqueue() {
 			fi
 
 			originspec_encode dep_originspec "${dep_origin}" '' ''
-			msg_debug "Will enqueue default ${dep_originspec} rdep=${rdep} into ${queue}"
+			msg_debug "Want to enqueue default ${dep_originspec} rdep=${rdep} into ${queue}"
 			gather_port_vars_process_depqueue_enqueue \
 			    "${originspec}" "${dep_originspec}" gqueue \
 			    "${rdep}"
@@ -5232,7 +5233,7 @@ gather_port_vars_process_depqueue() {
 			else
 				queue=fqueue
 			fi
-			msg_debug "Will enqueue ${dep_originspec} rdep=${origin} into ${queue}"
+			msg_debug "Want to enqueue ${dep_originspec} rdep=${origin} into ${queue}"
 			gather_port_vars_process_depqueue_enqueue \
 			    "${originspec}" "${dep_originspec}" "${queue}" \
 			    "${origin}"
