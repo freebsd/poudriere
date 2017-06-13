@@ -244,6 +244,29 @@ else
 fi
 
 if [ ${logs_deleted} -eq 1 ]; then
+
+	msg_n "Updating latest-per-pkg links for deleted builds..."
+	for build in ${DELETED_BUILDS}; do
+		echo -n " ${build}..."
+		find ${build} -maxdepth 2 -mindepth 2 -name logs -print0 | \
+		    xargs -0 -J % find % -mindepth 1 -maxdepth 1 -type f | \
+		    sort -d | \
+		    awk -F/ '{if (!printed[$4]){print $0; printed[$4]=1;}}' | \
+		    while read log; do
+			filename="${log##*/}"
+			dst="${build}/latest-per-pkg/${filename}"
+			[ -f "${dst}" ] && continue
+			ln "${log}" "${dst}"
+			pkgname="${filename%.log}"
+			pkgbase="${pkgname%-*}"
+			pkgver="${pkgname##*-}"
+			latest_dst="latest-per-pkg/${pkgbase}/${pkgver}/${build}.log"
+			mkdir -p "${latest_dst%/*}"
+			ln "${log}" "${latest_dst}"
+		done
+	done
+	echo " done"
+
 	msg_n "Removing empty build log directories..."
 	echo "${DELETED_BUILDS}" | sed -e 's,$,/latest-per-pkg,' | \
 	    tr '\n' '\000' | \
