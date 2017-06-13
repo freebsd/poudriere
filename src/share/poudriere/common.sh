@@ -3939,6 +3939,8 @@ originspec_encode() {
 	# Only add in FLAVOR and DEPENDS_ARGS if they are needed,
 	# if neither are then don't even add in the ORIGINSPEC_SEP.
 	if [ -n "${_dep_args}" -o -n "${_flavor}" ]; then
+		[ -n "${dep_args}" -a -n "${_flavor}" ] && \
+		    err 1 "originspec_encode: Origin ${origin} incorrectly trying to use FLAVOR=${_flavor} and DEPENDS_ARGS=${dep_args}"
 		output="${output}${ORIGINSPEC_SEP}${_flavor}${_dep_args:+${ORIGINSPEC_SEP}${_dep_args}}"
 	fi
 	setvar "${_var_return}" "${output}"
@@ -3996,6 +3998,11 @@ deps_fetch_vars() {
 
 	[ -n "${_pkgname}" ] || \
 	    err 1 "deps_fetch_vars: failed to get PKGNAME for ${originspec}"
+
+	[ -n "${_flavors}" ] && [ -n "${_dep_args}" ] && \
+	    err 1 "deps_fetch_vars: Port ${origin} incorrectly has both FLAVORS and DEPENDS_ARGS"
+	[ -n "${_flavors}" ] && [ -n "${_origin_deps_args}" ] && \
+	    err 1 "deps_fetch_vars: Port ${origin} has FLAVORS but was fetched with DEPENDS_ARGS=${_origin_dep_args}"
 
 	# Determine if the port's claimed DEPENDS_ARGS even matter.  If it
 	# matches the PYTHON_DEFAULT_VERSION then we can ignore it.  If it
