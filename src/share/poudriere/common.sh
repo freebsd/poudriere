@@ -1552,14 +1552,14 @@ enter_interactive() {
 		msg "Installing run-depends for ${COLOR_PORT}${port} | ${pkgname}"
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
 		    /usr/bin/make -C ${PORTSDIR}/${port} ${dep_args} \
-		    FLAVOR=${flavor} run-depends ||
+		    ${flavor:+FLAVOR=${flavor}} run-depends ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port} | ${pkgname}${COLOR_RESET} run-depends"
 		msg "Installing ${COLOR_PORT}${port} | ${pkgname}"
 		# Only use PKGENV during install as testport will store
 		# the package in a different place than dependencies
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 ${PKGENV} \
 		    /usr/bin/make -C ${PORTSDIR}/${port} ${dep_args} \
-		    FLAVOR=${flavor} install-package ||
+		    ${flavor:+FLAVOR=${flavor}} install-package ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port} | ${pkgname}"
 	done
 
