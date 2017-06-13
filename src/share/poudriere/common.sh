@@ -96,9 +96,11 @@ err() {
 
 # Message functions that depend on VERBOSE are stubbed out in post_getopts.
 
-msg_n() {
+_msg_n() {
 	local -; set +x
 	local now elapsed
+	local NL="${1}"
+	shift 1
 
 	elapsed=
 	if should_show_elapsed; then
@@ -107,18 +109,22 @@ msg_n() {
 		elapsed="[${elapsed}] "
 	fi
 	if [ -n "${COLOR_ARROW}" ] || [ -z "${1##*\033[*}" ]; then
-		printf "${elapsed}${DRY_MODE}${COLOR_ARROW}====>>${COLOR_RESET} ${1}${COLOR_RESET_REAL}"
+		printf "${elapsed}${DRY_MODE}${COLOR_ARROW}====>>${COLOR_RESET} ${1}${COLOR_RESET_REAL}${NL}"
 	else
-		printf "${elapsed}${DRY_MODE}====>> ${1}"
+		printf "${elapsed}${DRY_MODE}====>> ${1}${NL}"
 	fi
 }
 
+msg_n() {
+	_msg_n '' "$@"
+}
+
 msg() {
-	msg_n "$@""\n"
+	_msg_n "\n" "$@"
 }
 
 msg_verbose() {
-	msg_n "$@""\n"
+	_msg_n "\n" "$@"
 }
 
 msg_error() {
@@ -139,17 +145,17 @@ msg_error() {
 
 msg_dev() {
 	COLOR_ARROW="${COLOR_DEV}" \
-	    msg_n "${COLOR_DEV}Dev: $@""\n" >&2
+	    _msg_n "\n" "${COLOR_DEV}Dev: $@" >&2
 }
 
 msg_debug() {
 	COLOR_ARROW="${COLOR_DEBUG}" \
-	    msg_n "${COLOR_DEBUG}Debug: $@""\n" >&2
+	    _msg_n "\n" "${COLOR_DEBUG}Debug: $@" >&2
 }
 
 msg_warn() {
 	COLOR_ARROW="${COLOR_WARN}" \
-	    msg_n "${COLOR_WARN}Warning: $@""\n" >&2
+	    _msg_n "\n" "${COLOR_WARN}Warning: $@" >&2
 }
 
 job_msg() {
@@ -166,9 +172,9 @@ job_msg() {
 	fi
 	if [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
 		# Send to true stdout (not any build log)
-		msg_n "${output}\n" >&3
+		_msg_n "\n" "${output}" >&3
 	else
-		msg_n "${output}\n"
+		_msg_n "\n" "${output}"
 	fi
 }
 
@@ -3210,7 +3216,7 @@ stop_builders() {
 sanity_check_queue() {
 	local always_fail=${1:-1}
 	local crashed_packages dependency_cycles deps pkgname origin
-	local failed_phase pwd
+	local failed_phase pwd dead_all dead_deps dead_top dead_packages
 
 	pwd="${PWD}"
 	cd "${MASTERMNT}/.p"
@@ -3239,22 +3245,25 @@ sanity_check_queue() {
 ${dependency_cycles}"
 	fi
 
+	dead_all=$(mktemp -t dead_packages.all)
+	dead_deps=$(mktemp -t dead_packages.deps)
+	dead_top=$(mktemp -t dead_packages.top)
+	find deps -mindepth 1 > "${dead_all}"
+	# All packages in the queue
+	cut -d / -f 2 "${dead_all}" | sort -u > "${dead_top}"
+	# All packages with dependencies
+	cut -d / -f 3 "${dead_all}" | sort -u | sed -e '/^$/d' > "${dead_deps}"
+	# Find all packages only listed as dependencies (not in queue)
+	dead_packages=$(comm -13 "${dead_top}" "${dead_deps}")
+	rm -f "${dead_all}" "${dead_deps}" "${dead_top}" || :
+
 	if [ ${always_fail} -eq 0 ]; then
+		if [ -n "${dead_packages}" ]; then
+			err 1 "Packages stuck in queue (depended on but not in queue): ${dead_packages}"
+		fi
 		cd "${pwd}"
 		return 0
 	fi
-
-	dead_packages=
-	highest_dep=
-	while read deps pkgname; do
-		[ -z "${highest_dep}" ] && highest_dep=${deps}
-		[ ${deps} -ne ${highest_dep} ] && break
-		dead_packages="${dead_packages} ${pkgname}"
-	done <<-EOF
-	$(find deps -mindepth 2 | \
-	    sed -e "s,^deps/,," -e 's:/: :' | \
-	    tsort -D 2>/dev/null | sort -nr)
-	EOF
 
 	if [ -n "${dead_packages}" ]; then
 		failed_phase="stuck_in_queue"
@@ -5110,7 +5119,7 @@ gather_port_vars_port() {
 			originspec_encode dep_originspec "${dep_origin}" \
 			    '' "${dep_flavor}"
 		fi
-		msg_verbose "${COLOR_PORT}${originspec}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_originspec}"
+		msg_verbose "${COLOR_PORT}${originspec}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
 		if [ "${origin}" = "${dep_origin}" ]; then
 			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
 			set_dep_fatal_error
@@ -5912,12 +5921,13 @@ prepare_ports() {
 	clean_build_queue
 
 	# Call the deadlock code as non-fatal which will check for cycles
+	msg "Sanity checking build queue"
+	bset status "sanity_check_queue:"
 	sanity_check_queue 0
 
 	if was_a_bulk_run; then
 		if [ $resuming_build -eq 0 ]; then
-			nbq=0
-			nbq=$(find deps -type d -depth 1 | wc -l)
+			nbq=$(cat "${log}/.poudriere.ports.queued" | wc -l)
 			# Add 1 for the main port to test
 			[ "${SCRIPTPATH##*/}" = "testport.sh" ] && \
 			    nbq=$((${nbq} + 1))
@@ -5928,6 +5938,7 @@ prepare_ports() {
 		find deps -type d -empty -depth 1 | \
 			xargs -J % mv % pool/unbalanced
 		load_priorities
+		msg "Balancing pool"
 		balance_pool
 
 		[ -n "${ALLOW_MAKE_JOBS}" ] || \
@@ -6031,6 +6042,9 @@ load_priorities_ptsort() {
 load_priorities() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "load_priorities requires PWD=${MASTERMNT}/.p"
+
+	msg "Processing PRIORITY_BOOST"
+	bset status "load_priorities:"
 
 	POOL_BUCKET_DIRS=""
 

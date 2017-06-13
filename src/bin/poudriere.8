@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd June 5, 2017
+.Dd June 12, 2017
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -711,8 +711,15 @@ jail/tree/set combination.
 .Pp
 This command accepts the following options:
 .Bl -tag -width "-f conffile"
+.It Fl j Ar name
+Specifies the
+.Ar name
+of the jail to filter by.
 .It Fl n
 Dry run, do not actually delete anything.
+.It Fl B Ar name
+Specifies which buildname to match on.
+May be a glob.
 .It Fl p Ar tree
 Specifies which ports
 .Ar tree
@@ -723,6 +730,11 @@ Assume yes, do not confirm and just delete the files.
 .It Fl v
 This will show more information during the build.
 Specify twice to enable debug output.
+.It Fl z Ar set
+This specifies which SET to filter builds by.
+Use
+.Sy 0
+to match on empty SET.
 .El
 .Ss distclean
 This command accepts the following options:

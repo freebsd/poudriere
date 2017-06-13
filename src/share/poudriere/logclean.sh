@@ -35,6 +35,7 @@ Parameters:
                    jail/tree/set combination.
 
 Options:
+    -B name     -- Build name glob to match on (defaults to *)
     -j jail     -- Which jail to use for log directories
     -p tree     -- Specify which ports tree to use for log directories
                    (Defaults to the 'default' tree)
@@ -43,11 +44,13 @@ Options:
     -v          -- Be verbose; show more information. Use twice to enable
                    debug output
     -y          -- Assume yes when deleting and do not prompt for confirmation
-    -z set      -- Specify which SET to use for log directories
+    -z set      -- Specify which SET to match for logs. Use '0' to only
+                   match on empty sets.
 EOF
 	exit 1
 }
 
+BUILDNAME_GLOB="*"
 PTNAME=
 SETNAME=
 DRY_RUN=0
@@ -56,10 +59,13 @@ MAX_COUNT=
 
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "aj:p:nN:vyz:" FLAG; do
+while getopts "aB:j:p:nN:vyz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			DAYS=0
+			;;
+		B)
+			BUILDNAME_GLOB="${OPTARG}"
 			;;
 		j)
 			JAILNAME=${OPTARG}
@@ -105,6 +111,8 @@ logclean_cleanup() {
 	rm -f ${OLDLOGS} 2>/dev/null
 }
 OLDLOGS=$(mktemp -t poudriere_logclean)
+
+[ -d "${log_top}" ] || err 0 "No logs present"
 
 cd ${log_top}
 
@@ -163,7 +171,7 @@ fi
 msg_n "Looking for ${reason}..."
 if [ -n "${MAX_COUNT}" ]; then
 	# Find build directories up to limit MAX_COUNT per mastername
-	BUILDNAME_GLOB="*" SHOW_FINISHED=1 \
+	BUILDNAME_GLOB="${BUILDNAME_GLOB}" SHOW_FINISHED=1 \
 	    for_each_build echo_logdir | sort -d | \
 	    awk -vMAX_COUNT="${MAX_COUNT}" -F / '
 	{
@@ -186,7 +194,7 @@ if [ -n "${MAX_COUNT}" ]; then
 	' > "${OLDLOGS}"
 else
 	# Find build directories older than DAYS
-	BUILDNAME_GLOB="*" SHOW_FINISHED=1 \
+	BUILDNAME_GLOB="${BUILDNAME_GLOB}" SHOW_FINISHED=1 \
 	    for_each_build echo_logdir | \
 	    xargs -0 -J {} \
 	    find {} -type d -mindepth 0 -maxdepth 0 -Btime +${DAYS}d \
@@ -236,6 +244,29 @@ else
 fi
 
 if [ ${logs_deleted} -eq 1 ]; then
+
+	msg_n "Updating latest-per-pkg links for deleted builds..."
+	for build in ${DELETED_BUILDS}; do
+		echo -n " ${build}..."
+		find ${build} -maxdepth 2 -mindepth 2 -name logs -print0 | \
+		    xargs -0 -J % find % -mindepth 1 -maxdepth 1 -type f | \
+		    sort -d | \
+		    awk -F/ '{if (!printed[$4]){print $0; printed[$4]=1;}}' | \
+		    while read log; do
+			filename="${log##*/}"
+			dst="${build}/latest-per-pkg/${filename}"
+			[ -f "${dst}" ] && continue
+			ln "${log}" "${dst}"
+			pkgname="${filename%.log}"
+			pkgbase="${pkgname%-*}"
+			pkgver="${pkgname##*-}"
+			latest_dst="latest-per-pkg/${pkgbase}/${pkgver}/${build}.log"
+			mkdir -p "${latest_dst%/*}"
+			ln "${log}" "${latest_dst}"
+		done
+	done
+	echo " done"
+
 	msg_n "Removing empty build log directories..."
 	echo "${DELETED_BUILDS}" | sed -e 's,$,/latest-per-pkg,' | \
 	    tr '\n' '\000' | \

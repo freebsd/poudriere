@@ -144,6 +144,7 @@ maybe_run_queued "${saved_argv}"
 msg "Gathering all expected packages"
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 prepare_ports
+msg "Looking for unneeded packages"
 bset status "pkgclean:"
 
 [ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] && PACKAGES="${PACKAGES}/.latest"

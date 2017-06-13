@@ -187,7 +187,7 @@ fi
 
 deps_fetch_vars "${ORIGIN}" LISTPORTS PKGNAME DEPENDS_ARGS FLAVOR FLAVORS
 for dep_origin in ${LISTPORTS}; do
-	msg_verbose "${COLOR_PORT}${ORIGINSPEC}${COLOR_DEBUG} depends on ${COLOR_PORT}${dep_origin}"
+	msg_verbose "${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET} depends on ${COLOR_PORT}${dep_origin}"
 done
 prepare_ports
 markfs prepkg ${MASTERMNT}
