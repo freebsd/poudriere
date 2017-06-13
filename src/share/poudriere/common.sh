@@ -33,8 +33,10 @@ EX_SOFTWARE=70
 
 # Return true if ran from bulk/testport, ie not daemon/status/jail
 was_a_bulk_run() {
-	[ "${SCRIPTPATH##*/}" = "bulk.sh" -o "${SCRIPTPATH##*/}" \
-	    = "testport.sh" ]
+	[ "${SCRIPTPATH##*/}" = "bulk.sh" ] || was_a_testport_run
+}
+was_a_testport_run() {
+	[ "${SCRIPTPATH##*/}" = "testport.sh" ]
 }
 # Return true if in a bulk or other jail run that needs to shutdown the jail
 was_a_jail_run() {
@@ -1530,7 +1532,7 @@ enter_interactive() {
 	echo "127.0.0.1 ${MASTERNAME}" >> ${MASTERMNT}/etc/hosts
 
 	# Skip for testport as it has already installed pkg in the ref jail.
-	if [ "${SCRIPTPATH##*/}" != "testport.sh" ]; then
+	if ! was_a_testport_run; then
 		# Install pkg-static so full pkg package can install
 		ensure_pkg_installed force_extract || \
 		    err 1 "Unable to extract pkg."
@@ -3073,8 +3075,8 @@ _real_build_port() {
 				die=1
 				cat ${mod1}
 			fi
-			[ ${die} -eq 1 -a "${SCRIPTPATH##*/}" = "testport.sh" \
-			    -a "${PREFIX}" != "${LOCALBASE}" ] && msg \
+			[ ${die} -eq 1 -a "${PREFIX}" != "${LOCALBASE}" ] && \
+			    was_a_testport_run && msg \
 			    "This test was done with PREFIX!=LOCALBASE which \
 may show failures if the port does not respect PREFIX. \
 Try testport with -n to use PREFIX=LOCALBASE"
@@ -3519,7 +3521,7 @@ parallel_build() {
 	local nremaining=$(calculate_tobuild)
 
 	# Subtract the 1 for the main port to test
-	[ "${SCRIPTPATH##*/}" = "testport.sh" ] && \
+	was_a_testport_run && \
 	    nremaining=$((${nremaining} - 1))
 
 	# If pool is empty, just return
@@ -6069,7 +6071,7 @@ prepare_ports() {
 		if [ $resuming_build -eq 0 ]; then
 			nbq=$(cat "${log}/.poudriere.ports.queued" | wc -l)
 			# Add 1 for the main port to test
-			[ "${SCRIPTPATH##*/}" = "testport.sh" ] && \
+			was_a_testport_run && \
 			    nbq=$((${nbq} + 1))
 			bset stats_queued ${nbq##* }
 		fi
