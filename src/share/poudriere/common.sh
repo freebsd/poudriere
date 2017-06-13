@@ -5278,8 +5278,7 @@ prepare_ports() {
 
 	if was_a_bulk_run; then
 		if [ $resuming_build -eq 0 ]; then
-			nbq=0
-			nbq=$(find deps -type d -depth 1 | wc -l)
+			nbq=$(cat "${log}/.poudriere.ports.queued" | wc -l)
 			# Add 1 for the main port to test
 			[ "${SCRIPTPATH##*/}" = "testport.sh" ] && \
 			    nbq=$((${nbq} + 1))
