@@ -4027,6 +4027,22 @@ deps_fetch_vars() {
 	esac
 
 	setvar "${pkgname_var}" "${_pkgname}"
+	if [ -n "${_pkg_deps}" -a -z "${_pkg_deps%%*py3*}" ]; then
+		unset _new_pkg_deps
+		for _dep in ${_pkg_deps}; do
+			originspec_encode _dep_originspec "${_dep}" '' ''
+			is_bad_flavor_slave_port "${_dep_originspec}" \
+			    _dep_originspec || :
+			originspec_decode "${_dep_originspec}" _dep '' ''
+			_new_pkg_deps="${_new_pkg_deps:+${_new_pkg_deps} }${_dep}"
+		done
+		_pkg_deps="${_new_pkg_deps}"
+	fi
+	setvar "${deps_var}" "${_pkg_deps}"
+	setvar "${dep_args_var}" "${_dep_args}"
+	setvar "${flavor_var}" "${_flavor}"
+	setvar "${flavors_var}" "${_flavors}"
+	# Need all of the output vars set before potentially returning 2.
 
 	# Check if this PKGNAME already exists, which is sometimes fatal.
 	# Two different originspecs of the same origin but with
@@ -4053,23 +4069,6 @@ deps_fetch_vars() {
 		fi
 		err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${originspec}${COLOR_RESET} AND ${COLOR_PORT}${_existing_originspec}${COLOR_RESET}. Rerun with -v to see which ports are depending on these."
 	fi
-
-	if [ -n "${_pkg_deps}" -a -z "${_pkg_deps%%*py3*}" ]; then
-		unset _new_pkg_deps
-		for _dep in ${_pkg_deps}; do
-			originspec_encode _dep_originspec "${_dep}" '' ''
-			is_bad_flavor_slave_port "${_dep_originspec}" \
-			    _dep_originspec || :
-			originspec_decode "${_dep_originspec}" _dep '' ''
-			_new_pkg_deps="${_new_pkg_deps:+${_new_pkg_deps} }${_dep}"
-		done
-		_pkg_deps="${_new_pkg_deps}"
-	fi
-
-	setvar "${deps_var}" "${_pkg_deps}"
-	setvar "${dep_args_var}" "${_dep_args}"
-	setvar "${flavor_var}" "${_flavor}"
-	setvar "${flavors_var}" "${_flavors}"
 
 	# Discovered a new originspec->pkgname mapping.
 	msg_debug "deps_fetch_vars: discovered ${originspec} is ${_pkgname}"
@@ -5010,33 +5009,67 @@ gather_port_vars_port() {
 	local rdep="$2"
 	local dep_origin deps pkgname dep_args dep_originspec
 	local dep_ret log flavor flavors dep_flavor
-	local origin origin_dep_args origin_flavor
+	local origin origin_dep_args origin_flavor default_flavor
 
 	msg_debug "gather_port_vars_port (${originspec}): LOOKUP"
 	originspec_decode "${originspec}" origin origin_dep_args origin_flavor
 
-	shash_get originspec-pkgname "${originspec}" pkgname && \
-	    err 1 "gather_port_vars_port: Already had ${originspec}"
+	if shash_get originspec-pkgname "${originspec}" pkgname; then
+		# We already fetched the vars for this port, but did
+		# we actually queue it? We only care if the rdep isn't
+		# currently 'metadata' (which can't happen here) and
+		# if not -a since it can't happen in that case either.
+		# This is the opposite of the check later.
+		is_failed_metadata_lookup "${pkgname}" "${rdep}" || \
+		    err 1 "gather_port_vars_port: Already had ${originspec} (rdep=${rdep})"
 
-	dep_ret=0
-	deps_fetch_vars "${originspec}" deps pkgname dep_args flavor \
-	    flavors || dep_ret=$?
-	case ${dep_ret} in
-	0) ;;
-	# Non-fatal duplicate should be ignored
-	2)
-		# The previous depqueue run may have readded this originspec
-		# into the flavorqueue.  Expunge it.
-		rm -rf "fqueue/${originspec%/*}!${originspec#*/}"
-		return 0
-		;;
-	# Fatal error
-	*)
-		# An error is printed from deps_fetch_vars
-		set_dep_fatal_error
-		return 1
-		;;
-	esac
+		# Fetch the vars that deps_fetch_vars would normally return.
+		if false; then
+		shash_get originspec-pkgname "${originspec}" pkgname || \
+		    err 1 "gather_port_vars_port: Failed to lookup PKGNAME for ${originspec}"
+		fi
+		shash_get pkgname-deps "${pkgname}" deps || deps=
+		shash_get pkgname-flavor "${pkgname}" flavor || flavor=
+		shash_get pkgname-flavors "${pkgname}" flavors || flavors=
+		# DEPENDS_ARGS not fetched since it is not possible to be
+		# in this situation with them.  The 'metadata' hack is
+		# only used for FLAVOR lookups.
+	else
+		dep_ret=0
+		deps_fetch_vars "${originspec}" deps pkgname dep_args flavor \
+		    flavors || dep_ret=$?
+		case ${dep_ret} in
+		0) ;;
+		# Non-fatal duplicate should be ignored
+		2)
+			# The previous depqueue run may have readded
+			# this originspec into the flavorqueue.
+			# Expunge it.
+			rm -rf "fqueue/${originspec%/*}!${originspec#*/}"
+			# If this is the default FLAVOR and we're not already
+			# queued then we're the victim of the 'metadata' hack.
+			# Fix it.
+			default_flavor="${flavors%% *}"
+			if ! [ -n "${flavors}" -a \
+			    "${origin_flavor}" = "${default_flavor}" ] || \
+			    pkgname_is_queued "${pkgname}"; then
+				# Nothing more do to.
+				return 0
+			fi
+			msg_debug "gather_port_vars_port: Fixing up from metadata hack on ${originspec}"
+			# Queue us as the main port
+			originspec_encode originspec "${origin}" \
+			    "${origin_dep_args}" ''
+			# Having $origin_flavor set prevents looping later.
+			;;
+		# Fatal error
+		*)
+			# An error is printed from deps_fetch_vars
+			set_dep_fatal_error
+			return 1
+			;;
+		esac
+	fi
 
 	# If this originspec was added purely for metadata lookups then
 	# there's nothing more to do.  Unless it is the default FLAVOR
@@ -5047,10 +5080,12 @@ gather_port_vars_port() {
 			msg_debug "SKIPPING ${originspec} - no FLAVORS"
 			return 0
 		fi
-		local default_flavor queued_flavor queuespec
+		local queued_flavor queuespec
 
 		default_flavor="${flavors%% *}"
 		queued_flavor="${rdep#* }"
+		# Check if we have the default FLAVOR sitting in the
+		# flavorqueue and don't skip if so.
 		if [ "${queued_flavor}" != "${default_flavor}" ]; then
 			msg_debug "SKIPPING ${originspec}"
 			return 0
@@ -5073,7 +5108,7 @@ gather_port_vars_port() {
 	fi
 
 	msg_debug "WILL BUILD ${originspec}"
-	awk -vpkgname="${pkgname}" '$1 == pkgname {exit 1}' "all_pkgs" || \
+	pkgname_is_queued "${pkgname}" && \
 	    err 1 "gather_port_vars_port: Found ${pkgname} already in all_pkgs"
 	echo "${pkgname} ${originspec}" >> "all_pkgs"
 	if [ "${rdep}" = "listed" ]; then
@@ -5148,6 +5183,22 @@ gather_port_vars_port() {
 	fi
 }
 
+# Annoying hack for dealing with FLAVORs not queueing properly due
+# to shoehorning the main port in the 'metadata' lookup hack.  This is
+# just common code.
+is_failed_metadata_lookup() {
+	[ $# -eq 2 ] || eargs is_failed_metadata_lookup pkgname rdep
+	local pkgname="$1"
+	local rdep="$2"
+
+	if [ ${ALL} -eq 1 ] || [ "${rdep%% *}" = "metadata" ] || \
+	    pkgname_is_queued "${pkgname}"; then
+		return 1
+	else
+		return 0
+	fi
+}
+
 gather_port_vars_process_depqueue_enqueue() {
 	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
 	    err 1 "gather_port_vars_process_depqueue_enqueue requires SHASH_VAR_PATH=var/cache"
@@ -5161,8 +5212,14 @@ gather_port_vars_process_depqueue_enqueue() {
 
 	# Add this origin into the gatherqueue if not already done.
 	if shash_get originspec-pkgname "${dep_originspec}" dep_pkgname; then
-		msg_debug "gather_port_vars_process_depqueue_enqueue (${originspec}): Already had ${dep_originspec}, not enqueueing into ${queue} (rdep=${rdep})"
-		return 0
+		if ! is_failed_metadata_lookup "${dep_pkgname}" \
+		    "${rdep}"; then
+			msg_debug "gather_port_vars_process_depqueue_enqueue (${originspec}): Already had ${dep_originspec}, not enqueueing into ${queue} (rdep=${rdep})"
+			return 0
+		fi
+		# The package isn't queued but is needed and already known.
+		# That means we did a 'metadata' lookup hack on it already.
+		# Ensure we process it.
 	fi
 
 	msg_debug "gather_port_vars_process_depqueue_enqueue (${originspec}): Adding ${dep_originspec} into the ${queue} (rdep=${rdep})"
@@ -5512,6 +5569,24 @@ _all_pkgnames_for_origin() {
 
 listed_pkgnames() {
 	cat "listed_pkgs"
+}
+
+# Pkgname was in queue
+pkgname_is_queued() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgname_is_queued requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 1 ] || eargs pkgname_is_queued pkgname
+	local pkgname="$1"
+
+	awk -vpkgname="${pkgname}" '
+	    $1 == pkgname {
+		found=1
+		exit 0
+	    }
+	    END {
+		if (found != 1)
+			exit 1
+	    }' "all_pkgs"
 }
 
 # Pkgname was listed to be built
