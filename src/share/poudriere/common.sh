@@ -3969,7 +3969,7 @@ deps_fetch_vars() {
 	# If we were passed in a FLAVOR then we better have already looked up
 	# the default for this port.  This is to avoid making the default port
 	# become superfluous.
-	if [ -n "${_origin_flavor}" ]; then
+	if ! was_a_testport_run && [ -n "${_origin_flavor}" ]; then
 		originspec_encode _default_originspec "${origin}" '' ''
 		shash_get originspec-pkgname "${_default_originspec}" \
 		    _default_pkgname || \

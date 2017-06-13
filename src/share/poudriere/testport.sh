@@ -84,7 +84,7 @@ while getopts "o:cniIj:J:kNp:PsSvwz:" FLAG; do
 			CONFIGSTR=1
 			;;
 		o)
-			ORIGIN=${OPTARG}
+			ORIGINSPEC=${OPTARG}
 			;;
 		n)
 			# Backwards-compat with NOPREFIX=1
@@ -143,22 +143,24 @@ saved_argv="$@"
 shift $((OPTIND-1))
 post_getopts
 
-if [ -z ${ORIGIN} ]; then
+if [ -z ${ORIGINSPEC} ]; then
 	if [ $# -ne 1 ]; then
 		usage
 	fi
-	ORIGIN="${1}"
+	ORIGINSPEC="${1}"
 fi
 
 [ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
 _pget portsdir ${PTNAME} mnt
+originspec_decode "${ORIGINSPEC}" ORIGIN '' FLAVOR
+[ "${FLAVOR}" = "${FLAVOR_DEFAULT}" ] && FLAVOR=
 new_origin=$(grep -v '^#' ${portsdir}/MOVED | awk -vorigin="${ORIGIN}" \
     -F\| '$1 == origin && $2 != "" {print $2}')
 if [ -n "${new_origin}" ]; then
 	msg "MOVED: ${COLOR_PORT}${ORIGIN}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
 	ORIGIN="${new_origin}"
 fi
-originspec_encode ORIGINSPEC "${ORIGIN}" '' ''
+originspec_encode ORIGINSPEC "${ORIGIN}" '' "${FLAVOR}"
 if [ ! -f "${portsdir}/${ORIGIN}/Makefile" ] || [ -d "${portsdir}/${ORIGIN}/../Mk" ]; then
 	err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
 fi
@@ -182,10 +184,11 @@ if [ $CONFIGSTR -eq 1 ]; then
 	PORTSDIR=${portsdir} \
 	    PORT_DBDIR=${MASTERMNT}/var/db/ports \
 	    TERM=${SAVED_TERM} \
-	    make -C ${portsdir}/${ORIGIN} config
+	    make -C ${portsdir}/${ORIGIN} config \
+	    ${FLAVOR:+FLAVOR=${FLAVOR}}
 fi
 
-deps_fetch_vars "${ORIGIN}" LISTPORTS PKGNAME DEPENDS_ARGS FLAVOR FLAVORS
+deps_fetch_vars "${ORIGINSPEC}" LISTPORTS PKGNAME DEPENDS_ARGS FLAVOR FLAVORS
 for dep_origin in ${LISTPORTS}; do
 	msg_verbose "${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET} depends on ${COLOR_PORT}${dep_origin}"
 done
@@ -241,6 +244,7 @@ if [ -d ${MASTERMNT}${PREFIX} -a "${PREFIX}" != "/usr" ]; then
 fi
 
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
+MAKE_ARGS="${FLAVOR:+ FLAVOR=${FLAVOR}}"
 injail install -d -o ${PORTBUILD_USER} /tmp/pkgs
 PORTTESTING=yes
 export TRYBROKEN=yes
@@ -307,7 +311,7 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 
 	# Update LISTPORTS so enter_interactive only installs the built port
 	# via listed_ports()
-	LISTPORTS="${ORIGIN}"
+	LISTPORTS="${ORIGINSPEC}"
 	enter_interactive
 
 	if [ ${INTERACTIVE_MODE} -eq 1 ]; then
@@ -331,7 +335,8 @@ else
 fi
 
 msg "Cleaning up"
-injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -DNOCLEANDEPENDS clean
+injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -DNOCLEANDEPENDS clean \
+    ${FLAVOR:+FLAVOR=${FLAVOR}}
 
 msg "Deinstalling package"
 ensure_pkg_installed
