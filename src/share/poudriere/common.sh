@@ -1517,7 +1517,7 @@ do_jail_mounts() {
 
 # Interactive test mode
 enter_interactive() {
-	local stopmsg pkgname port originspec dep_args flavor
+	local stopmsg pkgname port originspec dep_args flavor packages
 
 	if [ ${ALL} -ne 0 ]; then
 		msg "(-a) Not entering interactive mode."
@@ -1545,7 +1545,12 @@ enter_interactive() {
 	fi
 
 	# Enable all selected ports and their run-depends
-	for pkgname in $(listed_pkgnames); do
+	if was_a_testport_run; then
+		packages="$(listed_pkgnames)"
+	else
+		packages="${LISTPORTS}"
+	fi
+	for pkgname in ${listed_pkgnames}; do
 		cache_get_originspec originspec "${pkgname}"
 		originspec_decode "${originspec}" port dep_args flavor
 		# Install run-depends since this is an interactive test
@@ -6069,7 +6074,8 @@ prepare_ports() {
 
 	if was_a_bulk_run; then
 		if [ $resuming_build -eq 0 ]; then
-			nbq=$(cat "${log}/.poudriere.ports.queued" | wc -l)
+			nbq=0
+			nbq=$(find deps -type d -depth 1 | wc -l)
 			# Add 1 for the main port to test
 			was_a_testport_run && \
 			    nbq=$((${nbq} + 1))
