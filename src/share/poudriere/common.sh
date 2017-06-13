@@ -3954,13 +3954,10 @@ deps_fetch_vars() {
 	local flavors_var="$6"
 	local _pkgname _pkg_deps _lib_depends= _run_depends= _selected_options=
 	local _changed_options= _changed_deps=
-	local _existing_pkgname _existing_origin _existing_originspec
+	local _existing_origin _existing_originspec
 	local _default_originspec _default_pkgname
 	local origin _origin_dep_args _dep_args _dep _new_pkg_deps
 	local _origin_flavor _flavor _flavors
-
-	shash_get originspec-pkgname "${originspec}" _existing_pkgname && \
-	    err 1 "deps_fetch_vars: already had ${originspec} as ${_existing_pkgname}"
 
 	originspec_decode "${originspec}" origin _origin_dep_args \
 	    _origin_flavor
