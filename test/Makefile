@@ -17,6 +17,7 @@ TESTS=\
 	bulk-flavor-specific-dep-and-specific-listed.sh \
 	bulk-flavor-specific-dep-and-main-listed.sh \
 	bulk-flavor-specific-dep-and-default-listed.sh \
+	bulk-flavor-specific-dep-and-default-shorthand-listed.sh \
 	bulk-flavor-specific-dep-and-multi-listed.sh \
 	bulk-flavor-specific-dep-and-multi-no-main-listed.sh
 

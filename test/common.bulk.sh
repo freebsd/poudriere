@@ -10,6 +10,7 @@ fix_default_flavor() {
 	[ -z "${_flavor}" ] && return 0
 	hash_get origin-flavors "${_origin}" _flavors
 	_default_flavor="${_flavors%% *}"
+	[ "${_flavor}" = "${FLAVOR_DEFAULT}" ] && _flavor="${_default_flavor}"
 	[ "${_default_flavor}" = "${_flavor}" ] || return 0
 	setvar "${var_return}" "${_origin}"
 }
@@ -17,11 +18,15 @@ fix_default_flavor() {
 # Cache all pkgnames involved.  Being single-threaded this is trivial.
 cache_pkgnames() {
 	local originspec="$1"
-	local origin dep_origin flavor flavors pkgname
+	local origin dep_origin flavor flavors pkgname default_flavor
 
 	hash_get originspec-pkgname "${originspec}" pkgname && return 0
 
 	originspec_decode "${originspec}" origin '' flavor
+
+	if [ "${flavor}" = "${FLAVOR_DEFAULT}" ]; then
+		originspec_encode originspec "${origin}" '' ''
+	fi
 
 	port_var_fetch_originspec "${originspec}" \
 	   PKGNAME pkgname \
@@ -41,9 +46,12 @@ cache_pkgnames() {
 	done
 	# Also cache all of the FLAVOR deps/PKGNAMES
 	if [ -n "${flavor}" ]; then
+		default_flavor="${flavors%% *}"
+		[ "${flavor}" = "${FLAVOR_DEFAULT}" ] && \
+		    flavor="${default_flavor}"
 		for flavor in ${flavors}; do
 			# Don't recurse on the first flavor since we are it.
-			[ "${flavor}" = "${flavors%% *}" ] && continue
+			[ "${flavor}" = "${default_flavor}" ] && continue
 			originspec_encode originspec "${origin}" '' "${flavor}"
 			cache_pkgnames "${originspec}"
 		done
@@ -77,6 +85,7 @@ list_all_deps() {
 	local var_return="$2"
 	local originspec origin _out flavors deps
 	local dep_originspec dep_origin dep_flavor dep_flavors
+	local dep_default_flavor
 	# Don't list 'recursed' local or setvar won't work to parent
 
 	[ "${var_return}" = recursed ] || _out=
@@ -106,7 +115,8 @@ list_all_deps() {
 				    dep_flavors=
 				if [ -n "${dep_flavors}" ]; then
 					# Change to default
-					dep_flavor="${dep_flavors%% *}"
+					dep_default_flavor="${dep_flavors%% *}"
+					dep_flavor="${dep_default_flavor}"
 					originspec_encode dep_originspec \
 					    "${dep_origin}" '' "${dep_flavor}"
 				fi

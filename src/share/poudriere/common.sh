@@ -3893,6 +3893,7 @@ prefix_output() {
 }
 
 : ${ORIGINSPEC_SEP:="@"}
+: ${FLAVOR_DEFAULT:="-"}
 
 # ORIGINSPEC is: ORIGIN@FLAVOR@DEPENDS_ARGS
 originspec_decode() {
@@ -5013,6 +5014,11 @@ gather_port_vars_port() {
 
 	msg_debug "gather_port_vars_port (${originspec}): LOOKUP"
 	originspec_decode "${originspec}" origin origin_dep_args origin_flavor
+	# Trim away FLAVOR_DEFAULT and restore it later
+	if [ "${origin_flavor}" = "${FLAVOR_DEFAULT}" ]; then
+		originspec_encode originspec "${origin}" "${origin_dep_args}" \
+		    ''
+	fi
 
 	if shash_get originspec-pkgname "${originspec}" pkgname; then
 		# We already fetched the vars for this port, but did
@@ -5050,6 +5056,8 @@ gather_port_vars_port() {
 			# queued then we're the victim of the 'metadata' hack.
 			# Fix it.
 			default_flavor="${flavors%% *}"
+			[ "${origin_flavor}" = "${FLAVOR_DEFAULT}" ] && \
+			    origin_flavor="${default_flavor}"
 			if ! [ -n "${flavors}" -a \
 			    "${origin_flavor}" = "${default_flavor}" ] || \
 			    pkgname_is_queued "${pkgname}"; then
@@ -5084,6 +5092,8 @@ gather_port_vars_port() {
 
 		default_flavor="${flavors%% *}"
 		queued_flavor="${rdep#* }"
+		[ "${queued_flavor}" = "${FLAVOR_DEFAULT}" ] && \
+		    queued_flavor="${default_flavor}"
 		# Check if we have the default FLAVOR sitting in the
 		# flavorqueue and don't skip if so.
 		if [ "${queued_flavor}" != "${default_flavor}" ]; then
@@ -5098,6 +5108,10 @@ gather_port_vars_port() {
 		originspec_encode queuespec "${origin}" "${origin_dep_args}" \
 		    "${origin_flavor}"
 		msg_debug "gather_port_vars_port: Fixing up ${originspec} to be ${queuespec}"
+		rm -rf "fqueue/${queuespec%/*}!${queuespec#*/}"
+		# Remove the @FLAVOR_DEFAULT too
+		originspec_encode queuespec "${origin}" "${origin_dep_args}" \
+		    "${FLAVOR_DEFAULT}"
 		rm -rf "fqueue/${queuespec%/*}!${queuespec#*/}"
 	fi
 

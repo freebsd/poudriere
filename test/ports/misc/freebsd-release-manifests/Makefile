@@ -8,6 +8,9 @@ FLAVOR?=	DEFAULT
 .if ${FLAVOR} != DEFAULT
 PKGNAMESUFFIX=	-${FLAVOR}
 .endif
+.if !${FLAVORS:M${FLAVOR}}
+.error Invalid FLAVOR '${FLAVOR}'
+.endif
 CATEGORIES=	misc
 MASTER_SITES=	#
 DISTFILES=	#
