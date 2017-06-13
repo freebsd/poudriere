@@ -5635,7 +5635,7 @@ _all_pkgnames_for_origin() {
 }
 
 listed_pkgnames() {
-	cat "listed_pkgs"
+	cat "${MASTERMNT}/.p/listed_pkgs"
 }
 
 # Pkgname was in queue
