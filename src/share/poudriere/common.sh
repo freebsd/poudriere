@@ -4194,40 +4194,43 @@ pkg_get_flavor() {
 	setvar "${var_return}" "${_flavor}"
 }
 
-pkg_get_dep_origin() {
-	[ $# -ne 2 ] && eargs pkg_get_dep_origin var_return pkg
-	local var_return="$1"
-	local pkg="$2"
-	local dep_origin_file
+pkg_get_dep_origin_pkgbase() {
+	[ $# -ne 3 ] && eargs pkg_get_dep_origin_pkgbase var_return_origin \
+	    var_return_pkgbase pkg
+	local var_return_origin="$1"
+	local var_return_pkgbase="$2"
+	local pkg="$3"
+	local cachefile
 	local pkg_cache_dir
-	local compiled_dep_origins
-	local origin new_origin _old_dep_origins
+	local fetch_data compiled_dep_origins compiled_dep_pkgbases
+	local origin new_origin _old_dep_origins pkgbase
 
 	get_pkg_cache_dir pkg_cache_dir "${pkg}"
-	dep_origin_file="${pkg_cache_dir}/dep_origin"
+	cachefile="${pkg_cache_dir}/dep_origin_pkgbases"
 
-	if [ ! -f "${dep_origin_file}" ]; then
-		compiled_dep_origins=$(injail ${PKG_BIN} query -F \
-			"/packages/All/${pkg##*/}" '%do' | tr '\n' ' ')
-		echo "${compiled_dep_origins}" > "${dep_origin_file}"
+	if [ ! -f "${cachefile}" ]; then
+		fetched_data=$(injail ${PKG_BIN} query -F \
+			"/packages/All/${pkg##*/}" '%do %dn' | tr '\n' ' ')
+		echo "${fetched_data}" > "${cachefile}"
 	else
 		while read line; do
-			compiled_dep_origins="${compiled_dep_origins} ${line}"
-		done < "${dep_origin_file}"
+			fetched_data="${fetched_data}${fetched_data:+ }${line}"
+		done < "${cachefile}"
 	fi
 
-	# Check MOVED
-	_old_dep_origins="${compiled_dep_origins}"
-	compiled_dep_origins=
-	for origin in ${_old_dep_origins}; do
-		if check_moved new_origin "${origin}"; then
-			compiled_dep_origins="${compiled_dep_origins} ${new_origin}"
-		else
-			compiled_dep_origins="${compiled_dep_origins} ${origin}"
-		fi
+	# Split the data and check MOVED
+	set -- ${fetched_data}
+	while [ $# -ne 0 ]; do
+		origin="$1"
+		pkgbase="$2"
+		check_moved new_origin "${origin}" && origin="${new_origin}"
+		compiled_dep_origins="${compiled_dep_origins}${compiled_dep_origins:+ }${origin}"
+		compiled_dep_pkgbases="${compiled_dep_pkgbases}${compiled_dep_pkgbases:+ }${pkgbase}"
+		shift 2
 	done
 
-	setvar "${var_return}" "${compiled_dep_origins}"
+	setvar "${var_return_origin}" "${compiled_dep_origins}"
+	setvar "${var_return_pkgbase}" "${compiled_dep_pkgbases}"
 }
 
 pkg_get_options() {
@@ -4299,7 +4302,7 @@ pkg_cache_data() {
 	pkg_get_options _ignored "${pkg}" > /dev/null
 	pkg_get_origin _ignored "${pkg}" "${origin}" > /dev/null
 	pkg_get_flavor _ignored "${pkg}" > /dev/null
-	pkg_get_dep_origin _ignored "${pkg}" > /dev/null
+	pkg_get_dep_origin_pkgbase _ignored _ignored "${pkg}" > /dev/null
 	deps_file _ignored "${pkg}" > /dev/null
 }
 
@@ -4432,7 +4435,9 @@ delete_old_pkg() {
 	local mnt pkgname new_pkgname
 	local origin v v2 compiled_options current_options current_deps
 	local td d key dpath dir found raw_deps compiled_deps
+	local compiled_deps_pkgbases
 	local pkgbase new_pkgbase _pkgnames flavor pkg_flavor
+	local dep_pkgname dep_pkgbase dep_origin dep_flavor dep_dep_args
 
 	pkgname="${pkg##*/}"
 	pkgname="${pkgname%.*}"
@@ -4495,6 +4500,16 @@ delete_old_pkg() {
 				case "${dpath}" in
 				${PORTSDIR}/*) dpath=${dpath#${PORTSDIR}/} ;;
 				esac
+				# Handle py3 mapping needs
+				if [ -z "${dpath%%*py3*}" ]; then
+					is_bad_flavor_slave_port "${dpath}" \
+					    dpath || :
+				fi
+				# Technically we need to apply our own
+				# DEPENDS_ARGS to all of the current_deps but
+				# it has no practical impact since
+				# is_bad_flavor_slave_port will apply it as
+				# needed.
 				case ${td} in
 				lib)
 					case ${key} in
@@ -4544,11 +4559,40 @@ delete_old_pkg() {
 			done
 		done
 		[ -n "${current_deps}" ] && \
-		    pkg_get_dep_origin compiled_deps "${pkg}"
+		    pkg_get_dep_origin_pkgbase \
+		    compiled_deps compiled_deps_pkgbases "${pkg}"
+		# To handle FLAVOR/DEPENDS_ARGS here we can't just use
+		# a simple origin comparison, which is what is in deps now.
+		# We need to map all of the deps to PKGNAMEs which is
+		# relatively expensive.  First try to match on an origin
+		# and then verify the PKGNAME is a match which assumes
+		# that is enough to account for FLAVOR/DEPENDS_ARGS.
 		for d in ${current_deps}; do
-			case " $compiled_deps " in
-			*\ $d\ *) ;;
+			dep_pkgname=
+			case " ${compiled_deps} " in
+			# Matches an existing origin (no FLAVOR/DEPENDS_ARGS)
+			*\ ${d}\ *) ;;
 			*)
+				# Unknown, but if this origin has a FLAVOR or
+				# DEPENDS_ARGS then we needa to fallback to a
+				# PKGBASE comparison first.
+				originspec_decode "${d}" dep_origin \
+				    dep_dep_args dep_flavor
+				if [ -n "${dep_dep_args}" ] || \
+				    [ -n "${dep_flavor}" ]; then
+					get_pkgname_from_originspec \
+					    "${d}" dep_pkgname || \
+					    err 1 "delete_old_pkg: Failed to lookup PKGNAME for ${d}"
+					dep_pkgbase="${dep_pkgname%-*}"
+					# Now need to map all of the package's
+					# dependencies to PKGBASES.
+					case " ${compiled_deps_pkgbases} " in
+					# Matches an existing pkgbase
+					*\ ${dep_pkgbase}\ *) continue ;;
+					# New dep
+					*) ;;
+					esac
+				fi
 				msg "Deleting ${pkg##*/}: new dependency: ${d}"
 				delete_pkg "${pkg}"
 				return 0
@@ -5961,8 +6005,6 @@ prepare_ports() {
 
 	compute_deps
 
-	unset P_PYTHON_DEFAULT_VERSION P_PYTHON3_DEFAULT
-
 	bset status "sanity:"
 
 	if [ -f ${PACKAGES}/.jailversion ]; then
@@ -6112,7 +6154,9 @@ prepare_ports() {
 		fi
 
 		jget ${JAILNAME} version > ${PACKAGES}/.jailversion
+
 	fi
+	unset P_PYTHON_DEFAULT_VERSION P_PYTHON3_DEFAULT
 
 	return 0
 }
