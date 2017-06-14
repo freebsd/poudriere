@@ -912,6 +912,14 @@ The
 .Nm
 command may use the following environment variable:
 .Bl -tag -width "HTTP_PROXY FTP_PROXY"
+.It Sy FETCH_BIND_ADDRESS
+The bind address used by
+.Xr fetch 1
+for
+.Nm jail .
+See
+.Xr fetch 3
+for more details.
 .It Sy HTTP_PROXY FTP_PROXY
 The proxy configuration for
 .Nm ports
