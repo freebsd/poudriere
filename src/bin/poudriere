@@ -134,7 +134,7 @@ case "${CMD}" in
 ports|jail)
 	while read envvar envvalue; do
 		case "${envvar}" in
-		FTP_*|ftp_*|HTTP_*|http_*|SSL_|NO_PROXY|no_proxy|MAKEOBJDIRPREFIX)
+		FETCH_BIND_ADDRESS|FTP_*|ftp_*|HTTP_*|http_*|SSL_|NO_PROXY|no_proxy|MAKEOBJDIRPREFIX)
 			CMD_ENV="${CMD_ENV} ${envvar}=${envvalue}"
 			;;
 		esac
