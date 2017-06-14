@@ -1985,6 +1985,13 @@ jail_start() {
 		PKG_EXT="tbz"
 	fi
 
+	# Fetch library list for later comparisons
+	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
+		CHANGED_DEPS_LIBLIST=$(injail \
+		    ldconfig -r | \
+		    awk '$1 ~ /:-l/ { gsub(/.*-l/, "", $1); printf("%s ",$1) } END { printf("\n") }')
+	fi
+
 	return 0
 }
 
@@ -3748,7 +3755,7 @@ delete_old_pkg() {
 	local pkg="$1"
 	local mnt pkgname cached_pkgname
 	local o v v2 compiled_options current_options current_deps
-	local liblist key dpath dir found raw_deps compiled_deps
+	local key dpath dir found raw_deps compiled_deps
 
 	pkg_get_origin o "${pkg}"
 	port_is_needed "${o}" || return 0
@@ -3775,7 +3782,6 @@ delete_old_pkg() {
 	# do not have and delete them.
 	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
 		current_deps=""
-		liblist=""
 		# FIXME: Move into Infrastructure/scripts and 
 		# 'make actual-run-depends-list' after enough testing,
 		# which will avoida all of the injail hacks
@@ -3793,9 +3799,11 @@ delete_old_pkg() {
 				esac
 				case ${td} in
 				LIB)
-					[ -n "${liblist}" ] || liblist=$(injail ldconfig -r | awk '$1 ~ /:-l/ { gsub(/.*-l/, "", $1); printf("%s ",$1) } END { printf("\n") }')
 					case ${key} in
 					lib*)
+						# libfoo.so
+						# libfoo.so.x
+						# libfoo.so.x.y
 						unset found
 						for dir in /lib /usr/lib ; do
 							if injail test -f "${dir}/${key}"; then
@@ -3806,7 +3814,12 @@ delete_old_pkg() {
 						[ -n "${found}" ] || current_deps="${current_deps} ${dpath}"
 						;;
 					*.*)
-						case " ${liblist} " in
+						# foo.x
+						# Unsupported since r362031 / July 2014
+						# Keep for backwards-compatibility
+						[ -n "${CHANGED_DEPS_LIBLIST}" ] \
+						    err 1 "CHANGED_DEPS_LIBLIST not set"
+						case " ${CHANGED_DEPS_LIBLIST} " in
 							*\ ${key}\ *) ;;
 							*) current_deps="${current_deps} ${dpath}" ;;
 						esac
