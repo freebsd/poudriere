@@ -176,4 +176,7 @@ jail|ports|daemon|status|options)
 	;;
 esac
 
+: ${UMASK:=022}
+umask 022
+
 exec env -i ${CMD_ENV} sh ${SET_ERREXIT} ${SETX} "${SCRIPTPATH}" "$@"
