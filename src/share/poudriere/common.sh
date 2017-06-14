@@ -1551,7 +1551,7 @@ enter_interactive() {
 		packages="${LISTPORTS}"
 	fi
 	for pkgname in ${listed_pkgnames}; do
-		cache_get_originspec originspec "${pkgname}"
+		get_originspec_from_pkgname originspec "${pkgname}"
 		originspec_decode "${originspec}" port dep_args flavor
 		# Install run-depends since this is an interactive test
 		msg "Installing run-depends for ${COLOR_PORT}${port} | ${pkgname}"
@@ -3581,7 +3581,7 @@ crashed_build() {
 	local origin log
 
 	_log_path log
-	cache_get_origin origin "${pkgname}"
+	get_origin_from_pkgname origin "${pkgname}"
 
 	echo "Build crashed: ${failed_phase}" >> "${log}/logs/${pkgname}.log"
 
@@ -3613,11 +3613,11 @@ clean_pool() {
 	[ -n "${MY_JOBID}" ] && bset ${MY_JOBID} status "clean_pool:"
 
 	[ -z "${port}" -a -n "${clean_rdepends}" ] && \
-	    cache_get_origin port "${pkgname}"
+	    get_origin_from_pkgname port "${pkgname}"
 
 	# Cleaning queue (pool is cleaned here)
 	sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT}" "${pkgname}" "${clean_rdepends}" | sort -u | while read skipped_pkgname; do
-		cache_get_origin skipped_origin "${skipped_pkgname}"
+		get_origin_from_pkgname skipped_origin "${skipped_pkgname}"
 		badd ports.skipped "${skipped_origin} ${skipped_pkgname} ${pkgname}"
 		COLOR_ARROW="${COLOR_SKIP}" \
 		    job_msg "${COLOR_SKIP}Skipping ${COLOR_PORT}${skipped_origin} | ${skipped_pkgname}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${port} | ${pkgname}${COLOR_SKIP} ${clean_rdepends}"
@@ -3661,7 +3661,7 @@ build_pkg() {
 	clean_rdepends=
 	trap '' SIGTSTP
 	PKGNAME="${pkgname}" # set ASAP so jail_cleanup() can use it
-	cache_get_originspec originspec "${pkgname}"
+	get_originspec_from_pkgname originspec "${pkgname}"
 	originspec_decode "${originspec}" port DEPENDS_ARGS FLAVOR
 	if [ -z "${FLAVOR}" ]; then
 		shash_get pkgname-flavor "${pkgname}" FLAVOR || FLAVOR=
@@ -4858,8 +4858,8 @@ port_var_fetch_originspec() {
 	port_var_fetch "${origin}" "$@" ${dep_args} ${flavor:+FLAVOR=${flavor}}
 }
 
-cache_get_originspec() {
-	[ $# -ne 2 ] && eargs cache_get_originspec var_return pkgname
+get_originspec_from_pkgname() {
+	[ $# -ne 2 ] && eargs get_originspec_from_pkgname var_return pkgname
 	local var_return="$1"
 	local pkgname="$2"
 	local _originspec
@@ -4869,13 +4869,13 @@ cache_get_originspec() {
 	setvar "${var_return}" "${_originspec}"
 }
 
-cache_get_origin() {
-	[ $# -ne 2 ] && eargs cache_get_origin var_return pkgname
+get_origin_from_pkgname() {
+	[ $# -ne 2 ] && eargs get_origin_from_pkgname var_return pkgname
 	local var_return="$1"
 	local pkgname="$2"
 	local originspec
 
-	cache_get_originspec originspec "${pkgname}"
+	get_originspec_from_pkgname originspec "${pkgname}"
 	originspec_decode "${originspec}" "${var_return}" '' ''
 }
 
@@ -6177,7 +6177,8 @@ load_priorities_tsortD() {
 				${pkg_boost})
 					[ -d "deps/${pkgname}" ] \
 					    || continue
-					cache_get_origin origin "${pkgname}"
+					get_origin_from_pkgname origin \
+					    "${pkgname}"
 					msg "Boosting priority: ${COLOR_PORT}${origin} | ${pkgname}"
 					priority=${PRIORITY_BOOST_VALUE}
 					boosted=1
