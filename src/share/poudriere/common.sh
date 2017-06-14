@@ -4031,8 +4031,7 @@ deps_fetch_vars() {
 			_dep_arg=
 			;;
 		PYTHON_VERSION=*)
-			# It wants to use a non-default Python.  We'll allow
-			it.
+			# It wants to use a non-default Python.  We'll allow it.
 			;;
 		RUBY_VER=*)
 			# Ruby never used this so just trim it.
