@@ -39,4 +39,4 @@ Build status
 ------------------------------
 
 * FreeBSD 10.3-amd64 [![FreeBSD 10.3-amd64](https://jenkins.mouf.net/job/poudriere-103-amd64/badge/icon)](https://jenkins.mouf.net/job/poudriere-103-amd64/)
-* FreeBSD 12-CURRENT-armv6 [![FreeBSD 12-CURRENT-armv6](https://jenkins.mouf.net/job/poudriere-arm/badge/icon)](https://jenkins.mouf.net/job/poudriere-arm/)
+* FreeBSD 12-CURRENT-armv6 [![FreeBSD 12-CURRENT-armv6](http://jenkins.mouf.net/view/poudriere/job/poudriere-12-armv6/badge/icon)](http://jenkins.mouf.net/view/poudriere/job/poudriere-12-armv6/)
