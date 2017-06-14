@@ -2494,9 +2494,8 @@ package_dir_exists_and_has_packages() {
 sanity_check_pkg() {
 	[ $# -eq 1 ] || eargs sanity_check_pkg pkg
 	local pkg="$1"
-	local depfile origin pkgname
+	local depfile pkgname
 
-	pkg_get_origin origin "${pkg}"
 	pkgname="${pkg##*/}"
 	pkgname="${pkgname%.*}"
 	pkg_is_needed "${pkgname}" || return 0
