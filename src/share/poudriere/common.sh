@@ -2513,9 +2513,8 @@ package_dir_exists_and_has_packages() {
 sanity_check_pkg() {
 	[ $# -eq 1 ] || eargs sanity_check_pkg pkg
 	local pkg="$1"
-	local depfile origin pkgname
+	local depfile pkgname
 
-	pkg_get_origin origin "${pkg}"
 	pkgname="${pkg##*/}"
 	pkgname="${pkgname%.*}"
 	pkgbase_is_needed "${pkgname}" || return 0
@@ -4424,7 +4423,8 @@ delete_old_pkg() {
 	[ $# -eq 1 ] || eargs delete_old_pkg pkgname
 	local pkg="$1"
 	local mnt pkgname new_pkgname
-	local origin v v2 compiled_options current_options current_deps compiled_deps
+	local origin v v2 compiled_options current_options current_deps
+	local liblist key dpath dir found raw_deps compiled_deps
 	local pkgbase _pkgnames flavor pkg_flavor
 
 	pkgname="${pkg##*/}"
@@ -4530,8 +4530,8 @@ delete_old_pkg() {
 				esac
 			done
 		done
-		pkg_get_dep_origin compiled_deps "${pkg}"
-
+		[ -n "${current_deps}" ] && \
+		    pkg_get_dep_origin compiled_deps "${pkg}"
 		for d in ${current_deps}; do
 			case " $compiled_deps " in
 			*\ $d\ *) ;;
