@@ -225,12 +225,12 @@ if [ -z "${JAILMNT}" ]; then
 	if ! ${POUDRIERE} jail -c -j "${JAILNAME}" \
 	    -v "${JAIL_VERSION}" -a ${ARCH}; then
 		echo "SKIP: Cannot setup jail with Poudriere" >&2
-		exit 0
+		exit 1
 	fi
 	JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt" 2>/dev/null || echo)
 	if [ -z "${JAILMNT}" ]; then
 		echo "SKIP: Failed fetching mnt for new jail in Poudriere" >&2
-		exit 0
+		exit 1
 	fi
 	echo "Done setting up test jail" >&2
 	echo >&2
