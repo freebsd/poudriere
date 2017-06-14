@@ -4432,7 +4432,7 @@ delete_old_pkg() {
 	local mnt pkgname new_pkgname
 	local origin v v2 compiled_options current_options current_deps
 	local td d key dpath dir found raw_deps compiled_deps
-	local pkgbase _pkgnames flavor pkg_flavor
+	local pkgbase new_pkgbase _pkgnames flavor pkg_flavor
 
 	pkgname="${pkg##*/}"
 	pkgname="${pkgname%.*}"
@@ -4465,10 +4465,10 @@ delete_old_pkg() {
 	# to our old pkgbase.
 	pkgbase="${pkgname%-*}"
 	for new_pkgname in ${_pkgnames}; do
-		if [ "${pkgbase}" = "${new_pkgname%-*}" ]; then
-			break
-		fi
+		new_pkgbase="${new_pkgname%-*}"
+		[ "${pkgbase}" = "${new_pkgbase}" ] && break
 	done
+
 	# A 'changed PKGNAME' check is done later for the case of
 	# not finding a relevant pkgbase match.
 
@@ -4588,8 +4588,8 @@ delete_old_pkg() {
 	fi
 
 	# XXX: Check if the pkgname has changed and rename in the repo
-	if [ "${pkgname%-*}" != "${new_pkgname%-*}" ]; then
-		msg "Deleting ${pkg##*/}: package name changed to '${new_pkgname%-*}'"
+	if [ "${pkgbase}" != "${new_pkgbase}" ]; then
+		msg "Deleting ${pkg##*/}: package name changed to '${new_pkgbase}'"
 		delete_pkg "${pkg}"
 		return 0
 	fi
