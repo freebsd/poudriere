@@ -38,5 +38,5 @@ Getting started with poudriere
 Build status
 ------------------------------
 
-* FreeBSD 10.3-amd64 [![FreeBSD 10.3-amd64](https://jenkins.mouf.net/job/poudriere/badge/icon)](https://jenkins.mouf.net/job/poudriere/)
+* FreeBSD 10.3-amd64 [![FreeBSD 10.3-amd64](https://jenkins.mouf.net/job/poudriere-103-amd64/badge/icon)](https://jenkins.mouf.net/job/poudriere-103-amd64/)
 * FreeBSD 12-CURRENT-armv6 [![FreeBSD 12-CURRENT-armv6](https://jenkins.mouf.net/job/poudriere-arm/badge/icon)](https://jenkins.mouf.net/job/poudriere-arm/)
