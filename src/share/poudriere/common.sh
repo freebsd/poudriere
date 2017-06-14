@@ -4126,11 +4126,7 @@ deps_file() {
 	_depfile="${pkg_cache_dir}/deps"
 
 	if [ ! -f "${_depfile}" ]; then
-		if [ "${PKG_EXT}" = "tbz" ]; then
-			injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | awk '$1 == "@pkgdep" { print $2 }' > "${_depfile}"
-		else
-			injail ${PKG_BIN} info -qdF "/packages/All/${pkg##*/}" > "${_depfile}"
-		fi
+		injail ${PKG_BIN} info -qdF "/packages/All/${pkg##*/}" > "${_depfile}"
 	fi
 
 	setvar "${var_return}" "${_depfile}"
@@ -4150,13 +4146,8 @@ pkg_get_origin() {
 
 	if [ ! -f "${originfile}" ]; then
 		if [ -z "${_origin}" ]; then
-			if [ "${PKG_EXT}" = "tbz" ]; then
-				_origin=$(injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | \
-					awk -F: '$1 == "@comment ORIGIN" { print $2 }')
-			else
-				_origin=$(injail ${PKG_BIN} query -F \
-					"/packages/All/${pkg##*/}" "%o")
-			fi
+			_origin=$(injail ${PKG_BIN} query -F \
+				"/packages/All/${pkg##*/}" "%o")
 		fi
 		echo ${_origin} > "${originfile}"
 	else
@@ -4210,13 +4201,8 @@ pkg_get_dep_origin() {
 	dep_origin_file="${pkg_cache_dir}/dep_origin"
 
 	if [ ! -f "${dep_origin_file}" ]; then
-		if [ "${PKG_EXT}" = "tbz" ]; then
-			compiled_dep_origins=$(injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | \
-				awk -F: '$1 == "@comment DEPORIGIN" {print $2}' | tr '\n' ' ')
-		else
-			compiled_dep_origins=$(injail ${PKG_BIN} query -F \
-				"/packages/All/${pkg##*/}" '%do' | tr '\n' ' ')
-		fi
+		compiled_dep_origins=$(injail ${PKG_BIN} query -F \
+			"/packages/All/${pkg##*/}" '%do' | tr '\n' ' ')
 		echo "${compiled_dep_origins}" > "${dep_origin_file}"
 	else
 		while read line; do
@@ -4250,24 +4236,18 @@ pkg_get_options() {
 	optionsfile="${pkg_cache_dir}/options"
 
 	if [ ! -f "${optionsfile}" ]; then
-		if [ "${PKG_EXT}" = "tbz" ]; then
-			_compiled_options=$(injail tar -qxf "/packages/All/${pkg##*/}" -O +CONTENTS | \
-				awk -F: '$1 == "@comment OPTIONS" {print $2}' | tr ' ' '\n' | \
-				sed -n 's/^\+\(.*\)/\1/p' | sort | tr '\n' ' ')
-		else
-			_compiled_options=
-			while read key value; do
-				case "${value}" in
-					off|false) continue ;;
-				esac
-				_compiled_options="${_compiled_options}${_compiled_options:+ }${key}"
-			done <<-EOF
-			$(injail ${PKG_BIN} query -F "/packages/All/${pkg##*/}" '%Ok %Ov' | sort)
-			EOF
-			# Compat with pretty-print-config
-			if [ -n "${_compiled_options}" ]; then
-				_compiled_options="${_compiled_options} "
-			fi
+		_compiled_options=
+		while read key value; do
+			case "${value}" in
+				off|false) continue ;;
+			esac
+			_compiled_options="${_compiled_options}${_compiled_options:+ }${key}"
+		done <<-EOF
+		$(injail ${PKG_BIN} query -F "/packages/All/${pkg##*/}" '%Ok %Ov' | sort)
+		EOF
+		# Compat with pretty-print-config
+		if [ -n "${_compiled_options}" ]; then
+			_compiled_options="${_compiled_options} "
 		fi
 		echo "${_compiled_options}" > "${optionsfile}"
 		setvar "${var_return}" "${_compiled_options}"
