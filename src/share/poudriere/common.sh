@@ -4761,7 +4761,7 @@ port_var_fetch() {
 	if [ -n "${origin}" ]; then
 		_make_origin="-C${sep}${PORTSDIR}/${origin}"
 	else
-		_make_origin="-f${sep}${PORTSDIR}/Mk/bsd.port.mk"
+		_make_origin="-f${sep}${PORTSDIR}/Mk/bsd.port.mk${sep}PORTSDIR=${PORTSDIR}"
 	fi
 
 	shift
