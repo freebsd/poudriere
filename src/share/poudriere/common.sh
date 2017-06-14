@@ -4198,7 +4198,7 @@ delete_old_pkg() {
 	local pkg="$1"
 	local mnt pkgname new_pkgname
 	local origin v v2 compiled_options current_options current_deps
-	local key dpath dir found raw_deps compiled_deps
+	local td d key dpath dir found raw_deps compiled_deps
 
 	pkgname="${pkg##*/}"
 	pkgname="${pkgname%.*}"
