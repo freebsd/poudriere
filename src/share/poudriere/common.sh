@@ -4840,6 +4840,35 @@ cache_get_originspec_flavor() {
 	originspec_encode "${var_return}" "${origin}" '' "${flavor}"
 }
 
+# Look for PKGNAME and strip away @DEFAULT if it is the default FLAVOR.
+get_pkgname_from_originspec() {
+	[ $# -eq 2 ] || eargs get_pkgname_from_originspec originspec var_return
+	local _originspec="$1"
+	local var_return="$2"
+	local _pkgname _origin _dep_args _flavor _default_flavor _flavors
+
+	# Trim away FLAVOR_DEFAULT if present
+	originspec_decode "${_originspec}" _origin _dep_args _flavor
+	if [ "${_flavor}" = "${FLAVOR_DEFAULT}" ]; then
+		_flavor=
+		originspec_encode _originspec "${_origin}" '' "${_flavor}"
+	fi
+	shash_get originspec-pkgname "${_originspec}" "${var_return}" && \
+	    return 0
+	# If the FLAVOR is empty then it is fatal to not have a result yet.
+	[ -z "${_flavor}" ] && return 1
+	# See if the FLAVOR is the default and lookup that PKGNAME if so.
+	originspec_encode _originspec "${_origin}" "${_dep_args}" ''
+	shash_get originspec-pkgname "${_originspec}" _pkgname || return 1
+	# Great, compare the flavors and validate we had the default.
+	shash_get pkgname-flavors "${_pkgname}" _flavors || return 1
+	[ -z "${_flavors}" ] && return 1
+	_default_flavor="${_flavors%% *}"
+	[ "${_default_flavor}" = "${_flavor}" ] || return 1
+	# Yup, this was the default FLAVOR
+	setvar "${var_return}" "${_pkgname}"
+}
+
 set_dep_fatal_error() {
 	[ -n "${DEP_FATAL_ERROR}" ] && return 0
 	DEP_FATAL_ERROR=1
@@ -5402,7 +5431,7 @@ compute_deps_pkg() {
 	[ $# -lt 1 ] && eargs compute_deps_pkg pkgname
 	local pkgname="$1"
 	local pkg_pooldir deps dep_origin dep_pkgname dep_originspec
-	local dep_originspec_default dep_args dep_flavor
+	local dep_args dep_flavor
 
 	shash_get pkgname-deps "${pkgname}" deps || \
 	    err 1 "compute_deps_pkg failed to find deps for ${pkgname}"
@@ -5417,8 +5446,7 @@ compute_deps_pkg() {
 	for dep_originspec in ${deps}; do
 		originspec_decode "${dep_originspec}" dep_origin '' dep_flavor
 		# Depend on our specific DEPENDS_ARGS/FLAVOR version of this
-		# dependency.  If there is none then it was coalesced
-		# with the default.
+		# dependency.
 		if origin_should_use_dep_args "${dep_origin}"; then
 			originspec_encode dep_originspec "${dep_origin}" \
 			    "${dep_args}" "${dep_flavor}"
@@ -5426,15 +5454,9 @@ compute_deps_pkg() {
 			originspec_encode dep_originspec "${dep_origin}" \
 			    '' "${dep_flavor}"
 		fi
-		if ! shash_get originspec-pkgname "${dep_originspec}" \
-		    dep_pkgname; then
-			originspec_encode dep_originspec_default \
-			    "${dep_origin}" '' ''
-			shash_get originspec-pkgname \
-			    "${dep_originspec_default}" dep_pkgname || \
-			    err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname}"
-			dep_originspec="${dep_originspec_default}"
-		fi
+		get_pkgname_from_originspec "${dep_originspec}" \
+		    dep_pkgname || \
+		    err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname}"
 		msg_debug "compute_deps_pkg: Will build ${dep_originspec} for ${pkgname}"
 		:> "${pkg_pooldir}/${dep_pkgname}"
 		echo "${pkgname} ${dep_pkgname}" >> "pkg_deps.unsorted"
