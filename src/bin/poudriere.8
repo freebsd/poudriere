@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd June 12, 2017
+.Dd June 14, 2017
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -911,10 +911,27 @@ to match on empty SET.
 The
 .Nm
 command may use the following environment variable:
-.Bl -tag -width "POUDRIERE_ETC"
-.It Pa POUDRIERE_ETC
+.Bl -tag -width "HTTP_PROXY FTP_PROXY"
+.It Sy HTTP_PROXY FTP_PROXY
+The proxy configuration for
+.Nm ports
+and
+.Nm jail .
+See
+.Xr fetch 3
+for other supported proxy environment variables.
+.It Sy MAKEOBJDIRPREFIX
+Passes through for
+.Nm jail
+builds.
+.It Sy POUDRIERE_ETC
 If specified, the path to poudriere's config directory.
 Defaults to /usr/local/etc.
+.It Sy UMASK
+The umask for files created by
+.Nm .
+Defaults to
+.Sy 022.
 .El
 .Sh FILES
 .Bl -tag -width ".Pa POUDRIERE_ETC/poudriere.d/poudriere.conf" -compact
