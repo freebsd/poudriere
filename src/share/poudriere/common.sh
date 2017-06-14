@@ -4283,8 +4283,8 @@ delete_old_pkg() {
 				esac
 			done
 		done
-		pkg_get_dep_origin compiled_deps "${pkg}"
-
+		[ -n "${current_deps}" ] && \
+		    pkg_get_dep_origin compiled_deps "${pkg}"
 		for d in ${current_deps}; do
 			case " $compiled_deps " in
 			*\ $d\ *) ;;
