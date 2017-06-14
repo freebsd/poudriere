@@ -2518,7 +2518,7 @@ sanity_check_pkg() {
 	pkg_get_origin origin "${pkg}"
 	pkgname="${pkg##*/}"
 	pkgname="${pkgname%.*}"
-	pkg_is_needed "${pkgname}" || return 0
+	pkgbase_is_needed "${pkgname}" || return 0
 	deps_file depfile "${pkg}"
 	while read dep; do
 		if [ ! -e "${PACKAGES}/All/${dep}.${PKG_EXT}" ]; then
@@ -4429,7 +4429,7 @@ delete_old_pkg() {
 
 	pkgname="${pkg##*/}"
 	pkgname="${pkgname%.*}"
-	pkg_is_needed "${pkgname}" || return 0
+	pkgbase_is_needed "${pkgname}" || return 0
 
 	pkg_get_origin origin "${pkg}"
 	_my_path mnt
@@ -5659,11 +5659,11 @@ pkgname_is_listed() {
 	    }' "${MASTERMNT}/.p/listed_pkgs"
 }
 
-# Port was requested to be built, or is needed by a port requested to be built
-pkg_is_needed() {
+# PKGBASE was requested to be built, or is needed by a port requested to be built
+pkgbase_is_needed() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkg_is_needed requires PWD=${MASTERMNT}/.p"
-	[ $# -eq 1 ] || eargs pkg_is_needed pkgname
+	    err 1 "pkgbase_is_needed requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 1 ] || eargs pkgbase_is_needed pkgname
 	local pkgname="$1"
 	local pkgbase
 
