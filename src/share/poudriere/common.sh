@@ -3747,7 +3747,8 @@ delete_old_pkg() {
 	[ $# -eq 1 ] || eargs delete_old_pkg pkgname
 	local pkg="$1"
 	local mnt pkgname cached_pkgname
-	local o v v2 compiled_options current_options current_deps compiled_deps
+	local o v v2 compiled_options current_options current_deps
+	local liblist key dpath dir found raw_deps compiled_deps
 
 	pkg_get_origin o "${pkg}"
 	port_is_needed "${o}" || return 0
