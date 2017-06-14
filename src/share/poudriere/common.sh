@@ -5080,11 +5080,6 @@ gather_port_vars_port() {
 		is_failed_metadata_lookup "${pkgname}" "${rdep}" || \
 		    err 1 "gather_port_vars_port: Already had ${originspec} (rdep=${rdep})"
 
-		# Fetch the vars that deps_fetch_vars would normally return.
-		if false; then
-		shash_get originspec-pkgname "${originspec}" pkgname || \
-		    err 1 "gather_port_vars_port: Failed to lookup PKGNAME for ${originspec}"
-		fi
 		shash_get pkgname-deps "${pkgname}" deps || deps=
 		shash_get pkgname-flavor "${pkgname}" flavor || flavor=
 		shash_get pkgname-flavors "${pkgname}" flavors || flavors=
