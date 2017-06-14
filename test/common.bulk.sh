@@ -214,6 +214,15 @@ export SRC_ENV_CONF=/dev/null
 assert_not "" "${LISTPORTS}" "LISTPORTS empty"
 echo "Building: $(echo ${LISTPORTS})"
 
+SUDO=
+if [ $(id -u) -ne 0 ]; then
+	if ! which sudo >/dev/null 2>&1; then
+		echo "SKIP: Need root or sudo access for bulk tests" >&2
+		exit 1
+	fi
+	SUDO="sudo"
+fi
+
 : ${BUILDNAME:=${0%.sh}}
 POUDRIERE="${POUDRIEREPATH} -e /usr/local/etc"
 ARCH=$(uname -p)
@@ -222,7 +231,7 @@ JAIL_VERSION="10.3-RELEASE"
 JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt" 2>/dev/null || echo)
 if [ -z "${JAILMNT}" ]; then
 	echo "Setting up jail for testing..." >&2
-	if ! ${POUDRIERE} jail -c -j "${JAILNAME}" \
+	if ! ${SUDO} ${POUDRIERE} jail -c -j "${JAILNAME}" \
 	    -v "${JAIL_VERSION}" -a ${ARCH}; then
 		echo "SKIP: Cannot setup jail with Poudriere" >&2
 		exit 1
@@ -264,7 +273,8 @@ export POUDRIERE_BUILD_TYPE=bulk
 _log_path log
 
 echo -n "Pruning previous logs..."
-${POUDRIEREPATH} -e ${POUDRIERE_ETC} logclean -B "${BUILDNAME}" -ay >/dev/null
+${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} logclean -B "${BUILDNAME}" -ay \
+    >/dev/null
 echo " done"
 set +e
 

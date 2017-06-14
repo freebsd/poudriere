@@ -3,7 +3,7 @@
 LISTPORTS="ports-mgmt/poudriere-devel-bad-dep_args"
 . common.bulk.sh
 
-${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
+${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
     -B "${BUILDNAME}" \
     -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
     ${LISTPORTS}

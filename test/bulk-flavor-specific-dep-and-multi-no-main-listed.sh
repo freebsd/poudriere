@@ -3,7 +3,7 @@
 LISTPORTS="misc/freebsd-release-manifests@BAR misc/freebsd-release-manifests@FOO ports-mgmt/poudriere-devel-dep-FOO"
 . common.bulk.sh
 
-${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
+${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
     -B "${BUILDNAME}" \
     -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
     ${LISTPORTS}
