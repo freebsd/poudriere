@@ -152,15 +152,28 @@ fi
 
 [ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
 _pget portsdir ${PTNAME} mnt
-originspec_decode "${ORIGINSPEC}" ORIGIN '' FLAVOR
+# Allow testing on virtual py3 slaves until we have FLAVORS.
+if [ -z "${ORIGINSPEC%%*py3*}" ]; then
+	# See prepare_ports - this lookup is needed for is_bad_flavor_slave_port
+	if [ -f "${portsdir}/Mk/bsd.port.mk" ] && \
+	    PORTSDIR="${portsdir}" port_var_fetch '' \
+	    'USES=python' \
+	    PYTHON_DEFAULT_VERSION P_PYTHON_DEFAULT_VERSION \
+	    PYTHON3_DEFAULT P_PYTHON3_DEFAULT; then
+		PORTSDIR="${portsdir}" \
+		    is_bad_flavor_slave_port "${ORIGINSPEC}" ORIGINSPEC || :
+	fi
+fi
+originspec_decode "${ORIGINSPEC}" ORIGIN DEPENDS_ARGS FLAVOR
 [ "${FLAVOR}" = "${FLAVOR_DEFAULT}" ] && FLAVOR=
 new_origin=$(grep -v '^#' ${portsdir}/MOVED | awk -vorigin="${ORIGIN}" \
     -F\| '$1 == origin && $2 != "" {print $2}')
 if [ -n "${new_origin}" ]; then
 	msg "MOVED: ${COLOR_PORT}${ORIGIN}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
 	ORIGIN="${new_origin}"
+	# Update ORIGINSPEC for the new ORIGIN
+	originspec_encode ORIGINSPEC "${ORIGIN}" "${DEPENDS_ARGS}" "${FLAVOR}"
 fi
-originspec_encode ORIGINSPEC "${ORIGIN}" '' "${FLAVOR}"
 if [ ! -f "${portsdir}/${ORIGIN}/Makefile" ] || [ -d "${portsdir}/${ORIGIN}/../Mk" ]; then
 	err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
 fi
@@ -188,7 +201,7 @@ if [ $CONFIGSTR -eq 1 ]; then
 	    ${FLAVOR:+FLAVOR=${FLAVOR}}
 fi
 
-deps_fetch_vars "${ORIGINSPEC}" LISTPORTS PKGNAME DEPENDS_ARGS FLAVOR FLAVORS
+deps_fetch_vars "${ORIGINSPEC}" LISTPORTS PKGNAME _ignored FLAVOR FLAVORS
 for dep_origin in ${LISTPORTS}; do
 	msg_verbose "${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET} depends on ${COLOR_PORT}${dep_origin}"
 done
@@ -244,7 +257,7 @@ if [ -d ${MASTERMNT}${PREFIX} -a "${PREFIX}" != "/usr" ]; then
 fi
 
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
-MAKE_ARGS="${FLAVOR:+ FLAVOR=${FLAVOR}}"
+MAKE_ARGS="${DEPENDS_ARGS}${FLAVOR:+ FLAVOR=${FLAVOR}}"
 injail install -d -o ${PORTBUILD_USER} /tmp/pkgs
 PORTTESTING=yes
 export TRYBROKEN=yes
