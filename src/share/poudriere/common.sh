@@ -4750,6 +4750,13 @@ port_var_fetch() {
 	# Use invalid shell var character '!' to ensure we
 	# don't setvar it later.
 	local assign_var="!"
+	local injail
+
+	if [ ${STATUS:-0} -eq 1 ]; then
+		injail=injail
+	else
+		injail=
+	fi
 
 	if [ -n "${origin}" ]; then
 		_make_origin="-C${sep}${PORTSDIR}/${origin}"
@@ -4809,7 +4816,7 @@ port_var_fetch() {
 			shiftcnt=$((shiftcnt + 1))
 		fi
 	done <<-EOF
-	$(IFS="${sep}"; injail /usr/bin/make ${_make_origin} ${_makeflags} || echo "${_errexit} $?")
+	$(IFS="${sep}"; ${injail} /usr/bin/make ${_make_origin} ${_makeflags} || echo "${_errexit} $?")
 	EOF
 
 	# If the entire output was blank, then $() ate all of the excess
