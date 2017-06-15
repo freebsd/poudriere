@@ -335,13 +335,11 @@ jstart() {
 	jail -c persist name=${name} \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
-		${network} ${JAIL_PARAMS} \
-		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
+		${network} ${JAIL_PARAMS}
 	jail -c persist name=${name}-n \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
-		${ipargs} ${JAIL_PARAMS} \
-		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
+		${ipargs} ${JAIL_PARAMS}
 }
 
 jail_has_processes() {
