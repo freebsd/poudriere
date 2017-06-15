@@ -203,7 +203,7 @@ assert_queued() {
 while read var; do
 	unset ${var}
 done <<-EOF
-$(env | egrep '^(WITH_|PORT)')
+$(env | egrep '^(WITH_|PORT)' | grep -v PORTSDIR)
 EOF
 export __MAKE_CONF=/dev/null
 export SRCCONF=/dev/null
@@ -247,7 +247,7 @@ fi
 
 . ${SCRIPTPREFIX}/common.sh
 
-PORTSDIR=${THISDIR}/ports
+: ${PORTSDIR:=${THISDIR}/ports}
 PTMNT="${PORTSDIR}"
 : ${JAILNAME:=bulk}
 : ${PTNAME:=test}
