@@ -4030,11 +4030,11 @@ deps_fetch_vars() {
 	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
 		_changed_deps="LIB_DEPENDS _lib_depends RUN_DEPENDS _run_depends"
 	fi
-	if [ -z "${PORTS_FEATURES%%*FLAVORS*}" ]; then
+	if have_ports_feature FLAVORS; then
 		_lookup_flavors="FLAVOR _flavor FLAVORS _flavors"
 		[ -n "${_origin_dep_args}" ] && \
 		    err 1 "deps_fetch_vars: Using FLAVORS but attempted lookup on ${originspec}"
-	elif [ -z "${PORTS_FEATURES%%*DEPENDS_ARGS*}" ]; then
+	elif have_ports_feature DEPENDS_ARGS; then
 		_depends_args="DEPENDS_ARGS _dep_args"
 		[ -n "${_origin_flavor}" ] && \
 		    err 1 "deps_fetch_vars: Using DEPENDS_ARGS but attempted lookup on ${originspec}"
@@ -4055,7 +4055,7 @@ deps_fetch_vars() {
 	[ -n "${_pkgname}" ] || \
 	    err 1 "deps_fetch_vars: failed to get PKGNAME for ${originspec}"
 
-	if [ -z "${PORTS_FEATURES%%*DEPENDS_ARGS*}" ]; then
+	if have_ports_feature DEPENDS_ARGS; then
 		# Determine if the port's claimed DEPENDS_ARGS even matter.
 		# If it matches the PYTHON_DEFAULT_VERSION then we can ignore
 		# it.  If it is for RUBY then it can be ignored as well since
@@ -4097,7 +4097,7 @@ deps_fetch_vars() {
 
 	setvar "${pkgname_var}" "${_pkgname}"
 	# Deal with py3 slave port hack
-	if [ -z "${PORTS_FEATURES%%*DEPENDS_ARGS*}" ] && \
+	if have_ports_feature DEPENDS_ARGS && \
 	    [ -n "${_pkg_deps}" -a -z "${_pkg_deps%%*py3*}" ]; then
 		unset _new_pkg_deps
 		for _dep in ${_pkg_deps}; do
@@ -4782,6 +4782,10 @@ lock_have() {
 	local _ignored
 
 	hash_get have_lock "${lockname}" _ignored
+}
+
+have_ports_feature() {
+	[ -z "${PORTS_FEATURES%%*${1}*}" ]
 }
 
 # Fetch vars from the Makefile and set them locally.
@@ -5644,7 +5648,7 @@ is_bad_flavor_slave_port() {
 
 	originspec_decode "${_originspec}" origin dep_args flavor
 
-	[ -z "${PORTS_FEATURES%%*DEPENDS_ARGS*}" ] || return 1
+	have_ports_feature DEPENDS_ARGS || return 1
 
 	# If there's already a DEPENDS_ARGS or FLAVOR just assume it
 	# is working with the new framework or is not in need of
@@ -5717,7 +5721,7 @@ origin_should_use_dep_args() {
 	[ $# -eq 1 ] || eargs _origin_should_use_dep_args origin
 	local origin="${1}"
 
-	[ -z "${PORTS_FEATURES%%*DEPENDS_ARGS*}" ] || return 1
+	have_ports_feature DEPENDS_ARGS || return 1
 
 	# These are forcing python3 already
 	case "${origin}" in
@@ -6003,7 +6007,7 @@ fetch_global_port_vars() {
 	# Ensure not blank so -z checks work properly
 	[ -z "${PORTS_FEATURES}" ] && PORTS_FEATURES="none"
 	# Add in pseduo 'DEPENDS_ARGS' feature if there's no FLAVORS support.
-	[ -z "${PORTS_FEATURES%%*FLAVORS*}" ] || \
+	have_ports_feature FLAVORS || \
 	    PORTS_FEATURES="${PORTS_FEATURES:+${PORTS_FEATURES} }DEPENDS_ARGS"
 	# Trim none if leftover from forcing in DEPENDS_ARGS
 	PORTS_FEATURES="${PORTS_FEATURES#none }"
