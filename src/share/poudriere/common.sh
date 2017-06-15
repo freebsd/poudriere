@@ -4539,20 +4539,12 @@ delete_old_pkg() {
 			shash_get pkgname-${td}_deps "${new_pkgname}" raw_deps || raw_deps=
 			for d in ${raw_deps}; do
 				key="${d%:*}"
-				dpath="${d#*:}"
-				case "${dpath}" in
-				${PORTSDIR}/*) dpath="${dpath#${PORTSDIR}/}" ;;
-				esac
-				# Handle py3 mapping needs
-				if [ -z "${dpath%%*py3*}" ]; then
-					is_bad_flavor_slave_port "${dpath}" \
-					    dpath || :
-				fi
 				# Technically we need to apply our own
 				# DEPENDS_ARGS to all of the current_deps but
 				# it has no practical impact since
 				# is_bad_flavor_slave_port will apply it as
 				# needed.
+				found=
 				case "${td}" in
 				lib)
 					case "${key}" in
@@ -4560,14 +4552,12 @@ delete_old_pkg() {
 						# libfoo.so
 						# libfoo.so.x
 						# libfoo.so.x.y
-						unset found
 						for dir in /lib /usr/lib ; do
 							if injail test -f "${dir}/${key}"; then
 								found=yes
-								break;
+								break
 							fi
 						done
-						[ -n "${found}" ] || current_deps="${current_deps} ${dpath}"
 						;;
 					*.*)
 						# foo.x
@@ -4576,29 +4566,44 @@ delete_old_pkg() {
 						[ -n "${CHANGED_DEPS_LIBLIST}" ] \
 						    err 1 "CHANGED_DEPS_LIBLIST not set"
 						case " ${CHANGED_DEPS_LIBLIST} " in
-							*\ ${key}\ *) ;;
-							*) current_deps="${current_deps} ${dpath}" ;;
+							*\ ${key}\ *)
+								found=yes
+								;;
+							*) ;;
 						esac
 						;;
 					*)
-						unset found
 						for dir in /lib /usr/lib ; do
 							if injail test -f "${dir}/lib${key}.so"; then
 								found=yes
-								break;
+								break
 							fi
 						done
-						[ -n "${found}" ] || current_deps="${current_deps} ${dpath}"
 						;;
 					esac
 					;;
 				run)
 					case "${key}" in
-					/*) [ -e ${mnt}/${key} ] || current_deps="${current_deps} ${dpath}" ;;
-					*) [ -n "$(injail which ${key})" ] || current_deps="${current_deps} ${dpath}" ;;
+					/*) [ -e ${mnt}/${key} ] && found=yes ;;
+					*) [ -n "$(injail which ${key})" ] && \
+					    found=yes
 					esac
 					;;
 				esac
+				if [ -z "${found}" ]; then
+					dpath="${d#*:}"
+					case "${dpath}" in
+					${PORTSDIR}/*)
+						dpath="${dpath#${PORTSDIR}/}"
+						;;
+					esac
+					# Handle py3 mapping needs
+					if [ -z "${dpath%%*py3*}" ]; then
+						is_bad_flavor_slave_port \
+						    "${dpath}" dpath || :
+					fi
+					current_deps="${current_deps} ${dpath}"
+				fi
 			done
 		done
 		[ -n "${current_deps}" ] && \
@@ -5574,15 +5579,6 @@ compute_deps_pkg() {
 			    continue
 			for d in ${raw_deps}; do
 				key="${d%:*}"
-				dpath="${d#*:}"
-				case "${dpath}" in
-				${PORTSDIR}/*) dpath=${dpath#${PORTSDIR}/} ;;
-				esac
-				# Handle py3 mapping needs
-				if [ -z "${dpath%%*py3*}" ]; then
-					is_bad_flavor_slave_port "${dpath}" \
-					    dpath || :
-				fi
 				# Validate that there is not an incorrect
 				# PKGNAME dependency that does not match the
 				# actual PKGNAME.  This would otherwise cause
@@ -5592,6 +5588,16 @@ compute_deps_pkg() {
 				case "${key}" in
 				*\>*|*\<*|*=*)
 					dep_pkgname="${key%%[><=]*}"
+					dpath="${d#*:}"
+					case "${dpath}" in
+					${PORTSDIR}/*)
+						dpath=${dpath#${PORTSDIR}/} ;;
+					esac
+					# Handle py3 mapping needs
+					if [ -z "${dpath%%*py3*}" ]; then
+						is_bad_flavor_slave_port \
+						    "${dpath}" dpath || :
+					fi
 					originspec_decode "${dpath}" \
 					    dep_origin '' dep_flavor
 					# Lookup our specific
