@@ -2676,7 +2676,7 @@ gather_distfiles() {
 	local from=$(realpath $2)
 	local to=$(realpath $3)
 	local sub dists d tosubd specials special origin dep_args flavor
-	local dep_originspec
+	local dep_originspec dep_args_loop
 
 	port_var_fetch_originspec "${originspec}" \
 	    DIST_SUBDIR sub \
@@ -2705,12 +2705,12 @@ gather_distfiles() {
 				shash_get pkgname-dep_args "${pkgname}" \
 				    dep_args || dep_args=
 			fi
-			originspec_encode dep_originspec "${special}" \
-			    "${dep_args}" "${flavor}"
+			dep_args_loop="${dep_args}"
 		else
-			originspec_encode dep_originspec "${special}" \
-			    '' "${flavor}"
+			dep_args_loop=
 		fi
+		originspec_encode dep_originspec "${special}" \
+		    "${dep_args_loop}" "${flavor}"
 		gather_distfiles "${dep_originspec}" "${from}" "${to}"
 	done
 
@@ -5522,7 +5522,7 @@ compute_deps_pkg() {
 	local pkgname="$1"
 	local originspec="$2"
 	local pkg_pooldir deps dep_origin dep_pkgname dep_originspec
-	local dep_args dep_flavor deps
+	local dep_args dep_args_loop dep_flavor deps
 	local raw_deps td d key dpath dep_real_pkgname err_type
 
 	shash_get pkgname-deps "${pkgname}" deps || \
@@ -5544,12 +5544,12 @@ compute_deps_pkg() {
 				shash_get pkgname-dep_args "${pkgname}" \
 				    dep_args || dep_args=
 			fi
-			originspec_encode dep_originspec "${dep_origin}" \
-			    "${dep_args}" "${dep_flavor}"
+			dep_args_loop="${dep_args}"
 		else
-			originspec_encode dep_originspec "${dep_origin}" \
-			    '' "${dep_flavor}"
+			dep_args_loop=
 		fi
+		originspec_encode dep_originspec "${dep_origin}" \
+		    "${dep_args_loop}" "${dep_flavor}"
 		get_pkgname_from_originspec "${dep_originspec}" \
 		    dep_pkgname || \
 		    err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname}"
@@ -5601,15 +5601,14 @@ compute_deps_pkg() {
 					# dependency.
 					if origin_should_use_dep_args \
 					    "${dep_origin}"; then
-						originspec_encode dpath \
-						    "${dep_origin}" \
-						    "${dep_args}" \
-						    "${dep_flavor}"
+						dep_args_loop="${dep_args}"
 					else
-						originspec_encode dpath \
-						    "${dep_origin}" \
-						    '' "${dep_flavor}"
+						dep_args_loop=
 					fi
+					originspec_encode dpath \
+					    "${dep_origin}" \
+					    "${dep_args_loop}" \
+					    "${dep_flavor}"
 					hash_get \
 					    compute_deps_originspec-pkgname \
 					    "${dpath}" dep_real_pkgname || \
