@@ -152,17 +152,14 @@ fi
 
 [ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
 _pget portsdir ${PTNAME} mnt
+[ -f "${portsdir}/Mk/bsd.port.mk" ] || \
+    err 1 "Ports tree ${portsdir} is missing Mk/bsd.port.mk"
+PORTSDIR="${portsdir}" fetch_global_port_vars || \
+    err 1 "Failed to lookup global ports metadata"
 # Allow testing on virtual py3 slaves until we have FLAVORS.
 if [ -z "${ORIGINSPEC%%*py3*}" ]; then
-	# See prepare_ports - this lookup is needed for is_bad_flavor_slave_port
-	if [ -f "${portsdir}/Mk/bsd.port.mk" ] && \
-	    PORTSDIR="${portsdir}" port_var_fetch '' \
-	    'USES=python' \
-	    PYTHON_DEFAULT_VERSION P_PYTHON_DEFAULT_VERSION \
-	    PYTHON3_DEFAULT P_PYTHON3_DEFAULT; then
-		PORTSDIR="${portsdir}" \
-		    is_bad_flavor_slave_port "${ORIGINSPEC}" ORIGINSPEC || :
-	fi
+	PORTSDIR="${portsdir}" \
+	    is_bad_flavor_slave_port "${ORIGINSPEC}" ORIGINSPEC || :
 fi
 originspec_decode "${ORIGINSPEC}" ORIGIN DEPENDS_ARGS FLAVOR
 [ "${FLAVOR}" = "${FLAVOR_DEFAULT}" ] && FLAVOR=

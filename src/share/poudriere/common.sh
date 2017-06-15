@@ -4004,7 +4004,7 @@ deps_fetch_vars() {
 	local flavor_var="$5"
 	local flavors_var="$6"
 	local _pkgname _pkg_deps _lib_depends= _run_depends= _selected_options=
-	local _changed_options= _changed_deps=
+	local _changed_options= _changed_deps= _depends_args= _lookup_flavors=
 	local _existing_origin _existing_originspec
 	local _default_originspec _default_pkgname
 	local origin _origin_dep_args _dep_args _dep _new_pkg_deps
@@ -4030,11 +4030,19 @@ deps_fetch_vars() {
 	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
 		_changed_deps="LIB_DEPENDS _lib_depends RUN_DEPENDS _run_depends"
 	fi
+	if [ -z "${PORTS_FEATURES%%*FLAVORS*}" ]; then
+		_lookup_flavors="FLAVOR _flavor FLAVORS _flavors"
+		[ -n "${_origin_dep_args}" ] && \
+		    err 1 "deps_fetch_vars: Using FLAVORS but attempted lookup on ${originspec}"
+	elif [ -z "${PORTS_FEATURES%%*DEPENDS_ARGS*}" ]; then
+		_depends_args="DEPENDS_ARGS _dep_args"
+		[ -n "${_origin_flavor}" ] && \
+		    err 1 "deps_fetch_vars: Using DEPENDS_ARGS but attempted lookup on ${originspec}"
+	fi
 	if ! port_var_fetch_originspec "${originspec}" \
 	    PKGNAME _pkgname \
-	    DEPENDS_ARGS _dep_args \
-	    FLAVOR _flavor \
-	    FLAVORS _flavors \
+	    ${_depends_args} \
+	    ${_lookup_flavors} \
 	    ${_changed_deps} \
 	    ${_changed_options} \
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
@@ -4047,49 +4055,50 @@ deps_fetch_vars() {
 	[ -n "${_pkgname}" ] || \
 	    err 1 "deps_fetch_vars: failed to get PKGNAME for ${originspec}"
 
-	[ -n "${_flavors}" ] && [ -n "${_dep_args}" ] && \
-	    err 1 "deps_fetch_vars: Port ${origin} incorrectly has both FLAVORS and DEPENDS_ARGS"
-	[ -n "${_flavors}" ] && [ -n "${_origin_deps_args}" ] && \
-	    err 1 "deps_fetch_vars: Port ${origin} has FLAVORS but was fetched with DEPENDS_ARGS=${_origin_dep_args}"
-
-	# Determine if the port's claimed DEPENDS_ARGS even matter.  If it
-	# matches the PYTHON_DEFAULT_VERSION then we can ignore it.  If it
-	# is for RUBY then it can be ignored as well since it was never
-	# implemented in the tree.  If it is anything else it is an error.
-	_new_dep_args=
-	for _dep_arg in ${_dep_args}; do
-		case "${_dep_arg}" in
-		PYTHON_VERSION=${P_PYTHON_DEFAULT_VERSION})
-			# Matches the default, no reason to waste time looking
-			# up dependencies with this bogus value.
-			msg_debug "deps_fetch_vars: Trimmed superfluous DEPENDS_ARGS=${_dep_arg} for ${originspec}"
-			_dep_arg=
-			;;
-		PYTHON_VERSION=*)
-			# It wants to use a non-default Python.  We'll allow it.
-			;;
-		RUBY_VER=*)
-			# Ruby never used this so just trim it.
-			_dep_arg=
-			;;
-		*WITH_*=yes)
-			# dns/unbound had these but they do nothing anymore,
-			# ignore.
-			_dep_arg=
-			;;
-		'')
-			# Blank value, great!
-			;;
-		*)
-			err 1 "deps_fetch_vars: Unknown or invalid DEPENDS_ARGS (${_dep_arg}) for ${originspec}"
-			;;
-		esac
-		_new_dep_args="${_new_dep_args}${_new_dep_args:+ }${_dep_arg}"
-	done
-	_dep_args="${_new_dep_args}"
+	if [ -z "${PORTS_FEATURES%%*DEPENDS_ARGS*}" ]; then
+		# Determine if the port's claimed DEPENDS_ARGS even matter.
+		# If it matches the PYTHON_DEFAULT_VERSION then we can ignore
+		# it.  If it is for RUBY then it can be ignored as well since
+		# it was never implemented in the tree.  If it is anything
+		# else it is an error.
+		_new_dep_args=
+		for _dep_arg in ${_dep_args}; do
+			case "${_dep_arg}" in
+			PYTHON_VERSION=${P_PYTHON_DEFAULT_VERSION})
+				# Matches the default, no reason to waste time
+				# looking up dependencies with this bogus value.
+				msg_debug "deps_fetch_vars: Trimmed superfluous DEPENDS_ARGS=${_dep_arg} for ${originspec}"
+				_dep_arg=
+				;;
+			PYTHON_VERSION=*)
+				# It wants to use a non-default Python.  We'll
+				# allow it.
+				;;
+			RUBY_VER=*)
+				# Ruby never used this so just trim it.
+				_dep_arg=
+				;;
+			*WITH_*=yes)
+				# dns/unbound had these but they do nothing
+				# anymore, ignore.
+				_dep_arg=
+				;;
+			'')
+				# Blank value, great!
+				;;
+			*)
+				err 1 "deps_fetch_vars: Unknown or invalid DEPENDS_ARGS (${_dep_arg}) for ${originspec}"
+				;;
+			esac
+			_new_dep_args="${_new_dep_args}${_new_dep_args:+ }${_dep_arg}"
+		done
+		_dep_args="${_new_dep_args}"
+	fi
 
 	setvar "${pkgname_var}" "${_pkgname}"
-	if [ -n "${_pkg_deps}" -a -z "${_pkg_deps%%*py3*}" ]; then
+	# Deal with py3 slave port hack
+	if [ -z "${PORTS_FEATURES%%*DEPENDS_ARGS*}" ] && \
+	    [ -n "${_pkg_deps}" -a -z "${_pkg_deps%%*py3*}" ]; then
 		unset _new_pkg_deps
 		for _dep in ${_pkg_deps}; do
 			originspec_encode _dep_originspec "${_dep}" '' ''
@@ -5629,6 +5638,8 @@ is_bad_flavor_slave_port() {
 
 	originspec_decode "${_originspec}" origin dep_args flavor
 
+	[ -z "${PORTS_FEATURES%%*DEPENDS_ARGS*}" ] || return 1
+
 	# If there's already a DEPENDS_ARGS or FLAVOR just assume it
 	# is working with the new framework or is not in need of
 	# remapping.
@@ -5699,6 +5710,8 @@ is_bad_flavor_slave_port() {
 origin_should_use_dep_args() {
 	[ $# -eq 1 ] || eargs _origin_should_use_dep_args origin
 	local origin="${1}"
+
+	[ -z "${PORTS_FEATURES%%*DEPENDS_ARGS*}" ] || return 1
 
 	# These are forcing python3 already
 	case "${origin}" in
@@ -5970,6 +5983,29 @@ check_moved() {
 	shash_get origin-moved "${origin}" "${var_return}"
 }
 
+fetch_global_port_vars() {
+	was_a_testport_run && [ -n "${PORTS_FEATURES}" ] && return 0
+	# Before we start, determine the default PYTHON version to
+	# deal with any use of DEPENDS_ARGS involving it.  DEPENDS_ARGS
+	# was a hack only actually used for python ports.
+	port_var_fetch '' \
+	    'USES=python' \
+	    PORTS_FEATURES PORTS_FEATURES \
+	    PYTHON_DEFAULT_VERSION P_PYTHON_DEFAULT_VERSION \
+	    PYTHON3_DEFAULT P_PYTHON3_DEFAULT || \
+	    err 1 "Error looking up pre-build ports vars"
+	# Ensure not blank so -z checks work properly
+	[ -z "${PORTS_FEATURES}" ] && PORTS_FEATURES="none"
+	# Add in pseduo 'DEPENDS_ARGS' feature if there's no FLAVORS support.
+	[ -z "${PORTS_FEATURES%%*FLAVORS*}" ] || \
+	    PORTS_FEATURES="${PORTS_FEATURES:+${PORTS_FEATURES} }DEPENDS_ARGS"
+	# Trim none if leftover from forcing in DEPENDS_ARGS
+	PORTS_FEATURES="${PORTS_FEATURES#none }"
+	[ "${PORTS_FEATURES}" != "none" ] && \
+	    msg "Ports supports: ${PORTS_FEATURES}"
+	export PORTS_FEATURES P_PYTHON_DEFAULT_VERSION P_PYTHON3_DEFAULT
+}
+
 clean_build_queue() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "clean_build_queue requires PWD=${MASTERMNT}/.p"
@@ -6094,15 +6130,8 @@ prepare_ports() {
 
 	load_moved
 
-	# Before we start, determine the default PYTHON version to
-	# deal with any use of DEPENDS_ARGS involving it.  DEPENDS_ARGS
-	# was a hack only actually used for python ports.
-	port_var_fetch '' \
-	    'USES=python' \
-	    PYTHON_DEFAULT_VERSION P_PYTHON_DEFAULT_VERSION \
-	    PYTHON3_DEFAULT P_PYTHON3_DEFAULT || \
-	    err 1 "Error looking up pre-build ports vars"
-	export P_PYTHON_DEFAULT_VERSION P_PYTHON3_DEFAULT
+	fetch_global_port_vars || \
+	    err 1 "Failed to lookup global ports metadata"
 
 	gather_port_vars
 
