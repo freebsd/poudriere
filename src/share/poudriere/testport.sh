@@ -157,10 +157,8 @@ _pget portsdir ${PTNAME} mnt
 PORTSDIR="${portsdir}" fetch_global_port_vars || \
     err 1 "Failed to lookup global ports metadata"
 # Allow testing on virtual py3 slaves until we have FLAVORS.
-if [ -z "${ORIGINSPEC%%*py3*}" ]; then
-	PORTSDIR="${portsdir}" \
-	    is_bad_flavor_slave_port "${ORIGINSPEC}" ORIGINSPEC || :
-fi
+PORTSDIR="${portsdir}" \
+    map_py_slave_port "${ORIGINSPEC}" ORIGINSPEC || :
 originspec_decode "${ORIGINSPEC}" ORIGIN DEPENDS_ARGS FLAVOR
 [ "${FLAVOR}" = "${FLAVOR_DEFAULT}" ] && FLAVOR=
 new_origin=$(grep -v '^#' ${portsdir}/MOVED | awk -vorigin="${ORIGIN}" \

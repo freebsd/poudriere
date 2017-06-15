@@ -4096,15 +4096,12 @@ deps_fetch_vars() {
 	fi
 
 	setvar "${pkgname_var}" "${_pkgname}"
-	# Deal with py3 slave port hack
-	if have_ports_feature DEPENDS_ARGS && \
-	    [ -n "${_pkg_deps}" -a -z "${_pkg_deps%%*py3*}" ]; then
+	# Deal with py3 slave port hack by forcing some DEPENDS_ARGS on
+	# our dependencies as needed.
+	if have_ports_feature DEPENDS_ARGS && [ -n "${_pkg_deps}" ]; then
 		unset _new_pkg_deps
 		for _dep in ${_pkg_deps}; do
-			originspec_encode _dep_originspec "${_dep}" '' ''
-			is_bad_flavor_slave_port "${_dep_originspec}" \
-			    _dep_originspec || :
-			originspec_decode "${_dep_originspec}" _dep '' ''
+			map_py_slave_port "${_dep}" _dep || :
 			_new_pkg_deps="${_new_pkg_deps:+${_new_pkg_deps} }${_dep}"
 		done
 		_pkg_deps="${_new_pkg_deps}"
@@ -4542,7 +4539,7 @@ delete_old_pkg() {
 				# Technically we need to apply our own
 				# DEPENDS_ARGS to all of the current_deps but
 				# it has no practical impact since
-				# is_bad_flavor_slave_port will apply it as
+				# map_py_slave_port will apply it as
 				# needed.
 				found=
 				case "${td}" in
@@ -4598,10 +4595,7 @@ delete_old_pkg() {
 						;;
 					esac
 					# Handle py3 mapping needs
-					if [ -z "${dpath%%*py3*}" ]; then
-						is_bad_flavor_slave_port \
-						    "${dpath}" dpath || :
-					fi
+					map_py_slave_port "${dpath}" dpath || :
 					current_deps="${current_deps} ${dpath}"
 				fi
 			done
@@ -5598,10 +5592,8 @@ compute_deps_pkg() {
 						dpath=${dpath#${PORTSDIR}/} ;;
 					esac
 					# Handle py3 mapping needs
-					if [ -z "${dpath%%*py3*}" ]; then
-						is_bad_flavor_slave_port \
-						    "${dpath}" dpath || :
-					fi
+					map_py_slave_port "${dpath}" \
+					    dpath || :
 					originspec_decode "${dpath}" \
 					    dep_origin '' dep_flavor
 					# Lookup our specific
@@ -5639,8 +5631,8 @@ compute_deps_pkg() {
 # Before Poudriere added DEPENDS_ARGS and FLAVORS support many slave ports
 # were added that are now redundant.  Replace them with the proper main port
 # dependency.
-is_bad_flavor_slave_port() {
-	[ $# -eq 2 ] || eargs is_bad_flavor_slave_port originspec \
+map_py_slave_port() {
+	[ $# -eq 2 ] || eargs map_py_slave_port originspec \
 	    var_return_originspec
 	local _originspec="$1"
 	local var_return_originspec="$2"
@@ -5709,7 +5701,7 @@ is_bad_flavor_slave_port() {
 	mapped_origin="${origin%%${pyreg}*}/${pymaster_prefix}${origin#*${pyreg}}${pymaster_suffix}"
 	# Verify the port even exists or else we need a special case above.
 	[ -d "${MASTERMNT}${PORTSDIR}/${mapped_origin}" ] || \
-	    err 1 "is_bad_flavor_slave_port: Mapping ${_originspec} found no existing ${mapped_origin}"
+	    err 1 "map_py_slave_port: Mapping ${_originspec} found no existing ${mapped_origin}"
 	dep_args="PYTHON_VERSION=python${pyver}"
 	msg_debug "Mapping ${origin} to ${mapped_origin} with DEPENDS_ARGS=${dep_args}"
 	originspec_encode "${var_return_originspec}" "${mapped_origin}" \
@@ -5725,25 +5717,20 @@ origin_should_use_dep_args() {
 
 	# These are forcing python3 already
 	case "${origin}" in
-		devel/py-typed-ast)		return 1 ;;
-		misc/py-spdx)			return 1 ;;
-		misc/py-spdx-lookup)		return 1 ;;
-		net-im/py-sleekxmpp)		return 1 ;;
-		net/py-dugong)			return 1 ;;
-		www/py-aiohttp)			return 1 ;;
-	esac
+	devel/py-typed-ast)		return 1 ;;
+	misc/py-spdx)			return 1 ;;
+	misc/py-spdx-lookup)		return 1 ;;
+	net-im/py-sleekxmpp)		return 1 ;;
+	net/py-dugong)			return 1 ;;
+	www/py-aiohttp)			return 1 ;;
 	# Their corresponding MASTERDIRS do not support DEPENDS_ARGS
-	case "${origin}" in
-		devel/pydbus-common)		return 1 ;;
-		devel/pygobject3-common)	return 1 ;;
-		devel/py-dbus)			return 1 ;;
-		devel/py-gobject3)		return 1 ;;
-	esac
-
+	devel/pydbus-common)		return 1 ;;
+	devel/pygobject3-common)	return 1 ;;
+	devel/py-dbus)			return 1 ;;
+	devel/py-gobject3)		return 1 ;;
 	# Only use DEPENDS_ARGS on py[!3] ports where it will
 	# make an impact.  This is a big assumption and may not
 	# prove workable.
-	case "${origin}" in
 	*/python*) ;;
 	*/py[^3]*)
 		return 0
@@ -5754,7 +5741,7 @@ origin_should_use_dep_args() {
 
 listed_ports() {
 	_listed_ports | while read originspec; do
-		is_bad_flavor_slave_port "${originspec}" originspec && continue
+		map_py_slave_port "${originspec}" originspec && continue
 		echo "${originspec}"
 	done
 }
