@@ -10,7 +10,7 @@ POUDRIERE_ETC=${THISDIR}/etc
 LIBEXECPREFIX="${POUDRIEREPATH%src/bin/poudriere}"
 export PATH=${LIBEXECPREFIX}:${PATH}:/sbin:/usr/sbin
 
-: ${DISTFILES_CACHE:=/distfiles}
+: ${DISTFILES_CACHE:=$(mktemp -dt distfiles)}
 
 mkdir -p ${POUDRIERE_ETC}/poudriere.d
 cat > ${POUDRIERE_ETC}/poudriere.conf << EOF
