@@ -2061,7 +2061,6 @@ jail_start() {
 	local name=$1
 	local ptname=$2
 	local setname=$3
-	local portsdir
 	local arch host_arch
 	local mnt
 	local needfs="${NULLFSREF}"
@@ -2076,7 +2075,6 @@ jail_start() {
 	else
 		_mastermnt tomnt
 	fi
-	_pget portsdir ${ptname} mnt
 	_jget arch ${name} arch
 	get_host_arch host_arch
 	_jget mnt ${name} mnt
@@ -2176,7 +2174,6 @@ jail_start() {
 
 	PACKAGES=${POUDRIERE_DATA}/packages/${MASTERNAME}
 
-	[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
 	msg "Mounting ports/packages/distfiles"
 
 	mkdir -p ${PACKAGES}/
