@@ -6623,17 +6623,27 @@ fi
 
 : ${LOIP6:=::1}
 : ${LOIP4:=127.0.0.1}
+# If in a nested jail we may not even have a loopback to use.
+if [ ${JAILED} -eq 1 ]; then
+	# !! Note these exit statuses are inverted
+	ifconfig | \
+	    awk -vip="${LOIP4}" '$1 == "inet6" && $2 == ip {exit 1}' && \
+	    LOIP6=
+	ifconfig | \
+	    awk -vip="${LOIP6}" '$1 == "inet" && $2 == ip {exit 1}' && \
+	    LOIP4=
+fi
 case $IPS in
 01)
-	localipargs="ip6.addr=${LOIP6}"
+	localipargs="${LOIP6:+ip6.addr=${LOIP6}}"
 	ipargs="ip6=inherit"
 	;;
 10)
-	localipargs="ip4.addr=${LOIP4}"
+	localipargs="${LOIP4:+ip4.addr=${LOIP4}}"
 	ipargs="ip4=inherit"
 	;;
 11)
-	localipargs="ip4.addr=${LOIP4} ip6.addr=${LOIP6}"
+	localipargs="${LOIP4:+ip4.addr=${LOIP4} }${LOIP6:+ip6.addr=${LOIP6}}"
 	ipargs="ip4=inherit ip6=inherit"
 	;;
 esac
@@ -6762,6 +6772,10 @@ EPOCH_START=$(clock -epoch)
 . ${SCRIPTPREFIX}/include/shared_hash.sh
 . ${SCRIPTPREFIX}/include/cache.sh
 . ${SCRIPTPREFIX}/include/fs.sh
+
+if [ -z "${LOIP6}" -a -z "${LOIP4}" ]; then
+	msg_warn "No loopback address defined, consider setting LOIP6/LOIP4 or assigning a loopback address to the jail."
+fi
 
 if [ -e /nonexistent ]; then
 	err 1 "You may not have a /nonexistent.  Please remove it."
