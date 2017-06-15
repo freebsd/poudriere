@@ -5602,7 +5602,6 @@ else
 	setproctitle() { }
 fi
 
-RESOLV_CONF=""
 STATUS=0 # out of jail #
 # cd into / to avoid foot-shooting if running from deleted dirs or
 # NFS dir which root has no access to.
@@ -5855,6 +5854,7 @@ fi
 DRY_RUN=0
 
 # Be sure to update poudriere.conf to document the default when changing these
+: ${RESOLV_CONF="/etc/resolv.conf"}
 : ${MAX_EXECUTION_TIME:=86400}         # 24 hours for 1 command
 : ${NOHANG_TIME:=7200}                 # 120 minutes with no log update
 : ${TIMESTAMP_LOGS:=no}
