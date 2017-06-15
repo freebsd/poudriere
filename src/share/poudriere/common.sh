@@ -4519,10 +4519,10 @@ delete_old_pkg() {
 		for td in lib run; do
 			shash_get pkgname-${td}_deps "${new_pkgname}" raw_deps || raw_deps=
 			for d in ${raw_deps}; do
-				key=${d%:*}
-				dpath=${d#*:}
+				key="${d%:*}"
+				dpath="${d#*:}"
 				case "${dpath}" in
-				${PORTSDIR}/*) dpath=${dpath#${PORTSDIR}/} ;;
+				${PORTSDIR}/*) dpath="${dpath#${PORTSDIR}/}" ;;
 				esac
 				# Handle py3 mapping needs
 				if [ -z "${dpath%%*py3*}" ]; then
@@ -4534,9 +4534,9 @@ delete_old_pkg() {
 				# it has no practical impact since
 				# is_bad_flavor_slave_port will apply it as
 				# needed.
-				case ${td} in
+				case "${td}" in
 				lib)
-					case ${key} in
+					case "${key}" in
 					lib*)
 						# libfoo.so
 						# libfoo.so.x
@@ -4574,7 +4574,7 @@ delete_old_pkg() {
 					esac
 					;;
 				run)
-					case $key in
+					case "${key}" in
 					/*) [ -e ${mnt}/${key} ] || current_deps="${current_deps} ${dpath}" ;;
 					*) [ -n "$(injail which ${key})" ] || current_deps="${current_deps} ${dpath}" ;;
 					esac
