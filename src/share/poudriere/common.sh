@@ -329,7 +329,9 @@ jstart() {
 
 	network="${localipargs}"
 
-	[ "${RESTRICT_NETWORKING}" = "yes" ] || network="${ipargs}"
+	if [ "${RESTRICT_NETWORKING}" != "yes" ]; then
+		network="${ipargs} ${JAIL_NET_PARAMS}"
+	fi
 
 	_my_name name
 	jail -c persist name=${name} \
@@ -339,7 +341,7 @@ jstart() {
 	jail -c persist name=${name}-n \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
-		${ipargs} ${JAIL_PARAMS}
+		${ipargs} ${JAIL_PARAMS} ${JAIL_NET_PARAMS}
 }
 
 jail_has_processes() {

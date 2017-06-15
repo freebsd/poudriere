@@ -14,11 +14,11 @@ IPS="$(sysctl -n kern.features.inet 2>/dev/null || echo 0)$(sysctl -n kern.featu
 JAILED=$(sysctl -n security.jail.jailed)
 if [ ${JAILED} -eq 0 ] || \
     [ $(sysctl -n security.jail.socket_unixiproute_only) -eq 0 ]; then
-	JAIL_PARAMS="${JAIL_PARAMS:+${JAIL_PARAMS} }allow.socket_af"
+	JAIL_NET_PARAMS="${JAIL_NET_PARAMS:+${JAIL_NET_PARAMS} }allow.socket_af"
 fi
 if [ ${JAILED} -eq 0 ] || \
     [ $(sysctl -n security.jail.allow_raw_sockets) -eq 1 ]; then
-	JAIL_PARAMS="${JAIL_PARAMS:+${JAIL_PARAMS} }allow.raw_sockets"
+	JAIL_NET_PARAMS="${JAIL_NET_PARAMS:+${JAIL_NET_PARAMS} }allow.raw_sockets"
 fi
 if [ ${JAILED} -eq 0 ] || \
     [ $(sysctl -n security.jail.chflags_allowed) -eq 1 ]; then
