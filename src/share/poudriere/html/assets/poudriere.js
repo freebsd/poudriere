@@ -589,6 +589,7 @@ function process_data_build(data) {
 
 			row.id = builder.id;
 			row.job_id = builder.id;
+			row.pkgname = builder.pkgname ? format_pkgname(builder.pkgname) : "";
 			row.origin = builder.origin ? format_origin(builder.origin) : "";
 			row.status = builder.pkgname ?
 				format_log(builder.pkgname, false, builder.status) :
@@ -896,7 +897,12 @@ function setup_build() {
 				"sWidth": "1em",
 			},
 			{
+				"data": "pkgname",
+				"sWidth": "15em",
+			},
+			{
 				"data": "origin",
+				"sWidth": "17em",
 			},
 			{
 				"data": "status",
