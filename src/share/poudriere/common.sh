@@ -199,20 +199,25 @@ confirm_if_tty() {
 }
 
 _mastermnt() {
-	local hashed_name mnt mnttest mnamelen
+	local hashed_name mnt mnttest mnamelen testpath
 
 	mnamelen=$(grep "#define[[:space:]]MNAMELEN" \
 	    /usr/include/sys/mount.h 2>/dev/null | awk '{print $3}')
 
 	mnt="${POUDRIERE_DATA}/.m/${MASTERNAME}/ref"
-	mnttest="${mnt}/compat/linux/proc"
+	if [ -z "${NOLINUX}" ]; then
+		testpath="/compat/linux/proc"
+	else
+		testpath="/var/db/ports"
+	fi
+	mnttest="${mnt}${testpath}"
 
 	if [ -n "${mnamelen}" ] && \
 	    [ ${#mnttest} -ge $((${mnamelen} - 1)) ]; then
 		hashed_name=$(sha256 -qs "${MASTERNAME}" | \
 		    awk '{print substr($0, 0, 6)}')
 		mnt="${POUDRIERE_DATA}/.m/${hashed_name}/ref"
-		mnttest="${mnt}/var/db/ports"
+		mnttest="${mnt}${testpath}"
 		[ ${#mnttest} -ge $((${mnamelen} - 1)) ] && \
 		    err 1 "Mountpath '${mnt}' exceeds system MNAMELEN limit of ${mnamelen}. Unable to mount. Try shortening BASEFS."
 		msg_warn "MASTERNAME '${MASTERNAME}' too long for mounting, using hashed version of '${hashed_name}'"
