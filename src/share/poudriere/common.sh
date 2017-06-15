@@ -244,7 +244,8 @@ _mastermnt() {
 	fi
 	mnttest="${mnt}${testpath}"
 
-	if [ -n "${mnamelen}" ] && \
+	if [ -n "${FORCE_MOUNT_HASH}" ] || \
+	    [ -n "${mnamelen}" ] && \
 	    [ ${#mnttest} -ge $((${mnamelen} - 1)) ]; then
 		hashed_name=$(sha256 -qs "${MASTERNAME}" | \
 		    awk '{print substr($0, 0, 6)}')
