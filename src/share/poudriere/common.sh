@@ -3894,7 +3894,7 @@ deps_fetch_vars() {
 	local pkgname_var="$3"
 	local _pkgname _pkg_deps _lib_depends= _run_depends= _selected_options=
 	local _changed_options= _changed_deps=
-	local _existing_pkgname _existing_origin
+	local _existing_pkgname _existing_origin categories
 
 	shash_get origin-pkgname "${origin}" _existing_pkgname && \
 	    err 1 "deps_fetch_vars: already had ${origin} as ${_existing_pkgname}"
@@ -3907,6 +3907,7 @@ deps_fetch_vars() {
 	fi
 	if ! port_var_fetch "${origin}" \
 	    PKGNAME _pkgname \
+	    CATEGORIES categories \
 	    ${_changed_deps} \
 	    ${_changed_options} \
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
@@ -3918,6 +3919,15 @@ deps_fetch_vars() {
 
 	[ -n "${_pkgname}" ] || \
 	    err 1 "deps_fetch_vars: failed to get PKGNAME for ${origin}"
+
+	# Validate CATEGORIES is proper to avoid:
+	# - Pkg not registering the dependency
+	# - Having delete_old_pkg later remove it due to the origin fetched
+	#   from pkg-query not existing.
+	if [ "${categories%% *}" != "${origin%%/*}" ]; then
+		msg_error "${COLOR_PORT}${origin}${COLOR_RESET} has incorrect CATEGORIES, first should be '${origin%%/*}'.  Please contact maintainer of the port to fix this."
+		return 1
+	fi
 
 	# Make sure this PKGNAME did not already exist.
 	shash_get pkgname-origin "${_pkgname}" _existing_origin && \
