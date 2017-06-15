@@ -2685,7 +2685,7 @@ gather_distfiles() {
 	    err 1 "Failed to lookup distfiles for ${originspec}"
 
 	originspec_decode "${originspec}" origin '' flavor
-	shash_get pkgname-dep_args "${pkgname}" dep_args || dep_args=
+	unset dep_args
 
 	job_msg_verbose "Status   ${COLOR_PORT}${origin} | ${PKGNAME}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
@@ -2699,8 +2699,18 @@ gather_distfiles() {
 		case "${special}" in
 		${PORTSDIR}/*) special=${special#${PORTSDIR}/} ;;
 		esac
-		originspec_encode dep_originspec "${special}" "${dep_args}" \
-		    "${flavor}"
+		if origin_should_use_dep_args "${special}"; then
+			# Lookup our dep_args if not already done
+			if [ "${dep_args-empty}" = "empty" ]; then
+				shash_get pkgname-dep_args "${pkgname}" \
+				    dep_args || dep_args=
+			fi
+			originspec_encode dep_originspec "${special}" \
+			    "${dep_args}" "${flavor}"
+		else
+			originspec_encode dep_originspec "${special}" \
+			    '' "${flavor}"
+		fi
 		gather_distfiles "${dep_originspec}" "${from}" "${to}"
 	done
 
@@ -5391,7 +5401,7 @@ gather_port_vars_process_depqueue() {
 	[ $# -ne 1 ] && eargs gather_port_vars_process_depqueue originspec
 	local originspec="$1"
 	local origin pkgname deps dep_origin
-	local dep_args_save dep_args dep_originspec dep_flavor queue rdep
+	local dep_args_loop dep_args dep_originspec dep_flavor queue rdep
 
 	msg_debug "gather_port_vars_process_depqueue (${originspec})"
 
@@ -5400,20 +5410,25 @@ gather_port_vars_process_depqueue() {
 	    err 1 "gather_port_vars_process_depqueue failed to find pkgname for origin ${originspec}"
 	shash_get pkgname-deps "${pkgname}" deps || \
 	    err 1 "gather_port_vars_process_depqueue failed to find deps for pkg ${pkgname}"
-	shash_get pkgname-dep_args "${pkgname}" dep_args || dep_args=
-	dep_args_save="${dep_args}"
+	unset dep_args
 
 	originspec_decode "${originspec}" origin '' ''
 	for dep_originspec in ${deps}; do
 		originspec_decode "${dep_originspec}" dep_origin '' dep_flavor
-		dep_args="${dep_args_save}"
-		if ! origin_should_use_dep_args "${dep_origin}"; then
-			dep_args=
+		if origin_should_use_dep_args "${dep_origin}"; then
+			# We need to lookup dep_args on the first need
+			if [ "${dep_args-empty}" = "empty" ]; then
+				shash_get pkgname-dep_args "${pkgname}" \
+				    dep_args || dep_args=
+			fi
+			dep_args_loop="${dep_args}"
+		else
+			dep_args_loop=
 		fi
 		# First queue the default origin into the gatherqueue if
 		# needed.  For the -a case we're guaranteed to already
 		# have done this via the category Makefiles.
-		if [ ${ALL} -eq 0 ] && [ -z "${dep_args}" ]; then
+		if [ ${ALL} -eq 0 ] && [ -z "${dep_args_loop}" ]; then
 			if [ -n "${dep_flavor}" ]; then
 				queue=fqueue
 				rdep="metadata ${dep_flavor}"
@@ -5431,9 +5446,9 @@ gather_port_vars_process_depqueue() {
 
 		# And place any DEPENDS_ARGS-specific origin into the
 		# flavorqueue
-		if [ -n "${dep_args}" -o -n "${dep_flavor}" ]; then
+		if [ -n "${dep_args_loop}" -o -n "${dep_flavor}" ]; then
 			originspec_encode dep_originspec "${dep_origin}" \
-			    "${dep_args}" "${dep_flavor}"
+			    "${dep_args_loop}" "${dep_flavor}"
 			# For the -a case we can skip the flavorqueue since
 			# we've already processed all default origins
 			if [ ${ALL} -eq 1 ]; then
@@ -5501,18 +5516,22 @@ compute_deps_pkg() {
 	shash_get pkgname-deps "${pkgname}" deps || \
 	    err 1 "compute_deps_pkg failed to find deps for ${pkgname}"
 
-	shash_get pkgname-dep_args "${pkgname}" dep_args || dep_args=
-
 	pkg_pooldir="deps/${pkgname}"
 	msg_debug "compute_deps_pkg: Will build ${pkgname}"
 	mkdir "${pkg_pooldir}" || \
 	    err 1 "compute_deps_pkg: Error creating pool dir for ${pkgname}: There may be a duplicate origin in a category Makefile"
+	unset dep_args
 
 	for dep_originspec in ${deps}; do
 		originspec_decode "${dep_originspec}" dep_origin '' dep_flavor
 		# Depend on our specific DEPENDS_ARGS/FLAVOR version of this
 		# dependency.
 		if origin_should_use_dep_args "${dep_origin}"; then
+			# Lookup our dep_args if not already done
+			if [ "${dep_args-empty}" = "empty" ]; then
+				shash_get pkgname-dep_args "${pkgname}" \
+				    dep_args || dep_args=
+			fi
 			originspec_encode dep_originspec "${dep_origin}" \
 			    "${dep_args}" "${dep_flavor}"
 		else
