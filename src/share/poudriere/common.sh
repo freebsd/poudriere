@@ -2675,8 +2675,8 @@ gather_distfiles() {
 	local originspec="$1"
 	local from=$(realpath $2)
 	local to=$(realpath $3)
-	local sub dists d tosubd specials special origin dep_args flavor
-	local dep_originspec dep_args_loop
+	local sub dists d tosubd specials special origin dep_args
+	local dep_originspec
 
 	port_var_fetch_originspec "${originspec}" \
 	    DIST_SUBDIR sub \
@@ -2684,8 +2684,7 @@ gather_distfiles() {
 	    _DEPEND_SPECIALS specials || \
 	    err 1 "Failed to lookup distfiles for ${originspec}"
 
-	originspec_decode "${originspec}" origin '' flavor
-	unset dep_args
+	originspec_decode "${originspec}" origin '' ''
 
 	job_msg_verbose "Status   ${COLOR_PORT}${origin} | ${PKGNAME}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
@@ -2699,18 +2698,9 @@ gather_distfiles() {
 		case "${special}" in
 		${PORTSDIR}/*) special=${special#${PORTSDIR}/} ;;
 		esac
-		if origin_should_use_dep_args "${special}"; then
-			# Lookup our dep_args if not already done
-			if [ "${dep_args-empty}" = "empty" ]; then
-				shash_get pkgname-dep_args "${pkgname}" \
-				    dep_args || dep_args=
-			fi
-			dep_args_loop="${dep_args}"
-		else
-			dep_args_loop=
-		fi
-		originspec_encode dep_originspec "${special}" \
-		    "${dep_args_loop}" "${flavor}"
+		maybe_apply_my_own_dep_args "${pkgname}" \
+		    dep_originspec "${special}" \
+		    "${dep_args}" dep_args || :
 		gather_distfiles "${dep_originspec}" "${from}" "${to}"
 	done
 
@@ -3992,6 +3982,51 @@ originspec_encode() {
 		output="${output}${ORIGINSPEC_SEP}${_flavor}${_dep_args:+${ORIGINSPEC_SEP}${_dep_args}}"
 	fi
 	setvar "${_var_return}" "${output}"
+}
+
+# Apply my (pkgname) own DEPENDS_ARGS to the given origin if I have any and
+# the dep should be allowed to use it.
+maybe_apply_my_own_dep_args() {
+	[ $# -eq 5 ] || eargs maybe_apply_my_own_dep_args \
+	    pkgname var_return_originspec originspec \
+	    dep_args var_return_dep_args
+	local pkgname="$1"
+	local var_return_originspec="$2"
+	local originspec="$3"
+	local _my_dep_args="$4"
+	local var_return_dep_args="$5"
+	local _origin _dep_args _flavor
+
+	# Already looked up my DEPENDS_ARGS and I have none to apply.
+	[ -z "${_my_dep_args}" ] && \
+	    hash_isset fetched_dep_args "${pkgname}" && \
+	    return 1
+	originspec_decode "${originspec}" _origin _dep_args _flavor
+	if ! origin_should_use_dep_args "${_origin}"; then
+		if [ -n "${var_return_dep_args}" ]; then
+			setvar "${var_return_dep_args}" ''
+		fi
+		return 1
+	fi
+	# Lookup our dep_args if not already done.  If var_return_dep_args
+	# is empty though we should trust what was passed in.
+	if [ -z "${_my_dep_args}" ] && [ -n "${var_return_dep_args}" ]; then
+		if ! shash_get pkgname-dep_args "${pkgname}" _my_dep_args; then
+			# No DEPENDS_ARGS to apply.  Cache that we're sure of
+			# this since it is a blank value.
+			setvar "${var_return_dep_args}" ''
+			hash_set fetched_dep_args "${pkgname}" 1
+			return 1
+		fi
+		setvar "${var_return_dep_args}" "${_my_dep_args}"
+	fi
+	# It's possible _dep_args is not empty now due to earlier calls to
+	# map_py_slave_port() in deps_fetch_vars().  Still try to overwrite
+	# it though with our own as long as it didn't change to empty.
+	[ -n "${_dep_args}" ] && [ -z "${_my_dep_args}" ] && \
+	    err 1 "maybe_apply_my_own_dep_args: Already had dep_args for ${originspec} but dropped them PKGNAME=${pkgname}"
+	originspec_encode "${var_return_originspec}" \
+	    "${_origin}" "${_my_dep_args}" "${_flavor}"
 }
 
 deps_fetch_vars() {
@@ -5318,14 +5353,10 @@ gather_port_vars_port() {
 	# Assert some policy before proceeding to process these deps
 	# further.
 	for dep_originspec in ${deps}; do
+		maybe_apply_my_own_dep_args "${pkgname}" \
+		    dep_originspec "${dep_originspec}" \
+		    "${dep_args}" '' || :
 		originspec_decode "${dep_originspec}" dep_origin '' dep_flavor
-		if origin_should_use_dep_args "${dep_origin}"; then
-			originspec_encode dep_originspec "${dep_origin}" \
-			    "${dep_args}" "${dep_flavor}"
-		else
-			originspec_encode dep_originspec "${dep_origin}" \
-			    '' "${dep_flavor}"
-		fi
 		msg_verbose "${COLOR_PORT}${originspec}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
 		if [ "${origin}" = "${dep_origin}" ]; then
 			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
@@ -5421,21 +5452,14 @@ gather_port_vars_process_depqueue() {
 	    err 1 "gather_port_vars_process_depqueue failed to find pkgname for origin ${originspec}"
 	shash_get pkgname-deps "${pkgname}" deps || \
 	    err 1 "gather_port_vars_process_depqueue failed to find deps for pkg ${pkgname}"
-	unset dep_args
 
 	originspec_decode "${originspec}" origin '' ''
 	for dep_originspec in ${deps}; do
-		originspec_decode "${dep_originspec}" dep_origin '' dep_flavor
-		if origin_should_use_dep_args "${dep_origin}"; then
-			# We need to lookup dep_args on the first need
-			if [ "${dep_args-empty}" = "empty" ]; then
-				shash_get pkgname-dep_args "${pkgname}" \
-				    dep_args || dep_args=
-			fi
-			dep_args_loop="${dep_args}"
-		else
-			dep_args_loop=
-		fi
+		maybe_apply_my_own_dep_args "${pkgname}" \
+		    dep_originspec "${dep_originspec}" \
+		    "${dep_args}" dep_args || :
+		originspec_decode "${dep_originspec}" dep_origin \
+		    dep_args_loop dep_flavor
 		# First queue the default origin into the gatherqueue if
 		# needed.  For the -a case we're guaranteed to already
 		# have done this via the category Makefiles.
@@ -5448,18 +5472,15 @@ gather_port_vars_process_depqueue() {
 				rdep="${origin}"
 			fi
 
-			originspec_encode dep_originspec "${dep_origin}" '' ''
-			msg_debug "Want to enqueue default ${dep_originspec} rdep=${rdep} into ${queue}"
+			msg_debug "Want to enqueue default ${dep_origin} rdep=${rdep} into ${queue}"
 			gather_port_vars_process_depqueue_enqueue \
-			    "${originspec}" "${dep_originspec}" gqueue \
+			    "${originspec}" "${dep_origin}" gqueue \
 			    "${rdep}"
 		fi
 
 		# And place any DEPENDS_ARGS-specific origin into the
 		# flavorqueue
 		if [ -n "${dep_args_loop}" -o -n "${dep_flavor}" ]; then
-			originspec_encode dep_originspec "${dep_origin}" \
-			    "${dep_args_loop}" "${dep_flavor}"
 			# For the -a case we can skip the flavorqueue since
 			# we've already processed all default origins
 			if [ ${ALL} -eq 1 ]; then
@@ -5520,8 +5541,7 @@ compute_deps_pkg() {
 	[ $# -ne 2 ] && eargs compute_deps_pkg pkgname originspec
 	local pkgname="$1"
 	local originspec="$2"
-	local pkg_pooldir deps dep_origin dep_pkgname dep_originspec
-	local dep_args dep_args_loop dep_flavor deps
+	local pkg_pooldir deps dep_pkgname dep_originspec dep_args
 	local raw_deps td d key dpath dep_real_pkgname err_type
 
 	shash_get pkgname-deps "${pkgname}" deps || \
@@ -5531,24 +5551,11 @@ compute_deps_pkg() {
 	msg_debug "compute_deps_pkg: Will build ${pkgname}"
 	mkdir "${pkg_pooldir}" || \
 	    err 1 "compute_deps_pkg: Error creating pool dir for ${pkgname}: There may be a duplicate origin in a category Makefile"
-	unset dep_args
 
 	for dep_originspec in ${deps}; do
-		originspec_decode "${dep_originspec}" dep_origin '' dep_flavor
-		# Depend on our specific DEPENDS_ARGS/FLAVOR version of this
-		# dependency.
-		if origin_should_use_dep_args "${dep_origin}"; then
-			# Lookup our dep_args if not already done
-			if [ "${dep_args-empty}" = "empty" ]; then
-				shash_get pkgname-dep_args "${pkgname}" \
-				    dep_args || dep_args=
-			fi
-			dep_args_loop="${dep_args}"
-		else
-			dep_args_loop=
-		fi
-		originspec_encode dep_originspec "${dep_origin}" \
-		    "${dep_args_loop}" "${dep_flavor}"
+		maybe_apply_my_own_dep_args "${pkgname}" \
+		    dep_originspec "${dep_originspec}" \
+		    "${dep_args}" dep_args || :
 		get_pkgname_from_originspec "${dep_originspec}" \
 		    dep_pkgname || \
 		    err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname}"
@@ -5593,21 +5600,10 @@ compute_deps_pkg() {
 					# Handle py3 mapping needs
 					map_py_slave_port "${dpath}" \
 					    dpath || :
-					originspec_decode "${dpath}" \
-					    dep_origin '' dep_flavor
-					# Lookup our specific
-					# DEPENDS_ARGS/FLAVOR version of this
-					# dependency.
-					if origin_should_use_dep_args \
-					    "${dep_origin}"; then
-						dep_args_loop="${dep_args}"
-					else
-						dep_args_loop=
-					fi
-					originspec_encode dpath \
-					    "${dep_origin}" \
-					    "${dep_args_loop}" \
-					    "${dep_flavor}"
+					maybe_apply_my_own_dep_args \
+					    "${pkgname}" \
+					    dpath "${dpath}" \
+					    "${dep_args}" dep_args || :
 					hash_get \
 					    compute_deps_originspec-pkgname \
 					    "${dpath}" dep_real_pkgname || \
