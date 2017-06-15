@@ -4773,9 +4773,8 @@ lock_release() {
 lock_have() {
 	[ $# -ne 1 ] && eargs lock_have lockname
 	local lockname="$1"
-	local _ignored
 
-	hash_get have_lock "${lockname}" _ignored
+	hash_isset have_lock "${lockname}"
 }
 
 have_ports_feature() {
