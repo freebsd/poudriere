@@ -4133,7 +4133,7 @@ deps_fetch_vars() {
 	[ -n "${_flavors}" ] && \
 	    shash_set pkgname-flavors "${_pkgname}" "${_flavors}"
 	shash_set pkgname-deps "${_pkgname}" "${_pkg_deps}"
-	# Store for delete_old_pkg
+	# Store for delete_old_pkg with CHECK_CHANGED_DEPS==yes
 	if [ -n "${_lib_depends}" ]; then
 		shash_set pkgname-lib_deps "${_pkgname}" "${_lib_depends}"
 	fi
@@ -5463,7 +5463,7 @@ compute_deps() {
 	clear_dep_fatal_error
 	parallel_start
 	while read pkgname originspec; do
-		parallel_run compute_deps_pkg "${pkgname}" || \
+		parallel_run compute_deps_pkg "${pkgname}" "${originspec}" || \
 			set_dep_fatal_error
 	done < "all_pkgs"
 	if ! parallel_stop || check_dep_fatal_error; then
@@ -5491,10 +5491,12 @@ compute_deps_pkg() {
 	    err 1 "compute_deps_pkg requires SHASH_VAR_PATH=var/cache"
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "compute_deps_pkgname requires PWD=${MASTERMNT}/.p"
-	[ $# -lt 1 ] && eargs compute_deps_pkg pkgname
+	[ $# -ne 2 ] && eargs compute_deps_pkg pkgname originspec
 	local pkgname="$1"
+	local originspec="$2"
 	local pkg_pooldir deps dep_origin dep_pkgname dep_originspec
-	local dep_args dep_flavor
+	local dep_args dep_flavor deps
+	local raw_deps td d key dpath dep_real_pkgname err_type
 
 	shash_get pkgname-deps "${pkgname}" deps || \
 	    err 1 "compute_deps_pkg failed to find deps for ${pkgname}"
@@ -5523,7 +5525,75 @@ compute_deps_pkg() {
 		msg_debug "compute_deps_pkg: Will build ${dep_originspec} for ${pkgname}"
 		:> "${pkg_pooldir}/${dep_pkgname}"
 		echo "${pkgname} ${dep_pkgname}" >> "pkg_deps.unsorted"
+		if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
+			# Cache for call later in this func
+			hash_set compute_deps_originspec-pkgname \
+			    "${dep_originspec}" "${dep_pkgname}"
+		fi
 	done
+	# Check for invalid PKGNAME dependencies which break later incremental
+	# 'new dependency' detection.  This is done here rather than
+	# delete_old_pkgs since that only covers existing packages, but we
+	# need to detect the problem for all new package builds.
+	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
+		if [ "${BAD_PKGNAME_DEPS_ARE_FATAL}" = "yes" ]; then
+			err_type="err 1"
+		else
+			err_type="msg_warn"
+		fi
+		for td in run lib; do
+			shash_get pkgname-${td}_deps "${pkgname}" raw_deps || \
+			    continue
+			for d in ${raw_deps}; do
+				key="${d%:*}"
+				dpath="${d#*:}"
+				case "${dpath}" in
+				${PORTSDIR}/*) dpath=${dpath#${PORTSDIR}/} ;;
+				esac
+				# Handle py3 mapping needs
+				if [ -z "${dpath%%*py3*}" ]; then
+					is_bad_flavor_slave_port "${dpath}" \
+					    dpath || :
+				fi
+				# Validate that there is not an incorrect
+				# PKGNAME dependency that does not match the
+				# actual PKGNAME.  This would otherwise cause
+				# the next build to delete the package due
+				# to having a 'new dependency' since pkg would
+				# not record it due to being invalid.
+				case "${key}" in
+				*\>*|*\<*|*=*)
+					dep_pkgname="${key%%[><=]*}"
+					originspec_decode "${dpath}" \
+					    dep_origin '' dep_flavor
+					# Lookup our specific
+					# DEPENDS_ARGS/FLAVOR version of this
+					# dependency.
+					if origin_should_use_dep_args \
+					    "${dep_origin}"; then
+						originspec_encode dpath \
+						    "${dep_origin}" \
+						    "${dep_args}" \
+						    "${dep_flavor}"
+					else
+						originspec_encode dpath \
+						    "${dep_origin}" \
+						    '' "${dep_flavor}"
+					fi
+					hash_get \
+					    compute_deps_originspec-pkgname \
+					    "${dpath}" dep_real_pkgname || \
+					    err 1 "compute_deps_pkg failed to lookup existing pkgname for ${dpath} processing package ${pkgname}"
+					if [ "${dep_pkgname}" != \
+					    "${dep_real_pkgname%-*}" ]; then
+						${err_type} "${COLOR_PORT}${originspec}${COLOR_WARN} dependency on ${COLOR_PORT}${dpath}${COLOR_WARN} has wrong PKGNAME of '${dep_pkgname}' but should be '${dep_real_pkgname%-*}'"
+					fi
+					;;
+				*) ;;
+				esac
+			done
+		done
+	fi
 
 	return 0
 }
@@ -6742,6 +6812,7 @@ DRY_RUN=0
 : ${COMMIT_PACKAGES_ON_FAILURE:=yes}
 : ${SAVE_WRKDIR:=no}
 : ${CHECK_CHANGED_DEPS:=yes}
+: ${BAD_PKGNAME_DEPS_ARE_FATAL:=no}
 : ${CHECK_CHANGED_OPTIONS:=verbose}
 : ${NO_RESTRICTED:=no}
 : ${USE_COLORS:=yes}
