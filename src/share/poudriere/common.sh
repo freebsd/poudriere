@@ -5862,6 +5862,7 @@ fi
 : ${BUILD_AS_NON_ROOT:=yes}
 : ${DISTFILES_CACHE:=/nonexistent}
 : ${SVN_CMD:=$(which svn 2>/dev/null || which svnlite 2>/dev/null)}
+: ${GIT_CMD:=git}
 : ${BINMISC:=/usr/sbin/binmiscctl}
 # 24 hours for 1 command
 : ${MAX_EXECUTION_TIME:=86400}

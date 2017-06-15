@@ -288,7 +288,7 @@ if [ ${CREATE} -eq 1 ]; then
 		git*)
 			msg_n "Cloning the ports tree..."
 			[ ${VERBOSE} -gt 0 ] || quiet="-q"
-			git clone --depth=1 --single-branch ${quiet} -b ${BRANCH} ${GIT_FULLURL} ${PTMNT} || err 1 " fail"
+			${GIT_CMD} clone --depth=1 --single-branch ${quiet} -b ${BRANCH} ${GIT_FULLURL} ${PTMNT} || err 1 " fail"
 			echo " done"
 			;;
 		esac
@@ -356,7 +356,7 @@ if [ ${UPDATE} -eq 1 ]; then
 	git*)
 		msg_n "Updating portstree \"${PTNAME}\" with ${METHOD}..."
 		[ ${VERBOSE} -gt 0 ] || quiet="-q"
-		git -C ${PORTSMNT:-${PTMNT}} pull --rebase ${quiet}
+		${GIT_CMD} -C ${PORTSMNT:-${PTMNT}} pull --rebase ${quiet}
 		echo " done"
 		;;
 	none)	;;
