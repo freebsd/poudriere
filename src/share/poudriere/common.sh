@@ -509,23 +509,25 @@ jstart() {
 
 	network="${localipargs}"
 
-	[ "${RESTRICT_NETWORKING}" = "yes" ] || network="${ipargs}"
+	if [ "${RESTRICT_NETWORKING}" != "yes" ]; then
+		network="${ipargs} ${JAIL_NET_PARAMS}"
+	fi
 
 	_my_name name
+	# Restrict to no networking (if RESTRICT_NETWORKING==yes)
 	jail -c persist name=${name} \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
-		${network} ${JAIL_PARAMS} \
-		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
+		${network} ${JAIL_PARAMS}
 	[ "${USE_JEXECD}" = "yes" ] && \
 	    jexecd -j ${name} -d ${MASTERMNT}/../ \
 	    ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}} \
 	    ${MAX_FILES+-n ${MAX_FILES}}
+	# Allow networking in -n jail
 	jail -c persist name=${name}-n \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
-		${ipargs} ${JAIL_PARAMS} \
-		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
+		${ipargs} ${JAIL_PARAMS} ${JAIL_NET_PARAMS}
 	[ "${USE_JEXECD}" = "yes" ] && \
 	    jexecd -j ${name}-n -d ${MASTERMNT}/../ \
 	    ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}} \
@@ -2078,7 +2080,6 @@ jail_start() {
 	local name=$1
 	local ptname=$2
 	local setname=$3
-	local portsdir
 	local arch host_arch
 	local mnt
 	local needfs="${NULLFSREF}"
@@ -2093,7 +2094,6 @@ jail_start() {
 	else
 		_mastermnt tomnt
 	fi
-	_pget portsdir ${ptname} mnt
 	_jget arch ${name} arch
 	get_host_arch host_arch
 	_jget mnt ${name} mnt
@@ -2128,6 +2128,26 @@ jail_start() {
 				needkld="${needkld} linux64elf:linux64"
 			fi
 		fi
+	fi
+
+	if [ ${JAILED} -eq 1 ]; then
+		# Verify we have some of the needed configuration enabled
+		# or advise how to fix it.
+		local nested_perm
+
+		[ $(sysctl -n security.jail.enforce_statfs) -eq 1 ] || \
+		    nested_perm="${nested_perm:+${nested_perm} }enforce_statfs=1"
+		[ $(sysctl -n security.jail.mount_allowed) -eq 1 ] || \
+		    nested_perm="${nested_perm:+${nested_perm} }allow.mount"
+		[ $(sysctl -n security.jail.mount_devfs_allowed) -eq 1 ] || \
+		    nested_perm="${nested_perm:+${nested_perm} }allow.mount.devfs"
+		[ $(sysctl -n security.jail.mount_nullfs_allowed) -eq 1 ] || \
+		    nested_perm="${nested_perm:+${nested_perm} }allow.mount.nullfs"
+		[ "${USE_TMPFS}" != "no" ] && \
+		    [ $(sysctl -n security.jail.mount_tmpfs_allowed) -eq 0 ] && \
+		    nested_perm="${nested_perm:+${nested_perm} }allow.mount.tmpfs (with USE_TMPFS=${USE_TMPFS})"
+		[ -n "${nested_perm}" ] && \
+		    err 1 "Nested jail requires these missing params: ${nested_perm}"
 	fi
 	[ "${USE_TMPFS}" != "no" ] && needfs="${needfs} tmpfs"
 	[ "${USE_PROCFS}" = "yes" ] && needfs="${needfs} procfs"
@@ -2193,7 +2213,6 @@ jail_start() {
 
 	PACKAGES=${POUDRIERE_DATA}/packages/${MASTERNAME}
 
-	[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
 	msg "Mounting ports/packages/distfiles"
 
 	mkdir -p ${PACKAGES}/
@@ -6445,7 +6464,6 @@ else
 	setproctitle() { }
 fi
 
-RESOLV_CONF=""
 STATUS=0 # out of jail #
 # cd into / to avoid foot-shooting if running from deleted dirs or
 # NFS dir which root has no access to.
@@ -6698,6 +6716,7 @@ fi
 DRY_RUN=0
 
 # Be sure to update poudriere.conf to document the default when changing these
+: ${RESOLV_CONF="/etc/resolv.conf"}
 : ${MAX_EXECUTION_TIME:=86400}         # 24 hours for 1 command
 : ${NOHANG_TIME:=7200}                 # 120 minutes with no log update
 : ${TIMESTAMP_LOGS:=no}
