@@ -513,8 +513,7 @@ jstart() {
 	jail -c persist name=${name} \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
-		${network} ${JAIL_PARAMS} \
-		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
+		${network} ${JAIL_PARAMS}
 	[ "${USE_JEXECD}" = "yes" ] && \
 	    jexecd -j ${name} -d ${MASTERMNT}/../ \
 	    ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}} \
@@ -522,8 +521,7 @@ jstart() {
 	jail -c persist name=${name}-n \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
-		${ipargs} ${JAIL_PARAMS} \
-		allow.socket_af allow.raw_sockets allow.chflags allow.sysvipc
+		${ipargs} ${JAIL_PARAMS}
 	[ "${USE_JEXECD}" = "yes" ] && \
 	    jexecd -j ${name}-n -d ${MASTERMNT}/../ \
 	    ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}} \
