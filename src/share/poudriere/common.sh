@@ -2112,6 +2112,26 @@ jail_start() {
 			fi
 		fi
 	fi
+
+	if [ ${JAILED} -eq 1 ]; then
+		# Verify we have some of the needed configuration enabled
+		# or advise how to fix it.
+		local nested_perm
+
+		[ $(sysctl -n security.jail.enforce_statfs) -eq 1 ] || \
+		    nested_perm="${nested_perm:+${nested_perm} }enforce_statfs=1"
+		[ $(sysctl -n security.jail.mount_allowed) -eq 1 ] || \
+		    nested_perm="${nested_perm:+${nested_perm} }allow.mount"
+		[ $(sysctl -n security.jail.mount_devfs_allowed) -eq 1 ] || \
+		    nested_perm="${nested_perm:+${nested_perm} }allow.mount.devfs"
+		[ $(sysctl -n security.jail.mount_nullfs_allowed) -eq 1 ] || \
+		    nested_perm="${nested_perm:+${nested_perm} }allow.mount.nullfs"
+		[ "${USE_TMPFS}" != "no" ] && \
+		    [ $(sysctl -n security.jail.mount_tmpfs_allowed) -eq 0 ] && \
+		    nested_perm="${nested_perm:+${nested_perm} }allow.mount.tmpfs (with USE_TMPFS=${USE_TMPFS})"
+		[ -n "${nested_perm}" ] && \
+		    err 1 "Nested jail requires these missing params: ${nested_perm}"
+	fi
 	[ "${USE_TMPFS}" != "no" ] && needfs="${needfs} tmpfs"
 	[ "${USE_PROCFS}" = "yes" ] && needfs="${needfs} procfs"
 	[ "${USE_FDESCFS}" = "yes" ] && \
