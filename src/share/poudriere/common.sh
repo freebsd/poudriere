@@ -3425,8 +3425,8 @@ build_queue() {
 				find ../deps -type d -depth 1 | \
 				    sed -e 's,$, waiting-on-dependency,'
 			} | sed -e 's,.*/,,' > \
-			    "${log}/.poudriere.ports.remaining.tmp"
-			mv -f "${log}/.poudriere.ports.remaining.tmp" \
+			    "${log}/.poudriere.ports.remaining.tmp%"
+			mv -f "${log}/.poudriere.ports.remaining.tmp%" \
 			    "${log}/.poudriere.ports.remaining"
 		fi
 
