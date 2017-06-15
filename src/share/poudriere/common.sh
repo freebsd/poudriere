@@ -5241,7 +5241,6 @@ gather_port_vars_port() {
 	echo "${pkgname} ${originspec}" >> "all_pkgs"
 	if [ "${rdep}" = "listed" ]; then
 		echo "${pkgname}" >> "listed_pkgs"
-		echo "${originspec}" >> "listed_origins"
 	fi
 	[ ${ALL} -eq 0 ] && echo "${pkgname%-*}" >> "all_pkgbases"
 
@@ -5617,11 +5616,6 @@ origin_should_use_dep_args() {
 }
 
 listed_ports() {
-	if [ -f "${MASTERMNT}/.p/listed_origins" ]; then
-		cat "${MASTERMNT}/.p/listed_origins"
-		return
-	fi
-
 	_listed_ports | while read originspec; do
 		is_bad_flavor_slave_port "${originspec}" originspec && continue
 		echo "${originspec}"
