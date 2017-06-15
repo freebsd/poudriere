@@ -510,6 +510,7 @@ jstart() {
 	[ "${RESTRICT_NETWORKING}" = "yes" ] || network="${ipargs}"
 
 	_my_name name
+	# Restrict to no networking (if RESTRICT_NETWORKING==yes)
 	jail -c persist name=${name} \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
@@ -518,6 +519,7 @@ jstart() {
 	    jexecd -j ${name} -d ${MASTERMNT}/../ \
 	    ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}} \
 	    ${MAX_FILES+-n ${MAX_FILES}}
+	# Allow networking in -n jail
 	jail -c persist name=${name}-n \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
