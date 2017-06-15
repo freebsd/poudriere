@@ -491,7 +491,7 @@ install_from_vcs() {
 	if [ ${UPDATE} -eq 0 ]; then
 		case ${METHOD} in
 		svn*)
-			msg_n "Checking out the sources from svn..."
+			msg_n "Checking out the sources with ${METHOD}..."
 			${SVN_CMD} -q co ${SVN_FULLURL}/${VERSION} ${SRC_BASE} || err 1 " fail"
 			echo " done"
 			if [ -n "${SRCPATCHFILE}" ]; then
@@ -504,7 +504,7 @@ install_from_vcs() {
 			if [ -n "${SRCPATCHFILE}" ]; then
 				err 1 "Patch files not supported with git, please use feature branches"
 			fi
-			msg_n "Checking out the sources from git..."
+			msg_n "Checking out the sources with ${METHOD}..."
 			git clone ${GIT_DEPTH} -q -b ${VERSION} ${GIT_FULLURL} ${SRC_BASE} || err 1 " fail"
 			echo " done"
 			# No support for patches, using feature branches is recommanded"
@@ -513,7 +513,7 @@ install_from_vcs() {
 	else
 		case ${METHOD} in
 		svn*)
-			msg_n "Updating the sources from svn..."
+			msg_n "Updating the sources with ${METHOD}..."
 			${SVN_CMD} upgrade ${SRC_BASE} 2>/dev/null || :
 			${SVN_CMD} -q update -r ${TORELEASE:-head} ${SRC_BASE} || err 1 " fail"
 			echo " done"
