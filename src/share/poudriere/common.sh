@@ -5551,7 +5551,7 @@ compute_deps_pkg() {
 	local pkgname="$1"
 	local originspec="$2"
 	local pkg_pooldir deps dep_pkgname dep_originspec dep_args
-	local raw_deps td d key dpath dep_real_pkgname err_type
+	local raw_deps d key dpath dep_real_pkgname err_type
 
 	shash_get pkgname-deps "${pkgname}" deps || \
 	    err 1 "compute_deps_pkg failed to find deps for ${pkgname}"
@@ -5587,44 +5587,41 @@ compute_deps_pkg() {
 		else
 			err_type="msg_warn"
 		fi
-		for td in run lib; do
-			shash_get pkgname-${td}_deps "${pkgname}" raw_deps || \
-			    continue
-			for d in ${raw_deps}; do
-				key="${d%:*}"
-				# Validate that there is not an incorrect
-				# PKGNAME dependency that does not match the
-				# actual PKGNAME.  This would otherwise cause
-				# the next build to delete the package due
-				# to having a 'new dependency' since pkg would
-				# not record it due to being invalid.
-				case "${key}" in
-				*\>*|*\<*|*=*)
-					dep_pkgname="${key%%[><=]*}"
-					dpath="${d#*:}"
-					case "${dpath}" in
-					${PORTSDIR}/*)
-						dpath=${dpath#${PORTSDIR}/} ;;
-					esac
-					# Handle py3 mapping needs
-					map_py_slave_port "${dpath}" \
-					    dpath || :
-					maybe_apply_my_own_dep_args \
-					    "${pkgname}" \
-					    dpath "${dpath}" \
-					    "${dep_args}" dep_args || :
-					hash_get \
-					    compute_deps_originspec-pkgname \
-					    "${dpath}" dep_real_pkgname || \
-					    err 1 "compute_deps_pkg failed to lookup existing pkgname for ${dpath} processing package ${pkgname}"
-					if [ "${dep_pkgname}" != \
-					    "${dep_real_pkgname%-*}" ]; then
-						${err_type} "${COLOR_PORT}${originspec}${COLOR_WARN} dependency on ${COLOR_PORT}${dpath}${COLOR_WARN} has wrong PKGNAME of '${dep_pkgname}' but should be '${dep_real_pkgname%-*}'"
-					fi
-					;;
-				*) ;;
+		shash_get pkgname-run_deps "${pkgname}" raw_deps || raw_deps=
+		for d in ${raw_deps}; do
+			key="${d%:*}"
+			# Validate that there is not an incorrect
+			# PKGNAME dependency that does not match the
+			# actual PKGNAME.  This would otherwise cause
+			# the next build to delete the package due
+			# to having a 'new dependency' since pkg would
+			# not record it due to being invalid.
+			case "${key}" in
+			*\>*|*\<*|*=*)
+				dep_pkgname="${key%%[><=]*}"
+				dpath="${d#*:}"
+				case "${dpath}" in
+				${PORTSDIR}/*)
+					dpath=${dpath#${PORTSDIR}/} ;;
 				esac
-			done
+				# Handle py3 mapping needs
+				map_py_slave_port "${dpath}" \
+				    dpath || :
+				maybe_apply_my_own_dep_args \
+				    "${pkgname}" \
+				    dpath "${dpath}" \
+				    "${dep_args}" dep_args || :
+				hash_get \
+				    compute_deps_originspec-pkgname \
+				    "${dpath}" dep_real_pkgname || \
+				    err 1 "compute_deps_pkg failed to lookup existing pkgname for ${dpath} processing package ${pkgname}"
+				if [ "${dep_pkgname}" != \
+				    "${dep_real_pkgname%-*}" ]; then
+					${err_type} "${COLOR_PORT}${originspec}${COLOR_WARN} dependency on ${COLOR_PORT}${dpath}${COLOR_WARN} has wrong PKGNAME of '${dep_pkgname}' but should be '${dep_real_pkgname%-*}'"
+				fi
+				;;
+			*) ;;
+			esac
 		done
 	fi
 
