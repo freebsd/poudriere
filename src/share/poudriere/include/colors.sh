@@ -39,7 +39,6 @@ MAXCOLORS=126
 # them and the below : {} lines in poudriere.conf.
 if [ ${USE_COLORS} = "no" ]; then
 	COLOR_RESET=
-	COLOR_RESET_REAL=
 	COLOR_BOLD=
 	COLOR_UNDER=
 	COLOR_BLINK=

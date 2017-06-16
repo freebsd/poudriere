@@ -111,7 +111,7 @@ _msg_n() {
 		elapsed="[${elapsed}] "
 	fi
 	if [ -n "${COLOR_ARROW}" ] || [ -z "${1##*\033[*}" ]; then
-		printf "${elapsed}${DRY_MODE}${COLOR_ARROW}====>>${COLOR_RESET} ${1}${COLOR_RESET_REAL}${NL}"
+		printf "${elapsed}${DRY_MODE}${COLOR_ARROW}====>>${COLOR_RESET} ${1}${COLOR_RESET}${NL}"
 	else
 		printf "${elapsed}${DRY_MODE}====>> ${1}${NL}"
 	fi
