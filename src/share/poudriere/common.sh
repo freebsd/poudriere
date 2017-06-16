@@ -4823,7 +4823,7 @@ lock_have() {
 }
 
 have_ports_feature() {
-	[ -z "${PORTS_FEATURES%%*${1}*}" ]
+	[ -z "${P_PORTS_FEATURES%%*${1}*}" ]
 }
 
 # Fetch vars from the Makefile and set them locally.
@@ -5985,26 +5985,26 @@ check_moved() {
 }
 
 fetch_global_port_vars() {
-	was_a_testport_run && [ -n "${PORTS_FEATURES}" ] && return 0
+	was_a_testport_run && [ -n "${P_PORTS_FEATURES}" ] && return 0
 	# Before we start, determine the default PYTHON version to
 	# deal with any use of DEPENDS_ARGS involving it.  DEPENDS_ARGS
 	# was a hack only actually used for python ports.
 	port_var_fetch '' \
 	    'USES=python' \
-	    PORTS_FEATURES PORTS_FEATURES \
+	    PORTS_FEATURES P_PORTS_FEATURES \
 	    PYTHON_DEFAULT_VERSION P_PYTHON_DEFAULT_VERSION \
 	    PYTHON3_DEFAULT P_PYTHON3_DEFAULT || \
 	    err 1 "Error looking up pre-build ports vars"
 	# Ensure not blank so -z checks work properly
-	[ -z "${PORTS_FEATURES}" ] && PORTS_FEATURES="none"
+	[ -z "${P_PORTS_FEATURES}" ] && P_PORTS_FEATURES="none"
 	# Add in pseduo 'DEPENDS_ARGS' feature if there's no FLAVORS support.
 	have_ports_feature FLAVORS || \
-	    PORTS_FEATURES="${PORTS_FEATURES:+${PORTS_FEATURES} }DEPENDS_ARGS"
+	    P_PORTS_FEATURES="${P_PORTS_FEATURES:+${P_PORTS_FEATURES} }DEPENDS_ARGS"
 	# Trim none if leftover from forcing in DEPENDS_ARGS
-	PORTS_FEATURES="${PORTS_FEATURES#none }"
-	[ "${PORTS_FEATURES}" != "none" ] && \
-	    msg "Ports supports: ${PORTS_FEATURES}"
-	export PORTS_FEATURES P_PYTHON_DEFAULT_VERSION P_PYTHON3_DEFAULT
+	P_PORTS_FEATURES="${P_PORTS_FEATURES#none }"
+	[ "${P_PORTS_FEATURES}" != "none" ] && \
+	    msg "Ports supports: ${P_PORTS_FEATURES}"
+	export P_PORTS_FEATURES P_PYTHON_DEFAULT_VERSION P_PYTHON3_DEFAULT
 }
 
 clean_build_queue() {
