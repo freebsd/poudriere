@@ -274,3 +274,11 @@ read_line() {
 
 	return ${ret}
 }
+
+# This uses open(O_CREAT), woot.
+noclobber() {
+	local -
+	set -C
+
+	"$@" 2>/dev/null
+}

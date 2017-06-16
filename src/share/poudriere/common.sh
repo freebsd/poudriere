@@ -4164,9 +4164,9 @@ deps_fetch_vars() {
 	# support python but is passed DEPENDS_ARGS=PYTHON_VERSION=3.2
 	# from a reverse dependency. Just ignore it in that case.
 	# Otherwise it is fatal due to duplicated PKGNAME.
-	shash_get pkgname-originspec "${_pkgname}" _existing_originspec || \
-	    _existing_originspec=
-	if [ -n "${_existing_originspec}" ]; then
+	if ! noclobber shash_set pkgname-originspec "${_pkgname}" \
+	    "${originspec}"; then
+		shash_get pkgname-originspec "${_pkgname}" _existing_originspec
 		[ "${_existing_originspec}" = "${originspec}" ] && \
 		    err 1 "deps_fetch_vars: ${originspec} already known as ${pkgname}"
 		originspec_decode "${_existing_originspec}" \
@@ -4186,7 +4186,6 @@ deps_fetch_vars() {
 	# Discovered a new originspec->pkgname mapping.
 	msg_debug "deps_fetch_vars: discovered ${originspec} is ${_pkgname}"
 	shash_set originspec-pkgname "${originspec}" "${_pkgname}"
-	shash_set pkgname-originspec "${_pkgname}" "${originspec}"
 	[ -n "${_dep_args}" ] && \
 	    shash_set pkgname-dep_args "${_pkgname}" "${_dep_args}"
 	[ -n "${_flavor}" ] && \
