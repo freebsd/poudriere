@@ -5644,6 +5644,7 @@ map_py_slave_port() {
 	originspec_decode "${_originspec}" origin dep_args flavor
 
 	have_ports_feature DEPENDS_ARGS || return 1
+	[ "${P_PYTHON_MAJOR_VER}" = "2" ] || return 1
 
 	# If there's already a DEPENDS_ARGS or FLAVOR just assume it
 	# is working with the new framework or is not in need of
@@ -5717,6 +5718,7 @@ origin_should_use_dep_args() {
 	local origin="${1}"
 
 	have_ports_feature DEPENDS_ARGS || return 1
+	[ "${P_PYTHON_MAJOR_VER}" = "2" ] || return 1
 
 	# These are forcing python3 already
 	case "${origin}" in
@@ -5991,6 +5993,7 @@ fetch_global_port_vars() {
 	port_var_fetch '' \
 	    'USES=python' \
 	    PORTS_FEATURES P_PORTS_FEATURES \
+	    PYTHON_MAJOR_VER P_PYTHON_MAJOR_VER \
 	    PYTHON_DEFAULT_VERSION P_PYTHON_DEFAULT_VERSION \
 	    PYTHON3_DEFAULT P_PYTHON3_DEFAULT || \
 	    err 1 "Error looking up pre-build ports vars"
@@ -6003,7 +6006,8 @@ fetch_global_port_vars() {
 	P_PORTS_FEATURES="${P_PORTS_FEATURES#none }"
 	[ "${P_PORTS_FEATURES}" != "none" ] && \
 	    msg "Ports supports: ${P_PORTS_FEATURES}"
-	export P_PORTS_FEATURES P_PYTHON_DEFAULT_VERSION P_PYTHON3_DEFAULT
+	export P_PORTS_FEATURES P_PYTHON_MAJOR_VER P_PYTHON_DEFAULT_VERSION \
+	    P_PYTHON3_DEFAULT
 }
 
 clean_build_queue() {
