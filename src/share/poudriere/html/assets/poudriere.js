@@ -469,6 +469,7 @@ function format_status_row(status, row, n) {
 		table_row.push(format_pkgname(row.pkgname));
 		table_row.push(row.status);
 	} else if (status == "queued") {
+		table_row.push(format_pkgname(row.pkgname));
 		table_row.push(format_origin(row.origin));
 		if (row.reason == "listed") {
 			table_row.push(row.reason);
@@ -588,6 +589,7 @@ function process_data_build(data) {
 
 			row.id = builder.id;
 			row.job_id = builder.id;
+			row.pkgname = builder.pkgname ? format_pkgname(builder.pkgname) : "";
 			row.origin = builder.origin ? format_origin(builder.origin) : "";
 			row.status = builder.pkgname ?
 				format_log(builder.pkgname, false, builder.status) :
@@ -895,7 +897,12 @@ function setup_build() {
 				"sWidth": "1em",
 			},
 			{
+				"data": "pkgname",
+				"sWidth": "15em",
+			},
+			{
 				"data": "origin",
+				"sWidth": "17em",
 			},
 			{
 				"data": "status",
@@ -999,6 +1006,7 @@ function setup_build() {
 		],
 		"queued": [
 			build_order_column,
+			pkgname_column,
 			origin_column,
 			origin_column,
 		],

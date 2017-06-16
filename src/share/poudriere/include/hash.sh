@@ -74,6 +74,21 @@ _hash_var_name() {
 	_hash_var_name=${_gsub}
 }
 
+hash_isset() {
+	local -; set +x
+	[ $# -ne 2 ] && eargs hash_isset var key
+	local var="$1"
+	local key="$2"
+	local _hash_var_name _value
+
+	_hash_var_name "${var}" "${key}"
+
+	# Look value from cache
+	eval "_value=\${${_hash_var_name}-__null}"
+
+	[ "${_value}" != "__null" ]
+}
+
 hash_get() {
 	local -; set +x
 	[ $# -ne 3 ] && eargs hash_get var key var_return

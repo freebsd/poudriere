@@ -1,0 +1,21 @@
+# $FreeBSD: head/Mk/Uses/gmake.mk 418216 2016-07-08 11:24:18Z tijl $
+#
+# Provide support to use the GNU make
+#
+# Feature:		gmake
+# Usage:		USES=gmake
+#
+# MAINTAINER: portmgr@FreeBSD.org
+
+.if !defined(_INCLUDE_USES_GMAKE_MK)
+_INCLUDE_USES_GMAKE_MK=	yes
+
+.if !empty(gmake_ARGS)
+IGNORE=	Incorrect 'USES+= gmake:${gmake_ARGS}' gmake takes no arguments
+.endif
+
+BUILD_DEPENDS+=		gmake:devel/gmake
+CONFIGURE_ENV+=		MAKE=gmake
+MAKE_CMD=		gmake
+
+.endif

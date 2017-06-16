@@ -19,8 +19,12 @@ for test in ${TESTS}; do
 		if [ ${status} -eq 124 ]; then
 			status="124 (timeout)"
 		fi
-		echo "failed: ${status}"
-		FAILED_TESTS="${FAILED_TESTS}${FAILED_TESTS:+ }${test}"
+		if grep -q SKIP ${test}.stderr.log; then
+			echo "skipped: $(cat ${test}.stderr.log)"
+		else
+			echo "failed: ${status}"
+			FAILED_TESTS="${FAILED_TESTS}${FAILED_TESTS:+ }${test}"
+		fi
 	else
 		echo "pass"
 	fi

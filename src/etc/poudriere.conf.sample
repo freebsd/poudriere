@@ -104,7 +104,19 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # as DEFAULT_RUBY_VERSION, PERL_VERSION, WITHOUT_X11 that change dependencies
 # for many ports.
 # Valid options: yes, no
+# Default: yes
 #CHECK_CHANGED_DEPS=yes
+
+# Consider bad dependency lines on the wrong PKGNAME as fatal.
+# For example:
+#    BUILD_DEPENDS=  p5-List-MoreUtils>=0:lang/p5-List-MoreUtils
+# If this port's PKGNAME were really "List-MoreUtils" then it would
+# not be recorded into the resulting package.  The next build with
+# CHECK_CHANGED_DEPS enabled would consider it a "new dependency"
+# since it is in the the port but not in the package.  This is usually
+# a warning but can be made fatal instead by enabling this option.
+# Default: no
+#BAD_PKGNAME_DEPS_ARE_FATAL=yes
 
 
 # Path to the RSA key to sign the PKG repo with. See pkg-repo(8)

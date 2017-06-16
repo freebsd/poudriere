@@ -170,7 +170,7 @@ for file in ${PACKAGES}/All/*; do
 			if ! pkg_get_origin origin "${file}"; then
 				msg_verbose "Found corrupt package: ${file}"
 				echo "${file}" >> ${BADFILES_LIST}
-			elif ! pkg_is_needed "${pkgname}"; then
+			elif ! pkgbase_is_needed "${pkgname}"; then
 				msg_verbose "Found unwanted package: ${file}"
 				echo "${file}" >> ${BADFILES_LIST}
 			else
@@ -249,10 +249,10 @@ END {
 				;;
 			'=')
 				# This should be impossible now due to the
-				# earlier pkg_is_needed() comparison
+				# earlier pkgbase_is_needed() comparison
 				# (by PKGBASE) and that this check is grouped
 				# by PKGBASE.  Any renamed package is trimmed
-				# out by the failed pkg_is_needed() check.
+				# out by the failed pkgbase_is_needed() check.
 				err 1 "Found duplicated packages ${pkg} vs ${lastpkg} with origin ${origin}"
 				;;
 		esac

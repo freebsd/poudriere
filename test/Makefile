@@ -9,6 +9,17 @@ TESTS=\
 	relpath_common.sh \
 	shash_basic.sh \
 	trap_save.sh \
+	bulk-bad-DEPENDS_ARGS.sh \
+	bulk-flavor-default-dep.sh \
+	bulk-flavor-main-dep-and-specific-listed.sh \
+	bulk-flavor-main-dep-and-default-listed.sh \
+	bulk-flavor-default-dep-and-specific-listed.sh \
+	bulk-flavor-specific-dep-and-specific-listed.sh \
+	bulk-flavor-specific-dep-and-main-listed.sh \
+	bulk-flavor-specific-dep-and-default-listed.sh \
+	bulk-flavor-specific-dep-and-default-shorthand-listed.sh \
+	bulk-flavor-specific-dep-and-multi-listed.sh \
+	bulk-flavor-specific-dep-and-multi-no-main-listed.sh
 
 all: check
 
