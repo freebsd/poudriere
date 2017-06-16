@@ -344,7 +344,7 @@ fi
 
 msg "Cleaning up"
 injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -DNOCLEANDEPENDS clean \
-    ${FLAVOR:+FLAVOR=${FLAVOR}}
+    ${MAKE_ARGS}
 
 msg "Deinstalling package"
 ensure_pkg_installed
