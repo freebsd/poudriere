@@ -1,13 +1,13 @@
 cacheccmd		cachec
-clockcmd		clock
-diremptycmd		dirempty
+clockcmd -n		clock
+diremptycmd -n		dirempty
 locked_mkdircmd		locked_mkdir
 mkdircmd		mkdir
 mktempcmd		mktemp
 pwaitcmd		pwait
-realpathcmd		realpath
-renamecmd		rename
-rmdircmd		rmdir
+realpathcmd -n		realpath
+renamecmd -n		rename
+rmdircmd -n		rmdir
 setproctitlecmd		setproctitle
 sleepcmd		sleep
 touchcmd		touch
