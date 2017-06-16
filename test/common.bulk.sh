@@ -198,13 +198,6 @@ assert_queued() {
 	rm -f "${tmp}"
 }
 
-# Need to trim environment of anything that may taint our top-level port var
-# fetching.
-while read var; do
-	unset ${var}
-done <<-EOF
-$(env | egrep '^(WITH_|PORT)' | grep -v PORTSDIR)
-EOF
 export __MAKE_CONF=/dev/null
 export SRCCONF=/dev/null
 export SRC_ENV_CONF=/dev/null

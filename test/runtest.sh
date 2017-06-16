@@ -10,4 +10,12 @@ esac
 
 [ -t 0 ] && export FORCE_COLORS=1
 
+# Need to trim environment of anything that may taint our top-level port var
+# fetching.
+while read var; do
+	unset ${var}
+done <<-EOF
+$(env | egrep '^(WITH_|PORT)')
+EOF
+
 exec /usr/bin/timeout ${TIMEOUT} ../timestamp ${SH} "$@"
