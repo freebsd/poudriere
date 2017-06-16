@@ -2,8 +2,8 @@ cacheccmd		cachec
 clockcmd -n		clock
 diremptycmd -n		dirempty
 locked_mkdircmd		locked_mkdir
-mkdircmd		mkdir
-mktempcmd		mktemp
+mkdircmd -n		mkdir
+mktempcmd -n		mktemp
 pwaitcmd		pwait
 realpathcmd -n		realpath
 renamecmd -n		rename
