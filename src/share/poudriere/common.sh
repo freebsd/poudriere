@@ -3461,8 +3461,8 @@ build_queue() {
 				find ../deps -type d -depth 1 | \
 				    sed -e 's,$, waiting-on-dependency,'
 			} | sed -e 's,.*/,,' > \
-			    "${log}/.poudriere.ports.remaining.tmp"
-			mv -f "${log}/.poudriere.ports.remaining.tmp" \
+			    "${log}/.poudriere.ports.remaining.tmp%"
+			mv -f "${log}/.poudriere.ports.remaining.tmp%" \
 			    "${log}/.poudriere.ports.remaining"
 		fi
 
@@ -4040,7 +4040,7 @@ deps_fetch_vars() {
 	local flavors_var="$6"
 	local _pkgname _pkg_deps _lib_depends= _run_depends= _selected_options=
 	local _changed_options= _changed_deps= _depends_args= _lookup_flavors=
-	local _existing_origin _existing_originspec
+	local _existing_origin _existing_originspec categories
 	local _default_originspec _default_pkgname
 	local origin _origin_dep_args _dep_args _dep _new_pkg_deps
 	local _origin_flavor _flavor _flavors _dep_arg _new_dep_args
@@ -4078,6 +4078,7 @@ deps_fetch_vars() {
 	    PKGNAME _pkgname \
 	    ${_depends_args} \
 	    ${_lookup_flavors} \
+	    CATEGORIES categories \
 	    ${_changed_deps} \
 	    ${_changed_options} \
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
@@ -4089,6 +4090,15 @@ deps_fetch_vars() {
 
 	[ -n "${_pkgname}" ] || \
 	    err 1 "deps_fetch_vars: failed to get PKGNAME for ${originspec}"
+
+	# Validate CATEGORIES is proper to avoid:
+	# - Pkg not registering the dependency
+	# - Having delete_old_pkg later remove it due to the origin fetched
+	#   from pkg-query not existing.
+	if [ "${categories%% *}" != "${origin%%/*}" ]; then
+		msg_error "${COLOR_PORT}${origin}${COLOR_RESET} has incorrect CATEGORIES, first should be '${origin%%/*}'.  Please contact maintainer of the port to fix this."
+		return 1
+	fi
 
 	if have_ports_feature DEPENDS_ARGS; then
 		# Determine if the port's claimed DEPENDS_ARGS even matter.
@@ -4726,7 +4736,7 @@ delete_old_pkg() {
 
 delete_old_pkgs() {
 
-	msg "Checking packages for incremental rebuild needed"
+	msg "Checking packages for incremental rebuild needs"
 
 	package_dir_exists_and_has_packages || return 0
 
@@ -6814,6 +6824,7 @@ fi
 : ${BUILD_AS_NON_ROOT:=yes}
 : ${DISTFILES_CACHE:=/nonexistent}
 : ${SVN_CMD:=$(which svn 2>/dev/null || which svnlite 2>/dev/null)}
+: ${GIT_CMD:=git}
 : ${BINMISC:=/usr/sbin/binmiscctl}
 # 24 hours for 1 command
 : ${MAX_EXECUTION_TIME:=86400}
