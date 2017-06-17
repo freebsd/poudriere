@@ -5723,6 +5723,8 @@ map_py_slave_port() {
 		multimedia/py3-gstreamer1)	return 1 ;;
 		sysutils/py3-iocage)		return 1 ;;
 		textproc/py3-libxml2)		return 1 ;;
+		# It only supports up to 3.3
+		devel/py3-enum34)		return 1 ;;
 	esac
 
 	[ -n "${P_PYTHON3_DEFAULT}" ] || \
@@ -5773,6 +5775,8 @@ origin_should_use_dep_args() {
 	devel/pygobject3-common)	return 1 ;;
 	devel/py-dbus)			return 1 ;;
 	devel/py-gobject3)		return 1 ;;
+	# It only supports up to 3.3
+	devel/py-enum34)		return 1 ;;
 	# Only use DEPENDS_ARGS on py[!3] ports where it will
 	# make an impact.  This is a big assumption and may not
 	# prove workable.
