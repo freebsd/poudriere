@@ -3733,12 +3733,12 @@ build_pkg() {
 	case " ${BLACKLIST} " in
 	*\ ${port}\ *) ignore="Blacklisted" ;;
 	esac
-	# If this port is IGNORED, skip it
-	# This is checked here instead of when building the queue
-	# as the list may start big but become very small, so here
-	# is a less-common check
-	: ${ignore:=$(injail /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
-	    -VIGNORE)}
+	if [ -n "${ignore}" ]; then
+		# If this port is IGNORED, skip it
+		# This is checked here due to historical reasons and
+		# will later be moved up into the queue creation.
+		shash_get pkgname-ignore "${pkgname}" ignore || ignore=
+	fi
 
 	rm -rf ${mnt}/wrkdirs/* || :
 
@@ -4086,7 +4086,7 @@ deps_fetch_vars() {
 	local flavors_var="$6"
 	local _pkgname _pkg_deps _lib_depends= _run_depends= _selected_options=
 	local _changed_options= _changed_deps= _depends_args= _lookup_flavors=
-	local _existing_origin _existing_originspec categories
+	local _existing_origin _existing_originspec categories _ignore
 	local _default_originspec _default_pkgname
 	local origin _origin_dep_args _dep_args _dep _new_pkg_deps
 	local _origin_flavor _flavor _flavors _dep_arg _new_dep_args
@@ -4133,6 +4133,7 @@ deps_fetch_vars() {
 	    ${_depends_args} \
 	    ${_lookup_flavors} \
 	    CATEGORIES categories \
+	    IGNORE _ignore \
 	    ${_changed_deps} \
 	    ${_changed_options} \
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
@@ -4264,6 +4265,8 @@ deps_fetch_vars() {
 	    shash_set pkgname-flavor "${_pkgname}" "${_flavor}"
 	[ -n "${_flavors}" ] && \
 	    shash_set pkgname-flavors "${_pkgname}" "${_flavors}"
+	[ -n "${_ignore}" ] && \
+	    shash_set pkgname-ignore "${_pkgname}" "${_ignore}"
 	shash_set pkgname-deps "${_pkgname}" "${_pkg_deps}"
 	# Store for delete_old_pkg with CHECK_CHANGED_DEPS==yes
 	if [ -n "${_lib_depends}" ]; then
