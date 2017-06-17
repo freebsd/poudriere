@@ -4098,14 +4098,19 @@ deps_fetch_vars() {
 	# become superfluous.  Bulk -a would have already visited from the
 	# category Makefiles.  The main port would have been looked up
 	# potentially by the 'metadata' hack.
+	# DEPENDS_ARGS can fall into this as well but it is unlikely to
+	# actually be superfluous due to the conditional application of
+	# DEPENDS_ARGS in most cases.  So don't waste time looking it up
+	# or enforcing the rule until it is found superfluous.  www/py-yarl
+	# triggers this with www/py-multidict since it tries to add DEPENDS_ARGS
+	# onto its multidict dependency but later finds that multidict is
+	# already forcing Python 3 and the DEPENDS_ARGS does nothing.
 	if ! was_a_testport_run && [ ${ALL} -eq 0 ] && \
 	    [ -n "${_origin_flavor}" ]; then
 		originspec_encode _default_originspec "${origin}" '' ''
 		shash_get originspec-pkgname "${_default_originspec}" \
 		    _default_pkgname || \
 		    err 1 "deps_fetch_vars: Lookup of ${originspec} failed to already have ${_default_originspec}"
-	else
-		_default_originspec="${originspec}"
 	fi
 
 	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
@@ -4221,12 +4226,30 @@ deps_fetch_vars() {
 		originspec_decode "${_existing_originspec}" \
 		    _existing_origin '' ''
 		if [ "${_existing_origin}" = "${origin}" ]; then
+			# We don't force having the main port looked up for
+			# DEPENDS_ARGS uses, see explanation at first
+			# originspec-pkgname lookup.
+			if have_ports_feature DEPENDS_ARGS && \
+			    [ -z "${_default_pkgname}" ] && \
+			    [ -n "${_origin_dep_args}" ]; then
+				originspec_encode _default_originspec \
+				    "${origin}" '' ''
+				shash_get originspec-pkgname \
+				    "${_default_originspec}" \
+				    _default_pkgname || \
+				    err 1 "deps_fetch_vars: Lookup of ${originspec} failed to already have ${_default_originspec}"
+			fi
 			if [ "${_pkgname}" = "${_default_pkgname}" ]; then
+				# Set this for later compute_deps lookups
+				have_ports_feature DEPENDS_ARGS && \
+				    [ -n "${_origin_dep_args}" ] && \
+				    shash_set originspec-pkgname \
+				    "${originspec}" "${_pkgname}"
 				# This originspec is superfluous, just ignore.
 				msg_debug "deps_fetch_vars: originspec ${originspec} is superfluous for PKGNAME ${_pkgname}"
-				[ ${ALL} -eq 0 ] && \
-				    [ -z "${_origin_dep_args}" ] && \
-				    return 2
+				[ ${ALL} -eq 0 ] && return 2
+				have_ports_feature DEPENDS_ARGS && \
+				    [ -n "${_origin_dep_args}" ] && return 2
 			fi
 		fi
 		err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${originspec}${COLOR_RESET} AND ${COLOR_PORT}${_existing_originspec}${COLOR_RESET}. Rerun with -v to see which ports are depending on these."
@@ -5309,6 +5332,9 @@ gather_port_vars_port() {
 		0) ;;
 		# Non-fatal duplicate should be ignored
 		2)
+			# If this a superfluous DEPENDS_ARGS then there's
+			# nothing more to do - it's already queued.
+			[ -n "${origin_dep_args}" ] && return 0
 			# The previous depqueue run may have readded
 			# this originspec into the flavorqueue.
 			# Expunge it.
@@ -5717,11 +5743,11 @@ map_py_slave_port() {
 	esac
 
 	# These ports need to have their main port properly made into
-	# a variable port - which comes naturally which will come
-	# with the FLAVORS conversion.  They have no MASTERDIR now
-	# but seemingly do -- OR they have a MASTERDIR that is not
-	# otherwise a dependency for anything and does not cause a
-	# DEPENDS_ARGS-generated py3 package.
+	# a variable port - which comes naturally with the FLAVORS
+	# conversion.  They have no MASTERDIR now but seemingly do --
+	# OR they have a MASTERDIR that is not otherwise a dependency
+	# for anything and does not cause a DEPENDS_ARGS-generated py3
+	# package.
 	case "${origin}" in
 		accessibility/py3-atspi)	return 1 ;;
 		audio/py3-pylast)		return 1 ;;
@@ -5776,28 +5802,14 @@ origin_should_use_dep_args() {
 	have_ports_feature FLAVORS && return 1
 	[ "${P_PYTHON_MAJOR_VER}" = "2" ] || return 1
 
-	# These are forcing python3 already
 	case "${origin}" in
-	devel/py-typed-ast)		return 1 ;;
-	misc/py-spdx)			return 1 ;;
-	misc/py-spdx-lookup)		return 1 ;;
-	net-im/py-sleekxmpp)		return 1 ;;
-	net/py-dugong)			return 1 ;;
-	www/py-aiohttp)			return 1 ;;
-	# Their corresponding MASTERDIRS do not support DEPENDS_ARGS
-	devel/pydbus-common)		return 1 ;;
-	devel/pygobject3-common)	return 1 ;;
-	devel/py-dbus)			return 1 ;;
-	devel/py-gobject3)		return 1 ;;
-	# It only supports up to 3.3
-	devel/py-enum34)		return 1 ;;
-	# Only use DEPENDS_ARGS on py[!3] ports where it will
-	# make an impact.  This is a big assumption and may not
-	# prove workable.
+	# Only use DEPENDS_ARGS on py- ports where it will
+	# make an impact.  It can still result in superfluous
+	# PKGNAMES as some py- ports are really 3+.  This
+	# matching is done to at least reduce the number of
+	# superfluous lookups for optimization.
 	*/python*) ;;
-	*/py[^3]*)
-		return 0
-		;;
+	*/py-*) return 0 ;;
 	esac
 	return 1
 }
