@@ -4087,7 +4087,7 @@ deps_fetch_vars() {
 	local _pkgname _pkg_deps _lib_depends= _run_depends= _selected_options=
 	local _changed_options= _changed_deps= _depends_args= _lookup_flavors=
 	local _existing_origin _existing_originspec categories _ignore
-	local _default_originspec _default_pkgname
+	local _default_originspec _default_pkgname _orig_ignore
 	local origin _origin_dep_args _dep_args _dep _new_pkg_deps
 	local _origin_flavor _flavor _flavors _dep_arg _new_dep_args
 
@@ -4241,11 +4241,23 @@ deps_fetch_vars() {
 				    err 1 "deps_fetch_vars: Lookup of ${originspec} failed to already have ${_default_originspec}"
 			fi
 			if [ "${_pkgname}" = "${_default_pkgname}" ]; then
-				# Set this for later compute_deps lookups
-				have_ports_feature DEPENDS_ARGS && \
-				    [ -n "${_origin_dep_args}" ] && \
-				    shash_set originspec-pkgname \
-				    "${originspec}" "${_pkgname}"
+				if have_ports_feature DEPENDS_ARGS && \
+				    [ -n "${_origin_dep_args}" ]; then
+					# If this port is IGNORE but the
+					# main one was not then we're not
+					# really superfluous.  This really
+					# indicates an invalid py3 mapping
+					# that needs ignored in
+					# map_py_slave_port.
+					if false && [ -n "${_ignore}" ] && \
+					    ! shash_get pkgname-ignore \
+					    "${_pkgname}" _orig_ignore; then
+						err 1 "${originspec} is IGNORE but ${_existing_originspec} was not for ${_pkgname}: ${_ignore}"
+					fi
+					# Set this for later compute_deps lookups
+					shash_set originspec-pkgname \
+					    "${originspec}" "${_pkgname}"
+				fi
 				# This originspec is superfluous, just ignore.
 				msg_debug "deps_fetch_vars: originspec ${originspec} is superfluous for PKGNAME ${_pkgname}"
 				[ ${ALL} -eq 0 ] && return 2
