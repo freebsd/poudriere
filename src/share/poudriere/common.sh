@@ -4095,8 +4095,11 @@ deps_fetch_vars() {
 	    _origin_flavor
 	# If we were passed in a FLAVOR then we better have already looked up
 	# the default for this port.  This is to avoid making the default port
-	# become superfluous.
-	if ! was_a_testport_run && [ -n "${_origin_flavor}" ]; then
+	# become superfluous.  Bulk -a would have already visited from the
+	# category Makefiles.  The main port would have been looked up
+	# potentially by the 'metadata' hack.
+	if ! was_a_testport_run && [ ${ALL} -eq 0 ] && \
+	    [ -n "${_origin_flavor}" ]; then
 		originspec_encode _default_originspec "${origin}" '' ''
 		shash_get originspec-pkgname "${_default_originspec}" \
 		    _default_pkgname || \
