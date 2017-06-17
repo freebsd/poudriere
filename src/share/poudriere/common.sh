@@ -5655,10 +5655,12 @@ compute_deps_pkg() {
 				    compute_deps_originspec-pkgname \
 				    "${dpath}" dep_real_pkgname || \
 				    err 1 "compute_deps_pkg failed to lookup existing pkgname for ${dpath} processing package ${pkgname}"
-				if [ "${dep_pkgname}" != \
-				    "${dep_real_pkgname%-*}" ]; then
+				case "${dep_real_pkgname%-*}" in
+				${dep_pkgname}) ;;
+				*)
 					${err_type} "${COLOR_PORT}${originspec}${COLOR_WARN} dependency on ${COLOR_PORT}${dpath}${COLOR_WARN} has wrong PKGNAME of '${dep_pkgname}' but should be '${dep_real_pkgname%-*}'"
-				fi
+					;;
+				esac
 				;;
 			*) ;;
 			esac
