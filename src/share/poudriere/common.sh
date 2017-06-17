@@ -5371,8 +5371,6 @@ gather_port_vars_port() {
 	fi
 
 	msg_debug "WILL BUILD ${originspec}"
-	pkgname_is_queued "${pkgname}" && \
-	    err 1 "gather_port_vars_port: Found ${pkgname} already in all_pkgs"
 	echo "${pkgname} ${originspec}" >> "all_pkgs"
 	if [ "${rdep}" = "listed" ]; then
 		echo "${pkgname}" >> "listed_pkgs"
