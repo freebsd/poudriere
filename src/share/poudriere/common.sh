@@ -3968,12 +3968,12 @@ originspec_encode() {
 	[ $# -ne 4 ] && eargs originspec_encode var_return origin dep_args \
 	    flavor
 	local _var_return="$1"
-	local _origin="$2"
+	local _origin_in="$2"
 	local _dep_args="$3"
 	local _flavor="$4"
 	local output
 
-	output="${_origin}"
+	output="${_origin_in}"
 	# Only add in FLAVOR and DEPENDS_ARGS if they are needed,
 	# if neither are then don't even add in the ORIGINSPEC_SEP.
 	if [ -n "${_dep_args}" -o -n "${_flavor}" ]; then
