@@ -2698,6 +2698,7 @@ gather_distfiles() {
 		case "${special}" in
 		${PORTSDIR}/*) special=${special#${PORTSDIR}/} ;;
 		esac
+		map_py_slave_port "${special}" special || :
 		maybe_apply_my_own_dep_args "${pkgname}" \
 		    dep_originspec "${special}" \
 		    "${dep_args}" dep_args || :
