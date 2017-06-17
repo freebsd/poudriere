@@ -5707,7 +5707,7 @@ map_py_slave_port() {
 	msg_debug "Mapping ${origin} to ${mapped_origin} with DEPENDS_ARGS=${dep_args}"
 	originspec_encode "${var_return_originspec}" "${mapped_origin}" \
 	    "${dep_args}" ''
-	return 1
+	return 0
 }
 
 origin_should_use_dep_args() {
@@ -5743,7 +5743,7 @@ origin_should_use_dep_args() {
 
 listed_ports() {
 	_listed_ports | while read originspec; do
-		map_py_slave_port "${originspec}" originspec && continue
+		map_py_slave_port "${originspec}" originspec || :
 		echo "${originspec}"
 	done
 }
