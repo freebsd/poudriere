@@ -1,5 +1,7 @@
-# Not included in bulk tests
-#SUBDIR += devel
+SUBDIR += converters
+SUBDIR += devel
 SUBDIR += lang
 SUBDIR += ports-mgmt
 SUBDIR += misc
+SUBDIR += print
+SUBDIR += security

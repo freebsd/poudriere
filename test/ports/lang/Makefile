@@ -1,3 +1,4 @@
+SUBDIR += perl5.24
 SUBDIR += python
 SUBDIR += python2
 SUBDIR += python3

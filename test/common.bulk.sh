@@ -204,8 +204,9 @@ export SRC_ENV_CONF=/dev/null
 
 . common.sh
 
-assert_not "" "${LISTPORTS}" "LISTPORTS empty"
-echo "Building: $(echo ${LISTPORTS})"
+if [ ${ALL:-0} -eq 0 ]; then
+	assert_not "" "${LISTPORTS}" "LISTPORTS empty"
+fi
 
 SUDO=
 if [ $(id -u) -ne 0 ]; then
@@ -273,6 +274,13 @@ set +e
 
 ALL_PKGNAMES=
 ALL_ORIGINS=
+if [ ${ALL} -eq 1 ]; then
+	LISTPORTS="$(listed_ports)"
+fi
+echo -n "Gathering metadata for requested ports..."
 for origin in ${LISTPORTS}; do
 	cache_pkgnames "${origin}"
 done
+echo " done"
+expand_origin_flavors "${LISTPORTS}" LISTPORTS_EXPANDED
+echo "Building: $(echo ${LISTPORTS_EXPANDED})"

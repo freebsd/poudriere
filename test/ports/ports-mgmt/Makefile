@@ -1,5 +1,6 @@
 SUBDIR += pkg
 SUBDIR += poudriere-devel
-SUBDIR += poudriere-devel-bad-dep_args
+# Would break bulk -a test
+#SUBDIR += poudriere-devel-bad-dep_args
 SUBDIR += poudriere-devel-dep-DEFAULT
 SUBDIR += poudriere-devel-dep-FOO

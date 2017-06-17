@@ -8,6 +8,7 @@ MASTER_SITES=	LOCAL/bdrewery/${PORTNAME}/ \
 		http://mirror.shatow.net/freebsd/${PORTNAME}/ \
 		GH
 PKGNAMESUFFIX=	-devel
+PKGNAMESUFFIX:=	${PKGNAMESUFFIX}-dep-FOO
 
 MAINTAINER=	bdrewery@FreeBSD.org
 COMMENT=	Port build and test system
