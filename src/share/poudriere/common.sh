@@ -5108,6 +5108,9 @@ gather_port_vars() {
 	parallel_start
 	for originspec in $(listed_ports show_moved); do
 		originspec_decode "${originspec}" origin dep_args flavor
+		[ ${ALL} -eq 0 ] && [ -n "${flavor}" ] && \
+		    ! have_ports_feature FLAVORS && \
+		    err 1 "Trying to build FLAVOR-specific ${originspec} but ports tree has no FLAVORS support."
 		if [ -d "../${PORTSDIR}/${origin}" ]; then
 			rdep="listed"
 			# For -a we skip the initial gatherqueue
@@ -5269,6 +5272,11 @@ gather_port_vars_port() {
 
 	msg_debug "gather_port_vars_port (${originspec}): LOOKUP"
 	originspec_decode "${originspec}" origin origin_dep_args origin_flavor
+	[ -n "${origin_dep_args}" ] && ! have_ports_feature DEPENDS_ARGS && \
+	    err 1 "gather_port_vars_port: Looking up ${originspec} without DEPENDS_ARGS support in ports"
+	[ -n "${origin_flavor}" ] && ! have_ports_feature FLAVORS && \
+	    err 1 "gather_port_vars_port: Looking up ${originspec} without FLAVORS support in ports"
+
 	# Trim away FLAVOR_DEFAULT and restore it later
 	if [ "${origin_flavor}" = "${FLAVOR_DEFAULT}" ]; then
 		originspec_encode originspec "${origin}" "${origin_dep_args}" \
@@ -5448,7 +5456,8 @@ is_failed_metadata_lookup() {
 	local pkgname="$1"
 	local rdep="$2"
 
-	if [ ${ALL} -eq 1 ] || [ "${rdep%% *}" = "metadata" ] || \
+	if ! have_ports_feature FLAVORS || \
+	    [ ${ALL} -eq 1 ] || [ "${rdep%% *}" = "metadata" ] || \
 	    pkgname_is_queued "${pkgname}"; then
 		return 1
 	else
@@ -5684,6 +5693,7 @@ map_py_slave_port() {
 	originspec_decode "${_originspec}" origin dep_args flavor
 
 	have_ports_feature DEPENDS_ARGS || return 1
+	have_ports_feature FLAVORS && return 1
 	[ "${P_PYTHON_MAJOR_VER}" = "2" ] || return 1
 
 	# If there's already a DEPENDS_ARGS or FLAVOR just assume it
@@ -5760,6 +5770,7 @@ origin_should_use_dep_args() {
 	local origin="${1}"
 
 	have_ports_feature DEPENDS_ARGS || return 1
+	have_ports_feature FLAVORS && return 1
 	[ "${P_PYTHON_MAJOR_VER}" = "2" ] || return 1
 
 	# These are forcing python3 already

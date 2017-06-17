@@ -160,6 +160,8 @@ PORTSDIR="${portsdir}" fetch_global_port_vars || \
 PORTSDIR="${portsdir}" \
     map_py_slave_port "${ORIGINSPEC}" ORIGINSPEC || :
 originspec_decode "${ORIGINSPEC}" ORIGIN DEPENDS_ARGS FLAVOR
+[ -n "${FLAVOR}" ] && ! have_ports_feature FLAVORS && \
+    err 1 "Trying to build FLAVOR-specific ${ORIGINSPEC} but ports tree has no FLAVORS support."
 [ "${FLAVOR}" = "${FLAVOR_DEFAULT}" ] && FLAVOR=
 new_origin=$(grep -v '^#' ${portsdir}/MOVED | awk -vorigin="${ORIGIN}" \
     -F\| '$1 == origin && $2 != "" {print $2}')
