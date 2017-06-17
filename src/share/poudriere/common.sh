@@ -4029,6 +4029,51 @@ maybe_apply_my_own_dep_args() {
 	    "${_origin}" "${_my_dep_args}" "${_flavor}"
 }
 
+# Deal with py3 slave port hack by forcing some DEPENDS_ARGS on our
+# dependencies as needed.
+map_py_slave_port_deps() {
+	[ $# -ne 2 ] && eargs map_py_slave_port_deps var_return raw_deps
+	local var_return="$1"
+	local raw_deps="$2"
+	local _new_deps _dep _origin _pkgname _target
+
+	have_ports_feature DEPENDS_ARGS || return 0
+	[ -n "${raw_deps}" ] || return 0
+
+	for _dep in ${raw_deps}; do
+		# We either have <origin> or <*:origin[:*]>
+		case "${_dep}" in
+		*:*:*)
+			_pkgname="${_dep%%:*}"
+			_origin="${_dep%:*}"
+			_origin="${_origin#*:}"
+			_target="${_dep##*:}"
+			;;
+		*:*)
+			_pkgname="${_dep%:*}"
+			_origin="${_dep#*:}"
+			_target=
+			;;
+		*)
+			_pkgname=
+			_origin="${_dep}"
+			_target=
+			;;
+		esac
+		case "${_origin}" in
+		${PORTSDIR}/*)
+			_origin="${_origin#${PORTSDIR}/}" ;;
+		esac
+		if map_py_slave_port "${_origin}" _origin; then
+			# Fix it back up to the proper syntax
+			_dep="${_pkgname:+${_pkgname}:}${_origin}${_target:+:${_target}}"
+		fi
+		_new_deps="${_new_deps:+${_new_deps} }${_dep}"
+	done
+
+	setvar "${var_return}" "${_new_deps}"
+}
+
 deps_fetch_vars() {
 	[ $# -ne 6 ] && eargs deps_fetch_vars originspec deps_var \
 	    pkgname_var dep_args_var flavor_var flavors_var
@@ -4195,9 +4240,11 @@ deps_fetch_vars() {
 	shash_set pkgname-deps "${_pkgname}" "${_pkg_deps}"
 	# Store for delete_old_pkg with CHECK_CHANGED_DEPS==yes
 	if [ -n "${_lib_depends}" ]; then
+		map_py_slave_port_deps _lib_depends "${_lib_depends}"
 		shash_set pkgname-lib_deps "${_pkgname}" "${_lib_depends}"
 	fi
 	if [ -n "${_run_depends}" ]; then
+		map_py_slave_port_deps _run_depends "${_run_depends}"
 		shash_set pkgname-run_deps "${_pkgname}" "${_run_depends}"
 	fi
 	if [ -n "${_selected_options}" ]; then
@@ -4638,8 +4685,6 @@ delete_old_pkg() {
 						dpath="${dpath#${PORTSDIR}/}"
 						;;
 					esac
-					# Handle py3 mapping needs
-					map_py_slave_port "${dpath}" dpath || :
 					current_deps="${current_deps} ${dpath}"
 				fi
 			done
@@ -5604,9 +5649,6 @@ compute_deps_pkg() {
 				${PORTSDIR}/*)
 					dpath=${dpath#${PORTSDIR}/} ;;
 				esac
-				# Handle py3 mapping needs
-				map_py_slave_port "${dpath}" \
-				    dpath || :
 				maybe_apply_my_own_dep_args \
 				    "${pkgname}" \
 				    dpath "${dpath}" \
