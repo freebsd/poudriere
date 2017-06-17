@@ -4184,19 +4184,19 @@ deps_fetch_vars() {
 			_new_dep_args="${_new_dep_args}${_new_dep_args:+ }${_dep_arg}"
 		done
 		_dep_args="${_new_dep_args}"
-	fi
 
-	setvar "${pkgname_var}" "${_pkgname}"
-	# Deal with py3 slave port hack by forcing some DEPENDS_ARGS on
-	# our dependencies as needed.
-	if have_ports_feature DEPENDS_ARGS && [ -n "${_pkg_deps}" ]; then
-		unset _new_pkg_deps
-		for _dep in ${_pkg_deps}; do
-			map_py_slave_port "${_dep}" _dep || :
-			_new_pkg_deps="${_new_pkg_deps:+${_new_pkg_deps} }${_dep}"
-		done
-		_pkg_deps="${_new_pkg_deps}"
+		# Deal with py3 slave port hack by forcing some DEPENDS_ARGS on
+		# our dependencies as needed.
+		if [ -n "${_pkg_deps}" ]; then
+			unset _new_pkg_deps
+			for _dep in ${_pkg_deps}; do
+				map_py_slave_port "${_dep}" _dep || :
+				_new_pkg_deps="${_new_pkg_deps:+${_new_pkg_deps} }${_dep}"
+			done
+			_pkg_deps="${_new_pkg_deps}"
+		fi
 	fi
+	setvar "${pkgname_var}" "${_pkgname}"
 	setvar "${deps_var}" "${_pkg_deps}"
 	setvar "${dep_args_var}" "${_dep_args}"
 	setvar "${flavor_var}" "${_flavor}"
