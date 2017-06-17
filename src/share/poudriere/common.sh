@@ -5048,6 +5048,13 @@ get_pkgname_from_originspec() {
 	local var_return="$2"
 	local _pkgname _origin _dep_args _flavor _default_flavor _flavors
 
+	# This function is primarily for FLAVORS handling.
+	if ! have_ports_feature FLAVORS; then
+		shash_get originspec-pkgname "${_originspec}" \
+		    "${var_return}" || return 1
+		return 0
+	fi
+
 	# Trim away FLAVOR_DEFAULT if present
 	originspec_decode "${_originspec}" _origin _dep_args _flavor
 	if [ "${_flavor}" = "${FLAVOR_DEFAULT}" ]; then
