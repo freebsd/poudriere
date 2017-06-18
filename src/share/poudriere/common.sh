@@ -2675,7 +2675,7 @@ gather_distfiles() {
 	local originspec="$1"
 	local from=$(realpath $2)
 	local to=$(realpath $3)
-	local sub dists d tosubd specials special origin dep_args
+	local sub dists d tosubd specials special origin
 	local dep_originspec pkgname
 
 	port_var_fetch_originspec "${originspec}" \
@@ -2700,10 +2700,7 @@ gather_distfiles() {
 		case "${special}" in
 		${PORTSDIR}/*) special=${special#${PORTSDIR}/} ;;
 		esac
-		maybe_apply_my_own_dep_args "${pkgname}" \
-		    dep_originspec "${special}" \
-		    "${dep_args}" dep_args || :
-		gather_distfiles "${dep_originspec}" "${from}" "${to}"
+		gather_distfiles "${special}" "${from}" "${to}"
 	done
 
 	return 0
@@ -3997,14 +3994,14 @@ maybe_apply_my_own_dep_args() {
 	local originspec="$3"
 	local _my_dep_args="$4"
 	local var_return_dep_args="$5"
-	local _origin _dep_args _flavor
+	local _my_origin _dep_args _flavor
 
 	# Already looked up my DEPENDS_ARGS and I have none to apply.
 	[ -z "${_my_dep_args}" ] && \
 	    hash_isset fetched_dep_args "${pkgname}" && \
 	    return 1
-	originspec_decode "${originspec}" _origin _dep_args _flavor
-	if ! origin_should_use_dep_args "${_origin}"; then
+	originspec_decode "${originspec}" _my_origin _dep_args _flavor
+	if ! origin_should_use_dep_args "${_my_origin}"; then
 		if [ -n "${var_return_dep_args}" ]; then
 			setvar "${var_return_dep_args}" ''
 		fi
@@ -4028,15 +4025,18 @@ maybe_apply_my_own_dep_args() {
 	[ -n "${_dep_args}" ] && [ -z "${_my_dep_args}" ] && \
 	    err 1 "maybe_apply_my_own_dep_args: Already had dep_args for ${originspec} but dropped them PKGNAME=${pkgname}"
 	originspec_encode "${var_return_originspec}" \
-	    "${_origin}" "${_my_dep_args}" "${_flavor}"
+	    "${_my_origin}" "${_my_dep_args}" "${_flavor}"
 }
 
-# Deal with py3 slave port hack by forcing some DEPENDS_ARGS on our
-# dependencies as needed.
-map_py_slave_port_deps() {
-	[ $# -ne 2 ] && eargs map_py_slave_port_deps var_return raw_deps
+# Apply our own DEPENDS_ARGS to each of our dependencies,
+# Also deal with py3 slave port hack first.
+fixup_dependencies_dep_args() {
+	[ $# -ne 4 ] && eargs fixup_dependencies_dep_args var_return \
+	    pkgname raw_deps dep_args
 	local var_return="$1"
-	local raw_deps="$2"
+	local pkgname="$2"
+	local raw_deps="$3"
+	local dep_args="$4"
 	local _new_deps _dep _origin _pkgname _target
 
 	have_ports_feature DEPENDS_ARGS || return 0
@@ -4066,10 +4066,11 @@ map_py_slave_port_deps() {
 		${PORTSDIR}/*)
 			_origin="${_origin#${PORTSDIR}/}" ;;
 		esac
-		if map_py_slave_port "${_origin}" _origin; then
-			# Fix it back up to the proper syntax
-			_dep="${_pkgname:+${_pkgname}:}${_origin}${_target:+:${_target}}"
-		fi
+		map_py_slave_port "${_origin}" _origin || :
+		maybe_apply_my_own_dep_args "${pkgname}" \
+		    _origin "${_origin}" \
+		    "${dep_args}" '' || :
+		_dep="${_pkgname:+${_pkgname}:}${_origin}${_target:+:${_target}}"
 		_new_deps="${_new_deps:+${_new_deps} }${_dep}"
 	done
 
@@ -4197,12 +4198,15 @@ deps_fetch_vars() {
 		done
 		_dep_args="${_new_dep_args}"
 
-		# Deal with py3 slave port hack by forcing some DEPENDS_ARGS on
-		# our dependencies as needed.
+		# Apply our own DEPENDS_ARGS to each of our dependencies,
+		# Also deal with py3 slave port hack first.
 		if [ -n "${_pkg_deps}" ]; then
 			unset _new_pkg_deps
 			for _dep in ${_pkg_deps}; do
 				map_py_slave_port "${_dep}" _dep || :
+				maybe_apply_my_own_dep_args "${_pkgname}" \
+				    _dep "${_dep}" \
+				    "${_dep_args}" '' || :
 				_new_pkg_deps="${_new_pkg_deps:+${_new_pkg_deps} }${_dep}"
 			done
 			_pkg_deps="${_new_pkg_deps}"
@@ -4283,18 +4287,27 @@ deps_fetch_vars() {
 	[ -n "${_ignore}" ] && \
 	    shash_set pkgname-ignore "${_pkgname}" "${_ignore}"
 	if [ -n "${_depend_specials}" ]; then
-		map_py_slave_port_deps _depend_specials "${_depend_specials}"
+		fixup_dependencies_dep_args _depend_specials \
+		    "${_pkgname}" \
+		    "${_depend_specials}" \
+		    "${_dep_args}"
 		shash_set pkgname-depend_specials "${_pkgname}" \
 		    "${_depend_specials}"
 	fi
 	shash_set pkgname-deps "${_pkgname}" "${_pkg_deps}"
 	# Store for delete_old_pkg with CHECK_CHANGED_DEPS==yes
 	if [ -n "${_lib_depends}" ]; then
-		map_py_slave_port_deps _lib_depends "${_lib_depends}"
+		fixup_dependencies_dep_args _lib_depends \
+		    "${_pkgname}" \
+		    "${_lib_depends}" \
+		    "${_dep_args}"
 		shash_set pkgname-lib_deps "${_pkgname}" "${_lib_depends}"
 	fi
 	if [ -n "${_run_depends}" ]; then
-		map_py_slave_port_deps _run_depends "${_run_depends}"
+		fixup_dependencies_dep_args _run_depends \
+		    "${_pkgname}" \
+		    "${_run_depends}" \
+		    "${_dep_args}"
 		shash_set pkgname-run_deps "${_pkgname}" "${_run_depends}"
 	fi
 	if [ -n "${_selected_options}" ]; then
@@ -5473,9 +5486,6 @@ gather_port_vars_port() {
 	# Assert some policy before proceeding to process these deps
 	# further.
 	for dep_originspec in ${deps}; do
-		maybe_apply_my_own_dep_args "${pkgname}" \
-		    dep_originspec "${dep_originspec}" \
-		    "${dep_args}" '' || :
 		originspec_decode "${dep_originspec}" dep_origin '' dep_flavor
 		msg_verbose "${COLOR_PORT}${originspec}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
 		if [ "${origin}" = "${dep_origin}" ]; then
@@ -5564,7 +5574,7 @@ gather_port_vars_process_depqueue() {
 	[ $# -ne 1 ] && eargs gather_port_vars_process_depqueue originspec
 	local originspec="$1"
 	local origin pkgname deps dep_origin
-	local dep_args_loop dep_args dep_originspec dep_flavor queue rdep
+	local dep_args dep_originspec dep_flavor queue rdep
 
 	msg_debug "gather_port_vars_process_depqueue (${originspec})"
 
@@ -5576,15 +5586,12 @@ gather_port_vars_process_depqueue() {
 
 	originspec_decode "${originspec}" origin '' ''
 	for dep_originspec in ${deps}; do
-		maybe_apply_my_own_dep_args "${pkgname}" \
-		    dep_originspec "${dep_originspec}" \
-		    "${dep_args}" dep_args || :
 		originspec_decode "${dep_originspec}" dep_origin \
-		    dep_args_loop dep_flavor
+		    dep_args dep_flavor
 		# First queue the default origin into the gatherqueue if
 		# needed.  For the -a case we're guaranteed to already
 		# have done this via the category Makefiles.
-		if [ ${ALL} -eq 0 ] && [ -z "${dep_args_loop}" ]; then
+		if [ ${ALL} -eq 0 ] && [ -z "${dep_args}" ]; then
 			if [ -n "${dep_flavor}" ]; then
 				queue=fqueue
 				rdep="metadata ${dep_flavor}"
@@ -5601,7 +5608,7 @@ gather_port_vars_process_depqueue() {
 
 		# And place any DEPENDS_ARGS-specific origin into the
 		# flavorqueue
-		if [ -n "${dep_args_loop}" -o -n "${dep_flavor}" ]; then
+		if [ -n "${dep_args}" -o -n "${dep_flavor}" ]; then
 			# For the -a case we can skip the flavorqueue since
 			# we've already processed all default origins
 			if [ ${ALL} -eq 1 ]; then
@@ -5662,7 +5669,7 @@ compute_deps_pkg() {
 	[ $# -ne 2 ] && eargs compute_deps_pkg pkgname originspec
 	local pkgname="$1"
 	local originspec="$2"
-	local pkg_pooldir deps dep_pkgname dep_originspec dep_origin dep_args
+	local pkg_pooldir deps dep_pkgname dep_originspec dep_origin
 	local raw_deps d key dpath dep_real_pkgname err_type
 
 	shash_get pkgname-deps "${pkgname}" deps || \
@@ -5674,9 +5681,6 @@ compute_deps_pkg() {
 	    err 1 "compute_deps_pkg: Error creating pool dir for ${pkgname}: There may be a duplicate origin in a category Makefile"
 
 	for dep_originspec in ${deps}; do
-		maybe_apply_my_own_dep_args "${pkgname}" \
-		    dep_originspec "${dep_originspec}" \
-		    "${dep_args}" dep_args || :
 		if ! get_pkgname_from_originspec "${dep_originspec}" \
 		    dep_pkgname; then
 			[ ${ALL} -eq 0 ] && \
@@ -5720,10 +5724,6 @@ compute_deps_pkg() {
 				${PORTSDIR}/*)
 					dpath=${dpath#${PORTSDIR}/} ;;
 				esac
-				maybe_apply_my_own_dep_args \
-				    "${pkgname}" \
-				    dpath "${dpath}" \
-				    "${dep_args}" dep_args || :
 				hash_get \
 				    compute_deps_originspec-pkgname \
 				    "${dpath}" dep_real_pkgname || \
