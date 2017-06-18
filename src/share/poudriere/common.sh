@@ -2676,15 +2676,17 @@ gather_distfiles() {
 	local from=$(realpath $2)
 	local to=$(realpath $3)
 	local sub dists d tosubd specials special origin dep_args
-	local dep_originspec
+	local dep_originspec pkgname
 
 	port_var_fetch_originspec "${originspec}" \
 	    DIST_SUBDIR sub \
-	    ALLFILES dists \
-	    _DEPEND_SPECIALS specials || \
+	    ALLFILES dists || \
 	    err 1 "Failed to lookup distfiles for ${originspec}"
 
 	originspec_decode "${originspec}" origin '' ''
+	shash_get originspec-pkgname "${originspec}" pkgname || \
+	    err 1 "gather_distfiles: Could not find PKGNAME for ${originspec}"
+	shash_get pkgname-depend_specials "${pkgname}" specials || specials=
 
 	job_msg_verbose "Status   ${COLOR_PORT}${origin} | ${PKGNAME}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
@@ -2698,7 +2700,6 @@ gather_distfiles() {
 		case "${special}" in
 		${PORTSDIR}/*) special=${special#${PORTSDIR}/} ;;
 		esac
-		map_py_slave_port "${special}" special || :
 		maybe_apply_my_own_dep_args "${pkgname}" \
 		    dep_originspec "${special}" \
 		    "${dep_args}" dep_args || :
@@ -4090,6 +4091,7 @@ deps_fetch_vars() {
 	local _default_originspec _default_pkgname _orig_ignore
 	local origin _origin_dep_args _dep_args _dep _new_pkg_deps
 	local _origin_flavor _flavor _flavors _dep_arg _new_dep_args
+	local _depend_specials=
 
 	originspec_decode "${originspec}" origin _origin_dep_args \
 	    _origin_flavor
@@ -4132,6 +4134,7 @@ deps_fetch_vars() {
 	    PKGNAME _pkgname \
 	    ${_depends_args} \
 	    ${_lookup_flavors} \
+	    _DEPEND_SPECIALS _depend_specials \
 	    CATEGORIES categories \
 	    IGNORE _ignore \
 	    ${_changed_deps} \
@@ -4279,6 +4282,11 @@ deps_fetch_vars() {
 	    shash_set pkgname-flavors "${_pkgname}" "${_flavors}"
 	[ -n "${_ignore}" ] && \
 	    shash_set pkgname-ignore "${_pkgname}" "${_ignore}"
+	if [ -n "${_depend_specials}" ]; then
+		map_py_slave_port_deps _depend_specials "${_depend_specials}"
+		shash_set pkgname-depend_specials "${_pkgname}" \
+		    "${_depend_specials}"
+	fi
 	shash_set pkgname-deps "${_pkgname}" "${_pkg_deps}"
 	# Store for delete_old_pkg with CHECK_CHANGED_DEPS==yes
 	if [ -n "${_lib_depends}" ]; then
