@@ -4249,8 +4249,6 @@ deps_fetch_vars() {
 	# Discovered a new originspec->pkgname mapping.
 	msg_debug "deps_fetch_vars: discovered ${originspec} is ${_pkgname}"
 	shash_set originspec-pkgname "${originspec}" "${_pkgname}"
-	[ -n "${_dep_args}" ] && \
-	    shash_set pkgname-dep_args "${_pkgname}" "${_dep_args}"
 	[ -n "${_flavor}" ] && \
 	    shash_set pkgname-flavor "${_pkgname}" "${_flavor}"
 	[ -n "${_flavors}" ] && \
