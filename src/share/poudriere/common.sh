@@ -3983,44 +3983,22 @@ originspec_encode() {
 # Apply my (pkgname) own DEPENDS_ARGS to the given origin if I have any and
 # the dep should be allowed to use it.
 maybe_apply_my_own_dep_args() {
-	[ $# -eq 5 ] || eargs maybe_apply_my_own_dep_args \
+	[ $# -eq 4 ] || eargs maybe_apply_my_own_dep_args \
 	    pkgname var_return_originspec originspec \
-	    dep_args var_return_dep_args
+	    dep_args
 	local pkgname="$1"
 	local var_return_originspec="$2"
 	local originspec="$3"
 	local _my_dep_args="$4"
-	local var_return_dep_args="$5"
-	local _my_origin _dep_args _flavor
+	local _my_origin _flavor
 
-	# Already looked up my DEPENDS_ARGS and I have none to apply.
-	[ -z "${_my_dep_args}" ] && \
-	    hash_isset fetched_dep_args "${pkgname}" && \
-	    return 1
-	originspec_decode "${originspec}" _my_origin _dep_args _flavor
-	if ! origin_should_use_dep_args "${_my_origin}"; then
-		if [ -n "${var_return_dep_args}" ]; then
-			setvar "${var_return_dep_args}" ''
-		fi
-		return 1
-	fi
-	# Lookup our dep_args if not already done.  If var_return_dep_args
-	# is empty though we should trust what was passed in.
-	if [ -z "${_my_dep_args}" ] && [ -n "${var_return_dep_args}" ]; then
-		if ! shash_get pkgname-dep_args "${pkgname}" _my_dep_args; then
-			# No DEPENDS_ARGS to apply.  Cache that we're sure of
-			# this since it is a blank value.
-			setvar "${var_return_dep_args}" ''
-			hash_set fetched_dep_args "${pkgname}" 1
-			return 1
-		fi
-		setvar "${var_return_dep_args}" "${_my_dep_args}"
-	fi
-	# It's possible _dep_args is not empty now due to earlier calls to
-	# map_py_slave_port() in deps_fetch_vars().  Still try to overwrite
-	# it though with our own as long as it didn't change to empty.
-	[ -n "${_dep_args}" ] && [ -z "${_my_dep_args}" ] && \
-	    err 1 "maybe_apply_my_own_dep_args: Already had dep_args for ${originspec} but dropped them PKGNAME=${pkgname}"
+	# No DEPENDS_ARGS to apply.
+	[ -n "${_my_dep_args}" ] || return 1
+	originspec_decode "${originspec}" _my_origin '' _flavor
+	origin_should_use_dep_args "${_my_origin}" || return 1
+	# It's possible the originspec already had DEPENDS_ARGS due to earlier
+	# calls to map_py_slave_port() in deps_fetch_vars().  Still overwrite
+	# it though with our own.
 	originspec_encode "${var_return_originspec}" \
 	    "${_my_origin}" "${_my_dep_args}" "${_flavor}"
 }
@@ -4065,8 +4043,7 @@ fixup_dependencies_dep_args() {
 		esac
 		map_py_slave_port "${_origin}" _origin || :
 		maybe_apply_my_own_dep_args "${pkgname}" \
-		    _origin "${_origin}" \
-		    "${dep_args}" '' || :
+		    _origin "${_origin}" "${dep_args}" || :
 		_dep="${_pkgname:+${_pkgname}:}${_origin}${_target:+:${_target}}"
 		_new_deps="${_new_deps:+${_new_deps} }${_dep}"
 	done
@@ -4202,8 +4179,7 @@ deps_fetch_vars() {
 			for _dep in ${_pkg_deps}; do
 				map_py_slave_port "${_dep}" _dep || :
 				maybe_apply_my_own_dep_args "${_pkgname}" \
-				    _dep "${_dep}" \
-				    "${_dep_args}" '' || :
+				    _dep "${_dep}" "${_dep_args}" || :
 				_new_pkg_deps="${_new_pkg_deps:+${_new_pkg_deps} }${_dep}"
 			done
 			_pkg_deps="${_new_pkg_deps}"
