@@ -2682,8 +2682,14 @@ gather_distfiles() {
 	    err 1 "Failed to lookup distfiles for ${originspec}"
 
 	originspec_decode "${originspec}" origin '' ''
-	shash_get originspec-pkgname "${originspec}" pkgname || \
-	    err 1 "gather_distfiles: Could not find PKGNAME for ${originspec}"
+	if [ "${ORIGINSPEC}" = "${originspec}" ]; then
+		# Building main port
+		pkgname="${PKGNAME}"
+	else
+		# Recursive gather_distfiles()
+		shash_get originspec-pkgname "${originspec}" pkgname || \
+		    err 1 "gather_distfiles: Could not find PKGNAME for ${originspec}"
+	fi
 	shash_get pkgname-depend_specials "${pkgname}" specials || specials=
 
 	job_msg_verbose "Status   ${COLOR_PORT}${origin} | ${PKGNAME}${COLOR_RESET}: distfiles ${from} -> ${to}"
@@ -3662,7 +3668,7 @@ build_pkg() {
 	# since PKGNAME is not yet set.
 	[ $# -ne 1 ] && eargs build_pkg pkgname
 	local pkgname="$1"
-	local port portdir originspec
+	local port portdir
 	local build_failed=0
 	local name
 	local mnt
@@ -3680,8 +3686,8 @@ build_pkg() {
 	clean_rdepends=
 	trap '' SIGTSTP
 	PKGNAME="${pkgname}" # set ASAP so jail_cleanup() can use it
-	get_originspec_from_pkgname originspec "${pkgname}"
-	originspec_decode "${originspec}" port DEPENDS_ARGS FLAVOR
+	get_originspec_from_pkgname ORIGINSPEC "${pkgname}"
+	originspec_decode "${ORIGINSPEC}" port DEPENDS_ARGS FLAVOR
 	if [ -z "${FLAVOR}" ]; then
 		shash_get pkgname-flavor "${pkgname}" FLAVOR || FLAVOR=
 	fi
@@ -3750,7 +3756,7 @@ build_pkg() {
 		clean_rdepends="ignored"
 		run_hook pkgbuild ignored "${port}" "${PKGNAME}" "${ignore}"
 	else
-		build_port "${originspec}" || ret=$?
+		build_port "${ORIGINSPEC}" || ret=$?
 		if [ ${ret} -ne 0 ]; then
 			build_failed=1
 			# ret=2 is a test failure
