@@ -2697,9 +2697,6 @@ gather_distfiles() {
 	done
 
 	for special in ${specials}; do
-		case "${special}" in
-		${PORTSDIR}/*) special=${special#${PORTSDIR}/} ;;
-		esac
 		gather_distfiles "${special}" "${from}" "${to}"
 	done
 
@@ -4135,7 +4132,7 @@ deps_fetch_vars() {
 	    PKGNAME _pkgname \
 	    ${_depends_args} \
 	    ${_lookup_flavors} \
-	    _DEPEND_SPECIALS _depend_specials \
+	    '${_DEPEND_SPECIALS:C,^${PORTSDIR}/,,}' _depend_specials \
 	    CATEGORIES categories \
 	    IGNORE _ignore \
 	    ${_changed_deps} \
