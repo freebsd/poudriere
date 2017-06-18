@@ -5647,7 +5647,8 @@ compute_deps_pkg() {
 	local pkg_pooldir deps dep_pkgname dep_originspec dep_origin
 	local raw_deps d key dpath dep_real_pkgname err_type
 
-	shash_get pkgname-deps "${pkgname}" deps || \
+	# Safe to remove pkgname-deps now, it won't be needed later.
+	shash_remove pkgname-deps "${pkgname}" deps || \
 	    err 1 "compute_deps_pkg failed to find deps for ${pkgname}"
 
 	pkg_pooldir="deps/${pkgname}"
