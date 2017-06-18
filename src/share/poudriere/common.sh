@@ -4249,7 +4249,7 @@ deps_fetch_vars() {
 					# indicates an invalid py3 mapping
 					# that needs ignored in
 					# map_py_slave_port.
-					if false && [ -n "${_ignore}" ] && \
+					if [ -n "${_ignore}" ] && \
 					    ! shash_get pkgname-ignore \
 					    "${_pkgname}" _orig_ignore; then
 						err 1 "${originspec} is IGNORE but ${_existing_originspec} was not for ${_pkgname}: ${_ignore}"
