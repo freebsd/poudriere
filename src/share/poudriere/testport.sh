@@ -198,10 +198,16 @@ if [ $CONFIGSTR -eq 1 ]; then
 	    ${FLAVOR:+FLAVOR=${FLAVOR}}
 fi
 
-deps_fetch_vars "${ORIGINSPEC}" LISTPORTS PKGNAME _ignored FLAVOR FLAVORS
-for dep_origin in ${LISTPORTS}; do
-	msg_verbose "${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET} depends on ${COLOR_PORT}${dep_origin}"
+deps_fetch_vars "${ORIGINSPEC}" LISTPORTS PKGNAME DEPENDS_ARGS FLAVOR FLAVORS
+NEW_LISTPORTS=
+for dep_originspec in $(listed_ports); do
+	maybe_apply_my_own_dep_args "${PKGNAME}" \
+	    dep_originspec "${dep_originspec}" \
+	    "${DEPENDS_ARGS}" '' || :
+	NEW_LISTPORTS="${NEW_LISTPORTS:+${NEW_LISTPORTS} }${dep_originspec}"
+	msg_verbose "${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
 done
+LISTPORTS="${NEW_LISTPORTS}"
 prepare_ports
 markfs prepkg ${MASTERMNT}
 
