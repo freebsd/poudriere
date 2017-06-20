@@ -1,5 +1,5 @@
-clockcmd		clock
-diremptycmd		dirempty
+clockcmd -n		clock
+diremptycmd -n		dirempty
 #locked_mkdircmd		locked_mkdir
-realpathcmd		realpath
+realpathcmd -n		realpath
 sleepcmd		sleep
