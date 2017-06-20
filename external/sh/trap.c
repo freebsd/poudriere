@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)trap.c	8.5 (Berkeley) 6/5/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/trap.c 317298 2017-04-22 21:31:37Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/trap.c 319826 2017-06-11 16:54:04Z jilles $");
 
 #include <signal.h>
 #include <unistd.h>
@@ -526,11 +526,13 @@ exitshell_savedstatus(void)
 			 */
 			evalskip = 0;
 			trap[0] = NULL;
+			FORCEINTON;
 			evalstring(p, 0);
 		}
 	}
 	if (!setjmp(loc2.loc)) {
 		handler = &loc2;		/* probably unnecessary */
+		FORCEINTON;
 		flushall();
 #if JOBS
 		setjobctl(0);
