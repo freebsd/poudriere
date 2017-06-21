@@ -514,7 +514,9 @@ install_from_ftp() {
 	5.[0-4]*) HASH=MD5 ;;
 	*) HASH=SHA256 ;;
 	esac
-	if [ ${V%%.*} -lt 9 ]; then
+
+	case "${V}" in
+	[0-8][^0-9]*) # < 9
 		msg "Fetching sets for FreeBSD ${V} ${ARCH}"
 		case ${METHOD} in
 		ftp|http|gjb)
@@ -573,7 +575,8 @@ install_from_ftp() {
 				tar --unlink -xpf - -C ${JAILMNT}/${APPEND} || err 1 " fail"
 			echo " done"
 		done
-	else
+		;;
+	*)
 		local type
 		case ${METHOD} in
 			ftp|http|gjb)
@@ -638,7 +641,8 @@ install_from_ftp() {
 			tar -xpf "${JAILMNT}/fromftp/${dist}" -C  ${JAILMNT}/ || err 1 " fail"
 			echo " done"
 		done
-	fi
+		;;
+	esac
 
 	msg_n "Cleaning up..."
 	rm -rf ${JAILMNT}/fromftp/
