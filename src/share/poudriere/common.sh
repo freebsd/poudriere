@@ -3732,7 +3732,7 @@ build_pkg() {
 	case " ${BLACKLIST} " in
 	*\ ${port}\ *) ignore="Blacklisted" ;;
 	esac
-	if [ -n "${ignore}" ]; then
+	if [ -z "${ignore}" ]; then
 		# If this port is IGNORED, skip it
 		# This is checked here due to historical reasons and
 		# will later be moved up into the queue creation.
