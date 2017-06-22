@@ -4807,12 +4807,14 @@ delete_old_pkg() {
 		return 0
 	fi
 
-	shash_get pkgname-flavor "${pkgname}" flavor || flavor=
-	pkg_get_flavor pkg_flavor "${pkg}"
-	if [ "${pkg_flavor}" != "${flavor}" ]; then
-		msg "Deleting ${pkg##*/}: FLAVOR changed to '${flavor}' from '${pkg_flavor}'"
-		delete_pkg "${pkg}"
-		return 0
+	if have_ports_feature FLAVORS; then
+		shash_get pkgname-flavor "${pkgname}" flavor || flavor=
+		pkg_get_flavor pkg_flavor "${pkg}"
+		if [ "${pkg_flavor}" != "${flavor}" ]; then
+			msg "Deleting ${pkg##*/}: FLAVOR changed to '${flavor}' from '${pkg_flavor}'"
+			delete_pkg "${pkg}"
+			return 0
+		fi
 	fi
 }
 
