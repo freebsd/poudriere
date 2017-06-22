@@ -88,7 +88,7 @@ if [ "${POUDRIEREPATH%src/bin/poudriere}" != "${POUDRIEREPATH}" ]; then
 	# It is running from src/bin/poudriere in checkout
 	POUDRIEREPREFIX=${POUDRIEREPATH%/bin/*}
 	LIBEXECPREFIX="${POUDRIEREPATH%/src/bin/poudriere}"
-elif [ "${POUDRIEREPATH%\/bin/*}" = "${POUDRIEREPATH}" ]; then
+elif [ "${POUDRIEREPATH%/bin/*}" = "${POUDRIEREPATH}" ]; then
 	# It is running in a build directory or the source checkout as
 	# ./poudriere.  Lookup VPATH to resolve to source checkout if in
 	# build directory.
