@@ -194,6 +194,17 @@ update_jail() {
 	msg "Upgrading using ${METHOD}"
 	case ${METHOD} in
 	ftp|http|ftp-archive)
+		# In case we use FreeBSD dists and TORELEASE is present, check if it's a release branch.
+		if [ -n "${TORELEASE}" ]; then
+		  case ${TORELEASE} in
+		    *-ALPHA*|*-CURRENT|*-PRERELEASE|*-STABLE)
+			msg_error "Only release branches are supported by the ${METHOD} method."
+			msg_error "Please try to upgrade to a new BETA, RC or RELEASE version."
+			exit 1
+			;;
+		    *) ;;
+		  esac
+		fi
 		MASTERMNT=${JAILMNT}
 		MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
