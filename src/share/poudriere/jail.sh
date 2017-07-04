@@ -198,12 +198,12 @@ update_jail() {
 	msg "Upgrading using ${METHOD}"
 	case ${METHOD} in
 	ftp|http|ftp-archive)
-		# Verify if TORELEASE is supported by freebsd-update(8), if it's present.
+		# In case we use FreeBSD dists and TORELEASE is present, check if it's a release branch.
 		if [ ! -z ${TORELEASE} ]; then
 		  case ${TORELEASE} in
 		    *-ALPHA*|*-CURRENT|*-PRERELEASE)
 			msg_error "Only release branches are supported by freebsd-update(8)."
-			msg_error "Please try to upgrade to a BETA, RC, or RELEASE version.
+			msg_error "Please try to upgrade to a new BETA, RC or RELEASE version."
 			exit 1 ;;
 		    *) ;;
 		  esac
