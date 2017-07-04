@@ -778,7 +778,7 @@ create_jail() {
 
 	markfs clean ${JAILMNT}
 
-	# Check VERSION before running 'update_jail' on FreeBSD dists.
+	# Check VERSION before running 'update_jail' on jails created using FreeBSD dists.
 	case ${METHOD} in
 		ftp|http|ftp-archive)
 			[ ${VERSION#*-RELEAS*} != ${VERSION} ] && update_jail
