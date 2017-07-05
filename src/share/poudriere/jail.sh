@@ -201,7 +201,7 @@ update_jail() {
 		# In case we use FreeBSD dists and TORELEASE is present, check if it's a release branch.
 		if [ ! -z ${TORELEASE} ]; then
 		  case ${TORELEASE} in
-		    *-ALPHA*|*-CURRENT|*-PRERELEASE)
+		    *-ALPHA*|*-CURRENT|*-PRERELEASE|*-STABLE)
 			msg_error "Only release branches are supported by freebsd-update(8)."
 			msg_error "Please try to upgrade to a new BETA, RC or RELEASE version."
 			exit 1 ;;
