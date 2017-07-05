@@ -198,10 +198,7 @@ if [ $CONFIGSTR -eq 1 ]; then
 	    ${FLAVOR:+FLAVOR=${FLAVOR}}
 fi
 
-deps_fetch_vars "${ORIGINSPEC}" LISTPORTS PKGNAME DEPENDS_ARGS FLAVOR FLAVORS
-for dep_originspec in $(listed_ports); do
-	msg_verbose "${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
-done
+# This will set LISTPORTS/PKGNAME/DEPENDS_ARGS/FLAVOR/FLAVORS as well.
 prepare_ports
 markfs prepkg ${MASTERMNT}
 
@@ -319,9 +316,6 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 	# the terminal can be properly used in the jail
 	log_stop
 
-	# Update LISTPORTS so enter_interactive only installs the built port
-	# via listed_ports()
-	LISTPORTS="${ORIGINSPEC}"
 	enter_interactive
 
 	if [ ${INTERACTIVE_MODE} -eq 1 ]; then

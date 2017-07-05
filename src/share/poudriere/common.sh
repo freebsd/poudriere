@@ -1551,12 +1551,12 @@ enter_interactive() {
 	fi
 
 	# Enable all selected ports and their run-depends
-	if was_a_testport_run; then
+	if ! was_a_testport_run; then
 		packages="$(listed_pkgnames)"
 	else
-		packages="${LISTPORTS}"
+		packages="${PKGNAME}"
 	fi
-	for pkgname in ${listed_pkgnames}; do
+	for pkgname in ${packages}; do
 		get_originspec_from_pkgname originspec "${pkgname}"
 		originspec_decode "${originspec}" port dep_args flavor
 		# Install run-depends since this is an interactive test
@@ -6169,6 +6169,16 @@ prepare_ports() {
 		resuming_build=1
 	else
 		resuming_build=0
+	fi
+
+	if was_a_testport_run; then
+		local dep_originspec
+
+		deps_fetch_vars "${ORIGINSPEC}" LISTPORTS PKGNAME \
+		    DEPENDS_ARGS FLAVOR FLAVORS
+		for dep_originspec in $(listed_ports); do
+			msg_verbose "${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
+		done
 	fi
 
 	if was_a_bulk_run; then
