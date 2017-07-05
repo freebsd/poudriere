@@ -1577,16 +1577,16 @@ enter_interactive() {
 	# Create a pkg repo configuration, and disable FreeBSD
 	msg "Installing local Pkg repository to ${LOCALBASE}/etc/pkg/repos"
 	mkdir -p ${MASTERMNT}${LOCALBASE}/etc/pkg/repos
-	cat > ${MASTERMNT}${LOCALBASE}/etc/pkg/repos/local.conf << EOF
-FreeBSD: {
-	enabled: no
-}
+	cat > ${MASTERMNT}${LOCALBASE}/etc/pkg/repos/local.conf <<-EOF
+	FreeBSD: {
+		enabled: no
+	}
 
-local: {
-	url: "file:///packages",
-	enabled: yes
-}
-EOF
+	local: {
+		url: "file:///packages",
+		enabled: yes
+	}
+	EOF
 
 	if [ ${INTERACTIVE_MODE} -eq 1 ]; then
 		msg "Entering interactive test mode. Type 'exit' when done."
