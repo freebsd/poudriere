@@ -656,8 +656,6 @@ function process_data_build(data) {
 						return;
 					}
 				} else {
-					$('#' + status + '_div').show();
-					$('#nav_' + status).removeClass('disabled');
 					n = 0;
 				}
 				for (; n < data.ports[status].length; n++) {
@@ -679,6 +677,13 @@ function process_data_build(data) {
 					$('#' + status + '_table').DataTable().clear().draw();
 					$('#' + status + '_table').DataTable().rows.add(table_rows)
 						.draw(false);
+					if (table_rows.length > 0) {
+						$('#' + status + '_div').show();
+						$('#nav_' + status).removeClass('disabled');
+					} else {
+						$('#' + status + '_div').hide();
+						$('#nav_' + status).addClass('disabled');
+					}
 				}
 			}
 		});
