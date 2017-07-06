@@ -360,6 +360,10 @@ function format_start_to_end(start, end) {
 function format_duration(duration) {
 	var hours, minutes, seconds;
 
+    if (duration === undefined || duration == '' || isNaN(duration)) {
+      return '';
+    }
+
     hours = Math.floor(duration / 3600);
     duration = duration - hours * 3600;
     minutes = Math.floor(duration / 60);
