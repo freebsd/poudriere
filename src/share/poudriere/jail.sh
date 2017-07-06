@@ -215,10 +215,14 @@ update_jail() {
 			# We're running inside the jail so basedir is /.
 			# If we start using -b this needs to match it.
 			basedir=/
-			bdhash="$(echo "${basedir}" | sha256 -q)"
+			fu_workdir=/var/db/freebsd-update
+			fu_bdhash="$(echo "${basedir}" | sha256 -q)"
+			# New updates are identified by a symlink containing
+			# the basedir hash and -install as suffix.  If we
+			# really have new updates to install, then install them.
 			if injail env PAGER=/bin/cat \
 			    /usr/sbin/freebsd-update.fixed fetch && \
-			    [ -L "${JAILMNT}/${bdhash}-install" ]; then
+			    [ -L "${JAILMNT}${fu_workdir}/${fu_bdhash}-install" ]; then
 				injail env PAGER=/bin/cat \
 				    /usr/sbin/freebsd-update.fixed install
 			fi
