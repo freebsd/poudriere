@@ -147,7 +147,14 @@ prepare_ports
 msg "Looking for unneeded packages"
 bset status "pkgclean:"
 
-[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] && PACKAGES="${PACKAGES}/.latest"
+if [ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ]; then
+	if [ -d "${PACKAGES}/.building" ]; then
+		msg "Cleaning in previously failed build directory"
+		PACKAGES="${PACKAGES}/.building"
+	else
+		PACKAGES="${PACKAGES}/.latest"
+	fi
+fi
 
 # Some packages may exist that are stale, but are still the latest version
 # built. Don't delete those, bulk will incrementally delete them. We only
