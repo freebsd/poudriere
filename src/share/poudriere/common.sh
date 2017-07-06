@@ -6174,6 +6174,8 @@ prepare_ports() {
 	if was_a_testport_run; then
 		local dep_originspec
 
+		[ -z "${ORIGINSPEC}" ] && \
+		    err 1 "testport+prepare_ports requires ORIGINSPEC set"
 		deps_fetch_vars "${ORIGINSPEC}" LISTPORTS PKGNAME \
 		    DEPENDS_ARGS FLAVOR FLAVORS
 		for dep_originspec in $(listed_ports); do

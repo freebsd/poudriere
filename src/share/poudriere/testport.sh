@@ -198,6 +198,7 @@ if [ $CONFIGSTR -eq 1 ]; then
 	    ${FLAVOR:+FLAVOR=${FLAVOR}}
 fi
 
+# deps_fetch_vars lookup for dependencies moved to prepare_ports()
 # This will set LISTPORTS/PKGNAME/DEPENDS_ARGS/FLAVOR/FLAVORS as well.
 prepare_ports
 markfs prepkg ${MASTERMNT}
