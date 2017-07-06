@@ -213,15 +213,14 @@ update_jail() {
 		chmod +x ${JAILMNT}/usr/sbin/freebsd-update.fixed
 		if [ -z "${TORELEASE}" ]; then
 			# We're running inside the jail so basedir is /.
-			# If we start using -b this needs to match it.
+			# If we start using '-b' this needs to match it.
 			basedir=/
-			bdhash="$(echo "${basedir}" | sha256 -q)"
-			if injail env PAGER=/bin/cat \
-			    /usr/sbin/freebsd-update.fixed fetch && \
-			    [ -L "${JAILMNT}/${bdhash}-install" ]; then
-				injail env PAGER=/bin/cat \
-				    /usr/sbin/freebsd-update.fixed install
-			fi
+			bdhash=$(echo ${basedir} | sha256 -q)
+			injail env PAGER=/bin/cat /usr/sbin/freebsd-update.fixed fetch && \
+			  # New updates are identified by a symlink containing the basedir hash and -install as suffix.
+			  # If we really have new updates to install, then install them.
+			  [ -L "${JAILMNT}/var/db/freebsd-update/${bdhash}-install" ] && \
+			    injail env PAGER=/bin/cat /usr/sbin/freebsd-update.fixed install
 		else
 			# Install new kernel
 			injail env PAGER=/bin/cat \
