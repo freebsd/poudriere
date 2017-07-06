@@ -1568,13 +1568,13 @@ commit_packages() {
 	# mostly incase pkg adds a new top-level repo or the ports framework
 	# starts creating a new directory
 	find ${PACKAGES}/ -mindepth 1 -maxdepth 1 \
-	    \( ! -name '.*' -o -name '.jailversion' \) |
+	    \( ! -name '.*' -o -name '.jailversion' -o -name '.buildname' \) |
 	    while read path; do
 		name=${path##*/}
 		[ ! -L "${PACKAGES_ROOT}/${name}" ] || continue
 		if [ -e "${PACKAGES_ROOT}/${name}" ]; then
 			case "${name}" in
-			.jailversion|meta.txz|digests.txz|packagesite.txz|All|Latest)
+			.buildname|.jailversion|meta.txz|digests.txz|packagesite.txz|All|Latest)
 				# Auto fix pkg-owned files
 				rm -f "${PACKAGES_ROOT}/${name}"
 				;;
@@ -1605,7 +1605,7 @@ symlink to .latest/${name}"
 	# Look for broken top-level links and remove them, if they reference
 	# the old directory
 	find -L ${PACKAGES_ROOT}/ -mindepth 1 -maxdepth 1 \
-	    \( ! -name '.*' -o -name '.jailversion' \) \
+	    \( ! -name '.*' -o -name '.jailversion' -o -name '.buildname' \) \
 	    -type l |
 	    while read path; do
 		link=$(readlink ${path})
@@ -4581,6 +4581,7 @@ prepare_ports() {
 		fi
 
 		jget ${JAILNAME} version > ${PACKAGES}/.jailversion
+		echo "${BUILDNAME}" > "${PACKAGES}/.buildname"
 	fi
 
 	return 0
