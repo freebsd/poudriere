@@ -339,6 +339,8 @@ installworld() {
 setup_build_env() {
 	local hostver
 
+	[ -n "${MAKE_CMD}" ] && return 0
+
 	JAIL_OSVERSION=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' ${SRC_BASE}/sys/sys/param.h)
 	hostver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' /usr/include/sys/param.h)
 	MAKE_CMD=make
@@ -413,7 +415,7 @@ buildworld() {
 
 setup_xdev() {
 	[ ${XDEV} -eq 1 ] || return 0
-	[ -n "${MAKE_CMD}" ] || err 1 "setup_xdev: setup_build_env not called"
+	setup_build_env
 
 	msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
 	: ${XDEV_SRC:=/usr/src}
@@ -730,6 +732,7 @@ install_from_tar() {
 	msg_n "Installing ${VERSION} ${ARCH} from ${TARBALL} ..."
 	tar -xpf ${TARBALL} -C ${JAILMNT}/ || err 1 " fail"
 	echo " done"
+	setup_xdev
 }
 
 create_jail() {
