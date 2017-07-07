@@ -418,7 +418,7 @@ setup_xdev() {
 	msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
 	: ${XDEV_SRC:=/usr/src}
 	${MAKE_CMD} -C ${XDEV_SRC} native-xtools ${MAKE_JOBS} \
-	    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools'"
+	    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools' in ${XDEV_SRC}"
 	XDEV_TOOLS=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
 	    ${MAKE_CMD} -C ${XDEV_SRC} -f Makefile.inc1 -V NXBDESTDIR)
 	: ${XDEV_TOOLS:=/usr/obj/${TARGET}.${TARGET_ARCH}/nxb-bin}
