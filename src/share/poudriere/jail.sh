@@ -499,8 +499,8 @@ install_from_src() {
 	else
 		buildworld
 		installworld
-		setup_xdev
 	fi
+	setup_xdev
 	# Use __FreeBSD_version as our version_extra
 	setvar "${var_version_extra}" \
 	    "$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' \
