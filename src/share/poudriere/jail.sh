@@ -276,6 +276,7 @@ update_jail() {
 		update_version
 		[ -n "${RESOLV_CONF}" ] && rm -f ${JAILMNT}/etc/resolv.conf
 		update_version_env $(jget ${JAILNAME} version)
+		setup_xdev
 		markfs clean ${JAILMNT}
 		;;
 	svn*|git*)
@@ -415,6 +416,7 @@ buildworld() {
 
 setup_xdev() {
 	[ ${XDEV} -eq 1 ] || return 0
+	[ ${SETUP_XDEV:-0} -eq 0 ] || return 0
 	setup_build_env
 
 	msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
@@ -472,6 +474,8 @@ setup_xdev() {
 			ln ${JAILMNT}/nxb-bin/${file} ${JAILMNT}/${file}
 		fi
 	done
+
+	SETUP_XDEV=1
 }
 
 install_from_src() {
@@ -726,6 +730,8 @@ install_from_ftp() {
 	msg_n "Cleaning up..."
 	rm -rf ${JAILMNT}/fromftp/
 	echo " done"
+
+	setup_xdev
 }
 
 install_from_tar() {
