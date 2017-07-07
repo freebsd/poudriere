@@ -417,6 +417,7 @@ buildworld() {
 build_native_xtools() {
 	[ ${XDEV} -eq 1 ] || return 0
 	[ ${BUILT_NATIVE_XTOOLS:-0} -eq 0 ] || return 0
+	need_emulation "${ARCH}" || return 0
 	setup_build_env
 
 	msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
