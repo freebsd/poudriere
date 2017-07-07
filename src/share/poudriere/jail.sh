@@ -276,7 +276,7 @@ update_jail() {
 		update_version
 		[ -n "${RESOLV_CONF}" ] && rm -f ${JAILMNT}/etc/resolv.conf
 		update_version_env $(jget ${JAILNAME} version)
-		setup_xdev
+		build_native_xtools
 		markfs clean ${JAILMNT}
 		;;
 	svn*|git*)
@@ -414,9 +414,9 @@ buildworld() {
 	fi
 }
 
-setup_xdev() {
+build_native_xtools() {
 	[ ${XDEV} -eq 1 ] || return 0
-	[ ${SETUP_XDEV:-0} -eq 0 ] || return 0
+	[ ${BUILT_NATIVE_XTOOLS:-0} -eq 0 ] || return 0
 	setup_build_env
 
 	msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
@@ -428,54 +428,8 @@ setup_xdev() {
 	: ${XDEV_TOOLS:=/usr/obj/${TARGET}.${TARGET_ARCH}/nxb-bin}
 	rm -rf ${JAILMNT}/nxb-bin || err 1 "Failed to remove old native-xtools"
 	mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
-	cat > ${JAILMNT}/etc/make.nxb.conf <<- EOF
-	CC=/nxb-bin/usr/bin/cc
-	CPP=/nxb-bin/usr/bin/cpp
-	CXX=/nxb-bin/usr/bin/c++
-	AS=/nxb-bin/usr/bin/as
-	NM=/nxb-bin/usr/bin/nm
-	LD=/nxb-bin/usr/bin/ld
-	OBJCOPY=/nxb-bin/usr/bin/objcopy
-	SIZE=/nxb-bin/usr/bin/size
-	STRIPBIN=/nxb-bin/usr/bin/strip
-	SED=/nxb-bin/usr/bin/sed
-	READELF=/nxb-bin/usr/bin/readelf
-	RANLIB=/nxb-bin/usr/bin/ranlib
-	YACC=/nxb-bin/usr/bin/yacc
-	MAKE=/nxb-bin/usr/bin/make
-	STRINGS=/nxb-bin/usr/bin/strings
-	AWK=/nxb-bin/usr/bin/awk
-	FLEX=/nxb-bin/usr/bin/flex
-	EOF
-
-	# hardlink these files to capture scripts and tools
-	# that explicitly call them instead of using paths.
-	HLINK_FILES="usr/bin/env usr/bin/gzip usr/bin/id usr/bin/limits \
-			usr/bin/make usr/bin/dirname usr/bin/diff \
-			usr/bin/makewhatis \
-			usr/bin/find usr/bin/gzcat usr/bin/awk \
-			usr/bin/touch usr/bin/sed usr/bin/patch \
-			usr/bin/install usr/bin/gunzip usr/bin/sort \
-			usr/bin/tar usr/bin/xargs usr/sbin/chown bin/cp \
-			bin/cat bin/chmod bin/echo bin/expr \
-			bin/hostname bin/ln bin/ls bin/mkdir bin/mv \
-			bin/realpath bin/rm bin/rmdir bin/sleep \
-			sbin/sha256 sbin/sha512 sbin/md5 sbin/sha1"
-
-	# Endian issues on mips/mips64 are not handling exec of 64bit shells
-	# from emulated environments correctly.  This works just fine on ARM
-	# because of the same issue, so allow it for now.
-	[ ${TARGET} = "mips" ] || \
-	    HLINK_FILES="${HLINK_FILES} bin/sh bin/csh"
-
-	for file in ${HLINK_FILES}; do
-		if [ -f "${JAILMNT}/nxb-bin/${file}" ]; then
-			rm -f ${JAILMNT}/${file}
-			ln ${JAILMNT}/nxb-bin/${file} ${JAILMNT}/${file}
-		fi
-	done
-
-	SETUP_XDEV=1
+	# The files are hard linked at bulk jail startup now.
+	BUILT_NATIVE_XTOOLS=1
 }
 
 install_from_src() {
@@ -506,7 +460,7 @@ install_from_src() {
 		buildworld
 		installworld
 	fi
-	setup_xdev
+	build_native_xtools
 	# Use __FreeBSD_version as our version_extra
 	setvar "${var_version_extra}" \
 	    "$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' \
@@ -565,7 +519,7 @@ install_from_vcs() {
 	fi
 	buildworld
 	installworld
-	setup_xdev
+	build_native_xtools
 
 	case ${METHOD} in
 	svn*)
@@ -731,14 +685,14 @@ install_from_ftp() {
 	rm -rf ${JAILMNT}/fromftp/
 	echo " done"
 
-	setup_xdev
+	build_native_xtools
 }
 
 install_from_tar() {
 	msg_n "Installing ${VERSION} ${ARCH} from ${TARBALL} ..."
 	tar -xpf ${TARBALL} -C ${JAILMNT}/ || err 1 " fail"
 	echo " done"
-	setup_xdev
+	build_native_xtools
 }
 
 create_jail() {
