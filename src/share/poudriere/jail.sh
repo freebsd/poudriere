@@ -416,10 +416,11 @@ setup_xdev() {
 	[ -n "${MAKE_CMD}" ] || err 1 "setup_xdev: setup_build_env not called"
 
 	msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
-	${MAKE_CMD} -C /usr/src native-xtools ${MAKE_JOBS} \
+	: ${XDEV_SRC:=/usr/src}
+	${MAKE_CMD} -C ${XDEV_SRC} native-xtools ${MAKE_JOBS} \
 	    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools'"
 	XDEV_TOOLS=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
-	    ${MAKE_CMD} -C /usr/src -f Makefile.inc1 -V NXBDESTDIR)
+	    ${MAKE_CMD} -C ${XDEV_SRC} -f Makefile.inc1 -V NXBDESTDIR)
 	: ${XDEV_TOOLS:=/usr/obj/${TARGET}.${TARGET_ARCH}/nxb-bin}
 	rm -rf ${JAILMNT}/nxb-bin || err 1 "Failed to remove old native-xtools"
 	mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
