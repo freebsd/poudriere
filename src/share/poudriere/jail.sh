@@ -383,7 +383,7 @@ setup_src_conf() {
 	    ${JAILMNT}/etc/${src}.conf
 }
 
-build_and_install_world() {
+buildworld() {
 	export SRC_BASE=${JAILMNT}/usr/src
 	mkdir -p ${JAILMNT}/etc
 	setup_src_conf "src"
@@ -409,9 +409,6 @@ build_and_install_world() {
 			KERNCONF=${KERNEL} ${MAKEWORLDARGS} || \
 			err 1 "Failed to 'make buildkernel'"
 	fi
-
-	installworld
-	setup_xdev
 }
 
 setup_xdev() {
@@ -499,7 +496,9 @@ install_from_src() {
 		setup_build_env
 		installworld
 	else
-		build_and_install_world
+		buildworld
+		installworld
+		setup_xdev
 	fi
 	# Use __FreeBSD_version as our version_extra
 	setvar "${var_version_extra}" \
@@ -557,7 +556,9 @@ install_from_vcs() {
 			;;
 		esac
 	fi
-	build_and_install_world
+	buildworld
+	installworld
+	setup_xdev
 
 	case ${METHOD} in
 	svn*)
