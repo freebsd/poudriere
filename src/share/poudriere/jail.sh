@@ -217,6 +217,7 @@ update_jail() {
 		    "${JAILNAME}"
 		JNETNAME="n"
 		jstart
+		[ ${QEMU_EMULATING} -eq 1 ] && qemu_install "${JAILMNT}"
 		# Fix freebsd-update to not check for TTY and to allow
 		# EOL branches to still get updates.
 		sed \
@@ -261,6 +262,15 @@ update_jail() {
 			jset ${JAILNAME} version ${TORELEASE}
 		fi
 		rm -f ${JAILMNT}/usr/sbin/freebsd-update.fixed
+		if [ ${QEMU_EMULATING} -eq 1 ]; then
+			rm -f "${JAILMNT}${EMULATOR}"
+			# Try to cleanup the lingering directory structure
+			emulator_dir="${EMULATOR%/*}"
+			while [ -n "${emulator_dir}" ] && \
+			    rmdir "${JAILMNT}${emulator_dir}" 2>/dev/null; do
+				emulator_dir="${emulator_dir%/*}"
+			done
+		fi
 		jstop
 		umountfs ${JAILMNT} 1
 		update_version

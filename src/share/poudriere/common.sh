@@ -2079,6 +2079,16 @@ setup_ccache() {
 	fi
 }
 
+# Copy in the latest version of the emulator.
+qemu_install() {
+	[ $# -eq 1 ] || eargs qemu_install mnt
+	local mnt="$1"
+
+	msg "Copying latest version of the emulator from: ${EMULATOR}"
+	mkdir -p "${mnt}${EMULATOR%/*}"
+	cp -f "${EMULATOR}" "${mnt}${EMULATOR}"
+}
+
 jail_start() {
 	[ $# -lt 2 ] && eargs jail_start name ptname setname
 	local name=$1
@@ -2234,10 +2244,7 @@ jail_start() {
 		cat >> "${tomnt}/etc/make.conf" <<-EOF
 		.sinclude "/etc/make.nxb.conf"
 		EOF
-		# Copy in the latest version of the emulator.
-		msg "Copying latest version of the emulator from: ${EMULATOR}"
-		mkdir -p "${tomnt}${EMULATOR%/*}"
-		cp -f "${EMULATOR}" "${tomnt}${EMULATOR}"
+		qemu_install "${tomnt}"
 	fi
 	# Handle special ARM64 needs
 	if [ "${arch#*.}" = "aarch64" ] && ! [ -f "${tomnt}/usr/bin/ld" ]; then
