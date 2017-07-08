@@ -342,7 +342,7 @@ if [ ${UPDATE} -eq 1 ]; then
 			SNAPDIR=${PTMNT}/.snap
 		fi
 		/usr/sbin/portsnap ${PTARGS} -d ${SNAPDIR} -p ${PORTSMNT:-${PTMNT}} ${PSCOMMAND} alfred
-		msg " done"
+		echo " done"
 		;;
 	svn*)
 		msg_n "Updating portstree \"${PTNAME}\" with ${METHOD}..."
