@@ -5042,10 +5042,10 @@ fi
 if [ ${JAILED} -eq 1 ]; then
 	# !! Note these exit statuses are inverted
 	ifconfig | \
-	    awk -vip="${LOIP4}" '$1 == "inet6" && $2 == ip {exit 1}' && \
+	    awk -vip="${LOIP6}" '$1 == "inet6" && $2 == ip {exit 1}' && \
 	    LOIP6=
 	ifconfig | \
-	    awk -vip="${LOIP6}" '$1 == "inet" && $2 == ip {exit 1}' && \
+	    awk -vip="${LOIP4}" '$1 == "inet" && $2 == ip {exit 1}' && \
 	    LOIP4=
 fi
 case $IPS in
