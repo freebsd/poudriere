@@ -12,4 +12,19 @@ TMPFS_LOCALBASE=0
 NS="poudriere"
 IPS="$(sysctl -n kern.features.inet 2>/dev/null || echo 0)$(sysctl -n kern.features.inet6 2>/dev/null || echo 0)"
 JAILED=$(sysctl -n security.jail.jailed)
-
+if [ ${JAILED} -eq 0 ] || \
+    [ $(sysctl -n security.jail.socket_unixiproute_only) -eq 0 ]; then
+	JAIL_NET_PARAMS="${JAIL_NET_PARAMS:+${JAIL_NET_PARAMS} }allow.socket_af"
+fi
+if [ ${JAILED} -eq 0 ] || \
+    [ $(sysctl -n security.jail.allow_raw_sockets) -eq 1 ]; then
+	JAIL_NET_PARAMS="${JAIL_NET_PARAMS:+${JAIL_NET_PARAMS} }allow.raw_sockets"
+fi
+if [ ${JAILED} -eq 0 ] || \
+    [ $(sysctl -n security.jail.chflags_allowed) -eq 1 ]; then
+	JAIL_PARAMS="${JAIL_PARAMS:+${JAIL_PARAMS} }allow.chflags"
+fi
+if [ ${JAILED} -eq 0 ] || \
+    [ $(sysctl -n security.jail.sysvipc_allowed) -eq 1 ]; then
+	JAIL_PARAMS="${JAIL_PARAMS:+${JAIL_PARAMS} }allow.sysvipc"
+fi

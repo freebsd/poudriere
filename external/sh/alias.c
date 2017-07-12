@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)alias.c	8.3 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/alias.c 314436 2017-02-28 23:42:47Z imp $");
+__FBSDID("$FreeBSD: head/bin/sh/alias.c 317039 2017-04-16 22:10:02Z jilles $");
 
 #include <stdlib.h>
 #include "shell.h"
@@ -45,7 +45,7 @@ __FBSDID("$FreeBSD: head/bin/sh/alias.c 314436 2017-02-28 23:42:47Z imp $");
 #include "memalloc.h"
 #include "mystring.h"
 #include "alias.h"
-#include "options.h"	/* XXX for argptr (should remove?) */
+#include "options.h"
 #include "builtins.h"
 
 #define ATABSIZE 39
@@ -63,17 +63,8 @@ setalias(const char *name, const char *val)
 {
 	struct alias *ap, **app;
 
+	unalias(name);
 	app = hashalias(name);
-	for (ap = *app; ap; ap = ap->next) {
-		if (equal(name, ap->name)) {
-			INTOFF;
-			ckfree(ap->val);
-			ap->val	= savestr(val);
-			INTON;
-			return;
-		}
-	}
-	/* not found */
 	INTOFF;
 	ap = ckmalloc(sizeof (struct alias));
 	ap->name = savestr(name);
@@ -83,6 +74,14 @@ setalias(const char *name, const char *val)
 	*app = ap;
 	aliases++;
 	INTON;
+}
+
+static void
+freealias(struct alias *ap)
+{
+	ckfree(ap->name);
+	ckfree(ap->val);
+	ckfree(ap);
 }
 
 static int
@@ -106,9 +105,7 @@ unalias(const char *name)
 			else {
 				INTOFF;
 				*app = ap->next;
-				ckfree(ap->name);
-				ckfree(ap->val);
-				ckfree(ap);
+				freealias(ap);
 				INTON;
 			}
 			aliases--;
@@ -122,19 +119,21 @@ unalias(const char *name)
 static void
 rmaliases(void)
 {
-	struct alias *ap, *tmp;
+	struct alias *ap, **app;
 	int i;
 
 	INTOFF;
 	for (i = 0; i < ATABSIZE; i++) {
-		ap = atab[i];
-		atab[i] = NULL;
-		while (ap) {
-			ckfree(ap->name);
-			ckfree(ap->val);
-			tmp = ap;
-			ap = ap->next;
-			ckfree(tmp);
+		app = &atab[i];
+		while (*app) {
+			ap = *app;
+			if (ap->flag & ALIASINUSE) {
+				*ap->name = '\0';
+				app = &(*app)->next;
+			} else {
+				*app = ap->next;
+				freealias(ap);
+			}
 		}
 	}
 	aliases = 0;

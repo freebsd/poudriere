@@ -20,6 +20,12 @@ port_var_fetch "devel/port_var_fetch1" \
     PKGNAME pkgname
 assert "py34-sqlrelay-1.0.0_2" "${pkgname}" "PKGNAME"
 
+# Test -f Mk/bsd.port.mk usage
+maintainer=
+port_var_fetch '' \
+    MAINTAINER maintainer
+assert "ports@FreeBSD.org" "${maintainer}" "MAINTAINER from -f Mk/bsd.port.mk"
+
 port_var_fetch "devel/port_var_fetch1" \
 	FOO='BLAH BLAH ${PKGNAME}' \
 	PKGNAME pkgname \
@@ -49,7 +55,8 @@ port_var_fetch "devel/port_var_fetch2" \
 	IGNORE ignore \
 	FOO foo \
 	_PDEPS='' \
-	_PDEPS pdeps
+	_PDEPS pdeps \
+	_FOO=''
 assert 0 $? "port_var_fetch should succeed"
 assert '' "${pkgname}" "pkgname var should now be empty"
 assert '' "${ignore}" "ignore var should now be empty"

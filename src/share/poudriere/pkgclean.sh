@@ -29,12 +29,13 @@ usage() {
 poudriere pkgclean [options] [-f file|cat/port ...]
 
 Parameters:
-    -a          -- Clean the whole ports tree
-    -j jail     -- Which jail to use for packages
+    -A          -- Remove all packages
+    -a          -- Keep all known ports
     -f file     -- Get the list of ports to keep from a file
     [ports...]  -- List of ports to keep on the command line
 
 Options:
+    -j jail     -- Which jail to use for packages
     -J n        -- Run n jobs in parallel (Defaults to the number of
                    CPUs times 1.25)
     -n          -- Do not actually remove anything, just show what would be
@@ -54,7 +55,7 @@ EOF
 PTNAME=default
 SETNAME=""
 DRY_RUN=0
-ALL=0
+DO_ALL=0
 BUILD_REPO=1
 SKIPSANITY=0
 
@@ -62,8 +63,11 @@ SKIPSANITY=0
 
 [ $# -eq 0 ] && usage
 
-while getopts "aj:J:f:nNp:Rvyz:" FLAG; do
+while getopts "Aaj:J:f:nNp:Rvyz:" FLAG; do
 	case "${FLAG}" in
+		A)
+			DO_ALL=1
+			;;
 		a)
 			ALL=1
 			;;
@@ -124,21 +128,33 @@ export MASTERMNT
 : ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}
 PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
 
-read_packages_from_params "$@"
+if [ ${DO_ALL} -eq 1 ]; then
+	LISTPORTS=
+else
+	read_packages_from_params "$@"
+fi
 
 PACKAGES=${POUDRIERE_DATA}/packages/${MASTERNAME}
 
 PKG_EXT='*' package_dir_exists_and_has_packages ||
-    err 1 "No packages exist for ${MASTERNAME}"
+    err 0 "No packages exist for ${MASTERNAME}"
 
 maybe_run_queued "${saved_argv}"
 
 msg "Gathering all expected packages"
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 prepare_ports
+msg "Looking for unneeded packages"
 bset status "pkgclean:"
 
-[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] && PACKAGES="${PACKAGES}/.latest"
+if [ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ]; then
+	if [ -d "${PACKAGES}/.building" ]; then
+		msg "Cleaning in previously failed build directory"
+		PACKAGES="${PACKAGES}/.building"
+	else
+		PACKAGES="${PACKAGES}/.latest"
+	fi
+fi
 
 # Some packages may exist that are stale, but are still the latest version
 # built. Don't delete those, bulk will incrementally delete them. We only
@@ -161,7 +177,7 @@ for file in ${PACKAGES}/All/*; do
 			if ! pkg_get_origin origin "${file}"; then
 				msg_verbose "Found corrupt package: ${file}"
 				echo "${file}" >> ${BADFILES_LIST}
-			elif ! pkg_is_needed "${pkgname}"; then
+			elif ! pkgbase_is_needed "${pkgname}"; then
 				msg_verbose "Found unwanted package: ${file}"
 				echo "${file}" >> ${BADFILES_LIST}
 			else
@@ -240,10 +256,10 @@ END {
 				;;
 			'=')
 				# This should be impossible now due to the
-				# earlier pkg_is_needed() comparison
+				# earlier pkgbase_is_needed() comparison
 				# (by PKGBASE) and that this check is grouped
 				# by PKGBASE.  Any renamed package is trimmed
-				# out by the failed pkg_is_needed() check.
+				# out by the failed pkgbase_is_needed() check.
 				err 1 "Found duplicated packages ${pkg} vs ${lastpkg} with origin ${origin}"
 				;;
 		esac
@@ -264,6 +280,18 @@ if [ $ret -eq 1 ]; then
 	[ "${NO_RESTRICTED}" != "no" ] && clean_restricted
 	delete_stale_symlinks_and_empty_dirs
 	delete_stale_pkg_cache
-	[ ${BUILD_REPO} -eq 1 ] && build_repo
+	if [ ${BUILD_REPO} -eq 1 ]; then
+		if [ ${DO_ALL} -eq 1 ]; then
+			msg "Removing pkg repository files"
+			rm -f "${PACKAGES}/meta.txz" \
+				"${PACKAGES}/digests.txz" \
+				"${PACKAGES}/packagesite.txz"
+		else
+			build_repo
+		fi
+	fi
+	if [ ${DO_ALL} -eq 1 ]; then
+		msg "Cleaned all packages but ${PACKAGES} may need to be removed manually."
+	fi
 fi
 run_hook pkgclean done ${ret} ${BUILD_REPO}

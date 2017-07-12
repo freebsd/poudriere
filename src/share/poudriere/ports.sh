@@ -72,6 +72,7 @@ NAMEONLY=0
 QUIET=0
 VERBOSE=0
 KEEP=0
+CREATED_FS=0
 while getopts "B:cFuU:dklp:qf:nM:m:v" FLAG; do
 	case "${FLAG}" in
 		B)
@@ -152,6 +153,7 @@ if [ -n "${SOURCES_URL}" ]; then
 		http://*) METHOD="git+http" ;;
 		https://*) METHOD="git+https" ;;
 		git://*) METHOD="git" ;;
+		file:///*) METHOD="git" ;;
 		*) err 1 "Invalid git url" ;;
 		esac
 		;;
@@ -216,7 +218,9 @@ fi
 
 cleanup_new_ports() {
 	msg "Error while creating ports tree, cleaning up." >&2
-	TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
+	if [ "${CREATED_FS}" -eq 1 ]; then
+		TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
+	fi
 	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
 }
 
@@ -233,18 +237,28 @@ if [ ${CREATE} -eq 1 ]; then
 	: ${PTMNT="${BASEFS:=/usr/local${ZROOTFS}}/ports/${PTNAME}"}
 	: ${PTFS="${ZPOOL}${ZROOTFS}/ports/${PTNAME}"}
 
-	# Wrap the ports creation in a special cleanup hook that will remove it
-	# if any error is encountered
-	CLEANUP_HOOK=cleanup_new_ports
-
 	[ "${PTNAME#*.*}" = "${PTNAME}" ] ||
 		err 1 "The ports name cannot contain a period (.). See jail(8)"
 
+	[ -d "${PTMNT}" ] && \
+	    err 1 "Directory ${PTMNT} already exists"
+
 	if [ ${METHOD} != "none" ]; then
+		# This will exit if it fails to zfs create...
 		createfs ${PTNAME} ${PTMNT} ${PTFS}
+		# Ports runs without -e, but even if it did let's not
+		# short-circuit all of -e support in createfs.  It
+		# should have exited on error with err(), but be sure.
+		if [ $? -eq 0 ]; then
+			CREATED_FS=1
+		fi
 	else
 		echo "Not creating fs for method=none"
 	fi
+
+	# Wrap the ports creation in a special cleanup hook that will remove it
+	# if any error is encountered
+	CLEANUP_HOOK=cleanup_new_ports
 
 	pset ${PTNAME} mnt ${PTMNT}
 	if [ $FAKE -eq 0 ]; then
@@ -274,7 +288,7 @@ if [ ${CREATE} -eq 1 ]; then
 		git*)
 			msg_n "Cloning the ports tree..."
 			[ ${VERBOSE} -gt 0 ] || quiet="-q"
-			git clone --depth=1 --single-branch ${quiet} -b ${BRANCH} ${GIT_FULLURL} ${PTMNT} || err 1 " fail"
+			${GIT_CMD} clone --depth=1 --single-branch ${quiet} -b ${BRANCH} ${GIT_FULLURL} ${PTMNT} || err 1 " fail"
 			echo " done"
 			;;
 		esac
@@ -313,13 +327,13 @@ if [ ${UPDATE} -eq 1 ]; then
 	${NULLMOUNT} | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	maybe_run_queued "${saved_argv}"
-	msg "Updating portstree \"${PTNAME}\""
 	if [ -z "${METHOD}" -o ${METHOD} = "-" ]; then
 		METHOD=portsnap
 		pset ${PTNAME} method ${METHOD}
 	fi
 	case ${METHOD} in
 	portsnap|"")
+		msg_n "Updating portstree \"${PTNAME}\" with ${METHOD}..."
 		# additional portsnap arguments
 		PTARGS=$(check_portsnap_interactive)
 		if [ -d "${PTMNT}/snap" ]; then
@@ -328,9 +342,10 @@ if [ ${UPDATE} -eq 1 ]; then
 			SNAPDIR=${PTMNT}/.snap
 		fi
 		/usr/sbin/portsnap ${PTARGS} -d ${SNAPDIR} -p ${PORTSMNT:-${PTMNT}} ${PSCOMMAND} alfred
+		echo " done"
 		;;
 	svn*)
-		msg_n "Updating the ports tree..."
+		msg_n "Updating portstree \"${PTNAME}\" with ${METHOD}..."
 		[ ${VERBOSE} -gt 0 ] || quiet="-q"
 		${SVN_CMD} upgrade ${PORTSMNT:-${PTMNT}} 2>/dev/null || :
 		${SVN_CMD} ${quiet} update \
@@ -339,9 +354,9 @@ if [ ${UPDATE} -eq 1 ]; then
 		echo " done"
 		;;
 	git*)
-		msg "Updating the ports tree"
+		msg_n "Updating portstree \"${PTNAME}\" with ${METHOD}..."
 		[ ${VERBOSE} -gt 0 ] || quiet="-q"
-		git -C ${PORTSMNT:-${PTMNT}} pull --rebase ${quiet}
+		${GIT_CMD} -C ${PORTSMNT:-${PTMNT}} pull --rebase ${quiet}
 		echo " done"
 		;;
 	none)	;;

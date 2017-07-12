@@ -47,6 +47,7 @@ src/etc/rc.d/poudriered
 src/stamp-h1
 test/*.log
 test/etc
+src/poudriere-sh/builtins.def
 src/poudriere-sh/builtins-poudriere.def
 src/poudriere-sh/builtins.c
 src/poudriere-sh/builtins.h

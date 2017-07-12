@@ -156,7 +156,7 @@ timeout_SOURCES=	src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
 tsort_SOURCES=		src/libexec/poudriere/tsort/tsort.c
 
-sh_CFLAGS=		-DSHELL -DNO_HISTORY \
+sh_CFLAGS=		-DSHELL -DNO_HISTORY -std=gnu99 \
 			-include $(top_srcdir)/external/sh_compat/compat.h \
 			-I$(top_srcdir)/src \
 			-I$(top_srcdir)/external/sh
@@ -305,7 +305,8 @@ gen-man-wiki:
 MOSTLYCLEANFILES+=	poudriere
 .PHONY: poudriere
 poudriere: $(top_srcdir)/src/bin/poudriere
-	@if which git >/dev/null 2>&1 && [ -d $(top_srcdir)/.git ]; then \
+	@if which git >/dev/null 2>&1 && \
+	    [ -d "$$(git -C "$(top_srcdir)" rev-parse --git-dir)" ]; then \
 	    gitver=$$(git -C "$(top_srcdir)" describe --tags HEAD); \
 	    echo "POUDRIERE_VERSION=$${gitver} > $@"; \
 	    sed -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \

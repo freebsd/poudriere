@@ -34,3 +34,9 @@ Getting started with poudriere
 4. man poudriere, search for EXAMPLES, read the wiki https://github.com/freebsd/poudriere/wiki
 5. Follow "bulk build of binary packages" steps
 6. Enjoy your new fresh binary packages!
+
+Build status
+------------------------------
+
+* FreeBSD 10.3-amd64 [![FreeBSD 10.3-amd64](https://jenkins.mouf.net/job/poudriere-103-amd64/badge/icon)](https://jenkins.mouf.net/job/poudriere-103-amd64/)
+* FreeBSD 12-CURRENT-armv6 [![FreeBSD 12-CURRENT-armv6](http://jenkins.mouf.net/view/poudriere/job/poudriere-12-armv6/badge/icon)](http://jenkins.mouf.net/view/poudriere/job/poudriere-12-armv6/)
