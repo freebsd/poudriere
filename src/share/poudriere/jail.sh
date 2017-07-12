@@ -385,18 +385,6 @@ setup_src_conf() {
 	    ${JAILMNT}/etc/${src}.conf
 }
 
-check_xdev() {
-	# Check that we can theoretically build xdev and error out
-	# if we clearly cannot.
-	if [ ${QEMU_EMULATING} -eq 1 ] && [ ${NO_XDEV} -ne 0 ]; then
-		if [ ! -f /usr/src/Makefile ] || [ ! -f /usr/src/Makefile.inc1 ]; then
-			err 1 "/usr/src must be a working src tree to build native-xtools. Perhaps you meant to specify -X?"
-		fi
-
-		XDEV=1
-	fi
-}
-
 buildworld() {
 	export SRC_BASE=${JAILMNT}/usr/src
 	mkdir -p ${JAILMNT}/etc
@@ -430,10 +418,14 @@ build_native_xtools() {
 	[ ${BUILT_NATIVE_XTOOLS:-0} -eq 0 ] || return 0
 	[ ${QEMU_EMULATING} -eq 1 ] || return 0
 	setup_build_env
-	check_xdev
+
+	: ${XDEV_SRC:=/usr/src}
+	# Basic sanity check
+	if [ ! -f ${XDEV_SRC}/Makefile ] || [ ! -f ${XDEV_SRC}/Makefile.inc1 ]; then
+		err 1 "${XDEV_SRC} must be a working src tree to build native-xtools. Perhaps you meant to specify -X?"
+	fi
 
 	msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
-	: ${XDEV_SRC:=/usr/src}
 	${MAKE_CMD} -C ${XDEV_SRC} native-xtools ${MAKE_JOBS} \
 	    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools' in ${XDEV_SRC}"
 	XDEV_TOOLS=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
@@ -933,8 +925,7 @@ INFO=0
 UPDATE=0
 PTNAME=default
 SETNAME=""
-XDEV=0
-NO_XDEV=0
+XDEV=1
 BUILD=0
 GIT_DEPTH=--depth=1
 
@@ -1026,7 +1017,7 @@ while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DX" FLAG; do
 			TORELEASE=${OPTARG}
 			;;
 		X)
-			NO_XDEV=1
+			XDEV=0
 			;;
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"
