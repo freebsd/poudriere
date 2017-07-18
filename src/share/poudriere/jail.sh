@@ -184,6 +184,14 @@ rename_jail() {
 	msg_warn "If you choose to rename the filesystem then modify the 'mnt' and 'fs' files in ${POUDRIERED}/jails/${NEWJAILNAME}"
 }
 
+hook_stop_jail() {
+	jstop
+	umountfs ${JAILMNT} 1
+	if [ -n "${OLD_CLEANUP_HOOK}" ]; then
+		${OLD_CLEANUP_HOOK}
+	fi
+}
+
 update_jail() {
 	SRC_BASE="${JAILMNT}/usr/src"
 	METHOD=$(jget ${JAILNAME} method)
@@ -212,6 +220,8 @@ update_jail() {
 		    do_jail_mounts "${JAILMNT}" "${JAILMNT}" "${ARCH}"
 		JNETNAME="n"
 		jstart
+		[ -n "${CLEANUP_HOOK}" ] && OLD_CLEANUP_HOOK="${CLEANUP_HOOK}"
+		CLEANUP_HOOK=hook_stop_jail
 		# Fix freebsd-update to not check for TTY and to allow
 		# EOL branches to still get updates.
 		sed \
@@ -258,6 +268,12 @@ update_jail() {
 		rm -f ${JAILMNT}/usr/sbin/freebsd-update.fixed
 		jstop
 		umountfs ${JAILMNT} 1
+		if [ -n "${OLD_CLEANUP_HOOK}" ]; then
+			CLEANUP_HOOK="${OLD_CLEANUP_HOOK}"
+			unset OLD_CLEANUP_HOOK
+		else
+			unset CLEANUP_HOOK
+		fi
 		update_version
 		[ -n "${RESOLV_CONF}" ] && rm -f ${JAILMNT}/etc/resolv.conf
 		update_version_env $(jget ${JAILNAME} version)
