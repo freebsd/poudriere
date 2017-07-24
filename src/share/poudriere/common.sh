@@ -684,6 +684,7 @@ buildlog_start() {
 	echo "maintained by: $(injail /usr/bin/make -C ${portdir} maintainer)"
 	echo "Makefile ident: $(ident -q ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
 	echo "Poudriere version: ${POUDRIERE_VERSION}"
+	[ ${QEMU_EMULATING} -eq 1 ] && echo "QEMU version: `pkg query %v qemu-user-static`"
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
 	echo "Jail OSVERSION: ${JAIL_OSVERSION}"
 	echo "Job Id: ${MY_JOBID}"
