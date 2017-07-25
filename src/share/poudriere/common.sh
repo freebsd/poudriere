@@ -5114,10 +5114,6 @@ fi
 : ${BUILD_AS_NON_ROOT:=no}
 : ${SVN_CMD:=$(which svn 2>/dev/null || which svnlite 2>/dev/null)}
 : ${BINMISC:=/usr/sbin/binmiscctl}
-# 24 hours for 1 command
-: ${MAX_EXECUTION_TIME:=86400}
-# 120 minutes with no log update
-: ${NOHANG_TIME:=7200}
 : ${PATCHED_FS_KERNEL:=no}
 : ${ALL:=0}
 : ${CLEAN:=0}
