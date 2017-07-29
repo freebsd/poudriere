@@ -2773,7 +2773,7 @@ gather_distfiles() {
 # Return 2 on test failure if PORTTESTING_FATAL=no
 _real_build_port() {
 	[ $# -ne 1 ] && eargs _real_build_port originspec
-	local originspec=$1
+	local originspec="$1"
 	local port portdir
 	local mnt
 	local log
@@ -2784,12 +2784,21 @@ _real_build_port() {
 	local jailuser
 	local testfailure=0
 	local max_execution_time allownetworking
+	local _need_root NEED_ROOT PREFIX
 
 	_my_path mnt
 	_log_path log
 
 	originspec_decode "${originspec}" port '' ''
 	portdir="/usr/ports/${port}"
+
+	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
+		_need_root="NEED_ROOT NEED_ROOT"
+	fi
+	port_var_fetch_originspec "${originspec}" \
+	    ${PORT_FLAGS} \
+	    PREFIX PREFIX \
+	    ${_need_root}
 
 	# Use bootstrap PKG when not building pkg itself.
 	if false && [ ${QEMU_EMULATING} -eq 1 ]; then
@@ -2829,9 +2838,7 @@ _real_build_port() {
 	# Must install run-depends as 'actual-package-depends' and autodeps
 	# only consider installed packages as dependencies
 	jailuser=root
-	if [ "${BUILD_AS_NON_ROOT}" = "yes" ] &&
-	    [ -z "$(injail /usr/bin/make -C ${portdir} \
-	        -VNEED_ROOT)" ]; then
+	if [ "${BUILD_AS_NON_ROOT}" = "yes" ] && [ -z "${NEED_ROOT}" ]; then
 		jailuser=${PORTBUILD_USER}
 	fi
 	# XXX: run-depends can come out of here with some bsd.port.mk
@@ -3045,7 +3052,6 @@ _real_build_port() {
 			local mod=$(mktemp -t lo.mod)
 			local mod1=$(mktemp -t lo.mod1)
 			local die=0
-			PREFIX=$(injail /usr/bin/env ${PORT_FLAGS} /usr/bin/make -C ${portdir} -VPREFIX)
 
 			msg "Checking for extra files and directories"
 			bset_job_status "leftovers" "${port}"
