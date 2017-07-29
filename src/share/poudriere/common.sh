@@ -671,17 +671,36 @@ log_start() {
 }
 
 buildlog_start() {
-	local portdir=$1
-	local mnt
-	local var
+	local originspec="$1"
+	local mnt var portdir
+	local make_vars
+	local wanted_vars="
+	    MAINTAINER
+	    CONFIGURE_ARGS
+	    CONFIGURE_ENV
+	    MAKE_ENV
+	    PLIST_SUB
+	    SUB_LIST
+	    "
 
 	_my_path mnt
+	originspec_decode "${originspec}" port '' ''
+	portdir="${PORTSDIR}/${port}"
+
+	for var in ${wanted_vars}; do
+		local "mk_${var}"
+		make_vars="${make_vars:+${make_vars} }${var} mk_${var}"
+	done
+
+	port_var_fetch_originspec "${originspec}" \
+	    ${PORT_FLAGS} \
+	    ${make_vars}
 
 	echo "build started at $(date)"
 	echo "port directory: ${portdir}"
 	echo "package name: ${PKGNAME}"
 	echo "building for: $(injail uname -a)"
-	echo "maintained by: $(injail /usr/bin/make -C ${portdir} maintainer)"
+	echo "maintained by: ${_maintainer}"
 	echo "Makefile ident: $(ident -q ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
 	echo "Poudriere version: ${POUDRIERE_VERSION}"
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
@@ -716,25 +735,12 @@ buildlog_start() {
 	injail /usr/bin/make -C ${portdir} ${MAKE_ARGS} showconfig || :
 	echo "---End OPTIONS List---"
 	echo ""
-	for var in CONFIGURE_ARGS CONFIGURE_ENV MAKE_ENV; do
+	for var in ${wanted_vars}; do
 		echo "--${var}--"
-		echo "$(injail /usr/bin/env ${PORT_FLAGS} \
-		    /usr/bin/make -C ${portdir} ${MAKE_ARGS} -V ${var})"
+		eval "echo \"\${mk_${var}}\""
 		echo "--End ${var}--"
 		echo ""
 	done
-	echo "--PLIST_SUB--"
-	echo "$(injail /usr/bin/env ${PORT_FLAGS} \
-	    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
-	    -V PLIST_SUB | tr ' ' '\n' | grep -v '^$')"
-	echo "--End PLIST_SUB--"
-	echo ""
-	echo "--SUB_LIST--"
-	echo "$(injail /usr/bin/env ${PORT_FLAGS} \
-	    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
-	    -V SUB_LIST | tr ' ' '\n' | grep -v '^$')"
-	echo "--End SUB_LIST--"
-	echo ""
 	echo "---Begin make.conf---"
 	cat ${mnt}/etc/make.conf
 	echo "---End make.conf---"
@@ -3811,7 +3817,7 @@ build_pkg() {
 
 	log_start 0
 	msg "Building ${port}"
-	buildlog_start ${portdir}
+	buildlog_start "${ORIGINSPEC}"
 
 	# Ensure /dev/null exists (kern/139014)
 	[ ${JAILED} -eq 0 ] && ! [ -c "${mnt}/dev/null" ] && \

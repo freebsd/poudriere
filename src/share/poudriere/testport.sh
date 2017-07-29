@@ -267,7 +267,7 @@ if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
 	JEXEC_LIMITS=1
 fi
 log_start 1
-buildlog_start ${PORTSDIR}/${ORIGIN}
+buildlog_start "${ORIGINSPEC}"
 ret=0
 
 # Don't show timestamps in msg() which goes to logs, only job_msg()
