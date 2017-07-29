@@ -138,7 +138,7 @@ parallel_start() {
 	fifo=$(mktemp -ut parallel.pipe)
 	mkfifo ${fifo}
 	exec 9<> ${fifo}
-	rm -f ${fifo}
+	unlink ${fifo}
 	export NBPARALLEL=0
 	export PARALLEL_PIDS=""
 	: ${PARALLEL_JOBS:=$(sysctl -n hw.ncpu)}
@@ -241,7 +241,7 @@ nohang() {
 	# mtime not the client's mtime until the client writes to it
 	touch ${fifo}
 	exec 8<> ${fifo}
-	rm -f ${fifo}
+	unlink ${fifo}
 
 	starttime=$(clock -epoch)
 
@@ -291,7 +291,7 @@ nohang() {
 
 	exec 8<&- 8>&-
 
-	rm -f ${pidfile}
+	unlink ${pidfile}
 
 	return $ret
 }

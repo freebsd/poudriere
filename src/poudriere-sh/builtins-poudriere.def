@@ -12,3 +12,4 @@ rmdircmd -n		rmdir
 setproctitlecmd		setproctitle
 sleepcmd		sleep
 touchcmd		touch
+unlinkcmd -n		unlink

@@ -662,7 +662,7 @@ log_start() {
 		# Remove fifo pipe file right away to avoid orphaning it.
 		# The pipe will continue to work as long as we keep
 		# the FD open to it.
-		rm -f ${logfile}.pipe
+		unlink ${logfile}.pipe
 	else
 		# Send output directly to file.
 		tpid=
@@ -1383,7 +1383,7 @@ markfs() {
 		# remove old snapshot if exists
 		zfs destroy -r ${fs}@${name} 2>/dev/null || :
 		rollback_file "${mnt}" "${name}" snapfile
-		rm -f "${snapfile}" >/dev/null 2>&1 || :
+		unlink "${snapfile}" >/dev/null 2>&1 || :
 		#create new snapshot
 		zfs snapshot ${fs}@${name}
 		# Mark that we are in this snapshot, which rollbackfs
@@ -1805,7 +1805,7 @@ commit_packages() {
 			case "${name}" in
 			.buildname|.jailversion|meta.txz|digests.txz|packagesite.txz|All|Latest)
 				# Auto fix pkg-owned files
-				rm -f "${PACKAGES_ROOT}/${name}"
+				unlink "${PACKAGES_ROOT}/${name}"
 				;;
 			*)
 				msg_error "${PACKAGES_ROOT}/${name}
@@ -1840,7 +1840,7 @@ symlink to .latest/${name}"
 		link=$(readlink ${path})
 		# Skip if link does not reference inside latest
 		[ "${link##.latest}" != "${link}" ] || continue
-		rm -f ${path}
+		unlink ${path}
 	done
 
 
@@ -2146,7 +2146,7 @@ setup_xdev() {
 
 	for file in ${HLINK_FILES}; do
 		if [ -f "${mnt}/nxb-bin/${file}" ]; then
-			rm -f "${mnt}/${file}"
+			unlink "${mnt}/${file}"
 			ln "${mnt}/nxb-bin/${file}" "${mnt}/${file}"
 		fi
 	done
@@ -2725,7 +2725,7 @@ check_fs_violation() {
 		job_msg_verbose "Status   ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}: ${status_value}"
 		ret=1
 	fi
-	rm -f ${tmpfile}
+	unlink ${tmpfile}
 
 	return $ret
 }
@@ -3242,7 +3242,7 @@ save_wrkdir() {
 	tbz) COMPRESSKEY="j" ;;
 	txz) COMPRESSKEY="J" ;;
 	esac
-	rm -f ${tarname}
+	unlink ${tarname}
 	tar -s ",${mnted_portdir},," -c${COMPRESSKEY}f ${tarname} ${mnted_portdir}/work > /dev/null 2>&1
 
 	job_msg "Saved ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET} wrkdir to: ${tarname}"
@@ -3424,7 +3424,7 @@ job_done() {
 	hash_get builder_pkgnames "${j}" pkgname || return 1
 	hash_unset builder_pids "${j}"
 	hash_unset builder_pkgnames "${j}"
-	rm -f "../var/run/${j}.pid"
+	unlink "../var/run/${j}.pid"
 	_bget status ${j} status
 	rmdir "../building/${pkgname}"
 	if [ "${status%%:*}" = "done" ]; then
@@ -3446,7 +3446,7 @@ build_queue() {
 
 	mkfifo ${MASTERMNT}/.p/builders.pipe
 	exec 6<> ${MASTERMNT}/.p/builders.pipe
-	rm -f ${MASTERMNT}/.p/builders.pipe
+	unlink ${MASTERMNT}/.p/builders.pipe
 	queue_empty=0
 
 	msg "Hit CTRL+t at any time to see build progress and stats"
@@ -3898,7 +3898,7 @@ stop_build() {
 
 		if [ -f "${mnt}/.npkg_mounted" ]; then
 			umount ${UMOUNT_NONBUSY} "${mnt}/.npkg"
-			rm -f "${mnt}/.npkg_mounted"
+			unlink "${mnt}/.npkg_mounted"
 		fi
 		rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
 
@@ -3952,7 +3952,7 @@ prefix_stderr() {
 	prefixpid=$!
 	exec 4>&2
 	exec 2> "${prefixpipe}"
-	rm -f "${prefixpipe}"
+	unlink "${prefixpipe}"
 
 	ret=0
 	"$@" || ret=$?
@@ -3980,7 +3980,7 @@ prefix_stdout() {
 	prefixpid=$!
 	exec 3>&1
 	exec > "${prefixpipe}"
-	rm -f "${prefixpipe}"
+	unlink "${prefixpipe}"
 
 	ret=0
 	"$@" || ret=$?
@@ -4575,7 +4575,7 @@ pkg_cacher_main() {
 }
 
 pkg_cacher_cleanup() {
-	rm -f ${MASTERMNT}/.p/pkg_cacher.pipe
+	unlink ${MASTERMNT}/.p/pkg_cacher.pipe
 }
 
 get_cache_dir() {
@@ -4625,7 +4625,7 @@ delete_pkg() {
 
 	# Delete the package and the depsfile since this package is being deleted,
 	# which will force it to be recreated
-	rm -f "${pkg}"
+	unlink "${pkg}"
 	clear_pkg_cache "${pkg}"
 }
 
@@ -5171,7 +5171,7 @@ set_dep_fatal_error() {
 
 clear_dep_fatal_error() {
 	unset DEP_FATAL_ERROR
-	rm -f dep_fatal_error 2>/dev/null || :
+	unlink dep_fatal_error 2>/dev/null || :
 	export ERRORS_ARE_DEP_FATAL=1
 }
 
@@ -5372,7 +5372,7 @@ gather_port_vars() {
 		ls gqueue dqueue fqueue 2>/dev/null || :
 		err 1 "Gather port queues not empty"
 	fi
-	rm -f "${qlist}" || :
+	unlink "${qlist}" || :
 }
 
 gather_port_vars_port() {
@@ -5704,7 +5704,7 @@ compute_deps() {
 		awk '{print $2 "/" $1}' "../pkg_deps" | xargs touch
 	)
 
-	rm -f "pkg_deps.unsorted"
+	unlink "pkg_deps.unsorted"
 
 	return 0
 }
@@ -6353,7 +6353,7 @@ prepare_ports() {
 			msg "(-C) Flushing package deletions"
 			cat "${delete_pkg_list}" | tr '\n' '\000' | \
 			    xargs -0 rm -rf
-			rm -f "${delete_pkg_list}" || :
+			unlink "${delete_pkg_list}" || :
 		fi
 
 		# If the build is being resumed then packages already
@@ -6395,7 +6395,7 @@ prepare_ports() {
 			pkg="${PACKAGES}/All/${n}"
 			if [ -f "${pkg}" ]; then
 				msg "Removing invalid pkg repo file: ${pkg}"
-				rm -f "${pkg}"
+				unlink "${pkg}"
 			fi
 
 		done
@@ -6689,10 +6689,10 @@ sign_pkg() {
 	local pkgfile="$2"
 
 	if [ "${sigtype}" = "fingerprint" ]; then
-		rm -f "${pkgfile}.sig"
+		unlink "${pkgfile}.sig"
 		sha256 -q "${pkgfile}" | ${SIGNING_COMMAND} > "${pkgfile}.sig"
 	elif [ "${sigtype}" = "pubkey" ]; then
-		rm -f "${pkgfile}.pubkeysig"
+		unlink "${pkgfile}.pubkeysig"
 		echo -n $(sha256 -q "${pkgfile}") | \
 		    openssl dgst -sha256 -sign "${PKG_REPO_SIGNING_KEY}" \
 		    -binary -out "${pkgfile}.pubkeysig"
@@ -6721,7 +6721,7 @@ build_repo() {
 		injail ${PKG_BIN} repo -o /tmp/packages \
 			${PKG_META} \
 			/packages /tmp/repo.key
-		rm -f ${MASTERMNT}/tmp/repo.key
+		unlink ${MASTERMNT}/tmp/repo.key
 	elif [ "${PKG_REPO_FROM_HOST:-no}" = "yes" ]; then
 		# Sometimes building repo from host is needed if
 		# using SSH with DNSSEC as older hosts don't support
@@ -6889,7 +6889,7 @@ if [ ! -d ${POUDRIERED}/ports ]; then
 			echo ${method} > ${POUDRIERED}/ports/${name}/method
 			echo ${mnt} > ${POUDRIERED}/ports/${name}/mnt
 		done < ${POUDRIERED}/portstrees
-		rm -f ${POUDRIERED}/portstrees
+		unlink ${POUDRIERED}/portstrees
 	fi
 fi
 

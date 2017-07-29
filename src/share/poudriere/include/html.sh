@@ -191,7 +191,7 @@ install_html_files() {
 
 	# Symlink the build properly
 	ln -fs build.html "${dest}/index.html"
-	rm -f "${dest}/jail.html"
+	unlink "${dest}/jail.html"
 
 	return 0
 }
