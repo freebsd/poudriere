@@ -2405,18 +2405,6 @@ jail_start() {
 			echo "GID=0"
 		} >> ${tomnt}/etc/make.conf
 	fi
-	# Determine if the ports tree supports SELECTED_OPTIONS from
-	# r403743
-	if [ -f "${tomnt}${PORTSDIR}/Mk/bsd.options.mk" ] && \
-	    grep -m1 -q SELECTED_OPTIONS \
-	    "${tomnt}${PORTSDIR}/Mk/bsd.options.mk"; then
-		PORTS_HAS_SELECTED_OPTIONS=1
-	else
-		# Fallback on pretty-print-config.
-		PORTS_HAS_SELECTED_OPTIONS=0
-		# XXX: If we know we can use bmake then this would work
-		# make _SELECTED_OPTIONS='${ALL_OPTIONS:@opt@${PORT_OPTIONS:M${opt}}@} ${MULTI GROUP SINGLE RADIO:L:@otype@${OPTIONS_${otype}:@m@${OPTIONS_${otype}_${m}:@opt@${PORT_OPTIONS:M${opt}}@}@}@}' -V _SELECTED_OPTIONS:O
-	fi
 
 	PKG_EXT="txz"
 	PKG_BIN="/.p/pkg-static"
@@ -4846,7 +4834,7 @@ delete_old_pkg() {
 
 	# Check if the compiled options match the current options from make.conf and /var/db/ports
 	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
-		if [ ${PORTS_HAS_SELECTED_OPTIONS} -eq 1 ]; then
+		if have_ports_feature SELECTED_OPTIONS; then
 			shash_get pkgname-options "${new_pkgname}" \
 			    current_options || current_options=
 			# pretty-print-config has a trailing space, so
@@ -4855,7 +4843,9 @@ delete_old_pkg() {
 				current_options="${current_options} "
 			fi
 		else
-			# Backwards-compat
+			# Backwards-compat: Fallback on pretty-print-config.
+			# XXX: If we know we can use bmake then this would work
+			# make _SELECTED_OPTIONS='${ALL_OPTIONS:@opt@${PORT_OPTIONS:M${opt}}@} ${MULTI GROUP SINGLE RADIO:L:@otype@${OPTIONS_${otype}:@m@${OPTIONS_${otype}_${m}:@opt@${PORT_OPTIONS:M${opt}}@}@}@}' -V _SELECTED_OPTIONS:O
 			current_options=$(injail /usr/bin/make -C \
 			    ${PORTSDIR}/${origin} \
 			    pretty-print-config | tr ' ' '\n' | \
@@ -6160,6 +6150,12 @@ fetch_global_port_vars() {
 	    P_PORTS_FEATURES="${P_PORTS_FEATURES:+${P_PORTS_FEATURES} }DEPENDS_ARGS"
 	# Trim none if leftover from forcing in DEPENDS_ARGS
 	P_PORTS_FEATURES="${P_PORTS_FEATURES#none }"
+	# Determine if the ports tree supports SELECTED_OPTIONS from r403743
+	if [ -f "${MASTERMNT}${PORTSDIR}/Mk/bsd.options.mk" ] && \
+	    grep -m1 -q SELECTED_OPTIONS \
+	    "${MASTERMNT}${PORTSDIR}/Mk/bsd.options.mk"; then
+		P_PORTS_FEATURES="${P_PORTS_FEATURES:+${P_PORTS_FEATURES} }SELECTED_OPTIONS"
+	fi
 	[ "${P_PORTS_FEATURES}" != "none" ] && \
 	    msg "Ports supports: ${P_PORTS_FEATURES}"
 	export P_PORTS_FEATURES P_PYTHON_MAJOR_VER P_PYTHON_DEFAULT_VERSION \
