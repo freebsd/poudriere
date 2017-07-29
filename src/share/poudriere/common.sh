@@ -4156,7 +4156,8 @@ deps_fetch_vars() {
 		    err 1 "deps_fetch_vars: Lookup of ${originspec} failed to already have ${_default_originspec}"
 	fi
 
-	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
+	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ] && \
+	    have_ports_feature SELECTED_OPTIONS; then
 		_changed_options="SELECTED_OPTIONS:O _selected_options"
 	fi
 	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
