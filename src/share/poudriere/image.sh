@@ -436,7 +436,7 @@ firmware)
 		-p efi:=${mnt}/boot/boot1.efifat \
 		-p freebsd-boot:=${mnt}/boot/gptboot \
 		-p freebsd-ufs/${IMAGENAME}1:=${WRKDIR}/raw.img \
-		-p freebsd-ufs/${IMAGENAME}2::${IMAGESIZE} \
+		-p freebsd-ufs/${IMAGENAME}2:=${WRKDIR}/raw.img \
 		-p freebsd-ufs/cfg:=${WRKDIR}/cfg.img \
 		-p freebsd-ufs/data:=${WRKDIR}/data.img \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
