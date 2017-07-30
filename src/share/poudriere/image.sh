@@ -379,6 +379,8 @@ usb)
 	# replace /tmp by a symlink to /var/tmp
 	rm -rf ${WRKDIR}/world/tmp
 	ln -s /var/tmp ${WRKDIR}/world/tmp
+	# Copy save_cfg to /etc
+	cp ${mnt}/usr/src/tools/tools/nanobsd/Files/root/save_cfg ${WRKDIR}/world/etc/
 	# For correct booting it needs ufs formatted /cfg and /data partitions
 	TMPFILE=`mktemp -t poudriere-firmware` || exit 1
 	makefs -B little -s ${CFG_SIZE} ${WRKDIR}/cfg.img ${TMPFILE}
