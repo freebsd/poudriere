@@ -182,8 +182,18 @@ job_msg() {
 
 # Stubbed until post_getopts
 job_msg_verbose() {
-	local -; set +x
 	job_msg "$@"
+}
+
+# These are aligned for 'Building msg'
+job_msg_dev() {
+	COLOR_ARROW="${COLOR_DEV}" \
+	    job_msg "${COLOR_DEV}Dev:     $@"
+}
+
+job_msg_debug() {
+	COLOR_ARROW="${COLOR_DEBUG}" \
+	    job_msg "${COLOR_DEBUG}Debug:   $@"
 }
 
 job_msg_warn() {
@@ -220,9 +230,11 @@ post_getopts() {
 	# Short-circuit verbose functions to save CPU
 	if ! [ ${VERBOSE} -gt 2 ]; then
 		msg_dev() { }
+		job_msg_dev() { }
 	fi
 	if ! [ ${VERBOSE} -gt 1 ]; then
 		msg_debug() { }
+		job_msg_debug() { }
 	fi
 	if ! [ ${VERBOSE} -gt 0 ]; then
 		msg_verbose() { }
@@ -2767,7 +2779,7 @@ gather_distfiles() {
 	fi
 	shash_get pkgname-depend_specials "${pkgname}" specials || specials=
 
-	job_msg_verbose "Status   ${COLOR_PORT}${origin} | ${PKGNAME}${COLOR_RESET}: distfiles ${from} -> ${to}"
+	job_msg_dev "${COLOR_PORT}${origin} | ${PKGNAME}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
 		[ -f ${from}/${sub}/${d} ] || continue
 		tosubd=${to}/${sub}/${d}
