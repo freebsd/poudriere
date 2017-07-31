@@ -171,7 +171,7 @@ job_msg() {
 		NO_ELAPSED_IN_MSG=0
 		now=$(clock -monotonic)
 		calculate_duration elapsed "$((${now} - ${TIME_START_JOB:-${TIME_START:-0}}))"
-		output="[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}][${elapsed}] $1"
+		output="[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}] [${elapsed}] $1"
 	else
 		output="$@"
 	fi
