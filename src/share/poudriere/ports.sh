@@ -132,7 +132,7 @@ saved_argv="$@"
 shift $((OPTIND-1))
 post_getopts
 
-METHOD=${METHOD:-portsnap}
+[ ${FAKE} -eq 0 ] && METHOD=${METHOD:-portsnap}
 PTNAME=${PTNAME:-default}
 
 [ "${METHOD}" = "none" ] && METHOD=null
@@ -176,7 +176,7 @@ else
 	git+ssh) proto="ssh" ;;
 	git) proto="git";;
 	null) ;;
-	*) usage;;
+	*) [ ${FAKE} -eq 0 ] && usage ;;
 	esac
 	SVN_FULLURL=${proto}://${SVN_HOST}/ports
 	if [ -n "${GIT_URL}" ]; then
@@ -305,7 +305,7 @@ if [ ${CREATE} -eq 1 ]; then
 		pset ${PTNAME} method ${METHOD}
 		pset ${PTNAME} timestamp $(clock -epoch)
 	else
-		pset ${PTNAME} method "-"
+		pset ${PTNAME} method ${METHOD:--}
 	fi
 	if [ "${METHOD}" = "null" ]; then
 		msg "Imported ports tree \"${PTNAME}\" from ${PTMNT}"
