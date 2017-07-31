@@ -1552,7 +1552,11 @@ stash_packages() {
 }
 
 commit_packages() {
-	local pkgdir_old pkgdir_new stats_failed
+	local pkgdir_old pkgdir_new stats_failed log
+
+	# Link the latest-done path now that we're done
+	_log_path log
+	ln -sfh ${BUILDNAME} ${log%/*}/latest-done
 
 	[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] || return 0
 	if [ "${COMMIT_PACKAGES_ON_FAILURE}" = "no" ] &&

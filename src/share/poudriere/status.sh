@@ -168,8 +168,9 @@ for_each_job() {
 	local action="$1"
 
 	found_jobs=0
-	[ ${SCRIPT_MODE} -eq 0 -a -n "${BUILDNAME_GLOB}" \
-	    -a "${BUILDNAME_GLOB}" != "latest" ] && \
+	[ ${SCRIPT_MODE} -eq 0 -a -n "${BUILDNAME_GLOB}" -a \
+	    "${BUILDNAME_GLOB}" != "latest" -a \
+	    "${BUILDNAME_GLOB}" != "latest-done" ] && \
 	    msg_warn "Looking up all matching builds. This may take a while."
 	for mastername in ${POUDRIERE_DATA}/logs/bulk/*; do
 		# Check empty dir
@@ -196,6 +197,9 @@ for_each_job() {
 					# Skip latest if from a glob, let it be
 					# found normally.
 					"${mastername}/latest")
+						continue
+						;;
+					"${mastername}/latest-done")
 						continue
 						;;
 					# Don't want latest-per-pkg
@@ -253,6 +257,8 @@ for_each_job() {
 				fi
 			fi
 			# Dereference latest into actual buildname
+			[ "${buildname}" = "latest-done" ] && \
+			    _bget BUILDNAME buildname 2>/dev/null
 			[ "${buildname}" = "latest" ] && \
 			    _bget BUILDNAME buildname 2>/dev/null
 			# May be blank if build is still starting up
