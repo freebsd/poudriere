@@ -695,7 +695,7 @@ create_jail() {
 		[ -z "${JAILMNT}" ] && \
 		    err 1 "Must set -M to path of jail to use"
 		[ "${JAILMNT}" = "/" ] && \
-		    err 1 "Cannot use /"
+		    err 1 "Cannot use / for -M"
 	fi
 
 	if [ -z ${JAILMNT} ]; then

@@ -50,8 +50,8 @@ Options:
     -k            -- When used with -d, only unregister the ports tree without
                      removing the files.
     -m method     -- When used with -c, specify the method used to create the
-                     ports tree. Possible methods are 'portsnap', 'svn',
-                     'svn+http', 'svn+https', 'svn+file', 'svn+ssh', 'git'.
+                     ports tree. Possible methods are 'git', 'null', 'portsnap',
+                     'svn', 'svn+http', 'svn+https', 'svn+file', 'svn+ssh'.
                      The default is 'portsnap'.
     -n            -- When used with -l, only print the name of the ports tree
     -p name       -- Specifies the name of the ports tree to work on.  The
@@ -130,6 +130,8 @@ shift $((OPTIND-1))
 METHOD=${METHOD:-portsnap}
 PTNAME=${PTNAME:-default}
 
+[ "${METHOD}" = "none" ] && METHOD=null
+
 case ${METHOD} in
 portsnap);;
 svn+http);;
@@ -138,6 +140,7 @@ svn+ssh);;
 svn+file);;
 svn);;
 git);;
+null)
 *) usage;;
 esac
 
@@ -175,7 +178,7 @@ fi
 
 cleanup_new_ports() {
 	msg "Error while creating ports tree, cleaning up." >&2
-	if [ "${CREATED_FS}" -eq 1 ]; then
+	if [ "${CREATED_FS}" -eq 1 ] && [ "${METHOD}" != "null" ]; then
 		TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
 	fi
 	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
@@ -197,16 +200,27 @@ if [ ${CREATE} -eq 1 ]; then
 	[ "${PTNAME#*.*}" = "${PTNAME}" ] ||
 		err 1 "The ports name cannot contain a period (.). See jail(8)"
 
+	if [ "${METHOD}" = "null" ]; then
+		[ -z "${PTMNT}" ] && \
+		    err 1 "Must set -M to path of ports tree to use"
+		[ "${PTMNT}" = "/" ] && \
+		    err 1 "Cannot use / for -M"
+		PTFS="none"
+		[ ${FAKE} -eq 1 ] && err 1 "Cannot use -F with -m null"
+	fi
+
 	[ "${PTFS}" != "none" ] && [ -d "${PTMNT}" ] && \
 	    err 1 "Directory ${PTMNT} already exists"
 
-	# This will exit if it fails to zfs create...
-	createfs ${PTNAME} ${PTMNT} ${PTFS}
-	# Ports runs without -e, but even if it did let's not
-	# short-circuit all of -e support in createfs.  It
-	# should have exited on error with err(), but be sure.
-	if [ $? -eq 0 ] && [ ${PTFS} != "none" ]; then
-		CREATED_FS=1
+	if [ "${METHOD}" != "null" ]; then
+		# This will exit if it fails to zfs create...
+		createfs ${PTNAME} ${PTMNT} ${PTFS:-none}
+		# Ports runs without -e, but even if it did let's not
+		# short-circuit all of -e support in createfs.  It
+		# should have exited on error with err(), but be sure.
+		if [ $? -eq 0 ]; then
+			CREATED_FS=1
+		fi
 	fi
 
 	# Wrap the ports creation in a special cleanup hook that will remove it
@@ -273,7 +287,8 @@ if [ ${DELETE} -eq 1 ]; then
 	    err 1 "Not deleting ports tree"
 	maybe_run_queued "${saved_argv}"
 	msg_n "Deleting portstree \"${PTNAME}\""
-	if [ ${KEEP} -eq 0 -a ${PTMETHOD} != "-" ]; then
+	if [ ${KEEP} -eq 0 -a "${PTMETHOD}" != "null" -a \
+	    "${PTMETHOD}" != "none" -a ${PTMETHOD} != "-" ]; then
 		TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
 	fi
 	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
@@ -319,6 +334,7 @@ if [ ${UPDATE} -eq 1 ]; then
 		cd ${PORTSMNT:-${PTMNT}} && git pull --rebase ${quiet}
 		echo " done"
 		;;
+	null|none) msg "Not updating portstree \"${PTNAME}\" with method ${METHOD}" ;;
 	*)
 		err 1 "Undefined upgrade method"
 		;;
