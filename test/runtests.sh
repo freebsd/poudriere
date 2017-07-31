@@ -2,6 +2,10 @@
 
 export PATH=..:${PATH}
 
+if [ -f "./$1" ]; then
+	echo "Usage: $0: sh test" >&2
+	exit 1
+fi
 export SH="$1"
 : ${TIMEOUT:=30}
 shift
@@ -10,7 +14,7 @@ TESTS="$@"
 FAILED_TESTS=
 for test in ${TESTS}; do
 	status=0
-	echo -n "Running ${test} ... "
+	echo -n "Running ${SH} ${test} ... "
 	${SH} runtest.sh ${test} > ${test}.stdout.log 2> ${test}.stderr.log ||
 	    status=$?
 	if [ ${status} -ne 0 ]; then
