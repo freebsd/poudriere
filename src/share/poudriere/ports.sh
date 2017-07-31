@@ -200,17 +200,13 @@ if [ ${CREATE} -eq 1 ]; then
 	[ -d "${PTMNT}" ] && \
 	    err 1 "Directory ${PTMNT} already exists"
 
-	if [ ${METHOD} != "none" ]; then
-		# This will exit if it fails to zfs create...
-		createfs ${PTNAME} ${PTMNT} ${PTFS}
-		# Ports runs without -e, but even if it did let's not
-		# short-circuit all of -e support in createfs.  It
-		# should have exited on error with err(), but be sure.
-		if [ $? -eq 0 ]; then
-			CREATED_FS=1
-		fi
-	else
-		echo "Not creating fs for method=none"
+	# This will exit if it fails to zfs create...
+	createfs ${PTNAME} ${PTMNT} ${PTFS}
+	# Ports runs without -e, but even if it did let's not
+	# short-circuit all of -e support in createfs.  It
+	# should have exited on error with err(), but be sure.
+	if [ $? -eq 0 ]; then
+		CREATED_FS=1
 	fi
 
 	# Wrap the ports creation in a special cleanup hook that will remove it
