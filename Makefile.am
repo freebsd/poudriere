@@ -127,7 +127,6 @@ pkglibexec_PROGRAMS= \
 		     timeout \
 		     timestamp \
 		     tsort \
-		     unlink \
 		     @SH@
 EXTRA_PROGRAMS= \
 		rm \
@@ -156,7 +155,6 @@ rm_SOURCES=		src/libexec/poudriere/rm/rm.c
 timeout_SOURCES=	src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
 tsort_SOURCES=		src/libexec/poudriere/tsort/tsort.c
-unlink_SOURCES=		src/libexec/poudriere/unlink/unlink.c
 
 sh_CFLAGS=		-DSHELL -DNO_HISTORY -std=gnu99 \
 			-include $(top_srcdir)/external/sh_compat/compat.h \
@@ -207,7 +205,6 @@ sh_SOURCES+=		\
 			src/libexec/poudriere/locked_mkdir/locked_mkdir.c \
 			src/libexec/poudriere/pwait/pwait.c \
 			src/libexec/poudriere/rename/rename.c \
-			src/libexec/poudriere/unlink/unlink.c \
 			src/poudriere-sh/helpers.c \
 			src/poudriere-sh/mkdir.c \
 			src/poudriere-sh/mkfifo.c \
@@ -216,7 +213,8 @@ sh_SOURCES+=		\
 			src/poudriere-sh/rmdir.c \
 			src/poudriere-sh/setproctitle.c \
 			src/poudriere-sh/sleep.c \
-			src/poudriere-sh/touch.c
+			src/poudriere-sh/touch.c \
+			src/poudriere-sh/unlink.c
 sh_CFLAGS+=		-I$(top_srcdir)/src/poudriere-sh \
 			-I$(top_builddir)/src/poudriere-sh
 # cachec
