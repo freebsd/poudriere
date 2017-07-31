@@ -205,7 +205,7 @@ if [ ${CREATE} -eq 1 ]; then
 	# Ports runs without -e, but even if it did let's not
 	# short-circuit all of -e support in createfs.  It
 	# should have exited on error with err(), but be sure.
-	if [ $? -eq 0 ]; then
+	if [ $? -eq 0 ] && [ ${PTFS} != "none" ]; then
 		CREATED_FS=1
 	fi
 
