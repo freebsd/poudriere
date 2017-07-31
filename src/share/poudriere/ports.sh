@@ -270,6 +270,7 @@ if [ ${CREATE} -eq 1 ]; then
 	CLEANUP_HOOK=cleanup_new_ports
 
 	pset ${PTNAME} mnt ${PTMNT}
+	pset ${PTNAME} created_fs ${CREATED_FS}
 	if [ $FAKE -eq 0 ]; then
 		case ${METHOD} in
 		portsnap)
@@ -306,6 +307,9 @@ if [ ${CREATE} -eq 1 ]; then
 	else
 		pset ${PTNAME} method "-"
 	fi
+	if [ "${METHOD}" = "null" ]; then
+		msg "Imported ports tree \"${PTNAME}\" from ${PTMNT}"
+	fi
 
 	unset CLEANUP_HOOK
 fi
@@ -314,16 +318,28 @@ if [ ${DELETE} -eq 1 ]; then
 	porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 	PTMETHOD=$(pget ${PTNAME} method)
 	PTMNT=$(pget ${PTNAME} mnt)
+	CREATED_FS=$(pget ${PTNAME} created_fs 2>/dev/null || echo 0)
 	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
 	${NULLMOUNT} | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	confirm_if_tty "Are you sure you want to delete the ports tree ${PTNAME} at ${PTMNT}?" || \
 	    err 1 "Not deleting ports tree"
 	maybe_run_queued "${saved_argv}"
-	msg_n "Deleting portstree \"${PTNAME}\""
+	msg_n "Deleting portstree \"${PTNAME}\"..."
+	# Regarding -F, older system ports trees will have method=- and
+	# created_fs=0 so we never delete them (#250).
+	# Newer imports with -F will have method=- and could have
+	# created_fs=1 if they did not use -m null.  It is fine to
+	# delete in that case (#469)
 	if [ ${KEEP} -eq 0 -a "${PTMETHOD}" != "null" -a \
-	    "${PTMETHOD}" != "none" -a ${PTMETHOD} != "-" ]; then
-		TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
+	    "${PTMETHOD}" != "none" ]; then
+		can_delete=1
+
+		# Deal with method=-
+		[ "${PTMETHOD}" = "-" ] && can_delete=${CREATED_FS}
+		if [ ${can_delete} -eq 1 ]; then
+			TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
+		fi
 	fi
 	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
 	echo " done"
