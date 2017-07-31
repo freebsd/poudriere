@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd June 14, 2017
+.Dd July 31, 2017
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -580,8 +580,16 @@ When used with
 specify which
 .Ar method
 to use to create the ports tree.
-Could be portsnap, git, none, svn{,+http,+https,+file,+ssh}.
+Could be portsnap, git, null, svn{,+http,+https,+file,+ssh}.
 The default is portsnap.
+.Bl -tag -width "svn+https"
+.It Sy null
+This option can be used to import an existing directory that already contains
+a manually managed ports tree.
+The path must be specified with
+.Fl M Ar path .
+The path will be null-mounted during builds.
+.El
 .It Fl n
 When combined with
 .Fl l ,
