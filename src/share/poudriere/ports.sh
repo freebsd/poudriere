@@ -240,7 +240,7 @@ if [ ${CREATE} -eq 1 ]; then
 	[ "${PTNAME#*.*}" = "${PTNAME}" ] ||
 		err 1 "The ports name cannot contain a period (.). See jail(8)"
 
-	[ -d "${PTMNT}" ] && \
+	[ "${PTFS}" != "none" ] && [ -d "${PTMNT}" ] && \
 	    err 1 "Directory ${PTMNT} already exists"
 
 	# This will exit if it fails to zfs create...
