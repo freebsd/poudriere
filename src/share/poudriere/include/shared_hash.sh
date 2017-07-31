@@ -129,6 +129,6 @@ shash_unset() {
 		cachec -s /${MASTERNAME} "unset ${var}-${key}"
 	else
 		_shash_varkey_file "${var}" "${key}"
-		unlink ${_shash_varkey_file}
+		unlink ${_shash_varkey_file} 2>/dev/null || :
 	fi
 }

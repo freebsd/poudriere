@@ -1323,6 +1323,10 @@ mktemp() {
 	fi
 }
 
+unlink() {
+	command unlink "$@" 2>/dev/null || :
+}
+
 common_mtree() {
 	[ $# -eq 1 ] || eargs common_mtree mtreefile
 	local mtreefile="$1"
