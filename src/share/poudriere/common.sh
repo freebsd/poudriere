@@ -339,6 +339,9 @@ for_each_build() {
 					"${mastername}/latest")
 						continue
 						;;
+					"${mastername}/latest-done")
+						continue
+						;;
 					# Don't want latest-per-pkg
 					"${mastername}/latest-per-pkg")
 						continue
@@ -394,6 +397,8 @@ for_each_build() {
 				fi
 			fi
 			# Dereference latest into actual buildname
+			[ "${buildname}" = "latest-done" ] && \
+			    _bget BUILDNAME buildname 2>/dev/null
 			[ "${buildname}" = "latest" ] && \
 			    _bget BUILDNAME buildname 2>/dev/null
 			# May be blank if build is still starting up
@@ -1785,7 +1790,11 @@ stash_packages() {
 }
 
 commit_packages() {
-	local pkgdir_old pkgdir_new stats_failed
+	local pkgdir_old pkgdir_new stats_failed log
+
+	# Link the latest-done path now that we're done
+	_log_path log
+	ln -sfh ${BUILDNAME} ${log%/*}/latest-done
 
 	[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] || return 0
 	if [ "${COMMIT_PACKAGES_ON_FAILURE}" = "no" ] &&
