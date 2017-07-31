@@ -127,7 +127,7 @@ done
 saved_argv="$@"
 shift $((OPTIND-1))
 
-METHOD=${METHOD:-portsnap}
+[ ${FAKE} -eq 0 ] && METHOD=${METHOD:-portsnap}
 PTNAME=${PTNAME:-default}
 
 [ "${METHOD}" = "none" ] && METHOD=null
@@ -141,7 +141,7 @@ svn+file);;
 svn);;
 git);;
 null)
-*) usage;;
+*) [ ${FAKE} -eq 0 ] && usage ;;
 esac
 
 case ${METHOD} in
@@ -271,7 +271,7 @@ if [ ${CREATE} -eq 1 ]; then
 		pset ${PTNAME} method ${METHOD}
 		pset ${PTNAME} timestamp $(clock -epoch)
 	else
-		pset ${PTNAME} method "-"
+		pset ${PTNAME} method ${METHOD:--}
 	fi
 	if [ "${METHOD}" = "null" ]; then
 		msg "Imported ports tree \"${PTNAME}\" from ${PTMNT}"
