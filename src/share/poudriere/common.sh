@@ -102,6 +102,7 @@ _msg_n() {
 	local -; set +x
 	local now elapsed
 	local NL="${1}"
+	local arrow
 	shift 1
 
 	elapsed=
@@ -109,11 +110,13 @@ _msg_n() {
 		now=$(clock -monotonic)
 		calculate_duration elapsed "$((${now} - ${TIME_START:-0}))"
 		elapsed="[${elapsed}] "
+	else
+		arrow="=>>"
 	fi
 	if [ -n "${COLOR_ARROW}" ] || [ -z "${1##*\033[*}" ]; then
-		printf "${elapsed}${DRY_MODE}${COLOR_ARROW}====>>${COLOR_RESET} ${1}${COLOR_RESET}${NL}"
+		printf "${elapsed}${DRY_MODE}${arrow:+${COLOR_ARROW}${arrow}${COLOR_RESET} }${1}${COLOR_RESET}${NL}"
 	else
-		printf "${elapsed}${DRY_MODE}====>> ${1}${NL}"
+		printf "${elapsed}${DRY_MODE}${arrow:+${arrow} }${1}${NL}"
 	fi
 }
 
