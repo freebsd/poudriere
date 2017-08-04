@@ -140,7 +140,7 @@ svn+ssh);;
 svn+file);;
 svn);;
 git);;
-null)
+null);;
 *) [ ${FAKE} -eq 0 ] && usage ;;
 esac
 
