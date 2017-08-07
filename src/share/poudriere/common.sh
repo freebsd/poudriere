@@ -3519,9 +3519,8 @@ job_done() {
 	# CWD is MASTERMNT/.p/pool
 
 	# Failure to find this indicates the job is already done.
-	hash_get builder_pkgnames "${j}" pkgname || return 1
+	hash_remove builder_pkgnames "${j}" pkgname || return 1
 	hash_unset builder_pids "${j}"
-	hash_unset builder_pkgnames "${j}"
 	unlink "../var/run/${j}.pid"
 	_bget status ${j} status
 	rmdir "../building/${pkgname}"
