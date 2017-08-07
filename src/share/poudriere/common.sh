@@ -3855,28 +3855,28 @@ build_pkg() {
 	clean_rdepends=
 	trap '' SIGTSTP
 	PKGNAME="${pkgname}" # set ASAP so jail_cleanup() can use it
+	setproctitle "build_pkg (${pkgname})" || :
+
+	# Don't show timestamps in msg() which goes to logs, only job_msg()
+	# which goes to master
+	NO_ELAPSED_IN_MSG=1
+	TIME_START_JOB=$(clock -monotonic)
+	colorize_job_id COLOR_JOBID "${MY_JOBID}"
+
 	get_originspec_from_pkgname ORIGINSPEC "${pkgname}"
 	originspec_decode "${ORIGINSPEC}" port DEPENDS_ARGS FLAVOR
+	bset_job_status "starting" "${port}"
 	if [ -z "${FLAVOR}" ]; then
 		shash_get pkgname-flavor "${pkgname}" FLAVOR || FLAVOR=
 	fi
+	job_msg "Building ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_RESET}"
+
 	MAKE_ARGS="${DEPENDS_ARGS}${FLAVOR:+ FLAVOR=${FLAVOR}}"
 	portdir="${PORTSDIR}/${port}"
 
 	if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
 		JEXEC_LIMITS=1
 	fi
-
-	setproctitle "build_pkg (${pkgname})" || :
-
-	TIME_START_JOB=$(clock -monotonic)
-	# Don't show timestamps in msg() which goes to logs, only job_msg()
-	# which goes to master
-	NO_ELAPSED_IN_MSG=1
-	colorize_job_id COLOR_JOBID "${MY_JOBID}"
-
-	job_msg "Building ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_RESET}"
-	bset_job_status "starting" "${port}"
 
 	if [ "${USE_JEXECD}" = "no" ]; then
 		# Kill everything in jail first
