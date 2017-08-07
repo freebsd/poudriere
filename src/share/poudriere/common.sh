@@ -2500,11 +2500,11 @@ setup_makeconf() {
 	# The jail may be empty for poudriere-options.
 	if [ -n "${name}" ]; then
 		_jget arch "${name}" arch
-	elif [ -n "$ARCH" ]; then
-		arch=$ARCH
+	elif [ -n "${ARCH}" ]; then
+		arch="${ARCH}"
 	fi
 
-	if [ -n "$arch" ]; then
+	if [ -n "${arch}" ]; then
 		if need_cross_build "${host_arch}" "${arch}"; then
 			cat >> "${dst_makeconf}" <<-EOF
 			MACHINE=${arch%.*}
