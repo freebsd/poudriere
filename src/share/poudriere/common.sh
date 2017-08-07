@@ -2504,7 +2504,7 @@ setup_makeconf() {
 		arch=$ARCH
 	fi
 
-	if [ -n "$arch" ];
+	if [ -n "$arch" ]; then
 		if need_cross_build "${host_arch}" "${arch}"; then
 			cat >> "${dst_makeconf}" <<-EOF
 			MACHINE=${arch%.*}
