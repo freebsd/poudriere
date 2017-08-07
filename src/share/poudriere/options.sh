@@ -35,6 +35,8 @@ Parameters:
     [ports...]  -- List of ports to set options on
 
 Options:
+    -a arch     -- Indicates the TARGET_ARCH if no jail is specified. Such as i386
+                   or amd64. Format of TARGET.TARGET_ARCH is also supported.
     -c          -- Use 'make config' target
     -C          -- Use 'make config-conditional' target (default)
     -j name     -- Run on the given jail
@@ -47,8 +49,10 @@ EOF
 	exit 1
 }
 
+ARCH=
 PTNAME=default
 SETNAME=""
+PTNAME_TMP=""
 DO_RECURSE=y
 COMMAND=config-conditional
 RECURSE_COMMAND=config-recursive
@@ -57,8 +61,14 @@ RECURSE_COMMAND=config-recursive
 
 [ $# -eq 0 ] && usage
 
-while getopts "cCj:f:p:nrsz:" FLAG; do
+while getopts "a:cCj:f:p:nrsz:" FLAG; do
 	case "${FLAG}" in
+		a)
+			ARCH=${OPTARG}
+			# If TARGET=TARGET_ARCH trim it away and just use
+			# TARGET_ARCH
+			[ "${ARCH%.*}" = "${ARCH#*.}" ] && ARCH="${ARCH#*.}"
+			;;
 		c)
 			COMMAND=config
 			;;
@@ -80,6 +90,7 @@ while getopts "cCj:f:p:nrsz:" FLAG; do
 			porttree_exists ${OPTARG} ||
 			    err 2 "No such ports tree: ${OPTARG}"
 			PTNAME=${OPTARG}
+			PTNAME_TMP=${OPTARG}
 			;;
 		n)
 			DO_RECURSE=
@@ -105,6 +116,14 @@ done
 shift $((OPTIND-1))
 post_getopts
 
+# checking jail and architecture consistency
+if [ -n "${JAILNAME}" -a -n "${ARCH}" ]; then
+	_jget _arch "${JAILNAME}" arch
+	if need_cross_build "${_arch}" "${ARCH}" ; then
+		err 1 "jail ${JAILNAME} and architecture ${ARCH} not compatible"
+	fi
+fi
+
 export PORTSDIR=`pget ${PTNAME} mnt`
 [ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 [ -z "${PORTSDIR}" ] && err 1 "No such ports tree: ${PTNAME}"
@@ -120,7 +139,7 @@ else
 	LISTPORTS="$@"
 fi
 
-PORT_DBDIR=${POUDRIERED}/${JAILNAME}${JAILNAME:+-}${SETNAME}${SETNAME:+-}options
+PORT_DBDIR=${POUDRIERED}/${JAILNAME}${JAILNAME:+-}${PTNAME_TMP}${PTNAME_TMP:+-}${SETNAME}${SETNAME:+-}options
 
 mkdir -p ${PORT_DBDIR}
 
