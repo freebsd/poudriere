@@ -73,7 +73,7 @@ main(int argc, char **argv)
 	name = NULL;
 
 #ifdef SHELL
-	while ((c = nextopt("dqt:u")) != -'\0')
+	while ((c = nextopt("dqt:u")) != '\0')
 #else
 	while ((c = getopt(argc, argv, "dqt:u")) != -1)
 #endif

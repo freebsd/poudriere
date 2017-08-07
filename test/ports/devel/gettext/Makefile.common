@@ -1,0 +1,18 @@
+# $FreeBSD: head/devel/gettext/Makefile.common 416967 2016-06-16 13:31:37Z tijl $
+
+# NOTE: before committing to this port, contact portmgr to arrange for an
+# experimental ports run.  Untested commits may be backed out at portmgr's
+# discretion.
+
+PORTVERSION=	0.19.8.1
+PORTREVISION?=	0 # Leave this zero. Set in Makefile instead.
+CATEGORIES=	devel
+MASTER_SITES=	GNU/gettext
+DISTNAME=	gettext-${PORTVERSION}
+
+MAINTAINER=	tijl@FreeBSD.org
+
+DISTINFO_FILE=	${.CURDIR}/../gettext/distinfo
+
+DATADIR=	${PREFIX}/share/gettext
+DOCSDIR=	${PREFIX}/share/doc/gettext

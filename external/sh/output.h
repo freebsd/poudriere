@@ -30,7 +30,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)output.h	8.2 (Berkeley) 5/4/95
- * $FreeBSD: head/bin/sh/output.h 314436 2017-02-28 23:42:47Z imp $
+ * $FreeBSD: head/bin/sh/output.h 318385 2017-05-16 21:54:51Z jilles $
  */
 
 #ifndef OUTPUT_INCL
@@ -40,7 +40,7 @@
 
 struct output {
 	char *nextc;
-	int nleft;
+	char *bufend;
 	char *buf;
 	int bufsize;
 	short fd;
@@ -75,7 +75,7 @@ void fmtstr(char *, int, const char *, ...) __printflike(3, 4);
 void doformat(struct output *, const char *, va_list) __printflike(2, 0);
 int xwrite(int, const char *, int);
 
-#define outc(c, file)	(--(file)->nleft < 0? (emptyoutbuf(file), *(file)->nextc++ = (c)) : (*(file)->nextc++ = (c)))
+#define outc(c, file)	((file)->nextc == (file)->bufend ? (emptyoutbuf(file), *(file)->nextc++ = (c)) : (*(file)->nextc++ = (c)))
 #define out1c(c)	outc(c, out1);
 #define out2c(c)	outcslow(c, out2);
 

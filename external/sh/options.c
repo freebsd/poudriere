@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)options.c	8.2 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/options.c 314436 2017-02-28 23:42:47Z imp $");
+__FBSDID("$FreeBSD: head/bin/sh/options.c 317882 2017-05-06 13:28:42Z jilles $");
 
 #include <signal.h>
 #include <unistd.h>
@@ -131,7 +131,7 @@ procargs(int argc, char **argv)
 void
 optschanged(void)
 {
-	setinteractive(iflag);
+	setinteractive();
 #ifndef NO_HISTORY
 	histedit();
 #endif
@@ -141,6 +141,8 @@ optschanged(void)
 /*
  * Process shell options.  The global variable argptr contains a pointer
  * to the argument list; we advance it past the options.
+ * If cmdline is true, process the shell's argv; otherwise, process arguments
+ * to the set special builtin.
  */
 
 static void
@@ -392,7 +394,7 @@ shiftcmd(int argc, char **argv)
 
 
 /*
- * The set command builtin.
+ * The set builtin command.
  */
 
 int
@@ -558,7 +560,7 @@ out:
 /*
  * Standard option processing (a la getopt) for builtin routines.  The
  * only argument that is passed to nextopt is the option string; the
- * other arguments are unnecessary.  It return the character, or '\0' on
+ * other arguments are unnecessary.  It returns the option, or '\0' on
  * end of input.
  */
 

@@ -165,8 +165,9 @@ add_summary_build() {
 }
 
 status_for_each_build() {
-	[ ${SCRIPT_MODE} -eq 0 -a -n "${BUILDNAME_GLOB}" \
-	    -a "${BUILDNAME_GLOB}" != "latest" ] && \
+	[ ${SCRIPT_MODE} -eq 0 -a -n "${BUILDNAME_GLOB}" -a \
+	    "${BUILDNAME_GLOB}" != "latest" -a \
+	    "${BUILDNAME_GLOB}" != "latest-done" ] && \
 	    msg_warn "Looking up all matching builds. This may take a while."
 	for_each_build "$@"
 }

@@ -62,6 +62,7 @@ Options:
                        url=SOMEURL.
     -P patch      -- Specify a patch to apply to the source before building.
     -S srcpath    -- Specify a path to the source tree to be used.
+    -D            -- Do a full git clone without --depth (default: --depth=1)
     -t version    -- Version of FreeBSD to upgrade the jail to.
     -U url        -- Specify a url to fetch the sources (with method git and/or svn).
     -x            -- Build and setup native-xtools cross compile tools in jail when
@@ -93,6 +94,8 @@ list_jail() {
 		name=${j##*/}
 		if [ ${NAMEONLY} -eq 0 ]; then
 			_jget version ${name} version
+			_jget version_vcs ${name} version_vcs 2>/dev/null || \
+			    version_vcs=
 			_jget arch ${name} arch
 			_jget method ${name} method
 			_jget mnt ${name} mnt
@@ -100,6 +103,9 @@ list_jail() {
 			time=
 			[ -n "${timestamp}" ] && \
 			    time="$(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
+			if [ -n "${version_vcs}" ]; then
+				version="${version} ${version_vcs}"
+			fi
 			display_add "${name}" "${version}" "${arch}" \
 			    "${method}" "${time}" "${mnt}"
 		else
@@ -158,7 +164,7 @@ update_version_env() {
 	login_env=",UNAME_r=${release% *},UNAME_v=FreeBSD ${release},OSVERSION=${osversion}"
 
 	# Tell pkg(8) to not use /bin/sh for the ELF ABI since it is native.
-	need_emulation  "${ARCH}" && \
+	[ ${QEMU_EMULATING} -eq 1 ] && \
 	    login_env="${login_env},ABI_FILE=\/usr\/lib\/crt1.o"
 
 	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
@@ -182,6 +188,14 @@ rename_jail() {
 	msg_warn "If you choose to rename the filesystem then modify the 'mnt' and 'fs' files in ${POUDRIERED}/jails/${NEWJAILNAME}"
 }
 
+hook_stop_jail() {
+	jstop
+	umountfs ${JAILMNT} 1
+	if [ -n "${OLD_CLEANUP_HOOK}" ]; then
+		${OLD_CLEANUP_HOOK}
+	fi
+}
+
 update_jail() {
 	SRC_BASE="${JAILMNT}/usr/src"
 	METHOD=$(jget ${JAILNAME} method)
@@ -192,13 +206,28 @@ update_jail() {
 	msg "Upgrading using ${METHOD}"
 	case ${METHOD} in
 	ftp|http|ftp-archive)
+		# In case we use FreeBSD dists and TORELEASE is present, check if it's a release branch.
+		if [ -n "${TORELEASE}" ]; then
+		  case ${TORELEASE} in
+		    *-ALPHA*|*-CURRENT|*-PRERELEASE|*-STABLE)
+			msg_error "Only release branches are supported by the ${METHOD} method."
+			msg_error "Please try to upgrade to a new BETA, RC or RELEASE version."
+			exit 1
+			;;
+		    *) ;;
+		  esac
+		fi
 		MASTERMNT=${JAILMNT}
 		MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
-		MUTABLE_BASE=yes do_jail_mounts "${JAILMNT}" "${JAILMNT}" \
-		    "${ARCH}" "${JAILNAME}"
+		MUTABLE_BASE=yes NOLINUX=yes \
+		    do_jail_mounts "${JAILMNT}" "${JAILMNT}" "${ARCH}" \
+		    "${JAILNAME}"
 		JNETNAME="n"
 		jstart
+		[ -n "${CLEANUP_HOOK}" ] && OLD_CLEANUP_HOOK="${CLEANUP_HOOK}"
+		CLEANUP_HOOK=hook_stop_jail
+		[ ${QEMU_EMULATING} -eq 1 ] && qemu_install "${JAILMNT}"
 		# Fix freebsd-update to not check for TTY and to allow
 		# EOL branches to still get updates.
 		sed \
@@ -210,8 +239,20 @@ update_jail() {
 		    ${JAILMNT}/usr/sbin/freebsd-update.fixed
 		chmod +x ${JAILMNT}/usr/sbin/freebsd-update.fixed
 		if [ -z "${TORELEASE}" ]; then
-			injail env PAGER=/bin/cat \
-			    /usr/sbin/freebsd-update.fixed fetch install
+			# We're running inside the jail so basedir is /.
+			# If we start using -b this needs to match it.
+			basedir=/
+			fu_workdir=/var/db/freebsd-update
+			fu_bdhash="$(echo "${basedir}" | sha256 -q)"
+			# New updates are identified by a symlink containing
+			# the basedir hash and -install as suffix.  If we
+			# really have new updates to install, then install them.
+			if injail env PAGER=/bin/cat \
+			    /usr/sbin/freebsd-update.fixed fetch && \
+			    [ -L "${JAILMNT}${fu_workdir}/${fu_bdhash}-install" ]; then
+				injail env PAGER=/bin/cat \
+				    /usr/sbin/freebsd-update.fixed install
+			fi
 		else
 			# Install new kernel
 			injail env PAGER=/bin/cat \
@@ -231,11 +272,27 @@ update_jail() {
 			jset ${JAILNAME} version ${TORELEASE}
 		fi
 		rm -f ${JAILMNT}/usr/sbin/freebsd-update.fixed
+		if [ ${QEMU_EMULATING} -eq 1 ]; then
+			rm -f "${JAILMNT}${EMULATOR}"
+			# Try to cleanup the lingering directory structure
+			emulator_dir="${EMULATOR%/*}"
+			while [ -n "${emulator_dir}" ] && \
+			    rmdir "${JAILMNT}${emulator_dir}" 2>/dev/null; do
+				emulator_dir="${emulator_dir%/*}"
+			done
+		fi
 		jstop
 		umountfs ${JAILMNT} 1
+		if [ -n "${OLD_CLEANUP_HOOK}" ]; then
+			CLEANUP_HOOK="${OLD_CLEANUP_HOOK}"
+			unset OLD_CLEANUP_HOOK
+		else
+			unset CLEANUP_HOOK
+		fi
 		update_version
 		[ -n "${RESOLV_CONF}" ] && rm -f ${JAILMNT}/etc/resolv.conf
 		update_version_env $(jget ${JAILNAME} version)
+		build_native_xtools
 		markfs clean ${JAILMNT}
 		;;
 	svn*|git*)
@@ -247,9 +304,9 @@ update_jail() {
 		;;
 	src=*)
 		SRC_BASE="${METHOD#src=}"
-		install_from_src
-		update_version
-		update_version_env $(jget ${JAILNAME} version)
+		install_from_src version_extra
+		RELEASE=$(update_version "${version_extra}")
+		update_version_env "${RELEASE}"
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
@@ -299,6 +356,8 @@ installworld() {
 setup_build_env() {
 	local hostver
 
+	[ -n "${MAKE_CMD}" ] && return 0
+
 	JAIL_OSVERSION=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' ${SRC_BASE}/sys/sys/param.h)
 	hostver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' /usr/include/sys/param.h)
 	MAKE_CMD=make
@@ -324,17 +383,30 @@ setup_build_env() {
 	export TARGET=${ARCH%.*}
 	export TARGET_ARCH=${ARCH#*.}
 	export WITH_FAST_DEPEND=yes
+	MAKE_JOBS="-j${PARALLEL_JOBS}"
 }
 
-build_and_install_world() {
+setup_src_conf() {
+	local src="$1"
+
+	[ -f ${JAILMNT}/etc/${src}.conf ] && rm -f ${JAILMNT}/etc/${src}.conf
+	touch ${JAILMNT}/etc/${src}.conf
+	[ -f ${POUDRIERED}/${src}.conf ] && \
+	    cat ${POUDRIERED}/${src}.conf > ${JAILMNT}/etc/${src}.conf
+	[ -n "${SETNAME}" ] && \
+	    [ -f ${POUDRIERED}/${SETNAME}-${src}.conf ] && \
+	    cat ${POUDRIERED}/${SETNAME}-${src}.conf >> \
+	    ${JAILMNT}/etc/${src}.conf
+	[ -f ${POUDRIERED}/${JAILNAME}-${src}.conf ] && \
+	    cat ${POUDRIERED}/${JAILNAME}-${src}.conf >> \
+	    ${JAILMNT}/etc/${src}.conf
+}
+
+buildworld() {
 	export SRC_BASE=${JAILMNT}/usr/src
 	mkdir -p ${JAILMNT}/etc
-	[ -f ${JAILMNT}/etc/src.conf ] && rm -f ${JAILMNT}/etc/src.conf
-	touch ${JAILMNT}/etc/src.conf
-	[ -f ${POUDRIERED}/src.conf ] && cat ${POUDRIERED}/src.conf > ${JAILMNT}/etc/src.conf
-	[ -n "${SETNAME}" ] && [ -f ${POUDRIERED}/${SETNAME}-src.conf ] && \
-	    cat ${POUDRIERED}/${SETNAME}-src.conf >> ${JAILMNT}/etc/src.conf
-	[ -f ${POUDRIERED}/${JAILNAME}-src.conf ] && cat ${POUDRIERED}/${JAILNAME}-src.conf >> ${JAILMNT}/etc/src.conf
+	setup_src_conf "src"
+	setup_src_conf "src-env"
 
 	if [ "${TARGET}" = "mips" ]; then
 		echo "WITH_ELFTOOLCHAIN_TOOLS=y" >> ${JAILMNT}/etc/src.conf
@@ -342,8 +414,7 @@ build_and_install_world() {
 
 	export __MAKE_CONF=/dev/null
 	export SRCCONF=${JAILMNT}/etc/src.conf
-	export SRC_ENV_CONF=/dev/null
-	MAKE_JOBS="-j${PARALLEL_JOBS}"
+	export SRC_ENV_CONF=${JAILMNT}/etc/src-env.conf
 
 	setup_build_env
 
@@ -357,66 +428,29 @@ build_and_install_world() {
 			KERNCONF=${KERNEL} ${MAKEWORLDARGS} || \
 			err 1 "Failed to 'make buildkernel'"
 	fi
+}
 
-	installworld
+build_native_xtools() {
+	[ ${XDEV} -eq 1 ] || return 0
+	[ ${BUILT_NATIVE_XTOOLS:-0} -eq 0 ] || return 0
+	[ ${QEMU_EMULATING} -eq 1 ] || return 0
+	setup_build_env
 
-	if [ ${XDEV} -eq 1 ]; then
-		msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
-		${MAKE_CMD} -C /usr/src native-xtools ${MAKE_JOBS} \
-		    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools'"
-		XDEV_TOOLS=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
-		    ${MAKE_CMD} -C /usr/src -f Makefile.inc1 -V NXBDESTDIR)
-		rm -rf ${JAILMNT}/nxb-bin || err 1 "Failed to remove old native-xtools"
-		mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
-		cat > ${JAILMNT}/etc/make.nxb.conf <<- EOF
-		CC=/nxb-bin/usr/bin/cc
-		CPP=/nxb-bin/usr/bin/cpp
-		CXX=/nxb-bin/usr/bin/c++
-		AS=/nxb-bin/usr/bin/as
-		NM=/nxb-bin/usr/bin/nm
-		LD=/nxb-bin/usr/bin/ld
-		OBJCOPY=/nxb-bin/usr/bin/objcopy
-		SIZE=/nxb-bin/usr/bin/size
-		STRIPBIN=/nxb-bin/usr/bin/strip
-		SED=/nxb-bin/usr/bin/sed
-		READELF=/nxb-bin/usr/bin/readelf
-		RANLIB=/nxb-bin/usr/bin/ranlib
-		YACC=/nxb-bin/usr/bin/yacc
-		MAKE=/nxb-bin/usr/bin/make
-		STRINGS=/nxb-bin/usr/bin/strings
-		AWK=/nxb-bin/usr/bin/awk
-		FLEX=/nxb-bin/usr/bin/flex
-		EOF
-
-		# hardlink these files to capture scripts and tools
-		# that explicitly call them instead of using paths.
-		HLINK_FILES="usr/bin/env usr/bin/gzip usr/bin/id usr/bin/limits \
-				usr/bin/make usr/bin/dirname usr/bin/diff \
-				usr/bin/find usr/bin/gzcat usr/bin/awk \
-				usr/bin/touch usr/bin/sed usr/bin/patch \
-				usr/bin/install usr/bin/gunzip usr/bin/sort \
-				usr/bin/tar usr/bin/xargs usr/sbin/chown bin/cp \
-				bin/cat bin/chmod bin/echo bin/expr \
-				bin/hostname bin/ln bin/ls bin/mkdir bin/mv \
-				bin/realpath bin/rm bin/rmdir bin/sleep \
-				sbin/sha256 sbin/sha512 sbin/md5 sbin/sha1"
-
-		# Endian issues on mips/mips64 are not handling exec of 64bit shells
-		# from emulated environments correctly.  This works just fine on ARM
-		# because of the same issue, so allow it for now.
-		[ ${TARGET} = "mips" ] || \
-		    HLINK_FILES="${HLINK_FILES} bin/sh bin/csh"
-
-		for file in ${HLINK_FILES}; do
-			if [ -f "${JAILMNT}/nxb-bin/${file}" ]; then
-				rm -f ${JAILMNT}/${file}
-				ln ${JAILMNT}/nxb-bin/${file} ${JAILMNT}/${file}
-			fi
-		done
-	fi
+	msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
+	: ${XDEV_SRC:=/usr/src}
+	${MAKE_CMD} -C ${XDEV_SRC} native-xtools ${MAKE_JOBS} \
+	    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools' in ${XDEV_SRC}"
+	XDEV_TOOLS=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
+	    ${MAKE_CMD} -C ${XDEV_SRC} -f Makefile.inc1 -V NXBDESTDIR)
+	: ${XDEV_TOOLS:=/usr/obj/${TARGET}.${TARGET_ARCH}/nxb-bin}
+	rm -rf ${JAILMNT}/nxb-bin || err 1 "Failed to remove old native-xtools"
+	mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
+	# The files are hard linked at bulk jail startup now.
+	BUILT_NATIVE_XTOOLS=1
 }
 
 install_from_src() {
+	local var_version_extra="$1"
 	local cpignore_flag cpignore
 
 	msg_n "Copying ${SRC_BASE} to ${JAILMNT}/usr/src..."
@@ -436,19 +470,25 @@ install_from_src() {
 	[ -n "${cpignore}" ] && rm -f ${cpignore}
 	echo " done"
 
-	setup_build_env
 	if [ ${BUILD} -eq 0 ]; then
+		setup_build_env
 		installworld
 	else
-		build_and_install_world
+		buildworld
+		installworld
 	fi
+	build_native_xtools
+	# Use __FreeBSD_version as our version_extra
+	setvar "${var_version_extra}" \
+	    "$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' \
+	    ${JAILMNT}/usr/include/sys/param.h)"
 }
 
 install_from_vcs() {
 	local var_version_extra="$1"
 	local UPDATE=0
-	local proto
-	local svn_rev
+	local proto version_vcs
+	local git_sha svn_rev
 
 	if [ -d "${SRC_BASE}" ]; then
 		UPDATE=1
@@ -458,7 +498,7 @@ install_from_vcs() {
 	if [ ${UPDATE} -eq 0 ]; then
 		case ${METHOD} in
 		svn*)
-			msg_n "Checking out the sources from svn..."
+			msg_n "Checking out the sources with ${METHOD}..."
 			${SVN_CMD} -q co ${SVN_FULLURL}/${VERSION} ${SRC_BASE} || err 1 " fail"
 			echo " done"
 			if [ -n "${SRCPATCHFILE}" ]; then
@@ -471,8 +511,8 @@ install_from_vcs() {
 			if [ -n "${SRCPATCHFILE}" ]; then
 				err 1 "Patch files not supported with git, please use feature branches"
 			fi
-			msg_n "Checking out the sources from git..."
-			git clone --depth=1 -q -b ${VERSION} ${GIT_FULLURL} ${SRC_BASE} || err 1 " fail"
+			msg_n "Checking out the sources with ${METHOD}..."
+			${GIT_CMD} clone ${GIT_DEPTH} -q -b ${VERSION} ${GIT_FULLURL} ${SRC_BASE} || err 1 " fail"
 			echo " done"
 			# No support for patches, using feature branches is recommanded"
 			;;
@@ -480,37 +520,43 @@ install_from_vcs() {
 	else
 		case ${METHOD} in
 		svn*)
-			msg_n "Updating the sources from svn..."
+			msg_n "Updating the sources with ${METHOD}..."
 			${SVN_CMD} upgrade ${SRC_BASE} 2>/dev/null || :
 			${SVN_CMD} -q update -r ${TORELEASE:-head} ${SRC_BASE} || err 1 " fail"
 			echo " done"
 			;;
 		git*)
-			git -C ${SRC_BASE} pull --rebase -q || err 1 " fail"
+			${GIT_CMD} -C ${SRC_BASE} pull --rebase -q || err 1 " fail"
 			if [ -n "${TORELEASE}" ]; then
-				git checkout -q "${TORELEASE}" || err 1 " fail"
+				${GIT_CMD} checkout -q "${TORELEASE}" || err 1 " fail"
 			fi
 			echo " done"
 			;;
 		esac
 	fi
-	build_and_install_world
+	buildworld
+	installworld
+	build_native_xtools
 
 	case ${METHOD} in
 	svn*)
 		svn_rev=$(${SVN_CMD} info ${SRC_BASE} |
 		    awk '/Last Changed Rev:/ {print $4}')
-		setvar "${var_version_extra}" "r${svn_rev}"
+		version_vcs="r${svn_rev}"
 	;;
 	git*)
-		git_sha=$(git -C ${SRC_BASE} rev-parse --short HEAD)
-		setvar "${var_version_extra}" "${git_sha}"
+		git_sha=$(${GIT_CMD} -C ${SRC_BASE} rev-parse --short HEAD)
+		version_vcs="${git_sha}"
 	;;
 	esac
+	jset ${JAILNAME} version_vcs "${version_vcs}"
+	# Use __FreeBSD_version as our version_extra
+	setvar "${var_version_extra}" \
+	    "$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' \
+	    ${JAILMNT}/usr/include/sys/param.h)"
 }
 
 install_from_ftp() {
-	local var_version_extra="$1"
 	mkdir ${JAILMNT}/fromftp
 	local URL V
 
@@ -525,7 +571,8 @@ install_from_ftp() {
 	[ -z "${SRCPATH}" ] && DISTS="${DISTS} src"
 	DISTS="${DISTS} ${EXTRA_DISTS}"
 
-	if [ ${V%%.*} -lt 9 ]; then
+	case "${V}" in
+	[0-8][^0-9]*) # < 9
 		msg "Fetching sets for FreeBSD ${V} ${ARCH}"
 		case ${METHOD} in
 		ftp|http|gjb)
@@ -586,7 +633,8 @@ install_from_ftp() {
 				tar --unlink -xpf - -C ${JAILMNT}/${APPEND} || err 1 " fail"
 			echo " done"
 		done
-	else
+		;;
+	*)
 		local type
 		case ${METHOD} in
 			ftp|http|gjb)
@@ -647,17 +695,21 @@ install_from_ftp() {
 			tar -xpf "${JAILMNT}/fromftp/${dist}.txz" -C  ${JAILMNT}/ || err 1 " fail"
 			echo " done"
 		done
-	fi
+		;;
+	esac
 
 	msg_n "Cleaning up..."
 	rm -rf ${JAILMNT}/fromftp/
 	echo " done"
+
+	build_native_xtools
 }
 
 install_from_tar() {
 	msg_n "Installing ${VERSION} ${ARCH} from ${TARBALL} ..."
 	tar -xpf ${TARBALL} -C ${JAILMNT}/ || err 1 " fail"
 	echo " done"
+	build_native_xtools
 }
 
 create_jail() {
@@ -668,7 +720,7 @@ create_jail() {
 		[ -z "${JAILMNT}" ] && \
 		    err 1 "Must set -M to path of jail to use"
 		[ "${JAILMNT}" = "/" ] && \
-		    err 1 "Cannot use /"
+		    err 1 "Cannot use / for -M"
 	fi
 
 	if [ -z ${JAILMNT} ]; then
@@ -749,9 +801,16 @@ create_jail() {
 		;;
 	esac
 
+	if [ "${JAILFS}" != "none" ]; then
+		[ -d "${JAILMNT}" ] && \
+		    err 1 "Directory ${JAILMNT} already exists"
+	fi
+
 	createfs ${JAILNAME} ${JAILMNT} ${JAILFS:-none}
 	[ -n "${JAILFS}" -a "${JAILFS}" != "none" ] && jset ${JAILNAME} fs ${JAILFS}
-	jset ${JAILNAME} version ${VERSION}
+	if [ -n "${VERSION}" ]; then
+		jset ${JAILNAME} version ${VERSION}
+	fi
 	jset ${JAILNAME} timestamp $(clock -epoch)
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
@@ -776,16 +835,16 @@ create_jail() {
 
 	markfs clean ${JAILMNT}
 
-	# Always update when using FreeBSD dists
+	# Check VERSION before running 'update_jail' on jails created using FreeBSD dists.
 	case ${METHOD} in
 		ftp|http|ftp-archive)
-			update_jail
+			[ ${VERSION#*-RELEAS*} != ${VERSION} ] && update_jail
 			;;
 	esac
 
 	unset CLEANUP_HOOK
 
-	msg "Jail ${JAILNAME} ${VERSION} ${ARCH} is ready to be used"
+	msg "Jail ${JAILNAME} ${RELEASE} ${ARCH} is ready to be used"
 }
 
 info_jail() {
@@ -812,6 +871,7 @@ info_jail() {
 	tobuild=$((nbq - nbb - nbf - nbi - nbs))
 
 	_jget jversion ${JAILNAME} version
+	_jget jversion_vcs ${JAILNAME} version_vcs 2>/dev/null || jversion_vcs=
 	_jget jarch ${JAILNAME} arch
 	_jget jmethod ${JAILNAME} method
 	_jget timestamp ${JAILNAME} timestamp 2>/dev/null || :
@@ -820,6 +880,9 @@ info_jail() {
 
 	echo "Jail name:         ${JAILNAME}"
 	echo "Jail version:      ${jversion}"
+	if [ -n "${jversion_vcs}" ]; then
+		echo "Jail vcs version:  ${jversion_vcs}"
+	fi
 	echo "Jail arch:         ${jarch}"
 	echo "Jail method:       ${jmethod}"
 	echo "Jail mount:        ${mnt}"
@@ -876,8 +939,9 @@ PTNAME=default
 SETNAME=""
 XDEV=0
 BUILD=0
+GIT_DEPTH=--depth=1
 
-while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:x" FLAG; do
+while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:Dx" FLAG; do
 	case "${FLAG}" in
 		b)
 			BUILD=1
@@ -945,6 +1009,9 @@ while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:x" FLAG; do
 			[ -d ${OPTARG} ] || err 1 "No such directory ${OPTARG}"
 			SRCPATH=${OPTARG}
 			;;
+		D)
+			GIT_DEPTH=""
+			;;
 		q)
 			QUIET=1
 			;;
@@ -1004,6 +1071,7 @@ if [ -n "${SOURCES_URL}" ]; then
 		http://*) METHOD="git+http" ;;
 		https://*) METHOD="git+https" ;;
 		git://*) METHOD="git" ;;
+		file://*) METHOD="git" ;;
 		*) err 1 "Invalid git url" ;;
 		esac
 		;;
@@ -1033,7 +1101,10 @@ fi
 case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	10000000)
 		test -z ${JAILNAME} && usage JAILNAME
-		test -z ${VERSION} && usage VERSION
+		case ${METHOD} in
+			src=*|null|tar) ;;
+			*) test -z ${VERSION} && usage VERSION ;;
+		esac
 		jail_exists ${JAILNAME} && \
 		    err 2 "The jail ${JAILNAME} already exists"
 		check_emulation "${REALARCH}" "${ARCH}"
@@ -1052,7 +1123,6 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		;;
 	00010000)
 		test -z ${JAILNAME} && usage JAILNAME
-		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 		maybe_run_queued "${saved_argv}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		_mastermnt MASTERMNT

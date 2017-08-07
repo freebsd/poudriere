@@ -37,5 +37,12 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 assert_ret 1 shash_get pkgname-origin "pkg-2.0" value
 assert_ret 1 shash_get pkgname-origin "pkg-*" value
 
+assert_ret 1 shash_get pkgname-origin "notfound-*" value
+assert "" "${value}" "globbed missing value"
+
+assert_ret 1 shash_get pkgname-origin "*-notfound" value
+assert "" "${value}" "globbed missing value"
+
+
 rm -rf "${MASTERMNT}"
 exit 0

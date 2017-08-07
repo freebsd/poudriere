@@ -1,6 +1,6 @@
 /* vim: set sts=4 sw=4 ts=4 noet: */
 /*
- * Copyright (c) 2013-2014 Bryan Drewery <bdrewery@FreeBSD.org>
+ * Copyright (c) 2013-2017 Bryan Drewery <bdrewery@FreeBSD.org>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,6 @@
 .layout td {
 	border: 0;
 }
-.queued { background-color: #aaa !important; }
 .built { background-color: #00CC00 !important; }
 .built .row1 { background-color: #00FF00; }
 .failed { background-color: #E00000 !important; }
@@ -58,6 +57,9 @@
 .ignored { background-color: #FF9900 !important; }
 .ignored .row1 { background-color: #FF6F00; }
 .remaining { background-color: #E3E3E3 !important; }
+.remaining .row1 { background-color: #BCBCBC; }
+.queued { background-color: #aaa !important; }
+.queued .row1 { background-color: #BBBBBB; }
 .latest { background-color: #f7Fe4a; }
 td.highlight {
 	background-color: whitesmoke !important;
