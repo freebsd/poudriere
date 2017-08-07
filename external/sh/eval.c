@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)eval.c	8.9 (Berkeley) 6/8/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/eval.c 314436 2017-02-28 23:42:47Z imp $");
+__FBSDID("$FreeBSD: head/bin/sh/eval.c 319576 2017-06-04 21:02:48Z bdrewery $");
 
 #include <paths.h>
 #include <signal.h>
@@ -470,6 +470,7 @@ evalredir(union node *n, int flags)
 		if (e == EXERROR || e == EXEXEC) {
 			if (in_redirect) {
 				exitstatus = 2;
+				FORCEINTON;
 				return;
 			}
 		}
@@ -799,11 +800,8 @@ xtracecommand(struct arglist *varlist, int argc, char **argv)
 static int
 safe_builtin(int idx, int argc, char **argv)
 {
-	if (idx == BLTINCMD || idx == COMMANDCMD || idx == ECHOCMD ||
-	    idx == FALSECMD || idx == JOBIDCMD || idx == JOBSCMD ||
-	    idx == KILLCMD || idx == PRINTFCMD || idx == PWDCMD ||
-	    idx == TESTCMD || idx == TIMESCMD || idx == TRUECMD ||
-	    idx == TYPECMD)
+	/* Generated from builtins.def. */
+	if (safe_builtin_always(idx))
 		return (1);
 	if (idx == EXPORTCMD || idx == TRAPCMD || idx == ULIMITCMD ||
 	    idx == UMASKCMD)
@@ -1080,9 +1078,7 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 #endif
 		mode = (cmdentry.u.index == EXECCMD)? 0 : REDIR_PUSH;
 		if (flags == EV_BACKCMD) {
-			memout.nleft = 0;
 			memout.nextc = memout.buf;
-			memout.bufsize = 64;
 			mode |= REDIR_BACKQ;
 		}
 		savecmdname = commandname;
@@ -1134,8 +1130,12 @@ cmddone:
 			exitshell(exitstatus);
 		if (flags == EV_BACKCMD) {
 			backcmd->buf = memout.buf;
-			backcmd->nleft = memout.nextc - memout.buf;
+			backcmd->nleft = memout.buf != NULL ?
+			    memout.nextc - memout.buf : 0;
 			memout.buf = NULL;
+			memout.nextc = NULL;
+			memout.bufend = NULL;
+			memout.bufsize = 64;
 		}
 		if (cmdentry.u.index != EXECCMD)
 			popredir();
@@ -1222,7 +1222,7 @@ bltincmd(int argc, char **argv)
 		return 127;
 	}
 	/*
-	 * Preserve exitstatus of a previous possible redirection
+	 * Preserve exitstatus of a previous possible command substitution
 	 * as POSIX mandates
 	 */
 	return exitstatus;

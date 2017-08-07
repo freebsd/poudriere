@@ -88,20 +88,19 @@ distfiles_cleanup() {
 		2>/dev/null
 }
 
-get_distinfo() {
-	local port="$1"
-
-	prefix_stderr_quick "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
-	    make -C "${PORTSDIR}/${port}" -V DISTINFO_FILE
+injail() {
+	"$@"
 }
-
 gather_distfiles() {
-	local origin="$1"
-	local distinfo_file="$(get_distinfo ${origin})"
+	local originspec="$1"
+	local distinfo_file
+
+	port_var_fetch_originspec "${originspec}" \
+	    DISTINFO_FILE distinfo_file || :
 
 	[ -f "${distinfo_file}" ] || return 0
 
-	msg_verbose "Gathering distfiles for: ${origin}"
+	msg_verbose "Gathering distfiles for: ${originspec}"
 
 	awk -v distdir="${DISTFILES_CACHE%/}" '/SIZE/ {print distdir "/" substr($2, 2, length($2) - 2)}' \
 		"${distinfo_file}" >> ${DISTFILES_LIST}
@@ -121,8 +120,11 @@ for PTNAME in ${PTNAMES}; do
 
 	msg "Gathering all expected distfiles for ports tree '${PTNAME}'"
 
-	for origin in $(listed_ports); do
-		parallel_run gather_distfiles ${origin}
+	for originspec in $(listed_ports); do
+		parallel_run \
+		    prefix_stderr_quick \
+		    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
+		    gather_distfiles "${originspec}"
 	done
 done
 parallel_stop

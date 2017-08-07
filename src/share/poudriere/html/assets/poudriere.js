@@ -1,6 +1,6 @@
 // vim: set sts=4 sw=4 ts=4 noet:
 /*
- * Copyright (c) 2013-2015 Bryan Drewery <bdrewery@FreeBSD.org>
+ * Copyright (c) 2013-2017 Bryan Drewery <bdrewery@FreeBSD.org>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -333,8 +333,8 @@ function format_log(pkgname, errors, text) {
 	return html;
 }
 
-function format_duration(start, end) {
-    var duration, hours, minutes, seconds;
+function format_start_to_end(start, end) {
+	var duration;
 
 	if (!start) {
 		return '';
@@ -353,6 +353,16 @@ function format_duration(start, end) {
 	if (duration < 0) {
 		duration = 0;
 	}
+
+	return format_duration(duration);
+}
+
+function format_duration(duration) {
+	var hours, minutes, seconds;
+
+    if (duration === undefined || duration == '' || isNaN(duration)) {
+      return '';
+    }
 
     hours = Math.floor(duration / 3600);
     duration = duration - hours * 3600;
@@ -442,12 +452,14 @@ function format_status_row(status, row, n) {
 		table_row.push(format_pkgname(row.pkgname));
 		table_row.push(format_origin(row.origin));
 		table_row.push(format_log(row.pkgname, false, 'success'));
+		table_row.push(format_duration(row.elapsed));
 	} else if (status == "failed") {
 		table_row.push(format_pkgname(row.pkgname));
 		table_row.push(format_origin(row.origin));
 		table_row.push(row.phase);
 		table_row.push(row.skipped_cnt);
 		table_row.push(format_log(row.pkgname, true, row.errortype));
+		table_row.push(format_duration(row.elapsed));
 	} else if (status == "skipped") {
 		table_row.push(format_pkgname(row.pkgname));
 		table_row.push(format_origin(row.origin));
@@ -457,6 +469,17 @@ function format_status_row(status, row, n) {
 		table_row.push(format_origin(row.origin));
 		table_row.push(row.skipped_cnt);
 		table_row.push(row.reason);
+	} else if (status == "remaining") {
+		table_row.push(format_pkgname(row.pkgname));
+		table_row.push(row.status);
+	} else if (status == "queued") {
+		table_row.push(format_pkgname(row.pkgname));
+		table_row.push(format_origin(row.origin));
+		if (row.reason == "listed") {
+			table_row.push(row.reason);
+		} else {
+			table_row.push(format_origin(row.reason));
+		}
 	}
 
 	return table_row;
@@ -570,12 +593,13 @@ function process_data_build(data) {
 
 			row.id = builder.id;
 			row.job_id = builder.id;
+			row.pkgname = builder.pkgname ? format_pkgname(builder.pkgname) : "";
 			row.origin = builder.origin ? format_origin(builder.origin) : "";
 			row.status = builder.pkgname ?
 				format_log(builder.pkgname, false, builder.status) :
 				builder.status.split(":")[0];
 			row.elapsed = builder.started ?
-				format_duration(builder.started, now) : "";
+				format_start_to_end(builder.started, now) : "";
 
 			/* Hide idle builders when the build is stopped. */
 			if (!is_stopped || (row.status != "idle")) {
@@ -589,7 +613,7 @@ function process_data_build(data) {
 	if (data.stats) {
 		$.each(data.stats, function(status, count) {
 			if (status == "elapsed") {
-				count = format_duration(count);
+				count = format_start_to_end(count);
 			}
 			$('#stats_' + status).html(count);
 		});
@@ -599,7 +623,7 @@ function process_data_build(data) {
 		if (data.snap) {
 			$.each(data.snap, function(status, count) {
 				if (status == "elapsed") {
-					count = format_duration(count);
+					count = format_start_to_end(count);
 				}
 				$('#snap_' + status).html(count);
 			});
@@ -615,16 +639,24 @@ function process_data_build(data) {
 	 * may involve looping 24000 times. */
 
 	if (data.ports) {
+		if (data.ports["remaining"] === undefined) {
+			data.ports["remaining"] = [];
+		}
 		$.each(data.ports, function(status, ports) {
-			if (data.ports[status] && data.ports[status].length > 0) {
+			if (data.ports[status] &&
+				(data.ports[status].length > 0 || status == "remaining")) {
 				table_rows = [];
-				if ((n = $('#' + status + '_body').data('index')) === undefined) {
+				if (status != "remaining") {
+					if ((n = $('#' + status + '_body').data('index')) === undefined) {
+						n = 0;
+						$('#' + status + '_div').show();
+						$('#nav_' + status).removeClass('disabled');
+					}
+					if (n == data.ports[status].length) {
+						return;
+					}
+				} else {
 					n = 0;
-					$('#' + status + '_div').show();
-					$('#nav_' + status).removeClass('disabled');
-				}
-				if (n == data.ports[status].length) {
-					return;
 				}
 				for (; n < data.ports[status].length; n++) {
 					var row = data.ports[status][n];
@@ -637,9 +669,22 @@ function process_data_build(data) {
 
 					table_rows.push(format_status_row(status, row, n));
 				}
-				$('#' + status + '_body').data('index', n);
-				$('#' + status + '_table').DataTable().rows.add(table_rows)
-					.draw(false);
+				if (status != "remaining") {
+					$('#' + status + '_body').data('index', n);
+					$('#' + status + '_table').DataTable().rows.add(table_rows)
+						.draw(false);
+				} else {
+					$('#' + status + '_table').DataTable().clear().draw();
+					$('#' + status + '_table').DataTable().rows.add(table_rows)
+						.draw(false);
+					if (table_rows.length > 0) {
+						$('#' + status + '_div').show();
+						$('#nav_' + status).removeClass('disabled');
+					} else {
+						$('#' + status + '_div').hide();
+						$('#nav_' + status).addClass('disabled');
+					}
+				}
 			}
 		});
 	}
@@ -861,7 +906,12 @@ function setup_build() {
 				"sWidth": "1em",
 			},
 			{
+				"data": "pkgname",
+				"sWidth": "15em",
+			},
+			{
 				"data": "origin",
+				"sWidth": "17em",
 			},
 			{
 				"data": "status",
@@ -906,6 +956,10 @@ function setup_build() {
 				"bSortable": false,
 				"bSearchable": false,
 			},
+			{
+				"bSearchable": false,
+				"sWidth": "3em",
+			},
 		],
 		"failed": [
 			build_order_column,
@@ -924,6 +978,10 @@ function setup_build() {
 			},
 			{
 				"sWidth": "7em",
+			},
+			{
+				"bSearchable": false,
+				"sWidth": "3em",
 			},
 		],
 		"skipped": [
@@ -948,9 +1006,22 @@ function setup_build() {
 				"sWidth": "25em",
 			},
 		],
+		"remaining": [
+			build_order_column,
+			pkgname_column,
+			{
+				"sWidth": "7em",
+			},
+		],
+		"queued": [
+			build_order_column,
+			pkgname_column,
+			origin_column,
+			origin_column,
+		],
 	};
 
-	types = ['built', 'failed', 'skipped', 'ignored'];
+	types = ['built', 'failed', 'skipped', 'ignored', 'remaining', 'queued'];
 	for (i in types) {
 		status = types[i];
 		$('#' + status + '_table').dataTable({

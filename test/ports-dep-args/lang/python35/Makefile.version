@@ -1,0 +1,4 @@
+# Mk/Uses/python.mk includes this file, don't remove it!
+# $FreeBSD: head/lang/python35/Makefile.version 432188 2017-01-23 02:35:42Z wen $
+
+PYTHON_PORTVERSION=	3.5.3

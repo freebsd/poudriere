@@ -1,13 +1,15 @@
-cacheccmd cachec
-clockcmd clock
-diremptycmd dirempty
-locked_mkdircmd locked_mkdir
-mkdircmd mkdir
-mktempcmd mktemp
-pwaitcmd pwait
-realpathcmd realpath
-renamecmd rename
-rmdircmd rmdir
-setproctitlecmd setproctitle
-sleepcmd sleep
-touchcmd touch
+cacheccmd		cachec
+clockcmd -n		clock
+diremptycmd -n		dirempty
+locked_mkdircmd		locked_mkdir
+mkdircmd -n		mkdir
+mkfifocmd -n		mkfifo
+mktempcmd -n		mktemp
+pwaitcmd		pwait
+realpathcmd -n		realpath
+renamecmd -n		rename
+rmdircmd -n		rmdir
+setproctitlecmd		setproctitle
+sleepcmd		sleep
+touchcmd		touch
+unlinkcmd -n		unlink

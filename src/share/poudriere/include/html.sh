@@ -1,6 +1,6 @@
 #!/bin/sh
 # 
-# Copyright (c) 2012-2014 Bryan Drewery <bdrewery@FreeBSD.org>
+# Copyright (c) 2012-2017 Bryan Drewery <bdrewery@FreeBSD.org>
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -105,6 +105,14 @@ build_json() {
 build_jail_json() {
 	[ -n "${log_path_jail}" ] || \
 	    err 1 "build_jail_json requires log_path_jail set"
+	local empty
+	for empty in ${log_path_jail}/*/.data.mini.json; do
+		case "${empty}" in
+		# Empty
+		"${log_path_jail}/*/.data.mini.json") return 0 ;;
+		esac
+		break
+	done
 	tmpfile=$(TMPDIR="${log_path_jail}" mktemp -ut json)
 	{
 		echo "{\"builds\":{"
@@ -120,6 +128,14 @@ build_jail_json() {
 build_top_json() {
 	[ -n "${log_path_top}" ] || \
 	    err 1 "build_top_json requires log_path_top set"
+	local empty
+	for empty in */latest/.data.mini.json; do
+		case "${empty}" in
+		# Empty
+		"*/latest/.data.mini.json") return 0 ;;
+		esac
+		break
+	done
 	tmpfile=$(TMPDIR="${log_path_top}" mktemp -ut json)
 	(
 		cd "${log_path_top}"
@@ -139,7 +155,7 @@ html_json_cleanup() {
 
 	_log_path log
 	bset ended "$(clock -epoch)" || :
-	build_all_json 2>/dev/null || :
+	build_all_json || :
 	rm -f ${log}/.data.json.tmp ${log}/.data.mini.json.tmp 2>/dev/null || :
 }
 
@@ -175,7 +191,7 @@ install_html_files() {
 
 	# Symlink the build properly
 	ln -fs build.html "${dest}/index.html"
-	rm -f "${dest}/jail.html"
+	unlink "${dest}/jail.html"
 
 	return 0
 }

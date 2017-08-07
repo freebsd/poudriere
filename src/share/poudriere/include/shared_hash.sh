@@ -68,7 +68,7 @@ shash_get() {
 		# This assumes globbing works
 		for _f in ${_shash_varkey_file}; do
 			case "${_f}" in
-			"*") break ;; # no file found
+			*"*"*) break ;; # no file found
 			esac
 			if read_line _value "${_f}"; then
 				_values="${_values}${_values:+ }${_value}"
@@ -129,6 +129,13 @@ shash_unset() {
 		cachec -s /${MASTERNAME} "unset ${var}-${key}"
 	else
 		_shash_varkey_file "${var}" "${key}"
-		rm -f ${_shash_varkey_file}
+		case "${_shash_varkey_file}" in
+		*"*"*)
+			rm -f ${_shash_varkey_file}
+			;;
+		*)
+			unlink ${_shash_varkey_file} 2>/dev/null || :
+			;;
+		esac
 	fi
 }

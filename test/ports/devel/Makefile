@@ -1,0 +1,14 @@
+SUBDIR += autoconf
+SUBDIR += autoconf-wrapper
+SUBDIR += automake
+SUBDIR += automake-wrapper
+SUBDIR += ccache
+SUBDIR += gettext
+SUBDIR += gettext-runtime
+SUBDIR += gettext-tools
+SUBDIR += gmake
+SUBDIR += libffi
+SUBDIR += m4
+SUBDIR += p5-Locale-gettext
+SUBDIR += pkgconf
+SUBDIR += readline

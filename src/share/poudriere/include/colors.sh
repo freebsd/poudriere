@@ -25,8 +25,10 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-if [ -z "${FORCE_COLORS}" ] && ! [ -t 1 ] || ! [ -t 2 ]; then
-	USE_COLORS="no"
+if [ -z "${FORCE_COLORS}" ]; then
+	if ! [ -t 1 ] || ! [ -t 2 ]; then
+		USE_COLORS="no"
+	fi
 fi
 
 # The number of hardcoded color sets supported for colorize_job_id
@@ -37,7 +39,6 @@ MAXCOLORS=126
 # them and the below : {} lines in poudriere.conf.
 if [ ${USE_COLORS} = "no" ]; then
 	COLOR_RESET=
-	COLOR_RESET_REAL=
 	COLOR_BOLD=
 	COLOR_UNDER=
 	COLOR_BLINK=

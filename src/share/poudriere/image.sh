@@ -39,10 +39,11 @@ Parameters:
     -h hostname     -- The image hostname
     -t type         -- Type of image can be one of (default iso+zmfs):
                     -- iso, iso+mfs, iso+zmfs, usb, usb+mfs, usb+zmfs,
-                       rawdisk, zrawdisk, tar, firmware, rawfirmware
+                       rawdisk, zrawdisk, tar, firmware, rawfirmware,
+                       embedded
     -X excludefile  -- File containing the list in cpdup format
     -f packagelist  -- List of packages to install
-    -c overlaydir   -- The content of the overlay directory will copied into
+    -c overlaydir   -- The content of the overlay directory will be copied into
                        the image
 EOF
 	exit 1
@@ -80,8 +81,9 @@ while getopts "o:j:p:z:n:t:X:f:c:h:s:" FLAG; do
 		t)
 			MEDIATYPE=${OPTARG}
 			case ${MEDIATYPE} in
-			iso|iso+mfs|iso+zmfs|usb|usb+mfs|usb+mfs) ;;
+			iso|iso+mfs|iso+zmfs|usb|usb+mfs|usb+zmfs) ;;
 			rawdisk|zrawdisk|tar|firmware|rawfirmware) ;;
+			embedded) ;;
 			*) err 1 "invalid mediatype: ${MEDIATYPE}"
 			esac
 			;;
@@ -125,7 +127,7 @@ saved_argv="$@"
 shift $((OPTIND-1))
 post_getopts
 
-: ${MEDIATYPE:=iso+zmfs}
+: ${MEDIATYPE:=none}
 : ${PTNAME:=default}
 
 [ -n "${JAILNAME}" ] || usage
@@ -133,6 +135,11 @@ post_getopts
 : ${OUTPUTDIR:=${POUDRIERE_DATA}/images/}
 : ${IMAGENAME:=poudriereimage}
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
+
+# CFG_SIZE set /etc and /var ramdisk size and /cfg partition size
+# DATA_SIZE set /data partition size
+CFG_SIZE='32m'
+DATA_SIZE='32m'
 
 case "${MEDIATYPE}" in
 *iso*)
@@ -143,13 +150,18 @@ case "${MEDIATYPE}" in
 		;;
 	esac
 	;;
+none)
+	err 1 "Missing -t option"
+	;;
 esac
 
 mkdir -p ${OUTPUTDIR}
 
 jail_exists ${JAILNAME} || err 1 "The jail ${JAILNAME} does not exist"
+_jget arch ${JAILNAME} arch
+get_host_arch host_arch
 case "${MEDIATYPE}" in
-usb|*firmware|rawdisk)
+usb|*firmware|rawdisk|embedded)
 	[ -n "${IMAGESIZE}" ] || err 1 "Please specify the imagesize"
 	_jget mnt ${JAILNAME} mnt
 	test -f ${mnt}/boot/kernel/kernel || err 1 "The ${MEDIATYPE} media type requires a jail with a kernel"
@@ -172,9 +184,27 @@ mkdir -p ${WRKDIR}/out
 [ -z "${EXCLUDELIST}" ] || cat ${EXCLUDELIST} > ${excludelist}
 cat >> ${excludelist} << EOF
 usr/src
+var/db/freebsd-update
+var/db/etcupdate
+boot/kernel.old
 EOF
 case "${MEDIATYPE}" in
-usb|*firmware|rawdisk)
+embedded)
+	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
+	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
+	gpart create -s mbr ${md}
+	gpart add -t '!6' -a 63 -s 20m ${md}
+	gpart set -a active -i 1 ${md}
+	newfs_msdos -F16 -L msdosboot /dev/${md}s1
+	gpart add -t freebsd ${md}
+	gpart create -s bsd ${md}s2
+	gpart add -t freebsd-ufs -a 64k ${md}s2
+	newfs -U -L ${IMAGENAME} /dev/${md}s2a
+	mount /dev/${md}s2a ${WRKDIR}/world
+	mkdir -p ${WRKDIR}/world/boot/msdos
+	mount_msdosfs /dev/${md}s1 /${WRKDIR}/world/boot/msdos
+	;;
+rawdisk)
 	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
 	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
 	newfs -j -L ${IMAGENAME} /dev/${md}
@@ -238,11 +268,21 @@ cap_mkdb ${WRKDIR}/world/etc/login.conf
 if [ -n "${PACKAGELIST}" ]; then
 	mkdir -p ${WRKDIR}/world/tmp/packages
 	${NULLMOUNT} ${POUDRIERE_DATA}/packages/${MASTERNAME} ${WRKDIR}/world/tmp/packages
-	cat > ${WRKDIR}/world/tmp/repo.conf <<-EOF
+	if [ "${arch}" == "${host_arch}" ]; then
+		cat > ${WRKDIR}/world/tmp/repo.conf <<-EOF
 	FreeBSD: { enabled: false }
 	local: { url: file:///tmp/packages }
 	EOF
-	cat ${PACKAGELIST} | xargs chroot ${WRKDIR}/world env ASSUME_ALWAYS_YES=yes REPOS_DIR=/tmp pkg install
+		cat ${PACKAGELIST} | xargs chroot ${WRKDIR}/world env ASSUME_ALWAYS_YES=yes REPOS_DIR=/tmp pkg install
+	else
+		cat > ${WRKDIR}/world/tmp/repo.conf <<-EOF
+	FreeBSD: { enabled: false }
+	local: { url: file:///${WRKDIR}/world/tmp/packages }
+	EOF
+		abi=$(REPOS_DIR=/${WRKDIR}/world/tmp/ pkg -r ${WRKDIR}/world/ query --file tmp/packages/Latest/pkg.txz '%q')
+		env ASSUME_ALWAYS_YES=yes REPOS_DIR=/${WRKDIR}/world/tmp/ ABI=${abi} pkg -r ${WRKDIR}/world/ install pkg
+		cat ${PACKAGELIST} | xargs env ASSUME_ALWAYS_YES=yes REPOS_DIR=/${WRKDIR}/world/tmp/ ABI=${abi} pkg -r ${WRKDIR}/world/ install
+	fi
 	rm -rf ${WRKDIR}/world/var/cache/pkg
 	umount ${WRKDIR}/world/tmp/packages
 	rmdir ${WRKDIR}/world/tmp/packages
@@ -271,17 +311,82 @@ case ${MEDIATYPE} in
 	vfs.root.mountfrom="ufs:/dev/ufs/${IMAGENAME}"
 	EOF
 	;;
-usb|rawdisk)
+iso)
+	imageupper=$(echo ${IMAGENAME} | tr '[:lower:]' '[:upper:]')
+	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
+	/dev/iso9660/${imageupper} / cd9660 ro 0 0
+	tmpfs /tmp tmpfs rw,mode=1777 0 0
+	EOF
+	cpdup -i0 ${WRKDIR}/world/boot ${WRKDIR}/out/boot
+	;;
+rawdisk)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
 	/dev/ufs/${IMAGENAME} / ufs rw 1 1
 	EOF
 	;;
-*firmware)
+embedded)
+	if [ -f ${WRKDIR}/world/boot/ubldr.bin ]; then
+	    cp ${WRKDIR}/world/boot/ubldr.bin ${WRKDIR}/world/boot/msdos/
+	fi
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
-	/dev/gpt/${IMAGENAME}0 / ufs ro 1 1
+	/dev/ufs/${IMAGENAME} / ufs rw 1 1
+	/dev/msdosfs/MSDOSBOOT /boot/msdos msdosfs rw,noatime 0 0
 	EOF
-	mkdir -p ${WRKDIR}/world/conf/base
-	tar -C ${WRKDIR}/world -X ${excludelist} -cf - etc | tar -xf - -C ${WRKDIR}/world/conf/base
+	;;
+usb)
+	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
+	/dev/ufs/${IMAGENAME} / ufs rw 1 1
+	EOF
+	makefs -B little ${IMAGESIZE:+-s ${IMAGESIZE}} -o label=${IMAGENAME} \
+		-o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world
+	;;
+*firmware)
+	# Configuring nanobsd-like mode
+	# It re-use diskless(8) framework but using a /cfg configuration partition
+	# It needs a "config save" script too, like the nanobsd example:
+	#  /usr/src/tools/tools/nanobsd/Files/root/save_cfg
+	# Or the BSDRP config script:
+	#  https://github.com/ocochard/BSDRP/blob/master/BSDRP/Files/usr/local/sbin/config
+	# Because rootfs is readonly, it create ramdisks for /etc and /var
+	# Then we need to replace /tmp by a symlink to /var/tmp
+	# For more information, read /etc/rc.initdiskless
+	echo "/dev/gpt/${IMAGENAME}1 / ufs ro 1 1" >> ${WRKDIR}/world/etc/fstab
+	echo '/dev/gpt/cfg  /cfg  ufs rw,noatime,noauto        2 2' >> ${WRKDIR}/world/etc/fstab
+	echo '/dev/gpt/data /data ufs rw,noatime,noauto,failok 2 2' >> ${WRKDIR}/world/etc/fstab
+	# Enable diskless(8) mode
+	touch ${WRKDIR}/world/etc/diskless
+	for d in cfg data; do
+		mkdir -p ${WRKDIR}/world/$d
+	done
+	# Declare system name into /etc/nanobsd.conf: Allow to re-use nanobsd script
+	echo "NANO_DRIVE=gpt/${IMAGENAME}" > ${WRKDIR}/world/etc/nanobsd.conf
+	# Move /usr/local/etc to /etc/local (Only /etc will be backuped)
+	if [ -d ${WRKDIR}/world/usr/local/etc ] ; then
+		mkdir -p ${WRKDIR}/world/etc/local
+		tar -C ${WRKDIR}/world -X ${excludelist} -cf - usr/local/etc/ | tar -xf - -C ${WRKDIR}/world/etc/local
+		rm -rf ${WRKDIR}/world/usr/local/etc
+		ln -s /etc/local ${WRKDIR}/world/usr/local/etc
+	fi
+	# Copy /etc and /var to /conf/base as "reference"
+	for d in var etc; do
+		mkdir -p ${WRKDIR}/world/conf/base/$d ${WRKDIR}/world/conf/default/$d
+		tar -C ${WRKDIR}/world -X ${excludelist} -cf - $d | tar -xf - -C ${WRKDIR}/world/conf/base
+	done
+	# Set ram disks size
+	echo "$CFG_SIZE" > ${WRKDIR}/world/conf/base/etc/md_size
+	echo "$CFG_SIZE" > ${WRKDIR}/world/conf/base/var/md_size
+	echo "mount -o ro /dev/gpt/cfg" > ${WRKDIR}/world/conf/default/etc/remount
+	# replace /tmp by a symlink to /var/tmp
+	rm -rf ${WRKDIR}/world/tmp
+	ln -s /var/tmp ${WRKDIR}/world/tmp
+	# Copy save_cfg to /etc
+	cp ${mnt}/usr/src/tools/tools/nanobsd/Files/root/save_cfg ${WRKDIR}/world/etc/
+	# For correct booting it needs ufs formatted /cfg and /data partitions
+	TMPFILE=`mktemp -t poudriere-firmware` || exit 1
+	makefs -B little -s ${CFG_SIZE} ${WRKDIR}/cfg.img ${TMPFILE}
+	makefs -B little -s ${DATA_SIZE} ${WRKDIR}/data.img ${TMPFILE}
+	makefs -B little ${IMAGESIZE:+-s ${IMAGESIZE}} -o label=${IMAGENAME} \
+		-o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world
 	;;
 zrawdisk)
 	cat >> ${WRKDIR}/world/boot/loader.conf <<-EOF
@@ -291,7 +396,14 @@ zrawdisk)
 esac
 
 case ${MEDIATYPE} in
-iso*)
+iso)
+	FINALIMAGE=${IMAGENAME}.iso
+	makefs -t cd9660 -o rockridge -o label=${IMAGENAME} \
+		-o publisher="poudriere" \
+		-o bootimage="i386;${WRKDIR}/out/boot/cdboot" \
+		-o no-emul-boot ${OUTPUTDIR}/${FINALIMAGE} ${WRKDIR}/world
+	;;
+iso+*mfs)
 	FINALIMAGE=${IMAGENAME}.iso
 	makefs -t cd9660 -o rockridge -o label=${IMAGENAME} \
 		-o publisher="poudriere" \
@@ -315,8 +427,6 @@ usb)
 		-p freebsd-ufs:=${WRKDIR}/raw.img \
 		-p freebsd-swap::1M \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
-	umount ${WRKDIR}/world
-	/sbin/mdconfig -d -u ${md#md}
 	;;
 tar)
 	FINALIMAGE=${IMAGENAME}.txz
@@ -324,27 +434,29 @@ tar)
 	;;
 firmware)
 	FINALIMAGE=${IMAGENAME}.img
-	umount ${WRKDIR}/world
-	/sbin/mdconfig -d -u ${md#md}
-	md=
 	mkimg -s gpt -b ${mnt}/boot/pmbr \
 		-p efi:=${mnt}/boot/boot1.efifat \
 		-p freebsd-boot:=${mnt}/boot/gptboot \
-		-p freebsd-ufs/${IMAGENAME}0:=${WRKDIR}/raw.img \
-		-p freebsd-ufs/${IMAGENAME}1::${IMAGESIZE} \
-		-p freebsd-ufs/cfg::32M \
-		-p freebsd-ufs/data::200M \
+		-p freebsd-ufs/${IMAGENAME}1:=${WRKDIR}/raw.img \
+		-p freebsd-ufs/${IMAGENAME}2:=${WRKDIR}/raw.img \
+		-p freebsd-ufs/cfg:=${WRKDIR}/cfg.img \
+		-p freebsd-ufs/data:=${WRKDIR}/data.img \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
 	;;
 rawfirmware)
 	FINALIMAGE=${IMAGENAME}.raw
+	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
+	;;
+rawdisk)
+	FINALIMAGE=${IMAGENAME}.img
 	umount ${WRKDIR}/world
 	/sbin/mdconfig -d -u ${md#md}
 	md=
 	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
 	;;
-rawdisk)
+embedded)
 	FINALIMAGE=${IMAGENAME}.img
+	umount ${WRKDIR}/world/boot/msdos
 	umount ${WRKDIR}/world
 	/sbin/mdconfig -d -u ${md#md}
 	md=

@@ -113,7 +113,7 @@ rollbackfs() {
 		tries=0
 		while :; do
 			if ! zfs rollback -r "${fs}@${name}"; then
-				rm -f "${sfile}"
+				unlink "${sfile}"
 				err 1 "Unable to rollback ${fs} to ${name}"
 			fi
 			# Success
@@ -122,7 +122,7 @@ rollbackfs() {
 			fi
 			tries=$((tries + 1))
 			if [ ${tries} -eq 20 ]; then
-				rm -f "${sfile}"
+				unlink "${sfile}"
 				err 1 "Timeout rolling back ${fs} to ${name}"
 			fi
 			sleep 1
@@ -193,7 +193,9 @@ zfs_getfs() {
 	[ -z "${ZPOOL}${ZROOTFS}" ] && return 0
 
 	cache_call value _zfs_getfs "${mnt}"
-	echo "${value}"
+	if [ -n "${value}" ]; then
+		echo "${value}"
+	fi
 }
 
 mnt_tmpfs() {
