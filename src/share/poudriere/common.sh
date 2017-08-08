@@ -4832,6 +4832,8 @@ delete_old_pkg() {
 						dpath="${dpath#${PORTSDIR}/}"
 						;;
 					esac
+					[ -n "${dpath}" ] || \
+					    err 1 "Invalid dependency for ${pkgname}: ${d}"
 					current_deps="${current_deps} ${dpath}"
 				fi
 			done
@@ -5813,6 +5815,8 @@ compute_deps_pkg() {
 				${PORTSDIR}/*)
 					dpath=${dpath#${PORTSDIR}/} ;;
 				esac
+				[ -n "${dpath}" ] || \
+				    err 1 "Invalid dependency line for ${pkgname}: ${d}"
 				hash_get \
 				    compute_deps_originspec-pkgname \
 				    "${dpath}" dep_real_pkgname || \
