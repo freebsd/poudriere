@@ -67,8 +67,7 @@ Options:
 Options for -d:
     -C clean      -- Clean remaining data existing in poudriere data folder.
                      See poudriere(8) for more details. Can be one of:
-                       all, logs, packages, wrkdirs
-
+                       all, cache, logs, packages, wrkdirs
 Options for -s and -k:
     -p tree       -- Specify which ports tree to start/stop the jail with.
     -z set        -- Specify which SET the jail to start/stop with.
@@ -112,6 +111,7 @@ list_jail() {
 
 delete_jail() {
 	local cache_dir method
+	local clean_dir depth
 
 	test -z ${JAILNAME} && usage JAILNAME
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
@@ -129,27 +129,21 @@ delete_jail() {
 	cache_dir="${POUDRIERE_DATA}/cache/${JAILNAME}-*"
 	rm -rf ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} || :
 	echo " done"
-	if [ "${CLEAN}" == "none" ]; then
+	if [ "${CLEANJAIL}" = "none" ]; then
 		return 0
 	fi
 	msg_n "Cleaning ${JAILNAME} data..."
-	case ${CLEAN} in
-		all)
-			find ${POUDRIERE_DATA} -name "${JAILNAME}" -type d | xargs rm -rf || :
-			;;
-		logs)
-			logs_dir="${POUDRIERE_DATA}/logs/bulk/${JAILNAME}-*"
-			rm -rf ${logs_dir} || :
-			;;
-		packages)
-			pkgs_dir="${POUDRIERE_DATA}/packages/${JAILNAME}-*"
-			rm -rf ${pkgs_dir} || :
-			;;
-		wrkdirs)
-			wrk_dir="${POUDRIERE_DATA}/wrkdirs/${JAILNAME}*"
-			rm -rf ${wrk_dir} || :
-			;;
+	case ${CLEANJAIL} in
+		all) clean_dir="${POUDRIERE_DATA}" ;;
+		cache) clean_dir="${POUDRIERE_DATA}/cache"; depth=1 ;;
+		logs) clean_dir="${POUDRIERE_DATA}/logs"; depth=1 ;;
+		packages) clean_dir="${POUDRIERE_DATA}/packages"; depth=1 ;;
+		wrkdirs) clean_dir="${POUDRIERE_DATA}/wrkdirs"; depth=1 ;;
 	esac
+	if [ -n "${clean_dir}" ]; then
+		find "${clean_dir}/" -name "${JAILNAME}-*" \
+			${depth:+-maxdepth ${depth}} -print0 | xargs -0 rm -rf || :
+	fi
 	echo " done"
 }
 
@@ -890,7 +884,7 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:xC:" FLAG; do
 			CREATE=1
 			;;
 		C)
-			CLEAN=${OPTARG}
+			CLEANJAIL=${OPTARG}
 			;;
 		d)
 			DELETE=1
@@ -936,7 +930,7 @@ saved_argv="$@"
 shift $((OPTIND-1))
 
 METHOD=${METHOD:-ftp}
-CLEAN=${CLEAN:-none}
+CLEANJAIL=${CLEANJAIL:-none}
 if [ -n "${JAILNAME}" -a ${CREATE} -eq 0 ]; then
 	_jget ARCH ${JAILNAME} arch 2>/dev/null || :
 	_jget JAILFS ${JAILNAME} fs 2>/dev/null || :
