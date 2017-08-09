@@ -411,6 +411,21 @@ This specifies which SET to start/stop the jail with.
 Build the native-xbuild target and copy this into the jail.
 Used exclusively
 for cross building a ports set, typically via qemu-user tools.
+.It Fl C Ar data
+Clean poudriere
+.Ar data
+folders when deleting a jail. Only used for
+.Sy -d
+option.
+.Pp
+.Bl -tag -width "packagesXX"
+.Pa data
+options are the following:
+.It Sy all
+.It Sy cache
+.It Sy logs
+.It Sy packages
+.It Sy wkrdirs
 .El
 .Ss ports
 .Pp
