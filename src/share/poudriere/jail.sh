@@ -64,6 +64,10 @@ Options:
                      building for a different TARGET ARCH than the host.
                      Only applies if TARGET_ARCH and HOST_ARCH are different.
                      Will only be used if -m is svn*.
+Options for -d:
+    -C clean      -- Clean remaining data existing in poudriere data folder.
+                     See poudriere(8) for more details. Can be one of:
+                       all, logs, packages, wrkdirs
 
 Options for -s and -k:
     -p tree       -- Specify which ports tree to start/stop the jail with.
@@ -124,6 +128,28 @@ delete_jail() {
 	fi
 	cache_dir="${POUDRIERE_DATA}/cache/${JAILNAME}-*"
 	rm -rf ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} || :
+	echo " done"
+	if [ "${CLEAN}" == "none" ]; then
+		return 0
+	fi
+	msg_n "Cleaning ${JAILNAME} data..."
+	case ${CLEAN} in
+		all)
+			find ${POUDRIERE_DATA} -name "${JAILNAME}" -type d | xargs rm -rf || :
+			;;
+		logs)
+			logs_dir="${POUDRIERE_DATA}/logs/bulk/${JAILNAME}-*"
+			rm -rf ${logs_dir} || :
+			;;
+		packages)
+			pkgs_dir="${POUDRIERE_DATA}/packages/${JAILNAME}-*"
+			rm -rf ${pkgs_dir} || :
+			;;
+		wrkdirs)
+			wrk_dir="${POUDRIERE_DATA}/wrkdirs/${JAILNAME}*"
+			rm -rf ${wrk_dir} || :
+			;;
+	esac
 	echo " done"
 }
 
@@ -819,7 +845,7 @@ PTNAME=default
 SETNAME=""
 XDEV=0
 
-while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:x" FLAG; do
+while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:xC:" FLAG; do
 	case "${FLAG}" in
 		i)
 			INFO=1
@@ -862,6 +888,9 @@ while getopts "iJ:j:v:a:z:m:nf:M:sdklqcip:r:ut:z:P:x" FLAG; do
 			;;
 		c)
 			CREATE=1
+			;;
+		C)
+			CLEAN=${OPTARG}
 			;;
 		d)
 			DELETE=1
@@ -907,6 +936,7 @@ saved_argv="$@"
 shift $((OPTIND-1))
 
 METHOD=${METHOD:-ftp}
+CLEAN=${CLEAN:-none}
 if [ -n "${JAILNAME}" -a ${CREATE} -eq 0 ]; then
 	_jget ARCH ${JAILNAME} arch 2>/dev/null || :
 	_jget JAILFS ${JAILNAME} fs 2>/dev/null || :
