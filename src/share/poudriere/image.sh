@@ -379,13 +379,25 @@ usb)
 	# replace /tmp by a symlink to /var/tmp
 	rm -rf ${WRKDIR}/world/tmp
 	ln -s /var/tmp ${WRKDIR}/world/tmp
+
 	# Copy save_cfg to /etc
 	cp ${mnt}/usr/src/tools/tools/nanobsd/Files/root/save_cfg ${WRKDIR}/world/etc/
+
+	# Figure out Partition sizes
+	OS_SIZE=
+	calculate_ospart_size ${IMAGESIZE} ${CFG_SIZE} ${DATA_SIZE}
+	# Prune off a bit to fit the extra partitions and loaders
+	OS_SIZE=$(( ${OS_SIZE} - 1 ))
+	WORLD_SIZE=$(du -ms ${WRKDIR}/world | awk '{print $1}')
+	if [ ${WORLD_SIZE} -gt ${OS_SIZE} ]; then
+		err 2 "Installed OS Partition needs: ${WORLD_SIZE}m, but the OS Partitions are only: ${OS_SIZE}m.  Increase -s"
+	fi
+
 	# For correct booting it needs ufs formatted /cfg and /data partitions
 	TMPFILE=`mktemp -t poudriere-firmware` || exit 1
 	makefs -B little -s ${CFG_SIZE} ${WRKDIR}/cfg.img ${TMPFILE}
 	makefs -B little -s ${DATA_SIZE} ${WRKDIR}/data.img ${TMPFILE}
-	makefs -B little -s ${IMAGESIZE} -o label=${IMAGENAME} \
+	makefs -B little -s ${OS_SIZE}m -o label=${IMAGENAME} \
 		-o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world
 	;;
 zrawdisk)
@@ -434,7 +446,7 @@ tar)
 	;;
 firmware)
 	FINALIMAGE=${IMAGENAME}.img
-	mkimg -s gpt -b ${mnt}/boot/pmbr \
+	mkimg -s gpt -C ${IMAGESIZE} -b ${mnt}/boot/pmbr \
 		-p efi:=${mnt}/boot/boot1.efifat \
 		-p freebsd-boot:=${mnt}/boot/gptboot \
 		-p freebsd-ufs/${IMAGENAME}1:=${WRKDIR}/raw.img \

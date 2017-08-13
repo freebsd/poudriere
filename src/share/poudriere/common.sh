@@ -6791,6 +6791,54 @@ build_repo() {
 	fi
 }
 
+calculate_size_in_mb() {
+	case ${CALC_SIZE} in
+	*p)
+		CALC_SIZE=${CALC_SIZE%p}
+		CALC_SIZE=$(( ${CALC_SIZE} << 10 ))
+		;&
+	*t)
+		CALC_SIZE=${CALC_SIZE%t}
+		CALC_SIZE=$(( ${CALC_SIZE} << 10 ))
+		;&
+	*g)
+		CALC_SIZE=${CALC_SIZE%g}
+		CALC_SIZE=$(( ${CALC_SIZE} << 10 ))
+		;&
+	*m)
+		CALC_SIZE=${CALC_SIZE%m}
+	esac
+}
+
+calculate_ospart_size() {
+	local CALC_SIZE
+	local FULL_CALC_SIZE
+	local DATA_CALC_SIZE
+	local CFG_CALC_SIZE
+
+	# Figure out the size of the image in MB
+	CALC_SIZE=${IMAGESIZE}
+	calculate_size_in_mb
+	FULL_CALC_SIZE=${CALC_SIZE}
+
+	# Figure out the size of the /cfg partition
+	CALC_SIZE=${CFG_SIZE}
+	calculate_size_in_mb
+	CFG_CALC_SIZE=${CALC_SIZE}
+
+	# Figure out the size of the Data partition
+	if [ $# -eq 3 -o -n ${DATA_SIZE} ]; then
+		CALC_SIZE=${DATA_SIZE}
+		calculate_size_in_mb
+		DATA_CALC_SIZE=${CALC_SIZE}
+	else
+		DATA_CALC_SIZE=0
+	fi
+
+	OS_SIZE=$(( ( ${FULL_CALC_SIZE} - ${CFG_CALC_SIZE} - ${DATA_CALC_SIZE} ) / 2 ))
+	msg "OS Partiton size: ${OS_SIZE}m"
+}
+
 # Builtin-only functions
 _BUILTIN_ONLY=""
 for _var in ${_BUILTIN_ONLY}; do
