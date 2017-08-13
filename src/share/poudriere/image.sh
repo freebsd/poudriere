@@ -385,7 +385,7 @@ usb)
 	TMPFILE=`mktemp -t poudriere-firmware` || exit 1
 	makefs -B little -s ${CFG_SIZE} ${WRKDIR}/cfg.img ${TMPFILE}
 	makefs -B little -s ${DATA_SIZE} ${WRKDIR}/data.img ${TMPFILE}
-	makefs -B little ${IMAGESIZE:+-s ${IMAGESIZE}} -o label=${IMAGENAME} \
+	makefs -B little -s ${IMAGESIZE} -o label=${IMAGENAME} \
 		-o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world
 	;;
 zrawdisk)
