@@ -293,32 +293,32 @@ Defaults to
 This specifies the type of image to create:
 .Bl -tag -width "rawfirmware"
 .It iso
-ISO 9660 format image
+An ISO 9660 format image.
 .It iso+mfs
-ISO 9660 format image where the root filesystem gets MFS mounted
+An ISO 9660 format image where the root filesystem gets MFS mounted.
 .It iso+zmfs
-ISO 9660 format image where the root filesystem is LZ77 compressed and gets MFS
-mounted
+An ISO 9660 format image where the root filesystem is LZ77 compressed and gets MFS
+mounted.
 .It usb
-a GPT-layout prepared UFS2 image containing a UEFI boot loader
+A GPT-layout prepared UFS2 image containing a UEFI boot loader.
 .It usb+mfs
-a GPT-layout prepared UFS2 image containing a UEFI boot loader where the root
-filesystem gets MFS mounted
+A GPT-layout prepared UFS2 image containing a UEFI boot loader where the root
+filesystem gets MFS mounted.
 .It usb+zmfs
-a GPT-layout prepared UFS2 image containing a UEFI boot loader where the root
-filesystem is LZ77 compressed and gets MFS mounted
+A GPT-layout prepared UFS2 image containing a UEFI boot loader where the root
+filesystem is LZ77 compressed and gets MFS mounted.
 .It rawdisk
-a raw UFS2, softupdates-enabled, disk image
+A raw UFS2, softupdates-enabled, disk image.
 .It zrawdisk
-a raw ZFS disk image
+A raw ZFS disk image.
 .It tar
-an XZ-compressed tarball
+An XZ-compressed tarball.
 .It firmware
 A nanobsd style image with a GPT partitions and a UEFI boot loader.
 .It rawfirmware
-a raw disk image
+A raw disk image.
 .It embedded
-Create a u-boot ready embedded image
+Create a u-boot ready embedded image.
 .El
 .It Fl X Ar excludefile
 This specifies a list of files to exclude from the final image.
