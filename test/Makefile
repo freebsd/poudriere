@@ -1,6 +1,7 @@
 TESTS=\
 	cache.sh \
 	encode_args.sh \
+	list.sh \
 	locks.sh \
 	locks_critical_section.sh \
 	locks_critical_section_nested.sh \
