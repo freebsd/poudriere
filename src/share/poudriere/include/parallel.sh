@@ -209,7 +209,7 @@ parallel_run() {
 
 	[ ${NBPARALLEL} -lt ${PARALLEL_JOBS} ] && NBPARALLEL=$((NBPARALLEL + 1))
 	PARALLEL_CHILD=1 spawn parallel_exec "$@"
-	PARALLEL_PIDS="${PARALLEL_PIDS} $! "
+	list_add PARALLEL_PIDS "$!"
 
 	return ${ret}
 }
