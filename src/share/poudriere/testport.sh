@@ -205,6 +205,8 @@ markfs prepkg ${MASTERMNT}
 
 _log_path log
 
+PARALLEL_JOBS=${BUILD_PARALLEL_JOBS}
+
 POUDRIERE_BUILD_TYPE=bulk parallel_build ${JAILNAME} ${PTNAME} ${SETNAME}
 if [ $(bget stats_failed) -gt 0 ] || [ $(bget stats_skipped) -gt 0 ]; then
 	failed=$(bget ports.failed | awk '{print $1 ":" $3 }' | xargs echo)
@@ -225,8 +227,6 @@ nbbuilt=$(bget stats_built)
 [ ${BUILD_REPO} -eq 1 -a ${nbbuilt} -gt 0 ] && build_repo
 
 commit_packages
-
-PARALLEL_JOBS=${BUILD_PARALLEL_JOBS}
 
 bset_job_status "testing" "${ORIGIN}"
 
