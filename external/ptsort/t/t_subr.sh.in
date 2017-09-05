@@ -1,0 +1,147 @@
+#!/bin/sh
+#-
+# Copyright (c) 2017 Dag-Erling Smørgrav
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. The name of the author may not be used to endorse or promote
+#    products derived from this software without specific prior written
+#    permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+
+#
+# Support code for writing TAP tests in Bourne shell
+#
+# To use this, add the following at the top of your test script:
+#
+# . t_subr.sh
+#
+# Run your tests, invoking either not_ok() or ok() after each.
+#
+# Finally, call tap() to print the output.
+#
+
+set -E
+
+# Who and where am I?
+selfbin=$(realpath "$0")
+selfdir="${selfbin%/*}"
+progname="${selfbin##*/}"
+
+# Source directories
+srcdir="@srcdir@"
+top_srcdir="@top_srcdir@"
+abs_srcdir="@abs_srcdir@"
+abs_top_srcdir="@abs_top_srcdir@"
+
+# Build directories
+builddir="@builddir@"
+top_builddir="@top_builddir@"
+abs_builddir="@abs_builddir@"
+abs_top_builddir="@abs_top_builddir@"
+
+# Verbose flag
+_verbose=
+
+# Number of tests, number of failed / passed tests, test output
+_n=0
+_n_not_ok=0
+
+_n_ok=0
+_tap=
+
+#
+# Print an error message and terminate.
+#
+error() {
+	echo "${progname}: $@" >&2
+	exit 1
+}
+
+#
+# Print a warning message.
+#
+warning() {
+	echo "${progname}: $@" >&2
+}
+
+#
+# Insert an informational message into the TAP output if the verbose
+# flag is set.
+#
+verbose() {
+	if [ -n "${_verbose}" ] ; then
+		_tap="${_tap}
+$@"
+	fi
+}
+
+#
+# Record a test as failed
+#
+not_ok() {
+	: $((_n=_n+1))
+	: $((_n_not_ok=_n_not_ok+1))
+	_tap="${_tap}
+not ok ${n} - $@"
+}
+
+#
+# Record a test as successful.
+#
+ok() {
+	: $((_n=_n+1))
+	: $((_n_ok=_n_ok+1))
+	_tap="${_tap}
+ok ${n} - $@"
+}
+
+#
+# Print the result.
+#
+tap() {
+	[ "${_n}" -gt 0 ] || exit 1
+	echo "1..${_n}${_tap}"
+	[ "${_n_not_ok}" -eq 0 ]
+}
+
+#
+# Print a usage message and terminate.
+#
+usage() {
+	echo "${progname} [-v]" >&2
+	exit 1
+}
+
+#
+# Parse command-line options.
+#
+while getopts "v" opt ; do
+	case "${opt}" in
+	v)
+		_verbose=1
+		;;
+	*)
+		usage
+		;;
+	esac
+done

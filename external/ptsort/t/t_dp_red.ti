@@ -1,0 +1,17 @@
+# Create a root node and enough successors to increase its depth to 3.
+r	a1
+a1	a2
+a2	a3
+r	b1
+b1	b2
+b2	b3
+
+# Boost the root node's priority.  Normally, this has no effect as it
+# is the root of the graph, but the bug causes the root's depth to be
+# reset to 0.
+r	99
+
+# Add more successors, which should have no effect on the root node,
+# but the bug causes its priority to be reset to 1 (and its depth
+# increased from 0 to 1).
+r	c1
