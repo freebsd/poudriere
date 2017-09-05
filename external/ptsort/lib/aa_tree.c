@@ -221,7 +221,7 @@ aa_insert_r(aa_tree *tree, aa_node *parent, aa_node **nodep, void *data)
 		return (node->data);
 	} else if (cmp < 0) {
 		ret = aa_insert_r(tree, node, &node->left, data);
-	} else if (cmp > 0) {
+	} else /* (cmp > 0) */ {
 		ret = aa_insert_r(tree, node, &node->right, data);
 	}
 	node = aa_split(aa_skew(node));
@@ -269,7 +269,7 @@ aa_delete_r(aa_tree *tree, aa_node **nodep, void *key)
 		}
 	} else if (cmp < 0) {
 		ret = aa_delete_r(tree, &node->left, key);
-	} else if (cmp > 0) {
+	} else /* (cmp > 0) */ {
 		ret = aa_delete_r(tree, &node->right, key);
 	}
 	if (node->left->level < node->level - 1 ||
@@ -313,7 +313,7 @@ aa_find_r(const aa_node *node, const void *key, aa_comparator compare)
 		ret = node->data;
 	else if (cmp < 0)
 		ret = aa_find_r(node->left, key, compare);
-	else if (cmp > 0)
+	else /* (cmp > 0) */
 		ret = aa_find_r(node->right, key, compare);
 	return (ret);
 }
@@ -338,7 +338,7 @@ aa_first(const aa_tree *tree, aa_iterator **iterp)
 	while (node->left != &aa_nil)
 		node = node->left;
 	iter->cur = node;
-	return (node->data);
+	return (iter->cur->data);
 }
 
 void *

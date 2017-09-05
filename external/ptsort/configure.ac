@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([ptsort], [0.20170215], [des@des.no],
+AC_INIT([ptsort], [1.20170904], [des@des.no],
     [ptsort], [https://www.github.com/dag-erling/ptsort])
 AC_CONFIG_SRCDIR([bin/ptsort.c])
 AC_CONFIG_MACRO_DIR([m4])
@@ -45,5 +45,6 @@ AC_CONFIG_FILES([
     bin/Makefile
     lib/Makefile
     t/Makefile
+    t/t_subr.sh
 ])
 AC_OUTPUT
