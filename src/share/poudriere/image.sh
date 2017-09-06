@@ -442,7 +442,7 @@ usb)
 	;;
 tar)
 	FINALIMAGE=${IMAGENAME}.txz
-	tar -f ${OUTPUTDIR}/${FINALIMAGE} -cJ -C ${WRKDIR}/world .
+	tar -f - -c -C ${WRKDIR}/world . | xz -T0 -c > ${OUTPUTDIR}/${FINALIMAGE}
 	;;
 firmware)
 	FINALIMAGE=${IMAGENAME}.img
