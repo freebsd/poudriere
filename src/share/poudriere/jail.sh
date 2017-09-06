@@ -65,10 +65,9 @@ Options:
     -D            -- Do a full git clone without --depth (default: --depth=1)
     -t version    -- Version of FreeBSD to upgrade the jail to.
     -U url        -- Specify a url to fetch the sources (with method git and/or svn).
-    -x            -- Build and setup native-xtools cross compile tools in jail when
-                     building for a different TARGET ARCH than the host.
+    -X            -- Do not build and setup native-xtools cross compile tools in jail
+                     when building for a different TARGET ARCH than the host.
                      Only applies if TARGET_ARCH and HOST_ARCH are different.
-                     Will only be used if -m is svn*.
 
 Options for -s and -k:
     -p tree       -- Specify which ports tree to start/stop the jail with.
@@ -436,8 +435,13 @@ build_native_xtools() {
 	[ ${QEMU_EMULATING} -eq 1 ] || return 0
 	setup_build_env
 
-	msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
 	: ${XDEV_SRC:=/usr/src}
+	# Basic sanity check
+	if [ ! -f ${XDEV_SRC}/Makefile ] || [ ! -f ${XDEV_SRC}/Makefile.inc1 ]; then
+		err 1 "${XDEV_SRC} must be a working src tree to build native-xtools. Perhaps you meant to specify -X?"
+	fi
+
+	msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
 	${MAKE_CMD} -C ${XDEV_SRC} native-xtools ${MAKE_JOBS} \
 	    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools' in ${XDEV_SRC}"
 	XDEV_TOOLS=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
@@ -937,11 +941,11 @@ INFO=0
 UPDATE=0
 PTNAME=default
 SETNAME=""
-XDEV=0
+XDEV=1
 BUILD=0
 GIT_DEPTH=--depth=1
 
-while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:Dx" FLAG; do
+while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DX" FLAG; do
 	case "${FLAG}" in
 		b)
 			BUILD=1
@@ -1028,8 +1032,8 @@ while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:Dx" FLAG; do
 		t)
 			TORELEASE=${OPTARG}
 			;;
-		x)
-			XDEV=1
+		X)
+			XDEV=0
 			;;
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"

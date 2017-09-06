@@ -509,19 +509,12 @@ source tree mounted inside the jail.
 instead of upgrading to the latest security fix of the jail version, you can
 jump to the new specified
 .Ar version .
+.It Fl X
+Do not build and setup native-xtools cross compile tools in jail
+when building for a different TARGET ARCH than the host.
+Only applies if TARGET_ARCH and HOST_ARCH are different.
 .It Fl z Ar set
 This specifies which SET to start/stop the jail with.
-.It Fl x
-Build the native-xtools target using the host's
-.Pa /usr/src
-tree and copy this
-into the jail.
-The use of
-.Pa /usr/src
-is due to a bug in the native-xtools build which does not allow it to be
-built from the jail's own source.
-Used exclusively
-for cross building a ports set, typically via qemu-user tools.
 .It Fl D
 When creating the jail from a git checkout, clone it with the full history
 instead of a --depth=1.
