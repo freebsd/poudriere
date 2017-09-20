@@ -73,7 +73,7 @@ Options:
 Options for -d:
     -C clean      -- Clean remaining data existing in pourdiere data folder.
                      See poudriere(8) for more details. Can be one of:
-                       all, logs, packages, wrkdirs
+                       all, cache, logs, packages, wrkdirs
 Options for -s and -k:
     -p tree       -- Specify which ports tree to start/stop the jail with.
     -z set        -- Specify which SET the jail to start/stop with.
@@ -122,6 +122,7 @@ list_jail() {
 
 delete_jail() {
 	local cache_dir method
+	local clean_dir depth
 
 	test -z ${JAILNAME} && usage JAILNAME
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
@@ -140,28 +141,22 @@ delete_jail() {
 	rm -rf ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} \
 		${POUDRIERE_DATA}/.m/${JAILNAME}-* || :
 	echo " done"
-	if [ "${CLEAN}" == "none" ]; then
-        return 0
-    fi
-    msg_n "Cleaning ${JAILNAME} data..."
-    case ${CLEAN} in
-        all)
-            find ${POUDRIERE_DATA} -name "${JAILNAME}" -type d | xargs rm -rf || :
-            ;;
-        logs)
-            logs_dir="${POUDRIERE_DATA}/logs/bulk/${JAILNAME}-*"
-            rm -rf ${logs_dir} || :
-            ;;
-        packages)
-            pkgs_dir="${POUDRIERE_DATA}/packages/${JAILNAME}-*"
-            rm -rf ${pkgs_dir} || :
-            ;;
-        wrkdirs)
-            wrk_dir="${POUDRIERE_DATA}/wrkdirs/${JAILNAME}*"
-            rm -rf ${wrk_dir} || :
-            ;;
-    esac
-    echo " done"
+	if [ "${CLEANJAIL}" == "none" ]; then
+		return 0
+	fi
+	msg_n "Cleaning ${JAILNAME} data..."
+	case ${CLEANJAIL} in
+		all) cleandir="${POUDRIERE_DATA}" ;;
+		cache) cleandir="${POUDRIERE_DATA}/cache"; depth=1 ;;
+		logs) cleandir="${POUDRIERE_DATA}/logs"; depth=1 ;;
+		packages) cleandir="${POUDRIERE_DATA}/packages"; depth=1 ;;
+		wrkdirs) cleandir="${POUDRIERE_DATA}/wkdirs"; depth=1 ;;
+	esac
+	if [ -n "${clean_dir}" ]; then
+		find "${clean_dir}/" -name "${JAILNAME}-*" \
+			${depth:+-maxdepth ${depth}} -print0 | xargs -0 rm -rf || :
+	fi
+	echo " done"
 }
 
 cleanup_new_jail() {
@@ -1018,7 +1013,7 @@ while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 			CREATE=1
 			;;
 		C)
-			CLEAN=${OPTARG}
+			CLEANJAIL=${OPTARG}
 			;;
 		d)
 			DELETE=1
@@ -1076,7 +1071,7 @@ shift $((OPTIND-1))
 post_getopts
 
 METHOD=${METHOD:-ftp}
-CLEAN=${CLEAN:-none}
+CLEANJAIL=${CLEAN:-none}
 if [ -n "${JAILNAME}" -a ${CREATE} -eq 0 ]; then
 	_jget ARCH ${JAILNAME} arch 2>/dev/null || :
 	_jget JAILFS ${JAILNAME} fs 2>/dev/null || :
