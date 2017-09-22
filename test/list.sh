@@ -115,3 +115,8 @@ assert_list "01 /*"
 
 list_remove LIST "/*"
 assert_list "01"
+
+# Test removing of duplicates causing duplicate items of unremoved
+LIST="01 02 03 04 03 "
+list_remove LIST 03
+assert_list "01 02 03 04"

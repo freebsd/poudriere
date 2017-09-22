@@ -174,6 +174,5 @@ list_remove() {
 
 	eval "value=\"\${${var}}\""
 	case "${value}" in *" ${item} "*) ;; *) return 0 ;; esac
-
-	setvar "${var}" "${value%* "${item}" *}${value#* "${item}" *}"
+	setvar "${var}" "${value% "${item}" *}${value##* "${item}" }"
 }
