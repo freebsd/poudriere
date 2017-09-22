@@ -1155,9 +1155,9 @@ show_build_summary() {
 	_bget buildname buildname 2>/dev/null || :
 	now=$(clock -epoch)
 
-	calculate_elapsed_from_log ${now} ${log} || return 1
+	calculate_elapsed_from_log "${now}" "${log}" || return 1
 	elapsed=${_elapsed_time}
-	calculate_duration buildtime ${elapsed}
+	calculate_duration buildtime "${elapsed}"
 
 	printf "[${MASTERNAME}] [${buildname}] [${status}] \
 Queued: %-${queue_width}d ${COLOR_SUCCESS}Built: %-${queue_width}d \
@@ -3627,7 +3627,9 @@ calculate_elapsed_from_log() {
 	local log="$2"
 
 	[ -f "${log}/.poudriere.status" ] || return 1
-	start_end_time=$(stat -f '%B %m' ${log}/.poudriere.status.journal% 2>/dev/null || stat -f '%B %m' ${log}/.poudriere.status)
+	start_end_time=$(stat -f '%B %m' \
+	    "${log}/.poudriere.status.journal%" 2>/dev/null || \
+	    stat -f '%B %m' "${log}/.poudriere.status")
 	start_time=${start_end_time% *}
 	if status_is_stopped "${status}"; then
 		end_time=${start_end_time#* }
