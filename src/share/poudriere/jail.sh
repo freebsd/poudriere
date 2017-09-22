@@ -70,6 +70,10 @@ Options:
                      Only applies if TARGET_ARCH and HOST_ARCH are different.
                      Will only be used if -m is svn*.
 
+Options for -d:
+    -C clean      -- Clean remaining data existing in pourdiere data folder.
+                     See poudriere(8) for more details. Can be one of:
+                       all, cache, logs, packages, wrkdirs
 Options for -s and -k:
     -p tree       -- Specify which ports tree to start/stop the jail with.
     -z set        -- Specify which SET the jail to start/stop with.
@@ -118,6 +122,7 @@ list_jail() {
 
 delete_jail() {
 	local cache_dir method
+	local clean_dir depth
 
 	test -z ${JAILNAME} && usage JAILNAME
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
@@ -135,6 +140,22 @@ delete_jail() {
 	cache_dir="${POUDRIERE_DATA}/cache/${JAILNAME}-*"
 	rm -rf ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} \
 		${POUDRIERE_DATA}/.m/${JAILNAME}-* || :
+	echo " done"
+	if [ "${CLEANJAIL}" = "none" ]; then
+		return 0
+	fi
+	msg_n "Cleaning ${JAILNAME} data..."
+	case ${CLEANJAIL} in
+		all) cleandir="${POUDRIERE_DATA}" ;;
+		cache) cleandir="${POUDRIERE_DATA}/cache"; depth=1 ;;
+		logs) cleandir="${POUDRIERE_DATA}/logs"; depth=1 ;;
+		packages) cleandir="${POUDRIERE_DATA}/packages"; depth=1 ;;
+		wrkdirs) cleandir="${POUDRIERE_DATA}/wkdirs"; depth=1 ;;
+	esac
+	if [ -n "${clean_dir}" ]; then
+		find "${clean_dir}/" -name "${JAILNAME}-*" \
+			${depth:+-maxdepth ${depth}} -print0 | xargs -0 rm -rf || :
+	fi
 	echo " done"
 }
 
@@ -941,7 +962,7 @@ XDEV=0
 BUILD=0
 GIT_DEPTH=--depth=1
 
-while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:Dx" FLAG; do
+while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 	case "${FLAG}" in
 		b)
 			BUILD=1
@@ -990,6 +1011,9 @@ while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:Dx" FLAG; do
 			;;
 		c)
 			CREATE=1
+			;;
+		C)
+			CLEANJAIL=${OPTARG}
 			;;
 		d)
 			DELETE=1
@@ -1047,6 +1071,7 @@ shift $((OPTIND-1))
 post_getopts
 
 METHOD=${METHOD:-ftp}
+CLEANJAIL=${CLEAN:-none}
 if [ -n "${JAILNAME}" -a ${CREATE} -eq 0 ]; then
 	_jget ARCH ${JAILNAME} arch 2>/dev/null || :
 	_jget JAILFS ${JAILNAME} fs 2>/dev/null || :
