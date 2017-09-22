@@ -159,15 +159,21 @@ list_add() {
 	[ $# -eq 2 ] || eargs list_add var item
 	local var="$1"
 	local item="$2"
-	eval "case \"\${${var}}\" in *\ ${item}\ *) return ;; esac;"
-	eval "${var}=\"\${${var}} ${item} \""
+	local value
+
+	eval "value=\"\${${var}}\""
+	case "${value}" in *\ ${item}\ *) return 0 ;; esac
+	setvar "${var}" "${value} ${item} "
 }
 
 list_remove() {
 	[ $# -eq 2 ] || eargs list_remove var item
 	local var="$1"
 	local item="$2"
+	local value
 
-	eval "case \"\${${var}}\" in *\ ${item}\ *) ;; *) return 0 ;; esac;"
-	eval "${var}=\"\${${var}%* ${item} *}\${${var}#* ${item} *}\""
+	eval "value=\"\${${var}}\""
+	case "${value}" in *\ ${item}\ *) ;; *) return 0 ;; esac
+
+	setvar "${var}" "${value%* ${item} *}${value#* ${item} *}"
 }

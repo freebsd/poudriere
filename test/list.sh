@@ -93,3 +93,11 @@ assert_list "01" "Expected 01 - right"
 
 list_remove LIST 01
 assert_list "" "Expected blank - right"
+
+# Test eval parsing
+LIST=
+list_add LIST 01
+list_add LIST "02;"
+list_add LIST "03"
+list_remove LIST 03
+assert_list "01 02;" "Parsing error"
