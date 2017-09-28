@@ -273,8 +273,12 @@ ret=0
 # Don't show timestamps in msg() which goes to logs, only job_msg()
 # which goes to master
 NO_ELAPSED_IN_MSG=1
+TIME_START_JOB=$(clock -monotonic)
 build_port "${ORIGINSPEC}" || ret=$?
 unset NO_ELAPSED_IN_MSG
+
+now=$(clock -monotonic)
+elapsed=$((${now} - ${TIME_START_JOB}))
 
 if [ ${ret} -ne 0 ]; then
 	if [ ${ret} -eq 2 ]; then
@@ -292,7 +296,7 @@ if [ ${ret} -ne 0 ]; then
 	errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
 		${log}/logs/errors/${PKGNAME}.log \
 		2> /dev/null)
-	badd ports.failed "${ORIGIN} ${PKGNAME} ${failed_phase} ${errortype}"
+	badd ports.failed "${ORIGIN} ${PKGNAME} ${failed_phase} ${errortype} ${elapsed}"
 	update_stats || :
 
 	if [ ${INTERACTIVE_MODE} -eq 0 ]; then
@@ -304,7 +308,7 @@ if [ ${ret} -ne 0 ]; then
 		exit 1
 	fi
 else
-	badd ports.built "${ORIGIN} ${PKGNAME}"
+	badd ports.built "${ORIGIN} ${PKGNAME} ${elapsed}"
 	if [ -f ${MASTERMNT}${PORTSDIR}/${ORIGIN}/.keep ]; then
 		save_wrkdir ${MASTERMNT} "${PKGNAME}" "${PORTSDIR}/${ORIGIN}" \
 		    "noneed" || :
