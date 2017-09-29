@@ -13,7 +13,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)trap.c	8.5 (Berkeley) 6/5/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/trap.c 281718 2015-04-18 23:49:57Z bdrewery $");
+__FBSDID("$FreeBSD: head/bin/sh/trap.c 319826 2017-06-11 16:54:04Z jilles $");
 
 #include <signal.h>
 #include <unistd.h>
@@ -412,6 +412,7 @@ onsig(int signo)
 void
 dotrap(void)
 {
+	struct stackmark smark;
 	int i;
 	int savestatus, prev_evalskip, prev_skipcount;
 
@@ -445,7 +446,9 @@ dotrap(void)
 
 					last_trapsig = i;
 					savestatus = exitstatus;
-					evalstring(trap[i], 0);
+					setstackmark(&smark);
+					evalstring(stsavestr(trap[i]), 0);
+					popstackmark(&smark);
 
 					/*
 					 * If such a command was not
@@ -475,19 +478,14 @@ dotrap(void)
 
 
 /*
- * Controls whether the shell is interactive or not.
+ * Controls whether the shell is interactive or not based on iflag.
  */
 void
-setinteractive(int on)
+setinteractive(void)
 {
-	static int is_interactive = -1;
-
-	if (on == is_interactive)
-		return;
 	setsignal(SIGINT);
 	setsignal(SIGQUIT);
 	setsignal(SIGTERM);
-	is_interactive = on;
 }
 
 
@@ -528,11 +526,13 @@ exitshell_savedstatus(void)
 			 */
 			evalskip = 0;
 			trap[0] = NULL;
+			FORCEINTON;
 			evalstring(p, 0);
 		}
 	}
 	if (!setjmp(loc2.loc)) {
 		handler = &loc2;		/* probably unnecessary */
+		FORCEINTON;
 		flushall();
 #if JOBS
 		setjobctl(0);

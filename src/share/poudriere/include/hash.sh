@@ -74,6 +74,21 @@ _hash_var_name() {
 	_hash_var_name=${_gsub}
 }
 
+hash_isset() {
+	local -; set +x
+	[ $# -ne 2 ] && eargs hash_isset var key
+	local var="$1"
+	local key="$2"
+	local _hash_var_name _value
+
+	_hash_var_name "${var}" "${key}"
+
+	# Look value from cache
+	eval "_value=\${${_hash_var_name}-__null}"
+
+	[ "${_value}" != "__null" ]
+}
+
 hash_get() {
 	local -; set +x
 	[ $# -ne 3 ] && eargs hash_get var key var_return
@@ -138,4 +153,26 @@ hash_unset() {
 
 	_hash_var_name "${var}" "${key}"
 	unset "${_hash_var_name}"
+}
+
+list_add() {
+	[ $# -eq 2 ] || eargs list_add var item
+	local var="$1"
+	local item="$2"
+	local value
+
+	eval "value=\"\${${var}}\""
+	case "${value}" in *" ${item} "*) return 0 ;; esac
+	setvar "${var}" "${value} ${item} "
+}
+
+list_remove() {
+	[ $# -eq 2 ] || eargs list_remove var item
+	local var="$1"
+	local item="$2"
+	local value
+
+	eval "value=\"\${${var}}\""
+	case "${value}" in *" ${item} "*) ;; *) return 0 ;; esac
+	setvar "${var}" "${value% "${item}" *}${value##* "${item}" }"
 }

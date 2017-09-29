@@ -1,4 +1,31 @@
 <!DOCTYPE html>
+<!--
+/*
+ * Copyright (c) 2014-2017 Bryan Drewery <bdrewery@FreeBSD.org>
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+-->
 <html lang="en">
 	<head>
 		<meta charset="utf-8">
@@ -38,6 +65,8 @@
 										<li class="disabled" id="nav_failed"><a href="#failed">Failed</a></li>
 										<li class="disabled" id="nav_skipped"><a href="#skipped">Skipped</a></li>
 										<li class="disabled" id="nav_ignored"><a href="#ignored">Ignored</a></li>
+										<li class="disabled" id="nav_queued"><a href="#queued">Queued</a></li>
+										<li class="disabled" id="nav_remaining"><a href="#remaining">Remaining</a></li>
 									</ul>
 								</li>
 								<li class="dropdown">
@@ -45,6 +74,7 @@
 									<ul class="dropdown-menu">
 										<li><a href="logs/" class="data_url" target="logs"><span class="glyphicon glyphicon-share-alt"></span>All Logs</a></li>
 										<li><a href="logs/errors/" class="data_url" target="logs"><span class="glyphicon glyphicon-share-alt"></span>Error Logs</a></li>
+										<li><a href=".poudriere.deps%25" class="data_url" target="dependecny_graph"><span class="glyphicon glyphicon-share-alt"></span>Dependency graph</a></li>
 									</ul>
 								</li>
 							</ul>
@@ -146,6 +176,7 @@
 							<thead>
 								<tr>
 									<th>Id</th>
+									<th>Package</th>
 									<th>Origin</th>
 									<th>Status</th>
 									<th>Elapsed</th>
@@ -169,6 +200,7 @@
 									<th>Package</th>
 									<th>Origin</th>
 									<th>Log</th>
+									<th>Time</th>
 								</tr>
 							</thead>
 							<tbody id="built_body"></tbody>
@@ -187,6 +219,7 @@
 									<th>Phase</th>
 									<th>Skipped</th>
 									<th>Log</th>
+									<th>Time</th>
 								</tr>
 							</thead>
 							<tbody id="failed_body"></tbody>
@@ -225,6 +258,37 @@
 							<tbody id="ignored_body"></tbody>
 						</table>
 					</div><!-- #ignored -->
+					<div id="queued_div" class="status" style="display: none;">
+						<h2 id="queued">Queued ports
+							<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
+						</h2>
+						<table class="display queued ports table-bordered" id="queued_table">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>Package</th>
+									<th>Origin</th>
+									<th>Reason</th>
+								</tr>
+							</thead>
+							<tbody id="queued_body"></tbody>
+						</table>
+					</div><!-- #queued -->
+					<div id="remaining_div" class="status" style="display: none;">
+						<h2 id="remaining">Remaining ports
+							<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
+						</h2>
+						<table class="display remaining ports table-bordered" id="remaining_table">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>Package</th>
+									<th>Status</th>
+								</tr>
+							</thead>
+							<tbody id="remaining_body"></tbody>
+						</table>
+					</div><!-- #remaining -->
 					<br class="clear" />
 				</div><!-- /col -->
 			</div><!-- /row -->

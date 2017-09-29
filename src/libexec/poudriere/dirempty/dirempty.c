@@ -30,6 +30,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <err.h>
+
+#ifdef SHELL
+#define main diremptycmd
+#include "bltin/bltin.h"
+#include <errno.h>
+#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+#endif
  
 static bool
 dir_empty(const char *path)
@@ -60,7 +67,7 @@ int
 main(int argc, char **argv)
 {
 	if (argc != 2)
-		err(EXIT_FAILURE, "Argument missing");
+		err(EXIT_FAILURE, "%s", "Argument missing");
  
 	if (dir_empty(argv[1]))
 		return (EXIT_SUCCESS);

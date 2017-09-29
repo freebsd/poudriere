@@ -1,0 +1,158 @@
+.\"-
+.\" Copyright (c) 2016-2017 Dag-Erling Smørgrav
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. The name of the author may not be used to endorse or promote
+.\"    products derived from this software without specific prior written
+.\"    permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.Dd September 4, 2017
+.Dt PTSORT 1
+.Os
+.Sh NAME
+.Nm ptsort
+.Nd Prioritized topological sort
+.Sh SYNOPSIS
+.Nm
+.Op Fl Ddpqsv
+.Op Fl o Ar output
+.Op Ar input ...
+.Sh DESCRIPTION
+The
+.Nm
+utility takes a directed acyclic graph of nodes as input and outputs
+the nodes in topological order.
+Unlike
+.Xr tsort 1 ,
+the
+.Nm ptsort
+utility allows nodes to be given a numeric priority.
+Priorities are propagated along edges so that each node's priority is
+greater than the priority of all its successors.
+Thus, it is possible to boost a specific node so that it, and all its
+predecessors, will be listed ahead of other unrelated nodes.
+.Pp
+The following options are available:
+.Bl -tag -width Fl
+.It Fl D
+Sort the output by depth first instead of priority first.
+.It Fl d
+Include each node's depth in the output.
+.It Fl p
+Include each node's priority in the output.
+.It Fl q
+Quiet mode.
+Do not warn about cycles in the input.
+.It Fl s
+Strict mode.
+Cycles in the input will cause
+.Nm
+to terminate with an exit code of 3.
+.It Fl v
+Verbose mode.
+Show detailed information while building and traversing the graph.
+.El
+.Pp
+The
+.Nm
+utility takes its input either from the files listed on the command
+line or, if no files were specified, from the standard input.
+All input is read into the same graph before processing.
+.Pp
+Each input line contains either two names or a name and a decimal
+integer, separated by any amount of whitespace.
+Any amount of leading or trailing whitespace is permitted.
+Names are arbitrary non-empty sequences of up to 255 printable,
+non-whitespace ASCII characters.
+It is strictly speaking possible, but not a good idea, for a node's
+name to consist entirely of digits.
+.Pp
+If the line contains two names, the effect is to insert a directed
+edge into the graph going from the first (predecessor) node to the
+second (successor) node.
+Either or both nodes are created if they do not already exist.
+If both names are identical, no edge is inserted, but the node is
+still created unless it already exists.
+.Pp
+If the line contains a name and a number, the effect is to raise the
+priority of that node to the given number, unless it is already
+higher.
+The node will be created if it does not already exist.
+.Pp
+Blank lines in the input are ignored.
+.Pp
+Any error in the input will cause
+.Nm
+to print an error message which includes the offending line and
+terminate with an exit code of 2.
+.Pp
+If no error occurred, the
+.Nm
+utility ouputs one line for each node in the graph, consisting of the
+node's name optionally preceded by its depth (if the
+.Fl d
+option was specified) and / or priority (if the
+.Fl p
+option was specified).
+By default, the list is sorted in decreasing order of priority, then
+depth, then name.
+If the
+.Fl D
+option was specified, it is sorted in decreasing order of depth, then
+priority, then name.
+.Sh DIAGNOSTICS
+If an error occurred, the
+.Nm
+utility exits with one of the following codes:
+.Bl -tag -width 999
+.It 1
+An error occurred while opening or reading from an input file or while
+trying to allocate memory.
+.It 2
+A syntax error was encountered in the input.
+.It 3
+A cycle was detected while running in strict mode.
+.El
+.Pp
+Otherwise, it exits with code 0.
+.Sh SEE ALSO
+.Xr tsort 1
+.Sh AUTHORS
+The
+.Nm
+utility and this manual page were written by
+.An Dag-Erling Sm\(/orgrav Aq Mt des@des.no .
+.Sh BUGS
+The
+.Nm
+utility uses a completely different algorithm than the similar
+.Xr tsort 1
+and may therefore produce different (but toplogically equivalent)
+output when given the same input.
+.Pp
+The
+.Nm
+utility should probably have been named
+.Nm klatch ,
+but the author has no imagination or appreciation for the literary
+arts.

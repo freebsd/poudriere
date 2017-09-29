@@ -117,7 +117,7 @@ post_getopts
 [ ${ALL} -eq 0 ] && : ${BUILDNAME_GLOB:=latest}
 
 POUDRIERE_BUILD_TYPE=bulk
-now="$(date +%s)"
+now="$(clock -epoch)"
 
 output_builder_info() {
 	local builders
@@ -147,7 +147,7 @@ add_summary_build() {
 	url=
 	if [ ${COMPACT} -eq 0 ]; then
 		if [ ${URL} -eq 0 ] || ! build_url url; then
-			url="${log}"
+			url="${PWD}/${log}"
 		fi
 	fi
 	status="${status#stopped:}"
@@ -164,117 +164,12 @@ add_summary_build() {
 	    "${nbignored:-?}" "${nbtobuild:-?}" "${time:-?}" ${url}
 }
 
-for_each_job() {
-	[ $# -eq 1 ] || eargs for_each_job action
-	local action="$1"
-
-	found_jobs=0
-	[ ${SCRIPT_MODE} -eq 0 -a -n "${BUILDNAME_GLOB}" \
-	    -a "${BUILDNAME_GLOB}" != "latest" ] && \
+status_for_each_build() {
+	[ ${SCRIPT_MODE} -eq 0 -a -n "${BUILDNAME_GLOB}" -a \
+	    "${BUILDNAME_GLOB}" != "latest" -a \
+	    "${BUILDNAME_GLOB}" != "latest-done" ] && \
 	    msg_warn "Looking up all matching builds. This may take a while."
-	for mastername in ${POUDRIERE_DATA}/logs/bulk/*; do
-		# Check empty dir
-		case "${mastername}" in
-			"${POUDRIERE_DATA}/logs/bulk/*") break ;;
-		esac
-		[ -L "${mastername}/latest" ] || continue
-		MASTERNAME=${mastername#${POUDRIERE_DATA}/logs/bulk/}
-		[ "${MASTERNAME}" = "latest-per-pkg" ] && continue
-		[ ${SHOW_FINISHED} -eq 0 ] && ! jail_runs ${MASTERNAME} && \
-		    continue
-
-		# Look for all wanted buildnames (will be 1 or Many(-a)))
-		for buildname in ${mastername}/${BUILDNAME_GLOB}; do
-			# Check for no match. If not using a glob ensure the
-			# file exists otherwise check for the glob coming back
-			if [ "${BUILDNAME_GLOB%\**}" != \
-			    "${BUILDNAME_GLOB}" ]; then
-				case "${buildname}" in
-					# Check no results
-					"${mastername}/${BUILDNAME_GLOB}")
-						break
-						;;
-					# Skip latest if from a glob, let it be
-					# found normally.
-					"${mastername}/latest")
-						continue
-						;;
-					# Don't want latest-per-pkg
-					"${mastername}/latest-per-pkg")
-						continue
-						;;
-				esac
-			else
-				# No match
-				[ -e "${buildname}" ] || break
-			fi
-			buildname="${buildname#${mastername}/}"
-			BUILDNAME="${buildname}"
-			# Unset so later they can be checked for NULL (don't
-			# want to lookup again if value looked up is empty
-			unset jailname ptname setname
-			# Try matching on any given JAILNAME/PTNAME/SETNAME,
-			# and if any don't match skip this MASTERNAME entirely.
-			# If the file is missing it's a legacy build, skip it
-			# but not the entire mastername if it has a match.
-			if [ -n "${JAILNAME}" ]; then
-				if _bget jailname jailname 2>/dev/null; then
-					[ "${jailname}" = "${JAILNAME}" ] || \
-					    continue 2
-				else
-					case "${MASTERNAME}" in
-						${JAILNAME}-*) ;;
-						*) continue 2 ;;
-					esac
-					continue
-				fi
-			fi
-			if [ -n "${PTNAME}" ]; then
-				if _bget ptname ptname 2>/dev/null; then
-					[ "${ptname}" = "${PTNAME}" ] || \
-					    continue 2
-				else
-					case "${MASTERNAME}" in
-						*-${PTNAME}) ;;
-						*) continue 2 ;;
-					esac
-					continue
-				fi
-			fi
-			if [ -n "${SETNAME}" ]; then
-				if _bget setname setname 2>/dev/null; then
-					[ "${setname}" = "${SETNAME%0}" ] || \
-					    continue 2
-				else
-					case "${MASTERNAME}" in
-						*-${SETNAME%0}) ;;
-						*) continue 2 ;;
-					esac
-					continue
-				fi
-			fi
-			# Dereference latest into actual buildname
-			[ "${buildname}" = "latest" ] && \
-			    _bget BUILDNAME buildname 2>/dev/null
-			# May be blank if build is still starting up
-			[ -z "${BUILDNAME}" ] && continue 2
-
-			found_jobs=$((${found_jobs} + 1))
-
-			# Lookup jailname/setname/ptname if needed. Delayed
-			# from earlier for performance for -a
-			[ -z "${jailname+null}" ] && \
-			    _bget jailname jailname 2>/dev/null || :
-			[ -z "${setname+null}" ] && \
-			    _bget setname setname 2>/dev/null || :
-			[ -z "${ptname+null}" ] && \
-			    _bget ptname ptname 2>/dev/null || :
-			log=${mastername}/${BUILDNAME}
-
-			${action}
-		done
-
-	done
+	for_each_build "$@"
 }
 
 show_summary() {
@@ -309,7 +204,7 @@ show_summary() {
 		    "Q" "B" "F" "S" "I" "R" "TIME"
 	fi
 
-	for_each_job add_summary_build
+	status_for_each_build add_summary_build
 
 	if [ ${SCRIPT_MODE} -eq 0 ]; then
 		if [ ${found_jobs} -eq 0 ]; then
@@ -333,13 +228,13 @@ show_summary() {
 }
 
 show_builder_info() {
-	for_each_job output_builder_info
+	status_for_each_build output_builder_info
 
 	return 0
 }
 
 show_results() {
-	for_each_job show_build_results
+	status_for_each_build show_build_results
 
 	return 0
 }

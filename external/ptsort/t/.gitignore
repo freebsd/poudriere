@@ -1,0 +1,4 @@
+*.log
+*.trs
+t_aa
+t_subr.sh

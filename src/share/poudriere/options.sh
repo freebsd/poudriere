@@ -35,6 +35,8 @@ Parameters:
     [ports...]  -- List of ports to set options on
 
 Options:
+    -a arch     -- Indicates the TARGET_ARCH if no jail is specified. Such as i386
+                   or amd64. Format of TARGET.TARGET_ARCH is also supported.
     -c          -- Use 'make config' target
     -C          -- Use 'make config-conditional' target (default)
     -j name     -- Run on the given jail
@@ -47,8 +49,10 @@ EOF
 	exit 1
 }
 
+ARCH=
 PTNAME=default
 SETNAME=""
+PTNAME_TMP=""
 DO_RECURSE=y
 COMMAND=config-conditional
 RECURSE_COMMAND=config-recursive
@@ -57,8 +61,14 @@ RECURSE_COMMAND=config-recursive
 
 [ $# -eq 0 ] && usage
 
-while getopts "cCj:f:p:nrsz:" FLAG; do
+while getopts "a:cCj:f:p:nrsz:" FLAG; do
 	case "${FLAG}" in
+		a)
+			ARCH=${OPTARG}
+			# If TARGET=TARGET_ARCH trim it away and just use
+			# TARGET_ARCH
+			[ "${ARCH%.*}" = "${ARCH#*.}" ] && ARCH="${ARCH#*.}"
+			;;
 		c)
 			COMMAND=config
 			;;
@@ -80,6 +90,7 @@ while getopts "cCj:f:p:nrsz:" FLAG; do
 			porttree_exists ${OPTARG} ||
 			    err 2 "No such ports tree: ${OPTARG}"
 			PTNAME=${OPTARG}
+			PTNAME_TMP=${OPTARG}
 			;;
 		n)
 			DO_RECURSE=
@@ -105,10 +116,18 @@ done
 shift $((OPTIND-1))
 post_getopts
 
+# checking jail and architecture consistency
+if [ -n "${JAILNAME}" -a -n "${ARCH}" ]; then
+	_jget _arch "${JAILNAME}" arch
+	if need_cross_build "${_arch}" "${ARCH}" ; then
+		err 1 "jail ${JAILNAME} and architecture ${ARCH} not compatible"
+	fi
+fi
+
 export PORTSDIR=`pget ${PTNAME} mnt`
 [ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 [ -z "${PORTSDIR}" ] && err 1 "No such ports tree: ${PTNAME}"
-which dialog4ports >/dev/null 2>&1 || err 1 "You must have ports-mgmt/dialog4ports installed on the host to use this command."
+command -v dialog4ports >/dev/null 2>&1 || err 1 "You must have ports-mgmt/dialog4ports installed on the host to use this command."
 
 if [ $# -eq 0 ]; then
 	[ -n "${BULK_LIST}" ] || err 1 "No packages specified"
@@ -120,7 +139,7 @@ else
 	LISTPORTS="$@"
 fi
 
-PORT_DBDIR=${POUDRIERED}/${JAILNAME}${JAILNAME:+-}${SETNAME}${SETNAME:+-}options
+PORT_DBDIR=${POUDRIERED}/${JAILNAME}${JAILNAME:+-}${PTNAME_TMP}${PTNAME_TMP:+-}${SETNAME}${SETNAME:+-}options
 
 mkdir -p ${PORT_DBDIR}
 
@@ -133,11 +152,12 @@ options_cleanup() {
 setup_makeconf ${__MAKE_CONF} "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 
 export TERM=${SAVED_TERM}
-for origin in ${LISTPORTS}; do
+for originspec in ${LISTPORTS}; do
+	originspec_decode "${originspec}" origin '' flavor
 	[ -d ${PORTSDIR}/${origin} ] || err 1 "No such port: ${origin}"
 	make PORT_DBDIR=${PORT_DBDIR} \
 		-C ${PORTSDIR}/${origin} \
-		${COMMAND}
+		${COMMAND} ${flavor:+FLAVOR=${flavor}}
 
 	if [ -n "${DO_RECURSE}" ]; then
 		make PORT_DBDIR=${PORT_DBDIR} \
@@ -145,6 +165,6 @@ for origin in ${LISTPORTS}; do
 			DIALOG4PORTS=`which dialog4ports` \
 			LOCALBASE=/nonexistent \
 			-C ${PORTSDIR}/${origin} \
-			${RECURSE_COMMAND}
+			${RECURSE_COMMAND} ${flavor:+FLAVOR=${flavor}}
 	fi
 done

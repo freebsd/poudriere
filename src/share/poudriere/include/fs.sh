@@ -39,22 +39,48 @@ createfs() {
 			-o atime=off \
 			-o mountpoint=${mnt} ${fs} || err 1 " fail"
 		echo " done"
+		# Must invalidate the zfs_getfs cache now in case of a
+		# negative entry.
+		cache_invalidate _zfs_getfs "${mnt}"
 	else
 		mkdir -p ${mnt}
 	fi
 }
 
 do_clone() {
-	local src dst common
-	set -- $(relpath "${1}" "${2}")
-	common="${1}"
-	src="${2}"
-	dst="${3}"
+	[ $# -lt 2 ] && eargs do_clone [-r] src dst
+	[ $# -gt 3 ] && eargs do_clone [-r] src dst
+	local src dst common relative FLAG
 
-	(
-		cd "${common}"
-		cpdup -i0 -x "${src}" "${dst}"
-	)
+	relative=0
+	while getopts "r" FLAG; do
+		case "${FLAG}" in
+			r) relative=1 ;;
+		esac
+	done
+	shift $((OPTIND-1))
+
+	if [ ${relative} -eq 1 ]; then
+		set -- $(relpath_common "${1}" "${2}")
+		common="${1}"
+		src="${2}"
+		dst="${3}"
+		(
+			cd "${common}"
+			cpdup -i0 -x "${src}" "${dst}"
+		)
+	else
+		cpdup -i0 -x "${1}" "${2}"
+	fi
+}
+
+rollback_file() {
+	[ $# -eq 3 ] || eargs rollback_file mnt snapshot var_return
+	local mnt="$1"
+	local snapshot="$2"
+	local var_return="$3"
+
+	setvar "${var_return}" "${mnt}/.poudriere-snap-${snapshot}"
 }
 
 rollbackfs() {
@@ -62,45 +88,114 @@ rollbackfs() {
 	local name=$1
 	local mnt=$2
 	local fs="${3-$(zfs_getfs ${mnt})}"
+	local sfile tries
 
 	if [ -n "${fs}" ]; then
-		zfs rollback -r "${fs}@${name}" || \
-		    err 1 "Unable to rollback ${fs}"
+		# ZFS has a race with rollback+snapshot.  If ran concurrently
+		# it is possible that the rollback will "succeed" but the
+		# dataset will be on the newly created snapshot.  Avoid this
+		# by creating a file that we know won't be in the expected
+		# snapshot and trying a few times before considering it a
+		# failure.  https://www.illumos.org/issues/7600
+		rollback_file "${mnt}" "${name}" sfile
+		# The file should already exist from a markfs call.  If it
+		# doesn't for some reason, make it here.  The reason
+		# for markfs to create it is to avoid just hitting race that
+		# this extra code is trying to avoid in the first place.
+		if ! [ -f "${sfile}" ] && ! : > "${sfile}"; then
+			# Cannot create our race check file, so just try
+			# and assume it is OK.
+			zfs rollback -r "${fs}@${name}" || \
+			    err 1 "Unable to rollback ${fs}"
+			: > "${sfile}" || :
+			return
+		fi
+		tries=0
+		while :; do
+			if ! zfs rollback -r "${fs}@${name}"; then
+				unlink "${sfile}"
+				err 1 "Unable to rollback ${fs} to ${name}"
+			fi
+			# Success
+			if ! [ -f "${sfile}" ]; then
+				break
+			fi
+			tries=$((tries + 1))
+			if [ ${tries} -eq 20 ]; then
+				unlink "${sfile}"
+				err 1 "Timeout rolling back ${fs} to ${name}"
+			fi
+			sleep 1
+		done
+		# Need to create the file to note which snapshot we're in.
+		: > "${sfile}"
 		return
 	fi
 
-	do_clone "${MASTERMNT}" "${mnt}"
+	do_clone -r "${MASTERMNT}" "${mnt}"
+}
+
+findmounts() {
+	local mnt="$1"
+	local pattern="$2"
+
+	mount | sort -r -k 2 | while read dev on pt opts; do
+		case "${pt}" in
+		${mnt}${pattern}*)
+			if [ "${dev#/dev/md*}" != "${dev}" ]; then
+				umount ${UMOUNT_NONBUSY} "${pt}" || \
+				    umount -f "${pt}" || :
+				mdconfig -d -u ${dev#/dev/md*}
+			else
+				echo "${pt}"
+			fi
+		;;
+		esac
+	done
 }
 
 umountfs() {
 	[ $# -lt 1 ] && eargs umountfs mnt childonly
 	local mnt=$1
 	local childonly=$2
-	local pattern
+	local pattern xargsmax
 
 	[ -n "${childonly}" ] && pattern="/"
 
-	[ -d "${mnt}" ] || return 0
-	mnt=$(realpath ${mnt})
-	mount | sort -r -k 2 | while read dev on pt opts; do
-		case ${pt} in
-		${mnt}${pattern}*)
-			umount -f ${pt} || :
-			[ "${dev#/dev/md*}" != "${dev}" ] && mdconfig -d -u ${dev#/dev/md*}
-		;;
-		esac
-	done
+	mnt=$(realpath "${mnt}" 2>/dev/null || echo "${mnt}")
+	xargsmax=
+	if [ ${UMOUNT_BATCHING} -eq 0 ]; then
+		xargsmax="-n 2"
+	fi
+	if ! findmounts "${mnt}" "${pattern}" | \
+	    xargs ${xargsmax} umount ${UMOUNT_NONBUSY}; then
+		findmounts "${mnt}" "${pattern}" | xargs ${xargsmax} umount -fv || :
+	fi
 
 	return 0
+}
+
+_zfs_getfs() {
+	[ $# -ne 1 ] && eargs _zfs_getfs mnt
+	local mnt="${1}"
+
+	mntres=$(realpath "${mnt}" 2>/dev/null || echo "${mnt}")
+	zfs list -rt filesystem -H -o name,mountpoint ${ZPOOL}${ZROOTFS} | \
+	    awk -vmnt="${mntres}" '$2 == mnt {print $1}'
 }
 
 zfs_getfs() {
 	[ $# -ne 1 ] && eargs zfs_getfs mnt
 	local mnt="${1}"
-	local mntres
+	local value
 
-	mntres=$(realpath "${mnt}")
-	mount -t zfs | awk -v n="${mntres}" ' $3 == n { print $1 }'
+	[ -n "${NO_ZFS}" ] && return 0
+	[ -z "${ZPOOL}${ZROOTFS}" ] && return 0
+
+	cache_call value _zfs_getfs "${mnt}"
+	if [ -n "${value}" ]; then
+		echo "${value}"
+	fi
 }
 
 mnt_tmpfs() {
@@ -158,6 +253,11 @@ clonefs() {
 			-o compression=off \
 			${fs}@${snap} \
 			${zfs_to}
+		# Must invalidate the zfs_getfs cache now in case of a
+		# negative entry.
+		cache_invalidate _zfs_getfs "${to}"
+		# Insert this into the zfs_getfs cache.
+		cache_set "${zfs_to}" _zfs_getfs "${to}"
 	else
 		[ ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs all ${to}
 		if [ "${snap}" = "clean" ]; then
@@ -165,7 +265,7 @@ clonefs() {
 			echo "debug" >> "${from}/usr/lib/.cpignore" || :
 			echo "freebsd-update" >> "${from}/var/db/.cpignore" || :
 		fi
-		do_clone "${from}" "${to}"
+		do_clone -r "${from}" "${to}"
 		if [ "${snap}" = "clean" ]; then
 			rm -f "${from}/usr/.cpignore" \
 			    "${from}/usr/lib/.cpignore" \
@@ -179,22 +279,31 @@ clonefs() {
 
 destroyfs() {
 	[ $# -ne 2 ] && eargs destroyfs name type
-	local mnt fs type
-	mnt=$1
-	type=$2
-	[ -d ${mnt} ] || return 0
-	fs=$(zfs_getfs ${mnt})
+	local mnt="$1"
+	local type="$2"
+	local fs
+
 	umountfs ${mnt} 1
 	if [ ${TMPFS_ALL} -eq 1 ]; then
-		umount -f ${mnt} 2>/dev/null || :
-	elif [ -n "${fs}" -a "${fs}" != "none" ]; then
-		zfs destroy -rf ${fs}
-		rmdir ${mnt}
-	else
-		rm -rfx ${mnt} 2>/dev/null || :
 		if [ -d "${mnt}" ]; then
-			chflags -R 0 ${mnt}
-			rm -rfx ${mnt}
+			if ! umount ${UMOUNT_NONBUSY} "${mnt}" 2>/dev/null; then
+				umount -f "${mnt}" 2>/dev/null || :
+			fi
+		fi
+	else
+		[ "${fs}" != "none" ] && fs=$(zfs_getfs ${mnt})
+		if [ -n "${fs}" -a "${fs}" != "none" ]; then
+			zfs destroy -rf ${fs}
+			rmdir ${mnt} || :
+			# Must invalidate the zfs_getfs cache.
+			cache_invalidate _zfs_getfs "${mnt}"
+		else
+			[ -d ${mnt} ] || return 0
+			rm -rfx ${mnt} 2>/dev/null || :
+			if [ -d "${mnt}" ]; then
+				chflags -R 0 ${mnt}
+				rm -rfx ${mnt}
+			fi
 		fi
 	fi
 }

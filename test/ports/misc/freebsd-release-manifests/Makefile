@@ -1,0 +1,33 @@
+# $FreeBSD: head/misc/freebsd-release-manifests/Makefile 429892 2016-12-29 12:41:04Z mat $
+
+PORTNAME=	freebsd-release-manifests
+DISTVERSION=	20161010
+PORTREVISION=	0
+FLAVORS=	DEFAULT FOO BAR
+FLAVOR?=	DEFAULT
+.if ${FLAVOR} != DEFAULT
+PKGNAMESUFFIX=	-${FLAVOR}
+.endif
+.if !${FLAVORS:M${FLAVOR}}
+.error Invalid FLAVOR '${FLAVOR}'
+.endif
+CATEGORIES=	misc
+MASTER_SITES=	#
+DISTFILES=	#
+
+MAINTAINER=	bdrewery@FreeBSD.org
+COMMENT=	FreeBSD release manifests
+
+LICENSE=	BSD2CLAUSE
+
+NO_BUILD=	yes
+NO_ARCH=	yes
+
+DATADIR=	${PREFIX}/share/freebsd
+
+do-install:
+	@${MKDIR} ${STAGEDIR}${DATADIR}/MANIFESTS
+	${INSTALL_DATA} ${FILESDIR}/MANIFESTS/* \
+	    ${STAGEDIR}${DATADIR}/MANIFESTS/
+
+.include <bsd.port.mk>

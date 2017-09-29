@@ -1,0 +1,15 @@
+cacheccmd		cachec
+clockcmd -n		clock
+diremptycmd -n		dirempty
+locked_mkdircmd		locked_mkdir
+mkdircmd -n		mkdir
+mkfifocmd -n		mkfifo
+mktempcmd -n		mktemp
+pwaitcmd		pwait
+realpathcmd -n		realpath
+renamecmd -n		rename
+rmdircmd -n		rmdir
+setproctitlecmd		setproctitle
+sleepcmd		sleep
+touchcmd		touch
+unlinkcmd -n		unlink

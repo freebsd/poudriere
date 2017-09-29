@@ -30,7 +30,8 @@ usage() {
 poudriere distclean [options]
 
 Options:
-    -J n        -- Run n jobs in parallel (Defaults to the number of CPUs)
+    -J n        -- Run n jobs in parallel (Defaults to the number of CPUs
+                   times 1.25)
     -p tree     -- Specify which ports tree to use for comparing to distfiles.
                    Can be specified multiple times. (Defaults to the 'default'
                    tree)
@@ -51,7 +52,7 @@ ALL=1
 while getopts "J:np:vy" FLAG; do
 	case "${FLAG}" in
 		J)
-			PARALLEL_JOBS=${OPTARG}
+			PREPARE_PARALLEL_JOBS=${OPTARG}
 			;;
 		n)
 			DRY_RUN=1
@@ -78,26 +79,28 @@ done
 shift $((OPTIND-1))
 post_getopts
 
+: ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}
+PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
+
 distfiles_cleanup() {
 	rm -f ${DISTFILES_LIST} ${DISTFILES_LIST}.expected \
 		${DISTFILES_LIST}.actual ${DISTFILES_LIST}.unexpected \
 		2>/dev/null
 }
 
-get_distinfo() {
-	local port="$1"
-
-	prefix_stderr_quick "(${COLOR_PORT}$1${COLOR_RESET})${COLOR_WARN}" \
-	    make -C "${PORTSDIR}/${port}" -V DISTINFO_FILE
+injail() {
+	"$@"
 }
-
 gather_distfiles() {
-	local origin="$1"
-	local distinfo_file="$(get_distinfo ${origin})"
+	local originspec="$1"
+	local distinfo_file
+
+	port_var_fetch_originspec "${originspec}" \
+	    DISTINFO_FILE distinfo_file || :
 
 	[ -f "${distinfo_file}" ] || return 0
 
-	msg_verbose "Gathering distfiles for: ${origin}"
+	msg_verbose "Gathering distfiles for: ${originspec}"
 
 	awk -v distdir="${DISTFILES_CACHE%/}" '/SIZE/ {print distdir "/" substr($2, 2, length($2) - 2)}' \
 		"${distinfo_file}" >> ${DISTFILES_LIST}
@@ -117,8 +120,11 @@ for PTNAME in ${PTNAMES}; do
 
 	msg "Gathering all expected distfiles for ports tree '${PTNAME}'"
 
-	for origin in $(listed_ports); do
-		parallel_run gather_distfiles ${origin}
+	for originspec in $(listed_ports); do
+		parallel_run \
+		    prefix_stderr_quick \
+		    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
+		    gather_distfiles "${originspec}"
 	done
 done
 parallel_stop
@@ -136,35 +142,12 @@ find -x ${DISTFILES_CACHE}/ -type f | sort > ${DISTFILES_LIST}.actual
 comm -1 -3 ${DISTFILES_LIST}.expected ${DISTFILES_LIST}.actual \
 	> ${DISTFILES_LIST}.unexpected
 
-file_cnt=$(wc -l ${DISTFILES_LIST}.unexpected | awk '{print $1}')
-
-if [ ${file_cnt} -eq 0 ]; then
-	msg "No stale distfiles to cleanup"
-	exit 0
-fi
-
 [ -s "${DISTFILES_LIST}.expected" ] || \
 	err 1 "Something went wrong. All distfiles would have been removed."
 
-hsize=$(cat ${DISTFILES_LIST}.unexpected | xargs stat -f '%i %z' | sort -u | \
-	awk '{total += $2} END {print total}' | \
-	awk -f ${AWKPREFIX}/humanize.awk
-)
-
-msg "Files to be deleted:"
-cat ${DISTFILES_LIST}.unexpected
-msg "Cleaning these will free: ${hsize}"
-
-if [ ${DRY_RUN} -eq 1 ];  then
-	msg "Dry run: not cleaning anything."
+ret=0
+do_confirm_delete "${DISTFILES_LIST}.unexpected" "stale distfiles" \
+    "${answer}" "${DRY_RUN}" || ret=$?
+if [ ${ret} -eq 2 ]; then
 	exit 0
-fi
-
-if [ -z "${answer}" ]; then
-	prompt "Proceed?" && answer="yes"
-fi
-
-if [ "${answer}" = "yes" ]; then
-	msg "Cleaning files"
-	cat ${DISTFILES_LIST}.unexpected | xargs rm -f
 fi

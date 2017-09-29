@@ -40,7 +40,7 @@ Options:
                    retry built/failed/skipped/ignored packages.
     -c          -- Clean all the previously built binary packages and logs.
     -C          -- Clean only the packages listed on the command line or
-                   -f file
+                   -f file.  Implies -c for -a.
     -i          -- Interactive mode. Enter jail for interactive testing and
                    automatically cleanup when done.
     -I          -- Advanced Interactive mode. Leaves jail running with ports
@@ -62,7 +62,7 @@ Options:
                    a stable ABI.
     -J n[:p]    -- Run n jobs in parallel, and optionally run a different
                    number of jobs in parallel while preparing the build.
-                   (Defaults to the number of CPUs)
+                   (Defaults to the number of CPUs for n and 1.25 times n for p)
     -j name     -- Run only on the given jail
     -N          -- Do not build package repository or INDEX when build
                    completed
@@ -185,6 +185,11 @@ while getopts "B:iIf:j:J:CcknNp:RFtrTsSvwz:a" FLAG; do
 	esac
 done
 
+if [ ${ALL} -eq 1 -a ${CLEAN_LISTED} -eq 1 ]; then
+	CLEAN=1
+	CLEAN_LISTED=0
+fi
+
 saved_argv="$@"
 shift $((OPTIND-1))
 post_getopts
@@ -192,7 +197,7 @@ post_getopts
 [ ${ALL} -eq 1 -a -n "${PORTTESTING}" ] && PORTTESTING_FATAL=no
 
 : ${BUILD_PARALLEL_JOBS:=${PARALLEL_JOBS}}
-: ${PREPARE_PARALLEL_JOBS:=${PARALLEL_JOBS}}
+: ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}
 PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
 
 test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
@@ -221,11 +226,10 @@ if [ -d ${LOGD} -a ${CLEAN} -eq 1 ]; then
 fi
 
 prepare_ports
-markfs prepkg ${MASTERMNT}
 
 if [ ${DRY_RUN} -eq 1 ]; then
+	bset status "done:"
 	msg "Dry run mode, cleaning up and exiting"
-	rm -rf ${PACKAGES_ROOT}/.building
 	tobuild=$(calculate_tobuild)
 	if [ ${tobuild} -gt 0 ]; then
 		[ ${PARALLEL_JOBS} -gt ${tobuild} ] &&
@@ -233,24 +237,22 @@ if [ ${DRY_RUN} -eq 1 ]; then
 		msg "Would build ${tobuild} packages using ${PARALLEL_JOBS} builders"
 
 		msg_n "Ports to build: "
-		{
-			find ${MASTERMNT}/.p/deps/ -mindepth 1 \
-			    -maxdepth 1
-			find ${MASTERMNT}/.p/pool/ -mindepth 2 \
-			    -maxdepth 2
-		} | while read pkgpath; do
-			pkgname=${pkgpath##*/}
-			cache_get_origin origin "${pkgpath##*/}"
-			echo "${origin}"
-		done | sort -u | tr '\n' ' '
+		cat "${MASTERMNT}/.p/all_pkgs" | \
+		    while read pkgname originspec; do
+			# Trim away DEPENDS_ARGS for display
+			originspec_decode "${originspec}" origin '' flavor
+			originspec_encode originspec "${origin}" '' "${flavor}"
+			echo "${originspec}"
+		done | sort | tr '\n' ' '
 		echo
 	else
 		msg "No packages would be built"
 	fi
 
-	cleanup
 	exit 0
 fi
+
+markfs prepkg ${MASTERMNT}
 
 PARALLEL_JOBS=${BUILD_PARALLEL_JOBS}
 
@@ -263,19 +265,14 @@ _bget nbfailed stats_failed
 _bget nbskipped stats_skipped
 _bget nbignored stats_ignored
 # Always create repository if it is missing (but still respect -N)
-if [ $PKGNG -eq 1 ] && \
-	[ ! -f ${MASTERMNT}/packages/digests.txz -o \
+if 	[ ! -f ${MASTERMNT}/packages/digests.txz -o \
 	  ! -f ${MASTERMNT}/packages/packagesite.txz ]; then
 	[ $nbbuilt -eq 0 -a ${BUILD_REPO} -eq 1 ] && 
 		msg "No package built, but repository needs to be created"
 	# This block mostly to avoid next
 # Package all newly built ports
 elif [ $nbbuilt -eq 0 ]; then
-	if [ $PKGNG -eq 1 ]; then
-		msg "No package built, no need to update the repository"
-	else
-		msg "No package built, no need to update INDEX"
-	fi
+	msg "No package built, no need to update the repository"
 	BUILD_REPO=0
 fi
 
@@ -292,7 +289,6 @@ run_hook bulk done ${nbbuilt} ${nbfailed} ${nbignored} ${nbskipped}
 [ ${INTERACTIVE_MODE} -gt 0 ] && enter_interactive
 
 bset status "done:"
-cleanup
 
 set +e
 

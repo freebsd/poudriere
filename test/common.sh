@@ -1,17 +1,27 @@
 THISDIR=$(realpath $(dirname $0))
 CMD=$(basename $0)
-POUDRIEREPATH=$(realpath ${THISDIR}/../src)
-POUDRIERE_ETC=${THISDIR}/etc
-SCRIPTPREFIX=${POUDRIEREPATH}/share/poudriere
-SCRIPTPATH="${SCRIPTPREFIX}/${CMD}.sh"
+POUDRIEREPATH=$(realpath ${THISDIR}/../src/bin/poudriere)
+POUDRIEREPREFIX=${POUDRIEREPATH%\/bin/*}
+SCRIPTPREFIX=${POUDRIEREPREFIX}/share/poudriere
 
-LIBEXECPREFIX=$(realpath ${POUDRIEREPATH}/..)
+SCRIPTPATH="${SCRIPTPREFIX}/${CMD}"
+POUDRIERE_ETC=${THISDIR}/etc
+
+LIBEXECPREFIX="${POUDRIEREPATH%src/bin/poudriere}"
 export PATH=${LIBEXECPREFIX}:${PATH}:/sbin:/usr/sbin
+
+: ${DISTFILES_CACHE:=$(mktemp -dt distfiles)}
+: ${BASEFS:=${POUDRIERE_ETC}}
 
 mkdir -p ${POUDRIERE_ETC}/poudriere.d
 cat > ${POUDRIERE_ETC}/poudriere.conf << EOF
 NO_ZFS=yes
-BASEFS=${POUDRIERE_ETC}
+BASEFS=${BASEFS}
+DISTFILES_CACHE=${DISTFILES_CACHE}
+USE_TMPFS=all
+USE_PROCFS=no
+USE_FDESCFS=no
+NOLINUX=yes
 EOF
 
 : ${VERBOSE:=1}
@@ -27,6 +37,11 @@ msg_debug() {
 	fi
 	msg "[DEBUG] $@" >&2
 }
+
+msg_warn() {
+	msg "[WARN] $@" >&2
+}
+
 msg_dev() {
 	if [ ${VERBOSE} -le 2 ]; then
 		msg_dev() { }
@@ -37,8 +52,8 @@ msg_dev() {
 
 assert() {
 	[ $# -eq 3 ] || eargs assert expected actual msg
-	local expected="$1"
-	local actual="$2"
+	local expected="$(echo "$1" | cat -v)"
+	local actual="$(echo "$2" | cat -v)"
 	local msg="$3"
 
 	: ${EXITVAL:=0}
@@ -47,6 +62,25 @@ assert() {
 
 	if [ "${actual}" != "${expected}" ]; then
 		aecho "${msg}: expected: '${expected}', actual: '${actual}'"
+		exit ${EXITVAL}
+	fi
+
+	return 0
+
+}
+
+assert_not() {
+	[ $# -eq 3 ] || eargs assert_not notexpected actual msg
+	local noexpected="$(echo "$1" | cat -v)"
+	local actual="$(echo "$2" | cat -v)"
+	local msg="$3"
+
+	: ${EXITVAL:=0}
+
+	EXITVAL=$((${EXITVAL:-0} + 1))
+
+	if [ "${actual}" = "${notexpected}" ]; then
+		aecho "${msg}: notexpected: '${notexpected}', actual: '${actual}'"
 		exit ${EXITVAL}
 	fi
 
@@ -69,3 +103,6 @@ aecho() {
 	echo "$@" >&2
 }
 
+injail() {
+	"$@"
+}

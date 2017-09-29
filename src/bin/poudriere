@@ -36,10 +36,12 @@ usage() {
 Usage: poudriere [-e etcdir] [-N] command [options]
 
 Options:
+    -A          -- Force colors, even if not in a TTY
     -e etcdir   -- Specify an alternate etc/ dir where poudriere configuration
                    resides.
     -N          -- Disable colors
-
+    -v          -- Be verbose; show more information. Use twice to enable
+                   debug output
 Commands:
     bulk        -- Generate packages for given ports
     distclean   -- Remove old distfiles
@@ -47,6 +49,7 @@ Commands:
     help        -- Show usage
     image       -- Generate images
     jail        -- Manage the jails used by poudriere
+    logclean    -- Remove old logfiles
     ports       -- Create, update or delete the portstrees used by poudriere
     pkgclean    -- Remove packages that are no longer needed
     options     -- Configure ports options
@@ -59,8 +62,11 @@ EOF
 }
 
 SETX=""
-while getopts "e:Nx" FLAG; do
+while getopts "Ae:Nvx" FLAG; do
 	case "${FLAG}" in
+	A)
+		FORCE_COLORS=1
+		;;
 	e)
 		if [ ! -d "$OPTARG" ]; then
 			echo "Error: argument '$OPTARG' not a directory"
@@ -70,6 +76,9 @@ while getopts "e:Nx" FLAG; do
 		;;
 	N)
 		USE_COLORS="no"
+		;;
+	v)
+		VERBOSE=$((${VERBOSE:-0} + 1))
 		;;
 	x)
 		SETX="-x"
@@ -85,7 +94,23 @@ shift $((OPTIND-1))
 [ $# -lt 1 ] && usage
 
 POUDRIEREPATH=`realpath $0`
-POUDRIEREPREFIX=${POUDRIEREPATH%\/bin/*}
+if [ "${POUDRIEREPATH%src/bin/poudriere}" != "${POUDRIEREPATH}" ]; then
+	# It is running from src/bin/poudriere in checkout
+	POUDRIEREPREFIX=${POUDRIEREPATH%/bin/*}
+	LIBEXECPREFIX="${POUDRIEREPATH%/src/bin/poudriere}"
+elif [ "${POUDRIEREPATH%/bin/*}" = "${POUDRIEREPATH}" ]; then
+	# It is running in a build directory or the source checkout as
+	# ./poudriere.  Lookup VPATH to resolve to source checkout if in
+	# build directory.
+	[ -f Makefile ] && VPATH="$(make -V VPATH)"
+	POUDRIEREPREFIX="${POUDRIEREPATH%/poudriere}${VPATH:+/${VPATH}}/src"
+	[ -n "${VPATH}" ] && POUDRIEREPREFIX="$(realpath "${POUDRIEREPREFIX}")"
+	LIBEXECPREFIX="${POUDRIEREPATH%/poudriere}"
+else
+	# Running from PREFIX/bin/poudriere
+	POUDRIEREPREFIX=${POUDRIEREPATH%/bin/*}
+	LIBEXECPREFIX="${POUDRIEREPREFIX}/libexec/poudriere"
+fi
 SCRIPTPREFIX=${POUDRIEREPREFIX}/share/poudriere
 
 CMD=$1
@@ -93,15 +118,12 @@ shift
 CMD_ENV=
 [ -n "${POUDRIERE_ETC}" ] && CMD_ENV="${CMD_ENV} POUDRIERE_ETC=${POUDRIERE_ETC}"
 [ -n "${USE_COLORS}" ] && CMD_ENV="${CMD_ENV} USE_COLORS=${USE_COLORS}"
-# Support running from checkout.
-if [ "${POUDRIEREPATH%src/bin/poudriere}" != "${POUDRIEREPATH}" ]; then
-	LIBEXECPREFIX="${POUDRIEREPATH%src/bin/poudriere}"
-else
-	LIBEXECPREFIX="${POUDRIEREPREFIX}/libexec/poudriere"
-fi
 CMD_ENV="${CMD_ENV} LIBEXECPREFIX=${LIBEXECPREFIX}"
 CMD_ENV="${CMD_ENV} PATH=${LIBEXECPREFIX}:${PATH}:/sbin:/usr/sbin"
 CMD_ENV="${CMD_ENV} POUDRIERE_VERSION=${POUDRIERE_VERSION}"
+CMD_ENV="${CMD_ENV} POUDRIEREPATH=${POUDRIEREPATH}"
+[ -n "${VERBOSE}" ] && CMD_ENV="${CMD_ENV} VERBOSE=${VERBOSE}"
+[ -n "${FORCE_COLORS}" ] && CMD_ENV="${CMD_ENV} FORCE_COLORS=${FORCE_COLORS}"
 
 # Handle special-case commands first.
 case "${CMD}" in
@@ -124,7 +146,7 @@ case "${CMD}" in
 ports|jail)
 	while read envvar envvalue; do
 		case "${envvar}" in
-		FTP_*|ftp_*|HTTP_*|http_*|SSL_|NO_PROXY|no_proxy)
+		FETCH_BIND_ADDRESS|FTP_*|ftp_*|HTTP_*|http_*|SSL_|NO_PROXY|no_proxy|MAKEOBJDIRPREFIX)
 			CMD_ENV="${CMD_ENV} ${envvar}=${envvalue}"
 			;;
 		esac
@@ -138,7 +160,7 @@ SCRIPTPATH="${SCRIPTPREFIX}/${CMD}.sh"
 CMD_ENV="${CMD_ENV} SCRIPTPATH=${SCRIPTPATH} SCRIPTPREFIX=${SCRIPTPREFIX}"
 
 case "${CMD}" in
-api|bulk|distclean|daemon|image|jail|ports|options|pkgclean|queue|status|testport)
+api|bulk|distclean|daemon|image|jail|logclean|ports|options|pkgclean|queue|status|testport)
 	;;
 *)
 	echo "Unknown command '${CMD}'"
@@ -154,4 +176,9 @@ jail|ports|daemon|status|options)
 	;;
 esac
 
-exec env -i ${CMD_ENV} sh ${SET_ERREXIT} ${SETX} "${SCRIPTPATH}" "$@"
+: ${UMASK:=022}
+umask ${UMASK}
+
+: ${SH:=sh}
+
+exec env -i ${CMD_ENV} ${SH} ${SET_ERREXIT} ${SETX} "${SCRIPTPATH}" "$@"
