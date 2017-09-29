@@ -163,6 +163,9 @@ export POUDRIERE_BUILD_TYPE=bulk
 
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
+injail /usr/bin/make -C /usr/ports/${ORIGIN} maintainer ECHO_CMD=true || \
+    err 1 "Port is broken"
+
 if [ $CONFIGSTR -eq 1 ]; then
 	which dialog4ports >/dev/null 2>&1 || err 1 "You must have ports-mgmt/dialog4ports installed on the host to use -c."
 	export PORTSDIR=${portsdir} \
@@ -207,8 +210,11 @@ commit_packages
 bset_job_status "testing" "${ORIGIN}"
 
 PKGNAME=`injail /usr/bin/make -C /usr/ports/${ORIGIN} -VPKGNAME`
+[ -n "${PKGNAME}" ] || err 1 "Port has empty PKGNAME?"
 LOCALBASE=`injail /usr/bin/make -C /usr/ports/${ORIGIN} -VLOCALBASE`
+[ -n "${LOCALBASE}" ] || err 1 "Port has empty LOCALBASE?"
 : ${PREFIX:=$(injail /usr/bin/make -C /usr/ports/${ORIGIN} -VPREFIX)}
+[ -n "${PREFIX}" ] || err 1 "Port has empty PREFIX?"
 if [ "${USE_PORTLINT}" = "yes" ]; then
 	[ ! -x `which portlint` ] &&
 		err 2 "First install portlint if you want USE_PORTLINT to work as expected"
