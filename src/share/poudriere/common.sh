@@ -5257,7 +5257,6 @@ gather_port_vars() {
 	msg "Gathering ports metadata"
 	bset status "gatheringportvars:"
 
-	:> "listed_pkgs"
 	:> "all_pkgs"
 	[ ${ALL} -eq 0 ] && :> "all_pkgbases"
 
@@ -5539,9 +5538,6 @@ gather_port_vars_port() {
 
 	msg_debug "WILL BUILD ${originspec}"
 	echo "${pkgname} ${originspec} ${rdep}" >> "all_pkgs"
-	if [ "${rdep}" = "listed" ]; then
-		echo "${pkgname}" >> "listed_pkgs"
-	fi
 	[ ${ALL} -eq 0 ] && echo "${pkgname%-*}" >> "all_pkgbases"
 
 	# Add all of the discovered FLAVORS into the flavorqueue if
@@ -6005,7 +6001,7 @@ _all_pkgnames_for_origin() {
 }
 
 listed_pkgnames() {
-	cat "${MASTERMNT}/.p/listed_pkgs"
+	awk '$3 == "listed" { print $1} }' "${MASTERMNT}/.p/all_pkgs"
 }
 
 # Pkgname was in queue
@@ -6034,14 +6030,14 @@ pkgname_is_listed() {
 	[ ${ALL} -eq 1 ] && return 0
 
 	awk -vpkgname="${pkgname}" '
-	    $1 == pkgname {
+	    $3 == "listed" && $1 == pkgname {
 		found=1
 		exit 0
 	    }
 	    END {
 		if (found != 1)
 			exit 1
-	    }' "${MASTERMNT}/.p/listed_pkgs"
+	    }' "${MASTERMNT}/.p/all_pkgs"
 }
 
 # PKGBASE was requested to be built, or is needed by a port requested to be built
