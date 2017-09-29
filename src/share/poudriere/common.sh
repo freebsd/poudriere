@@ -5537,14 +5537,8 @@ gather_port_vars_port() {
 		rm -rf "fqueue/${queuespec%/*}!${queuespec#*/}"
 	fi
 
-	if was_a_bulk_run; then
-		_log_path log
-		echo "${origin} ${pkgname} ${rdep}" >> \
-		    "${log}/.poudriere.ports.queued"
-	fi
-
 	msg_debug "WILL BUILD ${originspec}"
-	echo "${pkgname} ${originspec}" >> "all_pkgs"
+	echo "${pkgname} ${originspec} ${rdep}" >> "all_pkgs"
 	if [ "${rdep}" = "listed" ]; then
 		echo "${pkgname}" >> "listed_pkgs"
 	fi
@@ -5720,7 +5714,7 @@ gather_port_vars_process_depqueue() {
 compute_deps() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "compute_deps requires PWD=${MASTERMNT}/.p"
-	local pkgname originspec dep_pkgname
+	local pkgname originspec dep_pkgname _ignored
 
 	msg "Calculating ports order and dependencies"
 	bset status "computingdeps:"
@@ -5729,7 +5723,7 @@ compute_deps() {
 
 	clear_dep_fatal_error
 	parallel_start
-	while read pkgname originspec; do
+	while read pkgname originspec _ignored; do
 		parallel_run compute_deps_pkg "${pkgname}" "${originspec}" || \
 			set_dep_fatal_error
 	done < "all_pkgs"
@@ -6485,6 +6479,16 @@ prepare_ports() {
 			was_a_testport_run && \
 			    nbq=$((${nbq} + 1))
 			bset stats_queued ${nbq##* }
+
+			# Generate ports.queued list after the queue was
+			# trimmed.
+			local _originspec _pkgname _rdep tmp
+			tmp=$(TMPDIR="${log}" mktemp -ut .queued)
+			while read _pkgname _originspec _rdep; do
+				[ -d "deps/${_pkgname}" ] && \
+				    echo "${_originspec} ${_pkgname} ${_rdep}"
+			done < "all_pkgs" > "${tmp}"
+			mv -f "${tmp}" "${log}/.poudriere.ports.queued"
 		fi
 
 		# Create a pool of ready-to-build from the deps pool
@@ -6555,7 +6559,7 @@ load_priorities_tsortD() {
 }
 
 load_priorities_ptsort() {
-	local priority pkgname originspec pkg_boost origin
+	local priority pkgname originspec pkg_boost origin _ignored
 	local - # Keep set -f local
 
 	set -f # for PRIORITY_BOOST
@@ -6563,7 +6567,7 @@ load_priorities_ptsort() {
 	awk '{print $2 " " $1}' "pkg_deps" > "pkg_deps.ptsort"
 
 	# Add in boosts before running ptsort
-	while read pkgname originspec; do
+	while read pkgname originspec _ignored; do
 		# Does this pkg have an override?
 		for pkg_boost in ${PRIORITY_BOOST}; do
 			case ${pkgname%-*} in

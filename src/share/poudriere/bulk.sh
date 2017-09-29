@@ -238,7 +238,7 @@ if [ ${DRY_RUN} -eq 1 ]; then
 
 		msg_n "Ports to build: "
 		cat "${MASTERMNT}/.p/all_pkgs" | \
-		    while read pkgname originspec; do
+		    while read pkgname originspec _ignored; do
 			# Trim away DEPENDS_ARGS for display
 			originspec_decode "${originspec}" origin '' flavor
 			originspec_encode originspec "${origin}" '' "${flavor}"
