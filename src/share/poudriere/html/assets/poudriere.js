@@ -452,14 +452,14 @@ function format_status_row(status, row, n) {
 		table_row.push(format_pkgname(row.pkgname));
 		table_row.push(format_origin(row.origin));
 		table_row.push(format_log(row.pkgname, false, 'success'));
-		table_row.push(format_duration(row.elapsed));
+		table_row.push(format_duration(row.elapsed ? row.elapsed : ''));
 	} else if (status == "failed") {
 		table_row.push(format_pkgname(row.pkgname));
 		table_row.push(format_origin(row.origin));
 		table_row.push(row.phase);
 		table_row.push(row.skipped_cnt);
 		table_row.push(format_log(row.pkgname, true, row.errortype));
-		table_row.push(format_duration(row.elapsed));
+		table_row.push(format_duration(row.elapsed ? row.elapsed : ''));
 	} else if (status == "skipped") {
 		table_row.push(format_pkgname(row.pkgname));
 		table_row.push(format_origin(row.origin));
