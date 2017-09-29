@@ -5751,7 +5751,7 @@ compute_deps_pkg() {
 	[ $# -ne 2 ] && eargs compute_deps_pkg pkgname originspec
 	local pkgname="$1"
 	local originspec="$2"
-	local pkg_pooldir deps dep_pkgname dep_originspec dep_origin
+	local pkg_pooldir deps dep_pkgname dep_originspec dep_origin dep_flavor
 	local raw_deps d key dpath dep_real_pkgname err_type
 
 	# Safe to remove pkgname-deps now, it won't be needed later.
@@ -5766,10 +5766,10 @@ compute_deps_pkg() {
 	for dep_originspec in ${deps}; do
 		if ! get_pkgname_from_originspec "${dep_originspec}" \
 		    dep_pkgname; then
-			[ ${ALL} -eq 0 ] && \
-			    err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname}"
 			originspec_decode "${dep_originspec}" dep_origin '' ''
-			err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname} -- Is SUBDIR+=${dep_originspec#*/} missing in ${dep_originspec%/*}/Makefile?"
+			[ ${ALL} -eq 0 ] && \
+			    err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname} -- Does ${dep_origin} provide the '${dep_flavor}' FLAVOR?"
+			err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname} -- Is SUBDIR+=${dep_originspec#*/} missing in ${dep_originspec%/*}/Makefile and does the port provide the '${dep_flavor}' FLAVOR?"
 		fi
 		msg_debug "compute_deps_pkg: Will build ${dep_originspec} for ${pkgname}"
 		:> "${pkg_pooldir}/${dep_pkgname}"
