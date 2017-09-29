@@ -5959,14 +5959,16 @@ _listed_ports() {
 				while read origin; do
 					# Skip blank lines and comments
 					[ -z "${origin%%#*}" ] && continue
-					# Remove trailing slash for historical reasons.
+					# Remove excess slashes for mistakes
+					origin="${origin#/}"
 					echo "${origin%/}"
 				done < "${file}"
 			done
 		else
 			# Ports specified on cmdline
 			for origin in ${LISTPORTS}; do
-				# Remove trailing slash for historical reasons.
+				# Remove excess slashes for mistakes
+				origin="${origin#/}"
 				echo "${origin%/}"
 			done
 		fi
