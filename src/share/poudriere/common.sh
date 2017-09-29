@@ -6001,7 +6001,7 @@ _all_pkgnames_for_origin() {
 }
 
 listed_pkgnames() {
-	awk '$3 == "listed" { print $1} }' "${MASTERMNT}/.p/all_pkgs"
+	awk '$3 == "listed" { print $1 }' "${MASTERMNT}/.p/all_pkgs"
 }
 
 # Pkgname was in queue
