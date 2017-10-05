@@ -4196,7 +4196,7 @@ deps_fetch_vars() {
 	# triggers this with www/py-multidict since it tries to add DEPENDS_ARGS
 	# onto its multidict dependency but later finds that multidict is
 	# already forcing Python 3 and the DEPENDS_ARGS does nothing.
-	if ! was_a_testport_run && [ ${ALL} -eq 0 ] && \
+	if [ ${ALL} -eq 0 ] && \
 	    [ -n "${_origin_flavor}" ]; then
 		originspec_encode _default_originspec "${origin}" '' ''
 		shash_get originspec-pkgname "${_default_originspec}" \
@@ -6287,12 +6287,32 @@ prepare_ports() {
 	fi
 
 	if was_a_testport_run; then
-		local dep_originspec
+		local dep_originspec dep_origin dep_flavor dep_ret
 
 		[ -z "${ORIGINSPEC}" ] && \
 		    err 1 "testport+prepare_ports requires ORIGINSPEC set"
+		if have_ports_feature FLAVORS; then
+			# deps_fetch_vars really wants to have the main port
+			# cached before being given a FLAVOR.
+			originspec_decode "${ORIGINSPEC}" dep_origin \
+			    '' dep_flavor
+			if [ -n "${dep_flavor}" ]; then
+				deps_fetch_vars "${dep_origin}" LISTPORTS \
+				    PKGNAME DEPENDS_ARGS FLAVOR FLAVORS
+			fi
+		fi
+		dep_ret=0
 		deps_fetch_vars "${ORIGINSPEC}" LISTPORTS PKGNAME \
-		    DEPENDS_ARGS FLAVOR FLAVORS
+		    DEPENDS_ARGS FLAVOR FLAVORS || dep_ret=$?
+		case ${dep_ret} in
+		0) ;;
+		# Non-fatal duplicate should be ignored
+		2) ;;
+		# Fatal error
+		*)
+			err ${ret} "deps_fetch_vars failed for ${ORIGINSPEC}"
+			;;
+		esac
 		for dep_originspec in $(listed_ports); do
 			msg_verbose "${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
 		done
