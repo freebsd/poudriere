@@ -4102,6 +4102,22 @@ prefix_output() {
 
 : ${ORIGINSPEC_SEP:="@"}
 : ${FLAVOR_DEFAULT:="-"}
+: ${FLAVOR_ALL:="all"}
+
+build_all_flavors() {
+	[ $# -eq 1 ] || eargs build_all_flavors originspec
+	local originspec="$1"
+	local origin build_all
+
+	[ "${ALL}" -eq 1 ] && return 0
+	[ "${FLAVOR_DEFAULT_ALL}" = "yes" ] && return 0
+	originspec_decode "${originspec}" origin '' ''
+	shash_get origin-flavor-all "${origin}" build_all || build_all=0
+	[ "${build_all}" -eq 1 ] && return 0
+
+	# bulk and testport
+	return 1
+}
 
 # ORIGINSPEC is: ORIGIN@FLAVOR@DEPENDS_ARGS
 originspec_decode() {
@@ -5361,6 +5377,16 @@ gather_port_vars() {
 		# FLAVOR handling.
 		qorigin="gqueue/${origin%/*}!${origin#*/}"
 
+		# For FLAVOR=all cache that request somewhere for
+		# gather_port_vars_port to use later.  Other
+		# methods of passing it down the queue are too complex.
+		if [ "${flavor}" = "${FLAVOR_ALL}" ]; then
+			unset flavor
+			if [ "${FLAVOR_DEFAULT_ALL}" != "yes" ]; then
+				shash_set origin-flavor-all "${origin}" 1
+			fi
+		fi
+
 		# If we were passed a FLAVOR-specific origin, we
 		# need to delay it into the flavorqueue because
 		# it is possible the list has multiple FLAVORS
@@ -5611,7 +5637,8 @@ gather_port_vars_port() {
 	# this was the default originspec and this originspec was
 	# listed to build.
 	if [ "${rdep}" = "listed" -a \
-	    -z "${origin_flavor}" -a -n "${flavors}" ]; then
+	    -z "${origin_flavor}" -a -n "${flavors}" ] && \
+	    build_all_flavors "${originspec}"; then
 		msg_verbose "Will build all flavors for ${COLOR_PORT}${originspec}${COLOR_RESET}: ${flavors}"
 		for dep_flavor in ${flavors}; do
 			# Skip default FLAVOR
@@ -7225,6 +7252,7 @@ DRY_RUN=0
 : ${NO_RESTRICTED:=no}
 : ${USE_COLORS:=yes}
 : ${ALLOW_MAKE_JOBS_PACKAGES=pkg ccache}
+: ${FLAVOR_DEFAULT_ALL:=no}
 
 : ${POUDRIERE_TMPDIR:=$(command mktemp -dt poudriere)}
 : ${SHASH_VAR_PATH_DEFAULT:=${POUDRIERE_TMPDIR}}

@@ -11,7 +11,9 @@ fix_default_flavor() {
 	hash_get origin-flavors "${_origin}" _flavors
 	_default_flavor="${_flavors%% *}"
 	[ "${_flavor}" = "${FLAVOR_DEFAULT}" ] && _flavor="${_default_flavor}"
-	[ "${_default_flavor}" = "${_flavor}" ] || return 0
+	if [ "${_flavor}" != "${FLAVOR_ALL}" ]; then
+		[ "${_default_flavor}" = "${_flavor}" ] || return 0
+	fi
 	setvar "${var_return}" "${_origin}"
 }
 
@@ -25,6 +27,9 @@ cache_pkgnames() {
 	originspec_decode "${originspec}" origin '' flavor
 
 	if [ "${flavor}" = "${FLAVOR_DEFAULT}" ]; then
+		originspec_encode originspec "${origin}" '' ''
+	elif [ "${flavor}" = "${FLAVOR_ALL}" ]; then
+		unset flavor
 		originspec_encode originspec "${origin}" '' ''
 	fi
 
@@ -64,7 +69,11 @@ expand_origin_flavors() {
 	for originspec in ${origins}; do
 		originspec_decode "${originspec}" origin '' flavor
 		hash_get origin-flavors "${origin}" flavors || flavors=
-		if [ -n "${flavor}" ] || [ -z "${flavors}" ]; then
+		if [ -n "${flavor}" -a "${flavor}" != "${FLAVOR_ALL}" ] || \
+		    [ -z "${flavors}" ] || \
+		    [ "${FLAVOR_DEFAULT_ALL}" != "yes" -a \
+		    ${ALL} -eq 0 -a \
+		    "${flavor}" != "${FLAVOR_ALL}" ]; then
 			_expanded="${_expanded}${_expanded:+ }${originspec}"
 			continue
 		fi
