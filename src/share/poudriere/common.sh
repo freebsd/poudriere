@@ -5320,7 +5320,7 @@ gather_port_vars() {
 				if [ -d "${qorigin}" ]; then
 					rdep=
 				elif [ -n "${flavor}" ]; then
-					rdep="metadata ${flavor}"
+					rdep="metadata ${flavor} listed"
 				fi
 			fi
 
@@ -5505,6 +5505,7 @@ gather_port_vars_port() {
 	# which is also listed to build since the FLAVOR-specific one
 	# will be found superfluous later.  None of this is possible with -a
 	if [ ${ALL} -eq 0 ] && [ "${rdep%% *}" = "metadata" ]; then
+		# rdep is: metadata flavor original_rdep
 		if [ -z "${flavors}" ]; then
 			msg_debug "SKIPPING ${originspec} - no FLAVORS"
 			return 0
@@ -5512,7 +5513,8 @@ gather_port_vars_port() {
 		local queued_flavor queuespec
 
 		default_flavor="${flavors%% *}"
-		queued_flavor="${rdep#* }"
+		rdep="${rdep#* }"
+		queued_flavor="${rdep% *}"
 		[ "${queued_flavor}" = "${FLAVOR_DEFAULT}" ] && \
 		    queued_flavor="${default_flavor}"
 		# Check if we have the default FLAVOR sitting in the
@@ -5521,10 +5523,10 @@ gather_port_vars_port() {
 			msg_debug "SKIPPING ${originspec}"
 			return 0
 		fi
-		# We're keeping this metadata lookup as a listed one
+		# We're keeping this metadata lookup as its original rdep
 		# but we need to prevent forcing all FLAVORS to build
 		# later, so reset our flavor and originspec.
-		rdep="listed"
+		rdep="${rdep#* }"
 		origin_flavor="${queued_flavor}"
 		originspec_encode queuespec "${origin}" "${origin_dep_args}" \
 		    "${origin_flavor}"
@@ -5676,7 +5678,7 @@ gather_port_vars_process_depqueue() {
 		if [ ${ALL} -eq 0 ] && [ -z "${dep_args}" ]; then
 			if [ -n "${dep_flavor}" ]; then
 				queue=fqueue
-				rdep="metadata ${dep_flavor}"
+				rdep="metadata ${dep_flavor} ${origin}"
 			else
 				queue=gqueue
 				rdep="${origin}"
