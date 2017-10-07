@@ -2228,7 +2228,7 @@ jail_start() {
 	[ "${setname#*.*}" = "${setname}" ] ||
 		err 1 "The set name cannot contain a period (.). See jail(8)"
 	if [ ! $(sysctl -n security.bsd.hardlink_check_uid) -eq 0 -o ! $(sysctl -n security.bsd.hardlink_check_gid) -eq 0 ]; then
-		err 1 "Poudriere is not able to stage some ports if 'security.bsd.hardlink_check_uid' or 'security.bsd.hardlink_check_uid' are not set to '0'."
+		err 1 "Poudriere is not able to stage some ports if 'security.bsd.hardlink_check_uid' or 'security.bsd.hardlink_check_gid' are not set to '0'."
 	fi
 	if [ -z "${NOLINUX}" ]; then
 		if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
