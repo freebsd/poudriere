@@ -3826,7 +3826,7 @@ build_pkg() {
 	NO_ELAPSED_IN_MSG=1
 	colorize_job_id COLOR_JOBID "${MY_JOBID}"
 
-	job_msg "Building ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}"
+	job_msg "Building ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_RESET}"
 	bset_job_status "starting" "${port}"
 
 	if [ "${USE_JEXECD}" = "no" ]; then
@@ -3872,7 +3872,7 @@ build_pkg() {
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
 		badd ports.ignored "${port} ${PKGNAME} ${ignore}"
-		COLOR_ARROW="${COLOR_IGNORE}" job_msg "${COLOR_IGNORE}Finished ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_IGNORE}: Ignored: ${ignore}"
+		COLOR_ARROW="${COLOR_IGNORE}" job_msg "${COLOR_IGNORE}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_IGNORE}: Ignored: ${ignore}"
 		clean_rdepends="ignored"
 		run_hook pkgbuild ignored "${port}" "${PKGNAME}" "${ignore}"
 	else
@@ -3899,7 +3899,7 @@ build_pkg() {
 
 		if [ ${build_failed} -eq 0 ]; then
 			badd ports.built "${port} ${PKGNAME} ${elapsed}"
-			COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_SUCCESS}: Success"
+			COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_SUCCESS}: Success"
 			run_hook pkgbuild success "${port}" "${PKGNAME}"
 			# Cache information for next run
 			pkg_cacher_queue "${port}" "${pkgname}" || :
@@ -3910,7 +3910,7 @@ build_pkg() {
 				${log}/logs/errors/${PKGNAME}.log \
 				2> /dev/null)
 			badd ports.failed "${port} ${PKGNAME} ${failed_phase} ${errortype} ${elapsed}"
-			COLOR_ARROW="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
+			COLOR_ARROW="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
 			run_hook pkgbuild failed "${port}" "${PKGNAME}" "${failed_phase}" \
 				"${log}/logs/errors/${PKGNAME}.log"
 			# ret=2 is a test failure
