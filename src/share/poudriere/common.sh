@@ -2227,7 +2227,17 @@ jail_start() {
 		err 1 "The ports name cannot contain a period (.). See jail(8)"
 	[ "${setname#*.*}" = "${setname}" ] ||
 		err 1 "The set name cannot contain a period (.). See jail(8)"
-
+	if [ -n "${HARDLINK_CHECK}" -a ! "${HARDLINK_CHECK}" = "00" ]; then
+		case ${BUILD_AS_NON_ROOT} in
+			[Yy][Ee][Ss])
+				msg_warn "You have BUILD_AS_NON_ROOT set to '${BUILD_AS_NON_ROOT}' (c.f. poudriere.conf),"
+				msg_warn "    and 'security.bsd.hardlink_check_uid' or 'security.bsd.hardlink_check_gid' are not set to '0'."
+				err 1 "Poudriere will not be able to stage some ports. Exiting."
+				;;
+			*)
+				;;
+		esac
+	fi
 	if [ -z "${NOLINUX}" ]; then
 		if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
 			needfs="${needfs} linprocfs"
