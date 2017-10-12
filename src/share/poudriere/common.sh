@@ -2227,7 +2227,7 @@ jail_start() {
 		err 1 "The ports name cannot contain a period (.). See jail(8)"
 	[ "${setname#*.*}" = "${setname}" ] ||
 		err 1 "The set name cannot contain a period (.). See jail(8)"
-	if [ ! $(sysctl -n security.bsd.hardlink_check_uid) -eq 0 -o ! $(sysctl -n security.bsd.hardlink_check_gid) -eq 0 ]; then
+	if [ -n "${HARDLINK_CHECK}" -a ! "${HARDLINK_CHECK}" = "00" ]; then
 		case ${BUILD_AS_NON_ROOT} in
 			[Yy][Ee][Ss])
 				msg_warn "You have BUILD_AS_NON_ROOT set to '${BUILD_AS_NON_ROOT}' (c.f. poudriere.conf),"
