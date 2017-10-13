@@ -3585,8 +3585,6 @@ build_queue() {
 				# are empty
 				queue_empty && queue_empty=1
 
-				# Pool is waiting on dep, wait until a build
-				# is done before checking the queue again
 				builders_idle=1
 			else
 				MY_JOBID="${j}" \
@@ -3597,8 +3595,6 @@ build_queue() {
 				hash_set builder_pids "${j}" "${pid}"
 				hash_set builder_pkgnames "${j}" "${pkgname}"
 
-				# A new job is spawned, try to read the queue
-				# just to keep things moving
 				builders_active=1
 			fi
 		done
