@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd July 31, 2017
+.Dd October 13, 2017
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -1162,6 +1162,9 @@ Any of the following are allowed and will all be used in the order shown:
 .Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-make.conf
 .Dl /usr/local/etc/poudriere.d/<jailname>-<setname>-make.conf
 .Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-make.conf
+The
+.Pa /usr/local/etc/poudriere.d/hooks/plugins/<plugin>/
+directory may contain any of the above patterns as well.
 .Ss Create optional src.conf
 You can also specify a global src.conf which will be used for building
 jails with the
@@ -1182,6 +1185,14 @@ Any of the following are allowed and will all be used in the order shown:
 .Dl /usr/local/etc/poudriere.d/src-env.conf
 .Dl /usr/local/etc/poudriere.d/<setname>-src-env.conf
 .Dl /usr/local/etc/poudriere.d/<jailname>-src-env.conf
+.Ss Hooks
+Hook scripts may be loaded in any of the following paths:
+.Pp
+.Dl /usr/local/etc/poudriere.d/hooks/<hook>.sh
+.Dl /usr/local/etc/poudriere.d/hooks/plugins/<plugin>/<hook>.sh
+.Pp
+For specific hook documentation see:
+.Lk https://github.com/freebsd/poudriere/wiki/hooks
 .Sh CAVEATS
 .Ss Jailname
 .Fl j ,
