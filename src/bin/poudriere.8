@@ -966,7 +966,8 @@ Passes through for
 builds.
 .It Sy POUDRIERE_ETC
 If specified, the path to poudriere's config directory.
-Defaults to /usr/local/etc.
+Defaults to
+.Pa /usr/local/etc .
 .It Sy UMASK
 The umask for files created by
 .Nm .
@@ -977,7 +978,7 @@ Defaults to
 .Bl -tag -width ".Pa POUDRIERE_ETC/poudriere.d/poudriere.conf" -compact
 .It Pa POUDRIERE_ETC/poudriere.conf
 See self-documented
-.Ar /usr/local/etc/poudriere.conf.sample
+.Pa /usr/local/etc/poudriere.conf.sample
 for example.
 .It Pa POUDRIERE_ETC/poudriere.d/poudriere.conf
 The configuration can be stored in the poudriere.d directory as well.
@@ -1043,7 +1044,7 @@ created by poudriere.
 .Pp
 Once the bulk build is over, you can meet your shiny new packages here:
 .Pp
-.Dl "/usr/local/poudriere/data/packages/81i386"
+.Dl Pa /usr/local/poudriere/data/packages/81i386
 .Pp
 with 81i386 as the name of the jail.
 .Ss test a single port
@@ -1095,17 +1096,18 @@ can mount a directory containing option files if available.
 .Nm
 will check for any of these directories in this order:
 .Pp
-.Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-options
-.Dl /usr/local/etc/poudriere.d/<jailname>-<setname>-options
-.Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-options
-.Dl /usr/local/etc/poudriere.d/<tree>-<setname>-options
-.Dl /usr/local/etc/poudriere.d/<setname>-options
-.Dl /usr/local/etc/poudriere.d/<tree>-options
-.Dl /usr/local/etc/poudriere.d/<jailname>-options
-.Dl /usr/local/etc/poudriere.d/options
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-options
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-<setname>-options
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-<tree>-options
+.Dl Pa /usr/local/etc/poudriere.d/<tree>-<setname>-options
+.Dl Pa /usr/local/etc/poudriere.d/<setname>-options
+.Dl Pa /usr/local/etc/poudriere.d/<tree>-options
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-options
+.Dl Pa /usr/local/etc/poudriere.d/options
 .Pp
 If a directory with this name exists, it is null-mounted into the
-/var/db/ports/ directory of the jail, thus allowing to build package
+.Pa /var/db/ports/
+directory of the jail, thus allowing to build package
 with custom OPTIONS.
 .Pp
 The
@@ -1118,50 +1120,52 @@ port (the name of the port) containing an 'options' file with lines similar to:
 .Dl WITH_FOO=true
 .Dl WITHOUT_BAR=true
 .Pp
-As a starter, you may want to copy an existing /var/db/ports/ to
-/usr/local/etc/poudriere.d/options.
+As a starter, you may want to copy an existing
+.Pa /var/db/ports/
+to
+.Pa /usr/local/etc/poudriere.d/options .
 .Ss Blacklist ports
 You can also specify a blacklist which will disallow the lists port origins
 from building on the matched jail.
 Any of the following are allowed and will all be used in the order shown:
 .Pp
-.Dl /usr/local/etc/poudriere.d/blacklist
-.Dl /usr/local/etc/poudriere.d/<setname>-blacklist
-.Dl /usr/local/etc/poudriere.d/<tree>-blacklist
-.Dl /usr/local/etc/poudriere.d/<jailname>-blacklist
-.Dl /usr/local/etc/poudriere.d/<tree>-<setname>-blacklist
-.Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-blacklist
-.Dl /usr/local/etc/poudriere.d/<jailname>-<setname>-blacklist
-.Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-blacklist
+.Dl Pa /usr/local/etc/poudriere.d/blacklist
+.Dl Pa /usr/local/etc/poudriere.d/<setname>-blacklist
+.Dl Pa /usr/local/etc/poudriere.d/<tree>-blacklist
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-blacklist
+.Dl Pa /usr/local/etc/poudriere.d/<tree>-<setname>-blacklist
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-<tree>-blacklist
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-<setname>-blacklist
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-blacklist
 .Pp
 If QEMU is being used then a special qemu blacklist is also loaded.
-.Dl /usr/local/etc/poudriere.d/qemu-blacklist
+.Dl Pa /usr/local/etc/poudriere.d/qemu-blacklist
 .Ss Create optional poudriere.conf
 You can also specify an optional poudriere.conf that is pulled in
 depending on the build.
 Any of the following are allowed and will all be used in the order shown:
 .Pp
-.Dl /usr/local/etc/poudriere.d/poudriere.conf
-.Dl /usr/local/etc/poudriere.d/<setname>-poudriere.conf
-.Dl /usr/local/etc/poudriere.d/<tree>-poudriere.conf
-.Dl /usr/local/etc/poudriere.d/<jailname>-poudriere.conf
-.Dl /usr/local/etc/poudriere.d/<tree>-<setname>-poudriere.conf
-.Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-poudriere.conf
-.Dl /usr/local/etc/poudriere.d/<jailname>-<setname>-poudriere.conf
-.Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-poudriere.conf
+.Dl Pa /usr/local/etc/poudriere.d/poudriere.conf
+.Dl Pa /usr/local/etc/poudriere.d/<setname>-poudriere.conf
+.Dl Pa /usr/local/etc/poudriere.d/<tree>-poudriere.conf
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-poudriere.conf
+.Dl Pa /usr/local/etc/poudriere.d/<tree>-<setname>-poudriere.conf
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-<tree>-poudriere.conf
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-<setname>-poudriere.conf
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-poudriere.conf
 .Ss Create optional make.conf
 You can also specify a global make.conf which will be used for all the
 jails.
 Any of the following are allowed and will all be used in the order shown:
 .Pp
-.Dl /usr/local/etc/poudriere.d/make.conf
-.Dl /usr/local/etc/poudriere.d/<setname>-make.conf
-.Dl /usr/local/etc/poudriere.d/<tree>-make.conf
-.Dl /usr/local/etc/poudriere.d/<jailname>-make.conf
-.Dl /usr/local/etc/poudriere.d/<tree>-<setname>-make.conf
-.Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-make.conf
-.Dl /usr/local/etc/poudriere.d/<jailname>-<setname>-make.conf
-.Dl /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-make.conf
+.Dl Pa /usr/local/etc/poudriere.d/make.conf
+.Dl Pa /usr/local/etc/poudriere.d/<setname>-make.conf
+.Dl Pa /usr/local/etc/poudriere.d/<tree>-make.conf
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-make.conf
+.Dl Pa /usr/local/etc/poudriere.d/<tree>-<setname>-make.conf
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-<tree>-make.conf
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-<setname>-make.conf
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-make.conf
 The
 .Pa /usr/local/etc/poudriere.d/hooks/plugins/<plugin>/
 directory may contain any of the above patterns as well.
@@ -1172,9 +1176,9 @@ jails with the
 subcommand.
 Any of the following are allowed and will all be used in the order shown:
 .Pp
-.Dl /usr/local/etc/poudriere.d/src.conf
-.Dl /usr/local/etc/poudriere.d/<setname>-src.conf
-.Dl /usr/local/etc/poudriere.d/<jailname>-src.conf
+.Dl Pa /usr/local/etc/poudriere.d/src.conf
+.Dl Pa /usr/local/etc/poudriere.d/<setname>-src.conf
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-src.conf
 .Ss Create optional src-env.conf
 You can also specify a global src-env.conf which will be used for building
 jails with the
@@ -1182,14 +1186,14 @@ jails with the
 subcommand.
 Any of the following are allowed and will all be used in the order shown:
 .Pp
-.Dl /usr/local/etc/poudriere.d/src-env.conf
-.Dl /usr/local/etc/poudriere.d/<setname>-src-env.conf
-.Dl /usr/local/etc/poudriere.d/<jailname>-src-env.conf
+.Dl Pa /usr/local/etc/poudriere.d/src-env.conf
+.Dl Pa /usr/local/etc/poudriere.d/<setname>-src-env.conf
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-src-env.conf
 .Ss Hooks
 Hook scripts may be loaded in any of the following paths:
 .Pp
-.Dl /usr/local/etc/poudriere.d/hooks/<hook>.sh
-.Dl /usr/local/etc/poudriere.d/hooks/plugins/<plugin>/<hook>.sh
+.Dl Pa /usr/local/etc/poudriere.d/hooks/<hook>.sh
+.Dl Pa /usr/local/etc/poudriere.d/hooks/plugins/<plugin>/<hook>.sh
 .Pp
 For specific hook documentation see:
 .Lk https://github.com/freebsd/poudriere/wiki/hooks
