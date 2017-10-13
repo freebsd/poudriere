@@ -3792,7 +3792,7 @@ crashed_build() {
 		    "${COLOR_FAIL}Finished ${COLOR_PORT}${origin} | ${pkgname}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
 		run_hook pkgbuild failed "${origin}" "${pkgname}" \
 		    "${failed_phase}" \
-		    "${log}/logs/errors/${pkgname}.log"
+		    "${log}/logs/errors/${pkgname}.log" >&3
 	fi
 	clean_pool "${pkgname}" "${origin}" "${failed_phase}"
 	stop_build "${pkgname}" "${origin}" 1 >> "${log}/logs/${pkgname}.log"
@@ -3816,7 +3816,7 @@ clean_pool() {
 		badd ports.skipped "${skipped_origin} ${skipped_pkgname} ${pkgname}"
 		COLOR_ARROW="${COLOR_SKIP}" \
 		    job_msg "${COLOR_SKIP}Skipping ${COLOR_PORT}${skipped_origin} | ${skipped_pkgname}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${port} | ${pkgname}${COLOR_SKIP} ${clean_rdepends}"
-		run_hook pkgbuild skipped "${skipped_origin}" "${skipped_pkgname}" "${port}"
+		run_hook pkgbuild skipped "${skipped_origin}" "${skipped_pkgname}" "${port}" >&3
 	done
 
 	(
@@ -3924,7 +3924,7 @@ build_pkg() {
 		badd ports.ignored "${port} ${PKGNAME} ${ignore}"
 		COLOR_ARROW="${COLOR_IGNORE}" job_msg "${COLOR_IGNORE}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_IGNORE}: Ignored: ${ignore}"
 		clean_rdepends="ignored"
-		run_hook pkgbuild ignored "${port}" "${PKGNAME}" "${ignore}"
+		run_hook pkgbuild ignored "${port}" "${PKGNAME}" "${ignore}" >&3
 	else
 		build_port "${ORIGINSPEC}" || ret=$?
 		if [ ${ret} -ne 0 ]; then
@@ -3950,7 +3950,7 @@ build_pkg() {
 		if [ ${build_failed} -eq 0 ]; then
 			badd ports.built "${port} ${PKGNAME} ${elapsed}"
 			COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_SUCCESS}: Success"
-			run_hook pkgbuild success "${port}" "${PKGNAME}"
+			run_hook pkgbuild success "${port}" "${PKGNAME}" >&3
 			# Cache information for next run
 			pkg_cacher_queue "${port}" "${pkgname}" || :
 		else
@@ -3962,7 +3962,7 @@ build_pkg() {
 			badd ports.failed "${port} ${PKGNAME} ${failed_phase} ${errortype} ${elapsed}"
 			COLOR_ARROW="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
 			run_hook pkgbuild failed "${port}" "${PKGNAME}" "${failed_phase}" \
-				"${log}/logs/errors/${PKGNAME}.log"
+				"${log}/logs/errors/${PKGNAME}.log" >&3
 			# ret=2 is a test failure
 			if [ ${ret} -eq 2 ]; then
 				clean_rdepends=
