@@ -3365,6 +3365,10 @@ start_builder() {
 start_builders() {
 	local arch=$(injail uname -p)
 
+	msg "Starting/Cloning builders"
+	bset status "starting_jobs:"
+	run_hook start_builders start
+
 	bset builders "${JOBS}"
 	bset status "starting_builders:"
 	parallel_start
@@ -3372,6 +3376,8 @@ start_builders() {
 		parallel_run start_builder ${j} ${arch}
 	done
 	parallel_stop
+
+	run_hook start_builders stop
 }
 
 stop_builder() {
@@ -3536,6 +3542,8 @@ build_queue() {
 
 	_log_path log
 
+	run_hook build_queue start
+
 	mkfifo ${MASTERMNT}/.p/builders.pipe
 	exec 6<> ${MASTERMNT}/.p/builders.pipe
 	unlink ${MASTERMNT}/.p/builders.pipe
@@ -3647,6 +3655,8 @@ build_queue() {
 		fi
 	done
 	exec 6<&- 6>&-
+
+	run_hook build_queue stop
 }
 
 calculate_tobuild() {
@@ -3731,8 +3741,6 @@ parallel_build() {
 	msg "Building ${nremaining} packages using ${PARALLEL_JOBS} builders"
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
 
-	bset status "starting_jobs:"
-	msg "Starting/Cloning builders"
 	start_builders
 
 	coprocess_start pkg_cacher
@@ -4988,14 +4996,17 @@ delete_old_pkg() {
 delete_old_pkgs() {
 
 	msg "Checking packages for incremental rebuild needs"
+	run_hook delete_old_pkgs start
 
-	package_dir_exists_and_has_packages || return 0
+	if package_dir_exists_and_has_packages; then
+		parallel_start
+		for pkg in ${PACKAGES}/All/*.${PKG_EXT}; do
+			parallel_run delete_old_pkg "${pkg}"
+		done
+		parallel_stop
+	fi
 
-	parallel_start
-	for pkg in ${PACKAGES}/All/*.${PKG_EXT}; do
-		parallel_run delete_old_pkg "${pkg}"
-	done
-	parallel_stop
+	run_hook delete_old_pkgs stop
 }
 
 ## Pick the next package from the "ready to build" queue in pool/
@@ -5308,6 +5319,7 @@ gather_port_vars() {
 
 	msg "Gathering ports metadata"
 	bset status "gatheringportvars:"
+	run_hook gather_port_vars start
 
 	:> "all_pkgs"
 	[ ${ALL} -eq 0 ] && :> "all_pkgbases"
@@ -5468,6 +5480,7 @@ gather_port_vars() {
 		err 1 "Gather port queues not empty"
 	fi
 	unlink "${qlist}" || :
+	run_hook gather_port_vars stop
 }
 
 gather_port_vars_port() {
@@ -5768,6 +5781,7 @@ compute_deps() {
 
 	msg "Calculating ports order and dependencies"
 	bset status "computingdeps:"
+	run_hook compute_deps start
 
 	:> "pkg_deps.unsorted"
 
@@ -5793,7 +5807,7 @@ compute_deps() {
 	)
 
 	unlink "pkg_deps.unsorted"
-
+	run_hook compute_deps stop
 	return 0
 }
 
