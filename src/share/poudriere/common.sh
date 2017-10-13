@@ -3568,7 +3568,8 @@ build_queue() {
 				fi
 				job_done "${j}"
 				# Set a 0 timeout to quickly rescan for idle
-				# builders to toss a job at.
+				# builders to toss a job at since the queue
+				# may now be unblocked.
 				[ ${queue_empty} -eq 0 -a \
 				    ${builders_idle} -eq 1 ] && timeout=0
 			fi
