@@ -611,15 +611,16 @@ run_hook() {
 	[ $# -ge 2 ] || eargs run_hook hook event args
 	local hook="$1"
 	local event="$2"
-	local build_url log_url plugin_dir
+	local build_url log log_url plugin_dir
 
 	shift 2
 
 	build_url build_url || :
 	log_url log_url || :
+	_log_path log || :
 
 	run_hook_file "${HOOKDIR}/${hook}.sh" "${hook}" "${event}" \
-	    "${build_url}" "${log_url}" "$@"
+	    "${build_url}" "${log_url}" "${log}" "$@"
 
 	if [ -d "${HOOKDIR}/plugins" ]; then
 		for plugin_dir in ${HOOKDIR}/plugins/*; do
@@ -628,22 +629,24 @@ run_hook() {
 			"${HOOKDIR}/plugins/*") break ;;
 			esac
 			run_hook_file "${plugin_dir}/${hook}.sh" "${hook}" \
-			    "${event}" "${build_url}" "${log_url}" "$@"
+			    "${event}" "${build_url}" "${log_url}" "${log}" \
+			    "$@"
 		done
 	fi
 }
 
 run_hook_file() {
-	[ $# -ge 5 ] || eargs run_hook_file hookfile hook event build_url \
-	    log_url args
+	[ $# -ge 6 ] || eargs run_hook_file hookfile hook event build_url \
+	    log_url log args
 	local hookfile="$1"
 	local hook="$2"
 	local event="$3"
 	local build_url="$4"
 	local log_url="$5"
+	local log="$6"
 	[ -f "${hookfile}" ] || return 0
 
-	shift 5
+	shift 6
 
 	job_msg_dev "Running ${hookfile} for event '${hook}:${event}' args: ${@:-(null)}"
 
@@ -652,6 +655,7 @@ run_hook_file() {
 		cd /
 		BUILD_URL="${build_url}" \
 		    LOG_URL="${log_url}" \
+		    LOG="${log}" \
 		    POUDRIERE_BUILD_TYPE=${POUDRIERE_BUILD_TYPE} \
 		    POUDRIERED="${POUDRIERED}" \
 		    POUDRIERE_DATA="${POUDRIERE_DATA}" \
