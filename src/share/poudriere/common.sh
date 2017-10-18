@@ -5335,71 +5335,71 @@ gather_port_vars() {
 		[ ${ALL} -eq 0 ] && [ -n "${flavor}" ] && \
 		    ! have_ports_feature FLAVORS && \
 		    err 1 "Trying to build FLAVOR-specific ${originspec} but ports tree has no FLAVORS support."
-		if [ -d "../${PORTSDIR}/${origin}" ]; then
-			rdep="listed"
-			# For -a we skip the initial gatherqueue
-			if [ ${ALL} -eq 1 ]; then
-				[ -n "${flavor}" ] && \
-				    err 1 "Flavor ${originspec} with ALL=1"
-				parallel_run \
-				    prefix_stderr_quick \
-				    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
-				    gather_port_vars_port "${originspec}" \
-				    "${rdep}" || \
-				    set_dep_fatal_error
-				continue
-			fi
-			# Otherwise let's utilize the gatherqueue to simplify
-			# FLAVOR handling.
-			qorigin="gqueue/${origin%/*}!${origin#*/}"
-
-			# If we were passed a FLAVOR-specific origin, we
-			# need to delay it into the flavorqueue because
-			# it is possible the list has multiple FLAVORS
-			# of the origin specified or even the main port.
-			# We want to ensure that the main port is looked up
-			# first and then FLAVOR-specific ones are processed.
-			if [ -n "${flavor}" ] || [ -n "${dep_args}" ]; then
-				# We will delay the FLAVOR-specific into
-				# the flavorqueue and process the main port
-				# here as long as it hasn't already.
-				# Don't worry about duplicates from user list.
-				mkdir -p \
-				    "fqueue/${originspec%/*}!${originspec#*/}"
-				echo "${rdep}" > \
-				    "fqueue/${originspec%/*}!${originspec#*/}/rdep"
-				msg_debug "queueing ${originspec} into flavorqueue (rdep=${rdep})"
-				# For DEPENDS_ARGS we can skip bothering with
-				# the gatherqueue just simply delay into the
-				# flavorqueue.
-				if [ -n "${dep_args}" ]; then
-					continue
-				fi
-				# Now handle adding the main port without
-				# FLAVOR.  Only do this if the main port
-				# wasn't already listed.  The 'metadata'
-				# will cause gather_port_vars_port to not
-				# actually queue it for build unless it
-				# is discovered to be the default.
-				if [ -d "${qorigin}" ]; then
-					rdep=
-				elif [ -n "${flavor}" ]; then
-					rdep="metadata ${flavor} listed"
-				fi
-			fi
-
-			# Duplicate are possible from a user list, it's fine.
-			mkdir -p "${qorigin}"
-			msg_debug "queueing ${origin} into gatherqueue (rdep=${rdep})"
-			[ -n "${rdep}" ] && echo "${rdep}" > "${qorigin}/rdep"
-		else
+		if ! [ -d "../${PORTSDIR}/${origin}" ]; then
 			if [ ${ALL} -eq 1 ]; then
 				msg_warn "Nonexistent origin listed in category Makefiles: ${COLOR_PORT}${origin}"
 			else
 				msg_error "Nonexistent origin listed for build: ${COLOR_PORT}${origin}"
 				set_dep_fatal_error
 			fi
+			continue
 		fi
+		rdep="listed"
+		# For -a we skip the initial gatherqueue
+		if [ ${ALL} -eq 1 ]; then
+			[ -n "${flavor}" ] && \
+			    err 1 "Flavor ${originspec} with ALL=1"
+			parallel_run \
+			    prefix_stderr_quick \
+			    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
+			    gather_port_vars_port "${originspec}" \
+			    "${rdep}" || \
+			    set_dep_fatal_error
+			continue
+		fi
+		# Otherwise let's utilize the gatherqueue to simplify
+		# FLAVOR handling.
+		qorigin="gqueue/${origin%/*}!${origin#*/}"
+
+		# If we were passed a FLAVOR-specific origin, we
+		# need to delay it into the flavorqueue because
+		# it is possible the list has multiple FLAVORS
+		# of the origin specified or even the main port.
+		# We want to ensure that the main port is looked up
+		# first and then FLAVOR-specific ones are processed.
+		if [ -n "${flavor}" ] || [ -n "${dep_args}" ]; then
+			# We will delay the FLAVOR-specific into
+			# the flavorqueue and process the main port
+			# here as long as it hasn't already.
+			# Don't worry about duplicates from user list.
+			mkdir -p \
+			    "fqueue/${originspec%/*}!${originspec#*/}"
+			echo "${rdep}" > \
+			    "fqueue/${originspec%/*}!${originspec#*/}/rdep"
+			msg_debug "queueing ${originspec} into flavorqueue (rdep=${rdep})"
+			# For DEPENDS_ARGS we can skip bothering with
+			# the gatherqueue just simply delay into the
+			# flavorqueue.
+			if [ -n "${dep_args}" ]; then
+				continue
+			fi
+			# Now handle adding the main port without
+			# FLAVOR.  Only do this if the main port
+			# wasn't already listed.  The 'metadata'
+			# will cause gather_port_vars_port to not
+			# actually queue it for build unless it
+			# is discovered to be the default.
+			if [ -d "${qorigin}" ]; then
+				rdep=
+			elif [ -n "${flavor}" ]; then
+				rdep="metadata ${flavor} listed"
+			fi
+		fi
+
+		# Duplicate are possible from a user list, it's fine.
+		mkdir -p "${qorigin}"
+		msg_debug "queueing ${origin} into gatherqueue (rdep=${rdep})"
+		[ -n "${rdep}" ] && echo "${rdep}" > "${qorigin}/rdep"
 	done
 	if ! parallel_stop || check_dep_fatal_error; then
 		err 1 "Fatal errors encountered gathering initial ports metadata"
