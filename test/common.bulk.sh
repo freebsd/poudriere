@@ -47,8 +47,6 @@ cache_pkgnames() {
 	# Also cache all of the FLAVOR deps/PKGNAMES
 	if [ -n "${flavor}" ]; then
 		default_flavor="${flavors%% *}"
-		[ "${flavor}" = "${FLAVOR_DEFAULT}" ] && \
-		    flavor="${default_flavor}"
 		for flavor in ${flavors}; do
 			# Don't recurse on the first flavor since we are it.
 			[ "${flavor}" = "${default_flavor}" ] && continue
