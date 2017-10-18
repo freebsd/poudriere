@@ -5612,6 +5612,7 @@ gather_port_vars_port() {
 	# listed to build.
 	if [ "${rdep}" = "listed" -a \
 	    -z "${origin_flavor}" -a -n "${flavors}" ]; then
+		msg_verbose "Will build all flavors for ${COLOR_PORT}${originspec}${COLOR_RESET}: ${flavors}"
 		for dep_flavor in ${flavors}; do
 			# Skip default FLAVOR
 			[ "${flavor}" = "${dep_flavor}" ] && continue
