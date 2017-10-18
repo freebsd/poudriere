@@ -5585,7 +5585,7 @@ gather_port_vars_port() {
 		# Check if we have the default FLAVOR sitting in the
 		# flavorqueue and don't skip if so.
 		if [ "${queued_flavor}" != "${default_flavor}" ]; then
-			msg_debug "SKIPPING ${originspec}"
+			msg_debug "SKIPPING ${originspec} - metadata lookup queued=${queued_flavor} default=${default_flavor}"
 			return 0
 		fi
 		# We're keeping this metadata lookup as its original rdep
