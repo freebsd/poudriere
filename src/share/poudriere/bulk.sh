@@ -248,7 +248,7 @@ if [ ${DRY_RUN} -eq 1 ]; then
 	else
 		msg "No packages would be built"
 	fi
-
+	show_log_info
 	exit 0
 fi
 
