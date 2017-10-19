@@ -2379,9 +2379,9 @@ jail_start() {
 		setup_xdev "${tomnt}" "${arch%.*}"
 
 		# QEMU is really slow. Extend the time significantly.
-		msg "Raising MAX_EXECUTION_TIME and NOHANG_TIME for QEMU"
-		MAX_EXECUTION_TIME=864000
-		NOHANG_TIME=72000
+		msg "Raising MAX_EXECUTION_TIME and NOHANG_TIME for QEMU from QEMU_ values"
+		MAX_EXECUTION_TIME=${QEMU_MAX_EXECUTION_TIME}
+		NOHANG_TIME=${QEMU_NOHANG_TIME}
 		# Setup native-xtools overrides.
 		cat >> "${tomnt}/etc/make.conf" <<-EOF
 		.sinclude "/etc/make.nxb.conf"
@@ -7243,8 +7243,10 @@ DRY_RUN=0
 
 # Be sure to update poudriere.conf to document the default when changing these
 : ${RESOLV_CONF="/etc/resolv.conf"}
-: ${MAX_EXECUTION_TIME:=86400}         # 24 hours for 1 command
+: ${MAX_EXECUTION_TIME:=86400}         # 24 hours for 1 command (phase)
 : ${NOHANG_TIME:=7200}                 # 120 minutes with no log update
+: ${QEMU_MAX_EXECUTION_TIME:=345600}   # 4 days for 1 command (phase)
+: ${QEMU_NOHANG_TIME:=21600}           # 6 hours with no log update
 : ${TIMESTAMP_LOGS:=no}
 : ${ATOMIC_PACKAGE_REPOSITORY:=yes}
 : ${KEEP_OLD_PACKAGES:=no}
