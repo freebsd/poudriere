@@ -6410,6 +6410,10 @@ prepare_ports() {
 			err ${ret} "deps_fetch_vars failed for ${ORIGINSPEC}"
 			;;
 		esac
+		if have_ports_feature FLAVORS && [ -n "${FLAVORS}" ] && \
+		    [ "${FLAVOR_DEFAULT_ALL}" = "yes" ]; then
+			msg_warn "Only testing first flavor '${FLAVOR}', use 'bulk -t' to test all flavors"
+		fi
 		for dep_originspec in $(listed_ports); do
 			msg_verbose "${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
 		done
