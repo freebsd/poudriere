@@ -6482,7 +6482,7 @@ prepare_ports() {
 
 	if was_a_bulk_run; then
 		# Stash dependency graph
-		cp -f "${MASTERMNT}/.p/pkg_deps" "${log}/.poudriere.deps%"
+		cp -f "${MASTERMNT}/.p/pkg_deps" "${log}/.poudriere.pkg_deps%"
 
 		if [ ${JAIL_NEEDS_CLEAN} -eq 1 ]; then
 			msg_n "Cleaning all packages due to newer version of the jail..."
