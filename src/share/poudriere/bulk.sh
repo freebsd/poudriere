@@ -237,8 +237,8 @@ if [ ${DRY_RUN} -eq 1 ]; then
 		msg "Would build ${tobuild} packages using ${PARALLEL_JOBS} builders"
 
 		msg_n "Ports to build: "
-		cat "${MASTERMNT}/.p/all_pkgs" | \
-		    while read pkgname originspec _ignored; do
+		cat "${LOGD}/.poudriere.ports.queued" | \
+		    while read originspec pkgname _ignored; do
 			# Trim away DEPENDS_ARGS for display
 			originspec_decode "${originspec}" origin '' flavor
 			originspec_encode originspec "${origin}" '' "${flavor}"
