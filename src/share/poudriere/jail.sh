@@ -401,7 +401,7 @@ build_and_install_world() {
 	installworld
 
 	if [ ${XDEV} -eq 1 ]; then
-		: ${XDEV_SRC:=/usr/src}
+		: ${XDEV_SRC:=${SRC_BASE}}
 		msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs in ${XDEV_SRC}"
 		${MAKE_CMD} -C ${XDEV_SRC} native-xtools ${MAKE_JOBS} \
 		    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools' in ${XDEV_SRC}"
@@ -421,7 +421,6 @@ build_and_install_world() {
 		SIZE=/nxb-bin/usr/bin/size
 		STRIPBIN=/nxb-bin/usr/bin/strip
 		SED=/nxb-bin/usr/bin/sed
-		READELF=/nxb-bin/usr/bin/readelf
 		RANLIB=/nxb-bin/usr/bin/ranlib
 		YACC=/nxb-bin/usr/bin/yacc
 		MAKE=/nxb-bin/usr/bin/make
@@ -437,7 +436,8 @@ build_and_install_world() {
 				usr/bin/makewhatis \
 				usr/bin/find usr/bin/gzcat usr/bin/awk \
 				usr/bin/touch usr/bin/sed usr/bin/patch \
-				usr/bin/install usr/bin/gunzip usr/bin/sort \
+				usr/bin/install usr/bin/gunzip \
+				usr/bin/readelf usr/bin/sort \
 				usr/bin/tar usr/bin/xargs usr/sbin/chown bin/cp \
 				bin/cat bin/chmod bin/echo bin/expr \
 				bin/hostname bin/ln bin/ls bin/mkdir bin/mv \
