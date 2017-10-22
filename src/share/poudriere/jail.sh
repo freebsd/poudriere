@@ -458,7 +458,7 @@ build_native_xtools() {
 	setup_build_env
 
 	msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
-	: ${XDEV_SRC:=/usr/src}
+	: ${XDEV_SRC:=${SRC_BASE}}
 	${MAKE_CMD} -C ${XDEV_SRC} native-xtools ${MAKE_JOBS} \
 	    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools' in ${XDEV_SRC}"
 	XDEV_TOOLS=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
