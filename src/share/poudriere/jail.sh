@@ -397,18 +397,29 @@ build_and_install_world() {
 	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
 	${MAKE_CMD} -C ${SRC_BASE} buildworld ${MAKE_JOBS} \
 	    ${MAKEWORLDARGS} || err 1 "Failed to 'make buildworld'"
+	BUILTWORLD=1
 
 	installworld
 
 	if [ ${XDEV} -eq 1 ]; then
 		: ${XDEV_SRC:=${SRC_BASE}}
-		if [ "${XDEV_SRC_JAIL}" = "yes" ]; then
+		# Check for which style of native-xtools to build.
+		# If there is a populated NXBDIRS then it is the new style
+		# fixed version with a proper sysroot.
+		# Otherwise it's the older broken one, so use the host /usr/src
+		# unless the user set XDEV_SRC_JAIL.
+		XDEV_DIRS=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
+		    ${MAKE_CMD} -C ${SRC_BASE} -f Makefile.inc1 -V NXBDIRS)
+		if [ -n "${XDEV_DIRS}" ] || [ "${XDEV_SRC_JAIL}" = "yes" ]; then
 			: ${XDEV_SRC:=${SRC_BASE}}
 		else
 			: ${XDEV_SRC:=/usr/src}
 		fi
 		msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs in ${XDEV_SRC}"
+		# Can use -DNO_NXBTOOLCHAIN if we just ran buildworld to reuse the
+		# toolchain already just built.
 		${MAKE_CMD} -C ${XDEV_SRC} native-xtools ${MAKE_JOBS} \
+		    ${BUILTWORLD:+-DNO_NXBTOOLCHAIN} \
 		    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools' in ${XDEV_SRC}"
 		XDEV_TOOLS=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
 		    ${MAKE_CMD} -C ${XDEV_SRC} -f Makefile.inc1 -V NXBDESTDIR)
