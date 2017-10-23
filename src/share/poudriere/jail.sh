@@ -401,8 +401,8 @@ build_and_install_world() {
 	installworld
 
 	if [ ${XDEV} -eq 1 ]; then
-		msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
 		: ${XDEV_SRC:=/usr/src}
+		msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs in ${XDEV_SRC}"
 		${MAKE_CMD} -C ${XDEV_SRC} native-xtools ${MAKE_JOBS} \
 		    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools' in ${XDEV_SRC}"
 		XDEV_TOOLS=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
