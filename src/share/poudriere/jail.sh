@@ -402,7 +402,7 @@ build_and_install_world() {
 
 	if [ ${XDEV} -eq 1 ]; then
 		: ${XDEV_SRC:=${SRC_BASE}}
-		if [ -n "${XDEV_SRC_JAIL}" ]; then
+		if [ "${XDEV_SRC_JAIL}" = "yes" ]; then
 			: ${XDEV_SRC:=${SRC_BASE}}
 		else
 			: ${XDEV_SRC:=/usr/src}
