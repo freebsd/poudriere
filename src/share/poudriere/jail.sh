@@ -402,6 +402,11 @@ build_and_install_world() {
 
 	if [ ${XDEV} -eq 1 ]; then
 		: ${XDEV_SRC:=${SRC_BASE}}
+		if [ -n "${XDEV_SRC_JAIL}" ]; then
+			: ${XDEV_SRC:=${SRC_BASE}}
+		else
+			: ${XDEV_SRC:=/usr/src}
+		fi
 		msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs in ${XDEV_SRC}"
 		${MAKE_CMD} -C ${XDEV_SRC} native-xtools ${MAKE_JOBS} \
 		    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools' in ${XDEV_SRC}"
