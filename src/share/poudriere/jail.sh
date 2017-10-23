@@ -457,7 +457,7 @@ build_native_xtools() {
 	[ ${QEMU_EMULATING} -eq 1 ] || return 0
 	setup_build_env
 
-	if [ -n "${XDEV_SRC_JAIL}" ]; then
+	if [ "${XDEV_SRC_JAIL}" = "yes" ]; then
 		: ${XDEV_SRC:=${SRC_BASE}}
 	else
 		: ${XDEV_SRC:=/usr/src}
