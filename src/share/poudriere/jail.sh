@@ -1147,8 +1147,8 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		esac
 		jail_exists ${JAILNAME} && \
 		    err 2 "The jail ${JAILNAME} already exists"
-		check_emulation "${REALARCH}" "${ARCH}"
 		maybe_run_queued "${saved_argv}"
+		check_emulation "${REALARCH}" "${ARCH}"
 		create_jail
 		;;
 	01000000)
