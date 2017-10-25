@@ -2156,6 +2156,7 @@ qemu_install() {
 	local mnt="$1"
 
 	msg "Copying latest version of the emulator from: ${EMULATOR}"
+	[ -n "${EMULATOR}" ] || err 1 "No EMULATOR set"
 	mkdir -p "${mnt}${EMULATOR%/*}"
 	cp -f "${EMULATOR}" "${mnt}${EMULATOR}"
 }

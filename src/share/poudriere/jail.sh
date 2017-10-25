@@ -294,6 +294,7 @@ update_jail() {
 		fi
 		rm -f ${JAILMNT}/usr/sbin/freebsd-update.fixed
 		if [ ${QEMU_EMULATING} -eq 1 ]; then
+			[ -n "${EMULATOR}" ] || err 1 "No EMULATOR set"
 			rm -f "${JAILMNT}${EMULATOR}"
 			# Try to cleanup the lingering directory structure
 			emulator_dir="${EMULATOR%/*}"
