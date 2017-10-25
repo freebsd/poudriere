@@ -2832,14 +2832,14 @@ gather_distfiles() {
 	local from=$(realpath $2)
 	local to=$(realpath $3)
 	local sub dists d tosubd specials special origin
-	local dep_originspec pkgname
+	local dep_originspec pkgname flavor
 
 	port_var_fetch_originspec "${originspec}" \
 	    DIST_SUBDIR sub \
 	    ALLFILES dists || \
 	    err 1 "Failed to lookup distfiles for ${originspec}"
 
-	originspec_decode "${originspec}" origin '' ''
+	originspec_decode "${originspec}" origin '' flavor
 	if [ "${ORIGINSPEC}" = "${originspec}" ]; then
 		# Building main port
 		pkgname="${PKGNAME}"
@@ -2850,7 +2850,7 @@ gather_distfiles() {
 	fi
 	shash_get pkgname-depend_specials "${pkgname}" specials || specials=
 
-	job_msg_dev "${COLOR_PORT}${origin} | ${PKGNAME}${COLOR_RESET}: distfiles ${from} -> ${to}"
+	job_msg_dev "${COLOR_PORT}${origin}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
 		[ -f ${from}/${sub}/${d} ] || continue
 		tosubd=${to}/${sub}/${d}
@@ -2870,7 +2870,7 @@ gather_distfiles() {
 _real_build_port() {
 	[ $# -ne 1 ] && eargs _real_build_port originspec
 	local originspec="$1"
-	local port portdir
+	local port flavor portdir
 	local mnt
 	local log
 	local network
@@ -2885,7 +2885,7 @@ _real_build_port() {
 	_my_path mnt
 	_log_path log
 
-	originspec_decode "${originspec}" port '' ''
+	originspec_decode "${originspec}" port '' flavor
 	portdir="/usr/ports/${port}"
 
 	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
@@ -2911,7 +2911,7 @@ _real_build_port() {
 	for jpkg in ${ALLOW_MAKE_JOBS_PACKAGES}; do
 		case "${PKGNAME%-*}" in
 		${jpkg})
-			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}"
+			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}"
 			sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' \
 			    ${mnt}/etc/make.conf
 			break
@@ -2922,8 +2922,8 @@ _real_build_port() {
 	for jpkg in ${ALLOW_NETWORKING_PACKAGES}; do
 		case "${PKGNAME%-*}" in
 		${jpkg})
-			job_msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}"
-			msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}"
+			job_msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}"
+			msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}"
 			allownetworking=1
 			JNETNAME="n"
 			break
@@ -2964,7 +2964,7 @@ _real_build_port() {
 		phaseenv=
 		JUSER=${jailuser}
 		bset_job_status "${phase}" "${originspec}"
-		job_msg_verbose "Status   ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
+		job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
 		[ -n "${PORTTESTING}" ] && \
 		    phaseenv="${phaseenv} DEVELOPER_MODE=yes"
 		case ${phase} in
@@ -3092,11 +3092,11 @@ _real_build_port() {
 				if [ $hangstatus -eq 2 ]; then
 					msg "Killing runaway build after ${NOHANG_TIME} seconds with no output"
 					bset_job_status "${phase}/runaway" "${originspec}"
-					job_msg_verbose "Status   ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}runaway"
+					job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}runaway"
 				elif [ $hangstatus -eq 3 ]; then
 					msg "Killing timed out build after ${max_execution_time} seconds"
 					bset_job_status "${phase}/timeout" "${originspec}"
-					job_msg_verbose "Status   ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}timeout"
+					job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}timeout"
 				fi
 				return 1
 			fi
@@ -3317,13 +3317,14 @@ build_port() {
 
 # Save wrkdir and return path to file
 save_wrkdir() {
-	[ $# -ne 4 ] && eargs save_wrkdir mnt port portdir phase
+	[ $# -ne 5 ] && eargs save_wrkdir mnt originspec pkgname portdir phase
 	local mnt=$1
-	local port="$2"
-	local portdir="$3"
-	local phase="$4"
+	local originspec="$2"
+	local pkgname="$3"
+	local portdir="$4"
+	local phase="$5"
 	local tardir=${POUDRIERE_DATA}/wrkdirs/${MASTERNAME}/${PTNAME}
-	local tarname=${tardir}/${PKGNAME}.${WRKDIR_ARCHIVE_FORMAT}
+	local tarname=${tardir}/${pkgname}.${WRKDIR_ARCHIVE_FORMAT}
 	local mnted_portdir=${mnt}/wrkdirs/${portdir}
 
 	[ "${SAVE_WRKDIR}" != "no" ] || return 0
@@ -3343,7 +3344,7 @@ save_wrkdir() {
 	unlink ${tarname}
 	tar -s ",${mnted_portdir},," -c${COMPRESSKEY}f ${tarname} ${mnted_portdir}/work > /dev/null 2>&1
 
-	job_msg "Saved ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET} wrkdir to: ${tarname}"
+	job_msg "Saved ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_RESET} wrkdir to: ${tarname}"
 }
 
 start_builder() {
@@ -3944,9 +3945,11 @@ build_pkg() {
 				failed_phase=${failed_status%%:*}
 			fi
 
-			save_wrkdir ${mnt} "${port}" "${portdir}" "${failed_phase}" || :
+			save_wrkdir "${mnt}" "${ORIGINSPEC}" "${PKGNAME}" \
+			    "${portdir}" "${failed_phase}" || :
 		elif [ -f ${mnt}/${portdir}/.keep ]; then
-			save_wrkdir ${mnt} "${port}" "${portdir}" "noneed" ||:
+			save_wrkdir "${mnt}" "${ORIGINSPEC}" "${PKGNAME}" \
+			    "${portdir}" "noneed" ||:
 		fi
 
 		now=$(clock -monotonic)

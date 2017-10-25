@@ -300,7 +300,8 @@ if [ ${ret} -ne 0 ]; then
 		failed_phase=${failed_status%%:*}
 	fi
 
-	save_wrkdir ${MASTERMNT} "${PKGNAME}" "${PORTSDIR}/${ORIGIN}" "${failed_phase}" || :
+	save_wrkdir "${MASTERMNT}" "${ORIGINSPEC}" "${PKGNAME}" \
+	    "${PORTSDIR}/${ORIGIN}" "${failed_phase}" || :
 
 	ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
 	errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
@@ -320,8 +321,8 @@ if [ ${ret} -ne 0 ]; then
 else
 	badd ports.built "${ORIGINSPEC} ${PKGNAME} ${elapsed}"
 	if [ -f ${MASTERMNT}${PORTSDIR}/${ORIGIN}/.keep ]; then
-		save_wrkdir ${MASTERMNT} "${PKGNAME}" "${PORTSDIR}/${ORIGIN}" \
-		    "noneed" || :
+		save_wrkdir "${MASTERMNT}" "${ORIGINSPEC}" "${PKGNAME}" \
+		    "${PORTSDIR}/${ORIGIN}" "noneed" || :
 	fi
 	update_stats || :
 fi
