@@ -226,7 +226,7 @@ if [ $(bget stats_failed) -gt 0 ] || [ $(bget stats_skipped) -gt 0 ]; then
 	[ -n "${skipped}" ] && COLOR_ARROW="${COLOR_SKIP}" \
 	    msg "${COLOR_SKIP}Skipped ports: ${COLOR_PORT}${skipped}"
 
-	bset_job_status "failed/depends" "${ORIGIN}"
+	bset_job_status "failed/depends" "${ORIGINSPEC}"
 	set +e
 	exit 1
 fi
@@ -236,7 +236,7 @@ nbbuilt=$(bget stats_built)
 
 commit_packages
 
-bset_job_status "testing" "${ORIGIN}"
+bset_job_status "testing" "${ORIGINSPEC}"
 
 LOCALBASE=`injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -VLOCALBASE`
 [ -n "${LOCALBASE}" ] || err 1 "Port has empty LOCALBASE?"
@@ -306,19 +306,19 @@ if [ ${ret} -ne 0 ]; then
 	errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
 		${log}/logs/errors/${PKGNAME}.log \
 		2> /dev/null)
-	badd ports.failed "${ORIGIN} ${PKGNAME} ${failed_phase} ${errortype} ${elapsed}"
+	badd ports.failed "${ORIGINSPEC} ${PKGNAME} ${failed_phase} ${errortype} ${elapsed}"
 	update_stats || :
 
 	if [ ${INTERACTIVE_MODE} -eq 0 ]; then
-		stop_build "${PKGNAME}" ${ORIGIN} 1
+		stop_build "${PKGNAME}" "${ORIGINSPEC}" 1
 		log_stop
-		bset_job_status "failed/${failed_phase}" "${ORIGIN}"
+		bset_job_status "failed/${failed_phase}" "${ORIGINSPEC}"
 		msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
 		set +e
 		exit 1
 	fi
 else
-	badd ports.built "${ORIGIN} ${PKGNAME} ${elapsed}"
+	badd ports.built "${ORIGINSPEC} ${PKGNAME} ${elapsed}"
 	if [ -f ${MASTERMNT}${PORTSDIR}/${ORIGIN}/.keep ]; then
 		save_wrkdir ${MASTERMNT} "${PKGNAME}" "${PORTSDIR}/${ORIGIN}" \
 		    "noneed" || :
@@ -337,7 +337,7 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 		# Since failure was skipped earlier, fail now after leaving
 		# jail.
 		if [ -n "${failed_phase}" ]; then
-			bset_job_status "failed/${failed_phase}" "${ORIGIN}"
+			bset_job_status "failed/${failed_phase}" "${ORIGINSPEC}"
 			msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
 			set +e
 			exit 1
@@ -361,10 +361,10 @@ msg "Deinstalling package"
 ensure_pkg_installed
 injail ${PKG_DELETE} ${PKGNAME}
 
-stop_build "${PKGNAME}" ${ORIGIN} ${ret}
+stop_build "${PKGNAME}" "${ORIGINSPEC}" ${ret}
 log_stop
 
-bset_job_status "stopped" "${ORIGIN}"
+bset_job_status "stopped" "${ORIGINSPEC}"
 
 bset status "done:"
 

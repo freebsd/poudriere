@@ -71,6 +71,13 @@ function display_skipped() {
   print "}\n"
 }
 
+function originspec_decode(originspec, originspec_items) {
+  split(originspec, originspec_items, "@")
+  # 1 = origin
+  # 2 = FLAVOR
+  # 3 = DEP_ARGS
+}
+
 function end_type() {
   if (in_type) {
     # Close out ports
@@ -81,8 +88,10 @@ function end_type() {
 	  print "{"
           split(ports[port_status_type, i], build_reasons, " ")
           if (port_status_type != "remaining") {
-            origin = build_reasons[1]
-            print "\"origin\":\"" origin "\","
+            originspec_decode(build_reasons[1], originspec)
+            print "\"origin\":\"" originspec[1] "\","
+            if (originspec[2])
+              print "\"flavor\":\"" originspec[2] "\","
             pkgname = build_reasons[2]
           } else {
             pkgname = build_reasons[1]
@@ -188,7 +197,10 @@ BEGIN {
     print "\"id\":\"" group_id "\","
     if (split($0, status_a, ":") > 2) {
       print "\"status\":\""  status_a[1] "\","
-      print "\"origin\":\""  status_a[2] "\","
+      originspec_decode(status_a[2], originspec)
+      print "\"origin\":\""  originspec[1] "\","
+      if (originspec[2])
+        print "\"flavor\":\""  originspec[2] "\","
       print "\"pkgname\":\"" status_a[3] "\","
       print "\"started\":\"" status_a[4] "\","
       print "\"elapsed\":\"" status_a[5] "\""
