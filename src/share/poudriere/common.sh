@@ -5780,10 +5780,10 @@ gather_port_vars_process_depqueue() {
 		if [ ${ALL} -eq 0 ] && [ -z "${dep_args}" ]; then
 			if [ -n "${dep_flavor}" ]; then
 				queue=fqueue
-				rdep="metadata ${dep_flavor} ${origin}"
+				rdep="metadata ${dep_flavor} ${originspec}"
 			else
 				queue=gqueue
-				rdep="${origin}"
+				rdep="${originspec}"
 			fi
 
 			msg_debug "Want to enqueue default ${dep_origin} rdep=${rdep} into ${queue}"
@@ -5805,7 +5805,7 @@ gather_port_vars_process_depqueue() {
 			msg_debug "Want to enqueue ${dep_originspec} rdep=${origin} into ${queue}"
 			gather_port_vars_process_depqueue_enqueue \
 			    "${originspec}" "${dep_originspec}" "${queue}" \
-			    "${origin}"
+			    "${originspec}"
 		fi
 	done
 }
