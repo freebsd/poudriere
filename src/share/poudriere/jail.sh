@@ -707,6 +707,8 @@ install_from_tar() {
 create_jail() {
 	[ "${JAILNAME#*.*}" = "${JAILNAME}" ] ||
 		err 1 "The jailname cannot contain a period (.). See jail(8)"
+	[ "${JAILNAME#*:*}" = "${JAILNAME}" ] ||
+		err 1 "The jailname cannot contain a colon (:)."
 
 	if [ "${METHOD}" = "null" ]; then
 		[ -z "${JAILMNT}" ] && \
