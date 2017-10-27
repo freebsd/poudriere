@@ -423,7 +423,7 @@ build_and_install_world() {
 		    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools' in ${XDEV_SRC}"
 		XDEV_TOOLS=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
 		    ${MAKE_CMD} -C ${XDEV_SRC} -f Makefile.inc1 -V NXBDESTDIR)
-		: ${XDEV_TOOLS:=/usr/obj/${TARGET}.${TARGET_ARCH}/nxb-bin}
+		: ${XDEV_TOOLS:=${MAKEOBJDIRPREFIX:-/usr/obj}/${TARGET}.${TARGET_ARCH}/nxb-bin}
 		rm -rf ${JAILMNT}/nxb-bin || err 1 "Failed to remove old native-xtools"
 		mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
 		cat > ${JAILMNT}/etc/make.nxb.conf <<- EOF
