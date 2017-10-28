@@ -421,11 +421,22 @@ build_and_install_world() {
 		${MAKE_CMD} -C ${XDEV_SRC} native-xtools ${MAKE_JOBS} \
 		    ${BUILTWORLD:+-DNO_NXBTOOLCHAIN} \
 		    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools' in ${XDEV_SRC}"
-		XDEV_TOOLS=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
-		    ${MAKE_CMD} -C ${XDEV_SRC} -f Makefile.inc1 -V NXBDESTDIR)
-		: ${XDEV_TOOLS:=${MAKEOBJDIRPREFIX:-/usr/obj}/${TARGET}.${TARGET_ARCH}/nxb-bin}
 		rm -rf ${JAILMNT}/nxb-bin || err 1 "Failed to remove old native-xtools"
-		mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
+		# Check for native-xtools-install support
+		NXTP=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
+		    ${MAKE_CMD} -C ${SRC_BASE} -f Makefile.inc1 -V NXTP)
+		if [ -n "${NXTP}" ]; then
+			# New style, we call native-xtools-install
+			${MAKE_CMD} -C ${XDEV_SRC} native-xtools-install ${MAKE_JOBS} \
+			    DESTDIR=${JAILMNT} NXTP=/nxb-bin || \
+			    err 1 "Failed to 'make native-xtools-install' in ${XDEV_SRC}"
+		else
+			# Old style, we guess or ask where the files were dropped
+			XDEV_TOOLS=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
+			    ${MAKE_CMD} -C ${XDEV_SRC} -f Makefile.inc1 -V NXBDESTDIR)
+			: ${XDEV_TOOLS:=${MAKEOBJDIRPREFIX:-/usr/obj}/${TARGET}.${TARGET_ARCH}/nxb-bin}
+			mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
+		fi
 		cat > ${JAILMNT}/etc/make.nxb.conf <<- EOF
 		CC=/nxb-bin/usr/bin/cc
 		CPP=/nxb-bin/usr/bin/cpp
