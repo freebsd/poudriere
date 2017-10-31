@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd October 13, 2017
+.Dd October 31, 2017
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -216,22 +216,13 @@ This flag specifies on which ports
 the bulk build will be done.
 .It Fl R
 Clean RESTRICTED packages after building.
-.It Fl s
-Skip incremental rebuild and sanity checks.
-Sanity tests are made to check if the ports exists,
-does not have an increased version number, packaged dependencies match,
-pkgname matches, if the compiled options match the current options from the
-.Pa make.conf
-files and
-.Pa /usr/local/etc/poudriere.d/options ,
-and that its own dependencies did not require rebuild as well.
 .It Fl S
 Don't recursively rebuild packages affected by other packages requiring
 incremental rebuild.
-This is a subset of
-.Fl s .
-This may result in broken packages if the ones they depend on are updated
-and are not ABI-compatible.
+This may result in broken packages if the ones they depend on are updated,
+are not ABI-compatible, and were not properly
+.Sy PORTREVISION
+bumped.
 .It Fl t
 Add some testing to the specified ports.
 Add
@@ -694,22 +685,13 @@ Do not build package repository or INDEX when build of dependencies is completed
 Specifies which ports
 .Ar tree
 to use.
-.It Fl s
-Skip incremental rebuild and sanity checks.
-Sanity tests are made to check if the ports exists,
-does not have an increased version number, packaged dependencies match,
-pkgname matches, if the compiled options match the current options from the
-.Pa make.conf
-files and
-.Pa /usr/local/etc/poudriere.d/options ,
-and that its own dependencies did not require rebuild as well.
 .It Fl S
 Don't recursively rebuild packages affected by other packages requiring
 incremental rebuild.
-This is a subset of
-.Fl s .
-This may result in broken packages if the ones they depend on are updated
-and are not ABI-compatible.
+This may result in broken packages if the ones they depend on are updated,
+are not ABI-compatible, and were not properly
+.Sy PORTREVISION
+bumped.
 .It Fl v
 This will show more information during the build.
 Specify twice to enable debug output.

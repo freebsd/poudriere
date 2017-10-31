@@ -80,7 +80,6 @@ bulk_cleanup() {
 }
 
 PTNAME="default"
-SKIPSANITY=0
 SKIP_RECURSIVE_REBUILD=0
 SETNAME=""
 CLEAN=0
@@ -93,7 +92,7 @@ INTERACTIVE_MODE=0
 
 [ $# -eq 0 ] && usage
 
-while getopts "B:iIf:j:J:CcknNp:RFtrTsSvwz:a" FLAG; do
+while getopts "B:iIf:j:J:CcknNp:RFtrTSvwz:a" FLAG; do
 	case "${FLAG}" in
 		B)
 			BUILDNAME="${OPTARG}"
@@ -159,9 +158,6 @@ while getopts "B:iIf:j:J:CcknNp:RFtrTsSvwz:a" FLAG; do
 			;;
 		R)
 			NO_RESTRICTED=1
-			;;
-		s)
-			SKIPSANITY=1
 			;;
 		S)
 			SKIP_RECURSIVE_REBUILD=1

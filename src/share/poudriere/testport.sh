@@ -69,13 +69,12 @@ CONFIGSTR=0
 . ${SCRIPTPREFIX}/common.sh
 NOPREFIX=1
 SETNAME=""
-SKIPSANITY=0
 SKIP_RECURSIVE_REBUILD=0
 INTERACTIVE_MODE=0
 PTNAME="default"
 BUILD_REPO=1
 
-while getopts "o:cniIj:J:kNp:PsSvwz:" FLAG; do
+while getopts "o:cniIj:J:kNp:PSvwz:" FLAG; do
 	case "${FLAG}" in
 		B)
 			BUILDNAME="${OPTARG}"
@@ -116,9 +115,6 @@ while getopts "o:cniIj:J:kNp:PsSvwz:" FLAG; do
 			;;
 		P)
 			NOPREFIX=0
-			;;
-		s)
-			SKIPSANITY=1
 			;;
 		S)
 			SKIP_RECURSIVE_REBUILD=1
