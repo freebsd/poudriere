@@ -279,8 +279,8 @@ if [ -n "${PACKAGELIST}" ]; then
 	FreeBSD: { enabled: false }
 	local: { url: file:///${WRKDIR}/world/tmp/packages }
 	EOF
-		env ASSUME_ALWAYS_YES=yes REPOS_DIR=/${WRKDIR}/world/tmp/ ABI_FILE=/${WRKDIR}/world/bin/sh pkg -r ${WRKDIR}/world/ install pkg
-		cat ${PACKAGELIST} | xargs env ASSUME_ALWAYS_YES=yes REPOS_DIR=/${WRKDIR}/world/tmp/ ABI_FILE=/${WRKDIR}/world/bin/sh pkg -r ${WRKDIR}/world/ install
+		env ASSUME_ALWAYS_YES=yes SYSLOG=no REPOS_DIR=/${WRKDIR}/world/tmp/ ABI_FILE=/${WRKDIR}/world/bin/sh pkg -r ${WRKDIR}/world/ install pkg
+		cat ${PACKAGELIST} | xargs env ASSUME_ALWAYS_YES=yes SYSLOG=no REPOS_DIR=/${WRKDIR}/world/tmp/ ABI_FILE=/${WRKDIR}/world/bin/sh pkg -r ${WRKDIR}/world/ install
 	fi
 	rm -rf ${WRKDIR}/world/var/cache/pkg
 	umount ${WRKDIR}/world/tmp/packages
