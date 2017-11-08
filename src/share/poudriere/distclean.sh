@@ -27,7 +27,12 @@
 
 usage() {
 	cat <<EOF
-poudriere distclean [options]
+poudriere distclean [options] [-a|-f file|cat/port ...]
+
+Parameters:
+    -a          -- Clean the whole ports tree
+    -f file     -- Get the list of ports to clean from a file
+    [ports...]  -- List of ports to clean on the command line
 
 Options:
     -J n        -- Run n jobs in parallel (Defaults to the number of CPUs
@@ -45,12 +50,24 @@ EOF
 }
 
 DRY_RUN=0
-ALL=1
+ALL=0
 
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "J:np:vy" FLAG; do
+[ $# -eq 0 ] && usage
+
+while getopts "af:J:np:vy" FLAG; do
 	case "${FLAG}" in
+		a)
+			ALL=1
+			;;
+		f)
+			# If this is a relative path, add in ${PWD} as
+			# a cd / was done.
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			    OPTARG="${SAVED_PWD}/${OPTARG}"
+			LISTPKGS="${LISTPKGS} ${OPTARG}"
+			;;
 		J)
 			PREPARE_PARALLEL_JOBS=${OPTARG}
 			;;
@@ -111,6 +128,8 @@ gather_distfiles() {
 
 DISTFILES_LIST=$(mktemp -t poudriere_distfiles)
 CLEANUP_HOOK=distfiles_cleanup
+
+read_packages_from_params "$@"
 
 parallel_start
 for PTNAME in ${PTNAMES}; do

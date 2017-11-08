@@ -27,7 +27,7 @@
 
 usage() {
 	cat << EOF
-poudriere bulk [options] [-f file|cat/port ...]
+poudriere bulk [options] [-a|-f file|cat/port ...]
 
 Parameters:
     -a          -- Build the whole ports tree
