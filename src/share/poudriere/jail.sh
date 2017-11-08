@@ -225,6 +225,7 @@ update_jail() {
 		jset ${JAILNAME} method ${METHOD}
 	fi
 	msg "Upgrading using ${METHOD}"
+	: ${KERNEL:=$(jget ${JAILNAME} kernel 2>/dev/null || echo)}
 	case ${METHOD} in
 	ftp|http|ftp-archive)
 		# In case we use FreeBSD dists and TORELEASE is present, check if it's a release branch.
@@ -865,6 +866,7 @@ create_jail() {
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
 	[ -n "$SRCPATH" ] && jset ${JAILNAME} srcpath ${SRCPATH}
+	[ -n "${KERNEL}" ] && jset ${JAILNAME} kernel ${KERNEL}
 
 	# Wrap the jail creation in a special cleanup hook that will remove the jail
 	# if any error is encountered
@@ -902,7 +904,7 @@ info_jail() {
 	local building_started status log
 	local elapsed elapsed_days elapsed_hms elapsed_timestamp
 	local now start_time timestamp
-	local jversion jarch jmethod pmethod mnt fs
+	local jversion jarch jmethod pmethod mnt fs kernel
 
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 
@@ -927,6 +929,7 @@ info_jail() {
 	_jget timestamp ${JAILNAME} timestamp 2>/dev/null || :
 	_jget mnt ${JAILNAME} mnt 2>/dev/null || :
 	_jget fs ${JAILNAME} fs 2>/dev/null || fs=""
+	_jget kernel ${JAILNAME} kernel 2>/dev/null || kernel=
 
 	echo "Jail name:         ${JAILNAME}"
 	echo "Jail version:      ${jversion}"
@@ -937,6 +940,9 @@ info_jail() {
 	echo "Jail method:       ${jmethod}"
 	echo "Jail mount:        ${mnt}"
 	echo "Jail fs:           ${fs}"
+	if [ -n "${kernel}" ]; then
+		echo "Jail kernel:       ${kernel}"
+	fi
 	if [ -n "${timestamp}" ]; then
 		echo "Jail updated:      $(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
 	fi
