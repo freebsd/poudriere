@@ -4941,7 +4941,7 @@ delete_old_pkg() {
 			*\ ${d}\ *) ;;
 			*)
 				# Unknown, but if this origin has a FLAVOR or
-				# DEPENDS_ARGS then we needa to fallback to a
+				# DEPENDS_ARGS then we need to fallback to a
 				# PKGBASE comparison first.
 				originspec_decode "${d}" dep_origin \
 				    dep_dep_args dep_flavor
