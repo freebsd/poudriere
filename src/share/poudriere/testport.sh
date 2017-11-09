@@ -170,7 +170,7 @@ if [ -n "${new_origin}" ]; then
 	msg "MOVED: ${COLOR_PORT}${ORIGIN}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
 	# The ORIGIN may have a FLAVOR in it which overrides whatever the
 	# user specified.
-	originspec_decode "${new_origin}" ORIGIN _ignored NEW_FLAVOR
+	originspec_decode "${new_origin}" ORIGIN '' NEW_FLAVOR
 	if [ -n "${NEW_FLAVOR}" ]; then
 		FLAVOR="${NEW_FLAVOR}"
 	fi
