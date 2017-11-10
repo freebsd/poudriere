@@ -52,7 +52,6 @@ Options:
                    of dependencies completed
     -p tree     -- Specify the path to the portstree
     -P          -- Use custom prefix
-    -s          -- Skip incremental rebuild and sanity checks
     -S          -- Don't recursively rebuild packages affected by other
                    packages requiring incremental rebuild. This can result
                    in broken packages if the ones updated do not retain
