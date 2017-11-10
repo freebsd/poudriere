@@ -4801,14 +4801,35 @@ delete_old_pkg() {
 	local origin v v2 compiled_options current_options current_deps
 	local td d key dpath dir found raw_deps compiled_deps
 	local compiled_deps_pkgbases
-	local pkgbase new_pkgbase _pkgnames flavor pkg_flavor
+	local pkgbase new_pkgbase _pkgnames flavor pkg_flavor originspec
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor dep_dep_args
 
 	pkgname="${pkg##*/}"
 	pkgname="${pkgname%.*}"
-	pkgbase_is_needed "${pkgname}" || return 0
 
-	pkg_get_origin origin "${pkg}"
+	pkg_flavor="__null"
+	origin="__null"
+	if ! pkgbase_is_needed "${pkgname}"; then
+		# We don't expect this PKGBASE but it may still be an
+		# origin that is expected and just renamed.  Need to
+		# get the origin and flavor out of the package to
+		# determine that.
+		pkg_get_origin origin "${pkg}"
+		if have_ports_feature FLAVORS; then
+			pkg_get_flavor pkg_flavor "${pkg}"
+		else
+			pkg_flavor=
+		fi
+		originspec_encode originspec "${origin}" '' "${pkg_flavor}"
+		if ! originspec_is_needed "${originspec}"; then
+			msg_debug "delete_old_pkg: Skip unqueued ${pkg} ${origin} ${pkg_flavor} ${originspec}"
+			return 0
+		fi
+		# Apparently we expect this package via its origin and flavor.
+	fi
+	[ "${origin}" = "__null" ] && \
+	    pkg_get_origin origin "${pkg}"
+
 	_my_path mnt
 
 	if [ ! -d "${mnt}${PORTSDIR}/${origin}" ]; then
@@ -5009,7 +5030,11 @@ delete_old_pkg() {
 
 	if have_ports_feature FLAVORS; then
 		shash_get pkgname-flavor "${pkgname}" flavor || flavor=
-		pkg_get_flavor pkg_flavor "${pkg}"
+		if have_ports_feature FLAVORS; then
+			pkg_get_flavor pkg_flavor "${pkg}"
+		else
+			pkg_flavor=
+		fi
 		if [ "${pkg_flavor}" != "${flavor}" ]; then
 			msg "Deleting ${pkg##*/}: FLAVOR changed to '${flavor}' from '${pkg_flavor}'"
 			delete_pkg "${pkg}"
@@ -6172,6 +6197,26 @@ pkgbase_is_needed() {
 		if (found != 1)
 			exit 1
 	    }' "all_pkgbases"
+}
+
+# Port was requested to be built, or is needed by a port requested to be built
+originspec_is_needed() {
+       [ "${PWD}" = "${MASTERMNT}/.p" ] || \
+           err 1 "originspec_is_needed requires PWD=${MASTERMNT}/.p"
+       [ $# -eq 1 ] || eargs originspec_is_needed originspec
+       local originspec="$1"
+
+       [ ${ALL} -eq 1 ] && return 0
+
+       awk -voriginspec="${originspec}" '
+           $2 == originspec {
+               found=1
+               exit 0
+           }
+           END {
+               if (found != 1)
+                       exit 1
+           }' "all_pkgs"
 }
 
 get_porttesting() {
