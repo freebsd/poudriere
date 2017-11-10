@@ -3883,6 +3883,9 @@ build_pkg() {
 	job_msg "Building ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_RESET}"
 
 	MAKE_ARGS="${DEPENDS_ARGS}${FLAVOR:+ FLAVOR=${FLAVOR}}"
+	if [ -n "${DEPENDS_ARGS}" ]; then
+		PKGENV="${PKGENV:+${PKGENV} }PKG_NOTES=depends_args PKG_NOTE_depends_args=${DEPENDS_ARGS}"
+	fi
 	portdir="${PORTSDIR}/${port}"
 
 	if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
@@ -4562,6 +4565,33 @@ pkg_get_flavor() {
 	setvar "${var_return}" "${_flavor}"
 }
 
+pkg_get_dep_args() {
+	[ $# -eq 2 ] || eargs pkg_get_dep_args var_return pkg
+	local var_return="$1"
+	local pkg="$2"
+	local pkg_cache_dir
+	local _dep_args cachefile
+
+	get_pkg_cache_dir pkg_cache_dir "${pkg}"
+	cachefile="${pkg_cache_dir}/dep_args"
+
+	if [ ! -f "${cachefile}" ]; then
+		if [ -z "${_dep_args}" ]; then
+			if [ "${PKG_EXT}" != "tbz" ]; then
+				_dep_args=$(injail ${PKG_BIN} query -F \
+					"/packages/All/${pkg##*/}" \
+					'%At %Av' | \
+					awk '$1 == "depends_args" {print $2}')
+			fi
+		fi
+		echo ${_dep_args} > "${cachefile}"
+	else
+		read_line _dep_args "${cachefile}"
+	fi
+
+	setvar "${var_return}" "${_dep_args}"
+}
+
 pkg_get_dep_origin_pkgbase() {
 	[ $# -ne 3 ] && eargs pkg_get_dep_origin_pkgbase var_return_origin \
 	    var_return_pkgbase pkg
@@ -4669,7 +4699,11 @@ pkg_cache_data() {
 	ensure_pkg_installed || return 1
 	pkg_get_options _ignored "${pkg}" > /dev/null
 	pkg_get_origin _ignored "${pkg}" "${origin}" > /dev/null
-	pkg_get_flavor _ignored "${pkg}" > /dev/null
+	if have_ports_feature FLAVORS; then
+		pkg_get_flavor _ignored "${pkg}" > /dev/null
+	elif have_ports_feature DEPENDS_ARGS; then
+		pkg_get_dep_args _ignored "${pkg}" > /dev/null
+	fi
 	pkg_get_dep_origin_pkgbase _ignored _ignored "${pkg}" > /dev/null
 	deps_file _ignored "${pkg}" > /dev/null
 }
