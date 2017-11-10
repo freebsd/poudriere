@@ -4860,8 +4860,14 @@ delete_old_pkg() {
 		[ "${pkgbase}" = "${new_pkgbase}" ] && break
 	done
 
-	# A 'changed PKGNAME' check is done later for the case of
-	# not finding a relevant pkgbase match.
+	# Check for changed PKGNAME before version as otherwise a new
+	# version may show for a stale package that has been renamed.
+	# XXX: Check if the pkgname has changed and rename in the repo
+	if [ "${pkgbase}" != "${new_pkgbase}" ]; then
+		msg "Deleting ${pkg##*/}: package name changed to '${new_pkgbase}'"
+		delete_pkg "${pkg}"
+		return 0
+	fi
 
 	v2=${new_pkgname##*-}
 	if [ "$v" != "$v2" ]; then
@@ -5019,13 +5025,6 @@ delete_old_pkg() {
 			delete_pkg "${pkg}"
 			return 0
 		fi
-	fi
-
-	# XXX: Check if the pkgname has changed and rename in the repo
-	if [ "${pkgbase}" != "${new_pkgbase}" ]; then
-		msg "Deleting ${pkg##*/}: package name changed to '${new_pkgbase}'"
-		delete_pkg "${pkg}"
-		return 0
 	fi
 
 	if have_ports_feature FLAVORS; then
