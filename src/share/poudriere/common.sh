@@ -64,6 +64,9 @@ not_for_os() {
 }
 
 err() {
+	if [ -n "${IGNORE_ERR}" ]; then
+		return 0
+	fi
 	trap '' SIGINFO
 	export CRASHED=1
 	if [ $# -ne 2 ]; then
@@ -4172,8 +4175,8 @@ originspec_encode() {
 	# Only add in FLAVOR and DEPENDS_ARGS if they are needed,
 	# if neither are then don't even add in the ORIGINSPEC_SEP.
 	if [ -n "${_dep_args}" -o -n "${_flavor}" ]; then
-		[ -n "${dep_args}" -a -n "${_flavor}" ] && \
-		    err 1 "originspec_encode: Origin ${origin} incorrectly trying to use FLAVOR=${_flavor} and DEPENDS_ARGS=${dep_args}"
+		[ -n "${_dep_args}" -a -n "${_flavor}" ] && \
+		    err 1 "originspec_encode: Origin ${origin} incorrectly trying to use FLAVOR=${_flavor} and DEPENDS_ARGS=${_dep_args}"
 		output="${output}${ORIGINSPEC_SEP}${_flavor}${_dep_args:+${ORIGINSPEC_SEP}${_dep_args}}"
 	fi
 	setvar "${_var_return}" "${output}"
@@ -6122,7 +6125,8 @@ _all_pkgnames_for_origin() {
 	local var_return_pkgnames="${2}"
 	local originspec results
 
-	originspec_encode originspec "${origin}" \
+	# Need to ignore exception for both flavor+dep_args usage
+	IGNORE_ERR=1 originspec_encode originspec "${origin}" \
 	    "?[^${ORIGINSPEC_SEP}]*" \
 	    "?[^${ORIGINSPEC_SEP}]*"
 	_gsub "${originspec}" '+' '\\+'
