@@ -755,7 +755,7 @@ buildlog_start() {
 	echo "port directory: ${portdir}"
 	echo "package name: ${PKGNAME}"
 	echo "building for: $(injail uname -a)"
-	echo "maintained by: ${_maintainer}"
+	echo "maintained by: ${mk_MAINTAINER}"
 	echo "Makefile ident: $(ident -q ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
 	echo "Poudriere version: ${POUDRIERE_VERSION}"
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
