@@ -33,17 +33,30 @@ createfs() {
 	[ -z "${NO_ZFS}" ] || fs=none
 
 	if [ -n "${fs}" -a "${fs}" != "none" ]; then
-		msg_n "Creating ${name} fs..."
-		zfs create -p \
+		msg_n "Creating ${name} fs at ${mnt}..."
+		if ! zfs create -p \
 			-o compression=lz4 \
 			-o atime=off \
-			-o mountpoint=${mnt} ${fs} || err 1 " fail"
+			-o mountpoint=${mnt} ${fs}; then
+			echo " fail"
+			err 1 "Failed to create FS ${fs}"
+		fi
 		echo " done"
 		# Must invalidate the zfs_getfs cache now in case of a
 		# negative entry.
 		cache_invalidate _zfs_getfs "${mnt}"
 	else
-		mkdir -p ${mnt}
+		msg_n "Creating ${name} fs at ${mnt}..."
+		if ! mkdir -p "${mnt}"; then
+			echo " fail"
+			err 1 "Failed to create directory ${mnt}"
+		fi
+		# If the directory is non-empty then we didn't create it.
+		if ! dirempty "${mnt}"; then
+			echo " fail"
+			err 1 "Directory not empty at ${mnt}"
+		fi
+		echo " done"
 	fi
 }
 
