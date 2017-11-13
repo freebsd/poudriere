@@ -200,6 +200,7 @@ injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} maintainer ECHO_CMD=true || \
 if [ $CONFIGSTR -eq 1 ]; then
 	command -v dialog4ports >/dev/null 2>&1 || err 1 "You must have ports-mgmt/dialog4ports installed on the host to use -c."
 	PORTSDIR=${portsdir} \
+	    __MAKE_CONF=/dev/null \
 	    PORT_DBDIR=${MASTERMNT}/var/db/ports \
 	    TERM=${SAVED_TERM} \
 	    make -C ${portsdir}/${ORIGIN} config \
