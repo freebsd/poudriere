@@ -104,7 +104,3 @@ assert_ret() {
 aecho() {
 	echo "$@" >&2
 }
-
-injail() {
-	"$@"
-}
