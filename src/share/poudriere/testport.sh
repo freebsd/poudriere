@@ -146,14 +146,26 @@ if [ -z ${ORIGINSPEC} ]; then
 fi
 
 [ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
+
+maybe_run_queued "$@"
+
+: ${BUILD_PARALLEL_JOBS:=${PARALLEL_JOBS}}
+: ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}
+PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
+
+MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
+_mastermnt MASTERMNT
+export MASTERNAME
+export MASTERMNT
+export POUDRIERE_BUILD_TYPE=bulk
+
+jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
+
 _pget portsdir ${PTNAME} mnt
-[ -f "${portsdir}/Mk/bsd.port.mk" ] || \
-    err 1 "Ports tree ${portsdir} is missing Mk/bsd.port.mk"
-PORTSDIR="${portsdir}" fetch_global_port_vars || \
+fetch_global_port_vars || \
     err 1 "Failed to lookup global ports metadata"
 # Allow testing on virtual py3 slaves until we have FLAVORS.
-PORTSDIR="${portsdir}" \
-    map_py_slave_port "${ORIGINSPEC}" ORIGINSPEC || :
+map_py_slave_port "${ORIGINSPEC}" ORIGINSPEC || :
 originspec_decode "${ORIGINSPEC}" ORIGIN DEPENDS_ARGS FLAVOR
 if have_ports_feature FLAVORS; then
 	[ "${FLAVOR}" = "${FLAVOR_DEFAULT}" ] && FLAVOR=
@@ -179,20 +191,6 @@ fi
 if [ ! -f "${portsdir}/${ORIGIN}/Makefile" ] || [ -d "${portsdir}/${ORIGIN}/../Mk" ]; then
 	err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
 fi
-
-maybe_run_queued "$@"
-
-: ${BUILD_PARALLEL_JOBS:=${PARALLEL_JOBS}}
-: ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}
-PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
-
-MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
-_mastermnt MASTERMNT
-export MASTERNAME
-export MASTERMNT
-export POUDRIERE_BUILD_TYPE=bulk
-
-jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
 injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} maintainer ECHO_CMD=true || \
     err 1 "Port is broken"
