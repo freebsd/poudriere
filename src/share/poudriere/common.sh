@@ -7389,8 +7389,6 @@ fi
 TIME_START=$(clock -monotonic)
 EPOCH_START=$(clock -epoch)
 
-[ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}
-
 . ${SCRIPTPREFIX}/include/util.sh
 . ${SCRIPTPREFIX}/include/colors.sh
 . ${SCRIPTPREFIX}/include/display.sh
