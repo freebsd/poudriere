@@ -60,6 +60,10 @@ KILL=0
 
 . ${SCRIPTPREFIX}/common.sh
 
+if [ ! -d ${WATCHDIR} ]; then
+	mkdir -p ${WATCHDIR} || err 1 "Unable to create needed directory ${WATCHDIR}"
+fi
+
 if [ -z "${DAEMON_ARGS_PARSED}" ]; then
 	while getopts "knp:" FLAG; do
 		case "${FLAG}" in
