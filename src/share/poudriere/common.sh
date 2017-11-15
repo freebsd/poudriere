@@ -2643,20 +2643,34 @@ setup_makeconf() {
 }
 
 include_poudriere_confs() {
-	local files file flag args_hack
+	local files file flag args_hack debug
 
+	# msg_debug is not properly setup this early for VERBOSE to be set
+	# so spy on -v and set debug and use it locally instead.
+	debug=0
 	# Spy on cmdline arguments so this function is not needed in
 	# every new sub-command file, which could lead to missing it.
-	args_hack=$(echo " $@"|grep -Eo -- ' -[^ ]*([jpz]) ?([^ ]*)'|tr '\n' ' '|sed -Ee 's, -[^ ]*([jpz]) ?([^ ]*),-\1 \2,g')
+	args_hack=$(echo " $@"|grep -Eo -- ' -[^jpvz ]*([jpz] ?[^ ]*|v+)'|tr '\n' ' '|sed -Ee 's, -[^jpvz ]*([jpz]|v+) ?([^ ]*),-\1 \2,g')
 	set -- ${args_hack}
-	while getopts "j:p:z:" flag; do
+	while getopts "j:p:vz:" flag; do
 		case ${flag} in
 			j) jail="${OPTARG}" ;;
 			p) ptname="${OPTARG}" ;;
+			v) debug=$((debug+1)) ;;
 			z) setname="${OPTARG}" ;;
 			*) ;;
 		esac
 	done
+
+	if [ -r "${POUDRIERE_ETC}/poudriere.conf" ]; then
+		. "${POUDRIERE_ETC}/poudriere.conf"
+		[ ${debug} -gt 1 ] && msg_debug "Reading ${POUDRIERE_ETC}/poudriere.conf"
+	elif [ -r "${POUDRIERED}/poudriere.conf" ]; then
+		. "${POUDRIERED}/poudriere.conf"
+		[ ${debug} -gt 1 ] && msg_debug "Reading ${POUDRIERED}/poudriere.conf"
+	else
+		err 1 "Unable to find a readable poudriere.conf in ${POUDRIERE_ETC} or ${POUDRIERED}"
+	fi
 
 	files="${setname} ${ptname} ${jail}"
 	[ -n "${ptname}" -a -n "${setname}" ] && \
@@ -2669,7 +2683,10 @@ include_poudriere_confs() {
 	    files="${files} ${jail}-${ptname}-${setname}"
 	for file in ${files}; do
 		file="${POUDRIERED}/${file}-poudriere.conf"
-		[ -r "${file}" ] && . "${file}"
+		if [ -r "${file}" ]; then
+			[ ${debug} -gt 1 ] && msg_debug "Reading ${file}"
+			. "${file}"
+		fi
 	done
 
 	return 0
@@ -7159,13 +7176,6 @@ cd /
 [ "${POUDRIERE_ETC#/}" = "${POUDRIERE_ETC}" ] && \
     POUDRIERE_ETC="${SAVED_PWD}/${POUDRIERE_ETC}"
 POUDRIERED=${POUDRIERE_ETC}/poudriere.d
-if [ -r "${POUDRIERE_ETC}/poudriere.conf" ]; then
-	. "${POUDRIERE_ETC}/poudriere.conf"
-elif [ -r "${POUDRIERED}/poudriere.conf" ]; then
-	. "${POUDRIERED}/poudriere.conf"
-else
-	err 1 "Unable to find a readable poudriere.conf in ${POUDRIERE_ETC} or ${POUDRIERED}"
-fi
 include_poudriere_confs "$@"
 
 AWKPREFIX=${SCRIPTPREFIX}/awk
