@@ -412,9 +412,6 @@ setup_build_env() {
 setup_src_conf() {
 	local src="$1"
 
-	[ "${JAILNAME#*:*}" = "${JAILNAME}" ] ||
-		err 1 "The jailname cannot contain a colon (:) when doing a buildworld."
-
 	[ -f ${JAILMNT}/etc/${src}.conf ] && rm -f ${JAILMNT}/etc/${src}.conf
 	touch ${JAILMNT}/etc/${src}.conf
 	[ -f ${POUDRIERED}/${src}.conf ] && \
@@ -777,8 +774,13 @@ create_jail() {
 
 	if [ -z ${JAILMNT} ]; then
 		[ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
-		JAILMNT=${BASEFS}/jails/${JAILNAME}
+		JAILMNT="${BASEFS}/jails/${JAILNAME}"
+		_gsub "${JAILMNT}" ":" "_"
+		JAILMNT="${_gsub}"
 	fi
+
+	[ "${JAILMNT#*:*}" = "${JAILMNT}" ] ||
+		err 1 "The jail mount path cannot contain a colon (:)"
 
 	if [ -z "${JAILFS}" -a -z "${NO_ZFS}" ]; then
 		[ -z ${ZPOOL} ] && err 1 "Please provide a ZPOOL variable in your poudriere.conf"
