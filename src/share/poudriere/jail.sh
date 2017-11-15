@@ -412,6 +412,9 @@ setup_build_env() {
 setup_src_conf() {
 	local src="$1"
 
+	[ "${JAILNAME#*:*}" = "${JAILNAME}" ] ||
+		err 1 "The jailname cannot contain a colon (:) when doing a buildworld."
+
 	[ -f ${JAILMNT}/etc/${src}.conf ] && rm -f ${JAILMNT}/etc/${src}.conf
 	touch ${JAILMNT}/etc/${src}.conf
 	[ -f ${POUDRIERED}/${src}.conf ] && \
@@ -440,9 +443,6 @@ buildworld() {
 	export SRC_ENV_CONF=${JAILMNT}/etc/src-env.conf
 
 	setup_build_env
-
-	[ "${JAILNAME#*:*}" = "${JAILNAME}" ] ||
-		err 1 "The jailname cannot contain a colon (:) when doing a buildworld."
 
 	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
 	${MAKE_CMD} -C ${SRC_BASE} buildworld ${MAKE_JOBS} \
