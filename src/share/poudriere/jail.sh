@@ -441,6 +441,9 @@ buildworld() {
 
 	setup_build_env
 
+	[ "${JAILNAME#*:*}" = "${JAILNAME}" ] ||
+		err 1 "The jailname cannot contain a colon (:) when doing a buildworld."
+
 	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
 	${MAKE_CMD} -C ${SRC_BASE} buildworld ${MAKE_JOBS} \
 	    ${MAKEWORLDARGS} || err 1 "Failed to 'make buildworld'"
@@ -764,8 +767,6 @@ install_from_tar() {
 create_jail() {
 	[ "${JAILNAME#*.*}" = "${JAILNAME}" ] ||
 		err 1 "The jailname cannot contain a period (.). See jail(8)"
-	[ "${JAILNAME#*:*}" = "${JAILNAME}" ] ||
-		err 1 "The jailname cannot contain a colon (:)."
 
 	if [ "${METHOD}" = "null" ]; then
 		[ -z "${JAILMNT}" ] && \
