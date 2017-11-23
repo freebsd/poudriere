@@ -462,7 +462,7 @@ function format_status_row(status, row, n) {
 		table_row.push(format_duration(row.elapsed ? row.elapsed : ''));
 	} else if (status == "failed") {
 		table_row.push(format_pkgname(row.pkgname));
-		table_row.push(format_origin(row.origi, row.flavorn));
+		table_row.push(format_origin(row.origin, row.flavor));
 		table_row.push(row.phase);
 		table_row.push(row.skipped_cnt);
 		table_row.push(format_log(row.pkgname, true, row.errortype));
