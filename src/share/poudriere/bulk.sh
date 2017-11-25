@@ -55,6 +55,7 @@ Options:
                    fatal; don't skip dependent ports on findings.
     -T          -- Try to build broken ports anyway
     -F          -- Only fetch from original master_site (skip FreeBSD mirrors)
+    -s          -- Do package seeding
     -S          -- Don't recursively rebuild packages affected by other
                    packages requiring incremental rebuild. This can result
                    in broken packages if the ones updated do not retain
@@ -91,7 +92,7 @@ INTERACTIVE_MODE=0
 
 [ $# -eq 0 ] && usage
 
-while getopts "B:iIf:j:J:CcknNp:RFtrTSvwz:a" FLAG; do
+while getopts "B:iIf:j:J:CcknNp:RFtrTsSvwz:a" FLAG; do
 	case "${FLAG}" in
 		B)
 			BUILDNAME="${OPTARG}"
@@ -157,6 +158,9 @@ while getopts "B:iIf:j:J:CcknNp:RFtrTSvwz:a" FLAG; do
 			;;
 		R)
 			NO_RESTRICTED=1
+			;;
+		s)
+			PKG_SEEDING=1
 			;;
 		S)
 			SKIP_RECURSIVE_REBUILD=1

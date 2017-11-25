@@ -6710,6 +6710,10 @@ prepare_ports() {
 
 	clean_build_queue
 
+	pkg_seeding
+
+	clean_build_queue
+
 	# Call the deadlock code as non-fatal which will check for cycles
 	msg "Sanity checking build queue"
 	bset status "sanity_check_queue:"
@@ -6875,6 +6879,64 @@ load_priorities() {
 	POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS} unbalanced"
 
 	return 0
+}
+
+pkg_seeding() {
+	[ "${PKG_SEEDING}" != "no" ] || return 0
+
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkg_seeding requires PWD=${MASTERMNT}/.p"
+
+	local url url_prefix jail_version jail_arch dest
+	local seed_total seed_ok
+
+	# Set up URL prefix
+	jail_version=$(jget ${JAILNAME} version)
+	# $MAJOR_RELEASE-$SUBRELEASE.RELEASE-px --> $MAJOR_RELEASE
+	jail_version="${jail_version%%.*}"
+	jail_arch=$(jget ${JAILNAME} arch)
+	url_prefix="${PKG_SEEDING_METHOD}://${PKG_SEEDING_MIRROR}"
+	url_prefix="${url_prefix}/FreeBSD:${jail_version}:${jail_arch}/latest/All"
+
+	msg "Package seeding from ${PKG_SEEDING_MIRROR}"
+	bset status "packageseeding:"
+
+	seed_ok=0
+	parallel_start
+	while read pkgname originspec dep_reason; do
+		# Don't fetch ports explicitly requested to be built
+		# Only fetch dependencies the users don't bother being built
+		# by others
+		pkgname="${pkgname}.${PKG_EXT}"
+		url="${url_prefix}/${pkgname}"
+		dest="${PACKAGES}/All/${pkgname}"
+		if [ "${dep_reason}" != "listed" ] && [ ! -f "$dest" ]; then
+			parallel_run pkg_seeding_download "${url}" "${dest}" "${originspec}" && \
+                seed_ok=$((${seed_ok} + 1))
+		fi
+	done < "all_pkgs"
+
+	if ! parallel_stop; then
+		err 1 "Fatal errors encountered seeding packages."
+	fi
+
+	msg "Package seeding done, seeded ${seed_ok} packages."
+}
+
+pkg_seeding_download() {
+	[ $# -ne 3 ] && eargs pkg_seeding_download destination url originspec
+
+	msg_debug "Fetching seed from: $1"
+	fetch -q -a -w 1 -m -o "$2" "$1" &> /dev/null || \
+		fetch -q -a -w 1 -r -o "$2" "$1" &> /dev/null
+
+	if [ $? -eq 0 ]; then
+		msg_verbose "Successfully seeding $3 to $2"
+		return 0
+	else
+		msg_debug "Fail seeding $3"
+		return 1
+	fi
 }
 
 balance_pool() {
@@ -7390,6 +7452,10 @@ DRY_RUN=0
 : ${BUILDNAME:=$(date +${BUILDNAME_FORMAT})}
 
 : ${HTML_TYPE:=inline}
+
+: ${PKG_SEEDING:=no}
+: ${PKG_SEEDING_METHOD:=http}
+: ${PKG_SEEDING_MIRROR:=pkg.freebsd.org}
 
 if [ -n "${MAX_MEMORY}" ]; then
 	MAX_MEMORY_BYTES="$((${MAX_MEMORY} * 1024 * 1024 * 1024))"

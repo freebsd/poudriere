@@ -309,3 +309,9 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # processing of the queue slightly, especially for bulk -a bulds.
 # Default: no
 #HTML_TRACK_REMAINING=yes
+
+# Do package seeding or not (fetching required binary packages from a mirror
+# that has the exact version we want)
+# Default: no
+#PKG_SEEDING=yes
+#PKG_SEEDING_MIRROR=pkg.freebsd.org
