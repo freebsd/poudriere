@@ -2704,7 +2704,7 @@ jail_cleanup() {
 	export CLEANED_UP=1
 }
 
-# return 0 if the package dir exists and has packages, 0 otherwise
+# return 0 if the package dir exists and has packages, 1 otherwise
 package_dir_exists_and_has_packages() {
 	[ ! -d ${PACKAGES}/All ] && return 1
 	dirempty ${PACKAGES}/All && return 1
@@ -5468,7 +5468,7 @@ gather_port_vars() {
 
 	clear_dep_fatal_error
 	parallel_start
-	for originspec in $(listed_ports show_moved); do
+	for originspec in $(listed_ports); do
 		originspec_decode "${originspec}" origin dep_args flavor
 		[ ${ALL} -eq 0 ] && [ -n "${flavor}" ] && \
 		    ! have_ports_feature FLAVORS && \
