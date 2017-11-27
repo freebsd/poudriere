@@ -262,7 +262,7 @@ _mastermnt() {
 	fi
 	mnttest="${mnt}${testpath}"
 
-	if [ -n "${FORCE_MOUNT_HASH}" ] || \
+	if [ "${FORCE_MOUNT_HASH}" = "yes" ] || \
 	    [ -n "${mnamelen}" ] && \
 	    [ ${#mnttest} -ge $((${mnamelen} - 1)) ]; then
 		hashed_name=$(sha256 -qs "${MASTERNAME}" | \
@@ -7357,6 +7357,7 @@ fi
 : ${MUTABLE_BASE:=yes}
 : ${HTML_JSON_UPDATE_INTERVAL:=2}
 : ${HTML_TRACK_REMAINING:=no}
+: ${FORCE_MOUNT_HASH:=no}
 DRY_RUN=0
 
 # Be sure to update poudriere.conf to document the default when changing these
