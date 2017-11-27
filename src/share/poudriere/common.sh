@@ -253,6 +253,7 @@ _mastermnt() {
 
 	mnamelen=$(grep "#define[[:space:]]MNAMELEN" \
 	    /usr/include/sys/mount.h 2>/dev/null | awk '{print $3}')
+	: ${mnamelen:=88}
 
 	mnt="${POUDRIERE_DATA}/.m/${MASTERNAME}/ref"
 	if [ -z "${NOLINUX}" ]; then
@@ -263,7 +264,6 @@ _mastermnt() {
 	mnttest="${mnt}${testpath}"
 
 	if [ "${FORCE_MOUNT_HASH}" = "yes" ] || \
-	    [ -n "${mnamelen}" ] && \
 	    [ ${#mnttest} -ge $((${mnamelen} - 1)) ]; then
 		hashed_name=$(sha256 -qs "${MASTERNAME}" | \
 		    awk '{print substr($0, 0, 6)}')
