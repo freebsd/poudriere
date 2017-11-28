@@ -588,6 +588,7 @@ jkill_wait() {
 # Kill everything in the jail and ensure it is free of any processes
 # before returning.
 jkill() {
+	[ "${USE_JEXECD}" = "yes" ] && return 0
 	jkill_wait
 	JNETNAME="n" jkill_wait
 }
@@ -3909,10 +3910,8 @@ build_pkg() {
 		JEXEC_LIMITS=1
 	fi
 
-	if [ "${USE_JEXECD}" = "no" ]; then
-		# Kill everything in jail first
-		jkill
-	fi
+	# Kill everything in jail first
+	jkill
 
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
 		if [ -f "${mnt}/${LOCALBASE:-/usr/local}/.mounted" ]; then
@@ -4045,10 +4044,8 @@ stop_build() {
 			JNETNAME="n" injail ps auxwwd | egrep -v '(ps auxwwd|jexecd)'
 		fi
 
-		if [ "${USE_JEXECD}" = "no" ]; then
-			# Always kill to avoid missing anything
-			jkill
-		fi
+		# Always kill to avoid missing anything
+		jkill
 	fi
 
 	buildlog_stop "${pkgname}" "${originspec}" ${build_failed}
