@@ -501,7 +501,7 @@ do_confirm_delete() {
 }
 
 injail() {
-	if [ ${STATUS:-0} -eq 0 ]; then
+	if [ ${INJAIL_HOST:-0} -eq 1 ]; then
 		# For test/
 		"$@"
 	elif [ "${USE_JEXECD}" = "no" ]; then
