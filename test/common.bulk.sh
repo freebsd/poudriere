@@ -205,6 +205,8 @@ assert_queued() {
 export __MAKE_CONF=/dev/null
 export SRCCONF=/dev/null
 export SRC_ENV_CONF=/dev/null
+# Avoid injail() for port_var_fetch
+INJAIL_HOST=1
 
 . common.sh
 
