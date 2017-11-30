@@ -296,7 +296,7 @@ gen-man-wiki:
 	  echo "MANDOC wiki/$${man##*/}-devel.md"; \
 	  ( \
 	    echo "### This page is auto-generated from $(dist_man_MANS)"; \
-	    (mandoc -Txhtml $${man} | awk \
+	    (mandoc -Thtml $${man} | awk \
 	    '$$1 == "<body>" { seenbody=1; next; }; \
 	     $$1 == "</body>" { seenbody=0; }; \
 	     seenbody == 1 { print };'\

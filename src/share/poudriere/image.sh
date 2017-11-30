@@ -279,9 +279,8 @@ if [ -n "${PACKAGELIST}" ]; then
 	FreeBSD: { enabled: false }
 	local: { url: file:///${WRKDIR}/world/tmp/packages }
 	EOF
-		abi=$(REPOS_DIR=/${WRKDIR}/world/tmp/ pkg -r ${WRKDIR}/world/ query --file tmp/packages/Latest/pkg.txz '%q')
-		env ASSUME_ALWAYS_YES=yes REPOS_DIR=/${WRKDIR}/world/tmp/ ABI=${abi} pkg -r ${WRKDIR}/world/ install pkg
-		cat ${PACKAGELIST} | xargs env ASSUME_ALWAYS_YES=yes REPOS_DIR=/${WRKDIR}/world/tmp/ ABI=${abi} pkg -r ${WRKDIR}/world/ install
+		env ASSUME_ALWAYS_YES=yes SYSLOG=no REPOS_DIR=/${WRKDIR}/world/tmp/ ABI_FILE=/${WRKDIR}/world/usr/lib/crt1.o pkg -r ${WRKDIR}/world/ install pkg
+		cat ${PACKAGELIST} | xargs env ASSUME_ALWAYS_YES=yes SYSLOG=no REPOS_DIR=/${WRKDIR}/world/tmp/ ABI_FILE=/${WRKDIR}/world/usr/lib/crt1.o pkg -r ${WRKDIR}/world/ install
 	fi
 	rm -rf ${WRKDIR}/world/var/cache/pkg
 	umount ${WRKDIR}/world/tmp/packages
@@ -442,7 +441,7 @@ usb)
 	;;
 tar)
 	FINALIMAGE=${IMAGENAME}.txz
-	tar -f ${OUTPUTDIR}/${FINALIMAGE} -cJ -C ${WRKDIR}/world .
+	tar -f - -c -C ${WRKDIR}/world . | xz -T0 -c > ${OUTPUTDIR}/${FINALIMAGE}
 	;;
 firmware)
 	FINALIMAGE=${IMAGENAME}.img

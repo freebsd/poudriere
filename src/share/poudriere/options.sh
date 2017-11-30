@@ -139,7 +139,18 @@ else
 	LISTPORTS="$@"
 fi
 
+OLD_PORT_DBDIR=${POUDRIERED}/${JAILNAME}${JAILNAME:+-}${SETNAME}${SETNAME:+-}options
 PORT_DBDIR=${POUDRIERED}/${JAILNAME}${JAILNAME:+-}${PTNAME_TMP}${PTNAME_TMP:+-}${SETNAME}${SETNAME:+-}options
+
+if [ -d "${OLD_PORT_DBDIR}" ] && [ ! -d "${PORT_DBDIR}" ]; then
+	msg_warn "You already have options configured without '-p ${PTNAME_TMP}' that will no longer be used."
+	msg_warn "Drop the '-p ${PTNAME_TMP}' option to avoid this problem."
+	if [ -t 0 ]; then
+		confirm_if_tty "Are you sure you want to continue?" || exit 0
+	else
+		msg_warn "Will create ${PORT_DBDIR} which overrides existing ${OLD_PORT_DBDIR}"
+	fi
+fi
 
 mkdir -p ${PORT_DBDIR}
 

@@ -85,7 +85,7 @@ function update_data() {
 	});
 }
 
-function format_origin(origin) {
+function format_origin(origin, flavor) {
 	var data;
 
 	if (!origin) {
@@ -94,10 +94,17 @@ function format_origin(origin) {
 
 	data = origin.split("/");
 
+	if (flavor) {
+		flavor = "@" + flavor;
+	} else {
+		flavor = '';
+	}
+
 	return "<a target=\"_new\" title=\"portsmon for " + origin +
 		"\" href=\"http://portsmon.freebsd.org/portoverview.py?category=" +
 		data[0] + "&amp;portname=" + data[1] + "\"><span " +
-		"class=\"glyphicon glyphicon-tasks\"></span>"+ origin + "</a>";
+		"class=\"glyphicon glyphicon-tasks\"></span>"+ origin + flavor +
+		"</a>";
 }
 
 function format_pkgname(pkgname) {
@@ -450,23 +457,23 @@ function format_status_row(status, row, n) {
 	table_row.push(n + 1);
 	if (status == "built") {
 		table_row.push(format_pkgname(row.pkgname));
-		table_row.push(format_origin(row.origin));
+		table_row.push(format_origin(row.origin, row.flavor));
 		table_row.push(format_log(row.pkgname, false, 'success'));
-		table_row.push(format_duration(row.elapsed));
+		table_row.push(format_duration(row.elapsed ? row.elapsed : ''));
 	} else if (status == "failed") {
 		table_row.push(format_pkgname(row.pkgname));
-		table_row.push(format_origin(row.origin));
+		table_row.push(format_origin(row.origin, row.flavor));
 		table_row.push(row.phase);
 		table_row.push(row.skipped_cnt);
 		table_row.push(format_log(row.pkgname, true, row.errortype));
-		table_row.push(format_duration(row.elapsed));
+		table_row.push(format_duration(row.elapsed ? row.elapsed : ''));
 	} else if (status == "skipped") {
 		table_row.push(format_pkgname(row.pkgname));
-		table_row.push(format_origin(row.origin));
+		table_row.push(format_origin(row.origin, row.flavor));
 		table_row.push(format_pkgname(row.depends));
 	} else if (status == "ignored") {
 		table_row.push(format_pkgname(row.pkgname));
-		table_row.push(format_origin(row.origin));
+		table_row.push(format_origin(row.origin, row.flavor));
 		table_row.push(row.skipped_cnt);
 		table_row.push(row.reason);
 	} else if (status == "remaining") {
@@ -474,7 +481,7 @@ function format_status_row(status, row, n) {
 		table_row.push(row.status);
 	} else if (status == "queued") {
 		table_row.push(format_pkgname(row.pkgname));
-		table_row.push(format_origin(row.origin));
+		table_row.push(format_origin(row.origin, row.flavor));
 		if (row.reason == "listed") {
 			table_row.push(row.reason);
 		} else {
@@ -594,7 +601,7 @@ function process_data_build(data) {
 			row.id = builder.id;
 			row.job_id = builder.id;
 			row.pkgname = builder.pkgname ? format_pkgname(builder.pkgname) : "";
-			row.origin = builder.origin ? format_origin(builder.origin) : "";
+			row.origin = builder.origin ? format_origin(builder.origin, builder.flavor) : "";
 			row.status = builder.pkgname ?
 				format_log(builder.pkgname, false, builder.status) :
 				builder.status.split(":")[0];

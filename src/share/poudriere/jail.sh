@@ -225,6 +225,7 @@ update_jail() {
 		jset ${JAILNAME} method ${METHOD}
 	fi
 	msg "Upgrading using ${METHOD}"
+	: ${KERNEL:=$(jget ${JAILNAME} kernel 2>/dev/null || echo)}
 	case ${METHOD} in
 	ftp|http|ftp-archive)
 		# In case we use FreeBSD dists and TORELEASE is present, check if it's a release branch.
@@ -294,6 +295,7 @@ update_jail() {
 		fi
 		rm -f ${JAILMNT}/usr/sbin/freebsd-update.fixed
 		if [ ${QEMU_EMULATING} -eq 1 ]; then
+			[ -n "${EMULATOR}" ] || err 1 "No EMULATOR set"
 			rm -f "${JAILMNT}${EMULATOR}"
 			# Try to cleanup the lingering directory structure
 			emulator_dir="${EMULATOR%/*}"
@@ -442,6 +444,7 @@ buildworld() {
 	msg "Starting make buildworld with ${PARALLEL_JOBS} jobs"
 	${MAKE_CMD} -C ${SRC_BASE} buildworld ${MAKE_JOBS} \
 	    ${MAKEWORLDARGS} || err 1 "Failed to 'make buildworld'"
+	BUILTWORLD=1
 
 	if [ -n "${KERNEL}" ]; then
 		msg "Starting make buildkernel with ${PARALLEL_JOBS} jobs"
@@ -457,15 +460,40 @@ build_native_xtools() {
 	[ ${QEMU_EMULATING} -eq 1 ] || return 0
 	setup_build_env
 
-	msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs"
-	: ${XDEV_SRC:=/usr/src}
+	# Check for which style of native-xtools to build.
+	# If there is a populated NXBDIRS then it is the new style
+	# fixed version with a proper sysroot.
+	# Otherwise it's the older broken one, so use the host /usr/src
+	# unless the user set XDEV_SRC_JAIL.
+	XDEV_DIRS=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
+	    ${MAKE_CMD} -C ${SRC_BASE} -f Makefile.inc1 -V NXBDIRS)
+	if [ -n "${XDEV_DIRS}" ] || [ "${XDEV_SRC_JAIL}" = "yes" ]; then
+		: ${XDEV_SRC:=${SRC_BASE}}
+	else
+		: ${XDEV_SRC:=/usr/src}
+	fi
+	msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs in ${XDEV_SRC}"
+	# Can use -DNO_NXBTOOLCHAIN if we just ran buildworld to reuse the
+	# toolchain already just built.
 	${MAKE_CMD} -C ${XDEV_SRC} native-xtools ${MAKE_JOBS} \
+	    ${BUILTWORLD:+-DNO_NXBTOOLCHAIN} \
 	    ${MAKEWORLDARGS} || err 1 "Failed to 'make native-xtools' in ${XDEV_SRC}"
-	XDEV_TOOLS=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
-	    ${MAKE_CMD} -C ${XDEV_SRC} -f Makefile.inc1 -V NXBDESTDIR)
-	: ${XDEV_TOOLS:=/usr/obj/${TARGET}.${TARGET_ARCH}/nxb-bin}
 	rm -rf ${JAILMNT}/nxb-bin || err 1 "Failed to remove old native-xtools"
-	mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
+	# Check for native-xtools-install support
+	NXTP=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
+	    ${MAKE_CMD} -C ${SRC_BASE} -f Makefile.inc1 -V NXTP)
+	if [ -n "${NXTP}" ]; then
+		# New style, we call native-xtools-install
+		${MAKE_CMD} -C ${XDEV_SRC} native-xtools-install ${MAKE_JOBS} \
+		    DESTDIR=${JAILMNT} NXTP=/nxb-bin || \
+		    err 1 "Failed to 'make native-xtools-install' in ${XDEV_SRC}"
+	else
+		# Old style, we guess or ask where the files were dropped
+		XDEV_TOOLS=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
+		    ${MAKE_CMD} -C ${XDEV_SRC} -f Makefile.inc1 -V NXBDESTDIR)
+		: ${XDEV_TOOLS:=${MAKEOBJDIRPREFIX:-/usr/obj}/${TARGET}.${TARGET_ARCH}/nxb-bin}
+		mv ${XDEV_TOOLS} ${JAILMNT} || err 1 "Failed to move native-xtools"
+	fi
 	# The files are hard linked at bulk jail startup now.
 	BUILT_NATIVE_XTOOLS=1
 }
@@ -746,8 +774,13 @@ create_jail() {
 
 	if [ -z ${JAILMNT} ]; then
 		[ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
-		JAILMNT=${BASEFS}/jails/${JAILNAME}
+		JAILMNT="${BASEFS}/jails/${JAILNAME}"
+		_gsub "${JAILMNT}" ":" "_"
+		JAILMNT="${_gsub}"
 	fi
+
+	[ "${JAILMNT#*:*}" = "${JAILMNT}" ] ||
+		err 1 "The jail mount path cannot contain a colon (:)"
 
 	if [ -z "${JAILFS}" -a -z "${NO_ZFS}" ]; then
 		[ -z ${ZPOOL} ] && err 1 "Please provide a ZPOOL variable in your poudriere.conf"
@@ -836,6 +869,7 @@ create_jail() {
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
 	[ -n "$SRCPATH" ] && jset ${JAILNAME} srcpath ${SRCPATH}
+	[ -n "${KERNEL}" ] && jset ${JAILNAME} kernel ${KERNEL}
 
 	# Wrap the jail creation in a special cleanup hook that will remove the jail
 	# if any error is encountered
@@ -873,7 +907,7 @@ info_jail() {
 	local building_started status log
 	local elapsed elapsed_days elapsed_hms elapsed_timestamp
 	local now start_time timestamp
-	local jversion jarch jmethod pmethod mnt fs
+	local jversion jarch jmethod pmethod mnt fs kernel
 
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 
@@ -898,6 +932,7 @@ info_jail() {
 	_jget timestamp ${JAILNAME} timestamp 2>/dev/null || :
 	_jget mnt ${JAILNAME} mnt 2>/dev/null || :
 	_jget fs ${JAILNAME} fs 2>/dev/null || fs=""
+	_jget kernel ${JAILNAME} kernel 2>/dev/null || kernel=
 
 	echo "Jail name:         ${JAILNAME}"
 	echo "Jail version:      ${jversion}"
@@ -908,6 +943,9 @@ info_jail() {
 	echo "Jail method:       ${jmethod}"
 	echo "Jail mount:        ${mnt}"
 	echo "Jail fs:           ${fs}"
+	if [ -n "${kernel}" ]; then
+		echo "Jail kernel:       ${kernel}"
+	fi
 	if [ -n "${timestamp}" ]; then
 		echo "Jail updated:      $(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
 	fi
@@ -1132,8 +1170,8 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		esac
 		jail_exists ${JAILNAME} && \
 		    err 2 "The jail ${JAILNAME} already exists"
-		check_emulation "${REALARCH}" "${ARCH}"
 		maybe_run_queued "${saved_argv}"
+		check_emulation "${REALARCH}" "${ARCH}"
 		create_jail
 		;;
 	01000000)

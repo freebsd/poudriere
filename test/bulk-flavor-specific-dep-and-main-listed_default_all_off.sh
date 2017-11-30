@@ -1,5 +1,7 @@
 #! /bin/sh
 
+FLAVOR_DEFAULT_ALL=no
+
 LISTPORTS="misc/freebsd-release-manifests ports-mgmt/poudriere-devel-dep-FOO"
 . common.bulk.sh
 

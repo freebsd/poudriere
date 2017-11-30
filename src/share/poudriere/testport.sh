@@ -52,7 +52,6 @@ Options:
                    of dependencies completed
     -p tree     -- Specify the path to the portstree
     -P          -- Use custom prefix
-    -s          -- Skip incremental rebuild and sanity checks
     -S          -- Don't recursively rebuild packages affected by other
                    packages requiring incremental rebuild. This can result
                    in broken packages if the ones updated do not retain
@@ -69,13 +68,12 @@ CONFIGSTR=0
 . ${SCRIPTPREFIX}/common.sh
 NOPREFIX=1
 SETNAME=""
-SKIPSANITY=0
 SKIP_RECURSIVE_REBUILD=0
 INTERACTIVE_MODE=0
 PTNAME="default"
 BUILD_REPO=1
 
-while getopts "o:cniIj:J:kNp:PsSvwz:" FLAG; do
+while getopts "o:cniIj:J:kNp:PSvwz:" FLAG; do
 	case "${FLAG}" in
 		B)
 			BUILDNAME="${OPTARG}"
@@ -117,9 +115,6 @@ while getopts "o:cniIj:J:kNp:PsSvwz:" FLAG; do
 		P)
 			NOPREFIX=0
 			;;
-		s)
-			SKIPSANITY=1
-			;;
 		S)
 			SKIP_RECURSIVE_REBUILD=1
 			;;
@@ -151,29 +146,6 @@ if [ -z ${ORIGINSPEC} ]; then
 fi
 
 [ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
-_pget portsdir ${PTNAME} mnt
-[ -f "${portsdir}/Mk/bsd.port.mk" ] || \
-    err 1 "Ports tree ${portsdir} is missing Mk/bsd.port.mk"
-PORTSDIR="${portsdir}" fetch_global_port_vars || \
-    err 1 "Failed to lookup global ports metadata"
-# Allow testing on virtual py3 slaves until we have FLAVORS.
-PORTSDIR="${portsdir}" \
-    map_py_slave_port "${ORIGINSPEC}" ORIGINSPEC || :
-originspec_decode "${ORIGINSPEC}" ORIGIN DEPENDS_ARGS FLAVOR
-[ -n "${FLAVOR}" ] && ! have_ports_feature FLAVORS && \
-    err 1 "Trying to build FLAVOR-specific ${ORIGINSPEC} but ports tree has no FLAVORS support."
-[ "${FLAVOR}" = "${FLAVOR_DEFAULT}" ] && FLAVOR=
-new_origin=$(grep -v '^#' ${portsdir}/MOVED | awk -vorigin="${ORIGIN}" \
-    -F\| '$1 == origin && $2 != "" {print $2}')
-if [ -n "${new_origin}" ]; then
-	msg "MOVED: ${COLOR_PORT}${ORIGIN}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
-	ORIGIN="${new_origin}"
-	# Update ORIGINSPEC for the new ORIGIN
-	originspec_encode ORIGINSPEC "${ORIGIN}" "${DEPENDS_ARGS}" "${FLAVOR}"
-fi
-if [ ! -f "${portsdir}/${ORIGIN}/Makefile" ] || [ -d "${portsdir}/${ORIGIN}/../Mk" ]; then
-	err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
-fi
 
 maybe_run_queued "$@"
 
@@ -189,9 +161,44 @@ export POUDRIERE_BUILD_TYPE=bulk
 
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
+_pget portsdir ${PTNAME} mnt
+fetch_global_port_vars || \
+    err 1 "Failed to lookup global ports metadata"
+# Allow testing on virtual py3 slaves until we have FLAVORS.
+map_py_slave_port "${ORIGINSPEC}" ORIGINSPEC || :
+originspec_decode "${ORIGINSPEC}" ORIGIN DEPENDS_ARGS FLAVOR
+if have_ports_feature FLAVORS; then
+	[ "${FLAVOR}" = "${FLAVOR_DEFAULT}" ] && FLAVOR=
+	[ "${FLAVOR}" = "${FLAVOR_ALL}" ] && \
+	    err 1 "Cannot testport on multiple flavors, use 'bulk -t' instead."
+else
+	[ -n "${FLAVOR}" ] && \
+	    err 1 "Trying to build FLAVOR-specific ${ORIGINSPEC} but ports tree has no FLAVORS support."
+fi
+new_origin=$(grep -v '^#' ${portsdir}/MOVED | awk -vorigin="${ORIGIN}" \
+    -F\| '$1 == origin && $2 != "" {print $2}')
+if [ -n "${new_origin}" ]; then
+	msg "MOVED: ${COLOR_PORT}${ORIGIN}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
+	# The ORIGIN may have a FLAVOR in it which overrides whatever the
+	# user specified.
+	originspec_decode "${new_origin}" ORIGIN '' NEW_FLAVOR
+	if [ -n "${NEW_FLAVOR}" ]; then
+		FLAVOR="${NEW_FLAVOR}"
+	fi
+	# Update ORIGINSPEC for the new ORIGIN
+	originspec_encode ORIGINSPEC "${ORIGIN}" "${DEPENDS_ARGS}" "${FLAVOR}"
+fi
+if [ ! -f "${portsdir}/${ORIGIN}/Makefile" ] || [ -d "${portsdir}/${ORIGIN}/../Mk" ]; then
+	err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
+fi
+
+injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} maintainer ECHO_CMD=true || \
+    err 1 "Port is broken"
+
 if [ $CONFIGSTR -eq 1 ]; then
 	command -v dialog4ports >/dev/null 2>&1 || err 1 "You must have ports-mgmt/dialog4ports installed on the host to use -c."
 	PORTSDIR=${portsdir} \
+	    __MAKE_CONF=/dev/null \
 	    PORT_DBDIR=${MASTERMNT}/var/db/ports \
 	    TERM=${SAVED_TERM} \
 	    make -C ${portsdir}/${ORIGIN} config \
@@ -218,7 +225,7 @@ if [ $(bget stats_failed) -gt 0 ] || [ $(bget stats_skipped) -gt 0 ]; then
 	[ -n "${skipped}" ] && COLOR_ARROW="${COLOR_SKIP}" \
 	    msg "${COLOR_SKIP}Skipped ports: ${COLOR_PORT}${skipped}"
 
-	bset_job_status "failed/depends" "${ORIGIN}"
+	bset_job_status "failed/depends" "${ORIGINSPEC}"
 	set +e
 	exit 1
 fi
@@ -228,10 +235,12 @@ nbbuilt=$(bget stats_built)
 
 commit_packages
 
-bset_job_status "testing" "${ORIGIN}"
+bset_job_status "testing" "${ORIGINSPEC}"
 
 LOCALBASE=`injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -VLOCALBASE`
+[ -n "${LOCALBASE}" ] || err 1 "Port has empty LOCALBASE?"
 : ${PREFIX:=$(injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -VPREFIX)}
+[ -n "${PREFIX}" ] || err 1 "Port has empty PREFIX?"
 if [ "${USE_PORTLINT}" = "yes" ]; then
 	[ ! -x `command -v portlint` ] &&
 		err 2 "First install portlint if you want USE_PORTLINT to work as expected"
@@ -290,28 +299,29 @@ if [ ${ret} -ne 0 ]; then
 		failed_phase=${failed_status%%:*}
 	fi
 
-	save_wrkdir ${MASTERMNT} "${PKGNAME}" "${PORTSDIR}/${ORIGIN}" "${failed_phase}" || :
+	save_wrkdir "${MASTERMNT}" "${ORIGINSPEC}" "${PKGNAME}" \
+	    "${PORTSDIR}/${ORIGIN}" "${failed_phase}" || :
 
 	ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
 	errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
 		${log}/logs/errors/${PKGNAME}.log \
 		2> /dev/null)
-	badd ports.failed "${ORIGIN} ${PKGNAME} ${failed_phase} ${errortype} ${elapsed}"
+	badd ports.failed "${ORIGINSPEC} ${PKGNAME} ${failed_phase} ${errortype} ${elapsed}"
 	update_stats || :
 
 	if [ ${INTERACTIVE_MODE} -eq 0 ]; then
-		stop_build "${PKGNAME}" ${ORIGIN} 1
+		stop_build "${PKGNAME}" "${ORIGINSPEC}" 1
 		log_stop
-		bset_job_status "failed/${failed_phase}" "${ORIGIN}"
+		bset_job_status "failed/${failed_phase}" "${ORIGINSPEC}"
 		msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
 		set +e
 		exit 1
 	fi
 else
-	badd ports.built "${ORIGIN} ${PKGNAME} ${elapsed}"
+	badd ports.built "${ORIGINSPEC} ${PKGNAME} ${elapsed}"
 	if [ -f ${MASTERMNT}${PORTSDIR}/${ORIGIN}/.keep ]; then
-		save_wrkdir ${MASTERMNT} "${PKGNAME}" "${PORTSDIR}/${ORIGIN}" \
-		    "noneed" || :
+		save_wrkdir "${MASTERMNT}" "${ORIGINSPEC}" "${PKGNAME}" \
+		    "${PORTSDIR}/${ORIGIN}" "noneed" || :
 	fi
 	update_stats || :
 fi
@@ -327,7 +337,7 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 		# Since failure was skipped earlier, fail now after leaving
 		# jail.
 		if [ -n "${failed_phase}" ]; then
-			bset_job_status "failed/${failed_phase}" "${ORIGIN}"
+			bset_job_status "failed/${failed_phase}" "${ORIGINSPEC}"
 			msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
 			set +e
 			exit 1
@@ -351,10 +361,10 @@ msg "Deinstalling package"
 ensure_pkg_installed
 injail ${PKG_DELETE} ${PKGNAME}
 
-stop_build "${PKGNAME}" ${ORIGIN} ${ret}
+stop_build "${PKGNAME}" "${ORIGINSPEC}" ${ret}
 log_stop
 
-bset_job_status "stopped" "${ORIGIN}"
+bset_job_status "stopped" "${ORIGINSPEC}"
 
 bset status "done:"
 

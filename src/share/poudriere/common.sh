@@ -64,6 +64,9 @@ not_for_os() {
 }
 
 err() {
+	if [ -n "${IGNORE_ERR}" ]; then
+		return 0
+	fi
 	trap '' SIGINFO
 	export CRASHED=1
 	if [ $# -ne 2 ]; then
@@ -256,6 +259,7 @@ _mastermnt() {
 
 	mnamelen=$(grep "#define[[:space:]]MNAMELEN" \
 	    /usr/include/sys/mount.h 2>/dev/null | awk '{print $3}')
+	: ${mnamelen:=88}
 
 	mnt="${POUDRIERE_DATA}/.m/${MASTERNAME}/ref"
 	if [ -z "${NOLINUX}" ]; then
@@ -265,8 +269,7 @@ _mastermnt() {
 	fi
 	mnttest="${mnt}${testpath}"
 
-	if [ -n "${FORCE_MOUNT_HASH}" ] || \
-	    [ -n "${mnamelen}" ] && \
+	if [ "${FORCE_MOUNT_HASH}" = "yes" ] || \
 	    [ ${#mnttest} -ge $((${mnamelen} - 1)) ]; then
 		hashed_name=$(sha256 -qs "${MASTERNAME}" | \
 		    awk '{print substr($0, 0, 6)}')
@@ -503,10 +506,11 @@ do_confirm_delete() {
 	return ${ret}
 }
 
-# It may be defined as a NOP for tests
-if ! type injail >/dev/null 2>&1; then
 injail() {
-	if [ "${USE_JEXECD}" = "no" ]; then
+	if [ ${INJAIL_HOST:-0} -eq 1 ]; then
+		# For test/
+		"$@"
+	elif [ "${USE_JEXECD}" = "no" ]; then
 		injail_tty "$@"
 	else
 		local name
@@ -517,7 +521,6 @@ injail() {
 			-u ${JUSER:-root} "$@"
 	fi
 }
-fi
 
 injail_tty() {
 	local name
@@ -591,6 +594,7 @@ jkill_wait() {
 # Kill everything in the jail and ensure it is free of any processes
 # before returning.
 jkill() {
+	[ "${USE_JEXECD}" = "yes" ] && return 0
 	jkill_wait
 	JNETNAME="n" jkill_wait
 }
@@ -614,33 +618,68 @@ eargs() {
 }
 
 run_hook() {
-	local hookfile="${HOOKDIR}/${1}.sh"
-	local build_url log_url
-	shift
+	[ $# -ge 2 ] || eargs run_hook hook event args
+	local hook="$1"
+	local event="$2"
+	local build_url log log_url plugin_dir
+
+	shift 2
 
 	build_url build_url || :
 	log_url log_url || :
-	if [ -f "${hookfile}" ]; then
-		(
-			cd /
+	_log_path log || :
 
-			BUILD_URL="${build_url}" \
-			LOG_URL="${log_url}" \
-			POUDRIERE_BUILD_TYPE=${POUDRIERE_BUILD_TYPE} \
-			POUDRIERED="${POUDRIERED}" \
-			POUDRIERE_DATA="${POUDRIERE_DATA}" \
-			MASTERNAME="${MASTERNAME}" \
-			MASTERMNT="${MASTERMNT}" \
-			MY_JOBID="${MY_JOBID}" \
-			BUILDNAME="${BUILDNAME}" \
-			JAILNAME="${JAILNAME}" \
-			PTNAME="${PTNAME}" \
-			SETNAME="${SETNAME}" \
-			PACKAGES="${PACKAGES}" \
-			PACKAGES_ROOT="${PACKAGES_ROOT}" \
-			/bin/sh "${hookfile}" "$@"
-		)
+	run_hook_file "${HOOKDIR}/${hook}.sh" "${hook}" "${event}" \
+	    "${build_url}" "${log_url}" "${log}" "$@"
+
+	if [ -d "${HOOKDIR}/plugins" ]; then
+		for plugin_dir in ${HOOKDIR}/plugins/*; do
+			# Check empty dir
+			case "${plugin_dir}" in
+			"${HOOKDIR}/plugins/*") break ;;
+			esac
+			run_hook_file "${plugin_dir}/${hook}.sh" "${hook}" \
+			    "${event}" "${build_url}" "${log_url}" "${log}" \
+			    "$@"
+		done
 	fi
+}
+
+run_hook_file() {
+	[ $# -ge 6 ] || eargs run_hook_file hookfile hook event build_url \
+	    log_url log args
+	local hookfile="$1"
+	local hook="$2"
+	local event="$3"
+	local build_url="$4"
+	local log_url="$5"
+	local log="$6"
+	[ -f "${hookfile}" ] || return 0
+
+	shift 6
+
+	job_msg_dev "Running ${hookfile} for event '${hook}:${event}' args: ${@:-(null)}"
+
+	(
+		set +e
+		cd /
+		BUILD_URL="${build_url}" \
+		    LOG_URL="${log_url}" \
+		    LOG="${log}" \
+		    POUDRIERE_BUILD_TYPE=${POUDRIERE_BUILD_TYPE} \
+		    POUDRIERED="${POUDRIERED}" \
+		    POUDRIERE_DATA="${POUDRIERE_DATA}" \
+		    MASTERNAME="${MASTERNAME}" \
+		    MASTERMNT="${MASTERMNT}" \
+		    MY_JOBID="${MY_JOBID}" \
+		    BUILDNAME="${BUILDNAME}" \
+		    JAILNAME="${JAILNAME}" \
+		    PTNAME="${PTNAME}" \
+		    SETNAME="${SETNAME}" \
+		    PACKAGES="${PACKAGES}" \
+		    PACKAGES_ROOT="${PACKAGES_ROOT}" \
+		    /bin/sh "${hookfile}" "${event}" "$@"
+	) || err 1 "Hook ${hookfile} for '${hook}:${event}' returned non-zero"
 	return 0
 }
 
@@ -726,7 +765,7 @@ buildlog_start() {
 	echo "port directory: ${portdir}"
 	echo "package name: ${PKGNAME}"
 	echo "building for: $(injail uname -a)"
-	echo "maintained by: ${_maintainer}"
+	echo "maintained by: ${mk_MAINTAINER}"
 	echo "Makefile ident: $(ident -q ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
 	echo "Poudriere version: ${POUDRIERE_VERSION}"
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
@@ -782,9 +821,9 @@ buildlog_start() {
 }
 
 buildlog_stop() {
-	[ $# -eq 3 ] || eargs buildlog_stop pkgname origin build_failed
+	[ $# -eq 3 ] || eargs buildlog_stop pkgname originspec build_failed
 	local pkgname="$1"
-	local origin=$2
+	local originspec=$2
 	local build_failed="$3"
 	local log
 	local buildtime
@@ -796,7 +835,7 @@ buildlog_stop() {
 		awk -F'!' '{print $2}' \
 	)
 
-	echo "build of ${origin} | ${pkgname} ended at $(date)"
+	echo "build of ${originspec} | ${pkgname} ended at $(date)"
 	echo "build time: ${buildtime}"
 	[ ${build_failed} -gt 0 ] && echo "!!! build failure encountered !!!"
 
@@ -977,11 +1016,11 @@ bset() {
 }
 
 bset_job_status() {
-	[ $# -eq 2 ] || eargs bset_job_status status origin
+	[ $# -eq 2 ] || eargs bset_job_status status originspec
 	local status="$1"
-	local origin="$2"
+	local originspec="$2"
 
-	bset ${MY_JOBID} status "${status}:${origin}:${PKGNAME}:${TIME_START_JOB:-${TIME_START}}:$(clock -monotonic)"
+	bset ${MY_JOBID} status "${status}:${originspec}:${PKGNAME}:${TIME_START_JOB:-${TIME_START}}:$(clock -monotonic)"
 }
 
 badd() {
@@ -2127,6 +2166,7 @@ qemu_install() {
 	local mnt="$1"
 
 	msg "Copying latest version of the emulator from: ${EMULATOR}"
+	[ -n "${EMULATOR}" ] || err 1 "No EMULATOR set"
 	mkdir -p "${mnt}${EMULATOR%/*}"
 	cp -f "${EMULATOR}" "${mnt}${EMULATOR}"
 }
@@ -2151,7 +2191,6 @@ setup_xdev() {
 	SIZE=/nxb-bin/usr/bin/size
 	STRIPBIN=/nxb-bin/usr/bin/strip
 	SED=/nxb-bin/usr/bin/sed
-	READELF=/nxb-bin/usr/bin/readelf
 	RANLIB=/nxb-bin/usr/bin/ranlib
 	YACC=/nxb-bin/usr/bin/yacc
 	MAKE=/nxb-bin/usr/bin/make
@@ -2167,7 +2206,8 @@ setup_xdev() {
 			usr/bin/makewhatis \
 			usr/bin/find usr/bin/gzcat usr/bin/awk \
 			usr/bin/touch usr/bin/sed usr/bin/patch \
-			usr/bin/install usr/bin/gunzip usr/bin/sort \
+			usr/bin/install usr/bin/gunzip \
+			usr/bin/readelf usr/bin/sort \
 			usr/bin/tar usr/bin/xargs usr/sbin/chown bin/cp \
 			bin/cat bin/chmod bin/echo bin/expr \
 			bin/hostname bin/ln bin/ls bin/mkdir bin/mv \
@@ -2233,7 +2273,17 @@ jail_start() {
 		err 1 "The ports name cannot contain a period (.). See jail(8)"
 	[ "${setname#*.*}" = "${setname}" ] ||
 		err 1 "The set name cannot contain a period (.). See jail(8)"
-
+	if [ -n "${HARDLINK_CHECK}" -a ! "${HARDLINK_CHECK}" = "00" ]; then
+		case ${BUILD_AS_NON_ROOT} in
+			[Yy][Ee][Ss])
+				msg_warn "You have BUILD_AS_NON_ROOT set to '${BUILD_AS_NON_ROOT}' (c.f. poudriere.conf),"
+				msg_warn "    and 'security.bsd.hardlink_check_uid' or 'security.bsd.hardlink_check_gid' are not set to '0'."
+				err 1 "Poudriere will not be able to stage some ports. Exiting."
+				;;
+			*)
+				;;
+		esac
+	fi
 	if [ -z "${NOLINUX}" ]; then
 		if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
 			needfs="${needfs} linprocfs"
@@ -2340,9 +2390,9 @@ jail_start() {
 		setup_xdev "${tomnt}" "${arch%.*}"
 
 		# QEMU is really slow. Extend the time significantly.
-		msg "Raising MAX_EXECUTION_TIME and NOHANG_TIME for QEMU"
-		MAX_EXECUTION_TIME=864000
-		NOHANG_TIME=72000
+		msg "Raising MAX_EXECUTION_TIME and NOHANG_TIME for QEMU from QEMU_ values"
+		MAX_EXECUTION_TIME=${QEMU_MAX_EXECUTION_TIME}
+		NOHANG_TIME=${QEMU_NOHANG_TIME}
 		# Setup native-xtools overrides.
 		cat >> "${tomnt}/etc/make.conf" <<-EOF
 		.sinclude "/etc/make.nxb.conf"
@@ -2499,7 +2549,7 @@ setup_makeconf() {
 	local name=$2
 	local ptname=$3
 	local setname=$4
-	local makeconf opt
+	local makeconf opt plugin_dir
 	local arch host_arch
 
 	get_host_arch host_arch
@@ -2526,8 +2576,19 @@ setup_makeconf() {
 	[ -n "${setname}" ] && makeconf="${makeconf} ${name}-${setname} \
 		    ${name}-${ptname}-${setname}"
 	for opt in ${makeconf}; do
-		append_make ${opt} ${dst_makeconf}
+		append_make "${POUDRIERED}" "${opt}" "${dst_makeconf}"
 	done
+
+	# Check for and load plugin make.conf files
+	if [ -d "${HOOKDIR}/plugins" ]; then
+		for plugin_dir in ${HOOKDIR}/plugins/*; do
+			# Check empty dir
+			case "${plugin_dir}" in
+			"${HOOKDIR}/plugins/*") break ;;
+			esac
+			append_make "${plugin_dir}" "-" "${dst_makeconf}"
+		done
+	fi
 
 	# We will handle DEVELOPER for testing when appropriate
 	if grep -q '^DEVELOPER=' ${dst_makeconf}; then
@@ -2537,20 +2598,34 @@ setup_makeconf() {
 }
 
 include_poudriere_confs() {
-	local files file flag args_hack
+	local files file flag args_hack debug
 
+	# msg_debug is not properly setup this early for VERBOSE to be set
+	# so spy on -v and set debug and use it locally instead.
+	debug=0
 	# Spy on cmdline arguments so this function is not needed in
 	# every new sub-command file, which could lead to missing it.
-	args_hack=$(echo " $@"|grep -Eo -- ' -[^ ]*([jpz]) ?([^ ]*)'|tr '\n' ' '|sed -Ee 's, -[^ ]*([jpz]) ?([^ ]*),-\1 \2,g')
+	args_hack=$(echo " $@"|grep -Eo -- ' -[^jpvz ]*([jpz] ?[^ ]*|v+)'|tr '\n' ' '|sed -Ee 's, -[^jpvz ]*([jpz]|v+) ?([^ ]*),-\1 \2,g')
 	set -- ${args_hack}
-	while getopts "j:p:z:" flag; do
+	while getopts "j:p:vz:" flag; do
 		case ${flag} in
 			j) jail="${OPTARG}" ;;
 			p) ptname="${OPTARG}" ;;
+			v) debug=$((debug+1)) ;;
 			z) setname="${OPTARG}" ;;
 			*) ;;
 		esac
 	done
+
+	if [ -r "${POUDRIERE_ETC}/poudriere.conf" ]; then
+		. "${POUDRIERE_ETC}/poudriere.conf"
+		[ ${debug} -gt 1 ] && msg_debug "Reading ${POUDRIERE_ETC}/poudriere.conf"
+	elif [ -r "${POUDRIERED}/poudriere.conf" ]; then
+		. "${POUDRIERED}/poudriere.conf"
+		[ ${debug} -gt 1 ] && msg_debug "Reading ${POUDRIERED}/poudriere.conf"
+	else
+		err 1 "Unable to find a readable poudriere.conf in ${POUDRIERE_ETC} or ${POUDRIERED}"
+	fi
 
 	files="${setname} ${ptname} ${jail}"
 	[ -n "${ptname}" -a -n "${setname}" ] && \
@@ -2563,7 +2638,10 @@ include_poudriere_confs() {
 	    files="${files} ${jail}-${ptname}-${setname}"
 	for file in ${files}; do
 		file="${POUDRIERED}/${file}-poudriere.conf"
-		[ -r "${file}" ] && . "${file}"
+		if [ -r "${file}" ]; then
+			[ ${debug} -gt 1 ] && msg_debug "Reading ${file}"
+			. "${file}"
+		fi
 	done
 
 	return 0
@@ -2747,11 +2825,11 @@ check_leftovers() {
 }
 
 check_fs_violation() {
-	[ $# -eq 6 ] || eargs check_fs_violation mnt mtree_target port \
+	[ $# -eq 6 ] || eargs check_fs_violation mnt mtree_target originspec \
 	    status_msg err_msg status_value
 	local mnt="$1"
 	local mtree_target="$2"
-	local port="$3"
+	local originspec="$3"
 	local status_msg="$4"
 	local err_msg="$5"
 	local status_value="$6"
@@ -2767,8 +2845,8 @@ check_fs_violation() {
 	if [ -s ${tmpfile} ]; then
 		msg "Error: ${err_msg}"
 		cat ${tmpfile}
-		bset_job_status "${status_value}" "${port}"
-		job_msg_verbose "Status   ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}: ${status_value}"
+		bset_job_status "${status_value}" "${originspec}"
+		job_msg_verbose "Status   ${COLOR_PORT}${originspec} | ${PKGNAME}${COLOR_RESET}: ${status_value}"
 		ret=1
 	fi
 	unlink ${tmpfile}
@@ -2782,14 +2860,14 @@ gather_distfiles() {
 	local from=$(realpath $2)
 	local to=$(realpath $3)
 	local sub dists d tosubd specials special origin
-	local dep_originspec pkgname
+	local dep_originspec pkgname flavor
 
 	port_var_fetch_originspec "${originspec}" \
 	    DIST_SUBDIR sub \
 	    ALLFILES dists || \
 	    err 1 "Failed to lookup distfiles for ${originspec}"
 
-	originspec_decode "${originspec}" origin '' ''
+	originspec_decode "${originspec}" origin '' flavor
 	if [ "${ORIGINSPEC}" = "${originspec}" ]; then
 		# Building main port
 		pkgname="${PKGNAME}"
@@ -2800,7 +2878,7 @@ gather_distfiles() {
 	fi
 	shash_get pkgname-depend_specials "${pkgname}" specials || specials=
 
-	job_msg_dev "${COLOR_PORT}${origin} | ${PKGNAME}${COLOR_RESET}: distfiles ${from} -> ${to}"
+	job_msg_dev "${COLOR_PORT}${origin}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
 		[ -f ${from}/${sub}/${d} ] || continue
 		tosubd=${to}/${sub}/${d}
@@ -2820,7 +2898,7 @@ gather_distfiles() {
 _real_build_port() {
 	[ $# -ne 1 ] && eargs _real_build_port originspec
 	local originspec="$1"
-	local port portdir
+	local port flavor portdir
 	local mnt
 	local log
 	local network
@@ -2835,7 +2913,7 @@ _real_build_port() {
 	_my_path mnt
 	_log_path log
 
-	originspec_decode "${originspec}" port '' ''
+	originspec_decode "${originspec}" port '' flavor
 	portdir="/usr/ports/${port}"
 
 	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
@@ -2861,7 +2939,7 @@ _real_build_port() {
 	for jpkg in ${ALLOW_MAKE_JOBS_PACKAGES}; do
 		case "${PKGNAME%-*}" in
 		${jpkg})
-			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}"
+			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}"
 			sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' \
 			    ${mnt}/etc/make.conf
 			break
@@ -2872,8 +2950,8 @@ _real_build_port() {
 	for jpkg in ${ALLOW_NETWORKING_PACKAGES}; do
 		case "${PKGNAME%-*}" in
 		${jpkg})
-			job_msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}"
-			msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}"
+			job_msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}"
+			msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}"
 			allownetworking=1
 			JNETNAME="n"
 			break
@@ -2913,8 +2991,8 @@ _real_build_port() {
 		max_execution_time=${MAX_EXECUTION_TIME}
 		phaseenv=
 		JUSER=${jailuser}
-		bset_job_status "${phase}" "${port}"
-		job_msg_verbose "Status   ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
+		bset_job_status "${phase}" "${originspec}"
+		job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
 		[ -n "${PORTTESTING}" ] && \
 		    phaseenv="${phaseenv} DEVELOPER_MODE=yes"
 		case ${phase} in
@@ -2943,7 +3021,8 @@ _real_build_port() {
 		run-depends)
 			JUSER=root
 			if [ -n "${PORTTESTING}" ]; then
-				check_fs_violation ${mnt} prebuild "${port}" \
+				check_fs_violation ${mnt} prebuild \
+				    "${originspec}" \
 				    "Checking for filesystem violations" \
 				    "Filesystem touched during build:" \
 				    "build_fs_violation" ||
@@ -2964,7 +3043,8 @@ _real_build_port() {
 		package)
 			max_execution_time=7200
 			if [ -n "${PORTTESTING}" ]; then
-				check_fs_violation ${mnt} prestage "${port}" \
+				check_fs_violation ${mnt} prestage \
+				    "${originspec}" \
 				    "Checking for staging violations" \
 				    "Filesystem touched during stage (files must install to \${STAGEDIR}):" \
 				    "stage_fs_violation" || if [ "${PORTTESTING_FATAL}" != "no" ]; then
@@ -3039,12 +3119,12 @@ _real_build_port() {
 				# 3 = cmd timeout
 				if [ $hangstatus -eq 2 ]; then
 					msg "Killing runaway build after ${NOHANG_TIME} seconds with no output"
-					bset_job_status "${phase}/runaway" "${port}"
-					job_msg_verbose "Status   ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}runaway"
+					bset_job_status "${phase}/runaway" "${originspec}"
+					job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}runaway"
 				elif [ $hangstatus -eq 3 ]; then
 					msg "Killing timed out build after ${max_execution_time} seconds"
-					bset_job_status "${phase}/timeout" "${port}"
-					job_msg_verbose "Status   ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}timeout"
+					bset_job_status "${phase}/timeout" "${originspec}"
+					job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}timeout"
 				fi
 				return 1
 			fi
@@ -3064,7 +3144,7 @@ _real_build_port() {
 		if [ "${phase}" = "stage" -a -n "${PORTTESTING}" ]; then
 			local die=0
 
-			bset_job_status "stage-qa" "${port}"
+			bset_job_status "stage-qa" "${originspec}"
 			if ! injail /usr/bin/env DEVELOPER=1 ${PORT_FLAGS} \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    stage-qa; then
@@ -3074,7 +3154,7 @@ _real_build_port() {
 				die=1
 			fi
 
-			bset_job_status "check-plist" "${port}"
+			bset_job_status "check-plist" "${originspec}"
 			if ! injail /usr/bin/env DEVELOPER=1 ${PORT_FLAGS} \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    check-plist; then
@@ -3100,7 +3180,7 @@ _real_build_port() {
 			local die=0
 
 			msg "Checking for extra files and directories"
-			bset_job_status "leftovers" "${port}"
+			bset_job_status "leftovers" "${originspec}"
 
 			if [ -f "${mnt}${PORTSDIR}/Mk/Scripts/check_leftovers.sh" ]; then
 				check_leftovers ${mnt} | sed -e "s|${mnt}||" |
@@ -3251,7 +3331,7 @@ Try testport with -n to use PREFIX=LOCALBASE"
 		done
 	fi
 
-	bset_job_status "build_port_done" "${port}"
+	bset_job_status "build_port_done" "${originspec}"
 	return ${testfailure}
 }
 
@@ -3265,13 +3345,14 @@ build_port() {
 
 # Save wrkdir and return path to file
 save_wrkdir() {
-	[ $# -ne 4 ] && eargs save_wrkdir mnt port portdir phase
+	[ $# -ne 5 ] && eargs save_wrkdir mnt originspec pkgname portdir phase
 	local mnt=$1
-	local port="$2"
-	local portdir="$3"
-	local phase="$4"
+	local originspec="$2"
+	local pkgname="$3"
+	local portdir="$4"
+	local phase="$5"
 	local tardir=${POUDRIERE_DATA}/wrkdirs/${MASTERNAME}/${PTNAME}
-	local tarname=${tardir}/${PKGNAME}.${WRKDIR_ARCHIVE_FORMAT}
+	local tarname=${tardir}/${pkgname}.${WRKDIR_ARCHIVE_FORMAT}
 	local mnted_portdir=${mnt}/wrkdirs/${portdir}
 
 	[ "${SAVE_WRKDIR}" != "no" ] || return 0
@@ -3291,7 +3372,7 @@ save_wrkdir() {
 	unlink ${tarname}
 	tar -s ",${mnted_portdir},," -c${COMPRESSKEY}f ${tarname} ${mnted_portdir}/work > /dev/null 2>&1
 
-	job_msg "Saved ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET} wrkdir to: ${tarname}"
+	job_msg "Saved ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_RESET} wrkdir to: ${tarname}"
 }
 
 start_builder() {
@@ -3319,6 +3400,10 @@ start_builder() {
 start_builders() {
 	local arch=$(injail uname -p)
 
+	msg "Starting/Cloning builders"
+	bset status "starting_jobs:"
+	run_hook start_builders start
+
 	bset builders "${JOBS}"
 	bset status "starting_builders:"
 	parallel_start
@@ -3326,6 +3411,8 @@ start_builders() {
 		parallel_run start_builder ${j} ${arch}
 	done
 	parallel_stop
+
+	run_hook start_builders stop
 }
 
 stop_builder() {
@@ -3467,9 +3554,8 @@ job_done() {
 	# CWD is MASTERMNT/.p/pool
 
 	# Failure to find this indicates the job is already done.
-	hash_get builder_pkgnames "${j}" pkgname || return 1
+	hash_remove builder_pkgnames "${j}" pkgname || return 1
 	hash_unset builder_pids "${j}"
-	hash_unset builder_pkgnames "${j}"
 	unlink "../var/run/${j}.pid"
 	_bget status ${j} status
 	rmdir "../building/${pkgname}"
@@ -3489,6 +3575,8 @@ build_queue() {
 	local builders_idle idle_only timeout log
 
 	_log_path log
+
+	run_hook build_queue start
 
 	mkfifo ${MASTERMNT}/.p/builders.pipe
 	exec 6<> ${MASTERMNT}/.p/builders.pipe
@@ -3515,7 +3603,8 @@ build_queue() {
 				fi
 				job_done "${j}"
 				# Set a 0 timeout to quickly rescan for idle
-				# builders to toss a job at.
+				# builders to toss a job at since the queue
+				# may now be unblocked.
 				[ ${queue_empty} -eq 0 -a \
 				    ${builders_idle} -eq 1 ] && timeout=0
 			fi
@@ -3532,8 +3621,6 @@ build_queue() {
 				# are empty
 				queue_empty && queue_empty=1
 
-				# Pool is waiting on dep, wait until a build
-				# is done before checking the queue again
 				builders_idle=1
 			else
 				MY_JOBID="${j}" \
@@ -3544,8 +3631,6 @@ build_queue() {
 				hash_set builder_pids "${j}" "${pid}"
 				hash_set builder_pkgnames "${j}" "${pkgname}"
 
-				# A new job is spawned, try to read the queue
-				# just to keep things moving
 				builders_active=1
 			fi
 		done
@@ -3601,6 +3686,8 @@ build_queue() {
 		fi
 	done
 	exec 6<&- 6>&-
+
+	run_hook build_queue stop
 }
 
 calculate_tobuild() {
@@ -3685,8 +3772,6 @@ parallel_build() {
 	msg "Building ${nremaining} packages using ${PARALLEL_JOBS} builders"
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
 
-	bset status "starting_jobs:"
-	msg "Starting/Cloning builders"
 	start_builders
 
 	coprocess_start pkg_cacher
@@ -3719,10 +3804,11 @@ crashed_build() {
 	[ $# -eq 2 ] || eargs crashed_build pkgname failed_phase
 	local pkgname="$1"
 	local failed_phase="$2"
-	local origin log
+	local origin originspec log
 
 	_log_path log
-	get_origin_from_pkgname origin "${pkgname}"
+	get_originspec_from_pkgname originspec "${pkgname}"
+	originspec_decode "${originspec}" origin '' ''
 
 	echo "Build crashed: ${failed_phase}" >> "${log}/logs/${pkgname}.log"
 
@@ -3733,36 +3819,38 @@ crashed_build() {
 		# Symlink the buildlog into errors/
 		ln -s "../${pkgname}.log" "${log}/logs/errors/${pkgname}.log"
 		badd ports.failed \
-		    "${origin} ${pkgname} ${failed_phase} ${failed_phase}"
+		    "${originspec} ${pkgname} ${failed_phase} ${failed_phase}"
 		COLOR_ARROW="${COLOR_FAIL}" msg \
-		    "${COLOR_FAIL}Finished ${COLOR_PORT}${origin} | ${pkgname}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
+		    "${COLOR_FAIL}Finished ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
 		run_hook pkgbuild failed "${origin}" "${pkgname}" \
 		    "${failed_phase}" \
-		    "${log}/logs/errors/${pkgname}.log"
+		    "${log}/logs/errors/${pkgname}.log" >&3
 	fi
-	clean_pool "${pkgname}" "${origin}" "${failed_phase}"
-	stop_build "${pkgname}" "${origin}" 1 >> "${log}/logs/${pkgname}.log"
+	clean_pool "${pkgname}" "${originspec}" "${failed_phase}"
+	stop_build "${pkgname}" "${originspec}" 1 >> "${log}/logs/${pkgname}.log"
 }
 
 clean_pool() {
-	[ $# -ne 3 ] && eargs clean_pool pkgname origin clean_rdepends
+	[ $# -ne 3 ] && eargs clean_pool pkgname originspec clean_rdepends
 	local pkgname=$1
-	local port=$2
+	local originspec=$2
 	local clean_rdepends="$3"
-	local skipped_origin
+	local origin skipped_originspec skipped_origin
 
 	[ -n "${MY_JOBID}" ] && bset ${MY_JOBID} status "clean_pool:"
 
-	[ -z "${port}" -a -n "${clean_rdepends}" ] && \
-	    get_origin_from_pkgname port "${pkgname}"
+	[ -z "${originspec}" -a -n "${clean_rdepends}" ] && \
+	    get_originspec_from_pkgname originspec "${pkgname}"
+	originspec_decode "${originspec}" origin '' ''
 
 	# Cleaning queue (pool is cleaned here)
 	sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT}" "${pkgname}" "${clean_rdepends}" | sort -u | while read skipped_pkgname; do
-		get_origin_from_pkgname skipped_origin "${skipped_pkgname}"
-		badd ports.skipped "${skipped_origin} ${skipped_pkgname} ${pkgname}"
+		get_originspec_from_pkgname skipped_originspec "${skipped_pkgname}"
+		originspec_decode "${skipped_originspec}" skipped_origin '' ''
+		badd ports.skipped "${skipped_originspec} ${skipped_pkgname} ${pkgname}"
 		COLOR_ARROW="${COLOR_SKIP}" \
-		    job_msg "${COLOR_SKIP}Skipping ${COLOR_PORT}${skipped_origin} | ${skipped_pkgname}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${port} | ${pkgname}${COLOR_SKIP} ${clean_rdepends}"
-		run_hook pkgbuild skipped "${skipped_origin}" "${skipped_pkgname}" "${port}"
+		    job_msg "${COLOR_SKIP}Skipping ${COLOR_PORT}${skipped_originspec} | ${skipped_pkgname}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_SKIP} ${clean_rdepends}"
+		run_hook pkgbuild skipped "${skipped_origin}" "${skipped_pkgname}" "${origin}" >&3
 	done
 
 	(
@@ -3802,33 +3890,34 @@ build_pkg() {
 	clean_rdepends=
 	trap '' SIGTSTP
 	PKGNAME="${pkgname}" # set ASAP so jail_cleanup() can use it
+	setproctitle "build_pkg (${pkgname})" || :
+
+	# Don't show timestamps in msg() which goes to logs, only job_msg()
+	# which goes to master
+	NO_ELAPSED_IN_MSG=1
+	TIME_START_JOB=$(clock -monotonic)
+	colorize_job_id COLOR_JOBID "${MY_JOBID}"
+
 	get_originspec_from_pkgname ORIGINSPEC "${pkgname}"
 	originspec_decode "${ORIGINSPEC}" port DEPENDS_ARGS FLAVOR
+	bset_job_status "starting" "${ORIGINSPEC}"
 	if [ -z "${FLAVOR}" ]; then
 		shash_get pkgname-flavor "${pkgname}" FLAVOR || FLAVOR=
 	fi
+	job_msg "Building ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_RESET}"
+
 	MAKE_ARGS="${DEPENDS_ARGS}${FLAVOR:+ FLAVOR=${FLAVOR}}"
+	if [ -n "${DEPENDS_ARGS}" ]; then
+		PKGENV="${PKGENV:+${PKGENV} }PKG_NOTES=depends_args PKG_NOTE_depends_args=${DEPENDS_ARGS}"
+	fi
 	portdir="${PORTSDIR}/${port}"
 
 	if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
 		JEXEC_LIMITS=1
 	fi
 
-	setproctitle "build_pkg (${pkgname})" || :
-
-	TIME_START_JOB=$(clock -monotonic)
-	# Don't show timestamps in msg() which goes to logs, only job_msg()
-	# which goes to master
-	NO_ELAPSED_IN_MSG=1
-	colorize_job_id COLOR_JOBID "${MY_JOBID}"
-
-	job_msg "Building ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_RESET}"
-	bset_job_status "starting" "${port}"
-
-	if [ "${USE_JEXECD}" = "no" ]; then
-		# Kill everything in jail first
-		jkill
-	fi
+	# Kill everything in jail first
+	jkill
 
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
 		if [ -f "${mnt}/${LOCALBASE:-/usr/local}/.mounted" ]; then
@@ -3867,10 +3956,10 @@ build_pkg() {
 
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
-		badd ports.ignored "${port} ${PKGNAME} ${ignore}"
-		COLOR_ARROW="${COLOR_IGNORE}" job_msg "${COLOR_IGNORE}Finished ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_IGNORE}: Ignored: ${ignore}"
+		badd ports.ignored "${ORIGINSPEC} ${PKGNAME} ${ignore}"
+		COLOR_ARROW="${COLOR_IGNORE}" job_msg "${COLOR_IGNORE}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_IGNORE}: Ignored: ${ignore}"
 		clean_rdepends="ignored"
-		run_hook pkgbuild ignored "${port}" "${PKGNAME}" "${ignore}"
+		run_hook pkgbuild ignored "${port}" "${PKGNAME}" "${ignore}" >&3
 	else
 		build_port "${ORIGINSPEC}" || ret=$?
 		if [ ${ret} -ne 0 ]; then
@@ -3885,18 +3974,20 @@ build_pkg() {
 				failed_phase=${failed_status%%:*}
 			fi
 
-			save_wrkdir ${mnt} "${port}" "${portdir}" "${failed_phase}" || :
+			save_wrkdir "${mnt}" "${ORIGINSPEC}" "${PKGNAME}" \
+			    "${portdir}" "${failed_phase}" || :
 		elif [ -f ${mnt}/${portdir}/.keep ]; then
-			save_wrkdir ${mnt} "${port}" "${portdir}" "noneed" ||:
+			save_wrkdir "${mnt}" "${ORIGINSPEC}" "${PKGNAME}" \
+			    "${portdir}" "noneed" ||:
 		fi
 
 		now=$(clock -monotonic)
 		elapsed=$((${now} - ${TIME_START_JOB}))
 
 		if [ ${build_failed} -eq 0 ]; then
-			badd ports.built "${port} ${PKGNAME} ${elapsed}"
-			COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_SUCCESS}: Success"
-			run_hook pkgbuild success "${port}" "${PKGNAME}"
+			badd ports.built "${ORIGINSPEC} ${PKGNAME} ${elapsed}"
+			COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_SUCCESS}: Success"
+			run_hook pkgbuild success "${port}" "${PKGNAME}" >&3
 			# Cache information for next run
 			pkg_cacher_queue "${port}" "${pkgname}" || :
 		else
@@ -3905,10 +3996,10 @@ build_pkg() {
 			errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
 				${log}/logs/errors/${PKGNAME}.log \
 				2> /dev/null)
-			badd ports.failed "${port} ${PKGNAME} ${failed_phase} ${errortype} ${elapsed}"
-			COLOR_ARROW="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished ${COLOR_PORT}${port} | ${PKGNAME}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
+			badd ports.failed "${ORIGINSPEC} ${PKGNAME} ${failed_phase} ${errortype} ${elapsed}"
+			COLOR_ARROW="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
 			run_hook pkgbuild failed "${port}" "${PKGNAME}" "${failed_phase}" \
-				"${log}/logs/errors/${PKGNAME}.log"
+				"${log}/logs/errors/${PKGNAME}.log" >&3
 			# ret=2 is a test failure
 			if [ ${ret} -eq 2 ]; then
 				clean_rdepends=
@@ -3923,9 +4014,9 @@ build_pkg() {
 		rm -rf ${mnt}/wrkdirs/* || :
 	fi
 
-	clean_pool ${PKGNAME} ${port} "${clean_rdepends}"
+	clean_pool "${PKGNAME}" "${ORIGINSPEC}" "${clean_rdepends}"
 
-	stop_build "${PKGNAME}" ${port} ${build_failed}
+	stop_build "${PKGNAME}" "${ORIGINSPEC}" ${build_failed}
 
 	log_stop
 
@@ -3935,9 +4026,9 @@ build_pkg() {
 }
 
 stop_build() {
-	[ $# -eq 3 ] || eargs stop_build pkgname origin build_failed
+	[ $# -eq 3 ] || eargs stop_build pkgname originspec build_failed
 	local pkgname="$1"
-	local origin="$2"
+	local originspec="$2"
 	local build_failed="$3"
 	local mnt
 
@@ -3959,13 +4050,11 @@ stop_build() {
 			JNETNAME="n" injail ps auxwwd | egrep -v '(ps auxwwd|jexecd)'
 		fi
 
-		if [ "${USE_JEXECD}" = "no" ]; then
-			# Always kill to avoid missing anything
-			jkill
-		fi
+		# Always kill to avoid missing anything
+		jkill
 	fi
 
-	buildlog_stop "${pkgname}" ${origin} ${build_failed}
+	buildlog_stop "${pkgname}" "${originspec}" ${build_failed}
 }
 
 prefix_stderr_quick() {
@@ -4048,6 +4137,22 @@ prefix_output() {
 
 : ${ORIGINSPEC_SEP:="@"}
 : ${FLAVOR_DEFAULT:="-"}
+: ${FLAVOR_ALL:="all"}
+
+build_all_flavors() {
+	[ $# -eq 1 ] || eargs build_all_flavors originspec
+	local originspec="$1"
+	local origin build_all
+
+	[ "${ALL}" -eq 1 ] && return 0
+	[ "${FLAVOR_DEFAULT_ALL}" = "yes" ] && return 0
+	originspec_decode "${originspec}" origin '' ''
+	shash_get origin-flavor-all "${origin}" build_all || build_all=0
+	[ "${build_all}" -eq 1 ] && return 0
+
+	# bulk and testport
+	return 1
+}
 
 # ORIGINSPEC is: ORIGIN@FLAVOR@DEPENDS_ARGS
 originspec_decode() {
@@ -4093,8 +4198,8 @@ originspec_encode() {
 	# Only add in FLAVOR and DEPENDS_ARGS if they are needed,
 	# if neither are then don't even add in the ORIGINSPEC_SEP.
 	if [ -n "${_dep_args}" -o -n "${_flavor}" ]; then
-		[ -n "${dep_args}" -a -n "${_flavor}" ] && \
-		    err 1 "originspec_encode: Origin ${origin} incorrectly trying to use FLAVOR=${_flavor} and DEPENDS_ARGS=${dep_args}"
+		[ -n "${_dep_args}" -a -n "${_flavor}" ] && \
+		    err 1 "originspec_encode: Origin ${origin} incorrectly trying to use FLAVOR=${_flavor} and DEPENDS_ARGS=${_dep_args}"
 		output="${output}${ORIGINSPEC_SEP}${_flavor}${_dep_args:+${ORIGINSPEC_SEP}${_dep_args}}"
 	fi
 	setvar "${_var_return}" "${output}"
@@ -4202,7 +4307,7 @@ deps_fetch_vars() {
 	# triggers this with www/py-multidict since it tries to add DEPENDS_ARGS
 	# onto its multidict dependency but later finds that multidict is
 	# already forcing Python 3 and the DEPENDS_ARGS does nothing.
-	if ! was_a_testport_run && [ ${ALL} -eq 0 ] && \
+	if [ ${ALL} -eq 0 ] && \
 	    [ -n "${_origin_flavor}" ]; then
 		originspec_encode _default_originspec "${origin}" '' ''
 		shash_get originspec-pkgname "${_default_originspec}" \
@@ -4480,6 +4585,33 @@ pkg_get_flavor() {
 	setvar "${var_return}" "${_flavor}"
 }
 
+pkg_get_dep_args() {
+	[ $# -eq 2 ] || eargs pkg_get_dep_args var_return pkg
+	local var_return="$1"
+	local pkg="$2"
+	local pkg_cache_dir
+	local _dep_args cachefile
+
+	get_pkg_cache_dir pkg_cache_dir "${pkg}"
+	cachefile="${pkg_cache_dir}/dep_args"
+
+	if [ ! -f "${cachefile}" ]; then
+		if [ -z "${_dep_args}" ]; then
+			if [ "${PKG_EXT}" != "tbz" ]; then
+				_dep_args=$(injail ${PKG_BIN} query -F \
+					"/packages/All/${pkg##*/}" \
+					'%At %Av' | \
+					awk '$1 == "depends_args" {print $2}')
+			fi
+		fi
+		echo ${_dep_args} > "${cachefile}"
+	else
+		read_line _dep_args "${cachefile}"
+	fi
+
+	setvar "${var_return}" "${_dep_args}"
+}
+
 pkg_get_dep_origin_pkgbase() {
 	[ $# -ne 3 ] && eargs pkg_get_dep_origin_pkgbase var_return_origin \
 	    var_return_pkgbase pkg
@@ -4587,7 +4719,11 @@ pkg_cache_data() {
 	ensure_pkg_installed || return 1
 	pkg_get_options _ignored "${pkg}" > /dev/null
 	pkg_get_origin _ignored "${pkg}" "${origin}" > /dev/null
-	pkg_get_flavor _ignored "${pkg}" > /dev/null
+	if have_ports_feature FLAVORS; then
+		pkg_get_flavor _ignored "${pkg}" > /dev/null
+	elif have_ports_feature DEPENDS_ARGS; then
+		pkg_get_dep_args _ignored "${pkg}" > /dev/null
+	fi
 	pkg_get_dep_origin_pkgbase _ignored _ignored "${pkg}" > /dev/null
 	deps_file _ignored "${pkg}" > /dev/null
 }
@@ -4721,15 +4857,66 @@ delete_old_pkg() {
 	local mnt pkgname new_pkgname
 	local origin v v2 compiled_options current_options current_deps
 	local td d key dpath dir found raw_deps compiled_deps
-	local compiled_deps_pkgbases
-	local pkgbase new_pkgbase _pkgnames flavor pkg_flavor
+	local pkg_origin compiled_deps_pkgbases
+	local pkgbase new_pkgbase flavor pkg_flavor originspec
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor dep_dep_args
+	local stale_pkg dep_args pkg_dep_args
 
 	pkgname="${pkg##*/}"
 	pkgname="${pkgname%.*}"
-	pkgbase_is_needed "${pkgname}" || return 0
 
-	pkg_get_origin origin "${pkg}"
+	# Some expensive lookups are delayed until the last possible
+	# moment as cheaper checks may weed out this package before.
+
+	pkg_flavor="__null"
+	pkg_dep_args="__null"
+	origin="__null"
+	originspec=
+	if ! pkgbase_is_needed "${pkgname}"; then
+		# We don't expect this PKGBASE but it may still be an
+		# origin that is expected and just renamed.  Need to
+		# get the origin and flavor out of the package to
+		# determine that.
+		pkg_get_origin origin "${pkg}"
+		# pkg_get_origin may have returned a FLAVOR from MOVED.
+		originspec_decode "${origin}" pkg_origin '' pkg_flavor
+		if [ -n "${pkg_flavor}" ]; then
+			# Assume this is the flavor to use now.  Trim
+			# FLAVOR from origin.
+			origin="${pkg_origin}"
+			pkg_dep_args=
+			# XXX: What if the package already had a FLAVOR? (#541)
+		else
+			pkg_flavor=
+			pkg_dep_args=
+			if have_ports_feature FLAVORS; then
+				pkg_get_flavor pkg_flavor "${pkg}"
+			elif have_ports_feature DEPENDS_ARGS; then
+				pkg_get_dep_args pkg_dep_args "${pkg}"
+			fi
+		fi
+		originspec_encode originspec "${origin}" "${pkg_dep_args}" \
+		    "${pkg_flavor}"
+		if ! originspec_is_needed "${originspec}"; then
+			msg_debug "delete_old_pkg: Skip unqueued ${pkg} ${origin} ${pkg_flavor}${pkg_dep_args} ${originspec}"
+			return 0
+		fi
+		# Apparently we expect this package via its origin and flavor.
+	fi
+	if [ "${origin}" = "__null" ]; then
+		pkg_get_origin origin "${pkg}"
+		# pkg_get_origin may have returned a FLAVOR from MOVED.
+		originspec_decode "${origin}" pkg_origin '' pkg_flavor
+		if [ -n "${pkg_flavor}" ]; then
+			# Assume this is the flavor to use now.  Trim
+			# FLAVOR from origin and fixup originspec.
+			originspec="${origin}"
+			origin="${pkg_origin}"
+			pkg_dep_args=
+			# XXX: What if the package already had a FLAVOR? (#541)
+		fi
+	fi
+
 	_my_path mnt
 
 	if [ ! -d "${mnt}${PORTSDIR}/${origin}" ]; then
@@ -4738,30 +4925,53 @@ delete_old_pkg() {
 		return 0
 	fi
 
+	if [ -z "${originspec}" ]; then
+		pkg_flavor=
+		pkg_dep_args=
+		if have_ports_feature FLAVORS; then
+			pkg_get_flavor pkg_flavor "${pkg}"
+		elif have_ports_feature DEPENDS_ARGS; then
+			pkg_get_dep_args pkg_dep_args "${pkg}"
+		fi
+		originspec_encode originspec "${origin}" "${pkg_dep_args}" \
+		    "${pkg_flavor}"
+	fi
+
 	v="${pkgname##*-}"
 	# Check if any packages were queried for this origin to map it to a
 	# new pkgname/version.
-	if ! _all_pkgnames_for_origin "${origin}" _pkgnames; then
+	stale_pkg=0
+	if have_ports_feature FLAVORS && \
+	    ! get_pkgname_from_originspec "${originspec}" new_pkgname; then
+		stale_pkg=1
+	elif have_ports_feature DEPENDS_ARGS; then
+		map_py_slave_port "${originspec}" originspec || :
+		if ! shash_get originspec-pkgname "${originspec}" \
+		    new_pkgname; then
+			stale_pkg=1
+		fi
+	fi
+	if [ ${stale_pkg} -eq 1 ]; then
 		# This origin was not looked up in gather_port_vars.  It is
 		# a stale package with the same PKGBASE as one we want, but
 		# with a different origin.  Such as lang/perl5.20 vs
 		# lang/perl5.22 both with 'perl5' as PKGBASE.  A pkgclean
 		# would handle removing this.
-		msg "Deleting ${pkg##*/}: stale package: unwanted origin ${origin}"
+		msg "Deleting ${pkg##*/}: stale package: unwanted origin ${originspec}"
 		delete_pkg "${pkg}"
 		return 0
 	fi
-	# The previous _pkgnames lookup may have returned multiple
-	# packages built from this origin.  Find the closest matching
-	# to our old pkgbase.
 	pkgbase="${pkgname%-*}"
-	for new_pkgname in ${_pkgnames}; do
-		new_pkgbase="${new_pkgname%-*}"
-		[ "${pkgbase}" = "${new_pkgbase}" ] && break
-	done
+	new_pkgbase="${new_pkgname%-*}"
 
-	# A 'changed PKGNAME' check is done later for the case of
-	# not finding a relevant pkgbase match.
+	# Check for changed PKGNAME before version as otherwise a new
+	# version may show for a stale package that has been renamed.
+	# XXX: Check if the pkgname has changed and rename in the repo
+	if [ "${pkgbase}" != "${new_pkgbase}" ]; then
+		msg "Deleting ${pkg##*/}: package name changed to '${new_pkgbase}'"
+		delete_pkg "${pkg}"
+		return 0
+	fi
 
 	v2=${new_pkgname##*-}
 	if [ "$v" != "$v2" ]; then
@@ -4862,7 +5072,7 @@ delete_old_pkg() {
 			*\ ${d}\ *) ;;
 			*)
 				# Unknown, but if this origin has a FLAVOR or
-				# DEPENDS_ARGS then we needa to fallback to a
+				# DEPENDS_ARGS then we need to fallback to a
 				# PKGBASE comparison first.
 				originspec_decode "${d}" dep_origin \
 				    dep_dep_args dep_flavor
@@ -4921,16 +5131,8 @@ delete_old_pkg() {
 		fi
 	fi
 
-	# XXX: Check if the pkgname has changed and rename in the repo
-	if [ "${pkgbase}" != "${new_pkgbase}" ]; then
-		msg "Deleting ${pkg##*/}: package name changed to '${new_pkgbase}'"
-		delete_pkg "${pkg}"
-		return 0
-	fi
-
 	if have_ports_feature FLAVORS; then
 		shash_get pkgname-flavor "${pkgname}" flavor || flavor=
-		pkg_get_flavor pkg_flavor "${pkg}"
 		if [ "${pkg_flavor}" != "${flavor}" ]; then
 			msg "Deleting ${pkg##*/}: FLAVOR changed to '${flavor}' from '${pkg_flavor}'"
 			delete_pkg "${pkg}"
@@ -4942,14 +5144,17 @@ delete_old_pkg() {
 delete_old_pkgs() {
 
 	msg "Checking packages for incremental rebuild needs"
+	run_hook delete_old_pkgs start
 
-	package_dir_exists_and_has_packages || return 0
+	if package_dir_exists_and_has_packages; then
+		parallel_start
+		for pkg in ${PACKAGES}/All/*.${PKG_EXT}; do
+			parallel_run delete_old_pkg "${pkg}"
+		done
+		parallel_stop
+	fi
 
-	parallel_start
-	for pkg in ${PACKAGES}/All/*.${PKG_EXT}; do
-		parallel_run delete_old_pkg "${pkg}"
-	done
-	parallel_stop
+	run_hook delete_old_pkgs stop
 }
 
 ## Pick the next package from the "ready to build" queue in pool/
@@ -5046,13 +5251,6 @@ port_var_fetch() {
 	# Use invalid shell var character '!' to ensure we
 	# don't setvar it later.
 	local assign_var="!"
-	local injail
-
-	if [ ${STATUS:-0} -eq 1 ]; then
-		injail=injail
-	else
-		injail=
-	fi
 
 	if [ -n "${origin}" ]; then
 		_make_origin="-C${sep}${PORTSDIR}/${origin}"
@@ -5112,7 +5310,7 @@ port_var_fetch() {
 			shiftcnt=$((shiftcnt + 1))
 		fi
 	done <<-EOF
-	$(IFS="${sep}"; ${injail} /usr/bin/make ${_make_origin} ${_makeflags} || echo "${_errexit} $?")
+	$(IFS="${sep}"; injail /usr/bin/make ${_make_origin} ${_makeflags} || echo "${_errexit} $?")
 	EOF
 
 	# If the entire output was blank, then $() ate all of the excess
@@ -5262,8 +5460,8 @@ gather_port_vars() {
 
 	msg "Gathering ports metadata"
 	bset status "gatheringportvars:"
+	run_hook gather_port_vars start
 
-	:> "listed_pkgs"
 	:> "all_pkgs"
 	[ ${ALL} -eq 0 ] && :> "all_pkgbases"
 
@@ -5278,71 +5476,81 @@ gather_port_vars() {
 		[ ${ALL} -eq 0 ] && [ -n "${flavor}" ] && \
 		    ! have_ports_feature FLAVORS && \
 		    err 1 "Trying to build FLAVOR-specific ${originspec} but ports tree has no FLAVORS support."
-		if [ -d "../${PORTSDIR}/${origin}" ]; then
-			rdep="listed"
-			# For -a we skip the initial gatherqueue
-			if [ ${ALL} -eq 1 ]; then
-				[ -n "${flavor}" ] && \
-				    err 1 "Flavor ${originspec} with ALL=1"
-				parallel_run \
-				    prefix_stderr_quick \
-				    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
-				    gather_port_vars_port "${originspec}" \
-				    "${rdep}" || \
-				    set_dep_fatal_error
-				continue
-			fi
-			# Otherwise let's utilize the gatherqueue to simplify
-			# FLAVOR handling.
-			qorigin="gqueue/${origin%/*}!${origin#*/}"
-
-			# If we were passed a FLAVOR-specific origin, we
-			# need to delay it into the flavorqueue because
-			# it is possible the list has multiple FLAVORS
-			# of the origin specified or even the main port.
-			# We want to ensure that the main port is looked up
-			# first and then FLAVOR-specific ones are processed.
-			if [ -n "${flavor}" ] || [ -n "${dep_args}" ]; then
-				# We will delay the FLAVOR-specific into
-				# the flavorqueue and process the main port
-				# here as long as it hasn't already.
-				# Don't worry about duplicates from user list.
-				mkdir -p \
-				    "fqueue/${originspec%/*}!${originspec#*/}"
-				echo "${rdep}" > \
-				    "fqueue/${originspec%/*}!${originspec#*/}/rdep"
-				msg_debug "queueing ${originspec} into flavorqueue (rdep=${rdep})"
-				# For DEPENDS_ARGS we can skip bothering with
-				# the gatherqueue just simply delay into the
-				# flavorqueue.
-				if [ -n "${dep_args}" ]; then
-					continue
-				fi
-				# Now handle adding the main port without
-				# FLAVOR.  Only do this if the main port
-				# wasn't already listed.  The 'metadata'
-				# will cause gather_port_vars_port to not
-				# actually queue it for build unless it
-				# is discovered to be the default.
-				if [ -d "${qorigin}" ]; then
-					rdep=
-				elif [ -n "${flavor}" ]; then
-					rdep="metadata ${flavor}"
-				fi
-			fi
-
-			# Duplicate are possible from a user list, it's fine.
-			mkdir -p "${qorigin}"
-			msg_debug "queueing ${origin} into gatherqueue (rdep=${rdep})"
-			[ -n "${rdep}" ] && echo "${rdep}" > "${qorigin}/rdep"
-		else
+		if ! [ -d "../${PORTSDIR}/${origin}" ]; then
 			if [ ${ALL} -eq 1 ]; then
 				msg_warn "Nonexistent origin listed in category Makefiles: ${COLOR_PORT}${origin}"
 			else
 				msg_error "Nonexistent origin listed for build: ${COLOR_PORT}${origin}"
 				set_dep_fatal_error
 			fi
+			continue
 		fi
+		rdep="listed"
+		# For -a we skip the initial gatherqueue
+		if [ ${ALL} -eq 1 ]; then
+			[ -n "${flavor}" ] && \
+			    err 1 "Flavor ${originspec} with ALL=1"
+			parallel_run \
+			    prefix_stderr_quick \
+			    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
+			    gather_port_vars_port "${originspec}" \
+			    "${rdep}" || \
+			    set_dep_fatal_error
+			continue
+		fi
+		# Otherwise let's utilize the gatherqueue to simplify
+		# FLAVOR handling.
+		qorigin="gqueue/${origin%/*}!${origin#*/}"
+
+		# For FLAVOR=all cache that request somewhere for
+		# gather_port_vars_port to use later.  Other
+		# methods of passing it down the queue are too complex.
+		if [ "${flavor}" = "${FLAVOR_ALL}" ]; then
+			unset flavor
+			if [ "${FLAVOR_DEFAULT_ALL}" != "yes" ]; then
+				shash_set origin-flavor-all "${origin}" 1
+			fi
+		fi
+
+		# If we were passed a FLAVOR-specific origin, we
+		# need to delay it into the flavorqueue because
+		# it is possible the list has multiple FLAVORS
+		# of the origin specified or even the main port.
+		# We want to ensure that the main port is looked up
+		# first and then FLAVOR-specific ones are processed.
+		if [ -n "${flavor}" ] || [ -n "${dep_args}" ]; then
+			# We will delay the FLAVOR-specific into
+			# the flavorqueue and process the main port
+			# here as long as it hasn't already.
+			# Don't worry about duplicates from user list.
+			mkdir -p \
+			    "fqueue/${originspec%/*}!${originspec#*/}"
+			echo "${rdep}" > \
+			    "fqueue/${originspec%/*}!${originspec#*/}/rdep"
+			msg_debug "queueing ${originspec} into flavorqueue (rdep=${rdep})"
+			# For DEPENDS_ARGS we can skip bothering with
+			# the gatherqueue just simply delay into the
+			# flavorqueue.
+			if [ -n "${dep_args}" ]; then
+				continue
+			fi
+			# Now handle adding the main port without
+			# FLAVOR.  Only do this if the main port
+			# wasn't already listed.  The 'metadata'
+			# will cause gather_port_vars_port to not
+			# actually queue it for build unless it
+			# is discovered to be the default.
+			if [ -d "${qorigin}" ]; then
+				rdep=
+			elif [ -n "${flavor}" ]; then
+				rdep="metadata ${flavor} listed"
+			fi
+		fi
+
+		# Duplicate are possible from a user list, it's fine.
+		mkdir -p "${qorigin}"
+		msg_debug "queueing ${origin} into gatherqueue (rdep=${rdep})"
+		[ -n "${rdep}" ] && echo "${rdep}" > "${qorigin}/rdep"
 	done
 	if ! parallel_stop || check_dep_fatal_error; then
 		err 1 "Fatal errors encountered gathering initial ports metadata"
@@ -5423,6 +5631,7 @@ gather_port_vars() {
 		err 1 "Gather port queues not empty"
 	fi
 	unlink "${qlist}" || :
+	run_hook gather_port_vars stop
 }
 
 gather_port_vars_port() {
@@ -5512,6 +5721,7 @@ gather_port_vars_port() {
 	# which is also listed to build since the FLAVOR-specific one
 	# will be found superfluous later.  None of this is possible with -a
 	if [ ${ALL} -eq 0 ] && [ "${rdep%% *}" = "metadata" ]; then
+		# rdep is: metadata flavor original_rdep
 		if [ -z "${flavors}" ]; then
 			msg_debug "SKIPPING ${originspec} - no FLAVORS"
 			return 0
@@ -5519,19 +5729,20 @@ gather_port_vars_port() {
 		local queued_flavor queuespec
 
 		default_flavor="${flavors%% *}"
-		queued_flavor="${rdep#* }"
+		rdep="${rdep#* }"
+		queued_flavor="${rdep% *}"
 		[ "${queued_flavor}" = "${FLAVOR_DEFAULT}" ] && \
 		    queued_flavor="${default_flavor}"
 		# Check if we have the default FLAVOR sitting in the
 		# flavorqueue and don't skip if so.
 		if [ "${queued_flavor}" != "${default_flavor}" ]; then
-			msg_debug "SKIPPING ${originspec}"
+			msg_debug "SKIPPING ${originspec} - metadata lookup queued=${queued_flavor} default=${default_flavor}"
 			return 0
 		fi
-		# We're keeping this metadata lookup as a listed one
+		# We're keeping this metadata lookup as its original rdep
 		# but we need to prevent forcing all FLAVORS to build
 		# later, so reset our flavor and originspec.
-		rdep="listed"
+		rdep="${rdep#* }"
 		origin_flavor="${queued_flavor}"
 		originspec_encode queuespec "${origin}" "${origin_dep_args}" \
 		    "${origin_flavor}"
@@ -5543,24 +5754,17 @@ gather_port_vars_port() {
 		rm -rf "fqueue/${queuespec%/*}!${queuespec#*/}"
 	fi
 
-	if was_a_bulk_run; then
-		_log_path log
-		echo "${origin} ${pkgname} ${rdep}" >> \
-		    "${log}/.poudriere.ports.queued"
-	fi
-
 	msg_debug "WILL BUILD ${originspec}"
-	echo "${pkgname} ${originspec}" >> "all_pkgs"
-	if [ "${rdep}" = "listed" ]; then
-		echo "${pkgname}" >> "listed_pkgs"
-	fi
+	echo "${pkgname} ${originspec} ${rdep}" >> "all_pkgs"
 	[ ${ALL} -eq 0 ] && echo "${pkgname%-*}" >> "all_pkgbases"
 
 	# Add all of the discovered FLAVORS into the flavorqueue if
 	# this was the default originspec and this originspec was
 	# listed to build.
 	if [ "${rdep}" = "listed" -a \
-	    -z "${origin_flavor}" -a -n "${flavors}" ]; then
+	    -z "${origin_flavor}" -a -n "${flavors}" ] && \
+	    build_all_flavors "${originspec}"; then
+		msg_verbose "Will build all flavors for ${COLOR_PORT}${originspec}${COLOR_RESET}: ${flavors}"
 		for dep_flavor in ${flavors}; do
 			# Skip default FLAVOR
 			[ "${flavor}" = "${dep_flavor}" ] && continue
@@ -5692,10 +5896,10 @@ gather_port_vars_process_depqueue() {
 		if [ ${ALL} -eq 0 ] && [ -z "${dep_args}" ]; then
 			if [ -n "${dep_flavor}" ]; then
 				queue=fqueue
-				rdep="metadata ${dep_flavor}"
+				rdep="metadata ${dep_flavor} ${originspec}"
 			else
 				queue=gqueue
-				rdep="${origin}"
+				rdep="${originspec}"
 			fi
 
 			msg_debug "Want to enqueue default ${dep_origin} rdep=${rdep} into ${queue}"
@@ -5717,7 +5921,7 @@ gather_port_vars_process_depqueue() {
 			msg_debug "Want to enqueue ${dep_originspec} rdep=${origin} into ${queue}"
 			gather_port_vars_process_depqueue_enqueue \
 			    "${originspec}" "${dep_originspec}" "${queue}" \
-			    "${origin}"
+			    "${originspec}"
 		fi
 	done
 }
@@ -5726,16 +5930,17 @@ gather_port_vars_process_depqueue() {
 compute_deps() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "compute_deps requires PWD=${MASTERMNT}/.p"
-	local pkgname originspec dep_pkgname
+	local pkgname originspec dep_pkgname _ignored
 
 	msg "Calculating ports order and dependencies"
 	bset status "computingdeps:"
+	run_hook compute_deps start
 
 	:> "pkg_deps.unsorted"
 
 	clear_dep_fatal_error
 	parallel_start
-	while read pkgname originspec; do
+	while read pkgname originspec _ignored; do
 		parallel_run compute_deps_pkg "${pkgname}" "${originspec}" || \
 			set_dep_fatal_error
 	done < "all_pkgs"
@@ -5755,7 +5960,7 @@ compute_deps() {
 	)
 
 	unlink "pkg_deps.unsorted"
-
+	run_hook compute_deps stop
 	return 0
 }
 
@@ -5767,7 +5972,7 @@ compute_deps_pkg() {
 	[ $# -ne 2 ] && eargs compute_deps_pkg pkgname originspec
 	local pkgname="$1"
 	local originspec="$2"
-	local pkg_pooldir deps dep_pkgname dep_originspec dep_origin
+	local pkg_pooldir deps dep_pkgname dep_originspec dep_origin dep_flavor
 	local raw_deps d key dpath dep_real_pkgname err_type
 
 	# Safe to remove pkgname-deps now, it won't be needed later.
@@ -5782,10 +5987,11 @@ compute_deps_pkg() {
 	for dep_originspec in ${deps}; do
 		if ! get_pkgname_from_originspec "${dep_originspec}" \
 		    dep_pkgname; then
+			originspec_decode "${dep_originspec}" dep_origin '' \
+			    dep_flavor
 			[ ${ALL} -eq 0 ] && \
-			    err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname}"
-			originspec_decode "${dep_originspec}" dep_origin '' ''
-			err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname} -- Is SUBDIR+=${dep_originspec#*/} missing in ${dep_originspec%/*}/Makefile?"
+			    err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname} from ${originspec} -- Does ${dep_origin} provide the '${dep_flavor}' FLAVOR?"
+			err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname} from ${originspec} -- Is SUBDIR+=${dep_originspec#*/} missing in ${dep_originspec%/*}/Makefile and does the port provide the '${dep_flavor}' FLAVOR?"
 		fi
 		msg_debug "compute_deps_pkg: Will build ${dep_originspec} for ${pkgname}"
 		:> "${pkg_pooldir}/${dep_pkgname}"
@@ -5975,14 +6181,16 @@ _listed_ports() {
 				while read origin; do
 					# Skip blank lines and comments
 					[ -z "${origin%%#*}" ] && continue
-					# Remove trailing slash for historical reasons.
+					# Remove excess slashes for mistakes
+					origin="${origin#/}"
 					echo "${origin%/}"
 				done < "${file}"
 			done
 		else
 			# Ports specified on cmdline
 			for origin in ${LISTPORTS}; do
-				# Remove trailing slash for historical reasons.
+				# Remove excess slashes for mistakes
+				origin="${origin#/}"
 				echo "${origin%/}"
 			done
 		fi
@@ -5998,26 +6206,8 @@ _listed_ports() {
 	done
 }
 
-_all_pkgnames_for_origin() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "_all_pkgnames_for_origin requires PWD=${MASTERMNT}/.p"
-	[ $# -eq 2 ] || eargs _all_pkgnames_for_origin origin var_return_pkgnames
-	local origin="${1}"
-	local var_return_pkgnames="${2}"
-	local originspec results
-
-	originspec_encode originspec "${origin}" \
-	    "?[^${ORIGINSPEC_SEP}]*" \
-	    "?[^${ORIGINSPEC_SEP}]*"
-	_gsub "${originspec}" '+' '\\+'
-	results=$(awk -voriginspec="${_gsub}" '
-	    $2 ~ originspec { print $1 }' "all_pkgs")
-	setvar "${var_return_pkgnames}" "${results}"
-	[ -n "${results}" ]
-}
-
 listed_pkgnames() {
-	cat "${MASTERMNT}/.p/listed_pkgs"
+	awk '$3 == "listed" { print $1 }' "${MASTERMNT}/.p/all_pkgs"
 }
 
 # Pkgname was in queue
@@ -6046,14 +6236,14 @@ pkgname_is_listed() {
 	[ ${ALL} -eq 1 ] && return 0
 
 	awk -vpkgname="${pkgname}" '
-	    $1 == pkgname {
+	    $3 == "listed" && $1 == pkgname {
 		found=1
 		exit 0
 	    }
 	    END {
 		if (found != 1)
 			exit 1
-	    }' "${MASTERMNT}/.p/listed_pkgs"
+	    }' "${MASTERMNT}/.p/all_pkgs"
 }
 
 # PKGBASE was requested to be built, or is needed by a port requested to be built
@@ -6080,6 +6270,26 @@ pkgbase_is_needed() {
 		if (found != 1)
 			exit 1
 	    }' "all_pkgbases"
+}
+
+# Port was requested to be built, or is needed by a port requested to be built
+originspec_is_needed() {
+       [ "${PWD}" = "${MASTERMNT}/.p" ] || \
+           err 1 "originspec_is_needed requires PWD=${MASTERMNT}/.p"
+       [ $# -eq 1 ] || eargs originspec_is_needed originspec
+       local originspec="$1"
+
+       [ ${ALL} -eq 1 ] && return 0
+
+       awk -voriginspec="${originspec}" '
+           $2 == originspec {
+               found=1
+               exit 0
+           }
+           END {
+               if (found != 1)
+                       exit 1
+           }' "all_pkgs"
 }
 
 get_porttesting() {
@@ -6301,12 +6511,36 @@ prepare_ports() {
 	fi
 
 	if was_a_testport_run; then
-		local dep_originspec
+		local dep_originspec dep_origin dep_flavor dep_ret
 
 		[ -z "${ORIGINSPEC}" ] && \
 		    err 1 "testport+prepare_ports requires ORIGINSPEC set"
+		if have_ports_feature FLAVORS; then
+			# deps_fetch_vars really wants to have the main port
+			# cached before being given a FLAVOR.
+			originspec_decode "${ORIGINSPEC}" dep_origin \
+			    '' dep_flavor
+			if [ -n "${dep_flavor}" ]; then
+				deps_fetch_vars "${dep_origin}" LISTPORTS \
+				    PKGNAME DEPENDS_ARGS FLAVOR FLAVORS
+			fi
+		fi
+		dep_ret=0
 		deps_fetch_vars "${ORIGINSPEC}" LISTPORTS PKGNAME \
-		    DEPENDS_ARGS FLAVOR FLAVORS
+		    DEPENDS_ARGS FLAVOR FLAVORS || dep_ret=$?
+		case ${dep_ret} in
+		0) ;;
+		# Non-fatal duplicate should be ignored
+		2) ;;
+		# Fatal error
+		*)
+			err ${ret} "deps_fetch_vars failed for ${ORIGINSPEC}"
+			;;
+		esac
+		if have_ports_feature FLAVORS && [ -n "${FLAVORS}" ] && \
+		    [ "${FLAVOR_DEFAULT_ALL}" = "yes" ]; then
+			msg_warn "Only testing first flavor '${FLAVOR}', use 'bulk -t' to test all flavors"
+		fi
 		for dep_originspec in $(listed_ports); do
 			msg_verbose "${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
 		done
@@ -6377,7 +6611,8 @@ prepare_ports() {
 
 	if was_a_bulk_run; then
 		# Stash dependency graph
-		cp -f "${MASTERMNT}/.p/pkg_deps" "${log}/.poudriere.deps%"
+		cp -f "${MASTERMNT}/.p/pkg_deps" "${log}/.poudriere.pkg_deps%"
+		cp -f "${MASTERMNT}/.p/all_pkgs" "${log}/.poudriere.all_pkgs%"
 
 		if [ ${JAIL_NEEDS_CLEAN} -eq 1 ]; then
 			msg_n "Cleaning all packages due to newer version of the jail..."
@@ -6493,6 +6728,16 @@ prepare_ports() {
 			was_a_testport_run && \
 			    nbq=$((${nbq} + 1))
 			bset stats_queued ${nbq##* }
+
+			# Generate ports.queued list after the queue was
+			# trimmed.
+			local _originspec _pkgname _rdep tmp
+			tmp=$(TMPDIR="${log}" mktemp -ut .queued)
+			while read _pkgname _originspec _rdep; do
+				[ -d "deps/${_pkgname}" ] && \
+				    echo "${_originspec} ${_pkgname} ${_rdep}"
+			done < "all_pkgs" > "${tmp}"
+			mv -f "${tmp}" "${log}/.poudriere.ports.queued"
 		fi
 
 		# Create a pool of ready-to-build from the deps pool
@@ -6563,7 +6808,7 @@ load_priorities_tsortD() {
 }
 
 load_priorities_ptsort() {
-	local priority pkgname originspec pkg_boost origin
+	local priority pkgname originspec pkg_boost origin _ignored
 	local - # Keep set -f local
 
 	set -f # for PRIORITY_BOOST
@@ -6571,7 +6816,7 @@ load_priorities_ptsort() {
 	awk '{print $2 " " $1}' "pkg_deps" > "pkg_deps.ptsort"
 
 	# Add in boosts before running ptsort
-	while read pkgname originspec; do
+	while read pkgname originspec _ignored; do
 		# Does this pkg have an override?
 		for pkg_boost in ${PRIORITY_BOOST}; do
 			case ${pkgname%-*} in
@@ -6684,14 +6929,15 @@ balance_pool() {
 }
 
 append_make() {
-	[ $# -ne 2 ] && eargs append_make src_makeconf dst_makeconf
-	local src_makeconf=$1
-	local dst_makeconf=$2
+	[ $# -ne 3 ] && eargs append_make srcdir src_makeconf dst_makeconf
+	local srcdir="$1"
+	local src_makeconf=$2
+	local dst_makeconf=$3
 
 	if [ "${src_makeconf}" = "-" ]; then
-		src_makeconf="${POUDRIERED}/make.conf"
+		src_makeconf="${srcdir}/make.conf"
 	else
-		src_makeconf="${POUDRIERED}/${src_makeconf}-make.conf"
+		src_makeconf="${srcdir}/${src_makeconf}-make.conf"
 	fi
 
 	[ -f "${src_makeconf}" ] || return 0
@@ -6879,13 +7125,6 @@ cd /
 [ "${POUDRIERE_ETC#/}" = "${POUDRIERE_ETC}" ] && \
     POUDRIERE_ETC="${SAVED_PWD}/${POUDRIERE_ETC}"
 POUDRIERED=${POUDRIERE_ETC}/poudriere.d
-if [ -r "${POUDRIERE_ETC}/poudriere.conf" ]; then
-	. "${POUDRIERE_ETC}/poudriere.conf"
-elif [ -r "${POUDRIERED}/poudriere.conf" ]; then
-	. "${POUDRIERED}/poudriere.conf"
-else
-	err 1 "Unable to find a readable poudriere.conf in ${POUDRIERE_ETC} or ${POUDRIERED}"
-fi
 include_poudriere_confs "$@"
 
 AWKPREFIX=${SCRIPTPREFIX}/awk
@@ -7107,6 +7346,7 @@ fi
 : ${ALL:=0}
 : ${CLEAN:=0}
 : ${CLEAN_LISTED:=0}
+: ${SKIPSANITY:=0}
 : ${JAIL_NEEDS_CLEAN:=0}
 : ${VERBOSE:=0}
 : ${QEMU_EMULATING:=0}
@@ -7122,12 +7362,15 @@ fi
 : ${MUTABLE_BASE:=yes}
 : ${HTML_JSON_UPDATE_INTERVAL:=2}
 : ${HTML_TRACK_REMAINING:=no}
+: ${FORCE_MOUNT_HASH:=no}
 DRY_RUN=0
 
 # Be sure to update poudriere.conf to document the default when changing these
 : ${RESOLV_CONF="/etc/resolv.conf"}
-: ${MAX_EXECUTION_TIME:=86400}         # 24 hours for 1 command
+: ${MAX_EXECUTION_TIME:=86400}         # 24 hours for 1 command (phase)
 : ${NOHANG_TIME:=7200}                 # 120 minutes with no log update
+: ${QEMU_MAX_EXECUTION_TIME:=345600}   # 4 days for 1 command (phase)
+: ${QEMU_NOHANG_TIME:=21600}           # 6 hours with no log update
 : ${TIMESTAMP_LOGS:=no}
 : ${ATOMIC_PACKAGE_REPOSITORY:=yes}
 : ${KEEP_OLD_PACKAGES:=no}
@@ -7140,6 +7383,7 @@ DRY_RUN=0
 : ${NO_RESTRICTED:=no}
 : ${USE_COLORS:=yes}
 : ${ALLOW_MAKE_JOBS_PACKAGES=pkg ccache}
+: ${FLAVOR_DEFAULT_ALL:=no}
 
 : ${POUDRIERE_TMPDIR:=$(command mktemp -dt poudriere)}
 : ${SHASH_VAR_PATH_DEFAULT:=${POUDRIERE_TMPDIR}}
@@ -7160,8 +7404,6 @@ fi
 
 TIME_START=$(clock -monotonic)
 EPOCH_START=$(clock -epoch)
-
-[ -d ${WATCHDIR} ] || mkdir -p ${WATCHDIR}
 
 . ${SCRIPTPREFIX}/include/util.sh
 . ${SCRIPTPREFIX}/include/colors.sh

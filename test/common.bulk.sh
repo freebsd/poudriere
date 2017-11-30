@@ -11,7 +11,9 @@ fix_default_flavor() {
 	hash_get origin-flavors "${_origin}" _flavors
 	_default_flavor="${_flavors%% *}"
 	[ "${_flavor}" = "${FLAVOR_DEFAULT}" ] && _flavor="${_default_flavor}"
-	[ "${_default_flavor}" = "${_flavor}" ] || return 0
+	if [ "${_flavor}" != "${FLAVOR_ALL}" ]; then
+		[ "${_default_flavor}" = "${_flavor}" ] || return 0
+	fi
 	setvar "${var_return}" "${_origin}"
 }
 
@@ -25,6 +27,9 @@ cache_pkgnames() {
 	originspec_decode "${originspec}" origin '' flavor
 
 	if [ "${flavor}" = "${FLAVOR_DEFAULT}" ]; then
+		originspec_encode originspec "${origin}" '' ''
+	elif [ "${flavor}" = "${FLAVOR_ALL}" ]; then
+		unset flavor
 		originspec_encode originspec "${origin}" '' ''
 	fi
 
@@ -47,8 +52,6 @@ cache_pkgnames() {
 	# Also cache all of the FLAVOR deps/PKGNAMES
 	if [ -n "${flavor}" ]; then
 		default_flavor="${flavors%% *}"
-		[ "${flavor}" = "${FLAVOR_DEFAULT}" ] && \
-		    flavor="${default_flavor}"
 		for flavor in ${flavors}; do
 			# Don't recurse on the first flavor since we are it.
 			[ "${flavor}" = "${default_flavor}" ] && continue
@@ -66,7 +69,11 @@ expand_origin_flavors() {
 	for originspec in ${origins}; do
 		originspec_decode "${originspec}" origin '' flavor
 		hash_get origin-flavors "${origin}" flavors || flavors=
-		if [ -n "${flavor}" ] || [ -z "${flavors}" ]; then
+		if [ -n "${flavor}" -a "${flavor}" != "${FLAVOR_ALL}" ] || \
+		    [ -z "${flavors}" ] || \
+		    [ "${FLAVOR_DEFAULT_ALL}" != "yes" -a \
+		    ${ALL} -eq 0 -a \
+		    "${flavor}" != "${FLAVOR_ALL}" ]; then
 			_expanded="${_expanded}${_expanded:+ }${originspec}"
 			continue
 		fi
@@ -144,7 +151,7 @@ list_all_deps() {
 assert_queued() {
 	local dep="$1"
 	local origins="$2"
-	local tmp originspec origin flavor origins_expanded
+	local tmp originspec origins_expanded
 
 	tmp="$(mktemp -t queued.${dep})"
 	awk -v dep="${dep}" '$3 == dep' "${log}/.poudriere.ports.queued" \
@@ -155,15 +162,12 @@ assert_queued() {
 	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | tr '\n' ' ')"
 	echo "Asserting that only '${origins_expanded}' are in the${dep:+ ${dep}} queue"
 	for originspec in ${origins_expanded}; do
-		originspec_decode "${originspec}" origin '' flavor
 		fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
 		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec}"
-		echo "=> Asserting that ${origin} | ${pkgname} is${dep:+ dep=${dep}} in queue"
-		# The queue does not list @FLAVORS for the origin, only PKGNAME
-		# is FLAVOR-specific.
-		awk -vpkgname="${pkgname}" -vorigin="${origin}" -vdep="${dep}" '
-		    $1 == origin && $2 == pkgname && (dep == "" || $3 == dep) {
+		echo "=> Asserting that ${originspec} | ${pkgname} is${dep:+ dep=${dep}} in queue"
+		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" -vdep="${dep}" '
+		    $1 == originspec && $2 == pkgname && (dep == "" || $3 == dep) {
 			print "==> " $0
 			if (found == 1) {
 				# A duplicate, no good.
@@ -173,20 +177,20 @@ assert_queued() {
 			found = 1
 			next
 		    }
-		    $1 == origin && $2 == pkgname && dep != "" && $3 != dep {
+		    $1 == originspec && $2 == pkgname && dep != "" && $3 != dep {
 			print "==> " $0
 			found = 0
 			exit 1
 		    }
 		    END { if (found != 1) exit 1 }
 		' ${log}/.poudriere.ports.queued >&2
-		assert 0 $? "${origin} | ${pkgname} should be queued${dep:+ with dep=${dep}}"
+		assert 0 $? "${originspec} | ${pkgname} should be queued${dep:+ with dep=${dep}}"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
 		cat "${tmp}" | \
-		    awk -vpkgname="${pkgname}" -vorigin="${origin}" \
+		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
 		    -vdep="${dep}" '
-		    $1 == origin && $2 == pkgname && $3 == dep { next }
+		    $1 == originspec && $2 == pkgname && $3 == dep { next }
 		    { print }
 		' > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
@@ -201,6 +205,8 @@ assert_queued() {
 export __MAKE_CONF=/dev/null
 export SRCCONF=/dev/null
 export SRC_ENV_CONF=/dev/null
+# Avoid injail() for port_var_fetch
+INJAIL_HOST=1
 
 . common.sh
 

@@ -27,7 +27,7 @@
 
 usage() {
 	cat << EOF
-poudriere bulk [options] [-f file|cat/port ...]
+poudriere bulk [options] [-a|-f file|cat/port ...]
 
 Parameters:
     -a          -- Build the whole ports tree
@@ -55,7 +55,6 @@ Options:
                    fatal; don't skip dependent ports on findings.
     -T          -- Try to build broken ports anyway
     -F          -- Only fetch from original master_site (skip FreeBSD mirrors)
-    -s          -- Skip incremental rebuild and sanity checks
     -S          -- Don't recursively rebuild packages affected by other
                    packages requiring incremental rebuild. This can result
                    in broken packages if the ones updated do not retain
@@ -80,7 +79,6 @@ bulk_cleanup() {
 }
 
 PTNAME="default"
-SKIPSANITY=0
 SKIP_RECURSIVE_REBUILD=0
 SETNAME=""
 CLEAN=0
@@ -93,7 +91,7 @@ INTERACTIVE_MODE=0
 
 [ $# -eq 0 ] && usage
 
-while getopts "B:iIf:j:J:CcknNp:RFtrTsSvwz:a" FLAG; do
+while getopts "B:iIf:j:J:CcknNp:RFtrTSvwz:a" FLAG; do
 	case "${FLAG}" in
 		B)
 			BUILDNAME="${OPTARG}"
@@ -159,9 +157,6 @@ while getopts "B:iIf:j:J:CcknNp:RFtrTsSvwz:a" FLAG; do
 			;;
 		R)
 			NO_RESTRICTED=1
-			;;
-		s)
-			SKIPSANITY=1
 			;;
 		S)
 			SKIP_RECURSIVE_REBUILD=1
@@ -237,8 +232,8 @@ if [ ${DRY_RUN} -eq 1 ]; then
 		msg "Would build ${tobuild} packages using ${PARALLEL_JOBS} builders"
 
 		msg_n "Ports to build: "
-		cat "${MASTERMNT}/.p/all_pkgs" | \
-		    while read pkgname originspec; do
+		cat "${LOGD}/.poudriere.ports.queued" | \
+		    while read originspec pkgname _ignored; do
 			# Trim away DEPENDS_ARGS for display
 			originspec_decode "${originspec}" origin '' flavor
 			originspec_encode originspec "${origin}" '' "${flavor}"
@@ -248,7 +243,7 @@ if [ ${DRY_RUN} -eq 1 ]; then
 	else
 		msg "No packages would be built"
 	fi
-
+	show_log_info
 	exit 0
 fi
 

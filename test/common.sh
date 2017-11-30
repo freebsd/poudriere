@@ -22,6 +22,8 @@ USE_TMPFS=all
 USE_PROCFS=no
 USE_FDESCFS=no
 NOLINUX=yes
+${FLAVOR_DEFAULT_ALL:+FLAVOR_DEFAULT_ALL=${FLAVOR_DEFAULT_ALL}}
+${FLAVOR_ALL:+FLAVOR_ALL=${FLAVOR_ALL}}
 EOF
 
 : ${VERBOSE:=1}
@@ -101,8 +103,4 @@ assert_ret() {
 
 aecho() {
 	echo "$@" >&2
-}
-
-injail() {
-	"$@"
 }
