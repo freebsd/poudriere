@@ -113,7 +113,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # If this port's PKGNAME were really "List-MoreUtils" then it would
 # not be recorded into the resulting package.  The next build with
 # CHECK_CHANGED_DEPS enabled would consider it a "new dependency"
-# since it is in the the port but not in the package.  This is usually
+# since it is in the port but not in the package.  This is usually
 # a warning but can be made fatal instead by enabling this option.
 # Default: no
 #BAD_PKGNAME_DEPS_ARE_FATAL=yes
