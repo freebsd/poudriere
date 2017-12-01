@@ -306,6 +306,6 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #HTML_TYPE="hosted"
 
 # Set to track remaining ports in the HTML interface.  This can slow down
-# processing of the queue slightly, especially for bulk -a bulds.
+# processing of the queue slightly, especially for bulk -a builds.
 # Default: no
 #HTML_TRACK_REMAINING=yes
