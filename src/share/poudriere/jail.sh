@@ -859,8 +859,11 @@ create_jail() {
 		[ -d "${JAILMNT}" ] && \
 		    err 1 "Directory ${JAILMNT} already exists"
 	fi
-
-	createfs ${JAILNAME} ${JAILMNT} ${JAILFS:-none}
+	if [ "${METHOD}" != "null" ]; then
+		createfs ${JAILNAME} ${JAILMNT} ${JAILFS:-none}
+	elif [ ! -d "${JAILMNT}" ] || dirempty "${JAILMNT}"; then
+		err 1 "Directory ${JAILMNT} expected to be populated from installworld already."
+	fi
 	[ -n "${JAILFS}" -a "${JAILFS}" != "none" ] && jset ${JAILNAME} fs ${JAILFS}
 	if [ -n "${VERSION}" ]; then
 		jset ${JAILNAME} version ${VERSION}
