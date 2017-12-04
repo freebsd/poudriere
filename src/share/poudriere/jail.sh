@@ -504,7 +504,7 @@ install_from_src() {
 
 	msg_n "Copying ${SRC_BASE} to ${JAILMNT}/usr/src..."
 	mkdir -p ${JAILMNT}/usr/src
-	if [ -f ${SRC_BASE}/usr/src/.cpignore ]; then
+	if [ -f ${JAILMNT}/usr/src/.cpignore ]; then
 		cpignore_flag="-x"
 	else
 		cpignore=$(mktemp -t cpignore)
