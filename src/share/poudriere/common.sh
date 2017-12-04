@@ -4892,7 +4892,7 @@ delete_old_pkg() {
 	_my_path mnt
 
 	if [ ! -d "${mnt}${PORTSDIR}/${origin}" ]; then
-		msg "${origin} does not exist anymore. Deleting stale ${pkg##*/}"
+		msg "Deleting ${pkg##*/}: stale package: nonexistent origin ${origin}"
 		delete_pkg "${pkg}"
 		return 0
 	fi
