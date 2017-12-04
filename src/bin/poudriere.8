@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd November 8, 2017
+.Dd December 4, 2017
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -495,7 +495,9 @@ Use the specified
 .Ar srcpath
 as the
 .Fx
-source tree mounted inside the jail.
+source tree mounted inside the jail
+or from the host for
+.Fl m Ar null .
 .It Fl t Ar version
 instead of upgrading to the latest security fix of the jail version, you can
 jump to the new specified
