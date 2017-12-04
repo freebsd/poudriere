@@ -218,8 +218,13 @@ hook_stop_jail() {
 }
 
 update_jail() {
-	SRC_BASE="${JAILMNT}/usr/src"
 	METHOD=$(jget ${JAILNAME} method)
+	: ${SRCPATH:=$(jget ${JAILNAME} srcpath 2>/dev/null || echo)}
+	if [ "${METHOD}" = "null" -a -n "${SRCPATH}" ]; then
+		SRC_BASE="${SRCPATH}"
+	else
+		SRC_BASE="${JAILMNT}/usr/src"
+	fi
 	if [ -z "${METHOD}" -o "${METHOD}" = "-" ]; then
 		METHOD="ftp"
 		jset ${JAILNAME} method ${METHOD}
@@ -787,7 +792,11 @@ create_jail() {
 		JAILFS=${ZPOOL}${ZROOTFS}/jails/${JAILNAME}
 	fi
 
-	SRC_BASE="${JAILMNT}/usr/src"
+	if [ "${METHOD}" = "null" -a -n "${SRCPATH}" ]; then
+		SRC_BASE="${SRCPATH}"
+	else
+		SRC_BASE="${JAILMNT}/usr/src"
+	fi
 
 	case ${METHOD} in
 	ftp|http|gjb|ftp-archive|url=*)
