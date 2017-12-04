@@ -131,9 +131,11 @@ delete_jail() {
 	msg_n "Removing ${JAILNAME} jail..."
 	method=$(jget ${JAILNAME} method)
 	if [ "${method}" = "null" ]; then
-		mv -f ${JAILMNT}/etc/login.conf.orig \
-		    ${JAILMNT}/etc/login.conf
-		cap_mkdb ${JAILMNT}/etc/login.conf
+		if [ -f "${JAILMNT}/etc/login.conf.orig" ]; then
+			mv -f ${JAILMNT}/etc/login.conf.orig \
+			    ${JAILMNT}/etc/login.conf
+			cap_mkdb ${JAILMNT}/etc/login.conf
+		fi
 	else
 		TMPFS_ALL=0 destroyfs ${JAILMNT} jail || :
 	fi
@@ -894,6 +896,10 @@ create_jail() {
 	else
 		RELEASE="${VERSION}"
 	fi
+
+	[ "${METHOD}" = "null" ] && \
+	    [ ! -f "${JAILMNT}/etc/login.conf" ] && \
+	    err 1 "Directory ${JAILMNT} must be populated from installworld already."
 
 	cp -f "${JAILMNT}/etc/login.conf" "${JAILMNT}/etc/login.conf.orig"
 	update_version_env "${RELEASE}"
