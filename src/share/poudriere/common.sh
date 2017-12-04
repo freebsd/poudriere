@@ -4860,32 +4860,19 @@ delete_old_pkg() {
 	# Some expensive lookups are delayed until the last possible
 	# moment as cheaper checks may weed out this package before.
 
-	pkg_flavor="__null"
-	pkg_dep_args="__null"
-	origin="__null"
+	pkg_flavor=
+	pkg_dep_args=
 	originspec=
+	pkg_get_origin origin "${pkg}"
 	if ! pkgbase_is_needed "${pkgname}"; then
 		# We don't expect this PKGBASE but it may still be an
 		# origin that is expected and just renamed.  Need to
 		# get the origin and flavor out of the package to
 		# determine that.
-		pkg_get_origin origin "${pkg}"
-		# pkg_get_origin may have returned a FLAVOR from MOVED.
-		originspec_decode "${origin}" pkg_origin '' pkg_flavor
-		if [ -n "${pkg_flavor}" ]; then
-			# Assume this is the flavor to use now.  Trim
-			# FLAVOR from origin.
-			origin="${pkg_origin}"
-			pkg_dep_args=
-			# XXX: What if the package already had a FLAVOR? (#541)
-		else
-			pkg_flavor=
-			pkg_dep_args=
-			if have_ports_feature FLAVORS; then
-				pkg_get_flavor pkg_flavor "${pkg}"
-			elif have_ports_feature DEPENDS_ARGS; then
-				pkg_get_dep_args pkg_dep_args "${pkg}"
-			fi
+		if have_ports_feature FLAVORS; then
+			pkg_get_flavor pkg_flavor "${pkg}"
+		elif have_ports_feature DEPENDS_ARGS; then
+			pkg_get_dep_args pkg_dep_args "${pkg}"
 		fi
 		originspec_encode originspec "${origin}" "${pkg_dep_args}" \
 		    "${pkg_flavor}"
@@ -4894,19 +4881,6 @@ delete_old_pkg() {
 			return 0
 		fi
 		# Apparently we expect this package via its origin and flavor.
-	fi
-	if [ "${origin}" = "__null" ]; then
-		pkg_get_origin origin "${pkg}"
-		# pkg_get_origin may have returned a FLAVOR from MOVED.
-		originspec_decode "${origin}" pkg_origin '' pkg_flavor
-		if [ -n "${pkg_flavor}" ]; then
-			# Assume this is the flavor to use now.  Trim
-			# FLAVOR from origin and fixup originspec.
-			originspec="${origin}"
-			origin="${pkg_origin}"
-			pkg_dep_args=
-			# XXX: What if the package already had a FLAVOR? (#541)
-		fi
 	fi
 
 	if check_moved new_origin "${origin}"; then
@@ -4924,8 +4898,6 @@ delete_old_pkg() {
 	fi
 
 	if [ -z "${originspec}" ]; then
-		pkg_flavor=
-		pkg_dep_args=
 		if have_ports_feature FLAVORS; then
 			pkg_get_flavor pkg_flavor "${pkg}"
 		elif have_ports_feature DEPENDS_ARGS; then
