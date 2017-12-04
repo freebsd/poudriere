@@ -4530,7 +4530,6 @@ pkg_get_origin() {
 	local _origin=$3
 	local pkg_cache_dir
 	local originfile
-	local new_origin
 
 	get_pkg_cache_dir pkg_cache_dir "${pkg}"
 	originfile="${pkg_cache_dir}/origin"
@@ -4545,7 +4544,6 @@ pkg_get_origin() {
 		read_line _origin "${originfile}"
 	fi
 
-	check_moved new_origin "${_origin}" && _origin=${new_origin}
 
 	setvar "${var_return}" "${_origin}"
 
@@ -4854,7 +4852,7 @@ delete_old_pkg() {
 	local pkg_origin compiled_deps_pkgbases
 	local pkgbase new_pkgbase flavor pkg_flavor originspec
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor dep_dep_args
-	local stale_pkg dep_args pkg_dep_args
+	local new_origin stale_pkg dep_args pkg_dep_args
 
 	pkgname="${pkg##*/}"
 	pkgname="${pkgname%.*}"
@@ -4909,6 +4907,12 @@ delete_old_pkg() {
 			pkg_dep_args=
 			# XXX: What if the package already had a FLAVOR? (#541)
 		fi
+	fi
+
+	if check_moved new_origin "${origin}"; then
+		msg "Deleting ${pkg##*/}: ${origin} moved to ${new_origin}"
+		delete_pkg "${pkg}"
+		return 0
 	fi
 
 	_my_path mnt
