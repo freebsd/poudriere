@@ -247,11 +247,11 @@ clonefs() {
 	# When using TMPFS, there is no need to clone the originating FS from
 	# a snapshot as the destination will be tmpfs. We do however need to
 	# ensure the originating FS is rolled back to the expected snapshot.
-	if [ -n "${fs}" -a ${TMPFS_ALL} -eq 1 ]; then
+	if [ ${from} != "/" -a -n "${fs}" -a ${TMPFS_ALL} -eq 1 ]; then
 		rollbackfs "${snap}" "${from}" "${fs}"
 		unset fs
 	fi
-	if [ -n "${fs}" ]; then
+	if [ ${from} != "/" -a -n "${fs}" ]; then
 		name=${to##*/}
 
 		if [ "${name}" = "ref" ]; then
@@ -278,7 +278,19 @@ clonefs() {
 			echo "debug" >> "${from}/usr/lib/.cpignore" || :
 			echo "freebsd-update" >> "${from}/var/db/.cpignore" || :
 		fi
-		do_clone -r "${from}" "${to}"
+		if [ ${from} = "/" ]; then
+			for dir in bin boot boot/modules lib libexec sbin \
+				usr/bin usr/include usr/lib usr/lib32 \
+				usr/libdata usr/libexec usr/sbin usr/share \
+				usr/src; do
+				if [ -d "${from}/${dir}" ]; then
+					mkdir -p "${to}/${dir}"
+					do_clone "${from}/${dir}" "${to}/${dir}"
+				fi
+			done
+		else
+			do_clone "${from}" "${to}"
+		fi
 		if [ "${snap}" = "clean" ]; then
 			rm -f "${from}/usr/.cpignore" \
 			    "${from}/usr/lib/.cpignore" \
