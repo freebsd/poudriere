@@ -4950,6 +4950,15 @@ delete_old_pkg() {
 		return 0
 	fi
 
+	if have_ports_feature FLAVORS; then
+		shash_get pkgname-flavor "${pkgname}" flavor || flavor=
+		if [ "${pkg_flavor}" != "${flavor}" ]; then
+			msg "Deleting ${pkg##*/}: FLAVOR changed to '${flavor}' from '${pkg_flavor}'"
+			delete_pkg "${pkg}"
+			return 0
+		fi
+	fi
+
 	# Detect ports that have new dependencies that the existing packages
 	# do not have and delete them.
 	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
@@ -5096,15 +5105,6 @@ delete_old_pkg() {
 				msg "Pkg: ${compiled_options}"
 				msg "New: ${current_options}"
 			fi
-			delete_pkg "${pkg}"
-			return 0
-		fi
-	fi
-
-	if have_ports_feature FLAVORS; then
-		shash_get pkgname-flavor "${pkgname}" flavor || flavor=
-		if [ "${pkg_flavor}" != "${flavor}" ]; then
-			msg "Deleting ${pkg##*/}: FLAVOR changed to '${flavor}' from '${pkg_flavor}'"
 			delete_pkg "${pkg}"
 			return 0
 		fi
