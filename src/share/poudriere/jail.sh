@@ -502,22 +502,24 @@ install_from_src() {
 	local var_version_extra="$1"
 	local cpignore_flag cpignore
 
-	msg_n "Copying ${SRC_BASE} to ${JAILMNT}/usr/src..."
-	mkdir -p ${JAILMNT}/usr/src
-	if [ -f ${SRC_BASE}/usr/src/.cpignore ]; then
-		cpignore_flag="-x"
-	else
-		cpignore=$(mktemp -t cpignore)
-		cpignore_flag="-X ${cpignore}"
-		# Ignore some files
-		cat > ${cpignore} <<-EOF
-		.git
-		.svn
-		EOF
+	if [ -z "$SRCPATH" ] ; then
+		msg_n "Copying ${SRC_BASE} to ${JAILMNT}/usr/src..."
+		mkdir -p ${JAILMNT}/usr/src
+		if [ -f ${SRC_BASE}/usr/src/.cpignore ]; then
+			cpignore_flag="-x"
+		else
+			cpignore=$(mktemp -t cpignore)
+			cpignore_flag="-X ${cpignore}"
+			# Ignore some files
+			cat > ${cpignore} <<-EOF
+			.git
+			.svn
+			EOF
+		fi
+		cpdup -i0 ${cpignore_flag} ${SRC_BASE} ${JAILMNT}/usr/src
+		[ -n "${cpignore}" ] && rm -f ${cpignore}
+		echo " done"
 	fi
-	cpdup -i0 ${cpignore_flag} ${SRC_BASE} ${JAILMNT}/usr/src
-	[ -n "${cpignore}" ] && rm -f ${cpignore}
-	echo " done"
 
 	if [ ${BUILD} -eq 0 ]; then
 		setup_build_env
