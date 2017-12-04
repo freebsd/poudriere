@@ -487,6 +487,9 @@ function format_status_row(status, row, n) {
 		} else {
 			table_row.push(format_origin(row.reason));
 		}
+	} else {
+		alert('Unknown data type "' + status + '". Try flushing cache.');
+		throw 'Unknown data type "' + status + '". Try flushing cache.';
 	}
 
 	return table_row;
