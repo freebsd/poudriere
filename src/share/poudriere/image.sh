@@ -30,21 +30,21 @@ usage() {
 poudriere image [parameters] [options]
 
 Parameters:
-    -o outputdir    -- Image destination directory
-    -j jail         -- Jail
-    -p portstree    -- Ports tree
-    -z set          -- Set
-    -s size         -- Set the image size
-    -n imagename    -- The name of the generated image
+    -c overlaydir   -- The content of the overlay directory will be copied into
+                       the image
+    -f packagelist  -- List of packages to install
     -h hostname     -- The image hostname
+    -j jail         -- Jail
+    -n imagename    -- The name of the generated image
+    -o outputdir    -- Image destination directory
+    -p portstree    -- Ports tree
+    -s size         -- Set the image size
     -t type         -- Type of image can be one of (default iso+zmfs):
                     -- iso, iso+mfs, iso+zmfs, usb, usb+mfs, usb+zmfs,
                        rawdisk, zrawdisk, tar, firmware, rawfirmware,
                        embedded
     -X excludefile  -- File containing the list in cpdup format
-    -f packagelist  -- List of packages to install
-    -c overlaydir   -- The content of the overlay directory will be copied into
-                       the image
+    -z set          -- Set
 EOF
 	exit 1
 }
@@ -63,8 +63,29 @@ cleanup_image() {
 
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "o:j:p:z:n:t:X:f:c:h:s:" FLAG; do
+while getopts "c:f:h:j:n:o:p:s:t:X:z:" FLAG; do
 	case "${FLAG}" in
+		c)
+			[ -d "${OPTARG}" ] || err 1 "No such extract directory: ${OPTARG}"
+			EXTRADIR=$(realpath ${OPTARG})
+			;;
+		f)
+			# If this is a relative path, add in ${PWD} as
+			# a cd / was done.
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			    OPTARG="${SAVED_PWD}/${OPTARG}"
+			[ -f "${OPTARG}" ] || err 1 "No such package list: ${OPTARG}"
+			PACKAGELIST=${OPTARG}
+			;;
+		h)
+			HOSTNAME=${OPTARG}
+			;;
+		j)
+			JAILNAME=${OPTARG}
+			;;
+		n)
+			IMAGENAME=${OPTARG}
+			;;
 		o)
 			# If this is a relative path, add in ${PWD} as
 			# a cd / was done.
@@ -72,11 +93,11 @@ while getopts "o:j:p:z:n:t:X:f:c:h:s:" FLAG; do
 			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			OUTPUTDIR=${OPTARG}
 			;;
-		j)
-			JAILNAME=${OPTARG}
-			;;
 		p)
 			PTNAME=${OPTARG}
+			;;
+		s)
+			IMAGESIZE="${OPTARG}"
 			;;
 		t)
 			MEDIATYPE=${OPTARG}
@@ -87,12 +108,6 @@ while getopts "o:j:p:z:n:t:X:f:c:h:s:" FLAG; do
 			*) err 1 "invalid mediatype: ${MEDIATYPE}"
 			esac
 			;;
-		n)
-			IMAGENAME=${OPTARG}
-			;;
-		h)
-			HOSTNAME=${OPTARG}
-			;;
 		X)
 			[ -f "${OPTARG}" ] || err 1 "No such exclude list ${OPTARG}"
 			EXCLUDELIST=$(realpath ${OPTARG})
@@ -100,21 +115,6 @@ while getopts "o:j:p:z:n:t:X:f:c:h:s:" FLAG; do
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"
 			SETNAME="${OPTARG}"
-			;;
-		s)
-			IMAGESIZE="${OPTARG}"
-			;;
-		f)
-			# If this is a relative path, add in ${PWD} as
-			# a cd / was done.
-			[ "${OPTARG#/}" = "${OPTARG}" ] && \
-			    OPTARG="${SAVED_PWD}/${OPTARG}"
-			[ -f "${OPTARG}" ] || err 1 "No such package list: ${OPTARG}"
-			PACKAGELIST=${OPTARG}
-			;;
-		c)
-			[ -d "${OPTARG}" ] || err 1 "No such extract directory: ${OPTARG}"
-			EXTRADIR=$(realpath ${OPTARG})
 			;;
 		*)
 			echo "Unknown flag '${FLAG}'"
