@@ -83,7 +83,7 @@ recursecopylib() {
 
 mkminiroot() {
 	mroot=${WRKDIR}/miniroot
-	dirs="etc dev boot bin usr/bin libexec lib sbin"
+	dirs="etc dev boot bin usr/bin libexec lib usr/lib sbin"
 	files="sbin/init etc/pwd.db etc/spwd.db"
 	files="${files} bin/sh sbin/halt sbin/fasthalt sbin/fastboot sbin/reboot"
 	files="${files} usr/bin/bsdtar libexec/ld-elf.so.1 sbin/newfs"
