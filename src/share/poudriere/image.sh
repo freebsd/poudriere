@@ -100,6 +100,7 @@ mkminiroot() {
 	done
 
 	makefs ${OUTPUTDIR}/miniroot ${mroot}
+	[ -f ${OUTPUTDIR}/miniroot.gz ] && rm ${OUTPUTDIR}/miniroot.gz
 	gzip -9 ${OUTPUTDIR}/miniroot
 }
 
