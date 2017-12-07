@@ -35,7 +35,8 @@ Parameters:
     -f packagelist  -- List of packages to install
     -h hostname     -- The image hostname
     -j jail         -- Jail
-    -m              -- Build a miniroot image as well (for tar type images)
+    -m overlaydir   -- Build a miniroot image as well (for tar type images), and
+                       overlay this directory into the miniroot image
     -n imagename    -- The name of the generated image
     -o outputdir    -- Image destination directory
     -p portstree    -- Ports tree
@@ -98,6 +99,7 @@ mkminiroot() {
 		cp -p ${WRKDIR}/world/${f} ${mroot}/${f}
 		recursecopylib ${f}
 	done
+	cp -fRLp ${MINIROOT}/ ${mroot}/
 
 	makefs ${OUTPUTDIR}/miniroot ${mroot}
 	[ -f ${OUTPUTDIR}/miniroot.gz ] && rm ${OUTPUTDIR}/miniroot.gz
@@ -106,7 +108,7 @@ mkminiroot() {
 
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "c:f:h:j:mn:o:p:s:t:X:z:" FLAG; do
+while getopts "c:f:h:j:m:n:o:p:s:t:X:z:" FLAG; do
 	case "${FLAG}" in
 		c)
 			[ -d "${OPTARG}" ] || err 1 "No such extract directory: ${OPTARG}"
@@ -127,7 +129,8 @@ while getopts "c:f:h:j:mn:o:p:s:t:X:z:" FLAG; do
 			JAILNAME=${OPTARG}
 			;;
 		m)
-			MINIROOT=1
+			[ -d "${OPTARG}" ] || err 1 "No such miniroot overlday directory: ${OPTARG}"
+			MINIROOT=$(realpath ${OPTARG})
 			;;
 		n)
 			IMAGENAME=${OPTARG}
