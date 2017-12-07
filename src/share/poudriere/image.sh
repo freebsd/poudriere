@@ -35,6 +35,7 @@ Parameters:
     -f packagelist  -- List of packages to install
     -h hostname     -- The image hostname
     -j jail         -- Jail
+    -m              -- Build a miniroot image as well (for tar type images)
     -n imagename    -- The name of the generated image
     -o outputdir    -- Image destination directory
     -p portstree    -- Ports tree
@@ -61,9 +62,50 @@ cleanup_image() {
 	delete_image
 }
 
+recursecopylib() {
+	path=$1
+	case $1 in
+	*/*) ;;
+	lib*)
+		if [ -e "${WRKDIR}/world/lib/$1" ]; then
+			cp ${WRKDIR}/world/lib/$1 ${mroot}/lib
+			path=lib/$1
+		elif [ -e "${WRKDIR}/world/usr/lib/$1" ]; then
+			cp ${WRKDIR}/world/usr/lib/$1 ${mroot}/usr/lib
+			path=usr/lib/$1
+		fi
+		;;
+	esac
+	for i in $( (readelf -d ${mroot}/$path 2>/dev/null || :) | awk '$2 == "NEEDED" { gsub(/\[/,"", $NF ); gsub(/\]/,"",$NF) ; print $NF }'); do
+		[ -f ${mroot}/lib/$i ] || recursecopylib $i
+	done
+}
+
+mkminiroot() {
+	mroot=${WRKDIR}/miniroot
+	dirs="etc dev boot bin usr/bin libexec lib sbin"
+	files="sbin/init etc/pwd.db etc/spwd.db"
+	files="${files} bin/sh sbin/halt sbin/fasthalt sbin/fastboot sbin/reboot"
+	files="${files} usr/bin/bsdtar libexec/ld-elf.so.1 sbin/newfs"
+	files="${files} sbin/mdconfig usr/bin/fetch sbin/ifconfig sbin/route sbin/mount"
+	files="${files} sbin/umount bin/mkdir bin/kenv usr/bin/sed"
+
+	for d in ${dirs}; do
+		mkdir -p ${mroot}/${d}
+	done
+
+	for f in ${files}; do
+		cp -p ${WRKDIR}/world/${f} ${mroot}/${f}
+		recursecopylib ${f}
+	done
+
+	makefs ${OUTPUTDIR}/miniroot ${mroot}
+	gzip -9 ${OUTPUTDIR}/miniroot
+}
+
 . ${SCRIPTPREFIX}/common.sh
 
-while getopts "c:f:h:j:n:o:p:s:t:X:z:" FLAG; do
+while getopts "c:f:h:j:mn:o:p:s:t:X:z:" FLAG; do
 	case "${FLAG}" in
 		c)
 			[ -d "${OPTARG}" ] || err 1 "No such extract directory: ${OPTARG}"
@@ -82,6 +124,9 @@ while getopts "c:f:h:j:n:o:p:s:t:X:z:" FLAG; do
 			;;
 		j)
 			JAILNAME=${OPTARG}
+			;;
+		m)
+			MINIROOT=1
 			;;
 		n)
 			IMAGENAME=${OPTARG}
@@ -403,6 +448,11 @@ zrawdisk)
 	cat >> ${WRKDIR}/world/boot/loader.conf <<-EOF
 	vfs.root.mountfrom="zfs:${zroot}/ROOT/default"
 	EOF
+	;;
+tar)
+	if [ -n $MINIROOT ]; then
+		mkminiroot
+	fi
 	;;
 esac
 
