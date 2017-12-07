@@ -132,6 +132,7 @@ msg() {
 }
 
 msg_verbose() {
+	[ -n "${DEBUG_LOG}" ] && msg "$@" >> "${DEBUG_LOG}"
 	_msg_n "\n" "$@"
 }
 
@@ -144,8 +145,10 @@ msg_error() {
 		msg "Error: $1" >&2
 	elif [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
 		# Send to true stderr
+		[ -n "${DEBUG_LOG}" ] && msg "Error: $1" >> "${DEBUG_LOG}"
 		COLOR_ARROW="${COLOR_ERROR}" msg "${COLOR_ERROR}Error: $1" >&4
 	else
+		[ -n "${DEBUG_LOG}" ] && msg "Error: $1" >> "${DEBUG_LOG}"
 		COLOR_ARROW="${COLOR_ERROR}" msg "${COLOR_ERROR}Error: $1" >&2
 	fi
 	return 0
@@ -157,11 +160,13 @@ msg_dev() {
 }
 
 msg_debug() {
+	[ -n "${DEBUG_LOG}" ] && msg "Debug: $@" >> "${DEBUG_LOG}"
 	COLOR_ARROW="${COLOR_DEBUG}" \
 	    _msg_n "\n" "${COLOR_DEBUG}Debug: $@" >&2
 }
 
 msg_warn() {
+	[ -n "${DEBUG_LOG}" ] && msg "Warning: $@" >> "${DEBUG_LOG}"
 	COLOR_ARROW="${COLOR_WARN}" \
 	    _msg_n "\n" "${COLOR_WARN}Warning: $@" >&2
 }
@@ -239,11 +244,12 @@ post_getopts() {
 		job_msg_dev() { }
 	fi
 	if ! [ ${VERBOSE} -gt 1 ]; then
-		msg_debug() { }
+		msg_debug() { [ -n "${DEBUG_LOG}" ] && msg "$@" >> "${DEBUG_LOG}"; }
 		job_msg_debug() { }
 	fi
 	if ! [ ${VERBOSE} -gt 0 ]; then
-		msg_verbose() { }
+		msg_debug() { [ -n "${DEBUG_LOG}" ] && msg "$@" >> "${DEBUG_LOG}"; }
+		msg_verbose() { [ -n "${DEBUG_LOG}" ] && msg "$@" >> "${DEBUG_LOG}"; }
 		job_msg_verbose() { }
 	fi
 }
@@ -6532,6 +6538,8 @@ prepare_ports() {
 			    ${cache_dir}
 			# Link this build as the /latest
 			ln -sfh ${BUILDNAME} ${log%/*}/latest
+
+			DEBUG_LOG=${log}/logs/debug.log
 
 			# Record the SVN URL@REV in the build
 			[ -d ${MASTERMNT}${PORTSDIR}/.svn ] && bset svn_url $(
