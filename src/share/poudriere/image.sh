@@ -101,9 +101,9 @@ mkminiroot() {
 	done
 	cp -fRLp ${MINIROOT}/ ${mroot}/
 
-	makefs ${OUTPUTDIR}/miniroot ${mroot}
-	[ -f ${OUTPUTDIR}/miniroot.gz ] && rm ${OUTPUTDIR}/miniroot.gz
-	gzip -9 ${OUTPUTDIR}/miniroot
+	makefs ${OUTPUTDIR}/${IMAGENAME}-miniroot ${mroot}
+	[ -f ${OUTPUTDIR}/${IMAGENAME}-miniroot.gz ] && rm ${OUTPUTDIR}/${IMAGENAME}-miniroot.gz
+	gzip -9 ${OUTPUTDIR}/${IMAGENAME}-miniroot
 }
 
 . ${SCRIPTPREFIX}/common.sh
