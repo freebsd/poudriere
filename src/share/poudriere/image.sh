@@ -83,6 +83,8 @@ recursecopylib() {
 }
 
 mkminiroot() {
+	msg "Making miniroot"
+	[ -z ${MINIROOT} ] && err 1 "MINIROOT not defined"
 	mroot=${WRKDIR}/miniroot
 	dirs="etc dev boot bin usr/bin libexec lib usr/lib sbin"
 	files="sbin/init etc/pwd.db etc/spwd.db"
@@ -454,7 +456,7 @@ zrawdisk)
 	EOF
 	;;
 tar)
-	if [ -n $MINIROOT ]; then
+	if [ -n "${MINIROOT}" ]; then
 		mkminiroot
 	fi
 	;;
