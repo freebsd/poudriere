@@ -131,7 +131,7 @@ while getopts "c:f:h:j:m:n:o:p:s:t:X:z:" FLAG; do
 			JAILNAME=${OPTARG}
 			;;
 		m)
-			[ -d "${OPTARG}" ] || err 1 "No such miniroot overlday directory: ${OPTARG}"
+			[ -d "${OPTARG}" ] || err 1 "No such miniroot overlay directory: ${OPTARG}"
 			MINIROOT=$(realpath ${OPTARG})
 			;;
 		n)
