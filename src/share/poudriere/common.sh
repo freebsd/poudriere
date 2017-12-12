@@ -1165,6 +1165,41 @@ show_log_info() {
 	return 0
 }
 
+show_dry_run_summary() {
+	[ ${DRY_RUN} -eq 1 ] || return 0
+	local log
+
+	_log_path log
+
+	bset status "done:"
+	msg "Dry run mode, cleaning up and exiting"
+	tobuild=$(calculate_tobuild)
+	if [ ${tobuild} -gt 0 ]; then
+		[ ${PARALLEL_JOBS} -gt ${tobuild} ] &&
+		    PARALLEL_JOBS=${tobuild##* }
+		msg "Would build ${tobuild} packages using ${PARALLEL_JOBS} builders"
+
+		msg_n "Ports to build: "
+		{
+			if was_a_testport_run; then
+				echo "${ORIGINSPEC}"
+			fi
+			cat "${log}/.poudriere.ports.queued"
+		} | \
+		    while read originspec pkgname _ignored; do
+			# Trim away DEPENDS_ARGS for display
+			originspec_decode "${originspec}" origin '' flavor
+			originspec_encode originspec "${origin}" '' "${flavor}"
+			echo "${originspec}"
+		done | sort | tr '\n' ' '
+		echo
+	else
+		msg "No packages would be built"
+	fi
+	show_log_info
+	exit 0
+}
+
 show_build_summary() {
 	local status nbb nbf nbs nbi nbq ndone nbtobuild buildname
 	local log now elapsed buildtime queue_width
@@ -3285,8 +3320,7 @@ _real_build_port() {
 			[ ${die} -eq 1 -a "${PREFIX}" != "${LOCALBASE}" ] && \
 			    was_a_testport_run && msg \
 			    "This test was done with PREFIX!=LOCALBASE which \
-may show failures if the port does not respect PREFIX. \
-Try testport with -n to use PREFIX=LOCALBASE"
+may show failures if the port does not respect PREFIX."
 			rm -f ${add} ${add1} ${del} ${del1} ${mod} ${mod1}
 			[ $die -eq 0 ] || if [ "${PORTTESTING_FATAL}" != "no" ]; then
 				return 1

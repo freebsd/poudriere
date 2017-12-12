@@ -221,32 +221,7 @@ if [ -d ${LOGD} -a ${CLEAN} -eq 1 ]; then
 fi
 
 prepare_ports
-
-if [ ${DRY_RUN} -eq 1 ]; then
-	bset status "done:"
-	msg "Dry run mode, cleaning up and exiting"
-	tobuild=$(calculate_tobuild)
-	if [ ${tobuild} -gt 0 ]; then
-		[ ${PARALLEL_JOBS} -gt ${tobuild} ] &&
-		    PARALLEL_JOBS=${tobuild##* }
-		msg "Would build ${tobuild} packages using ${PARALLEL_JOBS} builders"
-
-		msg_n "Ports to build: "
-		cat "${LOGD}/.poudriere.ports.queued" | \
-		    while read originspec pkgname _ignored; do
-			# Trim away DEPENDS_ARGS for display
-			originspec_decode "${originspec}" origin '' flavor
-			originspec_encode originspec "${origin}" '' "${flavor}"
-			echo "${originspec}"
-		done | sort | tr '\n' ' '
-		echo
-	else
-		msg "No packages would be built"
-	fi
-	show_log_info
-	exit 0
-fi
-
+show_dry_run_summary
 markfs prepkg ${MASTERMNT}
 
 PARALLEL_JOBS=${BUILD_PARALLEL_JOBS}
