@@ -688,7 +688,7 @@ First you have to create a jail, which will hold all the building infrastructure
 </blockquote>
 <p>
 A jail will take approximately 3GB of space.<p>
-Of course you can use another version of FreeBSD, regarless on what version you are running. amd64 users can choose i386 arch like in this example:<p>
+Of course you can use another version of FreeBSD, regardless on what version you are running. amd64 users can choose i386 arch like in this example:<p>
 <blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
 <div class="display">
 <code class="lit">poudriere jail -c -v 8.1-RELEASE -a i386 -j 81i386</code></div>
