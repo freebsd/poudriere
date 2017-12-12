@@ -73,7 +73,7 @@ INTERACTIVE_MODE=0
 PTNAME="default"
 BUILD_REPO=1
 
-while getopts "o:cniIj:J:kNp:PSvwz:" FLAG; do
+while getopts "B:o:cniIj:J:kNp:PSvwz:" FLAG; do
 	case "${FLAG}" in
 		B)
 			BUILDNAME="${OPTARG}"
