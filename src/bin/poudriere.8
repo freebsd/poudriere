@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd December 4, 2017
+.Dd December 12, 2017
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -679,10 +679,14 @@ The default pre-build value is 1.25 times the value of the build value.
 .It Fl k
 Do not consider failures as fatal.
 Find all failures.
-.It Fl P
-Use custom prefix.
+.It Fl n
+Dry run.
+Show what would be done, but do not actually build or delete any
+packages.
 .It Fl N
 Do not build package repository or INDEX when build of dependencies is completed.
+.It Fl P
+Use custom prefix.
 .It Fl p Ar tree
 Specifies which ports
 .Ar tree

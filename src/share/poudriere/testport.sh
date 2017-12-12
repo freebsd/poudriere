@@ -48,6 +48,8 @@ Options:
                    the build. (Defaults to the number of CPUs for n and
                    1.25 times n for p)
     -k          -- Don't consider failures as fatal; find all failures.
+    -n          -- Dry-run. Show what will be done, but do not build
+                   any packages.
     -N          -- Do not build package repository or INDEX when build
                    of dependencies completed
     -p tree     -- Specify the path to the portstree
@@ -67,6 +69,7 @@ EOF
 CONFIGSTR=0
 . ${SCRIPTPREFIX}/common.sh
 NOPREFIX=1
+DRY_RUN=0
 SETNAME=""
 SKIP_RECURSIVE_REBUILD=0
 INTERACTIVE_MODE=0
@@ -85,7 +88,10 @@ while getopts "B:o:cniIj:J:kNp:PSvwz:" FLAG; do
 			ORIGINSPEC=${OPTARG}
 			;;
 		n)
-			# Backwards-compat with NOPREFIX=1
+			[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] ||
+			    err 1 "ATOMIC_PACKAGE_REPOSITORY required for dry-run support"
+			DRY_RUN=1
+			DRY_MODE="${COLOR_DRY_MODE}[Dry Run]${COLOR_RESET} "
 			;;
 		j)
 			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
@@ -208,6 +214,7 @@ fi
 # deps_fetch_vars lookup for dependencies moved to prepare_ports()
 # This will set LISTPORTS/PKGNAME/DEPENDS_ARGS/FLAVOR/FLAVORS as well.
 prepare_ports
+show_dry_run_summary
 markfs prepkg ${MASTERMNT}
 
 _log_path log
