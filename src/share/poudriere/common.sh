@@ -105,15 +105,18 @@ _msg_n() {
 	local -; set +x
 	local now elapsed
 	local NL="${1}"
-	local arrow
+	local arrow DRY_MODE
 	shift 1
 
-	elapsed=
-	if should_show_elapsed; then
+	if [ "${MSG_NESTED:-0}" -eq 1 ]; then
+		unset elapsed arrow DRY_MODE
+	elif should_show_elapsed; then
 		now=$(clock -monotonic)
 		calculate_duration elapsed "$((${now} - ${TIME_START:-0}))"
 		elapsed="[${elapsed}] "
+		unset arrow
 	else
+		unset elapsed
 		arrow="=>>"
 	fi
 	if [ -n "${COLOR_ARROW}" ] || [ -z "${1##*\033[*}" ]; then
@@ -4071,10 +4074,14 @@ stop_build() {
 prefix_stderr_quick() {
 	local -; set +x
 	local extra="$1"
+	local MSG_NESTED
 	shift 1
 
 	{
-		{ "$@"; } 2>&1 1>&3 | {
+		{
+			MSG_NESTED=1
+			"$@"
+		} 2>&1 1>&3 | {
 			setproctitle "${PROC_TITLE} (prefix_stderr_quick)"
 			while read -r line; do
 				msg_warn "${extra}: ${line}"
@@ -4087,6 +4094,7 @@ prefix_stderr() {
 	local extra="$1"
 	shift 1
 	local prefixpipe prefixpid ret
+	local MSG_NESTED
 
 	prefixpipe=$(mktemp -ut prefix_stderr.pipe)
 	mkfifo "${prefixpipe}"
@@ -4102,6 +4110,7 @@ prefix_stderr() {
 	exec 2> "${prefixpipe}"
 	unlink "${prefixpipe}"
 
+	MSG_NESTED=1
 	ret=0
 	"$@" || ret=$?
 
@@ -4115,6 +4124,7 @@ prefix_stdout() {
 	local extra="$1"
 	shift 1
 	local prefixpipe prefixpid ret
+	local MSG_NESTED
 
 	prefixpipe=$(mktemp -ut prefix_stdout.pipe)
 	mkfifo "${prefixpipe}"
@@ -4130,6 +4140,7 @@ prefix_stdout() {
 	exec > "${prefixpipe}"
 	unlink "${prefixpipe}"
 
+	MSG_NESTED=1
 	ret=0
 	"$@" || ret=$?
 
