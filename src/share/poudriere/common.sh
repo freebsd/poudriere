@@ -5700,8 +5700,23 @@ gather_port_vars_port() {
 			[ "${origin_flavor}" = "${FLAVOR_DEFAULT}" ] && \
 			    origin_flavor="${default_flavor}"
 			if ! [ -n "${flavors}" -a \
-			    "${origin_flavor}" = "${default_flavor}" ] || \
-			    pkgname_is_queued "${pkgname}"; then
+			    "${origin_flavor}" = "${default_flavor}" ]; then
+				# Not the default FLAVOR.
+				# Is it even a valid FLAVOR though?
+				case " ${flavors} " in
+				*\ ${origin_flavor}\ *)
+					# A superfluous valid FLAVOR, nothing
+					# more to do.
+					return 0
+					;;
+				esac
+				# The FLAVOR is invalid.  It will be marked
+				# IGNORE but we process it far too late.
+				# There is no unique PKGNAME for this lookup
+				# so we must fail now.
+				err 1 "Invalid FLAVOR '${origin_flavor}' for ${COLOR_PORT}${origin}${COLOR_RESET}"
+			fi
+			if pkgname_is_queued "${pkgname}"; then
 				# Nothing more do to.
 				return 0
 			fi
