@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd December 12, 2017
+.Dd December 13, 2017
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -134,6 +134,10 @@ arguments may be specified at once.
 .It cat/port cat/port2 ...
 A list of ports can be specified directly.
 .El
+.Pp
+See
+.Sx FLAVORS
+for supported FLAVORS syntax.
 .Pp
 See
 .Sx CUSTOMISATION
@@ -624,6 +628,9 @@ is automatically defined in the environment to test ports marked as
 .Bl -tag -width "-f conffile"
 .It Oo Fl o Oc Ar origin
 Specifies an origin in the ports tree.
+See
+.Sx FLAVORS
+for supported FLAVORS syntax.
 .El
 .Pp
 Here are the options associated with the
@@ -1090,6 +1097,66 @@ propose the line to add to pkg-plist if needed.
 .Pp
 It is very easy to extend it so that we can easily add other tests if
 wanted.
+.Sh FLAVORS
+.Cm bulk -a
+will build all FLAVORS for each port.
+Otherwise
+.Cm bulk
+and
+.Cm testport
+use the following rules:
+.Bl -bullet -compact
+.It
+A FLAVOR of
+.Sy bar
+for port
+.Pa devel/foo
+is specified as
+.Sy devel/foo@bar .
+.El
+.Pp
+If
+.Va FLAVOR_DEFAULT_ALL
+is not set, or is set to
+.Sy no
+(the default), in
+.Pa poudriere.conf,
+then:
+.Bl -bullet -compact
+.It
+All FLAVORS for a port, without a specified FLAVOR, will be built
+using the FLAVOR
+.Sy all :
+.Sy devel/foo@all .
+.It
+The first (default) FLAVOR for a port is built by not specifying a FLAVOR:
+.Sy devel/foo .
+.El
+.Pp
+If
+.Va FLAVOR_DEFAULT_ALL
+is set to
+.Sy yes
+in
+.Pa poudriere.conf,
+then:
+.Bl -bullet -compact
+.It
+All FLAVORS for a port, without a specified FLAVOR, will be built:
+.Sy devel/foo .
+.It
+The first (default) FLAVOR for a port is built by specifying the FLAVOR
+.Sy - :
+.Sy devel/foo@-
+.El
+.Pp
+.Ss KNOWN ISSUES
+.Bl -bullet -compat
+.It
+An invalid FLAVOR for a port will cause an error during dependency calculation.
+.It
+MOVED entries do not support a source FLAVOR, only a target one.
+.El
 .Sh CUSTOMISATION
 For bulk building, you can customize binary packages produced by
 .Nm
