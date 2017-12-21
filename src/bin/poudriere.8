@@ -268,22 +268,25 @@ for examples of how this is used.
 .Ss image
 WARNING: This is still considered as ALPHA.
 .Bl -tag -width "-f packagelist"
-.It Fl o Ar outputdir
-This argument specifies directory where the resulting image will be created.
-.It Fl j Ar name
-This argument specifies the name of the jail that is used.
-.It Fl p Ar tree
-This argument specifies the name of the ports tree that is used.
-.It Fl z Ar set
-This specifies which SET to use for the build.
-.It Fl s Ar size
-This specifies the maximum size of the image that gets build.
-.It Fl n Ar name
-This specifies the name of the resulting image.
+.It Fl c Ar overlaydir
+This specifies an extra directory whose contents will be copied directly into
+the final image, starting from the root.
+.It Fl f Ar packagelist
+This specifies a list of packages to be pre-installed in the final image.
 .It Fl h Ar hostname
 This specifies the hostname used for the image.
 Defaults to
 .Ar poudriere-image .
+.It Fl j Ar name
+This argument specifies the name of the jail that is used.
+.It Fl n Ar name
+This specifies the name of the resulting image.
+.It Fl o Ar outputdir
+This argument specifies directory where the resulting image will be created.
+.It Fl p Ar tree
+This argument specifies the name of the ports tree that is used.
+.It Fl s Ar size
+This specifies the maximum size of the image that gets build.
 .It Fl t Ar type
 This specifies the type of image to create:
 .Bl -tag -width "rawfirmware"
@@ -317,11 +320,8 @@ Create a u-boot ready embedded image.
 .El
 .It Fl X Ar excludefile
 This specifies a list of files to exclude from the final image.
-.It Fl f Ar packagelist
-This specifies a list of packages to be pre-installed in the final image.
-.It Fl c Ar overlaydir
-This specifies an extra directory whose contents will be copied directly into
-the final image, starting from the root.
+.It Fl z Ar set
+This specifies which SET to use for the build.
 .El
 .Ss jail
 These subcommands are mutually exclusive.
