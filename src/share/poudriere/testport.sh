@@ -268,6 +268,7 @@ if [ -d ${MASTERMNT}${PREFIX} -a "${PREFIX}" != "/usr" ]; then
 fi
 
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
+PKGBASE="${PKGNAME%-*}"
 MAKE_ARGS="${DEPENDS_ARGS}${FLAVOR:+ FLAVOR=${FLAVOR}}"
 injail install -d -o ${PORTBUILD_USER} /tmp/pkgs
 PORTTESTING=yes

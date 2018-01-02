@@ -690,7 +690,7 @@ log_start() {
 	_log_path_top log_top
 
 	logfile="${log}/logs/${PKGNAME}.log"
-	latest_log=${log_top}/latest-per-pkg/${PKGNAME%-*}/${PKGNAME##*-}
+	latest_log=${log_top}/latest-per-pkg/${PKGBASE}/${PKGNAME##*-}
 
 	# Make sure directory exists
 	mkdir -p ${log}/logs ${latest_log}
@@ -2952,7 +2952,7 @@ _real_build_port() {
 	fi
 
 	for jpkg in ${ALLOW_MAKE_JOBS_PACKAGES}; do
-		case "${PKGNAME%-*}" in
+		case "${PKGBASE}" in
 		${jpkg})
 			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}"
 			sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' \
@@ -2963,7 +2963,7 @@ _real_build_port() {
 	done
 	allownetworking=0
 	for jpkg in ${ALLOW_NETWORKING_PACKAGES}; do
-		case "${PKGNAME%-*}" in
+		case "${PKGBASE}" in
 		${jpkg})
 			job_msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}"
 			msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}"
@@ -3904,6 +3904,7 @@ build_pkg() {
 	clean_rdepends=
 	trap '' SIGTSTP
 	PKGNAME="${pkgname}" # set ASAP so jail_cleanup() can use it
+	PKGBASE="${PKGNAME%-*}"
 	setproctitle "build_pkg (${pkgname})" || :
 
 	# Don't show timestamps in msg() which goes to logs, only job_msg()
