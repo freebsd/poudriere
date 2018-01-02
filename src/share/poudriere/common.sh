@@ -2940,7 +2940,7 @@ _real_build_port() {
 	local jailuser
 	local testfailure=0
 	local max_execution_time allownetworking
-	local _need_root NEED_ROOT PREFIX
+	local _need_root NEED_ROOT PREFIX max_files
 
 	_my_path mnt
 	_log_path log
@@ -3944,6 +3944,7 @@ build_pkg() {
 	fi
 	portdir="${PORTSDIR}/${port}"
 
+	eval "MAX_FILES=\${MAX_FILES_${PKGBASE}:-${DEFAULT_MAX_FILES}}"
 	if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
 		JEXEC_LIMITS=1
 	fi
@@ -7430,6 +7431,7 @@ if [ -n "${MAX_MEMORY}" ]; then
 	MAX_MEMORY_BYTES="$((${MAX_MEMORY} * 1024 * 1024 * 1024))"
 fi
 : ${MAX_FILES:=1024}
+: ${DEFAULT_MAX_FILES:=${MAX_FILES}}
 
 TIME_START=$(clock -monotonic)
 EPOCH_START=$(clock -epoch)
