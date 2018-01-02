@@ -140,6 +140,9 @@ msg_verbose() {
 
 msg_error() {
 	local -; set +x
+	local MSG_NESTED
+
+	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
 	if [ -n "${MY_JOBID}" ]; then
 		# Send colored msg to bulk log...
 		COLOR_ARROW="${COLOR_ERROR}" job_msg "${COLOR_ERROR}Error: $1"
@@ -155,16 +158,25 @@ msg_error() {
 }
 
 msg_dev() {
+	local MSG_NESTED
+
+	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
 	COLOR_ARROW="${COLOR_DEV}" \
 	    _msg_n "\n" "${COLOR_DEV}Dev: $@" >&2
 }
 
 msg_debug() {
+	local MSG_NESTED
+
+	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
 	COLOR_ARROW="${COLOR_DEBUG}" \
 	    _msg_n "\n" "${COLOR_DEBUG}Debug: $@" >&2
 }
 
 msg_warn() {
+	local MSG_NESTED
+
+	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
 	COLOR_ARROW="${COLOR_WARN}" \
 	    _msg_n "\n" "${COLOR_WARN}Warning: $@" >&2
 }
@@ -4077,12 +4089,12 @@ stop_build() {
 prefix_stderr_quick() {
 	local -; set +x
 	local extra="$1"
-	local MSG_NESTED
+	local MSG_NESTED_STDERR
 	shift 1
 
 	{
 		{
-			MSG_NESTED=1
+			MSG_NESTED_STDERR=1
 			"$@"
 		} 2>&1 1>&3 | {
 			setproctitle "${PROC_TITLE} (prefix_stderr_quick)"
@@ -4097,7 +4109,7 @@ prefix_stderr() {
 	local extra="$1"
 	shift 1
 	local prefixpipe prefixpid ret
-	local MSG_NESTED
+	local MSG_NESTED_STDERR
 
 	prefixpipe=$(mktemp -ut prefix_stderr.pipe)
 	mkfifo "${prefixpipe}"
@@ -4113,7 +4125,7 @@ prefix_stderr() {
 	exec 2> "${prefixpipe}"
 	unlink "${prefixpipe}"
 
-	MSG_NESTED=1
+	MSG_NESTED_STDERR=1
 	ret=0
 	"$@" || ret=$?
 
