@@ -32,7 +32,7 @@ _shash_var_name() {
 	local var="${1}"
 	local _gsub
 
-	# Replace anything not SHASH_VAR_NAME_SUB_GLOB with _
+	# Replace SHASH_VAR_NAME_SUB_GLOB matches with _
 	_gsub "${var}" "${SHASH_VAR_NAME_SUB_GLOB}" _
 	_shash_var_name=${_gsub}
 }
