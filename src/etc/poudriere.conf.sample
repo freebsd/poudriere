@@ -75,6 +75,7 @@ USE_TMPFS=yes
 #MAX_MEMORY=8
 
 # How many file descriptors to limit each jail process to (default: 1024)
+# This can also be set per PKGBASE, such as MAX_FILES_RStudio=2048
 #MAX_FILES=1024
 
 # If set the given directory will be used for the distfiles
