@@ -3927,7 +3927,8 @@ build_pkg() {
 	fi
 	portdir="${PORTSDIR}/${port}"
 
-	eval "MAX_FILES=\${MAX_FILES_${PKGBASE}:-${DEFAULT_MAX_FILES}}"
+	_gsub "${PKGBASE}" '-' '_'
+	eval "MAX_FILES=\${MAX_FILES_${_gsub}:-${DEFAULT_MAX_FILES}}"
 	if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
 		JEXEC_LIMITS=1
 	fi
