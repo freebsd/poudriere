@@ -147,6 +147,8 @@ elif bzgrep -q "error in dependency .*, exiting" $1; then
   reason="depend_package"
 elif bzgrep -q "/usr/bin/ld: cannot find -l" $1; then
   reason="linker_error"
+elif bzgrep -q "^#error \"" $1; then
+  reason="explicit_error"
 elif bzgrep -q "cd: can't cd to" $1; then
   reason="NFS"
 elif bzgrep -qE "(pkg_create: make_dist: tar command failed with code|pkg-static: lstat|pkg-static DEVELOPER_MODE: Plist error:|Error: check-plist failures)" $1; then
