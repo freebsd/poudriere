@@ -5664,6 +5664,36 @@ gather_port_vars() {
 	run_hook gather_port_vars stop
 }
 
+# Dependency policy/assertions.
+deps_sanity() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "deps_sanity requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 2 ] || eargs deps_sanity originspec deps
+	local originspec="${1}"
+	local deps="${2}"
+	local origin dep_originspec dep_origin dep_flavor
+
+	originspec_decode "${originspec}" origin '' ''
+
+	for dep_originspec in ${deps}; do
+		originspec_decode "${dep_originspec}" dep_origin '' dep_flavor
+		msg_verbose "${COLOR_PORT}${originspec}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
+		if [ "${origin}" = "${dep_origin}" ]; then
+			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
+			return 1
+		fi
+		# Detect bad cat/origin/ dependency which pkg will not register properly
+		if ! [ "${dep_origin}" = "${dep_origin%/}" ]; then
+			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} depends on bad origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
+			return 1
+		fi
+		if ! [ -d "../${PORTSDIR}/${dep_origin}" ]; then
+			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} depends on nonexistent origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
+			return 1
+		fi
+	done
+}
+
 gather_port_vars_port() {
 	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
 	    err 1 "gather_port_vars_port requires SHASH_VAR_PATH=var/cache"
@@ -5832,26 +5862,10 @@ gather_port_vars_port() {
 
 	# Assert some policy before proceeding to process these deps
 	# further.
-	for dep_originspec in ${deps}; do
-		originspec_decode "${dep_originspec}" dep_origin '' dep_flavor
-		msg_verbose "${COLOR_PORT}${originspec}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
-		if [ "${origin}" = "${dep_origin}" ]; then
-			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
-			set_dep_fatal_error
-			return 1
-		fi
-		# Detect bad cat/origin/ dependency which pkg will not register properly
-		if ! [ "${dep_origin}" = "${dep_origin%/}" ]; then
-			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} depends on bad origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
-			set_dep_fatal_error
-			return 1
-		fi
-		if ! [ -d "../${PORTSDIR}/${dep_origin}" ]; then
-			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} depends on nonexistent origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
-			set_dep_fatal_error
-			return 1
-		fi
-	done
+	if ! deps_sanity "${originspec}" "${deps}"; then
+		set_dep_fatal_error
+		return 1
+	fi
 
 	# In the -a case, there's no need to use the depqueue to add
 	# dependencies into the gatherqueue for those without a DEPENDS_ARGS
@@ -6586,9 +6600,8 @@ prepare_ports() {
 		    [ "${FLAVOR_DEFAULT_ALL}" = "yes" ]; then
 			msg_warn "Only testing first flavor '${FLAVOR}', use 'bulk -t' to test all flavors"
 		fi
-		for dep_originspec in "${LISTPORTS}"; do
-			msg_verbose "${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
-		done
+		deps_sanity "${ORIGINSPEC}" "${LISTPORTS}" || \
+		    err 1 "Error processing dependencies"
 	fi
 
 	if was_a_bulk_run; then
