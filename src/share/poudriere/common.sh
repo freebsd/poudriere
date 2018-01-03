@@ -5564,6 +5564,14 @@ gather_port_vars() {
 			if [ -n "${dep_args}" ]; then
 				continue
 			fi
+
+			# Testport already looked up the main FLAVOR
+			if was_a_testport_run && \
+			    [ -n "${ORIGIN}" ] && \
+			    [ "${origin}" = "${ORIGIN}" ]; then
+				continue
+			fi
+
 			# Now handle adding the main port without
 			# FLAVOR.  Only do this if the main port
 			# wasn't already listed.  The 'metadata'
