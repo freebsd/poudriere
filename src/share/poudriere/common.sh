@@ -6596,9 +6596,18 @@ prepare_ports() {
 			err ${ret} "deps_fetch_vars failed for ${ORIGINSPEC}"
 			;;
 		esac
-		if have_ports_feature FLAVORS && [ -n "${FLAVORS}" ] && \
-		    [ "${FLAVOR_DEFAULT_ALL}" = "yes" ]; then
-			msg_warn "Only testing first flavor '${FLAVOR}', use 'bulk -t' to test all flavors"
+		if have_ports_feature FLAVORS; then
+			if [ -n "${FLAVORS}" ] && \
+			    [ "${FLAVOR_DEFAULT_ALL}" = "yes" ]; then
+				msg_warn "Only testing first flavor '${FLAVOR}', use 'bulk -t' to test all flavors"
+			fi
+			# Is it even a valid FLAVOR though?
+			case " ${FLAVORS} " in
+			*\ ${dep_flavor}\ *) ;;
+			*)
+				err 1 "Invalid FLAVOR '${dep_flavor}' for ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
+				;;
+			esac
 		fi
 		deps_sanity "${ORIGINSPEC}" "${LISTPORTS}" || \
 		    err 1 "Error processing dependencies"
