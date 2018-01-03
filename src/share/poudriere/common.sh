@@ -6569,7 +6569,7 @@ prepare_ports() {
 		    [ "${FLAVOR_DEFAULT_ALL}" = "yes" ]; then
 			msg_warn "Only testing first flavor '${FLAVOR}', use 'bulk -t' to test all flavors"
 		fi
-		for dep_originspec in $(listed_ports); do
+		for dep_originspec in "${LISTPORTS}"; do
 			msg_verbose "${COLOR_PORT}${ORIGINSPEC}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
 		done
 	fi
