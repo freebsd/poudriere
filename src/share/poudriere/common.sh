@@ -4656,7 +4656,7 @@ pkg_get_dep_origin_pkgnames() {
 	local cachefile
 	local pkg_cache_dir
 	local fetched_data compiled_dep_origins compiled_dep_pkgnames
-	local origin new_origin _old_dep_origins pkgname
+	local origin _old_dep_origins pkgname
 
 	get_pkg_cache_dir pkg_cache_dir "${pkg}"
 	cachefile="${pkg_cache_dir}/dep_origin_pkgnames"
@@ -4674,14 +4674,11 @@ pkg_get_dep_origin_pkgnames() {
 	[ -n "${var_return_origins}" -o -n "${var_return_pkgnames}" ] || \
 	    return 0
 
-	# Split the data and check MOVED
+	# Split the data
 	set -- ${fetched_data}
 	while [ $# -ne 0 ]; do
 		origin="$1"
 		pkgname="$2"
-		if [ -n "${var_return_origins}" ]; then
-			check_moved new_origin "${origin}" && origin="${new_origin}"
-		fi
 		compiled_dep_origins="${compiled_dep_origins}${compiled_dep_origins:+ }${origin}"
 		compiled_dep_pkgnames="${compiled_dep_pkgnames}${compiled_dep_pkgnames:+ }${pkgname}"
 		shift 2
@@ -4901,7 +4898,7 @@ delete_old_pkg() {
 	local origin v v2 compiled_options current_options current_deps
 	local td d key dpath dir found raw_deps compiled_deps
 	local pkg_origin compiled_deps_pkgnames compiled_deps_pkgbases
-	local compiled_deps_pkgname
+	local compiled_deps_pkgname compiled_deps_origin compiled_deps_new
 	local pkgbase new_pkgbase flavor pkg_flavor originspec
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor dep_dep_args
 	local new_origin stale_pkg dep_args pkg_dep_args
@@ -5094,6 +5091,14 @@ delete_old_pkg() {
 			    ${compiled_deps_pkgnames}; do
 				compiled_deps_pkgbases="${compiled_deps_pkgbases:+${compiled_deps_pkgbases} }${compiled_deps_pkgname%-*}"
 			done
+			# Handle MOVED
+			for compiled_deps_origin in ${compiled_deps}; do
+				check_moved new_origin \
+				    "${compiled_deps_origin}" && \
+				    compiled_deps_origin="${new_origin}"
+				compiled_deps_new="${compiled_deps_new:+${compiled_deps_new} }${compiled_deps_origin}"
+			done
+			compiled_deps="${compiled_deps_new}"
 		fi
 		# To handle FLAVOR/DEPENDS_ARGS here we can't just use
 		# a simple origin comparison, which is what is in deps now.
