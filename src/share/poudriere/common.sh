@@ -4816,8 +4816,7 @@ pkg_cacher_cleanup() {
 }
 
 get_cache_dir() {
-	local var_return="$1"
-	setvar "${var_return}" ${POUDRIERE_DATA}/cache/${MASTERNAME}
+	setvar "${1}" ${POUDRIERE_DATA}/cache/${MASTERNAME}
 }
 
 # Return the cache dir for the given pkg
