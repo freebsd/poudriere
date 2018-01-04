@@ -4638,7 +4638,7 @@ pkg_get_dep_origin_pkgnames() {
 	local pkg="$3"
 	local cachefile
 	local pkg_cache_dir
-	local fetch_data compiled_dep_origins compiled_dep_pkgnames
+	local fetched_data compiled_dep_origins compiled_dep_pkgnames
 	local origin new_origin _old_dep_origins pkgname
 
 	get_pkg_cache_dir pkg_cache_dir "${pkg}"
