@@ -2757,20 +2757,20 @@ package_dir_exists_and_has_packages() {
 sanity_check_pkg() {
 	[ $# -eq 1 ] || eargs sanity_check_pkg pkg
 	local pkg="$1"
-	local depfile pkgname
+	local compiled_deps_pkgnames pkgname dep_pkgname
 
 	pkgname="${pkg##*/}"
 	pkgname="${pkgname%.*}"
 	pkgbase_is_needed "${pkgname}" || return 0
-	deps_file depfile "${pkg}"
-	while read dep; do
-		if [ ! -e "${PACKAGES}/All/${dep}.${PKG_EXT}" ]; then
-			msg_debug "${pkg} needs missing ${PACKAGES}/All/${dep}.${PKG_EXT}"
-			msg "Deleting ${pkg##*/}: missing dependency: ${dep}"
+	pkg_get_dep_origin_pkgnames _ignored compiled_deps_pkgnames "${pkg}"
+	for dep_pkgname in ${compiled_deps_pkgnames}; do
+		if [ ! -e "${PACKAGES}/All/${dep_pkgname}.${PKG_EXT}" ]; then
+			msg_debug "${pkg} needs missing ${PACKAGES}/All/${dep_pkgname}.${PKG_EXT}"
+			msg "Deleting ${pkg##*/}: missing dependency: ${dep_pkgname}"
 			delete_pkg "${pkg}"
 			return 65	# Package deleted, need another pass
 		fi
-	done < "${depfile}"
+	done
 
 	return 0
 }
@@ -4550,23 +4550,6 @@ deps_fetch_vars() {
 	fi
 }
 
-deps_file() {
-	[ $# -ne 2 ] && eargs deps_file var_return pkg
-	local var_return="$1"
-	local pkg="$2"
-	local pkg_cache_dir
-	local _depfile
-
-	get_pkg_cache_dir pkg_cache_dir "${pkg}"
-	_depfile="${pkg_cache_dir}/deps"
-
-	if [ ! -f "${_depfile}" ]; then
-		injail ${PKG_BIN} info -qdF "/packages/All/${pkg##*/}" > "${_depfile}"
-	fi
-
-	setvar "${var_return}" "${_depfile}"
-}
-
 pkg_get_origin() {
 	[ $# -lt 2 ] && eargs pkg_get_origin var_return pkg [origin]
 	local var_return="$1"
@@ -4644,23 +4627,23 @@ pkg_get_dep_args() {
 	setvar "${var_return}" "${_dep_args}"
 }
 
-pkg_get_dep_origin_pkgbase() {
-	[ $# -ne 3 ] && eargs pkg_get_dep_origin_pkgbase var_return_origin \
-	    var_return_pkgbase pkg
-	local var_return_origin="$1"
-	local var_return_pkgbase="$2"
+pkg_get_dep_origin_pkgnames() {
+	[ $# -ne 3 ] && eargs pkg_get_dep_origin_pkgnames var_return_origins \
+	    var_return_pkgnames pkg
+	local var_return_origins="$1"
+	local var_return_pkgnames="$2"
 	local pkg="$3"
 	local cachefile
 	local pkg_cache_dir
-	local fetch_data compiled_dep_origins compiled_dep_pkgbases
-	local origin new_origin _old_dep_origins pkgbase
+	local fetch_data compiled_dep_origins compiled_dep_pkgnames
+	local origin new_origin _old_dep_origins pkgname
 
 	get_pkg_cache_dir pkg_cache_dir "${pkg}"
-	cachefile="${pkg_cache_dir}/dep_origin_pkgbases"
+	cachefile="${pkg_cache_dir}/dep_origin_pkgnames"
 
 	if [ ! -f "${cachefile}" ]; then
 		fetched_data=$(injail ${PKG_BIN} query -F \
-			"/packages/All/${pkg##*/}" '%do %dn' | tr '\n' ' ')
+			"/packages/All/${pkg##*/}" '%do %dn-%dv' | tr '\n' ' ')
 		echo "${fetched_data}" > "${cachefile}"
 	else
 		while read line; do
@@ -4672,15 +4655,15 @@ pkg_get_dep_origin_pkgbase() {
 	set -- ${fetched_data}
 	while [ $# -ne 0 ]; do
 		origin="$1"
-		pkgbase="$2"
+		pkgname="$2"
 		check_moved new_origin "${origin}" && origin="${new_origin}"
 		compiled_dep_origins="${compiled_dep_origins}${compiled_dep_origins:+ }${origin}"
-		compiled_dep_pkgbases="${compiled_dep_pkgbases}${compiled_dep_pkgbases:+ }${pkgbase}"
+		compiled_dep_pkgnames="${compiled_dep_pkgnames}${compiled_dep_pkgnames:+ }${pkgname}"
 		shift 2
 	done
 
-	setvar "${var_return_origin}" "${compiled_dep_origins}"
-	setvar "${var_return_pkgbase}" "${compiled_dep_pkgbases}"
+	setvar "${var_return_origins}" "${compiled_dep_origins}"
+	setvar "${var_return_pkgnames}" "${compiled_dep_pkgnames}"
 }
 
 pkg_get_options() {
@@ -4756,8 +4739,7 @@ pkg_cache_data() {
 	elif have_ports_feature DEPENDS_ARGS; then
 		pkg_get_dep_args _ignored "${pkg}" > /dev/null
 	fi
-	pkg_get_dep_origin_pkgbase _ignored _ignored "${pkg}" > /dev/null
-	deps_file _ignored "${pkg}" > /dev/null
+	pkg_get_dep_origin_pkgnames _ignored _ignored "${pkg}" > /dev/null
 }
 
 pkg_cacher_queue() {
@@ -4888,7 +4870,8 @@ delete_old_pkg() {
 	local mnt pkgname new_pkgname
 	local origin v v2 compiled_options current_options current_deps
 	local td d key dpath dir found raw_deps compiled_deps
-	local pkg_origin compiled_deps_pkgbases
+	local pkg_origin compiled_deps_pkgnames compiled_deps_pkgbases
+	local compiled_deps_pkgname
 	local pkgbase new_pkgbase flavor pkg_flavor originspec
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor dep_dep_args
 	local new_origin stale_pkg dep_args pkg_dep_args
@@ -5074,9 +5057,14 @@ delete_old_pkg() {
 				fi
 			done
 		done
-		[ -n "${current_deps}" ] && \
-		    pkg_get_dep_origin_pkgbase \
-		    compiled_deps compiled_deps_pkgbases "${pkg}"
+		if [ -n "${current_deps}" ]; then
+			pkg_get_dep_origin_pkgnames \
+			    compiled_deps compiled_deps_pkgnames "${pkg}"
+			for compiled_deps_pkgname in \
+			    ${compiled_deps_pkgnames}; do
+				compiled_deps_pkgbases="${compiled_deps_pkgbases:+${compiled_deps_pkgbases} }${compiled_deps_pkgname%-*}"
+			done
+		fi
 		# To handle FLAVOR/DEPENDS_ARGS here we can't just use
 		# a simple origin comparison, which is what is in deps now.
 		# We need to map all of the deps to PKGNAMEs which is
