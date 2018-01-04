@@ -4036,7 +4036,8 @@ build_pkg() {
 			COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_SUCCESS}: Success"
 			run_hook pkgbuild success "${port}" "${PKGNAME}" >&3
 			# Cache information for next run
-			pkg_cacher_queue "${port}" "${pkgname}" || :
+			pkg_cacher_queue "${port}" "${pkgname}" \
+			    "${DEPENDS_ARGS}" "${FLAVOR}" || :
 		else
 			# Symlink the buildlog into errors/
 			ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
@@ -4594,11 +4595,12 @@ pkg_get_origin() {
 }
 
 pkg_get_flavor() {
-	[ $# -eq 2 ] || eargs pkg_get_flavor var_return pkg
+	[ $# -lt 2 ] && eargs pkg_get_flavor var_return pkg [flavor]
 	local var_return="$1"
 	local pkg="$2"
+	local _flavor="$3"
 	local pkg_cache_dir
-	local _flavor cachefile
+	local cachefile
 
 	get_pkg_cache_dir pkg_cache_dir "${pkg}"
 	cachefile="${pkg_cache_dir}/flavor"
@@ -4621,11 +4623,12 @@ pkg_get_flavor() {
 }
 
 pkg_get_dep_args() {
-	[ $# -eq 2 ] || eargs pkg_get_dep_args var_return pkg
+	[ $# -lt 2 ] && eargs pkg_get_dep_args var_return pkg [dep_args]
 	local var_return="$1"
 	local pkg="$2"
+	local _dep_args="$3"
 	local pkg_cache_dir
-	local _dep_args cachefile
+	local cachefile
 
 	get_pkg_cache_dir pkg_cache_dir "${pkg}"
 	cachefile="${pkg_cache_dir}/dep_args"
@@ -4753,32 +4756,35 @@ ensure_pkg_installed() {
 }
 
 pkg_cache_data() {
-	[ $# -ne 2 ] && eargs pkg_cache_data pkg origin
+	[ $# -eq 4 ] || eargs pkg_cache_data pkg origin dep_args flavor
 	local pkg="$1"
 	local origin="$2"
+	local dep_args="$3"
+	local flavor="$4"
 	local _ignored
 
 	ensure_pkg_installed || return 1
 	pkg_get_options '' "${pkg}" > /dev/null
 	pkg_get_origin '' "${pkg}" "${origin}" > /dev/null
 	if have_ports_feature FLAVORS; then
-		pkg_get_flavor '' "${pkg}" > /dev/null
+		pkg_get_flavor '' "${pkg}" "${flavor}" > /dev/null
 	elif have_ports_feature DEPENDS_ARGS; then
-		pkg_get_dep_args '' "${pkg}" > /dev/null
+		pkg_get_dep_args '' "${pkg}" "${dep_args}" > /dev/null
 	fi
 	pkg_get_dep_origin_pkgnames '' '' "${pkg}" > /dev/null
 }
 
 pkg_cacher_queue() {
-	[ $# -eq 2 ] || eargs pkg_cacher_queue origin pkgname
-	local origin="$1"
-	local pkgname="$2"
+	[ $# -eq 4 ] || eargs pkg_cacher_queue origin pkgname dep_args flavor
+	local encoded_data
 
-	echo "${origin} ${pkgname}" > ${MASTERMNT}/.p/pkg_cacher.pipe
+	encode_args encoded_data "$@"
+
+	echo "${encoded_data}" > ${MASTERMNT}/.p/pkg_cacher.pipe
 }
 
 pkg_cacher_main() {
-	local pkg pkgname origin work
+	local pkg work pkgname origin dep_args flavor
 
 	mkfifo ${MASTERMNT}/.p/pkg_cacher.pipe
 	exec 6<> ${MASTERMNT}/.p/pkg_cacher.pipe
@@ -4789,12 +4795,15 @@ pkg_cacher_main() {
 	# Wait for packages to process.
 	while :; do
 		read -r work <&6
-		set -- ${work}
+		eval $(decode_args work)
 		origin="$1"
 		pkgname="$2"
+		dep_args="$3"
+		flavor="$4"
 		pkg="${PACKAGES}/All/${pkgname}.${PKG_EXT}"
 		if [ -f "${pkg}" ]; then
-			pkg_cache_data "${pkg}" "${origin}"
+			pkg_cache_data "${pkg}" "${origin}" "${dep_args}" \
+			    "${flavor}"
 		fi
 	done
 }
