@@ -84,3 +84,22 @@ assert "1" "$1" "decode 3 trailing arguments x argument 1"
 assert "" "$2" "decode 3 trailing arguments x argument 2"
 assert "" "$3" "decode 3 trailing arguments x argument 3"
 assert "x" "$4" "decode 3 trailing arguments x argument 4"
+
+# Test parsing safety
+
+# $()
+tmpfile=$(mktemp -ut poudriere_encode_args)
+encode_args data "\$(touch ${tmpfile})"
+[ -f "${tmpfile}" ]
+assert_not 0 $? "File should not exist when encoded"
+eval $(decode_args data)
+[ -f "${tmpfile}" ]
+assert_not 0 $? "File should not exist when decoded"
+
+# ``
+tmpfile=$(mktemp -ut poudriere_encode_args)
+encode_args data "\`touch ${tmpfile}\`"
+[ -f "${tmpfile}" ]
+assert_not 0 $? "File should not exist when encoded"
+[ -f "${tmpfile}" ]
+assert_not 0 $? "File should not exist when decoded"
