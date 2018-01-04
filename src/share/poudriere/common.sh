@@ -4590,8 +4590,6 @@ pkg_get_origin() {
 
 
 	setvar "${var_return}" "${_origin}"
-
-	[ -n "${_origin}" ]
 }
 
 pkg_get_flavor() {
