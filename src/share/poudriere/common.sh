@@ -2420,7 +2420,8 @@ jail_start() {
 	msg "Mounting system devices for ${MASTERNAME}"
 	do_jail_mounts "${mnt}" "${tomnt}" ${arch} ${name}
 
-	PACKAGES=${POUDRIERE_DATA}/packages/${MASTERNAME}
+	# May already be set for pkgclean
+	: ${PACKAGES:=${POUDRIERE_DATA}/packages/${MASTERNAME}}
 
 	msg "Mounting ports/packages/distfiles"
 
