@@ -4606,12 +4606,10 @@ pkg_get_flavor() {
 
 	if [ ! -f "${cachefile}" ]; then
 		if [ -z "${_flavor}" ]; then
-			if [ "${PKG_EXT}" != "tbz" ]; then
-				_flavor=$(injail ${PKG_BIN} query -F \
-					"/packages/All/${pkg##*/}" \
-					'%At %Av' | \
-					awk '$1 == "flavor" {print $2}')
-			fi
+			_flavor=$(injail ${PKG_BIN} query -F \
+				"/packages/All/${pkg##*/}" \
+				'%At %Av' | \
+				awk '$1 == "flavor" {print $2}')
 		fi
 		echo ${_flavor} > "${cachefile}"
 	else
@@ -4633,12 +4631,10 @@ pkg_get_dep_args() {
 
 	if [ ! -f "${cachefile}" ]; then
 		if [ -z "${_dep_args}" ]; then
-			if [ "${PKG_EXT}" != "tbz" ]; then
-				_dep_args=$(injail ${PKG_BIN} query -F \
-					"/packages/All/${pkg##*/}" \
-					'%At %Av' | \
-					awk '$1 == "depends_args" {print $2}')
-			fi
+			_dep_args=$(injail ${PKG_BIN} query -F \
+				"/packages/All/${pkg##*/}" \
+				'%At %Av' | \
+				awk '$1 == "depends_args" {print $2}')
 		fi
 		echo ${_dep_args} > "${cachefile}"
 	else
