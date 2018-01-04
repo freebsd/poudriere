@@ -4556,22 +4556,16 @@ pkg_get_origin() {
 	local var_return="$1"
 	local pkg="$2"
 	local _origin=$3
-	local pkg_cache_dir
-	local originfile
+	local SHASH_VAR_PATH
 
-	get_pkg_cache_dir pkg_cache_dir "${pkg}"
-	originfile="${pkg_cache_dir}/origin"
-
-	if [ ! -f "${originfile}" ]; then
+	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
+	if ! shash_get 'pkg' 'origin' _origin; then
 		if [ -z "${_origin}" ]; then
 			_origin=$(injail ${PKG_BIN} query -F \
-				"/packages/All/${pkg##*/}" "%o")
+			    "/packages/All/${pkg##*/}" "%o")
 		fi
-		echo ${_origin} > "${originfile}"
-	elif [ -n "${var_return}" ]; then
-		read_line _origin "${originfile}"
+		shash_set 'pkg' 'origin' "${_origin}"
 	fi
-
 	if [ -n "${var_return}" ]; then
 		setvar "${var_return}" "${_origin}"
 	fi
@@ -4582,24 +4576,18 @@ pkg_get_flavor() {
 	local var_return="$1"
 	local pkg="$2"
 	local _flavor="$3"
-	local pkg_cache_dir
-	local cachefile
+	local SHASH_VAR_PATH
 
-	get_pkg_cache_dir pkg_cache_dir "${pkg}"
-	cachefile="${pkg_cache_dir}/flavor"
-
-	if [ ! -f "${cachefile}" ]; then
+	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
+	if ! shash_get 'pkg' 'flavor' _flavor; then
 		if [ -z "${_flavor}" ]; then
 			_flavor=$(injail ${PKG_BIN} query -F \
 				"/packages/All/${pkg##*/}" \
 				'%At %Av' | \
 				awk '$1 == "flavor" {print $2}')
 		fi
-		echo ${_flavor} > "${cachefile}"
-	elif [ -n "${var_return}" ]; then
-		read_line _flavor "${cachefile}"
+		shash_set 'pkg' 'flavor' "${_flavor}"
 	fi
-
 	if [ -n "${var_return}" ]; then
 		setvar "${var_return}" "${_flavor}"
 	fi
@@ -4610,24 +4598,18 @@ pkg_get_dep_args() {
 	local var_return="$1"
 	local pkg="$2"
 	local _dep_args="$3"
-	local pkg_cache_dir
-	local cachefile
+	local SHASH_VAR_PATH
 
-	get_pkg_cache_dir pkg_cache_dir "${pkg}"
-	cachefile="${pkg_cache_dir}/dep_args"
-
-	if [ ! -f "${cachefile}" ]; then
+	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
+	if ! shash_get 'pkg' 'dep_args' _dep_args; then
 		if [ -z "${_dep_args}" ]; then
 			_dep_args=$(injail ${PKG_BIN} query -F \
 				"/packages/All/${pkg##*/}" \
 				'%At %Av' | \
 				awk '$1 == "depends_args" {print $2}')
 		fi
-		echo ${_dep_args} > "${cachefile}"
-	elif [ -n "${var_return}" ]; then
-		read_line _dep_args "${cachefile}"
+		shash_set 'pkg' 'dep_args' "${_dep_args}"
 	fi
-
 	if [ -n "${var_return}" ]; then
 		setvar "${var_return}" "${_dep_args}"
 	fi
@@ -4639,27 +4621,18 @@ pkg_get_dep_origin_pkgnames() {
 	local var_return_origins="$1"
 	local var_return_pkgnames="$2"
 	local pkg="$3"
-	local cachefile
-	local pkg_cache_dir
+	local SHASH_VAR_PATH
 	local fetched_data compiled_dep_origins compiled_dep_pkgnames
 	local origin pkgname
 
-	get_pkg_cache_dir pkg_cache_dir "${pkg}"
-	cachefile="${pkg_cache_dir}/dep_origin_pkgnames"
-
-	if [ ! -f "${cachefile}" ]; then
+	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
+	if ! shash_get 'pkg' 'deps' fetched_data; then
 		fetched_data=$(injail ${PKG_BIN} query -F \
 			"/packages/All/${pkg##*/}" '%do %dn-%dv' | tr '\n' ' ')
-		echo "${fetched_data}" > "${cachefile}"
-	elif [ -n "${var_return_origins}" -o -n "${var_return_pkgnames}" ]; then
-		while read line; do
-			fetched_data="${fetched_data}${fetched_data:+ }${line}"
-		done < "${cachefile}"
+		shash_set 'pkg' 'deps' "${fetched_data}"
 	fi
-
 	[ -n "${var_return_origins}" -o -n "${var_return_pkgnames}" ] || \
 	    return 0
-
 	# Split the data
 	set -- ${fetched_data}
 	while [ $# -ne 0 ]; do
@@ -4669,7 +4642,6 @@ pkg_get_dep_origin_pkgnames() {
 		compiled_dep_pkgnames="${compiled_dep_pkgnames}${compiled_dep_pkgnames:+ }${pkgname}"
 		shift 2
 	done
-
 	if [ -n "${var_return_origins}" ]; then
 		setvar "${var_return_origins}" "${compiled_dep_origins}"
 	fi
@@ -4682,14 +4654,11 @@ pkg_get_options() {
 	[ $# -ne 2 ] && eargs pkg_get_options var_return pkg
 	local var_return="$1"
 	local pkg="$2"
-	local optionsfile
-	local pkg_cache_dir
+	local SHASH_VAR_PATH
 	local _compiled_options
 
-	get_pkg_cache_dir pkg_cache_dir "${pkg}"
-	optionsfile="${pkg_cache_dir}/options"
-
-	if [ ! -f "${optionsfile}" ]; then
+	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
+	if ! shash_get 'pkg' 'options' _compiled_options; then
 		_compiled_options=
 		while read key value; do
 			case "${value}" in
@@ -4703,18 +4672,12 @@ pkg_get_options() {
 		if [ -n "${_compiled_options}" ]; then
 			_compiled_options="${_compiled_options} "
 		fi
-		echo "${_compiled_options}" > "${optionsfile}"
-	elif [ -n "${var_return}" ]; then
-		# Special care here to match whitespace of 'pretty-print-config'
-		while read line; do
-			_compiled_options="${_compiled_options}${_compiled_options:+ }${line}"
-		done < "${optionsfile}"
-
+		shash_set 'pkg' 'options' "${_compiled_options}"
+	else
 		# Space on end to match 'pretty-print-config' in delete_old_pkg
 		[ -n "${_compiled_options}" ] &&
 		    _compiled_options="${_compiled_options} "
 	fi
-
 	if [ -n "${var_return}" ]; then
 		setvar "${var_return}" "${_compiled_options}"
 	fi
@@ -4833,6 +4796,7 @@ clear_pkg_cache() {
 	get_pkg_cache_dir pkg_cache_dir "${pkg}" 0
 
 	rm -fr "${pkg_cache_dir}"
+	# XXX: Need shash_unset with glob
 }
 
 delete_pkg() {
@@ -4860,6 +4824,7 @@ delete_pkg_xargs() {
 		echo "${pkg}"
 		echo "${pkg_cache_dir}"
 	} >> "${listfile}"
+	# XXX: May need clear_pkg_cache here if shash changes from file.
 }
 
 # Deleted cached information for stale packages (manually removed)
