@@ -2762,7 +2762,7 @@ sanity_check_pkg() {
 	pkgname="${pkg##*/}"
 	pkgname="${pkgname%.*}"
 	pkgbase_is_needed "${pkgname}" || return 0
-	pkg_get_dep_origin_pkgnames _ignored compiled_deps_pkgnames "${pkg}"
+	pkg_get_dep_origin_pkgnames '' compiled_deps_pkgnames "${pkg}"
 	for dep_pkgname in ${compiled_deps_pkgnames}; do
 		if [ ! -e "${PACKAGES}/All/${dep_pkgname}.${PKG_EXT}" ]; then
 			msg_debug "${pkg} needs missing ${PACKAGES}/All/${dep_pkgname}.${PKG_EXT}"
@@ -4567,12 +4567,13 @@ pkg_get_origin() {
 				"/packages/All/${pkg##*/}" "%o")
 		fi
 		echo ${_origin} > "${originfile}"
-	else
+	elif [ -n "${var_return}" ]; then
 		read_line _origin "${originfile}"
 	fi
 
-
-	setvar "${var_return}" "${_origin}"
+	if [ -n "${var_return}" ]; then
+		setvar "${var_return}" "${_origin}"
+	fi
 }
 
 pkg_get_flavor() {
@@ -4593,11 +4594,13 @@ pkg_get_flavor() {
 				awk '$1 == "flavor" {print $2}')
 		fi
 		echo ${_flavor} > "${cachefile}"
-	else
+	elif [ -n "${var_return}" ]; then
 		read_line _flavor "${cachefile}"
 	fi
 
-	setvar "${var_return}" "${_flavor}"
+	if [ -n "${var_return}" ]; then
+		setvar "${var_return}" "${_flavor}"
+	fi
 }
 
 pkg_get_dep_args() {
@@ -4618,11 +4621,13 @@ pkg_get_dep_args() {
 				awk '$1 == "depends_args" {print $2}')
 		fi
 		echo ${_dep_args} > "${cachefile}"
-	else
+	elif [ -n "${var_return}" ]; then
 		read_line _dep_args "${cachefile}"
 	fi
 
-	setvar "${var_return}" "${_dep_args}"
+	if [ -n "${var_return}" ]; then
+		setvar "${var_return}" "${_dep_args}"
+	fi
 }
 
 pkg_get_dep_origin_pkgnames() {
@@ -4643,25 +4648,34 @@ pkg_get_dep_origin_pkgnames() {
 		fetched_data=$(injail ${PKG_BIN} query -F \
 			"/packages/All/${pkg##*/}" '%do %dn-%dv' | tr '\n' ' ')
 		echo "${fetched_data}" > "${cachefile}"
-	else
+	elif [ -n "${var_return_origins}" -o -n "${var_return_pkgnames}" ]; then
 		while read line; do
 			fetched_data="${fetched_data}${fetched_data:+ }${line}"
 		done < "${cachefile}"
 	fi
+
+	[ -n "${var_return_origins}" -o -n "${var_return_pkgnames}" ] || \
+	    return 0
 
 	# Split the data and check MOVED
 	set -- ${fetched_data}
 	while [ $# -ne 0 ]; do
 		origin="$1"
 		pkgname="$2"
-		check_moved new_origin "${origin}" && origin="${new_origin}"
+		if [ -n "${var_return_origins}" ]; then
+			check_moved new_origin "${origin}" && origin="${new_origin}"
+		fi
 		compiled_dep_origins="${compiled_dep_origins}${compiled_dep_origins:+ }${origin}"
 		compiled_dep_pkgnames="${compiled_dep_pkgnames}${compiled_dep_pkgnames:+ }${pkgname}"
 		shift 2
 	done
 
-	setvar "${var_return_origins}" "${compiled_dep_origins}"
-	setvar "${var_return_pkgnames}" "${compiled_dep_pkgnames}"
+	if [ -n "${var_return_origins}" ]; then
+		setvar "${var_return_origins}" "${compiled_dep_origins}"
+	fi
+	if [ -n "${var_return_pkgnames}" ]; then
+		setvar "${var_return_pkgnames}" "${compiled_dep_pkgnames}"
+	fi
 }
 
 pkg_get_options() {
@@ -4690,19 +4704,20 @@ pkg_get_options() {
 			_compiled_options="${_compiled_options} "
 		fi
 		echo "${_compiled_options}" > "${optionsfile}"
-		setvar "${var_return}" "${_compiled_options}"
-		return 0
+	elif [ -n "${var_return}" ]; then
+		# Special care here to match whitespace of 'pretty-print-config'
+		while read line; do
+			_compiled_options="${_compiled_options}${_compiled_options:+ }${line}"
+		done < "${optionsfile}"
+
+		# Space on end to match 'pretty-print-config' in delete_old_pkg
+		[ -n "${_compiled_options}" ] &&
+		    _compiled_options="${_compiled_options} "
 	fi
 
-	# Special care here to match whitespace of 'pretty-print-config'
-	while read line; do
-		_compiled_options="${_compiled_options}${_compiled_options:+ }${line}"
-	done < "${optionsfile}"
-
-	# Space on end to match 'pretty-print-config' in delete_old_pkg
-	[ -n "${_compiled_options}" ] &&
-	    _compiled_options="${_compiled_options} "
-	setvar "${var_return}" "${_compiled_options}"
+	if [ -n "${var_return}" ]; then
+		setvar "${var_return}" "${_compiled_options}"
+	fi
 }
 
 ensure_pkg_installed() {
@@ -4730,14 +4745,14 @@ pkg_cache_data() {
 	local _ignored
 
 	ensure_pkg_installed || return 1
-	pkg_get_options _ignored "${pkg}" > /dev/null
-	pkg_get_origin _ignored "${pkg}" "${origin}" > /dev/null
+	pkg_get_options '' "${pkg}" > /dev/null
+	pkg_get_origin '' "${pkg}" "${origin}" > /dev/null
 	if have_ports_feature FLAVORS; then
-		pkg_get_flavor _ignored "${pkg}" > /dev/null
+		pkg_get_flavor '' "${pkg}" > /dev/null
 	elif have_ports_feature DEPENDS_ARGS; then
-		pkg_get_dep_args _ignored "${pkg}" > /dev/null
+		pkg_get_dep_args '' "${pkg}" > /dev/null
 	fi
-	pkg_get_dep_origin_pkgnames _ignored _ignored "${pkg}" > /dev/null
+	pkg_get_dep_origin_pkgnames '' '' "${pkg}" > /dev/null
 }
 
 pkg_cacher_queue() {
