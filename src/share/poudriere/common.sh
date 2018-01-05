@@ -6588,13 +6588,15 @@ prepare_ports() {
 			    [ "${FLAVOR_DEFAULT_ALL}" = "yes" ]; then
 				msg_warn "Only testing first flavor '${FLAVOR}', use 'bulk -t' to test all flavors"
 			fi
-			# Is it even a valid FLAVOR though?
-			case " ${FLAVORS} " in
-			*\ ${dep_flavor}\ *) ;;
-			*)
-				err 1 "Invalid FLAVOR '${dep_flavor}' for ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
-				;;
-			esac
+			if [ -n "${dep_flavor}" ]; then
+				# Is it even a valid FLAVOR though?
+				case " ${FLAVORS} " in
+				*\ ${dep_flavor}\ *) ;;
+				*)
+					err 1 "Invalid FLAVOR '${dep_flavor}' for ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
+					;;
+				esac
+			fi
 		fi
 		deps_sanity "${ORIGINSPEC}" "${LISTPORTS}" || \
 		    err 1 "Error processing dependencies"
