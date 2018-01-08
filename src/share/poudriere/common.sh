@@ -6909,7 +6909,7 @@ prepare_ports() {
 	if was_a_bulk_run; then
 		if [ $resuming_build -eq 0 ]; then
 			nbq=0
-			nbq=$(find deps -type d -depth 1 | wc -l)
+			nbq=$(pkgqueue_list | wc -l)
 			# Add 1 for the main port to test
 			was_a_testport_run && \
 			    nbq=$((${nbq} + 1))
