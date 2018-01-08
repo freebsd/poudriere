@@ -157,8 +157,11 @@ main(int argc, char **argv)
 	kevent(kq, ev, nevents, NULL, 0, NULL);
 
 	for (;;) {
-		if ((kn = kevent(kq, NULL, 0, ev, nevents, NULL)) == -1)
+		if ((kn = kevent(kq, NULL, 0, ev, nevents, NULL)) == -1) {
+			if (errno == EINTR)
+				continue;
 			err(EXIT_FAILURE, "kevent");
+		}
 		for (i = 0; i < kn; i++) {
 			if (ev[i].filter == EVFILT_READ) {
 				fd_in = (int)ev[i].ident;
