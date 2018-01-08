@@ -6485,30 +6485,43 @@ get_porttesting() {
 	echo "${porttesting}"
 }
 
-find_all_deps() {
+# List deps from pkgnames in STDIN
+pkgqueue_list_deps_pipe() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "find_all_deps requires PWD=${MASTERMNT}/.p"
-	[ $# -ne 1 ] && eargs find_all_deps pkgname
+	    err 1 "pkgqueue_list_deps_pipe requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 0 ] || eargs pkgqueue_list_deps_pipe [pkgnames stdin]
+	local pkgname FIND_ALL_DEPS
+
+	unset FIND_ALL_DEPS
+	while read pkgname; do
+		pkgqueue_list_deps_recurse "${pkgname}" | sort -u
+	done | sort -u
+}
+
+pkgqueue_list_deps_recurse() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_list_deps_recurse requires PWD=${MASTERMNT}/.p"
+	[ $# -ne 1 ] && eargs pkgqueue_list_deps_recurse pkgname
 	local pkgname="$1"
 	local dep_pkgname
 
 	FIND_ALL_DEPS="${FIND_ALL_DEPS} ${pkgname}"
 
-	#msg_debug "find_all_deps ${pkgname}"
+	#msg_debug "pkgqueue_list_deps_recurse ${pkgname}"
 
 	# Show deps/*/${pkgname}
 	for pn in deps/${pkgname}/*; do
-		dep_pkgname=${pn##*/}
+		dep_pkgname="${pn##*/}"
 		case " ${FIND_ALL_DEPS} " in
 			*\ ${dep_pkgname}\ *) continue ;;
 		esac
 		case "${pn}" in
 			"deps/${pkgname}/*") break ;;
 		esac
-		echo "deps/${dep_pkgname}"
-		find_all_deps "${dep_pkgname}"
+		echo "${dep_pkgname}"
+		pkgqueue_list_deps_recurse "${dep_pkgname}"
 	done
-	echo "deps/${pkgname}"
+	echo "${pkgname}"
 }
 
 pkgqueue_find_all_pool_references() {
@@ -6644,17 +6657,9 @@ clean_build_queue() {
 				    pkgname && \
 				    echo "${pkgname}"
 			done
-		} | {
-			FIND_ALL_DEPS=
-			while read pkgname; do
-				find_all_deps "${pkgname}"
-			done | sort -u > ${tmp}
-		}
-		find deps -type d -mindepth 1 -maxdepth 1 | \
-		    sort > ${tmp}.actual
-		comm -13 ${tmp} ${tmp}.actual | while read pn; do
-			echo "${pn##*/}"
-		done | pkgqueue_remove_many_pipe
+		} | pkgqueue_list_deps_pipe > "${tmp}"
+		pkgqueue_list > "${tmp}.actual"
+		comm -13 ${tmp} ${tmp}.actual | pkgqueue_remove_many_pipe
 		rm -f ${tmp} ${tmp}.actual
 	fi
 }
