@@ -5215,6 +5215,16 @@ pkgqueue_get_next() {
 	setvar "${var_return}" "${_pkgname}"
 }
 
+pkgqueue_init() {
+	mkdir -p "${MASTERMNT}/.p/building" \
+		"${MASTERMNT}/.p/pool" \
+		"${MASTERMNT}/.p/pool/unbalanced" \
+		"${MASTERMNT}/.p/deps" \
+		"${MASTERMNT}/.p/rdeps" \
+		"${MASTERMNT}/.p/cleaning/deps" \
+		"${MASTERMNT}/.p/cleaning/rdeps"
+}
+
 pkgqueue_contains() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "pkgqueue_contains requires PWD=${MASTERMNT}/.p"
@@ -6627,13 +6637,8 @@ prepare_ports() {
 	local cache_dir sflag delete_pkg_list
 
 	_log_path log
-	mkdir -p "${MASTERMNT}/.p/building" \
-		"${MASTERMNT}/.p/pool" \
-		"${MASTERMNT}/.p/pool/unbalanced" \
-		"${MASTERMNT}/.p/deps" \
-		"${MASTERMNT}/.p/rdeps" \
-		"${MASTERMNT}/.p/cleaning/deps" \
-		"${MASTERMNT}/.p/cleaning/rdeps" \
+	pkgqueue_init
+	mkdir -p \
 		"${MASTERMNT}/.p/var/run" \
 		"${MASTERMNT}/.p/var/cache"
 
