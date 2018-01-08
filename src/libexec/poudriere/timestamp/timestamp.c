@@ -58,7 +58,7 @@ calculate_duration(char *timestamp, size_t tlen, time_t elapsed)
 }
 
 static int
-prefix_output(int fd_in, int fd_out, size_t pending_len, time_t start)
+prefix_output(int fd_in, FILE *fp_out, size_t pending_len, time_t start)
 {
 	char timestamp[8 + 3 + 1]; /* '[HH:MM:SS] ' + 1 */
 	char buf[1024];
@@ -81,13 +81,18 @@ prefix_output(int fd_in, int fd_out, size_t pending_len, time_t start)
 				elapsed = now - start;
 				calculate_duration((char *)&timestamp,
 				    tlen, elapsed);
-				write(fd_out, timestamp, tlen - 1);
+				fwrite(timestamp, tlen - 1, 1, fp_out);
+				if (ferror(fp_out))
+					return (-1);
 			}
 			if (*p == '\n' || *p == '\r')
 				newline = true;
-			write(fd_out, p, 1);
+			if (putc(*p, fp_out) == EOF)
+				return (-1);
 		}
 	}
+	if (ferror(fp_out))
+		return (-1);
 	return (0);
 }
 
@@ -97,12 +102,13 @@ prefix_output(int fd_in, int fd_out, size_t pending_len, time_t start)
 int
 main(int argc, char **argv)
 {
+	FILE *fp_out;
 	struct kevent *ev;
 	time_t start;
 	size_t pending_len;
 	pid_t child_pid;
 	int child_stdout[2], child_stderr[2];
-	int kq, fd_in, fd_out, nevents, nev, kn, i, status, ret, done;
+	int ch, kq, fd_in, nevents, nev, kn, i, status, ret, done, uflag;
 
 	ev = NULL;
 	nev = nevents = 0;
@@ -111,8 +117,19 @@ main(int argc, char **argv)
 	ret = 0;
 	done = 0;
 	newline = true;
+	uflag = 0;
 
-	if (argc > 1) {
+	while ((ch = getopt(argc, argv, "u")) != -1) {
+		switch (ch) {
+		case 'u':
+			uflag = 1;
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+
+	if (argc > 0) {
 		if (pipe(child_stdout) != 0)
 			err(EXIT_FAILURE, "pipe");
 		if (pipe(child_stderr) != 0)
@@ -130,7 +147,7 @@ main(int argc, char **argv)
 			dup2(child_stderr[1], STDERR_FILENO);
 			close(child_stderr[1]);
 
-			execvp(argv[1], &argv[1]);
+			execvp(argv[0], &argv[0]);
 			_exit(127);
 		}
 		close(STDIN_FILENO);
@@ -150,12 +167,14 @@ main(int argc, char **argv)
 		EV_SET(ev + nevents++, child_pid, EVFILT_PROC, EV_ADD,
 		    NOTE_EXIT, 0, NULL);
 		EV_SET(ev + nevents++, child_stdout[0], EVFILT_READ, EV_ADD,
-		    0, 0, (void*)STDOUT_FILENO);
+		    0, 0, (void*)stdout);
 		EV_SET(ev + nevents++, child_stderr[0], EVFILT_READ, EV_ADD,
-		    0, 0, (void*)STDERR_FILENO);
+		    0, 0, (void*)stderr);
 	} else
 		EV_SET(ev + nevents++, STDIN_FILENO, EVFILT_READ, EV_ADD, 0, 0,
-		    (void*)STDOUT_FILENO);
+		    (void*)stdout);
+	if (uflag)
+		setbuf(stdout, NULL);
 
 	kevent(kq, ev, nevents, NULL, 0, NULL);
 
@@ -168,9 +187,9 @@ main(int argc, char **argv)
 		for (i = 0; i < kn; i++) {
 			if (ev[i].filter == EVFILT_READ) {
 				fd_in = (int)ev[i].ident;
-				fd_out = (int)(intptr_t)ev[i].udata;
+				fp_out = (FILE *)(intptr_t)ev[i].udata;
 				pending_len = (size_t)ev[i].data;
-				if (prefix_output(fd_in, fd_out, pending_len,
+				if (prefix_output(fd_in, fp_out, pending_len,
 				    start) == -1 &&
 				    child_pid == -1 &&
 				    ev[i].ident == STDIN_FILENO)

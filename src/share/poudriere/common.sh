@@ -723,7 +723,10 @@ log_start() {
 		[ ! -e ${logfile}.pipe ] && mkfifo ${logfile}.pipe
 		if [ ${need_tee} -eq 1 ]; then
 			if [ "${TIMESTAMP_LOGS}" = "yes" ]; then
-				timestamp < ${logfile}.pipe | tee ${logfile} &
+				# Unbuffered for 'echo -n' support.
+				# Otherwise need setbuf -o L here due to
+				# stdout not writing to terminal but to tee.
+				timestamp -u < ${logfile}.pipe | tee ${logfile} &
 			else
 				tee ${logfile} < ${logfile}.pipe &
 			fi
