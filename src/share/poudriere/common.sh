@@ -5215,6 +5215,15 @@ pkgqueue_get_next() {
 	setvar "${var_return}" "${_pkgname}"
 }
 
+pkgqueue_contains() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_contains requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 1 ] || eargs pkgqueue_contains pkgname
+	local pkgname="$1"
+
+	[ -d "deps/${pkgname}" ]
+}
+
 lock_acquire() {
 	[ $# -ge 1 ] || eargs lock_acquire lockname [waittime]
 	local lockname="$1"
@@ -6855,7 +6864,7 @@ prepare_ports() {
 			local _originspec _pkgname _rdep tmp
 			tmp=$(TMPDIR="${log}" mktemp -ut .queued)
 			while read _pkgname _originspec _rdep; do
-				[ -d "deps/${_pkgname}" ] && \
+				pkgqueue_contains "${_pkgname}" && \
 				    echo "${_originspec} ${_pkgname} ${_rdep}"
 			done < "all_pkgs" > "${tmp}"
 			mv -f "${tmp}" "${log}/.poudriere.ports.queued"
@@ -6908,8 +6917,8 @@ load_priorities_tsortD() {
 		for pkg_boost in ${PRIORITY_BOOST}; do
 			case ${pkgname%-*} in
 				${pkg_boost})
-					[ -d "deps/${pkgname}" ] \
-					    || continue
+					pkgqueue_contains "${pkgname}" || \
+					    continue
 					get_origin_from_pkgname origin \
 					    "${pkgname}"
 					msg "Boosting priority: ${COLOR_PORT}${origin} | ${pkgname}"
@@ -6942,8 +6951,8 @@ load_priorities_ptsort() {
 		for pkg_boost in ${PRIORITY_BOOST}; do
 			case ${pkgname%-*} in
 				${pkg_boost})
-					[ -d "deps/${pkgname}" ] \
-					    || continue
+					pkgqueue_contains "${pkgname}" || \
+					    continue
 					originspec_decode "${originspec}" \
 					    origin '' ''
 					msg "Boosting priority: ${COLOR_PORT}${origin} | ${pkgname}"
