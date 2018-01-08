@@ -57,7 +57,7 @@ calculate_duration(char *timestamp, size_t tlen, time_t elapsed)
 	    seconds);
 }
 
-static void
+static int
 prefix_output(int fd_in, int fd_out, size_t pending_len, time_t start)
 {
 	char timestamp[8 + 3 + 1]; /* '[HH:MM:SS] ' + 1 */
@@ -70,6 +70,8 @@ prefix_output(int fd_in, int fd_out, size_t pending_len, time_t start)
 	while (pending_len > 0) {
 		read_len = read(fd_in, buf, min(sizeof(buf),
 		    pending_len));
+		if (read_len == 0)
+			return (-1);
 		pending_len -= read_len;
 		for (p = buf; read_len > 0;
 		    ++p, --read_len) {
@@ -86,6 +88,7 @@ prefix_output(int fd_in, int fd_out, size_t pending_len, time_t start)
 			write(fd_out, p, 1);
 		}
 	}
+	return (0);
 }
 
 /**
@@ -167,8 +170,11 @@ main(int argc, char **argv)
 				fd_in = (int)ev[i].ident;
 				fd_out = (int)(intptr_t)ev[i].udata;
 				pending_len = (size_t)ev[i].data;
-				prefix_output(fd_in, fd_out, pending_len,
-				    start);
+				if (prefix_output(fd_in, fd_out, pending_len,
+				    start) == -1 &&
+				    child_pid == -1 &&
+				    ev[i].ident == STDIN_FILENO)
+					done = 1;
 				if (child_pid == -1 &&
 				    ev[i].ident == STDIN_FILENO &&
 				    ev[i].flags & EV_EOF)
