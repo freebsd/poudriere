@@ -5264,6 +5264,26 @@ pkgqueue_done() {
 	# Outputs skipped_pkgnames
 }
 
+pkgqueue_list() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_list requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 0 ] || eargs pkgqueue_list
+
+	ls deps/ | tr ' ' '\n'
+}
+
+# Remove all packages from queue sent in STDIN
+pkgqueue_remove_many_pipe() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_remove_many_pipe requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 0 ] || eargs pkgqueue_remove_many_pipe [pkgnames stdin]
+	local pkgname
+
+	while read pkgname; do
+		pkgqueue_find_all_pool_references "${pkgname}"
+	done | xargs rm -rf
+}
+
 lock_acquire() {
 	[ $# -ge 1 ] || eargs lock_acquire lockname [waittime]
 	local lockname="$1"
@@ -6491,10 +6511,10 @@ find_all_deps() {
 	echo "deps/${pkgname}"
 }
 
-find_all_pool_references() {
+pkgqueue_find_all_pool_references() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "find_all_pool_references requires PWD=${MASTERMNT}/.p"
-	[ $# -ne 1 ] && eargs find_all_pool_references pkgname
+	    err 1 "pkgqueue_find_all_pool_references requires PWD=${MASTERMNT}/.p"
+	[ $# -ne 1 ] && eargs pkgqueue_find_all_pool_references pkgname
 	local pkgname="$1"
 	local rpn dep_pkgname
 
@@ -6601,10 +6621,9 @@ clean_build_queue() {
 	msg "Cleaning the build queue"
 
 	# Delete from the queue all that already have a current package.
-	for pn in $(ls deps/); do
-		[ -f "../packages/All/${pn}.${PKG_EXT}" ] && \
-		    find_all_pool_references "${pn}"
-	done | xargs rm -rf
+	pkgqueue_list | while read pn; do
+		[ -f "../packages/All/${pn}.${PKG_EXT}" ] && echo "${pn}"
+	done | pkgqueue_remove_many_pipe
 
 	# Delete from the queue orphaned build deps. This can happen if
 	# the specified-to-build ports have all their deps satisifed
@@ -6633,9 +6652,9 @@ clean_build_queue() {
 		}
 		find deps -type d -mindepth 1 -maxdepth 1 | \
 		    sort > ${tmp}.actual
-		comm -13 ${tmp} ${tmp}.actual | while read pd; do
-			find_all_pool_references "${pd##*/}"
-		done | xargs rm -rf
+		comm -13 ${tmp} ${tmp}.actual | while read pn; do
+			echo "${pn##*/}"
+		done | pkgqueue_remove_many_pipe
 		rm -f ${tmp} ${tmp}.actual
 	fi
 }
@@ -6644,7 +6663,7 @@ clean_build_queue() {
 prepare_ports() {
 	local pkg
 	local log log_top
-	local n pn nbq resuming_build
+	local n nbq resuming_build
 	local cache_dir sflag delete_pkg_list
 
 	_log_path log
@@ -6813,13 +6832,11 @@ prepare_ports() {
 		# built/failed/skipped/ignored should not be rebuilt.
 		if [ ${resuming_build} -eq 1 ]; then
 			awk '{print $2}' \
-				${log}/.poudriere.ports.built \
-				${log}/.poudriere.ports.failed \
-				${log}/.poudriere.ports.ignored \
-				${log}/.poudriere.ports.skipped | \
-			while read pn; do
-				find_all_pool_references "${pn}"
-			done | xargs rm -rf
+			    ${log}/.poudriere.ports.built \
+			    ${log}/.poudriere.ports.failed \
+			    ${log}/.poudriere.ports.ignored \
+			    ${log}/.poudriere.ports.skipped | \
+			    pkgqueue_remove_many_pipe
 		else
 			# New build
 			bset stats_queued 0
