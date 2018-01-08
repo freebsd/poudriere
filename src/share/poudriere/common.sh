@@ -3500,7 +3500,7 @@ stop_builders() {
 	JOBS=""
 }
 
-sanity_check_queue() {
+pkgqueue_sanity_check() {
 	local always_fail=${1:-1}
 	local crashed_packages dependency_cycles deps pkgname origin
 	local failed_phase pwd dead_all dead_deps dead_top dead_packages
@@ -3566,9 +3566,9 @@ ${dependency_cycles}"
 $(find ${MASTERMNT}/.p/building ${MASTERMNT}/.p/pool ${MASTERMNT}/.p/deps ${MASTERMNT}/.p/cleaning)"
 }
 
-queue_empty() {
+pkgqueue_empty() {
 	[ "${PWD}" = "${MASTERMNT}/.p/pool" ] || \
-	    err 1 "queue_empty requires PWD=${MASTERMNT}/.p/pool"
+	    err 1 "pkgqueue_empty requires PWD=${MASTERMNT}/.p/pool"
 	local pool_dir dirs
 	local n
 
@@ -3661,13 +3661,13 @@ build_queue() {
 
 			[ ${queue_empty} -eq 0 ] || continue
 
-			next_in_queue pkgname || \
+			pkgqueue_get_next pkgname || \
 			    err 1 "Failed to find a package from the queue."
 
 			if [ -z "${pkgname}" ]; then
 				# Check if the ready-to-build pool and need-to-build pools
 				# are empty
-				queue_empty && queue_empty=1
+				pkgqueue_empty && queue_empty=1
 
 				builders_idle=1
 			else
@@ -3691,13 +3691,13 @@ build_queue() {
 				# FALLTHROUGH
 			else
 				# All work is done
-				sanity_check_queue 0
+				pkgqueue_sanity_check 0
 				break
 			fi
 		fi
 
 		# If builders are idle then there is a problem.
-		[ ${builders_active} -eq 1 ] || sanity_check_queue
+		[ ${builders_active} -eq 1 ] || pkgqueue_sanity_check
 
 		if [ "${HTML_TRACK_REMAINING}" = "yes" ]; then
 			{
@@ -5182,9 +5182,9 @@ delete_old_pkgs() {
 ## Pick the next package from the "ready to build" queue in pool/
 ## Then move the package to the "building" dir in building/
 ## This is only ran from 1 process
-next_in_queue() {
+pkgqueue_get_next() {
 	[ "${PWD}" = "${MASTERMNT}/.p/pool" ] || \
-	    err 1 "next_in_queue requires PWD=${MASTERMNT}/.p/pool"
+	    err 1 "pkgqueue_get_next requires PWD=${MASTERMNT}/.p/pool"
 	local var_return="$1"
 	local p _pkgname ret
 
@@ -5201,11 +5201,11 @@ next_in_queue() {
 				# balance_queue(). The file is already
 				# gone and moved to a bucket. Try again.
 				ret=0
-				next_in_queue "${var_return}" || ret=$?
+				pkgqueue_get_next "${var_return}" || ret=$?
 				return ${ret}
 			else
 				# Failure to move a balanced item??
-				err 1 "next_in_queue: Failed to mv ${p} to ${MASTERMNT}/.p/building/${_pkgname}"
+				err 1 "pkgqueue_get_next: Failed to mv ${p} to ${MASTERMNT}/.p/building/${_pkgname}"
 			fi
 		fi
 		# Update timestamp for buildtime accounting
@@ -6838,8 +6838,8 @@ prepare_ports() {
 
 	# Call the deadlock code as non-fatal which will check for cycles
 	msg "Sanity checking build queue"
-	bset status "sanity_check_queue:"
-	sanity_check_queue 0
+	bset status "pkgqueue_sanity_check:"
+	pkgqueue_sanity_check 0
 
 	if was_a_bulk_run; then
 		if [ $resuming_build -eq 0 ]; then
@@ -7013,7 +7013,7 @@ balance_pool() {
 
 	# Avoid running this in parallel, no need. Note that this lock is
 	# not on the unbalanced/ dir, but only this function. clean.sh writes
-	# to unbalanced/, queue_empty() reads from it, and next_in_queue()
+	# to unbalanced/, pkgqueue_empty() reads from it, and pkgqueue_get_next()
 	# moves from it.
 	lock=.lock-balance_pool
 	mkdir ${lock} 2>/dev/null || return 0
@@ -7031,13 +7031,13 @@ balance_pool() {
 
 	# For everything ready-to-build...
 	for pkg_dir in pool/unbalanced/*; do
-		# May be empty due to racing with next_in_queue()
+		# May be empty due to racing with pkgqueue_get_next()
 		case "${pkg_dir}" in
 			"pool/unbalanced/*") break ;;
 		esac
 		pkgname=${pkg_dir##*/}
 		hash_get "priority" "${pkgname}" dep_count || dep_count=0
-		# This races with next_in_queue(), just ignore failure
+		# This races with pkgqueue_get_next(), just ignore failure
 		# to move it.
 		rename "${pkg_dir}" \
 		    "pool/${dep_count}/${pkgname}" \
