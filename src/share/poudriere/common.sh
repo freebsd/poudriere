@@ -5198,7 +5198,7 @@ pkgqueue_get_next() {
 			# Was the failure from /unbalanced?
 			if [ -z "${p%%*unbalanced/*}" ]; then
 				# We lost the race with a child running
-				# balance_queue(). The file is already
+				# balance_pool(). The file is already
 				# gone and moved to a bucket. Try again.
 				ret=0
 				pkgqueue_get_next "${var_return}" || ret=$?
