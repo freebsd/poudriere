@@ -3892,7 +3892,8 @@ clean_pool() {
 	originspec_decode "${originspec}" origin '' ''
 
 	# Cleaning queue (pool is cleaned here)
-	sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT}" "${pkgname}" "${clean_rdepends}" | sort -u | while read skipped_pkgname; do
+	pkgqueue_done "${pkgname}" "${clean_rdepends}" | \
+	    while read skipped_pkgname; do
 		get_originspec_from_pkgname skipped_originspec "${skipped_pkgname}"
 		originspec_decode "${skipped_originspec}" skipped_origin '' ''
 		badd ports.skipped "${skipped_originspec} ${skipped_pkgname} ${pkgname}"
@@ -5251,6 +5252,16 @@ pkgqueue_add_dep() {
 	local dep_pkgname="$2"
 
 	:> "deps/${pkgname}/${dep_pkgname}"
+}
+
+pkgqueue_done() {
+	[ $# -eq 2 ] || eargs pkgqueue_done pkgname clean_rdepends
+	local pkgname="$1"
+	local clean_rdepends="$2"
+
+	sh "${SCRIPTPREFIX}/clean.sh" "${MASTERMNT}" "${pkgname}" \
+	    "${clean_rdepends}" | sort -u
+	# Outputs skipped_pkgnames
 }
 
 lock_acquire() {
