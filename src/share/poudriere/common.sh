@@ -5224,6 +5224,25 @@ pkgqueue_contains() {
 	[ -d "deps/${pkgname}" ]
 }
 
+pkgqueue_add() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_add requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 1 ] || eargs pkgqueue_add pkgname
+	local pkgname="$1"
+
+	mkdir "deps/${pkgname}"
+}
+
+pkgqueue_add_dep() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_add_dep requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 2 ] || eargs pkgqueue_add_dep pkgname dep_pkgname
+	local pkgname="$1"
+	local dep_pkgname="$2"
+
+	:> "deps/${pkgname}/${dep_pkgname}"
+}
+
 lock_acquire() {
 	[ $# -ge 1 ] || eargs lock_acquire lockname [waittime]
 	local lockname="$1"
@@ -6064,17 +6083,16 @@ compute_deps_pkg() {
 	[ $# -ne 2 ] && eargs compute_deps_pkg pkgname originspec
 	local pkgname="$1"
 	local originspec="$2"
-	local pkg_pooldir deps dep_pkgname dep_originspec dep_origin dep_flavor
+	local deps dep_pkgname dep_originspec dep_origin dep_flavor
 	local raw_deps d key dpath dep_real_pkgname err_type
 
 	# Safe to remove pkgname-deps now, it won't be needed later.
 	shash_remove pkgname-deps "${pkgname}" deps || \
 	    err 1 "compute_deps_pkg failed to find deps for ${pkgname}"
 
-	pkg_pooldir="deps/${pkgname}"
 	msg_debug "compute_deps_pkg: Will build ${pkgname}"
-	mkdir "${pkg_pooldir}" || \
-	    err 1 "compute_deps_pkg: Error creating pool dir for ${pkgname}: There may be a duplicate origin in a category Makefile"
+	pkgqueue_add "${pkgname}" || \
+	    err 1 "compute_deps_pkg: Error creating queue entry for ${pkgname}: There may be a duplicate origin in a category Makefile"
 
 	for dep_originspec in ${deps}; do
 		if ! get_pkgname_from_originspec "${dep_originspec}" \
@@ -6086,7 +6104,7 @@ compute_deps_pkg() {
 			err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname} from ${originspec} -- Is SUBDIR+=${dep_originspec#*/} missing in ${dep_originspec%/*}/Makefile and does the port provide the '${dep_flavor}' FLAVOR?"
 		fi
 		msg_debug "compute_deps_pkg: Will build ${dep_originspec} for ${pkgname}"
-		:> "${pkg_pooldir}/${dep_pkgname}"
+		pkgqueue_add_dep "${pkgname}" "${dep_pkgname}"
 		echo "${pkgname} ${dep_pkgname}" >> "pkg_deps.unsorted"
 		if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
 			# Cache for call later in this func
