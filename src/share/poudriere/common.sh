@@ -1405,7 +1405,9 @@ get_data_dir() {
 
 fetch_file() {
 	[ $# -ne 2 ] && eargs fetch_file destination source
-	fetch -p -o $1 $2 || fetch -p -o $1 $2 || err 1 "Failed to fetch from $2"
+	fetch -a -p -o $1 $2 || \
+	    fetch -a -r -p -o $1 $2 || \
+	    err 1 "Failed to fetch from $2"
 }
 
 # Export handling is different in builtin vs external
