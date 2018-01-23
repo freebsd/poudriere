@@ -274,6 +274,11 @@ if [ ${CREATE} -eq 1 ]; then
 	if [ $FAKE -eq 0 ]; then
 		case ${METHOD} in
 		portsnap)
+
+			if [ -n "$BRANCH" ]; then
+				err 1 "portsnap does not support branches, use '-m svn' (or another method supporting branches) or drop '-B $BRANCH'."
+			fi
+
 			# additional portsnap arguments
 			PTARGS=$(check_portsnap_interactive)
 			mkdir ${PTMNT}/.snap
