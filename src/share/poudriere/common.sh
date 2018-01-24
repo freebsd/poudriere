@@ -6203,7 +6203,7 @@ origin_should_use_dep_args() {
 }
 
 listed_ports() {
-	_listed_ports | while read originspec; do
+	_listed_ports "$@" | while read originspec; do
 		map_py_slave_port "${originspec}" originspec || :
 		echo "${originspec}"
 	done
