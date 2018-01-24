@@ -2478,6 +2478,7 @@ jail_start() {
 	    echo "FORCE_PACKAGE=yes" >> "${tomnt}/etc/make.conf"
 	if [ -z "${NO_PACKAGE_BUILDING}" ]; then
 		echo "PACKAGE_BUILDING=yes" >> "${tomnt}/etc/make.conf"
+		export PACKAGE_BUILDING=yes
 		echo "PACKAGE_BUILDING_FLAVORS=yes" >> "${tomnt}/etc/make.conf"
 	fi
 
