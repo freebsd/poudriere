@@ -68,7 +68,7 @@ BEGIN {
 	forward[ref] = dst
 	srcs[src] = ref
 	if (dst == "")
-		reason[ref] = $4
+		reason[ref] = $3 " " $4
 	#printf("READ %s %s -> %s\n", src, ref, dst)
 
 	# Update fowards to me to now point to my dst and
