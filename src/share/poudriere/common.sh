@@ -671,7 +671,7 @@ run_hook_file() {
 
 	(
 		set +e
-		cd /
+		cd /tmp
 		BUILD_URL="${build_url}" \
 		    LOG_URL="${log_url}" \
 		    LOG="${log}" \
@@ -2702,7 +2702,7 @@ jail_stop() {
 
 	# Make sure CWD is not inside the jail or MASTERMNT/.p, which may
 	# cause EBUSY from umount.
-	cd /
+	cd /tmp
 
 	stop_builders >/dev/null || :
 	if [ ${USE_CACHED} = "yes" ]; then
@@ -7171,7 +7171,7 @@ STATUS=0 # out of jail #
 # cd into / to avoid foot-shooting if running from deleted dirs or
 # NFS dir which root has no access to.
 SAVED_PWD="${PWD}"
-cd /
+cd /tmp
 
 . ${SCRIPTPREFIX}/include/colors.pre.sh
 [ -z "${POUDRIERE_ETC}" ] &&
