@@ -6251,8 +6251,8 @@ _listed_ports() {
 			set_dep_fatal_error
 			continue
 		fi
-		[ -n "${tell_moved}" ] && [ -n "${new_origin}" ] && msg \
-			    "MOVED: ${COLOR_PORT}${origin_listed}${COLOR_RESET} renamed to ${COLOR_PORT}${new_origin}${COLOR_RESET}" >&2
+		[ -n "${tell_moved}" ] && [ -n "${new_origin}" ] && msg_warn \
+			    "MOVED: ${COLOR_PORT}${origin_listed}${COLOR_RESET} renamed to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
 		echo "${originspec}"
 	done
 }
