@@ -5480,18 +5480,6 @@ gather_port_vars() {
 	parallel_start
 	for originspec in $(listed_ports show_moved); do
 		originspec_decode "${originspec}" origin dep_args flavor
-		[ ${ALL} -eq 0 ] && [ -n "${flavor}" ] && \
-		    ! have_ports_feature FLAVORS && \
-		    err 1 "Trying to build FLAVOR-specific ${originspec} but ports tree has no FLAVORS support."
-		if ! [ -d "../${PORTSDIR}/${origin}" ]; then
-			if [ ${ALL} -eq 1 ]; then
-				msg_warn "Nonexistent origin listed in category Makefiles: ${COLOR_PORT}${origin}"
-			else
-				msg_error "Nonexistent origin listed for build: ${COLOR_PORT}${origin}"
-				set_dep_fatal_error
-			fi
-			continue
-		fi
 		rdep="listed"
 		# For -a we skip the initial gatherqueue
 		if [ ${ALL} -eq 1 ]; then
@@ -6214,6 +6202,12 @@ _listed_ports() {
 		[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
 		for cat in $(awk -F= '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print $2}' ${portsdir}/Makefile); do
 			awk -F= -v cat=${cat} '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print cat"/"$2}' ${portsdir}/${cat}/Makefile
+		done | while read origin; do
+			if ! [ -d "${portsdir}/${origin}" ]; then
+				msg_warn "Nonexistent origin listed in category Makefiles: ${COLOR_PORT}${origin}${COLOR_RESET} (skipping)"
+				continue
+			fi
+			echo "${origin}"
 		done
 		return 0
 	fi
@@ -6240,12 +6234,25 @@ _listed_ports() {
 		fi
 	} | sort -u | while read originspec; do
 		originspec_decode "${originspec}" origin '' flavor
+		if [ -n "${flavor}" ] && ! have_ports_feature FLAVORS; then
+			msg_error "Trying to build FLAVOR-specific ${originspec} but ports tree has no FLAVORS support."
+			set_dep_fatal_error
+			continue
+		fi
+		origin_listed="${origin}"
 		if check_moved new_origin ${origin}; then
-			[ -n "${tell_moved}" ] && msg \
-			    "MOVED: ${COLOR_PORT}${origin}${COLOR_RESET} renamed to ${COLOR_PORT}${new_origin}${COLOR_RESET}" >&2
 			origin="${new_origin}"
 			originspec_encode originspec "${origin}" '' "${flavor}"
+		else
+			unset new_origin
 		fi
+		if ! [ -d "../${PORTSDIR}/${origin}" ]; then
+			msg_error "Nonexistent origin listed: ${COLOR_PORT}${origin_listed}${new_origin:+${COLOR_RESET} (moved to nonexistent ${COLOR_PORT}${new_origin}${COLOR_RESET})}"
+			set_dep_fatal_error
+			continue
+		fi
+		[ -n "${tell_moved}" ] && [ -n "${new_origin}" ] && msg \
+			    "MOVED: ${COLOR_PORT}${origin_listed}${COLOR_RESET} renamed to ${COLOR_PORT}${new_origin}${COLOR_RESET}" >&2
 		echo "${originspec}"
 	done
 }
