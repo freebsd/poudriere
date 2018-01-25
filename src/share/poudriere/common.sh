@@ -4916,9 +4916,9 @@ delete_old_pkg() {
 
 			shash_get origin-moved-expired "${origin}" \
 			    expired_reason || expired_reason=
-			msg "Deleting ${pkg##*/}: ${origin} ${expired_reason}"
+			msg "Deleting ${pkg##*/}: ${COLOR_PORT}${origin}${COLOR_RESET} ${expired_reason}"
 		else
-			msg "Deleting ${pkg##*/}: ${origin} moved to ${new_origin}"
+			msg "Deleting ${pkg##*/}: ${COLOR_PORT}${origin}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
 		fi
 		delete_pkg "${pkg}"
 		return 0
@@ -4927,7 +4927,7 @@ delete_old_pkg() {
 	_my_path mnt
 
 	if [ ! -d "${mnt}${PORTSDIR}/${origin}" ]; then
-		msg "Deleting ${pkg##*/}: stale package: nonexistent origin ${origin}"
+		msg "Deleting ${pkg##*/}: stale package: nonexistent origin ${COLOR_PORT}${origin}${COLOR_RESET}"
 		delete_pkg "${pkg}"
 		return 0
 	fi
@@ -4962,7 +4962,7 @@ delete_old_pkg() {
 		# with a different origin.  Such as lang/perl5.20 vs
 		# lang/perl5.22 both with 'perl5' as PKGBASE.  A pkgclean
 		# would handle removing this.
-		msg "Deleting ${pkg##*/}: stale package: unwanted origin ${originspec}"
+		msg "Deleting ${pkg##*/}: stale package: unwanted origin ${COLOR_PORT}${originspec}${COLOR_RESET}"
 		delete_pkg "${pkg}"
 		return 0
 	fi
