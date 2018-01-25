@@ -131,22 +131,27 @@ CLEANUP_HOOK=distfiles_cleanup
 
 read_packages_from_params "$@"
 
+: ${DEP_FATAL_ERROR_FILE:=dep_fatal_error-$$}
+clear_dep_fatal_error
 parallel_start
 for PTNAME in ${PTNAMES}; do
 	export PORTSDIR=$(pget ${PTNAME} mnt)
 	[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 	[ -z "${PORTSDIR}" ] && err 1 "No such ports tree: ${PTNAME}"
 
+	MASTERMNT= load_moved
 	msg "Gathering all expected distfiles for ports tree '${PTNAME}'"
 
-	for originspec in $(listed_ports); do
+	for originspec in $(listed_ports show_moved); do
 		parallel_run \
 		    prefix_stderr_quick \
 		    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
 		    gather_distfiles "${originspec}"
 	done
 done
-parallel_stop
+if ! parallel_stop || check_dep_fatal_error; then
+	err 1 "Fatal errors encountered gathering distfiles metadata"
+fi
 
 # Remove duplicates
 sort -u ${DISTFILES_LIST} > ${DISTFILES_LIST}.expected
