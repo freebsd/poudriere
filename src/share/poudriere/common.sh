@@ -4908,7 +4908,15 @@ delete_old_pkg() {
 	fi
 
 	if check_moved new_origin "${origin}"; then
-		msg "Deleting ${pkg##*/}: ${origin} moved to ${new_origin}"
+		if [ "${new_origin}" = "EXPIRED" ]; then
+			local expired_reason
+
+			shash_get origin-moved-expired "${origin}" \
+			    expired_reason || expired_reason=
+			msg "Deleting ${pkg##*/}: ${origin} ${expired_reason}"
+		else
+			msg "Deleting ${pkg##*/}: ${origin} moved to ${new_origin}"
+		fi
 		delete_pkg "${pkg}"
 		return 0
 	fi
@@ -5071,6 +5079,8 @@ delete_old_pkg() {
 				check_moved new_origin \
 				    "${compiled_deps_origin}" && \
 				    compiled_deps_origin="${new_origin}"
+				[ "${compiled_deps_origin}" = "EXPIRED" ] && \
+				    continue
 				compiled_deps_new="${compiled_deps_new:+${compiled_deps_new} }${compiled_deps_origin}"
 			done
 			compiled_deps="${compiled_deps_new}"
@@ -6241,6 +6251,13 @@ _listed_ports() {
 		fi
 		origin_listed="${origin}"
 		if check_moved new_origin ${origin}; then
+			if [ "${new_origin}" = "EXPIRED" ]; then
+				shash_get origin-moved-expired "${origin}" \
+				    expired_reason || expired_reason=
+				msg_error "MOVED: ${origin} ${expired_reason}"
+				set_dep_fatal_error
+				continue
+			fi
 			origin="${new_origin}"
 			originspec_encode originspec "${origin}" '' "${flavor}"
 		else
@@ -6437,8 +6454,11 @@ load_moved() {
 	awk -f ${AWKPREFIX}/parse_MOVED.awk \
 	    ${MASTERMNT}${PORTSDIR}/MOVED | \
 	    while read old_origin new_origin expired_reason; do
-		[ "${new_origin}" = "EXPIRED" ] && continue
 		shash_set origin-moved "${old_origin}" "${new_origin}"
+		if [ "${new_origin}" = "EXPIRED" ]; then
+			shash_set origin-moved-expired "${old_origin}" \
+			    "${expired_reason}"
+		fi
 	done
 }
 
