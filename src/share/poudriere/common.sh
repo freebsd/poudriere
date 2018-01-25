@@ -6434,13 +6434,12 @@ load_moved() {
 	[ -f ${MASTERMNT}${PORTSDIR}/MOVED ] || return 0
 	msg "Loading MOVED"
 	bset status "loading_moved:"
-	grep -v '^#' ${MASTERMNT}${PORTSDIR}/MOVED | awk \
-	    -F\| '
-		$2 != "" {
-			print $1,$2;
-		}' | while read old_origin new_origin; do
-			shash_set origin-moved "${old_origin}" "${new_origin}"
-		done
+	awk -f ${AWKPREFIX}/parse_MOVED.awk \
+	    ${MASTERMNT}${PORTSDIR}/MOVED | \
+	    while read old_origin new_origin expired_reason; do
+		[ "${new_origin}" = "EXPIRED" ] && continue
+		shash_set origin-moved "${old_origin}" "${new_origin}"
+	done
 }
 
 check_moved() {
