@@ -5431,18 +5431,19 @@ set_dep_fatal_error() {
 	DEP_FATAL_ERROR=1
 	# Mark the fatal error flag. Must do it like this as this may be
 	# running in a sub-shell.
-	: > dep_fatal_error
+	: > ${DEP_FATAL_ERROR_FILE}
 }
 
 clear_dep_fatal_error() {
+	: ${DEP_FATAL_ERROR_FILE:=dep_fatal_error}
 	unset DEP_FATAL_ERROR
-	unlink dep_fatal_error 2>/dev/null || :
+	unlink ${DEP_FATAL_ERROR_FILE} 2>/dev/null || :
 	export ERRORS_ARE_DEP_FATAL=1
 }
 
 check_dep_fatal_error() {
 	unset ERRORS_ARE_DEP_FATAL
-	[ -n "${DEP_FATAL_ERROR}" ] || [ -f dep_fatal_error ]
+	[ -n "${DEP_FATAL_ERROR}" ] || [ -f ${DEP_FATAL_ERROR_FILE} ]
 }
 
 gather_port_vars() {
@@ -6444,12 +6445,14 @@ delete_stale_symlinks_and_empty_dirs() {
 }
 
 load_moved() {
-	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
-	    err 1 "load_moved requires SHASH_VAR_PATH=var/cache"
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "load_moved requires PWD=${MASTERMNT}/.p"
+	if [ "${SCRIPTPATH##*/}" != "distclean.sh" ]; then
+		[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
+		    err 1 "load_moved requires SHASH_VAR_PATH=var/cache"
+		[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+		    err 1 "load_moved requires PWD=${MASTERMNT}/.p"
+	fi
 	[ -f ${MASTERMNT}${PORTSDIR}/MOVED ] || return 0
-	msg "Loading MOVED"
+	msg "Loading MOVED for ${MASTERMNT}${PORTSDIR}"
 	bset status "loading_moved:"
 	awk -f ${AWKPREFIX}/parse_MOVED.awk \
 	    ${MASTERMNT}${PORTSDIR}/MOVED | \
