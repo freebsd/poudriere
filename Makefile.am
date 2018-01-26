@@ -157,11 +157,11 @@ timeout_SOURCES=	src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
 tsort_SOURCES=		src/libexec/poudriere/tsort/tsort.c
 
-sh_CFLAGS=		-DSHELL -DNO_HISTORY -std=gnu99 \
+sh_CFLAGS=		-DSHELL -std=gnu99 \
 			-include $(top_srcdir)/external/sh_compat/compat.h \
 			-I$(top_srcdir)/src \
 			-I$(top_srcdir)/external/sh
-sh_LDADD=
+sh_LDADD=		-ledit
 sh_SOURCES=		external/sh_compat/strchrnul.c \
 			external/sh_compat/utimensat.c \
 			external/sh/alias.c \
