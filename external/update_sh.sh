@@ -13,7 +13,8 @@ mkdir -p "${DESTDIR}"
 DESTDIR_REAL="$(realpath "${DESTDIR}")"
 ORIG_PWD="${PWD}"
 cd "${SH_DIR}"
-export MK_TESTS=no
+export WITHOUT_TESTS=yes
+export WITHOUT_AUTO_OBJ=yes
 make cleanobj
 make clean cleandepend
 make depend
