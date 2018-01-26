@@ -73,6 +73,7 @@ __FBSDID("$FreeBSD: head/bin/rm/rm.c 326025 2017-11-20 19:49:47Z pfg $");
 #undef xflag
 #include "helpers.h"
 #define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+static struct sigaction info_oact;
 #endif
 
 static int dflag, eval, fflag, iflag, Pflag, vflag, Wflag, stdin_ok;
@@ -106,6 +107,7 @@ main(int argc, char *argv[])
 #ifdef SHELL
 	info = dflag = eval = fflag = iflag = Pflag = vflag = Wflag =
 	    stdin_ok = rflag = Iflag = xflag = 0;
+	memset(&info_oact, sizeof(info_oact), 0);
 #else
 	(void)setlocale(LC_ALL, "");
 #endif
@@ -198,15 +200,22 @@ main(int argc, char *argv[])
 	checkslash(argv);
 	uid = geteuid();
 
-#ifndef SHELL
-	(void)signal(SIGINFO, siginfo);
+#ifdef SHELL
+	INTOFF;
+	trap_push(SIGINFO, &info_oact);
 #endif
+	(void)signal(SIGINFO, siginfo);
 	if (*argv) {
 		stdin_ok = isatty(STDIN_FILENO);
 
 		if (Iflag) {
-			if (check2(argv) == 0)
+			if (check2(argv) == 0) {
+#ifdef SHELL
+				trap_pop(SIGINFO, &info_oact);
+				INTON;
+#endif
 				return (1);
+			}
 		}
 		if (rflag)
 			rm_tree(argv);
@@ -214,6 +223,10 @@ main(int argc, char *argv[])
 			rm_file(argv);
 	}
 
+#ifdef SHELL
+	trap_pop(SIGINFO, &info_oact);
+	INTON;
+#endif
 	return (eval);
 }
 
@@ -248,9 +261,17 @@ rm_tree(char **argv)
 	if (!(fts = fts_open(argv, flags, NULL))) {
 		if (fflag && errno == ENOENT)
 			return;
+#ifdef SHELL
+		trap_pop(SIGINFO, &info_oact);
+		INTON;
+#endif
 		err(1, "%s", "fts_open");
 	}
 	while ((p = fts_read(fts)) != NULL) {
+#ifdef SHELL
+		if (int_pending())
+			break;
+#endif
 		switch (p->fts_info) {
 		case FTS_DNR:
 			if (!fflag || p->fts_errno != ENOENT) {
@@ -260,6 +281,10 @@ rm_tree(char **argv)
 			}
 			continue;
 		case FTS_ERR:
+#ifdef SHELL
+			trap_pop(SIGINFO, &info_oact);
+			INTON;
+#endif
 			errx(1, "%s: %s", p->fts_path, strerror(p->fts_errno));
 		case FTS_NS:
 			/*
@@ -323,6 +348,9 @@ rm_tree(char **argv)
 						info = 0;
 						(void)printf("%s\n",
 						    p->fts_path);
+#ifdef SHELL
+						fflush(stdout);
+#endif
 					}
 					continue;
 				}
@@ -338,6 +366,9 @@ rm_tree(char **argv)
 						info = 0;
 						(void)printf("%s\n",
 						    p->fts_path);
+#ifdef SHELL
+						fflush(stdout);
+#endif
 					}
 					continue;
 				}
@@ -370,6 +401,9 @@ rm_tree(char **argv)
 						info = 0;
 						(void)printf("%s\n",
 						    p->fts_path);
+#ifdef SHELL
+						fflush(stdout);
+#endif
 					}
 					continue;
 				}
@@ -379,8 +413,13 @@ err:
 		warn("%s", p->fts_path);
 		eval = 1;
 	}
-	if (!fflag && errno)
+	if (!fflag && errno) {
+#ifdef SHELL
+		trap_pop(SIGINFO, &info_oact);
+		INTON;
+#endif
 		err(1, "%s", "fts_read");
+	}
 	fts_close(fts);
 }
 
@@ -446,6 +485,9 @@ rm_file(char **argv)
 		if (info && rval == 0) {
 			info = 0;
 			(void)printf("%s\n", f);
+#ifdef SHELL
+			fflush(stdout);
+#endif
 		}
 	}
 }
@@ -495,8 +537,13 @@ rm_overwrite(const char *file, struct stat *sbp)
 	if (fstatfs(fd, &fsb) == -1)
 		goto err;
 	bsize = MAX(fsb.f_iosize, 1024);
-	if ((buf = malloc(bsize)) == NULL)
+	if ((buf = malloc(bsize)) == NULL) {
+#ifdef SHELL
+		trap_pop(SIGINFO, &info_oact);
+		INTON;
+#endif
 		err(1, "%s: malloc", file);
+	}
 
 #define	PASS(byte) {							\
 	memset(buf, byte, bsize);					\
@@ -550,12 +597,22 @@ check(const char *path, const char *name, struct stat *sp)
 		    (!(sp->st_flags & (UF_APPEND|UF_IMMUTABLE)) || !uid)))
 			return (1);
 		strmode(sp->st_mode, modep);
-		if ((flagsp = fflagstostr(sp->st_flags)) == NULL)
+		if ((flagsp = fflagstostr(sp->st_flags)) == NULL) {
+#ifdef SHELL
+			trap_pop(SIGINFO, &info_oact);
+			INTON;
+#endif
 			err(1, "%s", "fflagstostr");
-		if (Pflag)
+		}
+		if (Pflag) {
+#ifdef SHELL
+			trap_pop(SIGINFO, &info_oact);
+			INTON;
+#endif
 			errx(1,
 			    "%s: -P was specified, but file is not writable",
 			    path);
+		}
 		(void)fprintf(stderr, "override %s%s%s/%s %s%sfor %s? ",
 		    modep + 1, modep[10] == ' ' ? "" : " ",
 		    user_from_uid(sp->st_uid, 0),
