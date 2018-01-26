@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -36,7 +38,7 @@ static char sccsid[] = "@(#)miscbltin.c	8.4 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/miscbltin.c 316744 2017-04-12 21:15:55Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/miscbltin.c 326025 2017-11-20 19:49:47Z pfg $");
 
 /*
  * Miscellaneous builtins.

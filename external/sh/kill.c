@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1988, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -43,7 +45,7 @@ static char sccsid[] = "@(#)kill.c	8.4 (Berkeley) 4/28/95";
 #endif /* not lint */
 #endif
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/kill/kill.c 314714 2017-03-05 21:56:04Z bdrewery $");
+__FBSDID("$FreeBSD: head/bin/kill/kill.c 326025 2017-11-20 19:49:47Z pfg $");
 
 #include <ctype.h>
 #include <err.h>

@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -30,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)trap.h	8.3 (Berkeley) 6/5/95
- * $FreeBSD: head/bin/sh/trap.h 317298 2017-04-22 21:31:37Z jilles $
+ * $FreeBSD: head/bin/sh/trap.h 326025 2017-11-20 19:49:47Z pfg $
  */
 
 extern volatile sig_atomic_t pendingsig;
