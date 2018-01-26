@@ -5732,7 +5732,10 @@ gather_port_vars_port() {
 			# The previous depqueue run may have readded
 			# this originspec into the flavorqueue.
 			# Expunge it.
-			rm -rf "fqueue/${originspec%/*}!${originspec#*/}"
+			if [ -d \
+			    "fqueue/${originspec%/*}!${originspec#*/}" ]; then
+				rm -rf "fqueue/${originspec%/*}!${originspec#*/}"
+			fi
 			# If this is the default FLAVOR and we're not already
 			# queued then we're the victim of the 'metadata' hack.
 			# Fix it.
@@ -5806,11 +5809,15 @@ gather_port_vars_port() {
 		originspec_encode queuespec "${origin}" "${origin_dep_args}" \
 		    "${origin_flavor}"
 		msg_debug "gather_port_vars_port: Fixing up ${originspec} to be ${queuespec}"
-		rm -rf "fqueue/${queuespec%/*}!${queuespec#*/}"
+		if [ -d "fqueue/${queuespec%/*}!${queuespec#*/}" ]; then
+			rm -rf "fqueue/${queuespec%/*}!${queuespec#*/}"
+		fi
 		# Remove the @FLAVOR_DEFAULT too
 		originspec_encode queuespec "${origin}" "${origin_dep_args}" \
 		    "${FLAVOR_DEFAULT}"
-		rm -rf "fqueue/${queuespec%/*}!${queuespec#*/}"
+		if [ -d "fqueue/${queuespec%/*}!${queuespec#*/}" ]; then
+			rm -rf "fqueue/${queuespec%/*}!${queuespec#*/}"
+		fi
 	fi
 
 	msg_debug "WILL BUILD ${originspec}"
