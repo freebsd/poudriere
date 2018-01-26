@@ -5486,8 +5486,8 @@ gather_port_vars() {
 	:> "all_pkgs"
 	[ ${ALL} -eq 0 ] && :> "all_pkgbases"
 
-	rm -rf gqueue dqueue fqueue 2>/dev/null || :
-	mkdir gqueue dqueue fqueue
+	rm -rf gqueue dqueue mqueue fqueue 2>/dev/null || :
+	mkdir gqueue dqueue mqueue fqueue
 	qlist=$(mktemp -t poudriere.qlist)
 
 	clear_dep_fatal_error
@@ -5573,7 +5573,8 @@ gather_port_vars() {
 		err 1 "Fatal errors encountered gathering initial ports metadata"
 	fi
 
-	until dirempty dqueue && dirempty gqueue && dirempty fqueue; do
+	until dirempty dqueue && dirempty gqueue && dirempty mqueue && \
+	    dirempty fqueue; do
 		# Process all newly found deps into the gatherqueue
 		:> "${qlist}"
 		clear_dep_fatal_error
@@ -5633,6 +5634,13 @@ gather_port_vars() {
 		if ! dirempty gqueue || ! dirempty dqueue; then
 			continue
 		fi
+		dirempty mqueue || msg_debug "Processing metaqueue"
+		find mqueue -depth 1 -print0 | \
+		    xargs -J % -0 mv % gqueue/ || \
+		    err 1 "Failed moving mqueue items to gqueue"
+		if ! dirempty gqueue; then
+			continue
+		fi
 		# Process flavor queue to lookup newly discovered originspecs
 		dirempty fqueue || msg_debug "Processing flavorqueue"
 		# Just move all items to the gatherqueue.  We've looked up
@@ -5643,8 +5651,9 @@ gather_port_vars() {
 		    err 1 "Failed moving fqueue items to gqueue"
 	done
 
-	if ! rmdir gqueue || ! rmdir dqueue || ! rmdir fqueue; then
-		ls gqueue dqueue fqueue 2>/dev/null || :
+	if ! rmdir gqueue || ! rmdir dqueue || ! rmdir mqueue || \
+	    ! rmdir fqueue; then
+		ls gqueue dqueue mqueue fqueue 2>/dev/null || :
 		err 1 "Gather port queues not empty"
 	fi
 	unlink "${qlist}" || :
@@ -5706,6 +5715,12 @@ gather_port_vars_port() {
 		    ''
 	fi
 
+	# A metadata lookup may have been queued for this port that is no
+	# longer needed.
+	if [ ${ALL} -eq 0 ] && \
+	    [ -d "mqueue/${originspec%/*}!${originspec#*/}" ]; then
+		rm -rf "mqueue/${originspec%/*}!${originspec#*/}"
+	fi
 	if shash_get originspec-pkgname "${originspec}" pkgname; then
 		# We already fetched the vars for this port, but did
 		# we actually queue it? We only care if the rdep isn't
@@ -5948,7 +5963,7 @@ gather_port_vars_process_depqueue() {
 		# have done this via the category Makefiles.
 		if [ ${ALL} -eq 0 ] && [ -z "${dep_args}" ]; then
 			if [ -n "${dep_flavor}" ]; then
-				queue=fqueue
+				queue=mqueue
 				rdep="metadata ${dep_flavor} ${originspec}"
 			else
 				queue=gqueue
@@ -5957,7 +5972,7 @@ gather_port_vars_process_depqueue() {
 
 			msg_debug "Want to enqueue default ${dep_origin} rdep=${rdep} into ${queue}"
 			gather_port_vars_process_depqueue_enqueue \
-			    "${originspec}" "${dep_origin}" gqueue \
+			    "${originspec}" "${dep_origin}" "${queue}" \
 			    "${rdep}"
 		fi
 

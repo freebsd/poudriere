@@ -28,6 +28,8 @@ TESTS=\
 	bulk-flavor-specific-dep-and-specific-listed-nonexistent.sh \
 	bulk-flavor-specific-dep-nonexistent.sh \
 	bulk-flavor-specific-dep.sh \
+	bulk-flavor-metadata-queue-ordering.sh \
+	bulk-flavor-metadata-queue-ordering-multi-pass.sh \
 	bulk-flavor-all.sh
 
 all: check check-stock
