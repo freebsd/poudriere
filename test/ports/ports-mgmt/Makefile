@@ -6,3 +6,5 @@ SUBDIR += poudriere-devel-dep-DEFAULT
 SUBDIR += poudriere-devel-dep-FOO
 # Would break bulk -a test
 #SUBDIR += poudriere-devel-dep-INVALID
+SUBDIR += yyyy
+SUBDIR += zzzz

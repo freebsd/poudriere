@@ -1,9 +1,9 @@
 # $FreeBSD: head/misc/freebsd-release-manifests/Makefile 429892 2016-12-29 12:41:04Z mat $
 
-PORTNAME=	freebsd-release-manifests
+PORTNAME=	foo
 DISTVERSION=	20161010
 PORTREVISION=	0
-FLAVORS=	DEFAULT FOO BAR
+FLAVORS=	DEFAULT FLAV
 FLAVOR?=	DEFAULT
 .if ${FLAVOR} != DEFAULT && !empty(FLAVORS:M${FLAVOR})
 PKGNAMESUFFIX=	-${FLAVOR}
@@ -16,10 +16,6 @@ MAINTAINER=	bdrewery@FreeBSD.org
 COMMENT=	FreeBSD release manifests
 
 LICENSE=	BSD2CLAUSE
-
-.if ${FLAVOR} == FOO
-RUN_DEPENDS+=	foo:misc/foo
-.endif
 
 NO_BUILD=	yes
 NO_ARCH=	yes
