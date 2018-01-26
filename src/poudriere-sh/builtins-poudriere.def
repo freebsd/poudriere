@@ -8,6 +8,7 @@ mktempcmd -n		mktemp
 pwaitcmd		pwait
 realpathcmd -n		realpath
 renamecmd -n		rename
+rmcmd -n		rm
 rmdircmd -n		rmdir
 setproctitlecmd		setproctitle
 sleepcmd		sleep
