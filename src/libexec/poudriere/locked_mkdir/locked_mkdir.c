@@ -55,9 +55,9 @@
 
 static int lockfd = -1;
 static volatile sig_atomic_t timed_out;
-struct sigaction oact;
+static struct sigaction oact;
 #ifdef SHELL
-struct sigaction oact_siginfo;
+static struct sigaction oact_siginfo;
 #endif
 
 /*
@@ -125,6 +125,7 @@ main(int argc, char **argv)
 	lockfd = -1;
 	timed_out = 0;
 	memset(&oact, sizeof(oact), 0);
+	memset(&oact_siginfo, sizeof(oact_siginfo), 0);
 #endif
 
 	if (argc != 3)

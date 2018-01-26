@@ -78,6 +78,7 @@ main(int argc, char *argv[])
 	int ch, exitval;
 
 #ifdef SHELL
+	f_mode = 0;
 	while ((ch = nextopt("m:")) != '\0')
 #else
 	while ((ch = getopt(argc, argv, "m:")) != -1)

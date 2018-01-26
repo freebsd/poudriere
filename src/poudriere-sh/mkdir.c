@@ -78,6 +78,7 @@ main(int argc, char *argv[])
 	omode = pflag = 0;
 	mode = NULL;
 #ifdef SHELL
+	vflag = 0;
 	while ((ch = nextopt("m:pv")) != '\0')
 #else
 	while ((ch = getopt(argc, argv, "m:pv")) != -1)
