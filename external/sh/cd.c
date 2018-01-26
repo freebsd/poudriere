@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)cd.c	8.2 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/cd.c 314436 2017-02-28 23:42:47Z imp $");
+__FBSDID("$FreeBSD: head/bin/sh/cd.c 320340 2017-06-25 21:53:08Z jilles $");
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -164,8 +164,17 @@ docd(char *dest, int print, int phys)
 	if ((phys || (rc = cdlogical(dest)) < 0) && (rc = cdphysical(dest)) < 0)
 		return (-1);
 
-	if (print && iflag && curdir)
+	if (print && iflag && curdir) {
 		out1fmt("%s\n", curdir);
+		/*
+		 * Ignore write errors to preserve the invariant that the
+		 * current directory is changed iff the exit status is 0
+		 * (or 1 if -e was given and the full pathname could not be
+		 * determined).
+		 */
+		flushout(out1);
+		outclearerror(out1);
+	}
 
 	return (rc);
 }

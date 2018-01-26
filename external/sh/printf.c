@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright 2014 Garrett D'Amore <garrett@damore.org>
  * Copyright 2010 Nexenta Systems, Inc.  All rights reserved.
  * Copyright (c) 1989, 1993
@@ -46,7 +48,7 @@ static char const copyright[] =
 static char const sccsid[] = "@(#)printf.c	8.1 (Berkeley) 7/20/93";
 #endif
 static const char rcsid[] =
-  "$FreeBSD: head/usr.bin/printf/printf.c 317598 2017-04-29 21:48:11Z jilles $";
+  "$FreeBSD: head/usr.bin/printf/printf.c 326025 2017-11-20 19:49:47Z pfg $";
 #endif /* not lint */
 
 #include <sys/types.h>

@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -36,7 +38,7 @@ static char sccsid[] = "@(#)options.c	8.2 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/options.c 317882 2017-05-06 13:28:42Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/options.c 326025 2017-11-20 19:49:47Z pfg $");
 
 #include <signal.h>
 #include <unistd.h>
@@ -191,16 +193,11 @@ options(int cmdline)
 		while ((c = *p++) != '\0') {
 			if (c == 'c' && cmdline) {
 				char *q;
-#ifdef NOHACK	/* removing this code allows sh -ce 'foo' for compat */
-				if (*p == '\0')
-#endif
-					q = *argptr++;
+
+				q = *argptr++;
 				if (q == NULL || minusc != NULL)
 					error("Bad -c option");
 				minusc = q;
-#ifdef NOHACK
-				break;
-#endif
 			} else if (c == 'o') {
 				minus_o(*argptr, val);
 				if (*argptr)
