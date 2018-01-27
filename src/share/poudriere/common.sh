@@ -5655,27 +5655,29 @@ deps_sanity() {
 	[ $# -eq 2 ] || eargs deps_sanity originspec deps
 	local originspec="${1}"
 	local deps="${2}"
-	local origin dep_originspec dep_origin dep_flavor
+	local origin dep_originspec dep_origin dep_flavor ret
 
 	originspec_decode "${originspec}" origin '' ''
 
+	ret=0
 	for dep_originspec in ${deps}; do
 		originspec_decode "${dep_originspec}" dep_origin '' dep_flavor
 		msg_verbose "${COLOR_PORT}${originspec}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
 		if [ "${origin}" = "${dep_origin}" ]; then
 			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
-			return 1
+			ret=1
 		fi
 		# Detect bad cat/origin/ dependency which pkg will not register properly
 		if ! [ "${dep_origin}" = "${dep_origin%/}" ]; then
 			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} depends on bad origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
-			return 1
+			ret=1
 		fi
 		if ! [ -d "../${PORTSDIR}/${dep_origin}" ]; then
 			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} depends on nonexistent origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
-			return 1
+			ret=1
 		fi
 	done
+	return ${ret}
 }
 
 gather_port_vars_port() {
