@@ -5656,6 +5656,7 @@ deps_sanity() {
 	local originspec="${1}"
 	local deps="${2}"
 	local origin dep_originspec dep_origin dep_flavor ret
+	local new_origin moved_reason
 
 	originspec_decode "${originspec}" origin '' ''
 
@@ -5673,7 +5674,17 @@ deps_sanity() {
 			ret=1
 		fi
 		if ! [ -d "../${PORTSDIR}/${dep_origin}" ]; then
-			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} depends on nonexistent origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
+			# Was it moved? We cannot map it here due to the ports
+			# framework not supporting it later on, and the
+			# PKGNAME would be wrong, but we can at least
+			# advise the user about it.
+			check_moved new_origin "${dep_origin}" || new_origin=
+			if [ "${new_origin}" = "EXPIRED" ]; then
+				moved_reason="port EXPIRED"
+			else
+				moved_reason="moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
+			fi
+			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} depends on nonexistent origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'${moved_reason:+ (${moved_reason})}; Please contact maintainer of the port to fix this."
 			ret=1
 		fi
 	done
