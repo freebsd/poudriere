@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -10,7 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -39,7 +41,7 @@ static char sccsid[] = "@(#)rm.c	8.5 (Berkeley) 4/18/94";
 #endif /* not lint */
 #endif
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+__FBSDID("$FreeBSD: head/bin/rm/rm.c 326025 2017-11-20 19:49:47Z pfg $");
 
 #include <sys/stat.h>
 #include <sys/param.h>
@@ -58,6 +60,21 @@ __FBSDID("$FreeBSD$");
 #include <string.h>
 #include <sysexits.h>
 #include <unistd.h>
+
+#ifdef SHELL
+#define main rmcmd
+#include "bltin/bltin.h"
+#include "options.h"
+#undef fflag
+#undef iflag
+#undef Iflag
+#undef Pflag
+#undef vflag
+#undef xflag
+#include "helpers.h"
+#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+static struct sigaction info_oact;
+#endif
 
 static int dflag, eval, fflag, iflag, Pflag, vflag, Wflag, stdin_ok;
 static int rflag, Iflag, xflag;
@@ -87,7 +104,13 @@ main(int argc, char *argv[])
 	int ch;
 	char *p;
 
+#ifdef SHELL
+	info = dflag = eval = fflag = iflag = Pflag = vflag = Wflag =
+	    stdin_ok = rflag = Iflag = xflag = 0;
+	memset(&info_oact, sizeof(info_oact), 0);
+#else
 	(void)setlocale(LC_ALL, "");
+#endif
 
 	/*
 	 * Test for the special case where the utility is called as
@@ -98,19 +121,33 @@ main(int argc, char *argv[])
 		p = argv[0];
 	else
 		++p;
+
 	if (strcmp(p, "unlink") == 0) {
+#ifdef SHELL
+		while (nextopt("") != '\0')
+#else
 		while (getopt(argc, argv, "") != -1)
+#endif
 			usage();
+#ifdef SHELL
+		argc -= argptr - argv;
+		argv = argptr;
+#else
 		argc -= optind;
 		argv += optind;
+#endif
 		if (argc != 1)
 			usage();
 		rm_file(&argv[0]);
-		exit(eval);
+		return(eval);
 	}
 
 	Pflag = rflag = xflag = 0;
+#ifdef SHELL
+	while ((ch = nextopt("dfiIPRrvWx")) != '\0')
+#else
 	while ((ch = getopt(argc, argv, "dfiIPRrvWx")) != -1)
+#endif
 		switch(ch) {
 		case 'd':
 			dflag = 1;
@@ -145,8 +182,13 @@ main(int argc, char *argv[])
 		default:
 			usage();
 		}
+#ifdef SHELL
+	argc -= argptr - argv;
+	argv = argptr;
+#else
 	argc -= optind;
 	argv += optind;
+#endif
 
 	if (argc < 1) {
 		if (fflag)
@@ -158,13 +200,22 @@ main(int argc, char *argv[])
 	checkslash(argv);
 	uid = geteuid();
 
+#ifdef SHELL
+	INTOFF;
+	trap_push(SIGINFO, &info_oact);
+#endif
 	(void)signal(SIGINFO, siginfo);
 	if (*argv) {
 		stdin_ok = isatty(STDIN_FILENO);
 
 		if (Iflag) {
-			if (check2(argv) == 0)
-				exit (1);
+			if (check2(argv) == 0) {
+#ifdef SHELL
+				trap_pop(SIGINFO, &info_oact);
+				INTON;
+#endif
+				return (1);
+			}
 		}
 		if (rflag)
 			rm_tree(argv);
@@ -172,7 +223,11 @@ main(int argc, char *argv[])
 			rm_file(argv);
 	}
 
-	exit (eval);
+#ifdef SHELL
+	trap_pop(SIGINFO, &info_oact);
+	INTON;
+#endif
+	return (eval);
 }
 
 static void
@@ -206,9 +261,17 @@ rm_tree(char **argv)
 	if (!(fts = fts_open(argv, flags, NULL))) {
 		if (fflag && errno == ENOENT)
 			return;
-		err(1, "fts_open");
+#ifdef SHELL
+		trap_pop(SIGINFO, &info_oact);
+		INTON;
+#endif
+		err(1, "%s", "fts_open");
 	}
 	while ((p = fts_read(fts)) != NULL) {
+#ifdef SHELL
+		if (int_pending())
+			break;
+#endif
 		switch (p->fts_info) {
 		case FTS_DNR:
 			if (!fflag || p->fts_errno != ENOENT) {
@@ -218,6 +281,10 @@ rm_tree(char **argv)
 			}
 			continue;
 		case FTS_ERR:
+#ifdef SHELL
+			trap_pop(SIGINFO, &info_oact);
+			INTON;
+#endif
 			errx(1, "%s: %s", p->fts_path, strerror(p->fts_errno));
 		case FTS_NS:
 			/*
@@ -281,6 +348,9 @@ rm_tree(char **argv)
 						info = 0;
 						(void)printf("%s\n",
 						    p->fts_path);
+#ifdef SHELL
+						fflush(stdout);
+#endif
 					}
 					continue;
 				}
@@ -296,6 +366,9 @@ rm_tree(char **argv)
 						info = 0;
 						(void)printf("%s\n",
 						    p->fts_path);
+#ifdef SHELL
+						fflush(stdout);
+#endif
 					}
 					continue;
 				}
@@ -328,6 +401,9 @@ rm_tree(char **argv)
 						info = 0;
 						(void)printf("%s\n",
 						    p->fts_path);
+#ifdef SHELL
+						fflush(stdout);
+#endif
 					}
 					continue;
 				}
@@ -337,8 +413,13 @@ err:
 		warn("%s", p->fts_path);
 		eval = 1;
 	}
-	if (!fflag && errno)
-		err(1, "fts_read");
+	if (!fflag && errno) {
+#ifdef SHELL
+		trap_pop(SIGINFO, &info_oact);
+		INTON;
+#endif
+		err(1, "%s", "fts_read");
+	}
 	fts_close(fts);
 }
 
@@ -404,6 +485,9 @@ rm_file(char **argv)
 		if (info && rval == 0) {
 			info = 0;
 			(void)printf("%s\n", f);
+#ifdef SHELL
+			fflush(stdout);
+#endif
 		}
 	}
 }
@@ -453,8 +537,13 @@ rm_overwrite(const char *file, struct stat *sbp)
 	if (fstatfs(fd, &fsb) == -1)
 		goto err;
 	bsize = MAX(fsb.f_iosize, 1024);
-	if ((buf = malloc(bsize)) == NULL)
+	if ((buf = malloc(bsize)) == NULL) {
+#ifdef SHELL
+		trap_pop(SIGINFO, &info_oact);
+		INTON;
+#endif
 		err(1, "%s: malloc", file);
+	}
 
 #define	PASS(byte) {							\
 	memset(buf, byte, bsize);					\
@@ -508,14 +597,24 @@ check(const char *path, const char *name, struct stat *sp)
 		    (!(sp->st_flags & (UF_APPEND|UF_IMMUTABLE)) || !uid)))
 			return (1);
 		strmode(sp->st_mode, modep);
-		if ((flagsp = fflagstostr(sp->st_flags)) == NULL)
-			err(1, "fflagstostr");
-		if (Pflag)
+		if ((flagsp = fflagstostr(sp->st_flags)) == NULL) {
+#ifdef SHELL
+			trap_pop(SIGINFO, &info_oact);
+			INTON;
+#endif
+			err(1, "%s", "fflagstostr");
+		}
+		if (Pflag) {
+#ifdef SHELL
+			trap_pop(SIGINFO, &info_oact);
+			INTON;
+#endif
 			errx(1,
 			    "%s: -P was specified, but file is not writable",
 			    path);
+		}
 		(void)fprintf(stderr, "override %s%s%s/%s %s%sfor %s? ",
-		    modep + 1, modep[9] == ' ' ? "" : " ",
+		    modep + 1, modep[10] == ' ' ? "" : " ",
 		    user_from_uid(sp->st_uid, 0),
 		    group_from_gid(sp->st_gid, 0),
 		    *flagsp ? flagsp : "", *flagsp ? " " : "",
@@ -633,7 +732,11 @@ usage(void)
 	(void)fprintf(stderr, "%s\n%s\n",
 	    "usage: rm [-f | -i] [-dIPRrvWx] file ...",
 	    "       unlink file");
+#ifdef SHELL
+	error(NULL);
+#else
 	exit(EX_USAGE);
+#endif
 }
 
 static void
