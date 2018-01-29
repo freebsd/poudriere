@@ -266,7 +266,8 @@ am_sh_OBJECTS = external/sh_compat/sh-strchrnul.$(OBJEXT) \
 	src/poudriere-sh/sh-unlink.$(OBJEXT) \
 	src/poudriere-sh/sh-builtins.$(OBJEXT)
 sh_OBJECTS = $(am_sh_OBJECTS)
-sh_DEPENDENCIES =
+am__DEPENDENCIES_1 =
+sh_DEPENDENCIES = $(am__DEPENDENCIES_1)
 sh_LINK = $(CCLD) $(sh_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
 	$@
 am_timeout_OBJECTS = src/libexec/poudriere/timeout/timeout.$(OBJEXT)
@@ -635,12 +636,14 @@ rm_SOURCES = src/libexec/poudriere/rm/rm.c
 timeout_SOURCES = src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES = src/libexec/poudriere/timestamp/timestamp.c
 tsort_SOURCES = src/libexec/poudriere/tsort/tsort.c
-sh_CFLAGS = -DSHELL -std=gnu99 -include \
+sh_CFLAGS = -DSHELL -std=gnu99 ${sh_hist_CFLAGS} -include \
 	$(top_srcdir)/external/sh_compat/compat.h -I$(top_srcdir)/src \
 	-I$(top_srcdir)/external/sh -I$(top_srcdir)/src/poudriere-sh \
 	-I$(top_builddir)/src/poudriere-sh
 # cachec
-sh_LDADD = -ledit -lrt
+sh_LDADD = ${sh_hist_LDADD} -lrt
+sh_hist_LDADD = @MAINTAINER_MODE_TRUE@ -ledit
+sh_hist_CFLAGS = @MAINTAINER_MODE_FALSE@ -DNO_HISTORY
 sh_SOURCES = external/sh_compat/strchrnul.c \
 	external/sh_compat/utimensat.c external/sh/alias.c \
 	external/sh/arith_yacc.c external/sh/arith_yylex.c \
