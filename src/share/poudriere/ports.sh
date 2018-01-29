@@ -189,6 +189,9 @@ fi
 case ${METHOD} in
 svn*) : ${BRANCH:=head} ;;
 git*)  : ${BRANCH:=master} ;;
+*)
+	[ -n "${BRANCH}" ] && \
+	    err 1 "Branch (-B) only supported for SVN and git."
 esac
 
 if [ ${LIST} -eq 1 ]; then
