@@ -109,6 +109,7 @@ mkminiroot() {
 }
 
 . ${SCRIPTPREFIX}/common.sh
+HOSTNAME=poudriere-image
 
 while getopts "c:f:h:j:m:n:o:p:s:t:X:z:" FLAG; do
 	case "${FLAG}" in
@@ -309,8 +310,12 @@ touch ${WRKDIR}/src.conf
 [ ! -f ${POUDRIERED}/image-${JAILNAME}-${SETNAME}-src.conf ] || cat ${POUDRIERED}/image-${JAILNAME}-${SETNAME}-src.conf >> ${WRKDIR}/src.conf
 make -C ${mnt}/usr/src DESTDIR=${WRKDIR}/world BATCH_DELETE_OLD_FILES=yes SRCCONF=${WRKDIR}/src.conf delete-old delete-old-libs
 
-mkdir -p ${WRKDIR}/world/etc/rc.conf.d
-echo "hostname=${HOSTNAME:-poudriere-image}" > ${WRKDIR}/world/etc/rc.conf.d/hostname
+# Set hostname
+if [ -n "${HOSTNAME}" ]; then
+	mkdir -p ${WRKDIR}/world/etc/rc.conf.d
+	echo "hostname=${HOSTNAME}" > ${WRKDIR}/world/etc/rc.conf.d/hostname
+else
+
 [ ! -d "${EXTRADIR}" ] || cp -fRLp ${EXTRADIR}/ ${WRKDIR}/world/
 mv ${WRKDIR}/world/etc/login.conf.orig ${WRKDIR}/world/etc/login.conf
 cap_mkdb ${WRKDIR}/world/etc/login.conf
