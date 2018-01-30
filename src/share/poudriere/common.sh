@@ -3700,14 +3700,7 @@ build_queue() {
 		[ ${builders_active} -eq 1 ] || pkgqueue_sanity_check
 
 		if [ "${HTML_TRACK_REMAINING}" = "yes" ]; then
-			{
-				# Find items in pool ready-to-build
-				find . -type d -depth 2 | \
-				    sed -e 's,$, ready-to-build,'
-				# Find items in queue not ready-to-build.
-				find ../deps -type d -depth 1 | \
-				    sed -e 's,$, waiting-on-dependency,'
-			} 2>/dev/null | sed -e 's,.*/,,' > \
+			pkgqueue_remaining > \
 			    "${log}/.poudriere.ports.remaining.tmp%"
 			mv -f "${log}/.poudriere.ports.remaining.tmp%" \
 			    "${log}/.poudriere.ports.remaining"
@@ -5428,6 +5421,20 @@ pkgqueue_compute_rdeps() {
 			echo "${rdep_dir_name}/${dep}"
 		done | xargs touch
 	)
+}
+
+pkgqueue_remaining() {
+	[ "${PWD}" = "${MASTERMNT}/.p/pool" ] || \
+	    err 1 "pkgqueue_remaining requires PWD=${MASTERMNT}/.p/pool"
+	[ $# -eq 0 ] || eargs pkgqueue_remaining
+	{
+		# Find items in pool ready-to-build
+		find . -type d -depth 2 | \
+		    sed -e 's,$, ready-to-build,'
+		# Find items in queue not ready-to-build.
+		find ../deps -type d -depth 1 | \
+		    sed -e 's,$, waiting-on-dependency,'
+	} 2>/dev/null | sed -e 's,.*/,,'
 }
 
 # Return directory name for given job
