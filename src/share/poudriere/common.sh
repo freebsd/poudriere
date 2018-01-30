@@ -7078,7 +7078,7 @@ clean_restricted() {
 	# Remount rw
 	# mount_nullfs does not support mount -u
 	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages || \
-	    umount -f ${MASTERMNT}/packages || \
+	    umount -f ${MASTERMNT}/packages
 	mount_packages
 	injail /usr/bin/make -s -C ${PORTSDIR} -j ${PARALLEL_JOBS} \
 	    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
