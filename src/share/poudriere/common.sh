@@ -3578,7 +3578,7 @@ pkgqueue_empty() {
 
 	n=0
 	# Check twice that the queue is empty. This avoids racing with
-	# clean.sh and balance_pool() moving files between the dirs.
+	# pkgqueue_done() and balance_pool() moving files between the dirs.
 	while [ ${n} -lt 2 ]; do
 		for pool_dir in ${dirs}; do
 			if ! dirempty ${pool_dir}; then
@@ -5254,13 +5254,132 @@ pkgqueue_add_dep() {
 	:> "deps/${pkgname}/${dep_pkgname}"
 }
 
+# Remove myself from the remaining list of dependencies for anything
+# depending on this package. If clean_rdepends is set, instead cleanup
+# anything depending on me and skip them.
+pkgqueue_clean_rdeps() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_clean_rdeps requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 2 ] || eargs pkgqueue_clean_rdeps pkgclean clean_rdepends
+	local pkgname="$1"
+	local clean_rdepends="$2"
+	local dep_dir dep_pkgname
+	local deps_to_check deps_to_clean
+	local rdep_dir
+
+	rdep_dir="cleaning/rdeps/${pkgname}"
+
+	# Exclusively claim the rdeps dir or return, another pkgqueue_done()
+	# owns it or there were no reverse deps for this package.
+	rename "rdeps/${pkgname}" "${rdep_dir}" 2>/dev/null ||
+	    return 0
+
+	# Cleanup everything that depends on my package
+	# Note 2 loops here to avoid rechecking clean_rdepends every loop.
+	if [ -n "${clean_rdepends}" ]; then
+		# Recursively cleanup anything that depends on my package.
+		for dep_dir in ${rdep_dir}/*; do
+			# May be empty if all my reverse deps are now skipped.
+			case "${dep_dir}" in "${rdep_dir}/*") break ;; esac
+			dep_pkgname=${dep_dir##*/}
+
+			# clean_pool() in common.sh will pick this up and add to SKIPPED
+			echo "${dep_pkgname}"
+
+			clean_pool ${dep_pkgname} "${clean_rdepends}"
+		done
+	else
+		for dep_dir in ${rdep_dir}/*; do
+			dep_pkgname=${dep_dir##*/}
+
+			deps_to_check="${deps_to_check} deps/${dep_pkgname}"
+			deps_to_clean="${deps_to_clean} deps/${dep_pkgname}/${pkgname}"
+		done
+
+		# Remove this package from every package depending on this.
+		# This is removing: deps/<dep_pkgname>/<this pkg>.
+		# Note that this is not needed when recursively cleaning as
+		# the entire /deps/<pkgname> for all my rdeps will be removed.
+		echo ${deps_to_clean} | xargs rm -f >/dev/null 2>&1 || :
+
+		# Look for packages that are now ready to build. They have no
+		# remaining dependencies. Move them to /unbalanced for later
+		# processing.
+		echo ${deps_to_check} | \
+		    xargs -J % \
+		    find % -type d -maxdepth 0 -empty 2>/dev/null | \
+		    xargs -J % mv % "pool/unbalanced" \
+		    2>/dev/null || :
+	fi
+
+	rm -rf "${rdep_dir}" >/dev/null 2>&1 &
+
+	return 0
+}
+
+# Remove my /deps/<pkgname> dir and any references to this dir in /rdeps/
+pkgqueue_clean_deps() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_clean_deps requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 2 ] || eargs pkgqueue_clean_deps pkgclean clean_rdepends
+	local pkgname="$1"
+	local clean_rdepends="$2"
+	local dep_dir rdep_pkgname
+	local deps_to_check rdeps_to_clean
+	local dir
+
+	dep_dir="cleaning/deps/${pkgname}"
+
+	# Exclusively claim the deps dir or return, another pkgqueue_done()
+	# owns it
+	rename "deps/${pkgname}" "${dep_dir}" 2>/dev/null ||
+	    return 0
+
+	# Remove myself from all my dependency rdeps to prevent them from
+	# trying to skip me later
+
+	for dir in ${dep_dir}/*; do
+		rdep_pkgname=${dir##*/}
+
+		rdeps_to_clean="${rdeps_to_clean} rdeps/${rdep_pkgname}/${pkgname}"
+	done
+
+	echo ${rdeps_to_clean} | xargs rm -f >/dev/null 2>&1 || :
+
+	rm -rf "${dep_dir}" >/dev/null 2>&1 &
+
+	return 0
+}
+
+pkgqueue_clean_pool() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_clean_pool requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 2 ] || eargs pkgqueue_clean_pool pkgclean clean_rdepends
+	local pkgname="$1"
+	local clean_rdepends="$2"
+
+	pkgqueue_clean_rdeps "${pkgname}" "${clean_rdepends}"
+
+	# Remove this pkg from the needs-to-build list. It will not exist
+	# if this build was sucessful. It only exists if pkgqueue_clean_pool is
+	# being called recursively to skip items and in that case it will
+	# not be empty.
+	[ -n "${clean_rdepends}" ] &&
+	    pkgqueue_clean_deps "${pkgname}" "${clean_rdepends}"
+
+	return 0
+}
+
 pkgqueue_done() {
 	[ $# -eq 2 ] || eargs pkgqueue_done pkgname clean_rdepends
 	local pkgname="$1"
 	local clean_rdepends="$2"
 
-	sh "${SCRIPTPREFIX}/clean.sh" "${MASTERMNT}" "${pkgname}" \
-	    "${clean_rdepends}" | sort -u
+	(
+		cd "${MASTERMNT}/.p"
+		pkgqueue_clean_pool "${pkgname}" "${clean_rdepends}"
+	) | sort -u
+
 	# Outputs skipped_pkgnames
 }
 
@@ -7088,9 +7207,9 @@ balance_pool() {
 	local pkgname pkg_dir dep_count lock
 
 	# Avoid running this in parallel, no need. Note that this lock is
-	# not on the unbalanced/ dir, but only this function. clean.sh writes
-	# to unbalanced/, pkgqueue_empty() reads from it, and pkgqueue_get_next()
-	# moves from it.
+	# not on the unbalanced/ dir, but only this function. pkgqueue_done()
+	# writes to unbalanced/, pkgqueue_empty() reads from it, and
+	# pkgqueue_get_next() moves from it.
 	lock=.lock-balance_pool
 	mkdir ${lock} 2>/dev/null || return 0
 
@@ -7119,8 +7238,8 @@ balance_pool() {
 		    "pool/${dep_count}/${pkgname}" \
 		    2>/dev/null || :
 	done
-	# New files may have been added in unbalanced/ via clean.sh due to not
-	# being locked. These will be picked up in the next run.
+	# New files may have been added in unbalanced/ via pkgqueue_done() due
+	# to not being locked. These will be picked up in the next run.
 
 	rmdir ${lock}
 }
