@@ -6093,8 +6093,8 @@ compute_deps() {
 	clear_dep_fatal_error
 	parallel_start
 	while read pkgname originspec _ignored; do
-		parallel_run compute_deps_pkg "${pkgname}" "${originspec}" || \
-			set_dep_fatal_error
+		parallel_run compute_deps_pkg "${pkgname}" "${originspec}" \
+		    "pkg_deps.unsorted" || set_dep_fatal_error
 	done < "all_pkgs"
 	if ! parallel_stop || check_dep_fatal_error; then
 		err 1 "Fatal errors encountered calculating dependencies"
@@ -6121,9 +6121,10 @@ compute_deps_pkg() {
 	    err 1 "compute_deps_pkg requires SHASH_VAR_PATH=var/cache"
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "compute_deps_pkgname requires PWD=${MASTERMNT}/.p"
-	[ $# -ne 2 ] && eargs compute_deps_pkg pkgname originspec
+	[ $# -ne 3 ] && eargs compute_deps_pkg pkgname originspec pkg_deps
 	local pkgname="$1"
 	local originspec="$2"
+	local pkg_deps="$3"
 	local deps dep_pkgname dep_originspec dep_origin dep_flavor
 	local raw_deps d key dpath dep_real_pkgname err_type
 
@@ -6146,7 +6147,7 @@ compute_deps_pkg() {
 		fi
 		msg_debug "compute_deps_pkg: Will build ${dep_originspec} for ${pkgname}"
 		pkgqueue_add_dep "${pkgname}" "${dep_pkgname}"
-		echo "${pkgname} ${dep_pkgname}" >> "pkg_deps.unsorted"
+		echo "${pkgname} ${dep_pkgname}" >> "${pkg_deps}"
 		if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
 			# Cache for call later in this func
 			hash_set compute_deps_originspec-pkgname \
