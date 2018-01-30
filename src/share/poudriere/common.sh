@@ -4759,8 +4759,8 @@ ensure_pkg_installed() {
 		cp -f /usr/local/sbin/pkg-static "${mnt}/.p/pkg-static"
 		return 0
 	fi
-	[ -e ${MASTERMNT}/packages/Latest/pkg.txz ] || return 1 #pkg missing
-	injail tar xf /packages/Latest/pkg.txz -C / \
+	[ -e ${MASTERMNT}/packages/Latest/pkg.${PKG_EXT} ] || return 1 #pkg missing
+	injail tar xf /packages/Latest/pkg.${PKG_EXT} -C / \
 		-s ",/.*/,.p/,g" "*/pkg-static"
 	return 0
 }
@@ -7488,11 +7488,11 @@ build_repo() {
 	cp ${MASTERMNT}/tmp/packages/* ${PACKAGES}/
 
 	# Sign the ports-mgmt/pkg package for bootstrap
-	if [ -e "${PACKAGES}/Latest/pkg.txz" ]; then
+	if [ -e "${PACKAGES}/Latest/pkg.${PKG_EXT}" ]; then
 		if [ -n "${SIGNING_COMMAND}" ]; then
-			sign_pkg fingerprint "${PACKAGES}/Latest/pkg.txz"
+			sign_pkg fingerprint "${PACKAGES}/Latest/pkg.${PKG_EXT}"
 		elif [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
-			sign_pkg pubkey "${PACKAGES}/Latest/pkg.txz"
+			sign_pkg pubkey "${PACKAGES}/Latest/pkg.${PKG_EXT}"
 		fi
 	fi
 }
