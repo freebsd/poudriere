@@ -5265,13 +5265,14 @@ pkgqueue_clean_rdeps() {
 	local clean_rdepends="$2"
 	local dep_dir dep_pkgname
 	local deps_to_check deps_to_clean
-	local rdep_dir
+	local rdep_dir rdep_dir_name
 
 	rdep_dir="cleaning/rdeps/${pkgname}"
 
 	# Exclusively claim the rdeps dir or return, another pkgqueue_done()
 	# owns it or there were no reverse deps for this package.
-	rename "rdeps/${pkgname}" "${rdep_dir}" 2>/dev/null ||
+	pkgqueue_dir rdep_dir_name "${pkgname}"
+	rename "rdeps/${rdep_dir_name}" "${rdep_dir}" 2>/dev/null ||
 	    return 0
 
 	# Cleanup everything that depends on my package
@@ -5326,7 +5327,7 @@ pkgqueue_clean_deps() {
 	local clean_rdepends="$2"
 	local dep_dir rdep_pkgname
 	local deps_to_check rdeps_to_clean
-	local dir
+	local dir rdep_dir_name
 
 	dep_dir="cleaning/deps/${pkgname}"
 
@@ -5340,8 +5341,8 @@ pkgqueue_clean_deps() {
 
 	for dir in ${dep_dir}/*; do
 		rdep_pkgname=${dir##*/}
-
-		rdeps_to_clean="${rdeps_to_clean} rdeps/${rdep_pkgname}/${pkgname}"
+		pkgqueue_dir rdep_dir_name "${rdep_pkgname}"
+		rdeps_to_clean="${rdeps_to_clean} rdeps/${rdep_dir_name}/${pkgname}"
 	done
 
 	echo ${rdeps_to_clean} | xargs rm -f >/dev/null 2>&1 || :
@@ -5410,14 +5411,32 @@ pkgqueue_compute_rdeps() {
 	    err 1 "pkgqueue_compute_rdeps requires PWD=${MASTERMNT}/.p"
 	[ $# -eq 1 ] || eargs pkgqueue_compute_rdeps pkg_deps
 	local pkg_deps="$1"
+	local job rdep_dir_name dep
 
 	bset status "computingrdeps:"
 	# cd into rdeps to allow xargs mkdir to have more args.
 	(
 		cd "rdeps"
-		awk '{print $2}' "../${pkg_deps}" | sort -u | xargs mkdir
-		awk '{print $2 "/" $1}' "../${pkg_deps}" | xargs touch
+		awk '{print $2}' "../${pkg_deps}" | sort -u | \
+		    while read job; do
+			pkgqueue_dir rdep_dir_name "${job}"
+			echo "${rdep_dir_name}"
+		done | xargs mkdir -p
+		awk '{print $2 " " $1}' "../${pkg_deps}" | \
+		    while read job dep; do
+			pkgqueue_dir rdep_dir_name "${job}"
+			echo "${rdep_dir_name}/${dep}"
+		done | xargs touch
 	)
+}
+
+# Return directory name for given job
+pkgqueue_dir() {
+	[ $# -eq 2 ] || eargs pkgqueue_dir var_return dir
+	local var_return="$1"
+	local dir="$2"
+
+	setvar "${var_return}" "$(printf "%.1s/%s" "${dir}" "${dir}")"
 }
 
 lock_acquire() {
@@ -6659,7 +6678,7 @@ pkgqueue_find_all_pool_references() {
 	    err 1 "pkgqueue_find_all_pool_references requires PWD=${MASTERMNT}/.p"
 	[ $# -ne 1 ] && eargs pkgqueue_find_all_pool_references pkgname
 	local pkgname="$1"
-	local rpn dep_pkgname
+	local rpn dep_pkgname rdep_dir_name
 
 	# Cleanup rdeps/*/${pkgname}
 	for rpn in deps/${pkgname}/*; do
@@ -6668,19 +6687,21 @@ pkgqueue_find_all_pool_references() {
 				break ;;
 		esac
 		dep_pkgname=${rpn##*/}
-		echo "rdeps/${dep_pkgname}/${pkgname}"
+		pkgqueue_dir rdep_dir_name "${dep_pkgname}"
+		echo "rdeps/${rdep_dir_name}/${pkgname}"
 	done
 	echo "deps/${pkgname}"
 	# Cleanup deps/*/${pkgname}
-	for rpn in rdeps/${pkgname}/*; do
+	pkgqueue_dir rdep_dir_name "${pkgname}"
+	for rpn in rdeps/${rdep_dir_name}/*; do
 		case "${rpn}" in
-			"rdeps/${pkgname}/*")
+			"rdeps/${rdep_dir_name}/*")
 				break ;;
 		esac
 		dep_pkgname=${rpn##*/}
 		echo "deps/${dep_pkgname}/${pkgname}"
 	done
-	echo "rdeps/${pkgname}"
+	echo "rdeps/${rdep_dir_name}"
 }
 
 delete_stale_symlinks_and_empty_dirs() {
