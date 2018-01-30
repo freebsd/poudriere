@@ -3500,7 +3500,7 @@ stop_builders() {
 	JOBS=""
 }
 
-sanity_check_queue() {
+pkgqueue_sanity_check() {
 	local always_fail=${1:-1}
 	local crashed_packages dependency_cycles deps pkgname origin
 	local failed_phase pwd dead_all dead_deps dead_top dead_packages
@@ -3519,8 +3519,8 @@ sanity_check_queue() {
 
 	# Check if there's a cycle in the need-to-build queue
 	dependency_cycles=$(\
-		find deps -mindepth 2 | \
-		sed -e "s,^deps/,," -e 's:/: :' | \
+		find deps -mindepth 3 | \
+		sed -e "s,^deps/[^/]*/,," -e 's:/: :' | \
 		# Only cycle errors are wanted
 		tsort 2>&1 >/dev/null | \
 		sed -e 's/tsort: //' | \
@@ -3535,11 +3535,11 @@ ${dependency_cycles}"
 	dead_all=$(mktemp -t dead_packages.all)
 	dead_deps=$(mktemp -t dead_packages.deps)
 	dead_top=$(mktemp -t dead_packages.top)
-	find deps -mindepth 1 > "${dead_all}"
+	find deps -mindepth 2 > "${dead_all}"
 	# All packages in the queue
-	cut -d / -f 2 "${dead_all}" | sort -u > "${dead_top}"
+	cut -d / -f 3 "${dead_all}" | sort -u > "${dead_top}"
 	# All packages with dependencies
-	cut -d / -f 3 "${dead_all}" | sort -u | sed -e '/^$/d' > "${dead_deps}"
+	cut -d / -f 4 "${dead_all}" | sort -u | sed -e '/^$/d' > "${dead_deps}"
 	# Find all packages only listed as dependencies (not in queue)
 	dead_packages=$(comm -13 "${dead_top}" "${dead_deps}")
 	rm -f "${dead_all}" "${dead_deps}" "${dead_top}" || :
@@ -3566,19 +3566,21 @@ ${dependency_cycles}"
 $(find ${MASTERMNT}/.p/building ${MASTERMNT}/.p/pool ${MASTERMNT}/.p/deps ${MASTERMNT}/.p/cleaning)"
 }
 
-queue_empty() {
+pkgqueue_empty() {
 	[ "${PWD}" = "${MASTERMNT}/.p/pool" ] || \
-	    err 1 "queue_empty requires PWD=${MASTERMNT}/.p/pool"
+	    err 1 "pkgqueue_empty requires PWD=${MASTERMNT}/.p/pool"
 	local pool_dir dirs
 	local n
 
-	# CWD is MASTERMNT/.p/pool
+	if [ -z "${ALL_DEPS_DIRS}" ]; then
+		ALL_DEPS_DIRS=$(find ../deps -mindepth 1 -maxdepth 1 -type d)
+	fi
 
-	dirs="../deps ${POOL_BUCKET_DIRS}"
+	dirs="${ALL_DEPS_DIRS} ${POOL_BUCKET_DIRS}"
 
 	n=0
 	# Check twice that the queue is empty. This avoids racing with
-	# clean.sh and balance_pool() moving files between the dirs.
+	# pkgqueue_done() and balance_pool() moving files between the dirs.
 	while [ ${n} -lt 2 ]; do
 		for pool_dir in ${dirs}; do
 			if ! dirempty ${pool_dir}; then
@@ -3661,13 +3663,13 @@ build_queue() {
 
 			[ ${queue_empty} -eq 0 ] || continue
 
-			next_in_queue pkgname || \
+			pkgqueue_get_next pkgname || \
 			    err 1 "Failed to find a package from the queue."
 
 			if [ -z "${pkgname}" ]; then
 				# Check if the ready-to-build pool and need-to-build pools
 				# are empty
-				queue_empty && queue_empty=1
+				pkgqueue_empty && queue_empty=1
 
 				builders_idle=1
 			else
@@ -3691,23 +3693,16 @@ build_queue() {
 				# FALLTHROUGH
 			else
 				# All work is done
-				sanity_check_queue 0
+				pkgqueue_sanity_check 0
 				break
 			fi
 		fi
 
 		# If builders are idle then there is a problem.
-		[ ${builders_active} -eq 1 ] || sanity_check_queue
+		[ ${builders_active} -eq 1 ] || pkgqueue_sanity_check
 
 		if [ "${HTML_TRACK_REMAINING}" = "yes" ]; then
-			{
-				# Find items in pool ready-to-build
-				find . -type d -depth 2 | \
-				    sed -e 's,$, ready-to-build,'
-				# Find items in queue not ready-to-build.
-				find ../deps -type d -depth 1 | \
-				    sed -e 's,$, waiting-on-dependency,'
-			} 2>/dev/null | sed -e 's,.*/,,' > \
+			pkgqueue_remaining > \
 			    "${log}/.poudriere.ports.remaining.tmp%"
 			mv -f "${log}/.poudriere.ports.remaining.tmp%" \
 			    "${log}/.poudriere.ports.remaining"
@@ -3892,7 +3887,8 @@ clean_pool() {
 	originspec_decode "${originspec}" origin '' ''
 
 	# Cleaning queue (pool is cleaned here)
-	sh ${SCRIPTPREFIX}/clean.sh "${MASTERMNT}" "${pkgname}" "${clean_rdepends}" | sort -u | while read skipped_pkgname; do
+	pkgqueue_done "${pkgname}" "${clean_rdepends}" | \
+	    while read skipped_pkgname; do
 		get_originspec_from_pkgname skipped_originspec "${skipped_pkgname}"
 		originspec_decode "${skipped_originspec}" skipped_origin '' ''
 		badd ports.skipped "${skipped_originspec} ${skipped_pkgname} ${pkgname}"
@@ -5182,9 +5178,9 @@ delete_old_pkgs() {
 ## Pick the next package from the "ready to build" queue in pool/
 ## Then move the package to the "building" dir in building/
 ## This is only ran from 1 process
-next_in_queue() {
+pkgqueue_get_next() {
 	[ "${PWD}" = "${MASTERMNT}/.p/pool" ] || \
-	    err 1 "next_in_queue requires PWD=${MASTERMNT}/.p/pool"
+	    err 1 "pkgqueue_get_next requires PWD=${MASTERMNT}/.p/pool"
 	local var_return="$1"
 	local p _pkgname ret
 
@@ -5198,14 +5194,14 @@ next_in_queue() {
 			# Was the failure from /unbalanced?
 			if [ -z "${p%%*unbalanced/*}" ]; then
 				# We lost the race with a child running
-				# balance_queue(). The file is already
+				# balance_pool(). The file is already
 				# gone and moved to a bucket. Try again.
 				ret=0
-				next_in_queue "${var_return}" || ret=$?
+				pkgqueue_get_next "${var_return}" || ret=$?
 				return ${ret}
 			else
 				# Failure to move a balanced item??
-				err 1 "next_in_queue: Failed to mv ${p} to ${MASTERMNT}/.p/building/${_pkgname}"
+				err 1 "pkgqueue_get_next: Failed to mv ${p} to ${MASTERMNT}/.p/building/${_pkgname}"
 			fi
 		fi
 		# Update timestamp for buildtime accounting
@@ -5213,6 +5209,260 @@ next_in_queue() {
 	fi
 
 	setvar "${var_return}" "${_pkgname}"
+}
+
+pkgqueue_init() {
+	mkdir -p "${MASTERMNT}/.p/building" \
+		"${MASTERMNT}/.p/pool" \
+		"${MASTERMNT}/.p/pool/unbalanced" \
+		"${MASTERMNT}/.p/deps" \
+		"${MASTERMNT}/.p/rdeps" \
+		"${MASTERMNT}/.p/cleaning/deps" \
+		"${MASTERMNT}/.p/cleaning/rdeps"
+}
+
+pkgqueue_contains() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_contains requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 1 ] || eargs pkgqueue_contains pkgname
+	local pkgname="$1"
+	local pkg_dir_name
+
+	pkgqueue_dir pkg_dir_name "${pkgname}"
+	[ -d "deps/${pkg_dir_name}" ]
+}
+
+pkgqueue_add() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_add requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 1 ] || eargs pkgqueue_add pkgname
+	local pkgname="$1"
+	local pkg_dir_name
+
+	pkgqueue_dir pkg_dir_name "${pkgname}"
+	mkdir -p "deps/${pkg_dir_name}"
+}
+
+pkgqueue_add_dep() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_add_dep requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 2 ] || eargs pkgqueue_add_dep pkgname dep_pkgname
+	local pkgname="$1"
+	local dep_pkgname="$2"
+	local pkg_dir_name
+
+	pkgqueue_dir pkg_dir_name "${pkgname}"
+	:> "deps/${pkg_dir_name}/${dep_pkgname}"
+}
+
+# Remove myself from the remaining list of dependencies for anything
+# depending on this package. If clean_rdepends is set, instead cleanup
+# anything depending on me and skip them.
+pkgqueue_clean_rdeps() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_clean_rdeps requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 2 ] || eargs pkgqueue_clean_rdeps pkgclean clean_rdepends
+	local pkgname="$1"
+	local clean_rdepends="$2"
+	local dep_dir dep_pkgname pkg_dir_name
+	local deps_to_check deps_to_clean
+	local rdep_dir rdep_dir_name
+
+	rdep_dir="cleaning/rdeps/${pkgname}"
+
+	# Exclusively claim the rdeps dir or return, another pkgqueue_done()
+	# owns it or there were no reverse deps for this package.
+	pkgqueue_dir rdep_dir_name "${pkgname}"
+	rename "rdeps/${rdep_dir_name}" "${rdep_dir}" 2>/dev/null ||
+	    return 0
+
+	# Cleanup everything that depends on my package
+	# Note 2 loops here to avoid rechecking clean_rdepends every loop.
+	if [ -n "${clean_rdepends}" ]; then
+		# Recursively cleanup anything that depends on my package.
+		for dep_dir in ${rdep_dir}/*; do
+			# May be empty if all my reverse deps are now skipped.
+			case "${dep_dir}" in "${rdep_dir}/*") break ;; esac
+			dep_pkgname=${dep_dir##*/}
+
+			# clean_pool() in common.sh will pick this up and add to SKIPPED
+			echo "${dep_pkgname}"
+
+			clean_pool ${dep_pkgname} "${clean_rdepends}"
+		done
+	else
+		for dep_dir in ${rdep_dir}/*; do
+			dep_pkgname=${dep_dir##*/}
+			pkgqueue_dir pkg_dir_name "${dep_pkgname}"
+			deps_to_check="${deps_to_check} deps/${pkg_dir_name}"
+			deps_to_clean="${deps_to_clean} deps/${pkg_dir_name}/${pkgname}"
+		done
+
+		# Remove this package from every package depending on this.
+		# This is removing: deps/<dep_pkgname>/<this pkg>.
+		# Note that this is not needed when recursively cleaning as
+		# the entire /deps/<pkgname> for all my rdeps will be removed.
+		echo ${deps_to_clean} | xargs rm -f >/dev/null 2>&1 || :
+
+		# Look for packages that are now ready to build. They have no
+		# remaining dependencies. Move them to /unbalanced for later
+		# processing.
+		echo ${deps_to_check} | \
+		    xargs -J % \
+		    find % -type d -maxdepth 0 -empty 2>/dev/null | \
+		    xargs -J % mv % "pool/unbalanced" \
+		    2>/dev/null || :
+	fi
+
+	rm -rf "${rdep_dir}" >/dev/null 2>&1 &
+
+	return 0
+}
+
+# Remove my /deps/<pkgname> dir and any references to this dir in /rdeps/
+pkgqueue_clean_deps() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_clean_deps requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 2 ] || eargs pkgqueue_clean_deps pkgclean clean_rdepends
+	local pkgname="$1"
+	local clean_rdepends="$2"
+	local dep_dir rdep_pkgname pkg_dir_name
+	local deps_to_check rdeps_to_clean
+	local dir rdep_dir_name
+
+	dep_dir="cleaning/deps/${pkgname}"
+
+	# Exclusively claim the deps dir or return, another pkgqueue_done()
+	# owns it
+	pkgqueue_dir pkg_dir_name "${pkgname}"
+	rename "deps/${pkg_dir_name}" "${dep_dir}" 2>/dev/null ||
+	    return 0
+
+	# Remove myself from all my dependency rdeps to prevent them from
+	# trying to skip me later
+
+	for dir in ${dep_dir}/*; do
+		rdep_pkgname=${dir##*/}
+		pkgqueue_dir rdep_dir_name "${rdep_pkgname}"
+		rdeps_to_clean="${rdeps_to_clean} rdeps/${rdep_dir_name}/${pkgname}"
+	done
+
+	echo ${rdeps_to_clean} | xargs rm -f >/dev/null 2>&1 || :
+
+	rm -rf "${dep_dir}" >/dev/null 2>&1 &
+
+	return 0
+}
+
+pkgqueue_clean_pool() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_clean_pool requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 2 ] || eargs pkgqueue_clean_pool pkgclean clean_rdepends
+	local pkgname="$1"
+	local clean_rdepends="$2"
+
+	pkgqueue_clean_rdeps "${pkgname}" "${clean_rdepends}"
+
+	# Remove this pkg from the needs-to-build list. It will not exist
+	# if this build was sucessful. It only exists if pkgqueue_clean_pool is
+	# being called recursively to skip items and in that case it will
+	# not be empty.
+	[ -n "${clean_rdepends}" ] &&
+	    pkgqueue_clean_deps "${pkgname}" "${clean_rdepends}"
+
+	return 0
+}
+
+pkgqueue_done() {
+	[ $# -eq 2 ] || eargs pkgqueue_done pkgname clean_rdepends
+	local pkgname="$1"
+	local clean_rdepends="$2"
+
+	(
+		cd "${MASTERMNT}/.p"
+		pkgqueue_clean_pool "${pkgname}" "${clean_rdepends}"
+	) | sort -u
+
+	# Outputs skipped_pkgnames
+}
+
+pkgqueue_list() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_list requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 0 ] || eargs pkgqueue_list
+
+	find deps -type d -depth 2 | cut -d / -f 3
+}
+
+# Create a pool of ready-to-build from the deps pool
+pkgqueue_move_ready_to_pool() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_move_ready_to_pool requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 0 ] || eargs pkgqueue_move_ready_to_pool
+
+	find deps -type d -depth 2 -empty | \
+	    xargs -J % mv % pool/unbalanced
+}
+
+# Remove all packages from queue sent in STDIN
+pkgqueue_remove_many_pipe() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_remove_many_pipe requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 0 ] || eargs pkgqueue_remove_many_pipe [pkgnames stdin]
+	local pkgname
+
+	while read pkgname; do
+		pkgqueue_find_all_pool_references "${pkgname}"
+	done | xargs rm -rf
+}
+
+# Compute back references for quickly finding things to skip if this job
+# fails.
+pkgqueue_compute_rdeps() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_compute_rdeps requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 1 ] || eargs pkgqueue_compute_rdeps pkg_deps
+	local pkg_deps="$1"
+	local job rdep_dir_name dep
+
+	bset status "computingrdeps:"
+	# cd into rdeps to allow xargs mkdir to have more args.
+	(
+		cd "rdeps"
+		awk '{print $2}' "../${pkg_deps}" | sort -u | \
+		    while read job; do
+			pkgqueue_dir rdep_dir_name "${job}"
+			echo "${rdep_dir_name}"
+		done | xargs mkdir -p
+		awk '{print $2 " " $1}' "../${pkg_deps}" | \
+		    while read job dep; do
+			pkgqueue_dir rdep_dir_name "${job}"
+			echo "${rdep_dir_name}/${dep}"
+		done | xargs touch
+	)
+}
+
+pkgqueue_remaining() {
+	[ "${PWD}" = "${MASTERMNT}/.p/pool" ] || \
+	    err 1 "pkgqueue_remaining requires PWD=${MASTERMNT}/.p/pool"
+	[ $# -eq 0 ] || eargs pkgqueue_remaining
+	{
+		# Find items in pool ready-to-build
+		find . -type d -depth 2 | \
+		    sed -e 's,$, ready-to-build,'
+		# Find items in queue not ready-to-build.
+		( cd ..; pkgqueue_list ) | \
+		    sed -e 's,$, waiting-on-dependency,'
+	} 2>/dev/null | sed -e 's,.*/,,'
+}
+
+# Return directory name for given job
+pkgqueue_dir() {
+	[ $# -eq 2 ] || eargs pkgqueue_dir var_return dir
+	local var_return="$1"
+	local dir="$2"
+
+	setvar "${var_return}" "$(printf "%.1s/%s" "${dir}" "${dir}")"
 }
 
 lock_acquire() {
@@ -6024,25 +6274,18 @@ compute_deps() {
 	clear_dep_fatal_error
 	parallel_start
 	while read pkgname originspec _ignored; do
-		parallel_run compute_deps_pkg "${pkgname}" "${originspec}" || \
-			set_dep_fatal_error
+		parallel_run compute_deps_pkg "${pkgname}" "${originspec}" \
+		    "pkg_deps.unsorted" || set_dep_fatal_error
 	done < "all_pkgs"
 	if ! parallel_stop || check_dep_fatal_error; then
 		err 1 "Fatal errors encountered calculating dependencies"
 	fi
 
 	sort -u "pkg_deps.unsorted" > "pkg_deps"
-
-	bset status "computingrdeps:"
-
-	# cd into rdeps to allow xargs mkdir to have more args.
-	(
-		cd "rdeps"
-		awk '{print $2}' "../pkg_deps" | sort -u | xargs mkdir
-		awk '{print $2 "/" $1}' "../pkg_deps" | xargs touch
-	)
-
 	unlink "pkg_deps.unsorted"
+
+	pkgqueue_compute_rdeps "pkg_deps"
+
 	run_hook compute_deps stop
 	return 0
 }
@@ -6052,20 +6295,20 @@ compute_deps_pkg() {
 	    err 1 "compute_deps_pkg requires SHASH_VAR_PATH=var/cache"
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "compute_deps_pkgname requires PWD=${MASTERMNT}/.p"
-	[ $# -ne 2 ] && eargs compute_deps_pkg pkgname originspec
+	[ $# -ne 3 ] && eargs compute_deps_pkg pkgname originspec pkg_deps
 	local pkgname="$1"
 	local originspec="$2"
-	local pkg_pooldir deps dep_pkgname dep_originspec dep_origin dep_flavor
+	local pkg_deps="$3"
+	local deps dep_pkgname dep_originspec dep_origin dep_flavor
 	local raw_deps d key dpath dep_real_pkgname err_type
 
 	# Safe to remove pkgname-deps now, it won't be needed later.
 	shash_remove pkgname-deps "${pkgname}" deps || \
 	    err 1 "compute_deps_pkg failed to find deps for ${pkgname}"
 
-	pkg_pooldir="deps/${pkgname}"
 	msg_debug "compute_deps_pkg: Will build ${pkgname}"
-	mkdir "${pkg_pooldir}" || \
-	    err 1 "compute_deps_pkg: Error creating pool dir for ${pkgname}: There may be a duplicate origin in a category Makefile"
+	pkgqueue_add "${pkgname}" || \
+	    err 1 "compute_deps_pkg: Error creating queue entry for ${pkgname}: There may be a duplicate origin in a category Makefile"
 
 	for dep_originspec in ${deps}; do
 		if ! get_pkgname_from_originspec "${dep_originspec}" \
@@ -6077,8 +6320,8 @@ compute_deps_pkg() {
 			err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname} from ${originspec} -- Is SUBDIR+=${dep_originspec#*/} missing in ${dep_originspec%/*}/Makefile and does the port provide the '${dep_flavor}' FLAVOR?"
 		fi
 		msg_debug "compute_deps_pkg: Will build ${dep_originspec} for ${pkgname}"
-		:> "${pkg_pooldir}/${dep_pkgname}"
-		echo "${pkgname} ${dep_pkgname}" >> "pkg_deps.unsorted"
+		pkgqueue_add_dep "${pkgname}" "${dep_pkgname}"
+		echo "${pkgname} ${dep_pkgname}" >> "${pkg_deps}"
 		if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
 			# Cache for call later in this func
 			hash_set compute_deps_originspec-pkgname \
@@ -6417,59 +6660,77 @@ get_porttesting() {
 	echo "${porttesting}"
 }
 
-find_all_deps() {
+# List deps from pkgnames in STDIN
+pkgqueue_list_deps_pipe() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "find_all_deps requires PWD=${MASTERMNT}/.p"
-	[ $# -ne 1 ] && eargs find_all_deps pkgname
+	    err 1 "pkgqueue_list_deps_pipe requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 0 ] || eargs pkgqueue_list_deps_pipe [pkgnames stdin]
+	local pkgname FIND_ALL_DEPS
+
+	unset FIND_ALL_DEPS
+	while read pkgname; do
+		pkgqueue_list_deps_recurse "${pkgname}" | sort -u
+	done | sort -u
+}
+
+pkgqueue_list_deps_recurse() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_list_deps_recurse requires PWD=${MASTERMNT}/.p"
+	[ $# -ne 1 ] && eargs pkgqueue_list_deps_recurse pkgname
 	local pkgname="$1"
-	local dep_pkgname
+	local dep_pkgname pkg_dir_name
 
 	FIND_ALL_DEPS="${FIND_ALL_DEPS} ${pkgname}"
 
-	#msg_debug "find_all_deps ${pkgname}"
+	#msg_debug "pkgqueue_list_deps_recurse ${pkgname}"
 
+	pkgqueue_dir pkg_dir_name "${pkgname}"
 	# Show deps/*/${pkgname}
-	for pn in deps/${pkgname}/*; do
-		dep_pkgname=${pn##*/}
+	for pn in deps/${pkg_dir_name}/*; do
+		dep_pkgname="${pn##*/}"
 		case " ${FIND_ALL_DEPS} " in
 			*\ ${dep_pkgname}\ *) continue ;;
 		esac
 		case "${pn}" in
-			"deps/${pkgname}/*") break ;;
+			"deps/${pkg_dir_name}/*") break ;;
 		esac
-		echo "deps/${dep_pkgname}"
-		find_all_deps "${dep_pkgname}"
+		echo "${dep_pkgname}"
+		pkgqueue_list_deps_recurse "${dep_pkgname}"
 	done
-	echo "deps/${pkgname}"
+	echo "${pkgname}"
 }
 
-find_all_pool_references() {
+pkgqueue_find_all_pool_references() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "find_all_pool_references requires PWD=${MASTERMNT}/.p"
-	[ $# -ne 1 ] && eargs find_all_pool_references pkgname
+	    err 1 "pkgqueue_find_all_pool_references requires PWD=${MASTERMNT}/.p"
+	[ $# -ne 1 ] && eargs pkgqueue_find_all_pool_references pkgname
 	local pkgname="$1"
-	local rpn dep_pkgname
+	local rpn dep_pkgname rdep_dir_name pkg_dir_name dep_dir_name
 
 	# Cleanup rdeps/*/${pkgname}
-	for rpn in deps/${pkgname}/*; do
+	pkgqueue_dir pkg_dir_name "${pkgname}"
+	for rpn in deps/${pkg_dir_name}/*; do
 		case "${rpn}" in
-			"deps/${pkgname}/*")
+			"deps/${pkg_dir_name}/*")
 				break ;;
 		esac
 		dep_pkgname=${rpn##*/}
-		echo "rdeps/${dep_pkgname}/${pkgname}"
+		pkgqueue_dir rdep_dir_name "${dep_pkgname}"
+		echo "rdeps/${rdep_dir_name}/${pkgname}"
 	done
-	echo "deps/${pkgname}"
+	echo "deps/${pkg_dir_name}"
 	# Cleanup deps/*/${pkgname}
-	for rpn in rdeps/${pkgname}/*; do
+	pkgqueue_dir rdep_dir_name "${pkgname}"
+	for rpn in rdeps/${rdep_dir_name}/*; do
 		case "${rpn}" in
-			"rdeps/${pkgname}/*")
+			"rdeps/${rdep_dir_name}/*")
 				break ;;
 		esac
 		dep_pkgname=${rpn##*/}
-		echo "deps/${dep_pkgname}/${pkgname}"
+		pkgqueue_dir dep_dir_name "${dep_pkgname}"
+		echo "deps/${dep_dir_name}/${pkgname}"
 	done
-	echo "rdeps/${pkgname}"
+	echo "rdeps/${rdep_dir_name}"
 }
 
 delete_stale_symlinks_and_empty_dirs() {
@@ -6553,10 +6814,9 @@ clean_build_queue() {
 	msg "Cleaning the build queue"
 
 	# Delete from the queue all that already have a current package.
-	for pn in $(ls deps/); do
-		[ -f "../packages/All/${pn}.${PKG_EXT}" ] && \
-		    find_all_pool_references "${pn}"
-	done | xargs rm -rf
+	pkgqueue_list | while read pn; do
+		[ -f "../packages/All/${pn}.${PKG_EXT}" ] && echo "${pn}"
+	done | pkgqueue_remove_many_pipe
 
 	# Delete from the queue orphaned build deps. This can happen if
 	# the specified-to-build ports have all their deps satisifed
@@ -6577,17 +6837,9 @@ clean_build_queue() {
 				    pkgname && \
 				    echo "${pkgname}"
 			done
-		} | {
-			FIND_ALL_DEPS=
-			while read pkgname; do
-				find_all_deps "${pkgname}"
-			done | sort -u > ${tmp}
-		}
-		find deps -type d -mindepth 1 -maxdepth 1 | \
-		    sort > ${tmp}.actual
-		comm -13 ${tmp} ${tmp}.actual | while read pd; do
-			find_all_pool_references "${pd##*/}"
-		done | xargs rm -rf
+		} | pkgqueue_list_deps_pipe > "${tmp}"
+		pkgqueue_list | sort > "${tmp}.actual"
+		comm -13 ${tmp} ${tmp}.actual | pkgqueue_remove_many_pipe
 		rm -f ${tmp} ${tmp}.actual
 	fi
 }
@@ -6596,17 +6848,12 @@ clean_build_queue() {
 prepare_ports() {
 	local pkg
 	local log log_top
-	local n pn nbq resuming_build
+	local n nbq resuming_build
 	local cache_dir sflag delete_pkg_list
 
 	_log_path log
-	mkdir -p "${MASTERMNT}/.p/building" \
-		"${MASTERMNT}/.p/pool" \
-		"${MASTERMNT}/.p/pool/unbalanced" \
-		"${MASTERMNT}/.p/deps" \
-		"${MASTERMNT}/.p/rdeps" \
-		"${MASTERMNT}/.p/cleaning/deps" \
-		"${MASTERMNT}/.p/cleaning/rdeps" \
+	pkgqueue_init
+	mkdir -p \
 		"${MASTERMNT}/.p/var/run" \
 		"${MASTERMNT}/.p/var/cache"
 
@@ -6770,13 +7017,11 @@ prepare_ports() {
 		# built/failed/skipped/ignored should not be rebuilt.
 		if [ ${resuming_build} -eq 1 ]; then
 			awk '{print $2}' \
-				${log}/.poudriere.ports.built \
-				${log}/.poudriere.ports.failed \
-				${log}/.poudriere.ports.ignored \
-				${log}/.poudriere.ports.skipped | \
-			while read pn; do
-				find_all_pool_references "${pn}"
-			done | xargs rm -rf
+			    ${log}/.poudriere.ports.built \
+			    ${log}/.poudriere.ports.failed \
+			    ${log}/.poudriere.ports.ignored \
+			    ${log}/.poudriere.ports.skipped | \
+			    pkgqueue_remove_many_pipe
 		else
 			# New build
 			bset stats_queued 0
@@ -6838,13 +7083,13 @@ prepare_ports() {
 
 	# Call the deadlock code as non-fatal which will check for cycles
 	msg "Sanity checking build queue"
-	bset status "sanity_check_queue:"
-	sanity_check_queue 0
+	bset status "pkgqueue_sanity_check:"
+	pkgqueue_sanity_check 0
 
 	if was_a_bulk_run; then
 		if [ $resuming_build -eq 0 ]; then
 			nbq=0
-			nbq=$(find deps -type d -depth 1 | wc -l)
+			nbq=$(pkgqueue_list | wc -l)
 			# Add 1 for the main port to test
 			was_a_testport_run && \
 			    nbq=$((${nbq} + 1))
@@ -6855,15 +7100,13 @@ prepare_ports() {
 			local _originspec _pkgname _rdep tmp
 			tmp=$(TMPDIR="${log}" mktemp -ut .queued)
 			while read _pkgname _originspec _rdep; do
-				[ -d "deps/${_pkgname}" ] && \
+				pkgqueue_contains "${_pkgname}" && \
 				    echo "${_originspec} ${_pkgname} ${_rdep}"
 			done < "all_pkgs" > "${tmp}"
 			mv -f "${tmp}" "${log}/.poudriere.ports.queued"
 		fi
 
-		# Create a pool of ready-to-build from the deps pool
-		find deps -type d -empty -depth 1 | \
-			xargs -J % mv % pool/unbalanced
+		pkgqueue_move_ready_to_pool
 		load_priorities
 		msg "Balancing pool"
 		balance_pool
@@ -6908,8 +7151,8 @@ load_priorities_tsortD() {
 		for pkg_boost in ${PRIORITY_BOOST}; do
 			case ${pkgname%-*} in
 				${pkg_boost})
-					[ -d "deps/${pkgname}" ] \
-					    || continue
+					pkgqueue_contains "${pkgname}" || \
+					    continue
 					get_origin_from_pkgname origin \
 					    "${pkgname}"
 					msg "Boosting priority: ${COLOR_PORT}${origin} | ${pkgname}"
@@ -6942,8 +7185,8 @@ load_priorities_ptsort() {
 		for pkg_boost in ${PRIORITY_BOOST}; do
 			case ${pkgname%-*} in
 				${pkg_boost})
-					[ -d "deps/${pkgname}" ] \
-					    || continue
+					pkgqueue_contains "${pkgname}" || \
+					    continue
 					originspec_decode "${originspec}" \
 					    origin '' ''
 					msg "Boosting priority: ${COLOR_PORT}${origin} | ${pkgname}"
@@ -7012,9 +7255,9 @@ balance_pool() {
 	local pkgname pkg_dir dep_count lock
 
 	# Avoid running this in parallel, no need. Note that this lock is
-	# not on the unbalanced/ dir, but only this function. clean.sh writes
-	# to unbalanced/, queue_empty() reads from it, and next_in_queue()
-	# moves from it.
+	# not on the unbalanced/ dir, but only this function. pkgqueue_done()
+	# writes to unbalanced/, pkgqueue_empty() reads from it, and
+	# pkgqueue_get_next() moves from it.
 	lock=.lock-balance_pool
 	mkdir ${lock} 2>/dev/null || return 0
 
@@ -7031,20 +7274,20 @@ balance_pool() {
 
 	# For everything ready-to-build...
 	for pkg_dir in pool/unbalanced/*; do
-		# May be empty due to racing with next_in_queue()
+		# May be empty due to racing with pkgqueue_get_next()
 		case "${pkg_dir}" in
 			"pool/unbalanced/*") break ;;
 		esac
 		pkgname=${pkg_dir##*/}
 		hash_get "priority" "${pkgname}" dep_count || dep_count=0
-		# This races with next_in_queue(), just ignore failure
+		# This races with pkgqueue_get_next(), just ignore failure
 		# to move it.
 		rename "${pkg_dir}" \
 		    "pool/${dep_count}/${pkgname}" \
 		    2>/dev/null || :
 	done
-	# New files may have been added in unbalanced/ via clean.sh due to not
-	# being locked. These will be picked up in the next run.
+	# New files may have been added in unbalanced/ via pkgqueue_done() due
+	# to not being locked. These will be picked up in the next run.
 
 	rmdir ${lock}
 }
