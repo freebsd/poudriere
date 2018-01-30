@@ -1262,9 +1262,9 @@ siginfo_handler() {
 	[ "${POUDRIERE_BUILD_TYPE}" != "bulk" ] && return 0
 	local status
 	local now
-	local j elapsed job_id_color
-	local pkgname origin phase buildtime started
-	local format_origin_phase format_phase
+	local j elapsed elapsed_phase job_id_color
+	local pkgname origin phase buildtime buildtime_phase started
+	local started_phase format_origin_phase format_phase
 	local -
 
 	set +e
@@ -1305,18 +1305,23 @@ siginfo_handler() {
 			pkgname="${status%%:*}"
 			status="${status#*:}"
 			started="${status%%:*}"
+			status="${status#*:}"
+			started_phase="${status%%:*}"
 
 			colorize_job_id job_id_color "${j}"
 
 			# Must put colors in format
-			format_origin_phase="\t[${job_id_color}%s${COLOR_RESET}]: ${COLOR_PORT}%-25s | %-25s ${COLOR_PHASE}%-15s${COLOR_RESET} (%s)\n"
+			format_origin_phase="\t[${job_id_color}%s${COLOR_RESET}]: ${COLOR_PORT}%-25s | %-25s ${COLOR_PHASE}%-15s${COLOR_RESET} (%s / %s)\n"
 			format_phase="\t[${job_id_color}%s${COLOR_RESET}]: %53s ${COLOR_PHASE}%-15s${COLOR_RESET}\n"
 			if [ -n "${pkgname}" ]; then
 				elapsed=$((${now} - ${started}))
 				calculate_duration buildtime "${elapsed}"
+				elapsed_phase=$((${now} - ${started_phase}))
+				calculate_duration buildtime_phase \
+				    "${elapsed_phase}"
 				printf "${format_origin_phase}" "${j}" \
 				    "${origin}" "${pkgname}" "${phase}" \
-				    ${buildtime}
+				    "${buildtime}" "${buildtime_phase}"
 			else
 				printf "${format_phase}" "${j}" '' "${phase}"
 			fi
