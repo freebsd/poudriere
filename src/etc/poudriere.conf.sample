@@ -4,12 +4,12 @@
 # 
 #### ZFS
 # The pool where poudriere will create all the filesystems it needs
-# poudriere will use tank/${ZROOTFS} as its root
+# poudriere will use ${ZPOOL}/${ZROOTFS} as its root
 #
 # You need at least 7GB of free space in this pool to have a working
 # poudriere.
 #
-#ZPOOL=tank
+#ZPOOL=zroot
 
 ### NO ZFS
 # To not use ZFS, define NO_ZFS=yes
