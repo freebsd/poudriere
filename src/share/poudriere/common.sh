@@ -5284,6 +5284,23 @@ pkgqueue_remove_many_pipe() {
 	done | xargs rm -rf
 }
 
+# Compute back references for quickly finding things to skip if this job
+# fails.
+pkgqueue_compute_rdeps() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_compute_rdeps requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 1 ] || eargs pkgqueue_compute_rdeps pkg_deps
+	local pkg_deps="$1"
+
+	bset status "computingrdeps:"
+	# cd into rdeps to allow xargs mkdir to have more args.
+	(
+		cd "rdeps"
+		awk '{print $2}' "../${pkg_deps}" | sort -u | xargs mkdir
+		awk '{print $2 "/" $1}' "../${pkg_deps}" | xargs touch
+	)
+}
+
 lock_acquire() {
 	[ $# -ge 1 ] || eargs lock_acquire lockname [waittime]
 	local lockname="$1"
@@ -6101,17 +6118,10 @@ compute_deps() {
 	fi
 
 	sort -u "pkg_deps.unsorted" > "pkg_deps"
-
-	bset status "computingrdeps:"
-
-	# cd into rdeps to allow xargs mkdir to have more args.
-	(
-		cd "rdeps"
-		awk '{print $2}' "../pkg_deps" | sort -u | xargs mkdir
-		awk '{print $2 "/" $1}' "../pkg_deps" | xargs touch
-	)
-
 	unlink "pkg_deps.unsorted"
+
+	pkgqueue_compute_rdeps "pkg_deps"
+
 	run_hook compute_deps stop
 	return 0
 }
