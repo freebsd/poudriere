@@ -9,128 +9,179 @@ _poudriere_pt() {
 }
 
 _bulk=(
-	'-a[Build all ports in the tree]'
-	'-B[What buildname to use]:buildname'
-	'-f[Give the list of ports to build]:name of file:_files'
-	'-F[Only fetch from original master_sites; skip FreeBSD mirrors]'
-	'-c[Clean all previously built packages and logs]'
-	'-C[Clean only the packages specified on the command line or in a file via -f]'
-        '-i[Interactive mode. Enter jail after build and automatically cleanup when done]'
-        '-I[Advanced interactive mode. Leave jail running but do not enter]'
-	'-n[Dry run. Show what would be done, but do not build any packages]'
-	'-N[Do not build repository or INDEX when done building]'
-        '-k[Keep going when using -t and do not consider failures as fatal]'
-	'-t[Test the specified ports for leftovers]'
-	'-r[Recursively test all dependencies as well]'
-        '-s[skip sanity/incremental rebuild checks]'
-        '-S[skip rebuild of packages for which their dependencies require a rebuild]'
-	'-j[Run only on the given jail]::jail name:_poudriere_jail'
-	'-p[Specify on which ports tree the bulk will be done]::tree:_poudriere_pt'
-	'-T[Try building BROKEN ports]'
-	'-J[Specify the number of jobs you want to run in parallel]::'
-	'-R[Remove RESTRICTED packages after building]'
-	'-v[Be verbose; show more information. Specify twice to enable debug output.]'
-        '-w[Save WRKDIR on failed builds]'
-	'-z[Specify on which SET to use]::'
+	'-a[build the whole ports tree]'
+	'-f[get the list of ports to build from a file]:name of file:_files'
+	'-B[what buildname to use]:buildname'
+	'-c[clean all the previously built binary packages and logs]'
+	'-C[clean only the packages listed on the command line or -f file]'
+        '-i[interactive mode. enter jail for interactive testing and automatically cleanup when done]'
+        '-I[advanced Interactive mode. leaves jail running with ports installed after test]'
+	'-n[dry-run. show what will be done, but do not build any packages]'
+	'-R[clean RESTRICTED packages after building]'
+	'-t[test the specified ports for leftovers]'
+	'-r[resursively test all dependencies as well]'
+        '-k[when doing testing with -t, don\x27t consider failures as fatal; don\x27t skip dependent ports on findings]'
+	'-T[try to build broken ports anyway]'
+	'-F[only fetch from original master_site (skip FreeBSD mirrors)]'
+        '-S[don\x27t recursively rebuild packages affected by other packages requiring incremental rebuild]'
+	'-J[run n jobs in parallel, and optionally run a different number of jobs in parallel while preparing the build]::'
+	'-j[run only on the given jail]::jail name:_poudriere_jail'
+	'-N[do not build package repository or INDEX when build completed]'
+	'-p[specify on which ports tree the bulk build will be done]::tree:_poudriere_pt'
+	'-v[be verbose; show more information. Use twice to enable debug output]'
+        '-w[save WRKDIR on failed builds]'
+	'-z[specify which SET to use]::'
 )
 
-_jail=(
-	'(-d -l -s -k -u -i)-c[create a jail]' 
-	'(-c -l -s -k -u -i)-d[delete a jail]' 
-	'(-c -d -s -k -u -i)-l[list all available jails]' 
-	'(-c -d -l -k -u -i)-s[start a jail]' 
-	'(-c -d -i -s -u -i)-k[kill (stop) a jail]' 
-	'(-c -d -l -s -k -i)-u[update a jail]' 
-	'(-c -d -l -s -k -u)-i[show information about a jail]'
-	'-q[quiet (remove the header in list)]::' \
-	'-j[Specifies the jailname]::jailname:_poudriere_jail' \
-	'-v[Specifies which version of FreeBSD we want in jail]::version' \
-	'-a[Indicates architecture of the jail: i386 or amd64(same as host by default)]::arch:(amd64 i386)' \
-	'-m[Method used to create jail, specify NONE if you want to use your home made jail(ftp by default)]::method:((ftp svn svn+http svn+ssh))' \
-	'-f[FS name (tank/jails/myjail)]::fs:_files -/' \
-	'-t[version to upgrade to]' \
-	'-M[mountpoint]::mountpoint:_files -/'
-	'-S[FreeBSD source path to be mounted inside the jail]::'
-	'-r[rename jail]::'
-	'-x[build xdev]::'
-)
-
-_options=(
-	'-c[Use config target]::'
-	'-C[Use config-conditional target]::'
-	'-f[Give the list of ports to configure]:name of file:_files'
-	'-j[run only inside the given jail]::name:_poudriere_jail'
-	'-n[do not be recursive]::'
-	'-p[specify on which portstree we work]::tree:_poudriere_pt'
-	'-s[show options instead of configuring them]::'
-	'-r[remove options instead of configuring them]::'
-	'-z[Specify on which SET to use]::'
+_daemon=(
+	'-n[do not daemonise]'
+	'-p[override the pidfile location]:pid file:_files'
+	'-k[kill the running daemon]'
 )
 
 _distclean=(
-	'-J[Specify the number of jobs you want to run in parallel]::'
-	'-n[dry run, only show what would be done]::'
-	'-p[specify on which portstree we work]::tree:_poudriere_pt'
-	'-v[Be verbose; show more information. Specify twice to enable debug output.]'
-	'-y[assume yes and do not confirm before deleting]::'
+	'-a[clean the whole ports tree]'
+	'-f[get the list of ports to clean from a file]:name of file:_files'
+	'-J[run n jobs in parallel]::'
+	'-p[specify which ports tree to use for comparing to distfiles, can be specified multiple times]::tree:_poudriere_pt'
+	'-n[do not actually remove anything, just show what would be removed]::'
+	'-v[be verbose; show more information. use twice to enable debug output]'
+	'-y[assume yes when deleting and do not prompt for confirmation]::'
+)
+
+_image=(
+	'-c[the content of the overlay directory will be copied into the image]:directory:_files'
+	'-f[list of packages to install]:file:_files'
+	'-h[the image hostname]:hostname:'
+	'-j[jail]::jailname:_poudriere_jail'
+	'-m[build a miniroot image as well (for tar type images), and overlay this directory into the miniroot image]:directory:_files'
+	'-n[the name of the generated image]:imagename:'
+	'-o[image destination directory]:directory:_files'
+	'-p[Ports tree]::tree:_poudriere_pt'
+	'-s[set the image size]:size:'
+	'-t[type of image]::type:((iso iso+mfs iso+zmfs usb usb+mfs usb+zmfs rawdisk zrawdisk tar firmware rawfirmware embedded))'
+	'-X[file containing the list in cpdup format]:file:_files'
+	'-z[set]::'
+)
+
+_jail=(
+	'(-d -i -l -s -k -u -r)-c[create a jail]' 
+	'(-c -i -l -s -k -u -r)-d[delete a jail]' 
+	'(-c -d -l -s -k -u -r)-i[show information about a jail]'
+	'(-c -d -i -s -k -u -r)-l[list all available jails]' 
+	'(-c -d -i -l -k -u -r)-s[start a jail]' 
+	'(-c -d -i -l -s -u -r)-k[stop a jail]' 
+	'(-c -d -i -l -s -k -r)-u[update a jail]' 
+	'(-c -d -i -l -s -k -u)-r[rename a jail to name]::name'
+	'-b[build the OS (for use with -m src)]'
+	'-q[quiet (do not print the header)]'
+	'-J[run buildworld in parallel with n jobs]::'
+	'-j[specifies the jailname]::jailname:_poudriere_jail'
+	'-v[specify which version of FreeBSD to install in the jail]::version'
+	'-a[indicates the TARGET_ARCH of the jail. Such as i386 or amd64]::arch:(amd64 i386)'
+	'-f[fs name (tank/jails/myjail) if fs is "none" then do not create on ZFS]::fs:_files -/'
+	'-K[build the jail with the kernel]::kernelname'
+	'-M[mountpoint]::mountpoint:_files -/'
+	'-m[when used with -c, overrides the default method for obtaining and building the jail.]::method:(allbsd ftp-archive ftp git http null src svn svn+file svn+http svn+https svn+ssh tar url)'
+	'-P[specify a patch to apply to the source before building]::patch:_files -/'
+	'-S[specify a path to the source tree to be used]::srcpath:_files -/'
+	'-D[do a full git clone without --depth]'
+	'-t[version of FreeBSD to upgrade the jail to]::version'
+	'-U[specify a url to fetch the sources (with method git and/or svn)]::url'
+	'-x[build and setup native-xtools cross compile tools in jail when building for a different TARGET ARCH than the host]'
+	'-C[clean remaining data existing in pourdiere data folder]::clean:(all cache logs packages wrkdirs)'
+	'-p[specify which ports tree to start/stop the jail with]::tree:_poudriere_pt'
+	'-z[specify which SET the jail to start/stop with]::set'
+)
+
+_logclean=(
+	'(-N)-a[remove all logfiles matching the filter]'
+	'(-a)-N[how many logfiles to keep matching the filter per jail/tree/set combination]:count:'
+	'-B[build name glob to match on]:glob:'
+	'-j[which jail to use for log directories]::name:_poudriere_jail'
+	'-p[specify which ports tree to use for log directories]::tree:_poudriere_pt'
+	'-n[do not actually remove anything, just show what would be removed]'
+	'-v[be verbose; show more information]'
+	'-y[assume yes when deleting and do not prompt for confirmation]'
+	'-z[specify which SET to match for logs]::'
+)
+
+_options=(
+	'-a[indicates the TARGET_ARCH if no jail is specified]::arch:(amd64 i386)'
+	"(-C)-c[use 'make config' target]::"
+	"(-c)-C[use 'make config-conditional' target]::"
+	'-f[give the list of ports to set options]:name of file:_files'
+	'-j[run on the given jail]::name:_poudriere_jail'
+	'-n[do not configure/show/remove options of dependencies]::'
+	'-p[specify on which ports tree the configuration will be done]::tree:_poudriere_pt'
+	'(-r)-s[show options instead of configuring them]::'
+	'(-s)-r[show port options instead of configuring them]::'
+	'-z[Specify which SET to use]::'
 )
 
 _pkgclean=(
-	'-a[Expect all ports in the tree]'
-	'-f[Give the list of ports to expect]:name of file:_files'
-	'-n[dry run, only show what would be done]::'
-	'-N[Do not build repository or INDEX when done cleaning]'
-	'-j[The jail to use for the packages to clean]::jail name:_poudriere_jail'
-	'-p[The porttree to use for the packages to clean]::tree:_poudriere_pt'
-	'-J[Specify the number of jobs you want to run in parallel]::'
-	'-R[Remove RESTRICTED packages]'
-	'-v[Be verbose; show more information. Specify twice to enable debug output.]'
-	'-y[assume yes and do not confirm before deleting]::'
-	'-z[The SET to use for the packages to clean]::'
-)
-
-_testport=(
-	'(-o)-d[specify on which port we work]::path:_files -/'
-	'-c[run make config for the given port]::'
-	'-j[run only inside the given jail]::name:_poudriere_jail'
-        '-i[Interactive mode. Enter jail after build and automatically cleanup when done]'
-        '-I[Advanced interactive mode. Leave jail running but do not enter]'
-        '-k[Do not consider failures as fatal; find all failures]'
-	'-N[Do not build repository or INDEX when done building dependencies]'
-	'-p[specify on which portstree we work]::tree:_poudriere_pt'
-        '-P[use custom prefix]'
-        '-s[skip sanity/incremental rebuild checks]'
-        '-S[skip rebuild of packages for which their dependencies require a rebuild]'
-	'-v[Be verbose; show more information. Specify twice to enable debug output.]'
-        '-w[Save WRKDIR on failed builds]'
-	'-z[Specify on which SET to use]::'
-)
-
-_status=(
-        '-a[show all builds, not just currently running]'
-        '-b[show builder details]'
-        '-B[which build to match on]:buildname'
-        '-c[show a more compact output]'
-	'-j[run only inside the given jail]::name:_poudriere_jail'
-        '-l[show logs instead of URL]'
-	'-p[specify on which portstree we work]::tree:_poudriere_pt'
-        '-H[Do not print headers and separate fields by a single tab instead of arbitrary white space.]'
-	'-z[Specify on which SET to use]::'
+	'(-a -f)-A[remove all packages]'
+	'(-A -f)-a[keep all known ports]'
+	'(-A -a)-f[get the list of ports to keep from a file]:name of file:_files'
+	'-j[which jail to use for packages]::jail name:_poudriere_jail'
+	'-J[run n jobs in parallel]::'
+	'-n[do not actually remove anything, just show what would be removed]::'
+	'-N[do not build the package repository when clean completed]'
+	'-p[which ports tree to use for packages]::tree:_poudriere_pt'
+	'-R[clean RESTRICTED packages after building]'
+	'-v[be verbose; show more information. Use twice to enable debug output]'
+	'-y[assume yes when deleting and do not confirm]::'
+	'-z[specify which SET to use for packages]::'
 )
 
 _ports=(
-	'(-d -u -l)-c[create a portstree]'
-	'(-c -u -l)-d[delete a portstree]'
-	'(-c -d -l)-u[update a portstree]'
-	'(-c -d -u)-l[lists all available portstrees]'
-	'-q[quiet (remove the header in list)]'
-	'-F[when used with -c, only create the needed ZFS filesystems and directories, but do not populate them]'
-	'-k[when used with -d, only unregister the directory from the ports tree list, but keep the files]'
-	'-p[specify the name of the portstree we work on]::tree:_poudriere_pt'
-	'-f[FS name (tank/jails/myjail)]::fs:_files -/'
-	'-M[mountpoint]::mountpoint:_files -/'
-	'-m[method]::method:((portsnap svn svn+http svn+ssh git none))'
-	'-v[Be verbose; show more information.]'
+	'(-d -u -l)-c[create a ports tree]'
+	'(-c -u -l)-d[delete a ports tree]'
+	'(-c -d -u)-l[lists all available ports trees]'
+	'(-c -d -l)-u[update a ports tree]'
+	'-U[url where to fetch the ports tree from]::'
+	'-B[which branch to use for the svn or git methods]::'
+	'-F[When used with -c, only create the needed filesystems (for ZFS) and directories, but do not populate them.]'
+	'-M[the path to the source of a ports tree]::path:_files -/'
+	'-f[the name of the filesystem to create for the ports tree]::fs:_files -/'
+	'-k[when used with -d, only unregister the ports tree without removing the files]'
+	'-m[when used with -c, specify the method used to create the ports tree]::method:((git null portsnap svn svn+http svn+https svn+file svn+ssh))'
+	'-n[when used with -l, only print the name of the ports tree]'
+	'-p[specifies the name of the ports tree to work on]::tree:_poudriere_pt'
+	'-q[when used with -l, remove the header in the list view]'
+	'-v[show more verbose output]'
+)
+
+_status=(
+        '-a[show all builds, not just latest]'
+	'-f[show finished builds as well]'
+        '-b[display status of each builder for the matched build]'
+        '-B[what buildname to use]:buildname'
+        '-c[compact output]'
+	'-H[do not print headers and separate fields by a single tab instead of arbitrary white space]'
+	'-j[run on the given jail]::name:_poudriere_jail'
+	'-p[specify on which ports tree to match for the build]::tree:_poudriere_pt'
+        '-l[show logs instead of URL]'
+	'-r[show results]'
+	'-z[specify which SET to match for the build]::'
+)
+
+_testport=(
+	'-j[run inside the given jail]::name:_poudriere_jail'
+	'-B[What buildname to use]::'
+	'-c[run make config for the given port]::'
+        '-i[interactive mode]'
+        '-I[advanced interactive mode]'
+	'-J[Run n jobs in parallel for dependencies, and optionally run a different number of jobs in parallel while preparing the build]::'
+        "-k[don't consider failures as fatal; find all failures]"
+	'-n[show what will be done, but do not build any packages]'
+	'-N[do not build package repository when build of dependencies completed]'
+	'-p[specifies which ports tree to use]::tree:_poudriere_pt'
+        '-P[use custom prefix]'
+        "-S[don't recursively rebuild packages affected by other packages requiring incremental rebuild]"
+	'-v[be verbose; show more information]'
+        '-w[save WRKDIR on failed builds]'
+	'-z[specify which SET to use]::'
 )
 
 _poudriere () {
@@ -139,15 +190,19 @@ _poudriere () {
 	typeset -A val_args
 	cmds=(
 		'bulk:generate packages for given ports'
-		'daemon:process jobs in the queue'
+		'daemon:launch the poudriere daemon'
+		'distclean:remove old distfiles'
+		'help:show usage'
+		'image:generate images'
 		'jail:manage the jails used by poudriere'
-		'distclean:clean old distfiles'
-		'options:allows to configure the options for a given port'
+		'logclean:remove old logfiles'
+		'options:configure ports options'
+		'pkgclean:remove packages that are no longer needed'
 		'ports:create, update or delete the portstrees used by poudriere'
-		'pkgclean:clean old and unwanted packages'
-		'queue:queue a build request (through daemon)'
-		'testport:launch a test on a given port'
-		'version:show poudriere version'
+		'queue:queue a build request'
+		'status:get the status of builds'
+		'testport:launch a test build of a given port'
+		'version:show the version of poudriere'
 	)
 	# we are in second argument
 	if ((CURRENT == 2)); then
@@ -158,26 +213,35 @@ _poudriere () {
 			bulk)
 			_arguments : $_bulk "::" && return
 			;;
-			jail)
-			_arguments : $_jail "::" && return
+			daemon)
+			_arguments : $_daemon "::" && return
 			;;
 			distclean)
 			_arguments : $_distclean "::" && return
 			;;
+			image)
+			_arguments : $_image "::" && return
+			;;
+			jail)
+			_arguments : $_jail "::" && return
+			;;
+			logclean)
+			_arguments : $_logclean "::" && return
+			;;
 			options)
 			_arguments : $_options "::" && return
-			;;
-			ports)
-			_arguments : $_ports "::" && return
 			;;
 			pkgclean)
 			_arguments : $_pkgclean "::" && return
 			;;
-			testport)
-			_arguments : $_testport "::" && return
+			ports)
+			_arguments : $_ports "::" && return
 			;;
 			status)
 			_arguments : $_status "::" && return
+			;;
+			testport)
+			_arguments : $_testport "::" && return
 			;;
 		esac
 	fi
