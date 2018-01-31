@@ -871,64 +871,6 @@ log_stop() {
 	fi
 }
 
-read_file() {
-	[ $# -eq 2 ] || eargs read_file var_return file
-	local var_return="$1"
-	local file="$2"
-	local _data line
-	local ret -
-
-	# var_return may be empty if only $_read_file_lines_read is being
-	# used.
-
-	set +e
-	_data=
-	_read_file_lines_read=0
-
-	if [ ${READ_FILE_USE_CAT:-0} -eq 1 ]; then
-		if [ -f "${file}" ]; then
-			if [ -n "${var_return}" ]; then
-				_data="$(cat "${file}")"
-			fi
-			_read_file_lines_read=$(wc -l < "${file}")
-			_read_file_lines_read=${_read_file_lines_read##* }
-			ret=0
-		else
-			ret=1
-		fi
-	else
-		while :; do
-			IFS= read -r line
-			ret=$?
-			case ${ret} in
-				# Success, process data and keep reading.
-				0) ;;
-				# EOF
-				1)
-					ret=0
-					break
-					;;
-				# Some error or interruption/signal. Reread.
-				*) continue ;;
-			esac
-			if [ -n "${var_return}" ]; then
-				# Add extra newline
-				[ ${_read_file_lines_read} -gt 0 ] && \
-				    _data="${_data}
-"
-				_data="${_data}${line}"
-			fi
-			_read_file_lines_read=$((${_read_file_lines_read} + 1))
-		done < "${file}" || ret=$?
-	fi
-
-	if [ -n "${var_return}" ]; then
-		setvar "${var_return}" "${_data}"
-	fi
-
-	return ${ret}
-}
-
 attr_set() {
 	local type=$1
 	local name=$2
