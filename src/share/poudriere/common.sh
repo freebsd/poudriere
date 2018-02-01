@@ -6871,7 +6871,7 @@ prepare_ports() {
 		echo "${BUILDNAME}" > "${PACKAGES}/.buildname"
 
 	fi
-	unset P_PYTHON_DEFAULT_VERSION P_PYTHON3_DEFAULT
+	unset P_PYTHON_MAJOR_VER P_PYTHON_DEFAULT_VERSION P_PYTHON3_DEFAULT
 
 	return 0
 }
