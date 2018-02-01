@@ -141,3 +141,50 @@ assert_list "01"
 LIST="01 02 03 04 03 "
 list_remove LIST 03
 assert_list "01 02 03 04"
+
+# Test a copool case
+LIST=
+assert_ret 0 list_add LIST 31230
+assert_ret 0 list_add LIST 31237
+assert_ret 0 list_add LIST 31247
+assert_ret 0 list_add LIST 31258
+assert_ret 0 list_add LIST 31267
+assert_ret 0 list_add LIST 31276
+assert_ret 0 list_add LIST 31286
+assert_ret 0 list_add LIST 31299
+assert_ret 0 list_add LIST 31308
+assert_ret 0 list_add LIST 31317
+assert_ret 0 list_add LIST 31326
+assert_ret 0 list_add LIST 31338
+assert_ret 0 list_add LIST 31354
+assert_ret 0 list_add LIST 31367
+assert_ret 0 list_add LIST 31382
+assert_ret 0 list_add LIST 31395
+assert_ret 0 list_add LIST 31407
+assert_ret 0 list_add LIST 31415
+assert_ret 0 list_add LIST 31429
+assert_ret 0 list_add LIST 31442
+assert_list "31230 31237 31247 31258 31267 31276 31286 31299 31308 31317 31326 31338 31354 31367 31382 31395 31407 31415 31429 31442"
+
+assert_ret 0 list_remove LIST 31367
+assert_ret 0 list_remove LIST 31382
+assert_ret 0 list_remove LIST 31395
+assert_ret 0 list_remove LIST 31407
+assert_ret 0 list_remove LIST 31415
+assert_ret 0 list_remove LIST 31429
+assert_ret 0 list_remove LIST 31442
+assert_ret 0 list_remove LIST 31230
+assert_ret 0 list_remove LIST 31237
+assert_ret 0 list_remove LIST 31247
+assert_ret 0 list_remove LIST 31258
+assert_ret 0 list_remove LIST 31267
+assert_ret 0 list_remove LIST 31276
+assert_ret 0 list_remove LIST 31286
+assert_ret 0 list_remove LIST 31299
+assert_ret 0 list_remove LIST 31308
+assert_ret 0 list_remove LIST 31317
+assert_ret 0 list_remove LIST 31326
+assert_ret 0 list_remove LIST 31338
+assert_ret 1 list_remove LIST 31367
+
+assert_list "31354"

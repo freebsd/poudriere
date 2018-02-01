@@ -161,7 +161,8 @@ _reap_children() {
 		if ! kill -0 ${pid}; then
 			# This will error out if the return status is non-zero
 			_wait ${pid} || ret=$?
-			list_remove PARALLEL_PIDS "${pid}"
+			list_remove PARALLEL_PIDS "${pid}" || \
+			    err 1 "_reap_children did not find ${pid} in PARALLEL_PIDS"
 		fi
 	done 2>/dev/null
 
