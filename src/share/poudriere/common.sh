@@ -5833,60 +5833,64 @@ gather_port_vars() {
 	until dirempty dqueue && dirempty gqueue && dirempty mqueue && \
 	    dirempty fqueue; do
 		# Process all newly found deps into the gatherqueue
-		:> "${qlist}"
-		clear_dep_fatal_error
-		dirempty dqueue || msg_debug "Processing depqueue"
-		parallel_start
-		for qorigin in dqueue/*; do
-			case "${qorigin}" in
+		if ! dirempty dqueue; then
+			msg_debug "Processing depqueue"
+			:> "${qlist}"
+			clear_dep_fatal_error
+			parallel_start
+			for qorigin in dqueue/*; do
+				case "${qorigin}" in
 				"dqueue/*") break ;;
-			esac
-			echo "${qorigin}" >> "${qlist}"
-			origin="${qorigin#*/}"
-			# origin is really originspec, but fixup
-			# the substitued '/'
-			originspec="${origin%!*}/${origin#*!}"
-			parallel_run \
-			    gather_port_vars_process_depqueue \
-			    "${originspec}" || \
-			    set_dep_fatal_error
-		done
-		if ! parallel_stop || check_dep_fatal_error; then
-			err 1 "Fatal errors encountered processing gathered ports metadata"
+				esac
+				echo "${qorigin}" >> "${qlist}"
+				origin="${qorigin#*/}"
+				# origin is really originspec, but fixup
+				# the substitued '/'
+				originspec="${origin%!*}/${origin#*!}"
+				parallel_run \
+				    gather_port_vars_process_depqueue \
+				    "${originspec}" || \
+				    set_dep_fatal_error
+			done
+			if ! parallel_stop || check_dep_fatal_error; then
+				err 1 "Fatal errors encountered processing gathered ports metadata"
+			fi
+			cat "${qlist}" | tr '\n' '\000' | xargs -0 rmdir
 		fi
-		cat "${qlist}" | tr '\n' '\000' | xargs -0 rmdir
 
 		# Now process the gatherqueue
 
 		# Now rerun until the work queue is empty
 		# XXX: If the initial run were to use an efficient work queue then
 		#      this could be avoided.
-		:> "${qlist}"
-		clear_dep_fatal_error
-		parallel_start
-		dirempty gqueue || msg_debug "Processing gatherqueue"
-		for qorigin in gqueue/*; do
-			case "${qorigin}" in
+		if ! dirempty gqueue; then
+			msg_debug "Processing gatherqueue"
+			:> "${qlist}"
+			clear_dep_fatal_error
+			parallel_start
+			for qorigin in gqueue/*; do
+				case "${qorigin}" in
 				"gqueue/*") break ;;
-			esac
-			echo "${qorigin}" >> "${qlist}"
-			origin="${qorigin#*/}"
-			# origin is really originspec, but fixup
-			# the substitued '/'
-			originspec="${origin%!*}/${origin#*!}"
-			read_line rdep "${qorigin}/rdep" || \
-			    err 1 "gather_port_vars: Failed to read rdep for ${originspec}"
-			parallel_run \
-			    prefix_stderr_quick \
-			    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
-			    gather_port_vars_port \
-			    "${originspec}" "${rdep}" || \
-			    set_dep_fatal_error
-		done
-		if ! parallel_stop || check_dep_fatal_error; then
-			err 1 "Fatal errors encountered gathering ports metadata"
+				esac
+				echo "${qorigin}" >> "${qlist}"
+				origin="${qorigin#*/}"
+				# origin is really originspec, but fixup
+				# the substitued '/'
+				originspec="${origin%!*}/${origin#*!}"
+				read_line rdep "${qorigin}/rdep" || \
+				    err 1 "gather_port_vars: Failed to read rdep for ${originspec}"
+				parallel_run \
+				    prefix_stderr_quick \
+				    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
+				    gather_port_vars_port \
+				    "${originspec}" "${rdep}" || \
+				    set_dep_fatal_error
+			done
+			if ! parallel_stop || check_dep_fatal_error; then
+				err 1 "Fatal errors encountered gathering ports metadata"
+			fi
+			cat "${qlist}" | tr '\n' '\000' | xargs -0 rm -rf
 		fi
-		cat "${qlist}" | tr '\n' '\000' | xargs -0 rm -rf
 
 		if ! dirempty gqueue || ! dirempty dqueue; then
 			continue
