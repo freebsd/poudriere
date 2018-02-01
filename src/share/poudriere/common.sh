@@ -5665,21 +5665,26 @@ gather_port_vars() {
 		if ! dirempty gqueue || ! dirempty dqueue; then
 			continue
 		fi
-		dirempty mqueue || msg_debug "Processing metaqueue"
-		find mqueue -depth 1 -print0 | \
-		    xargs -J % -0 mv % gqueue/ || \
-		    err 1 "Failed moving mqueue items to gqueue"
+		if ! dirempty mqueue; then
+			msg_debug "Processing metaqueue"
+			find mqueue -depth 1 -print0 | \
+			    xargs -J % -0 mv % gqueue/ || \
+			    err 1 "Failed moving mqueue items to gqueue"
+		fi
 		if ! dirempty gqueue; then
 			continue
 		fi
 		# Process flavor queue to lookup newly discovered originspecs
-		dirempty fqueue || msg_debug "Processing flavorqueue"
-		# Just move all items to the gatherqueue.  We've looked up
-		# the default flavor for each of these origins already and
-		# can now try to identify alt flavors for the origins.
-		find fqueue -depth 1 -print0 | \
-		    xargs -J % -0 mv % gqueue/ || \
-		    err 1 "Failed moving fqueue items to gqueue"
+		if ! dirempty fqueue; then
+			msg_debug "Processing flavorqueue"
+			# Just move all items to the gatherqueue.  We've
+			# looked up the default flavor for each of these
+			# origins already and can now try to identify alt
+			# flavors for the origins.
+			find fqueue -depth 1 -print0 | \
+			    xargs -J % -0 mv % gqueue/ || \
+			    err 1 "Failed moving fqueue items to gqueue"
+		fi
 	done
 
 	if ! rmdir gqueue || ! rmdir dqueue || ! rmdir mqueue || \
