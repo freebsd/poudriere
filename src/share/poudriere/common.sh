@@ -6569,8 +6569,8 @@ _listed_ports() {
 				set_dep_fatal_error
 				continue
 			fi
-			origin="${new_origin}"
-			originspec_encode originspec "${origin}" '' "${flavor}"
+			originspec="${new_origin}"
+			originspec_decode "${originspec}" origin '' flavor
 		else
 			unset new_origin
 		fi
