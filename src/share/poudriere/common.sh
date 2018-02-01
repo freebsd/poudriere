@@ -5217,6 +5217,13 @@ next_in_queue() {
 	setvar "${var_return}" "${_pkgname}"
 }
 
+slock_acquire() {
+	[ $# -ge 1 ] || eargs slock_acquire lockname [waittime]
+
+	POUDRIERE_TMPDIR=/tmp MASTERNAME=poudriere-shared \
+	    lock_acquire "$@"
+}
+
 lock_acquire() {
 	[ $# -ge 1 ] || eargs lock_acquire lockname [waittime]
 	local lockname="$1"
@@ -5235,6 +5242,12 @@ lock_acquire() {
 
 	# Delay TERM/INT while holding the lock
 	critical_start
+}
+
+slock_release() {
+	[ $# -ne 1 ] && eargs slock_release lockname
+	POUDRIERE_TMPDIR=/tmp MASTERNAME=poudriere-shared \
+	    lock_release "$@"
 }
 
 lock_release() {
