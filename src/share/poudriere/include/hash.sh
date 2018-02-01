@@ -170,6 +170,17 @@ hash_unset() {
 	unset "${_hash_var_name}"
 }
 
+list_contains() {
+	[ $# -eq 2 ] || eargs list_contains var item
+	local var="$1"
+	local item="$2"
+	local value
+
+	eval "value=\"\${${var}}\""
+	case "${value}" in *" ${item} "*) ;; *) return 1 ;; esac
+	return 0
+}
+
 list_add() {
 	[ $# -eq 2 ] || eargs list_add var item
 	local var="$1"

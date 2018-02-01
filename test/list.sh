@@ -78,21 +78,42 @@ assert_list "" "Expected empty - left"
 # Reset so we can test removing the right
 LIST=
 list_add LIST 01
+assert_ret 0 list_contains LIST 01
+assert_ret 1 list_contains LIST 02
+assert_ret 1 list_contains LIST 03
 list_add LIST 02
+assert_ret 0 list_contains LIST 01
+assert_ret 0 list_contains LIST 02
+assert_ret 1 list_contains LIST 03
 list_add LIST 03
+assert_ret 0 list_contains LIST 01
+assert_ret 0 list_contains LIST 02
+assert_ret 0 list_contains LIST 03
 assert_list "01 02 03" "Expected 01 02 03 - right"
 
 list_remove LIST 03
 assert_list "01 02" "Expected 01 02 - right"
+assert_ret 0 list_contains LIST 01
+assert_ret 0 list_contains LIST 02
+assert_ret 1 list_contains LIST 03
 
 list_remove LIST 02
 assert_list "01" "Expected 01 - right"
+assert_ret 0 list_contains LIST 01
+assert_ret 1 list_contains LIST 02
+assert_ret 1 list_contains LIST 03
 
 list_remove LIST 02
 assert_list "01" "Expected 01 - right"
+assert_ret 0 list_contains LIST 01
+assert_ret 1 list_contains LIST 02
+assert_ret 1 list_contains LIST 03
 
 list_remove LIST 01
 assert_list "" "Expected blank - right"
+assert_ret 1 list_contains LIST 01
+assert_ret 1 list_contains LIST 02
+assert_ret 1 list_contains LIST 03
 
 # Test eval parsing
 LIST=
