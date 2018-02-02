@@ -50,6 +50,7 @@ static time_t start;
 struct kdata {
 	FILE *fp_in;
 	FILE *fp_out;
+	bool timestamp;
 };
 
 static void
@@ -66,7 +67,7 @@ calculate_duration(char *timestamp, size_t tlen, time_t elapsed)
 }
 
 static int
-prefix_output(FILE *fp_in, FILE *fp_out)
+prefix_output(struct kdata *kd)
 {
 	char timestamp[8 + 3 + 1]; /* '[HH:MM:SS] ' + 1 */
 	int ch;
@@ -76,19 +77,22 @@ prefix_output(FILE *fp_in, FILE *fp_out)
 	while ((ch = getc(kd->fp_in)) != EOF) {
 		if (newline) {
 			newline = false;
-			now = time(NULL);
-			elapsed = now - start;
-			calculate_duration((char *)&timestamp, tlen, elapsed);
-			fwrite(timestamp, tlen - 1, 1, fp_out);
-			if (ferror(fp_out))
-				return (-1);
+			if (kd->timestamp) {
+				now = time(NULL);
+				elapsed = now - start;
+				calculate_duration((char *)&timestamp, tlen,
+				    elapsed);
+				fwrite(timestamp, tlen - 1, 1, kd->fp_out);
+				if (ferror(kd->fp_out))
+					return (-1);
+			}
 		}
 		if (ch == '\n' || ch == '\r')
 			newline = true;
-		if (putc(ch, fp_out) == EOF)
+		if (putc(ch, kd->fp_out) == EOF)
 			return (-1);
 	}
-	if (ferror(fp_out) || ferror(fp_in) || feof(fp_in))
+	if (ferror(kd->fp_out) || ferror(kd->fp_in) || feof(kd->fp_in))
 		return (-1);
 	return (0);
 }
@@ -96,9 +100,9 @@ prefix_output(FILE *fp_in, FILE *fp_out)
 static void*
 prefix_main(void *arg)
 {
-	struct kdata *kdata = arg;
+	struct kdata *kd = arg;
 
-	prefix_output(kdata->fp_in, kdata->fp_out);
+	prefix_output(kd);
 
 	return (NULL);
 }
@@ -108,7 +112,7 @@ usage(void)
 {
 
 	fprintf(stderr, "%s\n",
-	    "usage: timestamp [-u] command");
+	    "usage: timestamp [-uT] command");
 	exit(EX_USAGE);
 }
 
@@ -123,18 +127,21 @@ main(int argc, char **argv)
 	struct kdata kdata_stdout, kdata_stderr;
 	pid_t child_pid;
 	int child_stdout[2], child_stderr[2];
-	int ch, status, ret, done, uflag;
+	int ch, status, ret, done, uflag, Tflag;
 
 	child_pid = -1;
 	start = time(NULL);
 	ret = 0;
 	done = 0;
 	newline = true;
-	uflag = 0;
+	Tflag = uflag = 0;
 	thr_stdout = thr_stderr = NULL;
 
-	while ((ch = getopt(argc, argv, "u")) != -1) {
+	while ((ch = getopt(argc, argv, "Tu")) != -1) {
 		switch (ch) {
+		case 'T':
+			Tflag = 1;
+			break;
 		case 'u':
 			uflag = 1;
 			break;
@@ -181,6 +188,7 @@ main(int argc, char **argv)
 
 	kdata_stdout.fp_in = fp_stdout;
 	kdata_stdout.fp_out = stdout;
+	kdata_stdout.timestamp = !Tflag;
 	thr_stdout = calloc(sizeof(pthread_t), 1);
 	if (pthread_create(thr_stdout, NULL, prefix_main, &kdata_stdout))
 		err(EXIT_FAILURE, "pthread_create stdout");
@@ -189,6 +197,7 @@ main(int argc, char **argv)
 	if (child_pid != -1) {
 		kdata_stderr.fp_in = fp_stderr;
 		kdata_stderr.fp_out = stderr;
+		kdata_stderr.timestamp = !Tflag;
 		thr_stderr = calloc(sizeof(pthread_t), 1);
 		if (pthread_create(thr_stderr, NULL, prefix_main,
 		    &kdata_stderr))
