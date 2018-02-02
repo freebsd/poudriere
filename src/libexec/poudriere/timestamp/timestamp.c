@@ -112,7 +112,7 @@ usage(void)
 {
 
 	fprintf(stderr, "%s\n",
-	    "usage: timestamp [-uT] command");
+	    "usage: timestamp [-uT] [command]");
 	exit(EX_USAGE);
 }
 
