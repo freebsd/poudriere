@@ -58,7 +58,7 @@ calculate_duration(char *timestamp, size_t tlen, time_t elapsed)
 }
 
 static int
-prefix_output(int fd_in, FILE *fp_out, size_t pending_len, time_t start)
+prefix_output(FILE *fp_in, FILE *fp_out, size_t pending_len, time_t start)
 {
 	char timestamp[8 + 3 + 1]; /* '[HH:MM:SS] ' + 1 */
 	char buf[1024];
@@ -68,8 +68,8 @@ prefix_output(int fd_in, FILE *fp_out, size_t pending_len, time_t start)
 	tlen = sizeof(timestamp);
 
 	while (pending_len > 0) {
-		read_len = read(fd_in, buf, min(sizeof(buf),
-		    pending_len));
+		read_len = fread(buf, sizeof(buf[0]),
+		    min(sizeof(buf), pending_len), fp_in);
 		if (read_len == 0)
 			return (-1);
 		pending_len -= read_len;
@@ -91,10 +91,15 @@ prefix_output(int fd_in, FILE *fp_out, size_t pending_len, time_t start)
 				return (-1);
 		}
 	}
-	if (ferror(fp_out))
+	if (ferror(fp_out) || ferror(fp_in) || feof(fp_in))
 		return (-1);
 	return (0);
 }
+
+struct kdata {
+	FILE *fp_in;
+	FILE *fp_out;
+};
 
 /**
  * Timestamp stdout
@@ -102,13 +107,14 @@ prefix_output(int fd_in, FILE *fp_out, size_t pending_len, time_t start)
 int
 main(int argc, char **argv)
 {
-	FILE *fp_out;
+	FILE *fp_in, *fp_out, *fp_stdout, *fp_stderr;
+	struct kdata kdata_stdout, kdata_stderr;
 	struct kevent *ev;
 	time_t start;
 	size_t pending_len;
 	pid_t child_pid;
 	int child_stdout[2], child_stderr[2];
-	int ch, kq, fd_in, nevents, nev, kn, i, status, ret, done, uflag;
+	int ch, kq, nevents, nev, kn, i, status, ret, done, uflag;
 
 	ev = NULL;
 	nev = nevents = 0;
@@ -153,6 +159,10 @@ main(int argc, char **argv)
 		close(STDIN_FILENO);
 		close(child_stdout[1]);
 		close(child_stderr[1]);
+		if ((fp_stdout = fdopen(child_stdout[0], "r")) == NULL)
+		    err(EXIT_FAILURE, "fdopen stdout");
+		if ((fp_stderr = fdopen(child_stderr[0], "r")) == NULL)
+		    err(EXIT_FAILURE, "fdopen stderr");
 		nev = 3;
 	} else
 		nev = 1;
@@ -166,13 +176,20 @@ main(int argc, char **argv)
 	if (child_pid != -1) {
 		EV_SET(ev + nevents++, child_pid, EVFILT_PROC, EV_ADD,
 		    NOTE_EXIT, 0, NULL);
-		EV_SET(ev + nevents++, child_stdout[0], EVFILT_READ, EV_ADD,
-		    0, 0, (void*)stdout);
-		EV_SET(ev + nevents++, child_stderr[0], EVFILT_READ, EV_ADD,
-		    0, 0, (void*)stderr);
-	} else
-		EV_SET(ev + nevents++, STDIN_FILENO, EVFILT_READ, EV_ADD, 0, 0,
-		    (void*)stdout);
+		kdata_stdout.fp_in = fp_stdout;
+		kdata_stdout.fp_out = stdout;
+		EV_SET(ev + nevents++, fileno(kdata_stdout.fp_in),
+		    EVFILT_READ, EV_ADD, 0, 0, &kdata_stdout);
+		kdata_stderr.fp_in = fp_stderr;
+		kdata_stderr.fp_out = stderr;
+		EV_SET(ev + nevents++, fileno(kdata_stderr.fp_in),
+		    EVFILT_READ, EV_ADD, 0, 0, &kdata_stderr);
+	} else {
+		kdata_stdout.fp_in = stdin;
+		kdata_stdout.fp_out = stdout;
+		EV_SET(ev + nevents++, fileno(kdata_stdout.fp_in),
+		    EVFILT_READ, EV_ADD, 0, 0, &kdata_stdout);
+	}
 	if (uflag)
 		setbuf(stdout, NULL);
 
@@ -186,10 +203,10 @@ main(int argc, char **argv)
 		}
 		for (i = 0; i < kn; i++) {
 			if (ev[i].filter == EVFILT_READ) {
-				fd_in = (int)ev[i].ident;
-				fp_out = (FILE *)(intptr_t)ev[i].udata;
+				fp_in = ((struct kdata *)ev[i].udata)->fp_in;
+				fp_out = ((struct kdata *)ev[i].udata)->fp_out;
 				pending_len = (size_t)ev[i].data;
-				if (prefix_output(fd_in, fp_out, pending_len,
+				if (prefix_output(fp_in, fp_out, pending_len,
 				    start) == -1 &&
 				    child_pid == -1 &&
 				    ev[i].ident == STDIN_FILENO)
