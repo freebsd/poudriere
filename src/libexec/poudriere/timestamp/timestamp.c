@@ -50,6 +50,8 @@ static time_t start;
 struct kdata {
 	FILE *fp_in;
 	FILE *fp_out;
+	const char *prefix;
+	size_t prefix_len;
 	bool timestamp;
 };
 
@@ -86,6 +88,14 @@ prefix_output(struct kdata *kd)
 				if (ferror(kd->fp_out))
 					return (-1);
 			}
+			if (kd->prefix != NULL) {
+				if (fwrite(kd->prefix, sizeof(kd->prefix[0]),
+				    kd->prefix_len, kd->fp_out) <
+				    kd->prefix_len)
+					return (-1);
+				if (putc(' ', kd->fp_out) == EOF)
+					return (-1);
+			}
 		}
 		if (ch == '\n' || ch == '\r')
 			newline = true;
@@ -102,6 +112,8 @@ prefix_main(void *arg)
 {
 	struct kdata *kd = arg;
 
+	if (kd->prefix != NULL)
+		kd->prefix_len = strlen(kd->prefix);
 	prefix_output(kd);
 
 	return (NULL);
@@ -112,7 +124,7 @@ usage(void)
 {
 
 	fprintf(stderr, "%s\n",
-	    "usage: timestamp [-uT] [command]");
+	    "usage: timestamp [-1 <stdout prefix>] [-2 <stderr prefix>] [-uT] [command]");
 	exit(EX_USAGE);
 }
 
@@ -125,6 +137,7 @@ main(int argc, char **argv)
 	FILE *fp_stdout, *fp_stderr;
 	pthread_t *thr_stdout, *thr_stderr;
 	struct kdata kdata_stdout, kdata_stderr;
+	const char *prefix_stdout, *prefix_stderr;
 	pid_t child_pid;
 	int child_stdout[2], child_stderr[2];
 	int ch, status, ret, done, uflag, Tflag;
@@ -136,9 +149,16 @@ main(int argc, char **argv)
 	newline = true;
 	Tflag = uflag = 0;
 	thr_stdout = thr_stderr = NULL;
+	prefix_stdout = prefix_stderr = NULL;
 
-	while ((ch = getopt(argc, argv, "Tu")) != -1) {
+	while ((ch = getopt(argc, argv, "1:2:Tu")) != -1) {
 		switch (ch) {
+		case '1':
+			prefix_stdout = strdup(optarg);
+			break;
+		case '2':
+			prefix_stderr = strdup(optarg);
+			break;
 		case 'T':
 			Tflag = 1;
 			break;
@@ -188,6 +208,7 @@ main(int argc, char **argv)
 
 	kdata_stdout.fp_in = fp_stdout;
 	kdata_stdout.fp_out = stdout;
+	kdata_stdout.prefix = prefix_stdout;
 	kdata_stdout.timestamp = !Tflag;
 	thr_stdout = calloc(sizeof(pthread_t), 1);
 	if (pthread_create(thr_stdout, NULL, prefix_main, &kdata_stdout))
@@ -197,6 +218,7 @@ main(int argc, char **argv)
 	if (child_pid != -1) {
 		kdata_stderr.fp_in = fp_stderr;
 		kdata_stderr.fp_out = stderr;
+		kdata_stderr.prefix = prefix_stderr;
 		kdata_stderr.timestamp = !Tflag;
 		thr_stderr = calloc(sizeof(pthread_t), 1);
 		if (pthread_create(thr_stderr, NULL, prefix_main,
