@@ -5293,7 +5293,7 @@ pkgqueue_clean_rdeps() {
 			# clean_pool() in common.sh will pick this up and add to SKIPPED
 			echo "${dep_pkgname}"
 
-			clean_pool ${dep_pkgname} "${clean_rdepends}"
+			pkgqueue_clean_pool ${dep_pkgname} "${clean_rdepends}"
 		done
 	else
 		for dep_dir in ${rdep_dir}/*; do
