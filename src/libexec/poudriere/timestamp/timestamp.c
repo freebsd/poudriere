@@ -44,7 +44,6 @@
 
 #define min(a, b) ((a) > (b) ? (b) : (a))
 
-static bool newline;
 static time_t start;
 
 struct kdata {
@@ -80,7 +79,9 @@ prefix_output(struct kdata *kd)
 	int ch;
 	time_t elapsed, now, lastline;
 	const size_t tlen = sizeof(timestamp);
+	bool newline;
 
+	newline = true;
 	if (kd->timestamp_line)
 		lastline = time(NULL);
 	while ((ch = getc(kd->fp_in)) != EOF) {
@@ -165,7 +166,6 @@ main(int argc, char **argv)
 	start = time(NULL);
 	ret = 0;
 	done = 0;
-	newline = true;
 	tflag = Tflag = uflag = 0;
 	thr_stdout = thr_stderr = NULL;
 	prefix_stdout = prefix_stderr = NULL;
