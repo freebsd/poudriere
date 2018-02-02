@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sysexits.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -102,6 +103,15 @@ prefix_main(void *arg)
 	return (NULL);
 }
 
+static void
+usage(void)
+{
+
+	fprintf(stderr, "%s\n",
+	    "usage: timestamp [-u] command");
+	exit(EX_USAGE);
+}
+
 /**
  * Timestamp stdout
  */
@@ -128,6 +138,8 @@ main(int argc, char **argv)
 		case 'u':
 			uflag = 1;
 			break;
+		default:
+			usage();
 		}
 	}
 	argc -= optind;
