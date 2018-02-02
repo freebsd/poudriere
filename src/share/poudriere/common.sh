@@ -2100,7 +2100,7 @@ need_cross_build() {
 }
 
 _jlock() {
-	setvar "$1" "/var/run/poudriere/poudriere.${MASTERNAME}.lock"
+	setvar "$1" "${SHARED_LOCK_DIR}/poudriere.${MASTERNAME}.lock"
 }
 
 lock_jail() {
@@ -2108,7 +2108,7 @@ lock_jail() {
 
 	_jlock jlock
 	jlockf="${jlock}/pid"
-	mkdir -p /var/run/poudriere >/dev/null 2>&1 || :
+	mkdir -p "${SHARED_LOCK_DIR}" >/dev/null 2>&1 || :
 	# Ensure no other processes are trying to start this jail
 	if ! mkdir "${jlock}" 2>/dev/null; then
 		if [ -d "${jlock}" ]; then
@@ -5220,7 +5220,8 @@ next_in_queue() {
 slock_acquire() {
 	[ $# -ge 1 ] || eargs slock_acquire lockname [waittime]
 
-	POUDRIERE_TMPDIR=/tmp MASTERNAME=poudriere-shared \
+	mkdir -p "${SHARED_LOCK_DIR}" >/dev/null 2>&1 || :
+	POUDRIERE_TMPDIR="${SHARED_LOCK_DIR}" MASTERNAME=poudriere-shared \
 	    lock_acquire "$@"
 }
 
@@ -5246,7 +5247,7 @@ lock_acquire() {
 
 slock_release() {
 	[ $# -ne 1 ] && eargs slock_release lockname
-	POUDRIERE_TMPDIR=/tmp MASTERNAME=poudriere-shared \
+	POUDRIERE_TMPDIR="${SHARED_LOCK_DIR}" MASTERNAME=poudriere-shared \
 	    lock_release "$@"
 }
 
@@ -7451,6 +7452,7 @@ fi
 : ${WATCHDIR:=${POUDRIERE_DATA}/queue}
 : ${PIDFILE:=${POUDRIERE_DATA}/daemon.pid}
 : ${QUEUE_SOCKET:=/var/run/poudriered.sock}
+: ${SHARED_LOCK_DIR:=/var/run/poudriere}
 : ${PORTBUILD_UID:=65532}
 : ${PORTBUILD_GID:=${PORTBUILD_UID}}
 : ${PORTBUILD_USER:=nobody}
