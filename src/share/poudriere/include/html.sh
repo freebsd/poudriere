@@ -78,8 +78,14 @@ html_json_main() {
 build_all_json() {
 	critical_start
 	build_json
-	build_jail_json
-	build_top_json
+	if slock_acquire "json_jail_${MASTERNAME}"; then
+		build_jail_json
+		slock_release "json_jail_${MASTERNAME}"
+	fi
+	if slock_acquire "json_top"; then
+		build_top_json
+		slock_release "json_top"
+	fi
 	critical_end
 }
 
