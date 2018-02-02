@@ -233,12 +233,12 @@ main(int argc, char **argv)
 	kdata_stdout.prefix = prefix_stdout;
 	kdata_stdout.timestamp = !Tflag;
 	kdata_stdout.timestamp_line = tflag;
-	thr_stdout = calloc(sizeof(pthread_t), 1);
-	if (pthread_create(thr_stdout, NULL, prefix_main, &kdata_stdout))
-		err(EXIT_FAILURE, "pthread_create stdout");
-	pthread_set_name_np(*thr_stdout, "prefix_stdout");
-
 	if (child_pid != -1) {
+		thr_stdout = calloc(sizeof(pthread_t), 1);
+		if (pthread_create(thr_stdout, NULL, prefix_main, &kdata_stdout))
+			err(EXIT_FAILURE, "pthread_create stdout");
+		pthread_set_name_np(*thr_stdout, "prefix_stdout");
+
 		kdata_stderr.fp_in = fp_stderr;
 		kdata_stderr.fp_out = stderr;
 		kdata_stderr.prefix = prefix_stderr;
@@ -258,7 +258,8 @@ main(int argc, char **argv)
 			ret = WSTOPSIG(status) + 128;
 		else
 			ret = WTERMSIG(status) + 128;
-	}
+	} else
+		prefix_main(&kdata_stdout);
 
 	if (thr_stdout != NULL)
 		pthread_join(*thr_stdout, NULL);
