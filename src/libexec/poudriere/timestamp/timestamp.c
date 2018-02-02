@@ -32,6 +32,8 @@
 #include <err.h>
 #include <errno.h>
 #include <paths.h>
+#include <pthread.h>
+#include <pthread_np.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -43,6 +45,12 @@
 #define min(a, b) ((a) > (b) ? (b) : (a))
 
 static bool newline;
+static time_t start;
+
+struct kdata {
+	FILE *fp_in;
+	FILE *fp_out;
+};
 
 static void
 calculate_duration(char *timestamp, size_t tlen, time_t elapsed)
@@ -58,48 +66,42 @@ calculate_duration(char *timestamp, size_t tlen, time_t elapsed)
 }
 
 static int
-prefix_output(FILE *fp_in, FILE *fp_out, size_t pending_len, time_t start)
+prefix_output(FILE *fp_in, FILE *fp_out)
 {
 	char timestamp[8 + 3 + 1]; /* '[HH:MM:SS] ' + 1 */
-	char buf[1024];
-	char *p = NULL;
+	int ch;
 	time_t elapsed, now;
-	size_t read_len, tlen;
-	tlen = sizeof(timestamp);
+	const size_t tlen = sizeof(timestamp);
 
-	while (pending_len > 0) {
-		read_len = fread(buf, sizeof(buf[0]),
-		    min(sizeof(buf), pending_len), fp_in);
-		if (read_len == 0)
-			return (-1);
-		pending_len -= read_len;
-		for (p = buf; read_len > 0;
-		    ++p, --read_len) {
-			if (newline) {
-				newline = false;
-				now = time(NULL);
-				elapsed = now - start;
-				calculate_duration((char *)&timestamp,
-				    tlen, elapsed);
-				fwrite(timestamp, tlen - 1, 1, fp_out);
-				if (ferror(fp_out))
-					return (-1);
-			}
-			if (*p == '\n' || *p == '\r')
-				newline = true;
-			if (putc(*p, fp_out) == EOF)
+	while ((ch = getc(kd->fp_in)) != EOF) {
+		if (newline) {
+			newline = false;
+			now = time(NULL);
+			elapsed = now - start;
+			calculate_duration((char *)&timestamp, tlen, elapsed);
+			fwrite(timestamp, tlen - 1, 1, fp_out);
+			if (ferror(fp_out))
 				return (-1);
 		}
+		if (ch == '\n' || ch == '\r')
+			newline = true;
+		if (putc(ch, fp_out) == EOF)
+			return (-1);
 	}
 	if (ferror(fp_out) || ferror(fp_in) || feof(fp_in))
 		return (-1);
 	return (0);
 }
 
-struct kdata {
-	FILE *fp_in;
-	FILE *fp_out;
-};
+static void*
+prefix_main(void *arg)
+{
+	struct kdata *kdata = arg;
+
+	prefix_output(kdata->fp_in, kdata->fp_out);
+
+	return (NULL);
+}
 
 /**
  * Timestamp stdout
@@ -107,11 +109,10 @@ struct kdata {
 int
 main(int argc, char **argv)
 {
-	FILE *fp_in, *fp_out, *fp_stdout, *fp_stderr;
+	FILE *fp_stdout, *fp_stderr;
+	pthread_t *thr_stdout, *thr_stderr;
 	struct kdata kdata_stdout, kdata_stderr;
 	struct kevent *ev;
-	time_t start;
-	size_t pending_len;
 	pid_t child_pid;
 	int child_stdout[2], child_stderr[2];
 	int ch, kq, nevents, nev, kn, i, status, ret, done, uflag;
@@ -124,6 +125,7 @@ main(int argc, char **argv)
 	done = 0;
 	newline = true;
 	uflag = 0;
+	thr_stdout = thr_stderr = NULL;
 
 	while ((ch = getopt(argc, argv, "u")) != -1) {
 		switch (ch) {
@@ -178,20 +180,33 @@ main(int argc, char **argv)
 		    NOTE_EXIT, 0, NULL);
 		kdata_stdout.fp_in = fp_stdout;
 		kdata_stdout.fp_out = stdout;
-		EV_SET(ev + nevents++, fileno(kdata_stdout.fp_in),
-		    EVFILT_READ, EV_ADD, 0, 0, &kdata_stdout);
+		thr_stdout = calloc(sizeof(pthread_t), 1);
+		if (pthread_create(thr_stdout, NULL, prefix_main,
+		    &kdata_stdout))
+			err(EXIT_FAILURE, "pthread_create stdout");
+		pthread_set_name_np(*thr_stdout, "prefix_stdout");
+
 		kdata_stderr.fp_in = fp_stderr;
 		kdata_stderr.fp_out = stderr;
-		EV_SET(ev + nevents++, fileno(kdata_stderr.fp_in),
-		    EVFILT_READ, EV_ADD, 0, 0, &kdata_stderr);
+		thr_stderr = calloc(sizeof(pthread_t), 1);
+		if (pthread_create(thr_stderr, NULL, prefix_main,
+		    &kdata_stderr))
+			err(EXIT_FAILURE, "pthread_create stderr");
+		pthread_set_name_np(*thr_stderr, "prefix_stderr");
 	} else {
 		kdata_stdout.fp_in = stdin;
 		kdata_stdout.fp_out = stdout;
-		EV_SET(ev + nevents++, fileno(kdata_stdout.fp_in),
-		    EVFILT_READ, EV_ADD, 0, 0, &kdata_stdout);
+		thr_stdout = calloc(sizeof(pthread_t), 1);
+		if (pthread_create(thr_stdout, NULL, prefix_main,
+		    &kdata_stdout))
+			err(EXIT_FAILURE, "pthread_create stdout");
+		pthread_set_name_np(*thr_stdout, "prefix_stdout");
 	}
 	if (uflag)
 		setbuf(stdout, NULL);
+
+	if (nevents == 0)
+		goto no_events;
 
 	kevent(kq, ev, nevents, NULL, 0, NULL);
 
@@ -202,20 +217,7 @@ main(int argc, char **argv)
 			err(EXIT_FAILURE, "kevent");
 		}
 		for (i = 0; i < kn; i++) {
-			if (ev[i].filter == EVFILT_READ) {
-				fp_in = ((struct kdata *)ev[i].udata)->fp_in;
-				fp_out = ((struct kdata *)ev[i].udata)->fp_out;
-				pending_len = (size_t)ev[i].data;
-				if (prefix_output(fp_in, fp_out, pending_len,
-				    start) == -1 &&
-				    child_pid == -1 &&
-				    ev[i].ident == STDIN_FILENO)
-					done = 1;
-				if (child_pid == -1 &&
-				    ev[i].ident == STDIN_FILENO &&
-				    ev[i].flags & EV_EOF)
-					done = 1;
-			} else if (ev[i].filter == EVFILT_PROC) {
+			if (ev[i].filter == EVFILT_PROC) {
 				/* Pwait code here */
 				status = ev[i].data;
 				if (WIFEXITED(status))
@@ -230,6 +232,12 @@ main(int argc, char **argv)
 		if (done == 1)
 			break;
 	}
+no_events:
+
+	if (thr_stdout != NULL)
+		pthread_join(*thr_stdout, NULL);
+	if (thr_stderr != NULL)
+		pthread_join(*thr_stderr, NULL);
 
 	free(ev);
 	return (ret);
