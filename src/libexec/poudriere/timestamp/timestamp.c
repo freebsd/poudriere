@@ -25,7 +25,6 @@
  */
 
 #include <sys/types.h>
-#include <sys/event.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 
@@ -112,13 +111,10 @@ main(int argc, char **argv)
 	FILE *fp_stdout, *fp_stderr;
 	pthread_t *thr_stdout, *thr_stderr;
 	struct kdata kdata_stdout, kdata_stderr;
-	struct kevent *ev;
 	pid_t child_pid;
 	int child_stdout[2], child_stderr[2];
-	int ch, kq, nevents, nev, kn, i, status, ret, done, uflag;
+	int ch, status, ret, done, uflag;
 
-	ev = NULL;
-	nev = nevents = 0;
 	child_pid = -1;
 	start = time(NULL);
 	ret = 0;
@@ -136,6 +132,9 @@ main(int argc, char **argv)
 	}
 	argc -= optind;
 	argv += optind;
+
+	if (uflag)
+		setbuf(stdout, NULL);
 
 	if (argc > 0) {
 		if (pipe(child_stdout) != 0)
@@ -165,27 +164,17 @@ main(int argc, char **argv)
 		    err(EXIT_FAILURE, "fdopen stdout");
 		if ((fp_stderr = fdopen(child_stderr[0], "r")) == NULL)
 		    err(EXIT_FAILURE, "fdopen stderr");
-		nev = 3;
 	} else
-		nev = 1;
+		fp_stdout = stdin;
 
-	if ((kq = kqueue()) == -1)
-		err(EXIT_FAILURE, "kqueue");
-	ev = calloc(sizeof(struct kevent), nev);
-	if (ev == NULL)
-		err(EXIT_FAILURE, "malloc");
+	kdata_stdout.fp_in = fp_stdout;
+	kdata_stdout.fp_out = stdout;
+	thr_stdout = calloc(sizeof(pthread_t), 1);
+	if (pthread_create(thr_stdout, NULL, prefix_main, &kdata_stdout))
+		err(EXIT_FAILURE, "pthread_create stdout");
+	pthread_set_name_np(*thr_stdout, "prefix_stdout");
 
 	if (child_pid != -1) {
-		EV_SET(ev + nevents++, child_pid, EVFILT_PROC, EV_ADD,
-		    NOTE_EXIT, 0, NULL);
-		kdata_stdout.fp_in = fp_stdout;
-		kdata_stdout.fp_out = stdout;
-		thr_stdout = calloc(sizeof(pthread_t), 1);
-		if (pthread_create(thr_stdout, NULL, prefix_main,
-		    &kdata_stdout))
-			err(EXIT_FAILURE, "pthread_create stdout");
-		pthread_set_name_np(*thr_stdout, "prefix_stdout");
-
 		kdata_stderr.fp_in = fp_stderr;
 		kdata_stderr.fp_out = stderr;
 		thr_stderr = calloc(sizeof(pthread_t), 1);
@@ -193,52 +182,21 @@ main(int argc, char **argv)
 		    &kdata_stderr))
 			err(EXIT_FAILURE, "pthread_create stderr");
 		pthread_set_name_np(*thr_stderr, "prefix_stderr");
-	} else {
-		kdata_stdout.fp_in = stdin;
-		kdata_stdout.fp_out = stdout;
-		thr_stdout = calloc(sizeof(pthread_t), 1);
-		if (pthread_create(thr_stdout, NULL, prefix_main,
-		    &kdata_stdout))
-			err(EXIT_FAILURE, "pthread_create stdout");
-		pthread_set_name_np(*thr_stdout, "prefix_stdout");
+
+		if (waitpid(child_pid, &status, WEXITED) == -1)
+			err(EXIT_FAILURE, "waitpid");
+		if (WIFEXITED(status))
+			ret = WEXITSTATUS(status);
+		else if (WIFSTOPPED(status))
+			ret = WSTOPSIG(status) + 128;
+		else
+			ret = WTERMSIG(status) + 128;
 	}
-	if (uflag)
-		setbuf(stdout, NULL);
-
-	if (nevents == 0)
-		goto no_events;
-
-	kevent(kq, ev, nevents, NULL, 0, NULL);
-
-	for (;;) {
-		if ((kn = kevent(kq, NULL, 0, ev, nevents, NULL)) == -1) {
-			if (errno == EINTR)
-				continue;
-			err(EXIT_FAILURE, "kevent");
-		}
-		for (i = 0; i < kn; i++) {
-			if (ev[i].filter == EVFILT_PROC) {
-				/* Pwait code here */
-				status = ev[i].data;
-				if (WIFEXITED(status))
-					ret = WEXITSTATUS(status);
-				else if (WIFSTOPPED(status))
-					ret = WSTOPSIG(status) + 128;
-				else
-					ret = WTERMSIG(status) + 128;
-				done = 1;
-			}
-		}
-		if (done == 1)
-			break;
-	}
-no_events:
 
 	if (thr_stdout != NULL)
 		pthread_join(*thr_stdout, NULL);
 	if (thr_stderr != NULL)
 		pthread_join(*thr_stderr, NULL);
 
-	free(ev);
 	return (ret);
 }
