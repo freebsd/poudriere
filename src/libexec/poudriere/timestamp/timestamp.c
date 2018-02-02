@@ -143,7 +143,7 @@ usage(void)
 {
 
 	fprintf(stderr, "%s\n",
-	    "usage: timestamp [-1 <stdout prefix>] [-2 <stderr prefix>] [-utT] [command]");
+	    "usage: timestamp [-1 <stdout prefix>] [-2 <stderr prefix>] [-P <proctitle>] [-utT] [command]");
 	exit(EX_USAGE);
 }
 
@@ -170,13 +170,16 @@ main(int argc, char **argv)
 	thr_stdout = thr_stderr = NULL;
 	prefix_stdout = prefix_stderr = NULL;
 
-	while ((ch = getopt(argc, argv, "1:2:tTu")) != -1) {
+	while ((ch = getopt(argc, argv, "1:2:P:tTu")) != -1) {
 		switch (ch) {
 		case '1':
 			prefix_stdout = strdup(optarg);
 			break;
 		case '2':
 			prefix_stderr = strdup(optarg);
+			break;
+		case 'P':
+			setproctitle("%s", optarg);
 			break;
 		case 't':
 			tflag = 1;
