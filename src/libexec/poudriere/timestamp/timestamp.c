@@ -221,6 +221,7 @@ main(int argc, char **argv)
 			execvp(argv[0], &argv[0]);
 			_exit(127);
 		}
+		signal(SIGINT, SIG_IGN);
 		close(STDIN_FILENO);
 		close(child_stdout[1]);
 		close(child_stderr[1]);
