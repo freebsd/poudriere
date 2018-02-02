@@ -53,10 +53,11 @@ struct kdata {
 	const char *prefix;
 	size_t prefix_len;
 	bool timestamp;
+	bool timestamp_line;
 };
 
 static void
-calculate_duration(char *timestamp, size_t tlen, time_t elapsed)
+calculate_duration(char *timestamp, size_t tlen, time_t elapsed, int type)
 {
 	int hours, minutes, seconds;
 
@@ -64,8 +65,12 @@ calculate_duration(char *timestamp, size_t tlen, time_t elapsed)
 	minutes = (elapsed / 60) % 60;
 	hours = elapsed / 3600;
 
-	snprintf(timestamp, tlen, "(%02d:%02d:%02d) ", hours, minutes,
-	    seconds);
+	if (type == 0)
+		snprintf(timestamp, tlen, "(%02d:%02d:%02d) ", hours, minutes,
+		    seconds);
+	else
+		snprintf(timestamp, tlen, "[%02d:%02d:%02d] ", hours, minutes,
+		    seconds);
 }
 
 static int
@@ -73,9 +78,11 @@ prefix_output(struct kdata *kd)
 {
 	char timestamp[8 + 3 + 1]; /* '[HH:MM:SS] ' + 1 */
 	int ch;
-	time_t elapsed, now;
+	time_t elapsed, now, lastline;
 	const size_t tlen = sizeof(timestamp);
 
+	if (kd->timestamp_line)
+		lastline = time(NULL);
 	while ((ch = getc(kd->fp_in)) != EOF) {
 		if (newline) {
 			newline = false;
@@ -83,7 +90,16 @@ prefix_output(struct kdata *kd)
 				now = time(NULL);
 				elapsed = now - start;
 				calculate_duration((char *)&timestamp, tlen,
-				    elapsed);
+				    elapsed, 0);
+				fwrite(timestamp, tlen - 1, 1, kd->fp_out);
+				if (ferror(kd->fp_out))
+					return (-1);
+			}
+			if (kd->timestamp_line) {
+				now = time(NULL);
+				elapsed = now - lastline;
+				calculate_duration((char *)&timestamp, tlen,
+				    elapsed, 1);
 				fwrite(timestamp, tlen - 1, 1, kd->fp_out);
 				if (ferror(kd->fp_out))
 					return (-1);
@@ -97,8 +113,11 @@ prefix_output(struct kdata *kd)
 					return (-1);
 			}
 		}
-		if (ch == '\n' || ch == '\r')
+		if (ch == '\n' || ch == '\r') {
 			newline = true;
+			if (kd->timestamp_line)
+				lastline = time(NULL);
+		}
 		if (putc(ch, kd->fp_out) == EOF)
 			return (-1);
 	}
@@ -124,7 +143,7 @@ usage(void)
 {
 
 	fprintf(stderr, "%s\n",
-	    "usage: timestamp [-1 <stdout prefix>] [-2 <stderr prefix>] [-uT] [command]");
+	    "usage: timestamp [-1 <stdout prefix>] [-2 <stderr prefix>] [-utT] [command]");
 	exit(EX_USAGE);
 }
 
@@ -140,24 +159,27 @@ main(int argc, char **argv)
 	const char *prefix_stdout, *prefix_stderr;
 	pid_t child_pid;
 	int child_stdout[2], child_stderr[2];
-	int ch, status, ret, done, uflag, Tflag;
+	int ch, status, ret, done, uflag, tflag, Tflag;
 
 	child_pid = -1;
 	start = time(NULL);
 	ret = 0;
 	done = 0;
 	newline = true;
-	Tflag = uflag = 0;
+	tflag = Tflag = uflag = 0;
 	thr_stdout = thr_stderr = NULL;
 	prefix_stdout = prefix_stderr = NULL;
 
-	while ((ch = getopt(argc, argv, "1:2:Tu")) != -1) {
+	while ((ch = getopt(argc, argv, "1:2:tTu")) != -1) {
 		switch (ch) {
 		case '1':
 			prefix_stdout = strdup(optarg);
 			break;
 		case '2':
 			prefix_stderr = strdup(optarg);
+			break;
+		case 't':
+			tflag = 1;
 			break;
 		case 'T':
 			Tflag = 1;
@@ -210,6 +232,7 @@ main(int argc, char **argv)
 	kdata_stdout.fp_out = stdout;
 	kdata_stdout.prefix = prefix_stdout;
 	kdata_stdout.timestamp = !Tflag;
+	kdata_stdout.timestamp_line = tflag;
 	thr_stdout = calloc(sizeof(pthread_t), 1);
 	if (pthread_create(thr_stdout, NULL, prefix_main, &kdata_stdout))
 		err(EXIT_FAILURE, "pthread_create stdout");
@@ -220,6 +243,7 @@ main(int argc, char **argv)
 		kdata_stderr.fp_out = stderr;
 		kdata_stderr.prefix = prefix_stderr;
 		kdata_stderr.timestamp = !Tflag;
+		kdata_stderr.timestamp_line = tflag;
 		thr_stderr = calloc(sizeof(pthread_t), 1);
 		if (pthread_create(thr_stderr, NULL, prefix_main,
 		    &kdata_stderr))
