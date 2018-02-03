@@ -392,7 +392,47 @@ prefix_stdout() {
 
 prefix_output() {
 	local extra="$1"
+	local prefix_stdout prefix_stderr prefixpipe_stdout prefixpipe_stderr
+	local ret MSG_NESTED MSG_NESTED_STDERR
 	shift 1
 
-	prefix_stderr "${extra}" prefix_stdout "${extra}" "$@"
+	if ! command -v timestamp >/dev/null; then
+		prefix_stderr "${extra}" prefix_stdout "${extra}" "$@"
+		return
+	fi
+	# Use timestamp's multiple file input feature.
+
+	prefixpipe_stdout=$(mktemp -ut prefix_stdout.pipe)
+	mkfifo "${prefixpipe_stdout}"
+	prefix_stdout="$(msg "${extra}:")"
+
+	prefixpipe_stderr=$(mktemp -ut prefix_stderr.pipe)
+	mkfifo "${prefixpipe_stderr}"
+	prefix_stderr="$(msg_warn "${extra}:" 2>&1)"
+
+	stdbuf -o L -e L \
+	    timestamp -T \
+	    -1 "${prefix_stdout}" -o "${prefixpipe_stdout}" \
+	    -2 "${prefix_stderr}" -e "${prefixpipe_stderr}" \
+	    -P "poudriere: ${PROC_TITLE} (prefix_output)" \
+	    &
+
+	prefixpid=$!
+	exec 3>&1
+	exec > "${prefixpipe_stdout}"
+	unlink "${prefixpipe_stdout}"
+	exec 4>&2
+	exec 2> "${prefixpipe_stderr}"
+	unlink "${prefixpipe_stderr}"
+
+	MSG_NESTED=1
+	MSG_NESTED_STDERR=1
+	ret=0
+	"$@" || ret=$?
+
+	exec 1>&3 3>&- 2>&4 4>&-
+	timed_wait_and_kill 5 ${prefixpid} || :
+	_wait ${prefixpid}
+
+	return ${ret}
 }
