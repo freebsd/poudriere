@@ -4115,7 +4115,7 @@ stop_build() {
 prefix_stderr_quick() {
 	local -; set +x
 	local extra="$1"
-	local MSG_NESTED_STDERR
+	local MSG_NESTED_STDERR prefix
 	shift 1
 
 	{
@@ -4123,10 +4123,11 @@ prefix_stderr_quick() {
 			MSG_NESTED_STDERR=1
 			"$@"
 		} 2>&1 1>&3 | {
-			setproctitle "${PROC_TITLE} (prefix_stderr_quick)"
-			while read -r line; do
-				msg_warn "${extra}: ${line}"
-			done
+			prefix="$(msg_warn "${extra}:" 2>&1)"
+			stdbuf -o L \
+			    timestamp -T -1 "${prefix}" \
+			    -P "poudriere: ${PROC_TITLE} (prefix_stderr_quick)" \
+			    >&2
 		}
 	} 3>&1
 }
@@ -4135,17 +4136,15 @@ prefix_stderr() {
 	local extra="$1"
 	shift 1
 	local prefixpipe prefixpid ret
-	local MSG_NESTED_STDERR
+	local prefix MSG_NESTED_STDERR
 
 	prefixpipe=$(mktemp -ut prefix_stderr.pipe)
 	mkfifo "${prefixpipe}"
-	(
-		set +x
-		setproctitle "${PROC_TITLE} (prefix_stderr)"
-		while read -r line; do
-			msg_warn "${extra}: ${line}"
-		done
-	) < ${prefixpipe} &
+	prefix="$(msg_warn "${extra}:" 2>&1)"
+	stdbuf -o L \
+	    timestamp -T -1 "${prefix}" \
+	    -P "poudriere: ${PROC_TITLE} (prefix_stderr)" \
+	    < "${prefixpipe}" >&2 &
 	prefixpid=$!
 	exec 4>&2
 	exec 2> "${prefixpipe}"
@@ -4165,17 +4164,15 @@ prefix_stdout() {
 	local extra="$1"
 	shift 1
 	local prefixpipe prefixpid ret
-	local MSG_NESTED
+	local prefix MSG_NESTED
 
 	prefixpipe=$(mktemp -ut prefix_stdout.pipe)
 	mkfifo "${prefixpipe}"
-	(
-		set +x
-		setproctitle "${PROC_TITLE} (prefix_stdout)"
-		while read -r line; do
-			msg "${extra}: ${line}"
-		done
-	) < ${prefixpipe} &
+	prefix="$(msg "${extra}:")"
+	stdbuf -o L \
+	    timestamp -T -1 "${prefix}" \
+	    -P "poudriere: ${PROC_TITLE} (prefix_stdout)" \
+	    < "${prefixpipe}" &
 	prefixpid=$!
 	exec 3>&1
 	exec > "${prefixpipe}"
