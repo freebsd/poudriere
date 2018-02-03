@@ -7716,6 +7716,10 @@ fi
 : ${MAX_FILES:=1024}
 : ${DEFAULT_MAX_FILES:=${MAX_FILES}}
 : ${DEP_FATAL_ERROR_FILE:=dep_fatal_error}
+HAVE_FDESCFS=0
+if [ "$(mount -t fdescfs | awk '$3 == "/dev/fd" {print $3}')" = "/dev/fd" ]; then
+	HAVE_FDESCFS=1
+fi
 
 TIME_START=$(clock -monotonic)
 EPOCH_START=$(clock -epoch)
