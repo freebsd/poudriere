@@ -15,6 +15,12 @@ echo "Running in ${PWD}"
 
 FAILED_TESTS=
 for test in ${TESTS}; do
+	if [ -n "${TEST_FILTER}" ]; then
+		case "${test}" in
+			${TEST_FILTER}|${TEST_FILTER}.sh) ;;
+			*) continue ;;
+		esac
+	fi
 	status=0
 	echo -n "Running ${SH} ${test} ... "
 	${SH} runtest.sh ${test} > ${test}.stdout.log 2> ${test}.stderr.log ||
