@@ -235,7 +235,6 @@ main(int argc, char **argv)
 			_exit(127);
 		}
 		signal(SIGINT, SIG_IGN);
-		close(STDIN_FILENO);
 		close(child_stdout[1]);
 		close(child_stderr[1]);
 		if ((fp_in_stdout = fdopen(child_stdout[0], "r")) == NULL)
@@ -244,6 +243,9 @@ main(int argc, char **argv)
 		    err(EXIT_FAILURE, "fdopen stderr");
 	} else if (fp_in_stdout == NULL)
 		fp_in_stdout = stdin;
+
+	if (fp_in_stdout != stdin && fp_in_stderr != stdin)
+		fclose(stdin);
 
 	if (fp_in_stdout != NULL) {
 		kdata_stdout.fp_in = fp_in_stdout;
