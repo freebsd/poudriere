@@ -154,6 +154,7 @@ rename_SOURCES=		src/libexec/poudriere/rename/rename.c
 rm_SOURCES=		src/libexec/poudriere/rm/rm.c
 timeout_SOURCES=	src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
+timestamp_LDADD=	-lpthread
 tsort_SOURCES=		src/libexec/poudriere/tsort/tsort.c
 
 sh_CFLAGS=		-DSHELL -std=gnu99 ${sh_hist_CFLAGS} \
