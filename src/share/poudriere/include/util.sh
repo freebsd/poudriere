@@ -282,3 +282,113 @@ noclobber() {
 
 	"$@" 2>/dev/null
 }
+
+prefix_stderr_quick() {
+	local -; set +x
+	local extra="$1"
+	local MSG_NESTED_STDERR prefix
+	shift 1
+
+	{
+		{
+			MSG_NESTED_STDERR=1
+			"$@"
+		} 2>&1 1>&3 | {
+			if command -v timestamp >/dev/null; then
+				prefix="$(msg_warn "${extra}:" 2>&1)"
+				stdbuf -o L \
+				    timestamp -T -1 "${prefix}" \
+				    -P "poudriere: ${PROC_TITLE} (prefix_stderr_quick)" \
+				    >&2
+			else
+				setproctitle "${PROC_TITLE} (prefix_stderr_quick)"
+				while read -r line; do
+					msg_warn "${extra}: ${line}"
+				done
+			fi
+		}
+	} 3>&1
+}
+
+prefix_stderr() {
+	local extra="$1"
+	shift 1
+	local prefixpipe prefixpid ret
+	local prefix MSG_NESTED_STDERR
+
+	prefixpipe=$(mktemp -ut prefix_stderr.pipe)
+	mkfifo "${prefixpipe}"
+	if command -v timestamp >/dev/null; then
+		prefix="$(msg_warn "${extra}:" 2>&1)"
+		stdbuf -o L \
+		    timestamp -T -1 "${prefix}" \
+		    -P "poudriere: ${PROC_TITLE} (prefix_stderr)" \
+		    < "${prefixpipe}" >&2 &
+	else
+		(
+			set +x
+			setproctitle "${PROC_TITLE} (prefix_stderr)"
+			while read -r line; do
+				msg_warn "${extra}: ${line}"
+			done
+		) < ${prefixpipe} &
+	fi
+	prefixpid=$!
+	exec 4>&2
+	exec 2> "${prefixpipe}"
+	unlink "${prefixpipe}"
+
+	MSG_NESTED_STDERR=1
+	ret=0
+	"$@" || ret=$?
+
+	exec 2>&4 4>&-
+	_wait ${prefixpid}
+
+	return ${ret}
+}
+
+prefix_stdout() {
+	local extra="$1"
+	shift 1
+	local prefixpipe prefixpid ret
+	local prefix MSG_NESTED
+
+	prefixpipe=$(mktemp -ut prefix_stdout.pipe)
+	mkfifo "${prefixpipe}"
+	if command -v timestamp >/dev/null; then
+		prefix="$(msg "${extra}:")"
+		stdbuf -o L \
+		    timestamp -T -1 "${prefix}" \
+		    -P "poudriere: ${PROC_TITLE} (prefix_stdout)" \
+		    < "${prefixpipe}" &
+	else
+		(
+			set +x
+			setproctitle "${PROC_TITLE} (prefix_stdout)"
+			while read -r line; do
+				msg "${extra}: ${line}"
+			done
+		) < ${prefixpipe} &
+	fi
+	prefixpid=$!
+	exec 3>&1
+	exec > "${prefixpipe}"
+	unlink "${prefixpipe}"
+
+	MSG_NESTED=1
+	ret=0
+	"$@" || ret=$?
+
+	exec 1>&3 3>&-
+	_wait ${prefixpid}
+
+	return ${ret}
+}
+
+prefix_output() {
+	local extra="$1"
+	shift 1
+
+	prefix_stderr "${extra}" prefix_stdout "${extra}" "$@"
+}
