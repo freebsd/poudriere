@@ -214,6 +214,10 @@ main(int argc, char **argv)
 	}
 
 	if (argc > 0) {
+		if (fp_in_stdout != NULL)
+			errx(EX_DATAERR, "Cannot use -o with command");
+		if (fp_in_stderr != NULL)
+			errx(EX_DATAERR, "Cannot use -e with command");
 		if (pipe(child_stdout) != 0)
 			err(EXIT_FAILURE, "pipe");
 		if (pipe(child_stderr) != 0)
