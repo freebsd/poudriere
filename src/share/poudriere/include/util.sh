@@ -298,8 +298,7 @@ prefix_stderr_quick() {
 			    [ "$(type timestamp)" = \
 			    "timestamp is a shell builtin" ]; then
 				prefix="$(msg_warn "${extra}:" 2>&1)"
-				stdbuf -o L \
-				    timestamp -T -1 "${prefix}" \
+				timestamp -T -1 "${prefix}" \
 				    -P "poudriere: ${PROC_TITLE} (prefix_stderr_quick)" \
 				    >&2
 			else
@@ -322,8 +321,7 @@ prefix_stderr() {
 	mkfifo "${prefixpipe}"
 	if command -v timestamp >/dev/null; then
 		prefix="$(msg_warn "${extra}:" 2>&1)"
-		stdbuf -o L \
-		    timestamp -T -1 "${prefix}" \
+		timestamp -T -1 "${prefix}" \
 		    -P "poudriere: ${PROC_TITLE} (prefix_stderr)" \
 		    < "${prefixpipe}" >&2 &
 	else
@@ -361,8 +359,7 @@ prefix_stdout() {
 	mkfifo "${prefixpipe}"
 	if command -v timestamp >/dev/null; then
 		prefix="$(msg "${extra}:")"
-		stdbuf -o L \
-		    timestamp -T -1 "${prefix}" \
+		timestamp -T -1 "${prefix}" \
 		    -P "poudriere: ${PROC_TITLE} (prefix_stdout)" \
 		    < "${prefixpipe}" &
 	else
@@ -410,8 +407,7 @@ prefix_output() {
 	mkfifo "${prefixpipe_stderr}"
 	prefix_stderr="$(msg_warn "${extra}:" 2>&1)"
 
-	stdbuf -o L -e L \
-	    timestamp -T \
+	timestamp -T \
 	    -1 "${prefix_stdout}" -o "${prefixpipe_stdout}" \
 	    -2 "${prefix_stderr}" -e "${prefixpipe_stderr}" \
 	    -P "poudriere: ${PROC_TITLE} (prefix_output)" \

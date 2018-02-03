@@ -208,6 +208,10 @@ main(int argc, char **argv)
 
 	if (uflag)
 		setbuf(stdout, NULL);
+	else {
+		setlinebuf(stdout);
+		setlinebuf(stderr);
+	}
 
 	if (argc > 0) {
 		if (pipe(child_stdout) != 0)
