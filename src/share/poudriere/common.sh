@@ -4155,7 +4155,7 @@ prefix_stderr() {
 	"$@" || ret=$?
 
 	exec 2>&4 4>&-
-	wait ${prefixpid}
+	_wait ${prefixpid}
 
 	return ${ret}
 }
@@ -4183,7 +4183,7 @@ prefix_stdout() {
 	"$@" || ret=$?
 
 	exec 1>&3 3>&-
-	wait ${prefixpid}
+	_wait ${prefixpid}
 
 	return ${ret}
 }
