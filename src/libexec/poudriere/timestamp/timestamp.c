@@ -144,7 +144,7 @@ usage(void)
 {
 
 	fprintf(stderr, "%s\n",
-	    "usage: timestamp [-1 <stdout prefix>] [-2 <stderr prefix>] [-P <proctitle>] [-utT] [command]");
+	    "usage: timestamp [-1 <stdout prefix>] [-2 <stderr prefix>] [-eo in.fifo] [-P <proctitle>] [-utT] [command]");
 	exit(EX_USAGE);
 }
 
@@ -169,14 +169,23 @@ main(int argc, char **argv)
 	tflag = Tflag = uflag = 0;
 	thr_stdout = thr_stderr = NULL;
 	prefix_stdout = prefix_stderr = NULL;
+	fp_stdout = fp_stderr = NULL;
 
-	while ((ch = getopt(argc, argv, "1:2:P:tTu")) != -1) {
+	while ((ch = getopt(argc, argv, "1:2:e:o:P:tTu")) != -1) {
 		switch (ch) {
 		case '1':
 			prefix_stdout = strdup(optarg);
 			break;
 		case '2':
 			prefix_stderr = strdup(optarg);
+			break;
+		case 'e':
+			if ((fp_stderr = fopen(optarg, "r")) == NULL)
+				err(EX_DATAERR, "fopen");
+			break;
+		case 'o':
+			if ((fp_stdout = fopen(optarg, "r")) == NULL)
+				err(EX_DATAERR, "fopen");
 			break;
 		case 'P':
 			setproctitle("%s", optarg);
@@ -229,41 +238,57 @@ main(int argc, char **argv)
 		    err(EXIT_FAILURE, "fdopen stdout");
 		if ((fp_stderr = fdopen(child_stderr[0], "r")) == NULL)
 		    err(EXIT_FAILURE, "fdopen stderr");
-	} else
+	} else if (fp_stdout == NULL)
 		fp_stdout = stdin;
 
-	kdata_stdout.fp_in = fp_stdout;
-	kdata_stdout.fp_out = stdout;
-	kdata_stdout.prefix = prefix_stdout;
-	kdata_stdout.timestamp = !Tflag;
-	kdata_stdout.timestamp_line = tflag;
-	if (child_pid != -1) {
-		thr_stdout = calloc(sizeof(pthread_t), 1);
-		if (pthread_create(thr_stdout, NULL, prefix_main, &kdata_stdout))
-			err(EXIT_FAILURE, "pthread_create stdout");
-		pthread_set_name_np(*thr_stdout, "prefix_stdout");
+	if (fp_stdout != NULL) {
+		kdata_stdout.fp_in = fp_stdout;
+		kdata_stdout.fp_out = stdout;
+		kdata_stdout.prefix = prefix_stdout;
+		kdata_stdout.timestamp = !Tflag;
+		kdata_stdout.timestamp_line = tflag;
+	}
 
+	if (fp_stderr != NULL) {
 		kdata_stderr.fp_in = fp_stderr;
 		kdata_stderr.fp_out = stderr;
 		kdata_stderr.prefix = prefix_stderr;
 		kdata_stderr.timestamp = !Tflag;
 		kdata_stderr.timestamp_line = tflag;
-		thr_stderr = calloc(sizeof(pthread_t), 1);
-		if (pthread_create(thr_stderr, NULL, prefix_main,
-		    &kdata_stderr))
-			err(EXIT_FAILURE, "pthread_create stderr");
-		pthread_set_name_np(*thr_stderr, "prefix_stderr");
+	}
 
-		if (waitpid(child_pid, &status, WEXITED) == -1)
-			err(EXIT_FAILURE, "waitpid");
-		if (WIFEXITED(status))
-			ret = WEXITSTATUS(status);
-		else if (WIFSTOPPED(status))
-			ret = WSTOPSIG(status) + 128;
-		else
-			ret = WTERMSIG(status) + 128;
-	} else
+	if (child_pid != -1 || (fp_stderr != NULL && fp_stdout != NULL)) {
+		if (fp_stdout != NULL) {
+			thr_stdout = calloc(sizeof(pthread_t), 1);
+			if (pthread_create(thr_stdout, NULL, prefix_main,
+			    &kdata_stdout))
+				err(EXIT_FAILURE, "pthread_create stdout");
+			pthread_set_name_np(*thr_stdout, "prefix_stdout");
+		}
+
+		if (fp_stderr != NULL) {
+			thr_stderr = calloc(sizeof(pthread_t), 1);
+			if (pthread_create(thr_stderr, NULL, prefix_main,
+			    &kdata_stderr))
+				err(EXIT_FAILURE, "pthread_create stderr");
+			pthread_set_name_np(*thr_stderr, "prefix_stderr");
+		}
+
+		if (child_pid != -1) {
+			if (waitpid(child_pid, &status, WEXITED) == -1)
+				err(EXIT_FAILURE, "waitpid");
+			if (WIFEXITED(status))
+				ret = WEXITSTATUS(status);
+			else if (WIFSTOPPED(status))
+				ret = WSTOPSIG(status) + 128;
+			else
+				ret = WTERMSIG(status) + 128;
+		}
+	} else if (fp_stderr != NULL) {
+		prefix_main(&kdata_stderr);
+	} else if (fp_stdout != NULL) {
 		prefix_main(&kdata_stdout);
+	}
 
 	if (thr_stdout != NULL)
 		pthread_join(*thr_stdout, NULL);
