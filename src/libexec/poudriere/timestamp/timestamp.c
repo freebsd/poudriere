@@ -154,7 +154,7 @@ usage(void)
 int
 main(int argc, char **argv)
 {
-	FILE *fp_stdout, *fp_stderr;
+	FILE *fp_in_stdout, *fp_in_stderr;
 	pthread_t *thr_stdout, *thr_stderr;
 	struct kdata kdata_stdout, kdata_stderr;
 	const char *prefix_stdout, *prefix_stderr;
@@ -169,7 +169,7 @@ main(int argc, char **argv)
 	tflag = Tflag = uflag = 0;
 	thr_stdout = thr_stderr = NULL;
 	prefix_stdout = prefix_stderr = NULL;
-	fp_stdout = fp_stderr = NULL;
+	fp_in_stdout = fp_in_stderr = NULL;
 
 	while ((ch = getopt(argc, argv, "1:2:e:o:P:tTu")) != -1) {
 		switch (ch) {
@@ -180,11 +180,11 @@ main(int argc, char **argv)
 			prefix_stderr = strdup(optarg);
 			break;
 		case 'e':
-			if ((fp_stderr = fopen(optarg, "r")) == NULL)
+			if ((fp_in_stderr = fopen(optarg, "r")) == NULL)
 				err(EX_DATAERR, "fopen");
 			break;
 		case 'o':
-			if ((fp_stdout = fopen(optarg, "r")) == NULL)
+			if ((fp_in_stdout = fopen(optarg, "r")) == NULL)
 				err(EX_DATAERR, "fopen");
 			break;
 		case 'P':
@@ -238,31 +238,32 @@ main(int argc, char **argv)
 		close(STDIN_FILENO);
 		close(child_stdout[1]);
 		close(child_stderr[1]);
-		if ((fp_stdout = fdopen(child_stdout[0], "r")) == NULL)
+		if ((fp_in_stdout = fdopen(child_stdout[0], "r")) == NULL)
 		    err(EXIT_FAILURE, "fdopen stdout");
-		if ((fp_stderr = fdopen(child_stderr[0], "r")) == NULL)
+		if ((fp_in_stderr = fdopen(child_stderr[0], "r")) == NULL)
 		    err(EXIT_FAILURE, "fdopen stderr");
-	} else if (fp_stdout == NULL)
-		fp_stdout = stdin;
+	} else if (fp_in_stdout == NULL)
+		fp_in_stdout = stdin;
 
-	if (fp_stdout != NULL) {
-		kdata_stdout.fp_in = fp_stdout;
+	if (fp_in_stdout != NULL) {
+		kdata_stdout.fp_in = fp_in_stdout;
 		kdata_stdout.fp_out = stdout;
 		kdata_stdout.prefix = prefix_stdout;
 		kdata_stdout.timestamp = !Tflag;
 		kdata_stdout.timestamp_line = tflag;
 	}
 
-	if (fp_stderr != NULL) {
-		kdata_stderr.fp_in = fp_stderr;
+	if (fp_in_stderr != NULL) {
+		kdata_stderr.fp_in = fp_in_stderr;
 		kdata_stderr.fp_out = stderr;
 		kdata_stderr.prefix = prefix_stderr;
 		kdata_stderr.timestamp = !Tflag;
 		kdata_stderr.timestamp_line = tflag;
 	}
 
-	if (child_pid != -1 || (fp_stderr != NULL && fp_stdout != NULL)) {
-		if (fp_stdout != NULL) {
+	if (child_pid != -1 || (fp_in_stderr != NULL &&
+	    fp_in_stdout != NULL)) {
+		if (fp_in_stdout != NULL) {
 			thr_stdout = calloc(sizeof(pthread_t), 1);
 			if (pthread_create(thr_stdout, NULL, prefix_main,
 			    &kdata_stdout))
@@ -270,7 +271,7 @@ main(int argc, char **argv)
 			pthread_set_name_np(*thr_stdout, "prefix_stdout");
 		}
 
-		if (fp_stderr != NULL) {
+		if (fp_in_stderr != NULL) {
 			thr_stderr = calloc(sizeof(pthread_t), 1);
 			if (pthread_create(thr_stderr, NULL, prefix_main,
 			    &kdata_stderr))
@@ -288,9 +289,9 @@ main(int argc, char **argv)
 			else
 				ret = WTERMSIG(status) + 128;
 		}
-	} else if (fp_stderr != NULL) {
+	} else if (fp_in_stderr != NULL) {
 		prefix_main(&kdata_stderr);
-	} else if (fp_stdout != NULL) {
+	} else if (fp_in_stdout != NULL) {
 		prefix_main(&kdata_stdout);
 	}
 
