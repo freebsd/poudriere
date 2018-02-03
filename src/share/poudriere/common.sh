@@ -5623,7 +5623,6 @@ set_dep_fatal_error() {
 }
 
 clear_dep_fatal_error() {
-	: ${DEP_FATAL_ERROR_FILE:=dep_fatal_error}
 	unset DEP_FATAL_ERROR
 	unlink ${DEP_FATAL_ERROR_FILE} 2>/dev/null || :
 	export ERRORS_ARE_DEP_FATAL=1
@@ -7716,6 +7715,7 @@ if [ -n "${MAX_MEMORY}" ]; then
 fi
 : ${MAX_FILES:=1024}
 : ${DEFAULT_MAX_FILES:=${MAX_FILES}}
+: ${DEP_FATAL_ERROR_FILE:=dep_fatal_error}
 
 TIME_START=$(clock -monotonic)
 EPOCH_START=$(clock -epoch)
