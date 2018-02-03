@@ -294,7 +294,9 @@ prefix_stderr_quick() {
 			MSG_NESTED_STDERR=1
 			"$@"
 		} 2>&1 1>&3 | {
-			if command -v timestamp >/dev/null; then
+			if command -v timestamp >/dev/null && \
+			    [ "$(type timestamp)" = \
+			    "timestamp is a shell builtin" ]; then
 				prefix="$(msg_warn "${extra}:" 2>&1)"
 				stdbuf -o L \
 				    timestamp -T -1 "${prefix}" \
