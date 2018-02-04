@@ -320,6 +320,7 @@ prefix_stderr() {
 	shift 1
 	local prefixpipe prefixpid ret
 	local prefix MSG_NESTED_STDERR
+	local - errexit
 
 	prefixpipe=$(mktemp -ut prefix_stderr.pipe)
 	mkfifo "${prefixpipe}"
@@ -344,7 +345,10 @@ prefix_stderr() {
 
 	MSG_NESTED_STDERR=1
 	ret=0
-	"$@" || ret=$?
+	case $- in *e*) errexit=1; set +e;; esac
+	"$@"
+	ret=$?
+	[ ${errexit} -eq 1 ] && set -e
 
 	exec 2>&4 4>&-
 	timed_wait_and_kill 5 ${prefixpid} || :
@@ -358,6 +362,7 @@ prefix_stdout() {
 	shift 1
 	local prefixpipe prefixpid ret
 	local prefix MSG_NESTED
+	local - errexit
 
 	prefixpipe=$(mktemp -ut prefix_stdout.pipe)
 	mkfifo "${prefixpipe}"
@@ -382,7 +387,10 @@ prefix_stdout() {
 
 	MSG_NESTED=1
 	ret=0
-	"$@" || ret=$?
+	case $- in *e*) errexit=1; set +e;; esac
+	"$@"
+	ret=$?
+	[ ${errexit} -eq 1 ] && set -e
 
 	exec 1>&3 3>&-
 	timed_wait_and_kill 5 ${prefixpid} || :
@@ -395,6 +403,7 @@ prefix_output() {
 	local extra="$1"
 	local prefix_stdout prefix_stderr prefixpipe_stdout prefixpipe_stderr
 	local ret MSG_NESTED MSG_NESTED_STDERR
+	local - errexit
 	shift 1
 
 	if ! command -v timestamp >/dev/null; then
@@ -428,7 +437,10 @@ prefix_output() {
 	MSG_NESTED=1
 	MSG_NESTED_STDERR=1
 	ret=0
-	"$@" || ret=$?
+	case $- in *e*) errexit=1; set +e;; esac
+	"$@"
+	ret=$?
+	[ ${errexit} -eq 1 ] && set -e
 
 	exec 1>&3 3>&- 2>&4 4>&-
 	timed_wait_and_kill 5 ${prefixpid} || :
