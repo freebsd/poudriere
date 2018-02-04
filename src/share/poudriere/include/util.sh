@@ -348,7 +348,7 @@ prefix_stderr() {
 
 	exec 2>&4 4>&-
 	timed_wait_and_kill 5 ${prefixpid} || :
-	_wait ${prefixpid}
+	_wait ${prefixpid} || :
 
 	return ${ret}
 }
@@ -386,7 +386,7 @@ prefix_stdout() {
 
 	exec 1>&3 3>&-
 	timed_wait_and_kill 5 ${prefixpid} || :
-	_wait ${prefixpid}
+	_wait ${prefixpid} || :
 
 	return ${ret}
 }
@@ -432,7 +432,7 @@ prefix_output() {
 
 	exec 1>&3 3>&- 2>&4 4>&-
 	timed_wait_and_kill 5 ${prefixpid} || :
-	_wait ${prefixpid}
+	_wait ${prefixpid} || :
 
 	return ${ret}
 }
