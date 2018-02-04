@@ -247,7 +247,6 @@ am_sh_OBJECTS = external/sh_compat/sh-strchrnul.$(OBJEXT) \
 	external/sh/sh-show.$(OBJEXT) external/sh/sh-syntax.$(OBJEXT) \
 	external/sh/sh-test.$(OBJEXT) external/sh/sh-trap.$(OBJEXT) \
 	external/sh/sh-var.$(OBJEXT) \
-	src/libexec/poudriere/cachec/sh-cachec.$(OBJEXT) \
 	src/libexec/poudriere/clock/sh-clock.$(OBJEXT) \
 	src/libexec/poudriere/dirempty/sh-dirempty.$(OBJEXT) \
 	src/libexec/poudriere/locked_mkdir/sh-locked_mkdir.$(OBJEXT) \
@@ -639,8 +638,7 @@ sh_CFLAGS = -DSHELL -std=gnu99 ${sh_hist_CFLAGS} -include \
 	$(top_srcdir)/external/sh_compat/compat.h -I$(top_srcdir)/src \
 	-I$(top_srcdir)/external/sh -I$(top_srcdir)/src/poudriere-sh \
 	-I$(top_builddir)/src/poudriere-sh
-# cachec
-sh_LDADD = ${sh_hist_LDADD} -lrt
+sh_LDADD = ${sh_hist_LDADD}
 sh_hist_LDADD = @MAINTAINER_MODE_TRUE@ -ledit
 sh_hist_CFLAGS = @MAINTAINER_MODE_FALSE@ -DNO_HISTORY
 sh_SOURCES = external/sh_compat/strchrnul.c \
@@ -656,7 +654,6 @@ sh_SOURCES = external/sh_compat/strchrnul.c \
 	external/sh/parser.c external/sh/printf.c external/sh/redir.c \
 	external/sh/show.c external/sh/syntax.c external/sh/test.c \
 	external/sh/trap.c external/sh/var.c \
-	src/libexec/poudriere/cachec/cachec.c \
 	src/libexec/poudriere/clock/clock.c \
 	src/libexec/poudriere/dirempty/dirempty.c \
 	src/libexec/poudriere/locked_mkdir/locked_mkdir.c \
@@ -1188,9 +1185,6 @@ external/sh/sh-trap.$(OBJEXT): external/sh/$(am__dirstamp) \
 	external/sh/$(DEPDIR)/$(am__dirstamp)
 external/sh/sh-var.$(OBJEXT): external/sh/$(am__dirstamp) \
 	external/sh/$(DEPDIR)/$(am__dirstamp)
-src/libexec/poudriere/cachec/sh-cachec.$(OBJEXT):  \
-	src/libexec/poudriere/cachec/$(am__dirstamp) \
-	src/libexec/poudriere/cachec/$(DEPDIR)/$(am__dirstamp)
 src/libexec/poudriere/clock/sh-clock.$(OBJEXT):  \
 	src/libexec/poudriere/clock/$(am__dirstamp) \
 	src/libexec/poudriere/clock/$(DEPDIR)/$(am__dirstamp)
@@ -1433,7 +1427,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh_compat/$(DEPDIR)/sh-strchrnul.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh_compat/$(DEPDIR)/sh-utimensat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cachec/$(DEPDIR)/cachec.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cachec/$(DEPDIR)/sh-cachec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cached/$(DEPDIR)/cached-cached.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/clock/$(DEPDIR)/clock.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/clock/$(DEPDIR)/sh-clock.Po@am__quote@
@@ -2257,20 +2250,6 @@ external/sh/sh-var.obj: external/sh/var.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/var.c' object='external/sh/sh-var.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-var.obj `if test -f 'external/sh/var.c'; then $(CYGPATH_W) 'external/sh/var.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/var.c'; fi`
-
-src/libexec/poudriere/cachec/sh-cachec.o: src/libexec/poudriere/cachec/cachec.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cachec/sh-cachec.o -MD -MP -MF src/libexec/poudriere/cachec/$(DEPDIR)/sh-cachec.Tpo -c -o src/libexec/poudriere/cachec/sh-cachec.o `test -f 'src/libexec/poudriere/cachec/cachec.c' || echo '$(srcdir)/'`src/libexec/poudriere/cachec/cachec.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cachec/$(DEPDIR)/sh-cachec.Tpo src/libexec/poudriere/cachec/$(DEPDIR)/sh-cachec.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cachec/cachec.c' object='src/libexec/poudriere/cachec/sh-cachec.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cachec/sh-cachec.o `test -f 'src/libexec/poudriere/cachec/cachec.c' || echo '$(srcdir)/'`src/libexec/poudriere/cachec/cachec.c
-
-src/libexec/poudriere/cachec/sh-cachec.obj: src/libexec/poudriere/cachec/cachec.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cachec/sh-cachec.obj -MD -MP -MF src/libexec/poudriere/cachec/$(DEPDIR)/sh-cachec.Tpo -c -o src/libexec/poudriere/cachec/sh-cachec.obj `if test -f 'src/libexec/poudriere/cachec/cachec.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cachec/cachec.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cachec/cachec.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cachec/$(DEPDIR)/sh-cachec.Tpo src/libexec/poudriere/cachec/$(DEPDIR)/sh-cachec.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cachec/cachec.c' object='src/libexec/poudriere/cachec/sh-cachec.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cachec/sh-cachec.obj `if test -f 'src/libexec/poudriere/cachec/cachec.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cachec/cachec.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cachec/cachec.c'; fi`
 
 src/libexec/poudriere/clock/sh-clock.o: src/libexec/poudriere/clock/clock.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/clock/sh-clock.o -MD -MP -MF src/libexec/poudriere/clock/$(DEPDIR)/sh-clock.Tpo -c -o src/libexec/poudriere/clock/sh-clock.o `test -f 'src/libexec/poudriere/clock/clock.c' || echo '$(srcdir)/'`src/libexec/poudriere/clock/clock.c
@@ -3273,6 +3252,9 @@ uninstall-man: uninstall-man8
 
 .PRECIOUS: Makefile
 
+# cachec
+#sh_SOURCES+=		src/libexec/poudriere/cachec/cachec.c
+#sh_LDADD+=		-lrt
 src/poudriere-sh/builtins.def: $(top_srcdir)/external/sh/builtins.def \
     $(top_srcdir)/src/poudriere-sh/builtins-poudriere.def
 	cat $^${.ALLSRC} > $@

@@ -202,7 +202,6 @@ CLEANFILES+=		\
 			src/poudriere-sh/builtins.h \
 			src/poudriere-sh/shell.h
 sh_SOURCES+=		\
-			src/libexec/poudriere/cachec/cachec.c \
 			src/libexec/poudriere/clock/clock.c \
 			src/libexec/poudriere/dirempty/dirempty.c \
 			src/libexec/poudriere/locked_mkdir/locked_mkdir.c \
@@ -221,7 +220,8 @@ sh_SOURCES+=		\
 sh_CFLAGS+=		-I$(top_srcdir)/src/poudriere-sh \
 			-I$(top_builddir)/src/poudriere-sh
 # cachec
-sh_LDADD+=		-lrt
+#sh_SOURCES+=		src/libexec/poudriere/cachec/cachec.c
+#sh_LDADD+=		-lrt
 src/poudriere-sh/builtins.def: $(top_srcdir)/external/sh/builtins.def \
     $(top_srcdir)/src/poudriere-sh/builtins-poudriere.def
 	cat $^${.ALLSRC} > $@
