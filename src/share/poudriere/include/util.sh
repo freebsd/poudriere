@@ -206,6 +206,9 @@ critical_start() {
 	local saved_int saved_term
 
 	_CRITSNEST=$((${_CRITSNEST:-0} + 1))
+	if [ ${_CRITSNEST} -gt 1 ]; then
+		return 0
+	fi
 
 	trap_push INT saved_int
 	: ${_crit_caught_int:=0}
@@ -227,6 +230,7 @@ critical_end() {
 
 	oldnest=${_CRITSNEST}
 	_CRITSNEST=$((${_CRITSNEST} - 1))
+	[ ${_CRITSNEST} -eq 0 ] || return 0
 	if hash_remove crit_saved_trap "INT-${oldnest}" saved_int; then
 		trap_pop INT "${saved_int}"
 	fi
