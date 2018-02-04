@@ -270,7 +270,7 @@ main(int argc, char **argv)
 	if (child_pid != -1 || (fp_in_stderr != NULL &&
 	    fp_in_stdout != NULL)) {
 		if (fp_in_stdout != NULL) {
-			thr_stdout = calloc(sizeof(pthread_t), 1);
+			thr_stdout = calloc(1, sizeof(pthread_t));
 			if (pthread_create(thr_stdout, NULL, prefix_main,
 			    &kdata_stdout))
 				err(EXIT_FAILURE, "pthread_create stdout");
@@ -278,7 +278,7 @@ main(int argc, char **argv)
 		}
 
 		if (fp_in_stderr != NULL) {
-			thr_stderr = calloc(sizeof(pthread_t), 1);
+			thr_stderr = calloc(1, sizeof(pthread_t));
 			if (pthread_create(thr_stderr, NULL, prefix_main,
 			    &kdata_stderr))
 				err(EXIT_FAILURE, "pthread_create stderr");
