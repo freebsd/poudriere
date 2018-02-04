@@ -345,7 +345,7 @@ prefix_stderr() {
 
 	MSG_NESTED_STDERR=1
 	ret=0
-	case $- in *e*) errexit=1; set +e;; esac
+	case $- in *e*) errexit=1; set +e ;; *) errexit=0 ;; esac
 	"$@"
 	ret=$?
 	[ ${errexit} -eq 1 ] && set -e
@@ -387,7 +387,7 @@ prefix_stdout() {
 
 	MSG_NESTED=1
 	ret=0
-	case $- in *e*) errexit=1; set +e;; esac
+	case $- in *e*) errexit=1; set +e ;; *) errexit=0 ;; esac
 	"$@"
 	ret=$?
 	[ ${errexit} -eq 1 ] && set -e
@@ -437,7 +437,7 @@ prefix_output() {
 	MSG_NESTED=1
 	MSG_NESTED_STDERR=1
 	ret=0
-	case $- in *e*) errexit=1; set +e;; esac
+	case $- in *e*) errexit=1; set +e ;; *) errexit=0 ;; esac
 	"$@"
 	ret=$?
 	[ ${errexit} -eq 1 ] && set -e
