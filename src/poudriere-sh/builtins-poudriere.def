@@ -10,6 +10,6 @@ realpathcmd -n		realpath
 renamecmd -n		rename
 rmdircmd -n		rmdir
 setproctitlecmd		setproctitle
-sleepcmd		sleep
+sleepcmd -n		sleep
 touchcmd		touch
 unlinkcmd -n		unlink
