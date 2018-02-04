@@ -1,4 +1,4 @@
-cacheccmd		cachec
+#cacheccmd		cachec
 clockcmd -n		clock
 diremptycmd -n		dirempty
 locked_mkdircmd		locked_mkdir
