@@ -1,0 +1,124 @@
+/*-
+ * Copyright (c) 2018 Bryan Drewery <bdrewery@FreeBSD.org>
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer
+ *    in this position and unchanged.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR(S) ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR(S) BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sysexits.h>
+
+#ifndef SHELL
+#error Only supported as a builtin
+#endif
+
+#include "bltin/bltin.h"
+#include <errno.h>
+#include "helpers.h"
+#include "var.h"
+#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+
+extern int rootpid;
+
+#define MAX_SIGNALS 32
+static struct sigdata *signals[MAX_SIGNALS] = {0};
+static int nextidx = 0;
+
+static int
+signame_to_signum(const char *sig)
+{
+	int n;
+
+	if (strncasecmp(sig, "SIG", 3) == 0)
+		sig += 3;
+	for (n = 1; n < sys_nsig; n++) {
+		if (!strcasecmp(sys_signame[n], sig))
+			return (n);
+	}
+	return (-1);
+}
+
+int
+trap_pushcmd(int argc, char **argv)
+{
+	struct sigdata *sd;
+	char buf[32];
+	int signo;
+
+	if (argc != 3)
+		errx(EXIT_USAGE, "%s", "Usage: trap_push <signal> <var_return>");
+
+	if ((signo = signame_to_signum(argv[1])) == -1)
+		errx(EX_DATAERR, "Invalid signal %s", argv[1]);
+
+	if (signals[nextidx] != NULL)
+		errx(EX_SOFTWARE, "%s", "Signal stack exceeded");
+
+	INTOFF;
+	sd = calloc(1, sizeof(*sd));
+	trap_push_sh(signo, sd);
+
+	snprintf(buf, sizeof(buf), "%d", nextidx);
+
+	signals[nextidx] = sd;
+	if (nextidx + 1 == MAX_SIGNALS)
+		nextidx = 0;
+	else
+		++nextidx;
+	INTON;
+	setvar(argv[2], buf, 0);
+
+	return (0);
+}
+
+int
+trap_popcmd(int argc, char **argv)
+{
+	struct sigdata *sd;
+	char *end;
+	int signo, idx;
+
+	if (argc != 3)
+		errx(EXIT_USAGE, "%s", "Usage: trap_popcmd <signal> <saved_trap>");
+
+	if ((signo = signame_to_signum(argv[1])) == -1)
+		errx(EX_DATAERR, "Invalid signal %s", argv[1]);
+
+	errno = 0;
+	idx = strtod(argv[2], &end);
+	if (end == argv[2] || errno == ERANGE || idx < 0 || idx >= MAX_SIGNALS)
+		errx(EX_DATAERR, "%s", "Invalid saved_trap");
+	sd = signals[idx];
+	if (sd == NULL || sd->signo != signo)
+		errx(EX_DATAERR, "%s", "Invalid saved_trap");
+
+	INTOFF;
+	trap_pop(sd->signo, sd);
+	free(signals[idx]);
+	signals[idx] = NULL;
+	INTON;
+
+	return (0);
+
+}

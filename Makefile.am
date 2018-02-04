@@ -216,6 +216,7 @@ sh_SOURCES+=		\
 			src/poudriere-sh/rmdir.c \
 			src/poudriere-sh/setproctitle.c \
 			src/poudriere-sh/sleep.c \
+			src/poudriere-sh/traps.c \
 			src/poudriere-sh/touch.c \
 			src/poudriere-sh/unlink.c
 sh_CFLAGS+=		-I$(top_srcdir)/src/poudriere-sh \

@@ -13,4 +13,6 @@ rmdircmd -n		rmdir
 setproctitlecmd		setproctitle
 sleepcmd -n		sleep
 touchcmd		touch
+trap_pushcmd -n		trap_push
+trap_popcmd -n		trap_pop
 unlinkcmd -n		unlink

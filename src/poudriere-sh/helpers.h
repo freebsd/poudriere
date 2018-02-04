@@ -25,8 +25,16 @@
  */
 
 #include <signal.h>
+#include <stdbool.h>
 
-void trap_push(int signo, struct sigaction *oact);
-void trap_pop(int signo, struct sigaction *oact);
-#define siginfo_push(oact) trap_push(SIGINFO, oact)
-#define siginfo_pop(oact) trap_pop(SIGINFO, oact)
+struct sigdata {
+	struct sigaction oact;
+	char *action_str;
+	char sigmode;
+	int signo;
+	bool sh;
+};
+
+void trap_push(int signo, struct sigdata *sd);
+void trap_push_sh(int signo, struct sigdata *sd);
+void trap_pop(int signo, struct sigdata *sd);
