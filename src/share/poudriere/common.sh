@@ -5308,7 +5308,7 @@ pkgqueue_add_dep() {
 pkgqueue_clean_rdeps() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "pkgqueue_clean_rdeps requires PWD=${MASTERMNT}/.p"
-	[ $# -eq 2 ] || eargs pkgqueue_clean_rdeps pkgclean clean_rdepends
+	[ $# -eq 2 ] || eargs pkgqueue_clean_rdeps clean_rdepends
 	local pkgname="$1"
 	local clean_rdepends="$2"
 	local dep_dir dep_pkgname pkg_dir_name
@@ -5370,7 +5370,7 @@ pkgqueue_clean_rdeps() {
 pkgqueue_clean_deps() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "pkgqueue_clean_deps requires PWD=${MASTERMNT}/.p"
-	[ $# -eq 2 ] || eargs pkgqueue_clean_deps pkgclean clean_rdepends
+	[ $# -eq 2 ] || eargs pkgqueue_clean_deps clean_rdepends
 	local pkgname="$1"
 	local clean_rdepends="$2"
 	local dep_dir rdep_pkgname pkg_dir_name
@@ -5404,7 +5404,7 @@ pkgqueue_clean_deps() {
 pkgqueue_clean_pool() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "pkgqueue_clean_pool requires PWD=${MASTERMNT}/.p"
-	[ $# -eq 2 ] || eargs pkgqueue_clean_pool pkgclean clean_rdepends
+	[ $# -eq 2 ] || eargs pkgqueue_clean_pool clean_rdepends
 	local pkgname="$1"
 	local clean_rdepends="$2"
 
