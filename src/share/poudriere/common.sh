@@ -158,6 +158,7 @@ msg_error() {
 }
 
 msg_dev() {
+	local -; set +x
 	local MSG_NESTED
 
 	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
@@ -166,6 +167,7 @@ msg_dev() {
 }
 
 msg_debug() {
+	local -; set +x
 	local MSG_NESTED
 
 	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
@@ -174,6 +176,7 @@ msg_debug() {
 }
 
 msg_warn() {
+	local -; set +x
 	local MSG_NESTED
 
 	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
