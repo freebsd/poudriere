@@ -289,25 +289,25 @@ This argument specifies directory where the resulting image will be created.
 .It Fl p Ar tree
 This argument specifies the name of the ports tree that is used.
 .It Fl s Ar size
-This specifies the maximum size of the image that gets build.
+This specifies the maximum size of the image that is built.
 .It Fl t Ar type
 This specifies the type of image to create:
 .Bl -tag -width "rawfirmware"
 .It iso
 An ISO 9660 format image.
 .It iso+mfs
-An ISO 9660 format image where the root filesystem gets MFS mounted.
+An ISO 9660 format image where the root filesystem is MFS mounted.
 .It iso+zmfs
-An ISO 9660 format image where the root filesystem is LZ77 compressed and gets MFS
+An ISO 9660 format image where the root filesystem is LZ77 compressed and is MFS
 mounted.
 .It usb
 A GPT-layout prepared UFS2 image containing a UEFI boot loader.
 .It usb+mfs
 A GPT-layout prepared UFS2 image containing a UEFI boot loader where the root
-filesystem gets MFS mounted.
+filesystem is MFS mounted.
 .It usb+zmfs
 A GPT-layout prepared UFS2 image containing a UEFI boot loader where the root
-filesystem is LZ77 compressed and gets MFS mounted.
+filesystem is LZ77 compressed and is MFS mounted.
 .It rawdisk
 A raw UFS2, softupdates-enabled, disk image.
 .It zrawdisk
