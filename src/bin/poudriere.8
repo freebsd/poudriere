@@ -1051,9 +1051,7 @@ Any line starting with the hash sign will be treated as a comment.
 .Bq Launch the bulk build
 .Pp
 Now you can launch the bulk build.
-You can specify to build for only one
-arch/version ; by default it will make the bulk build on all the jails
-created by poudriere.
+At minimum the jail and list of packages to build must be specified.
 .Pp
 .Dl "poudriere bulk -f ~/pkglist -j 81i386"
 .Pp
