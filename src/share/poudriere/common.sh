@@ -6419,10 +6419,14 @@ origin_should_use_dep_args() {
 }
 
 listed_ports() {
-	_listed_ports "$@" | while read originspec; do
-		map_py_slave_port "${originspec}" originspec || :
-		echo "${originspec}"
-	done
+	if have_ports_feature DEPENDS_ARGS; then
+		_listed_ports "$@" | while read originspec; do
+			map_py_slave_port "${originspec}" originspec || :
+			echo "${originspec}"
+		done
+		return
+	fi
+	_listed_ports "$@"
 }
 _listed_ports() {
 	local tell_moved="${1}"
