@@ -1004,7 +1004,7 @@ This directory contains various configuration files for the different jails.
 .Sh EXIT STATUS
 .Ex -std
 .Sh EXAMPLES
-.Ss bulk build of binary packages
+.Ss Bulk build of specific binary packages
 This first example provides a guide on how to use
 .Nm
 for bulk build packages.
@@ -1031,8 +1031,8 @@ you can create a lot of them.
 It will install the jail under the pool
 you have chosen, at poudriere/jailname.
 .Pp
-You also need to have at least one ports tree to build packages from it,
-so let us take the default configuration by creating a ports tree.
+You also need to have at least one ports tree to build packages from,
+so let us take the default configuration and create a ports tree.
 .Pp
 .Dl "poudriere ports -c"
 .Pp
@@ -1054,6 +1054,7 @@ Now you can launch the bulk build.
 You can specify to build for only one
 arch/version ; by default it will make the bulk build on all the jails
 created by poudriere.
+.Pp
 .Dl "poudriere bulk -f ~/pkglist -j 81i386"
 .Pp
 .Bq Find your packages
@@ -1063,7 +1064,7 @@ Once the bulk build is over, you can meet your shiny new packages here:
 .Dl Pa /usr/local/poudriere/data/packages/81i386
 .Pp
 with 81i386 as the name of the jail.
-.Ss test a single port
+.Ss Test a single port
 This second example show how to use
 .Nm
 for a single port.
@@ -1080,7 +1081,7 @@ package dir (pourdriere/data/packages/<jailname>-<tree>-<setname>), then it moun
 (except runtime ones) and log it to
 poudriere/data/logs/testport/jailname/default/mybeautifulporttotest.log).
 .Pp
-If packages for the dependencies already exists it will use them
+If packages for the dependencies already exists poudriere will use them.
 .Pp
 When all the dependencies are built, packages for them are created so
 that next time it will be faster.
@@ -1091,14 +1092,14 @@ After that it will build the port itself with LOCALBASE != PREFIX
 and log the build to
 poudriere/data/logs/testport/jailname/default/mybeautifulporttotest.log
 .Pp
-It will try to:
+Poudriere will try to:
 install it,
 create a package from it,
 deinstall it,
 check for cruft left behind and
 propose the line to add to pkg-plist if needed.
 .Pp
-It is very easy to extend it so that we can easily add other tests if
+Poudriere is very easy to extend it so that we can easily add other tests if
 wanted.
 .Sh FLAVORS
 .Cm bulk -a
