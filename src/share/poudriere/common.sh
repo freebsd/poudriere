@@ -893,7 +893,7 @@ read_file() {
 		fi
 	else
 		while :; do
-			read -r line
+			IFS= read -r line
 			ret=$?
 			case ${ret} in
 				# Success, process data and keep reading.
@@ -4611,10 +4611,6 @@ pkg_get_options() {
 			_compiled_options="${_compiled_options} "
 		fi
 		shash_set 'pkg' 'options' "${_compiled_options}"
-	else
-		# Space on end to match 'pretty-print-config' in delete_old_pkg
-		[ -n "${_compiled_options}" ] &&
-		    _compiled_options="${_compiled_options} "
 	fi
 	if [ -n "${var_return}" ]; then
 		setvar "${var_return}" "${_compiled_options}"
@@ -4678,7 +4674,7 @@ pkg_cacher_main() {
 
 	# Wait for packages to process.
 	while :; do
-		read -r work <&6
+		IFS= read -r work <&6
 		eval $(decode_args work)
 		origin="$1"
 		pkgname="$2"
@@ -5490,7 +5486,7 @@ port_var_fetch() {
 	set -- ${_vars}
 	varcnt=$#
 	shiftcnt=0
-	while read -r _line; do
+	while IFS= read -r _line; do
 		if [ "${_line% *}" = "${_errexit}" ]; then
 			ret=${_line#* }
 			# Encountered an error, abort parsing anything further.

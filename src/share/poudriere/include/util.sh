@@ -265,7 +265,7 @@ read_line() {
 
 		# Read until a full line is returned.
 		until [ ${reads} -eq ${max_reads} ] || \
-		    read -t 1 -r line < "${file}"; do
+		    IFS= read -t 1 -r line < "${file}"; do
 			sleep 0.1
 			reads=$((${reads} + 1))
 		done
@@ -307,7 +307,7 @@ prefix_stderr_quick() {
 				    >&2
 			else
 				setproctitle "${PROC_TITLE} (prefix_stderr_quick)"
-				while read -r line; do
+				while IFS= read -r line; do
 					msg_warn "${extra}: ${line}"
 				done
 			fi
@@ -333,7 +333,7 @@ prefix_stderr() {
 		(
 			set +x
 			setproctitle "${PROC_TITLE} (prefix_stderr)"
-			while read -r line; do
+			while IFS= read -r line; do
 				msg_warn "${extra}: ${line}"
 			done
 		) < ${prefixpipe} &
@@ -375,7 +375,7 @@ prefix_stdout() {
 		(
 			set +x
 			setproctitle "${PROC_TITLE} (prefix_stdout)"
-			while read -r line; do
+			while IFS= read -r line; do
 				msg "${extra}: ${line}"
 			done
 		) < ${prefixpipe} &
