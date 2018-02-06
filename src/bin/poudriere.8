@@ -48,7 +48,9 @@ It can also be used to test a single port.
 accepts a global option:
 .Bl -tag -width "-f conffile"
 .It Fl e Ar etcdir
-Path to the directory where poudriere will find its configuration data.
+Path to the directory where
+.Nm
+will find its configuration data.
 See
 .Sx FILES
 and
@@ -1040,7 +1042,8 @@ A ports tree will take approximately 4GB of space.
 .Bq Specify a list of ports you want to build
 .Pp
 Create a flat text file in which you put the ports you want to see
-built by poudriere.
+built by
+.Nm :
 .Pp
 .Dl "echo 'sysutils/screen' > ~/pkglist"
 .Dl "echo 'editors/vim' >> ~/pkglist"
@@ -1078,7 +1081,9 @@ package dir (pourdriere/data/packages/<jailname>-<tree>-<setname>), then it moun
 (except runtime ones) and log it to
 poudriere/data/logs/testport/jailname/default/mybeautifulporttotest.log).
 .Pp
-If packages for the dependencies already exists poudriere will use them.
+If packages for the dependencies already exist, then
+.Nm
+will use them.
 .Pp
 When all the dependencies are built, packages for them are created so
 that next time it will be faster.
