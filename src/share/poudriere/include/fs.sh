@@ -152,18 +152,16 @@ findmounts() {
 	local mnt="$1"
 	local pattern="$2"
 
-	mount | sort -r -k 2 | while read dev on pt opts; do
-		case "${pt}" in
-		${mnt}${pattern}*)
-			if [ "${dev#/dev/md*}" != "${dev}" ]; then
-				umount ${UMOUNT_NONBUSY} "${pt}" || \
-				    umount -f "${pt}" || :
-				mdconfig -d -u ${dev#/dev/md*}
-			else
-				echo "${pt}"
-			fi
-		;;
-		esac
+	mount | awk -v mnt="${mnt}${pattern}" '$3 ~ mnt {print $1 " " $3}' | \
+	    sort -r -k 2 | \
+	    while read dev pt; do
+		if [ "${dev#/dev/md*}" != "${dev}" ]; then
+			umount ${UMOUNT_NONBUSY} "${pt}" || \
+			    umount -f "${pt}" || :
+			mdconfig -d -u ${dev#/dev/md*}
+		else
+			echo "${pt}"
+		fi
 	done
 }
 
