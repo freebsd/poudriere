@@ -73,7 +73,7 @@ assert() {
 
 assert_not() {
 	[ $# -eq 3 ] || eargs assert_not notexpected actual msg
-	local noexpected="$(echo "$1" | cat -v)"
+	local notexpected="$(echo "$1" | cat -v)"
 	local actual="$(echo "$2" | cat -v)"
 	local msg="$3"
 
