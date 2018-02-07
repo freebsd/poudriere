@@ -289,6 +289,8 @@ _mastermnt() {
 		msg_warn "MASTERNAME '${MASTERNAME}' too long for mounting, using hashed version of '${hashed_name}'"
 	fi
 
+	_gsub "${mnt}" ":" "_"
+	mnt="${_gsub}"
 	setvar "$1" "${mnt}"
 	# MASTERMNTROOT
 	setvar "${1}ROOT" "${mnt%/ref}"
