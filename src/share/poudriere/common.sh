@@ -264,13 +264,18 @@ post_getopts() {
 }
 
 _mastermnt() {
-	local hashed_name mnt mnttest mnamelen testpath
+	local hashed_name mnt mnttest mnamelen testpath mastername
 
 	mnamelen=$(grep "#define[[:space:]]MNAMELEN" \
 	    /usr/include/sys/mount.h 2>/dev/null | awk '{print $3}')
 	: ${mnamelen:=88}
 
-	mnt="${POUDRIERE_DATA}/.m/${MASTERNAME}/ref"
+	# Avoid : which causes issues with PATH for non-jailed commands
+	# like portlint in testport.
+	mastername="${MASTERNAME}"
+	_gsub "${mastername}" ":" "_"
+	mastername="${_gsub}"
+	mnt="${POUDRIERE_DATA}/.m/${mastername}/ref"
 	if [ -z "${NOLINUX}" ]; then
 		testpath="/compat/linux/proc"
 	else
@@ -289,8 +294,6 @@ _mastermnt() {
 		msg_warn "MASTERNAME '${MASTERNAME}' too long for mounting, using hashed version of '${hashed_name}'"
 	fi
 
-	_gsub "${mnt}" ":" "_"
-	mnt="${_gsub}"
 	setvar "$1" "${mnt}"
 	# MASTERMNTROOT
 	setvar "${1}ROOT" "${mnt%/ref}"
