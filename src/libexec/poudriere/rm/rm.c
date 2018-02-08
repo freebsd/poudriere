@@ -214,7 +214,7 @@ main(int argc, char *argv[])
 		if (Iflag) {
 			if (check2(argv) == 0) {
 #ifdef SHELL
-				sigaction(SIGINFO, &info_act, NULL);
+				sigaction(SIGINFO, &info_oact, NULL);
 				INTON;
 #endif
 				return (1);
@@ -227,7 +227,7 @@ main(int argc, char *argv[])
 	}
 
 #ifdef SHELL
-	sigaction(SIGINFO, &info_act, NULL);
+	sigaction(SIGINFO, &info_oact, NULL);
 	INTON;
 #endif
 	return (eval);
@@ -265,7 +265,7 @@ rm_tree(char **argv)
 		if (fflag && errno == ENOENT)
 			return;
 #ifdef SHELL
-		sigaction(SIGINFO, &info_act, NULL);
+		sigaction(SIGINFO, &info_oact, NULL);
 		INTON;
 #endif
 		err(1, "%s", "fts_open");
@@ -285,7 +285,7 @@ rm_tree(char **argv)
 			continue;
 		case FTS_ERR:
 #ifdef SHELL
-			sigaction(SIGINFO, &info_act, NULL);
+			sigaction(SIGINFO, &info_oact, NULL);
 			INTON;
 #endif
 			errx(1, "%s: %s", p->fts_path, strerror(p->fts_errno));
@@ -418,7 +418,7 @@ err:
 	}
 	if (!fflag && errno) {
 #ifdef SHELL
-		sigaction(SIGINFO, &info_act, NULL);
+		sigaction(SIGINFO, &info_oact, NULL);
 		INTON;
 #endif
 		err(1, "%s", "fts_read");
@@ -542,7 +542,7 @@ rm_overwrite(const char *file, struct stat *sbp)
 	bsize = MAX(fsb.f_iosize, 1024);
 	if ((buf = malloc(bsize)) == NULL) {
 #ifdef SHELL
-		sigaction(SIGINFO, &info_act, NULL);
+		sigaction(SIGINFO, &info_oact, NULL);
 		INTON;
 #endif
 		err(1, "%s: malloc", file);
@@ -602,14 +602,14 @@ check(const char *path, const char *name, struct stat *sp)
 		strmode(sp->st_mode, modep);
 		if ((flagsp = fflagstostr(sp->st_flags)) == NULL) {
 #ifdef SHELL
-			sigaction(SIGINFO, &info_act, NULL);
+			sigaction(SIGINFO, &info_oact, NULL);
 			INTON;
 #endif
 			err(1, "%s", "fflagstostr");
 		}
 		if (Pflag) {
 #ifdef SHELL
-			sigaction(SIGINFO, &info_act, NULL);
+			sigaction(SIGINFO, &info_oact, NULL);
 			INTON;
 #endif
 			errx(1,
