@@ -73,6 +73,7 @@ __FBSDID("$FreeBSD: head/bin/rm/rm.c 326025 2017-11-20 19:49:47Z pfg $");
 #undef xflag
 #include "helpers.h"
 #define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+extern volatile sig_atomic_t gotsig[NSIG];
 static struct sigaction info_oact;
 #endif
 
@@ -268,7 +269,7 @@ rm_tree(char **argv)
 	}
 	while ((p = fts_read(fts)) != NULL) {
 #ifdef SHELL
-		if (int_pending())
+		if (int_pending() || gotsig[SIGINT] || gotsig[SIGTERM])
 			break;
 #endif
 		switch (p->fts_info) {
