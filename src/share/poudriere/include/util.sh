@@ -199,7 +199,6 @@ trap_pop() {
 		return 1
 	fi
 }
-fi
 
 # Start a "critical section", disable INT/TERM while in here and delay until
 # critical_end is called.
@@ -250,6 +249,7 @@ critical_end() {
 		kill -TERM $(sh -c 'echo ${PPID}')
 	fi
 }
+fi
 
 # Read a file until 0 status is found. Partial reads not accepted.
 read_line() {

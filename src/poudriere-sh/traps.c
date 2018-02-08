@@ -40,6 +40,8 @@
 #define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
 
 extern int rootpid;
+static int critsnest;
+static sigset_t osigmask;
 
 #define MAX_SIGNALS 32
 static struct sigdata *signals[MAX_SIGNALS] = {0};
@@ -88,6 +90,40 @@ trap_pushcmd(int argc, char **argv)
 		++nextidx;
 	INTON;
 	setvar(argv[2], buf, 0);
+
+	return (0);
+}
+
+int
+critical_startcmd(int argc, char **argv)
+{
+	sigset_t sigmask;
+
+	++critsnest;
+	if (critsnest > 1)
+		return (0);
+
+	sigemptyset(&sigmask);
+	sigaddset(&sigmask, SIGINT);
+	sigaddset(&sigmask, SIGTERM);
+	sigprocmask(SIG_BLOCK, &sigmask, &osigmask);
+
+	return (0);
+}
+
+int
+critical_endcmd(int argc, char **argv)
+{
+
+	if (critsnest == 0) {
+		errx(EX_DATAERR, "%s",
+		    "critical_end called without critical_start");
+	}
+	--critsnest;
+	if (critsnest > 0)
+		return (0);
+
+	sigprocmask(SIG_SETMASK, &osigmask, NULL);
 
 	return (0);
 }
