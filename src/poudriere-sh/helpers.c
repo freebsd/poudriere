@@ -39,8 +39,6 @@ trap_push(int signo, struct sigaction *oact)
 {
 	struct sigaction act;
 
-	memset(oact, sizeof(*oact), 0);
-
 	act.sa_handler = SIG_IGN;
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = SA_RESTART;

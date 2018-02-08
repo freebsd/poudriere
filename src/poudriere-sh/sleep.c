@@ -103,7 +103,6 @@ main(int argc, char *argv[])
 
 #ifdef SHELL
 	INTOFF;
-	memset(&oact, sizeof(oact), 0);
 	act.sa_handler = report_request;
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = SA_RESTART;

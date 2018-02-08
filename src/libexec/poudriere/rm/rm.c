@@ -107,7 +107,6 @@ main(int argc, char *argv[])
 #ifdef SHELL
 	info = dflag = eval = fflag = iflag = Pflag = vflag = Wflag =
 	    stdin_ok = rflag = Iflag = xflag = 0;
-	memset(&info_oact, sizeof(info_oact), 0);
 #else
 	(void)setlocale(LC_ALL, "");
 #endif
