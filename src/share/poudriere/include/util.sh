@@ -519,6 +519,19 @@ noclobber() {
 	"$@" 2>/dev/null
 }
 
+# Ignore SIGPIPE
+nopipe() {
+	local opipe ret
+
+	trap_push PIPE opipe
+	trap '' PIPE
+	ret=0
+	"$@" || ret=$?
+	trap_pop PIPE "${opipe}"
+
+	return ${ret}
+}
+
 prefix_stderr_quick() {
 	local -; set +x
 	local extra="$1"
