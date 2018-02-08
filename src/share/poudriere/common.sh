@@ -1509,7 +1509,7 @@ markfs() {
 		# remove old snapshot if exists
 		zfs destroy -r ${fs}@${name} 2>/dev/null || :
 		rollback_file "${mnt}" "${name}" snapfile
-		unlink "${snapfile}" >/dev/null 2>&1 || :
+		unlink "${snapfile}" || :
 		#create new snapshot
 		zfs snapshot ${fs}@${name}
 		# Mark that we are in this snapshot, which rollbackfs
@@ -4649,14 +4649,16 @@ pkg_cache_data() {
 	local _ignored
 
 	ensure_pkg_installed || return 1
-	pkg_get_options '' "${pkg}" > /dev/null
-	pkg_get_origin '' "${pkg}" "${origin}" > /dev/null
-	if have_ports_feature FLAVORS; then
-		pkg_get_flavor '' "${pkg}" "${flavor}" > /dev/null
-	elif have_ports_feature DEPENDS_ARGS; then
-		pkg_get_dep_args '' "${pkg}" "${dep_args}" > /dev/null
-	fi
-	pkg_get_dep_origin_pkgnames '' '' "${pkg}" > /dev/null
+	{
+		pkg_get_options '' "${pkg}"
+		pkg_get_origin '' "${pkg}" "${origin}"
+		if have_ports_feature FLAVORS; then
+			pkg_get_flavor '' "${pkg}" "${flavor}"
+		elif have_ports_feature DEPENDS_ARGS; then
+			pkg_get_dep_args '' "${pkg}" "${dep_args}"
+		fi
+		pkg_get_dep_origin_pkgnames '' '' "${pkg}"
+	} >/dev/null
 }
 
 pkg_cacher_queue() {
@@ -5625,7 +5627,7 @@ set_dep_fatal_error() {
 
 clear_dep_fatal_error() {
 	unset DEP_FATAL_ERROR
-	unlink ${DEP_FATAL_ERROR_FILE} 2>/dev/null || :
+	unlink ${DEP_FATAL_ERROR_FILE} || :
 	export ERRORS_ARE_DEP_FATAL=1
 }
 
@@ -7229,9 +7231,8 @@ balance_pool() {
 		# This races with pkgqueue_get_next(), just ignore failure
 		# to move it.
 		rename "${pkg_dir}" \
-		    "pool/${dep_count}/${pkgname}" \
-		    2>/dev/null || :
-	done
+		    "pool/${dep_count}/${pkgname}" || :
+	done 2>/dev/null
 	# New files may have been added in unbalanced/ via pkgqueue_done() due
 	# to not being locked. These will be picked up in the next run.
 

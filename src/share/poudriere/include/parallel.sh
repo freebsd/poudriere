@@ -28,10 +28,12 @@ _wait() {
 	# by using 'pwait' to wait(2) and then 'wait' to collect return code
 	local ret=0 pid
 
-	pwait "$@" 2>/dev/null || :
-	for pid in "$@"; do
-		wait ${pid} 2>/dev/null 1>&2 || ret=$?
-	done
+	{
+		pwait "$@" || :
+		for pid in "$@"; do
+			wait ${pid} || ret=$?
+		done
+	} 2>/dev/null
 
 	return ${ret}
 }
@@ -50,7 +52,7 @@ timed_wait_and_kill() {
 		kill_and_wait 1 "${pids}" || ret=$?
 	else
 		# Nothing running, collect their status.
-		wait ${pids} 2>/dev/null 1>&2 || ret=$?
+		wait ${pids} 2>/dev/null || ret=$?
 	fi
 
 	return ${ret}
@@ -66,7 +68,7 @@ timed_wait() {
 
 	status=0
 	# Wait for the pids.
-	pwait -t ${time} ${pids} 2>/dev/null >&1 || status=$?
+	pwait -t ${time} ${pids} || status=$?
 	if [ ${status} -eq 124 ]; then
 		# Timeout reached, something still running.
 		return 1
@@ -88,17 +90,19 @@ kill_and_wait() {
 
 	[ -z "${pids}" ] && return 0
 
-	kill ${pids} 2>/dev/null || :
+	{
+		kill ${pids} || :
 
-	# Wait for the pids. Non-zero status means something is still running.
-	if ! timed_wait ${time} "${pids}"; then
-		# Kill remaining children instead of waiting on them
-		kill -9 ${pids} 2>/dev/null || :
-		_wait ${pids} || ret=$?
-	else
-		# Nothing running, collect status directly.
-		wait ${pids} 2>/dev/null 1>&2 || ret=$?
-	fi
+		# Wait for the pids. Non-zero status means something is still running.
+		if ! timed_wait ${time} "${pids}"; then
+			# Kill remaining children instead of waiting on them
+			kill -9 ${pids} || :
+			_wait ${pids} || ret=$?
+		else
+			# Nothing running, collect status directly.
+			wait ${pids} || ret=$?
+		fi
+	} 2>/dev/null
 
 	return ${ret}
 }
@@ -138,7 +142,7 @@ parallel_start() {
 	fifo=$(mktemp -ut parallel.pipe)
 	mkfifo ${fifo}
 	exec 9<> ${fifo}
-	unlink ${fifo} 2>/dev/null || :
+	unlink ${fifo} || :
 	export NBPARALLEL=0
 	export PARALLEL_PIDS=""
 	: ${PARALLEL_JOBS:=$(sysctl -n hw.ncpu)}
@@ -154,12 +158,12 @@ _reap_children() {
 
 	for pid in ${PARALLEL_PIDS}; do
 		# Check if this pid is still alive
-		if ! kill -0 ${pid} 2>/dev/null; then
+		if ! kill -0 ${pid}; then
 			# This will error out if the return status is non-zero
 			_wait ${pid} || ret=$?
 			list_remove PARALLEL_PIDS "${pid}"
 		fi
-	done
+	done 2>/dev/null
 
 	return ${ret}
 }
@@ -241,7 +245,7 @@ nohang() {
 	# mtime not the client's mtime until the client writes to it
 	touch ${fifo}
 	exec 8<> ${fifo}
-	unlink ${fifo} 2>/dev/null || :
+	unlink ${fifo} || :
 
 	starttime=$(clock -epoch)
 
@@ -291,7 +295,7 @@ nohang() {
 
 	exec 8<&- 8>&-
 
-	unlink ${pidfile} 2>/dev/null || :
+	unlink ${pidfile} || :
 
 	return $ret
 }
