@@ -57,7 +57,7 @@ static int lockfd = -1;
 static volatile sig_atomic_t timed_out;
 static struct sigaction oact;
 #ifdef SHELL
-static struct sigaction oact_siginfo;
+static struct sigdata oinfo;
 #endif
 
 /*
@@ -95,7 +95,7 @@ cleanup(void)
 	}
 #ifdef SHELL
 	sigaction(SIGALRM, &oact, NULL);
-	siginfo_pop(&oact_siginfo);
+	trap_pop(SIGINFO, &oinfo);
 	errno = serrno;
 #endif
 }
@@ -134,7 +134,7 @@ main(int argc, char **argv)
 
 #ifdef SHELL
 	INTOFF;
-	siginfo_push(&oact_siginfo);
+	trap_push(SIGINFO, &oinfo);
 #endif
 	act.sa_handler = sig_timeout;
 	sigemptyset(&act.sa_mask);

@@ -57,7 +57,7 @@ main(int argc, char **argv)
 	size_t outlen;
 	bool set = false;
 #ifdef SHELL
-	struct sigaction oact;
+	struct sigdata oinfo;
 
 	while ((ch = nextopt("s:")) != '\0') {
 		switch (ch) {
@@ -94,12 +94,12 @@ main(int argc, char **argv)
 
 #ifdef SHELL
 	INTOFF;
-	siginfo_push(&oact);
+	trap_push(SIGINFO, &oinfo);
 #endif
 	qserver = mq_open(queuepath, O_WRONLY);
 	if (qserver == (mqd_t)-1) {
 #ifdef SHELL
-		siginfo_pop(&oact);
+		trap_pop(SIGINFO, &oinfo);
 		INTON;
 #endif
 		err(EXIT_FAILURE, "%s", "mq_open");
@@ -114,7 +114,7 @@ main(int argc, char **argv)
 		mq_send(qserver, out, outlen, 0);
 		mq_close(qserver);
 #ifdef SHELL
-		siginfo_pop(&oact);
+		trap_pop(SIGINFO, &oinfo);
 		INTON;
 #endif
 		return (0);
@@ -131,7 +131,7 @@ main(int argc, char **argv)
 	mq_close(qme);
 	mq_unlink(spath);
 #ifdef SHELL
-	siginfo_pop(&oact);
+	trap_pop(SIGINFO, &oinfo);
 	INTON;
 #endif
 	return (0);

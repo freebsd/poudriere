@@ -160,6 +160,7 @@ relpath() {
 	echo "${_relpath}"
 }
 
+if [ "$(type trap_push 2>/dev/null)" != "trap_push is a shell builtin" ]; then
 trap_push() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs trap_push signal var_return
@@ -193,7 +194,7 @@ trap_pop() {
 	local _trap="$2"
 
 	if [ -n "${_trap}" ]; then
-		eval trap -- ${_trap} ${signal} || :
+		eval trap -- "${_trap}" ${signal} || :
 	else
 		return 1
 	fi
@@ -248,6 +249,7 @@ critical_end() {
 		kill -TERM $(sh -c 'echo ${PPID}')
 	fi
 }
+fi
 
 # Read a file until 0 status is found. Partial reads not accepted.
 read_line() {

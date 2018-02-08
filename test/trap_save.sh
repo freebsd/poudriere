@@ -3,6 +3,11 @@
 . common.sh
 . ${SCRIPTPREFIX}/include/util.sh
 
+builtin=0
+if [ "$(type trap_push 2>/dev/null)" = "trap_push is a shell builtin" ]; then
+	builtin=1
+fi
+
 assert_traps() {
 	local expected_file="$1"
 	local extra="$2"
@@ -87,6 +92,7 @@ EXPECTED_0=$(mktemp -ut trap_save)
 cp "${ORIGINAL}" "${EXPECTED_0}"
 trap_push INFO oact_info
 assert 0 $? "trap_push INFO"
+[ ${builtin} -eq 0 ] &&
 assert "-" "${oact_info}" "INFO had no trap so should be -"
 assert_traps "${EXPECTED_0}" "saved 0 traps should match"
 
@@ -97,6 +103,7 @@ EXPECTED_1=$(mktemp -ut trap_save)
 awk '$NF != "INT"' "${ORIGINAL}" > "${EXPECTED_1}"
 trap_push INT oact_int
 assert 0 $? "trap_push INT"
+[ ${builtin} -eq 0 ] &&
 assert "${orig_intrap}" "${oact_int}" "INT trap should match"
 assert_traps "${EXPECTED_1}" "saved 1 traps should match"
 
@@ -110,6 +117,7 @@ if [ ${sh_quotes_assignments} -eq 1 ]; then
 trap_push USR1 oact_usr1
 assert 0 $? "trap_push USR1"
 assert 0 ${evalled_usr1} "trap_push USR1 should not have evalled it"
+[ ${builtin} -eq 0 ] &&
 assert $'$\'var="gotusr1"; evalled_usr1=1; [ -z $dokill ] && `kill -9 $$`; setvar "${var}" \\\'1\\\'\'' "${oact_usr1}" "USR1 trap should match"
 fi
 assert_traps "${EXPECTED_2}" "saved 2 traps should match"
@@ -121,6 +129,7 @@ EXPECTED_3=$(mktemp -ut trap_save)
 awk '$NF != "INT" && $NF != "USR1" && $NF != "TERM"' "${ORIGINAL}" > "${EXPECTED_3}"
 trap_push TERM oact_term
 assert 0 $? "trap_push TERM"
+[ ${builtin} -eq 0 ] &&
 assert "''" "${oact_term}" "TERM trap should match"
 assert_traps "${EXPECTED_3}" "saved 3 traps should match"
 
@@ -150,7 +159,7 @@ assert_traps "${CRITICAL}" "critical traps should match"
 echo "Restore 0 - bad INFO"
 cp "${CRITICAL}" "${EXPECTED_0}"
 trap_pop INFO ""
-assert 1 $? "trap_pop INFO blank"
+assert_not 0 $? "trap_pop INFO blank"
 trap
 assert_traps "${EXPECTED_0}" "restore 0 traps should match"
 

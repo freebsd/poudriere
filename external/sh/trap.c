@@ -74,11 +74,11 @@ __FBSDID("$FreeBSD: head/bin/sh/trap.c 326025 2017-11-20 19:49:47Z pfg $");
 #define S_RESET 5		/* temporary - to reset a hard ignored sig */
 
 
-static char sigmode[NSIG];	/* current value of signal */
+char sigmode[NSIG];	/* current value of signal */
 volatile sig_atomic_t pendingsig;	/* indicates some signal received */
 volatile sig_atomic_t pendingsig_waitcmd;	/* indicates wait builtin should be interrupted */
 static int in_dotrap;			/* do we execute in a trap handler? */
-static char *volatile trap[NSIG];	/* trap handler commands */
+char *volatile trap[NSIG];	/* trap handler commands */
 volatile sig_atomic_t gotsig[NSIG];
 				/* indicates specified signal received */
 static int ignore_sigchld;	/* Used while handling SIGCHLD traps. */

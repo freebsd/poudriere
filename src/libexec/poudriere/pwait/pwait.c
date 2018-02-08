@@ -76,7 +76,7 @@ int
 main(int argc, char *argv[])
 {
 #ifdef SHELL
-	struct sigaction info_oact, alrm_oact;
+	struct sigdata info_oact, alrm_oact;
 #endif
 	struct itimerval itv;
 	int kq;

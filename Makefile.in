@@ -261,6 +261,7 @@ am_sh_OBJECTS = external/sh_compat/sh-strchrnul.$(OBJEXT) \
 	src/poudriere-sh/sh-rmdir.$(OBJEXT) \
 	src/poudriere-sh/sh-setproctitle.$(OBJEXT) \
 	src/poudriere-sh/sh-sleep.$(OBJEXT) \
+	src/poudriere-sh/sh-traps.$(OBJEXT) \
 	src/poudriere-sh/sh-touch.$(OBJEXT) \
 	src/poudriere-sh/sh-unlink.$(OBJEXT) \
 	src/poudriere-sh/sh-builtins.$(OBJEXT)
@@ -665,8 +666,8 @@ sh_SOURCES = external/sh_compat/strchrnul.c \
 	src/poudriere-sh/mkfifo.c src/poudriere-sh/mktemp.c \
 	src/poudriere-sh/realpath.c src/poudriere-sh/rmdir.c \
 	src/poudriere-sh/setproctitle.c src/poudriere-sh/sleep.c \
-	src/poudriere-sh/touch.c src/poudriere-sh/unlink.c \
-	src/poudriere-sh/builtins.c
+	src/poudriere-sh/traps.c src/poudriere-sh/touch.c \
+	src/poudriere-sh/unlink.c src/poudriere-sh/builtins.c
 libucl_a_SOURCES = external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_emitter_streamline.c \
 			external/libucl/src/ucl_emitter_utils.c \
@@ -1232,6 +1233,8 @@ src/poudriere-sh/sh-setproctitle.$(OBJEXT):  \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
 src/poudriere-sh/sh-sleep.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
+src/poudriere-sh/sh-traps.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
+	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
 src/poudriere-sh/sh-touch.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
 src/poudriere-sh/sh-unlink.$(OBJEXT):  \
@@ -1468,6 +1471,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-sleep.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-touch.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-traps.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-unlink.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriered/$(DEPDIR)/poudriered-poudriered.Po@am__quote@
 
@@ -2452,6 +2456,20 @@ src/poudriere-sh/sh-sleep.obj: src/poudriere-sh/sleep.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/sleep.c' object='src/poudriere-sh/sh-sleep.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-sleep.obj `if test -f 'src/poudriere-sh/sleep.c'; then $(CYGPATH_W) 'src/poudriere-sh/sleep.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/sleep.c'; fi`
+
+src/poudriere-sh/sh-traps.o: src/poudriere-sh/traps.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-traps.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-traps.Tpo -c -o src/poudriere-sh/sh-traps.o `test -f 'src/poudriere-sh/traps.c' || echo '$(srcdir)/'`src/poudriere-sh/traps.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-traps.Tpo src/poudriere-sh/$(DEPDIR)/sh-traps.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/traps.c' object='src/poudriere-sh/sh-traps.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-traps.o `test -f 'src/poudriere-sh/traps.c' || echo '$(srcdir)/'`src/poudriere-sh/traps.c
+
+src/poudriere-sh/sh-traps.obj: src/poudriere-sh/traps.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-traps.obj -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-traps.Tpo -c -o src/poudriere-sh/sh-traps.obj `if test -f 'src/poudriere-sh/traps.c'; then $(CYGPATH_W) 'src/poudriere-sh/traps.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/traps.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-traps.Tpo src/poudriere-sh/$(DEPDIR)/sh-traps.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/traps.c' object='src/poudriere-sh/sh-traps.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-traps.obj `if test -f 'src/poudriere-sh/traps.c'; then $(CYGPATH_W) 'src/poudriere-sh/traps.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/traps.c'; fi`
 
 src/poudriere-sh/sh-touch.o: src/poudriere-sh/touch.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-touch.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-touch.Tpo -c -o src/poudriere-sh/sh-touch.o `test -f 'src/poudriere-sh/touch.c' || echo '$(srcdir)/'`src/poudriere-sh/touch.c

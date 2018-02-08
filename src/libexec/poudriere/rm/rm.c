@@ -71,10 +71,9 @@ __FBSDID("$FreeBSD: head/bin/rm/rm.c 326025 2017-11-20 19:49:47Z pfg $");
 #undef Pflag
 #undef vflag
 #undef xflag
-#include "helpers.h"
 #define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
 extern volatile sig_atomic_t gotsig[NSIG];
-static struct sigaction info_oact;
+struct sigaction info_act, info_oact;
 #endif
 
 static int dflag, eval, fflag, iflag, Pflag, vflag, Wflag, stdin_ok;
@@ -202,16 +201,20 @@ main(int argc, char *argv[])
 
 #ifdef SHELL
 	INTOFF;
-	trap_push(SIGINFO, &info_oact);
-#endif
+	info_act.sa_handler = siginfo;
+	sigemptyset(&info_act.sa_mask);
+	info_act.sa_flags = SA_RESTART;
+	sigaction(SIGINFO, &info_act, &info_oact);
+#else
 	(void)signal(SIGINFO, siginfo);
+#endif
 	if (*argv) {
 		stdin_ok = isatty(STDIN_FILENO);
 
 		if (Iflag) {
 			if (check2(argv) == 0) {
 #ifdef SHELL
-				trap_pop(SIGINFO, &info_oact);
+				sigaction(SIGINFO, &info_act, NULL);
 				INTON;
 #endif
 				return (1);
@@ -224,7 +227,7 @@ main(int argc, char *argv[])
 	}
 
 #ifdef SHELL
-	trap_pop(SIGINFO, &info_oact);
+	sigaction(SIGINFO, &info_act, NULL);
 	INTON;
 #endif
 	return (eval);
@@ -262,7 +265,7 @@ rm_tree(char **argv)
 		if (fflag && errno == ENOENT)
 			return;
 #ifdef SHELL
-		trap_pop(SIGINFO, &info_oact);
+		sigaction(SIGINFO, &info_act, NULL);
 		INTON;
 #endif
 		err(1, "%s", "fts_open");
@@ -282,7 +285,7 @@ rm_tree(char **argv)
 			continue;
 		case FTS_ERR:
 #ifdef SHELL
-			trap_pop(SIGINFO, &info_oact);
+			sigaction(SIGINFO, &info_act, NULL);
 			INTON;
 #endif
 			errx(1, "%s: %s", p->fts_path, strerror(p->fts_errno));
@@ -415,7 +418,7 @@ err:
 	}
 	if (!fflag && errno) {
 #ifdef SHELL
-		trap_pop(SIGINFO, &info_oact);
+		sigaction(SIGINFO, &info_act, NULL);
 		INTON;
 #endif
 		err(1, "%s", "fts_read");
@@ -539,7 +542,7 @@ rm_overwrite(const char *file, struct stat *sbp)
 	bsize = MAX(fsb.f_iosize, 1024);
 	if ((buf = malloc(bsize)) == NULL) {
 #ifdef SHELL
-		trap_pop(SIGINFO, &info_oact);
+		sigaction(SIGINFO, &info_act, NULL);
 		INTON;
 #endif
 		err(1, "%s: malloc", file);
@@ -599,14 +602,14 @@ check(const char *path, const char *name, struct stat *sp)
 		strmode(sp->st_mode, modep);
 		if ((flagsp = fflagstostr(sp->st_flags)) == NULL) {
 #ifdef SHELL
-			trap_pop(SIGINFO, &info_oact);
+			sigaction(SIGINFO, &info_act, NULL);
 			INTON;
 #endif
 			err(1, "%s", "fflagstostr");
 		}
 		if (Pflag) {
 #ifdef SHELL
-			trap_pop(SIGINFO, &info_oact);
+			sigaction(SIGINFO, &info_act, NULL);
 			INTON;
 #endif
 			errx(1,
