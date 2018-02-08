@@ -79,7 +79,7 @@ volatile sig_atomic_t pendingsig;	/* indicates some signal received */
 volatile sig_atomic_t pendingsig_waitcmd;	/* indicates wait builtin should be interrupted */
 static int in_dotrap;			/* do we execute in a trap handler? */
 static char *volatile trap[NSIG];	/* trap handler commands */
-static volatile sig_atomic_t gotsig[NSIG];
+volatile sig_atomic_t gotsig[NSIG];
 				/* indicates specified signal received */
 static int ignore_sigchld;	/* Used while handling SIGCHLD traps. */
 static int last_trapsig;
