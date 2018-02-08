@@ -355,25 +355,36 @@ read_line() {
 	[ $# -eq 2 ] || eargs read_line var_return file
 	local var_return="$1"
 	local file="$2"
-	local max_reads reads _ret _line
+	local max_reads reads _ret _line maph
+
+
+	if [ ! -f "${file}" ]; then
+		setvar "${var_return}" ""
+		return 1
+	fi
 
 	_ret=0
-	_line=
+	if mapfile_builtin; then
+		if mapfile maph "${file}"; then
+			IFS= mapfile_read "${maph}" "${var_return}" || _ret=$?
+			mapfile_close "${maph}" || :
+		else
+			_ret=$?
+		fi
 
-	if [ -f "${file}" ]; then
-		max_reads=100
-		reads=0
-
-		# Read until a full line is returned.
-		until [ ${reads} -eq ${max_reads} ] || \
-		    IFS= read -t 1 -r _line < "${file}"; do
-			sleep 0.1
-			reads=$((${reads} + 1))
-		done
-		[ ${reads} -eq ${max_reads} ] && _ret=1
-	else
-		_ret=1
+		return ${_ret}
 	fi
+
+	max_reads=100
+	reads=0
+
+	# Read until a full line is returned.
+	until [ ${reads} -eq ${max_reads} ] || \
+	    IFS= read -t 1 -r _line < "${file}"; do
+		sleep 0.1
+		reads=$((${reads} + 1))
+	done
+	[ ${reads} -eq ${max_reads} ] && _ret=1
 
 	setvar "${var_return}" "${_line}"
 
