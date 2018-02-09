@@ -6139,7 +6139,7 @@ gather_port_vars_process_depqueue_enqueue() {
 	msg_debug "gather_port_vars_process_depqueue_enqueue (${originspec}): Adding ${dep_originspec} into the ${queue} (rdep=${rdep})"
 	# Another worker may have created it
 	if mkdir "${queue}/${dep_originspec%/*}!${dep_originspec#*/}" \
-	    2>/dev/null; then
+	    2>&5; then
 		originspec_decode "${originspec}" origin '' ''
 
 		echo "${rdep}" > \
@@ -6162,6 +6162,10 @@ gather_port_vars_process_depqueue() {
 	    err 1 "gather_port_vars_process_depqueue failed to find pkgname for origin ${originspec}"
 	shash_get pkgname-deps "${pkgname}" deps || \
 	    err 1 "gather_port_vars_process_depqueue failed to find deps for pkg ${pkgname}"
+
+	# Open /dev/null in case gather_port_vars_process_depqueue_enqueue
+	# uses it, to avoid opening for every dependency.
+	[ -n "${deps}" ] && exec 5>/dev/null
 
 	originspec_decode "${originspec}" origin '' ''
 	for dep_originspec in ${deps}; do
@@ -6201,6 +6205,10 @@ gather_port_vars_process_depqueue() {
 			    "${originspec}"
 		fi
 	done
+
+	if [ -n "${deps}" ]; then
+		exec 5>&-
+	fi
 }
 
 
@@ -6265,13 +6273,14 @@ compute_deps_pkg() {
 		fi
 		msg_debug "compute_deps_pkg: Will build ${dep_originspec} for ${pkgname}"
 		pkgqueue_add_dep "${pkgname}" "${dep_pkgname}"
-		echo "${pkgname} ${dep_pkgname}" >> "${pkg_deps}"
+		echo "${pkgname} ${dep_pkgname}"
 		if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
 			# Cache for call later in this func
 			hash_set compute_deps_originspec-pkgname \
 			    "${dep_originspec}" "${dep_pkgname}"
 		fi
-	done
+	done >> "${pkg_deps}"
+
 	# Check for invalid PKGNAME dependencies which break later incremental
 	# 'new dependency' detection.  This is done here rather than
 	# delete_old_pkgs since that only covers existing packages, but we
