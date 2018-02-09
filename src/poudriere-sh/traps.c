@@ -45,7 +45,6 @@ static sigset_t osigmask;
 
 #define MAX_SIGNALS 32
 static struct sigdata *signals[MAX_SIGNALS] = {0};
-static int nextidx = 0;
 
 static int
 signame_to_signum(const char *sig)
@@ -66,7 +65,7 @@ trap_pushcmd(int argc, char **argv)
 {
 	struct sigdata *sd;
 	char buf[32];
-	int signo;
+	int nextidx, idx, signo;
 
 	if (argc != 3)
 		errx(EXIT_USAGE, "%s", "Usage: trap_push <signal> <var_return>");
@@ -74,7 +73,14 @@ trap_pushcmd(int argc, char **argv)
 	if ((signo = signame_to_signum(argv[1])) == -1)
 		errx(EX_DATAERR, "Invalid signal %s", argv[1]);
 
-	if (signals[nextidx] != NULL)
+	nextidx = -1;
+	for (idx = 0; idx < MAX_SIGNALS; idx++) {
+		if (signals[idx] == NULL) {
+			nextidx = idx;
+			break;
+		}
+	}
+	if (nextidx == -1)
 		errx(EX_SOFTWARE, "%s", "Signal stack exceeded");
 
 	INTOFF;
@@ -84,10 +90,6 @@ trap_pushcmd(int argc, char **argv)
 	snprintf(buf, sizeof(buf), "%d", nextidx);
 
 	signals[nextidx] = sd;
-	if (nextidx + 1 == MAX_SIGNALS)
-		nextidx = 0;
-	else
-		++nextidx;
 	INTON;
 	setvar(argv[2], buf, 0);
 
