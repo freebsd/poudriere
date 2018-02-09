@@ -1158,12 +1158,13 @@ show_dry_run_summary() {
 			fi
 			cat "${log}/.poudriere.ports.queued"
 		} | \
-		    while read originspec pkgname _ignored; do
-			# Trim away DEPENDS_ARGS for display
-			originspec_decode "${originspec}" origin '' flavor
-			originspec_encode originspec "${origin}" '' "${flavor}"
-			echo "${originspec}"
-		done | sort | tr '\n' ' '
+		    while mapfile_read_loop_redir \
+		        originspec pkgname _ignored; do
+			    # Trim away DEPENDS_ARGS for display
+			    originspec_decode "${originspec}" origin '' flavor
+			    originspec_encode originspec "${origin}" '' "${flavor}"
+			    echo "${originspec}"
+		    done | sort | tr '\n' ' '
 		echo
 	else
 		msg "No packages would be built"
@@ -3848,7 +3849,7 @@ clean_pool() {
 
 	# Cleaning queue (pool is cleaned here)
 	pkgqueue_done "${pkgname}" "${clean_rdepends}" | \
-	    while read skipped_pkgname; do
+	    while mapfile_read_loop_redir skipped_pkgname; do
 		get_originspec_from_pkgname skipped_originspec "${skipped_pkgname}"
 		originspec_decode "${skipped_originspec}" skipped_origin '' ''
 		badd ports.skipped "${skipped_originspec} ${skipped_pkgname} ${pkgname}"
@@ -4554,7 +4555,7 @@ pkg_get_options() {
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
 	if ! shash_get 'pkg' 'options' _compiled_options; then
 		_compiled_options=
-		while read key value; do
+		while mapfile_read_loop_redir key value; do
 			case "${value}" in
 				off|false) continue ;;
 			esac
@@ -5284,7 +5285,7 @@ pkgqueue_remove_many_pipe() {
 	[ $# -eq 0 ] || eargs pkgqueue_remove_many_pipe [pkgnames stdin]
 	local pkgname
 
-	while read pkgname; do
+	while mapfile_read_loop_redir pkgname; do
 		pkgqueue_find_all_pool_references "${pkgname}"
 	done | xargs rm -rf
 }
@@ -5303,12 +5304,12 @@ pkgqueue_compute_rdeps() {
 	(
 		cd "rdeps"
 		awk '{print $2}' "../${pkg_deps}" | sort -u | \
-		    while read job; do
+		    while mapfile_read_loop_redir job; do
 			pkgqueue_dir rdep_dir_name "${job}"
 			echo "${rdep_dir_name}"
 		done | xargs mkdir -p
 		awk '{print $2 " " $1}' "../${pkg_deps}" | \
-		    while read job dep; do
+		    while mapfile_read_loop_redir job dep; do
 			pkgqueue_dir rdep_dir_name "${job}"
 			echo "${rdep_dir_name}/${dep}"
 		done | xargs touch
@@ -6176,10 +6177,10 @@ compute_deps() {
 
 	clear_dep_fatal_error
 	parallel_start
-	while read pkgname originspec _ignored; do
+	while mapfile_read_loop "all_pkgs" pkgname originspec _ignored; do
 		parallel_run compute_deps_pkg "${pkgname}" "${originspec}" \
 		    "pkg_deps.unsorted" || set_dep_fatal_error
-	done < "all_pkgs"
+	done
 	if ! parallel_stop || check_dep_fatal_error; then
 		err 1 "Fatal errors encountered calculating dependencies"
 	fi
@@ -6404,7 +6405,7 @@ _listed_ports() {
 		[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
 		for cat in $(awk -F= '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print $2}' ${portsdir}/Makefile); do
 			awk -F= -v cat=${cat} '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print cat"/"$2}' ${portsdir}/${cat}/Makefile
-		done | while read origin; do
+		done | while mapfile_read_loop_redir origin; do
 			if ! [ -d "${portsdir}/${origin}" ]; then
 				msg_warn "Nonexistent origin listed in category Makefiles: ${COLOR_PORT}${origin}${COLOR_RESET} (skipping)"
 				continue
@@ -6418,13 +6419,13 @@ _listed_ports() {
 		# -f specified
 		if [ -z "${LISTPORTS}" ]; then
 			for file in ${LISTPKGS}; do
-				while read origin; do
+				while mapfile_read_loop "${file}" origin; do
 					# Skip blank lines and comments
 					[ -z "${origin%%#*}" ] && continue
 					# Remove excess slashes for mistakes
 					origin="${origin#/}"
 					echo "${origin%/}"
-				done < "${file}"
+				done
 			done
 		else
 			# Ports specified on cmdline
@@ -6434,7 +6435,7 @@ _listed_ports() {
 				echo "${origin%/}"
 			done
 		fi
-	} | sort -u | while read originspec; do
+	} | sort -u | while mapfile_read_loop_redir originspec; do
 		originspec_decode "${originspec}" origin '' flavor
 		if [ -n "${flavor}" ] && ! have_ports_feature FLAVORS; then
 			msg_error "Trying to build FLAVOR-specific ${originspec} but ports tree has no FLAVORS support."
@@ -6576,7 +6577,7 @@ pkgqueue_list_deps_pipe() {
 	local pkgname FIND_ALL_DEPS
 
 	unset FIND_ALL_DEPS
-	while read pkgname; do
+	while mapfile_read_loop_redir pkgname; do
 		pkgqueue_list_deps_recurse "${pkgname}" | sort -u
 	done | sort -u
 }
@@ -6665,7 +6666,8 @@ load_moved() {
 	bset status "loading_moved:"
 	awk -f ${AWKPREFIX}/parse_MOVED.awk \
 	    ${MASTERMNT}${PORTSDIR}/MOVED | \
-	    while read old_origin new_origin expired_reason; do
+	    while mapfile_read_loop_redir \
+	        old_origin new_origin expired_reason; do
 		shash_set origin-moved "${old_origin}" "${new_origin}"
 		if [ "${new_origin}" = "EXPIRED" ]; then
 			shash_set origin-moved-expired "${old_origin}" \
@@ -6722,7 +6724,7 @@ clean_build_queue() {
 	msg "Cleaning the build queue"
 
 	# Delete from the queue all that already have a current package.
-	pkgqueue_list | while read pn; do
+	pkgqueue_list | while mapfile_read_loop_redir pn; do
 		[ -f "../packages/All/${pn}.${PKG_EXT}" ] && echo "${pn}"
 	done | pkgqueue_remove_many_pipe
 
@@ -6905,7 +6907,8 @@ prepare_ports() {
 			msg "(-C) Cleaning specified packages to build"
 			delete_pkg_list=$(mktemp -t poudriere.cleanC)
 			clear_dep_fatal_error
-			listed_pkgnames | while read pkgname; do
+			listed_pkgnames | while mapfile_read_loop_redir \
+			    pkgname; do
 				pkg="${PACKAGES}/All/${pkgname}.${PKG_EXT}"
 				if [ -f "${pkg}" ]; then
 					msg "(-C) Deleting existing package: ${pkg##*/}"
@@ -7007,10 +7010,11 @@ prepare_ports() {
 			# trimmed.
 			local _originspec _pkgname _rdep tmp
 			tmp=$(TMPDIR="${log}" mktemp -ut .queued)
-			while read _pkgname _originspec _rdep; do
+			while mapfile_read_loop "all_pkgs" \
+			    _pkgname _originspec _rdep; do
 				pkgqueue_contains "${_pkgname}" && \
 				    echo "${_originspec} ${_pkgname} ${_rdep}"
-			done < "all_pkgs" | sort > "${tmp}"
+			done | sort > "${tmp}"
 			mv -f "${tmp}" "${log}/.poudriere.ports.queued"
 		fi
 
@@ -7054,7 +7058,7 @@ load_priorities_tsortD() {
 
 	set -f # for PRIORITY_BOOST
 	boosted=0
-	while read priority pkgname; do
+	while mapfile_read_loop "pkg_deps.depth" priority pkgname; do
 		# Does this pkg have an override?
 		for pkg_boost in ${PRIORITY_BOOST}; do
 			case ${pkgname%-*} in
@@ -7071,7 +7075,7 @@ load_priorities_tsortD() {
 			esac
 		done
 		hash_set "priority" "${pkgname}" ${priority}
-	done < "pkg_deps.depth"
+	done
 
 	# Add ${PRIORITY_BOOST_VALUE} into the pool if needed.
 	[ ${boosted} -eq 1 ] && POOL_BUCKET_DIRS="${PRIORITY_BOOST_VALUE} ${POOL_BUCKET_DIRS}"
@@ -7088,7 +7092,7 @@ load_priorities_ptsort() {
 	awk '{print $2 " " $1}' "pkg_deps" > "pkg_deps.ptsort"
 
 	# Add in boosts before running ptsort
-	while read pkgname originspec _ignored; do
+	while mapfile_read_loop "all_pkgs" pkgname originspec _ignored; do
 		# Does this pkg have an override?
 		for pkg_boost in ${PRIORITY_BOOST}; do
 			case ${pkgname%-*} in
@@ -7104,7 +7108,7 @@ load_priorities_ptsort() {
 					;;
 			esac
 		done
-	done < "all_pkgs"
+	done
 
 	ptsort -p "pkg_deps.ptsort" > \
 	    "pkg_deps.priority"
@@ -7114,9 +7118,9 @@ load_priorities_ptsort() {
 	    "pkg_deps.priority"|sort -run)
 
 	# Read all priorities into the "priority" hash
-	while read priority pkgname; do
+	while mapfile_read_loop "pkg_deps.priority" priority pkgname; do
 		hash_set "priority" "${pkgname}" ${priority}
-	done < "pkg_deps.priority"
+	done
 
 	return 0
 }
