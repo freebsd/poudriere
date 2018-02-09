@@ -178,7 +178,7 @@ parallel_stop() {
 		_wait ${PARALLEL_PIDS} || ret=$?
 	fi
 
-	exec 9<&- 9>&-
+	exec 9>&-
 	unset PARALLEL_PIDS
 	unset NBPARALLEL
 
@@ -293,7 +293,7 @@ nohang() {
 		fi
 	done
 
-	exec 8<&- 8>&-
+	exec 8>&-
 
 	unlink ${pidfile} || :
 

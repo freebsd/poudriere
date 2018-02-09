@@ -1137,7 +1137,7 @@ exit_handler() {
 
 	if was_a_bulk_run; then
 		# build_queue socket
-		exec 6<&- 6>&- || :
+		exec 6>&- || :
 		coprocess_stop pkg_cacher
 	fi
 
@@ -3738,7 +3738,7 @@ build_queue() {
 			idle_only=0
 		fi
 	done
-	exec 6<&- 6>&-
+	exec 6>&-
 
 	run_hook build_queue stop
 }
