@@ -7162,7 +7162,7 @@ prepare_ports() {
 			while read _pkgname _originspec _rdep; do
 				pkgqueue_contains "${_pkgname}" && \
 				    echo "${_originspec} ${_pkgname} ${_rdep}"
-			done < "all_pkgs" > "${tmp}"
+			done < "all_pkgs" | sort > "${tmp}"
 			mv -f "${tmp}" "${log}/.poudriere.ports.queued"
 		fi
 
