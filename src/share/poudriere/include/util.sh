@@ -49,7 +49,7 @@ encode_args() {
 # Decode data from encode_args
 # Usage: eval $(decode_args data_var_name)
 decode_args() {
-	local -; set +x
+	local -; set +x -f
 	[ $# -eq 1 ] || eargs decode_args encoded_args_var
 	local encoded_args_var="$1"
 
@@ -117,7 +117,7 @@ relpath_common() {
 
 # Given 2 paths, return the relative path from the 2nd to the first
 _relpath() {
-	local -; set +x
+	local -; set +x -f
 	[ $# -eq 2 ] || eargs _relpath dir1 dir2
 	local dir1="$1"
 	local dir2="$2"

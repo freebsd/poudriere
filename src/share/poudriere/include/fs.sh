@@ -61,6 +61,7 @@ createfs() {
 }
 
 do_clone() {
+	local -; set -f
 	[ $# -lt 2 ] && eargs do_clone [-r] src dst
 	[ $# -gt 3 ] && eargs do_clone [-r] src dst
 	local src dst common relative FLAG

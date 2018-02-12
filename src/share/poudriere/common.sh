@@ -2657,6 +2657,7 @@ setup_makeconf() {
 }
 
 include_poudriere_confs() {
+	local -; set -f
 	local files file flag args_hack debug
 
 	# msg_debug is not properly setup this early for VERBOSE to be set
@@ -4138,7 +4139,7 @@ build_all_flavors() {
 
 # ORIGINSPEC is: ORIGIN@FLAVOR@DEPENDS_ARGS
 originspec_decode() {
-	local -; set +x
+	local -; set +x -f
 	[ $# -ne 4 ] && eargs originspec_decode originspec \
 	    var_return_origin var_return_dep_args var_return_flavor
 	local _originspec="$1"
@@ -4559,6 +4560,7 @@ pkg_get_dep_args() {
 }
 
 pkg_get_dep_origin_pkgnames() {
+	local -; set -f
 	[ $# -ne 3 ] && eargs pkg_get_dep_origin_pkgnames var_return_origins \
 	    var_return_pkgnames pkg
 	local var_return_origins="$1"
@@ -5448,7 +5450,7 @@ have_ports_feature() {
 # port_var_fetch ports-mgmt/pkg PKGNAME pkgname PKGBASE pkgbase ...
 # Assignments are supported as well, without a subsequent variable for storage.
 port_var_fetch() {
-	local -; set +x
+	local -; set +x -f
 	[ $# -ge 3 ] || eargs port_var_fetch origin PORTVAR var_set ...
 	local origin="$1"
 	local _make_origin _makeflags _vars
