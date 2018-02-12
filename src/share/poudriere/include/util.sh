@@ -53,11 +53,8 @@ decode_args() {
 	[ $# -eq 1 ] || eargs decode_args encoded_args_var
 	local encoded_args_var="$1"
 
-	# IFS="${ENCODE_SEP}"
-	# set -- ${data}
-	# unset IFS
-
-	echo "IFS=\"\${ENCODE_SEP}\"; set -- \${${encoded_args_var}}; unset IFS"
+	# oldIFS="${IFS}"; IFS="${ENCODE_SEP}"; set -- ${data}; IFS="${oldIFS}"; unset oldIFS
+	echo "oldIFS=\"\${IFS}\"; IFS=\"\${ENCODE_SEP}\"; set -- \${${encoded_args_var}}; IFS=\"\${oldIFS}\"; unset oldIFS"
 }
 
 # Given 2 directories, make both of them relative to their
