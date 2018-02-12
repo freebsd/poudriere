@@ -39,6 +39,7 @@ _shash_var_name() {
 
 _shash_varkey_file() {
 	local varkey="${1}%${2}"
+	local _shash_var_name
 
 	_shash_var_name "${varkey}"
 	_shash_varkey_file="${SHASH_VAR_PATH}/${SHASH_VAR_PREFIX}${_shash_var_name}"

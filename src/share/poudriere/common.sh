@@ -264,7 +264,7 @@ post_getopts() {
 }
 
 _mastermnt() {
-	local hashed_name mnt mnttest mnamelen testpath mastername
+	local hashed_name mnt mnttest mnamelen testpath mastername _gsub
 
 	mnamelen=$(grep "#define[[:space:]]MNAMELEN" \
 	    /usr/include/sys/mount.h 2>/dev/null | awk '{print $3}')
@@ -983,7 +983,7 @@ _pget() {
 
 #build getter/setter
 _bget() {
-	local var_return id property mnt log file READ_FILE_USE_CAT
+	local var_return id property mnt log file READ_FILE_USE_CAT file
 
 	var_return="$1"
 	_log_path log
@@ -1018,7 +1018,7 @@ bget() {
 
 bset() {
 	was_a_bulk_run || return 0
-	local id property mnt log
+	local id property mnt log file
 	_log_path log
 	if [ $# -eq 3 ]; then
 		id=$1
@@ -1041,7 +1041,7 @@ bset_job_status() {
 }
 
 badd() {
-	local id property mnt log
+	local id property mnt log file
 	_log_path log
 	if [ $# -eq 3 ]; then
 		id=$1
@@ -1355,7 +1355,7 @@ jail_runs() {
 }
 
 porttree_list() {
-	local name method mntpoint
+	local name method mntpoint p
 	[ -d ${POUDRIERED}/ports ] || return 0
 	for p in $(find ${POUDRIERED}/ports -type d -maxdepth 1 -mindepth 1 -print); do
 		name=${p##*/}
@@ -1589,7 +1589,7 @@ do_jail_mounts() {
 	local arch="$3"
 	local name="$4"
 	local devfspath="null zero random urandom stdin stdout stderr fd fd/* bpf* pts pts/*"
-	local srcpath nullpaths nullpath
+	local srcpath nullpaths nullpath p
 
 	# from==mnt is via jail -u
 
@@ -1772,7 +1772,7 @@ do_portbuild_mounts() {
 	local ptname=$3
 	local setname=$4
 	local portsdir
-	local optionsdir
+	local optionsdir opt
 
 	# clone will inherit from the ref jail
 	if [ ${mnt##*/} = "ref" ]; then
@@ -2294,7 +2294,7 @@ jail_start() {
 	local mnt
 	local needfs="${NULLFSREF}"
 	local needkld kldpair kld kldmodname
-	local tomnt
+	local tomnt fs
 	local portbuild_uid
 
 	lock_jail
@@ -2657,6 +2657,7 @@ setup_makeconf() {
 include_poudriere_confs() {
 	local -; set -f
 	local files file flag args_hack debug
+	local jail ptname setname
 
 	# msg_debug is not properly setup this early for VERBOSE to be set
 	# so spy on -v and set debug and use it locally instead.
@@ -3770,6 +3771,7 @@ calculate_elapsed_from_log() {
 	[ $# -eq 2 ] || eargs calculate_elapsed_from_log now log
 	local now="$1"
 	local log="$2"
+	local start_time start_end_time end_time
 
 	[ -f "${log}/.poudriere.status" ] || return 1
 	start_end_time=$(stat -f '%B %m' \
@@ -3935,7 +3937,7 @@ build_pkg() {
 	local ignore
 	local errortype
 	local ret=0
-	local elapsed now
+	local elapsed now _gsub
 
 	_my_path mnt
 	_my_name name
@@ -5451,7 +5453,7 @@ port_var_fetch() {
 	local -; set +x -f
 	[ $# -ge 3 ] || eargs port_var_fetch origin PORTVAR var_set ...
 	local origin="$1"
-	local _make_origin _makeflags _vars
+	local _make_origin _makeflags _vars ret
 	local _portvar _var _line _errexit shiftcnt varcnt
 	# Use a tab rather than space to allow FOO='BLAH BLAH' assignments
 	# and lookups like -V'${PKG_DEPENDS} ${BUILD_DEPENDS}'
@@ -7512,6 +7514,7 @@ for val in ${USE_TMPFS}; do
 	*) err 1 "Unknown value for USE_TMPFS can be a combination of wrkdir,data,all,yes,no,localbase" ;;
 	esac
 done
+unset val
 
 case ${TMPFS_WRKDIR}${TMPFS_DATA}${TMPFS_LOCALBASE}${TMPFS_ALL} in
 1**1|*1*1|**11)
