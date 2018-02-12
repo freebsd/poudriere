@@ -1424,8 +1424,6 @@ if [ "$(type mktemp)" = "mktemp is a shell builtin" ]; then
 fi
 # Wrap mktemp to put most tmpfiles in mnt/.p/tmp rather than system /tmp.
 mktemp() {
-	local ret
-
 	if [ -z "${TMPDIR}" ]; then
 		if [ -n "${MASTERMNT}" -a ${STATUS} -eq 1 ]; then
 			local mnt
