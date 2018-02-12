@@ -636,9 +636,10 @@ timeout_SOURCES = src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES = src/libexec/poudriere/timestamp/timestamp.c
 timestamp_LDADD = -lpthread
 tsort_SOURCES = src/libexec/poudriere/tsort/tsort.c
-sh_CFLAGS = -DSHELL -std=gnu99 ${sh_hist_CFLAGS} -include \
-	$(top_srcdir)/external/sh_compat/compat.h -I$(top_srcdir)/src \
-	-I$(top_srcdir)/external/sh -I$(top_srcdir)/src/poudriere-sh \
+sh_CFLAGS = -DSHELL -std=gnu99 -DVTABSIZE=1000 ${sh_hist_CFLAGS} \
+	-include $(top_srcdir)/external/sh_compat/compat.h \
+	-I$(top_srcdir)/src -I$(top_srcdir)/external/sh \
+	-I$(top_srcdir)/src/poudriere-sh \
 	-I$(top_builddir)/src/poudriere-sh
 sh_LDADD = ${sh_hist_LDADD}
 sh_hist_LDADD = @MAINTAINER_MODE_TRUE@ -ledit

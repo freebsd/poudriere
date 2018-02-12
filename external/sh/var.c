@@ -71,7 +71,9 @@ __FBSDID("$FreeBSD: head/bin/sh/var.c 326025 2017-11-20 19:49:47Z pfg $");
 #endif
 
 
+#ifndef VTABSIZE
 #define VTABSIZE 39
+#endif
 
 
 struct varinit {
