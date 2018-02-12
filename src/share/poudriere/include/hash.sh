@@ -83,24 +83,19 @@ hash_isset() {
 
 	_hash_var_name "${var}" "${key}"
 
-	# Look value from cache
+	# Lookup value from cache
 	eval "_value=\${${_hash_var_name}-__null}"
 
 	[ "${_value}" != "__null" ]
 }
 
-hash_get() {
-	local -; set +x
-	[ $# -ne 3 ] && eargs hash_get var key var_return
-	local var="$1"
-	local key="$2"
-	local var_return="$3"
-	local _hash_var_name _value
-	local ret
+_hash_get() {
+	[ $# -eq 2 ] || eargs _hash_get _hash_var_name var_return
+	local _hash_var_name="$1"
+	local var_return="$2"
+	local _value ret
 
-	_hash_var_name "${var}" "${key}"
-
-	# Look value from cache
+	# Lookup value from cache
 	eval "_value=\${${_hash_var_name}-__null}"
 
 	if [ "${_value}" = "__null" ]; then
@@ -113,6 +108,19 @@ hash_get() {
 	setvar "${var_return}" "${_value}"
 
 	return ${ret}
+}
+
+hash_get() {
+	local -; set +x
+	[ $# -ne 3 ] && eargs hash_get var key var_return
+	local var="$1"
+	local key="$2"
+	local var_return="$3"
+	local _hash_var_name
+
+	_hash_var_name "${var}" "${key}"
+
+	_hash_get "${_hash_var_name}" "${var_return}"
 }
 
 hash_set() {
@@ -134,12 +142,14 @@ hash_remove() {
 	[ $# -ne 3 ] && eargs hash_remove var key var_return
 	local var="$1"
 	local key="$2"
-	local ret
+	local var_return="$3"
+	local _hash_var_name ret
 
+	_hash_var_name "${var}" "${key}"
 	ret=0
-	hash_get "$@" || ret=$?
+	_hash_get "${_hash_var_name}" "${var_return}" || ret=$?
 	if [ ${ret} -eq 0 ]; then
-		hash_unset "${var}" "${key}"
+		unset "${_hash_var_name}"
 	fi
 	return ${ret}
 }
