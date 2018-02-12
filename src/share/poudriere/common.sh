@@ -7238,7 +7238,7 @@ balance_pool() {
 			"pool/unbalanced/*") break ;;
 		esac
 		pkgname=${pkg_dir##*/}
-		hash_get "priority" "${pkgname}" dep_count || dep_count=0
+		hash_remove "priority" "${pkgname}" dep_count || dep_count=0
 		# This races with pkgqueue_get_next(), just ignore failure
 		# to move it.
 		rename "${pkg_dir}" \
