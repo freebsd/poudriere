@@ -228,7 +228,7 @@ POUDRIERE="${POUDRIEREPATH} -e /usr/local/etc"
 ARCH=$(uname -p)
 JAILNAME="poudriere-10${ARCH}"
 JAIL_VERSION="10.3-RELEASE"
-JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt" 2>/dev/null || echo)
+JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt" || echo)
 if [ -z "${JAILMNT}" ]; then
 	echo "Setting up jail for testing..." >&2
 	if ! ${SUDO} ${POUDRIERE} jail -c -j "${JAILNAME}" \
@@ -236,7 +236,7 @@ if [ -z "${JAILMNT}" ]; then
 		echo "SKIP: Cannot setup jail with Poudriere" >&2
 		exit 1
 	fi
-	JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt" 2>/dev/null || echo)
+	JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt" || echo)
 	if [ -z "${JAILMNT}" ]; then
 		echo "SKIP: Failed fetching mnt for new jail in Poudriere" >&2
 		exit 1

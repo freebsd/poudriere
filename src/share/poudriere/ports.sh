@@ -204,7 +204,7 @@ if [ ${LIST} -eq 1 ]; then
 	fi
 	while read ptname ptmethod ptpath; do
 		if [ ${NAMEONLY} -eq 0 ]; then
-			_pget timestamp ${ptname} timestamp 2>/dev/null || :
+			_pget timestamp ${ptname} timestamp || :
 			time=
 			[ -n "${timestamp}" ] && \
 			    time="$(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
@@ -321,7 +321,7 @@ if [ ${DELETE} -eq 1 ]; then
 	porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 	PTMETHOD=$(pget ${PTNAME} method)
 	PTMNT=$(pget ${PTNAME} mnt)
-	CREATED_FS=$(pget ${PTNAME} created_fs 2>/dev/null || echo 0)
+	CREATED_FS=$(pget ${PTNAME} created_fs || echo 0)
 	[ -d "${PTMNT}/ports" ] && PORTSMNT="${PTMNT}/ports"
 	${NULLMOUNT} | /usr/bin/grep -q "${PORTSMNT:-${PTMNT}} on" \
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."

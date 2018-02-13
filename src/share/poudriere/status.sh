@@ -122,7 +122,7 @@ now="$(clock -epoch)"
 output_builder_info() {
 	local builders
 
-	_bget builders builders 2>/dev/null || :
+	_bget builders builders || :
 
 	_mastermnt MASTERMNT
 	JOBS="${builders}" siginfo_handler
@@ -132,12 +132,12 @@ add_summary_build() {
 	local status nbqueued nbfailed nbignored nbskipped nbbuilt nbtobuild
 	local elapsed time url save_status
 
-	_bget status status 2>/dev/null || :
-	_bget nbqueued stats_queued 2>/dev/null || :
-	_bget nbbuilt stats_built 2>/dev/null || :
-	_bget nbfailed stats_failed 2>/dev/null || :
-	_bget nbignored stats_ignored 2>/dev/null || :
-	_bget nbskipped stats_skipped 2>/dev/null || :
+	_bget status status || :
+	_bget nbqueued stats_queued || :
+	_bget nbbuilt stats_built || :
+	_bget nbfailed stats_failed || :
+	_bget nbignored stats_ignored || :
+	_bget nbskipped stats_skipped || :
 	nbtobuild=$((nbqueued - (nbbuilt + nbfailed + nbskipped + nbignored)))
 
 	calculate_elapsed_from_log ${now} ${log}

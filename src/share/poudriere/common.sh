@@ -399,7 +399,7 @@ for_each_build() {
 			# If the file is missing it's a legacy build, skip it
 			# but not the entire mastername if it has a match.
 			if [ -n "${JAILNAME}" ]; then
-				if _bget jailname jailname 2>/dev/null; then
+				if _bget jailname jailname; then
 					[ "${jailname}" = "${JAILNAME}" ] || \
 					    continue 2
 				else
@@ -411,7 +411,7 @@ for_each_build() {
 				fi
 			fi
 			if [ -n "${PTNAME}" ]; then
-				if _bget ptname ptname 2>/dev/null; then
+				if _bget ptname ptname; then
 					[ "${ptname}" = "${PTNAME}" ] || \
 					    continue 2
 				else
@@ -423,7 +423,7 @@ for_each_build() {
 				fi
 			fi
 			if [ -n "${SETNAME}" ]; then
-				if _bget setname setname 2>/dev/null; then
+				if _bget setname setname; then
 					[ "${setname}" = "${SETNAME%0}" ] || \
 					    continue 2
 				else
@@ -436,9 +436,9 @@ for_each_build() {
 			fi
 			# Dereference latest into actual buildname
 			[ "${buildname}" = "latest-done" ] && \
-			    _bget BUILDNAME buildname 2>/dev/null
+			    _bget BUILDNAME buildname
 			[ "${buildname}" = "latest" ] && \
-			    _bget BUILDNAME buildname 2>/dev/null
+			    _bget BUILDNAME buildname
 			# May be blank if build is still starting up
 			[ -z "${BUILDNAME}" ] && continue 2
 
@@ -447,11 +447,11 @@ for_each_build() {
 			# Lookup jailname/setname/ptname if needed. Delayed
 			# from earlier for performance for -a
 			[ -z "${jailname+null}" ] && \
-			    _bget jailname jailname 2>/dev/null || :
+			    _bget jailname jailname || :
 			[ -z "${setname+null}" ] && \
-			    _bget setname setname 2>/dev/null || :
+			    _bget setname setname || :
 			[ -z "${ptname+null}" ] && \
-			    _bget ptname ptname 2>/dev/null || :
+			    _bget ptname ptname || :
 			log=${mastername}/${BUILDNAME}
 
 			${action} || ret=$?
@@ -1171,12 +1171,12 @@ show_build_summary() {
 
 	update_stats 2>/dev/null || return 0
 
-	_bget nbq stats_queued 2>/dev/null || nbq=0
-	_bget status status 2>/dev/null || status=unknown
-	_bget nbf stats_failed 2>/dev/null || nbf=0
-	_bget nbi stats_ignored 2>/dev/null || nbi=0
-	_bget nbs stats_skipped 2>/dev/null || nbs=0
-	_bget nbb stats_built 2>/dev/null || nbb=0
+	_bget nbq stats_queued || nbq=0
+	_bget status status || status=unknown
+	_bget nbf stats_failed || nbf=0
+	_bget nbi stats_ignored || nbi=0
+	_bget nbs stats_skipped || nbs=0
+	_bget nbb stats_built || nbb=0
 	ndone=$((nbb + nbf + nbi + nbs))
 	nbtobuild=$((nbq - ndone))
 
@@ -1191,7 +1191,7 @@ show_build_summary() {
 	fi
 
 	_log_path log
-	_bget buildname buildname 2>/dev/null || :
+	_bget buildname buildname || :
 	now=$(clock -epoch)
 
 	calculate_elapsed_from_log "${now}" "${log}" || return 1
@@ -1221,13 +1221,13 @@ siginfo_handler() {
 
 	trap '' SIGINFO
 
-	_bget status status 2>/dev/null || status=unknown
+	_bget status status || status=unknown
 	if [ "${status}" = "index:" -o "${status#stopped:}" = "crashed:" ]; then
 		enable_siginfo_handler
 		return 0
 	fi
 
-	_bget nbq stats_queued 2>/dev/null || nbq=0
+	_bget nbq stats_queued || nbq=0
 	if [ -z "${nbq}" ]; then
 		enable_siginfo_handler
 		return 0
@@ -1243,7 +1243,7 @@ siginfo_handler() {
 	    ! status_is_stopped "${status}"; then
 		for j in ${JOBS}; do
 			# Ignore error here as the zfs dataset may not be cloned yet.
-			_bget status ${j} status 2>/dev/null || :
+			_bget status ${j} status || :
 			# Skip builders not started yet
 			[ -z "${status}" ] && continue
 			# Hide idle workers
@@ -1301,8 +1301,8 @@ porttree_list() {
 	[ -d ${POUDRIERED}/ports ] || return 0
 	for p in $(find ${POUDRIERED}/ports -type d -maxdepth 1 -mindepth 1 -print); do
 		name=${p##*/}
-		_pget mnt ${name} mnt 2>/dev/null || :
-		_pget method ${name} method 2>/dev/null || :
+		_pget mnt ${name} mnt || :
+		_pget method ${name} method || :
 		echo "${name} ${method:--} ${mnt}"
 	done
 }
@@ -1566,7 +1566,7 @@ do_jail_mounts() {
 	done
 
 	# Mount /usr/src into target if it exists and not overridden
-	_jget srcpath ${name} srcpath 2>/dev/null || srcpath="${from}/usr/src"
+	_jget srcpath ${name} srcpath || srcpath="${from}/usr/src"
 	[ -d "${srcpath}" -a "${from}" != "${mnt}" ] && \
 	    ${NULLMOUNT} -o ro ${srcpath} ${mnt}/usr/src
 
@@ -2668,7 +2668,7 @@ jail_stop() {
 	export STATUS=0
 
 	# Don't override if there is a failure to grab the last status.
-	_bget last_status status 2>/dev/null || :
+	_bget last_status status || :
 	[ -n "${last_status}" ] && bset status "stopped:${last_status}" \
 	    2>/dev/null || :
 }
@@ -3688,11 +3688,11 @@ build_queue() {
 calculate_tobuild() {
 	local nbq nbb nbf nbi nbsndone nremaining
 
-	_bget nbq stats_queued 2>/dev/null || nbq=0
-	_bget nbb stats_built 2>/dev/null || nbb=0
-	_bget nbf stats_failed 2>/dev/null || nbf=0
-	_bget nbi stats_ignored 2>/dev/null || nbi=0
-	_bget nbs stats_skipped 2>/dev/null || nbs=0
+	_bget nbq stats_queued || nbq=0
+	_bget nbb stats_built || nbb=0
+	_bget nbf stats_failed || nbf=0
+	_bget nbi stats_ignored || nbi=0
+	_bget nbs stats_skipped || nbs=0
 
 	ndone=$((nbb + nbf + nbi + nbs))
 	nremaining=$((nbq - ndone))

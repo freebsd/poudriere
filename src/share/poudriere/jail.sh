@@ -98,12 +98,12 @@ list_jail() {
 		name=${j##*/}
 		if [ ${NAMEONLY} -eq 0 ]; then
 			_jget version ${name} version
-			_jget version_vcs ${name} version_vcs 2>/dev/null || \
+			_jget version_vcs ${name} version_vcs || \
 			    version_vcs=
 			_jget arch ${name} arch
 			_jget method ${name} method
 			_jget mnt ${name} mnt
-			_jget timestamp ${name} timestamp 2>/dev/null || :
+			_jget timestamp ${name} timestamp || :
 			time=
 			[ -n "${timestamp}" ] && \
 			    time="$(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
@@ -221,7 +221,7 @@ hook_stop_jail() {
 
 update_jail() {
 	METHOD=$(jget ${JAILNAME} method)
-	: ${SRCPATH:=$(jget ${JAILNAME} srcpath 2>/dev/null || echo)}
+	: ${SRCPATH:=$(jget ${JAILNAME} srcpath || echo)}
 	if [ "${METHOD}" = "null" -a -n "${SRCPATH}" ]; then
 		SRC_BASE="${SRCPATH}"
 	else
@@ -232,7 +232,7 @@ update_jail() {
 		jset ${JAILNAME} method ${METHOD}
 	fi
 	msg "Upgrading using ${METHOD}"
-	: ${KERNEL:=$(jget ${JAILNAME} kernel 2>/dev/null || echo)}
+	: ${KERNEL:=$(jget ${JAILNAME} kernel || echo)}
 	case ${METHOD} in
 	ftp|http|ftp-archive)
 		# In case we use FreeBSD dists and TORELEASE is present, check if it's a release branch.
@@ -937,22 +937,22 @@ info_jail() {
 	_log_path log
 	now=$(clock -epoch)
 
-	_bget status status 2>/dev/null || :
-	_bget nbq stats_queued 2>/dev/null || nbq=0
-	_bget nbb stats_built 2>/dev/null || nbb=0
-	_bget nbf stats_failed 2>/dev/null || nbf=0
-	_bget nbi stats_ignored 2>/dev/null || nbi=0
-	_bget nbs stats_skipped 2>/dev/null || nbs=0
+	_bget status status || :
+	_bget nbq stats_queued || nbq=0
+	_bget nbb stats_built || nbb=0
+	_bget nbf stats_failed || nbf=0
+	_bget nbi stats_ignored || nbi=0
+	_bget nbs stats_skipped || nbs=0
 	tobuild=$((nbq - nbb - nbf - nbi - nbs))
 
 	_jget jversion ${JAILNAME} version
-	_jget jversion_vcs ${JAILNAME} version_vcs 2>/dev/null || jversion_vcs=
+	_jget jversion_vcs ${JAILNAME} version_vcs || jversion_vcs=
 	_jget jarch ${JAILNAME} arch
 	_jget jmethod ${JAILNAME} method
-	_jget timestamp ${JAILNAME} timestamp 2>/dev/null || :
-	_jget mnt ${JAILNAME} mnt 2>/dev/null || :
-	_jget fs ${JAILNAME} fs 2>/dev/null || fs=""
-	_jget kernel ${JAILNAME} kernel 2>/dev/null || kernel=
+	_jget timestamp ${JAILNAME} timestamp || :
+	_jget mnt ${JAILNAME} mnt || :
+	_jget fs ${JAILNAME} fs || fs=""
+	_jget kernel ${JAILNAME} kernel || kernel=
 
 	echo "Jail name:         ${JAILNAME}"
 	echo "Jail version:      ${jversion}"
@@ -1131,9 +1131,9 @@ post_getopts
 METHOD=${METHOD:-ftp}
 CLEANJAIL=${CLEAN:-none}
 if [ -n "${JAILNAME}" -a ${CREATE} -eq 0 ]; then
-	_jget ARCH ${JAILNAME} arch 2>/dev/null || :
-	_jget JAILFS ${JAILNAME} fs 2>/dev/null || :
-	_jget JAILMNT ${JAILNAME} mnt 2>/dev/null || :
+	_jget ARCH ${JAILNAME} arch || :
+	_jget JAILFS ${JAILNAME} fs || :
+	_jget JAILMNT ${JAILNAME} mnt || :
 fi
 
 if [ -n "${SOURCES_URL}" ]; then
