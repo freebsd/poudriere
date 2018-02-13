@@ -5766,7 +5766,7 @@ gather_port_vars_port() {
 
 	# A metadata lookup may have been queued for this port that is no
 	# longer needed.
-	if [ ${ALL} -eq 0 ] && \
+	if [ ${ALL} -eq 0 ] && [ "${rdep%% *}" != "metadata" ] && \
 	    [ -d "mqueue/${originspec%/*}!${originspec#*/}" ]; then
 		rm -rf "mqueue/${originspec%/*}!${originspec#*/}"
 	fi
