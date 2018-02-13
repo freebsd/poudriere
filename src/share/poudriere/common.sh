@@ -6793,7 +6793,7 @@ prepare_ports() {
 		if have_ports_feature FLAVORS; then
 			if [ -n "${FLAVORS}" ] && \
 			    [ "${FLAVOR_DEFAULT_ALL}" = "yes" ]; then
-				msg_warn "Only testing first flavor '${FLAVOR}', use 'bulk -t' to test all flavors"
+				msg_warn "Only testing first flavor '${FLAVOR}', use 'bulk -t' to test all flavors: ${FLAVORS}"
 			fi
 			if [ -n "${dep_flavor}" ]; then
 				# Is it even a valid FLAVOR though?
