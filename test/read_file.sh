@@ -5,7 +5,7 @@
 
 TMP=$(mktemp -u)
 data=blah
-read_file data "${TMP}" 2>/dev/null
+read_file data "${TMP}"
 assert_not 0 $? "read_file on missing file should not return 0"
 assert '' "${data}" "read_file on missing file should be blank"
 assert 0 "${_read_file_lines_read}" "_read_file_lines_read should be 0 on missing file"
