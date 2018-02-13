@@ -58,6 +58,11 @@ _gsub() {
 	_gsub="${result_l}${result_r}"
 }
 
+if ! type _gsub_var_name 2>/dev/null >&2; then
+_gsub_var_name() {
+	_gsub "$1" "${HASH_VAR_NAME_SUB_GLOB}" _
+}
+fi
 
 gsub() {
 	local _gsub
@@ -70,7 +75,7 @@ _hash_var_name() {
 	local _gsub
 
 	# Replace anything not HASH_VAR_NAME_SUB_GLOB with _
-	_gsub "_HASH_${1}_${2}" "${HASH_VAR_NAME_SUB_GLOB}" _
+	_gsub_var_name "_HASH_${1}_${2}"
 	_hash_var_name=${_gsub}
 }
 

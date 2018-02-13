@@ -32,6 +32,8 @@
 
 #include "bltin/bltin.h"
 #include "options.h"
+#include "syntax.h"
+#include "var.h"
 
 extern int rootshell;
 
@@ -156,4 +158,25 @@ trap_pop(int signo, struct sigdata *sd)
 		sigmode[sd->signo] = sd->sigmode;
 	}
 	errno = serrno;
+}
+
+int
+_gsub_var_namecmd(int argc, char **argv)
+{
+	char *string, *pattern, *p, *n;
+	char newvar[512];
+
+	string = argv[1];
+	n = newvar;
+	for (p = string; *p != '\0'; ++p) {
+		if (!is_in_name(*p))
+			*n++ = '_';
+		else
+			*n++ = *p;
+		if (n - newvar == sizeof(newvar) - 1)
+			errx(EX_DATAERR, "var too long");
+	}
+	*n = '\0';
+	setvar("_gsub", newvar, 0);
+	return (0);
 }

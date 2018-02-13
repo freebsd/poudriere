@@ -3,6 +3,7 @@ clockcmd -n		clock
 critical_startcmd -n	critical_start
 critical_endcmd -n	critical_end
 diremptycmd -n		dirempty
+_gsub_var_namecmd -n	_gsub_var_name
 locked_mkdircmd		locked_mkdir
 mkdircmd -n		mkdir
 mkfifocmd -n		mkfifo
