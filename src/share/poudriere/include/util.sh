@@ -66,6 +66,40 @@ decode_args() {
 	echo "oldIFS=\"\${IFS}\"; IFS=\"\${ENCODE_SEP}\"; set -- \${${encoded_args_var}}; IFS=\"\${oldIFS}\"; unset oldIFS"
 }
 
+if ! type issetvar >/dev/null 2>&1; then
+issetvar() {
+	[ $# -eq 1 ] || eargs issetvar
+	local var="$1"
+	local _evalue
+
+	eval "_evalue=\${${var}-__null}"
+
+	[ "${_evalue}" != "__null" ]
+}
+fi
+
+if ! type getvar >/dev/null 2>&1; then
+getvar() {
+	[ $# -eq 2 ] || eargs getvar var var_return
+	local var="$1"
+	local var_return="$2"
+	local ret _evalue
+
+	eval "_evalue=\${${var}-__null}"
+
+	if [ "${_evalue}" = "__null" ]; then
+		_evalue=
+		ret=1
+	else
+		ret=0
+	fi
+
+	setvar "${var_return}" "${_evalue}"
+
+	return ${ret}
+}
+fi
+
 # Given 2 directories, make both of them relative to their
 # common directory.
 # $1 = _relpath_common = common directory

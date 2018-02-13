@@ -88,31 +88,15 @@ hash_isset() {
 
 	_hash_var_name "${var}" "${key}"
 
-	# Lookup value from cache
-	eval "_value=\${${_hash_var_name}-__null}"
-
-	[ "${_value}" != "__null" ]
+	issetvar "${_hash_var_name}"
 }
 
 _hash_get() {
 	[ $# -eq 2 ] || eargs _hash_get _hash_var_name var_return
 	local _hash_var_name="$1"
 	local var_return="$2"
-	local _value ret
 
-	# Lookup value from cache
-	eval "_value=\${${_hash_var_name}-__null}"
-
-	if [ "${_value}" = "__null" ]; then
-		_value=
-		ret=1
-	else
-		ret=0
-	fi
-
-	setvar "${var_return}" "${_value}"
-
-	return ${ret}
+	getvar "${_hash_var_name}" "${var_return}"
 }
 
 hash_get() {
@@ -176,7 +160,7 @@ list_contains() {
 	local item="$2"
 	local value
 
-	eval "value=\"\${${var}}\""
+	getvar "${var}" value
 	case "${value}" in *" ${item} "*) ;; *) return 1 ;; esac
 	return 0
 }
@@ -187,7 +171,7 @@ list_add() {
 	local item="$2"
 	local value
 
-	eval "value=\"\${${var}}\""
+	getvar "${var}" value
 	case "${value}" in *" ${item} "*) return 0 ;; esac
 	setvar "${var}" "${value} ${item} "
 }
@@ -198,7 +182,7 @@ list_remove() {
 	local item="$2"
 	local value
 
-	eval "value=\"\${${var}}\""
+	getvar "${var}" value
 	case "${value}" in *" ${item} "*) ;; *) return 1 ;; esac
 	setvar "${var}" "${value% "${item}" *}${value##* "${item}" }"
 }

@@ -161,6 +161,33 @@ trap_pop(int signo, struct sigdata *sd)
 }
 
 int
+getvarcmd(int argc, char **argv)
+{
+	char *value;
+
+	if (argc != 3)
+		errx(EX_USAGE, "%s", "Usage: getvar <var> <var_return>");
+
+	if ((value = lookupvar(argv[1])) == NULL) {
+		setvar(argv[2], "", 0);
+		return (1);
+	}
+
+	setvar(argv[2], value, 0);
+	return (0);
+}
+
+int
+issetvarcmd(int argc, char **argv)
+{
+
+	if (argc != 2)
+		errx(EX_USAGE, "%s", "Usage: issetvar <var>");
+
+	return (lookupvar(argv[1]) == NULL);
+}
+
+int
 _gsub_var_namecmd(int argc, char **argv)
 {
 	char *string, *pattern, *p, *n;
