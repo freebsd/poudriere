@@ -891,9 +891,7 @@ _attr_get() {
 	local property="$4"
 
 	read_file "${var_return}" \
-	    "${POUDRIERED}/${type}/${name}/${property}" && return 0
-	setvar "${var_return}" ""
-	return 1
+	    "${POUDRIERED}/${type}/${name}/${property}"
 }
 
 attr_get() {
@@ -939,13 +937,7 @@ _bget() {
 	# Use cat(1) to read long list files.
 	[ -z "${1##ports.*}" ] && READ_FILE_USE_CAT=1
 
-	read_file "${var_return}" "${log}/${file}" && return 0
-	# It may be empty if only a count was being looked up
-	# via $_read_file_lines_read hack.
-	if [ -n "${var_return}" ]; then
-		setvar "${var_return}" ""
-	fi
-	return 1
+	read_file "${var_return}" "${log}/${file}"
 }
 
 bget() {
