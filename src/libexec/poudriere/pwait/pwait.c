@@ -148,7 +148,11 @@ main(int argc, char *argv[])
 	if (argc == 0)
 		usage();
 
+#ifndef SHELL
 	me = getpid();
+#else
+	me = -1;
+#endif
 
 #ifdef SHELL
 	INTOFF;
