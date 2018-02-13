@@ -7,6 +7,7 @@ TESTS=\
 	locks_critical_section.sh \
 	locks_critical_section_nested.sh \
 	port_var_fetch.sh \
+	read_file.sh \
 	relpath.sh \
 	relpath_common.sh \
 	shash_basic.sh \
