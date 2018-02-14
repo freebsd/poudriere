@@ -239,6 +239,7 @@ usr/src
 var/db/freebsd-update
 var/db/etcupdate
 boot/kernel.old
+nxb-bin
 EOF
 case "${MEDIATYPE}" in
 embedded)
