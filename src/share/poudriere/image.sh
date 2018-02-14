@@ -310,15 +310,14 @@ touch ${WRKDIR}/src.conf
 [ ! -f ${POUDRIERED}/image-${JAILNAME}-${SETNAME}-src.conf ] || cat ${POUDRIERED}/image-${JAILNAME}-${SETNAME}-src.conf >> ${WRKDIR}/src.conf
 make -C ${mnt}/usr/src DESTDIR=${WRKDIR}/world BATCH_DELETE_OLD_FILES=yes SRCCONF=${WRKDIR}/src.conf delete-old delete-old-libs
 
-# Set hostname
-if [ -n "${HOSTNAME}" ]; then
-	mkdir -p ${WRKDIR}/world/etc/rc.conf.d
-	echo "hostname=${HOSTNAME}" > ${WRKDIR}/world/etc/rc.conf.d/hostname
-fi
-
 [ ! -d "${EXTRADIR}" ] || cp -fRLp ${EXTRADIR}/ ${WRKDIR}/world/
 mv ${WRKDIR}/world/etc/login.conf.orig ${WRKDIR}/world/etc/login.conf
 cap_mkdb ${WRKDIR}/world/etc/login.conf
+
+# Set hostname
+if [ -n "${HOSTNAME}" ]; then
+	echo "hostname=${HOSTNAME}" >> ${WRKDIR}/world/etc/rc.conf
+fi
 
 # install packages if any is needed
 if [ -n "${PACKAGELIST}" ]; then
