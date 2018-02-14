@@ -311,9 +311,10 @@ touch ${WRKDIR}/src.conf
 make -C ${mnt}/usr/src DESTDIR=${WRKDIR}/world BATCH_DELETE_OLD_FILES=yes SRCCONF=${WRKDIR}/src.conf delete-old delete-old-libs
 
 # Set hostname
+# diskless mode didn't support to remove default files into /etc/, but only to add or modify existing filess
+# So providing file into /etc/rc.conf.d/ should be avoided 
 if [ -n "${HOSTNAME}" ]; then
-	mkdir -p ${WRKDIR}/world/etc/rc.conf.d
-	echo "hostname=${HOSTNAME}" > ${WRKDIR}/world/etc/rc.conf.d/hostname
+	echo "hostname=${HOSTNAME}" > ${WRKDIR}/world/etc/rc.conf
 fi
 
 [ ! -d "${EXTRADIR}" ] || cp -fRLp ${EXTRADIR}/ ${WRKDIR}/world/
