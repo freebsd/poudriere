@@ -737,6 +737,56 @@ write_pipe() {
 	return "${ret}"
 }
 
+_pipe_hold_child() {
+	[ $# -ge 3 ] || eargs _pipe_hold_child watch_pid sync_fifo fifos...
+	local sync_fifo="$1"
+	local watch_pid="$2"
+	shift 2
+	local -; set +x
+	local ret
+
+	trap "rm -f '${sync_fifo}'" EXIT
+	trap exit TERM INT HUP PIPE
+
+	setproctitle "pipe_hold($*)"
+	exec 3> "${sync_fifo}"
+	case "$#" in
+	6) exec 9<> "$6" ;;
+	5) exec 8<> "$5" ;;
+	4) exec 7<> "$4" ;;
+	3) exec 6<> "$3" ;;
+	2) exec 5<> "$2" ;;
+	1) exec 4<> "$1" ;;
+	esac || err "$?" "_pipe_hold_child: exec"
+	# Alert parent we're ready
+	echo ready >&3 || err "$?" "pwrite"
+	exec pwait "${watch_pid}" 3<&- 2>/dev/null || err "$?" "pwait"
+}
+
+# This keeps the given fifos open to avoid EOF in writers.
+pipe_hold() {
+	[ $# -ge 3 ] || eargs pipe_hold var_return_pid watch_pid fifos...
+	local var_return_pid="$1"
+	local watch_pid="$2"
+	shift 2
+	local sync_fifo sync ret
+
+	ret=0
+	sync=
+	sync_fifo=$(mktemp -ut pipe_hold)
+	mkfifo "${sync_fifo}"
+
+	spawn_job _pipe_hold_child "${sync_fifo}" "${watch_pid}" "$@"
+	setvar "${var_return_pid}" "$!"
+	read_pipe "${sync_fifo}" sync || ret="$?"
+	case "${sync}" in
+	ready) ;;
+	*) err 1 "pipe_hold failure" ;;
+	esac
+	unlink "${sync_fifo}"
+	return "${ret}"
+}
+
 if [ "$(type mapfile 2>/dev/null)" != "mapfile is a shell builtin" ]; then
 mapfile() {
 	local -; set +x

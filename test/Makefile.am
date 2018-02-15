@@ -36,6 +36,7 @@ TESTS=\
 	mktemp.sh \
 	originspec.sh \
 	pkg_version.sh \
+	pipe_hold.sh \
 	port_var_fetch.sh \
 	prefix_output.sh \
 	read_blocking.sh \
