@@ -145,14 +145,17 @@ msg_error() {
 	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
 	if [ -n "${MY_JOBID}" ]; then
 		# Send colored msg to bulk log...
-		COLOR_ARROW="${COLOR_ERROR}" job_msg "${COLOR_ERROR}Error: $1"
+		COLOR_ARROW="${COLOR_ERROR}" \
+		    job_msg "${COLOR_ERROR}Error:${COLOR_RESET} $1"
 		# And non-colored to buld log
 		msg "Error: $1" >&2
 	elif [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
 		# Send to true stderr
-		COLOR_ARROW="${COLOR_ERROR}" msg "${COLOR_ERROR}Error: $1" >&4
+		COLOR_ARROW="${COLOR_ERROR}" \
+		    msg "${COLOR_ERROR}Error:${COLOR_RESET} $1" >&4
 	else
-		COLOR_ARROW="${COLOR_ERROR}" msg "${COLOR_ERROR}Error: $1" >&2
+		COLOR_ARROW="${COLOR_ERROR}" \
+		    msg "${COLOR_ERROR}Error:${COLOR_RESET} $1" >&2
 	fi
 	return 0
 }
@@ -163,7 +166,7 @@ msg_dev() {
 
 	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
 	COLOR_ARROW="${COLOR_DEV}" \
-	    _msg_n "\n" "${COLOR_DEV}Dev: $@" >&2
+	    _msg_n "\n" "${COLOR_DEV}Dev:${COLOR_RESET} $@" >&2
 }
 
 msg_debug() {
@@ -172,7 +175,7 @@ msg_debug() {
 
 	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
 	COLOR_ARROW="${COLOR_DEBUG}" \
-	    _msg_n "\n" "${COLOR_DEBUG}Debug: $@" >&2
+	    _msg_n "\n" "${COLOR_DEBUG}Debug:${COLOR_RESET} $@" >&2
 }
 
 msg_warn() {
@@ -187,7 +190,7 @@ msg_warn() {
 		unset prefix
 	fi
 	COLOR_ARROW="${COLOR_WARN}" \
-	    _msg_n "\n" "${COLOR_WARN}${prefix}$@" >&2
+	    _msg_n "\n" "${COLOR_WARN}${prefix}${COLOR_RESET}$@" >&2
 }
 
 job_msg() {
@@ -5636,7 +5639,7 @@ gather_port_vars() {
 			    err 1 "Flavor ${originspec} with ALL=1"
 			parallel_run \
 			    prefix_stderr_quick \
-			    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
+			    "(${COLOR_PORT}${originspec}${COLOR_RESET})" \
 			    gather_port_vars_port "${originspec}" \
 			    "${rdep}" || \
 			    set_dep_fatal_error
@@ -5759,7 +5762,7 @@ gather_port_vars() {
 				    err 1 "gather_port_vars: Failed to read rdep for ${originspec}"
 				parallel_run \
 				    prefix_stderr_quick \
-				    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
+				    "(${COLOR_PORT}${originspec}${COLOR_RESET})" \
 				    gather_port_vars_port \
 				    "${originspec}" "${rdep}" || \
 				    set_dep_fatal_error
