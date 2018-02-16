@@ -731,12 +731,15 @@ log_start() {
 				# Unbuffered for 'echo -n' support.
 				# Otherwise need setbuf -o L here due to
 				# stdout not writing to terminal but to tee.
-				timestamp -u < ${logfile}.pipe | tee ${logfile} &
+				TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
+				    timestamp -u < ${logfile}.pipe | \
+				    tee ${logfile} &
 			else
 				tee ${logfile} < ${logfile}.pipe &
 			fi
 		elif [ "${TIMESTAMP_LOGS}" = "yes" ]; then
-			timestamp > ${logfile} < ${logfile}.pipe &
+			TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
+			    timestamp > ${logfile} < ${logfile}.pipe &
 		fi
 		tpid=$!
 		exec > ${logfile}.pipe 2>&1

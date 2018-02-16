@@ -402,8 +402,10 @@ prefix_stderr_quick() {
 			if command -v timestamp >/dev/null && \
 			    [ "$(type timestamp)" = \
 			    "timestamp is a shell builtin" ]; then
-				prefix="$(msg_warn "${extra}:" 2>&1)"
-				timestamp -T -1 "${prefix}" \
+				# Let timestamp handle showing the proper time.
+				prefix="$(NO_ELAPSED_IN_MSG=1 msg_warn "${extra}:" 2>&1)"
+				TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
+				    timestamp -1 "${prefix}" \
 				    -P "poudriere: ${PROC_TITLE} (prefix_stderr_quick)" \
 				    >&2
 			else
@@ -426,8 +428,10 @@ prefix_stderr() {
 	prefixpipe=$(mktemp -ut prefix_stderr.pipe)
 	mkfifo "${prefixpipe}"
 	if command -v timestamp >/dev/null; then
-		prefix="$(msg_warn "${extra}:" 2>&1)"
-		timestamp -T -1 "${prefix}" \
+		# Let timestamp handle showing the proper time.
+		prefix="$(NO_ELAPSED_IN_MSG=1 msg_warn "${extra}:" 2>&1)"
+		TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
+		    timestamp -1 "${prefix}" \
 		    -P "poudriere: ${PROC_TITLE} (prefix_stderr)" \
 		    < "${prefixpipe}" >&2 &
 	else
@@ -468,8 +472,10 @@ prefix_stdout() {
 	prefixpipe=$(mktemp -ut prefix_stdout.pipe)
 	mkfifo "${prefixpipe}"
 	if command -v timestamp >/dev/null; then
-		prefix="$(msg "${extra}:")"
-		timestamp -T -1 "${prefix}" \
+		# Let timestamp handle showing the proper time.
+		prefix="$(NO_ELAPSED_IN_MSG=1 msg "${extra}:")"
+		TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
+		    timestamp -1 "${prefix}" \
 		    -P "poudriere: ${PROC_TITLE} (prefix_stdout)" \
 		    < "${prefixpipe}" &
 	else
@@ -512,16 +518,18 @@ prefix_output() {
 		return
 	fi
 	# Use timestamp's multiple file input feature.
+	# Let timestamp handle showing the proper time.
 
 	prefixpipe_stdout=$(mktemp -ut prefix_stdout.pipe)
 	mkfifo "${prefixpipe_stdout}"
-	prefix_stdout="$(msg "${extra}:")"
+	prefix_stdout="$(NO_ELAPSED_IN_MSG=1 msg "${extra}:")"
 
 	prefixpipe_stderr=$(mktemp -ut prefix_stderr.pipe)
 	mkfifo "${prefixpipe_stderr}"
-	prefix_stderr="$(msg_warn "${extra}:" 2>&1)"
+	prefix_stderr="$(NO_ELAPSED_IN_MSG=1 msg_warn "${extra}:" 2>&1)"
 
-	timestamp -T \
+	TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
+	    timestamp \
 	    -1 "${prefix_stdout}" -o "${prefixpipe_stdout}" \
 	    -2 "${prefix_stderr}" -e "${prefixpipe_stderr}" \
 	    -P "poudriere: ${PROC_TITLE} (prefix_output)" \
