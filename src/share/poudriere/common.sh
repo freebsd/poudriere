@@ -177,11 +177,17 @@ msg_debug() {
 
 msg_warn() {
 	local -; set +x
-	local MSG_NESTED
+	local MSG_NESTED MSG_NESTED_STDERR prefix
 
-	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
+	: "${MSG_NESTED_STDERR:=0}"
+	MSG_NESTED="${MSG_NESTED_STDERR}"
+	if [ "${MSG_NESTED_STDERR}" -eq 0 ]; then
+		prefix="Warning: "
+	else
+		unset prefix
+	fi
 	COLOR_ARROW="${COLOR_WARN}" \
-	    _msg_n "\n" "${COLOR_WARN}Warning: $@" >&2
+	    _msg_n "\n" "${COLOR_WARN}${prefix}$@" >&2
 }
 
 job_msg() {
