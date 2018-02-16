@@ -44,7 +44,7 @@
 
 #define min(a, b) ((a) > (b) ? (b) : (a))
 
-static time_t start;
+static struct timespec start;
 
 struct kdata {
 	FILE *fp_in;
@@ -80,7 +80,8 @@ prefix_output(struct kdata *kd)
 	char prefix_override[128] = {0};
 	char *p;
 	int ch;
-	time_t elapsed, now, lastline;
+	time_t elapsed;
+	struct timespec now, lastline;
 	const size_t tlen = sizeof(timestamp);
 	size_t prefix_len;
 	bool newline;
@@ -90,7 +91,8 @@ prefix_output(struct kdata *kd)
 	prefix_len = kd->prefix_len;
 	newline = true;
 	if (kd->timestamp_line)
-		lastline = time(NULL);
+		if (clock_gettime(CLOCK_MONOTONIC_FAST, &lastline))
+			err(EXIT_FAILURE, "%s", "clock_gettime");
 	while ((ch = getc(kd->fp_in)) != EOF) {
 		if (ch == '\001') {
 			/* Read in a new prefix */
@@ -114,9 +116,11 @@ prefix_output(struct kdata *kd)
 		}
 		if (newline) {
 			newline = false;
+			if (kd->timestamp || kd->timestamp_line)
+				if (clock_gettime(CLOCK_MONOTONIC_FAST, &now))
+					err(EXIT_FAILURE, "%s", "clock_gettime");
 			if (kd->timestamp) {
-				now = time(NULL);
-				elapsed = now - start;
+				elapsed = now.tv_sec - start.tv_sec;
 				calculate_duration((char *)&timestamp, tlen,
 				    elapsed, 0);
 				fwrite(timestamp, tlen - 1, 1, kd->fp_out);
@@ -124,8 +128,7 @@ prefix_output(struct kdata *kd)
 					return (-1);
 			}
 			if (kd->timestamp_line) {
-				now = time(NULL);
-				elapsed = now - lastline;
+				elapsed = now.tv_sec - lastline.tv_sec;
 				calculate_duration((char *)&timestamp, tlen,
 				    elapsed, 1);
 				fwrite(timestamp, tlen - 1, 1, kd->fp_out);
@@ -144,7 +147,7 @@ prefix_output(struct kdata *kd)
 		if (ch == '\n' || ch == '\r') {
 			newline = true;
 			if (kd->timestamp_line)
-				lastline = time(NULL);
+				lastline = now;
 		}
 		if (putc(ch, kd->fp_out) == EOF)
 			return (-1);
@@ -191,7 +194,8 @@ main(int argc, char **argv)
 	int ch, status, ret, done, uflag, tflag, Tflag;
 
 	child_pid = -1;
-	start = time(NULL);
+	if (clock_gettime(CLOCK_MONOTONIC_FAST, &start))
+		err(EXIT_FAILURE, "%s", "clock_gettime");
 	ret = 0;
 	done = 0;
 	tflag = Tflag = uflag = 0;
