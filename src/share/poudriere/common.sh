@@ -120,7 +120,7 @@ _msg_n() {
 		arrow="=>>"
 	fi
 	if [ -n "${COLOR_ARROW}" ] || [ -z "${1##*\033[*}" ]; then
-		printf "${elapsed}${DRY_MODE}${arrow:+${COLOR_ARROW}${arrow}${COLOR_RESET} }${1}${COLOR_RESET}${NL}"
+		printf "${COLOR_ARROW}${elapsed}${DRY_MODE}${arrow:+${COLOR_ARROW}${arrow}${COLOR_RESET} }${1}${COLOR_RESET}${NL}"
 	else
 		printf "${elapsed}${DRY_MODE}${arrow:+${arrow} }${1}${NL}"
 	fi
