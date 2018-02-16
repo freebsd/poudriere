@@ -723,7 +723,7 @@ prefix_stderr_quick() {
 				    >&2
 			else
 				setproctitle "${PROC_TITLE} (prefix_stderr_quick)"
-				while IFS= read -r line; do
+				while mapfile_read_loop_redir line; do
 					msg_warn "${extra}: ${line}"
 				done
 			fi
@@ -751,7 +751,7 @@ prefix_stderr() {
 		(
 			set +x
 			setproctitle "${PROC_TITLE} (prefix_stderr)"
-			while read_blocking_line line; do
+			while mapfile_read_loop_redir line; do
 				msg_warn "${extra}: ${line}"
 			done
 		) < ${prefixpipe} &
@@ -795,7 +795,7 @@ prefix_stdout() {
 		(
 			set +x
 			setproctitle "${PROC_TITLE} (prefix_stdout)"
-			while read_blocking_line line; do
+			while mapfile_read_loop_redir line; do
 				msg "${extra}: ${line}"
 			done
 		) < ${prefixpipe} &
