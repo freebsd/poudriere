@@ -297,7 +297,7 @@ read_file() {
 	local var_return="$1"
 	local file="$2"
 	local _data _line newline
-	local ret -
+	local _ret -
 
 	# var_return may be empty if only $_read_file_lines_read is being
 	# used.
@@ -320,17 +320,17 @@ read_file() {
 		fi
 		_read_file_lines_read=$(wc -l < "${file}")
 		_read_file_lines_read=${_read_file_lines_read##* }
-		ret=0
+		_ret=0
 	else
 		while :; do
 			IFS= read -r _line
-			ret=$?
-			case ${ret} in
+			_ret=$?
+			case ${_ret} in
 				# Success, process data and keep reading.
 				0) ;;
 				# EOF
 				1)
-					ret=0
+					_ret=0
 					break
 					;;
 				# Some error or interruption/signal. Reread.
@@ -340,14 +340,14 @@ read_file() {
 				_data="${_data:+${_data}${newline}}${_line}"
 			fi
 			_read_file_lines_read=$((${_read_file_lines_read} + 1))
-		done < "${file}" || ret=$?
+		done < "${file}" || _ret=$?
 	fi
 
 	if [ -n "${var_return}" ]; then
 		setvar "${var_return}" "${_data}"
 	fi
 
-	return ${ret}
+	return ${_ret}
 }
 
 # Read a file until 0 status is found. Partial reads not accepted.
@@ -355,10 +355,10 @@ read_line() {
 	[ $# -eq 2 ] || eargs read_line var_return file
 	local var_return="$1"
 	local file="$2"
-	local max_reads reads ret line
+	local max_reads reads _ret _line
 
-	ret=0
-	line=
+	_ret=0
+	_line=
 
 	if [ -f "${file}" ]; then
 		max_reads=100
@@ -366,29 +366,29 @@ read_line() {
 
 		# Read until a full line is returned.
 		until [ ${reads} -eq ${max_reads} ] || \
-		    IFS= read -t 1 -r line < "${file}"; do
+		    IFS= read -t 1 -r _line < "${file}"; do
 			sleep 0.1
 			reads=$((${reads} + 1))
 		done
-		[ ${reads} -eq ${max_reads} ] && ret=1
+		[ ${reads} -eq ${max_reads} ] && _ret=1
 	else
-		ret=1
+		_ret=1
 	fi
 
-	setvar "${var_return}" "${line}"
+	setvar "${var_return}" "${_line}"
 
-	return ${ret}
+	return ${_ret}
 }
 
 # SIGINFO traps won't abort the read.
 read_blocking() {
 	[ $# -ge 1 ] || eargs read_blocking read_args
-	local ret
+	local _ret
 
 	while :; do
-		ret=0
-		read "$@" || ret=$?
-		case ${ret} in
+		_ret=0
+		read "$@" || _ret=$?
+		case ${_ret} in
 			# Read again on SIGINFO interrupts
 			157) continue ;;
 			# Valid EOF
@@ -399,7 +399,7 @@ read_blocking() {
 			*) break ;;
 		esac
 	done
-	return ${ret}
+	return ${_ret}
 }
 
 # Same as read_blocking() but it reads an entire raw line.
@@ -407,12 +407,12 @@ read_blocking() {
 # builtin does.
 read_blocking_line() {
 	[ $# -ge 1 ] || eargs read_blocking_line read_args
-	local ret
+	local _ret
 
 	while :; do
-		ret=0
-		IFS= read -r "$@" || ret=$?
-		case ${ret} in
+		_ret=0
+		IFS= read -r "$@" || _ret=$?
+		case ${_ret} in
 			# Read again on SIGINFO interrupts
 			157) continue ;;
 			# Valid EOF
@@ -423,7 +423,7 @@ read_blocking_line() {
 			*) break ;;
 		esac
 	done
-	return ${ret}
+	return ${_ret}
 }
 
 # SIGINFO traps won't abort the read, and if the pipe goes away or
@@ -431,13 +431,13 @@ read_blocking_line() {
 read_pipe() {
 	[ $# -ge 2 ] || eargs read_pipe fifo read_args
 	local fifo="$1"
-	local ret resread resopen
+	local _ret resread resopen
 	shift
 
-	ret=0
+	_ret=0
 	while :; do
 		if ! [ -p "${fifo}" ]; then
-			ret=32
+			_ret=32
 			break
 		fi
 		# Separately handle open(2) and read(builtin) errors
@@ -456,35 +456,35 @@ read_pipe() {
 			# Success
 			0) ;;
 			# Unknown problem or signal, just return the error.
-			*) ret=${resopen}; break ;;
+			*) _ret=${resopen}; break ;;
 		esac
 		case ${resread} in
 			# Read again on SIGINFO interrupts
 			157) continue ;;
 			# Valid EOF
-			1) ret=${resread}; break ;;
+			1) _ret=${resread}; break ;;
 			# Success
 			0) break ;;
 			# Unknown problem or signal, just return the error.
-			*) ret=${resread}; break ;;
+			*) _ret=${resread}; break ;;
 		esac
 	done
-	return ${ret}
+	return ${_ret}
 }
 
 # Ignore EOF
 read_pipe_noeof() {
 	[ $# -ge 2 ] || eargs read_pipe_noeof fifo read_args
 	local fifo="$1"
-	local ret
+	local _ret
 	shift
 
 	while :; do
-		ret=0
-		read_pipe "${fifo}" "$@" || ret=$?
-		[ ${ret} -eq 1 ] || break
+		_ret=0
+		read_pipe "${fifo}" "$@" || _ret=$?
+		[ ${_ret} -eq 1 ] || break
 	done
-	return ${ret}
+	return ${_ret}
 }
 
 # This is avoiding EINTR errors when writing to a pipe due to SIGINFO traps
@@ -521,15 +521,15 @@ noclobber() {
 
 # Ignore SIGPIPE
 nopipe() {
-	local opipe ret
+	local opipe _ret
 
 	trap_push PIPE opipe
 	trap '' PIPE
-	ret=0
-	"$@" || ret=$?
+	_ret=0
+	"$@" || _ret=$?
 	trap_pop PIPE "${opipe}"
 
-	return ${ret}
+	return ${_ret}
 }
 
 prefix_stderr_quick() {
