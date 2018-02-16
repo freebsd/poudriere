@@ -64,7 +64,7 @@ calculate_duration(char *timestamp, size_t tlen, time_t elapsed, int type)
 	minutes = (elapsed / 60) % 60;
 	hours = elapsed / 3600;
 
-	if (type == 0)
+	if (type == 1)
 		snprintf(timestamp, tlen, "(%02d:%02d:%02d) ", hours, minutes,
 		    seconds);
 	else
@@ -188,7 +188,8 @@ main(int argc, char **argv)
 	FILE *fp_in_stdout, *fp_in_stderr;
 	pthread_t *thr_stdout, *thr_stderr;
 	struct kdata kdata_stdout, kdata_stderr;
-	const char *prefix_stdout, *prefix_stderr;
+	const char *prefix_stdout, *prefix_stderr, *time_start;
+	char *end;
 	pid_t child_pid;
 	int child_stdout[2], child_stderr[2];
 	int ch, status, ret, done, uflag, tflag, Tflag;
@@ -237,6 +238,14 @@ main(int argc, char **argv)
 	}
 	argc -= optind;
 	argv += optind;
+
+	if ((time_start = getenv("TIME_START")) != NULL &&
+	    strcmp(time_start, "0") != 0) {
+		errno = 0;
+		start.tv_sec = strtol(time_start, &end, 10);
+		if (start.tv_sec < 0 || *end != '\0' || errno != 0)
+			err(1, "Invalid START_TIME");
+	}
 
 	if (uflag)
 		setbuf(stdout, NULL);
