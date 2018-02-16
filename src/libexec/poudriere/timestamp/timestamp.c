@@ -76,15 +76,42 @@ static int
 prefix_output(struct kdata *kd)
 {
 	char timestamp[8 + 3 + 1]; /* '[HH:MM:SS] ' + 1 */
+	const char *prefix;
+	char prefix_override[128] = {0};
+	char *p;
 	int ch;
 	time_t elapsed, now, lastline;
 	const size_t tlen = sizeof(timestamp);
+	size_t prefix_len;
 	bool newline;
 
+	p = NULL;
+	prefix = kd->prefix;
+	prefix_len = kd->prefix_len;
 	newline = true;
 	if (kd->timestamp_line)
 		lastline = time(NULL);
 	while ((ch = getc(kd->fp_in)) != EOF) {
+		if (ch == '\001') {
+			/* Read in a new prefix */
+			p = prefix_override;
+			while (p - prefix_override < sizeof(prefix_override)) {
+				if ((ch = getc(kd->fp_in)) == EOF)
+					goto error;
+				if (ch == '\n')
+					break;
+				*p++ = ch;
+			}
+			*p = '\0';
+			if (prefix_override[0] != '\0') {
+				prefix = prefix_override;
+				prefix_len = p - prefix_override;
+			} else {
+				prefix = kd->prefix;
+				prefix_len = kd->prefix_len;
+			}
+			continue;
+		}
 		if (newline) {
 			newline = false;
 			if (kd->timestamp) {
@@ -105,10 +132,10 @@ prefix_output(struct kdata *kd)
 				if (ferror(kd->fp_out))
 					return (-1);
 			}
-			if (kd->prefix != NULL) {
-				if (fwrite(kd->prefix, sizeof(kd->prefix[0]),
-				    kd->prefix_len, kd->fp_out) <
-				    kd->prefix_len)
+			if (prefix != NULL) {
+				if (fwrite(prefix, sizeof(prefix[0]),
+				    prefix_len, kd->fp_out) <
+				    prefix_len)
 					return (-1);
 				if (putc(' ', kd->fp_out) == EOF)
 					return (-1);
@@ -122,6 +149,7 @@ prefix_output(struct kdata *kd)
 		if (putc(ch, kd->fp_out) == EOF)
 			return (-1);
 	}
+error:
 	if (ferror(kd->fp_out) || ferror(kd->fp_in) || feof(kd->fp_in))
 		return (-1);
 	return (0);
