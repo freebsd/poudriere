@@ -296,8 +296,8 @@ read_file() {
 	[ $# -eq 2 ] || eargs read_file var_return file
 	local var_return="$1"
 	local file="$2"
-	local _data _line newline
-	local ret -
+	local _data _line newline maph
+	local _ret -
 
 	# var_return may be empty if only $_read_file_lines_read is being
 	# used.
@@ -305,6 +305,7 @@ read_file() {
 	set +e
 	_data=
 	_read_file_lines_read=0
+	_ret=0
 	newline=$'\n'
 
 	if [ ! -f "${file}" ]; then
@@ -314,23 +315,43 @@ read_file() {
 		return 1
 	fi
 
+	if mapfile_builtin; then
+		if mapfile maph "${file}" "r"; then
+			if [ -n "${var_return}" ]; then
+				while IFS= mapfile_read "${maph}" _line; do
+					_data="${_data:+${_data}${newline}}${_line}"
+					_read_file_lines_read=$((${_read_file_lines_read} + 1))
+				done
+				setvar "${var_return}" "${_data}"
+			else
+				while IFS= mapfile_read "${maph}" _line; do
+					_read_file_lines_read=$((${_read_file_lines_read} + 1))
+				done
+			fi
+			mapfile_close "${maph}"
+		else
+			_ret=$?
+		fi
+
+		return ${_ret}
+	fi
+
 	if [ ${READ_FILE_USE_CAT:-0} -eq 1 ]; then
 		if [ -n "${var_return}" ]; then
 			_data="$(cat "${file}")"
 		fi
 		_read_file_lines_read=$(wc -l < "${file}")
 		_read_file_lines_read=${_read_file_lines_read##* }
-		ret=0
 	else
 		while :; do
 			IFS= read -r _line
-			ret=$?
-			case ${ret} in
+			_ret=$?
+			case ${_ret} in
 				# Success, process data and keep reading.
 				0) ;;
 				# EOF
 				1)
-					ret=0
+					_ret=0
 					break
 					;;
 				# Some error or interruption/signal. Reread.
@@ -340,14 +361,14 @@ read_file() {
 				_data="${_data:+${_data}${newline}}${_line}"
 			fi
 			_read_file_lines_read=$((${_read_file_lines_read} + 1))
-		done < "${file}" || ret=$?
+		done < "${file}" || _ret=$?
 	fi
 
 	if [ -n "${var_return}" ]; then
 		setvar "${var_return}" "${_data}"
 	fi
 
-	return ${ret}
+	return ${_ret}
 }
 
 # Read a file until 0 status is found. Partial reads not accepted.
@@ -355,28 +376,307 @@ read_line() {
 	[ $# -eq 2 ] || eargs read_line var_return file
 	local var_return="$1"
 	local file="$2"
-	local max_reads reads ret line
+	local max_reads reads _ret _line maph
 
-	ret=0
-	line=
 
-	if [ -f "${file}" ]; then
-		max_reads=100
-		reads=0
-
-		# Read until a full line is returned.
-		until [ ${reads} -eq ${max_reads} ] || \
-		    IFS= read -t 1 -r line < "${file}"; do
-			sleep 0.1
-			reads=$((${reads} + 1))
-		done
-		[ ${reads} -eq ${max_reads} ] && ret=1
-	else
-		ret=1
+	if [ ! -f "${file}" ]; then
+		setvar "${var_return}" ""
+		return 1
 	fi
 
-	setvar "${var_return}" "${line}"
+	_ret=0
+	if mapfile_builtin; then
+		if mapfile maph "${file}"; then
+			IFS= mapfile_read "${maph}" "${var_return}" || _ret=$?
+			mapfile_close "${maph}" || :
+		else
+			_ret=$?
+		fi
 
+		return ${_ret}
+	fi
+
+	max_reads=100
+	reads=0
+
+	# Read until a full line is returned.
+	until [ ${reads} -eq ${max_reads} ] || \
+	    IFS= read -t 1 -r _line < "${file}"; do
+		sleep 0.1
+		reads=$((${reads} + 1))
+	done
+	[ ${reads} -eq ${max_reads} ] && _ret=1
+
+	setvar "${var_return}" "${_line}"
+
+	return ${_ret}
+}
+
+# SIGINFO traps won't abort the read.
+read_blocking() {
+	[ $# -ge 1 ] || eargs read_blocking read_args
+	local _ret
+
+	while :; do
+		_ret=0
+		read "$@" || _ret=$?
+		case ${_ret} in
+			# Read again on SIGINFO interrupts
+			157) continue ;;
+			# Valid EOF
+			1) break ;;
+			# Success
+			0) break ;;
+			# Unknown problem or signal, just return the error.
+			*) break ;;
+		esac
+	done
+	return ${_ret}
+}
+
+# Same as read_blocking() but it reads an entire raw line.
+# Needed because 'IFS= read_blocking' doesn't reset IFS like the normal read
+# builtin does.
+read_blocking_line() {
+	[ $# -ge 1 ] || eargs read_blocking_line read_args
+	local _ret
+
+	while :; do
+		_ret=0
+		IFS= read -r "$@" || _ret=$?
+		case ${_ret} in
+			# Read again on SIGINFO interrupts
+			157) continue ;;
+			# Valid EOF
+			1) break ;;
+			# Success
+			0) break ;;
+			# Unknown problem or signal, just return the error.
+			*) break ;;
+		esac
+	done
+	return ${_ret}
+}
+
+# SIGINFO traps won't abort the read, and if the pipe goes away or
+# turns into a file then an error is returned.
+read_pipe() {
+	[ $# -ge 2 ] || eargs read_pipe fifo read_args
+	local fifo="$1"
+	local _ret resread resopen
+	shift
+
+	_ret=0
+	while :; do
+		if ! [ -p "${fifo}" ]; then
+			_ret=32
+			break
+		fi
+		# Separately handle open(2) and read(builtin) errors
+		# since opening the pipe blocks and may be interrupted.
+		resread=0
+		resopen=0
+		{ { read "$@" || resread=$?; } < "${fifo}" || resopen=$?; } \
+		    2>/dev/null
+		msg_dev "read_pipe ${fifo}: resread=${resread} resopen=${resopen}"
+		# First check the open errors
+		case ${resopen} in
+			# Open error.  We do a test -p in every iteration,
+			# so it was either a race or an interrupt.  Retry
+			# in case it was just an interrupt.
+			2) continue ;;
+			# Success
+			0) ;;
+			# Unknown problem or signal, just return the error.
+			*) _ret=${resopen}; break ;;
+		esac
+		case ${resread} in
+			# Read again on SIGINFO interrupts
+			157) continue ;;
+			# Valid EOF
+			1) _ret=${resread}; break ;;
+			# Success
+			0) break ;;
+			# Unknown problem or signal, just return the error.
+			*) _ret=${resread}; break ;;
+		esac
+	done
+	return ${_ret}
+}
+
+# Ignore EOF
+read_pipe_noeof() {
+	[ $# -ge 2 ] || eargs read_pipe_noeof fifo read_args
+	local fifo="$1"
+	local _ret
+	shift
+
+	while :; do
+		_ret=0
+		read_pipe "${fifo}" "$@" || _ret=$?
+		[ ${_ret} -eq 1 ] || break
+	done
+	return ${_ret}
+}
+
+# This is avoiding EINTR errors when writing to a pipe due to SIGINFO traps
+write_pipe() {
+	[ $# -ge 1 ] || eargs write_pipe fifo [write_args]
+	local fifo="$1"
+	local ret siginfo_trap
+	shift
+
+	# If this is not a pipe then return an error immediately
+	if ! [ -p "${fifo}" ]; then
+		msg_dev "write_pipe FAILED to send to ${fifo} (NOT A PIPE? ret=2): $@"
+		return 2
+	fi
+
+	msg_dev "write_pipe ${fifo}: $@"
+	ret=0
+	echo "$@" > "${fifo}" || ret=$?
+
+	if [ ${ret} -ne 0 ]; then
+		err 1 "write_pipe FAILED to send to ${fifo} (ret: ${ret}): $@"
+	fi
+
+	return ${ret}
+}
+
+if [ "$(type mapfile 2>/dev/null)" != "mapfile is a shell builtin" ]; then
+mapfile() {
+	[ $# -eq 2 -o $# -eq 3 ] || eargs mapfile handle_name file modes
+	local handle_name="$1"
+	local _file="$2"
+
+	[ -e "${_file}" ] || return 1
+	[ -p "${file}" ] && return 32
+	setvar "${handle_name}" "${_file}"
+}
+
+mapfile_read() {
+	[ $# -ge 2 ] || eargs mapfile_read handle output_var ...
+	local handle="$1"
+	shift
+	local -; set -f
+
+	if [ -p "${handle}" ]; then
+		read_pipe "${handle}" "$@"
+	elif [ -f "${handle}" ]; then
+		read_blocking_line "$@" < "${handle}"
+	elif [ "${handle}" = "/dev/fd/0" ]; then
+		# mapfile_read_loop_redir pipe
+		read "$@"
+	else
+		return 1
+	fi
+}
+
+mapfile_write() {
+	[ $# -eq 2 ] || eargs mapfile_write handle data
+	local handle="$1"
+	shift
+
+	if [ -p "${handle}" ]; then
+		nopipe write_pipe "${handle}" "$@"
+	else
+		echo "$@" > "${handle}"
+	fi
+}
+
+mapfile_close() {
+	[ $# -eq 1 ] || eargs mapfile_close handle
+	local handle="$1"
+
+	[ -e "${handle}" ] || return 1
+	# Nothing to do for non-builtin.
+}
+
+mapfile_builtin() {
+	return 1
+}
+
+else
+
+mapfile_builtin() {
+	return 0
+}
+fi
+
+# This can give huge performance savings on large files, like 70%.  Rather than
+# reading 1 byte at a time it will use buffered reads.
+mapfile_read_loop() {
+	[ $# -ge 2 ] || eargs mapfile_read_loop file vars
+	local _file="$1"
+	shift
+	local ret _handle
+
+	if ! mapfile_builtin; then
+		# Low effort compatibility attempt
+		if [ -z "${_mapfile_read_loop}" ]; then
+			exec 8< "${_file}"
+			_mapfile_read_loop="${_file}"
+		elif [ "${_mapfile_read_loop}" != "${_file}" ]; then
+			err 1 "mapfile_read_loop only supports 1 file at a time without builtin"
+		fi
+		ret=0
+		read "$@" <&8 || ret=$?
+		if [ ${ret} -ne 0 ]; then
+			exec 8>&-
+			unset _mapfile_read_loop
+		fi
+		return ${ret}
+	fi
+
+	if ! hash_get mapfile_handle "${_file}" _handle; then
+		mapfile _handle "${_file}" "re"
+		hash_set mapfile_handle "${_file}" "${_handle}"
+	fi
+
+	if mapfile_read "${_handle}" "$@"; then
+		ret=0
+	else
+		ret=$?
+		mapfile_close "${_handle}"
+		hash_unset mapfile_handle "${_file}"
+	fi
+	return ${ret}
+}
+
+# This syntax works with non-builtin mapfile but requires a redirection.
+# It also supports pipes more naturally than mapfile_read_loop().
+mapfile_read_loop_redir() {
+	[ $# -ge 1 ] || eargs mapfile_read_loop_redir vars
+	local _file _hkey ret _handle
+
+	if ! mapfile_builtin; then
+		read "$@"
+		return
+	fi
+
+	# Read from stdin
+	_file="/dev/fd/0"
+	# Store the handle based on the params passed in since it is
+	# using an anonymous handle on stdin - which if nested in a
+	# pipe would reuse the already-opened handle from the parent
+	# pipe.
+	# Getting a nested call is simple when mapfile_read_loop_redir()
+	# is used in abstractions that pipe to each other.
+	# It would be great to have a PIPELEVEL or SHPID rather than this.
+	_hkey="$*"
+
+	if ! hash_get mapfile_handle "${_hkey}" _handle; then
+		mapfile _handle "${_file}" "re"
+		hash_set mapfile_handle "${_hkey}" "${_handle}"
+	fi
+
+	if mapfile_read "${_handle}" "$@"; then
+		ret=0
+	else
+		ret=$?
+		mapfile_close "${_handle}"
+		hash_unset mapfile_handle "${_hkey}"
+	fi
 	return ${ret}
 }
 
@@ -386,6 +686,19 @@ noclobber() {
 	set -C
 
 	"$@" 2>/dev/null
+}
+
+# Ignore SIGPIPE
+nopipe() {
+	local opipe _ret
+
+	trap_push PIPE opipe
+	trap '' PIPE
+	_ret=0
+	"$@" || _ret=$?
+	trap_pop PIPE "${opipe}"
+
+	return ${_ret}
 }
 
 prefix_stderr_quick() {
@@ -410,7 +723,7 @@ prefix_stderr_quick() {
 				    >&2
 			else
 				setproctitle "${PROC_TITLE} (prefix_stderr_quick)"
-				while IFS= read -r line; do
+				while mapfile_read_loop_redir line; do
 					msg_warn "${extra}: ${line}"
 				done
 			fi
@@ -438,7 +751,7 @@ prefix_stderr() {
 		(
 			set +x
 			setproctitle "${PROC_TITLE} (prefix_stderr)"
-			while IFS= read -r line; do
+			while mapfile_read_loop_redir line; do
 				msg_warn "${extra}: ${line}"
 			done
 		) < ${prefixpipe} &
@@ -482,7 +795,7 @@ prefix_stdout() {
 		(
 			set +x
 			setproctitle "${PROC_TITLE} (prefix_stdout)"
-			while IFS= read -r line; do
+			while mapfile_read_loop_redir line; do
 				msg "${extra}: ${line}"
 			done
 		) < ${prefixpipe} &

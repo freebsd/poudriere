@@ -209,6 +209,7 @@ sh_SOURCES+=		\
 			src/libexec/poudriere/rm/rm.c \
 			src/libexec/poudriere/rename/rename.c \
 			src/poudriere-sh/helpers.c \
+			src/poudriere-sh/mapfile.c \
 			src/poudriere-sh/mkdir.c \
 			src/poudriere-sh/mkfifo.c \
 			src/poudriere-sh/mktemp.c \

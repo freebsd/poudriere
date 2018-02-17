@@ -81,7 +81,6 @@ timed_wait() {
 	return 0
 }
 
-
 kill_and_wait() {
 	[ $# -eq 2 ] || eargs kill_and_wait time pids
 	local time="$1"
@@ -107,6 +106,41 @@ kill_and_wait() {
 	return ${ret}
 }
 
+kill_job() {
+	[ $# -eq 2 ] || eargs kill_job timeout pgid
+	local timeout="$1"
+	local pgid="$2"
+	local ret
+
+	msg_dev "Killing job ${pgid} $(jobid ${pgid})"
+	{
+		if ! kill -STOP -- -${pgid} || \
+		    ! kill -- -${pgid} || \
+		    ! kill -CONT -- -${pgid}; then
+			# Not a real PGID, try a normal kill.
+			ret=0
+			kill_and_wait "${timeout}" "${pgid}" || ret=$?
+			return ${ret}
+		fi
+
+		timed_wait ${timeout} ${pgid} || :
+		# Kill remaining children instead of waiting on them
+		kill -9 -- -${pgid} || :
+		ret=0
+		_wait ${pgid} || ret=$?
+	} 2>/dev/null
+	[ ${ret} -ne 0 ] && msg_dev "Job ${pgid} exited ${ret}"
+	return ${ret}
+}
+
+kill_jobs() {
+	local pgid
+
+	msg_dev "Jobs: $(jobs -l)"
+	for pgid in $(jobs -p); do
+		kill_job 1 "${pgid}" || :
+	done
+}
 
 parallel_exec() {
 	local ret=0
@@ -309,6 +343,13 @@ madvise_protect() {
 		${PROTECT} -p "$1" 2>/dev/null || :
 	fi
 	return 0
+}
+
+spawn_job() {
+       local -
+
+       set -m
+       spawn_protected "$@"
 }
 
 _spawn_wrapper() {
