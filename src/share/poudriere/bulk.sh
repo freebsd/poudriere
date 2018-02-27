@@ -38,34 +38,34 @@ Options:
     -B name     -- What buildname to use (must be unique, defaults to
                    YYYY-MM-DD_HH:MM:SS). Resuming a previous build will not
                    retry built/failed/skipped/ignored packages.
-    -c          -- Clean all the previously built binary packages and logs.
     -C          -- Clean only the packages listed on the command line or
                    -f file.  Implies -c for -a.
-    -i          -- Interactive mode. Enter jail for interactive testing and
-                   automatically cleanup when done.
+    -c          -- Clean all the previously built binary packages and logs.
+    -F          -- Only fetch from original master_site (skip FreeBSD mirrors)
     -I          -- Advanced Interactive mode. Leaves jail running with ports
                    installed after test.
-    -n          -- Dry-run. Show what will be done, but do not build
-                   any packages.
-    -R          -- Clean RESTRICTED packages after building
-    -t          -- Test the specified ports for leftovers. Add -r to
-                   recursively test all dependencies as well.
-    -r          -- Resursively test all dependencies as well
-    -k          -- When doing testing with -t, don't consider failures as
-                   fatal; don't skip dependent ports on findings.
-    -T          -- Try to build broken ports anyway
-    -F          -- Only fetch from original master_site (skip FreeBSD mirrors)
-    -S          -- Don't recursively rebuild packages affected by other
-                   packages requiring incremental rebuild. This can result
-                   in broken packages if the ones updated do not retain
-                   a stable ABI.
+    -i          -- Interactive mode. Enter jail for interactive testing and
+                   automatically cleanup when done.
     -J n[:p]    -- Run n jobs in parallel, and optionally run a different
                    number of jobs in parallel while preparing the build.
                    (Defaults to the number of CPUs for n and 1.25 times n for p)
     -j name     -- Run only on the given jail
+    -k          -- When doing testing with -t, don't consider failures as
+                   fatal; don't skip dependent ports on findings.
     -N          -- Do not build package repository or INDEX when build
                    completed
+    -n          -- Dry-run. Show what will be done, but do not build
+                   any packages.
     -p tree     -- Specify on which ports tree the bulk build will be done
+    -R          -- Clean RESTRICTED packages after building
+    -r          -- Resursively test all dependencies as well
+    -S          -- Don't recursively rebuild packages affected by other
+                   packages requiring incremental rebuild. This can result
+                   in broken packages if the ones updated do not retain
+                   a stable ABI.
+    -t          -- Test the specified ports for leftovers. Add -r to
+                   recursively test all dependencies as well.
+    -T          -- Try to build broken ports anyway
     -v          -- Be verbose; show more information. Use twice to enable
                    debug output
     -w          -- Save WRKDIR on failed builds
