@@ -91,25 +91,13 @@ INTERACTIVE_MODE=0
 
 [ $# -eq 0 ] && usage
 
-while getopts "B:iIf:j:J:CcknNp:RFtrTSvwz:a" FLAG; do
+while getopts "aB:CcFf:iIj:J:knNp:RrSTtvwz:" FLAG; do
 	case "${FLAG}" in
+		a)
+			ALL=1
+			;;
 		B)
 			BUILDNAME="${OPTARG}"
-			;;
-		t)
-			PORTTESTING=1
-			export NO_WARNING_PKG_INSTALL_EOL=yes
-			export WARNING_WAIT=0
-			export DEV_WARNING_WAIT=0
-			;;
-		r)
-			PORTTESTING_RECURSIVE=1
-			;;
-		k)
-			PORTTESTING_FATAL=no
-			;;
-		T)
-			export TRYBROKEN=yes
 			;;
 		c)
 			CLEAN=1
@@ -117,17 +105,8 @@ while getopts "B:iIf:j:J:CcknNp:RFtrTSvwz:a" FLAG; do
 		C)
 			CLEAN_LISTED=1
 			;;
-		i)
-			INTERACTIVE_MODE=1
-			;;
-		I)
-			INTERACTIVE_MODE=2
-			;;
-		n)
-			[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] ||
-			    err 1 "ATOMIC_PACKAGE_REPOSITORY required for dry-run support"
-			DRY_RUN=1
-			DRY_MODE="${COLOR_DRY_MODE}[Dry Run]${COLOR_RESET} "
+		F)
+			export MASTER_SITE_BACKUP=''
 			;;
 		f)
 			# If this is a relative path, add in ${PWD} as
@@ -136,30 +115,57 @@ while getopts "B:iIf:j:J:CcknNp:RFtrTSvwz:a" FLAG; do
 			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			LISTPKGS="${LISTPKGS} ${OPTARG}"
 			;;
-		F)
-			export MASTER_SITE_BACKUP=''
+		I)
+			INTERACTIVE_MODE=2
 			;;
-		j)
-			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
-			JAILNAME=${OPTARG}
+		i)
+			INTERACTIVE_MODE=1
 			;;
 		J)
 			BUILD_PARALLEL_JOBS=${OPTARG%:*}
 			PREPARE_PARALLEL_JOBS=${OPTARG#*:}
 			;;
+		j)
+			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
+			JAILNAME=${OPTARG}
+			;;
+		k)
+			PORTTESTING_FATAL=no
+			;;
 		N)
 			BUILD_REPO=0
+			;;
+		n)
+			[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] ||
+			    err 1 "ATOMIC_PACKAGE_REPOSITORY required for dry-run support"
+			DRY_RUN=1
+			DRY_MODE="${COLOR_DRY_MODE}[Dry Run]${COLOR_RESET} "
 			;;
 		p)
 			porttree_exists ${OPTARG} ||
 			    err 2 "No such ports tree ${OPTARG}"
 			PTNAME=${OPTARG}
 			;;
-		R)
-			NO_RESTRICTED=1
+		r)
+			PORTTESTING_RECURSIVE=1
 			;;
 		S)
 			SKIP_RECURSIVE_REBUILD=1
+			;;
+		T)
+			export TRYBROKEN=yes
+			;;
+		t)
+			PORTTESTING=1
+			export NO_WARNING_PKG_INSTALL_EOL=yes
+			export WARNING_WAIT=0
+			export DEV_WARNING_WAIT=0
+			;;
+		R)
+			NO_RESTRICTED=1
+			;;
+		v)
+			VERBOSE=$((${VERBOSE} + 1))
 			;;
 		w)
 			SAVE_WRKDIR=1
@@ -167,12 +173,6 @@ while getopts "B:iIf:j:J:CcknNp:RFtrTSvwz:a" FLAG; do
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"
 			SETNAME="${OPTARG}"
-			;;
-		a)
-			ALL=1
-			;;
-		v)
-			VERBOSE=$((${VERBOSE} + 1))
 			;;
 		*)
 			usage
