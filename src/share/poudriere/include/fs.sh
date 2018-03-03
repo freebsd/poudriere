@@ -326,12 +326,12 @@ nullfs_paths() {
 	local mnt="${1}"
 	local nullpaths
 
-	nullpaths="/rescue"
+	nullpaths="/rescue /usr/share /usr/tests"
 	if [ "${MUTABLE_BASE}" = "no" ]; then
 		# Need to keep /usr/src and /usr/ports on their own.
 		nullpaths="${nullpaths} /usr/bin /usr/include /usr/lib \
 		    /usr/lib32 /usr/libdata /usr/libexec /usr/obj \
-		    /usr/sbin /usr/share /usr/tests /boot /bin /sbin /lib \
+		    /usr/sbin /boot /bin /sbin /lib \
 		    /libexec"
 		# Do a real copy for the ref jail since we need to modify
 		# or create directories in them.
