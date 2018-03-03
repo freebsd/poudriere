@@ -1398,9 +1398,10 @@ unlink() {
 }
 
 common_mtree() {
-	[ $# -eq 1 ] || eargs common_mtree mtreefile
-	local mtreefile="$1"
-	local exclude
+	[ $# -eq 2 ] || eargs common_mtree mnt mtreefile
+	local mnt="${1}"
+	local mtreefile="${2}"
+	local exclude nullpaths dir
 
 	{
 	cat <<EOF
@@ -1420,6 +1421,10 @@ common_mtree() {
 ./var/db/ports
 ./wrkdirs
 EOF
+	nullpaths="$(nullfs_paths "${mnt}")"
+	for dir in ${nullpaths}; do
+		echo ".${dir}"
+	done
 	for exclude in ${LOCAL_MTREE_EXCLUDES}; do
 		echo ".${exclude#.}"
 	done
@@ -1473,7 +1478,7 @@ markfs() {
 	fi
 	mtreefile=${mnt}/.p/mtree.${name}exclude
 
-	common_mtree ${mtreefile}
+	common_mtree "${mnt}" "${mtreefile}"
 	case "${name}" in
 		prebuild|prestage)
 			cat >> ${mtreefile} <<-EOF
