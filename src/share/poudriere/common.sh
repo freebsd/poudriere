@@ -4110,17 +4110,20 @@ stop_build() {
 		fi
 		rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
 
-		if jail_has_processes; then
-			msg_warn "Leftover processes:"
-			injail ps auxwwd | egrep -v '(ps auxwwd|jexecd)'
+		if [ -n "${PORTTESTING}" ]; then
+			if jail_has_processes; then
+				msg_warn "Leftover processes:"
+				injail ps auxwwd | egrep -v '(ps auxwwd|jexecd)'
+				jkill_wait
+			fi
+			if JNETNAME="n" jail_has_processes; then
+				msg_warn "Leftover processes (network jail):"
+				JNETNAME="n" injail ps auxwwd | egrep -v '(ps auxwwd|jexecd)'
+				JNETNAME="n" jkill_wait
+			fi
+		else
+			jkill
 		fi
-		if JNETNAME="n" jail_has_processes; then
-			msg_warn "Leftover processes (network jail):"
-			JNETNAME="n" injail ps auxwwd | egrep -v '(ps auxwwd|jexecd)'
-		fi
-
-		# Always kill to avoid missing anything
-		jkill
 	fi
 
 	buildlog_stop "${pkgname}" "${originspec}" ${build_failed}
