@@ -1451,7 +1451,8 @@ common_mtree() {
 	local mtreefile="$1"
 	local exclude
 
-	cat > "${mtreefile}" <<EOF
+	{
+	cat <<EOF
 ./.npkg
 ./.p
 ./.poudriere-snap-*
@@ -1469,8 +1470,9 @@ common_mtree() {
 ./wrkdirs
 EOF
 	for exclude in ${LOCAL_MTREE_EXCLUDES}; do
-		echo ".${exclude#.}" >> "${mtreefile}"
+		echo ".${exclude#.}"
 	done
+	} > "${mtreefile}"
 }
 
 markfs() {
