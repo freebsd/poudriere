@@ -239,6 +239,7 @@ clonefs() {
 	local snap=$3
 	local name zfs_to
 	local fs=$(zfs_getfs ${from})
+	local basepath dir dirs skippaths cpignore cpignores
 
 	destroyfs ${to} jail
 	mkdir -p ${to}
@@ -273,20 +274,72 @@ clonefs() {
 	else
 		[ ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs all ${to}
 		if [ "${snap}" = "clean" ]; then
-			echo "src" >> "${from}/usr/.cpignore" || :
-			echo "debug" >> "${from}/usr/lib/.cpignore" || :
-			echo "freebsd-update" >> "${from}/var/db/.cpignore" || :
+			skippaths="$(nullfs_paths "${to}")"
+			skippaths="${skippaths} /usr/src"
+			skippaths="${skippaths} /usr/lib/debug"
+			skippaths="${skippaths} /var/db/freebsd-update"
+			while read basepath dirs; do
+				cpignore="${from}${basepath%/}/.cpignore"
+				for dir in ${dirs}; do
+					echo "${dir}"
+				done >> "${cpignore}"
+				cpignores="${cpignores:+${cpignores} }${cpignore}"
+			done <<-EOF
+			$(echo "${skippaths}" | tr ' ' '\n' | \
+			    sed '/^$/d' | awk '
+			    function basename(file) {
+				    sub(".*/", "", file)
+				    return file
+			    }
+			    function dirname(file) {
+				    sub("/[^/]*$", "", file)
+				    if (file == "")
+					    file = "/"
+				    return file
+			    }
+			    {
+				    dir = dirname($1)
+				    file = basename($1)
+				    if (dir in dirs)
+					    dirs[dir] = dirs[dir] " " file
+				    else
+					    dirs[dir] = file
+			    }
+			    END {
+				    for (dir in dirs)
+					    print dir " " dirs[dir]
+			    }')
+			EOF
 		fi
 		do_clone -r "${from}" "${to}"
 		if [ "${snap}" = "clean" ]; then
-			rm -f "${from}/usr/.cpignore" \
-			    "${from}/usr/lib/.cpignore" \
-			    "${from}/var/db/.cpignore"
+			rm -f ${cpignores}
 			echo ".p" >> "${to}/.cpignore"
 		fi
 	fi
 	# Create our data dir.
 	mkdir -p "${to}/.p"
+}
+
+nullfs_paths() {
+	[ $# -eq 1 ] || eargs nullfs_paths mnt
+	local mnt="${1}"
+	local nullpaths
+
+	nullpaths="/rescue"
+	if [ "${MUTABLE_BASE}" = "no" ]; then
+		# Need to keep /usr/src and /usr/ports on their own.
+		nullpaths="${nullpaths} /usr/bin /usr/include /usr/lib \
+		    /usr/lib32 /usr/libdata /usr/libexec /usr/obj \
+		    /usr/sbin /usr/share /usr/tests /boot /bin /sbin /lib \
+		    /libexec"
+		# Do a real copy for the ref jail since we need to modify
+		# or create directories in them.
+		if [ "${mnt##*/}" != "ref" ]; then
+			nullpaths="${nullpaths} /etc"
+		fi
+	fi
+	echo "${nullpaths}"
 }
 
 destroyfs() {
