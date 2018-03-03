@@ -218,7 +218,7 @@ fi
 		i=$((i + 1))
 	done
 	fds=$(procstat -f $$|wc -l)
-	assert "${expectedfds}" "${fds}" "fd leak"
+	assert "${expectedfds}" "${fds}" "fd leak 1"
 }
 
 # Test mapfile_read_loop_redir
@@ -236,7 +236,7 @@ fi
 		i=$((i + 1))
 	done < "${TMP}"
 	fds=$(procstat -f $$|wc -l)
-	assert "${expectedfds}" "${fds}" "fd leak"
+	assert "${expectedfds}" "${fds}" "fd leak 2"
 }
 
 # Test mapfile_read_loop_redir with multi vars in IFS= mode
@@ -259,7 +259,7 @@ fi
 		i=$((i + 1))
 	done < "${TMP}"
 	fds=$(procstat -f $$|wc -l)
-	assert "${expectedfds}" "${fds}" "fd leak"
+	assert "${expectedfds}" "${fds}" "fd leak 3"
 }
 
 # Test mapfile_read_loop_redir with multi vars in IFS mode
@@ -282,7 +282,7 @@ fi
 		i=$((i + 1))
 	done < "${TMP}"
 	fds=$(procstat -f $$|wc -l)
-	assert "${expectedfds}" "${fds}" "fd leak"
+	assert "${expectedfds}" "${fds}" "fd leak 4"
 }
 
 # Piped mapfile_read_loop_redir
@@ -307,7 +307,7 @@ fi
 		i=$((i + 1))
 	done
 	fds=$(procstat -f $$|wc -l)
-	assert "${expectedfds}" "${fds}" "fd leak"
+	assert "${expectedfds}" "${fds}" "fd leak 5"
 }
 
 # Piped mapfile_read_loop_redir
@@ -332,7 +332,7 @@ fi
 		i=$((i + 1))
 	done
 	fds=$(procstat -f $$|wc -l)
-	assert "${expectedfds}" "${fds}" "fd leak"
+	assert "${expectedfds}" "${fds}" "fd leak 6"
 }
 
 # Nested mapfile_read_loop_redir
@@ -359,5 +359,5 @@ fi
 		i=$((i + 1))
 	done
 	fds=$(procstat -f $$|wc -l)
-	assert "${expectedfds}" "${fds}" "fd leak"
+	assert "${expectedfds}" "${fds}" "fd leak 7"
 }
