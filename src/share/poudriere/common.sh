@@ -598,10 +598,10 @@ jail_has_processes() {
 }
 
 jkill_wait() {
-	injail kill -9 -1 2>/dev/null || :
+	injail kill -9 -1 2>/dev/null || return 0
 	while jail_has_processes; do
 		sleep 1
-		injail kill -9 -1 2>/dev/null || :
+		injail kill -9 -1 2>/dev/null || return 0
 	done
 }
 
