@@ -1601,20 +1601,7 @@ do_jail_mounts() {
 	fi
 
 	# Mount some paths read-only from the ref-jail if possible.
-	nullpaths="/rescue"
-	if [ "${MUTABLE_BASE}" = "no" ]; then
-		# Need to keep /usr/src and /usr/ports on their own.
-		nullpaths="${nullpaths} /usr/bin /usr/include /usr/lib \
-		    /usr/lib32 /usr/libdata /usr/libexec /usr/obj \
-		    /usr/sbin /usr/share /usr/tests /boot /bin /sbin /lib \
-		    /libexec"
-		# Do a real copy for the ref jail since we need to modify
-		# or create directories in them.
-		if [ "${mnt##*/}" != "ref" ]; then
-			nullpaths="${nullpaths} /etc"
-		fi
-
-	fi
+	nullpaths="$(nullfs_paths "${mnt}")"
 	echo ${nullpaths} | tr ' ' '\n' | sed -e "s,^/,${mnt}/," | \
 	    xargs mkdir -p
 	for nullpath in ${nullpaths}; do
