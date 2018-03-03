@@ -3584,6 +3584,7 @@ job_done() {
 	else
 		# Try to cleanup and mark build crashed
 		MY_JOBID="${j}" crashed_build "${pkgname}" "${status%%:*}"
+		MY_JOBID="${j}" jkill
 		bset ${j} status "crashed:"
 	fi
 }
@@ -3933,9 +3934,6 @@ build_pkg() {
 	if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
 		JEXEC_LIMITS=1
 	fi
-
-	# Kill everything in jail first
-	jkill
 
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
 		if [ -f "${mnt}/${LOCALBASE:-/usr/local}/.mounted" ]; then
