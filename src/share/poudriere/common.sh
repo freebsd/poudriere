@@ -2403,6 +2403,11 @@ jail_start() {
 	mkdir -p ${MASTERMNT%/ref}
 	chmod 0755 ${POUDRIERE_DATA}/.m
 	chmod 0711 ${MASTERMNT%/ref}
+	# Mount tmpfs at the root to avoid crossing tmpfs-zfs-tmpfs boundary
+	# for cloning.
+	if [ ${TMPFS_ALL} -eq 1 ]; then
+		mnt_tmpfs all "${MASTERMNTROOT}"
+	fi
 
 	export HOME=/root
 	export USER=root
@@ -2719,6 +2724,11 @@ jail_stop() {
 	jstop || :
 	msg "Unmounting file systems"
 	destroyfs ${MASTERMNT} jail || :
+	if [ ${TMPFS_ALL} -eq 1 ]; then
+		if ! umount ${UMOUNT_NONBUSY} "${MASTERMNTROOT}" 2>/dev/null; then
+			umount -f "${MASTERMNTROOT}" 2>/dev/null || :
+		fi
+	fi
 	rm -rfx ${MASTERMNT}/../
 	export STATUS=0
 
