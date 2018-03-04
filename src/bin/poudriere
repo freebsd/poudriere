@@ -160,7 +160,7 @@ SCRIPTPATH="${SCRIPTPREFIX}/${CMD}.sh"
 CMD_ENV="${CMD_ENV} SCRIPTPATH=${SCRIPTPATH} SCRIPTPREFIX=${SCRIPTPREFIX}"
 
 case "${CMD}" in
-api|bulk|distclean|daemon|image|jail|logclean|ports|options|pkgclean|queue|status|testport)
+api|bulk|distclean|daemon|image|jail|foreachport|logclean|ports|options|pkgclean|queue|status|testport)
 	;;
 *)
 	echo "Unknown command '${CMD}'"

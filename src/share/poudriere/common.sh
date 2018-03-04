@@ -40,7 +40,8 @@ was_a_testport_run() {
 }
 # Return true if in a bulk or other jail run that needs to shutdown the jail
 was_a_jail_run() {
-	was_a_bulk_run ||  [ "${SCRIPTPATH##*/}" = "pkgclean.sh" ]
+	was_a_bulk_run ||  [ "${SCRIPTPATH##*/}" = "pkgclean.sh" ] || \
+	    [ "${SCRIPTPATH##*/}" = "foreachport.sh" ]
 }
 # Return true if output via msg() should show elapsed time
 should_show_elapsed() {
