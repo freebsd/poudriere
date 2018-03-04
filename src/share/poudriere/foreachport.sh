@@ -140,6 +140,8 @@ exec /tmp/script "$@"
 EOF
 chmod 0555 "${MASTERMNT}/tmp/cmd"
 
+JNETNAME="n"
+
 run_hook foreachport start
 
 exec >&3
