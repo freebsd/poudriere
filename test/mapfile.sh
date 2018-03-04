@@ -212,6 +212,7 @@ fi
 	jot 10 0 > "${TMP}"
 
 	expectedfds=$(procstat -f $$|wc -l)
+	procstat -f $$ >&2
 	i=0
 	while mapfile_read_loop "${TMP}" n; do
 		assert "$i" "$n" "value should match 1 $i"
@@ -219,6 +220,8 @@ fi
 		i=$((i + 1))
 	done
 	fds=$(procstat -f $$|wc -l)
+	echo "-" >&2
+	procstat -f $$ >&2
 	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 1"
 }
 
