@@ -5363,7 +5363,7 @@ lock_acquire() {
 	    return 1
 
 	if ! locked_mkdir "${waittime}" \
-	    "${POUDRIERE_TMPDIR}/lock-${MASTERNAME}-${lockname}"; then
+	    "${POUDRIERE_TMPDIR}/lock-${MASTERNAME}-${lockname}" "$$"; then
 		msg_warn "Failed to acquire ${lockname} lock"
 		return 1
 	fi
