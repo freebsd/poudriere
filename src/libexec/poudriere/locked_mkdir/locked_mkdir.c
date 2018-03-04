@@ -40,6 +40,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -51,6 +52,10 @@
 #include "bltin/bltin.h"
 #include "helpers.h"
 #define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+#undef fclose
+#undef fopen
+#undef fprintf
+#undef FILE
 #endif
 
 static int lockfd = -1;
@@ -101,6 +106,101 @@ cleanup(void)
 }
 
 /*
+ * Write the given pid while holding the flock.
+ */
+static void
+write_pid(const char *dirpath, pid_t writepid)
+{
+	FILE *f;
+	char pidpath[MAXPATHLEN];
+
+	if (writepid == -1)
+		return;
+
+	/* XXX: Could probably store this in the .flock file */
+	snprintf(pidpath, sizeof(pidpath), "%s.pid", dirpath);
+	if ((f = fopen(pidpath, "w")) == NULL) {
+#ifdef SHELL
+		cleanup();
+		INTON;
+#endif
+		err(1, "%s", "fopen(pid)");
+	}
+
+	if (fprintf(f, "%u", writepid) < 0) {
+#ifdef SHELL
+		fclose(f);
+		cleanup();
+		INTON;
+#endif
+		err(1, "%s", "fprintf(pid)");
+	}
+
+	if (fclose(f) != 0) {
+#ifdef SHELL
+		cleanup();
+		INTON;
+#endif
+		err(1, "%s", "fclose(pid)");
+	}
+}
+
+static bool
+stale_lock(const char *dirpath, pid_t *outpid)
+{
+	FILE *f;
+	char pidpath[MAXPATHLEN], pidbuf[16];
+	char *end;
+	pid_t pid;
+	bool stale;
+
+	f = NULL;
+	stale = true;
+	pid = -1;
+	/* XXX: Could probably store this in the .flock file */
+	snprintf(pidpath, sizeof(pidpath), "%s.pid", dirpath);
+	/* Missing file is considered stale. */
+	if ((f = fopen(pidpath, "r")) == NULL)
+		goto done;
+
+	/* Read failure is fatal. */
+	if (fgets(pidbuf, sizeof(pidbuf), f) == NULL) {
+#ifdef SHELL
+		fclose(f);
+		cleanup();
+		INTON;
+#endif
+		err(1, "%s", "fread(pid)");
+	}
+
+	/* Bad pid is considered stale. */
+	errno = 0;
+	pid = strtol(pidbuf, &end, 10);
+	if (pid < 0 || *end != '\0' || errno != 0)
+		goto done;
+
+	/* Check if the process is still alive. */
+	if (kill(pid, 0) == 0)
+		stale = false;
+done:
+	if (stale) {
+		/*
+		 * This won't race with other locked_mkdir since we hold
+		 * the flock.
+		 */
+		if (f != NULL)
+			(void)unlink(pidpath);
+		(void)rmdir(dirpath);
+	}
+	if (f != NULL)
+		fclose(f);
+	if (outpid != NULL)
+		*outpid = pid;
+
+	return (stale);
+}
+
+/*
  * Signal handler for SIGALRM.
  */
 static void
@@ -114,11 +214,13 @@ int
 main(int argc, char **argv)
 {
 	struct sigaction act;
-	struct kevent event, change;
+	struct kevent event[2];
 	struct timespec timeout;
 	const char *path;
+	char *end;
 	char flock[MAXPATHLEN];
-	int kq, fd, waitsec;
+	int kq, fd, waitsec, nevents;
+	pid_t writepid, lockpid;
 #ifdef SHELL
 	int serrno;
 
@@ -127,12 +229,21 @@ main(int argc, char **argv)
 	memset(&oact, sizeof(oact), 0);
 	memset(&oact_siginfo, sizeof(oact_siginfo), 0);
 #endif
+	lockpid = -1;
 
-	if (argc != 3)
-		errx(1, "Usage: <timeout> <directory>");
+	if (argc != 3 && argc != 4)
+		errx(1, "Usage: <timeout> <directory> [pid]");
 
 	waitsec = atoi(argv[1]);
 	path = argv[2];
+	if (argc == 4) {
+		errno = 0;
+		writepid = strtol(argv[3], &end, 10);
+		if (writepid < 0 || *end != '\0' || errno != 0) {
+			errx(1, "%s: bad process id", argv[3]);
+		}
+	} else
+		writepid = -1;
 
 #ifdef SHELL
 	INTOFF;
@@ -163,11 +274,12 @@ main(int argc, char **argv)
 	if (atexit(cleanup) == -1)
 		err(EX_OSERR, "%s", "atexit failed");
 #endif
-
+retry:
 	/* Try creating the directory. */
 	fd = open(path, O_RDONLY);
 	if (fd == -1 && errno == ENOENT) {
 		if (mkdir(path, S_IRWXU) == 0) {
+			write_pid(path, writepid);
 #ifdef SHELL
 			cleanup();
 			INTON;
@@ -184,6 +296,9 @@ main(int argc, char **argv)
 	}
 
 	/* Failed, the directory already exists. */
+	/* If a pid was given then check for a stale lock. */
+	if (writepid != -1 && stale_lock(path, &lockpid))
+		goto retry;
 
 	timeout.tv_sec = waitsec;
 	timeout.tv_nsec = 0;
@@ -199,10 +314,16 @@ main(int argc, char **argv)
 		err(1, "%s", "kqueue()");
 	}
 
-	EV_SET(&change, fd, EVFILT_VNODE, EV_ADD | EV_ENABLE |
-	    EV_ONESHOT, NOTE_DELETE, 0, 0);
+	nevents = 0;
+	EV_SET(&event[nevents++], fd, EVFILT_VNODE, EV_ADD | EV_ENABLE |
+	    EV_ONESHOT, NOTE_DELETE, 0, NULL);
+	if (writepid != -1 && lockpid != -1) {
+		EV_SET(&event[nevents++], lockpid, EVFILT_PROC,
+		    EV_ADD | EV_ENABLE | EV_ONESHOT, NOTE_EXIT, 0, NULL);
+	}
 
-	switch (kevent(kq, &change, 1, &event, 1, &timeout)) {
+	switch (kevent(kq, (struct kevent *)&event, nevents,
+	    (struct kevent *)&event, nevents, &timeout)) {
 	    case -1:
 #ifdef SHELL
 		serrno = errno;
@@ -232,14 +353,18 @@ main(int argc, char **argv)
 #endif
 	close(fd);
 
-	/* This is expected to succeed. */
-	if (mkdir(path, S_IRWXU) != 0) {
+	/* If the dir was deleted then we can recreate it. */
+	if (event[0].filter == EVFILT_VNODE &&
+	    /* This is expected to succeed. */
+	    mkdir(path, S_IRWXU) != 0) {
 #ifdef SHELL
 		cleanup();
 		INTON;
 #endif
 		err(1, "%s", "mkdir()");
 	}
+
+	write_pid(path, writepid);
 
 #ifdef SHELL
 	cleanup();
