@@ -5,6 +5,7 @@ INJAIL_HOST=1
 . ${SCRIPTPREFIX}/common.sh
 PORTSDIR=${THISDIR}/ports
 export PORTSDIR
+export __MAKE_CONF=/dev/null
 
 port_var_fetch "devel/port_var_fetch1" \
     PKGNAME pkgname
