@@ -26,7 +26,7 @@
 
 usage() {
 	cat <<EOF
-poudriere foreachport [options] [-f file] /patch/to/script
+poudriere foreachport [options] [-f file] /patch/to/script [args]
 
 Parameters:
     -a          -- Run on all ports (default)
@@ -100,8 +100,9 @@ saved_argv="$@"
 shift $((OPTIND-1))
 post_getopts
 
-[ $# -ne 1 ] && usage
+[ $# -lt 1 ] && usage
 CMD="${1}"
+shift 1
 if [ "${CMD#/}" = "${CMD}" ]; then
 	CMD="${SAVED_PWD}/${CMD}"
 fi
@@ -132,10 +133,11 @@ cat > "${MASTERMNT}/tmp/cmd" <<'EOF'
 #! /bin/sh
 ORIGIN="${1}"
 FLAVOR="${2}"
+shift 2
 if [ -n "${FLAVOR}" ]; then
 	export FLAVOR
 fi
-cd "${PORTSDIR}/${1}"
+cd "${PORTSDIR}/${ORIGIN}"
 exec /tmp/script "$@"
 EOF
 chmod 0555 "${MASTERMNT}/tmp/cmd"
@@ -154,7 +156,7 @@ for originspec in $(listed_ports show_moved); do
 	parallel_run \
 	    prefix_stderr_quick \
 	    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
-	    injail "/tmp/cmd" "${origin}" "${flavor}" || \
+	    injail "/tmp/cmd" "${origin}" "${flavor}" "$@" || \
 	    set_dep_fatal_error
 done
 if ! parallel_stop || check_dep_fatal_error; then
