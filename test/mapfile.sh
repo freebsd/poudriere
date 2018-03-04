@@ -4,6 +4,7 @@
 . ${SCRIPTPREFIX}/include/hash.sh
 . ${SCRIPTPREFIX}/include/parallel.sh
 . ${SCRIPTPREFIX}/include/util.sh
+JAILED=$(sysctl -n security.jail.jailed 2>/dev/null || echo 0)
 
 LINES=20
 
@@ -218,7 +219,7 @@ fi
 		i=$((i + 1))
 	done
 	fds=$(procstat -f $$|wc -l)
-	assert "${expectedfds}" "${fds}" "fd leak 1"
+	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 1"
 }
 
 # Test mapfile_read_loop_redir
@@ -236,7 +237,7 @@ fi
 		i=$((i + 1))
 	done < "${TMP}"
 	fds=$(procstat -f $$|wc -l)
-	assert "${expectedfds}" "${fds}" "fd leak 2"
+	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 2"
 }
 
 # Test mapfile_read_loop_redir with multi vars in IFS= mode
@@ -259,7 +260,7 @@ fi
 		i=$((i + 1))
 	done < "${TMP}"
 	fds=$(procstat -f $$|wc -l)
-	assert "${expectedfds}" "${fds}" "fd leak 3"
+	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 3"
 }
 
 # Test mapfile_read_loop_redir with multi vars in IFS mode
@@ -282,7 +283,7 @@ fi
 		i=$((i + 1))
 	done < "${TMP}"
 	fds=$(procstat -f $$|wc -l)
-	assert "${expectedfds}" "${fds}" "fd leak 4"
+	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 4"
 }
 
 # Piped mapfile_read_loop_redir
@@ -307,7 +308,7 @@ fi
 		i=$((i + 1))
 	done
 	fds=$(procstat -f $$|wc -l)
-	assert "${expectedfds}" "${fds}" "fd leak 5"
+	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 5"
 }
 
 # Piped mapfile_read_loop_redir
@@ -332,7 +333,7 @@ fi
 		i=$((i + 1))
 	done
 	fds=$(procstat -f $$|wc -l)
-	assert "${expectedfds}" "${fds}" "fd leak 6"
+	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 6"
 }
 
 # Nested mapfile_read_loop_redir
@@ -359,5 +360,5 @@ fi
 		i=$((i + 1))
 	done
 	fds=$(procstat -f $$|wc -l)
-	assert "${expectedfds}" "${fds}" "fd leak 7"
+	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 7"
 }
