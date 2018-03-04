@@ -362,3 +362,4 @@ fi
 	fds=$(procstat -f $$|wc -l)
 	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 7"
 }
+exit 0
