@@ -211,6 +211,8 @@ fi
 
 	jot 10 0 > "${TMP}"
 
+	# For some reason Jenkins is leaking in fd 8
+	exec 8>&- || :
 	expectedfds=$(procstat -f $$|wc -l)
 	procstat -f $$ >&2
 	i=0
