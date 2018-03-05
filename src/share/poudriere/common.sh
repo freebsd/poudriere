@@ -2517,6 +2517,33 @@ jail_start() {
 		    awk '$1 ~ /:-l/ { gsub(/.*-l/, "", $1); printf("%s ",$1) } END { printf("\n") }')
 	fi
 
+	if [ "${MUTABLE_BASE}" = "schg" ] && [ ${TMPFS_ALL} -eq 1 ] && \
+	    [ "${tomnt}" = "${MASTERMNT}" ]; then
+		# The first few directories are allowed for ports to write to.
+		find -x "${tomnt}" \
+		    -mindepth 1 \
+		    \( -depth 1 -name boot -prune \) -o \
+		    \( -depth 1 -name compat -prune \) -o \
+		    \( -depth 1 -name etc -prune \) -o \
+		    \( -depth 1 -name root -prune \) -o \
+		    \( -depth 1 -name var -prune \) -o \
+		    \( -depth 1 -name '.poudriere-snap*' -prune \) -o \
+		    \( -depth 1 -name .ccache -prune \) -o \
+		    \( -depth 1 -name .cpignore -prune \) -o \
+		    \( -depth 1 -name .npkg -prune \) -o \
+		    \( -depth 1 -name .p -prune \) -o \
+		    \( -depth 1 -name distfiles -prune \) -o \
+		    \( -depth 1 -name packages -prune \) -o \
+		    \( -depth 1 -name tmp -prune \) -o \
+		    \( -depth 1 -name wrkdirs -prune \) -o \
+		    \( -type d -o -type f -o -type l \) \
+		    -exec chflags -fh schg {} +
+		chflags noschg \
+		    "${tomnt}${LOCALBASE:-/usr/local}" \
+		    "${tomnt}${PREFIX:-/usr/local}"
+	fi
+
+
 	return 0
 }
 
@@ -3784,6 +3811,25 @@ parallel_build() {
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
 
 	start_builders
+
+	# Ensure rollback for builders doesn't copy schg files.
+	if [ "${MUTABLE_BASE}" = "schg" ] && [ ${TMPFS_ALL} -eq 1 ]; then
+		chflags noschg "${MASTERMNT}/usr"
+		find -x "${MASTERMNT}" -mindepth 1 -maxdepth 1 \
+		    -flags +schg -print | \
+		    sed -e "s,^${MASTERMNT}/,," >> \
+		    "${MASTERMNT}/.cpignore"
+
+		# /usr has both schg and noschg paths (LOCALBASE).
+		# XXX: This assumes LOCALBASE=/usr/local and does
+		# not account for PREFIX either.
+		find -x "${MASTERMNT}/usr" -mindepth 1 -maxdepth 1 \
+		    \( -depth 1 -name 'local' -prune \) -o \
+		    -flags +schg -print | \
+		    sed -e "s,^${MASTERMNT}/usr/,," >> \
+		    "${MASTERMNT}/usr/.cpignore"
+		chflags schg "${MASTERMNT}/usr"
+	fi
 
 	coprocess_start pkg_cacher
 
@@ -7475,6 +7521,14 @@ for val in ${USE_TMPFS}; do
 	esac
 done
 unset val
+
+for val in ${MUTABLE_BASE}; do
+	case ${val} in
+		schg|yes|nullfs) ;;
+		no) MUTABLE_BASE="schg" ;;
+		*) err 1 "Unknown value for MUTABLE_BASE" ;;
+	esac
+done
 
 case ${TMPFS_WRKDIR}${TMPFS_DATA}${TMPFS_LOCALBASE}${TMPFS_ALL} in
 1**1|*1*1|**11)
