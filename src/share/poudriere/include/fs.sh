@@ -276,6 +276,7 @@ clonefs() {
 			skippaths="$(nullfs_paths "${to}")"
 			skippaths="${skippaths} /usr/src"
 			skippaths="${skippaths} /usr/lib/debug"
+			skippaths="${skippaths} /var/db/etcupdate"
 			skippaths="${skippaths} /var/db/freebsd-update"
 			while read basepath dirs; do
 				cpignore="${from}${basepath%/}/.cpignore"

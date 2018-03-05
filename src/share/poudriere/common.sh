@@ -1465,6 +1465,7 @@ common_mtree() {
 	.${PORTSDIR}
 	./usr/src
 	./var/db/freebsd-update
+	./var/db/etcupdate
 	./var/db/ports
 	./wrkdirs
 	EOF
