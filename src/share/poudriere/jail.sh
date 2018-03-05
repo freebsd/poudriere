@@ -1220,7 +1220,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		_mastermnt MASTERMNT
 		export MASTERMNT
-		jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
+		MUTABLE_BASE=yes jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 		JNETNAME="n"
 		;;
 	00000100)
