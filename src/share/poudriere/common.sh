@@ -43,6 +43,11 @@ was_a_jail_run() {
 	was_a_bulk_run ||  [ "${SCRIPTPATH##*/}" = "pkgclean.sh" ] || \
 	    [ "${SCRIPTPATH##*/}" = "foreachport.sh" ]
 }
+schg_immutable_base() {
+	[ "${MUTABLE_BASE}" = "schg" ] || return 1
+	[ ${TMPFS_ALL} -eq 0 ] && [ -z "${NO_ZFS}" ] && return 1
+	return 0
+}
 # Return true if output via msg() should show elapsed time
 should_show_elapsed() {
 	[ -z "${TIME_START}" ] && return 1
@@ -2517,8 +2522,7 @@ jail_start() {
 		    awk '$1 ~ /:-l/ { gsub(/.*-l/, "", $1); printf("%s ",$1) } END { printf("\n") }')
 	fi
 
-	if [ "${MUTABLE_BASE}" = "schg" ] && [ ${TMPFS_ALL} -eq 1 ] && \
-	    [ "${tomnt}" = "${MASTERMNT}" ]; then
+	if schg_immutable_base && [ "${tomnt}" = "${MASTERMNT}" ]; then
 		# The first few directories are allowed for ports to write to.
 		find -x "${tomnt}" \
 		    -mindepth 1 \
@@ -3813,7 +3817,7 @@ parallel_build() {
 	start_builders
 
 	# Ensure rollback for builders doesn't copy schg files.
-	if [ "${MUTABLE_BASE}" = "schg" ] && [ ${TMPFS_ALL} -eq 1 ]; then
+	if schg_immutable_base; then
 		chflags noschg "${MASTERMNT}/usr"
 		find -x "${MASTERMNT}" -mindepth 1 -maxdepth 1 \
 		    -flags +schg -print | \
