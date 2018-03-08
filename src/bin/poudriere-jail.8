@@ -1,0 +1,296 @@
+.\" Copyright (c) 2012 Baptiste Daroussin <bapt@FreeBSD.org>
+.\" Copyright (c) 2012-2014 Bryan Drewery <bdrewery@FreeBSD.org>
+.\" Copyright (c) 2018 SRI International
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\" $FreeBSD$
+.\"
+.\" Note: The date here should be updated whenever a non-trivial
+.\" change is made to the manual page.
+.Dd March 8, 2018
+.Dt POUDRIERE-JAIL 8
+.Os
+.Sh NAME
+.Nm poudriere-jail
+.Nd manage jails used to build ports
+.Sh SYNOPSIS
+.Nm poudriere
+.Op Ar poudriere-options
+.Cm jail
+.Ar subcommand
+.Op Ar options
+.Sh DESCRIPTION
+This command manages the
+.Nm
+jails which are used as different building environments.
+.Pp
+One
+.Ar subcommand
+must be supplied.
+.Sh SUBCOMMANDS
+.Bl -tag -width "-f conffile"
+.It Fl c
+Creates a jail.
+See
+.Sx CAVEATS
+for restrictions on the names of jails.
+.It Fl d
+Deletes a jail.
+.It Fl i
+Show information about a jail.
+See also
+.Cm status .
+.It Fl l
+List all poudriere jails.
+.It Fl n
+When combined with
+.Fl l ,
+only display jail name.
+.It Fl s
+Starts a jail.
+.It Fl k
+Kills a jail (stops it).
+.It Fl r Ar name
+Rename a jail to
+.Ar name .
+.It Fl u
+Update a jail.
+.El
+.Sh OPTIONS
+Except for
+.Fl l ,
+all of the subcommands require the
+.Fl j
+option (see below).
+.Pp
+.Bl -tag -width "-f conffile"
+.It Fl b
+Build the source provided with the -m src=PATH option.
+.It Fl J Ar number
+The
+.Ar number
+of make jobs will run in parallel for buildworld.
+Defaults to the number of CPUs reported by:  sysctl hw.ncpu.
+.It Fl q
+Remove the header when
+.Fl l
+is the specified mandatory option.
+Otherwise, it has no effect.
+.It Fl j Ar name
+Specifies the
+.Ar name
+of the jail.
+.It Fl v Ar version
+Specifies which
+.Ar version
+of
+.Fx
+to use in the jail.
+If you are using method ftp then the
+.Ar version
+should in the form of: 9.0-RELEASE.
+If you are using method of svn then the
+.Ar version
+should be in the form of git or svn branches: stable/9 or head for CURRENT.
+Other methods only use the value for display.
+.It Fl a Ar architecture
+Specifies which
+.Ar architecture
+of
+.Fx
+to use in the jail.
+(Default: same as host)
+.It Fl m Ar method
+Specifies which
+.Ar method
+to use to create the jail.
+(default:
+.Sy http )
+.Pp
+Pre-built distribution options:
+.Bl -tag -width "ftp-archiveXX"
+.It Sy allbsd
+Use
+.Lk http://www.allbsd.org.
+.It Sy ftp Sy http
+Fetch from configured
+.Sy FREEBSD_HOST
+variable from
+.Pa poudriere.conf .
+.It Sy ftp-archive
+Fetch from
+.Lk http://ftp-archive.freebsd.org.
+.It Sy null
+This option can be used to import an existing directory that already contains an installed system.
+The path must be specified with
+.Fl M Ar path .
+It is expected that this directory be installed to with the following:
+.Bd -literal -offset indent
+/usr/src# make installworld DESTDIR=PATH DB_FROM_SRC=1
+/usr/src# make distrib-dirs DESTDIR=PATH DB_FROM_SRC=1
+/usr/src# make distribution DESTDIR=PATH DB_FROM_SRC=1
+.Ed
+.Pp
+The path will be null-mounted during builds.
+It will not be copied at the time of running
+.Nm jail .
+Deleting the jail will attempt to revert any files changed by poudriere.
+.It Sy src=PATH
+Install from the given src directory at
+.Sy PATH .
+This directory will not be built from.
+It is expected that it is already built and maps to a corresponding
+.Pa /usr/obj
+directory.
+.It Sy tar=PATH
+Install from the tarball at the given
+.Sy PATH .
+Note that this method requires the tarball contains the
+.Pa /usr/src
+files as well if you plan to build any port containing modules.
+.It Sy url=PATH
+Fetch from given
+.Sy PATH .
+Any URL supported by
+.Xr fetch 1
+can be used.
+For example:
+.Dl "url=file:///mirror/10.0"
+.El
+.Pp
+Build from source options:
+.Bl -tag -width "ftp-archiveXX"
+.It Sy git Sy git+http Sy git+https Sy git+ssh
+Will use git, the -v flag to set the branch name and the
+.Sy GIT_BASEURL
+variable in
+.Pa poudriere.conf .
+.It Sy src=PATH
+With the
+.Fl b
+flag, the src tree will be copied into the jail and built.
+.It Sy svn Sy svn+file Sy svn+http Sy svn+https
+Will use SVN and the
+.Sy SVN_HOST
+variable in
+.Pa poudriere.conf .
+.El
+.It Fl f Ar filesystem
+Specifies the
+.Ar filesystem
+name (${ZPOOL}/jails/filesystem).
+.It Fl K Ar kernelname
+Install the jail with a kernel.
+If the
+.Ar kernelname
+is an empty string GENERIC will be used.
+If installing from ftp then the default kernel will be installed what ever the
+.Ar kernelname
+value is.
+.It Fl M Ar mountpoint
+Gives an alternative
+.Ar mountpoint
+when creating jail.
+.It Fl p Ar name
+This specifies which port tree to start/stop the jail with.
+.It Fl P Ar patch
+Apply the specified
+.Ar patch
+to the source tree before building the jail.
+.It Fl S Ar srcpath
+Use the specified
+.Ar srcpath
+as the
+.Fx
+source tree mounted inside the jail
+or from the host for
+.Fl m Ar null .
+.It Fl t Ar version
+instead of upgrading to the latest security fix of the jail version, you can
+jump to the new specified
+.Ar version .
+.It Fl z Ar set
+This specifies which SET to start/stop the jail with.
+.It Fl x
+Build the native-xtools target using the host's
+.Pa /usr/src
+tree and copy this
+into the jail.
+The use of
+.Pa /usr/src
+is due to a bug in the native-xtools build which does not allow it to be
+built from the jail's own source.
+Used exclusively
+for cross building a ports set, typically via qemu-user tools.
+.It Fl C Ar data
+Clean poudriere
+.Ar data
+folders when deleting a jail.
+Only used for
+.Sy -d
+option.
+.Pp
+.Bl -tag -width "packagesXX"
+.Pa data
+options are the following:
+.It Sy all
+.It Sy cache
+.It Sy logs
+.It Sy packages
+.It Sy wkrdirs
+.El
+.It Fl D
+When creating the jail from a git checkout, clone it with the full history
+instead of a --depth=1.
+.El
+.Sh CAVEATS
+.Ss Jailname
+.Fl j ,
+.Fl z
+and
+.Fl p
+are all used in the name of the jail.
+.Pp
+Be careful to respect the names supported by jail(8):
+.Bd -literal
+    "This is an arbitrary string that identifies a jail (except it
+     may not contain a '.')"
+.Ed
+.Sh SEE ALSO
+.Xr jail 8 ,
+.Xr poudriere 8 ,
+.Xr poudriere-bulk 8 ,
+.Xr poudriere-distclean 8 ,
+.Xr poudriere-image 8 ,
+.Xr poudriere-logclean 8 ,
+.Xr poudriere-options 8 ,
+.Xr poudriere-pkgclean 8 ,
+.Xr poudriere-ports 8 ,
+.Xr poudriere-queue 8 ,
+.Xr poudriere-status 8 ,
+.Xr poudriere-testport 8 ,
+.Xr poudriere-version 8
+.Sh AUTHORS
+.An Baptiste Daroussin Aq bapt@FreeBSD.org
+.An Bryan Drewery Aq bdrewery@FreeBSD.org

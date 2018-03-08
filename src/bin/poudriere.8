@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd December 13, 2017
+.Dd March 8, 2018
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -35,9 +35,9 @@
 .Nd bulk package builder and port tester
 .Sh SYNOPSIS
 .Nm
+.Ar poudriere-options
 .Cm command
-.Cm subcommand
-.Op Ar options
+.Op Ar command-options
 .Sh DESCRIPTION
 The
 .Nm
@@ -45,7 +45,7 @@ tool is used to build packages from the ports tree.
 It can also be used to test a single port.
 .Sh GLOBAL OPTIONS
 .Nm
-accepts a global option:
+accepts the following global options.
 .Bl -tag -width "-f conffile"
 .It Fl e Ar etcdir
 Path to the directory where
@@ -70,35 +70,35 @@ The first argument to
 must be a
 .Cm command
 from the following list:
-.Bl -tag -width "-f conffile"
-.It bulk
+.Bl -tag -width 5
+.It Cm bulk ( Xr poudriere-bulk 8 )
 This command makes a ready-to-export package tree, and fills it with
 binary packages built from a given list of ports.
 During the build, hit ^T to send
 .Dv SIGINFO
 and show stats and progress about the build.
-.It image
+.It Cm image Xr ( poudriere-image 8 )
 This command creates images.
-.It jail
+.It Cm jail Xr ( poudriere-jail 8 )
 This command manages the
 .Nm
 jails which are used as different building environments.
-.It ports
+.It Cm ports Xr ( poudriere-ports 8 )
 This command provides management of different portstrees which will be used
 by
 .Nm .
-.It testport
+.It Cm testport Xr ( poudriere-testport 8 )
 This command, mainly targeted at ports developers, launches a
 test on a given port (useful before submitting/committing a port).
-.It options
-This command allows to configure the options for a given port
-.It logclean
+.It Cm options Xr ( poudriere-options 8 )
+This command configures the options for a given port
+.It Cm logclean Xr ( poudriere-logclean 8 )
 This command will cleanup old logfiles
-.It distclean
+.It Cm distclean Xr ( poudriere-distclean 8 )
 This command will cleanup old distfiles
-.It pkgclean
+.It Cm pkgclean Xr ( poudriere-pkgclean 8 )
 This command will cleanup old and unwanted packages
-.It queue
+.It Cm queue Xr ( poudriere-queue 8 )
 This command allows a non-root user to queue
 .Nm
 commands.
@@ -107,854 +107,11 @@ It is currently
 Using it requires starting
 .Sy poudriered
 via the provided rc script.
-.It status
+.It Cm status Xr ( poudriere-status 8 )
 This command shows status of current and previous builds
-.It version
+.It Cm version Xr ( poudriere-version 8 )
 Show version of
 .Nm .
-.El
-.Sh SUBCOMMANDS
-Here are the list of subcommands and associated options supported by
-.Nm ,
-sorted by
-.Cm command
-order.
-.Ss bulk
-These subcommands are mutually exclusive.
-.Bl -tag -width "-f conffile"
-.It Fl a
-Build all ports in the tree.
-.It Fl f Ar file
-Absolute path to a file which contains the list of ports to build.
-Ports must be specified in the form
-.Ar category/port
-and shell-style comments are allowed.
-Multiple
-.Fl f Ar file
-arguments may be specified at once.
-.It cat/port cat/port2 ...
-A list of ports can be specified directly.
-.El
-.Pp
-See
-.Sx FLAVORS
-for supported FLAVORS syntax.
-.Pp
-See
-.Sx CUSTOMISATION
-to know how to build binary packages with options that differs from
-defaults.
-.Pp
-Here are the options associated with the
-.Cm bulk
-command.
-.Bl -tag -width "-f conffile"
-.It Fl B Ar name
-Specify which buildname to use.
-By default
-.Ar YYYY-MM-DD_HH:MM:SS
-will be used.
-This can be used to resume a previous build and use the same log and URL paths.
-Resuming a build will not retry built/failed/skipped/ignored packages.
-.It Fl c
-Clean
-.Em all
-previously built packages and logs.
-.It Fl C
-Clean only the packages specified on the command line or in in the file given in
-.Fl f Ar file .
-Implies
-.Fl c
-for
-.Fl a .
-.It Fl F
-Only fetch from original MASTER_SITES.
-Skip
-.Fx
-mirrors.
-.It Fl j Ar name
-Run the bulk build on the jail named
-.Ar name .
-.It Fl J Ar number[:number]
-This argument specifies how many
-.Ar number
-jobs will run in parallel for a bulk build.
-The optional second
-.Ar number
-is the number of jobs used for the steps before the build, they are more IO
-bound than CPU bound, so you may want to use a different number.
-The default pre-build value is 1.25 times the value of the build value.
-.It Fl i
-Interactive mode.
-Enter jail for interactive testing and automatically cleanup when done.
-A local
-.Xr pkg.conf 5
-repository configuration will be installed to
-.Pa LOCALBASE/etc/pkg/repos/local.conf
-so that
-.Xr pkg 8
-can be used with any existing packages built for the jail.
-The
-.Fx
-repository will be disabled by default.
-.It Fl I
-Advanced Interactive mode.
-Leaves jail running with ports installed after test.
-When done with the jail you will need to manually shut it down:
-.Dl "poudriere jail -k -j JAILNAME" .
-As with
-.Fl i
-this will install a
-.Xr pkg.conf 5
-file for
-.Xr pkg 8
-usage.
-.It Fl n
-Dry run.
-Show what would be done, but do not actually build or delete any
-packages.
-.It Fl N
-Do not build package repository or INDEX when build is completed.
-.It Fl p Ar tree
-This flag specifies on which ports
-.Ar tree
-the bulk build will be done.
-.It Fl R
-Clean RESTRICTED packages after building.
-.It Fl S
-Don't recursively rebuild packages affected by other packages requiring
-incremental rebuild.
-This may result in broken packages if the ones they depend on are updated,
-are not ABI-compatible, and were not properly
-.Sy PORTREVISION
-bumped.
-.It Fl t
-Add some testing to the specified ports.
-Add
-.Fl r
-to recursively test all port dependencies as well.
-Currently uninstalls the port, and disable parallel
-jobs for make.
-When used with
-.Fl a
-then
-.Fl rk
-are implied.
-.It Fl r
-Recursively test all dependencies as well.
-This flag is automatically set when using
-.Fl at .
-.It Fl k
-When using
-.Fl t
-do not consider failures as fatal.
-Do not skip dependent ports on findings.
-This flag is automatically set when using
-.Fl at .
-.It Fl T
-Try building BROKEN ports by defining TRYBROKEN for the build.
-.It Fl w
-Save WRKDIR on build failure.
-The WRKDIR will be tarred up into
-.Sy ${POUDRIERE_DATA}/wrkdirs .
-.It Fl v
-This will show more information during the build.
-Specify twice to enable debug output.
-.It Fl z Ar set
-This specifies which SET to use for the build.
-See
-.Sx CUSTOMISATION
-for examples of how this is used.
-.El
-.Ss image
-WARNING: This feature is still considered ALPHA.
-.Bl -tag -width "-f packagelist"
-.It Fl c Ar overlaydir
-This specifies an extra directory whose contents will be copied directly into
-the final image, starting from the root.
-.It Fl f Ar packagelist
-This specifies a list of packages to be pre-installed in the final image.
-.It Fl h Ar hostname
-This specifies the hostname used for the image.
-Defaults to
-.Ar poudriere-image .
-.It Fl j Ar name
-This argument specifies the name of the jail that is used.
-.It Fl m Ar overlaydir
-Build a miniroot image as well (for tar type images), and copy this directory
-into the miniroot image.
-.It Fl n Ar name
-This specifies the name of the resulting image.
-.It Fl o Ar outputdir
-This argument specifies directory where the resulting image will be created.
-.It Fl p Ar tree
-This argument specifies the name of the ports tree that is used.
-.It Fl s Ar size
-This specifies the maximum size of the image that is built.
-.It Fl t Ar type
-This specifies the type of image to create:
-.Bl -tag -width "rawfirmware"
-.It iso
-An ISO 9660 format image.
-.It iso+mfs
-An ISO 9660 format image where the root filesystem is MFS mounted.
-.It iso+zmfs
-An ISO 9660 format image where the root filesystem is LZ77 compressed and is MFS
-mounted.
-.It usb
-A GPT-layout prepared UFS2 image containing a UEFI boot loader.
-.It usb+mfs
-A GPT-layout prepared UFS2 image containing a UEFI boot loader where the root
-filesystem is MFS mounted.
-.It usb+zmfs
-A GPT-layout prepared UFS2 image containing a UEFI boot loader where the root
-filesystem is LZ77 compressed and is MFS mounted.
-.It rawdisk
-A raw UFS2, softupdates-enabled, disk image.
-.It zrawdisk
-A raw ZFS disk image.
-.It tar
-An XZ-compressed tarball.
-.It firmware
-A nanobsd style image with a GPT partitions and a UEFI boot loader.
-.It rawfirmware
-A raw disk image.
-.It embedded
-Create a u-boot ready embedded image.
-.El
-.It Fl X Ar excludefile
-This specifies a list of files to exclude from the final image.
-.It Fl z Ar set
-This specifies which SET to use for the build.
-.El
-.Ss jail
-These subcommands are mutually exclusive.
-.Bl -tag -width "-f conffile"
-.It Fl c
-Creates a jail.
-.It Fl d
-Deletes a jail.
-.It Fl i
-Show information about a jail.
-See also
-.Cm status .
-.It Fl l
-List all poudriere jails.
-.It Fl n
-When combined with
-.Fl l ,
-only display jail name.
-.It Fl s
-Starts a jail.
-.It Fl k
-Kills a jail (stops it).
-.It Fl r Ar name
-Rename a jail to
-.Ar name .
-.It Fl u
-Update a jail.
-.El
-.Pp
-Except for
-.Fl l ,
-all of the subcommands require the
-.Fl j
-option (see below).
-.Pp
-Here are the options associated with the
-.Cm jail
-command.
-.Bl -tag -width "-f conffile"
-.It Fl b
-Build the source provided with the -m src=PATH option.
-.It Fl J Ar number
-The
-.Ar number
-of make jobs will run in parallel for buildworld.
-Defaults to the number of CPUs reported by:  sysctl hw.ncpu.
-.It Fl q
-Remove the header when
-.Fl l
-is the specified mandatory option.
-Otherwise, it has no effect.
-.It Fl j Ar name
-Specifies the
-.Ar name
-of the jail.
-.It Fl v Ar version
-Specifies which
-.Ar version
-of
-.Fx
-to use in the jail.
-If you are using method ftp then the
-.Ar version
-should in the form of: 9.0-RELEASE.
-If you are using method of svn then the
-.Ar version
-should be in the form of git or svn branches: stable/9 or head for CURRENT.
-Other methods only use the value for display.
-.It Fl a Ar architecture
-Specifies which
-.Ar architecture
-of
-.Fx
-to use in the jail.
-(Default: same as host)
-.It Fl m Ar method
-Specifies which
-.Ar method
-to use to create the jail.
-(default:
-.Sy http )
-.Pp
-Pre-built distribution options:
-.Bl -tag -width "ftp-archiveXX"
-.It Sy allbsd
-Use
-.Lk http://www.allbsd.org.
-.It Sy ftp Sy http
-Fetch from configured
-.Sy FREEBSD_HOST
-variable from
-.Pa poudriere.conf .
-.It Sy ftp-archive
-Fetch from
-.Lk http://ftp-archive.freebsd.org.
-.It Sy null
-This option can be used to import an existing directory that already contains an installed system.
-The path must be specified with
-.Fl M Ar path .
-It is expected that this directory be installed to with the following:
-.Bd -literal -offset indent
-/usr/src# make installworld DESTDIR=PATH DB_FROM_SRC=1
-/usr/src# make distrib-dirs DESTDIR=PATH DB_FROM_SRC=1
-/usr/src# make distribution DESTDIR=PATH DB_FROM_SRC=1
-.Ed
-.Pp
-The path will be null-mounted during builds.
-It will not be copied at the time of running
-.Nm jail .
-Deleting the jail will attempt to revert any files changed by poudriere.
-.It Sy src=PATH
-Install from the given src directory at
-.Sy PATH .
-This directory will not be built from.
-It is expected that it is already built and maps to a corresponding
-.Pa /usr/obj
-directory.
-.It Sy tar=PATH
-Install from the tarball at the given
-.Sy PATH .
-Note that this method requires the tarball contains the
-.Pa /usr/src
-files as well if you plan to build any port containing modules.
-.It Sy url=PATH
-Fetch from given
-.Sy PATH .
-Any URL supported by
-.Xr fetch 1
-can be used.
-For example:
-.Dl "url=file:///mirror/10.0"
-.El
-.Pp
-Build from source options:
-.Bl -tag -width "ftp-archiveXX"
-.It Sy git Sy git+http Sy git+https Sy git+ssh
-Will use git, the -v flag to set the branch name and the
-.Sy GIT_BASEURL
-variable in
-.Pa poudriere.conf .
-.It Sy src=PATH
-With the
-.Fl b
-flag, the src tree will be copied into the jail and built.
-.It Sy svn Sy svn+file Sy svn+http Sy svn+https
-Will use SVN and the
-.Sy SVN_HOST
-variable in
-.Pa poudriere.conf .
-.El
-.It Fl f Ar filesystem
-Specifies the
-.Ar filesystem
-name (${ZPOOL}/jails/filesystem).
-.It Fl K Ar kernelname
-Install the jail with a kernel.
-If the
-.Ar kernelname
-is an empty string GENERIC will be used.
-If installing from ftp then the default kernel will be installed what ever the
-.Ar kernelname
-value is.
-.It Fl M Ar mountpoint
-Gives an alternative
-.Ar mountpoint
-when creating jail.
-.It Fl p Ar name
-This specifies which port tree to start/stop the jail with.
-.It Fl P Ar patch
-Apply the specified
-.Ar patch
-to the source tree before building the jail.
-.It Fl S Ar srcpath
-Use the specified
-.Ar srcpath
-as the
-.Fx
-source tree mounted inside the jail
-or from the host for
-.Fl m Ar null .
-.It Fl t Ar version
-instead of upgrading to the latest security fix of the jail version, you can
-jump to the new specified
-.Ar version .
-.It Fl z Ar set
-This specifies which SET to start/stop the jail with.
-.It Fl x
-Build the native-xtools target using the host's
-.Pa /usr/src
-tree and copy this
-into the jail.
-The use of
-.Pa /usr/src
-is due to a bug in the native-xtools build which does not allow it to be
-built from the jail's own source.
-Used exclusively
-for cross building a ports set, typically via qemu-user tools.
-.It Fl C Ar data
-Clean poudriere
-.Ar data
-folders when deleting a jail. Only used for
-.Sy -d
-option.
-.Pp
-.Bl -tag -width "packagesXX"
-.Pa data
-options are the following:
-.It Sy all
-.It Sy cache
-.It Sy logs
-.It Sy packages
-.It Sy wkrdirs
-.El
-.It Fl D
-When creating the jail from a git checkout, clone it with the full history
-instead of a --depth=1.
-.El
-.Ss ports
-These subcommands are mutually exclusive.
-.Bl -tag -width "-f conffile"
-.It Fl c
-Creates a ports tree.
-.It Fl d
-Deletes a ports tree.
-.It Fl l
-List all available ports trees.
-.It Fl u
-Update a ports tree.
-.El
-.Pp
-Except for
-.Fl l ,
-all of the subcommands require the
-.Fl p
-switch (see below).
-.Pp
-Here are the options associated with the
-.Cm ports
-command.
-.Bl -tag -width "-f conffile"
-.It Fl B Ar branch
-Specifies which
-.Ar branch
-to checkout when using the
-.Sy svn
-or
-.Sy git
-methods.
-(Default: head/master)
-.It Fl F
-When used with
-.Fl c ,
-only create the needed file systems (for ZFS) and directories, but do
-not populate them.
-.It Fl M Ar mountpoint
-Path to the source of a ports tree.
-.It Fl f Ar filesystem
-The name of the
-.Ar filesystem
-to create for the ports tree.
-If 'none' then do not create a filesystem.
-Defaults to poudriere/ports/default.
-.It Fl k
-When used with
-.Fl d ,
-only unregister the ports tree without removing the files.
-.It Fl m Ar method
-When used with
-.Fl c ,
-specify which
-.Ar method
-to use to create the ports tree.
-Could be portsnap, git, null, svn{,+http,+https,+file,+ssh}.
-The default is portsnap.
-.Bl -tag -width "svn+https"
-.It Sy null
-This option can be used to import an existing directory that already contains
-a manually managed ports tree.
-The path must be specified with
-.Fl M Ar path .
-The path will be null-mounted during builds.
-.El
-.It Fl n
-When combined with
-.Fl l ,
-only display the name of the ports tree.
-.It Fl p Ar name
-Specifies the
-.Ar name
-of the ports tree to use.
-.It Fl q
-When used with
-.Fl l ,
-remove the header in the list view.
-.It Fl v
-Show more verbose output.
-.El
-.Ss testport
-The specified port will be tested for build and packaging problems.
-All missing dependencies will first be built in parallel.
-.Ev TRYBROKEN=yes
-is automatically defined in the environment to test ports marked as
-.Ev BROKEN .
-.Bl -tag -width "-f conffile"
-.It Oo Fl o Oc Ar origin
-Specifies an origin in the ports tree.
-See
-.Sx FLAVORS
-for supported FLAVORS syntax.
-.El
-.Pp
-Here are the options associated with the
-.Cm testport
-command.
-.Bl -tag -width "-f conffile"
-.It Fl B Ar name
-Specify which buildname to use.
-By default
-.Ar YYYY-MM-DD_HH:MM:SS
-will be used.
-This can be used to resume a previous build and use the same log and URL paths.
-Resuming a build will not retry built/failed/skipped/ignored packages.
-.It Fl c
-Run make config for the given port.
-.It Fl i
-Interactive mode.
-Enter jail for interactive testing and automatically cleanup when done.
-A local
-.Xr pkg.conf 5
-repository configuration will be installed to
-.Pa LOCALBASE/etc/pkg/repos/local.conf
-so that
-.Xr pkg 8
-can be used with any existing packages built for the jail.
-The
-.Fx
-repository will be disabled by default.
-.It Fl I
-Advanced Interactive mode.
-Leaves jail running with port installed after test.
-When done with the jail you will need to manually shut it down:
-.Dl "poudriere jail -k -j JAILNAME" .
-As with
-.Fl i
-this will install a
-.Xr pkg.conf 5
-file for
-.Xr pkg 8
-usage.
-.It Fl j Ar name
-Runs only inside the jail named
-.Ar name .
-.It Fl J Ar number[:number]
-This argument specifies how many
-.Ar number
-jobs will run in parallel for building the dependencies.
-The optional second
-.Ar number
-is the number of jobs used for the steps before the build, they are more IO
-bound than CPU bound, so you may want to use a different number.
-The default pre-build value is 1.25 times the value of the build value.
-.It Fl k
-Do not consider failures as fatal.
-Find all failures.
-.It Fl n
-Dry run.
-Show what would be done, but do not actually build or delete any
-packages.
-.It Fl N
-Do not build package repository or INDEX when build of dependencies is completed.
-.It Fl P
-Use custom prefix.
-.It Fl p Ar tree
-Specifies which ports
-.Ar tree
-to use.
-.It Fl S
-Don't recursively rebuild packages affected by other packages requiring
-incremental rebuild.
-This may result in broken packages if the ones they depend on are updated,
-are not ABI-compatible, and were not properly
-.Sy PORTREVISION
-bumped.
-.It Fl v
-This will show more information during the build.
-Specify twice to enable debug output.
-.It Fl w
-Save WRKDIR on build failure.
-The WRKDIR will be tarred up into
-.Sy ${POUDRIERE_DATA}/wrkdirs .
-.It Fl z Ar set
-This specifies which SET to use for the build.
-See
-.Sx CUSTOMISATION
-for examples of how this is used.
-.El
-.Ss logclean
-.Bl -tag -width "-f conffile"
-.It Fl a
-Remove all logfiles matching the filter.
-.It Ar days
-How many days old of logfiles to keep matching the filter.
-.It Fl N Ar count
-How many logfiles to keep matching the filter per
-jail/tree/set combination.
-.El
-.Pp
-This command accepts the following options:
-.Bl -tag -width "-f conffile"
-.It Fl j Ar name
-Specifies the
-.Ar name
-of the jail to filter by.
-.It Fl n
-Dry run, do not actually delete anything.
-.It Fl B Ar name
-Specifies which buildname to match on.
-May be a glob.
-.It Fl p Ar tree
-Specifies which ports
-.Ar tree
-to use.
-This can be specified multiple times to consider multiple trees.
-.It Fl y
-Assume yes, do not confirm and just delete the files.
-.It Fl v
-This will show more information during the build.
-Specify twice to enable debug output.
-.It Fl z Ar set
-This specifies which SET to filter builds by.
-Use
-.Sy 0
-to match on empty SET.
-.El
-.Ss distclean
-These subcommands are mutually exclusive.
-.Bl -tag -width "-f conffile"
-.It Fl a
-Clean all ports in the tree.
-.It Fl f Ar file
-Absolute path to a file which contains the list of ports to clean.
-Ports must be specified in the form
-.Ar category/port
-and shell-style comments are allowed.
-Multiple
-.Fl f Ar file
-arguments may be specified at once.
-.It cat/port cat/port2 ...
-A list of ports can be specified on the command line.
-.El
-.Pp
-Here are the options associated with the
-.Cm distclean
-command.
-.Bl -tag -width "-f conffile"
-.It Fl J Ar number
-This argument specifies how many
-.Ar number
-jobs will run in parallel for gathering distfile information.
-.It Fl n
-Dry run, do not actually delete anything.
-.It Fl p Ar tree
-Specifies which ports
-.Ar tree
-to use.
-This can be specified multiple times to consider multiple tress.
-.It Fl y
-Assume yes, do not confirm and just delete the files.
-.It Fl v
-This will show more information during the build.
-Specify twice to enable debug output.
-.El
-.Ss pkgclean
-This command is used to delete all packages not specified to build.
-.Pp
-These subcommands are mutually exclusive.
-.Bl -tag -width "-f conffile"
-.It Fl A
-Remove all packages.
-.It Fl a
-Keep all known ports in the tree.
-.It Fl f Ar file
-Absolute path to a file which contains the list of ports to keep.
-Ports must be specified in the form
-.Ar category/port
-and shell-style comments are allowed.
-Multiple
-.Fl f Ar file
-arguments may be specified at once.
-.It cat/port cat/port2 ...
-A list of ports can be specified directly.
-.El
-.Pp
-Here are the options associated with the
-.Cm pkgclean
-command.
-This command accepts the following options:
-.Bl -tag -width "-f conffile"
-.It Fl j Ar name
-Jail to use for the packages to inspect.
-.It Fl J Ar number
-This argument specifies how many
-.Ar number
-jobs will run in parallel for gathering package information.
-.It Fl n
-Dry run, do not actually delete anything.
-.It Fl N
-Do not build package repository or INDEX when done cleaning.
-.It Fl p Ar tree
-Specifies which ports
-.Ar tree
-to use.
-.It Fl R
-Also clean restricted packages.
-.It Fl y
-Assume yes, do not confirm and just delete the files.
-.It Fl v
-This will show more information during the build.
-Specify twice to enable debug output.
-.It Fl z Ar set
-SET to use for the packages to inspect.
-.El
-.Ss options
-This command accepts the following parameters:
-.Bl -tag -width "-f conffile"
-.It Fl f Ar file
-Absolute path to a file which contains the list of ports to configure.
-Ports must be specified in the form
-.Ar category/port
-and shell-style comments are allowed.
-.It cat/port cat/port2 ...
-A list of ports can be specified directly.
-.El
-.Pp
-This command accepts the following options:
-.Bl -tag -width "-f conffile"
-.It Fl a Ar architecture
-Specifies which
-.Ar architecture
-of FreeBSD to use to show options.
-(Default: the one of jail
-.Ar jailname
-)
-.It Fl c
-Use 'config' target, which will always show the dialog for the given ports.
-.It Fl C
-Use 'config-conditional' target, which will only bring up the dialog on new options for the given ports.
-(This is the default)
-.It Fl j Ar jailname
-If given, configure the options only for the given jail.
-.It Fl p Ar portstree
-Run the configuration inside the given ports tree (by default uses default)
-.It Fl n
-Do not be recursive
-.It Fl r
-Remove port options instead of configuring them
-.It Fl s
-Show port options instead of configuring them
-.It Fl z Ar set
-This specifies which SET to use for the build.
-See
-.Sx CUSTOMISATION
-for examples of how this is used.
-.El
-.Pp
-The
-.Cm options
-subcommand can also take the list of ports to configure through command line
-arguments instead of the using a file list.
-.Ss queue
-This command takes a
-.Nm
-command in argument.
-.Pp
-There are no options associated with the
-.Cm queue
-command.
-.Ss status
-.Nm status
-sorts by SETNAME, PORTSTREE, JAILNAME and then BUILDNAME.
-.Pp
-This command accepts the following options:
-.Bl -tag -width "-f conffile"
-.It Fl a
-Show all builds, not just latest.
-This implies
-.Fl f .
-.It Fl b
-Show details about what each builder for the matched builds are doing.
-.It Fl B Ar name
-Specifies which buildname to match on.
-This supports shell globbing.
-Defaults to "latest".
-Specifying this implies the
-.Fl f
-flag.
-.It Fl c
-Show a more compact output and do not include some columns.
-.It Fl f
-Show finished builds, not just currently running.
-This is implied by the
-.Fl a ,
-.Fl B
-and
-.Fl r
-flags.
-.It Fl H
-Do not print headers and separate fields by a single tab instead of arbitrary
-white space.
-.It Fl j Ar name
-Specifies the
-.Ar name
-of the jail to filter by.
-.It Fl l
-Show logs instead of URL.
-.It Fl p Ar tree
-This flag specifies which ports
-.Ar tree
-to filter builds by.
-.It Fl r
-Show build results.
-This implies the
-.Fl f
-flag.
-.It Fl z Ar set
-This specifies which SET to filter builds by.
-Use
-.Sy 0
-to match on empty SET.
 .El
 .Sh ENVIRONMENT
 The
@@ -1068,15 +225,14 @@ with 81i386 as the name of the jail.
 This second example show how to use
 .Nm
 for a single port.
-.Pp
-Let's take the example of building a single port;
+Take the example of building a single port;
 .Pp
 .Dl "poudriere testport -o category/port -j myjail"
 .Pp
 all the tests will be done in myjail.
 .Pp
 It starts the jail, then mount the ports tree (nullfs), then mounts the
-package dir (pourdriere/data/packages/<jailname>-<tree>-<setname>), then it mounts the
+package dir (poudriere/data/packages/<jailname>-<tree>-<setname>), then it mounts the
 ~/ports-cvs/mybeautifulporttotest (nullfs) it builds all the dependencies
 (except runtime ones) and log it to
 poudriere/data/logs/testport/jailname/default/mybeautifulporttotest.log).
@@ -1275,24 +431,20 @@ Hook scripts may be loaded in any of the following paths:
 .Pp
 For specific hook documentation see:
 .Lk https://github.com/freebsd/poudriere/wiki/hooks
-.Sh CAVEATS
-.Ss Jailname
-.Fl j ,
-.Fl z
-and
-.Fl p
-are all used in the name of the jail.
-.Pp
-Be careful to respect the names supported by jail(8):
-.Bd -literal
-    "This is an arbitrary string that identifies a jail (except it
-     may not contain a '.')"
-.Ed
-.Pp
-Be also careful to not begin the name of the jail by a number if you are
-not running FreeBSD 9.0 or later:
-.Pp
-.Lk http://svn.freebsd.org/viewvc/base?view=revision&revision=209820
+.Sh SEE ALSO
+.Xr jail 8 ,
+.Xr poudriere-bulk 8 ,
+.Xr poudriere-distclean 8 ,
+.Xr poudriere-image 8 ,
+.Xr poudriere-jail 8 ,
+.Xr poudriere-logclean 8 ,
+.Xr poudriere-options 8 ,
+.Xr poudriere-pkgclean 8 ,
+.Xr poudriere-ports 8 ,
+.Xr poudriere-queue 8 ,
+.Xr poudriere-status 8 ,
+.Xr poudriere-testport 8 ,
+.Xr poudriere-version 8
 .Sh BUGS
 In case of bugs, feel free to file a report:
 .Pp

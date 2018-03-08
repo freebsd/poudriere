@@ -1,0 +1,108 @@
+.\" Copyright (c) 2012 Baptiste Daroussin <bapt@FreeBSD.org>
+.\" Copyright (c) 2012-2014 Bryan Drewery <bdrewery@FreeBSD.org>
+.\" Copyright (c) 2018 SRI International
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\" $FreeBSD$
+.\"
+.\" Note: The date here should be updated whenever a non-trivial
+.\" change is made to the manual page.
+.Dd March 8, 2018
+.Dt POUDRIERE-PKGCLEAN 8
+.Os
+.Sh NAME
+.Nm poudriere-pkgclean
+.Nd cleanup old or unwanted packages
+.Sh SYNOPSIS
+.Nm poudriere
+.Op Ar poudriere-options
+.Cm pkgclean
+.Ar subcommand
+.Op Ar options
+.Nm poudriere
+.Op Ar poudriere-options
+.Cm pkgclean
+.Op Ar options
+.Ar origin
+.Op Ar origin2 Op Ar ...
+.Sh DESCRIPTION
+This command is used to delete all packages not specified to build.
+.Pp
+Either a subcommand or a list of port origins must be supplied.
+.Sh SUBCOMMANDS
+.Bl -tag -width "-f conffile"
+.It Fl A
+Remove all packages.
+.It Fl a
+Keep all known ports in the tree.
+.It Fl f Ar file
+Absolute path to a file which contains the list of ports to keep.
+Ports must be specified in the form
+.Ar category/port
+and shell-style comments are allowed.
+Multiple
+.Fl f Ar file
+arguments may be specified at once.
+.El
+.Sh OPTIONS
+.Bl -tag -width "-f conffile"
+.It Fl j Ar name
+Jail to use for the packages to inspect.
+.It Fl J Ar number
+This argument specifies how many
+.Ar number
+jobs will run in parallel for gathering package information.
+.It Fl n
+Dry run, do not actually delete anything.
+.It Fl N
+Do not build package repository or INDEX when done cleaning.
+.It Fl p Ar tree
+Specifies which ports
+.Ar tree
+to use.
+.It Fl R
+Also clean restricted packages.
+.It Fl y
+Assume yes, do not confirm and just delete the files.
+.It Fl v
+This will show more information during the build.
+Specify twice to enable debug output.
+.It Fl z Ar set
+SET to use for the packages to inspect.
+.El
+.Sh SEE ALSO
+.Xr poudriere 8 ,
+.Xr poudriere-bulk 8 ,
+.Xr poudriere-distclean 8 ,
+.Xr poudriere-image 8 ,
+.Xr poudriere-jail 8 ,
+.Xr poudriere-logclean 8 ,
+.Xr poudriere-ports 8 ,
+.Xr poudriere-queue 8 ,
+.Xr poudriere-status 8 ,
+.Xr poudriere-testport 8 ,
+.Xr poudriere-version 8
+.Sh AUTHORS
+.An Baptiste Daroussin Aq bapt@FreeBSD.org
+.An Bryan Drewery Aq bdrewery@FreeBSD.org
