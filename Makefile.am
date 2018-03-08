@@ -22,7 +22,19 @@ examplesdir= $(datadir)/examples/$(PACKAGE_NAME)
 
 dist_bin_SCRIPTS=	poudriere
 
-dist_man_MANS=	src/bin/poudriere.8
+dist_man_MANS=	src/bin/poudriere.8 \
+		src/bin/poudriere-bulk.8 \
+		src/bin/poudriere-distclean.8 \
+		src/bin/poudriere-image.8 \
+		src/bin/poudriere-jail.8 \
+		src/bin/poudriere-logclean.8 \
+		src/bin/poudriere-options.8 \
+		src/bin/poudriere-pkgclean.8 \
+		src/bin/poudriere-ports.8 \
+		src/bin/poudriere-queue.8 \
+		src/bin/poudriere-status.8 \
+		src/bin/poudriere-testport.8 \
+		src/bin/poudriere-version.8
 
 sysconf_DATA=	src/etc/poudriere.conf.sample \
 		src/etc/poudriered.conf.sample

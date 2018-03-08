@@ -1,0 +1,159 @@
+.\" Copyright (c) 2012 Baptiste Daroussin <bapt@FreeBSD.org>
+.\" Copyright (c) 2012-2014 Bryan Drewery <bdrewery@FreeBSD.org>
+.\" Copyright (c) 2018 SRI International
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\" $FreeBSD$
+.\"
+.\" Note: The date here should be updated whenever a non-trivial
+.\" change is made to the manual page.
+.Dd March 8, 2018
+.Dt POUDRIERE-TESTPORT 8
+.Os
+.Sh NAME
+.Nm poudriere-testport
+.Nd test a given port's build
+.Sh SYNOPSIS
+.Nm poudriere
+.Op Ar poudriere-options
+.Cm testport
+.Op Ar options
+.Oo Fl o Oc Ar origin
+.Sh DESCRIPTION
+The specified port will be tested for build and packaging problems.
+All missing dependencies will first be built in parallel.
+.Ev TRYBROKEN=yes
+is automatically defined in the environment to test ports marked as
+.Ev BROKEN .
+See
+.Sx FLAVORS
+in
+.Xr poudriere 8
+for supported FLAVORS syntax.
+.Pp
+One port origin must be specified.
+.Sh OPTIONS
+.Bl -tag -width "-f conffile"
+.It Fl o Ar origin
+Specifies an origin in the ports tree.
+.It Fl B Ar name
+Specify which buildname to use.
+By default
+.Ar YYYY-MM-DD_HH:MM:SS
+will be used.
+This can be used to resume a previous build and use the same log and URL paths.
+Resuming a build will not retry built/failed/skipped/ignored packages.
+.It Fl c
+Run make config for the given port.
+.It Fl i
+Interactive mode.
+Enter jail for interactive testing and automatically cleanup when done.
+A local
+.Xr pkg.conf 5
+repository configuration will be installed to
+.Pa LOCALBASE/etc/pkg/repos/local.conf
+so that
+.Xr pkg 8
+can be used with any existing packages built for the jail.
+The
+.Fx
+repository will be disabled by default.
+.It Fl I
+Advanced Interactive mode.
+Leaves jail running with port installed after test.
+When done with the jail you will need to manually shut it down:
+.Dl "poudriere jail -k -j JAILNAME" .
+As with
+.Fl i
+this will install a
+.Xr pkg.conf 5
+file for
+.Xr pkg 8
+usage.
+.It Fl j Ar name
+Runs only inside the jail named
+.Ar name .
+.It Fl J Ar number[:number]
+This argument specifies how many
+.Ar number
+jobs will run in parallel for building the dependencies.
+The optional second
+.Ar number
+is the number of jobs used for the steps before the build, they are more IO
+bound than CPU bound, so you may want to use a different number.
+The default pre-build value is 1.25 times the value of the build value.
+.It Fl k
+Do not consider failures as fatal.
+Find all failures.
+.It Fl n
+Dry run.
+Show what would be done, but do not actually build or delete any
+packages.
+.It Fl N
+Do not build package repository or INDEX when build of dependencies is
+completed.
+.It Fl P
+Use custom prefix.
+.It Fl p Ar tree
+Specifies which ports
+.Ar tree
+to use.
+.It Fl S
+Do not recursively rebuild packages affected by other packages requiring
+incremental rebuild.
+This may result in broken packages if the ones they depend on are updated,
+are not ABI-compatible, and were not properly
+.Sy PORTREVISION
+bumped.
+.It Fl v
+This will show more information during the build.
+Specify twice to enable debug output.
+.It Fl w
+Save WRKDIR on build failure.
+The WRKDIR will be tarred up into
+.Sy ${POUDRIERE_DATA}/wrkdirs .
+.It Fl z Ar set
+This specifies which SET to use for the build.
+See
+.Sx CUSTOMISATION
+in
+.Xr poudriere 8
+for examples of how this is used.
+.El
+.Sh SEE ALSO
+.Xr poudriere 8 ,
+.Xr poudriere-bulk 8 ,
+.Xr poudriere-distclean 8 ,
+.Xr poudriere-image 8 ,
+.Xr poudriere-jail 8 ,
+.Xr poudriere-logclean 8 ,
+.Xr poudriere-options 8 ,
+.Xr poudriere-pkgclean 8 ,
+.Xr poudriere-ports 8 ,
+.Xr poudriere-queue 8 ,
+.Xr poudriere-status 8 ,
+.Xr poudriere-version 8
+.Sh AUTHORS
+.An Baptiste Daroussin Aq bapt@FreeBSD.org
+.An Bryan Drewery Aq bdrewery@FreeBSD.org

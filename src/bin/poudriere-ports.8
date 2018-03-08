@@ -1,0 +1,140 @@
+.\" Copyright (c) 2012 Baptiste Daroussin <bapt@FreeBSD.org>
+.\" Copyright (c) 2012-2014 Bryan Drewery <bdrewery@FreeBSD.org>
+.\" Copyright (c) 2018 SRI International
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\" $FreeBSD$
+.\"
+.\" Note: The date here should be updated whenever a non-trivial
+.\" change is made to the manual page.
+.Dd March 8, 2018
+.Dt POUDRIERE-PORTS 8
+.Os
+.Sh NAME
+.Nm poudriere-ports
+.Nd manage ports trees
+.Sh SYNOPSIS
+.Nm poudriere
+.Op Ar poudriere-options
+.Cm ports
+.Ar subcommand
+.Op Ar options
+.Sh DESCRIPTION
+This command provides management of different ports trees which will be used
+by
+.Nm poudriere .
+.Pp
+On subcommand must be supplied.
+.Sh SUBCOMMANDS
+.Bl -tag -width "-f conffile"
+.It Fl c
+Creates a ports tree.
+.It Fl d
+Deletes a ports tree.
+.It Fl l
+List all available ports trees.
+.It Fl u
+Update a ports tree.
+.El
+.Sh OPTIONS
+Except for
+.Fl l ,
+all of the subcommands require the
+.Fl p
+switch (see below).
+.Pp
+.Bl -tag -width "-f conffile"
+.It Fl B Ar branch
+Specifies which
+.Ar branch
+to checkout when using the
+.Sy svn
+or
+.Sy git
+methods.
+(Default: head/master)
+.It Fl F
+When used with
+.Fl c ,
+only create the needed file systems (for ZFS) and directories, but do
+not populate them.
+.It Fl M Ar mountpoint
+Path to the source of a ports tree.
+.It Fl f Ar filesystem
+The name of the
+.Ar filesystem
+to create for the ports tree.
+If 'none' then do not create a filesystem.
+Defaults to poudriere/ports/default.
+.It Fl k
+When used with
+.Fl d ,
+only unregister the ports tree without removing the files.
+.It Fl m Ar method
+When used with
+.Fl c ,
+specify which
+.Ar method
+to use to create the ports tree.
+Could be portsnap, git, null, svn{,+http,+https,+file,+ssh}.
+The default is portsnap.
+.Bl -tag -width "svn+https"
+.It Sy null
+This option can be used to import an existing directory that already contains
+a manually managed ports tree.
+The path must be specified with
+.Fl M Ar path .
+The path will be null-mounted during builds.
+.El
+.It Fl n
+When combined with
+.Fl l ,
+only display the name of the ports tree.
+.It Fl p Ar name
+Specifies the
+.Ar name
+of the ports tree to use.
+.It Fl q
+When used with
+.Fl l ,
+remove the header in the list view.
+.It Fl v
+Show more verbose output.
+.El
+.Sh SEE ALSO
+.Xr poudriere 8 ,
+.Xr poudriere-bulk 8 ,
+.Xr poudriere-distclean 8 ,
+.Xr poudriere-image 8 ,
+.Xr poudriere-jail 8 ,
+.Xr poudriere-logclean 8 ,
+.Xr poudriere-options 8 ,
+.Xr poudriere-pkgclean 8 ,
+.Xr poudriere-queue 8 ,
+.Xr poudriere-status 8 ,
+.Xr poudriere-testport 8 ,
+.Xr poudriere-version 8
+.Sh AUTHORS
+.An Baptiste Daroussin Aq bapt@FreeBSD.org
+.An Bryan Drewery Aq bdrewery@FreeBSD.org
