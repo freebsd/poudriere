@@ -27,15 +27,16 @@
 # SUCH DAMAGE.
 #
 # ---
-# Version: 0.1.0
+# Version: 0.2.0
+# Upstream: https://github.com/0mp/poudriere-bash-completion/
 
 _poudriere_absolute_path() {
     COMPREPLY=($(compgen -f "${cur:-/}" -- "$cur"))
 }
 
-# XXX: It might be non exhaustive.
+# XXX: It does not complete the architectures available thanks to the QEMU option.
 _poudriere_architecture() {
-    COMPREPLY=($(compgen -W 'amd64 i386' -- "$cur"))
+    COMPREPLY=($(compgen -W "$(sysctl -n kern.supported_archs)" -- "$cur"))
 }
 
 # TODO: Parse poudriere status.
@@ -47,6 +48,7 @@ _poudriere_direct_port() {
     # Find a ports tree to search for ports.
     local prev_word=
     local ports_tree=
+    local w
     # Find out if a ports tree is already specified with -p.
     for w in ${words[@]}; do
         if [[ $w == -p ]]; then
@@ -81,13 +83,37 @@ _poudriere_filesystem() {
     fi
 }
 
+# In order to avoid an obvious bitrot, this function depends on the contents of
+# /usr/share/misc/bsd-family-tree. The list of generated versions depends on
+# the FreeBSD version running on the host machine. If it's running CURRENT then
+# the list includes two latest RELEASE branches of two previous major versions
+# as well as their STABLE branches. Otherwise, only one previous major version
+# is included. SVN branches are included accordingly. This way the list
+# contains versions, which should run without any problems.
+# For example, when the host is running 12.0-CURRENT the list will contain the
+# following targets (as of 2018.03.09): 10-STABLE, 10.3-RELEASE, 10.4-RELEASE,
+# 11-STABLE, 11.0-RELEASE, 11.1-RELEASE, 12.0-CURRENT, head, release/10.3,
+# release/10.4, release/11.0, release/11.1, stable/10, stable/11.
 _poudriere_freebsd_version() {
-    # XXX: It might be non exhaustive.
-    # For example it does not include options like:
-    # stable/11, stable/10@123456
-    COMPREPLY+=($(compgen -W "10.3 10.4 11.1" -S '-RELEASE' -- "$cur"))
-    COMPREPLY+=($(compgen -W "10.4 11.1" -S '-STABLE' -- "$cur"))
-    COMPREPLY+=($(compgen -W "12.0" -S '-CURRENT' -- "$cur"))
+    local machine_version="$(freebsd-version)" # E.g. 12.0-CURRENT
+    local machine_major="${machine_version/[.-]*/}" # E.g. 12
+    local machine_branch="${machine_version##*-}" # E.g. CURRENT
+    local supported_branches=() # E.g. 12.0-CURRENT 11-STABLE 11.1-RELEASE
+    local supported_majors=($((machine_major - 1))) # E.g. 12 11 10
+    local release_versions=() # E.g. 11.1 11.0 10.4
+    if [[ $machine_branch == CURRENT ]]; then
+        supported_branches+=("$machine_version")
+        supported_majors+=($((machine_major - 2)))
+    else
+        supported_majors+=($machine_major)
+    fi
+    local major
+    for major in ${supported_majors[@]}; do
+        supported_branches+=($major-STABLE stable/$major)
+        release_versions+=($(awk "/FreeBSD $major/{print \$2}" /usr/share/misc/bsd-family-tree | tail -n 2))
+        supported_branches+=("${release_versions[@]/%/-RELEASE}" "${release_versions[@]/#/release/}")
+    done
+    COMPREPLY=($(compgen -W "head ${supported_branches[*]}" -- "$cur"))
 }
 
 # XXX: A little bit slow due to poudriere jail -l.
@@ -120,6 +146,7 @@ _poudriere()
     # Is the command already selected?
     local pipe_separated_command_list="$(tr ' ' '|' <<< "${command_list[@]}")"
     local selected_command=
+    local i
     for (( i=0 ; i < "${#words[@]}" ; i++ )); do
         word="${words[$i]}"
         if [[ $word =~ $pipe_separated_command_list ]]; then
@@ -165,7 +192,7 @@ _poudriere()
                         if [[ $cur != -* ]]; then
                             _poudriere_direct_port
                         fi
-                        if [[ ${COMPREPLY[@]} -eq 0 ]]; then
+                        if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
                             COMPREPLY=($(compgen -W "$(_parse_help poudriere $selected_command)" -- "$cur"))
                         fi
                         ;;
@@ -187,7 +214,7 @@ _poudriere()
                         if [[ $cur != -* ]]; then
                             _poudriere_direct_port
                         fi
-                        if [[ ${COMPREPLY[@]} -eq 0 ]]; then
+                        if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
                             COMPREPLY=($(compgen -W "$(_parse_help poudriere $selected_command)" -- "$cur"))
                         fi
                         ;;
@@ -341,7 +368,7 @@ _poudriere()
                         if [[ $cur != -* ]]; then
                             _poudriere_direct_port
                         fi
-                        if [[ ${COMPREPLY[@]} -eq 0 ]]; then
+                        if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
                             COMPREPLY=($(compgen -W "$(_parse_help poudriere $selected_command)" -- "$cur"))
                         fi
                         ;;
@@ -369,14 +396,12 @@ _poudriere()
                         if [[ $cur != -* ]]; then
                             _poudriere_direct_port
                         fi
-                        if [[ ${COMPREPLY[@]} -eq 0 ]]; then
+                        if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
                             COMPREPLY=($(compgen -W "$(_parse_help poudriere $selected_command)" -- "$cur"))
                         fi
                         ;;
                 esac
                 ;;
-
-            # TODO: queue) ;;
 
             status)
                 case "$prev" in
@@ -423,7 +448,7 @@ _poudriere()
                         if [[ $cur != -* ]]; then
                             _poudriere_direct_port
                         fi
-                        if [[ ${COMPREPLY[@]} -eq 0 ]]; then
+                        if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
                             COMPREPLY=($(compgen -W "$(_parse_help poudriere $selected_command) -o" -- "$cur"))
                         fi
                         ;;
