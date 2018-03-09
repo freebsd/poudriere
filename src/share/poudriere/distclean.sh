@@ -103,6 +103,9 @@ distfiles_cleanup() {
 	rm -f ${DISTFILES_LIST} ${DISTFILES_LIST}.expected \
 		${DISTFILES_LIST}.actual ${DISTFILES_LIST}.unexpected \
 		2>/dev/null
+	if [ -n "${__MAKE_CONF}" ]; then
+		rm -f "${__MAKE_CONF}"
+	fi
 }
 
 injail() {
@@ -138,6 +141,16 @@ for PTNAME in ${PTNAMES}; do
 	export PORTSDIR=$(pget ${PTNAME} mnt)
 	[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 	[ -z "${PORTSDIR}" ] && err 1 "No such ports tree: ${PTNAME}"
+
+	__MAKE_CONF=$(mktemp -t poudriere-make.conf)
+	export __MAKE_CONF
+	setup_ports_env "/" "${__MAKE_CONF}"
+	if [ -z "${NO_PACKAGE_BUILDING}" ]; then
+		echo "BATCH=yes"
+		echo "PACKAGE_BUILDING=yes"
+		export PACKAGE_BUILDING=yes
+		echo "PACKAGE_BUILDING_FLAVORS=yes"
+	fi >> "${__MAKE_CONF}"
 
 	MASTERMNT= load_moved
 	msg "Gathering all expected distfiles for ports tree '${PTNAME}'"
