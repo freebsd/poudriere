@@ -2236,6 +2236,38 @@ setup_xdev() {
 	echo " done"
 }
 
+setup_ports_env() {
+	[ $# -eq 2 ] || eargs setup_ports_env mnt __MAKE_CONF
+	local mnt="$1"
+	local __MAKE_CONF="$2"
+
+	# Suck in ports environment to avoid redundant fork/exec for each
+	# child.
+	if [ -f "${mnt}${PORTSDIR}/Mk/Scripts/ports_env.sh" ]; then
+		local make
+
+		if [ -x "${mnt}/usr/bin/bmake" ]; then
+			make=/usr/bin/bmake
+		else
+			make=/usr/bin/make
+		fi
+		{
+			echo "#### /usr/ports/Mk/Scripts/ports_env.sh ####"
+			injail env \
+			    SCRIPTSDIR=${PORTSDIR}/Mk/Scripts \
+			    PORTSDIR=${PORTSDIR} \
+			    MAKE=${make} \
+			    /bin/sh ${PORTSDIR}/Mk/Scripts/ports_env.sh | \
+			    grep '^export [^;&]*' | \
+			    sed -e 's,^export ,,' -e 's,=",=,' -e 's,"$,,'
+			echo "#### Misc Poudriere ####"
+			# This is not set by ports_env as older Poudriere
+			# would not handle it right.
+			echo "GID=0"
+		} >> "${__MAKE_CONF}"
+	fi
+}
+
 jail_start() {
 	[ $# -lt 2 ] && eargs jail_start name ptname setname
 	local name=$1
@@ -2483,31 +2515,7 @@ jail_start() {
 	# a hook modifies ports or the jail somehow relevant.
 	run_hook jail start
 
-	# Suck in ports environment to avoid redundant fork/exec for each
-	# child.
-	if [ -f "${tomnt}${PORTSDIR}/Mk/Scripts/ports_env.sh" ]; then
-		local make
-
-		if [ -x "${tomnt}/usr/bin/bmake" ]; then
-			make=/usr/bin/bmake
-		else
-			make=/usr/bin/make
-		fi
-		{
-			echo "#### /usr/ports/Mk/Scripts/ports_env.sh ####"
-			injail env \
-			    SCRIPTSDIR=${PORTSDIR}/Mk/Scripts \
-			    PORTSDIR=${PORTSDIR} \
-			    MAKE=${make} \
-			    /bin/sh ${PORTSDIR}/Mk/Scripts/ports_env.sh | \
-			    grep '^export [^;&]*' | \
-			    sed -e 's,^export ,,' -e 's,=",=,' -e 's,"$,,'
-			echo "#### Misc Poudriere ####"
-			# This is not set by ports_env as older Poudriere
-			# would not handle it right.
-			echo "GID=0"
-		} >> ${tomnt}/etc/make.conf
-	fi
+	setup_ports_env "${tomnt}" "${tomnt}/etc/make.conf"
 
 	PKG_EXT="txz"
 	PKG_BIN="/.p/pkg-static"
