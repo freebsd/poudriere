@@ -488,7 +488,7 @@ build_native_xtools() {
 	rm -rf ${JAILMNT}/nxb-bin || err 1 "Failed to remove old native-xtools"
 	# Check for native-xtools-install support
 	NXTP=$(TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
-	    ${MAKE_CMD} -C ${SRC_BASE} -f Makefile.inc1 -V NXTP)
+	    ${MAKE_CMD} -C ${XDEV_SRC} -f Makefile.inc1 -V NXTP)
 	if [ -n "${NXTP}" ]; then
 		# New style, we call native-xtools-install
 		${MAKE_CMD} -C ${XDEV_SRC} native-xtools-install ${MAKE_JOBS} \
