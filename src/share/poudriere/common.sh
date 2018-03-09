@@ -2246,7 +2246,7 @@ jail_start() {
 	local needfs="${NULLFSREF}"
 	local needkld kldpair kld kldmodname
 	local tomnt fs
-	local portbuild_uid
+	local portbuild_uid aarchld
 
 	lock_jail
 
@@ -2413,9 +2413,15 @@ jail_start() {
 	fi
 	# Handle special ARM64 needs
 	if [ "${arch#*.}" = "aarch64" ] && ! [ -f "${tomnt}/usr/bin/ld" ]; then
-		if [ -f /usr/local/aarch64-freebsd/bin/ld ]; then
-			msg "Copying aarch64-binutils ld from /usr/local/aarch64-freebsd/bin/ld"
-			cp -f /usr/local/aarch64-freebsd/bin/ld \
+		for aarchld in /usr/local/aarch64-*freebsd*/bin/ld; do
+			case "${aarchld}" in
+			"/usr/local/aarch64-*freebsd*/bin/ld")
+				# empty dir
+				err 1 "Arm64 requires aarch64-binutils to be installed."
+				;;
+			esac
+			msg "Copying aarch64-binutils ld from "${aarchld}""
+			cp -f "${aarchld}" \
 			    "${tomnt}/usr/bin/ld"
 			if [ -d "${tomnt}/nxb-bin/usr/bin" ]; then
 				# Create a symlink to satisfy the LD in
@@ -2425,9 +2431,7 @@ jail_start() {
 				ln -f "${tomnt}/usr/bin/ld" \
 				    "${tomnt}/nxb-bin/usr/bin/ld"
 			fi
-		else
-			err 1 "Arm64 requires aarch64-binutils to be installed."
-		fi
+		done
 	fi
 
 	cat >> "${tomnt}/etc/make.conf" <<-EOF
