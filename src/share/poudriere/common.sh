@@ -6665,7 +6665,7 @@ prepare_ports() {
 		2) ;;
 		# Fatal error
 		*)
-			err ${ret} "deps_fetch_vars failed for ${ORIGINSPEC}"
+			err ${dep_ret} "deps_fetch_vars failed for ${ORIGINSPEC}"
 			;;
 		esac
 		if have_ports_feature FLAVORS; then
