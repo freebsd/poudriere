@@ -22,16 +22,16 @@ You can also open the poudriere's manpage, located in the 8th section.
 Support
 -------
 
-IRC:          #poudriere on freenode
-Mailing list: freebsd-pkg@FreeBSD.org
+IRC:          [#poudriere](https://webchat.freenode.net/?channels=%23poudriere) on freenode  
+Mailing list: [freebsd-pkg@FreeBSD.org (lists.freebsd.org)](https://lists.freebsd.org/mailman/listinfo/freebsd-pkg)
 
 Getting started with poudriere
 ------------------------------
 
-1. Install it by typing "./configure", "make" and "make install" at the top-level directory
-2. Copy /usr/local/etc/poudriere.conf.sample to /usr/local/etc/poudriere.conf
+1. Install it by typing `./configure`, `make` and `make install` at the top-level directory
+2. Copy `/usr/local/etc/poudriere.conf.sample` to `/usr/local/etc/poudriere.conf`
 3. Edit it to suit your needs
-4. man poudriere, search for EXAMPLES, read the wiki https://github.com/freebsd/poudriere/wiki
+4. `man poudriere`, search for `EXAMPLES`, read the [wiki](https://github.com/freebsd/poudriere/wiki)
 5. Follow "bulk build of binary packages" steps
 6. Enjoy your new fresh binary packages!
 
