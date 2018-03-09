@@ -173,6 +173,10 @@ fetch_global_port_vars || \
 # Allow testing on virtual py3 slaves until we have FLAVORS.
 map_py_slave_port "${ORIGINSPEC}" ORIGINSPEC || :
 originspec_decode "${ORIGINSPEC}" ORIGIN DEPENDS_ARGS FLAVOR
+# Remove excess slashes for mistakes
+ORIGIN="${ORIGIN#/}"
+ORIGIN="${ORIGIN%/}"
+originspec_encode ORIGINSPEC "${ORIGIN}" "${DEPENDS_ARGS}" "${FLAVOR}"
 if have_ports_feature FLAVORS; then
 	[ "${FLAVOR}" = "${FLAVOR_DEFAULT}" ] && FLAVOR=
 	[ "${FLAVOR}" = "${FLAVOR_ALL}" ] && \
