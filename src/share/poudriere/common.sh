@@ -5916,6 +5916,11 @@ deps_sanity() {
 			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} depends on nonexistent origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'${moved_reason:+ (${moved_reason})}; Please contact maintainer of the port to fix this."
 			ret=1
 		fi
+		if have_ports_feature FLAVORS && [ -z "${dep_flavor}" ] && \
+		    [ "${dep_originspec}" != "${dep_origin}" ]; then
+			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} has dependency on ${COLOR_PORT}${dep_origin}${COLOR_RESET} with invalid empty FLAVOR; Please contact maintainer of the port to fix this."
+			ret=1
+		fi
 	done
 	return ${ret}
 }
