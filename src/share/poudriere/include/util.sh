@@ -297,7 +297,7 @@ read_file() {
 	local var_return="$1"
 	local file="$2"
 	local _data _line newline maph
-	local _ret -
+	local _ret - IFS
 
 	# var_return may be empty if only $_read_file_lines_read is being
 	# used.
@@ -376,8 +376,7 @@ read_line() {
 	[ $# -eq 2 ] || eargs read_line var_return file
 	local var_return="$1"
 	local file="$2"
-	local max_reads reads _ret _line maph
-
+	local max_reads reads _ret _line maph IFS
 
 	if [ ! -f "${file}" ]; then
 		setvar "${var_return}" ""
