@@ -7149,10 +7149,6 @@ load_priorities_ptsort() {
 	ptsort -p "pkg_deps.ptsort" > \
 	    "pkg_deps.priority"
 
-	# Create buckets to satisfy the dependency chain priorities.
-	POOL_BUCKET_DIRS=$(awk '{print $1}' \
-	    "pkg_deps.priority"|sort -run)
-
 	# Read all priorities into the "priority" hash
 	while mapfile_read_loop "pkg_deps.priority" priority pkgname; do
 		hash_set "priority" "${pkgname}" ${priority}
@@ -7168,9 +7164,10 @@ load_priorities() {
 	msg "Processing PRIORITY_BOOST"
 	bset status "load_priorities:"
 
-	POOL_BUCKET_DIRS=""
-
 	load_priorities_ptsort
+
+	# Create buckets to satisfy the dependency chain priorities.
+	POOL_BUCKET_DIRS=$(awk '{print $1}' "pkg_deps.priority"|sort -run)
 
 	# If there are no buckets then everything to build will fall
 	# into 0 as they depend on nothing and nothing depends on them.
