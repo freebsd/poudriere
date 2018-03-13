@@ -3834,7 +3834,7 @@ parallel_build() {
 		chflags noschg \
 		    "${MASTERMNT}/boot" \
 		    "${MASTERMNT}/usr"
-		find -x "${MASTERMNT}" -mindepth 1 -maxdepth 1 \
+		find -xs "${MASTERMNT}" -mindepth 1 -maxdepth 1 \
 		    -flags +schg -print | \
 		    sed -e "s,^${MASTERMNT}/,," >> \
 		    "${MASTERMNT}/.cpignore"
@@ -3842,13 +3842,13 @@ parallel_build() {
 		# /usr has both schg and noschg paths (LOCALBASE).
 		# XXX: This assumes LOCALBASE=/usr/local and does
 		# not account for PREFIX either.
-		find -x "${MASTERMNT}/usr" -mindepth 1 -maxdepth 1 \
+		find -xs "${MASTERMNT}/usr" -mindepth 1 -maxdepth 1 \
 		    \( -depth 1 -name 'local' -prune \) -o \
 		    -flags +schg -print | \
 		    sed -e "s,^${MASTERMNT}/usr/,," >> \
 		    "${MASTERMNT}/usr/.cpignore"
 
-		find -x "${MASTERMNT}/boot" -mindepth 1 -maxdepth 1 \
+		find -xs "${MASTERMNT}/boot" -mindepth 1 -maxdepth 1 \
 		    \( -depth 1 -name 'modules' -prune \) -o \
 		    -flags +schg -print | \
 		    sed -e "s,^${MASTERMNT}/boot/,," >> \
