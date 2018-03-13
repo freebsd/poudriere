@@ -7170,9 +7170,7 @@ load_priorities() {
 
 	POOL_BUCKET_DIRS=""
 
-	if [ ${POOL_BUCKETS} -gt 0 ]; then
-		load_priorities_ptsort
-	fi
+	load_priorities_ptsort
 
 	# If there are no buckets then everything to build will fall
 	# into 0 as they depend on nothing and nothing depends on them.
@@ -7191,8 +7189,6 @@ load_priorities() {
 }
 
 balance_pool() {
-	# Don't bother if disabled
-	[ ${POOL_BUCKETS} -gt 0 ] || return 0
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "balance_pool requires PWD=${MASTERMNT}/.p"
 
@@ -7625,13 +7621,6 @@ fi
 case ${PARALLEL_JOBS} in
 ''|*[!0-9]*)
 	PARALLEL_JOBS=${NCPU}
-	;;
-esac
-
-case ${POOL_BUCKETS} in
-''|*[!0-9]*)
-	# 1 will auto determine proper size, 0 disables.
-	POOL_BUCKETS=1
 	;;
 esac
 
