@@ -7613,3 +7613,7 @@ fi
 if [ -e /nonexistent ]; then
 	err 1 "You may not have a /nonexistent.  Please remove it."
 fi
+
+if [ "${USE_CACHED}" = "yes" ]; then
+	err 1 "USE_CACHED=yes is not supported."
+fi
