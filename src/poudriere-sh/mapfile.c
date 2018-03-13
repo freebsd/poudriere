@@ -51,7 +51,7 @@
 
 /* Defined here to avoid bltin.h redefining FILE */
 static FILE *fp = NULL;
-#define MAX_FILES 80
+#define MAX_FILES 256
 struct mapped_data {
 	FILE *fp;
 	char *file;
