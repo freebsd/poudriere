@@ -2539,7 +2539,6 @@ jail_start() {
 		# The first few directories are allowed for ports to write to.
 		find -x "${tomnt}" \
 		    -mindepth 1 \
-		    \( -depth 1 -name boot -prune \) -o \
 		    \( -depth 1 -name compat -prune \) -o \
 		    \( -depth 1 -name etc -prune \) -o \
 		    \( -depth 1 -name root -prune \) -o \
@@ -2557,7 +2556,8 @@ jail_start() {
 		    -exec chflags -fh schg {} +
 		chflags noschg \
 		    "${tomnt}${LOCALBASE:-/usr/local}" \
-		    "${tomnt}${PREFIX:-/usr/local}"
+		    "${tomnt}${PREFIX:-/usr/local}" \
+		    "${tomnt}/boot/modules"
 	fi
 
 
@@ -3831,7 +3831,9 @@ parallel_build() {
 
 	# Ensure rollback for builders doesn't copy schg files.
 	if schg_immutable_base; then
-		chflags noschg "${MASTERMNT}/usr"
+		chflags noschg \
+		    "${MASTERMNT}/boot" \
+		    "${MASTERMNT}/usr"
 		find -x "${MASTERMNT}" -mindepth 1 -maxdepth 1 \
 		    -flags +schg -print | \
 		    sed -e "s,^${MASTERMNT}/,," >> \
@@ -3845,7 +3847,16 @@ parallel_build() {
 		    -flags +schg -print | \
 		    sed -e "s,^${MASTERMNT}/usr/,," >> \
 		    "${MASTERMNT}/usr/.cpignore"
-		chflags schg "${MASTERMNT}/usr"
+
+		find -x "${MASTERMNT}/boot" -mindepth 1 -maxdepth 1 \
+		    \( -depth 1 -name 'modules' -prune \) -o \
+		    -flags +schg -print | \
+		    sed -e "s,^${MASTERMNT}/boot/,," >> \
+		    "${MASTERMNT}/boot/.cpignore"
+
+		chflags schg \
+		    "${MASTERMNT}/boot" \
+		    "${MASTERMNT}/usr"
 	fi
 
 	coprocess_start pkg_cacher
