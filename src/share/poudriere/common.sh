@@ -1326,7 +1326,7 @@ siginfo_handler() {
 				    "${elapsed_phase}"
 				printf "${format_origin_phase}" "${j}" \
 				    "${origin}" "${pkgname}" "${phase}" \
-				    "${buildtime}" "${buildtime_phase}"
+				    "${buildtime_phase}" "${buildtime}"
 			else
 				printf "${format_phase}" "${j}" '' "${phase}"
 			fi
