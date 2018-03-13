@@ -2306,6 +2306,7 @@ setup_ports_env() {
 			# This is not set by ports_env as older Poudriere
 			# would not handle it right.
 			echo "GID=0"
+			echo "UID=0"
 		} >> "${__MAKE_CONF}"
 	fi
 }
