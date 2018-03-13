@@ -7119,45 +7119,6 @@ prepare_ports() {
 	return 0
 }
 
-load_priorities_tsortD() {
-	local priority pkgname pkg_boost boosted origin
-	local - # Keep set -f local
-
-	tsort -D "pkg_deps" > "pkg_deps.depth"
-
-	# Create buckets to satisfy the dependency chains, in reverse
-	# order. Not counting here as there may be boosted priorities
-	# at 99 or other high values.
-
-	POOL_BUCKET_DIRS=$(awk '{print $1}' "pkg_deps.depth"|sort -run)
-
-	set -f # for PRIORITY_BOOST
-	boosted=0
-	while mapfile_read_loop "pkg_deps.depth" priority pkgname; do
-		# Does this pkg have an override?
-		for pkg_boost in ${PRIORITY_BOOST}; do
-			case ${pkgname%-*} in
-				${pkg_boost})
-					pkgqueue_contains "${pkgname}" || \
-					    continue
-					get_origin_from_pkgname origin \
-					    "${pkgname}"
-					msg "Boosting priority: ${COLOR_PORT}${origin} | ${pkgname}"
-					priority=${PRIORITY_BOOST_VALUE}
-					boosted=1
-					break
-					;;
-			esac
-		done
-		hash_set "priority" "${pkgname}" ${priority}
-	done
-
-	# Add ${PRIORITY_BOOST_VALUE} into the pool if needed.
-	[ ${boosted} -eq 1 ] && POOL_BUCKET_DIRS="${PRIORITY_BOOST_VALUE} ${POOL_BUCKET_DIRS}"
-
-	return 0
-}
-
 load_priorities_ptsort() {
 	local priority pkgname originspec pkg_boost origin _ignored
 	local - # Keep set -f local
@@ -7210,11 +7171,7 @@ load_priorities() {
 	POOL_BUCKET_DIRS=""
 
 	if [ ${POOL_BUCKETS} -gt 0 ]; then
-		if [ "${USE_PTSORT}" = "yes" ]; then
-			load_priorities_ptsort
-		else
-			load_priorities_tsortD
-		fi
+		load_priorities_ptsort
 	fi
 
 	# If there are no buckets then everything to build will fall
@@ -7720,7 +7677,6 @@ fi
 : ${USE_JEXECD:=no}
 : ${USE_PROCFS:=yes}
 : ${USE_FDESCFS:=yes}
-: ${USE_PTSORT:=yes}
 : ${MUTABLE_BASE:=yes}
 : ${HTML_JSON_UPDATE_INTERVAL:=2}
 : ${HTML_TRACK_REMAINING:=no}

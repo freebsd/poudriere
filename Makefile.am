@@ -139,7 +139,6 @@ pkglibexec_PROGRAMS= \
 		     @RM@ \
 		     timeout \
 		     timestamp \
-		     tsort \
 		     @SH@
 EXTRA_PROGRAMS= \
 		rm \
@@ -168,7 +167,6 @@ rm_SOURCES=		src/libexec/poudriere/rm/rm.c
 timeout_SOURCES=	src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
 timestamp_LDADD=	-lpthread
-tsort_SOURCES=		src/libexec/poudriere/tsort/tsort.c
 
 sh_CFLAGS=		-DSHELL -std=gnu99 -DVTABSIZE=1000 ${sh_hist_CFLAGS} \
 			-include $(top_srcdir)/external/sh_compat/compat.h \

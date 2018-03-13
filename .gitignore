@@ -34,7 +34,6 @@
 /sh
 /timeout
 /timestamp
-/tsort
 Makefile
 _FOSSIL_
 config.status
