@@ -1451,23 +1451,23 @@ common_mtree() {
 	local mnt="${1}"
 	local exclude nullpaths dir
 
-	cat <<EOF
-./.npkg
-./.p
-./.poudriere-snap-*
-.${HOME}/.ccache
-./compat/linux/proc
-./dev
-./distfiles
-./packages
-./portdistfiles
-./proc
-.${PORTSDIR}
-./usr/src
-./var/db/freebsd-update
-./var/db/ports
-./wrkdirs
-EOF
+	cat <<-EOF
+	./.npkg
+	./.p
+	./.poudriere-snap-*
+	.${HOME}/.ccache
+	./compat/linux/proc
+	./dev
+	./distfiles
+	./packages
+	./portdistfiles
+	./proc
+	.${PORTSDIR}
+	./usr/src
+	./var/db/freebsd-update
+	./var/db/ports
+	./wrkdirs
+	EOF
 	nullpaths="$(nullfs_paths "${mnt}")"
 	for dir in ${nullpaths}; do
 		echo ".${dir}"
