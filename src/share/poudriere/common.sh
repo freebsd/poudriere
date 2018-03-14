@@ -1404,12 +1404,10 @@ unlink() {
 }
 
 common_mtree() {
-	[ $# -eq 2 ] || eargs common_mtree mnt mtreefile
+	[ $# -eq 1 ] || eargs common_mtree mnt
 	local mnt="${1}"
-	local mtreefile="${2}"
 	local exclude nullpaths schgpaths dir
 
-	{
 	cat <<EOF
 ./.npkg
 ./.p
@@ -1442,7 +1440,6 @@ EOF
 	for exclude in ${LOCAL_MTREE_EXCLUDES}; do
 		echo ".${exclude#.}"
 	done
-	} > "${mtreefile}"
 }
 
 markfs() {
@@ -1491,34 +1488,35 @@ markfs() {
 		return 0
 	fi
 	mtreefile="${mnt}/.p/mtree.${name}exclude"
-
-	common_mtree "${mnt}" "${mtreefile}"
-	case "${name}" in
-		prebuild|prestage)
-			cat >> "${mtreefile}" <<-EOF
-			./tmp
-			./var/tmp
-			EOF
+	{
+		common_mtree "${mnt}"
+		case "${name}" in
+			prebuild|prestage)
+				cat <<-EOF
+				./tmp
+				./var/tmp
+				EOF
+				;;
+			preinst)
+				cat <<-EOF
+				./etc/group
+				./etc/make.conf
+				./etc/make.conf.bak
+				./etc/master.passwd
+				./etc/passwd
+				./etc/pwd.db
+				./etc/shells
+				./etc/spwd.db
+				./tmp
+				./var/db/pkg
+				./var/log
+				./var/mail
+				./var/run
+				./var/tmp
+				EOF
 			;;
-		preinst)
-			cat >> "${mtreefile}" <<-EOF
-			./etc/group
-			./etc/make.conf
-			./etc/make.conf.bak
-			./etc/master.passwd
-			./etc/passwd
-			./etc/pwd.db
-			./etc/shells
-			./etc/spwd.db
-			./tmp
-			./var/db/pkg
-			./var/log
-			./var/mail
-			./var/run
-			./var/tmp
-			EOF
-		;;
-	esac
+		esac
+	} > "${mtreefile}"
 	( cd "${mnt}${path}" && mtree -X "${mtreefile}" \
 		-cn -k uid,gid,mode,size \
 		-p . ) > "${mnt}/.p/mtree.${name}"
