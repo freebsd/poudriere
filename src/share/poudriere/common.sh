@@ -1521,7 +1521,7 @@ markfs() {
 		    rename "${mtreefile}.tmp${MY_JOBID:-ref}" "${mtreefile}"
 	fi
 	( cd "${mnt}${path}" && mtree -X "${mtreefile}" \
-		-cn -k uid,gid,mode,size \
+		-cn -k uid,gid,flags,mode,size \
 		-p . ) > "${mnt}/.p/mtree.${name}"
 	echo " done"
 }
