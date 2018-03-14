@@ -52,8 +52,7 @@ Options:
     -j name     -- Run only on the given jail
     -k          -- When doing testing with -t, don't consider failures as
                    fatal; don't skip dependent ports on findings.
-    -N          -- Do not build package repository or INDEX when build
-                   completed
+    -N          -- Do not build package repository when build completed
     -n          -- Dry-run. Show what will be done, but do not build
                    any packages.
     -p tree     -- Specify on which ports tree the bulk build will be done

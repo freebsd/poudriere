@@ -40,8 +40,7 @@ Options:
                    CPUs times 1.25)
     -n          -- Do not actually remove anything, just show what would be
                    removed
-    -N          -- Do not build the package repository or INDEX when clean
-                   completed
+    -N          -- Do not build the package repository when clean completed
     -p tree     -- Which ports tree to use for packages
     -R          -- Clean RESTRICTED packages after building
     -v          -- Be verbose; show more information. Use twice to enable
