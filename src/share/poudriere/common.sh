@@ -1407,7 +1407,7 @@ common_mtree() {
 	[ $# -eq 2 ] || eargs common_mtree mnt mtreefile
 	local mnt="${1}"
 	local mtreefile="${2}"
-	local exclude nullpaths dir
+	local exclude nullpaths schgpaths dir
 
 	{
 	cat <<EOF
@@ -1432,6 +1432,13 @@ EOF
 	for dir in ${nullpaths}; do
 		echo ".${dir}"
 	done
+	if schg_immutable_base; then
+		schgpaths="/ /usr /boot"
+		for dir in ${schgpaths}; do
+			[ -f "${MASTERMNT}${dir}/.cpignore" ] || continue
+			sed -e "s,^,.${dir%/}/," "${MASTERMNT}${dir}/.cpignore"
+		done
+	fi
 	for exclude in ${LOCAL_MTREE_EXCLUDES}; do
 		echo ".${exclude#.}"
 	done
