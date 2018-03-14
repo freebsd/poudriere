@@ -50,8 +50,8 @@ Options:
     -k          -- Don't consider failures as fatal; find all failures.
     -n          -- Dry-run. Show what will be done, but do not build
                    any packages.
-    -N          -- Do not build package repository or INDEX when build
-                   of dependencies completed
+    -N          -- Do not build package repository when build of dependencies
+                   completed
     -p tree     -- Specify the path to the portstree
     -P          -- Use custom prefix
     -S          -- Don't recursively rebuild packages affected by other

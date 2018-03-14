@@ -63,8 +63,7 @@ Options:
                    number of jobs in parallel while preparing the build.
                    (Defaults to the number of CPUs for n and 1.25 times n for p)
     -j name     -- Run only on the given jail
-    -N          -- Do not build package repository or INDEX when build
-                   completed
+    -N          -- Do not build package repository when build completed
     -p tree     -- Specify on which ports tree the bulk build will be done
     -v          -- Be verbose; show more information. Use twice to enable
                    debug output
