@@ -3905,7 +3905,7 @@ crashed_build() {
 		ln -s "../${pkgname}.log" "${log}/logs/errors/${pkgname}.log"
 		badd ports.failed \
 		    "${originspec} ${pkgname} ${failed_phase} ${failed_phase}"
-		COLOR_ARROW="${COLOR_FAIL}" msg \
+		COLOR_ARROW="${COLOR_FAIL}" job_msg \
 		    "${COLOR_FAIL}Finished ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
 		run_hook pkgbuild failed "${origin}" "${pkgname}" \
 		    "${failed_phase}" \
