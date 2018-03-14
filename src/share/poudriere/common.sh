@@ -3909,7 +3909,7 @@ crashed_build() {
 		    "${COLOR_FAIL}Finished ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
 		run_hook pkgbuild failed "${origin}" "${pkgname}" \
 		    "${failed_phase}" \
-		    "${log}/logs/errors/${pkgname}.log" >&3
+		    "${log}/logs/errors/${pkgname}.log"
 	fi
 	clean_pool "${pkgname}" "${originspec}" "${failed_phase}"
 	stop_build "${pkgname}" "${originspec}" 1 >> "${log}/logs/${pkgname}.log"
@@ -3936,7 +3936,14 @@ clean_pool() {
 		badd ports.skipped "${skipped_originspec} ${skipped_pkgname} ${pkgname}"
 		COLOR_ARROW="${COLOR_SKIP}" \
 		    job_msg "${COLOR_SKIP}Skipping ${COLOR_PORT}${skipped_originspec} | ${skipped_pkgname}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_SKIP} ${clean_rdepends}"
-		run_hook pkgbuild skipped "${skipped_origin}" "${skipped_pkgname}" "${origin}" >&3
+		if [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
+			# Send to true stdout (not any build log)
+			run_hook pkgbuild skipped "${skipped_origin}" \
+			    "${skipped_pkgname}" "${origin}" >&3
+		else
+			run_hook pkgbuild skipped "${skipped_origin}" \
+			    "${skipped_pkgname}" "${origin}"
+		fi
 	done
 
 	(
