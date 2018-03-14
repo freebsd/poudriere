@@ -1536,22 +1536,22 @@ markfs() {
 			EOF
 			;;
 		preinst)
-			cat >> "${mtreefile}" << EOF
-./etc/group
-./etc/make.conf
-./etc/make.conf.bak
-./etc/master.passwd
-./etc/passwd
-./etc/pwd.db
-./etc/shells
-./etc/spwd.db
-./tmp
-./var/db/pkg
-./var/log
-./var/mail
-./var/run
-./var/tmp
-EOF
+			cat >> "${mtreefile}" <<-EOF
+			./etc/group
+			./etc/make.conf
+			./etc/make.conf.bak
+			./etc/master.passwd
+			./etc/passwd
+			./etc/pwd.db
+			./etc/shells
+			./etc/spwd.db
+			./tmp
+			./var/db/pkg
+			./var/log
+			./var/mail
+			./var/run
+			./var/tmp
+			EOF
 		;;
 	esac
 	( cd "${mnt}${path}" && mtree -X "${mtreefile}" \
