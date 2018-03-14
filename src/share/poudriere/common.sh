@@ -1525,18 +1525,18 @@ markfs() {
 		echo " done"
 		return 0
 	fi
-	mtreefile=${mnt}/.p/mtree.${name}exclude
+	mtreefile="${mnt}/.p/mtree.${name}exclude"
 
 	common_mtree "${mnt}" "${mtreefile}"
 	case "${name}" in
 		prebuild|prestage)
-			cat >> ${mtreefile} <<-EOF
+			cat >> "${mtreefile}" <<-EOF
 			./tmp
 			./var/tmp
 			EOF
 			;;
 		preinst)
-			cat >> ${mnt}/.p/mtree.${name}exclude << EOF
+			cat >> "${mtreefile}" << EOF
 ./etc/group
 ./etc/make.conf
 ./etc/make.conf.bak
@@ -1554,9 +1554,9 @@ markfs() {
 EOF
 		;;
 	esac
-	( cd "${mnt}${path}" && mtree -X ${mnt}/.p/mtree.${name}exclude \
+	( cd "${mnt}${path}" && mtree -X "${mtreefile}" \
 		-cn -k uid,gid,mode,size \
-		-p . ) > ${mnt}/.p/mtree.${name}
+		-p . ) > "${mnt}/.p/mtree.${name}"
 	echo " done"
 }
 
