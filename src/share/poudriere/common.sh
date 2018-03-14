@@ -1487,36 +1487,39 @@ markfs() {
 		echo " done"
 		return 0
 	fi
-	mtreefile="${mnt}/.p/mtree.${name}exclude"
-	{
-		common_mtree "${mnt}"
-		case "${name}" in
-			prebuild|prestage)
-				cat <<-EOF
-				./tmp
-				./var/tmp
-				EOF
+	mtreefile="${MASTERMNT}/.p/mtree.${name}exclude"
+	if [ ! -f "${mtreefile}" ]; then
+		{
+			common_mtree "${mnt}"
+			case "${name}" in
+				prebuild|prestage)
+					cat <<-EOF
+					./tmp
+					./var/tmp
+					EOF
+					;;
+				preinst)
+					cat <<-EOF
+					./etc/group
+					./etc/make.conf
+					./etc/make.conf.bak
+					./etc/master.passwd
+					./etc/passwd
+					./etc/pwd.db
+					./etc/shells
+					./etc/spwd.db
+					./tmp
+					./var/db/pkg
+					./var/log
+					./var/mail
+					./var/run
+					./var/tmp
+					EOF
 				;;
-			preinst)
-				cat <<-EOF
-				./etc/group
-				./etc/make.conf
-				./etc/make.conf.bak
-				./etc/master.passwd
-				./etc/passwd
-				./etc/pwd.db
-				./etc/shells
-				./etc/spwd.db
-				./tmp
-				./var/db/pkg
-				./var/log
-				./var/mail
-				./var/run
-				./var/tmp
-				EOF
-			;;
-		esac
-	} > "${mtreefile}"
+			esac
+		} > "${mtreefile}.tmp${MY_JOBID:-ref}" && \
+		    rename "${mtreefile}.tmp${MY_JOBID:-ref}" "${mtreefile}"
+	fi
 	( cd "${mnt}${path}" && mtree -X "${mtreefile}" \
 		-cn -k uid,gid,mode,size \
 		-p . ) > "${mnt}/.p/mtree.${name}"
@@ -2831,8 +2834,9 @@ check_leftovers() {
 	local mnt="${1}"
 
 	( cd "${mnt}" && \
-	    mtree -X ${mnt}/.p/mtree.preinstexclude -f ${mnt}/.p/mtree.preinst \
-	    -p . ) | while read l; do
+	    mtree -X "${MASTERMNT}/.p/mtree.preinstexclude" \
+	    -f "${mnt}/.p/mtree.preinst" -p . ) | \
+	    while read l; do
 		local changed read_again
 
 		changed=
@@ -2901,8 +2905,9 @@ check_fs_violation() {
 	local ret=0
 
 	msg_n "${status_msg}..."
-	( cd "${mnt}" && mtree -X ${mnt}/.p/mtree.${mtree_target}exclude \
-		-f ${mnt}/.p/mtree.${mtree_target} \
+	( cd "${mnt}" && \
+		mtree -X "${MASTERMNT}/.p/mtree.${mtree_target}exclude" \
+		-f "${mnt}/.p/mtree.${mtree_target}" \
 		-p . ) >> ${tmpfile}
 	echo " done"
 
