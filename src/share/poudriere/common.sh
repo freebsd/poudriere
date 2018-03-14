@@ -7180,6 +7180,7 @@ load_priorities_ptsort() {
 
 	ptsort -p "pkg_deps.ptsort" > \
 	    "pkg_deps.priority"
+	unlink "pkg_deps.ptsort"
 
 	# Read all priorities into the "priority" hash
 	while mapfile_read_loop "pkg_deps.priority" priority pkgname; do
