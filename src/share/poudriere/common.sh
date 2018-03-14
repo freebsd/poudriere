@@ -2949,7 +2949,7 @@ gather_distfiles() {
 		shash_get originspec-pkgname "${originspec}" pkgname || \
 		    err 1 "gather_distfiles: Could not find PKGNAME for ${originspec}"
 	fi
-	shash_get pkgname-depend_specials "${pkgname}" specials || specials=
+	shash_remove pkgname-depend_specials "${pkgname}" specials || specials=
 
 	job_msg_dev "${COLOR_PORT}${origin}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
@@ -4010,7 +4010,7 @@ build_pkg() {
 	originspec_decode "${ORIGINSPEC}" port DEPENDS_ARGS FLAVOR
 	bset_job_status "starting" "${ORIGINSPEC}"
 	if [ -z "${FLAVOR}" ]; then
-		shash_get pkgname-flavor "${pkgname}" FLAVOR || FLAVOR=
+		shash_remove pkgname-flavor "${pkgname}" FLAVOR || FLAVOR=
 	fi
 	job_msg "Building ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_RESET}"
 
@@ -4049,7 +4049,7 @@ build_pkg() {
 		# If this port is IGNORED, skip it
 		# This is checked here due to historical reasons and
 		# will later be moved up into the queue creation.
-		shash_get pkgname-ignore "${pkgname}" ignore || ignore=
+		shash_remove pkgname-ignore "${pkgname}" ignore || ignore=
 	fi
 
 	rm -rf ${mnt}/wrkdirs/* || :
@@ -4182,7 +4182,7 @@ build_all_flavors() {
 	[ "${ALL}" -eq 1 ] && return 0
 	[ "${FLAVOR_DEFAULT_ALL}" = "yes" ] && return 0
 	originspec_decode "${originspec}" origin '' ''
-	shash_get origin-flavor-all "${origin}" build_all || build_all=0
+	shash_remove origin-flavor-all "${origin}" build_all || build_all=0
 	[ "${build_all}" -eq 1 ] && return 0
 
 	# bulk and testport
@@ -4977,7 +4977,7 @@ delete_old_pkg() {
 		# which will avoida all of the injail hacks
 
 		for td in lib run; do
-			shash_get pkgname-${td}_deps "${new_pkgname}" raw_deps || raw_deps=
+			shash_remove pkgname-${td}_deps "${new_pkgname}" raw_deps || raw_deps=
 			for d in ${raw_deps}; do
 				key="${d%:*}"
 				# Technically we need to apply our own
@@ -5106,7 +5106,7 @@ delete_old_pkg() {
 	# Check if the compiled options match the current options from make.conf and /var/db/ports
 	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ]; then
 		if have_ports_feature SELECTED_OPTIONS; then
-			shash_get pkgname-options "${new_pkgname}" \
+			shash_remove pkgname-options "${new_pkgname}" \
 			    current_options || current_options=
 			# pretty-print-config has a trailing space, so
 			# pkg_get_options does as well.  Add in for compat.
@@ -6860,7 +6860,7 @@ prepare_ports() {
 	local pkg
 	local log log_top
 	local n nbq resuming_build
-	local cache_dir sflag delete_pkg_list
+	local cache_dir sflag delete_pkg_list shash_bucket
 
 	_log_path log
 	pkgqueue_init
@@ -7087,6 +7087,22 @@ prepare_ports() {
 	else
 		[ ${SKIPSANITY} -eq 1 ] && sflag="(-s) "
 		msg "${sflag}Skipping incremental rebuild and repository sanity checks"
+	fi
+
+	if was_a_bulk_run; then
+		# Cleanup cached data that is no longer needed.
+		(
+			cd "${SHASH_VAR_PATH}"
+			for shash_bucket in \
+			    origin-moved \
+			    origin-moved-expired \
+			    pkgname-options \
+			    pkgname-run_deps \
+			    pkgname-lib_deps \
+			    pkgname-flavors; do
+				shash_remove_var "${shash_bucket}" || :
+			done
+		)
 	fi
 
 	export LOCALBASE=${LOCALBASE:-/usr/local}
