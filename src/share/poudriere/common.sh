@@ -4943,7 +4943,7 @@ delete_old_pkg() {
 		# Apparently we expect this package via its origin and flavor.
 	fi
 
-	if check_moved new_origin "${origin}"; then
+	if shash_get origin-moved "${origin}" new_origin; then
 		if [ "${new_origin}" = "EXPIRED" ]; then
 			local expired_reason
 
@@ -5112,8 +5112,9 @@ delete_old_pkg() {
 			done
 			# Handle MOVED
 			for compiled_deps_origin in ${compiled_deps}; do
-				check_moved new_origin \
-				    "${compiled_deps_origin}" && \
+				shash_get origin-moved \
+				    "${compiled_deps_origin}" \
+				    new_origin && \
 				    compiled_deps_origin="${new_origin}"
 				[ "${compiled_deps_origin}" = "EXPIRED" ] && \
 				    continue
@@ -5745,7 +5746,8 @@ deps_sanity() {
 			# framework not supporting it later on, and the
 			# PKGNAME would be wrong, but we can at least
 			# advise the user about it.
-			check_moved new_origin "${dep_origin}" || new_origin=
+			shash_get origin-moved "${dep_origin}" \
+			    new_origin || new_origin=
 			if [ "${new_origin}" = "EXPIRED" ]; then
 				moved_reason="port EXPIRED"
 			else
@@ -6353,7 +6355,7 @@ _listed_ports() {
 			continue
 		fi
 		origin_listed="${origin}"
-		if check_moved new_origin ${origin}; then
+		if shash_get origin-moved "${origin}" new_origin; then
 			if [ "${new_origin}" = "EXPIRED" ]; then
 				shash_get origin-moved-expired "${origin}" \
 				    expired_reason || expired_reason=
@@ -6565,14 +6567,6 @@ load_moved() {
 			    "${expired_reason}"
 		fi
 	done
-}
-
-check_moved() {
-	[ $# -lt 2 ] && eargs check_moved var_return origin
-	local var_return="$1"
-	local origin="$2"
-
-	shash_get origin-moved "${origin}" "${var_return}"
 }
 
 fetch_global_port_vars() {
