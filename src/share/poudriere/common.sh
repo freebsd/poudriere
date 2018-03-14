@@ -1430,7 +1430,8 @@ common_mtree() {
 	for dir in ${nullpaths}; do
 		echo ".${dir}"
 	done
-	if schg_immutable_base; then
+	# Ignore schg files when not testing.
+	if schg_immutable_base && [ -z "${PORTTESTING}" ]; then
 		schgpaths="/ /usr /boot"
 		for dir in ${schgpaths}; do
 			[ -f "${MASTERMNT}${dir}/.cpignore" ] || continue
@@ -1487,8 +1488,11 @@ markfs() {
 		echo " done"
 		return 0
 	fi
-	mtreefile="${MASTERMNT}/.p/mtree.${name}exclude"
+	mtreefile="${MASTERMNT}/.p/mtree.${name}exclude${PORTTESTING}"
 	if [ ! -f "${mtreefile}" ]; then
+		local mtreefiletmp
+
+		mtreefiletmp="${mtreefile}.tmp${MY_JOBID:-ref}${PORTTESTING}"
 		{
 			common_mtree "${mnt}"
 			case "${name}" in
@@ -1517,8 +1521,8 @@ markfs() {
 					EOF
 				;;
 			esac
-		} > "${mtreefile}.tmp${MY_JOBID:-ref}" && \
-		    rename "${mtreefile}.tmp${MY_JOBID:-ref}" "${mtreefile}"
+		} > "${mtreefiletmp}" && \
+		    rename "${mtreefiletmp}" "${mtreefile}"
 	fi
 	( cd "${mnt}${path}" && mtree -X "${mtreefile}" \
 		-cn -k uid,gid,flags,mode,size \
@@ -2834,7 +2838,7 @@ check_leftovers() {
 	local mnt="${1}"
 
 	( cd "${mnt}" && \
-	    mtree -X "${MASTERMNT}/.p/mtree.preinstexclude" \
+	    mtree -X "${MASTERMNT}/.p/mtree.preinstexclude${PORTTESTING}" \
 	    -f "${mnt}/.p/mtree.preinst" -p . ) | \
 	    while read l; do
 		local changed read_again
@@ -2906,7 +2910,7 @@ check_fs_violation() {
 
 	msg_n "${status_msg}..."
 	( cd "${mnt}" && \
-		mtree -X "${MASTERMNT}/.p/mtree.${mtree_target}exclude" \
+		mtree -X "${MASTERMNT}/.p/mtree.${mtree_target}exclude${PORTTESTING}" \
 		-f "${mnt}/.p/mtree.${mtree_target}" \
 		-p . ) >> ${tmpfile}
 	echo " done"
