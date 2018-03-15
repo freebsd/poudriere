@@ -2916,7 +2916,7 @@ check_fs_violation() {
 	echo " done"
 
 	if [ -s ${tmpfile} ]; then
-		msg_error "${err_msg}"
+		msg "Error: ${err_msg}"
 		cat ${tmpfile}
 		bset_job_status "${status_value}" "${originspec}"
 		job_msg_verbose "Status   ${COLOR_PORT}${originspec} | ${PKGNAME}${COLOR_RESET}: ${status_value}"
@@ -3221,7 +3221,7 @@ _real_build_port() {
 			if ! injail /usr/bin/env DEVELOPER=1 ${PORT_FLAGS} \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    stage-qa; then
-				msg_error "stage-qa failures detected"
+				msg "Error: stage-qa failures detected"
 				[ "${PORTTESTING_FATAL}" != "no" ] &&
 					return 1
 				die=1
@@ -3231,7 +3231,7 @@ _real_build_port() {
 			if ! injail /usr/bin/env DEVELOPER=1 ${PORT_FLAGS} \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    check-plist; then
-				msg_error "check-plist failures detected"
+				msg "Error: check-plist failures detected"
 				[ "${PORTTESTING_FATAL}" != "no" ] &&
 					return 1
 				die=1
@@ -3363,18 +3363,18 @@ _real_build_port() {
 			comm -23 ${add1} ${del1} > ${add}
 			comm -13 ${add1} ${del1} > ${del}
 			if [ -s "${add}" ]; then
-				msg_error "Files or directories left over:"
+				msg "Error: Files or directories left over:"
 				die=1
 				grep -v "^@dirrm" ${add}
 				grep "^@dirrm" ${add} | sort -r
 			fi
 			if [ -s "${del}" ]; then
-				msg_error "Files or directories removed:"
+				msg "Error: Files or directories removed:"
 				die=1
 				cat ${del}
 			fi
 			if [ -s "${mod}" ]; then
-				msg_error "Files or directories modified:"
+				msg "Error: Files or directories modified:"
 				die=1
 				cat ${mod1}
 			fi
