@@ -1498,6 +1498,7 @@ markfs() {
 			case "${name}" in
 				prebuild|prestage)
 					cat <<-EOF
+					.${HOME}
 					./tmp
 					./var/tmp
 					EOF
