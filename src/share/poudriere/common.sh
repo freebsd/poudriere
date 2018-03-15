@@ -2570,7 +2570,8 @@ jail_start() {
 		chflags noschg \
 		    "${tomnt}${LOCALBASE:-/usr/local}" \
 		    "${tomnt}${PREFIX:-/usr/local}" \
-		    "${tomnt}/boot/modules"
+		    "${tomnt}/boot/modules" \
+		    "${tomnt}/boot"
 	fi
 
 
@@ -3870,8 +3871,9 @@ parallel_build() {
 		    "${MASTERMNT}/boot/.cpignore"
 
 		chflags schg \
-		    "${MASTERMNT}/boot" \
 		    "${MASTERMNT}/usr"
+		# /boot purposely left writable but its
+		# individual files are read-only.
 	fi
 
 	coprocess_start pkg_cacher
