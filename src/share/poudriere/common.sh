@@ -2314,7 +2314,7 @@ jail_start() {
 	[ ${JAIL_OSVERSION} -lt 900000 ] && needkld="${needkld} sem"
 
 	if [ "${DISTFILES_CACHE}" != "no" -a ! -d "${DISTFILES_CACHE}" ]; then
-		err 1 "DISTFILES_CACHE directory does not exist. (c.f.  poudriere.conf)"
+		err 1 "DISTFILES_CACHE directory does not exist. (cf.  poudriere.conf)"
 	fi
 	[ ${TMPFS_ALL} -ne 1 ] && [ $(sysctl -n kern.securelevel) -ge 1 ] && \
 	    err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags. USE_TMPFS=all can override this."
@@ -2327,7 +2327,7 @@ jail_start() {
 	if [ -n "${HARDLINK_CHECK}" -a ! "${HARDLINK_CHECK}" = "00" ]; then
 		case ${BUILD_AS_NON_ROOT} in
 			[Yy][Ee][Ss])
-				msg_warn "You have BUILD_AS_NON_ROOT set to '${BUILD_AS_NON_ROOT}' (c.f. poudriere.conf),"
+				msg_warn "You have BUILD_AS_NON_ROOT set to '${BUILD_AS_NON_ROOT}' (cf. poudriere.conf),"
 				msg_warn "    and 'security.bsd.hardlink_check_uid' or 'security.bsd.hardlink_check_gid' are not set to '0'."
 				err 1 "Poudriere will not be able to stage some ports. Exiting."
 				;;
