@@ -103,6 +103,19 @@ shash_set() {
 	fi
 }
 
+shash_remove_var() {
+	local -; set +x
+	[ $# -eq 1 ] || eargs shash_remove_var var
+	local var="$1"
+	local _shash_varkey_file
+
+	# This assumes globbing works
+	_shash_var_name "${var}%*"
+	find -x "${SHASH_VAR_PATH}" \
+	    -name "${SHASH_VAR_PREFIX}${_shash_var_name}" \
+	    -delete || :
+}
+
 shash_remove() {
 	local -; set +x
 	[ $# -ne 3 ] && eargs shash_remove var key var_return
