@@ -5640,16 +5640,6 @@ get_originspec_from_pkgname() {
 	shash_get pkgname-originspec "${pkgname}" "${var_return}"
 }
 
-get_origin_from_pkgname() {
-	[ $# -ne 2 ] && eargs get_origin_from_pkgname var_return pkgname
-	local var_return="$1"
-	local pkgname="$2"
-	local originspec
-
-	get_originspec_from_pkgname originspec "${pkgname}"
-	originspec_decode "${originspec}" "${var_return}" '' ''
-}
-
 # Look for PKGNAME and strip away @DEFAULT if it is the default FLAVOR.
 get_pkgname_from_originspec() {
 	[ $# -eq 2 ] || eargs get_pkgname_from_originspec originspec var_return
