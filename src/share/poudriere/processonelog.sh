@@ -127,6 +127,8 @@ elif bzgrep -qE "(USER.*PID.*TIME.*COMMAND|pnohang: killing make package|Killing
   reason="runaway_process"
 elif bzgrep -qE "(/usr/bin/ld: cannot find -l(pthread|XThrStub)|cannot find -lc_r|Error: pthreads are required to build this package|Please install/update your POSIX threads (pthreads) library|requires.*thread support|: The -pthread option is deprecated)" $1; then
   reason="threads"
+elif bzgrep -qE 'pkg-static: Fail.*(Read-only file system|Operation not permitted)' $1; then
+  reason="immutable_base"
 elif bzgrep -qi 'read-only file system' $1; then
   reason="WRKDIR"
 
