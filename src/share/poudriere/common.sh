@@ -1096,6 +1096,11 @@ exit_handler() {
 		coprocess_stop pkg_cacher
 	fi
 
+	# stdin may be redirected if a signal interrupted the read builtin (or
+	# any redirection to stdin).  Close it to avoid possibly referencing a
+	# file in the jail like builders.pipe on socket 6.
+	exec </dev/null
+
 	[ ${STATUS} -eq 1 ] && jail_cleanup
 
 	if was_a_bulk_run; then
