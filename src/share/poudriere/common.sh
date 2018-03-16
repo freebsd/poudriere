@@ -2962,7 +2962,7 @@ gather_distfiles() {
 		shash_get originspec-pkgname "${originspec}" pkgname || \
 		    err 1 "gather_distfiles: Could not find PKGNAME for ${originspec}"
 	fi
-	shash_remove pkgname-depend_specials "${pkgname}" specials || specials=
+	shash_get pkgname-depend_specials "${pkgname}" specials || specials=
 
 	job_msg_dev "${COLOR_PORT}${origin}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
