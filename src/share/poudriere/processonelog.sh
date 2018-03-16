@@ -60,7 +60,7 @@ elif bzgrep -qE '(/usr/libexec/elf/ld: cannot find|undefined reference to|cannot
   reason="linker_error"
 elif bzgrep -q 'install: .*: No such file' $1; then
   reason="install_error"
-elif bzgrep -qE "(conflicts with installed package|is already installed - perhaps an older version|You may wish to ..make deinstall.. and install this port again)" $1; then
+elif bzgrep -qE "(conflicts with installed package|installs files into the same place|is already installed - perhaps an older version|You may wish to ..make deinstall.. and install this port again)" $1; then
   reason="depend_object"
 elif bzgrep -q "core dumped" $1; then
   reason="coredump"
