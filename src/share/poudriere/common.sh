@@ -3011,16 +3011,6 @@ _real_build_port() {
 		esac
 	fi
 
-	for jpkg in ${ALLOW_MAKE_JOBS_PACKAGES}; do
-		case "${PKGBASE}" in
-		${jpkg})
-			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}"
-			sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' \
-			    ${mnt}/etc/make.conf
-			break
-			;;
-		esac
-	done
 	allownetworking=0
 	for jpkg in ${ALLOW_NETWORKING_PACKAGES}; do
 		case "${PKGBASE}" in
@@ -3992,7 +3982,7 @@ build_pkg() {
 	local ignore
 	local errortype
 	local ret=0
-	local elapsed now _gsub
+	local elapsed now _gsub jpkg
 
 	_my_path mnt
 	_my_name name
@@ -4059,6 +4049,18 @@ build_pkg() {
 
 	log_start 0
 	msg "Building ${port}"
+
+	for jpkg in ${ALLOW_MAKE_JOBS_PACKAGES}; do
+		case "${PKGBASE}" in
+		${jpkg})
+			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_RESET}"
+			sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' \
+			    "${mnt}/etc/make.conf"
+			break
+			;;
+		esac
+	done
+
 	buildlog_start "${ORIGINSPEC}"
 
 	# Ensure /dev/null exists (kern/139014)
