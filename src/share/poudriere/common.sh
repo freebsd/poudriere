@@ -5432,11 +5432,8 @@ get_originspec_from_pkgname() {
 	[ $# -ne 2 ] && eargs get_originspec_from_pkgname var_return pkgname
 	local var_return="$1"
 	local pkgname="$2"
-	local _originspec
 
-	shash_get pkgname-originspec "${pkgname}" _originspec
-
-	setvar "${var_return}" "${_originspec}"
+	shash_get pkgname-originspec "${pkgname}" "${var_return}"
 }
 
 get_origin_from_pkgname() {
