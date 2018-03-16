@@ -2746,7 +2746,7 @@ jail_stop() {
 }
 
 jail_cleanup() {
-	local wait_pids
+	local wait_pids pid pidfile
 
 	[ -n "${CLEANED_UP}" ] && return 0
 	msg "Cleaning up"
@@ -2763,10 +2763,13 @@ jail_cleanup() {
 		fi
 
 		if [ -d ${MASTERMNT}/.p/var/run ]; then
-			for pid in ${MASTERMNT}/.p/var/run/*.pid; do
+			for pidfile in ${MASTERMNT}/.p/var/run/*.pid; do
 				# Ensure there is a pidfile to read or break
-				[ "${pid}" = "${MASTERMNT}/.p/var/run/*.pid" ] && break
-				pkill -15 -F ${pid} >/dev/null 2>&1 || :
+				[ "${pidfile}" = \
+				    "${MASTERMNT}/.p/var/run/*.pid" ] && \
+				    break
+				read pid < "${pidfile}"
+				kill_job 1 "${pid}" || :
 				wait_pids="${wait_pids} ${pid}"
 			done
 			_wait ${wait_pids} || :
@@ -3692,7 +3695,7 @@ build_queue() {
 			else
 				MY_JOBID="${j}" \
 				    PORTTESTING=$(get_porttesting "${pkgname}") \
-				    spawn_protected build_pkg "${pkgname}"
+				    spawn_job build_pkg "${pkgname}"
 				pid=$!
 				echo "${pid}" > "../var/run/${j}.pid"
 				hash_set builder_pids "${j}" "${pid}"
