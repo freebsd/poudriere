@@ -112,7 +112,7 @@ kill_job() {
 	local pgid="$2"
 	local ret
 
-	msg_dev "Killing job ${pgid} $(jobid ${pgid})"
+	msg_dev "Killing job ${pgid} $(jobid ${pgid} 2>/dev/null)"
 	{
 		if ! kill -STOP -- -${pgid} || \
 		    ! kill -- -${pgid} || \
