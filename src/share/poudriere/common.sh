@@ -2577,6 +2577,7 @@ jail_start() {
 		chflags noschg \
 		    "${tomnt}${LOCALBASE:-/usr/local}" \
 		    "${tomnt}${PREFIX:-/usr/local}" \
+		    "${tomnt}/usr/home" \
 		    "${tomnt}/boot/modules" \
 		    "${tomnt}/boot"
 	fi
@@ -3859,6 +3860,7 @@ parallel_build() {
 		# XXX: This assumes LOCALBASE=/usr/local and does
 		# not account for PREFIX either.
 		find -xs "${MASTERMNT}/usr" -mindepth 1 -maxdepth 1 \
+		    \( -depth 1 -name 'home' -prune \) -o \
 		    \( -depth 1 -name 'local' -prune \) -o \
 		    -flags +schg -print | \
 		    sed -e "s,^${MASTERMNT}/usr/,," >> \
