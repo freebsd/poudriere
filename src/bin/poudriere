@@ -72,7 +72,7 @@ while getopts "Ae:Nvx" FLAG; do
 			echo "Error: argument '$OPTARG' not a directory"
 			exit 1
 		fi
-		export POUDRIERE_ETC=$OPTARG
+		export POUDRIERE_ETC="$OPTARG"
 		;;
 	N)
 		USE_COLORS="no"
@@ -98,6 +98,7 @@ if [ "${POUDRIEREPATH%src/bin/poudriere}" != "${POUDRIEREPATH}" ]; then
 	# It is running from src/bin/poudriere in checkout
 	POUDRIEREPREFIX=${POUDRIEREPATH%/bin/*}
 	LIBEXECPREFIX="${POUDRIEREPATH%/src/bin/poudriere}"
+	: ${POUDRIERE_ETC:="/usr/local/etc"}
 elif [ "${POUDRIEREPATH%/bin/*}" = "${POUDRIEREPATH}" ]; then
 	# It is running in a build directory or the source checkout as
 	# ./poudriere.  Lookup VPATH to resolve to source checkout if in
@@ -106,6 +107,7 @@ elif [ "${POUDRIEREPATH%/bin/*}" = "${POUDRIEREPATH}" ]; then
 	POUDRIEREPREFIX="${POUDRIEREPATH%/poudriere}${VPATH:+/${VPATH}}/src"
 	[ -n "${VPATH}" ] && POUDRIEREPREFIX="$(realpath "${POUDRIEREPREFIX}")"
 	LIBEXECPREFIX="${POUDRIEREPATH%/poudriere}"
+	: ${POUDRIERE_ETC:="/usr/local/etc"}
 else
 	# Running from PREFIX/bin/poudriere
 	POUDRIEREPREFIX=${POUDRIEREPATH%/bin/*}
