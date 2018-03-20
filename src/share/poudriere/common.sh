@@ -2538,16 +2538,6 @@ jail_start() {
 
 	setup_ports_env "${tomnt}" "${tomnt}/etc/make.conf"
 
-	PKG_EXT="txz"
-	PKG_BIN="/.p/pkg-static"
-	PKG_ADD="${PKG_BIN} add"
-	PKG_DELETE="${PKG_BIN} delete -y -f"
-	PKG_VERSION="${PKG_BIN} version"
-
-	[ -n "${PKG_REPO_SIGNING_KEY}" ] &&
-		! [ -f "${PKG_REPO_SIGNING_KEY}" ] &&
-		err 1 "PKG_REPO_SIGNING_KEY defined but the file is missing."
-
 	# Fetch library list for later comparisons
 	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
 		CHANGED_DEPS_LIBLIST=$(injail \
@@ -5729,6 +5719,52 @@ gather_port_vars() {
 	bset status "gatheringportvars:"
 	run_hook gather_port_vars start
 
+	if was_a_testport_run; then
+		local dep_originspec dep_origin dep_flavor dep_ret
+
+		[ -z "${ORIGINSPEC}" ] && \
+		    err 1 "testport+gather_port_vars requires ORIGINSPEC set"
+		if have_ports_feature FLAVORS; then
+			# deps_fetch_vars really wants to have the main port
+			# cached before being given a FLAVOR.
+			originspec_decode "${ORIGINSPEC}" dep_origin \
+			    '' dep_flavor
+			if [ -n "${dep_flavor}" ]; then
+				deps_fetch_vars "${dep_origin}" LISTPORTS \
+				    PKGNAME DEPENDS_ARGS FLAVOR FLAVORS
+			fi
+		fi
+		dep_ret=0
+		deps_fetch_vars "${ORIGINSPEC}" LISTPORTS PKGNAME \
+		    DEPENDS_ARGS FLAVOR FLAVORS || dep_ret=$?
+		case ${dep_ret} in
+		0) ;;
+		# Non-fatal duplicate should be ignored
+		2) ;;
+		# Fatal error
+		*)
+			err ${dep_ret} "deps_fetch_vars failed for ${ORIGINSPEC}"
+			;;
+		esac
+		if have_ports_feature FLAVORS; then
+			if [ -n "${FLAVORS}" ] && \
+			    [ "${FLAVOR_DEFAULT_ALL}" = "yes" ]; then
+				msg_warn "Only testing first flavor '${FLAVOR}', use 'bulk -t' to test all flavors: ${FLAVORS}"
+			fi
+			if [ -n "${dep_flavor}" ]; then
+				# Is it even a valid FLAVOR though?
+				case " ${FLAVORS} " in
+				*\ ${dep_flavor}\ *) ;;
+				*)
+					err 1 "Invalid FLAVOR '${dep_flavor}' for ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
+					;;
+				esac
+			fi
+		fi
+		deps_sanity "${ORIGINSPEC}" "${LISTPORTS}" || \
+		    err 1 "Error processing dependencies"
+	fi
+
 	:> "all_pkgs"
 	[ ${ALL} -eq 0 ] && :> "all_pkgbases"
 
@@ -6797,6 +6833,8 @@ fetch_global_port_vars() {
 	port_var_fetch '' \
 	    'USES=python' \
 	    PORTS_FEATURES P_PORTS_FEATURES \
+	    PKG_NOCOMPRESS:Dyes P_PKG_NOCOMPRESS \
+	    PKG_SUFX P_PKG_SUFX \
 	    PYTHON_MAJOR_VER P_PYTHON_MAJOR_VER \
 	    PYTHON_DEFAULT_VERSION P_PYTHON_DEFAULT_VERSION \
 	    PYTHON3_DEFAULT P_PYTHON3_DEFAULT || \
@@ -6885,52 +6923,6 @@ prepare_ports() {
 		resuming_build=0
 	fi
 
-	if was_a_testport_run; then
-		local dep_originspec dep_origin dep_flavor dep_ret
-
-		[ -z "${ORIGINSPEC}" ] && \
-		    err 1 "testport+prepare_ports requires ORIGINSPEC set"
-		if have_ports_feature FLAVORS; then
-			# deps_fetch_vars really wants to have the main port
-			# cached before being given a FLAVOR.
-			originspec_decode "${ORIGINSPEC}" dep_origin \
-			    '' dep_flavor
-			if [ -n "${dep_flavor}" ]; then
-				deps_fetch_vars "${dep_origin}" LISTPORTS \
-				    PKGNAME DEPENDS_ARGS FLAVOR FLAVORS
-			fi
-		fi
-		dep_ret=0
-		deps_fetch_vars "${ORIGINSPEC}" LISTPORTS PKGNAME \
-		    DEPENDS_ARGS FLAVOR FLAVORS || dep_ret=$?
-		case ${dep_ret} in
-		0) ;;
-		# Non-fatal duplicate should be ignored
-		2) ;;
-		# Fatal error
-		*)
-			err ${dep_ret} "deps_fetch_vars failed for ${ORIGINSPEC}"
-			;;
-		esac
-		if have_ports_feature FLAVORS; then
-			if [ -n "${FLAVORS}" ] && \
-			    [ "${FLAVOR_DEFAULT_ALL}" = "yes" ]; then
-				msg_warn "Only testing first flavor '${FLAVOR}', use 'bulk -t' to test all flavors: ${FLAVORS}"
-			fi
-			if [ -n "${dep_flavor}" ]; then
-				# Is it even a valid FLAVOR though?
-				case " ${FLAVORS} " in
-				*\ ${dep_flavor}\ *) ;;
-				*)
-					err 1 "Invalid FLAVOR '${dep_flavor}' for ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
-					;;
-				esac
-			fi
-		fi
-		deps_sanity "${ORIGINSPEC}" "${LISTPORTS}" || \
-		    err 1 "Error processing dependencies"
-	fi
-
 	if was_a_bulk_run; then
 		_log_path_top log_top
 		get_cache_dir cache_dir
@@ -6978,6 +6970,16 @@ prepare_ports() {
 
 	fetch_global_port_vars || \
 	    err 1 "Failed to lookup global ports metadata"
+
+	PKG_EXT="${P_PKG_SUFX#.}"
+	PKG_BIN="/.p/pkg-static"
+	PKG_ADD="${PKG_BIN} add"
+	PKG_DELETE="${PKG_BIN} delete -y -f"
+	PKG_VERSION="${PKG_BIN} version"
+
+	[ -n "${PKG_REPO_SIGNING_KEY}" ] && \
+	    ! [ -f "${PKG_REPO_SIGNING_KEY}" ] && \
+	    err 1 "PKG_REPO_SIGNING_KEY defined but the file is missing."
 
 	gather_port_vars
 
