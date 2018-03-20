@@ -176,6 +176,7 @@ for originspec in ${LISTPORTS}; do
 			DIALOG4PORTS=`which dialog4ports` \
 			LOCALBASE=/nonexistent \
 			-C ${PORTSDIR}/${origin} \
-			${RECURSE_COMMAND} ${flavor:+FLAVOR=${flavor}}
+			${flavor:+FLAVOR=${flavor}} \
+			${RECURSE_COMMAND}
 	fi
 done
