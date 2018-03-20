@@ -166,17 +166,18 @@ export TERM=${SAVED_TERM}
 for originspec in ${LISTPORTS}; do
 	originspec_decode "${originspec}" origin '' flavor
 	[ -d ${PORTSDIR}/${origin} ] || err 1 "No such port: ${origin}"
+	env ${flavor:+FLAVOR=${flavor}} \
 	make PORT_DBDIR=${PORT_DBDIR} \
 		-C ${PORTSDIR}/${origin} \
-		${COMMAND} ${flavor:+FLAVOR=${flavor}}
+		${COMMAND}
 
 	if [ -n "${DO_RECURSE}" ]; then
+		env ${flavor:+FLAVOR=${flavor}} \
 		make PORT_DBDIR=${PORT_DBDIR} \
 			PKG_BIN=`which pkg-static` \
 			DIALOG4PORTS=`which dialog4ports` \
 			LOCALBASE=/nonexistent \
 			-C ${PORTSDIR}/${origin} \
-			${flavor:+FLAVOR=${flavor}} \
 			${RECURSE_COMMAND}
 	fi
 done
