@@ -383,6 +383,8 @@ bset_job_status "stopped" "${ORIGINSPEC}"
 
 bset status "done:"
 
+show_log_info
+
 set +e
 
 exit 0
