@@ -211,8 +211,9 @@ if [ $CONFIGSTR -eq 1 ]; then
 	    __MAKE_CONF=/dev/null \
 	    PORT_DBDIR=${MASTERMNT}/var/db/ports \
 	    TERM=${SAVED_TERM} \
-	    make -C ${portsdir}/${ORIGIN} config \
-	    ${FLAVOR:+FLAVOR=${FLAVOR}}
+	    make -C ${portsdir}/${ORIGIN} \
+	    ${FLAVOR:+FLAVOR=${FLAVOR}} \
+	    config
 fi
 
 # deps_fetch_vars lookup for dependencies moved to prepare_ports()
