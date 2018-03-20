@@ -7040,7 +7040,7 @@ prepare_ports() {
 	fetch_global_port_vars || \
 	    err 1 "Failed to lookup global ports metadata"
 
-	: ${PKG_EXT:="${P_PKG_SUFX#.}"}
+	PKG_EXT="${P_PKG_SUFX#.}"
 	PKG_BIN="/.p/pkg-static"
 	PKG_ADD="${PKG_BIN} add"
 	PKG_DELETE="${PKG_BIN} delete -y -f"
