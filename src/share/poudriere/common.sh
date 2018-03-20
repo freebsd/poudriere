@@ -2538,16 +2538,6 @@ jail_start() {
 
 	setup_ports_env "${tomnt}" "${tomnt}/etc/make.conf"
 
-	PKG_EXT="txz"
-	PKG_BIN="/.p/pkg-static"
-	PKG_ADD="${PKG_BIN} add"
-	PKG_DELETE="${PKG_BIN} delete -y -f"
-	PKG_VERSION="${PKG_BIN} version"
-
-	[ -n "${PKG_REPO_SIGNING_KEY}" ] &&
-		! [ -f "${PKG_REPO_SIGNING_KEY}" ] &&
-		err 1 "PKG_REPO_SIGNING_KEY defined but the file is missing."
-
 	# Fetch library list for later comparisons
 	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
 		CHANGED_DEPS_LIBLIST=$(injail \
@@ -6980,6 +6970,16 @@ prepare_ports() {
 
 	fetch_global_port_vars || \
 	    err 1 "Failed to lookup global ports metadata"
+
+	PKG_EXT="txz"
+	PKG_BIN="/.p/pkg-static"
+	PKG_ADD="${PKG_BIN} add"
+	PKG_DELETE="${PKG_BIN} delete -y -f"
+	PKG_VERSION="${PKG_BIN} version"
+
+	[ -n "${PKG_REPO_SIGNING_KEY}" ] && \
+	    ! [ -f "${PKG_REPO_SIGNING_KEY}" ] && \
+	    err 1 "PKG_REPO_SIGNING_KEY defined but the file is missing."
 
 	gather_port_vars
 
