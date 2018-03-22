@@ -1,0 +1,462 @@
+# vim: filetype=sh
+#
+# SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+#
+# Copyright (c) 2018 Matusz Piotrowski <0mp@FreeBSD.org>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+# ---
+# Version: 0.2.0
+# Upstream: https://github.com/0mp/poudriere-bash-completion/
+
+_poudriere_absolute_path() {
+    COMPREPLY=($(compgen -f "${cur:-/}" -- "$cur"))
+}
+
+# XXX: It does not complete the architectures available thanks to the QEMU option.
+_poudriere_architecture() {
+    COMPREPLY=($(compgen -W "$(sysctl -n kern.supported_archs)" -- "$cur"))
+}
+
+# TODO: Parse poudriere status.
+_poudriere_buildname() {
+    compopt -o default
+}
+
+_poudriere_direct_port() {
+    # Find a ports tree to search for ports.
+    local prev_word=
+    local ports_tree=
+    local w
+    # Find out if a ports tree is already specified with -p.
+    for w in ${words[@]}; do
+        if [[ $w == -p ]]; then
+            prev_word=-p
+        elif [[ $prev_word == -p ]]; then
+            ports_tree="$w"
+            break
+        fi
+    done
+    # Find out if the default tree is present.
+    if [[ -z $ports_tree ]] && poudriere ports -l | awk '/^default */{found=1} END{if (found != 1) {exit 1}}'; then
+        ports_tree=default
+    elif [[ -z $ports_tree ]]; then
+        return
+    fi
+    local ports_tree_path="$(poudriere ports -l | awk -v tree=$ports_tree 'NR > 1{if (match($1, tree)) {print $5}}')"
+    # Complete port name.
+    if [[ $cur =~ .*/.* ]]; then
+        COMPREPLY=($(compgen -W "$(
+        command cd "$ports_tree_path" && LANG=C find "${cur%%/*}/" -mindepth 1 -maxdepth 1 -type d -name "${cur##*/}*"
+        )" -- "$cur"))
+    else # Complete category.
+        COMPREPLY=($(compgen -W "$(command cd "$ports_tree_path" && LANG=C find * -maxdepth 0 -type d -name '[^.A-Z]*' -prune)" -S "/" -- "$cur")) && compopt -o nospace
+    fi
+}
+
+_poudriere_filesystem() {
+    COMPREPLY=($(compgen -W "none $(zfs list | awk 'NR > 1{print $1}')" -- "$cur"))
+    if [[ ${#COMPREPLY[@]} == 1 ]] && [[ $COMPREPLY != none ]]; then
+        # XXX: Is it reasonable to assume that someone would continue to append somthing to an existing name?
+        compopt -o nospace
+    fi
+}
+
+# In order to avoid an obvious bitrot, this function depends on the contents of
+# /usr/share/misc/bsd-family-tree. The list of generated versions depends on
+# the FreeBSD version running on the host machine. If it's running CURRENT then
+# the list includes two latest RELEASE branches of two previous major versions
+# as well as their STABLE branches. Otherwise, only one previous major version
+# is included. SVN branches are included accordingly. This way the list
+# contains versions, which should run without any problems.
+# For example, when the host is running 12.0-CURRENT the list will contain the
+# following targets (as of 2018.03.09): 10-STABLE, 10.3-RELEASE, 10.4-RELEASE,
+# 11-STABLE, 11.0-RELEASE, 11.1-RELEASE, 12.0-CURRENT, head, release/10.3,
+# release/10.4, release/11.0, release/11.1, stable/10, stable/11.
+_poudriere_freebsd_version() {
+    local machine_version="$(freebsd-version)" # E.g. 12.0-CURRENT
+    local machine_major="${machine_version/[.-]*/}" # E.g. 12
+    local machine_branch="${machine_version##*-}" # E.g. CURRENT
+    local supported_branches=() # E.g. 12.0-CURRENT 11-STABLE 11.1-RELEASE
+    local supported_majors=($((machine_major - 1))) # E.g. 12 11 10
+    local release_versions=() # E.g. 11.1 11.0 10.4
+    if [[ $machine_branch == CURRENT ]]; then
+        supported_branches+=("$machine_version")
+        supported_majors+=($((machine_major - 2)))
+    else
+        supported_majors+=($machine_major)
+    fi
+    local major
+    for major in ${supported_majors[@]}; do
+        supported_branches+=($major-STABLE stable/$major)
+        release_versions+=($(awk "/FreeBSD $major/{print \$2}" /usr/share/misc/bsd-family-tree | tail -n 2))
+        supported_branches+=("${release_versions[@]/%/-RELEASE}" "${release_versions[@]/#/release/}")
+    done
+    COMPREPLY=($(compgen -W "head ${supported_branches[*]}" -- "$cur"))
+}
+
+# XXX: A little bit slow due to poudriere jail -l.
+_poudriere_jails_list() {
+    COMPREPLY=($(compgen -W "$(poudriere jail -l | awk 'NR > 1 {print $1}')" -- "$cur"))
+}
+
+# TODO: Support the second argument.
+_poudriere_jobs_number() {
+    COMPREPLY=($(compgen -W "$(seq 1 $(sysctl -n hw.ncpu))" -- "$cur"))
+}
+
+_poudriere_ports_list() {
+    COMPREPLY=($(compgen -W "$(poudriere ports -l | awk 'NR > 1 {print $1}')" -- "$cur"))
+}
+
+# TODO: It cannot be easily done as far as I know.
+_poudriere_set_list() {
+    compopt -o default
+}
+
+_poudriere()
+{
+    local cur prev words cword
+    _init_completion || return
+
+    local command_list=(bulk distclean daemon help image jail logclean \
+        ports pkgclean options queue status testport version)
+
+    # Is the command already selected?
+    local pipe_separated_command_list="$(tr ' ' '|' <<< "${command_list[@]}")"
+    local selected_command=
+    local i
+    for (( i=0 ; i < "${#words[@]}" ; i++ )); do
+        word="${words[$i]}"
+        if [[ $word =~ $pipe_separated_command_list ]]; then
+            if [[ $i > 0 ]] && [[ ${words[$(( i - 1 ))]} =~ -e ]]; then
+                continue
+            else
+                selected_command="$word"
+                break
+            fi
+        fi
+    done
+
+    if [[ -z $selected_command ]]; then
+        case "$prev" in
+            -e)
+                compopt -o default
+                ;;
+            *)
+                if [[ $cur == -* ]]; then
+                    COMPREPLY=($(compgen -W '-e -A -N -v' -- "$cur"))
+                else
+                    COMPREPLY=($(compgen -W "${command_list[*]}" -- "$cur"))
+                fi
+                ;;
+        esac
+    else
+        case "$selected_command" in
+            bulk)
+                case "$prev" in
+                    -B)
+                        _poudriere_buildname
+                        ;;
+                    -f)
+                        _poudriere_absolute_path
+                        ;;
+                    -J)
+                        _poudriere_jobs_number
+                        ;;
+                    -p)
+                        _poudriere_ports_list
+                        ;;
+                    *)
+                        if [[ $cur != -* ]]; then
+                            _poudriere_direct_port
+                        fi
+                        if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
+                            COMPREPLY=($(compgen -W "$(_parse_help poudriere $selected_command)" -- "$cur"))
+                        fi
+                        ;;
+                esac
+                ;;
+
+            distclean)
+                case "$prev" in
+                    -f)
+                        _poudriere_absolute_path
+                        ;;
+                    -J)
+                        _poudriere_jobs_number
+                        ;;
+                    -p)
+                        _poudriere_ports_list
+                        ;;
+                    *)
+                        if [[ $cur != -* ]]; then
+                            _poudriere_direct_port
+                        fi
+                        if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
+                            COMPREPLY=($(compgen -W "$(_parse_help poudriere $selected_command)" -- "$cur"))
+                        fi
+                        ;;
+                esac
+                ;;
+
+            # daemon) ;;
+
+            # help) ;;
+
+            image)
+                case "$prev" in
+                    -c|-f|-h|-m|-o|-s|-X)
+                        # XXX: Maybe there is a better way to complete size (-s).
+                        compopt -o default
+                        ;;
+                    -j)
+                        _poudriere_jails_list
+                        ;;
+                    -p)
+                        _poudriere_ports_list
+                        ;;
+                    -t)
+                        COMPREPLY=($(compgen -W 'iso iso+mfs iso+zmfs usb usb+mfs usb+zmfs rawdisk zrawdisk tar firmware rawfirmware embedded' -- "$cur"))
+                        ;;
+                    -z)
+                        _poudriere_set_list
+                        ;;
+                    *)
+                        COMPREPLY=($(compgen -W "$(_parse_help poudriere $selected_command)" -X '--' -- "$cur"))
+                        ;;
+                esac
+                ;;
+
+            jail)
+                case "$prev" in
+                    -a)
+                        _poudriere_architecture
+                        ;;
+                    -C)
+                        COMPREPLY=($(compgen -W "all cache logs packages wkrdirs" -- "$cur"))
+                        ;;
+                    -f)
+                        _poudriere_filesystem
+                        ;;
+                    -j)
+                        _poudriere_jails_list
+                        ;;
+                    -J)
+                        _poudriere_jobs_number
+                        ;;
+                    -K|-r|-M|-P|-S)
+                        compopt -o default
+                        ;;
+                    -v)
+                        _poudriere_freebsd_version
+                        ;;
+                    -m)
+                        # TODO: Complete paths for src= and tar=.
+                        COMPREPLY=($(compgen -W "allbsd ftp-archive ftp git http null src= svn svn+file svn+http svn+https svn+ssh tar= url=" -- "$cur"))
+                        if [[ ${#COMPREPLY[@]} == 1 && $COMPREPLY == *= ]]; then
+                            compopt -o nospace
+                        fi
+                        ;;
+                    -t)
+                        _poudriere_freebsd_version
+                        ;;
+                    -p)
+                        _poudriere_ports_list
+                        ;;
+                    -z)
+                        _poudriere_set_list
+                        ;;
+                    *)
+                        COMPREPLY=($(compgen -W "$(_parse_help poudriere $selected_command)" -- "$cur"))
+                        ;;
+                esac
+                ;;
+
+            logclean)
+                case "$prev" in
+                    -B)
+                        _poudriere_buildname
+                        ;;
+                    -j)
+                        _poudriere_jails_list
+                        ;;
+                    -N)
+                        COMPREPLY=($(compgen -W "0 1 2 3 4 5 6 7 8 9"))
+                        compopt -o nospace
+                        ;;
+                    -p)
+                        _poudriere_ports_list
+                        ;;
+                    -z)
+                        _poudriere_set_list
+                        ;;
+                    *)
+                        if [[ $cur =~ ^([[:digit:]])+$ ]]; then
+                            COMPREPLY=(0 1 2 3 4 5 6 7 8 9)
+                            compopt -o nospace
+                        else
+                            COMPREPLY=($(compgen -W "$(_parse_help poudriere $selected_command) 0 1 2 3 4 5 6 7 8 9" -- "$cur"))
+                        fi
+                        ;;
+                esac
+                ;;
+
+            ports)
+                case "$prev" in
+                    -B)
+                        # XXX: Maybe there are not that many branches and it is possible to actually list them here.
+                        compopt -o default
+                        ;;
+                    -f)
+                        _poudriere_filesystem
+                        ;;
+                    -m)
+                        COMPREPLY=($(compgen -W 'portsnap git null svn svn+http svn+https svn+file svn+ssh' -- "$cur"))
+                        ;;
+                    -M)
+                        compopt -o default
+                        ;;
+                    -p)
+                        _poudriere_ports_list
+                        ;;
+                    *)
+                        COMPREPLY=($(compgen -W "$(_parse_help poudriere $selected_command)" -- "$cur"))
+                        ;;
+                esac
+                ;;
+
+            pkgclean)
+                case "$prev" in
+                    -f)
+                        _poudriere_absolute_path
+                        ;;
+                    -j)
+                        _poudriere_jails_list
+                        ;;
+                    -J)
+                        _poudriere_jobs_number
+                        ;;
+                    -p)
+                        _poudriere_ports_list
+                        ;;
+                    -z)
+                        _poudriere_set_list
+                        ;;
+                    *)
+                        if [[ $cur != -* ]]; then
+                            _poudriere_direct_port
+                        fi
+                        if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
+                            COMPREPLY=($(compgen -W "$(_parse_help poudriere $selected_command)" -- "$cur"))
+                        fi
+                        ;;
+                esac
+                ;;
+
+            options)
+                case "$prev" in
+                    -a)
+                        _poudriere_architecture
+                        ;;
+                    -f)
+                        _poudriere_absolute_path
+                        ;;
+                    -j)
+                        _poudriere_jails_list
+                        ;;
+                    -p)
+                        _poudriere_ports_list
+                        ;;
+                    -z)
+                        _poudriere_set_list
+                        ;;
+                    *)
+                        if [[ $cur != -* ]]; then
+                            _poudriere_direct_port
+                        fi
+                        if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
+                            COMPREPLY=($(compgen -W "$(_parse_help poudriere $selected_command)" -- "$cur"))
+                        fi
+                        ;;
+                esac
+                ;;
+
+            status)
+                case "$prev" in
+                    -B)
+                        _poudriere_buildname
+                        ;;
+                    -j)
+                        _poudriere_jails_list
+                        ;;
+                    -p)
+                        _poudriere_ports_list
+                        ;;
+                    -z)
+                        _poudriere_set_list
+                        ;;
+                    *)
+                        # XXX: _parse_help does not work for some reason.
+                        COMPREPLY=($(compgen -W '-a -b -B -c -f -H -j -l -p -r -z' -- "$cur"))
+                        ;;
+                esac
+                ;;
+
+            testport)
+                case "$prev" in
+                    -B)
+                        _poudriere_buildname
+                        ;;
+                    -j)
+                        _poudriere_jails_list
+                        ;;
+                    -J)
+                        _poudriere_jobs_number
+                        ;;
+                    -o)
+                        _poudriere_direct_port
+                        ;;
+                    -p)
+                        _poudriere_ports_list
+                        ;;
+                    -z)
+                        _poudriere_set_list
+                        ;;
+                    *)
+                        if [[ $cur != -* ]]; then
+                            _poudriere_direct_port
+                        fi
+                        if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
+                            COMPREPLY=($(compgen -W "$(_parse_help poudriere $selected_command) -o" -- "$cur"))
+                        fi
+                        ;;
+                esac
+                ;;
+
+            # version) ;;
+        esac
+    fi
+} &&
+complete -F _poudriere poudriere
