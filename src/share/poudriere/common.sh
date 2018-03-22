@@ -2568,6 +2568,13 @@ jail_start() {
 		    "${tomnt}/usr/home" \
 		    "${tomnt}/boot/modules" \
 		    "${tomnt}/boot"
+		if [ -n "${CCACHE_STATIC_PREFIX}" ] && \
+			[ -x "${CCACHE_STATIC_PREFIX}/bin/ccache" ]; then
+			# Need to allow ccache-update-links to work.
+			chflags noschg \
+			    "${tomnt}${CCACHE_JAIL_PREFIX}/libexec/ccache" \
+			    "${tomnt}${CCACHE_JAIL_PREFIX}/libexec/ccache/world"
+		fi
 	fi
 
 
