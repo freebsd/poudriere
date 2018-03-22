@@ -1505,6 +1505,7 @@ markfs() {
 					cat <<-EOF
 					.${HOME}
 					./tmp
+					./var/crash/*.core
 					./var/tmp
 					EOF
 					;;
