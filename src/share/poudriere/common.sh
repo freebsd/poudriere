@@ -2141,7 +2141,6 @@ lock_jail() {
 setup_ccache() {
 	[ $# -eq 1 ] || eargs setup_ccache tomnt
 	local tomnt="$1"
-	local ccacheprefix
 
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 		cat >> "${tomnt}/etc/make.conf" <<-EOF
@@ -2155,34 +2154,33 @@ setup_ccache() {
 		file "${CCACHE_STATIC_PREFIX}/bin/ccache" | \
 		    grep -q "statically linked" || \
 		    err 1 "CCACHE_STATIC_PREFIX used but ${CCACHE_STATIC_PREFIX}/bin/ccache is not static."
-		ccacheprefix=/ccache
-		mkdir -p "${tomnt}${ccacheprefix}/libexec/ccache/world" \
-		    "${tomnt}${ccacheprefix}/bin"
+		mkdir -p "${tomnt}${CCACHE_JAIL_PREFIX}/libexec/ccache/world" \
+		    "${tomnt}${CCACHE_JAIL_PREFIX}/bin"
 		msg "Copying host static ccache from ${CCACHE_STATIC_PREFIX}/bin/ccache"
 		cp -f "${CCACHE_STATIC_PREFIX}/bin/ccache" \
 		    "${CCACHE_STATIC_PREFIX}/bin/ccache-update-links" \
-		    "${tomnt}${ccacheprefix}/bin/"
+		    "${tomnt}${CCACHE_JAIL_PREFIX}/bin/"
 		cp -f "${CCACHE_STATIC_PREFIX}/libexec/ccache/world/ccache" \
-		    "${tomnt}${ccacheprefix}/libexec/ccache/world/ccache"
+		    "${tomnt}${CCACHE_JAIL_PREFIX}/libexec/ccache/world/ccache"
 		# Tell the ports framework that we don't need it to add
 		# a BUILD_DEPENDS on everything for ccache.
 		# Also set it up to look in our ccacheprefix location for the
 		# wrappers.
 		cat >> "${tomnt}/etc/make.conf" <<-EOF
 		NO_CCACHE_DEPEND=1
-		CCACHE_WRAPPER_PATH=	${ccacheprefix}/libexec/ccache
+		CCACHE_WRAPPER_PATH=	${CCACHE_JAIL_PREFIX}/libexec/ccache
 		EOF
 		# Link the wrapper update script to /sbin so that
 		# any package trying to update the links will find it
 		# rather than an actual ccache package in the jail.
-		ln -fs "../${ccacheprefix}/bin/ccache-update-links" \
+		ln -fs "../${CCACHE_JAIL_PREFIX}/bin/ccache-update-links" \
 		    "${tomnt}/sbin/ccache-update-links"
 		# Fix the wrapper update script to always make the links
 		# in the new prefix.
-		sed -i '' -e "s,^\(PREFIX\)=.*,\1=\"${ccacheprefix}\"," \
-		    "${tomnt}${ccacheprefix}/bin/ccache-update-links"
+		sed -i '' -e "s,^\(PREFIX\)=.*,\1=\"${CCACHE_JAIL_PREFIX}\"," \
+		    "${tomnt}${CCACHE_JAIL_PREFIX}/bin/ccache-update-links"
 		# Create base compiler links
-		injail "${ccacheprefix}/bin/ccache-update-links"
+		injail "${CCACHE_JAIL_PREFIX}/bin/ccache-update-links"
 	fi
 }
 
@@ -7690,6 +7688,7 @@ if [ -n "${CCACHE_DIR}" ] && [ "${CCACHE_DIR_NON_ROOT_SAFE}" = "no" ]; then
 	# Default off with CCACHE_DIR.
 	: ${BUILD_AS_NON_ROOT:=no}
 fi
+: ${CCACHE_JAIL_PREFIX:=/ccache}
 # Default on otherwise.
 : ${BUILD_AS_NON_ROOT:=yes}
 : ${DISTFILES_CACHE:=/nonexistent}
