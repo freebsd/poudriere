@@ -355,11 +355,16 @@ spawn_job() {
 _spawn_wrapper() {
 	case $- in
 		# Job control
-		*m*) ;;
+		*m*)
 		# No job control
 		# Reset SIGINT to the default to undo POSIX's SIG_IGN in
 		# 2.11 "Signals and Error Handling". This will ensure no
 		# foreground process is left around on SIGINT.
+
+		# Don't stop processes if they try using TTY.
+		trap '' SIGTTIN
+		trap '' SIGTTOU
+	;;
 		*) trap - INT ;;
 	esac
 
