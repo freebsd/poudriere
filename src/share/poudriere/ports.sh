@@ -397,4 +397,5 @@ if [ ${UPDATE} -eq 1 ]; then
 	esac
 
 	pset ${PTNAME} timestamp $(clock -epoch)
+	run_hook ports_update "done"
 fi
