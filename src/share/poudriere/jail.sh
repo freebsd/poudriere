@@ -279,24 +279,24 @@ update_jail() {
 			if injail env PAGER=/bin/cat \
 			    /usr/sbin/freebsd-update.fixed fetch && \
 			    [ -L "${JAILMNT}${fu_workdir}/${fu_bdhash}-install" ]; then
-				injail env PAGER=/bin/cat \
+				yes | injail env PAGER=/bin/cat \
 				    /usr/sbin/freebsd-update.fixed install
 			fi
 		else
 			# Install new kernel
-			injail env PAGER=/bin/cat \
+			yes | injail env PAGER=/bin/cat \
 			    /usr/sbin/freebsd-update.fixed -r ${TORELEASE} \
 			    upgrade install || err 1 "Fail to upgrade system"
 			# Reboot
 			update_version_env ${TORELEASE}
 			# Install new world
-			injail env PAGER=/bin/cat \
+			yes | injail env PAGER=/bin/cat \
 			    /usr/sbin/freebsd-update.fixed install || \
 			    err 1 "Fail to upgrade system"
 			# Reboot
 			update_version_env ${TORELEASE}
 			# Remove stale files
-			injail env PAGER=/bin/cat \
+			yes | injail env PAGER=/bin/cat \
 			    /usr/sbin/freebsd-update.fixed install || :
 			jset ${JAILNAME} version ${TORELEASE}
 		fi
