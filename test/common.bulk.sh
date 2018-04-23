@@ -253,6 +253,7 @@ PTMNT="${PORTSDIR}"
 : ${PTNAME:=test}
 : ${SETNAME:=}
 export PORT_DBDIR=/dev/null
+export PERL5_DEFAULT=5.24
 
 set -e
 
