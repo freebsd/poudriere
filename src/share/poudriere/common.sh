@@ -6379,9 +6379,14 @@ compute_deps_pkg() {
 		    dep_pkgname; then
 			originspec_decode "${dep_originspec}" dep_origin '' \
 			    dep_flavor
-			[ ${ALL} -eq 0 ] && \
-			    err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname} from ${originspec} -- Does ${dep_origin} provide the '${dep_flavor}' FLAVOR?"
-			err 1 "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname} from ${originspec} -- Is SUBDIR+=${dep_originspec#*/} missing in ${dep_originspec%/*}/Makefile and does the port provide the '${dep_flavor}' FLAVOR?"
+			if [ ${ALL} -eq 0 ]; then
+				msg_error "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname} from ${originspec} -- Does ${dep_origin} provide the '${dep_flavor}' FLAVOR?"
+				set_dep_fatal_error
+				continue
+			fi
+			msg_error "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname} from ${originspec} -- Is SUBDIR+=${dep_originspec#*/} missing in ${dep_originspec%/*}/Makefile and does the port provide the '${dep_flavor}' FLAVOR?"
+			set_dep_fatal_error
+			continue
 		fi
 		msg_debug "compute_deps_pkg: Will build ${dep_originspec} for ${pkgname}"
 		pkgqueue_add_dep "${pkgname}" "${dep_pkgname}"
@@ -6398,7 +6403,7 @@ compute_deps_pkg() {
 	# need to detect the problem for all new package builds.
 	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
 		if [ "${BAD_PKGNAME_DEPS_ARE_FATAL}" = "yes" ]; then
-			err_type="err 1"
+			err_type="msg_error"
 		else
 			err_type="msg_warn"
 		fi
@@ -6419,16 +6424,28 @@ compute_deps_pkg() {
 				${PORTSDIR}/*)
 					dpath=${dpath#${PORTSDIR}/} ;;
 				esac
-				[ -n "${dpath}" ] || \
-				    err 1 "Invalid dependency line for ${pkgname}: ${d}"
-				hash_get \
+				if [ -z "${dpath}" ]; then
+					msg_error "Invalid dependency line for ${pkgname}: ${d}"
+					set_dep_fatal_error
+					continue
+				fi
+				if ! hash_get \
 				    compute_deps_originspec-pkgname \
-				    "${dpath}" dep_real_pkgname || \
-				    err 1 "compute_deps_pkg failed to lookup existing pkgname for ${dpath} processing package ${pkgname}"
+				    "${dpath}" dep_real_pkgname; then
+					msg_error "compute_deps_pkg failed to lookup existing pkgname for ${dpath} processing package ${pkgname}"
+					set_dep_fatal_error
+					continue
+				fi
 				case "${dep_real_pkgname%-*}" in
 				${dep_pkgname}) ;;
 				*)
 					${err_type} "${COLOR_PORT}${originspec}${COLOR_WARN} dependency on ${COLOR_PORT}${dpath}${COLOR_WARN} has wrong PKGNAME of '${dep_pkgname}' but should be '${dep_real_pkgname%-*}'"
+					if [ \
+					    "${BAD_PKGNAME_DEPS_ARE_FATAL}" = \
+					    "yes" ]; then
+						set_dep_fatal_error
+						continue
+					fi
 					;;
 				esac
 				;;
