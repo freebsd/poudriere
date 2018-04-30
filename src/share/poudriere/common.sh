@@ -2514,13 +2514,15 @@ jail_start() {
 	fi
 	injail id >/dev/null 2>&1 || \
 	    err 1 "Unable to execute id(1) in jail. Emulation or ABI wrong."
-	portbuild_uid=$(injail id -u ${PORTBUILD_USER} 2>/dev/null || :)
+	portbuild_uid=$(injail id -u "${PORTBUILD_USER}" 2>/dev/null || :)
 	if [ -z "${portbuild_uid}" ]; then
 		msg_n "Creating user/group ${PORTBUILD_USER}"
-		injail pw groupadd ${PORTBUILD_USER} -g ${PORTBUILD_UID} || \
-		err 1 "Unable to create group ${PORTBUILD_USER}"
-		injail pw useradd ${PORTBUILD_USER} -u ${PORTBUILD_UID} -d /nonexistent -c "Package builder" || \
-		err 1 "Unable to create user ${PORTBUILD_USER}"
+		injail pw groupshow "${PORTBUILD_USER}" >/dev/null 2>&1 || \
+		injail pw groupadd "${PORTBUILD_USER}" -g "${PORTBUILD_UID}" || \
+		    err 1 "Unable to create group ${PORTBUILD_USER}"
+		injail pw useradd "${PORTBUILD_USER}" -u "${PORTBUILD_UID}" \
+		    -g "${PORTBUILD_USER}" -d /nonexistent -c "Package builder" || \
+		    err 1 "Unable to create user ${PORTBUILD_USER}"
 		echo " done"
 	else
 		PORTBUILD_UID=${portbuild_uid}
