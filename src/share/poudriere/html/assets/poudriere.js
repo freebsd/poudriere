@@ -71,6 +71,7 @@ function update_data() {
 			'Cache-Control': 'max-age=0',
 		},
 		success: function(data) {
+			load_attempts = 0;
 			process_data(data);
 		},
 		error: function(data) {
