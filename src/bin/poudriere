@@ -29,7 +29,7 @@ LC_ALL=C
 unset SHELL
 SAVED_TERM=$TERM
 unset TERM
-POUDRIERE_VERSION="3.2.6"
+POUDRIERE_VERSION="3.2.7"
 
 usage() {
 	cat << EOF
