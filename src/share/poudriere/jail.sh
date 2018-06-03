@@ -390,7 +390,7 @@ setup_build_env() {
 
 	JAIL_OSVERSION=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' ${SRC_BASE}/sys/sys/param.h)
 	hostver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' /usr/include/sys/param.h)
-	MAKE_CMD=make
+	MAKE_CMD="make -s"
 	if [ ${hostver} -gt 1000000 -a ${JAIL_OSVERSION} -lt 1000000 ]; then
 		FMAKE=$(command -v fmake 2>/dev/null)
 		[ -n "${FMAKE}" ] ||
