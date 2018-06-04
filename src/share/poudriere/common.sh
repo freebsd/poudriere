@@ -2299,6 +2299,7 @@ jail_start() {
 	local needkld kldpair kld kldmodname
 	local tomnt fs
 	local portbuild_uid portbuild_gid aarchld
+	local portbuild_gids portbuild_add_group _gid
 
 	lock_jail
 
@@ -2532,6 +2533,20 @@ jail_start() {
 		echo " done"
 	else
 		PORTBUILD_UID=${portbuild_uid}
+	fi
+	portbuild_gids=$(injail id -G "${PORTBUILD_USER}" 2>/dev/null || :)
+	portbuild_add_group=true
+	for _gid in ${portbuild_gids}; do
+		if [ "${_gid}" = "${PORTBUILD_GID}" ]; then
+			portbuild_add_group=false
+			break
+		fi
+	done
+	if [ "$portbuild_add_group" = "true" ]; then
+		msg_n "Adding user ${PORTBUILD_USER} to ${PORTBUILD_GROUP}"
+		injail pw groupmod "${PORTBUILD_GROUP}" -m "${PORTBUILD_USER}" || \
+		    err 1 "Unable to add user ${PORTBUILD_USER} to group ${PORTBUILD_GROUP}"
+		echo " done"
 	fi
 	injail service ldconfig start >/dev/null || \
 	    err 1 "Failed to set ldconfig paths."
