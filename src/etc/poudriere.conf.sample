@@ -1,7 +1,6 @@
-
 # Poudriere can optionally use ZFS for its ports/jail storage. For
 # ZFS define ZPOOL, otherwise set NO_ZFS=yes
-# 
+#
 #### ZFS
 # The pool where poudriere will create all the filesystems it needs
 # poudriere will use ${ZPOOL}/${ZROOTFS} as its root
@@ -311,3 +310,25 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # processing of the queue slightly, especially for bulk -a builds.
 # Default: no
 #HTML_TRACK_REMAINING=yes
+
+# Devices available in builder jails via devfs
+# See also JAIL_ZFS_JAILED_DATASETS.
+# Default: null zero random urandom stdin stdout stderr fd fd/* bpf* pts pts/*
+#JAIL_DEVFS_PATH="null zero random urandom stdin stdout stderr fd fd/* bpf* pts pts/* usb"
+
+# Extra configuration parameters for builder jails, see jail(8).
+# Default: none
+# Example that may be helpful together with JAIL_ZFS_JAILED_DATASETS to
+# allow builder jails access to specified ZFS datasets:
+#JAIL_EXTRA_PARAMS="allow.mount allow.mount.zfs enforce_statfs=1"
+
+# ZFS datasets made available in builder jails. See `zfs jail` command
+# in zfs(8). These datasets need the property `jailed=on`.
+# Using this feature implicitly adds `zfs` to JAIL_DEVFS_PATH i.e.
+# unhides /dev/zfs inside the jails as required to access ZFS datasets from
+# inside builder jails. See also the example in JAIL_EXTRA_PARAMS for how to
+# allow access to the datasets within the jails (not changed implicitly
+# because you may want other values for `enforce_statfs`).
+# This is unrelated to the NO_ZFS option!
+# Default: none
+#JAIL_ZFS_JAILED_DATASETS="zroot/poudriere/buildartifacts"

@@ -585,7 +585,7 @@ jstart() {
 	jail -c persist name=${name} \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
-		${network} ${JAIL_PARAMS}
+		${network} ${JAIL_PARAMS} ${JAIL_EXTRA_PARAMS}
 	[ "${USE_JEXECD}" = "yes" ] && \
 	    jexecd -j ${name} -d ${MASTERMNT}/../ \
 	    ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}} \
@@ -594,11 +594,17 @@ jstart() {
 	jail -c persist name=${name}-n \
 		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
-		${ipargs} ${JAIL_PARAMS} ${JAIL_NET_PARAMS}
+		${ipargs} ${JAIL_PARAMS} ${JAIL_NET_PARAMS} ${JAIL_EXTRA_PARAMS}
 	[ "${USE_JEXECD}" = "yes" ] && \
 	    jexecd -j ${name}-n -d ${MASTERMNT}/../ \
 	    ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}} \
 	    ${MAX_FILES+-n ${MAX_FILES}}
+
+	for zfs_filesystem in ${JAIL_ZFS_JAILED_DATASETS}; do
+		zfs jail ${name} ${zfs_filesystem}
+		zfs jail ${name}-n ${zfs_filesystem}
+	done
+
 	return 0
 }
 
@@ -1571,7 +1577,6 @@ do_jail_mounts() {
 	local mnt="$2"
 	local arch="$3"
 	local name="$4"
-	local devfspath="null zero random urandom stdin stdout stderr fd fd/* bpf* pts pts/*"
 	local srcpath nullpaths nullpath p
 
 	# from==mnt is via jail -u
@@ -1601,7 +1606,7 @@ do_jail_mounts() {
 	mount -t devfs devfs ${mnt}/dev
 	if [ ${JAILED} -eq 0 ]; then
 		devfs -m ${mnt}/dev rule apply hide
-		for p in ${devfspath} ; do
+		for p in ${JAIL_DEVFS_PATH}; do
 			devfs -m ${mnt}/dev/ rule apply path "${p}" unhide
 		done
 	fi
@@ -7778,6 +7783,13 @@ DRY_RUN=0
 : ${BUILDNAME:=$(date +${BUILDNAME_FORMAT})}
 
 : ${HTML_TYPE:=inline}
+
+: ${JAIL_DEVFS_PATH:="null zero random urandom stdin stdout stderr fd fd/* bpf* pts pts/*"}
+: ${JAIL_EXTRA_PARAMS:=}
+: ${JAIL_ZFS_JAILED_DATASETS:=}
+if [ -n "${JAIL_ZFS_JAILED_DATASETS}" ] && ! echo "${JAIL_DEVFS_PATH}" | grep -qw zfs; then
+	JAIL_DEVFS_PATH="${JAIL_DEVFS_PATH:+${JAIL_DEVFS_PATH} }zfs"
+fi
 
 if [ -n "${MAX_MEMORY}" ]; then
 	MAX_MEMORY_BYTES="$((${MAX_MEMORY} * 1024 * 1024 * 1024))"
