@@ -117,6 +117,8 @@ saved_argv="$@"
 shift $((OPTIND-1))
 post_getopts
 
+test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
+
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 _mastermnt MASTERMNT
 
