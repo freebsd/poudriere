@@ -102,7 +102,7 @@ function format_origin(origin, flavor) {
 	}
 
 	return "<a target=\"_new\" title=\"freshports for " + origin +
-		"\" href=\"https://freshports.org/" +
+		"\" href=\"https://www.freshports.org/" +
 		data[0] + "/" + data[1] + "/\"><span " +
 		"class=\"glyphicon glyphicon-tasks\"></span>"+ origin + flavor +
 		"</a>";
