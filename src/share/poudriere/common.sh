@@ -4504,7 +4504,7 @@ deps_fetch_vars() {
 		_changed_options="SELECTED_OPTIONS:O _selected_options"
 	fi
 	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
-		_changed_deps="LIB_DEPENDS _lib_depends RUN_DEPENDS _run_depends"
+		_changed_deps="LIB_DEPENDS_ALL _lib_depends RUN_DEPENDS_ALL _run_depends"
 	fi
 	if have_ports_feature FLAVORS; then
 		_lookup_flavors="FLAVOR _flavor FLAVORS _flavors"
@@ -4524,7 +4524,7 @@ deps_fetch_vars() {
 	    IGNORE _ignore \
 	    ${_changed_deps} \
 	    ${_changed_options} \
-	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
+	    _PDEPS='${PKG_DEPENDS_ALL} ${EXTRACT_DEPENDS_ALL} ${PATCH_DEPENDS_ALL} ${FETCH_DEPENDS_ALL} ${BUILD_DEPENDS_ALL} ${LIB_DEPENDS_ALL} ${RUN_DEPENDS_ALL}' \
 	    '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
 	    _pkg_deps; then
 		msg_error "Error looking up dependencies for ${COLOR_PORT}${originspec}${COLOR_RESET}"
