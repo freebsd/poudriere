@@ -4476,6 +4476,7 @@ deps_fetch_vars() {
 	local origin _origin_dep_args _dep_args _dep _new_pkg_deps
 	local _origin_flavor _flavor _flavors _dep_arg _new_dep_args
 	local _depend_specials=
+	local _all_deps
 
 	originspec_decode "${originspec}" origin _origin_dep_args \
 	    _origin_flavor
@@ -4504,7 +4505,11 @@ deps_fetch_vars() {
 		_changed_options="SELECTED_OPTIONS:O _selected_options"
 	fi
 	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
-		_changed_deps="LIB_DEPENDS_ALL _lib_depends RUN_DEPENDS_ALL _run_depends"
+		if have_ports_feature SUBPACKAGES; then
+			_changed_deps="LIB_DEPENDS_ALL _lib_depends RUN_DEPENDS_ALL _run_depends"
+		else
+			_changed_deps="LIB_DEPENDS _lib_depends RUN_DEPENDS _run_depends"
+		fi
 	fi
 	if have_ports_feature FLAVORS; then
 		_lookup_flavors="FLAVOR _flavor FLAVORS _flavors"
@@ -4515,6 +4520,11 @@ deps_fetch_vars() {
 		[ -n "${_origin_flavor}" ] && \
 		    err 1 "deps_fetch_vars: Using DEPENDS_ARGS but attempted lookup on ${originspec}"
 	fi
+	if have_ports_feature SUBPACKAGES; then
+	  _all_deps='${PKG_DEPENDS_ALL} ${EXTRACT_DEPENDS_ALL} ${PATCH_DEPENDS_ALL} ${FETCH_DEPENDS_ALL} ${BUILD_DEPENDS_ALL} ${LIB_DEPENDS_ALL} ${RUN_DEPENDS_ALL}'
+	else
+	  _all_deps='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}'
+	fi
 	if ! port_var_fetch_originspec "${originspec}" \
 	    PKGNAME _pkgname \
 	    ${_depends_args} \
@@ -4524,7 +4534,7 @@ deps_fetch_vars() {
 	    IGNORE _ignore \
 	    ${_changed_deps} \
 	    ${_changed_options} \
-	    _PDEPS='${PKG_DEPENDS_ALL} ${EXTRACT_DEPENDS_ALL} ${PATCH_DEPENDS_ALL} ${FETCH_DEPENDS_ALL} ${BUILD_DEPENDS_ALL} ${LIB_DEPENDS_ALL} ${RUN_DEPENDS_ALL}' \
+	    _PDEPS="${_all_deps}" \
 	    '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
 	    _pkg_deps; then
 		msg_error "Error looking up dependencies for ${COLOR_PORT}${originspec}${COLOR_RESET}"
