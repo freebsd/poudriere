@@ -7024,11 +7024,12 @@ prepare_ports() {
 
 		if [ ${JAIL_NEEDS_CLEAN} -eq 1 ]; then
 			msg_n "Cleaning all packages due to newer version of the jail..."
+			rm -rf ${PACKAGES}/* ${cache_dir}
+			echo " done"
 		elif [ ${CLEAN} -eq 1 ]; then
+			confirm_if_tty "Are you sure you want to clean all packages?" || \
+			    err 1 "Not cleaning all packages"
 			msg_n "(-c) Cleaning all packages..."
-		fi
-
-		if [ ${JAIL_NEEDS_CLEAN} -eq 1 ] || [ ${CLEAN} -eq 1 ]; then
 			rm -rf ${PACKAGES}/* ${cache_dir}
 			echo " done"
 		fi
