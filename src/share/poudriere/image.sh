@@ -527,7 +527,12 @@ rawdisk)
 	umount ${WRKDIR}/world
 	/sbin/mdconfig -d -u ${md#md}
 	md=
-	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
+	mkimg -s gpt -b ${mnt}/boot/pmbr \
+		-p efi:=${mnt}/boot/boot1.efifat \
+		-p freebsd-boot:=${mnt}/boot/gptboot \
+		-p freebsd-ufs:=${WRKDIR}/raw.img \
+		-p freebsd-swap::1M \
+		-o ${OUTPUTDIR}/${FINALIMAGE}
 	;;
 embedded)
 	FINALIMAGE=${IMAGENAME}.img
@@ -546,11 +551,14 @@ zrawdisk)
 	zpool set autoexpand=on ${zroot}
 	zpool export ${zroot}
 	zroot=
-	dd if=${mnt}/boot/zfsboot of=/dev/${md} count=1
-	dd if=${mnt}/boot/zfsboot of=/dev/${md} iseek=1 oseek=1024
 	/sbin/mdconfig -d -u ${md#md}
 	md=
-	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
+	mkimg -s gpt -b ${mnt}/boot/pmbr \
+		-p efi:=${mnt}/boot/boot1.efifat \
+		-p freebsd-boot:=${mnt}/boot/gptzfsboot \
+		-p freebsd-zfs:=${WRKDIR}/raw.img \
+		-p freebsd-swap::1M \
+		-o ${OUTPUTDIR}/${FINALIMAGE}
 	;;
 esac
 
