@@ -1,7 +1,7 @@
 .\" Copyright (c) 2012 Baptiste Daroussin <bapt@FreeBSD.org>
 .\" Copyright (c) 2012-2014 Bryan Drewery <bdrewery@FreeBSD.org>
 .\" Copyright (c) 2018 SRI International
-.\" Copyright (c) 2018 Allan Jude <allanjude@FreeBSD.org>
+.\" Copyright (c) 2018-2021 Allan Jude <allanjude@FreeBSD.org>
 .\" All rights reserved.
 .\"
 .\" Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd August 3, 2021
+.Dd October 31, 2021
 .Dt POUDRIERE-IMAGE 8
 .Os
 .Sh NAME
@@ -82,7 +82,15 @@ This specifies the hostname used for the image.
 Defaults to
 .Ar poudriere-image .
 .It Fl i Ar originimage
-Path to a previously built full.img.gz.
+Path to a previously built image.
+For
+.Fl t Cm zsnapshot ,
+this should be
+.Pa full.img.gz .
+For
+.Fl t Cm zfs
+this should be
+.Pa image.full.zfs .
 .It Fl j Ar name
 This argument specifies the name of the jail that is used.
 .It Fl m Ar overlaydir
@@ -94,6 +102,13 @@ This specifies the name of the resulting image.
 This argument specifies directory where the resulting image will be created.
 .It Fl p Ar tree
 This argument specifies the name of the ports tree that is used.
+.It Fl R Ar flags
+The flags to pass to
+.Ql Cm zfs send
+when creating the replication stream.
+These will control which features are enabled in the stream.
+Default:
+.Fl Rec
 .It Fl S Ar snapshotname
 Name of the snapshot for zsnapshot type.
 .It Fl s Ar size
@@ -120,6 +135,26 @@ filesystem is LZ77 compressed and is MFS mounted.
 A raw UFS2, softupdates-enabled, disk image.
 .It zrawdisk
 A raw ZFS disk image.
+.It zfs
+Create a ZFS image in the same style as
+.Xr bsdinstall 8 .
+Supports the following sub-types, defaulting to gpt if not subtype is specified:
+.It zfs+gpt
+Creates a complete disk image with a GPT partition table.
+Includes both UEFI and Legacy boot code.
+.It zfs+raw
+Created an image of only the ZFS pool with no partitions.
+Not bootable.
+.It zfs+send
+Creates a full ZFS replication stream of the whole pool, including the boot
+environment, to be received using the
+.Xr zfs-recv 8
+command.
+Alias for zfs+send+full.
+You may create both send streams by specifying both sub-types
+(example: zfs+send+full+be).
+.It zfs+send+be
+Creates a ZFS replication stream of only the boot environment.
 .It tar
 An XZ-compressed tarball.
 .It firmware
@@ -153,10 +188,16 @@ format filesystems, and then mount them to
 /world .
 .It Ev WORLDDIR
 The path to the directory that is the root of the image.
-.It Ev zroot
+.It Ev ZFS_BEROOT_NAME
+The name of the dataset that contains all boot environments.
+Default: ROOT.
+.It Ev ZFS_BOOTFS_NAME
+The name of the default boot environment dataset.
+DEfault: default.
+.It Ev ZFS_POOL_NAME
 The name of the ZFS pool.
-The pre-script should populated this variable with the name of the ZFS pool
-that is created, if any.
+Defaults to
+.Ev ${IMAGENAME}root .
 .It Ev md
 The name of the
 .Xr mdconfig 8

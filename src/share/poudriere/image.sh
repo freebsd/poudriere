@@ -33,6 +33,7 @@
 . ${SCRIPTPREFIX}/image_rawdisk.sh
 . ${SCRIPTPREFIX}/image_tar.sh
 . ${SCRIPTPREFIX}/image_usb.sh
+. ${SCRIPTPREFIX}/image_zfs.sh
 . ${SCRIPTPREFIX}/image_zsnapshot.sh
 
 usage() {
@@ -45,7 +46,7 @@ Parameters:
     -t type         -- Type of image can be one of
                     -- iso, iso+mfs, iso+zmfs, usb, usb+mfs, usb+zmfs,
                        rawdisk, zrawdisk, tar, firmware, rawfirmware,
-                       dump, zsnapshot
+                       dump, zfs+[raw|gpt|send[+full[+be]]], zsnapshot
 
 Options:
     -A post-script  -- Source this script after populating the \$WRKDIR/world
@@ -66,6 +67,7 @@ Options:
     -o outputdir    -- Image destination directory
     -p portstree    -- Ports tree
     -P pkgbase      -- List of pkgbase packages to install
+    -R flags        -- ZFS Replication Flags
     -s size         -- Set the image size
     -S snapshotname -- Snapshot name
     -w size         -- Set the size of the swap partition
@@ -271,7 +273,7 @@ PKG_QUIET="-q"
 : ${PRE_BUILD_SCRIPT:=""}
 : ${POST_BUILD_SCRIPT:=""}
 
-while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:s:S:t:vw:X:z:" FLAG; do
+while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:R:s:S:t:vw:X:z:" FLAG; do
 	case "${FLAG}" in
 		A)
 			[ "${OPTARG#/}" = "${OPTARG}" ] && \
@@ -339,6 +341,9 @@ while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:s:S:t:vw:X:z:" FLAG; do
 			PKGBASELIST=${OPTARG}
 			INSTALLWORLD=install_world_from_pkgbase
 			;;
+		R)
+			ZFS_SEND_FLAGS="-${OPTARG}"
+			;;
 		s)
 			IMAGESIZE="${OPTARG}"
 			;;
@@ -351,6 +356,8 @@ while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:s:S:t:vw:X:z:" FLAG; do
 			iso|iso+mfs|iso+zmfs|usb|usb+mfs|usb+zmfs) ;;
 			rawdisk|zrawdisk|tar|firmware|rawfirmware) ;;
 			dump|zsnapshot) ;;
+			zfs|zfs+gpt|zfs+raw) ;;
+			zfs+send|zfs+send+full|zfs+send+be|zfs+send+full+be) ;;
 			*) err 1 "invalid mediatype: ${MEDIATYPE}"
 			esac
 			;;
@@ -379,15 +386,19 @@ saved_argv="$@"
 shift $((OPTIND-1))
 post_getopts
 
-: ${MEDIATYPE:=none}
-: ${SWAPBEFORE:=0}
-: ${SWAPSIZE:=0}
-: ${PTNAME:=default}
-
 [ -n "${JAILNAME}" ] || usage
 
 : ${OUTPUTDIR:=${POUDRIERE_DATA}/images/}
 : ${IMAGENAME:=poudriereimage}
+: ${MEDIATYPE:=none}
+: ${SWAPBEFORE:=0}
+: ${SWAPSIZE:=0}
+: ${PTNAME:=default}
+: ${ZFS_SEND_FLAGS:=-Rec}
+: ${ZFS_POOL_NAME:=${IMAGENAME}root}
+: ${ZFS_BEROOT_NAME:=ROOT}
+: ${ZFS_BOOTFS_NAME:=default}
+
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 
 MAINMEDIATYPE=${MEDIATYPE%%+*}
