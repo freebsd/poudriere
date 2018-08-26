@@ -69,6 +69,7 @@ dist_pkgdata_DATA=	\
 			src/share/poudriere/image_rawdisk.sh \
 			src/share/poudriere/image_tar.sh \
 			src/share/poudriere/image_usb.sh \
+			src/share/poudriere/image_zfs.sh \
 			src/share/poudriere/image_zsnapshot.sh \
 			src/share/poudriere/jail.sh \
 			src/share/poudriere/logclean.sh \
