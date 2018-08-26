@@ -30,6 +30,7 @@ usage() {
 poudriere image [parameters] [options]
 
 Parameters:
+    -b              -- Place the swap partition before the primary partition(s)
     -c overlaydir   -- The content of the overlay directory will be copied into
                        the image
     -f packagelist  -- List of packages to install
@@ -47,6 +48,7 @@ Parameters:
                     -- iso, iso+mfs, iso+zmfs, usb, usb+mfs, usb+zmfs,
                        rawdisk, zrawdisk, tar, firmware, rawfirmware,
                        embedded, dump, zsnapshot
+    -w size         -- Set the size of the swap partition
     -X excludefile  -- File containing the list in cpdup format
     -z set          -- Set
 EOF
@@ -174,8 +176,11 @@ make_esp_file() {
 . ${SCRIPTPREFIX}/common.sh
 HOSTNAME=poudriere-image
 
-while getopts "c:f:h:i:j:m:n:o:p:s:S:t:X:z:" FLAG; do
+while getopts "bc:f:h:i:j:m:n:o:p:s:S:t:w:X:z:" FLAG; do
 	case "${FLAG}" in
+		b)
+			SWAPBEFORE=1
+			;;
 		c)
 			[ -d "${OPTARG}" ] || err 1 "No such extract directory: ${OPTARG}"
 			EXTRADIR=$(realpath ${OPTARG})
@@ -229,6 +234,9 @@ while getopts "c:f:h:i:j:m:n:o:p:s:S:t:X:z:" FLAG; do
 			*) err 1 "invalid mediatype: ${MEDIATYPE}"
 			esac
 			;;
+		w)
+			SWAPSIZE="${OPTARG}"
+			;;
 		X)
 			[ -r "${OPTARG}" ] || err 1 "No such exclude list ${OPTARG}"
 			EXCLUDELIST=$(realpath ${OPTARG})
@@ -249,6 +257,8 @@ shift $((OPTIND-1))
 post_getopts
 
 : ${MEDIATYPE:=none}
+: ${SWAPBEFORE:=0}
+: ${SWAPSIZE:=0}
 : ${PTNAME:=default}
 
 [ -n "${JAILNAME}" ] || usage
@@ -567,7 +577,21 @@ usb)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
 	/dev/ufs/${IMAGENAME} / ufs rw 1 1
 	EOF
-	makefs -B little ${IMAGESIZE:+-s ${IMAGESIZE}} -o label=${IMAGENAME} \
+	if [ -n "${SWAPSIZE}" -a "${SWAPSIZE}" != "0" ]; then
+		cat >> ${WRKDIR}/world/etc/fstab <<-EOSWAP
+		/dev/gpt/swapspace none swap sw 0 0
+		EOSWAP
+	fi
+	# Figure out Partition sizes
+	OS_SIZE=
+	calculate_ospart_size 1 ${IMAGESIZE} 0 0 ${SWAPSIZE}
+	# Prune off a bit to fit the extra partitions and loaders
+	OS_SIZE=$(( ${OS_SIZE} - 1 ))
+	WORLD_SIZE=$(du -ms ${WRKDIR}/world | awk '{print $1}')
+	if [ ${WORLD_SIZE} -gt ${OS_SIZE} ]; then
+		err 2 "Installed OS Partition needs: ${WORLD_SIZE}m, but the OS Partitions are only: ${OS_SIZE}m.  Increase -s"
+	fi
+	makefs -B little ${OS_SIZE:+-s ${OS_SIZE}} -o label=${IMAGENAME} \
 		-o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world
 	;;
 *firmware)
@@ -583,6 +607,10 @@ usb)
 	echo "/dev/gpt/${IMAGENAME}1 / ufs ro 1 1" >> ${WRKDIR}/world/etc/fstab
 	echo '/dev/gpt/cfg  /cfg  ufs rw,noatime,noauto        2 2' >> ${WRKDIR}/world/etc/fstab
 	echo '/dev/gpt/data /data ufs rw,noatime,noauto,failok 2 2' >> ${WRKDIR}/world/etc/fstab
+	if [ -n "${SWAPSIZE}" -a "${SWAPSIZE}" != "0" ]; then
+		echo '/dev/gpt/swapspace none swap sw 0 0' >> ${WRKDIR}/world/etc/fstab
+	fi
+
 	# Enable diskless(8) mode
 	touch ${WRKDIR}/world/etc/diskless
 	for d in cfg data; do
@@ -616,7 +644,7 @@ usb)
 
 	# Figure out Partition sizes
 	OS_SIZE=
-	calculate_ospart_size ${IMAGESIZE} ${CFG_SIZE} ${DATA_SIZE}
+	calculate_ospart_size 2 ${IMAGESIZE} ${CFG_SIZE} ${DATA_SIZE} ${SWAPSIZE}
 	# Prune off a bit to fit the extra partitions and loaders
 	OS_SIZE=$(( ${OS_SIZE} - 1 ))
 	WORLD_SIZE=$(du -ms ${WRKDIR}/world | awk '{print $1}')
@@ -685,11 +713,18 @@ usb+*mfs)
 	;;
 usb)
 	FINALIMAGE=${IMAGENAME}.img
+	SWAPCMD="-p freebsd-swap/swapspace::${SWAPSIZE}"
+	if [ $SWAPBEFORE -eq 1 ]; then
+		SWAPFIRST="$SWAPCMD"
+	else
+		SWAPLAST="$SWAPCMD"
+	fi
 	mkimg -s gpt -b ${mnt}/boot/pmbr \
 		-p efi:=${mnt}/boot/boot1.efifat \
 		-p freebsd-boot:=${mnt}/boot/gptboot \
+		${SWAPFIRST} \
 		-p freebsd-ufs:=${WRKDIR}/raw.img \
-		-p freebsd-swap::1M \
+		${SWAPLAST} \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
 	;;
 tar)
@@ -698,13 +733,21 @@ tar)
 	;;
 firmware)
 	FINALIMAGE=${IMAGENAME}.img
+	SWAPCMD="-p freebsd-swap/swapspace::${SWAPSIZE}"
+	if [ $SWAPBEFORE -eq 1 ]; then
+		SWAPFIRST="$SWAPCMD"
+	else
+		SWAPLAST="$SWAPCMD"
+	fi
 	mkimg -s gpt -C ${IMAGESIZE} -b ${mnt}/boot/pmbr \
 		-p efi:=${mnt}/boot/boot1.efifat \
 		-p freebsd-boot:=${mnt}/boot/gptboot \
 		-p freebsd-ufs/${IMAGENAME}1:=${WRKDIR}/raw.img \
 		-p freebsd-ufs/${IMAGENAME}2:=${WRKDIR}/raw.img \
 		-p freebsd-ufs/cfg:=${WRKDIR}/cfg.img \
+		${SWAPFIRST} \
 		-p freebsd-ufs/data:=${WRKDIR}/data.img \
+		${SWAPLAST} \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
 	;;
 rawfirmware)

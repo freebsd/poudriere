@@ -7729,31 +7729,45 @@ calculate_size_in_mb() {
 }
 
 calculate_ospart_size() {
+	local NUM_PART
 	local CALC_SIZE
 	local FULL_CALC_SIZE
 	local DATA_CALC_SIZE
+	local SWAP_CALC_SIZE
 	local CFG_CALC_SIZE
 
+	# How many partitions do we need
+	NUM_PART=$1
+
 	# Figure out the size of the image in MB
-	CALC_SIZE=${IMAGESIZE}
+	CALC_SIZE=$2
 	calculate_size_in_mb
 	FULL_CALC_SIZE=${CALC_SIZE}
 
 	# Figure out the size of the /cfg partition
-	CALC_SIZE=${CFG_SIZE}
+	CALC_SIZE=$3
 	calculate_size_in_mb
 	CFG_CALC_SIZE=${CALC_SIZE}
 
 	# Figure out the size of the Data partition
-	if [ $# -eq 3 -o -n ${DATA_SIZE} ]; then
-		CALC_SIZE=${DATA_SIZE}
+	if [ $# -ge 4 -o -n $4 ]; then
+		CALC_SIZE=$4
 		calculate_size_in_mb
 		DATA_CALC_SIZE=${CALC_SIZE}
 	else
 		DATA_CALC_SIZE=0
 	fi
 
-	OS_SIZE=$(( ( ${FULL_CALC_SIZE} - ${CFG_CALC_SIZE} - ${DATA_CALC_SIZE} ) / 2 ))
+	# Figure out the size of the swap partition
+	if [ $# -eq 5 -o -n $5 ]; then
+		CALC_SIZE=$5
+		calculate_size_in_mb
+		SWAP_CALC_SIZE=${CALC_SIZE}
+	else
+		SWAP_CALC_SIZE=0
+	fi
+
+	OS_SIZE=$(( ( ${FULL_CALC_SIZE} - ${CFG_CALC_SIZE} - ${DATA_CALC_SIZE} - ${SWAP_CALC_SIZE} ) / ${NUM_PART} ))
 	msg "OS Partiton size: ${OS_SIZE}m"
 }
 
