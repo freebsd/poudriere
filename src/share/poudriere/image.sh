@@ -2,7 +2,8 @@
 #
 # Copyright (c) 2015 Baptiste Daroussin <bapt@FreeBSD.org>
 # All rights reserved.
-# Copyright (c) 2020 Allan Jude <allanjude@FreeBSD.org>
+# Copyright (c) 2018-2021 Allan Jude <allanjude@FreeBSD.org>
+# Copyright (c) 2019 Marie Helene Kvello-Aune <freebsd@mhka.no>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -50,12 +51,13 @@ Parameters:
     -o outputdir    -- Image destination directory
     -p portstree    -- Ports tree
     -P pkgbase      -- List of pkgbase packages to install
+    -R flags        -- ZFS Replication Flags
     -s size         -- Set the image size
     -S snapshotname -- Snapshot name
     -t type         -- Type of image can be one of (default iso+zmfs):
                     -- iso, iso+mfs, iso+zmfs, usb, usb+mfs, usb+zmfs,
                        rawdisk, zrawdisk, tar, firmware, rawfirmware,
-                       dump, zsnapshot
+                       dump, zfssend[+be[+full]], zsnapshot
     -w size         -- Set the size of the swap partition
     -X excludefile  -- File containing the list in cpdup format
     -z set          -- Set
@@ -190,15 +192,28 @@ make_esp_file() {
     rm -rf "${stagedir}"
 }
 
+zfssend_writereplicationstream() {
+	# Arguments:
+	# $1: snapshot to recursively replicate
+	# $2: Image name to write replication stream to
+	[ $# -eq 2 ] || eargs zfssend_writereplicationstream snapshot_from image_to
+	msg "Creating replication stream"
+	zfs send ${ZFS_SEND_FLAGS} "$1" > "${OUTPUTDIR}/$2" ||
+	    err 1 "Failed to save ZFS replication stream"
+}
+
 . ${SCRIPTPREFIX}/common.sh
-HOSTNAME=poudriere-image
 
 : ${PRE_BUILD_SCRIPT:=""}
 : ${POST_BUILD_SCRIPT:=""}
 
-while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:s:S:t:w:X:z:" FLAG; do
+while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:R:s:S:t:w:X:z:" FLAG; do
 	case "${FLAG}" in
 		A)
+			# If this is a relative path, add in ${PWD} as
+			# a cd / was done.
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			[ -f "${OPTARG}" ] || err 1 "No such post-build-script: ${OPTARG}"
 			POST_BUILD_SCRIPT="$(realpath ${OPTARG})"
 			;;
@@ -206,6 +221,8 @@ while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:s:S:t:w:X:z:" FLAG; do
 			SWAPBEFORE=1
 			;;
 		B)
+			# If this is a relative path, add in ${PWD} as
+			# a cd / was done.
 			[ "${OPTARG#/}" = "${OPTARG}" ] && \
 			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			[ -f "${OPTARG}" ] || err 1 "No such pre-build-script: ${OPTARG}"
@@ -261,6 +278,9 @@ while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:s:S:t:w:X:z:" FLAG; do
 			[ -r "${OPTARG}" ] || err 1 "No such package list: ${OPTARG}"
 			PKGBASELIST=${OPTARG}
 			;;
+		R)
+			ZFS_SEND_FLAGS="-${OPTARG}"
+			;;
 		s)
 			IMAGESIZE="${OPTARG}"
 			;;
@@ -272,7 +292,7 @@ while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:s:S:t:w:X:z:" FLAG; do
 			case ${MEDIATYPE} in
 			iso|iso+mfs|iso+zmfs|usb|usb+mfs|usb+zmfs) ;;
 			rawdisk|zrawdisk|tar|firmware|rawfirmware) ;;
-			dump|zsnapshot) ;;
+			dump|zfssend|zfssend+*|zsnapshot) ;;
 			*) err 1 "invalid mediatype: ${MEDIATYPE}"
 			esac
 			;;
@@ -302,6 +322,9 @@ post_getopts
 : ${SWAPBEFORE:=0}
 : ${SWAPSIZE:=0}
 : ${PTNAME:=default}
+: ${ZFS_SEND_FLAGS:=-Rec}
+: ${ZFS_BEROOT_NAME:=ROOT}
+: ${ZFS_BOOTFS_NAME:=default}
 
 [ -n "${JAILNAME}" ] || usage
 
@@ -338,7 +361,7 @@ jail_exists ${JAILNAME} || err 1 "The jail ${JAILNAME} does not exist"
 _jget arch ${JAILNAME} arch || err 1 "Missing arch metadata for jail"
 get_host_arch host_arch
 case "${MEDIATYPE}" in
-usb|*firmware|*rawdisk|dump)
+usb|*firmware|*rawdisk|dump|zfssend*)
 	[ -n "${IMAGESIZE}" ] || err 1 "Please specify the imagesize"
 	_jget mnt ${JAILNAME} mnt || err 1 "Missing mnt metadata for jail"
 	[ -f "${mnt}/boot/kernel/kernel" ] || \
@@ -507,11 +530,17 @@ zsnapshot)
 		PREVIOUS_SNAPSHOT_VERSION=$(cat ${WRKDIR}/mnt/.version)
 	fi
 	;;
+zfssend*)
+	md=
+	zroot=
+	. ${SCRIPTPREFIX}/zfs_pre_build.sh
+	;;
 skip)
 	MEDIATYPE="${REAL_MEDIATYPE}"
 	;;
 esac
 
+: ${HOSTNAME:=$(sysrc -n -q -R "${WRKDIR}/world" hostname || echo "poudriere-image")}
 
 if [ -f "${PKGBASELIST}" ]; then
 	OSVERSION=$(awk -F '"' '/REVISION=/ { print $2 }' ${mnt}/usr/src/sys/conf/newvers.sh | cut -d '.' -f 1)
@@ -548,7 +577,7 @@ cap_mkdb ${WRKDIR}/world/etc/login.conf
 
 # Set hostname
 if [ -n "${HOSTNAME}" ]; then
-	echo "hostname=${HOSTNAME}" >> ${WRKDIR}/world/etc/rc.conf
+	sysrc -q -R "${WRKDIR}/world" hostname="${HOSTNAME}"
 fi
 
 # Convert @flavor from package list to a unique entry of pkgname, otherwise it
@@ -750,6 +779,11 @@ tar)
 		mkminiroot
 	fi
 	;;
+zfssend*)
+	cat >> ${WRKDIR}/world/boot/loader.conf <<-EOF
+	zfs_load="YES"
+	EOF
+	;;
 zsnapshot)
 	do_clone -r ${WRKDIR}/world ${WRKDIR}/mnt
 	;;
@@ -927,6 +961,33 @@ zsnapshot)
 	mv ${WRKDIR}/manifest.json "${OUTPUTDIR}/${FINALIMAGE}-${SNAPSHOT_NAME}.manifest.json"
 	ln -s ${FINALIMAGE}-${SNAPSHOT_NAME}.manifest.json ${WRKDIR}/${FINALIMAGE}-latest.manifest.json
 	mv ${WRKDIR}/${FINALIMAGE}-latest.manifest.json "${OUTPUTDIR}/${FINALIMAGE}-latest.manifest.json"
+	;;
+zfssend*)
+	FINALIMAGE=${IMAGENAME}.*.zfs
+	. ${SCRIPTPREFIX}/zfs_post_build.sh
+	SNAPSPEC="${zroot}@${IMAGENAME}"
+
+	msg "Creating snapshot(s) for replication"
+	zfs snapshot -r $SNAPSPEC
+	## Call function to export replication stream here.
+	## Test if we should create +full or +be, but in a way
+	## which lets us perform both.
+	case "${MEDIATYPE}" in
+	zfssend|*+full*)
+		zfssend_writereplicationstream "${SNAPSPEC}" "${IMAGENAME}.full.zfs"
+	;;
+	esac
+	case "${MEDIATYPE}" in
+	*+be*)
+		SNAPSPEC="${zroot}/${ZFS_BEROOT_NAME}/${ZFS_BOOTFS_NAME}@${IMAGENAME}"
+		zfssend_writereplicationstream "${SNAPSPEC}" "${IMAGENAME}.be.zfs"
+	;;
+	esac
+
+	zpool export ${zroot}
+	zroot=
+	/sbin/mdconfig -d -u ${md#md}
+	md=
 	;;
 esac
 
