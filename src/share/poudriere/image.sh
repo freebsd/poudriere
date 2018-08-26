@@ -54,6 +54,7 @@ EOF
 delete_image() {
 	[ ! -f "${excludelist}" ] || rm -f ${excludelist}
 	[ -z "${zroot}" ] || zpool destroy -f ${zroot}
+	[ -z "${md}" ] || /sbin/mdconfig -d -u ${md#md}
 
 	destroyfs ${WRKDIR} image
 }
