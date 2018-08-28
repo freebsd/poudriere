@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 8, 2018
+.Dd June 19, 2018
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -400,9 +400,7 @@ Any of the following are allowed and will all be used in the order shown:
 .Dl Pa /usr/local/etc/poudriere.d/<jailname>-<tree>-make.conf
 .Dl Pa /usr/local/etc/poudriere.d/<jailname>-<setname>-make.conf
 .Dl Pa /usr/local/etc/poudriere.d/<jailname>-<tree>-<setname>-make.conf
-The
-.Pa /usr/local/etc/poudriere.d/hooks/plugins/<plugin>/
-directory may contain any of the above patterns as well.
+.Dl Pa /usr/local/etc/poudriere.d/hooks/plugins/<plugin>/make.conf
 .Ss Create optional src.conf
 You can also specify a global src.conf which will be used for building
 jails with the
