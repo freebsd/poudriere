@@ -213,7 +213,7 @@ jail_exists ${JAILNAME} || err 1 "The jail ${JAILNAME} does not exist"
 _jget arch ${JAILNAME} arch
 get_host_arch host_arch
 case "${MEDIATYPE}" in
-usb|*firmware|rawdisk|embedded)
+usb|*firmware|*rawdisk|embedded)
 	[ -n "${IMAGESIZE}" ] || err 1 "Please specify the imagesize"
 	_jget mnt ${JAILNAME} mnt
 	test -f ${mnt}/boot/kernel/kernel || err 1 "The ${MEDIATYPE} media type requires a jail with a kernel"
