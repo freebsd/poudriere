@@ -460,6 +460,7 @@ usb)
 	;;
 zrawdisk)
 	cat >> ${WRKDIR}/world/boot/loader.conf <<-EOF
+	zfs_load="YES"
 	vfs.root.mountfrom="zfs:${zroot}/ROOT/default"
 	EOF
 	;;
