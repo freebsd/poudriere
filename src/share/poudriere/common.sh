@@ -1365,6 +1365,7 @@ get_data_dir() {
 			${ZPOOL}${ZROOTFS}/data
 		zfs create ${ZPOOL}${ZROOTFS}/data/.m
 		zfs create -o compression=off ${ZPOOL}${ZROOTFS}/data/cache
+		zfs create -o compression=on ${ZPOOL}${ZROOTFS}/data/images
 		zfs create -o compression=lz4 ${ZPOOL}${ZROOTFS}/data/logs
 		zfs create -o compression=off ${ZPOOL}${ZROOTFS}/data/packages
 		zfs create -o compression=off ${ZPOOL}${ZROOTFS}/data/wrkdirs
