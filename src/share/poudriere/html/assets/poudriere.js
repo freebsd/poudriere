@@ -101,9 +101,9 @@ function format_origin(origin, flavor) {
 		flavor = '';
 	}
 
-	return "<a target=\"_new\" title=\"portsmon for " + origin +
-		"\" href=\"http://portsmon.freebsd.org/portoverview.py?category=" +
-		data[0] + "&amp;portname=" + data[1] + "\"><span " +
+	return "<a target=\"_new\" title=\"freshports for " + origin +
+		"\" href=\"https://www.freshports.org/" +
+		data[0] + "/" + data[1] + "/\"><span " +
 		"class=\"glyphicon glyphicon-tasks\"></span>"+ origin + flavor +
 		"</a>";
 }
