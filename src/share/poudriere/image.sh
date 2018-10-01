@@ -44,7 +44,7 @@ Parameters:
     -t type         -- Type of image can be one of (default iso+zmfs):
                     -- iso, iso+mfs, iso+zmfs, usb, usb+mfs, usb+zmfs,
                        rawdisk, zrawdisk, tar, firmware, rawfirmware,
-                       embedded
+                       embedded, dump
     -X excludefile  -- File containing the list in cpdup format
     -z set          -- Set
 EOF
@@ -157,7 +157,7 @@ while getopts "c:f:h:j:m:n:o:p:s:t:X:z:" FLAG; do
 			case ${MEDIATYPE} in
 			iso|iso+mfs|iso+zmfs|usb|usb+mfs|usb+zmfs) ;;
 			rawdisk|zrawdisk|tar|firmware|rawfirmware) ;;
-			embedded) ;;
+			embedded|dump) ;;
 			*) err 1 "invalid mediatype: ${MEDIATYPE}"
 			esac
 			;;
@@ -214,7 +214,7 @@ jail_exists ${JAILNAME} || err 1 "The jail ${JAILNAME} does not exist"
 _jget arch ${JAILNAME} arch
 get_host_arch host_arch
 case "${MEDIATYPE}" in
-usb|*firmware|*rawdisk|embedded)
+usb|*firmware|*rawdisk|embedded|dump)
 	[ -n "${IMAGESIZE}" ] || err 1 "Please specify the imagesize"
 	_jget mnt ${JAILNAME} mnt
 	test -f ${mnt}/boot/kernel/kernel || err 1 "The ${MEDIATYPE} media type requires a jail with a kernel"
@@ -291,7 +291,7 @@ embedded)
 	mkdir -p ${WRKDIR}/world/boot/msdos
 	mount_msdosfs /dev/${md}s1 /${WRKDIR}/world/boot/msdos
 	;;
-rawdisk)
+rawdisk|dump)
 	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
 	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
 	newfs -j -L ${IMAGENAME} /dev/${md}
@@ -408,7 +408,7 @@ iso)
 	EOF
 	cpdup -i0 ${WRKDIR}/world/boot ${WRKDIR}/out/boot
 	;;
-rawdisk)
+rawdisk|dump)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
 	/dev/ufs/${IMAGENAME} / ufs rw 1 1
 	EOF
@@ -563,6 +563,14 @@ rawdisk)
 	/sbin/mdconfig -d -u ${md#md}
 	md=
 	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
+	;;
+dump)
+	FINALIMAGE=${IMAGENAME}.dump
+	umount ${WRKDIR}/world
+	dump -0Raf ${WRKDIR}/raw.dump /dev/${md}
+	/sbin/mdconfig -d -u ${md#md}
+	md=
+	mv ${WRKDIR}/raw.dump ${OUTPUTDIR}/${FINALIMAGE}
 	;;
 embedded)
 	FINALIMAGE=${IMAGENAME}.img
