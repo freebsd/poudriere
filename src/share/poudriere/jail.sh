@@ -58,7 +58,7 @@ Options:
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
                        allbsd, ftp-archive, ftp, git, http, null, src=PATH, svn,
-                       svn+file, svn+http, svn+https, svn+ssh, tar=PATH
+                       svn+file, svn+http, svn+https, svn+ssh, tar=PATH, trueos,
                        url=SOMEURL.
     -P patch      -- Specify a patch to apply to the source before building.
     -S srcpath    -- Specify a path to the source tree to be used.
@@ -340,7 +340,7 @@ update_jail() {
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
-	allbsd|gjb|url=*)
+	allbsd|gjb|trueos|url=*)
 		[ -z "${VERSION}" ] && VERSION=$(jget ${JAILNAME} version)
 		[ -z "${ARCH}" ] && ARCH=$(jget ${JAILNAME} arch)
 		delete_jail
@@ -655,6 +655,7 @@ install_from_ftp() {
 			;;
 		url=*) URL=${METHOD##url=} ;;
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
+		trueos) URL="https://pkg.trueos.org/iso/snapshot/" ;;
 		ftp-archive) URL="http://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
 		esac
 		DISTS="${DISTS} dict"
@@ -717,6 +718,7 @@ install_from_ftp() {
 				esac
 				;;
 			allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
+			trueos) URL="https://pkg.trueos.org/iso/snapshot/" ;;
 			ftp-archive) URL="http://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH%%.*}/${ARCH##*.}/${V}" ;;
 			url=*) URL=${METHOD##url=} ;;
 		esac
@@ -820,6 +822,17 @@ create_jail() {
 		IFS=${OIFS}
 		RELEASE="${ALLBSDVER}-JPSNAP/ftp"
 		;;
+	trueos)
+	        FCT=install_from_ftp
+                TRUEOSVER=`fetch -qo - \
+                        https://pkg.trueos.org/iso/snapshot`
+                        [ -z ${TRUEOSVER} ] && err 1 "Unknown version $VERSION"
+
+                OIFS=${IFS}
+                IFS=-
+                set -- ${TRUEOSVER}
+                IFS=${OIFS}
+                ;;
 	svn*)
 		test -x "${SVN_CMD}" || err 1 "svn or svnlite not installed. Perhaps you need to 'pkg install subversion'"
 		case ${VERSION} in
