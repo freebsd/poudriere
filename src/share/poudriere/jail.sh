@@ -655,7 +655,7 @@ install_from_ftp() {
 			;;
 		url=*) URL=${METHOD##url=} ;;
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
-		trueos) URL="https://pkg.trueos.org/iso/snapshot/" ;;
+		trueos) URL="https://pkg.trueos.org/iso/snapshot/dist/" ;;
 		ftp-archive) URL="http://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
 		esac
 		DISTS="${DISTS} dict"
@@ -825,7 +825,7 @@ create_jail() {
 	trueos)
 	        FCT=install_from_ftp
                 TRUEOSVER=`fetch -qo - \
-                        https://pkg.trueos.org/iso/snapshot`
+                        https://pkg.trueos.org/iso/snapshot/dist`
                         [ -z ${TRUEOSVER} ] && err 1 "Unknown version $VERSION"
 
                 OIFS=${IFS}
