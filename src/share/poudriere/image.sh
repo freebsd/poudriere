@@ -34,6 +34,7 @@ Parameters:
                        the image
     -f packagelist  -- List of packages to install
     -h hostname     -- The image hostname
+    -i originimage  -- Origin image name
     -j jail         -- Jail
     -m overlaydir   -- Build a miniroot image as well (for tar type images), and
                        overlay this directory into the miniroot image
@@ -41,10 +42,11 @@ Parameters:
     -o outputdir    -- Image destination directory
     -p portstree    -- Ports tree
     -s size         -- Set the image size
+    -S snapshotname -- Snapshot name
     -t type         -- Type of image can be one of (default iso+zmfs):
                     -- iso, iso+mfs, iso+zmfs, usb, usb+mfs, usb+zmfs,
                        rawdisk, zrawdisk, tar, firmware, rawfirmware,
-                       embedded, dump
+                       embedded, dump, zsnapshot
     -X excludefile  -- File containing the list in cpdup format
     -z set          -- Set
 EOF
@@ -55,6 +57,7 @@ delete_image() {
 	[ ! -f "${excludelist}" ] || rm -f ${excludelist}
 	[ -z "${zroot}" ] || zpool destroy -f ${zroot}
 	[ -z "${md}" ] || /sbin/mdconfig -d -u ${md#md}
+	[ -z "${zfs_zsnapshot}" ] || zfs destroy -r ${zfs_zsnapshot}
 
 	destroyfs ${WRKDIR} image
 }
@@ -112,7 +115,7 @@ mkminiroot() {
 . ${SCRIPTPREFIX}/common.sh
 HOSTNAME=poudriere-image
 
-while getopts "c:f:h:j:m:n:o:p:s:t:X:z:" FLAG; do
+while getopts "c:f:h:i:j:m:n:o:p:s:S:t:X:z:" FLAG; do
 	case "${FLAG}" in
 		c)
 			[ -d "${OPTARG}" ] || err 1 "No such extract directory: ${OPTARG}"
@@ -128,6 +131,9 @@ while getopts "c:f:h:j:m:n:o:p:s:t:X:z:" FLAG; do
 			;;
 		h)
 			HOSTNAME=${OPTARG}
+			;;
+		i)
+			ORIGIN_IMAGE=${OPTARG}
 			;;
 		j)
 			JAILNAME=${OPTARG}
@@ -152,12 +158,15 @@ while getopts "c:f:h:j:m:n:o:p:s:t:X:z:" FLAG; do
 		s)
 			IMAGESIZE="${OPTARG}"
 			;;
+		S)
+			SNAPSHOT_NAME="${OPTARG}"
+			;;
 		t)
 			MEDIATYPE=${OPTARG}
 			case ${MEDIATYPE} in
 			iso|iso+mfs|iso+zmfs|usb|usb+mfs|usb+zmfs) ;;
 			rawdisk|zrawdisk|tar|firmware|rawfirmware) ;;
-			embedded|dump) ;;
+			embedded|dump|zsnapshot) ;;
 			*) err 1 "invalid mediatype: ${MEDIATYPE}"
 			esac
 			;;
@@ -203,6 +212,10 @@ case "${MEDIATYPE}" in
 		;;
 	esac
 	;;
+zsnapshot)
+	[ ! -z "${SNAPSHOT_NAME}" ] || \
+		err 1 "zsnapshot type requires a snapshot name (-S option)"
+	;;
 none)
 	err 1 "Missing -t option"
 	;;
@@ -247,7 +260,7 @@ EOF
 # This conversion is needed to be compliant with marketing 'unit'
 # without this, a 2GiB image will not fit into a 2GB flash disk (=1862MiB)
 
-IMAGESIZE_UNIT=$(printf ${IMAGESIZE} | tail -c 1)
+IMAGESIZE_UNIT=$(printf "${IMAGESIZE}" | tail -c 1)
 IMAGESIZE_VALUE=${IMAGESIZE%?}
 NEW_IMAGESIZE_UNIT=""
 NEW_IMAGESIZE_SIZE=""
@@ -272,8 +285,10 @@ case "${IMAGESIZE_UNIT}" in
                 NEW_IMAGESIZE_SIZE=${IMAGESIZE}
 esac
 # truncate accept only integer value, and bc needs a divide per 1 for refreshing scale
-[ -z "${NEW_IMAGESIZE_SIZE}" ] && NEW_IMAGESIZE_SIZE=$(echo "scale=9;var=${IMAGESIZE_VALUE} / ${DIVIDER}; scale=0; ( var * 1000 ) /1" | bc)
-IMAGESIZE="${NEW_IMAGESIZE_SIZE}${NEW_IMAGESIZE_UNIT}"
+if [ ! -z "${IMAGESIZE}" ]; then
+        [ -z "${NEW_IMAGESIZE_SIZE}" ] && NEW_IMAGESIZE_SIZE=$(echo "scale=9;var=${IMAGESIZE_VALUE} / ${DIVIDER}; scale=0; ( var * 1000 ) /1" | bc)
+        IMAGESIZE="${NEW_IMAGESIZE_SIZE}${NEW_IMAGESIZE_UNIT}"
+fi
 
 case "${MEDIATYPE}" in
 embedded)
@@ -333,6 +348,29 @@ zrawdisk)
 		-o exec=off -o setuid=off \
 		${zroot}/var/cache
 	zfs create -o mountpoint=/var/empty ${zroot}/var/empty
+	;;
+zsnapshot)
+	zfs list ${ZPOOL}${ZROOTFS}/images >/dev/null 2>/dev/null || \
+		zfs create -o compression=lz4 ${ZPOOL}${ZROOTFS}/images
+	zfs list ${ZPOOL}${ZROOTFS}/images/work >/dev/null 2>/dev/null || \
+		zfs create ${ZPOOL}${ZROOTFS}/images/work
+	mkdir -p ${WRKDIR}/mnt
+	if [ ! -z "${ORIGIN_IMAGE}" ]; then
+		gzip -d < "${ORIGIN_IMAGE}" | \
+			zfs recv ${ZPOOL}${ZROOTFS}/images/work/${JAILNAME}@previous
+		zfs unmount ${ZPOOL}${ZROOTFS}/images/work/${JAILNAME}
+	else
+		zfs create ${ZPOOL}${ZROOTFS}/images/work/${JAILNAME}
+		zfs unmount ${ZPOOL}${ZROOTFS}/images/work/${JAILNAME}
+	fi
+	zfs_zsnapshot=${ZPOOL}${ZROOTFS}/images/work/${JAILNAME}
+	zfs set mountpoint=${WRKDIR}/mnt \
+	       	${ZPOOL}${ZROOTFS}/images/work/${JAILNAME}
+	zfs mount \
+	       	${ZPOOL}${ZROOTFS}/images/work/${JAILNAME}
+	if [ ! -z "${ORIGIN_IMAGE}" -a -f ${WRKDIR}/mnt/.version ]; then
+		PREVIOUS_SNAPSHOT_VERSION=$(cat ${WRKDIR}/mnt/.version)
+	fi
 	;;
 esac
 
@@ -503,6 +541,9 @@ tar)
 		mkminiroot
 	fi
 	;;
+zsnapshot)
+	cpdup -i0 ${WRKDIR}/world ${WRKDIR}/mnt
+	;;
 esac
 
 case ${MEDIATYPE} in
@@ -594,6 +635,49 @@ zrawdisk)
 	/sbin/mdconfig -d -u ${md#md}
 	md=
 	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
+	;;
+zsnapshot)
+	FINALIMAGE=${IMAGENAME}
+
+	rm -f ${WRKDIR}/mnt/.version
+	echo ${SNAPSHOT_NAME} > ${WRKDIR}/mnt/.version
+	chmod 400 ${WRKDIR}/mnt/.version
+
+	if [ ! -z "${ORIGIN_IMAGE}" ]; then
+		zfs diff \
+       			${ZPOOL}${ZROOTFS}/images/work/${JAILNAME}@previous \
+			${ZPOOL}${ZROOTFS}/images/work/${JAILNAME} > ${WRKDIR}/modified.files
+	fi
+
+	zfs umount ${ZPOOL}${ZROOTFS}/images/work/${JAILNAME}
+	zfs set mountpoint=none \
+       		${ZPOOL}${ZROOTFS}/images/work/${JAILNAME}
+	zfs snapshot ${ZPOOL}${ZROOTFS}/images/work/${JAILNAME}@${SNAPSHOT_NAME}
+	zfs send ${ZPOOL}${ZROOTFS}/images/work/${JAILNAME}@${SNAPSHOT_NAME} > ${WRKDIR}/raw.img
+	FULL_HASH=$(sha512 -q ${WRKDIR}/raw.img)
+	# snapshot have some sparse regions, gzip is here to avoid them
+	gzip -1 ${WRKDIR}/raw.img
+
+	if [ ! -z "${ORIGIN_IMAGE}" ]; then
+		zfs send -i previous ${ZPOOL}${ZROOTFS}/images/work/${JAILNAME}@${SNAPSHOT_NAME} > ${WRKDIR}/incr.img
+		INCR_HASH=$(sha512 -q ${WRKDIR}/incr.img)
+		gzip -1 ${WRKDIR}/incr.img
+	fi
+
+	if [ ! -z "${ORIGIN_IMAGE}" ]; then
+		echo "{\"full\":{\"filename\":\"${FINALIMAGE}-${SNAPSHOT_NAME}.full.img.gz\", \"sha512\": \"${FULL_HASH}\"},\"incr\":{\"filename\":\"${FINALIMAGE}-${SNAPSHOT_NAME}.incr.img.gz\", \"sha512\": \"${INCR_HASH}\", \"previous\":\"${PREVIOUS_SNAPSHOT_VERSION}\", \"changed\":\"${FINALIMAGE}-${SNAPSHOT_NAME}.modified.files\"}, \"version\":\"${SNAPSHOT_NAME}\",\"name\":\"${FINALIMAGE}\"}" > ${WRKDIR}/manifest.json
+	else
+		echo "{\"full\":{\"filename\":\"${FINALIMAGE}-${SNAPSHOT_NAME}.full.img.gz\", \"sha512\": \"${FULL_HASH}\"}, \"version\":\"${SNAPSHOT_NAME}\",\"name\":\"${FINALIMAGE}\"}" > ${WRKDIR}/manifest.json
+	fi
+
+	if [ ! -z "${ORIGIN_IMAGE}" ]; then
+		mv ${WRKDIR}/incr.img.gz ${OUTPUTDIR}/${FINALIMAGE}-${SNAPSHOT_NAME}.incr.img.gz
+		mv ${WRKDIR}/modified.files ${OUTPUTDIR}/${FINALIMAGE}-${SNAPSHOT_NAME}.modified.files
+	fi
+	mv ${WRKDIR}/raw.img.gz ${OUTPUTDIR}/${FINALIMAGE}-${SNAPSHOT_NAME}.full.img.gz
+	mv ${WRKDIR}/manifest.json ${OUTPUTDIR}/${FINALIMAGE}-${SNAPSHOT_NAME}.manifest.json
+	ln -s ${FINALIMAGE}-${SNAPSHOT_NAME}.manifest.json ${WRKDIR}/${FINALIMAGE}-latest.manifest.json
+	mv ${WRKDIR}/${FINALIMAGE}-latest.manifest.json ${OUTPUTDIR}/${FINALIMAGE}-latest.manifest.json
 	;;
 esac
 
