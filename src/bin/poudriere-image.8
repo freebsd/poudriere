@@ -54,6 +54,8 @@ This specifies a list of packages to be pre-installed in the final image.
 This specifies the hostname used for the image.
 Defaults to
 .Ar poudriere-image .
+.It Fl i Ar originimage
+Path to a previously built full.img.gz.
 .It Fl j Ar name
 This argument specifies the name of the jail that is used.
 .It Fl m Ar overlaydir
@@ -67,6 +69,8 @@ This argument specifies directory where the resulting image will be created.
 This argument specifies the name of the ports tree that is used.
 .It Fl s Ar size
 This specifies the maximum size of the image that is built.
+.It Fl S Ar snapshotname
+Name of the snapshot for zsnapshot type.
 .It Fl t Ar type
 This specifies the type of image to create:
 .Bl -tag -width "rawfirmware"
@@ -97,6 +101,8 @@ A NanoBSD style image with a GPT partitions and a UEFI boot loader.
 A raw disk image.
 .It embedded
 Create a u-boot ready embedded image.
+.It zsnapshot
+Create a zfs snapshot full and incremental to be used in a jail.
 .El
 .It Fl X Ar excludefile
 This specifies a list of files to exclude from the final image.
