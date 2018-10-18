@@ -582,7 +582,9 @@ install_from_vcs() {
 			echo " done"
 			;;
 		git*)
-			${GIT_CMD} -C ${SRC_BASE} pull --rebase -q || err 1 " fail"
+			${GIT_CMD} -C ${SRC_BASE} fetch -q || err 1 " fail"
+			${GIT_CMD} -C ${SRC_BASE} reset --hard origin/${VERSION} -q || err 1 " fail"
+			${GIT_CMD} -C ${SRC_BASE} clean -x -d -f -q || err 1 " fail"
 			if [ -n "${TORELEASE}" ]; then
 				${GIT_CMD} checkout -q "${TORELEASE}" || err 1 " fail"
 			fi

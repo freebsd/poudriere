@@ -385,7 +385,9 @@ if [ ${UPDATE} -eq 1 ]; then
 	git*)
 		msg_n "Updating portstree \"${PTNAME}\" with ${METHOD}..."
 		[ ${VERBOSE} -gt 0 ] || quiet="-q"
-		${GIT_CMD} -C ${PORTSMNT:-${PTMNT}} pull --rebase ${quiet}
+		${GIT_CMD} -C ${PORTSMNT:-${PTMNT}} fetch ${quiet}
+		${GIT_CMD} -C ${PORTSMNT:-${PTMNT}} reset --hard origin/${BRANCH} ${quiet}
+		${GIT_CMD} -C ${PORTSMNT:-${PTMNT}} clean -x -d -f ${quiet}
 		echo " done"
 		;;
 	null|none) msg "Not updating portstree \"${PTNAME}\" with method ${METHOD}" ;;
