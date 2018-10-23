@@ -44,7 +44,7 @@ static char sccsid[] = "@(#)main.c	8.6 (Berkeley) 5/28/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/main.c 326025 2017-11-20 19:49:47Z pfg $");
+__FBSDID("$FreeBSD: head/bin/sh/main.c 336320 2018-07-15 21:55:17Z jilles $");
 
 #include <stdio.h>
 #include <signal.h>
@@ -294,6 +294,7 @@ static char *
 find_dot_file(char *basename)
 {
 	char *fullname;
+	const char *opt;
 	const char *path = pathval();
 	struct stat statb;
 
@@ -301,7 +302,7 @@ find_dot_file(char *basename)
 	if( strchr(basename, '/'))
 		return basename;
 
-	while ((fullname = padvance(&path, basename)) != NULL) {
+	while ((fullname = padvance(&path, &opt, basename)) != NULL) {
 		if ((stat(fullname, &statb) == 0) && S_ISREG(statb.st_mode)) {
 			/*
 			 * Don't bother freeing here, since it will

@@ -32,9 +32,9 @@
 # SUCH DAMAGE.
 #
 #	@(#)mkbuiltins	8.2 (Berkeley) 5/4/95
-# $FreeBSD: head/bin/sh/mkbuiltins 319576 2017-06-04 21:02:48Z bdrewery $
+# $FreeBSD: head/bin/sh/mkbuiltins 328934 2018-02-06 15:41:35Z arichardson $
 
-temp=`/usr/bin/mktemp -t ka`
+temp=`mktemp -t ka`
 havehist=1
 if [ "X$1" = "X-h" ]; then
 	havehist=0
