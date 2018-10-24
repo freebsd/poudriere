@@ -7028,7 +7028,8 @@ prepare_ports() {
 			rm -rf ${PACKAGES}/* ${cache_dir}
 			echo " done"
 		elif [ ${CLEAN} -eq 1 ]; then
-			if [ "${ATOMIC_PACKAGE_REPOSITORY}" != "yes" ]; then
+			if [ "${ATOMIC_PACKAGE_REPOSITORY}" != "yes" ] && \
+			    package_dir_exists_and_has_packages; then
 				confirm_if_tty "Are you sure you want to clean all packages?" || \
 				    err 1 "Not cleaning all packages"
 			fi
@@ -7052,7 +7053,8 @@ prepare_ports() {
 			done
 			check_dep_fatal_error && \
 			    err 1 "Error processing -C packages"
-			if [ "${ATOMIC_PACKAGE_REPOSITORY}" != "yes" ]; then
+			if [ "${ATOMIC_PACKAGE_REPOSITORY}" != "yes" ] && \
+			    [ -s "${delete_pkg_list}" ]; then
 				confirm_if_tty "Are you sure you want to delete the listed packages?" || \
 				    err 1 "Not cleaning packages"
 			fi
