@@ -1854,7 +1854,7 @@ stash_packages() {
 		# If the .building directory is still around, use it. The
 		# previous build may have failed, but all of the successful
 		# packages are still worth keeping for this build.
-		msg "Using packages from previously failed build"
+		msg "Using packages from previously failed build: ${PACKAGES}/.building"
 	else
 		msg "Stashing existing package repository"
 
@@ -1893,7 +1893,8 @@ commit_packages() {
 		return 0
 	fi
 
-	msg "Committing packages to repository"
+	pkgdir_new=.real_$(clock -epoch)
+	msg "Committing packages to repository: ${PACKAGES_ROOT}/${pkgdir_new} via .latest symlink"
 	bset status "committing:"
 
 	# Find any new top-level files not symlinked yet. This is
@@ -1924,7 +1925,6 @@ symlink to .latest/${name}"
 	pkgdir_old=$(realpath ${PACKAGES_ROOT}/.latest 2>/dev/null || :)
 
 	# Rename shadow dir to a production name
-	pkgdir_new=.real_$(clock -epoch)
 	mv ${PACKAGES_ROOT}/.building ${PACKAGES_ROOT}/${pkgdir_new}
 
 	# XXX: Copy in packages that failed to build
