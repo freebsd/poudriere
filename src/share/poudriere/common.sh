@@ -7028,8 +7028,10 @@ prepare_ports() {
 			rm -rf ${PACKAGES}/* ${cache_dir}
 			echo " done"
 		elif [ ${CLEAN} -eq 1 ]; then
-			confirm_if_tty "Are you sure you want to clean all packages?" || \
-			    err 1 "Not cleaning all packages"
+			if [ "${ATOMIC_PACKAGE_REPOSITORY}" != "yes" ]; then
+				confirm_if_tty "Are you sure you want to clean all packages?" || \
+				    err 1 "Not cleaning all packages"
+			fi
 			msg_n "(-c) Cleaning all packages..."
 			rm -rf ${PACKAGES}/* ${cache_dir}
 			echo " done"
@@ -7050,8 +7052,10 @@ prepare_ports() {
 			done
 			check_dep_fatal_error && \
 			    err 1 "Error processing -C packages"
-			confirm_if_tty "Are you sure you want to delete the listed packages?" || \
-			    err 1 "Not cleaning packages"
+			if [ "${ATOMIC_PACKAGE_REPOSITORY}" != "yes" ]; then
+				confirm_if_tty "Are you sure you want to delete the listed packages?" || \
+				    err 1 "Not cleaning packages"
+			fi
 			msg "(-C) Flushing package deletions"
 			cat "${delete_pkg_list}" | tr '\n' '\000' | \
 			    xargs -0 rm -rf
