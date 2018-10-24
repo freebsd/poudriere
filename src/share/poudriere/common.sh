@@ -7043,13 +7043,15 @@ prepare_ports() {
 			    pkgname; do
 				pkg="${PACKAGES}/All/${pkgname}.${PKG_EXT}"
 				if [ -f "${pkg}" ]; then
-					msg "(-C) Deleting existing package: ${pkg##*/}"
+					msg "(-C) Will delete existing package: ${pkg##*/}"
 					delete_pkg_xargs "${delete_pkg_list}" \
 					    "${pkg}"
 				fi
 			done
 			check_dep_fatal_error && \
 			    err 1 "Error processing -C packages"
+			confirm_if_tty "Are you sure you want to delete the listed packages?" || \
+			    err 1 "Not cleaning packages"
 			msg "(-C) Flushing package deletions"
 			cat "${delete_pkg_list}" | tr '\n' '\000' | \
 			    xargs -0 rm -rf
