@@ -44,7 +44,7 @@ static char sccsid[] = "@(#)main.c	8.6 (Berkeley) 5/28/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/main.c 336320 2018-07-15 21:55:17Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/main.c 340284 2018-11-09 14:58:24Z jilles $");
 
 #include <stdio.h>
 #include <signal.h>
@@ -105,19 +105,6 @@ main(int argc, char *argv[])
 	initcharset();
 	state = 0;
 	if (setjmp(main_handler.loc)) {
-		switch (exception) {
-		case EXEXEC:
-			exitstatus = exerrno;
-			break;
-
-		case EXERROR:
-			exitstatus = 2;
-			break;
-
-		default:
-			break;
-		}
-
 		if (state == 0 || iflag == 0 || ! rootshell ||
 		    exception == EXEXIT)
 			exitshell(exitstatus);

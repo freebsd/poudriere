@@ -30,7 +30,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)exec.h	8.3 (Berkeley) 6/8/95
- * $FreeBSD: head/bin/sh/exec.h 336320 2018-07-15 21:55:17Z jilles $
+ * $FreeBSD: head/bin/sh/exec.h 339822 2018-10-27 20:17:57Z jilles $
  */
 
 /* values of cmdtype */
@@ -60,8 +60,6 @@ struct cmdentry {
 /* action to find_command() */
 #define DO_ERR		0x01	/* prints errors */
 #define DO_NOFUNC	0x02	/* don't return shell functions, for command */
-
-extern int exerrno;		/* last exec error */
 
 void shellexec(char **, char **, const char *, int) __dead2;
 char *padvance(const char **, const char **, const char *);

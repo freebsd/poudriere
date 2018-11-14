@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)jobs.c	8.5 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/jobs.c 328818 2018-02-02 22:53:58Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/jobs.c 340284 2018-11-09 14:58:24Z jilles $");
 
 #include <sys/ioctl.h>
 #include <sys/param.h>
@@ -73,6 +73,7 @@ __FBSDID("$FreeBSD: head/bin/sh/jobs.c 328818 2018-02-02 22:53:58Z jilles $");
 #include "mystring.h"
 #include "var.h"
 #include "builtins.h"
+#include "eval.h"
 
 
 /*
@@ -1005,7 +1006,7 @@ vforkexecshell(struct job *jp, char **argv, char **envp, const char *path, int i
 	if (pid == 0) {
 		TRACE(("Child shell %d\n", (int)getpid()));
 		if (setjmp(jmploc.loc))
-			_exit(exception == EXEXEC ? exerrno : 2);
+			_exit(exitstatus);
 		if (pip != NULL) {
 			close(pip[0]);
 			if (pip[1] != 1) {
