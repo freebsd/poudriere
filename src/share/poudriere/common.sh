@@ -70,9 +70,6 @@ not_for_os() {
 }
 
 err() {
-	if [ -n "${IGNORE_ERR}" ]; then
-		return 0
-	fi
 	trap '' SIGINFO
 	export CRASHED=1
 	if [ $# -ne 2 ]; then
