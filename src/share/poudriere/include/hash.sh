@@ -64,6 +64,12 @@ _gsub_var_name() {
 }
 fi
 
+if ! type _gsub_simple 2>/dev/null >&2; then
+_gsub_simple() {
+	_gsub "$1" "[$2]" _
+}
+fi
+
 gsub() {
 	local _gsub
 

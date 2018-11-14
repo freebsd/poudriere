@@ -288,7 +288,7 @@ _mastermnt() {
 	# Avoid : which causes issues with PATH for non-jailed commands
 	# like portlint in testport.
 	mastername="${MASTERNAME}"
-	_gsub "${mastername}" ":" "_"
+	_gsub_simple "${mastername}" ":"
 	mastername="${_gsub}"
 	mnt="${POUDRIERE_DATA}/.m/${mastername}/ref"
 	if [ -z "${NOLINUX}" ]; then
