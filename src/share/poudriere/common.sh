@@ -77,7 +77,7 @@ err() {
 	fi
 	# Try to set status so other processes know this crashed
 	# Don't set it from children failures though, only master
-	if [ -z "${PARALLEL_CHILD}" ] && was_a_bulk_run; then
+	if [ "${PARALLEL_CHILD:-0}" -eq 0 ] && was_a_bulk_run; then
 		if [ -n "${MY_JOBID}" ]; then
 			bset ${MY_JOBID} status "${EXIT_STATUS:-crashed:}" \
 			    2>/dev/null || :
