@@ -102,7 +102,7 @@ md_find(const char *handle)
 	char *end;
 
 	errno = 0;
-	if (handle == NULL || strlen(handle) == 0)
+	if (handle == NULL || *handle == '\0')
 		errx(EX_DATAERR, "%s", "Missing handle");
 	idx = strtod(handle, &end);
 	if (end == handle || errno == ERANGE || idx < 0 || idx >= MAX_FILES)
