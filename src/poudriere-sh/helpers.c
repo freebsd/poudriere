@@ -193,6 +193,8 @@ _gsub_var_namecmd(int argc, char **argv)
 	char *string, *pattern, *p, *n;
 	char newvar[512];
 
+	if (argc != 2)
+		errx(EX_USAGE, "%s", "Usage: _gsub_var_name <var>");
 	string = argv[1];
 	n = newvar;
 	for (p = string; *p != '\0'; ++p) {
