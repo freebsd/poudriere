@@ -209,7 +209,7 @@ int
 mapfile_readcmd(int argc, char **argv)
 {
 	struct mapped_data *md;
-	struct timeval tv;
+	struct timeval tv = {};
 	fd_set ifds;
 	int flags;
 	char **var_return_ptr;
@@ -222,7 +222,6 @@ mapfile_readcmd(int argc, char **argv)
 	ifs = NULL;
 	timeout = 0;
 	tflag = 0;
-	memset(&tv, 0, sizeof(tv));
 
 	if (argc < 2)
 		errx(EXIT_USAGE, "%s", "Usage: mapfile_read <handle> "
