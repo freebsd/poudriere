@@ -1437,7 +1437,7 @@ common_mtree() {
 		echo ".${dir}"
 	done
 	# Ignore schg files when not testing.
-	if schg_immutable_base && [ -z "${PORTTESTING}" ]; then
+	if schg_immutable_base && [ "${PORTTESTING}" -eq 0 ]; then
 		schgpaths="/ /usr /boot"
 		for dir in ${schgpaths}; do
 			[ -f "${MASTERMNT}${dir}/.cpignore" ] || continue
@@ -2987,7 +2987,7 @@ _real_build_port() {
 	local network
 	local hangstatus
 	local pkgenv phaseenv jpkg
-	local targets install_order
+	local targets install_order deinstall
 	local jailuser
 	local testfailure=0
 	local max_execution_time allownetworking
@@ -3043,18 +3043,20 @@ _real_build_port() {
 	install_order="run-depends stage package"
 	# Don't need to install if only making packages and not
 	# testing.
-	[ -n "${PORTTESTING}" ] && \
-	    install_order="${install_order} install"
+	if [ "${PORTTESTING}" -eq 1 ]; then
+		install_order="${install_order} install"
+		deinstall="deinstall"
+	fi
 	targets="check-sanity pkg-depends fetch-depends fetch checksum \
 		  extract-depends extract patch-depends patch build-depends \
 		  lib-depends configure build ${install_order} \
-		  ${PORTTESTING:+deinstall}"
+		  ${deinstall-}"
 
 	# If not testing, then avoid rechecking deps in build/install;
 	# When testing, check depends twice to ensure they depend on
 	# proper files, otherwise they'll hit 'package already installed'
 	# errors.
-	if [ -z "${PORTTESTING}" ]; then
+	if [ "${PORTTESTING}" -eq 0 ]; then
 		PORT_FLAGS="${PORT_FLAGS} NO_DEPENDS=yes"
 	else
 		PORT_FLAGS="${PORT_FLAGS} STRICT_DEPENDS=yes"
@@ -3066,11 +3068,11 @@ _real_build_port() {
 		JUSER=${jailuser}
 		bset_job_status "${phase}" "${originspec}"
 		job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
-		[ -n "${PORTTESTING}" ] && \
+		[ "${PORTTESTING}" -eq 1 ] && \
 		    phaseenv="${phaseenv} DEVELOPER_MODE=yes"
 		case ${phase} in
 		check-sanity)
-			[ -n "${PORTTESTING}" ] && \
+			[ "${PORTTESTING}" -eq 1 ] && \
 			    phaseenv="${phaseenv} DEVELOPER=1"
 			;;
 		fetch)
@@ -3090,10 +3092,10 @@ _real_build_port() {
 				chown -R ${JUSER} ${mnt}/wrkdirs
 			fi
 			;;
-		configure) [ -n "${PORTTESTING}" ] && markfs prebuild ${mnt} ;;
+		configure) [ "${PORTTESTING}" -eq 1 ] && markfs prebuild ${mnt} ;;
 		run-depends)
 			JUSER=root
-			if [ -n "${PORTTESTING}" ]; then
+			if [ "${PORTTESTING}" -eq 1 ]; then
 				check_fs_violation ${mnt} prebuild \
 				    "${originspec}" \
 				    "Checking for filesystem violations" \
@@ -3107,15 +3109,15 @@ _real_build_port() {
 			fi
 			;;
 		checksum|*-depends) JUSER=root ;;
-		stage) [ -n "${PORTTESTING}" ] && markfs prestage ${mnt} ;;
+		stage) [ "${PORTTESTING}" -eq 1 ] && markfs prestage ${mnt} ;;
 		install)
 			max_execution_time=${MAX_EXECUTION_TIME_INSTALL}
 			JUSER=root
-			[ -n "${PORTTESTING}" ] && markfs preinst ${mnt}
+			[ "${PORTTESTING}" -eq 1 ] && markfs preinst ${mnt}
 			;;
 		package)
 			max_execution_time=${MAX_EXECUTION_TIME_PACKAGE}
-			if [ -n "${PORTTESTING}" ]; then
+			if [ "${PORTTESTING}" -eq 1 ]; then
 				check_fs_violation ${mnt} prestage \
 				    "${originspec}" \
 				    "Checking for staging violations" \
@@ -3214,7 +3216,7 @@ _real_build_port() {
 			    ${DISTFILES_CACHE} || return 1
 		fi
 
-		if [ "${phase}" = "stage" -a -n "${PORTTESTING}" ]; then
+		if [ "${phase}" = "stage" -a "${PORTTESTING}" -eq 1 ]; then
 			local die=0
 
 			bset_job_status "stage-qa" "${originspec}"
@@ -4165,7 +4167,7 @@ stop_build() {
 		fi
 		rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
 
-		if [ -n "${PORTTESTING}" ]; then
+		if [ "${PORTTESTING}" -eq 1 ]; then
 			if jail_has_processes; then
 				msg_warn "Leftover processes:"
 				injail ps auxwwd | egrep -v '(ps auxwwd|jexecd)'
@@ -6731,8 +6733,8 @@ get_porttesting() {
 	local pkgname="$1"
 	local porttesting
 
-	porttesting=
-	if [ -n "${PORTTESTING}" ]; then
+	porttesting=0
+	if [ "${PORTTESTING}" -eq 1 ]; then
 		if [ ${ALL} -eq 1 -o ${PORTTESTING_RECURSIVE} -eq 1 ]; then
 			porttesting=1
 		elif pkgname_is_listed "${pkgname}"; then
@@ -7738,6 +7740,7 @@ fi
 : ${JAIL_NEEDS_CLEAN:=0}
 : ${VERBOSE:=0}
 : ${QEMU_EMULATING:=0}
+: ${PORTTESTING:=0}
 : ${PORTTESTING_FATAL:=yes}
 : ${PORTTESTING_RECURSIVE:=0}
 : ${PRIORITY_BOOST_VALUE:=99}

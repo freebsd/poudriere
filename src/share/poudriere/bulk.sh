@@ -188,7 +188,7 @@ saved_argv="$@"
 shift $((OPTIND-1))
 post_getopts
 
-[ ${ALL} -eq 1 -a -n "${PORTTESTING}" ] && PORTTESTING_FATAL=no
+[ ${ALL} -eq 1 -a "${PORTTESTING}" -eq 1 ] && PORTTESTING_FATAL=no
 
 : ${BUILD_PARALLEL_JOBS:=${PARALLEL_JOBS}}
 : ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}
