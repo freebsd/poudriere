@@ -326,7 +326,7 @@ _my_path() {
 }
 
 _my_name() {
-	setvar "$1" "${MASTERNAME}${MY_JOBID+-job-${MY_JOBID}}"
+	setvar "$1" "${MASTERNAME}${MY_JOBID:+-job-${MY_JOBID}}"
 }
  
 _log_path_top() {
@@ -580,7 +580,7 @@ jstart() {
 	_my_name name
 	# Restrict to no networking (if RESTRICT_NETWORKING==yes)
 	jail -c persist name=${name} \
-		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
+		path=${MASTERMNT}${MY_JOBID:+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${network} ${JAIL_PARAMS}
 	[ "${USE_JEXECD}" = "yes" ] && \
@@ -589,7 +589,7 @@ jstart() {
 	    ${MAX_FILES+-n ${MAX_FILES}}
 	# Allow networking in -n jail
 	jail -c persist name=${name}-n \
-		path=${MASTERMNT}${MY_JOBID+/../${MY_JOBID}} \
+		path=${MASTERMNT}${MY_JOBID:+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${ipargs} ${JAIL_PARAMS} ${JAIL_NET_PARAMS}
 	[ "${USE_JEXECD}" = "yes" ] && \
