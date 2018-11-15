@@ -1447,10 +1447,9 @@ common_mtree() {
 }
 
 markfs() {
-	[ $# -lt 2 ] && eargs markfs name mnt path
+	[ $# -ne 2 ] && eargs markfs name mnt
 	local name=$1
 	local mnt="${2}"
-	local path="$3"
 	local fs="$(zfs_getfs ${mnt})"
 	local dozfs=0
 	local domtree=0
@@ -1529,7 +1528,7 @@ markfs() {
 		} > "${mtreefiletmp}" && \
 		    rename "${mtreefiletmp}" "${mtreefile}"
 	fi
-	( cd "${mnt}${path}" && mtree -X "${mtreefile}" \
+	( cd "${mnt}" && mtree -X "${mtreefile}" \
 		-cn -k uid,gid,flags,mode,size \
 		-p . ) > "${mnt}/.p/mtree.${name}"
 	echo " done"
@@ -3110,8 +3109,7 @@ _real_build_port() {
 		install)
 			max_execution_time=${MAX_EXECUTION_TIME_INSTALL}
 			JUSER=root
-			[ "${PORTTESTING}" -eq 1 ] && markfs preinst ${mnt}
-			;;
+			[ "${PORTTESTING}" -eq 1 ] && markfs preinst ${mnt} ;;
 		package)
 			max_execution_time=${MAX_EXECUTION_TIME_PACKAGE}
 			if [ "${PORTTESTING}" -eq 1 ]; then
