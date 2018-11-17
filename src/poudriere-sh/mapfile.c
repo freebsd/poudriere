@@ -152,11 +152,19 @@ mapfilecmd(int argc, char **argv)
 		errno = serrno;
 		err(EX_NOINPUT, "%s: %s", "fopen", file);
 	}
-	if (fstat(fileno(fp), &sb) != 0)
+	if (fstat(fileno(fp), &sb) != 0) {
+		serrno = errno;
+		INTON;
+		errno = serrno;
 		err(EX_OSERR, "%s", "fstat");
-	if (!(S_ISFIFO(sb.st_mode) || S_ISREG(sb.st_mode)))
+	}
+	if (!(S_ISFIFO(sb.st_mode) || S_ISREG(sb.st_mode))) {
+		serrno = errno;
+		INTON;
+		errno = serrno;
 		errx(EX_DATAERR, "%s not a regular file or FIFO",
 		    file);
+	}
 	/* sh has <=10 reserved. */
 	if (fileno(fp) < 10) {
 		cmd = -1;
