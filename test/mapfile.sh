@@ -345,6 +345,7 @@ fi
 # It's possible that a nested one will try to read from a parent's handle.
 {
 	rm -f "${TMP}"
+	TDIR=$(mktemp -dt mapfile)
 	TMP=$(mktemp -t mapfile)
 
 	i=0
@@ -356,15 +357,26 @@ fi
 	expectedfds=$(procstat -f $$|wc -l)
 	i=0
 	while mapfile_read_loop_redir n y; do
+		echo "OUTER 1: n=$n y=$y" >&2
 		echo "'${n}' '${y}'" | while mapfile_read_loop_redir m z; do
+			echo "INNER 1: m=$m z=$z" >&2
 			echo "'${m}' '${z}'"
 		done
 	done < "${TMP}" | while mapfile_read_loop_redir n y; do
+		echo "INNER 2: n=$n y=$y" >&2
 		assert "''$i''" "$n" "value should match double quoted 6 $i"
 		assert "''$((i + 5))''" "$y" "value should match double quoted 6 $((i + 5))"
+		touch "${TDIR}/${i}"
+		i=$((i + 1))
+	done
+	i=0
+	until [ ${i} -eq 10 ]; do
+		[ -e "${TDIR}/${i}" ]
+		assert 0 $? "inner loop did not run i=$i; found: $(/bin/ls ${TDIR}):"
 		i=$((i + 1))
 	done
 	fds=$(procstat -f $$|wc -l)
 	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 7"
+	rm -rf "${TDIR}"
 }
 exit 0
