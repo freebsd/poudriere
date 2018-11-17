@@ -56,7 +56,6 @@ struct mapped_data {
 	FILE *fp;
 	char *file;
 	int handle;
-	bool ispipe;
 	bool linebuffered;
 };
 static struct mapped_data *mapped_files[MAX_FILES] = {0};
@@ -191,7 +190,6 @@ mapfilecmd(int argc, char **argv)
 	md->fp = fp;
 	md->file = strdup(file);
 	md->handle = nextidx;
-	md->ispipe = S_ISFIFO(sb.st_mode);
 	md->linebuffered = strchr(modes, 'B') == NULL;
 
 	mapped_files[md->handle] = md;
