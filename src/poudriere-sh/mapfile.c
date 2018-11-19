@@ -154,12 +154,14 @@ mapfilecmd(int argc, char **argv)
 	}
 	if (fstat(fileno(fp), &sb) != 0) {
 		serrno = errno;
+		fclose(fp);
 		INTON;
 		errno = serrno;
 		err(EX_OSERR, "%s", "fstat");
 	}
 	if (!(S_ISFIFO(sb.st_mode) || S_ISREG(sb.st_mode))) {
 		serrno = errno;
+		fclose(fp);
 		INTON;
 		errno = serrno;
 		errx(EX_DATAERR, "%s not a regular file or FIFO",
@@ -182,6 +184,7 @@ mapfilecmd(int argc, char **argv)
 
 		if ((newfd = fcntl(fileno(fp), cmd, 10)) == -1) {
 			serrno = errno;
+			fclose(fp);
 			INTON;
 			errno = serrno;
 			err(EX_NOINPUT, "%s", "fcntl");
