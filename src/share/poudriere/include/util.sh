@@ -595,37 +595,42 @@ mapfile_builtin() {
 	return 1
 }
 
+mapfile_read_loop() {
+	[ $# -ge 2 ] || eargs mapfile_read_loop file vars
+	local _file="$1"
+	shift
+	local ret
+
+	# Low effort compatibility attempt
+	if [ -z "${_mapfile_read_loop}" ]; then
+		exec 8< "${_file}"
+		_mapfile_read_loop="${_file}"
+	elif [ "${_mapfile_read_loop}" != "${_file}" ]; then
+		err 1 "mapfile_read_loop only supports 1 file at a time without builtin"
+	fi
+	ret=0
+	read "$@" <&8 || ret=$?
+	if [ ${ret} -ne 0 ]; then
+		exec 8>&-
+		unset _mapfile_read_loop
+	fi
+	return ${ret}
+}
+
+mapfile_read_loop_redir() {
+	read "$@"
+}
 else
 
 mapfile_builtin() {
 	return 0
 }
-fi
 
-# This can give huge performance savings on large files, like 70%.  Rather than
-# reading 1 byte at a time it will use buffered reads.
 mapfile_read_loop() {
 	[ $# -ge 2 ] || eargs mapfile_read_loop file vars
 	local _file="$1"
 	shift
-	local ret _handle
-
-	if ! mapfile_builtin; then
-		# Low effort compatibility attempt
-		if [ -z "${_mapfile_read_loop}" ]; then
-			exec 8< "${_file}"
-			_mapfile_read_loop="${_file}"
-		elif [ "${_mapfile_read_loop}" != "${_file}" ]; then
-			err 1 "mapfile_read_loop only supports 1 file at a time without builtin"
-		fi
-		ret=0
-		read "$@" <&8 || ret=$?
-		if [ ${ret} -ne 0 ]; then
-			exec 8>&-
-			unset _mapfile_read_loop
-		fi
-		return ${ret}
-	fi
+	local _handle
 
 	if ! hash_get mapfile_handle "${_file}" _handle; then
 		mapfile _handle "${_file}" "re"
@@ -633,28 +638,21 @@ mapfile_read_loop() {
 	fi
 
 	if mapfile_read "${_handle}" "$@"; then
-		ret=0
+		return 0
 	else
-		ret=$?
+		local ret=$?
 		mapfile_close "${_handle}"
 		hash_unset mapfile_handle "${_file}"
+		return ${ret}
 	fi
-	return ${ret}
 }
 
 # This syntax works with non-builtin mapfile but requires a redirection.
 # It also supports pipes more naturally than mapfile_read_loop().
 mapfile_read_loop_redir() {
 	[ $# -ge 1 ] || eargs mapfile_read_loop_redir vars
-	local _file _hkey ret _handle
+	local _hkey _handle
 
-	if ! mapfile_builtin; then
-		read "$@"
-		return
-	fi
-
-	# Read from stdin
-	_file="/dev/fd/0"
 	# Store the handle based on the params passed in since it is
 	# using an anonymous handle on stdin - which if nested in a
 	# pipe would reuse the already-opened handle from the parent
@@ -662,22 +660,24 @@ mapfile_read_loop_redir() {
 	# Getting a nested call is simple when mapfile_read_loop_redir()
 	# is used in abstractions that pipe to each other.
 	# It would be great to have a PIPELEVEL or SHPID rather than this.
-	_hkey="$*"
+	local _hkey="$*"
 
 	if ! hash_get mapfile_handle "${_hkey}" _handle; then
-		mapfile _handle "${_file}" "re"
+		# Read from stdin
+		mapfile _handle "/dev/fd/0" "re"
 		hash_set mapfile_handle "${_hkey}" "${_handle}"
 	fi
 
 	if mapfile_read "${_handle}" "$@"; then
-		ret=0
+		return 0
 	else
-		ret=$?
+		local ret=$?
 		mapfile_close "${_handle}"
 		hash_unset mapfile_handle "${_hkey}"
+		return ${ret}
 	fi
-	return ${ret}
 }
+fi
 
 # This uses open(O_CREAT), woot.
 noclobber() {
