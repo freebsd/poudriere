@@ -2981,8 +2981,9 @@ gather_distfiles() {
 # Build+test port and return 1 on first failure
 # Return 2 on test failure if PORTTESTING_FATAL=no
 _real_build_port() {
-	[ $# -ne 1 ] && eargs _real_build_port originspec
+	[ $# -ne 2 ] && eargs _real_build_port originspec PKGNAME
 	local originspec="$1"
+	local PKGNAME="$2"
 	local port flavor portdir
 	local mnt
 	local log
@@ -4105,7 +4106,7 @@ build_pkg() {
 		clean_rdepends="ignored"
 		run_hook pkgbuild ignored "${port}" "${PKGNAME}" "${ignore}" >&3
 	else
-		build_port "${ORIGINSPEC}" || ret=$?
+		build_port "${ORIGINSPEC}" "${PKGNAME}" || ret=$?
 		if [ ${ret} -ne 0 ]; then
 			build_failed=1
 			# ret=2 is a test failure
