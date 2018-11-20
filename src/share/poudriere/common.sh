@@ -2937,10 +2937,12 @@ check_fs_violation() {
 }
 
 gather_distfiles() {
-	[ $# -eq 3 ] || eargs gather_distfiles originspec from to
-	local originspec="$1"
-	local from=$(realpath $2)
-	local to=$(realpath $3)
+	[ $# -eq 4 ] || eargs gather_distfiles originspec_parent \
+	    originspec from to
+	local originspec_parent="$1"
+	local originspec="$2"
+	local from=$(realpath "$3")
+	local to=$(realpath "$4")
 	local sub dists d tosubd specials special origin
 	local dep_originspec pkgname flavor
 
@@ -2950,7 +2952,7 @@ gather_distfiles() {
 	    err 1 "Failed to lookup distfiles for ${originspec}"
 
 	originspec_decode "${originspec}" origin '' flavor
-	if [ "${ORIGINSPEC}" = "${originspec}" ]; then
+	if [ "${originspec_parent}" = "${originspec}" ]; then
 		# Building main port
 		pkgname="${PKGNAME}"
 	else
@@ -2969,7 +2971,8 @@ gather_distfiles() {
 	done
 
 	for special in ${specials}; do
-		gather_distfiles "${special}" "${from}" "${to}"
+		gather_distfiles "${originspec_parent}" "${special}" \
+		    "${from}" "${to}"
 	done
 
 	return 0
@@ -3079,8 +3082,9 @@ _real_build_port() {
 			if [ "${DISTFILES_CACHE}" != "no" ]; then
 				echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf
 				gather_distfiles "${originspec}" \
-				    ${DISTFILES_CACHE} ${mnt}/portdistfiles \
-				    || return 1
+				    "${originspec}" "${DISTFILES_CACHE}" \
+				    "${mnt}/portdistfiles" || \
+				    return 1
 			fi
 			JNETNAME="n"
 			JUSER=root
@@ -3210,8 +3214,9 @@ _real_build_port() {
 		print_phase_footer
 
 		if [ "${phase}" = "checksum" -a "${DISTFILES_CACHE}" != "no" ]; then
-			gather_distfiles "${originspec}" ${mnt}/portdistfiles \
-			    ${DISTFILES_CACHE} || return 1
+			gather_distfiles "${originspec}" "${originspec}" \
+			    "${mnt}/portdistfiles" "${DISTFILES_CACHE}" || \
+			    return 1
 		fi
 
 		if [ "${phase}" = "stage" -a "${PORTTESTING}" -eq 1 ]; then
