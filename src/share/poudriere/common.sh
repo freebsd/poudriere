@@ -723,7 +723,7 @@ log_start() {
 	_log_path_top log_top
 
 	logfile="${log}/logs/${PKGNAME}.log"
-	latest_log=${log_top}/latest-per-pkg/${PKGBASE}/${PKGNAME##*-}
+	latest_log=${log_top}/latest-per-pkg/${PKGNAME%-*}/${PKGNAME##*-}
 
 	# Make sure directory exists
 	mkdir -p ${log}/logs ${latest_log}
@@ -3019,7 +3019,7 @@ _real_build_port() {
 
 	allownetworking=0
 	for jpkg in ${ALLOW_NETWORKING_PACKAGES}; do
-		case "${PKGBASE}" in
+		case "${pkgname%-*}" in
 		${jpkg})
 			job_msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}"
 			msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}"
@@ -4023,7 +4023,6 @@ build_pkg() {
 	clean_rdepends=
 	trap '' SIGTSTP
 	PKGNAME="${pkgname}"
-	PKGBASE="${pkgname%-*}"
 	setproctitle "build_pkg (${pkgname})" || :
 
 	# Don't show timestamps in msg() which goes to logs, only job_msg()
@@ -4046,7 +4045,7 @@ build_pkg() {
 	fi
 	portdir="${PORTSDIR}/${port}"
 
-	_gsub "${PKGBASE}" "${HASH_VAR_NAME_SUB_GLOB}" '_'
+	_gsub "${pkgname%-*}" "${HASH_VAR_NAME_SUB_GLOB}" '_'
 	eval "MAX_FILES=\${MAX_FILES_${_gsub}:-${DEFAULT_MAX_FILES}}"
 	if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
 		JEXEC_LIMITS=1
@@ -4084,7 +4083,7 @@ build_pkg() {
 	msg "Building ${port}"
 
 	for jpkg in ${ALLOW_MAKE_JOBS_PACKAGES}; do
-		case "${PKGBASE}" in
+		case "${pkgname%-*}" in
 		${jpkg})
 			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_RESET}"
 			sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' \
