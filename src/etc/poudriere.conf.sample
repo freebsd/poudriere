@@ -170,7 +170,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # default is tbz
 # WRKDIR_ARCHIVE_FORMAT=tbz
 
-# Disable linux support
+# Disable Linux support
 # NOLINUX=yes
 
 # By default poudriere sets FORCE_PACKAGE
