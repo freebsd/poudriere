@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 8, 2018
+.Dd November 26, 2018
 .Dt POUDRIERE-PORTS 8
 .Os
 .Sh NAME
@@ -64,16 +64,16 @@ all of the subcommands require the
 .Fl p
 switch (see below).
 .Pp
-.Bl -tag -width "-f conffile"
+.Bl -tag -width "-f filesystem"
 .It Fl B Ar branch
 Specifies which
 .Ar branch
 to checkout when using the
-.Sy svn
+.Cm svn
 or
-.Sy git
+.Cm git
 methods.
-(Default: head/master)
+.Pq Default: Dq head/master
 .It Fl F
 When used with
 .Fl c ,
@@ -85,8 +85,11 @@ Path to the source of a ports tree.
 The name of the
 .Ar filesystem
 to create for the ports tree.
-If 'none' then do not create a filesystem.
-Defaults to poudriere/ports/default.
+If set to
+.Dq none
+then do not create a filesystem.
+Defaults to
+.Dq poudriere/ports/default .
 .It Fl k
 When used with
 .Fl d ,
@@ -97,8 +100,15 @@ When used with
 specify which
 .Ar method
 to use to create the ports tree.
-Could be portsnap, git, null, svn{,+http,+https,+file,+ssh}.
-The default is portsnap.
+Could be
+.Cm portsnap ,
+.Cm git ,
+.Cm null ,
+.Sm off
+.Cm svn No {, Cm +http No , Cm +https No , Cm +file No , Cm +ssh No }.
+.Sm on
+The default is
+.Cm portsnap .
 .Bl -tag -width "svn+https"
 .It Sy null
 This option can be used to import an existing directory that already contains
