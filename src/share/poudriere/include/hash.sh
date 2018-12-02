@@ -24,6 +24,7 @@
 
 # Taken from bin/sh/mksyntax.sh is_in_name()
 : ${HASH_VAR_NAME_SUB_GLOB:="[!a-zA-Z0-9_]"}
+: ${HASH_VAR_NAME_PREFIX:="_HASH_"}
 
 if ! type eargs 2>/dev/null >&2; then
 	eargs() {
@@ -64,6 +65,12 @@ _gsub_var_name() {
 }
 fi
 
+if ! type _gsub_simple 2>/dev/null >&2; then
+_gsub_simple() {
+	_gsub "$1" "[$2]" _
+}
+fi
+
 gsub() {
 	local _gsub
 
@@ -75,7 +82,7 @@ _hash_var_name() {
 	local _gsub
 
 	# Replace anything not HASH_VAR_NAME_SUB_GLOB with _
-	_gsub_var_name "_HASH_${1}_${2}"
+	_gsub_var_name "${HASH_VAR_NAME_PREFIX}${1}_${2}"
 	_hash_var_name=${_gsub}
 }
 
@@ -91,25 +98,13 @@ hash_isset() {
 	issetvar "${_hash_var_name}"
 }
 
-_hash_get() {
-	[ $# -eq 2 ] || eargs _hash_get _hash_var_name var_return
-	local _hash_var_name="$1"
-	local var_return="$2"
-
-	getvar "${_hash_var_name}" "${var_return}"
-}
-
 hash_get() {
-	local -; set +x
 	[ $# -ne 3 ] && eargs hash_get var key var_return
-	local var="$1"
-	local key="$2"
-	local var_return="$3"
-	local _hash_var_name
+	local _gsub
 
-	_hash_var_name "${var}" "${key}"
-
-	_hash_get "${_hash_var_name}" "${var_return}"
+	#_hash_var_name "${1}" "${2}"
+	_gsub_var_name "${HASH_VAR_NAME_PREFIX}${1}_${2}"
+	getvar "${_gsub}" "${3}"
 }
 
 hash_set() {
@@ -136,7 +131,7 @@ hash_remove() {
 
 	_hash_var_name "${var}" "${key}"
 	ret=0
-	_hash_get "${_hash_var_name}" "${var_return}" || ret=$?
+	getvar "${_hash_var_name}" "${var_return}" || ret=$?
 	if [ ${ret} -eq 0 ]; then
 		unset "${_hash_var_name}"
 	fi

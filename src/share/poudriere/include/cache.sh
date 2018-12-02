@@ -24,6 +24,8 @@
 
 # Requires shared_hash
 
+: ${USE_CACHE_CALL:=0}
+
 cache_invalidate() {
 	local -; set +x
 	[ $# -ge 1 ] || eargs cache_invalidate function [params]
@@ -67,7 +69,7 @@ cache_set() {
 	shift 2
 	local var key
 
-	[ ${USE_CACHE_CALL:-0} -eq 0 ] && return 0
+	[ ${USE_CACHE_CALL} -eq 0 ] && return 0
 
 	var="cached-${function}"
 	encode_args key "$@"
@@ -92,7 +94,7 @@ cache_call() {
 	var="cached-${function}"
 	encode_args key "$@"
 
-	if [ ${USE_CACHE_CALL:-0} -eq 0 ] || \
+	if [ ${USE_CACHE_CALL} -eq 0 ] || \
 	    ! shash_get "${var}" "${key}" "${var_return}"; then
 		msg_dev "cache_call: Fetching ${function}($@)"
 		_value=$(${function} "$@")
@@ -126,7 +128,7 @@ cache_call_sv() {
 	var="cached-${function}"
 	encode_args key "$@"
 
-	if [ ${USE_CACHE_CALL:-0} -eq 0 ] || \
+	if [ ${USE_CACHE_CALL} -eq 0 ] || \
 	    ! shash_get "${var}" "${key}" "${var_return}"; then
 		msg_dev "cache_call_sv: Fetching ${function}($@)"
 		sv_value=__null

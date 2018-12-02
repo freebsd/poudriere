@@ -1,6 +1,7 @@
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
+ * Copyright 2018 Staysail Systems, Inc. <info@staysail.tech>
  * Copyright 2014 Garrett D'Amore <garrett@damore.org>
  * Copyright 2010 Nexenta Systems, Inc.  All rights reserved.
  * Copyright (c) 1989, 1993
@@ -48,7 +49,7 @@ static char const copyright[] =
 static char const sccsid[] = "@(#)printf.c	8.1 (Berkeley) 7/20/93";
 #endif
 static const char rcsid[] =
-  "$FreeBSD: head/usr.bin/printf/printf.c 326025 2017-11-20 19:49:47Z pfg $";
+  "$FreeBSD: head/usr.bin/printf/printf.c 337618 2018-08-11 11:13:34Z jilles $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -375,13 +376,16 @@ printf_doformat(char *fmt, int *rval)
 		char *p;
 		int getout;
 
-		p = strdup(getstr());
-		if (p == NULL) {
+		/* Convert "b" to "s" for output. */
+		start[strlen(start) - 1] = 's';
+		if ((p = strdup(getstr())) == NULL) {
 			warnx("%s", strerror(ENOMEM));
 			return (NULL);
 		}
 		getout = escape(p, 0, &len);
-		fputs(p, stdout);
+		PF(start, p);
+		/* Restore format for next loop. */
+
 		free(p);
 		if (getout)
 			return (end_fmt);

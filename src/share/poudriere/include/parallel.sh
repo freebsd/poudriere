@@ -190,7 +190,7 @@ _reap_children() {
 	local pid
 	local ret=0
 
-	for pid in ${PARALLEL_PIDS}; do
+	for pid in ${PARALLEL_PIDS-}; do
 		# Check if this pid is still alive
 		if ! kill -0 ${pid}; then
 			# This will error out if the return status is non-zero

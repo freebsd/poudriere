@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)jobs.c	8.5 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/jobs.c 327475 2018-01-01 22:31:52Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/jobs.c 340284 2018-11-09 14:58:24Z jilles $");
 
 #include <sys/ioctl.h>
 #include <sys/param.h>
@@ -73,6 +73,7 @@ __FBSDID("$FreeBSD: head/bin/sh/jobs.c 327475 2018-01-01 22:31:52Z jilles $");
 #include "mystring.h"
 #include "var.h"
 #include "builtins.h"
+#include "eval.h"
 
 
 /*
@@ -362,7 +363,7 @@ showjob(struct job *jp, int mode)
 	const char *statestr, *coredump;
 	struct procstat *ps;
 	struct job *j;
-	int col, curr, i, jobno, prev, procno;
+	int col, curr, i, jobno, prev, procno, status;
 	char c;
 
 	procno = (mode == SHOWJOBS_PGIDS) ? 1 : jp->nprocs;
@@ -376,11 +377,12 @@ showjob(struct job *jp, int mode)
 	}
 #endif
 	coredump = "";
-	ps = jp->ps + jp->nprocs - 1;
+	status = jp->ps[jp->nprocs - 1].status;
 	if (jp->state == 0) {
 		statestr = "Running";
 #if JOBS
 	} else if (jp->state == JOBSTOPPED) {
+		ps = jp->ps + jp->nprocs - 1;
 		while (!WIFSTOPPED(ps->status) && ps > jp->ps)
 			ps--;
 		if (WIFSTOPPED(ps->status))
@@ -391,20 +393,20 @@ showjob(struct job *jp, int mode)
 		if (statestr == NULL)
 			statestr = "Suspended";
 #endif
-	} else if (WIFEXITED(ps->status)) {
-		if (WEXITSTATUS(ps->status) == 0)
+	} else if (WIFEXITED(status)) {
+		if (WEXITSTATUS(status) == 0)
 			statestr = "Done";
 		else {
 			fmtstr(statebuf, sizeof(statebuf), "Done(%d)",
-			    WEXITSTATUS(ps->status));
+			    WEXITSTATUS(status));
 			statestr = statebuf;
 		}
 	} else {
-		i = WTERMSIG(ps->status);
+		i = WTERMSIG(status);
 		statestr = strsignal(i);
 		if (statestr == NULL)
 			statestr = "Unknown signal";
-		if (WCOREDUMP(ps->status))
+		if (WCOREDUMP(status))
 			coredump = " (core dumped)";
 	}
 
@@ -1004,7 +1006,7 @@ vforkexecshell(struct job *jp, char **argv, char **envp, const char *path, int i
 	if (pid == 0) {
 		TRACE(("Child shell %d\n", (int)getpid()));
 		if (setjmp(jmploc.loc))
-			_exit(exception == EXEXEC ? exerrno : 2);
+			_exit(exitstatus);
 		if (pip != NULL) {
 			close(pip[0]);
 			if (pip[1] != 1) {

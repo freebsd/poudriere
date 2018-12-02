@@ -24,7 +24,7 @@
 
 # Requires util.sh and hash.sh
 
-: ${SHASH_VAR_NAME_SUB_GLOB:="[ /]"}
+: ${SHASH_VAR_NAME_SUB_BADCHARS:=" /"}
 : ${SHASH_VAR_PATH:=${TMPDIR:-/tmp}}
 : ${SHASH_VAR_PREFIX=$$}
 
@@ -32,8 +32,8 @@ _shash_var_name() {
 	local var="${1}"
 	local _gsub
 
-	# Replace SHASH_VAR_NAME_SUB_GLOB matches with _
-	_gsub "${var}" "${SHASH_VAR_NAME_SUB_GLOB}" _
+	# Replace SHASH_VAR_NAME_SUB_BADCHARS matches with _
+	_gsub_simple "${var}" "${SHASH_VAR_NAME_SUB_BADCHARS}"
 	_shash_var_name=${_gsub}
 }
 

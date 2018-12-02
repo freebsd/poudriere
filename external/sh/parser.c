@@ -38,7 +38,7 @@ static char sccsid[] = "@(#)parser.c	8.7 (Berkeley) 5/16/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/parser.c 326025 2017-11-20 19:49:47Z pfg $");
+__FBSDID("$FreeBSD: head/bin/sh/parser.c 334008 2018-05-21 21:52:48Z jilles $");
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -1434,8 +1434,10 @@ readtoken1(int firstc, char const *initialsyntax, const char *eofmark,
 
 			switch(synentry) {
 			case CNL:	/* '\n' */
-				if (state[level].syntax == BASESYNTAX)
+				if (level == 0)
 					goto endword;	/* exit outer loop */
+				/* FALLTHROUGH */
+			case CQNL:
 				USTPUTC(c, out);
 				plinno++;
 				if (doprompt)

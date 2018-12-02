@@ -56,7 +56,6 @@ struct mapped_data {
 	FILE *fp;
 	char *file;
 	int handle;
-	bool ispipe;
 	bool linebuffered;
 };
 static struct mapped_data *mapped_files[MAX_FILES] = {0};
@@ -102,7 +101,7 @@ md_find(const char *handle)
 	char *end;
 
 	errno = 0;
-	if (handle == NULL || strlen(handle) == 0)
+	if (handle == NULL || *handle == '\0')
 		errx(EX_DATAERR, "%s", "Missing handle");
 	idx = strtod(handle, &end);
 	if (end == handle || errno == ERANGE || idx < 0 || idx >= MAX_FILES)
@@ -153,11 +152,21 @@ mapfilecmd(int argc, char **argv)
 		errno = serrno;
 		err(EX_NOINPUT, "%s: %s", "fopen", file);
 	}
-	if (fstat(fileno(fp), &sb) != 0)
+	if (fstat(fileno(fp), &sb) != 0) {
+		serrno = errno;
+		fclose(fp);
+		INTON;
+		errno = serrno;
 		err(EX_OSERR, "%s", "fstat");
-	if (!(S_ISFIFO(sb.st_mode) || S_ISREG(sb.st_mode)))
+	}
+	if (!(S_ISFIFO(sb.st_mode) || S_ISREG(sb.st_mode))) {
+		serrno = errno;
+		fclose(fp);
+		INTON;
+		errno = serrno;
 		errx(EX_DATAERR, "%s not a regular file or FIFO",
 		    file);
+	}
 	/* sh has <=10 reserved. */
 	if (fileno(fp) < 10) {
 		cmd = -1;
@@ -175,6 +184,7 @@ mapfilecmd(int argc, char **argv)
 
 		if ((newfd = fcntl(fileno(fp), cmd, 10)) == -1) {
 			serrno = errno;
+			fclose(fp);
 			INTON;
 			errno = serrno;
 			err(EX_NOINPUT, "%s", "fcntl");
@@ -191,7 +201,6 @@ mapfilecmd(int argc, char **argv)
 	md->fp = fp;
 	md->file = strdup(file);
 	md->handle = nextidx;
-	md->ispipe = S_ISFIFO(sb.st_mode);
 	md->linebuffered = strchr(modes, 'B') == NULL;
 
 	mapped_files[md->handle] = md;
@@ -209,7 +218,7 @@ int
 mapfile_readcmd(int argc, char **argv)
 {
 	struct mapped_data *md;
-	struct timeval tv;
+	struct timeval tv = {};
 	fd_set ifds;
 	int flags;
 	char **var_return_ptr;
@@ -222,7 +231,6 @@ mapfile_readcmd(int argc, char **argv)
 	ifs = NULL;
 	timeout = 0;
 	tflag = 0;
-	memset(&tv, 0, sizeof(tv));
 
 	if (argc < 2)
 		errx(EXIT_USAGE, "%s", "Usage: mapfile_read <handle> "

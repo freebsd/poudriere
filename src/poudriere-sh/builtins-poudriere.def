@@ -5,6 +5,7 @@ critical_endcmd -n	critical_end
 diremptycmd -n		dirempty
 getvarcmd -n		getvar
 _gsub_var_namecmd -n	_gsub_var_name
+_gsub_simplecmd -n	_gsub_simple
 issetvarcmd -n		issetvar
 locked_mkdircmd		locked_mkdir
 mapfilecmd -n		mapfile

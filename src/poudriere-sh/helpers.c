@@ -190,13 +190,39 @@ issetvarcmd(int argc, char **argv)
 int
 _gsub_var_namecmd(int argc, char **argv)
 {
-	char *string, *pattern, *p, *n;
+	char *n;
 	char newvar[512];
 
-	string = argv[1];
+	if (argc != 2)
+		errx(EX_USAGE, "%s", "Usage: _gsub_var_name <var>");
+	const char *string = argv[1];
 	n = newvar;
-	for (p = string; *p != '\0'; ++p) {
+	for (const char *p = string; *p != '\0'; ++p) {
 		if (!is_in_name(*p))
+			*n++ = '_';
+		else
+			*n++ = *p;
+		if (n - newvar == sizeof(newvar) - 1)
+			errx(EX_DATAERR, "var too long");
+	}
+	*n = '\0';
+	setvar("_gsub", newvar, 0);
+	return (0);
+}
+
+int
+_gsub_simplecmd(int argc, char **argv)
+{
+	char *n;
+	char newvar[512];
+
+	if (argc != 3)
+		errx(EX_USAGE, "%s", "Usage: _gsub_simple <var> <badchars>");
+	const char *string = argv[1];
+	const char *badchars = argv[2];
+	n = newvar;
+	for (const char *p = string; *p != '\0'; ++p) {
+		if (strchr(badchars, *p) != NULL)
 			*n++ = '_';
 		else
 			*n++ = *p;
