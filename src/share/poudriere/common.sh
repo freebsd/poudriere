@@ -1229,7 +1229,7 @@ siginfo_handler() {
 	local status
 	local now
 	local j elapsed elapsed_phase job_id_color
-	local pkgname origin phase buildtime buildtime_phase started
+	local pkgname origin phase progress buildtime buildtime_phase started
 	local started_phase format_origin_phase format_phase
 	local -
 
@@ -1277,16 +1277,18 @@ siginfo_handler() {
 			colorize_job_id job_id_color "${j}"
 
 			# Must put colors in format
-			format_origin_phase="\t[${job_id_color}%s${COLOR_RESET}]: ${COLOR_PORT}%-25s | %-25s ${COLOR_PHASE}%-15s${COLOR_RESET} (%s / %s)\n"
+			format_origin_phase="\t[${job_id_color}%s${COLOR_RESET}]: ${COLOR_PORT}%-25s | %-25s ${COLOR_PHASE}%-15s${COLOR_RESET} %s (%s / %s)\n"
 			format_phase="\t[${job_id_color}%s${COLOR_RESET}]: %53s ${COLOR_PHASE}%-15s${COLOR_RESET}\n"
 			if [ -n "${pkgname}" ]; then
 				elapsed=$((${now} - ${started}))
 				calculate_duration buildtime "${elapsed}"
 				elapsed_phase=$((${now} - ${started_phase}))
+				calculate_progress_from_log progress "${phase}" "${pkgname}" || progress=""
 				calculate_duration buildtime_phase \
 				    "${elapsed_phase}"
 				printf "${format_origin_phase}" "${j}" \
 				    "${origin}" "${pkgname}" "${phase}" \
+				    "${progress}" \
 				    "${buildtime_phase}" "${buildtime}"
 			else
 				printf "${format_phase}" "${j}" '' "${phase}"
@@ -3777,6 +3779,23 @@ status_is_stopped() {
 		sigterm:|sigint:|crashed:|stop:|stopped:*) return 0 ;;
 	esac
 	return 1
+}
+
+calculate_progress_from_log() {
+	[ $# -eq 3 ] || eargs calculate_progress_from_log var_return phase pkgname
+	local var_return="$1"
+	local phase="$2"
+	local pkgname="$3"
+	local log _progress
+
+	[ "${phase}" = "build" ] || return 1
+
+	_log_path log
+	[ -r "${log}/logs/${pkgname}.log" ] || return 1
+
+	_progress=$(tail -200 ${log}/logs/${pkgname}.log | sed -E "s,^\[( *[0-9]+%|[0-9]+/[0-9]+)\].*,{progress}\1,; /^{progress}/!d; s/{progress}//; s/ //g" | tail -1)
+
+	setvar "${var_return}" "${_progress}"
 }
 
 calculate_elapsed_from_log() {
