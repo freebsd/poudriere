@@ -95,6 +95,9 @@ while getopts "aB:CcFf:iIj:J:knNp:RrSTtvwz:" FLAG; do
 		a)
 			ALL=1
 			;;
+		b)
+			jail_exists ${OPTARG} || create_pkg_base_jail
+			JAILNAME=${OPTARG}
 		B)
 			BUILDNAME="${OPTARG}"
 			;;
