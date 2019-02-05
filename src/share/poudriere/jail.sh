@@ -556,7 +556,7 @@ install_from_ports() {
 		fi
 
 		# Now build the jail from the resulting tarball
-		TARBALL="${JAILMNT}/work/world/stage/usr/dist/${tgt}.txz"
+		TARBALL="${JAILMNT}/work/${tgt}/stage/usr/dist/${tgt}.txz"
 		install_from_tar
 
 		# Install the package
@@ -567,7 +567,7 @@ install_from_ports() {
 		fi
 
 		# Copy the package to the repo
-		cp ${pkg} ${PACKAGES}/All/
+		cp ${PKGFILE} ${PACKAGES}/All/
 		if [ $? -ne 0 ] ; then
 			return 1
 		fi
