@@ -542,6 +542,11 @@ install_from_ports() {
 	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes clean
 	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes distclean
 
+	if [ -e "${POUDRIERED}/${JAILNAME}.conf" ] ; then
+		export __MAKE_CONF="${POUDRIERED}/${JAILNAME}.conf"
+		echo "Using MAKE_CONF: ${__MAKE_CONF}"
+	fi
+
 	for tgt in world kernel
 	do
 		# Create the world package
