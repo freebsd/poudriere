@@ -513,11 +513,10 @@ install_from_ports() {
 	mkdir ${JAILMNT}/work
 	mkdir ${JAILMNT}/usr
 
-	# Figure out where finished packages need to be stashed
-	local MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
-	local PACKAGES=${POUDRIERE_DATA}/packages/${MASTERNAME}
-	if [ ! -d "${PACKAGES}/All" ]; then
-		mkdir -p ${PACKAGES}/All
+	# Figure out where finished OS packages need to be stashed
+	local PACKAGES=${JAILMNT}/.packages/
+	if [ ! -d "${PACKAGES}" ]; then
+		mkdir -p ${PACKAGES}
 	fi
 
 	# Create package for the system sources from the os/src port
@@ -534,7 +533,7 @@ install_from_ports() {
 	fi
 
 	# Copy the package to the repo
-	cp ${PKGFILE} ${PACKAGES}/All/
+	cp ${PKGFILE} ${PACKAGES}/
 	if [ $? -ne 0 ] ; then
 		return 1
 	fi
@@ -567,7 +566,7 @@ install_from_ports() {
 		fi
 
 		# Copy the package to the repo
-		cp ${PKGFILE} ${PACKAGES}/All/
+		cp ${PKGFILE} ${PACKAGES}/
 		if [ $? -ne 0 ] ; then
 			return 1
 		fi
@@ -934,7 +933,10 @@ create_jail() {
 		FCT=install_from_vcs
 		;;
 	ports=*)
-		PORTS_BASE="${METHOD#ports=}"
+		PTNAME="${METHOD#ports=}"
+	        # test if it already exists
+		porttree_exists ${PTNAME} || err 1 "No such ports name ${PTNAME}"
+		PORTS_BASE="${BASEFS:=/usr/local${ZROOTFS}}/ports/${PTNAME}"
 		test -d ${PORTS_BASE} || err 1 "No such ports directory"
 		test -d ${PORTS_BASE}/os/buildworld || err 1 "Missing os/buildworld in ports directory"
 		FCT=install_from_ports
