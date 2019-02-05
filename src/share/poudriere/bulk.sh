@@ -95,9 +95,6 @@ while getopts "aB:CcFf:iIj:J:knNp:RrSTtvwz:" FLAG; do
 		a)
 			ALL=1
 			;;
-		b)
-			jail_exists ${OPTARG} || create_pkg_base_jail
-			JAILNAME=${OPTARG}
 		B)
 			BUILDNAME="${OPTARG}"
 			;;
@@ -220,6 +217,11 @@ _log_path LOGD
 if [ -d ${LOGD} -a ${CLEAN} -eq 1 ]; then
 	msg "Cleaning up old logs in ${LOGD}"
 	[ ${DRY_RUN} -eq 0 ] && rm -Rf ${LOGD} 2>/dev/null
+fi
+
+# Do we have any base-port packages to ingest?
+if [ ! -d "${MASTERMNT}/.packages/" ] ; then
+	cp ${MASTERMNT}/.packages/*.txz ${MASTERMNT}/packages/
 fi
 
 prepare_ports
