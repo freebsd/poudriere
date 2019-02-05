@@ -216,6 +216,11 @@ if [ $CONFIGSTR -eq 1 ]; then
 	    config
 fi
 
+# Do we have any base-port packages to ingest?
+if [ ! -d "${MASTERMNT}/.packages/" ] ; then
+	cp ${MASTERMNT}/.packages/*.txz ${MASTERMNT}/packages/
+fi
+
 # deps_fetch_vars lookup for dependencies moved to prepare_ports()
 # This will set LISTPORTS/PKGNAME/DEPENDS_ARGS/FLAVOR/FLAVORS as well.
 prepare_ports

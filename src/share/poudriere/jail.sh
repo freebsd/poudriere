@@ -57,8 +57,8 @@ Options:
     -m method     -- When used with -c, overrides the default method for
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
-                       allbsd, ftp-archive, ftp, git, http, null, src=PATH, svn,
-                       svn+file, svn+http, svn+https, svn+ssh, tar=PATH, trueos,
+                       allbsd, ftp-archive, ftp, git, http, null, ports=PATH, src=PATH,
+		       svn, svn+file, svn+http, svn+https, svn+ssh, tar=PATH, trueos,
                        url=SOMEURL.
     -P patch      -- Specify a patch to apply to the source before building.
     -S srcpath    -- Specify a path to the source tree to be used.
@@ -332,6 +332,9 @@ update_jail() {
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
+	ports=*)
+		err 1 "Upgrade is not supported with ${METHOD}; to upgrade, please delete and recreate the jail"
+		;;
 	src=*)
 		SRC_BASE="${METHOD#src=}"
 		install_from_src version_extra
@@ -503,6 +506,77 @@ build_native_xtools() {
 	fi
 	# The files are hard linked at bulk jail startup now.
 	BUILT_NATIVE_XTOOLS=1
+}
+
+install_from_ports() {
+	# Create our work and usr directories for later usage
+	mkdir ${JAILMNT}/work
+	mkdir ${JAILMNT}/usr
+
+	# Figure out where finished packages need to be stashed
+	local MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
+	local PACKAGES=${POUDRIERE_DATA}/packages/${MASTERNAME}
+	if [ ! -d "${PACKAGES}/All" ]; then
+		mkdir -p ${PACKAGES}/All
+	fi
+
+	# Create package for the system sources from the os/src port
+	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes package
+	if [ $? -ne 0 ] ; then
+		return 1
+	fi
+
+	# Install the package
+	local PKGFILE="${JAILMNT}/work/src/pkg/$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/src -V PKGNAME).txz"
+	pkg-static -r ${JAILMNT} add ${PKGFILE}
+	if [ $? -ne 0 ] ; then
+		return 1
+	fi
+
+	# Copy the package to the repo
+	cp ${PKGFILE} ${PACKAGES}/All/
+	if [ $? -ne 0 ] ; then
+		return 1
+	fi
+
+	# Cleanup the src package
+	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes clean
+	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes distclean
+
+	for tgt in world kernel
+	do
+		# Create the world package
+		make -C ${PORTS_BASE}/os/build${tgt} \
+			WRKDIR=${JAILMNT}/work/${tgt} \
+			SRCDIR=${JAILMNT}/usr/src \
+			BATCH=yes \
+			package
+		if [ $? -ne 0 ] ; then
+			return 1
+		fi
+
+		# Now build the jail from the resulting tarball
+		TARBALL="${JAILMNT}/work/${tgt}/stage/usr/dist/${tgt}.txz"
+		install_from_tar
+
+		# Install the package
+		local PKGFILE="${JAILMNT}/work/${tgt}/pkg/$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/build${tgt} -V PKGNAME).txz"
+		pkg-static -r ${JAILMNT} add ${PKGFILE}
+		if [ $? -ne 0 ] ; then
+			return 1
+		fi
+
+		# Copy the package to the repo
+		cp ${PKGFILE} ${PACKAGES}/All/
+		if [ $? -ne 0 ] ; then
+			return 1
+		fi
+
+		make -C ${PORTS_BASE}/os/build${tgt} WRKDIR=${JAILMNT}/work/${tgt} SRCDIR=${JAILMNT}/usr/src BATCH=yes clean
+	done
+
+	# Cleanup the work directory
+	rm -rf ${JAILMNT}/work
 }
 
 install_from_src() {
@@ -858,6 +932,12 @@ create_jail() {
 	git*)
 		# Do not check valid version given one can have a specific branch
 		FCT=install_from_vcs
+		;;
+	ports=*)
+		PORTS_BASE="${METHOD#ports=}"
+		test -d ${PORTS_BASE} || err 1 "No such ports directory"
+		test -d ${PORTS_BASE}/os/buildworld || err 1 "Missing os/buildworld in ports directory"
+		FCT=install_from_ports
 		;;
 	src=*)
 		SRC_BASE="${METHOD#src=}"
