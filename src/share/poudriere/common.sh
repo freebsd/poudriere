@@ -7483,6 +7483,10 @@ ingest_base_pkgs()
 		return 0
 	fi
 
+	if [ ! -d "${PACKAGES}/All/" ] ; then
+		mkdir -p "${PACKAGES}/All/"
+	fi
+
 	for i in $(ls ${MASTERMNT}/.packages/*.txz)
 	do
 		msg "Copying $i -> ${PACKAGES}"
