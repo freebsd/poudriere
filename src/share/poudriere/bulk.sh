@@ -219,10 +219,7 @@ if [ -d ${LOGD} -a ${CLEAN} -eq 1 ]; then
 	[ ${DRY_RUN} -eq 0 ] && rm -Rf ${LOGD} 2>/dev/null
 fi
 
-# Do we have any base-port packages to ingest?
-if [ ! -d "${MASTERMNT}/.packages/" ] ; then
-	cp ${MASTERMNT}/.packages/*.txz ${MASTERMNT}/packages/
-fi
+ingest_base_pkgs
 
 prepare_ports
 show_dry_run_summary

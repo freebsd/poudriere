@@ -7476,6 +7476,20 @@ calculate_ospart_size() {
 	msg "OS Partiton size: ${OS_SIZE}m"
 }
 
+ingest_base_pkgs()
+{
+	# Do we have any base-port packages to ingest?
+	if [ ! -d "${MASTERMNT}/.packages/" ] ; then
+		return 0
+	fi
+
+	for i in $(ls ${MASTERMNT}/.packages/*.txz)
+	do
+		msg "Copying $i -> ${PACKAGES}"
+		cp ${i} ${PACKAGES}/All/
+	done
+}
+
 # Builtin-only functions
 _BUILTIN_ONLY=""
 for _var in ${_BUILTIN_ONLY}; do
