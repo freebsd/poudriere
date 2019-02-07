@@ -522,20 +522,21 @@ install_from_ports() {
 	# Create package for the system sources from the os/src port
 	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes package
 	if [ $? -ne 0 ] ; then
-		return 1
+		err 1
 	fi
 
 	# Install the package
 	local PKGFILE="${JAILMNT}/work/src/pkg/$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/src -V PKGNAME).txz"
-	pkg-static -r ${JAILMNT} add ${PKGFILE}
+	local ABISTRING="$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/src -V PKG_ABISTRING)"
+	pkg-static -o ABI=${ABISTRING} -r ${JAILMNT} add ${PKGFILE}
 	if [ $? -ne 0 ] ; then
-		return 1
+		err 1
 	fi
 
 	# Copy the package to the repo
 	cp ${PKGFILE} ${PACKAGES}/
 	if [ $? -ne 0 ] ; then
-		return 1
+		err 1
 	fi
 
 	# Cleanup the src package
@@ -556,7 +557,7 @@ install_from_ports() {
 			BATCH=yes \
 			package
 		if [ $? -ne 0 ] ; then
-			return 1
+			err 1
 		fi
 
 		# Now build the jail from the resulting tarball
@@ -565,15 +566,16 @@ install_from_ports() {
 
 		# Install the package
 		local PKGFILE="${JAILMNT}/work/${tgt}/pkg/$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/build${tgt} -V PKGNAME).txz"
-		pkg-static -r ${JAILMNT} add ${PKGFILE}
+		local ABISTRING="$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/build${tgt} -V PKG_ABISTRING)"
+		pkg-static -o ABI=${ABISTRING} -r ${JAILMNT} add ${PKGFILE}
 		if [ $? -ne 0 ] ; then
-			return 1
+			err 1
 		fi
 
 		# Copy the package to the repo
 		cp ${PKGFILE} ${PACKAGES}/
 		if [ $? -ne 0 ] ; then
-			return 1
+			err 1
 		fi
 
 		make -C ${PORTS_BASE}/os/build${tgt} WRKDIR=${JAILMNT}/work/${tgt} SRCDIR=${JAILMNT}/usr/src BATCH=yes clean
