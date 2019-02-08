@@ -534,7 +534,8 @@ install_from_ports() {
 
 	# Install the package
 	local PKGFILE="${JAILMNT}/work/src/pkg/$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/src -V PKGNAME).txz"
-	pkg-static -r ${JAILMNT} add ${PKGFILE}
+	local ABISTRING="$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/src -V PKG_ABISTRING)"
+	pkg-static -o ABI=${ABISTRING} -r ${JAILMNT} add ${PKGFILE}
 	if [ $? -ne 0 ] ; then
 		err 1
 	fi
@@ -576,7 +577,8 @@ install_from_ports() {
 
 		# Install the package
 		local PKGFILE="${JAILMNT}/work/${tgt}/pkg/$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/build${tgt} -V PKGNAME).txz"
-		pkg-static -r ${JAILMNT} add ${PKGFILE}
+		local ABISTRING="$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/build${tgt} -V PKG_ABISTRING)"
+		pkg-static -o ABI=${ABISTRING} -r ${JAILMNT} add ${PKGFILE}
 		if [ $? -ne 0 ] ; then
 			err 1
 		fi
