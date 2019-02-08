@@ -554,7 +554,6 @@ install_from_ports() {
 
 	if [ -e "${POUDRIERED}/${JAILNAME}-make.conf" ] ; then
 		export __MAKE_CONF="${POUDRIERED}/${JAILNAME}-make.conf"
-		echo "Using MAKE_CONF: ${__MAKE_CONF}"
 	fi
 
 	for tgt in world kernel
