@@ -529,7 +529,7 @@ install_from_ports() {
 	msg "Building src: ${LOGDIR}/${JAILNAME}-buildsrc.log"
 	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes package >${LOGDIR}/${JAILNAME}-buildsrc.log 2>&1
 	if [ $? -ne 0 ] ; then
-		err 1
+		err 1 "Failed building src"
 	fi
 
 	# Install the package
@@ -537,14 +537,14 @@ install_from_ports() {
 	local ABISTRING="$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/src -V PKG_ABISTRING)"
 	pkg-static -o ABI=${ABISTRING} -r ${JAILMNT} add ${PKGFILE}
 	if [ $? -ne 0 ] ; then
-		err 1
+		err 1 "Failed installing src"
 	fi
 
 	# Copy the package to the repo
 	msg "Copying package files"
 	cp ${PKGFILE} ${PACKAGES}/
 	if [ $? -ne 0 ] ; then
-		err 1
+		err 1 "Failed copying package"
 	fi
 
 	# Cleanup the src package
@@ -568,7 +568,7 @@ install_from_ports() {
 			package \
 			>${LOGDIR}/${JAILNAME}-build${tgt}.log 2>&1
 		if [ $? -ne 0 ] ; then
-			err 1
+			err 1 "Failed building ${tgt}"
 		fi
 
 		# Now build the jail from the resulting tarball
@@ -580,14 +580,14 @@ install_from_ports() {
 		local ABISTRING="$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/build${tgt} -V PKG_ABISTRING)"
 		pkg-static -o ABI=${ABISTRING} -r ${JAILMNT} add ${PKGFILE}
 		if [ $? -ne 0 ] ; then
-			err 1
+			err 1 "Failed installing ${tgt}"
 		fi
 
 		# Copy the package to the repo
 		msg "Copying package files"
 		cp ${PKGFILE} ${PACKAGES}/
 		if [ $? -ne 0 ] ; then
-			err 1
+			err 1 "Failed copying package"
 		fi
 
 		msg "Cleaning port files"
