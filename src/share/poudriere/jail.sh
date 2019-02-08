@@ -513,6 +513,12 @@ install_from_ports() {
 	mkdir ${JAILMNT}/work
 	mkdir ${JAILMNT}/usr
 
+	# Create our log location
+	LOGDIR="${POUDRIERE_DATA}/logs/base-ports"
+	if [ ! -d "${LOGDIR}" ] ; then
+		mkdir -p ${LOGDIR}
+	fi
+
 	# Figure out where finished OS packages need to be stashed
 	local PACKAGES=${JAILMNT}/.packages/
 	if [ ! -d "${PACKAGES}" ]; then
@@ -520,27 +526,30 @@ install_from_ports() {
 	fi
 
 	# Create package for the system sources from the os/src port
-	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes package
+	msg "Building src: ${LOGDIR}/${JAILNAME}-buildsrc.log"
+	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes package >${LOGDIR}/${JAILNAME}-buildsrc.log 2>&1
 	if [ $? -ne 0 ] ; then
-		return 1
+		err 1
 	fi
 
 	# Install the package
 	local PKGFILE="${JAILMNT}/work/src/pkg/$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/src -V PKGNAME).txz"
 	pkg-static -r ${JAILMNT} add ${PKGFILE}
 	if [ $? -ne 0 ] ; then
-		return 1
+		err 1
 	fi
 
 	# Copy the package to the repo
+	msg "Copying package files"
 	cp ${PKGFILE} ${PACKAGES}/
 	if [ $? -ne 0 ] ; then
-		return 1
+		err 1
 	fi
 
 	# Cleanup the src package
-	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes clean
-	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes distclean
+	msg "Cleaning port files"
+	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes clean 2>/dev/null >/dev/null
+	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes distclean 2>/dev/null >/dev/null
 
 	if [ -e "${POUDRIERED}/${JAILNAME}-make.conf" ] ; then
 		export __MAKE_CONF="${POUDRIERED}/${JAILNAME}-make.conf"
@@ -549,14 +558,16 @@ install_from_ports() {
 
 	for tgt in world kernel
 	do
-		# Create the world package
+		# Create the package
+		msg "Building ${tgt}: ${LOGDIR}/${JAILNAME}-build${tgt}.log"
 		make -C ${PORTS_BASE}/os/build${tgt} \
 			WRKDIR=${JAILMNT}/work/${tgt} \
 			SRCDIR=${JAILMNT}/usr/src \
 			BATCH=yes \
-			package
+			package \
+			>${LOGDIR}/${JAILNAME}-build${tgt}.log 2>&1
 		if [ $? -ne 0 ] ; then
-			return 1
+			err 1
 		fi
 
 		# Now build the jail from the resulting tarball
@@ -567,16 +578,18 @@ install_from_ports() {
 		local PKGFILE="${JAILMNT}/work/${tgt}/pkg/$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/build${tgt} -V PKGNAME).txz"
 		pkg-static -r ${JAILMNT} add ${PKGFILE}
 		if [ $? -ne 0 ] ; then
-			return 1
+			err 1
 		fi
 
 		# Copy the package to the repo
+		msg "Copying package files"
 		cp ${PKGFILE} ${PACKAGES}/
 		if [ $? -ne 0 ] ; then
-			return 1
+			err 1
 		fi
 
-		make -C ${PORTS_BASE}/os/build${tgt} WRKDIR=${JAILMNT}/work/${tgt} SRCDIR=${JAILMNT}/usr/src BATCH=yes clean
+		msg "Cleaning port files"
+		make -C ${PORTS_BASE}/os/build${tgt} WRKDIR=${JAILMNT}/work/${tgt} SRCDIR=${JAILMNT}/usr/src BATCH=yes clean >/dev/null 2>/dev/null
 	done
 
 	# Cleanup the work directory
