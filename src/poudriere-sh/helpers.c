@@ -63,7 +63,7 @@ _trap_push(int signo, struct sigdata *sd, bool sh)
 	char *action_str = "-", *t;
 	int action;
 
-	memset(sd, sizeof(*sd), 0);
+	memset(sd, 0, sizeof(*sd));
 	sd->signo = signo;
 	sd->sh = sh;
 
