@@ -349,7 +349,7 @@ destroyfs() {
 	local type="$2"
 	local fs
 
-	umountfs ${mnt} 1
+	umountfs ${mnt}
 	if [ ${TMPFS_ALL} -eq 1 ]; then
 		if [ -d "${mnt}" ]; then
 			if ! umount ${UMOUNT_NONBUSY} "${mnt}" 2>/dev/null; then
