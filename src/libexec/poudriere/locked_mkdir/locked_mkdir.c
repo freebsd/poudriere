@@ -226,8 +226,8 @@ main(int argc, char **argv)
 
 	lockfd = -1;
 	timed_out = 0;
-	memset(&oact, sizeof(oact), 0);
-	memset(&oact_siginfo, sizeof(oact_siginfo), 0);
+	memset(&oact, 0, sizeof(oact));
+	memset(&oact_siginfo, 0, sizeof(oact_siginfo));
 #endif
 	lockpid = -1;
 
