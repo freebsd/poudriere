@@ -191,14 +191,15 @@ _zfs_getfs() {
 	[ $# -ne 1 ] && eargs _zfs_getfs mnt
 	local mnt="${1}"
 
-	mntres=$(realpath "${mnt}" 2>/dev/null || echo "${mnt}")
 	zfs list -rt filesystem -H -o name,mountpoint ${ZPOOL}${ZROOTFS} | \
-	    awk -vmnt="${mntres}" '$2 == mnt {print $1}'
+	    awk -vmnt="${mnt}" '$2 == mnt {print $1}'
 }
 
 zfs_getfs() {
 	[ $# -ne 1 ] && eargs zfs_getfs mnt
-	local mnt="${1}"
+	# NB: do the realpath call _before_ the cache call, so the cached value
+	# consistently uses the real path as the identifier.
+	local mnt=$(realpath "${1}" 2>/dev/null || echo "${1}")
 	local value
 
 	[ -n "${NO_ZFS}" ] && return 0
