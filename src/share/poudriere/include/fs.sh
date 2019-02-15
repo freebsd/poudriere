@@ -239,11 +239,11 @@ clonefs() {
 	local snap=$3
 	local name zfs_to
 	local fs=$(zfs_getfs ${from})
-	local basepath dir dirs skippaths cpignore cpignores
+	local basepath dir dirs skippaths cpignore cpignores mnt
 
 	destroyfs ${to} jail
 	mkdir -p ${to}
-	to=$(realpath ${to})
+	mnt=$(realpath "${to}")
 	# When using TMPFS, there is no need to clone the originating FS from
 	# a snapshot as the destination will be tmpfs. We do however need to
 	# ensure the originating FS is rolled back to the expected snapshot.
@@ -252,7 +252,7 @@ clonefs() {
 		unset fs
 	fi
 	if [ -n "${fs}" ]; then
-		name=${to##*/}
+		name="${mnt##*/}"
 
 		if [ "${name}" = "ref" ]; then
 			zfs_to=${fs%/*}/${MASTERNAME}-${name}
@@ -260,7 +260,7 @@ clonefs() {
 			zfs_to=${fs}/${name}
 		fi
 
-		zfs clone -o mountpoint=${to} \
+		zfs clone -o mountpoint=${mnt} \
 			-o sync=disabled \
 			-o atime=off \
 			-o compression=off \
@@ -272,9 +272,9 @@ clonefs() {
 		# Insert this into the zfs_getfs cache.
 		cache_set "${zfs_to}" _zfs_getfs "${to}"
 	else
-		[ ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs all ${to}
+		[ ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs all "${mnt}"
 		if [ "${snap}" = "clean" ]; then
-			skippaths="$(nullfs_paths "${to}")"
+			skippaths="$(nullfs_paths "${mnt}")"
 			skippaths="${skippaths} /usr/src"
 			skippaths="${skippaths} /usr/lib/debug"
 			skippaths="${skippaths} /var/db/etcupdate"
@@ -312,14 +312,14 @@ clonefs() {
 			    }')
 			EOF
 		fi
-		do_clone -r "${from}" "${to}"
+		do_clone -r "${from}" "${mnt}"
 		if [ "${snap}" = "clean" ]; then
 			rm -f ${cpignores}
-			echo ".p" >> "${to}/.cpignore"
+			echo ".p" >> "${mnt}/.cpignore"
 		fi
 	fi
 	# Create our data dir.
-	mkdir -p "${to}/.p"
+	mkdir -p "${mnt}/.p"
 }
 
 nullfs_paths() {
