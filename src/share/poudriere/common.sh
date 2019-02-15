@@ -7590,7 +7590,7 @@ case ${TMPFS_WRKDIR}${TMPFS_DATA}${TMPFS_LOCALBASE}${TMPFS_ALL} in
 	;;
 esac
 
-POUDRIERE_DATA=`get_data_dir`
+POUDRIERE_DATA=$(realpath $(get_data_dir))
 : ${WRKDIR_ARCHIVE_FORMAT="tbz"}
 case "${WRKDIR_ARCHIVE_FORMAT}" in
 	tar|tgz|tbz|txz);;
