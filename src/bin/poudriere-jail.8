@@ -160,6 +160,8 @@ It is expected that this directory be installed to with the following:
 .Pp
 The path will be null-mounted during builds.
 It will not be copied at the time of running
+.Nm jail .
+Deleting the jail will attempt to revert any files changed by poudriere.
 .It Sy ports=PORTSTREE
 Build from the base ports included in
 .Sy PORTSTREE .
@@ -170,8 +172,6 @@ Install from the base packages located at
 .Sy URL .
 Note that this method requires the remote repo contain the
 os/userland, os/kernel, os/buildworld, os/buildkernel packages
-.Nm jail .
-Deleting the jail will attempt to revert any files changed by poudriere.
 .It Sy src=PATH
 Install from the given src directory at
 .Sy PATH .
