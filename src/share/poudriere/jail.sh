@@ -57,8 +57,8 @@ Options:
     -m method     -- When used with -c, overrides the default method for
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
-                       allbsd, ftp-archive, ftp, git, http, null, ports=PATH, src=PATH,
-		       svn, svn+file, svn+http, svn+https, svn+ssh, tar=PATH, trueos,
+                       allbsd, ftp-archive, ftp, git, http, null, pkg=URL, ports=PATH,
+		       src=PATH, svn, svn+file, svn+http, svn+https, svn+ssh, tar=PATH,
                        url=SOMEURL.
     -P patch      -- Specify a patch to apply to the source before building.
     -S srcpath    -- Specify a path to the source tree to be used.
@@ -332,6 +332,14 @@ update_jail() {
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
+	pkg)
+		[ -z "${VERSION}" ] && VERSION=$(jget ${JAILNAME} version)
+		[ -z "${ARCH}" ] && ARCH=$(jget ${JAILNAME} arch)
+		[ -z "${PKGREPO}" ] && PKGREPO=$(grep 'url:' ${JAILMNT}/etc/pkg/Train.conf | awk '{print $2}' | cut -d '"' -f 2)
+		METHOD="pkg=${PKGREPO}"
+		delete_jail
+		create_jail
+		;;
 	ports=*)
 		err 1 "Upgrade is not supported with ${METHOD}; to upgrade, please delete and recreate the jail"
 		;;
@@ -343,7 +351,7 @@ update_jail() {
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
-	allbsd|gjb|trueos|url=*)
+	allbsd|gjb|url=*)
 		[ -z "${VERSION}" ] && VERSION=$(jget ${JAILNAME} version)
 		[ -z "${ARCH}" ] && ARCH=$(jget ${JAILNAME} arch)
 		delete_jail
@@ -704,6 +712,47 @@ install_from_vcs() {
 	    ${JAILMNT}/usr/include/sys/param.h)"
 }
 
+install_from_pkg() {
+	mkdir ${JAILMNT}/pkgrepo
+	local ABISTRING INSLIST REMOTEVER
+
+	cat >${JAILMNT}/pkgrepo/repo.conf <<EOF
+base: {
+  url: "${PKGREPO}",
+  signature_type: "none",
+  enabled: yes,
+}
+EOF
+	# Get the remote version
+	REMOTEVER=$(sudo pkg rquery "%At=%Av" ports-mgmt/pkg | grep "FreeBSD_version" | cut -d '=' -f 2 | cut -c 1-2)
+	ABISTRING="FreeBSD:${REMOTEVER}:${ARCH}"
+
+	INSLIST="os/userland os/src os/kernel os/buildworld os/buildkernel"
+
+	# Make pkg play nice
+	export IGNORE_OSVERSION="YES"
+
+	for inspkg in ${INSLIST}
+	do
+		msg "Installing ${inspkg} into jail..."
+		# Install the packages
+		pkg-static -r ${JAILMNT} -o ABI="${ABISTRING}" \
+                        -R ${JAILMNT}/pkgrepo \
+                        install -y ${inspkg}
+		if [ $? -ne 0 ] ; then
+			err 1 "Failed installing ${inspkg} into jail..."
+		fi
+	done
+
+	# Cleanup the repo dir
+	rm -rf ${JAILMNT}/pkgrepo
+
+	msg_n "Cleaning up..."
+	rm -rf ${JAILMNT}/pkgrepo
+	rm -rf ${JAILMNT}/var/cache/pkg
+	echo " done"
+}
+
 install_from_ftp() {
 	mkdir ${JAILMNT}/fromftp
 	local URL V
@@ -747,7 +796,6 @@ install_from_ftp() {
 			;;
 		url=*) URL=${METHOD##url=} ;;
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
-		trueos) URL="https://pkg.trueos.org/iso/snapshot/dist/" ;;
 		ftp-archive) URL="http://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
 		esac
 		DISTS="${DISTS} dict"
@@ -810,7 +858,6 @@ install_from_ftp() {
 				esac
 				;;
 			allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
-			trueos) URL="https://pkg.trueos.org/iso/snapshot/dist/" ;;
 			ftp-archive) URL="http://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH%%.*}/${ARCH##*.}/${V}" ;;
 			url=*) URL=${METHOD##url=} ;;
 		esac
@@ -914,17 +961,6 @@ create_jail() {
 		IFS=${OIFS}
 		RELEASE="${ALLBSDVER}-JPSNAP/ftp"
 		;;
-	trueos)
-	        FCT=install_from_ftp
-                TRUEOSVER=`fetch -qo - \
-                        https://pkg.trueos.org/iso/snapshot/dist`
-                        [ -z ${TRUEOSVER} ] && err 1 "Unknown version $VERSION"
-
-                OIFS=${IFS}
-                IFS=-
-                set -- ${TRUEOSVER}
-                IFS=${OIFS}
-                ;;
 	svn*)
 		test -x "${SVN_CMD}" || err 1 "svn or svnlite not installed. Perhaps you need to 'pkg install subversion'"
 		case ${VERSION} in
@@ -950,6 +986,13 @@ create_jail() {
 	git*)
 		# Do not check valid version given one can have a specific branch
 		FCT=install_from_vcs
+		;;
+	pkg=*)
+		FCT=install_from_pkg
+		PKGREPO="${METHOD##*=}"
+		[ -z "${PKGREPO}" ] && \
+		    err 1 "Must use format -m pkg=<url>/<to>/<repo>"
+		METHOD="${METHOD%%=*}"
 		;;
 	ports=*)
 		PTNAME="${METHOD#ports=}"
