@@ -40,7 +40,7 @@ static char sccsid[] = "@(#)expand.c	8.5 (Berkeley) 5/15/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/expand.c 338473 2018-09-05 19:16:09Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/expand.c 341164 2018-11-28 20:03:53Z jilles $");
 
 #include <sys/types.h>
 #include <sys/time.h>
@@ -623,10 +623,11 @@ static const char *
 subevalvar_misc(const char *p, struct nodelist **restrict argbackq,
     const char *var, int subtype, int startloc, int varflags)
 {
+	const char *end;
 	char *startp;
 	int amount;
 
-	p = argstr(p, argbackq, EXP_TILDE, NULL);
+	end = argstr(p, argbackq, EXP_TILDE, NULL);
 	STACKSTRNUL(expdest);
 	startp = stackblock() + startloc;
 
@@ -635,7 +636,7 @@ subevalvar_misc(const char *p, struct nodelist **restrict argbackq,
 		setvar(var, startp, 0);
 		amount = startp - expdest;
 		STADJUST(amount, expdest);
-		return p;
+		return end;
 
 	case VSQUESTION:
 		if (*p != CTLENDVAR) {

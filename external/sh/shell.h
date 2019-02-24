@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)shell.h	8.2 (Berkeley) 5/4/95
- * $FreeBSD: head/bin/sh/shell.h 326025 2017-11-20 19:49:47Z pfg $
+ * $FreeBSD: head/bin/sh/shell.h 343981 2019-02-10 22:23:05Z jilles $
  */
 
 #ifndef SHELL_H_
@@ -59,8 +59,6 @@
  */
 typedef intmax_t arith_t;
 #define	ARITH_FORMAT_STR  "%" PRIdMAX
-#define	atoarith_t(arg)  strtoimax(arg, NULL, 0)
-#define	strtoarith_t(nptr, endptr, base)  strtoimax(nptr, endptr, base)
 #define	ARITH_MIN INTMAX_MIN
 #define	ARITH_MAX INTMAX_MAX
 

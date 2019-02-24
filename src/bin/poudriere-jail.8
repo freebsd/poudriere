@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 8, 2018
+.Dd October 22, 2018
 .Dt POUDRIERE-JAIL 8
 .Os
 .Sh NAME
@@ -57,6 +57,12 @@ See
 for restrictions on the names of jails.
 .It Fl d
 Deletes a jail.
+.Pp
+If the stdin is a TTY then the command is going to ask for confirmation,
+which defaults to
+.Dq Li N
+.Pq for Dq no .
+Othwerwise, the specified jail is deleted without confirmation.
 .It Fl i
 Show information about a jail.
 See also
