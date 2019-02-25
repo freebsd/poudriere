@@ -7480,11 +7480,11 @@ calculate_ospart_size() {
 ingest_base_pkgs()
 {
 	# Do we have any base-port packages to ingest?
-	if [ ! -d "${MASTERMNT}/.packages/" ] ; then
+	if [ ! -d "${MASTERMNT}/.packages/" ]; then
 		return 0
 	fi
 
-	if [ ! -d "${PACKAGES}/All/" ] ; then
+	if [ ! -d "${PACKAGES}/All/" ]; then
 		mkdir -p "${PACKAGES}/All/"
 	fi
 
