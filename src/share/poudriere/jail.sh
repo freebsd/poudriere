@@ -543,7 +543,7 @@ install_from_ports() {
 	# Install the package
 	local PKGFILE="${JAILMNT}/work/src/pkg/$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/src -V PKGNAME).txz"
 	local ABISTRING="$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/src -V PKG_ABISTRING)"
-	pkg-static -o ABI=${ABISTRING} -r ${JAILMNT} add ${PKGFILE}
+	pkg -o ABI=${ABISTRING} -r ${JAILMNT} add ${PKGFILE}
 	if [ $? -ne 0 ] ; then
 		err 1 "Failed installing src"
 	fi
@@ -585,7 +585,7 @@ install_from_ports() {
 		# Install the package
 		local PKGFILE="${JAILMNT}/work/${tgt}/pkg/$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/build${tgt} -V PKGNAME).txz"
 		local ABISTRING="$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/build${tgt} -V PKG_ABISTRING)"
-		pkg-static -o ABI=${ABISTRING} -r ${JAILMNT} add ${PKGFILE}
+		pkg -o ABI=${ABISTRING} -r ${JAILMNT} add ${PKGFILE}
 		if [ $? -ne 0 ] ; then
 			err 1 "Failed installing ${tgt}"
 		fi
@@ -724,7 +724,7 @@ base: {
 }
 EOF
 	# Get the remote version
-	REMOTEVER=$(sudo pkg rquery "%At=%Av" ports-mgmt/pkg | grep "FreeBSD_version" | cut -d '=' -f 2 | cut -c 1-2)
+	REMOTEVER=$(pkg rquery "%At=%Av" ports-mgmt/pkg | grep "FreeBSD_version" | cut -d '=' -f 2 | cut -c 1-2)
 	ABISTRING="FreeBSD:${REMOTEVER}:${ARCH}"
 
 	INSLIST="os/userland os/src os/kernel os/buildworld os/buildkernel"
@@ -736,7 +736,7 @@ EOF
 	do
 		msg "Installing ${inspkg} into jail..."
 		# Install the packages
-		pkg-static -r ${JAILMNT} -o ABI="${ABISTRING}" \
+		pkg -r ${JAILMNT} -o ABI="${ABISTRING}" \
                         -R ${JAILMNT}/pkgrepo \
                         install -y ${inspkg}
 		if [ $? -ne 0 ] ; then
