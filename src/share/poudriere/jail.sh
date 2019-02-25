@@ -698,13 +698,14 @@ install_from_pkg() {
 	mkdir ${JAILMNT}/pkgrepo
 	local ABISTRING INSLIST REMOTEVER
 
-	cat >${JAILMNT}/pkgrepo/repo.conf <<EOF
-base: {
-  url: "${PKGREPO}",
-  signature_type: "none",
-  enabled: yes,
-}
-EOF
+	cat > ${JAILMNT}/pkgrepo/repo.conf <<-EOF
+	base: {
+	  url: "${PKGREPO}",
+	  signature_type: "none",
+	  enabled: yes,
+	}
+	EOF
+
 	# Get the remote version
 	REMOTEVER=$(pkg rquery "%At=%Av" ports-mgmt/pkg | grep "FreeBSD_version" | cut -d '=' -f 2 | cut -c 1-2)
 	ABISTRING="FreeBSD:${REMOTEVER}:${ARCH}"
