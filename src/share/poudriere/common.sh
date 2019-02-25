@@ -7483,12 +7483,10 @@ calculate_ospart_size() {
 ingest_base_pkgs()
 {
 	# Do we have any base-port packages to ingest?
-	if [ ! -d "${MASTERMNT}/.packages/" ]; then
-		return 0
-	fi
+	[ -d "${MASTERMNT}/.packages/" ] || return 0
 
 	if [ ! -d "${PACKAGES}/All/" ]; then
-		mkdir -p "${PACKAGES}/All/"
+		mkdir -p "${PACKAGES}/All/" || err 1 "Failed creating packages All/ directory"
 	fi
 
 	for pkgfile in ${MASTERMNT}/.packages/*.txz; do
@@ -7498,7 +7496,7 @@ ingest_base_pkgs()
 		esac
 
 		msg "Copying $pkgfile -> ${PACKAGES}"
-		cp ${pkgfile} ${PACKAGES}/All/
+		cp ${pkgfile} ${PACKAGES}/All/ || err 1 "Failed copy of ${pkgfile}"
 	done
 }
 
