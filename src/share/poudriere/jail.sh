@@ -999,8 +999,8 @@ create_jail() {
 	        # test if it already exists
 		porttree_exists ${PTNAME} || err 1 "No such ports name ${PTNAME}"
 		PORTS_BASE="${BASEFS:=/usr/local${ZROOTFS}}/ports/${PTNAME}"
-		test -d ${PORTS_BASE} || err 1 "No such ports directory"
-		test -d ${PORTS_BASE}/os/buildworld || err 1 "Missing os/buildworld in ports directory"
+		[ -d ${PORTS_BASE} ] || err 1 "No such ports directory"
+		[ -d ${PORTS_BASE}/os/buildworld ] || err 1 "Missing os/buildworld in ports directory"
 		FCT=install_from_ports
 		;;
 	src=*)
