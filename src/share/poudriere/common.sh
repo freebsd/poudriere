@@ -7491,7 +7491,7 @@ ingest_base_pkgs()
 		mkdir -p "${PACKAGES}/All/"
 	fi
 
-	for pkgfile in $(${MASTERMNT}/.packages/*.txz); do
+	for pkgfile in ${MASTERMNT}/.packages/*.txz; do
 		# Check empty dir
 		case "${pkgfile}" in
 			"*") break ;;
