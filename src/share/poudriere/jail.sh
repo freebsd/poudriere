@@ -57,9 +57,9 @@ Options:
     -m method     -- When used with -c, overrides the default method for
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
-                       allbsd, ftp-archive, ftp, git, http, null, pkg=URL, ports=PATH,
+		       allbsd, ftp-archive, ftp, git, http, null, pkg=URL, ports=PATH,
 		       src=PATH, svn, svn+file, svn+http, svn+https, svn+ssh, tar=PATH,
-                       url=SOMEURL.
+		       url=SOMEURL.
     -P patch      -- Specify a patch to apply to the source before building.
     -S srcpath    -- Specify a path to the source tree to be used.
     -D            -- Do a full git clone without --depth (default: --depth=1)
