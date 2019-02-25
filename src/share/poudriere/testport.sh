@@ -216,8 +216,6 @@ if [ $CONFIGSTR -eq 1 ]; then
 	    config
 fi
 
-ingest_base_pkgs
-
 # deps_fetch_vars lookup for dependencies moved to prepare_ports()
 # This will set LISTPORTS/PKGNAME/DEPENDS_ARGS/FLAVOR/FLAVORS as well.
 prepare_ports

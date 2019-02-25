@@ -6949,6 +6949,9 @@ prepare_ports() {
 		_log_path_top log_top
 		get_cache_dir cache_dir
 
+		# Check if we have base packages to import
+		ingest_base_pkgs
+
 		if [ ${resuming_build} -eq 0 ] || ! [ -d "${log}" ]; then
 			# Sync in HTML files through a base dir
 			install_html_files "${HTMLPREFIX}" "${log_top}/.html" \
