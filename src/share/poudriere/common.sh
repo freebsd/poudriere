@@ -7488,10 +7488,14 @@ ingest_base_pkgs()
 		mkdir -p "${PACKAGES}/All/"
 	fi
 
-	for i in $(ls ${MASTERMNT}/.packages/*.txz)
-	do
-		msg "Copying $i -> ${PACKAGES}"
-		cp ${i} ${PACKAGES}/All/
+	for pkgfile in $(${MASTERMNT}/.packages/*.txz); do
+		# Check empty dir
+		case "${pkgfile}" in
+			"*") break ;;
+		esac
+
+		msg "Copying $pkgfile -> ${PACKAGES}"
+		cp ${pkgfile} ${PACKAGES}/All/
 	done
 }
 

@@ -535,30 +535,21 @@ install_from_ports() {
 
 	# Create package for the system sources from the os/src port
 	msg "Building src: ${LOGDIR}/${JAILNAME}-buildsrc.log"
-	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes package >${LOGDIR}/${JAILNAME}-buildsrc.log 2>&1
-	if [ $? -ne 0 ] ; then
-		err 1 "Failed building src"
-	fi
+	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes package >${LOGDIR}/${JAILNAME}-buildsrc.log 2>&1 || err 1 "Failed building src"
 
 	# Install the package
 	local PKGFILE="${JAILMNT}/work/src/pkg/$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/src -V PKGNAME).txz"
 	local ABISTRING="$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/src -V PKG_ABISTRING)"
-	pkg -o ABI=${ABISTRING} -r ${JAILMNT} add ${PKGFILE}
-	if [ $? -ne 0 ] ; then
-		err 1 "Failed installing src"
-	fi
+	pkg -o ABI=${ABISTRING} -r ${JAILMNT} add ${PKGFILE} || err 1 "Failed installing src"
 
 	# Copy the package to the repo
 	msg "Copying package files"
-	cp ${PKGFILE} ${PACKAGES}/
-	if [ $? -ne 0 ] ; then
-		err 1 "Failed copying package"
-	fi
+	cp ${PKGFILE} ${PACKAGES}/ || err 1 "Failed copying package"
 
 	# Cleanup the src package
 	msg "Cleaning port files"
-	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes clean 2>/dev/null >/dev/null
-	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes distclean 2>/dev/null >/dev/null
+	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes clean 2>/dev/null >/dev/null || err 1 "Failed make clean"
+	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes distclean 2>/dev/null >/dev/null || err 1 "Failed make distclean"
 
 	if [ -e "${POUDRIERED}/${JAILNAME}-make.conf" ] ; then
 		export __MAKE_CONF="${POUDRIERED}/${JAILNAME}-make.conf"
@@ -573,10 +564,7 @@ install_from_ports() {
 			SRCDIR=${JAILMNT}/usr/src \
 			BATCH=yes \
 			package \
-			>${LOGDIR}/${JAILNAME}-build${tgt}.log 2>&1
-		if [ $? -ne 0 ] ; then
-			err 1 "Failed building ${tgt}"
-		fi
+			>${LOGDIR}/${JAILNAME}-build${tgt}.log 2>&1 || err 1 "Failed building ${tgt}"
 
 		# Now build the jail from the resulting tarball
 		TARBALL="${JAILMNT}/work/${tgt}/stage/usr/dist/${tgt}.txz"
@@ -585,20 +573,14 @@ install_from_ports() {
 		# Install the package
 		local PKGFILE="${JAILMNT}/work/${tgt}/pkg/$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/build${tgt} -V PKGNAME).txz"
 		local ABISTRING="$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/build${tgt} -V PKG_ABISTRING)"
-		pkg -o ABI=${ABISTRING} -r ${JAILMNT} add ${PKGFILE}
-		if [ $? -ne 0 ] ; then
-			err 1 "Failed installing ${tgt}"
-		fi
+		pkg -o ABI=${ABISTRING} -r ${JAILMNT} add ${PKGFILE} || err 1 "Failed installing ${tgt}"
 
 		# Copy the package to the repo
 		msg "Copying package files"
-		cp ${PKGFILE} ${PACKAGES}/
-		if [ $? -ne 0 ] ; then
-			err 1 "Failed copying package"
-		fi
+		cp ${PKGFILE} ${PACKAGES}/ || err 1 "Failed copying package"
 
 		msg "Cleaning port files"
-		make -C ${PORTS_BASE}/os/build${tgt} WRKDIR=${JAILMNT}/work/${tgt} SRCDIR=${JAILMNT}/usr/src BATCH=yes clean >/dev/null 2>/dev/null
+		make -C ${PORTS_BASE}/os/build${tgt} WRKDIR=${JAILMNT}/work/${tgt} SRCDIR=${JAILMNT}/usr/src BATCH=yes clean >/dev/null 2>/dev/null || err 1 "Failed make clean"
 	done
 
 	# Cleanup the work directory
@@ -738,10 +720,7 @@ EOF
 		# Install the packages
 		pkg -r ${JAILMNT} -o ABI="${ABISTRING}" \
                         -R ${JAILMNT}/pkgrepo \
-                        install -y ${inspkg}
-		if [ $? -ne 0 ] ; then
-			err 1 "Failed installing ${inspkg} into jail..."
-		fi
+                        install -y ${inspkg} || err 1 "Failed installing ${inspkg} into jail..."
 	done
 
 	# Cleanup the repo dir
