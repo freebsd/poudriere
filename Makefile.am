@@ -299,6 +299,8 @@ cached_LDADD=	-lutil -lrt
 cachec_SOURCES=	src/libexec/poudriere/cachec/cachec.c
 cachec_LDADD=	-lrt
 
+DEVEL_SFX=	-devel
+
 .PHONY:	gen-make-wiki
 gen-man-wiki:
 	@if [ ! -e wiki/poudriere.8.md ]; then \
@@ -310,15 +312,15 @@ gen-man-wiki:
 	  exit 1; \
 	fi
 	@for man in $(dist_man_MANS); do \
-	  echo "MANDOC wiki/$${man##*/}.md"; \
+	  echo "MANDOC wiki/$${man##*/}${DEVEL_SFX}.md"; \
 	  ( \
 	    echo "### This page is auto-generated from $${man}"; \
-	    (mandoc -Thtml -O man=%N.%S $${man} | awk \
+	    (mandoc -Thtml -O man=%N.%S${DEVEL_SFX} $${man} | awk \
 	    '$$1 == "<body>" { seenbody=1; next; }; \
 	     $$1 == "</body>" { seenbody=0; }; \
 	     seenbody == 1 { print };'\
 	    ); \
-	  ) > wiki/$${man##*/}.md; \
+	  ) > wiki/$${man##*/}${DEVEL_SFX}.md; \
 	done
 
 MOSTLYCLEANFILES+=	poudriere
