@@ -310,7 +310,7 @@ gen-man-wiki:
 	  exit 1; \
 	fi
 	@for man in $(dist_man_MANS); do \
-	  echo "MANDOC wiki/$${man##*/}-devel.md"; \
+	  echo "MANDOC wiki/$${man##*/}.md"; \
 	  ( \
 	    echo "### This page is auto-generated from $${man}"; \
 	    (mandoc -Thtml -O man=%N.%S $${man} | awk \
@@ -318,7 +318,7 @@ gen-man-wiki:
 	     $$1 == "</body>" { seenbody=0; }; \
 	     seenbody == 1 { print };'\
 	    ); \
-	  ) > wiki/$${man##*/}-devel.md; \
+	  ) > wiki/$${man##*/}.md; \
 	done
 
 MOSTLYCLEANFILES+=	poudriere
