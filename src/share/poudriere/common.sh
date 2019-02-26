@@ -2938,12 +2938,14 @@ check_fs_violation() {
 }
 
 gather_distfiles() {
-	[ $# -eq 4 ] || eargs gather_distfiles originspec_parent \
-	    originspec from to
-	local originspec_parent="$1"
-	local originspec="$2"
-	local from=$(realpath "$3")
-	local to=$(realpath "$4")
+	[ $# -eq 6 ] || eargs gather_distfiles originspec_main pkgname_main \
+	    originspec pkgname from to
+	local originspec_main="$1"
+	local pkgname_main="$2"
+	local originspec="$3"
+	local pkgname="$4"
+	local from=$(realpath "$5")
+	local to=$(realpath "$6")
 	local sub dists d tosubd specials special origin
 	local dep_originspec pkgname flavor
 
@@ -2953,17 +2955,14 @@ gather_distfiles() {
 	    err 1 "Failed to lookup distfiles for ${originspec}"
 
 	originspec_decode "${originspec}" origin '' flavor
-	if [ "${originspec_parent}" = "${originspec}" ]; then
-		# Building main port
-		pkgname="${PKGNAME}"
-	else
+	if [ -z "${pkgname}" ]; then
 		# Recursive gather_distfiles()
 		shash_get originspec-pkgname "${originspec}" pkgname || \
 		    err 1 "gather_distfiles: Could not find PKGNAME for ${originspec}"
 	fi
 	shash_get pkgname-depend_specials "${pkgname}" specials || specials=
 
-	job_msg_dev "${COLOR_PORT}${origin}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}: distfiles ${from} -> ${to}"
+	job_msg_dev "${COLOR_PORT}${origin}${flavor:+@${flavor}} | ${pkgname_main}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
 		[ -f ${from}/${sub}/${d} ] || continue
 		tosubd=${to}/${sub}/${d}
@@ -2972,7 +2971,8 @@ gather_distfiles() {
 	done
 
 	for special in ${specials}; do
-		gather_distfiles "${originspec_parent}" "${special}" \
+		gather_distfiles "${originspec_main}" "${pkgname_main}" \
+		    "${special}" "" \
 		    "${from}" "${to}"
 	done
 
@@ -3084,8 +3084,9 @@ _real_build_port() {
 			mkdir -p ${mnt}/portdistfiles
 			if [ "${DISTFILES_CACHE}" != "no" ]; then
 				echo "DISTDIR=/portdistfiles" >> ${mnt}/etc/make.conf
-				gather_distfiles "${originspec}" \
-				    "${originspec}" "${DISTFILES_CACHE}" \
+				gather_distfiles "${originspec}" "${pkgname}" \
+				    "${originspec}" "${pkgname}" \
+				    "${DISTFILES_CACHE}" \
 				    "${mnt}/portdistfiles" || \
 				    return 1
 			fi
@@ -3217,7 +3218,8 @@ _real_build_port() {
 		print_phase_footer
 
 		if [ "${phase}" = "checksum" -a "${DISTFILES_CACHE}" != "no" ]; then
-			gather_distfiles "${originspec}" "${originspec}" \
+			gather_distfiles "${originspec}" "${pkgname}" \
+			    "${originspec}" "${pkgname}" \
 			    "${mnt}/portdistfiles" "${DISTFILES_CACHE}" || \
 			    return 1
 		fi
