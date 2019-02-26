@@ -313,7 +313,7 @@ gen-man-wiki:
 	  echo "MANDOC wiki/$${man##*/}-devel.md"; \
 	  ( \
 	    echo "### This page is auto-generated from $${man}"; \
-	    (mandoc -Thtml $${man} | awk \
+	    (mandoc -Thtml -O man=%N.%S $${man} | awk \
 	    '$$1 == "<body>" { seenbody=1; next; }; \
 	     $$1 == "</body>" { seenbody=0; }; \
 	     seenbody == 1 { print };'\
