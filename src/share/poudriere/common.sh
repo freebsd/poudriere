@@ -2906,14 +2906,15 @@ check_leftovers() {
 }
 
 check_fs_violation() {
-	[ $# -eq 6 ] || eargs check_fs_violation mnt mtree_target originspec \
-	    status_msg err_msg status_value
+	[ $# -eq 7 ] || eargs check_fs_violation mnt mtree_target originspec \
+	    pkgname status_msg err_msg status_value
 	local mnt="$1"
 	local mtree_target="$2"
 	local originspec="$3"
-	local status_msg="$4"
-	local err_msg="$5"
-	local status_value="$6"
+	local pkgname="$4"
+	local status_msg="$5"
+	local err_msg="$6"
+	local status_value="$7"
 	local tmpfile=$(mktemp -t check_fs_violation)
 	local ret=0
 
@@ -2928,7 +2929,7 @@ check_fs_violation() {
 		msg "Error: ${err_msg}"
 		cat ${tmpfile}
 		bset_job_status "${status_value}" "${originspec}"
-		job_msg_verbose "Status   ${COLOR_PORT}${originspec} | ${PKGNAME}${COLOR_RESET}: ${status_value}"
+		job_msg_verbose "Status   ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_RESET}: ${status_value}"
 		ret=1
 	fi
 	unlink ${tmpfile}
@@ -2984,6 +2985,7 @@ _real_build_port() {
 	[ $# -ne 2 ] && eargs _real_build_port originspec PKGNAME
 	local originspec="$1"
 	local PKGNAME="$2"
+	local pkgname="${PKGNAME}"
 	local port flavor portdir
 	local mnt
 	local log
@@ -3100,8 +3102,8 @@ _real_build_port() {
 		run-depends)
 			JUSER=root
 			if [ "${PORTTESTING}" -eq 1 ]; then
-				check_fs_violation ${mnt} prebuild \
-				    "${originspec}" \
+				check_fs_violation "${mnt}" prebuild \
+				    "${originspec}" "${pkgname}" \
 				    "Checking for filesystem violations" \
 				    "Filesystem touched during build:" \
 				    "build_fs_violation" ||
@@ -3121,8 +3123,8 @@ _real_build_port() {
 		package)
 			max_execution_time=${MAX_EXECUTION_TIME_PACKAGE}
 			if [ "${PORTTESTING}" -eq 1 ]; then
-				check_fs_violation ${mnt} prestage \
-				    "${originspec}" \
+				check_fs_violation "${mnt}" prestage \
+				    "${originspec}" "${pkgname}" \
 				    "Checking for staging violations" \
 				    "Filesystem touched during stage (files must install to \${STAGEDIR}):" \
 				    "stage_fs_violation" || if [ "${PORTTESTING_FATAL}" != "no" ]; then
