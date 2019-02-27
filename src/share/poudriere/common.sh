@@ -987,11 +987,12 @@ bset() {
 }
 
 bset_job_status() {
-	[ $# -eq 2 ] || eargs bset_job_status status originspec
+	[ $# -eq 3 ] || eargs bset_job_status status originspec pkgname
 	local status="$1"
 	local originspec="$2"
+	local pkgname="$3"
 
-	bset ${MY_JOBID} status "${status}:${originspec}:${PKGNAME}:${TIME_START_JOB:-${TIME_START}}:$(clock -monotonic)"
+	bset ${MY_JOBID} status "${status}:${originspec}:${pkgname}:${TIME_START_JOB:-${TIME_START}}:$(clock -monotonic)"
 }
 
 badd() {
@@ -2921,7 +2922,7 @@ check_fs_violation() {
 	if [ -s ${tmpfile} ]; then
 		msg "Error: ${err_msg}"
 		cat ${tmpfile}
-		bset_job_status "${status_value}" "${originspec}"
+		bset_job_status "${status_value}" "${originspec}" "${pkgname}"
 		job_msg_verbose "Status   ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_RESET}: ${status_value}"
 		ret=1
 	fi
@@ -3064,7 +3065,7 @@ _real_build_port() {
 		max_execution_time=${MAX_EXECUTION_TIME}
 		phaseenv=
 		JUSER=${jailuser}
-		bset_job_status "${phase}" "${originspec}"
+		bset_job_status "${phase}" "${originspec}" "${pkgname}"
 		job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
 		[ "${PORTTESTING}" -eq 1 ] && \
 		    phaseenv="${phaseenv} DEVELOPER_MODE=yes"
@@ -3193,11 +3194,13 @@ _real_build_port() {
 				# 3 = cmd timeout
 				if [ $hangstatus -eq 2 ]; then
 					msg "Killing runaway build after ${NOHANG_TIME} seconds with no output"
-					bset_job_status "${phase}/runaway" "${originspec}"
+					bset_job_status "${phase}/runaway" \
+					    "${originspec}" "${pkgname}"
 					job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}runaway"
 				elif [ $hangstatus -eq 3 ]; then
 					msg "Killing timed out build after ${max_execution_time} seconds"
-					bset_job_status "${phase}/timeout" "${originspec}"
+					bset_job_status "${phase}/timeout" \
+					    "${originspec}" "${pkgname}"
 					job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}timeout"
 				fi
 				return 1
@@ -3220,7 +3223,7 @@ _real_build_port() {
 		if [ "${phase}" = "stage" -a "${PORTTESTING}" -eq 1 ]; then
 			local die=0
 
-			bset_job_status "stage-qa" "${originspec}"
+			bset_job_status "stage-qa" "${originspec}" "${pkgname}"
 			if ! injail /usr/bin/env DEVELOPER=1 ${PORT_FLAGS} \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    stage-qa; then
@@ -3230,7 +3233,8 @@ _real_build_port() {
 				die=1
 			fi
 
-			bset_job_status "check-plist" "${originspec}"
+			bset_job_status "check-plist" "${originspec}" \
+			    "${pkgname}"
 			if ! injail /usr/bin/env DEVELOPER=1 ${PORT_FLAGS} \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    check-plist; then
@@ -3256,7 +3260,8 @@ _real_build_port() {
 			local die=0
 
 			msg "Checking for extra files and directories"
-			bset_job_status "leftovers" "${originspec}"
+			bset_job_status "leftovers" "${originspec}" \
+			    "${pkgname}"
 
 			if [ -f "${mnt}${PORTSDIR}/Mk/Scripts/check_leftovers.sh" ]; then
 				check_leftovers ${mnt} | sed -e "s|${mnt}||" |
@@ -3406,7 +3411,7 @@ may show failures if the port does not respect PREFIX."
 		done
 	fi
 
-	bset_job_status "build_port_done" "${originspec}"
+	bset_job_status "build_port_done" "${originspec}" "${pkgname}"
 	return ${testfailure}
 }
 
@@ -4030,7 +4035,7 @@ build_pkg() {
 
 	get_originspec_from_pkgname ORIGINSPEC "${pkgname}"
 	originspec_decode "${ORIGINSPEC}" port DEPENDS_ARGS FLAVOR
-	bset_job_status "starting" "${ORIGINSPEC}"
+	bset_job_status "starting" "${ORIGINSPEC}" "${pkgname}"
 	if [ -z "${FLAVOR}" ]; then
 		shash_remove pkgname-flavor "${pkgname}" FLAVOR || FLAVOR=
 	fi

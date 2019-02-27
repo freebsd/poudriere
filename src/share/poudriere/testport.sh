@@ -237,7 +237,7 @@ if [ $(bget stats_failed) -gt 0 ] || [ $(bget stats_skipped) -gt 0 ]; then
 	[ -n "${skipped}" ] && COLOR_ARROW="${COLOR_SKIP}" \
 	    msg "${COLOR_SKIP}Skipped ports: ${COLOR_PORT}${skipped}"
 
-	bset_job_status "failed/depends" "${ORIGINSPEC}"
+	bset_job_status "failed/depends" "${ORIGINSPEC}" "${PKGNAME}"
 	set +e
 	exit 1
 fi
@@ -247,7 +247,7 @@ nbbuilt=$(bget stats_built)
 
 commit_packages
 
-bset_job_status "testing" "${ORIGINSPEC}"
+bset_job_status "testing" "${ORIGINSPEC}" "${PKGNAME}"
 
 LOCALBASE=`injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -VLOCALBASE`
 [ -n "${LOCALBASE}" ] || err 1 "Port has empty LOCALBASE?"
@@ -327,7 +327,8 @@ if [ ${ret} -ne 0 ]; then
 	if [ ${INTERACTIVE_MODE} -eq 0 ]; then
 		stop_build "${PKGNAME}" "${ORIGINSPEC}" 1
 		log_stop
-		bset_job_status "failed/${failed_phase}" "${ORIGINSPEC}"
+		bset_job_status "failed/${failed_phase}" "${ORIGINSPEC}" \
+		    "${PKGNAME}"
 		msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
 		set +e
 		exit 1
@@ -352,7 +353,8 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 		# Since failure was skipped earlier, fail now after leaving
 		# jail.
 		if [ -n "${failed_phase}" ]; then
-			bset_job_status "failed/${failed_phase}" "${ORIGINSPEC}"
+			bset_job_status "failed/${failed_phase}" \
+			    "${ORIGINSPEC}" "${PKGNAME}"
 			msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
 			set +e
 			exit 1
@@ -379,7 +381,7 @@ injail ${PKG_DELETE} ${PKGNAME}
 stop_build "${PKGNAME}" "${ORIGINSPEC}" ${ret}
 log_stop
 
-bset_job_status "stopped" "${ORIGINSPEC}"
+bset_job_status "stopped" "${ORIGINSPEC}" "${PKGNAME}"
 
 bset status "done:"
 
