@@ -4023,7 +4023,7 @@ build_pkg() {
 	clean_rdepends=
 	trap '' SIGTSTP
 	PKGNAME="${pkgname}"
-	PKGBASE="${PKGNAME%-*}"
+	PKGBASE="${pkgname%-*}"
 	setproctitle "build_pkg (${pkgname})" || :
 
 	# Don't show timestamps in msg() which goes to logs, only job_msg()
@@ -4038,7 +4038,7 @@ build_pkg() {
 	if [ -z "${FLAVOR}" ]; then
 		shash_remove pkgname-flavor "${pkgname}" FLAVOR || FLAVOR=
 	fi
-	job_msg "Building ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_RESET}"
+	job_msg "Building ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_RESET}"
 
 	MAKE_ARGS="${DEPENDS_ARGS}${FLAVOR:+ FLAVOR=${FLAVOR}}"
 	if [ -n "${DEPENDS_ARGS}" ]; then
@@ -4086,7 +4086,7 @@ build_pkg() {
 	for jpkg in ${ALLOW_MAKE_JOBS_PACKAGES}; do
 		case "${PKGBASE}" in
 		${jpkg})
-			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_RESET}"
+			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_RESET}"
 			sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' \
 			    "${mnt}/etc/make.conf"
 			break
@@ -4094,7 +4094,7 @@ build_pkg() {
 		esac
 	done
 
-	buildlog_start "${ORIGINSPEC}" "${PKGNAME}"
+	buildlog_start "${ORIGINSPEC}" "${pkgname}"
 
 	# Ensure /dev/null exists (kern/139014)
 	[ ${JAILED} -eq 0 ] && ! [ -c "${mnt}/dev/null" ] && \
@@ -4102,28 +4102,28 @@ build_pkg() {
 
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
-		badd ports.ignored "${ORIGINSPEC} ${PKGNAME} ${ignore}"
-		COLOR_ARROW="${COLOR_IGNORE}" job_msg "${COLOR_IGNORE}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_IGNORE}: Ignored: ${ignore}"
+		badd ports.ignored "${ORIGINSPEC} ${pkgname} ${ignore}"
+		COLOR_ARROW="${COLOR_IGNORE}" job_msg "${COLOR_IGNORE}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_IGNORE}: Ignored: ${ignore}"
 		clean_rdepends="ignored"
-		run_hook pkgbuild ignored "${port}" "${PKGNAME}" "${ignore}" >&3
+		run_hook pkgbuild ignored "${port}" "${pkgname}" "${ignore}" >&3
 	else
-		build_port "${ORIGINSPEC}" "${PKGNAME}" || ret=$?
+		build_port "${ORIGINSPEC}" "${pkgname}" || ret=$?
 		if [ ${ret} -ne 0 ]; then
 			build_failed=1
 			# ret=2 is a test failure
 			if [ ${ret} -eq 2 ]; then
 				failed_phase=$(awk -f ${AWKPREFIX}/processonelog2.awk \
-					${log}/logs/${PKGNAME}.log \
+					"${log}/logs/${pkgname}.log" \
 					2> /dev/null)
 			else
 				_bget failed_status ${MY_JOBID} status
 				failed_phase=${failed_status%%:*}
 			fi
 
-			save_wrkdir "${mnt}" "${ORIGINSPEC}" "${PKGNAME}" \
+			save_wrkdir "${mnt}" "${ORIGINSPEC}" "${pkgname}" \
 			    "${portdir}" "${failed_phase}" || :
 		elif [ -f ${mnt}/${portdir}/.keep ]; then
-			save_wrkdir "${mnt}" "${ORIGINSPEC}" "${PKGNAME}" \
+			save_wrkdir "${mnt}" "${ORIGINSPEC}" "${pkgname}" \
 			    "${portdir}" "noneed" ||:
 		fi
 
@@ -4131,22 +4131,23 @@ build_pkg() {
 		elapsed=$((${now} - ${TIME_START_JOB}))
 
 		if [ ${build_failed} -eq 0 ]; then
-			badd ports.built "${ORIGINSPEC} ${PKGNAME} ${elapsed}"
-			COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_SUCCESS}: Success"
-			run_hook pkgbuild success "${port}" "${PKGNAME}" >&3
+			badd ports.built "${ORIGINSPEC} ${pkgname} ${elapsed}"
+			COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_SUCCESS}: Success"
+			run_hook pkgbuild success "${port}" "${pkgname}" >&3
 			# Cache information for next run
 			pkg_cacher_queue "${port}" "${pkgname}" \
 			    "${DEPENDS_ARGS}" "${FLAVOR}" || :
 		else
 			# Symlink the buildlog into errors/
-			ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
+			ln -s "../${pkgname}.log" \
+			    "${log}/logs/errors/${pkgname}.log"
 			errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
-				${log}/logs/errors/${PKGNAME}.log \
+				"${log}/logs/errors/${pkgname}.log" \
 				2> /dev/null)
-			badd ports.failed "${ORIGINSPEC} ${PKGNAME} ${failed_phase} ${errortype} ${elapsed}"
-			COLOR_ARROW="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${PKGNAME}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
-			run_hook pkgbuild failed "${port}" "${PKGNAME}" "${failed_phase}" \
-				"${log}/logs/errors/${PKGNAME}.log" >&3
+			badd ports.failed "${ORIGINSPEC} ${pkgname} ${failed_phase} ${errortype} ${elapsed}"
+			COLOR_ARROW="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
+			run_hook pkgbuild failed "${port}" "${pkgname}" "${failed_phase}" \
+				"${log}/logs/errors/${pkgname}.log" >&3
 			# ret=2 is a test failure
 			if [ ${ret} -eq 2 ]; then
 				clean_rdepends=
@@ -4161,9 +4162,9 @@ build_pkg() {
 		rm -rf ${mnt}/wrkdirs/* || :
 	fi
 
-	clean_pool "${PKGNAME}" "${ORIGINSPEC}" "${clean_rdepends}"
+	clean_pool "${pkgname}" "${ORIGINSPEC}" "${clean_rdepends}"
 
-	stop_build "${PKGNAME}" "${ORIGINSPEC}" ${build_failed}
+	stop_build "${pkgname}" "${ORIGINSPEC}" ${build_failed}
 
 	log_stop
 
