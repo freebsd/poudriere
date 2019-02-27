@@ -4023,7 +4023,6 @@ build_pkg() {
 	_log_path log
 	clean_rdepends=
 	trap '' SIGTSTP
-	PKGNAME="${pkgname}"
 	setproctitle "build_pkg (${pkgname})" || :
 
 	# Don't show timestamps in msg() which goes to logs, only job_msg()
