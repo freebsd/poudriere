@@ -773,6 +773,7 @@ log_start() {
 
 buildlog_start() {
 	local originspec="$1"
+	local pkgname="$2"
 	local mnt var portdir
 	local make_vars
 	local wanted_vars="
@@ -799,7 +800,7 @@ buildlog_start() {
 
 	echo "build started at $(date)"
 	echo "port directory: ${portdir}"
-	echo "package name: ${PKGNAME}"
+	echo "package name: ${pkgname}"
 	echo "building for: $(injail uname -a)"
 	echo "maintained by: ${mk_MAINTAINER}"
 	echo "Makefile ident: $(ident -q ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
@@ -4089,7 +4090,7 @@ build_pkg() {
 		esac
 	done
 
-	buildlog_start "${ORIGINSPEC}"
+	buildlog_start "${ORIGINSPEC}" "${PKGNAME}"
 
 	# Ensure /dev/null exists (kern/139014)
 	[ ${JAILED} -eq 0 ] && ! [ -c "${mnt}/dev/null" ] && \
