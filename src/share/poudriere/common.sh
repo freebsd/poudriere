@@ -714,16 +714,17 @@ run_hook_file() {
 }
 
 log_start() {
-	[ $# -eq 1 ] || eargs log_start need_tee
-	local need_tee="$1"
+	[ $# -eq 2 ] || eargs log_start pkgname need_tee
+	local pkgname="$1"
+	local need_tee="$2"
 	local log log_top
 	local latest_log
 
 	_log_path log
 	_log_path_top log_top
 
-	logfile="${log}/logs/${PKGNAME}.log"
-	latest_log=${log_top}/latest-per-pkg/${PKGNAME%-*}/${PKGNAME##*-}
+	logfile="${log}/logs/${pkgname}.log"
+	latest_log=${log_top}/latest-per-pkg/${pkgname%-*}/${pkgname##*-}
 
 	# Make sure directory exists
 	mkdir -p ${log}/logs ${latest_log}
@@ -734,7 +735,7 @@ log_start() {
 	ln -f ${logfile} ${latest_log}/${MASTERNAME}.log
 
 	# Link to JAIL/latest-per-pkg/PKGNAME.log
-	ln -f ${logfile} ${log}/../latest-per-pkg/${PKGNAME}.log
+	ln -f ${logfile} ${log}/../latest-per-pkg/${pkgname}.log
 
 	# Save stdout/stderr for restoration later for bulk/testport -i
 	exec 3>&1 4>&2
@@ -4079,7 +4080,7 @@ build_pkg() {
 
 	rm -rf ${mnt}/wrkdirs/* || :
 
-	log_start 0
+	log_start "${pkgname}" 0
 	msg "Building ${port}"
 
 	for jpkg in ${ALLOW_MAKE_JOBS_PACKAGES}; do

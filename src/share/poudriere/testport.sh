@@ -289,7 +289,7 @@ eval "MAX_FILES=\${MAX_FILES_${_gsub}:-${DEFAULT_MAX_FILES}}"
 if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
 	JEXEC_LIMITS=1
 fi
-log_start 1
+log_start "${PKGNAME}" 1
 buildlog_start "${ORIGINSPEC}" "${PKGNAME}"
 ret=0
 
