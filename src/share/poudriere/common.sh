@@ -2976,10 +2976,9 @@ gather_distfiles() {
 # Build+test port and return 1 on first failure
 # Return 2 on test failure if PORTTESTING_FATAL=no
 _real_build_port() {
-	[ $# -ne 2 ] && eargs _real_build_port originspec PKGNAME
+	[ $# -ne 2 ] && eargs _real_build_port originspec pkgname
 	local originspec="$1"
-	local PKGNAME="$2"
-	local pkgname="${PKGNAME}"
+	local pkgname="$2"
 	local port flavor portdir
 	local mnt
 	local log
@@ -4188,7 +4187,7 @@ stop_build() {
 			    umount -f "${mnt}/.npkg"
 			unlink "${mnt}/.npkg_mounted"
 		fi
-		rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
+		rm -rf "${PACKAGES}/.npkg/${pkgname}"
 
 		if [ "${PORTTESTING}" -eq 1 ]; then
 			if jail_has_processes; then
