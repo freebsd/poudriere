@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)histedit.c	8.2 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/histedit.c 343215 2019-01-20 14:25:25Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/histedit.c 344306 2019-02-19 21:27:30Z jilles $");
 
 #include <sys/param.h>
 #include <limits.h>
@@ -472,10 +472,31 @@ str_to_event(const char *str, int last)
 int
 bindcmd(int argc, char **argv)
 {
+	int ret;
+	FILE *old;
+	FILE *out;
 
 	if (el == NULL)
 		error("line editing is disabled");
-	return (el_parse(el, argc, __DECONST(const char **, argv)));
+
+	INTOFF;
+
+	out = out1fp();
+	if (out == NULL)
+		error("Out of space");
+
+	el_get(el, EL_GETFP, 1, &old);
+	el_set(el, EL_SETFP, 1, out);
+
+	ret = el_parse(el, argc, __DECONST(const char **, argv));
+
+	el_set(el, EL_SETFP, 1, old);
+
+	fclose(out);
+
+	INTON;
+
+	return ret;
 }
 
 #else
