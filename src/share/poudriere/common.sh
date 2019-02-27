@@ -3794,7 +3794,7 @@ calculate_progress_from_log() {
 	_log_path log
 	[ -r "${log}/logs/${pkgname}.log" ] || return 1
 
-	_progress=$(tail -200 ${log}/logs/${pkgname}.log | sed -E "s,^\[( *[0-9]+%|[0-9]+/[0-9]+)\].*,{progress}\1,; /^{progress}/!d; s/{progress}//; s/ //g" | tail -1)
+	_progress=$(tail -200 ${log}/logs/${pkgname}.log | sed -E "s,^\[( *[0-9]+%|[0-9]+/[0-9]+)\].*,#progress#\1,; /^#progress#/!d; s/#progress#//; s/ //g" | tail -1)
 
 	setvar "${var_return}" "${_progress}"
 }
