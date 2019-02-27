@@ -3022,8 +3022,8 @@ _real_build_port() {
 	for jpkg in ${ALLOW_NETWORKING_PACKAGES}; do
 		case "${PKGBASE}" in
 		${jpkg})
-			job_msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}"
-			msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}"
+			job_msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}"
+			msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}"
 			allownetworking=1
 			JNETNAME="n"
 			break
@@ -3066,7 +3066,7 @@ _real_build_port() {
 		phaseenv=
 		JUSER=${jailuser}
 		bset_job_status "${phase}" "${originspec}" "${pkgname}"
-		job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
+		job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
 		[ "${PORTTESTING}" -eq 1 ] && \
 		    phaseenv="${phaseenv} DEVELOPER_MODE=yes"
 		case ${phase} in
@@ -3133,10 +3133,10 @@ _real_build_port() {
 			max_execution_time=${MAX_EXECUTION_TIME_DEINSTALL}
 			JUSER=root
 			# Skip for all linux ports, they are not safe
-			if [ "${PKGNAME%%*linux*}" != "" ]; then
+			if [ "${pkgname%%*linux*}" != "" ]; then
 				msg "Checking shared library dependencies"
 				# Not using PKG_BIN to avoid bootstrap issues.
-				injail "${LOCALBASE}/sbin/pkg" query '%Fp' "${PKGNAME}" | \
+				injail "${LOCALBASE}/sbin/pkg" query '%Fp' "${pkgname}" | \
 				    injail xargs readelf -d 2>/dev/null | \
 				    grep NEEDED | sort -u
 			fi
@@ -3148,10 +3148,10 @@ _real_build_port() {
 		if [ "${phase}" = "package" ]; then
 			echo "PACKAGES=/.npkg" >> ${mnt}/etc/make.conf
 			# Create sandboxed staging dir for new package for this build
-			rm -rf "${PACKAGES}/.npkg/${PKGNAME}"
-			mkdir -p "${PACKAGES}/.npkg/${PKGNAME}"
+			rm -rf "${PACKAGES}/.npkg/${pkgname}"
+			mkdir -p "${PACKAGES}/.npkg/${pkgname}"
 			${NULLMOUNT} \
-				"${PACKAGES}/.npkg/${PKGNAME}" \
+				"${PACKAGES}/.npkg/${pkgname}" \
 				${mnt}/.npkg
 			chown -R ${JUSER} ${mnt}/.npkg
 			:> "${mnt}/.npkg_mounted"
@@ -3182,7 +3182,7 @@ _real_build_port() {
 			fi
 
 			nohang ${max_execution_time} ${NOHANG_TIME} \
-				${log}/logs/${PKGNAME}.log \
+				"${log}/logs/${pkgname}.log" \
 				${MASTERMNT}/.p/var/run/${MY_JOBID:-00}_nohang.pid \
 				injail /usr/bin/env ${pkgenv} ${phaseenv} ${PORT_FLAGS} \
 				/usr/bin/make -C ${portdir} ${MAKE_ARGS} \
@@ -3196,12 +3196,12 @@ _real_build_port() {
 					msg "Killing runaway build after ${NOHANG_TIME} seconds with no output"
 					bset_job_status "${phase}/runaway" \
 					    "${originspec}" "${pkgname}"
-					job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}runaway"
+					job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}: ${COLOR_PHASE}runaway"
 				elif [ $hangstatus -eq 3 ]; then
 					msg "Killing timed out build after ${max_execution_time} seconds"
 					bset_job_status "${phase}/timeout" \
 					    "${originspec}" "${pkgname}"
-					job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${PKGNAME}${COLOR_RESET}: ${COLOR_PHASE}timeout"
+					job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}: ${COLOR_PHASE}timeout"
 				fi
 				return 1
 			fi
@@ -3399,15 +3399,15 @@ may show failures if the port does not respect PREFIX."
 		fi
 	done
 
-	if [ -d "${PACKAGES}/.npkg/${PKGNAME}" ]; then
+	if [ -d "${PACKAGES}/.npkg/${pkgname}" ]; then
 		# everything was fine we can copy the package to the package
 		# directory
-		find ${PACKAGES}/.npkg/${PKGNAME} \
+		find "${PACKAGES}/.npkg/${pkgname}" \
 			-mindepth 1 \( -type f -or -type l \) | while read pkg_path; do
-			pkg_file=${pkg_path#${PACKAGES}/.npkg/${PKGNAME}}
-			pkg_base=${pkg_file%/*}
-			mkdir -p ${PACKAGES}/${pkg_base}
-			mv ${pkg_path} ${PACKAGES}/${pkg_base}
+			pkg_file="${pkg_path#${PACKAGES}/.npkg/${pkgname}}"
+			pkg_base="${pkg_file%/*}"
+			mkdir -p "${PACKAGES}/${pkg_base}"
+			mv "${pkg_path}" "${PACKAGES}/${pkg_base}"
 		done
 	fi
 
