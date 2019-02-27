@@ -4002,8 +4002,6 @@ print_phase_footer() {
 }
 
 build_pkg() {
-	# If this first check fails, the pool will not be cleaned up,
-	# since PKGNAME is not yet set.
 	[ $# -ne 1 ] && eargs build_pkg pkgname
 	local pkgname="$1"
 	local port portdir
