@@ -4015,7 +4015,7 @@ build_pkg() {
 	local ignore
 	local errortype
 	local ret=0
-	local elapsed now _gsub jpkg
+	local elapsed now _gsub jpkg originspec
 
 	_my_path mnt
 	_my_name name
@@ -4032,9 +4032,9 @@ build_pkg() {
 	TIME_START_JOB=$(clock -monotonic)
 	colorize_job_id COLOR_JOBID "${MY_JOBID}"
 
-	get_originspec_from_pkgname ORIGINSPEC "${pkgname}"
-	originspec_decode "${ORIGINSPEC}" port DEPENDS_ARGS FLAVOR
-	bset_job_status "starting" "${ORIGINSPEC}" "${pkgname}"
+	get_originspec_from_pkgname originspec "${pkgname}"
+	originspec_decode "${originspec}" port DEPENDS_ARGS FLAVOR
+	bset_job_status "starting" "${originspec}" "${pkgname}"
 	if [ -z "${FLAVOR}" ]; then
 		shash_remove pkgname-flavor "${pkgname}" FLAVOR || FLAVOR=
 	fi
@@ -4094,7 +4094,7 @@ build_pkg() {
 		esac
 	done
 
-	buildlog_start "${ORIGINSPEC}" "${pkgname}"
+	buildlog_start "${originspec}" "${pkgname}"
 
 	# Ensure /dev/null exists (kern/139014)
 	[ ${JAILED} -eq 0 ] && ! [ -c "${mnt}/dev/null" ] && \
@@ -4102,12 +4102,12 @@ build_pkg() {
 
 	if [ -n "${ignore}" ]; then
 		msg "Ignoring ${port}: ${ignore}"
-		badd ports.ignored "${ORIGINSPEC} ${pkgname} ${ignore}"
+		badd ports.ignored "${originspec} ${pkgname} ${ignore}"
 		COLOR_ARROW="${COLOR_IGNORE}" job_msg "${COLOR_IGNORE}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_IGNORE}: Ignored: ${ignore}"
 		clean_rdepends="ignored"
 		run_hook pkgbuild ignored "${port}" "${pkgname}" "${ignore}" >&3
 	else
-		build_port "${ORIGINSPEC}" "${pkgname}" || ret=$?
+		build_port "${originspec}" "${pkgname}" || ret=$?
 		if [ ${ret} -ne 0 ]; then
 			build_failed=1
 			# ret=2 is a test failure
@@ -4120,10 +4120,10 @@ build_pkg() {
 				failed_phase=${failed_status%%:*}
 			fi
 
-			save_wrkdir "${mnt}" "${ORIGINSPEC}" "${pkgname}" \
+			save_wrkdir "${mnt}" "${originspec}" "${pkgname}" \
 			    "${portdir}" "${failed_phase}" || :
 		elif [ -f ${mnt}/${portdir}/.keep ]; then
-			save_wrkdir "${mnt}" "${ORIGINSPEC}" "${pkgname}" \
+			save_wrkdir "${mnt}" "${originspec}" "${pkgname}" \
 			    "${portdir}" "noneed" ||:
 		fi
 
@@ -4131,7 +4131,7 @@ build_pkg() {
 		elapsed=$((${now} - ${TIME_START_JOB}))
 
 		if [ ${build_failed} -eq 0 ]; then
-			badd ports.built "${ORIGINSPEC} ${pkgname} ${elapsed}"
+			badd ports.built "${originspec} ${pkgname} ${elapsed}"
 			COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_SUCCESS}: Success"
 			run_hook pkgbuild success "${port}" "${pkgname}" >&3
 			# Cache information for next run
@@ -4144,7 +4144,7 @@ build_pkg() {
 			errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
 				"${log}/logs/errors/${pkgname}.log" \
 				2> /dev/null)
-			badd ports.failed "${ORIGINSPEC} ${pkgname} ${failed_phase} ${errortype} ${elapsed}"
+			badd ports.failed "${originspec} ${pkgname} ${failed_phase} ${errortype} ${elapsed}"
 			COLOR_ARROW="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
 			run_hook pkgbuild failed "${port}" "${pkgname}" "${failed_phase}" \
 				"${log}/logs/errors/${pkgname}.log" >&3
@@ -4162,9 +4162,9 @@ build_pkg() {
 		rm -rf ${mnt}/wrkdirs/* || :
 	fi
 
-	clean_pool "${pkgname}" "${ORIGINSPEC}" "${clean_rdepends}"
+	clean_pool "${pkgname}" "${originspec}" "${clean_rdepends}"
 
-	stop_build "${pkgname}" "${ORIGINSPEC}" ${build_failed}
+	stop_build "${pkgname}" "${originspec}" ${build_failed}
 
 	log_stop
 
