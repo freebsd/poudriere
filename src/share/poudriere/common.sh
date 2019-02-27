@@ -2758,14 +2758,6 @@ jail_cleanup() {
 	# Only bother with this if using jails as this may be being ran
 	# from queue.sh or daemon.sh, etc.
 	if [ -n "${MASTERMNT}" -a -n "${MASTERNAME}" ] && was_a_jail_run; then
-		# If this is a builder, don't cleanup, the master will handle that.
-		if [ -n "${MY_JOBID}" ]; then
-			if [ -n "${PKGNAME}" ]; then
-				clean_pool "${PKGNAME}" "" "failed" || :
-			fi
-			return 0
-		fi
-
 		if [ -d ${MASTERMNT}/.p/var/run ]; then
 			for pidfile in ${MASTERMNT}/.p/var/run/*.pid; do
 				# Ensure there is a pidfile to read or break
@@ -4025,7 +4017,7 @@ build_pkg() {
 	_log_path log
 	clean_rdepends=
 	trap '' SIGTSTP
-	PKGNAME="${pkgname}" # set ASAP so jail_cleanup() can use it
+	PKGNAME="${pkgname}"
 	PKGBASE="${PKGNAME%-*}"
 	setproctitle "build_pkg (${pkgname})" || :
 
