@@ -356,6 +356,31 @@ if [ -n "${HOSTNAME}" ]; then
 	echo "hostname=${HOSTNAME}" >> ${WRKDIR}/world/etc/rc.conf
 fi
 
+# Convert @flavor from package list to a unique entry of pkgname, otherwise it
+# spits out origin if no flavor.
+convert_package_list() {
+	local PACKAGELIST="$1"
+	local PKG_DBDIR=$(mktemp -dt poudriere_pkgdb)
+	local REPOS_DIR=$(mktemp -dt poudriere_repo)
+	local ABI_FILE
+
+	# This pkg rquery is always ran in host so we need a host-centric
+	# repo.conf always.
+	cat > "${REPOS_DIR}/repo.conf" <<-EOF
+	FreeBSD: { enabled: false }
+	local: { url: file:///${WRKDIR}/world/tmp/packages }
+	EOF
+
+	export REPOS_DIR PKG_DBDIR
+	# Always need this from host.
+	export ABI_FILE="${WRKDIR}/world/usr/lib/crt1.o"
+	pkg update >/dev/null || :
+	pkg rquery '%At %o@%Av %n-%v' | \
+	    awk -v pkglist="${PACKAGELIST}" \
+	    -f "${AWKPREFIX}/unique_pkgnames_from_flavored_origins.awk"
+	rm -rf "${PKG_DBDIR}" "${REPOS_DIR}"
+}
+
 # install packages if any is needed
 if [ -n "${PACKAGELIST}" ]; then
 	mkdir -p ${WRKDIR}/world/tmp/packages
@@ -365,11 +390,10 @@ if [ -n "${PACKAGELIST}" ]; then
 		FreeBSD: { enabled: false }
 		local: { url: file:///tmp/packages }
 		EOF
-		(
-			export ASSUME_ALWAYS_YES=yes REPOS_DIR=/tmp
-			cat "${PACKAGELIST}" | \
-			    xargs chroot "${WRKDIR}/world" pkg install
-		)
+		convert_package_list "${PACKAGELIST}" | \
+		    xargs chroot "${WRKDIR}/world" env \
+		    REPOS_DIR=/tmp ASSUME_ALWAYS_YES=yes \
+		    pkg install
 	else
 		cat > "${WRKDIR}/world/tmp/repo.conf" <<-EOF
 		FreeBSD: { enabled: false }
@@ -380,14 +404,14 @@ if [ -n "${PACKAGELIST}" ]; then
 			    REPOS_DIR="${WRKDIR}/world/tmp/" \
 			    ABI_FILE="${WRKDIR}/world/usr/lib/crt1.o"
 			pkg -r "${WRKDIR}/world/" install pkg
-			cat "${PACKAGELIST}" | \
+			convert_package_list "${PACKAGELIST}" | \
 			    xargs pkg -r "${WRKDIR}/world/" install
 		)
 	fi
 	rm -rf ${WRKDIR}/world/var/cache/pkg
 	umount ${WRKDIR}/world/tmp/packages
 	rmdir ${WRKDIR}/world/tmp/packages
-	rm ${WRKDIR}/world/var/db/pkg/repo-*
+	rm ${WRKDIR}/world/var/db/pkg/repo-* 2>/dev/null || :
 fi
 
 case ${MEDIATYPE} in
