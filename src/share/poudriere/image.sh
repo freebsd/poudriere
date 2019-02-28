@@ -359,28 +359,28 @@ if [ -n "${PACKAGELIST}" ]; then
 	mkdir -p ${WRKDIR}/world/tmp/packages
 	${NULLMOUNT} ${POUDRIERE_DATA}/packages/${MASTERNAME} ${WRKDIR}/world/tmp/packages
 	if [ "${arch}" == "${host_arch}" ]; then
-		cat > ${WRKDIR}/world/tmp/repo.conf <<-EOF
+		cat > "${WRKDIR}/world/tmp/repo.conf" <<-EOF
 		FreeBSD: { enabled: false }
 		local: { url: file:///tmp/packages }
 		EOF
-		cat ${PACKAGELIST} | \
-		    xargs chroot ${WRKDIR}/world \
-		    env ASSUME_ALWAYS_YES=yes REPOS_DIR=/tmp \
-		    pkg install
+		(
+			export ASSUME_ALWAYS_YES=yes REPOS_DIR=/tmp
+			cat "${PACKAGELIST}" | \
+			    xargs chroot "${WRKDIR}/world" pkg install
+		)
 	else
-		cat > ${WRKDIR}/world/tmp/repo.conf <<-EOF
+		cat > "${WRKDIR}/world/tmp/repo.conf" <<-EOF
 		FreeBSD: { enabled: false }
 		local: { url: file:///${WRKDIR}/world/tmp/packages }
 		EOF
-		env ASSUME_ALWAYS_YES=yes SYSLOG=no \
-		    REPOS_DIR=/${WRKDIR}/world/tmp/ \
-		    ABI_FILE=/${WRKDIR}/world/usr/lib/crt1.o \
-		    pkg -r ${WRKDIR}/world/ install pkg
-		cat ${PACKAGELIST} | \
-		    xargs env ASSUME_ALWAYS_YES=yes SYSLOG=no \
-		    REPOS_DIR=/${WRKDIR}/world/tmp/ \
-		    ABI_FILE=/${WRKDIR}/world/usr/lib/crt1.o \
-		    pkg -r ${WRKDIR}/world/ install
+		(
+			export ASSUME_ALWAYS_YES=yes SYSLOG=no \
+			    REPOS_DIR="${WRKDIR}/world/tmp/" \
+			    ABI_FILE="${WRKDIR}/world/usr/lib/crt1.o"
+			pkg -r "${WRKDIR}/world/" install pkg
+			cat "${PACKAGELIST}" | \
+			    xargs pkg -r "${WRKDIR}/world/" install
+		)
 	fi
 	rm -rf ${WRKDIR}/world/var/cache/pkg
 	umount ${WRKDIR}/world/tmp/packages
