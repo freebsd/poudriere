@@ -716,9 +716,7 @@ have_pipefail() {
 }
 
 set_pipefail() {
-	if have_pipefail; then
-		set -o pipefail
-	fi
+	command set -o pipefail 2>/dev/null || :
 }
 
 prefix_stderr_quick() {
