@@ -715,7 +715,8 @@ prefix_stderr_quick() {
 			MSG_NESTED_STDERR=1
 			"$@"
 		} 2>&1 1>&3 | {
-			if command -v timestamp >/dev/null && \
+			if [ "${USE_TIMESTAMP:-1}" -eq 1 ] && \
+			    command -v timestamp >/dev/null && \
 			    [ "$(type timestamp)" = \
 			    "timestamp is a shell builtin" ]; then
 				# Let timestamp handle showing the proper time.
@@ -743,7 +744,8 @@ prefix_stderr() {
 
 	prefixpipe=$(mktemp -ut prefix_stderr.pipe)
 	mkfifo "${prefixpipe}"
-	if command -v timestamp >/dev/null; then
+	if [ "${USE_TIMESTAMP:-1}" -eq 1 ] && \
+	    command -v timestamp >/dev/null; then
 		# Let timestamp handle showing the proper time.
 		prefix="$(NO_ELAPSED_IN_MSG=1 msg_warn "${extra}:" 2>&1)"
 		TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
@@ -787,7 +789,8 @@ prefix_stdout() {
 
 	prefixpipe=$(mktemp -ut prefix_stdout.pipe)
 	mkfifo "${prefixpipe}"
-	if command -v timestamp >/dev/null; then
+	if [ "${USE_TIMESTAMP:-1}" -eq 1 ] && \
+	    command -v timestamp >/dev/null; then
 		# Let timestamp handle showing the proper time.
 		prefix="$(NO_ELAPSED_IN_MSG=1 msg "${extra}:")"
 		TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
@@ -829,7 +832,8 @@ prefix_output() {
 	local - errexit
 	shift 1
 
-	if ! command -v timestamp >/dev/null; then
+	if ! [ "${USE_TIMESTAMP:-1}" -eq 1 ] && \
+	    command -v timestamp >/dev/null; then
 		prefix_stderr "${extra}" prefix_stdout "${extra}" "$@"
 		return
 	fi
