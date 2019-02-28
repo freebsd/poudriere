@@ -887,7 +887,7 @@ log_stop() {
 	fi
 	if [ -n "${tpid}" ]; then
 		# Give tee a moment to flush buffers
-		timed_wait_and_kill 5 $tpid || :
+		timed_wait_and_kill 5 $tpid 2>/dev/null || :
 		unset tpid
 	fi
 }
