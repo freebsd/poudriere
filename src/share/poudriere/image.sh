@@ -462,7 +462,8 @@ usb)
 	# Move /usr/local/etc to /etc/local (Only /etc will be backuped)
 	if [ -d ${WRKDIR}/world/usr/local/etc ] ; then
 		mkdir -p ${WRKDIR}/world/etc/local
-		tar -C ${WRKDIR}/world -X ${excludelist} -cf - usr/local/etc/ | tar -xf - -C ${WRKDIR}/world/etc/local
+		tar -C ${WRKDIR}/world -X ${excludelist} -cf - usr/local/etc/ | \
+		    tar -xf - -C ${WRKDIR}/world/etc/local --strip-components=3
 		rm -rf ${WRKDIR}/world/usr/local/etc
 		ln -s /etc/local ${WRKDIR}/world/usr/local/etc
 	fi
