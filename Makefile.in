@@ -668,7 +668,8 @@ dist_awk_DATA = src/share/poudriere/awk/dependency_loop.awk \
 		src/share/poudriere/awk/json_top.awk \
 		src/share/poudriere/awk/parse_MOVED.awk \
 		src/share/poudriere/awk/processonelog2.awk \
-		src/share/poudriere/awk/siginfo_buildtime.awk
+		src/share/poudriere/awk/siginfo_buildtime.awk \
+		src/share/poudriere/awk/unique_pkgnames_from_flavored_origins.awk
 
 dist_html_DATA = src/share/poudriere/html/build.html \
 			src/share/poudriere/html/index.html \
