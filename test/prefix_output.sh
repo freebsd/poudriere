@@ -33,6 +33,7 @@ until [ "${USE_TIMESTAMP}" -eq 2 ]; do
 
 	# Basic output test with prefix_stderr_quick
 	(
+		have_pipefail || echo "SKIP: Shell does not support pipefail" >&2
 		prefix_stderr_quick "STDERR" test_output 0 \
 		    > "${OUTPUT}" 2> "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr_quick test_output 0 wrong exit status"
@@ -140,6 +141,7 @@ until [ "${USE_TIMESTAMP}" -eq 2 ]; do
 
 	# Pipefail test with prefix_stderr_quick
 	(
+		have_pipefail || echo "SKIP: Shell does not support pipefail" >&2
 		prefix_stderr_quick "STDERR" test_output 5 \
 		    > "${OUTPUT}" 2> "${OUTPUT}.stderr"
 		assert 5 $? "ts=${USE_TIMESTAMP} prefix_stderr_quick test_output 5 wrong exit status"

@@ -704,13 +704,32 @@ nopipe() {
 	return ${_ret}
 }
 
+# Detect if pipefail support is available in the shell.  The shell
+# will just exit if we try 'set -o pipefail' and it doesn't support it.
+have_pipefail() {
+	local seto=$(set -o)
+
+	case ${seto} in
+	*pipefail*)
+		return 0
+		;;
+	esac
+	return 1
+}
+
+set_pipefail() {
+	if have_pipefail; then
+		set -o pipefail
+	fi
+}
+
 prefix_stderr_quick() {
 	local -; set +x
 	local extra="$1"
 	local MSG_NESTED_STDERR prefix
 	shift 1
 
-	set -o pipefail
+	set_pipefail
 
 	{
 		{
