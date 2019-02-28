@@ -707,9 +707,7 @@ nopipe() {
 # Detect if pipefail support is available in the shell.  The shell
 # will just exit if we try 'set -o pipefail' and it doesn't support it.
 have_pipefail() {
-	local seto=$(set -o)
-
-	case ${seto} in
+	case $(set -o) in
 	*pipefail*)
 		return 0
 		;;
