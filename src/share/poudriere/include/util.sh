@@ -768,7 +768,7 @@ prefix_stderr() {
 	[ ${errexit} -eq 1 ] && set -e
 
 	exec 2>&4 4>&-
-	timed_wait_and_kill 5 ${prefixpid} || :
+	timed_wait_and_kill 5 ${prefixpid} 2>/dev/null || :
 	_wait ${prefixpid} || :
 
 	return ${ret}
@@ -812,7 +812,7 @@ prefix_stdout() {
 	[ ${errexit} -eq 1 ] && set -e
 
 	exec 1>&3 3>&-
-	timed_wait_and_kill 5 ${prefixpid} || :
+	timed_wait_and_kill 5 ${prefixpid} 2>/dev/null || :
 	_wait ${prefixpid} || :
 
 	return ${ret}
@@ -864,7 +864,7 @@ prefix_output() {
 	[ ${errexit} -eq 1 ] && set -e
 
 	exec 1>&3 3>&- 2>&4 4>&-
-	timed_wait_and_kill 5 ${prefixpid} || :
+	timed_wait_and_kill 5 ${prefixpid} 2>/dev/null || :
 	_wait ${prefixpid} || :
 
 	return ${ret}
