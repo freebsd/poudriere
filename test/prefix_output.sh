@@ -131,7 +131,6 @@ ret=0
 
 # Pipefail test with prefix_stderr_quick
 (
-	echo "SKIP: pipefail issues" >&2
 	prefix_stderr_quick "STDERR" test_output 5 \
 	    > "${OUTPUT}" 2> "${OUTPUT}.stderr"
 	assert 5 $? "prefix_stderr_quick test_output 5 wrong exit status"

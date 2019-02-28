@@ -710,6 +710,8 @@ prefix_stderr_quick() {
 	local MSG_NESTED_STDERR prefix
 	shift 1
 
+	set -o pipefail
+
 	{
 		{
 			MSG_NESTED_STDERR=1
