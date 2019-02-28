@@ -33,6 +33,10 @@ if ! type eargs 2>/dev/null >&2; then
 	}
 fi
 
+if ! type setproctitle 2>/dev/null >&2; then
+	setproctitle() { }
+fi
+
 # Encode $@ for later decoding
 encode_args() {
 	local -; set +x
