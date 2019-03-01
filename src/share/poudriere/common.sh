@@ -2976,8 +2976,8 @@ gather_distfiles() {
 
 # Build+test port and return 1 on first failure
 # Return 2 on test failure if PORTTESTING_FATAL=no
-_real_build_port() {
-	[ $# -ne 2 ] && eargs _real_build_port originspec pkgname
+build_port() {
+	[ $# -ne 2 ] && eargs build_port originspec pkgname
 	local originspec="$1"
 	local pkgname="$2"
 	local port flavor portdir
@@ -2987,7 +2987,7 @@ _real_build_port() {
 	local hangstatus
 	local pkgenv phaseenv jpkg
 	local targets install_order deinstall
-	local jailuser
+	local jailuser JUSER
 	local testfailure=0
 	local max_execution_time allownetworking
 	local _need_root NEED_ROOT PREFIX max_files
@@ -3413,14 +3413,6 @@ may show failures if the port does not respect PREFIX."
 
 	bset_job_status "build_port_done" "${originspec}" "${pkgname}"
 	return ${testfailure}
-}
-
-# Wrapper to ensure JUSER is reset and any other cleanup needed
-build_port() {
-	local ret
-	_real_build_port "$@" || ret=$?
-	JUSER=root
-	return ${ret}
 }
 
 # Save wrkdir and return path to file
