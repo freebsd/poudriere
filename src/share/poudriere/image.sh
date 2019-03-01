@@ -247,33 +247,35 @@ EOF
 # This conversion is needed to be compliant with marketing 'unit'
 # without this, a 2GiB image will not fit into a 2GB flash disk (=1862MiB)
 
-IMAGESIZE_UNIT=$(printf ${IMAGESIZE} | tail -c 1)
-IMAGESIZE_VALUE=${IMAGESIZE%?}
-NEW_IMAGESIZE_UNIT=""
-NEW_IMAGESIZE_SIZE=""
-case "${IMAGESIZE_UNIT}" in
-        k|K)
-                DIVIDER=$(echo "scale=3; 1024 / 1000" | bc)
-                ;;
-        m|M)
-                DIVIDER=$(echo "scale=6; 1024 * 1024 / 1000000" | bc)
-                NEW_IMAGESIZE_UNIT="k"
-                ;;
-        g|G)
-                DIVIDER=$(echo "scale=9; 1024 * 1024 * 1024 / 1000000000" | bc)
-                NEW_IMAGESIZE_UNIT="m"
-                ;;
-        t|T)
-                DIVIDER=$(echo "scale=12; 1024 * 1024 * 1024 * 1024 / 1000000000000" | bc)
-                NEW_IMAGESIZE_UNIT="g"
-                ;;
-        *)
-                NEW_IMAGESIZE_UNIT=""
-                NEW_IMAGESIZE_SIZE=${IMAGESIZE}
-esac
-# truncate accept only integer value, and bc needs a divide per 1 for refreshing scale
-[ -z "${NEW_IMAGESIZE_SIZE}" ] && NEW_IMAGESIZE_SIZE=$(echo "scale=9;var=${IMAGESIZE_VALUE} / ${DIVIDER}; scale=0; ( var * 1000 ) /1" | bc)
-IMAGESIZE="${NEW_IMAGESIZE_SIZE}${NEW_IMAGESIZE_UNIT}"
+if [ -n "${IMAGESIZE}" ]; then
+	IMAGESIZE_UNIT=$(printf ${IMAGESIZE} | tail -c 1)
+	IMAGESIZE_VALUE=${IMAGESIZE%?}
+	NEW_IMAGESIZE_UNIT=""
+	NEW_IMAGESIZE_SIZE=""
+	case "${IMAGESIZE_UNIT}" in
+		k|K)
+			DIVIDER=$(echo "scale=3; 1024 / 1000" | bc)
+			;;
+		m|M)
+			DIVIDER=$(echo "scale=6; 1024 * 1024 / 1000000" | bc)
+			NEW_IMAGESIZE_UNIT="k"
+			;;
+		g|G)
+			DIVIDER=$(echo "scale=9; 1024 * 1024 * 1024 / 1000000000" | bc)
+			NEW_IMAGESIZE_UNIT="m"
+			;;
+		t|T)
+			DIVIDER=$(echo "scale=12; 1024 * 1024 * 1024 * 1024 / 1000000000000" | bc)
+			NEW_IMAGESIZE_UNIT="g"
+			;;
+		*)
+			NEW_IMAGESIZE_UNIT=""
+			NEW_IMAGESIZE_SIZE=${IMAGESIZE}
+	esac
+	# truncate accept only integer value, and bc needs a divide per 1 for refreshing scale
+	[ -z "${NEW_IMAGESIZE_SIZE}" ] && NEW_IMAGESIZE_SIZE=$(echo "scale=9;var=${IMAGESIZE_VALUE} / ${DIVIDER}; scale=0; ( var * 1000 ) /1" | bc)
+	IMAGESIZE="${NEW_IMAGESIZE_SIZE}${NEW_IMAGESIZE_UNIT}"
+fi
 
 case "${MEDIATYPE}" in
 embedded)
