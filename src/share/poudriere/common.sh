@@ -28,7 +28,6 @@
 
 BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
 . ${SCRIPTPREFIX}/include/common.sh.${BSDPLATFORM}
-BLACKLIST=""
 EX_SOFTWARE=70
 
 # Return true if ran from bulk/testport, ie not daemon/status/jail
