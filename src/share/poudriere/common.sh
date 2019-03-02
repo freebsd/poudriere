@@ -2611,7 +2611,7 @@ load_blacklist() {
 			*\ ${port}\ *) continue;;
 			esac
 			msg_warn "Blacklisting (from ${POUDRIERED}/${bfile}): ${COLOR_PORT}${port}"
-			BLACKLIST="${BLACKLIST} ${port}"
+			BLACKLIST="${BLACKLIST:+${BLACKLIST} }${port}"
 		done
 	done
 }
