@@ -27,7 +27,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd June 19, 2018
+.Dd March 4, 2019
 .Dt POUDRIERE 8
 .Os
 .Sh NAME
@@ -116,28 +116,8 @@ Show version of
 .Sh ENVIRONMENT
 The
 .Nm
-command may use the following environment variable:
+command may use the following environment variables:
 .Bl -tag -width "HTTP_PROXY FTP_PROXY"
-.It Sy FETCH_BIND_ADDRESS
-The bind address used by
-.Xr fetch 1
-for
-.Nm jail .
-See
-.Xr fetch 3
-for more details.
-.It Sy HTTP_PROXY FTP_PROXY
-The proxy configuration for
-.Nm ports
-and
-.Nm jail .
-See
-.Xr fetch 3
-for other supported proxy environment variables.
-.It Sy MAKEOBJDIRPREFIX
-Passes through for
-.Nm jail
-builds.
 .It Sy POUDRIERE_ETC
 If specified, the path to poudriere's config directory.
 Defaults to
@@ -147,6 +127,33 @@ The umask for files created by
 .Nm .
 Defaults to
 .Sy 022.
+.El
+.Pp
+The
+.Nm jail
+and
+.Nm ports
+subcommands may additionally use the following environment variables:
+.Bl -tag -width "HTTP_PROXY FTP_PROXY"
+.It Sy FETCH_BIND_ADDRESS
+The bind address used by
+.Xr fetch 1 .
+See
+.Xr fetch 3
+for more details.
+.It Sy HTTP_PROXY HTTP_* http_* FTP_PROXY FTP_* http_* SSL_* NO_PROXY no_proxy
+The proxy configuration for
+.Xr fetch 1 .
+See
+.Xr fetch 3
+for other supported proxy environment variables.
+.El
+.Pp
+The
+.Nm jail
+subcommand may additionally use the following environment variable:
+.Bl -tag -width "HTTP_PROXY FTP_PROXY"
+.It Sy MAKEOBJDIRPREFIX
 .El
 .Sh FILES
 .Bl -tag -width ".Pa POUDRIERE_ETC/poudriere.d/poudriere.conf" -compact
