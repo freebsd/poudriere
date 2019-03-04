@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd November 26, 2018
+.Dd March 4, 2019
 .Dt POUDRIERE-PORTS 8
 .Os
 .Sh NAME
@@ -131,6 +131,24 @@ When used with
 remove the header in the list view.
 .It Fl v
 Show more verbose output.
+.El
+.Sh ENVIRONMENT
+The
+.Nm port
+subcommand may use the following environment variables:
+.Bl -tag -width "HTTP_PROXY FTP_PROXY"
+.It Sy FETCH_BIND_ADDRESS
+The bind address used by
+.Xr fetch 1 .
+See
+.Xr fetch 3
+for more details.
+.It Sy HTTP_PROXY HTTP_* http_* FTP_PROXY FTP_* http_* SSL_* NO_PROXY no_proxy
+The proxy configuration for
+.Xr fetch 1 .
+See
+.Xr fetch 3
+for other supported proxy environment variables.
 .El
 .Sh SEE ALSO
 .Xr poudriere 8 ,
