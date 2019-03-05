@@ -26,9 +26,6 @@
 # SUCH DAMAGE.
 
 LC_ALL=C
-unset SHELL
-SAVED_TERM=$TERM
-unset TERM
 POUDRIERE_VERSION="3.4-pre"
 
 usage() {
@@ -92,6 +89,28 @@ done
 shift $((OPTIND-1))
 
 [ $# -lt 1 ] && usage
+CMD="$1"
+shift
+
+# Valid command list.
+case "${CMD}" in
+api|bulk|distclean|daemon|image|jail|foreachport|logclean|ports|options|pkgclean|queue|status|testport)
+	;;
+jails)
+	CMD="jail"
+	;;
+version)
+	echo "${POUDRIERE_VERSION}"
+	exit 0
+	;;
+help)
+	usage
+	;;
+*)
+	echo "Unknown command '${CMD}'"
+	usage
+	;;
+esac
 
 env_set() {
 	local envvar="$1"
@@ -128,9 +147,9 @@ else
 	LIBEXECPREFIX="${POUDRIEREPREFIX}/libexec/poudriere"
 fi
 SCRIPTPREFIX="${POUDRIEREPREFIX}/share/poudriere"
-
-CMD=$1
-shift
+env_set SCRIPTPREFIX
+SCRIPTPATH="${SCRIPTPREFIX}/${CMD}.sh"
+env_set SCRIPTPATH
 
 [ -n "${POUDRIERE_ETC}" ] && env_set POUDRIERE_ETC
 [ -n "${USE_COLORS}" ] && env_set USE_COLORS
@@ -141,22 +160,14 @@ env_set POUDRIEREPATH
 [ -n "${VERBOSE}" ] && env_set VERBOSE
 [ -n "${FORCE_COLORS}" ] && env_set FORCE_COLORS
 
-# Handle special-case commands first.
+# Set SAVED_TERM=$TERM for some interactive features.
 case "${CMD}" in
-version)
-	echo "${POUDRIERE_VERSION}"
-	exit 0
-	;;
-help)
-	usage
-	;;
-jails)
-	CMD="jail"
-	;;
 options|testport|bulk)
-	env_set SAVED_TERM
+	env_set SAVED_TERM $'${TERM}'
+	;;
 esac
 
+# Special-case environment passthroughs.
 while read envvar; do
 	case "${envvar}" in
 	FETCH_BIND_ADDRESS|FTP_*|ftp_*|HTTP_*|http_*|SSL_|NO_PROXY|no_proxy)
@@ -178,19 +189,7 @@ done <<-EOF
 $(export)
 EOF
 
-SCRIPTPATH="${SCRIPTPREFIX}/${CMD}.sh"
-env_set SCRIPTPATH
-env_set SCRIPTPREFIX
-
-case "${CMD}" in
-api|bulk|distclean|daemon|image|jail|foreachport|logclean|ports|options|pkgclean|queue|status|testport)
-	;;
-*)
-	echo "Unknown command '${CMD}'"
-	usage
-	;;
-esac
-
+# set -e blacklist (default on otherwise)
 case "${CMD}" in
 jail|ports|daemon|status|options)
 	;;
