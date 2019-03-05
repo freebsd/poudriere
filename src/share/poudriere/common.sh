@@ -1753,7 +1753,7 @@ do_portbuild_mounts() {
 		    "${mnt}/var/db/ports" \
 		    "${mnt}${HOME}/.ccache" \
 		    "${mnt}/usr/home"
-		ln -fs "usr/home" "${tomnt}/home"
+		ln -fs "usr/home" "${mnt}/home"
 	fi
 	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] &&
 	    mnt_tmpfs data "${mnt}/.p"
