@@ -28,6 +28,20 @@
 LC_ALL=C
 POUDRIERE_VERSION="3.3.1"
 
+env_set() {
+	local envvar="$1"
+	local envvalue="${2:-"\${${envvar}}"}"
+
+	CMD_ENV_S="${CMD_ENV_S:+${CMD_ENV_S} }\"${envvar}=${envvalue}\""
+	_EXPORT_LIST="${_EXPORT_LIST:+${_EXPORT_LIST} }${envvar}"
+}
+
+# Exporting saved until last to not impact any tests between env_set and
+# env -S.
+env_export() {
+	export ${_EXPORT_LIST}
+}
+
 usage() {
 	cat << EOF
 Usage: poudriere [-e etcdir] [-N] command [options]
@@ -62,17 +76,17 @@ SETX=""
 while getopts "Ae:Nvx" FLAG; do
 	case "${FLAG}" in
 	A)
-		FORCE_COLORS=1
+		env_set FORCE_COLORS '1'
 		;;
 	e)
 		if [ ! -d "$OPTARG" ]; then
 			echo "Error: argument '$OPTARG' not a directory"
 			exit 1
 		fi
-		export POUDRIERE_ETC="$OPTARG"
+		POUDRIERE_ETC="$OPTARG"
 		;;
 	N)
-		USE_COLORS="no"
+		env_set USE_COLORS 'no'
 		;;
 	v)
 		VERBOSE=$((${VERBOSE:-0} + 1))
@@ -112,20 +126,6 @@ help)
 	;;
 esac
 
-env_set() {
-	local envvar="$1"
-	local envvalue="${2:-"\${${envvar}}"}"
-
-	CMD_ENV_S="${CMD_ENV_S:+${CMD_ENV_S} }\"${envvar}=${envvalue}\""
-	_EXPORT_LIST="${_EXPORT_LIST:+${_EXPORT_LIST} }${envvar}"
-}
-
-# Exporting saved until last to not impact any tests between env_set and
-# env -S.
-env_export() {
-	export ${_EXPORT_LIST}
-}
-
 POUDRIEREPATH=`realpath $0`
 if [ "${POUDRIEREPATH%src/bin/poudriere}" != "${POUDRIEREPATH}" ]; then
 	# It is running from src/bin/poudriere in checkout
@@ -152,13 +152,11 @@ SCRIPTPATH="${SCRIPTPREFIX}/${CMD}.sh"
 env_set SCRIPTPATH
 
 [ -n "${POUDRIERE_ETC}" ] && env_set POUDRIERE_ETC
-[ -n "${USE_COLORS}" ] && env_set USE_COLORS
 env_set LIBEXECPREFIX
 env_set PATH $'${LIBEXECPREFIX}:${PATH}:/sbin:/usr/sbin'
 env_set POUDRIERE_VERSION
 env_set POUDRIEREPATH
 [ -n "${VERBOSE}" ] && env_set VERBOSE
-[ -n "${FORCE_COLORS}" ] && env_set FORCE_COLORS
 
 # Set SAVED_TERM=$TERM for some interactive features.
 case "${CMD}" in
