@@ -190,5 +190,5 @@ umask ${UMASK}
 
 : ${SH:=sh}
 
-exec env -i ${CMD_ENV_S:+-S "${CMD_ENV_S}"} ${CMD_ENV} \
+exec env -i -P "${LIBEXECPREFIX}" ${CMD_ENV_S:+-S "${CMD_ENV_S}"} ${CMD_ENV} \
     ${SH} ${SET_ERREXIT} ${SETX} "${SCRIPTPATH}" "$@"
