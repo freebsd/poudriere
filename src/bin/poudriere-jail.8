@@ -144,78 +144,106 @@ Other methods only use the
 .Ar version
 value for display.
 .It Fl m Ar method
-Specifies which
+Specify which
 .Ar method
 to use to create the jail.
-(default:
-.Sy http )
+The default is
+.Cm http .
 .Pp
 Pre-built distribution options:
-.Bl -tag -width "ftp-archiveXX"
-.It Sy allbsd
-Use
+.Bl -tag -width "ftp-archive"
+.It Cm allbsd
+Fetch from
 .Lk http://www.allbsd.org .
-.It Sy ftp Sy http
-Fetch from configured
-.Sy FREEBSD_HOST
+.It Cm ftp
+Fetch from the host specified to the
+.Va FREEBSD_HOST
 variable from
 .Pa poudriere.conf .
-.It Sy ftp-archive
+.It Cm ftp-archive
 Fetch from
 .Lk http://ftp-archive.freebsd.org .
-.It Sy null
-This option can be used to import an existing directory that already contains an installed system.
+.It Cm http
+Same as
+.Cm ftp .
+.It Cm null
+This option can be used to import an existing directory that already contains
+an installed system.
 The path must be specified with
 .Fl M Ar path .
 It is expected that this directory be installed to with the following:
-.Bd -literal -offset indent
-/usr/src# make installworld DESTDIR=PATH DB_FROM_SRC=1
-/usr/src# make distrib-dirs DESTDIR=PATH DB_FROM_SRC=1
-/usr/src# make distribution DESTDIR=PATH DB_FROM_SRC=1
+.Bd -literal -offset 2n
+.Ic # cd /usr/src
+.Ic # Ic make installworld DESTDIR= Ns Ar PATH Ic DB_FROM_SRC=1
+.Ic # make distrib-dirs DESTDIR= Ns Ar PATH Ic DB_FROM_SRC=1
+.Ic # make distribution DESTDIR= Ns Ar PATH Ic DB_FROM_SRC=1
 .Ed
 .Pp
 It will not be copied at the time of running
-.Nm jail .
+.Dq Li poudriere jail .
 Deleting the jail will attempt to revert any files changed by poudriere.
-.It Sy src=PATH
-Install from the given src directory at
-.Sy PATH .
+.It Cm src= Ns Ar path
+Install from the given directory at
+.Ar path .
 This directory will not be built from.
 It is expected that it is already built and maps to a corresponding
 .Pa /usr/obj
 directory.
-.It Sy tar=PATH
-Install from the tarball at the given
-.Sy PATH .
-Note that this method requires the tarball contains the
+.It Cm tar= Ns Ar path
+Install from the tarball located at the given
+.Ar path .
+.Pp
+Note that if you plan to build any port containing kernel modules then the
+specified tarball has to contain the
 .Pa /usr/src
-files as well if you plan to build any port containing modules.
-.It Sy url=PATH
-Fetch from given
-.Sy PATH .
+files as well.
+.It Cm url= Ns Ar path
+Fetch from the given
+.Ar path .
 Any URL supported by
 .Xr fetch 1
 can be used.
 For example:
-.Dl "url=file:///mirror/10.0"
+.Dq Cm url=file:///mirror/10.0 .
 .El
 .Pp
 Build from source options:
 .Bl -tag -width "ftp-archiveXX"
-.It Sy git Sy git+http Sy git+https Sy git+ssh
-Will use git, the -v flag to set the branch name and the
-.Sy GIT_BASEURL
+.It Cm git Ns Op Cm + Ns Ar protocol
+Use Git to download the sources.
+.Pp
+Use the
+.Fl v
+flag to set the branch name.
+The Git server address is derived from the
+.Va GIT_BASEURL
 variable in
 .Pa poudriere.conf .
-.It Sy src=PATH
-With the
+.Pp
+The following protocols are supported:
+.Cm git No (default) , Cm http , https , No and Cm ssh .
+.It Sy src= Ns Ar path
+Copy the source tree from
+.Ar path
+into the jail,
+and build it.
+This option is meant to be used with the
 .Fl b
-flag, the src tree will be copied into the jail and built.
-.It Sy svn Sy svn+file Sy svn+http Sy svn+https
+flag.
+.It Cm svn Ns Op Cm + Ns Ar protocol
 Will use SVN and the
 .Sy SVN_HOST
 variable in
 .Pa poudriere.conf .
+Use SVN to download the sources.
+.Pp
+The SVN host address is derived from the
+.Va SVN_HOST
+variable in
+.Pa poudriere.conf .
+.Pp
+The following protocols are supported:
+.Cm svn No (default) , Cm file , http , No and Cm https .
 .El
 .It Fl f Ar filesystem
 Specifies the
