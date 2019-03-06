@@ -89,7 +89,6 @@ Except for
 all of the subcommands require the
 .Fl j
 option (see below).
-.Pp
 .Bl -tag -width "-f conffile"
 .It Fl b
 Build the source provided with the -m src=PATH option.
@@ -138,7 +137,7 @@ Pre-built distribution options:
 .Bl -tag -width "ftp-archiveXX"
 .It Sy allbsd
 Use
-.Lk http://www.allbsd.org.
+.Lk http://www.allbsd.org .
 .It Sy ftp Sy http
 Fetch from configured
 .Sy FREEBSD_HOST
@@ -146,7 +145,7 @@ variable from
 .Pa poudriere.conf .
 .It Sy ftp-archive
 Fetch from
-.Lk http://ftp-archive.freebsd.org.
+.Lk http://ftp-archive.freebsd.org .
 .It Sy null
 This option can be used to import an existing directory that already contains an installed system.
 The path must be specified with
@@ -256,9 +255,10 @@ Only used for
 .Sy -d
 option.
 .Pp
-.Bl -tag -width "packagesXX"
+The
 .Pa data
-options are the following:
+parameter can be one of the following:
+.Bl -tag -width "packagesXX"
 .It Sy all
 .It Sy cache
 .It Sy logs
@@ -269,19 +269,6 @@ options are the following:
 When creating the jail from a git checkout, clone it with the full history
 instead of a --depth=1.
 .El
-.Sh CAVEATS
-.Ss Jailname
-.Fl j ,
-.Fl z
-and
-.Fl p
-are all used in the name of the jail.
-.Pp
-Be careful to respect the names supported by jail(8):
-.Bd -literal
-    "This is an arbitrary string that identifies a jail (except it
-     may not contain a '.')"
-.Ed
 .Sh ENVIRONMENT
 The
 .Nm jail
@@ -318,3 +305,16 @@ for other supported proxy environment variables.
 .Sh AUTHORS
 .An Baptiste Daroussin Aq bapt@FreeBSD.org
 .An Bryan Drewery Aq bdrewery@FreeBSD.org
+.Sh CAVEATS
+.Ss Jailname
+.Fl j ,
+.Fl z
+and
+.Fl p
+are all used in the name of the jail.
+.Pp
+Be careful to respect the names supported by jail(8):
+.Bd -literal
+    "This is an arbitrary string that identifies a jail (except it
+     may not contain a '.')"
+.Ed
