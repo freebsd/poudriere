@@ -90,42 +90,59 @@ all of the subcommands require the
 .Fl j
 option (see below).
 .Bl -tag -width "-f conffile"
+.It Fl a Ar architecture
+Specify the
+.Ar architecture
+to use in the jail
+.Pq for example Cm amd64 .
+The default is the architecture of the host.
 .It Fl b
-Build the source provided with the -m src=PATH option.
+Build the source provided with the
+.Fl m Cm src= Ns Ar path
+option.
 .It Fl J Ar number
-The
+Run
 .Ar number
-of make jobs will run in parallel for buildworld.
-Defaults to the number of CPUs reported by:  sysctl hw.ncpu.
+of
+.Xr make 1
+jobs in parallel for buildworld.
+Defaults to the number of CPUs reported by:
+.Dq Li sysctl hw.ncpu .
+.It Fl j Ar name
+Specify the
+.Ar name
+of the jail.
 .It Fl q
 Remove the header when
 .Fl l
 is the specified mandatory option.
 Otherwise, it has no effect.
-.It Fl j Ar name
-Specifies the
-.Ar name
-of the jail.
 .It Fl v Ar version
-Specifies which
+Specify the
 .Ar version
 of
 .Fx
 to use in the jail.
-If you are using method ftp then the
+If you are using
+.Fl m Cm ftp
+then the
 .Ar version
-should in the form of: 9.0-RELEASE.
-If you are using method of svn then the
+should in the form of
+.Dq Cm 9.0-RELEASE .
+If you are using
+.Fl m Cm svn
+then the
 .Ar version
-should be in the form of git or svn branches: stable/9 or head for CURRENT.
-Other methods only use the value for display.
-.It Fl a Ar architecture
-Specifies which
-.Ar architecture
-of
-.Fx
-to use in the jail.
-(Default: same as host)
+should be in the form of Git or SVN branches, which is usually
+in the form of
+.Dq Cm stable/9
+or
+just
+.Dq Cm head
+for CURRENT.
+Other methods only use the
+.Ar version
+value for display.
 .It Fl m Ar method
 Specifies which
 .Ar method
