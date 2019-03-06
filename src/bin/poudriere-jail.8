@@ -71,10 +71,6 @@ See also
 Kill a jail (stop it).
 .It Fl l
 List all poudriere jails.
-.It Fl n
-When combined with
-.Fl l ,
-only display jail name.
 .It Fl r Ar name
 Rename a jail to
 .Ar name .
@@ -249,6 +245,10 @@ variable in
 The following protocols are supported:
 .Cm svn No (default) , Cm file , http , No and Cm https .
 .El
+.It Fl n
+When combined with
+.Fl l ,
+only display jail name.
 .It Fl P Ar patch
 Apply the specified
 .Ar patch
