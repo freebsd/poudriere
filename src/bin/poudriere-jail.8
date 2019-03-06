@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 4, 2019
+.Dd March 6, 2019
 .Dt POUDRIERE-JAIL 8
 .Os
 .Sh NAME
@@ -49,37 +49,37 @@ One
 .Ar subcommand
 must be supplied.
 .Sh SUBCOMMANDS
-.Bl -tag -width "-f conffile"
+.Bl -tag -width "-r name"
 .It Fl c
-Creates a jail.
+Create a jail.
 See
 .Sx CAVEATS
 for restrictions on the names of jails.
 .It Fl d
-Deletes a jail.
+Delete a jail.
 .Pp
 If the stdin is a TTY then the command is going to ask for confirmation,
 which defaults to
-.Dq Li N
-.Pq for Dq no .
+.Dq Ic N
+.Pq for no .
 Othwerwise, the specified jail is deleted without confirmation.
 .It Fl i
 Show information about a jail.
 See also
 .Xr poudriere-status 8 .
+.It Fl k
+Kill a jail (stop it).
 .It Fl l
 List all poudriere jails.
 .It Fl n
 When combined with
 .Fl l ,
 only display jail name.
-.It Fl s
-Starts a jail.
-.It Fl k
-Kills a jail (stops it).
 .It Fl r Ar name
 Rename a jail to
 .Ar name .
+.It Fl s
+Start a jail.
 .It Fl u
 Update a jail.
 .El
