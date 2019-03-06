@@ -246,23 +246,25 @@ The following protocols are supported:
 .Cm svn No (default) , Cm file , http , No and Cm https .
 .El
 .It Fl f Ar filesystem
-Specifies the
+Specify the
 .Ar filesystem
-name (${ZPOOL}/jails/filesystem).
+name
+.Pq ${ Ns Va ZPOOL Ns } Ns Pa /jails/filesystem .
 .It Fl K Ar kernelname
-Install the jail with a kernel.
+Install the jail with the specified kernel name.
 If the
 .Ar kernelname
-is an empty string GENERIC will be used.
-If installing from ftp then the default kernel will be installed what ever the
+is an empty string then GENERIC will be used.
+If installing from FTP then the default kernel is installed and
+the value of
 .Ar kernelname
-value is.
+is ignored.
 .It Fl M Ar mountpoint
-Gives an alternative
+Use an alternative
 .Ar mountpoint
-when creating jail.
+when creating the jail.
 .It Fl p Ar name
-This specifies which port tree to start/stop the jail with.
+Specify the ports tree to start/stop the jail with.
 .It Fl P Ar patch
 Apply the specified
 .Ar patch
@@ -274,13 +276,13 @@ as the
 .Fx
 source tree mounted inside the jail
 or from the host for
-.Fl m Ar null .
+.Fl m Cm null .
 .It Fl t Ar version
-instead of upgrading to the latest security fix of the jail version, you can
-jump to the new specified
-.Ar version .
+Upgrade the jail to the specified
+.Ar version
+instead of upgrading to the latest security fix.
 .It Fl z Ar set
-This specifies which SET to start/stop the jail with.
+This specifies which set to start/stop the jail with.
 .It Fl x
 Build the native-xtools target using the host's
 .Pa /usr/src
@@ -291,28 +293,24 @@ The use of
 is due to a bug in the native-xtools build which does not allow it to be
 built from the jail's own source.
 Used exclusively
-for cross building a ports set, typically via qemu-user tools.
+for cross building a ports set, typically via the qemu-user tools.
 .It Fl C Ar data
 Clean poudriere
 .Ar data
 folders when deleting a jail.
 Only used for
-.Sy -d
+.Fl d
 option.
 .Pp
 The
 .Pa data
 parameter can be one of the following:
-.Bl -tag -width "packagesXX"
-.It Sy all
-.It Sy cache
-.It Sy logs
-.It Sy packages
-.It Sy wkrdirs
-.El
+.Cm all , cache , logs , packages , No or Cm wkrdirs .
 .It Fl D
-When creating the jail from a git checkout, clone it with the full history
-instead of a --depth=1.
+Clone the Git repository with the full history when creating the jail from a
+Git checkout.
+The default behavior is to check out only the most recent commit
+.Pq as if Fl -depth=1 No was specified to the Git command .
 .El
 .Sh ENVIRONMENT
 The
