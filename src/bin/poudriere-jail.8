@@ -100,6 +100,28 @@ The default is the architecture of the host.
 Build the source provided with the
 .Fl m Cm src= Ns Ar path
 option.
+.It Fl C Ar data
+Clean poudriere
+.Ar data
+folders when deleting a jail.
+Only used for
+.Fl d
+option.
+.Pp
+The
+.Pa data
+parameter can be one of the following:
+.Cm all , cache , logs , packages , No or Cm wkrdirs .
+.It Fl D
+Clone the Git repository with the full history when creating the jail from a
+Git checkout.
+The default behavior is to check out only the most recent commit
+.Pq as if Fl -depth=1 No was specified to the Git command .
+.It Fl f Ar filesystem
+Specify the
+.Ar filesystem
+name
+.Pq ${ Ns Va ZPOOL Ns } Ns Pa /jails/filesystem .
 .It Fl J Ar number
 Run
 .Ar number
@@ -112,37 +134,19 @@ Defaults to the number of CPUs reported by:
 Specify the
 .Ar name
 of the jail.
-.It Fl q
-Remove the header when
-.Fl l
-is the specified mandatory option.
-Otherwise, it has no effect.
-.It Fl v Ar version
-Specify the
-.Ar version
-of
-.Fx
-to use in the jail.
-If you are using
-.Fl m Cm ftp
-then the
-.Ar version
-should in the form of
-.Dq Cm 9.0-RELEASE .
-If you are using
-.Fl m Cm svn
-then the
-.Ar version
-should be in the form of Git or SVN branches, which is usually
-in the form of
-.Dq Cm stable/9
-or
-just
-.Dq Cm head
-for CURRENT.
-Other methods only use the
-.Ar version
-value for display.
+.It Fl K Ar kernelname
+Install the jail with the specified kernel name.
+If the
+.Ar kernelname
+is an empty string then GENERIC will be used.
+If installing from FTP then the default kernel is installed and
+the value of
+.Ar kernelname
+is ignored.
+.It Fl M Ar mountpoint
+Use an alternative
+.Ar mountpoint
+when creating the jail.
 .It Fl m Ar method
 Specify which
 .Ar method
@@ -245,30 +249,17 @@ variable in
 The following protocols are supported:
 .Cm svn No (default) , Cm file , http , No and Cm https .
 .El
-.It Fl f Ar filesystem
-Specify the
-.Ar filesystem
-name
-.Pq ${ Ns Va ZPOOL Ns } Ns Pa /jails/filesystem .
-.It Fl K Ar kernelname
-Install the jail with the specified kernel name.
-If the
-.Ar kernelname
-is an empty string then GENERIC will be used.
-If installing from FTP then the default kernel is installed and
-the value of
-.Ar kernelname
-is ignored.
-.It Fl M Ar mountpoint
-Use an alternative
-.Ar mountpoint
-when creating the jail.
-.It Fl p Ar name
-Specify the ports tree to start/stop the jail with.
 .It Fl P Ar patch
 Apply the specified
 .Ar patch
 to the source tree before building the jail.
+.It Fl p Ar name
+Specify the ports tree to start/stop the jail with.
+.It Fl q
+Remove the header when
+.Fl l
+is the specified mandatory option.
+Otherwise, it has no effect.
 .It Fl S Ar srcpath
 Use the specified
 .Ar srcpath
@@ -281,8 +272,32 @@ or from the host for
 Upgrade the jail to the specified
 .Ar version
 instead of upgrading to the latest security fix.
-.It Fl z Ar set
-This specifies which set to start/stop the jail with.
+.It Fl v Ar version
+Specify the
+.Ar version
+of
+.Fx
+to use in the jail.
+If you are using
+.Fl m Cm ftp
+then the
+.Ar version
+should in the form of
+.Dq Cm 9.0-RELEASE .
+If you are using
+.Fl m Cm svn
+then the
+.Ar version
+should be in the form of Git or SVN branches, which is usually
+in the form of
+.Dq Cm stable/9
+or
+just
+.Dq Cm head
+for CURRENT.
+Other methods only use the
+.Ar version
+value for display.
 .It Fl x
 Build the native-xtools target using the host's
 .Pa /usr/src
@@ -294,23 +309,8 @@ is due to a bug in the native-xtools build which does not allow it to be
 built from the jail's own source.
 Used exclusively
 for cross building a ports set, typically via the qemu-user tools.
-.It Fl C Ar data
-Clean poudriere
-.Ar data
-folders when deleting a jail.
-Only used for
-.Fl d
-option.
-.Pp
-The
-.Pa data
-parameter can be one of the following:
-.Cm all , cache , logs , packages , No or Cm wkrdirs .
-.It Fl D
-Clone the Git repository with the full history when creating the jail from a
-Git checkout.
-The default behavior is to check out only the most recent commit
-.Pq as if Fl -depth=1 No was specified to the Git command .
+.It Fl z Ar set
+This specifies which set to start/stop the jail with.
 .El
 .Sh ENVIRONMENT
 The
