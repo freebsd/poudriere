@@ -349,12 +349,14 @@ for other supported proxy environment variables.
 .An Baptiste Daroussin Aq bapt@FreeBSD.org
 .An Bryan Drewery Aq bdrewery@FreeBSD.org
 .Sh CAVEATS
-.Ss Jailname
+.Ss Jail names
+The values specified to the
 .Fl j ,
-.Fl z
+.Fl z ,
 and
 .Fl p
-are all used in the name of the jail.
+flags
+are all used directly in the name of the jail used by poudriere.
 .Pp
 Be careful to respect the names supported by jail(8):
 .Bd -literal
