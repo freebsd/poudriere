@@ -47,7 +47,7 @@ display_add() {
 }
 
 display_output() {
-	local cnt lengths length format arg flag quiet
+	local cnt lengths length format arg flag quiet line n
 
 	quiet=0
 
@@ -84,10 +84,17 @@ display_output() {
 
 	# Set format lengths if format is dynamic width
 	if [ "${format##*%%*}" != "${format}" ]; then
+		set -- ${format}
 		lengths=
-		for n in $(jot $((${_DISPLAY_COLUMNS} - 1)) 0); do
-			hash_get lengths ${n} length
-			lengths="${lengths} ${length}"
+		n=0
+		for arg in "$@"; do
+			case ${arg} in
+			*%d*)
+				hash_get lengths ${n} length
+				lengths="${lengths:+${lengths} }${length}"
+				;;
+			esac
+			n=$((n + 1))
 		done
 		format=$(printf "${format}" ${lengths})
 	fi
