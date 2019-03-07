@@ -222,7 +222,7 @@ variable in
 .Pp
 The following protocols are supported:
 .Cm git No (default) , Cm http , https , No and Cm ssh .
-.It Sy src= Ns Ar path
+.It Cm src= Ns Ar path
 Copy the source tree from
 .Ar path
 into the jail,
@@ -232,7 +232,7 @@ This option is meant to be used with the
 flag.
 .It Cm svn Ns Op Cm + Ns Ar protocol
 Will use SVN and the
-.Sy SVN_HOST
+.Ev SVN_HOST
 variable in
 .Pa poudriere.conf .
 Use SVN to download the sources.
