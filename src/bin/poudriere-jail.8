@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 6, 2019
+.Dd March 7, 2019
 .Dt POUDRIERE-JAIL 8
 .Os
 .Sh NAME
@@ -316,20 +316,52 @@ This specifies which set to start/stop the jail with.
 The
 .Nm jail
 subcommand may use the following environment variables:
-.Bl -tag -width "HTTP_PROXY FTP_PROXY"
-.It Sy FETCH_BIND_ADDRESS
+.Bl -tag -width FETCH_BIND_ADDRESS
+.It Ev FETCH_BIND_ADDRESS
 The bind address used by
 .Xr fetch 1 .
 See
 .Xr fetch 3
 for more details.
-.It Sy HTTP_PROXY HTTP_* http_* FTP_PROXY FTP_* http_* SSL_* NO_PROXY no_proxy
+.It Ev FTP_ Ns Aq Ar *
 The proxy configuration for
 .Xr fetch 1 .
 See
 .Xr fetch 3
 for other supported proxy environment variables.
-.It Sy MAKEOBJDIRPREFIX
+.It Ev ftp_ Ns Aq Ar *
+See
+.Ev FTP_ Ns Aq Ar * .
+.It Ev FTP_PROXY
+See
+.Ev FTP_ Ns Aq Ar * .
+.It Ev HTTP_ Ns Aq Ar *
+See
+.Ev FTP_ Ns Aq Ar * .
+.It Ev http_ Ns Aq Ar *
+See
+.Ev FTP_ Ns Aq Ar * .
+.It Ev HTTP_PROXY
+See
+.Ev FTP_ Ns Aq Ar * .
+.It Ev NO_PROXY
+See
+.Ev FTP_ Ns Aq Ar * .
+.It Ev no_proxy
+See
+.Ev FTP_ Ns Aq Ar * .
+.It Ev SSL_ Ns Aq Ar *
+See
+.Ev FTP_ Ns Aq Ar * .
+.It Ev MAKEOBJDIRPREFIX
+Related to the
+.Fl x
+flag.
+See
+.Xr build 7
+and the implementation of the
+.Nm jail
+subcommand for more details.
 .El
 .Sh SEE ALSO
 .Xr jail 8 ,
