@@ -365,6 +365,26 @@ and the implementation of the
 .Nm jail
 subcommand for more details.
 .El
+.Sh EXAMPLES
+.Bl -tag -width 0n
+.It Sy Example 1\&: No Creating New Jail
+.Pp
+The following example creates a new amd64 jail called
+.Dq 120amd64 ,
+that is based on
+.Fx 12.0-RELEASE .
+.Bd -literal -offset 2n
+.Li # Ic poudriere jail -c -j 120amd64 -v 12.0-RELEASE -a amd64
+.Ed
+.It Sy Example 2\&: No Checking If a Jail Already Exists
+.Pp
+The following command returns success if a poudriere jail called
+.Dq 112i386
+already exists.
+.Bd -literal -offset 2n
+.Li # Ic poudriere jail -l -n -q | grep -q '^112i386'
+.Ed
+.El
 .Sh SEE ALSO
 .Xr jail 8 ,
 .Xr poudriere 8 ,
