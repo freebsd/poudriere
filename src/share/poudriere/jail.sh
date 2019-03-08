@@ -916,8 +916,6 @@ create_jail() {
 	cp -f "${JAILMNT}/etc/login.conf" "${JAILMNT}/etc/login.conf.orig"
 	update_version_env "${RELEASE}"
 
-	pwd_mkdb -d ${JAILMNT}/etc/ -p ${JAILMNT}/etc/master.passwd
-
 	markfs clean ${JAILMNT}
 
 	# Check VERSION before running 'update_jail' on jails created using FreeBSD dists.

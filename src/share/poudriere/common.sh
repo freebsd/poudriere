@@ -2426,6 +2426,9 @@ jail_start() {
 	clonefs ${mnt} ${tomnt} clean
 	echo " done"
 
+	pwd_mkdb -d "${tomnt}/etc" -p "${tomnt}/etc/master.passwd" || \
+	    err 1 "pwd_mkdb for the jail failed."
+
 	if [ ${JAIL_OSVERSION} -gt ${HOST_OSVERSION} ]; then
 		msg_warn "!!! Jail is newer than host. (Jail: ${JAIL_OSVERSION}, Host: ${HOST_OSVERSION}) !!!"
 		msg_warn "This is not supported."
