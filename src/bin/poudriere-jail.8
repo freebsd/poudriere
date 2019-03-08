@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 7, 2019
+.Dd March 8, 2019
 .Dt POUDRIERE-JAIL 8
 .Os
 .Sh NAME
@@ -36,10 +36,60 @@
 .Nd manage jails used to build ports
 .Sh SYNOPSIS
 .Nm poudriere
-.Op Ar poudriere-options
 .Cm jail
-.Ar subcommand
-.Op Ar options
+.Fl c
+.Fl j Ar name
+.Op Fl bDx
+.Op Fl a Ar architecture
+.Op Fl f Ar filesystem
+.Op Fl J Ar number
+.Op Fl K Ar kernelname
+.Op Fl M Ar mountpoint
+.Op Fl m Ar method
+.Op Fl P Ar patch
+.Op Fl p Ar name
+.Op Fl S Ar srcpath
+.Op Fl z Ar set
+.Nm poudriere
+.Cm jail
+.Fl d
+.Fl j Ar name
+.Op Fl C Ar data
+.Op Fl p Ar name
+.Op Fl z Ar set
+.Nm poudriere
+.Cm jail
+.Fl i
+.Fl j Ar name
+.Op Fl z Ar set
+.Nm poudriere
+.Cm jail
+.Fl k
+.Fl j Ar name
+.Op Fl z Ar set
+.Nm poudriere
+.Cm jail
+.Fl l
+.Op Ar nq
+.Op Fl z Ar set
+.Nm poudriere
+.Cm jail
+.Fl r Ar name
+.Fl j Ar name
+.Op Fl z Ar set
+.Nm poudriere
+.Cm jail
+.Fl s
+.Fl j Ar name
+.Op Fl z Ar set
+.Nm poudriere
+.Cm jail
+.Fl u
+.Fl j Ar name
+.Op Fl x
+.Op Fl J Ar number
+.Op Fl t Ar version
+.Op Fl z Ar set
 .Sh DESCRIPTION
 This command manages the
 .Nm
