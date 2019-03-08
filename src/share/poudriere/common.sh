@@ -2291,12 +2291,39 @@ setup_ports_env() {
 	fi
 }
 
+# Set specified version into login.conf
+update_version_env() {
+	[ $# -eq 5 ] || \
+	    eargs update_version_env mnt host_arch arch version osversion
+	local mnt="$1"
+	local host_arch="$2"
+	local arch="$3"
+	local version="$4"
+	local osversion="$5"
+	local login_env
+
+	login_env=",UNAME_r=${version% *},UNAME_v=FreeBSD ${version},OSVERSION=${osversion}"
+
+	# Tell pkg(8) to not use /bin/sh for the ELF ABI since it is native.
+	[ "${QEMU_EMULATING}" -eq 1 ] && \
+	    login_env="${login_env},ABI_FILE=\/usr\/lib\/crt1.o"
+
+	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
+	need_cross_build "${host_arch}" "${arch}" && \
+	    login_env="${login_env},UNAME_m=${arch%.*},UNAME_p=${arch#*.}"
+
+	sed -i "" -e "s/,UNAME_r.*:/:/ ; s/:\(setenv.*\):/:\1${login_env}:/" \
+	    "${mnt}/etc/login.conf"
+	cap_mkdb "${mnt}/etc/login.conf" || \
+	    err 1 "cap_mkdb for the jail failed."
+}
+
 jail_start() {
 	[ $# -lt 2 ] && eargs jail_start name ptname setname
 	local name=$1
 	local ptname=$2
 	local setname=$3
-	local arch host_arch
+	local arch host_arch version
 	local mnt
 	local needfs="${NULLFSREF}"
 	local needkld kldpair kld kldmodname
@@ -2313,6 +2340,8 @@ jail_start() {
 	_jget arch ${name} arch || err 1 "Missing arch metadata for jail"
 	get_host_arch host_arch
 	_jget mnt ${name} mnt || err 1 "Missing mnt metadata for jail"
+	_jget version ${name} version || \
+	    err 1 "Missing version metadata for jail"
 
 	# Protect ourselves from OOM
 	madvise_protect $$ || :
@@ -2433,6 +2462,8 @@ jail_start() {
 
 	pwd_mkdb -d "${tomnt}/etc" -p "${tomnt}/etc/master.passwd" || \
 	    err 1 "pwd_mkdb for the jail failed."
+	update_version_env "${tomnt}" "${host_arch}" "${arch}" \
+	    "${version}" "${JAIL_OSVERSION}"
 
 	if [ ${JAIL_OSVERSION} -gt ${HOST_OSVERSION} ]; then
 		msg_warn "!!! Jail is newer than host. (Jail: ${JAIL_OSVERSION}, Host: ${HOST_OSVERSION}) !!!"
