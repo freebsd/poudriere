@@ -7189,7 +7189,8 @@ prepare_ports() {
 			export GID=0
 		fi
 
-		jget ${JAILNAME} version > ${PACKAGES}/.jailversion
+		jget ${JAILNAME} version > ${PACKAGES}/.jailversion || \
+		    err 1 "Missing version metadata for jail"
 		echo "${BUILDNAME}" > "${PACKAGES}/.buildname"
 
 	fi
