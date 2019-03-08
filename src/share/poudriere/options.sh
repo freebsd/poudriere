@@ -118,7 +118,7 @@ post_getopts
 
 # checking jail and architecture consistency
 if [ -n "${JAILNAME}" -a -n "${ARCH}" ]; then
-	_jget _arch "${JAILNAME}" arch
+	_jget _arch "${JAILNAME}" arch || err 1 "Missing arch metadata for jail"
 	if need_cross_build "${_arch}" "${ARCH}" ; then
 		err 1 "jail ${JAILNAME} and architecture ${ARCH} not compatible"
 	fi

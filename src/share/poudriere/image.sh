@@ -211,17 +211,17 @@ esac
 mkdir -p ${OUTPUTDIR}
 
 jail_exists ${JAILNAME} || err 1 "The jail ${JAILNAME} does not exist"
-_jget arch ${JAILNAME} arch
+_jget arch ${JAILNAME} arch || err 1 "Missing arch metadata for jail"
 get_host_arch host_arch
 case "${MEDIATYPE}" in
 usb|*firmware|*rawdisk|embedded|dump)
 	[ -n "${IMAGESIZE}" ] || err 1 "Please specify the imagesize"
-	_jget mnt ${JAILNAME} mnt
+	_jget mnt ${JAILNAME} mnt || err 1 "Missing mnt metadata for jail"
 	[ -f "${mnt}/boot/kernel/kernel" ] || \
 	    err 1 "The ${MEDIATYPE} media type requires a jail with a kernel"
 	;;
 iso*|usb*|raw*)
-	_jget mnt ${JAILNAME} mnt
+	_jget mnt ${JAILNAME} mnt || err 1 "Missing mnt metadata for jail"
 	[ -f "${mnt}/boot/kernel/kernel" ] || \
 	    err 1 "The ${MEDIATYPE} media type requires a jail with a kernel"
 	;;
@@ -233,7 +233,7 @@ CLEANUP_HOOK=cleanup_image
 [ -d "${POUDRIERE_DATA}/images" ] || \
     mkdir "${POUDRIERE_DATA}/images"
 WRKDIR=$(mktemp -d ${POUDRIERE_DATA}/images/${IMAGENAME}-XXXX)
-_jget mnt ${JAILNAME} mnt
+_jget mnt ${JAILNAME} mnt || err 1 "Missing mnt metadata for jail"
 excludelist=$(mktemp -t excludelist)
 mkdir -p ${WRKDIR}/world
 mkdir -p ${WRKDIR}/out
