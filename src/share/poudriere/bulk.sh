@@ -194,7 +194,8 @@ post_getopts
 : ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}
 PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
 
-test -z "${JAILNAME}" && err 1 "Don't know on which jail to run please specify -j"
+[ -z "${JAILNAME}" ] && \
+    err 1 "Don't know on which jail to run please specify -j"
 
 maybe_run_queued "${saved_argv}"
 

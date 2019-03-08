@@ -126,7 +126,7 @@ delete_jail() {
 	local cache_dir method
 	local clean_dir depth
 
-	test -z ${JAILNAME} && usage JAILNAME
+	[ -z "${JAILNAME}" ] && usage JAILNAME
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	jail_runs ${JAILNAME} &&
 		err 1 "Unable to delete jail ${JAILNAME}: it is running"
@@ -823,7 +823,8 @@ create_jail() {
 		RELEASE="${ALLBSDVER}-JPSNAP/ftp"
 		;;
 	svn*)
-		test -x "${SVN_CMD}" || err 1 "svn or svnlite not installed. Perhaps you need to 'pkg install subversion'"
+		[ -x "${SVN_CMD}" ] || \
+		    err 1 "svn or svnlite not installed. Perhaps you need to 'pkg install subversion'"
 		case ${VERSION} in
 			stable/*![0-9]*)
 				err 1 "bad version number for stable version"
@@ -850,7 +851,7 @@ create_jail() {
 		;;
 	src=*)
 		SRC_BASE="${METHOD#src=}"
-		test -d ${SRC_BASE} || err 1 "No such source directory"
+		[ -d "${SRC_BASE}" ] || err 1 "No such source directory"
 		FCT=install_from_src
 		;;
 	tar=*)
@@ -1185,10 +1186,10 @@ fi
 
 case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	10000000)
-		test -z ${JAILNAME} && usage JAILNAME
+		[ -z "${JAILNAME}" ] && usage JAILNAME
 		case ${METHOD} in
 			src=*|null|tar) ;;
-			*) test -z ${VERSION} && usage VERSION ;;
+			*) [ -z "${VERSION}" ] && usage VERSION ;;
 		esac
 		jail_exists ${JAILNAME} && \
 		    err 2 "The jail ${JAILNAME} already exists"
@@ -1197,7 +1198,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		create_jail
 		;;
 	01000000)
-		test -z ${JAILNAME} && usage JAILNAME
+		[ -z "${JAILNAME}" ] && usage JAILNAME
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		_mastermnt MASTERMNT
 		export MASTERMNT
@@ -1207,7 +1208,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		list_jail
 		;;
 	00010000)
-		test -z ${JAILNAME} && usage JAILNAME
+		[ -z "${JAILNAME}" ] && usage JAILNAME
 		maybe_run_queued "${saved_argv}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		_mastermnt MASTERMNT
@@ -1218,7 +1219,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		;;
 	00001000)
 		export SET_STATUS_ON_START=0
-		test -z ${JAILNAME} && usage JAILNAME
+		[ -z "${JAILNAME}" ] && usage JAILNAME
 		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 		maybe_run_queued "${saved_argv}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
@@ -1228,14 +1229,14 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		JNETNAME="n"
 		;;
 	00000100)
-		test -z ${JAILNAME} && usage JAILNAME
+		[ -z "${JAILNAME}" ] && usage JAILNAME
 		confirm_if_tty "Are you sure you want to delete the jail?" || \
 		    err 1 "Not deleting jail"
 		maybe_run_queued "${saved_argv}"
 		delete_jail
 		;;
 	00000010)
-		test -z ${JAILNAME} && usage JAILNAME
+		[ -z "${JAILNAME}" ] && usage JAILNAME
 		jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 		maybe_run_queued "${saved_argv}"
 		jail_runs ${JAILNAME} && \
@@ -1244,7 +1245,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		update_jail
 		;;
 	00000001)
-		test -z ${JAILNAME} && usage JAILNAME
+		[ -z "${JAILNAME}" ] && usage JAILNAME
 		maybe_run_queued "${saved_argv}"
 		rename_jail
 		;;
