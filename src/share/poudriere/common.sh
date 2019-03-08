@@ -1771,7 +1771,7 @@ do_portbuild_mounts() {
 		msg "Mounting packages from: ${PACKAGES_ROOT}"
 	fi
 
-	_pget portsdir ${ptname} mnt
+	_pget portsdir ${ptname} mnt || err 1 "Missing mnt metadata for portstree"
 	[ -d ${portsdir}/ports ] && portsdir=${portsdir}/ports
 	${NULLMOUNT} -o ro ${portsdir} ${mnt}${PORTSDIR} ||
 		err 1 "Failed to mount the ports directory "
@@ -2305,9 +2305,9 @@ jail_start() {
 	else
 		_mastermnt tomnt
 	fi
-	_jget arch ${name} arch
+	_jget arch ${name} arch || err 1 "Missing arch metadata for jail"
 	get_host_arch host_arch
-	_jget mnt ${name} mnt
+	_jget mnt ${name} mnt || err 1 "Missing mnt metadata for jail"
 
 	# Protect ourselves from OOM
 	madvise_protect $$ || :
@@ -2623,7 +2623,8 @@ setup_makeconf() {
 	get_host_arch host_arch
 	# The jail may be empty for poudriere-options.
 	if [ -n "${name}" ]; then
-		_jget arch "${name}" arch
+		_jget arch "${name}" arch || \
+		    err 1 "Missing arch metadata for jail"
 	elif [ -n "${ARCH}" ]; then
 		arch="${ARCH}"
 	fi
@@ -6572,7 +6573,8 @@ _listed_ports() {
 	local portsdir origin file
 
 	if [ ${ALL} -eq 1 ]; then
-		_pget portsdir ${PTNAME} mnt
+		_pget portsdir ${PTNAME} mnt || \
+		    err 1 "Missing mnt metadata for portstree"
 		[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
 		for cat in $(awk -F= '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print $2}' ${portsdir}/Makefile); do
 			awk -F= -v cat=${cat} '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print cat"/"$2}' ${portsdir}/${cat}/Makefile
