@@ -158,7 +158,6 @@ It is expected that this directory be installed to with the following:
 /usr/src# make distribution DESTDIR=PATH DB_FROM_SRC=1
 .Ed
 .Pp
-The path will be null-mounted during builds.
 It will not be copied at the time of running
 .Nm jail .
 Deleting the jail will attempt to revert any files changed by poudriere.
