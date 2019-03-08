@@ -3450,8 +3450,13 @@ save_wrkdir() {
 }
 
 start_builder() {
-	local id=$1
-	local arch=$2
+	[ $# -eq 5 ] || eargs start_builder MY_JOBID jname ptname setname \
+	    arch
+	local id="$1"
+	local jname="$2"
+	local ptname="$3"
+	local setname="$4"
+	local arch="$5"
 	local mnt MY_JOBID
 
 	MY_JOBID=${id}
@@ -3464,14 +3469,18 @@ start_builder() {
 	mkdir -p "${mnt}"
 	clonefs ${MASTERMNT} ${mnt} prepkg
 	markfs prepkg ${mnt} >/dev/null
-	do_jail_mounts "${MASTERMNT}" ${mnt} ${arch} ${jname}
-	do_portbuild_mounts ${mnt} ${jname} ${ptname} ${setname}
+	do_jail_mounts "${MASTERMNT}" "${mnt}" "${arch}" "${jname}"
+	do_portbuild_mounts "${mnt}" "${jname}" "${ptname}" "${setname}"
 	jstart
 	bset ${id} status "idle:"
 	run_hook builder start "${id}" "${mnt}"
 }
 
 start_builders() {
+	[ $# -eq 3 ] || eargs start_builders jname ptname setname
+	local jname="$1"
+	local ptname="$2"
+	local setname="$3"
 	local arch=$(injail uname -p)
 
 	msg "Starting/Cloning builders"
@@ -3482,7 +3491,8 @@ start_builders() {
 	bset status "starting_builders:"
 	parallel_start
 	for j in ${JOBS}; do
-		parallel_run start_builder ${j} ${arch}
+		parallel_run start_builder "${j}" \
+		    "${jname}" "${ptname}" "${setname}" "${arch}"
 	done
 	parallel_stop
 
@@ -3824,9 +3834,9 @@ calculate_duration() {
 # Build ports in parallel
 # Returns when all are built.
 parallel_build() {
-	local jname=$1
-	local ptname=$2
-	local setname=$3
+	local jname="$1"
+	local ptname="$2"
+	local setname="$3"
 	local real_parallel_jobs=${PARALLEL_JOBS}
 	local nremaining=$(calculate_tobuild)
 
@@ -3843,7 +3853,7 @@ parallel_build() {
 	msg "Building ${nremaining} packages using ${PARALLEL_JOBS} builders"
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
 
-	start_builders
+	start_builders "${jname}" "${ptname}" "${setname}"
 
 	# Ensure rollback for builders doesn't copy schg files.
 	if schg_immutable_base; then
