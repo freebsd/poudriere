@@ -252,8 +252,7 @@ update_jail() {
 		MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
 		MUTABLE_BASE=yes NOLINUX=yes \
-		    do_jail_mounts "${JAILMNT}" "${JAILMNT}" "${ARCH}" \
-		    "${JAILNAME}"
+		    do_jail_mounts "${JAILMNT}" "${JAILMNT}" "${JAILNAME}"
 		JNETNAME="n"
 		jstart
 		[ -n "${CLEANUP_HOOK}" ] && OLD_CLEANUP_HOOK="${CLEANUP_HOOK}"

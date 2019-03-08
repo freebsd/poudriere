@@ -1564,13 +1564,12 @@ cd() {
 }
 
 do_jail_mounts() {
-	[ $# -ne 4 ] && eargs do_jail_mounts from mnt arch name
+	[ $# -ne 3 ] && eargs do_jail_mounts from mnt name
 	local from="$1"
 	local mnt="$2"
-	local arch="$3"
-	local name="$4"
+	local name="$3"
 	local devfspath="null zero random urandom stdin stdout stderr fd fd/* bpf* pts pts/*"
-	local srcpath nullpaths nullpath p
+	local srcpath nullpaths nullpath p arch
 
 	# from==mnt is via jail -u
 
@@ -1609,10 +1608,13 @@ do_jail_mounts() {
 	    mount -t fdescfs fdesc "${mnt}/dev/fd"
 	[ "${USE_PROCFS}" = "yes" ] && \
 	    mount -t procfs proc "${mnt}/proc"
-	[ -z "${NOLINUX}" ] && \
-	    [ "${arch}" = "i386" -o "${arch}" = "amd64" ] && \
-	    [ -d "${mnt}/compat" ] && \
-	    mount -t linprocfs linprocfs "${mnt}/compat/linux/proc"
+
+	if [ -z "${NOLINUX}" ] && [ -d "${mnt}/compat" ]; then
+		_jget arch "${name}" arch || \
+		    err 1 "Missing arch metadata for jail"
+		[ "${arch}" = "i386" -o "${arch}" = "amd64" ] && \
+		    mount -t linprocfs linprocfs "${mnt}/compat/linux/proc"
+	fi
 
 	run_hook jail mount ${mnt}
 
@@ -2438,7 +2440,7 @@ jail_start() {
 	fi
 
 	msg "Mounting system devices for ${MASTERNAME}"
-	do_jail_mounts "${mnt}" "${tomnt}" ${arch} ${name}
+	do_jail_mounts "${mnt}" "${tomnt}" "${name}"
 
 	# May already be set for pkgclean
 	: ${PACKAGES:=${POUDRIERE_DATA}/packages/${MASTERNAME}}
@@ -3450,13 +3452,11 @@ save_wrkdir() {
 }
 
 start_builder() {
-	[ $# -eq 5 ] || eargs start_builder MY_JOBID jname ptname setname \
-	    arch
+	[ $# -eq 4 ] || eargs start_builder MY_JOBID jname ptname setname
 	local id="$1"
 	local jname="$2"
 	local ptname="$3"
 	local setname="$4"
-	local arch="$5"
 	local mnt MY_JOBID
 
 	MY_JOBID=${id}
@@ -3469,7 +3469,7 @@ start_builder() {
 	mkdir -p "${mnt}"
 	clonefs ${MASTERMNT} ${mnt} prepkg
 	markfs prepkg ${mnt} >/dev/null
-	do_jail_mounts "${MASTERMNT}" "${mnt}" "${arch}" "${jname}"
+	do_jail_mounts "${MASTERMNT}" "${mnt}" "${jname}"
 	do_portbuild_mounts "${mnt}" "${jname}" "${ptname}" "${setname}"
 	jstart
 	bset ${id} status "idle:"
@@ -3481,7 +3481,6 @@ start_builders() {
 	local jname="$1"
 	local ptname="$2"
 	local setname="$3"
-	local arch=$(injail uname -p)
 
 	msg "Starting/Cloning builders"
 	bset status "starting_jobs:"
@@ -3492,7 +3491,7 @@ start_builders() {
 	parallel_start
 	for j in ${JOBS}; do
 		parallel_run start_builder "${j}" \
-		    "${jname}" "${ptname}" "${setname}" "${arch}"
+		    "${jname}" "${ptname}" "${setname}"
 	done
 	parallel_stop
 
