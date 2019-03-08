@@ -871,6 +871,13 @@ create_jail() {
 		;;
 	esac
 
+	# Some methods determine VERSION from newvers.sh if possible
+	# but need to have -v specified otherwise.
+	if [ -z "${VERSION}" ] && \
+	    [ ! -r "${SRC_BASE}/sys/conf/newvers.sh" ]; then
+		usage VERSION
+	fi
+
 	if [ "${JAILFS}" != "none" ]; then
 		[ -d "${JAILMNT}" ] && \
 		    err 1 "Directory ${JAILMNT} already exists"
