@@ -4938,12 +4938,8 @@ delete_old_pkg() {
 	fi
 
 	if shash_get origin-moved "${origin}" new_origin; then
-		if [ "${new_origin}" = "EXPIRED" ]; then
-			local expired_reason
-
-			shash_get origin-moved-expired "${origin}" \
-			    expired_reason || expired_reason=
-			msg "Deleting ${pkg##*/}: ${COLOR_PORT}${origin}${COLOR_RESET} ${expired_reason}"
+		if [ "${new_origin%% *}" = "EXPIRED" ]; then
+			msg "Deleting ${pkg##*/}: ${COLOR_PORT}${origin}${COLOR_RESET} ${new_origin#EXPIRED }"
 		else
 			msg "Deleting ${pkg##*/}: ${COLOR_PORT}${origin}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
 		fi
@@ -5110,7 +5106,8 @@ delete_old_pkg() {
 				    "${compiled_deps_origin}" \
 				    new_origin && \
 				    compiled_deps_origin="${new_origin}"
-				[ "${compiled_deps_origin}" = "EXPIRED" ] && \
+				[ "${compiled_deps_origin%% *}" = \
+				    "EXPIRED" ] && \
 				    continue
 				compiled_deps_new="${compiled_deps_new:+${compiled_deps_new} }${compiled_deps_origin}"
 			done
@@ -6029,8 +6026,8 @@ deps_sanity() {
 			# advise the user about it.
 			shash_get origin-moved "${dep_origin}" \
 			    new_origin || new_origin=
-			if [ "${new_origin}" = "EXPIRED" ]; then
-				moved_reason="port EXPIRED"
+			if [ "${new_origin%% *}" = "EXPIRED" ]; then
+				moved_reason="port EXPIRED: ${new_origin#EXPIRED }"
 			else
 				moved_reason="moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
 			fi
@@ -6657,10 +6654,8 @@ _listed_ports() {
 		fi
 		origin_listed="${origin}"
 		if shash_get origin-moved "${origin}" new_origin; then
-			if [ "${new_origin}" = "EXPIRED" ]; then
-				shash_get origin-moved-expired "${origin}" \
-				    expired_reason || expired_reason=
-				msg_error "MOVED: ${origin} ${expired_reason}"
+			if [ "${new_origin%% *}" = "EXPIRED" ]; then
+				msg_error "MOVED: ${origin} ${new_origin}"
 				set_dep_fatal_error
 				continue
 			fi
@@ -6879,13 +6874,10 @@ load_moved() {
 	bset status "loading_moved:"
 	awk -f ${AWKPREFIX}/parse_MOVED.awk \
 	    ${MASTERMNT}${PORTSDIR}/MOVED | \
-	    while mapfile_read_loop_redir \
-	        old_origin new_origin expired_reason; do
+	    while mapfile_read_loop_redir old_origin new_origin; do
+		# new_origin may be EXPIRED followed by the reason
+		# or only a new origin.
 		shash_set origin-moved "${old_origin}" "${new_origin}"
-		if [ "${new_origin}" = "EXPIRED" ]; then
-			shash_set origin-moved-expired "${old_origin}" \
-			    "${expired_reason}"
-		fi
 	done
 }
 
@@ -7174,7 +7166,6 @@ prepare_ports() {
 			cd "${SHASH_VAR_PATH}"
 			for shash_bucket in \
 			    origin-moved \
-			    origin-moved-expired \
 			    pkgname-options \
 			    pkgname-run_deps \
 			    pkgname-lib_deps \
