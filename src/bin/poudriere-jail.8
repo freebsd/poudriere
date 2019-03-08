@@ -432,7 +432,7 @@ The following command returns success if a poudriere jail called
 .Dq 112i386
 already exists.
 .Bd -literal -offset 2n
-.Li # Ic poudriere jail -l -n -q | grep -q '^112i386'
+.Li # Ic poudriere jail -l -n -q | grep --quiet '^112i386$'
 .Ed
 .El
 .Sh SEE ALSO
