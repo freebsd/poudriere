@@ -217,18 +217,21 @@ case "${MEDIATYPE}" in
 usb|*firmware|*rawdisk|embedded|dump)
 	[ -n "${IMAGESIZE}" ] || err 1 "Please specify the imagesize"
 	_jget mnt ${JAILNAME} mnt
-	test -f ${mnt}/boot/kernel/kernel || err 1 "The ${MEDIATYPE} media type requires a jail with a kernel"
+	[ -f "${mnt}/boot/kernel/kernel" ] || \
+	    err 1 "The ${MEDIATYPE} media type requires a jail with a kernel"
 	;;
 iso*|usb*|raw*)
 	_jget mnt ${JAILNAME} mnt
-	test -f ${mnt}/boot/kernel/kernel || err 1 "The ${MEDIATYPE} media type requires a jail with a kernel"
+	[ -f "${mnt}/boot/kernel/kernel" ] || \
+	    err 1 "The ${MEDIATYPE} media type requires a jail with a kernel"
 	;;
 esac
 
 msg "Preparing the image '${IMAGENAME}'"
 md=""
 CLEANUP_HOOK=cleanup_image
-test -d ${POUDRIERE_DATA}/images || mkdir ${POUDRIERE_DATA}/images
+[ -d "${POUDRIERE_DATA}/images" ] || \
+    mkdir "${POUDRIERE_DATA}/images"
 WRKDIR=$(mktemp -d ${POUDRIERE_DATA}/images/${IMAGENAME}-XXXX)
 _jget mnt ${JAILNAME} mnt
 excludelist=$(mktemp -t excludelist)
