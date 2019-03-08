@@ -42,12 +42,12 @@
 .Op Fl bDx
 .Op Fl a Ar architecture
 .Op Fl f Ar filesystem
-.Op Fl J Ar number
+.Op Fl J Ar maxjobs
 .Op Fl K Ar kernelname
 .Op Fl M Ar mountpoint
 .Op Fl m Ar method
 .Op Fl P Ar patch
-.Op Fl p Ar name
+.Op Fl p Ar portstree
 .Op Fl S Ar srcpath
 .Op Fl z Ar set
 .Nm poudriere
@@ -55,7 +55,7 @@
 .Fl d
 .Fl j Ar name
 .Op Fl C Ar data
-.Op Fl p Ar name
+.Op Fl p Ar portstree
 .Op Fl z Ar set
 .Nm poudriere
 .Cm jail
@@ -87,7 +87,7 @@
 .Fl u
 .Fl j Ar name
 .Op Fl x
-.Op Fl J Ar number
+.Op Fl J Ar maxjobs
 .Op Fl t Ar version
 .Op Fl z Ar set
 .Sh DESCRIPTION
@@ -168,9 +168,9 @@ Specify the
 .Ar filesystem
 name
 .Pq ${ Ns Va ZPOOL Ns } Ns Pa /jails/filesystem .
-.It Fl J Ar number
+.It Fl J Ar maxjobs
 Run
-.Ar number
+.Ar maxjobs
 of
 .Xr make 1
 jobs in parallel for buildworld.
@@ -305,7 +305,7 @@ only display jail name.
 Apply the specified
 .Ar patch
 to the source tree before building the jail.
-.It Fl p Ar name
+.It Fl p Ar portstree
 Specify the ports tree to start/stop the jail with.
 .It Fl q
 Remove the header when
