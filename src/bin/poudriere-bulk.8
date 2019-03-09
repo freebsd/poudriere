@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 14, 2018
+.Dd March 8, 2019
 .Dt POUDRIERE-BULK 8
 .Os
 .Sh NAME
@@ -36,45 +36,72 @@
 .Nd build a ready-to-export package tree
 .Sh SYNOPSIS
 .Nm poudriere
-.Op Ar poudriere-options
 .Cm bulk
-.Ar subcommand
-.Op Ar options
+.Fl a
+.Fl j Ar name
+.Op Fl CcFIikNnRrSTtvw
+.Op Fl B Ar name
+.Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
+.Op Fl p Ar tree
+.Op Fl z Ar set
 .Nm poudriere
-.Op Ar poudriere-options
 .Cm bulk
-.Op Ar options
+.Fl f Ar file Op Oo Fl f Ar file2 Oc Ar ...
+.Fl j Ar name
+.Op Fl CcFIikNnRrSTtvw
+.Op Fl B Ar name
+.Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
+.Op Fl p Ar tree
+.Op Fl z Ar set
+.Nm poudriere
+.Cm bulk
+.Fl j Ar name
+.Op Fl CcFIikNnRrSTtvw
+.Op Fl B Ar name
+.Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
+.Op Fl p Ar tree
+.Op Fl z Ar set
 .Ar origin Op Ar origin2 ...
 .Sh DESCRIPTION
 This command makes a ready-to-export package tree, and fills it with
 binary packages built from a given list of ports.
-During the build, hit ^T to send
+During the build, hit
+.Ic ^T
+to send
 .Dv SIGINFO
 and show stats and progress about the build.
 .Pp
-See
-.Sx FLAVORS
+See the
+.Em FLAVORS
+section
 in
 .Xr poudriere 8
-for supported FLAVORS syntax.
+for supported flavors syntax.
 .Pp
 See
-.Sx CUSTOMISATION
+the
+.Em CUSTOMISATION
+section
 in
 .Xr poudriere 8
-to know how to build binary packages with options that differs from
+to learn how building binary packages with options that differ from
 defaults.
-.Pp
-Either a subcommand or a list of port origins must be supplied.
 .Sh SUBCOMMANDS
-.Bl -tag -width "-f conffile"
+.Bl -tag -width "-f file"
 .It Fl a
 Build all ports in the tree with all flavors.
 .It Fl f Ar file
-Absolute path to a file which contains the list of ports to build.
-Ports must be specified in the form
-.Ar category/port
-and shell-style comments are allowed.
+Build ports listed in the
+.Ar file .
+.Pp
+The path to the
+.Ar file
+has to be absolute.
+Ports must be specified in the form of
+.Dq Ar category Ns / Ns Ar port
+and
+.Xr sh 1 Ns -style
+comments are allowed.
 Multiple
 .Fl f Ar file
 arguments may be specified at once.
@@ -88,117 +115,145 @@ By default
 will be used.
 This can be used to resume a previous build and use the same log and URL paths.
 Resuming a build will not retry built/failed/skipped/ignored packages.
+.It Fl C
+Clean only the packages specified on the command line or in the file given by
 .It Fl c
 Clean
 .Em all
 previously built packages and logs.
-.It Fl C
-Clean only the packages specified on the command line or in the file given by
 .Fl f Ar file .
 Implies
 .Fl c
 for
 .Fl a .
 .It Fl F
-Only fetch from original MASTER_SITES.
+Fetch only fetch from the original
+.Va MASTER_SITES .
 Skip
 .Fx
 mirrors.
-.It Fl j Ar name
-Run the bulk build on the jail named
-.Ar name .
-.It Fl J Ar number[:number]
-This argument specifies how many
-.Ar number
-jobs will run in parallel for a bulk build.
-The optional second
-.Ar number
-is the number of jobs used for the steps before the build, they are more IO
-bound than CPU bound, so you may want to use a different number.
-The default pre-build value is 1.25 times the value of the build value.
 .It Fl i
 Interactive mode.
-Enter jail for interactive testing and automatically cleanup when done.
+.Pp
+Open an interactive shell session in the jail after the build is done and before the clean-up.
+It is a convenient way to do some additional testing.
+.Pp
 A local
 .Xr pkg.conf 5
 repository configuration will be installed to
-.Pa LOCALBASE/etc/pkg/repos/local.conf
+.No ${ Ns Va LOCALBASE Ns } Ns Pa /etc/pkg/repos/local.conf
 so that
 .Xr pkg 8
 can be used with any existing packages built for the jail.
 The
+default
 .Fx
 repository will be disabled by default.
+.It Fl j Ar name
+Run the bulk build on the jail named
+.Ar name .
+.It Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
+Specify the number of jobs that will run in parallel for a bulk build.
+The optional second parameter,
+.Ar prebuildmaxjobs ,
+is the number of jobs used for the steps before the build, they are more IO
+bound than CPU bound, so you may want to use a different number.
+The default pre-build value is 1.25 times the value of the build value.
 .It Fl I
-Advanced Interactive mode.
-Leaves jail running with ports installed after test.
-When done with the jail you will need to manually shut it down:
-.Dl "poudriere jail -k -j JAILNAME" .
-As with
-.Fl i
-this will install a
+Advanced interactive mode.
+.Pp
+Leave the jail running with ports installed after building and testing.
+It is a convenient way to do some additional testing.
+See
+.Xr poudriere-jail 8
+to learn how to stop a running poudriere jail.
+.Pp
+Similarly to
+.Fl i ,
+the
+.Fl I
+flag
+will cause
 .Xr pkg.conf 5
-file for
-.Xr pkg 8
-usage.
+to be installed in the jail.
+.It Fl k
+Do not consider failures to be fatal
+when using
+.Fl t .
+Do not skip dependent ports on findings.
+This flag is automatically set when using
+.Fl at .
+.It Fl N
+Do not build a package repository when the build is completed.
 .It Fl n
 Dry run.
 Show what would be done, but do not actually build or delete any
 packages.
-.It Fl N
-Do not build package repository when build is completed.
 .It Fl p Ar tree
-This flag specifies on which ports
+Specify on which ports
 .Ar tree
 the bulk build will be done.
 .It Fl R
-Clean RESTRICTED packages after building.
+Clean
+.Va RESTRICTED
+packages after building.
+.It Fl r
+Recursively test all dependencies as well.
+This flag is automatically set when using
+.Fl at .
 .It Fl S
 Do not recursively rebuild packages affected by other packages requiring
 incremental rebuild.
 This may result in broken packages if the ones they depend on are updated,
 are not ABI-compatible, and were not properly
-.Sy PORTREVISION
+.Va PORTREVISION
 bumped.
+.It Fl T
+Try building
+.Va BROKEN
+ports by defining
+.Va TRYBROKEN
+for the build.
 .It Fl t
 Add some testing to the specified ports.
 Add
 .Fl r
 to recursively test all port dependencies as well.
-Currently uninstalls the port, and disable parallel
-jobs for make.
+Currently, the behavior is to uninstall a port, and to disable parallel jobs
+for
+.Xr make 1 .
 When used with
 .Fl a
 then
 .Fl rk
 are implied.
-.It Fl r
-Recursively test all dependencies as well.
-This flag is automatically set when using
-.Fl at .
-.It Fl k
-When using
-.Fl t
-do not consider failures as fatal.
-Do not skip dependent ports on findings.
-This flag is automatically set when using
-.Fl at .
-.It Fl T
-Try building BROKEN ports by defining TRYBROKEN for the build.
-.It Fl w
-Save WRKDIR on build failure.
-The WRKDIR will be tarred up into
-.Sy ${POUDRIERE_DATA}/wrkdirs .
 .It Fl v
-This will show more information during the build.
+Enable additional information to be shown during the build.
 Specify twice to enable debug output.
+.It Fl w
+Save
+.Va WRKDIR
+on build failure.
+The
+.Va WRKDIR
+will be tarred up into
+.No ${ Ns Va POUDRIERE_DATA Ns } Ns Pa /wrkdirs .
 .It Fl z Ar set
 This specifies which SET to use for the build.
-See
-.Sx CUSTOMISATION
-in
+See the
+.Em CUSTOMISATION
+section in
 .Xr poudriere 8
 for examples of how this is used.
+.El
+.Sh EXAMPLES
+.Bl -tag -width 0n
+.It Sy Example 1\&: No Starting a Bulk Build
+.Pp
+The following example starts a bulk build of two ports.
+.Bd -literal -offset 2n
+.Li # Ic poudriere bulk accessibility/sct www/firefox
+.Ed
 .El
 .Sh SEE ALSO
 .Xr poudriere 8 ,
