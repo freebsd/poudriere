@@ -117,15 +117,15 @@ This can be used to resume a previous build and use the same log and URL paths.
 Resuming a build will not retry built/failed/skipped/ignored packages.
 .It Fl C
 Clean only the packages specified on the command line or in the file given by
-.It Fl c
-Clean
-.Em all
-previously built packages and logs.
 .Fl f Ar file .
 Implies
 .Fl c
 for
 .Fl a .
+.It Fl c
+Clean
+.Em all
+previously built packages and logs.
 .It Fl F
 Fetch only from the original
 .Va MASTER_SITES .
