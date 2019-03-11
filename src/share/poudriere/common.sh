@@ -4108,61 +4108,59 @@ build_pkg() {
 	[ ${JAILED} -eq 0 ] && ! [ -c "${mnt}/dev/null" ] && \
 	    devfs -m ${mnt}/dev rule apply path null unhide
 
-	if true; then
-		build_port "${originspec}" "${pkgname}" || ret=$?
-		if [ ${ret} -ne 0 ]; then
-			build_failed=1
-			# ret=2 is a test failure
-			if [ ${ret} -eq 2 ]; then
-				failed_phase=$(awk -f ${AWKPREFIX}/processonelog2.awk \
-					"${log}/logs/${pkgname}.log" \
-					2> /dev/null)
-			else
-				_bget failed_status ${MY_JOBID} status
-				failed_phase=${failed_status%%:*}
-			fi
-
-			save_wrkdir "${mnt}" "${originspec}" "${pkgname}" \
-			    "${portdir}" "${failed_phase}" || :
-		elif [ -f ${mnt}/${portdir}/.keep ]; then
-			save_wrkdir "${mnt}" "${originspec}" "${pkgname}" \
-			    "${portdir}" "noneed" ||:
-		fi
-
-		now=$(clock -monotonic)
-		elapsed=$((${now} - ${TIME_START_JOB}))
-
-		if [ ${build_failed} -eq 0 ]; then
-			badd ports.built "${originspec} ${pkgname} ${elapsed}"
-			COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_SUCCESS}: Success"
-			run_hook pkgbuild success "${port}" "${pkgname}" >&3
-			# Cache information for next run
-			pkg_cacher_queue "${port}" "${pkgname}" \
-			    "${DEPENDS_ARGS}" "${FLAVOR}" || :
-		else
-			# Symlink the buildlog into errors/
-			ln -s "../${pkgname}.log" \
-			    "${log}/logs/errors/${pkgname}.log"
-			errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
-				"${log}/logs/errors/${pkgname}.log" \
+	build_port "${originspec}" "${pkgname}" || ret=$?
+	if [ ${ret} -ne 0 ]; then
+		build_failed=1
+		# ret=2 is a test failure
+		if [ ${ret} -eq 2 ]; then
+			failed_phase=$(awk -f ${AWKPREFIX}/processonelog2.awk \
+				"${log}/logs/${pkgname}.log" \
 				2> /dev/null)
-			badd ports.failed "${originspec} ${pkgname} ${failed_phase} ${errortype} ${elapsed}"
-			COLOR_ARROW="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
-			run_hook pkgbuild failed "${port}" "${pkgname}" "${failed_phase}" \
-				"${log}/logs/errors/${pkgname}.log" >&3
-			# ret=2 is a test failure
-			if [ ${ret} -eq 2 ]; then
-				clean_rdepends=
-			else
-				clean_rdepends="failed"
-			fi
+		else
+			_bget failed_status ${MY_JOBID} status
+			failed_phase=${failed_status%%:*}
 		fi
 
-		msg "Cleaning up wrkdir"
-		injail /usr/bin/make -C "${portdir}" ${MAKE_ARGS} \
-		    -DNOCLEANDEPENDS clean || :
-		rm -rf ${mnt}/wrkdirs/* || :
+		save_wrkdir "${mnt}" "${originspec}" "${pkgname}" \
+		    "${portdir}" "${failed_phase}" || :
+	elif [ -f ${mnt}/${portdir}/.keep ]; then
+		save_wrkdir "${mnt}" "${originspec}" "${pkgname}" \
+		    "${portdir}" "noneed" ||:
 	fi
+
+	now=$(clock -monotonic)
+	elapsed=$((${now} - ${TIME_START_JOB}))
+
+	if [ ${build_failed} -eq 0 ]; then
+		badd ports.built "${originspec} ${pkgname} ${elapsed}"
+		COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_SUCCESS}: Success"
+		run_hook pkgbuild success "${port}" "${pkgname}" >&3
+		# Cache information for next run
+		pkg_cacher_queue "${port}" "${pkgname}" \
+		    "${DEPENDS_ARGS}" "${FLAVOR}" || :
+	else
+		# Symlink the buildlog into errors/
+		ln -s "../${pkgname}.log" \
+		    "${log}/logs/errors/${pkgname}.log"
+		errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
+			"${log}/logs/errors/${pkgname}.log" \
+			2> /dev/null)
+		badd ports.failed "${originspec} ${pkgname} ${failed_phase} ${errortype} ${elapsed}"
+		COLOR_ARROW="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
+		run_hook pkgbuild failed "${port}" "${pkgname}" "${failed_phase}" \
+			"${log}/logs/errors/${pkgname}.log" >&3
+		# ret=2 is a test failure
+		if [ ${ret} -eq 2 ]; then
+			clean_rdepends=
+		else
+			clean_rdepends="failed"
+		fi
+	fi
+
+	msg "Cleaning up wrkdir"
+	injail /usr/bin/make -C "${portdir}" ${MAKE_ARGS} \
+	    -DNOCLEANDEPENDS clean || :
+	rm -rf ${mnt}/wrkdirs/* || :
 
 	clean_pool "${pkgname}" "${originspec}" "${clean_rdepends}"
 
