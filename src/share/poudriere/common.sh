@@ -6304,7 +6304,7 @@ gather_port_vars_process_depqueue_enqueue() {
 
 	# Add this origin into the gatherqueue if not already done.
 	if shash_get originspec-pkgname "${dep_originspec}" dep_pkgname; then
-		if ! is_failed_metadata_lookup "${dep_pkgname}" ${rdep} || \
+		if ! is_failed_metadata_lookup "${dep_pkgname}" "${rdep}" || \
 		    shash_exists pkgname-ignore "${dep_pkgname}"; then
 			msg_debug "gather_port_vars_process_depqueue_enqueue (${originspec}): Already had ${dep_originspec}, not enqueueing into ${queue} (rdep=${rdep})"
 			return 0
