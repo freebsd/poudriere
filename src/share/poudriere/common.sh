@@ -3580,9 +3580,8 @@ stop_builders() {
 
 pkgqueue_sanity_check() {
 	local always_fail=${1:-1}
-	local crashed_packages dependency_cycles deps pkgname originspec origin
+	local crashed_packages dependency_cycles deps pkgname
 	local failed_phase pwd dead_packages
-	local ignore dead_packages_new log
 
 	pwd="${PWD}"
 	cd "${MASTERMNT}/.p"
@@ -3614,28 +3613,6 @@ ${dependency_cycles}"
 	dead_packages=$(pkgqueue_find_dead_packages)
 
 	if [ ${always_fail} -eq 0 ]; then
-		# Handle IGNORE
-		_log_path log
-		dead_packages_new=
-		for pkgname in ${dead_packages}; do
-			if shash_remove pkgname-ignore "${pkgname}" ignore; then
-				get_originspec_from_pkgname originspec \
-				    "${pkgname}"
-				originspec_decode "${originspec}" origin '' ''
-				msg "Ignoring ${origin}: ${ignore}"
-				echo "${originspec} ignored: ${ignore}" > \
-				    "${log}/logs/${pkgname}.log"
-				badd ports.ignored "${originspec} ${pkgname} ${ignore}"
-				run_hook pkgbuild ignored "${origin}" \
-				    "${pkgname}" "${ignore}"
-				clean_pool "${pkgname}" "${originspec}" \
-				    "ignored"
-			else
-				dead_packages_new="${dead_packages_new} ${pkgname}"
-			fi
-		done
-		dead_packages="${dead_packages_new}"
-
 		if [ -n "${dead_packages}" ]; then
 			err 1 "Packages stuck in queue (depended on but not in queue): ${dead_packages}"
 		fi
@@ -6956,6 +6933,32 @@ fetch_global_port_vars() {
 	    P_PYTHON3_DEFAULT
 }
 
+trim_ignored() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "trim_ignored requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 0 ] || eargs trim_ignored
+	local pkgname originspec origin ignore log
+
+	bset status "trimming_ignore:"
+	msg "Trimming IGNORED and blacklisted ports"
+
+	_log_path log
+	for pkgname in $(pkgqueue_find_dead_packages); do
+		if shash_remove pkgname-ignore "${pkgname}" ignore; then
+			get_originspec_from_pkgname originspec \
+			    "${pkgname}"
+			originspec_decode "${originspec}" origin '' ''
+			msg "Ignoring ${origin}: ${ignore}"
+			echo "${originspec} ignored: ${ignore}" > \
+			    "${log}/logs/${pkgname}.log"
+			badd ports.ignored "${originspec} ${pkgname} ${ignore}"
+			run_hook pkgbuild ignored "${origin}" "${pkgname}" \
+			    "${ignore}"
+			clean_pool "${pkgname}" "${originspec}" "ignored"
+		fi
+	done
+}
+
 clean_build_queue() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "clean_build_queue requires PWD=${MASTERMNT}/.p"
@@ -7221,6 +7224,7 @@ prepare_ports() {
 
 	export LOCALBASE=${LOCALBASE:-/usr/local}
 
+	trim_ignored
 	clean_build_queue
 
 	# Call the deadlock code as non-fatal which will check for cycles
