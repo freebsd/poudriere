@@ -6188,7 +6188,7 @@ gather_port_vars_port() {
 	fi
 
 	if [ -n "${ignore}" ]; then
-		msg_debug "SKIPPING ${originspec} - IGNORED: ${ignore}"
+		msg_debug "SKIPPING ${originspec} rdep=${rdep} - IGNORED: ${ignore}"
 		return 0
 	fi
 
