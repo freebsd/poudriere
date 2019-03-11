@@ -6607,7 +6607,7 @@ listed_ports() {
 }
 _listed_ports() {
 	local tell_moved="${1}"
-	local portsdir origin file
+	local portsdir origin file cat
 
 	if [ ${ALL} -eq 1 ]; then
 		_pget portsdir ${PTNAME} mnt || \
