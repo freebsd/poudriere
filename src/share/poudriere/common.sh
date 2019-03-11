@@ -3031,7 +3031,7 @@ build_port() {
 	_log_path log
 
 	originspec_decode "${originspec}" port '' flavor
-	portdir="/usr/ports/${port}"
+	portdir="${PORTSDIR}/${port}"
 
 	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
 		_need_root="NEED_ROOT NEED_ROOT"
