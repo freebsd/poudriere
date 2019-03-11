@@ -772,8 +772,9 @@ log_start() {
 }
 
 buildlog_start() {
-	local originspec="$1"
-	local pkgname="$2"
+	[ $# -eq 2 ] || eargs buildlog_start pkgname originspec
+	local pkgname="$1"
+	local originspec="$2"
 	local mnt var portdir
 	local make_vars
 	local wanted_vars="
@@ -4107,7 +4108,7 @@ build_pkg() {
 		esac
 	done
 
-	buildlog_start "${originspec}" "${pkgname}"
+	buildlog_start "${pkgname}" "${originspec}"
 
 	# Ensure /dev/null exists (kern/139014)
 	[ ${JAILED} -eq 0 ] && ! [ -c "${mnt}/dev/null" ] && \

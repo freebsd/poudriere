@@ -290,7 +290,7 @@ if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
 	JEXEC_LIMITS=1
 fi
 log_start "${PKGNAME}" 1
-buildlog_start "${ORIGINSPEC}" "${PKGNAME}"
+buildlog_start "${PKGNAME}" "${ORIGINSPEC}"
 ret=0
 
 # Don't show timestamps in msg() which goes to logs, only job_msg()
