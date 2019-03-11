@@ -6962,13 +6962,19 @@ trim_ignored() {
 
 	pkgqueue_find_dead_packages | while mapfile_read_loop_redir pkgname; do
 		if shash_remove pkgname-ignore "${pkgname}" ignore; then
-			_logfile logfile "${pkgname}"
 			get_originspec_from_pkgname originspec \
 			    "${pkgname}"
 			originspec_decode "${originspec}" origin '' flavor
 			COLOR_ARROW="${COLOR_IGNORE}" \
 			    msg "${COLOR_IGNORE}Ignoring ${COLOR_PORT}${origin}${flavor:+@${flavor}} | ${pkgname}${COLOR_IGNORE}: ${ignore}"
-			echo "Ignoring: ${ignore}" > "${logfile}"
+			_logfile logfile "${pkgname}"
+			{
+				buildlog_start "${pkgname}" "${originspec}"
+				print_phase_header "check-sanity"
+				echo "Ignoring: ${ignore}"
+				print_phase_footer
+				buildlog_stop "${pkgname}" "${originspec}" 0
+			} > "${logfile}"
 			badd ports.ignored "${originspec} ${pkgname} ${ignore}"
 			run_hook pkgbuild ignored "${origin}" "${pkgname}" \
 			    "${ignore}"
