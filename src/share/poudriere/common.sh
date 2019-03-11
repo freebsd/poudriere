@@ -6937,7 +6937,7 @@ trim_ignored() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "trim_ignored requires PWD=${MASTERMNT}/.p"
 	[ $# -eq 0 ] || eargs trim_ignored
-	local pkgname originspec origin ignore log
+	local pkgname originspec origin flavor ignore log
 
 	bset status "trimming_ignore:"
 	msg "Trimming IGNORED and blacklisted ports"
@@ -6947,8 +6947,9 @@ trim_ignored() {
 		if shash_remove pkgname-ignore "${pkgname}" ignore; then
 			get_originspec_from_pkgname originspec \
 			    "${pkgname}"
-			originspec_decode "${originspec}" origin '' ''
-			msg "Ignoring ${origin}: ${ignore}"
+			originspec_decode "${originspec}" origin '' flavor
+			COLOR_ARROW="${COLOR_IGNORE}" \
+			    msg "${COLOR_IGNORE}Ignoring ${COLOR_PORT}${origin}${flavor:+@${flavor}} | ${pkgname}${COLOR_IGNORE}: ${ignore}"
 			echo "${originspec} ignored: ${ignore}" > \
 			    "${log}/logs/${pkgname}.log"
 			badd ports.ignored "${originspec} ${pkgname} ${ignore}"
