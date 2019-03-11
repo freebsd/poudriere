@@ -4398,7 +4398,7 @@ deps_fetch_vars() {
 	local _pkgname _pkg_deps _lib_depends= _run_depends= _selected_options=
 	local _changed_options= _changed_deps= _depends_args= _lookup_flavors=
 	local _existing_origin _existing_originspec categories _ignore
-	local _default_originspec _default_pkgname _orig_ignore
+	local _default_originspec _default_pkgname
 	local origin _origin_dep_args _dep_args _dep _new_pkg_deps
 	local _origin_flavor _flavor _flavors _dep_arg _new_dep_args
 	local _depend_specials=
@@ -4570,8 +4570,8 @@ deps_fetch_vars() {
 					# that needs ignored in
 					# map_py_slave_port.
 					if [ -n "${_ignore}" ] && \
-					    ! shash_get pkgname-ignore \
-					    "${_pkgname}" _orig_ignore; then
+					    ! shash_exists pkgname-ignore \
+					    "${_pkgname}"; then
 						err 1 "${originspec} is IGNORE but ${_existing_originspec} was not for ${_pkgname}: ${_ignore}"
 					fi
 					# Set this for later compute_deps lookups
@@ -6300,12 +6300,12 @@ gather_port_vars_process_depqueue_enqueue() {
 	local dep_originspec="$2"
 	local queue="$3"
 	local rdep="$4"
-	local origin dep_pkgname dep_ignore
+	local origin dep_pkgname
 
 	# Add this origin into the gatherqueue if not already done.
 	if shash_get originspec-pkgname "${dep_originspec}" dep_pkgname; then
 		if ! is_failed_metadata_lookup "${dep_pkgname}" ${rdep} || \
-		    shash_get pkgname-ignore "${dep_pkgname}" dep_ignore; then
+		    shash_exists pkgname-ignore "${dep_pkgname}"; then
 			msg_debug "gather_port_vars_process_depqueue_enqueue (${originspec}): Already had ${dep_originspec}, not enqueueing into ${queue} (rdep=${rdep})"
 			return 0
 		fi
@@ -7111,8 +7111,8 @@ prepare_ports() {
 			    pkgname; do
 				pkg="${PACKAGES}/All/${pkgname}.${PKG_EXT}"
 				if [ -f "${pkg}" ]; then
-					shash_get pkgname-ignore "${pkgname}" \
-					    ignore && continue
+					shash_exists pkgname-ignore \
+					    "${pkgname}" && continue
 					msg "(-C) Will delete existing package: ${pkg##*/}"
 					delete_pkg_xargs "${delete_pkg_list}" \
 					    "${pkg}"
