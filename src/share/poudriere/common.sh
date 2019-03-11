@@ -3580,8 +3580,9 @@ stop_builders() {
 
 pkgqueue_sanity_check() {
 	local always_fail=${1:-1}
-	local crashed_packages dependency_cycles deps pkgname origin
+	local crashed_packages dependency_cycles deps pkgname originspec origin
 	local failed_phase pwd dead_all dead_deps dead_top dead_packages
+	local ignore dead_packages_new log
 
 	pwd="${PWD}"
 	cd "${MASTERMNT}/.p"
@@ -3623,6 +3624,28 @@ ${dependency_cycles}"
 	rm -f "${dead_all}" "${dead_deps}" "${dead_top}" || :
 
 	if [ ${always_fail} -eq 0 ]; then
+		# Handle IGNORE
+		_log_path log
+		dead_packages_new=
+		for pkgname in ${dead_packages}; do
+			if shash_remove pkgname-ignore "${pkgname}" ignore; then
+				get_originspec_from_pkgname originspec \
+				    "${pkgname}"
+				originspec_decode "${originspec}" origin '' ''
+				msg "Ignoring ${origin}: ${ignore}"
+				echo "${originspec} ignored: ${ignore}" > \
+				    "${log}/logs/${pkgname}.log"
+				badd ports.ignored "${originspec} ${pkgname} ${ignore}"
+				run_hook pkgbuild ignored "${origin}" \
+				    "${pkgname}" "${ignore}"
+				clean_pool "${pkgname}" "${originspec}" \
+				    "ignored"
+			else
+				dead_packages_new="${dead_packages_new} ${pkgname}"
+			fi
+		done
+		dead_packages="${dead_packages_new}"
+
 		if [ -n "${dead_packages}" ]; then
 			err 1 "Packages stuck in queue (depended on but not in queue): ${dead_packages}"
 		fi
@@ -4004,7 +4027,8 @@ clean_pool() {
 		get_originspec_from_pkgname skipped_originspec "${skipped_pkgname}"
 		originspec_decode "${skipped_originspec}" skipped_origin '' ''
 		badd ports.skipped "${skipped_originspec} ${skipped_pkgname} ${pkgname}"
-		COLOR_ARROW="${COLOR_SKIP}" \
+		[ "${ALL}" -eq 1 -a "${clean_rdepends}" = "ignored" ] || \
+		    COLOR_ARROW="${COLOR_SKIP}" \
 		    job_msg "${COLOR_SKIP}Skipping ${COLOR_PORT}${skipped_originspec} | ${skipped_pkgname}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_SKIP} ${clean_rdepends}"
 		if [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
 			# Send to true stdout (not any build log)
@@ -4016,10 +4040,12 @@ clean_pool() {
 		fi
 	done
 
-	(
-		cd "${MASTERMNT}/.p"
-		balance_pool || :
-	)
+	if [ "${clean_rdepends}" != "ignored" ]; then
+		(
+			cd "${MASTERMNT}/.p"
+			balance_pool || :
+		)
+	fi
 }
 
 print_phase_header() {
@@ -4040,7 +4066,6 @@ build_pkg() {
 	local failed_status failed_phase cnt
 	local clean_rdepends
 	local log
-	local ignore
 	local errortype
 	local ret=0
 	local elapsed now _gsub jpkg originspec
@@ -4094,16 +4119,6 @@ build_pkg() {
 	    err 1 "Failed to rollback ${mnt} to prepkg"
 	:> ${mnt}/.need_rollback
 
-	case " ${BLACKLIST} " in
-	*\ ${port}\ *) ignore="Blacklisted" ;;
-	esac
-	if [ -z "${ignore}" ]; then
-		# If this port is IGNORED, skip it
-		# This is checked here due to historical reasons and
-		# will later be moved up into the queue creation.
-		shash_remove pkgname-ignore "${pkgname}" ignore || ignore=
-	fi
-
 	rm -rf ${mnt}/wrkdirs/* || :
 
 	log_start "${pkgname}" 0
@@ -4126,13 +4141,7 @@ build_pkg() {
 	[ ${JAILED} -eq 0 ] && ! [ -c "${mnt}/dev/null" ] && \
 	    devfs -m ${mnt}/dev rule apply path null unhide
 
-	if [ -n "${ignore}" ]; then
-		msg "Ignoring ${port}: ${ignore}"
-		badd ports.ignored "${originspec} ${pkgname} ${ignore}"
-		COLOR_ARROW="${COLOR_IGNORE}" job_msg "${COLOR_IGNORE}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_IGNORE}: Ignored: ${ignore}"
-		clean_rdepends="ignored"
-		run_hook pkgbuild ignored "${port}" "${pkgname}" "${ignore}" >&3
-	else
+	if true; then
 		build_port "${originspec}" "${pkgname}" || ret=$?
 		if [ ${ret} -ne 0 ]; then
 			build_failed=1
@@ -4377,14 +4386,15 @@ fixup_dependencies_dep_args() {
 }
 
 deps_fetch_vars() {
-	[ $# -ne 6 ] && eargs deps_fetch_vars originspec deps_var \
-	    pkgname_var dep_args_var flavor_var flavors_var
+	[ $# -ne 7 ] && eargs deps_fetch_vars originspec deps_var \
+	    pkgname_var dep_args_var flavor_var flavors_var ignore_var
 	local originspec="$1"
 	local deps_var="$2"
 	local pkgname_var="$3"
 	local dep_args_var="$4"
 	local flavor_var="$5"
 	local flavors_var="$6"
+	local ignore_var="$7"
 	local _pkgname _pkg_deps _lib_depends= _run_depends= _selected_options=
 	local _changed_options= _changed_deps= _depends_args= _lookup_flavors=
 	local _existing_origin _existing_originspec categories _ignore
@@ -4516,6 +4526,10 @@ deps_fetch_vars() {
 	setvar "${dep_args_var}" "${_dep_args}"
 	setvar "${flavor_var}" "${_flavor}"
 	setvar "${flavors_var}" "${_flavors}"
+	case " ${BLACKLIST} " in
+	*\ ${origin}\ *) : ${_ignore:="Blacklisted"} ;;
+	esac
+	setvar "${ignore_var}" "${_ignore}"
 	# Need all of the output vars set before potentially returning 2.
 
 	# Check if this PKGNAME already exists, which is sometimes fatal.
@@ -5786,12 +5800,13 @@ gather_port_vars() {
 			    '' dep_flavor
 			if [ -n "${dep_flavor}" ]; then
 				deps_fetch_vars "${dep_origin}" LISTPORTS \
-				    PKGNAME DEPENDS_ARGS FLAVOR FLAVORS
+				    PKGNAME DEPENDS_ARGS FLAVOR FLAVORS \
+				    IGNORE
 			fi
 		fi
 		dep_ret=0
 		deps_fetch_vars "${ORIGINSPEC}" LISTPORTS PKGNAME \
-		    DEPENDS_ARGS FLAVOR FLAVORS || dep_ret=$?
+		    DEPENDS_ARGS FLAVOR FLAVORS IGNORE || dep_ret=$?
 		case ${dep_ret} in
 		0) ;;
 		# Non-fatal duplicate should be ignored
@@ -6066,6 +6081,7 @@ gather_port_vars_port() {
 	local dep_origin deps pkgname dep_args dep_originspec
 	local dep_ret log flavor flavors dep_flavor
 	local origin origin_dep_args origin_flavor default_flavor
+	local ignore
 
 	msg_debug "gather_port_vars_port (${originspec}): LOOKUP"
 	originspec_decode "${originspec}" origin origin_dep_args origin_flavor
@@ -6098,13 +6114,14 @@ gather_port_vars_port() {
 		shash_get pkgname-deps "${pkgname}" deps || deps=
 		shash_get pkgname-flavor "${pkgname}" flavor || flavor=
 		shash_get pkgname-flavors "${pkgname}" flavors || flavors=
+		shash_get pkgname-ignore "${pkgname}" ignore || ignore=
 		# DEPENDS_ARGS not fetched since it is not possible to be
 		# in this situation with them.  The 'metadata' hack is
 		# only used for FLAVOR lookups.
 	else
 		dep_ret=0
 		deps_fetch_vars "${originspec}" deps pkgname dep_args flavor \
-		    flavors || dep_ret=$?
+		    flavors ignore || dep_ret=$?
 		case ${dep_ret} in
 		0) ;;
 		# Non-fatal duplicate should be ignored
@@ -6203,6 +6220,11 @@ gather_port_vars_port() {
 		fi
 	fi
 
+	if [ -n "${ignore}" ]; then
+		msg_debug "SKIPPING ${originspec} - IGNORED: ${ignore}"
+		return 0
+	fi
+
 	msg_debug "WILL BUILD ${originspec}"
 	echo "${pkgname} ${originspec} ${rdep}" >> "all_pkgs"
 	[ ${ALL} -eq 0 ] && echo "${pkgname%-*}" >> "all_pkgbases"
@@ -6278,12 +6300,12 @@ gather_port_vars_process_depqueue_enqueue() {
 	local dep_originspec="$2"
 	local queue="$3"
 	local rdep="$4"
-	local origin dep_pkgname
+	local origin dep_pkgname dep_ignore
 
 	# Add this origin into the gatherqueue if not already done.
 	if shash_get originspec-pkgname "${dep_originspec}" dep_pkgname; then
-		if ! is_failed_metadata_lookup "${dep_pkgname}" \
-		    "${rdep}"; then
+		if ! is_failed_metadata_lookup "${dep_pkgname}" ${rdep} || \
+		    shash_get pkgname-ignore "${dep_pkgname}" dep_ignore; then
 			msg_debug "gather_port_vars_process_depqueue_enqueue (${originspec}): Already had ${dep_originspec}, not enqueueing into ${queue} (rdep=${rdep})"
 			return 0
 		fi
@@ -7089,6 +7111,8 @@ prepare_ports() {
 			    pkgname; do
 				pkg="${PACKAGES}/All/${pkgname}.${PKG_EXT}"
 				if [ -f "${pkg}" ]; then
+					shash_get pkgname-ignore "${pkgname}" \
+					    ignore && continue
 					msg "(-C) Will delete existing package: ${pkg##*/}"
 					delete_pkg_xargs "${delete_pkg_list}" \
 					    "${pkg}"
