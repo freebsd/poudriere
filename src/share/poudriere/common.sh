@@ -328,6 +328,42 @@ _my_path() {
 _my_name() {
 	setvar "$1" "${MASTERNAME}${MY_JOBID:+-job-${MY_JOBID}}"
 }
+
+_logfile() {
+	[ $# -eq 2 ] || eargs _logfile var_return pkgname
+	local var_return="$1"
+	local pkgname="$2"
+	local _log _log_top _latest_log _logfile
+
+	_log_path _log
+	_logfile="${_log}/logs/${pkgname}.log"
+	if [ ! -r "${_logfile}" ]; then
+		_log_path_top _log_top
+
+		_latest_log="${_log_top}/latest-per-pkg/${pkgname%-*}/${pkgname##*-}"
+
+		# Make sure directory exists
+		mkdir -p "${_log}/logs" "${_latest_log}"
+
+		:> "${_logfile}"
+
+		# Link to BUILD_TYPE/latest-per-pkg/PORTNAME/PKGVERSION/MASTERNAME.log
+		ln -f "${_logfile}" "${_latest_log}/${MASTERNAME}.log"
+
+		# Link to JAIL/latest-per-pkg/PKGNAME.log
+		ln -f "${_logfile}" "${_log}/../latest-per-pkg/${pkgname}.log"
+	fi
+
+	setvar "${var_return}" "${_logfile}"
+}
+
+logfile() {
+	[ $# -eq 1 ] || eargs logfile pkgname
+	local logfile
+
+	_logfile logfile "${pkgname}"
+	echo "${logfile}"
+}
  
 _log_path_top() {
 	setvar "$1" "${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}"
@@ -724,25 +760,9 @@ log_start() {
 	[ $# -eq 2 ] || eargs log_start pkgname need_tee
 	local pkgname="$1"
 	local need_tee="$2"
-	local log log_top
-	local latest_log
+	local logfile
 
-	_log_path log
-	_log_path_top log_top
-
-	logfile="${log}/logs/${pkgname}.log"
-	latest_log=${log_top}/latest-per-pkg/${pkgname%-*}/${pkgname##*-}
-
-	# Make sure directory exists
-	mkdir -p ${log}/logs ${latest_log}
-
-	:> ${logfile}
-
-	# Link to BUILD_TYPE/latest-per-pkg/PORTNAME/PKGVERSION/MASTERNAME.log
-	ln -f ${logfile} ${latest_log}/${MASTERNAME}.log
-
-	# Link to JAIL/latest-per-pkg/PKGNAME.log
-	ln -f ${logfile} ${log}/../latest-per-pkg/${pkgname}.log
+	_logfile logfile "${pkgname}"
 
 	# Save stdout/stderr for restoration later for bulk/testport -i
 	exec 3>&1 4>&2
