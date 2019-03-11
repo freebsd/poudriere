@@ -6941,7 +6941,7 @@ trim_ignored() {
 	msg "Trimming IGNORED and blacklisted ports"
 
 	_log_path log
-	for pkgname in $(pkgqueue_find_dead_packages); do
+	pkgqueue_find_dead_packages | while mapfile_read_loop_redir pkgname; do
 		if shash_remove pkgname-ignore "${pkgname}" ignore; then
 			get_originspec_from_pkgname originspec \
 			    "${pkgname}"
