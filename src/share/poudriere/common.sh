@@ -7231,12 +7231,15 @@ prepare_ports() {
 		msg "${sflag}Skipping incremental rebuild and repository sanity checks"
 	fi
 
+	trim_ignored
+
 	if was_a_bulk_run; then
 		# Cleanup cached data that is no longer needed.
 		(
 			cd "${SHASH_VAR_PATH}"
 			for shash_bucket in \
 			    origin-moved \
+			    pkgname-ignore \
 			    pkgname-options \
 			    pkgname-run_deps \
 			    pkgname-lib_deps \
@@ -7248,7 +7251,6 @@ prepare_ports() {
 
 	export LOCALBASE=${LOCALBASE:-/usr/local}
 
-	trim_ignored
 	clean_build_queue
 
 	# Call the deadlock code as non-fatal which will check for cycles
