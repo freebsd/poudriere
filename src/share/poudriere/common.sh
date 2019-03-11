@@ -3581,7 +3581,7 @@ stop_builders() {
 pkgqueue_sanity_check() {
 	local always_fail=${1:-1}
 	local crashed_packages dependency_cycles deps pkgname originspec origin
-	local failed_phase pwd dead_all dead_deps dead_top dead_packages
+	local failed_phase pwd dead_packages
 	local ignore dead_packages_new log
 
 	pwd="${PWD}"
@@ -3611,17 +3611,7 @@ pkgqueue_sanity_check() {
 ${dependency_cycles}"
 	fi
 
-	dead_all=$(mktemp -t dead_packages.all)
-	dead_deps=$(mktemp -t dead_packages.deps)
-	dead_top=$(mktemp -t dead_packages.top)
-	find deps -mindepth 2 > "${dead_all}"
-	# All packages in the queue
-	cut -d / -f 3 "${dead_all}" | sort -u > "${dead_top}"
-	# All packages with dependencies
-	cut -d / -f 4 "${dead_all}" | sort -u | sed -e '/^$/d' > "${dead_deps}"
-	# Find all packages only listed as dependencies (not in queue)
-	dead_packages=$(comm -13 "${dead_top}" "${dead_deps}")
-	rm -f "${dead_all}" "${dead_deps}" "${dead_top}" || :
+	dead_packages=$(pkgqueue_find_dead_packages)
 
 	if [ ${always_fail} -eq 0 ]; then
 		# Handle IGNORE
@@ -6848,6 +6838,25 @@ pkgqueue_list_deps_recurse() {
 		pkgqueue_list_deps_recurse "${dep_pkgname}"
 	done
 	echo "${pkgname}"
+}
+
+pkgqueue_find_dead_packages() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgqueue_find_dead_packages requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 0 ] || eargs pkgqueue_find_dead_packages
+	local dead_all dead_deps dead_top
+
+	dead_all=$(mktemp -t dead_packages.all)
+	dead_deps=$(mktemp -t dead_packages.deps)
+	dead_top=$(mktemp -t dead_packages.top)
+	find deps -mindepth 2 > "${dead_all}"
+	# All packages in the queue
+	cut -d / -f 3 "${dead_all}" | sort -u > "${dead_top}"
+	# All packages with dependencies
+	cut -d / -f 4 "${dead_all}" | sort -u | sed -e '/^$/d' > "${dead_deps}"
+	# Find all packages only listed as dependencies (not in queue)
+	comm -13 "${dead_top}" "${dead_deps}" || return 1
+	rm -f "${dead_all}" "${dead_deps}" "${dead_top}" || :
 }
 
 pkgqueue_find_all_pool_references() {
