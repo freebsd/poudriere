@@ -6205,13 +6205,8 @@ gather_port_vars_port() {
 		fi
 	fi
 
-	if [ -n "${ignore}" ]; then
-		msg_debug "SKIPPING ${originspec} rdep=${rdep} - IGNORED: ${ignore}"
-		return 0
-	fi
-
 	msg_debug "WILL BUILD ${originspec}"
-	echo "${pkgname} ${originspec} ${rdep}" >> "all_pkgs"
+	echo "${pkgname} ${originspec} ${rdep} ${ignore}" >> "all_pkgs"
 	[ ${ALL} -eq 0 ] && echo "${pkgname%-*}" >> "all_pkgbases"
 
 	# Add all of the discovered FLAVORS into the flavorqueue if
@@ -6759,6 +6754,14 @@ pkgbase_is_needed() {
 	    }' "all_pkgbases"
 }
 
+ignored_packages() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "ignored_packages requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 0 ] || eargs ignored_packages
+
+	awk '$4 != ""' "all_pkgs"
+}
+
 # Port was requested to be built, or is needed by a port requested to be built
 originspec_is_needed() {
        [ "${PWD}" = "${MASTERMNT}/.p" ] || \
@@ -6955,36 +6958,32 @@ trim_ignored() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "trim_ignored requires PWD=${MASTERMNT}/.p"
 	[ $# -eq 0 ] || eargs trim_ignored
-	local pkgname originspec origin flavor ignore logfile
+	local pkgname originspec origin flavor _rdep ignore logfile
 
 	bset status "trimming_ignore:"
 	msg "Trimming IGNORED and blacklisted ports"
 
-	pkgqueue_find_dead_packages | while mapfile_read_loop_redir pkgname; do
-		if shash_remove pkgname-ignore "${pkgname}" ignore; then
-			get_originspec_from_pkgname originspec \
-			    "${pkgname}"
-			originspec_decode "${originspec}" origin '' flavor
-			COLOR_ARROW="${COLOR_IGNORE}" \
-			    msg "${COLOR_IGNORE}Ignoring ${COLOR_PORT}${origin}${flavor:+@${flavor}} | ${pkgname}${COLOR_IGNORE}: ${ignore}"
-			if [ "${DRY_RUN}" -eq 0 ]; then
-				_logfile logfile "${pkgname}"
-				{
-					buildlog_start "${pkgname}" \
-					    "${originspec}"
-					print_phase_header "check-sanity"
-					echo "Ignoring: ${ignore}"
-					print_phase_footer
-					buildlog_stop "${pkgname}" \
-					    "${originspec}" 0
-				} > "${logfile}"
-			fi
-			badd ports.ignored "${originspec} ${pkgname} ${ignore}"
-			run_hook pkgbuild ignored "${origin}" "${pkgname}" \
-			    "${ignore}"
-			clean_pool "${pkgname}" "${originspec}" "ignored"
+	ignored_packages | while mapfile_read_loop_redir pkgname originspec \
+	    _rdep ignore; do
+		originspec_decode "${originspec}" origin '' flavor
+		COLOR_ARROW="${COLOR_IGNORE}" \
+		    msg "${COLOR_IGNORE}Ignoring ${COLOR_PORT}${origin}${flavor:+@${flavor}} | ${pkgname}${COLOR_IGNORE}: ${ignore}"
+		if [ "${DRY_RUN}" -eq 0 ]; then
+			_logfile logfile "${pkgname}"
+			{
+				buildlog_start "${pkgname}" "${originspec}"
+				print_phase_header "check-sanity"
+				echo "Ignoring: ${ignore}"
+				print_phase_footer
+				buildlog_stop "${pkgname}" "${originspec}" 0
+			} > "${logfile}"
 		fi
+		badd ports.ignored "${originspec} ${pkgname} ${ignore}"
+		run_hook pkgbuild ignored "${origin}" "${pkgname}" "${ignore}"
+		clean_pool "${pkgname}" "${originspec}" "ignored"
 	done
+	# Update ignored/skipped stats
+	update_stats
 }
 
 clean_build_queue() {
@@ -7030,7 +7029,7 @@ clean_build_queue() {
 prepare_ports() {
 	local pkg
 	local log log_top
-	local n nbq resuming_build
+	local n nbq nbi nbs resuming_build
 	local cache_dir sflag delete_pkg_list shash_bucket
 
 	_log_path log
@@ -7265,9 +7264,13 @@ prepare_ports() {
 	pkgqueue_sanity_check 0
 
 	if was_a_bulk_run; then
-		if [ $resuming_build -eq 0 ]; then
-			nbq=0
+		if [ "${resuming_build}" -eq 0 ]; then
 			nbq=$(pkgqueue_list | wc -l)
+			# Need to add in pre-build ignored/skipped
+			_bget nbi stats_ignored || nbi=0
+			_bget nbs stats_skipped || nbs=0
+			nbq=$((nbq + nbi + nbs))
+
 			# Add 1 for the main port to test
 			was_a_testport_run && \
 			    nbq=$((${nbq} + 1))
@@ -7275,10 +7278,10 @@ prepare_ports() {
 
 			# Generate ports.queued list after the queue was
 			# trimmed.
-			local _originspec _pkgname _rdep tmp
+			local _originspec _pkgname _rdep _ignore tmp
 			tmp=$(TMPDIR="${log}" mktemp -ut .queued)
 			while mapfile_read_loop "all_pkgs" \
-			    _pkgname _originspec _rdep; do
+			    _pkgname _originspec _rdep _ignore; do
 				pkgqueue_contains "${_pkgname}" && \
 				    echo "${_originspec} ${_pkgname} ${_rdep}"
 			done | sort > "${tmp}"
