@@ -7235,7 +7235,9 @@ prepare_ports() {
 		msg "${sflag}Skipping incremental rebuild and repository sanity checks"
 	fi
 
-	trim_ignored
+	if was_a_bulk_run && [ "${resuming_build}" -eq 0 ]; then
+		trim_ignored
+	fi
 
 	if was_a_bulk_run; then
 		# Cleanup cached data that is no longer needed.
