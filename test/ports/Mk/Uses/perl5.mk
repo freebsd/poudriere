@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/perl5.mk 442270 2017-06-01 02:26:53Z rene $
+# $FreeBSD: head/Mk/Uses/perl5.mk 476224 2018-08-02 08:35:10Z mat $
 #
 # Provide support to use perl5
 #
@@ -44,12 +44,12 @@ USE_PERL5?=	run build
 
 # When adding a version, please keep the comment in
 # Mk/bsd.default-versions.mk in sync.
-.    if ${PERL5_DEFAULT} == 5.22
-.include "${PORTSDIR}/lang/perl5.22/version.mk"
-.    elif ${PERL5_DEFAULT} == 5.24
+.    if ${PERL5_DEFAULT} == 5.24
 .include "${PORTSDIR}/lang/perl5.24/version.mk"
 .    elif ${PERL5_DEFAULT} == 5.26
 .include "${PORTSDIR}/lang/perl5.26/version.mk"
+.    elif ${PERL5_DEFAULT} == 5.28
+.include "${PORTSDIR}/lang/perl5.28/version.mk"
 .    elif ${PERL5_DEFAULT} == devel
 .include "${PORTSDIR}/lang/perl5-devel/version.mk"
 # Force PERL_PORT here in case two identical PERL_VERSION.
@@ -83,12 +83,12 @@ PERL_ARCH?=	mach
 # perl5_default file, or up there in the default versions selection.
 # When adding a version, please keep the comment in
 # Mk/bsd.default-versions.mk in sync.
-.  if   ${PERL_LEVEL} >= 502600
+.  if   ${PERL_LEVEL} >= 502800
+PERL_PORT?=	perl5.28
+.  elif   ${PERL_LEVEL} >= 502600
 PERL_PORT?=	perl5.26
-.  elif   ${PERL_LEVEL} >= 502400
+.  else # ${PERL_LEVEL} < 502600
 PERL_PORT?=	perl5.24
-.  else # ${PERL_LEVEL} < 502400
-PERL_PORT?=	perl5.22
 .  endif
 
 SITE_PERL_REL?=	lib/perl5/site_perl
@@ -97,11 +97,7 @@ SITE_ARCH_REL?=	${SITE_PERL_REL}/${PERL_ARCH}/${PERL_VER}
 SITE_ARCH?=	${LOCALBASE}/${SITE_ARCH_REL}
 SITE_MAN3_REL?=	${SITE_PERL_REL}/man/man3
 SITE_MAN3?=	${PREFIX}/${SITE_MAN3_REL}
-.  if defined(THIS_IS_OLD_PERL)
-SITE_MAN1_REL?=	share/man/man1
-.  else
 SITE_MAN1_REL?=	${SITE_PERL_REL}/man/man1
-.  endif
 SITE_MAN1?=	${PREFIX}/${SITE_MAN1_REL}
 
 PERL5?=		${LOCALBASE}/bin/perl${PERL_VERSION}
@@ -241,13 +237,11 @@ TEST_DEPENDS+=		${PERL5_DEPEND}:lang/${PERL_PORT}
 .  endif
 
 .  if ${_USE_PERL5:Mconfigure}
-CONFIGURE_ARGS+=	CC="${CC}" CCFLAGS="${CFLAGS}" PREFIX="${PREFIX}" \
+CONFIGURE_ARGS+=	CC="${CC}" CCFLAGS="${CFLAGS}" LD="${CC}" PREFIX="${PREFIX}" \
 			INSTALLPRIVLIB="${PREFIX}/lib" INSTALLARCHLIB="${PREFIX}/lib"
 CONFIGURE_SCRIPT?=	Makefile.PL
 MAN3PREFIX?=		${PREFIX}/${SITE_PERL_REL}
-.    if !defined(THIS_IS_OLD_PERL)
 MAN1PREFIX?=		${PREFIX}/${SITE_PERL_REL}
-.    endif
 .undef HAS_CONFIGURE
 
 .    if !target(do-configure)
@@ -311,6 +305,10 @@ fix-perl-things:
 # read with perldoc, remove the README.3 files that may be generated.
 	@[ -d "${STAGEDIR}${SITE_MAN3}" ] && \
 		${FIND} ${STAGEDIR}${SITE_MAN3} -name '*::README.3' -delete || :
+# Starting at ExtUtils::MakeMaker 7.31_06 and Perl 5.27.1, the base README.pod is
+# no longer installed. So remove any that can be there.
+	@[ -d "${STAGEDIR}${PREFIX}/${SITE_PERL_REL}" ] && \
+		${FIND} ${STAGEDIR}${PREFIX}/${SITE_PERL_REL} -name README.pod -delete || :
 
 .  if !target(do-test) && (!empty(USE_PERL5:Mmodbuild*) || !empty(USE_PERL5:Mconfigure))
 TEST_TARGET?=	test

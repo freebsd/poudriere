@@ -2,7 +2,7 @@
 #
 # Created by: Gabor Kovesdan <gabor@FreeBSD.org>
 #
-# $FreeBSD: head/Mk/bsd.commands.mk 438938 2017-04-20 11:13:32Z mat $
+# $FreeBSD: head/Mk/bsd.commands.mk 462459 2018-02-20 22:25:54Z bdrewery $
 #
 # DO NOT COMMIT CHANGES TO THIS FILE BY YOURSELF, EVEN IF YOU DID NOT GET
 # A RESPONSE FROM THE MAINTAINER(S) WITHIN A REASONABLE TIMEFRAME! ALL
@@ -108,11 +108,7 @@ XZ_CMD?=		/usr/bin/xz ${XZ}
 
 MD5?=			/sbin/md5
 SHA256?=		/sbin/sha256
-.if exists(/usr/bin/soeliminate)
-SOELIM?=		/usr/bin/soeliminate
-.else
 SOELIM?=		/usr/bin/soelim
-.endif
 
 # ECHO is defined in /usr/share/mk/sys.mk, which can either be "echo",
 # or "true" if the make flag -s is given.  Use ECHO_CMD where you mean

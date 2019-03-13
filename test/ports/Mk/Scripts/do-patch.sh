@@ -1,5 +1,5 @@
 #!/bin/sh
-# $FreeBSD: head/Mk/Scripts/do-patch.sh 431681 2017-01-16 16:47:05Z mat $
+# $FreeBSD: head/Mk/Scripts/do-patch.sh 459915 2018-01-25 09:12:21Z mat $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 
@@ -107,9 +107,14 @@ fi
 
 if [ -n "${dp_EXTRA_PATCHES}" ]; then
 	for i in ${dp_EXTRA_PATCHES}; do
-		apply_one_patch "${i}" \
-			"Applying extra patch" \
-			${dp_PATCH_ARGS}
+		if [ -d "${i}" ]; then
+			patch_from_directory "${i}" \
+				"extra patch"
+		else
+			apply_one_patch "${i}" \
+				"Applying extra patch" \
+				${dp_PATCH_ARGS}
+		fi
 	done
 fi
 

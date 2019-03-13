@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/gecko.mk 438316 2017-04-11 21:25:36Z jbeich $
+# $FreeBSD: head/Mk/Uses/gecko.mk 495403 2019-03-12 00:55:59Z jbeich $
 #
 # Handle dependency of different gecko based applications
 #
@@ -6,8 +6,7 @@
 #
 # Feature:	gecko
 # Usage:	USES=gecko or USES=gecko:ARGS
-# Valid ARGS:	libxul, firefox, seamonkey, thunderbird
-#		in case the first argument is not libxul
+# Valid ARGS:	firefox, seamonkey, thunderbird
 #		The following arguments are available
 #		- build: also add the dependency as a build
 #		         dependency
@@ -18,67 +17,53 @@
 .if !defined(_INCLUDE_USES_GECKO_MK)
 _INCLUDE_USES_GECKO_MK=	yes
 
-.if empty(gecko_ARGS)
-gecko_ARGS=	libxul
-.endif
-
 _GECKO_VERSION=	${gecko_ARGS:M[0-9][0-9]*}
 
-.if ${gecko_ARGS:Mlibxul}
-# Compat with older versions
-GECKO=	libxul
-GECKO_CONFING?=	${LOCALBASE}/bin/${GECKO}-config
-XPIDL?=		${LOCALBASE}/lib/${GECKO}/xpidl
-XPIDL_INCL?=	`${GECKO_CONFIG} --idlflags`
+.if ${gecko_ARGS:Mfirefox}
 
-BUILD_DEPENDS+=	libxul>=45:www/libxul
-RUN_DEPENDS+=	libxul>=45:www/libxul
-
-.elif ${gecko_ARGS:Mfirefox}
-
-_GECKO_DEFAULT_VERSION=	52
-_GECKO_VERSIONS=		52 53
+_GECKO_DEFAULT_VERSION=	60
+_GECKO_VERSIONS=		60 66
 _GECKO_TYPE=	firefox
 
 # Dependence lines for different Firefox versions
-52_DEPENDS=		${LOCALBASE}/lib/firefox/firefox:www/firefox-esr
-53_DEPENDS=		${LOCALBASE}/lib/firefox/firefox:www/firefox
+60_DEPENDS=		${LOCALBASE}/lib/firefox/firefox:www/firefox-esr
+66_DEPENDS=		${LOCALBASE}/lib/firefox/firefox:www/firefox
 
 .if exists(${LOCALBASE}/bin/firefox)
-_GECKO_INSTALLED_VER!=	${LOCALBASE}/bin/firefox --version 2>/dev/null
-_GECKO_INSTALLED_VER:=	${_GECKO_INSTALLED_VER:M[0-9][0-9]*:C/([0-9][0-9]).*/\1/g}
+_GECKO_INSTALLED_VER!=	${PKG_QUERY} %v firefox firefox-esr
+_GECKO_INSTALLED_VER:=	${_GECKO_INSTALLED_VER:C/\..*//}
 .endif
 
 .elif ${gecko_ARGS:Mseamonkey}
 
-_GECKO_DEFAULT_VERSION=	46
-_GECKO_VERSIONS=		46
+_GECKO_DEFAULT_VERSION=	49
+_GECKO_VERSIONS=		49
 _GECKO_TYPE=	seamonkey
 
 .if exists(${LOCALBASE}/bin/seamonkey)
-_GECKO_INSTALLED_VER!=	${LOCALBASE}/bin/seamonkey --version 2>/dev/null
-_GECKO_INSTALLED_VER:=	${_GECKO_INSTALLED_VER:M[0-9]*:C/[0-9].([0-9][0-9]).*/\1/g}
+_GECKO_INSTALLED_VER!=	${PKG_QUERY} %v seamonkey
+_GECKO_INSTALLED_VER:=	${_GECKO_INSTALLED_VER:C/[0-9]*\.//:C/\..*//}
 .endif
 
 # Dependence lines for different Seamonkey versions
-46_DEPENDS=		${LOCALBASE}/lib/seamonkey/seamonkey:www/seamonkey
+49_DEPENDS=		${LOCALBASE}/lib/seamonkey/seamonkey:www/seamonkey
 
 .elif ${gecko_ARGS:Mthunderbird}
 
-_GECKO_DEFAULT_VERSION=	52
-_GECKO_VERSIONS=	52
+_GECKO_DEFAULT_VERSION=	60
+_GECKO_VERSIONS=	60
 _GECKO_TYPE=	thunderbird
 
 .if exists(${LOCALBASE}/bin/thunderbird)
-_GECKO_INSTALLED_VER!=	${LOCALBASE}/bin/thunderbird --version 2>/dev/null
-_GECKO_INSTALLED_VER:=	${_GECKO_INSTALLED_VER:M[0-9][0-9]*:C/([0-9][0-9]).*/\1/g}
+_GECKO_INSTALLED_VER!=	${PKG_QUERY} %v thunderbird
+_GECKO_INSTALLED_VER:=	${_GECKO_INSTALLED_VER:C/\..*//}
 .endif
 
 # Dependence lines for different Thunderbird versions
-52_DEPENDS=		${LOCALBASE}/lib/thunderbird/thunderbird:mail/thunderbird
+60_DEPENDS=		${LOCALBASE}/lib/thunderbird/thunderbird:mail/thunderbird
 
 .else
-IGNORE=	Unknown type of gecko dependency you may specify either libxul, firefox, seamonkey or thunderbird
+IGNORE=	Unknown type of gecko dependency you may specify either firefox, seamonkey or thunderbird
 .endif
 
 .if defined(_GECKO_TYPE)

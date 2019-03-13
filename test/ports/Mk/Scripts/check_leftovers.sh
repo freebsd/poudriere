@@ -1,5 +1,5 @@
 #! /bin/sh
-# $FreeBSD: head/Mk/Scripts/check_leftovers.sh 415573 2016-05-20 19:01:59Z mat $
+# $FreeBSD: head/Mk/Scripts/check_leftovers.sh 495190 2019-03-09 18:38:18Z bdrewery $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 #
@@ -45,14 +45,19 @@ fi
 if [ -z "${CCACHE_DIR}" ]; then
 	CCACHE_DIR=$(make -C ${portdir} -VCCACHE_DIR)
 fi
-homedirs=$(awk -F: -v users=$(make -C ${portdir} -V USERS|sed -e 's, ,|,g;/^$/d;s,^,^(,;s,$,)$,') 'users && $1 ~ users {print $9}' ${PORTSDIR}/UIDs|sort -u|sed -e "s|/usr/local|${PREFIX}|"|tr "\n" " ")
-plistsub_sed=$(make -C ${portdir} -VPLIST_SUB_SED | /bin/sh ${PORTSDIR}/Mk/Scripts/plist_sub_sed_sort.sh)
+if [ -z "${UID_FILES}" ]; then
+	UID_FILES=$(make -C ${portdir} -VUID_FILES)
+fi
+homedirs=$(awk -F: -v users="$(make -C ${portdir} -V USERS|sed -e 's, ,|,g;/^$/d;s,^,^(,;s,$,)$,')" 'users && $1 ~ users {print $9}' ${UID_FILES}|sort -u|sed -e "s|/usr/local|${PREFIX}|"|tr "\n" " ")
+plistsub_sed=$(mktemp -t plistsub_sed)
+trap "rm -f ${plistsub_sed}" EXIT 1
+make -C ${portdir} -VPLIST_SUB_SED | /bin/sh ${PORTSDIR}/Mk/Scripts/plist_sub_sed_sort.sh ${plistsub_sed}
 tmpplist=$(make -C ${portdir} -VTMPPLIST)
 
-while read modtype path extra; do
+while read -r modtype path extra; do
 	# Ignore everything from these files/directories
 	case "${path}" in
-		${CCACHE_DIR}/*|\
+		${CCACHE_DIR:-/nonexistent}/*|\
 		/compat/linux/proc/*|\
 		/dev/*|\
 		/etc/make.conf.bak|\
@@ -69,7 +74,7 @@ while read modtype path extra; do
 	esac
 
 	ignore_path=0
-	sub_path=$(echo "$path" | sed -e "s|^${PREFIX}/||" -e "${plistsub_sed}")
+	sub_path=$(echo "$path" | sed -e "s|^${PREFIX}/||" -f "${plistsub_sed}")
 	orig_sub_path="${sub_path}"
 	# If this is a directory, use @dir in output
 	is_dir=0
@@ -150,6 +155,10 @@ while read modtype path extra; do
 			# xmlcatmgr is constantly updating catalog.ports ignore
 			# modification to that file
 			share/xml/catalog.ports) ;;
+			# Ignore ghc's doc index
+			share/doc/ghc-%%GHC_VERSION%%/*) ;;
+			# Ignore ghc's package conf
+			lib/ghc-%%GHC_VERSION%%/package.conf.d/*) ;;
 			# Ignore common system config files
 			/etc/group|\
 			/etc/make.conf|\

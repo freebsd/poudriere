@@ -1,5 +1,5 @@
 #!/bin/sh
-# $FreeBSD: head/Mk/Scripts/do-fetch.sh 432617 2017-01-28 10:52:20Z mat $
+# $FreeBSD: head/Mk/Scripts/do-fetch.sh 462544 2018-02-21 21:26:46Z bdrewery $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 
@@ -17,10 +17,14 @@ validate_env dp_DEVELOPER dp_DISABLE_SIZE dp_DISTDIR dp_DISTINFO_FILE \
 
 set -u
 
-if [ ! -d "${dp_DISTDIR}" ]; then
-	mkdir -p "${dp_DISTDIR}"
-fi
-cd "${dp_DISTDIR}"
+case ${dp_TARGET} in
+	do-fetch|makesum)
+		if [ ! -d "${dp_DISTDIR}" ]; then
+			mkdir -p "${dp_DISTDIR}"
+		fi
+		cd "${dp_DISTDIR}"
+		;;
+esac
 
 for _file in "${@}"; do
 	file=${_file%%:*}
@@ -108,7 +112,11 @@ for _file in "${@}"; do
 			;;
 	esac
 	sites_remaining=0
-	sites="$(${SORTED_MASTER_SITES_CMD_TMP} ${dp_RANDOMIZE_SITES})"
+	if [ -n "${dp_RANDOMIZE_SITES}" ]; then
+		sites="$(${SORTED_MASTER_SITES_CMD_TMP} | ${dp_RANDOMIZE_SITES})"
+	else
+		sites="$(${SORTED_MASTER_SITES_CMD_TMP})"
+	fi
 	for site in ${sites}; do
 		sites_remaining=$((sites_remaining + 1))
 	done

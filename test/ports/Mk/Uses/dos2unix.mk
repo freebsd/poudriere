@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/dos2unix.mk 410819 2016-03-11 10:39:04Z jbeich $
+# $FreeBSD: head/Mk/Uses/dos2unix.mk 479778 2018-09-14 18:27:20Z tobik $
 #
 # Provide support to convert files from dos2unix
 #
@@ -11,6 +11,10 @@
 
 .if !defined(_INCLUDE_USES_DOS2UNIX_MK)
 _INCLUDE_USES_DOS2UNIX_MK=	yes
+
+.if !empty(dos2unix_ARGS)
+IGNORE=	USES=dos2unix takes no arguments
+.endif
 
 .if !defined(DOS2UNIX_FILES) && !defined(DOS2UNIX_REGEX) && !defined(DOS2UNIX_GLOB)
 _DOS2UNIX_ALL=	yes

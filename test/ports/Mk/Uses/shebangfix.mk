@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/shebangfix.mk 438940 2017-04-20 11:45:44Z amdmi3 $
+# $FreeBSD: head/Mk/Uses/shebangfix.mk 456908 2017-12-21 13:27:51Z amdmi3 $
 #
 # Replace #! interpreters in scripts by what we actually have.
 #
@@ -65,6 +65,13 @@ ${lang}_OLD_CMD+= /usr/bin/${lang}
 ${lang}_OLD_CMD+= /usr/local/bin/${lang}
 .endfor
 
+.for pyver in 2 3
+python_OLD_CMD+= "/usr/bin/env python${pyver}"
+python_OLD_CMD+= /bin/python${pyver}
+python_OLD_CMD+= /usr/bin/python${pyver}
+python_OLD_CMD+= /usr/local/bin/python${pyver}
+.endfor
+
 .for lang in ${SHEBANG_LANG}
 .  if !defined(${lang}_CMD)
 IGNORE+=	missing definition for ${lang}_CMD
@@ -84,15 +91,18 @@ fix-shebang:
 	@cd ${WRKSRC}; \
 		${FIND} -E . -type f -iregex '${SHEBANG_REGEX}' \
 		-exec ${SED} -i '' ${_SHEBANG_REINPLACE_ARGS} {} +
-.elif defined(SHEBANG_GLOB)
-.for f in ${SHEBANG_GLOB}
+.endif
+.if defined(SHEBANG_GLOB)
+.  for f in ${SHEBANG_GLOB}
 	@cd ${WRKSRC}; \
 		${FIND} . -type f -name '${f}' \
 		-exec ${SED} -i '' ${_SHEBANG_REINPLACE_ARGS} {} +
-.endfor
-.else
+.  endfor
+.endif
+.if defined(SHEBANG_FILES)
 	@cd ${WRKSRC}; \
-		${ECHO_CMD} ${SHEBANG_FILES} | ${XARGS} ${SED} -i '' ${_SHEBANG_REINPLACE_ARGS}
+		${FIND} ${SHEBANG_FILES} -type f \
+		-exec ${SED} -i '' ${_SHEBANG_REINPLACE_ARGS} {} +
 .endif
 
 .endif

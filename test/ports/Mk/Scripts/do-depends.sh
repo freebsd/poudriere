@@ -1,5 +1,5 @@
 #!/bin/sh
-# $FreeBSD: head/Mk/Scripts/do-depends.sh 425026 2016-10-31 20:54:50Z bdrewery $
+# $FreeBSD: head/Mk/Scripts/do-depends.sh 455690 2017-12-07 01:51:00Z bdrewery $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 
@@ -11,7 +11,7 @@ validate_env dp_RAWDEPENDS dp_DEPTYPE dp_DEPENDS_TARGET dp_DEPENDS_PRECLEAN \
 	dp_DEPENDS_CLEAN dp_DEPENDS_ARGS dp_USE_PACKAGE_DEPENDS \
 	dp_USE_PACKAGE_DEPENDS_ONLY dp_PKG_ADD dp_PKG_INFO dp_WRKDIR \
 	dp_PKGNAME dp_STRICT_DEPENDS dp_LOCALBASE dp_LIB_DIRS dp_SH \
-	dp_SCRIPTSDIR PORTSDIR dp_MAKE
+	dp_SCRIPTSDIR PORTSDIR dp_MAKE dp_MAKEFLAGS
 
 [ -n "${DEBUG_MK_SCRIPTS}" -o -n "${DEBUG_MK_SCRIPTS_DO_DEPENDS}" ] && set -x
 
@@ -23,7 +23,7 @@ install_depends()
 	target=$2
 	depends_args=$3
 	if [ -z "${dp_USE_PACKAGE_DEPENDS}" -a -z "${dp_USE_PACKAGE_DEPENDS_ONLY}" ]; then
-		${dp_MAKE} -C ${origin} -DINSTALLS_DEPENDS ${target} ${depends_args}
+		MAKEFLAGS="${dp_MAKEFLAGS}" ${dp_MAKE} -C ${origin} -DINSTALLS_DEPENDS ${target} ${depends_args}
 		return 0
 	fi
 
@@ -46,7 +46,7 @@ install_depends()
 		echo "===>   USE_PACKAGE_DEPENDS_ONLY set - not building missing dependency from source" >&2
 		exit 1
 	else
-		${dp_MAKE} -C ${origin} -DINSTALLS_DEPENDS ${target} ${depends_args}
+		MAKEFLAGS="${dp_MAKEFLAGS}" ${dp_MAKE} -C ${origin} -DINSTALLS_DEPENDS ${target} ${depends_args}
 	fi
 }
 
@@ -94,13 +94,15 @@ find_lib()
 anynotfound=0
 err=0
 for _line in ${dp_RAWDEPENDS} ; do
+	# ensure we never leak flavors
+	unset FLAVOR
 	myifs=${IFS}
 	IFS=:
 	set -- ${_line}
 	IFS=${myifs}
 	if [ $# -lt 2 -o $# -gt 3 ]; then
 		echo "Error: bad dependency syntax in ${dp_DEPTYPE}" >&2
-		echo "expecting: pattern:origin[:target]" >&2
+		echo "expecting: pattern:origin[@flavour][:target]" >&2
 		echo "got: ${_line}" >&2
 		err=1
 		continue
@@ -125,15 +127,12 @@ for _line in ${dp_RAWDEPENDS} ; do
 	/*) ;;
 	*) origin="${PORTSDIR}/${origin}" ;;
 	esac
-
 	case "${origin}" in
+	*@*/*) ;; # Ignore @ in the path which would not be a flavor
 	*@*)
-		flavor="${origin#*@}"
-		origin="${origin%@*}"
-		export FLAVOR=${flavor}
-		echo "Fixed origin to ${origin} and flavor to ${flavor}" >&2
+		export FLAVOR="${origin##*@}"
+		origin=${origin%@*}
 		;;
-	*) ;;
 	esac
 
 	depends_args="${dp_DEPENDS_ARGS}"

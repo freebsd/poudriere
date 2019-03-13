@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/cran.mk 424635 2016-10-25 17:04:38Z jrm $
+# $FreeBSD: head/Mk/Uses/cran.mk 458513 2018-01-09 07:40:55Z mat $
 #
 # Use the Comprehensive R Archive Network 
 #
@@ -47,7 +47,7 @@ do-test:
 R_POSTCMD_INSTALL_OPTIONS+=	-l ${STAGEDIR}${PREFIX}/${R_LIB_DIR}
 R_POSTCMD_INSTALL_OPTIONS+=	--install-tests
 
-.if defined(NOPORTDOCS)
+.if empty(PORT_OPTIONS:MDOCS)
 R_POSTCMD_INSTALL_OPTIONS+=	--no-docs --no-html
 .endif
 
@@ -71,6 +71,8 @@ cran-strip:
 	${FIND} ${STAGEDIR}${PREFIX}/${R_MOD_DIR} -name '*.so' -exec ${STRIP_CMD} {} +
 .include "${PORTSDIR}/math/R/compiler.mk"
 .include "${USESDIR}/fortran.mk"
+.else
+NO_ARCH=	yes
 .endif
 
 .endif #_INCLUDE_USES_CRAN_MK

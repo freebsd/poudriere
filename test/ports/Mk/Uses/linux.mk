@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/linux.mk 441768 2017-05-26 10:26:39Z tijl $
+# $FreeBSD: head/Mk/Uses/linux.mk 478165 2018-08-26 19:53:54Z pi $
 #
 # Ports Linux compatibility framework
 #
@@ -37,7 +37,7 @@ linux_ARGS=		${LINUX_DEFAULT:S/_64//}
 .endif
 
 .if ${linux_ARGS} == c6
-LINUX_DIST_VER?=	6.9
+LINUX_DIST_VER?=	6.10
 .if ${ARCH} == amd64 && ${LINUX_DEFAULT} != c6
 LINUX_ARCH=		x86_64
 .elif ${ARCH} == amd64 || ${ARCH} == i386
@@ -47,7 +47,7 @@ LINUX_ARCH=		${ARCH}
 IGNORE=			Linux CentOS ${LINUX_DIST_VER} is unsupported on ${ARCH}
 .endif
 .elif ${linux_ARGS} == c7
-LINUX_DIST_VER?=	7.3.1611
+LINUX_DIST_VER?=	7.4.1708
 .if ${ARCH} == amd64
 LINUX_ARCH=		x86_64
 .elif ${ARCH} == i386
@@ -87,6 +87,7 @@ linux_gnutls_DEP=		linux-${linux_ARGS}-gnutls>0:security/linux-${linux_ARGS}-gnu
 linux_graphite2_DEP=		linux-${linux_ARGS}-graphite2>0:graphics/linux-${linux_ARGS}-graphite2
 linux_gtk2_DEP=			linux-${linux_ARGS}-gtk2>0:x11-toolkits/linux-${linux_ARGS}-gtk2
 linux_harfbuzz_DEP=		linux-${linux_ARGS}-harfbuzz>0:print/linux-${linux_ARGS}-harfbuzz
+linux_icu_DEP=			linux-${linux_ARGS}-icu>0:devel/linux-${linux_ARGS}-icu
 linux_jasper_DEP=		linux-${linux_ARGS}-jasper-libs>0:graphics/linux-${linux_ARGS}-jasper
 linux_jbigkit_DEP=		linux-${linux_ARGS}-jbigkit-libs>0:graphics/linux-${linux_ARGS}-jbigkit
 linux_jpeg_DEP=			linux-${linux_ARGS}-jpeg>0:graphics/linux-${linux_ARGS}-jpeg
@@ -109,12 +110,14 @@ linux_libssh2_DEP=		linux-${linux_ARGS}-libssh2>0:security/linux-${linux_ARGS}-l
 linux_libtasn1_DEP=		linux-${linux_ARGS}-libtasn1>0:security/linux-${linux_ARGS}-libtasn1
 linux_libthai_DEP=		linux-${linux_ARGS}-libthai>0:devel/linux-${linux_ARGS}-libthai
 linux_libtheora_DEP=		linux-${linux_ARGS}-libtheora>0:multimedia/linux-${linux_ARGS}-libtheora
+linux_libunwind_DEP=		linux-${linux_ARGS}-libunwind>0:devel/linux-${linux_ARGS}-libunwind
 linux_libv4l_DEP=		linux-${linux_ARGS}-libv4l>0:multimedia/linux-${linux_ARGS}-libv4l
 linux_libvorbis_DEP=		linux-${linux_ARGS}-libvorbis>0:audio/linux-${linux_ARGS}-libvorbis
 linux_libxml2_DEP=		linux-${linux_ARGS}-libxml2>0:textproc/linux-${linux_ARGS}-libxml2
+linux_lttng-ust_DEP=		linux-${linux_ARGS}-lttng-ust>0:sysutils/linux-${linux_ARGS}-lttng-ust
 linux_mikmod_DEP=		linux-${linux_ARGS}-libmikmod>0:audio/linux-${linux_ARGS}-mikmod
 linux_naslibs_DEP=		linux-${linux_ARGS}-nas>0:audio/linux-${linux_ARGS}-nas-libs
-linux_ncurses-base_DEP=		linux-${linux_ARGS}-ncurses-base>0:devel/linux-${linux_ARGS}-ncurses-base
+linux_nettle_DEP=		linux-${linux_ARGS}-nettle>0:security/linux-${linux_ARGS}-nettle
 linux_nspr_DEP=			linux-${linux_ARGS}-nspr>0:devel/linux-${linux_ARGS}-nspr
 linux_nss_DEP=			linux-${linux_ARGS}-nss>0:security/linux-${linux_ARGS}-nss
 linux_openal_DEP=		linux-${linux_ARGS}-openal>0:audio/linux-${linux_ARGS}-openal
@@ -130,6 +133,7 @@ linux_openssl_DEP=		linux-${linux_ARGS}-openssl>0:security/linux-${linux_ARGS}-o
 .else
 linux_openssl_DEP=		linux-${linux_ARGS}-openssl-libs>0:security/linux-${linux_ARGS}-openssl
 .endif
+linux_p11-kit_DEP=		linux-${linux_ARGS}-p11-kit>0:security/linux-${linux_ARGS}-p11-kit
 linux_pango_DEP=		linux-${linux_ARGS}-pango>0:x11-toolkits/linux-${linux_ARGS}-pango
 linux_pixman_DEP=		linux-${linux_ARGS}-pixman>0:x11/linux-${linux_ARGS}-pixman
 linux_png_DEP=			linux-${linux_ARGS}-libpng>0:graphics/linux-${linux_ARGS}-png
@@ -152,7 +156,9 @@ linux_tcl85_DEP=		linux-${linux_ARGS}-tcl85>0:lang/linux-${linux_ARGS}-tcl85
 linux_tcp_wrappers-libs_DEP=	linux-${linux_ARGS}-tcp_wrappers-libs>0:net/linux-${linux_ARGS}-tcp_wrappers-libs
 linux_tiff_DEP=			linux-${linux_ARGS}-libtiff>0:graphics/linux-${linux_ARGS}-tiff
 linux_tk85_DEP=			linux-${linux_ARGS}-tk85>0:x11-toolkits/linux-${linux_ARGS}-tk85
+linux_trousers_DEP=		linux-${linux_ARGS}-trousers>0:security/linux-${linux_ARGS}-trousers
 linux_ucl_DEP=			linux-${linux_ARGS}-ucl>0:archivers/linux-${linux_ARGS}-ucl
+linux_userspace-rcu_DEP=	linux-${linux_ARGS}-userspace-rcu>0:sysutils/linux-${linux_ARGS}-userspace-rcu
 linux_xorglibs_DEP=		linux-${linux_ARGS}-xorg-libs>0:x11/linux-${linux_ARGS}-xorg-libs
 
 USE_LINUX?=		base
@@ -166,6 +172,9 @@ BUILD_DEPENDS+=		${linux_${i:C/:.*//}_DEP}
 .endif
 .if ${_i_args:Mrun} || empty(_i_args)
 RUN_DEPENDS+=		${linux_${i:C/:.*//}_DEP}
+.endif
+.if !defined(linux_${i:C/:.*//}_DEP)
+DEV_ERROR+=		"USE_LINUX=${i}: package does not exist"
 .endif
 .endfor
 

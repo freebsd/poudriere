@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/bsd.ccache.mk 435818 2017-03-10 02:20:51Z bdrewery $
+# $FreeBSD: head/Mk/bsd.ccache.mk 462894 2018-02-25 03:32:18Z bdrewery $
 #-*- tab-width: 4; -*-
 # ex:ts=4
 #
@@ -51,6 +51,13 @@ MAKE_ENV+=		CCACHE_DIR="${CCACHE_DIR}"
 CONFIGURE_ENV+=	CCACHE_DIR="${CCACHE_DIR}"
 .	endif
 .endif
+
+# Some ports will truncate CCACHE_DIR from the env and due to HOME=${WRKDIR}
+# will incorrectly use ${WRKDIR}/.ccache.  Symlink to the proper place.
+${WRKDIR}/.ccache: ${WRKDIR}
+	@${LN} -sf ${CCACHE_DIR} ${WRKDIR}/.ccache
+ccache-wrkdir-link: ${WRKDIR}/.ccache .PHONY
+post-extract: ccache-wrkdir-link
 .endif
 
 .endif

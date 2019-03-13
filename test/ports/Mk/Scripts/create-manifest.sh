@@ -1,5 +1,5 @@
 #!/bin/sh
-# $FreeBSD: head/Mk/Scripts/create-manifest.sh 419513 2016-08-03 12:45:30Z mat $
+# $FreeBSD: head/Mk/Scripts/create-manifest.sh 471274 2018-06-01 16:20:54Z mat $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 
@@ -57,8 +57,8 @@ EOT
 [ -z "${dp_LICENSE}" ] || echo "licenses: [ ${dp_LICENSE} ]"
 [ -z "${dp_USERS}" ] || echo "users: [ ${dp_USERS} ]"
 [ -z "${dp_GROUPS}" ] || echo "groups: [ ${dp_GROUPS} ]"
-[ -n "${dp_NO_ARCH}" ] && echo "arch : `${dp_PKG_BIN} config abi | tr '[:upper:]' '[:lower:]' | cut -d: -f1,2`:*"
-[ -n "${dp_NO_ARCH}" ] && echo "abi : `${dp_PKG_BIN} config abi | cut -d: -f1,2`:*"
+[ -n "${dp_NO_ARCH}" ] && echo "arch : $(${dp_PKG_BIN} config abi | tr '[:upper:]' '[:lower:]' | cut -d: -f1,2):*"
+[ -n "${dp_NO_ARCH}" ] && echo "abi : $(${dp_PKG_BIN} config abi | cut -d: -f1,2):*"
 
 # Then the key/values sections
 echo "deps: { "
@@ -89,11 +89,19 @@ fi
 cp ${dp_DESCR} ${dp_METADIR}/+DESC
 
 # Concatenate all the scripts
+output_files=
+for stage in INSTALL DEINSTALL UPGRADE; do
+	for prepost in '' PRE POST; do
+		output=${dp_METADIR}/+${prepost:+${prepost}_}${stage}
+		[ -f "${output}" ] && output_files="${output_files:+${output_files} }${output}"
+	done
+done
+[ -n "${output_files}" ] && rm -f ${output_files}
+
 for stage in INSTALL DEINSTALL UPGRADE; do
 	for prepost in '' PRE POST; do
 		eval files="\${dp_PKG${prepost}${stage}}"
 		output=${dp_METADIR}/+${prepost:+${prepost}_}${stage}
-		rm -f ${output}
 		for input in ${files}; do
 			[ -f "${input}" ] && cat ${input} >> ${output}
 		done

@@ -1,6 +1,6 @@
 #!/bin/sh
 # MAINTAINER: portmgr@FreeBSD.org
-# $FreeBSD: head/Mk/Scripts/smart_makepatch.sh 415573 2016-05-20 19:01:59Z mat $
+# $FreeBSD: head/Mk/Scripts/smart_makepatch.sh 471994 2018-06-08 09:26:41Z mat $
 
 # This script regenerates patches.  It conserves existing comments and
 # file names, even if the file name does not meet any current or
@@ -51,9 +51,9 @@ strip_path() {
 		echo ${raw_name}
 	else
 		echo ${raw_name} | awk -v sc=${STRIP_COMPONENTS} -F "/" \
-		'{ for (x = sc + 1; x <= NF; x++) { \
-			slash = (x>sc+1) ? "/" : ""; \
-			printf ("%s%s", slash, $x); \
+		'{ for (x = sc + 1; x <= NF; x++) {
+			slash = (x>sc+1) ? "/" : "";
+			printf ("%s%s", slash, $x);
 		   }}'
 	fi
 }
@@ -63,14 +63,14 @@ std_patch_filename() {
 	local raw_name
 	sans_cwd=$(echo $1 | sed 's|^\.\/||')
 	raw_name=$(strip_path ${sans_cwd})
-	echo patch-$(echo ${raw_name} | sed -e 's|_|&&|g; s|/|_|g')
+	echo "patch-$(echo ${raw_name} | sed -e 's|_|&&|g; s|/|_|g')"
 }
 
 patchdir_files_list() {
 	if [ -d "${PATCHDIR}" ]; then
 		(cd ${PATCHDIR} && \
-			find * -type f -name "patch-*" -maxdepth 0 \
-			2>/dev/null | sed -e '/\.orig$/d'
+			find ./* -type f -name "patch-*" -maxdepth 0 \
+			2>/dev/null | sed -e 's,^\./,,; /\.orig$/d'
 		)
 	fi;
 }
@@ -135,33 +135,33 @@ extract_comment_from_patch() {
 		rawname=$(grep "^+++ " ${existing_patch} | \
 			awk -v num=${num} '{x++; if (x==num) print $2}')
 		fname=$(std_patch_filename $rawname)
-		awk -v num=${num} '\
-		BEGIN { done=0; x=0; hunk=0; looking=(num==1) } \
-		{ \
-		    if (!done) { \
-		        if ($1 == "@@") { \
-		            split ($2,a,","); \
-		            split ($3,b,","); \
+		awk -v num=${num} '
+		BEGIN { done=0; x=0; hunk=0; looking=(num==1) }
+		{
+		    if (!done) {
+		        if ($1 == "@@") {
+		            split ($2,a,",");
+		            split ($3,b,",");
 		            hca = a[2];
 		            hcb = a[3];
 		            hunk = 1;
-		        } else if (hunk) { \
-		            first=substr($1,1,1); \
-		            if (first == "-") { hca-- } \
-		            else if (first == "+") { hcb-- } \
-		            else {hca--; hcb--} \
-		            if (hca == 0 && hcb == 0) {hunk = 0} \
-		        } \
-			if ($1 == "---") { \
-			   x++; \
-			   if (x == num) { done = 1 } \
-			   if (x + 1 == num) { looking = 1 } \
-			} else if (!hunk && looking) { \
-		            if ($1!="diff" && $1!="index" && $1!="+++") {\
-		                print $0 \
-		            } \
-		        } \
-		    } \
+		        } else if (hunk) {
+		            first=substr($1,1,1);
+		            if (first == "-") { hca-- }
+		            else if (first == "+") { hcb-- }
+		            else {hca--; hcb--}
+		            if (hca == 0 && hcb == 0) {hunk = 0}
+		        }
+			if ($1 == "---") {
+			   x++;
+			   if (x == num) { done = 1 }
+			   if (x + 1 == num) { looking = 1 }
+			} else if (!hunk && looking) {
+		            if ($1!="diff" && $1!="index" && $1!="+++") {
+		                print $0
+		            }
+		        }
+		    }
 		}' ${existing_patch} > ${COMMENTS}/${fname}
 	done
 }
@@ -186,7 +186,7 @@ regenerate_patches() {
 	local ORIG
 	local new_list
 	new_list=$(cd "${PATCH_WRKSRC}" && \
-		find -s * -type f -name '*.orig' 2>/dev/null)
+		find -s ./* -type f -name '*.orig' 2>/dev/null)
 	(cd "${PATCH_WRKSRC}" && for F in ${new_list}; do
 		ORIG=${F#./}
 		NEW=${ORIG%.orig}
@@ -200,13 +200,13 @@ regenerate_patches() {
 }
 
 get_patch_name() {
-	awk -v name=$1 '\
-	{ if ($2 == name) \
-	  { \
-	      if (!done) { print $1 }; \
-	      done = 1; \
-	  } \
-	} \
+	awk -v name=$1 '
+	{ if ($2 == name)
+	  {
+	      if (!done) { print $1 };
+	      done = 1;
+	  }
+	}
 	END { if (!done) print name }' ${PATCHMAP}
 }
 
@@ -216,8 +216,9 @@ stage_patches() {
 	local P
 	local name
 	local patch_list
-	patch_list=$(cd ${REGENNED} && find * -name "patch-*" 2>/dev/null)
+	patch_list=$(cd ${REGENNED} && find ./* -name "patch-*" 2>/dev/null)
 	for P in ${patch_list}; do
+		P=${P#./}
 		name=$(get_patch_name ${P})
 		[ -e ${COMMENTS}/${P} ] && cat ${COMMENTS}/${P} \
 			>> ${DESTDIR}/${name}
@@ -228,6 +229,38 @@ stage_patches() {
 		fi
 		cat ${REGENNED}/${P} >> ${DESTDIR}/${name}
 	done
+}
+
+compare_common_patches() {
+	[ -z "${old_patch_list}" ] && return
+	local archive_patch_list
+	local P
+	local ppatch
+	local ppatch_stripped
+	local cpatch
+	local cpatch_stripped
+	for P in ${old_patch_list}; do
+		if [ -e ${DESTDIR}/${P} ]; then
+			ppatch=${PATCHDIR}/${P}
+			cpatch=${DESTDIR}/${P}
+			ppatch_stripped=$(mktemp -t portpatch)
+			cpatch_stripped=$(mktemp -t portpatch)
+			egrep -v -- '--- .+ UTC$' ${ppatch} \
+				> ${ppatch_stripped}
+			egrep -v -- '--- .+ UTC$' ${cpatch} \
+				> ${cpatch_stripped}
+			# Don't replace patches with only metadata changes
+			if ! cmp -s ${ppatch_stripped} ${cpatch_stripped}; then
+				archive_patch_list="${archive_patch_list} ${P}"
+			else
+				echo "${P} only contains metadata changes; not replacing"
+				rm ${cpatch}
+			fi
+			rm ${ppatch_stripped}
+			rm ${cpatch_stripped}
+		fi
+	done
+	old_patch_list=${archive_patch_list}
 }
 
 conserve_old_patches() {
@@ -244,7 +277,8 @@ conserve_old_patches() {
 }
 
 install_regenerated_patches() {
-	local testdir=$(find ${DESTDIR} -empty)
+	local testdir
+	testdir=$(find ${DESTDIR} -empty)
 	if [ -z "${testdir}" ]; then
 		mkdir -p ${PATCHDIR}
 		find ${DESTDIR} -type f -exec mv {} ${PATCHDIR}/ \;
@@ -257,5 +291,6 @@ map_existing_patches
 extract_comments
 regenerate_patches
 stage_patches
+compare_common_patches
 conserve_old_patches
 install_regenerated_patches

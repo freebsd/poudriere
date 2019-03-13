@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/bsd.default-versions.mk 442856 2017-06-07 17:32:04Z rene $
+# $FreeBSD: head/Mk/bsd.default-versions.mk 494880 2019-03-07 04:56:28Z acm $
 #
 # MAINTAINER:	ports@FreeBSD.org
 #
@@ -15,11 +15,11 @@ _INCLUDE_BSD_DEFAULT_VERSIONS_MK=	yes
 
 LOCALBASE?=	/usr/local
 
-.for lang in APACHE BDB FIREBIRD FPC GCC GHOSTSCRIPT LINUX LUA MYSQL PERL5 \
-	PGSQL PHP PYTHON PYTHON2 PYTHON3 RUBY SSL TCLTK
+.for lang in APACHE BDB COROSYNC EMACS FIREBIRD FORTRAN FPC GCC GHOSTSCRIPT \
+	LAZARUS LINUX LLVM LUA MYSQL PERL5 PGSQL PHP PYTHON PYTHON2 PYTHON3 \
+	RUBY RUST SAMBA SSL TCLTK VARNISH
 .if defined(${lang}_DEFAULT)
-WARNING+=	"The variable ${lang}_DEFAULT is set and it should only be defined through DEFAULT_VERSIONS+=${lang:tl}=${${lang}_DEFAULT} in /etc/make.conf"
-WARNING+=	"This behaviour has never been supported and will be removed on 2017-01-31"
+ERROR+=	"The variable ${lang}_DEFAULT is set and it should only be defined through DEFAULT_VERSIONS+=${lang:tl}=${${lang}_DEFAULT} in /etc/make.conf"
 .endif
 #.undef ${lang}_DEFAULT
 .endfor
@@ -29,18 +29,26 @@ _l=		${lang:C/=.*//g}
 ${_l:tu}_DEFAULT=	${lang:C/.*=//g}
 .endfor
 
-# Possible values: 2.2, 2.4
+# Possible values: 2.4
 APACHE_DEFAULT?=	2.4
 # Possible values: 48, 5, 6
 BDB_DEFAULT?=		5
+# Possible values: 2, 3
+COROSYNC_DEFAULT?=	2
+# Possible_values: full canna nox devel_full devel_nox
+#EMACS_DEFAULT?=	let the flavor be the default if not explicitly set
 # Possible values: 2.5
 FIREBIRD_DEFAULT?=	2.5
-# Possible values: 3.0.0
-FPC_DEFAULT?=		3.0.2
-# Possible values: 4.8, 4.9, 5, 6
-GCC_DEFAULT?=		5
+# Possible values: flang (experimental), gfortran
+FORTRAN_DEFAULT?=	gfortran
+# Possible values: 3.0.4
+FPC_DEFAULT?=		3.0.4
+# Possible values: 6, 7, 8
+GCC_DEFAULT?=		8
 # Possible values: 7, 8, 9, agpl
 GHOSTSCRIPT_DEFAULT?=	agpl
+# Possible values: 2.0.0
+LAZARUS_DEFAULT?=	2.0.0
 .if ${ARCH} == amd64
 # Possible values: c6, c6_64, c7
 LINUX_DEFAULT?=		c6_64
@@ -48,18 +56,16 @@ LINUX_DEFAULT?=		c6_64
 # Possible values: c6
 LINUX_DEFAULT?=		c6
 .endif
-.if defined(OVERRIDE_LINUX_BASE_PORT)
-LINUX_DEFAULT:=		${OVERRIDE_LINUX_BASE_PORT}
-WARNING+=		"OVERRIDE_LINUX_BASE_PORT is deprecated, please use DEFAULT_VERSIONS+=linux=${OVERRIDE_LINUX_BASE_PORT}."
-.endif
+# Possible values: 50, 60, 70 (to be used when non-base compiler is required)
+LLVM_DEFAULT?=		70
 # Possible values: 5.1, 5.2, 5.3
 LUA_DEFAULT?=		5.2
-# Possible values: 5.1, 5.5, 5.6, 5.7, 8.0, 5.5m, 10.0m, 10.1m, 5.5p, 5.6p, 5.7p, 5.6w
+# Possible values: 5.5, 5.6, 5.7, 8.0, 5.5m, 10.0m, 10.1m, 10.2m, 10.3m, 5.5p, 5.6p, 5.7p, 5.6w
 MYSQL_DEFAULT?=		5.6
-# Possible values: 5.22, 5.24, 5.26, devel
+# Possible values: 5.24, 5.26, 5.28, devel
 .if !exists(${LOCALBASE}/bin/perl) || (!defined(_PORTS_ENV_CHECK) && \
     defined(PACKAGE_BUILDING))
-PERL5_DEFAULT?=		5.24
+PERL5_DEFAULT?=		5.28
 .elif !defined(PERL5_DEFAULT)
 # There's no need to replace development versions, like "5.23" with "devel"
 # because 1) nobody is supposed to use it outside of poudriere, and 2) it must
@@ -71,38 +77,27 @@ _PERL5_FROM_BIN!=	perl -e 'printf "%vd\n", $$^V;'
 _EXPORTED_VARS+=	_PERL5_FROM_BIN
 PERL5_DEFAULT:=		${_PERL5_FROM_BIN:R}
 .endif
-# Possible values: 9.2, 9.3, 9.4, 9.5, 9.6
-PGSQL_DEFAULT?=		9.3
-# Possible values: 5.6, 7.0, 7.1
-PHP_DEFAULT?=		5.6
-# Possible values: 2.7, 3.3, 3.4, 3.5, 3.6
+# Possible values: 9.4, 9.5, 9.6, 10, 11
+PGSQL_DEFAULT?=		9.5
+# Possible values: 7.1, 7.2, 7.3
+PHP_DEFAULT?=		7.2
+# Possible values: 2.7, 3.5, 3.6, 3.7
 PYTHON_DEFAULT?=	2.7
 # Possible values: 2.7
 PYTHON2_DEFAULT?=	2.7
-# Possible values: 3.3, 3.4, 3.5, 3.6
+# Possible values: 3.5, 3.6, 3.7
 PYTHON3_DEFAULT?=	3.6
-# Possible values: 2.2, 2.3, 2.4
-RUBY_DEFAULT?=		2.3
-# Possible values: 4.4, 4.5, 4.6
-SAMBA_DEFAULT?=		4.4
-# Possible values: base, openssl, openssl-devel, libressl, libressl-devel
+# Possible values: 2.3, 2.4, 2.5
+RUBY_DEFAULT?=		2.4
+# Possible values: rust, rust-nightly
+RUST_DEFAULT?=		rust
+# Possible values: 4.6, 4.7, 4.8
+SAMBA_DEFAULT?=		4.7
+# Possible values: base, openssl, openssl111, libressl, libressl-devel
 .if !defined(SSL_DEFAULT)
 #	If no preference was set, check for an installed base version
 #	but give an installed port preference over it.
-.  if defined(WITH_OPENSSL_PORT)
-.    if defined(OPENSSL_PORT)
-SSL_DEFAULT:=${OPENSSL_PORT:T}
-WARNING+=	"Using WITH_OPENSSL_PORT and OPENSSL_PORT in make.conf is deprecated, replace them with DEFAULT_VERSIONS+=ssl=${SSL_DEFAULT} in your make.conf"
-.    else
-SSL_DEFAULT=openssl
-WARNING+=	"Using WITH_OPENSSL_PORT in make.conf is deprecated, replace it with DEFAULT_VERSIONS+=ssl=openssl in your make.conf"
-.    endif
-.  elif defined(WITH_OPENSSL_BASE)
-SSL_DEFAULT=base
-WARNING+=	"Using WITH_OPENSSL_BASE in make.conf is deprecated, replace it with DEFAULT_VERSIONS+=ssl=base in your make.conf"
-.  elif	!defined(WITH_OPENSSL_BASE) && \
-	!defined(WITH_OPENSSL_PORT) && \
-	!defined(SSL_DEFAULT) && \
+.  if	!defined(SSL_DEFAULT) && \
 	!exists(${DESTDIR}/${LOCALBASE}/lib/libcrypto.so) && \
 	exists(${DESTDIR}/usr/include/openssl/opensslv.h)
 SSL_DEFAULT=	base
@@ -134,10 +129,10 @@ check-makevars::
 # Make sure we have a default in the end
 SSL_DEFAULT?=	base
 .endif
-# Possible values: 8.4, 8.5, 8.6
+# Possible values: 8.5, 8.6, 8.7
 TCLTK_DEFAULT?=		8.6
 
-# Possible values: 4, 5
+# Possible values: 4, 6
 VARNISH_DEFAULT?=	4
 
 .endif

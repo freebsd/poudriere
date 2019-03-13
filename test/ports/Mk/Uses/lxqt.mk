@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/lxqt.mk 436496 2017-03-19 14:08:10Z rene $
+# $FreeBSD: head/Mk/Uses/lxqt.mk 473287 2018-06-25 00:49:41Z swills $
 #
 # This file contains some variable definitions that are supposed to make your
 # life easier, when dealing with ports related to the LXQt Desktop Environment.
@@ -10,6 +10,7 @@
 # Available LXQt components are:
 #
 # buildtools	- Helpers CMake modules
+# globalkeys	- Keyboard shortcuts daemon
 # libfmqt	- Libfm Qt bindings
 # lxqt		- LXQt core library
 # qtxdg		- Qt implementation of freedesktop.org xdg specs
@@ -23,17 +24,17 @@ _INCLUDE_USES_LXQT_MK=	yes
 IGNORE=	Incorrect 'USES+=lxqt:${lxqt_ARGS} takes no arguments
 .endif
 
-MASTER_SITE_LXQT+= \
-	https://github.com/lxde/%SUBDIR%/releases/download/${PORTVERSION}/ \
-	http://downloads.lxqt.org/%SUBDIR%/${PORTVERSION}/
-MASTER_SITE_LXQT_SUBDIR=	lxqt
+_LXQT_PROJECT=	${DISTNAME:S/-${DISTVERSION}//:tl}
 
-.if !defined(USE_GITHUB)
+MASTER_SITE_LXQT+= \
+	https://github.com/lxqt/%SUBDIR%/releases/download/${PORTVERSION}/ \
+	https://downloads.lxqt.org/downloads/%SUBDIR%/${PORTVERSION}/
+MASTER_SITE_LXQT_SUBDIR=	${_LXQT_PROJECT}
+
 MASTER_SITES?=	${MASTER_SITE_LXQT}
 MASTER_SITE_SUBDIR?=	${MASTER_SITE_LXQT_SUBDIR}
 
 DIST_SUBDIR=	lxqt
-.endif
 
 PLIST_SUB+=	LXQT_INCLUDEDIR="include/lxqt" \
 	LXQT_SHAREDIR="share/lxqt" \
@@ -44,11 +45,15 @@ CMAKE_ARGS+=	-DCMAKE_INSTALL_MANDIR=${MANDIRS} \
 	-DPULL_TRANSLATIONS:BOOL=OFF
 
 # Available LXQt components are:
-_USE_LXQT_ALL=	buildtools libfmqt lxqt qtxdg
+_USE_LXQT_ALL=	buildtools globalkeys libfmqt lxqt qtxdg
 
 _DATAROOTDIR=	${LOCALBASE}/share
 
 buildtools_BUILD_DEPENDS=	${_DATAROOTDIR}/cmake/lxqt-build-tools/lxqt-build-tools-config.cmake:devel/lxqt-build-tools
+
+globalkeys_LIB_DEPENDS=	liblxqt-globalkeys.so:x11/lxqt-globalkeys
+
+globalkeys_USE_LXQT_REQ=	lxqt
 
 libfmqt_LIB_DEPENDS=	libfm-qt.so:x11/libfm-qt
 

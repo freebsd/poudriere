@@ -1,14 +1,22 @@
-# $FreeBSD: head/Mk/Uses/pgsql.mk 423217 2016-10-03 18:15:45Z rene $
+# $FreeBSD: head/Mk/Uses/pgsql.mk 490431 2019-01-15 21:50:54Z crees $
 #
 # Provide support for PostgreSQL (pgsql)
 #
 # Feature:	pgsql
 # Usage:	USES=		pgsql[:version]
 #
-#		Maintainer can set version required.  Minimum and maximum
-#		versions can be specified; e.g. 9.0-, 9.2+
+# version 	Maintainer can set versions required. You can set this to
+#		[min]-[max] or min+ or -max or as an explicit version
+#		(eg. 9.3-9.6 for [min]-[max], 9.5+ or 9.6-
+#		for min+ and max-, 9.4 for an explicit version). Example:
 #
-#		WANT_PGSQL=	server[:fetch] pltcl plperl
+#		    USES=pgsql:9.4		# Only use PostgreSQL 9.4
+#		    USES=pgsql:9.3+		# Use PostgreSQL 9.3 or newer
+#		    USES=pgsql:9.3-9.6	# Use PostgreSQL between 9.3 & 9.6
+#		    USES=pgsql:9.6-		# Use any PostgreSQL up to 9.6
+#		    USES=pgsql		# Use the default PostgreSQL
+#
+#		WANT_PGSQL=	server[:fetch] plperl plpython pltcl
 #
 #		Add PostgreSQL component dependency, using
 #		WANT_PGSQL=	component[:target].
@@ -33,7 +41,7 @@ _INCLUDE_USES_PGSQL_MK=	yes
 
 # When adding a version, please keep the comment in
 # Mk/bsd.default-versions.mk in sync.
-VALID_PGSQL_VER=	9.2 9.3 9.4 9.5 9.6
+VALID_PGSQL_VER=	9.4 9.5 9.6 10 11
 
 # Override non-default LIBVERS like this:
 #PGSQL99_LIBVER=6
@@ -57,13 +65,13 @@ PGSQL_DEFAULT?=	${$w_PGSQL_VER:C,^.,&.,}
 .  endfor
 
 .  ifdef DEFAULT_PGSQL_VER && WITH_PGSQL_VER
-IGNORE=		will not allow setting both DEFAULT_PGSQL_VER and WITH_PGSQL_VER.  Use DEFAULT_VERSIONS=pgsql=9.0 instead
+IGNORE=		will not allow setting both DEFAULT_PGSQL_VER and WITH_PGSQL_VER.  Use DEFAULT_VERSIONS=pgsql=9.6 instead
 .  endif
 
 # Setting/finding PostgreSQL version we want.
 PG_CONFIG?=	${LOCALBASE}/bin/pg_config
 .  if exists(${PG_CONFIG})
-_PGSQL_VER!=	${PG_CONFIG} --version | ${SED} -n 's/PostgreSQL[^0-9]*\([0-9][0-9]*\.[0-9][0-9]*\)[^0-9].*/\1/p'
+_PGSQL_VER!=	${PG_CONFIG} --version | ${SED} -n 's/PostgreSQL[^0-9]*\([0-9]\.*[0-9]\).*/\1/p'
 .  endif
 
 # Handle the + and - version stuff
@@ -78,6 +86,17 @@ _WANT_PGSQL_VER+=${version}
 .      for version in ${VALID_PGSQL_VER}
 .        if ${pgsql_ARGS:S/-//} >= ${version}
 _WANT_PGSQL_VER+=${version}
+.        endif
+.      endfor
+.    elif ${pgsql_ARGS:M*-*}
+_MIN=${pgsql_ARGS:M?*-?*:C,-.*,,}
+_MAX=${pgsql_ARGS:M?*-?*:C,.*-,,}
+.      if ${_MIN} > ${_MAX}
+IGNORE= The minimum version must be higher than the maximum version wanted
+.      endif
+.      for version in ${VALID_PGSQL_VER}
+.        if ${_MIN} <= ${version} && ${_MAX} >= ${version}
+_WANT_PGSQL_VER+=       ${version}
 .        endif
 .      endfor
 .    endif
@@ -132,12 +151,13 @@ IGNORE?=		cannot install: does not work with postgresql${PGSQL_VER_NODOT}-client
 LIB_DEPENDS+=	libpq.so.${PGSQL${PGSQL_VER_NODOT}_LIBVER}:databases/postgresql${PGSQL_VER_NODOT}-client
 .endif
 
-_USE_PGSQL_DEP=		client contrib docs pgtcl pltcl plperl server
+_USE_PGSQL_DEP=		client contrib docs pgtcl plperl plpython pltcl server
 _USE_PGSQL_DEP_client=	psql
 _USE_PGSQL_DEP_contrib=	vacuumlo
 _USE_PGSQL_DEP_docs=	postgresql${PGSQL_VER_NODOT}-docs>0
 _USE_PGSQL_DEP_pgtcl=	${LOCALBASE}/lib/pgtcl/pkgIndex.tcl
 _USE_PGSQL_DEP_plperl=	postgresql${PGSQL_VER_NODOT}-plperl>0
+_USE_PGSQL_DEP_plpython=postgresql${PGSQL_VER_NODOT}-plpython>0
 _USE_PGSQL_DEP_pltcl=	postgresql${PGSQL_VER_NODOT}-pltcl>0
 _USE_PGSQL_DEP_server=	postgres
 .    if defined(WANT_PGSQL)
