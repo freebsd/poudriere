@@ -7489,7 +7489,7 @@ ingest_base_pkgs()
 		mkdir -p "${PACKAGES}/All/" || err 1 "Failed creating packages All/ directory"
 	fi
 
-	for pkgfile in ${MASTERMNT}/.packages/*.txz; do
+	for pkgfile in ${MASTERMNT}/.packages/*; do
 		# Check empty dir
 		case "${pkgfile}" in
 			"*") break ;;
