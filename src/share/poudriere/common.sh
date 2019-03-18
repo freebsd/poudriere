@@ -2582,6 +2582,7 @@ jail_start() {
 	fi
 
 	if schg_immutable_base && [ "${tomnt}" = "${MASTERMNT}" ]; then
+		msg "Setting schg on jail base paths"
 		# The first few directories are allowed for ports to write to.
 		find -x "${tomnt}" \
 		    -mindepth 1 \
