@@ -2875,6 +2875,8 @@ sanity_check_pkg() {
 
 	pkgname="${pkg##*/}"
 	pkgname="${pkgname%.*}"
+	# IGNORED and skipped packages are still deleted here so we don't
+	# provide an inconsistent repository.
 	pkgbase_is_needed "${pkgname}" || return 0
 	pkg_get_dep_origin_pkgnames '' compiled_deps_pkgnames "${pkg}"
 	for dep_pkgname in ${compiled_deps_pkgnames}; do
@@ -4929,7 +4931,7 @@ delete_old_pkg() {
 	pkg_dep_args=
 	originspec=
 	pkg_get_origin origin "${pkg}"
-	if ! pkgbase_is_needed "${pkgname}"; then
+	if ! pkgbase_is_needed_and_not_ignored "${pkgname}"; then
 		# We don't expect this PKGBASE but it may still be an
 		# origin that is expected and just renamed.  Need to
 		# get the origin and flavor out of the package to
@@ -4941,7 +4943,7 @@ delete_old_pkg() {
 		fi
 		originspec_encode originspec "${origin}" "${pkg_dep_args}" \
 		    "${pkg_flavor}"
-		if ! originspec_is_needed "${originspec}"; then
+		if ! originspec_is_needed_and_not_ignored "${originspec}"; then
 			msg_debug "delete_old_pkg: Skip unqueued ${pkg} ${originspec}"
 			return 0
 		fi
@@ -6754,6 +6756,32 @@ pkgbase_is_needed() {
 	    }' "all_pkgbases"
 }
 
+pkgbase_is_needed_and_not_ignored() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "pkgbase_is_needed_and_not_ignored requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 1 ] || eargs pkgbase_is_needed_and_not_ignored pkgname
+	local pkgname="$1"
+	local pkgbase
+
+	# We check on PKGBASE rather than PKGNAME from pkg_deps
+	# since the caller may be passing in a different version
+	# compared to what is in the queue to build for.
+	pkgbase="${pkgname%-*}"
+
+	awk -vpkgbase="${pkgbase}" '
+	    {sub(/-[^-]*$/, "", $1)}
+	    $1 == pkgbase {
+               if (NF < 4)
+                   found=1
+		exit 0
+	    }
+	    END {
+		if (found != 1)
+			exit 1
+	    }' "all_pkgs"
+}
+
+
 ignored_packages() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "ignored_packages requires PWD=${MASTERMNT}/.p"
@@ -6763,17 +6791,16 @@ ignored_packages() {
 }
 
 # Port was requested to be built, or is needed by a port requested to be built
-originspec_is_needed() {
+originspec_is_needed_and_not_ignored() {
        [ "${PWD}" = "${MASTERMNT}/.p" ] || \
-           err 1 "originspec_is_needed requires PWD=${MASTERMNT}/.p"
-       [ $# -eq 1 ] || eargs originspec_is_needed originspec
+           err 1 "originspec_is_needed_and_not_ignored requires PWD=${MASTERMNT}/.p"
+       [ $# -eq 1 ] || eargs originspec_is_needed_and_not_ignored originspec
        local originspec="$1"
-
-       [ ${ALL} -eq 1 ] && return 0
 
        awk -voriginspec="${originspec}" '
            $2 == originspec {
-               found=1
+               if (NF < 4)
+                   found=1
                exit 0
            }
            END {
