@@ -7204,6 +7204,7 @@ prepare_ports() {
 			:> ${log}/.poudriere.ports.failed
 			:> ${log}/.poudriere.ports.ignored
 			:> ${log}/.poudriere.ports.skipped
+			trim_ignored
 		fi
 	fi
 
@@ -7244,10 +7245,6 @@ prepare_ports() {
 	else
 		[ ${SKIPSANITY} -eq 1 ] && sflag="(-s) "
 		msg "${sflag}Skipping incremental rebuild and repository sanity checks"
-	fi
-
-	if was_a_bulk_run && [ "${resuming_build}" -eq 0 ]; then
-		trim_ignored
 	fi
 
 	if was_a_bulk_run; then
