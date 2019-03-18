@@ -6759,7 +6759,7 @@ ignored_packages() {
 	    err 1 "ignored_packages requires PWD=${MASTERMNT}/.p"
 	[ $# -eq 0 ] || eargs ignored_packages
 
-	awk '$4 != ""' "all_pkgs"
+	awk 'NF >= 4' "all_pkgs"
 }
 
 # Port was requested to be built, or is needed by a port requested to be built
