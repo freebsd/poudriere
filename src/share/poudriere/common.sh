@@ -6958,32 +6958,44 @@ trim_ignored() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "trim_ignored requires PWD=${MASTERMNT}/.p"
 	[ $# -eq 0 ] || eargs trim_ignored
-	local pkgname originspec origin flavor _rdep ignore logfile
+	local pkgname originspec _rdep ignore
 
 	bset status "trimming_ignore:"
 	msg "Trimming IGNORED and blacklisted ports"
 
 	ignored_packages | while mapfile_read_loop_redir pkgname originspec \
 	    _rdep ignore; do
-		originspec_decode "${originspec}" origin '' flavor
-		COLOR_ARROW="${COLOR_IGNORE}" \
-		    msg "${COLOR_IGNORE}Ignoring ${COLOR_PORT}${origin}${flavor:+@${flavor}} | ${pkgname}${COLOR_IGNORE}: ${ignore}"
-		if [ "${DRY_RUN}" -eq 0 ]; then
-			_logfile logfile "${pkgname}"
-			{
-				buildlog_start "${pkgname}" "${originspec}"
-				print_phase_header "check-sanity"
-				echo "Ignoring: ${ignore}"
-				print_phase_footer
-				buildlog_stop "${pkgname}" "${originspec}" 0
-			} > "${logfile}"
-		fi
-		badd ports.ignored "${originspec} ${pkgname} ${ignore}"
-		run_hook pkgbuild ignored "${origin}" "${pkgname}" "${ignore}"
-		clean_pool "${pkgname}" "${originspec}" "ignored"
+		trim_ignored_pkg "${pkgname}" "${originspec}" "${ignore}"
 	done
 	# Update ignored/skipped stats
 	update_stats
+}
+
+trim_ignored_pkg() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "trim_ignored_pkg requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 3 ] || eargs trim_ignored_pkg pkgname originspec ignore
+	local pkgname="$1"
+	local originspec="$2"
+	local ignore="$3"
+	local origin flavor logfile
+
+	originspec_decode "${originspec}" origin '' flavor
+	COLOR_ARROW="${COLOR_IGNORE}" \
+	    msg "${COLOR_IGNORE}Ignoring ${COLOR_PORT}${origin}${flavor:+@${flavor}} | ${pkgname}${COLOR_IGNORE}: ${ignore}"
+	if [ "${DRY_RUN}" -eq 0 ]; then
+		_logfile logfile "${pkgname}"
+		{
+			buildlog_start "${pkgname}" "${originspec}"
+			print_phase_header "check-sanity"
+			echo "Ignoring: ${ignore}"
+			print_phase_footer
+			buildlog_stop "${pkgname}" "${originspec}" 0
+		} > "${logfile}"
+	fi
+	badd ports.ignored "${originspec} ${pkgname} ${ignore}"
+	run_hook pkgbuild ignored "${origin}" "${pkgname}" "${ignore}"
+	clean_pool "${pkgname}" "${originspec}" "ignored"
 }
 
 clean_build_queue() {
