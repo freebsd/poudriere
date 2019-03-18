@@ -1163,21 +1163,24 @@ show_dry_run_summary() {
 		    PARALLEL_JOBS=${tobuild##* }
 		msg "Would build ${tobuild} packages using ${PARALLEL_JOBS} builders"
 
-		msg_n "Ports to build: "
-		{
-			if was_a_testport_run; then
-				echo "${ORIGINSPEC}"
-			fi
-			cat "${log}/.poudriere.ports.queued"
-		} | \
-		    while mapfile_read_loop_redir \
-		        originspec pkgname _ignored; do
-			    # Trim away DEPENDS_ARGS for display
-			    originspec_decode "${originspec}" origin '' flavor
-			    originspec_encode originspec "${origin}" '' "${flavor}"
-			    echo "${originspec}"
-		    done | sort | tr '\n' ' '
-		echo
+		if [ "${ALL}" -eq 0 ] || [ "${VERBOSE}" -ge 1 ]; then
+			msg_n "Ports to build: "
+			{
+				if was_a_testport_run; then
+					echo "${ORIGINSPEC}"
+				fi
+				cat "${log}/.poudriere.ports.queued"
+			} | while mapfile_read_loop_redir originspec pkgname \
+			    _ignored; do
+				# Trim away DEPENDS_ARGS for display
+				originspec_decode "${originspec}" origin '' \
+				    flavor
+				originspec_encode originspec "${origin}" '' \
+				    "${flavor}"
+				echo "${originspec}"
+			done | sort | tr '\n' ' '
+			echo
+		fi
 	else
 		msg "No packages would be built"
 	fi
