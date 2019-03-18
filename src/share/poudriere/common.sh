@@ -1666,18 +1666,18 @@ enter_interactive() {
 		get_originspec_from_pkgname originspec "${pkgname}"
 		originspec_decode "${originspec}" port dep_args flavor
 		# Install run-depends since this is an interactive test
-		msg "Installing run-depends for ${COLOR_PORT}${port} | ${pkgname}"
+		msg "Installing run-depends for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
 		    /usr/bin/make -C ${PORTSDIR}/${port} ${dep_args} \
 		    ${flavor:+FLAVOR=${flavor}} run-depends ||
-		    msg_warn "Failed to install ${COLOR_PORT}${port} | ${pkgname}${COLOR_RESET} run-depends"
-		msg "Installing ${COLOR_PORT}${port} | ${pkgname}"
+		    msg_warn "Failed to install ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET} run-depends"
+		msg "Installing ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
 		# Only use PKGENV during install as testport will store
 		# the package in a different place than dependencies
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 ${PKGENV} \
 		    /usr/bin/make -C ${PORTSDIR}/${port} ${dep_args} \
 		    ${flavor:+FLAVOR=${flavor}} install-package ||
-		    msg_warn "Failed to install ${COLOR_PORT}${port} | ${pkgname}"
+		    msg_warn "Failed to install ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
 	done
 
 	# Create a pkg repo configuration, and disable FreeBSD
@@ -6015,12 +6015,12 @@ deps_sanity() {
 		originspec_decode "${dep_originspec}" dep_origin '' dep_flavor
 		msg_verbose "${COLOR_PORT}${originspec}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
 		if [ "${origin}" = "${dep_origin}" ]; then
-			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
+			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
 			ret=1
 		fi
 		# Detect bad cat/origin/ dependency which pkg will not register properly
 		if ! [ "${dep_origin}" = "${dep_origin%/}" ]; then
-			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} depends on bad origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
+			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} depends on bad origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
 			ret=1
 		fi
 		if ! [ -d "../${PORTSDIR}/${dep_origin}" ]; then
@@ -6035,12 +6035,12 @@ deps_sanity() {
 			else
 				moved_reason="moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
 			fi
-			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} depends on nonexistent origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'${moved_reason:+ (${moved_reason})}; Please contact maintainer of the port to fix this."
+			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} depends on nonexistent origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'${moved_reason:+ (${moved_reason})}; Please contact maintainer of the port to fix this."
 			ret=1
 		fi
 		if have_ports_feature FLAVORS && [ -z "${dep_flavor}" ] && \
 		    [ "${dep_originspec}" != "${dep_origin}" ]; then
-			msg_error "${COLOR_PORT}${origin}${COLOR_RESET} has dependency on ${COLOR_PORT}${dep_origin}${COLOR_RESET} with invalid empty FLAVOR; Please contact maintainer of the port to fix this."
+			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} has dependency on ${COLOR_PORT}${dep_origin}${COLOR_RESET} with invalid empty FLAVOR; Please contact maintainer of the port to fix this."
 			ret=1
 		fi
 	done
@@ -7236,7 +7236,7 @@ prepare_ports() {
 }
 
 load_priorities_ptsort() {
-	local priority pkgname originspec pkg_boost origin _ignored
+	local priority pkgname originspec pkg_boost origin flavor _ignored
 	local - # Keep set -f local
 
 	set -f # for PRIORITY_BOOST
@@ -7248,16 +7248,16 @@ load_priorities_ptsort() {
 		# Does this pkg have an override?
 		for pkg_boost in ${PRIORITY_BOOST}; do
 			case ${pkgname%-*} in
-				${pkg_boost})
-					pkgqueue_contains "${pkgname}" || \
-					    continue
-					originspec_decode "${originspec}" \
-					    origin '' ''
-					msg "Boosting priority: ${COLOR_PORT}${origin} | ${pkgname}"
-					echo "${pkgname} ${PRIORITY_BOOST_VALUE}" >> \
-					    "pkg_deps.ptsort"
-					break
-					;;
+			${pkg_boost})
+				pkgqueue_contains "${pkgname}" || \
+				    continue
+				originspec_decode "${originspec}" \
+				    origin '' ''
+				msg "Boosting priority: ${COLOR_PORT}${origin}${flavor:+@${flavor}} | ${pkgname}"
+				echo "${pkgname} ${PRIORITY_BOOST_VALUE}" >> \
+				    "pkg_deps.ptsort"
+				break
+				;;
 			esac
 		done
 	done
