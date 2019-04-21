@@ -533,6 +533,11 @@ install_from_ports() {
 		mkdir -p ${PACKAGES}
 	fi
 
+	# Set make variables for this jail
+	if [ -e "${POUDRIERED}/${JAILNAME}-make.conf" ] ; then
+		export __MAKE_CONF="${POUDRIERED}/${JAILNAME}-make.conf"
+	fi
+
 	# Create package for the system sources from the os/src port
 	msg "Building src: ${LOGDIR}/${JAILNAME}-buildsrc.log"
 	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes package >${LOGDIR}/${JAILNAME}-buildsrc.log 2>&1 || err 1 "Failed building src"
@@ -550,10 +555,6 @@ install_from_ports() {
 	msg "Cleaning port files"
 	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes clean 2>/dev/null >/dev/null || err 1 "Failed make clean"
 	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes distclean 2>/dev/null >/dev/null || err 1 "Failed make distclean"
-
-	if [ -e "${POUDRIERED}/${JAILNAME}-make.conf" ] ; then
-		export __MAKE_CONF="${POUDRIERED}/${JAILNAME}-make.conf"
-	fi
 
 	for tgt in world kernel
 	do
