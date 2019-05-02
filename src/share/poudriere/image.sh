@@ -90,9 +90,9 @@ mkminiroot() {
 	dirs="etc dev boot bin usr/bin libexec lib usr/lib sbin"
 	files="sbin/init etc/pwd.db etc/spwd.db"
 	files="${files} bin/sh sbin/halt sbin/fasthalt sbin/fastboot sbin/reboot"
-	files="${files} usr/bin/bsdtar libexec/ld-elf.so.1 sbin/newfs"
+	files="${files} usr/bin/bsdtar libexec/ld-elf.so.1 sbin/newfs bin/sleep"
 	files="${files} sbin/mdconfig usr/bin/fetch sbin/ifconfig sbin/route sbin/mount"
-	files="${files} sbin/umount bin/mkdir bin/kenv usr/bin/sed"
+	files="${files} sbin/umount bin/mkdir bin/kenv usr/bin/sed sbin/ping bin/ls"
 
 	for d in ${dirs}; do
 		mkdir -p ${mroot}/${d}
