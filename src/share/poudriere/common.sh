@@ -2260,7 +2260,7 @@ setup_xdev() {
 			usr/bin/touch usr/bin/sed usr/bin/patch \
 			usr/bin/install usr/bin/gunzip \
 			usr/bin/readelf usr/bin/sort \
-			usr/bin/tar usr/bin/xargs usr/sbin/chown bin/cp \
+			usr/bin/tar usr/bin/wc usr/bin/xargs usr/sbin/chown bin/cp \
 			bin/cat bin/chmod bin/echo bin/expr \
 			bin/hostname bin/ln bin/ls bin/mkdir bin/mv \
 			bin/realpath bin/rm bin/rmdir bin/sleep \
