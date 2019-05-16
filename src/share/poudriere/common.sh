@@ -4435,7 +4435,7 @@ deps_fetch_vars() {
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
 	    '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
 	    _pkg_deps; then
-		msg_error "Error fetching dependencies for ${COLOR_PORT}${originspec}${COLOR_RESET}"
+		msg_error "Error looking up dependencies for ${COLOR_PORT}${originspec}${COLOR_RESET}"
 		return 1
 	fi
 
