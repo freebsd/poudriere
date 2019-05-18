@@ -7354,7 +7354,7 @@ read_packages_from_params()
 		    err 1 "No packages specified"
 		if [ ${ALL} -eq 0 ]; then
 			for listpkg_name in ${LISTPKGS}; do
-				[ -f "${listpkg_name}" ] ||
+				[ -r "${listpkg_name}" ] ||
 				    err 1 "No such list of packages: ${listpkg_name}"
 			done
 		fi

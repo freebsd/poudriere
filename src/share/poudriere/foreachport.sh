@@ -106,8 +106,8 @@ shift 1
 if [ "${CMD#/}" = "${CMD}" ]; then
 	CMD="${SAVED_PWD}/${CMD}"
 fi
-if ! [ -f "${CMD}" ]; then
-	msg_error "${CMD} must be a file to run per port."
+if ! [ -r "${CMD}" ]; then
+	msg_error "${CMD} must be a readable file to run per port."
 	usage
 fi
 

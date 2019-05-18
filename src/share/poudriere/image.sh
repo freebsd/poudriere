@@ -123,7 +123,7 @@ while getopts "c:f:h:j:m:n:o:p:s:t:X:z:" FLAG; do
 			# a cd / was done.
 			[ "${OPTARG#/}" = "${OPTARG}" ] && \
 			    OPTARG="${SAVED_PWD}/${OPTARG}"
-			[ -f "${OPTARG}" ] || err 1 "No such package list: ${OPTARG}"
+			[ -r "${OPTARG}" ] || err 1 "No such package list: ${OPTARG}"
 			PACKAGELIST=${OPTARG}
 			;;
 		h)
@@ -162,7 +162,7 @@ while getopts "c:f:h:j:m:n:o:p:s:t:X:z:" FLAG; do
 			esac
 			;;
 		X)
-			[ -f "${OPTARG}" ] || err 1 "No such exclude list ${OPTARG}"
+			[ -r "${OPTARG}" ] || err 1 "No such exclude list ${OPTARG}"
 			EXCLUDELIST=$(realpath ${OPTARG})
 			;;
 		z)
