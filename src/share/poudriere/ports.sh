@@ -205,6 +205,7 @@ if [ ${LIST} -eq 1 ]; then
 		display_add "PORTSTREE"
 	fi
 	while read ptname ptmethod ptpath; do
+		[ -z "${ptname}" ] && break
 		if [ ${NAMEONLY} -eq 0 ]; then
 			_pget timestamp ${ptname} timestamp || :
 			time=
