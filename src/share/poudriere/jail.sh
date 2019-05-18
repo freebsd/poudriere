@@ -1078,7 +1078,7 @@ while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 			PTNAME=${OPTARG}
 			;;
 		P)
-			[ -f ${OPTARG} ] || err 1 "No such patch"
+			[ -r ${OPTARG} ] || err 1 "No such patch"
 			# If this is a relative path, add in ${PWD} as
 			# a cd / was done.
 			[ "${OPTARG#/}" = "${OPTARG}" ] && \
