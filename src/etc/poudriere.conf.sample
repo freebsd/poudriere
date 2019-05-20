@@ -149,6 +149,12 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #RESTRICT_NETWORKING=yes
 #ALLOW_NETWORKING_PACKAGES="npm-foo"
 
+# Networking can be fully disabled by setting DISALLOW_NETWORKING to "yes"
+# this will prevent networking access even in the 'make fetch' phase
+# and will block access even for packages listed in ALLOW_NETWORKING_PACKAGES.
+# Default: no
+#DISALLOW_NETWORKING=yes
+
 # parallel build support.
 #
 # By default poudriere uses hw.ncpu to determine the number of builders.

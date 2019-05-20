@@ -536,6 +536,10 @@ do_confirm_delete() {
 }
 
 injail() {
+	if [ "${DISALLOW_NETWORKING}" = "yes" ]; then
+	    local JNETNAME=
+	fi
+
 	if [ ${INJAIL_HOST:-0} -eq 1 ]; then
 		# For test/
 		"$@"
@@ -553,6 +557,10 @@ injail() {
 
 injail_tty() {
 	local name
+
+	if [ "${DISALLOW_NETWORKING}" = "yes" ]; then
+	    local JNETNAME=
+	fi
 
 	_my_name name
 	[ -n "${name}" ] || err 1 "No jail setup"
@@ -7779,6 +7787,7 @@ fi
 : ${PORTTESTING_RECURSIVE:=0}
 : ${PRIORITY_BOOST_VALUE:=99}
 : ${RESTRICT_NETWORKING:=yes}
+: ${DISALLOW_NETWORKING:=no}
 : ${TRIM_ORPHANED_BUILD_DEPS:=yes}
 : ${USE_JEXECD:=no}
 : ${USE_PROCFS:=yes}
