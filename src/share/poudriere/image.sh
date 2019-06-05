@@ -393,10 +393,12 @@ if [ -n "${PACKAGELIST}" ]; then
 		FreeBSD: { enabled: false }
 		local: { url: file:///tmp/packages }
 		EOF
+		mount -t devfs devfs ${WRKDIR}/world/dev
 		convert_package_list "${PACKAGELIST}" | \
 		    xargs chroot "${WRKDIR}/world" env \
 		    REPOS_DIR=/tmp ASSUME_ALWAYS_YES=yes \
 		    pkg install
+		umount ${WRKDIR}/world/dev
 	else
 		cat > "${WRKDIR}/world/tmp/repo.conf" <<-EOF
 		FreeBSD: { enabled: false }
