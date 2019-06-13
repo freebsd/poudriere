@@ -85,12 +85,14 @@ list_jail() {
 	local format
 	local j name version arch method mnt timestamp time
 
-	format='%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%s'
-	display_setup "${format}" 6 "-d -k2,2 -k3,3 -k1,1"
 	if [ ${NAMEONLY} -eq 0 ]; then
+		format='%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%s'
+		display_setup "${format}" 6 "-d -k2,2 -k3,3 -k1,1"
 		display_add "JAILNAME" "VERSION" "ARCH" "METHOD" \
 		    "TIMESTAMP" "PATH"
 	else
+		format='%s'
+		display_setup "${format}" 1 "-d"
 		display_add JAILNAME
 	fi
 	[ -d ${POUDRIERED}/jails ] || return 0
@@ -124,13 +126,14 @@ delete_jail() {
 	local cache_dir method
 	local clean_dir depth
 
-	test -z ${JAILNAME} && usage JAILNAME
+	[ -z "${JAILNAME}" ] && usage JAILNAME
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 	jail_runs ${JAILNAME} &&
 		err 1 "Unable to delete jail ${JAILNAME}: it is running"
 	msg_n "Removing ${JAILNAME} jail..."
 	method=$(jget ${JAILNAME} method)
 	if [ "${method}" = "null" ]; then
+		# Legacy jail cleanup. New jails don't create this file.
 		if [ -f "${JAILMNT}/etc/login.conf.orig" ]; then
 			mv -f ${JAILMNT}/etc/login.conf.orig \
 			    ${JAILMNT}/etc/login.conf
@@ -176,26 +179,6 @@ update_version() {
 	    RELEASE="${RELEASE} ${version_extra}"
 	jset ${JAILNAME} version "${RELEASE}"
 	echo "${RELEASE}"
-}
-
-# Set specified version into login.conf
-update_version_env() {
-	local release="$1"
-	local login_env osversion
-
-	osversion=`awk '/\#define __FreeBSD_version/ { print $3 }' ${JAILMNT}/usr/include/sys/param.h`
-	login_env=",UNAME_r=${release% *},UNAME_v=FreeBSD ${release},OSVERSION=${osversion}"
-
-	# Tell pkg(8) to not use /bin/sh for the ELF ABI since it is native.
-	[ ${QEMU_EMULATING} -eq 1 ] && \
-	    login_env="${login_env},ABI_FILE=\/usr\/lib\/crt1.o"
-
-	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
-	need_cross_build "${REALARCH}" "${ARCH}" && \
-	    login_env="${login_env},UNAME_m=${ARCH%.*},UNAME_p=${ARCH#*.}"
-
-	sed -i "" -e "s/,UNAME_r.*:/:/ ; s/:\(setenv.*\):/:\1${login_env}:/" ${JAILMNT}/etc/login.conf
-	cap_mkdb ${JAILMNT}/etc/login.conf
 }
 
 rename_jail() {
@@ -248,10 +231,10 @@ update_jail() {
 		fi
 		MASTERMNT=${JAILMNT}
 		MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
+		# XXX: Stop doing this (RESOLV_CONF) when freebsd-update -b works
 		[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
 		MUTABLE_BASE=yes NOLINUX=yes \
-		    do_jail_mounts "${JAILMNT}" "${JAILMNT}" "${ARCH}" \
-		    "${JAILNAME}"
+		    do_jail_mounts "${JAILMNT}" "${JAILMNT}" "${JAILNAME}"
 		JNETNAME="n"
 		jstart
 		[ -n "${CLEANUP_HOOK}" ] && OLD_CLEANUP_HOOK="${CLEANUP_HOOK}"
@@ -267,6 +250,14 @@ update_jail() {
 		    ${JAILMNT}/usr/sbin/freebsd-update > \
 		    ${JAILMNT}/usr/sbin/freebsd-update.fixed
 		chmod +x ${JAILMNT}/usr/sbin/freebsd-update.fixed
+		# XXX: Stop doing this when freebsd-update -b works
+		OSVERSION=$(awk '/\#define __FreeBSD_version/ { print $3 }' "${JAILMNT}/usr/include/sys/param.h")
+		cp "${JAILMNT}/etc/login.conf" "${JAILMNT}/etc/login.conf.orig"
+		_jget version ${JAILNAME} version || \
+		    err 1 "Missing version metadata for jail"
+		update_version_env "${JAILMNT}" \
+		    "${REALARCH}" "${ARCH}" "${version}" \
+		    "${OSVERSION}"
 		if [ -z "${TORELEASE}" ]; then
 			# We're running inside the jail so basedir is /.
 			# If we start using -b this needs to match it.
@@ -288,13 +279,17 @@ update_jail() {
 			    /usr/sbin/freebsd-update.fixed -r ${TORELEASE} \
 			    upgrade install || err 1 "Fail to upgrade system"
 			# Reboot
-			update_version_env ${TORELEASE}
+			update_version_env "${JAILMNT}" \
+			    "${REALARCH}" "${ARCH}" "${TORELEASE}" \
+			    "${OSVERSION}"
 			# Install new world
 			yes | injail env PAGER=/bin/cat \
 			    /usr/sbin/freebsd-update.fixed install || \
 			    err 1 "Fail to upgrade system"
 			# Reboot
-			update_version_env ${TORELEASE}
+			update_version_env "${JAILMNT}" \
+			    "${REALARCH}" "${ARCH}" "${TORELEASE}" \
+			    "${OSVERSION}"
 			# Remove stale files
 			yes | injail env PAGER=/bin/cat \
 			    /usr/sbin/freebsd-update.fixed install || :
@@ -320,15 +315,16 @@ update_jail() {
 			unset CLEANUP_HOOK
 		fi
 		update_version
+		# XXX: Stop doing this when freebsd-update -b works
 		[ -n "${RESOLV_CONF}" ] && rm -f ${JAILMNT}/etc/resolv.conf
-		update_version_env $(jget ${JAILNAME} version)
+		mv -f "${JAILMNT}/etc/login.conf.orig" \
+		    "${JAILMNT}/etc/login.conf"
 		build_native_xtools
 		markfs clean ${JAILMNT}
 		;;
 	svn*|git*)
 		install_from_vcs version_extra
 		RELEASE=$(update_version "${version_extra}")
-		update_version_env "${RELEASE}"
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
@@ -347,7 +343,6 @@ update_jail() {
 		SRC_BASE="${METHOD#src=}"
 		install_from_src version_extra
 		RELEASE=$(update_version "${version_extra}")
-		update_version_env "${RELEASE}"
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
@@ -943,7 +938,8 @@ create_jail() {
 		RELEASE="${ALLBSDVER}-JPSNAP/ftp"
 		;;
 	svn*)
-		test -x "${SVN_CMD}" || err 1 "svn or svnlite not installed. Perhaps you need to 'pkg install subversion'"
+		[ -x "${SVN_CMD}" ] || \
+		    err 1 "svn or svnlite not installed. Perhaps you need to 'pkg install subversion'"
 		case ${VERSION} in
 			stable/*![0-9]*)
 				err 1 "bad version number for stable version"
@@ -986,7 +982,7 @@ create_jail() {
 		;;
 	src=*)
 		SRC_BASE="${METHOD#src=}"
-		test -d ${SRC_BASE} || err 1 "No such source directory"
+		[ -d "${SRC_BASE}" ] || err 1 "No such source directory"
 		FCT=install_from_src
 		;;
 	tar=*)
@@ -1005,6 +1001,13 @@ create_jail() {
 		err 2 "Unknown method to create the jail"
 		;;
 	esac
+
+	# Some methods determine VERSION from newvers.sh if possible
+	# but need to have -v specified otherwise.
+	if [ -z "${VERSION}" ] && \
+	    [ ! -r "${SRC_BASE}/sys/conf/newvers.sh" ]; then
+		usage VERSION
+	fi
 
 	if [ "${JAILFS}" != "none" ]; then
 		[ -d "${JAILMNT}" ] && \
@@ -1040,11 +1043,6 @@ create_jail() {
 	[ "${METHOD}" = "null" ] && \
 	    [ ! -f "${JAILMNT}/etc/login.conf" ] && \
 	    err 1 "Directory ${JAILMNT} must be populated from installworld already."
-
-	cp -f "${JAILMNT}/etc/login.conf" "${JAILMNT}/etc/login.conf.orig"
-	update_version_env "${RELEASE}"
-
-	pwd_mkdb -d ${JAILMNT}/etc/ -p ${JAILMNT}/etc/master.passwd
 
 	markfs clean ${JAILMNT}
 
@@ -1218,7 +1216,7 @@ while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 			PTNAME=${OPTARG}
 			;;
 		P)
-			[ -f ${OPTARG} ] || err 1 "No such patch"
+			[ -r ${OPTARG} ] || err 1 "No such patch"
 			# If this is a relative path, add in ${PWD} as
 			# a cd / was done.
 			[ "${OPTARG#/}" = "${OPTARG}" ] && \
@@ -1321,10 +1319,10 @@ fi
 
 case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	10000000)
-		test -z ${JAILNAME} && usage JAILNAME
+		[ -z "${JAILNAME}" ] && usage JAILNAME
 		case ${METHOD} in
 			src=*|null|tar) ;;
-			*) test -z ${VERSION} && usage VERSION ;;
+			*) [ -z "${VERSION}" ] && usage VERSION ;;
 		esac
 		jail_exists ${JAILNAME} && \
 		    err 2 "The jail ${JAILNAME} already exists"
@@ -1333,7 +1331,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		create_jail
 		;;
 	01000000)
-		test -z ${JAILNAME} && usage JAILNAME
+		[ -z "${JAILNAME}" ] && usage JAILNAME
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		_mastermnt MASTERMNT
 		export MASTERMNT
@@ -1343,7 +1341,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		list_jail
 		;;
 	00010000)
-		test -z ${JAILNAME} && usage JAILNAME
+		[ -z "${JAILNAME}" ] && usage JAILNAME
 		maybe_run_queued "${saved_argv}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		_mastermnt MASTERMNT
@@ -1354,7 +1352,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		;;
 	00001000)
 		export SET_STATUS_ON_START=0
-		test -z ${JAILNAME} && usage JAILNAME
+		[ -z "${JAILNAME}" ] && usage JAILNAME
 		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 		maybe_run_queued "${saved_argv}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
@@ -1364,14 +1362,14 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		JNETNAME="n"
 		;;
 	00000100)
-		test -z ${JAILNAME} && usage JAILNAME
+		[ -z "${JAILNAME}" ] && usage JAILNAME
 		confirm_if_tty "Are you sure you want to delete the jail?" || \
 		    err 1 "Not deleting jail"
 		maybe_run_queued "${saved_argv}"
 		delete_jail
 		;;
 	00000010)
-		test -z ${JAILNAME} && usage JAILNAME
+		[ -z "${JAILNAME}" ] && usage JAILNAME
 		jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 		maybe_run_queued "${saved_argv}"
 		jail_runs ${JAILNAME} && \
@@ -1380,7 +1378,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		update_jail
 		;;
 	00000001)
-		test -z ${JAILNAME} && usage JAILNAME
+		[ -z "${JAILNAME}" ] && usage JAILNAME
 		maybe_run_queued "${saved_argv}"
 		rename_jail
 		;;

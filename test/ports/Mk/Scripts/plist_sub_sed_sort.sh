@@ -1,11 +1,11 @@
 #! /bin/sh
-# $FreeBSD: head/Mk/Scripts/plist_sub_sed_sort.sh 351658 2014-04-20 23:47:25Z antoine $
+# $FreeBSD: head/Mk/Scripts/plist_sub_sed_sort.sh 475361 2018-07-26 11:09:46Z mat $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 #
 # PLIST_SUB_SED helper to sort by longest value first.
 
-exec awk '{
+awk '{
 	while (match($0, /s![^!]*![^!]*!g;/)) {
 		sedp=substr($0, RSTART, RLENGTH)
 		$0=substr($0, RSTART+RLENGTH)
@@ -14,4 +14,4 @@ exec awk '{
 		gsub(/\\./, ".", a[2])
 		print length(a[2]), sedp
 	}
-}' | sort -rn | awk '{$1=""; print $0}' | paste -s -d ' ' -
+}' | sort -rn | awk '{$1=""; print $0}' > $1

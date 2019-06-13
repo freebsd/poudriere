@@ -1,5 +1,5 @@
 # Created by: Rusmir Dusko <nemysis@FreeBSD.org>
-# $FreeBSD: head/Mk/Uses/pure.mk 411970 2016-03-27 01:23:25Z bapt $
+# $FreeBSD: head/Mk/Uses/pure.mk 478865 2018-09-03 12:42:20Z rene $
 #
 # Provide support for Pure Programming Language based projects
 #
@@ -9,7 +9,7 @@
 # ARGS description:
 # ffi			makes the port depends on pure-ffi at runtime
 #
-# MAINTAINER= nemysis@FreeBSD.org
+# MAINTAINER= ports@FreeBSD.org
 
 .if !defined(_INCLUDE_USES_PURE_MK)
 _INCLUDE_USES_PURE_MK=	yes

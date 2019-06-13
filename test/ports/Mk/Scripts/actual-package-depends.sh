@@ -1,6 +1,6 @@
 #!/bin/sh
 # MAINTAINER: portmgr@FeeeBSD.org
-# $FreeBSD: head/Mk/Scripts/actual-package-depends.sh 415573 2016-05-20 19:01:59Z mat $
+# $FreeBSD: head/Mk/Scripts/actual-package-depends.sh 471274 2018-06-01 16:20:54Z mat $
 
 [ -n "${DEBUG_MK_SCRIPTS}" -o -n "${DEBUG_MK_SCRIPTS_ACTUAL_PACKAGE_DEPENDS}" ] && set -x
 
@@ -17,7 +17,7 @@ resolv_symlink() {
 		return
 	fi
 
-	tgt=`readlink ${file}`
+	tgt=$(readlink ${file})
 	case $tgt in
 	/*)
 		echo $tgt

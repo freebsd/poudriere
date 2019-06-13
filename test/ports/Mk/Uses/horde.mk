@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/horde.mk 411970 2016-03-27 01:23:25Z bapt $
+# $FreeBSD: head/Mk/Uses/horde.mk 488016 2018-12-21 16:26:58Z joneum $
 #
 # Feature:	horde
 # Usage:	USES=horde
@@ -9,15 +9,9 @@
 .if !defined(_INCLUDE_USES_HORDE_MK)
 _INCLUDE_USES_HORDE_MK=	yes
 
-MASTER_SITES?=	http://pear.horde.org/get/
+MASTER_SITES?=	https://pear.horde.org/get/
 
-BUILD_DEPENDS+=	${PEARDIR}/.channels/pear.horde.org.reg:devel/pear-channel-horde
-RUN_DEPENDS+=	${PEARDIR}/.channels/pear.horde.org.reg:devel/pear-channel-horde
-
-PKGNAMEPREFIX?=	pear-
 HORDE_DIR?=	www/horde
-
-CONFLICTS+=	horde3-*.[0-9]*
 
 CPE_VENDOR?=	horde
 
@@ -142,7 +136,7 @@ horde-turba-DEPEND=		${LOCALBASE}/${HORDE_DIR}/turba/index.php:mail/horde-turba
 .  if !defined(horde-${DEP}-DEPEND)
 UNKNOWN_HORDE_PACKAGES+=	${DEP}
 .  else
-RUN_DEPENDS+=	${horde-${DEP}-DEPEND}
+RUN_DEPENDS+=	${horde-${DEP}-DEPEND}@${PHP_FLAVOR}
 .  endif
 . endfor
 .endif
@@ -152,7 +146,7 @@ RUN_DEPENDS+=	${horde-${DEP}-DEPEND}
 .  if !defined(horde-${DEP}-DEPEND)
 UNKNOWN_HORDE_PACKAGES+=	${DEP}
 .  else
-BUILD_DEPENDS+=	${horde-${DEP}-DEPEND}
+BUILD_DEPENDS+=	${horde-${DEP}-DEPEND}@${PHP_FLAVOR}
 .  endif
 . endfor
 .endif

@@ -26,10 +26,21 @@
 # SUCH DAMAGE.
 
 LC_ALL=C
-unset SHELL
-SAVED_TERM=$TERM
-unset TERM
-POUDRIERE_VERSION="3.3-pre"
+POUDRIERE_VERSION="3.4-pre"
+
+env_set() {
+	local envvar="$1"
+	local envvalue="${2:-"\${${envvar}}"}"
+
+	CMD_ENV_S="${CMD_ENV_S:+${CMD_ENV_S} }\"${envvar}=${envvalue}\""
+	_EXPORT_LIST="${_EXPORT_LIST:+${_EXPORT_LIST} }${envvar}"
+}
+
+# Exporting saved until last to not impact any tests between env_set and
+# env -S.
+env_export() {
+	export ${_EXPORT_LIST}
+}
 
 usage() {
 	cat << EOF
@@ -65,17 +76,17 @@ SETX=""
 while getopts "Ae:Nvx" FLAG; do
 	case "${FLAG}" in
 	A)
-		FORCE_COLORS=1
+		env_set FORCE_COLORS '1'
 		;;
 	e)
 		if [ ! -d "$OPTARG" ]; then
 			echo "Error: argument '$OPTARG' not a directory"
 			exit 1
 		fi
-		export POUDRIERE_ETC="$OPTARG"
+		POUDRIERE_ETC="$OPTARG"
 		;;
 	N)
-		USE_COLORS="no"
+		env_set USE_COLORS 'no'
 		;;
 	v)
 		VERBOSE=$((${VERBOSE:-0} + 1))
@@ -92,11 +103,33 @@ done
 shift $((OPTIND-1))
 
 [ $# -lt 1 ] && usage
+CMD="$1"
+shift
+
+# Valid command list.
+case "${CMD}" in
+api|bulk|distclean|daemon|image|jail|foreachport|logclean|ports|options|pkgclean|queue|status|testport)
+	;;
+jails)
+	CMD="jail"
+	;;
+version)
+	echo "${POUDRIERE_VERSION}"
+	exit 0
+	;;
+help)
+	usage
+	;;
+*)
+	echo "Unknown command '${CMD}'"
+	usage
+	;;
+esac
 
 POUDRIEREPATH=`realpath $0`
 if [ "${POUDRIEREPATH%src/bin/poudriere}" != "${POUDRIEREPATH}" ]; then
 	# It is running from src/bin/poudriere in checkout
-	POUDRIEREPREFIX=${POUDRIEREPATH%/bin/*}
+	POUDRIEREPREFIX="${POUDRIEREPATH%/bin/*}"
 	LIBEXECPREFIX="${POUDRIEREPATH%/src/bin/poudriere}"
 	: ${POUDRIERE_ETC:="/usr/local/etc"}
 elif [ "${POUDRIEREPATH%/bin/*}" = "${POUDRIEREPATH}" ]; then
@@ -110,66 +143,51 @@ elif [ "${POUDRIEREPATH%/bin/*}" = "${POUDRIEREPATH}" ]; then
 	: ${POUDRIERE_ETC:="/usr/local/etc"}
 else
 	# Running from PREFIX/bin/poudriere
-	POUDRIEREPREFIX=${POUDRIEREPATH%/bin/*}
+	POUDRIEREPREFIX="${POUDRIEREPATH%/bin/*}"
 	LIBEXECPREFIX="${POUDRIEREPREFIX}/libexec/poudriere"
 fi
-SCRIPTPREFIX=${POUDRIEREPREFIX}/share/poudriere
-
-CMD=$1
-shift
-CMD_ENV=
-[ -n "${POUDRIERE_ETC}" ] && CMD_ENV="${CMD_ENV} POUDRIERE_ETC=${POUDRIERE_ETC}"
-[ -n "${USE_COLORS}" ] && CMD_ENV="${CMD_ENV} USE_COLORS=${USE_COLORS}"
-CMD_ENV="${CMD_ENV} LIBEXECPREFIX=${LIBEXECPREFIX}"
-CMD_ENV="${CMD_ENV} PATH=${LIBEXECPREFIX}:${PATH}:/sbin:/usr/sbin"
-CMD_ENV="${CMD_ENV} POUDRIERE_VERSION=${POUDRIERE_VERSION}"
-CMD_ENV="${CMD_ENV} POUDRIEREPATH=${POUDRIEREPATH}"
-[ -n "${VERBOSE}" ] && CMD_ENV="${CMD_ENV} VERBOSE=${VERBOSE}"
-[ -n "${FORCE_COLORS}" ] && CMD_ENV="${CMD_ENV} FORCE_COLORS=${FORCE_COLORS}"
-
-# Handle special-case commands first.
-case "${CMD}" in
-version)
-	echo "${POUDRIERE_VERSION}"
-	exit 0
-	;;
-help)
-	usage
-	;;
-jails)
-	CMD="jail"
-	;;
-options|testport|bulk)
-	CMD_ENV="${CMD_ENV} SAVED_TERM=${SAVED_TERM}"
-esac
-
-# Allow proxy env to pass through for fetching jails/ports
-case "${CMD}" in
-ports|jail)
-	while read envvar envvalue; do
-		case "${envvar}" in
-		FETCH_BIND_ADDRESS|FTP_*|ftp_*|HTTP_*|http_*|SSL_|NO_PROXY|no_proxy|MAKEOBJDIRPREFIX)
-			CMD_ENV="${CMD_ENV} ${envvar}=${envvalue}"
-			;;
-		esac
-	done <<-EOF
-	$(env | sed -Ee 's,^([^=]*)=(.*),\1 \2,')
-	EOF
-	;;
-esac
-
+SCRIPTPREFIX="${POUDRIEREPREFIX}/share/poudriere"
+env_set SCRIPTPREFIX
 SCRIPTPATH="${SCRIPTPREFIX}/${CMD}.sh"
-CMD_ENV="${CMD_ENV} SCRIPTPATH=${SCRIPTPATH} SCRIPTPREFIX=${SCRIPTPREFIX}"
+env_set SCRIPTPATH
 
+[ -n "${POUDRIERE_ETC}" ] && env_set POUDRIERE_ETC
+env_set LIBEXECPREFIX
+env_set PATH $'${LIBEXECPREFIX}:${PATH}:/sbin:/usr/sbin'
+env_set POUDRIERE_VERSION
+env_set POUDRIEREPATH
+[ -n "${VERBOSE}" ] && env_set VERBOSE
+
+# Set SAVED_TERM=$TERM for some interactive features.
 case "${CMD}" in
-api|bulk|distclean|daemon|image|jail|foreachport|logclean|ports|options|pkgclean|queue|status|testport)
-	;;
-*)
-	echo "Unknown command '${CMD}'"
-	usage
+options|testport|bulk)
+	env_set SAVED_TERM $'${TERM}'
 	;;
 esac
 
+# Special-case environment passthroughs.
+while read envvar; do
+	case "${envvar}" in
+	FETCH_BIND_ADDRESS|FTP_*|ftp_*|HTTP_*|http_*|SSL_|NO_PROXY|no_proxy)
+		case "${CMD}" in
+		ports|jail) ;;
+		*) continue ;;
+		esac
+		;;
+	MAKEOBJDIRPREFIX)
+		case "${CMD}" in
+		jail) ;;
+		*) continue ;;
+		esac
+		;;
+	*) continue ;;
+	esac
+	env_set "${envvar}"
+done <<-EOF
+$(export)
+EOF
+
+# set -e blacklist (default on otherwise)
 case "${CMD}" in
 jail|ports|daemon|status|options)
 	;;
@@ -183,4 +201,6 @@ umask ${UMASK}
 
 : ${SH:=sh}
 
-exec env -i ${CMD_ENV} ${SH} ${SET_ERREXIT} ${SETX} "${SCRIPTPATH}" "$@"
+env_export
+exec env -i -P "${LIBEXECPREFIX}" ${CMD_ENV_S:+-S "${CMD_ENV_S}"} \
+    ${SH} ${SET_ERREXIT} ${SETX} "${SCRIPTPATH}" "$@"

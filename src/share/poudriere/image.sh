@@ -56,7 +56,7 @@ delete_image() {
 	[ -z "${zroot}" ] || zpool destroy -f ${zroot}
 	[ -z "${md}" ] || /sbin/mdconfig -d -u ${md#md}
 
-	destroyfs ${WRKDIR} image
+	TMPFS_ALL=0 destroyfs ${WRKDIR} image || :
 }
 
 cleanup_image() {
@@ -88,11 +88,29 @@ mkminiroot() {
 	[ -z "${MINIROOT}" ] && err 1 "MINIROOT not defined"
 	mroot=${WRKDIR}/miniroot
 	dirs="etc dev boot bin usr/bin libexec lib usr/lib sbin"
-	files="sbin/init etc/pwd.db etc/spwd.db"
-	files="${files} bin/sh sbin/halt sbin/fasthalt sbin/fastboot sbin/reboot"
-	files="${files} usr/bin/bsdtar libexec/ld-elf.so.1 sbin/newfs"
-	files="${files} sbin/mdconfig usr/bin/fetch sbin/ifconfig sbin/route sbin/mount"
-	files="${files} sbin/umount bin/mkdir bin/kenv usr/bin/sed"
+	files="bin/kenv"
+	files="${files} bin/ls"
+	files="${files} bin/mkdir"
+	files="${files} bin/sh"
+	files="${files} bin/sleep"
+	files="${files} etc/pwd.db"
+	files="${files} etc/spwd.db"
+	files="${files} libexec/ld-elf.so.1"
+	files="${files} sbin/fasthalt"
+	files="${files} sbin/fastboot"
+	files="${files} sbin/halt"
+	files="${files} sbin/ifconfig"
+	files="${files} sbin/init"
+	files="${files} sbin/mdconfig"
+	files="${files} sbin/mount"
+	files="${files} sbin/newfs"
+	files="${files} sbin/ping"
+	files="${files} sbin/reboot"
+	files="${files} sbin/route"
+	files="${files} sbin/umount"
+	files="${files} usr/bin/bsdtar"
+	files="${files} usr/bin/fetch"
+	files="${files} usr/bin/sed"
 
 	for d in ${dirs}; do
 		mkdir -p ${mroot}/${d}
@@ -123,7 +141,7 @@ while getopts "c:f:h:j:m:n:o:p:s:t:X:z:" FLAG; do
 			# a cd / was done.
 			[ "${OPTARG#/}" = "${OPTARG}" ] && \
 			    OPTARG="${SAVED_PWD}/${OPTARG}"
-			[ -f "${OPTARG}" ] || err 1 "No such package list: ${OPTARG}"
+			[ -r "${OPTARG}" ] || err 1 "No such package list: ${OPTARG}"
 			PACKAGELIST=${OPTARG}
 			;;
 		h)
@@ -162,7 +180,7 @@ while getopts "c:f:h:j:m:n:o:p:s:t:X:z:" FLAG; do
 			esac
 			;;
 		X)
-			[ -f "${OPTARG}" ] || err 1 "No such exclude list ${OPTARG}"
+			[ -r "${OPTARG}" ] || err 1 "No such exclude list ${OPTARG}"
 			EXCLUDELIST=$(realpath ${OPTARG})
 			;;
 		z)
@@ -211,26 +229,29 @@ esac
 mkdir -p ${OUTPUTDIR}
 
 jail_exists ${JAILNAME} || err 1 "The jail ${JAILNAME} does not exist"
-_jget arch ${JAILNAME} arch
+_jget arch ${JAILNAME} arch || err 1 "Missing arch metadata for jail"
 get_host_arch host_arch
 case "${MEDIATYPE}" in
 usb|*firmware|*rawdisk|embedded|dump)
 	[ -n "${IMAGESIZE}" ] || err 1 "Please specify the imagesize"
-	_jget mnt ${JAILNAME} mnt
-	test -f ${mnt}/boot/kernel/kernel || err 1 "The ${MEDIATYPE} media type requires a jail with a kernel"
+	_jget mnt ${JAILNAME} mnt || err 1 "Missing mnt metadata for jail"
+	[ -f "${mnt}/boot/kernel/kernel" ] || \
+	    err 1 "The ${MEDIATYPE} media type requires a jail with a kernel"
 	;;
 iso*|usb*|raw*)
-	_jget mnt ${JAILNAME} mnt
-	test -f ${mnt}/boot/kernel/kernel || err 1 "The ${MEDIATYPE} media type requires a jail with a kernel"
+	_jget mnt ${JAILNAME} mnt || err 1 "Missing mnt metadata for jail"
+	[ -f "${mnt}/boot/kernel/kernel" ] || \
+	    err 1 "The ${MEDIATYPE} media type requires a jail with a kernel"
 	;;
 esac
 
 msg "Preparing the image '${IMAGENAME}'"
 md=""
 CLEANUP_HOOK=cleanup_image
-test -d ${POUDRIERE_DATA}/images || mkdir ${POUDRIERE_DATA}/images
+[ -d "${POUDRIERE_DATA}/images" ] || \
+    mkdir "${POUDRIERE_DATA}/images"
 WRKDIR=$(mktemp -d ${POUDRIERE_DATA}/images/${IMAGENAME}-XXXX)
-_jget mnt ${JAILNAME} mnt
+_jget mnt ${JAILNAME} mnt || err 1 "Missing mnt metadata for jail"
 excludelist=$(mktemp -t excludelist)
 mkdir -p ${WRKDIR}/world
 mkdir -p ${WRKDIR}/out
@@ -247,33 +268,35 @@ EOF
 # This conversion is needed to be compliant with marketing 'unit'
 # without this, a 2GiB image will not fit into a 2GB flash disk (=1862MiB)
 
-IMAGESIZE_UNIT=$(printf ${IMAGESIZE} | tail -c 1)
-IMAGESIZE_VALUE=${IMAGESIZE%?}
-NEW_IMAGESIZE_UNIT=""
-NEW_IMAGESIZE_SIZE=""
-case "${IMAGESIZE_UNIT}" in
-        k|K)
-                DIVIDER=$(echo "scale=3; 1024 / 1000" | bc)
-                ;;
-        m|M)
-                DIVIDER=$(echo "scale=6; 1024 * 1024 / 1000000" | bc)
-                NEW_IMAGESIZE_UNIT="k"
-                ;;
-        g|G)
-                DIVIDER=$(echo "scale=9; 1024 * 1024 * 1024 / 1000000000" | bc)
-                NEW_IMAGESIZE_UNIT="m"
-                ;;
-        t|T)
-                DIVIDER=$(echo "scale=12; 1024 * 1024 * 1024 * 1024 / 1000000000000" | bc)
-                NEW_IMAGESIZE_UNIT="g"
-                ;;
-        *)
-                NEW_IMAGESIZE_UNIT=""
-                NEW_IMAGESIZE_SIZE=${IMAGESIZE}
-esac
-# truncate accept only integer value, and bc needs a divide per 1 for refreshing scale
-[ -z "${NEW_IMAGESIZE_SIZE}" ] && NEW_IMAGESIZE_SIZE=$(echo "scale=9;var=${IMAGESIZE_VALUE} / ${DIVIDER}; scale=0; ( var * 1000 ) /1" | bc)
-IMAGESIZE="${NEW_IMAGESIZE_SIZE}${NEW_IMAGESIZE_UNIT}"
+if [ -n "${IMAGESIZE}" ]; then
+	IMAGESIZE_UNIT=$(printf ${IMAGESIZE} | tail -c 1)
+	IMAGESIZE_VALUE=${IMAGESIZE%?}
+	NEW_IMAGESIZE_UNIT=""
+	NEW_IMAGESIZE_SIZE=""
+	case "${IMAGESIZE_UNIT}" in
+		k|K)
+			DIVIDER=$(echo "scale=3; 1024 / 1000" | bc)
+			;;
+		m|M)
+			DIVIDER=$(echo "scale=6; 1024 * 1024 / 1000000" | bc)
+			NEW_IMAGESIZE_UNIT="k"
+			;;
+		g|G)
+			DIVIDER=$(echo "scale=9; 1024 * 1024 * 1024 / 1000000000" | bc)
+			NEW_IMAGESIZE_UNIT="m"
+			;;
+		t|T)
+			DIVIDER=$(echo "scale=12; 1024 * 1024 * 1024 * 1024 / 1000000000000" | bc)
+			NEW_IMAGESIZE_UNIT="g"
+			;;
+		*)
+			NEW_IMAGESIZE_UNIT=""
+			NEW_IMAGESIZE_SIZE=${IMAGESIZE}
+	esac
+	# truncate accept only integer value, and bc needs a divide per 1 for refreshing scale
+	[ -z "${NEW_IMAGESIZE_SIZE}" ] && NEW_IMAGESIZE_SIZE=$(echo "scale=9;var=${IMAGESIZE_VALUE} / ${DIVIDER}; scale=0; ( var * 1000 ) /1" | bc)
+	IMAGESIZE="${NEW_IMAGESIZE_SIZE}${NEW_IMAGESIZE_UNIT}"
+fi
 
 case "${MEDIATYPE}" in
 embedded)
@@ -354,28 +377,64 @@ if [ -n "${HOSTNAME}" ]; then
 	echo "hostname=${HOSTNAME}" >> ${WRKDIR}/world/etc/rc.conf
 fi
 
+# Convert @flavor from package list to a unique entry of pkgname, otherwise it
+# spits out origin if no flavor.
+convert_package_list() {
+	local PACKAGELIST="$1"
+	local PKG_DBDIR=$(mktemp -dt poudriere_pkgdb)
+	local REPOS_DIR=$(mktemp -dt poudriere_repo)
+	local ABI_FILE
+
+	# This pkg rquery is always ran in host so we need a host-centric
+	# repo.conf always.
+	cat > "${REPOS_DIR}/repo.conf" <<-EOF
+	FreeBSD: { enabled: false }
+	local: { url: file:///${WRKDIR}/world/tmp/packages }
+	EOF
+
+	export REPOS_DIR PKG_DBDIR
+	# Always need this from host.
+	export ABI_FILE="${WRKDIR}/world/usr/lib/crt1.o"
+	pkg update >/dev/null || :
+	pkg rquery '%At %o@%Av %n-%v' | \
+	    awk -v pkglist="${PACKAGELIST}" \
+	    -f "${AWKPREFIX}/unique_pkgnames_from_flavored_origins.awk"
+	rm -rf "${PKG_DBDIR}" "${REPOS_DIR}"
+}
+
 # install packages if any is needed
 if [ -n "${PACKAGELIST}" ]; then
 	mkdir -p ${WRKDIR}/world/tmp/packages
 	${NULLMOUNT} ${POUDRIERE_DATA}/packages/${MASTERNAME} ${WRKDIR}/world/tmp/packages
 	if [ "${arch}" == "${host_arch}" ]; then
-		cat > ${WRKDIR}/world/tmp/repo.conf <<-EOF
-	FreeBSD: { enabled: false }
-	local: { url: file:///tmp/packages }
-	EOF
-		cat ${PACKAGELIST} | xargs chroot ${WRKDIR}/world env ASSUME_ALWAYS_YES=yes REPOS_DIR=/tmp pkg install
+		cat > "${WRKDIR}/world/tmp/repo.conf" <<-EOF
+		FreeBSD: { enabled: false }
+		local: { url: file:///tmp/packages }
+		EOF
+		mount -t devfs devfs ${WRKDIR}/world/dev
+		convert_package_list "${PACKAGELIST}" | \
+		    xargs chroot "${WRKDIR}/world" env \
+		    REPOS_DIR=/tmp ASSUME_ALWAYS_YES=yes \
+		    pkg install
+		umount ${WRKDIR}/world/dev
 	else
-		cat > ${WRKDIR}/world/tmp/repo.conf <<-EOF
-	FreeBSD: { enabled: false }
-	local: { url: file:///${WRKDIR}/world/tmp/packages }
-	EOF
-		env ASSUME_ALWAYS_YES=yes SYSLOG=no REPOS_DIR=/${WRKDIR}/world/tmp/ ABI_FILE=/${WRKDIR}/world/usr/lib/crt1.o pkg -r ${WRKDIR}/world/ install pkg
-		cat ${PACKAGELIST} | xargs env ASSUME_ALWAYS_YES=yes SYSLOG=no REPOS_DIR=/${WRKDIR}/world/tmp/ ABI_FILE=/${WRKDIR}/world/usr/lib/crt1.o pkg -r ${WRKDIR}/world/ install
+		cat > "${WRKDIR}/world/tmp/repo.conf" <<-EOF
+		FreeBSD: { enabled: false }
+		local: { url: file:///${WRKDIR}/world/tmp/packages }
+		EOF
+		(
+			export ASSUME_ALWAYS_YES=yes SYSLOG=no \
+			    REPOS_DIR="${WRKDIR}/world/tmp/" \
+			    ABI_FILE="${WRKDIR}/world/usr/lib/crt1.o"
+			pkg -r "${WRKDIR}/world/" install pkg
+			convert_package_list "${PACKAGELIST}" | \
+			    xargs pkg -r "${WRKDIR}/world/" install
+		)
 	fi
 	rm -rf ${WRKDIR}/world/var/cache/pkg
 	umount ${WRKDIR}/world/tmp/packages
 	rmdir ${WRKDIR}/world/tmp/packages
-	rm ${WRKDIR}/world/var/db/pkg/repo-*
+	rm ${WRKDIR}/world/var/db/pkg/repo-* 2>/dev/null || :
 fi
 
 case ${MEDIATYPE} in
@@ -452,7 +511,8 @@ usb)
 	# Move /usr/local/etc to /etc/local (Only /etc will be backuped)
 	if [ -d ${WRKDIR}/world/usr/local/etc ] ; then
 		mkdir -p ${WRKDIR}/world/etc/local
-		tar -C ${WRKDIR}/world -X ${excludelist} -cf - usr/local/etc/ | tar -xf - -C ${WRKDIR}/world/etc/local
+		tar -C ${WRKDIR}/world -X ${excludelist} -cf - usr/local/etc/ | \
+		    tar -xf - -C ${WRKDIR}/world/etc/local --strip-components=3
 		rm -rf ${WRKDIR}/world/usr/local/etc
 		ln -s /etc/local ${WRKDIR}/world/usr/local/etc
 	fi

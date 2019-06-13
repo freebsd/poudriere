@@ -1,5 +1,5 @@
 #	from: @(#)bsd.subdir.mk	5.9 (Berkeley) 2/1/91
-# $FreeBSD: head/Mk/bsd.port.subdir.mk 424411 2016-10-21 12:51:40Z mat $
+# $FreeBSD: head/Mk/bsd.port.subdir.mk 453873 2017-11-09 21:48:58Z jrm $
 #
 # The include file <bsd.port.subdir.mk> contains the default targets
 # for building ports subdirectories.
@@ -46,6 +46,11 @@ README=			${TEMPLATES}/README.category
 .endif
 MOVEDDIR?=		${PORTSDIR}
 MOVEDFILE?=		MOVED
+
+# Ensure .CURDIR contains an absolute path without a trailing slash.  Failed
+# builds can occur when PORTSDIR is a symbolic link, or with something like
+# make -C /usr/ports/category/port/.
+.CURDIR:=		${.CURDIR:tA}
 
 .include "${PORTSDIR}/Mk/bsd.commands.mk"
 

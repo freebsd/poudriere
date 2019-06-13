@@ -118,7 +118,7 @@ post_getopts
 
 # checking jail and architecture consistency
 if [ -n "${JAILNAME}" -a -n "${ARCH}" ]; then
-	_jget _arch "${JAILNAME}" arch
+	_jget _arch "${JAILNAME}" arch || err 1 "Missing arch metadata for jail"
 	if need_cross_build "${_arch}" "${ARCH}" ; then
 		err 1 "jail ${JAILNAME} and architecture ${ARCH} not compatible"
 	fi
@@ -131,7 +131,7 @@ command -v dialog4ports >/dev/null 2>&1 || err 1 "You must have ports-mgmt/dialo
 
 if [ $# -eq 0 ]; then
 	[ -n "${BULK_LIST}" ] || err 1 "No packages specified"
-	[ -f ${BULK_LIST} ] || err 1 "No such list of packages: ${BULK_LIST}"
+	[ -r "${BULK_LIST}" ] || err 1 "No such list of packages: ${BULK_LIST}"
 LISTPORTS=`grep -v -E '(^[[:space:]]*#|^[[:space:]]*$)' ${BULK_LIST}`
 else
 	[ -z "${BULK_LIST}" ] ||

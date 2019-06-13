@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd October 22, 2018
+.Dd March 4, 2019
 .Dt POUDRIERE-JAIL 8
 .Os
 .Sh NAME
@@ -158,7 +158,6 @@ It is expected that this directory be installed to with the following:
 /usr/src# make distribution DESTDIR=PATH DB_FROM_SRC=1
 .Ed
 .Pp
-The path will be null-mounted during builds.
 It will not be copied at the time of running
 .Nm jail .
 Deleting the jail will attempt to revert any files changed by poudriere.
@@ -293,6 +292,25 @@ Be careful to respect the names supported by jail(8):
     "This is an arbitrary string that identifies a jail (except it
      may not contain a '.')"
 .Ed
+.Sh ENVIRONMENT
+The
+.Nm jail
+subcommand may use the following environment variables:
+.Bl -tag -width "HTTP_PROXY FTP_PROXY"
+.It Sy FETCH_BIND_ADDRESS
+The bind address used by
+.Xr fetch 1 .
+See
+.Xr fetch 3
+for more details.
+.It Sy HTTP_PROXY HTTP_* http_* FTP_PROXY FTP_* http_* SSL_* NO_PROXY no_proxy
+The proxy configuration for
+.Xr fetch 1 .
+See
+.Xr fetch 3
+for other supported proxy environment variables.
+.It Sy MAKEOBJDIRPREFIX
+.El
 .Sh SEE ALSO
 .Xr jail 8 ,
 .Xr poudriere 8 ,

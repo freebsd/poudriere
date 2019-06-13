@@ -195,14 +195,17 @@ git*)  : ${BRANCH:=master} ;;
 esac
 
 if [ ${LIST} -eq 1 ]; then
-	format='%%-%ds %%-%ds %%-%ds %%s\n'
-	display_setup "${format}" 4 "-d"
 	if [ ${NAMEONLY} -eq 0 ]; then
+		format='%%-%ds %%-%ds %%-%ds %%s\n'
+		display_setup "${format}" 4 "-d"
 		display_add "PORTSTREE" "METHOD" "TIMESTAMP" "PATH"
 	else
+		format='%s'
+		display_setup "${format}" 1 "-d"
 		display_add "PORTSTREE"
 	fi
 	while read ptname ptmethod ptpath; do
+		[ -z "${ptname}" ] && break
 		if [ ${NAMEONLY} -eq 0 ]; then
 			_pget timestamp ${ptname} timestamp || :
 			time=

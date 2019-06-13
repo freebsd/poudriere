@@ -84,6 +84,25 @@ shash_get() {
 	return ${ret}
 }
 
+shash_exists() {
+	local -; set +x
+	[ $# -ne 2 ] && eargs shash_exists var key
+	local var="$1"
+	local key="$2"
+	local _shash_varkey_file _f
+
+	_shash_varkey_file "${var}" "${key}"
+	# This assumes globbing works
+	for _f in ${_shash_varkey_file}; do
+		case "${_f}" in
+		*"*"*) break ;; # no file found
+		esac
+		[ -r "${_f}" ] || break
+		return 0
+	done
+	return 1
+}
+
 shash_set() {
 	local -; set +x
 	[ $# -eq 3 ] || eargs shash_set var key value

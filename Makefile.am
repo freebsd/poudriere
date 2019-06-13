@@ -83,7 +83,8 @@ dist_awk_DATA= src/share/poudriere/awk/dependency_loop.awk \
 		src/share/poudriere/awk/json_top.awk \
 		src/share/poudriere/awk/parse_MOVED.awk \
 		src/share/poudriere/awk/processonelog2.awk \
-		src/share/poudriere/awk/siginfo_buildtime.awk
+		src/share/poudriere/awk/siginfo_buildtime.awk \
+		src/share/poudriere/awk/unique_pkgnames_from_flavored_origins.awk
 
 dist_html_DATA= 	src/share/poudriere/html/build.html \
 			src/share/poudriere/html/index.html \
@@ -299,6 +300,8 @@ cached_LDADD=	-lutil -lrt
 cachec_SOURCES=	src/libexec/poudriere/cachec/cachec.c
 cachec_LDADD=	-lrt
 
+DEVEL_SFX=	-devel
+
 .PHONY:	gen-make-wiki
 gen-man-wiki:
 	@if [ ! -e wiki/poudriere.8.md ]; then \
@@ -310,15 +313,15 @@ gen-man-wiki:
 	  exit 1; \
 	fi
 	@for man in $(dist_man_MANS); do \
-	  echo "MANDOC wiki/$${man##*/}-devel.md"; \
+	  echo "MANDOC wiki/$${man##*/}${DEVEL_SFX}.md"; \
 	  ( \
-	    echo "### This page is auto-generated from $(dist_man_MANS)"; \
-	    (mandoc -Thtml $${man} | awk \
+	    echo "### This page is auto-generated from $${man}"; \
+	    (mandoc -Thtml -O man=%N.%S${DEVEL_SFX} $${man} | awk \
 	    '$$1 == "<body>" { seenbody=1; next; }; \
 	     $$1 == "</body>" { seenbody=0; }; \
 	     seenbody == 1 { print };'\
 	    ); \
-	  ) > wiki/$${man##*/}-devel.md; \
+	  ) > wiki/$${man##*/}${DEVEL_SFX}.md; \
 	done
 
 MOSTLYCLEANFILES+=	poudriere

@@ -1,5 +1,5 @@
 # Created by: jkh
-# $FreeBSD: head/lang/python/Makefile 432153 2017-01-22 15:29:45Z sunpoet $
+# $FreeBSD: head/lang/python/Makefile 491284 2019-01-26 12:43:47Z sunpoet $
 
 PORTNAME=	python
 PORTVERSION=	${PYTHON_DEFAULT}
@@ -16,6 +16,7 @@ COMMENT=	"meta-port" for the default version of Python interpreter
 RUN_DEPENDS=	python${PYTHON_MAJOR_VER}:lang/python${PYTHON_MAJOR_VER}
 
 USES=		python:run
+
 NO_ARCH=	yes
 NO_BUILD=	yes
 

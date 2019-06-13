@@ -1,5 +1,5 @@
 #!/bin/sh
-# $FreeBSD: head/Mk/Scripts/functions.sh 434316 2017-02-17 22:22:27Z bdrewery $
+# $FreeBSD: head/Mk/Scripts/functions.sh 471988 2018-06-08 09:26:20Z mat $
 # This file for common functions used for port scripts.
 #
 # MAINTAINER: portmgr@FreeBSD.org
@@ -74,9 +74,9 @@ parse_plist() {
 		@info\ *|@shell\ *|@xmlcatmgr\ *)
 			set -- $line
 			shift
-			case "$@" in
-			/*) echo "${comment}$@" ;;
-			*) echo "${comment}${cwd}/$@" ;;
+			case "$*" in
+			/*) echo "${comment}$*" ;;
+			*) echo "${comment}${cwd}/$*" ;;
 			esac
 		;;
 		@sample\ *)
@@ -103,12 +103,12 @@ parse_plist() {
 		@fc\ *|@fcfontsdir\ *|@fontsdir\ *)
 			set -- $line
 			shift
-			case "$@" in
+			case "$*" in
 			/*)
-			echo >&3 "${comment}$@"
+			echo >&3 "${comment}$*"
 			;;
 			*)
-			echo >&3 "${comment}${cwd}/$@"
+			echo >&3 "${comment}${cwd}/$*"
 			;;
 			esac
 		;;
@@ -160,11 +160,15 @@ validate_env() {
 }
 
 export_ports_env() {
-	local export_vars make_cmd make_env var results value uses
+	local export_vars make_cmd make_env var value uses
+
+	if [ -n "${HAVE_PORTS_ENV:-}" ]; then
+		return 0
+	fi
 
 	validate_env MAKE PORTSDIR
 
-	uses="python"
+	uses="python compiler:features objc"
 
 	make_env="\
 		_PORTS_ENV_CHECK=1 \
@@ -176,33 +180,16 @@ export_ports_env() {
 
 	make_cmd="${make_env}"
 
-	export_vars="\
-		ARCH \
-		CONFIGURE_MAX_CMD_LEN \
-		HAVE_COMPAT_IA32_KERN \
-		OPSYS \
-		OSREL \
-		OSVERSION \
-		PYTHONBASE \
-		UID \
-		_JAVA_OS_LIST_REGEXP \
-		_JAVA_PORTS_INSTALLED \
-		_JAVA_VENDOR_LIST_REGEXP \
-		_JAVA_VERSION_LIST_REGEXP \
-		_OSRELEASE \
-		_PERL5_FROM_BIN \
-		_PKG_CHECKED \
-		_PYTHON_DEFAULT_VERSION \
-		_SMP_CPUS \
-	"
+	export_vars="$(${MAKE} -f ${PORTSDIR}/Mk/bsd.port.mk \
+	    -V PORTS_ENV_VARS ${make_env} USES="${uses}")"
 
 	for var in ${export_vars}; do
 		make_cmd="${make_cmd}${make_cmd:+ }-V ${var}=\${${var}:Q}"
 	done
 
 	# Bring in all the vars, but not empty ones.
-	eval $(${MAKE} -f ${PORTSDIR}/Mk/bsd.port.mk ${make_cmd} \
-	    USES="${uses}" | grep -v '=$' | sed -e 's,\\ $,,')
+	eval "$(${MAKE} -f ${PORTSDIR}/Mk/bsd.port.mk ${make_cmd} \
+		USES="${uses}" | grep -v '=$' | sed -e 's,\\ $,,')"
 	for var in ${export_vars}; do
 		# Export and display non-empty ones.  This is not redundant
 		# with above since we're looping on all vars here; do not
@@ -210,10 +197,14 @@ export_ports_env() {
 		value="$(eval echo \$${var})"
 
 		if [ -n "${value}" ]; then
+			# shellcheck disable=SC2163
+			# We want to export the variable which name is in var.
 			export ${var}
 			echo "export ${var}=\"${value}\""
 		fi
 	done
+	export HAVE_PORTS_ENV=1
+	echo "export HAVE_PORTS_ENV=1"
 }
 
 distinfo_data() {

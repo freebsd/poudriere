@@ -1,24 +1,23 @@
 # Created by: mat
-# $FreeBSD: head/lang/perl5.24/Makefile 442547 2017-06-04 11:47:42Z sunpoet $
+# $FreeBSD: head/lang/perl5.24/Makefile 484696 2018-11-11 15:38:50Z danfe $
 
 PORTNAME=	perl
 DISTVERSION=	${PERL_VERSION}
-PORTREVISION=	1
+PORTREVISION=	2
 CATEGORIES=	lang devel perl5
 MASTER_SITES=	CPAN/../../src/5.0 CPAN/../by-authors/id/S/SH/SHAY
 DIST_SUBDIR=	perl
 
-MAINTAINER=	perl@FreeBSD.org
+MAINTAINER=	mat@FreeBSD.org
 COMMENT=	Practical Extraction and Report Language
 
-LICENSE=	ART10 GPLv1
+LICENSE=	ART10 GPLv1+
 LICENSE_COMB=	dual
 LICENSE_FILE_ART10=	${WRKSRC}/Artistic
-LICENSE_FILE_GPLv1=	${WRKSRC}/Copying
+LICENSE_FILE_GPLv1+ =	${WRKSRC}/Copying
 
-# Uncomment when the default Perl is switched to 5.26
-#DEPRECATED=	Support ends three years after .0 release, please upgrade to a more recent version of Perl
-#EXPIRATION_DATE=2019-05-09
+DEPRECATED=	Support ends three years after .0 release, please upgrade to a more recent version of Perl
+EXPIRATION_DATE=2019-05-09
 
 TEST_TARGET=	test_harness
 TEST_ENV=	${MAKE_ENV} TEST_JOBS=${MAKE_JOBS_NUMBER} \
@@ -31,11 +30,10 @@ OPTIONS_RADIO=	EXCLUSIVE
 OPTIONS_RADIO_EXCLUSIVE=	THREADS PERL_MALLOC
 OPTIONS_DEFAULT=	PERL_64BITINT THREADS PTHREAD MULTIPLICITY DTRACE
 
-OPTIONS_EXCLUDE_FreeBSD_10=	DTRACE
 .if !exists(/usr/sbin/dtrace)
 OPTIONS_EXCLUDE+=	DTRACE
 .endif
-.for a in aarch64 arm armeb armv6 mips mips64 mips64el mipsel mipsn32 powerpc \
+.for a in aarch64 arm armeb armv6 armv7 mips mips64 mips64el mipsel mipsn32 powerpc \
 	powerpc64 sparc64
 OPTIONS_EXCLUDE_${a}=	DTRACE
 .endfor
@@ -160,13 +158,13 @@ PLIST_SUB+=	PERL_VERSION=${PERL_VERSION} \
 		PKGNAMESUFFIX=${PKGNAMESUFFIX} \
 		ARCH_LIB=${_ARCH_LIB}
 
+# Why this is required is explained in:
+# https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=227356#c5
 _PERL5_DEFAULT_FILE=	/tmp/PERL5_DEFAULT
 
-# bsd.default-versions.mk needs to know LOCALBASE for Perl, so
-# bsd.port.options.mk is needed before including it.
+# Get the default version, and possibly, overwrite it.
 .include <bsd.port.options.mk>
 .sinclude "${_PERL5_DEFAULT_FILE}"
-.include "${.CURDIR}/../../Mk/bsd.default-versions.mk"
 
 # if this port is default due PERL5_DEFAULT
 # change PKGNAME to reflect this
@@ -258,7 +256,10 @@ post-install:
 	${MKDIR} ${STAGEDIR}${SITE_MAN1} ${STAGEDIR}${SITE_MAN3}
 	${MKDIR} ${STAGEDIR}${SITE_ARCH}/auto
 	${MKDIR} ${STAGEDIR}${SITE_PERL}/auto
-	${LN} ${STAGEDIR}${PREFIX}/bin/perl${PERL_VERSION} ${STAGEDIR}${PREFIX}/bin/perl5
+.if defined(IAMDEFAULTPERL)
+	${LN} -sf perl ${STAGEDIR}${PREFIX}/bin/perl5
+	${LN} -sf perl ${STAGEDIR}${PREFIX}/bin/perl${PERL_VERSION}
+.endif
 	${LN} -sf libperl.so.${PERL_VERSION} ${STAGEDIR}${PREFIX}/${_ARCH_LIB}/CORE/libperl.so
 	${LN} -sf libperl.so.${PERL_VERSION} ${STAGEDIR}${PREFIX}/${_ARCH_LIB}/CORE/libperl.so.${PERL_VER}
 	${STRIP_CMD} ${STAGEDIR}${PREFIX}/bin/perl${PERL_VERSION}

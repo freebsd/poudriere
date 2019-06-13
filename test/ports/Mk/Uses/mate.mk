@@ -1,7 +1,7 @@
 #-*- tab-width: 4; -*-
 # ex:ts=4
 #
-# $FreeBSD: head/Mk/Uses/mate.mk 420602 2016-08-22 12:12:23Z kwm $
+# $FreeBSD: head/Mk/Uses/mate.mk 467271 2018-04-13 21:16:56Z ericbsd $
 #
 # Please view me with 4 column tabs!
 
@@ -48,7 +48,7 @@ _USE_MATE_ALL=	autogen intlhack intltool
 # the *.pc file instead.
 _USE_MATE_ALL+=	caja common controlcenter desktop dialogs docutils icontheme \
 		libmatekbd libmateweather \
-		marco menus notificationdaemon panel polkit pluma \
+		marco menus mixer notificationdaemon panel polkit pluma \
 		session settingsdaemon
 
 SCROLLKEEPER_DIR=	/var/db/rarian
@@ -116,6 +116,11 @@ menus_BUILD_DEPENDS=	${menus_DETECT}:x11/mate-menus
 menus_LIB_DEPENDS=	libmate-menu.so:x11/mate-menus
 menus_RUN_DEPENDS=	${menus_DETECT}:x11/mate-menus
 
+mixer_DETECT=		${LOCALBASE}/libdata/pkgconfig/libmatemixer.pc
+mixer_BUILD_DEPENDS=	${mixer_DETECT}:audio/libmatemixer
+mixer_LIB_DEPENDS=	libmatemixer.so:audio/libmatemixer
+mixer_RUN_DEPENDS=	${mixer_DETECT}:audio/libmatemixer
+
 notificationdaemon_DETECT=		${LOCALBASE}/libexec/mate-notification-daemon
 notificationdaemon_BUILD_DEPENDS=	${notificationdaemon_DETECT}:deskutils/mate-notification-daemon
 notificationdaemon_RUN_DEPENDS=		${notificationdaemon_DETECT}:deskutils/mate-notification-daemon
@@ -125,9 +130,8 @@ panel_BUILD_DEPENDS=	${panel_DETECT}:x11/mate-panel
 panel_LIB_DEPENDS=	libmate-panel-applet-4.so:x11/mate-panel
 panel_RUN_DEPENDS=	${panel_DETECT}:x11/mate-panel
 
-polkit_DETECT=		${LOCALBASE}/libdata/pkgconfig/polkit-gtk-mate-1.pc
+polkit_DETECT=		${LOCALBASE}/libexec/polkit-mate-authentication-agent-1
 polkit_BUILD_DEPENDS=	${polkit_DETECT}:sysutils/mate-polkit
-polkit_LIB_DEPENDS=	libpolkit-gtk-mate-1.so:sysutils/mate-polkit
 polkit_RUN_DEPENDS=	${polkit_DETECT}:sysutils/mate-polkit
 
 pluma_DETECT=		${LOCALBASE}/libdata/pkgconfig/pluma.pc

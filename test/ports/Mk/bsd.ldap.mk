@@ -1,7 +1,7 @@
 # -*- tab-width: 4; -*-
 # ex: ts=4
 #
-# $FreeBSD: head/Mk/bsd.ldap.mk 430899 2017-01-08 21:20:57Z adamw $
+# $FreeBSD: head/Mk/bsd.ldap.mk 451193 2017-10-04 09:32:12Z bapt $
 #
 
 .if defined(_POSTMKINCLUDED) && !defined(Ldap_Post_Include)
@@ -37,7 +37,6 @@ Database_Include_MAINTAINER=		ports@FreeBSD.org
 .if defined(USE_OPENLDAP)
 DEFAULT_OPENLDAP_VER?=	24
 # OpenLDAP client versions currently supported
-OPENLDAP23_LIB=		libldap-2.3.so.2
 OPENLDAP24_LIB=		libldap-2.4.so.2
 
 .if exists(${LOCALBASE}/bin/ldapwhoami)

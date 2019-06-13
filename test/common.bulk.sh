@@ -202,9 +202,6 @@ assert_queued() {
 	rm -f "${tmp}"
 }
 
-export __MAKE_CONF=/dev/null
-export SRCCONF=/dev/null
-export SRC_ENV_CONF=/dev/null
 # Avoid injail() for port_var_fetch
 INJAIL_HOST=1
 
@@ -253,7 +250,9 @@ PTMNT="${PORTSDIR}"
 : ${PTNAME:=test}
 : ${SETNAME:=}
 export PORT_DBDIR=/dev/null
-export PERL5_DEFAULT=5.24
+export __MAKE_CONF="${POUDRIERE_ETC}/poudriere.d/make.conf"
+export SRCCONF=/dev/null
+export SRC_ENV_CONF=/dev/null
 
 set -e
 

@@ -14,6 +14,8 @@ assert_ret 0 shash_unset pkgname-origin "pkg-1.7"
 assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 assert_ret 0 shash_set pkgname-origin "pkg-1.7" "ports-mgmt/pkg"
 assert_ret 0 shash_get pkgname-origin "pkg-1.7" value
+assert_ret 0 shash_exists pkgname-origin "pkg-1.7"
+assert_ret 1 shash_exists pkgname-origin "pkg-1.8"
 assert "ports-mgmt/pkg" "${value}" "Removed value should match"
 value=
 assert_ret 0 shash_remove pkgname-origin "pkg-1.7" value

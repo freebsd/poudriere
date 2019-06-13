@@ -33,6 +33,10 @@ if ! type eargs 2>/dev/null >&2; then
 	}
 fi
 
+if ! type setproctitle 2>/dev/null >&2; then
+	setproctitle() { }
+fi
+
 # Encode $@ for later decoding
 encode_args() {
 	local -; set +x
@@ -700,18 +704,36 @@ nopipe() {
 	return ${_ret}
 }
 
+# Detect if pipefail support is available in the shell.  The shell
+# will just exit if we try 'set -o pipefail' and it doesn't support it.
+have_pipefail() {
+	case $(set -o) in
+	*pipefail*)
+		return 0
+		;;
+	esac
+	return 1
+}
+
+set_pipefail() {
+	command set -o pipefail 2>/dev/null || :
+}
+
 prefix_stderr_quick() {
 	local -; set +x
 	local extra="$1"
 	local MSG_NESTED_STDERR prefix
 	shift 1
 
+	set_pipefail
+
 	{
 		{
 			MSG_NESTED_STDERR=1
 			"$@"
 		} 2>&1 1>&3 | {
-			if command -v timestamp >/dev/null && \
+			if [ "${USE_TIMESTAMP:-1}" -eq 1 ] && \
+			    command -v timestamp >/dev/null && \
 			    [ "$(type timestamp)" = \
 			    "timestamp is a shell builtin" ]; then
 				# Let timestamp handle showing the proper time.
@@ -739,7 +761,8 @@ prefix_stderr() {
 
 	prefixpipe=$(mktemp -ut prefix_stderr.pipe)
 	mkfifo "${prefixpipe}"
-	if command -v timestamp >/dev/null; then
+	if [ "${USE_TIMESTAMP:-1}" -eq 1 ] && \
+	    command -v timestamp >/dev/null; then
 		# Let timestamp handle showing the proper time.
 		prefix="$(NO_ELAPSED_IN_MSG=1 msg_warn "${extra}:" 2>&1)"
 		TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
@@ -768,7 +791,7 @@ prefix_stderr() {
 	[ ${errexit} -eq 1 ] && set -e
 
 	exec 2>&4 4>&-
-	timed_wait_and_kill 5 ${prefixpid} || :
+	timed_wait_and_kill 5 ${prefixpid} 2>/dev/null || :
 	_wait ${prefixpid} || :
 
 	return ${ret}
@@ -783,7 +806,8 @@ prefix_stdout() {
 
 	prefixpipe=$(mktemp -ut prefix_stdout.pipe)
 	mkfifo "${prefixpipe}"
-	if command -v timestamp >/dev/null; then
+	if [ "${USE_TIMESTAMP:-1}" -eq 1 ] && \
+	    command -v timestamp >/dev/null; then
 		# Let timestamp handle showing the proper time.
 		prefix="$(NO_ELAPSED_IN_MSG=1 msg "${extra}:")"
 		TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
@@ -812,7 +836,7 @@ prefix_stdout() {
 	[ ${errexit} -eq 1 ] && set -e
 
 	exec 1>&3 3>&-
-	timed_wait_and_kill 5 ${prefixpid} || :
+	timed_wait_and_kill 5 ${prefixpid} 2>/dev/null || :
 	_wait ${prefixpid} || :
 
 	return ${ret}
@@ -825,7 +849,8 @@ prefix_output() {
 	local - errexit
 	shift 1
 
-	if ! command -v timestamp >/dev/null; then
+	if ! [ "${USE_TIMESTAMP:-1}" -eq 1 ] && \
+	    command -v timestamp >/dev/null; then
 		prefix_stderr "${extra}" prefix_stdout "${extra}" "$@"
 		return
 	fi
@@ -864,7 +889,7 @@ prefix_output() {
 	[ ${errexit} -eq 1 ] && set -e
 
 	exec 1>&3 3>&- 2>&4 4>&-
-	timed_wait_and_kill 5 ${prefixpid} || :
+	timed_wait_and_kill 5 ${prefixpid} 2>/dev/null || :
 	_wait ${prefixpid} || :
 
 	return ${ret}

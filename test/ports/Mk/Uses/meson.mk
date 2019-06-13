@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/meson.mk 442907 2017-06-08 06:50:00Z mat $
+# $FreeBSD: head/Mk/Uses/meson.mk 493957 2019-02-26 09:36:29Z 0mp $
 #
 # Provide support for Meson based projects
 #
@@ -13,8 +13,8 @@
 # Variables for ports:
 # MESON_ARGS		- Arguments passed to meson
 #			format: -Denable_foo=true
-# MESON_BUILD_DIR	- Path to the build directory
-#			Default: ${WRKSRC}/_build
+# MESON_BUILD_DIR	- Path to the build directory relative to ${WRKSRC}
+#			Default: _build
 #
 # MAINTAINER: gnome@FreeBSD.org
 
@@ -35,7 +35,8 @@ BUILD_DEPENDS+=		meson:devel/meson
 USE_LOCALE?=	en_US.UTF-8
 
 CONFIGURE_ARGS+=	--prefix ${PREFIX} \
-			--mandir man
+			--mandir man \
+			--infodir ${INFO_PATH}
 
 # meson has it own strip mechanic
 INSTALL_TARGET=		install
@@ -61,6 +62,8 @@ TEST_WRKSRC=		${WRKSRC}/${MESON_BUILD_DIR}
 TEST_TARGET=		test
 
 MESON_BUILD_DIR?=	_build
+
+CONFIGURE_LOG=		${MESON_BUILD_DIR}/meson-logs/meson-log.txt
 
 # Add meson build dir at the end.
 CONFIGURE_ARGS+=	${MESON_BUILD_DIR}

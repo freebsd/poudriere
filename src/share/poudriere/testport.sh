@@ -237,7 +237,7 @@ if [ $(bget stats_failed) -gt 0 ] || [ $(bget stats_skipped) -gt 0 ]; then
 	[ -n "${skipped}" ] && COLOR_ARROW="${COLOR_SKIP}" \
 	    msg "${COLOR_SKIP}Skipped ports: ${COLOR_PORT}${skipped}"
 
-	bset_job_status "failed/depends" "${ORIGINSPEC}"
+	bset_job_status "failed/depends" "${ORIGINSPEC}" "${PKGNAME}"
 	set +e
 	exit 1
 fi
@@ -247,7 +247,7 @@ nbbuilt=$(bget stats_built)
 
 commit_packages
 
-bset_job_status "testing" "${ORIGINSPEC}"
+bset_job_status "testing" "${ORIGINSPEC}" "${PKGNAME}"
 
 LOCALBASE=`injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -VLOCALBASE`
 [ -n "${LOCALBASE}" ] || err 1 "Port has empty LOCALBASE?"
@@ -272,8 +272,7 @@ if [ -d ${MASTERMNT}${PREFIX} -a "${PREFIX}" != "/usr" ]; then
 	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${MASTERMNT}${PREFIX}
 fi
 
-PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs"
-PKGBASE="${PKGNAME%-*}"
+PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs PKGLATESTREPOSITORY=/tmp/pkgs/Latest"
 MAKE_ARGS="${DEPENDS_ARGS}${FLAVOR:+ FLAVOR=${FLAVOR}}"
 injail install -d -o ${PORTBUILD_USER} /tmp/pkgs
 PORTTESTING=1
@@ -285,20 +284,20 @@ if ! [ -t 1 ]; then
 	export DEV_WARNING_WAIT=0
 fi
 sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' ${MASTERMNT}/etc/make.conf
-_gsub "${PKGBASE}" "${HASH_VAR_NAME_SUB_GLOB}" '_'
+_gsub "${PKGNAME%-*}" "${HASH_VAR_NAME_SUB_GLOB}" '_'
 eval "MAX_FILES=\${MAX_FILES_${_gsub}:-${DEFAULT_MAX_FILES}}"
 if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
 	JEXEC_LIMITS=1
 fi
-log_start 1
-buildlog_start "${ORIGINSPEC}"
+log_start "${PKGNAME}" 1
+buildlog_start "${PKGNAME}" "${ORIGINSPEC}"
 ret=0
 
 # Don't show timestamps in msg() which goes to logs, only job_msg()
 # which goes to master
 NO_ELAPSED_IN_MSG=1
 TIME_START_JOB=$(clock -monotonic)
-build_port "${ORIGINSPEC}" || ret=$?
+build_port "${ORIGINSPEC}" "${PKGNAME}" || ret=$?
 unset NO_ELAPSED_IN_MSG
 
 now=$(clock -monotonic)
@@ -327,7 +326,8 @@ if [ ${ret} -ne 0 ]; then
 	if [ ${INTERACTIVE_MODE} -eq 0 ]; then
 		stop_build "${PKGNAME}" "${ORIGINSPEC}" 1
 		log_stop
-		bset_job_status "failed/${failed_phase}" "${ORIGINSPEC}"
+		bset_job_status "failed/${failed_phase}" "${ORIGINSPEC}" \
+		    "${PKGNAME}"
 		msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
 		set +e
 		exit 1
@@ -352,7 +352,8 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 		# Since failure was skipped earlier, fail now after leaving
 		# jail.
 		if [ -n "${failed_phase}" ]; then
-			bset_job_status "failed/${failed_phase}" "${ORIGINSPEC}"
+			bset_job_status "failed/${failed_phase}" \
+			    "${ORIGINSPEC}" "${PKGNAME}"
 			msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
 			set +e
 			exit 1
@@ -379,7 +380,7 @@ injail ${PKG_DELETE} ${PKGNAME}
 stop_build "${PKGNAME}" "${ORIGINSPEC}" ${ret}
 log_stop
 
-bset_job_status "stopped" "${ORIGINSPEC}"
+bset_job_status "stopped" "${ORIGINSPEC}" "${PKGNAME}"
 
 bset status "done:"
 
