@@ -2228,7 +2228,7 @@ setup_xdev() {
 
 	# hardlink these files to capture scripts and tools
 	# that explicitly call them instead of using paths.
-	HLINK_FILES="usr/bin/env usr/bin/gzip usr/bin/id usr/bin/limits \
+	HLINK_FILES="usr/bin/env usr/bin/gzip usr/bin/head usr/bin/id usr/bin/limits \
 			usr/bin/make usr/bin/dirname usr/bin/diff \
 			usr/bin/makewhatis \
 			usr/bin/find usr/bin/gzcat usr/bin/awk \
