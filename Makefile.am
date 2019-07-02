@@ -241,11 +241,11 @@ src/poudriere-sh/builtins.def: $(top_srcdir)/external/sh/builtins.def \
     $(top_srcdir)/src/poudriere-sh/builtins-poudriere.def
 	cat $^${.ALLSRC} > $@
 src/poudriere-sh/shell.h:
-	@ln -fs ../../$(top_srcdir)/external/sh/shell.h $@
+	@ln -fs $(top_srcdir)/external/sh/shell.h $@
 src/poudriere-sh/builtins.h: src/poudriere-sh/builtins.def \
       src/poudriere-sh/shell.h $(top_srcdir)/external/sh/mkbuiltins
 	cd $(top_builddir)/src/poudriere-sh && \
-	    sh ../../$(top_srcdir)/external/sh/mkbuiltins .
+	    sh $(top_srcdir)/external/sh/mkbuiltins .
 src/poudriere-sh/builtins.c: src/poudriere-sh/builtins.h
 sh_SOURCES+=		src/poudriere-sh/builtins.c
 ${sh_OBJECTS}:		src/poudriere-sh/builtins.h
