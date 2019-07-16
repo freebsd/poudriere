@@ -205,11 +205,10 @@ fi
 injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} maintainer ECHO_CMD=true || \
     err 1 "Port is broken"
 
-__MAKE_CONF=$(mktemp -t poudriere-make.conf)
-setup_makeconf ${__MAKE_CONF} "${JAILNAME}" "${PTNAME}" "${SETNAME}"
-
 if [ $CONFIGSTR -eq 1 ]; then
 	command -v dialog4ports >/dev/null 2>&1 || err 1 "You must have ports-mgmt/dialog4ports installed on the host to use -c."
+	__MAKE_CONF=$(mktemp -t poudriere-make.conf)
+	setup_makeconf ${__MAKE_CONF} "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 	PORTSDIR=${portsdir} \
 	    __MAKE_CONF=${__MAKE_CONF} \
 	    PORT_DBDIR=${MASTERMNT}/var/db/ports \
