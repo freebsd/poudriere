@@ -706,7 +706,7 @@ install_from_pkg() {
 	REMOTEVER=$(pkg rquery "%At=%Av" ports-mgmt/pkg | grep "FreeBSD_version" | cut -d '=' -f 2 | cut -c 1-2)
 	ABISTRING="FreeBSD:${REMOTEVER}:${ARCH}"
 
-	INSLIST="os-generic-userland os/src os-generic-kernel os-generic-buildworld os-generic-buildkernel"
+	INSLIST="os-generic-userland os-generic-userland-devtools os/src os-generic-kernel os-generic-buildworld os-generic-buildkernel"
 
 	# Make pkg play nice
 	export IGNORE_OSVERSION="YES"
