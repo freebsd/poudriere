@@ -216,6 +216,7 @@ if [ $CONFIGSTR -eq 1 ]; then
 	    make -C ${portsdir}/${ORIGIN} \
 	    ${FLAVOR:+FLAVOR=${FLAVOR}} \
 	    config
+	rm ${__MAKE_CONF}
 fi
 
 # deps_fetch_vars lookup for dependencies moved to prepare_ports()
