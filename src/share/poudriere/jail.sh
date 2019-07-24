@@ -538,7 +538,7 @@ install_from_ports() {
 	make -C ${PORTS_BASE}/os/src WRKDIR=${JAILMNT}/work/src BATCH=yes package >${LOGDIR}/${JAILNAME}-buildsrc.log 2>&1 || err 1 "Failed building src"
 
 	# Install the package
-	local PKGFILE="${JAILMNT}/work/src/pkg/$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/src -V PKGNAME).txz"
+	local PKGFILE="${JAILMNT}/work/src/pkg/$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/src -V PKGNAME).*"
 	local ABISTRING="$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/src -V PKG_ABISTRING)"
 	pkg -o ABI=${ABISTRING} -r ${JAILMNT} add ${PKGFILE} || err 1 "Failed installing src"
 
@@ -563,11 +563,11 @@ install_from_ports() {
 			>${LOGDIR}/${JAILNAME}-build${tgt}.log 2>&1 || err 1 "Failed building ${tgt}"
 
 		# Now build the jail from the resulting tarball
-		TARBALL="${JAILMNT}/work/${tgt}/stage/usr/dist/${tgt}.txz"
+		TARBALL="${JAILMNT}/work/${tgt}/stage/usr/dist/${tgt}.*"
 		install_from_tar
 
 		# Install the package
-		local PKGFILE="${JAILMNT}/work/${tgt}/pkg/$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/build${tgt} -V PKGNAME).txz"
+		local PKGFILE="${JAILMNT}/work/${tgt}/pkg/$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/build${tgt} -V PKGNAME).*"
 		local ABISTRING="$(make PORTSDIR=${PORTS_BASE} -C ${PORTS_BASE}/os/build${tgt} -V PKG_ABISTRING)"
 		pkg -o ABI=${ABISTRING} -r ${JAILMNT} add ${PKGFILE} || err 1 "Failed installing ${tgt}"
 
