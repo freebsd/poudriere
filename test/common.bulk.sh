@@ -74,13 +74,13 @@ expand_origin_flavors() {
 		    [ "${FLAVOR_DEFAULT_ALL}" != "yes" -a \
 		    ${ALL} -eq 0 -a \
 		    "${flavor}" != "${FLAVOR_ALL}" ]; then
-			_expanded="${_expanded}${_expanded:+ }${originspec}"
+			_expanded="${_expanded:+${_expanded} }${originspec}"
 			continue
 		fi
 		# Add all FLAVORS in for this one
 		for flavor in ${flavors}; do
 			originspec_encode originspec "${origin}" '' "${flavor}"
-			_expanded="${_expanded}${_expanded:+ }${originspec}"
+			_expanded="${_expanded:+${_expanded} }${originspec}"
 		done
 	done
 
@@ -159,7 +159,7 @@ assert_queued() {
 	# First fix the list to expand main port FLAVORS
 	expand_origin_flavors "${origins}" origins_expanded
 	# The queue does remove duplicates - do the same here
-	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | tr '\n' ' ')"
+	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
 	echo "Asserting that only '${origins_expanded}' are in the${dep:+ ${dep}} queue"
 	for originspec in ${origins_expanded}; do
 		fix_default_flavor "${originspec}" originspec
