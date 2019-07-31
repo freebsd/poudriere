@@ -156,7 +156,7 @@ list_contains() {
 	local value
 
 	getvar "${var}" value
-	case "${value}" in *" ${item} "*) ;; *) return 1 ;; esac
+	case " ${value} " in *" ${item} "*) ;; *) return 1 ;; esac
 	return 0
 }
 
@@ -167,17 +167,21 @@ list_add() {
 	local value
 
 	getvar "${var}" value
-	case "${value}" in *" ${item} "*) return 0 ;; esac
-	setvar "${var}" "${value} ${item} "
+	case " ${value} " in *" ${item} "*) return 0 ;; esac
+	setvar "${var}" "${value:+${value} }${item}"
 }
 
 list_remove() {
 	[ $# -eq 2 ] || eargs list_remove var item
 	local var="$1"
 	local item="$2"
-	local value
+	local value newvalue
 
 	getvar "${var}" value
+	value=" ${value} "
 	case "${value}" in *" ${item} "*) ;; *) return 1 ;; esac
-	setvar "${var}" "${value% "${item}" *}${value##* "${item}" }"
+	newvalue="${value% "${item}" *} ${value##* "${item}" }"
+	newvalue="${newvalue# }"
+	newvalue="${newvalue% }"
+	setvar "${var}" "${newvalue}"
 }
