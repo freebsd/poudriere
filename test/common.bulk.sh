@@ -1,4 +1,5 @@
 # Common setup for bulk test runs
+: ${ALL:=0}
 
 # Strip away @DEFAULT if it is the default FLAVOR
 fix_default_flavor() {
@@ -18,11 +19,19 @@ fix_default_flavor() {
 }
 
 # Cache all pkgnames involved.  Being single-threaded this is trivial.
+# Return 0 to skip the port
+# Return 1 to not skip the port
 cache_pkgnames() {
 	local originspec="$1"
-	local origin dep_origin flavor flavors pkgname default_flavor
+	local origin dep_origin flavor flavors pkgname default_flavor ignore
+	local flavor_originspec ret
 
-	hash_get originspec-pkgname "${originspec}" pkgname && return 0
+	if hash_get originspec-pkgname "${originspec}" pkgname; then
+		hash_get originspec-ignore "${originspec}" ignore
+		ret=1
+		[ -n "${ignore}" ] && ret=0
+		return ${ret}
+	fi
 
 	originspec_decode "${originspec}" origin '' flavor
 
@@ -36,6 +45,7 @@ cache_pkgnames() {
 	port_var_fetch_originspec "${originspec}" \
 	   PKGNAME pkgname \
 	   FLAVORS flavors \
+	   IGNORE ignore \
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
 	    '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
 	    pdeps
@@ -43,11 +53,17 @@ cache_pkgnames() {
 	fix_default_flavor "${originspec}" originspec
 	hash_set originspec-pkgname "${originspec}" "${pkgname}"
 	hash_set originspec-deps "${originspec}" "${pdeps}"
+	hash_set originspec-ignore "${originspec}" "${ignore}"
 	# Record all known packages for comparing to the queue later.
 	ALL_PKGNAMES="${ALL_PKGNAMES}${ALL_PKGNAMES:+ }${pkgname}"
 	ALL_ORIGINS="${ALL_ORIGINS}${ALL_ORIGINS:+ }${originspec}"
+	[ -n "${ignore}" ] && list_add IGNOREDPORTS "${originspec}"
 	for dep_origin in ${pdeps}; do
-		cache_pkgnames "${dep_origin}"
+		if cache_pkgnames "${dep_origin}"; then
+			if ! list_contains SKIPPEDPORTS "${originspec}"; then
+				list_add SKIPPEDPORTS "${originspec}"
+			fi
+		fi
 	done
 	# Also cache all of the FLAVOR deps/PKGNAMES
 	if [ -n "${flavor}" ]; then
@@ -55,10 +71,12 @@ cache_pkgnames() {
 		for flavor in ${flavors}; do
 			# Don't recurse on the first flavor since we are it.
 			[ "${flavor}" = "${default_flavor}" ] && continue
-			originspec_encode originspec "${origin}" '' "${flavor}"
-			cache_pkgnames "${originspec}"
+			originspec_encode flavor_originspec "${origin}" '' "${flavor}"
+			cache_pkgnames "${flavor_originspec}" || :
 		done
 	fi
+
+	[ -n "${ignore}" ]
 }
 
 expand_origin_flavors() {
@@ -99,10 +117,10 @@ list_all_deps() {
 
 	for originspec in ${origins}; do
 		# If it's already in the list, nothing to do
-		case "${_out}" in
+		case " ${_out} " in
 			*\ ${originspec}\ *) continue ;;
 		esac
-		_out="${_out:- }${originspec} "
+		_out="${_out:+${_out} }${originspec}"
 		originspec_decode "${originspec}" origin '' flavor
 		flavors=
 		[ -z "${flavor}" ] && \
@@ -145,6 +163,8 @@ list_all_deps() {
 			done
 		fi
 	done
+	_out="${_out# }"
+	_out="${_out% }"
 	setvar "${var_return}" "${_out}"
 }
 
@@ -200,6 +220,135 @@ assert_queued() {
 	! [ -s "${tmp}" ]
 	assert 0 $? "Queue should be empty"
 	rm -f "${tmp}"
+}
+
+assert_ignored() {
+	local origins="$1"
+	local tmp originspec origins_expanded
+
+	tmp="$(mktemp -t queued.${dep})"
+	cp -f "${log}/.poudriere.ports.ignored" "${tmp}"
+	# First fix the list to expand main port FLAVORS
+	expand_origin_flavors "${origins}" origins_expanded
+	# The queue does remove duplicates - do the same here
+	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
+	echo "Asserting that only '${origins_expanded}' are in the ignored list"
+	for originspec in ${origins_expanded}; do
+		fix_default_flavor "${originspec}" originspec
+		hash_get originspec-pkgname "${originspec}" pkgname
+		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec}"
+		echo "=> Asserting that ${originspec} | ${pkgname} is ignored"
+		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
+		    $1 == originspec && $2 == pkgname && ($3 == "ignored") {
+			print "==> " $0
+			if (found == 1) {
+				# A duplicate, no good.
+				found = 0
+				exit 1
+			}
+			found = 1
+			next
+		    }
+		    END { if (found != 1) exit 1 }
+		' ${log}/.poudriere.ports.ignored >&2
+		assert 0 $? "${originspec} | ${pkgname} should be ignored"
+		# Remove the entry so we can assert later that nothing extra
+		# is in the queue.
+		cat "${tmp}" | \
+		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
+		    $1 == originspec && $2 == pkgname && $3 == "ignored" { next }
+		    { print }
+		' > "${tmp}.new"
+		mv -f "${tmp}.new" "${tmp}"
+	done
+	echo "=> Asserting that nothing else is ignored"
+	cat "${tmp}" | sed -e 's,^,==> ,' >&2
+	! [ -s "${tmp}" ]
+	assert 0 $? "Ignore list should be empty"
+	rm -f "${tmp}"
+}
+
+assert_skipped() {
+	local origins="$1"
+	local tmp originspec origins_expanded
+
+	tmp="$(mktemp -t queued.${dep})"
+	cp -f "${log}/.poudriere.ports.skipped" "${tmp}"
+	# First fix the list to expand main port FLAVORS
+	expand_origin_flavors "${origins}" origins_expanded
+	# The queue does remove duplicates - do the same here
+	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
+	echo "Asserting that only '${origins_expanded}' are in the skipped list"
+	for originspec in ${origins_expanded}; do
+		fix_default_flavor "${originspec}" originspec
+		hash_get originspec-pkgname "${originspec}" pkgname
+		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec}"
+		echo "=> Asserting that ${originspec} | ${pkgname} is skipped"
+		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
+		    $1 == originspec && $2 == pkgname {
+			print "==> " $0
+			if (found == 1) {
+				# A duplicate, no good.
+				found = 0
+				exit 1
+			}
+			found = 1
+			next
+		    }
+		    END { if (found != 1) exit 1 }
+		' ${log}/.poudriere.ports.skipped >&2
+		assert 0 $? "${originspec} | ${pkgname} should be skipped"
+		# Remove the entry so we can assert later that nothing extra
+		# is in the queue.
+		cat "${tmp}" | \
+		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
+		    $1 == originspec && $2 == pkgname { next }
+		    { print }
+		' > "${tmp}.new"
+		mv -f "${tmp}.new" "${tmp}"
+	done
+	echo "=> Asserting that nothing else is skipped"
+	cat "${tmp}" | sed -e 's,^,==> ,' >&2
+	! [ -s "${tmp}" ]
+	assert 0 $? "Skipped list should be empty"
+	rm -f "${tmp}"
+}
+
+assert_counts() {
+	local queued expected_queued ignored expected_ignored
+	local skipped expected_skipped
+
+	if [ -z "${ALL_EXPECTED}" ]; then
+		expected_queued=0
+	else
+		expected_queued=$(echo "${ALL_EXPECTED}" | tr ' ' '\n' | wc -l)
+		expected_queued="${expected_queued##* }"
+	fi
+	if [ -z "${IGNOREDPORTS}" ]; then
+		expected_ignored=0
+	else
+		expected_ignored=$(echo "${IGNOREDPORTS}" | tr ' ' '\n' | wc -l)
+		expected_ignored="${expected_ignored##* }"
+	fi
+	if [ -z "${SKIPPEDPORTS}" ]; then
+		expected_skipped=0
+	else
+		expected_skipped=$(echo "${SKIPPEDPORTS}" | tr ' ' '\n' | wc -l)
+		expected_skipped="${expected_skipped##* }"
+	fi
+	echo "=> Asserting queued=${expected_queued} ignored=${expected_ignored} skipped=${expected_skipped}"
+
+	read queued < "${log}/.poudriere.stats_queued"
+	assert 0 $? "${log}/.poudriere.stats_queued read should pass"
+	assert "${expected_queued}" "${queued}" "queued should match"
+
+	read ignored < "${log}/.poudriere.stats_ignored"
+	assert 0 $? "${log}/.poudriere.stats_ignored read should pass"
+	assert "${expected_ignored}" "${ignored}" "ignored should match"
+
+	read skipped < "${log}/.poudriere.stats_skipped"
+	assert 0 $? "${log}/.poudriere.stats_skipped read should pass"
+	assert "${expected_skipped}" "${skipped}" "skipped should match"
 }
 
 # Avoid injail() for port_var_fetch
@@ -281,12 +430,30 @@ set +e
 ALL_PKGNAMES=
 ALL_ORIGINS=
 if [ ${ALL} -eq 1 ]; then
-	LISTPORTS="$(listed_ports)"
+	LISTPORTS="$(listed_ports | paste -s -d ' ' -)"
 fi
 echo -n "Gathering metadata for requested ports..."
+IGNOREDPORTS=""
+SKIPPEDPORTS=""
 for origin in ${LISTPORTS}; do
-	cache_pkgnames "${origin}"
+	cache_pkgnames "${origin}" || :
 done
 echo " done"
 expand_origin_flavors "${LISTPORTS}" LISTPORTS_EXPANDED
+LISTPORTS_NOIGNORED="${LISTPORTS_EXPANDED}"
+# Separate out IGNORED ports
+if [ -n "${IGNOREDPORTS}" ]; then
+	_IGNOREDPORTS="${IGNOREDPORTS}"
+	for port in ${_IGNOREDPORTS}; do
+		list_remove LISTPORTS_NOIGNORED "${port}"
+		list_remove SKIPPEDPORTS "${port}"
+	done
+fi
+# Separate out SKIPPED ports
+if [ -n "${SKIPPEDPORTS}" ]; then
+	_SKIPPEDPORTS="${SKIPPEDPORTS}"
+	for port in ${_SKIPPEDPORTS}; do
+		list_remove LISTPORTS_NOIGNORED "${port}"
+	done
+fi
 echo "Building: $(echo ${LISTPORTS_EXPANDED})"
