@@ -3825,7 +3825,7 @@ build_queue() {
 }
 
 calculate_tobuild() {
-	local nbq nbb nbf nbi nbsndone nremaining
+	local nbq nbb nbf nbi nbs ndone nremaining
 
 	_bget nbq stats_queued || nbq=0
 	_bget nbb stats_built || nbb=0
