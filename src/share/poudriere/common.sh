@@ -1217,7 +1217,7 @@ show_dry_run_summary() {
 }
 
 show_build_summary() {
-	local status nbb nbf nbs nbi nbq ndone nbtobuild buildname
+	local status nbb nbf nbs nbi nbq nbtobuild buildname
 	local log now elapsed buildtime queue_width
 
 	update_stats 2>/dev/null || return 0
@@ -1228,8 +1228,7 @@ show_build_summary() {
 	_bget nbi stats_ignored || nbi=0
 	_bget nbs stats_skipped || nbs=0
 	_bget nbb stats_built || nbb=0
-	ndone=$((nbb + nbf + nbi + nbs))
-	nbtobuild=$((nbq - ndone))
+	nbtobuild=$((nbq - (nbb + nbf)))
 
 	if [ ${nbq} -gt 9999 ]; then
 		queue_width=5
@@ -3825,18 +3824,15 @@ build_queue() {
 }
 
 calculate_tobuild() {
-	local nbq nbb nbf nbi nbs ndone nremaining
+	local nbq nbb nbf nremaining
 
 	_bget nbq stats_queued || nbq=0
 	_bget nbb stats_built || nbb=0
 	_bget nbf stats_failed || nbf=0
-	_bget nbi stats_ignored || nbi=0
-	_bget nbs stats_skipped || nbs=0
 
-	ndone=$((nbb + nbf + nbi + nbs))
-	nremaining=$((nbq - ndone))
+	nremaining=$((nbq - (nbb + nbf)))
 
-	echo ${nremaining}
+	echo "${nremaining}"
 }
 
 status_is_stopped() {
