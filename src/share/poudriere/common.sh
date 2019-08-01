@@ -7068,7 +7068,7 @@ clean_build_queue() {
 prepare_ports() {
 	local pkg
 	local log log_top
-	local n nbq nbi nbs resuming_build
+	local n nbq resuming_build
 	local cache_dir sflag delete_pkg_list shash_bucket
 
 	_log_path log
@@ -7301,27 +7301,23 @@ prepare_ports() {
 
 	if was_a_bulk_run; then
 		if [ "${resuming_build}" -eq 0 ]; then
-			nbq=$(pkgqueue_list | wc -l)
-			# Need to add in pre-build ignored/skipped
-			_bget nbi stats_ignored || nbi=0
-			_bget nbs stats_skipped || nbs=0
-			nbq=$((nbq + nbi + nbs))
-
-			# Add 1 for the main port to test
-			was_a_testport_run && \
-			    nbq=$((${nbq} + 1))
-			bset stats_queued ${nbq##* }
-
 			# Generate ports.queued list after the queue was
 			# trimmed.
 			local _originspec _pkgname _rdep _ignore tmp
 			tmp=$(TMPDIR="${log}" mktemp -ut .queued)
 			while mapfile_read_loop "all_pkgs" \
 			    _pkgname _originspec _rdep _ignore; do
-				pkgqueue_contains "${_pkgname}" && \
-				    echo "${_originspec} ${_pkgname} ${_rdep}"
+				if pkgqueue_contains "${_pkgname}"; then
+					echo "${_originspec} ${_pkgname} ${_rdep}"
+				fi
 			done | sort > "${tmp}"
 			mv -f "${tmp}" "${log}/.poudriere.ports.queued"
+			nbq=$(wc -l < "${log}/.poudriere.ports.queued")
+			nbq="${nbq##* }"
+			# Add 1 for the main port to test
+			was_a_testport_run && \
+			    nbq=$((nbq + 1))
+			bset stats_queued "${nbq}"
 		fi
 
 		pkgqueue_move_ready_to_pool
