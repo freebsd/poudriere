@@ -4012,8 +4012,7 @@ clean_pool() {
 		get_originspec_from_pkgname skipped_originspec "${skipped_pkgname}"
 		originspec_decode "${skipped_originspec}" skipped_origin '' ''
 		badd ports.skipped "${skipped_originspec} ${skipped_pkgname} ${pkgname}"
-		[ "${ALL}" -eq 1 -a "${clean_rdepends}" = "ignored" ] || \
-		    COLOR_ARROW="${COLOR_SKIP}" \
+		COLOR_ARROW="${COLOR_SKIP}" \
 		    job_msg "${COLOR_SKIP}Skipping ${COLOR_PORT}${skipped_originspec} | ${skipped_pkgname}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_SKIP} ${clean_rdepends}"
 		if [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
 			# Send to true stdout (not any build log)
