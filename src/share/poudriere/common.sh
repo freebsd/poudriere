@@ -3500,6 +3500,11 @@ save_wrkdir() {
 	[ "${failed_phase}" != "fetch" -a "${failed_phase}" != "checksum" -a \
 		"${failed_phase}" != "extract" ] || return 0
 
+	if [ -n "${MY_JOBID}" ]; then
+		bset ${MY_JOBID} status "save_wrkdir:"
+	else
+		bset status "save_wrkdir:"
+	fi
 	mkdir -p ${tardir}
 
 	# Tar up the WRKDIR, and ignore errors
