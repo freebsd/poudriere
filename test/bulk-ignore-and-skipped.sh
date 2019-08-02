@@ -1,23 +1,24 @@
 #! /bin/sh
 
-ALL=1
+LISTPORTS="ports-mgmt/poudriere-devel ports-mgmt/poudriere-devel-IGNORED-and-skipped"
+# IGNORE should take precedence over skipped.
 . common.bulk.sh
 
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
     -B "${BUILDNAME}" \
     -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
-    -a
+    ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 
+# Assert the non-ignored ports list is right
+assert "ports-mgmt/poudriere-devel" "${LISTPORTS_NOIGNORED}" "LISTPORTS_NOIGNORED should match"
+
 # Assert that IGNOREDPORTS was populated by the framework right.
-assert "ports-mgmt/poudriere-devel-IGNORED ports-mgmt/poudriere-devel-IGNORED-and-skipped misc/foo@IGNORED" \
+assert "ports-mgmt/poudriere-devel-IGNORED-and-skipped ports-mgmt/poudriere-devel-IGNORED" \
     "${IGNOREDPORTS-null}" "IGNOREDPORTS should match"
 
 # Assert that skipped ports are right
-assert "ports-mgmt/poudriere-devel-dep-IGNORED ports-mgmt/poudriere-devel-dep2-IGNORED" "${SKIPPEDPORTS-null}" "SKIPPEDPORTS should match"
-
-# Assert the IGNOREd ports are tracked in .poudriere.ports.ignored
-assert_ignored "${IGNOREDPORTS}"
+assert "" "${SKIPPEDPORTS-null}" "SKIPPEDPORTS should match"
 
 # Assert that only listed packages are in poudriere.ports.queued as 'listed'
 assert_queued "listed" "${LISTPORTS_NOIGNORED}"

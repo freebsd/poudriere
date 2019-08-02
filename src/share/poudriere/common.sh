@@ -4014,6 +4014,13 @@ clean_pool() {
 	# Cleaning queue (pool is cleaned here)
 	pkgqueue_done "${pkgname}" "${clean_rdepends}" | \
 	    while mapfile_read_loop_redir skipped_pkgname; do
+		# Don't skip listed ports that are also IGNORED. They
+		# should be accounted as IGNORED.
+		if [ "${clean_rdepends}" = "ignored" ] && \
+		    shash_exists pkgname-ignore "${skipped_pkgname}" && \
+		    pkgname_is_queued "${skipped_pkgname}"; then
+			continue
+		fi
 		get_originspec_from_pkgname skipped_originspec "${skipped_pkgname}"
 		originspec_decode "${skipped_originspec}" skipped_origin '' ''
 		badd ports.skipped "${skipped_originspec} ${skipped_pkgname} ${pkgname}"

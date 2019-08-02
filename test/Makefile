@@ -19,6 +19,7 @@ TESTS=\
 	bulk-ignore-dep-skipped.sh \
 	bulk-ignore-listed-skipped-dep.sh \
 	bulk-ignore-listed-dep.sh \
+	bulk-ignore-and-skipped.sh \
 	bulk-flavor-default-dep-and-specific-listed.sh \
 	bulk-flavor-default-dep.sh \
 	bulk-flavor-main-dep-and-default-listed.sh \
