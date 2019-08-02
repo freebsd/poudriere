@@ -221,6 +221,7 @@ if [ -d ${LOGD} -a ${CLEAN} -eq 1 ]; then
 fi
 
 prepare_ports
+show_build_summary
 show_dry_run_summary
 markfs prepkg ${MASTERMNT}
 
