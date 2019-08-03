@@ -21,7 +21,7 @@ assert "ports-mgmt/poudriere-devel-IGNORED-and-skipped ports-mgmt/poudriere-deve
 assert "" "${SKIPPEDPORTS-null}" "SKIPPEDPORTS should match"
 
 # Assert that only listed packages are in poudriere.ports.queued as 'listed'
-assert_queued "listed" "${LISTPORTS_NOIGNORED}"
+assert_queued "listed" "${LISTPORTS}"
 
 # Assert the IGNOREd ports are tracked in .poudriere.ports.ignored
 assert_ignored "${IGNOREDPORTS}"

@@ -20,7 +20,7 @@ assert "ports-mgmt/poudriere-devel-dep-IGNORED ports-mgmt/poudriere-devel-dep2-I
 assert_ignored "${IGNOREDPORTS}"
 
 # Assert that only listed packages are in poudriere.ports.queued as 'listed'
-assert_queued "listed" "${LISTPORTS_NOIGNORED}"
+assert_queued "listed" "${LISTPORTS}"
 
 # Assert the IGNOREd ports are tracked in .poudriere.ports.ignored
 assert_ignored "${IGNOREDPORTS}"

@@ -28,7 +28,7 @@ assert_ignored "${IGNOREDPORTS}"
 assert_skipped "${SKIPPEDPORTS}"
 
 # Assert that only listed packages are in poudriere.ports.queued as 'listed'
-assert_queued "listed" "${LISTPORTS_NOIGNORED}"
+assert_queued "listed" "${LISTPORTS}"
 
 # Assert that all expected dependencies are in poudriere.ports.queued (since
 # they do not exist yet)

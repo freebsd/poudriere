@@ -1200,6 +1200,7 @@ show_dry_run_summary() {
 				cat "${log}/.poudriere.ports.queued"
 			} | while mapfile_read_loop_redir originspec pkgname \
 			    _ignored; do
+				[ -n "${_ignored}" ] && continue
 				# Trim away DEPENDS_ARGS for display
 				originspec_decode "${originspec}" origin '' \
 				    flavor
@@ -7329,8 +7330,10 @@ prepare_ports() {
 			tmp=$(TMPDIR="${log}" mktemp -ut .queued)
 			while mapfile_read_loop "all_pkgs" \
 			    _pkgname _originspec _rdep _ignore; do
-				pkgqueue_contains "${_pkgname}" && \
-				    echo "${_originspec} ${_pkgname} ${_rdep}"
+				if [ "${_rdep}" = "listed" ] || \
+				    pkgqueue_contains "${_pkgname}"; then
+					echo "${_originspec} ${_pkgname} ${_rdep}"
+				fi
 			done | sort > "${tmp}"
 			mv -f "${tmp}" "${log}/.poudriere.ports.queued"
 		fi
