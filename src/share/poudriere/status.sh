@@ -138,7 +138,7 @@ add_summary_build() {
 	_bget nbfailed stats_failed || :
 	_bget nbignored stats_ignored || :
 	_bget nbskipped stats_skipped || :
-	nbtobuild=$((nbqueued - (nbbuilt + nbfailed)))
+	nbtobuild=$((nbqueued - (nbbuilt + nbfailed + nbskipped + nbignored)))
 
 	calculate_elapsed_from_log ${now} ${log}
 	elapsed=${_elapsed_time}

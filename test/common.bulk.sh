@@ -336,6 +336,7 @@ assert_counts() {
 		expected_skipped=$(echo "${SKIPPEDPORTS}" | tr ' ' '\n' | wc -l)
 		expected_skipped="${expected_skipped##* }"
 	fi
+	expected_queued=$((expected_queued + expected_ignored + expected_skipped))
 	echo "=> Asserting queued=${expected_queued} ignored=${expected_ignored} skipped=${expected_skipped}"
 
 	read queued < "${log}/.poudriere.stats_queued"

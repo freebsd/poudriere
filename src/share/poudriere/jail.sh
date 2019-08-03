@@ -941,7 +941,7 @@ info_jail() {
 	_bget nbf stats_failed || nbf=0
 	_bget nbi stats_ignored || nbi=0
 	_bget nbs stats_skipped || nbs=0
-	tobuild=$((nbq - (nbb + nbf)))
+	tobuild=$((nbq - nbb - nbf - nbi - nbs))
 
 	_jget jversion ${JAILNAME} version
 	_jget jversion_vcs ${JAILNAME} version_vcs || jversion_vcs=

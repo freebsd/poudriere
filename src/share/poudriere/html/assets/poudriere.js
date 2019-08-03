@@ -177,7 +177,7 @@ function update_canvas(stats) {
 	failed = stats.failed;
 	skipped = stats.skipped;
 	ignored = stats.ignored;
-	remaining = queued - built - failed;
+	remaining = queued - built - failed - skipped - ignored;
 
 	context = canvas.getContext('2d');
 
