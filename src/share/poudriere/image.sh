@@ -405,7 +405,10 @@ touch ${WRKDIR}/src.conf
 make -C ${mnt}/usr/src DESTDIR=${WRKDIR}/world BATCH_DELETE_OLD_FILES=yes SRCCONF=${WRKDIR}/src.conf delete-old delete-old-libs
 
 [ ! -d "${EXTRADIR}" ] || cp -fRPp ${EXTRADIR}/ ${WRKDIR}/world/
-mv ${WRKDIR}/world/etc/login.conf.orig ${WRKDIR}/world/etc/login.conf
+if [ -f "${WRKDIR}/world/etc/login.conf.orig" ]; then
+	mv -f "${WRKDIR}/world/etc/login.conf.orig" \
+	    "${WRKDIR}/world/etc/login.conf"
+fi
 cap_mkdb ${WRKDIR}/world/etc/login.conf
 
 # Set hostname
