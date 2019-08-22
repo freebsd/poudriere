@@ -430,6 +430,8 @@ case ${MEDIATYPE} in
 	case "${MEDIATYPE}" in
 	*zmfs) ${GZCMD:-gzip} -9 ${WRKDIR}/out/mfsroot ;;
 	esac
+	MFSROOTSIZE=$(ls -l ${WRKDIR}/out/mfsroot* | head -n 1 | awk '{print $5}')
+	if [ ${MFSROOTSIZE} -ge 268435456 ]; then echo WARNING: MFSROOT too large, boot failure likely ; fi
 	cpdup -i0 ${WRKDIR}/world/boot ${WRKDIR}/out/boot
 	cat >> ${WRKDIR}/out/boot/loader.conf <<-EOF
 	tmpfs_load="YES"
