@@ -2389,8 +2389,14 @@ jail_start() {
 	if [ "${DISTFILES_CACHE}" != "no" -a ! -d "${DISTFILES_CACHE}" ]; then
 		err 1 "DISTFILES_CACHE directory does not exist. (cf.  poudriere.conf)"
 	fi
-	[ ${TMPFS_ALL} -ne 1 ] && [ $(sysctl -n kern.securelevel) -ge 1 ] && \
-	    err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags. USE_TMPFS=all can override this."
+	schg_immutable_base && [ $(sysctl -n kern.securelevel) -ge 1 ] && \
+	    err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags for MUTABLE_BASE=schg."
+	[ ${TMPFS_ALL} -eq 0 ] && [ ${TMPFS_WRKDIR} -eq 0 ] \
+	    && [ $(sysctl -n kern.securelevel) -ge 1 ] && \
+	    err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags. USE_TMPFS with 'wrkdir' or 'all' values can avoid this."
+	[ ${TMPFS_ALL} -eq 0 ] && [ ${TMPFS_LOCALBASE} -eq 0 ] \
+	    && [ $(sysctl -n kern.securelevel) -ge 1 ] && \
+	    err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags. USE_TMPFS with 'localbase' or 'all' values can avoid this."
 	[ "${name#*.*}" = "${name}" ] ||
 		err 1 "The jail name cannot contain a period (.). See jail(8)"
 	[ "${ptname#*.*}" = "${ptname}" ] ||
