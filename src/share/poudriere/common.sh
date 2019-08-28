@@ -7796,6 +7796,7 @@ DRY_RUN=0
 : ${USE_COLORS:=yes}
 : ${ALLOW_MAKE_JOBS_PACKAGES=pkg ccache}
 : ${FLAVOR_DEFAULT_ALL:=no}
+: ${NULLFS_PATHS:="/rescue /usr/share /usr/tests /usr/lib32"}
 
 : ${POUDRIERE_TMPDIR:=$(command mktemp -dt poudriere)}
 : ${SHASH_VAR_PATH_DEFAULT:=${POUDRIERE_TMPDIR}}
