@@ -495,7 +495,7 @@ do_confirm_delete() {
 	local reason="$2"
 	local answer="$3"
 	local DRY_RUN="$4"
-	local file_cnt hsize ret
+	local file_cnt count hsize ret
 
 	file_cnt=$(wc -l ${filelist} | awk '{print $1}')
 	if [ ${file_cnt} -eq 0 ]; then
@@ -512,7 +512,9 @@ do_confirm_delete() {
 
 	msg "These ${reason} will be deleted:"
 	cat ${filelist}
-	msg "Removing these ${reason} will free: ${hsize}"
+	count=$(cat ${filelist} | wc -l)
+	count="${count##* }"
+	msg "Removing these ${count} ${reason} will free: ${hsize}"
 
 	if [ ${DRY_RUN} -eq 1 ];  then
 		msg "Dry run: not cleaning anything."
