@@ -229,6 +229,8 @@ ARCH=$(uname -p)
 JAILNAME="poudriere-10${ARCH}"
 JAIL_VERSION="10.3-RELEASE"
 JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt" || echo)
+export UNAME_r=$(freebsd-version)
+export UNAME_v="FreeBSD $(freebsd-version)"
 if [ -z "${JAILMNT}" ]; then
 	echo "Setting up jail for testing..." >&2
 	if ! ${SUDO} ${POUDRIERE} jail -c -j "${JAILNAME}" \
