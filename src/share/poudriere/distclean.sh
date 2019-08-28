@@ -188,6 +188,6 @@ do_confirm_delete "${DISTFILES_LIST}.unexpected" "stale distfiles" \
 if [ ${ret} -eq 2 ]; then
 	exit 0
 fi
-if [ "${DRY_RUN}" -eq 1 ]; then
+if [ "${DRY_RUN}" -eq 0 ]; then
 	find ${DISTFILES_CACHE}/ -type d -empty -delete
 fi
