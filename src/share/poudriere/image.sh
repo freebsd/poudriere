@@ -557,6 +557,8 @@ usb)
 		rm -rf ${WRKDIR}/world/usr/local/etc
 		ln -s /etc/local ${WRKDIR}/world/usr/local/etc
 	fi
+	# Copy save_cfg to /etc
+	cp ${mnt}/usr/src/tools/tools/nanobsd/Files/root/save_cfg ${WRKDIR}/world/etc/
 	# Copy /etc and /var to /conf/base as "reference"
 	for d in var etc; do
 		mkdir -p ${WRKDIR}/world/conf/base/$d ${WRKDIR}/world/conf/default/$d
@@ -569,9 +571,6 @@ usb)
 	# replace /tmp by a symlink to /var/tmp
 	rm -rf ${WRKDIR}/world/tmp
 	ln -s /var/tmp ${WRKDIR}/world/tmp
-
-	# Copy save_cfg to /etc
-	cp ${mnt}/usr/src/tools/tools/nanobsd/Files/root/save_cfg ${WRKDIR}/world/etc/
 
 	# Figure out Partition sizes
 	OS_SIZE=
