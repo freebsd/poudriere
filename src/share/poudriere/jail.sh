@@ -217,7 +217,7 @@ update_jail() {
 	msg "Upgrading using ${METHOD}"
 	: ${KERNEL:=$(jget ${JAILNAME} kernel || echo)}
 	case ${METHOD} in
-	ftp|http|ftp-archive)
+	ftp|http|ftp-archive|url=*)
 		# In case we use FreeBSD dists and TORELEASE is present, check if it's a release branch.
 		if [ -n "${TORELEASE}" ]; then
 		  case ${TORELEASE} in
@@ -335,7 +335,7 @@ update_jail() {
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
-	allbsd|gjb|url=*)
+	allbsd|gjb)
 		[ -z "${VERSION}" ] && VERSION=$(jget ${JAILNAME} version)
 		[ -z "${ARCH}" ] && ARCH=$(jget ${JAILNAME} arch)
 		delete_jail
@@ -910,7 +910,7 @@ create_jail() {
 
 	# Check VERSION before running 'update_jail' on jails created using FreeBSD dists.
 	case ${METHOD} in
-		ftp|http|ftp-archive)
+		ftp|http|ftp-archive|url=*)
 			[ ${VERSION#*-RELEAS*} != ${VERSION} ] && update_jail
 			;;
 	esac
