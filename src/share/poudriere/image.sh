@@ -413,7 +413,7 @@ cap_mkdb ${WRKDIR}/world/etc/login.conf
 
 # Set hostname
 if [ -n "${HOSTNAME}" ]; then
-	echo "hostname=${HOSTNAME}" >> ${WRKDIR}/world/etc/rc.conf
+	sysrc -R ${WRKDIR}/world hostname=${HOSTNAME} > /dev/null 2>&1
 fi
 
 # Convert @flavor from package list to a unique entry of pkgname, otherwise it
