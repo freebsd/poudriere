@@ -3503,7 +3503,7 @@ save_wrkdir() {
 	local phase="$5"
 	local tardir=${POUDRIERE_DATA}/wrkdirs/${MASTERNAME}/${PTNAME}
 	local tarname=${tardir}/${pkgname}.${WRKDIR_ARCHIVE_FORMAT}
-	local mnted_portdir=${mnt}/wrkdirs/${portdir}
+	local wrkdir
 
 	[ "${SAVE_WRKDIR}" != "no" ] || return 0
 	# Only save if not in fetch/checksum phase
@@ -3525,7 +3525,13 @@ save_wrkdir() {
 	txz) COMPRESSKEY="J" ;;
 	esac
 	unlink ${tarname}
-	tar -s ",${mnted_portdir},," -c${COMPRESSKEY}f ${tarname} ${mnted_portdir}/work > /dev/null 2>&1
+
+	port_var_fetch_originspec "${originspec}" \
+	    WRKDIR wrkdir || \
+	    err 1 "Failed to lookup WRKDIR for ${originspec}"
+
+	tar -s ",${mnt}${wrkdir%/*},," -c${COMPRESSKEY}f "${tarname}" \
+	    "${mnt}${wrkdir}" > /dev/null 2>&1
 
 	job_msg "Saved ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_RESET} wrkdir to: ${tarname}"
 }
