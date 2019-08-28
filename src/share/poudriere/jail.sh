@@ -335,7 +335,7 @@ update_jail() {
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
-	allbsd|gjb|url=*)
+	allbsd|url=*)
 		[ -z "${VERSION}" ] && VERSION=$(jget ${JAILNAME} version)
 		[ -z "${ARCH}" ] && ARCH=$(jget ${JAILNAME} arch)
 		delete_jail
@@ -626,7 +626,7 @@ install_from_ftp() {
 	[0-8][^0-9]*) # < 9
 		msg "Fetching sets for FreeBSD ${V} ${ARCH}"
 		case ${METHOD} in
-		ftp|http|gjb)
+		ftp|http)
 			case ${VERSION} in
 				*-PRERELEASE|*-STABLE) type=snapshots ;;
 				*) type=releases ;;
@@ -688,7 +688,7 @@ install_from_ftp() {
 	*)
 		local type
 		case ${METHOD} in
-			ftp|http|gjb)
+			ftp|http)
 				case ${VERSION} in
 					*-CURRENT|*-ALPHA*|*-PRERELEASE|*-STABLE) type=snapshots ;;
 					*) type=releases ;;
@@ -798,7 +798,7 @@ create_jail() {
 	fi
 
 	case ${METHOD} in
-	ftp|http|gjb|ftp-archive|url=*)
+	ftp|http|ftp-archive|url=*)
 		FCT=install_from_ftp
 		;;
 	allbsd)
