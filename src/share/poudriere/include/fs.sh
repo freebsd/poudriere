@@ -327,7 +327,7 @@ nullfs_paths() {
 	local mnt="${1}"
 	local nullpaths
 
-	nullpaths="/rescue /usr/share /usr/tests /usr/lib32"
+	nullpaths="${NULLFS_PATHS}"
 	if [ "${MUTABLE_BASE}" = "nullfs" ]; then
 		# Need to keep /usr/src and /usr/ports on their own.
 		nullpaths="${nullpaths} /usr/bin /usr/include /usr/lib \
