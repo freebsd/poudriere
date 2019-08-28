@@ -3,7 +3,7 @@
 . common.sh
 INJAIL_HOST=1
 . ${SCRIPTPREFIX}/common.sh
-PORTSDIR=${THISDIR}/ports
+PORTSDIR=${THISDIR}/../test-ports
 export PORTSDIR
 export __MAKE_CONF=/dev/null
 

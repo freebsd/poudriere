@@ -394,7 +394,7 @@ fi
 
 . ${SCRIPTPREFIX}/common.sh
 
-: ${PORTSDIR:=${THISDIR}/ports}
+: ${PORTSDIR:=${THISDIR}/../test-ports}
 PTMNT="${PORTSDIR}"
 : ${JAILNAME:=bulk}
 : ${PTNAME:=test}
