@@ -52,6 +52,7 @@ Options:
                    any packages.
     -N          -- Do not build package repository when build of dependencies
                    completed
+    -O overlays -- Specify the overlay which should be added to the ports tree
     -p tree     -- Specify the path to the portstree
     -P          -- Use custom prefix
     -S          -- Don't recursively rebuild packages affected by other
@@ -75,8 +76,9 @@ SKIP_RECURSIVE_REBUILD=0
 INTERACTIVE_MODE=0
 PTNAME="default"
 BUILD_REPO=1
+OVERLAYS=""
 
-while getopts "B:o:cniIj:J:kNp:PSvwz:" FLAG; do
+while getopts "B:o:cniIj:J:kNO:p:PSvwz:" FLAG; do
 	case "${FLAG}" in
 		B)
 			BUILDNAME="${OPTARG}"
@@ -112,6 +114,11 @@ while getopts "B:o:cniIj:J:kNp:PSvwz:" FLAG; do
 			;;
 		N)
 			BUILD_REPO=0
+			;;
+		O)
+			porttree_exists ${OPTARG} ||
+			    err 2 "No such overlay ${OPTARG}"
+			OVERLAYS="${OVERLAYS} ${OPTARG}"
 			;;
 		p)
 			porttree_exists ${OPTARG} ||
@@ -164,6 +171,7 @@ _mastermnt MASTERMNT
 export MASTERNAME
 export MASTERMNT
 export POUDRIERE_BUILD_TYPE=bulk
+export OVERLAYS
 
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
