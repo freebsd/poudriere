@@ -374,7 +374,7 @@ fi
 POUDRIERE="${POUDRIEREPATH} -e /usr/local/etc"
 ARCH=$(uname -p)
 JAILNAME="poudriere-11${ARCH}"
-JAIL_VERSION="11.2-RELEASE"
+JAIL_VERSION="11.3-RELEASE"
 JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt" || echo)
 export UNAME_r=$(freebsd-version)
 export UNAME_v="FreeBSD $(freebsd-version)"
