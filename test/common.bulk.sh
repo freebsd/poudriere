@@ -371,9 +371,9 @@ if [ $(id -u) -ne 0 ]; then
 fi
 
 : ${BUILDNAME:=${0%.sh}}
-POUDRIERE="${POUDRIEREPATH} -e /usr/local/etc"
+POUDRIERE="${POUDRIEREPATH} -e ${THISDIR}/etc"
 ARCH=$(uname -p)
-JAILNAME="poudriere-11${ARCH}"
+JAILNAME="poudriere-test-${ARCH}$(echo "${THISDIR}" | tr '/' '_')"
 JAIL_VERSION="11.3-RELEASE"
 JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt" || echo)
 export UNAME_r=$(freebsd-version)
@@ -398,7 +398,6 @@ fi
 
 : ${PORTSDIR:=${THISDIR}/../test-ports}
 PTMNT="${PORTSDIR}"
-: ${JAILNAME:=bulk}
 : ${PTNAME:=test}
 : ${SETNAME:=}
 export PORT_DBDIR=/dev/null
@@ -411,13 +410,6 @@ set -e
 # Import local ports tree
 pset "${PTNAME}" mnt "${PTMNT}"
 pset "${PTNAME}" method "-"
-
-# Import jail
-jset "${JAILNAME}" version "${JAIL_VERSION}"
-jset "${JAILNAME}" timestamp $(clock -epoch)
-jset "${JAILNAME}" arch "${ARCH}"
-jset "${JAILNAME}" mnt "${JAILMNT}"
-jset "${JAILNAME}" method "null"
 
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 _mastermnt MASTERMNT
