@@ -1230,6 +1230,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		;;
 	00000100)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
+		jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 		confirm_if_tty "Are you sure you want to delete the jail?" || \
 		    err 1 "Not deleting jail"
 		maybe_run_queued "${saved_argv}"
