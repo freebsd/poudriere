@@ -173,8 +173,12 @@ cleanup_new_jail() {
 update_version() {
 	local version_extra="$1"
 
-	eval `grep "^[RB][A-Z]*=" ${SRC_BASE}/sys/conf/newvers.sh `
-	RELEASE=${REVISION}-${BRANCH}
+	if [ -r "${SRC_BASE}/sys/conf/newvers.sh" ]; then
+		eval `grep "^[RB][A-Z]*=" ${SRC_BASE}/sys/conf/newvers.sh `
+		RELEASE=${REVISION}-${BRANCH}
+	else
+		RELEASE=$(jget ${JAILNAME} version)
+	fi
 	[ -n "${version_extra}" ] &&
 	    RELEASE="${RELEASE} ${version_extra}"
 	jset ${JAILNAME} version "${RELEASE}"
@@ -619,7 +623,7 @@ install_from_ftp() {
 	esac
 
 	DISTS="${DISTS} base games"
-	[ -z "${SRCPATH}" ] && DISTS="${DISTS} src"
+	[ -z "${SRCPATH}" -a "${NO_SRC:-no}" = "no" ] && DISTS="${DISTS} src"
 	DISTS="${DISTS} ${EXTRA_DISTS}"
 
 	case "${V}" in
