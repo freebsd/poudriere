@@ -730,7 +730,8 @@ install_from_ftp() {
 			fetch_file ${JAILMNT}/fromftp/MANIFEST ${URL}/MANIFEST
 		fi
 
-		DISTS="${DISTS} lib32"
+		[ "${NO_LIB32:-no}" = "no" ] &&
+			DISTS="${DISTS} lib32"
 		[ -n "${KERNEL}" ] && DISTS="${DISTS} kernel"
 		[ -s "${JAILMNT}/fromftp/MANIFEST" ] || err 1 "Empty MANIFEST file."
 		for dist in ${DISTS}; do
