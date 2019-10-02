@@ -2,6 +2,8 @@ check_task:
         compile_script:
                 - ./configure
                 - make
+        test_jail_prep_script:
+                - make -C test prep
         check_script: make -C test check
         check_stock_script: make -C test check-stock
         matrix:

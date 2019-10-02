@@ -357,10 +357,6 @@ INJAIL_HOST=1
 
 . common.sh
 
-if [ ${ALL:-0} -eq 0 ]; then
-	assert_not "" "${LISTPORTS}" "LISTPORTS empty"
-fi
-
 SUDO=
 if [ $(id -u) -ne 0 ]; then
 	if ! which sudo >/dev/null 2>&1; then
@@ -392,6 +388,13 @@ if [ -z "${JAILMNT}" ]; then
 	fi
 	echo "Done setting up test jail" >&2
 	echo >&2
+fi
+if [ ${BOOTSTRAP_ONLY:-0} -eq 1 ]; then
+	exit 0
+fi
+
+if [ ${ALL:-0} -eq 0 ]; then
+	assert_not "" "${LISTPORTS}" "LISTPORTS empty"
 fi
 
 . ${SCRIPTPREFIX}/common.sh

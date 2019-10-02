@@ -43,6 +43,9 @@ TESTS=\
 
 all: check check-stock
 
+prep: .PHONY
+	@sh prep.sh
+
 check: .PHONY
 	@echo "Running tests against modified sh"
 	@sh runtests.sh sh ${TESTS}
