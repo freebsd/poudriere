@@ -4,11 +4,13 @@ freebsd11_task:
         compile_script:
                 - ./configure
                 - make
-        check_script: cd test ; make
+        check_script: make -C test check
+        check_stock_script: make -C test check-stock
 freebsd12_task:
         freebsd_instance:
                 image: freebsd-12-0-release-amd64
         compile_script:
                 - ./configure
                 - make
-        check_script: cd test ; make
+        check_script: make -C test check
+        check_stock_script: make -C test check-stock
