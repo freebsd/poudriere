@@ -1,14 +1,11 @@
-freebsd11_task:
-        freebsd_instance:
-                image: freebsd-11-2-release-amd64
-        script:
+check_task:
+        compile_script:
                 - ./configure
                 - make
-        check_script: cd test ; make
-freebsd12_task:
+        check_script: make -C test check
+        check_stock_script: make -C test check-stock
         freebsd_instance:
-                image: freebsd-12-0-release-amd64
-        script:
-                - ./configure
-                - make
-        check_script: cd test ; make
+                matrix:
+                  - image: freebsd-11-2-release-amd64
+                  - image: freebsd-12-0-release-amd64
+                  - image_family: freebsd-13-0-snap
