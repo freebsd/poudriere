@@ -4,8 +4,13 @@ check_task:
                 - make
         check_script: make -C test check
         check_stock_script: make -C test check-stock
-        freebsd_instance:
-                matrix:
-                  - image: freebsd-11-2-release-amd64
-                  - image: freebsd-12-0-release-amd64
-                  - image_family: freebsd-13-0-snap
+        matrix:
+                - name: freebsd11-amd64
+                  freebsd_instance:
+                    image: freebsd-11-2-release-amd64
+                - name: freebsd12-amd64
+                  freebsd_instance:
+                    image: freebsd-12-0-release-amd64
+                - name: freebsd13-amd64
+                  freebsd_instance:
+                    image_family: freebsd-13-0-snap
