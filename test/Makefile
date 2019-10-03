@@ -41,15 +41,16 @@ TESTS=\
 	bulk-flavor-metadata-queue-ordering-multi-pass.sh \
 	bulk-flavor-ignore-all.sh
 
-all: check check-stock
+all: prep check check-stock
 
 prep: .PHONY
+	@echo "Prepping test jail"
 	@sh prep.sh
 
-check: .PHONY
+check: .PHONY prep
 	@echo "Running tests against modified sh"
 	@sh runtests.sh sh ${TESTS}
 
-check-stock: .PHONY
+check-stock: .PHONY prep
 	@echo "Running tests against stock /bin/sh"
 	@sh runtests.sh /bin/sh ${TESTS}
