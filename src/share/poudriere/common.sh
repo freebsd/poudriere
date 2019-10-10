@@ -3507,6 +3507,7 @@ save_wrkdir() {
 	check-sanity|pkg-depends|fetch-depends|fetch|checksum|extract-depends|extract) return 0 ;;
 	esac
 
+	job_msg "Saving ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_RESET} wrkdir"
 	bset ${MY_JOBID} status "save_wrkdir:"
 	mkdir -p ${tardir}
 
