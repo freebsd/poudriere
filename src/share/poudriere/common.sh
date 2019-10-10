@@ -4200,8 +4200,8 @@ build_pkg() {
 	fi
 
 	msg "Cleaning up wrkdir"
-	injail /usr/bin/make -C "${portdir}" -k ${MAKE_ARGS} \
-	    -DNOCLEANDEPENDS clean || :
+	injail /usr/bin/make -C "${portdir}" -k \
+	    -DNOCLEANDEPENDS clean ${MAKE_ARGS} || :
 	rm -rf ${mnt}/wrkdirs/* || :
 
 	clean_pool "${pkgname}" "${originspec}" "${clean_rdepends}"
