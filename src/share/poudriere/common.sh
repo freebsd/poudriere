@@ -3506,9 +3506,10 @@ save_wrkdir() {
 	local wrkdir
 
 	[ "${SAVE_WRKDIR}" != "no" ] || return 0
-	# Only save if not in fetch/checksum phase
-	[ "${phase}" != "fetch" -a "${phase}" != "checksum" -a \
-		"${phase}" != "extract" ] || return 0
+	# Don't save pre-extract
+	case ${phase} in
+	check-sanity|pkg-depends|fetch-depends|fetch|checksum|extract-depends|extract) return 0 ;;
+	esac
 
 	if [ -n "${MY_JOBID}" ]; then
 		bset ${MY_JOBID} status "save_wrkdir:"
