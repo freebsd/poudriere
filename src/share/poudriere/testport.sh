@@ -332,6 +332,7 @@ if [ ${ret} -ne 0 ]; then
 		bset_job_status "failed/${failed_phase}" "${ORIGINSPEC}" \
 		    "${PKGNAME}"
 		msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
+		show_log_info
 		set +e
 		exit 1
 	fi
@@ -358,6 +359,7 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 			bset_job_status "failed/${failed_phase}" \
 			    "${ORIGINSPEC}" "${PKGNAME}"
 			msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
+			show_log_info
 			set +e
 			exit 1
 		fi
