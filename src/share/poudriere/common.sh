@@ -77,12 +77,8 @@ err() {
 	# Try to set status so other processes know this crashed
 	# Don't set it from children failures though, only master
 	if [ "${PARALLEL_CHILD:-0}" -eq 0 ] && was_a_bulk_run; then
-		if [ -n "${MY_JOBID}" ]; then
-			bset ${MY_JOBID} status "${EXIT_STATUS:-crashed:}" \
-			    2>/dev/null || :
-		else
-			bset status "${EXIT_STATUS:-crashed:}" 2>/dev/null || :
-		fi
+		bset ${MY_JOBID} status "${EXIT_STATUS:-crashed:}" \
+		    2>/dev/null || :
 	fi
 	if [ ${1} -eq 0 ]; then
 		msg "$2" || :
@@ -3511,11 +3507,7 @@ save_wrkdir() {
 	check-sanity|pkg-depends|fetch-depends|fetch|checksum|extract-depends|extract) return 0 ;;
 	esac
 
-	if [ -n "${MY_JOBID}" ]; then
-		bset ${MY_JOBID} status "save_wrkdir:"
-	else
-		bset status "save_wrkdir:"
-	fi
+	bset ${MY_JOBID} status "save_wrkdir:"
 	mkdir -p ${tardir}
 
 	# Tar up the WRKDIR, and ignore errors
@@ -7465,11 +7457,7 @@ balance_pool() {
 		return 0
 	fi
 
-	if [ -n "${MY_JOBID}" ]; then
-		bset ${MY_JOBID} status "balancing_pool:"
-	else
-		bset status "balancing_pool:"
-	fi
+	bset ${MY_JOBID} status "balancing_pool:"
 
 	# For everything ready-to-build...
 	for pkg_dir in pool/unbalanced/*; do
