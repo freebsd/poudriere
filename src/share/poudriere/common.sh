@@ -3507,8 +3507,8 @@ save_wrkdir() {
 
 	[ "${SAVE_WRKDIR}" != "no" ] || return 0
 	# Only save if not in fetch/checksum phase
-	[ "${failed_phase}" != "fetch" -a "${failed_phase}" != "checksum" -a \
-		"${failed_phase}" != "extract" ] || return 0
+	[ "${phase}" != "fetch" -a "${phase}" != "checksum" -a \
+		"${phase}" != "extract" ] || return 0
 
 	if [ -n "${MY_JOBID}" ]; then
 		bset ${MY_JOBID} status "save_wrkdir:"
