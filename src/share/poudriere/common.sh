@@ -1058,6 +1058,22 @@ update_stats() {
 	lock_release update_stats
 }
 
+update_stats_queued() {
+	[ $# -eq 0 ] || eargs update_stats_queued
+	local nbq nbi nbs
+
+	nbq=$(pkgqueue_list | wc -l)
+	# Need to add in pre-build ignored/skipped
+	_bget nbi stats_ignored || nbi=0
+	_bget nbs stats_skipped || nbs=0
+	nbq=$((nbq + nbi + nbs))
+
+	# Add 1 for the main port to test
+	was_a_testport_run && \
+	    nbq=$((${nbq} + 1))
+	bset stats_queued ${nbq##* }
+}
+
 sigpipe_handler() {
 	EXIT_STATUS="sigpipe:"
 	SIGNAL="SIGPIPE"
@@ -7019,6 +7035,7 @@ trim_ignored() {
 	done
 	# Update ignored/skipped stats
 	update_stats
+	update_stats_queued
 }
 
 trim_ignored_pkg() {
@@ -7091,7 +7108,7 @@ clean_build_queue() {
 prepare_ports() {
 	local pkg
 	local log log_top
-	local n nbq nbi nbs resuming_build
+	local n resuming_build
 	local cache_dir sflag delete_pkg_list shash_bucket
 
 	_log_path log
@@ -7316,6 +7333,10 @@ prepare_ports() {
 	export LOCALBASE=${LOCALBASE:-/usr/local}
 
 	clean_build_queue
+	if was_a_bulk_run && [ "${resuming_build}" -eq 0 ]; then
+		# Update again after trimming the build queue
+		update_stats_queued
+	fi
 
 	# Call the deadlock code as non-fatal which will check for cycles
 	msg "Sanity checking build queue"
@@ -7324,17 +7345,6 @@ prepare_ports() {
 
 	if was_a_bulk_run; then
 		if [ "${resuming_build}" -eq 0 ]; then
-			nbq=$(pkgqueue_list | wc -l)
-			# Need to add in pre-build ignored/skipped
-			_bget nbi stats_ignored || nbi=0
-			_bget nbs stats_skipped || nbs=0
-			nbq=$((nbq + nbi + nbs))
-
-			# Add 1 for the main port to test
-			was_a_testport_run && \
-			    nbq=$((${nbq} + 1))
-			bset stats_queued ${nbq##* }
-
 			# Generate ports.queued list after the queue was
 			# trimmed.
 			local _originspec _pkgname _rdep _ignore tmp
