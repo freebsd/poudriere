@@ -2918,7 +2918,7 @@ check_leftovers() {
 	( cd "${mnt}" && \
 	    mtree -X "${MASTERMNT}/.p/mtree.preinstexclude${PORTTESTING}" \
 	    -f "${mnt}/.p/mtree.preinst" -p . ) | \
-	    while read l; do
+	    while mapfile_read_loop_redir l; do
 		local changed read_again
 
 		changed=
@@ -3342,7 +3342,8 @@ build_port() {
 				    injail /usr/bin/env PORTSDIR=${PORTSDIR} \
 				    ${PORT_FLAGS} /bin/sh \
 				    ${PORTSDIR}/Mk/Scripts/check_leftovers.sh \
-				    ${port} | while read modtype data; do
+				    ${port} | while \
+				    mapfile_read_loop_redir modtype data; do
 					case "${modtype}" in
 						+) echo "${data}" >> ${add} ;;
 						-) echo "${data}" >> ${del} ;;
@@ -3477,7 +3478,8 @@ may show failures if the port does not respect PREFIX."
 		# everything was fine we can copy the package to the package
 		# directory
 		find "${PACKAGES}/.npkg/${pkgname}" \
-			-mindepth 1 \( -type f -or -type l \) | while read pkg_path; do
+			-mindepth 1 \( -type f -or -type l \) | \
+			while mapfile_read_loop_redir pkg_path; do
 			pkg_file="${pkg_path#${PACKAGES}/.npkg/${pkgname}}"
 			pkg_base="${pkg_file%/*}"
 			mkdir -p "${PACKAGES}/${pkg_base}"
@@ -6632,7 +6634,8 @@ origin_should_use_dep_args() {
 
 listed_ports() {
 	if have_ports_feature DEPENDS_ARGS; then
-		_listed_ports "$@" | while read originspec; do
+		_listed_ports "$@" | \
+		    while mapfile_read_loop_redir originspec; do
 			map_py_slave_port "${originspec}" originspec || :
 			echo "${originspec}"
 		done
