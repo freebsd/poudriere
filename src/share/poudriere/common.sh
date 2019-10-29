@@ -3085,7 +3085,7 @@ _real_build_port() {
 		[ "${PORTTESTING}" -eq 1 ] && \
 		    phaseenv="${phaseenv} DEVELOPER_MODE=yes"
 		case ${phase} in
-		check-sanity)
+		check-sanity|patch)
 			[ "${PORTTESTING}" -eq 1 ] && \
 			    phaseenv="${phaseenv} DEVELOPER=1"
 			;;
