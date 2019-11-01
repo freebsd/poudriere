@@ -73,7 +73,7 @@ int
 main(int argc, char *argv[])
 {
 	const char *modestr = NULL;
-	const void *modep;
+	void *modep;
 	mode_t fifomode;
 	int ch, exitval;
 
@@ -115,6 +115,9 @@ main(int argc, char *argv[])
 			errx(1, "invalid file mode: %s", modestr);
 		}
 		fifomode = getmode(modep, BASEMODE);
+#ifdef SHELL
+		free(modep);
+#endif
 	} else {
 		fifomode = BASEMODE;
 	}
