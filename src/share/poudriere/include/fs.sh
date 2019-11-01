@@ -275,6 +275,7 @@ clonefs() {
 		[ ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs all "${mnt}"
 		if [ "${snap}" = "clean" ]; then
 			skippaths="$(nullfs_paths "${mnt}")"
+			skippaths="${skippaths} /proc"
 			skippaths="${skippaths} /usr/src"
 			skippaths="${skippaths} /usr/lib/debug"
 			skippaths="${skippaths} /var/db/etcupdate"
