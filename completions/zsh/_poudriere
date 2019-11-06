@@ -89,7 +89,7 @@ _jail=(
 	'-t[version of FreeBSD to upgrade the jail to]::version'
 	'-U[specify a url to fetch the sources (with method git and/or svn)]::url'
 	'-x[build and setup native-xtools cross compile tools in jail when building for a different TARGET ARCH than the host]'
-	'-C[clean remaining data existing in pourdiere data folder]::clean:(all cache logs packages wrkdirs)'
+	'-C[clean remaining data existing in poudriere data folder]::clean:(all cache logs packages wrkdirs)'
 	'-p[specify which ports tree to start/stop the jail with]::tree:_poudriere_pt'
 	'-z[specify which SET the jail to start/stop with]::set'
 )

@@ -71,7 +71,7 @@ Options:
                      Will only be used if -m is svn*.
 
 Options for -d:
-    -C clean      -- Clean remaining data existing in pourdiere data folder.
+    -C clean      -- Clean remaining data existing in poudriere data folder.
                      See poudriere(8) for more details. Can be one of:
                        all, cache, logs, packages, wrkdirs
 Options for -s and -k:
