@@ -270,14 +270,16 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # to that user.  Then set CCACHE_DIR_NON_ROOT_SAFE to yes.
 #BUILD_AS_NON_ROOT=no
 
-# Define to the username to build as when BUILD_AS_NON_ROOT is yes.
+# Define to the username and groupname to build as when BUILD_AS_NON_ROOT is yes.
 # Default: nobody (uid PORTBUILD_UID)
 #PORTBUILD_USER=nobody
+#PORTBUILD_GROUP=nobody
 
-# Define to the uid to use for PORTBUILD_USER if the user does not
+# Define to the uid and gid to use for PORTBUILD_USER if the user does not
 # already exist in the jail.
 # Default: 65532
 #PORTBUILD_UID=65534
+#PORTBUILD_GID=65534
 
 # Define pkgname globs to boost priority for
 # Default: none
