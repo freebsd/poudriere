@@ -5030,7 +5030,7 @@ delete_old_pkg() {
 
 	_my_path mnt
 
-	if ! test_port_origin_exist "${origin}" ; then
+	if ! test_port_origin_exist "${origin}"; then
 		msg "Deleting ${pkg##*/}: stale package: nonexistent origin ${COLOR_PORT}${origin}${COLOR_RESET}"
 		delete_pkg "${pkg}"
 		return 0
@@ -6103,7 +6103,7 @@ deps_sanity() {
 			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} depends on bad origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
 			ret=1
 		fi
-		if ! _find_origin_in_ports_or_overlays "${dep_origin}" ; then
+		if ! _find_origin_in_ports_or_overlays "${dep_origin}"; then
 			# Was it moved? We cannot map it here due to the ports
 			# framework not supporting it later on, and the
 			# PKGNAME would be wrong, but we can at least
