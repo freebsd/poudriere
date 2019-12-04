@@ -798,19 +798,20 @@ log_start() {
 }
 
 _lookup_portdir() {
-	local varname=$1
-	local port=$2
-	local ptdir
+	[ $# -eq 2 ] || eargs _lookup_portdir var_return origin
+	local _varname="$1"
+	local _port="$2"
+	local o ptdir
 
 	for o in ${OVERLAYS}; do
-		ptdir=/overlays/${o}/${port}
-		if [ -d ${MASTERMNT}${ptdir} ]; then
-			setvar "${varname}" "${ptdir}"
+		ptdir="/overlays/${o}/${_port}"
+		if [ -d "${MASTERMNT}${ptdir}" ]; then
+			setvar "${_varname}" "${ptdir}"
 			return
 		fi
 	done
-	ptdir="${PORTSDIR}/${port}"
-	setvar "${varname}" "${ptdir}"
+	ptdir="${PORTSDIR}/${_port}"
+	setvar "${_varname}" "${ptdir}"
 	return
 }
 
@@ -831,7 +832,7 @@ buildlog_start() {
 
 	_my_path mnt
 	originspec_decode "${originspec}" port '' ''
-	_lookup_portdir portdir ${port}
+	_lookup_portdir portdir "${port}"
 
 	for var in ${wanted_vars}; do
 		local "mk_${var}"
@@ -1486,6 +1487,7 @@ common_mtree() {
 	./compat/linux/proc
 	./dev
 	./distfiles
+	./overlays
 	./packages
 	./portdistfiles
 	./proc
@@ -1495,7 +1497,6 @@ common_mtree() {
 	./var/db/etcupdate
 	./var/db/ports
 	./wrkdirs
-	./overlays
 	EOF
 	nullpaths="$(nullfs_paths "${mnt}")"
 	for dir in ${nullpaths}; do
@@ -3115,7 +3116,7 @@ build_port() {
 	_log_path log
 
 	originspec_decode "${originspec}" port '' flavor
-	_lookup_portdir portdir ${port}
+	_lookup_portdir portdir "${port}"
 
 	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
 		_need_root="NEED_ROOT NEED_ROOT"
@@ -4151,7 +4152,7 @@ build_pkg() {
 	if [ -n "${DEPENDS_ARGS}" ]; then
 		PKGENV="${PKGENV:+${PKGENV} }PKG_NOTES=depends_args PKG_NOTE_depends_args=${DEPENDS_ARGS}"
 	fi
-	_lookup_portdir portdir ${port}
+	_lookup_portdir portdir "${port}"
 
 	_gsub "${pkgname%-*}" "${HASH_VAR_NAME_SUB_GLOB}" '_'
 	eval "MAX_FILES=\${MAX_FILES_${_gsub}:-${DEFAULT_MAX_FILES}}"
@@ -6102,7 +6103,7 @@ deps_sanity() {
 			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} depends on bad origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
 			ret=1
 		fi
-		if ! _find_origin_in_ports_or_overlays ${dep_origin} ; then
+		if ! _find_origin_in_ports_or_overlays "${dep_origin}" ; then
 			# Was it moved? We cannot map it here due to the ports
 			# framework not supporting it later on, and the
 			# PKGNAME would be wrong, but we can at least
@@ -6575,13 +6576,15 @@ compute_deps_pkg() {
 }
 
 test_port_origin_exist() {
-	local _origin=$1
+	[ $# -eq 1 ] || eargs test_port_origin_exist origin
+	local _origin="$1"
+
 	for o in ${OVERLAYS}; do
-		if [ -d ${MASTERMNT}/overlays/${o}/${_origin} ]; then
+		if [ -d "${MASTERMNT}/overlays/${o}/${_origin}" ]; then
 			return 0
 		fi
 	done
-	if [ -d ${MASTERMNT}/${PORTSDIR}/${_origin} ]; then
+	if [ -d "${MASTERMNT}/${PORTSDIR}/${_origin}" ]; then
 		return 0
 	fi
 	return 1
@@ -6662,7 +6665,7 @@ map_py_slave_port() {
 	esac
 	mapped_origin="${origin%%${pyreg}*}/${pymaster_prefix}${origin#*${pyreg}}${pymaster_suffix}"
 	# Verify the port even exists or else we need a special case above.
-	test_port_origin_exist ${mapped_origin} || \
+	test_port_origin_exist "${mapped_origin}" || \
 	    err 1 "map_py_slave_port: Mapping ${_originspec} found no existing ${mapped_origin}"
 	dep_args="PYTHON_VERSION=python${pyver}"
 	msg_debug "Mapping ${origin} to ${mapped_origin} with DEPENDS_ARGS=${dep_args}"
@@ -6704,14 +6707,17 @@ listed_ports() {
 }
 
 _list_ports_dir() {
-	local ptdir=$1
-	local overlay=$2
+	[ $# -eq 2 ] || eargs _list_ports_dir ptdir overlay
+	local ptdir="$1"
+	local overlay="$2"
+	local cat
+
 	# skip overlays with no categories listed
-	[ -f ${ptdir}/Makefile ] || return
+	[ -f "${ptdir}/Makefile" ] || return
 	for cat in $(awk -F= '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print $2}' ${ptdir}/Makefile); do
 		# skip overlays with no ports hooked to the build
-		[ -f ${ptdir}/${cat}/Makefile ] || continue
-		awk -F= -v cat=${cat} '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print cat"/"$2}' ${ptdir}/${cat}/Makefile
+		[ -f "${ptdir}/${cat}/Makefile" ] || continue
+		awk -F= -v cat=${cat} '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print cat"/"$2}' "${ptdir}/${cat}/Makefile"
 	done | while mapfile_read_loop_redir origin; do
 		if ! [ -d "${ptdir}/${origin}" ]; then
 			msg_warn "Nonexistent origin listed in category Makefiles in \"${overlay}\": ${COLOR_PORT}${origin}${COLOR_RESET} (skipping)"
@@ -6722,13 +6728,18 @@ _list_ports_dir() {
 }
 
 _find_origin_in_ports_or_overlays() {
-	local origin=$1
+	[ $# -eq 1 ] || eargs _find_origin_in_ports_or_overlays origin
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "_find_origin_in_ports_or_overlays requires PWD=${MASTERMNT}/.p"
+	local origin="$1"
+	local o
+
 	for o in ${OVERLAYS}; do
-		if [ -d ../overlays/${o}/${origin} ]; then
+		if [ -d "../overlays/${o}/${origin}" ]; then
 			return 0
 		fi
 	done
-	if [ -d ../${PORTSDIR}/${origin} ]; then
+	if [ -d "../${PORTSDIR}/${origin}" ]; then
 		return 0
 	fi
 	return 1
@@ -6736,16 +6747,16 @@ _find_origin_in_ports_or_overlays() {
 
 _listed_ports() {
 	local tell_moved="${1}"
-	local portsdir origin file cat
+	local portsdir origin file o
 
 	if [ ${ALL} -eq 1 ]; then
 		_pget portsdir ${PTNAME} mnt || \
 		    err 1 "Missing mnt metadata for portstree"
 		[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
-		_list_ports_dir ${portsdir} ${PTNAME}
+		_list_ports_dir "${portsdir}" "${PTNAME}"
 		for o in ${OVERLAYS}; do
-			_pget portsdir ${o} mnt
-			_list_ports_dir ${portsdir} ${o}
+			_pget portsdir "${o}" mnt
+			_list_ports_dir "${portsdir}" "${o}"
 		done
 		return 0
 	fi
@@ -6789,7 +6800,7 @@ _listed_ports() {
 		else
 			unset new_origin
 		fi
-		if ! _find_origin_in_ports_or_overlays ${origin}; then
+		if ! _find_origin_in_ports_or_overlays "${origin}"; then
 			msg_error "Nonexistent origin listed: ${COLOR_PORT}${origin_listed}${new_origin:+${COLOR_RESET} (moved to nonexistent ${COLOR_PORT}${new_origin}${COLOR_RESET})}"
 			set_dep_fatal_error
 			continue
