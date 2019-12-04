@@ -972,7 +972,7 @@ info_jail() {
 	if [ -n "${timestamp}" ]; then
 		echo "Jail updated:      $(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
 	fi
-	if porttree_exists ${PTNAME}; then
+	if [ "${PTNAME_ARG:-0}" -eq 1 ] && porttree_exists ${PTNAME}; then
 		_pget pmethod ${PTNAME} method
 		echo "Tree name:         ${PTNAME}"
 		echo "Tree method:       ${pmethod:--}"
@@ -1081,6 +1081,7 @@ while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 			;;
 		p)
 			PTNAME=${OPTARG}
+			PTNAME_ARG=1
 			;;
 		P)
 			[ -r ${OPTARG} ] || err 1 "No such patch"
