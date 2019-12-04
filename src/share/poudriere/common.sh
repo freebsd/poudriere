@@ -1810,7 +1810,7 @@ do_portbuild_mounts() {
 	local ptname=$3
 	local setname=$4
 	local portsdir
-	local optionsdir opt
+	local optionsdir opt o
 
 	# clone will inherit from the ref jail
 	if [ ${mnt##*/} = "ref" ]; then
@@ -1850,8 +1850,8 @@ do_portbuild_mounts() {
 	${NULLMOUNT} -o ro ${portsdir} ${mnt}${PORTSDIR} ||
 		err 1 "Failed to mount the ports directory "
 	for o in ${OVERLAYS}; do
-		_pget odir ${o} mnt || err 1 "Missing mnt metadata for overlay ${o}"
-		${NULLMOUNT} -o ro ${odir} ${mnt}/overlays/${o}
+		_pget odir "${o}" mnt || err 1 "Missing mnt metadata for overlay ${o}"
+		${NULLMOUNT} -o ro "${odir}" "${mnt}/overlays/${o}"
 	done
 	mount_packages -o ro
 	${NULLMOUNT} ${DISTFILES_CACHE} ${mnt}/distfiles ||
@@ -2401,7 +2401,7 @@ jail_start() {
 	local needfs="${NULLFSREF}"
 	local needkld kldpair kld kldmodname
 	local tomnt fs
-	local portbuild_uid aarchld
+	local portbuild_uid aarchld o
 
 	lock_jail
 
@@ -2612,7 +2612,7 @@ jail_start() {
 	EOF
 	for o in ${OVERLAYS}; do
 		echo "OVERLAYS+=/overlays/${o}"
-	done >> ${tomnt}/etc/make.conf
+	done >> "${tomnt}/etc/make.conf"
 	[ -z "${NO_FORCE_PACKAGE}" ] && \
 	    echo "FORCE_PACKAGE=yes" >> "${tomnt}/etc/make.conf"
 	if [ -z "${NO_PACKAGE_BUILDING}" ]; then
@@ -6578,6 +6578,7 @@ compute_deps_pkg() {
 test_port_origin_exist() {
 	[ $# -eq 1 ] || eargs test_port_origin_exist origin
 	local _origin="$1"
+	local o
 
 	for o in ${OVERLAYS}; do
 		if [ -d "${MASTERMNT}/overlays/${o}/${_origin}" ]; then
