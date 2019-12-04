@@ -171,7 +171,6 @@ _mastermnt MASTERMNT
 export MASTERNAME
 export MASTERMNT
 export POUDRIERE_BUILD_TYPE=bulk
-export OVERLAYS
 
 jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 
