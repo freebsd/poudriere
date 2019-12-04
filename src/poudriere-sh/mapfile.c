@@ -134,7 +134,7 @@ mapfilecmd(int argc, char **argv)
 			break;
 		}
 	}
-	if (mapped_files[nextidx] != NULL)
+	if (nextidx == -1 || mapped_files[nextidx] != NULL)
 		errx(EX_SOFTWARE, "%s", "mapped files stack exceeded");
 
 	file = argv[2];

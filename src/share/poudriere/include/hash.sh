@@ -38,10 +38,12 @@ fi
 # Based on Shell Scripting Recipes - Chris F.A. Johnson (c) 2005
 # Replace a pattern without needing a subshell/exec
 _gsub() {
-	[ $# -ne 3 ] && eargs _gsub string pattern replacement
+	[ $# -eq 3 -o $# -eq 4 ] || eargs _gsub string pattern replacement \
+	    var_return
 	local string="$1"
 	local pattern="$2"
 	local replacement="$3"
+	local var_return="${4:-_gsub}"
 	local result_l= result_r="${string}"
 
 	while :; do
@@ -56,7 +58,7 @@ _gsub() {
 		esac
 	done
 
-	_gsub="${result_l}${result_r}"
+	setvar "${var_return}" "${result_l}${result_r}"
 }
 
 if ! type _gsub_var_name 2>/dev/null >&2; then
@@ -75,7 +77,9 @@ gsub() {
 	local _gsub
 
 	_gsub "$@"
-	echo "${_gsub}"
+	if [ $# -ne 4 ]; then
+		echo "${_gsub}"
+	fi
 }
 
 _hash_var_name() {

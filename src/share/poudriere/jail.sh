@@ -71,7 +71,7 @@ Options:
                      Will only be used if -m is svn*.
 
 Options for -d:
-    -C clean      -- Clean remaining data existing in pourdiere data folder.
+    -C clean      -- Clean remaining data existing in poudriere data folder.
                      See poudriere(8) for more details. Can be one of:
                        all, cache, logs, packages, wrkdirs
 Options for -s and -k:
@@ -173,8 +173,12 @@ cleanup_new_jail() {
 update_version() {
 	local version_extra="$1"
 
-	eval `grep "^[RB][A-Z]*=" ${SRC_BASE}/sys/conf/newvers.sh `
-	RELEASE=${REVISION}-${BRANCH}
+	if [ -r "${SRC_BASE}/sys/conf/newvers.sh" ]; then
+		eval `grep "^[RB][A-Z]*=" ${SRC_BASE}/sys/conf/newvers.sh `
+		RELEASE=${REVISION}-${BRANCH}
+	else
+		RELEASE=$(jget ${JAILNAME} version)
+	fi
 	[ -n "${version_extra}" ] &&
 	    RELEASE="${RELEASE} ${version_extra}"
 	jset ${JAILNAME} version "${RELEASE}"
@@ -361,17 +365,17 @@ installworld() {
 
 	msg "Starting make installworld"
 	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} installworld \
-	    DESTDIR=${destdir} DB_FROM_SRC=1 || \
+	    DESTDIR=${destdir} DB_FROM_SRC=1 ${MAKEWORLDARGS} || \
 	    err 1 "Failed to 'make installworld'"
 	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} DESTDIR=${destdir} \
-	    DB_FROM_SRC=1 distrib-dirs || \
+	    DB_FROM_SRC=1 distrib-dirs ${MAKEWORLDARGS} || \
 	    err 1 "Failed to 'make distrib-dirs'"
 	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} DESTDIR=${destdir} \
-	    distribution || err 1 "Failed to 'make distribution'"
+	    distribution ${MAKEWORLDARGS} || err 1 "Failed to 'make distribution'"
 	if [ -n "${KERNEL}" ]; then
 		msg "Starting make installkernel"
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} installkernel \
-		    KERNCONF=${KERNEL} DESTDIR=${destdir} || \
+		    KERNCONF=${KERNEL} DESTDIR=${destdir} ${MAKEWORLDARGS} || \
 		    err 1 "Failed to 'make installkernel'"
 	fi
 
@@ -619,7 +623,7 @@ install_from_ftp() {
 	esac
 
 	DISTS="${DISTS} base games"
-	[ -z "${SRCPATH}" ] && DISTS="${DISTS} src"
+	[ -z "${SRCPATH}" -a "${NO_SRC:-no}" = "no" ] && DISTS="${DISTS} src"
 	DISTS="${DISTS} ${EXTRA_DISTS}"
 
 	case "${V}" in
@@ -726,7 +730,8 @@ install_from_ftp() {
 			fetch_file ${JAILMNT}/fromftp/MANIFEST ${URL}/MANIFEST
 		fi
 
-		DISTS="${DISTS} lib32"
+		[ "${NO_LIB32:-no}" = "no" ] &&
+			DISTS="${DISTS} lib32"
 		[ -n "${KERNEL}" ] && DISTS="${DISTS} kernel"
 		[ -s "${JAILMNT}/fromftp/MANIFEST" ] || err 1 "Empty MANIFEST file."
 		for dist in ${DISTS}; do
@@ -967,7 +972,7 @@ info_jail() {
 	if [ -n "${timestamp}" ]; then
 		echo "Jail updated:      $(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
 	fi
-	if porttree_exists ${PTNAME}; then
+	if [ "${PTNAME_ARG:-0}" -eq 1 ] && porttree_exists ${PTNAME}; then
 		_pget pmethod ${PTNAME} method
 		echo "Tree name:         ${PTNAME}"
 		echo "Tree method:       ${pmethod:--}"
@@ -1076,6 +1081,7 @@ while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 			;;
 		p)
 			PTNAME=${OPTARG}
+			PTNAME_ARG=1
 			;;
 		P)
 			[ -r ${OPTARG} ] || err 1 "No such patch"
@@ -1225,6 +1231,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		;;
 	00000100)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
+		jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 		confirm_if_tty "Are you sure you want to delete the jail?" || \
 		    err 1 "Not deleting jail"
 		maybe_run_queued "${saved_argv}"

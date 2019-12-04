@@ -38,9 +38,6 @@ Getting started with poudriere
 Build status
 ------------------------------
 
-* i386 [![FreeBSD i386](https://jenkins.mouf.net/job/poudriere/label=i386/badge/icon)](https://jenkins.mouf.net/job/poudriere/label=i386)
-* amd64 [![FreeBSD amd64](https://jenkins.mouf.net/job/poudriere/label=amd64/badge/icon)](https://jenkins.mouf.net/job/poudriere/label=amd64)
-* armv6 [![FreeBSD armv6](https://jenkins.mouf.net/job/poudriere/label=armv6/badge/icon)](https://jenkins.mouf.net/job/poudriere/label=armv6)
-* armv7 [![FreeBSD armv7](https://jenkins.mouf.net/job/poudriere/label=armv7/badge/icon)](https://jenkins.mouf.net/job/poudriere/label=armv7)
-* aarch64 [![FreeBSD aarch64](https://jenkins.mouf.net/job/poudriere/label=aarch64/badge/icon)](https://jenkins.mouf.net/job/poudriere/label=aarch64)
-* powerpc64 [![FreeBSD powerpc64](https://jenkins.mouf.net/job/poudriere/label=powerpc64/badge/icon)](https://jenkins.mouf.net/job/poudriere/label=powerpc64)
+* [![FreeBSD 11.2 amd64](https://api.cirrus-ci.com/github/freebsd/poudriere.svg?task=freebsd11-amd64&branch=master)](https://cirrus-ci.com/github/freebsd/poudriere)
+* [![FreeBSD 12.0 amd64](https://api.cirrus-ci.com/github/freebsd/poudriere.svg?task=freebsd12-amd64&branch=master)](https://cirrus-ci.com/github/freebsd/poudriere)
+* [![FreeBSD 13.0 amd64](https://api.cirrus-ci.com/github/freebsd/poudriere.svg?task=freebsd13-amd64&branch=master)](https://cirrus-ci.com/github/freebsd/poudriere)

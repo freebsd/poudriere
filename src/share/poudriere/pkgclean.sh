@@ -229,7 +229,7 @@ END {
 		if (origin_count[pkgbase] > 1)
 			print origins[pkgbase],packages[pkgbase]
 }
-' | while read origin packages; do
+' | while mapfile_read_loop_redir origin packages; do
 	lastpkg=
 	lastver=0
 	for pkg in $packages; do

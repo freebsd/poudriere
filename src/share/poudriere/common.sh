@@ -77,12 +77,8 @@ err() {
 	# Try to set status so other processes know this crashed
 	# Don't set it from children failures though, only master
 	if [ "${PARALLEL_CHILD:-0}" -eq 0 ] && was_a_bulk_run; then
-		if [ -n "${MY_JOBID}" ]; then
-			bset ${MY_JOBID} status "${EXIT_STATUS:-crashed:}" \
-			    2>/dev/null || :
-		else
-			bset status "${EXIT_STATUS:-crashed:}" 2>/dev/null || :
-		fi
+		bset ${MY_JOBID} status "${EXIT_STATUS:-crashed:}" \
+		    2>/dev/null || :
 	fi
 	if [ ${1} -eq 0 ]; then
 		msg "$2" || :
@@ -122,9 +118,9 @@ _msg_n() {
 		arrow="=>>"
 	fi
 	if [ -n "${COLOR_ARROW}" ] || [ -z "${1##*\033[*}" ]; then
-		printf "${COLOR_ARROW}${elapsed}${DRY_MODE}${arrow:+${COLOR_ARROW}${arrow}${COLOR_RESET} }${1}${COLOR_RESET}${NL}"
+		printf "${COLOR_ARROW}${elapsed}${DRY_MODE}${arrow:+${COLOR_ARROW}${arrow}${COLOR_RESET} }${*}${COLOR_RESET}${NL}"
 	else
-		printf "${elapsed}${DRY_MODE}${arrow:+${arrow} }${1}${NL}"
+		printf "${elapsed}${DRY_MODE}${arrow:+${arrow} }${*}${NL}"
 	fi
 }
 
@@ -1077,6 +1073,22 @@ update_stats() {
 		sort -u | wc -l)
 
 	lock_release update_stats
+}
+
+update_stats_queued() {
+	[ $# -eq 0 ] || eargs update_stats_queued
+	local nbq nbi nbs
+
+	nbq=$(pkgqueue_list | wc -l)
+	# Need to add in pre-build ignored/skipped
+	_bget nbi stats_ignored || nbi=0
+	_bget nbs stats_skipped || nbs=0
+	nbq=$((nbq + nbi + nbs))
+
+	# Add 1 for the main port to test
+	was_a_testport_run && \
+	    nbq=$((${nbq} + 1))
+	bset stats_queued ${nbq##* }
 }
 
 sigpipe_handler() {
@@ -2951,7 +2963,7 @@ check_leftovers() {
 	( cd "${mnt}" && \
 	    mtree -X "${MASTERMNT}/.p/mtree.preinstexclude${PORTTESTING}" \
 	    -f "${mnt}/.p/mtree.preinst" -p . ) | \
-	    while read l; do
+	    while mapfile_read_loop_redir l; do
 		local changed read_again
 
 		changed=
@@ -3375,7 +3387,8 @@ build_port() {
 				    injail /usr/bin/env PORTSDIR=${PORTSDIR} \
 				    ${PORT_FLAGS} /bin/sh \
 				    ${PORTSDIR}/Mk/Scripts/check_leftovers.sh \
-				    ${port} | while read modtype data; do
+				    ${port} | while \
+				    mapfile_read_loop_redir modtype data; do
 					case "${modtype}" in
 						+) echo "${data}" >> ${add} ;;
 						-) echo "${data}" >> ${del} ;;
@@ -3510,7 +3523,8 @@ may show failures if the port does not respect PREFIX."
 		# everything was fine we can copy the package to the package
 		# directory
 		find "${PACKAGES}/.npkg/${pkgname}" \
-			-mindepth 1 \( -type f -or -type l \) | while read pkg_path; do
+			-mindepth 1 \( -type f -or -type l \) | \
+			while mapfile_read_loop_redir pkg_path; do
 			pkg_file="${pkg_path#${PACKAGES}/.npkg/${pkgname}}"
 			pkg_base="${pkg_file%/*}"
 			mkdir -p "${PACKAGES}/${pkg_base}"
@@ -3535,15 +3549,13 @@ save_wrkdir() {
 	local wrkdir
 
 	[ "${SAVE_WRKDIR}" != "no" ] || return 0
-	# Only save if not in fetch/checksum phase
-	[ "${failed_phase}" != "fetch" -a "${failed_phase}" != "checksum" -a \
-		"${failed_phase}" != "extract" ] || return 0
+	# Don't save pre-extract
+	case ${phase} in
+	check-sanity|pkg-depends|fetch-depends|fetch|checksum|extract-depends|extract) return 0 ;;
+	esac
 
-	if [ -n "${MY_JOBID}" ]; then
-		bset ${MY_JOBID} status "save_wrkdir:"
-	else
-		bset status "save_wrkdir:"
-	fi
+	job_msg "Saving ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_RESET} wrkdir"
+	bset ${MY_JOBID} status "save_wrkdir:"
 	mkdir -p ${tardir}
 
 	# Tar up the WRKDIR, and ignore errors
@@ -4235,8 +4247,8 @@ build_pkg() {
 	fi
 
 	msg "Cleaning up wrkdir"
-	injail /usr/bin/make -C "${portdir}" ${MAKE_ARGS} \
-	    -DNOCLEANDEPENDS clean || :
+	injail /usr/bin/make -C "${portdir}" -k \
+	    -DNOCLEANDEPENDS clean ${MAKE_ARGS} || :
 	rm -rf ${mnt}/wrkdirs/* || :
 
 	clean_pool "${pkgname}" "${originspec}" "${clean_rdepends}"
@@ -6681,7 +6693,8 @@ origin_should_use_dep_args() {
 
 listed_ports() {
 	if have_ports_feature DEPENDS_ARGS; then
-		_listed_ports "$@" | while read originspec; do
+		_listed_ports "$@" | \
+		    while mapfile_read_loop_redir originspec; do
 			map_py_slave_port "${originspec}" originspec || :
 			echo "${originspec}"
 		done
@@ -7093,6 +7106,7 @@ trim_ignored() {
 	done
 	# Update ignored/skipped stats
 	update_stats
+	update_stats_queued
 }
 
 trim_ignored_pkg() {
@@ -7165,7 +7179,7 @@ clean_build_queue() {
 prepare_ports() {
 	local pkg
 	local log log_top
-	local n nbq nbi nbs resuming_build
+	local n resuming_build
 	local cache_dir sflag delete_pkg_list shash_bucket
 
 	_log_path log
@@ -7390,6 +7404,10 @@ prepare_ports() {
 	export LOCALBASE=${LOCALBASE:-/usr/local}
 
 	clean_build_queue
+	if was_a_bulk_run && [ "${resuming_build}" -eq 0 ]; then
+		# Update again after trimming the build queue
+		update_stats_queued
+	fi
 
 	# Call the deadlock code as non-fatal which will check for cycles
 	msg "Sanity checking build queue"
@@ -7398,17 +7416,6 @@ prepare_ports() {
 
 	if was_a_bulk_run; then
 		if [ "${resuming_build}" -eq 0 ]; then
-			nbq=$(pkgqueue_list | wc -l)
-			# Need to add in pre-build ignored/skipped
-			_bget nbi stats_ignored || nbi=0
-			_bget nbs stats_skipped || nbs=0
-			nbq=$((nbq + nbi + nbs))
-
-			# Add 1 for the main port to test
-			was_a_testport_run && \
-			    nbq=$((${nbq} + 1))
-			bset stats_queued ${nbq##* }
-
 			# Generate ports.queued list after the queue was
 			# trimmed.
 			local _originspec _pkgname _rdep _ignore tmp
@@ -7535,11 +7542,7 @@ balance_pool() {
 		return 0
 	fi
 
-	if [ -n "${MY_JOBID}" ]; then
-		bset ${MY_JOBID} status "balancing_pool:"
-	else
-		bset status "balancing_pool:"
-	fi
+	bset ${MY_JOBID} status "balancing_pool:"
 
 	# For everything ready-to-build...
 	for pkg_dir in pool/unbalanced/*; do
