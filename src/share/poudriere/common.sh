@@ -6760,11 +6760,13 @@ _listed_ports() {
 		_pget portsdir ${PTNAME} mnt || \
 		    err 1 "Missing mnt metadata for portstree"
 		[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
-		_list_ports_dir "${portsdir}" "${PTNAME}"
-		for o in ${OVERLAYS}; do
-			_pget portsdir "${o}" mnt
-			_list_ports_dir "${portsdir}" "${o}"
-		done
+		{
+			_list_ports_dir "${portsdir}" "${PTNAME}"
+			for o in ${OVERLAYS}; do
+				_pget portsdir "${o}" mnt
+				_list_ports_dir "${portsdir}" "${o}"
+			done
+		} | sort -ud
 		return 0
 	fi
 

@@ -41,6 +41,7 @@ TESTS=\
 	bulk-flavor-metadata-queue-ordering.sh \
 	bulk-flavor-metadata-queue-ordering-multi-pass.sh \
 	bulk-flavor-ignore-all.sh \
+	bulk-overlay-all.sh \
 	bulk-no-overlay-specific.sh \
 	bulk-overlay-specific.sh
 
