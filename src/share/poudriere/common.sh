@@ -6120,7 +6120,7 @@ deps_sanity() {
 			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} depends on bad origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
 			ret=1
 		fi
-		if ! _find_origin_in_ports_or_overlays "${dep_origin}"; then
+		if ! test_port_origin_exist "${dep_origin}"; then
 			# Was it moved? We cannot map it here due to the ports
 			# framework not supporting it later on, and the
 			# PKGNAME would be wrong, but we can at least
@@ -6598,11 +6598,11 @@ test_port_origin_exist() {
 	local o
 
 	for o in ${OVERLAYS}; do
-		if [ -d "${MASTERMNT}/overlays/${o}/${_origin}" ]; then
+		if [ -d "${MASTERMNTREL}/overlays/${o}/${_origin}" ]; then
 			return 0
 		fi
 	done
-	if [ -d "${MASTERMNT}/${PORTSDIR}/${_origin}" ]; then
+	if [ -d "${MASTERMNTREL}/${PORTSDIR}/${_origin}" ]; then
 		return 0
 	fi
 	return 1
@@ -6745,24 +6745,6 @@ _list_ports_dir() {
 	done
 }
 
-_find_origin_in_ports_or_overlays() {
-	[ $# -eq 1 ] || eargs _find_origin_in_ports_or_overlays origin
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "_find_origin_in_ports_or_overlays requires PWD=${MASTERMNT}/.p"
-	local origin="$1"
-	local o
-
-	for o in ${OVERLAYS}; do
-		if [ -d "../overlays/${o}/${origin}" ]; then
-			return 0
-		fi
-	done
-	if [ -d "../${PORTSDIR}/${origin}" ]; then
-		return 0
-	fi
-	return 1
-}
-
 _listed_ports() {
 	local tell_moved="${1}"
 	local portsdir origin file o
@@ -6818,7 +6800,7 @@ _listed_ports() {
 		else
 			unset new_origin
 		fi
-		if ! _find_origin_in_ports_or_overlays "${origin}"; then
+		if ! test_port_origin_exist "${origin}"; then
 			msg_error "Nonexistent origin listed: ${COLOR_PORT}${origin_listed}${new_origin:+${COLOR_RESET} (moved to nonexistent ${COLOR_PORT}${new_origin}${COLOR_RESET})}"
 			set_dep_fatal_error
 			continue
