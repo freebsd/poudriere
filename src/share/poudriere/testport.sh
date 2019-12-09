@@ -267,11 +267,11 @@ if [ "${USE_PORTLINT}" = "yes" ]; then
 	[ ! -x `command -v portlint` ] &&
 		err 2 "First install portlint if you want USE_PORTLINT to work as expected"
 	msg "Portlint check"
-	set +e
-	cd ${MASTERMNT}${PORTSDIR}/${ORIGIN} &&
-		PORTSDIR="${MASTERMNT}${PORTSDIR}" portlint -C | \
-		tee ${log}/logs/${PKGNAME}.portlint.log
-	set -e
+	(
+		cd ${MASTERMNT}${PORTSDIR}/${ORIGIN} &&
+			PORTSDIR="${MASTERMNT}${PORTSDIR}" portlint -C | \
+			tee ${log}/logs/${PKGNAME}.portlint.log
+	) || :
 fi
 [ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/prefix}/`echo ${PKGNAME} | tr '[,+]' _`"
 [ "${PREFIX}" != "${LOCALBASE}" ] && PORT_FLAGS="PREFIX=${PREFIX}"
