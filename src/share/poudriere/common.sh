@@ -1709,6 +1709,7 @@ do_jail_mounts() {
 # Interactive test mode
 enter_interactive() {
 	local stopmsg pkgname port originspec dep_args flavor packages
+	local portdir
 
 	if [ ${ALL} -ne 0 ]; then
 		msg "(-a) Not entering interactive mode."
@@ -1746,15 +1747,16 @@ enter_interactive() {
 		originspec_decode "${originspec}" port dep_args flavor
 		# Install run-depends since this is an interactive test
 		msg "Installing run-depends for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
+		_lookup_portdir portdir "${port}"
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
-		    /usr/bin/make -C ${PORTSDIR}/${port} ${dep_args} \
+		    /usr/bin/make -C "${portdir}" ${dep_args} \
 		    ${flavor:+FLAVOR=${flavor}} run-depends ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET} run-depends"
 		msg "Installing ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
 		# Only use PKGENV during install as testport will store
 		# the package in a different place than dependencies
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 ${PKGENV} \
-		    /usr/bin/make -C ${PORTSDIR}/${port} ${dep_args} \
+		    /usr/bin/make -C "${portdir}" ${dep_args} \
 		    ${flavor:+FLAVOR=${flavor}} install-package ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
 	done
@@ -6607,6 +6609,7 @@ test_port_origin_exist() {
 	fi
 	return 1
 }
+
 # Before Poudriere added DEPENDS_ARGS and FLAVORS support many slave ports
 # were added that are now redundant.  Replace them with the proper main port
 # dependency.
