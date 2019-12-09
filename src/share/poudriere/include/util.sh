@@ -116,8 +116,8 @@ fi
 _relpath_common() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs _relpath_common dir1 dir2
-	local dir1=$(realpath -q "$1" || echo "${1}")
-	local dir2=$(realpath -q "$2" || echo "${2}")
+	local dir1=$(realpath -q "$1" || gsub "${1}" '//' '/')
+	local dir2=$(realpath -q "$2" || gsub "${2}" '//' '/')
 	local common
 
 	dir1="${dir1%/}/"
