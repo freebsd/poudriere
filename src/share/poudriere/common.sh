@@ -803,17 +803,17 @@ _lookup_portdir() {
 	[ $# -eq 2 ] || eargs _lookup_portdir var_return origin
 	local _varname="$1"
 	local _port="$2"
-	local o ptdir
+	local o _ptdir
 
 	for o in ${OVERLAYS}; do
-		ptdir="/overlays/${o}/${_port}"
-		if [ -d "${MASTERMNTREL}${ptdir}" ]; then
-			setvar "${_varname}" "${ptdir}"
+		_ptdir="/overlays/${o}/${_port}"
+		if [ -d "${MASTERMNTREL}${_ptdir}" ]; then
+			setvar "${_varname}" "${_ptdir}"
 			return
 		fi
 	done
-	ptdir="${PORTSDIR}/${_port}"
-	setvar "${_varname}" "${ptdir}"
+	_ptdir="${PORTSDIR}/${_port}"
+	setvar "${_varname}" "${_ptdir}"
 	return
 }
 
