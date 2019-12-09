@@ -39,7 +39,7 @@ fi
 # Replace a pattern without needing a subshell/exec
 _gsub() {
 	[ $# -eq 3 -o $# -eq 4 ] || eargs _gsub string pattern replacement \
-	    var_return
+	    [var_return]
 	local string="$1"
 	local pattern="$2"
 	local replacement="$3"
