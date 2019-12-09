@@ -40,7 +40,9 @@ TESTS=\
 	bulk-flavor-specific-dep.sh \
 	bulk-flavor-metadata-queue-ordering.sh \
 	bulk-flavor-metadata-queue-ordering-multi-pass.sh \
-	bulk-flavor-ignore-all.sh
+	bulk-flavor-ignore-all.sh \
+	bulk-no-overlay-specific.sh \
+	bulk-overlay-specific.sh
 
 all: prep check check-stock
 

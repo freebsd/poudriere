@@ -806,7 +806,7 @@ _lookup_portdir() {
 	local o _ptdir
 
 	for o in ${OVERLAYS}; do
-		_ptdir="/overlays/${o}/${_port}"
+		_ptdir="${OVERLAYSDIR}/${o}/${_port}"
 		if [ -d "${MASTERMNTREL}${_ptdir}" ]; then
 			setvar "${_varname}" "${_ptdir}"
 			return
@@ -1489,7 +1489,7 @@ common_mtree() {
 	./compat/linux/proc
 	./dev
 	./distfiles
-	./overlays
+	.${OVERLAYSDIR}
 	./packages
 	./portdistfiles
 	./proc
@@ -1834,7 +1834,7 @@ do_portbuild_mounts() {
 	# clone will inherit from the ref jail
 	if [ ${mnt##*/} = "ref" ]; then
 		mkdir -p "${mnt}${PORTSDIR}" \
-		    "${mnt}/overlays" \
+		    "${mnt}${OVERLAYSDIR}" \
 		    "${mnt}/wrkdirs" \
 		    "${mnt}/${LOCALBASE:-/usr/local}" \
 		    "${mnt}/distfiles" \
@@ -1844,7 +1844,7 @@ do_portbuild_mounts() {
 		    "${mnt}${HOME}/.ccache" \
 		    "${mnt}/usr/home"
 		for o in ${OVERLAYS}; do
-			mkdir -p "${mnt}/overlays/${o}"
+			mkdir -p "${mnt}${OVERLAYSDIR}/${o}"
 		done
 		ln -fs "usr/home" "${mnt}/home"
 	fi
@@ -1870,7 +1870,7 @@ do_portbuild_mounts() {
 		err 1 "Failed to mount the ports directory "
 	for o in ${OVERLAYS}; do
 		_pget odir "${o}" mnt || err 1 "Missing mnt metadata for overlay ${o}"
-		${NULLMOUNT} -o ro "${odir}" "${mnt}/overlays/${o}"
+		${NULLMOUNT} -o ro "${odir}" "${mnt}${OVERLAYSDIR}/${o}"
 	done
 	mount_packages -o ro
 	${NULLMOUNT} ${DISTFILES_CACHE} ${mnt}/distfiles ||
@@ -2630,7 +2630,7 @@ jail_start() {
 	DISTDIR=/distfiles
 	EOF
 	for o in ${OVERLAYS}; do
-		echo "OVERLAYS+=/overlays/${o}"
+		echo "OVERLAYS+=${OVERLAYSDIR}/${o}"
 	done >> "${tomnt}/etc/make.conf"
 	[ -z "${NO_FORCE_PACKAGE}" ] && \
 	    echo "FORCE_PACKAGE=yes" >> "${tomnt}/etc/make.conf"
@@ -6600,7 +6600,7 @@ test_port_origin_exist() {
 	local o
 
 	for o in ${OVERLAYS}; do
-		if [ -d "${MASTERMNTREL}/overlays/${o}/${_origin}" ]; then
+		if [ -d "${MASTERMNTREL}${OVERLAYSDIR}/${o}/${_origin}" ]; then
 			return 0
 		fi
 	done
@@ -8075,6 +8075,7 @@ if [ "$(mount -t fdescfs | awk '$3 == "/dev/fd" {print $3}')" = "/dev/fd" ]; the
 	HAVE_FDESCFS=1
 fi
 
+: ${OVERLAYSDIR:=/overlays}
 : ${RELATIVE_PATH_VARS:=SHASH_VAR_PATH MASTERMNTREL}
 
 TIME_START=$(clock -monotonic)
