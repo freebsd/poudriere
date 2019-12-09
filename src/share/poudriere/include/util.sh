@@ -84,7 +84,7 @@ fi
 
 if ! type getvar >/dev/null 2>&1; then
 getvar() {
-	[ $# -eq 2 ] || eargs getvar var var_return
+	[ $# -eq 1 -o $# -eq 2 ] || eargs getvar var [var_return]
 	local var="$1"
 	local var_return="$2"
 	local ret _evalue
@@ -98,7 +98,11 @@ getvar() {
 		ret=0
 	fi
 
-	setvar "${var_return}" "${_evalue}"
+	if [ -n "${var_return}" ]; then
+		setvar "${var_return}" "${_evalue}"
+	else
+		echo "${_evalue}"
+	fi
 
 	return ${ret}
 }

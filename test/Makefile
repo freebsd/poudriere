@@ -1,6 +1,7 @@
 TESTS=\
 	cache.sh \
 	encode_args.sh \
+	getvar.sh \
 	hash_basic.sh \
 	list.sh \
 	locks.sh \
