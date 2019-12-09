@@ -162,9 +162,10 @@ relpath_common() {
 # Given 2 paths, return the relative path from the 2nd to the first
 _relpath() {
 	local -; set +x -f
-	[ $# -eq 2 ] || eargs _relpath dir1 dir2
+	[ $# -eq 2 -o $# -eq 3 ] || eargs _relpath dir1 dir2 [var_return]
 	local dir1="$1"
 	local dir2="$2"
+	local var_return="${3:-_relpath}"
 	local _relpath_common _relpath_common_dir1 _relpath_common_dir2
 	local newpath IFS
 
@@ -189,19 +190,21 @@ _relpath() {
 		done
 	fi
 
-	_relpath="${newpath}"
+	setvar "${var_return}" "${newpath}"
 }
 
 # See _relpath
 relpath() {
 	local -; set +x
-	[ $# -eq 2 ] || eargs relpath dir1 dir2
+	[ $# -eq 2 -o $# -eq 3 ] || eargs relpath dir1 dir2 [var_return]
 	local dir1="$1"
 	local dir2="$2"
 	local _relpath
 
-	_relpath "${dir1}" "${dir2}"
-	echo "${_relpath}"
+	_relpath "$@"
+	if [ $# -ne 3 ]; then
+		echo "${_relpath}"
+	fi
 }
 
 if [ "$(type trap_push 2>/dev/null)" != "trap_push is a shell builtin" ]; then

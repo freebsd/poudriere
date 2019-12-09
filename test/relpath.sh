@@ -29,7 +29,11 @@ while [ $# -gt 0 ]; do
 
 	actual_reldir=$(relpath "${dir1}" "${dir2}")
 
-	assert "${expected_reldir}" "${actual_reldir}" "dir1: ${dir1} dir2: ${dir2}"
+	assert "${expected_reldir}" "${actual_reldir}" "1. dir1: ${dir1} dir2: ${dir2}"
+
+	actual_reldir=
+	relpath "${dir1}" "${dir2}" actual_reldir
+	assert "${expected_reldir}" "${actual_reldir}" "2. dir1: ${dir1} dir2: ${dir2}"
 
 	set -- ${saved}
 done
