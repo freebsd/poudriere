@@ -807,7 +807,7 @@ _lookup_portdir() {
 
 	for o in ${OVERLAYS}; do
 		ptdir="/overlays/${o}/${_port}"
-		if [ -d "${MASTERMNT}${ptdir}" ]; then
+		if [ -d "${MASTERMNTREL}${ptdir}" ]; then
 			setvar "${_varname}" "${ptdir}"
 			return
 		fi
