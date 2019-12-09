@@ -1614,6 +1614,25 @@ rm() {
 	command rm "$@"
 }
 
+_update_relpaths() {
+	[ $# -eq 2 ] || eargs _update_relpaths oldroot newroot
+	local oldroot="$1"
+	local newroot="$2"
+	local var value
+
+	for var in ${RELATIVE_PATH_VARS}; do
+		getvar "${var}" value || continue
+		[ -z "${value}" ] && continue
+		if [ -n "${value##/*}" ]; then
+			# It was relative.
+			_relpath "${oldroot}/${value}" "${newroot}" "${var}"
+		else
+			# It was absolute.
+			_relpath "${value}" "${newroot}" "${var}"
+		fi
+	done
+}
+
 # Handle relative path change needs
 cd() {
 	local ret
@@ -1622,11 +1641,7 @@ cd() {
 	command cd "$@" || ret=$?
 	# Handle fixing relative paths
 	if [ "${OLDPWD}" != "${PWD}" ]; then
-		# Only change if it is relative
-		if [ -n "${SHASH_VAR_PATH##/*}" ]; then
-			_relpath "${OLDPWD}/${SHASH_VAR_PATH}" "${PWD}"
-			SHASH_VAR_PATH="${_relpath}"
-		fi
+		_update_relpaths "${OLDPWD}" "${PWD}" || :
 	fi
 	return ${ret}
 }
@@ -7201,7 +7216,7 @@ prepare_ports() {
 		"${MASTERMNT}/.p/var/cache"
 
 	cd "${MASTERMNT}/.p"
-	SHASH_VAR_PATH="var/cache"
+	SHASH_VAR_PATH=var/cache
 	# No prefix needed since we're unique in MASTERMNT.
 	SHASH_VAR_PREFIX=
 	# Allow caching values now
@@ -8069,6 +8084,8 @@ if [ "$(mount -t fdescfs | awk '$3 == "/dev/fd" {print $3}')" = "/dev/fd" ]; the
 	HAVE_FDESCFS=1
 fi
 
+: ${RELATIVE_PATH_VARS:=SHASH_VAR_PATH}
+
 TIME_START=$(clock -monotonic)
 EPOCH_START=$(clock -epoch)
 
@@ -8081,6 +8098,8 @@ EPOCH_START=$(clock -epoch)
 . ${SCRIPTPREFIX}/include/shared_hash.sh
 . ${SCRIPTPREFIX}/include/cache.sh
 . ${SCRIPTPREFIX}/include/fs.sh
+
+_update_relpaths "${PWD}" "${PWD}"
 
 if [ -z "${LOIP6}" -a -z "${LOIP4}" ]; then
 	msg_warn "No loopback address defined, consider setting LOIP6/LOIP4 or assigning a loopback address to the jail."
