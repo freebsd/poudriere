@@ -306,6 +306,8 @@ _mastermnt() {
 
 	# MASTERMNT=
 	setvar "$1" "${mnt}"
+	# MASTERMNTREL=
+	relpath "${MASTERMNT}" "${PWD}" MASTERMNTREL
 	# MASTERMNTROOT=
 	setvar "${1}ROOT" "${mnt%/ref}"
 }
@@ -8084,7 +8086,7 @@ if [ "$(mount -t fdescfs | awk '$3 == "/dev/fd" {print $3}')" = "/dev/fd" ]; the
 	HAVE_FDESCFS=1
 fi
 
-: ${RELATIVE_PATH_VARS:=SHASH_VAR_PATH}
+: ${RELATIVE_PATH_VARS:=SHASH_VAR_PATH MASTERMNTREL}
 
 TIME_START=$(clock -monotonic)
 EPOCH_START=$(clock -epoch)

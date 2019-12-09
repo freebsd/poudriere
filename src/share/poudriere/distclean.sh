@@ -152,7 +152,7 @@ for PTNAME in ${PTNAMES}; do
 		echo "PACKAGE_BUILDING_FLAVORS=yes"
 	fi >> "${__MAKE_CONF}"
 
-	MASTERMNT= load_moved
+	MASTERMNT= MASTERMNTREL= load_moved
 	msg "Gathering all expected distfiles for ports tree '${PTNAME}'"
 
 	for originspec in $(listed_ports show_moved); do
