@@ -6732,17 +6732,21 @@ _list_ports_dir() {
 
 	# skip overlays with no categories listed
 	[ -f "${ptdir}/Makefile" ] || return
-	for cat in $(awk -F= '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print $2}' ${ptdir}/Makefile); do
-		# skip overlays with no ports hooked to the build
-		[ -f "${ptdir}/${cat}/Makefile" ] || continue
-		awk -F= -v cat=${cat} '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print cat"/"$2}' "${ptdir}/${cat}/Makefile"
-	done | while mapfile_read_loop_redir origin; do
-		if ! [ -d "${ptdir}/${origin}" ]; then
-			msg_warn "Nonexistent origin listed in category Makefiles in \"${overlay}\": ${COLOR_PORT}${origin}${COLOR_RESET} (skipping)"
-			continue
-		fi
-		echo "${origin}"
-	done
+	(
+		cd "${ptdir}"
+		ptdir="."
+		for cat in $(awk -F= '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print $2}' "${ptdir}/Makefile"); do
+			# skip overlays with no ports hooked to the build
+			[ -f "${ptdir}/${cat}/Makefile" ] || continue
+			awk -F= -v cat=${cat} '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print cat"/"$2}' "${ptdir}/${cat}/Makefile"
+		done | while mapfile_read_loop_redir origin; do
+			if ! [ -d "${ptdir}/${origin}" ]; then
+				msg_warn "Nonexistent origin listed in category Makefiles in \"${overlay}\": ${COLOR_PORT}${origin}${COLOR_RESET} (skipping)"
+				continue
+			fi
+			echo "${origin}"
+		done
+	)
 }
 
 _listed_ports() {
