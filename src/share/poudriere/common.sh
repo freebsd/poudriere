@@ -7633,6 +7633,8 @@ read_packages_from_params()
 }
 
 clean_restricted() {
+	local o
+
 	msg "Cleaning restricted packages"
 	bset status "clean_restricted:"
 	# Remount rw
@@ -7642,6 +7644,11 @@ clean_restricted() {
 	mount_packages
 	injail /usr/bin/make -s -C ${PORTSDIR} -j ${PARALLEL_JOBS} \
 	    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
+	for o in ${OVERLAYS}; do
+		injail /usr/bin/make -s -C "${OVERLAYSDIR}/${o}" \
+		    -j ${PARALLEL_JOBS} \
+		    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
+	done
 	# Remount ro
 	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages || \
 	    umount -f ${MASTERMNT}/packages
