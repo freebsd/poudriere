@@ -27,6 +27,7 @@
 : ${SHASH_VAR_NAME_SUB_BADCHARS:=" /"}
 : ${SHASH_VAR_PATH:=${TMPDIR:-/tmp}}
 : ${SHASH_VAR_PREFIX=$$}
+add_relpath_var SHASH_VAR_PATH || err "Failed to add SHASH_VAR_PATH to relpaths"
 
 _shash_var_name() {
 	local var="${1}"

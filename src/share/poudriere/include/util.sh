@@ -211,6 +211,25 @@ relpath() {
 	fi
 }
 
+make_relative() {
+	[ $# -eq 1 -o $# -eq 3 ] || eargs make_relative varname \
+	    [oldroot newroot]
+	local varname="$1"
+	local oldroot="${2:-${PWD}}"
+	local newroot="${3:-${PWD}}"
+	local value
+
+	getvar "${varname}" value || return 0
+	[ -z "${value}" ] && return 0
+	if [ -n "${value##/*}" ]; then
+		# It was relative.
+		_relpath "${oldroot}/${value}" "${newroot}" "${varname}"
+	else
+		# It was absolute.
+		_relpath "${value}" "${newroot}" "${varname}"
+	fi
+}
+
 if [ "$(type trap_push 2>/dev/null)" != "trap_push is a shell builtin" ]; then
 trap_push() {
 	local -; set +x

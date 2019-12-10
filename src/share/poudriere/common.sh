@@ -306,8 +306,8 @@ _mastermnt() {
 
 	# MASTERMNT=
 	setvar "$1" "${mnt}"
-	# MASTERMNTREL=
-	relpath "${MASTERMNT}" "${PWD}" MASTERMNTREL
+	MASTERMNTREL="${mnt}"
+	add_relpath_var MASTERMNTREL
 	# MASTERMNTROOT=
 	setvar "${1}ROOT" "${mnt%/ref}"
 }
@@ -1620,19 +1620,22 @@ _update_relpaths() {
 	[ $# -eq 2 ] || eargs _update_relpaths oldroot newroot
 	local oldroot="$1"
 	local newroot="$2"
-	local var value
+	local varname
 
-	for var in ${RELATIVE_PATH_VARS}; do
-		getvar "${var}" value || continue
-		[ -z "${value}" ] && continue
-		if [ -n "${value##/*}" ]; then
-			# It was relative.
-			_relpath "${oldroot}/${value}" "${newroot}" "${var}"
-		else
-			# It was absolute.
-			_relpath "${value}" "${newroot}" "${var}"
-		fi
+	for varname in ${RELATIVE_PATH_VARS}; do
+		make_relative "${varname}" "${oldroot}" "${newroot}"
 	done
+}
+
+add_relpath_var() {
+	[ $# -eq 1 ] || eargs add_relpath_var varname
+	local varname="$1"
+
+	case " ${RELATIVE_PATH_VARS} " in
+	*" ${varname} "*) ;;
+	*) RELATIVE_PATH_VARS="${RELATIVE_PATH_VARS:+${RELATIVE_PATH_VARS} }${varname}" ;;
+	esac
+	make_relative "${varname}"
 }
 
 # Handle relative path change needs
@@ -8095,7 +8098,6 @@ if [ "$(mount -t fdescfs | awk '$3 == "/dev/fd" {print $3}')" = "/dev/fd" ]; the
 fi
 
 : ${OVERLAYSDIR:=/overlays}
-: ${RELATIVE_PATH_VARS:=SHASH_VAR_PATH MASTERMNTREL}
 
 TIME_START=$(clock -monotonic)
 EPOCH_START=$(clock -epoch)
@@ -8109,8 +8111,6 @@ EPOCH_START=$(clock -epoch)
 . ${SCRIPTPREFIX}/include/shared_hash.sh
 . ${SCRIPTPREFIX}/include/cache.sh
 . ${SCRIPTPREFIX}/include/fs.sh
-
-_update_relpaths "${PWD}" "${PWD}"
 
 if [ -z "${LOIP6}" -a -z "${LOIP4}" ]; then
 	msg_warn "No loopback address defined, consider setting LOIP6/LOIP4 or assigning a loopback address to the jail."
