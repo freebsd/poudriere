@@ -55,7 +55,7 @@ Options:
     -N          -- Do not build package repository when build completed
     -n          -- Dry-run. Show what will be done, but do not build
                    any packages.
-    -O overlays -- Specify path to overlay onto the ports tree
+    -O overlays -- Specify extra ports trees to overlay
     -p tree     -- Specify on which ports tree the bulk build will be done
     -R          -- Clean RESTRICTED packages after building
     -r          -- Resursively test all dependencies as well

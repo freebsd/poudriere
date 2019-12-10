@@ -52,8 +52,8 @@ Options:
                    any packages.
     -N          -- Do not build package repository when build of dependencies
                    completed
-    -O overlays -- Specify the overlay which should be added to the ports tree
-    -p tree     -- Specify the path to the portstree
+    -O overlays -- Specify extra ports trees to overlay
+    -p tree     -- Specify the path to the ports tree
     -P          -- Use custom prefix
     -S          -- Don't recursively rebuild packages affected by other
                    packages requiring incremental rebuild. This can result
