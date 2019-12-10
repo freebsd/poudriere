@@ -8080,6 +8080,8 @@ DRY_RUN=0
 : ${BUILDNAME:=$(date +${BUILDNAME_FORMAT})}
 
 : ${HTML_TYPE:=inline}
+: ${LC_COLLATE:=C}
+export LC_COLLATE
 
 if [ -n "${MAX_MEMORY}" ]; then
 	MAX_MEMORY_BYTES="$((${MAX_MEMORY} * 1024 * 1024 * 1024))"
