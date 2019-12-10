@@ -9,7 +9,7 @@
 dirs="\
 /poudriere/data/.m/exp-10amd64-commit-test/ref/.p/var/cache /poudriere/data/.m/exp-10amd64-commit-test/ref/usr/ports/ports-mgmt/poudriere - ../../../../.p/var/cache \
 /prefix/a/b/c /prefix/a/b - c \
-/prefix/a/b /prefix/a/b/c - .. \
+/prefix/a/b /////prefix//a///b/c - .. \
 /prefix/a/b/c /root/a - ../../prefix/a/b/c \
 /prefix/a/b/c / - prefix/a/b/c \
 / /prefix/a/b/c - ../../../.. \
