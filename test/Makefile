@@ -2,6 +2,7 @@ TESTS=\
 	cache.sh \
 	encode_args.sh \
 	getvar.sh \
+	gsub.sh \
 	hash_basic.sh \
 	list.sh \
 	locks.sh \
