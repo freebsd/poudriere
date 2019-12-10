@@ -14,7 +14,7 @@ assert "ports-mgmt/poudriere-devel-IGNORED ports-mgmt/poudriere-devel-IGNORED-an
     "${IGNOREDPORTS-null}" "IGNOREDPORTS should match"
 
 # Assert that skipped ports are right
-assert "ports-mgmt/poudriere-devel-dep2-IGNORED ports-mgmt/poudriere-devel-dep-IGNORED" "${SKIPPEDPORTS-null}" "SKIPPEDPORTS should match"
+assert "ports-mgmt/poudriere-devel-dep-IGNORED ports-mgmt/poudriere-devel-dep2-IGNORED" "${SKIPPEDPORTS-null}" "SKIPPEDPORTS should match"
 
 # Assert the IGNOREd ports are tracked in .poudriere.ports.ignored
 assert_ignored "${IGNOREDPORTS}"

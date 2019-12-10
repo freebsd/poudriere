@@ -6766,7 +6766,15 @@ _listed_ports() {
 				_pget portsdir "${o}" mnt
 				_list_ports_dir "${portsdir}" "${o}"
 			done
-		} | sort -ud
+		} | {
+			# Sort but only if there's OVERLAYS to avoid
+			# needless slowdown for pipelining otherwise.
+			if [ -n "${OVERLAYS}" ]; then
+				sort -ud
+			else
+				cat -u
+			fi
+		}
 		return 0
 	fi
 
