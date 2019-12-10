@@ -29,7 +29,30 @@ while [ $# -gt 0 ]; do
 
 	actual_reldir=$(relpath "${dir1}" "${dir2}")
 
-	assert "${expected_reldir}" "${actual_reldir}" "dir1: ${dir1} dir2: ${dir2}"
+	assert "${expected_reldir}" "${actual_reldir}" "1. dir1: ${dir1} dir2: ${dir2}"
+
+	actual_reldir=
+	relpath "${dir1}" "${dir2}" actual_reldir
+	assert "${expected_reldir}" "${actual_reldir}" "2. dir1: ${dir1} dir2: ${dir2}"
 
 	set -- ${saved}
 done
+
+cd /tmp
+RELATIVE_PATH_VARS="foo bar empty unset"
+unset unset
+empty=
+foo="/tmp"
+bar=".."
+
+cd /
+assert "tmp" "${foo}" 1
+assert "." "${bar}" 2
+assert "" "${empty}" 3
+assert "" "${unset}" 4
+
+cd etc
+assert "../tmp" "${foo}" 5
+assert ".." "${bar}" 6
+assert "" "${empty}" 7
+assert "" "${unset}" 8

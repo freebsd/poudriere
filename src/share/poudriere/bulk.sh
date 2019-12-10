@@ -55,6 +55,7 @@ Options:
     -N          -- Do not build package repository when build completed
     -n          -- Dry-run. Show what will be done, but do not build
                    any packages.
+    -O overlays -- Specify extra ports trees to overlay
     -p tree     -- Specify on which ports tree the bulk build will be done
     -R          -- Clean RESTRICTED packages after building
     -r          -- Resursively test all dependencies as well
@@ -86,11 +87,12 @@ DRY_RUN=0
 ALL=0
 BUILD_REPO=1
 INTERACTIVE_MODE=0
+OVERLAYS=""
 . ${SCRIPTPREFIX}/common.sh
 
 [ $# -eq 0 ] && usage
 
-while getopts "aB:CcFf:iIj:J:knNp:RrSTtvwz:" FLAG; do
+while getopts "aB:CcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			ALL=1
@@ -139,6 +141,11 @@ while getopts "aB:CcFf:iIj:J:knNp:RrSTtvwz:" FLAG; do
 			    err 1 "ATOMIC_PACKAGE_REPOSITORY required for dry-run support"
 			DRY_RUN=1
 			DRY_MODE="${COLOR_DRY_MODE}[Dry Run]${COLOR_RESET} "
+			;;
+		O)
+			porttree_exists ${OPTARG} ||
+			    err 2 "No such overlay ${OPTARG}"
+			OVERLAYS="${OVERLAYS} ${OPTARG}"
 			;;
 		p)
 			porttree_exists ${OPTARG} ||

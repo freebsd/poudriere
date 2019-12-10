@@ -306,6 +306,8 @@ _mastermnt() {
 
 	# MASTERMNT=
 	setvar "$1" "${mnt}"
+	# MASTERMNTREL=
+	relpath "${MASTERMNT}" "${PWD}" MASTERMNTREL
 	# MASTERMNTROOT=
 	setvar "${1}ROOT" "${mnt%/ref}"
 }
@@ -797,6 +799,24 @@ log_start() {
 	fi
 }
 
+_lookup_portdir() {
+	[ $# -eq 2 ] || eargs _lookup_portdir var_return origin
+	local _varname="$1"
+	local _port="$2"
+	local o _ptdir
+
+	for o in ${OVERLAYS}; do
+		_ptdir="${OVERLAYSDIR}/${o}/${_port}"
+		if [ -d "${MASTERMNTREL}${_ptdir}" ]; then
+			setvar "${_varname}" "${_ptdir}"
+			return
+		fi
+	done
+	_ptdir="${PORTSDIR}/${_port}"
+	setvar "${_varname}" "${_ptdir}"
+	return
+}
+
 buildlog_start() {
 	[ $# -eq 2 ] || eargs buildlog_start pkgname originspec
 	local pkgname="$1"
@@ -814,7 +834,7 @@ buildlog_start() {
 
 	_my_path mnt
 	originspec_decode "${originspec}" port '' ''
-	portdir="${PORTSDIR}/${port}"
+	_lookup_portdir portdir "${port}"
 
 	for var in ${wanted_vars}; do
 		local "mk_${var}"
@@ -1469,6 +1489,7 @@ common_mtree() {
 	./compat/linux/proc
 	./dev
 	./distfiles
+	.${OVERLAYSDIR}
 	./packages
 	./portdistfiles
 	./proc
@@ -1595,6 +1616,25 @@ rm() {
 	command rm "$@"
 }
 
+_update_relpaths() {
+	[ $# -eq 2 ] || eargs _update_relpaths oldroot newroot
+	local oldroot="$1"
+	local newroot="$2"
+	local var value
+
+	for var in ${RELATIVE_PATH_VARS}; do
+		getvar "${var}" value || continue
+		[ -z "${value}" ] && continue
+		if [ -n "${value##/*}" ]; then
+			# It was relative.
+			_relpath "${oldroot}/${value}" "${newroot}" "${var}"
+		else
+			# It was absolute.
+			_relpath "${value}" "${newroot}" "${var}"
+		fi
+	done
+}
+
 # Handle relative path change needs
 cd() {
 	local ret
@@ -1603,11 +1643,7 @@ cd() {
 	command cd "$@" || ret=$?
 	# Handle fixing relative paths
 	if [ "${OLDPWD}" != "${PWD}" ]; then
-		# Only change if it is relative
-		if [ -n "${SHASH_VAR_PATH##/*}" ]; then
-			_relpath "${OLDPWD}/${SHASH_VAR_PATH}" "${PWD}"
-			SHASH_VAR_PATH="${_relpath}"
-		fi
+		_update_relpaths "${OLDPWD}" "${PWD}" || :
 	fi
 	return ${ret}
 }
@@ -1673,6 +1709,7 @@ do_jail_mounts() {
 # Interactive test mode
 enter_interactive() {
 	local stopmsg pkgname port originspec dep_args flavor packages
+	local portdir
 
 	if [ ${ALL} -ne 0 ]; then
 		msg "(-a) Not entering interactive mode."
@@ -1710,15 +1747,16 @@ enter_interactive() {
 		originspec_decode "${originspec}" port dep_args flavor
 		# Install run-depends since this is an interactive test
 		msg "Installing run-depends for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
+		_lookup_portdir portdir "${port}"
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
-		    /usr/bin/make -C ${PORTSDIR}/${port} ${dep_args} \
+		    /usr/bin/make -C "${portdir}" ${dep_args} \
 		    ${flavor:+FLAVOR=${flavor}} run-depends ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET} run-depends"
 		msg "Installing ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
 		# Only use PKGENV during install as testport will store
 		# the package in a different place than dependencies
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 ${PKGENV} \
-		    /usr/bin/make -C ${PORTSDIR}/${port} ${dep_args} \
+		    /usr/bin/make -C "${portdir}" ${dep_args} \
 		    ${flavor:+FLAVOR=${flavor}} install-package ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
 	done
@@ -1791,11 +1829,12 @@ do_portbuild_mounts() {
 	local ptname=$3
 	local setname=$4
 	local portsdir
-	local optionsdir opt
+	local optionsdir opt o
 
 	# clone will inherit from the ref jail
 	if [ ${mnt##*/} = "ref" ]; then
 		mkdir -p "${mnt}${PORTSDIR}" \
+		    "${mnt}${OVERLAYSDIR}" \
 		    "${mnt}/wrkdirs" \
 		    "${mnt}/${LOCALBASE:-/usr/local}" \
 		    "${mnt}/distfiles" \
@@ -1804,6 +1843,9 @@ do_portbuild_mounts() {
 		    "${mnt}/var/db/ports" \
 		    "${mnt}${HOME}/.ccache" \
 		    "${mnt}/usr/home"
+		for o in ${OVERLAYS}; do
+			mkdir -p "${mnt}${OVERLAYSDIR}/${o}"
+		done
 		ln -fs "usr/home" "${mnt}/home"
 	fi
 	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] &&
@@ -1826,6 +1868,10 @@ do_portbuild_mounts() {
 	[ -d ${portsdir}/ports ] && portsdir=${portsdir}/ports
 	${NULLMOUNT} -o ro ${portsdir} ${mnt}${PORTSDIR} ||
 		err 1 "Failed to mount the ports directory "
+	for o in ${OVERLAYS}; do
+		_pget odir "${o}" mnt || err 1 "Missing mnt metadata for overlay ${o}"
+		${NULLMOUNT} -o ro "${odir}" "${mnt}${OVERLAYSDIR}/${o}"
+	done
 	mount_packages -o ro
 	${NULLMOUNT} ${DISTFILES_CACHE} ${mnt}/distfiles ||
 		err 1 "Failed to mount the distfiles cache directory"
@@ -2374,7 +2420,7 @@ jail_start() {
 	local needfs="${NULLFSREF}"
 	local needkld kldpair kld kldmodname
 	local tomnt fs
-	local portbuild_uid aarchld
+	local portbuild_uid aarchld o
 
 	lock_jail
 
@@ -2583,6 +2629,9 @@ jail_start() {
 	PACKAGES=/packages
 	DISTDIR=/distfiles
 	EOF
+	for o in ${OVERLAYS}; do
+		echo "OVERLAYS+=${OVERLAYSDIR}/${o}"
+	done >> "${tomnt}/etc/make.conf"
 	[ -z "${NO_FORCE_PACKAGE}" ] && \
 	    echo "FORCE_PACKAGE=yes" >> "${tomnt}/etc/make.conf"
 	if [ -z "${NO_PACKAGE_BUILDING}" ]; then
@@ -3086,7 +3135,7 @@ build_port() {
 	_log_path log
 
 	originspec_decode "${originspec}" port '' flavor
-	portdir="${PORTSDIR}/${port}"
+	_lookup_portdir portdir "${port}"
 
 	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
 		_need_root="NEED_ROOT NEED_ROOT"
@@ -4122,7 +4171,7 @@ build_pkg() {
 	if [ -n "${DEPENDS_ARGS}" ]; then
 		PKGENV="${PKGENV:+${PKGENV} }PKG_NOTES=depends_args PKG_NOTE_depends_args=${DEPENDS_ARGS}"
 	fi
-	portdir="${PORTSDIR}/${port}"
+	_lookup_portdir portdir "${port}"
 
 	_gsub "${pkgname%-*}" "${HASH_VAR_NAME_SUB_GLOB}" '_'
 	eval "MAX_FILES=\${MAX_FILES_${_gsub}:-${DEFAULT_MAX_FILES}}"
@@ -5000,7 +5049,7 @@ delete_old_pkg() {
 
 	_my_path mnt
 
-	if [ ! -d "${mnt}${PORTSDIR}/${origin}" ]; then
+	if ! test_port_origin_exist "${origin}"; then
 		msg "Deleting ${pkg##*/}: stale package: nonexistent origin ${COLOR_PORT}${origin}${COLOR_RESET}"
 		delete_pkg "${pkg}"
 		return 0
@@ -5615,9 +5664,11 @@ port_var_fetch() {
 	# Use invalid shell var character '!' to ensure we
 	# don't setvar it later.
 	local assign_var="!"
+	local portdir
 
 	if [ -n "${origin}" ]; then
-		_make_origin="-C${sep}${PORTSDIR}/${origin}"
+		_lookup_portdir portdir "${origin}"
+		_make_origin="-C${sep}${portdir}"
 	else
 		_make_origin="-f${sep}${PORTSDIR}/Mk/bsd.port.mk${sep}PORTSDIR=${PORTSDIR}"
 	fi
@@ -6071,7 +6122,7 @@ deps_sanity() {
 			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} depends on bad origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
 			ret=1
 		fi
-		if ! [ -d "../${PORTSDIR}/${dep_origin}" ]; then
+		if ! test_port_origin_exist "${dep_origin}"; then
 			# Was it moved? We cannot map it here due to the ports
 			# framework not supporting it later on, and the
 			# PKGNAME would be wrong, but we can at least
@@ -6543,6 +6594,22 @@ compute_deps_pkg() {
 	return 0
 }
 
+test_port_origin_exist() {
+	[ $# -eq 1 ] || eargs test_port_origin_exist origin
+	local _origin="$1"
+	local o
+
+	for o in ${OVERLAYS}; do
+		if [ -d "${MASTERMNTREL}${OVERLAYSDIR}/${o}/${_origin}" ]; then
+			return 0
+		fi
+	done
+	if [ -d "${MASTERMNTREL}/${PORTSDIR}/${_origin}" ]; then
+		return 0
+	fi
+	return 1
+}
+
 # Before Poudriere added DEPENDS_ARGS and FLAVORS support many slave ports
 # were added that are now redundant.  Replace them with the proper main port
 # dependency.
@@ -6619,7 +6686,7 @@ map_py_slave_port() {
 	esac
 	mapped_origin="${origin%%${pyreg}*}/${pymaster_prefix}${origin#*${pyreg}}${pymaster_suffix}"
 	# Verify the port even exists or else we need a special case above.
-	[ -d "${MASTERMNT}${PORTSDIR}/${mapped_origin}" ] || \
+	test_port_origin_exist "${mapped_origin}" || \
 	    err 1 "map_py_slave_port: Mapping ${_originspec} found no existing ${mapped_origin}"
 	dep_args="PYTHON_VERSION=python${pyver}"
 	msg_debug "Mapping ${origin} to ${mapped_origin} with DEPENDS_ARGS=${dep_args}"
@@ -6659,23 +6726,55 @@ listed_ports() {
 	fi
 	_listed_ports "$@"
 }
+
+_list_ports_dir() {
+	[ $# -eq 2 ] || eargs _list_ports_dir ptdir overlay
+	local ptdir="$1"
+	local overlay="$2"
+	local cat
+
+	# skip overlays with no categories listed
+	[ -f "${ptdir}/Makefile" ] || return
+	(
+		cd "${ptdir}"
+		ptdir="."
+		for cat in $(awk -F= '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print $2}' "${ptdir}/Makefile"); do
+			# skip overlays with no ports hooked to the build
+			[ -f "${ptdir}/${cat}/Makefile" ] || continue
+			awk -F= -v cat=${cat} '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print cat"/"$2}' "${ptdir}/${cat}/Makefile"
+		done | while mapfile_read_loop_redir origin; do
+			if ! [ -d "${ptdir}/${origin}" ]; then
+				msg_warn "Nonexistent origin listed in category Makefiles in \"${overlay}\": ${COLOR_PORT}${origin}${COLOR_RESET} (skipping)"
+				continue
+			fi
+			echo "${origin}"
+		done
+	)
+}
+
 _listed_ports() {
 	local tell_moved="${1}"
-	local portsdir origin file cat
+	local portsdir origin file o
 
 	if [ ${ALL} -eq 1 ]; then
 		_pget portsdir ${PTNAME} mnt || \
 		    err 1 "Missing mnt metadata for portstree"
 		[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
-		for cat in $(awk -F= '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print $2}' ${portsdir}/Makefile); do
-			awk -F= -v cat=${cat} '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print cat"/"$2}' ${portsdir}/${cat}/Makefile
-		done | while mapfile_read_loop_redir origin; do
-			if ! [ -d "${portsdir}/${origin}" ]; then
-				msg_warn "Nonexistent origin listed in category Makefiles: ${COLOR_PORT}${origin}${COLOR_RESET} (skipping)"
-				continue
+		{
+			_list_ports_dir "${portsdir}" "${PTNAME}"
+			for o in ${OVERLAYS}; do
+				_pget portsdir "${o}" mnt
+				_list_ports_dir "${portsdir}" "${o}"
+			done
+		} | {
+			# Sort but only if there's OVERLAYS to avoid
+			# needless slowdown for pipelining otherwise.
+			if [ -n "${OVERLAYS}" ]; then
+				sort -ud
+			else
+				cat -u
 			fi
-			echo "${origin}"
-		done
+		}
 		return 0
 	fi
 
@@ -6718,7 +6817,7 @@ _listed_ports() {
 		else
 			unset new_origin
 		fi
-		if ! [ -d "../${PORTSDIR}/${origin}" ]; then
+		if ! test_port_origin_exist "${origin}"; then
 			msg_error "Nonexistent origin listed: ${COLOR_PORT}${origin_listed}${new_origin:+${COLOR_RESET} (moved to nonexistent ${COLOR_PORT}${new_origin}${COLOR_RESET})}"
 			set_dep_fatal_error
 			continue
@@ -7118,7 +7217,7 @@ prepare_ports() {
 		"${MASTERMNT}/.p/var/cache"
 
 	cd "${MASTERMNT}/.p"
-	SHASH_VAR_PATH="var/cache"
+	SHASH_VAR_PATH=var/cache
 	# No prefix needed since we're unique in MASTERMNT.
 	SHASH_VAR_PREFIX=
 	# Allow caching values now
@@ -7534,6 +7633,8 @@ read_packages_from_params()
 }
 
 clean_restricted() {
+	local o
+
 	msg "Cleaning restricted packages"
 	bset status "clean_restricted:"
 	# Remount rw
@@ -7543,6 +7644,11 @@ clean_restricted() {
 	mount_packages
 	injail /usr/bin/make -s -C ${PORTSDIR} -j ${PARALLEL_JOBS} \
 	    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
+	for o in ${OVERLAYS}; do
+		injail /usr/bin/make -s -C "${OVERLAYSDIR}/${o}" \
+		    -j ${PARALLEL_JOBS} \
+		    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
+	done
 	# Remount ro
 	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages || \
 	    umount -f ${MASTERMNT}/packages
@@ -7986,6 +8092,9 @@ if [ "$(mount -t fdescfs | awk '$3 == "/dev/fd" {print $3}')" = "/dev/fd" ]; the
 	HAVE_FDESCFS=1
 fi
 
+: ${OVERLAYSDIR:=/overlays}
+: ${RELATIVE_PATH_VARS:=SHASH_VAR_PATH MASTERMNTREL}
+
 TIME_START=$(clock -monotonic)
 EPOCH_START=$(clock -epoch)
 
@@ -7998,6 +8107,8 @@ EPOCH_START=$(clock -epoch)
 . ${SCRIPTPREFIX}/include/shared_hash.sh
 . ${SCRIPTPREFIX}/include/cache.sh
 . ${SCRIPTPREFIX}/include/fs.sh
+
+_update_relpaths "${PWD}" "${PWD}"
 
 if [ -z "${LOIP6}" -a -z "${LOIP4}" ]; then
 	msg_warn "No loopback address defined, consider setting LOIP6/LOIP4 or assigning a loopback address to the jail."

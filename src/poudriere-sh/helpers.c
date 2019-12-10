@@ -164,17 +164,25 @@ int
 getvarcmd(int argc, char **argv)
 {
 	char *value;
+	char empty[0] = "";
+	int ret;
 
-	if (argc != 3)
-		errx(EX_USAGE, "%s", "Usage: getvar <var> <var_return>");
+	if (argc != 2 && argc != 3)
+		errx(EX_USAGE, "%s", "Usage: getvar <var> [var_return]");
 
+	value = NULL;
+	ret = 0;
 	if ((value = lookupvar(argv[1])) == NULL) {
-		setvar(argv[2], "", 0);
-		return (1);
+		value = empty;
+		ret = 1;
+		goto out;
 	}
-
-	setvar(argv[2], value, 0);
-	return (0);
+out:
+	if (argc == 3)
+		setvar(argv[2], value, 0);
+	else
+		printf("%s\n", value);
+	return (ret);
 }
 
 int

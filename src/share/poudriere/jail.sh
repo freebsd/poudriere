@@ -233,7 +233,8 @@ update_jail() {
 		    *) ;;
 		  esac
 		fi
-		MASTERMNT=${JAILMNT}
+		MASTERMNT="${JAILMNT}"
+		MASTERMNTREL="${JAILMNT}"
 		MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		# XXX: Stop doing this (RESOLV_CONF) when freebsd-update -b works
 		[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"

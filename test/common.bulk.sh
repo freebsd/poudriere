@@ -399,7 +399,8 @@ fi
 
 . ${SCRIPTPREFIX}/common.sh
 
-: ${PORTSDIR:=${THISDIR}/../test-ports}
+: ${PORTSDIR:=${THISDIR}/../test-ports/default}
+export PORTSDIR
 PTMNT="${PORTSDIR}"
 : ${PTNAME:=test}
 : ${SETNAME:=}
@@ -418,6 +419,21 @@ MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 _mastermnt MASTERMNT
 export POUDRIERE_BUILD_TYPE=bulk
 _log_path log
+
+# Setup basic overlay to test-ports/overlay/ dir.
+for o in ${OVERLAYS}; do
+	[ -d "${PTMNT%/*}/${o}" ] || continue
+	pset "${o}" mnt "${PTMNT%/*}/${o}"
+	pset "${o}" method "-"
+	# We run port_var_fetch_originspec without a jail so can't use plain
+	# /overlays. Need to link the host path into our fake MASTERMNT path
+	# as well as link to the overlay portdir without nullfs.
+	OVERLAYSDIR="$(mktemp -ut overlays)"
+	mkdir -p "${MASTERMNT}/${OVERLAYSDIR%/*}"
+	ln -fs "${MASTERMNT}/${OVERLAYSDIR}" "${OVERLAYSDIR}"
+	mkdir -p "${MASTERMNT}/${OVERLAYSDIR}"
+	ln -fs "${PTMNT%/*}/${o}" "${MASTERMNT}/${OVERLAYSDIR}/${o}"
+done
 
 echo -n "Pruning previous logs..."
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} logclean -B "${BUILDNAME}" -ay \
