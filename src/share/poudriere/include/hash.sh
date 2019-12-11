@@ -67,7 +67,8 @@ fi
 
 if ! type _gsub_var_name 2>/dev/null >&2; then
 _gsub_var_name() {
-	_gsub "$1" "${HASH_VAR_NAME_SUB_GLOB}" _
+	[ $# -eq 2 ] || eargs _gsub_var_name string var_return
+	_gsub "$1" "${HASH_VAR_NAME_SUB_GLOB}" _ "$2"
 }
 fi
 
@@ -89,11 +90,9 @@ gsub() {
 fi
 
 _hash_var_name() {
-	local _gsub
-
 	# Replace anything not HASH_VAR_NAME_SUB_GLOB with _
-	_gsub_var_name "${HASH_VAR_NAME_PREFIX}${1}_${2}"
-	_hash_var_name=${_gsub}
+	_gsub_var_name "${HASH_VAR_NAME_PREFIX}${1}_${2}" \
+	    _hash_var_name
 }
 
 hash_isset() {
@@ -110,11 +109,10 @@ hash_isset() {
 
 hash_get() {
 	[ $# -ne 3 ] && eargs hash_get var key var_return
-	local _gsub
+	local _hash_var_name
 
-	#_hash_var_name "${1}" "${2}"
-	_gsub_var_name "${HASH_VAR_NAME_PREFIX}${1}_${2}"
-	getvar "${_gsub}" "${3}"
+	_gsub_var_name "${HASH_VAR_NAME_PREFIX}${1}_${2}" _hash_var_name
+	getvar "${_hash_var_name}" "${3}"
 }
 
 hash_set() {

@@ -204,9 +204,10 @@ _gsub_var_namecmd(int argc, char **argv)
 	char *n;
 	char newvar[512];
 
-	if (argc != 2)
-		errx(EX_USAGE, "%s", "Usage: _gsub_var_name <var>");
+	if (argc != 3)
+		errx(EX_USAGE, "%s", "Usage: _gsub_var_name <var> <var_return>");
 	const char *string = argv[1];
+	const char *var_return = argv[2];
 	n = newvar;
 	for (const char *p = string; *p != '\0'; ++p) {
 		if (!is_in_name(*p))
@@ -217,7 +218,7 @@ _gsub_var_namecmd(int argc, char **argv)
 			errx(EX_DATAERR, "var too long");
 	}
 	*n = '\0';
-	setvar("_gsub", newvar, 0);
+	setvar(var_return, newvar, 0);
 	return (0);
 }
 
