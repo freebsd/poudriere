@@ -167,8 +167,7 @@ trap_pop(int signo, struct sigdata *sd)
 int
 getvarcmd(int argc, char **argv)
 {
-	char *value;
-	char empty[0] = "";
+	const char *value;
 	int ret;
 
 	if (argc != 2 && argc != 3)
@@ -177,7 +176,7 @@ getvarcmd(int argc, char **argv)
 	value = NULL;
 	ret = 0;
 	if ((value = lookupvar(argv[1])) == NULL) {
-		value = empty;
+		value = "";
 		ret = 1;
 		goto out;
 	}
