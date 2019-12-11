@@ -74,7 +74,8 @@ fi
 
 if ! type _gsub_simple 2>/dev/null >&2; then
 _gsub_simple() {
-	_gsub "$1" "[$2]" _
+	[ $# -eq 3 ] || eargs _gsub_simple string pattern var_return
+	_gsub "$1" "[$2]" _ "$3"
 }
 fi
 
