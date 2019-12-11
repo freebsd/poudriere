@@ -72,10 +72,25 @@ _gsub_var_name() {
 }
 fi
 
-if ! type _gsub_simple 2>/dev/null >&2; then
-_gsub_simple() {
-	[ $# -eq 3 ] || eargs _gsub_simple string pattern var_return
-	_gsub "$1" "[$2]" _ "$3"
+if ! type _gsub_badchars 2>/dev/null >&2; then
+_gsub_badchars() {
+	[ $# -eq 3 ] || eargs _gsub_badchars string badchars var_return
+	local string="$1"
+	local badchars="$2"
+	local var_return="$3"
+
+	# Avoid !^- processing as this is just filtering bad characters
+	# not a pattern.
+	if [ "${badchars#!}" != "${badchars}" ]; then
+		badchars="${badchars#!}!"
+	elif [ "${badchars#^}" != "${badchars}" ]; then
+		badchars="${badchars#^}^"
+	fi
+	case "${badchars}" in
+	*-*) _gsub "${badchars}" "-" "" badchars ;;
+	esac
+
+	_gsub "${string}" "[${badchars}]" _ "${var_return}"
 }
 fi
 

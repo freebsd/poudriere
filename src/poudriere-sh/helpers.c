@@ -223,13 +223,13 @@ _gsub_var_namecmd(int argc, char **argv)
 }
 
 int
-_gsub_simplecmd(int argc, char **argv)
+_gsub_badcharscmd(int argc, char **argv)
 {
 	char *n;
 	char newvar[512];
 
 	if (argc != 4)
-		errx(EX_USAGE, "%s", "Usage: _gsub_simple <var> <badchars> "
+		errx(EX_USAGE, "%s", "Usage: _gsub_badchars <var> <badchars> "
 		    "<var_return>");
 	const char *string = argv[1];
 	const char *badchars = argv[2];

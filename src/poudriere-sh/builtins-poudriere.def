@@ -5,7 +5,7 @@ critical_endcmd -n	critical_end
 diremptycmd -n		dirempty
 getvarcmd -n		getvar
 _gsub_var_namecmd -n	_gsub_var_name
-_gsub_simplecmd -n	_gsub_simple
+_gsub_badcharscmd -n	_gsub_badchars
 _gsubcmd -n		_gsub
 gsubcmd -n		gsub
 issetvarcmd -n		issetvar

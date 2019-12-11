@@ -33,7 +33,7 @@ _shash_var_name() {
 	local var="${1}"
 
 	# Replace SHASH_VAR_NAME_SUB_BADCHARS matches with _
-	_gsub_simple "${var}" "${SHASH_VAR_NAME_SUB_BADCHARS}" _gsub_simple
+	_gsub_badchars "${var}" "${SHASH_VAR_NAME_SUB_BADCHARS}" _shash_var_name
 }
 
 _shash_varkey_file() {

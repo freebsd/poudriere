@@ -283,7 +283,7 @@ _mastermnt() {
 	# Avoid : which causes issues with PATH for non-jailed commands
 	# like portlint in testport.
 	mastername="${MASTERNAME}"
-	_gsub_simple "${mastername}" ":" mastername
+	_gsub_badchars "${mastername}" ":" mastername
 	mnt="${POUDRIERE_DATA}/.m/${mastername}/ref"
 	if [ -z "${NOLINUX}" ]; then
 		testpath="/compat/linux/proc"
