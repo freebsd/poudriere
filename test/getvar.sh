@@ -1,7 +1,9 @@
 #! /bin/sh
 
+set -e
 . common.sh
 . ${SCRIPTPREFIX}/common.sh
+set +e
 
 foo="1 2 \$3"
 getvar foo output

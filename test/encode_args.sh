@@ -1,7 +1,9 @@
 #! /bin/sh
 
+set -e
 . common.sh
 . ${SCRIPTPREFIX}/include/util.sh
+set +e
 
 encode_args data "1"
 assert "1" "${data}" "encode 1 argument"

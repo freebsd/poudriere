@@ -1,9 +1,12 @@
 #! /bin/sh
 
+set -e
 . common.sh
 . ${SCRIPTPREFIX}/include/hash.sh
 . ${SCRIPTPREFIX}/include/parallel.sh
 . ${SCRIPTPREFIX}/include/util.sh
+set +e
+
 JAILED=$(sysctl -n security.jail.jailed 2>/dev/null || echo 0)
 
 LINES=20

@@ -1,7 +1,9 @@
 #! /bin/sh
 
+set -e
 . common.sh
 . ${SCRIPTPREFIX}/include/util.sh
+set +e
 
 builtin=0
 if [ "$(type trap_push 2>/dev/null)" = "trap_push is a shell builtin" ]; then

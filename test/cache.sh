@@ -1,10 +1,13 @@
 #! /bin/sh
 
+set -e
 . $(realpath $(dirname $0))/common.sh
+. ${SCRIPTPREFIX}/common.sh
 . ${SCRIPTPREFIX}/include/util.sh
 . ${SCRIPTPREFIX}/include/hash.sh
 . ${SCRIPTPREFIX}/include/shared_hash.sh
 . ${SCRIPTPREFIX}/include/cache.sh
+set +e
 
 USE_CACHE_CALL=1
 

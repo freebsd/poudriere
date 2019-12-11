@@ -1,7 +1,9 @@
 #! /bin/sh
 
+set -e
 . $(realpath $(dirname $0))/common.sh
 . ${SCRIPTPREFIX}/include/util.sh
+set +e
 
 TMP=$(mktemp -u)
 data=blah

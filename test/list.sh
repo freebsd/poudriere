@@ -1,8 +1,10 @@
 #! /bin/sh
 
+set -e
 . $(realpath $(dirname $0))/common.sh
 . ${SCRIPTPREFIX}/include/util.sh
 . ${SCRIPTPREFIX}/include/hash.sh
+set +e
 
 assert_list() {
 	local expected="${1}"
