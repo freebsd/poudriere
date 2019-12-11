@@ -206,7 +206,7 @@ relpath() {
 	local _relpath
 
 	_relpath "$@"
-	if [ $# -ne 3 ]; then
+	if [ -z "$3" ]; then
 		echo "${_relpath}"
 	fi
 }

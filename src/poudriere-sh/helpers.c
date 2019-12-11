@@ -451,7 +451,7 @@ _gsubcmd(int argc, char **argv)
 	if (argc != 4 && argc != 5)
 		errx(EX_USAGE, "%s", "Usage: _gsub <string> <pattern> "
 		    "<replacement> [var_return]");
-	var_return = argc == 5 ? argv[4] : "_gsub";
+	var_return = argc == 5 && argv[4][0] != '\0' ? argv[4] : "_gsub";
 	return (_gsub(argc, argv, var_return));
 }
 
@@ -463,6 +463,6 @@ gsubcmd(int argc, char **argv)
 	if (argc != 4 && argc != 5)
 		errx(EX_USAGE, "%s", "Usage: gsub <string> <pattern> "
 		    "<replacement> [var_return]");
-	var_return = argc == 5 ? argv[4] : NULL;
+	var_return = argc == 5 && argv[4][0] != '\0' ? argv[4] : NULL;
 	return (_gsub(argc, argv, var_return));
 }

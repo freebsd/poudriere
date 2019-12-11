@@ -82,7 +82,7 @@ gsub() {
 	local _gsub
 
 	_gsub "$@"
-	if [ $# -ne 4 ]; then
+	if [ -z "$4" ]; then
 		echo "${_gsub}"
 	fi
 }
