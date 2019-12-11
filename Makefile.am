@@ -173,7 +173,7 @@ sh_CFLAGS=		-DSHELL -std=gnu99 -DVTABSIZE=1000 ${sh_hist_CFLAGS} \
 			-include $(top_srcdir)/external/sh_compat/compat.h \
 			-I$(top_srcdir)/src \
 			-I$(top_srcdir)/external/sh
-sh_LDADD=		${sh_hist_LDADD}
+sh_LDADD=		${sh_hist_LDADD} -lsbuf
 sh_hist_LDADD=		@MAINTAINER_MODE_TRUE@ -ledit
 sh_hist_CFLAGS=		@MAINTAINER_MODE_FALSE@ -DNO_HISTORY
 sh_SOURCES=		external/sh_compat/strchrnul.c \

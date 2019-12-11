@@ -24,9 +24,13 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/types.h>
+#include <sys/sbuf.h>
 #include <errno.h>
+#include <fnmatch.h>
 #include <signal.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "helpers.h"
 
@@ -240,4 +244,226 @@ _gsub_simplecmd(int argc, char **argv)
 	*n = '\0';
 	setvar("_gsub", newvar, 0);
 	return (0);
+}
+
+static int
+_gsub_shell(struct sbuf *newstr, char *string, const char *pattern,
+    size_t pattern_len, const char *replacement, size_t replacement_len,
+    char *buf, size_t bufsiz)
+{
+	char *p, *c;
+	char save;
+	int ret;
+
+	char pattern_r[pattern_len + 2];
+	snprintf(pattern_r, sizeof(pattern_r), "%s*", pattern);
+
+	ret = 0;
+	INTOFF;
+	if (sbuf_new(newstr, buf, bufsiz, SBUF_AUTOEXTEND) == NULL) {
+		errx(EX_SOFTWARE, "%s", "sbuf_new");
+		ret = 1;
+		goto out;
+	}
+	/*
+	 * fnmatch(3) doesn't return the length matched so we need to
+	 * look at increasingly larger substrings to find a match to
+	 * replace. This is similar to how sh does it in subevalvar_trim()
+	 * as well. Not great but the other builtin cases in _gsub might make
+	 * this worth it.
+	 */
+	for (p = string; *p != '\0'; ++p) {
+		/*
+		 * Before going O(n^n) see if the pattern starts at this
+		 * point. If so then we need to look for the end.
+		 */
+		if (fnmatch(pattern_r, p, 0) != 0) {
+			sbuf_putc(newstr, *p);
+			continue;
+		}
+		/*
+		 * Search for the smallest match since fnmatch(3) doesn't
+		 * return that length for us.
+		 */
+		for (c = p + 1; *(c - 1) != '\0'; ++c) {
+			save = *c;
+			*c = '\0';
+			if (fnmatch(pattern, p, 0) == 0) {
+				/* Found a match. */
+				sbuf_bcat(newstr, replacement,
+				    replacement_len);
+				*c = save;
+				p = c - 1;
+				break; /* next p */
+			} else if (save == '\0') {
+				/*
+				 * The rest of the string doesn't match.
+				 * Take 1 character and try fnmatching
+				 * on the next range. Ick.
+				 */
+				sbuf_putc(newstr, *p);
+			}
+			*c = save;
+		}
+	}
+
+	sbuf_finish(newstr);
+out:
+	return (ret);
+}
+
+static int
+_gsub_inplace(char *string, const char pattern, const char replacement)
+{
+
+	for (char *p = string; *p != '\0'; ++p) {
+		if (*p == pattern)
+			*p = replacement;
+	}
+	return (0);
+}
+
+static int
+_gsub_shift(char *string, const char pattern)
+{
+	char *shift;
+
+	shift = NULL;
+	for (char *p = string; *p != '\0'; ++p) {
+		if (shift != NULL && *p != pattern)
+			*shift++ = *p;
+		else if (shift == NULL && *p == pattern)
+			shift = p;
+	}
+	if (shift != NULL)
+		*shift = '\0';
+	return (0);
+}
+
+static int
+_gsub_strstr(struct sbuf *newstr, const char *string, const char *pattern,
+    size_t pattern_len, const char *replacement, size_t replacement_len,
+    char *buf, size_t bufsiz)
+{
+	const char *p, *p2;
+	size_t string_len, new_len;
+	int ret, replacements;
+
+	ret = replacements = string_len = new_len = 0;
+	/* Get the string size and count how many replacements there are. */
+	for (p = string; (p2 = strstr(p, pattern)) != NULL; p2 += pattern_len,
+	    p = p2) {
+		string_len += p2 - p + pattern_len;
+		++replacements;
+	}
+	if ((p2 = strchr(p, '\0')) != NULL)
+		string_len += p2 - p;
+	new_len = string_len +
+	    ((replacement_len - pattern_len) * replacements) + 1;
+	if (new_len > 1024) {
+		buf = NULL;
+		bufsiz = new_len;
+	}
+	INTOFF;
+	if (sbuf_new(newstr, buf, bufsiz, SBUF_FIXEDLEN) == NULL) {
+		errx(EX_SOFTWARE, "%s", "sbuf_new");
+		ret = 1;
+		goto out;
+	}
+	for (p = string; (p2 = strstr(p, pattern)) != NULL; p2 += pattern_len,
+	    p = p2) {
+		sbuf_bcat(newstr, p, p2 - p);
+		sbuf_cat(newstr, replacement);
+	}
+	sbuf_cat(newstr, p);
+	sbuf_finish(newstr);
+out:
+	return (ret);
+}
+
+static int
+_gsub(int argc, char **argv, const char *var_return)
+{
+	struct sbuf newstr = {};
+	const char *pattern, *replacement, *p;
+	char buf[1024], *string, *outstr;
+	size_t pattern_len, replacement_len;
+	int ret;
+	bool match_shell, sbuf_free;
+
+	ret = 0;
+	string = argv[1];
+	pattern = argv[2];
+	replacement = argv[3];
+	replacement_len = strlen(replacement);
+	buf[0] = '\0';
+	sbuf_free = false;
+	outstr = NULL;
+
+	match_shell = false;
+	pattern_len = 0;
+	for (p = pattern; *p != '\0'; ++p) {
+		++pattern_len;
+		if (!match_shell && strchr("*?[", *p) != NULL)
+			match_shell = true;
+	}
+	if (pattern_len == 0) {
+		outstr = string;
+		goto empty_pattern;
+	}
+	if (match_shell) {
+		ret = _gsub_shell(&newstr, string, pattern, pattern_len,
+		    replacement, replacement_len, buf, sizeof(buf));
+	} else if (pattern_len == 1 && replacement_len == 1) {
+		ret = _gsub_inplace(string, *pattern, *replacement);
+		outstr = string;
+		INTOFF;
+	} else if (pattern_len == 1 && replacement_len == 0) {
+		ret = _gsub_shift(string, *pattern);
+		outstr = string;
+		INTOFF;
+	} else {
+		ret = _gsub_strstr(&newstr, string, pattern, pattern_len,
+		    replacement, replacement_len, buf, sizeof(buf));
+	}
+	if (ret != 0)
+		goto out;
+	if (outstr == NULL) {
+		outstr = sbuf_data(&newstr);
+		sbuf_free = true;
+	}
+empty_pattern:
+	if (var_return == NULL)
+		printf("%s\n", outstr);
+	else
+		setvar(var_return, outstr, 0);
+	if (sbuf_free)
+		sbuf_delete(&newstr);
+out:
+	INTON;
+	return (ret);
+}
+
+int
+_gsubcmd(int argc, char **argv)
+{
+	const char *var_return;
+
+	if (argc != 4 && argc != 5)
+		errx(EX_USAGE, "%s", "Usage: _gsub <string> <pattern> "
+		    "<replacement> [var_return]");
+	var_return = argc == 5 ? argv[4] : "_gsub";
+	return (_gsub(argc, argv, var_return));
+}
+
+int
+gsubcmd(int argc, char **argv)
+{
+	const char *var_return;
+
+	if (argc != 4 && argc != 5)
+		errx(EX_USAGE, "%s", "Usage: gsub <string> <pattern> "
+		    "<replacement> [var_return]");
+	var_return = argc == 5 ? argv[4] : NULL;
+	return (_gsub(argc, argv, var_return));
 }

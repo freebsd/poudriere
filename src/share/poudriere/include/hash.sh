@@ -35,6 +35,7 @@ if ! type eargs 2>/dev/null >&2; then
 	}
 fi
 
+if ! type _gsub 2>/dev/null >&2; then
 # Based on Shell Scripting Recipes - Chris F.A. Johnson (c) 2005
 # Replace a pattern without needing a subshell/exec
 _gsub() {
@@ -46,8 +47,9 @@ _gsub() {
 	local var_return="${4:-_gsub}"
 	local result_l= result_r="${string}"
 
-	while :; do
-		case ${result_r} in
+	if [ -n "${pattern}" ]; then
+		while :; do
+			case ${result_r} in
 			*${pattern}*)
 				result_l=${result_l}${result_r%%${pattern}*}${replacement}
 				result_r=${result_r#*${pattern}}
@@ -56,10 +58,12 @@ _gsub() {
 				break
 				;;
 		esac
-	done
+		done
+	fi
 
 	setvar "${var_return}" "${result_l}${result_r}"
 }
+fi
 
 if ! type _gsub_var_name 2>/dev/null >&2; then
 _gsub_var_name() {
@@ -73,6 +77,7 @@ _gsub_simple() {
 }
 fi
 
+if ! type gsub 2>/dev/null >&2; then
 gsub() {
 	local _gsub
 
@@ -81,6 +86,7 @@ gsub() {
 		echo "${_gsub}"
 	fi
 }
+fi
 
 _hash_var_name() {
 	local _gsub
