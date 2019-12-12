@@ -4138,7 +4138,7 @@ build_pkg() {
 	local log
 	local errortype
 	local ret=0
-	local elapsed now _gsub jpkg originspec
+	local elapsed now pkgname_varname jpkg originspec
 
 	_my_path mnt
 	_my_name name
@@ -4167,8 +4167,8 @@ build_pkg() {
 	fi
 	_lookup_portdir portdir "${port}"
 
-	_gsub "${pkgname%-*}" "${HASH_VAR_NAME_SUB_GLOB}" '_'
-	eval "MAX_FILES=\${MAX_FILES_${_gsub}:-${DEFAULT_MAX_FILES}}"
+	_gsub_var_name "${pkgname%-*}" pkgname_varname
+	eval "MAX_FILES=\${MAX_FILES_${pkgname_varname}:-${DEFAULT_MAX_FILES}}"
 	if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
 		JEXEC_LIMITS=1
 	fi
