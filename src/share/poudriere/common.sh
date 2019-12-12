@@ -147,13 +147,11 @@ msg_error() {
 		    job_msg "${COLOR_ERROR}Error:${COLOR_RESET} $1"
 		# And non-colored to buld log
 		msg "Error: $1" >&2
-	elif [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
+	else
 		# Send to true stderr
 		COLOR_ARROW="${COLOR_ERROR}" \
-		    msg "${COLOR_ERROR}Error:${COLOR_RESET} $1" >&4
-	else
-		COLOR_ARROW="${COLOR_ERROR}" \
-		    msg "${COLOR_ERROR}Error:${COLOR_RESET} $1" >&2
+		    msg "${COLOR_ERROR}Error:${COLOR_RESET} $1" \
+		    >&${OUTPUT_REDIRECTED_STDERR:-2}
 	fi
 	return 0
 }
@@ -203,12 +201,7 @@ job_msg() {
 	else
 		output="$@"
 	fi
-	if [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
-		# Send to true stdout (not any build log)
-		_msg_n "\n" "${output}" >&3
-	else
-		_msg_n "\n" "${output}"
-	fi
+	_msg_n "\n" "${output}" >&${OUTPUT_REDIRECTED_STDOUT:-1}
 }
 
 # Stubbed until post_getopts
@@ -765,7 +758,9 @@ log_start() {
 
 	# Save stdout/stderr for restoration later for bulk/testport -i
 	exec 3>&1 4>&2
-	OUTPUT_REDIRECTED=1
+	export OUTPUT_REDIRECTED=1
+	export OUTPUT_REDIRECTED_STDOUT=3
+	export OUTPUT_REDIRECTED_STDERR=4
 	# Pipe output to tee(1) or timestamp if needed.
 	if [ ${need_tee} -eq 1 ] || [ "${TIMESTAMP_LOGS}" = "yes" ]; then
 		[ ! -e ${logfile}.pipe ] && mkfifo ${logfile}.pipe
@@ -929,6 +924,8 @@ log_stop() {
 	if [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
 		exec 1>&3 3>&- 2>&4 4>&-
 		OUTPUT_REDIRECTED=0
+		unset OUTPUT_REDIRECTED_STDOUT
+		unset OUTPUT_REDIRECTED_STDERR
 	fi
 	if [ -n "${tpid}" ]; then
 		# Give tee a moment to flush buffers
@@ -4108,14 +4105,9 @@ clean_pool() {
 		badd ports.skipped "${skipped_originspec} ${skipped_pkgname} ${pkgname}"
 		COLOR_ARROW="${COLOR_SKIP}" \
 		    job_msg "${COLOR_SKIP}Skipping ${COLOR_PORT}${skipped_originspec} | ${skipped_pkgname}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_SKIP} ${clean_rdepends}"
-		if [ ${OUTPUT_REDIRECTED:-0} -eq 1 ]; then
-			# Send to true stdout (not any build log)
-			run_hook pkgbuild skipped "${skipped_origin}" \
-			    "${skipped_pkgname}" "${origin}" >&3
-		else
-			run_hook pkgbuild skipped "${skipped_origin}" \
-			    "${skipped_pkgname}" "${origin}"
-		fi
+		run_hook pkgbuild skipped "${skipped_origin}" \
+		    "${skipped_pkgname}" "${origin}" \
+		    >&${OUTPUT_REDIRECTED_STDOUT:-1}
 	done
 
 	if [ "${clean_rdepends}" != "ignored" ]; then
@@ -4245,7 +4237,8 @@ build_pkg() {
 	if [ ${build_failed} -eq 0 ]; then
 		badd ports.built "${originspec} ${pkgname} ${elapsed}"
 		COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_SUCCESS}: Success"
-		run_hook pkgbuild success "${port}" "${pkgname}" >&3
+		run_hook pkgbuild success "${port}" "${pkgname}" \
+		    >&${OUTPUT_REDIRECTED_STDOUT:-1}
 		# Cache information for next run
 		pkg_cacher_queue "${port}" "${pkgname}" \
 		    "${DEPENDS_ARGS}" "${FLAVOR}" || :
@@ -4259,7 +4252,8 @@ build_pkg() {
 		badd ports.failed "${originspec} ${pkgname} ${failed_phase} ${errortype} ${elapsed}"
 		COLOR_ARROW="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
 		run_hook pkgbuild failed "${port}" "${pkgname}" "${failed_phase}" \
-			"${log}/logs/errors/${pkgname}.log" >&3
+			"${log}/logs/errors/${pkgname}.log" \
+			>&${OUTPUT_REDIRECTED_STDOUT:-1}
 		# ret=2 is a test failure
 		if [ ${ret} -eq 2 ]; then
 			clean_rdepends=
@@ -6390,7 +6384,7 @@ gather_port_vars_process_depqueue_enqueue() {
 	msg_debug "gather_port_vars_process_depqueue_enqueue (${originspec}): Adding ${dep_originspec} into the ${queue} (rdep=${rdep})"
 	# Another worker may have created it
 	if mkdir "${queue}/${dep_originspec%/*}!${dep_originspec#*/}" \
-	    2>&5; then
+	    2>&${fd_devnull}; then
 		originspec_decode "${originspec}" origin '' ''
 
 		echo "${rdep}" > \
@@ -6405,6 +6399,7 @@ gather_port_vars_process_depqueue() {
 	local originspec="$1"
 	local origin pkgname deps dep_origin
 	local dep_args dep_originspec dep_flavor queue rdep
+	local fd_devnull
 
 	msg_debug "gather_port_vars_process_depqueue (${originspec})"
 
@@ -6416,7 +6411,10 @@ gather_port_vars_process_depqueue() {
 
 	# Open /dev/null in case gather_port_vars_process_depqueue_enqueue
 	# uses it, to avoid opening for every dependency.
-	[ -n "${deps}" ] && exec 5>/dev/null
+	if [ -n "${deps}" ]; then
+		exec 5>/dev/null
+		fd_devnull=5
+	fi
 
 	originspec_decode "${originspec}" origin '' ''
 	for dep_originspec in ${deps}; do
@@ -6459,6 +6457,7 @@ gather_port_vars_process_depqueue() {
 
 	if [ -n "${deps}" ]; then
 		exec 5>&-
+		unset fd_devnull
 	fi
 }
 
