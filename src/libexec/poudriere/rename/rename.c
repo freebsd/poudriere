@@ -50,7 +50,7 @@ main(int argc, char **argv)
 
 	if (rename(argv[1], argv[2]))
 #ifdef SHELL
-		error("%s", strerror(errno));
+		error("%s: %s %s", strerror(errno), argv[1], argv[2]);
 #else
 		err(EXIT_FAILURE, NULL);
 #endif
