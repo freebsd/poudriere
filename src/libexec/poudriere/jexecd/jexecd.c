@@ -413,7 +413,7 @@ main(int argc, char **argv)
 	snprintf(path, sizeof(path), "%s/%s.sock", dir, jailname);
 	unlink(path);
 	un.sun_family = AF_UNIX;
-	if (chdir(dirname(path)))
+	if (chdir(dir))
 		err(EXIT_FAILURE, "chdir()");
 	strlcpy(un.sun_path, basename(path), sizeof(un.sun_path));
 	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, (int[]){1},

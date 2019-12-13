@@ -25,10 +25,10 @@
  */
 
 #include <sys/types.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#include <limits.h>
 #include <libgen.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -40,6 +40,7 @@ int
 main(int argc, char **argv)
 {
 	struct sockaddr_un un;
+	char sock_buf[PATH_MAX];
 	int ch;
 	int fd;
 	int i;
@@ -68,9 +69,11 @@ main(int argc, char **argv)
 
 	memset(&un, 0, sizeof(struct sockaddr_un));
 	un.sun_family = AF_UNIX;
-	if (chdir(dirname(sock)))
+	strlcpy(sock_buf, sock, sizeof(sock_buf));
+	if (chdir(dirname(sock_buf)))
 		err(EXIT_FAILURE, "chdir()");
-	strlcpy(un.sun_path, basename(sock), sizeof(un.sun_path));
+	strlcpy(sock_buf, sock, sizeof(sock_buf));
+	strlcpy(un.sun_path, basename(sock_buf), sizeof(un.sun_path));
 
 	if (connect(fd, (struct sockaddr *) &un, sizeof(struct sockaddr_un)) == -1)
 		err(EXIT_FAILURE, "connect(%s)", sock);
