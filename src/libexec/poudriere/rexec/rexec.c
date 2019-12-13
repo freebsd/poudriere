@@ -56,6 +56,7 @@ main(int argc, char **argv)
 			break;
 		case 'u':
 			user = optarg;
+			break;
 		}
 	}
 	argc -= optind;
