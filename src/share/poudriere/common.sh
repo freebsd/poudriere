@@ -1847,10 +1847,14 @@ do_portbuild_mounts() {
 		done
 		ln -fs "usr/home" "${mnt}/home"
 	fi
+	# Create our data dirs
+	mkdir -p "${mnt}/.p"
 	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] &&
 	    mnt_tmpfs data "${mnt}/.p"
 
-	mkdir -p "${mnt}/.p/tmp"
+	mkdir -p \
+	    "${mnt}/.p/tmp" \
+	    "${mnt}/.p/var/run"
 
 	[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
 		${NULLMOUNT} ${CCACHE_DIR} ${mnt}${HOME}/.ccache
@@ -7214,7 +7218,6 @@ prepare_ports() {
 	_log_path log
 	pkgqueue_init
 	mkdir -p \
-		"${MASTERMNT}/.p/var/run" \
 		"${MASTERMNT}/.p/var/cache"
 
 	cd "${MASTERMNT}/.p"

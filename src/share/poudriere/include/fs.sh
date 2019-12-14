@@ -319,8 +319,6 @@ clonefs() {
 			echo ".p" >> "${mnt}/.cpignore"
 		fi
 	fi
-	# Create our data dir.
-	mkdir -p "${mnt}/.p"
 }
 
 nullfs_paths() {
