@@ -63,7 +63,7 @@ delete_image() {
 }
 
 cleanup_image() {
-	msg "Error while create image. cleaning up." >&2
+	msg "Error while creating image; cleaning up." >&2
 	delete_image
 }
 
