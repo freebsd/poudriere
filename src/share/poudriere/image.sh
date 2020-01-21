@@ -46,7 +46,7 @@ Parameters:
     -t type         -- Type of image can be one of (default iso+zmfs):
                     -- iso, iso+mfs, iso+zmfs, usb, usb+mfs, usb+zmfs,
                        rawdisk, zrawdisk, tar, firmware, rawfirmware,
-                       embedded, dump, zsnapshot
+                       embedded, dump, zsnapshot, ami
     -X excludefile  -- File containing the list in cpdup format
     -z set          -- Set
 EOF
@@ -225,7 +225,7 @@ while getopts "c:f:h:i:j:m:n:o:p:s:S:t:X:z:" FLAG; do
 			case ${MEDIATYPE} in
 			iso|iso+mfs|iso+zmfs|usb|usb+mfs|usb+zmfs) ;;
 			rawdisk|zrawdisk|tar|firmware|rawfirmware) ;;
-			embedded|dump|zsnapshot) ;;
+			embedded|dump|zsnapshot|ami) ;;
 			*) err 1 "invalid mediatype: ${MEDIATYPE}"
 			esac
 			;;
@@ -286,13 +286,13 @@ jail_exists ${JAILNAME} || err 1 "The jail ${JAILNAME} does not exist"
 _jget arch ${JAILNAME} arch || err 1 "Missing arch metadata for jail"
 get_host_arch host_arch
 case "${MEDIATYPE}" in
-usb|*firmware|*rawdisk|embedded|dump)
+usb|*firmware|*rawdisk|embedded|dump|ami)
 	[ -n "${IMAGESIZE}" ] || err 1 "Please specify the imagesize"
 	_jget mnt ${JAILNAME} mnt || err 1 "Missing mnt metadata for jail"
 	[ -f "${mnt}/boot/kernel/kernel" ] || \
 	    err 1 "The ${MEDIATYPE} media type requires a jail with a kernel"
 	;;
-iso*|usb*|raw*)
+iso*|usb*|raw*|ami)
 	_jget mnt ${JAILNAME} mnt || err 1 "Missing mnt metadata for jail"
 	[ -f "${mnt}/boot/kernel/kernel" ] || \
 	    err 1 "The ${MEDIATYPE} media type requires a jail with a kernel"
@@ -517,6 +517,33 @@ if [ -n "${PACKAGELIST}" ]; then
 	rm ${WRKDIR}/world/var/db/pkg/repo-* 2>/dev/null || :
 fi
 
+case "${MEDIATYPE}" in
+ami)
+	DESTDIR="${WRKDIR}/world"
+	TARGET_ARCH="${arch}"
+
+	# Required for chrooted pkg(8) bootstrap.
+        [ -e /etc/resolv.conf -a ! -e ${DESTDIR}/etc/resolv.conf ] && \
+                cp /etc/resolv.conf ${DESTDIR}/etc/resolv.conf
+        # Run ldconfig(8) in the chroot directory so /var/run/ld-elf*.so.hints
+        # is created.  This is needed by ports-mgmt/pkg.
+        eval chroot ${DESTDIR} /etc/rc.d/ldconfig forcerestart
+
+	. ${mnt}/usr/src/release/tools/ec2.conf
+
+	# XXX: This could be integrated with PACKAGELIST; thing is,
+	#       $PACKAGELIST is a path to file, not a list of packages.
+	chroot ${DESTDIR} env ASSUME_ALWAYS_YES=yes \
+		/usr/sbin/pkg install -f -y ${VM_EXTRA_PACKAGES}
+
+	vm_extra_pre_umount
+
+	for _rcvar in ${VM_RC_LIST}; do
+		echo ${_rcvar}_enable="YES" >> ${DESTDIR}/etc/rc.conf
+	done
+	;;
+esac
+
 case ${MEDIATYPE} in
 *mfs)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
@@ -563,7 +590,7 @@ embedded)
 	/dev/msdosfs/MSDOSBOOT /boot/msdos msdosfs rw,noatime 0 0
 	EOF
 	;;
-usb)
+usb|ami)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
 	/dev/ufs/${IMAGENAME} / ufs rw 1 1
 	EOF
@@ -683,7 +710,7 @@ usb+*mfs)
 		-p freebsd-ufs:=${WRKDIR}/img.part \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
 	;;
-usb)
+usb|ami)
 	FINALIMAGE=${IMAGENAME}.img
 	mkimg -s gpt -b ${mnt}/boot/pmbr \
 		-p efi:=${mnt}/boot/boot1.efifat \
