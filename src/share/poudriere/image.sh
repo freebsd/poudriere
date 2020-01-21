@@ -523,11 +523,11 @@ ami)
 	TARGET_ARCH="${arch}"
 
 	# Required for chrooted pkg(8) bootstrap.
-        [ -e /etc/resolv.conf -a ! -e ${DESTDIR}/etc/resolv.conf ] && \
-                cp /etc/resolv.conf ${DESTDIR}/etc/resolv.conf
-        # Run ldconfig(8) in the chroot directory so /var/run/ld-elf*.so.hints
-        # is created.  This is needed by ports-mgmt/pkg.
-        eval chroot ${DESTDIR} /etc/rc.d/ldconfig forcerestart
+	[ -e /etc/resolv.conf -a ! -e ${DESTDIR}/etc/resolv.conf ] && \
+		cp /etc/resolv.conf ${DESTDIR}/etc/resolv.conf
+	# Run ldconfig(8) in the chroot directory so /var/run/ld-elf*.so.hints
+	# is created.  This is needed by ports-mgmt/pkg.
+	eval chroot ${DESTDIR} /etc/rc.d/ldconfig forcerestart
 
 	. ${mnt}/usr/src/release/tools/ec2.conf
 
