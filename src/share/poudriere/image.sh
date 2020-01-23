@@ -529,7 +529,12 @@ ami)
 	# is created.  This is needed by ports-mgmt/pkg.
 	eval chroot ${DESTDIR} /etc/rc.d/ldconfig forcerestart
 
-	. ${mnt}/usr/src/release/tools/ec2.conf
+	# Give release(7) a chance to overload vm_extra_pre_umount.
+	if [ -e ${mnt}/usr/src/release/tools/ec2.conf ]; then
+		. ${mnt}/usr/src/release/tools/ec2.conf
+	else
+		. ${SCRIPTPREFIX}/ec2.sh
+	fi
 
 	# XXX: This could be integrated with PACKAGELIST; thing is,
 	#       $PACKAGELIST is a path to file, not a list of packages.
