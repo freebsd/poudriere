@@ -46,7 +46,7 @@ Parameters:
     -t type         -- Type of image can be one of (default iso+zmfs):
                     -- iso, iso+mfs, iso+zmfs, usb, usb+mfs, usb+zmfs,
                        rawdisk, zrawdisk, tar, firmware, rawfirmware,
-                       embedded, dump, zsnapshot, ami
+                       embedded, dump, zsnapshot, ami, zami
     -X excludefile  -- File containing the list in cpdup format
     -z set          -- Set
 EOF
@@ -225,7 +225,7 @@ while getopts "c:f:h:i:j:m:n:o:p:s:S:t:X:z:" FLAG; do
 			case ${MEDIATYPE} in
 			iso|iso+mfs|iso+zmfs|usb|usb+mfs|usb+zmfs) ;;
 			rawdisk|zrawdisk|tar|firmware|rawfirmware) ;;
-			embedded|dump|zsnapshot|ami) ;;
+			embedded|dump|zsnapshot|ami|zami) ;;
 			*) err 1 "invalid mediatype: ${MEDIATYPE}"
 			esac
 			;;
@@ -374,6 +374,27 @@ rawdisk|dump)
 	newfs -j -L ${IMAGENAME} /dev/${md}
 	mount /dev/${md} ${WRKDIR}/world
 	;;
+zami)
+	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
+	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
+
+	# Give release(7) a chance to overload create_zfs_be_datasets.
+	if [ -e ${mnt}/usr/src/release/tools/zfs.conf ]; then
+		. ${mnt}/usr/src/release/tools/zfs.conf
+	else
+		. ${SCRIPTPREFIX}/zfs.sh
+	fi
+
+	zroot=${ZFSBOOT_POOL_NAME}
+	zpool create \
+		-O mountpoint=/ \
+		-O canmount=noauto \
+		-O compression=on \
+		-O atime=off \
+		-R ${WRKDIR}/world ${ZFSBOOT_POOL_NAME} /dev/${md}
+
+	create_zfs_be_datasets
+;;
 zrawdisk)
 	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
 	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
@@ -518,7 +539,7 @@ if [ -n "${PACKAGELIST}" ]; then
 fi
 
 case "${MEDIATYPE}" in
-ami)
+ami|zami)
 	DESTDIR="${WRKDIR}/world"
 	TARGET_ARCH="${arch}"
 
@@ -667,7 +688,7 @@ usb|ami)
 	makefs -B little -s ${OS_SIZE}m -o label=${IMAGENAME} \
 		-o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world
 	;;
-zrawdisk)
+zrawdisk|zami)
 	cat >> ${WRKDIR}/world/boot/loader.conf <<-EOF
 	zfs_load="YES"
 	vfs.root.mountfrom="zfs:${zroot}/ROOT/default"
@@ -766,6 +787,22 @@ embedded)
 	/sbin/mdconfig -d -u ${md#md}
 	md=
 	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
+	;;
+zami)
+	FINALIMAGE=${IMAGENAME}.img
+	zfs umount -f ${zroot}/ROOT/default
+	zfs set mountpoint=none ${zroot}/ROOT/default
+	zpool set bootfs=${zroot}/ROOT/default ${zroot}
+	zpool set autoexpand=on ${zroot}
+	zpool export ${zroot}
+	zroot=
+	/sbin/mdconfig -d -u ${md#md}
+	md=
+	mkimg -s gpt -b ${mnt}/boot/pmbr \
+		-p efi:=${mnt}/boot/boot1.efifat \
+		-p freebsd-boot:=${mnt}/boot/gptzfsboot \
+		-p freebsd-zfs:=${WRKDIR}/raw.img \
+		-o ${OUTPUTDIR}/${FINALIMAGE}
 	;;
 zrawdisk)
 	FINALIMAGE=${IMAGENAME}.img
