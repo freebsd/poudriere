@@ -542,6 +542,7 @@ ami)
 		/usr/sbin/pkg install -f -y ${VM_EXTRA_PACKAGES}
 
 	vm_extra_pre_umount
+	echo >> ${DESTDIR}/etc/rc.conf
 
 	for _rcvar in ${VM_RC_LIST}; do
 		echo ${_rcvar}_enable="YES" >> ${DESTDIR}/etc/rc.conf
