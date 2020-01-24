@@ -689,6 +689,9 @@ usb|ami)
 		-o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world
 	;;
 zrawdisk|zami)
+	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
+	# Device	Mountpoint	FStype	Options	Dump	Pass#
+	EOF
 	cat >> ${WRKDIR}/world/boot/loader.conf <<-EOF
 	zfs_load="YES"
 	vfs.root.mountfrom="zfs:${zroot}/ROOT/default"
