@@ -4472,11 +4472,11 @@ deps_fetch_vars() {
 	local _pkgname _pkg_deps _lib_depends= _run_depends= _selected_options=
 	local _changed_options= _changed_deps= _depends_args= _lookup_flavors=
 	local _existing_origin _existing_originspec categories _ignore
-	local _default_originspec _default_pkgname
-	local origin _origin_dep_args _dep_args _dep _new_pkg_deps
+	local _default_originspec _default_pkgname subpackages
+	local origin _origin_dep_args _dep_args _dep _new_pkg_deps _spkg
 	local _origin_flavor _flavor _flavors _dep_arg _new_dep_args
 	local _depend_specials=
-	local _all_deps
+	local _all_deps all_pkgnames
 
 	originspec_decode "${originspec}" origin _origin_dep_args \
 	    _origin_flavor
@@ -4527,6 +4527,7 @@ deps_fetch_vars() {
 	fi
 	if ! port_var_fetch_originspec "${originspec}" \
 	    PKGNAME _pkgname \
+	    SUBPACKAGES subpackages \
 	    ${_depends_args} \
 	    ${_lookup_flavors} \
 	    '${_DEPEND_SPECIALS:C,^${PORTSDIR}/,,}' _depend_specials \
@@ -4681,6 +4682,20 @@ deps_fetch_vars() {
 	    shash_set pkgname-flavors "${_pkgname}" "${_flavors}"
 	[ -n "${_ignore}" ] && \
 	    shash_set pkgname-ignore "${_pkgname}" "${_ignore}"
+	if have_ports_feature SUBPACKAGES && [ -n "${subpackages}" ]; then
+		shash_set pkgname-subpackages "${_pkgname}" "${subpackages}"
+		for _spkg in ${subpackages}; do
+			local "pkgname_${_spkg}"
+			all_pkgnames=${all_pkgnames} PKGNAME.${_spkg} pkgname_${_spkg}
+		done
+		if ! port_var_fetch_originspec "${originspec}" \
+			${all_pkgnames} ; then
+			msg_error "Error looking up subpackage names for ${COLOR_PORT}${originspec}${COLOR_RESET}"
+			return 1
+		fi
+		# FIXME: all the package names for that port are in local
+		# pkgname_<subpkg> variables.
+	fi
 	if [ -n "${_depend_specials}" ]; then
 		fixup_dependencies_dep_args _depend_specials \
 		    "${_pkgname}" \
