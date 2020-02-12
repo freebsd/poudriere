@@ -34,7 +34,7 @@ function print_build(buildname, data) {
     print "\"" buildname "\":" data "" | "sort -n -k1,1 -t :"
 }
 {
-  if (FILENAME ~ /latest\//)
+  if (FILENAME ~ /\/latest\//)
     next
   else {
     data = $0
