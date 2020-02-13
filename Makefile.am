@@ -50,6 +50,7 @@ dist_pkgdata_DATA=	\
 			src/share/poudriere/common.sh \
 			src/share/poudriere/daemon.sh \
 			src/share/poudriere/distclean.sh \
+			src/share/poudriere/ec2.sh \
 			src/share/poudriere/foreachport.sh \
 			src/share/poudriere/image.sh \
 			src/share/poudriere/jail.sh \
@@ -60,7 +61,8 @@ dist_pkgdata_DATA=	\
 			src/share/poudriere/processonelog.sh \
 			src/share/poudriere/queue.sh \
 			src/share/poudriere/status.sh \
-			src/share/poudriere/testport.sh
+			src/share/poudriere/testport.sh \
+			src/share/poudriere/zfs.sh
 
 dist_include_HEADERS= \
 			src/share/poudriere/include/cache.sh \
