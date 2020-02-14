@@ -743,7 +743,6 @@ usb+*mfs)
 usb|ami)
 	FINALIMAGE=${IMAGENAME}.img
 	mkimg -s gpt -b ${mnt}/boot/pmbr \
-		-p efi:=${mnt}/boot/boot1.efifat \
 		-p freebsd-boot:=${mnt}/boot/gptboot \
 		-p freebsd-ufs:=${WRKDIR}/raw.img \
 		-p freebsd-swap::1M \
@@ -802,7 +801,6 @@ zami)
 	/sbin/mdconfig -d -u ${md#md}
 	md=
 	mkimg -s gpt -b ${mnt}/boot/pmbr \
-		-p efi:=${mnt}/boot/boot1.efifat \
 		-p freebsd-boot:=${mnt}/boot/gptzfsboot \
 		-p freebsd-zfs:=${WRKDIR}/raw.img \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
