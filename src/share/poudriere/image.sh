@@ -377,6 +377,7 @@ rawdisk|dump)
 zami)
 	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
 	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
+	zroot=${IMAGENAME}root
 
 	# Give release(7) a chance to overload create_zfs_be_datasets.
 	if [ -e ${mnt}/usr/src/release/tools/zfs.conf ]; then
@@ -385,14 +386,14 @@ zami)
 		. ${SCRIPTPREFIX}/zfs.sh
 	fi
 
-	zroot=${ZFSBOOT_POOL_NAME}
 	zpool create \
 		-O mountpoint=/ \
 		-O canmount=noauto \
 		-O compression=on \
 		-O atime=off \
-		-R ${WRKDIR}/world ${ZFSBOOT_POOL_NAME} /dev/${md}
+		-R ${WRKDIR}/world ${zroot} /dev/${md}
 
+	export ZFSBOOT_POOL_NAME="${zroot}"
 	create_zfs_be_datasets
 ;;
 zrawdisk)
