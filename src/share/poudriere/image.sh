@@ -523,6 +523,8 @@ case ${MEDIATYPE} in
 	/dev/ufs/${IMAGENAME} / ufs rw 0 0
 	tmpfs /tmp tmpfs rw,mode=1777 0 0
 	EOF
+	cpdup -i0 ${WRKDIR}/world/boot ${WRKDIR}/out/boot
+	rm -rf ${WRKDIR}/world/boot
 	makefs -B little ${IMAGESIZE:+-s ${IMAGESIZE}} -o label=${IMAGENAME} ${WRKDIR}/out/mfsroot ${WRKDIR}/world
 	if command -v pigz >/dev/null; then
 		GZCMD=pigz
@@ -532,7 +534,6 @@ case ${MEDIATYPE} in
 	esac
 	MFSROOTSIZE=$(ls -l ${WRKDIR}/out/mfsroot* | head -n 1 | awk '{print $5}')
 	if [ ${MFSROOTSIZE} -ge 268435456 ]; then echo WARNING: MFSROOT too large, boot failure likely ; fi
-	cpdup -i0 ${WRKDIR}/world/boot ${WRKDIR}/out/boot
 	cat >> ${WRKDIR}/out/boot/loader.conf <<-EOF
 	tmpfs_load="YES"
 	mfs_load="YES"
