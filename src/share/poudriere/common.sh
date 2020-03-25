@@ -6131,8 +6131,10 @@ deps_sanity() {
 			    new_origin || new_origin=
 			if [ "${new_origin%% *}" = "EXPIRED" ]; then
 				moved_reason="port EXPIRED: ${new_origin#EXPIRED }"
-			else
+			elif [ -n "${new_origin}" ]; then
 				moved_reason="moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
+			else
+				unset moved_reason
 			fi
 			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} depends on nonexistent origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'${moved_reason:+ (${moved_reason})}; Please contact maintainer of the port to fix this."
 			ret=1
