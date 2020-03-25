@@ -36,7 +36,7 @@ usage() {
 
 case $1 in
 bulk|testport) cmd=$1 ; shift ;;
-*) err 1 "$2 command cannot be queued" ;;
+*) err 1 "$1 command cannot be queued" ;;
 esac
 
 # Queue the command through the poudriered socket
