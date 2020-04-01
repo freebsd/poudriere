@@ -7681,6 +7681,7 @@ build_repo() {
 	local origin
 
 	msg "Creating pkg repository"
+	[ ${DRY_RUN} -eq 1 ] && return 0
 	bset status "pkgrepo:"
 	ensure_pkg_installed force_extract || \
 	    err 1 "Unable to extract pkg."

@@ -242,17 +242,6 @@ _bget nbbuilt stats_built
 _bget nbfailed stats_failed
 _bget nbskipped stats_skipped
 _bget nbignored stats_ignored
-# Always create repository if it is missing (but still respect -N)
-if 	[ ! -f ${MASTERMNT}/packages/digests.txz -o \
-	  ! -f ${MASTERMNT}/packages/packagesite.txz ]; then
-	[ $nbbuilt -eq 0 -a ${BUILD_REPO} -eq 1 ] && 
-		msg "No package built, but repository needs to be created"
-	# This block mostly to avoid next
-# Package all newly built ports
-elif [ $nbbuilt -eq 0 ]; then
-	msg "No package built, no need to update the repository"
-	BUILD_REPO=0
-fi
 
 [ "${NO_RESTRICTED}" != "no" ] && clean_restricted
 
