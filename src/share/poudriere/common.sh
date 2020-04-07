@@ -1230,7 +1230,7 @@ show_dry_run_summary() {
 				cat "${log}/.poudriere.ports.queued"
 			} | while mapfile_read_loop_redir originspec pkgname \
 			    _ignored; do
-				[ -n "${_ignored}" ] && continue
+				pkgqueue_contains "${pkgname}" || continue
 				# Trim away DEPENDS_ARGS for display
 				originspec_decode "${originspec}" origin '' \
 				    flavor
@@ -7464,10 +7464,16 @@ prepare_ports() {
 			mv -f "${tmp}" "${log}/.poudriere.ports.queued"
 		fi
 
-		pkgqueue_move_ready_to_pool
 		load_priorities
-		msg "Balancing pool"
-		balance_pool
+
+		# Avoid messing with the queue for DRY_RUN or it confuses
+		# the dry run summary output as it doesn't know about
+		# the ready-to-build pool dir.
+		if [ "${DRY_RUN}" -eq 0 ]; then
+			pkgqueue_move_ready_to_pool
+			msg "Balancing pool"
+			balance_pool
+		fi
 
 		[ -n "${ALLOW_MAKE_JOBS}" ] || \
 		    echo "DISABLE_MAKE_JOBS=poudriere" \
