@@ -4472,7 +4472,7 @@ deps_fetch_vars() {
 	local _pkgname _pkg_deps _lib_depends= _run_depends= _selected_options=
 	local _changed_options= _changed_deps= _depends_args= _lookup_flavors=
 	local _existing_origin _existing_originspec categories _ignore
-	local _default_originspec _default_pkgname
+	local _forbidden _default_originspec _default_pkgname
 	local origin _origin_dep_args _dep_args _dep _new_pkg_deps
 	local _origin_flavor _flavor _flavors _dep_arg _new_dep_args
 	local _depend_specials=
@@ -4522,6 +4522,7 @@ deps_fetch_vars() {
 	    '${_DEPEND_SPECIALS:C,^${PORTSDIR}/,,}' _depend_specials \
 	    CATEGORIES categories \
 	    IGNORE _ignore \
+	    FORBIDDEN _forbidden \
 	    ${_changed_deps} \
 	    ${_changed_options} \
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
@@ -4671,6 +4672,8 @@ deps_fetch_vars() {
 	    shash_set pkgname-flavors "${_pkgname}" "${_flavors}"
 	[ -n "${_ignore}" ] && \
 	    shash_set pkgname-ignore "${_pkgname}" "${_ignore}"
+	[ -n "${_forbidden}" ] && \
+	    shash_set pkgname-forbidden "${_pkgname}" "${_forbidden}"
 	if [ -n "${_depend_specials}" ]; then
 		fixup_dependencies_dep_args _depend_specials \
 		    "${_pkgname}" \
@@ -5006,13 +5009,22 @@ delete_old_pkg() {
 	local compiled_deps_pkgname compiled_deps_origin compiled_deps_new
 	local pkgbase new_pkgbase flavor pkg_flavor originspec
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor dep_dep_args
-	local new_origin stale_pkg dep_args pkg_dep_args
+	local ignore new_origin stale_pkg dep_args pkg_dep_args
 
 	pkgname="${pkg##*/}"
 	pkgname="${pkgname%.*}"
 
 	# Some expensive lookups are delayed until the last possible
 	# moment as cheaper checks may weed out this package before.
+
+	# Delete FORBIDDEN packages
+	if shash_remove pkgname-forbidden "${pkgname}" ignore; then
+		shash_get pkgname-ignore "${pkgname}" ignore || \
+		    ignore="is forbidden"
+		msg "Deleting ${pkg##*/}: ${ignore}"
+		delete_pkg "${pkg}"
+		return 0
+	fi
 
 	pkg_flavor=
 	pkg_dep_args=
