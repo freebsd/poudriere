@@ -4721,6 +4721,9 @@ pkg_get_origin() {
 	if [ -n "${var_return}" ]; then
 		setvar "${var_return}" "${_origin}"
 	fi
+	if [ -z "${_origin}" ]; then
+		return 1
+	fi
 }
 
 pkg_get_flavor() {
@@ -4861,7 +4864,7 @@ pkg_cache_data() {
 	ensure_pkg_installed || return 1
 	{
 		pkg_get_options '' "${pkg}"
-		pkg_get_origin '' "${pkg}" "${origin}"
+		pkg_get_origin '' "${pkg}" "${origin}" || :
 		if have_ports_feature FLAVORS; then
 			pkg_get_flavor '' "${pkg}" "${flavor}"
 		elif have_ports_feature DEPENDS_ARGS; then
@@ -5029,7 +5032,11 @@ delete_old_pkg() {
 	pkg_flavor=
 	pkg_dep_args=
 	originspec=
-	pkg_get_origin origin "${pkg}"
+	if ! pkg_get_origin origin "${pkg}"; then
+		msg "Deleting ${pkg##*/}: corrupted package"
+		delete_pkg "${pkg}"
+		return 0
+	fi
 	if ! pkgbase_is_needed_and_not_ignored "${pkgname}"; then
 		# We don't expect this PKGBASE but it may still be an
 		# origin that is expected and just renamed.  Need to
