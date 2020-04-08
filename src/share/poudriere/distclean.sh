@@ -174,7 +174,8 @@ msg "Gathering list of actual distfiles"
 # This is redundant but here for paranoia.
 [ -n "${DISTFILES_CACHE}" ] ||
     err 1 "DISTFILES_CACHE must be set (cf. poudriere.conf)"
-find -x ${DISTFILES_CACHE}/ -type f | sort > ${DISTFILES_LIST}.actual
+find -x ${DISTFILES_CACHE}/ -type f ! -name '.*' | \
+    sort > ${DISTFILES_LIST}.actual
 
 comm -1 -3 ${DISTFILES_LIST}.expected ${DISTFILES_LIST}.actual \
 	> ${DISTFILES_LIST}.unexpected
