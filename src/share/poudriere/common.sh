@@ -5050,7 +5050,12 @@ delete_old_pkg() {
 		originspec_encode originspec "${origin}" "${pkg_dep_args}" \
 		    "${pkg_flavor}"
 		if ! originspec_is_needed_and_not_ignored "${originspec}"; then
-			msg_debug "delete_old_pkg: Skip unqueued ${pkg} ${originspec}"
+			if [ ${ALL} -eq 1 -o -n "${LISTPKGS}" ]; then
+				msg "Deleting ${pkg##*/}: no longer needed"
+				delete_pkg "${pkg}"
+			else
+				msg_debug "delete_old_pkg: Skip unqueued ${pkg} ${originspec}"
+			fi
 			return 0
 		fi
 		# Apparently we expect this package via its origin and flavor.
