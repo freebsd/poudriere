@@ -177,6 +177,10 @@ for file in ${PACKAGES}/All/*; do
 			if ! pkg_get_origin origin "${file}"; then
 				msg_verbose "Found corrupt package: ${file}"
 				echo "${file}" >> ${BADFILES_LIST}
+			elif shash_remove pkgname-forbidden "${pkgname}" \
+			    forbidden; then
+				msg_verbose "Found forbidden package (${forbidden}): ${file}"
+				echo "${file}" >> ${BADFILES_LIST}
 			elif ! pkgbase_is_needed "${pkgname}"; then
 				msg_verbose "Found unwanted package: ${file}"
 				echo "${file}" >> ${BADFILES_LIST}
