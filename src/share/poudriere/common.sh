@@ -3848,9 +3848,8 @@ build_queue() {
 
 				builders_idle=1
 			else
-				MY_JOBID="${j}" \
-				    PORTTESTING="${porttesting}" \
-				    spawn_job build_pkg "${pkgname}"
+				MY_JOBID="${j}" spawn_job \
+				    build_pkg "${pkgname}" "${porttesting}"
 				pid=$!
 				echo "${pid}" > "../var/run/${j}.pid"
 				hash_set builder_pids "${j}" "${pid}"
@@ -4131,8 +4130,9 @@ print_phase_footer() {
 }
 
 build_pkg() {
-	[ $# -ne 1 ] && eargs build_pkg pkgname
+	[ $# -ne 2 ] && eargs build_pkg pkgname PORTTESTING
 	local pkgname="$1"
+	PORTTESTING="$2"
 	local port portdir
 	local build_failed=0
 	local name
