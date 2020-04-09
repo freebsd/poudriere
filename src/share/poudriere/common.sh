@@ -3797,7 +3797,7 @@ build_queue() {
 	[ "${PWD}" = "${MASTERMNT}/.p/pool" ] || \
 	    err 1 "build_queue requires PWD=${MASTERMNT}/.p/pool"
 	local j jobid pid pkgname builders_active queue_empty
-	local builders_idle idle_only timeout log
+	local builders_idle idle_only timeout log porttesting
 
 	_log_path log
 
@@ -3838,7 +3838,7 @@ build_queue() {
 
 			[ ${queue_empty} -eq 0 ] || continue
 
-			pkgqueue_get_next pkgname || \
+			pkgqueue_get_next pkgname porttesting || \
 			    err 1 "Failed to find a package from the queue."
 
 			if [ -z "${pkgname}" ]; then
@@ -3849,7 +3849,7 @@ build_queue() {
 				builders_idle=1
 			else
 				MY_JOBID="${j}" \
-				    PORTTESTING=$(get_porttesting "${pkgname}") \
+				    PORTTESTING="${porttesting}" \
 				    spawn_job build_pkg "${pkgname}"
 				pid=$!
 				echo "${pid}" > "../var/run/${j}.pid"
@@ -5332,7 +5332,9 @@ delete_old_pkgs() {
 pkgqueue_get_next() {
 	[ "${PWD}" = "${MASTERMNT}/.p/pool" ] || \
 	    err 1 "pkgqueue_get_next requires PWD=${MASTERMNT}/.p/pool"
-	local var_return="$1"
+	[ $# -eq 2 ] || eargs pkgqueue_get_next pkgname_var porttesting_var
+	local pkgname_var="$1"
+	local porttesting_var="$2"
 	local p _pkgname ret
 
 	# CWD is MASTERMNT/.p/pool
@@ -5348,7 +5350,7 @@ pkgqueue_get_next() {
 				# balance_pool(). The file is already
 				# gone and moved to a bucket. Try again.
 				ret=0
-				pkgqueue_get_next "${var_return}" || ret=$?
+				pkgqueue_get_next "$@" || ret=$?
 				return ${ret}
 			else
 				# Failure to move a balanced item??
@@ -5359,7 +5361,10 @@ pkgqueue_get_next() {
 		touch "../building/${_pkgname}"
 	fi
 
-	setvar "${var_return}" "${_pkgname}"
+	setvar "${pkgname_var}" "${_pkgname}"
+	# XXX: All of this should be passed in the queue rather than determined
+	# here.
+	setvar "${porttesting_var}" $(get_porttesting "${_pkgname}")
 }
 
 pkgqueue_init() {
