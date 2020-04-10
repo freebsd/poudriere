@@ -3132,7 +3132,7 @@ build_port() {
 	local network
 	local hangstatus
 	local pkgenv phaseenv jpkg
-	local targets install_order deinstall
+	local targets
 	local jailuser JUSER
 	local testfailure=0
 	local max_execution_time allownetworking
@@ -3185,17 +3185,13 @@ build_port() {
 	fi
 	# XXX: run-depends can come out of here with some bsd.port.mk
 	# changes. Easier once pkg_install is EOL.
-	install_order="run-depends stage package"
-	# Don't need to install if only making packages and not
-	# testing.
-	if [ "${PORTTESTING}" -eq 1 ]; then
-		install_order="${install_order} install"
-		deinstall="deinstall"
-	fi
 	targets="check-sanity pkg-depends fetch-depends fetch checksum \
 		  extract-depends extract patch-depends patch build-depends \
-		  lib-depends configure build ${install_order} \
-		  ${deinstall-}"
+		  lib-depends configure build run-depends stage package"
+	# Do a install/deinstall cycle for testport/bulk -t.
+	if [ "${PORTTESTING}" -eq 1 ]; then
+		targets="${targets} install deinstall"
+	fi
 
 	# If not testing, then avoid rechecking deps in build/install;
 	# When testing, check depends twice to ensure they depend on
