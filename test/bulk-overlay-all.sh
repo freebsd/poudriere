@@ -15,7 +15,7 @@ assert 0 $? "Bulk should pass"
 ret=0
 hash_get originspec-pkgname "misc/foo" pkgname || ret=$?
 assert 0 "${ret}" "Cannot find pkgname for misc/foo"
-assert "foo-OVERLAY-20161010" "${pkgname}" "misc/foo didn't found the overlay version"
+assert "foo-OVERLAY-20161010" "${pkgname}" "misc/foo didn't find the overlay version"
 
 # Assert that IGNOREDPORTS was populated by the framework right.
 assert "ports-mgmt/poudriere-devel-IGNORED ports-mgmt/poudriere-devel-IGNORED-and-skipped misc/foo@IGNORED_OVERLAY" \
