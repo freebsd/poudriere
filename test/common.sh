@@ -27,6 +27,7 @@ ${FLAVOR_ALL:+FLAVOR_ALL=${FLAVOR_ALL}}
 # jail -c options
 NO_LIB32=yes
 NO_SRC=yes
+SHARED_LOCK_DIR="${POUDRIERE_ETC}/run"
 EOF
 
 : ${VERBOSE:=1}
