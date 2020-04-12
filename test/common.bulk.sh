@@ -437,7 +437,7 @@ done
 
 echo -n "Pruning previous logs..."
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} logclean -B "${BUILDNAME}" -ay \
-    >/dev/null
+    >/dev/null || :
 echo " done"
 set +e
 
