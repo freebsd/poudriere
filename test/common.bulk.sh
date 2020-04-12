@@ -366,7 +366,9 @@ if [ $(id -u) -ne 0 ]; then
 	SUDO="sudo"
 fi
 
-: ${BUILDNAME:=${0%.sh}}
+: ${SCRIPTNAME:=${0%.sh}}
+SCRIPTNAME="${SCRIPTNAME##*/}"
+BUILDNAME="bulk"
 POUDRIERE="${POUDRIEREPATH} -e ${THISDIR}/etc"
 ARCH=$(uname -p)
 JAILNAME="poudriere-test-${ARCH}$(echo "${THISDIR}" | tr '/' '_')"
@@ -402,12 +404,17 @@ fi
 : ${PORTSDIR:=${THISDIR}/../test-ports/default}
 export PORTSDIR
 PTMNT="${PORTSDIR}"
-: ${PTNAME:=test}
-: ${SETNAME:=}
+: ${PTNAME:=${PTMNT##*/}}
+: ${SETNAME:=${SCRIPTNAME}}
 export PORT_DBDIR=/dev/null
 export __MAKE_CONF="${POUDRIERE_ETC}/poudriere.d/make.conf"
 export SRCCONF=/dev/null
 export SRC_ENV_CONF=/dev/null
+
+cat > "${POUDRIERE_ETC}/poudriere.d/${SETNAME}-poudriere.conf" << EOF
+${FLAVOR_DEFAULT_ALL:+FLAVOR_DEFAULT_ALL=${FLAVOR_DEFAULT_ALL}}
+${FLAVOR_ALL:+FLAVOR_ALL=${FLAVOR_ALL}}
+EOF
 
 set -e
 
@@ -436,8 +443,10 @@ for o in ${OVERLAYS}; do
 done
 
 echo -n "Pruning previous logs..."
-${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} logclean -B "${BUILDNAME}" -ay \
-    >/dev/null || :
+${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} logclean \
+    -B "${BUILDNAME}" \
+    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
+    -ay >/dev/null || :
 echo " done"
 set +e
 
