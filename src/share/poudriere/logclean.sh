@@ -112,6 +112,7 @@ logclean_cleanup() {
 }
 OLDLOGS=$(mktemp -t poudriere_logclean)
 
+slock_acquire logclean 30 || err 1 "Another logclean is busy"
 [ -d "${log_top}" ] || err 0 "No logs present"
 
 cd ${log_top}
