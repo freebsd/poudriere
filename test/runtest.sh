@@ -17,7 +17,7 @@ exec < /dev/null
 while read var; do
 	unset ${var}
 done <<-EOF
-$(env | egrep '^(WITH_|PORT)')
+$(env | egrep '^(WITH_|PORT|MAKE)'|grep -vF '.MAKE')
 EOF
 
 exec /usr/bin/timeout ${TIMEOUT} ../timestamp \
