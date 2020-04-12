@@ -1,7 +1,7 @@
 #! /bin/sh
 
 THISDIR=$(realpath $(dirname $0))
-PORTSDIR="${THISDIR}/ports-dep-args"
+PORTSDIR="${THISDIR}/../test-ports/ports-dep-args"
 
 LISTPORTS="ports-mgmt/poudriere-devel-bad-dep_args"
 . common.bulk.sh
