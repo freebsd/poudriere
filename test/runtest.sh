@@ -1,6 +1,7 @@
 #! /bin/sh
 
-: ${SH:=$(procstat -f $$ | awk '$3 == "text" { print $10 }')}
+export PATH=..:${PATH}
+
 case "$1" in
 bulk*.sh)
 	: ${TIMEOUT:=3600}
@@ -19,4 +20,5 @@ done <<-EOF
 $(env | egrep '^(WITH_|PORT)')
 EOF
 
-exec /usr/bin/timeout ${TIMEOUT} ../timestamp ${SH} "$@"
+exec /usr/bin/timeout ${TIMEOUT} ../timestamp \
+    ${SH:+env SH="${SH}"} ${SH:-sh} "$@"

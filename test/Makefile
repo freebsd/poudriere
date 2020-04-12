@@ -54,8 +54,8 @@ prep: .PHONY
 
 check: .PHONY prep
 	@echo "Running tests against modified sh"
-	@sh runtests.sh sh ${TESTS}
+	@env SH=sh sh runtests.sh ${TESTS}
 
 check-stock: .PHONY prep
 	@echo "Running tests against stock /bin/sh"
-	@sh runtests.sh /bin/sh ${TESTS}
+	@env SH=/bin/sh sh runtests.sh ${TESTS}
