@@ -18,7 +18,7 @@ assert_queued "listed" "${LISTPORTS}"
 ret=0
 hash_get originspec-pkgname "misc/foo" pkgname || ret=$?
 assert 0 "${ret}" "Cannot find pkgname for misc/foo"
-assert "foo-OVERLAY-20161010" "${pkgname}" "misc/foo didn't found the overlay version"
+assert "foo-OVERLAY-20161010" "${pkgname}" "misc/foo didn't find the overlay version"
 
 # Assert that all expected dependencies are in poudriere.ports.queued (since
 # they do not exist yet)
