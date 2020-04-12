@@ -416,6 +416,18 @@ ${FLAVOR_DEFAULT_ALL:+FLAVOR_DEFAULT_ALL=${FLAVOR_DEFAULT_ALL}}
 ${FLAVOR_ALL:+FLAVOR_ALL=${FLAVOR_ALL}}
 EOF
 
+echo -n "Pruning stale jails..."
+${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} jail -k \
+    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
+    >/dev/null || :
+echo " done"
+echo -n "Pruning previous logs..."
+${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} logclean \
+    -B "${BUILDNAME}" \
+    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
+    -ay >/dev/null || :
+echo " done"
+
 set -e
 
 # Import local ports tree
@@ -442,12 +454,6 @@ for o in ${OVERLAYS}; do
 	ln -fs "${PTMNT%/*}/${o}" "${MASTERMNT}/${OVERLAYSDIR}/${o}"
 done
 
-echo -n "Pruning previous logs..."
-${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} logclean \
-    -B "${BUILDNAME}" \
-    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
-    -ay >/dev/null || :
-echo " done"
 set +e
 
 ALL_PKGNAMES=
