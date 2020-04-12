@@ -1,11 +1,11 @@
 check_task:
         compile_script:
                 - ./configure
-                - make
+                - make -j4
         test_jail_prep_script:
                 - make -C test prep
-        check_script: make -C test check
-        check_stock_script: make -C test check-stock
+        check_script: make -sj4 check || { cat test/test-suite.log; exit 1; }
+        check_stock_script: make -sj4 check SH=/bin/sh || { cat test/test-suite.log; exit 1; }
         matrix:
                 - name: freebsd11-amd64
                   freebsd_instance:
