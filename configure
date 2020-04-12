@@ -4280,7 +4280,7 @@ $as_echo "$as_me: WARNING: It is advised to upgrade your base system to a newer 
 fi
 
 
-ac_config_files="$ac_config_files Makefile"
+ac_config_files="$ac_config_files Makefile test/Makefile"
 
 
 # Preserve timestamps for install. This is needed to preserve hardlinks
@@ -5022,6 +5022,7 @@ do
     "src/config.h") CONFIG_HEADERS="$CONFIG_HEADERS src/config.h" ;;
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "src/etc/rc.d/poudriered") CONFIG_FILES="$CONFIG_FILES src/etc/rc.d/poudriered" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;

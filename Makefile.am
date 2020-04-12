@@ -337,3 +337,5 @@ poudriere: $(top_srcdir)/src/bin/poudriere
 	else \
 	    cp -f $^${.ALLSRC} $@; \
 	fi;
+
+SUBDIRS= . test

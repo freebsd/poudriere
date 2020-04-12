@@ -46,16 +46,11 @@ TESTS=\
 	bulk-no-overlay-specific.sh \
 	bulk-overlay-specific.sh
 
-all: prep check check-stock
+TESTS_ENVIRONMENT=	env PATH="$(top_builddir):$$PATH" ${SH} runtests.sh
 
-prep: .PHONY
+check-am: prep
+
+.PHONY: prep
+prep:
 	@echo "Prepping test jail"
-	@sh prep.sh
-
-check: .PHONY prep
-	@echo "Running tests against modified sh"
-	@env SH=sh sh runtests.sh ${TESTS}
-
-check-stock: .PHONY prep
-	@echo "Running tests against stock /bin/sh"
-	@env SH=/bin/sh sh runtests.sh ${TESTS}
+	@${SH} prep.sh
