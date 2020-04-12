@@ -173,7 +173,7 @@ install_html_files() {
 	local base="$2"
 	local dest="$3"
 
-	slock_acquire html_base 2 2>/dev/null || return 0
+	slock_acquire html_base 20 2>/dev/null || return 0
 
 	# Update the base copy
 	mkdir -p "${base}"
