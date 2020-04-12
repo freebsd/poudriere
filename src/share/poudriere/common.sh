@@ -1804,8 +1804,7 @@ use_options() {
 	fi
 	[ -d "${optionsdir}" ] || return 1
 	optionsdir=$(realpath ${optionsdir} 2>/dev/null)
-	[ "${mnt##*/}" = "ref" ] && \
-	    msg "Copying /var/db/ports from: ${optionsdir}"
+	msg "Copying /var/db/ports from: ${optionsdir}"
 	do_clone "${optionsdir}" "${mnt}/var/db/ports" || \
 	    err 1 "Failed to copy OPTIONS directory"
 
@@ -1828,7 +1827,7 @@ do_portbuild_mounts() {
 	local ptname=$3
 	local setname=$4
 	local portsdir
-	local optionsdir opt o
+	local optionsdir opt o msgmount
 
 	# clone will inherit from the ref jail
 	if [ ${mnt##*/} = "ref" ]; then
@@ -1861,21 +1860,26 @@ do_portbuild_mounts() {
 	[ -n "${MFSSIZE}" ] && mdmfs -t -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
 	[ ${TMPFS_WRKDIR} -eq 1 ] && mnt_tmpfs wrkdir ${mnt}/wrkdirs
 	# Only show mounting messages once, not for every builder
+	msgmount=":"
 	if [ ${mnt##*/} = "ref" ]; then
-		[ -d "${CCACHE_DIR}" ] &&
-			msg "Mounting ccache from: ${CCACHE_DIR}"
-		msg "Mounting packages from: ${PACKAGES_ROOT}"
+		msgmount="msg"
 	fi
+	[ -d "${CCACHE_DIR}" ] && \
+	    ${msgmount} "Mounting ccache from: ${CCACHE_DIR}"
 
 	_pget portsdir ${ptname} mnt || err 1 "Missing mnt metadata for portstree"
 	[ -d ${portsdir}/ports ] && portsdir=${portsdir}/ports
+	${msgmount} "Mounting ports from: ${portsdir}"
 	${NULLMOUNT} -o ro ${portsdir} ${mnt}${PORTSDIR} ||
 		err 1 "Failed to mount the ports directory "
 	for o in ${OVERLAYS}; do
 		_pget odir "${o}" mnt || err 1 "Missing mnt metadata for overlay ${o}"
+		${msgmount} "Mounting ports overlay from: ${odir}"
 		${NULLMOUNT} -o ro "${odir}" "${mnt}${OVERLAYSDIR}/${o}"
 	done
+	${msgmount} "Mounting packages from: ${PACKAGES_ROOT}"
 	mount_packages -o ro
+	${msgmount} "Mounting distfiles from: ${DISTFILES_CACHE}"
 	${NULLMOUNT} ${DISTFILES_CACHE} ${mnt}/distfiles ||
 		err 1 "Failed to mount the distfiles cache directory"
 
@@ -2579,8 +2583,6 @@ jail_start() {
 
 	# May already be set for pkgclean
 	: ${PACKAGES:=${POUDRIERE_DATA}/packages/${MASTERNAME}}
-
-	msg "Mounting ports/packages/distfiles"
 
 	mkdir -p ${PACKAGES}/
 	was_a_bulk_run && stash_packages
