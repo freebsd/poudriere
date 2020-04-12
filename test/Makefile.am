@@ -46,7 +46,7 @@ TESTS=\
 	bulk-no-overlay-specific.sh \
 	bulk-overlay-specific.sh
 
-TESTS_ENVIRONMENT=	env PATH="$(top_builddir):$$PATH" ${SH} runtests.sh
+LOG_COMPILER=	env PATH="$(top_builddir):$$PATH" ${SH} runtest.sh
 
 check-am: prep
 
