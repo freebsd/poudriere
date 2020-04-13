@@ -321,6 +321,9 @@ delete_pkg() {
 	[ $# -ne 1 ] && eargs delete_pkg pkg
 	local pkg="$1"
 
+	# If ${pkg} is a symlink, delete the target as well
+	[ -L "${pkg}" ] && unlink $(realpath "${pkg}")
+
 	# Delete the package and the depsfile since this package is being deleted,
 	# which will force it to be recreated
 	unlink "${pkg}"
@@ -339,6 +342,8 @@ delete_pkg_xargs() {
 	# Delete the package and the depsfile since this package is being deleted,
 	# which will force it to be recreated
 	{
+		# If ${pkg} is a symlink, delete the target as well
+		[ -L "${pkg}" ] && echo $(realpath "${pkg}")
 		echo "${pkg}"
 		echo "${pkg_cache_dir}"
 	} >> "${listfile}"
