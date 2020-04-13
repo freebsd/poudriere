@@ -1131,6 +1131,7 @@ exit_handler() {
 	trap '' SIGPIPE
 	# Ignore SIGINT while cleaning up
 	trap '' SIGINT
+	SUPPRESS_INT=1
 
 	# stdin may be redirected if a signal interrupted the read builtin (or
 	# any redirection to stdin).  Close it to avoid possibly referencing a

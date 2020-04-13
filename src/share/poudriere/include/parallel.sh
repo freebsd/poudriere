@@ -363,7 +363,9 @@ _spawn_wrapper() {
 		# Reset SIGINT to the default to undo POSIX's SIG_IGN in
 		# 2.11 "Signals and Error Handling". This will ensure no
 		# foreground process is left around on SIGINT.
-		trap - INT
+		if [ ${SUPPRESS_INT:-0} -eq 0 ]; then
+			trap - INT
+		fi
 		;;
 	esac
 
