@@ -1132,6 +1132,8 @@ uninstall-am:
 
 .PRECIOUS: Makefile
 
+#TEST_EXTENSIONS=.sh
+#SH_LOG_COMPILER=$(run_env) ${SH} runtest.sh
 
 check-am: prep
 

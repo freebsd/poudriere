@@ -48,6 +48,8 @@ TESTS=\
 
 run_env=	env PATH="$(abs_top_builddir):$$PATH" VPATH=$(VPATH)
 LOG_COMPILER=	$(run_env) ${SH} $(srcdir)/runtest.sh
+#TEST_EXTENSIONS=.sh
+#SH_LOG_COMPILER=$(run_env) ${SH} runtest.sh
 
 check-am: prep
 
