@@ -4862,6 +4862,9 @@ delete_pkg() {
 	[ $# -ne 1 ] && eargs delete_pkg pkg
 	local pkg="$1"
 
+	# If ${pkg} is a symlink, delete the target as well
+	[ -L "${pkg}" ] && unlink $(realpath "${pkg}")
+
 	# Delete the package and the depsfile since this package is being deleted,
 	# which will force it to be recreated
 	unlink "${pkg}"
@@ -4880,6 +4883,7 @@ delete_pkg_xargs() {
 	# Delete the package and the depsfile since this package is being deleted,
 	# which will force it to be recreated
 	{
+		[ -L "${pkg}" ] && echo $(realpath "${pkg}")
 		echo "${pkg}"
 		echo "${pkg_cache_dir}"
 	} >> "${listfile}"
@@ -7676,11 +7680,18 @@ build_repo() {
 		install -m 0400 "${PKG_REPO_META_FILE}" \
 		    ${MASTERMNT}/tmp/pkgmeta
 	fi
+
+	# Remount rw
+	# mount_nullfs does not support mount -u
+	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages || \
+	    umount -f ${MASTERMNT}/packages
+	mount_packages
+
 	mkdir -p ${MASTERMNT}/tmp/packages
 	if [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
 		install -m 0400 ${PKG_REPO_SIGNING_KEY} \
 			${MASTERMNT}/tmp/repo.key
-		injail ${PKG_BIN} repo -o /tmp/packages \
+		injail ${PKG_BIN} repo ${PKG_REPO_FLAGS} -o /tmp/packages \
 			${PKG_META} \
 			/packages /tmp/repo.key
 		unlink ${MASTERMNT}/tmp/repo.key
@@ -7688,12 +7699,12 @@ build_repo() {
 		# Sometimes building repo from host is needed if
 		# using SSH with DNSSEC as older hosts don't support
 		# it.
-		${MASTERMNT}${PKG_BIN} repo \
+		${MASTERMNT}${PKG_BIN} repo ${PKG_REPO_FLAGS} \
 		    -o ${MASTERMNT}/tmp/packages ${PKG_META_MASTERMNT} \
 		    ${MASTERMNT}/packages \
 		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 	else
-		JNETNAME="n" injail ${PKG_BIN} repo \
+		JNETNAME="n" injail ${PKG_BIN} repo ${PKG_REPO_FLAGS} \
 		    -o /tmp/packages ${PKG_META} /packages \
 		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 	fi
@@ -7707,6 +7718,11 @@ build_repo() {
 			sign_pkg pubkey "${PACKAGES}/Latest/pkg.${PKG_EXT}"
 		fi
 	fi
+
+	# Remount ro
+	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages || \
+	    umount -f ${MASTERMNT}/packages
+	mount_packages -o ro
 }
 
 calculate_size_in_mb() {
