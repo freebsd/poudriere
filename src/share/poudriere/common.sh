@@ -1132,6 +1132,11 @@ exit_handler() {
 	# Ignore SIGINT while cleaning up
 	trap '' SIGINT
 
+	# stdin may be redirected if a signal interrupted the read builtin (or
+	# any redirection to stdin).  Close it to avoid possibly referencing a
+	# file in the jail like builders.pipe on socket 6.
+	exec </dev/null
+
 	if was_a_bulk_run; then
 		log_stop
 		# build_queue may have done cd MASTERMNT/.p/pool,
@@ -1154,11 +1159,6 @@ exit_handler() {
 		exec 6>&- || :
 		coprocess_stop pkg_cacher
 	fi
-
-	# stdin may be redirected if a signal interrupted the read builtin (or
-	# any redirection to stdin).  Close it to avoid possibly referencing a
-	# file in the jail like builders.pipe on socket 6.
-	exec </dev/null
 
 	[ ${STATUS} -eq 1 ] && jail_cleanup
 
