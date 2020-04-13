@@ -460,7 +460,8 @@ TESTS = \
 	bulk-no-overlay-specific.sh \
 	bulk-overlay-specific.sh
 
-LOG_COMPILER = env PATH="$(top_builddir):$$PATH" ${SH} runtest.sh
+run_env = env PATH="$(abs_top_builddir):$$PATH" VPATH=$(VPATH)
+LOG_COMPILER = $(run_env) ${SH} $(srcdir)/runtest.sh
 all: all-am
 
 .SUFFIXES:
@@ -1137,7 +1138,7 @@ check-am: prep
 .PHONY: prep
 prep:
 	@echo "Prepping test jail"
-	@${SH} prep.sh
+	@cd $(srcdir) && $(run_env) ${SH} prep.sh
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
