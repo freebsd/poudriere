@@ -10,9 +10,9 @@ fi
 SCRIPTPREFIX="${POUDRIEREPREFIX}/share/poudriere"
 
 SCRIPTPATH="${SCRIPTPREFIX}/${CMD}"
-POUDRIERE_ETC=${THISDIR}/etc
 
 LIBEXECPREFIX="${POUDRIEREPATH%/poudriere}"
+POUDRIERE_ETC=${LIBEXECPREFIX}/test/etc
 
 : ${DISTFILES_CACHE:=$(mktemp -dt distfiles)}
 : ${BASEFS:=${POUDRIERE_ETC}}
@@ -37,6 +37,9 @@ if ! cmp -s "${POUDRIERE_ETC}/poudriere.conf" "${ptmp}"; then
 else
 	rm -f "${ptmp}"
 fi
+cat > "${POUDRIERE_ETC}/poudriere.d/make.conf" << EOF
+DEFAULT_VERSIONS+=perl5=5.24
+EOF
 
 : ${VERBOSE:=1}
 : ${PARALLEL_JOBS:=2}
