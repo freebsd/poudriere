@@ -3694,7 +3694,7 @@ src/poudriere-sh/shell.h:
 	@ln -fs $(abs_top_srcdir)/external/sh/shell.h $@
 src/poudriere-sh/builtins.h: src/poudriere-sh/builtins.def \
       src/poudriere-sh/shell.h external/sh/mkbuiltins
-	cd $(top_builddir)/src/poudriere-sh && \
+	cd src/poudriere-sh && \
 	    sh $(abs_top_srcdir)/external/sh/mkbuiltins .
 src/poudriere-sh/builtins.c: src/poudriere-sh/builtins.h
 ${sh_OBJECTS}:		src/poudriere-sh/builtins.h
@@ -3721,7 +3721,7 @@ gen-man-wiki:
 	  ) > wiki/$${man##*/}${DEVEL_SFX}.md; \
 	done
 .PHONY: poudriere
-poudriere: $(top_srcdir)/src/bin/poudriere
+poudriere: src/bin/poudriere
 	@if which git >/dev/null 2>&1 && \
 	    [ -d "$$(git -C "$(top_srcdir)" rev-parse --git-dir)" ]; then \
 	    gitver=$$(git -C "$(top_srcdir)" describe --tags HEAD); \
