@@ -1,6 +1,11 @@
 #! /bin/sh
 
-export PATH=..:${PATH}
+THISDIR=$(realpath $(dirname $0))
+cd "${THISDIR}"
+
+if [ -z "${VPATH}" ]; then
+	export PATH=..:${PATH}
+fi
 
 case "$1" in
 bulk*.sh)
@@ -20,5 +25,5 @@ done <<-EOF
 $(env | egrep '^(WITH_|PORT|MAKE)'|grep -vF '.MAKE')
 EOF
 
-exec /usr/bin/timeout ${TIMEOUT} ../timestamp \
+exec /usr/bin/timeout ${TIMEOUT} timestamp \
     ${SH:+env SH="${SH}"} ${SH:-sh} "$@"

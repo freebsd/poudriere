@@ -127,25 +127,30 @@ help)
 esac
 
 POUDRIEREPATH=`realpath $0`
-if [ "${POUDRIEREPATH%src/bin/poudriere}" != "${POUDRIEREPATH}" ]; then
-	# It is running from src/bin/poudriere in checkout
+case "${POUDRIEREPATH}" in
+*/src/bin/poudriere)	# Running from source checkout
 	POUDRIEREPREFIX="${POUDRIEREPATH%/bin/*}"
 	LIBEXECPREFIX="${POUDRIEREPATH%/src/bin/poudriere}"
 	: ${POUDRIERE_ETC:="/usr/local/etc"}
-elif [ "${POUDRIEREPATH%/bin/*}" = "${POUDRIEREPATH}" ]; then
-	# It is running in a build directory or the source checkout as
-	# ./poudriere.  Lookup VPATH to resolve to source checkout if in
-	# build directory.
-	[ -f Makefile ] && VPATH="$(make -V VPATH)"
-	POUDRIEREPREFIX="${POUDRIEREPATH%/poudriere}${VPATH:+/${VPATH}}/src"
-	[ -n "${VPATH}" ] && POUDRIEREPREFIX="$(realpath "${POUDRIEREPREFIX}")"
-	LIBEXECPREFIX="${POUDRIEREPATH%/poudriere}"
-	: ${POUDRIERE_ETC:="/usr/local/etc"}
-else
-	# Running from PREFIX/bin/poudriere
+	;;
+*/bin/poudriere)	# Running from PREFIX/bin/poudriere
 	POUDRIEREPREFIX="${POUDRIEREPATH%/bin/*}"
 	LIBEXECPREFIX="${POUDRIEREPREFIX}/libexec/poudriere"
-fi
+	;;
+*/poudriere)		# Running from source checkout or build dir
+	LIBEXECPREFIX="${POUDRIEREPATH%/poudriere}"
+	if [ -f "${LIBEXECPREFIX}/Makefile" ]; then
+		VPATH="$(env -i make -C "${LIBEXECPREFIX}"\
+		    -V VPATH 2>/dev/null || :)"
+	fi
+	if [ -n "${VPATH}" ]; then
+		POUDRIEREPREFIX="${VPATH}/src"
+		POUDRIEREPREFIX="$(realpath "${POUDRIEREPREFIX}")"
+	else
+		POUDRIEREPREFIX="${POUDRIEREPATH%/poudriere}/src"
+	fi
+	: ${POUDRIERE_ETC:="/usr/local/etc"}
+esac
 SCRIPTPREFIX="${POUDRIEREPREFIX}/share/poudriere"
 env_set SCRIPTPREFIX
 SCRIPTPATH="${SCRIPTPREFIX}/${CMD}.sh"

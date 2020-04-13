@@ -46,11 +46,12 @@ TESTS=\
 	bulk-no-overlay-specific.sh \
 	bulk-overlay-specific.sh
 
-LOG_COMPILER=	env PATH="$(top_builddir):$$PATH" ${SH} runtest.sh
+run_env=	env PATH="$(abs_top_builddir):$$PATH" VPATH=$(VPATH)
+LOG_COMPILER=	$(run_env) ${SH} $(srcdir)/runtest.sh
 
 check-am: prep
 
 .PHONY: prep
 prep:
 	@echo "Prepping test jail"
-	@${SH} prep.sh
+	@cd $(srcdir) && $(run_env) ${SH} prep.sh

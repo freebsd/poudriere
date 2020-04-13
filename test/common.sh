@@ -1,14 +1,18 @@
 THISDIR=$(realpath $(dirname $0))
 CMD=$(basename $0)
-POUDRIEREPATH=$(realpath ${THISDIR}/../src/bin/poudriere)
-POUDRIEREPREFIX=${POUDRIEREPATH%\/bin/*}
-SCRIPTPREFIX=${POUDRIEREPREFIX}/share/poudriere
+POUDRIEREPATH=$(realpath $(which poudriere))
+if [ -n "${VPATH}" ]; then
+	POUDRIEREPREFIX="${VPATH}/../src"
+	POUDRIEREPREFIX="$(realpath "${POUDRIEREPREFIX}")"
+else
+	POUDRIEREPREFIX="${POUDRIEREPATH%/poudriere}/src"
+fi
+SCRIPTPREFIX="${POUDRIEREPREFIX}/share/poudriere"
 
 SCRIPTPATH="${SCRIPTPREFIX}/${CMD}"
 POUDRIERE_ETC=${THISDIR}/etc
 
-LIBEXECPREFIX="${POUDRIEREPATH%src/bin/poudriere}"
-export PATH=${LIBEXECPREFIX}:${PATH}:/sbin:/usr/sbin
+LIBEXECPREFIX="${POUDRIEREPATH%/poudriere}"
 
 : ${DISTFILES_CACHE:=$(mktemp -dt distfiles)}
 : ${BASEFS:=${POUDRIERE_ETC}}
