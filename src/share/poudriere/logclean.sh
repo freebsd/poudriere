@@ -127,10 +127,10 @@ find_broken_latest_per_pkg_links() {
 	    err 1 "find_broken_latest_per_pkg_links requires PWD=${log_top}"
 
 	log_links=3
-	find latest-per-pkg -type f ! -links ${log_links}
+	find -x latest-per-pkg -type f ! -links ${log_links}
 	# Each MASTERNAME/latest-per-pkg
-	find . -mindepth 2 -maxdepth 2 -name latest-per-pkg -print0 | \
-	    xargs -0 -J {} find {} -type f ! -links ${log_links} | \
+	find -x . -mindepth 2 -maxdepth 2 -name latest-per-pkg -print0 | \
+	    xargs -0 -J {} find -x {} -type f ! -links ${log_links} | \
 	    sed -e 's,^\./,,'
 }
 
@@ -139,10 +139,10 @@ delete_broken_latest_per_pkg_old_symlinks() {
 	[ "${PWD}" = "${log_top}" ] || \
 	    err 1 "find_broken_latest_per_pkg_old_symlinks requires PWD=${log_top}"
 
-	find -L latest-per-pkg -type l -exec rm -f {} +
+	find -x -L latest-per-pkg -type l -exec rm -f {} +
 	# Each MASTERNAME/latest-per-pkg
-	find . -mindepth 2 -maxdepth 2 -name latest-per-pkg -print0 | \
-	    xargs -0 -J {} find -L {} -type l -exec rm -f {} +
+	find -x . -mindepth 2 -maxdepth 2 -name latest-per-pkg -print0 | \
+	    xargs -0 -J {} find -x -L {} -type l -exec rm -f {} +
 }
 
 # Find now-empty latest-per-pkg directories.  This will take 3 runs
@@ -151,7 +151,7 @@ delete_empty_latest_per_pkg() {
 	[ "${PWD}" = "${log_top}" ] || \
 	    err 1 "find_empty_latest_per_pkg requires PWD=${log_top}"
 
-	find latest-per-pkg -mindepth 1 -type d -empty -delete
+	find -x latest-per-pkg -mindepth 1 -type d -empty -delete
 }
 
 echo_logdir() {
@@ -198,7 +198,7 @@ else
 	BUILDNAME_GLOB="${BUILDNAME_GLOB}" SHOW_FINISHED=1 \
 	    for_each_build echo_logdir | \
 	    xargs -0 -J {} \
-	    find {} -type d -mindepth 0 -maxdepth 0 -Btime +${DAYS}d \
+	    find -x {} -type d -mindepth 0 -maxdepth 0 -Btime +${DAYS}d \
 	    > "${OLDLOGS}"
 fi
 echo " done"
@@ -249,8 +249,8 @@ if [ ${logs_deleted} -eq 1 ]; then
 	msg_n "Updating latest-per-pkg links for deleted builds..."
 	for build in ${DELETED_BUILDS}; do
 		echo -n " ${build}..."
-		find ${build} -maxdepth 2 -mindepth 2 -name logs -print0 | \
-		    xargs -0 -J % find % -mindepth 1 -maxdepth 1 -type f | \
+		find -x ${build} -maxdepth 2 -mindepth 2 -name logs -print0 | \
+		    xargs -0 -J % find -x % -mindepth 1 -maxdepth 1 -type f | \
 		    sort -d | \
 		    awk -F/ '{if (!printed[$4]){print $0; printed[$4]=1;}}' | \
 		    while read log; do
@@ -271,7 +271,7 @@ if [ ${logs_deleted} -eq 1 ]; then
 	msg_n "Removing empty build log directories..."
 	echo "${DELETED_BUILDS}" | sed -e 's,$,/latest-per-pkg,' | \
 	    tr '\n' '\000' | \
-	    xargs -0 -J % find % -mindepth 0 -maxdepth 0 -empty | \
+	    xargs -0 -J % find -x % -mindepth 0 -maxdepth 0 -empty | \
 	    sed -e 's,$,/..,' | xargs realpath | tr '\n' '\000' | \
 	    xargs -0 rm -rf
 	echo " done"

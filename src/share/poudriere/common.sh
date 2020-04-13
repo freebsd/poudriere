@@ -4195,7 +4195,7 @@ build_pkg() {
 	    err 1 "Failed to rollback ${mnt} to prepkg"
 	:> ${mnt}/.need_rollback
 
-	rm -rf ${mnt}/wrkdirs/* || :
+	rm -rfx ${mnt}/wrkdirs/* || :
 
 	log_start "${pkgname}" 0
 	msg "Building ${port}"
@@ -4271,7 +4271,7 @@ build_pkg() {
 	msg "Cleaning up wrkdir"
 	injail /usr/bin/make -C "${portdir}" -k \
 	    -DNOCLEANDEPENDS clean ${MAKE_ARGS} || :
-	rm -rf ${mnt}/wrkdirs/* || :
+	rm -rfx ${mnt}/wrkdirs/* || :
 
 	clean_pool "${pkgname}" "${originspec}" "${clean_rdepends}"
 

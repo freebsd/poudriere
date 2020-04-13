@@ -143,7 +143,7 @@ delete_jail() {
 		TMPFS_ALL=0 destroyfs ${JAILMNT} jail || :
 	fi
 	cache_dir="${POUDRIERE_DATA}/cache/${JAILNAME}-*"
-	rm -rf ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} \
+	rm -rfx ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} \
 		${POUDRIERE_DATA}/.m/${JAILNAME}-* || :
 	echo " done"
 	if [ "${CLEANJAIL}" = "none" ]; then
@@ -158,8 +158,9 @@ delete_jail() {
 		wrkdirs) cleandir="${POUDRIERE_DATA}/wkdirs"; depth=1 ;;
 	esac
 	if [ -n "${clean_dir}" ]; then
-		find "${clean_dir}/" -name "${JAILNAME}-*" \
-			${depth:+-maxdepth ${depth}} -print0 | xargs -0 rm -rf || :
+		find -x "${clean_dir}/" -name "${JAILNAME}-*" \
+		    ${depth:+-maxdepth ${depth}} -print0 | \
+		    xargs -0 rm -rfx || :
 	fi
 	echo " done"
 }
