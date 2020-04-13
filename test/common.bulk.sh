@@ -369,7 +369,7 @@ fi
 : ${SCRIPTNAME:=${0%.sh}}
 SCRIPTNAME="${SCRIPTNAME##*/}"
 BUILDNAME="bulk"
-POUDRIERE="${POUDRIEREPATH} -e ${THISDIR}/etc"
+POUDRIERE="${POUDRIEREPATH} -e ${POUDRIERE_ETC}"
 ARCH=$(uname -p)
 JAILNAME="poudriere-test-${ARCH}$(echo "${THISDIR}" | tr '/' '_')"
 JAIL_VERSION="11.3-RELEASE"
