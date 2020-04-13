@@ -251,4 +251,7 @@ until [ "${USE_TIMESTAMP}" -eq 2 ]; do
 done
 
 rm "${OUTPUT}" "${OUTPUT}.stderr" "${OUTPUT}.expected"
+if ! have_pipefail && [ ${ret} -ne 0 ]; then
+	ret=77	# SKIP
+fi
 exit "${ret}"
