@@ -361,7 +361,7 @@ SUDO=
 if [ $(id -u) -ne 0 ]; then
 	if ! which sudo >/dev/null 2>&1; then
 		echo "SKIP: Need root or sudo access for bulk tests" >&2
-		exit 1
+		exit 77
 	fi
 	SUDO="sudo"
 fi
@@ -381,12 +381,12 @@ if [ -z "${JAILMNT}" ]; then
 	if ! ${SUDO} ${POUDRIERE} jail -c -j "${JAILNAME}" \
 	    -v "${JAIL_VERSION}" -a ${ARCH}; then
 		echo "SKIP: Cannot setup jail with Poudriere" >&2
-		exit 1
+		exit 77
 	fi
 	JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt" || echo)
 	if [ -z "${JAILMNT}" ]; then
 		echo "SKIP: Failed fetching mnt for new jail in Poudriere" >&2
-		exit 1
+		exit 77
 	fi
 	echo "Done setting up test jail" >&2
 	echo >&2
