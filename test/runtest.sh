@@ -1,6 +1,6 @@
 #! /bin/sh
 
-THISDIR=$(realpath $(dirname $0))
+THISDIR=$(realpath "${0%/*}")
 cd "${THISDIR}"
 
 if [ -z "${VPATH}" ]; then

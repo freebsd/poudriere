@@ -5,7 +5,7 @@ set -e
 INJAIL_HOST=1
 . ${SCRIPTPREFIX}/common.sh
 set +e
-PORTSDIR=${THISDIR}/../test-ports/default
+PORTSDIR=${THISDIR%/*}/test-ports/default
 export PORTSDIR
 export __MAKE_CONF=/dev/null
 

@@ -371,11 +371,11 @@ SCRIPTNAME="${SCRIPTNAME##*/}"
 BUILDNAME="bulk"
 POUDRIERE="${POUDRIEREPATH} -e ${POUDRIERE_ETC}"
 ARCH=$(uname -p)
-JAILNAME="poudriere-test-${ARCH}$(echo "${THISDIR}" | tr '/' '_')"
+JAILNAME="poudriere-test-${ARCH}$(echo "${PWD}" | tr '/' '_')"
 JAIL_VERSION="11.3-RELEASE"
 JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt" || echo)
 export UNAME_r=$(freebsd-version)
-export UNAME_v="FreeBSD $(freebsd-version)"
+export UNAME_v="FreeBSD ${UNAME_r}"
 if [ -z "${JAILMNT}" ]; then
 	echo "Setting up jail for testing..." >&2
 	if ! ${SUDO} ${POUDRIERE} jail -c -j "${JAILNAME}" \
@@ -401,7 +401,7 @@ fi
 
 . ${SCRIPTPREFIX}/common.sh
 
-: ${PORTSDIR:=${THISDIR}/../test-ports/default}
+: ${PORTSDIR:=${THISDIR%/*}/test-ports/default}
 export PORTSDIR
 PTMNT="${PORTSDIR}"
 : ${PTNAME:=${PTMNT##*/}}

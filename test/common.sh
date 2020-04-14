@@ -1,5 +1,5 @@
-THISDIR=$(realpath $(dirname $0))
-CMD=$(basename $0)
+THISDIR=$(realpath "${0%/*}")
+CMD="${0##*/}"
 POUDRIEREPATH=$(realpath $(which poudriere))
 if [ -n "${VPATH}" ]; then
 	POUDRIEREPREFIX="${VPATH}/../src"

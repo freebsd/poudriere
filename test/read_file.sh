@@ -1,7 +1,7 @@
 #! /bin/sh
 
 set -e
-. $(realpath $(dirname $0))/common.sh
+. common.sh
 . ${SCRIPTPREFIX}/include/util.sh
 set +e
 
