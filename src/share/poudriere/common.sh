@@ -555,8 +555,7 @@ do_confirm_delete() {
 	if [ "${answer}" = "yes" ]; then
 		msg_n "Removing files..."
 		cat ${filelist} | tr '\n' '\000' | \
-		    xargs -0 -J % \
-		    find % -mindepth 0 -maxdepth 0 -exec rm -rf {} +
+		    xargs -0 rm -rf
 		echo " done"
 		ret=1
 	fi
