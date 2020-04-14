@@ -8,7 +8,6 @@
 .deps/
 .dirstamp
 .dirstamp/
-.fslckout
 /autom4te.cache
 /cachec
 /cached
@@ -35,7 +34,7 @@
 /timeout
 /timestamp
 Makefile
-_FOSSIL_
+config.cache
 config.status
 config.log
 host-upgrade.sh
