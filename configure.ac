@@ -57,13 +57,12 @@ if [[ $ac_have_f_dupfd_cloexec -eq 0 ]]; then
 fi
 AC_SUBST([SH])
 
-AC_CONFIG_FILES([
-                 Makefile
-                 test/Makefile
-               ])
+AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([test/Makefile])
+AC_CONFIG_FILES([src/etc/rc.d/poudriered])
 
 # Preserve timestamps for install. This is needed to preserve hardlinks
 # for HTML files.
 AC_SUBST([INSTALL], ["${ac_cv_path_install% -c} -Cp"])
 
-AC_OUTPUT([src/etc/rc.d/poudriered])
+AC_OUTPUT

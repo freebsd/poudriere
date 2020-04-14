@@ -4280,15 +4280,17 @@ $as_echo "$as_me: WARNING: It is advised to upgrade your base system to a newer 
 fi
 
 
-ac_config_files="$ac_config_files Makefile test/Makefile"
+ac_config_files="$ac_config_files Makefile"
+
+ac_config_files="$ac_config_files test/Makefile"
+
+ac_config_files="$ac_config_files src/etc/rc.d/poudriered"
 
 
 # Preserve timestamps for install. This is needed to preserve hardlinks
 # for HTML files.
 INSTALL="${ac_cv_path_install% -c} -Cp"
 
-
-ac_config_files="$ac_config_files src/etc/rc.d/poudriered"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
