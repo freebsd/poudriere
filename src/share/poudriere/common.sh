@@ -2518,7 +2518,8 @@ jail_start() {
 	for fs in ${needfs}; do
 		if ! lsvfs $fs >/dev/null 2>&1; then
 			if [ $JAILED -eq 0 ]; then
-				kldload $fs || err 1 "Required kernel module '${fs}' not found"
+				kldload -n "$fs" || \
+				    err 1 "Required kernel module '${fs}' not found"
 			else
 				err 1 "please load the $fs module on host using \"kldload $fs\""
 			fi
@@ -2529,7 +2530,7 @@ jail_start() {
 		kld="${kldpair#*:}"
 		if ! kldstat -q -m "${kldmodname}" ; then
 			if [ $JAILED -eq 0 ]; then
-				kldload "${kld}" || \
+				kldload -n "${kld}" || \
 				    err 1 "Required kernel module '${kld}' not found"
 			else
 				err 1 "Please load the ${kld} module on the host using \"kldload ${kld}\""
