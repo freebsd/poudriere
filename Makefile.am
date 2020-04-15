@@ -176,8 +176,11 @@ sh_CFLAGS=		-DSHELL -std=gnu99 -DVTABSIZE=1000 ${sh_hist_CFLAGS} \
 			-I$(top_srcdir)/src \
 			-I$(top_srcdir)/external/sh
 sh_LDADD=		${sh_hist_LDADD} -lsbuf
-sh_hist_LDADD=		@MAINTAINER_MODE_TRUE@ -ledit
-sh_hist_CFLAGS=		@MAINTAINER_MODE_FALSE@ -DNO_HISTORY
+if MAINTAINER_MODE
+sh_hist_LDADD=		-ledit
+else
+sh_hist_CFLAGS=		-DNO_HISTORY
+endif
 sh_SOURCES=		external/sh_compat/strchrnul.c \
 			external/sh_compat/utimensat.c \
 			external/sh/alias.c \
