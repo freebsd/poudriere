@@ -3,6 +3,9 @@ MOSTLYCLEANFILES=
 
 ACLOCAL_AMFLAGS=	-I m4
 AM_CFLAGS=	-Wall -pipe -O2
+if MAINTAINER_MODE
+AM_CFLAGS+=	-Wextra -Werror
+endif
 
 awkdir=	$(pkgdatadir)/awk
 htmldir= $(pkgdatadir)/html

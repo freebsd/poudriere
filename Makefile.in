@@ -92,6 +92,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+@MAINTAINER_MODE_TRUE@am__append_1 = -Wextra -Werror
 pkglibexec_PROGRAMS = cachec$(EXEEXT) cached$(EXEEXT) clock$(EXEEXT) \
 	cpdup$(EXEEXT) dirempty$(EXEEXT) dirwatch$(EXEEXT) \
 	jexecd$(EXEEXT) locked_mkdir$(EXEEXT) nc$(EXEEXT) \
@@ -679,7 +680,7 @@ CLEANFILES = $(dist_rc_SCRIPTS) libucl.a libnv.a libptsort.a \
 	src/poudriere-sh/builtins.h src/poudriere-sh/shell.h
 MOSTLYCLEANFILES = poudriere
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Wall -pipe -O2
+AM_CFLAGS = -Wall -pipe -O2 $(am__append_1)
 awkdir = $(pkgdatadir)/awk
 assetsdir = $(htmldir)/assets
 bootstrapdir = $(assetsdir)/bootstrap-3.1.1
