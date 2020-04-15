@@ -1,6 +1,7 @@
 CLEANFILES=	$(dist_rc_SCRIPTS)
 MOSTLYCLEANFILES=
 
+ACLOCAL_AMFLAGS=	-I m4
 AM_CFLAGS=	-Wall -pipe -O2
 
 awkdir=	$(pkgdatadir)/awk
@@ -137,7 +138,7 @@ pkglibexec_PROGRAMS= \
 		     pwait \
 		     rename \
 		     rexec \
-		     @RM@ \
+		     @USE_RM@ \
 		     timeout \
 		     timestamp \
 		     @SH@
@@ -145,7 +146,8 @@ EXTRA_PROGRAMS= \
 		rm \
 		sh
 
-noinst_LIBRARIES=	libucl.a libnv.a libptsort.a
+noinst_LTLIBRARIES=	libucl.la libnv.la libptsort.la
+CLEANFILES+=		libucl.a libnv.a libptsort.a
 
 AUTOMAKE_OPTIONS=	subdir-objects
 
@@ -250,48 +252,48 @@ src/poudriere-sh/builtins.c: src/poudriere-sh/builtins.h
 sh_SOURCES+=		src/poudriere-sh/builtins.c
 ${sh_OBJECTS}:		src/poudriere-sh/builtins.h
 
-libucl_a_SOURCES=	external/libucl/src/ucl_emitter.c \
+libucl_la_SOURCES=	external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_emitter_streamline.c \
 			external/libucl/src/ucl_emitter_utils.c \
 			external/libucl/src/ucl_hash.c \
 			external/libucl/src/ucl_parser.c \
 			external/libucl/src/ucl_util.c \
 			external/libucl/src/xxhash.c
-libucl_a_CFLAGS=	-I$(top_srcdir)/external/libucl/uthash \
+libucl_la_CFLAGS=	-I$(top_srcdir)/external/libucl/uthash \
 			-I$(top_srcdir)/external/libucl/klib  \
 			-I$(top_srcdir)/external/libucl/include  \
 			-I$(top_srcdir)/external/libucl/src \
 			-Wno-unused-parameter -Wno-pointer-sign
 
-libptsort_a_SOURCES=	external/ptsort/lib/aa_tree.c \
+libptsort_la_SOURCES=	external/ptsort/lib/aa_tree.c \
 			external/ptsort/lib/fline.c
-libptsort_a_CPPFLAGS=	-I$(top_srcdir)/external/ptsort/lib
+libptsort_la_CPPFLAGS=	-I$(top_srcdir)/external/ptsort/lib
 ptsort_SOURCES=		external/ptsort/bin/ptsort.c
-ptsort_LDADD=		libptsort.a
+ptsort_LDADD=		libptsort.la
 ptsort_CPPFLAGS=	-I$(top_srcdir)/external/ptsort/lib
 
-libnv_a_CFLAGS=		-isystem $(top_srcdir)/external/libnv/ -std=gnu99
-libnv_a_SOURCES=	external/libnv/sys/dnvlist.c \
+libnv_la_CFLAGS=		-isystem $(top_srcdir)/external/libnv/ -std=gnu99
+libnv_la_SOURCES=	external/libnv/sys/dnvlist.c \
 			external/libnv/msgio.c \
 			external/libnv/sys/nvlist.c \
 			external/libnv/sys/nvpair.c
 poudriered_SOURCES=	src/poudriered/poudriered.c
 poudriered_CFLAGS=	-DPREFIX=\"$(prefix)\" \
 			-I$(top_srcdir)/external/libucl/include
-poudriered_LDADD=	libucl.a \
+poudriered_LDADD=	libucl.la \
 			-lsbuf \
 			-lutil
 
 jexecd_SOURCES=	src/libexec/poudriere/jexecd/jexecd.c
 jexecd_CFLAGS=	-I$(top_srcdir)/external/libnv/sys
-jexecd_LDADD=	libnv.a \
+jexecd_LDADD=	libnv.la \
 		-lsbuf \
 		-lutil \
 		-ljail
 
 rexec_SOURCES=	src/libexec/poudriere/rexec/rexec.c
 rexec_CFLAGS=	-I$(top_srcdir)/external/libnv/sys
-rexec_LDADD=	libnv.a
+rexec_LDADD=	libnv.la
 
 cached_SOURCES=	src/libexec/poudriere/cached/cached.c
 cached_CFLAGS=	-I$(top_srcdir)/external/klib

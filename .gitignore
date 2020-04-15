@@ -3,8 +3,8 @@
 *-original
 *.debug
 *.full
-*.o
 .*.sw*
+libtool
 .deps/
 .dirstamp
 .dirstamp/
@@ -16,9 +16,6 @@
 /dirempty
 /dirwatch
 /jexecd
-/libnv.a
-/libptsort.a
-/libucl.a
 /locked_mkdir
 /make_index
 /nc
@@ -41,6 +38,7 @@ host-upgrade.sh
 poudriere.fossil
 src/bin/poudriere.8.gz
 src/config.h
+src/config.h.in~
 src/etc/rc.d/poudriered
 src/stamp-h1
 src/poudriere-sh/builtins.def

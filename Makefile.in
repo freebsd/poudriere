@@ -90,16 +90,21 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
+build_triplet = @build@
+host_triplet = @host@
 pkglibexec_PROGRAMS = cachec$(EXEEXT) cached$(EXEEXT) clock$(EXEEXT) \
 	cpdup$(EXEEXT) dirempty$(EXEEXT) dirwatch$(EXEEXT) \
 	jexecd$(EXEEXT) locked_mkdir$(EXEEXT) nc$(EXEEXT) \
 	poudriered$(EXEEXT) ptsort$(EXEEXT) pwait$(EXEEXT) \
-	rename$(EXEEXT) rexec$(EXEEXT) @RM@ timeout$(EXEEXT) \
+	rename$(EXEEXT) rexec$(EXEEXT) @USE_RM@ timeout$(EXEEXT) \
 	timestamp$(EXEEXT) @SH@
 EXTRA_PROGRAMS = rm$(EXEEXT) sh$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
@@ -125,38 +130,37 @@ am__installdirs = "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(bindir)" \
 	"$(DESTDIR)$(examplesdir)" "$(DESTDIR)$(hookdir)" \
 	"$(DESTDIR)$(sysconfdir)" "$(DESTDIR)$(includedir)"
 PROGRAMS = $(pkglibexec_PROGRAMS)
-LIBRARIES = $(noinst_LIBRARIES)
-AR = ar
-ARFLAGS = cru
-AM_V_AR = $(am__v_AR_@AM_V@)
-am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
-am__v_AR_0 = @echo "  AR      " $@;
-am__v_AR_1 = 
-libnv_a_AR = $(AR) $(ARFLAGS)
-libnv_a_LIBADD =
+LTLIBRARIES = $(noinst_LTLIBRARIES)
+libnv_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
-am_libnv_a_OBJECTS = external/libnv/sys/libnv_a-dnvlist.$(OBJEXT) \
-	external/libnv/libnv_a-msgio.$(OBJEXT) \
-	external/libnv/sys/libnv_a-nvlist.$(OBJEXT) \
-	external/libnv/sys/libnv_a-nvpair.$(OBJEXT)
-libnv_a_OBJECTS = $(am_libnv_a_OBJECTS)
-libptsort_a_AR = $(AR) $(ARFLAGS)
-libptsort_a_LIBADD =
-am_libptsort_a_OBJECTS =  \
-	external/ptsort/lib/libptsort_a-aa_tree.$(OBJEXT) \
-	external/ptsort/lib/libptsort_a-fline.$(OBJEXT)
-libptsort_a_OBJECTS = $(am_libptsort_a_OBJECTS)
-libucl_a_AR = $(AR) $(ARFLAGS)
-libucl_a_LIBADD =
-am_libucl_a_OBJECTS =  \
-	external/libucl/src/libucl_a-ucl_emitter.$(OBJEXT) \
-	external/libucl/src/libucl_a-ucl_emitter_streamline.$(OBJEXT) \
-	external/libucl/src/libucl_a-ucl_emitter_utils.$(OBJEXT) \
-	external/libucl/src/libucl_a-ucl_hash.$(OBJEXT) \
-	external/libucl/src/libucl_a-ucl_parser.$(OBJEXT) \
-	external/libucl/src/libucl_a-ucl_util.$(OBJEXT) \
-	external/libucl/src/libucl_a-xxhash.$(OBJEXT)
-libucl_a_OBJECTS = $(am_libucl_a_OBJECTS)
+am_libnv_la_OBJECTS = external/libnv/sys/libnv_la-dnvlist.lo \
+	external/libnv/libnv_la-msgio.lo \
+	external/libnv/sys/libnv_la-nvlist.lo \
+	external/libnv/sys/libnv_la-nvpair.lo
+libnv_la_OBJECTS = $(am_libnv_la_OBJECTS)
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
+libnv_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libnv_la_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+libptsort_la_LIBADD =
+am_libptsort_la_OBJECTS = external/ptsort/lib/libptsort_la-aa_tree.lo \
+	external/ptsort/lib/libptsort_la-fline.lo
+libptsort_la_OBJECTS = $(am_libptsort_la_OBJECTS)
+libucl_la_LIBADD =
+am_libucl_la_OBJECTS = external/libucl/src/libucl_la-ucl_emitter.lo \
+	external/libucl/src/libucl_la-ucl_emitter_streamline.lo \
+	external/libucl/src/libucl_la-ucl_emitter_utils.lo \
+	external/libucl/src/libucl_la-ucl_hash.lo \
+	external/libucl/src/libucl_la-ucl_parser.lo \
+	external/libucl/src/libucl_la-ucl_util.lo \
+	external/libucl/src/libucl_la-xxhash.lo
+libucl_la_OBJECTS = $(am_libucl_la_OBJECTS)
+libucl_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libucl_la_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_cachec_OBJECTS = src/libexec/poudriere/cachec/cachec.$(OBJEXT)
 cachec_OBJECTS = $(am_cachec_OBJECTS)
 cachec_DEPENDENCIES =
@@ -164,8 +168,9 @@ am_cached_OBJECTS =  \
 	src/libexec/poudriere/cached/cached-cached.$(OBJEXT)
 cached_OBJECTS = $(am_cached_OBJECTS)
 cached_DEPENDENCIES =
-cached_LINK = $(CCLD) $(cached_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
+cached_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(cached_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_clock_OBJECTS = src/libexec/poudriere/clock/clock.$(OBJEXT)
 clock_OBJECTS = $(am_clock_OBJECTS)
 clock_LDADD = $(LDADD)
@@ -177,8 +182,9 @@ am_cpdup_OBJECTS = src/libexec/poudriere/cpdup/cpdup-cpdup.$(OBJEXT) \
 	src/libexec/poudriere/cpdup/cpdup-md5.$(OBJEXT)
 cpdup_OBJECTS = $(am_cpdup_OBJECTS)
 cpdup_DEPENDENCIES =
-cpdup_LINK = $(CCLD) $(cpdup_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
+cpdup_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(cpdup_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_dirempty_OBJECTS =  \
 	src/libexec/poudriere/dirempty/dirempty.$(OBJEXT)
 dirempty_OBJECTS = $(am_dirempty_OBJECTS)
@@ -190,9 +196,10 @@ dirwatch_LDADD = $(LDADD)
 am_jexecd_OBJECTS =  \
 	src/libexec/poudriere/jexecd/jexecd-jexecd.$(OBJEXT)
 jexecd_OBJECTS = $(am_jexecd_OBJECTS)
-jexecd_DEPENDENCIES = libnv.a
-jexecd_LINK = $(CCLD) $(jexecd_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
+jexecd_DEPENDENCIES = libnv.la
+jexecd_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(jexecd_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_locked_mkdir_OBJECTS =  \
 	src/libexec/poudriere/locked_mkdir/locked_mkdir.$(OBJEXT)
 locked_mkdir_OBJECTS = $(am_locked_mkdir_OBJECTS)
@@ -203,12 +210,13 @@ nc_LDADD = $(LDADD)
 am_poudriered_OBJECTS =  \
 	src/poudriered/poudriered-poudriered.$(OBJEXT)
 poudriered_OBJECTS = $(am_poudriered_OBJECTS)
-poudriered_DEPENDENCIES = libucl.a
-poudriered_LINK = $(CCLD) $(poudriered_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
+poudriered_DEPENDENCIES = libucl.la
+poudriered_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(poudriered_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_ptsort_OBJECTS = external/ptsort/bin/ptsort-ptsort.$(OBJEXT)
 ptsort_OBJECTS = $(am_ptsort_OBJECTS)
-ptsort_DEPENDENCIES = libptsort.a
+ptsort_DEPENDENCIES = libptsort.la
 am_pwait_OBJECTS = src/libexec/poudriere/pwait/pwait.$(OBJEXT)
 pwait_OBJECTS = $(am_pwait_OBJECTS)
 pwait_LDADD = $(LDADD)
@@ -217,9 +225,10 @@ rename_OBJECTS = $(am_rename_OBJECTS)
 rename_LDADD = $(LDADD)
 am_rexec_OBJECTS = src/libexec/poudriere/rexec/rexec-rexec.$(OBJEXT)
 rexec_OBJECTS = $(am_rexec_OBJECTS)
-rexec_DEPENDENCIES = libnv.a
-rexec_LINK = $(CCLD) $(rexec_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
+rexec_DEPENDENCIES = libnv.la
+rexec_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(rexec_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_rm_OBJECTS = src/libexec/poudriere/rm/rm.$(OBJEXT)
 rm_OBJECTS = $(am_rm_OBJECTS)
 rm_LDADD = $(LDADD)
@@ -269,8 +278,9 @@ am_sh_OBJECTS = external/sh_compat/sh-strchrnul.$(OBJEXT) \
 sh_OBJECTS = $(am_sh_OBJECTS)
 am__DEPENDENCIES_1 =
 sh_DEPENDENCIES = $(am__DEPENDENCIES_1)
-sh_LINK = $(CCLD) $(sh_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
-	$@
+sh_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(sh_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_timeout_OBJECTS = src/libexec/poudriere/timeout/timeout.$(OBJEXT)
 timeout_OBJECTS = $(am_timeout_OBJECTS)
 timeout_LDADD = $(LDADD)
@@ -319,22 +329,22 @@ am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
 am__v_at_1 = 
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src
-depcomp = $(SHELL) $(top_srcdir)/depcomp
+depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = external/libnv/$(DEPDIR)/libnv_a-msgio.Po \
-	external/libnv/sys/$(DEPDIR)/libnv_a-dnvlist.Po \
-	external/libnv/sys/$(DEPDIR)/libnv_a-nvlist.Po \
-	external/libnv/sys/$(DEPDIR)/libnv_a-nvpair.Po \
-	external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Po \
-	external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_streamline.Po \
-	external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_utils.Po \
-	external/libucl/src/$(DEPDIR)/libucl_a-ucl_hash.Po \
-	external/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Po \
-	external/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Po \
-	external/libucl/src/$(DEPDIR)/libucl_a-xxhash.Po \
+am__depfiles_remade = external/libnv/$(DEPDIR)/libnv_la-msgio.Plo \
+	external/libnv/sys/$(DEPDIR)/libnv_la-dnvlist.Plo \
+	external/libnv/sys/$(DEPDIR)/libnv_la-nvlist.Plo \
+	external/libnv/sys/$(DEPDIR)/libnv_la-nvpair.Plo \
+	external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter.Plo \
+	external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_streamline.Plo \
+	external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_utils.Plo \
+	external/libucl/src/$(DEPDIR)/libucl_la-ucl_hash.Plo \
+	external/libucl/src/$(DEPDIR)/libucl_la-ucl_parser.Plo \
+	external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Plo \
+	external/libucl/src/$(DEPDIR)/libucl_la-xxhash.Plo \
 	external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po \
-	external/ptsort/lib/$(DEPDIR)/libptsort_a-aa_tree.Po \
-	external/ptsort/lib/$(DEPDIR)/libptsort_a-fline.Po \
+	external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Plo \
+	external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Plo \
 	external/sh/$(DEPDIR)/sh-alias.Po \
 	external/sh/$(DEPDIR)/sh-arith_yacc.Po \
 	external/sh/$(DEPDIR)/sh-arith_yylex.Po \
@@ -407,32 +417,34 @@ am__depfiles_remade = external/libnv/$(DEPDIR)/libnv_a-msgio.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-unlink.Po \
 	src/poudriered/$(DEPDIR)/poudriered-poudriered.Po
 am__mv = mv -f
-AM_V_lt = $(am__v_lt_@AM_V@)
-am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
-am__v_lt_0 = --silent
-am__v_lt_1 = 
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS) $(CFLAGS)
 AM_V_CC = $(am__v_CC_@AM_V@)
 am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
 am__v_CC_1 = 
 CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libnv_a_SOURCES) $(libptsort_a_SOURCES) \
-	$(libucl_a_SOURCES) $(cachec_SOURCES) $(cached_SOURCES) \
+SOURCES = $(libnv_la_SOURCES) $(libptsort_la_SOURCES) \
+	$(libucl_la_SOURCES) $(cachec_SOURCES) $(cached_SOURCES) \
 	$(clock_SOURCES) $(cpdup_SOURCES) $(dirempty_SOURCES) \
 	$(dirwatch_SOURCES) $(jexecd_SOURCES) $(locked_mkdir_SOURCES) \
 	$(nc_SOURCES) $(poudriered_SOURCES) $(ptsort_SOURCES) \
 	$(pwait_SOURCES) $(rename_SOURCES) $(rexec_SOURCES) \
 	$(rm_SOURCES) $(sh_SOURCES) $(timeout_SOURCES) \
 	$(timestamp_SOURCES)
-DIST_SOURCES = $(libnv_a_SOURCES) $(libptsort_a_SOURCES) \
-	$(libucl_a_SOURCES) $(cachec_SOURCES) $(cached_SOURCES) \
+DIST_SOURCES = $(libnv_la_SOURCES) $(libptsort_la_SOURCES) \
+	$(libucl_la_SOURCES) $(cachec_SOURCES) $(cached_SOURCES) \
 	$(clock_SOURCES) $(cpdup_SOURCES) $(dirempty_SOURCES) \
 	$(dirwatch_SOURCES) $(jexecd_SOURCES) $(locked_mkdir_SOURCES) \
 	$(nc_SOURCES) $(poudriered_SOURCES) $(ptsort_SOURCES) \
@@ -491,9 +503,16 @@ CTAGS = ctags
 CSCOPE = cscope
 DIST_SUBDIRS = $(SUBDIRS)
 am__DIST_COMMON = $(dist_man_MANS) $(srcdir)/Makefile.in \
-	$(top_srcdir)/src/config.h.in \
-	$(top_srcdir)/src/etc/rc.d/poudriered.in compile depcomp \
-	install-sh missing
+	$(top_srcdir)/build-aux/compile \
+	$(top_srcdir)/build-aux/config.guess \
+	$(top_srcdir)/build-aux/config.sub \
+	$(top_srcdir)/build-aux/depcomp \
+	$(top_srcdir)/build-aux/install-sh \
+	$(top_srcdir)/build-aux/ltmain.sh \
+	$(top_srcdir)/build-aux/missing $(top_srcdir)/src/config.h.in \
+	$(top_srcdir)/src/etc/rc.d/poudriered.in build-aux/compile \
+	build-aux/config.guess build-aux/config.sub build-aux/depcomp \
+	build-aux/install-sh build-aux/ltmain.sh build-aux/missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -539,6 +558,7 @@ distcleancheck_listfiles = find . -type f -print
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
+AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -551,25 +571,40 @@ CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DLLTOOL = @DLLTOOL@
+DSYMUTIL = @DSYMUTIL@
+DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+FGREP = @FGREP@
 GREP = @GREP@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LIBTOOL = @LIBTOOL@
+LIPO = @LIPO@
+LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
+MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
+NM = @NM@
+NMEDIT = @NMEDIT@
+OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
+OTOOL = @OTOOL@
+OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -579,31 +614,42 @@ PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 RANLIB = @RANLIB@
-RM = @RM@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SH = @SH@
 SHELL = @SHELL@
 STRIP = @STRIP@
+USE_RM = @USE_RM@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
+ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
+ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
 am__tar = @am__tar@
 am__untar = @am__untar@
 bindir = @bindir@
+build = @build@
 build_alias = @build_alias@
+build_cpu = @build_cpu@
+build_os = @build_os@
+build_vendor = @build_vendor@
 builddir = @builddir@
 datadir = @datadir@
 datarootdir = @datarootdir@
 docdir = @docdir@
 dvidir = @dvidir@
 exec_prefix = @exec_prefix@
+host = @host@
 host_alias = @host_alias@
+host_cpu = @host_cpu@
+host_os = @host_os@
+host_vendor = @host_vendor@
 htmldir = $(pkgdatadir)/html
 includedir = $(pkgdatadir)/include
 infodir = @infodir@
@@ -628,10 +674,11 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 # Extra builtins
-CLEANFILES = $(dist_rc_SCRIPTS) src/poudriere-sh/builtins.c \
-	src/poudriere-sh/builtins.def src/poudriere-sh/builtins.h \
-	src/poudriere-sh/shell.h
+CLEANFILES = $(dist_rc_SCRIPTS) libucl.a libnv.a libptsort.a \
+	src/poudriere-sh/builtins.c src/poudriere-sh/builtins.def \
+	src/poudriere-sh/builtins.h src/poudriere-sh/shell.h
 MOSTLYCLEANFILES = poudriere
+ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = -Wall -pipe -O2
 awkdir = $(pkgdatadir)/awk
 assetsdir = $(htmldir)/assets
@@ -752,7 +799,7 @@ dist_dtimages_DATA = src/share/poudriere/html/assets/DataTables-1.10.0/images/ba
 			src/share/poudriere/html/assets/DataTables-1.10.0/images/sort_desc_disabled.png
 
 dist_rc_SCRIPTS = src/etc/rc.d/poudriered
-noinst_LIBRARIES = libucl.a libnv.a libptsort.a
+noinst_LTLIBRARIES = libucl.la libnv.la libptsort.la
 AUTOMAKE_OPTIONS = subdir-objects
 clock_SOURCES = src/libexec/poudriere/clock/clock.c
 cpdup_SOURCES = src/libexec/poudriere/cpdup/cpdup.c \
@@ -808,7 +855,7 @@ sh_SOURCES = external/sh_compat/strchrnul.c \
 	src/poudriere-sh/sleep.c src/poudriere-sh/traps.c \
 	src/poudriere-sh/touch.c src/poudriere-sh/unlink.c \
 	src/poudriere-sh/builtins.c
-libucl_a_SOURCES = external/libucl/src/ucl_emitter.c \
+libucl_la_SOURCES = external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_emitter_streamline.c \
 			external/libucl/src/ucl_emitter_utils.c \
 			external/libucl/src/ucl_hash.c \
@@ -816,21 +863,21 @@ libucl_a_SOURCES = external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_util.c \
 			external/libucl/src/xxhash.c
 
-libucl_a_CFLAGS = -I$(top_srcdir)/external/libucl/uthash \
+libucl_la_CFLAGS = -I$(top_srcdir)/external/libucl/uthash \
 			-I$(top_srcdir)/external/libucl/klib  \
 			-I$(top_srcdir)/external/libucl/include  \
 			-I$(top_srcdir)/external/libucl/src \
 			-Wno-unused-parameter -Wno-pointer-sign
 
-libptsort_a_SOURCES = external/ptsort/lib/aa_tree.c \
+libptsort_la_SOURCES = external/ptsort/lib/aa_tree.c \
 			external/ptsort/lib/fline.c
 
-libptsort_a_CPPFLAGS = -I$(top_srcdir)/external/ptsort/lib
+libptsort_la_CPPFLAGS = -I$(top_srcdir)/external/ptsort/lib
 ptsort_SOURCES = external/ptsort/bin/ptsort.c
-ptsort_LDADD = libptsort.a
+ptsort_LDADD = libptsort.la
 ptsort_CPPFLAGS = -I$(top_srcdir)/external/ptsort/lib
-libnv_a_CFLAGS = -isystem $(top_srcdir)/external/libnv/ -std=gnu99
-libnv_a_SOURCES = external/libnv/sys/dnvlist.c \
+libnv_la_CFLAGS = -isystem $(top_srcdir)/external/libnv/ -std=gnu99
+libnv_la_SOURCES = external/libnv/sys/dnvlist.c \
 			external/libnv/msgio.c \
 			external/libnv/sys/nvlist.c \
 			external/libnv/sys/nvpair.c
@@ -839,20 +886,20 @@ poudriered_SOURCES = src/poudriered/poudriered.c
 poudriered_CFLAGS = -DPREFIX=\"$(prefix)\" \
 			-I$(top_srcdir)/external/libucl/include
 
-poudriered_LDADD = libucl.a \
+poudriered_LDADD = libucl.la \
 			-lsbuf \
 			-lutil
 
 jexecd_SOURCES = src/libexec/poudriere/jexecd/jexecd.c
 jexecd_CFLAGS = -I$(top_srcdir)/external/libnv/sys
-jexecd_LDADD = libnv.a \
+jexecd_LDADD = libnv.la \
 		-lsbuf \
 		-lutil \
 		-ljail
 
 rexec_SOURCES = src/libexec/poudriere/rexec/rexec.c
 rexec_CFLAGS = -I$(top_srcdir)/external/libnv/sys
-rexec_LDADD = libnv.a
+rexec_LDADD = libnv.la
 cached_SOURCES = src/libexec/poudriere/cached/cached.c
 cached_CFLAGS = -I$(top_srcdir)/external/klib
 cached_LDADD = -lutil -lrt
@@ -863,7 +910,7 @@ SUBDIRS = . test
 all: all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .c .o .obj
+.SUFFIXES: .c .lo .o .obj
 am--refresh: Makefile
 	@:
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
@@ -924,6 +971,7 @@ install-pkglibexecPROGRAMS: $(pkglibexec_PROGRAMS)
 	for p in $$list; do echo "$$p $$p"; done | \
 	sed 's/$(EXEEXT)$$//' | \
 	while read p p1; do if test -f $$p \
+	 || test -f $$p1 \
 	  ; then echo "$$p"; echo "$$p"; else :; fi; \
 	done | \
 	sed -e 'p;s,.*/,,;n;h' \
@@ -938,8 +986,8 @@ install-pkglibexecPROGRAMS: $(pkglibexec_PROGRAMS)
 	while read type dir files; do \
 	    if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
 	    test -z "$$files" || { \
-	      echo " $(INSTALL_PROGRAM_ENV) $(INSTALL_PROGRAM) $$files '$(DESTDIR)$(pkglibexecdir)$$dir'"; \
-	      $(INSTALL_PROGRAM_ENV) $(INSTALL_PROGRAM) $$files "$(DESTDIR)$(pkglibexecdir)$$dir" || exit $$?; \
+	    echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL_PROGRAM) $$files '$(DESTDIR)$(pkglibexecdir)$$dir'"; \
+	    $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL_PROGRAM) $$files "$(DESTDIR)$(pkglibexecdir)$$dir" || exit $$?; \
 	    } \
 	; done
 
@@ -955,17 +1003,31 @@ uninstall-pkglibexecPROGRAMS:
 	cd "$(DESTDIR)$(pkglibexecdir)" && rm -f $$files
 
 clean-pkglibexecPROGRAMS:
-	-test -z "$(pkglibexec_PROGRAMS)" || rm -f $(pkglibexec_PROGRAMS)
+	@list='$(pkglibexec_PROGRAMS)'; test -n "$$list" || exit 0; \
+	echo " rm -f" $$list; \
+	rm -f $$list || exit $$?; \
+	test -n "$(EXEEXT)" || exit 0; \
+	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
+	echo " rm -f" $$list; \
+	rm -f $$list
 
-clean-noinstLIBRARIES:
-	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
+clean-noinstLTLIBRARIES:
+	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
+	@list='$(noinst_LTLIBRARIES)'; \
+	locs=`for p in $$list; do echo $$p; done | \
+	      sed 's|^[^/]*$$|.|; s|/[^/]*$$||; s|$$|/so_locations|' | \
+	      sort -u`; \
+	test -z "$$locs" || { \
+	  echo rm -f $${locs}; \
+	  rm -f $${locs}; \
+	}
 external/libnv/sys/$(am__dirstamp):
 	@$(MKDIR_P) external/libnv/sys
 	@: > external/libnv/sys/$(am__dirstamp)
 external/libnv/sys/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) external/libnv/sys/$(DEPDIR)
 	@: > external/libnv/sys/$(DEPDIR)/$(am__dirstamp)
-external/libnv/sys/libnv_a-dnvlist.$(OBJEXT):  \
+external/libnv/sys/libnv_la-dnvlist.lo:  \
 	external/libnv/sys/$(am__dirstamp) \
 	external/libnv/sys/$(DEPDIR)/$(am__dirstamp)
 external/libnv/$(am__dirstamp):
@@ -974,69 +1036,62 @@ external/libnv/$(am__dirstamp):
 external/libnv/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) external/libnv/$(DEPDIR)
 	@: > external/libnv/$(DEPDIR)/$(am__dirstamp)
-external/libnv/libnv_a-msgio.$(OBJEXT):  \
-	external/libnv/$(am__dirstamp) \
+external/libnv/libnv_la-msgio.lo: external/libnv/$(am__dirstamp) \
 	external/libnv/$(DEPDIR)/$(am__dirstamp)
-external/libnv/sys/libnv_a-nvlist.$(OBJEXT):  \
+external/libnv/sys/libnv_la-nvlist.lo:  \
 	external/libnv/sys/$(am__dirstamp) \
 	external/libnv/sys/$(DEPDIR)/$(am__dirstamp)
-external/libnv/sys/libnv_a-nvpair.$(OBJEXT):  \
+external/libnv/sys/libnv_la-nvpair.lo:  \
 	external/libnv/sys/$(am__dirstamp) \
 	external/libnv/sys/$(DEPDIR)/$(am__dirstamp)
 
-libnv.a: $(libnv_a_OBJECTS) $(libnv_a_DEPENDENCIES) $(EXTRA_libnv_a_DEPENDENCIES) 
-	$(AM_V_at)-rm -f libnv.a
-	$(AM_V_AR)$(libnv_a_AR) libnv.a $(libnv_a_OBJECTS) $(libnv_a_LIBADD)
-	$(AM_V_at)$(RANLIB) libnv.a
+libnv.la: $(libnv_la_OBJECTS) $(libnv_la_DEPENDENCIES) $(EXTRA_libnv_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(libnv_la_LINK)  $(libnv_la_OBJECTS) $(libnv_la_LIBADD) $(LIBS)
 external/ptsort/lib/$(am__dirstamp):
 	@$(MKDIR_P) external/ptsort/lib
 	@: > external/ptsort/lib/$(am__dirstamp)
 external/ptsort/lib/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) external/ptsort/lib/$(DEPDIR)
 	@: > external/ptsort/lib/$(DEPDIR)/$(am__dirstamp)
-external/ptsort/lib/libptsort_a-aa_tree.$(OBJEXT):  \
+external/ptsort/lib/libptsort_la-aa_tree.lo:  \
 	external/ptsort/lib/$(am__dirstamp) \
 	external/ptsort/lib/$(DEPDIR)/$(am__dirstamp)
-external/ptsort/lib/libptsort_a-fline.$(OBJEXT):  \
+external/ptsort/lib/libptsort_la-fline.lo:  \
 	external/ptsort/lib/$(am__dirstamp) \
 	external/ptsort/lib/$(DEPDIR)/$(am__dirstamp)
 
-libptsort.a: $(libptsort_a_OBJECTS) $(libptsort_a_DEPENDENCIES) $(EXTRA_libptsort_a_DEPENDENCIES) 
-	$(AM_V_at)-rm -f libptsort.a
-	$(AM_V_AR)$(libptsort_a_AR) libptsort.a $(libptsort_a_OBJECTS) $(libptsort_a_LIBADD)
-	$(AM_V_at)$(RANLIB) libptsort.a
+libptsort.la: $(libptsort_la_OBJECTS) $(libptsort_la_DEPENDENCIES) $(EXTRA_libptsort_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(LINK)  $(libptsort_la_OBJECTS) $(libptsort_la_LIBADD) $(LIBS)
 external/libucl/src/$(am__dirstamp):
 	@$(MKDIR_P) external/libucl/src
 	@: > external/libucl/src/$(am__dirstamp)
 external/libucl/src/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) external/libucl/src/$(DEPDIR)
 	@: > external/libucl/src/$(DEPDIR)/$(am__dirstamp)
-external/libucl/src/libucl_a-ucl_emitter.$(OBJEXT):  \
+external/libucl/src/libucl_la-ucl_emitter.lo:  \
 	external/libucl/src/$(am__dirstamp) \
 	external/libucl/src/$(DEPDIR)/$(am__dirstamp)
-external/libucl/src/libucl_a-ucl_emitter_streamline.$(OBJEXT):  \
+external/libucl/src/libucl_la-ucl_emitter_streamline.lo:  \
 	external/libucl/src/$(am__dirstamp) \
 	external/libucl/src/$(DEPDIR)/$(am__dirstamp)
-external/libucl/src/libucl_a-ucl_emitter_utils.$(OBJEXT):  \
+external/libucl/src/libucl_la-ucl_emitter_utils.lo:  \
 	external/libucl/src/$(am__dirstamp) \
 	external/libucl/src/$(DEPDIR)/$(am__dirstamp)
-external/libucl/src/libucl_a-ucl_hash.$(OBJEXT):  \
+external/libucl/src/libucl_la-ucl_hash.lo:  \
 	external/libucl/src/$(am__dirstamp) \
 	external/libucl/src/$(DEPDIR)/$(am__dirstamp)
-external/libucl/src/libucl_a-ucl_parser.$(OBJEXT):  \
+external/libucl/src/libucl_la-ucl_parser.lo:  \
 	external/libucl/src/$(am__dirstamp) \
 	external/libucl/src/$(DEPDIR)/$(am__dirstamp)
-external/libucl/src/libucl_a-ucl_util.$(OBJEXT):  \
+external/libucl/src/libucl_la-ucl_util.lo:  \
 	external/libucl/src/$(am__dirstamp) \
 	external/libucl/src/$(DEPDIR)/$(am__dirstamp)
-external/libucl/src/libucl_a-xxhash.$(OBJEXT):  \
+external/libucl/src/libucl_la-xxhash.lo:  \
 	external/libucl/src/$(am__dirstamp) \
 	external/libucl/src/$(DEPDIR)/$(am__dirstamp)
 
-libucl.a: $(libucl_a_OBJECTS) $(libucl_a_DEPENDENCIES) $(EXTRA_libucl_a_DEPENDENCIES) 
-	$(AM_V_at)-rm -f libucl.a
-	$(AM_V_AR)$(libucl_a_AR) libucl.a $(libucl_a_OBJECTS) $(libucl_a_LIBADD)
-	$(AM_V_at)$(RANLIB) libucl.a
+libucl.la: $(libucl_la_OBJECTS) $(libucl_la_DEPENDENCIES) $(EXTRA_libucl_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(libucl_la_LINK)  $(libucl_la_OBJECTS) $(libucl_la_LIBADD) $(LIBS)
 src/libexec/poudriere/cachec/$(am__dirstamp):
 	@$(MKDIR_P) src/libexec/poudriere/cachec
 	@: > src/libexec/poudriere/cachec/$(am__dirstamp)
@@ -1492,10 +1547,14 @@ uninstall-dist_rcSCRIPTS:
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f external/libnv/*.$(OBJEXT)
+	-rm -f external/libnv/*.lo
 	-rm -f external/libnv/sys/*.$(OBJEXT)
+	-rm -f external/libnv/sys/*.lo
 	-rm -f external/libucl/src/*.$(OBJEXT)
+	-rm -f external/libucl/src/*.lo
 	-rm -f external/ptsort/bin/*.$(OBJEXT)
 	-rm -f external/ptsort/lib/*.$(OBJEXT)
+	-rm -f external/ptsort/lib/*.lo
 	-rm -f external/sh/*.$(OBJEXT)
 	-rm -f external/sh/bltin/*.$(OBJEXT)
 	-rm -f external/sh_compat/*.$(OBJEXT)
@@ -1520,20 +1579,20 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@external/libnv/$(DEPDIR)/libnv_a-msgio.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/libnv/sys/$(DEPDIR)/libnv_a-dnvlist.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/libnv/sys/$(DEPDIR)/libnv_a-nvlist.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/libnv/sys/$(DEPDIR)/libnv_a-nvpair.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_streamline.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_utils.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-ucl_hash.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_a-xxhash.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/libnv/$(DEPDIR)/libnv_la-msgio.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/libnv/sys/$(DEPDIR)/libnv_la-dnvlist.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/libnv/sys/$(DEPDIR)/libnv_la-nvlist.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/libnv/sys/$(DEPDIR)/libnv_la-nvpair.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_streamline.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_utils.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_hash.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_parser.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-xxhash.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/lib/$(DEPDIR)/libptsort_a-aa_tree.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/lib/$(DEPDIR)/libptsort_a-fline.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh/$(DEPDIR)/sh-alias.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh/$(DEPDIR)/sh-arith_yacc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/sh/$(DEPDIR)/sh-arith_yylex.Po@am__quote@ # am--include-marker
@@ -1628,187 +1687,104 @@ am--depfiles: $(am__depfiles_remade)
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-external/libnv/sys/libnv_a-dnvlist.o: external/libnv/sys/dnvlist.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/sys/libnv_a-dnvlist.o -MD -MP -MF external/libnv/sys/$(DEPDIR)/libnv_a-dnvlist.Tpo -c -o external/libnv/sys/libnv_a-dnvlist.o `test -f 'external/libnv/sys/dnvlist.c' || echo '$(srcdir)/'`external/libnv/sys/dnvlist.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/sys/$(DEPDIR)/libnv_a-dnvlist.Tpo external/libnv/sys/$(DEPDIR)/libnv_a-dnvlist.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/sys/dnvlist.c' object='external/libnv/sys/libnv_a-dnvlist.o' libtool=no @AMDEPBACKSLASH@
+.c.lo:
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/sys/libnv_a-dnvlist.o `test -f 'external/libnv/sys/dnvlist.c' || echo '$(srcdir)/'`external/libnv/sys/dnvlist.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
-external/libnv/sys/libnv_a-dnvlist.obj: external/libnv/sys/dnvlist.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/sys/libnv_a-dnvlist.obj -MD -MP -MF external/libnv/sys/$(DEPDIR)/libnv_a-dnvlist.Tpo -c -o external/libnv/sys/libnv_a-dnvlist.obj `if test -f 'external/libnv/sys/dnvlist.c'; then $(CYGPATH_W) 'external/libnv/sys/dnvlist.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/sys/dnvlist.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/sys/$(DEPDIR)/libnv_a-dnvlist.Tpo external/libnv/sys/$(DEPDIR)/libnv_a-dnvlist.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/sys/dnvlist.c' object='external/libnv/sys/libnv_a-dnvlist.obj' libtool=no @AMDEPBACKSLASH@
+external/libnv/sys/libnv_la-dnvlist.lo: external/libnv/sys/dnvlist.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_la_CFLAGS) $(CFLAGS) -MT external/libnv/sys/libnv_la-dnvlist.lo -MD -MP -MF external/libnv/sys/$(DEPDIR)/libnv_la-dnvlist.Tpo -c -o external/libnv/sys/libnv_la-dnvlist.lo `test -f 'external/libnv/sys/dnvlist.c' || echo '$(srcdir)/'`external/libnv/sys/dnvlist.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/sys/$(DEPDIR)/libnv_la-dnvlist.Tpo external/libnv/sys/$(DEPDIR)/libnv_la-dnvlist.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/sys/dnvlist.c' object='external/libnv/sys/libnv_la-dnvlist.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/sys/libnv_a-dnvlist.obj `if test -f 'external/libnv/sys/dnvlist.c'; then $(CYGPATH_W) 'external/libnv/sys/dnvlist.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/sys/dnvlist.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_la_CFLAGS) $(CFLAGS) -c -o external/libnv/sys/libnv_la-dnvlist.lo `test -f 'external/libnv/sys/dnvlist.c' || echo '$(srcdir)/'`external/libnv/sys/dnvlist.c
 
-external/libnv/libnv_a-msgio.o: external/libnv/msgio.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/libnv_a-msgio.o -MD -MP -MF external/libnv/$(DEPDIR)/libnv_a-msgio.Tpo -c -o external/libnv/libnv_a-msgio.o `test -f 'external/libnv/msgio.c' || echo '$(srcdir)/'`external/libnv/msgio.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/$(DEPDIR)/libnv_a-msgio.Tpo external/libnv/$(DEPDIR)/libnv_a-msgio.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/msgio.c' object='external/libnv/libnv_a-msgio.o' libtool=no @AMDEPBACKSLASH@
+external/libnv/libnv_la-msgio.lo: external/libnv/msgio.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_la_CFLAGS) $(CFLAGS) -MT external/libnv/libnv_la-msgio.lo -MD -MP -MF external/libnv/$(DEPDIR)/libnv_la-msgio.Tpo -c -o external/libnv/libnv_la-msgio.lo `test -f 'external/libnv/msgio.c' || echo '$(srcdir)/'`external/libnv/msgio.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/$(DEPDIR)/libnv_la-msgio.Tpo external/libnv/$(DEPDIR)/libnv_la-msgio.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/msgio.c' object='external/libnv/libnv_la-msgio.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/libnv_a-msgio.o `test -f 'external/libnv/msgio.c' || echo '$(srcdir)/'`external/libnv/msgio.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_la_CFLAGS) $(CFLAGS) -c -o external/libnv/libnv_la-msgio.lo `test -f 'external/libnv/msgio.c' || echo '$(srcdir)/'`external/libnv/msgio.c
 
-external/libnv/libnv_a-msgio.obj: external/libnv/msgio.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/libnv_a-msgio.obj -MD -MP -MF external/libnv/$(DEPDIR)/libnv_a-msgio.Tpo -c -o external/libnv/libnv_a-msgio.obj `if test -f 'external/libnv/msgio.c'; then $(CYGPATH_W) 'external/libnv/msgio.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/msgio.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/$(DEPDIR)/libnv_a-msgio.Tpo external/libnv/$(DEPDIR)/libnv_a-msgio.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/msgio.c' object='external/libnv/libnv_a-msgio.obj' libtool=no @AMDEPBACKSLASH@
+external/libnv/sys/libnv_la-nvlist.lo: external/libnv/sys/nvlist.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_la_CFLAGS) $(CFLAGS) -MT external/libnv/sys/libnv_la-nvlist.lo -MD -MP -MF external/libnv/sys/$(DEPDIR)/libnv_la-nvlist.Tpo -c -o external/libnv/sys/libnv_la-nvlist.lo `test -f 'external/libnv/sys/nvlist.c' || echo '$(srcdir)/'`external/libnv/sys/nvlist.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/sys/$(DEPDIR)/libnv_la-nvlist.Tpo external/libnv/sys/$(DEPDIR)/libnv_la-nvlist.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/sys/nvlist.c' object='external/libnv/sys/libnv_la-nvlist.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/libnv_a-msgio.obj `if test -f 'external/libnv/msgio.c'; then $(CYGPATH_W) 'external/libnv/msgio.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/msgio.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_la_CFLAGS) $(CFLAGS) -c -o external/libnv/sys/libnv_la-nvlist.lo `test -f 'external/libnv/sys/nvlist.c' || echo '$(srcdir)/'`external/libnv/sys/nvlist.c
 
-external/libnv/sys/libnv_a-nvlist.o: external/libnv/sys/nvlist.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/sys/libnv_a-nvlist.o -MD -MP -MF external/libnv/sys/$(DEPDIR)/libnv_a-nvlist.Tpo -c -o external/libnv/sys/libnv_a-nvlist.o `test -f 'external/libnv/sys/nvlist.c' || echo '$(srcdir)/'`external/libnv/sys/nvlist.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/sys/$(DEPDIR)/libnv_a-nvlist.Tpo external/libnv/sys/$(DEPDIR)/libnv_a-nvlist.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/sys/nvlist.c' object='external/libnv/sys/libnv_a-nvlist.o' libtool=no @AMDEPBACKSLASH@
+external/libnv/sys/libnv_la-nvpair.lo: external/libnv/sys/nvpair.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_la_CFLAGS) $(CFLAGS) -MT external/libnv/sys/libnv_la-nvpair.lo -MD -MP -MF external/libnv/sys/$(DEPDIR)/libnv_la-nvpair.Tpo -c -o external/libnv/sys/libnv_la-nvpair.lo `test -f 'external/libnv/sys/nvpair.c' || echo '$(srcdir)/'`external/libnv/sys/nvpair.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/sys/$(DEPDIR)/libnv_la-nvpair.Tpo external/libnv/sys/$(DEPDIR)/libnv_la-nvpair.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/sys/nvpair.c' object='external/libnv/sys/libnv_la-nvpair.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/sys/libnv_a-nvlist.o `test -f 'external/libnv/sys/nvlist.c' || echo '$(srcdir)/'`external/libnv/sys/nvlist.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_la_CFLAGS) $(CFLAGS) -c -o external/libnv/sys/libnv_la-nvpair.lo `test -f 'external/libnv/sys/nvpair.c' || echo '$(srcdir)/'`external/libnv/sys/nvpair.c
 
-external/libnv/sys/libnv_a-nvlist.obj: external/libnv/sys/nvlist.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/sys/libnv_a-nvlist.obj -MD -MP -MF external/libnv/sys/$(DEPDIR)/libnv_a-nvlist.Tpo -c -o external/libnv/sys/libnv_a-nvlist.obj `if test -f 'external/libnv/sys/nvlist.c'; then $(CYGPATH_W) 'external/libnv/sys/nvlist.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/sys/nvlist.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/sys/$(DEPDIR)/libnv_a-nvlist.Tpo external/libnv/sys/$(DEPDIR)/libnv_a-nvlist.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/sys/nvlist.c' object='external/libnv/sys/libnv_a-nvlist.obj' libtool=no @AMDEPBACKSLASH@
+external/ptsort/lib/libptsort_la-aa_tree.lo: external/ptsort/lib/aa_tree.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external/ptsort/lib/libptsort_la-aa_tree.lo -MD -MP -MF external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Tpo -c -o external/ptsort/lib/libptsort_la-aa_tree.lo `test -f 'external/ptsort/lib/aa_tree.c' || echo '$(srcdir)/'`external/ptsort/lib/aa_tree.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Tpo external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/ptsort/lib/aa_tree.c' object='external/ptsort/lib/libptsort_la-aa_tree.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/sys/libnv_a-nvlist.obj `if test -f 'external/libnv/sys/nvlist.c'; then $(CYGPATH_W) 'external/libnv/sys/nvlist.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/sys/nvlist.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external/ptsort/lib/libptsort_la-aa_tree.lo `test -f 'external/ptsort/lib/aa_tree.c' || echo '$(srcdir)/'`external/ptsort/lib/aa_tree.c
 
-external/libnv/sys/libnv_a-nvpair.o: external/libnv/sys/nvpair.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/sys/libnv_a-nvpair.o -MD -MP -MF external/libnv/sys/$(DEPDIR)/libnv_a-nvpair.Tpo -c -o external/libnv/sys/libnv_a-nvpair.o `test -f 'external/libnv/sys/nvpair.c' || echo '$(srcdir)/'`external/libnv/sys/nvpair.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/sys/$(DEPDIR)/libnv_a-nvpair.Tpo external/libnv/sys/$(DEPDIR)/libnv_a-nvpair.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/sys/nvpair.c' object='external/libnv/sys/libnv_a-nvpair.o' libtool=no @AMDEPBACKSLASH@
+external/ptsort/lib/libptsort_la-fline.lo: external/ptsort/lib/fline.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external/ptsort/lib/libptsort_la-fline.lo -MD -MP -MF external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Tpo -c -o external/ptsort/lib/libptsort_la-fline.lo `test -f 'external/ptsort/lib/fline.c' || echo '$(srcdir)/'`external/ptsort/lib/fline.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Tpo external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/ptsort/lib/fline.c' object='external/ptsort/lib/libptsort_la-fline.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/sys/libnv_a-nvpair.o `test -f 'external/libnv/sys/nvpair.c' || echo '$(srcdir)/'`external/libnv/sys/nvpair.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external/ptsort/lib/libptsort_la-fline.lo `test -f 'external/ptsort/lib/fline.c' || echo '$(srcdir)/'`external/ptsort/lib/fline.c
 
-external/libnv/sys/libnv_a-nvpair.obj: external/libnv/sys/nvpair.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -MT external/libnv/sys/libnv_a-nvpair.obj -MD -MP -MF external/libnv/sys/$(DEPDIR)/libnv_a-nvpair.Tpo -c -o external/libnv/sys/libnv_a-nvpair.obj `if test -f 'external/libnv/sys/nvpair.c'; then $(CYGPATH_W) 'external/libnv/sys/nvpair.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/sys/nvpair.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libnv/sys/$(DEPDIR)/libnv_a-nvpair.Tpo external/libnv/sys/$(DEPDIR)/libnv_a-nvpair.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libnv/sys/nvpair.c' object='external/libnv/sys/libnv_a-nvpair.obj' libtool=no @AMDEPBACKSLASH@
+external/libucl/src/libucl_la-ucl_emitter.lo: external/libucl/src/ucl_emitter.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_la-ucl_emitter.lo -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter.Tpo -c -o external/libucl/src/libucl_la-ucl_emitter.lo `test -f 'external/libucl/src/ucl_emitter.c' || echo '$(srcdir)/'`external/libucl/src/ucl_emitter.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter.Tpo external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_emitter.c' object='external/libucl/src/libucl_la-ucl_emitter.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnv_a_CFLAGS) $(CFLAGS) -c -o external/libnv/sys/libnv_a-nvpair.obj `if test -f 'external/libnv/sys/nvpair.c'; then $(CYGPATH_W) 'external/libnv/sys/nvpair.c'; else $(CYGPATH_W) '$(srcdir)/external/libnv/sys/nvpair.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_la-ucl_emitter.lo `test -f 'external/libucl/src/ucl_emitter.c' || echo '$(srcdir)/'`external/libucl/src/ucl_emitter.c
 
-external/ptsort/lib/libptsort_a-aa_tree.o: external/ptsort/lib/aa_tree.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external/ptsort/lib/libptsort_a-aa_tree.o -MD -MP -MF external/ptsort/lib/$(DEPDIR)/libptsort_a-aa_tree.Tpo -c -o external/ptsort/lib/libptsort_a-aa_tree.o `test -f 'external/ptsort/lib/aa_tree.c' || echo '$(srcdir)/'`external/ptsort/lib/aa_tree.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/ptsort/lib/$(DEPDIR)/libptsort_a-aa_tree.Tpo external/ptsort/lib/$(DEPDIR)/libptsort_a-aa_tree.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/ptsort/lib/aa_tree.c' object='external/ptsort/lib/libptsort_a-aa_tree.o' libtool=no @AMDEPBACKSLASH@
+external/libucl/src/libucl_la-ucl_emitter_streamline.lo: external/libucl/src/ucl_emitter_streamline.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_la-ucl_emitter_streamline.lo -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_streamline.Tpo -c -o external/libucl/src/libucl_la-ucl_emitter_streamline.lo `test -f 'external/libucl/src/ucl_emitter_streamline.c' || echo '$(srcdir)/'`external/libucl/src/ucl_emitter_streamline.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_streamline.Tpo external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_streamline.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_emitter_streamline.c' object='external/libucl/src/libucl_la-ucl_emitter_streamline.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external/ptsort/lib/libptsort_a-aa_tree.o `test -f 'external/ptsort/lib/aa_tree.c' || echo '$(srcdir)/'`external/ptsort/lib/aa_tree.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_la-ucl_emitter_streamline.lo `test -f 'external/libucl/src/ucl_emitter_streamline.c' || echo '$(srcdir)/'`external/libucl/src/ucl_emitter_streamline.c
 
-external/ptsort/lib/libptsort_a-aa_tree.obj: external/ptsort/lib/aa_tree.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external/ptsort/lib/libptsort_a-aa_tree.obj -MD -MP -MF external/ptsort/lib/$(DEPDIR)/libptsort_a-aa_tree.Tpo -c -o external/ptsort/lib/libptsort_a-aa_tree.obj `if test -f 'external/ptsort/lib/aa_tree.c'; then $(CYGPATH_W) 'external/ptsort/lib/aa_tree.c'; else $(CYGPATH_W) '$(srcdir)/external/ptsort/lib/aa_tree.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/ptsort/lib/$(DEPDIR)/libptsort_a-aa_tree.Tpo external/ptsort/lib/$(DEPDIR)/libptsort_a-aa_tree.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/ptsort/lib/aa_tree.c' object='external/ptsort/lib/libptsort_a-aa_tree.obj' libtool=no @AMDEPBACKSLASH@
+external/libucl/src/libucl_la-ucl_emitter_utils.lo: external/libucl/src/ucl_emitter_utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_la-ucl_emitter_utils.lo -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_utils.Tpo -c -o external/libucl/src/libucl_la-ucl_emitter_utils.lo `test -f 'external/libucl/src/ucl_emitter_utils.c' || echo '$(srcdir)/'`external/libucl/src/ucl_emitter_utils.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_utils.Tpo external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_utils.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_emitter_utils.c' object='external/libucl/src/libucl_la-ucl_emitter_utils.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external/ptsort/lib/libptsort_a-aa_tree.obj `if test -f 'external/ptsort/lib/aa_tree.c'; then $(CYGPATH_W) 'external/ptsort/lib/aa_tree.c'; else $(CYGPATH_W) '$(srcdir)/external/ptsort/lib/aa_tree.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_la-ucl_emitter_utils.lo `test -f 'external/libucl/src/ucl_emitter_utils.c' || echo '$(srcdir)/'`external/libucl/src/ucl_emitter_utils.c
 
-external/ptsort/lib/libptsort_a-fline.o: external/ptsort/lib/fline.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external/ptsort/lib/libptsort_a-fline.o -MD -MP -MF external/ptsort/lib/$(DEPDIR)/libptsort_a-fline.Tpo -c -o external/ptsort/lib/libptsort_a-fline.o `test -f 'external/ptsort/lib/fline.c' || echo '$(srcdir)/'`external/ptsort/lib/fline.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/ptsort/lib/$(DEPDIR)/libptsort_a-fline.Tpo external/ptsort/lib/$(DEPDIR)/libptsort_a-fline.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/ptsort/lib/fline.c' object='external/ptsort/lib/libptsort_a-fline.o' libtool=no @AMDEPBACKSLASH@
+external/libucl/src/libucl_la-ucl_hash.lo: external/libucl/src/ucl_hash.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_la-ucl_hash.lo -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_la-ucl_hash.Tpo -c -o external/libucl/src/libucl_la-ucl_hash.lo `test -f 'external/libucl/src/ucl_hash.c' || echo '$(srcdir)/'`external/libucl/src/ucl_hash.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_la-ucl_hash.Tpo external/libucl/src/$(DEPDIR)/libucl_la-ucl_hash.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_hash.c' object='external/libucl/src/libucl_la-ucl_hash.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external/ptsort/lib/libptsort_a-fline.o `test -f 'external/ptsort/lib/fline.c' || echo '$(srcdir)/'`external/ptsort/lib/fline.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_la-ucl_hash.lo `test -f 'external/libucl/src/ucl_hash.c' || echo '$(srcdir)/'`external/libucl/src/ucl_hash.c
 
-external/ptsort/lib/libptsort_a-fline.obj: external/ptsort/lib/fline.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external/ptsort/lib/libptsort_a-fline.obj -MD -MP -MF external/ptsort/lib/$(DEPDIR)/libptsort_a-fline.Tpo -c -o external/ptsort/lib/libptsort_a-fline.obj `if test -f 'external/ptsort/lib/fline.c'; then $(CYGPATH_W) 'external/ptsort/lib/fline.c'; else $(CYGPATH_W) '$(srcdir)/external/ptsort/lib/fline.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/ptsort/lib/$(DEPDIR)/libptsort_a-fline.Tpo external/ptsort/lib/$(DEPDIR)/libptsort_a-fline.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/ptsort/lib/fline.c' object='external/ptsort/lib/libptsort_a-fline.obj' libtool=no @AMDEPBACKSLASH@
+external/libucl/src/libucl_la-ucl_parser.lo: external/libucl/src/ucl_parser.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_la-ucl_parser.lo -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_la-ucl_parser.Tpo -c -o external/libucl/src/libucl_la-ucl_parser.lo `test -f 'external/libucl/src/ucl_parser.c' || echo '$(srcdir)/'`external/libucl/src/ucl_parser.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_la-ucl_parser.Tpo external/libucl/src/$(DEPDIR)/libucl_la-ucl_parser.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_parser.c' object='external/libucl/src/libucl_la-ucl_parser.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libptsort_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external/ptsort/lib/libptsort_a-fline.obj `if test -f 'external/ptsort/lib/fline.c'; then $(CYGPATH_W) 'external/ptsort/lib/fline.c'; else $(CYGPATH_W) '$(srcdir)/external/ptsort/lib/fline.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_la-ucl_parser.lo `test -f 'external/libucl/src/ucl_parser.c' || echo '$(srcdir)/'`external/libucl/src/ucl_parser.c
 
-external/libucl/src/libucl_a-ucl_emitter.o: external/libucl/src/ucl_emitter.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_a-ucl_emitter.o -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Tpo -c -o external/libucl/src/libucl_a-ucl_emitter.o `test -f 'external/libucl/src/ucl_emitter.c' || echo '$(srcdir)/'`external/libucl/src/ucl_emitter.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Tpo external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_emitter.c' object='external/libucl/src/libucl_a-ucl_emitter.o' libtool=no @AMDEPBACKSLASH@
+external/libucl/src/libucl_la-ucl_util.lo: external/libucl/src/ucl_util.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_la-ucl_util.lo -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Tpo -c -o external/libucl/src/libucl_la-ucl_util.lo `test -f 'external/libucl/src/ucl_util.c' || echo '$(srcdir)/'`external/libucl/src/ucl_util.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Tpo external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_util.c' object='external/libucl/src/libucl_la-ucl_util.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_a-ucl_emitter.o `test -f 'external/libucl/src/ucl_emitter.c' || echo '$(srcdir)/'`external/libucl/src/ucl_emitter.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_la-ucl_util.lo `test -f 'external/libucl/src/ucl_util.c' || echo '$(srcdir)/'`external/libucl/src/ucl_util.c
 
-external/libucl/src/libucl_a-ucl_emitter.obj: external/libucl/src/ucl_emitter.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_a-ucl_emitter.obj -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Tpo -c -o external/libucl/src/libucl_a-ucl_emitter.obj `if test -f 'external/libucl/src/ucl_emitter.c'; then $(CYGPATH_W) 'external/libucl/src/ucl_emitter.c'; else $(CYGPATH_W) '$(srcdir)/external/libucl/src/ucl_emitter.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Tpo external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_emitter.c' object='external/libucl/src/libucl_a-ucl_emitter.obj' libtool=no @AMDEPBACKSLASH@
+external/libucl/src/libucl_la-xxhash.lo: external/libucl/src/xxhash.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_la-xxhash.lo -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_la-xxhash.Tpo -c -o external/libucl/src/libucl_la-xxhash.lo `test -f 'external/libucl/src/xxhash.c' || echo '$(srcdir)/'`external/libucl/src/xxhash.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_la-xxhash.Tpo external/libucl/src/$(DEPDIR)/libucl_la-xxhash.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/xxhash.c' object='external/libucl/src/libucl_la-xxhash.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_a-ucl_emitter.obj `if test -f 'external/libucl/src/ucl_emitter.c'; then $(CYGPATH_W) 'external/libucl/src/ucl_emitter.c'; else $(CYGPATH_W) '$(srcdir)/external/libucl/src/ucl_emitter.c'; fi`
-
-external/libucl/src/libucl_a-ucl_emitter_streamline.o: external/libucl/src/ucl_emitter_streamline.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_a-ucl_emitter_streamline.o -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_streamline.Tpo -c -o external/libucl/src/libucl_a-ucl_emitter_streamline.o `test -f 'external/libucl/src/ucl_emitter_streamline.c' || echo '$(srcdir)/'`external/libucl/src/ucl_emitter_streamline.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_streamline.Tpo external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_streamline.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_emitter_streamline.c' object='external/libucl/src/libucl_a-ucl_emitter_streamline.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_a-ucl_emitter_streamline.o `test -f 'external/libucl/src/ucl_emitter_streamline.c' || echo '$(srcdir)/'`external/libucl/src/ucl_emitter_streamline.c
-
-external/libucl/src/libucl_a-ucl_emitter_streamline.obj: external/libucl/src/ucl_emitter_streamline.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_a-ucl_emitter_streamline.obj -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_streamline.Tpo -c -o external/libucl/src/libucl_a-ucl_emitter_streamline.obj `if test -f 'external/libucl/src/ucl_emitter_streamline.c'; then $(CYGPATH_W) 'external/libucl/src/ucl_emitter_streamline.c'; else $(CYGPATH_W) '$(srcdir)/external/libucl/src/ucl_emitter_streamline.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_streamline.Tpo external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_streamline.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_emitter_streamline.c' object='external/libucl/src/libucl_a-ucl_emitter_streamline.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_a-ucl_emitter_streamline.obj `if test -f 'external/libucl/src/ucl_emitter_streamline.c'; then $(CYGPATH_W) 'external/libucl/src/ucl_emitter_streamline.c'; else $(CYGPATH_W) '$(srcdir)/external/libucl/src/ucl_emitter_streamline.c'; fi`
-
-external/libucl/src/libucl_a-ucl_emitter_utils.o: external/libucl/src/ucl_emitter_utils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_a-ucl_emitter_utils.o -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_utils.Tpo -c -o external/libucl/src/libucl_a-ucl_emitter_utils.o `test -f 'external/libucl/src/ucl_emitter_utils.c' || echo '$(srcdir)/'`external/libucl/src/ucl_emitter_utils.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_utils.Tpo external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_utils.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_emitter_utils.c' object='external/libucl/src/libucl_a-ucl_emitter_utils.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_a-ucl_emitter_utils.o `test -f 'external/libucl/src/ucl_emitter_utils.c' || echo '$(srcdir)/'`external/libucl/src/ucl_emitter_utils.c
-
-external/libucl/src/libucl_a-ucl_emitter_utils.obj: external/libucl/src/ucl_emitter_utils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_a-ucl_emitter_utils.obj -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_utils.Tpo -c -o external/libucl/src/libucl_a-ucl_emitter_utils.obj `if test -f 'external/libucl/src/ucl_emitter_utils.c'; then $(CYGPATH_W) 'external/libucl/src/ucl_emitter_utils.c'; else $(CYGPATH_W) '$(srcdir)/external/libucl/src/ucl_emitter_utils.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_utils.Tpo external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_utils.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_emitter_utils.c' object='external/libucl/src/libucl_a-ucl_emitter_utils.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_a-ucl_emitter_utils.obj `if test -f 'external/libucl/src/ucl_emitter_utils.c'; then $(CYGPATH_W) 'external/libucl/src/ucl_emitter_utils.c'; else $(CYGPATH_W) '$(srcdir)/external/libucl/src/ucl_emitter_utils.c'; fi`
-
-external/libucl/src/libucl_a-ucl_hash.o: external/libucl/src/ucl_hash.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_a-ucl_hash.o -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_a-ucl_hash.Tpo -c -o external/libucl/src/libucl_a-ucl_hash.o `test -f 'external/libucl/src/ucl_hash.c' || echo '$(srcdir)/'`external/libucl/src/ucl_hash.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_a-ucl_hash.Tpo external/libucl/src/$(DEPDIR)/libucl_a-ucl_hash.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_hash.c' object='external/libucl/src/libucl_a-ucl_hash.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_a-ucl_hash.o `test -f 'external/libucl/src/ucl_hash.c' || echo '$(srcdir)/'`external/libucl/src/ucl_hash.c
-
-external/libucl/src/libucl_a-ucl_hash.obj: external/libucl/src/ucl_hash.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_a-ucl_hash.obj -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_a-ucl_hash.Tpo -c -o external/libucl/src/libucl_a-ucl_hash.obj `if test -f 'external/libucl/src/ucl_hash.c'; then $(CYGPATH_W) 'external/libucl/src/ucl_hash.c'; else $(CYGPATH_W) '$(srcdir)/external/libucl/src/ucl_hash.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_a-ucl_hash.Tpo external/libucl/src/$(DEPDIR)/libucl_a-ucl_hash.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_hash.c' object='external/libucl/src/libucl_a-ucl_hash.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_a-ucl_hash.obj `if test -f 'external/libucl/src/ucl_hash.c'; then $(CYGPATH_W) 'external/libucl/src/ucl_hash.c'; else $(CYGPATH_W) '$(srcdir)/external/libucl/src/ucl_hash.c'; fi`
-
-external/libucl/src/libucl_a-ucl_parser.o: external/libucl/src/ucl_parser.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_a-ucl_parser.o -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Tpo -c -o external/libucl/src/libucl_a-ucl_parser.o `test -f 'external/libucl/src/ucl_parser.c' || echo '$(srcdir)/'`external/libucl/src/ucl_parser.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Tpo external/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_parser.c' object='external/libucl/src/libucl_a-ucl_parser.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_a-ucl_parser.o `test -f 'external/libucl/src/ucl_parser.c' || echo '$(srcdir)/'`external/libucl/src/ucl_parser.c
-
-external/libucl/src/libucl_a-ucl_parser.obj: external/libucl/src/ucl_parser.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_a-ucl_parser.obj -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Tpo -c -o external/libucl/src/libucl_a-ucl_parser.obj `if test -f 'external/libucl/src/ucl_parser.c'; then $(CYGPATH_W) 'external/libucl/src/ucl_parser.c'; else $(CYGPATH_W) '$(srcdir)/external/libucl/src/ucl_parser.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Tpo external/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_parser.c' object='external/libucl/src/libucl_a-ucl_parser.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_a-ucl_parser.obj `if test -f 'external/libucl/src/ucl_parser.c'; then $(CYGPATH_W) 'external/libucl/src/ucl_parser.c'; else $(CYGPATH_W) '$(srcdir)/external/libucl/src/ucl_parser.c'; fi`
-
-external/libucl/src/libucl_a-ucl_util.o: external/libucl/src/ucl_util.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_a-ucl_util.o -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Tpo -c -o external/libucl/src/libucl_a-ucl_util.o `test -f 'external/libucl/src/ucl_util.c' || echo '$(srcdir)/'`external/libucl/src/ucl_util.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Tpo external/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_util.c' object='external/libucl/src/libucl_a-ucl_util.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_a-ucl_util.o `test -f 'external/libucl/src/ucl_util.c' || echo '$(srcdir)/'`external/libucl/src/ucl_util.c
-
-external/libucl/src/libucl_a-ucl_util.obj: external/libucl/src/ucl_util.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_a-ucl_util.obj -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Tpo -c -o external/libucl/src/libucl_a-ucl_util.obj `if test -f 'external/libucl/src/ucl_util.c'; then $(CYGPATH_W) 'external/libucl/src/ucl_util.c'; else $(CYGPATH_W) '$(srcdir)/external/libucl/src/ucl_util.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Tpo external/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_util.c' object='external/libucl/src/libucl_a-ucl_util.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_a-ucl_util.obj `if test -f 'external/libucl/src/ucl_util.c'; then $(CYGPATH_W) 'external/libucl/src/ucl_util.c'; else $(CYGPATH_W) '$(srcdir)/external/libucl/src/ucl_util.c'; fi`
-
-external/libucl/src/libucl_a-xxhash.o: external/libucl/src/xxhash.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_a-xxhash.o -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_a-xxhash.Tpo -c -o external/libucl/src/libucl_a-xxhash.o `test -f 'external/libucl/src/xxhash.c' || echo '$(srcdir)/'`external/libucl/src/xxhash.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_a-xxhash.Tpo external/libucl/src/$(DEPDIR)/libucl_a-xxhash.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/xxhash.c' object='external/libucl/src/libucl_a-xxhash.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_a-xxhash.o `test -f 'external/libucl/src/xxhash.c' || echo '$(srcdir)/'`external/libucl/src/xxhash.c
-
-external/libucl/src/libucl_a-xxhash.obj: external/libucl/src/xxhash.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_a-xxhash.obj -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_a-xxhash.Tpo -c -o external/libucl/src/libucl_a-xxhash.obj `if test -f 'external/libucl/src/xxhash.c'; then $(CYGPATH_W) 'external/libucl/src/xxhash.c'; else $(CYGPATH_W) '$(srcdir)/external/libucl/src/xxhash.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_a-xxhash.Tpo external/libucl/src/$(DEPDIR)/libucl_a-xxhash.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/xxhash.c' object='external/libucl/src/libucl_a-xxhash.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_a_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_a-xxhash.obj `if test -f 'external/libucl/src/xxhash.c'; then $(CYGPATH_W) 'external/libucl/src/xxhash.c'; else $(CYGPATH_W) '$(srcdir)/external/libucl/src/xxhash.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_la-xxhash.lo `test -f 'external/libucl/src/xxhash.c' || echo '$(srcdir)/'`external/libucl/src/xxhash.c
 
 src/libexec/poudriere/cached/cached-cached.o: src/libexec/poudriere/cached/cached.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cached_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cached/cached-cached.o -MD -MP -MF src/libexec/poudriere/cached/$(DEPDIR)/cached-cached.Tpo -c -o src/libexec/poudriere/cached/cached-cached.o `test -f 'src/libexec/poudriere/cached/cached.c' || echo '$(srcdir)/'`src/libexec/poudriere/cached/cached.c
@@ -2663,6 +2639,19 @@ src/poudriere-sh/sh-builtins.obj: src/poudriere-sh/builtins.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/builtins.c' object='src/poudriere-sh/sh-builtins.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-builtins.obj `if test -f 'src/poudriere-sh/builtins.c'; then $(CYGPATH_W) 'src/poudriere-sh/builtins.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/builtins.c'; fi`
+
+mostlyclean-libtool:
+	-rm -f *.lo
+
+clean-libtool:
+	-rm -rf .libs _libs
+	-rm -rf external/libnv/.libs external/libnv/_libs
+	-rm -rf external/libnv/sys/.libs external/libnv/sys/_libs
+	-rm -rf external/libucl/src/.libs external/libucl/src/_libs
+	-rm -rf external/ptsort/lib/.libs external/ptsort/lib/_libs
+
+distclean-libtool:
+	-rm -f libtool config.lt
 install-man8: $(dist_man_MANS)
 	@$(NORMAL_INSTALL)
 	@list1=''; \
@@ -3299,7 +3288,7 @@ distcleancheck: distclean
 	       exit 1; } >&2
 check-am: all-am
 check: check-recursive
-all-am: Makefile $(PROGRAMS) $(LIBRARIES) $(SCRIPTS) $(MANS) $(DATA) \
+all-am: Makefile $(PROGRAMS) $(LTLIBRARIES) $(SCRIPTS) $(MANS) $(DATA) \
 		$(HEADERS)
 installdirs: installdirs-recursive
 installdirs-am:
@@ -3390,25 +3379,25 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-generic clean-noinstLIBRARIES clean-pkglibexecPROGRAMS \
-	mostlyclean-am
+clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
+	clean-pkglibexecPROGRAMS mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-		-rm -f external/libnv/$(DEPDIR)/libnv_a-msgio.Po
-	-rm -f external/libnv/sys/$(DEPDIR)/libnv_a-dnvlist.Po
-	-rm -f external/libnv/sys/$(DEPDIR)/libnv_a-nvlist.Po
-	-rm -f external/libnv/sys/$(DEPDIR)/libnv_a-nvpair.Po
-	-rm -f external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Po
-	-rm -f external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_streamline.Po
-	-rm -f external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_utils.Po
-	-rm -f external/libucl/src/$(DEPDIR)/libucl_a-ucl_hash.Po
-	-rm -f external/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Po
-	-rm -f external/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Po
-	-rm -f external/libucl/src/$(DEPDIR)/libucl_a-xxhash.Po
+		-rm -f external/libnv/$(DEPDIR)/libnv_la-msgio.Plo
+	-rm -f external/libnv/sys/$(DEPDIR)/libnv_la-dnvlist.Plo
+	-rm -f external/libnv/sys/$(DEPDIR)/libnv_la-nvlist.Plo
+	-rm -f external/libnv/sys/$(DEPDIR)/libnv_la-nvpair.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_streamline.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_utils.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_hash.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_parser.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-xxhash.Plo
 	-rm -f external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po
-	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_a-aa_tree.Po
-	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_a-fline.Po
+	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Plo
+	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Plo
 	-rm -f external/sh/$(DEPDIR)/sh-alias.Po
 	-rm -f external/sh/$(DEPDIR)/sh-arith_yacc.Po
 	-rm -f external/sh/$(DEPDIR)/sh-arith_yylex.Po
@@ -3482,7 +3471,7 @@ distclean: distclean-recursive
 	-rm -f src/poudriered/$(DEPDIR)/poudriered-poudriered.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-hdr distclean-tags
+	distclean-hdr distclean-libtool distclean-tags
 
 dvi: dvi-recursive
 
@@ -3534,20 +3523,20 @@ installcheck-am:
 maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-		-rm -f external/libnv/$(DEPDIR)/libnv_a-msgio.Po
-	-rm -f external/libnv/sys/$(DEPDIR)/libnv_a-dnvlist.Po
-	-rm -f external/libnv/sys/$(DEPDIR)/libnv_a-nvlist.Po
-	-rm -f external/libnv/sys/$(DEPDIR)/libnv_a-nvpair.Po
-	-rm -f external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter.Po
-	-rm -f external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_streamline.Po
-	-rm -f external/libucl/src/$(DEPDIR)/libucl_a-ucl_emitter_utils.Po
-	-rm -f external/libucl/src/$(DEPDIR)/libucl_a-ucl_hash.Po
-	-rm -f external/libucl/src/$(DEPDIR)/libucl_a-ucl_parser.Po
-	-rm -f external/libucl/src/$(DEPDIR)/libucl_a-ucl_util.Po
-	-rm -f external/libucl/src/$(DEPDIR)/libucl_a-xxhash.Po
+		-rm -f external/libnv/$(DEPDIR)/libnv_la-msgio.Plo
+	-rm -f external/libnv/sys/$(DEPDIR)/libnv_la-dnvlist.Plo
+	-rm -f external/libnv/sys/$(DEPDIR)/libnv_la-nvlist.Plo
+	-rm -f external/libnv/sys/$(DEPDIR)/libnv_la-nvpair.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_streamline.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_utils.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_hash.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_parser.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-xxhash.Plo
 	-rm -f external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po
-	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_a-aa_tree.Po
-	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_a-fline.Po
+	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Plo
+	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Plo
 	-rm -f external/sh/$(DEPDIR)/sh-alias.Po
 	-rm -f external/sh/$(DEPDIR)/sh-arith_yacc.Po
 	-rm -f external/sh/$(DEPDIR)/sh-arith_yylex.Po
@@ -3624,7 +3613,8 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-recursive
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool
 
 pdf: pdf-recursive
 
@@ -3650,11 +3640,12 @@ uninstall-man: uninstall-man8
 
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am \
 	am--depfiles am--refresh check check-am clean clean-cscope \
-	clean-generic clean-noinstLIBRARIES clean-pkglibexecPROGRAMS \
-	cscope cscopelist-am ctags ctags-am dist dist-all dist-bzip2 \
-	dist-gzip dist-lzip dist-shar dist-tarZ dist-xz dist-zip \
-	distcheck distclean distclean-compile distclean-generic \
-	distclean-hdr distclean-tags distcleancheck distdir \
+	clean-generic clean-libtool clean-noinstLTLIBRARIES \
+	clean-pkglibexecPROGRAMS cscope cscopelist-am ctags ctags-am \
+	dist dist-all dist-bzip2 dist-gzip dist-lzip dist-shar \
+	dist-tarZ dist-xz dist-zip distcheck distclean \
+	distclean-compile distclean-generic distclean-hdr \
+	distclean-libtool distclean-tags distcleancheck distdir \
 	distuninstallcheck dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am \
 	install-dist_assetsDATA install-dist_awkDATA \
@@ -3671,16 +3662,17 @@ uninstall-man: uninstall-man8
 	install-ps-am install-strip install-sysconfDATA installcheck \
 	installcheck-am installdirs installdirs-am maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-dist_assetsDATA uninstall-dist_awkDATA \
-	uninstall-dist_binSCRIPTS uninstall-dist_btcssDATA \
-	uninstall-dist_btfontsDATA uninstall-dist_btjsDATA \
-	uninstall-dist_dtcssDATA uninstall-dist_dtimagesDATA \
-	uninstall-dist_dtjsDATA uninstall-dist_htmlDATA \
-	uninstall-dist_includeHEADERS uninstall-dist_pkgdataDATA \
-	uninstall-dist_rcSCRIPTS uninstall-examplesDATA \
-	uninstall-hookDATA uninstall-man uninstall-man8 \
-	uninstall-pkglibexecPROGRAMS uninstall-sysconfDATA
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags tags-am uninstall uninstall-am uninstall-dist_assetsDATA \
+	uninstall-dist_awkDATA uninstall-dist_binSCRIPTS \
+	uninstall-dist_btcssDATA uninstall-dist_btfontsDATA \
+	uninstall-dist_btjsDATA uninstall-dist_dtcssDATA \
+	uninstall-dist_dtimagesDATA uninstall-dist_dtjsDATA \
+	uninstall-dist_htmlDATA uninstall-dist_includeHEADERS \
+	uninstall-dist_pkgdataDATA uninstall-dist_rcSCRIPTS \
+	uninstall-examplesDATA uninstall-hookDATA uninstall-man \
+	uninstall-man8 uninstall-pkglibexecPROGRAMS \
+	uninstall-sysconfDATA
 
 .PRECIOUS: Makefile
 

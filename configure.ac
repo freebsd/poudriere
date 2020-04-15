@@ -1,5 +1,7 @@
 AC_INIT([poudriere],[3.1.99],[https://github.com/freebsd/poudriere],[poudriere])
 AC_CONFIG_SRCDIR([configure.ac])
+AC_CONFIG_MACRO_DIRS([m4])
+AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([1.11 foreign -Wall -Wno-portability no-dist-gzip dist-xz])
 AM_SILENT_RULES([yes])
 AC_CONFIG_HEADER(src/config.h)
@@ -7,7 +9,8 @@ AC_CONFIG_HEADER(src/config.h)
 AM_MAINTAINER_MODE([disable])
 
 AC_PROG_CC([cc clang gcc])
-AC_PROG_RANLIB
+
+LT_INIT
 
 AC_CHECK_FUNCS([strftime_l strchrnul utimensat])
 
@@ -39,12 +42,12 @@ AC_CACHE_CHECK([whether rm -x works], [ac_cv_rm_x_works],
 		rm -x /nonexistent 2>/dev/null
 		test $? -eq 1 && ac_cv_rm_x_works=yes])
 if test "$ac_cv_rm_x_works" = yes; then
-  RM=
+  USE_RM=
 else
   # Need bundled
-  RM=rm
+  USE_RM=rm
 fi
-AC_SUBST([RM])
+AC_SUBST([USE_RM])
 
 AC_CHECK_DECLS([F_DUPFD_CLOEXEC], [ac_have_f_dupfd_cloexec=1],
     [ac_have_f_dupfd_cloexec=0], [[#include <fcntl.h>]])
