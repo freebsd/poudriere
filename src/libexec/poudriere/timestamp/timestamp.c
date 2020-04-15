@@ -98,7 +98,8 @@ prefix_output(struct kdata *kd)
 			if (ch == '\001') {
 				/* Read in a new prefix */
 				p = prefix_override;
-				while (p - prefix_override < sizeof(prefix_override)) {
+				while (p != prefix_override +
+				    sizeof(prefix_override)) {
 					if ((ch = getc(kd->fp_in)) == EOF)
 						goto error;
 					if (ch == '\n')
