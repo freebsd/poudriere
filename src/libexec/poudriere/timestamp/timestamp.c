@@ -192,13 +192,12 @@ main(int argc, char **argv)
 	char *end;
 	pid_t child_pid;
 	int child_stdout[2], child_stderr[2];
-	int ch, status, ret, done, uflag, tflag, Tflag;
+	int ch, status, ret, uflag, tflag, Tflag;
 
 	child_pid = -1;
 	if (clock_gettime(CLOCK_MONOTONIC_FAST, &start))
 		err(EXIT_FAILURE, "%s", "clock_gettime");
 	ret = 0;
-	done = 0;
 	tflag = Tflag = uflag = 0;
 	thr_stdout = thr_stderr = NULL;
 	prefix_stdout = prefix_stderr = NULL;
