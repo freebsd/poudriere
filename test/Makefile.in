@@ -463,6 +463,7 @@ TESTS = \
 	relpath.sh \
 	relpath_common.sh \
 	shash_basic.sh \
+	timestamp.sh \
 	trap_save.sh \
 	bulk-bad-DEPENDS_ARGS.sh \
 	bulk-ignore-listed.sh \
@@ -791,6 +792,13 @@ relpath_common.sh.log: relpath_common.sh
 shash_basic.sh.log: shash_basic.sh
 	@p='shash_basic.sh'; \
 	b='shash_basic.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+timestamp.sh.log: timestamp.sh
+	@p='timestamp.sh'; \
+	b='timestamp.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

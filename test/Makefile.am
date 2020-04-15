@@ -15,6 +15,7 @@ TESTS=\
 	relpath.sh \
 	relpath_common.sh \
 	shash_basic.sh \
+	timestamp.sh \
 	trap_save.sh \
 	bulk-bad-DEPENDS_ARGS.sh \
 	bulk-ignore-listed.sh \
