@@ -3845,18 +3845,16 @@ build_queue() {
 				# Check if the ready-to-build pool and need-to-build pools
 				# are empty
 				pkgqueue_empty && queue_empty=1
-
 				builders_idle=1
-			else
-				MY_JOBID="${j}" spawn_job \
-				    build_pkg "${pkgname}" "${porttesting}"
-				pid=$!
-				echo "${pid}" > "../var/run/${j}.pid"
-				hash_set builder_pids "${j}" "${pid}"
-				hash_set builder_pkgnames "${j}" "${pkgname}"
-
-				builders_active=1
+				continue
 			fi
+			builders_active=1
+			MY_JOBID="${j}" spawn_job \
+			    build_pkg "${pkgname}" "${porttesting}"
+			pid=$!
+			echo "${pid}" > "../var/run/${j}.pid"
+			hash_set builder_pids "${j}" "${pid}"
+			hash_set builder_pkgnames "${j}" "${pkgname}"
 		done
 
 		if [ ${queue_empty} -eq 1 ]; then
