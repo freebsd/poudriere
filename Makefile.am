@@ -2,7 +2,7 @@ CLEANFILES=	$(dist_rc_SCRIPTS)
 MOSTLYCLEANFILES=
 
 ACLOCAL_AMFLAGS=	-I m4
-AM_CFLAGS=	-Wall -pipe -O2
+AM_CFLAGS=	-Wall -pipe -O2 @AM_CFLAGS@
 if MAINTAINER_MODE
 AM_CFLAGS+=	-Wextra -Werror
 endif

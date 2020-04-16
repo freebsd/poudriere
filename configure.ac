@@ -9,6 +9,11 @@ AC_CONFIG_HEADER(src/config.h)
 AM_MAINTAINER_MODE([disable])
 
 AC_PROG_CC([cc clang gcc])
+AM_CFLAGS=
+AX_CHECK_COMPILE_FLAG([-Wno-format-truncation],
+                      [AM_CFLAGS="$AM_CFLAGS -Wno-format-truncation"],
+                      [], [-Werror])
+AC_SUBST([AM_CFLAGS])
 
 LT_INIT
 

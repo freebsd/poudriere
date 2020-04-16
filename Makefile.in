@@ -558,6 +558,7 @@ am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
 distcleancheck_listfiles = find . -type f -print
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
+AM_CFLAGS = -Wall -pipe -O2 @AM_CFLAGS@ $(am__append_1)
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
 AUTOCONF = @AUTOCONF@
@@ -680,7 +681,6 @@ CLEANFILES = $(dist_rc_SCRIPTS) libucl.a libnv.a libptsort.a \
 	src/poudriere-sh/builtins.h src/poudriere-sh/shell.h
 MOSTLYCLEANFILES = poudriere
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Wall -pipe -O2 $(am__append_1)
 awkdir = $(pkgdatadir)/awk
 assetsdir = $(htmldir)/assets
 bootstrapdir = $(assetsdir)/bootstrap-3.1.1
