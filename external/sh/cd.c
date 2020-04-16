@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)cd.c	8.2 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/cd.c 336320 2018-07-15 21:55:17Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/cd.c 356251 2020-01-01 12:06:37Z jilles $");
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -376,8 +376,11 @@ getpwd(void)
 		return curdir;
 
 	p = getpwd2();
-	if (p != NULL)
+	if (p != NULL) {
+		INTOFF;
 		curdir = savestr(p);
+		INTON;
+	}
 
 	return curdir;
 }

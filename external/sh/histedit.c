@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)histedit.c	8.2 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/histedit.c 344306 2019-02-19 21:27:30Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/histedit.c 352385 2019-09-16 07:31:59Z bapt $");
 
 #include <sys/param.h>
 #include <limits.h>
@@ -122,7 +122,7 @@ histedit(void)
 				el_set(el, EL_PROMPT, getprompt);
 				el_set(el, EL_ADDFN, "sh-complete",
 				    "Filename completion",
-				    _el_fn_sh_complete);
+				    _el_fn_complete);
 			} else {
 bad:
 				out2fmt_flush("sh: can't initialize editing\n");
