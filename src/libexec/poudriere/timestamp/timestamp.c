@@ -56,13 +56,17 @@ struct kdata {
 };
 
 static void
-calculate_duration(char *timestamp, size_t tlen, time_t elapsed, int type)
+calculate_duration(char *timestamp, size_t tlen, const struct timespec *elapsed,
+    int type)
 {
 	int hours, minutes, seconds;
+	time_t elapsed_seconds;
 
-	seconds = elapsed % 60;
-	minutes = (elapsed / 60) % 60;
-	hours = elapsed / 3600;
+	elapsed_seconds = elapsed->tv_sec;
+
+	seconds = elapsed_seconds % 60;
+	minutes = (elapsed_seconds / 60) % 60;
+	hours = elapsed_seconds / 3600;
 
 	if (type == 1)
 		snprintf(timestamp, tlen, "(%02d:%02d:%02d) ", hours, minutes,
@@ -80,8 +84,7 @@ prefix_output(struct kdata *kd)
 	char prefix_override[128] = {0};
 	char *p;
 	int ch;
-	time_t elapsed;
-	struct timespec now, lastline;
+	struct timespec now, lastline, elapsed;
 	const size_t tlen = sizeof(timestamp);
 	size_t prefix_len;
 	bool newline;
@@ -121,17 +124,17 @@ prefix_output(struct kdata *kd)
 				if (clock_gettime(CLOCK_MONOTONIC_FAST, &now))
 					err(EXIT_FAILURE, "%s", "clock_gettime");
 			if (kd->timestamp) {
-				elapsed = now.tv_sec - start.tv_sec;
+				timespecsub(&now, &start, &elapsed);
 				calculate_duration((char *)&timestamp, tlen,
-				    elapsed, 0);
+				    &elapsed, 0);
 				fwrite(timestamp, tlen - 1, 1, kd->fp_out);
 				if (ferror(kd->fp_out))
 					return (-1);
 			}
 			if (kd->timestamp_line) {
-				elapsed = now.tv_sec - lastline.tv_sec;
+				timespecsub(&now, &lastline, &elapsed);
 				calculate_duration((char *)&timestamp, tlen,
-				    elapsed, 1);
+				    &elapsed, 1);
 				fwrite(timestamp, tlen - 1, 1, kd->fp_out);
 				if (ferror(kd->fp_out))
 					return (-1);
@@ -196,8 +199,6 @@ main(int argc, char **argv)
 	int ch, status, ret, uflag, tflag, Tflag;
 
 	child_pid = -1;
-	if (clock_gettime(CLOCK_MONOTONIC_FAST, &start))
-		err(EXIT_FAILURE, "%s", "clock_gettime");
 	ret = 0;
 	tflag = Tflag = uflag = 0;
 	thr_stdout = thr_stderr = NULL;
@@ -241,11 +242,25 @@ main(int argc, char **argv)
 
 	if ((time_start = getenv("TIME_START")) != NULL &&
 	    strcmp(time_start, "0") != 0) {
+		char *p;
+
+		p = strchr(time_start, '.');
+		if (p != NULL)
+			*p = '\0';
 		errno = 0;
 		start.tv_sec = strtol(time_start, &end, 10);
 		if (start.tv_sec < 0 || *end != '\0' || errno != 0)
 			err(1, "Invalid START_TIME");
-	}
+		if (p != NULL) {
+			++p;
+			errno = 0;
+			start.tv_nsec = strtol(p, &end, 10);
+			if (start.tv_nsec < 0 || *end != '\0' || errno != 0)
+				err(1, "Invalid START_TIME");
+		} else
+			start.tv_nsec = 0;
+	} else if (clock_gettime(CLOCK_MONOTONIC_FAST, &start))
+		err(EXIT_FAILURE, "%s", "clock_gettime");
 
 	if (uflag)
 		setbuf(stdout, NULL);
