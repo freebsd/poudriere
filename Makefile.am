@@ -186,37 +186,7 @@ sh_hist_LDADD=		-ledit
 else
 sh_hist_CFLAGS=		-DNO_HISTORY
 endif
-sh_SOURCES=		external/sh_compat/strchrnul.c \
-			external/sh_compat/utimensat.c \
-			external/sh/alias.c \
-			external/sh/arith_yacc.c \
-			external/sh/arith_yylex.c \
-			external/sh/bltin/echo.c \
-			external/sh/cd.c \
-			external/sh/error.c \
-			external/sh/eval.c \
-			external/sh/exec.c \
-			external/sh/expand.c \
-			external/sh/histedit.c \
-			external/sh/input.c \
-			external/sh/jobs.c \
-			external/sh/kill.c \
-			external/sh/mail.c \
-			external/sh/main.c \
-			external/sh/memalloc.c \
-			external/sh/miscbltin.c \
-			external/sh/mystring.c \
-			external/sh/nodes.c \
-			external/sh/options.c \
-			external/sh/output.c \
-			external/sh/parser.c \
-			external/sh/printf.c \
-			external/sh/redir.c \
-			external/sh/show.c \
-			external/sh/syntax.c \
-			external/sh/test.c \
-			external/sh/trap.c \
-			external/sh/var.c
+include $(top_srcdir)/external/sh/Makefile.sources
 # Extra builtins
 CLEANFILES+=		\
 			src/poudriere-sh/builtins.c \

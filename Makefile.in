@@ -233,9 +233,7 @@ rexec_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 am_rm_OBJECTS = src/libexec/poudriere/rm/rm.$(OBJEXT)
 rm_OBJECTS = $(am_rm_OBJECTS)
 rm_LDADD = $(LDADD)
-am_sh_OBJECTS = external/sh_compat/sh-strchrnul.$(OBJEXT) \
-	external/sh_compat/sh-utimensat.$(OBJEXT) \
-	external/sh/sh-alias.$(OBJEXT) \
+am_sh_OBJECTS = external/sh/sh-alias.$(OBJEXT) \
 	external/sh/sh-arith_yacc.$(OBJEXT) \
 	external/sh/sh-arith_yylex.$(OBJEXT) \
 	external/sh/bltin/sh-echo.$(OBJEXT) \
@@ -257,6 +255,8 @@ am_sh_OBJECTS = external/sh_compat/sh-strchrnul.$(OBJEXT) \
 	external/sh/sh-show.$(OBJEXT) external/sh/sh-syntax.$(OBJEXT) \
 	external/sh/sh-test.$(OBJEXT) external/sh/sh-trap.$(OBJEXT) \
 	external/sh/sh-var.$(OBJEXT) \
+	external/sh_compat/sh-strchrnul.$(OBJEXT) \
+	external/sh_compat/sh-utimensat.$(OBJEXT) \
 	src/libexec/poudriere/clock/sh-clock.$(OBJEXT) \
 	src/libexec/poudriere/dirempty/sh-dirempty.$(OBJEXT) \
 	src/libexec/poudriere/locked_mkdir/sh-locked_mkdir.$(OBJEXT) \
@@ -510,7 +510,9 @@ am__DIST_COMMON = $(dist_man_MANS) $(srcdir)/Makefile.in \
 	$(top_srcdir)/build-aux/depcomp \
 	$(top_srcdir)/build-aux/install-sh \
 	$(top_srcdir)/build-aux/ltmain.sh \
-	$(top_srcdir)/build-aux/missing $(top_srcdir)/src/config.h.in \
+	$(top_srcdir)/build-aux/missing \
+	$(top_srcdir)/external/sh/Makefile.sources \
+	$(top_srcdir)/src/config.h.in \
 	$(top_srcdir)/src/etc/rc.d/poudriered.in build-aux/compile \
 	build-aux/config.guess build-aux/config.sub build-aux/depcomp \
 	build-aux/install-sh build-aux/ltmain.sh build-aux/missing
@@ -830,19 +832,30 @@ sh_CFLAGS = $(AM_CFLAGS) -Wno-extra -DSHELL -std=gnu99 -DVTABSIZE=1000 \
 sh_LDADD = ${sh_hist_LDADD} -lsbuf
 @MAINTAINER_MODE_TRUE@sh_hist_LDADD = -ledit
 @MAINTAINER_MODE_FALSE@sh_hist_CFLAGS = -DNO_HISTORY
-sh_SOURCES = external/sh_compat/strchrnul.c \
-	external/sh_compat/utimensat.c external/sh/alias.c \
-	external/sh/arith_yacc.c external/sh/arith_yylex.c \
-	external/sh/bltin/echo.c external/sh/cd.c external/sh/error.c \
-	external/sh/eval.c external/sh/exec.c external/sh/expand.c \
-	external/sh/histedit.c external/sh/input.c external/sh/jobs.c \
-	external/sh/kill.c external/sh/mail.c external/sh/main.c \
-	external/sh/memalloc.c external/sh/miscbltin.c \
-	external/sh/mystring.c external/sh/nodes.c \
-	external/sh/options.c external/sh/output.c \
-	external/sh/parser.c external/sh/printf.c external/sh/redir.c \
-	external/sh/show.c external/sh/syntax.c external/sh/test.c \
-	external/sh/trap.c external/sh/var.c \
+sh_SOURCES = external/sh/alias.c external/sh/alias.h \
+	external/sh/arith.h external/sh/arith_yacc.c \
+	external/sh/arith_yacc.h external/sh/arith_yylex.c \
+	external/sh/bltin/bltin.h external/sh/bltin/echo.c \
+	external/sh/builtins.def external/sh/cd.c external/sh/cd.h \
+	external/sh/error.c external/sh/error.h external/sh/eval.c \
+	external/sh/eval.h external/sh/exec.c external/sh/exec.h \
+	external/sh/expand.c external/sh/expand.h \
+	external/sh/histedit.c external/sh/input.c external/sh/input.h \
+	external/sh/jobs.c external/sh/jobs.h external/sh/kill.c \
+	external/sh/mail.c external/sh/mail.h external/sh/main.c \
+	external/sh/main.h external/sh/memalloc.c \
+	external/sh/memalloc.h external/sh/miscbltin.c \
+	external/sh/mkbuiltins external/sh/myhistedit.h \
+	external/sh/mystring.c external/sh/mystring.h \
+	external/sh/nodes.c external/sh/nodes.h external/sh/options.c \
+	external/sh/options.h external/sh/output.c \
+	external/sh/output.h external/sh/parser.c external/sh/parser.h \
+	external/sh/printf.c external/sh/redir.c external/sh/redir.h \
+	external/sh/shell.h external/sh/show.c external/sh/show.h \
+	external/sh/syntax.c external/sh/syntax.h external/sh/test.c \
+	external/sh/token.h external/sh/trap.c external/sh/trap.h \
+	external/sh/var.c external/sh/var.h \
+	external/sh_compat/strchrnul.c external/sh_compat/utimensat.c \
 	src/libexec/poudriere/clock/clock.c \
 	src/libexec/poudriere/dirempty/dirempty.c \
 	src/libexec/poudriere/locked_mkdir/locked_mkdir.c \
@@ -918,7 +931,7 @@ all: all-recursive
 .SUFFIXES: .c .lo .o .obj
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/external/sh/Makefile.sources $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -940,6 +953,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__maybe_remake_depfiles)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__maybe_remake_depfiles);; \
 	esac;
+$(top_srcdir)/external/sh/Makefile.sources $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -1307,18 +1321,6 @@ src/libexec/poudriere/rm/rm.$(OBJEXT):  \
 rm$(EXEEXT): $(rm_OBJECTS) $(rm_DEPENDENCIES) $(EXTRA_rm_DEPENDENCIES) 
 	@rm -f rm$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(rm_OBJECTS) $(rm_LDADD) $(LIBS)
-external/sh_compat/$(am__dirstamp):
-	@$(MKDIR_P) external/sh_compat
-	@: > external/sh_compat/$(am__dirstamp)
-external/sh_compat/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) external/sh_compat/$(DEPDIR)
-	@: > external/sh_compat/$(DEPDIR)/$(am__dirstamp)
-external/sh_compat/sh-strchrnul.$(OBJEXT):  \
-	external/sh_compat/$(am__dirstamp) \
-	external/sh_compat/$(DEPDIR)/$(am__dirstamp)
-external/sh_compat/sh-utimensat.$(OBJEXT):  \
-	external/sh_compat/$(am__dirstamp) \
-	external/sh_compat/$(DEPDIR)/$(am__dirstamp)
 external/sh/$(am__dirstamp):
 	@$(MKDIR_P) external/sh
 	@: > external/sh/$(am__dirstamp)
@@ -1390,6 +1392,18 @@ external/sh/sh-trap.$(OBJEXT): external/sh/$(am__dirstamp) \
 	external/sh/$(DEPDIR)/$(am__dirstamp)
 external/sh/sh-var.$(OBJEXT): external/sh/$(am__dirstamp) \
 	external/sh/$(DEPDIR)/$(am__dirstamp)
+external/sh_compat/$(am__dirstamp):
+	@$(MKDIR_P) external/sh_compat
+	@: > external/sh_compat/$(am__dirstamp)
+external/sh_compat/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) external/sh_compat/$(DEPDIR)
+	@: > external/sh_compat/$(DEPDIR)/$(am__dirstamp)
+external/sh_compat/sh-strchrnul.$(OBJEXT):  \
+	external/sh_compat/$(am__dirstamp) \
+	external/sh_compat/$(DEPDIR)/$(am__dirstamp)
+external/sh_compat/sh-utimensat.$(OBJEXT):  \
+	external/sh_compat/$(am__dirstamp) \
+	external/sh_compat/$(DEPDIR)/$(am__dirstamp)
 src/libexec/poudriere/clock/sh-clock.$(OBJEXT):  \
 	src/libexec/poudriere/clock/$(am__dirstamp) \
 	src/libexec/poudriere/clock/$(DEPDIR)/$(am__dirstamp)
@@ -1945,34 +1959,6 @@ src/libexec/poudriere/rexec/rexec-rexec.obj: src/libexec/poudriere/rexec/rexec.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rexec_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/rexec/rexec-rexec.obj `if test -f 'src/libexec/poudriere/rexec/rexec.c'; then $(CYGPATH_W) 'src/libexec/poudriere/rexec/rexec.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/rexec/rexec.c'; fi`
 
-external/sh_compat/sh-strchrnul.o: external/sh_compat/strchrnul.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh_compat/sh-strchrnul.o -MD -MP -MF external/sh_compat/$(DEPDIR)/sh-strchrnul.Tpo -c -o external/sh_compat/sh-strchrnul.o `test -f 'external/sh_compat/strchrnul.c' || echo '$(srcdir)/'`external/sh_compat/strchrnul.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh_compat/$(DEPDIR)/sh-strchrnul.Tpo external/sh_compat/$(DEPDIR)/sh-strchrnul.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh_compat/strchrnul.c' object='external/sh_compat/sh-strchrnul.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh_compat/sh-strchrnul.o `test -f 'external/sh_compat/strchrnul.c' || echo '$(srcdir)/'`external/sh_compat/strchrnul.c
-
-external/sh_compat/sh-strchrnul.obj: external/sh_compat/strchrnul.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh_compat/sh-strchrnul.obj -MD -MP -MF external/sh_compat/$(DEPDIR)/sh-strchrnul.Tpo -c -o external/sh_compat/sh-strchrnul.obj `if test -f 'external/sh_compat/strchrnul.c'; then $(CYGPATH_W) 'external/sh_compat/strchrnul.c'; else $(CYGPATH_W) '$(srcdir)/external/sh_compat/strchrnul.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh_compat/$(DEPDIR)/sh-strchrnul.Tpo external/sh_compat/$(DEPDIR)/sh-strchrnul.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh_compat/strchrnul.c' object='external/sh_compat/sh-strchrnul.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh_compat/sh-strchrnul.obj `if test -f 'external/sh_compat/strchrnul.c'; then $(CYGPATH_W) 'external/sh_compat/strchrnul.c'; else $(CYGPATH_W) '$(srcdir)/external/sh_compat/strchrnul.c'; fi`
-
-external/sh_compat/sh-utimensat.o: external/sh_compat/utimensat.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh_compat/sh-utimensat.o -MD -MP -MF external/sh_compat/$(DEPDIR)/sh-utimensat.Tpo -c -o external/sh_compat/sh-utimensat.o `test -f 'external/sh_compat/utimensat.c' || echo '$(srcdir)/'`external/sh_compat/utimensat.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh_compat/$(DEPDIR)/sh-utimensat.Tpo external/sh_compat/$(DEPDIR)/sh-utimensat.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh_compat/utimensat.c' object='external/sh_compat/sh-utimensat.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh_compat/sh-utimensat.o `test -f 'external/sh_compat/utimensat.c' || echo '$(srcdir)/'`external/sh_compat/utimensat.c
-
-external/sh_compat/sh-utimensat.obj: external/sh_compat/utimensat.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh_compat/sh-utimensat.obj -MD -MP -MF external/sh_compat/$(DEPDIR)/sh-utimensat.Tpo -c -o external/sh_compat/sh-utimensat.obj `if test -f 'external/sh_compat/utimensat.c'; then $(CYGPATH_W) 'external/sh_compat/utimensat.c'; else $(CYGPATH_W) '$(srcdir)/external/sh_compat/utimensat.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh_compat/$(DEPDIR)/sh-utimensat.Tpo external/sh_compat/$(DEPDIR)/sh-utimensat.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh_compat/utimensat.c' object='external/sh_compat/sh-utimensat.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh_compat/sh-utimensat.obj `if test -f 'external/sh_compat/utimensat.c'; then $(CYGPATH_W) 'external/sh_compat/utimensat.c'; else $(CYGPATH_W) '$(srcdir)/external/sh_compat/utimensat.c'; fi`
-
 external/sh/sh-alias.o: external/sh/alias.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-alias.o -MD -MP -MF external/sh/$(DEPDIR)/sh-alias.Tpo -c -o external/sh/sh-alias.o `test -f 'external/sh/alias.c' || echo '$(srcdir)/'`external/sh/alias.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh/$(DEPDIR)/sh-alias.Tpo external/sh/$(DEPDIR)/sh-alias.Po
@@ -2378,6 +2364,34 @@ external/sh/sh-var.obj: external/sh/var.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh/var.c' object='external/sh/sh-var.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh/sh-var.obj `if test -f 'external/sh/var.c'; then $(CYGPATH_W) 'external/sh/var.c'; else $(CYGPATH_W) '$(srcdir)/external/sh/var.c'; fi`
+
+external/sh_compat/sh-strchrnul.o: external/sh_compat/strchrnul.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh_compat/sh-strchrnul.o -MD -MP -MF external/sh_compat/$(DEPDIR)/sh-strchrnul.Tpo -c -o external/sh_compat/sh-strchrnul.o `test -f 'external/sh_compat/strchrnul.c' || echo '$(srcdir)/'`external/sh_compat/strchrnul.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh_compat/$(DEPDIR)/sh-strchrnul.Tpo external/sh_compat/$(DEPDIR)/sh-strchrnul.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh_compat/strchrnul.c' object='external/sh_compat/sh-strchrnul.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh_compat/sh-strchrnul.o `test -f 'external/sh_compat/strchrnul.c' || echo '$(srcdir)/'`external/sh_compat/strchrnul.c
+
+external/sh_compat/sh-strchrnul.obj: external/sh_compat/strchrnul.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh_compat/sh-strchrnul.obj -MD -MP -MF external/sh_compat/$(DEPDIR)/sh-strchrnul.Tpo -c -o external/sh_compat/sh-strchrnul.obj `if test -f 'external/sh_compat/strchrnul.c'; then $(CYGPATH_W) 'external/sh_compat/strchrnul.c'; else $(CYGPATH_W) '$(srcdir)/external/sh_compat/strchrnul.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh_compat/$(DEPDIR)/sh-strchrnul.Tpo external/sh_compat/$(DEPDIR)/sh-strchrnul.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh_compat/strchrnul.c' object='external/sh_compat/sh-strchrnul.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh_compat/sh-strchrnul.obj `if test -f 'external/sh_compat/strchrnul.c'; then $(CYGPATH_W) 'external/sh_compat/strchrnul.c'; else $(CYGPATH_W) '$(srcdir)/external/sh_compat/strchrnul.c'; fi`
+
+external/sh_compat/sh-utimensat.o: external/sh_compat/utimensat.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh_compat/sh-utimensat.o -MD -MP -MF external/sh_compat/$(DEPDIR)/sh-utimensat.Tpo -c -o external/sh_compat/sh-utimensat.o `test -f 'external/sh_compat/utimensat.c' || echo '$(srcdir)/'`external/sh_compat/utimensat.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh_compat/$(DEPDIR)/sh-utimensat.Tpo external/sh_compat/$(DEPDIR)/sh-utimensat.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh_compat/utimensat.c' object='external/sh_compat/sh-utimensat.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh_compat/sh-utimensat.o `test -f 'external/sh_compat/utimensat.c' || echo '$(srcdir)/'`external/sh_compat/utimensat.c
+
+external/sh_compat/sh-utimensat.obj: external/sh_compat/utimensat.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh_compat/sh-utimensat.obj -MD -MP -MF external/sh_compat/$(DEPDIR)/sh-utimensat.Tpo -c -o external/sh_compat/sh-utimensat.obj `if test -f 'external/sh_compat/utimensat.c'; then $(CYGPATH_W) 'external/sh_compat/utimensat.c'; else $(CYGPATH_W) '$(srcdir)/external/sh_compat/utimensat.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/sh_compat/$(DEPDIR)/sh-utimensat.Tpo external/sh_compat/$(DEPDIR)/sh-utimensat.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/sh_compat/utimensat.c' object='external/sh_compat/sh-utimensat.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o external/sh_compat/sh-utimensat.obj `if test -f 'external/sh_compat/utimensat.c'; then $(CYGPATH_W) 'external/sh_compat/utimensat.c'; else $(CYGPATH_W) '$(srcdir)/external/sh_compat/utimensat.c'; fi`
 
 src/libexec/poudriere/clock/sh-clock.o: src/libexec/poudriere/clock/clock.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/clock/sh-clock.o -MD -MP -MF src/libexec/poudriere/clock/$(DEPDIR)/sh-clock.Tpo -c -o src/libexec/poudriere/clock/sh-clock.o `test -f 'src/libexec/poudriere/clock/clock.c' || echo '$(srcdir)/'`src/libexec/poudriere/clock/clock.c
