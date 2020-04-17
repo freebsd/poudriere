@@ -600,7 +600,7 @@ keep(const ucl_object_t *c, struct client *cl)
 static void
 client_exec(struct client *cl)
 {
-	const ucl_object_t *c, *cmd_cred, *a;
+	const ucl_object_t *c, *cmd_cred;
 	bool cmd_allowed = false;
 	struct ucl_parser *p;
 	ucl_object_t *cmd, *msg;
