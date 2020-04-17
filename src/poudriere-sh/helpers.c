@@ -384,7 +384,7 @@ out:
 }
 
 static int
-_gsub(int argc, char **argv, const char *var_return)
+_gsub(char **argv, const char *var_return)
 {
 	struct sbuf newstr = {};
 	const char *pattern, *replacement, *p;
@@ -455,7 +455,7 @@ _gsubcmd(int argc, char **argv)
 		errx(EX_USAGE, "%s", "Usage: _gsub <string> <pattern> "
 		    "<replacement> [var_return]");
 	var_return = argc == 5 && argv[4][0] != '\0' ? argv[4] : "_gsub";
-	return (_gsub(argc, argv, var_return));
+	return (_gsub(argv, var_return));
 }
 
 int
@@ -467,5 +467,5 @@ gsubcmd(int argc, char **argv)
 		errx(EX_USAGE, "%s", "Usage: gsub <string> <pattern> "
 		    "<replacement> [var_return]");
 	var_return = argc == 5 && argv[4][0] != '\0' ? argv[4] : NULL;
-	return (_gsub(argc, argv, var_return));
+	return (_gsub(argv, var_return));
 }
