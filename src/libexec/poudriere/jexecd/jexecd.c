@@ -282,7 +282,7 @@ serve(int fd) {
 	for (;;) {
 		kevent(kq, NULL, 0, &ke, 1, NULL);
 		/* New client */
-		if (ke.ident == fd && ke.filter == EVFILT_READ) {
+		if ((int)ke.ident == fd && ke.filter == EVFILT_READ) {
 			cl = client_accept(ke.ident);
 			if (cl != NULL) {
 				EV_SET(&ke, cl->fd, EVFILT_READ, EV_ADD, 0, 0, cl);
