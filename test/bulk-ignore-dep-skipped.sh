@@ -6,7 +6,7 @@ LISTPORTS="ports-mgmt/poudriere-devel ports-mgmt/poudriere-devel-dep-IGNORED"
 # ports-mgmt/poudriere-devel-dep-IGNORED should be skipped.
 # ports-mgmt/poudriere-devel-IGNORED depends on misc/foo but it should
 # not show up at all.
-. common.bulk.sh
+. ${THISDIR}/common.bulk.sh
 
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
     -B "${BUILDNAME}" \

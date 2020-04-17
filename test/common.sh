@@ -1,17 +1,6 @@
-THISDIR=$(realpath "${0%/*}")
 CMD="${0##*/}"
-POUDRIEREPATH=$(realpath $(which poudriere))
-if [ -n "${VPATH}" ]; then
-	POUDRIEREPREFIX="${VPATH}/../src"
-	POUDRIEREPREFIX="$(realpath "${POUDRIEREPREFIX}")"
-else
-	POUDRIEREPREFIX="${POUDRIEREPATH%/poudriere}/src"
-fi
-SCRIPTPREFIX="${POUDRIEREPREFIX}/share/poudriere"
-
+IN_TEST=1
 SCRIPTPATH="${SCRIPTPREFIX}/${CMD}"
-
-LIBEXECPREFIX="${POUDRIEREPATH%/poudriere}"
 #POUDRIERE_ETC=${LIBEXECPREFIX}/test/etc
 : ${BASEFS:=/var/tmp/poudriere/test}
 POUDRIERE_ETC="${BASEFS}/etc"

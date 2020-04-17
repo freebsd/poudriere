@@ -7825,10 +7825,12 @@ else
 fi
 
 STATUS=0 # out of jail #
-# cd into / to avoid foot-shooting if running from deleted dirs or
-# NFS dir which root has no access to.
-SAVED_PWD="${PWD}"
-cd /tmp
+if [ ${IN_TEST:-0} -eq 0 ]; then
+	# cd into / to avoid foot-shooting if running from deleted dirs or
+	# NFS dir which root has no access to.
+	SAVED_PWD="${PWD}"
+	cd /tmp
+fi
 
 . ${SCRIPTPREFIX}/include/colors.pre.sh
 [ -z "${POUDRIERE_ETC}" ] &&

@@ -698,7 +698,8 @@ rcdir = $(sysconfdir)/rc.d
 hookdir = $(sysconfdir)/poudriere.d/hooks
 examplesdir = $(datadir)/examples/$(PACKAGE_NAME)
 EXTRA_DIST = \
-		src/bin/poudriere
+		src/bin/poudriere \
+		test-ports/
 
 dist_bin_SCRIPTS = poudriere
 dist_man_MANS = src/bin/poudriere.8 \

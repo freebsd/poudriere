@@ -4,7 +4,7 @@ FLAVOR_DEFAULT_ALL=no
 FLAVOR_ALL=all
 
 LISTPORTS="misc/freebsd-release-manifests@${FLAVOR_ALL} ports-mgmt/poudriere-devel-dep-FOO"
-. common.bulk.sh
+. ${THISDIR}/common.bulk.sh
 
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
     -B "${BUILDNAME}" \

@@ -1,10 +1,9 @@
 #! /bin/sh
 
-THISDIR=$(realpath "${0%/*}")
 PORTSDIR="${THISDIR%/*}/test-ports/ports-dep-args"
 
 LISTPORTS="ports-mgmt/poudriere-devel-bad-dep_args"
-. common.bulk.sh
+. ${THISDIR}/common.bulk.sh
 
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
     -B "${BUILDNAME}" \

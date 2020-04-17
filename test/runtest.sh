@@ -1,7 +1,9 @@
 #! /bin/sh
 
-THISDIR=$(realpath "${0%/*}")
-cd "${THISDIR}"
+BUILD_DIR="${PWD}"
+# source dir
+THISDIR=${VPATH:-.}
+THISDIR="$(realpath "${THISDIR}")"
 
 if [ -z "${VPATH}" ]; then
 	export PATH=..:${PATH}
@@ -26,4 +28,7 @@ $(env | egrep '^(WITH_|PORT|MAKE)'|grep -vF '.MAKE')
 EOF
 
 exec /usr/bin/timeout ${TIMEOUT} timestamp \
-    ${SH:+env SH="${SH}"} ${SH:-sh} "$@"
+    env \
+    THISDIR="${THISDIR}" \
+    ${SH:+SH="${SH}"} ${SH:-sh} \
+    "$@"

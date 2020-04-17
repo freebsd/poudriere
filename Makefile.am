@@ -25,7 +25,8 @@ mandir= $(prefix)/man
 examplesdir= $(datadir)/examples/$(PACKAGE_NAME)
 
 EXTRA_DIST=	\
-		src/bin/poudriere
+		src/bin/poudriere \
+		test-ports/
 
 dist_bin_SCRIPTS=	poudriere
 

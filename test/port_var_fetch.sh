@@ -1,7 +1,7 @@
 #! /bin/sh
 
 set -e
-. common.sh
+. ${THISDIR}/common.sh
 INJAIL_HOST=1
 . ${SCRIPTPREFIX}/common.sh
 set +e

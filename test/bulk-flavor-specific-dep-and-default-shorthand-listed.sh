@@ -1,7 +1,7 @@
 #! /bin/sh
 
 LISTPORTS="misc/freebsd-release-manifests@- ports-mgmt/poudriere-devel-dep-FOO"
-. common.bulk.sh
+. ${THISDIR}/common.bulk.sh
 
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
     -B "${BUILDNAME}" \

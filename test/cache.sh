@@ -1,7 +1,7 @@
 #! /bin/sh
 
 set -e
-. common.sh
+. ${THISDIR}/common.sh
 . ${SCRIPTPREFIX}/common.sh
 . ${SCRIPTPREFIX}/include/util.sh
 . ${SCRIPTPREFIX}/include/hash.sh

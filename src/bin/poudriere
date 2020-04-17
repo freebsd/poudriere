@@ -137,21 +137,21 @@ case "${POUDRIEREPATH}" in
 	POUDRIEREPREFIX="${POUDRIEREPATH%/bin/*}"
 	LIBEXECPREFIX="${POUDRIEREPREFIX}/libexec/poudriere"
 	;;
-*/poudriere)		# Running from source checkout or build dir
-	LIBEXECPREFIX="${POUDRIEREPATH%/poudriere}"
-	if [ -f "${LIBEXECPREFIX}/Makefile" ]; then
-		VPATH="$(env -i make -C "${LIBEXECPREFIX}"\
-		    -V VPATH 2>/dev/null || :)"
+*)			# Running from source checkout or build dir
+	: ${LIBEXECPREFIX:="${POUDRIEREPATH%/poudriere}"}
+	if [ -z "${POUDRIEREPREFIX}" -a -f "${LIBEXECPREFIX}/Makefile" ]; then
+		abs_top_srcdir="$(env -i make -C "${LIBEXECPREFIX}"\
+		    -V abs_top_srcdir 2>/dev/null || :)"
+		POUDRIEREPREFIX="${abs_top_srcdir}/src"
 	fi
-	if [ -n "${VPATH}" ]; then
-		POUDRIEREPREFIX="${VPATH}/src"
-		POUDRIEREPREFIX="$(realpath "${POUDRIEREPREFIX}")"
-	else
-		POUDRIEREPREFIX="${POUDRIEREPATH%/poudriere}/src"
-	fi
+	: ${POUDRIEREPREFIX:="${POUDRIEREPATH%/poudriere}/src"}
 	: ${POUDRIERE_ETC:="/usr/local/etc"}
 esac
-SCRIPTPREFIX="${POUDRIEREPREFIX}/share/poudriere"
+: ${SCRIPTPREFIX:="${POUDRIEREPREFIX}/share/poudriere"}
+if [ ! -d "${POUDRIEREPREFIX}" ] || [ ! -e "${SCRIPTPREFIX}/common.sh" ]; then
+	echo "$0: Unable to determine POUDRIEREPREFIX" >&2
+	exit 70 # EX_SOFTWARE
+fi
 env_set SCRIPTPREFIX
 SCRIPTPATH="${SCRIPTPREFIX}/${CMD}.sh"
 env_set SCRIPTPATH

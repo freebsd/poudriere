@@ -355,7 +355,7 @@ assert_counts() {
 # Avoid injail() for port_var_fetch
 INJAIL_HOST=1
 
-. common.sh
+. ${THISDIR}/common.sh
 
 SUDO=
 if [ $(id -u) -ne 0 ]; then
@@ -377,6 +377,10 @@ JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt" || echo)
 export UNAME_r=$(freebsd-version)
 export UNAME_v="FreeBSD ${UNAME_r}"
 if [ -z "${JAILMNT}" ]; then
+	if [ ${BOOTSTRAP_ONLY:-0} -eq 0 ]; then
+		echo "ERROR: Must run prep.sh" >&2
+		exit 99
+	fi
 	echo "Setting up jail for testing..." >&2
 	if ! ${SUDO} ${POUDRIERE} jail -c -j "${JAILNAME}" \
 	    -v "${JAIL_VERSION}" -a ${ARCH}; then
@@ -405,7 +409,7 @@ fi
 export PORTSDIR
 PTMNT="${PORTSDIR}"
 #: ${PTNAME:=${PTMNT##*/}}
-: ${PTNAME:=$(echo "${PORTSDIR}" | tr '/' '_')}
+: ${PTNAME:=$(echo "${PORTSDIR}" | tr '[./]' '_')}
 : ${SETNAME:=${SCRIPTNAME}}
 export PORT_DBDIR=/dev/null
 export __MAKE_CONF="${POUDRIERE_ETC}/poudriere.d/make.conf"

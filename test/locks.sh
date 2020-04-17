@@ -3,7 +3,7 @@
 SLEEPTIME=5
 
 set -e
-. common.sh
+. ${THISDIR}/common.sh
 . ${SCRIPTPREFIX}/common.sh
 set +e
 
