@@ -883,7 +883,7 @@ int
 main(int argc, char **argv)
 {
 	struct sockaddr_un un;
-	struct pidfh *pfh;
+	struct pidfh *pfh = NULL;
 	pid_t otherpid;
 	bool foreground = false;
 	int mib[4];
