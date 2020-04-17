@@ -1,3 +1,8 @@
+EXTRA_DIST= $(TESTS) \
+	    common.bulk.sh \
+	    common.sh \
+	    prep.sh \
+	    runtest.sh
 TESTS=\
 	cache.sh \
 	encode_args.sh \

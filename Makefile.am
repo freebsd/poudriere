@@ -24,6 +24,9 @@ hookdir= $(sysconfdir)/poudriere.d/hooks
 mandir= $(prefix)/man
 examplesdir= $(datadir)/examples/$(PACKAGE_NAME)
 
+EXTRA_DIST=	\
+		src/bin/poudriere
+
 dist_bin_SCRIPTS=	poudriere
 
 dist_man_MANS=	src/bin/poudriere.8 \
@@ -40,12 +43,14 @@ dist_man_MANS=	src/bin/poudriere.8 \
 		src/bin/poudriere-testport.8 \
 		src/bin/poudriere-version.8
 
-sysconf_DATA=	src/etc/poudriere.conf.sample \
+dist_sysconf_DATA=	\
+		src/etc/poudriere.conf.sample \
 		src/etc/poudriered.conf.sample
-examples_DATA=	src/share/examples/poudriere/nginx.conf.sample \
+dist_examples_DATA=	\
+		src/share/examples/poudriere/nginx.conf.sample \
 		src/share/examples/poudriere/httpd.conf.sample
 
-hook_DATA=	src/etc/poudriere.d/hooks/bulk.sh.sample \
+dist_hook_DATA=	src/etc/poudriere.d/hooks/bulk.sh.sample \
 		src/etc/poudriere.d/hooks/pkgbuild.sh.sample
 
 dist_pkgdata_DATA=	\
@@ -156,11 +161,15 @@ AUTOMAKE_OPTIONS=	subdir-objects
 
 clock_SOURCES=	src/libexec/poudriere/clock/clock.c
 cpdup_SOURCES=	src/libexec/poudriere/cpdup/cpdup.c \
-		src/libexec/poudriere/cpdup/hcproto.c \
-		src/libexec/poudriere/cpdup/hclink.c \
-		src/libexec/poudriere/cpdup/misc.c \
+		src/libexec/poudriere/cpdup/compat_sun.h \
+		src/libexec/poudriere/cpdup/cpdup.h \
 		src/libexec/poudriere/cpdup/fsmid.c \
-		src/libexec/poudriere/cpdup/md5.c
+		src/libexec/poudriere/cpdup/hclink.c \
+		src/libexec/poudriere/cpdup/hclink.h \
+		src/libexec/poudriere/cpdup/hcproto.c \
+		src/libexec/poudriere/cpdup/hcproto.h \
+		src/libexec/poudriere/cpdup/md5.c \
+		src/libexec/poudriere/cpdup/misc.c
 cpdup_LDADD=	-lmd
 cpdup_CFLAGS=	$(AM_CFLAGS) -D_ST_FLAGS_PRESENT_=1
 dirempty_SOURCES=	src/libexec/poudriere/dirempty/dirempty.c
@@ -198,9 +207,11 @@ sh_SOURCES+=		\
 			src/libexec/poudriere/dirempty/dirempty.c \
 			src/libexec/poudriere/locked_mkdir/locked_mkdir.c \
 			src/libexec/poudriere/pwait/pwait.c \
-			src/libexec/poudriere/rm/rm.c \
 			src/libexec/poudriere/rename/rename.c \
+			src/libexec/poudriere/rm/rm.c \
+			src/poudriere-sh/builtins-poudriere.def \
 			src/poudriere-sh/helpers.c \
+			src/poudriere-sh/helpers.h \
 			src/poudriere-sh/mapfile.c \
 			src/poudriere-sh/mkdir.c \
 			src/poudriere-sh/mkfifo.c \
@@ -209,9 +220,10 @@ sh_SOURCES+=		\
 			src/poudriere-sh/rmdir.c \
 			src/poudriere-sh/setproctitle.c \
 			src/poudriere-sh/sleep.c \
-			src/poudriere-sh/traps.c \
 			src/poudriere-sh/touch.c \
+			src/poudriere-sh/traps.c \
 			src/poudriere-sh/unlink.c
+
 sh_CFLAGS+=		-I$(top_srcdir)/src/poudriere-sh \
 			-I$(top_builddir)/src/poudriere-sh
 # cachec
@@ -230,13 +242,27 @@ src/poudriere-sh/builtins.c: src/poudriere-sh/builtins.h
 sh_SOURCES+=		src/poudriere-sh/builtins.c
 ${sh_OBJECTS}:		src/poudriere-sh/builtins.h
 
-libucl_la_SOURCES=	external/libucl/src/ucl_emitter.c \
+libucl_la_SOURCES=	\
+			external/libucl/include/lua_ucl.h \
+			external/libucl/include/ucl.h \
+			external/libucl/klib/khash.h \
+			external/libucl/klib/kvec.h \
+			external/libucl/src/tree.h \
+			external/libucl/src/ucl_chartable.h \
+			external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_emitter_streamline.c \
 			external/libucl/src/ucl_emitter_utils.c \
 			external/libucl/src/ucl_hash.c \
+			external/libucl/src/ucl_hash.h \
+			external/libucl/src/ucl_internal.h \
 			external/libucl/src/ucl_parser.c \
 			external/libucl/src/ucl_util.c \
-			external/libucl/src/xxhash.c
+			external/libucl/src/xxhash.c \
+			external/libucl/src/xxhash.h \
+			external/libucl/uthash/uthash.h \
+			external/libucl/uthash/utlist.h \
+			external/libucl/uthash/utstring.h
+
 libucl_la_CFLAGS=	$(AM_CFLAGS) -Wno-extra \
 			-I$(top_srcdir)/external/libucl/uthash \
 			-I$(top_srcdir)/external/libucl/klib  \
@@ -245,7 +271,10 @@ libucl_la_CFLAGS=	$(AM_CFLAGS) -Wno-extra \
 			-Wno-unused-parameter -Wno-pointer-sign
 
 libptsort_la_SOURCES=	external/ptsort/lib/aa_tree.c \
-			external/ptsort/lib/fline.c
+			external/ptsort/lib/aa_tree.h \
+			external/ptsort/lib/fline.c \
+			external/ptsort/lib/fline.h
+
 libptsort_la_CPPFLAGS=	-I$(top_srcdir)/external/ptsort/lib
 ptsort_SOURCES=		external/ptsort/bin/ptsort.c
 ptsort_LDADD=		libptsort.la
@@ -253,10 +282,19 @@ ptsort_CPPFLAGS=	-I$(top_srcdir)/external/ptsort/lib
 
 libnv_la_CFLAGS=	$(AM_CFLAGS) \
 			-isystem $(top_srcdir)/external/libnv/ -std=gnu99
-libnv_la_SOURCES=	external/libnv/sys/dnvlist.c \
+libnv_la_SOURCES=	\
+			external/libnv/common_impl.h \
 			external/libnv/msgio.c \
+			external/libnv/msgio.h \
+			external/libnv/sys/dnv.h \
+			external/libnv/sys/dnvlist.c \
+			external/libnv/sys/nv.h \
+			external/libnv/sys/nv_impl.h \
 			external/libnv/sys/nvlist.c \
-			external/libnv/sys/nvpair.c
+			external/libnv/sys/nvlist_impl.h \
+			external/libnv/sys/nvpair.c \
+			external/libnv/sys/nvpair_impl.h
+
 poudriered_SOURCES=	src/poudriered/poudriered.c
 poudriered_CFLAGS=	$(AM_CFLAGS) \
 			-DPREFIX=\"$(prefix)\" \
@@ -276,7 +314,8 @@ rexec_SOURCES=	src/libexec/poudriere/rexec/rexec.c
 rexec_CFLAGS=	$(AM_CFLAGS) -I$(top_srcdir)/external/libnv/sys
 rexec_LDADD=	libnv.la
 
-cached_SOURCES=	src/libexec/poudriere/cached/cached.c
+cached_SOURCES=	src/libexec/poudriere/cached/cached.c \
+		external/klib/khash.h
 cached_CFLAGS=	$(AM_CFLAGS) -I$(top_srcdir)/external/klib
 cached_LDADD=	-lutil -lrt
 
