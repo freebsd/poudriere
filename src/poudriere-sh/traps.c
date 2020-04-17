@@ -97,7 +97,7 @@ trap_pushcmd(int argc, char **argv)
 }
 
 int
-critical_startcmd(int argc, char **argv)
+critical_startcmd(int argc __unused, char **argv __unused)
 {
 	sigset_t sigmask;
 
@@ -114,7 +114,7 @@ critical_startcmd(int argc, char **argv)
 }
 
 int
-critical_endcmd(int argc, char **argv)
+critical_endcmd(int argc __unused, char **argv __unused)
 {
 
 	if (critsnest == 0) {
