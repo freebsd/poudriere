@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)histedit.c	8.2 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/histedit.c 352385 2019-09-16 07:31:59Z bapt $");
+__FBSDID("$FreeBSD$");
 
 #include <sys/param.h>
 #include <limits.h>
@@ -54,8 +54,8 @@ __FBSDID("$FreeBSD: head/bin/sh/histedit.c 352385 2019-09-16 07:31:59Z bapt $");
 #include "main.h"
 #include "output.h"
 #include "mystring.h"
-#ifndef NO_HISTORY
 #include "myhistedit.h"
+#ifndef NO_HISTORY
 #include "error.h"
 #include "eval.h"
 #include "memalloc.h"
@@ -503,7 +503,7 @@ bindcmd(int argc, char **argv)
 #include "error.h"
 
 int
-histcmd(int argc, char **argv)
+histcmd(int argc __unused, char **argv __unused)
 {
 
 	error("not compiled with history support");
@@ -512,7 +512,7 @@ histcmd(int argc, char **argv)
 }
 
 int
-bindcmd(int argc, char **argv)
+bindcmd(int argc __unused, char **argv __unused)
 {
 
 	error("not compiled with line editing support");
