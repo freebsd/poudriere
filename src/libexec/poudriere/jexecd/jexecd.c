@@ -117,7 +117,7 @@ client_read(struct client *cl)
 	nvlist_t *nv;
 	int type;
 	const nvlist_t *args;
-	const char *username, *command, *arg;
+	const char *username, *arg;
 	int fdout, fderr, fdin;
 	void *cookie;
 	pid_t pid;
@@ -131,7 +131,6 @@ client_read(struct client *cl)
 		username = nvlist_get_string(nv, "user");
 	else
 		username = "root";
-	command = nvlist_get_string(nv, "command");
 	fderr = nvlist_take_descriptor(nv, "stderr");
 	fdout = nvlist_take_descriptor(nv, "stdout");
 	fdin = nvlist_take_descriptor(nv, "stdin");

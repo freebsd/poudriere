@@ -85,7 +85,6 @@ main(int argc, char **argv)
 	if (user)
 		nvlist_add_string(nv, "user", user);
 
-	nvlist_add_string(nv, "command", argv[0]);
 	for (i = 0; i < argc; i++) {
 		snprintf(key, sizeof(key), "%d", i);
 		nvlist_add_string(arguments, key, argv[i]);
