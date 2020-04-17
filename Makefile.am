@@ -162,7 +162,7 @@ cpdup_SOURCES=	src/libexec/poudriere/cpdup/cpdup.c \
 		src/libexec/poudriere/cpdup/fsmid.c \
 		src/libexec/poudriere/cpdup/md5.c
 cpdup_LDADD=	-lmd
-cpdup_CFLAGS=	-D_ST_FLAGS_PRESENT_=1
+cpdup_CFLAGS=	$(AM_CFLAGS) -D_ST_FLAGS_PRESENT_=1
 dirempty_SOURCES=	src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
 locked_mkdir_SOURCES=	src/libexec/poudriere/locked_mkdir/locked_mkdir.c
@@ -174,7 +174,9 @@ timeout_SOURCES=	src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
 timestamp_LDADD=	-lpthread
 
-sh_CFLAGS=		-DSHELL -std=gnu99 -DVTABSIZE=1000 ${sh_hist_CFLAGS} \
+sh_CFLAGS=		$(AM_CFLAGS) -Wno-extra \
+			-DSHELL -std=gnu99 -DVTABSIZE=1000 ${sh_hist_CFLAGS} \
+			-Wno-unused-const-variable \
 			-include $(top_srcdir)/external/sh_compat/compat.h \
 			-I$(top_srcdir)/src \
 			-I$(top_srcdir)/external/sh
@@ -265,7 +267,8 @@ libucl_la_SOURCES=	external/libucl/src/ucl_emitter.c \
 			external/libucl/src/ucl_parser.c \
 			external/libucl/src/ucl_util.c \
 			external/libucl/src/xxhash.c
-libucl_la_CFLAGS=	-I$(top_srcdir)/external/libucl/uthash \
+libucl_la_CFLAGS=	$(AM_CFLAGS) -Wno-extra \
+			-I$(top_srcdir)/external/libucl/uthash \
 			-I$(top_srcdir)/external/libucl/klib  \
 			-I$(top_srcdir)/external/libucl/include  \
 			-I$(top_srcdir)/external/libucl/src \
@@ -278,31 +281,33 @@ ptsort_SOURCES=		external/ptsort/bin/ptsort.c
 ptsort_LDADD=		libptsort.la
 ptsort_CPPFLAGS=	-I$(top_srcdir)/external/ptsort/lib
 
-libnv_la_CFLAGS=		-isystem $(top_srcdir)/external/libnv/ -std=gnu99
+libnv_la_CFLAGS=	$(AM_CFLAGS) \
+			-isystem $(top_srcdir)/external/libnv/ -std=gnu99
 libnv_la_SOURCES=	external/libnv/sys/dnvlist.c \
 			external/libnv/msgio.c \
 			external/libnv/sys/nvlist.c \
 			external/libnv/sys/nvpair.c
 poudriered_SOURCES=	src/poudriered/poudriered.c
-poudriered_CFLAGS=	-DPREFIX=\"$(prefix)\" \
+poudriered_CFLAGS=	$(AM_CFLAGS) \
+			-DPREFIX=\"$(prefix)\" \
 			-I$(top_srcdir)/external/libucl/include
 poudriered_LDADD=	libucl.la \
 			-lsbuf \
 			-lutil
 
 jexecd_SOURCES=	src/libexec/poudriere/jexecd/jexecd.c
-jexecd_CFLAGS=	-I$(top_srcdir)/external/libnv/sys
+jexecd_CFLAGS=	$(AM_CFLAGS) -I$(top_srcdir)/external/libnv/sys
 jexecd_LDADD=	libnv.la \
 		-lsbuf \
 		-lutil \
 		-ljail
 
 rexec_SOURCES=	src/libexec/poudriere/rexec/rexec.c
-rexec_CFLAGS=	-I$(top_srcdir)/external/libnv/sys
+rexec_CFLAGS=	$(AM_CFLAGS) -I$(top_srcdir)/external/libnv/sys
 rexec_LDADD=	libnv.la
 
 cached_SOURCES=	src/libexec/poudriere/cached/cached.c
-cached_CFLAGS=	-I$(top_srcdir)/external/klib
+cached_CFLAGS=	$(AM_CFLAGS) -I$(top_srcdir)/external/klib
 cached_LDADD=	-lutil -lrt
 
 cachec_SOURCES=	src/libexec/poudriere/cachec/cachec.c
