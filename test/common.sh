@@ -12,10 +12,11 @@ SCRIPTPREFIX="${POUDRIEREPREFIX}/share/poudriere"
 SCRIPTPATH="${SCRIPTPREFIX}/${CMD}"
 
 LIBEXECPREFIX="${POUDRIEREPATH%/poudriere}"
-POUDRIERE_ETC=${LIBEXECPREFIX}/test/etc
+#POUDRIERE_ETC=${LIBEXECPREFIX}/test/etc
+: ${BASEFS:=/var/tmp/poudriere/test}
+POUDRIERE_ETC="${BASEFS}/etc"
 
 : ${DISTFILES_CACHE:=$(mktemp -dt distfiles)}
-: ${BASEFS:=${POUDRIERE_ETC}}
 
 mkdir -p ${POUDRIERE_ETC}/poudriere.d ${POUDRIERE_ETC}/run
 ptmp=$(TMPDIR="${POUDRIERE_ETC}" mktemp -t poudriere_conf)

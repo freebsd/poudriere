@@ -371,7 +371,7 @@ SCRIPTNAME="${SCRIPTNAME##*/}"
 BUILDNAME="bulk"
 POUDRIERE="${POUDRIEREPATH} -e ${POUDRIERE_ETC}"
 ARCH=$(uname -p)
-JAILNAME="poudriere-test-${ARCH}$(echo "${PWD}" | tr '/' '_')"
+JAILNAME="poudriere-test-${ARCH}"
 JAIL_VERSION="11.3-RELEASE"
 JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt" || echo)
 export UNAME_r=$(freebsd-version)
@@ -404,7 +404,8 @@ fi
 : ${PORTSDIR:=${THISDIR%/*}/test-ports/default}
 export PORTSDIR
 PTMNT="${PORTSDIR}"
-: ${PTNAME:=${PTMNT##*/}}
+#: ${PTNAME:=${PTMNT##*/}}
+: ${PTNAME:=$(echo "${PORTSDIR}" | tr '/' '_')}
 : ${SETNAME:=${SCRIPTNAME}}
 export PORT_DBDIR=/dev/null
 export __MAKE_CONF="${POUDRIERE_ETC}/poudriere.d/make.conf"
