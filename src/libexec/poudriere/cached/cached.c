@@ -172,7 +172,7 @@ main(int argc, char **argv)
 	char *name = NULL;
 	struct pidfh *pfh;
 	pid_t otherpid;
-	int ch, fd;
+	int ch;
 	bool foreground = false;
 
 	while ((ch = getopt(argc, argv, "s:fp:n:")) != -1) {
