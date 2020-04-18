@@ -355,7 +355,7 @@ assert_counts() {
 # Avoid injail() for port_var_fetch
 INJAIL_HOST=1
 
-. ${THISDIR}/common.sh
+. common.sh
 
 SUDO=
 if [ $(id -u) -ne 0 ]; then
@@ -364,6 +364,11 @@ if [ $(id -u) -ne 0 ]; then
 		exit 77
 	fi
 	SUDO="sudo"
+fi
+
+if [ -z "${POUDRIEREPATH}" ]; then
+	echo "ERROR: Unable to determine poudriere" >&2
+	exit 99
 fi
 
 : ${SCRIPTNAME:=${0%.sh}}

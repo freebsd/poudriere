@@ -502,11 +502,13 @@ TESTS = \
 	bulk-overlay-specific.sh
 
 run_env = env \
-		LIBEXECPREFIX="$(abs_top_builddir)" \
-		SCRIPTPREFIX="$(abs_top_srcdir)/src/share/poudriere" \
-		POUDRIEREPATH="$(abs_top_builddir)/poudriere" \
-		PATH="$(abs_top_builddir):$$PATH" \
-		VPATH="$(VPATH)"
+	 abs_top_builddir="$(abs_top_builddir)" \
+	 abs_top_srcdir="$(abs_top_srcdir)" \
+	 bindir="$(bindir)" \
+	 pkglibexecdir="$(pkglibexecdir)" \
+	 pkgdatadir="$(pkgdatadir)" \
+	 VPATH="$(VPATH)" \
+	 am_check=1
 
 LOG_COMPILER = $(run_env) $(SHELL) $(srcdir)/runtest.sh
 all: all-am
@@ -1202,7 +1204,7 @@ check-am: prep
 .PHONY: prep
 prep:
 	@echo "Prepping test jail"
-	@$(run_env) $(SHELL) $(srcdir)/prep.sh
+	$(LOG_COMPILER) $(srcdir)/prep.sh
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

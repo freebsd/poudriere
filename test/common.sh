@@ -1,7 +1,6 @@
 CMD="${0##*/}"
 IN_TEST=1
 SCRIPTPATH="${SCRIPTPREFIX}/${CMD}"
-#POUDRIERE_ETC=${LIBEXECPREFIX}/test/etc
 : ${BASEFS:=/var/tmp/poudriere/test}
 POUDRIERE_ETC="${BASEFS}/etc"
 

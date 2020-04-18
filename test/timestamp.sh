@@ -1,4 +1,4 @@
-. ${THISDIR}/common.sh
+. common.sh
 
 trap '' SIGINFO
 

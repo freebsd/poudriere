@@ -5,7 +5,7 @@
 # The order matters here since listed_ports does a sort -u. The specific
 # FLAVOR dependency MUST come first to hit the bug.
 LISTPORTS="ports-mgmt/poudriere-devel-dep-FOO ports-mgmt/zzzz"
-. ${THISDIR}/common.bulk.sh
+. common.bulk.sh
 
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
     -B "${BUILDNAME}" \

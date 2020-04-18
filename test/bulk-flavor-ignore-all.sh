@@ -1,7 +1,7 @@
 #! /bin/sh
 
 ALL=1
-. ${THISDIR}/common.bulk.sh
+. common.bulk.sh
 
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
     -B "${BUILDNAME}" \

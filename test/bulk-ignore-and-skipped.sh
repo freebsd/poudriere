@@ -2,7 +2,7 @@
 
 LISTPORTS="ports-mgmt/poudriere-devel ports-mgmt/poudriere-devel-IGNORED-and-skipped"
 # IGNORE should take precedence over skipped.
-. ${THISDIR}/common.bulk.sh
+. common.bulk.sh
 
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
     -B "${BUILDNAME}" \

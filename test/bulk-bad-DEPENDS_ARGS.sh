@@ -3,7 +3,7 @@
 PORTSDIR="${THISDIR%/*}/test-ports/ports-dep-args"
 
 LISTPORTS="ports-mgmt/poudriere-devel-bad-dep_args"
-. ${THISDIR}/common.bulk.sh
+. common.bulk.sh
 
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
     -B "${BUILDNAME}" \

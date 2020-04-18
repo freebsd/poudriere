@@ -2,7 +2,7 @@
 
 LISTPORTS="misc/foo"
 OVERLAYS="overlay"
-. ${THISDIR}/common.bulk.sh
+. common.bulk.sh
 
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
     -O "${OVERLAYS}" \

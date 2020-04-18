@@ -52,12 +52,14 @@ TESTS=\
 	bulk-no-overlay-specific.sh \
 	bulk-overlay-specific.sh
 
-run_env=	env \
-		LIBEXECPREFIX="$(abs_top_builddir)" \
-		SCRIPTPREFIX="$(abs_top_srcdir)/src/share/poudriere" \
-		POUDRIEREPATH="$(abs_top_builddir)/poudriere" \
-		PATH="$(abs_top_builddir):$$PATH" \
-		VPATH="$(VPATH)"
+run_env= env \
+	 abs_top_builddir="$(abs_top_builddir)" \
+	 abs_top_srcdir="$(abs_top_srcdir)" \
+	 bindir="$(bindir)" \
+	 pkglibexecdir="$(pkglibexecdir)" \
+	 pkgdatadir="$(pkgdatadir)" \
+	 VPATH="$(VPATH)" \
+	 am_check=1
 LOG_COMPILER=	$(run_env) $(SHELL) $(srcdir)/runtest.sh
 #TEST_EXTENSIONS=.sh
 #SH_LOG_COMPILER=$(run_env) $(SHELL) runtest.sh
@@ -67,4 +69,4 @@ check-am: prep
 .PHONY: prep
 prep:
 	@echo "Prepping test jail"
-	@$(run_env) $(SHELL) $(srcdir)/prep.sh
+	$(LOG_COMPILER) $(srcdir)/prep.sh

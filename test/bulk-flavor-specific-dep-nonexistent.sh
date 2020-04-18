@@ -1,7 +1,7 @@
 #! /bin/sh
 
 LISTPORTS="ports-mgmt/poudriere-devel-dep-INVALID"
-. ${THISDIR}/common.bulk.sh
+. common.bulk.sh
 
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
     -B "${BUILDNAME}" \

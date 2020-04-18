@@ -128,22 +128,12 @@ esac
 
 POUDRIEREPATH=`realpath $0`
 case "${POUDRIEREPATH}" in
-*/src/bin/poudriere)	# Running from source checkout
-	POUDRIEREPREFIX="${POUDRIEREPATH%/bin/*}"
-	LIBEXECPREFIX="${POUDRIEREPATH%/src/bin/poudriere}"
-	: ${POUDRIERE_ETC:="/usr/local/etc"}
-	;;
 */bin/poudriere)	# Running from PREFIX/bin/poudriere
 	POUDRIEREPREFIX="${POUDRIEREPATH%/bin/*}"
 	LIBEXECPREFIX="${POUDRIEREPREFIX}/libexec/poudriere"
 	;;
 *)			# Running from source checkout or build dir
 	: ${LIBEXECPREFIX:="${POUDRIEREPATH%/poudriere}"}
-	if [ -z "${POUDRIEREPREFIX}" -a -f "${LIBEXECPREFIX}/Makefile" ]; then
-		abs_top_srcdir="$(env -i make -C "${LIBEXECPREFIX}"\
-		    -V abs_top_srcdir 2>/dev/null || :)"
-		POUDRIEREPREFIX="${abs_top_srcdir}/src"
-	fi
 	: ${POUDRIEREPREFIX:="${POUDRIEREPATH%/poudriere}/src"}
 	: ${POUDRIERE_ETC:="/usr/local/etc"}
 esac

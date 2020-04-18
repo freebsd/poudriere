@@ -1,7 +1,7 @@
 #! /bin/sh
 
 LISTPORTS="misc/foo"
-. ${THISDIR}/common.bulk.sh
+. common.bulk.sh
 
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
     -B "${BUILDNAME}" \

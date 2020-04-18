@@ -698,7 +698,7 @@ rcdir = $(sysconfdir)/rc.d
 hookdir = $(sysconfdir)/poudriere.d/hooks
 examplesdir = $(datadir)/examples/$(PACKAGE_NAME)
 EXTRA_DIST = \
-		src/bin/poudriere \
+		src/bin/poudriere.in \
 		test-ports/
 
 dist_bin_SCRIPTS = poudriere
@@ -3574,7 +3574,7 @@ install-ps: install-ps-recursive
 
 install-ps-am:
 
-installcheck-am:
+installcheck-am: installcheck-local
 
 maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
@@ -3716,19 +3716,20 @@ uninstall-man: uninstall-man8
 	install-html-am install-info install-info-am install-man \
 	install-man8 install-pdf install-pdf-am \
 	install-pkglibexecPROGRAMS install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-dist_assetsDATA uninstall-dist_awkDATA \
-	uninstall-dist_binSCRIPTS uninstall-dist_btcssDATA \
-	uninstall-dist_btfontsDATA uninstall-dist_btjsDATA \
-	uninstall-dist_dtcssDATA uninstall-dist_dtimagesDATA \
-	uninstall-dist_dtjsDATA uninstall-dist_examplesDATA \
-	uninstall-dist_hookDATA uninstall-dist_htmlDATA \
-	uninstall-dist_includeHEADERS uninstall-dist_pkgdataDATA \
-	uninstall-dist_rcSCRIPTS uninstall-dist_sysconfDATA \
-	uninstall-man uninstall-man8 uninstall-pkglibexecPROGRAMS
+	install-strip installcheck installcheck-am installcheck-local \
+	installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags tags-am uninstall uninstall-am uninstall-dist_assetsDATA \
+	uninstall-dist_awkDATA uninstall-dist_binSCRIPTS \
+	uninstall-dist_btcssDATA uninstall-dist_btfontsDATA \
+	uninstall-dist_btjsDATA uninstall-dist_dtcssDATA \
+	uninstall-dist_dtimagesDATA uninstall-dist_dtjsDATA \
+	uninstall-dist_examplesDATA uninstall-dist_hookDATA \
+	uninstall-dist_htmlDATA uninstall-dist_includeHEADERS \
+	uninstall-dist_pkgdataDATA uninstall-dist_rcSCRIPTS \
+	uninstall-dist_sysconfDATA uninstall-man uninstall-man8 \
+	uninstall-pkglibexecPROGRAMS
 
 .PRECIOUS: Makefile
 
@@ -3769,7 +3770,7 @@ gen-man-wiki:
 	  ) > wiki/$${man##*/}${DEVEL_SFX}.md; \
 	done
 .PHONY: poudriere
-poudriere: src/bin/poudriere
+poudriere: src/bin/poudriere.in
 	@if which git >/dev/null 2>&1 && \
 	    [ -d "$$(git -C "$(top_srcdir)" rev-parse --git-dir)" ]; then \
 	    gitver=$$(git -C "$(top_srcdir)" describe --tags HEAD); \
@@ -3780,6 +3781,9 @@ poudriere: src/bin/poudriere
 	else \
 	    cp -f $^${.ALLSRC} $@; \
 	fi;
+
+installcheck-local:
+	$(MAKE) $(AM_MAKEFLAGS) check am_installcheck=1
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

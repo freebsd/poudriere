@@ -4,7 +4,7 @@ LISTPORTS="ports-mgmt/poudriere-devel ports-mgmt/poudriere-devel-IGNORED misc/fo
 # ports-mgmt/poudriere-devel-dep-IGNORED should be IGNORED.
 # misc/foo should show up.
 
-. ${THISDIR}/common.bulk.sh
+. common.bulk.sh
 
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
     -B "${BUILDNAME}" \

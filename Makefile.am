@@ -25,7 +25,7 @@ mandir= $(prefix)/man
 examplesdir= $(datadir)/examples/$(PACKAGE_NAME)
 
 EXTRA_DIST=	\
-		src/bin/poudriere \
+		src/bin/poudriere.in \
 		test-ports/
 
 dist_bin_SCRIPTS=	poudriere
@@ -349,7 +349,7 @@ gen-man-wiki:
 
 MOSTLYCLEANFILES+=	poudriere
 .PHONY: poudriere
-poudriere: src/bin/poudriere
+poudriere: src/bin/poudriere.in
 	@if which git >/dev/null 2>&1 && \
 	    [ -d "$$(git -C "$(top_srcdir)" rev-parse --git-dir)" ]; then \
 	    gitver=$$(git -C "$(top_srcdir)" describe --tags HEAD); \
@@ -362,3 +362,6 @@ poudriere: src/bin/poudriere
 	fi;
 
 SUBDIRS= . test
+
+installcheck-local:
+	$(MAKE) $(AM_MAKEFLAGS) check am_installcheck=1
