@@ -1,11 +1,11 @@
 #! /bin/sh
 
-PORTSDIR="${THISDIR%/*}/test-ports/ports-dep-args"
-
 LISTPORTS="ports-mgmt/poudriere-devel-bad-dep_args"
+OVERLAYS="ports-dep-args"
 . common.bulk.sh
 
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
+    -O "${OVERLAYS}" \
     -B "${BUILDNAME}" \
     -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
     ${LISTPORTS}

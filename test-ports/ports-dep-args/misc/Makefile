@@ -1,1 +1,0 @@
-SUBDIR += freebsd-release-manifests

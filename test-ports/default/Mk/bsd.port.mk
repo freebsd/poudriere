@@ -1373,6 +1373,9 @@ PKGCOMPATDIR?=		${LOCALBASE}/lib/compat/pkg
 .if defined(USE_LOCAL_MK)
 .include "${PORTSDIR}/Mk/bsd.local.mk"
 .endif
+.for odir in ${OVERLAYS}
+.-include "${odir}/Mk/bsd.overlay.mk"
+.endfor
 
 .if defined(USE_PHP) && (!defined(USES) || ( defined(USES) && !${USES:Mphp*} ))
 DEV_WARNING+=		"Using USE_PHP alone is deprecated, please use USES=php"
@@ -1926,6 +1929,9 @@ _FORCE_POST_PATTERNS=	rmdir kldxref mkfontscale mkfontdir fc-cache \
 .if defined(USE_LOCAL_MK)
 .include "${PORTSDIR}/Mk/bsd.local.mk"
 .endif
+.for odir in ${OVERLAYS}
+.-include "${odir}/Mk/bsd.overlay.mk"
+.endfor
 
 .if defined(USE_XORG) || defined(XORG_CAT)
 .include "${PORTSDIR}/Mk/bsd.xorg.mk"
