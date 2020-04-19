@@ -5,22 +5,22 @@ set -e
 INJAIL_HOST=1
 . ${SCRIPTPREFIX}/common.sh
 set +e
-PORTSDIR=${THISDIR%/*}/test-ports/default
+PORTSDIR=${THISDIR%/*}/test-ports/port_var_fetch
 export PORTSDIR
 export __MAKE_CONF=/dev/null
 
-port_var_fetch "devel/port_var_fetch1" \
+port_var_fetch "port_var_fetch1" \
     PKGNAME pkgname
 assert "py34-sqlrelay-1.0.0_2" "${pkgname}" "PKGNAME"
 
 # Try a lookup on a missing variable and ensure the value is cleared
 blah="notcleared"
-port_var_fetch "devel/port_var_fetch1" \
+port_var_fetch "port_var_fetch1" \
     BLAH blah
 assert "" "${blah}" "blah variable not cleared on missing result"
 
 pkgname=
-port_var_fetch "devel/port_var_fetch1" \
+port_var_fetch "port_var_fetch1" \
     PKGNAME pkgname
 assert "py34-sqlrelay-1.0.0_2" "${pkgname}" "PKGNAME"
 
@@ -30,7 +30,7 @@ port_var_fetch '' \
     MAINTAINER maintainer
 assert "ports@FreeBSD.org" "${maintainer}" "MAINTAINER from -f Mk/bsd.port.mk"
 
-port_var_fetch "devel/port_var_fetch1" \
+port_var_fetch "port_var_fetch1" \
 	FOO='BLAH BLAH ${PKGNAME}' \
 	PKGNAME pkgname \
 	FOO foo \
@@ -54,7 +54,7 @@ assert "databases/sqlrelay devel/ccache devel/gmake lang/perl5.20 lang/python34 
 
 # Check that old values are cleared out
 ignore="bad whitespace not cleared"
-port_var_fetch "devel/port_var_fetch2" \
+port_var_fetch "port_var_fetch2" \
 	PKGNAME pkgname \
 	IGNORE ignore \
 	FOO foo \
@@ -68,7 +68,7 @@ assert '' "${foo}" "foo var should now be empty"
 assert '' "${pdeps}" "pdeps var should now be empty"
 
 # Check that whitespace values don't break other vars
-port_var_fetch "devel/port_var_fetch2" \
+port_var_fetch "port_var_fetch2" \
 	IGNORE ignore \
 	PKG_DEPENDS pkg_depends
 assert 0 $? "port_var_fetch should succeed"
@@ -76,7 +76,7 @@ assert '' "${ignore}" "ignore var should be empty with bad whitespace before"
 assert '/usr/local/sbin/pkg:ports-mgmt/pkg' "${pkg_depends}" "PKG_DEPENDS should match with bad whitespace before"
 
 # Check that whitespace values don't break other vars
-port_var_fetch "devel/port_var_fetch2" \
+port_var_fetch "port_var_fetch2" \
 	PKG_DEPENDS pkg_depends \
 	IGNORE ignore
 assert 0 $? "port_var_fetch should succeed"
@@ -90,7 +90,7 @@ assert 1 $? "port_var_fetch invalid port should fail"
 assert "" "${pkgname}" "PKGNAME shouldn't have gotten a value in a failed lookup"
 
 pkgname=
-port_var_fetch "devel/port_var_fetch1" \
+port_var_fetch "port_var_fetch1" \
     FAIL=1 \
     PKGNAME pkgname 2>/dev/null
 assert 1 $? "port_var_fetch with FAIL set should fail"
@@ -98,13 +98,13 @@ assert "" "${pkgname}" "PKGNAME shouldn't have gotten a value in a failed lookup
 
 # Check for a syntax error failure
 pkgname=
-port_var_fetch "devel/port_var_fetch_syntax_error" \
+port_var_fetch "port_var_fetch_syntax_error" \
     PKGNAME pkgname 2>/dev/null
 assert 1 $? "port_var_fetch should detect make syntax error failure"
 assert "" "${pkgname}" "PKGNAME shouldn't have gotten a value in a failed lookup"
 
 # Lookup multiple vars to ensure the make errors to stdout don't cause confusion
-port_var_fetch "devel/port_var_fetch_syntax_error" \
+port_var_fetch "port_var_fetch_syntax_error" \
     PKG_DEPENDS pkg_depends \
     BUILD_DEPENDS build_depends \
     FETCH_DEPENDS fetch_depends \
@@ -116,7 +116,7 @@ assert "" "${fetch_depends}" "FETCH_DEPENDS shouldn't have gotten a value in a f
 assert "" "${pkgname}" "PKGNAME shouldn't have gotten a value in a failed lookup"
 
 # Lookup 1 value with multiple errors returned
-port_var_fetch "devel/port_var_fetch_syntax_error" \
+port_var_fetch "port_var_fetch_syntax_error" \
     PKGNAME pkgname 2>/dev/null
 assert 1 $? "port_var_fetch should detect make syntax error with 1 -V"
 assert "" "${pkgname}" "PKGNAME shouldn't have gotten a value in a failed lookup"
