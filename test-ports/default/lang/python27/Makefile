@@ -1,8 +1,9 @@
-# $FreeBSD: head/lang/python27/Makefile 483807 2018-11-02 13:32:34Z rene $
+# $FreeBSD: head/lang/python27/Makefile 521726 2020-01-01 16:21:17Z antoine $
 
 PORTNAME=	python
 PORTVERSION=	${PYTHON_PORTVERSION}
-CATEGORIES=	lang python ipv6
+PORTREVISION=	1
+CATEGORIES=	lang python
 MASTER_SITES=	PYTHON/ftp/python/${PORTVERSION}
 PKGNAMESUFFIX=	27
 DISTNAME=	Python-${PORTVERSION}
@@ -12,6 +13,9 @@ MAINTAINER=	python@FreeBSD.org
 COMMENT=	Interpreted object-oriented programming language
 
 LICENSE=	PSFL
+
+DEPRECATED=	EOLed upstream
+EXPIRATION_DATE=	2020-12-31
 
 USES=		cpe ncurses pathfix pkgconfig readline:port shebangfix ssl tar:xz
 PATHFIX_MAKEFILEIN=	Makefile.pre.in
@@ -87,7 +91,7 @@ PLIST_SUB+=	X86_ONLY=""
 PLIST_SUB+=	X86_ONLY="@comment "
 .endif
 
-.if ${ARCH} == aarch64 || ${ARCH} == amd64 || ${ARCH} == mips64 || ${ARCH} == powerpc64 || ${ARCH} == sparc64
+.if ${ARCH:M*64*}
 PLIST_SUB+=	32BIT_ONLY="@comment "
 .else
 PLIST_SUB+=	32BIT_ONLY=""

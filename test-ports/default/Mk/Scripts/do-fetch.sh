@@ -1,5 +1,5 @@
 #!/bin/sh
-# $FreeBSD: head/Mk/Scripts/do-fetch.sh 462544 2018-02-21 21:26:46Z bdrewery $
+# $FreeBSD: head/Mk/Scripts/do-fetch.sh 507705 2019-07-31 10:10:35Z mat $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 
@@ -126,7 +126,14 @@ for _file in "${@}"; do
 		# There is a lot of escaping, but the " needs to survive echo/eval.
 		case ${file} in
 			*/*)
-				mkdir -p "${file%/*}"
+				case ${dp_TARGET} in
+				fetch-list|fetch-url-list-int)
+					echo "mkdir -p \"${file%/*}\" && "
+					;;
+				*)
+					mkdir -p "${file%/*}"
+					;;
+				esac
 				args="-o ${file} ${site}${file}"
 				;;
 			*)

@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/bsd.sanity.mk 492696 2019-02-11 15:21:25Z amdmi3 $
+# $FreeBSD: head/Mk/bsd.sanity.mk 516730 2019-11-04 18:08:20Z zeising $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 #
@@ -58,7 +58,7 @@ ERROR+=	"${a} is unsupported, please use ${${a}_ALT}"
 
 # Warnings only when DEVELOPER=yes
 
-.if exists(${.CURDIR}/../../Mk/bsd.port.mk)
+.if exists(${.CURDIR}/../../Mk/bsd.port.mk) || ${OVERLAYS:tA:M${.CURDIR:H:H}} == ${.CURDIR:H:H}
 .if ${.CURDIR:H:T} != ${PKGCATEGORY}
 DEV_ERROR+=	"The first entry in CATEGORIES should be the directory where the port lives"
 .endif
@@ -110,7 +110,7 @@ DEV_ERROR+=	"All LIB_DEPENDS should use the new format and start out with lib.  
 .if ${LICENSE:MBSD}
 DEV_WARNING+=	"LICENSE must not contain BSD, instead use BSD[234]CLAUSE"
 .endif
-.else
+.elif !defined(DISABLE_LICENSES)
 .  if empty(USES:Mmetaport)
 DEV_WARNING+=	"Please set LICENSE for this port"
 .  endif
@@ -168,6 +168,28 @@ DEV_ERROR+=	"PORT${_type} does not do anything unless the ${_type} option is pre
 .  endif
 .endfor
 
+.if empty(PORTEPOCH) || !empty(PORTEPOCH:C/[0-9]+//)
+DEV_ERROR+=	"PORTEPOCH needs to be an integer \>= 0"
+.endif
+
+.if empty(PORTREVISION) || !empty(PORTREVISION:C/[0-9]+//)
+DEV_ERROR+=	"PORTREVISION needs to be an integer \>= 0"
+.endif
+
+# Whitelist of options helper lookalikes that should not be reported on:
+_OPTIONS_HELPERS_SEEN+=	OPENSSL_LDFLAGS
+_BROKEN_OPTIONS_HELPERS=
+.for opt in ${_REALLY_ALL_POSSIBLE_OPTIONS}
+.  for helper in ${_ALL_OPTIONS_HELPERS}
+.    if defined(${opt}_${helper}) && empty(_OPTIONS_HELPERS_SEEN:M${opt}_${helper})
+_BROKEN_OPTIONS_HELPERS+=	${opt}_${helper}
+.    endif
+.  endfor
+.endfor
+.if !empty(_BROKEN_OPTIONS_HELPERS)
+DEV_ERROR+=	"The following options helpers are incorrectly set after bsd.port.options.mk and are ineffective: ${_BROKEN_OPTIONS_HELPERS}"
+.endif
+
 SANITY_UNSUPPORTED=	USE_OPENAL USE_FAM USE_MAKESELF USE_ZIP USE_LHA USE_CMAKE \
 		USE_READLINE USE_ICONV PERL_CONFIGURE PERL_MODBUILD \
 		USE_PERL5_BUILD USE_PERL5_RUN USE_DISPLAY USE_FUSE \
@@ -181,7 +203,8 @@ SANITY_UNSUPPORTED=	USE_OPENAL USE_FAM USE_MAKESELF USE_ZIP USE_LHA USE_CMAKE \
 		USE_RCORDER USE_OPENSSL WANT_GNOME RUBYGEM_AUTOPLIST WANT_SDL \
 		INSTALLS_EGGINFO USE_DOS2UNIX NO_STAGE USE_RUBYGEMS USE_GHOSTSCRIPT \
 		USE_GHOSTSCRIPT_BUILD USE_GHOSTSCRIPT_RUN USE_AUTOTOOLS APACHE_PORT \
-		USE_FPC_RUN WANT_FPC_BASE WANT_FPC_ALL USE_QT4 USE_QT5 QT_NONSTANDARD
+		USE_FPC_RUN WANT_FPC_BASE WANT_FPC_ALL USE_QT4 USE_QT5 QT_NONSTANDARD \
+		XORG_CAT
 SANITY_DEPRECATED=	MLINKS \
 			USE_MYSQL WANT_MYSQL_VER \
 			PYDISTUTILS_INSTALLNOSINGLE \
@@ -265,9 +288,10 @@ APACHE_PORT_ALT=	DEFAULT_VERSIONS+=apache=${APACHE_PORT:S/www\/apache//:C/2(0-9)
 USE_FPC_RUN_ALT=	USES=fpc:run
 WANT_FPC_BASE_ALT=	USES=fpc:base
 WANT_FPC_ALL_ALT=	USES=fpc:all
-USE_QT4_ALT=		USES=qt:4 and USE_QT=${USE_QT4}
+USE_QT4_ALT=		USES=qt:5 and USE_QT=${USE_QT4} \(beware\) as Qt4 has been removed
 USE_QT5_ALT=		USES=qt:5 and USE_QT=${USE_QT5}
 QT_NONSTANDARD_ALT=	USES=qmake:no_env
+XORG_CAT_ALT=		USES=xorg-cat:${XORG_CAT}
 
 .for a in ${SANITY_DEPRECATED}
 .if defined(${a})

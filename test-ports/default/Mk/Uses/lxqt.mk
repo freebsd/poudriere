@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/lxqt.mk 473287 2018-06-25 00:49:41Z swills $
+# $FreeBSD: head/Mk/Uses/lxqt.mk 523171 2020-01-15 21:15:55Z bapt $
 #
 # This file contains some variable definitions that are supposed to make your
 # life easier, when dealing with ports related to the LXQt Desktop Environment.
@@ -41,8 +41,7 @@ PLIST_SUB+=	LXQT_INCLUDEDIR="include/lxqt" \
 	LXQT_TRANSLATIONS="share/lxqt/translations" \
 	VERSION="${PORTVERSION}"
 
-CMAKE_ARGS+=	-DCMAKE_INSTALL_MANDIR=${MANDIRS} \
-	-DPULL_TRANSLATIONS:BOOL=OFF
+CMAKE_ARGS+=	-DCMAKE_INSTALL_MANDIR=${PREFIX}/share/man
 
 # Available LXQt components are:
 _USE_LXQT_ALL=	buildtools globalkeys libfmqt lxqt qtxdg

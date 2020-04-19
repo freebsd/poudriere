@@ -1,8 +1,9 @@
 # Created by: Horance Chou <horance@freedom.ie.cycu.edu.tw>
-# $FreeBSD: head/devel/libffi/Makefile 412346 2016-04-01 14:00:51Z mat $
+# $FreeBSD: head/devel/libffi/Makefile 484628 2018-11-10 18:12:57Z bapt $
 
 PORTNAME=	libffi
 PORTVERSION=	3.2.1
+PORTREVISION=	3
 CATEGORIES=	devel
 MASTER_SITES=	SOURCEWARE/${PORTNAME}
 
@@ -18,14 +19,10 @@ USES=		libtool pathfix
 USE_LDCONFIG=	yes
 GNU_CONFIGURE=	yes
 
-OPTIONS_DEFINE=	TESTS
-
-TESTS_DESC=		Include tools for test suite
-TESTS_BUILD_DEPENDS=	${TEST_DEPENDS}
-
 INSTALL_TARGET=	install-strip
 INFO=		libffi
 PLIST_SUB=	PORTVERSION=${PORTVERSION}
+TEST_TARGET=	check
 
 post-patch:
 	@${REINPLACE_CMD} -e 's| -Wno-psabi||g' \
@@ -36,8 +33,5 @@ post-install:
 	    ${STAGEDIR}${PREFIX}/include/
 	@${LN} -sf ../lib/libffi-${PORTVERSION}/include/ffitarget.h \
 	    ${STAGEDIR}${PREFIX}/include/
-
-regression-test: build
-	@(cd ${WRKSRC} && ${MAKE_CMD} check)
 
 .include <bsd.port.mk>

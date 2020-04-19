@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/emacs.mk 471190 2018-05-31 01:17:52Z jrm $
+# $FreeBSD: head/Mk/Uses/emacs.mk 522315 2020-01-07 04:55:40Z jrm $
 #
 # Provide support for ports requiring Emacs.  This includes flavors with proper
 # dependencies and useful variables.
@@ -103,10 +103,10 @@ EMACS_FLAVOR=	full
 .endif
 
 .if ${FLAVOR:Mdevel*}
-EMACS_VER=			27.0.50
+EMACS_VER=			28.0.50
 EMACS_PORTDIR=		editors/emacs-devel
 .else
-EMACS_VER=			26.1
+EMACS_VER=		26.3
 EMACS_PORTDIR=		editors/emacs
 .endif
 

@@ -27,7 +27,6 @@ else
 	rm -f "${ptmp}"
 fi
 cat > "${POUDRIERE_ETC}/poudriere.d/make.conf" << EOF
-DEFAULT_VERSIONS+=perl5=5.24
 EOF
 
 : ${VERBOSE:=1}

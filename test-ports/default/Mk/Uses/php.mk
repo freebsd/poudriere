@@ -1,10 +1,11 @@
-# $FreeBSD: head/Mk/Uses/php.mk 488887 2019-01-01 13:29:57Z rene $
+# $FreeBSD: head/Mk/Uses/php.mk 521466 2019-12-30 06:39:51Z sunpoet $
 #
 # Support for PHP-based ports.
 #
 # Feature:	php
 # Usage:	USES=php
-# Valid ARGS:	(none), phpize, ext, zend, build, cli, cgi, mod, web, embed
+# Valid ARGS:	(none), phpize, ext, zend, build, cli, cgi, mod, web, embed,
+#		pecl, flavors, noflavors
 #
 #	- phpize   : Use to build a PHP extension.
 #	- ext      : Use to build, install and register a PHP extension.
@@ -60,6 +61,18 @@ PHP_Include_MAINTAINER=	ale@FreeBSD.org
 
 _INCLUDE_USES_PHP_MK=	yes
 
+_PHP_VALID_ARGS=	build cgi cli embed ext flavors mod noflavors pecl \
+			phpize web zend
+_PHP_UNKNOWN_ARGS=
+.for arg in ${php_ARGS}
+.  if empty(_PHP_VALID_ARGS:M${arg})
+_PHP_UNKNOWN_ARGS+=	${arg}
+.  endif
+.endfor
+.if !empty(_PHP_UNKNOWN_ARGS)
+IGNORE=	has unknown USES=php arguments: ${_PHP_UNKNOWN_ARGS}
+.endif
+
 .  if ${php_ARGS:Mbuild} && ( ${php_ARGS:Mphpize} || ${php_ARGS:Mext} || ${php_ARGS:Mzend} )
 DEV_WARNING+=	"USES=php:build is included in USES=php:phpize, USES=php:ext, and USES=php:zend, so it is not needed"
 .  endif
@@ -88,7 +101,8 @@ php_ARGS:=	${php_ARGS:Nflavors}
 php_ARGS+=	ext
 .    if !defined(USE_GITHUB)
 EXTRACT_SUFX=	.tgz
-MASTER_SITES=	http://pecl.php.net/get/
+MASTER_SITES=	https://pecl.php.net/get/ \
+		http://pecl.php.net/get/
 .    endif
 PKGNAMEPREFIX=	${PECL_PKGNAMEPREFIX}
 DIST_SUBDIR=	PECL
@@ -96,7 +110,7 @@ DIST_SUBDIR=	PECL
 
 PHPBASE?=	${LOCALBASE}
 
-_ALL_PHP_VERSIONS=	71 72 73
+_ALL_PHP_VERSIONS=	72 73 74
 
 # Make the already installed PHP the default one.
 .  if exists(${PHPBASE}/etc/php.conf)
@@ -116,7 +130,7 @@ IGNORE=	does not work with PHP versions "${IGNORE_WITH_PHP}" and "${_INSTALLED_P
 PHP_VER?=	${PHP_DEFAULT:S/.//}
 .  endif # .if exists(${PHPBASE}/etc/php.conf)
 
-# Use the "default" php version as th first version for flavors, so that it
+# Use the "default" php version as the first version for flavors, so that it
 # gets to be the default flavor.
 _ALL_FLAVOR_VERSIONS=	${PHP_VER} ${_ALL_PHP_VERSIONS:N${PHP_VER}}
 
@@ -145,6 +159,10 @@ FLAVOR=	${FLAVORS:[1]}
 .    endif
 .  endif
 
+.if ${PHP_VER} == 74 && (${ARCH:Mmips*} || (${ARCH:Mpowerpc*} && !exists(/usr/bin/clang)) || ${ARCH} == sparc64)
+USE_GCC=	yes
+.endif
+
 # This variable is for dependencies lines, so you write:
 # ${PHP_PKGNAMEPREFIX}foo:devel/php-foo@${PHP_FLAVOR}
 PHP_FLAVOR=	php${PHP_VER}
@@ -160,14 +178,14 @@ PHP_VER=	${FLAVOR:S/^php//}
 	(${FLAVOR:Mphp[0-9][0-9]} && ${FLAVOR} != ${FLAVORS:[1]})
 # When adding a version, please keep the comment in
 # Mk/bsd.default-versions.mk in sync.
-.    if ${PHP_VER} == 73
+.    if ${PHP_VER} == 74
+PHP_EXT_DIR=   20190902
+PHP_EXT_INC=    hash pcre spl
+.    elif ${PHP_VER} == 73
 PHP_EXT_DIR=   20180731
 PHP_EXT_INC=    pcre spl
 .    elif ${PHP_VER} == 72
 PHP_EXT_DIR=   20170718
-PHP_EXT_INC=    pcre spl
-.    elif ${PHP_VER} == 71
-PHP_EXT_DIR=   20160303
 PHP_EXT_INC=    pcre spl
 .    else
 # (rene) default to DEFAULT_VERSIONS
@@ -287,6 +305,8 @@ _INCLUDE_USES_PHP_POST_MK=yes
 
 .  if ${php_ARGS:Mext} || ${php_ARGS:Mzend}
 PHP_MODNAME?=	${PORTNAME}
+PHP_EXT_PKGMESSAGE=	${WRKDIR}/php-ext-pkg-message
+_PKGMESSAGES+=	${PHP_EXT_PKGMESSAGE}
 PHP_HEADER_DIRS+=	.
 # If there is no priority defined, we wing it.
 .    if !defined(PHP_MOD_PRIO)
@@ -335,6 +355,15 @@ add-plist-phpext:
 		>> ${TMPPLIST}
 	@${ECHO_CMD} "${PHP_EXT_INI_FILE}" \
 		>> ${TMPPLIST}
+	@${ECHO_CMD} "[" > ${PHP_EXT_PKGMESSAGE}
+	@${ECHO_CMD} "{" >> ${PHP_EXT_PKGMESSAGE}
+	@${ECHO_CMD} "  message: <<EOD" >> ${PHP_EXT_PKGMESSAGE}
+	@${ECHO_CMD} "This file has been added to automatically load the installed extension:" >> ${PHP_EXT_PKGMESSAGE}
+	@${ECHO_CMD} "${PREFIX}/${PHP_EXT_INI_FILE}" >> ${PHP_EXT_PKGMESSAGE}
+	@${ECHO_CMD} "EOD" >> ${PHP_EXT_PKGMESSAGE}
+	@${ECHO_CMD} "  type: install" >> ${PHP_EXT_PKGMESSAGE}
+	@${ECHO_CMD} "}" >> ${PHP_EXT_PKGMESSAGE}
+	@${ECHO_CMD} "]" >> ${PHP_EXT_PKGMESSAGE}
 .  endif
 
 # Extensions
@@ -342,17 +371,17 @@ add-plist-phpext:
 # non-version specific components
 _USE_PHP_ALL=	bcmath bitset bz2 calendar ctype curl dba dom \
 		enchant exif fileinfo filter ftp gd gettext gmp \
-		hash iconv igbinary imap interbase intl json ldap mbstring mcrypt \
+		hash iconv igbinary imap intl json ldap mbstring mcrypt \
 		memcache memcached mysqli odbc opcache \
 		openssl pcntl pcre pdf pdo pdo_dblib pdo_firebird pdo_mysql \
 		pdo_odbc pdo_pgsql pdo_sqlite phar pgsql posix \
-		pspell radius readline recode redis session shmop simplexml snmp soap\
+		pspell radius readline redis session shmop simplexml snmp soap\
 		sockets spl sqlite3 sysvmsg sysvsem sysvshm \
-		tidy tokenizer wddx xml xmlreader xmlrpc xmlwriter xsl zip zlib
+		tidy tokenizer xml xmlreader xmlrpc xmlwriter xsl zip zlib
 # version specific components
-_USE_PHP_VER71=	${_USE_PHP_ALL}
-_USE_PHP_VER72=	${_USE_PHP_ALL} sodium
-_USE_PHP_VER73=	${_USE_PHP_ALL} sodium
+_USE_PHP_VER72=	${_USE_PHP_ALL} interbase recode sodium wddx
+_USE_PHP_VER73=	${_USE_PHP_ALL} interbase recode sodium wddx
+_USE_PHP_VER74=	${_USE_PHP_ALL} ffi sodium
 
 bcmath_DEPENDS=	math/php${PHP_VER}-bcmath
 bitset_DEPENDS=	math/pecl-bitset@${PHP_FLAVOR}
@@ -365,6 +394,7 @@ dbase_DEPENDS=	databases/php${PHP_VER}-dbase
 dom_DEPENDS=	textproc/php${PHP_VER}-dom
 enchant_DEPENDS=	textproc/php${PHP_VER}-enchant
 exif_DEPENDS=	graphics/php${PHP_VER}-exif
+ffi_DEPENDS=	devel/php${PHP_VER}-ffi
 fileinfo_DEPENDS=	sysutils/php${PHP_VER}-fileinfo
 filter_DEPENDS=	security/php${PHP_VER}-filter
 ftp_DEPENDS=	ftp/php${PHP_VER}-ftp
@@ -380,15 +410,10 @@ intl_DEPENDS=	devel/php${PHP_VER}-intl
 json_DEPENDS=	devel/php${PHP_VER}-json
 ldap_DEPENDS=	net/php${PHP_VER}-ldap
 mbstring_DEPENDS=	converters/php${PHP_VER}-mbstring
-.    if ${PHP_VER} >= 72
 mcrypt_DEPENDS=	security/pecl-mcrypt@${PHP_FLAVOR}
-.    else
-mcrypt_DEPENDS=	security/php${PHP_VER}-mcrypt
-.    endif
-memcache_DEPENDS=	databases/php-memcache@${PHP_FLAVOR}
+memcache_DEPENDS=	databases/pecl-memcache@${PHP_FLAVOR}
 memcached_DEPENDS=	databases/pecl-memcached@${PHP_FLAVOR}
 mssql_DEPENDS=	databases/php${PHP_VER}-mssql
-mysql_DEPENDS=	databases/php${PHP_VER}-mysql
 mysqli_DEPENDS=	databases/php${PHP_VER}-mysqli
 odbc_DEPENDS=	databases/php${PHP_VER}-odbc
 opcache_DEPENDS=	www/php${PHP_VER}-opcache

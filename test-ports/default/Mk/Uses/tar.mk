@@ -1,9 +1,9 @@
-# $FreeBSD: head/Mk/Uses/tar.mk 410457 2016-03-06 12:29:51Z amdmi3 $
+# $FreeBSD: head/Mk/Uses/tar.mk 504008 2019-06-12 09:45:25Z danfe $
 #
 # handle tar archives
 #
 # Feature:	tar
-# Usage:	USES=tar[:[xz|lzma|Z|bzip2|tgz|tbz]]
+# Usage:	USES=tar[:[xz|lz|lzma|txz|bz[ip]2|tgz|tbz|tbz2|Z]]
 #
 # MAINTAINER: portmgr@FreeBSD.org
 
@@ -12,6 +12,8 @@ _INCLUDE_USES_TAR_MK=	yes
 
 .if ${tar_ARGS} == xz
 EXTRACT_SUFX?=	.tar.xz
+.elif ${tar_ARGS} == lz
+EXTRACT_SUFX?=	.tar.lz
 .elif ${tar_ARGS} == lzma
 EXTRACT_SUFX?=	.tar.lzma
 .elif ${tar_ARGS} == txz

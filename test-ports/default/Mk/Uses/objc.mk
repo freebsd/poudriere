@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/objc.mk 492056 2019-02-03 15:37:58Z theraven $
+# $FreeBSD: head/Mk/Uses/objc.mk 528379 2020-03-13 21:46:34Z jkim $
 #
 # Objective C support
 #
@@ -26,7 +26,7 @@ _CCVERSION!=	${CC} --version
 _OBJC_CCVERSION_${_CC_hash}=	${_CCVERSION}
 PORTS_ENV_VARS+=	_OBJC_CCVERSION_${_CC_hash}
 .endif
-COMPILER_VERSION=	${_CCVERSION:M[0-9].[0-9]*:tW:C/([0-9]).([0-9]).*/\1\2/g}
+COMPILER_VERSION=	${_CCVERSION:M[0-9]*.[0-9]*:[1]:C/([0-9]+)\.([0-9]+)\..*/\1\2/}
 .if ${_CCVERSION:Mclang}
 COMPILER_TYPE=	clang
 .else
@@ -48,7 +48,7 @@ _OBJC_ALTCCVERSION_${_CC_hash}=	${_ALTCCVERSION}
 PORTS_ENV_VARS+=		_OBJC_ALTCCVERSION_${_CC_hash}
 .endif
 
-ALT_COMPILER_VERSION=	${_ALTCCVERSION:M[0-9].[0-9]*:tW:C/([0-9]).([0-9]).*/\1\2/g}
+ALT_COMPILER_VERSION=	${_ALTCCVERSION:M[0-9]*.[0-9]*:[1]:C/([0-9]+)\.([0-9]+)\..*/\1\2/}
 .if ${_ALTCCVERSION:Mclang}
 ALT_COMPILER_TYPE=	clang
 .elif !empty(_ALTCCVERSION)

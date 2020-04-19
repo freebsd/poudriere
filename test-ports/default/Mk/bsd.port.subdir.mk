@@ -1,5 +1,5 @@
 #	from: @(#)bsd.subdir.mk	5.9 (Berkeley) 2/1/91
-# $FreeBSD: head/Mk/bsd.port.subdir.mk 453873 2017-11-09 21:48:58Z jrm $
+# $FreeBSD: head/Mk/bsd.port.subdir.mk 499773 2019-04-23 17:52:38Z pkubaj $
 #
 # The include file <bsd.port.subdir.mk> contains the default targets
 # for building ports subdirectories.
@@ -98,7 +98,7 @@ OPSYS!=	${UNAME} -s
 .endif
 _EXPORTED_VARS+=	OPSYS
 
-.if ${ARCH} == "amd64" || ${ARCH} =="ia64"
+.if ${ARCH} == "amd64"
 .if !defined(HAVE_COMPAT_IA32_KERN)
 HAVE_COMPAT_IA32_KERN!= if ${SYSCTL} -n compat.ia32.maxvmem >/dev/null 2>&1; then echo YES; fi; echo
 .if empty(HAVE_COMPAT_IA32_KERN)

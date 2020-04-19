@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/blaslapack.mk 434263 2017-02-17 03:10:55Z jbeich $
+# $FreeBSD: head/Mk/Uses/blaslapack.mk 523749 2020-01-21 22:03:19Z swills $
 #
 # Handle dependencies on Blas / Lapack
 #
@@ -41,8 +41,8 @@ _BLASLIB=	blas
 LAPACKLIB=	-llapack
 .elif ${blaslapack_ARGS} == openblas
 LIB_DEPENDS+=	libopenblas.so:math/openblas
-_BLASLIB=	openblasp
-LAPACKLIB=	-lopenblasp
+_BLASLIB=	openblas
+LAPACKLIB=	-lopenblas
 .else
 IGNORE=		USES=blaslapack: invalid arguments: ${blaslapack_ARGS}
 .endif

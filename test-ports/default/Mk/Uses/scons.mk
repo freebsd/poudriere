@@ -1,9 +1,9 @@
-# $FreeBSD: head/Mk/Uses/scons.mk 411970 2016-03-27 01:23:25Z bapt $
+# $FreeBSD: head/Mk/Uses/scons.mk 513680 2019-10-03 17:49:15Z sunpoet $
 #
 # Provide support to use the scons
 #
-# Feature:		scons
-# Usage:		USES=scons
+# Feature:	scons
+# Usage:	USES=scons
 #
 # MAINTAINER: python@FreeBSD.org
 
@@ -14,19 +14,26 @@ _INCLUDE_USES_SCONS_MK=	yes
 IGNORE=	Incorrect 'USES+= scons:${scons_ARGS}' scons takes no arguments
 .endif
 
-MAKEFILE=		#
-MAKE_FLAGS=		#
-ALL_TARGET=		#
-CCFLAGS?=		${CFLAGS}
-LINKFLAGS?=		${LDFLAGS}
-LIBPATH?=		${LOCALBASE}/lib
-CPPPATH?=		${LOCALBASE}/include
-SCONS=			${LOCALBASE}/bin/scons
-BUILD_DEPENDS+=		${SCONS}:devel/scons
-MAKE_CMD=		${SCONS}
-MAKE_ARGS+=	CCFLAGS="${CCFLAGS}" CXXFLAGS="${CXXFLAGS}" \
-		LINKFLAGS="${LINKFLAGS}" PKGCONFIGDIR="${PKGCONFIGDIR}"  \
-		CPPPATH="${CPPPATH}" LIBPATH="${LIBPATH}" PREFIX="${PREFIX}" \
-		CC="${CC}" CXX="${CXX}" ${DESTDIRNAME:tl}=${STAGEDIR}
+SCONS=		${LOCALBASE}/bin/scons
 
+BUILD_DEPENDS+=	${SCONS}:devel/scons
+
+ALL_TARGET=	#
+CCFLAGS?=	${CFLAGS}
+CPPPATH?=	${LOCALBASE}/include
+LIBPATH?=	${LOCALBASE}/lib
+LINKFLAGS?=	${LDFLAGS}
+MAKE_ARGS+=	CC="${CC}" \
+		CCFLAGS="${CCFLAGS}" \
+		CPPPATH="${CPPPATH}" \
+		CXX="${CXX}" \
+		CXXFLAGS="${CXXFLAGS}" \
+		LIBPATH="${LIBPATH}" \
+		LINKFLAGS="${LINKFLAGS}" \
+		PKGCONFIGDIR="${PKGCONFIGDIR}" \
+		PREFIX="${PREFIX}" \
+		destdir=${STAGEDIR}
+MAKE_CMD=	${SCONS}
+MAKE_FLAGS=	#
+MAKEFILE=	#
 .endif

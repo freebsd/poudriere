@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/mono.mk 479607 2018-09-12 14:53:21Z dbn $
+# $FreeBSD: head/Mk/Uses/mono.mk 526329 2020-02-16 21:44:56Z dch $
 #
 # mono (c#) support
 #
@@ -9,6 +9,8 @@
 # MAINTAINER=	mono@FreeBSD.org
 #
 # Arguments:
+#
+# build		Specifies that mono is only a build-time dependency.
 #
 # nuget		Specifies that the port uses nuget packages.
 #
@@ -71,8 +73,8 @@
 .if !defined(_INCLUDE_USES_MONO_MK)
 _INCLUDE_USES_MONO_MK=	yes
 
-.if !empty(mono_ARGS:Nnuget)
-IGNORE=	USES=mono only supports an optional nuget argument
+.if !empty(mono_ARGS:Nnuget:Nbuild)
+IGNORE=	USES=mono only supports optional arguments nuget and build
 .endif
 
 # Set the location of the .wapi directory so we write to a location we
@@ -81,7 +83,9 @@ MONO_SHARED_DIR=	${WRKDIR}
 CONFIGURE_ENV+=		MONO_SHARED_DIR="${MONO_SHARED_DIR}"
 MAKE_ENV+=		MONO_SHARED_DIR="${MONO_SHARED_DIR}" TZ=UTC
 BUILD_DEPENDS+=		mono:lang/mono
+.if empty(mono_ARGS:Mbuild)
 RUN_DEPENDS+=		mono:lang/mono
+.endif
 
 # Set the location that webaps served by XSP should use.
 XSP_DOCROOT=		${PREFIX}/www/xsp

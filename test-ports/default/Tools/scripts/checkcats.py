@@ -12,9 +12,9 @@
 # Maxim Sobolev
 # ----------------------------------------------------------------------------
 #
-# $FreeBSD: head/Tools/scripts/checkcats.py 340851 2014-01-23 19:55:14Z mat $
+# $FreeBSD: head/Tools/scripts/checkcats.py 486557 2018-12-03 21:38:04Z rene $
 #
-# MAINTAINER= sobomax@FreeBSD.org <- any unapproved commits to this file are
+# MAINTAINER= portmgr@FreeBSD.org <- any unapproved commits to this file are
 #                                    highly discouraged!!!
 #
 

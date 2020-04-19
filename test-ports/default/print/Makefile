@@ -1,2 +1,1 @@
 SUBDIR += indexinfo
-SUBDIR += texinfo

@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/bsd.options.desc.mk 491828 2019-02-01 15:27:35Z tobik $
+# $FreeBSD: head/Mk/bsd.options.desc.mk 521244 2019-12-28 21:23:52Z marius $
 #
 # READ BEFORE EDITING:
 # - Please keep descriptions sorted alphabetically by variable name.
@@ -22,6 +22,7 @@ AALIB_DESC?=		AAlib graphics library support
 ACOUSTID_DESC?=		AcoustID audio fingerprinting support
 ALAC_DESC?=		Apple Lossless audio format support
 ALSA_DESC?=		ALSA audio architecture support
+ALTIVEC_DESC?=		Use Altivec optimized routines
 AMR_DESC?=		AMR 3GPP speech codec support (opencore)
 AMR_NB_DESC?=		AMR Narrow Band audio support (opencore)
 AMR_WB_DESC?=		AMR Wide Band audio support (opencore)
@@ -78,7 +79,6 @@ DTRACE_DESC?=		Build with DTrace probes
 DV_DESC?=		Quasar DV video codec support (libdv)
 DVDCSS_DESC?=		Encrypted DVD support via libdvdcss
 ECW_DESC?=		ECW image format support
-ESOUND_DESC?=		EsounD sound server support
 EXAMPLES_DESC?=		Build and/or install examples
 EXIV2_DESC?=		EXIF and IPTC metadata support via exiv2
 EXPAT_DESC?=		XML parser support via Expat
@@ -166,6 +166,7 @@ IDN_DESC?=		International Domain Names support
 IMAGEMAGICK_DESC?=	ImageMagick image processing support
 IMLIB_DESC?=		Imlib image library support
 IMLIB2_DESC?=		Imlib 2 image library support
+INFO_DESC?=		Build and/or install GNU info pages
 INI_DESC?=		INI file/format/parser support
 IODBC_DESC?=		ODBC backend via iODBC
 IPV4_DESC?=		IPv4 protocol support
@@ -416,7 +417,6 @@ PYMALLOC_DESC?=		Use Python's internal malloc()
 PYTHON_DESC?=		Python bindings or support
 PYTHON2_DESC?=		Python 2.x bindings or support
 PYTHON3_DESC?=		Python 3.x bindings or support
-QT4_DESC?=		Qt 4 toolkit support
 QT5_DESC?=		Qt 5 toolkit support
 QUICKTIME_DESC?=	QuickTime media support
 RADIUS_DESC?=		RADIUS protocol support

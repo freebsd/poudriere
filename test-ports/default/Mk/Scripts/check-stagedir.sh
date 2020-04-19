@@ -1,6 +1,6 @@
 #!/bin/sh
 # ports/Mk/Scripts/check-stagedir.sh - called from ports/Mk/bsd.stage.mk
-# $FreeBSD: head/Mk/Scripts/check-stagedir.sh 484649 2018-11-10 23:55:42Z gerald $
+# $FreeBSD: head/Mk/Scripts/check-stagedir.sh 517011 2019-11-07 20:49:17Z bdrewery $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 #
@@ -98,13 +98,15 @@ setup_plist_seds() {
 	    \#${LOCALBASE}/lib/debug#d;"
 	sed_dirs_gen="s,^,@dir ,; \
 	    ${sed_portdocsexamples} \
-	    /^@dir share\/licenses/d;"
+	    /^@dir share\/licenses/d; \
+	    \#@dir ${LOCALBASE}/lib/debug#d;"
 
 	# These prevent ignoring DOCS/EXAMPLES dirs with sed_portdocsexamples
 	sed_files="/^share\/licenses/d; \
 	    \#${LOCALBASE}/lib/debug#d;"
 	sed_dirs="s,^,@dir ,; \
-	    /^@dir share\/licenses/d;"
+	    /^@dir share\/licenses/d; \
+	    \#@dir ${LOCALBASE}/lib/debug#d;"
 
 }
 

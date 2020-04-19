@@ -1,9 +1,9 @@
-# $FreeBSD: head/Mk/Uses/qmake.mk 473503 2018-06-28 17:39:53Z tcberner $
+# $FreeBSD: head/Mk/Uses/qmake.mk 505150 2019-06-26 11:52:23Z rene $
 #
 # There are three Qt related USES files with different access to Qt.
 #   - qmake: The port requires Qt's qmake to build -- creates the configure target
 #            - auto includes qt.mk
-#   - qt-dist: The port is a port for an part of Qt4 or Qt5
+#   - qt-dist: The port is a port for a part of Qt5
 #            - auto inclues qt.mk
 #   - qt.mk  - Dependency handling. USE_QT=foo bar
 #

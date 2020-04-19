@@ -1,5 +1,5 @@
 #
-# $FreeBSD: head/Mk/Uses/fpc.mk 466532 2018-04-05 04:52:36Z acm $
+# $FreeBSD: head/Mk/Uses/fpc.mk 510956 2019-09-03 15:51:50Z acm $
 #
 # Support for FPC-based ports. This automatically will install free pascal 
 # compiler and units.
@@ -61,7 +61,8 @@ ONLY_FOR_ARCHS=		i386 amd64
 ONLY_FOR_ARCHS_REASON=	not yet ported to anything other than i386 and amd64
 .endif
 
-BUILD_DEPENDS+=		${PPNAME}:lang/fpc
+BUILD_DEPENDS+=		${LOCALBASE}/bin/as:devel/binutils \
+			${PPNAME}:lang/fpc
 
 BUILDNAME=		${FPC_ARCH}-${OPSYS:tl}
 UNITSDIR=		${LOCALBASE}/lib/fpc/${FPC_VER}/units/${BUILDNAME}

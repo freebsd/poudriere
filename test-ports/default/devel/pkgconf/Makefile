@@ -1,7 +1,7 @@
-# $FreeBSD: head/devel/pkgconf/Makefile 441493 2017-05-22 21:41:30Z kwm $
+# $FreeBSD: head/devel/pkgconf/Makefile 509593 2019-08-22 11:01:17Z bapt $
 
 PORTNAME=	pkgconf
-PORTVERSION=	1.3.7
+PORTVERSION=	1.6.3
 PORTEPOCH=	1
 CATEGORIES=	devel
 MASTER_SITES=	https://distfiles.dereferenced.org/pkgconf/ \
@@ -26,6 +26,8 @@ CONFIGURE_ARGS=	--with-pkg-config-dir=${PREFIX}/libdata/pkgconfig:/usr/libdata/p
 		--with-system-libdir=/usr/lib \
 		--with-system-includedir=/usr/include
 MAKE_ARGS=	MANDIR="${MAN1PREFIX}/man/man1"
+
+OPTIONS_DEFINE=	DOCS
 
 post-install:
 	${LN} -sf pkgconf ${STAGEDIR}${PREFIX}/bin/pkg-config

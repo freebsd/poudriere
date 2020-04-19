@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/ssl.mk 487417 2018-12-14 09:34:59Z mat $
+# $FreeBSD: head/Mk/Uses/ssl.mk 521745 2020-01-01 16:42:44Z brnrd $
 #
 # Handle dependency on *ssl ports.
 #
@@ -10,7 +10,7 @@
 #
 # DEFAULT_VERSIONS+=	ssl=<openssl variant>
 #
-# Variants being base, openssl, openssl111, libressl, and libressl-devel.
+# Variants being base, openssl, libressl, and libressl-devel.
 #
 # The Makefile sets these variables:
 # OPENSSLBASE		- "/usr" or ${LOCALBASE}

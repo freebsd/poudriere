@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/waf.mk 470184 2018-05-17 00:51:35Z timur $
+# $FreeBSD: head/Mk/Uses/waf.mk 522998 2020-01-14 09:27:18Z antoine $
 #
 # Provide support to use the waf building system
 #
@@ -22,7 +22,7 @@ IGNORE=	Incorrect 'USES+= waf:${waf_ARGS}' waf takes no arguments
 .endif
 
 .if !${USES:Mpython*}
-python_ARGS=	2.7,build
+python_ARGS=	build
 .include "${USESDIR}/python.mk"
 .endif
 

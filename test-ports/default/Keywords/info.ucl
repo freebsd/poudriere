@@ -1,0 +1,19 @@
+# $FreeBSD: head/Keywords/info.ucl 399974 2015-10-22 13:30:32Z bapt $
+#
+# MAINTAINER: portmgr@FreeBSD.org
+
+actions: [file]
+post-install: <<EOD
+  case "%@" in
+  /*) file="%@" ;;
+   *) file="%D/%@" ;;
+  esac
+  indexinfo ${PKG_ROOTDIR}${file%/*}
+EOD
+post-deinstall: <<EOD
+  case "%@" in
+  /*) file="%@" ;;
+   *) file="%D/%@" ;;
+  esac
+  indexinfo ${PKG_ROOTDIR}${file%/*}
+EOD

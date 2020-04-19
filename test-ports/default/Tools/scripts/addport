@@ -33,7 +33,7 @@
 #
 # Id: addport,v 1.2 2000/04/02 06:21:13 will Exp (original shell script)
 # Id: addport,v 1.5 2000/04/22 22:19:43 mharo Exp (perl conversion)
-# $FreeBSD: head/Tools/scripts/addport 421545 2016-09-08 12:49:02Z mat $
+# $FreeBSD: head/Tools/scripts/addport 503896 2019-06-10 13:54:40Z pizzamig $
 #
 # MAINTAINER=	crees@FreeBSD.org
 #
@@ -331,7 +331,9 @@ foreach my $thisdir (@dirs) {
 	# let's get our hands dirty.
 	if (! -d "ports") {
 		system("$svn co --depth empty $repo ports") && errx(1, "can't get ports root, aborting.");
-		chdir "ports" or err(1,"ports");
+	}
+	chdir "ports" or err(1,"ports");
+	if (! -d "$category") {
 		system("$svn up --depth files $category") && errx(1, "can't get temporary category directory, aborting.");
 	}
 	chdir $category or err(1,"$category");

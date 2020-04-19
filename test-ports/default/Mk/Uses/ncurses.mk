@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/ncurses.mk 421554 2016-09-08 14:12:55Z mat $
+# $FreeBSD: head/Mk/Uses/ncurses.mk 520032 2019-12-13 13:24:16Z bapt $
 #
 # handle dependency on the ncurses port
 #
@@ -37,6 +37,9 @@ ncurses_ARGS=	port
 .if ${ncurses_ARGS} == base
 NCURSESBASE=	/usr
 NCURSESINC=	${NCURSESBASE}/include
+.if !exists(/usr/lib/libncursesw.so)
+NCURSES_IMPL=	ncurses
+.endif
 
 .  if exists(${LOCALBASE}/lib/libncurses.so)
 _USES_sanity+=	400:check-depends-ncurses
@@ -85,5 +88,6 @@ LDFLAGS+=	-Wl,-rpath=${NCURSESRPATH}
 .endif
 
 NCURSESLIB=	${NCURSESBASE}/lib
+NCURSES_IMPL?=	ncursesw
 
 .endif

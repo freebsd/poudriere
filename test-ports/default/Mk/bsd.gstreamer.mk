@@ -5,7 +5,7 @@
 #
 # Created by: Michael Johnson <ahze@FreeBSD.org>
 #
-# $FreeBSD: head/Mk/bsd.gstreamer.mk 488337 2018-12-25 19:43:19Z kwm $
+# $FreeBSD: head/Mk/bsd.gstreamer.mk 524224 2020-01-26 17:42:36Z kwm $
 #    $MCom: ports/Mk/bsd.gstreamer.mk,v 1.56 2013/01/15 21:43:45 kwm Exp $
 
 .if !defined(_POSTMKINCLUDED) && !defined(Gstreamer_Pre_Include)
@@ -104,7 +104,6 @@ _GSTREAMER_PLUGINS= \
 		sidplay \
 		soundtouch \
 		soup \
-		spc \
 		speex \
 		taglib \
 		theora \
@@ -121,7 +120,6 @@ _GSTREAMER_PLUGINS+= \
 		bz2 \
 		cdaudio \
 		dvd \
-		esound \
 		ffmpeg \
 		fluendo-mp3 \
 		fluendo-mpegdemux \
@@ -135,8 +133,8 @@ _GSTREAMER_PLUGINS+= \
 		mp3 \
 		nas \
 		python \
-		qt4 \
 		schroedinger \
+		spc \
 		sdl \
 		vdpau \
 		vp8 \
@@ -170,6 +168,7 @@ _GSTREAMER_PLUGINS+= \
 		openjpeg \
 		openmpt \
 		png \
+		qt \
 		rsvg \
 		rtmp \
 		smoothstreaming \
@@ -226,9 +225,6 @@ cdparanoia_IMPL=	#
 
 chromaprint_DEPENDS=	audio/gstreamer-plugins-chromaprint
 chromeprint_IMPL=	bad
-
-esound_DEPENDS=	audio/gstreamer-plugins-esound
-esound_IMPL=	good
 
 faac_DEPENDS=	audio/gstreamer-plugins-faac
 faac_IMPL=	bad
@@ -412,6 +408,9 @@ openmpt_IMPL=		bad
 png_DEPENDS=	graphics/gstreamer-plugins-png
 png_IMPL=	good
 
+qt_DEPENDS=	graphics/gstreamer-plugins-qt
+qt_IMPL=	good
+
 rsvg_DEPENDS=	graphics/gstreamer-plugins-rsvg
 rsvg_IMPL=	bad
 
@@ -497,10 +496,6 @@ mplex_IMPL=	bad
 
 openh264_DEPENDS=	multimedia/gstreamer-plugins-openh264
 openh264_IMPL=		bad
-
-qt4_DEPENDS=	multimedia/gstreamer-qt4
-qt4_GST_PREFIX=	gstreamer-
-qt4_IMPL=	#
 
 rtmp_DEPENDS=	multimedia/gstreamer-plugins-rtmp
 rtmp_IMPL=	bad

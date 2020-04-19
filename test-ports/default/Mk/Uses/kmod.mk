@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/kmod.mk 434056 2017-02-13 21:48:12Z rene $
+# $FreeBSD: head/Mk/Uses/kmod.mk 519159 2019-12-06 19:46:18Z emaste $
 #
 # Handles common items for kernel module ports.
 #
@@ -22,7 +22,7 @@ IGNORE=	USES=kmod takes either no arguments or 'debug'
 .endif
 
 .if !exists(${SRC_BASE}/sys/Makefile)
-IGNORE=	requires kernel source files in ${SRC_BASE}
+IGNORE=	requires kernel source files in SRC_BASE=${SRC_BASE}
 .endif
 
 CATEGORIES+=	kld

@@ -1,0 +1,8 @@
+#!/bin/sh
+#
+# $FreeBSD: head/Mk/Wrappers/gm4 513486 2019-10-01 14:33:24Z bapt $
+
+case " $@ " in
+*" --version "*) echo "m4 (GNU M4) 1.4.18" ;;
+*) exec m4 -g $@ ;;
+esac

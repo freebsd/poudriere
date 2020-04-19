@@ -1,15 +1,15 @@
-# $FreeBSD: head/Mk/Uses/pyqt.mk 487597 2018-12-16 15:25:40Z tcberner $
+# $FreeBSD: head/Mk/Uses/pyqt.mk 531396 2020-04-11 05:04:40Z lbartoletti $
 #
 # Handle PyQt related ports
 #
 # Feature:	pyqt
 # Usage:	USES=pyqt:ARGS
-# Valid ARGS:	4,5
+# Valid ARGS:	5
 #
 # MAINTAINER:	kde@FreeBSD.org
 #
 # Internal Port variables for PyQt ports:
-# PYQT_DIST	- This port is part of PyQt4/5 itself. Variables and
+# PYQT_DIST	- This port is part of PyQt5 itself. Variables and
 #		targets are then set assuming a certain tarball and
 #		port layout.
 # USE_PYQT	- List of PyQt components to depend on
@@ -24,15 +24,15 @@
 .if !defined(_INCLUDE_USES_PYQT_MK)
 _INCLUDE_USES_PYQT_MK=	yes
 
-# At the moment we support PyQt bindings versions 4 and 5, sip
+# At the moment we support PyQt bindings versions 5, sip
 # option is for internal use by the py-sip ports.
-_PYQT_SUPPORTED=        4 5 sip
+_PYQT_SUPPORTED=        5 sip
 
 .if empty(pyqt_ARGS)
 IGNORE=	pyqt needs a qt-version (${_PYQT_SUPPORTED})
 .endif
 
-# At the moment we support PyQt bindings versions 4 and 5
+# At the moment we support PyQt bindings versions 5
 .for ver in ${_PYQT_SUPPORTED:O:u}
 .  if ${pyqt_ARGS:M${ver}}
 .    if empty(_PYQT_VERSION)
@@ -45,46 +45,44 @@ IGNORE?=        cannot be installed: different PYQT versions specified via pyqt:
 
 .if empty(_PYQT_VERSION)
 IGNORE?=        USES=pyqt needs a version number (valid values: ${_PYQT_SUPPORTED})
+_PYQT_VERSION=	0
 .endif
 
 PYQT_MAINTAINER=	kde@FreeBSD.org
 
-MASTER_SITE_RIVERBANK=	http://www.riverbankcomputing.com/static/Downloads/%SUBDIR%/
+MASTER_SITE_RIVERBANK=	https://www.riverbankcomputing.com/static/Downloads/%SUBDIR%/
 
-MASTER_SITES_SIP=	SF/pyqt/sip/sip-${PORTVERSION} \
+# https://www.riverbankcomputing.com/static/Downloads/sip/4.19.15/sip-4.19.15.tar.gz
+MASTER_SITES_SIP=	RIVERBANK/sip/${PORTVERSION} \
+			SF/pyqt/sip/sip-${PORTVERSION} \
 			GENTOO
-MASTER_SITES_PYQT4=	SF/pyqt/PyQt4/PyQt-${PORTVERSION} \
+MASTER_SITES_PYQT5=	RIVERBANK/PyQt5/${PORTVERSION} \
+			SF/pyqt/PyQt5/PyQt-${PORTVERSION} \
 			GENTOO
-MASTER_SITES_PYQT5=	SF/pyqt/PyQt5/PyQt-${PORTVERSION} \
-			GENTOO
-MASTER_SITES_QSCI2=	SF/pyqt/QScintilla2/QScintilla-${PORTVERSION} \
+#https://www.riverbankcomputing.com/static/Downloads/QScintilla/2.11.4/QScintilla-2.11.4.tar.gz
+MASTER_SITES_QSCI2=	RIVERBANK/QScintilla/${PORTVERSION} \
+			SF/pyqt/QScintilla2/QScintilla-${PORTVERSION} \
 			GENTOO
 
-SIP_VERSION=		4.19.13
-QSCI2_VERSION=		2.10.8
-PYQT4_VERSION=		4.12.1
-PYQT5_VERSION=		5.11.3
+SIP_VERSION=		4.19.21
+QSCI2_VERSION=		2.11.4
+PYQT5_VERSION=		5.13.1
 
 SIP_DISTNAME=		sip-${SIP_VERSION}
-PYQT4_DISTNAME=		PyQt4_gpl_x11-${PYQT4_VERSION}
-PYQT4_DISTINFO_FILE=	${.CURDIR:H:H}/devel/${PYQT_RELNAME}/distinfo
 PYQT5_DISTNAME=		PyQt5_gpl-${PYQT5_VERSION}
 PYQT5_DISTINFO_FILE=	${.CURDIR:H:H}/devel/${PYQT_RELNAME}/distinfo
-QSCI2_DISTNAME=		QScintilla_gpl-${QSCI2_VERSION}
-PYQT4_LICENSE=		GPLv3
+QSCI2_DISTNAME=		QScintilla-${QSCI2_VERSION}
 PYQT5_LICENSE=		GPLv3
 
-# Keep these synchronized with OPTIONS_DEFINE in devel/py-qt4 and devel/py-qt5
-# PyQt components split up into pyqt4/pyqt5/...
+# Keep these synchronized with OPTIONS_DEFINE in devel/py-qt5
+# PyQt components split up into pyqt5/...
 _USE_PYQT_ALL=		core dbus dbussupport demo designer designerplugin \
-			gui multimedia network opengl qscintilla2 \
+			gui help multimedia network opengl qscintilla2 \
 			sql svg test webkit xml xmlpatterns sip
-# List of components only in pyqt4
-_USE_PYQT4_ONLY=	assistant declarative doc \
-			help phonon script scripttools
 # List of components only in pyqt5
 _USE_PYQT5_ONLY=	multimediawidgets printsupport qml quickwidgets \
-			serialport webchannel webengine webkitwidgets widgets
+			serialport webchannel webengine webkitwidgets \
+			websockets widgets
 
 # Unversioned variables for the rest of the file
 PYQT_VERSION=		${PYQT${_PYQT_VERSION}_VERSION}
@@ -119,8 +117,9 @@ py-sql_PATH=		${PYQT_PY_RELNAME}-sql>=${PYQT_VERSION}
 py-svg_PATH=		${PYQT_PY_RELNAME}-svg>=${PYQT_VERSION}
 py-test_PATH=		${PYQT_PY_RELNAME}-test>=${PYQT_VERSION}
 py-webchannel_PATH=	${PYQT_PY_RELNAME}-webchannel>=${PYQT_VERSION}
-py-webengine_PATH=	${PYQT_PY_RELNAME}-webengine>=${PYQT_VERSION}
+py-webengine_PATH=	${PYQT_PY_RELNAME}-webengine>=5.12.1
 py-webkit_PATH=		${PYQT_PY_RELNAME}-webkit>=${PYQT_VERSION}
+py-websockets_PATH=	${PYQT_PY_RELNAME}-websockets>=${PYQT_VERSION}
 py-xml_PATH=		${PYQT_PY_RELNAME}-xml>=${PYQT_VERSION}
 py-xmlpatterns_PATH=	${PYQT_PY_RELNAME}-xmlpatterns>=${PYQT_VERSION}
 
@@ -158,6 +157,7 @@ py-test_PORT=		devel/${PYQT_RELNAME}-test
 py-webchannel_PORT=	www/${PYQT_RELNAME}-webchannel
 py-webengine_PORT=	www/${PYQT_RELNAME}-webengine
 py-webkit_PORT=		www/${PYQT_RELNAME}-webkit
+py-websockets_PORT=	www/${PYQT_RELNAME}-websockets
 py-xml_PORT=		textproc/${PYQT_RELNAME}-xml
 py-xmlpatterns_PORT=	textproc/${PYQT_RELNAME}-xmlpatterns
 
@@ -187,6 +187,7 @@ py-phonon_DESC=		Python bindings for Phonon module
 py-qscintilla2_DESC=	Python bindings for QScintilla2
 py-script_DESC=		Python bindings for QtScript module
 py-scripttools_DESC=	Python bindings for QtScriptTools module
+py-sip_DESC=		Python bindings generator for C and C++ libraries
 py-sql_DESC=		Python bindings for QtSql module
 py-svg_DESC=		Python bindings for QtSvg module
 py-test_DESC=		Python bindings for QtTest module
@@ -220,7 +221,7 @@ _QMLDIR_REL=		${QT_QMLDIR_REL}/${_VERSION_SUBDIR_REL}
 PYQT_APIDIR=		${PREFIX}/${_APIDIR_REL}
 PYQT_DOCDIR=		${PREFIX}/${_DOCDIR_REL}
 PYQT_EXAMPLEDIR=	${PREFIX}/${_EXAMPLEDIR_REL}
-PYQT_SIPDIR=		${PREFIX}/${_SIPDIR_REL}
+PYQT_SIPDIR?=		${PREFIX}/${_SIPDIR_REL}
 PYQT_DESIGNERDIR=	${PREFIX}/${_DESIGNERDIR_REL}
 PYQT_QMLDIR=		${PREFIX}/${_QMLDIR_REL}
 
@@ -229,7 +230,10 @@ PLIST_SUB+=	PYQT_APIDIR=${_APIDIR_REL} \
 		PYQT_EXAMPLEDIR=${_EXAMPLEDIR_REL} \
 		PYQT_SIPDIR=${_SIPDIR_REL} \
 		PYQT_DESIGNERDIR=${_DESIGNERDIR_REL} \
-		PYQT_QMLDIR=${_QMLDIR_REL}
+		PYQT_QMLDIR=${_QMLDIR_REL} \
+		PYQT_SIPVERSION=${SIP_VERSION} \
+		PYQT_QSCIVERSION=${QSCI2_VERSION} \
+		PYQT_PYQTVERSION=${PYQT_VERSION}
 
 .if defined(PYQT_DIST)
 PORTVERSION=	${PYQT_VERSION}

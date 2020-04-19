@@ -1,0 +1,11 @@
+# $FreeBSD: head/Keywords/desktop-file-utils.ucl 368907 2014-09-22 12:48:27Z bapt $
+#
+# MAINTAINER: gnome@FreeBSD.org
+
+actions: []
+post-install: <<EOD
+  update-desktop-database -q > /dev/null || true
+EOD
+post-deinstall: <<EOD
+  update-desktop-database -q > /dev/null || true
+EOD

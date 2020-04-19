@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/fortran.mk 454428 2017-11-18 13:09:56Z tijl $
+# $FreeBSD: head/Mk/Uses/fortran.mk 497798 2019-04-04 06:54:58Z antoine $
 #
 # Fortran support
 #
@@ -17,8 +17,8 @@ fortran_ARGS=	${FORTRAN_DEFAULT}
 
 .if ${fortran_ARGS} == flang
 .if ${ARCH} == amd64
-BUILD_DEPENDS+=	flang:devel/flang
-RUN_DEPENDS+=	flang:devel/flang
+BUILD_DEPENDS+=	flang>0:devel/flang
+RUN_DEPENDS+=	flang>0:devel/flang
 F77=		flang
 FC=		flang
 LDFLAGS+=	-L${LOCALBASE}/flang/lib -Wl,--as-needed -lflang -lexecinfo -Wl,--no-as-needed

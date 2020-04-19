@@ -12,9 +12,9 @@
 # Maxim Sobolev
 # ----------------------------------------------------------------------------
 #
-# $FreeBSD: head/Tools/scripts/checknewver.sh 340851 2014-01-23 19:55:14Z mat $
+# $FreeBSD: head/Tools/scripts/checknewver.sh 486557 2018-12-03 21:38:04Z rene $
 #
-# MAINTAINER= sobomax@FreeBSD.org
+# MAINTAINER= ports@FreeBSD.org
 
 display_warn () {
   if [ x"${SILENT}" != x"yes" ]; then

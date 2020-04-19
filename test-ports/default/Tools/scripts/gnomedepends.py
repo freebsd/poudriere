@@ -13,9 +13,9 @@
 # Maxim Sobolev
 # ----------------------------------------------------------------------------
 #
-# $FreeBSD: head/Tools/scripts/gnomedepends.py 340851 2014-01-23 19:55:14Z mat $
+# $FreeBSD: head/Tools/scripts/gnomedepends.py 486557 2018-12-03 21:38:04Z rene $
 #
-# MAINTAINER= sobomax@FreeBSD.org
+# MAINTAINER= gnome@FreeBSD.org
 #
 # TODO:
 #  - analyse actual {RUN,LIB}_DEPENDS and give an advice about what should be

@@ -1,1 +1,0 @@
-SUBDIR += help2man

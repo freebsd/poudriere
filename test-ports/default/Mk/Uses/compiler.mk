@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/compiler.mk 488201 2018-12-23 12:01:32Z antoine $
+# $FreeBSD: head/Mk/Uses/compiler.mk 528379 2020-03-13 21:46:34Z jkim $
 #
 # Allows to determine the compiler being used
 #
@@ -79,7 +79,7 @@ _CCVERSION!=	${CC} --version
 _CCVERSION_${_CC_hash}=	${_CCVERSION}
 PORTS_ENV_VARS+=	_CCVERSION_${_CC_hash}
 .endif
-COMPILER_VERSION=	${_CCVERSION:M[0-9].[0-9]*:tW:C/([0-9]).([0-9]).*/\1\2/g}
+COMPILER_VERSION=	${_CCVERSION:M[0-9]*.[0-9]*:[1]:C/([0-9]+)\.([0-9]+)\..*/\1\2/}
 .if ${_CCVERSION:Mclang}
 COMPILER_TYPE=	clang
 .else
@@ -103,7 +103,7 @@ _ALTCCVERSION_${_CC_hash}=	${_ALTCCVERSION}
 PORTS_ENV_VARS+=		_ALTCCVERSION_${_CC_hash}
 .endif
 
-ALT_COMPILER_VERSION=	${_ALTCCVERSION:M[0-9].[0-9]*:tW:C/([0-9]).([0-9]).*/\1\2/g}
+ALT_COMPILER_VERSION=	${_ALTCCVERSION:M[0-9]*.[0-9]*:[1]:C/([0-9]+)\.([0-9]+)\..*/\1\2/}
 .if ${_ALTCCVERSION:Mclang}
 ALT_COMPILER_TYPE=	clang
 .elif ${_ALTCCVERSION} != none

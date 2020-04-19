@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/bsd.ccache.mk 462894 2018-02-25 03:32:18Z bdrewery $
+# $FreeBSD: head/Mk/bsd.ccache.mk 514247 2019-10-10 20:09:59Z bdrewery $
 #-*- tab-width: 4; -*-
 # ex:ts=4
 #
@@ -11,6 +11,10 @@ COMMANDS_Include_MAINTAINER=	portmgr@FreeBSD.org
 .if !defined(_CCACHEMKINCLUDED)
 
 _CCACHEMKINCLUDED=	yes
+
+.if defined(NOCCACHE)
+NO_CCACHE=	t
+.endif
 
 # HOME is always set to ${WRKDIR} now. Try to use /root/.ccache as default.
 .if defined(WITH_CCACHE_BUILD) && !defined(CCACHE_DIR)
@@ -25,7 +29,7 @@ WARNING+=	WITH_CCACHE_BUILD support disabled, please set CCACHE_DIR.
 # Support NO_CCACHE for common setups, require WITH_CCACHE_BUILD, and
 # don't use if ccache already set in CC
 .if !defined(NO_CCACHE) && defined(WITH_CCACHE_BUILD) && !${CC:M*ccache*} && \
-  !defined(NO_BUILD) && !defined(NOCCACHE)
+  !defined(NO_BUILD)
 
 # Avoid depends loops between ccache and pkg
 .	if !defined(NO_CCACHE_DEPEND) && \
@@ -34,6 +38,7 @@ BUILD_DEPENDS+=		${LOCALBASE}/bin/ccache:devel/ccache
 .	endif
 
 CCACHE_WRAPPER_PATH?=	${LOCALBASE}/libexec/ccache
+CCACHE_BIN?=			${CCACHE_WRAPPER_PATH:C,/libexec/ccache$,,}/bin/ccache
 
 .if exists(${CCACHE_WRAPPER_PATH})
 # Prepend the ccache dir into the PATH and setup ccache env

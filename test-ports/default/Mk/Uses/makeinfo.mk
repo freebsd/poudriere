@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/makeinfo.mk 446854 2017-07-28 21:45:20Z jkim $
+# $FreeBSD: head/Mk/Uses/makeinfo.mk 520033 2019-12-13 13:48:55Z adamw $
 #
 # handle dependency on the makeinfo port
 #
@@ -15,11 +15,8 @@ _INCLUDE_USES_MAKEINFO_MK=	yes
 IGNORE=	USES=makeinfo - expects no arguments
 .endif
 
-.if exists(/usr/bin/makeinfo)
-MAKEINFO?=	/usr/bin/makeinfo
-.else
-BUILD_DEPENDS+=	makeinfo:print/texinfo
+# Depend specifically on makeinfo from ports
+BUILD_DEPENDS+=	${LOCALBASE}/bin/makeinfo:print/texinfo
 MAKEINFO?=	${LOCALBASE}/bin/makeinfo
-.endif
 
 .endif

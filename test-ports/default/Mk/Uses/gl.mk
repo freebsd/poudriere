@@ -1,10 +1,10 @@
-# $FreeBSD: head/Mk/Uses/gl.mk 479543 2018-09-11 18:52:07Z zeising $
+# $FreeBSD: head/Mk/Uses/gl.mk 517002 2019-11-07 18:49:58Z zeising $
 # 
 # Use OpenGL and related libraries and ports
 # 
 # Feature:	gl
 # Usage:	USES=gl
-#		USE_GL=egl gbm gl glesv2 glew glu glut glw
+#		USE_GL=egl gbm gl glesv2 glew glu glut
 #		
 #		USE_GL specifies which GL components to add as dependencies.
 #		Not specifying USE_GL with USES=gl is an error.
@@ -24,7 +24,6 @@ _GL_glew_LIB_DEPENDS=		libGLEW.so:graphics/glew
 _GL_glu_LIB_DEPENDS=		libGLU.so:graphics/libGLU
 _GL_glu_USE_XORG=		xorgproto
 _GL_glut_LIB_DEPENDS=		libglut.so:graphics/freeglut
-_GL_glw_LIB_DEPENDS=		libGLw.so:graphics/libGLw
 
 .if !empty(gl_ARGS)
 IGNORE=	USES=gl takes no arguments
@@ -45,6 +44,14 @@ USE_XORG+=	${_GL_${_component}_USE_XORG}
 LIB_DEPENDS+=	${_GL_${_component}_LIB_DEPENDS}
 .endif
 .endfor
+
+# We only need to include xorg.mk if we want USE_XORG modules
+# USES+=xorg does not provide any functionality, it just silences an error
+# message about USES=xorg not being set
+.if defined(USE_XORG) && !empty(USE_XORG)
+USES+=		xorg
+.include "${USESDIR}/xorg.mk"
+.endif
 
 # _INCLUDE_USES_GL_MK
 .endif

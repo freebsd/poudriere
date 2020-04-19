@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/motif.mk 411970 2016-03-27 01:23:25Z bapt $
+# $FreeBSD: head/Mk/Uses/motif.mk 517002 2019-11-07 18:49:58Z zeising $
 #
 # handle dependency on motif
 #
@@ -24,7 +24,15 @@ USE_XORG+=	xpm
 LIB_DEPENDS+=		libXm.so.4:x11-toolkits/open-motif
 .endif
 
-MOTIFLIB?=	-L${LOCALBASE}/lib -lXm -lXp
+MOTIFLIB?=	-L${LOCALBASE}/lib -lXm
 MAKE_ENV+=	MOTIFLIB="${MOTIFLIB}"
+
+# We only need to include xorg.mk if we want USE_XORG modules
+# USES+=xorg does not provide any functionality, it just silences an error
+# message about USES=xorg not being set
+.if defined(USE_XORG) && !empty(USE_XORG)
+USES+=		xorg
+.include "${USESDIR}/xorg.mk"
+.endif
 
 .endif

@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/fonts.mk 495395 2019-03-11 21:25:57Z zeising $
+# $FreeBSD: head/Mk/Uses/fonts.mk 521478 2019-12-30 10:09:56Z hrs $
 #
 # handle fonts
 # Feature:	fonts
@@ -61,6 +61,14 @@ FONTNAME?=	${PORTNAME}
 FONTSDIR?=	${PREFIX}/share/fonts/${FONTNAME}
 .if !empty(fonts_ARGS:Nnone)
 PLIST_FILES+=	"@${fonts_ARGS} ${FONTSDIR}"
+.endif
+.if defined(FONTPATHSPEC) && !empty(FONTPATHSPEC)
+FONTPATHD?=	${LOCALBASE}/etc/X11/fontpath.d
+PLIST_FILES+=	"${FONTPATHD}/${FONTPATHSPEC}"
+_USES_install+=	690:fonts-install-fontpathd
+fonts-install-fontpathd:
+	@${MKDIR} ${STAGEDIR}${FONTPATHD}
+	${RLN} ${STAGEDIR}${FONTSDIR} ${STAGEDIR}${FONTPATHD}/${FONTPATHSPEC}
 .endif
 SUB_LIST+=	FONTSDIR="${FONTSDIR}"
 PLIST_SUB+=	FONTSDIR="${FONTSDIR:S,^${PREFIX}/,,}"

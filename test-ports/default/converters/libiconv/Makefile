@@ -1,9 +1,9 @@
 # Created by: Maxim Sobolev <sobomax@FreeBSD.org>
-# $FreeBSD: head/converters/libiconv/Makefile 428196 2016-12-09 12:57:21Z sunpoet $
+# $FreeBSD: head/converters/libiconv/Makefile 450634 2017-09-25 20:55:27Z tijl $
 
 PORTNAME=	libiconv
 PORTVERSION=	1.14
-PORTREVISION=	10
+PORTREVISION=	11
 CATEGORIES=	converters devel
 MASTER_SITES=	GNU
 

@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/bdb.mk 458513 2018-01-09 07:40:55Z mat $
+# $FreeBSD: head/Mk/Uses/bdb.mk 499233 2019-04-18 05:34:33Z tobik $
 #
 # Provide support for Berkeley DB
 # Feature:	bdb
@@ -218,8 +218,8 @@ debug-bdb:
 	@${ECHO_CMD} "BDB_LIB_NAME=${BDB_LIB_NAME}"
 	@${ECHO_CMD} "BDB_LIB_CXX_NAME=${BDB_LIB_CXX_NAME}"
 	@${ECHO_CMD} "BDB_LIB_DIR=${BDB_LIB_DIR}"
-	@${ECHO_CMD} "BUILD_DEPENDS=${BUILD_DEPENDS:M*/databases/db*}"
-	@${ECHO_CMD} "LIB_DEPENDS=${LIB_DEPENDS:M*/databases/db*}"
+	@${ECHO_CMD} "BUILD_DEPENDS=${BUILD_DEPENDS:M*\:databases/db*}"
+	@${ECHO_CMD} "LIB_DEPENDS=${LIB_DEPENDS:M*\:databases/db*}"
 	@${ECHO_CMD} "------------------------------------------------------------"
 
 # Obsolete variables - ports can define these to want users about

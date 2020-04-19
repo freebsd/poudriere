@@ -1,5 +1,5 @@
 #!/bin/sh
-# $FreeBSD: head/Mk/Scripts/check-vulnerable.sh 417111 2016-06-19 11:25:35Z mat $
+# $FreeBSD: head/Mk/Scripts/check-vulnerable.sh 502793 2019-05-27 13:02:05Z bapt $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 
@@ -24,9 +24,7 @@ if [ ! -x "${dp_PKG_BIN}" ]; then
 	exit 0
 fi
 
-vlist=$(${dp_PKG_BIN} audit "${dp_PKGNAME}" || :)
-
-if [ "${vlist}" != "0 problem(s) in the installed packages found." ]; then
+if ! vlist=$(${dp_PKG_BIN} audit "${dp_PKGNAME}"); then
 	${dp_ECHO_MSG} "===>  ${dp_PKGNAME} has known vulnerabilities:"
 	${dp_ECHO_MSG} "$vlist"
 	${dp_ECHO_MSG} "=> Please update your ports tree and try again."

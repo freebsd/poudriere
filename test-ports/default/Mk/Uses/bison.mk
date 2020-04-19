@@ -1,10 +1,15 @@
-# $FreeBSD: head/Mk/Uses/bison.mk 411970 2016-03-27 01:23:25Z bapt $
+# $FreeBSD: head/Mk/Uses/bison.mk 528181 2020-03-10 16:05:11Z bapt $
 #
 # handle dependency on the bison port
 #
 # Feature:	bison
 # Usage:	USES=bison or USES=bison:ARGS
-# Valid ARGS:	build (default, implicit), run, both
+# Valid ARGS:	build (default, implicit), run, both, alias, wrappers
+#
+# 'alias'	will automatically create a BINARY_ALIAS to use base
+#		byacc invoked as bison
+# 'wrapper'	will automatically create BINARY_WRAPPER to use base
+#		byacc with a wrapper to mimic a bit more bison
 #
 # MAINTAINER: portmgr@FreeBSD.org
 
@@ -24,6 +29,10 @@ RUN_DEPENDS+=	${_BISON_DEPENDS}
 .elif ${bison_ARGS} == "both"
 BUILD_DEPENDS+=	${_BISON_DEPENDS}
 RUN_DEPENDS+=	${_BISON_DEPENDS}
+.elif ${bison_ARGS} == "alias"
+BINARY_ALIAS+=	bison=byacc
+.elif ${bison_ARGS} == "wrapper"
+BINARY_WRAPPERS+=	bison
 .else
 IGNORE=	USES=bison - invalid args: [${bison_ARGS}] specified
 .endif

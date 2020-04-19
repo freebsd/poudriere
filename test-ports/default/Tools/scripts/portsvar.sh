@@ -27,9 +27,9 @@
 #   % portsvar.sh -a -w kde
 #   list all variables through bsd.port.mk including kde
 #
-# $FreeBSD: head/Tools/scripts/portsvar.sh 440110 2017-05-04 14:58:54Z mat $
+# $FreeBSD: head/Tools/scripts/portsvar.sh 471290 2018-06-01 20:25:45Z rene $
 #
-# MAINTAINER= daichi@FreeBSD.org
+# MAINTAINER= ports@FreeBSD.org
 
 usage_msg="usage:
     portsvar.sh [-a] [-e] [-w target] [-h] [var=val ...] var1 [var2 ...]

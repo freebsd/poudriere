@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/bsd.wx.mk 494048 2019-02-27 12:06:57Z danfe $
+# $FreeBSD: head/Mk/bsd.wx.mk 527449 2020-02-29 18:24:19Z lbartoletti $
 #
 # bsd.wx.mk - Support for wxWidgets based ports.
 #
@@ -140,8 +140,8 @@ _WX_FILE_python_2.8=	${PYTHON_SITELIBDIR}/wx-2.8-gtk2${_WX_PYSUFX}/wx/__init__.p
 _WX_PORT_wx_3.0=	x11-toolkits/wxgtk30
 _WX_LIB_wx_3.0=		wx_baseu-3.0
 
-_WX_PORT_python_3.0=	x11-toolkits/py-wxPython30
-_WX_FILE_python_3.0=	${PYTHON_SITELIBDIR}/wx-3.0-gtk3/wx/__init__.py
+_WX_PORT_python_3.0=	x11-toolkits/py-wxPython40@${PY_FLAVOR}
+_WX_FILE_python_3.0=	${PYTHON_SITELIBDIR}/wx/__init__.py
 
 # wxgtk 3.1
 _WX_PORT_wx_3.1=	x11-toolkits/wxgtk31

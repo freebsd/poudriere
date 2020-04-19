@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/cran.mk 458513 2018-01-09 07:40:55Z mat $
+# $FreeBSD: head/Mk/Uses/cran.mk 525094 2020-02-03 20:31:22Z rene $
 #
 # Use the Comprehensive R Archive Network 
 #
@@ -9,7 +9,7 @@
 # auto-plist	The pkg-plist is to be automatically generated
 # compiles	The port has code that needs to be compiled
 #
-# MAINTAINER=	dbn@FreeBSD.org
+# MAINTAINER=	ports@FreeBSD.org
 
 .if !defined(_INCLUDE_USES_CRAN_MK)
 _INCLUDE_USES_CRAN_MK=	yes
@@ -69,7 +69,6 @@ cran-auto-plist:
 _USES_install+= 755:cran-strip
 cran-strip:
 	${FIND} ${STAGEDIR}${PREFIX}/${R_MOD_DIR} -name '*.so' -exec ${STRIP_CMD} {} +
-.include "${PORTSDIR}/math/R/compiler.mk"
 .include "${USESDIR}/fortran.mk"
 .else
 NO_ARCH=	yes

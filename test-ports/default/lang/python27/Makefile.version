@@ -1,4 +1,6 @@
 # Mk/Uses/python.mk includes this file, don't remove it!
-# $FreeBSD: head/lang/python27/Makefile.version 495329 2019-03-11 08:18:00Z wen $
+# $FreeBSD: head/lang/python27/Makefile.version 515343 2019-10-24 15:13:26Z wen $
 
-PYTHON_PORTVERSION=	2.7.16
+# Do not forget to update python documentation (lang/python-doc-*)
+# Run "make -C lang/python-doc-html makesum"
+PYTHON_PORTVERSION=	2.7.17
