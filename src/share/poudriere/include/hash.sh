@@ -179,7 +179,7 @@ list_contains() {
 	local item="$2"
 	local value
 
-	getvar "${var}" value
+	getvar "${var}" value || value=
 	case " ${value} " in *" ${item} "*) ;; *) return 1 ;; esac
 	return 0
 }
@@ -190,7 +190,7 @@ list_add() {
 	local item="$2"
 	local value
 
-	getvar "${var}" value
+	getvar "${var}" value || value=
 	case " ${value} " in *" ${item} "*) return 0 ;; esac
 	setvar "${var}" "${value:+${value} }${item}"
 }
@@ -201,7 +201,7 @@ list_remove() {
 	local item="$2"
 	local value newvalue
 
-	getvar "${var}" value
+	getvar "${var}" value || value=
 	value=" ${value} "
 	case "${value}" in *" ${item} "*) ;; *) return 1 ;; esac
 	newvalue="${value% "${item}" *} ${value##* "${item}" }"

@@ -1,3 +1,4 @@
+set -e
 # Common setup for bulk test runs
 : ${ALL:=0}
 
@@ -48,7 +49,7 @@ cache_pkgnames() {
 	   IGNORE ignore \
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
 	    '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
-	    pdeps
+	    pdeps || exit 99
 	hash_set origin-flavors "${origin}" "${flavors}"
 	fix_default_flavor "${originspec}" originspec
 	hash_set originspec-pkgname "${originspec}" "${pkgname}"
@@ -452,8 +453,6 @@ ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} logclean \
     -ay >/dev/null || :
 echo " done"
 
-set -e
-
 # Import local ports tree
 pset "${PTNAME}" mnt "${PTMNT}"
 pset "${PTNAME}" method "-"
@@ -478,8 +477,6 @@ for o in ${OVERLAYS}; do
 	ln -fs "${PTMNT%/*}/${o}" "${MASTERMNT}/${OVERLAYSDIR}/${o}"
 done
 
-set +e
-
 ALL_PKGNAMES=
 ALL_ORIGINS=
 if [ ${ALL} -eq 1 ]; then
@@ -500,15 +497,16 @@ LISTPORTS_NOIGNORED="${LISTPORTS_EXPANDED}"
 if [ -n "${IGNOREDPORTS}" ]; then
 	_IGNOREDPORTS="${IGNOREDPORTS}"
 	for port in ${_IGNOREDPORTS}; do
-		list_remove LISTPORTS_NOIGNORED "${port}"
-		list_remove SKIPPEDPORTS "${port}"
+		list_remove LISTPORTS_NOIGNORED "${port}" || :
+		list_remove SKIPPEDPORTS "${port}" || :
 	done
 fi
 # Separate out SKIPPED ports
 if [ -n "${SKIPPEDPORTS}" ]; then
 	_SKIPPEDPORTS="${SKIPPEDPORTS}"
 	for port in ${_SKIPPEDPORTS}; do
-		list_remove LISTPORTS_NOIGNORED "${port}"
+		list_remove LISTPORTS_NOIGNORED "${port}" || :
 	done
 fi
 echo "Building: $(echo ${LISTPORTS_EXPANDED})"
+set +e
