@@ -45,7 +45,7 @@ THISDIR=${VPATH}
 THISDIR="$(realpath "${THISDIR}")"
 cd "${THISDIR}"
 
-case "$1" in
+case "${1##*/}" in
 bulk*.sh)
 	: ${TIMEOUT:=3600}
 	;;
