@@ -34,7 +34,7 @@ if [ -z "${LIBEXECPREFIX-}" ]; then
 	exit 99
 fi
 : ${VPATH:=.}
-: ${SH:=/bin/sh}
+: ${SH:=sh}
 if [ "${SH}" = "sh" ]; then
 	SH="${LIBEXECPREFIX}/sh"
 fi
@@ -60,7 +60,7 @@ exec < /dev/null
 while read var; do
 	unset ${var}
 done <<-EOF
-$(env | egrep '^(WITH_|PORT|MAKE)'|grep -vF '.MAKE')
+$(env | egrep '^(WITH_|PORT|MAKE)'|grep -vF '.MAKE'|cut -d= -f1)
 EOF
 
 exec /usr/bin/timeout ${TIMEOUT} \
