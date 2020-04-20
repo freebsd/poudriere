@@ -1,16 +1,12 @@
-#! /bin/sh
-
 # first depends on a specific flavor
 # second depends on the default flavor
 # The order matters here since listed_ports does a sort -u. The specific
 # FLAVOR dependency MUST come first to hit the bug.
 LISTPORTS="ports-mgmt/poudriere-devel-dep-FOO ports-mgmt/zzzz"
+OVERLAYS="omnibus"
 . common.bulk.sh
 
-${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
-    -B "${BUILDNAME}" \
-    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
-    ${LISTPORTS}
+do_bulk ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 
 # Assert that only listed packages are in poudriere.ports.queued as 'listed'

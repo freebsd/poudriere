@@ -1,5 +1,3 @@
-#! /bin/sh
-
 TESTS="$@"
 
 FAILED_TESTS=

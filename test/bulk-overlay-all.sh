@@ -1,14 +1,8 @@
-#! /bin/sh
-
 ALL=1
-OVERLAYS="overlay"
+OVERLAYS="overlay omnibus"
 . common.bulk.sh
 
-${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
-    -O "${OVERLAYS}" \
-    -B "${BUILDNAME}" \
-    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
-    -a
+do_bulk -a
 assert 0 $? "Bulk should pass"
 
 # Assert that we found the right misc/foo
@@ -18,11 +12,12 @@ assert 0 "${ret}" "Cannot find pkgname for misc/foo"
 assert "foo-OVERLAY-20161010" "${pkgname}" "misc/foo didn't find the overlay version"
 
 # Assert that IGNOREDPORTS was populated by the framework right.
-assert "ports-mgmt/poudriere-devel-IGNORED ports-mgmt/poudriere-devel-IGNORED-and-skipped misc/foo@IGNORED_OVERLAY" \
+assert "misc/foo@IGNORED_OVERLAY ports-mgmt/poudriere-devel-IGNORED ports-mgmt/poudriere-devel-IGNORED-and-skipped" \
     "${IGNOREDPORTS-null}" "IGNOREDPORTS should match"
 
 # Assert that skipped ports are right
-assert "ports-mgmt/poudriere-devel-dep2-IGNORED ports-mgmt/poudriere-devel-dep-IGNORED" "${SKIPPEDPORTS-null}" "SKIPPEDPORTS should match"
+assert "ports-mgmt/poudriere-devel-dep-IGNORED ports-mgmt/poudriere-devel-dep2-IGNORED" \
+	"${SKIPPEDPORTS-null}" "SKIPPEDPORTS should match"
 
 # Assert the IGNOREd ports are tracked in .poudriere.ports.ignored
 assert_ignored "${IGNOREDPORTS}"

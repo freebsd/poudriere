@@ -1,5 +1,3 @@
-#! /bin/sh
-
 # first depends on a specific flavor
 # second depends on the default flavor
 # The order matters here since listed_ports does a sort -u. The specific
@@ -25,12 +23,10 @@
 # 2nd pass:
 # freebsd-release-manifests@FOO depends on devel/foo (DEFAULT)
 LISTPORTS="ports-mgmt/poudriere-devel-dep-FOO ports-mgmt/zzzz ports-mgmt/yyyy"
+OVERLAYS="omnibus"
 . common.bulk.sh
 
-${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
-    -B "${BUILDNAME}" \
-    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
-    ${LISTPORTS}
+do_bulk ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 
 # Assert that only listed packages are in poudriere.ports.queued as 'listed'

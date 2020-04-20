@@ -57,7 +57,11 @@ cache_pkgnames() {
 	# Record all known packages for comparing to the queue later.
 	ALL_PKGNAMES="${ALL_PKGNAMES}${ALL_PKGNAMES:+ }${pkgname}"
 	ALL_ORIGINS="${ALL_ORIGINS}${ALL_ORIGINS:+ }${originspec}"
-	[ -n "${ignore}" ] && list_add IGNOREDPORTS "${originspec}"
+	if [ -n "${ignore}" ]; then
+		list_add IGNOREDPORTS "${originspec}"
+		IGNOREDPORTS="$(echo "${IGNOREDPORTS}" | tr ' ' '\n' |
+			LC_ALL=C sort | sed '/^$/d' | paste -s -d ' ' -)"
+	fi
 	for dep_origin in ${pdeps}; do
 		if cache_pkgnames "${dep_origin}"; then
 			if ! list_contains SKIPPEDPORTS "${originspec}"; then
@@ -65,6 +69,8 @@ cache_pkgnames() {
 			fi
 		fi
 	done
+	SKIPPEDPORTS="$(echo "${SKIPPEDPORTS}" | tr ' ' '\n' |
+		LC_ALL=C sort | sed '/^$/d' | paste -s -d ' ' -)"
 	# Also cache all of the FLAVOR deps/PKGNAMES
 	if [ -n "${flavor}" ]; then
 		default_flavor="${flavors%% *}"
@@ -352,6 +358,14 @@ assert_counts() {
 	assert "${expected_skipped}" "${skipped}" "skipped should match"
 }
 
+do_bulk() {
+	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
+	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | tr '\n' ' ')} \
+	    -B "${BUILDNAME}" \
+	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
+	    "$@"
+}
+
 # Avoid injail() for port_var_fetch
 INJAIL_HOST=1
 
@@ -450,6 +464,7 @@ export POUDRIERE_BUILD_TYPE=bulk
 _log_path log
 
 # Setup basic overlay to test-ports/overlay/ dir.
+OVERLAYSDIR="$(mktemp -ut overlays)"
 for o in ${OVERLAYS}; do
 	[ -d "${PTMNT%/*}/${o}" ] || continue
 	pset "${o}" mnt "${PTMNT%/*}/${o}"
@@ -457,7 +472,6 @@ for o in ${OVERLAYS}; do
 	# We run port_var_fetch_originspec without a jail so can't use plain
 	# /overlays. Need to link the host path into our fake MASTERMNT path
 	# as well as link to the overlay portdir without nullfs.
-	OVERLAYSDIR="$(mktemp -ut overlays)"
 	mkdir -p "${MASTERMNT}/${OVERLAYSDIR%/*}"
 	ln -fs "${MASTERMNT}/${OVERLAYSDIR}" "${OVERLAYSDIR}"
 	mkdir -p "${MASTERMNT}/${OVERLAYSDIR}"
@@ -471,6 +485,8 @@ ALL_ORIGINS=
 if [ ${ALL} -eq 1 ]; then
 	LISTPORTS="$(listed_ports | paste -s -d ' ' -)"
 fi
+LISTPORTS="$(echo "${LISTPORTS}" | tr ' ' '\n' |
+	LC_ALL=C sort | sed '/^$/d' | paste -s -d ' ' -)"
 echo -n "Gathering metadata for requested ports..."
 IGNOREDPORTS=""
 SKIPPEDPORTS=""

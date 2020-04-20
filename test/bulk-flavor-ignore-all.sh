@@ -1,16 +1,12 @@
-#! /bin/sh
-
 ALL=1
+OVERLAYS="omnibus"
 . common.bulk.sh
 
-${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
-    -B "${BUILDNAME}" \
-    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
-    -a
+do_bulk -a
 assert 0 $? "Bulk should pass"
 
 # Assert that IGNOREDPORTS was populated by the framework right.
-assert "ports-mgmt/poudriere-devel-IGNORED ports-mgmt/poudriere-devel-IGNORED-and-skipped misc/foo@IGNORED" \
+assert "misc/foo@IGNORED ports-mgmt/poudriere-devel-IGNORED ports-mgmt/poudriere-devel-IGNORED-and-skipped" \
     "${IGNOREDPORTS-null}" "IGNOREDPORTS should match"
 
 # Assert that skipped ports are right

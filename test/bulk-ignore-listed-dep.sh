@@ -1,19 +1,14 @@
-#! /bin/sh
-
 LISTPORTS="ports-mgmt/poudriere-devel ports-mgmt/poudriere-devel-IGNORED misc/foo"
 # ports-mgmt/poudriere-devel-dep-IGNORED should be IGNORED.
 # misc/foo should show up.
-
+OVERLAYS="omnibus"
 . common.bulk.sh
 
-${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
-    -B "${BUILDNAME}" \
-    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
-    ${LISTPORTS}
+do_bulk ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 
 # Assert the non-ignored ports list is right
-assert "ports-mgmt/poudriere-devel misc/foo" "${LISTPORTS_NOIGNORED}" "LISTPORTS_NOIGNORED should match"
+assert "misc/foo ports-mgmt/poudriere-devel" "${LISTPORTS_NOIGNORED}" "LISTPORTS_NOIGNORED should match"
 
 # Assert that IGNOREDPORTS was populated by the framework right.
 assert "ports-mgmt/poudriere-devel-IGNORED" \

@@ -1,5 +1,3 @@
-#! /bin/sh
-
 SLEEPTIME=5
 
 set -e

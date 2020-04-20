@@ -1,5 +1,3 @@
-#! /bin/sh
-
 set -e
 . common.sh
 . ${SCRIPTPREFIX}/common.sh

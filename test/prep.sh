@@ -1,4 +1,3 @@
-#! /bin/sh
 set -e
 
 : ${THISDIR:=$(realpath "${0%/*}")}

@@ -1,17 +1,13 @@
-#! /bin/sh
-
 LISTPORTS="
 	misc/freebsd-release-manifests@BAR
 	misc/freebsd-release-manifests@FOO
 	misc/freebsd-release-manifests@DEFAULT
 	ports-mgmt/poudriere-devel-dep-FOO
 "
+OVERLAYS="omnibus"
 . common.bulk.sh
 
-${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
-    -B "${BUILDNAME}" \
-    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
-    ${LISTPORTS}
+do_bulk ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 
 # Assert that only listed packages are in poudriere.ports.queued as 'listed'

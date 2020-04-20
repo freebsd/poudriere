@@ -1,5 +1,3 @@
-#! /bin/sh
-#
 # Test that (some) traps received while holding a lock are delayed until
 # the lock is released.
 # The same as locks_critical_section.sh but with a nested lock
