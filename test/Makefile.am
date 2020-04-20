@@ -5,6 +5,7 @@ EXTRA_DIST= $(TESTS) \
 	    prep.sh \
 	    runtest.sh
 TESTS=\
+	builtins.sh \
 	cache.sh \
 	encode_args.sh \
 	getvar.sh \
