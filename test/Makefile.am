@@ -1,4 +1,5 @@
 EXTRA_DIST= $(TESTS) \
+	    $(JAIL_TESTS) \
 	    common.bulk.sh \
 	    common.sh \
 	    prep.sh \
@@ -22,6 +23,9 @@ TESTS=\
 	shash_basic.sh \
 	timestamp.sh \
 	trap_save.sh \
+	$(JAIL_TESTS)
+
+JAIL_TESTS= \
 	bulk-bad-DEPENDS_ARGS.sh \
 	bulk-ignore-listed.sh \
 	bulk-ignore-dep-skipped.sh \
@@ -52,6 +56,10 @@ TESTS=\
 	bulk-no-overlay-specific.sh \
 	bulk-overlay-specific.sh
 
+# Depend bulk tests on jail setup
+TESTS+=	prep.sh
+$(JAIL_TESTS:.sh=.sh.log): prep.sh.log
+
 run_env= env \
 	 abs_top_builddir="$(abs_top_builddir)" \
 	 abs_top_srcdir="$(abs_top_srcdir)" \
@@ -63,10 +71,3 @@ run_env= env \
 LOG_COMPILER=	$(run_env) $(SHELL) $(srcdir)/runtest.sh
 #TEST_EXTENSIONS=.sh
 #SH_LOG_COMPILER=$(run_env) $(SHELL) runtest.sh
-
-check-am: prep
-
-.PHONY: prep
-prep:
-	@echo "Prepping test jail"
-	$(LOG_COMPILER) $(srcdir)/prep.sh

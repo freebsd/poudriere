@@ -447,30 +447,20 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 EXTRA_DIST = $(TESTS) \
+	    $(JAIL_TESTS) \
 	    common.bulk.sh \
 	    common.sh \
 	    prep.sh \
 	    runtest.sh
 
-TESTS = \
-	cache.sh \
-	encode_args.sh \
-	getvar.sh \
-	gsub.sh \
-	hash_basic.sh \
-	list.sh \
-	locks.sh \
-	locks_critical_section.sh \
-	locks_critical_section_nested.sh \
-	mapfile.sh \
-	port_var_fetch.sh \
-	prefix_output.sh \
-	read_file.sh \
-	relpath.sh \
-	relpath_common.sh \
-	shash_basic.sh \
-	timestamp.sh \
-	trap_save.sh \
+
+# Depend bulk tests on jail setup
+TESTS = cache.sh encode_args.sh getvar.sh gsub.sh hash_basic.sh \
+	list.sh locks.sh locks_critical_section.sh \
+	locks_critical_section_nested.sh mapfile.sh port_var_fetch.sh \
+	prefix_output.sh read_file.sh relpath.sh relpath_common.sh \
+	shash_basic.sh timestamp.sh trap_save.sh $(JAIL_TESTS) prep.sh
+JAIL_TESTS = \
 	bulk-bad-DEPENDS_ARGS.sh \
 	bulk-ignore-listed.sh \
 	bulk-ignore-dep-skipped.sh \
@@ -1027,6 +1017,13 @@ bulk-overlay-specific.sh.log: bulk-overlay-specific.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+prep.sh.log: prep.sh
+	@p='prep.sh'; \
+	b='prep.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 .test.log:
 	@p='$<'; \
 	$(am__set_b); \
@@ -1196,15 +1193,9 @@ uninstall-am:
 
 .PRECIOUS: Makefile
 
+$(JAIL_TESTS:.sh=.sh.log): prep.sh.log
 #TEST_EXTENSIONS=.sh
 #SH_LOG_COMPILER=$(run_env) $(SHELL) runtest.sh
-
-check-am: prep
-
-.PHONY: prep
-prep:
-	@echo "Prepping test jail"
-	$(LOG_COMPILER) $(srcdir)/prep.sh
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
