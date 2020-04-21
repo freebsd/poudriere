@@ -63,6 +63,8 @@ done <<-EOF
 $(env | egrep '^(WITH_|PORT|MAKE)'|grep -vF '.MAKE'|cut -d= -f1)
 EOF
 
+echo "Using SH=${SH}" >&2
+
 exec /usr/bin/timeout ${TIMEOUT} \
     "${LIBEXECPREFIX}/timestamp" \
     env \
