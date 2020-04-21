@@ -464,18 +464,24 @@ _log_path log
 
 # Setup basic overlay to test-ports/overlay/ dir.
 OVERLAYSDIR="$(mktemp -ut overlays)"
-for o in ${OVERLAYS}; do
-	[ -d "${PTMNT%/*}/${o}" ] || continue
-	pset "${o}" mnt "${PTMNT%/*}/${o}"
-	pset "${o}" method "-"
+OVERLAYS_save="${OVERLAYS}"
+OVERLAYS=
+for o in ${OVERLAYS_save}; do
+	omnt="${PTMNT%/*}/${o}"
+	[ -d "${omnt}" ] || continue
+	oname=$(echo "${omnt}" | tr '[./]' '_')
+	pset "${oname}" mnt "${omnt}"
+	pset "${oname}" method "-"
 	# We run port_var_fetch_originspec without a jail so can't use plain
 	# /overlays. Need to link the host path into our fake MASTERMNT path
 	# as well as link to the overlay portdir without nullfs.
 	mkdir -p "${MASTERMNT}/${OVERLAYSDIR%/*}"
 	ln -fs "${MASTERMNT}/${OVERLAYSDIR}" "${OVERLAYSDIR}"
 	mkdir -p "${MASTERMNT}/${OVERLAYSDIR}"
-	ln -fs "${PTMNT%/*}/${o}" "${MASTERMNT}/${OVERLAYSDIR}/${o}"
+	ln -fs "${omnt}" "${MASTERMNT}/${OVERLAYSDIR}/${oname}"
+	OVERLAYS="${OVERLAYS:+${OVERLAYS} }${oname}"
 done
+unset OVERLAYS_save omnt oname
 
 ALL_PKGNAMES=
 ALL_ORIGINS=
