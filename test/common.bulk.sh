@@ -360,7 +360,15 @@ assert_counts() {
 }
 
 do_bulk() {
-	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt \
+	local verbose n
+
+	n=0
+	until [ "${n}" -eq "${VERBOSE}" ]; do
+		[ -z "${verbose}" ] && verbose=-
+		verbose="${verbose}v"
+		n=$((n + 1))
+	done
+	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt ${verbose} \
 	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | tr '\n' ' ')} \
 	    -B "${BUILDNAME}" \
 	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
