@@ -5676,7 +5676,8 @@ _lock_release() {
 	else
 		hash_unset have_lock "${lockname}" ||
 			err 1 "Releasing unheld lock ${lockname}"
-		rmdir "${lockpath}" 2>/dev/null
+		rmdir "${lockpath}" 2>/dev/null ||
+			err 1 "Held lock dir not found: ${lockpath}"
 	fi
 	# Restore and deliver INT/TERM signals
 	critical_end
