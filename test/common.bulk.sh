@@ -361,6 +361,7 @@ assert_counts() {
 
 do_bulk() {
 	local verbose n
+	local -;set -v
 
 	n=0
 	until [ "${n}" -eq "${VERBOSE}" ]; do
