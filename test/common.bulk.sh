@@ -370,7 +370,7 @@ do_bulk() {
 		n=$((n + 1))
 	done
 	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -n -CNt ${verbose} \
-	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | tr '\n' ' ')} \
+	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
 	    -B "${BUILDNAME}" \
 	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
 	    "$@"
