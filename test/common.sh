@@ -1,3 +1,16 @@
+cmp_cat() {
+	local dest="$1"
+	local tmp="$(TEMPDIR="${dest%/*}" mktemp -t ${dest##*/})"
+
+	cat > "${tmp}"
+
+	if ! cmp -s "${dest}" "${tmp}"; then
+		mv -f "${tmp}" "${dest}"
+	else
+		rm -f "${tmp}"
+	fi
+}
+
 CMD="${0##*/}"
 IN_TEST=1
 SCRIPTPATH="${SCRIPTPREFIX}/${CMD}"
@@ -7,8 +20,8 @@ POUDRIERE_ETC="${BASEFS}/etc"
 : ${DISTFILES_CACHE:=$(mktemp -dt distfiles)}
 
 mkdir -p ${POUDRIERE_ETC}/poudriere.d ${POUDRIERE_ETC}/run
-ptmp=$(TMPDIR="${POUDRIERE_ETC}" mktemp -t poudriere_conf)
-cat > "${ptmp}" << EOF
+rm -f "${POUDRIERE_ETC}/poudriere.conf"
+cmp_cat "${POUDRIERE_ETC}/poudriere.d/poudriere.conf" << EOF
 NO_ZFS=yes
 BASEFS=${BASEFS}
 DISTFILES_CACHE=${DISTFILES_CACHE}
@@ -21,12 +34,7 @@ NO_LIB32=yes
 NO_SRC=yes
 SHARED_LOCK_DIR="${POUDRIERE_ETC}/run"
 EOF
-if ! cmp -s "${POUDRIERE_ETC}/poudriere.conf" "${ptmp}"; then
-	mv -f "${ptmp}" "${POUDRIERE_ETC}/poudriere.conf"
-else
-	rm -f "${ptmp}"
-fi
-cat > "${POUDRIERE_ETC}/poudriere.d/make.conf" << EOF
+cmp_cat "${POUDRIERE_ETC}/poudriere.d/make.conf" << EOF
 EOF
 
 : ${VERBOSE:=1}

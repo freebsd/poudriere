@@ -436,7 +436,7 @@ export __MAKE_CONF="${POUDRIERE_ETC}/poudriere.d/make.conf"
 export SRCCONF=/dev/null
 export SRC_ENV_CONF=/dev/null
 
-cat > "${POUDRIERE_ETC}/poudriere.d/${SETNAME}-poudriere.conf" << EOF
+cmp_cat "${POUDRIERE_ETC}/poudriere.d/${SETNAME}-poudriere.conf" << EOF
 ${FLAVOR_DEFAULT_ALL:+FLAVOR_DEFAULT_ALL=${FLAVOR_DEFAULT_ALL}}
 ${FLAVOR_ALL:+FLAVOR_ALL=${FLAVOR_ALL}}
 EOF
