@@ -625,12 +625,12 @@ usb)
 	fi
 
 	# For correct booting it needs ufs formatted /cfg and /data partitions
-	TMPDIR=`mktemp -d -t poudriere-firmware` || exit 1
+	FTMPDIR=`mktemp -d -t poudriere-firmware` || exit 1
 	# Set proper permissions to this empty directory: /cfg (so /etc) and /data once mounted will inherit them
-	chmod -R 755 ${TMPDIR}
-	makefs -B little -s ${CFG_SIZE} ${WRKDIR}/cfg.img ${TMPDIR}
-	makefs -B little -s ${DATA_SIZE} ${WRKDIR}/data.img ${TMPDIR}
-	rm -rf ${TMPDIR}
+	chmod -R 755 ${FTMPDIR}
+	makefs -B little -s ${CFG_SIZE} ${WRKDIR}/cfg.img ${FTMPDIR}
+	makefs -B little -s ${DATA_SIZE} ${WRKDIR}/data.img ${FTMPDIR}
+	rm -rf ${FTMPDIR}
 	makefs -B little -s ${OS_SIZE}m -o label=${IMAGENAME} \
 		-o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world
 	;;
