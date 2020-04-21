@@ -5633,16 +5633,17 @@ lock_acquire() {
 	local waittime="${2:-30}"
 	local have_lock
 
+	# Delay TERM/INT while holding the lock
+	critical_start
+
 	hash_get have_lock "${lockname}" have_lock || have_lock=0
 	if [ "${have_lock}" -eq 0 ] && ! locked_mkdir "${waittime}" \
 	    "${POUDRIERE_TMPDIR}/lock-${MASTERNAME}-${lockname}" "$$"; then
 		msg_warn "Failed to acquire ${lockname} lock"
+		critical_end
 		return 1
 	fi
 	hash_set have_lock "${lockname}" $((have_lock + 1))
-
-	# Delay TERM/INT while holding the lock
-	critical_start
 }
 
 slock_release() {
