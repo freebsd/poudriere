@@ -350,7 +350,8 @@ gen-man-wiki:
 MOSTLYCLEANFILES+=	poudriere
 .PHONY: poudriere
 poudriere: src/bin/poudriere.in
-	$(AM_V_GEN)if which git >/dev/null 2>&1 && \
+	$(AM_V_GEN)if test -e $(top_srcdir)/.git && \
+	    which git >/dev/null 2>&1 && \
 	    [ -d "$$(git -C "$(top_srcdir)" rev-parse --git-dir)" ]; then \
 	    gitver=$$(git -C "$(top_srcdir)" describe --tags HEAD); \
 	    sed -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
