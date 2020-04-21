@@ -42,6 +42,8 @@ set +e
 }
 
 # Ensure TEST is held
+# XXX: Recursion is allowed now
+false &&
 {
 	time=$(date +%s)
 	lock_acquire TEST ${SLEEPTIME}
@@ -112,4 +114,16 @@ set +e
 {
 	lock_release TEST2
 	assert 0 $? "lock_release(TEST2) did not succeed"
+}
+
+# Recursive test
+{
+	lock_acquire TEST ${SLEEPTIME}
+	assert 0 $? "$0:$LINENO: lock_acquire(TEST) did not succeed"
+	lock_acquire TEST ${SLEEPTIME}
+	assert 0 $? "$0:$LINENO: lock_acquire(TEST) did not succeed recursively"
+	lock_release TEST
+	assert 0 $? "$0:$LINENO: lock_release(TEST) did not succeed recursively"
+	lock_release TEST
+	assert 0 $? "$0:$LINENO: lock_release(TEST) did not succeed"
 }

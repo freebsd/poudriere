@@ -5631,17 +5631,15 @@ lock_acquire() {
 	[ $# -ge 1 ] || eargs lock_acquire lockname [waittime]
 	local lockname="$1"
 	local waittime="${2:-30}"
+	local have_lock
 
-	# Don't take locks inside siginfo_handler
-	[ ${in_siginfo_handler} -eq 1 ] && lock_have "${lockname}" && \
-	    return 1
-
-	if ! locked_mkdir "${waittime}" \
+	hash_get have_lock "${lockname}" have_lock || have_lock=0
+	if [ "${have_lock}" -eq 0 ] && ! locked_mkdir "${waittime}" \
 	    "${POUDRIERE_TMPDIR}/lock-${MASTERNAME}-${lockname}" "$$"; then
 		msg_warn "Failed to acquire ${lockname} lock"
 		return 1
 	fi
-	hash_set have_lock "${lockname}" 1
+	hash_set have_lock "${lockname}" $((have_lock + 1))
 
 	# Delay TERM/INT while holding the lock
 	critical_start
@@ -5656,11 +5654,17 @@ slock_release() {
 lock_release() {
 	[ $# -ne 1 ] && eargs lock_release lockname
 	local lockname="$1"
+	local have_lock
 
-	hash_unset have_lock "${lockname}" || \
-	    err 1 "Releasing unheld lock ${lockname}"
-	rmdir "${POUDRIERE_TMPDIR}/lock-${MASTERNAME}-${lockname}" 2>/dev/null
-
+	hash_get have_lock "${lockname}" have_lock ||
+		err 1 "Releasing unheld lock ${lockname}"
+	if [ "${have_lock}" -gt 1 ]; then
+		hash_set have_lock "${lockname}" $((have_lock - 1))
+	else
+		hash_unset have_lock "${lockname}" ||
+			err 1 "Releasing unheld lock ${lockname}"
+		rmdir "${POUDRIERE_TMPDIR}/lock-${MASTERNAME}-${lockname}" 2>/dev/null
+	fi
 	# Restore and deliver INT/TERM signals
 	critical_end
 }
