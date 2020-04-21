@@ -291,12 +291,21 @@ retry:
 #endif
 			err(1, "mkdir: %s", path);
 		}
+	} else if (fd == -1) {
+#ifdef SHELL
+		cleanup();
+		INTON;
+#endif
+		err(1, "open: %s", path);
 	}
 
 	/* Failed, the directory already exists. */
 	/* If a pid was given then check for a stale lock. */
-	if (writepid != -1 && stale_lock(path, &lockpid))
+	if (writepid != -1 && stale_lock(path, &lockpid)) {
+		if (fd != -1)
+			close(fd);
 		goto retry;
+	}
 
 	timeout.tv_sec = waitsec;
 	timeout.tv_nsec = 0;
