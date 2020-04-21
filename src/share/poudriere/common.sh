@@ -5619,26 +5619,20 @@ pkgqueue_dir() {
 	setvar "${var_return}" "$(printf "%.1s/%s" "${dir}" "${dir}")"
 }
 
-slock_acquire() {
-	[ $# -ge 1 ] || eargs slock_acquire lockname [waittime]
-
-	mkdir -p "${SHARED_LOCK_DIR}" >/dev/null 2>&1 || :
-	POUDRIERE_TMPDIR="${SHARED_LOCK_DIR}" MASTERNAME=poudriere-shared \
-	    lock_acquire "$@"
-}
-
-lock_acquire() {
-	[ $# -ge 1 ] || eargs lock_acquire lockname [waittime]
+_lock_acquire() {
+	[ $# -eq 2 -o $# -eq 3 ] || eargs _lock_acquire lockpath lockname \
+	    [waittime]
 	local lockname="$1"
-	local waittime="${2:-30}"
+	local lockpath="$2"
+	local waittime="${3:-30}"
 	local have_lock
 
 	# Delay TERM/INT while holding the lock
 	critical_start
 
 	hash_get have_lock "${lockname}" have_lock || have_lock=0
-	if [ "${have_lock}" -eq 0 ] && ! locked_mkdir "${waittime}" \
-	    "${POUDRIERE_TMPDIR}/lock-${MASTERNAME}-${lockname}" "$$"; then
+	if [ "${have_lock}" -eq 0 ] &&
+		! locked_mkdir "${waittime}" "${lockpath}" "$$"; then
 		msg_warn "Failed to acquire ${lockname} lock"
 		critical_end
 		return 1
@@ -5646,15 +5640,33 @@ lock_acquire() {
 	hash_set have_lock "${lockname}" $((have_lock + 1))
 }
 
-slock_release() {
-	[ $# -ne 1 ] && eargs slock_release lockname
-	POUDRIERE_TMPDIR="${SHARED_LOCK_DIR}" MASTERNAME=poudriere-shared \
-	    lock_release "$@"
+# Acquire local build lock
+lock_acquire() {
+	[ $# -eq 1 -o $# -eq 2 ] || eargs lock_acquire lockname [waittime]
+	local lockname="$1"
+	local waittime="$2"
+	local lockpath
+
+	lockpath="${POUDRIERE_TMPDIR}/lock-${MASTERNAME}-${lockname}"
+	_lock_acquire "${lockname}" "${lockpath}" "${waittime}"
 }
 
-lock_release() {
-	[ $# -ne 1 ] && eargs lock_release lockname
+# Acquire system wide lock
+slock_acquire() {
+	[ $# -eq 1 -o $# -eq 2 ] || eargs slock_acquire lockname [waittime]
 	local lockname="$1"
+	local waittime="$2"
+	local lockpath
+
+	mkdir -p "${SHARED_LOCK_DIR}" >/dev/null 2>&1 || :
+	lockpath="${SHARED_LOCK_DIR}/lock-poudriere-shared-${lockname}"
+	_lock_acquire "${lockname}" "${lockpath}" "${waittime}"
+}
+
+_lock_release() {
+	[ $# -eq 2 ] || eargs _lock_release lockname lockpath
+	local lockname="$1"
+	local lockpath="$2"
 	local have_lock
 
 	hash_get have_lock "${lockname}" have_lock ||
@@ -5664,10 +5676,30 @@ lock_release() {
 	else
 		hash_unset have_lock "${lockname}" ||
 			err 1 "Releasing unheld lock ${lockname}"
-		rmdir "${POUDRIERE_TMPDIR}/lock-${MASTERNAME}-${lockname}" 2>/dev/null
+		rmdir "${lockpath}" 2>/dev/null
 	fi
 	# Restore and deliver INT/TERM signals
 	critical_end
+}
+
+# Release local build lock
+lock_release() {
+	[ $# -eq 1 ] || eargs lock_release lockname
+	local lockname="$1"
+	local lockpath
+
+	lockpath="${POUDRIERE_TMPDIR}/lock-${MASTERNAME}-${lockname}"
+	_lock_release "${lockname}" "${lockpath}"
+}
+
+# Release system wide lock
+slock_release() {
+	[ $# -eq 1 ] || eargs slock_release lockname
+	local lockname="$1"
+	local lockpath
+
+	lockpath="${SHARED_LOCK_DIR}/lock-poudriere-shared-${lockname}"
+	_lock_release "${lockname}" "${lockpath}"
 }
 
 lock_have() {
