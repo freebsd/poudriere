@@ -875,8 +875,8 @@ prefix_output() {
 	local - errexit
 	shift 1
 
-	if ! [ "${USE_TIMESTAMP:-1}" -eq 1 ] && \
-	    command -v timestamp >/dev/null; then
+	if [ "${USE_TIMESTAMP:-1}" -eq 0 ] || \
+	    ! command -v timestamp >/dev/null; then
 		prefix_stderr "${extra}" prefix_stdout "${extra}" "$@"
 		return
 	fi
