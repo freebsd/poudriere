@@ -124,7 +124,7 @@ write_pid(const char *dirpath, pid_t writepid)
 		cleanup();
 		INTON;
 #endif
-		err(1, "%s", "fopen(pid)");
+		err(1, "fopen: %s", pidpath);
 	}
 
 	if (fprintf(f, "%u", writepid) < 0) {
@@ -289,7 +289,7 @@ retry:
 			cleanup();
 			INTON;
 #endif
-			err(1, "%s", "mkdir()");
+			err(1, "mkdir: %s", path);
 		}
 	}
 
@@ -359,7 +359,7 @@ retry:
 		cleanup();
 		INTON;
 #endif
-		err(1, "%s", "mkdir()");
+		err(1, "mkdir: %s", path);
 	}
 
 	write_pid(path, writepid);
