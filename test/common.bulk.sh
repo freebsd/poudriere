@@ -397,7 +397,7 @@ fi
 
 : ${SCRIPTNAME:=${0%.sh}}
 SCRIPTNAME="${SCRIPTNAME##*/}"
-BUILDNAME="bulk"
+BUILDNAME="$(date +%s)"
 POUDRIERE="${POUDRIEREPATH} -e ${POUDRIERE_ETC}"
 ARCH=$(uname -p)
 JAILNAME="poudriere-test-${ARCH}"
@@ -457,7 +457,6 @@ ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} jail -k \
 echo " done"
 echo -n "Pruning previous logs..."
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} logclean \
-    -B "${BUILDNAME}" \
     -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
     -ay >/dev/null || :
 echo " done"
