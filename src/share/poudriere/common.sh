@@ -1607,6 +1607,7 @@ rm() {
 
 	for arg in "$@"; do
 		[ "${arg}" = "/" ] && err 1 "Tried to rm /"
+		[ "${arg%/}" = "/COPYRIGHT" ] && err 1 "Tried to rm /*"
 		[ "${arg%/}" = "/bin" ] && err 1 "Tried to rm /*"
 	done
 

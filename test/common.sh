@@ -123,6 +123,7 @@ rm() {
 
 	for arg in "$@"; do
 		[ "${arg}" = "/" ] && err 99 "Tried to rm /"
+		[ "${arg%/}" = "/COPYRIGHT" ] && err 99 "Tried to rm /*"
 		[ "${arg%/}" = "/bin" ] && err 99 "Tried to rm /*"
 	done
 
