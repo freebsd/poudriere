@@ -55,6 +55,7 @@ until [ "${USE_TIMESTAMP}" -eq 2 ]; do
 
 	# Basic output test with prefix_stdout
 	(
+		TIME_START=$(clock -monotonic -nsec)
 		prefix_stdout "STDOUT" test_output 0 \
 		    > "${OUTPUT}" 2> "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stdout test_output 0 wrong exit status"
@@ -76,6 +77,7 @@ until [ "${USE_TIMESTAMP}" -eq 2 ]; do
 
 	# Basic output test with prefix_stderr
 	(
+		TIME_START=$(clock -monotonic -nsec)
 		prefix_stderr "STDERR" test_output 0 \
 		    > "${OUTPUT}" 2> "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr test_output 0 wrong exit status"
@@ -97,6 +99,7 @@ until [ "${USE_TIMESTAMP}" -eq 2 ]; do
 
 	# Basic output test with prefix_output
 	(
+		TIME_START=$(clock -monotonic -nsec)
 		prefix_output "OUTPUT" test_output 0 \
 		    > "${OUTPUT}" 2> "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_output test_output 0 wrong exit status"
@@ -118,6 +121,7 @@ until [ "${USE_TIMESTAMP}" -eq 2 ]; do
 
 	# Basic output test with chaining prefix_stderr and prefix_stdout
 	(
+		TIME_START=$(clock -monotonic -nsec)
 		prefix_stderr "STDERR" prefix_stdout "STDOUT" test_output 0 \
 		    > "${OUTPUT}" 2> "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr+prefix_stdout test_output 0 wrong exit status"
@@ -142,6 +146,7 @@ until [ "${USE_TIMESTAMP}" -eq 2 ]; do
 	# Pipefail test with prefix_stderr_quick
 	(
 		have_pipefail || echo "SKIP: Shell does not support pipefail" >&2
+		TIME_START=$(clock -monotonic -nsec)
 		prefix_stderr_quick "STDERR" test_output 5 \
 		    > "${OUTPUT}" 2> "${OUTPUT}.stderr"
 		assert 5 $? "ts=${USE_TIMESTAMP} prefix_stderr_quick test_output 5 wrong exit status"
@@ -163,6 +168,7 @@ until [ "${USE_TIMESTAMP}" -eq 2 ]; do
 
 	# pipefail test with prefix_stdout
 	(
+		TIME_START=$(clock -monotonic -nsec)
 		prefix_stdout "STDOUT" test_output 5 \
 		    > "${OUTPUT}" 2> "${OUTPUT}.stderr"
 		assert 5 $? "ts=${USE_TIMESTAMP} prefix_stdout test_output 5 wrong exit status"
@@ -184,6 +190,7 @@ until [ "${USE_TIMESTAMP}" -eq 2 ]; do
 
 	# pipefail test with prefix_stderr
 	(
+		TIME_START=$(clock -monotonic -nsec)
 		prefix_stderr "STDERR" test_output 5 \
 		    > "${OUTPUT}" 2> "${OUTPUT}.stderr"
 		assert 5 $? "ts=${USE_TIMESTAMP} prefix_stderr test_output 5 wrong exit status"
@@ -205,6 +212,7 @@ until [ "${USE_TIMESTAMP}" -eq 2 ]; do
 
 	# pipefail test with prefix_output
 	(
+		TIME_START=$(clock -monotonic -nsec)
 		prefix_output "OUTPUT" test_output 5 \
 		    > "${OUTPUT}" 2> "${OUTPUT}.stderr"
 		assert 5 $? "ts=${USE_TIMESTAMP} prefix_output test_output 5 wrong exit status"
@@ -226,6 +234,7 @@ until [ "${USE_TIMESTAMP}" -eq 2 ]; do
 
 	# pipefail test with chaining prefix_stderr and prefix_stdout
 	(
+		TIME_START=$(clock -monotonic -nsec)
 		prefix_stderr "STDERR" prefix_stdout "STDOUT" test_output 5 \
 		    > "${OUTPUT}" 2> "${OUTPUT}.stderr"
 		assert 5 $? "ts=${USE_TIMESTAMP} prefix_stderr+prefix_stdout test_output 5 wrong exit status"
