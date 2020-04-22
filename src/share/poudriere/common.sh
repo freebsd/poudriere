@@ -5667,7 +5667,7 @@ _lock_release() {
 	[ $# -eq 2 ] || eargs _lock_release lockname lockpath
 	local lockname="$1"
 	local lockpath="$2"
-	local have_lock
+	local have_lock pid
 
 	hash_get have_lock "${lockname}" have_lock ||
 		err 1 "Releasing unheld lock ${lockname}"
@@ -5676,6 +5676,10 @@ _lock_release() {
 	else
 		hash_unset have_lock "${lockname}" ||
 			err 1 "Releasing unheld lock ${lockname}"
+		if read pid < "${lockpath}.pid" 2>/dev/null &&
+			[ "${pid}" != "$$" ]; then
+			err 1 "I am not owner for ${lockpath} pid ${pid} is"
+		fi
 		rmdir "${lockpath}" 2>/dev/null ||
 			err 1 "Held lock dir not found: ${lockpath}"
 	fi
