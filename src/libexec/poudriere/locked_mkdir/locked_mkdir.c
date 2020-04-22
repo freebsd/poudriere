@@ -245,6 +245,7 @@ main(int argc, char **argv)
 	lockfd = -1;
 	timed_out = 0;
 #endif
+	fd = -1;
 	lockpid = -1;
 
 	if (argc != 3 && argc != 4)
@@ -290,30 +291,16 @@ main(int argc, char **argv)
 	if (atexit(cleanup) == -1)
 		err(EX_OSERR, "%s", "atexit failed");
 #endif
+retry:
 	/* Try creating the directory. */
-	fd = open(path, O_RDONLY);
-	if (fd == -1 && errno == ENOENT) {
-		if (mkdir(path, S_IRWXU) == 0) {
-			write_pid(path, writepid);
-#ifdef SHELL
-			cleanup();
-			INTON;
-#endif
-			return (0);
-		}
-		if (errno != EEXIST) {
-#ifdef SHELL
-			cleanup();
-			INTON;
-#endif
-			err(1, "mkdir: %s", path);
-		}
-	} else if (fd == -1) {
+	if (mkdir(path, S_IRWXU) == 0)
+		goto success;
+	else if (errno != EEXIST) {
 #ifdef SHELL
 		cleanup();
 		INTON;
 #endif
-		err(1, "open: %s", path);
+		err(EX_CANTCREAT, "mkdir: %s", path);
 	}
 
 	/* Failed, the directory already exists. */
@@ -321,6 +308,18 @@ main(int argc, char **argv)
 	if (writepid != -1 && stale_lock(path, &lockpid)) {
 		/* The last owner is gone. Take ownership. */
 		goto success;
+	}
+
+	fd = open(path, O_RDONLY);
+	/* It was deleted while we did a stale check */
+	if (fd == -1 && errno == ENOENT)
+		goto retry;
+	else if (fd == -1) {
+#ifdef SHELL
+		cleanup();
+		INTON;
+#endif
+		err(1, "open: %s", path);
 	}
 
 	timeout.tv_sec = waitsec;
@@ -386,7 +385,8 @@ main(int argc, char **argv)
 		err(1, "mkdir: %s", path);
 	}
 success:
-	close(fd);
+	if (fd != -1)
+		close(fd);
 	write_pid(path, writepid);
 
 #ifdef SHELL
