@@ -3951,21 +3951,6 @@ calculate_elapsed_from_log() {
 	return 0
 }
 
-calculate_duration() {
-	[ $# -eq 2 ] || eargs calculate_duration var_return elapsed
-	local var_return="$1"
-	local _elapsed="$2"
-	local seconds minutes hours _duration
-
-	seconds=$((${_elapsed} % 60))
-	minutes=$(((${_elapsed} / 60) % 60))
-	hours=$((${_elapsed} / 3600))
-
-	_duration=$(printf "%02d:%02d:%02d" ${hours} ${minutes} ${seconds})
-
-	setvar "${var_return}" "${_duration}"
-}
-
 # Build ports in parallel
 # Returns when all are built.
 parallel_build() {

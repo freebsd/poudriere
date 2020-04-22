@@ -920,3 +920,60 @@ prefix_output() {
 
 	return ${ret}
 }
+
+timespecsub() {
+	[ $# -eq 2 -o $# -eq 3 ] || eargs timespecsub now then [var_return]
+	local now_timespec="$1"
+	local then_timespec="$2"
+	local _var_return="$3"
+	local now_sec now_nsec then_sec then_nsec res_sec res_nsec
+
+	case ${now_timespec} in
+	*.*)
+		now_sec="${now_timespec%.*}"
+		now_nsec="${now_timespec#*.}"
+		;;
+	*)
+		now_sec="${now_timespec}"
+		now_nsec="0"
+		;;
+	esac
+	case ${then_timespec} in
+	*.*)
+		then_sec="${then_timespec%.*}"
+		then_nsec="${then_timespec#*.}"
+		;;
+	*)
+		then_sec="${then_timespec}"
+		then_nsec="0"
+		;;
+	esac
+
+	res_sec="$((now_sec - then_sec))"
+	res_nsec="$((now_nsec - then_nsec))"
+	if [ "${res_nsec}" -lt 0 ]; then
+		res_sec="$((res_sec - 1))"
+		res_nsec="$((res_nsec + 1000000000))"
+	fi
+
+	if [ -n "${_var_return}" ]; then
+		setvar "${_var_return}" "${res_sec}.${res_nsec}"
+	else
+		echo "${res_sec}.${res_nsec}"
+	fi
+}
+
+calculate_duration() {
+	[ $# -eq 2 ] || eargs calculate_duration var_return elapsed
+	local var_return="$1"
+	local _elapsed="$2"
+	local seconds minutes hours _duration
+
+	seconds=$((${_elapsed} % 60))
+	minutes=$(((${_elapsed} / 60) % 60))
+	hours=$((${_elapsed} / 3600))
+
+	_duration=$(printf "%02d:%02d:%02d" ${hours} ${minutes} ${seconds})
+
+	setvar "${var_return}" "${_duration}"
+}

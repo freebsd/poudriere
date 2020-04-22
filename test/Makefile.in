@@ -459,7 +459,8 @@ TESTS = builtins.sh cache.sh encode_args.sh getvar.sh gsub.sh \
 	hash_basic.sh list.sh locks.sh locks_critical_section.sh \
 	locks_critical_section_nested.sh mapfile.sh port_var_fetch.sh \
 	prefix_output.sh read_file.sh relpath.sh relpath_common.sh \
-	shash_basic.sh timestamp.sh trap_save.sh $(JAIL_TESTS) prep.sh
+	shash_basic.sh timespec.sh timestamp.sh trap_save.sh \
+	$(JAIL_TESTS) prep.sh
 JAIL_TESTS = \
 	bulk-bad-DEPENDS_ARGS.sh \
 	bulk-ignore-listed.sh \
@@ -803,6 +804,13 @@ relpath_common.sh.log: relpath_common.sh
 shash_basic.sh.log: shash_basic.sh
 	@p='shash_basic.sh'; \
 	b='shash_basic.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+timespec.sh.log: timespec.sh
+	@p='timespec.sh'; \
+	b='timespec.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

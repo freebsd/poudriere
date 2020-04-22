@@ -22,6 +22,7 @@ TESTS=\
 	relpath.sh \
 	relpath_common.sh \
 	shash_basic.sh \
+	timespec.sh \
 	timestamp.sh \
 	trap_save.sh \
 	$(JAIL_TESTS)
