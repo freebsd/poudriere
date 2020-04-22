@@ -65,6 +65,8 @@ static struct sigaction oact;
 static struct sigdata oinfo;
 #endif
 
+static void cleanup(void);
+
 /*
  * Try to acquire a lock on the given file, creating the file if
  * necessary.  Returns an open file descriptor on success, or -1 on failure.
@@ -77,6 +79,10 @@ acquire_lock(const char *name)
 	if ((fd = open(name, O_CREAT|O_RDONLY|O_EXLOCK, 0666)) == -1) {
 		if (errno == EAGAIN || errno == EINTR)
 			return (-1);
+#ifdef SHELL
+		cleanup();
+		INTON;
+#endif
 		err(EX_CANTCREAT, "cannot open %s", name);
 	}
 	return (fd);
