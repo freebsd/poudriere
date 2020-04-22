@@ -128,3 +128,10 @@ rm() {
 
 	command rm "$@"
 }
+
+err() {
+	local status="$1"
+	shift
+	echo "Error: $@" >&2
+	exit ${status}
+}
