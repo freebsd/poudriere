@@ -366,7 +366,7 @@ main(int argc, char **argv)
 		cleanup();
 		INTON;
 #endif
-		return (1);
+		return (EX_TEMPFAIL);
 		/* NOTREACHED */
 	    default:
 		break;
