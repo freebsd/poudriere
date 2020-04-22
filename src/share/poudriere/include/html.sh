@@ -195,7 +195,6 @@ install_html_files() {
 
 	mkdir -p "${dest}"
 	# Hardlink-copy the base into the destination dir.
-	rm -rf "${dest}"
 	cp -xal "${base}/" "${dest}/"
 
 	slock_release html_base
