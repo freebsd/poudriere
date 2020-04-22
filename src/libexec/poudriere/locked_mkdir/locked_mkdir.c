@@ -190,7 +190,6 @@ done:
 		 */
 		if (f != NULL)
 			(void)unlink(pidpath);
-		(void)rmdir(dirpath);
 	}
 	if (f != NULL)
 		fclose(f);
@@ -272,7 +271,6 @@ main(int argc, char **argv)
 	if (atexit(cleanup) == -1)
 		err(EX_OSERR, "%s", "atexit failed");
 #endif
-retry:
 	/* Try creating the directory. */
 	fd = open(path, O_RDONLY);
 	if (fd == -1 && errno == ENOENT) {
@@ -302,9 +300,8 @@ retry:
 	/* Failed, the directory already exists. */
 	/* If a pid was given then check for a stale lock. */
 	if (writepid != -1 && stale_lock(path, &lockpid)) {
-		if (fd != -1)
-			close(fd);
-		goto retry;
+		/* The last owner is gone. Take ownership. */
+		goto success;
 	}
 
 	timeout.tv_sec = waitsec;
@@ -358,7 +355,6 @@ retry:
 #ifdef SHELL
 	close(kq);
 #endif
-	close(fd);
 
 	/* If the dir was deleted then we can recreate it. */
 	if (event[0].filter == EVFILT_VNODE &&
@@ -370,7 +366,8 @@ retry:
 #endif
 		err(1, "mkdir: %s", path);
 	}
-
+success:
+	close(fd);
 	write_pid(path, writepid);
 
 #ifdef SHELL
