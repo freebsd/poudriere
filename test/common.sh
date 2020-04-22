@@ -1,3 +1,5 @@
+echo "getpid: $$" >&2
+
 cmp_cat() {
 	local dest="$1"
 	local tmp="$(TEMPDIR="${dest%/*}" mktemp -t ${dest##*/})"
