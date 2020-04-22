@@ -7205,7 +7205,7 @@ trim_ignored() {
 		trim_ignored_pkg "${pkgname}" "${originspec}" "${ignore}"
 	done
 	# Update ignored/skipped stats
-	update_stats
+	update_stats 2>/dev/null || :
 	update_stats_queued
 }
 
