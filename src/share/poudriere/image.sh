@@ -532,7 +532,7 @@ case ${MEDIATYPE} in
 	esac
 	MFSROOTSIZE=$(ls -l ${WRKDIR}/out/mfsroot* | head -n 1 | awk '{print $5}')
 	if [ ${MFSROOTSIZE} -ge 268435456 ]; then echo WARNING: MFSROOT too large, boot failure likely ; fi
-	cpdup -i0 ${WRKDIR}/world/boot ${WRKDIR}/out/boot
+	do_clone -r ${WRKDIR}/world/boot ${WRKDIR}/out/boot
 	cat >> ${WRKDIR}/out/boot/loader.conf <<-EOF
 	tmpfs_load="YES"
 	mfs_load="YES"
@@ -547,7 +547,7 @@ iso)
 	/dev/iso9660/${imageupper} / cd9660 ro 0 0
 	tmpfs /tmp tmpfs rw,mode=1777 0 0
 	EOF
-	cpdup -i0 ${WRKDIR}/world/boot ${WRKDIR}/out/boot
+	do_clone -r ${WRKDIR}/world/boot ${WRKDIR}/out/boot
 	;;
 rawdisk|dump)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
@@ -646,7 +646,7 @@ tar)
 	fi
 	;;
 zsnapshot)
-	cpdup -i0 ${WRKDIR}/world ${WRKDIR}/mnt
+	do_clone -r ${WRKDIR}/world ${WRKDIR}/mnt
 	;;
 esac
 

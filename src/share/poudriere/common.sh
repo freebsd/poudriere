@@ -3088,7 +3088,7 @@ gather_distfiles() {
 	local pkgname="$4"
 	local from=$(realpath "$5")
 	local to=$(realpath "$6")
-	local sub dists d tosubd specials special origin
+	local sub dists d specials special origin
 	local dep_originspec pkgname flavor
 
 	port_var_fetch_originspec "${originspec}" \
@@ -3107,8 +3107,6 @@ gather_distfiles() {
 	job_msg_dev "${COLOR_PORT}${origin}${flavor:+@${flavor}} | ${pkgname_main}${COLOR_RESET}: distfiles ${from} -> ${to}"
 	for d in ${dists}; do
 		[ -f ${from}/${sub}/${d} ] || continue
-		tosubd=${to}/${sub}/${d}
-		mkdir -p ${tosubd%/*} || return 1
 		do_clone "${from}/${sub}/${d}" "${to}/${sub}/${d}" || return 1
 	done
 

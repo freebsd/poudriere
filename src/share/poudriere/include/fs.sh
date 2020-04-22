@@ -62,17 +62,20 @@ createfs() {
 
 do_clone() {
 	local -; set -f
-	[ $# -lt 2 ] && eargs do_clone [-r] src dst
-	[ $# -gt 3 ] && eargs do_clone [-r] src dst
-	local src dst common relative FLAG
+	[ $# -lt 2 ] && eargs do_clone [-r] [-x | -X cpignore ] src dst
+	local src dst common relative cpignore FLAG
 
 	relative=0
-	while getopts "r" FLAG; do
+	cpignore="-x"
+	while getopts "rxX:" FLAG; do
 		case "${FLAG}" in
 			r) relative=1 ;;
+			x) cpignore="-x" ;;
+			X) cpignore="-X ${OPTARG}" ;;
 		esac
 	done
 	shift $((OPTIND-1))
+	[ $# -eq 2 ] || eargs do_clone [-r] [-x | -X cpignore ] src dst
 
 	if [ ${relative} -eq 1 ]; then
 		set -- $(relpath_common "${1}" "${2}")
@@ -85,13 +88,15 @@ do_clone() {
 		fi
 		(
 			cd "${common}"
-			cpdup -i0 -x "${src}" "${dst}"
+			mkdir -p "${dst%/*}"
+			cpdup -i0 ${cpignore} "${src}" "${dst}"
 		)
 	else
 		if [ "${1}" = "/" -o "${2}" = "/" ]; then
 			err 1 "Tried to cpdup /; src=${1} dst=${2}"
 		fi
-		cpdup -i0 -x "${1}" "${2}"
+		mkdir -p "${2%/*}"
+		cpdup -i0 ${cpignore} "${1}" "${2}"
 	fi
 }
 
