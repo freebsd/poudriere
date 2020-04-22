@@ -173,33 +173,33 @@ install_html_files() {
 	local base="$2"
 	local dest="$3"
 
-	slock_acquire html_base 20 2>/dev/null || return 0
+	if slock_acquire html_base 5 2>/dev/null; then
+		# Update the base copy
+		mkdir -p "${base}"
+		cpdup -i0 -x "${src}" "${base}"
 
-	# Update the base copy
-	mkdir -p "${base}"
-	cpdup -i0 -x "${src}" "${base}"
+		# Mark this HTML as inline rather than hosted. This means
+		# it will support Indexes and file://, rather than the
+		# aliased /data dir. This can easily be auto-detected via JS
+		# but due to FF file:// restrictions requires a hack which
+		# results in a 404 for every page load.
+		if [ "${HTML_TYPE}" = "inline" ]; then
+		    if grep -q 'server_style = "hosted"' \
+			"${base}/index.html"; then
+			    sed -i '' -e \
+			    's/server_style = "hosted"/server_style = "inline"/' \
+			    ${base}/*.html
+		    fi
+		fi
 
-	# Mark this HTML as inline rather than hosted. This means
-	# it will support Indexes and file://, rather than the
-	# aliased /data dir. This can easily be auto-detected via JS
-	# but due to FF file:// restrictions requires a hack which
-	# results in a 404 for every page load.
-	if [ "${HTML_TYPE}" = "inline" ]; then
-	    if grep -q 'server_style = "hosted"' \
-		"${log_top}/.html/index.html"; then
-		    sed -i '' -e \
-		    's/server_style = "hosted"/server_style = "inline"/' \
-		    ${log_top}/.html/*.html
-	    fi
+		mkdir -p "${dest}"
+		# Hardlink-copy the base into the destination dir.
+		cp -xal "${base}/" "${dest}/"
+
+		slock_release html_base
 	fi
 
-	mkdir -p "${dest}"
-	# Hardlink-copy the base into the destination dir.
-	cp -xal "${base}/" "${dest}/"
-
-	slock_release html_base
-
-	# Symlink the build properly
+	# Symlink the build
 	ln -fs build.html "${dest}/index.html"
 	unlink "${dest}/jail.html"
 
