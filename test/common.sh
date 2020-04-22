@@ -117,3 +117,14 @@ assert_ret() {
 aecho() {
 	echo "$@" >&2
 }
+
+rm() {
+	local arg
+
+	for arg in "$@"; do
+		[ "${arg}" = "/" ] && err 99 "Tried to rm /"
+		[ "${arg%/}" = "/bin" ] && err 99 "Tried to rm /*"
+	done
+
+	command rm "$@"
+}
