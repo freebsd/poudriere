@@ -113,6 +113,7 @@ write_pid(const char *dirpath, pid_t writepid)
 {
 	FILE *f;
 	char pidpath[MAXPATHLEN];
+	int serrno;
 
 	if (writepid == -1)
 		return;
@@ -120,27 +121,39 @@ write_pid(const char *dirpath, pid_t writepid)
 	/* XXX: Could probably store this in the .flock file */
 	snprintf(pidpath, sizeof(pidpath), "%s.pid", dirpath);
 	if ((f = fopen(pidpath, "w")) == NULL) {
+		serrno = errno;
+		(void)unlink(pidpath);
+		(void)rmdir(dirpath);
 #ifdef SHELL
 		cleanup();
 		INTON;
 #endif
+		errno = serrno;
 		err(1, "fopen: %s", pidpath);
 	}
 
 	if (fprintf(f, "%u", writepid) < 0) {
+		serrno = errno;
+		(void)unlink(pidpath);
+		(void)rmdir(dirpath);
 #ifdef SHELL
 		fclose(f);
 		cleanup();
 		INTON;
 #endif
+		errno = serrno;
 		err(1, "%s", "fprintf(pid)");
 	}
 
 	if (fclose(f) != 0) {
+		serrno = errno;
+		(void)unlink(pidpath);
+		(void)rmdir(dirpath);
 #ifdef SHELL
 		cleanup();
 		INTON;
 #endif
+		errno = serrno;
 		err(1, "%s", "fclose(pid)");
 	}
 }
