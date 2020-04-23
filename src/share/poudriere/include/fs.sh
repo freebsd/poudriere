@@ -79,11 +79,18 @@ do_clone() {
 		common="${1}"
 		src="${2}"
 		dst="${3}"
+		if [ "${common}" = "/" ] &&
+			[ "${src}" = "." -o "${dst}" = "." ]; then
+			err 1 "Tried to cpdup /; common=${common} src=${src} dst=${dst}"
+		fi
 		(
 			cd "${common}"
 			cpdup -i0 -x "${src}" "${dst}"
 		)
 	else
+		if [ "${1}" = "/" -o "${2}" = "/" ]; then
+			err 1 "Tried to cpdup /; src=${1} dst=${2}"
+		fi
 		cpdup -i0 -x "${1}" "${2}"
 	fi
 }
