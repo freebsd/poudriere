@@ -61,8 +61,23 @@ createfs() {
 }
 
 _do_cpdup() {
+	[ $# -eq 4 ] || eargs _do_cpdup rflags cpignore src dst
+	local rflags="$1"
+	local cpignore="$2"
+	local src="$3"
+	local dst="$4"
+
+	if [ "${src}" = "/" -o "${dst}" = "/" ]; then
+		err 1 "Tried to cpdup /; src=${src} dst=${dst}"
+	fi
+
+	mkdir -p "${dst%/*}"
+	cpdup -i0 ${rflags} ${cpignore} "${src}" "${dst}"
+}
+
+_do_clone() {
 	local -; set -f
-	[ $# -lt 3 ] && eargs _do_cpdup rflags args...
+	[ $# -lt 3 ] && eargs _do_clone rflags args...
 	local rflags="$1"
 	shift
 	local src dst common relative cpignore FLAG
@@ -77,10 +92,12 @@ _do_cpdup() {
 		esac
 	done
 	shift $((OPTIND-1))
-	[ $# -eq 2 ] || eargs _do_cpdup rflags args...
+	[ $# -eq 2 ] || eargs _do_clone rflags args...
+	src="$1"
+	dst="$2"
 
 	if [ ${relative} -eq 1 ]; then
-		set -- $(relpath_common "${1}" "${2}")
+		set -- $(relpath_common "${src}" "${dst}")
 		common="${1}"
 		src="${2}"
 		dst="${3}"
@@ -90,28 +107,24 @@ _do_cpdup() {
 		fi
 		(
 			cd "${common}"
-			mkdir -p "${dst%/*}"
-			cpdup -i0 ${rflags} ${cpignore} "${src}" "${dst}"
+			_do_cpdup "${rflags}" "${cpignore}" "${src}" "${dst}"
 		)
-	else
-		if [ "${1}" = "/" -o "${2}" = "/" ]; then
-			err 1 "Tried to cpdup /; src=${1} dst=${2}"
-		fi
-		mkdir -p "${2%/*}"
-		cpdup -i0 ${rflags} ${cpignore} "${1}" "${2}"
+		return
 	fi
+
+	_do_cpdup "${rflags}" "${cpignore}" "${src}" "${dst}"
 }
 
 do_clone() {
 	[ $# -lt 2 ] && eargs do_clone [-r] [-x | -X cpignore ] src dst
 
-	_do_cpdup "-o" "$@"
+	_do_clone "-o" "$@"
 }
 
 do_clone_del() {
 	[ $# -lt 2 ] && eargs do_clone_del [-r] [-x | -X cpignore ] src dst
 
-	_do_cpdup "-s0 -f" "$@"
+	_do_clone "-s0 -f" "$@"
 }
 
 rollback_file() {
