@@ -41,7 +41,7 @@ setup_src() {
 	DST_DIR=$(mktemp -udt poudriere.do_clone)
 	mkdir -p "${DST_DIR}"
 	touch "${DST_DIR}/dont-delete-me"
-	do_clone "${SRC_DIR}" "${DST_DIR}"
+	do_clone -x "${SRC_DIR}" "${DST_DIR}"
 	assert 0 $? "$0:$LINENO: do_clone"
 
 	[ -f "${DST_DIR}/dont-delete-me" ]
@@ -73,7 +73,7 @@ setup_src() {
 {
 	setup_src
 	DST_DIR=$(mktemp -udt poudriere.do_clone)
-	do_clone -r "${SRC_DIR}" "${DST_DIR}"
+	do_clone -rx "${SRC_DIR}" "${DST_DIR}"
 	assert 0 $? "$0:$LINENO: do_clone"
 
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
@@ -81,7 +81,7 @@ setup_src() {
 	rm -rf "${SRC_DIR}" "${DST_DIR}"
 }
 
-# Ignore based on .cpignore default
+# Ignore based on .cpignore default (ignored)
 {
 	setup_src
 	# Ignore the blah file
@@ -94,20 +94,17 @@ setup_src() {
 	assert 0 $? "$0:$LINENO: do_clone"
 
 	[ -f "${DST_DIR}/.cpignore" ]
-	assert_not 0 $? "$0:$LINENO: .cpignore should not be copied"
+	assert 0 $? "$0:$LINENO: .cpignore should be copied"
 
 	[ -f "${DST_DIR}/nested/blah" ]
-	assert 0 $? "$0:$LINENO: nested/blah should still be copied"
+	assert 0 $? "$0:$LINENO: nested/blah should be copied"
 
 	[ -f "${DST_DIR}/blah" ]
-	assert_not 0 $? "$0:$LINENO: blah should not be copied"
+	assert 0 $? "$0:$LINENO: blah should be copied"
 
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
-	# Fails due to missing blah/.cpignore files
-	assert 1 $? "$0:$LINENO: diff"
+	assert 0 $? "$0:$LINENO: diff"
 
-	rm -f "${SRC_DIR}/blah"
-	rm -f "${SRC_DIR}/.cpignore"
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
 	assert 0 $? "$0:$LINENO: diff"
 
@@ -123,7 +120,7 @@ setup_src() {
 	EOF
 	touch "${SRC_DIR}/blah"
 	DST_DIR=$(mktemp -udt poudriere.do_clone)
-	do_clone "${SRC_DIR}" "${DST_DIR}"
+	do_clone -x "${SRC_DIR}" "${DST_DIR}"
 	assert 0 $? "$0:$LINENO: do_clone"
 
 	[ -f "${DST_DIR}/nested/.cpignore" ]
@@ -157,7 +154,7 @@ setup_src() {
 	EOF
 	touch "${SRC_DIR}/blah"
 	DST_DIR=$(mktemp -udt poudriere.do_clone)
-	do_clone -r "${SRC_DIR}" "${DST_DIR}"
+	do_clone -rx "${SRC_DIR}" "${DST_DIR}"
 	assert 0 $? "$0:$LINENO: do_clone"
 
 	[ -f "${DST_DIR}/nested/.cpignore" ]

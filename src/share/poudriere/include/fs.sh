@@ -83,7 +83,7 @@ _do_clone() {
 	local src dst common relative cpignore FLAG
 
 	relative=0
-	cpignore="-x"
+	cpignore=""
 	while getopts "rxX:" FLAG; do
 		case "${FLAG}" in
 			r) relative=1 ;;
@@ -185,7 +185,7 @@ rollbackfs() {
 		return
 	fi
 
-	do_clone_del -r "${MASTERMNT}" "${mnt}"
+	do_clone_del -rx "${MASTERMNT}" "${mnt}"
 }
 
 findmounts() {
@@ -352,7 +352,7 @@ clonefs() {
 			    }')
 			EOF
 		fi
-		do_clone -r "${from}" "${mnt}"
+		do_clone -rx "${from}" "${mnt}"
 		if [ "${snap}" = "clean" ]; then
 			rm -f ${cpignores}
 			echo ".p" >> "${mnt}/.cpignore"
