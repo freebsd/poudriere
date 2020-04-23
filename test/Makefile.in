@@ -449,6 +449,7 @@ top_srcdir = @top_srcdir@
 EXTRA_DIST = $(TESTS) \
 	    $(JAIL_TESTS) \
 	    common.bulk.sh \
+	    common.locked_mkdir.sh \
 	    common.sh \
 	    prep.sh \
 	    runtest.sh
@@ -458,6 +459,8 @@ EXTRA_DIST = $(TESTS) \
 TESTS = builtins.sh cache.sh do_clone.sh encode_args.sh getvar.sh \
 	gsub.sh hash_basic.sh list.sh locks.sh \
 	locks_critical_section.sh locks_critical_section_nested.sh \
+	locked_mkdir.sh locked_mkdir_waiters.sh \
+	locked_mkdir_waiters_kill.sh locked_mkdir_waiters_all_lose.sh \
 	mapfile.sh port_var_fetch.sh prefix_output.sh read_file.sh \
 	relpath.sh relpath_common.sh shash_basic.sh timespec.sh \
 	timestamp.sh trap_save.sh $(JAIL_TESTS) prep.sh
@@ -762,6 +765,34 @@ locks_critical_section.sh.log: locks_critical_section.sh
 locks_critical_section_nested.sh.log: locks_critical_section_nested.sh
 	@p='locks_critical_section_nested.sh'; \
 	b='locks_critical_section_nested.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+locked_mkdir.sh.log: locked_mkdir.sh
+	@p='locked_mkdir.sh'; \
+	b='locked_mkdir.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+locked_mkdir_waiters.sh.log: locked_mkdir_waiters.sh
+	@p='locked_mkdir_waiters.sh'; \
+	b='locked_mkdir_waiters.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+locked_mkdir_waiters_kill.sh.log: locked_mkdir_waiters_kill.sh
+	@p='locked_mkdir_waiters_kill.sh'; \
+	b='locked_mkdir_waiters_kill.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+locked_mkdir_waiters_all_lose.sh.log: locked_mkdir_waiters_all_lose.sh
+	@p='locked_mkdir_waiters_all_lose.sh'; \
+	b='locked_mkdir_waiters_all_lose.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

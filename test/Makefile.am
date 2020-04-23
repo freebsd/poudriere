@@ -1,6 +1,7 @@
 EXTRA_DIST= $(TESTS) \
 	    $(JAIL_TESTS) \
 	    common.bulk.sh \
+	    common.locked_mkdir.sh \
 	    common.sh \
 	    prep.sh \
 	    runtest.sh
@@ -16,6 +17,10 @@ TESTS=\
 	locks.sh \
 	locks_critical_section.sh \
 	locks_critical_section_nested.sh \
+	locked_mkdir.sh \
+	locked_mkdir_waiters.sh \
+	locked_mkdir_waiters_kill.sh \
+	locked_mkdir_waiters_all_lose.sh \
 	mapfile.sh \
 	port_var_fetch.sh \
 	prefix_output.sh \
