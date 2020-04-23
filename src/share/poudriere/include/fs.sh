@@ -111,7 +111,7 @@ do_clone() {
 do_clone_del() {
 	[ $# -lt 2 ] && eargs do_clone_del [-r] [-x | -X cpignore ] src dst
 
-	_do_cpdup "" "$@"
+	_do_cpdup "-s0 -f" "$@"
 }
 
 rollback_file() {
