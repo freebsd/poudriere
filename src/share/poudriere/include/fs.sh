@@ -60,9 +60,11 @@ createfs() {
 	fi
 }
 
-do_clone() {
+_do_cpdup() {
 	local -; set -f
-	[ $# -lt 2 ] && eargs do_clone [-r] [-x | -X cpignore ] src dst
+	[ $# -lt 3 ] && eargs _do_cpdup rflags args...
+	local rflags="$1"
+	shift
 	local src dst common relative cpignore FLAG
 
 	relative=0
@@ -75,7 +77,7 @@ do_clone() {
 		esac
 	done
 	shift $((OPTIND-1))
-	[ $# -eq 2 ] || eargs do_clone [-r] [-x | -X cpignore ] src dst
+	[ $# -eq 2 ] || eargs _do_cpdup rflags args...
 
 	if [ ${relative} -eq 1 ]; then
 		set -- $(relpath_common "${1}" "${2}")
@@ -89,15 +91,27 @@ do_clone() {
 		(
 			cd "${common}"
 			mkdir -p "${dst%/*}"
-			cpdup -i0 ${cpignore} "${src}" "${dst}"
+			cpdup -i0 ${rflags} ${cpignore} "${src}" "${dst}"
 		)
 	else
 		if [ "${1}" = "/" -o "${2}" = "/" ]; then
 			err 1 "Tried to cpdup /; src=${1} dst=${2}"
 		fi
 		mkdir -p "${2%/*}"
-		cpdup -i0 ${cpignore} "${1}" "${2}"
+		cpdup -i0 ${rflags} ${cpignore} "${1}" "${2}"
 	fi
+}
+
+do_clone() {
+	[ $# -lt 2 ] && eargs do_clone [-r] [-x | -X cpignore ] src dst
+
+	_do_cpdup "-o" "$@"
+}
+
+do_clone_del() {
+	[ $# -lt 2 ] && eargs do_clone_del [-r] [-x | -X cpignore ] src dst
+
+	_do_cpdup "" "$@"
 }
 
 rollback_file() {
@@ -158,7 +172,7 @@ rollbackfs() {
 		return
 	fi
 
-	do_clone -r "${MASTERMNT}" "${mnt}"
+	do_clone_del -r "${MASTERMNT}" "${mnt}"
 }
 
 findmounts() {

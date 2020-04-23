@@ -35,6 +35,40 @@ setup_src() {
 	rm -rf "${SRC_DIR}" "${DST_DIR}"
 }
 
+# Test not deleting files
+{
+	setup_src
+	DST_DIR=$(mktemp -udt poudriere.do_clone)
+	mkdir -p "${DST_DIR}"
+	touch "${DST_DIR}/dont-delete-me"
+	do_clone "${SRC_DIR}" "${DST_DIR}"
+	assert 0 $? "$0:$LINENO: do_clone"
+
+	[ -f "${DST_DIR}/dont-delete-me" ]
+	assert 0 $? "$0:$LINENO: file should exist"
+
+	diff -urN "${SRC_DIR}" "${DST_DIR}"
+	assert 0 $? "$0:$LINENO: diff"
+	rm -rf "${SRC_DIR}" "${DST_DIR}"
+}
+
+# Test deleting files
+{
+	setup_src
+	DST_DIR=$(mktemp -udt poudriere.do_clone)
+	mkdir -p "${DST_DIR}"
+	touch "${DST_DIR}/delete-me"
+	do_clone_del "${SRC_DIR}" "${DST_DIR}"
+	assert 0 $? "$0:$LINENO: do_clone_del"
+
+	[ -f "${DST_DIR}/delete-me" ]
+	assert_not 0 $? "$0:$LINENO: file should not exist"
+
+	diff -urN "${SRC_DIR}" "${DST_DIR}"
+	assert 0 $? "$0:$LINENO: diff"
+	rm -rf "${SRC_DIR}" "${DST_DIR}"
+}
+
 # Relative test
 {
 	setup_src

@@ -175,7 +175,7 @@ install_html_files() {
 
 	if slock_acquire html_base 5 2>/dev/null; then
 		# Update the base copy
-		do_clone -r "${src}" "${base}"
+		do_clone_del -r "${src}" "${base}"
 
 		# Mark this HTML as inline rather than hosted. This means
 		# it will support Indexes and file://, rather than the
