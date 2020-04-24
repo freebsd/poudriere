@@ -19,6 +19,9 @@
 /* Define to 1 if you have the <float.h> header file. */
 #undef HAVE_FLOAT_H
 
+/* Define to 1 if you have the `funlinkat' function. */
+#undef HAVE_FUNLINKAT
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 

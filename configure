@@ -11828,7 +11828,7 @@ CC=$lt_save_CC
 
 
 
-for ac_func in strftime_l strchrnul utimensat
+for ac_func in funlinkat strftime_l strchrnul utimensat
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"

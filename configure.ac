@@ -17,7 +17,7 @@ AC_SUBST([AM_CFLAGS])
 
 LT_INIT
 
-AC_CHECK_FUNCS([strftime_l strchrnul utimensat])
+AC_CHECK_FUNCS([funlinkat strftime_l strchrnul utimensat])
 
 AC_CHECK_HEADERS_ONCE([sys/types.h])
 AC_CHECK_HEADERS_ONCE([sys/stat.h])
