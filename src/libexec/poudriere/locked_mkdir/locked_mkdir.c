@@ -84,7 +84,9 @@ acquire_lock(const int dirfd, const char *name)
 {
 	int fd;
 
-	if ((fd = openat(dirfd, name, O_CREAT|O_RDONLY|O_EXLOCK, 0666)) == -1) {
+	if ((fd = openat(dirfd, name,
+	    O_CREAT | O_RDONLY | O_EXLOCK | O_CLOEXEC,
+	    0666)) == -1) {
 		if (errno == EAGAIN || errno == EINTR)
 			return (-1);
 #ifdef SHELL
@@ -139,7 +141,9 @@ write_pid(const int dirfd, const char *dirpath, pid_t writepid)
 	snprintf(pidpath, sizeof(pidpath), "%s.pid", dirpath);
 
 	/* Protected by the flock */
-	fd = openat(dirfd, pidpath, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+	fd = openat(dirfd, pidpath,
+	    O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC | O_NONBLOCK,
+	    0666);
 	if (fd == -1) {
 		serrno = errno;
 		(void)unlinkat(dirfd, pidpath, 0);
@@ -206,7 +210,7 @@ stale_lock(const int dirfd, const char *dirpath, pid_t *outpid)
 	/* XXX: Could probably store this in the .flock file */
 	snprintf(pidpath, sizeof(pidpath), "%s.pid", dirpath);
 	/* Missing file is considered stale. */
-	fd = openat(dirfd, pidpath, O_RDONLY);
+	fd = openat(dirfd, pidpath, O_RDONLY | O_CLOEXEC | O_NONBLOCK);
 	if (fd == -1)
 		goto done;
 	if ((f = fdopen(fd, "r")) == NULL) {
@@ -359,7 +363,7 @@ retry:
 		goto success;
 	}
 
-	fd = openat(dirfd, path, O_RDONLY);
+	fd = openat(dirfd, path, O_RDONLY | O_CLOEXEC | O_NONBLOCK);
 	/* It was deleted while we did a stale check */
 	if (fd == -1 && errno == ENOENT)
 		goto retry;
