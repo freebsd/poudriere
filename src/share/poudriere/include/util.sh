@@ -977,3 +977,24 @@ calculate_duration() {
 
 	setvar "${var_return}" "${_duration}"
 }
+
+write_cmp() {
+	[ $# -eq 1 ] || eargs write_cmp destfile "< content"
+	local dest="$1"
+	local tmp ret
+
+	ret=0
+	tmp="$(TEMPDIR="${dest%/*}" mktemp -t ${dest##*/})" ||
+		err $? "write_cmp unable to create tmpfile in ${dest%/*}"
+	cat > "${tmp}" || ret=$?
+	if [ "${ret}" -ne 0 ]; then
+		rm -f "${tmp}"
+		return "${ret}"
+	fi
+
+	if ! cmp -s "${dest}" "${tmp}"; then
+		rename "${tmp}" "${dest}"
+	else
+		unlink "${tmp}"
+	fi
+}

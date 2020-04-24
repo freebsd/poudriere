@@ -935,12 +935,16 @@ log_stop() {
 }
 
 attr_set() {
-	local type=$1
-	local name=$2
-	local property=$3
+	local type="$1"
+	local name="$2"
+	local property="$3"
+	local dstfile
 	shift 3
-	mkdir -p ${POUDRIERED}/${type}/${name}
-	echo "$@" > ${POUDRIERED}/${type}/${name}/${property} || :
+
+	dstfile="${POUDRIERED}/${type}/${name}/${property}"
+	mkdir -p "${dstfile%/*}"
+	echo "$@" | write_cmp "${dstfile}" ||
+		err $? "attr_set failed to write to ${dstfile}"
 }
 
 jset() { attr_set jails "$@" ; }

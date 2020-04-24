@@ -1,17 +1,27 @@
 echo "getpid: $$" >&2
 
-cmp_cat() {
+# Duplicated from src/share/poudriere/util.sh because it is too early to
+# include that file.
+write_cmp() {
 	local dest="$1"
-	local tmp="$(TEMPDIR="${dest%/*}" mktemp -t ${dest##*/})"
+	local tmp ret
 
-	cat > "${tmp}"
+	ret=0
+	tmp="$(TEMPDIR="${dest%/*}" mktemp -t ${dest##*/})" ||
+		err $? "write_cmp unable to create tmpfile in ${dest%/*}"
+	cat > "${tmp}" || ret=$?
+	if [ "${ret}" -ne 0 ]; then
+		rm -f "${tmp}"
+		return "${ret}"
+	fi
 
 	if ! cmp -s "${dest}" "${tmp}"; then
-		mv -f "${tmp}" "${dest}"
+		rename "${tmp}" "${dest}"
 	else
-		rm -f "${tmp}"
+		unlink "${tmp}"
 	fi
 }
+
 
 CMD="${0##*/}"
 IN_TEST=1
@@ -23,7 +33,7 @@ POUDRIERE_ETC="${BASEFS}/etc"
 
 mkdir -p ${POUDRIERE_ETC}/poudriere.d ${POUDRIERE_ETC}/run
 rm -f "${POUDRIERE_ETC}/poudriere.conf"
-cmp_cat "${POUDRIERE_ETC}/poudriere.d/poudriere.conf" << EOF
+write_cmp "${POUDRIERE_ETC}/poudriere.d/poudriere.conf" << EOF
 NO_ZFS=yes
 BASEFS=${BASEFS}
 DISTFILES_CACHE=${DISTFILES_CACHE}
@@ -36,7 +46,7 @@ NO_LIB32=yes
 NO_SRC=yes
 SHARED_LOCK_DIR="${POUDRIERE_ETC}/run"
 EOF
-cmp_cat "${POUDRIERE_ETC}/poudriere.d/make.conf" << EOF
+write_cmp "${POUDRIERE_ETC}/poudriere.d/make.conf" << EOF
 EOF
 
 : ${VERBOSE:=1}
