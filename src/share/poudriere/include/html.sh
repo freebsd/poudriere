@@ -173,7 +173,9 @@ install_html_files() {
 	local base="$2"
 	local dest="$3"
 
-	if slock_acquire html_base 5 2>/dev/null; then
+	# Only 1 process needs to install the base files at a time. This is
+	# mostly a problem in tests.
+	if slock_acquire html_base 0 2>/dev/null; then
 		# Update the base copy
 		do_clone_del -r "${src}" "${base}"
 
@@ -191,16 +193,21 @@ install_html_files() {
 		    fi
 		fi
 
+		slock_release html_base
+	fi
+
+	# All processes need to make a copy of the base files.
+	if slock_acquire html_base 200; then
 		mkdir -p "${dest}"
 		# Hardlink-copy the base into the destination dir.
 		cp -xal "${base}/" "${dest}/"
 
+		# Symlink the build
+		ln -fs build.html "${dest}/index.html"
+		unlink "${dest}/jail.html"
+
 		slock_release html_base
 	fi
-
-	# Symlink the build
-	ln -fs build.html "${dest}/index.html"
-	unlink "${dest}/jail.html"
 
 	return 0
 }
