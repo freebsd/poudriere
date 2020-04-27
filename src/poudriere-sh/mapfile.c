@@ -291,8 +291,11 @@ mapfile_readcmd(int argc, char **argv)
 
 	linelen = -1;
 	/* Malloc once per sh process.  getline(3) may grow it. */
-	if (line == NULL)
+	if (line == NULL) {
 	    line = malloc(linecap);
+	    if (line == NULL)
+		    errx(EX_TEMPFAIL, "%s", "malloc");
+	}
 
 	INTOFF;
 	flags = 0;
