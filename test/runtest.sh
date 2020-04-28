@@ -46,7 +46,7 @@ THISDIR="$(realpath "${THISDIR}")"
 cd "${THISDIR}"
 
 case "${1##*/}" in
-bulk*.sh) : ${TIMEOUT:=3600} ;;
+bulk*.sh) : ${TIMEOUT:=300} ;;
 locked_mkdir.sh) : ${TIMEOUT:=120}
 esac
 : ${TIMEOUT:=90}
