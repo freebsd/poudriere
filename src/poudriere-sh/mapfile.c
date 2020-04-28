@@ -28,6 +28,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
+#include <assert.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -79,6 +80,7 @@ md_close(struct mapped_data *md)
 
 	debug("%d: Closing %s handle '%d'\n", getpid(),
 	    md->file, md->handle);
+	assert(is_int_on());
 
 	idx = md->handle;
 	md->handle = -1;
@@ -99,6 +101,7 @@ md_find(const char *handle)
 	int idx;
 	char *end;
 
+	assert(is_int_on());
 	errno = 0;
 	if (handle == NULL || *handle == '\0')
 		errx(EX_DATAERR, "%s", "Missing handle");
@@ -203,12 +206,11 @@ mapfilecmd(int argc, char **argv)
 	md->linebuffered = strchr(modes, 'B') == NULL;
 
 	mapped_files[md->handle] = md;
-	INTON;
-
 	snprintf(handle, sizeof(handle), "%d", md->handle);
 	setvar(var_return, handle, 0);
 	debug("%d: Mapped %s to handle '%s' modes '%s'\n", getpid(),
 	    md->file, handle, modes);
+	INTON;
 
 	return (0);
 }
@@ -280,6 +282,7 @@ mapfile_readcmd(int argc, char **argv)
 		errx(EXIT_USAGE, "%s", "Usage: mapfile_read <handle> "
 		    "[-t timeout] <output_var> ...");
 
+	INTOFF;
 	md = md_find(handle);
 
 	var_return_ptr = &argv[0];
@@ -289,7 +292,6 @@ mapfile_readcmd(int argc, char **argv)
 	    feof(md->fp), ferror(md->fp));
 
 	linelen = -1;
-	INTOFF;
 	/* Malloc once per sh process.  getline(3) may grow it. */
 	if (line == NULL) {
 	    line = malloc(linecap);

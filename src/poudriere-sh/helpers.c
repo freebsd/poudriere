@@ -48,7 +48,6 @@ extern char *volatile trap[NSIG];	/* trap handler commands */
 extern char sigmode[NSIG];	/* current value of signal */
 extern char *savestr(const char *);
 extern void onsig(int);
-extern void ckfree(pointer);
 #define S_DFL 1			/* default signal handling (SIG_DFL) */
 #define S_CATCH 2		/* signal is caught */
 #define S_IGN 3			/* signal is ignored (SIG_IGN) */
