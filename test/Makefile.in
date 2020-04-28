@@ -1247,6 +1247,11 @@ uninstall-am:
 .PRECIOUS: Makefile
 
 $(JAIL_TESTS:.sh=.sh.log): prep.sh.log
+
+.PHONY: prep
+prep:
+	@echo "Prepping test jail"
+	@$(LOG_COMPILER) $(srcdir)/prep.sh
 #TEST_EXTENSIONS=.sh
 #SH_LOG_COMPILER=$(run_env) $(SHELL) runtest.sh
 

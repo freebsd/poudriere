@@ -77,5 +77,10 @@ run_env= env \
 	 VPATH="$(VPATH)" \
 	 am_check=1
 LOG_COMPILER=	$(run_env) $(SHELL) $(srcdir)/runtest.sh
+
+.PHONY: prep
+prep:
+	@echo "Prepping test jail"
+	@$(LOG_COMPILER) $(srcdir)/prep.sh
 #TEST_EXTENSIONS=.sh
 #SH_LOG_COMPILER=$(run_env) $(SHELL) runtest.sh
