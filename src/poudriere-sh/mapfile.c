@@ -289,14 +289,16 @@ mapfile_readcmd(int argc, char **argv)
 	    feof(md->fp), ferror(md->fp));
 
 	linelen = -1;
+	INTOFF;
 	/* Malloc once per sh process.  getline(3) may grow it. */
 	if (line == NULL) {
 	    line = malloc(linecap);
-	    if (line == NULL)
+	    if (line == NULL) {
+		    INTON;
 		    errx(EX_TEMPFAIL, "%s", "malloc");
+	    }
 	}
 
-	INTOFF;
 	flags = 0;
 	ret = 0;
 	if (tflag) {
@@ -434,8 +436,10 @@ mapfile_closecmd(int argc, char **argv)
 	if (argc != 2)
 		errx(EXIT_USAGE, "%s", "Usage: mapfile_close <handle>");
 	handle = argv[1];
+	INTOFF;
 	md = md_find(handle);
 	md_close(md);
+	INTON;
 
 	return (0);
 }
@@ -450,11 +454,11 @@ mapfile_writecmd(int argc, char **argv)
 	if (argc != 3)
 		errx(EXIT_USAGE, "%s", "Usage: mapfile_write <handle> <data>");
 
+	INTOFF;
 	handle = argv[1];
 	md = md_find(handle);
 	data = argv[2];
 
-	INTOFF;
 	debug("%d: Writing to %s for handle '%s' fd: %d: %s\n",
 	    getpid(), md->file, handle, fileno(md->fp), data);
 	if (fputs(data, md->fp) == EOF ||

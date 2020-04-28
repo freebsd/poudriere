@@ -116,12 +116,18 @@ main(int argc, char **argv)
 
 	if (tflag) {
 		tmpdir = getenv("TMPDIR");
+#ifdef SHELL
+		INTOFF;
+#endif
 		if (tmpdir == NULL)
 			asprintf(&name, "%s%s.XXXXXXXX", _PATH_TMP, prefix);
 		else
 			asprintf(&name, "%s/%s.XXXXXXXX", tmpdir, prefix);
 		/* if this fails, the program is in big trouble already */
 		if (name == NULL) {
+#ifdef SHELL
+			INTON;
+#endif
 			if (qflag)
 				return (1);
 			else
@@ -132,6 +138,9 @@ main(int argc, char **argv)
 	/* generate all requested files */
 	while (name != NULL || argc > 0) {
 		if (name == NULL) {
+#ifdef SHELL
+			INTOFF;
+#endif
 			name = strdup(argv[0]);
 			argv++;
 			argc--;
@@ -148,20 +157,33 @@ main(int argc, char **argv)
 					rmdir(name);
 			}
 		} else {
+#ifdef SHELL
+			INTOFF;
+#endif
 			fd = mkstemp(name);
 			if (fd < 0) {
+#ifdef SHELL
+				INTON;
+#endif
 				ret = 1;
 				if (!qflag)
 					warn("mkstemp failed on %s", name);
 			} else {
 				close(fd);
+#ifdef SHELL
+				INTON;
+#endif
 				if (uflag)
 					unlink(name);
 				printf("%s\n", name);
 			}
 		}
-		if (name)
+		if (name) {
 			free(name);
+#ifdef SHELL
+			INTON;
+#endif
+		}
 		name = NULL;
 	}
 	return (ret);
