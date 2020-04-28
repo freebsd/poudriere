@@ -356,10 +356,10 @@ poudriere: src/bin/poudriere.in
 	    gitver=$$(git -C "$(top_srcdir)" describe --tags HEAD); \
 	    sed -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
 	      $^${.ALLSRC} > $@; \
-	    chmod +x $@; \
 	else \
 	    cp -f $^${.ALLSRC} $@; \
-	fi;
+	fi; \
+	chmod +x $@
 
 SUBDIRS= . test
 
