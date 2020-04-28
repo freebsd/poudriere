@@ -107,7 +107,8 @@ STDERR=$(mktemp -ut poudriere)
 
 # durations
 (
-	timestamp -t \
+	TIME_START=$(clock -monotonic -nsec)
+	TIME_START=${TIME_START} timestamp -t \
 	    sh -c 'echo start;(sleep 3.1 >/dev/null 2>&1; echo bg; sleep 3.1 >/dev/null 2>&1; echo done) & echo hi' \
 	    >${STDOUT} 2>${STDERR}
 	assert 0 $? "$0:${LINENO}: incorrect exit status"
