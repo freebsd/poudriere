@@ -65,13 +65,12 @@ static size_t linecap = BUFSIZ;
 
 #include "bltin/bltin.h"
 #include "options.h"
+#include "helpers.h"
 #undef tflag
 #undef fflush
 #undef fputs
-#include <errno.h>
 #include "trap.h"
 #include "var.h"
-#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
 
 static void
 md_close(struct mapped_data *md)
@@ -384,7 +383,7 @@ out:
 		--linelen;
 	}
 	linep = line;
-	if (ifs == NULL && (ifs = bltinlookup("IFS", 1)) == NULL)
+	if (ifs == NULL && (ifs = getenv("IFS")) == NULL)
 		ifs = " \t\n";
 	ifsp = NULL;
 	while (linelen != -1 && linep - line < linelen) {

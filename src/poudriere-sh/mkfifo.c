@@ -64,9 +64,7 @@ static int f_mode;
 #include "options.h"
 #undef uflag
 #include "var.h"
-#include <errno.h>
-#define getenv(var) bltinlookup(var, 1)
-#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+#include "helpers.h"
 #endif
 
 int

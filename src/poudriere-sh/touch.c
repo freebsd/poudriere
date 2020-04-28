@@ -62,8 +62,7 @@ static const char sccsid[] = "@(#)touch.c	8.1 (Berkeley) 6/6/93";
 #include "options.h"
 #undef aflag
 #undef mflag
-#include <errno.h>
-#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+#include "helpers.h"
 #endif
 
 static void	stime_arg1(const char *, struct timespec *);

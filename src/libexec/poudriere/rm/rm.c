@@ -65,13 +65,13 @@ __FBSDID("$FreeBSD: head/bin/rm/rm.c 326025 2017-11-20 19:49:47Z pfg $");
 #define main rmcmd
 #include "bltin/bltin.h"
 #include "options.h"
+#include "helpers.h"
 #undef fflag
 #undef iflag
 #undef Iflag
 #undef Pflag
 #undef vflag
 #undef xflag
-#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
 extern volatile sig_atomic_t gotsig[NSIG];
 struct sigaction info_act, info_oact;
 #endif

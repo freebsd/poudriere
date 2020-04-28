@@ -58,7 +58,6 @@
 #define main locked_mkdircmd
 #include "bltin/bltin.h"
 #include "helpers.h"
-#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
 #undef fclose
 #undef fopen
 #undef fprintf

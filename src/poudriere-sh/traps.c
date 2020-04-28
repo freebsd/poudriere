@@ -37,7 +37,6 @@
 #include <errno.h>
 #include "helpers.h"
 #include "var.h"
-#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
 
 extern int rootpid;
 static int critsnest;

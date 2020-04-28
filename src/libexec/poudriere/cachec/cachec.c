@@ -42,7 +42,6 @@
 #include "bltin/bltin.h"
 #include "options.h"
 #include "helpers.h"
-#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
 #endif
 
 int

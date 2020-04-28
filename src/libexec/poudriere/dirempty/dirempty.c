@@ -34,8 +34,7 @@
 #ifdef SHELL
 #define main diremptycmd
 #include "bltin/bltin.h"
-#include <errno.h>
-#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+#include "helpers.h"
 #endif
  
 static bool

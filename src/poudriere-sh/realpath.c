@@ -43,8 +43,7 @@ static void usage(void) __dead2;
 #define main realpathcmd
 #include "bltin/bltin.h"
 #include "options.h"
-#include <errno.h>
-#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+#include "helpers.h"
 #endif
 
 int

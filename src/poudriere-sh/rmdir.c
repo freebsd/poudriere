@@ -52,8 +52,7 @@ __FBSDID("$FreeBSD$");
 #include "bltin/bltin.h"
 #include "options.h"
 #undef vflag
-#include <errno.h>
-#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+#include "helpers.h"
 #endif
 
 static int rm_path(char *);

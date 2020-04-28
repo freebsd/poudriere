@@ -33,8 +33,7 @@
 #ifdef SHELL
 #define main unlinkcmd
 #include "bltin/bltin.h"
-#include <errno.h>
-#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+#include "helpers.h"
 #endif
 
 /**
