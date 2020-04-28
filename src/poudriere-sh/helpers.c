@@ -26,6 +26,8 @@
 
 #include <sys/types.h>
 #include <sys/sbuf.h>
+
+#include <assert.h>
 #include <errno.h>
 #include <fnmatch.h>
 #include <signal.h>
@@ -263,9 +265,8 @@ _gsub_shell(struct sbuf *newstr, char *string, const char *pattern,
 	ret = 0;
 	INTOFF;
 	if (sbuf_new(newstr, buf, bufsiz, SBUF_AUTOEXTEND) == NULL) {
+		INTON;
 		errx(EX_SOFTWARE, "%s", "sbuf_new");
-		ret = 1;
-		goto out;
 	}
 	/*
 	 * fnmatch(3) doesn't return the length matched so we need to
@@ -310,7 +311,6 @@ _gsub_shell(struct sbuf *newstr, char *string, const char *pattern,
 	}
 
 	sbuf_finish(newstr);
-out:
 	return (ret);
 }
 
@@ -368,9 +368,8 @@ _gsub_strstr(struct sbuf *newstr, const char *string, const char *pattern,
 	}
 	INTOFF;
 	if (sbuf_new(newstr, buf, bufsiz, SBUF_FIXEDLEN) == NULL) {
+		INTON;
 		errx(EX_SOFTWARE, "%s", "sbuf_new");
-		ret = 1;
-		goto out;
 	}
 	for (p = string; (p2 = strstr(p, pattern)) != NULL; p2 += pattern_len,
 	    p = p2) {
@@ -379,7 +378,6 @@ _gsub_strstr(struct sbuf *newstr, const char *string, const char *pattern,
 	}
 	sbuf_cat(newstr, p);
 	sbuf_finish(newstr);
-out:
 	return (ret);
 }
 
@@ -392,6 +390,9 @@ _gsub(char **argv, const char *var_return)
 	size_t pattern_len, replacement_len;
 	int ret;
 	bool match_shell, sbuf_free;
+#ifndef NDEBUG
+	const int inton = is_int_on();
+#endif
 
 	ret = 0;
 	string = argv[1];
@@ -416,17 +417,19 @@ _gsub(char **argv, const char *var_return)
 	if (match_shell) {
 		ret = _gsub_shell(&newstr, string, pattern, pattern_len,
 		    replacement, replacement_len, buf, sizeof(buf));
+		assert(is_int_on());
 	} else if (pattern_len == 1 && replacement_len == 1) {
 		ret = _gsub_inplace(string, *pattern, *replacement);
 		outstr = string;
-		INTOFF;
+		assert(inton == is_int_on());
 	} else if (pattern_len == 1 && replacement_len == 0) {
 		ret = _gsub_shift(string, *pattern);
 		outstr = string;
-		INTOFF;
+		assert(inton == is_int_on());
 	} else {
 		ret = _gsub_strstr(&newstr, string, pattern, pattern_len,
 		    replacement, replacement_len, buf, sizeof(buf));
+		assert(is_int_on());
 	}
 	if (ret != 0)
 		goto out;
@@ -439,10 +442,13 @@ empty_pattern:
 		printf("%s\n", outstr);
 	else
 		setvar(var_return, outstr, 0);
-	if (sbuf_free)
+	if (sbuf_free) {
+		assert(is_int_on());
 		sbuf_delete(&newstr);
+		INTON;
+	}
 out:
-	INTON;
+	assert(inton == is_int_on());
 	return (ret);
 }
 
