@@ -46,7 +46,7 @@ STDERR=$(mktemp -ut poudriere)
 
 (
 	TIME_START=$(clock -monotonic -nsec)
-	sleep 3.1
+	sleep 3.1 >/dev/null 2>&1
 	TIME_START=${TIME_START} timestamp \
 	    sh -c 'echo start' \
 	    >${STDOUT} 2>${STDERR}
@@ -66,7 +66,7 @@ STDERR=$(mktemp -ut poudriere)
 
 (
 	TIME_START=$(clock -monotonic -nsec)
-	sleep 3.1
+	sleep 3.1 >/dev/null 2>&1
 	TIME_START=${TIME_START} timestamp -t \
 	    sh -c 'echo start' \
 	    >${STDOUT} 2>${STDERR}
@@ -86,9 +86,9 @@ STDERR=$(mktemp -ut poudriere)
 
 (
 	TIME_START=$(clock -monotonic -nsec)
-	sleep 3.1
+	sleep 3.1 >/dev/null 2>&1
 	TIME_START=${TIME_START} timestamp -t \
-	    sh -c 'echo start; sleep 3.1; echo end' \
+	    sh -c 'echo start; sleep 3.1 >/dev/null 2>&1; echo end' \
 	    >${STDOUT} 2>${STDERR}
 	assert 0 $? "$0:${LINENO}: incorrect exit status"
 
@@ -108,7 +108,7 @@ STDERR=$(mktemp -ut poudriere)
 # durations
 (
 	timestamp -t \
-	    sh -c 'echo start;(sleep 3.1; echo bg; sleep 3.1; echo done) & echo hi' \
+	    sh -c 'echo start;(sleep 3.1 >/dev/null 2>&1; echo bg; sleep 3.1 >/dev/null 2>&1; echo done) & echo hi' \
 	    >${STDOUT} 2>${STDERR}
 	assert 0 $? "$0:${LINENO}: incorrect exit status"
 
