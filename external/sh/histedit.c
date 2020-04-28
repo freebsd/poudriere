@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)histedit.c	8.2 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+__FBSDID("$FreeBSD: head/bin/sh/histedit.c 360139 2020-04-21 00:37:55Z bdrewery $");
 
 #include <sys/param.h>
 #include <limits.h>
@@ -54,12 +54,12 @@ __FBSDID("$FreeBSD$");
 #include "main.h"
 #include "output.h"
 #include "mystring.h"
-#include "myhistedit.h"
+#include "builtins.h"
 #ifndef NO_HISTORY
+#include "myhistedit.h"
 #include "error.h"
 #include "eval.h"
 #include "memalloc.h"
-#include "builtins.h"
 
 #define MAXHISTLOOPS	4	/* max recursions through fc */
 #define DEFEDITOR	"ed"	/* default editor *should* be $EDITOR */

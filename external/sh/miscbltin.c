@@ -38,7 +38,7 @@ static char sccsid[] = "@(#)miscbltin.c	8.4 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/miscbltin.c 358235 2020-02-22 03:14:05Z kevans $");
+__FBSDID("$FreeBSD: head/bin/sh/miscbltin.c 360028 2020-04-16 23:31:39Z adrian $");
 
 /*
  * Miscellaneous builtins.
@@ -245,6 +245,7 @@ readcmd(int argc __unused, char **argv __unused)
 	lastnonifs = lastnonifsws = -1;
 	fdctx_init(STDIN_FILENO, &fdctx);
 	for (;;) {
+		c = 0;
 		nread = fdgetc(&fdctx, &c);
 		if (nread == -1) {
 			if (errno == EINTR) {
