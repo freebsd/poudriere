@@ -7,7 +7,7 @@ write_cmp() {
 	local tmp ret
 
 	ret=0
-	tmp="$(TEMPDIR="${dest%/*}" mktemp -t ${dest##*/})" ||
+	tmp="$(TMPDIR="${dest%/*}" mktemp -t ${dest##*/})" ||
 		err $? "write_cmp unable to create tmpfile in ${dest%/*}"
 	cat > "${tmp}" || ret=$?
 	if [ "${ret}" -ne 0 ]; then
