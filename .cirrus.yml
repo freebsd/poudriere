@@ -1,5 +1,5 @@
 check_task:
-	# Build with asserts/debugging for checks. distcheck won't use asserts.
+        # Build with asserts/debugging for checks. distcheck won't use asserts.
         compile_script:
                 - ./configure --enable-debug=yes
                 - make -j4
@@ -11,10 +11,11 @@ check_task:
         matrix:
                 - name: freebsd11-amd64
                   freebsd_instance:
-                    image: freebsd-11-2-release-amd64
+                          image: freebsd-11-2-release-amd64
                 - name: freebsd12-amd64
                   freebsd_instance:
-                    image: freebsd-12-0-release-amd64
+                          image: freebsd-12-0-release-amd64
                 - name: freebsd13-amd64
                   freebsd_instance:
-                    image_family: freebsd-13-0-snap
+                          image_family: freebsd-13-0-snap
+# vim: sw=8 et:
