@@ -7,6 +7,9 @@ AM_SILENT_RULES([yes])
 AC_CONFIG_HEADER(src/config.h)
 
 AM_MAINTAINER_MODE([disable])
+AS_IF([test "$USE_MAINTAINER_MODE" != "no"],
+      [ax_is_release=no],[ax_is_release=yes])
+AX_CHECK_ENABLE_DEBUG([yes])
 
 AC_PROG_CC([cc clang gcc])
 AM_CFLAGS=

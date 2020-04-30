@@ -91,6 +91,9 @@
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
+/* Define if debugging is disabled */
+#undef NDEBUG
+
 /* Name of package */
 #undef PACKAGE
 
