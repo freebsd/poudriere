@@ -71,6 +71,6 @@ AC_CONFIG_FILES([src/etc/rc.d/poudriered])
 
 # Preserve timestamps for install. This is needed to preserve hardlinks
 # for HTML files.
-AC_SUBST([INSTALL], ["${ac_cv_path_install% -c} -Cp"])
+AC_SUBST([INSTALL], ["${ac_cv_path_install% -c} -p"])
 
 AC_OUTPUT

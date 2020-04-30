@@ -11977,7 +11977,7 @@ ac_config_files="$ac_config_files src/etc/rc.d/poudriered"
 
 # Preserve timestamps for install. This is needed to preserve hardlinks
 # for HTML files.
-INSTALL="${ac_cv_path_install% -c} -Cp"
+INSTALL="${ac_cv_path_install% -c} -p"
 
 
 cat >confcache <<\_ACEOF
