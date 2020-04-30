@@ -8,14 +8,12 @@ check_task:
         check_script: make -sj4 check || { cat test/test-suite.log; exit 1; }
         distcheck_script: make -sj4 distcheck || { find . -name test-suite.log -exec cat {} +; exit 1; }
         check_stock_script: make -sj4 check SH=/bin/sh || { cat test/test-suite.log; exit 1; }
-        matrix:
-                - name: freebsd11-amd64
-                  freebsd_instance:
+        freebsd_instance:
+                matrix:
+                        - name: freebsd11-amd64
                           image: freebsd-11-2-release-amd64
-                - name: freebsd12-amd64
-                  freebsd_instance:
+                        - name: freebsd12-amd64
                           image: freebsd-12-0-release-amd64
-                - name: freebsd13-amd64
-                  freebsd_instance:
+                        - name: freebsd13-amd64
                           image_family: freebsd-13-0-snap
 # vim: sw=8 et:
