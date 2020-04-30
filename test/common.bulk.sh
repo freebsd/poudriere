@@ -477,7 +477,9 @@ OVERLAYS=
 for o in ${OVERLAYS_save}; do
 	omnt="${PTMNT%/*}/${o}"
 	[ -d "${omnt}" ] || continue
-	oname=$(echo "${omnt}" | tr '[./]' '_')
+	#oname=$(echo "${omnt}" | tr '[./]' '_')
+	# <12 still has 88 mount path restrictions
+	oname="$(stat -f %i "${omnt}")_${o}"
 	pset "${oname}" mnt "${omnt}"
 	pset "${oname}" method "-"
 	# We run port_var_fetch_originspec without a jail so can't use plain
