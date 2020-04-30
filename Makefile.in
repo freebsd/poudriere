@@ -907,7 +907,8 @@ libucl_la_CFLAGS = $(AM_CFLAGS) -Wno-extra \
 			-I$(top_srcdir)/external/libucl/klib  \
 			-I$(top_srcdir)/external/libucl/include  \
 			-I$(top_srcdir)/external/libucl/src \
-			-Wno-unused-parameter -Wno-pointer-sign
+			-Wno-unused-parameter -Wno-pointer-sign \
+			-Wno-unused-variable
 
 libptsort_la_SOURCES = external/ptsort/lib/aa_tree.c \
 			external/ptsort/lib/aa_tree.h \
