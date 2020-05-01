@@ -378,7 +378,7 @@ nullfs_paths() {
 			nullpaths="${nullpaths} /etc"
 		fi
 	fi
-	echo "${nullpaths}"
+	echo "${nullpaths}" | tr ' ' '\n' | sort -u
 }
 
 destroyfs() {
