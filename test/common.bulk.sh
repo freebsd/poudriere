@@ -23,7 +23,8 @@ fix_default_flavor() {
 # Return 0 to skip the port
 # Return 1 to not skip the port
 cache_pkgnames() {
-	local originspec="$1"
+	local isdep="$1"
+	local originspec="$2"
 	local origin dep_origin flavor flavors pkgname default_flavor ignore
 	local flavor_originspec ret
 
@@ -39,7 +40,6 @@ cache_pkgnames() {
 	if [ "${flavor}" = "${FLAVOR_DEFAULT}" ]; then
 		originspec_encode originspec "${origin}" '' ''
 	elif [ "${flavor}" = "${FLAVOR_ALL}" ]; then
-		unset flavor
 		originspec_encode originspec "${origin}" '' ''
 	fi
 
@@ -60,26 +60,25 @@ cache_pkgnames() {
 	ALL_ORIGINS="${ALL_ORIGINS}${ALL_ORIGINS:+ }${originspec}"
 	if [ -n "${ignore}" ]; then
 		list_add IGNOREDPORTS "${originspec}"
-		IGNOREDPORTS="$(echo "${IGNOREDPORTS}" | tr ' ' '\n' |
-			LC_ALL=C sort | sed '/^$/d' | paste -s -d ' ' -)"
 	fi
 	for dep_origin in ${pdeps}; do
-		if cache_pkgnames "${dep_origin}"; then
+		if cache_pkgnames 1 "${dep_origin}"; then
 			if ! list_contains SKIPPEDPORTS "${originspec}"; then
 				list_add SKIPPEDPORTS "${originspec}"
 			fi
 		fi
 	done
-	SKIPPEDPORTS="$(echo "${SKIPPEDPORTS}" | tr ' ' '\n' |
-		LC_ALL=C sort | sed '/^$/d' | paste -s -d ' ' -)"
 	# Also cache all of the FLAVOR deps/PKGNAMES
-	if [ -n "${flavor}" ]; then
+	if [ "${isdep}" -eq "0" ] &&
+		[ -n "${flavors}" ] &&
+		[ "${flavor}" = "${FLAVOR_ALL:-null}" -o \
+		"${ALL:-0}" -eq 1 -o "${FLAVOR_DEFAULT_ALL:-}" = "yes" ]; then
 		default_flavor="${flavors%% *}"
 		for flavor in ${flavors}; do
 			# Don't recurse on the first flavor since we are it.
 			[ "${flavor}" = "${default_flavor}" ] && continue
 			originspec_encode flavor_originspec "${origin}" '' "${flavor}"
-			cache_pkgnames "${flavor_originspec}" || :
+			cache_pkgnames 0 "${flavor_originspec}" || :
 		done
 	fi
 
@@ -181,6 +180,11 @@ assert_queued() {
 	local origins="$2"
 	local tmp originspec origins_expanded
 
+	if [ ! -f "${log}/.poudriere.ports.queued" ]; then
+		[ -z "${origins-}" ] && return 0
+		err 1 ".poudriere.ports.queued file is missing while EXPECTED_QUEUED${dep:+(${dep})} is: ${origins}"
+	fi
+
 	tmp="$(mktemp -t queued.${dep})"
 	awk -v dep="${dep}" '$3 == dep' "${log}/.poudriere.ports.queued" \
 	    > "${tmp}"
@@ -226,13 +230,18 @@ assert_queued() {
 	echo "=> Asserting that nothing else is in the${dep:+ ${dep}} queue"
 	cat "${tmp}" | sed -e 's,^,==> ,' >&2
 	! [ -s "${tmp}" ]
-	assert 0 $? "Queue should be empty"
+	assert 0 $? "Queue${dep:+(${dep})} should be empty"
 	rm -f "${tmp}"
 }
 
 assert_ignored() {
 	local origins="$1"
 	local tmp originspec origins_expanded
+
+	if [ ! -f "${log}/.poudriere.ports.ignored" ]; then
+		[ -z "${origins-}" ] && return 0
+		err 1 ".poudriere.ports.ignored file is missing while EXPECTED_IGNORED is: ${origins}"
+	fi
 
 	tmp="$(mktemp -t queued)"
 	cp -f "${log}/.poudriere.ports.ignored" "${tmp}"
@@ -280,6 +289,11 @@ assert_skipped() {
 	local origins="$1"
 	local tmp originspec origins_expanded
 
+	if [ ! -f "${log}/.poudriere.ports.skipped" ]; then
+		[ -z "${origins-}" ] && return 0
+		err 1 ".poudriere.ports.skipped file is missing while EXPECTED_SKIPPED is: ${origins}"
+	fi
+
 	tmp="$(mktemp -t queued)"
 	cp -f "${log}/.poudriere.ports.skipped" "${tmp}"
 	# First fix the list to expand main port FLAVORS
@@ -326,37 +340,49 @@ assert_counts() {
 	local queued expected_queued ignored expected_ignored
 	local skipped expected_skipped
 
-	if [ -z "${ALL_EXPECTED}" ]; then
+	if [ -z "${EXPECTED_QUEUED-}" ]; then
 		expected_queued=0
 	else
-		expected_queued=$(echo "${ALL_EXPECTED}" | tr ' ' '\n' | wc -l)
+		expected_queued=$(echo "${EXPECTED_QUEUED}" | tr ' ' '\n' | wc -l)
 		expected_queued="${expected_queued##* }"
 	fi
-	if [ -z "${IGNOREDPORTS}" ]; then
+	if [ -z "${EXPECTED_IGNORED-}" ]; then
 		expected_ignored=0
 	else
-		expected_ignored=$(echo "${IGNOREDPORTS}" | tr ' ' '\n' | wc -l)
+		expected_ignored=$(echo "${EXPECTED_IGNORED}" | tr ' ' '\n' | wc -l)
 		expected_ignored="${expected_ignored##* }"
 	fi
-	if [ -z "${SKIPPEDPORTS}" ]; then
+	if [ -z "${EXPECTED_SKIPPED-}" ]; then
 		expected_skipped=0
 	else
-		expected_skipped=$(echo "${SKIPPEDPORTS}" | tr ' ' '\n' | wc -l)
+		expected_skipped=$(echo "${EXPECTED_SKIPPED}" | tr ' ' '\n' | wc -l)
 		expected_skipped="${expected_skipped##* }"
 	fi
 	expected_queued=$((expected_queued + expected_ignored + expected_skipped))
 	echo "=> Asserting queued=${expected_queued} ignored=${expected_ignored} skipped=${expected_skipped}"
 
-	read queued < "${log}/.poudriere.stats_queued"
-	assert 0 $? "${log}/.poudriere.stats_queued read should pass"
+	if [ -n "${EXPECTED_QUEUED-}" ]; then
+		read queued < "${log}/.poudriere.stats_queued"
+		assert 0 $? "${log}/.poudriere.stats_queued read should pass"
+	else
+		queued=0
+	fi
 	assert "${expected_queued}" "${queued}" "queued should match"
 
-	read ignored < "${log}/.poudriere.stats_ignored"
-	assert 0 $? "${log}/.poudriere.stats_ignored read should pass"
+	if [ -n "${EXPECTED_IGNORED-}" ]; then
+		read ignored < "${log}/.poudriere.stats_ignored"
+		assert 0 $? "${log}/.poudriere.stats_ignored read should pass"
+	else
+		ignored=0
+	fi
 	assert "${expected_ignored}" "${ignored}" "ignored should match"
 
-	read skipped < "${log}/.poudriere.stats_skipped"
-	assert 0 $? "${log}/.poudriere.stats_skipped read should pass"
+	if [ -n "${EXPECTED_SKIPPED-}" ]; then
+		read skipped < "${log}/.poudriere.stats_skipped"
+		assert 0 $? "${log}/.poudriere.stats_skipped read should pass"
+	else
+		skipped=0
+	fi
 	assert "${expected_skipped}" "${skipped}" "skipped should match"
 }
 
@@ -375,6 +401,90 @@ do_bulk() {
 	    -B "${BUILDNAME}" \
 	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
 	    "$@"
+}
+
+assert_bulk_queue_and_stats() {
+	local expanded_LISTPORTS_NOIGNORED
+	local EXPECTED_LISTPORTS_IGNORED EXPECTED_LISTPORTS_NOIGNORED
+	local port
+	local -
+
+	set -u
+
+	# Some defaults based on passed in expectations. Assume nothing is
+	# ignored unless told otherwise.
+	if [ -n "${EXPECTED_LISTPORTS_IGNORED+set}" ] &&
+		[ -z "${EXPECTED_LISTPORTS_NOIGNORED+set}" ]; then
+		EXPECTED_LISTPORTS_NOIGNORED="${LISTPORTS}"
+		for port in ${EXPECTED_LISTPORTS_IGNORED}; do
+			list_remove EXPECTED_LISTPORTS_NOIGNORED "${port}" || :
+		done
+	elif [ -n "${EXPECTED_LISTPORTS_NOIGNORED+set}" ] &&
+		[ -z "${EXPECTED_LISTPORTS_IGNORED+set}" ]; then
+		EXPECTED_LISTPORTS_IGNORED="${LISTPORTS}"
+		for port in ${EXPECTED_LISTPORTS_NOIGNORED}; do
+			list_remove EXPECTED_LISTPORTS_IGNORED "${port}" || :
+		done
+	elif [ -z "${EXPECTED_LISTPORTS_NOIGNORED+set}" ] &&
+		[ -z "${EXPECTED_LISTPORTS_IGNORED+set}" ]; then
+		# This is highly dependent on the test framework
+		EXPECTED_LISTPORTS_NOIGNORED="${LISTPORTS_NOIGNORED}"
+		EXPECTED_LISTPORTS_IGNORED="${LISTPORTS_IGNORED}"
+	fi
+
+	# Assert the listed which are ignored is right
+	# This is testing the test framework
+	assert "${EXPECTED_LISTPORTS_IGNORED}" \
+		"${LISTPORTS_IGNORED-null}" \
+		"LISTPORTS_IGNORED should match"
+
+	# Assert the non-ignored ports list is right
+	# This is testing the test framework
+	assert "${EXPECTED_LISTPORTS_NOIGNORED}" \
+		"${LISTPORTS_NOIGNORED-null}" \
+		"LISTPORTS_NOIGNORED should match"
+
+	# Assert that IGNOREDPORTS was populated by the framework right.
+	# This is testing the test framework
+	assert "${EXPECTED_IGNORED-}" "${IGNOREDPORTS-null}" \
+		"IGNOREDPORTS should match"
+
+	# Assert that skipped ports are right
+	# This is testing the test framework
+	assert "${EXPECTED_SKIPPED-}" "${SKIPPEDPORTS-null}" \
+		"SKIPPEDPORTS should match"
+
+	### Now do tests against the output of the bulk run. ###
+
+	# Assert that only listed packages are in poudriere.ports.queued as
+	# 'listed'
+	if [ -z "${EXPECTED_QUEUED_LISTED-}" ]; then
+		# compat for tests
+		if [ -z "${EXPECTED_QUEUED-null}" ]; then
+			EXPECTED_QUEUED_LISTED=
+		else
+			EXPECTED_QUEUED_LISTED="${LISTPORTS}"
+		fi
+	fi
+	assert_queued "listed" "${EXPECTED_QUEUED_LISTED-}"
+
+	# Assert the IGNOREd ports are tracked in .poudriere.ports.ignored
+	assert_ignored "${EXPECTED_IGNORED-}"
+
+	# Assert that SKIPPED ports are right
+	assert_skipped "${EXPECTED_SKIPPED-}"
+
+	# Assert that all expected dependencies are in poudriere.ports.queued
+	# (since they do not exist yet)
+	if [ -z "${EXPECTED_QUEUED+set}" ]; then
+		expand_origin_flavors "${LISTPORTS_NOIGNORED}" \
+			expanded_LISTPORTS_NOIGNORED
+		list_all_deps "${expanded_LISTPORTS_NOIGNORED}" EXPECTED_QUEUED
+	fi
+	assert_queued "" "${EXPECTED_QUEUED-}"
+
+	# Assert stats counts are right
+	assert_counts
 }
 
 # Avoid injail() for port_var_fetch
@@ -504,16 +614,24 @@ LISTPORTS="$(echo "${LISTPORTS}" | tr ' ' '\n' |
 echo -n "Gathering metadata for requested ports..."
 IGNOREDPORTS=""
 SKIPPEDPORTS=""
+LISTPORTS_IGNORED=""
 for origin in ${LISTPORTS}; do
-	cache_pkgnames "${origin}" || :
+	cache_pkgnames 0 "${origin}" || :
 done
 echo " done"
+IGNOREDPORTS="$(echo "${IGNOREDPORTS}" | tr ' ' '\n' |
+	LC_ALL=C sort | sed '/^$/d' | paste -s -d ' ' -)"
+SKIPPEDPORTS="$(echo "${SKIPPEDPORTS}" | tr ' ' '\n' |
+	LC_ALL=C sort | sed '/^$/d' | paste -s -d ' ' -)"
 expand_origin_flavors "${LISTPORTS}" LISTPORTS_EXPANDED
-LISTPORTS_NOIGNORED="${LISTPORTS_EXPANDED}"
 # Separate out IGNORED ports
+LISTPORTS_NOIGNORED="${LISTPORTS_EXPANDED}"
 if [ -n "${IGNOREDPORTS}" ]; then
 	_IGNOREDPORTS="${IGNOREDPORTS}"
 	for port in ${_IGNOREDPORTS}; do
+		if list_contains LISTPORTS "${port}"; then
+			list_add LISTPORTS_IGNORED "${port}" || :
+		fi
 		list_remove LISTPORTS_NOIGNORED "${port}" || :
 		list_remove SKIPPEDPORTS "${port}" || :
 	done
