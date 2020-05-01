@@ -2,5 +2,5 @@ LISTPORTS="misc/freebsd-release-manifests@FOO ports-mgmt/poudriere-devel-dep-FOO
 OVERLAYS="omnibus"
 . common.bulk.sh
 
-do_bulk ${LISTPORTS}
+do_bulk -n ${LISTPORTS}
 assert 1 $? "Bulk should fail due to bad nonexistent flavor"

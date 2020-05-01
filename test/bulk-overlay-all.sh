@@ -2,7 +2,7 @@ ALL=1
 OVERLAYS="overlay omnibus"
 . common.bulk.sh
 
-do_bulk -a
+do_bulk -n -a
 assert 0 $? "Bulk should pass"
 
 # Assert that we found the right misc/foo

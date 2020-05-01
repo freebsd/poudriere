@@ -4,7 +4,7 @@ LISTPORTS="ports-mgmt/poudriere-devel ports-mgmt/poudriere-devel-IGNORED misc/fo
 OVERLAYS="omnibus"
 . common.bulk.sh
 
-do_bulk ${LISTPORTS}
+do_bulk -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 
 # Assert the non-ignored ports list is right

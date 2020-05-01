@@ -4,7 +4,7 @@ LISTPORTS="misc/freebsd-release-manifests ports-mgmt/poudriere-devel-dep-FOO"
 OVERLAYS="omnibus"
 . common.bulk.sh
 
-do_bulk ${LISTPORTS}
+do_bulk -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 
 # Assert that only listed packages are in poudriere.ports.queued as 'listed'

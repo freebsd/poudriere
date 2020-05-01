@@ -2,7 +2,7 @@ LISTPORTS="ports-mgmt/poudriere-devel-bad-dep_args"
 OVERLAYS="ports-dep-args"
 . common.bulk.sh
 
-do_bulk ${LISTPORTS}
+do_bulk -n ${LISTPORTS}
 assert 1 $? "Invalid DEPENDS_ARGS should be detected"
 
 # Nothing should be queued

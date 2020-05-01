@@ -2,7 +2,7 @@ ALL=1
 OVERLAYS="omnibus"
 . common.bulk.sh
 
-do_bulk -a
+do_bulk -n -a
 assert 0 $? "Bulk should pass"
 
 # Assert that IGNOREDPORTS was populated by the framework right.
