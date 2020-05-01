@@ -135,16 +135,16 @@ build_top_json() {
 	[ -n "${log_path_top}" ] || \
 	    err 1 "build_top_json requires log_path_top set"
 	local empty
-	for empty in */latest/.data.mini.json; do
-		case "${empty}" in
-		# Empty
-		"*/latest/.data.mini.json") return 0 ;;
-		esac
-		break
-	done
 	tmpfile=$(TMPDIR="${log_path_top}" mktemp -ut json)
 	(
 		cd "${log_path_top}"
+		for empty in */latest/.data.mini.json; do
+			case "${empty}" in
+			# Empty
+			"*/latest/.data.mini.json") return 0 ;;
+			esac
+			break
+		done
 		echo "{\"masternames\":{"
 		echo */latest/.data.mini.json | \
 		    xargs /usr/bin/awk -f ${AWKPREFIX}/json_top.awk | \
