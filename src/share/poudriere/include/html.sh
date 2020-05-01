@@ -94,14 +94,14 @@ build_json() {
 	    err 1 "build_jail_json requires log_path set"
 	/usr/bin/awk \
 		-f ${AWKPREFIX}/json.awk ${log_path}/.poudriere.*[!%] | \
-		/usr/bin/awk 'ORS=""; {print}' | \
+		/usr/bin/awk 'ORS=""; {print} END {print "\n"}' | \
 		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' | \
 		write_cmp "${log_path}/.data.json"
 
 	# Build mini json for stats
 	/usr/bin/awk -v mini=yes \
 		-f ${AWKPREFIX}/json.awk ${log_path}/.poudriere.*[!%] | \
-		/usr/bin/awk 'ORS=""; {print}' | \
+		/usr/bin/awk 'ORS=""; {print} END {print "\n"}' | \
 		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' | \
 		write_cmp "${log_path}/.data.mini.json"
 }
