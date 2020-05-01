@@ -77,7 +77,7 @@ err() {
 	# Try to set status so other processes know this crashed
 	# Don't set it from children failures though, only master
 	if [ "${PARALLEL_CHILD:-0}" -eq 0 ] && was_a_bulk_run; then
-		bset ${MY_JOBID} status "${EXIT_STATUS:-crashed:}" \
+		bset ${MY_JOBID-} status "${EXIT_STATUS:-crashed:}" \
 		    2>/dev/null || :
 	fi
 	if [ ${1} -eq 0 ]; then
@@ -85,7 +85,7 @@ err() {
 	else
 		msg_error "$2" || :
 	fi
-	if [ -n "${ERRORS_ARE_DEP_FATAL}" ]; then
+	if [ -n "${ERRORS_ARE_DEP_FATAL-}" ]; then
 		set_dep_fatal_error
 	fi
 	# Avoid recursive err()->exit_handler()->err()... Just let
@@ -118,9 +118,9 @@ _msg_n() {
 		arrow="=>>"
 	fi
 	if [ -n "${COLOR_ARROW}" ] || [ -z "${1##*\033[*}" ]; then
-		printf "${COLOR_ARROW}${elapsed}${DRY_MODE}${arrow:+${COLOR_ARROW}${arrow}${COLOR_RESET} }${*}${COLOR_RESET}${NL}"
+		printf "${COLOR_ARROW}${elapsed}${DRY_MODE-}${arrow:+${COLOR_ARROW}${arrow}${COLOR_RESET} }${*}${COLOR_RESET}${NL}"
 	else
-		printf "${elapsed}${DRY_MODE}${arrow:+${arrow} }${*}${NL}"
+		printf "${elapsed}${DRY_MODE-}${arrow:+${arrow} }${*}${NL}"
 	fi
 }
 
@@ -141,7 +141,7 @@ msg_error() {
 	local MSG_NESTED
 
 	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
-	if [ -n "${MY_JOBID}" ]; then
+	if [ -n "${MY_JOBID-}" ]; then
 		# Send colored msg to bulk log...
 		COLOR_ARROW="${COLOR_ERROR}" \
 		    job_msg "${COLOR_ERROR}Error:${COLOR_RESET} $1"
@@ -1177,7 +1177,7 @@ exit_handler() {
 		fi
 	fi
 
-	[ -n ${CLEANUP_HOOK} ] && ${CLEANUP_HOOK}
+	[ -n "${CLEANUP_HOOK-}" ] && ${CLEANUP_HOOK}
 
 	if [ ${CREATED_JLOCK:-0} -eq 1 ]; then
 		_jlock jlock
@@ -1454,7 +1454,7 @@ if [ "$(type mktemp)" = "mktemp is a shell builtin" ]; then
 fi
 # Wrap mktemp to put most tmpfiles in mnt/.p/tmp rather than system /tmp.
 mktemp() {
-	if [ -z "${TMPDIR}" ]; then
+	if [ -z "${TMPDIR-}" ]; then
 		if [ -n "${MASTERMNT}" -a ${STATUS} -eq 1 ]; then
 			local mnt
 			_my_path mnt
@@ -1464,11 +1464,11 @@ mktemp() {
 			TMPDIR="${POUDRIERE_TMPDIR}"
 		fi
 	fi
-	if [ -n "${MKTEMP_BUILTIN}" ]; then
+	if [ -n "${MKTEMP_BUILTIN-}" ]; then
 		# No export needed here since TMPDIR is set above in scope.
 		builtin mktemp "$@"
 	else
-		[ -n "${TMPDIR}" ] && export TMPDIR
+		[ -n "${TMPDIR-}" ] && export TMPDIR
 		command mktemp "$@"
 	fi
 }
@@ -4338,16 +4338,16 @@ originspec_decode() {
 	set -- ${_originspec}
 
 	__origin="${1}"
-	__flavor="${2}"
-	__dep_args="${3}"
+	__flavor="${2-}"
+	__dep_args="${3-}"
 
-	if [ -n "${var_return_origin}" ]; then
+	if [ -n "${var_return_origin-}" ]; then
 		setvar "${var_return_origin}" "${__origin}"
 	fi
-	if [ -n "${var_return_dep_args}" ]; then
+	if [ -n "${var_return_dep_args-}" ]; then
 		setvar "${var_return_dep_args}" "${__dep_args}"
 	fi
-	if [ -n "${var_return_flavor}" ]; then
+	if [ -n "${var_return_flavor-}" ]; then
 		setvar "${var_return_flavor}" "${__flavor}"
 	fi
 }

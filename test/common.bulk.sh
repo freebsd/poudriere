@@ -91,6 +91,7 @@ expand_origin_flavors() {
 	local var_return="$2"
 	local originspec origin flavor flavors _expanded
 
+	_expanded=
 	for originspec in ${origins}; do
 		originspec_decode "${originspec}" origin '' flavor
 		hash_get origin-flavors "${origin}" flavors || flavors=
@@ -233,7 +234,7 @@ assert_ignored() {
 	local origins="$1"
 	local tmp originspec origins_expanded
 
-	tmp="$(mktemp -t queued.${dep})"
+	tmp="$(mktemp -t queued)"
 	cp -f "${log}/.poudriere.ports.ignored" "${tmp}"
 	# First fix the list to expand main port FLAVORS
 	expand_origin_flavors "${origins}" origins_expanded
@@ -279,7 +280,7 @@ assert_skipped() {
 	local origins="$1"
 	local tmp originspec origins_expanded
 
-	tmp="$(mktemp -t queued.${dep})"
+	tmp="$(mktemp -t queued)"
 	cp -f "${log}/.poudriere.ports.skipped" "${tmp}"
 	# First fix the list to expand main port FLAVORS
 	expand_origin_flavors "${origins}" origins_expanded
