@@ -95,17 +95,15 @@ build_json() {
 	/usr/bin/awk \
 		-f ${AWKPREFIX}/json.awk ${log_path}/.poudriere.*[!%] | \
 		/usr/bin/awk 'ORS=""; {print}' | \
-		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' \
-		> ${log_path}/.data.json.tmp
-	rename ${log_path}/.data.json.tmp ${log_path}/.data.json
+		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' | \
+		write_cmp "${log_path}/.data.json"
 
 	# Build mini json for stats
 	/usr/bin/awk -v mini=yes \
 		-f ${AWKPREFIX}/json.awk ${log_path}/.poudriere.*[!%] | \
 		/usr/bin/awk 'ORS=""; {print}' | \
-		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' \
-		> ${log_path}/.data.mini.json.tmp
-	rename ${log_path}/.data.mini.json.tmp ${log_path}/.data.mini.json
+		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' | \
+		write_cmp "${log_path}/.data.mini.json"
 }
 
 build_jail_json() {
@@ -119,7 +117,6 @@ build_jail_json() {
 		esac
 		break
 	done
-	tmpfile=$(TMPDIR="${log_path_jail}" mktemp -ut json)
 	{
 		echo "{\"builds\":{"
 		echo ${log_path_jail}/*/.data.mini.json | \
@@ -127,8 +124,7 @@ build_jail_json() {
 		    /usr/bin/sed -e '/^$/d' | \
 		    paste -s -d , -
 		echo "}}"
-	} > ${tmpfile}
-	rename ${tmpfile} ${log_path_jail}/.data.json
+	} | write_cmp "${log_path_jail}/.data.json"
 }
 
 build_top_json() {
@@ -142,7 +138,6 @@ build_top_json() {
 		esac
 		break
 	done
-	tmpfile=$(TMPDIR="${log_path_top}" mktemp -ut json)
 	(
 		cd "${log_path_top}"
 		echo "{\"masternames\":{"
@@ -151,8 +146,7 @@ build_top_json() {
 		    /usr/bin/sed -e '/^$/d' | \
 		    paste -s -d , -
 		echo "}}"
-	) > ${tmpfile}
-	rename ${tmpfile} ${log_path_top}/.data.json
+	) | write_cmp "${log_path_top}/.data.json"
 }
 
 # This is called at the end
@@ -162,7 +156,6 @@ html_json_cleanup() {
 	_log_path log
 	bset ended "$(clock -epoch)" || :
 	build_all_json || :
-	rm -f ${log}/.data.json.tmp ${log}/.data.mini.json.tmp 2>/dev/null || :
 }
 
 # Create/Update a base dir and then hardlink-copy the files into the
