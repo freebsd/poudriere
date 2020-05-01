@@ -45,6 +45,7 @@ NOLINUX=yes
 NO_LIB32=yes
 NO_SRC=yes
 SHARED_LOCK_DIR="${POUDRIERE_ETC}/run"
+MUTABLE_BASE=nullfs
 EOF
 write_cmp "${POUDRIERE_ETC}/poudriere.d/make.conf" << EOF
 DEFAULT_VERSIONS+=	ssl=base
