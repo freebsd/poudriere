@@ -142,7 +142,7 @@ build_top_json() {
 		done
 		echo "{\"masternames\":{"
 		echo */latest/.data.mini.json | \
-		    xargs /usr/bin/awk -f ${AWKPREFIX}/json_top.awk | \
+		    xargs /usr/bin/awk -f ${AWKPREFIX}/json_top.awk 2>/dev/null | \
 		    /usr/bin/sed -e '/^$/d' | \
 		    paste -s -d , -
 		echo "}}"
