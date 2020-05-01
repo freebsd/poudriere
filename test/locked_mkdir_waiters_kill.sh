@@ -5,7 +5,7 @@ set +e
 LOCK1="${LOCKBASE}/lock_waiters"
 
 # Multiple waiters - one should win but killing it should allow another to win
-max=3
+max=1
 n=0
 [ -d "${LOCK1}" ]
 assert_not 0 $? "$0:$LINENO: Lock dir should not exist"
