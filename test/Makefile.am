@@ -62,7 +62,10 @@ JAIL_TESTS= \
 	bulk-flavor-ignore-all.sh \
 	bulk-overlay-all.sh \
 	bulk-no-overlay-specific.sh \
-	bulk-overlay-specific.sh
+	bulk-overlay-specific.sh \
+	bulk-build-self-mutable-base-no.sh \
+	bulk-build-self-mutable-base-schg.sh \
+	bulk-build-self-mutable-base-nullfs.sh
 
 # Depend bulk tests on jail setup
 TESTS+=	prep.sh
