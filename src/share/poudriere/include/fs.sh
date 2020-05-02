@@ -372,11 +372,6 @@ nullfs_paths() {
 		    /usr/lib32 /usr/libdata /usr/libexec /usr/obj \
 		    /usr/sbin /boot /bin /sbin /lib \
 		    /libexec"
-		# Do a real copy for the ref jail since we need to modify
-		# or create directories in them.
-		if [ "${mnt##*/}" != "ref" ]; then
-			nullpaths="${nullpaths} /etc"
-		fi
 	fi
 	echo "${nullpaths}" | tr ' ' '\n' | sort -u
 }
