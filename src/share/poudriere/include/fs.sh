@@ -370,8 +370,12 @@ nullfs_paths() {
 		# Need to keep /usr/src and /usr/ports on their own.
 		nullpaths="${nullpaths} /usr/bin /usr/include /usr/lib \
 		    /usr/lib32 /usr/libdata /usr/libexec /usr/obj \
-		    /usr/sbin /boot /bin /sbin /lib \
+		    /usr/sbin /boot /bin /lib \
 		    /libexec"
+		# Can only add /sbin if not using static ccache
+		if [ -z "${CCACHE_STATIC_PREFIX}" ]; then
+			nullpaths="${nullpaths} /sbin"
+		fi
 	fi
 	echo "${nullpaths}" | tr ' ' '\n' | sort -u
 }
