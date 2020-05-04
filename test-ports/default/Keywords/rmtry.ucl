@@ -1,4 +1,4 @@
-# $FreeBSD: head/Keywords/rmtry.ucl 509900 2019-08-26 10:41:50Z bapt $
+# $FreeBSD: head/Keywords/rmtry.ucl 533583 2020-05-01 19:39:26Z antoine $
 #
 # MAINTAINER:	portmgr@FreeBSD.org
 actions: []

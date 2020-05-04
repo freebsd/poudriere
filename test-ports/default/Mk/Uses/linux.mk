@@ -1,4 +1,4 @@
-# $FreeBSD: head/Mk/Uses/linux.mk 524495 2020-01-28 16:21:54Z tijl $
+# $FreeBSD: head/Mk/Uses/linux.mk 533773 2020-05-03 12:50:42Z tijl $
 #
 # Ports Linux compatibility framework
 #
@@ -34,7 +34,7 @@ linux_ARGS=		${LINUX_DEFAULT}
 .endif
 
 .if ${linux_ARGS} == c7
-LINUX_DIST_VER?=	7.7.1908
+LINUX_DIST_VER?=	7.8.2003
 .else
 IGNORE=			Invalid Linux distribution: ${linux_ARGS}
 .endif

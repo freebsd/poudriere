@@ -17,11 +17,15 @@ py3=$(make -f Mk/bsd.port.mk -V PYTHON3_DEFAULT:S,.,,)
 perl5=$(make -f Mk/bsd.port.mk -V PERL5_DEFAULT)
 
 # Minimum for a partial tree (and their deps)
+# Despite being 'dirs' it is paths.
 DIRS="
+GIDs
+Keywords
+MOVED
 Mk
 Templates
 Tools
-Keywords
+UIDs
 devel/gettext
 devel/gettext-runtime
 devel/gettext-tools
@@ -42,7 +46,9 @@ update_dir() {
 	rm -rf "${dir}"
 	svn export "${SVN_URL}/${dir}" "${dir}" || return $?
 	git add -f "${dir}"
-	find "${dir}" -name Makefile -exec git add -f {} +
+	if [ -d "${dir}" ]; then
+		find "${dir}" -name Makefile -exec git add -f {} +
+	fi
 }
 
 get_deps() {
@@ -86,7 +92,7 @@ recurse_deps_all() {
 	recurse_deps ${allports}
 }
 
-git rm -rf *
+git rm -rf .
 
 for dir in ${DIRS}; do
 	update_dir "${dir}"

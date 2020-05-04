@@ -1,7 +1,7 @@
 #-*- tab-width: 4; -*-
 # ex:ts=4
 #
-# $FreeBSD: head/Mk/bsd.port.mk 529956 2020-03-31 08:31:14Z 0mp $
+# $FreeBSD: head/Mk/bsd.port.mk 533337 2020-04-29 14:01:05Z bapt $
 #	$NetBSD: $
 #
 #	bsd.port.mk - 940820 Jordan K. Hubbard.
@@ -803,7 +803,7 @@ FreeBSD_MAINTAINER=	portmgr@FreeBSD.org
 # MAKE_JOBS_NUMBER_LIMIT
 #				- Set a limit for maximum number of make jobs allowed to be
 #				  used.
-## cacche
+## ccache
 #
 # WITH_CCACHE_BUILD
 # 				- Enable CCACHE support (devel/ccache).  User settable.
@@ -1047,7 +1047,7 @@ _FLAVOR:=	${FLAVOR}
 .if !defined(PORTS_FEATURES) && empty(${PORTS_FEATURES:MFLAVORS})
 PORTS_FEATURES+=	FLAVORS
 .endif
-MINIMAL_PKG_VERSION=	1.6.0
+MINIMAL_PKG_VERSION=	1.13.0
 
 _PORTS_DIRECTORIES+=	${PKG_DBDIR} ${PREFIX} ${WRKDIR} ${EXTRACT_WRKDIR} \
 						${STAGEDIR}${PREFIX} ${WRKDIR}/pkg ${BINARY_LINKDIR}
@@ -1364,7 +1364,7 @@ PKGCOMPATDIR?=		${LOCALBASE}/lib/compat/pkg
 .include "${PORTSDIR}/Mk/bsd.local.mk"
 .endif
 .for odir in ${OVERLAYS}
-.-include "${odir}/Mk/bsd.overlay.mk"
+.sinclude "${odir}/Mk/bsd.overlay.mk"
 .endfor
 
 .if defined(USE_XORG) && (!defined(USES) || !${USES:Mxorg})
@@ -1494,9 +1494,9 @@ DEV_ERROR+=		"FLAVORS contains flavors that are not all [a-z0-9_]: ${_BAD_FLAVOR
 
 .if !empty(FLAVOR)
 .  if empty(FLAVORS)
-IGNORE=	FLAVOR is defined (to ${FLAVOR}) while this port does not have FLAVORS.
+IGNORE=	FLAVOR is defined (to ${FLAVOR}) while this port does not have FLAVORS
 .  elif ! ${FLAVORS:M${FLAVOR}}
-IGNORE=	Unknown flavor '${FLAVOR}', possible flavors: ${FLAVORS}.
+IGNORE=	Unknown flavor '${FLAVOR}', possible flavors: ${FLAVORS}
 .  endif
 .endif
 
@@ -1950,7 +1950,7 @@ _FORCE_POST_PATTERNS=	rmdir kldxref mkfontscale mkfontdir fc-cache \
 .include "${PORTSDIR}/Mk/bsd.local.mk"
 .endif
 .for odir in ${OVERLAYS}
-.-include "${odir}/Mk/bsd.overlay.mk"
+.sinclude "${odir}/Mk/bsd.overlay.mk"
 .endfor
 
 .if defined(USE_XORG) && (!defined(USES) || ( defined(USES) && !${USES:Mxorg} ))

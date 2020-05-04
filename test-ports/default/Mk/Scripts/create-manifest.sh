@@ -1,5 +1,5 @@
 #!/bin/sh
-# $FreeBSD: head/Mk/Scripts/create-manifest.sh 509281 2019-08-19 12:18:16Z mat $
+# $FreeBSD: head/Mk/Scripts/create-manifest.sh 533337 2020-04-29 14:01:05Z bapt $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 
@@ -104,6 +104,7 @@ for stage in INSTALL DEINSTALL UPGRADE; do
 		output=${dp_METADIR}/+${prepost:+${prepost}_}${stage}
 		for input in ${files}; do
 			[ -f "${input}" ] && cat ${input} >> ${output}
+			[ -f "${input}.lua" ] && cp ${input}.lua ${dp_METADIR}
 		done
 	done
 done
