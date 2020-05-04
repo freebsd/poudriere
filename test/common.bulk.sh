@@ -704,6 +704,6 @@ if [ -n "${SKIPPEDPORTS}" ]; then
 	done
 fi
 fetch_global_port_vars || err 99 "Unable to fetch port vars"
-assert_not "null" "${P_PORTS_FEATURES}" "$0:$LINENO: fetch_global_port_vars should work"
+assert_not "null" "${P_PORTS_FEATURES-null}" "$0:$LINENO: fetch_global_port_vars should work"
 echo "Building: $(echo ${LISTPORTS_EXPANDED})"
 set +e
