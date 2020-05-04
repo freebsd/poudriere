@@ -26,7 +26,7 @@ cache_pkgnames() {
 	local isdep="$1"
 	local originspec="$2"
 	local origin dep_origin flavor flavors pkgname default_flavor ignore
-	local flavor_originspec ret
+	local flavor_originspec ret port_flavor
 
 	if hash_get originspec-pkgname "${originspec}" pkgname; then
 		hash_get originspec-ignore "${originspec}" ignore
@@ -46,6 +46,7 @@ cache_pkgnames() {
 	port_var_fetch_originspec "${originspec}" \
 	   PKGNAME pkgname \
 	   FLAVORS flavors \
+	   FLAVOR port_flavor \
 	   IGNORE ignore \
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
 	    '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
@@ -53,6 +54,10 @@ cache_pkgnames() {
 	hash_set origin-flavors "${origin}" "${flavors}"
 	fix_default_flavor "${originspec}" originspec
 	hash_set originspec-pkgname "${originspec}" "${pkgname}"
+	if [ -n "${port_flavor}" ]; then
+		hash_set originspec-flavor "${originspec}" "${port_flavor}"
+	fi
+	hash_set pkgname-originspec "${pkgname}" "${originspec}"
 	hash_set originspec-deps "${originspec}" "${pdeps}"
 	hash_set originspec-ignore "${originspec}" "${ignore}"
 	# Record all known packages for comparing to the queue later.
@@ -487,6 +492,60 @@ assert_bulk_queue_and_stats() {
 	assert_counts
 }
 
+assert_bulk_build_results() {
+	local pkgname file log originspec origin flavor flavor2
+	local PKG_BIN pkg_originspec pkg_origin pkg_flavor
+
+	: ${PKG_BIN:=pkg-static}
+
+	which -s "${PKG_BIN}" || err 99 "Unable to find in host: ${PKG_BIN}"
+	_log_path log || err 99 "Unable to determine logdir"
+
+	[ -d "${PACKAGES}" ]
+	assert 0 $? "PACKAGES directory should exist: ${PACKAGES}"
+
+	echo "Asserting that packages were built"
+	for pkgname in ${ALL_PKGNAMES}; do
+		file="${PACKAGES}/All/${pkgname}${P_PKG_SUFX}"
+		[ -f "${file}" ]
+		assert 0 $? "Package should exist: ${file}"
+		[ -s "${file}" ]
+		assert 0 $? "Package should not be empty: ${file}"
+	done
+
+	echo "Asserting that logfiles were produced"
+	for pkgname in ${ALL_PKGNAMES}; do
+		file="${log}/logs/${pkgname}.log"
+		[ -f "${file}" ]
+		assert 0 $? "Logfile should exist: ${file}"
+		[ -s "${file}" ]
+		assert 0 $? "Logfile should not be empty: ${file}"
+	done
+
+	echo "Asserting package metadata sanity check"
+	for pkgname in ${ALL_PKGNAMES}; do
+		file="${PACKAGES}/All/${pkgname}${P_PKG_SUFX}"
+		hash_get pkgname-originspec "${pkgname}" originspec ||
+			err 99 "Unable to find originspec for pkgname: ${pkgname}"
+		# Restore default flavor
+		originspec_decode "${originspec}" origin '' flavor
+		if [ -z "${flavor}" ] &&
+			hash_get originspec_flavor "${originspec}" flavor; then
+			originspec_encode originspec "${origin}" '' \
+				"${flavor}"
+		fi
+		pkg_origin=$(${PKG_BIN} query -F "${file}" '%o')
+		assert 0 $? "Unable to get origin from package: ${file}"
+		assert "${origin}" "${pkg_origin}" "Package origin should match for: ${file}"
+
+		pkg_flavor=$(${PKG_BIN} query -F "${file}" '%At %Av' |
+			awk '$1 == "flavor" {print $2}')
+		assert 0 $? "Unable to get flavor from package: ${file}"
+		assert "${flavor}" "${pkg_flavor}" "Package flavor should match for: ${file}"
+	done
+
+}
+
 # Avoid injail() for port_var_fetch
 INJAIL_HOST=1
 
@@ -580,6 +639,7 @@ MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 _mastermnt MASTERMNT
 export POUDRIERE_BUILD_TYPE=bulk
 _log_path log
+: ${PACKAGES:=${POUDRIERE_DATA}/packages/${MASTERNAME}}
 
 # Setup basic overlay to test-ports/overlay/ dir.
 OVERLAYSDIR="$(mktemp -ut overlays)"
@@ -643,5 +703,7 @@ if [ -n "${SKIPPEDPORTS}" ]; then
 		list_remove LISTPORTS_NOIGNORED "${port}" || :
 	done
 fi
+fetch_global_port_vars || err 99 "Unable to fetch port vars"
+assert_not "null" "${P_PORTS_FEATURES}" "$0:$LINENO: fetch_global_port_vars should work"
 echo "Building: $(echo ${LISTPORTS_EXPANDED})"
 set +e
