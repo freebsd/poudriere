@@ -3415,6 +3415,8 @@ build_port() {
 			else
 				check_leftovers ${mnt} | sed -e "s|${mnt}||" |
 				    injail /usr/bin/env PORTSDIR=${PORTSDIR} \
+				    UID_FILES="${P_UID_FILES}" \
+				    portdir="${portdir}" \
 				    ${PORT_FLAGS} /bin/sh \
 				    ${PORTSDIR}/Mk/Scripts/check_leftovers.sh \
 				    ${port} | while \
@@ -7077,6 +7079,7 @@ fetch_global_port_vars() {
 	    PORTS_FEATURES P_PORTS_FEATURES \
 	    PKG_NOCOMPRESS:Dyes P_PKG_NOCOMPRESS \
 	    PKG_SUFX P_PKG_SUFX \
+	    UID_FILES P_UID_FILES \
 	    PYTHON_MAJOR_VER P_PYTHON_MAJOR_VER \
 	    PYTHON_DEFAULT_VERSION P_PYTHON_DEFAULT_VERSION \
 	    PYTHON3_DEFAULT P_PYTHON3_DEFAULT || \
