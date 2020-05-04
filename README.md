@@ -38,6 +38,4 @@ Getting started with poudriere
 Build status
 ------------------------------
 
-* [![FreeBSD 11.2 amd64](https://api.cirrus-ci.com/github/freebsd/poudriere.svg?task=freebsd-11-2-release-amd64&branch=master)](https://cirrus-ci.com/github/freebsd/poudriere)
-* [![FreeBSD 12.0 amd64](https://api.cirrus-ci.com/github/freebsd/poudriere.svg?task=freebsd-12-0-release-amd64&branch=master)](https://cirrus-ci.com/github/freebsd/poudriere)
-* [![FreeBSD 13.0 amd64](https://api.cirrus-ci.com/github/freebsd/poudriere.svg?task=freebsd-13-0-snap&branch=master)](https://cirrus-ci.com/github/freebsd/poudriere)
+* [![Build Status](https://api.cirrus-ci.com/github/freebsd/poudriere.svg?branch=master)](https://cirrus-ci.com/github/freebsd/poudriere)
