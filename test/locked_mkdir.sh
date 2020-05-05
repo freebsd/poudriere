@@ -55,7 +55,7 @@ assert_pid "$0:$LINENO" "${LOCK1}" "$$"
 nowtime=$(date +%s)
 elapsed=$((${nowtime} - ${time}))
 [ "${elapsed}" -le 6 ]
-assert 0 $? "$0:$LINENO: Lock did not wait long enough elapsed=${elapsed}"
+assert 0 $? "$0:$LINENO: Lock slept too long elapsed=${elapsed}"
 [ -d "${LOCK1}" ]
 assert 0 $? "$0:$LINENO: Lock dir should exist"
 wait
@@ -106,7 +106,7 @@ assert_pid "$0:$LINENO" "${LOCK1}" "1"
 nowtime=$(date +%s)
 elapsed=$((${nowtime} - ${time}))
 [ "${elapsed}" -le 6 ]
-assert 0 $? "$0:$LINENO: Lock did not wait long enough elapsed=${elapsed}"
+assert 0 $? "$0:$LINENO: Lock slept too long elapsed=${elapsed}"
 [ -d "${LOCK1}" ]
 assert 0 $? "$0:$LINENO: Lock dir should exist"
 
