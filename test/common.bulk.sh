@@ -496,7 +496,8 @@ assert_bulk_build_results() {
 	local pkgname file log originspec origin flavor flavor2
 	local PKG_BIN pkg_originspec pkg_origin pkg_flavor
 
-	: ${PKG_BIN:=pkg-static}
+	: ${LOCALBASE:=/usr/local}
+	: ${PKG_BIN:=${LOCALBASE}/sbin/pkg-static}
 
 	which -s "${PKG_BIN}" || err 99 "Unable to find in host: ${PKG_BIN}"
 	_log_path log || err 99 "Unable to determine logdir"

@@ -1,4 +1,6 @@
 check_task:
+        pkg_bootstrap_script:
+                - env ASSUME_ALWAYS_YES=yes pkg bootstrap -f
         # Build with asserts/debugging for checks. distcheck won't use asserts.
         compile_script:
                 - ./configure --enable-debug=yes
