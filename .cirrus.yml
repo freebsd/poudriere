@@ -1,16 +1,52 @@
 check_task:
+        env:
+                CIRRUS_CLONE_DEPTH: 1
+                MAKEJOBS: "-j4"
+                PARALLEL_JOBS: "3"
+                DISTFILES_CACHE: "/tmp/distfiles"
+                CCACHE_DIR: "/tmp/.ccache"
+                CCACHE_COMPRESS: 1
+                CCACHE_SIZE: "200M"
+                CCACHE_STATIC_PREFIX: "/usr/local"
+                CCACHE_NOSTATS: 1
+                CCACHE_TEMPDIR: "/tmp"
+                BASEFS: ${CIRRUS_WORKING_DIR}/test_bulk
+        ccache_cache:
+                folder: ${CCACHE_DIR}
+        distfiles_cache:
+                folder: ${DISTFILES_CACHE}
+                populate_script: mkdir -p ${DISTFILES_CACHE}
         pkg_bootstrap_script:
                 - env ASSUME_ALWAYS_YES=yes pkg bootstrap -f
+        ccache_setup_script:
+                - pkg install -y ccache-static
+                - ccache --max-size=${CCACHE_SIZE}
         # Build with asserts/debugging for checks. distcheck won't use asserts.
         compile_script:
-                - ./configure --enable-debug=yes
-                - make -j4
+                - ./configure --enable-debug=yes || { cat config.log; exit 1; }
+                - make ${MAKEJOBS}
         test_jail_prep_script:
                 - make -C test prep
-        check_script: make -sj4 check || { cat test/test-suite.log; exit 1; }
-        distcheck_script: make -sj4 distcheck || { find . -name test-suite.log -exec cat {} +; exit 1; }
-        check_stock_script: make -sj4 check SH=/bin/sh || { cat test/test-suite.log; exit 1; }
+        matrix:
+                - name: "Check"
+                  env:
+                          SH: "sh"
+                - name: "Check (/bin/sh)"
+                  env:
+                          SH: "/bin/sh"
+        check_script: make -s ${MAKEJOBS} check SH=${SH} VERBOSE=1 || { cat test/test-suite.log; exit 1; }
+        distcheck_script: make -s ${MAKEJOBS} distcheck SH=${SH} VERBOSE=1 || { find . -name test-suite.log -exec cat {} +; exit 1; }
+        always:
+                bulk_logs_cleanup_script:
+                        - ( find -x test_bulk/data/logs/bulk ! -name '*.log' ! -name '.poudriere.*' ! -name '*.json' -delete; ) || true
+                test_logs_artifacts:
+                        paths:
+                                - "test/*.log"
+                                - "test_bulk/data/logs/bulk/**"
+                        type: text/plain
         freebsd_instance:
+                cpu: 8
+                memory: 8G
                 matrix:
                         - image: freebsd-11-2-release-amd64
                         - image: freebsd-12-0-release-amd64

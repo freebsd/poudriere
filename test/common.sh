@@ -46,7 +46,7 @@ NO_LIB32=yes
 NO_SRC=yes
 SHARED_LOCK_DIR="${POUDRIERE_ETC}/run"
 MUTABLE_BASE=${MUTABLE_BASE:-nullfs}
-$(env | grep -q 'CCACHE_STATIC_PREFIX' && { env | grep '^CCACHE'; } || :)
+$(env | grep -q 'CCACHE_STATIC_PREFIX' && { env | awk '/^CCACHE/ {print "export " $0}'; } || :)
 EOF
 write_cmp "${POUDRIERE_ETC}/poudriere.d/make.conf" << EOF
 DEFAULT_VERSIONS+=	ssl=base
