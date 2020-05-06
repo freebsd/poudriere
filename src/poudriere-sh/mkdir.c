@@ -59,8 +59,6 @@ static void	usage(void);
 #ifdef SHELL
 #define main mkdircmd
 #include "bltin/bltin.h"
-#include "options.h"
-#undef vflag
 #include "helpers.h"
 #endif
 
@@ -78,17 +76,11 @@ main(int argc, char *argv[])
 	mode = NULL;
 #ifdef SHELL
 	vflag = 0;
-	while ((ch = nextopt("m:pv")) != '\0')
-#else
-	while ((ch = getopt(argc, argv, "m:pv")) != -1)
 #endif
+	while ((ch = getopt(argc, argv, "m:pv")) != -1)
 		switch(ch) {
 		case 'm':
-#ifdef SHELL
-			mode = shoptarg;
-#else
 			mode = optarg;
-#endif
 			break;
 		case 'p':
 			pflag = 1;
@@ -101,13 +93,8 @@ main(int argc, char *argv[])
 			usage();
 		}
 
-#ifdef SHELL
-	argc -= argptr - argv;
-	argv = argptr;
-#else
 	argc -= optind;
 	argv += optind;
-#endif
 	if (argv[0] == NULL)
 		usage();
 

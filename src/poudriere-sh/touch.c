@@ -59,9 +59,6 @@ static const char sccsid[] = "@(#)touch.c	8.1 (Berkeley) 6/6/93";
 #ifdef SHELL
 #define main touchcmd
 #include "bltin/bltin.h"
-#include "options.h"
-#undef aflag
-#undef mflag
 #include "helpers.h"
 #endif
 
@@ -81,9 +78,6 @@ main(int argc, char *argv[])
 	int Aflag, aflag, cflag, mflag, ch, fd, len, rval, timeset;
 	char *p;
 	char *myname;
-#ifdef SHELL
-	char *optarg;
-#endif
 
 	myname = basename(argv[0]);
 	Aflag = aflag = cflag = mflag = timeset = 0;
@@ -91,12 +85,7 @@ main(int argc, char *argv[])
 	ts[0].tv_sec = ts[1].tv_sec = 0;
 	ts[0].tv_nsec = ts[1].tv_nsec = UTIME_NOW;
 
-#ifdef SHELL
-	while ((ch = nextopt("A:acd:fhmr:t:")) != '\0') {
-		optarg = shoptarg;
-#else
 	while ((ch = getopt(argc, argv, "A:acd:fhmr:t:")) != -1)
-#endif
 		switch(ch) {
 		case 'A':
 			Aflag = timeoffset(optarg);
@@ -132,14 +121,8 @@ main(int argc, char *argv[])
 		default:
 			usage(myname);
 		}
-#ifdef SHELL
-	}
-	argc -= argptr - argv;
-	argv = argptr;
-#else
 	argc -= optind;
 	argv += optind;
-#endif
 
 	if (aflag == 0 && mflag == 0)
 		aflag = mflag = 1;

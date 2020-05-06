@@ -64,14 +64,7 @@ __FBSDID("$FreeBSD: head/bin/rm/rm.c 326025 2017-11-20 19:49:47Z pfg $");
 #ifdef SHELL
 #define main rmcmd
 #include "bltin/bltin.h"
-#include "options.h"
 #include "helpers.h"
-#undef fflag
-#undef iflag
-#undef Iflag
-#undef Pflag
-#undef vflag
-#undef xflag
 extern volatile sig_atomic_t gotsig[NSIG];
 struct sigaction info_act, info_oact;
 #endif
@@ -122,19 +115,10 @@ main(int argc, char *argv[])
 		++p;
 
 	if (strcmp(p, "unlink") == 0) {
-#ifdef SHELL
-		while (nextopt("") != '\0')
-#else
 		while (getopt(argc, argv, "") != -1)
-#endif
 			usage();
-#ifdef SHELL
-		argc -= argptr - argv;
-		argv = argptr;
-#else
 		argc -= optind;
 		argv += optind;
-#endif
 		if (argc != 1)
 			usage();
 		rm_file(&argv[0]);
@@ -142,11 +126,7 @@ main(int argc, char *argv[])
 	}
 
 	Pflag = rflag = xflag = 0;
-#ifdef SHELL
-	while ((ch = nextopt("dfiIPRrvWx")) != '\0')
-#else
 	while ((ch = getopt(argc, argv, "dfiIPRrvWx")) != -1)
-#endif
 		switch(ch) {
 		case 'd':
 			dflag = 1;
@@ -181,13 +161,8 @@ main(int argc, char *argv[])
 		default:
 			usage();
 		}
-#ifdef SHELL
-	argc -= argptr - argv;
-	argv = argptr;
-#else
 	argc -= optind;
 	argv += optind;
-#endif
 
 	if (argc < 1) {
 		if (fflag)

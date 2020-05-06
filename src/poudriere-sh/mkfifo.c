@@ -61,8 +61,6 @@ static int f_mode;
 #ifdef SHELL
 #define main mkfifocmd
 #include "bltin/bltin.h"
-#include "options.h"
-#undef uflag
 #include "var.h"
 #include "helpers.h"
 #endif
@@ -77,30 +75,19 @@ main(int argc, char *argv[])
 
 #ifdef SHELL
 	f_mode = 0;
-	while ((ch = nextopt("m:")) != '\0')
-#else
-	while ((ch = getopt(argc, argv, "m:")) != -1)
 #endif
+	while ((ch = getopt(argc, argv, "m:")) != -1)
 		switch(ch) {
 		case 'm':
 			f_mode = 1;
-#ifdef shell
-			modestr = shoptarg;
-#else
 			modestr = optarg;
-#endif
 			break;
 		case '?':
 		default:
 			usage();
 		}
-#ifdef SHELL
-	argc -= argptr - argv;
-	argv = argptr;
-#else
 	argc -= optind;
 	argv += optind;
-#endif
 	if (argv[0] == NULL)
 		usage();
 

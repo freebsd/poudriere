@@ -34,12 +34,11 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "helpers.h"
-
 #include "bltin/bltin.h"
-#include "options.h"
 #include "syntax.h"
 #include "var.h"
+#define _NEED_SH_FLAGS
+#include "helpers.h"
 
 extern int rootshell;
 
@@ -473,4 +472,18 @@ gsubcmd(int argc, char **argv)
 		    "<replacement> [var_return]");
 	var_return = argc == 5 && argv[4][0] != '\0' ? argv[4] : NULL;
 	return (_gsub(argv, var_return));
+}
+
+int
+pgetopt(int argc, char *argv[], const char *optstring)
+{
+	int ch;
+
+	shoptarg = NULL;
+	ch = nextopt(optstring);
+	if (ch == '\0')
+		ch = -1;
+	optarg = shoptarg;
+	optind = argptr - argv;
+	return (ch);
 }

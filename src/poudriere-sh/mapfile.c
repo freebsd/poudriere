@@ -65,9 +65,7 @@ static char *line = NULL;
 static size_t linecap = BUFSIZ;
 
 #include "bltin/bltin.h"
-#include "options.h"
 #include "helpers.h"
-#undef tflag
 #undef fflush
 #undef fputs
 #include "trap.h"

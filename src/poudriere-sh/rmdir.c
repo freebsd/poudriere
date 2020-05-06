@@ -50,8 +50,6 @@ __FBSDID("$FreeBSD$");
 #ifdef SHELL
 #define main rmdircmd
 #include "bltin/bltin.h"
-#include "options.h"
-#undef vflag
 #include "helpers.h"
 #endif
 
@@ -68,10 +66,8 @@ main(int argc, char *argv[])
 
 #ifdef SHELL
 	pflag = vflag = 0;
-	while ((ch = nextopt("pv")) != '\0')
-#else
-	while ((ch = getopt(argc, argv, "pv")) != -1)
 #endif
+	while ((ch = getopt(argc, argv, "pv")) != -1)
 		switch(ch) {
 		case 'p':
 			pflag = 1;
@@ -83,13 +79,8 @@ main(int argc, char *argv[])
 		default:
 			usage();
 		}
-#ifdef SHELL
-	argc -= argptr - argv;
-	argv = argptr;
-#else
 	argc -= optind;
 	argv += optind;
-#endif
 
 	if (argc == 0)
 		usage();

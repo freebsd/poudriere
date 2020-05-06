@@ -51,7 +51,6 @@ __FBSDID("$FreeBSD$");
 #ifdef SHELL
 #define main pwaitcmd
 #include "bltin/bltin.h"
-#include "options.h"
 #include "helpers.h"
 #endif
 
@@ -89,10 +88,8 @@ main(int argc, char *argv[])
 
 #ifdef SHELL
 	pushed_alarm = 0;
-	while ((opt = nextopt("ot:v")) != '\0') {
-#else
-	while ((opt = getopt(argc, argv, "ot:v")) != -1) {
 #endif
+	while ((opt = getopt(argc, argv, "ot:v")) != -1) {
 		switch (opt) {
 		case 'o':
 			oflag = 1;
@@ -100,13 +97,8 @@ main(int argc, char *argv[])
 		case 't':
 			tflag = 1;
 			errno = 0;
-#ifdef SHELL
-			timeout = strtod(shoptarg, &end);
-			if (end == shoptarg || errno == ERANGE || timeout < 0) {
-#else
 			timeout = strtod(optarg, &end);
 			if (end == optarg || errno == ERANGE || timeout < 0) {
-#endif
 				errx(EX_DATAERR, "timeout value");
 			}
 			switch(*end) {
@@ -139,13 +131,8 @@ main(int argc, char *argv[])
 		}
 	}
 
-#ifdef SHELL
-	argc -= argptr - argv;
-	argv = argptr;
-#else
 	argc -= optind;
 	argv += optind;
-#endif
 
 	if (argc == 0) {
 		usage();

@@ -51,8 +51,6 @@ static void usage(void);
 #ifdef SHELL
 #define main mktempcmd
 #include "bltin/bltin.h"
-#include "options.h"
-#undef uflag
 #include "var.h"
 #include "helpers.h"
 #endif
@@ -70,11 +68,7 @@ main(int argc, char **argv)
 	prefix = "mktemp";
 	name = NULL;
 
-#ifdef SHELL
-	while ((c = nextopt("dqt:u")) != '\0')
-#else
 	while ((c = getopt(argc, argv, "dqt:u")) != -1)
-#endif
 		switch (c) {
 		case 'd':
 			dflag++;
@@ -85,11 +79,7 @@ main(int argc, char **argv)
 			break;
 
 		case 't':
-#ifdef SHELL
-			prefix = shoptarg;
-#else
 			prefix = optarg;
-#endif
 			tflag++;
 			break;
 
@@ -101,13 +91,8 @@ main(int argc, char **argv)
 			usage();
 		}
 
-#ifdef SHELL
-	argc -= argptr - argv;
-	argv = argptr;
-#else
 	argc -= optind;
 	argv += optind;
-#endif
 
 	if (!tflag && argc < 1) {
 		tflag = 1;

@@ -64,4 +64,68 @@ void flushall(void);
 	exraise(EXERROR); \
 } while (0)
 
+/* Getopt compat */
+#include "options.h"
+#ifndef _NEED_SH_FLAGS
+#undef Aflag
+#undef Bflag
+#undef Cflag
+#undef Dflag
+#undef Eflag
+#undef Fflag
+#undef Gflag
+#undef Hflag
+#undef Iflag
+#undef Jflag
+#undef Kflag
+#undef Lflag
+#undef Mflag
+#undef Nflag
+#undef Oflag
+#undef Pflag
+#undef Qflag
+#undef Rflag
+#undef Sflag
+#undef Tflag
+#undef Uflag
+#undef Vflag
+#undef Wflag
+#undef Xflag
+#undef Yflag
+#undef Zflag
+#undef aflag
+#undef bflag
+#undef cflag
+#undef dflag
+#undef eflag
+#undef fflag
+#undef gflag
+#undef hflag
+#undef iflag
+#undef jflag
+#undef kflag
+#undef lflag
+#undef mflag
+#undef nflag
+#undef oflag
+#undef pflag
+#undef qflag
+#undef rflag
+#undef sflag
+#undef tflag
+#undef uflag
+#undef vflag
+#undef wflag
+#undef xflag
+#undef yflag
+#undef zflag
+#endif
+
+#undef getopt
+#define getopt pgetopt
+#undef optopt
+#undef opterr
+#undef optreset
+int pgetopt(int argc, char *argv[], const char *optstring);
+
 #endif
