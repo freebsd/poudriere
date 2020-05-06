@@ -7,10 +7,10 @@ set +e
 
 # Acquire TEST
 {
-	time=$(date +%s)
+	time=$(clock -monotonic)
 	lock_acquire TEST ${SLEEPTIME}
 	assert 0 $? "lock_acquire failed"
-	nowtime=$(date +%s)
+	nowtime=$(clock -monotonic)
 	elapsed=$((${nowtime} - ${time}))
 	if [ ${elapsed} -ge ${SLEEPTIME} ]; then
 		result=slept
@@ -28,10 +28,10 @@ set +e
 	lock_have TEST2
 	assert 1 $? "lock_have(TEST2) should be false"
 
-	time=$(date +%s)
+	time=$(clock -monotonic)
 	lock_acquire TEST2 ${SLEEPTIME}
 	assert 0 $? "lock_acquire failed"
-	nowtime=$(date +%s)
+	nowtime=$(clock -monotonic)
 	elapsed=$((${nowtime} - ${time}))
 	if [ ${elapsed} -ge ${SLEEPTIME} ]; then
 		result=slept
@@ -45,10 +45,10 @@ set +e
 # XXX: Recursion is allowed now
 false &&
 {
-	time=$(date +%s)
+	time=$(clock -monotonic)
 	lock_acquire TEST ${SLEEPTIME}
 	assert 1 $? "lock TEST acquired but should be held"
-	nowtime=$(date +%s)
+	nowtime=$(clock -monotonic)
 	elapsed=$((${nowtime} - ${time}))
 	if [ ${elapsed} -ge ${SLEEPTIME} ]; then
 		result=slept
@@ -73,10 +73,10 @@ false &&
 
 # Reacquire TEST to ensure it was released
 {
-	time=$(date +%s)
+	time=$(clock -monotonic)
 	lock_acquire TEST ${SLEEPTIME}
 	assert 0 $? "lock_acquire failed"
-	nowtime=$(date +%s)
+	nowtime=$(clock -monotonic)
 	elapsed=$((${nowtime} - ${time}))
 	if [ ${elapsed} -ge ${SLEEPTIME} ]; then
 		result=slept
@@ -93,10 +93,10 @@ false &&
 
 # Reacquire TEST2 to ensure it was released
 {
-	time=$(date +%s)
+	time=$(clock -monotonic)
 	lock_acquire TEST2 ${SLEEPTIME}
 	assert 0 $? "lock_acquire failed"
-	nowtime=$(date +%s)
+	nowtime=$(clock -monotonic)
 	elapsed=$((${nowtime} - ${time}))
 	if [ ${elapsed} -ge ${SLEEPTIME} ]; then
 		result=slept

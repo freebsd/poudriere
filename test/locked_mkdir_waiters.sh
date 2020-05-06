@@ -14,11 +14,11 @@ until [ "${n}" -eq "${max}" ]; do
 	assert_not 0 $? "$0:$LINENO: Lock dir should not exist"
 
 	echo "$0:$LINENO: Parent pid $$ has lock ${n}"
-	time=$(date +%s)
+	time=$(clock -monotonic)
 	locked_mkdir 0 ${LOCK1} $$
 	assert 0 $? "$0:$LINENO: Lock should succeed"
 	assert_pid "$0:$LINENO" "${LOCK1}" "$$"
-	nowtime=$(date +%s)
+	nowtime=$(clock -monotonic)
 	elapsed=$((${nowtime} - ${time}))
 	[ "${elapsed}" -le 3 ]
 	assert 0 $? "$0:$LINENO: Lock shouldn't sleep elapsed=${elapsed} ${n}"
@@ -26,11 +26,11 @@ until [ "${n}" -eq "${max}" ]; do
 	# Background waiters
 	(
 		mypid=$(sh -c 'echo $PPID')
-		time=$(date +%s)
+		time=$(clock -monotonic)
 		locked_mkdir 5 "${LOCK1}" "${mypid}"
 		got_lock=$?
 		echo "$0:$LINENO: Pid ${mypid} got_lock=${got_lock} ${n}"
-		nowtime=$(date +%s)
+		nowtime=$(clock -monotonic)
 		elapsed=$((${nowtime} - ${time}))
 		[ "${elapsed}" -le 7 ]
 		assert 0 $? "$0:$LINENO: Lock slept too long elapsed=${elapsed} ${n}"
@@ -46,11 +46,11 @@ until [ "${n}" -eq "${max}" ]; do
 	pid_unlock1=$!
 	(
 		mypid=$(sh -c 'echo $PPID')
-		time=$(date +%s)
+		time=$(clock -monotonic)
 		locked_mkdir 5 "${LOCK1}" "${mypid}"
 		got_lock=$?
 		echo "$0:$LINENO: Pid ${mypid} got_lock=${got_lock} ${n}"
-		nowtime=$(date +%s)
+		nowtime=$(clock -monotonic)
 		elapsed=$((${nowtime} - ${time}))
 		[ "${elapsed}" -le 7 ]
 		assert 0 $? "$0:$LINENO: Lock slept too long elapsed=${elapsed} ${n}"
@@ -66,11 +66,11 @@ until [ "${n}" -eq "${max}" ]; do
 	pid_unlock2=$!
 	(
 		mypid=$(sh -c 'echo $PPID')
-		time=$(date +%s)
+		time=$(clock -monotonic)
 		locked_mkdir 5 "${LOCK1}" "${mypid}"
 		got_lock=$?
 		echo "$0:$LINENO: Pid ${mypid} got_lock=${got_lock} ${n}"
-		nowtime=$(date +%s)
+		nowtime=$(clock -monotonic)
 		elapsed=$((${nowtime} - ${time}))
 		[ "${elapsed}" -le 7 ]
 		assert 0 $? "$0:$LINENO: Lock slept too long elapsed=${elapsed} ${n}"
@@ -86,11 +86,11 @@ until [ "${n}" -eq "${max}" ]; do
 	pid_unlock3=$!
 	(
 		mypid=$(sh -c 'echo $PPID')
-		time=$(date +%s)
+		time=$(clock -monotonic)
 		locked_mkdir 5 "${LOCK1}" "${mypid}"
 		got_lock=$?
 		echo "$0:$LINENO: Pid ${mypid} got_lock=${got_lock} ${n}"
-		nowtime=$(date +%s)
+		nowtime=$(clock -monotonic)
 		elapsed=$((${nowtime} - ${time}))
 		[ "${elapsed}" -le 7 ]
 		assert 0 $? "$0:$LINENO: Lock slept too long elapsed=${elapsed} ${n}"
@@ -125,7 +125,7 @@ until [ "${n}" -eq "${max}" ]; do
 	_wait "${pid_unlock4}"
 	status_unlock4=$?
 
-	nowtime=$(date +%s)
+	nowtime=$(clock -monotonic)
 
 	assert $((75 * 3)) $((status_unlock1 + status_unlock2 + status_unlock3 + \
 		status_unlock4)) "$0:$LINENO: 3 waiters should timeout on lock and 1 should win ${n}"
@@ -147,13 +147,13 @@ until [ "${n}" -eq "${max}" ]; do
 	# dir since children are all dead.
 	[ -d "${LOCK1}" ]
 	assert 0 $? "$0:$LINENO: Lock dir should exist ${n}"
-	time=$(date +%s)
+	time=$(clock -monotonic)
 	locked_mkdir 2 ${LOCK1} $$
 	assert 0 $? "$0:$LINENO: Unlocked dir should succeed to lock ${n}"
 	[ -d "${LOCK1}" ]
 	assert 0 $? "$0:$LINENO: Lock dir should exist ${n}"
 	assert_pid "$0:$LINENO" "${LOCK1}" "$$"
-	nowtime=$(date +%s)
+	nowtime=$(clock -monotonic)
 	elapsed=$((${nowtime} - ${time}))
 	[ "${elapsed}" -lt 4 ]
 	assert 0 $? "$0:$LINENO: Unlocked dir should not wait to lock ${n}"

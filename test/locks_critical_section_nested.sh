@@ -30,10 +30,10 @@ assert 1 ${main_siginfo} "INFO should be trapped"
 
 # Acquire TEST
 {
-	time=$(date +%s)
+	time=$(clock -monotonic)
 	lock_acquire TEST ${SLEEPTIME}
 	assert 0 $? "lock_acquire failed"
-	nowtime=$(date +%s)
+	nowtime=$(clock -monotonic)
 	elapsed=$((${nowtime} - ${time}))
 	if [ ${elapsed} -ge ${SLEEPTIME} ]; then
 		result=slept
@@ -48,10 +48,10 @@ assert 1 ${main_siginfo} "INFO should be trapped"
 
 # Acquire TEST2
 {
-	time=$(date +%s)
+	time=$(clock -monotonic)
 	lock_acquire TEST2 ${SLEEPTIME}
 	assert 0 $? "lock_acquire failed"
-	nowtime=$(date +%s)
+	nowtime=$(clock -monotonic)
 	elapsed=$((${nowtime} - ${time}))
 	if [ ${elapsed} -ge ${SLEEPTIME} ]; then
 		result=slept
