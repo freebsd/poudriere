@@ -138,7 +138,7 @@ main(int argc, char *argv[])
 		if (argc != 1)
 			usage();
 		rm_file(&argv[0]);
-		return(eval);
+		exit(eval);
 	}
 
 	Pflag = rflag = xflag = 0;
@@ -217,7 +217,7 @@ main(int argc, char *argv[])
 				sigaction(SIGINFO, &info_oact, NULL);
 				INTON;
 #endif
-				return (1);
+				exit (1);
 			}
 		}
 		if (rflag)
@@ -230,7 +230,7 @@ main(int argc, char *argv[])
 	sigaction(SIGINFO, &info_oact, NULL);
 	INTON;
 #endif
-	return (eval);
+	exit (eval);
 }
 
 static void
@@ -735,11 +735,7 @@ usage(void)
 	(void)fprintf(stderr, "%s\n%s\n",
 	    "usage: rm [-f | -i] [-dIPRrvWx] file ...",
 	    "       unlink file");
-#ifdef SHELL
-	error(NULL);
-#else
 	exit(EX_USAGE);
-#endif
 }
 
 static void

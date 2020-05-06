@@ -149,7 +149,7 @@ main(int argc, char *argv[])
 			exitval = 1;
 		}
 	}
-	return(exitval);
+	exit(exitval);
 }
 
 
@@ -236,9 +236,5 @@ usage(void)
 
 	(void)fprintf(stderr,
 	    "usage: mkdir [-pv] [-m mode] directory_name ...\n");
-#ifdef SHELL
-	error(NULL);
-#else
 	exit (EX_USAGE);
-#endif
 }

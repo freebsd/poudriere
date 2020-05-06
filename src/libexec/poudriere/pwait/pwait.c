@@ -61,11 +61,7 @@ usage(void)
 {
 
 	fprintf(stderr, "usage: pwait [-t timeout] [-v] pid ...\n");
-#ifdef SHELL
-	error(NULL);
-#else
 	exit(EX_USAGE);
-#endif
 }
 
 /*

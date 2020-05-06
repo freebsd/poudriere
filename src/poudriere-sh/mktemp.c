@@ -196,9 +196,5 @@ usage(void)
 		"usage: mktemp [-d] [-q] [-t prefix] [-u] template ...\n");
 	fprintf(stderr,
 		"       mktemp [-d] [-q] [-u] -t prefix \n");
-#ifdef SHELL
-	error(NULL);
-#else
 	exit (1);
-#endif
 }

@@ -106,7 +106,7 @@ main(int argc, char *argv[])
 		}
 	}
 
-	return(errors);
+	exit(errors);
 }
 
 static int
@@ -142,9 +142,5 @@ usage(void)
 {
 
 	(void)fprintf(stderr, "usage: rmdir [-pv] directory ...\n");
-#ifdef SHELL
-	error(NULL);
-#else
 	exit(1);
-#endif
 }

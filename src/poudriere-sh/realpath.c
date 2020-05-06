@@ -86,11 +86,7 @@ main(int argc, char *argv[])
 		} else
 			(void)printf("%s\n", p);
 	} while ((path = *argv++) != NULL);
-#ifdef SHELL
-	return (rval);
-#else
 	exit(rval);
-#endif
 }
 
 static void
@@ -98,9 +94,5 @@ usage(void)
 {
 
 	(void)fprintf(stderr, "usage: realpath [-q] [path ...]\n");
-#ifdef SHELL
-	error(NULL);
-#else
   	exit(1);
-#endif
 }

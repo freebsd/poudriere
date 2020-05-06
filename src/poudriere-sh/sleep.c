@@ -145,10 +145,6 @@ static void
 usage(void)
 {
 
-#ifdef SHELL
-	error("usage: sleep seconds");
-#else
 	fprintf(stderr, "usage: sleep seconds\n");
 	exit(1);
-#endif
 }

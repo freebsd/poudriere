@@ -71,7 +71,7 @@ int
 main(int argc, char *argv[])
 {
 	const char *modestr = NULL;
-	void *modep;
+	const void *modep;
 	mode_t fifomode;
 	int ch, exitval;
 
@@ -114,7 +114,7 @@ main(int argc, char *argv[])
 		}
 		fifomode = getmode(modep, BASEMODE);
 #ifdef SHELL
-		free(modep);
+		free(__DECONST(char *, modep));
 #endif
 	} else {
 		fifomode = BASEMODE;
@@ -125,16 +125,12 @@ main(int argc, char *argv[])
 			warn("%s", *argv);
 			exitval = 1;
 		}
-	return(exitval);
+	exit(exitval);
 }
 
 static void
 usage(void)
 {
 	(void)fprintf(stderr, "usage: mkfifo [-m mode] fifo_name ...\n");
-#ifdef SHELL
-	error(NULL);
-#else
 	exit(1);
-#endif
 }

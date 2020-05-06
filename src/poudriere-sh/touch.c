@@ -232,7 +232,7 @@ main(int argc, char *argv[])
 		rval = 1;
 		warn("%s", *argv);
 	}
-	return (rval);
+	exit(rval);
 }
 
 #define	ATOI2(ar)	((ar)[0] - '0') * 10 + ((ar)[1] - '0'); (ar) += 2;
@@ -423,9 +423,5 @@ usage(const char *myname)
 		"[-t [[CC]YY]MMDDhhmm[.SS]]\n"
 		"       [-d YYYY-MM-DDThh:mm:SS[.frac][tz]] "
 		"file ...\n", myname);
-#ifdef SHELL
-	error(NULL);
-#else
 	exit(1);
-#endif
 }

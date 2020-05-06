@@ -53,4 +53,15 @@ void ckfree(void *);
 #define malloc ckmalloc
 #define realloc ckrealloc
 #define free ckfree
+
+/* This kinda works but does not free memory, close fd, or INTON. */
+#undef exit
+extern int exitstatus;
+void flushall(void);
+#define exit(status) do { \
+	exitstatus = status; \
+	flushall(); \
+	exraise(EXERROR); \
+} while (0)
+
 #endif
