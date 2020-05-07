@@ -79,7 +79,7 @@ display_output() {
 				# Set actual value
 				hash_set lengths ${cnt} ${#arg}
 			fi
-			cnt=$((${cnt} + 1))
+			cnt=$((cnt + 1))
 		done
 	done <<-EOF
 	${_DISPLAY_DATA}

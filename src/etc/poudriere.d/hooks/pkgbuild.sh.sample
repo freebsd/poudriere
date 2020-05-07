@@ -23,12 +23,12 @@ if [ "$status" = "failed" ]; then
 	mail_subject="[${MASTERNAME}] Build failed for ${pkgname} during ${failed_phase}"
 
 	log_lines=$(wc -l ${log}|awk '{print $1}')
-	if [ ${log_lines} -lt $((${FOOTER_LINES} + ${HEADER_LINES})) ]; then
+	if [ ${log_lines} -lt $((FOOTER_LINES + HEADER_LINES)) ]; then
 		# Log is short enough, just print it all
 		awk_script='{print $0}'
 	else
 		# Trim out the middle of the log
-		awk_script="NR < ${HEADER_LINES} || NR > $((${log_lines} - ${FOOTER_LINES})); NR == ${HEADER_LINES} { print \"<snip>\" }"
+		awk_script="NR < ${HEADER_LINES} || NR > $((log_lines - FOOTER_LINES)); NR == ${HEADER_LINES} { print \"<snip>\" }"
 	fi
 	
 	sendmail -f ${EMAIL_FROM} -t << EOF

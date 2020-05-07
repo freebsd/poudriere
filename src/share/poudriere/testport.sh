@@ -139,7 +139,7 @@ while getopts "B:o:cniIj:J:kNO:p:PSvwz:" FLAG; do
 			SETNAME="${OPTARG}"
 			;;
 		v)
-			VERBOSE=$((${VERBOSE} + 1))
+			VERBOSE=$((VERBOSE + 1))
 			;;
 		*)
 			usage
@@ -312,7 +312,7 @@ build_port "${ORIGINSPEC}" "${PKGNAME}" || ret=$?
 unset NO_ELAPSED_IN_MSG
 
 now=$(clock -monotonic)
-elapsed=$((${now} - ${TIME_START_JOB}))
+elapsed=$((now - TIME_START_JOB))
 
 if [ ${ret} -ne 0 ]; then
 	if [ ${ret} -eq 2 ]; then

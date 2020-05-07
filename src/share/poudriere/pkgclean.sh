@@ -98,7 +98,7 @@ while getopts "Aaj:J:f:nNp:Rvyz:" FLAG; do
 			NO_RESTRICTED=1
 			;;
 		v)
-			VERBOSE=$((${VERBOSE} + 1))
+			VERBOSE=$((VERBOSE + 1))
 			;;
 		y)
 			answer=yes

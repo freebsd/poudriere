@@ -110,7 +110,7 @@ _msg_n() {
 		unset elapsed arrow DRY_MODE
 	elif should_show_elapsed; then
 		now=$(clock -monotonic)
-		calculate_duration elapsed "$((${now} - ${TIME_START:-0}))"
+		calculate_duration elapsed "$((now - ${TIME_START:-0}))"
 		elapsed="[${elapsed}] "
 		unset arrow
 	else
@@ -196,7 +196,7 @@ job_msg() {
 	if [ -n "${MY_JOBID}" ]; then
 		NO_ELAPSED_IN_MSG=0
 		now=$(clock -monotonic)
-		calculate_duration elapsed "$((${now} - ${TIME_START_JOB:-${TIME_START:-0}}))"
+		calculate_duration elapsed "$((now - ${TIME_START_JOB:-${TIME_START:-0}}))"
 		output="[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}] [${elapsed}] $1"
 	else
 		output="$@"
@@ -286,12 +286,12 @@ _mastermnt() {
 	mnttest="${mnt}${testpath}"
 
 	if [ "${FORCE_MOUNT_HASH}" = "yes" ] || \
-	    [ ${#mnttest} -ge $((${mnamelen} - 1)) ]; then
+	    [ ${#mnttest} -ge $((mnamelen - 1)) ]; then
 		hashed_name=$(sha256 -qs "${MASTERNAME}" | \
 		    awk '{print substr($0, 0, 6)}')
 		mnt="${POUDRIERE_DATA}/.m/${hashed_name}/ref"
 		mnttest="${mnt}${testpath}"
-		[ ${#mnttest} -ge $((${mnamelen} - 1)) ] && \
+		[ ${#mnttest} -ge $((mnamelen - 1)) ] && \
 		    err 1 "Mountpath '${mnt}' exceeds system MNAMELEN limit of ${mnamelen}. Unable to mount. Try shortening BASEFS."
 		msg_warn "MASTERNAME '${MASTERNAME}' too long for mounting, using hashed version of '${hashed_name}'"
 	fi
@@ -483,7 +483,7 @@ for_each_build() {
 			# May be blank if build is still starting up
 			[ -z "${BUILDNAME}" ] && continue 2
 
-			found_jobs=$((${found_jobs} + 1))
+			found_jobs=$((found_jobs + 1))
 
 			# Lookup jailname/setname/ptname if needed. Delayed
 			# from earlier for performance for -a
@@ -1089,7 +1089,7 @@ update_stats_queued() {
 
 	# Add 1 for the main port to test
 	was_a_testport_run && \
-	    nbq=$((${nbq} + 1))
+	    nbq=$((nbq + 1))
 	bset stats_queued ${nbq##* }
 }
 
@@ -1351,9 +1351,9 @@ siginfo_handler() {
 			format_origin_phase="\t[${job_id_color}%s${COLOR_RESET}]: ${COLOR_PORT}%-25s | %-25s ${COLOR_PHASE}%-15s${COLOR_RESET} (%s / %s)\n"
 			format_phase="\t[${job_id_color}%s${COLOR_RESET}]: %53s ${COLOR_PHASE}%-15s${COLOR_RESET}\n"
 			if [ -n "${pkgname}" ]; then
-				elapsed=$((${now} - ${started}))
+				elapsed=$((now - started))
 				calculate_duration buildtime "${elapsed}"
-				elapsed_phase=$((${now} - ${started_phase}))
+				elapsed_phase=$((now - started_phase))
 				calculate_duration buildtime_phase \
 				    "${elapsed_phase}"
 				printf "${format_origin_phase}" "${j}" \
@@ -2071,7 +2071,7 @@ symlink to .latest/${name}"
 	msg "Removing old packages"
 
 	if [ "${KEEP_OLD_PACKAGES}" = "yes" ]; then
-		keep_cnt=$((${KEEP_OLD_PACKAGES_COUNT} + 1))
+		keep_cnt=$((KEEP_OLD_PACKAGES_COUNT + 1))
 		find ${PACKAGES_ROOT}/ -type d -mindepth 1 -maxdepth 1 \
 		    -name '.real_*' | sort -dr |
 		    sed -n "${keep_cnt},\$p" |
@@ -3893,7 +3893,7 @@ calculate_elapsed_from_log() {
 	fi
 	_start_time=${start_time}
 	_end_time=${end_time}
-	_elapsed_time=$((${end_time} - ${start_time}))
+	_elapsed_time=$((end_time - start_time))
 	return 0
 }
 
@@ -3910,7 +3910,7 @@ parallel_build() {
 
 	# Subtract the 1 for the main port to test
 	was_a_testport_run && \
-	    nremaining=$((${nremaining} - 1))
+	    nremaining=$((nremaining - 1))
 
 	# If pool is empty, just return
 	[ ${nremaining} -eq 0 ] && return 0
@@ -4167,7 +4167,7 @@ build_pkg() {
 	fi
 
 	now=$(clock -monotonic)
-	elapsed=$((${now} - ${TIME_START_JOB}))
+	elapsed=$((now - TIME_START_JOB))
 
 	if [ ${build_failed} -eq 0 ]; then
 		badd ports.built "${originspec} ${pkgname} ${elapsed}"
@@ -7757,15 +7757,15 @@ calculate_size_in_mb() {
 	case ${calc_size} in
 	*p)
 		calc_size=${calc_size%p}
-		calc_size=$(( ${calc_size} << 10 ))
+		calc_size=$(( calc_size << 10 ))
 		;&
 	*t)
 		calc_size=${calc_size%t}
-		calc_size=$(( ${calc_size} << 10 ))
+		calc_size=$(( calc_size << 10 ))
 		;&
 	*g)
 		calc_size=${calc_size%g}
-		calc_size=$(( ${calc_size} << 10 ))
+		calc_size=$(( calc_size << 10 ))
 		;&
 	*m)
 		calc_size=${calc_size%m}
@@ -7802,7 +7802,7 @@ calculate_ospart_size() {
 		SWAP_SIZE=0
 	fi
 	
-	OS_SIZE=$(( ( $FULL_SIZE - $CFG_SIZE - $DATA_SIZE - $SWAP_SIZE ) / $NUM_PART ))
+	OS_SIZE=$(( ( FULL_SIZE - CFG_SIZE - DATA_SIZE - SWAP_SIZE ) / NUM_PART ))
 	msg "OS Partiton size: ${OS_SIZE}m"
 }
 
@@ -8130,7 +8130,7 @@ DRY_RUN=0
 export LC_COLLATE
 
 if [ -n "${MAX_MEMORY}" ]; then
-	MAX_MEMORY_BYTES="$((${MAX_MEMORY} * 1024 * 1024 * 1024))"
+	MAX_MEMORY_BYTES="$((MAX_MEMORY * 1024 * 1024 * 1024))"
 fi
 : ${MAX_FILES:=1024}
 : ${DEFAULT_MAX_FILES:=${MAX_FILES}}

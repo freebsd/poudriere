@@ -36,7 +36,7 @@ stress_snapshot() {
 	loadpct="$(printf "%2.0f%%" $(echo "scale=20; 100 * (${min_load} / ${ncpu})" | bc))"
 	swapinfo=$(/usr/sbin/swapinfo -k|/usr/bin/awk '/\// {sum+=$2; X+=$3} END {if (sum) {printf "%1.2f%%\n", X*100/sum}}')
 	now=$(clock -monotonic)
-	elapsed=$((${now} - ${TIME_START}))
+	elapsed=$((now - TIME_START))
 
 	bset snap_loadavg "(${loadpct}) ${loadavg}"
 	bset snap_swapinfo "${swapinfo}"

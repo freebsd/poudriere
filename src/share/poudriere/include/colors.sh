@@ -114,7 +114,7 @@ colorize_job_id() {
 	fi
 
 	# Writing this list was painful
-	case $(((${id} - 1) % ${MAXCOLORS})) in
+	case $(((id - 1) % MAXCOLORS)) in
 	0)   color="${COLOR_RED}" ;;
 	1)   color="${COLOR_GREEN}" ;;
 	2)   color="${COLOR_BROWN}" ;;
@@ -268,9 +268,9 @@ test_colors() {
 
 	i=1
 
-	while [ $i -le $((${MAXCOLORS} * 2)) ]; do
+	while [ $i -le $((MAXCOLORS * 2)) ]; do
 		colorize_job_id job_color "$i"
 		printf -- "--- [${job_color}%03d${COLOR_RESET}] ---\n" "${i}"
-		i=$((${i} + 1))
+		i=$((i + 1))
 	done
 }

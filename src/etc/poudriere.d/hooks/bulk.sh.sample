@@ -32,7 +32,7 @@ elif [ "$status" = "done" ]; then
 	n_failed=$2
 	n_ignored=$3
 	n_skipped=$4
-	n_total=$((${n_built} + ${n_failed} + ${n_ignored} + ${n_skipped}))
+	n_total=$((n_built + n_failed + n_ignored + n_skipped))
 
         mail_subject="[RELEASE - ${MASTERNAME}] bulk done on `hostname`"
 

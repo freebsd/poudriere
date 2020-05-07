@@ -300,7 +300,7 @@ critical_end() {
 	    err 1 "critical_end called without critical_start"
 
 	oldnest=${_CRITSNEST}
-	_CRITSNEST=$((${_CRITSNEST} - 1))
+	_CRITSNEST=$((_CRITSNEST - 1))
 	[ ${_CRITSNEST} -eq 0 ] || return 0
 	if hash_remove crit_saved_trap "INT-${oldnest}" saved_int; then
 		trap_pop INT "${saved_int}"
@@ -350,12 +350,12 @@ read_file() {
 			if [ -n "${var_return}" ]; then
 				while IFS= mapfile_read "${maph}" _line; do
 					_data="${_data:+${_data}${newline}}${_line}"
-					_read_file_lines_read=$((${_read_file_lines_read} + 1))
+					_read_file_lines_read=$((_read_file_lines_read + 1))
 				done
 				setvar "${var_return}" "${_data}"
 			else
 				while IFS= mapfile_read "${maph}" _line; do
-					_read_file_lines_read=$((${_read_file_lines_read} + 1))
+					_read_file_lines_read=$((_read_file_lines_read + 1))
 				done
 			fi
 			mapfile_close "${maph}"
@@ -390,7 +390,7 @@ read_file() {
 			if [ -n "${var_return}" ]; then
 				_data="${_data:+${_data}${newline}}${_line}"
 			fi
-			_read_file_lines_read=$((${_read_file_lines_read} + 1))
+			_read_file_lines_read=$((_read_file_lines_read + 1))
 		done < "${file}" || _ret=$?
 	fi
 
@@ -432,7 +432,7 @@ read_line() {
 	until [ ${reads} -eq ${max_reads} ] || \
 	    IFS= read -t 1 -r _line < "${file}"; do
 		sleep 0.1
-		reads=$((${reads} + 1))
+		reads=$((reads + 1))
 	done
 	[ ${reads} -eq ${max_reads} ] && _ret=1
 
@@ -969,9 +969,9 @@ calculate_duration() {
 	local _elapsed="$2"
 	local seconds minutes hours _duration
 
-	seconds=$((${_elapsed} % 60))
-	minutes=$(((${_elapsed} / 60) % 60))
-	hours=$((${_elapsed} / 3600))
+	seconds="$((_elapsed % 60))"
+	minutes="$(((_elapsed / 60) % 60))"
+	hours="$((_elapsed / 3600))"
 
 	_duration=$(printf "%02d:%02d:%02d" ${hours} ${minutes} ${seconds})
 

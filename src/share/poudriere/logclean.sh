@@ -82,7 +82,7 @@ while getopts "aB:j:p:nN:vyz:" FLAG; do
 			PTNAME=${OPTARG}
 			;;
 		v)
-			VERBOSE=$((${VERBOSE} + 1))
+			VERBOSE=$((VERBOSE + 1))
 			;;
 		y)
 			answer=yes

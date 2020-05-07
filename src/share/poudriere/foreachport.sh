@@ -84,7 +84,7 @@ while getopts "af:j:J:p:vz:" FLAG; do
 			PTNAME=${OPTARG}
 			;;
 		v)
-			VERBOSE=$((${VERBOSE} + 1))
+			VERBOSE=$((VERBOSE + 1))
 			;;
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"

@@ -171,7 +171,7 @@ while getopts "aB:CcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
 			NO_RESTRICTED=1
 			;;
 		v)
-			VERBOSE=$((${VERBOSE} + 1))
+			VERBOSE=$((VERBOSE + 1))
 			;;
 		w)
 			SAVE_WRKDIR=1
