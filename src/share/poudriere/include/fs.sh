@@ -107,7 +107,7 @@ _do_clone() {
 			err 1 "Tried to cpdup /; common=${common} src=${src} dst=${dst}"
 		fi
 		(
-			cd "${common}"
+			cd "${common}" || err 1 "Cannot chdir ${common}"
 			_do_cpdup "${rflags}" "${cpignore}" "${src}" "${dst}"
 		)
 		return
