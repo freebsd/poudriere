@@ -65,7 +65,7 @@ should_show_elapsed() {
 not_for_os() {
 	local os=$1
 	shift
-	[ "${os}" = "${BSDPLATFORM}" ] && err 1 "This is not supported on ${BSDPLATFORM}: $@"
+	[ "${os}" = "${BSDPLATFORM}" ] && err 1 "This is not supported on ${BSDPLATFORM}: $*"
 }
 
 err() {
@@ -2642,7 +2642,7 @@ jail_start() {
 				err 1 "Arm64 requires aarch64-binutils to be installed."
 				;;
 			esac
-			msg "Copying aarch64-binutils ld from "${aarchld}""
+			msg "Copying aarch64-binutils ld from '${aarchld}'"
 			cp -f "${aarchld}" \
 			    "${tomnt}/usr/bin/ld"
 			if [ -d "${tomnt}/nxb-bin/usr/bin" ]; then
@@ -3195,7 +3195,7 @@ build_port() {
 	allownetworking=0
 	for jpkg in ${ALLOW_NETWORKING_PACKAGES}; do
 		case "${pkgname%-*}" in
-		${jpkg})
+		"${jpkg}")
 			job_msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}"
 			msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}"
 			allownetworking=1
@@ -4133,7 +4133,7 @@ build_pkg() {
 
 	for jpkg in ${ALLOW_MAKE_JOBS_PACKAGES}; do
 		case "${pkgname%-*}" in
-		${jpkg})
+		"${jpkg}")
 			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_RESET}"
 			sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' \
 			    "${mnt}/etc/make.conf"
@@ -4486,7 +4486,7 @@ deps_fetch_vars() {
 		_new_dep_args=
 		for _dep_arg in ${_dep_args}; do
 			case "${_dep_arg}" in
-			PYTHON_VERSION=${P_PYTHON_DEFAULT_VERSION})
+			"PYTHON_VERSION=${P_PYTHON_DEFAULT_VERSION}")
 				# Matches the default, no reason to waste time
 				# looking up dependencies with this bogus value.
 				msg_debug "deps_fetch_vars: Trimmed superfluous DEPENDS_ARGS=${_dep_arg} for ${originspec}"
@@ -6585,7 +6585,7 @@ compute_deps_pkg() {
 					continue
 				fi
 				case "${dep_real_pkgname%-*}" in
-				${dep_pkgname}) ;;
+				"${dep_pkgname}") ;;
 				*)
 					${err_type} "${COLOR_PORT}${originspec}${COLOR_WARN} dependency on ${COLOR_PORT}${dpath}${COLOR_WARN} has wrong PKGNAME of '${dep_pkgname}' but should be '${dep_real_pkgname%-*}'"
 					if [ \
@@ -7528,7 +7528,7 @@ load_priorities_ptsort() {
 		# Does this pkg have an override?
 		for pkg_boost in ${PRIORITY_BOOST}; do
 			case ${pkgname%-*} in
-			${pkg_boost})
+			"${pkg_boost}")
 				pkgqueue_contains "${pkgname}" || \
 				    continue
 				originspec_decode "${originspec}" \
@@ -7819,7 +7819,7 @@ done
 if [ "$(type setproctitle 2>/dev/null)" = "setproctitle is a shell builtin" ]; then
 	setproctitle() {
 		PROC_TITLE="$@"
-		command setproctitle "poudriere${MASTERNAME:+[${MASTERNAME}]}${MY_JOBID:+[${MY_JOBID}]}: $@"
+		command setproctitle "poudriere${MASTERNAME:+[${MASTERNAME}]}${MY_JOBID:+[${MY_JOBID}]}: $*"
 	}
 else
 	setproctitle() { :; }
