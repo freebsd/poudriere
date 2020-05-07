@@ -253,16 +253,16 @@ confirm_if_tty() {
 post_getopts() {
 	# Short-circuit verbose functions to save CPU
 	if ! [ ${VERBOSE} -gt 2 ]; then
-		msg_dev() { }
-		job_msg_dev() { }
+		msg_dev() { :; }
+		job_msg_dev() { :; }
 	fi
 	if ! [ ${VERBOSE} -gt 1 ]; then
-		msg_debug() { }
-		job_msg_debug() { }
+		msg_debug() { :; }
+		job_msg_debug() { :; }
 	fi
 	if ! [ ${VERBOSE} -gt 0 ]; then
-		msg_verbose() { }
-		job_msg_verbose() { }
+		msg_verbose() { :; }
+		job_msg_verbose() { :; }
 	fi
 }
 
@@ -3807,8 +3807,7 @@ build_queue() {
 			if [ ${builders_active} -eq 1 ]; then
 				# The queue is empty, but builds are still
 				# going. Wait on them below.
-
-				# FALLTHROUGH
+				:
 			else
 				# All work is done
 				pkgqueue_sanity_check 0
@@ -3838,6 +3837,7 @@ build_queue() {
 			else
 				# The job is already done. It was found to be
 				# done by a kill -0 check in a scan.
+				:
 			fi
 		else
 			# No event found. The next scan will check for
@@ -7820,7 +7820,7 @@ if [ "$(type setproctitle 2>/dev/null)" = "setproctitle is a shell builtin" ]; t
 		command setproctitle "poudriere${MASTERNAME:+[${MASTERNAME}]}${MY_JOBID:+[${MY_JOBID}]}: $@"
 	}
 else
-	setproctitle() { }
+	setproctitle() { :; }
 fi
 
 STATUS=0 # out of jail #

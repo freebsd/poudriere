@@ -73,7 +73,6 @@ shash_get() {
 			if read_line _value "${_f}"; then
 				_values="${_values}${_values:+ }${_value}"
 				ret=0
-			else
 			fi
 		done
 	fi
