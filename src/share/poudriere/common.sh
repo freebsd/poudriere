@@ -1384,7 +1384,8 @@ jail_runs() {
 }
 
 porttree_list() {
-	local name method mntpoint p
+	local name method p
+
 	[ -d ${POUDRIERED}/ports ] || return 0
 	for p in $(find ${POUDRIERED}/ports -type d -maxdepth 1 -mindepth 1 -print); do
 		name=${p##*/}
@@ -4067,7 +4068,7 @@ build_pkg() {
 	local build_failed=0
 	local name
 	local mnt
-	local failed_status failed_phase cnt
+	local failed_status failed_phase
 	local clean_rdepends
 	local log
 	local errortype
@@ -6627,6 +6628,7 @@ map_py_slave_port() {
 	local _originspec="$1"
 	local var_return_originspec="$2"
 	local origin dep_args flavor mapped_origin pyreg pyver
+	local pymaster_prefix
 
 	originspec_decode "${_originspec}" origin dep_args flavor
 
@@ -6692,7 +6694,7 @@ map_py_slave_port() {
 			;;
 		*) return 1 ;;
 	esac
-	mapped_origin="${origin%%${pyreg}*}/${pymaster_prefix}${origin#*${pyreg}}${pymaster_suffix}"
+	mapped_origin="${origin%%${pyreg}*}/${pymaster_prefix}${origin#*${pyreg}}"
 	# Verify the port even exists or else we need a special case above.
 	test_port_origin_exist "${mapped_origin}" || \
 	    err 1 "map_py_slave_port: Mapping ${_originspec} found no existing ${mapped_origin}"

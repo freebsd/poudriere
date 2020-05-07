@@ -116,7 +116,7 @@ hash_isset() {
 	[ $# -ne 2 ] && eargs hash_isset var key
 	local var="$1"
 	local key="$2"
-	local _hash_var_name _value
+	local _hash_var_name
 
 	_hash_var_name "${var}" "${key}"
 
