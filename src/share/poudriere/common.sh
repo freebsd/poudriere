@@ -69,7 +69,7 @@ not_for_os() {
 }
 
 err() {
-	trap '' SIGINFO
+	trap '' INFO
 	export CRASHED=1
 	if [ $# -ne 2 ]; then
 		err 1 "err expects 2 arguments: exit_number \"message\""
@@ -1114,12 +1114,12 @@ sigterm_handler() {
 
 sig_handler() {
 	# Reset SIGTERM handler, just exit if another is received.
-	trap - SIGTERM
+	trap - TERM
 	# Ignore SIGPIPE for messages
-	trap '' SIGPIPE
+	trap '' PIPE
 	# Ignore SIGINT while cleaning up
-	trap '' SIGINT
-	trap '' SIGINFO
+	trap '' INT
+	trap '' INFO
 	err 1 "Signal ${SIGNAL} caught, cleaning up and exiting"
 }
 
@@ -1127,13 +1127,13 @@ exit_handler() {
 	# Ignore errors while cleaning up
 	set +e
 	ERRORS_ARE_FATAL=0
-	trap '' SIGINFO
+	trap '' INFO
 	# Avoid recursively cleaning up here
-	trap - EXIT SIGTERM
+	trap - EXIT TERM
 	# Ignore SIGPIPE for messages
-	trap '' SIGPIPE
+	trap '' PIPE
 	# Ignore SIGINT while cleaning up
-	trap '' SIGINT
+	trap '' INT
 	SUPPRESS_INT=1
 
 	# stdin may be redirected if a signal interrupted the read builtin (or
@@ -1306,7 +1306,7 @@ siginfo_handler() {
 
 	set +e
 
-	trap '' SIGINFO
+	trap '' INFO
 
 	_bget status status || status=unknown
 	if [ "${status}" = "index:" -o "${status#stopped:}" = "crashed:" ]; then
@@ -4079,7 +4079,7 @@ build_pkg() {
 	_my_name name
 	_log_path log
 	clean_rdepends=
-	trap '' SIGTSTP
+	trap '' TSTP
 	setproctitle "build_pkg (${pkgname})" || :
 
 	# Don't show timestamps in msg() which goes to logs, only job_msg()
@@ -7852,12 +7852,12 @@ HOOKDIR=${POUDRIERED}/hooks
 [ -z "${NO_ZFS}" -a -z ${ZPOOL} ] && err 1 "ZPOOL variable is not set"
 [ -z ${BASEFS} ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
 
-trap sigpipe_handler SIGPIPE
-trap sigint_handler SIGINT
-trap sigterm_handler SIGTERM
+trap sigpipe_handler PIPE
+trap sigint_handler INT
+trap sigterm_handler TERM
 trap exit_handler EXIT
 enable_siginfo_handler() {
-	was_a_bulk_run && trap siginfo_handler SIGINFO
+	was_a_bulk_run && trap siginfo_handler INFO
 	in_siginfo_handler=0
 	return 0
 }
