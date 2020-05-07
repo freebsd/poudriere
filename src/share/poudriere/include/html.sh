@@ -25,7 +25,7 @@
 # SUCH DAMAGE.
 
 stress_snapshot() {
-	local loadvg swapinfo elapsed duration now min_load loadpct ncpu
+	local loadavg swapinfo elapsed duration now min_load loadpct ncpu
 
 	loadavg=$(/sbin/sysctl -n vm.loadavg|/usr/bin/awk '{print $2,$3,$4}')
 	min_load="${loadavg%% *}"
