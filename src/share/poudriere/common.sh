@@ -3164,7 +3164,7 @@ build_port() {
 	local jailuser JUSER
 	local testfailure=0
 	local max_execution_time allownetworking
-	local _need_root NEED_ROOT PREFIX max_files
+	local _need_root NEED_ROOT PREFIX MAX_FILES
 
 	_my_path mnt
 	_log_path log
