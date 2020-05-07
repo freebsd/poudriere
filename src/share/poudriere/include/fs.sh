@@ -274,9 +274,10 @@ clonefs() {
 	local to=$2
 	local snap=$3
 	local name zfs_to
-	local fs=$(zfs_getfs ${from})
+	local fs
 	local basepath dir dirs skippaths cpignore cpignores mnt
 
+	fs=$(zfs_getfs ${from})
 	destroyfs ${to} jail
 	mkdir -p ${to}
 	mnt=$(realpath "${to}")

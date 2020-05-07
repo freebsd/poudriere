@@ -1527,11 +1527,13 @@ markfs() {
 	[ $# -ne 2 ] && eargs markfs name mnt
 	local name=$1
 	local mnt="${2}"
-	local fs="$(zfs_getfs ${mnt})"
+	local fs
 	local dozfs=0
 	local domtree=0
 	local mtreefile
 	local snapfile
+
+	fs="$(zfs_getfs ${mnt})"
 
 	msg_n "Recording filesystem state for ${name}..."
 
@@ -3079,9 +3081,10 @@ check_fs_violation() {
 	local status_msg="$5"
 	local err_msg="$6"
 	local status_value="$7"
-	local tmpfile=$(mktemp -t check_fs_violation)
+	local tmpfile
 	local ret=0
 
+	tmpfile=$(mktemp -t check_fs_violation)
 	msg_n "${status_msg}..."
 	( cd "${mnt}" && \
 		mtree -X "${MASTERMNT}/.p/mtree.${mtree_target}exclude${PORTTESTING}" \
@@ -3108,11 +3111,12 @@ gather_distfiles() {
 	local pkgname_main="$2"
 	local originspec="$3"
 	local pkgname="$4"
-	local from=$(realpath "$5")
-	local to=$(realpath "$6")
+	local from to
 	local sub dists d specials special origin
 	local dep_originspec pkgname flavor
 
+	from=$(realpath "$5")
+	to=$(realpath "$6")
 	port_var_fetch_originspec "${originspec}" \
 	    DIST_SUBDIR sub \
 	    ALLFILES dists || \
@@ -3414,14 +3418,15 @@ build_port() {
 		fi
 
 		if [ "${phase}" = "deinstall" ]; then
-			local add=$(mktemp -t lo.add)
-			local add1=$(mktemp -t lo.add1)
-			local del=$(mktemp -t lo.del)
-			local del1=$(mktemp -t lo.del1)
-			local mod=$(mktemp -t lo.mod)
-			local mod1=$(mktemp -t lo.mod1)
+			local add add1 del del1 mod mod1
 			local die=0
 
+			add=$(mktemp -t lo.add)
+			add1=$(mktemp -t lo.add1)
+			del=$(mktemp -t lo.del)
+			del1=$(mktemp -t lo.del1)
+			mod=$(mktemp -t lo.mod)
+			mod1=$(mktemp -t lo.mod1)
 			msg "Checking for extra files and directories"
 			bset_job_status "leftovers" "${originspec}" \
 			    "${pkgname}"
@@ -3898,7 +3903,9 @@ parallel_build() {
 	local ptname="$2"
 	local setname="$3"
 	local real_parallel_jobs=${PARALLEL_JOBS}
-	local nremaining=$(calculate_tobuild)
+	local nremaining
+
+	nremaining=$(calculate_tobuild)
 
 	# Subtract the 1 for the main port to test
 	was_a_testport_run && \
