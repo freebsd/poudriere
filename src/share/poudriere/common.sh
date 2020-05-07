@@ -1914,7 +1914,9 @@ do_portbuild_mounts() {
 		optionsdir="${optionsdir} ${ptname} ${jname} -"
 
 		for opt in ${optionsdir}; do
-			use_options ${mnt} ${opt} && break || continue
+			if use_options ${mnt} ${opt}; then
+				break
+			fi
 		done
 	else
 		${NULLMOUNT} -o ro ${MASTERMNT}/var/db/ports \
