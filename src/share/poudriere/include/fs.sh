@@ -89,6 +89,7 @@ _do_clone() {
 			r) relative=1 ;;
 			x) cpignore="-x" ;;
 			X) cpignore="-X ${OPTARG}" ;;
+			*) err 1 "_do_clone: Invalid flag" ;;
 		esac
 	done
 	shift $((OPTIND-1))

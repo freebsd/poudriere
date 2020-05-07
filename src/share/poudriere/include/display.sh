@@ -56,6 +56,9 @@ display_output() {
 			q)
 				quiet=1
 				;;
+			*)
+				err 1 "display_output: Invalid flag"
+				;;
 		esac
 	done
 
