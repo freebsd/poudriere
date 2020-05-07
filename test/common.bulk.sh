@@ -658,10 +658,10 @@ for o in ${OVERLAYS_save}; do
 	# We run port_var_fetch_originspec without a jail so can't use plain
 	# /overlays. Need to link the host path into our fake MASTERMNT path
 	# as well as link to the overlay portdir without nullfs.
-	mkdir -p "${MASTERMNT}/${OVERLAYSDIR%/*}"
+	mkdir -p "${MASTERMNT:?}/${OVERLAYSDIR%/*}"
 	ln -fs "${MASTERMNT}/${OVERLAYSDIR}" "${OVERLAYSDIR}"
 	mkdir -p "${MASTERMNT}/${OVERLAYSDIR}"
-	ln -fs "${omnt}" "${MASTERMNT}/${OVERLAYSDIR}/${oname}"
+	ln -fs "${omnt}" "${MASTERMNT:?}/${OVERLAYSDIR}/${oname}"
 	OVERLAYS="${OVERLAYS:+${OVERLAYS} }${oname}"
 done
 unset OVERLAYS_save omnt oname

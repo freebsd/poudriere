@@ -805,7 +805,7 @@ _lookup_portdir() {
 			return
 		fi
 	done
-	_ptdir="${PORTSDIR}/${_port}"
+	_ptdir="${PORTSDIR:?}/${_port}"
 	setvar "${_varname}" "${_ptdir}"
 	return
 }
@@ -1029,7 +1029,7 @@ bset() {
 	shift
 	[ "${property}" = "status" ] && \
 	    echo "$@" >> ${log}/${file}.journal% || :
-	echo "$@" > "${log}/${file}"
+	echo "$@" > "${log:?}/${file}"
 }
 
 bset_job_status() {
@@ -2032,7 +2032,7 @@ commit_packages() {
 			case "${name}" in
 			.buildname|.jailversion|meta.txz|digests.txz|packagesite.txz|All|Latest)
 				# Auto fix pkg-owned files
-				unlink "${PACKAGES_ROOT}/${name}"
+				unlink "${PACKAGES_ROOT:?}/${name}"
 				;;
 			*)
 				msg_error "${PACKAGES_ROOT}/${name}
@@ -2378,8 +2378,8 @@ setup_xdev() {
 
 	for file in ${HLINK_FILES}; do
 		if [ -f "${mnt}/nxb-bin/${file}" ]; then
-			unlink "${mnt}/${file}"
-			ln "${mnt}/nxb-bin/${file}" "${mnt}/${file}"
+			unlink "${mnt:?}/${file}"
+			ln "${mnt}/nxb-bin/${file}" "${mnt:?}/${file}"
 		fi
 	done
 
@@ -2915,7 +2915,7 @@ jail_stop() {
 			umount -f "${MASTERMNTROOT}" 2>/dev/null || :
 		fi
 	fi
-	rm -rfx ${MASTERMNT}/../
+	rm -rfx "${MASTERMNT:?}/../"
 	export STATUS=0
 
 	# Don't override if there is a failure to grab the last status.
@@ -3498,8 +3498,8 @@ may show failures if the port does not respect PREFIX."
 			while mapfile_read_loop_redir pkg_path; do
 			pkg_file="${pkg_path#${PACKAGES}/.npkg/${pkgname}}"
 			pkg_base="${pkg_file%/*}"
-			mkdir -p "${PACKAGES}/${pkg_base}"
-			mv "${pkg_path}" "${PACKAGES}/${pkg_base}"
+			mkdir -p "${PACKAGES:?}/${pkg_base}"
+			mv "${pkg_path}" "${PACKAGES:?}/${pkg_base}"
 		done
 	fi
 
@@ -4116,8 +4116,8 @@ build_pkg() {
 			    umount -f ${mnt}/${LOCALBASE:-/usr/local}
 		fi
 		mnt_tmpfs localbase ${mnt}/${LOCALBASE:-/usr/local}
-		do_clone -r "${MASTERMNT}/${LOCALBASE:-/usr/local}" \
-		    "${mnt}/${LOCALBASE:-/usr/local}"
+		do_clone -r "${MASTERMNT:?}/${LOCALBASE:-/usr/local}" \
+		    "${mnt:?}/${LOCALBASE:-/usr/local}"
 		:> "${mnt}/${LOCALBASE:-/usr/local}/.mounted"
 	fi
 
@@ -6755,7 +6755,7 @@ _list_ports_dir() {
 			[ -f "${ptdir}/${cat}/Makefile" ] || continue
 			awk -F= -v cat=${cat} '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print cat"/"$2}' "${ptdir}/${cat}/Makefile"
 		done | while mapfile_read_loop_redir origin; do
-			if ! [ -d "${ptdir}/${origin}" ]; then
+			if ! [ -d "${ptdir:?}/${origin}" ]; then
 				msg_warn "Nonexistent origin listed in category Makefiles in \"${overlay}\": ${COLOR_PORT}${origin}${COLOR_RESET} (skipping)"
 				continue
 			fi
@@ -7331,7 +7331,7 @@ prepare_ports() {
 
 		if [ ${JAIL_NEEDS_CLEAN} -eq 1 ]; then
 			msg_n "Cleaning all packages due to newer version of the jail..."
-			rm -rf ${PACKAGES}/* ${cache_dir}
+			rm -rf ${PACKAGES:?}/* ${cache_dir}
 			echo " done"
 		elif [ ${CLEAN} -eq 1 ]; then
 			if [ "${ATOMIC_PACKAGE_REPOSITORY}" != "yes" ] && \
@@ -7340,7 +7340,7 @@ prepare_ports() {
 				    err 1 "Not cleaning all packages"
 			fi
 			msg_n "(-c) Cleaning all packages..."
-			rm -rf ${PACKAGES}/* ${cache_dir}
+			rm -rf ${PACKAGES:?}/* ${cache_dir}
 			echo " done"
 		fi
 
@@ -7838,7 +7838,7 @@ fi
     POUDRIERE_ETC=$(realpath ${SCRIPTPREFIX}/../../etc)
 # If this is a relative path, add in ${PWD} as a cd / is done.
 [ "${POUDRIERE_ETC#/}" = "${POUDRIERE_ETC}" ] && \
-    POUDRIERE_ETC="${SAVED_PWD}/${POUDRIERE_ETC}"
+    POUDRIERE_ETC="${SAVED_PWD:?}/${POUDRIERE_ETC}"
 POUDRIERED=${POUDRIERE_ETC}/poudriere.d
 include_poudriere_confs "$@"
 

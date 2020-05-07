@@ -367,12 +367,12 @@ fi
 		echo "INNER 2: n=$n y=$y" >&2
 		assert "''$i''" "$n" "value should match double quoted 6 $i"
 		assert "''$((i + 5))''" "$y" "value should match double quoted 6 $((i + 5))"
-		touch "${TDIR}/${i}"
+		touch "${TDIR:?}/${i}"
 		i=$((i + 1))
 	done
 	i=0
 	until [ ${i} -eq 10 ]; do
-		[ -e "${TDIR}/${i}" ]
+		[ -e "${TDIR:?}/${i}" ]
 		assert 0 $? "inner loop did not run i=$i; found: $(/bin/ls ${TDIR}):"
 		i=$((i + 1))
 	done
