@@ -39,6 +39,7 @@
  * Just call rename(2) on the params. This is a replacement for mv(1)
  * to both lower overhead and to support mv -h, which is not in 8.x or
  * 9.1, to rename a symlink and not move it.
+ * It is also to purposely fail on EXDEV.
  */
 int
 main(int argc, char **argv)
@@ -48,11 +49,7 @@ main(int argc, char **argv)
 		errx(EX_USAGE, "Usage: rename src dst");
 
 	if (rename(argv[1], argv[2]))
-#ifdef SHELL
-		error("%s: %s %s", strerror(errno), argv[1], argv[2]);
-#else
-		err(EXIT_FAILURE, NULL);
-#endif
+		err(EXIT_FAILURE, "%s to %s", argv[1], argv[2]);
 
 	return (0);
 }
