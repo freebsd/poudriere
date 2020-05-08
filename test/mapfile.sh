@@ -205,6 +205,32 @@ if mapfile_builtin; then
 }
 fi
 
+# Should only return full lines as read(1) does
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -t mapfile)
+	mapfile file_in "${TMP}" "re"
+	assert 0 $? "mapfile to standard file_in should pass"
+	assert_not "" "${file_in}" "mapfile file_in should return handle"
+
+	echo -n "blah" > "${TMP}"
+	mapfile_read "${file_in}" output
+	assert 1 "$?" "$0:$LINENO: read without newline should return EOF"
+	assert "blah" "${output}" "$0:$LINENO: output should match"
+
+	if mapfile_keeps_file_open_on_eof "${file_in}"; then
+		echo "" >> "${TMP}"
+		mapfile_read "${file_in}" output
+		assert 0 "$?" "$0:$LINENO: read after newline (without rewind) should return success"
+		assert '' "${output}" "$0:$LINENO: output should be empty"
+
+		echo "foo" >> "${TMP}"
+		mapfile_read "${file_in}" output
+		assert 0 "$?" "$0:$LINENO: read after newline (without rewind) should succeed"
+		assert 'foo' "${output}" "$0:$LINENO: output should match"
+	fi
+}
+
 # Test mapfile_read_loop
 {
 	rm -f "${TMP}"

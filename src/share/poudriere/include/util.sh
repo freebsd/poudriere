@@ -623,6 +623,11 @@ mapfile_builtin() {
 	return 1
 }
 
+mapfile_keeps_file_open_on_eof() {
+	[ $# -eq 1 ] || eargs mapfile_keeps_file_open_on_eof handle
+	return 1
+}
+
 mapfile_read_loop() {
 	[ $# -ge 2 ] || eargs mapfile_read_loop file vars
 	local _file="$1"
@@ -651,6 +656,11 @@ mapfile_read_loop_redir() {
 else
 
 mapfile_builtin() {
+	return 0
+}
+
+mapfile_keeps_file_open_on_eof() {
+	[ $# -eq 1 ] || eargs mapfile_keeps_file_open_on_eof handle
 	return 0
 }
 

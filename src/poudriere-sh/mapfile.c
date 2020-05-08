@@ -384,9 +384,19 @@ out:
 		md_close(md);
 	INTON;
 
-	if (linelen == -1)
+	if (linelen == -1) {
 		line[0] = '\0';
-	else {
+	} else if (feof(md->fp)) {
+		/*
+		 * EOF without newline.
+		 * EOF with newline is handled above.
+		 */
+		assert(ret == 0);
+		assert(line[linelen - 1] != '\n');
+		assert(ferror(md->fp) == 0);
+		ret = 1; /* EOF */
+		clearerr(md->fp);
+	} else {
 		/* Remove newline. */
 		line[linelen - 1] = '\0';
 		--linelen;
