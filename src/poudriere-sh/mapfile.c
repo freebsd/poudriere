@@ -382,7 +382,6 @@ out:
 	/* Don't close on EOF or timeout as more data may come later. */
 	if (ret != 1 && ret != 0 && ret != 142)
 		md_close(md);
-	INTON;
 
 	if (linelen == -1) {
 		line[0] = '\0';
@@ -436,6 +435,7 @@ out:
 			break;
 		}
 	}
+	INTON;
 
 	/* Set any remaining args to "" */
 	while (*var_return_ptr != NULL)
