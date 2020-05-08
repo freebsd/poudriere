@@ -427,7 +427,7 @@ EOF
 # without this, a 2GiB image will not fit into a 2GB flash disk (=1862MiB)
 
 if [ -n "${IMAGESIZE}" ]; then
-	IMAGESIZE_UNIT=$(printf ${IMAGESIZE} | tail -c 1)
+	IMAGESIZE_UNIT=$(printf "%s" "${IMAGESIZE}" | tail -c 1)
 	IMAGESIZE_VALUE=${IMAGESIZE%?}
 	NEW_IMAGESIZE_UNIT=""
 	NEW_IMAGESIZE_SIZE=""

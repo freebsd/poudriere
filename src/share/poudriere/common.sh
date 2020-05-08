@@ -118,9 +118,9 @@ _msg_n() {
 		arrow="=>>"
 	fi
 	if [ -n "${COLOR_ARROW}" ] || [ -z "${1##*\033[*}" ]; then
-		printf "${COLOR_ARROW}${elapsed}${DRY_MODE-}${arrow:+${COLOR_ARROW}${arrow} }${COLOR_RESET}${*}${COLOR_RESET}${NL}"
+		printf "${COLOR_ARROW}${elapsed}${DRY_MODE-}${arrow:+${COLOR_ARROW}${arrow} }${COLOR_RESET}%b${COLOR_RESET}${NL}" "$*"
 	else
-		printf "${elapsed}${DRY_MODE-}${arrow:+${arrow} }${*}${NL}"
+		printf "${elapsed}${DRY_MODE-}${arrow:+${arrow} }%b${NL}" "$*"
 	fi
 }
 
@@ -1285,12 +1285,13 @@ show_build_summary() {
 	elapsed=${_elapsed_time}
 	calculate_duration buildtime "${elapsed}"
 
-	printf "[${MASTERNAME}] [${buildname}] [${status}] \
+	printf "[%s] [%s] [%s] \
 Queued: %-${queue_width}d ${COLOR_SUCCESS}Built: %-${queue_width}d \
 ${COLOR_FAIL}Failed: %-${queue_width}d ${COLOR_SKIP}Skipped: \
 %-${queue_width}d ${COLOR_IGNORE}Ignored: %-${queue_width}d${COLOR_RESET} \
 Tobuild: %-${queue_width}d  Time: %s\n" \
-	    ${nbq} ${nbb} ${nbf} ${nbs} ${nbi} ${nbtobuild} "${buildtime}"
+	    "${MASTERNAME}" "${buildname}" "${status}" \
+	    "${nbq}" "${nbb}" "${nbf}" "${nbs}" "${nbi}" "${nbtobuild}" "${buildtime}"
 }
 
 siginfo_handler() {
