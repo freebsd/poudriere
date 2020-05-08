@@ -1018,18 +1018,27 @@ bget() {
 
 bset() {
 	was_a_bulk_run || return 0
-	local id property mnt log file
+	local id property mnt log file tmp ret
+
 	_log_path log
 	if [ $# -eq 3 ]; then
 		id=$1
 		shift
 	fi
 	property="$1"
-	file=.poudriere.${property}${id:+.${id}}
+	file=".poudriere.${property}${id:+.${id}}"
 	shift
 	[ "${property}" = "status" ] && \
 	    echo "$@" >> ${log}/${file}.journal% || :
-	echo "$@" > "${log:?}/${file}"
+	tmp="$(TMPDIR="${log}" mktemp -t .bset)" || return
+	ret=0
+	echo "$@" > "${tmp}" || ret=$?
+	if [ "${ret}" -eq 0 ]; then
+		rename "${tmp}" "${log:?}/${file}" || return
+	else
+		rm -f "${tmp}"
+	fi
+	return "${ret}"
 }
 
 bset_job_status() {
