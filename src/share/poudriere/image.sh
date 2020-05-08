@@ -584,9 +584,9 @@ usb)
 	fi
 	# Figure out Partition sizes
 	OS_SIZE=
-	calculate_ospart_size 1 ${IMAGESIZE} 0 0 ${SWAPSIZE}
+	calculate_ospart_size "1" "${IMAGESIZE}" "0" "0" "${SWAPSIZE}"
 	# Prune off a bit to fit the extra partitions and loaders
-	OS_SIZE=$(( ${OS_SIZE} - 1 ))
+	OS_SIZE=$(( $OS_SIZE - 1 ))
 	WORLD_SIZE=$(du -ms ${WRKDIR}/world | awk '{print $1}')
 	if [ ${WORLD_SIZE} -gt ${OS_SIZE} ]; then
 		err 2 "Installed OS Partition needs: ${WORLD_SIZE}m, but the OS Partitions are only: ${OS_SIZE}m.  Increase -s"
@@ -644,9 +644,9 @@ usb)
 
 	# Figure out Partition sizes
 	OS_SIZE=
-	calculate_ospart_size 2 ${IMAGESIZE} ${CFG_SIZE} ${DATA_SIZE} ${SWAPSIZE}
+	calculate_ospart_size "2" "${IMAGESIZE}" "${CFG_SIZE}" "${DATA_SIZE}" "${SWAPSIZE}"
 	# Prune off a bit to fit the extra partitions and loaders
-	OS_SIZE=$(( ${OS_SIZE} - 1 ))
+	OS_SIZE=$(( $OS_SIZE - 1 ))
 	WORLD_SIZE=$(du -ms ${WRKDIR}/world | awk '{print $1}')
 	if [ ${WORLD_SIZE} -gt ${OS_SIZE} ]; then
 		err 2 "Installed OS Partition needs: ${WORLD_SIZE}m, but the OS Partitions are only: ${OS_SIZE}m.  Increase -s"
