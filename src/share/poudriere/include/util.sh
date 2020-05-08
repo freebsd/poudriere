@@ -503,7 +503,7 @@ read_pipe() {
 		# since opening the pipe blocks and may be interrupted.
 		resread=0
 		resopen=0
-		{ { read "$@" || resread=$?; } < "${fifo}" || resopen=$?; } \
+		{ { read -r "$@" || resread=$?; } < "${fifo}" || resopen=$?; } \
 		    2>/dev/null
 		msg_dev "read_pipe ${fifo}: resread=${resread} resopen=${resopen}"
 		# First check the open errors
@@ -593,7 +593,7 @@ mapfile_read() {
 		read_blocking_line "$@" < "${handle}"
 	elif [ "${handle}" = "/dev/fd/0" ]; then
 		# mapfile_read_loop_redir pipe
-		read "$@"
+		read -r "$@"
 	else
 		return 1
 	fi
@@ -637,7 +637,7 @@ mapfile_read_loop() {
 		err 1 "mapfile_read_loop only supports 1 file at a time without builtin"
 	fi
 	ret=0
-	read "$@" <&8 || ret=$?
+	read -r "$@" <&8 || ret=$?
 	if [ ${ret} -ne 0 ]; then
 		exec 8>&-
 		unset _mapfile_read_loop
@@ -646,7 +646,7 @@ mapfile_read_loop() {
 }
 
 mapfile_read_loop_redir() {
-	read "$@"
+	read -r "$@"
 }
 else
 

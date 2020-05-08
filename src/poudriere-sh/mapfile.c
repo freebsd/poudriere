@@ -63,6 +63,7 @@ struct mapped_data {
 static struct mapped_data *mapped_files[MAX_FILES] = {0};
 /* Avoid remallocing every call */
 static char *line = NULL;
+/* This should be blksize for the file type. See readcmd builtin */
 static size_t linecap = BUFSIZ;
 
 #include "bltin/bltin.h"

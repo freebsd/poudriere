@@ -35,8 +35,8 @@ writer() {
 	n=0
 	until [ $n -eq ${LINES} ]; do
 		case ${type} in
-		pipe) echo "${n}" ;;
-		mapfile) mapfile_write "${out}" "${n}" ;;
+		pipe) echo "${n}\\" ;;
+		mapfile) mapfile_write "${out}" "${n}\\" ;;
 		esac
 		n=$((n + 1))
 	done
@@ -76,11 +76,11 @@ if mapfile_builtin; then
 	until [ $n -eq ${LINES} ]; do
 		mapfile_read "${handle1}" line
 		assert 0 $? "mapfile_read handle1 should succeed line $n"
-		assert "$n" "$line" "mapfile_read handle1 should match line $n"
+		assert "${n}\\" "$line" "mapfile_read handle1 should match line $n"
 
 		mapfile_read "${handle2}" line
 		assert 0 $? "mapfile_read handle2 should succeed line $n"
-		assert "$n" "$line" "mapfile_read handle2 should match line $n"
+		assert "${n}\\" "$line" "mapfile_read handle2 should match line $n"
 
 		n=$((n + 1))
 	done
@@ -162,13 +162,13 @@ if mapfile_builtin; then
 	assert " test   1 2 3 " "${line}" "mapfile_read IFS= should match line 2"
 	assert "" "${extra}" "mapfile_read IFS= should match extra 2"
 
-	# IFS mode
-	mapfile_write "${file_out}" " test   1 2 3 "
+	# IFS mode and default read -r behavior
+	mapfile_write "${file_out}" " t\\est   1 2 3 "
 	assert 0 $? "mapfile_write to standard file_out should pass"
 	extra="blah"
 	mapfile_read "${file_in}" line extra
 	assert 0 $? "mapfile_read from standard file_in to 2.1 var should pass"
-	assert "test" "${line}" "mapfile_read should match line 2.1"
+	assert "t\\est" "${line}" "mapfile_read should match line 2.1"
 	assert "1 2 3" "${extra}" "mapfile_read should match extra 2.1"
 
 	mapfile_write "${file_out}" "test 1 2 3"
