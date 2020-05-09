@@ -46,7 +46,7 @@ Parameters:
     -t type         -- Type of image can be one of (default iso+zmfs):
                     -- iso, iso+mfs, iso+zmfs, usb, usb+mfs, usb+zmfs,
                        rawdisk, zrawdisk, tar, firmware, rawfirmware,
-                       embedded, dump, zsnapshot
+                       embedded, dump, zsnapshot, ami, zami
     -X excludefile  -- File containing the list in cpdup format
     -z set          -- Set
 EOF
@@ -63,7 +63,7 @@ delete_image() {
 }
 
 cleanup_image() {
-	msg "Error while create image. cleaning up." >&2
+	msg "Error while creating image; cleaning up." >&2
 	delete_image
 }
 
@@ -225,7 +225,7 @@ while getopts "c:f:h:i:j:m:n:o:p:s:S:t:X:z:" FLAG; do
 			case ${MEDIATYPE} in
 			iso|iso+mfs|iso+zmfs|usb|usb+mfs|usb+zmfs) ;;
 			rawdisk|zrawdisk|tar|firmware|rawfirmware) ;;
-			embedded|dump|zsnapshot) ;;
+			embedded|dump|zsnapshot|ami|zami) ;;
 			*) err 1 "invalid mediatype: ${MEDIATYPE}"
 			esac
 			;;
@@ -286,7 +286,7 @@ jail_exists ${JAILNAME} || err 1 "The jail ${JAILNAME} does not exist"
 _jget arch ${JAILNAME} arch || err 1 "Missing arch metadata for jail"
 get_host_arch host_arch
 case "${MEDIATYPE}" in
-usb|*firmware|*rawdisk|embedded|dump)
+usb|*firmware|*rawdisk|embedded|dump|ami|zami)
 	[ -n "${IMAGESIZE}" ] || err 1 "Please specify the imagesize"
 	_jget mnt ${JAILNAME} mnt || err 1 "Missing mnt metadata for jail"
 	[ -f "${mnt}/boot/kernel/kernel" ] || \
@@ -374,6 +374,28 @@ rawdisk|dump)
 	newfs -j -L ${IMAGENAME} /dev/${md}
 	mount /dev/${md} ${WRKDIR}/world
 	;;
+zami)
+	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
+	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
+	zroot=${IMAGENAME}root
+
+	# Give release(7) a chance to overload create_zfs_be_datasets.
+	if [ -e ${mnt}/usr/src/release/tools/zfs.conf ]; then
+		. ${mnt}/usr/src/release/tools/zfs.conf
+	else
+		. ${SCRIPTPREFIX}/zfs.sh
+	fi
+
+	zpool create \
+		-O mountpoint=/ \
+		-O canmount=noauto \
+		-O compression=on \
+		-O atime=off \
+		-R ${WRKDIR}/world ${zroot} /dev/${md}
+
+	export ZFSBOOT_POOL_NAME="${zroot}"
+	create_zfs_be_datasets
+;;
 zrawdisk)
 	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
 	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
@@ -517,6 +539,39 @@ if [ -n "${PACKAGELIST}" ]; then
 	rm ${WRKDIR}/world/var/db/pkg/repo-* 2>/dev/null || :
 fi
 
+case "${MEDIATYPE}" in
+ami|zami)
+	DESTDIR="${WRKDIR}/world"
+	TARGET_ARCH="${arch}"
+
+	# Required for chrooted pkg(8) bootstrap.
+	[ -e /etc/resolv.conf -a ! -e ${DESTDIR}/etc/resolv.conf ] && \
+		cp /etc/resolv.conf ${DESTDIR}/etc/resolv.conf
+	# Run ldconfig(8) in the chroot directory so /var/run/ld-elf*.so.hints
+	# is created.  This is needed by ports-mgmt/pkg.
+	eval chroot ${DESTDIR} /etc/rc.d/ldconfig forcerestart
+
+	# Give release(7) a chance to overload vm_extra_pre_umount.
+	if [ -e ${mnt}/usr/src/release/tools/ec2.conf ]; then
+		. ${mnt}/usr/src/release/tools/ec2.conf
+	else
+		. ${SCRIPTPREFIX}/ec2.sh
+	fi
+
+	# XXX: This could be integrated with PACKAGELIST; thing is,
+	#       $PACKAGELIST is a path to file, not a list of packages.
+	chroot ${DESTDIR} env ASSUME_ALWAYS_YES=yes \
+		/usr/sbin/pkg install -f -y ${VM_EXTRA_PACKAGES}
+
+	vm_extra_pre_umount
+	echo >> ${DESTDIR}/etc/rc.conf
+
+	for _rcvar in ${VM_RC_LIST}; do
+		echo ${_rcvar}_enable="YES" >> ${DESTDIR}/etc/rc.conf
+	done
+	;;
+esac
+
 case ${MEDIATYPE} in
 *mfs)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
@@ -563,7 +618,7 @@ embedded)
 	/dev/msdosfs/MSDOSBOOT /boot/msdos msdosfs rw,noatime 0 0
 	EOF
 	;;
-usb)
+usb|ami)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
 	/dev/ufs/${IMAGENAME} / ufs rw 1 1
 	EOF
@@ -634,7 +689,10 @@ usb)
 	makefs -B little -s ${OS_SIZE}m -o label=${IMAGENAME} \
 		-o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world
 	;;
-zrawdisk)
+zrawdisk|zami)
+	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
+	# Device	Mountpoint	FStype	Options	Dump	Pass#
+	EOF
 	cat >> ${WRKDIR}/world/boot/loader.conf <<-EOF
 	zfs_load="YES"
 	vfs.root.mountfrom="zfs:${zroot}/ROOT/default"
@@ -683,10 +741,9 @@ usb+*mfs)
 		-p freebsd-ufs:=${WRKDIR}/img.part \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
 	;;
-usb)
+usb|ami)
 	FINALIMAGE=${IMAGENAME}.img
 	mkimg -s gpt -b ${mnt}/boot/pmbr \
-		-p efi:=${mnt}/boot/boot1.efifat \
 		-p freebsd-boot:=${mnt}/boot/gptboot \
 		-p freebsd-ufs:=${WRKDIR}/raw.img \
 		-p freebsd-swap::1M \
@@ -733,6 +790,21 @@ embedded)
 	/sbin/mdconfig -d -u ${md#md}
 	md=
 	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
+	;;
+zami)
+	FINALIMAGE=${IMAGENAME}.img
+	zfs umount -f ${zroot}/ROOT/default
+	zfs set mountpoint=none ${zroot}/ROOT/default
+	zpool set bootfs=${zroot}/ROOT/default ${zroot}
+	zpool set autoexpand=on ${zroot}
+	zpool export ${zroot}
+	zroot=
+	/sbin/mdconfig -d -u ${md#md}
+	md=
+	mkimg -s gpt -b ${mnt}/boot/pmbr \
+		-p freebsd-boot:=${mnt}/boot/gptzfsboot \
+		-p freebsd-zfs:=${WRKDIR}/raw.img \
+		-o ${OUTPUTDIR}/${FINALIMAGE}
 	;;
 zrawdisk)
 	FINALIMAGE=${IMAGENAME}.img
