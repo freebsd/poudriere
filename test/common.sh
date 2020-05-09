@@ -50,6 +50,7 @@ $(env | grep -q 'CCACHE_STATIC_PREFIX' && { env | awk '/^CCACHE/ {print "export 
 EOF
 write_cmp "${POUDRIERE_ETC}/poudriere.d/make.conf" << EOF
 DEFAULT_VERSIONS+=	ssl=base
+PKG_NOCOMPRESS=		t
 EOF
 
 : ${VERBOSE:=1}
