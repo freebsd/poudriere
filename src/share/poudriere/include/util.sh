@@ -371,7 +371,7 @@ read_file() {
 	[ $# -eq 2 ] || eargs read_file var_return file
 	local var_return="$1"
 	local file="$2"
-	local _data _line newline maph
+	local _data _line newline
 	local _ret - IFS
 
 	# var_return may be empty if only $_read_file_lines_read is being
@@ -391,24 +391,20 @@ read_file() {
 	fi
 
 	if mapfile_builtin; then
-		if mapfile maph "${file}" "r"; then
-			if [ -n "${var_return}" ]; then
-				while IFS= mapfile_read "${maph}" _line; do
-					_data="${_data:+${_data}${newline}}${_line}"
-					_read_file_lines_read=$((_read_file_lines_read + 1))
-				done
-				setvar "${var_return}" "${_data}"
-			else
-				while IFS= mapfile_read "${maph}" _line; do
-					_read_file_lines_read=$((_read_file_lines_read + 1))
-				done
-			fi
-			mapfile_close "${maph}"
+		if [ -n "${var_return}" ]; then
+			while IFS= mapfile_read_loop "${file}" _line; do
+				_data="${_data:+${_data}${newline}}${_line}"
+				_read_file_lines_read=$((_read_file_lines_read + 1))
+			done
 		else
-			_ret=$?
+			while IFS= mapfile_read_loop "${file}" _line; do
+				_read_file_lines_read=$((_read_file_lines_read + 1))
+			done
 		fi
-
-		return ${_ret}
+		if [ -n "${var_return}" ]; then
+			setvar "${var_return}" "${_data}"
+		fi
+		return 0
 	fi
 
 	if [ ${READ_FILE_USE_CAT:-0} -eq 1 ]; then
