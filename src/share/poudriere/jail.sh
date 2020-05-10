@@ -580,6 +580,7 @@ install_from_vcs() {
 			msg_n "Updating the sources with ${METHOD}..."
 			${SVN_CMD} upgrade ${SRC_BASE} 2>/dev/null || :
 			${SVN_CMD} -q update -r ${TORELEASE:-head} ${SRC_BASE} || err 1 " fail"
+			${SVN_CMD} cleanup ${SRC_BASE} || err 1 " fail"
 			echo " done"
 			;;
 		git*)
@@ -587,6 +588,7 @@ install_from_vcs() {
 			if [ -n "${TORELEASE}" ]; then
 				${GIT_CMD} checkout -q "${TORELEASE}" || err 1 " fail"
 			fi
+			(cd ${SRC_BASE} && ${GIT_CMD} gc) || err 1 " fail"
 			echo " done"
 			;;
 		esac
