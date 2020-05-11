@@ -54,6 +54,8 @@ main(int argc, char **argv)
 		err(1, "kqueue()");
 
 	fd = open(argv[1], O_RDONLY);
+	if (fd == -1)
+		err(1, "open()");
 
 	EV_SET(&change, fd, EVFILT_VNODE, EV_ADD | EV_ENABLE | EV_ONESHOT, NOTE_WRITE, 0, 0);
 
