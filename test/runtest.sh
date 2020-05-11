@@ -47,7 +47,7 @@ cd "${THISDIR}"
 
 case "${1##*/}" in
 prep.sh) : ${TIMEOUT:=1800} ;;
-bulk*build*.sh) : ${TIMEOUT:=3600} ;;
+bulk*build*.sh) : ${TIMEOUT:=900} ;;
 bulk*.sh) : ${TIMEOUT:=300} ;;
 locked_mkdir.sh) : ${TIMEOUT:=120}
 esac
