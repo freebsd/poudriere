@@ -118,7 +118,7 @@ _relpath_common() {
 	[ $# -eq 2 ] || eargs _relpath_common dir1 dir2
 	local dir1=$(realpath -q "$1" || echo "$1" | sed -e 's,//*,/,g')
 	local dir2=$(realpath -q "$2" || echo "$2" | sed -e 's,//*,/,g')
-	local common
+	local common other
 
 	dir1="${dir1%/}/"
 	dir2="${dir2%/}/"
@@ -130,10 +130,8 @@ _relpath_common() {
 		other="${dir1}"
 	fi
 	# Trim away path components until they match
-	_rel_found=0
 	while [ "${other#${common%/}/}" = "${other}" -a -n "${common}" ]; do
 		common="${common%/*}"
-		_rel_found=$((_rel_found + 1))
 	done
 	common="${common%/}"
 	common="${common:-/}"

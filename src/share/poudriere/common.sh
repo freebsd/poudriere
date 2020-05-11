@@ -1189,6 +1189,8 @@ exit_handler() {
 	[ -n "${CLEANUP_HOOK-}" ] && ${CLEANUP_HOOK}
 
 	if [ ${CREATED_JLOCK:-0} -eq 1 ]; then
+		local jlock
+
 		_jlock jlock
 		rm -rf "${jlock}" 2>/dev/null || :
 	fi
@@ -1851,7 +1853,7 @@ do_portbuild_mounts() {
 	local ptname=$3
 	local setname=$4
 	local portsdir
-	local optionsdir opt o msgmount
+	local optionsdir opt o odir msgmount
 
 	# clone will inherit from the ref jail
 	if [ ${mnt##*/} = "ref" ]; then
@@ -2692,6 +2694,8 @@ jail_start() {
 	msg "Starting jail ${MASTERNAME}"
 	jstart
 	if [ ${CREATED_JLOCK:-0} -eq 1 ]; then
+		local jlock
+
 		_jlock jlock
 		rm -rf "${jlock}" 2>/dev/null || :
 	fi
@@ -7826,6 +7830,7 @@ for _var in ${_BUILTIN_ONLY}; do
 		eval "${_var}() { return 0; }"
 	fi
 done
+unset _BUILTIN_ONLY
 if [ "$(type setproctitle 2>/dev/null)" = "setproctitle is a shell builtin" ]; then
 	setproctitle() {
 		PROC_TITLE="$@"
