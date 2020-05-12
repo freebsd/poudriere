@@ -267,6 +267,7 @@ fi
 	jot 10 0 > "${TMP}"
 
 	expectedfds=$(procstat -f $$|wc -l)
+	procstat -f $$ >&2
 	i=0
 	while mapfile_read_loop_redir n; do
 		assert "$i" "$n" "value should match 1 $i"
@@ -328,6 +329,8 @@ fi
 	done < "${TMP}"
 	assert 10 "$i"
 	fds=$(procstat -f $$|wc -l)
+	echo "-" >&2
+	procstat -f $$ >&2
 	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 2"
 }
 
@@ -343,6 +346,7 @@ fi
 	done > "${TMP}"
 
 	expectedfds=$(procstat -f $$|wc -l)
+	procstat -f $$ >&2
 	i=0
 	while IFS= mapfile_read_loop_redir n y; do
 		echo "'${n}' '${y}  '"
@@ -352,6 +356,8 @@ fi
 	done < "${TMP}"
 	fds=$(procstat -f $$|wc -l)
 	assert 10 "${i}"
+	echo "-" >&2
+	procstat -f $$ >&2
 	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 3"
 }
 
@@ -367,6 +373,7 @@ fi
 	done > "${TMP}"
 
 	expectedfds=$(procstat -f $$|wc -l)
+	procstat -f $$ >&2
 	i=0
 	while mapfile_read_loop_redir n y; do
 		echo "'${n}' '${y}'"
@@ -376,6 +383,8 @@ fi
 	done < "${TMP}"
 	assert 10 "$i"
 	fds=$(procstat -f $$|wc -l)
+	echo "-" >&2
+	procstat -f $$ >&2
 	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 4"
 }
 
@@ -391,6 +400,7 @@ fi
 	done > "${TMP}"
 
 	expectedfds=$(procstat -f $$|wc -l)
+	procstat -f $$ >&2
 	i=0
 	while mapfile_read_loop_redir n y; do
 		echo "'${n}' '${y}'"
@@ -401,6 +411,8 @@ fi
 		i=$((i + 1))
 	done
 	fds=$(procstat -f $$|wc -l)
+	echo "-" >&2
+	procstat -f $$ >&2
 	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 5"
 }
 
@@ -416,6 +428,7 @@ fi
 	done > "${TMP}"
 
 	expectedfds=$(procstat -f $$|wc -l)
+	procstat -f $$ >&2
 	i=0
 	cat "${TMP}" | while mapfile_read_loop_redir n y; do
 		echo "'${n}' '${y}'"
@@ -426,6 +439,8 @@ fi
 		i=$((i + 1))
 	done
 	fds=$(procstat -f $$|wc -l)
+	echo "-" >&2
+	procstat -f $$ >&2
 	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 6"
 }
 
@@ -443,6 +458,7 @@ fi
 	done > "${TMP}"
 
 	expectedfds=$(procstat -f $$|wc -l)
+	procstat -f $$ >&2
 	i=0
 	while mapfile_read_loop_redir n y; do
 		echo "OUTER 1: n=$n y=$y" >&2
@@ -464,6 +480,8 @@ fi
 		i=$((i + 1))
 	done
 	fds=$(procstat -f $$|wc -l)
+	echo "-" >&2
+	procstat -f $$ >&2
 	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 7"
 	rm -rf "${TDIR}"
 }
