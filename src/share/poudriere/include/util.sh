@@ -714,7 +714,7 @@ write_pipe() {
 	local -; set +x
 	[ $# -ge 1 ] || eargs write_pipe fifo [write_args]
 	local fifo="$1"
-	local ret siginfo_trap
+	local ret tmp
 	shift
 
 	# If this is not a pipe then return an error immediately
@@ -723,9 +723,12 @@ write_pipe() {
 		return 2
 	fi
 
-	msg_dev "write_pipe ${fifo}: $@"
 	ret=0
-	echo "$@" > "${fifo}" || ret=$?
+	msg_dev "write_pipe ${fifo}: $@"
+	unset tmp
+	while trap_ignore_block tmp INFO; do
+		echo "$@" > "${fifo}" || ret=$?
+	done
 
 	if [ "${ret}" -ne 0 ]; then
 		msg_warn "write_pipe FAILED to send to ${fifo} (ret: ${ret}): $*"
