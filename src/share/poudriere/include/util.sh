@@ -466,7 +466,7 @@ read_blocking() {
 # builtin does.
 read_blocking_line() {
 	[ $# -ge 1 ] || eargs read_blocking_line read_args
-	local _ret
+	local _ret IFS
 
 	while :; do
 		_ret=0
