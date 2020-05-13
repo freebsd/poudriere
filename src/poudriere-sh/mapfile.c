@@ -85,6 +85,7 @@ md_close(struct mapped_data *md)
 	free(md->file);
 	md->file = NULL;
 	if (md->fp != NULL) {
+		assert(fileno(md->fp) >= 10);
 		fclose(md->fp);
 		md->fp = NULL;
 	}
@@ -192,6 +193,7 @@ mapfilecmd(int argc, char **argv)
 			errno = serrno;
 			err(EX_NOINPUT, "%s", "fcntl");
 		}
+		assert(newfd >= 10);
 		(void)fclose(fp);
 		if ((fp = fdopen(newfd, dupmodes)) == NULL) {
 			serrno = errno;
