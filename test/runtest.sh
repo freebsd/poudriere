@@ -53,7 +53,7 @@ locked_mkdir.sh) : ${TIMEOUT:=120}
 esac
 : ${TIMEOUT:=90}
 
-[ -t 0 ] && export FORCE_COLORS=1
+[ "${am_check}" -eq 0 ] && [ -t 0 ] && export FORCE_COLORS=1
 exec < /dev/null
 
 # Need to trim environment of anything that may taint our top-level port var
