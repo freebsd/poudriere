@@ -29,6 +29,7 @@
 #include <sys/time.h>
 
 #include <assert.h>
+#include <err.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -295,7 +296,7 @@ mapfile_readcmd(int argc, char **argv)
 	    line = malloc(linecap);
 	    if (line == NULL) {
 		    INTON;
-		    errx(EX_TEMPFAIL, "%s", "malloc");
+		    err(EX_TEMPFAIL, "malloc");
 	    }
 	}
 

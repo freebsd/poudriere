@@ -243,7 +243,7 @@ rm_tree(char **argv)
 		sigaction(SIGINFO, &info_oact, NULL);
 		INTON;
 #endif
-		err(1, "%s", "fts_open");
+		err(1, "fts_open");
 	}
 	while ((p = fts_read(fts)) != NULL) {
 #ifdef SHELL
@@ -396,7 +396,7 @@ err:
 		sigaction(SIGINFO, &info_oact, NULL);
 		INTON;
 #endif
-		err(1, "%s", "fts_read");
+		err(1, "fts_read");
 	}
 	fts_close(fts);
 }
@@ -580,7 +580,7 @@ check(const char *path, const char *name, struct stat *sp)
 			sigaction(SIGINFO, &info_oact, NULL);
 			INTON;
 #endif
-			err(1, "%s", "fflagstostr");
+			err(1, "fflagstostr");
 		}
 		if (Pflag) {
 #ifdef SHELL

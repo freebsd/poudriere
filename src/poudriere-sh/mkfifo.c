@@ -96,7 +96,7 @@ main(int argc, char *argv[])
 		errno = 0;
 		if ((modep = setmode(modestr)) == NULL) {
 			if (errno)
-				err(1, "%s", "setmode");
+				err(1, "setmode");
 			errx(1, "invalid file mode: %s", modestr);
 		}
 		fifomode = getmode(modep, BASEMODE);

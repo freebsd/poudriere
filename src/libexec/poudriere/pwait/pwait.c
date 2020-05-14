@@ -154,7 +154,7 @@ main(int argc, char *argv[])
 		trap_pop(SIGINFO, &info_oact);
 		INTON;
 #endif
-		err(EX_OSERR, "%s", "kqueue");
+		err(EX_OSERR, "kqueue");
 	}
 
 	e = malloc((argc + tflag) * sizeof(struct kevent));
@@ -164,7 +164,7 @@ main(int argc, char *argv[])
 		trap_pop(SIGINFO, &info_oact);
 		INTON;
 #endif
-		err(EX_OSERR, "%s", "malloc");
+		err(EX_OSERR, "malloc");
 	}
 	nleft = 0;
 	for (n = 0; n < argc; n++) {
@@ -222,7 +222,7 @@ main(int argc, char *argv[])
 			trap_pop(SIGINFO, &info_oact);
 			INTON;
 #endif
-			err(EX_OSERR, "%s", "kevent");
+			err(EX_OSERR, "kevent");
 		}
 		/* Ignore SIGALRM to not interrupt kevent(2). */
 #ifdef SHELL
@@ -239,7 +239,7 @@ main(int argc, char *argv[])
 			trap_pop(SIGALRM, &alrm_oact);
 			INTON;
 #endif
-			err(EX_OSERR, "%s", "setitimer");
+			err(EX_OSERR, "setitimer");
 		}
 	}
 	while (nleft > 0) {
@@ -255,7 +255,7 @@ main(int argc, char *argv[])
 			}
 			INTON;
 #endif
-			err(EX_OSERR, "%s", "kevent");
+			err(EX_OSERR, "kevent");
 		}
 		for (i = 0; i < n; i++) {
 			if (e[i].filter == EVFILT_SIGNAL) {

@@ -90,7 +90,7 @@ main(int argc, char **argv)
 		trap_pop(SIGINFO, &oinfo);
 		INTON;
 #endif
-		err(EXIT_FAILURE, "%s", "mq_open");
+		err(EXIT_FAILURE, "mq_open");
 	}
 	if (set)
 		snprintf(out, sizeof(out), "%s", argv[0]);

@@ -230,7 +230,7 @@ stime_arg1(const char *arg, struct timespec *tvp)
 
 	now = time(NULL);
 	if ((t = localtime(&now)) == NULL)
-		err(1, "%s", "localtime");
+		err(1, "localtime");
 					/* [[CC]YY]MMDDhhmm[.SS] */
 	if ((p = strchr(arg, '.')) == NULL)
 		t->tm_sec = 0;		/* Seconds defaults to 0. */
@@ -292,7 +292,7 @@ stime_arg2(const char *arg, int year, struct timespec *tvp)
 
 	now = time(NULL);
 	if ((t = localtime(&now)) == NULL)
-		err(1, "%s", "localtime");
+		err(1, "localtime");
 
 	t->tm_mon = ATOI2(arg);		/* MMDDhhmm[yy] */
 	--t->tm_mon;			/* Convert from 01-12 to 00-11 */
