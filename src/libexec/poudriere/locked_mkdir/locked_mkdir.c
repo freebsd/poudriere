@@ -60,10 +60,11 @@
 #define main locked_mkdircmd
 #include "bltin/bltin.h"
 #include "helpers.h"
+#undef FILE
 #undef fclose
+#undef fdopen
 #undef fopen
 #undef fprintf
-#undef FILE
 #endif
 
 static int dirfd = -1;

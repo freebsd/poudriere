@@ -41,6 +41,29 @@ void trap_pop(int signo, struct sigdata *sd);
 
 #ifdef SHELL
 #include <errno.h>
+
+/*
+ * fprintf(stderr) and fprintf(stdout) are defined special to use
+ * the shell buffering.
+ * Any other functions can use stdio as long as they undef what they
+ * use from here. No mixing between stdio functions and the shell
+ * builtins can be done.
+ */
+#undef FILE
+#define FILE MUST_UNDEF_STDIO_FUNCTIONS_AND_NOT_MIX_WITH_FPRINTF
+#define fclose MUST_UNDEF_STDIO_FUNCTIONS_AND_NOT_MIX_WITH_FPRINTF
+#define fdclose MUST_UNDEF_STDIO_FUNCTIONS_AND_NOT_MIX_WITH_FPRINTF
+#define fdcloseall MUST_UNDEF_STDIO_FUNCTIONS_AND_NOT_MIX_WITH_FPRINTF
+#define fdopen MUST_UNDEF_STDIO_FUNCTIONS_AND_NOT_MIX_WITH_FPRINTF
+#define fmemopen MUST_UNDEF_STDIO_FUNCTIONS_AND_NOT_MIX_WITH_FPRINTF
+#define fopen MUST_UNDEF_STDIO_FUNCTIONS_AND_NOT_MIX_WITH_FPRINTF
+#define freopen MUST_UNDEF_STDIO_FUNCTIONS_AND_NOT_MIX_WITH_FPRINTF
+
+#define err_set_exit notimplemented
+#define err_set_file notimplemented
+#define verr notimplemented
+#define verrc notimplemented
+#define verrx notimplemented
 #undef warn
 #define warn(fmt, ...) warning(fmt ": %s", ##__VA_ARGS__, strerror(errno))
 #undef errx

@@ -51,8 +51,17 @@
 #define debug(...)
 #endif
 
-/* Defined here to avoid bltin.h redefining FILE */
-static FILE *fp = NULL;
+#include "bltin/bltin.h"
+#include "helpers.h"
+#undef FILE
+#undef fclose
+#undef fdopen
+#undef fflush
+#undef fopen
+#undef fputs
+#include "trap.h"
+#include "var.h"
+
 #define MAX_FILES 256
 struct mapped_data {
 	FILE *fp;
@@ -61,17 +70,6 @@ struct mapped_data {
 	bool linebuffered;
 };
 static struct mapped_data *mapped_files[MAX_FILES] = {0};
-/* Avoid remallocing every call */
-static char *line = NULL;
-/* Start a bit larger to avoid needing reallocs in children. */
-static size_t linecap = 4096;
-
-#include "bltin/bltin.h"
-#include "helpers.h"
-#undef fflush
-#undef fputs
-#include "trap.h"
-#include "var.h"
 
 static void
 md_close(struct mapped_data *md)
@@ -119,6 +117,7 @@ md_find(const char *handle)
 int
 mapfilecmd(int argc, char **argv)
 {
+	FILE *fp;
 	struct mapped_data *md;
 	struct stat sb;
 	const char *file, *var_return, *modes, *p;
@@ -230,6 +229,10 @@ mapfile_readcmd(int argc, char **argv)
 	ssize_t linelen;
 	double timeout;
 	int ch, ret, serrno, sig, tflag;
+	/* Avoid remallocing every call */
+	static char *line = NULL;
+	/* Start a bit larger to avoid needing reallocs in children. */
+	static size_t linecap = 4096;
 
 	ifs = NULL;
 	timeout = 0;
