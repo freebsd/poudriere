@@ -41,7 +41,10 @@ void trap_pop(int signo, struct sigdata *sd);
 
 #ifdef SHELL
 #include <errno.h>
-#define err(exitstatus, fmt, ...) error(fmt ": %s", __VA_ARGS__, strerror(errno))
+#undef errx
+#define errx(exitstatus, ...) errorwithstatus(exitstatus, __VA_ARGS__)
+#define err(exitstatus, fmt, ...) \
+    errorwithstatus(exitstatus, fmt ": %s", __VA_ARGS__, strerror(errno))
 #define getenv(var) bltinlookup(var, 1)
 
 #include "shell.h"

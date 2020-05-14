@@ -108,9 +108,9 @@ md_find(const char *handle)
 		errx(EX_DATAERR, "Invalid handle '%s'", handle);
 	md = mapped_files[idx];
 	if (md == NULL || md->handle != idx)
-		errx(EX_DATAERR, "Invalid handle '%s'", handle);
+		errx(EBADF, "Invalid handle '%s'", handle);
 	if (md->fp == NULL)
-		errx(EX_DATAERR, "handle '%s' is not opened", handle);
+		errx(EBADF, "handle '%s' is not opened", handle);
 	return (md);
 }
 
@@ -126,7 +126,7 @@ mapfilecmd(int argc, char **argv)
 
 	fp = NULL;
 	if (argc != 3 && argc != 4)
-		errx(EXIT_USAGE, "%s", "Usage: mapfile <handle_name> <file> [modes]");
+		errx(EX_USAGE, "%s", "Usage: mapfile <handle_name> <file> [modes]");
 	nextidx = -1;
 	for (idx = 0; idx < MAX_FILES; idx++) {
 		if (mapped_files[idx] == NULL) {
@@ -232,7 +232,7 @@ mapfile_readcmd(int argc, char **argv)
 	tflag = 0;
 
 	if (argc < 2)
-		errx(EXIT_USAGE, "%s", "Usage: mapfile_read <handle> "
+		errx(EX_USAGE, "%s", "Usage: mapfile_read <handle> "
 		    "[-t timeout] <output_var> ...");
 
 	handle = argv[1];
@@ -277,7 +277,7 @@ mapfile_readcmd(int argc, char **argv)
 	argv = argptr;
 
 	if (argc < 1)
-		errx(EXIT_USAGE, "%s", "Usage: mapfile_read <handle> "
+		errx(EX_USAGE, "%s", "Usage: mapfile_read <handle> "
 		    "[-t timeout] <output_var> ...");
 
 	INTOFF;
@@ -434,7 +434,7 @@ mapfile_closecmd(int argc, char **argv)
 	const char *handle;
 
 	if (argc != 2)
-		errx(EXIT_USAGE, "%s", "Usage: mapfile_close <handle>");
+		errx(EX_USAGE, "%s", "Usage: mapfile_close <handle>");
 	handle = argv[1];
 	INTOFF;
 	md = md_find(handle);
@@ -452,7 +452,7 @@ mapfile_writecmd(int argc, char **argv)
 	int serrno;
 
 	if (argc != 3)
-		errx(EXIT_USAGE, "%s", "Usage: mapfile_write <handle> <data>");
+		errx(EX_USAGE, "%s", "Usage: mapfile_write <handle> <data>");
 
 	INTOFF;
 	handle = argv[1];

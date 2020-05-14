@@ -33,6 +33,7 @@
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sysexits.h>
 
 #include "bltin/bltin.h"
 #include "syntax.h"

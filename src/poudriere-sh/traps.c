@@ -67,7 +67,7 @@ trap_pushcmd(int argc, char **argv)
 	int nextidx, idx, signo;
 
 	if (argc != 3)
-		errx(EXIT_USAGE, "%s", "Usage: trap_push <signal> <var_return>");
+		errx(EX_USAGE, "%s", "Usage: trap_push <signal> <var_return>");
 
 	if ((signo = signame_to_signum(argv[1])) == -1)
 		errx(EX_DATAERR, "Invalid signal %s", argv[1]);
@@ -137,7 +137,7 @@ trap_popcmd(int argc, char **argv)
 	int signo, idx;
 
 	if (argc != 3)
-		errx(EXIT_USAGE, "%s", "Usage: trap_popcmd <signal> <saved_trap>");
+		errx(EX_USAGE, "%s", "Usage: trap_popcmd <signal> <saved_trap>");
 
 	if ((signo = signame_to_signum(argv[1])) == -1)
 		errx(EX_DATAERR, "Invalid signal %s", argv[1]);
