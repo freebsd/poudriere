@@ -185,6 +185,9 @@ aecho() {
 	[ $# -ge 2 ] || eargs aecho result lineinfo expected actual msg
 	local result="$1"
 	local lineinfo="$2"
+	local mypid
+
+	: ${mypid:=$(sh -c 'echo $PPID')}
 
 	if [ "$#" -gt 3 ]; then
 		# Failure
@@ -193,15 +196,15 @@ aecho() {
 		local INDENT
 		shift 4
 		INDENT=">>   "
-		printf "> %-4s %s: %s\n${INDENT}expected '%s'\n${INDENT}actual   '%s'\n" \
-			"${result}" "${lineinfo}" \
+		printf "%d> %-4s %s: %s\n${INDENT}expected '%s'\n${INDENT}actual '%s'\n" \
+			"${mypid}" "${result}" "${lineinfo}" \
 			"$(echo "$@" | cat -ev | sed '2,$s,^,	,')" \
 			"$(echo "${expected}" | cat -ev | sed '2,$s,^,	,')" \
 			"$(echo "${actual}" | cat -ev | sed '2,$s,^,	,')"
 	elif [ "$#" -eq 3 ]; then
 		printf "> %-4s %s: %s\n" "${result}" "${lineinfo}" "${3}"
 	else
-		printf "> %-4s %s\n" "${result}" "${lineinfo}"
+		printf "%d> %-4s %s\n" "${mypid}" "${result}" "${lineinfo}"
 	fi >&2
 }
 
