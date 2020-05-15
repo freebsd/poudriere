@@ -119,11 +119,11 @@ false &&
 # Recursive test
 {
 	lock_acquire TEST ${SLEEPTIME}
-	assert 0 $? "$0:$LINENO: lock_acquire(TEST) did not succeed"
+	assert 0 $? "lock_acquire(TEST) did not succeed"
 	lock_acquire TEST ${SLEEPTIME}
-	assert 0 $? "$0:$LINENO: lock_acquire(TEST) did not succeed recursively"
+	assert 0 $? "lock_acquire(TEST) did not succeed recursively"
 	lock_release TEST
-	assert 0 $? "$0:$LINENO: lock_release(TEST) did not succeed recursively"
+	assert 0 $? "lock_release(TEST) did not succeed recursively"
 	lock_release TEST
-	assert 0 $? "$0:$LINENO: lock_release(TEST) did not succeed"
+	assert 0 $? "lock_release(TEST) did not succeed"
 }

@@ -28,10 +28,10 @@ setup_src() {
 	setup_src
 	DST_DIR=$(mktemp -udt poudriere.do_clone)
 	do_clone "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: do_clone"
+	assert 0 $? "do_clone"
 
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: diff"
+	assert 0 $? "diff"
 	rm -rf "${SRC_DIR}" "${DST_DIR}"
 }
 
@@ -42,13 +42,13 @@ setup_src() {
 	mkdir -p "${DST_DIR}"
 	touch "${DST_DIR}/dont-delete-me"
 	do_clone -x "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: do_clone"
+	assert 0 $? "do_clone"
 
 	[ -f "${DST_DIR}/dont-delete-me" ]
-	assert 0 $? "$0:$LINENO: file should exist"
+	assert 0 $? "file should exist"
 
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: diff"
+	assert 0 $? "diff"
 	rm -rf "${SRC_DIR}" "${DST_DIR}"
 }
 
@@ -59,13 +59,13 @@ setup_src() {
 	mkdir -p "${DST_DIR}"
 	touch "${DST_DIR}/delete-me"
 	do_clone_del "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: do_clone_del"
+	assert 0 $? "do_clone_del"
 
 	[ -f "${DST_DIR}/delete-me" ]
-	assert_not 0 $? "$0:$LINENO: file should not exist"
+	assert_not 0 $? "file should not exist"
 
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: diff"
+	assert 0 $? "diff"
 	rm -rf "${SRC_DIR}" "${DST_DIR}"
 }
 
@@ -74,10 +74,10 @@ setup_src() {
 	setup_src
 	DST_DIR=$(mktemp -udt poudriere.do_clone)
 	do_clone -rx "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: do_clone"
+	assert 0 $? "do_clone"
 
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: diff"
+	assert 0 $? "diff"
 	rm -rf "${SRC_DIR}" "${DST_DIR}"
 }
 
@@ -91,22 +91,22 @@ setup_src() {
 	touch "${SRC_DIR}/blah"
 	DST_DIR=$(mktemp -udt poudriere.do_clone)
 	do_clone "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: do_clone"
+	assert 0 $? "do_clone"
 
 	[ -f "${DST_DIR}/.cpignore" ]
-	assert 0 $? "$0:$LINENO: .cpignore should be copied"
+	assert 0 $? ".cpignore should be copied"
 
 	[ -f "${DST_DIR}/nested/blah" ]
-	assert 0 $? "$0:$LINENO: nested/blah should be copied"
+	assert 0 $? "nested/blah should be copied"
 
 	[ -f "${DST_DIR}/blah" ]
-	assert 0 $? "$0:$LINENO: blah should be copied"
+	assert 0 $? "blah should be copied"
 
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: diff"
+	assert 0 $? "diff"
 
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: diff"
+	assert 0 $? "diff"
 
 	rm -rf "${SRC_DIR}" "${DST_DIR}"
 }
@@ -121,26 +121,26 @@ setup_src() {
 	touch "${SRC_DIR}/blah"
 	DST_DIR=$(mktemp -udt poudriere.do_clone)
 	do_clone -x "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: do_clone"
+	assert 0 $? "do_clone"
 
 	[ -f "${DST_DIR}/nested/.cpignore" ]
-	assert_not 0 $? "$0:$LINENO: nested/.cpignore should not be copied"
+	assert_not 0 $? "nested/.cpignore should not be copied"
 
 	[ -f "${DST_DIR}/nested/blah" ]
-	assert_not 0 $? "$0:$LINENO: nested/blah should not be copied"
+	assert_not 0 $? "nested/blah should not be copied"
 
 	[ -f "${DST_DIR}/blah" ]
-	assert 0 $? "$0:$LINENO: blah should still be copied"
+	assert 0 $? "blah should still be copied"
 
 
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
 	# Fails due to missing blah/.cpignore files
-	assert 1 $? "$0:$LINENO: diff"
+	assert 1 $? "diff"
 
 	rm -f "${SRC_DIR}/nested/blah"
 	rm -f "${SRC_DIR}/nested/.cpignore"
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: diff"
+	assert 0 $? "diff"
 
 	rm -rf "${SRC_DIR}" "${DST_DIR}"
 }
@@ -155,26 +155,26 @@ setup_src() {
 	touch "${SRC_DIR}/blah"
 	DST_DIR=$(mktemp -udt poudriere.do_clone)
 	do_clone -rx "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: do_clone"
+	assert 0 $? "do_clone"
 
 	[ -f "${DST_DIR}/nested/.cpignore" ]
-	assert_not 0 $? "$0:$LINENO: nested/.cpignore should not be copied"
+	assert_not 0 $? "nested/.cpignore should not be copied"
 
 	[ -f "${DST_DIR}/nested/blah" ]
-	assert_not 0 $? "$0:$LINENO: nested/blah should not be copied"
+	assert_not 0 $? "nested/blah should not be copied"
 
 	[ -f "${DST_DIR}/blah" ]
-	assert 0 $? "$0:$LINENO: blah should still be copied"
+	assert 0 $? "blah should still be copied"
 
 
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
 	# Fails due to missing blah/.cpignore files
-	assert 1 $? "$0:$LINENO: diff"
+	assert 1 $? "diff"
 
 	rm -f "${SRC_DIR}/nested/blah"
 	rm -f "${SRC_DIR}/nested/.cpignore"
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: diff"
+	assert 0 $? "diff"
 
 	rm -rf "${SRC_DIR}" "${DST_DIR}"
 }
@@ -189,26 +189,26 @@ setup_src() {
 	touch "${SRC_DIR}/blah"
 	DST_DIR=$(mktemp -udt poudriere.do_clone)
 	do_clone -rx "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: do_clone"
+	assert 0 $? "do_clone"
 
 	[ -f "${DST_DIR}/nested/.cpignore" ]
-	assert_not 0 $? "$0:$LINENO: nested/.cpignore should not be copied"
+	assert_not 0 $? "nested/.cpignore should not be copied"
 
 	[ -f "${DST_DIR}/nested/blah" ]
-	assert_not 0 $? "$0:$LINENO: nested/blah should not be copied"
+	assert_not 0 $? "nested/blah should not be copied"
 
 	[ -f "${DST_DIR}/blah" ]
-	assert 0 $? "$0:$LINENO: blah should still be copied"
+	assert 0 $? "blah should still be copied"
 
 
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
 	# Fails due to missing blah/.cpignore files
-	assert 1 $? "$0:$LINENO: diff"
+	assert 1 $? "diff"
 
 	rm -f "${SRC_DIR}/nested/blah"
 	rm -f "${SRC_DIR}/nested/.cpignore"
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: diff"
+	assert 0 $? "diff"
 
 	rm -rf "${SRC_DIR}" "${DST_DIR}"
 }
@@ -224,25 +224,25 @@ setup_src() {
 	touch "${SRC_DIR}/blah"
 	DST_DIR=$(mktemp -udt poudriere.do_clone)
 	do_clone -X ".cpignore" "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: do_clone"
+	assert 0 $? "do_clone"
 
 	[ -f "${DST_DIR}/.cpignore" ]
-	assert_not 0 $? "$0:$LINENO: .cpignore should not be copied"
+	assert_not 0 $? ".cpignore should not be copied"
 
 	[ -f "${DST_DIR}/blah" ]
-	assert_not 0 $? "$0:$LINENO: blah should not be copied"
+	assert_not 0 $? "blah should not be copied"
 
 	[ -f "${DST_DIR}/nested/blah" ]
-	assert 0 $? "$0:$LINENO: nested/blah should still be copied"
+	assert 0 $? "nested/blah should still be copied"
 
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
 	# Fails due to missing blah/.cpignore files
-	assert 1 $? "$0:$LINENO: diff"
+	assert 1 $? "diff"
 
 	rm -f "${SRC_DIR}/blah"
 	rm -f "${SRC_DIR}/.cpignore"
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: diff"
+	assert 0 $? "diff"
 
 	rm -rf "${SRC_DIR}" "${DST_DIR}"
 }
@@ -259,25 +259,25 @@ setup_src() {
 	touch "${SRC_DIR}/blah"
 	DST_DIR=$(mktemp -udt poudriere.do_clone)
 	do_clone -X "${CPIGNORE}" "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: do_clone"
+	assert 0 $? "do_clone"
 
 	[ -f "${DST_DIR}/.cpignore" ]
-	assert 0 $? "$0:$LINENO: .cpignore should still be copied"
+	assert 0 $? ".cpignore should still be copied"
 
 	[ -f "${DST_DIR}/blah" ]
-	assert_not 0 $? "$0:$LINENO: blah should not be copied"
+	assert_not 0 $? "blah should not be copied"
 
 	[ -f "${DST_DIR}/nested/blah" ]
-	assert_not 0 $? "$0:$LINENO: nested/blah should not be copied"
+	assert_not 0 $? "nested/blah should not be copied"
 
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
 	# Fails due to missing blah file
-	assert 1 $? "$0:$LINENO: diff"
+	assert 1 $? "diff"
 
 	rm -f "${SRC_DIR}/blah"
 	rm -f "${SRC_DIR}/nested/blah"
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: diff"
+	assert 0 $? "diff"
 
 	rm -rf "${SRC_DIR}" "${DST_DIR}" "${CPIGNORE}"
 }
@@ -294,25 +294,25 @@ setup_src() {
 	touch "${SRC_DIR}/blah"
 	DST_DIR=$(mktemp -udt poudriere.do_clone)
 	do_clone -r -X "${CPIGNORE}" "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: do_clone"
+	assert 0 $? "do_clone"
 
 	[ -f "${DST_DIR}/.cpignore" ]
-	assert 0 $? "$0:$LINENO: .cpignore should still be copied"
+	assert 0 $? ".cpignore should still be copied"
 
 	[ -f "${DST_DIR}/blah" ]
-	assert_not 0 $? "$0:$LINENO: blah should not be copied"
+	assert_not 0 $? "blah should not be copied"
 
 	[ -f "${DST_DIR}/nested/blah" ]
-	assert_not 0 $? "$0:$LINENO: nested/blah should not be copied"
+	assert_not 0 $? "nested/blah should not be copied"
 
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
 	# Fails due to missing blah file
-	assert 1 $? "$0:$LINENO: diff"
+	assert 1 $? "diff"
 
 	rm -f "${SRC_DIR}/blah"
 	rm -f "${SRC_DIR}/nested/blah"
 	diff -urN "${SRC_DIR}" "${DST_DIR}"
-	assert 0 $? "$0:$LINENO: diff"
+	assert 0 $? "diff"
 
 	rm -rf "${SRC_DIR}" "${DST_DIR}" "${CPIGNORE}"
 }

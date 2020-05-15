@@ -79,57 +79,86 @@ msg_dev() {
 	msg "[DEV] $@" >&2
 }
 
-assert() {
-	[ $# -eq 3 ] || eargs assert expected actual msg
-	local expected="$(echo "$1" | cat -ev)"
-	local actual="$(echo "$2" | cat -ev)"
-	local msg="$3"
+_assert() {
+	local -; set +x
+	[ $# -ge 3 ] || eargs assert lineinfo expected actual msg
+	local lineinfo="$1"
+	local expected="$2"
+	local actual="$3"
+	shift 3
 
 	: ${EXITVAL:=0}
 
 	EXITVAL=$((${EXITVAL:-0} + 1))
 
 	if [ "${actual}" != "${expected}" ]; then
-		aecho "${msg}: expected: '${expected}', actual: '${actual}'"
+		aecho FAIL "${lineinfo}" "${expected}" "${actual}" "$@"
 		exit ${EXITVAL}
 	fi
+	aecho OK "${lineinfo}" #"${msg}: expected: '${expected}', actual: '${actual}'"
 
 	return 0
 
 }
+alias assert='_assert "$0:$LINENO"'
 
-assert_not() {
-	[ $# -eq 3 ] || eargs assert_not notexpected actual msg
-	local notexpected="$(echo "$1" | cat -ev)"
-	local actual="$(echo "$2" | cat -ev)"
-	local msg="$3"
+_assert_not() {
+	local -; set +x
+	[ $# -ge 3 ] || eargs assert_not lineinfo notexpected actual msg
+	local lineinfo="$1"
+	local notexpected="$2"
+	local actual="$3"
+	shift 3
 
 	: ${EXITVAL:=0}
 
 	EXITVAL=$((${EXITVAL:-0} + 1))
 
 	if [ "${actual}" = "${notexpected}" ]; then
-		aecho "${msg}: notexpected: '${notexpected}', actual: '${actual}'"
+		aecho FAIL "${lineinfo}" "!${notexpected}" "${actual}" "$@"
 		exit ${EXITVAL}
 	fi
+	aecho OK "${lineinfo}" # "${msg}: notexpected: '${notexpected}', actual: '${actual}'"
 
 	return 0
 
 }
+alias assert_not='_assert_not "$0:$LINENO"'
 
-assert_ret() {
-	local expected="$1"
+_assert_ret() {
+	local lineinfo="$1"
+	local expected="$2"
+	shift 2
 	local ret
-
-	shift
 
 	ret=0
 	"$@" || ret=$?
-	assert ${expected} ${ret} "$*"
+	_assert "${lineinfo}" "${expected}" "${ret}" "Bad exit status: $@"
 }
+alias assert_ret='_assert_ret "$0:$LINENO"'
 
 aecho() {
-	echo "$@" >&2
+	local -; set +x
+	[ $# -ge 2 ] || eargs aecho result lineinfo expected actual msg
+	local result="$1"
+	local lineinfo="$2"
+
+	if [ $# -gt 2 ]; then
+		# Failure
+		local expected="$3"
+		local actual="$4"
+		local INDENT
+		shift 4
+		INDENT=">>   "
+		printf "> %-4s %s: %s\n${INDENT}expected '%s'\n${INDENT}actual '%s'\n" \
+			"${result}" "${lineinfo}" \
+			"$(echo "$@" | cat -ev | sed '2,$s,^,	,')" \
+			"$(echo "${expected}" | cat -ev | sed '2,$s,^,	,')" \
+			"$(echo "${actual}" | cat -ev | sed '2,$s,^,	,')"
+	else
+		# Success
+		printf "> %-4s %s\n" "${result}" "${lineinfo}"
+	fi >&2
 }
 
 rm() {

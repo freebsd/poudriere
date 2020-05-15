@@ -218,19 +218,19 @@ fi
 
 	echo -n "blah" > "${TMP}"
 	mapfile_read "${file_in}" output
-	assert 1 "$?" "$0:$LINENO: read without newline should return EOF"
-	assert "blah" "${output}" "$0:$LINENO: output should match"
+	assert 1 "$?" "read without newline should return EOF"
+	assert "blah" "${output}" "output should match"
 
 	if mapfile_keeps_file_open_on_eof "${file_in}"; then
 		echo "" >> "${TMP}"
 		mapfile_read "${file_in}" output
-		assert 0 "$?" "$0:$LINENO: read after newline (without rewind) should return success"
-		assert '' "${output}" "$0:$LINENO: output should be empty"
+		assert 0 "$?" "read after newline (without rewind) should return success"
+		assert '' "${output}" "output should be empty"
 
 		echo "foo" >> "${TMP}"
 		mapfile_read "${file_in}" output
-		assert 0 "$?" "$0:$LINENO: read after newline (without rewind) should succeed"
-		assert 'foo' "${output}" "$0:$LINENO: output should match"
+		assert 0 "$?" "read after newline (without rewind) should succeed"
+		assert 'foo' "${output}" "output should match"
 	fi
 	assert_ret 0 mapfile_close "${file_in}"
 }
@@ -403,7 +403,7 @@ fi
 	i=0
 	until [ ${i} -eq 10 ]; do
 		[ -e "${TDIR:?}/${i}" ]
-		assert 0 $? "inner loop did not run i=$i; found: $(/bin/ls ${TDIR}):"
+		assert 0 $? "inner loop did not run i=$i; found: $(/bin/ls ${TDIR})"
 		i=$((i + 1))
 	done
 	fds=$(procstat -f $$|wc -l)

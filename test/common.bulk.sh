@@ -1,6 +1,10 @@
 set -e
 # Common setup for bulk test runs
 : ${ALL:=0}
+# Avoid injail() for port_var_fetch
+INJAIL_HOST=1
+
+. common.sh
 
 # Strip away @DEFAULT if it is the default FLAVOR
 fix_default_flavor() {
@@ -548,11 +552,6 @@ assert_bulk_build_results() {
 
 }
 
-# Avoid injail() for port_var_fetch
-INJAIL_HOST=1
-
-. common.sh
-
 SUDO=
 if [ $(id -u) -ne 0 ]; then
 	if ! which sudo >/dev/null 2>&1; then
@@ -708,6 +707,6 @@ if [ -n "${SKIPPEDPORTS}" ]; then
 	done
 fi
 fetch_global_port_vars || err 99 "Unable to fetch port vars"
-assert_not "null" "${P_PORTS_FEATURES-null}" "$0:$LINENO: fetch_global_port_vars should work"
+assert_not "null" "${P_PORTS_FEATURES-null}" "fetch_global_port_vars should work"
 echo "Building: $(echo ${LISTPORTS_EXPANDED})"
 set +e
