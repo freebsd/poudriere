@@ -38,6 +38,7 @@ static char sccsid[] = "@(#)eval.c	8.9 (Berkeley) 6/8/95";
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/bin/sh/eval.c 340284 2018-11-09 14:58:24Z jilles $");
 
+#include <assert.h>
 #include <paths.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -840,6 +841,9 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 	int do_clearcmdentry;
 	const char *path = pathval();
 	int i;
+#ifndef NDEBUG
+	int savesuppressint;
+#endif
 
 	/* First expand the arguments. */
 	TRACE(("evalcommand(%p, %d) called\n", (void *)cmd, flags));
@@ -1104,8 +1108,18 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 		argptr = argv + 1;
 		nextopt_optptr = NULL;		/* initialize nextopt */
 		builtin_flags = flags;
+#ifndef NDEBUG
+		savesuppressint = suppressint;
+#endif
 		exitstatus = (*builtinfunc[cmdentry.u.index])(argc, argv);
 		flushall();
+#ifndef NDEBUG
+		if (suppressint > savesuppressint &&
+		    cmdentry.u.index != DOTCMD) {
+			error("leaked INTOFF/INTON %d != %ld",
+			    savesuppressint, suppressint);
+		}
+#endif
 		if (outiserror(out1)) {
 			warning("write error on stdout");
 			if (exitstatus == 0 || exitstatus == 1)

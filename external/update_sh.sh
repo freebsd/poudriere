@@ -61,3 +61,4 @@ find "${DESTDIR}" -name '*.c' -o -name '*.h' -o -name '*.def' -o -name 'mk*'
 } | sed -e '$ ! s,$, \\,' \
     > external/sh/Makefile.sources
 git add -f external/sh/Makefile.sources
+find external/patches/sh -type f -exec git am {} +
