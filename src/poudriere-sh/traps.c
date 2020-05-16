@@ -72,6 +72,7 @@ trap_pushcmd(int argc, char **argv)
 	if ((signo = signame_to_signum(argv[1])) == -1)
 		errx(EX_DATAERR, "Invalid signal %s", argv[1]);
 
+	INTOFF;
 	nextidx = -1;
 	for (idx = 0; idx < MAX_SIGNALS; idx++) {
 		if (signals[idx] == NULL) {
@@ -82,7 +83,6 @@ trap_pushcmd(int argc, char **argv)
 	if (nextidx == -1)
 		errx(EX_SOFTWARE, "%s", "Signal stack exceeded");
 
-	INTOFF;
 	sd = calloc(1, sizeof(*sd));
 	trap_push_sh(signo, sd);
 
@@ -146,11 +146,11 @@ trap_popcmd(int argc, char **argv)
 	idx = strtod(argv[2], &end);
 	if (end == argv[2] || errno == ERANGE || idx < 0 || idx >= MAX_SIGNALS)
 		errx(EX_DATAERR, "%s", "Invalid saved_trap");
+	INTOFF;
 	sd = signals[idx];
 	if (sd == NULL || sd->signo != signo)
 		errx(EX_DATAERR, "%s", "Invalid saved_trap");
 
-	INTOFF;
 	trap_pop(sd->signo, sd);
 	free(signals[idx]);
 	signals[idx] = NULL;

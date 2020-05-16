@@ -128,6 +128,7 @@ mapfilecmd(int argc, char **argv)
 	fp = NULL;
 	if (argc != 3 && argc != 4)
 		errx(EX_USAGE, "%s", "Usage: mapfile <handle_name> <file> [modes]");
+	INTOFF;
 	nextidx = -1;
 	for (idx = 0; idx < MAX_FILES; idx++) {
 		if (mapped_files[idx] == NULL) {
@@ -135,8 +136,10 @@ mapfilecmd(int argc, char **argv)
 			break;
 		}
 	}
-	if (nextidx == -1 || mapped_files[nextidx] != NULL)
+	if (nextidx == -1 || mapped_files[nextidx] != NULL) {
+		INTON;
 		errx(EX_SOFTWARE, "%s", "mapped files stack exceeded");
+	}
 
 	file = argv[2];
 	var_return = argv[1];
@@ -146,7 +149,6 @@ mapfilecmd(int argc, char **argv)
 	else
 		modes = "re";
 
-	INTOFF;
 	if ((fp = fopen(file, modes)) == NULL) {
 		serrno = errno;
 		INTON;
