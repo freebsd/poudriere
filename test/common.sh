@@ -173,9 +173,12 @@ rm() {
 	command rm "$@"
 }
 
-err() {
+_err() {
 	local status="$1"
 	shift
 	echo "Error: $@" >&2
 	exit ${status}
 }
+if ! type err >/dev/null 2>&1; then
+	alias err=_err
+fi

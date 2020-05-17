@@ -1,4 +1,5 @@
 SLEEPTIME=5
+alias err=return
 
 set -e
 . common.sh
@@ -63,6 +64,8 @@ false &&
 
 # Release TEST, but releasing return status is unreliable.
 {
+	lock_have TEST
+	assert 0 $? "lock_have(TEST) should be true"
 	lock_release TEST
 	assert 0 $? "lock_release(TEST) did not succeed"
 	lock_have TEST
@@ -126,4 +129,79 @@ false &&
 	assert 0 $? "lock_release(TEST) did not succeed recursively"
 	lock_release TEST
 	assert 0 $? "lock_release(TEST) did not succeed"
+}
+
+# Should not be able to acquire or release a child's lock
+{
+	lock_have TEST
+	assert 1 $? "Should not have lock"
+	SYNC_FIFO="$(mktemp -ut poudriere.lock)"
+	mkfifo "${SYNC_FIFO}"
+	(
+		trap - INT
+
+		lock_acquire TEST 5
+		assert 0 "$?" "Should get lock"
+		lock_have TEST
+		assert 0 $? "Should have lock"
+		write_pipe "${SYNC_FIFO}" "have_lock"
+		assert 0 "$?" "write_pipe"
+		read_pipe "${SYNC_FIFO}" waiting
+		lock_release TEST
+		assert 0 "$?" "lock_release"
+	) &
+	lockpid=$!
+
+	read_pipe "${SYNC_FIFO}" line
+	assert 0 "$?" "read_pipe"
+	assert "have_lock" "${line}"
+	lock_have TEST
+	assert 1 $? "Should not have lock"
+
+	# Try to acquire the child's lock - should not work
+	lock_acquire TEST 1
+	assert 1 "$?" "lock_acquire on child's lock should fail"
+	(lock_acquire TEST 1)
+	assert 1 "$?" "lock_acquire on child's lock should fail"
+	# Try to drop the lock - should not work
+	lock_release TEST
+	assert_not 0 "$?" "Can't release lock not owned"
+	(lock_release TEST)
+	assert_not 0 "$?" "Can't release lock not owned"
+
+	write_pipe "${SYNC_FIFO}" done
+	rm -f "${SYNC_FIFO}"
+	_wait "${lockpid}"
+	assert 0 "$?" "Child should pass asserts"
+}
+
+# Should not be able to acquire or release a parent's lock
+{
+	lock_have TEST
+	assert 1 $? "Should not have lock"
+	lock_acquire TEST 5
+	assert 0 "$?" "Should get lock"
+
+	(
+		trap - INT
+
+		lock_have TEST
+		assert 1 $? "Should not have lock in child from parent"
+		lock_acquire TEST 5
+		assert 1 "$?" "Should not get lock"
+		lock_have TEST
+		assert 1 $? "Should not have lock in child from parent"
+		lock_release TEST
+		assert_not 0 "$?" "Should not be able to release parent lock"
+		lock_have TEST
+		assert 1 $? "Should not have lock in child from parent"
+	) &
+	lockpid=$!
+
+	_wait "${lockpid}"
+	assert 0 "$?" "Child should pass asserts"
+	lock_have TEST
+	assert 0 $? "Should have lock"
+	lock_release TEST
+	assert 0 "$?" "lock_release"
 }

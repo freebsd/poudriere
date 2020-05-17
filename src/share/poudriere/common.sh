@@ -70,7 +70,7 @@ not_for_os() {
 	[ "${os}" = "${BSDPLATFORM}" ] && err 1 "This is not supported on ${BSDPLATFORM}: $*"
 }
 
-err() {
+_err() {
 	if [ -n "${CRASHED:-}" ]; then
 		echo "err: Recursive error detected: $2" >&2 || :
 		exit "$1"
@@ -106,6 +106,9 @@ err() {
 		return 0
 	fi
 }
+if ! type err >/dev/null 2>&1; then
+	alias err=_err
+fi
 
 # Message functions that depend on VERBOSE are stubbed out in post_getopts.
 
@@ -5895,19 +5898,32 @@ _lock_acquire() {
 	local lockname="$1"
 	local lockpath="$2"
 	local waittime="${3:-30}"
-	local have_lock
+	local have_lock mypid lock_pid
 
 	# Delay TERM/INT while holding the lock
 	critical_start
 
+	mypid="$(getpid)"
 	hash_get have_lock "${lockname}" have_lock || have_lock=0
+	# lock_pid is in case a subshell tries to reacquire/relase my lock
+	hash_get lock_pid "${lockname}" lock_pid || lock_pid=
+	# If the pid is set and does not match I'm a subshell and should wait
+	if [ -n "${lock_pid}" -a "${lock_pid}" != "${mypid}" ]; then
+		hash_unset have_lock "${lockname}"
+		hash_unset lock_pid "${lockname}"
+		unset lock_pid
+		have_lock=0
+	fi
 	if [ "${have_lock}" -eq 0 ] &&
-		! locked_mkdir "${waittime}" "${lockpath}" "$$"; then
+		! locked_mkdir "${waittime}" "${lockpath}" "${mypid}"; then
 		msg_warn "Failed to acquire ${lockname} lock"
 		critical_end
 		return 1
 	fi
 	hash_set have_lock "${lockname}" $((have_lock + 1))
+	if [ -z "${lock_pid}" ]; then
+		hash_set lock_pid "${lockname}" "${mypid}"
+	fi
 }
 
 # Acquire local build lock
@@ -5939,20 +5955,30 @@ _lock_release() {
 	[ $# -eq 2 ] || eargs _lock_release lockname lockpath
 	local lockname="$1"
 	local lockpath="$2"
-	local have_lock pid
+	local have_lock lock_pid mypid pid
 
 	hash_get have_lock "${lockname}" have_lock ||
 		err 1 "Releasing unheld lock ${lockname}"
+	[ "${have_lock}" -eq 0 ] &&
+		err 1 "Release unheld lock (have_lock=0) ${lockname}"
+	hash_get lock_pid "${lockname}" lock_pid ||
+		err 1 "Lock had no pid ${lockname}"
+	mypid="$(getpid)"
+	[ "${mypid}" = "${lock_pid}" ] ||
+		err 1 "Releasing lock pid ${lock_pid} owns ${lockname}"
 	if [ "${have_lock}" -gt 1 ]; then
 		hash_set have_lock "${lockname}" $((have_lock - 1))
 	else
-		hash_unset have_lock "${lockname}" ||
-			err 1 "Releasing unheld lock ${lockname}"
-		if read pid < "${lockpath}.pid" 2>/dev/null &&
-			[ "${pid}" != "$$" ]; then
-			err 1 "I am not owner for ${lockpath} pid ${pid} is"
-		fi
-		rmdir "${lockpath}" 2>/dev/null ||
+		hash_unset have_lock "${lockname}"
+		[ -f "${lockpath}.pid" ] ||
+			err 1 "No pidfile found for ${lockpath}"
+		# Pidfile has no trailing newline so will return 1
+		read pid < "${lockpath}.pid" || :
+		[ -n "${pid}" ] ||
+			err 1 "Pidfile is empty for ${lockpath}"
+		[ "${pid}" = "${mypid}" ] ||
+			err 1 "Releasing lock pid ${lock_pid} owns ${lockname}"
+		rmdir "${lockpath}" ||
 			err 1 "Held lock dir not found: ${lockpath}"
 	fi
 	# Restore and deliver INT/TERM signals
@@ -5993,8 +6019,17 @@ slock_release_all() {
 lock_have() {
 	[ $# -ne 1 ] && eargs lock_have lockname
 	local lockname="$1"
+	local mypid lock_pid
 
-	hash_isset have_lock "${lockname}"
+	if hash_isset have_lock "${lockname}"; then
+		hash_get lock_pid "${lockname}" lock_pid ||
+			err 1 "have_lock: Lock had no pid ${lockname}"
+		mypid="$(getpid)"
+		if [ "${mypid}" = "${lock_pid}" ]; then
+			return 0
+		fi
+	fi
+	return 1
 }
 
 have_ports_feature() {
