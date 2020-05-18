@@ -124,6 +124,7 @@ hash_isset() {
 }
 
 hash_get() {
+	local -; set +x
 	[ $# -ne 3 ] && eargs hash_get var key var_return
 	local _hash_var_name
 
@@ -174,6 +175,7 @@ hash_unset() {
 }
 
 list_contains() {
+	local -; set +x
 	[ $# -eq 2 ] || eargs list_contains var item
 	local var="$1"
 	local item="$2"
@@ -185,6 +187,7 @@ list_contains() {
 }
 
 list_add() {
+	local -; set +x
 	[ $# -eq 2 ] || eargs list_add var item
 	local var="$1"
 	local item="$2"
@@ -196,6 +199,7 @@ list_add() {
 }
 
 list_remove() {
+	local -; set +x
 	[ $# -eq 2 ] || eargs list_remove var item
 	local var="$1"
 	local item="$2"
