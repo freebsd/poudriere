@@ -1129,6 +1129,7 @@ sig_handler() {
 	# Ignore SIGINT while cleaning up
 	trap '' INT
 	trap '' INFO
+	unset IFS
 	err 1 "Signal ${SIGNAL} caught, cleaning up and exiting"
 }
 
@@ -1144,6 +1145,7 @@ exit_handler() {
 	# Ignore SIGINT while cleaning up
 	trap '' INT
 	SUPPRESS_INT=1
+	unset IFS
 
 	# stdin may be redirected if a signal interrupted the read builtin (or
 	# any redirection to stdin).  Close it to avoid possibly referencing a
