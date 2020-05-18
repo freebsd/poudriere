@@ -47,14 +47,14 @@ encode_args() {
 
 	_args=
 	lastempty=0
-	while [ $# -gt 0 ]; do
+	while [ "$#" -gt 0 ]; do
 		_args="${_args}${_args:+${ENCODE_SEP}}${1}"
-		[ $# -eq 1 -a -z "$1" ] && lastempty=1
+		[ "$#" -eq 1 -a -z "$1" ] && lastempty=1
 		shift
 	done
 	# If the string ends in ENCODE_SEP then add another to
 	# fix 'set' later eating it.
-	[ ${lastempty} -eq 1 ] && _args="${_args}${_args:+${ENCODE_SEP}}"
+	[ "${lastempty}" -eq 1 ] && _args="${_args}${_args:+${ENCODE_SEP}}"
 
 	setvar "${var_return}" "${_args}"
 }
@@ -62,12 +62,46 @@ encode_args() {
 # Decode data from encode_args
 # Usage: eval $(decode_args data_var_name)
 decode_args() {
-	local -; set +x -f
+	local -; set +x
 	[ $# -eq 1 ] || eargs decode_args encoded_args_var
 	local encoded_args_var="$1"
 
 	# oldIFS="${IFS}"; IFS="${ENCODE_SEP}"; set -- ${data}; IFS="${oldIFS}"; unset oldIFS
-	echo "oldIFS=\"\${IFS}\"; IFS=\"\${ENCODE_SEP}\"; set -- \${${encoded_args_var}}; IFS=\"\${oldIFS}\"; unset oldIFS"
+	echo "\
+		case \$- in *f*) set_f=1 ;; *) set_f=0 ;; esac; \
+		[ \"\${set_f}\" -eq 0 ] && set -f; \
+		IFS=\"\${ENCODE_SEP}\"; \
+		set -- \${${encoded_args_var}}; \
+		unset IFS; \
+		[ \"\${set_f}\" -eq 0 ] && set +f; \
+		unset set_f; \
+		"
+}
+
+
+# Decode data from encode_args
+decode_args_vars() {
+	local -; set +x -f
+	[ $# -ge 2 ] || eargs decode_args_vars data var1 [var2... varN]
+	local encoded_args_data="$1"
+	local _value _var _vars IFS
+	shift
+	local _vars="$*"
+
+	IFS="${ENCODE_SEP}"
+	set -- ${encoded_args_data}
+	unset IFS
+	for _value; do
+		_var="${_vars%% *}"
+		_vars="${_vars#${_var} }"
+		if [ "${_var}" = "${_vars}" ]; then
+			setvar "${_var}" "$*"
+			break
+		else
+			setvar "${_var}" "${_value}"
+		fi
+		shift
+	done
 }
 
 if ! type issetvar >/dev/null 2>&1; then

@@ -4854,11 +4854,8 @@ pkg_cacher_main() {
 	# Wait for packages to process.
 	while :; do
 		IFS= read -r work <&6
-		eval $(decode_args work)
-		origin="$1"
-		pkgname="$2"
-		dep_args="$3"
-		flavor="$4"
+		decode_args_vars "${work}" \
+			origin pkgname dep_args flavor
 		pkg="${PACKAGES}/All/${pkgname}.${PKG_EXT}"
 		if [ -f "${pkg}" ]; then
 			pkg_cache_data "${pkg}" "${origin}" "${dep_args}" \
