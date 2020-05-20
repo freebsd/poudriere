@@ -993,6 +993,7 @@ write_cmp() {
 	fi
 
 	if ! cmp -s "${dest}" "${tmp}"; then
+		chmod 644 ${tmp}
 		rename "${tmp}" "${dest}"
 	else
 		unlink "${tmp}"
