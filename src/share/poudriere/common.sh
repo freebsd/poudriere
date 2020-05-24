@@ -7747,17 +7747,17 @@ calculate_ospart_size() {
 	# size of the swap partition
 	local SWAP_SIZE="$5"
 
-	if [ -n "CFG_SIZE" ]; then
+	if [ -n "${CFG_SIZE}" ]; then
 		calculate_size_in_mb CFG_SIZE
 	else
 		CFG_SIZE=0
 	fi
-	if [ -n "DATA_SIZE" ]; then
+	if [ -n "${DATA_SIZE}" ]; then
 		calculate_size_in_mb DATA_SIZE
 	else
 		DATA_SIZE=0
 	fi
-	if [ -n "SWAP_SIZE" ]; then
+	if [ -n "${SWAP_SIZE}" ]; then
 		calculate_size_in_mb SWAP_SIZE
 	else
 		SWAP_SIZE=0
