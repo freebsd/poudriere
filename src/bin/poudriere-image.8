@@ -1,6 +1,7 @@
 .\" Copyright (c) 2012 Baptiste Daroussin <bapt@FreeBSD.org>
 .\" Copyright (c) 2012-2014 Bryan Drewery <bdrewery@FreeBSD.org>
 .\" Copyright (c) 2018 SRI International
+.\" Copyright (c) 2018 Allan Jude <allanjude@FreeBSD.org>
 .\" All rights reserved.
 .\"
 .\" Redistribution and use in source and binary forms, with or without
@@ -28,7 +29,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 8, 2018
+.Dd November 28, 2019
 .Dt POUDRIERE-IMAGE 8
 .Os
 .Sh NAME
@@ -45,6 +46,9 @@ Builds a filesystem image per the specified options.
 WARNING: This feature is still considered ALPHA.
 .Sh OPTIONS
 .Bl -tag -width "-f packagelist"
+.It Fl b
+Place the swap partition before the primary partition(s) to allow the primary
+partition to be grown to fill the remaining space on a disk.
 .It Fl c Ar overlaydir
 This specifies an extra directory whose contents will be copied directly into
 the final image, starting from the root.
@@ -104,6 +108,9 @@ Create a u-boot ready embedded image.
 .It zsnapshot
 Create a zfs snapshot full and incremental to be used in a jail.
 .El
+.It Fl w Ar size
+This specifies the size of the swap partition to be added to the image.
+Size 0 skips the creation of a swap partition.
 .It Fl X Ar excludefile
 This specifies a list of files to exclude from the final image.
 .It Fl z Ar set

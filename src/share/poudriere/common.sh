@@ -7710,50 +7710,60 @@ build_repo() {
 }
 
 calculate_size_in_mb() {
-	case ${CALC_SIZE} in
+	local calc_var="$1"
+	local calc_size
+
+	getvar "$calc_var" calc_size
+
+	case ${calc_size} in
 	*p)
-		CALC_SIZE=${CALC_SIZE%p}
-		CALC_SIZE=$(( ${CALC_SIZE} << 10 ))
+		calc_size=${calc_size%p}
+		calc_size=$(( ${calc_size} << 10 ))
 		;&
 	*t)
-		CALC_SIZE=${CALC_SIZE%t}
-		CALC_SIZE=$(( ${CALC_SIZE} << 10 ))
+		calc_size=${calc_size%t}
+		calc_size=$(( ${calc_size} << 10 ))
 		;&
 	*g)
-		CALC_SIZE=${CALC_SIZE%g}
-		CALC_SIZE=$(( ${CALC_SIZE} << 10 ))
+		calc_size=${calc_size%g}
+		calc_size=$(( ${calc_size} << 10 ))
 		;&
 	*m)
-		CALC_SIZE=${CALC_SIZE%m}
+		calc_size=${calc_size%m}
 	esac
+
+	setvar "$calc_var" "$calc_size"
 }
 
 calculate_ospart_size() {
-	local CALC_SIZE
-	local FULL_CALC_SIZE
-	local DATA_CALC_SIZE
-	local CFG_CALC_SIZE
+	# How many partitions do we need
+	local NUM_PART="$1"
+	# size of the image in MB
+	local FULL_SIZE="$2"
+	# size of the /cfg partition
+	local CFG_SIZE="$3"
+	# size of the Data partition
+	local DATA_SIZE="$4"
+	# size of the swap partition
+	local SWAP_SIZE="$5"
 
-	# Figure out the size of the image in MB
-	CALC_SIZE=${IMAGESIZE}
-	calculate_size_in_mb
-	FULL_CALC_SIZE=${CALC_SIZE}
-
-	# Figure out the size of the /cfg partition
-	CALC_SIZE=${CFG_SIZE}
-	calculate_size_in_mb
-	CFG_CALC_SIZE=${CALC_SIZE}
-
-	# Figure out the size of the Data partition
-	if [ $# -eq 3 -o -n ${DATA_SIZE} ]; then
-		CALC_SIZE=${DATA_SIZE}
-		calculate_size_in_mb
-		DATA_CALC_SIZE=${CALC_SIZE}
+	if [ -n "CFG_SIZE" ]; then
+		calculate_size_in_mb CFG_SIZE
 	else
-		DATA_CALC_SIZE=0
+		CFG_SIZE=0
 	fi
-
-	OS_SIZE=$(( ( ${FULL_CALC_SIZE} - ${CFG_CALC_SIZE} - ${DATA_CALC_SIZE} ) / 2 ))
+	if [ -n "DATA_SIZE" ]; then
+		calculate_size_in_mb DATA_SIZE
+	else
+		DATA_SIZE=0
+	fi
+	if [ -n "SWAP_SIZE" ]; then
+		calculate_size_in_mb SWAP_SIZE
+	else
+		SWAP_SIZE=0
+	fi
+	
+	OS_SIZE=$(( ( $FULL_SIZE - $CFG_SIZE - $DATA_SIZE - $SWAP_SIZE ) / $NUM_PART ))
 	msg "OS Partiton size: ${OS_SIZE}m"
 }
 
