@@ -128,5 +128,5 @@ STDERR=$(mktemp -ut poudriere)
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
 ) || ret=1
 
-rm -f "${STDOUT}*" "${STDERR}*"
+rm -f ${STDOUT}* ${STDERR}*
 exit ${ret:-0}
