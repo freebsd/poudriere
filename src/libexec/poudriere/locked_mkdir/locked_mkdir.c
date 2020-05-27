@@ -131,7 +131,7 @@ cleanup(void)
  * Write the given pid while holding the flock.
  */
 static void
-write_pid(const int dirfd, const char *dirpath, pid_t writepid)
+write_pid(const int dirfd, const char *lockdirpath, pid_t writepid)
 {
 	FILE *f;
 	char pidpath[MAXPATHLEN];
@@ -140,7 +140,7 @@ write_pid(const int dirfd, const char *dirpath, pid_t writepid)
 	if (writepid == -1)
 		return;
 	/* XXX: Could probably store this in the .flock file */
-	snprintf(pidpath, sizeof(pidpath), "%s.pid", dirpath);
+	snprintf(pidpath, sizeof(pidpath), "%s.pid", lockdirpath);
 
 	/* Protected by the flock */
 	fd = openat(dirfd, pidpath,
@@ -149,19 +149,19 @@ write_pid(const int dirfd, const char *dirpath, pid_t writepid)
 	if (fd == -1) {
 		serrno = errno;
 		(void)unlinkat(dirfd, pidpath, 0);
-		(void)unlinkat(dirfd, dirpath, AT_REMOVEDIR);
+		(void)unlinkat(dirfd, lockdirpath, AT_REMOVEDIR);
 #ifdef SHELL
 		cleanup();
 		INTON;
 #endif
 		errno = serrno;
-		err(1, "openat: %s", pidpath);
+		err(1, "openat(%s): %s", lockdirpath, pidpath);
 	}
 	if ((f = fdopen(fd, "w")) == NULL) {
 		serrno = errno;
 		close(fd);
 		(void)funlinkat(dirfd, pidpath, fd, 0);
-		(void)unlinkat(dirfd, dirpath, AT_REMOVEDIR);
+		(void)unlinkat(dirfd, lockdirpath, AT_REMOVEDIR);
 #ifdef SHELL
 		cleanup();
 		INTON;
@@ -173,7 +173,7 @@ write_pid(const int dirfd, const char *dirpath, pid_t writepid)
 	if (fprintf(f, "%u", writepid) < 0) {
 		serrno = errno;
 		(void)funlinkat(dirfd, pidpath, fd, 0);
-		(void)unlinkat(dirfd, dirpath, AT_REMOVEDIR);
+		(void)unlinkat(dirfd, lockdirpath, AT_REMOVEDIR);
 #ifdef SHELL
 		fclose(f);
 		cleanup();
@@ -186,7 +186,7 @@ write_pid(const int dirfd, const char *dirpath, pid_t writepid)
 	if (fclose(f) != 0) {
 		serrno = errno;
 		(void)funlinkat(dirfd, pidpath, fd, 0);
-		(void)unlinkat(dirfd, dirpath, AT_REMOVEDIR);
+		(void)unlinkat(dirfd, lockdirpath, AT_REMOVEDIR);
 #ifdef SHELL
 		cleanup();
 		INTON;
@@ -197,7 +197,7 @@ write_pid(const int dirfd, const char *dirpath, pid_t writepid)
 }
 
 static bool
-stale_lock(const int dirfd, const char *dirpath, pid_t *outpid)
+stale_lock(const int dirfd, const char *lockdirpath, pid_t *outpid)
 {
 	FILE *f;
 	char pidpath[MAXPATHLEN], pidbuf[16];
@@ -210,7 +210,7 @@ stale_lock(const int dirfd, const char *dirpath, pid_t *outpid)
 	stale = true;
 	pid = -1;
 	/* XXX: Could probably store this in the .flock file */
-	snprintf(pidpath, sizeof(pidpath), "%s.pid", dirpath);
+	snprintf(pidpath, sizeof(pidpath), "%s.pid", lockdirpath);
 	/* Missing file is considered stale. */
 	fd = openat(dirfd, pidpath, O_RDONLY | O_CLOEXEC | O_NONBLOCK);
 	if (fd == -1)
@@ -272,7 +272,7 @@ main(int argc, char **argv)
 	struct sigaction act;
 	struct kevent event[2];
 	struct timespec timeout;
-	const char *path, *dirpath;
+	const char *lockdirpath, *dirpath;
 	char *end;
 	char pathbuf[MAXPATHLEN], dirbuf[MAXPATHLEN], basebuf[MAXPATHLEN];
 	int kq, lockdirfd, waitsec, nevents;
@@ -291,7 +291,7 @@ main(int argc, char **argv)
 		errx(1, "Usage: <timeout> <directory> [pid]");
 
 	waitsec = atoi(argv[1]);
-	path = argv[2];
+	lockdirpath = argv[2];
 
 	if (argc == 4) {
 		errno = 0;
@@ -306,7 +306,7 @@ main(int argc, char **argv)
 	INTOFF;
 	trap_push(SIGINFO, &oinfo);
 #endif
-	strlcpy(dirbuf, path, sizeof(dirbuf));
+	strlcpy(dirbuf, lockdirpath, sizeof(dirbuf));
 	dirpath = dirname(dirbuf);
 	dirfd = open(dirpath, O_RDONLY | O_DIRECTORY);
 	if (dirfd == -1) {
@@ -318,8 +318,8 @@ main(int argc, char **argv)
 #endif
 		err(1, "%s", "opendir");
 	}
-	strlcpy(basebuf, path, sizeof(basebuf));
-	path = basename(basebuf);
+	strlcpy(basebuf, lockdirpath, sizeof(basebuf));
+	lockdirpath = basename(basebuf);
 
 	act.sa_handler = sig_timeout;
 	sigemptyset(&act.sa_mask);
@@ -328,7 +328,7 @@ main(int argc, char **argv)
 	alarm(waitsec);
 
 	/* Open a file lock to serialize other locked_mkdir processes. */
-	snprintf(pathbuf, sizeof(pathbuf), "%s.flock", path);
+	snprintf(pathbuf, sizeof(pathbuf), "%s.flock", lockdirpath);
 
 	while (lockfd == -1 && !timed_out)
 		lockfd = acquire_lock(dirfd, pathbuf);
@@ -348,24 +348,25 @@ main(int argc, char **argv)
 #endif
 retry:
 	/* Try creating the directory. */
-	if (mkdirat(dirfd, path, S_IRWXU) == 0)
+	if (mkdirat(dirfd, lockdirpath, S_IRWXU) == 0)
 		goto success;
 	else if (errno != EEXIST) {
 #ifdef SHELL
 		cleanup();
 		INTON;
 #endif
-		err(EX_CANTCREAT, "mkdirat: %s", path);
+		err(EX_CANTCREAT, "mkdirat(%s): %s", dirpath, lockdirpath);
 	}
 
 	/* Failed, the directory already exists. */
 	/* If a pid was given then check for a stale lock. */
-	if (writepid != -1 && stale_lock(dirfd, path, &lockpid)) {
+	if (writepid != -1 && stale_lock(dirfd, lockdirpath, &lockpid)) {
 		/* The last owner is gone. Take ownership. */
 		goto success;
 	}
 
-	lockdirfd = openat(dirfd, path, O_RDONLY | O_CLOEXEC | O_NONBLOCK);
+	lockdirfd = openat(dirfd, lockdirpath,
+	    O_RDONLY | O_CLOEXEC | O_NONBLOCK);
 	/* It was deleted while we did a stale check */
 	if (lockdirfd == -1 && errno == ENOENT)
 		goto retry;
@@ -374,7 +375,7 @@ retry:
 		cleanup();
 		INTON;
 #endif
-		err(1, "openat: %s", path);
+		err(1, "openat(%s): %s", dirpath, lockdirpath);
 	}
 
 	timeout.tv_sec = waitsec;
@@ -432,7 +433,7 @@ retry:
 	/* If the dir was deleted then we can recreate it. */
 	if (event[0].filter == EVFILT_VNODE &&
 	    /* This is expected to succeed. */
-	    mkdirat(dirfd, path, S_IRWXU) != 0) {
+	    mkdirat(dirfd, lockdirpath, S_IRWXU) != 0) {
 #ifdef SHELL
 		serrno = errno;
 		close(lockdirfd);
@@ -440,12 +441,12 @@ retry:
 		INTON;
 		errno = serrno;
 #endif
-		err(1, "mkdirat: %s", path);
+		err(1, "mkdirat(%s): %s", dirpath, lockdirpath);
 	}
 success:
 	if (lockdirfd != -1)
 		close(lockdirfd);
-	write_pid(dirfd, path, writepid);
+	write_pid(dirfd, lockdirpath, writepid);
 
 #ifdef SHELL
 	cleanup();
