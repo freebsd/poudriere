@@ -275,7 +275,7 @@ main(int argc, char **argv)
 	const char *path, *dirpath;
 	char *end;
 	char pathbuf[MAXPATHLEN], dirbuf[MAXPATHLEN], basebuf[MAXPATHLEN];
-	int kq, fd, waitsec, nevents;
+	int kq, lockdirfd, waitsec, nevents;
 	pid_t writepid, lockpid;
 #ifdef SHELL
 	int serrno;
@@ -284,7 +284,7 @@ main(int argc, char **argv)
 	lockfd = -1;
 	timed_out = 0;
 #endif
-	fd = -1;
+	lockdirfd = -1;
 	lockpid = -1;
 
 	if (argc != 3 && argc != 4)
@@ -365,11 +365,11 @@ retry:
 		goto success;
 	}
 
-	fd = openat(dirfd, path, O_RDONLY | O_CLOEXEC | O_NONBLOCK);
+	lockdirfd = openat(dirfd, path, O_RDONLY | O_CLOEXEC | O_NONBLOCK);
 	/* It was deleted while we did a stale check */
-	if (fd == -1 && errno == ENOENT)
+	if (lockdirfd == -1 && errno == ENOENT)
 		goto retry;
-	else if (fd == -1) {
+	else if (lockdirfd == -1) {
 #ifdef SHELL
 		cleanup();
 		INTON;
@@ -383,7 +383,7 @@ retry:
 	if ((kq = kqueue()) == -1) {
 #ifdef SHELL
 		serrno = errno;
-		close(fd);
+		close(lockdirfd);
 		cleanup();
 		INTON;
 		errno = serrno;
@@ -392,7 +392,7 @@ retry:
 	}
 
 	nevents = 0;
-	EV_SET(&event[nevents++], fd, EVFILT_VNODE, EV_ADD | EV_ENABLE |
+	EV_SET(&event[nevents++], lockdirfd, EVFILT_VNODE, EV_ADD | EV_ENABLE |
 	    EV_ONESHOT, NOTE_DELETE, 0, NULL);
 	if (writepid != -1 && lockpid != -1) {
 		EV_SET(&event[nevents++], lockpid, EVFILT_PROC,
@@ -405,7 +405,7 @@ retry:
 #ifdef SHELL
 		serrno = errno;
 		close(kq);
-		close(fd);
+		close(lockdirfd);
 		cleanup();
 		INTON;
 		errno = serrno;
@@ -416,7 +416,7 @@ retry:
 		/* Timeout */
 #ifdef SHELL
 		close(kq);
-		close(fd);
+		close(lockdirfd);
 		cleanup();
 		INTON;
 #endif
@@ -440,8 +440,8 @@ retry:
 		err(1, "mkdirat: %s", path);
 	}
 success:
-	if (fd != -1)
-		close(fd);
+	if (lockdirfd != -1)
+		close(lockdirfd);
 	write_pid(dirfd, path, writepid);
 
 #ifdef SHELL
