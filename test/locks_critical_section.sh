@@ -27,42 +27,48 @@ assert 1 ${main_siginfo} "INFO should be trapped"
 # lock_acquire does nothing with INFO currently
 # lock_acquire delayed INT/TERM
 
-# Acquire TEST
 {
-	time=$(clock -monotonic)
-	lock_acquire TEST ${SLEEPTIME}
-	assert 0 $? "lock_acquire failed"
-	nowtime=$(clock -monotonic)
-	elapsed=$((${nowtime} - ${time}))
-	if [ ${elapsed} -ge ${SLEEPTIME} ]; then
-		result=slept
-	else
-		result=nowait
-	fi
-	assert nowait ${result} "lock_acquire(TEST) should not have slept, elapsed: ${elapsed}"
+	# Acquire TEST
+	{
+		time=$(clock -monotonic)
+		lock_acquire TEST ${SLEEPTIME}
+		assert 0 $? "lock_acquire failed"
+		critical_start
+		assert 0 "$?" "critical_start"
+		nowtime=$(clock -monotonic)
+		elapsed=$((${nowtime} - ${time}))
+		if [ ${elapsed} -ge ${SLEEPTIME} ]; then
+			result=slept
+		else
+			result=nowait
+		fi
+		assert nowait ${result} "lock_acquire(TEST) should not have slept, elapsed: ${elapsed}"
 
-	lock_have TEST
-	assert 0 $? "lock_have(TEST) should be true"
+		lock_have TEST
+		assert 0 $? "lock_have(TEST) should be true"
+	}
+
+	# Now ensure that our traps *do not work*
+	main_sigint=0
+	kill -INT $$
+	assert 0 ${main_sigint} "INT should not be trapped in critical section"
+	main_sigterm=0
+	kill -TERM $$
+	assert 0 ${main_sigterm} "TERM should not be trapped in critical section"
+	main_siginfo=0
+	kill -INFO $$
+	assert 1 ${main_siginfo} "INFO should be trapped in critical section"
+	main_siginfo=0
+
+	lock_release TEST
+	critical_end
+	assert 0 "$?" "critical_end"
+
+	# The signals should have been delivered on the lock_release
+	assert 1 ${main_sigint} "INT should be delivered on lock_release"
+	assert 1 ${main_sigterm} "TERM should be delivered on lock_release"
+	assert 0 ${main_siginfo} "INFO should not be delivered on lock_release"
 }
-
-# Now ensure that our traps *do not work*
-main_sigint=0
-kill -INT $$
-assert 0 ${main_sigint} "INT should not be trapped in critical section"
-main_sigterm=0
-kill -TERM $$
-assert 0 ${main_sigterm} "TERM should not be trapped in critical section"
-main_siginfo=0
-kill -INFO $$
-assert 1 ${main_siginfo} "INFO should be trapped in critical section"
-main_siginfo=0
-
-lock_release TEST
-
-# The signals should have been delivered on the lock_release
-assert 1 ${main_sigint} "INT should be delivered on lock_release"
-assert 1 ${main_sigterm} "TERM should be delivered on lock_release"
-assert 0 ${main_siginfo} "INFO should not be delivered on lock_release"
 
 # Forking with a lock does bad things
 {

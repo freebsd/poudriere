@@ -1162,6 +1162,7 @@ update_stats() {
 	set +e
 
 	lock_acquire update_stats || return 1
+	critical_start
 
 	for type in built failed ignored; do
 		_bget '' "ports.${type}"
@@ -1173,6 +1174,7 @@ update_stats() {
 		sort -u | wc -l)
 
 	lock_release update_stats
+	critical_end
 }
 
 update_stats_queued() {
@@ -5900,9 +5902,6 @@ _lock_acquire() {
 	local waittime="${3:-30}"
 	local have_lock mypid lock_pid
 
-	# Delay TERM/INT while holding the lock
-	critical_start
-
 	mypid="$(getpid)"
 	hash_get have_lock "${lockname}" have_lock || have_lock=0
 	# lock_pid is in case a subshell tries to reacquire/relase my lock
@@ -5917,7 +5916,6 @@ _lock_acquire() {
 	if [ "${have_lock}" -eq 0 ] &&
 		! locked_mkdir "${waittime}" "${lockpath}" "${mypid}"; then
 		msg_warn "Failed to acquire ${lockname} lock"
-		critical_end
 		return 1
 	fi
 	hash_set have_lock "${lockname}" $((have_lock + 1))
@@ -5981,8 +5979,6 @@ _lock_release() {
 		rmdir "${lockpath}" ||
 			err 1 "Held lock dir not found: ${lockpath}"
 	fi
-	# Restore and deliver INT/TERM signals
-	critical_end
 }
 
 # Release local build lock
@@ -7636,8 +7632,6 @@ prepare_ports() {
 		fi
 
 		show_log_info
-		# Must acquire "update_stats" on shutdown to ensure
-		# the process is not killed while holding it.
 		if [ ${HTML_JSON_UPDATE_INTERVAL} -ne 0 ]; then
 			coprocess_start html_json
 		else

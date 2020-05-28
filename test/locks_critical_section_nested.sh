@@ -33,6 +33,8 @@ assert 1 ${main_siginfo} "INFO should be trapped"
 	time=$(clock -monotonic)
 	lock_acquire TEST ${SLEEPTIME}
 	assert 0 $? "lock_acquire failed"
+	critical_start
+	assert 0 "$?" "critical_start"
 	nowtime=$(clock -monotonic)
 	elapsed=$((${nowtime} - ${time}))
 	if [ ${elapsed} -ge ${SLEEPTIME} ]; then
@@ -51,6 +53,8 @@ assert 1 ${main_siginfo} "INFO should be trapped"
 	time=$(clock -monotonic)
 	lock_acquire TEST2 ${SLEEPTIME}
 	assert 0 $? "lock_acquire failed"
+	critical_start
+	assert 0 "$?" "critical_start"
 	nowtime=$(clock -monotonic)
 	elapsed=$((${nowtime} - ${time}))
 	if [ ${elapsed} -ge ${SLEEPTIME} ]; then
@@ -77,6 +81,8 @@ kill -INFO $$
 assert 1 ${main_siginfo} "INFO should be trapped in critical section"
 main_siginfo=0
 lock_release TEST2
+critical_end
+assert 0 "$?" "critical_end"
 
 # The signals should not have been delivered on the nested lock_release
 assert 0 ${main_sigint} "INT should not be delivered on nested lock_release"
@@ -84,6 +90,8 @@ assert 0 ${main_sigterm} "TERM should not be delivered on nested lock_release"
 assert 0 ${main_siginfo} "INFO should not be delivered on lock_release"
 
 lock_release TEST
+critical_end
+assert 0 "$?" "critical_end"
 
 # The signals should have been delivered on the final lock_release
 assert 1 ${main_sigint} "INT should be delivered on lock_release"
