@@ -434,8 +434,11 @@ retry:
 	    /* This is expected to succeed. */
 	    mkdirat(dirfd, path, S_IRWXU) != 0) {
 #ifdef SHELL
+		serrno = errno;
+		close(lockdirfd);
 		cleanup();
 		INTON;
+		errno = serrno;
 #endif
 		err(1, "mkdirat: %s", path);
 	}
