@@ -70,6 +70,9 @@
 static int dirfd = -1;
 static int lockfd = -1;
 static volatile sig_atomic_t timed_out;
+#ifdef SHELL
+static int did_sigalrm;
+#endif
 static struct sigaction oact;
 #ifdef SHELL
 static struct sigdata oinfo;
@@ -121,7 +124,8 @@ cleanup(void)
 		lockfd = -1;
 	}
 #ifdef SHELL
-	sigaction(SIGALRM, &oact, NULL);
+	if (did_sigalrm == 1)
+		sigaction(SIGALRM, &oact, NULL);
 	trap_pop(SIGINFO, &oinfo);
 	errno = serrno;
 #endif
@@ -283,6 +287,7 @@ main(int argc, char **argv)
 	dirfd = -1;
 	lockfd = -1;
 	timed_out = 0;
+	did_sigalrm = 0;
 #endif
 	lockdirfd = -1;
 	lockpid = -1;
@@ -324,6 +329,9 @@ main(int argc, char **argv)
 	act.sa_handler = sig_timeout;
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = 0;	/* Note that we do not set SA_RESTART. */
+#ifdef SHELL
+	did_sigalrm = 1;
+#endif
 	sigaction(SIGALRM, &act, &oact);
 	alarm(waitsec);
 
