@@ -63,3 +63,24 @@ lock_release TEST
 assert 1 ${main_sigint} "INT should be delivered on lock_release"
 assert 1 ${main_sigterm} "TERM should be delivered on lock_release"
 assert 0 ${main_siginfo} "INFO should not be delivered on lock_release"
+
+# Forking with a lock does bad things
+{
+	lock_acquire TEST 0
+	assert 0 "$?" "lock_acquire"
+
+	(
+		trap - INT
+		lock_have TEST
+		assert_not 0 "$?" "child should not have lock TEST"
+		sleep 300
+	) &
+	bgpid="$!"
+
+	sleep 2
+	kill_and_wait 10 "${bgpid}"
+	assert 143 "$?" "kill bgpid - it should exit on INT rather than wait"
+
+	lock_release TEST
+	assert 0 "$?" "lock_release"
+}
