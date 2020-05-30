@@ -584,15 +584,15 @@ usb)
 	fi
 	# Figure out Partition sizes
 	OS_SIZE=
-	calculate_ospart_size "1" "${IMAGESIZE}" "0" "0" "${SWAPSIZE}"
+	calculate_ospart_size "1" "${NEW_IMAGESIZE_SIZE}" "0" "0" "${SWAPSIZE}"
 	# Prune off a bit to fit the extra partitions and loaders
 	OS_SIZE=$(( $OS_SIZE - 1 ))
 	WORLD_SIZE=$(du -ms ${WRKDIR}/world | awk '{print $1}')
 	if [ ${WORLD_SIZE} -gt ${OS_SIZE} ]; then
 		err 2 "Installed OS Partition needs: ${WORLD_SIZE}m, but the OS Partitions are only: ${OS_SIZE}m.  Increase -s"
 	fi
-	makefs -B little ${OS_SIZE:+-s ${OS_SIZE}} -o label=${IMAGENAME} \
-		-o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world
+	makefs -B little ${OS_SIZE:+-s ${OS_SIZE}}m -o label=${IMAGENAME} \
+	       -o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world
 	;;
 *firmware)
 	# Configuring nanobsd-like mode
