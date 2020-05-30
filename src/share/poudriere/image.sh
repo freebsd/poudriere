@@ -716,11 +716,13 @@ usb+*mfs)
 	;;
 usb)
 	FINALIMAGE=${IMAGENAME}.img
-	SWAPCMD="-p freebsd-swap/swapspace::${SWAPSIZE}"
-	if [ $SWAPBEFORE -eq 1 ]; then
-		SWAPFIRST="$SWAPCMD"
-	else
-		SWAPLAST="$SWAPCMD"
+	if [ ${SWAPSIZE} != "0" ]; then
+		SWAPCMD="-p freebsd-swap/swapspace::${SWAPSIZE}"
+		if [ $SWAPBEFORE -eq 1 ]; then
+			SWAPFIRST="$SWAPCMD"
+		else
+			SWAPLAST="$SWAPCMD"
+		fi
 	fi
 	espfilename=$(mktemp /tmp/efiboot.XXXXXX)
 	make_esp_file ${espfilename} 800 ${WRKDIR}/world/boot/loader.efi
