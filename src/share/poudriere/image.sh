@@ -362,6 +362,36 @@ if [ -n "${IMAGESIZE}" ]; then
 	IMAGESIZE="${NEW_IMAGESIZE_SIZE}${NEW_IMAGESIZE_UNIT}"
 fi
 
+if [ -n "${SWAPSIZE}" ]; then
+	SWAPSIZE_UNIT=$(printf ${SWAPSIZE} | tail -c 1)
+	SWAPSIZE_VALUE=${SWAPSIZE%?}
+	NEW_SWAPSIZE_UNIT=""
+	NEW_SWAPSIZE_SIZE=""
+	case "${SWAPSIZE_UNIT}" in
+		k|K)
+			DIVIDER=$(echo "scale=3; 1024 / 1000" | bc)
+			;;
+		m|M)
+			DIVIDER=$(echo "scale=6; 1024 * 1024 / 1000000" | bc)
+			NEW_SWAPSIZE_UNIT="k"
+			;;
+		g|G)
+			DIVIDER=$(echo "scale=9; 1024 * 1024 * 1024 / 1000000000" | bc)
+			NEW_SWAPSIZE_UNIT="m"
+			;;
+		t|T)
+			DIVIDER=$(echo "scale=12; 1024 * 1024 * 1024 * 1024 / 1000000000000" | bc)
+			NEW_SWAPSIZE_UNIT="g"
+			;;
+		*)
+			NEW_SWAPSIZE_UNIT=""
+			NEW_SWAPSIZE_SIZE=${SWAPSIZE}
+	esac
+	# truncate accept only integer value, and bc needs a divide per 1 for refreshing scale
+	[ -z "${NEW_SWAPSIZE_SIZE}" ] && NEW_SWAPSIZE_SIZE=$(echo "scale=9;var=${SWAPSIZE_VALUE} / ${DIVIDER}; scale=0; ( var * 1000 ) /1" | bc)
+	SWAPSIZE="${NEW_SWAPSIZE_SIZE}${NEW_SWAPSIZE_UNIT}"
+fi
+
 case "${MEDIATYPE}" in
 embedded)
 	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
