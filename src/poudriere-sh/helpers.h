@@ -61,15 +61,30 @@ void trap_pop(int signo, struct sigdata *sd);
 
 #define err_set_exit notimplemented
 #define err_set_file notimplemented
-#define verr notimplemented
 #define verrc notimplemented
 #define verrx notimplemented
-#undef warn
-#define warn(fmt, ...) warning(fmt ": %s", ##__VA_ARGS__, strerror(errno))
+#define vwarn notimplemented
+#define vwarnc notimplemented
+#undef err
+#undef errc
 #undef errx
-#define errx(exitstatus, ...) errorwithstatus(exitstatus, __VA_ARGS__)
-#define err(exitstatus, fmt, ...) \
-    errorwithstatus(exitstatus, fmt ": %s", ##__VA_ARGS__, strerror(errno))
+#undef verrx
+#undef vwarnx
+#undef warn
+#undef warnc
+#undef warnx
+
+#define warnx 			warning
+#define vwarnx			vwarning
+#define warnc(code, fmt, ...) 	warnx(fmt ": %s", ##__VA_ARGS__, strerror(code))
+#define warn(...) 		warnc(errno, __VA_ARGS__)
+
+#define errx 			errorwithstatus
+#define verrx			verrorwithstatus
+#define errc(exitstatus, code, fmt, ...) \
+    errx(exitstatus, fmt ": %s", ##__VA_ARGS__, strerror(code))
+#define err(exitstatus, ...) 	errc(exitstatus, errno, __VA_ARGS__)
+
 #define getenv(var) bltinlookup(var, 1)
 
 #include "shell.h"
