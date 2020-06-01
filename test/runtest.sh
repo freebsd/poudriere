@@ -67,7 +67,7 @@ EOF
 echo "Using SH=${SH}" >&2
 
 exec /usr/bin/timeout ${TIMEOUT} \
-    "${LIBEXECPREFIX}/timestamp" \
+    "${LIBEXECPREFIX}/timestamp" -t \
     env \
     THISDIR="${THISDIR}" \
     SH="${SH}" \
