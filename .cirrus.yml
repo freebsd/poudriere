@@ -18,6 +18,7 @@ check_task:
                 populate_script: mkdir -p ${DISTFILES_CACHE}
         pkg_bootstrap_script:
                 - env ASSUME_ALWAYS_YES=yes pkg bootstrap -f
+                - pkg update -f
         ccache_setup_script:
                 - pkg install -y ccache-static
                 - ccache --max-size=${CCACHE_SIZE}
