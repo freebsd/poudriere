@@ -1318,11 +1318,8 @@ exit_handler() {
 
 	[ -n "${CLEANUP_HOOK-}" ] && ${CLEANUP_HOOK}
 
-	if [ ${CREATED_JLOCK:-0} -eq 1 ]; then
-		local jlock
-
-		_jlock jlock
-		rm -rf "${jlock}" 2>/dev/null || :
+	if lock_have "jail_start_${MASTERNAME}"; then
+		slock_release "jail_start_${MASTERNAME}" || :
 	fi
 	slock_release_all || :
 	if [ -n "${POUDRIERE_TMPDIR-}" ]; then
@@ -2510,68 +2507,6 @@ need_cross_build() {
 	    need_emulation "${wanted_arch}"
 }
 
-_jlock() {
-	setvar "$1" "${SHARED_LOCK_DIR}/poudriere.${MASTERNAME}.lock"
-}
-
-lock_jail() {
-	local jlock jlockf jlockpid
-
-	_jlock jlock
-	jlockf="${jlock}/pid"
-	mkdir -p "${SHARED_LOCK_DIR}" >/dev/null 2>&1 || :
-	# Ensure no other processes are trying to start this jail
-	if ! mkdir "${jlock}" 2>/dev/null; then
-		if [ -d "${jlock}" ]; then
-			jlockpid=
-			if [ -f "${jlockf}" ]; then
-				if locked_mkdir 5 "${jlock}.pid"; then
-					read jlockpid < "${jlockf}" || :
-					rmdir "${jlock}.pid"
-				else
-					# Something went wrong, just try again
-					lock_jail
-					return
-				fi
-			fi
-			if [ -n "${jlockpid}" ]; then
-				if ! kill -0 ${jlockpid} >/dev/null 2>&1; then
-					# The process is dead;
-					# the lock is stale
-					rm -rf "${jlock}"
-					# Try to get the lock again
-					lock_jail
-					return
-				else
-					# The lock is currently held
-					err 1 "jail currently starting: ${MASTERNAME}"
-				fi
-			else
-				# This shouldn't happen due to the
-				# use of locking on the file, just
-				# blow it away and try again.
-				rm -rf "${jlock}"
-				lock_jail
-				return
-			fi
-		else
-			err 1 "Unable to create jail lock ${jlock}"
-		fi
-	else
-		# We're safe to start the jail and to later remove the lock.
-		if locked_mkdir 5 "${jlock}.pid"; then
-			CREATED_JLOCK=1
-			echo "$$" > "${jlock}/pid"
-			rmdir "${jlock}.pid"
-			return 0
-		else
-			# Something went wrong, just try again
-			lock_jail
-			return
-		fi
-	fi
-}
-
 setup_ccache() {
 	[ $# -eq 1 ] || eargs setup_ccache tomnt
 	local tomnt="$1"
@@ -2805,7 +2740,10 @@ jail_start() {
 	local portbuild_uid portbuild_gid aarchld
 	local portbuild_gids portbuild_add_group _gid
 
-	lock_jail
+	# Lock the startup. From there jail_runs() works fine.
+	if ! slock_acquire "jail_start_${MASTERNAME}" 1; then
+		err 1 "jail currently starting: ${MASTERNAME}"
+	fi
 
 	if [ -n "${MASTERMNT}" ]; then
 		tomnt="${MASTERMNT}"
@@ -3042,12 +2980,8 @@ jail_start() {
 	[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${tomnt}/etc/"
 	msg "Starting jail ${MASTERNAME}"
 	jstart
-	if [ ${CREATED_JLOCK:-0} -eq 1 ]; then
-		local jlock
-
-		_jlock jlock
-		rm -rf "${jlock}" 2>/dev/null || :
-	fi
+	# Safe to release the lock now as jail_runs() will block further bulks.
+	slock_release "jail_start_${MASTERNAME}"
 	injail id >/dev/null 2>&1 || \
 	    err $? "Unable to execute id(1) in jail. Emulation or ABI wrong."
 
