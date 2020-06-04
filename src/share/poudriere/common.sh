@@ -1295,19 +1295,20 @@ exit_handler() {
 		# build_queue socket
 		exec 6>&- || :
 		coprocess_stop pkg_cacher
+		coprocess_stop html_json
 	fi
 
-	[ ${STATUS} -eq 1 ] && jail_cleanup
-
-	if was_a_bulk_run; then
-		coprocess_stop html_json
-		if [ ${CREATED_JLOCK:-0} -eq 1 ]; then
+	if [ "${STATUS}" -eq 1 ]; then
+		if was_a_bulk_run; then
 			update_stats >/dev/null 2>&1 || :
-			if [ ${DRY_RUN} -eq 1 ] && [ -n "${PACKAGES_ROOT}" ] &&
+			if [ "${DRY_RUN:-0}" -eq 1 ] &&
+			    [ -n "${PACKAGES_ROOT-}" ] &&
 			    [ ${PACKAGES_MADE_BUILDING:-0} -eq 1 ] ; then
 				rm -rf "${PACKAGES_ROOT}/.building" || :
 			fi
 		fi
+
+		jail_cleanup
 	fi
 
 	[ -n "${CLEANUP_HOOK-}" ] && ${CLEANUP_HOOK}
