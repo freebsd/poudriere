@@ -110,6 +110,9 @@ build_jail_json() {
 	[ -n "${log_path_jail}" ] || \
 	    err 1 "build_jail_json requires log_path_jail set"
 	local empty
+
+	lock_have "json_jail_${MASTERNAME}" ||
+		err 1 "build_jail_json requires slock json_jail_${MASTERNAME}"
 	for empty in ${log_path_jail}/*/.data.mini.json; do
 		case "${empty}" in
 		# Empty
@@ -131,6 +134,9 @@ build_top_json() {
 	[ -n "${log_path_top}" ] || \
 	    err 1 "build_top_json requires log_path_top set"
 	local empty
+
+	lock_have "json_top" ||
+		err 1 "build_top_json requires slock json_top"
 	(
 		cd "${log_path_top}"
 		for empty in */latest/.data.mini.json; do

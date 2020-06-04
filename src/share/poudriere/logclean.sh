@@ -325,12 +325,18 @@ if [ ${logs_deleted} -eq 1 ]; then
 		[ -d "${MASTERNAME}" ] || continue
 		msg_n "Rebuilding HTML JSON for: ${MASTERNAME}..."
 		_log_path_jail log_path_jail
-		build_jail_json || :
+		if slock_acquire "json_jail_${MASTERNAME}" 60 2>/dev/null; then
+			build_jail_json || :
+			slock_release "json_jail_${MASTERNAME}"
+		fi
 		echo " done"
 	done
 	msg_n "Rebuilding HTML JSON for top-level..."
 	log_path_top="${log_top}"
-	build_top_json || :
+	if slock_acquire "json_top" 60 2>/dev/null; then
+		build_top_json || :
+		slock_release "json_top"
+	fi
 	echo " done"
 elif [ "${DRY_RUN}" -eq 1 ]; then
 	msg "[Dry Run] Would fix latest symlinks..."
