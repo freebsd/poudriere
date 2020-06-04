@@ -1184,10 +1184,10 @@ exit_handler() {
 		coprocess_stop html_json
 		if [ ${CREATED_JLOCK:-0} -eq 1 ]; then
 			update_stats >/dev/null 2>&1 || :
-		fi
-		if [ ${DRY_RUN} -eq 1 ] && [ -n "${PACKAGES_ROOT}" ] &&
-		    [ ${PACKAGES_MADE_BUILDING:-0} -eq 1 ] ; then
-			rm -rf "${PACKAGES_ROOT}/.building" || :
+			if [ ${DRY_RUN} -eq 1 ] && [ -n "${PACKAGES_ROOT}" ] &&
+			    [ ${PACKAGES_MADE_BUILDING:-0} -eq 1 ] ; then
+				rm -rf "${PACKAGES_ROOT}/.building" || :
+			fi
 		fi
 	fi
 
