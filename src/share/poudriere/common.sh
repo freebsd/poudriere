@@ -2598,18 +2598,22 @@ jail_start() {
 	mkdir -p ${MASTERMNT%/ref}
 	chmod 0755 ${POUDRIERE_DATA}/.m
 	chmod 0711 ${MASTERMNT%/ref}
+
+	export HOME=/root
+	export USER=root
+
+	# ----- No mounting should be done above this point (STATUS=1) -----
+
+	# Only set STATUS=1 if not turned off
+	# jail -s should not do this or jail will stop on EXIT
+	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
+
 	# Mount tmpfs at the root to avoid crossing tmpfs-zfs-tmpfs boundary
 	# for cloning.
 	if [ ${TMPFS_ALL} -eq 1 ]; then
 		mnt_tmpfs all "${MASTERMNTROOT}"
 	fi
 
-	export HOME=/root
-	export USER=root
-
-	# Only set STATUS=1 if not turned off
-	# jail -s should not do this or jail will stop on EXIT
-	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
 	msg_n "Creating the reference jail..."
 	if [ ${USE_CACHED} = "yes" ]; then
 		export CACHESOCK=${MASTERMNT%/ref}/cache.sock
