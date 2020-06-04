@@ -2638,13 +2638,11 @@ jail_start() {
 
 	msg "Mounting system devices for ${MASTERNAME}"
 	do_jail_mounts "${mnt}" "${tomnt}" "${name}"
-
+	# do_portbuild_mounts depends on PACKAGES being set.
 	# May already be set for pkgclean
-	: ${PACKAGES:=${POUDRIERE_DATA}/packages/${MASTERNAME}}
-
-	mkdir -p ${PACKAGES}/
+	: ${PACKAGES:=${POUDRIERE_DATA:?}/packages/${MASTERNAME}}
+	mkdir -p "${PACKAGES:?}/"
 	was_a_bulk_run && stash_packages
-
 	do_portbuild_mounts ${tomnt} ${name} ${ptname} ${setname}
 
 	# Handle special QEMU needs.
@@ -2704,7 +2702,6 @@ jail_start() {
 	fi
 
 	setup_makeconf ${tomnt}/etc/make.conf ${name} ${ptname} ${setname}
-	load_blacklist ${name} ${ptname} ${setname}
 
 	[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${tomnt}/etc/"
 	msg "Starting jail ${MASTERNAME}"
@@ -2739,13 +2736,6 @@ jail_start() {
 	run_hook jail start
 
 	setup_ports_env "${tomnt}" "${tomnt}/etc/make.conf"
-
-	# Fetch library list for later comparisons
-	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
-		CHANGED_DEPS_LIBLIST=$(injail \
-		    ldconfig -r | \
-		    awk '$1 ~ /:-l/ { gsub(/.*-l/, "", $1); printf("%s ",$1) } END { printf("\n") }')
-	fi
 
 	if schg_immutable_base && [ "${tomnt}" = "${MASTERMNT}" ]; then
 		msg "Setting schg on jail base paths"
@@ -7291,6 +7281,13 @@ prepare_ports() {
 		_log_path_top log_top
 		get_cache_dir cache_dir
 
+		# Fetch library list for later comparisons
+		if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
+			CHANGED_DEPS_LIBLIST=$(injail \
+			    ldconfig -r | \
+			    awk '$1 ~ /:-l/ { gsub(/.*-l/, "", $1); printf("%s ",$1) } END { printf("\n") }')
+		fi
+
 		if [ ${resuming_build} -eq 0 ] || ! [ -d "${log}" ]; then
 			# Sync in HTML files through a base dir
 			install_html_files "${HTMLPREFIX}" "${log_top}/.html" \
@@ -7331,6 +7328,7 @@ prepare_ports() {
 	fi
 
 	load_moved
+	load_blacklist "${MASTERNAME}" "${PTNAME}" "${SETNAME}"
 
 	fetch_global_port_vars || \
 	    err 1 "Failed to lookup global ports metadata"
