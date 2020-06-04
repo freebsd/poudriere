@@ -1319,6 +1319,7 @@ exit_handler() {
 		_jlock jlock
 		rm -rf "${jlock}" 2>/dev/null || :
 	fi
+	slock_release_all || :
 	if [ -n "${POUDRIERE_TMPDIR-}" ]; then
 		rm -rf "${POUDRIERE_TMPDIR}" >/dev/null 2>&1 || :
 	fi
@@ -5929,7 +5930,9 @@ slock_acquire() {
 
 	mkdir -p "${SHARED_LOCK_DIR}" >/dev/null 2>&1 || :
 	lockpath="${SHARED_LOCK_DIR}/lock-poudriere-shared-${lockname}"
-	_lock_acquire "${lockname}" "${lockpath}" "${waittime}"
+	_lock_acquire "${lockname}" "${lockpath}" "${waittime}" || return
+	# This assumes SHARED_LOCK_DIR isn't overridden by caller
+	SLOCKS="${SLOCKS:+${SLOCKS} }${lockname}"
 }
 
 _lock_release() {
@@ -5973,7 +5976,18 @@ slock_release() {
 	local lockpath
 
 	lockpath="${SHARED_LOCK_DIR}/lock-poudriere-shared-${lockname}"
-	_lock_release "${lockname}" "${lockpath}"
+	_lock_release "${lockname}" "${lockpath}" || return
+	list_remove SLOCKS "${lockname}"
+}
+
+slock_release_all() {
+	[ $# -eq 0 ] || eargs slock_release_all
+	local lockname
+
+	[ -z "${SLOCKS-}" ] && return 0
+	for lockname in ${SLOCKS}; do
+		slock_release "${lockname}"
+	done
 }
 
 lock_have() {
