@@ -332,6 +332,9 @@ _logfile() {
 
 		_latest_log="${_log_top}/latest-per-pkg/${pkgname%-*}/${pkgname##*-}"
 
+		# These 4 operations can race with logclean which mitigates
+		# the issue by looking for files older than 1 minute.
+
 		# Make sure directory exists
 		mkdir -p "${_log}/logs" "${_latest_log}"
 

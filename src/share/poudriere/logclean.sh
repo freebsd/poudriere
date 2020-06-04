@@ -139,11 +139,12 @@ find_broken_latest_per_pkg_links() {
 	    err 1 "find_broken_latest_per_pkg_links requires PWD=${log_top}"
 
 	log_links=3
-	find -x latest-per-pkg -type f ! -links ${log_links}
+	# -Btime is to avoid racing with bulk logfile()
+	find -x latest-per-pkg -type f -Btime +1m ! -links ${log_links}
 	# Each MASTERNAME/latest-per-pkg
 	find -x . -mindepth 2 -maxdepth 2 -name latest-per-pkg -print0 | \
-	    xargs -0 -J {} find -x {} -type f ! -links ${log_links} | \
-	    sed -e 's,^\./,,'
+	    xargs -0 -J {} find -x {} -type f -Btime +1m \
+	    ! -links ${log_links} | sed -e 's,^\./,,'
 }
 
 # Very old style symlinks.  Find broken links.
@@ -163,7 +164,8 @@ delete_empty_latest_per_pkg() {
 	[ "${PWD}" = "${log_top}" ] || \
 	    err 1 "find_empty_latest_per_pkg requires PWD=${log_top}"
 
-	find -x latest-per-pkg -mindepth 1 -type d -empty -delete
+	# -Btime is to avoid racing with bulk logfile()
+	find -x latest-per-pkg -mindepth 1 -type d -Btime +1m -empty -delete
 }
 
 echo_logdir() {
