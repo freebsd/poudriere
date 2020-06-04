@@ -1117,12 +1117,17 @@ sigint_handler() {
 	sig_handler
 }
 
+sighup_handler() {
+	EXIT_STATUS="sighup:"
+	SIGNAL="SIGHUP"
+	sig_handler
+}
+
 sigterm_handler() {
 	EXIT_STATUS="sigterm:"
 	SIGNAL="SIGTERM"
 	sig_handler
 }
-
 
 sig_handler() {
 	# Reset SIGTERM handler, just exit if another is received.
@@ -1132,6 +1137,7 @@ sig_handler() {
 	# Ignore SIGINT while cleaning up
 	trap '' INT
 	trap '' INFO
+	trap '' HUP
 	unset IFS
 	err 1 "Signal ${SIGNAL} caught, cleaning up and exiting"
 }
@@ -1148,6 +1154,7 @@ exit_handler() {
 	# Ignore SIGINT while cleaning up
 	trap '' INT
 	SUPPRESS_INT=1
+	trap '' HUP
 	unset IFS
 
 	# stdin may be redirected if a signal interrupted the read builtin (or
@@ -7880,6 +7887,7 @@ HOOKDIR=${POUDRIERED}/hooks
 
 trap sigpipe_handler PIPE
 trap sigint_handler INT
+trap sighup_handler HUP
 trap sigterm_handler TERM
 trap exit_handler EXIT
 enable_siginfo_handler() {
