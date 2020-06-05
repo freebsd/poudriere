@@ -169,12 +169,13 @@ cached_LINK = $(CCLD) $(cached_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 am_clock_OBJECTS = src/libexec/poudriere/clock/clock.$(OBJEXT)
 clock_OBJECTS = $(am_clock_OBJECTS)
 clock_LDADD = $(LDADD)
-am_cpdup_OBJECTS = src/libexec/poudriere/cpdup/cpdup-cpdup.$(OBJEXT) \
-	src/libexec/poudriere/cpdup/cpdup-hcproto.$(OBJEXT) \
-	src/libexec/poudriere/cpdup/cpdup-hclink.$(OBJEXT) \
-	src/libexec/poudriere/cpdup/cpdup-misc.$(OBJEXT) \
-	src/libexec/poudriere/cpdup/cpdup-fsmid.$(OBJEXT) \
-	src/libexec/poudriere/cpdup/cpdup-md5.$(OBJEXT)
+am_cpdup_OBJECTS =  \
+	src/libexec/poudriere/cpdup/src/cpdup-cpdup.$(OBJEXT) \
+	src/libexec/poudriere/cpdup/src/cpdup-fsmid.$(OBJEXT) \
+	src/libexec/poudriere/cpdup/src/cpdup-hclink.$(OBJEXT) \
+	src/libexec/poudriere/cpdup/src/cpdup-hcproto.$(OBJEXT) \
+	src/libexec/poudriere/cpdup/src/cpdup-md5.$(OBJEXT) \
+	src/libexec/poudriere/cpdup/src/cpdup-misc.$(OBJEXT)
 cpdup_OBJECTS = $(am_cpdup_OBJECTS)
 cpdup_DEPENDENCIES =
 cpdup_LINK = $(CCLD) $(cpdup_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
@@ -370,12 +371,12 @@ am__depfiles_remade = external/libnv/$(DEPDIR)/libnv_a-msgio.Po \
 	src/libexec/poudriere/cached/$(DEPDIR)/cached-cached.Po \
 	src/libexec/poudriere/clock/$(DEPDIR)/clock.Po \
 	src/libexec/poudriere/clock/$(DEPDIR)/sh-clock.Po \
-	src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-cpdup.Po \
-	src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-fsmid.Po \
-	src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hclink.Po \
-	src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hcproto.Po \
-	src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-md5.Po \
-	src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-misc.Po \
+	src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-cpdup.Po \
+	src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-fsmid.Po \
+	src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hclink.Po \
+	src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hcproto.Po \
+	src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-md5.Po \
+	src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-misc.Po \
 	src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po \
 	src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po \
 	src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po \
@@ -716,14 +717,17 @@ dist_rc_SCRIPTS = src/etc/rc.d/poudriered
 noinst_LIBRARIES = libucl.a libnv.a libptsort.a
 AUTOMAKE_OPTIONS = subdir-objects
 clock_SOURCES = src/libexec/poudriere/clock/clock.c
-cpdup_SOURCES = src/libexec/poudriere/cpdup/cpdup.c \
-		src/libexec/poudriere/cpdup/hcproto.c \
-		src/libexec/poudriere/cpdup/hclink.c \
-		src/libexec/poudriere/cpdup/misc.c \
-		src/libexec/poudriere/cpdup/fsmid.c \
-		src/libexec/poudriere/cpdup/md5.c
+cpdup_SOURCES = src/libexec/poudriere/cpdup/src/cpdup.c \
+		src/libexec/poudriere/cpdup/src/cpdup.h \
+		src/libexec/poudriere/cpdup/src/fsmid.c \
+		src/libexec/poudriere/cpdup/src/hclink.c \
+		src/libexec/poudriere/cpdup/src/hclink.h \
+		src/libexec/poudriere/cpdup/src/hcproto.c \
+		src/libexec/poudriere/cpdup/src/hcproto.h \
+		src/libexec/poudriere/cpdup/src/md5.c \
+		src/libexec/poudriere/cpdup/src/misc.c
 
-cpdup_LDADD = -lmd
+cpdup_LDADD = -lcrypto
 cpdup_CFLAGS = -D_ST_FLAGS_PRESENT_=1
 dirempty_SOURCES = src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES = src/libexec/poudriere/dirwatch/dirwatch.c
@@ -1035,30 +1039,30 @@ src/libexec/poudriere/clock/clock.$(OBJEXT):  \
 clock$(EXEEXT): $(clock_OBJECTS) $(clock_DEPENDENCIES) $(EXTRA_clock_DEPENDENCIES) 
 	@rm -f clock$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(clock_OBJECTS) $(clock_LDADD) $(LIBS)
-src/libexec/poudriere/cpdup/$(am__dirstamp):
-	@$(MKDIR_P) src/libexec/poudriere/cpdup
-	@: > src/libexec/poudriere/cpdup/$(am__dirstamp)
-src/libexec/poudriere/cpdup/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) src/libexec/poudriere/cpdup/$(DEPDIR)
-	@: > src/libexec/poudriere/cpdup/$(DEPDIR)/$(am__dirstamp)
-src/libexec/poudriere/cpdup/cpdup-cpdup.$(OBJEXT):  \
-	src/libexec/poudriere/cpdup/$(am__dirstamp) \
-	src/libexec/poudriere/cpdup/$(DEPDIR)/$(am__dirstamp)
-src/libexec/poudriere/cpdup/cpdup-hcproto.$(OBJEXT):  \
-	src/libexec/poudriere/cpdup/$(am__dirstamp) \
-	src/libexec/poudriere/cpdup/$(DEPDIR)/$(am__dirstamp)
-src/libexec/poudriere/cpdup/cpdup-hclink.$(OBJEXT):  \
-	src/libexec/poudriere/cpdup/$(am__dirstamp) \
-	src/libexec/poudriere/cpdup/$(DEPDIR)/$(am__dirstamp)
-src/libexec/poudriere/cpdup/cpdup-misc.$(OBJEXT):  \
-	src/libexec/poudriere/cpdup/$(am__dirstamp) \
-	src/libexec/poudriere/cpdup/$(DEPDIR)/$(am__dirstamp)
-src/libexec/poudriere/cpdup/cpdup-fsmid.$(OBJEXT):  \
-	src/libexec/poudriere/cpdup/$(am__dirstamp) \
-	src/libexec/poudriere/cpdup/$(DEPDIR)/$(am__dirstamp)
-src/libexec/poudriere/cpdup/cpdup-md5.$(OBJEXT):  \
-	src/libexec/poudriere/cpdup/$(am__dirstamp) \
-	src/libexec/poudriere/cpdup/$(DEPDIR)/$(am__dirstamp)
+src/libexec/poudriere/cpdup/src/$(am__dirstamp):
+	@$(MKDIR_P) src/libexec/poudriere/cpdup/src
+	@: > src/libexec/poudriere/cpdup/src/$(am__dirstamp)
+src/libexec/poudriere/cpdup/src/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/libexec/poudriere/cpdup/src/$(DEPDIR)
+	@: > src/libexec/poudriere/cpdup/src/$(DEPDIR)/$(am__dirstamp)
+src/libexec/poudriere/cpdup/src/cpdup-cpdup.$(OBJEXT):  \
+	src/libexec/poudriere/cpdup/src/$(am__dirstamp) \
+	src/libexec/poudriere/cpdup/src/$(DEPDIR)/$(am__dirstamp)
+src/libexec/poudriere/cpdup/src/cpdup-fsmid.$(OBJEXT):  \
+	src/libexec/poudriere/cpdup/src/$(am__dirstamp) \
+	src/libexec/poudriere/cpdup/src/$(DEPDIR)/$(am__dirstamp)
+src/libexec/poudriere/cpdup/src/cpdup-hclink.$(OBJEXT):  \
+	src/libexec/poudriere/cpdup/src/$(am__dirstamp) \
+	src/libexec/poudriere/cpdup/src/$(DEPDIR)/$(am__dirstamp)
+src/libexec/poudriere/cpdup/src/cpdup-hcproto.$(OBJEXT):  \
+	src/libexec/poudriere/cpdup/src/$(am__dirstamp) \
+	src/libexec/poudriere/cpdup/src/$(DEPDIR)/$(am__dirstamp)
+src/libexec/poudriere/cpdup/src/cpdup-md5.$(OBJEXT):  \
+	src/libexec/poudriere/cpdup/src/$(am__dirstamp) \
+	src/libexec/poudriere/cpdup/src/$(DEPDIR)/$(am__dirstamp)
+src/libexec/poudriere/cpdup/src/cpdup-misc.$(OBJEXT):  \
+	src/libexec/poudriere/cpdup/src/$(am__dirstamp) \
+	src/libexec/poudriere/cpdup/src/$(DEPDIR)/$(am__dirstamp)
 
 cpdup$(EXEEXT): $(cpdup_OBJECTS) $(cpdup_DEPENDENCIES) $(EXTRA_cpdup_DEPENDENCIES) 
 	@rm -f cpdup$(EXEEXT)
@@ -1461,7 +1465,7 @@ mostlyclean-compile:
 	-rm -f src/libexec/poudriere/cachec/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/cached/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/clock/*.$(OBJEXT)
-	-rm -f src/libexec/poudriere/cpdup/*.$(OBJEXT)
+	-rm -f src/libexec/poudriere/cpdup/src/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/dirempty/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/dirwatch/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/jexecd/*.$(OBJEXT)
@@ -1528,12 +1532,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cached/$(DEPDIR)/cached-cached.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/clock/$(DEPDIR)/clock.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/clock/$(DEPDIR)/sh-clock.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-cpdup.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-fsmid.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hclink.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hcproto.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-md5.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-misc.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-cpdup.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-fsmid.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hclink.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hcproto.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-md5.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-misc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po@am__quote@ # am--include-marker
@@ -1783,89 +1787,89 @@ src/libexec/poudriere/cached/cached-cached.obj: src/libexec/poudriere/cached/cac
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cached_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cached/cached-cached.obj `if test -f 'src/libexec/poudriere/cached/cached.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cached/cached.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cached/cached.c'; fi`
 
-src/libexec/poudriere/cpdup/cpdup-cpdup.o: src/libexec/poudriere/cpdup/cpdup.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/cpdup-cpdup.o -MD -MP -MF src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-cpdup.Tpo -c -o src/libexec/poudriere/cpdup/cpdup-cpdup.o `test -f 'src/libexec/poudriere/cpdup/cpdup.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/cpdup.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-cpdup.Tpo src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-cpdup.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/cpdup.c' object='src/libexec/poudriere/cpdup/cpdup-cpdup.o' libtool=no @AMDEPBACKSLASH@
+src/libexec/poudriere/cpdup/src/cpdup-cpdup.o: src/libexec/poudriere/cpdup/src/cpdup.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/src/cpdup-cpdup.o -MD -MP -MF src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-cpdup.Tpo -c -o src/libexec/poudriere/cpdup/src/cpdup-cpdup.o `test -f 'src/libexec/poudriere/cpdup/src/cpdup.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/src/cpdup.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-cpdup.Tpo src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-cpdup.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/src/cpdup.c' object='src/libexec/poudriere/cpdup/src/cpdup-cpdup.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/cpdup-cpdup.o `test -f 'src/libexec/poudriere/cpdup/cpdup.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/cpdup.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/src/cpdup-cpdup.o `test -f 'src/libexec/poudriere/cpdup/src/cpdup.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/src/cpdup.c
 
-src/libexec/poudriere/cpdup/cpdup-cpdup.obj: src/libexec/poudriere/cpdup/cpdup.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/cpdup-cpdup.obj -MD -MP -MF src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-cpdup.Tpo -c -o src/libexec/poudriere/cpdup/cpdup-cpdup.obj `if test -f 'src/libexec/poudriere/cpdup/cpdup.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/cpdup.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/cpdup.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-cpdup.Tpo src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-cpdup.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/cpdup.c' object='src/libexec/poudriere/cpdup/cpdup-cpdup.obj' libtool=no @AMDEPBACKSLASH@
+src/libexec/poudriere/cpdup/src/cpdup-cpdup.obj: src/libexec/poudriere/cpdup/src/cpdup.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/src/cpdup-cpdup.obj -MD -MP -MF src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-cpdup.Tpo -c -o src/libexec/poudriere/cpdup/src/cpdup-cpdup.obj `if test -f 'src/libexec/poudriere/cpdup/src/cpdup.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/src/cpdup.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/src/cpdup.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-cpdup.Tpo src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-cpdup.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/src/cpdup.c' object='src/libexec/poudriere/cpdup/src/cpdup-cpdup.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/cpdup-cpdup.obj `if test -f 'src/libexec/poudriere/cpdup/cpdup.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/cpdup.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/cpdup.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/src/cpdup-cpdup.obj `if test -f 'src/libexec/poudriere/cpdup/src/cpdup.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/src/cpdup.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/src/cpdup.c'; fi`
 
-src/libexec/poudriere/cpdup/cpdup-hcproto.o: src/libexec/poudriere/cpdup/hcproto.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/cpdup-hcproto.o -MD -MP -MF src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hcproto.Tpo -c -o src/libexec/poudriere/cpdup/cpdup-hcproto.o `test -f 'src/libexec/poudriere/cpdup/hcproto.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/hcproto.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hcproto.Tpo src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hcproto.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/hcproto.c' object='src/libexec/poudriere/cpdup/cpdup-hcproto.o' libtool=no @AMDEPBACKSLASH@
+src/libexec/poudriere/cpdup/src/cpdup-fsmid.o: src/libexec/poudriere/cpdup/src/fsmid.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/src/cpdup-fsmid.o -MD -MP -MF src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-fsmid.Tpo -c -o src/libexec/poudriere/cpdup/src/cpdup-fsmid.o `test -f 'src/libexec/poudriere/cpdup/src/fsmid.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/src/fsmid.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-fsmid.Tpo src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-fsmid.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/src/fsmid.c' object='src/libexec/poudriere/cpdup/src/cpdup-fsmid.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/cpdup-hcproto.o `test -f 'src/libexec/poudriere/cpdup/hcproto.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/hcproto.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/src/cpdup-fsmid.o `test -f 'src/libexec/poudriere/cpdup/src/fsmid.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/src/fsmid.c
 
-src/libexec/poudriere/cpdup/cpdup-hcproto.obj: src/libexec/poudriere/cpdup/hcproto.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/cpdup-hcproto.obj -MD -MP -MF src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hcproto.Tpo -c -o src/libexec/poudriere/cpdup/cpdup-hcproto.obj `if test -f 'src/libexec/poudriere/cpdup/hcproto.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/hcproto.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/hcproto.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hcproto.Tpo src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hcproto.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/hcproto.c' object='src/libexec/poudriere/cpdup/cpdup-hcproto.obj' libtool=no @AMDEPBACKSLASH@
+src/libexec/poudriere/cpdup/src/cpdup-fsmid.obj: src/libexec/poudriere/cpdup/src/fsmid.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/src/cpdup-fsmid.obj -MD -MP -MF src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-fsmid.Tpo -c -o src/libexec/poudriere/cpdup/src/cpdup-fsmid.obj `if test -f 'src/libexec/poudriere/cpdup/src/fsmid.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/src/fsmid.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/src/fsmid.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-fsmid.Tpo src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-fsmid.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/src/fsmid.c' object='src/libexec/poudriere/cpdup/src/cpdup-fsmid.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/cpdup-hcproto.obj `if test -f 'src/libexec/poudriere/cpdup/hcproto.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/hcproto.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/hcproto.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/src/cpdup-fsmid.obj `if test -f 'src/libexec/poudriere/cpdup/src/fsmid.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/src/fsmid.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/src/fsmid.c'; fi`
 
-src/libexec/poudriere/cpdup/cpdup-hclink.o: src/libexec/poudriere/cpdup/hclink.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/cpdup-hclink.o -MD -MP -MF src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hclink.Tpo -c -o src/libexec/poudriere/cpdup/cpdup-hclink.o `test -f 'src/libexec/poudriere/cpdup/hclink.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/hclink.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hclink.Tpo src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hclink.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/hclink.c' object='src/libexec/poudriere/cpdup/cpdup-hclink.o' libtool=no @AMDEPBACKSLASH@
+src/libexec/poudriere/cpdup/src/cpdup-hclink.o: src/libexec/poudriere/cpdup/src/hclink.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/src/cpdup-hclink.o -MD -MP -MF src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hclink.Tpo -c -o src/libexec/poudriere/cpdup/src/cpdup-hclink.o `test -f 'src/libexec/poudriere/cpdup/src/hclink.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/src/hclink.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hclink.Tpo src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hclink.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/src/hclink.c' object='src/libexec/poudriere/cpdup/src/cpdup-hclink.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/cpdup-hclink.o `test -f 'src/libexec/poudriere/cpdup/hclink.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/hclink.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/src/cpdup-hclink.o `test -f 'src/libexec/poudriere/cpdup/src/hclink.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/src/hclink.c
 
-src/libexec/poudriere/cpdup/cpdup-hclink.obj: src/libexec/poudriere/cpdup/hclink.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/cpdup-hclink.obj -MD -MP -MF src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hclink.Tpo -c -o src/libexec/poudriere/cpdup/cpdup-hclink.obj `if test -f 'src/libexec/poudriere/cpdup/hclink.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/hclink.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/hclink.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hclink.Tpo src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hclink.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/hclink.c' object='src/libexec/poudriere/cpdup/cpdup-hclink.obj' libtool=no @AMDEPBACKSLASH@
+src/libexec/poudriere/cpdup/src/cpdup-hclink.obj: src/libexec/poudriere/cpdup/src/hclink.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/src/cpdup-hclink.obj -MD -MP -MF src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hclink.Tpo -c -o src/libexec/poudriere/cpdup/src/cpdup-hclink.obj `if test -f 'src/libexec/poudriere/cpdup/src/hclink.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/src/hclink.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/src/hclink.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hclink.Tpo src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hclink.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/src/hclink.c' object='src/libexec/poudriere/cpdup/src/cpdup-hclink.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/cpdup-hclink.obj `if test -f 'src/libexec/poudriere/cpdup/hclink.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/hclink.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/hclink.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/src/cpdup-hclink.obj `if test -f 'src/libexec/poudriere/cpdup/src/hclink.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/src/hclink.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/src/hclink.c'; fi`
 
-src/libexec/poudriere/cpdup/cpdup-misc.o: src/libexec/poudriere/cpdup/misc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/cpdup-misc.o -MD -MP -MF src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-misc.Tpo -c -o src/libexec/poudriere/cpdup/cpdup-misc.o `test -f 'src/libexec/poudriere/cpdup/misc.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/misc.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-misc.Tpo src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-misc.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/misc.c' object='src/libexec/poudriere/cpdup/cpdup-misc.o' libtool=no @AMDEPBACKSLASH@
+src/libexec/poudriere/cpdup/src/cpdup-hcproto.o: src/libexec/poudriere/cpdup/src/hcproto.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/src/cpdup-hcproto.o -MD -MP -MF src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hcproto.Tpo -c -o src/libexec/poudriere/cpdup/src/cpdup-hcproto.o `test -f 'src/libexec/poudriere/cpdup/src/hcproto.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/src/hcproto.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hcproto.Tpo src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hcproto.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/src/hcproto.c' object='src/libexec/poudriere/cpdup/src/cpdup-hcproto.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/cpdup-misc.o `test -f 'src/libexec/poudriere/cpdup/misc.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/misc.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/src/cpdup-hcproto.o `test -f 'src/libexec/poudriere/cpdup/src/hcproto.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/src/hcproto.c
 
-src/libexec/poudriere/cpdup/cpdup-misc.obj: src/libexec/poudriere/cpdup/misc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/cpdup-misc.obj -MD -MP -MF src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-misc.Tpo -c -o src/libexec/poudriere/cpdup/cpdup-misc.obj `if test -f 'src/libexec/poudriere/cpdup/misc.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/misc.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/misc.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-misc.Tpo src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-misc.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/misc.c' object='src/libexec/poudriere/cpdup/cpdup-misc.obj' libtool=no @AMDEPBACKSLASH@
+src/libexec/poudriere/cpdup/src/cpdup-hcproto.obj: src/libexec/poudriere/cpdup/src/hcproto.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/src/cpdup-hcproto.obj -MD -MP -MF src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hcproto.Tpo -c -o src/libexec/poudriere/cpdup/src/cpdup-hcproto.obj `if test -f 'src/libexec/poudriere/cpdup/src/hcproto.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/src/hcproto.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/src/hcproto.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hcproto.Tpo src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hcproto.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/src/hcproto.c' object='src/libexec/poudriere/cpdup/src/cpdup-hcproto.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/cpdup-misc.obj `if test -f 'src/libexec/poudriere/cpdup/misc.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/misc.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/misc.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/src/cpdup-hcproto.obj `if test -f 'src/libexec/poudriere/cpdup/src/hcproto.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/src/hcproto.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/src/hcproto.c'; fi`
 
-src/libexec/poudriere/cpdup/cpdup-fsmid.o: src/libexec/poudriere/cpdup/fsmid.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/cpdup-fsmid.o -MD -MP -MF src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-fsmid.Tpo -c -o src/libexec/poudriere/cpdup/cpdup-fsmid.o `test -f 'src/libexec/poudriere/cpdup/fsmid.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/fsmid.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-fsmid.Tpo src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-fsmid.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/fsmid.c' object='src/libexec/poudriere/cpdup/cpdup-fsmid.o' libtool=no @AMDEPBACKSLASH@
+src/libexec/poudriere/cpdup/src/cpdup-md5.o: src/libexec/poudriere/cpdup/src/md5.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/src/cpdup-md5.o -MD -MP -MF src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-md5.Tpo -c -o src/libexec/poudriere/cpdup/src/cpdup-md5.o `test -f 'src/libexec/poudriere/cpdup/src/md5.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/src/md5.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-md5.Tpo src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-md5.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/src/md5.c' object='src/libexec/poudriere/cpdup/src/cpdup-md5.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/cpdup-fsmid.o `test -f 'src/libexec/poudriere/cpdup/fsmid.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/fsmid.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/src/cpdup-md5.o `test -f 'src/libexec/poudriere/cpdup/src/md5.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/src/md5.c
 
-src/libexec/poudriere/cpdup/cpdup-fsmid.obj: src/libexec/poudriere/cpdup/fsmid.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/cpdup-fsmid.obj -MD -MP -MF src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-fsmid.Tpo -c -o src/libexec/poudriere/cpdup/cpdup-fsmid.obj `if test -f 'src/libexec/poudriere/cpdup/fsmid.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/fsmid.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/fsmid.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-fsmid.Tpo src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-fsmid.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/fsmid.c' object='src/libexec/poudriere/cpdup/cpdup-fsmid.obj' libtool=no @AMDEPBACKSLASH@
+src/libexec/poudriere/cpdup/src/cpdup-md5.obj: src/libexec/poudriere/cpdup/src/md5.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/src/cpdup-md5.obj -MD -MP -MF src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-md5.Tpo -c -o src/libexec/poudriere/cpdup/src/cpdup-md5.obj `if test -f 'src/libexec/poudriere/cpdup/src/md5.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/src/md5.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/src/md5.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-md5.Tpo src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-md5.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/src/md5.c' object='src/libexec/poudriere/cpdup/src/cpdup-md5.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/cpdup-fsmid.obj `if test -f 'src/libexec/poudriere/cpdup/fsmid.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/fsmid.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/fsmid.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/src/cpdup-md5.obj `if test -f 'src/libexec/poudriere/cpdup/src/md5.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/src/md5.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/src/md5.c'; fi`
 
-src/libexec/poudriere/cpdup/cpdup-md5.o: src/libexec/poudriere/cpdup/md5.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/cpdup-md5.o -MD -MP -MF src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-md5.Tpo -c -o src/libexec/poudriere/cpdup/cpdup-md5.o `test -f 'src/libexec/poudriere/cpdup/md5.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/md5.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-md5.Tpo src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-md5.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/md5.c' object='src/libexec/poudriere/cpdup/cpdup-md5.o' libtool=no @AMDEPBACKSLASH@
+src/libexec/poudriere/cpdup/src/cpdup-misc.o: src/libexec/poudriere/cpdup/src/misc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/src/cpdup-misc.o -MD -MP -MF src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-misc.Tpo -c -o src/libexec/poudriere/cpdup/src/cpdup-misc.o `test -f 'src/libexec/poudriere/cpdup/src/misc.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/src/misc.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-misc.Tpo src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-misc.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/src/misc.c' object='src/libexec/poudriere/cpdup/src/cpdup-misc.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/cpdup-md5.o `test -f 'src/libexec/poudriere/cpdup/md5.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/md5.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/src/cpdup-misc.o `test -f 'src/libexec/poudriere/cpdup/src/misc.c' || echo '$(srcdir)/'`src/libexec/poudriere/cpdup/src/misc.c
 
-src/libexec/poudriere/cpdup/cpdup-md5.obj: src/libexec/poudriere/cpdup/md5.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/cpdup-md5.obj -MD -MP -MF src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-md5.Tpo -c -o src/libexec/poudriere/cpdup/cpdup-md5.obj `if test -f 'src/libexec/poudriere/cpdup/md5.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/md5.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/md5.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-md5.Tpo src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-md5.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/md5.c' object='src/libexec/poudriere/cpdup/cpdup-md5.obj' libtool=no @AMDEPBACKSLASH@
+src/libexec/poudriere/cpdup/src/cpdup-misc.obj: src/libexec/poudriere/cpdup/src/misc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cpdup/src/cpdup-misc.obj -MD -MP -MF src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-misc.Tpo -c -o src/libexec/poudriere/cpdup/src/cpdup-misc.obj `if test -f 'src/libexec/poudriere/cpdup/src/misc.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/src/misc.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/src/misc.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-misc.Tpo src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-misc.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/cpdup/src/misc.c' object='src/libexec/poudriere/cpdup/src/cpdup-misc.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/cpdup-md5.obj `if test -f 'src/libexec/poudriere/cpdup/md5.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/md5.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/md5.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/src/cpdup-misc.obj `if test -f 'src/libexec/poudriere/cpdup/src/misc.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/src/misc.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/src/misc.c'; fi`
 
 src/libexec/poudriere/jexecd/jexecd-jexecd.o: src/libexec/poudriere/jexecd/jexecd.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(jexecd_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/jexecd/jexecd-jexecd.o -MD -MP -MF src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd-jexecd.Tpo -c -o src/libexec/poudriere/jexecd/jexecd-jexecd.o `test -f 'src/libexec/poudriere/jexecd/jexecd.c' || echo '$(srcdir)/'`src/libexec/poudriere/jexecd/jexecd.c
@@ -3248,8 +3252,8 @@ distclean-generic:
 	-rm -f src/libexec/poudriere/cached/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/clock/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/clock/$(am__dirstamp)
-	-rm -f src/libexec/poudriere/cpdup/$(DEPDIR)/$(am__dirstamp)
-	-rm -f src/libexec/poudriere/cpdup/$(am__dirstamp)
+	-rm -f src/libexec/poudriere/cpdup/src/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/libexec/poudriere/cpdup/src/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/dirempty/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/dirwatch/$(DEPDIR)/$(am__dirstamp)
@@ -3336,12 +3340,12 @@ distclean: distclean-am
 	-rm -f src/libexec/poudriere/cached/$(DEPDIR)/cached-cached.Po
 	-rm -f src/libexec/poudriere/clock/$(DEPDIR)/clock.Po
 	-rm -f src/libexec/poudriere/clock/$(DEPDIR)/sh-clock.Po
-	-rm -f src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-cpdup.Po
-	-rm -f src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-fsmid.Po
-	-rm -f src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hclink.Po
-	-rm -f src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hcproto.Po
-	-rm -f src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-md5.Po
-	-rm -f src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-misc.Po
+	-rm -f src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-cpdup.Po
+	-rm -f src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-fsmid.Po
+	-rm -f src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hclink.Po
+	-rm -f src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hcproto.Po
+	-rm -f src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-md5.Po
+	-rm -f src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-misc.Po
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po
 	-rm -f src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po
@@ -3475,12 +3479,12 @@ maintainer-clean: maintainer-clean-am
 	-rm -f src/libexec/poudriere/cached/$(DEPDIR)/cached-cached.Po
 	-rm -f src/libexec/poudriere/clock/$(DEPDIR)/clock.Po
 	-rm -f src/libexec/poudriere/clock/$(DEPDIR)/sh-clock.Po
-	-rm -f src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-cpdup.Po
-	-rm -f src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-fsmid.Po
-	-rm -f src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hclink.Po
-	-rm -f src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-hcproto.Po
-	-rm -f src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-md5.Po
-	-rm -f src/libexec/poudriere/cpdup/$(DEPDIR)/cpdup-misc.Po
+	-rm -f src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-cpdup.Po
+	-rm -f src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-fsmid.Po
+	-rm -f src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hclink.Po
+	-rm -f src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-hcproto.Po
+	-rm -f src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-md5.Po
+	-rm -f src/libexec/poudriere/cpdup/src/$(DEPDIR)/cpdup-misc.Po
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po
 	-rm -f src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po

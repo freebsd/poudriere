@@ -150,13 +150,16 @@ noinst_LIBRARIES=	libucl.a libnv.a libptsort.a
 AUTOMAKE_OPTIONS=	subdir-objects
 
 clock_SOURCES=	src/libexec/poudriere/clock/clock.c
-cpdup_SOURCES=	src/libexec/poudriere/cpdup/cpdup.c \
-		src/libexec/poudriere/cpdup/hcproto.c \
-		src/libexec/poudriere/cpdup/hclink.c \
-		src/libexec/poudriere/cpdup/misc.c \
-		src/libexec/poudriere/cpdup/fsmid.c \
-		src/libexec/poudriere/cpdup/md5.c
-cpdup_LDADD=	-lmd
+cpdup_SOURCES=	src/libexec/poudriere/cpdup/src/cpdup.c \
+		src/libexec/poudriere/cpdup/src/cpdup.h \
+		src/libexec/poudriere/cpdup/src/fsmid.c \
+		src/libexec/poudriere/cpdup/src/hclink.c \
+		src/libexec/poudriere/cpdup/src/hclink.h \
+		src/libexec/poudriere/cpdup/src/hcproto.c \
+		src/libexec/poudriere/cpdup/src/hcproto.h \
+		src/libexec/poudriere/cpdup/src/md5.c \
+		src/libexec/poudriere/cpdup/src/misc.c
+cpdup_LDADD=	-lcrypto
 cpdup_CFLAGS=	-D_ST_FLAGS_PRESENT_=1
 dirempty_SOURCES=	src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c

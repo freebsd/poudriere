@@ -1,7 +1,5 @@
 /*
  * CPDUP.H
- *
- * $DragonFly: src/bin/cpdup/cpdup.h,v 1.9 2008/04/14 05:40:51 dillon Exp $
  */
 
 #include <sys/param.h>
@@ -16,6 +14,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <strings.h>
 #include <errno.h>
 #include <unistd.h>
 #include <utime.h>
@@ -24,28 +23,26 @@
 #include <pwd.h>
 #include <fnmatch.h>
 #include <assert.h>
-#ifndef NOMD5
-#include <md5.h>
+
+#define VERSION	"1.21"
+#define AUTHORS	"Matt Dillon, Dima Ruban, & Oliver Fromme"
+
+#ifndef __unused
+#define __unused __attribute__((unused))
 #endif
 
-/* Solaris needs <strings.h> for bzero(), bcopy() and bcmp(). */
-#include <strings.h>
-
-#ifdef __sun
-#include "compat_sun.h"
+#ifndef __dead2
+#define __dead2 __attribute__((__noreturn__))
 #endif
 
-#ifdef __linux
-#define __printflike(a,b)
-#define __printf0like(a,b)
-#define __aligned(x)
-#define __unused
+#ifndef __printf0like
+#define __printf0like(a,b) __attribute__((__format__ (__printf__, a, b)))
 #endif
 
 void logstd(const char *ctl, ...) __printflike(1, 2);
 void logerr(const char *ctl, ...) __printflike(1, 2);
 char *mprintf(const char *ctl, ...) __printflike(1, 2);
-void fatal(const char *ctl, ...) __printf0like(1, 2);
+void fatal(const char *ctl, ...) __dead2 __printf0like(1, 2);
 char *fextract(FILE *fi, int n, int *pc, int skip);
 
 int16_t hc_bswap16(int16_t var);

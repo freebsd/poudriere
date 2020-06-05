@@ -166,41 +166,49 @@ fatal(const char *ctl, ...)
     va_list va;
 
     if (ctl == NULL) {
-	puts("cpdup [<options>] src [dest]");
-	puts("    -C          request compressed ssh link if remote operation\n"
-	     "    -v[vv]      verbose level (-vv is typical)\n"
+	puts("usage: cpdup [<options>] src [dest]");
+	puts("\n"
+	     "options:\n"
+	     "    -C          request compressed ssh link if remote operation\n"
 	     "    -d          print directories being traversed\n"
-	     "    -u          use unbuffered output for -v[vv]\n"
-	     "    -I          display performance summary\n"
 	     "    -f          force update even if files look the same\n"
-	     "    -F<ssh_opt> Add <ssh_opt> to options passed to ssh\n"
+	     "    -F<ssh_opt> add <ssh_opt> to options passed to ssh\n"
+	     "    -h          show this help\n"
+	     "    -H path     hardlink from path to target instead of copying\n"
+	     "    -I          display performance summary\n"
 	     "    -i0         do NOT confirm when removing something\n"
 	     "    -j0         do not try to recreate CHR or BLK devices\n"
-	     "    -l          force line-buffered stdout/stderr\n"
-	     "    -s0         disable safeties - allow files to overwrite directories\n"
-	     "    -q          quiet operation\n"
-	     "    -o          do not remove any files, just overwrite/add\n"
-	);
-	puts(
 	     "    -k          maintain/generate FSMID checkfile on target,\n"
 	     "                and compare source FSMIDs against the checkfiles\n"
 	     "    -K file     -k+specify FSMID checkfile, else .FSMID.CHECK\n"
+	     "    -l          force line-buffered stdout/stderr"
+	);
 #ifndef NOMD5
-	     "    -m          maintain/generate MD5 checkfile on source,\n"
+	puts("    -m          maintain/generate MD5 checkfile on source,\n"
 	     "                and compare with (optional) destination,\n"
 	     "                copying if the compare fails\n"
 	     "    -M file     -m+specify MD5 checkfile, else .MD5_CHECKSUMS\n"
-	     "                copy if md5 check fails\n"
+	     "                copy if md5 check fails"
+	);
 #endif
-	     "    -H path     hardlink from path to target instead of copying\n"
+	puts("    -n          do not make any real changes to the target\n"
+	     "    -o          do not remove any files, just overwrite/add\n"
+	     "    -q          quiet operation\n"
 	     "    -R          read-only slave mode for ssh remotes\n"
 	     "                source to target, if source matches path.\n"
+	     "    -S          slave mode\n"
+	     "    -s0         disable safeties - allow files to overwrite directories\n"
+	     "    -u          use unbuffered output for -v[vv]\n"
+	     "    -v[vv]      verbose level (-vv is typical)\n"
 	     "    -V          verify file contents even if they appear\n"
 	     "                to be the same.\n"
 	     "    -VV         same as -V but ignore mtime entirely\n"
 	     "    -x          use .cpignore as exclusion file\n"
-	     "    -X file     specify exclusion file\n"
-	     " Version 1.18 by Matt Dillon, Dima Ruban, & Oliver Fromme\n"
+	     "    -X file     specify exclusion file (can match full source\n"
+	     "                path if the exclusion file is specified via\n"
+	     "                an absolute path.\n"
+	     "\n"
+	     "Version " VERSION " by " AUTHORS "\n"
 	);
 	exit(0);
     } else {

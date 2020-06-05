@@ -1,0 +1,13 @@
+*~
+*.swp
+*.orig
+*.bak
+*.o
+*.so
+*.gz
+*.xz
+*.rpm
+*.deb
+*.html
+
+/cpdup
