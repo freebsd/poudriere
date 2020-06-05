@@ -1,0 +1,23 @@
+# Maintainer: Aaron LI <aly@aaronly.me>
+
+pkgname=cpdup
+pkgver=1.21
+pkgrel=1
+pkgdesc="Filesystem mirroring utility from DragonFly BSD"
+url="https://github.com/DragonFlyBSD/cpdup"
+license=('BSD')
+arch=('i686' 'x86_64')
+depends=('libbsd' 'openssl')
+makedepends=('pkg-config')
+
+build() {
+	make
+}
+
+package() {
+	make install PREFIX=${pkgdir}/usr
+	for f in README.md BACKUPS PORTING; do
+		install -Dm 644 ${f} ${pkgdir}/usr/share/doc/${pkgname}/${f}
+	done
+	install -Dm 644 LICENSE ${pkgdir}/usr/share/licenses/${pkgname}/LICENSE
+}

@@ -4,11 +4,11 @@
  * (c) Copyright 1997-1999 by Matthew Dillon and Dima Ruban.  Permission to
  *     use and distribute based on the FreeBSD copyright.  Supplied as-is,
  *     USE WITH EXTREME CAUTION.
- *
- * $DragonFly: src/bin/cpdup/md5.c,v 1.3 2008/11/10 14:30:02 swildner Exp $
  */
 
 #include "cpdup.h"
+
+#include <openssl/md5.h>
 
 typedef struct MD5Node {
     struct MD5Node *md_Next;
@@ -26,7 +26,7 @@ static MD5Node *MD5Base;
 static int MD5SCacheDirLen;
 static int MD5SCacheDirty;
 
-void 
+void
 md5_flush(void)
 {
     if (MD5SCacheDirty && MD5SCache && NotForRealOpt == 0) {
@@ -37,8 +37,8 @@ md5_flush(void)
 
 	    for (node = MD5Base; node; node = node->md_Next) {
 		if (node->md_Accessed && node->md_Code) {
-		    fprintf(fo, "%s %zu %s\n", 
-			node->md_Code, 
+		    fprintf(fo, "%s %zu %s\n",
+			node->md_Code,
 			strlen(node->md_Name),
 			node->md_Name
 		    );
@@ -123,7 +123,7 @@ md5_cache(const char *spath, int sdirlen)
 		free(s);
 	    }
 	    /*
-	     * extracting md_Name - name may contain embedded control 
+	     * extracting md_Name - name may contain embedded control
 	     * characters.
 	     */
 	    CountSourceReadBytes += nlen+1;
@@ -254,6 +254,59 @@ md5_check(const char *spath, const char *dpath)
     return(r);
 }
 
+static char *
+md5_file(const char *filename, char *buf)
+{
+    unsigned char digest[MD5_DIGEST_LENGTH];
+    static const char hex[] = "0123456789abcdef";
+    MD5_CTX ctx;
+    unsigned char buffer[4096];
+    struct stat st;
+    off_t size;
+    int fd, bytes, i;
+
+    fd = open(filename, O_RDONLY);
+    if (fd < 0)
+	return NULL;
+    if (fstat(fd, &st) < 0) {
+	bytes = -1;
+	goto err;
+    }
+
+    MD5_Init(&ctx);
+    size = st.st_size;
+    bytes = 0;
+    while (size > 0) {
+	if ((size_t)size > sizeof(buffer))
+	     bytes = read(fd, buffer, sizeof(buffer));
+	else
+	     bytes = read(fd, buffer, size);
+	if (bytes < 0)
+	     break;
+	MD5_Update(&ctx, buffer, bytes);
+	size -= bytes;
+    }
+
+err:
+    close(fd);
+    if (bytes < 0)
+	return NULL;
+
+    if (!buf)
+	buf = malloc(MD5_DIGEST_LENGTH * 2 + 1);
+    if (!buf)
+	return NULL;
+
+    MD5_Final(digest, &ctx);
+    for (i = 0; i < MD5_DIGEST_LENGTH; i++) {
+	buf[2*i] = hex[digest[i] >> 4];
+	buf[2*i+1] = hex[digest[i] & 0x0f];
+    }
+    buf[MD5_DIGEST_LENGTH * 2] = '\0';
+
+    return buf;
+}
+
 char *
 doMD5File(const char *filename, char *buf, int is_target)
 {
@@ -267,6 +320,5 @@ doMD5File(const char *filename, char *buf, int is_target)
 		    CountSourceReadBytes += size;
 	}
     }
-    return MD5File(filename, buf);
+    return md5_file(filename, buf);
 }
-

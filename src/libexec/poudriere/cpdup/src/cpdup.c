@@ -7,9 +7,9 @@
  *     use and distribute based on the FreeBSD copyright.  Supplied as-is,
  *     USE WITH EXTREME CAUTION.
  *
- * This program attempts to duplicate the source onto the destination as 
+ * This program attempts to duplicate the source onto the destination as
  * exactly as possible, retaining modify times, flags, perms, uid, and gid.
- * It can duplicate devices, files (including hardlinks), softlinks, 
+ * It can duplicate devices, files (including hardlinks), softlinks,
  * directories, and so forth.  It is recursive by default!  The duplication
  * is inclusive of removal of files/directories on the destination that do
  * not exist on the source.  This program supports a per-directory exception
@@ -34,10 +34,10 @@
  *	- copies uid, gid, mtime, perms, flags, softlinks, devices, hardlinks,
  *	  and recurses through directories.
  *
- *	- accesses a per-directory exclusion file, .cpignore, containing 
+ *	- accesses a per-directory exclusion file, .cpignore, containing
  *	  standard wildcarded ( ? / * style, NOT regex) exclusions.
  *
- *	- tries to play permissions and flags smart in regards to overwriting 
+ *	- tries to play permissions and flags smart in regards to overwriting
  *	  schg files and doing related stuff.
  *
  *	- Can do MD5 consistancy checks
@@ -49,7 +49,7 @@
  */
 
 /*-
- * Example: cc -O cpdup.c -o cpdup -lmd
+ * Example: cc -O cpdup.c -o cpdup -lcrypto
  *
  * ".MD5.CHECKSUMS" contains md5 checksumms for the current directory.
  * This file is stored on the source.
@@ -110,8 +110,9 @@ static void InitList(List *list);
 static void ResetList(List *list);
 static Node *IterateList(List *list, Node *node, int n);
 static int AddList(List *list, const char *name, int n, struct stat *st);
+static int CheckList(List *list, const char *path, const char *name);
 static int getbool(const char *str);
-static char *SplitRemote(char *path);
+static char *SplitRemote(char **pathp);
 static int ChgrpAllowed(gid_t g);
 static int OwnerMatch(struct stat *st1, struct stat *st2);
 #ifdef _ST_FLAGS_PRESENT_
@@ -130,9 +131,11 @@ static int YesNo(const char *path);
 static int xrename(const char *src, const char *dst, u_long flags);
 static int xlink(const char *src, const char *dst, u_long flags);
 static int xremove(struct HostConf *host, const char *path);
+static int xrmdir(struct HostConf *host, const char *path);
 static int DoCopy(copy_info_t info, struct stat *stat1, int depth);
 static int ScanDir(List *list, struct HostConf *host, const char *path,
 	int64_t *CountReadBytes, int n);
+static int mtimecmp(struct stat *st1, struct stat *st2);
 
 int AskConfirmation = 1;
 int SafetyOpt = 1;
@@ -191,56 +194,31 @@ main(int ac, char **av)
 
     gettimeofday(&start, NULL);
     opterr = 0;
-    while ((opt = getopt(ac, av, ":CdnF:fH:Ii:j:K:klM:mopqRSs:uVvX:x")) != -1) {
+    while ((opt = getopt(ac, av, ":CdF:fH:hIi:j:K:klM:mnoqRSs:uVvX:x")) != -1) {
 	switch (opt) {
-	/* TODO: sort the branches */
 	case 'C':
 	    CompressOpt = 1;
 	    break;
-	case 'v':
-	    ++VerboseOpt;
-	    break;
 	case 'd':
 	    DirShowOpt = 1;
-	    break;
-	case 'n':
-	    NotForRealOpt = 1;
-	    break;
-	case 'l':
-	    setlinebuf(stdout);
-	    setlinebuf(stderr);
-	    break;
-	case 'V':
-	    ++ValidateOpt;
-	    break;
-	case 'I':
-	    SummaryOpt = 1;
-	    break;
-	case 'o':
-	    NoRemoveOpt = 1;
-	    break;
-	case 'x':
-	    UseCpFile = ".cpignore";
-	    break;
-	case 'X':
-	    UseCpFile = optarg;
-	    break;
-	case 'H':
-	    UseHLPath = optarg;
 	    break;
 	case 'F':
 	    if (ssh_argc >= 16)
 		fatal("too many -F options");
 	    ssh_argv[ssh_argc++] = optarg;
 	    break;
-	case 'S':
-	    SlaveOpt = 1;
-	    break;
-	case 'R':
-	    ReadOnlyOpt = 1;
-	    break;
 	case 'f':
 	    ForceOpt = 1;
+	    break;
+	case 'H':
+	    UseHLPath = optarg;
+	    break;
+	case 'h':
+	    fatal(NULL);
+	    /* not reached */
+	    break;
+	case 'I':
+	    SummaryOpt = 1;
 	    break;
 	case 'i':
 	    AskConfirmation = getbool(optarg);
@@ -248,19 +226,17 @@ main(int ac, char **av)
 	case 'j':
 	    DeviceOpt = getbool(optarg);
 	    break;
-	case 's':
-	    SafetyOpt = getbool(optarg);
-	    break;
-	case 'q':
-	    QuietOpt = 1;
+	case 'K':
+	    UseFSMIDOpt = 1;
+	    FSMIDCacheFile = optarg;
 	    break;
 	case 'k':
 	    UseFSMIDOpt = 1;
 	    FSMIDCacheFile = ".FSMID.CHECK";
 	    break;
-	case 'K':
-	    UseFSMIDOpt = 1;
-	    FSMIDCacheFile = optarg;
+	case 'l':
+	    setlinebuf(stdout);
+	    setlinebuf(stderr);
 	    break;
 	case 'M':
 	    UseMD5Opt = 1;
@@ -270,8 +246,38 @@ main(int ac, char **av)
 	    UseMD5Opt = 1;
 	    MD5CacheFile = ".MD5.CHECKSUMS";
 	    break;
+	case 'n':
+	    NotForRealOpt = 1;
+	    break;
+	case 'o':
+	    NoRemoveOpt = 1;
+	    break;
+	case 'q':
+	    QuietOpt = 1;
+	    break;
+	case 'R':
+	    ReadOnlyOpt = 1;
+	    break;
+	case 'S':
+	    SlaveOpt = 1;
+	    break;
+	case 's':
+	    SafetyOpt = getbool(optarg);
+	    break;
 	case 'u':
 	    setvbuf(stdout, NULL, _IOLBF, 0);
+	    break;
+	case 'V':
+	    ++ValidateOpt;
+	    break;
+	case 'v':
+	    ++VerboseOpt;
+	    break;
+	case 'X':
+	    UseCpFile = optarg;
+	    break;
+	case 'x':
+	    UseCpFile = ".cpignore";
 	    break;
 	case ':':
 	    fatal("missing argument for option: -%c\n", optopt);
@@ -309,7 +315,7 @@ main(int ac, char **av)
      * Extract the source and/or/neither target [user@]host and
      * make any required connections.
      */
-    if (src && (ptr = SplitRemote(src)) != NULL) {
+    if (src && (ptr = SplitRemote(&src)) != NULL) {
 	SrcHost.host = src;
 	src = ptr;
 	if (UseMD5Opt)
@@ -319,7 +325,7 @@ main(int ac, char **av)
     } else if (ReadOnlyOpt)
 	fatal("The -R option is only supported for remote sources");
 
-    if (dst && (ptr = SplitRemote(dst)) != NULL) {
+    if (dst && (ptr = SplitRemote(&dst)) != NULL) {
 	DstHost.host = dst;
 	dst = ptr;
 	if (UseFSMIDOpt)
@@ -428,15 +434,22 @@ getbool(const char *str)
  * If a remote path is detected, the colon is replaced with a null byte,
  * and the return value is a pointer to the next character.
  * Otherwise NULL is returned.
+ *
+ * A path prefix of localhost is the same as a locally specified file or
+ * directory path, but prevents any further interpretation of the path
+ * as being a remote hostname (for paths that have colons in them).
  */
 static char *
-SplitRemote(char *path)
+SplitRemote(char **pathp)
 {
     int cindex;
+    char *path = *pathp;
 
     if (path[(cindex = strcspn(path, ":/"))] == ':') {
 	path[cindex++] = 0;
-	return (path + cindex);
+	if (strcmp(path, "localhost") != 0)
+		return (path + cindex);
+	*pathp = path + cindex;
     }
     return (NULL);
 }
@@ -493,11 +506,20 @@ OwnerMatch(struct stat *st1, struct stat *st2)
 static int
 FlagsMatch(struct stat *st1, struct stat *st2)
 {
-    if (DstRootPrivs)
-	return (st1->st_flags == st2->st_flags);
-    else
-	/* Only consider the user-settable flags. */
-	return (((st1->st_flags ^ st2->st_flags) & UF_SETTABLE) == 0);
+/*
+ * Ignore UF_ARCHIVE.  It gets set automatically by the filesystem, for
+ * filesystems that support it.  If the destination filesystem supports it, but
+ * it's cleared on the source file, then multiple invocations of cpdup would
+ * all try to copy the file because the flags wouldn't match.
+ *
+ * When unpriveleged, ignore flags we can't set
+ */
+    u_long ignored = DstRootPrivs ? 0 : SF_SETTABLE;
+
+#ifdef UF_ARCHIVE
+    ignored |= UF_ARCHIVE;
+#endif
+    return (((st1->st_flags ^ st2->st_flags) & ~ignored) == 0);
 }
 #endif
 
@@ -592,14 +614,15 @@ checkHLPath(struct stat *st1, const char *spath, const char *dpath)
     char *hpath;
     int error;
 
-    asprintf(&hpath, "%s%s", UseHLPath, dpath + DstBaseLen);
+    if (asprintf(&hpath, "%s%s", UseHLPath, dpath + DstBaseLen) < 0)
+	fatal("out of memory");
 
     /*
      * stat info matches ?
      */
     if (hc_stat(&DstHost, hpath, &sthl) < 0 ||
 	st1->st_size != sthl.st_size ||
-	st1->st_mtime != sthl.st_mtime ||
+	mtimecmp(st1, &sthl) != 0 ||
 	!OwnerMatch(st1, &sthl) ||
 	!FlagsMatch(st1, &sthl)
     ) {
@@ -733,7 +756,7 @@ DoCopy(copy_info_t info, struct stat *stat1, int depth)
 		     * hard link is not correct, attempt to unlink it
 		     */
                     if (xremove(&DstHost, dpath) < 0) {
-			logerr("%-32s hardlink: unable to unlink: %s\n", 
+			logerr("%-32s hardlink: unable to unlink: %s\n",
 			    ((dpath) ? dpath : spath), strerror(errno));
                         hltdelete(hln);
 			hln = NULL;
@@ -763,7 +786,7 @@ DoCopy(copy_info_t info, struct stat *stat1, int depth)
 		}
                 if (r == 0) {
 		    if (VerboseOpt) {
-			logstd("%-32s hardlink: %s\n", 
+			logstd("%-32s hardlink: %s\n",
 			    (dpath ? dpath : spath),
 			    (st2Valid ? "relinked" : "linked")
 			);
@@ -818,7 +841,7 @@ relink:
 	} else {
 	    if (ForceOpt == 0 &&
 		stat1->st_size == st2.st_size &&
-		(ValidateOpt == 2 || stat1->st_mtime == st2.st_mtime) &&
+		(ValidateOpt == 2 || mtimecmp(stat1, &st2) == 0) &&
 		OwnerMatch(stat1, &st2)
 #ifndef NOMD5
 		&& (UseMD5Opt == 0 || !S_ISREG(stat1->st_mode) ||
@@ -937,6 +960,8 @@ relink:
 			/* Note that we should not set skipdir = 1 here. */
 		    }
 		}
+		if (VerboseOpt)
+		    logstd("%-32s mkdir-ok\n", (dpath ? dpath : spath));
 		CountCopiedItems++;
 	    } else {
 		/*
@@ -1050,10 +1075,14 @@ relink:
 	    if (!FlagsMatch(stat1, &st2))
 		hc_chflags(&DstHost, dpath, stat1->st_flags);
 #endif
-	    if (ForceOpt || stat1->st_mtime != st2.st_mtime) {
+	    if (ForceOpt || mtimecmp(stat1, &st2) != 0) {
 		bzero(tv, sizeof(tv));
 		tv[0].tv_sec = stat1->st_mtime;
 		tv[1].tv_sec = stat1->st_mtime;
+#if defined(st_mtime)  /* A macro, so very likely on modern POSIX */
+		tv[0].tv_usec = stat1->st_mtim.tv_nsec / 1000;
+		tv[1].tv_usec = stat1->st_mtim.tv_nsec / 1000;
+#endif
 		hc_utimes(&DstHost, dpath, tv);
 	    }
 	}
@@ -1092,7 +1121,7 @@ relink:
 #ifndef NOMD5
 	if (mres < 0)
 	    logerr("%-32s md5-CHECK-FAILED\n", (dpath) ? dpath : spath);
-	else 
+	else
 #endif
 	if (fres < 0)
 	    logerr("%-32s fsmid-CHECK-FAILED\n", (dpath) ? dpath : spath);
@@ -1159,6 +1188,10 @@ relink:
 		    bzero(tv, sizeof(tv));
 		    tv[0].tv_sec = stat1->st_mtime;
 		    tv[1].tv_sec = stat1->st_mtime;
+#if defined(st_mtime)
+		    tv[0].tv_usec = stat1->st_mtim.tv_nsec / 1000;
+		    tv[1].tv_usec = stat1->st_mtim.tv_nsec / 1000;
+#endif
 
 		    if (DstRootPrivs || ChgrpAllowed(stat1->st_gid))
 			hc_chown(&DstHost, path, stat1->st_uid, stat1->st_gid);
@@ -1255,7 +1288,7 @@ skip_copy:
 		    if (DstRootPrivs || ChgrpAllowed(stat1->st_gid))
 			hc_lchown(&DstHost, path, stat1->st_uid, stat1->st_gid);
 		    /*
-		     * there is no lchmod() or lchflags(), we 
+		     * there is no lchmod() or lchflags(), we
 		     * cannot chmod or chflags a softlink.
 		     */
 		    if (st2Valid && xrename(path, dpath, st2_flags) != 0) {
@@ -1282,7 +1315,7 @@ skip_copy:
 	    }
 	    CountSourceBytes += n1;
 	    CountSourceReadBytes += n1;
-	    if (n2 > 0) 
+	    if (n2 > 0)
 		CountTargetReadBytes += n2;
 	    CountSourceItems++;
 	} else {
@@ -1296,7 +1329,7 @@ skip_copy:
 	char *path = NULL;
 
 	if (ForceOpt ||
-	    st2Valid == 0 || 
+	    st2Valid == 0 ||
 	    stat1->st_mode != st2.st_mode ||
 	    stat1->st_rdev != st2.st_rdev ||
 	    !OwnerMatch(stat1, &st2)
@@ -1324,7 +1357,7 @@ skip_copy:
 		CountCopiedItems++;
 	    } else {
 		r = 1;
-		logerr("%-32s dev failed: %s\n", 
+		logerr("%-32s dev failed: %s\n",
 		    (dpath ? dpath : spath), strerror(errno)
 		);
 	    }
@@ -1353,6 +1386,7 @@ ScanDir(List *list, struct HostConf *host, const char *path,
 	int64_t *CountReadBytes, int n)
 {
     DIR *dir;
+    struct HostConf *cphost;
     struct HCDirEntry *den;
     struct stat *statptr;
 
@@ -1371,13 +1405,16 @@ ScanDir(List *list, struct HostConf *host, const char *path,
 
 	    if (UseCpFile[0] == '/') {
 		fpath = mprintf("%s", UseCpFile);
+		cphost = NULL;
 	    } else {
 		fpath = mprintf("%s/%s", path, UseCpFile);
+		AddList(list, strrchr(fpath, '/') + 1, 1, NULL);
+		cphost = host;
 	    }
-	    AddList(list, strrchr(fpath, '/') + 1, 1, NULL);
-	    if ((fd = hc_open(host, fpath, O_RDONLY, 0)) >= 0) {
+	    fd = hc_open(cphost, fpath, O_RDONLY, 0);
+	    if (fd >= 0) {
 		bufused = 0;
-		while ((nread = hc_read(host, fd, buf + bufused,
+		while ((nread = hc_read(cphost, fd, buf + bufused,
 			GETBUFSIZE - bufused - 1)) > 0) {
 		    *CountReadBytes += nread;
 		    bufused += nread;
@@ -1395,7 +1432,7 @@ ScanDir(List *list, struct HostConf *host, const char *path,
 		    buf[bufused] = 0;
 		    AddList(list, buf, 1, NULL);
 		}
-		hc_close(host, fd);
+		hc_close(cphost, fd);
 	    }
 	    free(fpath);
 	    free(buf);
@@ -1420,8 +1457,13 @@ ScanDir(List *list, struct HostConf *host, const char *path,
 	/*
 	 * ignore . and ..
 	 */
-	if (strcmp(den->d_name, ".") != 0 && strcmp(den->d_name, "..") != 0)
+	if (strcmp(den->d_name, ".") != 0 && strcmp(den->d_name, "..") != 0) {
+	     if (UseCpFile && UseCpFile[0] == '/') {
+		 if (CheckList(list, path, den->d_name) == 0)
+			continue;
+	     }
 	     AddList(list, den->d_name, n, statptr);
+	}
     }
     hc_closedir(host, dir);
 
@@ -1474,7 +1516,7 @@ RemoveRecur(const char *dpath, dev_t devNo, struct stat *dstat)
 		}
 		if (AskConfirmation && NoRemoveOpt == 0) {
 		    if (YesNo(dpath)) {
-			if (hc_rmdir(&DstHost, dpath) < 0) {
+			if (xrmdir(&DstHost, dpath) < 0) {
 			    logerr("%-32s rmdir failed: %s\n",
 				dpath, strerror(errno)
 			    );
@@ -1485,7 +1527,7 @@ RemoveRecur(const char *dpath, dev_t devNo, struct stat *dstat)
 		    if (NoRemoveOpt) {
 			if (VerboseOpt)
 			    logstd("%-32s not-removed\n", dpath);
-		    } else if (hc_rmdir(&DstHost, dpath) == 0) {
+		    } else if (xrmdir(&DstHost, dpath) == 0) {
 			if (VerboseOpt)
 			    logstd("%-32s rmdir-ok\n", dpath);
 			CountRemovedItems++;
@@ -1567,7 +1609,6 @@ AddList(List *list, const char *name, int n, struct stat *st)
      * Scan against wildcards.  Only a node value of 1 can be a wildcard
      * ( usually scanned from .cpignore )
      */
-
     for (node = list->li_Hash[0]; node; node = node->no_HNext) {
 	if (strcmp(name, node->no_Name) == 0 ||
 	    (n != 1 && node->no_Value == 1 &&
@@ -1604,6 +1645,51 @@ AddList(List *list, const char *name, int n, struct stat *st)
     return(n);
 }
 
+/*
+ * Match against n=1 (cpignore) entries
+ *
+ * Returns 0 on match, non-zero if no match
+ */
+static int
+CheckList(List *list, const char *path, const char *name)
+{
+    char *fpath = NULL;
+    Node *node;
+    int hv;
+
+    if (asprintf(&fpath, "%s/%s", path, name) < 0)
+	fatal("out of memory");
+
+    /*
+     * Scan against wildcards.  Only a node value of 1 can be a wildcard
+     * ( usually scanned from .cpignore )
+     */
+    for (node = list->li_Hash[0]; node; node = node->no_HNext) {
+	if (node->no_Value != 1)
+		continue;
+	if (fnmatch(node->no_Name, fpath, 0) == 0) {
+		free(fpath);
+		return 0;
+	}
+    }
+
+    /*
+     * Look for exact match
+     */
+    hv = shash(fpath);
+    for (node = list->li_Hash[hv]; node; node = node->no_HNext) {
+	if (node->no_Value != 1)
+		continue;
+	if (strcmp(fpath, node->no_Name) == 0) {
+		free(fpath);
+		return 0;
+	}
+    }
+
+    free(fpath);
+    return 1;
+}
+
 static int
 shash(const char *s)
 {
@@ -1612,8 +1698,8 @@ shash(const char *s)
     hv = 0xA4FB3255;
 
     while (*s) {
-	if (*s == '*' || *s == '?' || 
-	    *s == '{' || *s == '}' || 
+	if (*s == '*' || *s == '?' ||
+	    *s == '{' || *s == '}' ||
 	    *s == '[' || *s == ']' ||
 	    *s == '|'
 	) {
@@ -1642,13 +1728,13 @@ YesNo(const char *path)
 /*
  * xrename() - rename with override
  *
- *	If the rename fails, attempt to override st_flags on the 
+ *	If the rename fails, attempt to override st_flags on the
  *	destination and rename again.  If that fails too, try to
  *	set the flags back the way they were and give up.
  */
 
 static int
-xrename(const char *src, const char *dst, u_long flags)
+xrename(const char *src, const char *dst, u_long flags __unused)
 {
     int r;
 
@@ -1663,7 +1749,7 @@ xrename(const char *src, const char *dst, u_long flags)
 }
 
 static int
-xlink(const char *src, const char *dst, u_long flags)
+xlink(const char *src, const char *dst, u_long flags __unused)
 {
     int r;
 #ifdef _ST_FLAGS_PRESENT_
@@ -1699,3 +1785,37 @@ xremove(struct HostConf *host, const char *path)
     return(res);
 }
 
+static int
+xrmdir(struct HostConf *host, const char *path)
+{
+    int res;
+
+    res = hc_rmdir(host, path);
+#ifdef _ST_FLAGS_PRESENT_
+    if (res == -EPERM) {
+	hc_chflags(host, path, 0);
+	res = hc_rmdir(host, path);
+    }
+#endif
+    return(res);
+}
+
+/*
+ * Compare mtimes.  By default cpdup only compares the seconds field
+ * because different operating systems and filesystems will store time
+ * fields with varying amounts of precision.
+ *
+ * This subroutine can be adjusted to also compare to microseconds or
+ * nanoseconds precision.  However, since cpdup() uses utimes() to
+ * set a file's timestamp and utimes() only takes timeval's (usec precision),
+ * I strongly recommend only comparing down to usec precision at best.
+ */
+static int
+mtimecmp(struct stat *st1, struct stat *st2)
+{
+	if (st1->st_mtime < st2->st_mtime)
+		return -1;
+	if (st1->st_mtime == st2->st_mtime)
+		return 0;
+	return 1;
+}

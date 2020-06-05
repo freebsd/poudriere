@@ -83,7 +83,9 @@ static struct HCDesc HCDispatchTable[] = {
 };
 
 static int chown_warning;
+#ifdef _ST_FLAGS_PRESENT_
 static int chflags_warning;
+#endif
 
 /*
  * If not running as root generate a silent warning and return no error.
@@ -122,7 +124,6 @@ hc_slave(int fdin, int fdout)
 {
     hcc_slave(fdin, fdout, HCDispatchTable,
 	      sizeof(HCDispatchTable) / sizeof(HCDispatchTable[0]));
-    
 }
 
 /*
@@ -178,8 +179,9 @@ hc_hello(struct HostConf *hc)
 		hc->host);
 	error = -1;
     } else if (hc->version < HCPROTO_VERSION && QuietOpt == 0) {
-	fprintf(stderr, "WARNING: Remote cpdup at %s has a lower version, "
-		"expect reduced speed\n", hc->host);
+	fprintf(stderr,
+		"WARNING: Remote cpdup at %s has a lower version,\n"
+		"expect reduced speed and/or functionality\n", hc->host);
     }
     if (error < 0)
 	fprintf(stderr, "Handshake failed with %s\n", hc->host);
@@ -292,6 +294,17 @@ hc_decode_stat_item(struct stat *st, struct HCLeaf *item)
     case LC_CTIME:
 	st->st_ctime = (time_t)HCC_INT64(item);
 	break;
+#if defined(st_atime)  /* A macro, so very likely on modern POSIX */
+    case LC_ATIMENSEC:
+	st->st_atim.tv_nsec = HCC_INT32(item);
+	break;
+    case LC_MTIMENSEC:
+	st->st_mtim.tv_nsec = HCC_INT32(item);
+	break;
+    case LC_CTIMENSEC:
+	st->st_ctim.tv_nsec = HCC_INT32(item);
+	break;
+#endif
     case LC_FILESIZE:
 	st->st_size = HCC_INT64(item);
 	break;
@@ -371,6 +384,11 @@ rc_encode_stat(hctransaction_t trans, struct stat *st)
     hcc_leaf_int64(trans, LC_ATIME, st->st_atime);
     hcc_leaf_int64(trans, LC_MTIME, st->st_mtime);
     hcc_leaf_int64(trans, LC_CTIME, st->st_ctime);
+#if defined(st_atime)
+    hcc_leaf_int32(trans, LC_ATIMENSEC, st->st_atim.tv_nsec);
+    hcc_leaf_int32(trans, LC_MTIMENSEC, st->st_mtim.tv_nsec);
+    hcc_leaf_int32(trans, LC_CTIMENSEC, st->st_ctim.tv_nsec);
+#endif
     hcc_leaf_int64(trans, LC_FILESIZE, st->st_size);
     hcc_leaf_int64(trans, LC_FILEBLKS, st->st_blocks);
     hcc_leaf_int32(trans, LC_BLKSIZE, st->st_blksize);
@@ -511,6 +529,8 @@ hc_readdir(struct HostConf *hc, DIR *dir, struct stat **statpp)
 	free(*statpp);
 	*statpp = NULL;
     }
+    if (hc->trans.state == HCT_FAIL)
+	return NULL;
     return (denbuf.d_name[0] ? &denbuf : NULL);
 }
 
@@ -570,7 +590,7 @@ hc_closedir(struct HostConf *hc, DIR *dir)
     /* skip any remaining items if the directory is closed prematurely */
     while (hcc_nextchaineditem(hc, head) != NULL)
 	/*nothing*/ ;
-    if (head->error)
+    if (hc->trans.state == HCT_FAIL || head->error)
 	return (-1);
     return (0);
 }
@@ -783,7 +803,7 @@ hc_close(struct HostConf *hc, int fd)
 	/* skip any remaining items if the file is closed prematurely */
 	while (hcc_nextchaineditem(hc, head) != NULL)
 	    /*nothing*/ ;
-	if (head->error)
+	if (hc->trans.state == HCT_FAIL || head->error)
 	    return (-1);
 	return (0);
     }
@@ -853,12 +873,16 @@ hc_read(struct HostConf *hc, int fd, void *buf, size_t bytes)
     if (fd == 1 && hc->version >= 4) {	/* using HC_READFILE */
 	head = (void *)hc->trans.rbuf;
 	while (bytes) {
-	    if ((offset = head->magic) != 0)
+	    if ((offset = head->magic) != 0) {
 		item = hcc_currentchaineditem(hc, head);
-	    else
+	    } else {
 		item = hcc_nextchaineditem(hc, head);
-	    if (item == NULL)
+	    }
+	    if (item == NULL) {
+		if (hc->trans.state == HCT_FAIL)
+			r = -1;
 		return (r);
+	    }
 	    if (item->leafid != LC_DATA)
 		return (-1);
 	    x = item->bytes - sizeof(*item) - offset;
@@ -1720,7 +1744,7 @@ hc_rename(struct HostConf *hc, const char *name1, const char *name2)
 {
     hctransaction_t trans;
     struct HCHead *head;
-  
+
     if (NotForRealOpt)
 	return(0);
     if (hc == NULL || hc->host == NULL)
@@ -1780,6 +1804,10 @@ hc_utimes(struct HostConf *hc, const char *path, const struct timeval *times)
     hcc_leaf_string(trans, LC_PATH1, path);
     hcc_leaf_int64(trans, LC_ATIME, times[0].tv_sec);
     hcc_leaf_int64(trans, LC_MTIME, times[1].tv_sec);
+#if defined(st_atime)
+    hcc_leaf_int32(trans, LC_ATIMENSEC, times[0].tv_usec * 1000);
+    hcc_leaf_int32(trans, LC_MTIMENSEC, times[1].tv_usec * 1000);
+#endif
     if ((head = hcc_finish_command(trans)) == NULL)
 	return(-1);
     if (head->error)
@@ -1808,6 +1836,14 @@ rc_utimes(hctransaction_t trans, struct HCHead *head)
 	case LC_MTIME:
 	    times[1].tv_sec = HCC_INT64(item);
 	    break;
+#if defined(st_atimespec) || defined(_STATBUF_ST_NSEC)
+	case LC_ATIMENSEC:
+	    times[0].tv_usec = HCC_INT32(item) / 1000;
+	    break;
+	case LC_MTIMENSEC:
+	    times[1].tv_usec = HCC_INT32(item) / 1000;
+	    break;
+#endif
 	}
     }
     if (ReadOnlyOpt) {
