@@ -275,8 +275,7 @@ clonefs() {
 	local to=$2
 	local snap=$3
 	local name zfs_to
-	local fs
-	local basepath dir dirs skippaths cpignore cpignores mnt
+	local fs mnt
 
 	fs=$(zfs_getfs ${from})
 	destroyfs ${to} jail
@@ -310,50 +309,35 @@ clonefs() {
 		# Insert this into the zfs_getfs cache.
 		cache_set "${zfs_to}" _zfs_getfs "${to}"
 	else
+		local cpignore
+
+		cpignore=
 		[ ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs all "${mnt}"
 		if [ "${snap}" = "clean" ]; then
+			local skippath skippaths common src dst
+
+			set -- $(relpath_common "${from}" "${mnt}")
+			common="${1}"
+			src="${2}"
+			dst="${3}"
+
+			cpignore="$(mktemp -ut clone.cpignore)"
 			skippaths="$(nullfs_paths "${mnt}")"
 			skippaths="${skippaths} /proc"
 			skippaths="${skippaths} /usr/src"
 			skippaths="${skippaths} /usr/lib/debug"
 			skippaths="${skippaths} /var/db/etcupdate"
 			skippaths="${skippaths} /var/db/freebsd-update"
-			while mapfile_read_loop_redir basepath dirs; do
-				cpignore="${from}${basepath%/}/.cpignore"
-				for dir in ${dirs}; do
-					echo "${dir}"
-				done >> "${cpignore}"
-				cpignores="${cpignores:+${cpignores} }${cpignore}"
-			done <<-EOF
-			$(echo "${skippaths}" | tr ' ' '\n' | \
-			    sed '/^$/d' | awk '
-			    function basename(file) {
-				    sub(".*/", "", file)
-				    return file
-			    }
-			    function dirname(file) {
-				    sub("/[^/]*$", "", file)
-				    if (file == "")
-					    file = "/"
-				    return file
-			    }
-			    {
-				    dir = dirname($1)
-				    file = basename($1)
-				    if (dir in dirs)
-					    dirs[dir] = dirs[dir] " " file
-				    else
-					    dirs[dir] = file
-			    }
-			    END {
-				    for (dir in dirs)
-					    print dir " " dirs[dir]
-			    }')
-			EOF
+			{
+				for skippath in ${skippaths}; do
+					echo "${src}${skippath}"
+				done
+				echo ".cpignore"
+			} > "${cpignore}"
 		fi
-		do_clone -rx "${from}" "${mnt}"
+		do_clone -r ${cpignore:+-X "${cpignore}"} "${from}" "${mnt}"
 		if [ "${snap}" = "clean" ]; then
-			rm -f ${cpignores}
+			rm -f "${cpignore}"
 			echo ".p" >> "${mnt}/.cpignore"
 		fi
 	fi
