@@ -2882,6 +2882,13 @@ include_poudriere_confs() {
 			*) ;;
 		esac
 	done
+	# Hack for tests
+	if [ -n "${THISDIR-}" ]; then
+		jail="${JAILNAME-}"
+		ptname="${PTNAME-}"
+		setname="${SETNAME-}"
+		debug="${VERBOSE:-0}"
+	fi
 
 	if [ -r "${POUDRIERE_ETC}/poudriere.conf" ]; then
 		. "${POUDRIERE_ETC}/poudriere.conf"

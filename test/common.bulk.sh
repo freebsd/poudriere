@@ -603,8 +603,6 @@ if [ ${ALL:-0} -eq 0 ]; then
 	assert_not "" "${LISTPORTS}" "LISTPORTS empty"
 fi
 
-. ${SCRIPTPREFIX}/common.sh
-
 : ${PORTSDIR:=${THISDIR%/*}/test-ports/default}
 export PORTSDIR
 PTMNT="${PORTSDIR}"
@@ -620,7 +618,10 @@ export PACKAGE_BUILDING=yes
 write_cmp "${POUDRIERE_ETC}/poudriere.d/${SETNAME}-poudriere.conf" << EOF
 ${FLAVOR_DEFAULT_ALL:+FLAVOR_DEFAULT_ALL=${FLAVOR_DEFAULT_ALL}}
 ${FLAVOR_ALL:+FLAVOR_ALL=${FLAVOR_ALL}}
+${MUTABLE_BASE:+MUTABLE_BASE=${MUTABLE_BASE}}
 EOF
+
+. ${SCRIPTPREFIX}/common.sh
 
 echo -n "Pruning stale jails..."
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} jail -k \
