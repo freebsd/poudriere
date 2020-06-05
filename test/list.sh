@@ -4,9 +4,10 @@ set -e
 . ${SCRIPTPREFIX}/include/hash.sh
 set +e
 
-assert_list() {
-	local expected="${1}"
-	local reason="${2}"
+_assert_list() {
+	local lineinfo="$1"
+	local expected="$2"
+	local reason="$3"
 	local have_tmp=$(mktemp -t assert_list)
 	local expected_tmp=$(mktemp -t assert_list)
 	local ret=0
@@ -18,8 +19,10 @@ assert_list() {
 	[ ${ret} -ne 0 ] && comm "${have_tmp}" "${expected_tmp}" >&2
 
 	rm -f "${have_tmp}" "${expected_tmp}"
-	assert 0 "${ret}" "${reason} - Have: '${LIST}' Expected: '${expected}'"
+	_assert "${lineinfo}" 0 "${ret}" \
+		"${reason} - Have: '${LIST}' Expected: '${expected}'"
 }
+alias assert_list='_assert_list "$0:$LINENO"'
 
 LIST=
 assert_list "" "Empty list expected"
