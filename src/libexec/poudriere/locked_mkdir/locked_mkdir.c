@@ -30,6 +30,10 @@
  * locking shell functions. Based on lockf(1).
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/event.h>
@@ -47,8 +51,6 @@
 #include <string.h>
 #include <sysexits.h>
 #include <unistd.h>
-
-#include <config.h>
 
 #ifndef HAVE_FUNLINKAT
 #define funlinkat(dfd, path, fd, flag) unlinkat(dfd, path, flag)
