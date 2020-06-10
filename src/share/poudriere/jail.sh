@@ -42,6 +42,7 @@ Parameters:
 
 Options:
     -b            -- Build the OS (for use with -m src)
+    -B            -- Build the pkgbase set (for use with -b or -m svn/git/...)
     -q            -- Quiet (Do not print the header)
     -n            -- Print only jail name (for use with -l)
     -J n          -- Run buildworld in parallel with n jobs.
@@ -384,6 +385,20 @@ installworld() {
 	return 0
 }
 
+build_pkgbase() {
+	local make_jobs
+	local destdir="${JAILMNT}"
+
+	if [ ${JAIL_OSVERSION} -gt 1100086 ]; then
+		make_jobs="${MAKE_JOBS}"
+	fi
+
+	msg "Starting make packages"
+	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages \
+	    DESTDIR=${destdir} REPODIR=${POUDRIERE_DATA}/images/${JAILNAME}-repo ${MAKEWORLDARGS} || \
+		err 1 "Failed to 'make packages'"
+}
+
 setup_build_env() {
 	local hostver
 
@@ -533,6 +548,9 @@ install_from_src() {
 	else
 		buildworld
 		installworld
+		if [ ${BUILD_PKGBASE} -eq 1 ]; then
+			build_pkgbase
+		fi
 	fi
 	build_native_xtools
 	# Use __FreeBSD_version as our version_extra
@@ -593,6 +611,9 @@ install_from_vcs() {
 	fi
 	buildworld
 	installworld
+	if [ ${BUILD_PKGBASE} -eq 1 ]; then
+		build_pkgbase
+	fi
 	build_native_xtools
 
 	case ${METHOD} in
@@ -1023,10 +1044,13 @@ XDEV=0
 BUILD=0
 GIT_DEPTH=--depth=1
 
-while getopts "biJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
+while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 	case "${FLAG}" in
 		b)
 			BUILD=1
+			;;
+		B)
+			BUILD_PKGBASE=1
 			;;
 		i)
 			INFO=1
