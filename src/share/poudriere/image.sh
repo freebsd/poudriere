@@ -42,6 +42,7 @@ Parameters:
     -n imagename    -- The name of the generated image
     -o outputdir    -- Image destination directory
     -p portstree    -- Ports tree
+    -P pkgbase     -- List of pkgbase packages to install
     -s size         -- Set the image size
     -S snapshotname -- Snapshot name
     -t type         -- Type of image can be one of (default iso+zmfs):
@@ -176,7 +177,7 @@ make_esp_file() {
 . ${SCRIPTPREFIX}/common.sh
 HOSTNAME=poudriere-image
 
-while getopts "bc:f:h:i:j:m:n:o:p:s:S:t:w:X:z:" FLAG; do
+while getopts "bc:f:h:i:j:m:n:o:p:P:s:S:t:w:X:z:" FLAG; do
 	case "${FLAG}" in
 		b)
 			SWAPBEFORE=1
@@ -218,6 +219,14 @@ while getopts "bc:f:h:i:j:m:n:o:p:s:S:t:w:X:z:" FLAG; do
 			;;
 		p)
 			PTNAME=${OPTARG}
+			;;
+		P)
+			# If this is a relative path, add in ${PWD} as
+			# a cd / was done.
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			    OPTARG="${SAVED_PWD}/${OPTARG}"
+			[ -r "${OPTARG}" ] || err 1 "No such package list: ${OPTARG}"
+			PKGBASELIST=${OPTARG}
 			;;
 		s)
 			IMAGESIZE="${OPTARG}"
@@ -476,14 +485,31 @@ zsnapshot)
 	;;
 esac
 
-# Use of tar given cpdup has a pretty useless -X option for this case
-tar -C ${mnt} -X ${excludelist} -cf - . | tar -xf - -C ${WRKDIR}/world
-touch ${WRKDIR}/src.conf
-[ ! -f ${POUDRIERED}/src.conf ] || cat ${POUDRIERED}/src.conf > ${WRKDIR}/src.conf
-[ ! -f ${POUDRIERED}/${JAILNAME}-src.conf ] || cat ${POUDRIERED}/${JAILNAME}-src.conf >> ${WRKDIR}/src.conf
-[ ! -f ${POUDRIERED}/image-${JAILNAME}-src.conf ] || cat ${POUDRIERED}/image-${JAILNAME}-src.conf >> ${WRKDIR}/src.conf
-[ ! -f ${POUDRIERED}/image-${JAILNAME}-${SETNAME}-src.conf ] || cat ${POUDRIERED}/image-${JAILNAME}-${SETNAME}-src.conf >> ${WRKDIR}/src.conf
-make -C ${mnt}/usr/src DESTDIR=${WRKDIR}/world BATCH_DELETE_OLD_FILES=yes SRCCONF=${WRKDIR}/src.conf delete-old delete-old-libs
+
+if [ -f "${PKGBASELIST}" ]; then
+	OSVERSION=$(awk -F '"' '/REVISION=/ { print $2 }' ${mnt}/usr/src/sys/conf/newvers.sh | cut -d '.' -f 1)
+	mkdir -p ${WRKDIR}/world/etc/pkg/
+	cat << -EOF > ${WRKDIR}/world/etc/pkg/FreeBSD-base.conf
+	local: {
+               url: file://${POUDRIERE_DATA}/images/${JAILNAME}-repo/FreeBSD:${OSVERSION}:${arch}/latest,
+               enabled: true
+	       }
+-EOF
+	pkg -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world update
+	while read line; do
+		pkg -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world install -y ${line}
+	done < ${PKGBASELIST}
+	rm ${WRKDIR}/world/etc/pkg/FreeBSD-base.conf
+else
+	# Use of tar given cpdup has a pretty useless -X option for this case
+	tar -C ${mnt} -X ${excludelist} -cf - . | tar -xf - -C ${WRKDIR}/world
+	touch ${WRKDIR}/src.conf
+	[ ! -f ${POUDRIERED}/src.conf ] || cat ${POUDRIERED}/src.conf > ${WRKDIR}/src.conf
+	[ ! -f ${POUDRIERED}/${JAILNAME}-src.conf ] || cat ${POUDRIERED}/${JAILNAME}-src.conf >> ${WRKDIR}/src.conf
+	[ ! -f ${POUDRIERED}/image-${JAILNAME}-src.conf ] || cat ${POUDRIERED}/image-${JAILNAME}-src.conf >> ${WRKDIR}/src.conf
+	[ ! -f ${POUDRIERED}/image-${JAILNAME}-${SETNAME}-src.conf ] || cat ${POUDRIERED}/image-${JAILNAME}-${SETNAME}-src.conf >> ${WRKDIR}/src.conf
+	make -C ${mnt}/usr/src DESTDIR=${WRKDIR}/world BATCH_DELETE_OLD_FILES=yes SRCCONF=${WRKDIR}/src.conf delete-old delete-old-libs
+fi
 
 [ ! -d "${EXTRADIR}" ] || cp -fRPp ${EXTRADIR}/ ${WRKDIR}/world/
 if [ -f "${WRKDIR}/world/etc/login.conf.orig" ]; then
