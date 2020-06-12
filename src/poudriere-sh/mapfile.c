@@ -347,7 +347,7 @@ mapfile_readcmd(int argc, char **argv)
 			case -1:
 				debug("%d: SELECT error getline %s errno %d\n",
 				    getpid(), handle, errno);
-				ret = 1;
+				ret = EX_IOERR;
 				warn("%s", "select");
 				goto out;
 			}
