@@ -243,7 +243,7 @@ parallel_run() {
 	# Only read once all slots are taken up; burst jobs until maxed out.
 	# NBPARALLEL is never decreased and only inreased until maxed.
 	if [ ${NBPARALLEL} -eq ${PARALLEL_JOBS} ]; then
-		unset a; until trappedinfo=; read a <&9 || [ -z "$trappedinfo" ]; do :; done
+		read_blocking a <&9 || :
 	fi
 
 	[ ${NBPARALLEL} -lt ${PARALLEL_JOBS} ] && NBPARALLEL=$((NBPARALLEL + 1))
@@ -306,8 +306,7 @@ nohang() {
 		# This is done instead of a 'sleep' as it should recognize
 		# the command has completed right away instead of waiting
 		# on the 'sleep' to finish
-		unset n; until trappedinfo=; read -t $read_timeout n <&8 ||
-			[ -z "$trappedinfo" ]; do :; done
+		read_blocking -t "${read_timeout}" n <&8 || :
 		if [ "${n}" = "done" ]; then
 			_wait $childpid || ret=1
 			break

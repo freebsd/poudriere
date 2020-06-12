@@ -1439,7 +1439,6 @@ ${COLOR_RESET}Tobuild: %-${queue_width}d  Time: %s\n" \
 
 siginfo_handler() {
 	local IFS; unset IFS;
-	trappedinfo=1
 	in_siginfo_handler=1
 	if [ "${POUDRIERE_BUILD_TYPE}" != "bulk" ]; then
 		return 0
@@ -4602,8 +4601,7 @@ build_queue() {
 		update_remaining
 
 		# Wait for an event from a child. All builders are busy.
-		unset jobid; until trappedinfo=; read -t ${timeout} jobid <&6 ||
-			[ -z "$trappedinfo" ]; do :; done
+		read_blocking -t "${timeout}" jobid <&6 || :
 		if [ -n "${jobid}" ]; then
 			# A job just finished.
 			if job_done "${jobid}"; then
