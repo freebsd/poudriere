@@ -42,7 +42,7 @@ Parameters:
     -n imagename    -- The name of the generated image
     -o outputdir    -- Image destination directory
     -p portstree    -- Ports tree
-    -P pkgbase     -- List of pkgbase packages to install
+    -P pkgbase      -- List of pkgbase packages to install
     -s size         -- Set the image size
     -S snapshotname -- Snapshot name
     -t type         -- Type of image can be one of (default iso+zmfs):
