@@ -2,6 +2,7 @@
 #
 # Copyright (c) 2015 Baptiste Daroussin <bapt@FreeBSD.org>
 # All rights reserved.
+# Copyright (c) 2020 Allan Jude <allanjude@FreeBSD.org>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -30,7 +31,13 @@ usage() {
 poudriere image [parameters] [options]
 
 Parameters:
+    -A post-script  -- Source this script after populating the \$WRKDIR/world
+                       directory to apply customizations before exporting the
+                       final image.
     -b              -- Place the swap partition before the primary partition(s)
+    -B pre-script   -- Source this script instead of using the defaults to setup
+                       the disk image and mount it to \$WRKDIR/world before
+                       installing the contents to the image
     -c overlaydir   -- The content of the overlay directory will be copied into
                        the image
     -f packagelist  -- List of packages to install
@@ -177,10 +184,21 @@ make_esp_file() {
 . ${SCRIPTPREFIX}/common.sh
 HOSTNAME=poudriere-image
 
-while getopts "bc:f:h:i:j:m:n:o:p:P:s:S:t:w:X:z:" FLAG; do
+: ${PRE_BUILD_SCRIPT:=""}
+: ${POST_BUILD_SCRIPT:=""}
+
+while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:s:S:t:w:X:z:" FLAG; do
 	case "${FLAG}" in
+		A)
+			[ -f "${OPTARG}" ] || err 1 "No such post-build-script: ${OPTARG}"
+			POST_BUILD_SCRIPT="$(realpath ${OPTARG})"
+			;;
 		b)
 			SWAPBEFORE=1
+			;;
+		B)
+			[ -f "${OPTARG}" ] || err 1 "No such pre-build-script: ${OPTARG}"
+			PRE_BUILD_SCRIPT="$(realpath ${OPTARG})"
 			;;
 		c)
 			[ -d "${OPTARG}" ] || err 1 "No such extract directory: ${OPTARG}"
@@ -328,6 +346,7 @@ _jget mnt ${JAILNAME} mnt || err 1 "Missing mnt metadata for jail"
 excludelist=$(mktemp -t excludelist)
 mkdir -p ${WRKDIR}/world
 mkdir -p ${WRKDIR}/out
+WORLDDIR="${WRKDIR}/world"
 [ -z "${EXCLUDELIST}" ] || cat ${EXCLUDELIST} > ${excludelist}
 cat >> ${excludelist} << EOF
 usr/src
@@ -401,6 +420,11 @@ if [ -n "${SWAPSIZE}" ]; then
 	SWAPSIZE="${NEW_SWAPSIZE_SIZE}${NEW_SWAPSIZE_UNIT}"
 fi
 
+if [ -n "${PRE_BUILD_SCRIPT}" ]; then
+	. "${PRE_BUILD_SCRIPT}"
+	REAL_MEDIATYPE="${MEDIATYPE}"
+	MEDIATYPE="skip"
+fi
 case "${MEDIATYPE}" in
 embedded)
 	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
@@ -482,6 +506,9 @@ zsnapshot)
 	if [ ! -z "${ORIGIN_IMAGE}" -a -f ${WRKDIR}/mnt/.version ]; then
 		PREVIOUS_SNAPSHOT_VERSION=$(cat ${WRKDIR}/mnt/.version)
 	fi
+	;;
+skip)
+	MEDIATYPE="${REAL_MEDIATYPE}"
 	;;
 esac
 
@@ -733,6 +760,11 @@ zsnapshot)
 	do_clone -r ${WRKDIR}/world ${WRKDIR}/mnt
 	;;
 esac
+
+if [ -f "${POST_BUILD_SCRIPT}" ]; then
+	# Source the post-build-script.
+	. "${POST_BUILD_SCRIPT}"
+fi
 
 case ${MEDIATYPE} in
 iso)
