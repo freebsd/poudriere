@@ -494,7 +494,7 @@ if [ -f "${PKGBASELIST}" ]; then
                url: file://${POUDRIERE_DATA}/images/${JAILNAME}-repo/FreeBSD:${OSVERSION}:${arch}/latest,
                enabled: true
 	       }
--EOF
+EOF
 	pkg -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world update
 	while read line; do
 		pkg -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world install -y ${line}
