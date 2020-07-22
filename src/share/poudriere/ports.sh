@@ -53,7 +53,7 @@ Options:
     -m method     -- When used with -c, specify the method used to create the
                      ports tree. Possible methods are 'git', 'null', 'portsnap',
                      'svn', 'svn+http', 'svn+https', 'svn+file', or 'svn+ssh'.
-                     The default is 'portsnap'.
+                     The default is 'svn+https'.
     -n            -- When used with -l, only print the name of the ports tree
     -p name       -- Specifies the name of the ports tree to work on.  The
                      default is 'default'.
@@ -132,7 +132,7 @@ saved_argv="$@"
 shift $((OPTIND-1))
 post_getopts
 
-[ ${FAKE} -eq 0 ] && METHOD=${METHOD:-portsnap}
+[ ${FAKE} -eq 0 ] && METHOD=${METHOD:-svn+https}
 PTNAME=${PTNAME:-default}
 
 [ "${METHOD}" = "none" ] && METHOD=null
