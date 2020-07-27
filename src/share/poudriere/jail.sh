@@ -59,8 +59,8 @@ Options:
     -m method     -- When used with -c, overrides the default method for
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
-                       allbsd, ftp-archive, ftp, git, http, null, src=PATH, svn,
-                       svn+file, svn+http, svn+https, svn+ssh, tar=PATH
+                       allbsd, ftp-archive, ftp, freebsdci, git, http, null, src=PATH,
+                       svn, svn+file, svn+http, svn+https, svn+ssh, tar=PATH
                        url=SOMEURL.
                      The default is '${METHOD_DEF}'.
     -P patch      -- Specify a patch to apply to the source before building.
@@ -348,7 +348,7 @@ update_jail() {
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
-	allbsd|gjb|url=*)
+	allbsd|gjb|url=*|freebsdci)
 		[ -z "${VERSION}" ] && VERSION=$(jget ${JAILNAME} version)
 		[ -z "${ARCH}" ] && ARCH=$(jget ${JAILNAME} arch)
 		delete_jail
@@ -672,6 +672,7 @@ install_from_ftp() {
 		url=*) URL=${METHOD##url=} ;;
 		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
 		ftp-archive) URL="http://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
+		freebsdci) URL="https://artifact.ci.freebsd.org/snapshot/${V}/latest_tested/${ARCH%%.*}/${ARCH##*.}" ;;
 		esac
 		DISTS="${DISTS} dict"
 		[ "${NO_LIB32:-no}" = "no" -a "${ARCH}" = "amd64" ] &&
@@ -734,6 +735,7 @@ install_from_ftp() {
 				;;
 			allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
 			ftp-archive) URL="http://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH%%.*}/${ARCH##*.}/${V}" ;;
+			freebsdci) URL="https://artifact.ci.freebsd.org/snapshot/${V}/latest_tested/${ARCH%%.*}/${ARCH##*.}" ;;
 			url=*) URL=${METHOD##url=} ;;
 		esac
 
@@ -820,7 +822,7 @@ create_jail() {
 	fi
 
 	case ${METHOD} in
-	ftp|http|gjb|ftp-archive|url=*)
+	ftp|http|gjb|ftp-archive|freebsdci|url=*)
 		FCT=install_from_ftp
 		;;
 	allbsd)
