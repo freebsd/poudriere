@@ -69,6 +69,8 @@ Options:
     -v          -- Be verbose; show more information. Use twice to enable
                    debug output
     -w          -- Save WRKDIR on failed builds
+    -W          -- Mount ports tree in read-write mode (allowing to patch
+                   it in interactive mode)
     -z set      -- Specify which SET to use
 EOF
 	exit 1
@@ -88,11 +90,12 @@ ALL=0
 BUILD_REPO=1
 INTERACTIVE_MODE=0
 OVERLAYS=""
+PORTS_SRC_RW=0
 . ${SCRIPTPREFIX}/common.sh
 
 [ $# -eq 0 ] && usage
 
-while getopts "aB:CcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
+while getopts "aB:CcFf:iIj:J:knNO:p:RrSTtvwWz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			ALL=1
@@ -175,6 +178,9 @@ while getopts "aB:CcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
 			;;
 		w)
 			SAVE_WRKDIR=1
+			;;
+		W)
+			PORTS_SRC_RW=1
 			;;
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"
