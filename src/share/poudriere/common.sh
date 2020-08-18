@@ -7060,8 +7060,13 @@ load_moved() {
 	[ -f ${MASTERMNT}${PORTSDIR}/MOVED ] || return 0
 	msg "Loading MOVED for ${MASTERMNT}${PORTSDIR}"
 	bset status "loading_moved:"
-	awk -f ${AWKPREFIX}/parse_MOVED.awk \
-	    ${MASTERMNT}${PORTSDIR}/MOVED | \
+        { cat ${MASTERMNT}${PORTSDIR}/MOVED 
+          for o in ${OVERLAYS}; do
+                 test -f "${MASTERMNT}${OVERLAYSDIR}/${o}/MOVED" || continue
+                 cat "${MASTERMNT}${OVERLAYSDIR}/${o}/MOVED"
+          done
+        } | \
+	awk -f ${AWKPREFIX}/parse_MOVED.awk | \
 	    while mapfile_read_loop_redir old_origin new_origin; do
 		# new_origin may be EXPIRED followed by the reason
 		# or only a new origin.
