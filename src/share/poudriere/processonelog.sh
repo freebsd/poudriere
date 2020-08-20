@@ -36,6 +36,8 @@ elif bzgrep -qE "\.(c|cc|cxx|cpp|h|y)[0-9:]+ .+\.[hH](: No such file|' file not 
   reason="missing_header"
 elif bzgrep -qE '(nested function.*declared but never defined|warning: nested extern declaration)' $1; then
   reason="nested_declaration"
+elif bzgrep -q "ld: error: duplicate symbol:" $1; then
+  reason="duplicate_symbol"
 elif bzgrep -qE 'error: .* create dynamic relocation .* against symbol: .* in readonly segment' $1; then
   reason="lld_linker_error"
 # note: must be run before compiler_error
