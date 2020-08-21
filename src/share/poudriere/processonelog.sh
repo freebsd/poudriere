@@ -63,7 +63,7 @@ elif bzgrep -qE 'error: (array type has incomplete element type|conflicts with n
   reason="gcc4_error"
 elif bzgrep -qE '(/usr/libexec/elf/ld: cannot find|undefined reference to|cannot open -l.*: No such file|error: linker command failed with exit code 1)' $1; then
   reason="linker_error"
-elif bzgrep -q 'install: .*: No such file' $1; then
+elif bzgrep -qE '(install|cp): .*: No such file' $1; then
   reason="install_error"
 elif bzgrep -qE "(conflicts with installed package|installs files into the same place|is already installed - perhaps an older version|You may wish to ..make deinstall.. and install this port again)" $1; then
   reason="depend_object"
@@ -112,7 +112,7 @@ elif bzgrep -qE "(missing separator|mixed implicit and normal rules|recipe comme
   reason="gmake"
 elif bzgrep -qE "(Run-time system build failed for some reason|tar: Error opening archive: Failed to open.*No such file or directory)" $1; then
   reason="install_error"
-elif bzgrep -qE "(cc: .*libintl.*: No such file or directory|cc: ndbm\.so: No such file or directory|error: linker command failed|error: The X11 shared library could not be loaded|libtool: link: cannot find the library|relocation against dynamic symbol|Shared object.*not found, required by)" $1; then
+elif bzgrep -qE "(cc: .*libintl.*: No such file or directory|cc: ndbm\.so: No such file or directory|error: linker command failed|error: The X11 shared library could not be loaded|libtool: link: cannot find the library|relocation against dynamic symbol|Shared object.*not found, required by|ld: unrecognized option)" $1; then
   reason="linker_error"
 elif bzgrep -q "libtool: finish: invalid argument" $1; then
   reason="libtool"
