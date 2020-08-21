@@ -164,6 +164,11 @@ elif bzgrep -q "pkg-static: package field incomplete" $1; then
   reason="MANIFEST"
 elif bzgrep -q "Segmentation fault" $1; then
   reason="segfault"
+# must come after segfault
+elif bzgrep -qE "(process didn.t exit successfully:.*build-script-build|try .rustc --explain)" $1; then
+  reason="rust"
+elif bzgrep -qi 'ninja: build stopped: subcommand failed' $1; then
+  reason="ninja"
 
 else
   reason="???"
