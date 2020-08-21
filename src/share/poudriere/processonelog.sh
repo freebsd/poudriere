@@ -35,16 +35,10 @@ elif bzgrep -qE 'error: .* create dynamic relocation .* against symbol: .* in re
 # note: must be run before compiler_error
 elif bzgrep -q '#warning "this file includes <sys/termios.h>' $1; then
   reason="termios"
-# note: must be run before compiler_error
-elif bzgrep -qE "(#error define UTMP_FILENAME in config.h|error: ._PATH_UTMP. undeclared|error: .struct utmpx. has no member named .ut_name|error: invalid application of .sizeof. to incomplete type .struct utmp|utmp.h> has been replaced by <utmpx.h)" $1; then
-  reason="utmp_x"
 elif bzgrep -qE '(parse error|too (many|few) arguments to|argument.*doesn.*prototype|incompatible type for argument|conflicting types for|undeclared \(first use (in |)this function\)|incorrect number of parameters|has incomplete type and cannot be initialized|error: storage size.* isn.t known|command .cc. terminated by signal 4)' $1; then
   reason="compiler_error"
 elif bzgrep -qE '(ANSI C.. forbids|is a contravariance violation|changed for new ANSI .for. scoping|[0-9]: passing .* changes signedness|lacks a cast|redeclared as different kind of symbol|invalid type .* for default argument to|wrong type argument to unary exclamation mark|duplicate explicit instantiation of|incompatible types in assignment|assuming . on overloaded member function|call of overloaded .* is ambiguous|declaration of C function .* conflicts with|initialization of non-const reference type|using typedef-name .* after|[0-9]: size of array .* is too large|fixed or forbidden register .* for class|assignment of read-only variable|error: label at end of compound statement|error:.*(has no|is not a) member|error:.*is (private|protected)|error: uninitialized member|error: unrecognized command line option)' $1; then
   reason="new_compiler_error"
-# XXX MCL must preceed badc++
-elif bzgrep -qE "error: invalid conversion from .*dirent" $1; then
-  reason="dirent"
 # must preceed badc++
 elif bzgrep -qE "ld: error:.*undefined (reference|symbol).*std::" $1; then
   reason="clang11"
@@ -61,9 +55,6 @@ elif bzgrep -qE "(conflicts with installed package|installs files into the same 
   reason="depend_object"
 elif bzgrep -q "core dumped" $1; then
   reason="coredump"
-# linimon would _really_ like to understand how to fix this problem
-elif bzgrep -q "pkg_add: tar extract.*failed!" $1; then
-  reason="truncated_distfile"
 elif bzgrep -qE "(error: a parameter list without types|error: C++ requires a type specifier|error: allocation of incomplete type|error: array is too large|error: binding of reference|error: call to func.*neither visible|error: called object type|error: cannot combine with previous.*specifier|error: cannot initialize (a parameter|a variable|return object)|error: cannot pass object|error:.*cast from pointer|error: comparison of unsigned.*expression.*is always|error: conversion.*(is ambiguous|specifies type)|error:.*converts between pointers to integer|error: declaration of.*shadows template parameter|error:.*declared as an array with a negative size|error: default arguments cannot be added|error: default initialization of an object|error: definition.*not in a namespace|error:.*directive requires a positive integer argument|error: elaborated type refers to a typedef|error: exception specification|error: explicit specialization.*after instantiation|error: explicitly assigning a variable|error: expression result unused|error: fields must have a constant size|error: flexible array member|error: (first|second) (argument|parameter) of .main|error: format string is not a string literal|error: function.*is not needed|error: global register values are not supported|error:.*hides overloaded virtual function|error: if statement has empty body|error: illegal storage class on function|error: implicit (conversion|declaration|instantiation)|error: indirection.*will be deleted|error: initializer element is not.*constant|error: initialization of pointer|error: indirect goto might cross|error:.*is a (private|protected) member|error: member (of anonymous union|reference)|error: no matching member|error: non-const lvalue|error: non-void function.*should return a value|error: no (matching constructor|member named|viable overloaded)|error: parameter.*must have type|error: passing.*(a.*value|incompatible type)|error: qualified reference|error: redeclaration of.*built-in type|error:.*requires a (constant expression|pointer or reference|type specifier)|error: redefinition of|error: switch condition has boolean|error: taking the address of a temporary object|error: target.*conflicts with declaration|error:.*unable to pass LLVM bit-code files to linker|error: unexpected token|error: unknown (machine mode|type name)|error: unsupported option|error: unused (function|parameter)|error: use of (GNU old-style field designator|undeclared identifier|unknown builtin)|error: using the result of an assignment|error: variable.*is unitialized|error: variable length array|error: void function.*should not return a value|the clang compiler does not support|Unknown depmode none)" $1; then
   reason="clang"
 
@@ -84,12 +75,6 @@ elif bzgrep -q 'Checksum mismatch' $1; then
   reason="checksum"
 elif bzgrep -qE "(clang: error: unable to execute command|error: cannot compile this.*yet|error: clang frontend command failed|error:.*ignoring directive for now|error: (invalid|unknown) argument|error: (invalid|unknown use of) instruction mnemonic|error:.*please report this as a bug)" $1; then
   reason="clang-bug"
-elif bzgrep -q "Shared object \"libc.so.6\" not found, required by" $1; then
-  reason="compat6x"
-elif bzgrep -q "Fatal error .failed to get sysctl kern.sched.cpusetsize" $1; then
-  reason="cpusetsize"
-elif bzgrep -qE "pkg_(add|create):.*(can't find enough temporary space|projected size of .* exceeds available free space)" $1; then
-  reason="disk_full"
 elif bzgrep -qE "((Can't|unable to) open display|Cannot open /dev/tty for read|RuntimeError: cannot open display|You must run this program under the X-Window System)" $1; then
   reason="DISPLAY"
 elif bzgrep -qE '(No checksum recorded for|(Maybe|Either) .* is out of date, or)' $1; then
@@ -116,8 +101,6 @@ elif bzgrep -q "/usr/.*/man/.*: No such file or directory" $1; then
   reason="manpage"
 elif bzgrep -q "out of .* hunks .*--saving rejects to" $1; then
   reason="patch"
-elif bzgrep -qE "((perl|perl5.6.1):.*(not found|No such file or directory)|cp:.*site_perl: No such file or directory|perl(.*): Perl is not installed, try .pkg_add -r perl|Perl .* required--this is only version)" $1; then
-  reason="perl"
 elif bzgrep -qE "(Abort trap|Bus error|Error 127|Killed: 9|Signal 1[01])" $1; then
   reason="process_failed"
 elif bzgrep -q "error: .regparm. is not valid on this platform" $1; then
@@ -126,8 +109,6 @@ elif bzgrep -qE "(USER.*PID.*TIME.*COMMAND|pnohang: killing make package|Killing
   reason="runaway_process"
 elif bzgrep -qE "(/usr/bin/ld: cannot find -l(pthread|XThrStub)|cannot find -lc_r|Error: pthreads are required to build this package|Please install/update your POSIX threads (pthreads) library|requires.*thread support|: The -pthread option is deprecated|error: reference to .thread. is ambiguous)" $1; then
   reason="threads"
-elif bzgrep -qE 'pkg-static: Fail.*(Read-only file system|Operation not permitted)' $1; then
-  reason="immutable_base"
 elif bzgrep -qi 'read-only file system' $1; then
   reason="WRKDIR"
 
@@ -150,12 +131,6 @@ elif bzgrep -q "/usr/bin/ld: cannot find -l" $1; then
   reason="linker_error"
 elif bzgrep -q "^#error \"" $1; then
   reason="explicit_error"
-elif bzgrep -q "cd: can't cd to" $1; then
-  reason="NFS"
-elif bzgrep -qE "(pkg_create: make_dist: tar command failed with code|pkg-static: lstat|pkg-static DEVELOPER_MODE: Plist error:|Error: check-plist failures)" $1; then
-  reason="PLIST"
-elif bzgrep -q "pkg-static: package field incomplete" $1; then
-  reason="MANIFEST"
 elif bzgrep -qE "(Segmentation fault|signal: 11, SIGSEGV)" $1; then
   reason="segfault"
 # must come after segfault
