@@ -16,16 +16,8 @@ elif bzgrep -qE "(Error: Filesystem touched during stage|Error: stage-qa failure
 # note: must run before the configure_error check
 elif bzgrep -qE "Configuration .* not supported" $1; then
   reason="arch"
-elif bzgrep -qE '(configure: error:|Script.*configure.*failed unexpectedly|script.*failed: here are the contents of)' $1; then
-  if bzgrep -qE "configure: error: cpu .* not supported" $1; then
-    reason="arch"
-  elif bzgrep -qE "configure: error: [Pp]erl (5.* required|version too old)" $1; then
-    reason="perl"
-  elif bzgrep -q 'sem_wait: Invalid argument' $1; then
-    reason="sem_wait"
-  else
-    reason="configure_error"
-  fi
+elif bzgrep -qE '(configure: error:|Script.*configure.*failed unexpectedly|script.*failed: here are the contents of|CMake Error at|fatal error.*file not found)' $1; then
+  reason="configure_error"
 elif bzgrep -q "invalid DSO for symbol" $1; then
   reason="missing_LDFLAGS"
 elif bzgrep -q "Couldn't fetch it - please try" $1; then
