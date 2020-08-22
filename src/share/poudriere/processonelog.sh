@@ -14,14 +14,14 @@ if bzgrep -qE "(Error: mtree file ./etc/mtree/BSD.local.dist. is missing|error i
 # note: must run before the configure_error check
 elif bzgrep -qE "Configuration .* not supported" $1; then
   reason="arch"
+elif bzgrep -qE "\.(c|cc|cxx|cpp|h|y)[0-9:]+ .+\.[hH](: No such file|' file not found)" $1; then
+  reason="missing_header"
 elif bzgrep -qE '(configure: error:|Script.*configure.*failed unexpectedly|script.*failed: here are the contents of|CMake Error at|fatal error.*file not found)' $1; then
   reason="configure_error"
 elif bzgrep -q "Couldn't fetch it - please try" $1; then
   reason="fetch"
 elif bzgrep -q "Error: shared library \".*\" does not exist" $1; then
   reason="LIB_DEPENDS"
-elif bzgrep -qE "\.(c|cc|cxx|cpp|h|y)[0-9:]+ .+\.[hH](: No such file|' file not found)" $1; then
-  reason="missing_header"
 elif bzgrep -q "ld: error: duplicate symbol:" $1; then
   reason="duplicate_symbol"
 elif bzgrep -qE 'error: .* create dynamic relocation .* against symbol: .* in readonly segment' $1; then
