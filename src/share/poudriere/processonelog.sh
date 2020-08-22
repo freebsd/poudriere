@@ -32,9 +32,6 @@ elif bzgrep -q "ld: error: duplicate symbol:" $1; then
   reason="duplicate_symbol"
 elif bzgrep -qE 'error: .* create dynamic relocation .* against symbol: .* in readonly segment' $1; then
   reason="lld_linker_error"
-# note: must be run before compiler_error
-elif bzgrep -q '#warning "this file includes <sys/termios.h>' $1; then
-  reason="termios"
 elif bzgrep -qE '(parse error|too (many|few) arguments to|argument.*doesn.*prototype|incompatible type for argument|conflicting types for|undeclared \(first use (in |)this function\)|incorrect number of parameters|has incomplete type and cannot be initialized|error: storage size.* isn.t known|command .cc. terminated by signal 4)' $1; then
   reason="compiler_error"
 elif bzgrep -qE '(ANSI C.. forbids|is a contravariance violation|changed for new ANSI .for. scoping|[0-9]: passing .* changes signedness|lacks a cast|redeclared as different kind of symbol|invalid type .* for default argument to|wrong type argument to unary exclamation mark|duplicate explicit instantiation of|incompatible types in assignment|assuming . on overloaded member function|call of overloaded .* is ambiguous|declaration of C function .* conflicts with|initialization of non-const reference type|using typedef-name .* after|[0-9]: size of array .* is too large|fixed or forbidden register .* for class|assignment of read-only variable|error: label at end of compound statement|error:.*(has no|is not a) member|error:.*is (private|protected)|error: uninitialized member|error: unrecognized command line option)' $1; then
@@ -106,6 +103,9 @@ elif bzgrep -q "error: .regparm. is not valid on this platform" $1; then
   reason="regparm"
 elif bzgrep -qE "(USER.*PID.*TIME.*COMMAND|pnohang: killing make package|Killing runaway|Killing timed out build)" $1; then
   reason="runaway_process"
+# this is usually a second-order effect
+elif bzgrep -q '#warning "this file includes <sys/termios.h>' $1; then
+  reason="termios"
 elif bzgrep -qE "(/usr/bin/ld: cannot find -l(pthread|XThrStub)|cannot find -lc_r|Error: pthreads are required to build this package|Please install/update your POSIX threads (pthreads) library|requires.*thread support|: The -pthread option is deprecated|error: reference to .thread. is ambiguous)" $1; then
   reason="threads"
 elif bzgrep -qi 'read-only file system' $1; then
