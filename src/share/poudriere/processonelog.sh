@@ -4,7 +4,7 @@
 # Read a single errorlogfile and output a reason.
 #
 # Originally factored out of portbuild's processonelog
-# XXX MCL note: not up-to-date with:
+# not up-to-date with:
 # http://www.marcuscom.com:8080/cgi-bin/cvsweb.cgi/portstools/tinderbox/sql/values.{lp|pfp|pfr}
 
 filename=$1
@@ -33,7 +33,6 @@ elif bzgrep -qE '(ANSI C.. forbids|is a contravariance violation|changed for new
 # must preceed badc++
 elif bzgrep -qE "ld: error:.*undefined (reference|symbol).*std::" $1; then
   reason="clang11"
-# s/ISO C++ does not support/ISO C++/
 elif bzgrep -qE '(syntax error before|friend declaration|no matching function for call to|.main. must return .int.|invalid conversion (between|from)|cannot be used as a macro name as it is an operator in C\+\+|is not a member of type|after previous specification in|no class template named|because worst conversion for the former|better than worst conversion|no match for.*operator|no match for call to|undeclared in namespace|is used as a type, but is not|error: array bound forbidden|error: class definition|error: expected constructor|error: there are no arguments|error:.*cast.*loses precision|ISO C\+\+|error: invalid pure specifier|error: invalid (argument type|integral value|operand|token|use of a cast|value)|error: expected.*(at end of declaration|expression|identifier)|error:.*not supported|error:.*assert failed|error: expected unqualified-id|error: non-constant-expression cannot be narrowed|error: cannot assign to variable|error: no type.*in namespace)' $1; then
   reason="bad_C++_code"
 elif bzgrep -qE 'error: (array type has incomplete element type|conflicts with new declaration|expected.*before .class|expected primary expression|extra qualification .* on member|.*has incomplete type|invalid cast.*type .* to type|invalid lvalue in (assignment|decrement|increment|unary)|invalid storage class for function|lvalue required as (increment operator|left operand)|.*should have been declared inside|static declaration of.*follows non-static declaration|two or more data types in declaration specifiers|.* was not declared in this scope)' $1; then
@@ -50,7 +49,6 @@ elif bzgrep -qE '(/usr/libexec/elf/ld: cannot find|undefined reference to|cannot
 
 # below here are the less common items
 
-# XXX MCL "file not recognized: File format not recognized" can be clang
 elif bzgrep -qE "(.s: Assembler messages:|Cannot (determine .* target|find the byte order) for this architecture|^cc1: bad value.*for -mcpu.*switch|could not read symbols: File in wrong format|[Ee]rror: [Uu]nknown opcode|error.*Unsupported architecture|ENDIAN must be defined 0 or 1|failed to merge target-specific data|(file not recognized|failed to set dynamic section sizes): File format not recognized|impossible register constraint|inconsistent operand constraints in an .asm|Invalid configuration.*unknown.*machine.*unknown not recognized|invalid lvalue in asm statement|is only for.*, and you are running|not a valid 64 bit base/index expression|relocation R_X86_64_32.*can not be used when making a shared object|relocation truncated to fit: |shminit failed: Function not implemented|The target cpu, .*, is not currently supported.|This architecture seems to be neither big endian nor little endian|unknown register name|Unable to correct byte order|Unsupported platform, sorry|won't run on this architecture|error: invalid output constraint .* in asm|error: unsupported inline asm|error: invalid (instruction|operand)|error: Please add support for your architecture|error: unrecognized machine type|error: [Uu]nknown endian|<inline asm>.* error:|error: unrecognized instruction)" $1;  then
   reason="arch"
 elif bzgrep -q 'Checksum mismatch' $1; then
