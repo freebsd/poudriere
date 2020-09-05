@@ -53,8 +53,6 @@ elif bzgrep -qE '(cp|install|make|pkg-static): .*: No such file' $1; then
   reason="install_error"
 elif bzgrep -qE "(conflicts with installed package|installs files into the same place|is already installed - perhaps an older version|You may wish to ..make deinstall.. and install this port again)" $1; then
   reason="depend_object"
-elif bzgrep -q "core dumped" $1; then
-  reason="coredump"
 elif bzgrep -qE "(error: a parameter list without types|error: C++ requires a type specifier|error: allocation of incomplete type|error: array is too large|error: binding of reference|error: call to func.*neither visible|error: called object type|error: cannot combine with previous.*specifier|error: cannot initialize (a parameter|a variable|return object)|error: cannot pass object|error:.*cast from pointer|error: comparison of unsigned.*expression.*is always|error: conversion.*(is ambiguous|specifies type)|error:.*converts between pointers to integer|error: declaration of.*shadows template parameter|error:.*declared as an array with a negative size|error: default arguments cannot be added|error: default initialization of an object|error: definition.*not in a namespace|error:.*directive requires a positive integer argument|error: elaborated type refers to a typedef|error: exception specification|error: explicit specialization.*after instantiation|error: explicitly assigning a variable|error: expression result unused|error: fields must have a constant size|error: flexible array member|error: (first|second) (argument|parameter) of .main|error: format string is not a string literal|error: function.*is not needed|error: global register values are not supported|error:.*hides overloaded virtual function|error: if statement has empty body|error: illegal storage class on function|error: implicit (conversion|declaration|instantiation)|error: indirection.*will be deleted|error: initializer element is not.*constant|error: initialization of pointer|error: indirect goto might cross|error:.*is a (private|protected) member|error: member (of anonymous union|reference)|error: no matching member|error: non-const lvalue|error: non-void function.*should return a value|error: no (matching constructor|member named|viable overloaded)|error: parameter.*must have type|error: passing.*(a.*value|incompatible type)|error: qualified reference|error: redeclaration of.*built-in type|error:.*requires a (constant expression|pointer or reference|type specifier)|error: redefinition of|error: switch condition has boolean|error: taking the address of a temporary object|error: target.*conflicts with declaration|error:.*unable to pass LLVM bit-code files to linker|error: unexpected token|error: unknown (machine mode|type name)|error: unsupported option|error: unused (function|parameter)|error: use of (GNU old-style field designator|undeclared identifier|unknown builtin)|error: using the result of an assignment|error: variable.*is unitialized|error: variable length array|error: void function.*should not return a value|the clang compiler does not support|Unknown depmode none)" $1; then
   reason="clang"
 
@@ -121,6 +119,8 @@ elif bzgrep -qE "\.(c|cc|cxx|cpp|h|y)[0-9:]+ error: .*-Werror" $1; then
   reason="clang_werror"
 elif bzgrep -qE 'cc1.*warnings being treated as errors' $1; then
   reason="compiler_error"
+elif bzgrep -q "core dumped" $1; then
+  reason="coredump"
 elif bzgrep -q 'tar: Error exit delayed from previous errors' $1; then
   reason="install_error"
 elif bzgrep -q "Cannot stat: " $1; then
