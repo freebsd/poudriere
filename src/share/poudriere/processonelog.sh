@@ -33,7 +33,7 @@ elif bzgrep -qE '(ANSI C.. forbids|is a contravariance violation|changed for new
 # must preceed badc++
 elif bzgrep -qE "ld: error:.*undefined (reference|symbol).*std::" $1; then
   reason="clang11"
-elif bzgrep -qE '(syntax error before|friend declaration|no matching function for call to|.main. must return .int.|invalid conversion (between|from)|cannot be used as a macro name as it is an operator in C\+\+|is not a member of type|after previous specification in|no class template named|because worst conversion for the former|better than worst conversion|no match for.*operator|no match for call to|undeclared in namespace|is used as a type, but is not|error: array bound forbidden|error: class definition|error: expected constructor|error: there are no arguments|error:.*cast.*loses precision|ISO C\+\+|error: invalid pure specifier|error: invalid (argument type|integral value|operand|token|use of a cast|value)|error: expected.*(at end of declaration|expression|identifier)|error:.*not supported|error:.*assert failed|error: expected unqualified-id|error: non-constant-expression cannot be narrowed|error: cannot assign to variable|error: no type.*in namespace)' $1; then
+elif bzgrep -qE '(syntax error before|friend declaration|no matching function for call to|.main. must return .int.|invalid conversion (between|from)|cannot be used as a macro name as it is an operator in C\+\+|is not a member of type|after previous specification in|no class template named|because worst conversion for the former|better than worst conversion|no match for.*operator|no match for call to|undeclared in namespace|is used as a type, but is not|error: array bound forbidden|error: class definition|error: expected constructor|error: there are no arguments|error:.*cast.*loses precision|ISO C\+\+|error: invalid pure specifier|error: invalid (argument type|integral value|operand|token|use of a cast|value)|error: expected.*(at end of declaration|expression|identifier)|error:.*not supported|error:.*assert failed|error: expected unqualified-id|error: non-constant-expression cannot be narrowed|error: cannot assign to variable|error: no type.*in namespace|error: constant expression evaluates)' $1; then
   reason="bad_C++_code"
 elif bzgrep -qE 'error: (array type has incomplete element type|conflicts with new declaration|expected.*before .class|expected primary expression|extra qualification .* on member|.*has incomplete type|invalid cast.*type .* to type|invalid lvalue in (assignment|decrement|increment|unary)|invalid storage class for function|lvalue required as (increment operator|left operand)|.*should have been declared inside|static declaration of.*follows non-static declaration|two or more data types in declaration specifiers|.* was not declared in this scope)' $1; then
   reason="gcc4_error"
@@ -53,7 +53,7 @@ elif bzgrep -qE "(.s: Assembler messages:|Cannot (determine .* target|find the b
   reason="arch"
 elif bzgrep -q 'Checksum mismatch' $1; then
   reason="checksum"
-elif bzgrep -qE "(clang: error: unable to execute command|error: cannot compile this.*yet|error: clang frontend command failed|error:.*ignoring directive for now|error: (invalid|unknown) argument|error: (invalid|unknown use of) instruction mnemonic|error:.*please report this as a bug)" $1; then
+elif bzgrep -qE "(clang: error: unable to execute command|error: cannot compile this.*yet|error: clang frontend command failed|error:.*ignoring directive for now|error: (invalid|unknown) argument|error: (invalid|unknown use of) instruction mnemonic|error:.*please report this as a bug|LLVM ERROR: )" $1; then
   reason="clang-bug"
 elif bzgrep -qE "((Can't|unable to) open display|Cannot open /dev/tty for read|RuntimeError: cannot open display|You must run this program under the X-Window System)" $1; then
   reason="DISPLAY"
@@ -75,7 +75,7 @@ elif bzgrep -v "regression-test.continuing" $1 | grep -qE "make.*(cannot open [M
   reason="makefile"
 elif bzgrep -q "/usr/.*/man/.*: No such file or directory" $1; then
   reason="manpage"
-elif bzgrep -q "out of .* hunks .*--saving rejects to" $1; then
+elif bzgrep -qE "(out of .* hunks .*--saving rejects to|FAILED to apply cleanly FreeBSD patch)" $1; then
   reason="patch"
 elif bzgrep -qE "(Abort trap|Bus error|Error 127|Killed: 9|Signal 1[01])" $1; then
   reason="process_failed"
