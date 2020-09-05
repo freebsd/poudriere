@@ -49,7 +49,7 @@ elif bzgrep -qE 'error: (array type has incomplete element type|conflicts with n
   reason="gcc4_error"
 elif bzgrep -qE '(/usr/libexec/elf/ld: cannot find|undefined reference to|cannot open -l.*: No such file|error: linker command failed with exit code 1)' $1; then
   reason="linker_error"
-elif bzgrep -qE '(cp|install|make|pkg-static): .*: No such file' $1; then
+elif bzgrep -qE '^(cp|install|make|pkg-static|strip|tar):.*No such file' $1; then
   reason="install_error"
 elif bzgrep -qE "(conflicts with installed package|installs files into the same place|is already installed - perhaps an older version|You may wish to ..make deinstall.. and install this port again)" $1; then
   reason="depend_object"
