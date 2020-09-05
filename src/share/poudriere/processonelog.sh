@@ -11,23 +11,17 @@ filename=$1
 
 if bzgrep -qE "(Error: mtree file ./etc/mtree/BSD.local.dist. is missing|error in pkg_delete|filesystem was touched prior to .make install|list of extra files and directories|list of files present before this port was installed|list of filesystem changes from before and after|Error: Files or directories left over|Error: Filesystem touched during build)" $1; then
   reason="mtree"
-elif bzgrep -qE "(Error: Filesystem touched during stage|Error: stage-qa failures)" $1; then
-  reason="stage"
 # note: must run before the configure_error check
 elif bzgrep -qE "Configuration .* not supported" $1; then
   reason="arch"
 elif bzgrep -qE '(configure: error:|Script.*configure.*failed unexpectedly|script.*failed: here are the contents of|CMake Error at|fatal error.*file not found)' $1; then
   reason="configure_error"
-elif bzgrep -q "invalid DSO for symbol" $1; then
-  reason="missing_LDFLAGS"
 elif bzgrep -q "Couldn't fetch it - please try" $1; then
   reason="fetch"
 elif bzgrep -q "Error: shared library \".*\" does not exist" $1; then
   reason="LIB_DEPENDS"
 elif bzgrep -qE "\.(c|cc|cxx|cpp|h|y)[0-9:]+ .+\.[hH](: No such file|' file not found)" $1; then
   reason="missing_header"
-elif bzgrep -qE '(nested function.*declared but never defined|warning: nested extern declaration)' $1; then
-  reason="nested_declaration"
 elif bzgrep -q "ld: error: duplicate symbol:" $1; then
   reason="duplicate_symbol"
 elif bzgrep -qE 'error: .* create dynamic relocation .* against symbol: .* in readonly segment' $1; then
@@ -59,14 +53,6 @@ elif bzgrep -qE '(/usr/libexec/elf/ld: cannot find|undefined reference to|cannot
 # XXX MCL "file not recognized: File format not recognized" can be clang
 elif bzgrep -qE "(.s: Assembler messages:|Cannot (determine .* target|find the byte order) for this architecture|^cc1: bad value.*for -mcpu.*switch|could not read symbols: File in wrong format|[Ee]rror: [Uu]nknown opcode|error.*Unsupported architecture|ENDIAN must be defined 0 or 1|failed to merge target-specific data|(file not recognized|failed to set dynamic section sizes): File format not recognized|impossible register constraint|inconsistent operand constraints in an .asm|Invalid configuration.*unknown.*machine.*unknown not recognized|invalid lvalue in asm statement|is only for.*, and you are running|not a valid 64 bit base/index expression|relocation R_X86_64_32.*can not be used when making a shared object|relocation truncated to fit: |shminit failed: Function not implemented|The target cpu, .*, is not currently supported.|This architecture seems to be neither big endian nor little endian|unknown register name|Unable to correct byte order|Unsupported platform, sorry|won't run on this architecture|error: invalid output constraint .* in asm|error: unsupported inline asm|error: invalid (instruction|operand)|error: Please add support for your architecture|error: unrecognized machine type|error: [Uu]nknown endian|<inline asm>.* error:|error: unrecognized instruction)" $1;  then
   reason="arch"
-elif bzgrep -qE "(Cannot exec cc|cannot find program cc|cc: No such file or directory|cc.*must be installed to build|compiler not found|error: no acceptable C compiler|g\+\+: No such file or directory|g\+\+.*not found)" $1; then
-  reason="assumes_gcc"
-elif bzgrep -qE "autoconf([0-9\-\.]*): (not found|No such file or directory)" $1; then
-  reason="autoconf"
-elif bzgrep -q "autoheader: not found" $1; then
-  reason="autoheader"
-elif bzgrep -qE "automake(.*): not found" $1; then
-  reason="automake"
 elif bzgrep -q 'Checksum mismatch' $1; then
   reason="checksum"
 elif bzgrep -qE "(clang: error: unable to execute command|error: cannot compile this.*yet|error: clang frontend command failed|error:.*ignoring directive for now|error: (invalid|unknown) argument|error: (invalid|unknown use of) instruction mnemonic|error:.*please report this as a bug)" $1; then
@@ -81,14 +67,10 @@ elif bzgrep -qE "(pnohang: killing make checksum|fetch: transfer timed out)" $1;
   reason="fetch_timeout"
 elif bzgrep -q "See <URL:http://gcc.gnu.org/bugs.html> for instructions." $1; then
   reason="gcc_bug"
-elif bzgrep -qE "(missing separator|mixed implicit and normal rules|recipe commences before first target).*Stop" $1; then
-  reason="gmake"
 elif bzgrep -qE "(Run-time system build failed for some reason|tar: Error opening archive: Failed to open.*No such file or directory)" $1; then
   reason="install_error"
 elif bzgrep -qE "(cc: .*libintl.*: No such file or directory|cc: ndbm\.so: No such file or directory|error: linker command failed|error: The X11 shared library could not be loaded|libtool: link: cannot find the library|relocation against dynamic symbol|Shared object.*not found, required by|ld: unrecognized option|error: ld returned.*status )" $1; then
   reason="linker_error"
-elif bzgrep -q "libtool: finish: invalid argument" $1; then
-  reason="libtool"
 elif bzgrep -q "Could not create Makefile" $1; then
   reason="makefile"
 elif bzgrep -v "regression-test.continuing" $1 | grep -qE "make.*(cannot open [Mm]akefile|don.t know how to make|fatal errors encountered|No rule to make target|built-in)"; then
