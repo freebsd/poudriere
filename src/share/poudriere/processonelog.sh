@@ -53,6 +53,9 @@ elif bzgrep -qE '(ANSI C.. forbids|is a contravariance violation|changed for new
 # XXX MCL must preceed badc++
 elif bzgrep -qE "error: invalid conversion from .*dirent" $1; then
   reason="dirent"
+# must preceed badc++
+elif bzgrep -qE "ld: error:.*undefined (reference|symbol).*std::" $1; then
+  reason="clang11"
 # s/ISO C++ does not support/ISO C++/
 elif bzgrep -qE '(syntax error before|friend declaration|no matching function for call to|.main. must return .int.|invalid conversion from|cannot be used as a macro name as it is an operator in C\+\+|is not a member of type|after previous specification in|no class template named|because worst conversion for the former|better than worst conversion|no match for.*operator|no match for call to|undeclared in namespace|is used as a type, but is not|error: array bound forbidden|error: class definition|error: expected constructor|error: there are no arguments|error:.*cast.*loses precision|ISO C\+\+|error: invalid pure specifier|error: invalid (argument type|integral value|operand|token|use of a cast|value)|error: expected.*(at end of declaration|expression|identifier)|error:.*not supported)' $1; then
   reason="bad_C++_code"
