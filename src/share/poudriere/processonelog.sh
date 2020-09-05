@@ -132,7 +132,7 @@ elif bzgrep -q "error: .regparm. is not valid on this platform" $1; then
   reason="regparm"
 elif bzgrep -qE "(USER.*PID.*TIME.*COMMAND|pnohang: killing make package|Killing runaway|Killing timed out build)" $1; then
   reason="runaway_process"
-elif bzgrep -qE "(/usr/bin/ld: cannot find -l(pthread|XThrStub)|cannot find -lc_r|Error: pthreads are required to build this package|Please install/update your POSIX threads (pthreads) library|requires.*thread support|: The -pthread option is deprecated)" $1; then
+elif bzgrep -qE "(/usr/bin/ld: cannot find -l(pthread|XThrStub)|cannot find -lc_r|Error: pthreads are required to build this package|Please install/update your POSIX threads (pthreads) library|requires.*thread support|: The -pthread option is deprecated|error: reference to .thread. is ambiguous)" $1; then
   reason="threads"
 elif bzgrep -qE 'pkg-static: Fail.*(Read-only file system|Operation not permitted)' $1; then
   reason="immutable_base"
