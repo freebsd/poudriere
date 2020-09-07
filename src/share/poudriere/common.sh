@@ -7060,14 +7060,18 @@ load_moved() {
 	[ -f ${MASTERMNT}${PORTSDIR}/MOVED ] || return 0
 	msg "Loading MOVED for ${MASTERMNT}${PORTSDIR}"
 	bset status "loading_moved:"
-        { cat ${MASTERMNT}${PORTSDIR}/MOVED 
-          for o in ${OVERLAYS}; do
-                 test -f "${MASTERMNT}${OVERLAYSDIR}/${o}/MOVED" || continue
-                 cat "${MASTERMNT}${OVERLAYSDIR}/${o}/MOVED"
-          done
-        } | \
+	local movedfiles o
+
+	{
+		echo "${MASTERMNT}${PORTSDIR}/MOVED"
+		for o in ${OVERLAYS}; do
+			test -f "${MASTERMNT}${OVERLAYSDIR}/${o}/MOVED" || continue
+			echo "${MASTERMNT}${OVERLAYSDIR}/${o}/MOVED"
+		done
+	} | \
+	xargs cat | \
 	awk -f ${AWKPREFIX}/parse_MOVED.awk | \
-	    while mapfile_read_loop_redir old_origin new_origin; do
+	while mapfile_read_loop_redir old_origin new_origin; do
 		# new_origin may be EXPIRED followed by the reason
 		# or only a new origin.
 		shash_set origin-moved "${old_origin}" "${new_origin}"
