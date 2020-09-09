@@ -44,7 +44,7 @@ env_export() {
 
 usage() {
 	cat << EOF
-Usage: poudriere [-e etcdir] [-N] command [options]
+Usage: poudriere [-ANv] [-e etcdir] command [options]
 
 Options:
     -A          -- Force colors, even if not in a TTY
