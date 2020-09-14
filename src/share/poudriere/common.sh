@@ -7664,6 +7664,9 @@ build_repo() {
 	local origin
 
 	msg "Creating pkg repository"
+	if [ ${PKG_HASH} != no ] ; then
+	REPO_OPTIONS="-h -s"
+	fi
 	[ ${DRY_RUN} -eq 1 ] && return 0
 	bset status "pkgrepo:"
 	ensure_pkg_installed force_extract || \
@@ -7680,7 +7683,7 @@ build_repo() {
 	if [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
 		install -m 0400 ${PKG_REPO_SIGNING_KEY} \
 			${MASTERMNT}/tmp/repo.key
-		injail ${PKG_BIN} repo -o /tmp/packages \
+		injail ${PKG_BIN} repo ${REPO_OPTIONS} -o /tmp/packages \
 			${PKG_META} \
 			/packages /tmp/repo.key
 		unlink ${MASTERMNT}/tmp/repo.key
@@ -7688,12 +7691,12 @@ build_repo() {
 		# Sometimes building repo from host is needed if
 		# using SSH with DNSSEC as older hosts don't support
 		# it.
-		${MASTERMNT}${PKG_BIN} repo \
+		${MASTERMNT}${PKG_BIN} repo ${REPO_OPTIONS} \
 		    -o ${MASTERMNT}/tmp/packages ${PKG_META_MASTERMNT} \
 		    ${MASTERMNT}/packages \
 		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 	else
-		JNETNAME="n" injail ${PKG_BIN} repo \
+		JNETNAME="n" injail ${PKG_BIN} repo  ${REPO_OPTIONS}\
 		    -o /tmp/packages ${PKG_META} /packages \
 		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 	fi
@@ -8102,6 +8105,7 @@ if [ "$(mount -t fdescfs | awk '$3 == "/dev/fd" {print $3}')" = "/dev/fd" ]; the
 fi
 
 : ${OVERLAYSDIR:=/overlays}
+: ${PKG_HASH:=no}
 
 TIME_START=$(clock -monotonic)
 EPOCH_START=$(clock -epoch)

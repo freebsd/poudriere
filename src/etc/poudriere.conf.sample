@@ -309,3 +309,13 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # processing of the queue slightly, especially for bulk -a builds.
 # Default: no
 #HTML_TRACK_REMAINING=yes
+
+# Have pkg create hashed versions of the pkg filenames with symlinks to
+# original pkg names. The packagesite.yaml file will point to the hashed version
+# of these files. By using hashed pkg filenames, this allows users to lazily
+# synchronise packages without conflicting with the current packages,
+# for example using rsync or CDNs.  Once the packages are synced the much
+# smaller meta files can then be synced. Allowing a near atomic update of repo.
+# On caching cdn this means a need to purge 2-5 files instead of all pkgs that
+# have been updated.
+#PKG_HASH=no
