@@ -1876,8 +1876,12 @@ do_portbuild_mounts() {
 	_pget portsdir ${ptname} mnt || err 1 "Missing mnt metadata for portstree"
 	[ -d ${portsdir}/ports ] && portsdir=${portsdir}/ports
 	${msgmount} "Mounting ports from: ${portsdir}"
-	[ ${INTERACTIVE_MODE} -gt 0 ] && OPT=rw || OPT=ro
-	${NULLMOUNT} -o ${OPT} ${portsdir} ${mnt}${PORTSDIR} ||
+	if [ "${INTERACTIVE_MODE}" -gt 0 ]; then
+		opt=rw
+	else
+		opt=ro
+	fi
+	${NULLMOUNT} -o ${opt} ${portsdir} ${mnt}${PORTSDIR} ||
 		err 1 "Failed to mount the ports directory "
 	for o in ${OVERLAYS}; do
 		_pget odir "${o}" mnt || err 1 "Missing mnt metadata for overlay ${o}"
