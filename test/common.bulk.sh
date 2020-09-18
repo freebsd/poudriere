@@ -583,7 +583,7 @@ if [ -z "${JAILMNT}" ]; then
 	fi
 	echo "Setting up jail for testing..." >&2
 	if ! ${SUDO} ${POUDRIERE} jail -c -j "${JAILNAME}" \
-	    -v "${JAIL_VERSION}" -a ${ARCH}; then
+	    -v "${JAIL_VERSION}" -a "$(uname -m).${ARCH}"; then
 		echo "SKIP: Cannot setup jail with Poudriere" >&2
 		exit 77
 	fi
