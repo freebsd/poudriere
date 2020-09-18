@@ -64,7 +64,7 @@ _poudriere_direct_port() {
     elif [[ -z $ports_tree ]]; then
         return
     fi
-    local ports_tree_path="$(poudriere ports -l | awk -v tree=$ports_tree 'NR > 1{if (match($1, tree)) {print $5}}')"
+    local ports_tree_path="$(poudriere ports -l | awk -v tree=$ports_tree 'NR > 1{if ($1 == tree) {print $5}}')"
     # Complete port name.
     if [[ $cur =~ .*/.* ]]; then
         COMPREPLY=($(compgen -W "$(
