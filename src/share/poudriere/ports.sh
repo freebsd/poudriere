@@ -70,7 +70,6 @@ DELETE=0
 LIST=0
 NAMEONLY=0
 QUIET=0
-VERBOSE=0
 KEEP=0
 CREATED_FS=0
 while getopts "B:cFuU:dklp:qf:nM:m:v" FLAG; do
