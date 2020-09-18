@@ -64,16 +64,25 @@ BEGIN {
 		{ printf("MOVED error: %s has duplicate entries\n", src) > "/dev/stderr" }
 		next
 	}
-	refname[ref] = src
-	forward[ref] = dst
-	srcs[src] = ref
-	if (dst == "")
-		reason[ref] = $3 " " $4
-	#printf("READ %s %s -> %s\n", src, ref, dst)
+	if (src == "") {
+		if (dst in srcs) {
+			delete forward[srcs[dst]]
+			delete refname[srcs[dst]]
+			delete srcs[dst]
+		}
+	}
+	else {
+		refname[ref] = src
+		forward[ref] = dst
+		srcs[src] = ref
+		if (dst == "")
+			reason[ref] = $3 " " $4
+		#printf("READ %s %s -> %s\n", src, ref, dst)
 
-	# Update fowards to me to now point to my dst and
-	# update my own backrefs
-	update_forwards(src, ref)
+		# Update fowards to me to now point to my dst and
+		# update my own backrefs
+		update_forwards(src, ref)
+	}
 }
 
 END {
