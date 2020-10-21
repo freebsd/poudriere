@@ -205,11 +205,12 @@ if [ -n "${new_origin}" ]; then
 	# Update ORIGINSPEC for the new ORIGIN
 	originspec_encode ORIGINSPEC "${ORIGIN}" "${DEPENDS_ARGS}" "${FLAVOR}"
 fi
-if [ ! -f "${portsdir}/${ORIGIN}/Makefile" ] || [ -d "${portsdir}/${ORIGIN}/../Mk" ]; then
+_lookup_portdir portdir "${ORIGIN}"
+if [ "${portdir}" = "${PORTSDIR}/${ORIGIN}" ] && [ ! -f "${portsdir}/${ORIGIN}/Makefile" ] || [ -d "${portsdir}/${ORIGIN}/../Mk" ]; then
 	err 1 "Nonexistent origin ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
 fi
 
-injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} maintainer ECHO_CMD=true || \
+injail /usr/bin/make -C ${portdir} maintainer ECHO_CMD=true || \
     err 1 "Port is broken"
 
 if [ $CONFIGSTR -eq 1 ]; then
@@ -220,7 +221,7 @@ if [ $CONFIGSTR -eq 1 ]; then
 	    __MAKE_CONF="${__MAKE_CONF}" \
 	    PORT_DBDIR=${MASTERMNT}/var/db/ports \
 	    TERM=${SAVED_TERM} \
-	    make -C ${portsdir}/${ORIGIN} \
+	    make -C ${portdir} \
 	    ${FLAVOR:+FLAVOR=${FLAVOR}} \
 	    config
 	rm -f "${__MAKE_CONF}"
@@ -259,16 +260,16 @@ commit_packages
 
 bset_job_status "testing" "${ORIGINSPEC}" "${PKGNAME}"
 
-LOCALBASE=`injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -VLOCALBASE`
+LOCALBASE=`injail /usr/bin/make -C ${portdir} -VLOCALBASE`
 [ -n "${LOCALBASE}" ] || err 1 "Port has empty LOCALBASE?"
-: ${PREFIX:=$(injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -VPREFIX)}
+: ${PREFIX:=$(injail /usr/bin/make -C ${portdir} -VPREFIX)}
 [ -n "${PREFIX}" ] || err 1 "Port has empty PREFIX?"
 if [ "${USE_PORTLINT}" = "yes" ]; then
 	[ ! -x `command -v portlint` ] &&
 		err 2 "First install portlint if you want USE_PORTLINT to work as expected"
 	msg "Portlint check"
 	(
-		cd ${MASTERMNT}${PORTSDIR}/${ORIGIN} &&
+		cd ${MASTERMNT}${portdir} &&
 			PORTSDIR="${MASTERMNT}${PORTSDIR}" portlint -C | \
 			tee ${log}/logs/${PKGNAME}.portlint.log
 	) || :
@@ -324,7 +325,7 @@ if [ ${ret} -ne 0 ]; then
 	fi
 
 	save_wrkdir "${MASTERMNT}" "${ORIGINSPEC}" "${PKGNAME}" \
-	    "${PORTSDIR}/${ORIGIN}" "${failed_phase}" || :
+	    "${portdir}" "${failed_phase}" || :
 
 	ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
 	errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
@@ -345,9 +346,9 @@ if [ ${ret} -ne 0 ]; then
 	fi
 else
 	badd ports.built "${ORIGINSPEC} ${PKGNAME} ${elapsed}"
-	if [ -f ${MASTERMNT}${PORTSDIR}/${ORIGIN}/.keep ]; then
+	if [ -f ${MASTERMNT}${portdir}/.keep ]; then
 		save_wrkdir "${MASTERMNT}" "${ORIGINSPEC}" "${PKGNAME}" \
-		    "${PORTSDIR}/${ORIGIN}" "noneed" || :
+		    "${portdir}" "noneed" || :
 	fi
 	update_stats || :
 fi
@@ -382,7 +383,7 @@ else
 fi
 
 msg "Cleaning up"
-injail /usr/bin/make -C ${PORTSDIR}/${ORIGIN} -DNOCLEANDEPENDS clean \
+injail /usr/bin/make -C ${portdir} -DNOCLEANDEPENDS clean \
     ${MAKE_ARGS}
 
 msg "Deinstalling package"

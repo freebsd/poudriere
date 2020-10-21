@@ -801,7 +801,7 @@ _lookup_portdir() {
 
 	for o in ${OVERLAYS}; do
 		_ptdir="${OVERLAYSDIR}/${o}/${_port}"
-		if [ -d "${MASTERMNTREL}${_ptdir}" ]; then
+		if [ -r "${MASTERMNTREL}${_ptdir}/Makefile" ]; then
 			setvar "${_varname}" "${_ptdir}"
 			return
 		fi
