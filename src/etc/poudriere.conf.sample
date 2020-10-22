@@ -309,3 +309,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # processing of the queue slightly, especially for bulk -a builds.
 # Default: no
 #HTML_TRACK_REMAINING=yes
+
+# Set to pass arguments to buildworld.
+# Defualt:
+#MAKEWORLDARGS="WITHOUT_LLVM_ASSERTIONS=yes WITH_MALLOC_PRODUCTION=yes -DMALLOC_PRODUCTION"
