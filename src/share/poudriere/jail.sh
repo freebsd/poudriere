@@ -31,6 +31,7 @@ usage() {
 poudriere jail [parameters] [options]
 
 Parameters:
+    -A archive    -- Archive a jail
     -c            -- Create a jail
     -d            -- Delete a jail
     -i            -- Show information about a jail
@@ -58,13 +59,14 @@ Options:
     -m method     -- When used with -c, overrides the default method for
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
-                       allbsd, ftp-archive, ftp, freebsdci, git, http, null, src=PATH,
-                       svn, svn+file, svn+http, svn+https, svn+ssh, tar=PATH
-                       url=SOMEURL.
+                       allbsd, ftp-archive, ftp, freebsdci, http, url=SOMEURL
+                       git, svn, svn+file, svn+http, svn+https, svn+ssh,
+                       archive=PATH, null, src=PATH, tar=PATH
     -P patch      -- Specify a patch to apply to the source before building.
     -S srcpath    -- Specify a path to the source tree to be used.
     -D            -- Do a full git clone without --depth (default: --depth=1)
     -t version    -- Version of FreeBSD to upgrade the jail to.
+    -T args       -- Arguments to pass to tar (default: -a)
     -U url        -- Specify a url to fetch the sources (with method git and/or svn).
     -x            -- Build and setup native-xtools cross compile tools in jail when
                      building for a different TARGET ARCH than the host.
@@ -164,6 +166,40 @@ delete_jail() {
 		    xargs -0 rm -rfx || :
 	fi
 	echo " done"
+}
+
+archive_jail() {
+	local version version_vcs arch method mnt timestamp kernel
+	local archive_tmpdir archive_meta
+
+	_jget method ${JAILNAME} method
+	[ "${method}" = "null" ] && err 1 "Can't archive null jails"
+	_jget version ${JAILNAME} version
+	_jget arch ${JAILNAME} arch
+
+	_jget kernel ${JAILNAME} kernel || kernel=
+	_jget mnt ${JAILNAME} mnt || :
+	_jget timestamp ${JAILNAME} timestamp || timestamp=
+	_jget version_vcs ${JAILNAME} version_vcs || jversion_vcs=
+
+	archive_tmpdir=$(mktemp -d -t poudriere-archive)
+	archive_meta="${archive_tmpdir}/.jail-archive-meta"
+
+	cat > "${archive_meta}" <<-EOF
+		JAIL_ARCHIVE_VERSION=1
+		ARCH=${arch}
+		ARCHIVE_METHOD=${method}
+		ARCHIVE_TIMESTAMP=${timestamp}
+		VERSION=${version}
+		VERSION_VCS=${version_vcs}
+		KERNEL=${kernel}
+	EOF
+
+	msg "Archiving jail ${JAILNAME}"
+	tar cf "${ARCHIVE}" ${TAR_ARGS} \
+	    -C "${archive_tmpdir}" .jail-archive-meta \
+	    -C "${mnt}" .
+	msg "${ARCHIVE} complete"
 }
 
 cleanup_new_jail() {
@@ -786,6 +822,16 @@ install_from_ftp() {
 	build_native_xtools
 }
 
+install_from_archive() {
+	msg_n "Installing ${VERSION} ${ARCH} from ${ARCHIVE} ..."
+	tar -xpf ${ARCHIVE} --exclude .jail-archive-meta -C ${JAILMNT}/ || \
+	    err 1 " fail"
+	echo " done"
+	if [ -n "${VERSION_VCS}" ]; then
+		jset ${JAILNAME} version_vcs "${VERSION_VCS}"
+	fi
+}
+
 install_from_tar() {
 	msg_n "Installing ${VERSION} ${ARCH} from ${TARBALL} ..."
 	tar -xpf ${TARBALL} -C ${JAILMNT}/ || err 1 " fail"
@@ -842,6 +888,29 @@ create_jail() {
 		set -- ${ALLBSDVER}
 		IFS=${OIFS}
 		RELEASE="${ALLBSDVER}-JPSNAP/ftp"
+		;;
+	archive=*)
+		ARCHIVE="${METHOD##*=}"
+		[ -z "${ARCHIVE}" ] && \
+		    err 1 "Must use format -m tar=/path/to/tarball.tar"
+		case "${ARCHIVE}" in
+		/*)
+			;;
+		*)
+			# poudrere runs in /tmp
+			ARCHIVE="${OLDPWD}/${ARCHIVE}"
+			;;
+		esac
+		[ -r "${ARCHIVE}" ] || err 1 "Cannot read file ${ARCHIVE}"
+		METHOD="${METHOD%%=*}"
+
+		archive_tmpdir=$(mktemp -d -t poudriere-archive)
+		tar xfq "${ARCHIVE}" -C "${archive_tmpdir}" .jail-archive-meta ||
+		    err 1 "Failed to extract .jail-archive-meta from ${ARCHIVE}"
+		. "${archive_tmpdir}/.jail-archive-meta"
+		[ -z "${JAIL_ARCHIVE_VERSION}" -o "${JAIL_ARCHIVE_VERSION}" -ne 1 ] &&
+		    err 1 "Unknown JAIL_ARCHIVE_VERSION=${JAIL_ARCHIVE_VERSION}"
+		FCT=install_from_archive
 		;;
 	svn*)
 		[ -x "${SVN_CMD}" ] || \
@@ -912,7 +981,11 @@ create_jail() {
 	if [ -n "${VERSION}" ]; then
 		jset ${JAILNAME} version ${VERSION}
 	fi
-	jset ${JAILNAME} timestamp $(clock -epoch)
+	if [ "${METHOD}" = "archive" ]; then
+		jset ${JAILNAME} timestamp ${ARCHIVE_TIMESTAMP}
+	else
+		jset ${JAILNAME} timestamp $(clock -epoch)
+	fi
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
 	[ -n "$SRCPATH" ] && jset ${JAILNAME} srcpath ${SRCPATH}
@@ -921,7 +994,11 @@ create_jail() {
 	# Wrap the jail creation in a special cleanup hook that will remove the jail
 	# if any error is encountered
 	CLEANUP_HOOK=cleanup_new_jail
-	jset ${JAILNAME} method ${METHOD}
+	if [ "${METHOD}" = "archive" ]; then
+		jset ${JAILNAME} method ${ARCHIVE_METHOD}
+	else
+		jset ${JAILNAME} method ${METHOD}
+	fi
 	[ -n "${FCT}" ] && ${FCT} version_extra
 
 	if [ -r "${SRC_BASE}/sys/conf/newvers.sh" ]; then
@@ -953,7 +1030,7 @@ info_jail() {
 	local building_started status log
 	local elapsed elapsed_days elapsed_hms elapsed_timestamp
 	local now start_time timestamp
-	local jversion jarch jmethod pmethod mnt fs kernel
+	local jversion jversion_vcs jarch jmethod pmethod mnt fs kernel
 
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 
@@ -1030,10 +1107,12 @@ info_jail() {
 
 get_host_arch ARCH
 REALARCH=${ARCH}
+ARCHIVE=
 QUIET=0
 NAMEONLY=0
 PTNAME=default
 SETNAME=""
+TAR_ARG=
 XDEV=0
 BUILD=0
 GIT_DEPTH=--depth=1
@@ -1043,8 +1122,20 @@ set_command() {
 	COMMAND="$1"
 }
 
-while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
+while getopts "A:bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:T:DxC:" FLAG; do
 	case "${FLAG}" in
+		A)
+			set_command archive
+			ARCHIVE=${OPTARG}
+			case "${ARCHIVE}" in
+			/*)
+				;;
+			*)
+				# poudrere runs in /tmp
+				ARCHIVE="${OLDPWD}/${ARCHIVE}"
+				;;
+			esac
+			;;
 		b)
 			BUILD=1
 			;;
@@ -1117,6 +1208,9 @@ while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 		S)
 			[ -d ${OPTARG} ] || err 1 "No such directory ${OPTARG}"
 			SRCPATH=${OPTARG}
+			;;
+		T)
+			TAR_ARGS="${OPTARG}"
 			;;
 		D)
 			GIT_DEPTH=""
@@ -1209,10 +1303,16 @@ fi
 
 
 case "${COMMAND}" in
+	archive)
+		jail_exists ${JAILNAME} || \
+		    err 2 "The jail ${JAILNAME} does not exist"
+		maybe_run_queued "${saved_argv}"
+		archive_jail
+		;;
 	create)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		case ${METHOD} in
-			src=*|null|tar) ;;
+			archive=*|src=*|null|tar) ;;
 			*) [ -z "${VERSION}" ] && usage VERSION ;;
 		esac
 		jail_exists ${JAILNAME} && \
