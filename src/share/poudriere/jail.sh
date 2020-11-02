@@ -170,7 +170,7 @@ cleanup_new_jail() {
 update_version() {
 	local version_extra="$1"
 
-	eval `grep "^[RB][A-Z]*=" ${SRC_BASE}/sys/conf/newvers.sh `
+	eval `grep "^REVISION=\|^BRANCH=" ${SRC_BASE}/sys/conf/newvers.sh `
 	RELEASE=${REVISION}-${BRANCH}
 	[ -n "${version_extra}" ] &&
 	    RELEASE="${RELEASE} ${version_extra}"
