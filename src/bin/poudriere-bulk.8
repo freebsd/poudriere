@@ -40,6 +40,7 @@
 .Fl a
 .Fl j Ar name
 .Op Fl CcFIikNnRrSTtvw
+.Op Fl b Ar name
 .Op Fl B Ar name
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
 .Op Fl O Ar overlays
@@ -50,6 +51,7 @@
 .Fl f Ar file Op Oo Fl f Ar file2 Oc Ar ...
 .Fl j Ar name
 .Op Fl CcFIikNnRrSTtvw
+.Op Fl b Ar name
 .Op Fl B Ar name
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
 .Op Fl O Ar overlays
@@ -59,6 +61,7 @@
 .Cm bulk
 .Fl j Ar name
 .Op Fl CcFIikNnRrSTtvw
+.Op Fl b Ar name
 .Op Fl B Ar name
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
 .Op Fl O Ar overlays
@@ -111,6 +114,17 @@ arguments may be specified at once.
 .El
 .Sh OPTIONS
 .Bl -tag -width "-B name"
+.It Fl b Ar name
+Specify the
+.Ar name
+of the binary package branch to use to prefetch packages.
+Should be
+.Qq latest
+or
+.Qq quarterly .
+With this option poudriere will first try to fetch from the binary package
+repository specified the binary package prior to do the sanity check if the
+package does not already exist.
 .It Fl B Ar name
 Specify which buildname to use.
 By default

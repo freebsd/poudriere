@@ -2985,6 +2985,29 @@ jail_cleanup() {
 	export CLEANED_UP=1
 }
 
+download_from_repo() {
+	msg "Prefetching missing packages from pkg+http://pkg.freebsd.org/\${ABI}/${PACKAGE_BRANCH}"
+	cat >> ${MASTERMNT}/etc/pkg/poudriere.conf <<EOF
+FreeBSD: {
+        url: pkg+http://pkg.freebsd.org/\${ABI}/${PACKAGE_BRANCH};
+}
+EOF
+	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages || \
+	    umount -f ${MASTERMNT}/packages
+	mount_packages
+	# only list packages which do not exists to prevent pkg from overwriting prebuilt packages
+	# XXX only work when PKG_EXT is the same as the upstream
+	(
+	while mapfile_read_loop "all_pkgs" pkgname originspec _ignored; do
+		[ -f ${MASTERMNT}/packages/All/${pkgname}.${PKG_EXT} ] || echo ${pkgname}
+	done
+	)| JNETNAME="n" injail xargs env -i ASSUME_ALWAYS_YES=yes pkg fetch -o /packages
+	# Remount ro
+	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages || \
+	    umount -f ${MASTERMNT}/packages
+	mount_packages -o ro
+}
+
 # return 0 if the package dir exists and has packages, 0 otherwise
 package_dir_exists_and_has_packages() {
 	[ ! -d ${PACKAGES}/All ] && return 1
@@ -7428,6 +7451,10 @@ prepare_ports() {
 			:> ${log}/.poudriere.ports.skipped
 			trim_ignored
 		fi
+	fi
+
+	if [ -n "${PACKAGE_BRANCH}" ]; then
+		download_from_repo
 	fi
 
 	if ! ensure_pkg_installed && [ ${SKIPSANITY} -eq 0 ]; then
