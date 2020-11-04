@@ -3693,7 +3693,12 @@ jail_start() {
 	# do_portbuild_mounts depends on PACKAGES being set.
 	# May already be set for pkgclean
 	: ${PACKAGES:=${POUDRIERE_DATA:?}/packages/${MASTERNAME}}
-	: ${THIN_PACKAGES:=${POUDRIERE_DATA:?}/packages/${MASTERNAME}-thin}
+	if [ ${SMALL_REPO} -eq 1 ]; then
+		THIN_EXT=-small
+	else
+		THIN_EXT=-thin
+	fi
+	: ${THIN_PACKAGES:=${POUDRIERE_DATA:?}/packages/${MASTERNAME}${THIN_EXT}}
 	mkdir -p "${PACKAGES:?}/"
 	if was_a_bulk_run; then
 		stash_packages
@@ -9984,16 +9989,38 @@ clean_restricted() {
 	remount_packages -o ro
 }
 
+add_pkg_to_repo() {
+	local pkgname=$1
+	local target=$2
+	[ -f ${target}/${pkgname}.${PKG_EXT} ] && return
+	if [ ${SMALL_REPO} -eq 1 ]; then
+		for dep in $(injail ${PKG_BIN} info -qd -F /packages/All/${pkgname}.${PKG_EXT}); do
+			add_pkg_to_repo ${dep} ${target}
+		done
+	fi
+	cp ${PACKAGES}/All/${pkgname}.${PKG_EXT} ${target}/
+}
+
 build_thin_repo() {
 	# Try to be as atomic as possible in recreating the new thin repo
 	mkdir -p ${THIN_PACKAGES}/All.new
 	while mapfile_read_loop "all_pkgs" \
 	    _pkgname _originspec _rdep _ignore; do
 		if [ "${_rdep}" = "listed" ] ; then
-			cp ${PACKAGES}/All/${_pkgname}.${PKG_EXT} \
+			add_pkg_to_repo ${_pkgname} \
 				${THIN_PACKAGES}/All.new
 		fi
 	done
+	if [ ${SMALL_REPO} -eq 1 ]; then
+		cp ${PACKAGES}/All/pkg-*.txz ${THIN_PACKAGES}/All.new
+	fi
+	if [ -d "${THIN_PACKAGES}/Latest" ]; then
+		rm -rf "${THIN_PACKAGES}/Latest"
+		if [ ${SMALL_REPO} -eq 1 ]; then
+			mkdir ${THIN_PACKAGES}/Latest
+			cp -RP ${PACKAGES}/Latest/pkg.${PKG_EXT} ${THIN_PACKAGES}/Latest
+		fi
+	fi
 	if [ -d "${THIN_PACKAGES}/All" ]; then
 		mv ${THIN_PACKAGES}/All ${THIN_PACKAGES}/All.old
 	fi
@@ -10009,7 +10036,6 @@ build_repo() {
 
 	if [ ${THIN_REPO} -eq 1 ]; then
 		msg "Creating thin pkg repository"
-		build_thin_repo
 		packages="${THIN_PACKAGES:?}"
 	else
 		msg "Creating pkg repository"
@@ -10034,6 +10060,7 @@ build_repo() {
 		;;
 	esac
 	if [ ${THIN_REPO} -eq 1 ]; then
+		build_thin_repo
 		# only overwrite the packages repo with the thin one
 		# after having extracted pkg because pkg might not
 		# be on the thin repo
