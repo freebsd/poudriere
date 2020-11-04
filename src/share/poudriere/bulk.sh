@@ -59,6 +59,8 @@ Options:
     -j name     -- Run only on the given jail
     -k          -- When doing testing with -t, don't consider failures as
                    fatal; don't skip dependent ports on findings.
+    -m          -- minimal repository, only create a repository with the listed
+                   packages, incompatible with -a.
     -N          -- Do not build package repository when build completed
     -NN         -- Do not commit package repository when build completed
     -n          -- Dry-run. Show what will be done, but do not build
@@ -94,6 +96,7 @@ CLEAN=0
 CLEAN_LISTED=0
 DRY_RUN=0
 ALL=0
+THIN_REPO=0
 BUILD_REPO=1
 INTERACTIVE_MODE=0
 OVERLAYS=""
@@ -103,7 +106,7 @@ if [ $# -eq 0 ]; then
 	usage
 fi
 
-while getopts "ab:B:CcFf:HiIj:J:knNO:p:RrSTtvwz:" FLAG; do
+while getopts "ab:B:CcFf:HiIj:J:kmnNO:p:RrSTtvwz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			ALL=1
@@ -151,6 +154,9 @@ while getopts "ab:B:CcFf:HiIj:J:knNO:p:RrSTtvwz:" FLAG; do
 			;;
 		k)
 			PORTTESTING_FATAL=no
+			;;
+		m)
+			THIN_REPO=1
 			;;
 		N)
 			: ${NFLAG:=0}
@@ -215,6 +221,9 @@ while getopts "ab:B:CcFf:HiIj:J:knNO:p:RrSTtvwz:" FLAG; do
 	esac
 done
 
+if [ ${ALL} -eq 1 -a ${THIN_REPO} -eq 1 ]; then
+	err 1 "incompatible options: bith -a and -m are provided"
+fi
 if [ ${ALL} -eq 1 -a ${CLEAN_LISTED} -eq 1 ]; then
 	CLEAN=1
 	CLEAN_LISTED=0

@@ -3693,6 +3693,7 @@ jail_start() {
 	# do_portbuild_mounts depends on PACKAGES being set.
 	# May already be set for pkgclean
 	: ${PACKAGES:=${POUDRIERE_DATA:?}/packages/${MASTERNAME}}
+	: ${THIN_PACKAGES:=${POUDRIERE_DATA:?}/packages/${MASTERNAME}-thin}
 	mkdir -p "${PACKAGES:?}/"
 	if was_a_bulk_run; then
 		stash_packages
@@ -9983,10 +9984,37 @@ clean_restricted() {
 	remount_packages -o ro
 }
 
+build_thin_repo() {
+	# Try to be as atomic as possible in recreating the new thin repo
+	mkdir -p ${THIN_PACKAGES}/All.new
+	while mapfile_read_loop "all_pkgs" \
+	    _pkgname _originspec _rdep _ignore; do
+		if [ "${_rdep}" = "listed" ] ; then
+			cp ${PACKAGES}/All/${_pkgname}.${PKG_EXT} \
+				${THIN_PACKAGES}/All.new
+		fi
+	done
+	if [ -d "${THIN_PACKAGES}/All" ]; then
+		mv ${THIN_PACKAGES}/All ${THIN_PACKAGES}/All.old
+	fi
+	mv ${THIN_PACKAGES}/All.new ${THIN_PACKAGES}/All
+	if [ -d "${THIN_PACKAGES}/All" ]; then
+		rm -rf ${THIN_PACKAGES}/All.old
+	fi
+}
+
 build_repo() {
 	local origin pkg_repo_list_files hashcmd
+	local packages
 
-	msg "Creating pkg repository"
+	if [ ${THIN_REPO} -eq 1 ]; then
+		msg "Creating thin pkg repository"
+		build_thin_repo
+		packages="${THIN_PACKAGES:?}"
+	else
+		msg "Creating pkg repository"
+		packages="${PACKAGES:?}"
+	fi
 	if [ ${DRY_RUN} -eq 1 ]; then
 		return 0
 	fi
@@ -10005,7 +10033,13 @@ build_repo() {
 		unset pkg_repo_list_files
 		;;
 	esac
-	run_hook pkgrepo sign "${PACKAGES:?}" "${PKG_REPO_SIGNING_KEY}" \
+	if [ ${THIN_REPO} -eq 1 ]; then
+		# only overwrite the packages repo with the thin one
+		# after having extracted pkg because pkg might not
+		# be on the thin repo
+		PACKAGES="${THIN_PACKAGES}" mount_packages -o ro
+	fi
+	run_hook pkgrepo sign "${packages:?}" "${PKG_REPO_SIGNING_KEY}" \
 	    "${PKG_REPO_FROM_HOST:-no}" "${PKG_REPO_META_FILE}"
 	if [ -r "${PKG_REPO_META_FILE:-/nonexistent}" ]; then
 		PKG_META="-m /tmp/pkgmeta"
@@ -10064,14 +10098,14 @@ build_repo() {
 		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}} ||
 		    err "$?" "Failed to sign pkg repository"
 	fi
-	cp "${MASTERMNT:?}"/tmp/packages/* "${PACKAGES:?}/"
+	cp "${MASTERMNT:?}"/tmp/packages/* "${packages:?}/"
 
 	# Sign the ports-mgmt/pkg package for bootstrap
-	if [ -e "${PACKAGES:?}/Latest/pkg.${PKG_EXT}" ]; then
+	if [ -e "${packages:?}/Latest/pkg.${PKG_EXT}" ]; then
 		if [ -n "${SIGNING_COMMAND}" ]; then
-			sign_pkg fingerprint "${PACKAGES:?}/Latest/pkg.${PKG_EXT}"
+			sign_pkg fingerprint "${packages:?}/Latest/pkg.${PKG_EXT}"
 		elif [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
-			sign_pkg pubkey "${PACKAGES:?}/Latest/pkg.${PKG_EXT}"
+			sign_pkg pubkey "${packages:?}/Latest/pkg.${PKG_EXT}"
 		fi
 	fi
 
