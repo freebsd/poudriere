@@ -208,7 +208,37 @@ hook_stop_jail() {
 	fi
 }
 
+update_pkgbase() {
+	local make_jobs
+	local destdir="${JAILMNT}"
+
+	if [ ${JAIL_OSVERSION} -gt 1100086 ]; then
+		make_jobs="${MAKE_JOBS}"
+	fi
+
+	msg "Starting make update-packages"
+	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} update-packages \
+	    DESTDIR="${destdir}" REPODIR="${POUDRIERE_DATA}/images/${JAILNAME}-repo" ${MAKEWORLDARGS}
+	case $? in
+	    0)
+		run_hook jail pkgbase "${POUDRIERE_DATA}/images/${JAILNAME}-repo"
+		return
+		;;
+	    2)
+		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages \
+		    DESTDIR="${destdir}" REPODIR="${POUDRIERE_DATA}/images/${JAILNAME}-repo" ${MAKEWORLDARGS} || \
+		    err 1 "Failed to 'make packages'"
+		run_hook jail pkgbase "${POUDRIERE_DATA}/images/${JAILNAME}-repo"
+		;;
+	    *)
+		err 1 "Failed to 'make update-packages'"
+		;;
+	esac
+}
+
 update_jail() {
+	local pkgbase
+
 	METHOD=$(jget ${JAILNAME} method)
 	: ${SRCPATH:=$(jget ${JAILNAME} srcpath || echo)}
 	if [ "${METHOD}" = "null" -a -n "${SRCPATH}" ]; then
@@ -355,6 +385,10 @@ update_jail() {
 		err 1 "Unsupported method"
 		;;
 	esac
+	pkgbase=$(jget ${JAILNAME} pkgbase)
+	if [ -n "${pkgbase}" ] && [ "${pkgbase}" -eq 1 ]; then
+	    update_pkgbase
+	fi
 	jset ${JAILNAME} timestamp $(clock -epoch)
 }
 
@@ -397,6 +431,8 @@ build_pkgbase() {
 	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages \
 	    DESTDIR=${destdir} REPODIR=${POUDRIERE_DATA}/images/${JAILNAME}-repo ${MAKEWORLDARGS} || \
 		err 1 "Failed to 'make packages'"
+
+	run_hook jail pkgbase "${POUDRIERE_DATA}/images/${JAILNAME}-repo"
 }
 
 setup_build_env() {
@@ -924,6 +960,8 @@ create_jail() {
 	jset ${JAILNAME} method ${METHOD}
 	[ -n "${FCT}" ] && ${FCT} version_extra
 
+	jset ${JAILNAME} pkgbase ${BUILD_PKGBASE}
+
 	if [ -r "${SRC_BASE}/sys/conf/newvers.sh" ]; then
 		RELEASE=$(update_version "${version_extra}")
 	else
@@ -1045,6 +1083,7 @@ SETNAME=""
 XDEV=0
 BUILD=0
 GIT_DEPTH=--depth=1
+BUILD_PKGBASE=0
 
 while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 	case "${FLAG}" in
@@ -1210,6 +1249,9 @@ else
 	GIT_FULLURL=${proto}://${GIT_BASEURL}
 fi
 
+if [ -z "${KERNEL}" ] && [ "${BUILD_PKGBASE}" -eq 1 ]; then
+    err 1 "pkgbase build need a kernel"
+fi
 
 case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	10000000)
