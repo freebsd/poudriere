@@ -37,6 +37,9 @@
 .Sh SYNOPSIS
 .Nm poudriere
 .Cm jail
+.Fl A Ar archive
+.Fl j Ar name
+.Op Fl T -A args
 .Fl c
 .Fl j Ar name
 .Op Fl bDx
@@ -95,7 +98,10 @@ This command manages the
 .Nm
 jails which are used as different building environments.
 .Sh SUBCOMMANDS
-.Bl -tag -width "-r name"
+.Bl -tag -width "-A archive"
+.It Fl A Ar archive
+Create an archive of a jail suitable for use with the archive method of
+the create subcommand.
 .It Fl c
 Create a jail.
 See
@@ -201,6 +207,9 @@ Pre-built distribution options:
 .It Cm allbsd
 Fetch from
 .Lk http://www.allbsd.org .
+.It Cm archive= Ns Ar archive
+Extract an archive created by the archive subcommand
+.Po Fl A Ar archive Pc .
 .It Cm ftp
 Fetch from the host specified in the
 .Va FREEBSD_HOST
@@ -319,6 +328,12 @@ as the
 source tree mounted inside the jail
 or from the host for
 .Fl m Cm null .
+.It Fl T Ar args
+Pass the argument to tar as an unquoted string when creating an archive with
+the archive subcommand
+.Po Fl A Ar archive Pc .
+This can be used to specify compression or archive format.
+.Pq default: -a
 .It Fl t Ar version
 Upgrade the jail to the specified
 .Ar version
