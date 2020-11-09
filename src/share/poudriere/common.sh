@@ -2236,7 +2236,6 @@ setup_xdev() {
 	CC=/nxb-bin/usr/bin/cc
 	CPP=/nxb-bin/usr/bin/cpp
 	CXX=/nxb-bin/usr/bin/c++
-	AS=/nxb-bin/usr/bin/as
 	NM=/nxb-bin/usr/bin/nm
 	LD=/nxb-bin/usr/bin/ld
 	OBJCOPY=/nxb-bin/usr/bin/objcopy
@@ -2250,6 +2249,14 @@ setup_xdev() {
 	AWK=/nxb-bin/usr/bin/awk
 	FLEX=/nxb-bin/usr/bin/flex
 	EOF
+
+	# as(1) has been removed in FreeBSD 13.0.  Just check if it's present
+	# in the target environment's /nxb-bin and use it if it's there.
+	if [ -f "${mnt}/nxb-bin/usr/bin/as" ]; then
+		cat >> "${mnt}/etc/make.nxb.conf" <<-EOF
+		AS=/nxb-bin/usr/bin/as
+		EOF
+	fi
 
 	# hardlink these files to capture scripts and tools
 	# that explicitly call them instead of using paths.
