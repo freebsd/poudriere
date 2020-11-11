@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)exec.c	8.4 (Berkeley) 6/8/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/exec.c 340284 2018-11-09 14:58:24Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/exec.c 365037 2020-09-01 13:19:15Z jilles $");
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -44,6 +44,7 @@ __FBSDID("$FreeBSD: head/bin/sh/exec.c 340284 2018-11-09 14:58:24Z jilles $");
 #include <fcntl.h>
 #include <errno.h>
 #include <paths.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
 /*
@@ -140,6 +141,37 @@ shellexec(char **argv, char **envp, const char *path, int idx)
 }
 
 
+static bool
+isbinary(const char *data, size_t len)
+{
+	const char *nul, *p;
+	bool hasletter;
+
+	nul = memchr(data, '\0', len);
+	if (nul == NULL)
+		return false;
+	/*
+	 * POSIX says we shall allow execution if the initial part intended
+	 * to be parsed by the shell consists of characters and does not
+	 * contain the NUL character. This allows concatenating a shell
+	 * script (ending with exec or exit) and a binary payload.
+	 *
+	 * In order to reject common binary files such as PNG images, check
+	 * that there is a lowercase letter or expansion before the last
+	 * newline before the NUL character, in addition to the check for
+	 * the newline character suggested by POSIX.
+	 */
+	hasletter = false;
+	for (p = data; *p != '\0'; p++) {
+		if ((*p >= 'a' && *p <= 'z') || *p == '$' || *p == '`')
+			hasletter = true;
+		if (hasletter && *p == '\n')
+			return false;
+	}
+	return true;
+}
+
+
 static void
 tryexec(char *cmd, char **argv, char **envp)
 {
@@ -155,7 +187,7 @@ tryexec(char *cmd, char **argv, char **envp)
 		if (in != -1) {
 			n = pread(in, buf, sizeof buf, 0);
 			close(in);
-			if (n > 0 && memchr(buf, '\0', n) != NULL) {
+			if (n > 0 && isbinary(buf, n)) {
 				errno = ENOEXEC;
 				return;
 			}
@@ -647,6 +679,21 @@ isfunc(const char *name)
 }
 
 
+static void
+print_absolute_path(const char *name)
+{
+	const char *pwd;
+
+	if (*name != '/' && (pwd = lookupvar("PWD")) != NULL && *pwd != '\0') {
+		out1str(pwd);
+		if (strcmp(pwd, "/") != 0)
+			outcslow('/', out1);
+	}
+	out1str(name);
+	outcslow('\n', out1);
+}
+
+
 /*
  * Shared code for the following builtin commands:
  *    type, command -v, command -V
@@ -713,20 +760,16 @@ typecmd_impl(int argc, char **argv, int cmd, const char *path)
 					name = padvance(&path2, &opt2, argv[i]);
 					stunalloc(name);
 				} while (--j >= 0);
-				if (cmd == TYPECMD_SMALLV)
-					out1fmt("%s\n", name);
-				else
-					out1fmt("%s is%s %s\n", argv[i],
+				if (cmd != TYPECMD_SMALLV)
+					out1fmt("%s is%s ", argv[i],
 					    (cmdp && cmd == TYPECMD_TYPE) ?
-						" a tracked alias for" : "",
-					    name);
+						" a tracked alias for" : "");
+				print_absolute_path(name);
 			} else {
 				if (eaccess(argv[i], X_OK) == 0) {
-					if (cmd == TYPECMD_SMALLV)
-						out1fmt("%s\n", argv[i]);
-					else
-						out1fmt("%s is %s\n", argv[i],
-						    argv[i]);
+					if (cmd != TYPECMD_SMALLV)
+						out1fmt("%s is ", argv[i]);
+					print_absolute_path(argv[i]);
 				} else {
 					if (cmd != TYPECMD_SMALLV)
 						outfmt(out2, "%s: %s\n",

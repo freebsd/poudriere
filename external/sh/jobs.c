@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)jobs.c	8.5 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/jobs.c 340284 2018-11-09 14:58:24Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/jobs.c 361112 2020-05-16 16:29:23Z jilles $");
 
 #include <sys/ioctl.h>
 #include <sys/param.h>
@@ -105,6 +105,7 @@ struct job {
 	char changed;		/* true if status has changed */
 	char foreground;	/* true if running in the foreground */
 	char remembered;	/* true if $! referenced */
+	char pipefail;		/* pass any non-zero status */
 #if JOBS
 	char jobctl;		/* job running under job control */
 	struct job *next;	/* job used after this one */
@@ -144,6 +145,7 @@ static void setcurjob(struct job *);
 static void deljob(struct job *);
 static struct job *getcurjob(struct job *);
 #endif
+static int getjobstatus(const struct job *);
 static void printjobcmd(struct job *);
 static void showjob(struct job *, int);
 
@@ -341,6 +343,20 @@ jobscmd(int argc __unused, char *argv[] __unused)
 	return (0);
 }
 
+static int getjobstatus(const struct job *jp)
+{
+	int i, status;
+
+	if (!jp->pipefail)
+		return (jp->ps[jp->nprocs - 1].status);
+	for (i = jp->nprocs - 1; i >= 0; i--) {
+		status = jp->ps[i].status;
+		if (status != 0)
+			return (status);
+	}
+	return (0);
+}
+
 static void
 printjobcmd(struct job *jp)
 {
@@ -377,7 +393,7 @@ showjob(struct job *jp, int mode)
 	}
 #endif
 	coredump = "";
-	status = jp->ps[jp->nprocs - 1].status;
+	status = getjobstatus(jp);
 	if (jp->state == 0) {
 		statestr = "Running";
 #if JOBS
@@ -556,7 +572,7 @@ waitcmdloop(struct job *job)
 	do {
 		if (job != NULL) {
 			if (job->state == JOBDONE) {
-				status = job->ps[job->nprocs - 1].status;
+				status = getjobstatus(job);
 				if (WIFEXITED(status))
 					retval = WEXITSTATUS(status);
 				else
@@ -781,6 +797,7 @@ makejob(union node *node __unused, int nprocs)
 	jp->nprocs = 0;
 	jp->foreground = 0;
 	jp->remembered = 0;
+	jp->pipefail = pipefailflag;
 #if JOBS
 	jp->jobctl = jobctl;
 	jp->next = NULL;
@@ -991,9 +1008,11 @@ vforkexecshell(struct job *jp, char **argv, char **envp, const char *path, int i
 	pid_t pid;
 	struct jmploc jmploc;
 	struct jmploc *savehandler;
+	int inton;
 
 	TRACE(("vforkexecshell(%%%td, %s, %p) called\n", jp - jobtab, argv[0],
 	    (void *)pip));
+	inton = is_int_on();
 	INTOFF;
 	flushall();
 	savehandler = handler;
@@ -1028,7 +1047,7 @@ vforkexecshell(struct job *jp, char **argv, char **envp, const char *path, int i
 		setcurjob(jp);
 #endif
 	}
-	INTON;
+	SETINTON(inton);
 	TRACE(("In parent shell:  child = %d\n", (int)pid));
 	return pid;
 }
@@ -1076,7 +1095,7 @@ waitforjob(struct job *jp, int *signaled)
 	if (jp->state == JOBSTOPPED)
 		setcurjob(jp);
 #endif
-	status = jp->ps[jp->nprocs - 1].status;
+	status = getjobstatus(jp);
 	if (signaled != NULL)
 		*signaled = WIFSIGNALED(status);
 	/* convert to 8 bits */
