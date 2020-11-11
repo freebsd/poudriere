@@ -44,7 +44,7 @@ static char sccsid[] = "@(#)main.c	8.6 (Berkeley) 5/28/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/main.c 340284 2018-11-09 14:58:24Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/main.c 364919 2020-08-28 15:35:45Z jilles $");
 
 #include <stdio.h>
 #include <signal.h>
@@ -134,6 +134,7 @@ main(int argc, char *argv[])
 	setstackmark(&smark);
 	setstackmark(&smark2);
 	procargs(argc, argv);
+	trap_init();
 	pwd_init(iflag);
 	INTON;
 	if (iflag)
@@ -228,6 +229,10 @@ cmdloop(int top)
 		}
 	}
 	popstackmark(&smark);
+	if (top && iflag) {
+		out2c('\n');
+		flushout(out2);
+	}
 }
 
 
