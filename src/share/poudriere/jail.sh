@@ -992,6 +992,7 @@ info_jail() {
 	local elapsed elapsed_days elapsed_hms elapsed_timestamp
 	local now start_time timestamp
 	local jversion jarch jmethod pmethod mnt fs kernel
+	local pkgbase
 
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 
@@ -1017,6 +1018,7 @@ info_jail() {
 	_jget mnt ${JAILNAME} mnt || :
 	_jget fs ${JAILNAME} fs || fs=""
 	_jget kernel ${JAILNAME} kernel || kernel=
+	_jget pkgbase ${JAILNAME} pkgbase || pkgbase=0
 
 	echo "Jail name:         ${JAILNAME}"
 	echo "Jail version:      ${jversion}"
@@ -1032,6 +1034,11 @@ info_jail() {
 	fi
 	if [ -n "${timestamp}" ]; then
 		echo "Jail updated:      $(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
+	fi
+	if [ "${pkgbase}" -eq 0 ]; then
+	    echo "Jail pkgbase:      disabled"
+	else
+	    echo "Jail pkgbase:      enabled"
 	fi
 	if [ "${PTNAME_ARG:-0}" -eq 1 ] && porttree_exists ${PTNAME}; then
 		_pget pmethod ${PTNAME} method
