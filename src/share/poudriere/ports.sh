@@ -359,7 +359,7 @@ if [ ${UPDATE} -eq 1 ]; then
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	maybe_run_queued "${saved_argv}"
 	if [ -z "${METHOD}" -o ${METHOD} = "-" ]; then
-		METHOD=portsnap
+		METHOD=svn+https
 		pset ${PTNAME} method ${METHOD}
 	fi
 	case ${METHOD} in
