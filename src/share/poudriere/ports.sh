@@ -27,6 +27,8 @@
 
 . ${SCRIPTPREFIX}/common.sh
 
+METHOD_DEF=svn+https
+
 # test if there is any args
 usage() {
 	cat << EOF
@@ -53,7 +55,7 @@ Options:
     -m method     -- When used with -c, specify the method used to create the
                      ports tree. Possible methods are 'git', 'null', 'portsnap',
                      'svn', 'svn+http', 'svn+https', 'svn+file', or 'svn+ssh'.
-                     The default is 'svn+https'.
+                     The default is '${METHOD_DEF}'.
     -n            -- When used with -l, only print the name of the ports tree
     -p name       -- Specifies the name of the ports tree to work on.  The
                      default is 'default'.
@@ -131,7 +133,7 @@ saved_argv="$@"
 shift $((OPTIND-1))
 post_getopts
 
-[ ${FAKE} -eq 0 ] && METHOD=${METHOD:-svn+https}
+[ ${FAKE} -eq 0 ] && METHOD=${METHOD:-${METHOD_DEF}}
 PTNAME=${PTNAME:-default}
 
 [ "${METHOD}" = "none" ] && METHOD=null
@@ -359,7 +361,7 @@ if [ ${UPDATE} -eq 1 ]; then
 		&& err 1 "Ports tree \"${PTNAME}\" is currently mounted and being used."
 	maybe_run_queued "${saved_argv}"
 	if [ -z "${METHOD}" -o ${METHOD} = "-" ]; then
-		METHOD=svn+https
+		METHOD=${METHOD_DEF}
 		pset ${PTNAME} method ${METHOD}
 	fi
 	case ${METHOD} in
