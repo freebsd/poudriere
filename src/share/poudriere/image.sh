@@ -723,6 +723,9 @@ zrawdisk)
 	zfs_load="YES"
 	vfs.root.mountfrom="zfs:${zroot}/ROOT/default"
 	EOF
+	cat >> ${WRKDIR}/world/etc/rc.conf <<-EOF
+	zfs_enable="YES"
+	EOF
 	;;
 tar)
 	if [ -n "${MINIROOT}" ]; then
