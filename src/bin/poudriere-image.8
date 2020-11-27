@@ -29,7 +29,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd November 28, 2019
+.Dd November 27, 2020
 .Dt POUDRIERE-IMAGE 8
 .Os
 .Sh NAME
@@ -116,6 +116,15 @@ This specifies a list of files to exclude from the final image.
 .It Fl z Ar set
 This specifies which SET to use for the build.
 .El
+.Sh CUSTOMIZATION
+.Ss Create optional src.conf
+An optional src.conf which will be used for building images.
+Any of the following are allowed and will be applied in the order shown:
+.Pp
+.Dl Pa /usr/local/etc/poudriere.d/src.conf
+.Dl Pa /usr/local/etc/poudriere.d/<jailname>-src.conf
+.Dl Pa /usr/local/etc/poudriere.d/image-<jailname>-src.conf
+.Dl Pa /usr/local/etc/poudriere.d/image-<jailname>-<setname>-src.conf
 .Sh SEE ALSO
 .Xr poudriere 8 ,
 .Xr poudriere-bulk 8 ,
