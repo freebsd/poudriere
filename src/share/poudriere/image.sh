@@ -696,7 +696,7 @@ usb)
 	ln -s /var/tmp ${WRKDIR}/world/tmp
 
 	# Copy save_cfg to /etc
-	cp ${mnt}/usr/src/tools/tools/nanobsd/Files/root/save_cfg ${WRKDIR}/world/etc/
+	install ${mnt}/usr/src/tools/tools/nanobsd/Files/root/save_cfg ${WRKDIR}/world/conf/base/etc/
 
 	# Figure out Partition sizes
 	OS_SIZE=
