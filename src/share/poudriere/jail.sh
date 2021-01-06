@@ -412,7 +412,7 @@ installworld() {
 	if [ -n "${KERNEL}" ]; then
 		msg "Starting make installkernel"
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} installkernel \
-		    KERNCONF=${KERNEL} DESTDIR=${destdir} ${MAKEWORLDARGS} || \
+		    KERNCONF="${KERNEL}" DESTDIR=${destdir} ${MAKEWORLDARGS} || \
 		    err 1 "Failed to 'make installkernel'"
 	fi
 
@@ -508,7 +508,7 @@ buildworld() {
 	if [ -n "${KERNEL}" ]; then
 		msg "Starting make buildkernel with ${PARALLEL_JOBS} jobs"
 		${MAKE_CMD} -C ${SRC_BASE} buildkernel ${MAKE_JOBS} \
-			KERNCONF=${KERNEL} ${MAKEWORLDARGS} || \
+			KERNCONF="${KERNEL}" ${MAKEWORLDARGS} || \
 			err 1 "Failed to 'make buildkernel'"
 	fi
 }
@@ -952,7 +952,7 @@ create_jail() {
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
 	[ -n "$SRCPATH" ] && jset ${JAILNAME} srcpath ${SRCPATH}
-	[ -n "${KERNEL}" ] && jset ${JAILNAME} kernel ${KERNEL}
+	[ -n "${KERNEL}" ] && jset ${JAILNAME} kernel "${KERNEL}"
 
 	# Wrap the jail creation in a special cleanup hook that will remove the jail
 	# if any error is encountered
@@ -1137,7 +1137,7 @@ while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 			STOP=1
 			;;
 		K)
-			KERNEL=${OPTARG:-GENERIC}
+			KERNEL="${OPTARG:-GENERIC}"
 			;;
 		l)
 			LIST=1
