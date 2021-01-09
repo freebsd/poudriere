@@ -217,7 +217,7 @@ update_pkgbase() {
 	fi
 
 	msg "Starting make update-packages"
-	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} update-packages \
+	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} update-packages KERNCONF="${KERNEL}" \
 	    DESTDIR="${destdir}" REPODIR="${POUDRIERE_DATA}/images/${JAILNAME}-repo" ${MAKEWORLDARGS}
 	case $? in
 	    0)
@@ -225,7 +225,7 @@ update_pkgbase() {
 		return
 		;;
 	    2)
-		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages \
+		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages KERNCONF="${KERNEL}" \
 		    DESTDIR="${destdir}" REPODIR="${POUDRIERE_DATA}/images/${JAILNAME}-repo" ${MAKEWORLDARGS} || \
 		    err 1 "Failed to 'make packages'"
 		run_hook jail pkgbase "${POUDRIERE_DATA}/images/${JAILNAME}-repo"
@@ -428,7 +428,7 @@ build_pkgbase() {
 	fi
 
 	msg "Starting make packages"
-	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages \
+	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages KERNCONF="${KERNEL}" \
 	    DESTDIR=${destdir} REPODIR=${POUDRIERE_DATA}/images/${JAILNAME}-repo ${MAKEWORLDARGS} || \
 		err 1 "Failed to 'make packages'"
 
