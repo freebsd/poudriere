@@ -165,12 +165,9 @@ rollbackfs() {
 		fi
 		tries=0
 		while :; do
-			if ! zfs rollback -r "${fs}@${name}"; then
-				unlink "${sfile}"
-				err 1 "Unable to rollback ${fs} to ${name}"
-			fi
 			# Success
-			if ! [ -f "${sfile}" ]; then
+			if zfs rollback -r "${fs}@${name}" && \
+			    ! [ -f "${sfile}" ]; then
 				break
 			fi
 			tries=$((tries + 1))
