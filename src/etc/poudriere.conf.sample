@@ -311,5 +311,5 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #HTML_TRACK_REMAINING=yes
 
 # Set to pass arguments to buildworld.
-# Defualt:
+# Default:
 #MAKEWORLDARGS="WITHOUT_LLVM_ASSERTIONS=yes WITH_MALLOC_PRODUCTION=yes -DMALLOC_PRODUCTION"
