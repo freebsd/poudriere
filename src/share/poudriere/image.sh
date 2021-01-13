@@ -128,9 +128,9 @@ mkminiroot() {
 	done
 	cp -fRPp ${MINIROOT}/ ${mroot}/
 
-	makefs ${OUTPUTDIR}/${IMAGENAME}-miniroot ${mroot}
-	[ -f ${OUTPUTDIR}/${IMAGENAME}-miniroot.gz ] && rm ${OUTPUTDIR}/${IMAGENAME}-miniroot.gz
-	gzip -9 ${OUTPUTDIR}/${IMAGENAME}-miniroot
+	makefs "${OUTPUTDIR}/${IMAGENAME}-miniroot" ${mroot}
+	[ -f "${OUTPUTDIR}/${IMAGENAME}-miniroot.gz" ] && rm "${OUTPUTDIR}/${IMAGENAME}-miniroot.gz"
+	gzip -9 "${OUTPUTDIR}/${IMAGENAME}-miniroot"
 }
 
 get_uefi_bootname() {
@@ -299,7 +299,7 @@ none)
 	;;
 esac
 
-mkdir -p ${OUTPUTDIR}
+mkdir -p "${OUTPUTDIR}"
 
 jail_exists ${JAILNAME} || err 1 "The jail ${JAILNAME} does not exist"
 _jget arch ${JAILNAME} arch || err 1 "Missing arch metadata for jail"
@@ -747,7 +747,7 @@ iso)
 		-o bootimage="i386;${WRKDIR}/out/boot/cdboot" \
 		-o bootimage="i386;${espfilename}" \
 		-o platformid=efi \
-		-o no-emul-boot ${OUTPUTDIR}/${FINALIMAGE} ${WRKDIR}/world
+		-o no-emul-boot "${OUTPUTDIR}/${FINALIMAGE}" ${WRKDIR}/world
 	;;
 iso+*mfs)
 	FINALIMAGE=${IMAGENAME}.iso
@@ -758,7 +758,7 @@ iso+*mfs)
 		-o bootimage="i386;${WRKDIR}/out/boot/cdboot" \
 		-o bootimage="i386;${espfilename}" \
 		-o platformid=efi \
-		-o no-emul-boot ${OUTPUTDIR}/${FINALIMAGE} ${WRKDIR}/out
+		-o no-emul-boot "${OUTPUTDIR}/${FINALIMAGE}" ${WRKDIR}/out
 	rm -rf ${espfilename}
 	;;
 usb+*mfs)
@@ -770,7 +770,7 @@ usb+*mfs)
 		-p efi:=${espfilename} \
 		-p freebsd-boot:=${mnt}/boot/gptboot \
 		-p freebsd-ufs:=${WRKDIR}/img.part \
-		-o ${OUTPUTDIR}/${FINALIMAGE}
+		-o "${OUTPUTDIR}/${FINALIMAGE}"
 	rm -rf ${espfilename}
 	;;
 usb)
@@ -791,12 +791,12 @@ usb)
 		${SWAPFIRST} \
 		-p freebsd-ufs:=${WRKDIR}/raw.img \
 		${SWAPLAST} \
-		-o ${OUTPUTDIR}/${FINALIMAGE}
+		-o "${OUTPUTDIR}/${FINALIMAGE}"
 	rm -rf ${espfilename}
 	;;
 tar)
 	FINALIMAGE=${IMAGENAME}.txz
-	tar -f - -c -C ${WRKDIR}/world . | xz -T0 -c > ${OUTPUTDIR}/${FINALIMAGE}
+	tar -f - -c -C ${WRKDIR}/world . | xz -T0 -c > "${OUTPUTDIR}/${FINALIMAGE}"
 	;;
 firmware)
 	FINALIMAGE=${IMAGENAME}.img
@@ -817,19 +817,19 @@ firmware)
 		${SWAPFIRST} \
 		-p freebsd-ufs/data:=${WRKDIR}/data.img \
 		${SWAPLAST} \
-		-o ${OUTPUTDIR}/${FINALIMAGE}
+		-o "${OUTPUTDIR}/${FINALIMAGE}"
 	rm -rf ${espfilename}
 	;;
 rawfirmware)
 	FINALIMAGE=${IMAGENAME}.raw
-	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
+	mv ${WRKDIR}/raw.img "${OUTPUTDIR}/${FINALIMAGE}"
 	;;
 rawdisk)
 	FINALIMAGE=${IMAGENAME}.img
 	umount ${WRKDIR}/world
 	/sbin/mdconfig -d -u ${md#md}
 	md=
-	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
+	mv ${WRKDIR}/raw.img "${OUTPUTDIR}/${FINALIMAGE}"
 	;;
 dump)
 	FINALIMAGE=${IMAGENAME}.dump
@@ -837,7 +837,7 @@ dump)
 	dump -0Raf ${WRKDIR}/raw.dump /dev/${md}
 	/sbin/mdconfig -d -u ${md#md}
 	md=
-	mv ${WRKDIR}/raw.dump ${OUTPUTDIR}/${FINALIMAGE}
+	mv ${WRKDIR}/raw.dump "${OUTPUTDIR}/${FINALIMAGE}"
 	;;
 embedded)
 	FINALIMAGE=${IMAGENAME}.img
@@ -845,7 +845,7 @@ embedded)
 	umount ${WRKDIR}/world
 	/sbin/mdconfig -d -u ${md#md}
 	md=
-	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
+	mv ${WRKDIR}/raw.img "${OUTPUTDIR}/${FINALIMAGE}"
 	;;
 zrawdisk)
 	FINALIMAGE=${IMAGENAME}.img
@@ -860,7 +860,7 @@ zrawdisk)
 	dd if=${mnt}/boot/zfsboot of=/dev/${md} iseek=1 oseek=1024
 	/sbin/mdconfig -d -u ${md#md}
 	md=
-	mv ${WRKDIR}/raw.img ${OUTPUTDIR}/${FINALIMAGE}
+	mv ${WRKDIR}/raw.img "${OUTPUTDIR}/${FINALIMAGE}"
 	;;
 zsnapshot)
 	FINALIMAGE=${IMAGENAME}
@@ -897,13 +897,13 @@ zsnapshot)
 	fi
 
 	if [ ! -z "${ORIGIN_IMAGE}" ]; then
-		mv ${WRKDIR}/incr.img.gz ${OUTPUTDIR}/${FINALIMAGE}-${SNAPSHOT_NAME}.incr.img.gz
-		mv ${WRKDIR}/modified.files ${OUTPUTDIR}/${FINALIMAGE}-${SNAPSHOT_NAME}.modified.files
+		mv ${WRKDIR}/incr.img.gz "${OUTPUTDIR}/${FINALIMAGE}-${SNAPSHOT_NAME}.incr.img.gz"
+		mv ${WRKDIR}/modified.files "${OUTPUTDIR}/${FINALIMAGE}-${SNAPSHOT_NAME}.modified.files"
 	fi
-	mv ${WRKDIR}/raw.img.gz ${OUTPUTDIR}/${FINALIMAGE}-${SNAPSHOT_NAME}.full.img.gz
-	mv ${WRKDIR}/manifest.json ${OUTPUTDIR}/${FINALIMAGE}-${SNAPSHOT_NAME}.manifest.json
+	mv ${WRKDIR}/raw.img.gz "${OUTPUTDIR}/${FINALIMAGE}-${SNAPSHOT_NAME}.full.img.gz"
+	mv ${WRKDIR}/manifest.json "${OUTPUTDIR}/${FINALIMAGE}-${SNAPSHOT_NAME}.manifest.json"
 	ln -s ${FINALIMAGE}-${SNAPSHOT_NAME}.manifest.json ${WRKDIR}/${FINALIMAGE}-latest.manifest.json
-	mv ${WRKDIR}/${FINALIMAGE}-latest.manifest.json ${OUTPUTDIR}/${FINALIMAGE}-latest.manifest.json
+	mv ${WRKDIR}/${FINALIMAGE}-latest.manifest.json "${OUTPUTDIR}/${FINALIMAGE}-latest.manifest.json"
 	;;
 esac
 
