@@ -65,28 +65,31 @@ EOF
 	exit 1
 }
 
-CREATE=0
 FAKE=0
-UPDATE=0
-DELETE=0
-LIST=0
 NAMEONLY=0
 QUIET=0
 KEEP=0
 CREATED_FS=0
+COMMAND=
+
+set_command() {
+	[ -z "${COMMAND}" ] || usage
+	COMMAND="$1"
+}
+
 while getopts "B:cFuU:dklp:qf:nM:m:v" FLAG; do
 	case "${FLAG}" in
 		B)
 			BRANCH="${OPTARG}"
 			;;
 		c)
-			CREATE=1
+			set_command create
 			;;
 		F)
 			FAKE=1
 			;;
 		u)
-			UPDATE=1
+			set_command update
 			;;
 		U)
 			SOURCES_URL=${OPTARG}
@@ -98,13 +101,13 @@ while getopts "B:cFuU:dklp:qf:nM:m:v" FLAG; do
 			PTNAME=${OPTARG}
 			;;
 		d)
-			DELETE=1
+			set_command delete
 			;;
 		k)
 			KEEP=1
 			;;
 		l)
-			LIST=1
+			set_command list
 			;;
 		q)
 			QUIET=1
@@ -126,8 +129,6 @@ while getopts "B:cFuU:dklp:qf:nM:m:v" FLAG; do
 		;;
 	esac
 done
-
-[ $(( CREATE + UPDATE + DELETE + LIST )) -lt 1 ] && usage
 
 saved_argv="$@"
 shift $((OPTIND-1))
@@ -195,7 +196,26 @@ git*)  : ${BRANCH:=master} ;;
 	    err 1 "Branch (-B) only supported for SVN and git."
 esac
 
-if [ ${LIST} -eq 1 ]; then
+cleanup_new_ports() {
+	msg "Error while creating ports tree, cleaning up." >&2
+	if [ "${CREATED_FS}" -eq 1 ] && [ "${METHOD}" != "null" ]; then
+		TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
+	fi
+	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
+}
+
+check_portsnap_interactive() {
+	if /usr/sbin/portsnap --help | grep -q -- '--interactive'; then
+		echo "--interactive "
+	fi
+}
+
+if [ "${COMMAND}" != "list" ]; then
+	[ -z "${PTNAME}" ] && usage
+fi
+
+case $COMMAND in
+list)
 	if [ ${NAMEONLY} -eq 0 ]; then
 		format='%%-%ds %%-%ds %%-%ds %%s\n'
 		display_setup "${format}" 4 "-d"
@@ -221,25 +241,9 @@ if [ ${LIST} -eq 1 ]; then
 	EOF
 	[ ${QUIET} -eq 1 ] && quiet="-q"
 	display_output ${quiet}
-else
-	[ -z "${PTNAME}" ] && usage
-fi
+	;;
 
-cleanup_new_ports() {
-	msg "Error while creating ports tree, cleaning up." >&2
-	if [ "${CREATED_FS}" -eq 1 ] && [ "${METHOD}" != "null" ]; then
-		TMPFS_ALL=0 destroyfs ${PTMNT} ports || :
-	fi
-	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
-}
-
-check_portsnap_interactive() {
-	if /usr/sbin/portsnap --help | grep -q -- '--interactive'; then
-		echo "--interactive "
-	fi
-}
-
-if [ ${CREATE} -eq 1 ]; then
+create)
 	# test if it already exists
 	porttree_exists ${PTNAME} && err 2 "The ports tree, ${PTNAME}, already exists"
 	maybe_run_queued "${saved_argv}"
@@ -319,9 +323,9 @@ if [ ${CREATE} -eq 1 ]; then
 	fi
 
 	unset CLEANUP_HOOK
-fi
+	;;
 
-if [ ${DELETE} -eq 1 ]; then
+delete)
 	porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 	PTMETHOD=$(pget ${PTNAME} method)
 	PTMNT=$(pget ${PTNAME} mnt)
@@ -350,9 +354,9 @@ if [ ${DELETE} -eq 1 ]; then
 	fi
 	rm -rf ${POUDRIERED}/ports/${PTNAME} || :
 	echo " done"
-fi
+	;;
 
-if [ ${UPDATE} -eq 1 ]; then
+update)
 	porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 	METHOD=$(pget ${PTNAME} method)
 	PTMNT=$(pget ${PTNAME} mnt)
@@ -400,4 +404,9 @@ if [ ${UPDATE} -eq 1 ]; then
 
 	pset ${PTNAME} timestamp $(clock -epoch)
 	run_hook ports_update "done"
-fi
+	;;
+
+*)
+	usage
+	;;
+esac

@@ -1075,22 +1075,19 @@ info_jail() {
 
 get_host_arch ARCH
 REALARCH=${ARCH}
-START=0
-STOP=0
-LIST=0
-DELETE=0
-CREATE=0
-RENAME=0
 QUIET=0
 NAMEONLY=0
-INFO=0
-UPDATE=0
 PTNAME=default
 SETNAME=""
 XDEV=0
 BUILD=0
 GIT_DEPTH=--depth=1
 BUILD_PKGBASE=0
+
+set_command() {
+	[ -z "${COMMAND}" ] || usage
+	COMMAND="$1"
+}
 
 while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 	case "${FLAG}" in
@@ -1101,7 +1098,7 @@ while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 			BUILD_PKGBASE=1
 			;;
 		i)
-			INFO=1
+			set_command info
 			;;
 		j)
 			JAILNAME=${OPTARG}
@@ -1131,25 +1128,25 @@ while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 			JAILMNT=${OPTARG}
 			;;
 		s)
-			START=1
+			set_command start
 			;;
 		k)
-			STOP=1
+			set_command stop
 			;;
 		K)
 			KERNEL="${OPTARG:-GENERIC}"
 			;;
 		l)
-			LIST=1
+			set_command list
 			;;
 		c)
-			CREATE=1
+			set_command create
 			;;
 		C)
 			CLEANJAIL=${OPTARG}
 			;;
 		d)
-			DELETE=1
+			set_command delete
 			;;
 		p)
 			PTNAME=${OPTARG}
@@ -1174,13 +1171,13 @@ while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 			QUIET=1
 			;;
 		u)
-			UPDATE=1
+			set_command update
 			;;
 		U)
 			SOURCES_URL=${OPTARG}
 			;;
 		r)
-			RENAME=1;
+			set_command update
 			NEWJAILNAME=${OPTARG}
 			;;
 		t)
@@ -1206,7 +1203,7 @@ post_getopts
 
 METHOD=${METHOD:-ftp}
 CLEANJAIL=${CLEAN:-none}
-if [ -n "${JAILNAME}" -a ${CREATE} -eq 0 ]; then
+if [ -n "${JAILNAME}" -a ${COMMAND} != "create" ]; then
 	_jget ARCH ${JAILNAME} arch || :
 	_jget JAILFS ${JAILNAME} fs || :
 	_jget JAILMNT ${JAILNAME} mnt || :
@@ -1260,8 +1257,8 @@ if [ -z "${KERNEL}" ] && [ "${BUILD_PKGBASE}" -eq 1 ]; then
     err 1 "pkgbase build need a kernel"
 fi
 
-case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
-	10000000)
+case "${COMMAND}" in
+	create)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		case ${METHOD} in
 			src=*|null|tar) ;;
@@ -1273,17 +1270,17 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		check_emulation "${REALARCH}" "${ARCH}"
 		create_jail
 		;;
-	01000000)
+	info)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		_mastermnt MASTERMNT
 		export MASTERMNT
 		info_jail
 		;;
-	00100000)
+	list)
 		list_jail
 		;;
-	00010000)
+	stop)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		maybe_run_queued "${saved_argv}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
@@ -1293,7 +1290,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		    msg "Jail ${MASTERNAME} not running, but cleaning up anyway"
 		jail_stop
 		;;
-	00001000)
+	start)
 		export SET_STATUS_ON_START=0
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
@@ -1304,7 +1301,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		MUTABLE_BASE=yes jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 		JNETNAME="n"
 		;;
-	00000100)
+	delete)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 		confirm_if_tty "Are you sure you want to delete the jail?" || \
@@ -1312,7 +1309,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		maybe_run_queued "${saved_argv}"
 		delete_jail
 		;;
-	00000010)
+	update)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 		maybe_run_queued "${saved_argv}"
@@ -1321,7 +1318,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		check_emulation "${REALARCH}" "${ARCH}"
 		update_jail
 		;;
-	00000001)
+	rename)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		maybe_run_queued "${saved_argv}"
 		rename_jail
