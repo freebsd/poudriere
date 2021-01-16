@@ -639,7 +639,7 @@ install_from_vcs() {
 		git*)
 			${GIT_CMD} -C ${SRC_BASE} pull --rebase -q || err 1 " fail"
 			if [ -n "${TORELEASE}" ]; then
-				${GIT_CMD} checkout -q "${TORELEASE}" || err 1 " fail"
+				${GIT_CMD} -C ${SRC_BASE} checkout -q "${TORELEASE}" || err 1 " fail"
 			fi
 			echo " done"
 			;;
