@@ -615,6 +615,7 @@ export PORT_DBDIR=/dev/null
 export __MAKE_CONF="${POUDRIERE_ETC}/poudriere.d/make.conf"
 export SRCCONF=/dev/null
 export SRC_ENV_CONF=/dev/null
+export PACKAGE_BUILDING=yes
 
 write_cmp "${POUDRIERE_ETC}/poudriere.d/${SETNAME}-poudriere.conf" << EOF
 ${FLAVOR_DEFAULT_ALL:+FLAVOR_DEFAULT_ALL=${FLAVOR_DEFAULT_ALL}}
