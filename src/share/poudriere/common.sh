@@ -7853,7 +7853,7 @@ if [ -z "${NO_ZFS}" ]; then
 fi
 
 : ${SVN_HOST="svn.freebsd.org"}
-: ${GIT_BASEURL="github.com/freebsd/freebsd.git"}
+: ${GIT_BASEURL="github.com/freebsd/freebsd-src.git"}
 : ${GIT_PORTSURL="github.com/freebsd/freebsd-ports.git"}
 : ${FREEBSD_HOST="https://download.FreeBSD.org"}
 if [ -z "${NO_ZFS}" ]; then
