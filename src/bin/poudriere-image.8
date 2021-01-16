@@ -29,7 +29,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd November 27, 2020
+.Dd January 16, 2021
 .Dt POUDRIERE-IMAGE 8
 .Os
 .Sh NAME
@@ -46,9 +46,31 @@ Builds a filesystem image per the specified options.
 WARNING: This feature is still considered ALPHA.
 .Sh OPTIONS
 .Bl -tag -width "-f packagelist"
+.It Fl A Ar post-script
+Source the
+.Ar post-script
+file after populating the
+.Ev $WRKDIR Ns
+/world directory.
+.Pp
+See the
+.Sx ENVIRONMENT
+section for a list of environment variables that are available.
 .It Fl b
 Place the swap partition before the primary partition(s) to allow the primary
 partition to be grown to fill the remaining space on a disk.
+.It Fl B Ar pre-script
+Source the
+.Ar pre-script
+file instead of using the default methods to create the image file, add
+partitions, format filesystems, and then mount them to
+.Ev $WRKDIR Ns
+/world before the contents are installed to that directory.
+.Pp
+See the
+.Sx ENVIRONMENT
+section for a list of environment variables that are available or may need to
+be populated by the script.
 .It Fl c Ar overlaydir
 This specifies an extra directory whose contents will be copied directly into
 the final image, starting from the root.
@@ -115,6 +137,27 @@ Size 0 skips the creation of a swap partition.
 This specifies a list of files to exclude from the final image.
 .It Fl z Ar set
 This specifies which SET to use for the build.
+.El
+.Sh ENVIRONMENT
+.Bl -tag -width "ZFS_BEROOT_NAME"
+.It Ev IMAGESIZE
+The size of the image file to be created, in bytes.
+.It Ev IMAGENAME
+The name of the image (from
+.Fl n Ar name Ns
+).
+.It Ev WORLDDIR
+The path to the directory that is the root of the image.
+.It Ev zroot
+The name of the ZFS pool.
+The pre-script should populated this variable with the name of the ZFS pool
+that is created, if any.
+.It Ev md
+The name of the
+.Xr mdconfig 8
+device corresponding to the image file.
+The pre-script should populated this variable with the name of the md
+device created, so that is is properly cleaned up after the image is created.
 .El
 .Sh CUSTOMIZATION
 .Ss Create optional src.conf
