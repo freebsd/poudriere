@@ -34,7 +34,7 @@ createfs() {
 
 	if [ -n "${fs}" -a "${fs}" != "none" ]; then
 		msg_n "Creating ${name} fs at ${mnt}..."
-		if ! zfs create -p ${fs}; then
+		if ! zfs create ${fs}; then
 			echo " fail"
 			err 1 "Failed to create FS ${fs}"
 		fi
