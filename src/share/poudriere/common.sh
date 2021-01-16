@@ -1428,14 +1428,19 @@ get_data_dir() {
 			zfs get -H -o value mountpoint ${ZPOOL}${ZROOTFS}/data
 			return
 		fi
-		zfs create -p -o ${NS}:type=data \
-			-o atime=off \
-			-o mountpoint=${BASEFS}/data \
-			${ZPOOL}${ZROOTFS}/data
+		# Set properties on top dataset and let underlying ones inherit them
+		# Explicitly set properties for values diverging from top dataset
+		zfs create -p -o atime=off \
+			-o compression=on \ 
+			-o mountpoint=${BASEFS} \
+			${ZPOOL}${ZROOTFS}
+		zfs create ${ZPOOL}${ZROOTFS}/jails
+		zfs create ${ZPOOL}${ZROOTFS}/ports
+		zfs create -o ${NS}:type=data ${ZPOOL}${ZROOTFS}/data
 		zfs create ${ZPOOL}${ZROOTFS}/data/.m
 		zfs create -o compression=off ${ZPOOL}${ZROOTFS}/data/cache
-		zfs create -o compression=on ${ZPOOL}${ZROOTFS}/data/images
-		zfs create -o compression=lz4 ${ZPOOL}${ZROOTFS}/data/logs
+		zfs create ${ZPOOL}${ZROOTFS}/data/images
+		zfs create ${ZPOOL}${ZROOTFS}/data/logs
 		zfs create -o compression=off ${ZPOOL}${ZROOTFS}/data/packages
 		zfs create -o compression=off ${ZPOOL}${ZROOTFS}/data/wrkdirs
 	else
