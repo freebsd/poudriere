@@ -176,7 +176,7 @@ update_version() {
 	local version_extra="$1"
 
 	if [ -r "${SRC_BASE}/sys/conf/newvers.sh" ]; then
-		eval `grep "^[RB][A-Z]*=" ${SRC_BASE}/sys/conf/newvers.sh `
+		eval `egrep "^REVISION=|^BRANCH=" ${SRC_BASE}/sys/conf/newvers.sh `
 		RELEASE=${REVISION}-${BRANCH}
 	else
 		RELEASE=$(jget ${JAILNAME} version)
@@ -208,7 +208,37 @@ hook_stop_jail() {
 	fi
 }
 
+update_pkgbase() {
+	local make_jobs
+	local destdir="${JAILMNT}"
+
+	if [ ${JAIL_OSVERSION} -gt 1100086 ]; then
+		make_jobs="${MAKE_JOBS}"
+	fi
+
+	msg "Starting make update-packages"
+	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} update-packages KERNCONF="${KERNEL}" \
+	    DESTDIR="${destdir}" REPODIR="${POUDRIERE_DATA}/images/${JAILNAME}-repo" ${MAKEWORLDARGS}
+	case $? in
+	    0)
+		run_hook jail pkgbase "${POUDRIERE_DATA}/images/${JAILNAME}-repo"
+		return
+		;;
+	    2)
+		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages KERNCONF="${KERNEL}" \
+		    DESTDIR="${destdir}" REPODIR="${POUDRIERE_DATA}/images/${JAILNAME}-repo" ${MAKEWORLDARGS} || \
+		    err 1 "Failed to 'make packages'"
+		run_hook jail pkgbase "${POUDRIERE_DATA}/images/${JAILNAME}-repo"
+		;;
+	    *)
+		err 1 "Failed to 'make update-packages'"
+		;;
+	esac
+}
+
 update_jail() {
+	local pkgbase
+
 	METHOD=$(jget ${JAILNAME} method)
 	: ${SRCPATH:=$(jget ${JAILNAME} srcpath || echo)}
 	if [ "${METHOD}" = "null" -a -n "${SRCPATH}" ]; then
@@ -355,6 +385,10 @@ update_jail() {
 		err 1 "Unsupported method"
 		;;
 	esac
+	pkgbase=$(jget ${JAILNAME} pkgbase)
+	if [ -n "${pkgbase}" ] && [ "${pkgbase}" -eq 1 ]; then
+	    update_pkgbase
+	fi
 	jset ${JAILNAME} timestamp $(clock -epoch)
 }
 
@@ -378,7 +412,7 @@ installworld() {
 	if [ -n "${KERNEL}" ]; then
 		msg "Starting make installkernel"
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} installkernel \
-		    KERNCONF=${KERNEL} DESTDIR=${destdir} ${MAKEWORLDARGS} || \
+		    KERNCONF="${KERNEL}" DESTDIR=${destdir} ${MAKEWORLDARGS} || \
 		    err 1 "Failed to 'make installkernel'"
 	fi
 
@@ -394,9 +428,11 @@ build_pkgbase() {
 	fi
 
 	msg "Starting make packages"
-	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages \
+	${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages KERNCONF="${KERNEL}" \
 	    DESTDIR=${destdir} REPODIR=${POUDRIERE_DATA}/images/${JAILNAME}-repo ${MAKEWORLDARGS} || \
 		err 1 "Failed to 'make packages'"
+
+	run_hook jail pkgbase "${POUDRIERE_DATA}/images/${JAILNAME}-repo"
 }
 
 setup_build_env() {
@@ -472,7 +508,7 @@ buildworld() {
 	if [ -n "${KERNEL}" ]; then
 		msg "Starting make buildkernel with ${PARALLEL_JOBS} jobs"
 		${MAKE_CMD} -C ${SRC_BASE} buildkernel ${MAKE_JOBS} \
-			KERNCONF=${KERNEL} ${MAKEWORLDARGS} || \
+			KERNCONF="${KERNEL}" ${MAKEWORLDARGS} || \
 			err 1 "Failed to 'make buildkernel'"
 	fi
 }
@@ -603,7 +639,7 @@ install_from_vcs() {
 		git*)
 			${GIT_CMD} -C ${SRC_BASE} pull --rebase -q || err 1 " fail"
 			if [ -n "${TORELEASE}" ]; then
-				${GIT_CMD} checkout -q "${TORELEASE}" || err 1 " fail"
+				${GIT_CMD} -C ${SRC_BASE} checkout -q "${TORELEASE}" || err 1 " fail"
 			fi
 			echo " done"
 			;;
@@ -916,13 +952,15 @@ create_jail() {
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
 	[ -n "$SRCPATH" ] && jset ${JAILNAME} srcpath ${SRCPATH}
-	[ -n "${KERNEL}" ] && jset ${JAILNAME} kernel ${KERNEL}
+	[ -n "${KERNEL}" ] && jset ${JAILNAME} kernel "${KERNEL}"
 
 	# Wrap the jail creation in a special cleanup hook that will remove the jail
 	# if any error is encountered
 	CLEANUP_HOOK=cleanup_new_jail
 	jset ${JAILNAME} method ${METHOD}
 	[ -n "${FCT}" ] && ${FCT} version_extra
+
+	jset ${JAILNAME} pkgbase ${BUILD_PKGBASE}
 
 	if [ -r "${SRC_BASE}/sys/conf/newvers.sh" ]; then
 		RELEASE=$(update_version "${version_extra}")
@@ -954,6 +992,7 @@ info_jail() {
 	local elapsed elapsed_days elapsed_hms elapsed_timestamp
 	local now start_time timestamp
 	local jversion jarch jmethod pmethod mnt fs kernel
+	local pkgbase
 
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 
@@ -979,6 +1018,7 @@ info_jail() {
 	_jget mnt ${JAILNAME} mnt || :
 	_jget fs ${JAILNAME} fs || fs=""
 	_jget kernel ${JAILNAME} kernel || kernel=
+	_jget pkgbase ${JAILNAME} pkgbase || pkgbase=0
 
 	echo "Jail name:         ${JAILNAME}"
 	echo "Jail version:      ${jversion}"
@@ -994,6 +1034,11 @@ info_jail() {
 	fi
 	if [ -n "${timestamp}" ]; then
 		echo "Jail updated:      $(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
+	fi
+	if [ "${pkgbase}" -eq 0 ]; then
+	    echo "Jail pkgbase:      disabled"
+	else
+	    echo "Jail pkgbase:      enabled"
 	fi
 	if [ "${PTNAME_ARG:-0}" -eq 1 ] && porttree_exists ${PTNAME}; then
 		_pget pmethod ${PTNAME} method
@@ -1030,21 +1075,19 @@ info_jail() {
 
 get_host_arch ARCH
 REALARCH=${ARCH}
-START=0
-STOP=0
-LIST=0
-DELETE=0
-CREATE=0
-RENAME=0
 QUIET=0
 NAMEONLY=0
-INFO=0
-UPDATE=0
 PTNAME=default
 SETNAME=""
 XDEV=0
 BUILD=0
 GIT_DEPTH=--depth=1
+BUILD_PKGBASE=0
+
+set_command() {
+	[ -z "${COMMAND}" ] || usage
+	COMMAND="$1"
+}
 
 while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 	case "${FLAG}" in
@@ -1055,7 +1098,7 @@ while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 			BUILD_PKGBASE=1
 			;;
 		i)
-			INFO=1
+			set_command info
 			;;
 		j)
 			JAILNAME=${OPTARG}
@@ -1085,25 +1128,25 @@ while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 			JAILMNT=${OPTARG}
 			;;
 		s)
-			START=1
+			set_command start
 			;;
 		k)
-			STOP=1
+			set_command stop
 			;;
 		K)
-			KERNEL=${OPTARG:-GENERIC}
+			KERNEL="${OPTARG:-GENERIC}"
 			;;
 		l)
-			LIST=1
+			set_command list
 			;;
 		c)
-			CREATE=1
+			set_command create
 			;;
 		C)
 			CLEANJAIL=${OPTARG}
 			;;
 		d)
-			DELETE=1
+			set_command delete
 			;;
 		p)
 			PTNAME=${OPTARG}
@@ -1128,13 +1171,13 @@ while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 			QUIET=1
 			;;
 		u)
-			UPDATE=1
+			set_command update
 			;;
 		U)
 			SOURCES_URL=${OPTARG}
 			;;
 		r)
-			RENAME=1;
+			set_command update
 			NEWJAILNAME=${OPTARG}
 			;;
 		t)
@@ -1160,7 +1203,7 @@ post_getopts
 
 METHOD=${METHOD:-ftp}
 CLEANJAIL=${CLEAN:-none}
-if [ -n "${JAILNAME}" -a ${CREATE} -eq 0 ]; then
+if [ -n "${JAILNAME}" -a ${COMMAND} != "create" ]; then
 	_jget ARCH ${JAILNAME} arch || :
 	_jget JAILFS ${JAILNAME} fs || :
 	_jget JAILMNT ${JAILNAME} mnt || :
@@ -1210,9 +1253,12 @@ else
 	GIT_FULLURL=${proto}://${GIT_BASEURL}
 fi
 
+if [ -z "${KERNEL}" ] && [ "${BUILD_PKGBASE}" -eq 1 ]; then
+    err 1 "pkgbase build need a kernel"
+fi
 
-case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
-	10000000)
+case "${COMMAND}" in
+	create)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		case ${METHOD} in
 			src=*|null|tar) ;;
@@ -1224,17 +1270,17 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		check_emulation "${REALARCH}" "${ARCH}"
 		create_jail
 		;;
-	01000000)
+	info)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		_mastermnt MASTERMNT
 		export MASTERMNT
 		info_jail
 		;;
-	00100000)
+	list)
 		list_jail
 		;;
-	00010000)
+	stop)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		maybe_run_queued "${saved_argv}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
@@ -1244,7 +1290,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		    msg "Jail ${MASTERNAME} not running, but cleaning up anyway"
 		jail_stop
 		;;
-	00001000)
+	start)
 		export SET_STATUS_ON_START=0
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
@@ -1255,7 +1301,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		MUTABLE_BASE=yes jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 		JNETNAME="n"
 		;;
-	00000100)
+	delete)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 		confirm_if_tty "Are you sure you want to delete the jail?" || \
@@ -1263,7 +1309,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		maybe_run_queued "${saved_argv}"
 		delete_jail
 		;;
-	00000010)
+	update)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 		maybe_run_queued "${saved_argv}"
@@ -1272,7 +1318,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 		check_emulation "${REALARCH}" "${ARCH}"
 		update_jail
 		;;
-	00000001)
+	rename)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		maybe_run_queued "${saved_argv}"
 		rename_jail

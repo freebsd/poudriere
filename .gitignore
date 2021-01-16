@@ -52,3 +52,4 @@ src/poudriere-sh/builtins.h
 src/poudriere-sh/shell.h
 external/ptsort/.git
 external/ptsort/.gitignore
+test/prep

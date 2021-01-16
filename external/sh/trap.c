@@ -38,7 +38,7 @@ static char sccsid[] = "@(#)trap.c	8.5 (Berkeley) 6/5/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/trap.c 326025 2017-11-20 19:49:47Z pfg $");
+__FBSDID("$FreeBSD: head/bin/sh/trap.c 364919 2020-08-28 15:35:45Z jilles $");
 
 #include <signal.h>
 #include <unistd.h>
@@ -382,12 +382,7 @@ onsig(int signo)
 {
 
 	if (signo == SIGINT && trap[SIGINT] == NULL) {
-		/*
-		 * The !in_dotrap here is safe.  The only way we can arrive
-		 * here with in_dotrap set is that a trap handler set SIGINT to
-		 * SIG_DFL and killed itself.
-		 */
-		if (suppressint && !in_dotrap)
+		if (suppressint)
 			SET_PENDING_INT;
 		else
 			onint();
@@ -479,14 +474,20 @@ dotrap(void)
 }
 
 
+void
+trap_init(void)
+{
+	setsignal(SIGINT);
+	setsignal(SIGQUIT);
+}
+
+
 /*
  * Controls whether the shell is interactive or not based on iflag.
  */
 void
 setinteractive(void)
 {
-	setsignal(SIGINT);
-	setsignal(SIGQUIT);
 	setsignal(SIGTERM);
 }
 

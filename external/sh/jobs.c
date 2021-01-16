@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)jobs.c	8.5 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/jobs.c 344502 2019-02-24 21:05:13Z jilles $");
+__FBSDID("$FreeBSD: head/bin/sh/jobs.c 361112 2020-05-16 16:29:23Z jilles $");
 
 #include <sys/ioctl.h>
 #include <sys/param.h>
@@ -1008,9 +1008,11 @@ vforkexecshell(struct job *jp, char **argv, char **envp, const char *path, int i
 	pid_t pid;
 	struct jmploc jmploc;
 	struct jmploc *savehandler;
+	int inton;
 
 	TRACE(("vforkexecshell(%%%td, %s, %p) called\n", jp - jobtab, argv[0],
 	    (void *)pip));
+	inton = is_int_on();
 	INTOFF;
 	flushall();
 	savehandler = handler;
@@ -1045,7 +1047,7 @@ vforkexecshell(struct job *jp, char **argv, char **envp, const char *path, int i
 		setcurjob(jp);
 #endif
 	}
-	INTON;
+	SETINTON(inton);
 	TRACE(("In parent shell:  child = %d\n", (int)pid));
 	return pid;
 }

@@ -801,7 +801,7 @@ _lookup_portdir() {
 
 	for o in ${OVERLAYS}; do
 		_ptdir="${OVERLAYSDIR}/${o}/${_port}"
-		if [ -d "${MASTERMNTREL}${_ptdir}" ]; then
+		if [ -r "${MASTERMNTREL}${_ptdir}/Makefile" ]; then
 			setvar "${_varname}" "${_ptdir}"
 			return
 		fi
@@ -1172,7 +1172,8 @@ exit_handler() {
 		if [ ${CREATED_JLOCK:-0} -eq 1 ]; then
 			update_stats >/dev/null 2>&1 || :
 		fi
-		if [ ${DRY_RUN} -eq 1 ] && [ -n "${PACKAGES_ROOT}" ]; then
+		if [ ${DRY_RUN} -eq 1 ] && [ -n "${PACKAGES_ROOT}" ] &&
+		    [ ${PACKAGES_MADE_BUILDING:-0} -eq 1 ] ; then
 			rm -rf "${PACKAGES_ROOT}/.building" || :
 		fi
 	fi
@@ -1976,6 +1977,7 @@ stash_packages() {
 		# set; Must stay on the same device for linking.
 
 		mkdir -p ${PACKAGES}/.building
+		PACKAGES_MADE_BUILDING=1
 		# hardlink copy all top-level directories
 		find ${PACKAGES}/.latest/ -mindepth 1 -maxdepth 1 -type d \
 		    ! -name .building | xargs -J % cp -al % ${PACKAGES}/.building
@@ -2322,7 +2324,6 @@ setup_xdev() {
 	CC=/nxb-bin/usr/bin/cc
 	CPP=/nxb-bin/usr/bin/cpp
 	CXX=/nxb-bin/usr/bin/c++
-	AS=/nxb-bin/usr/bin/as
 	NM=/nxb-bin/usr/bin/nm
 	LD=/nxb-bin/usr/bin/ld
 	OBJCOPY=/nxb-bin/usr/bin/objcopy
@@ -2336,6 +2337,14 @@ setup_xdev() {
 	AWK=/nxb-bin/usr/bin/awk
 	FLEX=/nxb-bin/usr/bin/flex
 	EOF
+
+	# as(1) has been removed in FreeBSD 13.0.  Just check if it's present
+	# in the target environment's /nxb-bin and use it if it's there.
+	if [ -f "${mnt}/nxb-bin/usr/bin/as" ]; then
+		cat >> "${mnt}/etc/make.nxb.conf" <<-EOF
+		AS=/nxb-bin/usr/bin/as
+		EOF
+	fi
 
 	# hardlink these files to capture scripts and tools
 	# that explicitly call them instead of using paths.
@@ -7844,7 +7853,7 @@ if [ -z "${NO_ZFS}" ]; then
 fi
 
 : ${SVN_HOST="svn.freebsd.org"}
-: ${GIT_BASEURL="github.com/freebsd/freebsd.git"}
+: ${GIT_BASEURL="github.com/freebsd/freebsd-src.git"}
 : ${GIT_PORTSURL="github.com/freebsd/freebsd-ports.git"}
 : ${FREEBSD_HOST="https://download.FreeBSD.org"}
 if [ -z "${NO_ZFS}" ]; then

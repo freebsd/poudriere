@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)trap.h	8.3 (Berkeley) 6/5/95
- * $FreeBSD: head/bin/sh/trap.h 326025 2017-11-20 19:49:47Z pfg $
+ * $FreeBSD: head/bin/sh/trap.h 364919 2020-08-28 15:35:45Z jilles $
  */
 
 extern volatile sig_atomic_t pendingsig;
@@ -45,6 +45,7 @@ void ignoresig(int);
 int issigchldtrapped(void);
 void onsig(int);
 void dotrap(void);
+void trap_init(void);
 void setinteractive(void);
 void exitshell(int) __dead2;
 void exitshell_savedstatus(void) __dead2;
