@@ -221,7 +221,7 @@ update_pkgbase() {
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} update-packages \
 			KERNCONF="${KERNEL}" DESTDIR="${destdir}" \
 			REPODIR="${POUDRIERE_DATA}/images/${JAILNAME}-repo" \
-			${MAKEWORLDARGS}
+			NO_INSTALLEXTRAKERNELS=no ${MAKEWORLDARGS}
 	case $? in
 	    0)
 		run_hook jail pkgbase "${POUDRIERE_DATA}/images/${JAILNAME}-repo"
@@ -232,7 +232,7 @@ update_pkgbase() {
 			${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages \
 				KERNCONF="${KERNEL}" DESTDIR="${destdir}" \
 				REPODIR="${POUDRIERE_DATA}/images/${JAILNAME}-repo"
-				${MAKEWORLDARGS} || \
+				NO_INSTALLEXTRAKERNELS=no ${MAKEWORLDARGS} || \
 			err 1 "Failed to 'make packages'"
 		run_hook jail pkgbase "${POUDRIERE_DATA}/images/${JAILNAME}-repo"
 		;;
@@ -418,7 +418,7 @@ installworld() {
 	if [ -n "${KERNEL}" ]; then
 		msg "Starting make installkernel"
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} installkernel \
-		    KERNCONF="${KERNEL}" DESTDIR=${destdir} ${MAKEWORLDARGS} || \
+		    KERNCONF="${KERNEL}" NO_INSTALLEXTRAKERNELS=no DESTDIR=${destdir} ${MAKEWORLDARGS} || \
 		    err 1 "Failed to 'make installkernel'"
 	fi
 
@@ -438,7 +438,7 @@ build_pkgbase() {
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages \
 			KERNCONF="${KERNEL}" DESTDIR=${destdir} \
 			REPODIR=${POUDRIERE_DATA}/images/${JAILNAME}-repo
-			${MAKEWORLDARGS} || \
+			NO_INSTALLEXTRAKERNELS=no ${MAKEWORLDARGS} || \
 		err 1 "Failed to 'make packages'"
 
 	run_hook jail pkgbase "${POUDRIERE_DATA}/images/${JAILNAME}-repo"
