@@ -3948,6 +3948,7 @@ save_wrkdir() {
 	tgz) COMPRESSKEY="z" ;;
 	tbz) COMPRESSKEY="j" ;;
 	txz) COMPRESSKEY="J" ;;
+	tzst) COMPRESSKEY="-zstd" ;;
 	esac
 	unlink ${tarname}
 
@@ -3955,7 +3956,7 @@ save_wrkdir() {
 	    WRKDIR wrkdir || \
 	    err 1 "Failed to lookup WRKDIR for ${originspec}"
 
-	tar -s ",${mnt}${wrkdir%/*},," -c${COMPRESSKEY}f "${tarname}" \
+	tar -s ",${mnt}${wrkdir%/*},," -cf "${tarname}" -${COMPRESSKEY} \
 	    "${mnt}${wrkdir}" > /dev/null 2>&1
 
 	job_msg "Saved ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_RESET} wrkdir to: ${tarname}"
@@ -8507,7 +8508,7 @@ if [ -e "${POUDRIERE_DATA}" ]; then
 fi
 : ${WRKDIR_ARCHIVE_FORMAT="tbz"}
 case "${WRKDIR_ARCHIVE_FORMAT}" in
-	tar|tgz|tbz|txz);;
+	tar|tgz|tbz|txz|tzst);;
 	*) err 1 "invalid format for WRKDIR_ARCHIVE_FORMAT: ${WRKDIR_ARCHIVE_FORMAT}" ;;
 esac
 
