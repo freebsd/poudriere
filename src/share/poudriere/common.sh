@@ -2178,7 +2178,7 @@ commit_packages() {
 		[ ! -L "${PACKAGES_ROOT}/${name}" ] || continue
 		if [ -e "${PACKAGES_ROOT}/${name}" ]; then
 			case "${name}" in
-			.buildname|.jailversion|meta.txz|digests.txz|packagesite.txz|All|Latest)
+			.buildname|.jailversion|meta.${PKG_EXT}|digests.${PKG_EXT}|packagesite.${PKG_EXT}|All|Latest)
 				# Auto fix pkg-owned files
 				unlink "${PACKAGES_ROOT:?}/${name}"
 				;;
@@ -7875,7 +7875,7 @@ prepare_ports() {
 	if [ $SKIPSANITY -eq 0 ]; then
 		msg "Sanity checking the repository"
 
-		for n in repo.txz digests.txz packagesite.txz; do
+		for n in repo.${PKG_EXT} digests.${PKG_EXT} packagesite.${PKG_EXT}; do
 			pkg="${PACKAGES}/All/${n}"
 			if [ -f "${pkg}" ]; then
 				msg "Removing invalid pkg repo file: ${pkg}"
@@ -8177,10 +8177,13 @@ build_repo() {
 	    err 1 "Unable to extract pkg."
 	run_hook pkgrepo sign "${PACKAGES}" "${PKG_REPO_SIGNING_KEY}" \
 	    "${PKG_REPO_FROM_HOST:-no}" "${PKG_REPO_META_FILE}"
+	PKG_META="-m /tmp/pkgmeta"
+	PKG_META_MASTERMNT="-m ${MASTERMNT}/tmp/pkgmeta"
 	if [ -r "${PKG_REPO_META_FILE:-/nonexistent}" ]; then
-		PKG_META="-m /tmp/pkgmeta"
-		PKG_META_MASTERMNT="-m ${MASTERMNT}/tmp/pkgmeta"
 		install -m 0400 "${PKG_REPO_META_FILE}" \
+		    ${MASTERMNT}/tmp/pkgmeta
+	else
+		printf "version = 2;\npacking_format = \"${PKG_EXT}\";\n" > \
 		    ${MASTERMNT}/tmp/pkgmeta
 	fi
 	mkdir -p ${MASTERMNT}/tmp/packages
