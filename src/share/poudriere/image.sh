@@ -202,7 +202,7 @@ while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:s:S:t:w:X:z:" FLAG; do
 			;;
 		c)
 			[ -d "${OPTARG}" ] || err 1 "No such extract directory: ${OPTARG}"
-			EXTRADIR=$(realpath ${OPTARG})
+			EXTRADIR=$(realpath "${OPTARG}")
 			;;
 		f)
 			# If this is a relative path, add in ${PWD} as
@@ -538,7 +538,7 @@ else
 	make -C ${mnt}/usr/src DESTDIR=${WRKDIR}/world BATCH_DELETE_OLD_FILES=yes SRCCONF=${WRKDIR}/src.conf delete-old delete-old-libs
 fi
 
-[ ! -d "${EXTRADIR}" ] || cp -fRPp ${EXTRADIR}/ ${WRKDIR}/world/
+[ ! -d "${EXTRADIR}" ] || cp -fRPp "${EXTRADIR}/" ${WRKDIR}/world/
 if [ -f "${WRKDIR}/world/etc/login.conf.orig" ]; then
 	mv -f "${WRKDIR}/world/etc/login.conf.orig" \
 	    "${WRKDIR}/world/etc/login.conf"
