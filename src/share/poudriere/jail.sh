@@ -566,6 +566,21 @@ build_native_xtools() {
 	BUILT_NATIVE_XTOOLS=1
 }
 
+check_kernconf() {
+	# Check if the kernel exists before we get too far
+	if [ -z "${KERNEL}" ]; then
+		KERNEL_ERR=
+		for k in ${KERNEL}; do
+			if [ ! -r "${SRC_BASE}/sys/${ARCH}/conf/${k}" ]; then
+				KERNEL_ERR="${KERNEL_ERR} ${k}"
+			fi
+		done
+		if [ -z "${KERNEL_ERR}" ]; then
+			err 1 "Unable to find specified KERNCONF:${KERNEL_ERR}"
+		fi
+	fi
+}
+
 install_from_src() {
 	local var_version_extra="$1"
 	local cpignore_flag cpignore
@@ -586,6 +601,7 @@ install_from_src() {
 	do_clone -r ${cpignore_flag} ${SRC_BASE} ${JAILMNT}/usr/src
 	[ -n "${cpignore}" ] && rm -f ${cpignore}
 	echo " done"
+	check_kernconf
 
 	if [ ${BUILD} -eq 0 ]; then
 		setup_build_env
@@ -654,6 +670,7 @@ install_from_vcs() {
 			;;
 		esac
 	fi
+	check_kernconf
 	buildworld
 	installworld
 	if [ ${BUILD_PKGBASE} -eq 1 ]; then
@@ -828,6 +845,7 @@ install_from_ftp() {
 	rm -rf ${JAILMNT}/fromftp/
 	echo " done"
 
+	check_kernconf
 	build_native_xtools
 }
 
@@ -835,6 +853,7 @@ install_from_tar() {
 	msg_n "Installing ${VERSION} ${ARCH} from ${TARBALL} ..."
 	tar -xpf ${TARBALL} -C ${JAILMNT}/ || err 1 " fail"
 	echo " done"
+	check_kernconf
 	build_native_xtools
 }
 
