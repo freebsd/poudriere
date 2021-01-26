@@ -218,6 +218,7 @@ update_pkgbase() {
 
 	msg "Starting make update-packages"
 	env ${PKG_REPO_SIGNING_KEY:+PKG_REPO_SIGNING_KEY="${PKG_REPO_SIGNING_KEY}"} \
+		${PKG_FORMAT:+PKG_FORMAT="${WRKDIR_ARCHIVE_FORMAT}"} \
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} update-packages \
 			KERNCONF="${KERNEL}" DESTDIR="${destdir}" \
 			REPODIR="${POUDRIERE_DATA}/images/${JAILNAME}-repo" \
@@ -229,6 +230,7 @@ update_pkgbase() {
 		;;
 	    2)
 		env ${PKG_REPO_SIGNING_KEY:+PKG_REPO_SIGNING_KEY="${PKG_REPO_SIGNING_KEY}"} \
+			${PKG_FORMAT:+PKG_FORMAT="${WRKDIR_ARCHIVE_FORMAT}"} \
 			${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages \
 				KERNCONF="${KERNEL}" DESTDIR="${destdir}" \
 				REPODIR="${POUDRIERE_DATA}/images/${JAILNAME}-repo"
@@ -435,6 +437,7 @@ build_pkgbase() {
 
 	msg "Starting make packages"
 	env ${PKG_REPO_SIGNING_KEY:+PKG_REPO_SIGNING_KEY="${PKG_REPO_SIGNING_KEY}"} \
+		${PKG_FORMAT:+PKG_FORMAT="${WRKDIR_ARCHIVE_FORMAT}"} \
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages \
 			KERNCONF="${KERNEL}" DESTDIR=${destdir} \
 			REPODIR=${POUDRIERE_DATA}/images/${JAILNAME}-repo
