@@ -153,7 +153,7 @@ if [ -n "${SOURCES_URL}" ]; then
 		;;
 	git*)
 		case "${SOURCES_URL}" in
-		ssh://*) METHOD="git+ssh" ;;
+		git@*) METHOD="git+ssh" ;;
 		http://*) METHOD="git+http" ;;
 		https://*) METHOD="git+https" ;;
 		git://*) METHOD="git" ;;
