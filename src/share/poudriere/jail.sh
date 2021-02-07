@@ -217,7 +217,7 @@ update_pkgbase() {
 	fi
 
 	msg "Starting make update-packages"
-	env ${PKG_REPO_SIGNING_KEY:+PKG_REPO_SIGNING_KEY="${PKG_REPO_SIGNING_KEY}"} \
+	env ${PKG_REPO_SIGNING_KEY:+PKG_REPO_SIGNING_KEY="${PKG_REPO_SIGNING_KEY}"} IGNORE_OSMAJOR=y \
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} update-packages \
 			KERNCONF="${KERNEL}" DESTDIR="${destdir}" \
 			REPODIR="${POUDRIERE_DATA}/images/${JAILNAME}-repo" \
