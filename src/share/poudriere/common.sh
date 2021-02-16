@@ -1664,7 +1664,7 @@ do_jail_mounts() {
 	local from="$1"
 	local mnt="$2"
 	local name="$3"
-	local devfspath="null zero random urandom stdin stdout stderr fd fd/* bpf* pts pts/*"
+	local devfspath="null zero random urandom stdin stdout stderr fd fd/* pts pts/*"
 	local srcpath nullpaths nullpath p arch
 
 	# from==mnt is via jail -u
