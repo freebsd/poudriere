@@ -7864,7 +7864,7 @@ fi
 if [ -z "${NO_ZFS}" ]; then
 	: ${ZROOTFS="/poudriere"}
 	case ${ZROOTFS} in
-	[!/]*) err 1 "ZROOTFS shoud start with a /" ;;
+	[!/]*) err 1 "ZROOTFS should start with a /" ;;
 	esac
 fi
 
