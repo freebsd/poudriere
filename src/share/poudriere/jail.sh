@@ -231,7 +231,7 @@ update_pkgbase() {
 		env ${PKG_REPO_SIGNING_KEY:+PKG_REPO_SIGNING_KEY="${PKG_REPO_SIGNING_KEY}"} \
 			${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages \
 				KERNCONF="${KERNEL}" DESTDIR="${destdir}" \
-				REPODIR="${POUDRIERE_DATA}/images/${JAILNAME}-repo"
+				REPODIR="${POUDRIERE_DATA}/images/${JAILNAME}-repo" \
 				NO_INSTALLEXTRAKERNELS=no ${MAKEWORLDARGS} || \
 			err 1 "Failed to 'make packages'"
 		run_hook jail pkgbase "${POUDRIERE_DATA}/images/${JAILNAME}-repo"
@@ -437,7 +437,7 @@ build_pkgbase() {
 	env ${PKG_REPO_SIGNING_KEY:+PKG_REPO_SIGNING_KEY="${PKG_REPO_SIGNING_KEY}"} \
 		${MAKE_CMD} -C "${SRC_BASE}" ${make_jobs} packages \
 			KERNCONF="${KERNEL}" DESTDIR=${destdir} \
-			REPODIR=${POUDRIERE_DATA}/images/${JAILNAME}-repo
+			REPODIR=${POUDRIERE_DATA}/images/${JAILNAME}-repo \
 			NO_INSTALLEXTRAKERNELS=no ${MAKEWORLDARGS} || \
 		err 1 "Failed to 'make packages'"
 
