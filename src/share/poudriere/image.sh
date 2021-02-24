@@ -153,9 +153,9 @@ get_uefi_bootname() {
 
     case ${arch} in
         amd64) echo bootx64 ;;
-        arm64) echo bootaa64 ;;
+        arm64.aarch64) echo bootaa64 ;;
         i386) echo bootia32 ;;
-        arm) echo bootarm ;;
+        arm.armv7) echo bootarm ;;
         *) echo boot ;;
     esac
 }
