@@ -1431,7 +1431,7 @@ get_data_dir() {
 		# Set properties on top dataset and let underlying ones inherit them
 		# Explicitly set properties for values diverging from top dataset
 		zfs create -p -o atime=off \
-			-o compression=on \ 
+			-o compression=on \
 			-o mountpoint=${BASEFS} \
 			${ZPOOL}${ZROOTFS}
 		zfs create ${ZPOOL}${ZROOTFS}/jails
