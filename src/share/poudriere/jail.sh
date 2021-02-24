@@ -568,7 +568,7 @@ build_native_xtools() {
 
 check_kernconf() {
 	# Check if the kernel exists before we get too far
-	if [ -z "${KERNEL}" ]; then
+	if [ -n "${KERNEL}" ]; then
 		KERNEL_ERR=
 		for k in ${KERNEL}; do
 			if [ ! -r "${SRC_BASE}/sys/${ARCH}/conf/${k}" ]; then
