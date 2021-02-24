@@ -55,7 +55,7 @@ Parameters:
     -t type         -- Type of image can be one of (default iso+zmfs):
                     -- iso, iso+mfs, iso+zmfs, usb, usb+mfs, usb+zmfs,
                        rawdisk, zrawdisk, tar, firmware, rawfirmware,
-                       embedded, dump, zsnapshot
+                       dump, zsnapshot
     -w size         -- Set the size of the swap partition
     -X excludefile  -- File containing the list in cpdup format
     -z set          -- Set
@@ -266,7 +266,7 @@ while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:s:S:t:w:X:z:" FLAG; do
 			case ${MEDIATYPE} in
 			iso|iso+mfs|iso+zmfs|usb|usb+mfs|usb+zmfs) ;;
 			rawdisk|zrawdisk|tar|firmware|rawfirmware) ;;
-			embedded|dump|zsnapshot) ;;
+			dump|zsnapshot) ;;
 			*) err 1 "invalid mediatype: ${MEDIATYPE}"
 			esac
 			;;
@@ -332,7 +332,7 @@ jail_exists ${JAILNAME} || err 1 "The jail ${JAILNAME} does not exist"
 _jget arch ${JAILNAME} arch || err 1 "Missing arch metadata for jail"
 get_host_arch host_arch
 case "${MEDIATYPE}" in
-usb|*firmware|*rawdisk|embedded|dump)
+usb|*firmware|*rawdisk|dump)
 	[ -n "${IMAGESIZE}" ] || err 1 "Please specify the imagesize"
 	_jget mnt ${JAILNAME} mnt || err 1 "Missing mnt metadata for jail"
 	[ -f "${mnt}/boot/kernel/kernel" ] || \
@@ -435,21 +435,6 @@ if [ -n "${PRE_BUILD_SCRIPT}" ]; then
 	MEDIATYPE="skip"
 fi
 case "${MEDIATYPE}" in
-embedded)
-	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
-	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
-	gpart create -s mbr ${md}
-	gpart add -t '!6' -a 63 -s 20m ${md}
-	gpart set -a active -i 1 ${md}
-	newfs_msdos -F16 -L msdosboot /dev/${md}s1
-	gpart add -t freebsd ${md}
-	gpart create -s bsd ${md}s2
-	gpart add -t freebsd-ufs -a 64k ${md}s2
-	newfs -U -L ${IMAGENAME} /dev/${md}s2a
-	mount /dev/${md}s2a ${WRKDIR}/world
-	mkdir -p ${WRKDIR}/world/boot/msdos
-	mount_msdosfs /dev/${md}s1 /${WRKDIR}/world/boot/msdos
-	;;
 rawdisk|dump)
 	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
 	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
@@ -655,15 +640,6 @@ iso)
 rawdisk|dump)
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
 	/dev/ufs/${IMAGENAME} / ufs rw 1 1
-	EOF
-	;;
-embedded)
-	if [ -f ${WRKDIR}/world/boot/ubldr.bin ]; then
-	    cp ${WRKDIR}/world/boot/ubldr.bin ${WRKDIR}/world/boot/msdos/
-	fi
-	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
-	/dev/ufs/${IMAGENAME} / ufs rw 1 1
-	/dev/msdosfs/MSDOSBOOT /boot/msdos msdosfs rw,noatime 0 0
 	EOF
 	;;
 usb)
@@ -888,14 +864,6 @@ dump)
 	/sbin/mdconfig -d -u ${md#md}
 	md=
 	mv ${WRKDIR}/raw.dump "${OUTPUTDIR}/${FINALIMAGE}"
-	;;
-embedded)
-	FINALIMAGE=${IMAGENAME}.img
-	umount ${WRKDIR}/world/boot/msdos
-	umount ${WRKDIR}/world
-	/sbin/mdconfig -d -u ${md#md}
-	md=
-	mv ${WRKDIR}/raw.img "${OUTPUTDIR}/${FINALIMAGE}"
 	;;
 zrawdisk)
 	FINALIMAGE=${IMAGENAME}.img
