@@ -164,14 +164,14 @@ make_esp_file() {
     local file sizekb loader device stagedir fatbits efibootname
 
     file=$1
-    sizekb=$2
+    size=$2
     loader=$3
-    fat32min=33292
-    fat16min=2100
+    fat32min=33
+    fat16min=2
 
-    if [ "$sizekb" -ge "$fat32min" ]; then
+    if [ "$size" -ge "$fat32min" ]; then
         fatbits=32
-    elif [ "$sizekb" -ge "$fat16min" ]; then
+    elif [ "$size" -ge "$fat16min" ]; then
         fatbits=16
     else
         fatbits=12
@@ -185,7 +185,7 @@ make_esp_file() {
 	-o fat_type=${fatbits} \
 	-o sectors_per_cluster=1 \
 	-o volume_label=EFISYS \
-	-s ${sizekb}k \
+	-s ${size}m \
 	"${file}" "${stagedir}"
     rm -rf "${stagedir}"
 }
@@ -783,7 +783,7 @@ case ${MEDIATYPE} in
 iso)
 	FINALIMAGE=${IMAGENAME}.iso
 	espfilename=$(mktemp /tmp/efiboot.XXXXXX)
-	make_esp_file ${espfilename} 800 ${WRKDIR}/world/boot/loader.efi
+	make_esp_file ${espfilename} 10 ${WRKDIR}/world/boot/loader.efi
 	makefs -t cd9660 -o rockridge -o label=${IMAGENAME} \
 		-o publisher="poudriere" \
 		-o bootimage="i386;${WRKDIR}/out/boot/cdboot" \
@@ -794,7 +794,7 @@ iso)
 iso+*mfs)
 	FINALIMAGE=${IMAGENAME}.iso
 	espfilename=$(mktemp /tmp/efiboot.XXXXXX)
-	make_esp_file ${espfilename} 800 ${WRKDIR}/out/boot/loader.efi
+	make_esp_file ${espfilename} 10 ${WRKDIR}/out/boot/loader.efi
 	makefs -t cd9660 -o rockridge -o label=${IMAGENAME} \
 		-o publisher="poudriere" \
 		-o bootimage="i386;${WRKDIR}/out/boot/cdboot" \
@@ -806,7 +806,7 @@ iso+*mfs)
 usb+*mfs)
 	FINALIMAGE=${IMAGENAME}.img
 	espfilename=$(mktemp /tmp/efiboot.XXXXXX)
-	make_esp_file ${espfilename} 800 ${WRKDIR}/world/boot/loader.efi
+	make_esp_file ${espfilename} 10 ${WRKDIR}/world/boot/loader.efi
 	makefs -B little ${WRKDIR}/img.part ${WRKDIR}/out
 	mkimg -s gpt -b ${mnt}/boot/pmbr \
 		-p efi:=${espfilename} \
@@ -826,7 +826,7 @@ usb)
 		fi
 	fi
 	espfilename=$(mktemp /tmp/efiboot.XXXXXX)
-	make_esp_file ${espfilename} 800 ${WRKDIR}/world/boot/loader.efi
+	make_esp_file ${espfilename} 10 ${WRKDIR}/world/boot/loader.efi
 	mkimg -s gpt -b ${mnt}/boot/pmbr \
 		-p efi:=${espfilename} \
 		-p freebsd-boot:=${mnt}/boot/gptboot \
@@ -849,7 +849,7 @@ firmware)
 		SWAPLAST="$SWAPCMD"
 	fi
 	espfilename=$(mktemp /tmp/efiboot.XXXXXX)
-	make_esp_file ${espfilename} 800 ${WRKDIR}/world/boot/loader.efi
+	make_esp_file ${espfilename} 10 ${WRKDIR}/world/boot/loader.efi
 	mkimg -s gpt -C ${IMAGESIZE} -b ${mnt}/boot/pmbr \
 		-p efi:=${espfilename} \
 		-p freebsd-boot:=${mnt}/boot/gptboot \
