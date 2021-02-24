@@ -140,6 +140,15 @@ mkminiroot() {
 	gzip -9 "${OUTPUTDIR}/${IMAGENAME}-miniroot"
 }
 
+get_pkg_abi() {
+	case ${arch} in
+		amd64) echo amd64 ;;
+		arm64.aarch64) echo aarch64 ;;
+		i386) echo i386 ;;
+		arm.armv7) echo armv7 ;;
+	esac
+}
+
 get_uefi_bootname() {
 
     case ${arch} in
@@ -516,15 +525,16 @@ esac
 if [ -f "${PKGBASELIST}" ]; then
 	OSVERSION=$(awk -F '"' '/REVISION=/ { print $2 }' ${mnt}/usr/src/sys/conf/newvers.sh | cut -d '.' -f 1)
 	mkdir -p ${WRKDIR}/world/etc/pkg/
+	pkg_abi=$(get_pkg_abi)
 	cat << -EOF > ${WRKDIR}/world/etc/pkg/FreeBSD-base.conf
 	local: {
-               url: file://${POUDRIERE_DATA}/images/${JAILNAME}-repo/FreeBSD:${OSVERSION}:${arch}/latest,
+               url: file://${POUDRIERE_DATA}/images/${JAILNAME}-repo/FreeBSD:${OSVERSION}:${pkg_abi}/latest,
                enabled: true
 	       }
 -EOF
-	pkg -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world update
+	pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world update
 	while read line; do
-		pkg -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world install -y ${line}
+		pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world install -y ${line}
 	done < ${PKGBASELIST}
 	rm ${WRKDIR}/world/etc/pkg/FreeBSD-base.conf
 else
