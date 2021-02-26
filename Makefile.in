@@ -737,6 +737,14 @@ dist_pkgdata_DATA = \
 			src/share/poudriere/distclean.sh \
 			src/share/poudriere/foreachport.sh \
 			src/share/poudriere/image.sh \
+			src/share/poudriere/image_dump.sh \
+			src/share/poudriere/image_firmware.sh \
+			src/share/poudriere/image_iso.sh \
+			src/share/poudriere/image_mfs.sh \
+			src/share/poudriere/image_rawdisk.sh \
+			src/share/poudriere/image_tar.sh \
+			src/share/poudriere/image_usb.sh \
+			src/share/poudriere/image_zsnapshot.sh \
 			src/share/poudriere/jail.sh \
 			src/share/poudriere/logclean.sh \
 			src/share/poudriere/options.sh \
