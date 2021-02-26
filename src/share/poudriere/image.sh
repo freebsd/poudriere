@@ -206,10 +206,14 @@ while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:s:S:t:w:X:z:" FLAG; do
 			SWAPBEFORE=1
 			;;
 		B)
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			[ -f "${OPTARG}" ] || err 1 "No such pre-build-script: ${OPTARG}"
 			PRE_BUILD_SCRIPT="$(realpath ${OPTARG})"
 			;;
 		c)
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			[ -d "${OPTARG}" ] || err 1 "No such extract directory: ${OPTARG}"
 			EXTRADIR=$(realpath "${OPTARG}")
 			;;
@@ -231,6 +235,8 @@ while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:s:S:t:w:X:z:" FLAG; do
 			JAILNAME=${OPTARG}
 			;;
 		m)
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			[ -d "${OPTARG}" ] || err 1 "No such miniroot overlay directory: ${OPTARG}"
 			MINIROOT=$(realpath ${OPTARG})
 			;;
