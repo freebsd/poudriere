@@ -795,7 +795,7 @@ usb+*mfs)
 	fi
 	mkimg -s gpt ${pmbr} \
 	      -p efi:=${espfilename} \
-	      ${gptboot}
+	      ${gptboot} \
 	      -p freebsd-ufs:=${WRKDIR}/img.part \
 	      -o "${OUTPUTDIR}/${FINALIMAGE}"
 	rm -rf ${espfilename}
