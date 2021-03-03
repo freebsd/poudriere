@@ -571,11 +571,11 @@ check_kernconf() {
 	if [ -n "${KERNEL}" ]; then
 		KERNEL_ERR=
 		for k in ${KERNEL}; do
-			if [ ! -r "${SRC_BASE}/sys/${ARCH}/conf/${k}" ]; then
+			if [ ! -r "${SRC_BASE}/sys/${ARCH%.*}/conf/${k}" ]; then
 				KERNEL_ERR="${KERNEL_ERR} ${k}"
 			fi
 		done
-		if [ -z "${KERNEL_ERR}" ]; then
+		if [ -n "${KERNEL_ERR}" ]; then
 			err 1 "Unable to find specified KERNCONF:${KERNEL_ERR}"
 		fi
 	fi
