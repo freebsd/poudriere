@@ -4974,7 +4974,7 @@ delete_old_pkg() {
 		originspec_encode originspec "${origin}" "${pkg_dep_args}" \
 		    "${pkg_flavor}"
 		if ! originspec_is_needed_and_not_ignored "${originspec}"; then
-			if [ ${ALL} -eq 1 -o -n "${LISTPKGS}" ]; then
+			if [ ${ALL} -eq 1 ]; then
 				msg "Deleting ${pkg##*/}: no longer needed"
 				delete_pkg "${pkg}"
 			else
