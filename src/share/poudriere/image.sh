@@ -190,6 +190,31 @@ make_esp_file() {
     rm -rf "${stagedir}"
 }
 
+# Convert @flavor from package list to a unique entry of pkgname, otherwise it
+# spits out origin if no flavor.
+convert_package_list() {
+	local PACKAGELIST="$1"
+	local PKG_DBDIR=$(mktemp -dt poudriere_pkgdb)
+	local REPOS_DIR=$(mktemp -dt poudriere_repo)
+	local ABI_FILE
+
+	# This pkg rquery is always ran in host so we need a host-centric
+	# repo.conf always.
+	cat > "${REPOS_DIR}/repo.conf" <<-EOF
+	FreeBSD: { enabled: false }
+	local: { url: file:///${WRKDIR}/world/tmp/packages }
+	EOF
+
+	export REPOS_DIR PKG_DBDIR
+	# Always need this from host.
+	export ABI_FILE="${WRKDIR}/world/usr/lib/crt1.o"
+	pkg update >/dev/null || :
+	pkg rquery '%At %o@%Av %n-%v' | \
+	    awk -v pkglist="${PACKAGELIST}" \
+	    -f "${AWKPREFIX}/unique_pkgnames_from_flavored_origins.awk"
+	rm -rf "${PKG_DBDIR}" "${REPOS_DIR}"
+}
+
 install_world_from_pkgbase()
 {
 	OSVERSION=$(awk -F '"' '/REVISION=/ { print $2 }' ${mnt}/usr/src/sys/conf/newvers.sh | cut -d '.' -f 1)
@@ -476,32 +501,6 @@ cap_mkdb ${WRKDIR}/world/etc/login.conf
 if [ -n "${HOSTNAME}" ]; then
 	echo "hostname=${HOSTNAME}" >> ${WRKDIR}/world/etc/rc.conf
 fi
-
-# Convert @flavor from package list to a unique entry of pkgname, otherwise it
-# spits out origin if no flavor.
-convert_package_list() {
-	local PACKAGELIST="$1"
-	local PKG_DBDIR=$(mktemp -dt poudriere_pkgdb)
-	local REPOS_DIR=$(mktemp -dt poudriere_repo)
-	local ABI_FILE
-
-	# This pkg rquery is always ran in host so we need a host-centric
-	# repo.conf always.
-	cat > "${REPOS_DIR}/repo.conf" <<-EOF
-	FreeBSD: { enabled: false }
-	local: { url: file:///${WRKDIR}/world/tmp/packages }
-	EOF
-
-	export REPOS_DIR PKG_DBDIR
-	# Always need this from host.
-	export ABI_FILE="${WRKDIR}/world/usr/lib/crt1.o"
-	pkg update >/dev/null || :
-	pkg rquery '%At %o@%Av %n-%v' | \
-	    awk -v pkglist="${PACKAGELIST}" \
-	    -f "${AWKPREFIX}/unique_pkgnames_from_flavored_origins.awk"
-	rm -rf "${PKG_DBDIR}" "${REPOS_DIR}"
-}
-
 
 # install packages if any is needed
 if [ -n "${PACKAGELIST}" ]; then
