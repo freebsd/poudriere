@@ -190,6 +190,36 @@ make_esp_file() {
     rm -rf "${stagedir}"
 }
 
+install_world_from_pkgbase()
+{
+	OSVERSION=$(awk -F '"' '/REVISION=/ { print $2 }' ${mnt}/usr/src/sys/conf/newvers.sh | cut -d '.' -f 1)
+	mkdir -p ${WRKDIR}/world/etc/pkg/
+	pkg_abi=$(get_pkg_abi)
+	cat << -EOF > ${WRKDIR}/world/etc/pkg/FreeBSD-base.conf
+	local: {
+               url: file://${POUDRIERE_DATA}/images/${JAILNAME}-repo/FreeBSD:${OSVERSION}:${pkg_abi}/latest,
+               enabled: true
+	       }
+-EOF
+	pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world update
+	while read line; do
+		pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world install -y ${line}
+	done < ${PKGBASELIST}
+	rm ${WRKDIR}/world/etc/pkg/FreeBSD-base.conf
+}
+
+install_world()
+{
+	# Use of tar given cpdup has a pretty useless -X option for this case
+	tar -C ${mnt} -X ${excludelist} -cf - . | tar -xf - -C ${WRKDIR}/world
+	touch ${WRKDIR}/src.conf
+	[ ! -f ${POUDRIERED}/src.conf ] || cat ${POUDRIERED}/src.conf > ${WRKDIR}/src.conf
+	[ ! -f ${POUDRIERED}/${JAILNAME}-src.conf ] || cat ${POUDRIERED}/${JAILNAME}-src.conf >> ${WRKDIR}/src.conf
+	[ ! -f ${POUDRIERED}/image-${JAILNAME}-src.conf ] || cat ${POUDRIERED}/image-${JAILNAME}-src.conf >> ${WRKDIR}/src.conf
+	[ ! -f ${POUDRIERED}/image-${JAILNAME}-${SETNAME}-src.conf ] || cat ${POUDRIERED}/image-${JAILNAME}-${SETNAME}-src.conf >> ${WRKDIR}/src.conf
+	make -s -C ${mnt}/usr/src DESTDIR=${WRKDIR}/world BATCH_DELETE_OLD_FILES=yes SRCCONF=${WRKDIR}/src.conf delete-old delete-old-libs
+}
+
 . ${SCRIPTPREFIX}/common.sh
 . ${SCRIPTPREFIX}/image_dump.sh
 . ${SCRIPTPREFIX}/image_firmware.sh
@@ -201,6 +231,7 @@ make_esp_file() {
 . ${SCRIPTPREFIX}/image_zsnapshot.sh
 
 HOSTNAME=poudriere-image
+INSTALLWORLD=install_world
 
 : ${PRE_BUILD_SCRIPT:=""}
 : ${POST_BUILD_SCRIPT:=""}
@@ -269,6 +300,7 @@ while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:s:S:t:w:X:z:" FLAG; do
 			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			[ -r "${OPTARG}" ] || err 1 "No such package list: ${OPTARG}"
 			PKGBASELIST=${OPTARG}
+			INSTALLWORLD=install_world_from_pkgbase
 			;;
 		s)
 			IMAGESIZE="${OPTARG}"
@@ -430,31 +462,8 @@ skip)
 	;;
 esac
 
-if [ -f "${PKGBASELIST}" ]; then
-	OSVERSION=$(awk -F '"' '/REVISION=/ { print $2 }' ${mnt}/usr/src/sys/conf/newvers.sh | cut -d '.' -f 1)
-	mkdir -p ${WRKDIR}/world/etc/pkg/
-	pkg_abi=$(get_pkg_abi)
-	cat << -EOF > ${WRKDIR}/world/etc/pkg/FreeBSD-base.conf
-	local: {
-               url: file://${POUDRIERE_DATA}/images/${JAILNAME}-repo/FreeBSD:${OSVERSION}:${pkg_abi}/latest,
-               enabled: true
-	       }
--EOF
-	pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world update
-	while read line; do
-		pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world install -y ${line}
-	done < ${PKGBASELIST}
-	rm ${WRKDIR}/world/etc/pkg/FreeBSD-base.conf
-else
-	# Use of tar given cpdup has a pretty useless -X option for this case
-	tar -C ${mnt} -X ${excludelist} -cf - . | tar -xf - -C ${WRKDIR}/world
-	touch ${WRKDIR}/src.conf
-	[ ! -f ${POUDRIERED}/src.conf ] || cat ${POUDRIERED}/src.conf > ${WRKDIR}/src.conf
-	[ ! -f ${POUDRIERED}/${JAILNAME}-src.conf ] || cat ${POUDRIERED}/${JAILNAME}-src.conf >> ${WRKDIR}/src.conf
-	[ ! -f ${POUDRIERED}/image-${JAILNAME}-src.conf ] || cat ${POUDRIERED}/image-${JAILNAME}-src.conf >> ${WRKDIR}/src.conf
-	[ ! -f ${POUDRIERED}/image-${JAILNAME}-${SETNAME}-src.conf ] || cat ${POUDRIERED}/image-${JAILNAME}-${SETNAME}-src.conf >> ${WRKDIR}/src.conf
-	make -s -C ${mnt}/usr/src DESTDIR=${WRKDIR}/world BATCH_DELETE_OLD_FILES=yes SRCCONF=${WRKDIR}/src.conf delete-old delete-old-libs
-fi
+# Run the install world function
+${INSTALLWORLD}
 
 [ ! -d "${EXTRADIR}" ] || cp -fRPp "${EXTRADIR}/" ${WRKDIR}/world/
 if [ -f "${WRKDIR}/world/etc/login.conf.orig" ]; then
