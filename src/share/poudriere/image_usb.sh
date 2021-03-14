@@ -51,6 +51,7 @@ usb_build()
 		return 0
 	fi
 
+	msg "Building UFS image for usb"
 	cat >> ${WRKDIR}/world/etc/fstab <<-EOF
 	/dev/ufs/${IMAGENAME} / ufs rw 1 1
 	EOF
@@ -69,7 +70,8 @@ usb_build()
 		err 2 "Installed OS Partition needs: ${WORLD_SIZE}m, but the OS Partitions are only: ${OS_SIZE}m.  Increase -s"
 	fi
 	makefs -B little ${OS_SIZE:+-s ${OS_SIZE}}m -o label=${IMAGENAME} \
-	       -o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world
+	       -o version=2 ${WRKDIR}/raw.img ${WRKDIR}/world >/dev/null 2>&1
+	msg "UFS image for USB built"
 }
 
 usb_generate()
@@ -80,7 +82,7 @@ usb_generate()
 	make_esp_file ${espfilename} 10 ${WRKDIR}/world/boot/loader.efi
 
 	if [ "$1" = "mfs" ] || [ "$1" = "zmfs" ]; then
-		makefs -B little ${WRKDIR}/img.part ${WRKDIR}/out
+		makefs -B little ${WRKDIR}/img.part ${WRKDIR}/out >/dev/null 2>&1
 		ufsimage=${WRKDIR}/img.part
 	else
 		ufsimage=${WRKDIR}/raw.img

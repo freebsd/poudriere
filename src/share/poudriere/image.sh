@@ -163,6 +163,7 @@ get_uefi_bootname() {
 make_esp_file() {
     local file sizekb loader device stagedir fatbits efibootname
 
+    msg "Creating ESP image"
     file=$1
     size=$2
     loader=$3
@@ -186,8 +187,10 @@ make_esp_file() {
 	-o sectors_per_cluster=1 \
 	-o volume_label=EFISYS \
 	-s ${size}m \
-	"${file}" "${stagedir}"
+	"${file}" "${stagedir}" \
+	>/dev/null 2>&1
     rm -rf "${stagedir}"
+    msg "ESP Image created"
 }
 
 # Convert @flavor from package list to a unique entry of pkgname, otherwise it
@@ -226,16 +229,19 @@ install_world_from_pkgbase()
                enabled: true
 	       }
 -EOF
-	pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world update
+	pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world update ${PKG_QUIET}
+	msg "Installing base packages"
 	while read line; do
-		pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world install -y ${line}
+		pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world install ${PKG_QUIET} -y ${line}
 	done < ${PKGBASELIST}
 	rm ${WRKDIR}/world/etc/pkg/FreeBSD-base.conf
+	msg "Base packages installed"
 }
 
 install_world()
 {
-	# Use of tar given cpdup has a pretty useless -X option for this case
+    # Use of tar given cpdup has a pretty useless -X option for this case
+	msg "Installing world with tar"
 	tar -C ${mnt} -X ${excludelist} -cf - . | tar -xf - -C ${WRKDIR}/world
 	touch ${WRKDIR}/src.conf
 	[ ! -f ${POUDRIERED}/src.conf ] || cat ${POUDRIERED}/src.conf > ${WRKDIR}/src.conf
@@ -243,6 +249,7 @@ install_world()
 	[ ! -f ${POUDRIERED}/image-${JAILNAME}-src.conf ] || cat ${POUDRIERED}/image-${JAILNAME}-src.conf >> ${WRKDIR}/src.conf
 	[ ! -f ${POUDRIERED}/image-${JAILNAME}-${SETNAME}-src.conf ] || cat ${POUDRIERED}/image-${JAILNAME}-${SETNAME}-src.conf >> ${WRKDIR}/src.conf
 	make -s -C ${mnt}/usr/src DESTDIR=${WRKDIR}/world BATCH_DELETE_OLD_FILES=yes SRCCONF=${WRKDIR}/src.conf delete-old delete-old-libs
+	msg "Installing world done"
 }
 
 . ${SCRIPTPREFIX}/common.sh
@@ -257,11 +264,12 @@ install_world()
 
 HOSTNAME=poudriere-image
 INSTALLWORLD=install_world
+PKG_QUIET="-q"
 
 : ${PRE_BUILD_SCRIPT:=""}
 : ${POST_BUILD_SCRIPT:=""}
 
-while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:s:S:t:w:X:z:" FLAG; do
+while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:s:S:t:vw:X:z:" FLAG; do
 	case "${FLAG}" in
 		A)
 			[ -f "${OPTARG}" ] || err 1 "No such post-build-script: ${OPTARG}"
@@ -341,6 +349,9 @@ while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:s:S:t:w:X:z:" FLAG; do
 			dump|zsnapshot) ;;
 			*) err 1 "invalid mediatype: ${MEDIATYPE}"
 			esac
+			;;
+		v)
+			PKG_QUIET=""
 			;;
 		w)
 			SWAPSIZE="${OPTARG}"
