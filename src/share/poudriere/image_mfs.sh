@@ -33,7 +33,7 @@ _mfs_create()
 	/dev/ufs/${IMAGENAME} / ufs rw 0 0
 	tmpfs /tmp tmpfs rw,mode=1777 0 0
 	EOF
-	makefs -B little ${IMAGESIZE:+-s ${IMAGESIZE}} -o label=${IMAGENAME} ${WRKDIR}/out/mfsroot ${WRKDIR}/world >/dev/null 2>&1
+	makefs -B little -o label=${IMAGENAME} ${WRKDIR}/out/mfsroot ${WRKDIR}/world >/dev/null 2>&1
 }
 
 _zmfs_create()
