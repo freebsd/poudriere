@@ -422,27 +422,28 @@ if [ -n "${IMAGESIZE}" ]; then
 	NEW_IMAGESIZE_SIZE=""
 	case "${IMAGESIZE_UNIT}" in
 		k|K)
-			DIVIDER=$(echo "scale=3; 1024 / 1000" | bc)
+			err 1 "Need a bigger image size than kilobyte"
 			;;
 		m|M)
-			DIVIDER=$(echo "scale=6; 1024 * 1024 / 1000000" | bc)
-			NEW_IMAGESIZE_UNIT="k"
+			DIVIDER=$(echo "scale=6; 1024 / 1000" | bc)
+			NEW_IMAGESIZE_UNIT="m"
 			;;
 		g|G)
-			DIVIDER=$(echo "scale=9; 1024 * 1024 * 1024 / 1000000000" | bc)
+			DIVIDER=$(echo "scale=9; 1024 / (1000 * 1000)" | bc)
 			NEW_IMAGESIZE_UNIT="m"
 			;;
 		t|T)
-			DIVIDER=$(echo "scale=12; 1024 * 1024 * 1024 * 1024 / 1000000000000" | bc)
-			NEW_IMAGESIZE_UNIT="g"
+			DIVIDER=$(echo "scale=12; 1024 / (1000 * 1000 * 1000)" | bc)
+			NEW_IMAGESIZE_UNIT="m"
 			;;
 		*)
-			NEW_IMAGESIZE_UNIT=""
-			NEW_IMAGESIZE_SIZE=${IMAGESIZE}
+			err 1 "Image size need a unit (m/g/t)"
+			;;
 	esac
 	# truncate accept only integer value, and bc needs a divide per 1 for refreshing scale
-	[ -z "${NEW_IMAGESIZE_SIZE}" ] && NEW_IMAGESIZE_SIZE=$(echo "scale=9;var=${IMAGESIZE_VALUE} / ${DIVIDER}; scale=0; ( var * 1000 ) /1" | bc)
+	[ -z "${NEW_IMAGESIZE_SIZE}" ] && NEW_IMAGESIZE_SIZE=$(echo "scale=9;var=${IMAGESIZE_VALUE} / ${DIVIDER}; scale=0; var / 1" | bc)
 	IMAGESIZE="${NEW_IMAGESIZE_SIZE}${NEW_IMAGESIZE_UNIT}"
+	msg "Calculated image size ${IMAGESIZE}"
 fi
 
 if [ -n "${SWAPSIZE}" ]; then
@@ -452,7 +453,7 @@ if [ -n "${SWAPSIZE}" ]; then
 	NEW_SWAPSIZE_SIZE=""
 	case "${SWAPSIZE_UNIT}" in
 		k|K)
-			DIVIDER=$(echo "scale=3; 1024 / 1000" | bc)
+			err 1 "Need a bigger image size than kilobyte"
 			;;
 		m|M)
 			DIVIDER=$(echo "scale=6; 1024 * 1024 / 1000000" | bc)
