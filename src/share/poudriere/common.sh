@@ -1414,6 +1414,13 @@ get_data_dir() {
 	fi
 
 	if [ -z "${NO_ZFS}" ]; then
+		# Prepare older installs to take advantage of inheritance
+		zrootfsmountpoint=$(zfs get -o value -H mountpoint ${ZPOOL}${ZROOTFS})
+		if [ "${zrootfsmountpoint}" != ${BASEFS} ]; then
+			zfs inherit -r mountpoint ${ZPOOL}${ZROOTFS}
+			zfs set mountpoint=${BASEFS} ${ZPOOL}${ZROOTFS}
+		fi
+		# Normal place to look for the data mountpoint
 		data=$(zfs list -rt filesystem -H -o ${NS}:type,mountpoint ${ZPOOL}${ZROOTFS} 2>/dev/null |
 		    awk '$1 == "data" { print $2; exit; }')
 		if [ -n "${data}" ]; then
