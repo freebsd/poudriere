@@ -1415,7 +1415,7 @@ get_data_dir() {
 
 	if [ -z "${NO_ZFS}" ]; then
 		# Prepare older installs to take advantage of inheritance
-		zrootfsmountpoint=$(zfs get -o value -H mountpoint ${ZPOOL}${ZROOTFS})
+		zrootfsmountpoint=$(zfs get -H -o value mountpoint ${ZPOOL}${ZROOTFS})
 		if [ "${zrootfsmountpoint}" != ${BASEFS} ]; then
 			zfs inherit -r mountpoint ${ZPOOL}${ZROOTFS}
 			zfs set mountpoint=${BASEFS} ${ZPOOL}${ZROOTFS}
