@@ -6783,8 +6783,11 @@ _listed_ports() {
 	{
 		# -f specified
 		if [ -z "${LISTPORTS}" ]; then
+			local _ignore_comments
+
 			for file in ${LISTPKGS}; do
-				while mapfile_read_loop "${file}" origin; do
+				while mapfile_read_loop "${file}" origin \
+				    _ignore_comments; do
 					# Skip blank lines and comments
 					[ -z "${origin%%#*}" ] && continue
 					# Remove excess slashes for mistakes
