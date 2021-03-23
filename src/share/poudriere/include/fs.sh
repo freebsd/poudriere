@@ -34,7 +34,10 @@ createfs() {
 
 	if [ -n "${fs}" -a "${fs}" != "none" ]; then
 		msg_n "Creating ${name} fs at ${mnt}..."
-		if ! zfs create ${fs}; then
+		if ! zfs create -p \
+			-o compression=on \
+			-o atime=off \
+			-o mountpoint=${mnt} ${fs}; then
 			echo " fail"
 			err 1 "Failed to create FS ${fs}"
 		fi
