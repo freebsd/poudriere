@@ -227,7 +227,7 @@ if [ ${ret} -eq 1 ]; then
 fi
 
 # Save which builds were modified for later html_json rewriting
-DELETED_BUILDS="$(cat "${OLDLOGS}" | cut -d / -f 1 | sort -u)"
+MASTERNAMES_TOUCHED="$(cat "${OLDLOGS}" | cut -d / -f 1 | sort -u)"
 
 # Once that is done, we have a latest-per-pkg links to cleanup.
 reason="detached latest-per-pkg logfiles in ${log_top} (no filter)"
@@ -259,7 +259,7 @@ fi
 if [ ${logs_deleted} -eq 1 ]; then
 	[ "${DRY_RUN}" -eq 0 ] || err 1 "Would delete files with dry-run"
 	msg_n "Fixing latest-done symlinks..."
-	for MASTERNAME in ${DELETED_BUILDS}; do
+	for MASTERNAME in ${MASTERNAMES_TOUCHED}; do
 		echo -n "${MASTERNAME}..."
 		latest_done=$(find -x "${MASTERNAME}" -mindepth 2 -maxdepth 2 \
 		    \( -type d -name 'latest*' -prune \) -o \
@@ -273,21 +273,21 @@ if [ ${logs_deleted} -eq 1 ]; then
 	echo " done"
 
 	msg_n "Updating latest-per-pkg links..."
-	for build in ${DELETED_BUILDS}; do
-		echo -n " ${build}..."
-		find -x ${build} -maxdepth 2 -mindepth 2 -name logs -print0 | \
+	for MASTERNAME in ${MASTERNAMES_TOUCHED}; do
+		echo -n " ${MASTERNAME}..."
+		find -x "${MASTERNAME}" -maxdepth 2 -mindepth 2 -name logs -print0 | \
 		    xargs -0 -J % find -x % -mindepth 1 -maxdepth 1 -type f | \
 		    sort -d | \
 		    awk -F/ '{if (!printed[$4]){print $0; printed[$4]=1;}}' | \
 		    while read log; do
 			filename="${log##*/}"
-			dst="${build}/latest-per-pkg/${filename}"
+			dst="${MASTERNAME}/latest-per-pkg/${filename}"
 			[ -f "${dst}" ] && continue
 			ln "${log}" "${dst}"
 			pkgname="${filename%.log}"
 			pkgbase="${pkgname%-*}"
 			pkgver="${pkgname##*-}"
-			latest_dst="latest-per-pkg/${pkgbase}/${pkgver}/${build}.log"
+			latest_dst="latest-per-pkg/${pkgbase}/${pkgver}/${MASTERNAME}.log"
 			mkdir -p "${latest_dst%/*}"
 			ln "${log}" "${latest_dst}"
 		done
@@ -295,7 +295,7 @@ if [ ${logs_deleted} -eq 1 ]; then
 	echo " done"
 
 	msg_n "Removing empty build log directories..."
-	echo "${DELETED_BUILDS}" | sed -e 's,$,/latest-per-pkg,' | \
+	echo "${MASTERNAMES_TOUCHED}" | sed -e 's,$,/latest-per-pkg,' | \
 	    tr '\n' '\000' | \
 	    xargs -0 -J % find -x % -mindepth 0 -maxdepth 0 -empty | \
 	    sed -e 's,$,/..,' | xargs realpath | tr '\n' '\000' | \
@@ -303,7 +303,7 @@ if [ ${logs_deleted} -eq 1 ]; then
 	echo " done"
 
 	msg "Rebuilding HTML JSON files..."
-	for MASTERNAME in ${DELETED_BUILDS}; do
+	for MASTERNAME in ${MASTERNAMES_TOUCHED}; do
 		# Was this build eliminated?
 		[ -d "${MASTERNAME}" ] || continue
 		msg_n "Rebuilding HTML JSON for: ${MASTERNAME}..."
