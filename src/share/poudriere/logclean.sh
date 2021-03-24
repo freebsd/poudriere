@@ -195,12 +195,12 @@ if [ -n "${MAX_COUNT}" ]; then
 	END {
 		for (mastername in out) {
 			total = split(out[mastername], a, "\t")
-			for (n in a) {
-				if (total <= MAX_COUNT)
-					break
+			if (MAX_COUNT > total)
+				total = 0
+			else
+				total -= MAX_COUNT
+			for (n = 1; n <= total; n++)
 				print a[n]
-				total = total - 1
-			}
 		}
 	}
 	' > "${OLDLOGS}"
