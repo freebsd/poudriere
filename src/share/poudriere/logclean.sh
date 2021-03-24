@@ -256,7 +256,8 @@ else
 fi
 
 if [ ${logs_deleted} -eq 1 ]; then
-	msg_n "Fixing latest-done links..."
+	[ "${DRY_RUN}" -eq 0 ] || err 1 "Would delete files with dry-run"
+	msg_n "Fixing latest-done symlinks..."
 	for MASTERNAME in ${DELETED_BUILDS}; do
 		echo -n "${MASTERNAME}..."
 		latest_done=$(find -x "${MASTERNAME}" -mindepth 2 -maxdepth 2 \
@@ -270,7 +271,7 @@ if [ ${logs_deleted} -eq 1 ]; then
 	done
 	echo " done"
 
-	msg_n "Updating latest-per-pkg links for deleted builds..."
+	msg_n "Updating latest-per-pkg links..."
 	for build in ${DELETED_BUILDS}; do
 		echo -n " ${build}..."
 		find ${build} -maxdepth 2 -mindepth 2 -name logs -print0 | \
@@ -313,6 +314,11 @@ if [ ${logs_deleted} -eq 1 ]; then
 	log_path_top="${log_top}"
 	build_top_json || :
 	echo " done"
+else
+	msg "[Dry Run] Would fix latest-done symlinks..."
+	msg "[Dry Run] Would fix latest-per-pkg links..."
+	msg "[Dry Run] Would remove builds with no logs..."
+	msg "[Dry Run] Would rebuild HTML JSON files..."
 fi
 
 exit 0
