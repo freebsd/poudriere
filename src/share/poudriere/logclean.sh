@@ -258,6 +258,21 @@ fi
 
 if [ ${logs_deleted} -eq 1 ]; then
 	[ "${DRY_RUN}" -eq 0 ] || err 1 "Would delete files with dry-run"
+
+	msg_n "Fixing latest symlinks..."
+	for MASTERNAME in ${MASTERNAMES_TOUCHED}; do
+		echo -n "${MASTERNAME}..."
+		latest=$(find -x "${MASTERNAME}" -mindepth 2 -maxdepth 2 \
+		    \( -type d -name 'latest*' -prune \) -o \
+		    -type f -name .poudriere.status \
+		    -print | sort -u -d | tail -n 1 | \
+		    awk -F / '{print $(NF - 1)}')
+		rm -f "${MASTERNAME}/latest"
+		[ -z "${latest}" ] && continue
+		ln -s "${latest}" "${MASTERNAME}/latest"
+	done
+	echo " done"
+
 	msg_n "Fixing latest-done symlinks..."
 	for MASTERNAME in ${MASTERNAMES_TOUCHED}; do
 		echo -n "${MASTERNAME}..."
@@ -316,6 +331,7 @@ if [ ${logs_deleted} -eq 1 ]; then
 	build_top_json || :
 	echo " done"
 else
+	msg "[Dry Run] Would fix latest symlinks..."
 	msg "[Dry Run] Would fix latest-done symlinks..."
 	msg "[Dry Run] Would fix latest-per-pkg links..."
 	msg "[Dry Run] Would remove builds with no logs..."
