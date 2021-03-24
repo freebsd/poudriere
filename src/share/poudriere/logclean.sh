@@ -55,6 +55,7 @@ PTNAME=
 SETNAME=
 DRY_RUN=0
 DAYS=
+ALL=0
 MAX_COUNT=
 
 . ${SCRIPTPREFIX}/common.sh
@@ -63,6 +64,7 @@ while getopts "aB:j:p:nN:vyz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			DAYS=0
+			ALL=1
 			;;
 		B)
 			BUILDNAME_GLOB="${OPTARG}"
@@ -100,8 +102,18 @@ post_getopts
 
 if [ -z "${DAYS}" -a -z "${MAX_COUNT}" -a $# -eq 0 ]; then
 	usage
+	# <days> mutually exclusive with -N and -a
+elif [ $# -ne 0 ] && [ -n "${MAX_COUNT}" -o "${ALL}" -eq 1 ]; then
+	usage
+	# -N mutually exclusive with <days> and -a
+elif [ -n "${MAX_COUNT}" ] && [ $# -ne 0 -o "${ALL}" -eq 1 ]; then
+	usage
+	# -a mutually exclusive with -N and <days>
+elif [ "${ALL}" -eq 1 ] && [ -n "${MAX_COUNT}" -o $# -ne 0 ]; then
+	usage
 fi
 : ${DAYS:=$1}
+unset ALL
 
 POUDRIERE_BUILD_TYPE="bulk"
 _log_path_top log_top
