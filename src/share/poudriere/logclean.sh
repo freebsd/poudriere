@@ -256,6 +256,19 @@ else
 fi
 
 if [ ${logs_deleted} -eq 1 ]; then
+	msg_n "Fixing latest-done links..."
+	for MASTERNAME in ${DELETED_BUILDS}; do
+		echo -n "${MASTERNAME}..."
+		latest_done=$(find -x "${MASTERNAME}" -mindepth 2 -maxdepth 2 \
+		    \( -type d -name 'latest*' -prune \) -o \
+		    -type f -name .poudriere.status \
+		    -exec grep -l done: {} + | sort -u -d | tail -n 1 | \
+		    awk -F / '{print $(NF - 1)}')
+		rm -f "${MASTERNAME}/latest-done"
+		[ -z "${latest_done}" ] && continue
+		ln -s "${latest_done}" "${MASTERNAME}/latest-done"
+	done
+	echo " done"
 
 	msg_n "Updating latest-per-pkg links for deleted builds..."
 	for build in ${DELETED_BUILDS}; do
