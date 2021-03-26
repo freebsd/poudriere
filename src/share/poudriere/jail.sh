@@ -200,14 +200,6 @@ rename_jail() {
 	msg_warn "If you choose to rename the filesystem then modify the 'mnt' and 'fs' files in ${POUDRIERED}/jails/${NEWJAILNAME}"
 }
 
-hook_stop_jail() {
-	jstop
-	umountfs ${JAILMNT} 1
-	if [ -n "${OLD_CLEANUP_HOOK}" ]; then
-		${OLD_CLEANUP_HOOK}
-	fi
-}
-
 update_pkgbase() {
 	local make_jobs
 	local destdir="${JAILMNT}"
@@ -271,16 +263,6 @@ update_jail() {
 		    *) ;;
 		  esac
 		fi
-		MASTERMNT="${JAILMNT}"
-		MASTERMNTREL="${JAILMNT}"
-		MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
-		MUTABLE_BASE=yes NOLINUX=yes \
-		    do_jail_mounts "${JAILMNT}" "${JAILMNT}" "${JAILNAME}"
-		JNETNAME="n"
-		jstart
-		[ -n "${CLEANUP_HOOK}" ] && OLD_CLEANUP_HOOK="${CLEANUP_HOOK}"
-		CLEANUP_HOOK=hook_stop_jail
-		[ ${QEMU_EMULATING} -eq 1 ] && qemu_install "${JAILMNT}"
 		# Fix freebsd-update to not check for TTY and to allow
 		# EOL branches to still get updates.
 		sed \
@@ -321,24 +303,6 @@ update_jail() {
 			jset ${JAILNAME} version ${TORELEASE}
 		fi
 		rm -f ${JAILMNT}/usr/sbin/freebsd-update.fixed
-		if [ ${QEMU_EMULATING} -eq 1 ]; then
-			[ -n "${EMULATOR}" ] || err 1 "No EMULATOR set"
-			rm -f "${JAILMNT}${EMULATOR}"
-			# Try to cleanup the lingering directory structure
-			emulator_dir="${EMULATOR%/*}"
-			while [ -n "${emulator_dir}" ] && \
-			    rmdir "${JAILMNT}${emulator_dir}" 2>/dev/null; do
-				emulator_dir="${emulator_dir%/*}"
-			done
-		fi
-		jstop
-		umountfs ${JAILMNT} 1
-		if [ -n "${OLD_CLEANUP_HOOK}" ]; then
-			CLEANUP_HOOK="${OLD_CLEANUP_HOOK}"
-			unset OLD_CLEANUP_HOOK
-		else
-			unset CLEANUP_HOOK
-		fi
 		update_version
 		build_native_xtools
 		markfs clean ${JAILMNT}
