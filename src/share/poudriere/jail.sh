@@ -274,8 +274,6 @@ update_jail() {
 		MASTERMNT="${JAILMNT}"
 		MASTERMNTREL="${JAILMNT}"
 		MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
-		# XXX: Stop doing this (RESOLV_CONF) when freebsd-update -b works
-		[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
 		MUTABLE_BASE=yes NOLINUX=yes \
 		    do_jail_mounts "${JAILMNT}" "${JAILMNT}" "${JAILNAME}"
 		JNETNAME="n"
@@ -293,14 +291,6 @@ update_jail() {
 		    ${JAILMNT}/usr/sbin/freebsd-update > \
 		    ${JAILMNT}/usr/sbin/freebsd-update.fixed
 		chmod +x ${JAILMNT}/usr/sbin/freebsd-update.fixed
-		# XXX: Stop doing this when freebsd-update -b works
-		OSVERSION=$(awk '/\#define __FreeBSD_version/ { print $3 }' "${JAILMNT}/usr/include/sys/param.h")
-		cp "${JAILMNT}/etc/login.conf" "${JAILMNT}/etc/login.conf.orig"
-		_jget version ${JAILNAME} version || \
-		    err 1 "Missing version metadata for jail"
-		update_version_env "${JAILMNT}" \
-		    "${REALARCH}" "${ARCH}" "${version}" \
-		    "${OSVERSION}"
 		if [ -z "${TORELEASE}" ]; then
 			# We're running inside the jail so basedir is /.
 			# If we start using -b this needs to match it.
@@ -321,18 +311,10 @@ update_jail() {
 			yes | injail env PAGER=/bin/cat \
 			    /usr/sbin/freebsd-update.fixed -r ${TORELEASE} \
 			    upgrade install || err 1 "Fail to upgrade system"
-			# Reboot
-			update_version_env "${JAILMNT}" \
-			    "${REALARCH}" "${ARCH}" "${TORELEASE}" \
-			    "${OSVERSION}"
 			# Install new world
 			yes | injail env PAGER=/bin/cat \
 			    /usr/sbin/freebsd-update.fixed install || \
 			    err 1 "Fail to upgrade system"
-			# Reboot
-			update_version_env "${JAILMNT}" \
-			    "${REALARCH}" "${ARCH}" "${TORELEASE}" \
-			    "${OSVERSION}"
 			# Remove stale files
 			yes | injail env PAGER=/bin/cat \
 			    /usr/sbin/freebsd-update.fixed install || :
@@ -358,10 +340,6 @@ update_jail() {
 			unset CLEANUP_HOOK
 		fi
 		update_version
-		# XXX: Stop doing this when freebsd-update -b works
-		[ -n "${RESOLV_CONF}" ] && rm -f ${JAILMNT}/etc/resolv.conf
-		mv -f "${JAILMNT}/etc/login.conf.orig" \
-		    "${JAILMNT}/etc/login.conf"
 		build_native_xtools
 		markfs clean ${JAILMNT}
 		;;
