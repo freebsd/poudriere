@@ -252,6 +252,8 @@ update_jail() {
 	: ${KERNEL:=$(jget ${JAILNAME} kernel || echo)}
 	case ${METHOD} in
 	ftp|http|ftp-archive)
+		local FREEBSD_UPDATE fu_bin fu_basedir fu_bdhash fu_workdir version
+
 		# In case we use FreeBSD dists and TORELEASE is present, check if it's a release branch.
 		if [ -n "${TORELEASE}" ]; then
 		  case ${TORELEASE} in
@@ -265,44 +267,46 @@ update_jail() {
 		fi
 		# Fix freebsd-update to not check for TTY and to allow
 		# EOL branches to still get updates.
+		fu_bin="$(mktemp -t freebsd-update)"
 		sed \
 		    -e 's/! -t 0/1 -eq 0/' \
 		    -e 's/-t 0/1 -eq 1/' \
 		    -e 's,\(fetch_warn_eol ||\) return 1,\1 :,' \
 		    -e 's,sysctl -n kern.bootfile,echo /boot/kernel/kernel,' \
-		    ${JAILMNT}/usr/sbin/freebsd-update > \
-		    ${JAILMNT}/usr/sbin/freebsd-update.fixed
-		chmod +x ${JAILMNT}/usr/sbin/freebsd-update.fixed
+		    /usr/sbin/freebsd-update > "${fu_bin}"
+		FREEBSD_UPDATE="env PAGER=/bin/cat"
+		FREEBSD_UPDATE="${FREEBSD_UPDATE} /bin/sh ${fu_bin}"
+		fu_basedir="${JAILMNT}"
+		fu_bdhash="$(echo "${fu_basedir}" | sha256 -q)"
+		FREEBSD_UPDATE="${FREEBSD_UPDATE} -b ${fu_basedir}"
+		fu_workdir="${JAILMNT}/var/db/freebsd-update"
+		FREEBSD_UPDATE="${FREEBSD_UPDATE} -d ${fu_workdir}"
+		_jget version ${JAILNAME} version || \
+			err 1 "Missing version metadata for jail"
+		FREEBSD_UPDATE="${FREEBSD_UPDATE} --currently-running ${version}"
+		FREEBSD_UPDATE="${FREEBSD_UPDATE} -f ${JAILMNT}/etc/freebsd-update.conf"
+
 		if [ -z "${TORELEASE}" ]; then
-			# We're running inside the jail so basedir is /.
-			# If we start using -b this needs to match it.
-			basedir=/
-			fu_workdir=/var/db/freebsd-update
-			fu_bdhash="$(echo "${basedir}" | sha256 -q)"
 			# New updates are identified by a symlink containing
 			# the basedir hash and -install as suffix.  If we
 			# really have new updates to install, then install them.
-			if injail env PAGER=/bin/cat \
-			    /usr/sbin/freebsd-update.fixed fetch && \
-			    [ -L "${JAILMNT}${fu_workdir}/${fu_bdhash}-install" ]; then
-				yes | injail env PAGER=/bin/cat \
-				    /usr/sbin/freebsd-update.fixed install
+			if ${FREEBSD_UPDATE} fetch && \
+			    [ -L "${fu_workdir}/${fu_bdhash}-install" ]; then
+				yes | ${FREEBSD_UPDATE} install
 			fi
 		else
 			# Install new kernel
-			yes | injail env PAGER=/bin/cat \
-			    /usr/sbin/freebsd-update.fixed -r ${TORELEASE} \
+			yes | ${FREEBSD_UPDATE} -r ${TORELEASE} \
 			    upgrade install || err 1 "Fail to upgrade system"
 			# Install new world
-			yes | injail env PAGER=/bin/cat \
-			    /usr/sbin/freebsd-update.fixed install || \
+			yes | ${FREEBSD_UPDATE} install || \
 			    err 1 "Fail to upgrade system"
 			# Remove stale files
-			yes | injail env PAGER=/bin/cat \
-			    /usr/sbin/freebsd-update.fixed install || :
+			yes | ${FREEBSD_UPDATE} install || :
 			jset ${JAILNAME} version ${TORELEASE}
 		fi
-		rm -f ${JAILMNT}/usr/sbin/freebsd-update.fixed
+
+		rm -f "${fu_bin}"
 		update_version
 		build_native_xtools
 		markfs clean ${JAILMNT}
