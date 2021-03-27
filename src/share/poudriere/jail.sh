@@ -265,6 +265,14 @@ update_jail() {
 		    *) ;;
 		  esac
 		fi
+		# Avoid conflict with modified login.conf before we stopped
+		# modifying it in commit bcda4cf990d.
+		sed -i '' \
+		    -e 's#:\(setenv.*\),UNAME_r=.*UNAME_v=FreeBSD.*,OSVERSION=[^:,]*\([,:]\)#:\1\2#' \
+		    -e 's#:\(setenv.*\),ABI_FILE=/usr/lib/crt1.o[^:,]*\([,:]\)#:\1\2#' \
+		    -e 's#:\(setenv.*\),UNAME_m=.*,UNAME_p=[^:,]*\([,:]\)#:\1\2#' \
+		    "${JAILMNT}/etc/login.conf"
+		cap_mkdb "${JAILMNT}/etc/login.conf"
 		# Fix freebsd-update to not check for TTY and to allow
 		# EOL branches to still get updates.
 		fu_bin="$(mktemp -t freebsd-update)"
