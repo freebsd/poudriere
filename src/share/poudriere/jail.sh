@@ -1231,7 +1231,7 @@ post_getopts
 
 METHOD=${METHOD:-ftp}
 CLEANJAIL=${CLEAN:-none}
-if [ -n "${JAILNAME}" -a ${COMMAND} != "create" ]; then
+if [ -n "${JAILNAME}" -a "${COMMAND}" != "create" ]; then
 	_jget ARCH ${JAILNAME} arch || :
 	_jget JAILFS ${JAILNAME} fs || :
 	_jget JAILMNT ${JAILNAME} mnt || :
