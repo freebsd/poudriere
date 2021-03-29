@@ -94,7 +94,7 @@ firmware_build()
 
 	# Figure out Partition sizes
 	OS_SIZE=
-	calculate_ospart_size "2" "${IMAGESIZE}" "${CFG_SIZE}" "${DATA_SIZE}" "${SWAPSIZE}"
+	calculate_ospart_size "2" "${NEW_IMAGESIZE_SIZE}" "${CFG_SIZE}" "${DATA_SIZE}" "${SWAPSIZE}"
 	# Prune off a bit to fit the extra partitions and loaders
 	OS_SIZE=$(( $OS_SIZE - 1 ))
 	WORLD_SIZE=$(du -ms ${WRKDIR}/world | awk '{print $1}')
