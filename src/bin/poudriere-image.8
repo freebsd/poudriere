@@ -29,7 +29,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd January 16, 2021
+.Dd March 24, 2021
 .Dt POUDRIERE-IMAGE 8
 .Os
 .Sh NAME
@@ -93,6 +93,13 @@ This specifies the name of the resulting image.
 This argument specifies directory where the resulting image will be created.
 .It Fl p Ar tree
 This argument specifies the name of the ports tree that is used.
+.It Fl R Ar flags
+The flags to pass to
+.Ql Cm zfs send
+when creating the replication stream.
+These will control which features are enabled in the stream.
+Default:
+.Fl Rec
 .It Fl s Ar size
 This specifies the maximum size of the image that is built.
 .It Fl S Ar snapshotname
@@ -119,6 +126,14 @@ filesystem is LZ77 compressed and is MFS mounted.
 A raw UFS2, softupdates-enabled, disk image.
 .It zrawdisk
 A raw ZFS disk image.
+.It zfssend
+A ZFS replication stream.
+Defaults to zfssend+be.
+You may specify multiple streams by specifying multiple options (example: zfssend+full+be).
+.It zfssend+be
+Creates a ZFS replication stream of the boot environment.
+.It zfssend+full
+Creates a ZFS replication stream of the while pool, including the boot environment.
 .It tar
 An XZ-compressed tarball.
 .It firmware

@@ -70,7 +70,9 @@ dist_pkgdata_DATA=	\
 			src/share/poudriere/processonelog.sh \
 			src/share/poudriere/queue.sh \
 			src/share/poudriere/status.sh \
-			src/share/poudriere/testport.sh
+			src/share/poudriere/testport.sh \
+			src/share/poudriere/zfs_post_build.sh \
+			src/share/poudriere/zfs_pre_build.sh
 
 dist_include_HEADERS= \
 			src/share/poudriere/include/cache.sh \
