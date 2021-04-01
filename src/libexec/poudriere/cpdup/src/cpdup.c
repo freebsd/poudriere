@@ -44,8 +44,6 @@
  *
  *	- Is able to do incremental mirroring/backups via hardlinks from
  *	  the 'previous' version (supplied with -H path).
- *
- * $DragonFly: src/bin/cpdup/cpdup.c,v 1.32 2008/11/11 04:36:00 dillon Exp $
  */
 
 /*-
@@ -136,6 +134,8 @@ static int DoCopy(copy_info_t info, struct stat *stat1, int depth);
 static int ScanDir(List *list, struct HostConf *host, const char *path,
 	int64_t *CountReadBytes, int n);
 static int mtimecmp(struct stat *st1, struct stat *st2);
+static int symlink_mfo_test(struct HostConf *hc, struct stat *st1,
+	struct stat *st2);
 
 int AskConfirmation = 1;
 int SafetyOpt = 1;
@@ -147,7 +147,6 @@ int NotForRealOpt;
 int QuietOpt;
 int NoRemoveOpt;
 int UseMD5Opt;
-int UseFSMIDOpt;
 int SummaryOpt;
 int CompressOpt;
 int SlaveOpt;
@@ -159,7 +158,6 @@ int DstRootPrivs;
 
 const char *UseCpFile;
 const char *MD5CacheFile;
-const char *FSMIDCacheFile;
 const char *UseHLPath;
 
 static int DstBaseLen;
@@ -194,7 +192,7 @@ main(int ac, char **av)
 
     gettimeofday(&start, NULL);
     opterr = 0;
-    while ((opt = getopt(ac, av, ":CdF:fH:hIi:j:K:klM:mnoqRSs:uVvX:x")) != -1) {
+    while ((opt = getopt(ac, av, ":CdF:fH:hIi:j:lM:mnoqRSs:uVvX:x")) != -1) {
 	switch (opt) {
 	case 'C':
 	    CompressOpt = 1;
@@ -225,14 +223,6 @@ main(int ac, char **av)
 	    break;
 	case 'j':
 	    DeviceOpt = getbool(optarg);
-	    break;
-	case 'K':
-	    UseFSMIDOpt = 1;
-	    FSMIDCacheFile = optarg;
-	    break;
-	case 'k':
-	    UseFSMIDOpt = 1;
-	    FSMIDCacheFile = ".FSMID.CHECK";
 	    break;
 	case 'l':
 	    setlinebuf(stdout);
@@ -322,16 +312,19 @@ main(int ac, char **av)
 	    fatal("The MD5 options are not currently supported for remote sources");
 	if (hc_connect(&SrcHost, ReadOnlyOpt) < 0)
 	    exit(1);
-    } else if (ReadOnlyOpt)
-	fatal("The -R option is only supported for remote sources");
+    } else {
+	SrcHost.version = HCPROTO_VERSION;
+	if (ReadOnlyOpt)
+	    fatal("The -R option is only supported for remote sources");
+    }
 
     if (dst && (ptr = SplitRemote(&dst)) != NULL) {
 	DstHost.host = dst;
 	dst = ptr;
-	if (UseFSMIDOpt)
-	    fatal("The FSMID options are not currently supported for remote targets");
 	if (hc_connect(&DstHost, 0) < 0)
 	    exit(1);
+    } else {
+	DstHost.version = HCPROTO_VERSION;
     }
 
     /*
@@ -374,7 +367,6 @@ main(int ac, char **av)
 #ifndef NOMD5
     md5_flush();
 #endif
-    fsmid_flush();
 
     if (SummaryOpt && i == 0) {
 	double duration;
@@ -808,8 +800,7 @@ relink:
 
     /*
      * Do we need to copy the file/dir/link/whatever?  Early termination
-     * if we do not.  Always redo links.  Directories are always traversed
-     * except when the FSMID options are used.
+     * if we do not.  Always traverse directories.  Always redo links.
      *
      * NOTE: st2Valid is true only if dpath != NULL *and* dpath stats good.
      */
@@ -820,24 +811,7 @@ relink:
 	&& FlagsMatch(stat1, &st2)
     ) {
 	if (S_ISLNK(stat1->st_mode) || S_ISDIR(stat1->st_mode)) {
-	    /*
-	     * If FSMID tracking is turned on we can avoid recursing through
-	     * an entire directory subtree if the FSMID matches.
-	     */
-#ifdef _ST_FSMID_PRESENT_
-	    if (ForceOpt == 0 &&
-		(UseFSMIDOpt && (fres = fsmid_check(stat1->st_fsmid, dpath)) == 0)
-	    ) {
-		if (VerboseOpt >= 3) {
-		    if (UseFSMIDOpt) /* always true!?! */
-			logstd("%-32s fsmid-nochange\n", (dpath ? dpath : spath));
-		    else
-			logstd("%-32s nochange\n", (dpath ? dpath : spath));
-		}
-		r = 0;
-		goto done;
-	    }
-#endif
+	    ;
 	} else {
 	    if (ForceOpt == 0 &&
 		stat1->st_size == st2.st_size &&
@@ -846,10 +820,6 @@ relink:
 #ifndef NOMD5
 		&& (UseMD5Opt == 0 || !S_ISREG(stat1->st_mode) ||
 		    (mres = md5_check(spath, dpath)) == 0)
-#endif
-#ifdef _ST_FSMID_PRESENT_
-		&& (UseFSMIDOpt == 0 ||
-		    (fres = fsmid_check(stat1->st_fsmid, dpath)) == 0)
 #endif
 		&& (ValidateOpt == 0 || !S_ISREG(stat1->st_mode) ||
 		    validate_check(spath, dpath) == 0)
@@ -881,10 +851,7 @@ relink:
 				(dpath ? dpath : spath));
 		    } else
 #endif
-		    if (UseFSMIDOpt) {
-			logstd("%-32s fsmid-nochange",
-				(dpath ? dpath : spath));
-		    } else if (ValidateOpt) {
+		    if (ValidateOpt) {
 			logstd("%-32s nochange (contents validated)",
 				(dpath ? dpath : spath));
 		    } else {
@@ -927,9 +894,6 @@ relink:
      */
     if (S_ISDIR(stat1->st_mode)) {
 	int skipdir = 0;
-
-	if (fres < 0)
-	    logerr("%-32s/ fsmid-CHECK-FAILED\n", (dpath) ? dpath : spath);
 
 	if (dpath) {
 	    if (!st2Valid || S_ISDIR(st2.st_mode) == 0) {
@@ -1121,10 +1085,7 @@ relink:
 #ifndef NOMD5
 	if (mres < 0)
 	    logerr("%-32s md5-CHECK-FAILED\n", (dpath) ? dpath : spath);
-	else
 #endif
-	if (fres < 0)
-	    logerr("%-32s fsmid-CHECK-FAILED\n", (dpath) ? dpath : spath);
 
 	/*
 	 * Not quite ready to do the copy yet.  If UseHLPath is defined,
@@ -1206,6 +1167,7 @@ relink:
 			logerr("%-32s rename-after-copy failed: %s\n",
 			    (dpath ? dpath : spath), strerror(errno)
 			);
+			xremove(&DstHost, path);
 			++r;
 		    } else {
 			if (VerboseOpt)
@@ -1274,7 +1236,19 @@ skip_copy:
 		n2 = -1;
 	}
 	if (n1 >= 0) {
-	    if (ForceOpt || n1 != n2 || bcmp(link1, link2, n1) != 0) {
+	    if (ForceOpt || n1 != n2 || bcmp(link1, link2, n1) != 0 ||
+		(st2Valid && symlink_mfo_test(&DstHost, stat1, &st2))
+	    ) {
+		struct timeval tv[2];
+
+		bzero(tv, sizeof(tv));
+		tv[0].tv_sec = stat1->st_mtime;
+		tv[1].tv_sec = stat1->st_mtime;
+#if defined(st_mtime)
+		tv[0].tv_usec = stat1->st_mtim.tv_nsec / 1000;
+		tv[1].tv_usec = stat1->st_mtim.tv_nsec / 1000;
+#endif
+
 		hc_umask(&DstHost, ~stat1->st_mode);
 		xremove(&DstHost, path);
 		link1[n1] = 0;
@@ -1287,16 +1261,32 @@ skip_copy:
 		} else {
 		    if (DstRootPrivs || ChgrpAllowed(stat1->st_gid))
 			hc_lchown(&DstHost, path, stat1->st_uid, stat1->st_gid);
+
 		    /*
-		     * there is no lchmod() or lchflags(), we
-		     * cannot chmod or chflags a softlink.
+		     * lutimes, lchmod if supported by destination.
+		     */
+		    if (DstHost.version >= HCPROTO_VERSION_LUCC) {
+			hc_lchmod(&DstHost, path, stat1->st_mode);
+			hc_lutimes(&DstHost, path, tv);
+		    }
+
+		    /*
+		     * rename (and set flags if supported by destination)
 		     */
 		    if (st2Valid && xrename(path, dpath, st2_flags) != 0) {
 			logerr("%-32s rename softlink (%s->%s) failed: %s\n",
 			    (dpath ? dpath : spath),
 			    path, dpath, strerror(errno));
-		    } else if (VerboseOpt) {
-			logstd("%-32s softlink-ok\n", (dpath ? dpath : spath));
+			xremove(&DstHost, path);
+		    } else {
+#ifdef _ST_FLAGS_PRESENT_
+			if (DstHost.version >= HCPROTO_VERSION_LUCC)
+			    hc_lchflags(&DstHost, dpath, stat1->st_flags);
+#endif
+			if (VerboseOpt) {
+			    logstd("%-32s softlink-ok\n",
+				   (dpath ? dpath : spath));
+			}
 		    }
 		    hc_umask(&DstHost, 000);
 		    CountWriteBytes += n1;
@@ -1441,14 +1431,9 @@ ScanDir(List *list, struct HostConf *host, const char *path,
 	/*
 	 * Automatically exclude MD5CacheFile that we create on the
 	 * source from the copy to the destination.
-	 *
-	 * Automatically exclude a FSMIDCacheFile on the source that
-	 * would otherwise overwrite the one we maintain on the target.
 	 */
 	if (UseMD5Opt)
 	    AddList(list, MD5CacheFile, 1, NULL);
-	if (UseFSMIDOpt)
-	    AddList(list, FSMIDCacheFile, 1, NULL);
     }
 
     if ((dir = hc_opendir(host, path)) == NULL)
@@ -1740,9 +1725,17 @@ xrename(const char *src, const char *dst, u_long flags __unused)
 
     if ((r = hc_rename(&DstHost, src, dst)) < 0) {
 #ifdef _ST_FLAGS_PRESENT_
-	hc_chflags(&DstHost, dst, 0);
-	if ((r = hc_rename(&DstHost, src, dst)) < 0)
+	if (DstHost.version >= HCPROTO_VERSION_LUCC)
+	    hc_lchflags(&DstHost, dst, 0);
+	else
+	    hc_chflags(&DstHost, dst, 0);
+
+	if ((r = hc_rename(&DstHost, src, dst)) < 0) {
+	    if (DstHost.version >= HCPROTO_VERSION_LUCC)
+		hc_lchflags(&DstHost, dst, flags);
+	    else
 		hc_chflags(&DstHost, dst, flags);
+	}
 #endif
     }
     return(r);
@@ -1758,7 +1751,10 @@ xlink(const char *src, const char *dst, u_long flags __unused)
 
     if ((r = hc_link(&DstHost, src, dst)) < 0) {
 #ifdef _ST_FLAGS_PRESENT_
-	hc_chflags(&DstHost, src, 0);
+	if (DstHost.version >= HCPROTO_VERSION_LUCC)
+	    hc_lchflags(&DstHost, src, 0);
+	else
+	    hc_chflags(&DstHost, src, 0);
 	r = hc_link(&DstHost, src, dst);
 	e = errno;
 	hc_chflags(&DstHost, src, flags);
@@ -1778,7 +1774,10 @@ xremove(struct HostConf *host, const char *path)
     res = hc_remove(host, path);
 #ifdef _ST_FLAGS_PRESENT_
     if (res == -EPERM) {
-	hc_chflags(host, path, 0);
+	if (host->version >= HCPROTO_VERSION_LUCC)
+	    hc_lchflags(host, path, 0);
+	else
+	    hc_chflags(host, path, 0);
 	res = hc_remove(host, path);
     }
 #endif
@@ -1813,9 +1812,31 @@ xrmdir(struct HostConf *host, const char *path)
 static int
 mtimecmp(struct stat *st1, struct stat *st2)
 {
-	if (st1->st_mtime < st2->st_mtime)
-		return -1;
-	if (st1->st_mtime == st2->st_mtime)
-		return 0;
-	return 1;
+    if (st1->st_mtime < st2->st_mtime)
+	return -1;
+    if (st1->st_mtime == st2->st_mtime)
+	return 0;
+    return 1;
+}
+
+/*
+ * Check to determine if a symlink's mtime, flags, or mode differ.
+ *
+ * This is only supported on targets that support lchflags, lutimes,
+ * and lchmod.
+ */
+static int
+symlink_mfo_test(struct HostConf *hc, struct stat *st1, struct stat *st2)
+{
+    int res = 0;
+
+    if (hc->version >= HCPROTO_VERSION_LUCC) {
+	if (!FlagsMatch(st1, st2))
+	    res = 1;
+	if (mtimecmp(st1, st2) != 0)
+	    res = 1;
+	if (st1->st_mode != st2->st_mode)
+	    res = 1;
+    }
+    return res;
 }

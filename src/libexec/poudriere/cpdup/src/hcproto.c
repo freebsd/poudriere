@@ -2,8 +2,6 @@
  * HCPROTO.C
  *
  * This module implements a simple remote control protocol
- *
- * $DragonFly: src/bin/cpdup/hcproto.c,v 1.8 2008/11/11 04:36:00 dillon Exp $
  */
 
 #include "cpdup.h"
@@ -80,6 +78,11 @@ static struct HCDesc HCDispatchTable[] = {
     { HC_GETGROUPS,	rc_getgroups },
     { HC_SCANDIR,	rc_scandir },
     { HC_READFILE,	rc_readfile },
+    { HC_LUTIMES,	rc_utimes },
+#ifdef _ST_FLAGS_PRESENT_
+    { HC_LCHFLAGS,	rc_chflags },
+#endif
+    { HC_LCHMOD,	rc_chmod },
 };
 
 static int chown_warning;
@@ -314,11 +317,6 @@ hc_decode_stat_item(struct stat *st, struct HCLeaf *item)
     case LC_BLKSIZE:
 	st->st_blksize = HCC_INT32(item);
 	break;
-#ifdef _ST_FSMID_PRESENT_
-    case LC_FSMID:
-	st->st_fsmid = HCC_INT64(item);
-	break;
-#endif
 #ifdef _ST_FLAGS_PRESENT_
     case LC_FILEFLAGS:
 	st->st_flags = (uint32_t)HCC_INT64(item);
@@ -392,9 +390,6 @@ rc_encode_stat(hctransaction_t trans, struct stat *st)
     hcc_leaf_int64(trans, LC_FILESIZE, st->st_size);
     hcc_leaf_int64(trans, LC_FILEBLKS, st->st_blocks);
     hcc_leaf_int32(trans, LC_BLKSIZE, st->st_blksize);
-#ifdef _ST_FSMID_PRESENT_
-    hcc_leaf_int64(trans, LC_FSMID, st->st_fsmid);
-#endif
 #ifdef _ST_FLAGS_PRESENT_
     hcc_leaf_int64(trans, LC_FILEFLAGS, st->st_flags);
 #endif
@@ -1385,6 +1380,27 @@ hc_chmod(struct HostConf *hc, const char *path, mode_t mode)
     return(0);
 }
 
+int
+hc_lchmod(struct HostConf *hc, const char *path, mode_t mode)
+{
+    hctransaction_t trans;
+    struct HCHead *head;
+
+    if (NotForRealOpt)
+	return(0);
+    if (hc == NULL || hc->host == NULL)
+	return(lchmod(path, mode));
+
+    trans = hcc_start_command(hc, HC_LCHMOD);
+    hcc_leaf_string(trans, LC_PATH1, path);
+    hcc_leaf_int32(trans, LC_MODE, mode);
+    if ((head = hcc_finish_command(trans)) == NULL)
+	return(-1);
+    if (head->error)
+	return(-1);
+    return(0);
+}
+
 static int
 rc_chmod(hctransaction_t trans, struct HCHead *head)
 {
@@ -1408,7 +1424,10 @@ rc_chmod(hctransaction_t trans, struct HCHead *head)
     }
     if (path == NULL)
 	return(-2);
-    return(chmod(path, mode));
+    if (head->cmd == HC_LCHMOD)
+	    return(lchmod(path, mode));
+    else
+	    return(chmod(path, mode));
 }
 
 /*
@@ -1554,6 +1573,34 @@ hc_chflags(struct HostConf *hc, const char *path, u_long flags)
     return(0);
 }
 
+int
+hc_lchflags(struct HostConf *hc, const char *path, u_long flags)
+{
+    hctransaction_t trans;
+    struct HCHead *head;
+    int rc;
+
+    if (NotForRealOpt)
+	return(0);
+    if (!DstRootPrivs)
+	flags &= UF_SETTABLE;
+
+    if (hc == NULL || hc->host == NULL) {
+	if ((rc = lchflags(path, flags)) < 0)
+	    rc = silentwarning(&chflags_warning, "file flags may differ\n");
+	return (rc);
+    }
+
+    trans = hcc_start_command(hc, HC_LCHFLAGS);
+    hcc_leaf_string(trans, LC_PATH1, path);
+    hcc_leaf_int64(trans, LC_FILEFLAGS, flags);
+    if ((head = hcc_finish_command(trans)) == NULL)
+	return(-1);
+    if (head->error)
+	return(-1);
+    return(0);
+}
+
 static int
 rc_chflags(hctransaction_t trans, struct HCHead *head)
 {
@@ -1578,7 +1625,11 @@ rc_chflags(hctransaction_t trans, struct HCHead *head)
     }
     if (path == NULL)
 	return(-2);
-    if ((rc = chflags(path, flags)) < 0)
+    if (head->cmd == HC_LCHFLAGS)
+	rc = lchflags(path, flags);
+    else
+	rc = chflags(path, flags);
+    if (rc < 0)
 	rc = silentwarning(&chflags_warning, "file flags may differ\n");
     return(rc);
 }
@@ -1797,10 +1848,38 @@ hc_utimes(struct HostConf *hc, const char *path, const struct timeval *times)
 
     if (NotForRealOpt)
 	return(0);
-    if (hc == NULL || hc->host == NULL)
+    if (hc == NULL || hc->host == NULL) {
 	return(utimes(path, times));
+    }
 
     trans = hcc_start_command(hc, HC_UTIMES);
+    hcc_leaf_string(trans, LC_PATH1, path);
+    hcc_leaf_int64(trans, LC_ATIME, times[0].tv_sec);
+    hcc_leaf_int64(trans, LC_MTIME, times[1].tv_sec);
+#if defined(st_atime)
+    hcc_leaf_int32(trans, LC_ATIMENSEC, times[0].tv_usec * 1000);
+    hcc_leaf_int32(trans, LC_MTIMENSEC, times[1].tv_usec * 1000);
+#endif
+    if ((head = hcc_finish_command(trans)) == NULL)
+	return(-1);
+    if (head->error)
+	return(-1);
+    return(0);
+}
+
+int
+hc_lutimes(struct HostConf *hc, const char *path, const struct timeval *times)
+{
+    hctransaction_t trans;
+    struct HCHead *head;
+
+    if (NotForRealOpt)
+	return(0);
+    if (hc == NULL || hc->host == NULL) {
+	return(lutimes(path, times));
+    }
+
+    trans = hcc_start_command(hc, HC_LUTIMES);
     hcc_leaf_string(trans, LC_PATH1, path);
     hcc_leaf_int64(trans, LC_ATIME, times[0].tv_sec);
     hcc_leaf_int64(trans, LC_MTIME, times[1].tv_sec);
@@ -1852,7 +1931,10 @@ rc_utimes(hctransaction_t trans, struct HCHead *head)
     }
     if (path == NULL)
 	return(-2);
-    return(utimes(path, times));
+    if (head->cmd == HC_LUTIMES)
+	    return(lutimes(path, times));
+    else
+	    return(utimes(path, times));
 }
 
 uid_t
