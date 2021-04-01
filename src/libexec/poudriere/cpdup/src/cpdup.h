@@ -24,7 +24,31 @@
 #include <fnmatch.h>
 #include <assert.h>
 
-#define VERSION	"1.21"
+/*
+ * See ./mklinux script
+ *
+ * This is a horrible hack.  lchmod also seems to be missing
+ * on the Debian system I am testing compatibility on (which will
+ * break the symlink handling code), so not sure what to do about
+ * that.
+ *
+ * XXX TODO
+ */
+#ifdef __linux
+
+#define __printflike(a, b)
+#define __printf0like(a, b)
+#define __aligned(n)
+#define __dead2
+#define __unused
+
+#define lchmod	chmod	/* horrible hack */
+
+size_t strlcpy(char *dst, const char *src, size_t size);
+
+#endif
+
+#define VERSION	"1.22"
 #define AUTHORS	"Matt Dillon, Dima Ruban, & Oliver Fromme"
 
 #ifndef __unused
@@ -49,8 +73,6 @@ int16_t hc_bswap16(int16_t var);
 int32_t hc_bswap32(int32_t var);
 int64_t hc_bswap64(int64_t var);
 
-int fsmid_check(int64_t fsmid, const char *dpath);
-void fsmid_flush(void);
 #ifndef NOMD5
 int md5_check(const char *spath, const char *dpath);
 void md5_flush(void);
@@ -58,7 +80,6 @@ void md5_flush(void);
 
 extern const char *UseCpFile;
 extern const char *MD5CacheFile;
-extern const char *FSMIDCacheFile;
 extern const char *UseHLPath;
 
 extern int AskConfirmation;
@@ -71,7 +92,6 @@ extern int QuietOpt;
 extern int NotForRealOpt;
 extern int NoRemoveOpt;
 extern int UseMD5Opt;
-extern int UseFSMIDOpt;
 extern int SlaveOpt;
 extern int SummaryOpt;
 extern int CompressOpt;

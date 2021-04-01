@@ -171,7 +171,6 @@ AUTOMAKE_OPTIONS=	subdir-objects
 clock_SOURCES=	src/libexec/poudriere/clock/clock.c
 cpdup_SOURCES=	src/libexec/poudriere/cpdup/src/cpdup.c \
 		src/libexec/poudriere/cpdup/src/cpdup.h \
-		src/libexec/poudriere/cpdup/src/fsmid.c \
 		src/libexec/poudriere/cpdup/src/hclink.c \
 		src/libexec/poudriere/cpdup/src/hclink.h \
 		src/libexec/poudriere/cpdup/src/hcproto.c \

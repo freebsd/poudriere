@@ -1,6 +1,6 @@
 Name:		cpdup
-Version:	1.21
-Release:	2%{?dist}
+Version:	1.22
+Release:	1%{?dist}
 Summary:	Filesystem mirroring utility from DragonFly BSD
 
 License:	BSD
@@ -38,6 +38,8 @@ gzip -9 %{buildroot}%{_mandir}/man1/%{name}.1
 %license LICENSE
 
 %changelog
+* Wed Feb 10 2021 Aaron LI <aly@aaronly.me> - 1.22-1
+- Update to version 1.22
 * Fri Apr 10 2020 Aaron LI <aly@aaronly.me> - 1.21-2
 - Simplify this RPM spec
 * Sat Apr 4 2020 Aaron LI <aly@aaronly.me> - 1.21-1
