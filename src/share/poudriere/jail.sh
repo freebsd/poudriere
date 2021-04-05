@@ -200,14 +200,6 @@ rename_jail() {
 	msg_warn "If you choose to rename the filesystem then modify the 'mnt' and 'fs' files in ${POUDRIERED}/jails/${NEWJAILNAME}"
 }
 
-hook_stop_jail() {
-	jstop
-	umountfs ${JAILMNT} 1
-	if [ -n "${OLD_CLEANUP_HOOK}" ]; then
-		${OLD_CLEANUP_HOOK}
-	fi
-}
-
 update_pkgbase() {
 	local make_jobs
 	local destdir="${JAILMNT}"
@@ -260,6 +252,8 @@ update_jail() {
 	: ${KERNEL:=$(jget ${JAILNAME} kernel || echo)}
 	case ${METHOD} in
 	ftp|http|ftp-archive)
+		local FREEBSD_UPDATE fu_bin fu_basedir fu_bdhash fu_workdir version
+
 		# In case we use FreeBSD dists and TORELEASE is present, check if it's a release branch.
 		if [ -n "${TORELEASE}" ]; then
 		  case ${TORELEASE} in
@@ -271,97 +265,57 @@ update_jail() {
 		    *) ;;
 		  esac
 		fi
-		MASTERMNT="${JAILMNT}"
-		MASTERMNTREL="${JAILMNT}"
-		MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
-		# XXX: Stop doing this (RESOLV_CONF) when freebsd-update -b works
-		[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${JAILMNT}/etc/"
-		MUTABLE_BASE=yes NOLINUX=yes \
-		    do_jail_mounts "${JAILMNT}" "${JAILMNT}" "${JAILNAME}"
-		JNETNAME="n"
-		jstart
-		[ -n "${CLEANUP_HOOK}" ] && OLD_CLEANUP_HOOK="${CLEANUP_HOOK}"
-		CLEANUP_HOOK=hook_stop_jail
-		[ ${QEMU_EMULATING} -eq 1 ] && qemu_install "${JAILMNT}"
+		# Avoid conflict with modified login.conf before we stopped
+		# modifying it in commit bcda4cf990d.
+		sed -i '' \
+		    -e 's#:\(setenv.*\),UNAME_r=.*UNAME_v=FreeBSD.*,OSVERSION=[^:,]*\([,:]\)#:\1\2#' \
+		    -e 's#:\(setenv.*\),ABI_FILE=/usr/lib/crt1.o[^:,]*\([,:]\)#:\1\2#' \
+		    -e 's#:\(setenv.*\),UNAME_m=.*,UNAME_p=[^:,]*\([,:]\)#:\1\2#' \
+		    "${JAILMNT}/etc/login.conf"
+		cap_mkdb "${JAILMNT}/etc/login.conf"
 		# Fix freebsd-update to not check for TTY and to allow
 		# EOL branches to still get updates.
+		fu_bin="$(mktemp -t freebsd-update)"
 		sed \
 		    -e 's/! -t 0/1 -eq 0/' \
 		    -e 's/-t 0/1 -eq 1/' \
 		    -e 's,\(fetch_warn_eol ||\) return 1,\1 :,' \
 		    -e 's,sysctl -n kern.bootfile,echo /boot/kernel/kernel,' \
-		    ${JAILMNT}/usr/sbin/freebsd-update > \
-		    ${JAILMNT}/usr/sbin/freebsd-update.fixed
-		chmod +x ${JAILMNT}/usr/sbin/freebsd-update.fixed
-		# XXX: Stop doing this when freebsd-update -b works
-		OSVERSION=$(awk '/\#define __FreeBSD_version/ { print $3 }' "${JAILMNT}/usr/include/sys/param.h")
-		cp "${JAILMNT}/etc/login.conf" "${JAILMNT}/etc/login.conf.orig"
+		    /usr/sbin/freebsd-update > "${fu_bin}"
+		FREEBSD_UPDATE="env PAGER=/bin/cat"
+		FREEBSD_UPDATE="${FREEBSD_UPDATE} /bin/sh ${fu_bin}"
+		fu_basedir="${JAILMNT}"
+		fu_bdhash="$(echo "${fu_basedir}" | sha256 -q)"
+		FREEBSD_UPDATE="${FREEBSD_UPDATE} -b ${fu_basedir}"
+		fu_workdir="${JAILMNT}/var/db/freebsd-update"
+		FREEBSD_UPDATE="${FREEBSD_UPDATE} -d ${fu_workdir}"
 		_jget version ${JAILNAME} version || \
-		    err 1 "Missing version metadata for jail"
-		update_version_env "${JAILMNT}" \
-		    "${REALARCH}" "${ARCH}" "${version}" \
-		    "${OSVERSION}"
+			err 1 "Missing version metadata for jail"
+		FREEBSD_UPDATE="${FREEBSD_UPDATE} --currently-running ${version}"
+		FREEBSD_UPDATE="${FREEBSD_UPDATE} -f ${JAILMNT}/etc/freebsd-update.conf"
+
 		if [ -z "${TORELEASE}" ]; then
-			# We're running inside the jail so basedir is /.
-			# If we start using -b this needs to match it.
-			basedir=/
-			fu_workdir=/var/db/freebsd-update
-			fu_bdhash="$(echo "${basedir}" | sha256 -q)"
 			# New updates are identified by a symlink containing
 			# the basedir hash and -install as suffix.  If we
 			# really have new updates to install, then install them.
-			if injail env PAGER=/bin/cat \
-			    /usr/sbin/freebsd-update.fixed fetch && \
-			    [ -L "${JAILMNT}${fu_workdir}/${fu_bdhash}-install" ]; then
-				yes | injail env PAGER=/bin/cat \
-				    /usr/sbin/freebsd-update.fixed install
+			if ${FREEBSD_UPDATE} fetch && \
+			    [ -L "${fu_workdir}/${fu_bdhash}-install" ]; then
+				yes | ${FREEBSD_UPDATE} install
 			fi
 		else
 			# Install new kernel
-			yes | injail env PAGER=/bin/cat \
-			    /usr/sbin/freebsd-update.fixed -r ${TORELEASE} \
+			yes | ${FREEBSD_UPDATE} -r ${TORELEASE} \
 			    upgrade install || err 1 "Fail to upgrade system"
-			# Reboot
-			update_version_env "${JAILMNT}" \
-			    "${REALARCH}" "${ARCH}" "${TORELEASE}" \
-			    "${OSVERSION}"
 			# Install new world
-			yes | injail env PAGER=/bin/cat \
-			    /usr/sbin/freebsd-update.fixed install || \
+			yes | ${FREEBSD_UPDATE} install || \
 			    err 1 "Fail to upgrade system"
-			# Reboot
-			update_version_env "${JAILMNT}" \
-			    "${REALARCH}" "${ARCH}" "${TORELEASE}" \
-			    "${OSVERSION}"
 			# Remove stale files
-			yes | injail env PAGER=/bin/cat \
-			    /usr/sbin/freebsd-update.fixed install || :
+			yes | ${FREEBSD_UPDATE} install || :
 			jset ${JAILNAME} version ${TORELEASE}
 		fi
-		rm -f ${JAILMNT}/usr/sbin/freebsd-update.fixed
-		if [ ${QEMU_EMULATING} -eq 1 ]; then
-			[ -n "${EMULATOR}" ] || err 1 "No EMULATOR set"
-			rm -f "${JAILMNT}${EMULATOR}"
-			# Try to cleanup the lingering directory structure
-			emulator_dir="${EMULATOR%/*}"
-			while [ -n "${emulator_dir}" ] && \
-			    rmdir "${JAILMNT}${emulator_dir}" 2>/dev/null; do
-				emulator_dir="${emulator_dir%/*}"
-			done
-		fi
-		jstop
-		umountfs ${JAILMNT} 1
-		if [ -n "${OLD_CLEANUP_HOOK}" ]; then
-			CLEANUP_HOOK="${OLD_CLEANUP_HOOK}"
-			unset OLD_CLEANUP_HOOK
-		else
-			unset CLEANUP_HOOK
-		fi
+
+		rm -f "${fu_bin}"
 		update_version
-		# XXX: Stop doing this when freebsd-update -b works
-		[ -n "${RESOLV_CONF}" ] && rm -f ${JAILMNT}/etc/resolv.conf
-		mv -f "${JAILMNT}/etc/login.conf.orig" \
-		    "${JAILMNT}/etc/login.conf"
 		build_native_xtools
 		markfs clean ${JAILMNT}
 		;;
