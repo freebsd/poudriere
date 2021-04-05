@@ -83,8 +83,8 @@ assert '' "${ignore}" "ignore var should be empty with bad whitespace after"
 
 pkgname=
 port_var_fetch "foo" \
-    PKGNAME pkgname 2>/dev/null
-assert 1 $? "port_var_fetch invalid port should fail"
+    PKGNAME pkgname
+assert_not 0 $? "port_var_fetch invalid port should fail"
 assert "" "${pkgname}" "PKGNAME shouldn't have gotten a value in a failed lookup"
 
 pkgname=
