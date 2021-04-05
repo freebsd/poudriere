@@ -280,7 +280,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Define format for buildnames
 # Default: %Y-%m-%d_%Hh%Mm%Ss
 # ISO8601:
-#BUILDNAME_FORMAT="%FT%TZ"
+#BUILDNAME_FORMAT="%FT%T%z"
 
 # Define format for build duration times
 # Default: %H:%M:%S
