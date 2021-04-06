@@ -589,11 +589,14 @@ install_from_vcs() {
 		case ${METHOD} in
 		svn*)
 			msg_n "Checking out the sources with ${METHOD}..."
-			${SVN_CMD} -q co ${SVN_FULLURL}/${VERSION} ${SRC_BASE} || err 1 " fail"
+			${SVN_CMD} ${quiet} checkout \
+			    ${SVN_FULLURL}/${VERSION} ${SRC_BASE} || \
+			    err 1 " fail"
 			echo " done"
 			if [ -n "${SRCPATCHFILE}" ]; then
 				msg_n "Patching the sources with ${SRCPATCHFILE}"
-				${SVN_CMD} -q patch ${SRCPATCHFILE} ${SRC_BASE} || err 1 " fail"
+				${SVN_CMD} ${quiet} patch ${SRCPATCHFILE} \
+				    ${SRC_BASE} || err 1 " fail"
 				echo done
 			fi
 			;;
@@ -602,7 +605,9 @@ install_from_vcs() {
 				err 1 "Patch files not supported with git, please use feature branches"
 			fi
 			msg_n "Checking out the sources with ${METHOD}..."
-			${GIT_CMD} clone ${GIT_DEPTH} -q -b ${VERSION} ${GIT_FULLURL} ${SRC_BASE} || err 1 " fail"
+			${GIT_CMD} clone ${GIT_DEPTH} ${quiet} \
+			    -b ${VERSION} ${GIT_FULLURL} ${SRC_BASE} || \
+			    err 1 " fail"
 			echo " done"
 			# No support for patches, using feature branches is recommanded"
 			;;
@@ -612,13 +617,15 @@ install_from_vcs() {
 		svn*)
 			msg_n "Updating the sources with ${METHOD}..."
 			${SVN_CMD} upgrade ${SRC_BASE} 2>/dev/null || :
-			${SVN_CMD} -q update -r ${TORELEASE:-head} ${SRC_BASE} || err 1 " fail"
+			${SVN_CMD} ${quiet} update -r ${TORELEASE:-head} ${SRC_BASE} || err 1 " fail"
 			echo " done"
 			;;
 		git*)
-			${GIT_CMD} -C ${SRC_BASE} pull --rebase -q || err 1 " fail"
+			${GIT_CMD} -C ${SRC_BASE} pull --rebase ${quiet} || \
+			    err 1 " fail"
 			if [ -n "${TORELEASE}" ]; then
-				${GIT_CMD} -C ${SRC_BASE} checkout -q "${TORELEASE}" || err 1 " fail"
+				${GIT_CMD} -C ${SRC_BASE} checkout \
+				    ${quiet} "${TORELEASE}" || err 1 " fail"
 			fi
 			echo " done"
 			;;
@@ -1182,6 +1189,7 @@ done
 saved_argv="$@"
 shift $((OPTIND-1))
 post_getopts
+[ ${VERBOSE} -gt 0 ] || quiet="-q"
 
 METHOD=${METHOD:-ftp}
 CLEANJAIL=${CLEAN:-none}

@@ -132,6 +132,7 @@ done
 saved_argv="$@"
 shift $((OPTIND-1))
 post_getopts
+[ ${VERBOSE} -gt 0 ] || quiet="-q"
 
 [ ${FAKE} -eq 0 ] && METHOD=${METHOD:-${METHOD_DEF}}
 PTNAME=${PTNAME:-default}
@@ -268,7 +269,6 @@ create)
 			fi
 
 			msg_n "Checking out the ports tree..."
-			[ ${VERBOSE} -gt 0 ] || quiet="-q"
 			${SVN_CMD} ${quiet} co \
 				${SVN_PRESERVE_TIMESTAMP} \
 				${SVN_FULLURL}/${BRANCH} \
@@ -277,7 +277,6 @@ create)
 			;;
 		git*)
 			msg_n "Cloning the ports tree..."
-			[ ${VERBOSE} -gt 0 ] || quiet="-q"
 			${GIT_CMD} clone --depth=1 --single-branch ${quiet} \
 			    ${BRANCH:+-b ${BRANCH}} ${GIT_FULLURL} ${PTMNT} || \
 			    err 1 " fail"
@@ -354,7 +353,6 @@ update)
 		;;
 	svn*)
 		msg_n "Updating portstree \"${PTNAME}\" with ${METHOD}..."
-		[ ${VERBOSE} -gt 0 ] || quiet="-q"
 		${SVN_CMD} upgrade ${PORTSMNT:-${PTMNT}} 2>/dev/null || :
 		${SVN_CMD} ${quiet} update \
 			${SVN_PRESERVE_TIMESTAMP} \
@@ -363,7 +361,6 @@ update)
 		;;
 	git*)
 		msg_n "Updating portstree \"${PTNAME}\" with ${METHOD}..."
-		[ ${VERBOSE} -gt 0 ] || quiet="-q"
 		${GIT_CMD} -C ${PORTSMNT:-${PTMNT}} pull --rebase ${quiet}
 		echo " done"
 		;;
