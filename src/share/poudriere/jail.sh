@@ -1165,52 +1165,31 @@ if [ -n "${JAILNAME}" -a ${CREATE} -eq 0 ]; then
 	_jget JAILMNT ${JAILNAME} mnt || :
 fi
 
-if [ -n "${SOURCES_URL}" ]; then
-	case "${METHOD}" in
-	svn*)
-		case "${SOURCES_URL}" in
-		http://*) METHOD="svn+http" ;;
-		https://*) METHOD="svn+https" ;;
-		file://*) METHOD="svn+file" ;;
-		svn+ssh://*) METHOD="svn+ssh" ;;
-		svn://*) METHOD="svn" ;;
-		*) err 1 "Invalid svn url" ;;
-		esac
-		;;
-	git*)
-		case "${SOURCES_URL}" in
-		ssh://*) METHOD="git+ssh" ;;
-		http://*) METHOD="git+http" ;;
-		https://*) METHOD="git+https" ;;
-		file://*) METHOD="git+file" ;;
-		git://*) METHOD="git" ;;
-		/*) _METHOD="git+file" ;;
-		*://*) err 1 "Invalid git protocol" ;;
-		*:*) METHOD="git+ssh" ;;
-		*) err 1 "Invalid git url" ;;
-		esac
-		;;
-	*)
-		err 1 "-U only valid with git and svn methods"
-		;;
-	esac
-	SVN_FULLURL=${SOURCES_URL}
-	GIT_FULLURL=${SOURCES_URL}
-else
-	case ${METHOD} in
-	svn+http) proto="http" ;;
-	svn+https) proto="https" ;;
-	svn+ssh) proto="svn+ssh" ;;
-	svn+file) proto="file" ;;
-	svn) proto="svn" ;;
-	git+ssh) proto="ssh" ;;
-	git+http) proto="http" ;;
-	git+https) proto="https" ;;
-	git+file) proto="file" ;;
-	git) proto="git" ;;
-	esac
-	SVN_FULLURL=${proto}://${SVN_HOST}/base
-	GIT_FULLURL=${proto}://${GIT_BASEURL}
+# Handle common (jail+ports) git/svn methods and then fallback to
+# methods only supported by jail.
+if ! svn_git_checkout_method "${SOURCES_URL}" "${METHOD}" \
+    "${SVN_HOST}/base" "${GIT_BASEURL}" \
+    METHOD SVN_FULLURL GIT_FULLURL; then
+        if [ -n "${SOURCES_URL}" ]; then
+                usage
+        fi
+        case "${METHOD}" in
+        allbsd) ;;
+        csup) ;;
+        freebsdci) ;;
+        ftp) ;;
+        ftp-archive) ;;
+        gjb) ;;
+        http) ;;
+        null) ;;
+        src=*) ;;
+        tar=*) ;;
+        url=*) ;;
+        *)
+                msg_error "Unknown method ${METHOD}"
+                usage
+                ;;
+        esac
 fi
 
 
