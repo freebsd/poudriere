@@ -42,8 +42,7 @@ Parameters:
 
 Options:
     -U url        -- URL where to fetch the ports tree from.
-    -B branch     -- Which branch to use for the svn or git methods.  Defaults
-                     to 'head/master'.
+    -B branch     -- Which branch to use for the svn or git methods.
     -F            -- When used with -c, only create the needed filesystems
                      (for ZFS) and directories, but do not populate them.
     -M path       -- The path to the source of a ports tree.
@@ -192,7 +191,6 @@ fi
 
 case ${METHOD} in
 svn*) : ${BRANCH:=head} ;;
-git*)  : ${BRANCH:=master} ;;
 *)
 	[ -n "${BRANCH}" ] && \
 	    err 1 "Branch (-B) only supported for SVN and git."
@@ -311,7 +309,9 @@ create)
 		git*)
 			msg_n "Cloning the ports tree..."
 			[ ${VERBOSE} -gt 0 ] || quiet="-q"
-			${GIT_CMD} clone --depth=1 --single-branch ${quiet} -b ${BRANCH} ${GIT_FULLURL} ${PTMNT} || err 1 " fail"
+			${GIT_CMD} clone --depth=1 --single-branch ${quiet} \
+			    ${BRANCH:+-b ${BRANCH}} ${GIT_FULLURL} ${PTMNT} || \
+			    err 1 " fail"
 			echo " done"
 			;;
 		esac
