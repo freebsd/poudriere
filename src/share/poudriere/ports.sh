@@ -27,7 +27,7 @@
 
 . ${SCRIPTPREFIX}/common.sh
 
-METHOD_DEF=svn+https
+METHOD_DEF=git+https
 
 # test if there is any args
 usage() {
