@@ -1210,6 +1210,7 @@ if [ -n "${SOURCES_URL}" ]; then
 		https://*) METHOD="git+https" ;;
 		file://*) METHOD="git+file" ;;
 		git://*) METHOD="git" ;;
+		/*) _METHOD="git+file" ;;
 		*://*) err 1 "Invalid git protocol" ;;
 		*:*) METHOD="git+ssh" ;;
 		*) err 1 "Invalid git url" ;;
