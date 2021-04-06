@@ -577,7 +577,7 @@ install_from_src() {
 install_from_vcs() {
 	local var_version_extra="$1"
 	local UPDATE=0
-	local proto version_vcs
+	local version_vcs
 	local git_sha svn_rev
 
 	if [ -d "${SRC_BASE}" ]; then
