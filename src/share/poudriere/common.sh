@@ -7840,6 +7840,82 @@ calculate_ospart_size() {
 	msg "OS Partiton size: ${OS_SIZE}m"
 }
 
+svn_git_checkout_method() {
+        [ $# -eq 7 ] || eargs svn_git_checkout_method SOURCES_URL METHOD \
+	   SVN_URL_DEFAULT GIT_URL_DEFAULT \
+           METHOD_var SVN_FULLURL_var GIT_FULLURL_var
+        local SOURCES_URL="$1"
+        local _METHOD="$2"
+        local SVN_URL_DEFAULT="$3"
+        local GIT_URL_DEFAULT="$4"
+        local METHOD_var="$5"
+        local SVN_FULLURL_var="$6"
+        local GIT_FULLURL_var="$7"
+        local _SVN_FULLURL _GIT_FULLURL
+        local proto
+
+        if [ -n "${SOURCES_URL}" ]; then
+                case "${_METHOD}" in
+                svn*)
+                        case "${SOURCES_URL}" in
+                        http://*) _METHOD="svn+http" ;;
+                        https://*) _METHOD="svn+https" ;;
+                        file://*) _METHOD="svn+file" ;;
+                        svn+ssh://*) _METHOD="svn+ssh" ;;
+                        svn://*) _METHOD="svn" ;;
+                        *)
+                                msg_error "Invalid svn url"
+                                return 1
+                                ;;
+                        esac
+                        ;;
+                git*)
+                        case "${SOURCES_URL}" in
+                        ssh://*) _METHOD="git+ssh" ;;
+                        http://*) _METHOD="git+http" ;;
+                        https://*) _METHOD="git+https" ;;
+                        file://*) _METHOD="git+file" ;;
+                        git://*) _METHOD="git" ;;
+                        /*) _METHOD="git+file" ;;
+                        *://*) err 1 "Invalid git protocol" ;;
+                        *:*) _METHOD="git+ssh" ;;
+                        *)
+                                msg_error "Invalid git url"
+                                return 1
+                                ;;
+                        esac
+                        ;;
+                *)
+                        msg_error "-U only valid with git and svn methods"
+                        return 1
+                        ;;
+                esac
+                _SVN_FULLURL="${SOURCES_URL}"
+                _GIT_FULLURL="${SOURCES_URL}"
+        else
+                case "${_METHOD}" in
+                svn+http) proto="http" ;;
+                svn+https) proto="https" ;;
+                svn+ssh) proto="svn+ssh" ;;
+                svn+file) proto="file" ;;
+                svn) proto="svn" ;;
+                git+ssh) proto="ssh" ;;
+                git+http) proto="http" ;;
+                git+https) proto="https" ;;
+                git+file) proto="file" ;;
+                git) proto="git" ;;
+                *)
+                        return 1
+                        ;;
+                esac
+                _SVN_FULLURL="${proto}://${SVN_URL_DEFAULT}"
+                _GIT_FULLURL="${proto}://${GIT_URL_DEFAULT}"
+        fi
+        setvar "${METHOD_var}" "${_METHOD}"
+        setvar "${SVN_FULLURL_var}" "${_SVN_FULLURL}"
+        setvar "${GIT_FULLURL_var}" "${_GIT_FULLURL}"
+}
+
 # Builtin-only functions
 _BUILTIN_ONLY=""
 for _var in ${_BUILTIN_ONLY}; do
