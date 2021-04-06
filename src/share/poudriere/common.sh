@@ -7905,8 +7905,8 @@ if [ -z "${NO_ZFS}" ]; then
 fi
 
 : ${SVN_HOST="svn.freebsd.org"}
-: ${GIT_BASEURL="github.com/freebsd/freebsd-src.git"}
-: ${GIT_PORTSURL="github.com/freebsd/freebsd-ports.git"}
+: ${GIT_BASEURL="git.freebsd.org/src.git"}
+: ${GIT_PORTSURL="git.freebsd.org/ports.git"}
 : ${FREEBSD_HOST="https://download.FreeBSD.org"}
 if [ -z "${NO_ZFS}" ]; then
 	: ${ZROOTFS="/poudriere"}
