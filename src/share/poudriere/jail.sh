@@ -1208,8 +1208,8 @@ if [ -n "${SOURCES_URL}" ]; then
 		ssh://*) METHOD="git+ssh" ;;
 		http://*) METHOD="git+http" ;;
 		https://*) METHOD="git+https" ;;
+		file://*) METHOD="git+file" ;;
 		git://*) METHOD="git" ;;
-		file://*) METHOD="git" ;;
 		*://*) err 1 "Invalid git protocol" ;;
 		*:*) METHOD="git+ssh" ;;
 		*) err 1 "Invalid git url" ;;
@@ -1231,6 +1231,7 @@ else
 	git+ssh) proto="ssh" ;;
 	git+http) proto="http" ;;
 	git+https) proto="https" ;;
+	git+file) proto="file" ;;
 	git) proto="git" ;;
 	esac
 	SVN_FULLURL=${proto}://${SVN_HOST}/base
