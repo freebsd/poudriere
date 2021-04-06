@@ -175,6 +175,7 @@ else
 	svn+ssh) proto="svn+ssh" ;;
 	svn+file) proto="file" ;;
 	svn) proto="svn" ;;
+	git+http) proto="http" ;;
 	git+https) proto="https" ;;
 	git+ssh) proto="ssh" ;;
 	git) proto="git";;
