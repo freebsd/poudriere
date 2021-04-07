@@ -2987,11 +2987,11 @@ jail_cleanup() {
 
 download_from_repo() {
 	msg "Prefetching missing packages from pkg+http://pkg.freebsd.org/\${ABI}/${PACKAGE_BRANCH}"
-	cat >> ${MASTERMNT}/etc/pkg/poudriere.conf <<EOF
-FreeBSD: {
-        url: pkg+http://pkg.freebsd.org/\${ABI}/${PACKAGE_BRANCH};
-}
-EOF
+	cat >> "${MASTERMNT}/etc/pkg/poudriere.conf" <<-EOF
+	FreeBSD: {
+	        url: pkg+http://pkg.freebsd.org/\${ABI}/${PACKAGE_BRANCH};
+	}
+	EOF
 	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages || \
 	    umount -f ${MASTERMNT}/packages
 	mount_packages
@@ -2999,12 +2999,14 @@ EOF
 	# XXX only work when PKG_EXT is the same as the upstream
 	(
 	while mapfile_read_loop "all_pkgs" pkgname originspec _ignored; do
-		[ -f ${MASTERMNT}/packages/All/${pkgname}.${PKG_EXT} ] || echo ${pkgname}
+		[ -f "${MASTERMNT}/packages/All/${pkgname}.${PKG_EXT}" ] || \
+		    echo "${pkgname}"
 	done
-	)| JNETNAME="n" injail xargs env -i ASSUME_ALWAYS_YES=yes pkg fetch -o /packages
+	) | JNETNAME="n" injail xargs \
+	    env -i ASSUME_ALWAYS_YES=yes pkg fetch -o /packages
 	# Remount ro
-	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages || \
-	    umount -f ${MASTERMNT}/packages
+	umount ${UMOUNT_NONBUSY} "${MASTERMNT}/packages" || \
+	    umount -f "${MASTERMNT}/packages"
 	mount_packages -o ro
 }
 
@@ -7728,8 +7730,8 @@ clean_restricted() {
 	bset status "clean_restricted:"
 	# Remount rw
 	# mount_nullfs does not support mount -u
-	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages || \
-	    umount -f ${MASTERMNT}/packages
+	umount ${UMOUNT_NONBUSY} "${MASTERMNT}/packages" || \
+	    umount -f "${MASTERMNT}/packages"
 	mount_packages
 	injail /usr/bin/make -s -C ${PORTSDIR} -j ${PARALLEL_JOBS} \
 	    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
@@ -7739,8 +7741,8 @@ clean_restricted() {
 		    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
 	done
 	# Remount ro
-	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages || \
-	    umount -f ${MASTERMNT}/packages
+	umount ${UMOUNT_NONBUSY} "${MASTERMNT}/packages" || \
+	    umount -f "${MASTERMNT}/packages"
 	mount_packages -o ro
 }
 
