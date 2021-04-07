@@ -2988,6 +2988,7 @@ jail_cleanup() {
 download_from_repo() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "download_from_repo requires PWD=${MASTERMNT}/.p"
+	local pkgname originspec _ignored
 
 	if ! ensure_pkg_installed; then
 		msg "pkg package missing, skipping fetching of packages"
