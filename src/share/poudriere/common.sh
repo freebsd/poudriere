@@ -2986,6 +2986,9 @@ jail_cleanup() {
 }
 
 download_from_repo() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "download_from_repo requires PWD=${MASTERMNT}/.p"
+
 	msg "Prefetching missing packages from pkg+http://pkg.freebsd.org/\${ABI}/${PACKAGE_BRANCH}"
 	cat >> "${MASTERMNT}/etc/pkg/poudriere.conf" <<-EOF
 	FreeBSD: {
