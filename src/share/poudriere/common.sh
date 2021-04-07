@@ -1849,6 +1849,12 @@ use_options() {
 	return 0
 }
 
+remount_packages() {
+	umount ${UMOUNT_NONBUSY} "${MASTERMNT}/packages" || \
+	    umount -f "${MASTERMNT}/packages"
+	mount_packages "$@"
+}
+
 mount_packages() {
 	local mnt
 
@@ -3000,9 +3006,7 @@ download_from_repo() {
 	        url: pkg+http://pkg.freebsd.org/\${ABI}/${PACKAGE_BRANCH};
 	}
 	EOF
-	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages || \
-	    umount -f ${MASTERMNT}/packages
-	mount_packages
+	remount_packages -o rw
 	# only list packages which do not exists to prevent pkg from overwriting prebuilt packages
 	# XXX only work when PKG_EXT is the same as the upstream
 	(
@@ -3012,10 +3016,7 @@ download_from_repo() {
 	done
 	) | JNETNAME="n" injail xargs \
 	    env -i ASSUME_ALWAYS_YES=yes pkg fetch -o /packages
-	# Remount ro
-	umount ${UMOUNT_NONBUSY} "${MASTERMNT}/packages" || \
-	    umount -f "${MASTERMNT}/packages"
-	mount_packages -o ro
+	remount_packages -o ro
 }
 
 # return 0 if the package dir exists and has packages, 0 otherwise
@@ -7736,11 +7737,7 @@ clean_restricted() {
 
 	msg "Cleaning restricted packages"
 	bset status "clean_restricted:"
-	# Remount rw
-	# mount_nullfs does not support mount -u
-	umount ${UMOUNT_NONBUSY} "${MASTERMNT}/packages" || \
-	    umount -f "${MASTERMNT}/packages"
-	mount_packages
+	remount_packages -o rw
 	injail /usr/bin/make -s -C ${PORTSDIR} -j ${PARALLEL_JOBS} \
 	    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
 	for o in ${OVERLAYS}; do
@@ -7748,10 +7745,7 @@ clean_restricted() {
 		    -j ${PARALLEL_JOBS} \
 		    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
 	done
-	# Remount ro
-	umount ${UMOUNT_NONBUSY} "${MASTERMNT}/packages" || \
-	    umount -f "${MASTERMNT}/packages"
-	mount_packages -o ro
+	remount_packages -o ro
 }
 
 sign_pkg() {
