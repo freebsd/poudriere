@@ -178,6 +178,7 @@ update_version() {
 	else
 		RELEASE=$(jget ${JAILNAME} version)
 	fi
+	[ -n "${RELEASE}" ] || err 1 "updated_version: Failed to determine RELEASE"
 	[ -n "${version_extra}" ] &&
 	    RELEASE="${RELEASE} ${version_extra}"
 	jset ${JAILNAME} version "${RELEASE}"
@@ -577,7 +578,8 @@ install_from_vcs() {
 			fi
 			msg_n "Checking out the sources with ${METHOD}..."
 			${GIT_CMD} clone ${GIT_DEPTH} ${quiet} \
-			    -b ${VERSION} ${GIT_FULLURL} ${SRC_BASE} || \
+			    ${VERSION:+-b ${VERSION}} ${GIT_FULLURL} \
+			    ${SRC_BASE} || \
 			    err 1 " fail"
 			echo " done"
 			# No support for patches, using feature branches is recommanded"
@@ -884,10 +886,15 @@ create_jail() {
 
 	# Some methods determine VERSION from newvers.sh if possible
 	# but need to have -v specified otherwise.
-	if [ -z "${VERSION}" ] && \
-	    [ ! -r "${SRC_BASE}/sys/conf/newvers.sh" ]; then
-		usage VERSION
-	fi
+	case "${FCT}" in
+	install_from_vcs) ;;	# Checkout is done in $FCT
+	*)
+		if [ -z "${VERSION}" ] && \
+		    [ ! -r "${SRC_BASE:?}/sys/conf/newvers.sh" ]; then
+			usage VERSION
+		fi
+		;;
+	esac
 
 	if [ "${JAILFS}" != "none" ]; then
 		[ -d "${JAILMNT}" ] && \
@@ -914,11 +921,12 @@ create_jail() {
 	jset ${JAILNAME} method ${METHOD}
 	[ -n "${FCT}" ] && ${FCT} version_extra
 
-	if [ -r "${SRC_BASE}/sys/conf/newvers.sh" ]; then
+	if [ -r "${SRC_BASE:?}/sys/conf/newvers.sh" ]; then
 		RELEASE=$(update_version "${version_extra}")
 	else
 		RELEASE="${VERSION}"
 	fi
+	[ -n "${RELEASE}" ] || err 1 "Failed to determine RELEASE"
 
 	[ "${METHOD}" = "null" ] && \
 	    [ ! -f "${JAILMNT}/etc/login.conf" ] && \
@@ -1210,7 +1218,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	10000000)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		case ${METHOD} in
-			src=*|null) ;;
+			src=*|null|git*) ;;
 			*) [ -z "${VERSION}" ] && usage VERSION ;;
 		esac
 		jail_exists ${JAILNAME} && \
