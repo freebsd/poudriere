@@ -1234,7 +1234,7 @@ case "${COMMAND}" in
 	create)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		case ${METHOD} in
-			src=*|null|tar) ;;
+			src=*|null) ;;
 			*) [ -z "${VERSION}" ] && usage VERSION ;;
 		esac
 		jail_exists ${JAILNAME} && \
