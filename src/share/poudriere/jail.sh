@@ -1198,7 +1198,7 @@ case "${CREATE}${INFO}${LIST}${STOP}${START}${DELETE}${UPDATE}${RENAME}" in
 	10000000)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		case ${METHOD} in
-			src=*|null|tar) ;;
+			src=*|null) ;;
 			*) [ -z "${VERSION}" ] && usage VERSION ;;
 		esac
 		jail_exists ${JAILNAME} && \
