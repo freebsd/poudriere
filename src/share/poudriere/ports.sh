@@ -161,6 +161,7 @@ fi
 
 case ${METHOD} in
 svn*) : ${BRANCH:=head} ;;
+git*) ;;
 *)
 	[ -n "${BRANCH}" ] && \
 	    err 1 "Branch (-B) only supported for SVN and git."
