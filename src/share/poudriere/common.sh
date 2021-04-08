@@ -7852,7 +7852,7 @@ svn_git_checkout_method() {
         local SVN_FULLURL_var="$6"
         local GIT_FULLURL_var="$7"
         local _SVN_FULLURL _GIT_FULLURL
-        local proto
+        local proto url_prefix=
 
         if [ -n "${SOURCES_URL}" ]; then
                 case "${_METHOD}" in
@@ -7893,6 +7893,16 @@ svn_git_checkout_method() {
                 _SVN_FULLURL="${SOURCES_URL}"
                 _GIT_FULLURL="${SOURCES_URL}"
         else
+		# Compat hacks for FreeBSD's special git server
+		case "${GIT_URL_DEFAULT}" in
+		${FREEBSD_GIT_BASEURL}|${FREEBSD_GIT_PORTSURL})
+			case "${_METHOD}" in
+			git+ssh) url_prefix="${FREEBSD_GIT_SSH_USER}@" ;;
+			git) msg_warn "As of 2021-04-08 FreeBSD's git server does not support the git protocol.  Try git+https or git+ssh." ;;
+			esac
+			;;
+		*) ;;
+		esac
                 case "${_METHOD}" in
                 svn+http) proto="http" ;;
                 svn+https) proto="https" ;;
@@ -7909,7 +7919,7 @@ svn_git_checkout_method() {
                         ;;
                 esac
                 _SVN_FULLURL="${proto}://${SVN_URL_DEFAULT}"
-                _GIT_FULLURL="${proto}://${GIT_URL_DEFAULT}"
+                _GIT_FULLURL="${proto}://${url_prefix}${GIT_URL_DEFAULT}"
         fi
         setvar "${METHOD_var}" "${_METHOD}"
         setvar "${SVN_FULLURL_var}" "${_SVN_FULLURL}"
@@ -7982,6 +7992,7 @@ fi
 
 : ${SVN_HOST="svn.freebsd.org"}
 : ${FREEBSD_GIT_BASEURL="git.freebsd.org/src.git"}
+: ${FREEBSD_GIT_SSH_USER:="anongit"}
 : ${GIT_BASEURL:=${FREEBSD_GIT_BASEURL}}
 : ${FREEBSD_GIT_PORTSURL="git.freebsd.org/ports.git"}
 # GIT_URL is old compat
