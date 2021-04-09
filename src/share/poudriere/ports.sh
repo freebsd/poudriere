@@ -274,6 +274,9 @@ if [ ${CREATE} -eq 1 ]; then
 			echo " done"
 			;;
 		git*)
+			if [ ! -x "${GIT_CMD}" ]; then
+				err 1 "Git is not installed. Perhaps you need to 'pkg install git'"
+			fi
 			msg_n "Cloning the ports tree..."
 			${GIT_CMD} clone --depth=1 --single-branch ${quiet} \
 			    ${BRANCH:+-b ${BRANCH}} ${GIT_FULLURL} ${PTMNT} || \
