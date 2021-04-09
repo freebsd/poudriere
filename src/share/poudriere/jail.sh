@@ -25,6 +25,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+METHOD_DEF=http
+
 usage() {
 	[ $# -gt 0 ] && echo "Missing: $@" >&2
 	cat << EOF
@@ -61,6 +63,7 @@ Options:
                        allbsd, ftp-archive, ftp, freebsdci, git, http, null, src=PATH,
                        svn, svn+file, svn+http, svn+https, svn+ssh, tar=PATH
                        url=SOMEURL.
+                     The default is '${METHOD_DEF}'.
     -P patch      -- Specify a patch to apply to the source before building.
     -S srcpath    -- Specify a path to the source tree to be used.
     -D            -- Do a full git clone without --depth (default: --depth=1)
@@ -246,7 +249,7 @@ update_jail() {
 		SRC_BASE="${JAILMNT}/usr/src"
 	fi
 	if [ -z "${METHOD}" -o "${METHOD}" = "-" ]; then
-		METHOD="ftp"
+		METHOD="${METHOD_DEF}"
 		jset ${JAILNAME} method ${METHOD}
 	fi
 	msg "Upgrading using ${METHOD}"
@@ -1202,7 +1205,7 @@ shift $((OPTIND-1))
 post_getopts
 [ ${VERBOSE} -gt 0 ] || quiet="-q"
 
-METHOD=${METHOD:-ftp}
+METHOD=${METHOD:-${METHOD_DEF}}
 CLEANJAIL=${CLEAN:-none}
 if [ -n "${JAILNAME}" -a "${COMMAND}" != "create" ]; then
 	_jget ARCH ${JAILNAME} arch || :
