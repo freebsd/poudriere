@@ -42,7 +42,7 @@ Parameters:
 
 Options:
     -U url        -- URL where to fetch the ports tree from.
-    -B branch     -- Which branch to use for the svn or git methods.
+    -B branch     -- Which branch to use for the git or svn methods.
     -D            -- Do a full git clone without --depth (default: --depth=1)
     -F            -- When used with -c, only create the needed filesystems
                      (for ZFS) and directories, but do not populate them.
@@ -53,8 +53,9 @@ Options:
     -k            -- When used with -d, only unregister the ports tree without
                      removing the files.
     -m method     -- When used with -c, specify the method used to create the
-                     ports tree. Possible methods are 'git', 'null', 'portsnap',
-                     'svn', 'svn+http', 'svn+https', 'svn+file', or 'svn+ssh'.
+                     ports tree. Can be one of:
+		       'null', 'portsnap',
+		       '{git,svn}{,+http,+https,+file,+ssh}' (e.g., 'git+https').
                      The default is '${METHOD_DEF}'.
     -n            -- When used with -l, only print the name of the ports tree
     -p name       -- Specifies the name of the ports tree to work on.  The
