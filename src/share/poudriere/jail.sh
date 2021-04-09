@@ -894,6 +894,9 @@ create_jail() {
 		FCT=install_from_vcs
 		;;
 	git*)
+		if [ ! -x "${GIT_CMD}" ]; then
+			err 1 "Git is not installed. Perhaps you need to 'pkg install git'"
+		fi
 		# Do not check valid version given one can have a specific branch
 		FCT=install_from_vcs
 		;;

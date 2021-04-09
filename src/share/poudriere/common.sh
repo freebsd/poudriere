@@ -8189,7 +8189,7 @@ fi
 : ${BUILD_AS_NON_ROOT:=yes}
 : ${DISTFILES_CACHE:=/nonexistent}
 : ${SVN_CMD:=$(which svn 2>/dev/null || which svnlite 2>/dev/null)}
-: ${GIT_CMD:=git}
+: ${GIT_CMD:=$(which git 2>/dev/null)}
 : ${BINMISC:=/usr/sbin/binmiscctl}
 : ${PATCHED_FS_KERNEL:=no}
 : ${ALL:=0}
