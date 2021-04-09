@@ -7898,7 +7898,7 @@ svn_git_checkout_method() {
 		${FREEBSD_GIT_BASEURL}|${FREEBSD_GIT_PORTSURL})
 			case "${_METHOD}" in
 			git+ssh) url_prefix="${FREEBSD_GIT_SSH_USER}@" ;;
-			git) msg_warn "As of 2021-04-08 FreeBSD's git server does not support the git protocol.  Try git+https or git+ssh." ;;
+			git) msg_warn "As of 2021-04-08 FreeBSD's git server does not support the git protocol.  Remove -m or try git+https or git+ssh." ;;
 			esac
 			;;
 		*) ;;
