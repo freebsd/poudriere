@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 8, 2019
+.Dd April 9, 2021
 .Dt POUDRIERE-JAIL 8
 .Os
 .Sh NAME
@@ -263,16 +263,31 @@ Build from source options:
 .It Cm git Ns Op Cm + Ns Ar protocol
 Use Git to download the sources.
 .Pp
+Sources will be cloned shallowly unless
+.Fl D
+is specified.
+.Pp
+Output will mostly be hidden unless
+.Cm poudriere -v jail
+is used.
+.Pp
 Use the
-.Fl v
-flag to set the branch name.
+.Fl v Ar branch
+parameter to set the branch name when creating a jail.
+.Pp
+Use the
+.Fl t Ar branch
+parameter to switch the branch when updating a jail.
+.Pp
 The Git server address is derived from the
 .Va GIT_BASEURL
 variable in
 .Pa poudriere.conf .
+.Fl U Ar url
+may be used to override that value.
 .Pp
 The following protocols are supported:
-.Cm git No (default) , Cm http , https , No and Cm ssh .
+.Cm git No (default), Cm +http Ns , Cm +https Ns , Cm +file Ns , Cm +ssh Ns .
 .It Cm src= Ns Ar path
 Copy the source tree from
 .Ar path
@@ -282,19 +297,29 @@ This option is meant to be used with the
 .Fl b
 flag.
 .It Cm svn Ns Op Cm + Ns Ar protocol
-Will use SVN and the
-.Ev SVN_HOST
-variable in
-.Pa poudriere.conf .
 Use SVN to download the sources.
+.Pp
+Output will mostly be hidden unless
+.Cm poudriere -v jail
+is used.
+.Pp
+Use the
+.Fl v Ar branch
+parameter to set the branch name.
+.Pp
+Use the
+.Fl t Ar branch
+parameter to switch the branch when updating a jail.
 .Pp
 The SVN host address is derived from the
 .Va SVN_HOST
 variable in
 .Pa poudriere.conf .
+.Fl U Ar url
+may be used to override that value.
 .Pp
 The following protocols are supported:
-.Cm svn No (default) , Cm file , http , No and Cm https .
+.Cm svn No (default), Cm +http Ns , Cm +https Ns , Cm +file Ns , Cm +ssh Ns .
 .El
 .It Fl n
 When combined with
@@ -323,6 +348,12 @@ or from the host for
 Upgrade the jail to the specified
 .Ar version
 instead of upgrading to the latest security fix.
+.It Fl U Ar url
+Specifies which url to checkout from when using the
+.Cm git
+or
+.Cm svn
+methods.
 .It Fl v Ar version
 Specify the
 .Ar version
@@ -336,7 +367,9 @@ then the
 should in the form of
 .Dq Cm 12.0-RELEASE .
 If you are using
-.Fl m Cm svn
+.Fl m Cm git ,
+or
+.Fl m Cm svn ,
 then the
 .Ar version
 should be in the form of Git or SVN branches, which is usually

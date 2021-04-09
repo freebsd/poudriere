@@ -44,7 +44,7 @@ Parameters:
 
 Options:
     -b            -- Build the OS (for use with -m src)
-    -B            -- Build the pkgbase set (for use with -b or -m svn/git/...)
+    -B            -- Build the pkgbase set (for use with -b or -m git/svn/...)
     -q            -- Quiet (Do not print the header)
     -n            -- Print only jail name (for use with -l)
     -J n          -- Run buildworld in parallel with n jobs.
@@ -60,9 +60,9 @@ Options:
     -m method     -- When used with -c, overrides the default method for
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
-                       allbsd, ftp-archive, ftp, freebsdci, git, http, null, src=PATH,
-                       svn, svn+file, svn+http, svn+https, svn+ssh, tar=PATH
-                       url=SOMEURL.
+                       'allbsd', 'ftp-archive', 'ftp', 'freebsdci', 'http',
+		       'null', 'src=PATH', 'tar=PATH', 'url=URL', or
+		       '{git,svn}{,+http,+https,+file,+ssh}' (e.g., 'git+https').
                      The default is '${METHOD_DEF}'.
     -P patch      -- Specify a patch to apply to the source before building.
     -S srcpath    -- Specify a path to the source tree to be used.
