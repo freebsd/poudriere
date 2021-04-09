@@ -71,8 +71,7 @@ Options:
     -U url        -- Specify a url to fetch the sources (with method git and/or svn).
     -x            -- Build and setup native-xtools cross compile tools in jail when
                      building for a different TARGET ARCH than the host.
-                     Only applies if TARGET_ARCH and HOST_ARCH are different.
-                     Will only be used if -m is svn*.
+                     Will only be used if -m does a source build.
 
 Options for -d:
     -C clean      -- Clean remaining data existing in poudriere data folder.
