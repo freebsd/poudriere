@@ -1179,26 +1179,26 @@ fi
 if ! svn_git_checkout_method "${SOURCES_URL}" "${METHOD}" \
     "${SVN_HOST}/base" "${GIT_BASEURL}" \
     METHOD SVN_FULLURL GIT_FULLURL; then
-        if [ -n "${SOURCES_URL}" ]; then
-                usage
-        fi
-        case "${METHOD}" in
-        allbsd) ;;
-        csup) ;;
-        freebsdci) ;;
-        ftp) ;;
-        ftp-archive) ;;
-        gjb) ;;
-        http) ;;
-        null) ;;
-        src=*) ;;
-        tar=*) ;;
-        url=*) ;;
-        *)
-                msg_error "Unknown method ${METHOD}"
-                usage
-                ;;
-        esac
+	if [ -n "${SOURCES_URL}" ]; then
+		usage
+	fi
+	case "${METHOD}" in
+	allbsd) ;;
+	csup) ;;
+	freebsdci) ;;
+	ftp) ;;
+	ftp-archive) ;;
+	gjb) ;;
+	http) ;;
+	null) ;;
+	src=*) ;;
+	tar=*) ;;
+	url=*) ;;
+	*)
+		msg_error "Unknown method ${METHOD}"
+		usage
+		;;
+	esac
 fi
 
 
