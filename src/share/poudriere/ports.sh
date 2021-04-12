@@ -286,7 +286,7 @@ create)
 				err 1 "Git is not installed. Perhaps you need to 'pkg install git'"
 			fi
 			msg_n "Cloning the ports tree..."
-			${GIT_CMD} clone ${GIT_DEPTH} --single-branch ${quiet} \
+			${GIT_CMD} clone ${GIT_DEPTH} ${quiet} \
 			    ${BRANCH:+-b ${BRANCH}} ${GIT_FULLURL} ${PTMNT} || \
 			    err 1 " fail"
 			echo " done"
