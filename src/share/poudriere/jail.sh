@@ -598,6 +598,7 @@ install_from_vcs() {
 			;;
 		git*)
 			# !! Any changes here should be considered for ports.sh too.
+			msg_n "Updating the sources with ${METHOD}..."
 			${GIT_CMD} -C ${SRC_BASE} pull --rebase ${quiet} || \
 			    err 1 " fail"
 			if [ -n "${TORELEASE}" ]; then
