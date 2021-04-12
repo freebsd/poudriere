@@ -43,6 +43,7 @@ Parameters:
 Options:
     -U url        -- URL where to fetch the ports tree from.
     -B branch     -- Which branch to use for the svn or git methods.
+    -D            -- Do a full git clone without --depth (default: --depth=1)
     -F            -- When used with -c, only create the needed filesystems
                      (for ZFS) and directories, but do not populate them.
     -M path       -- The path to the source of a ports tree.
@@ -74,13 +75,18 @@ QUIET=0
 VERBOSE=0
 KEEP=0
 CREATED_FS=0
-while getopts "B:cFuU:dklp:qf:nM:m:v" FLAG; do
+GIT_DEPTH=--depth=1
+
+while getopts "B:cDFuU:dklp:qf:nM:m:v" FLAG; do
 	case "${FLAG}" in
 		B)
 			BRANCH="${OPTARG}"
 			;;
 		c)
 			CREATE=1
+			;;
+		D)
+			GIT_DEPTH=""
 			;;
 		F)
 			FAKE=1
@@ -278,7 +284,7 @@ if [ ${CREATE} -eq 1 ]; then
 				err 1 "Git is not installed. Perhaps you need to 'pkg install git'"
 			fi
 			msg_n "Cloning the ports tree..."
-			${GIT_CMD} clone --depth=1 --single-branch ${quiet} \
+			${GIT_CMD} clone ${GIT_DEPTH} --single-branch ${quiet} \
 			    ${BRANCH:+-b ${BRANCH}} ${GIT_FULLURL} ${PTMNT} || \
 			    err 1 " fail"
 			echo " done"
