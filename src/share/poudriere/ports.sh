@@ -359,7 +359,8 @@ update)
 		else
 			SNAPDIR=${PTMNT}/.snap
 		fi
-		/usr/sbin/portsnap ${PTARGS} -d ${SNAPDIR} -p ${PORTSMNT:-${PTMNT}} ${PSCOMMAND} alfred
+		/usr/sbin/portsnap ${PTARGS} -d ${SNAPDIR} -p ${PORTSMNT:-${PTMNT}} ${PSCOMMAND} alfred || \
+		    err 1 " fail"
 		echo " done"
 		;;
 	svn*)
@@ -367,13 +368,15 @@ update)
 		${SVN_CMD} upgrade ${PORTSMNT:-${PTMNT}} 2>/dev/null || :
 		${SVN_CMD} ${quiet} update \
 			${SVN_PRESERVE_TIMESTAMP} \
-			${PORTSMNT:-${PTMNT}}
+			${PORTSMNT:-${PTMNT}} || \
+		    err 1 " fail"
 		echo " done"
 		;;
 	git*)
 		# !! Any changes here should be considered for jail.sh too.
 		msg_n "Updating portstree \"${PTNAME}\" with ${METHOD}..."
-		${GIT_CMD} -C ${PORTSMNT:-${PTMNT}} pull --rebase ${quiet}
+		${GIT_CMD} -C ${PORTSMNT:-${PTMNT}} pull --rebase ${quiet} || \
+		    err 1 " fail"
 		echo " done"
 		;;
 	null|none) msg "Not updating portstree \"${PTNAME}\" with method ${METHOD}" ;;
