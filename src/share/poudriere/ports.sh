@@ -283,6 +283,7 @@ create)
 			echo " done"
 			;;
 		git*)
+			# !! Any changes here should be considered for jail.sh too.
 			if [ ! -x "${GIT_CMD}" ]; then
 				err 1 "Git is not installed. Perhaps you need to 'pkg install git'"
 			fi
@@ -370,6 +371,7 @@ update)
 		echo " done"
 		;;
 	git*)
+		# !! Any changes here should be considered for jail.sh too.
 		msg_n "Updating portstree \"${PTNAME}\" with ${METHOD}..."
 		${GIT_CMD} -C ${PORTSMNT:-${PTMNT}} pull --rebase ${quiet}
 		echo " done"
