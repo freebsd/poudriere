@@ -575,6 +575,7 @@ install_from_vcs() {
 			fi
 			;;
 		git*)
+			# !! Any changes here should be considered for ports.sh too.
 			if [ -n "${SRCPATCHFILE}" ]; then
 				err 1 "Patch files not supported with git, please use feature branches"
 			fi
@@ -596,6 +597,7 @@ install_from_vcs() {
 			echo " done"
 			;;
 		git*)
+			# !! Any changes here should be considered for ports.sh too.
 			${GIT_CMD} -C ${SRC_BASE} pull --rebase ${quiet} || \
 			    err 1 " fail"
 			if [ -n "${TORELEASE}" ]; then
