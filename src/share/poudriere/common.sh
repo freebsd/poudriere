@@ -846,7 +846,7 @@ buildlog_start() {
 	echo "package name: ${pkgname}"
 	echo "building for: $(injail uname -a)"
 	echo "maintained by: ${mk_MAINTAINER}"
-	echo "Makefile ident: $(ident -q ${mnt}/${portdir}/Makefile|sed -n '2,2p')"
+	echo "Makefile datestamp: $(ls -l ${mnt}/${portdir}/Makefile)"
 	echo "Poudriere version: ${POUDRIERE_VERSION}"
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
 	echo "Jail OSVERSION: ${JAIL_OSVERSION}"
