@@ -7990,14 +7990,19 @@ if [ -z "${NO_ZFS}" ]; then
 	zpool list ${ZPOOL} >/dev/null 2>&1 || err 1 "No such zpool: ${ZPOOL}"
 fi
 
-: ${SVN_HOST="svn.freebsd.org"}
-: ${FREEBSD_GIT_BASEURL="git.freebsd.org/src.git"}
-: ${FREEBSD_GIT_SSH_USER:="anongit"}
+: ${FREEBSD_SVN_HOST:="svn.FreeBSD.org"}
+: ${FREEBSD_GIT_HOST:="git.FreeBSD.org"}
+: ${FREEBSD_GIT_BASEURL:="${FREEBSD_GIT_HOST}/src.git"}
+: ${FREEBSD_GIT_PORTSURL:="${FREEBSD_GIT_HOST}/ports.git"}
+: ${FREEBSD_HOST:="https://download.FreeBSD.org"}
+: ${FREEBSD_GIT_SSH_USER="anongit"}
+
+: ${SVN_HOST:="${FREEBSD_SVN_HOST}"}
+: ${GIT_HOST:="${FREEBSD_GIT_HOST}"}
 : ${GIT_BASEURL:=${FREEBSD_GIT_BASEURL}}
-: ${FREEBSD_GIT_PORTSURL="git.freebsd.org/ports.git"}
 # GIT_URL is old compat
 : ${GIT_PORTSURL:=${GIT_URL:-${FREEBSD_GIT_PORTSURL}}}
-: ${FREEBSD_HOST="https://download.FreeBSD.org"}
+
 if [ -z "${NO_ZFS}" ]; then
 	: ${ZROOTFS="/poudriere"}
 	case ${ZROOTFS} in
