@@ -422,6 +422,8 @@ boot/kernel.old
 nxb-bin
 EOF
 
+${MAINMEDIATYPE}_prepare ${SUBMEDIATYPE} || err 1 "${MAINMEDIATYPE}_prepare failed"
+
 # Need to convert IMAGESIZE from bytes to bibytes
 # This conversion is needed to be compliant with marketing 'unit'
 # without this, a 2GiB image will not fit into a 2GB flash disk (=1862MiB)
