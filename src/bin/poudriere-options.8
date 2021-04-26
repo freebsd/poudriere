@@ -62,14 +62,13 @@ This command accepts the following options:
 Specifies which
 .Ar architecture
 of FreeBSD to use to show options.
-(Default: the one of jail
-.Ar jailname
-)
-.It Fl c
-Use 'config' target, which will always show the dialog for the given ports.
+.Po Default: the one of jail
+.Ar jailname Pc
 .It Fl C
 Use 'config-conditional' target, which will only bring up the dialog on new options for the given ports.
 (This is the default)
+.It Fl c
+Use 'config' target, which will always show the dialog for the given ports.
 .It Fl f Ar file
 Absolute path to a file which contains the list of ports to configure.
 Ports must be specified in the form
@@ -77,10 +76,10 @@ Ports must be specified in the form
 and shell-style comments are allowed.
 .It Fl j Ar jailname
 If given, configure the options only for the given jail.
-.It Fl p Ar portstree
-Run the configuration inside the given ports tree (by default uses default)
 .It Fl n
 Do not be recursive
+.It Fl p Ar portstree
+Run the configuration inside the given ports tree (by default uses default)
 .It Fl r
 Remove port options instead of configuring them
 .It Fl s
