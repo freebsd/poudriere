@@ -3222,7 +3222,7 @@ build_port() {
 	allownetworking=0
 	for jpkg in ${ALLOW_NETWORKING_PACKAGES}; do
 		case "${pkgname%-*}" in
-		"${jpkg}")
+		${jpkg})
 			job_msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}"
 			msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}"
 			allownetworking=1
@@ -4160,7 +4160,7 @@ build_pkg() {
 
 	for jpkg in ${ALLOW_MAKE_JOBS_PACKAGES}; do
 		case "${pkgname%-*}" in
-		"${jpkg}")
+		${jpkg})
 			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_RESET}"
 			sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' \
 			    "${mnt}/etc/make.conf"
@@ -7560,7 +7560,7 @@ load_priorities_ptsort() {
 		# Does this pkg have an override?
 		for pkg_boost in ${PRIORITY_BOOST}; do
 			case ${pkgname%-*} in
-			"${pkg_boost}")
+			${pkg_boost})
 				pkgqueue_contains "${pkgname}" || \
 				    continue
 				originspec_decode "${originspec}" \
