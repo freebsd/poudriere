@@ -1182,7 +1182,7 @@ while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 			SOURCES_URL=${OPTARG}
 			;;
 		r)
-			set_command update
+			set_command rename
 			NEWJAILNAME=${OPTARG}
 			;;
 		t)
