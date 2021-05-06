@@ -7507,7 +7507,7 @@ prepare_ports() {
 		fi
 	fi
 
-	if [ -n "${PACKAGE_BRANCH}" ]; then
+	if [ -n "${PACKAGE_BRANCH-}" ]; then
 		download_from_repo
 	fi
 
