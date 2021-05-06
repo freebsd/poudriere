@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd December 9, 2019
+.Dd April 26, 2021
 .Dt POUDRIERE-BULK 8
 .Os
 .Sh NAME
@@ -135,33 +135,6 @@ Fetch only from the original
 Skip
 .Fx
 mirrors.
-.It Fl i
-Interactive mode.
-.Pp
-Open an interactive shell session in the jail after the build is done and before the clean-up.
-It is a convenient way to do some additional testing.
-.Pp
-A local
-.Xr pkg.conf 5
-repository configuration will be installed to
-.No ${ Ns Va LOCALBASE Ns } Ns Pa /etc/pkg/repos/local.conf
-so that
-.Xr pkg 8
-can be used with any existing packages built for the jail.
-The
-default
-.Fx
-repository will be disabled by default.
-.It Fl j Ar name
-Run the bulk build on the jail named
-.Ar name .
-.It Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
-Specify the number of jobs that will run in parallel for a bulk build.
-The optional second parameter,
-.Ar prebuildmaxjobs ,
-is the number of jobs used for the steps before the build, they are more IO
-bound than CPU bound, so you may want to use a different number.
-The default pre-build value is 1.25 times the value of the build value.
 .It Fl I
 Advanced interactive mode.
 .Pp
@@ -179,6 +152,33 @@ flag
 will cause
 .Xr pkg.conf 5
 to be installed in the jail.
+.It Fl i
+Interactive mode.
+.Pp
+Open an interactive shell session in the jail after the build is done and before the clean-up.
+It is a convenient way to do some additional testing.
+.Pp
+A local
+.Xr pkg.conf 5
+repository configuration will be installed to
+.No ${ Ns Va LOCALBASE Ns } Ns Pa /etc/pkg/repos/local.conf
+so that
+.Xr pkg 8
+can be used with any existing packages built for the jail.
+The
+default
+.Fx
+repository will be disabled by default.
+.It Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
+Specify the number of jobs that will run in parallel for a bulk build.
+The optional second parameter,
+.Ar prebuildmaxjobs ,
+is the number of jobs used for the steps before the build, they are more IO
+bound than CPU bound, so you may want to use a different number.
+The default pre-build value is 1.25 times the value of the build value.
+.It Fl j Ar name
+Run the bulk build on the jail named
+.Ar name .
 .It Fl k
 Do not consider failures to be fatal
 when using
@@ -198,6 +198,7 @@ Specify extra ports trees to overlay.
 Specify on which ports
 .Ar tree
 the bulk build will be done.
+.Pq Default: Dq Li default
 .It Fl R
 Clean
 .Va RESTRICTED

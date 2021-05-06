@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd April 9, 2021
+.Dd April 26, 2021
 .Dt POUDRIERE-PORTS 8
 .Os
 .Sh NAME
@@ -78,8 +78,6 @@ When used with
 .Fl c ,
 only create the needed file systems (for ZFS) and directories, but do
 not populate them.
-.It Fl M Ar mountpoint
-Path to the source of a ports tree.
 .It Fl f Ar filesystem
 The name of the
 .Ar filesystem
@@ -93,6 +91,8 @@ Defaults to
 When used with
 .Fl d ,
 only unregister the ports tree without removing the files.
+.It Fl M Ar mountpoint
+Path to the source of a ports tree.
 .It Fl m Ar method
 Specify which
 .Ar method
@@ -168,6 +168,7 @@ only display the name of the ports tree.
 Specifies the
 .Ar name
 of the ports tree to use.
+.Pq Default: Dq Li default
 .It Fl q
 When used with
 .Fl l ,

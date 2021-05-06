@@ -50,8 +50,6 @@ command sorts by SETNAME, PORTSTREE, JAILNAME and then BUILDNAME.
 Show all builds, not just latest.
 This implies
 .Fl f .
-.It Fl b
-Show details about what each builder for the matched builds are doing.
 .It Fl B Ar name
 Specifies which buildname to match on.
 This supports shell globbing.
@@ -59,6 +57,8 @@ Defaults to "latest".
 Specifying this implies the
 .Fl f
 flag.
+.It Fl b
+Show details about what each builder for the matched builds are doing.
 .It Fl c
 Show a more compact output and do not include some columns.
 .It Fl f

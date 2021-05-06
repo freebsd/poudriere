@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd December 9, 2019
+.Dd April 26, 2021
 .Dt POUDRIERE-TESTPORT 8
 .Os
 .Sh NAME
@@ -55,8 +55,6 @@ for supported FLAVORS syntax.
 One port origin must be specified.
 .Sh OPTIONS
 .Bl -tag -width "-f conffile"
-.It Fl o Ar origin
-Specifies an origin in the ports tree.
 .It Fl B Ar name
 Specify which buildname to use.
 By default
@@ -66,6 +64,18 @@ This can be used to resume a previous build and use the same log and URL paths.
 Resuming a build will not retry built/failed/skipped/ignored packages.
 .It Fl c
 Run make config for the given port.
+.It Fl I
+Advanced Interactive mode.
+Leaves jail running with port installed after test.
+When done with the jail you will need to manually shut it down:
+.Dl "poudriere jail -k -j JAILNAME" .
+As with
+.Fl i
+this will install a
+.Xr pkg.conf 5
+file for
+.Xr pkg 8
+usage.
 .It Fl i
 Interactive mode.
 Enter jail for interactive testing and automatically cleanup when done.
@@ -79,21 +89,6 @@ can be used with any existing packages built for the jail.
 The
 .Fx
 repository will be disabled by default.
-.It Fl I
-Advanced Interactive mode.
-Leaves jail running with port installed after test.
-When done with the jail you will need to manually shut it down:
-.Dl "poudriere jail -k -j JAILNAME" .
-As with
-.Fl i
-this will install a
-.Xr pkg.conf 5
-file for
-.Xr pkg 8
-usage.
-.It Fl j Ar name
-Runs only inside the jail named
-.Ar name .
 .It Fl J Ar number[:number]
 This argument specifies how many
 .Ar number
@@ -103,24 +98,30 @@ The optional second
 is the number of jobs used for the steps before the build, they are more IO
 bound than CPU bound, so you may want to use a different number.
 The default pre-build value is 1.25 times the value of the build value.
+.It Fl j Ar name
+Runs only inside the jail named
+.Ar name .
 .It Fl k
 Do not consider failures as fatal.
 Find all failures.
+.It Fl N
+Do not build package repository when build of dependencies is
+completed.
 .It Fl n
 Dry run.
 Show what would be done, but do not actually build or delete any
 packages.
-.It Fl N
-Do not build package repository when build of dependencies is
-completed.
-.It Fl P
-Use custom prefix.
 .It Fl O Ar overlays
 Specify extra ports trees to overlay.
+.It Fl o Ar origin
+Specifies an origin in the ports tree.
+.It Fl P
+Use custom prefix.
 .It Fl p Ar tree
 Specifies which ports
 .Ar tree
 to use.
+.Pq Default: Dq Li default
 .It Fl S
 Do not recursively rebuild packages affected by other packages requiring
 incremental rebuild.
