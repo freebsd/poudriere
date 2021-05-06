@@ -114,6 +114,13 @@ arguments may be specified at once.
 .El
 .Sh OPTIONS
 .Bl -tag -width "-B name"
+.It Fl B Ar name
+Specify which buildname to use.
+By default
+.Ar YYYY-MM-DD_HH:MM:SS
+will be used.
+This can be used to resume a previous build and use the same log and URL paths.
+Resuming a build will not retry built/failed/skipped/ignored packages.
 .It Fl b Ar name
 Specify the
 .Ar name
@@ -133,13 +140,6 @@ is used along with
 or
 .Fl c ,
 then listed packages will not be fetched.
-.It Fl B Ar name
-Specify which buildname to use.
-By default
-.Ar YYYY-MM-DD_HH:MM:SS
-will be used.
-This can be used to resume a previous build and use the same log and URL paths.
-Resuming a build will not retry built/failed/skipped/ignored packages.
 .It Fl C
 Clean only the packages specified on the command line or in the file given by
 .Fl f Ar file .
