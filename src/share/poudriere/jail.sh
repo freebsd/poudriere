@@ -72,12 +72,13 @@ Options:
     -x            -- Build and setup native-xtools cross compile tools in jail when
                      building for a different TARGET ARCH than the host.
                      Will only be used if -m does a source build.
-    -y            -- Do not prompt for confirmation when deleting a jail.
 
 Options for -d:
     -C clean      -- Clean remaining data existing in poudriere data folder.
                      See poudriere(8) for more details. Can be one of:
                        all, cache, logs, packages, wrkdirs
+    -y            -- Do not prompt for confirmation when deleting a jail.
+
 Options for -s and -k:
     -p tree       -- Specify which ports tree to start/stop the jail with.
     -z set        -- Specify which SET the jail to start/stop with.
