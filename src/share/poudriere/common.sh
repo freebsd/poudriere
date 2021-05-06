@@ -2994,11 +2994,13 @@ jail_cleanup() {
 download_from_repo() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "download_from_repo requires PWD=${MASTERMNT}/.p"
-	local pkgname originspec _ignored
+	local pkgname originspec _ignored pkg_bin pkgname
 
-	if ! ensure_pkg_installed; then
-		msg "pkg package missing, skipping fetching of packages"
-		return
+	if ensure_pkg_installed; then
+		pkg_bin="${PKG_BIN}"
+	else
+		# Will bootstrap
+		pkg_bin="pkg"
 	fi
 	msg "Prefetching missing packages from pkg+http://pkg.freebsd.org/\${ABI}/${PACKAGE_BRANCH}"
 	cat >> "${MASTERMNT}/etc/pkg/poudriere.conf" <<-EOF
@@ -3013,8 +3015,16 @@ download_from_repo() {
 		[ -f "${MASTERMNT}/packages/All/${pkgname}.${PKG_EXT}" ] || \
 		    echo "${pkgname}"
 	done | JNETNAME="n" injail xargs \
-	    env -i ASSUME_ALWAYS_YES=yes pkg fetch -o /packages
+	    env -i ASSUME_ALWAYS_YES=yes ${pkg_bin} fetch -o /packages
+	# Ensure pkg has a proper symlink
 	remount_packages -o ro
+	# Bootstrapped.  Need to setup symlinks.
+	if [ "${pkg_bin}" = "pkg" ]; then
+		pkgname=$(injail pkg query %n-%v pkg)
+		mkdir -p "${PACKAGES}/Latest"
+		ln -fhs "../All/${pkgname}.${PKG_EXT}" \
+		    "${PACKAGES}/Latest/pkg.${PKG_EXT}"
+	fi
 }
 
 # return 0 if the package dir exists and has packages, 0 otherwise
