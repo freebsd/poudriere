@@ -3009,12 +3009,10 @@ download_from_repo() {
 	remount_packages -o rw
 	# only list packages which do not exists to prevent pkg from overwriting prebuilt packages
 	# XXX only work when PKG_EXT is the same as the upstream
-	(
 	while mapfile_read_loop "all_pkgs" pkgname originspec _ignored; do
 		[ -f "${MASTERMNT}/packages/All/${pkgname}.${PKG_EXT}" ] || \
 		    echo "${pkgname}"
-	done
-	) | JNETNAME="n" injail xargs \
+	done | JNETNAME="n" injail xargs \
 	    env -i ASSUME_ALWAYS_YES=yes pkg fetch -o /packages
 	remount_packages -o ro
 }
