@@ -3014,14 +3014,21 @@ download_from_repo() {
 		return
 	fi
 	remount_packages -o rw
-	# only list packages which do not exists to prevent pkg from overwriting prebuilt packages
-	# XXX only work when PKG_EXT is the same as the upstream
-	while mapfile_read_loop "all_pkgs" pkgname originspec _ignored; do
-		[ -f "${MASTERMNT}/packages/All/${pkgname}.${PKG_EXT}" ] || \
-		    echo "${pkgname}"
-	done | JNETNAME="n" injail xargs \
-	    env ASSUME_ALWAYS_YES=yes PACKAGESITE="${packagesite}" \
-	    ${pkg_bin} fetch -o /packages
+	{
+		# Ensure we always fetch pkg as the *wanted* version may not
+		# match the remote's returned one but we still want to use
+		# what it sends back.
+		echo "ports-mgmt/pkg"
+		# only list packages which do not exists to prevent pkg
+		# from overwriting prebuilt packages
+		# XXX only work when PKG_EXT is the same as the upstream
+		while mapfile_read_loop "all_pkgs" pkgname originspec _ignored; do
+			[ -f "${PACKAGES}/All/${pkgname}.${PKG_EXT}" ] || \
+			    echo "${pkgname}"
+		done
+	} | JNETNAME="n" injail xargs \
+		    env ASSUME_ALWAYS_YES=yes PACKAGESITE="${packagesite}" \
+		    ${pkg_bin} fetch -o /packages
 	# Ensure pkg has a proper symlink
 	remount_packages -o ro
 	# Bootstrapped.  Need to setup symlinks.
@@ -3031,6 +3038,8 @@ download_from_repo() {
 		ln -fhs "../All/${pkgname}.${PKG_EXT}" \
 		    "${PACKAGES}/Latest/pkg.${PKG_EXT}"
 	fi
+	ensure_pkg_installed || \
+	    err 1 "download_from_repo: failed to bootstrap pkg"
 }
 
 # return 0 if the package dir exists and has packages, 0 otherwise
