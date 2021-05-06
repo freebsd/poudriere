@@ -119,9 +119,10 @@ Specify the
 .Ar name
 of the binary package branch to use to prefetch packages.
 Should be
-.Qq latest
+.Qq latest ,
+.Qq quarterly ,
 or
-.Qq quarterly .
+.Qq release_* .
 With this option poudriere will first try to fetch from the binary package
 repository specified the binary package prior to do the sanity check if the
 package does not already exist.

@@ -39,7 +39,7 @@ Options:
                    YYYY-MM-DD_HH:MM:SS). Resuming a previous build will not
                    retry built/failed/skipped/ignored packages.
     -b branch   -- Branch to choose for fetching packages from official
-                   repositories: valid options are: latest, quarterly
+                   repositories: valid options are: latest, quarterly, release_*
     -C          -- Clean only the packages listed on the command line or
                    -f file.  Implies -c for -a.
     -c          -- Clean all the previously built binary packages and logs.
@@ -105,7 +105,7 @@ while getopts "ab:B:CcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
 		b)
 			PACKAGE_BRANCH="${OPTARG}"
 			case "${PACKAGE_BRANCH}" in
-			latest|quarterly) ;;
+			latest|quarterly|release*) ;;
 			*)
 				err 1 "Invalid branch name for packages: ${OPTARG}"
 			esac
