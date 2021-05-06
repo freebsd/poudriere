@@ -3002,7 +3002,7 @@ download_from_repo() {
 		# Will bootstrap
 		pkg_bin="pkg"
 	fi
-	packagesite="pkg+http://pkg.freebsd.org/\${ABI}/${PACKAGE_BRANCH}"
+	packagesite="${PACKAGE_FETCH_URL}/${PACKAGE_FETCH_BRANCH}"
 	msg "Prefetching missing packages from ${packagesite}"
 	cat >> "${MASTERMNT}/etc/pkg/poudriere.conf" <<-EOF
 	FreeBSD: {
@@ -3052,13 +3052,13 @@ download_from_repo() {
 }
 
 validate_package_branch() {
-	[ $# -eq 1 ] || eargs validate_package_branch PACKAGE_BRANCH
-	local PACKAGE_BRANCH="$1"
+	[ $# -eq 1 ] || eargs validate_package_branch PACKAGE_FETCH_BRANCH
+	local PACKAGE_FETCH_BRANCH="$1"
 
-	case "${PACKAGE_BRANCH}" in
+	case "${PACKAGE_FETCH_BRANCH}" in
 	latest|quarterly|release*) ;;
 	*)
-		err 1 "Invalid branch name for package fetching: ${PACKAGE_BRANCH}"
+		err 1 "Invalid branch name for package fetching: ${PACKAGE_FETCH_BRANCH}"
 	esac
 }
 
@@ -7505,7 +7505,7 @@ prepare_ports() {
 			:> ${log}/.poudriere.ports.skipped
 			trim_ignored
 		fi
-		if [ -n "${PACKAGE_BRANCH-}" ]; then
+		if [ -n "${PACKAGE_FETCH_BRANCH-}" ]; then
 			download_from_repo
 		fi
 	fi
@@ -8319,6 +8319,7 @@ INTERACTIVE_MODE=0
 : ${ALLOW_MAKE_JOBS_PACKAGES=pkg ccache}
 : ${FLAVOR_DEFAULT_ALL:=no}
 : ${NULLFS_PATHS:="/rescue /usr/share /usr/tests /usr/lib32"}
+: ${PACKAGE_FETCH_URL:="pkg+http://pkg.FreeBSD.org/\${ABI}"}
 
 : ${POUDRIERE_TMPDIR:=$(command mktemp -dt poudriere)}
 : ${SHASH_VAR_PATH_DEFAULT:=${POUDRIERE_TMPDIR}}

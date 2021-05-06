@@ -83,8 +83,8 @@ OVERLAYS=""
 while getopts "b:B:o:cniIj:J:kNO:p:PSvwz:" FLAG; do
 	case "${FLAG}" in
 		b)
-			PACKAGE_BRANCH="${OPTARG}"
-			validate_package_branch "${PACKAGE_BRANCH}"
+			PACKAGE_FETCH_BRANCH="${OPTARG}"
+			validate_package_branch "${PACKAGE_FETCH_BRANCH}"
 			;;
 		B)
 			BUILDNAME="${OPTARG}"

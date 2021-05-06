@@ -103,8 +103,8 @@ while getopts "ab:B:CcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
 			BUILDNAME="${OPTARG}"
 			;;
 		b)
-			PACKAGE_BRANCH="${OPTARG}"
-			validate_package_branch "${PACKAGE_BRANCH}"
+			PACKAGE_FETCH_BRANCH="${OPTARG}"
+			validate_package_branch "${PACKAGE_FETCH_BRANCH}"
 			;;
 		c)
 			CLEAN=1
