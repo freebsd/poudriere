@@ -8219,6 +8219,7 @@ fi
 : ${HTML_TRACK_REMAINING:=no}
 : ${FORCE_MOUNT_HASH:=no}
 DRY_RUN=0
+INTERACTIVE_MODE=0
 
 # Be sure to update poudriere.conf to document the default when changing these
 : ${RESOLV_CONF="/etc/resolv.conf"}
