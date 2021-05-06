@@ -3009,6 +3009,10 @@ download_from_repo() {
 	        url: ${packagesite};
 	}
 	EOF
+	if [ "${DRY_RUN:-0}" -eq 1 ]; then
+		msg "not fetching remote packages in dry run mode."
+		return
+	fi
 	remount_packages -o rw
 	# only list packages which do not exists to prevent pkg from overwriting prebuilt packages
 	# XXX only work when PKG_EXT is the same as the upstream
