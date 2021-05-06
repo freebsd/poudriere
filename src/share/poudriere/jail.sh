@@ -72,6 +72,7 @@ Options:
     -x            -- Build and setup native-xtools cross compile tools in jail when
                      building for a different TARGET ARCH than the host.
                      Will only be used if -m does a source build.
+    -y            -- Do not prompt for confirmation when deleting a jail.
 
 Options for -d:
     -C clean      -- Clean remaining data existing in poudriere data folder.
@@ -1094,7 +1095,7 @@ set_command() {
 	COMMAND="$1"
 }
 
-while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
+while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:y" FLAG; do
 	case "${FLAG}" in
 		b)
 			BUILD=1
@@ -1190,6 +1191,9 @@ while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:" FLAG; do
 			;;
 		x)
 			XDEV=1
+			;;
+		y)
+			YES=1
 			;;
 		z)
 			[ -n "${OPTARG}" ] || err 1 "Empty set name"
@@ -1293,8 +1297,10 @@ case "${COMMAND}" in
 	delete)
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
-		confirm_if_tty "Are you sure you want to delete the jail?" || \
-		    err 1 "Not deleting jail"
+		if [ -z "${YES}" ]; then
+			confirm_if_tty "Are you sure you want to delete the jail?" || \
+			    err 1 "Not deleting jail"
+		fi
 		maybe_run_queued "${saved_argv}"
 		delete_jail
 		;;
