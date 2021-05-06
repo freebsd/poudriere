@@ -2994,7 +2994,7 @@ jail_cleanup() {
 download_from_repo() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "download_from_repo requires PWD=${MASTERMNT}/.p"
-	local pkgname originspec _ignored pkg_bin pkgname
+	local pkgname originspec _ignored pkg_bin pkgname packagesite
 
 	if ensure_pkg_installed; then
 		pkg_bin="${PKG_BIN}"
@@ -3002,10 +3002,11 @@ download_from_repo() {
 		# Will bootstrap
 		pkg_bin="pkg"
 	fi
-	msg "Prefetching missing packages from pkg+http://pkg.freebsd.org/\${ABI}/${PACKAGE_BRANCH}"
+	packagesite="pkg+http://pkg.freebsd.org/\${ABI}/${PACKAGE_BRANCH}"
+	msg "Prefetching missing packages from ${packagesite}"
 	cat >> "${MASTERMNT}/etc/pkg/poudriere.conf" <<-EOF
 	FreeBSD: {
-	        url: pkg+http://pkg.freebsd.org/\${ABI}/${PACKAGE_BRANCH};
+	        url: ${packagesite};
 	}
 	EOF
 	remount_packages -o rw
@@ -3015,7 +3016,8 @@ download_from_repo() {
 		[ -f "${MASTERMNT}/packages/All/${pkgname}.${PKG_EXT}" ] || \
 		    echo "${pkgname}"
 	done | JNETNAME="n" injail xargs \
-	    env ASSUME_ALWAYS_YES=yes ${pkg_bin} fetch -o /packages
+	    env ASSUME_ALWAYS_YES=yes PACKAGESITE="${packagesite}" \
+	    ${pkg_bin} fetch -o /packages
 	# Ensure pkg has a proper symlink
 	remount_packages -o ro
 	# Bootstrapped.  Need to setup symlinks.
