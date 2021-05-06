@@ -1849,6 +1849,12 @@ use_options() {
 	return 0
 }
 
+remount_packages() {
+	umount ${UMOUNT_NONBUSY} "${MASTERMNT}/packages" || \
+	    umount -f "${MASTERMNT}/packages"
+	mount_packages "$@"
+}
+
 mount_packages() {
 	local mnt
 
@@ -2983,6 +2989,80 @@ jail_cleanup() {
 	fi
 
 	export CLEANED_UP=1
+}
+
+download_from_repo() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "download_from_repo requires PWD=${MASTERMNT}/.p"
+	local pkgname originspec listed pkg_bin pkgname packagesite
+
+	if ensure_pkg_installed; then
+		pkg_bin="${PKG_BIN}"
+	else
+		# Will bootstrap
+		pkg_bin="pkg"
+	fi
+	packagesite="${PACKAGE_FETCH_URL:+${PACKAGE_FETCH_URL}/}${PACKAGE_FETCH_BRANCH}"
+	msg "Prefetching missing packages from ${packagesite}"
+	cat >> "${MASTERMNT}/etc/pkg/poudriere.conf" <<-EOF
+	FreeBSD: {
+	        url: ${packagesite};
+	}
+	EOF
+	if [ "${DRY_RUN:-0}" -eq 1 ]; then
+		msg "not fetching remote packages in dry run mode."
+		return
+	fi
+	remount_packages -o rw
+	{
+		# Ensure we always fetch pkg as the *wanted* version may not
+		# match the remote's returned one but we still want to use
+		# what it sends back.
+		echo "ports-mgmt/pkg"
+		# only list packages which do not exists to prevent pkg
+		# from overwriting prebuilt packages
+		# XXX only work when PKG_EXT is the same as the upstream
+		while mapfile_read_loop "all_pkgs" pkgname originspec listed; do
+			# Skip listed packages when testing
+			if [ "${PORTTESTING}" -eq 1 ]; then
+				if [ "${CLEAN:-0}" -eq 1 ] || \
+				    [ "${CLEAN_LISTED:-0}" -eq 1 ]; then
+					case "${listed}" in
+					listed) continue ;;
+					esac
+				fi
+			fi
+			[ -f "${PACKAGES}/All/${pkgname}.${PKG_EXT}" ] || \
+			    echo "${pkgname}"
+		done
+	} | JNETNAME="n" injail xargs \
+		    env ASSUME_ALWAYS_YES=yes PACKAGESITE="${packagesite}" \
+		    ${pkg_bin} fetch -o /packages
+	# Ensure pkg has a proper symlink
+	remount_packages -o ro
+	# Bootstrapped.  Need to setup symlinks.
+	if [ "${pkg_bin}" = "pkg" ]; then
+		pkgname=$(injail pkg query %n-%v pkg)
+		mkdir -p "${PACKAGES}/Latest"
+		ln -fhs "../All/${pkgname}.${PKG_EXT}" \
+		    "${PACKAGES}/Latest/pkg.${PKG_EXT}"
+	fi
+	ensure_pkg_installed || \
+	    err 1 "download_from_repo: failed to bootstrap pkg"
+}
+
+validate_package_branch() {
+	[ $# -eq 1 ] || eargs validate_package_branch PACKAGE_FETCH_BRANCH
+	local PACKAGE_FETCH_BRANCH="$1"
+
+	case "${PACKAGE_FETCH_BRANCH}" in
+	latest|quarterly|release*) ;;
+	*:*)
+		unset PACKAGE_FETCH_URL
+		;;
+	*)
+		err 1 "Invalid branch name for package fetching: ${PACKAGE_FETCH_BRANCH}"
+	esac
 }
 
 # return 0 if the package dir exists and has packages, 0 otherwise
@@ -7428,6 +7508,9 @@ prepare_ports() {
 			:> ${log}/.poudriere.ports.skipped
 			trim_ignored
 		fi
+		if [ -n "${PACKAGE_FETCH_BRANCH-}" ]; then
+			download_from_repo
+		fi
 	fi
 
 	if ! ensure_pkg_installed && [ ${SKIPSANITY} -eq 0 ]; then
@@ -7699,11 +7782,7 @@ clean_restricted() {
 
 	msg "Cleaning restricted packages"
 	bset status "clean_restricted:"
-	# Remount rw
-	# mount_nullfs does not support mount -u
-	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages || \
-	    umount -f ${MASTERMNT}/packages
-	mount_packages
+	remount_packages -o rw
 	injail /usr/bin/make -s -C ${PORTSDIR} -j ${PARALLEL_JOBS} \
 	    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
 	for o in ${OVERLAYS}; do
@@ -7711,10 +7790,7 @@ clean_restricted() {
 		    -j ${PARALLEL_JOBS} \
 		    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
 	done
-	# Remount ro
-	umount ${UMOUNT_NONBUSY} ${MASTERMNT}/packages || \
-	    umount -f ${MASTERMNT}/packages
-	mount_packages -o ro
+	remount_packages -o ro
 }
 
 sign_pkg() {
@@ -8246,6 +8322,7 @@ INTERACTIVE_MODE=0
 : ${ALLOW_MAKE_JOBS_PACKAGES=pkg ccache}
 : ${FLAVOR_DEFAULT_ALL:=no}
 : ${NULLFS_PATHS:="/rescue /usr/share /usr/tests /usr/lib32"}
+: ${PACKAGE_FETCH_URL:="pkg+http://pkg.FreeBSD.org/\${ABI}"}
 
 : ${POUDRIERE_TMPDIR:=$(command mktemp -dt poudriere)}
 : ${SHASH_VAR_PATH_DEFAULT:=${POUDRIERE_TMPDIR}}

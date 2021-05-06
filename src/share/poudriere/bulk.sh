@@ -38,6 +38,9 @@ Options:
     -B name     -- What buildname to use (must be unique, defaults to
                    YYYY-MM-DD_HH:MM:SS). Resuming a previous build will not
                    retry built/failed/skipped/ignored packages.
+    -b branch   -- Branch to choose for fetching packages from official
+                   repositories: valid options are: latest, quarterly,
+                   release_*, or a url.
     -C          -- Clean only the packages listed on the command line or
                    -f file.  Implies -c for -a.
     -c          -- Clean all the previously built binary packages and logs.
@@ -92,13 +95,17 @@ OVERLAYS=""
 
 [ $# -eq 0 ] && usage
 
-while getopts "aB:CcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
+while getopts "ab:B:CcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			ALL=1
 			;;
 		B)
 			BUILDNAME="${OPTARG}"
+			;;
+		b)
+			PACKAGE_FETCH_BRANCH="${OPTARG}"
+			validate_package_branch "${PACKAGE_FETCH_BRANCH}"
 			;;
 		c)
 			CLEAN=1

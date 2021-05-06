@@ -325,3 +325,10 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Set to pass arguments to buildworld.
 # Default:
 #MAKEWORLDARGS="WITHOUT_LLVM_ASSERTIONS=yes WITH_MALLOC_PRODUCTION=yes -DMALLOC_PRODUCTION"
+
+# Set to always attempt to fetch packages or dependencies before building.
+# XXX: This is subject to change
+# Default: off; requires -b <branch> for bulk or testport.
+#PACKAGE_FETCH_BRANCH=latest
+# The branch will be appended to the URL:
+#PACKAGE_FETCH_URL=pkg+http://pkg.FreeBSD.org/\${ABI}

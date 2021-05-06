@@ -38,6 +38,9 @@ Options:
     -B name     -- What buildname to use (must be unique, defaults to
                    YYYY-MM-DD_HH:MM:SS). Resuming a previous build will not
                    retry built/failed/skipped/ignored packages.
+    -b branch   -- Branch to choose for fetching packages from official
+                   repositories: valid options are: latest, quarterly,
+                   release_*, or a url.
     -c          -- Run make config for the given port
     -i          -- Interactive mode. Enter jail for interactive testing and
                    automatically cleanup when done.
@@ -78,8 +81,12 @@ PTNAME="default"
 BUILD_REPO=1
 OVERLAYS=""
 
-while getopts "B:o:cniIj:J:kNO:p:PSvwz:" FLAG; do
+while getopts "b:B:o:cniIj:J:kNO:p:PSvwz:" FLAG; do
 	case "${FLAG}" in
+		b)
+			PACKAGE_FETCH_BRANCH="${OPTARG}"
+			validate_package_branch "${PACKAGE_FETCH_BRANCH}"
+			;;
 		B)
 			BUILDNAME="${OPTARG}"
 			;;

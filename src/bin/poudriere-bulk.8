@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd April 26, 2021
+.Dd May 6, 2021
 .Dt POUDRIERE-BULK 8
 .Os
 .Sh NAME
@@ -40,6 +40,7 @@
 .Fl a
 .Fl j Ar name
 .Op Fl CcFIikNnRrSTtvw
+.Op Fl b Ar name
 .Op Fl B Ar name
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
 .Op Fl O Ar overlays
@@ -50,6 +51,7 @@
 .Fl f Ar file Op Oo Fl f Ar file2 Oc Ar ...
 .Fl j Ar name
 .Op Fl CcFIikNnRrSTtvw
+.Op Fl b Ar name
 .Op Fl B Ar name
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
 .Op Fl O Ar overlays
@@ -59,6 +61,7 @@
 .Cm bulk
 .Fl j Ar name
 .Op Fl CcFIikNnRrSTtvw
+.Op Fl b Ar name
 .Op Fl B Ar name
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
 .Op Fl O Ar overlays
@@ -118,6 +121,33 @@ By default
 will be used.
 This can be used to resume a previous build and use the same log and URL paths.
 Resuming a build will not retry built/failed/skipped/ignored packages.
+.It Fl b Ar name
+Specify the
+.Ar name
+of the binary package branch to use to prefetch packages.
+Should be
+.Qq latest ,
+.Qq quarterly ,
+.Qq release_* ,
+or
+.Ar url .
+With this option poudriere will first try to fetch from the binary package
+repository specified the binary package prior to do the sanity check if the
+package does not already exist.
+When
+.Fl t
+is used along with
+.Fl C ,
+or
+.Fl c ,
+then listed packages will not be fetched.
+.Pp
+See
+.Sy PACKAGE_FETCH_BRANCH ,
+and
+.Sy PACKAGE_FETCH_URL ,
+in
+.Pa poudriere.conf.sample .
 .It Fl C
 Clean only the packages specified on the command line or in the file given by
 .Fl f Ar file .
