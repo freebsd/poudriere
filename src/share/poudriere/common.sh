@@ -3015,7 +3015,7 @@ download_from_repo() {
 		[ -f "${MASTERMNT}/packages/All/${pkgname}.${PKG_EXT}" ] || \
 		    echo "${pkgname}"
 	done | JNETNAME="n" injail xargs \
-	    env -i ASSUME_ALWAYS_YES=yes ${pkg_bin} fetch -o /packages
+	    env ASSUME_ALWAYS_YES=yes ${pkg_bin} fetch -o /packages
 	# Ensure pkg has a proper symlink
 	remount_packages -o ro
 	# Bootstrapped.  Need to setup symlinks.
