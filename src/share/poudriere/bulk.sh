@@ -104,11 +104,7 @@ while getopts "ab:B:CcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
 			;;
 		b)
 			PACKAGE_BRANCH="${OPTARG}"
-			case "${PACKAGE_BRANCH}" in
-			latest|quarterly|release*) ;;
-			*)
-				err 1 "Invalid branch name for packages: ${OPTARG}"
-			esac
+			validate_package_branch "${PACKAGE_BRANCH}"
 			;;
 		c)
 			CLEAN=1

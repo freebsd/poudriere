@@ -3051,6 +3051,17 @@ download_from_repo() {
 	    err 1 "download_from_repo: failed to bootstrap pkg"
 }
 
+validate_package_branch() {
+	[ $# -eq 1 ] || eargs validate_package_branch PACKAGE_BRANCH
+	local PACKAGE_BRANCH="$1"
+
+	case "${PACKAGE_BRANCH}" in
+	latest|quarterly|release*) ;;
+	*)
+		err 1 "Invalid branch name for package fetching: ${PACKAGE_BRANCH}"
+	esac
+}
+
 # return 0 if the package dir exists and has packages, 0 otherwise
 package_dir_exists_and_has_packages() {
 	[ ! -d ${PACKAGES}/All ] && return 1

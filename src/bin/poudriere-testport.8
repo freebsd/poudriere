@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd April 26, 2021
+.Dd May 6, 2021
 .Dt POUDRIERE-TESTPORT 8
 .Os
 .Sh NAME
@@ -62,6 +62,19 @@ By default
 will be used.
 This can be used to resume a previous build and use the same log and URL paths.
 Resuming a build will not retry built/failed/skipped/ignored packages.
+.It Fl b Ar name
+Specify the
+.Ar name
+of the binary package branch to use to prefetch packages.
+Should be
+.Qq latest ,
+.Qq quarterly ,
+or
+.Qq release_* .
+With this option poudriere will first try to fetch from the binary package
+repository specified the binary package prior to do the sanity check if the
+package does not already exist.
+The port being tested will not be fetched.
 .It Fl c
 Run make config for the given port.
 .It Fl I
