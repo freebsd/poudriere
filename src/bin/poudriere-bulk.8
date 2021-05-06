@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd April 26, 2021
+.Dd May 6, 2021
 .Dt POUDRIERE-BULK 8
 .Os
 .Sh NAME
@@ -126,6 +126,13 @@ or
 With this option poudriere will first try to fetch from the binary package
 repository specified the binary package prior to do the sanity check if the
 package does not already exist.
+When
+.Fl t
+is used along with
+.Fl C ,
+or
+.Fl c ,
+then listed packages will not be fetched.
 .It Fl B Ar name
 Specify which buildname to use.
 By default

@@ -2994,7 +2994,7 @@ jail_cleanup() {
 download_from_repo() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "download_from_repo requires PWD=${MASTERMNT}/.p"
-	local pkgname originspec _ignored pkg_bin pkgname packagesite
+	local pkgname originspec listed pkg_bin pkgname packagesite
 
 	if ensure_pkg_installed; then
 		pkg_bin="${PKG_BIN}"
@@ -3022,7 +3022,16 @@ download_from_repo() {
 		# only list packages which do not exists to prevent pkg
 		# from overwriting prebuilt packages
 		# XXX only work when PKG_EXT is the same as the upstream
-		while mapfile_read_loop "all_pkgs" pkgname originspec _ignored; do
+		while mapfile_read_loop "all_pkgs" pkgname originspec listed; do
+			# Skip listed packages when testing
+			if [ "${PORTTESTING}" -eq 1 ]; then
+				if [ "${CLEAN:-0}" -eq 1 ] || \
+				    [ "${CLEAN_LISTED:-0}" -eq 1 ]; then
+					case "${listed}" in
+					listed) continue ;;
+					esac
+				fi
+			fi
 			[ -f "${PACKAGES}/All/${pkgname}.${PKG_EXT}" ] || \
 			    echo "${pkgname}"
 		done
