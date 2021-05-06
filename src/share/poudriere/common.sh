@@ -7505,10 +7505,9 @@ prepare_ports() {
 			:> ${log}/.poudriere.ports.skipped
 			trim_ignored
 		fi
-	fi
-
-	if [ -n "${PACKAGE_BRANCH-}" ]; then
-		download_from_repo
+		if [ -n "${PACKAGE_BRANCH-}" ]; then
+			download_from_repo
+		fi
 	fi
 
 	if ! ensure_pkg_installed && [ ${SKIPSANITY} -eq 0 ]; then
