@@ -39,7 +39,8 @@ Options:
                    YYYY-MM-DD_HH:MM:SS). Resuming a previous build will not
                    retry built/failed/skipped/ignored packages.
     -b branch   -- Branch to choose for fetching packages from official
-                   repositories: valid options are: latest, quarterly, release_*
+                   repositories: valid options are: latest, quarterly,
+                   release_*, or a url.
     -c          -- Run make config for the given port
     -i          -- Interactive mode. Enter jail for interactive testing and
                    automatically cleanup when done.

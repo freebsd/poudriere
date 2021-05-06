@@ -3002,7 +3002,7 @@ download_from_repo() {
 		# Will bootstrap
 		pkg_bin="pkg"
 	fi
-	packagesite="${PACKAGE_FETCH_URL}/${PACKAGE_FETCH_BRANCH}"
+	packagesite="${PACKAGE_FETCH_URL:+${PACKAGE_FETCH_URL}/}${PACKAGE_FETCH_BRANCH}"
 	msg "Prefetching missing packages from ${packagesite}"
 	cat >> "${MASTERMNT}/etc/pkg/poudriere.conf" <<-EOF
 	FreeBSD: {
@@ -3057,6 +3057,9 @@ validate_package_branch() {
 
 	case "${PACKAGE_FETCH_BRANCH}" in
 	latest|quarterly|release*) ;;
+	*:*)
+		unset PACKAGE_FETCH_URL
+		;;
 	*)
 		err 1 "Invalid branch name for package fetching: ${PACKAGE_FETCH_BRANCH}"
 	esac
