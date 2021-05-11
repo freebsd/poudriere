@@ -3023,6 +3023,18 @@ download_from_repo() {
 		# from overwriting prebuilt packages
 		# XXX only work when PKG_EXT is the same as the upstream
 		while mapfile_read_loop "all_pkgs" pkgname originspec listed; do
+			local bpkg
+
+			# Skip blacklisted packages
+			for bpkg in ${PACKAGE_FETCH_BLACKLIST}; do
+				case "${pkgname%-*}" in
+				${bpkg})
+					msg_verbose "PACKAGE_FETCH_BLACKLIST: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}" >&2
+					continue 2
+					;;
+				esac
+			done
+
 			# Skip listed packages when testing
 			if [ "${PORTTESTING}" -eq 1 ]; then
 				if [ "${CLEAN:-0}" -eq 1 ] || \

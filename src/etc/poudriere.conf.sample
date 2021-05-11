@@ -332,3 +332,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #PACKAGE_FETCH_BRANCH=latest
 # The branch will be appended to the URL:
 #PACKAGE_FETCH_URL=pkg+http://pkg.FreeBSD.org/\${ABI}
+# Packages which should never be fetched.  This is useful for ports that
+# you have local patches for as otherwise the patches would be ignored if
+# a remote package is used instead.
+#PACKAGE_FETCH_BLACKLIST=""
