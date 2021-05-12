@@ -2992,13 +2992,15 @@ jail_cleanup() {
 }
 
 download_from_repo_check_pkg() {
-	[ $# -eq 4 ] || eargs download_from_repo_check_pkg pkgname \
-	    remote_all_options remote_all_pkgs output
+	[ $# -eq 5 ] || eargs download_from_repo_check_pkg pkgname \
+	    remote_all_options remote_all_pkgs remote_all_deps output
 	local pkgname="$1"
 	local remote_all_options="$2"
 	local remote_all_pkgs="$3"
-	local output="$4"
+	local remote_all_deps="$4"
+	local output="$5"
 	local pkgbase bpkg selected_options remote_options found
+	local run_deps lib_deps raw_deps dep dep_pkgname local_deps remote_deps
 
 	# The options checks here are not optimized because we lack goto.
 	pkgbase="${pkgname%-*}"
@@ -3035,8 +3037,27 @@ download_from_repo_check_pkg() {
 	case "${selected_options}" in
 	${remote_options}) ;;
 	*)
-		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (want:   '${selected_options}')"
-		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (remote: '${remote_options}')"
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (want options:   '${selected_options}')"
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (remote options: '${remote_options}')"
+		return
+		;;
+	esac
+
+	# Runtime dependency mismatch (for example DEFAULT_VERSIONS=ssl=openssl)
+	shash_get pkgname-run_deps "${pkgname}" run_deps || run_deps=
+	shash_get pkgname-lib_deps "${pkgname}" lib_deps || lib_deps=
+	raw_deps="${run_deps:+${run_deps} }${lib_deps}"
+	local_deps=$(for dep in ${raw_deps}; do
+		get_pkgname_from_originspec "${dep#*:}" dep_pkgname || continue
+		echo "${dep_pkgname}"
+	done | sort | paste -s -d ' ' -)
+	remote_deps=$(awk -vpkgbase="${pkgbase}" '$1 == pkgbase {print $2}' \
+	    "${remote_all_deps}" | sort | paste -s -d ' ' -)
+	case "${local_deps}" in
+	${remote_deps}) ;;
+	*)
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (want deps:   '${local_deps}')"
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (remote deps: '${remote_deps}')"
 		return
 		;;
 	esac
@@ -3049,7 +3070,7 @@ download_from_repo() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "download_from_repo requires PWD=${MASTERMNT}/.p"
 	local pkgname originspec listed ignored pkg_bin packagesite
-	local remote_all_pkgs remote_all_options wantedpkgs
+	local remote_all_pkgs remote_all_options wantedpkgs remote_all_deps
 
 	if ensure_pkg_installed; then
 		pkg_bin="${PKG_BIN}"
@@ -3075,6 +3096,7 @@ download_from_repo() {
 	# here. Grab all the options for comparison.
 	remote_all_pkgs=$(mktemp -t remote_all_pkgs)
 	remote_all_options=$(mktemp -t remote_all_options)
+	remote_all_deps=$(mktemp -t remote_all_deps)
 	# XXX: bootstrap+rquery could be done asynchronously during deps
 	# Bootstrapping might occur here.
 	# XXX: rquery is supposed to 'update' but it does not on first run.
@@ -3083,6 +3105,7 @@ download_from_repo() {
 	    ${pkg_bin} update -f
 	injail ${pkg_bin} rquery -U '%n %Ok %Ov' > "${remote_all_options}"
 	injail ${pkg_bin} rquery -U '%n %n-%v %?O' > "${remote_all_pkgs}"
+	injail ${pkg_bin} rquery -U '%n %dn-%dv' > "${remote_all_deps}"
 
 	# Ensure we always fetch pkg as the *wanted* version may not
 	# match the remote's returned one but we still want to use
@@ -3111,11 +3134,11 @@ download_from_repo() {
 			parallel_run download_from_repo_check_pkg \
 			    "${pkgname}" \
 			    "${remote_all_options}" "${remote_all_pkgs}" \
-			    "${wantedpkgs}"
+			    "${remote_all_deps}" "${wantedpkgs}"
 		fi
 	done
 	parallel_stop
-	rm -f "${remote_all_pkgs}" "${remote_all_options}"
+	rm -f "${remote_all_pkgs}" "${remote_all_options}" "${remote_all_deps}"
 
 	remount_packages -o rw
 	cat "${wantedpkgs}" | JNETNAME="n" injail xargs \
