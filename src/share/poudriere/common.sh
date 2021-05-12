@@ -2991,10 +2991,65 @@ jail_cleanup() {
 	export CLEANED_UP=1
 }
 
+download_from_repo_check_pkg() {
+	[ $# -eq 4 ] || eargs download_from_repo_check_pkg pkgname \
+	    remote_all_options remote_all_pkgs output
+	local pkgname="$1"
+	local remote_all_options="$2"
+	local remote_all_pkgs="$3"
+	local output="$4"
+	local pkgbase bpkg selected_options remote_options found
+
+	# The options checks here are not optimized because we lack goto.
+	pkgbase="${pkgname%-*}"
+
+	# Skip blacklisted packages
+	for bpkg in ${PACKAGE_FETCH_BLACKLIST}; do
+		case "${pkgbase}" in
+		${bpkg})
+			msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (blacklisted)"
+			return
+			;;
+		esac
+	done
+	found=$(awk -v pkgname="${pkgname}" -vpkgbase="${pkgbase}" \
+	    '$1 == pkgbase {print $2}' "${remote_all_pkgs}")
+	if [ -z "${found}" ]; then
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (not found in remote)"
+		return
+	fi
+	# Version mismatch
+	if [ "${found}" != "${pkgname}" ]; then
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (remote version mismatch: ${COLOR_PORT}${found}${COLOR_RESET})"
+		return
+	fi
+
+	remote_options=$(awk -vpkgbase="${pkgbase}" ' \
+	    $1 == pkgbase && $3 == "on" {print $2}' \
+	    "${remote_all_options}" | sort | paste -s -d ' ' -)
+
+	shash_get pkgname-options "${pkgname}" selected_options || \
+	    selected_options=
+
+	# Options mismatch
+	case "${selected_options}" in
+	${remote_options}) ;;
+	*)
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (want:   '${selected_options}')"
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (remote: '${remote_options}')"
+		return
+		;;
+	esac
+
+	msg_verbose "Package fetch: Will fetch ${COLOR_PORT}${pkgname}${COLOR_RESET}"
+	echo "${pkgname}" >> "${output}"
+}
+
 download_from_repo() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "download_from_repo requires PWD=${MASTERMNT}/.p"
-	local pkgname originspec listed pkg_bin pkgname packagesite
+	local pkgname originspec listed pkg_bin packagesite
+	local remote_all_pkgs remote_all_options wantedpkgs
 
 	if ensure_pkg_installed; then
 		pkg_bin="${PKG_BIN}"
@@ -3013,45 +3068,56 @@ download_from_repo() {
 		msg "not fetching remote packages in dry run mode."
 		return
 	fi
-	remount_packages -o rw
-	{
-		# Ensure we always fetch pkg as the *wanted* version may not
-		# match the remote's returned one but we still want to use
-		# what it sends back.
-		echo "ports-mgmt/pkg"
-		# only list packages which do not exists to prevent pkg
-		# from overwriting prebuilt packages
-		# XXX only work when PKG_EXT is the same as the upstream
-		while mapfile_read_loop "all_pkgs" pkgname originspec listed; do
-			local bpkg
+	wantedpkgs=$(mktemp -t wantedpkgs)
 
-			# Skip blacklisted packages
-			for bpkg in ${PACKAGE_FETCH_BLACKLIST}; do
-				case "${pkgname%-*}" in
-				${bpkg})
-					msg_verbose "PACKAGE_FETCH_BLACKLIST: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}" >&2
-					continue 2
-					;;
+	# pkg insists on creating a local.sqlite even if we won't use it
+	# (like pkg rquery -U), and it uses various locking that isn't needed
+	# here. Grab all the options for comparison.
+	remote_all_pkgs=$(mktemp -t remote_all_pkgs)
+	remote_all_options=$(mktemp -t remote_all_options)
+	# XXX: bootstrap+rquery could be done asynchronously during deps
+	# Bootstrapping might occur here.
+	# XXX: rquery is supposed to 'update' but it does not on first run.
+	JNETNAME="n" injail env ASSUME_ALWAYS_YES=yes \
+	    PACKAGESITE="${packagesite}" \
+	    ${pkg_bin} update -f
+	injail ${pkg_bin} rquery -U '%n %Ok %Ov' > "${remote_all_options}"
+	injail ${pkg_bin} rquery -U '%n %n-%v %?O' > "${remote_all_pkgs}"
+
+	# Ensure we always fetch pkg as the *wanted* version may not
+	# match the remote's returned one but we still want to use
+	# what it sends back.
+	echo "ports-mgmt/pkg" > "${wantedpkgs}"
+	parallel_start
+	# only list packages which do not exists to prevent pkg
+	# from overwriting prebuilt packages
+	while mapfile_read_loop "all_pkgs" pkgname originspec listed; do
+		# Skip listed packages when testing
+		if [ "${PORTTESTING}" -eq 1 ]; then
+			if [ "${CLEAN:-0}" -eq 1 ] || \
+			    [ "${CLEAN_LISTED:-0}" -eq 1 ]; then
+				case "${listed}" in
+				listed) continue ;;
 				esac
-			done
-
-			# Skip listed packages when testing
-			if [ "${PORTTESTING}" -eq 1 ]; then
-				if [ "${CLEAN:-0}" -eq 1 ] || \
-				    [ "${CLEAN_LISTED:-0}" -eq 1 ]; then
-					case "${listed}" in
-					listed) continue ;;
-					esac
-				fi
 			fi
-			[ -f "${PACKAGES}/All/${pkgname}.${PKG_EXT}" ] || \
-			    echo "${pkgname}"
-		done
-	} | JNETNAME="n" injail xargs \
+		fi
+		# XXX only work when PKG_EXT is the same as the upstream
+		if [ ! -f "${PACKAGES}/All/${pkgname}.${PKG_EXT}" ]; then
+			parallel_run download_from_repo_check_pkg \
+			    "${pkgname}" \
+			    "${remote_all_options}" "${remote_all_pkgs}" \
+			    "${wantedpkgs}"
+		fi
+	done
+	parallel_stop
+	rm -f "${remote_all_pkgs}" "${remote_all_options}"
+
+	remount_packages -o rw
+	cat "${wantedpkgs}" | JNETNAME="n" injail xargs \
 		    env ASSUME_ALWAYS_YES=yes PACKAGESITE="${packagesite}" \
-		    ${pkg_bin} fetch -o /packages
-	# Ensure pkg has a proper symlink
+		    ${pkg_bin} fetch -U -o /packages
 	remount_packages -o ro
+	rm -f "${wantedpkgs}"
 	# Bootstrapped.  Need to setup symlinks.
 	if [ "${pkg_bin}" = "pkg" ]; then
 		pkgname=$(injail pkg query %n-%v pkg)
