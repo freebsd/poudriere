@@ -3048,7 +3048,7 @@ download_from_repo_check_pkg() {
 download_from_repo() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "download_from_repo requires PWD=${MASTERMNT}/.p"
-	local pkgname originspec listed pkg_bin packagesite
+	local pkgname originspec listed ignored pkg_bin packagesite
 	local remote_all_pkgs remote_all_options wantedpkgs
 
 	if ensure_pkg_installed; then
@@ -3091,7 +3091,12 @@ download_from_repo() {
 	parallel_start
 	# only list packages which do not exists to prevent pkg
 	# from overwriting prebuilt packages
-	while mapfile_read_loop "all_pkgs" pkgname originspec listed; do
+	while mapfile_read_loop "all_pkgs" pkgname originspec listed \
+	    ignored; do
+		# Skip ignored ports
+		if [ -n "${ignored}" ]; then
+			continue
+		fi
 		# Skip listed packages when testing
 		if [ "${PORTTESTING}" -eq 1 ]; then
 			if [ "${CLEAN:-0}" -eq 1 ] || \
