@@ -3172,7 +3172,7 @@ sanity_check_pkg() {
 	for dep_pkgname in ${compiled_deps_pkgnames}; do
 		if [ ! -e "${PACKAGES}/All/${dep_pkgname}.${PKG_EXT}" ]; then
 			msg_debug "${pkg} needs missing ${PACKAGES}/All/${dep_pkgname}.${PKG_EXT}"
-			msg "Deleting ${pkg##*/}: missing dependency: ${dep_pkgname}"
+			msg "Deleting ${COLOR_PORT}${pkg##*/}${COLOR_RESET}: missing dependency: ${COLOR_PORT}${dep_pkgname}${COLOR_RESET}"
 			delete_pkg "${pkg}"
 			return 65	# Package deleted, need another pass
 		fi
@@ -5139,7 +5139,7 @@ delete_old_pkg() {
 	if shash_remove pkgname-forbidden "${pkgname}" ignore; then
 		shash_get pkgname-ignore "${pkgname}" ignore || \
 		    ignore="is forbidden"
-		msg "Deleting ${pkg##*/}: ${ignore}"
+		msg "Deleting ${COLOR_PORT}${pkg##*/}${COLOR_RESET}: ${ignore}"
 		delete_pkg "${pkg}"
 		return 0
 	fi
@@ -5148,7 +5148,7 @@ delete_old_pkg() {
 	pkg_dep_args=
 	originspec=
 	if ! pkg_get_origin origin "${pkg}"; then
-		msg "Deleting ${pkg##*/}: corrupted package"
+		msg "Deleting ${COLOR_PORT}${pkg##*/}${COLOR_RESET}: corrupted package"
 		delete_pkg "${pkg}"
 		return 0
 	fi
@@ -5166,10 +5166,10 @@ delete_old_pkg() {
 		    "${pkg_flavor}"
 		if ! originspec_is_needed_and_not_ignored "${originspec}"; then
 			if [ ${ALL} -eq 1 ]; then
-				msg "Deleting ${pkg##*/}: no longer needed"
+				msg "Deleting ${COLOR_PORT}${pkg##*/}${COLOR_RESET}: no longer needed"
 				delete_pkg "${pkg}"
 			else
-				msg_debug "delete_old_pkg: Skip unqueued ${pkg} ${originspec}"
+				msg_debug "delete_old_pkg: Skip unqueued ${COLOR_PORT}${pkg} | ${originspec}${COLOR_RESET}"
 			fi
 			return 0
 		fi
@@ -5189,7 +5189,7 @@ delete_old_pkg() {
 	_my_path mnt
 
 	if ! test_port_origin_exist "${origin}"; then
-		msg "Deleting ${pkg##*/}: stale package: nonexistent origin ${COLOR_PORT}${origin}${COLOR_RESET}"
+		msg "Deleting ${COLOR_PORT}${pkg##*/}${COLOR_RESET}: stale package: nonexistent origin ${COLOR_PORT}${origin}${COLOR_RESET}"
 		delete_pkg "${pkg}"
 		return 0
 	fi
@@ -5224,7 +5224,7 @@ delete_old_pkg() {
 		# with a different origin.  Such as lang/perl5.20 vs
 		# lang/perl5.22 both with 'perl5' as PKGBASE.  A pkgclean
 		# would handle removing this.
-		msg "Deleting ${pkg##*/}: stale package: unwanted origin ${COLOR_PORT}${originspec}${COLOR_RESET}"
+		msg "Deleting ${COLOR_PORT}${pkg##*/}${COLOR_RESET}: stale package: unwanted origin ${COLOR_PORT}${originspec}${COLOR_RESET}"
 		delete_pkg "${pkg}"
 		return 0
 	fi
@@ -5235,14 +5235,14 @@ delete_old_pkg() {
 	# version may show for a stale package that has been renamed.
 	# XXX: Check if the pkgname has changed and rename in the repo
 	if [ "${pkgbase}" != "${new_pkgbase}" ]; then
-		msg "Deleting ${pkg##*/}: package name changed to '${new_pkgbase}'"
+		msg "Deleting ${COLOR_PORT}${pkg##*/}${COLOR_RESET}: package name changed to '${COLOR_PORT}${new_pkgbase}${COLOR_RESET}'"
 		delete_pkg "${pkg}"
 		return 0
 	fi
 
 	v2=${new_pkgname##*-}
 	if [ "$v" != "$v2" ]; then
-		msg "Deleting ${pkg##*/}: new version: ${v2}"
+		msg "Deleting ${COLOR_PORT}${pkg##*/}${COLOR_RESET}: new version: ${v2}"
 		delete_pkg "${pkg}"
 		return 0
 	fi
@@ -5250,7 +5250,7 @@ delete_old_pkg() {
 	if have_ports_feature FLAVORS; then
 		shash_get pkgname-flavor "${pkgname}" flavor || flavor=
 		if [ "${pkg_flavor}" != "${flavor}" ]; then
-			msg "Deleting ${pkg##*/}: FLAVOR changed to '${flavor}' from '${pkg_flavor}'"
+			msg "Deleting ${COLOR_PORT}${pkg##*/}${COLOR_RESET}: FLAVOR changed to '${flavor}' from '${pkg_flavor}'"
 			delete_pkg "${pkg}"
 			return 0
 		fi
@@ -5373,7 +5373,7 @@ delete_old_pkg() {
 				    [ -n "${dep_flavor}" ]; then
 					get_pkgname_from_originspec \
 					    "${d}" dep_pkgname || \
-					    err 1 "delete_old_pkg: Failed to lookup PKGNAME for ${d}"
+					    err 1 "delete_old_pkg: Failed to lookup PKGNAME for ${COLOR_PORT}${d}${COLOR_RESET}"
 					dep_pkgbase="${dep_pkgname%-*}"
 					# Now need to map all of the package's
 					# dependencies to PKGBASES.
@@ -5384,7 +5384,7 @@ delete_old_pkg() {
 					*) ;;
 					esac
 				fi
-				msg "Deleting ${pkg##*/}: new dependency: ${d}"
+				msg "Deleting ${COLOR_PORT}${pkg##*/}${COLOR_RESET}: new dependency: ${COLOR_PORT}${d}${COLOR_RESET}"
 				delete_pkg "${pkg}"
 				return 0
 				;;
@@ -5414,7 +5414,7 @@ delete_old_pkg() {
 		pkg_get_options compiled_options "${pkg}"
 
 		if [ "${compiled_options}" != "${current_options}" ]; then
-			msg "Deleting ${pkg##*/}: changed options"
+			msg "Deleting ${COLOR_PORT}${pkg##*/}${COLOR_RESET}: changed options"
 			if [ "${CHECK_CHANGED_OPTIONS}" = "verbose" ]; then
 				msg "Pkg: ${compiled_options}"
 				msg "New: ${current_options}"
