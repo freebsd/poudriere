@@ -3050,7 +3050,7 @@ download_from_repo_check_pkg() {
 	local_deps=$(for dep in ${raw_deps}; do
 		get_pkgname_from_originspec "${dep#*:}" dep_pkgname || continue
 		echo "${dep_pkgname}"
-	done | sort | paste -s -d ' ' -)
+	done | sort -u | paste -s -d ' ' -)
 	remote_deps=$(awk -vpkgbase="${pkgbase}" '$1 == pkgbase {print $2}' \
 	    "${remote_all_deps}" | sort | paste -s -d ' ' -)
 	case "${local_deps}" in
