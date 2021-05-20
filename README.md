@@ -22,7 +22,7 @@ You can also open the poudriere's manpage, located in the 8th section.
 Support
 -------
 
-IRC:          [#poudriere](https://webchat.freenode.net/?channels=%23poudriere) on freenode  
+IRC:          #poudriere on EFNet
 Mailing list: [freebsd-pkg@FreeBSD.org (lists.freebsd.org)](https://lists.freebsd.org/mailman/listinfo/freebsd-pkg)
 
 Getting started with poudriere
