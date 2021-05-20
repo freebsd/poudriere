@@ -2891,14 +2891,14 @@ check_leftovers() {
 			esac
 			case ${l} in
 			*extra)
-				if [ -d ${mnt}/${l% *} ]; then
-					find ${mnt}/${l% *} -exec echo "+ {}" \;
+				if [ -d "${mnt}/${l% *}" ]; then
+					find "${mnt}/${l% *}" -exec echo "+ {}" \;
 				else
 					echo "+ ${mnt}/${l% *}"
 				fi
 				;;
 			*missing)
-				l=${l#./}
+				l="${l#./}"
 				echo "- ${mnt}/${l% *}"
 				;;
 			*changed)
@@ -2906,8 +2906,8 @@ check_leftovers() {
 				read_again=1
 				;;
 			extra:*)
-				if [ -d ${mnt}/${l#* } ]; then
-					find ${mnt}/${l#* } -exec echo "+ {}" \;
+				if [ -d "${mnt}/${l#* }" ]; then
+					find "${mnt}/${l#* }" -exec echo "+ {}" \;
 				else
 					echo "+ ${mnt}/${l#* }"
 				fi
