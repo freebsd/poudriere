@@ -3090,7 +3090,6 @@ download_from_repo() {
 	        url: ${packagesite};
 	}
 	EOF
-	wantedpkgs=$(mktemp -t wantedpkgs)
 
 	# pkg insists on creating a local.sqlite even if we won't use it
 	# (like pkg rquery -U), and it uses various locking that isn't needed
@@ -3113,6 +3112,7 @@ download_from_repo() {
 	# what it sends back.
 	echo "ports-mgmt/pkg" > "${wantedpkgs}"
 	parallel_start
+	wantedpkgs=$(mktemp -t wantedpkgs)
 	# only list packages which do not exists to prevent pkg
 	# from overwriting prebuilt packages
 	while mapfile_read_loop "all_pkgs" pkgname originspec listed \
