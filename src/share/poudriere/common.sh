@@ -3071,9 +3071,39 @@ download_from_repo() {
 	    err 1 "download_from_repo requires PWD=${MASTERMNT}/.p"
 	local pkgname originspec listed ignored pkg_bin packagesite
 	local remote_all_pkgs remote_all_options wantedpkgs remote_all_deps
+	local missing_pkgs
 
 	if [ "${DRY_RUN:-0}" -eq 1 ]; then
 		msg "not fetching remote packages in dry run mode."
+		return
+	fi
+
+	# only list packages which do not exists to prevent pkg
+	# from overwriting prebuilt packages
+	missing_pkgs=$(mktemp -t missing_pkgs)
+	while mapfile_read_loop "all_pkgs" pkgname originspec listed \
+	    ignored; do
+		# Skip ignored ports
+		if [ -n "${ignored}" ]; then
+			continue
+		fi
+		# Skip listed packages when testing
+		if [ "${PORTTESTING}" -eq 1 ]; then
+			if [ "${CLEAN:-0}" -eq 1 ] || \
+			    [ "${CLEAN_LISTED:-0}" -eq 1 ]; then
+				case "${listed}" in
+				listed) continue ;;
+				esac
+			fi
+		fi
+		# XXX only work when PKG_EXT is the same as the upstream
+		if [ ! -f "${PACKAGES}/All/${pkgname}.${PKG_EXT}" ]; then
+			echo "${pkgname}"
+		fi
+	done > "${missing_pkgs}"
+	if [ ! -s "${missing_pkgs}" ]; then
+		msg_verbose "Package fetch: No missing packages to fetch"
+		rm -f "${missing_pkgs}"
 		return
 	fi
 
@@ -3107,39 +3137,27 @@ download_from_repo() {
 	injail ${pkg_bin} rquery -U '%n %n-%v %?O' > "${remote_all_pkgs}"
 	injail ${pkg_bin} rquery -U '%n %dn-%dv' > "${remote_all_deps}"
 
+	parallel_start
+	wantedpkgs=$(mktemp -t wantedpkgs)
+	while mapfile_read_loop "${missing_pkgs}" pkgname; do
+		parallel_run download_from_repo_check_pkg \
+		    "${pkgname}" \
+		    "${remote_all_options}" "${remote_all_pkgs}" \
+		    "${remote_all_deps}" "${wantedpkgs}"
+	done
+	parallel_stop
+	rm -f "${missing_pkgs}" \
+	    "${remote_all_pkgs}" "${remote_all_options}" "${remote_all_deps}"
+
+	if [ ! -s "${wantedpkgs}" ]; then
+		msg_verbose "Package fetch: No packages eligible to fetch"
+		rm -f "${wantedpkgs}"
+		return
+	fi
 	# Ensure we always fetch pkg as the *wanted* version may not
 	# match the remote's returned one but we still want to use
 	# what it sends back.
-	echo "ports-mgmt/pkg" > "${wantedpkgs}"
-	parallel_start
-	wantedpkgs=$(mktemp -t wantedpkgs)
-	# only list packages which do not exists to prevent pkg
-	# from overwriting prebuilt packages
-	while mapfile_read_loop "all_pkgs" pkgname originspec listed \
-	    ignored; do
-		# Skip ignored ports
-		if [ -n "${ignored}" ]; then
-			continue
-		fi
-		# Skip listed packages when testing
-		if [ "${PORTTESTING}" -eq 1 ]; then
-			if [ "${CLEAN:-0}" -eq 1 ] || \
-			    [ "${CLEAN_LISTED:-0}" -eq 1 ]; then
-				case "${listed}" in
-				listed) continue ;;
-				esac
-			fi
-		fi
-		# XXX only work when PKG_EXT is the same as the upstream
-		if [ ! -f "${PACKAGES}/All/${pkgname}.${PKG_EXT}" ]; then
-			parallel_run download_from_repo_check_pkg \
-			    "${pkgname}" \
-			    "${remote_all_options}" "${remote_all_pkgs}" \
-			    "${remote_all_deps}" "${wantedpkgs}"
-		fi
-	done
-	parallel_stop
-	rm -f "${remote_all_pkgs}" "${remote_all_options}" "${remote_all_deps}"
+	echo "ports-mgmt/pkg" >> "${wantedpkgs}"
 
 	remount_packages -o rw
 	cat "${wantedpkgs}" | JNETNAME="n" injail xargs \
