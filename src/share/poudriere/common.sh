@@ -3072,6 +3072,11 @@ download_from_repo() {
 	local pkgname originspec listed ignored pkg_bin packagesite
 	local remote_all_pkgs remote_all_options wantedpkgs remote_all_deps
 
+	if [ "${DRY_RUN:-0}" -eq 1 ]; then
+		msg "not fetching remote packages in dry run mode."
+		return
+	fi
+
 	if ensure_pkg_installed; then
 		pkg_bin="${PKG_BIN}"
 	else
@@ -3085,10 +3090,6 @@ download_from_repo() {
 	        url: ${packagesite};
 	}
 	EOF
-	if [ "${DRY_RUN:-0}" -eq 1 ]; then
-		msg "not fetching remote packages in dry run mode."
-		return
-	fi
 	wantedpkgs=$(mktemp -t wantedpkgs)
 
 	# pkg insists on creating a local.sqlite even if we won't use it
