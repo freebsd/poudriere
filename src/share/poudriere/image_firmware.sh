@@ -32,6 +32,9 @@
 CFG_SIZE='32m'
 DATA_SIZE='32m'
 
+# ESP_SIZE set the EFI system partition size in MB
+ESP_SIZE=10
+
 firmware_check()
 {
 
@@ -96,7 +99,7 @@ firmware_build()
 	OS_SIZE=
 	calculate_ospart_size "2" "${NEW_IMAGESIZE_SIZE}" "${CFG_SIZE}" "${DATA_SIZE}" "${SWAPSIZE}"
 	# Prune off a bit to fit the extra partitions and loaders
-	OS_SIZE=$(( $OS_SIZE - 1 ))
+	OS_SIZE=$(( OS_SIZE - 1 - ESP_SIZE / 2 ))
 	WORLD_SIZE=$(du -ms ${WRKDIR}/world | awk '{print $1}')
 	if [ ${WORLD_SIZE} -gt ${OS_SIZE} ]; then
 		err 2 "Installed OS Partition needs: ${WORLD_SIZE}m, but the OS Partitions are only: ${OS_SIZE}m.  Increase -s"
@@ -117,14 +120,16 @@ firmware_generate()
 {
 
 	FINALIMAGE=${IMAGENAME}.img
-	SWAPCMD="-p freebsd-swap/swapspace::${SWAPSIZE}"
-	if [ $SWAPBEFORE -eq 1 ]; then
-		SWAPFIRST="$SWAPCMD"
-	else
-		SWAPLAST="$SWAPCMD"
+	if [ ${SWAPSIZE} != "0" ]; then
+		SWAPCMD="-p freebsd-swap/swapspace::${SWAPSIZE}"
+		if [ $SWAPBEFORE -eq 1 ]; then
+			SWAPFIRST="$SWAPCMD"
+		else
+			SWAPLAST="$SWAPCMD"
+		fi
 	fi
 	espfilename=$(mktemp /tmp/efiboot.XXXXXX)
-	make_esp_file ${espfilename} 10 ${WRKDIR}/world/boot/loader.efi
+	make_esp_file ${espfilename} ${ESP_SIZE} ${WRKDIR}/world/boot/loader.efi
 	mkimg -s gpt -C ${IMAGESIZE} -b ${mnt}/boot/pmbr \
 		-p efi:=${espfilename} \
 		-p freebsd-boot:=${mnt}/boot/gptboot \
