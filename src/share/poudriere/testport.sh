@@ -256,6 +256,7 @@ if [ $(bget stats_failed) -gt 0 ] || [ $(bget stats_skipped) -gt 0 ]; then
 	    msg "${COLOR_SKIP}Skipped ports: ${COLOR_PORT}${skipped}"
 
 	bset_job_status "failed/depends" "${ORIGINSPEC}" "${PKGNAME}"
+	show_log_info
 	set +e
 	exit 1
 fi
