@@ -2768,6 +2768,7 @@ jail_start() {
 		    "${tomnt}${PREFIX:-/usr/local}" \
 		    "${tomnt}/usr/home" \
 		    "${tomnt}/boot/modules" \
+		    "${tomnt}/boot/firmware" \
 		    "${tomnt}/boot"
 		if [ -n "${CCACHE_STATIC_PREFIX}" ] && \
 			[ -x "${CCACHE_STATIC_PREFIX}/bin/ccache" ]; then
@@ -4179,6 +4180,7 @@ parallel_build() {
 
 		find -xs "${MASTERMNT}/boot" -mindepth 1 -maxdepth 1 \
 		    \( -depth 1 -name 'modules' -prune \) -o \
+		    \( -depth 1 -name 'firmware' -prune \) -o \
 		    -flags +schg -print | \
 		    sed -e "s,^${MASTERMNT}/boot/,," >> \
 		    "${MASTERMNT}/boot/.cpignore"
