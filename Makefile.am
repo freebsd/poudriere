@@ -30,19 +30,19 @@ EXTRA_DIST=	\
 
 dist_bin_SCRIPTS=	poudriere
 
-dist_man_MANS=	src/bin/poudriere.8 \
-		src/bin/poudriere-bulk.8 \
-		src/bin/poudriere-distclean.8 \
-		src/bin/poudriere-image.8 \
-		src/bin/poudriere-jail.8 \
-		src/bin/poudriere-logclean.8 \
-		src/bin/poudriere-options.8 \
-		src/bin/poudriere-pkgclean.8 \
-		src/bin/poudriere-ports.8 \
-		src/bin/poudriere-queue.8 \
-		src/bin/poudriere-status.8 \
-		src/bin/poudriere-testport.8 \
-		src/bin/poudriere-version.8
+dist_man_MANS=	src/man/poudriere.8 \
+		src/man/poudriere-bulk.8 \
+		src/man/poudriere-distclean.8 \
+		src/man/poudriere-image.8 \
+		src/man/poudriere-jail.8 \
+		src/man/poudriere-logclean.8 \
+		src/man/poudriere-options.8 \
+		src/man/poudriere-pkgclean.8 \
+		src/man/poudriere-ports.8 \
+		src/man/poudriere-queue.8 \
+		src/man/poudriere-status.8 \
+		src/man/poudriere-testport.8 \
+		src/man/poudriere-version.8
 
 dist_sysconf_DATA=	\
 		src/etc/poudriere.conf.sample \
