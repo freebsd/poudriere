@@ -220,9 +220,9 @@ export MASTERNAME
 export MASTERMNT
 export POUDRIERE_BUILD_TYPE=bulk
 
-CLEANUP_HOOK=bulk_cleanup
-
 read_packages_from_params "$@"
+
+CLEANUP_HOOK=bulk_cleanup
 
 run_hook bulk start
 
