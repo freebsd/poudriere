@@ -6842,11 +6842,11 @@ test_port_origin_exist() {
 	local o
 
 	for o in ${OVERLAYS}; do
-		if [ -d "${MASTERMNTREL}${OVERLAYSDIR}/${o}/${_origin}" ]; then
+		if [ -d "${MASTERMNTREL}${OVERLAYSDIR:?}/${o}/${_origin}" ]; then
 			return 0
 		fi
 	done
-	if [ -d "${MASTERMNTREL}/${PORTSDIR}/${_origin}" ]; then
+	if [ -d "${MASTERMNTREL}/${PORTSDIR:?}/${_origin}" ]; then
 		return 0
 	fi
 	return 1

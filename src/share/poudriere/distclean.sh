@@ -66,7 +66,7 @@ while getopts "af:J:np:vy" FLAG; do
 			# a cd / was done.
 			[ "${OPTARG#/}" = "${OPTARG}" ] && \
 			    OPTARG="${SAVED_PWD}/${OPTARG}"
-			LISTPKGS="${LISTPKGS} ${OPTARG}"
+			LISTPKGS="${LISTPKGS:+${LISTPKGS} }${OPTARG}"
 			;;
 		J)
 			PREPARE_PARALLEL_JOBS=${OPTARG}
