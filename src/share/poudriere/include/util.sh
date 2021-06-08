@@ -106,7 +106,7 @@ decode_args_vars() {
 
 if ! type issetvar >/dev/null 2>&1; then
 issetvar() {
-	[ $# -eq 1 ] || eargs issetvar
+	[ $# -eq 1 ] || eargs issetvar var
 	local var="$1"
 	local _evalue
 
