@@ -2892,7 +2892,7 @@ include_poudriere_confs() {
 
 	# msg_debug is not properly setup this early for VERBOSE to be set
 	# so spy on -v and set debug and use it locally instead.
-	debug=0
+	debug=${VERBOSE:-0}
 	# Spy on cmdline arguments so this function is not needed in
 	# every new sub-command file, which could lead to missing it.
 	args_hack=$(echo " $@"|grep -Eo -- ' -[^jpvz ]*([jpz] ?[^ ]*|v+)'|tr '\n' ' '|sed -Ee 's, -[^jpvz ]*([jpz]|v+) ?([^ ]*),-\1 \2,g')
