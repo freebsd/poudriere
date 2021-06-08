@@ -5394,7 +5394,7 @@ delete_old_pkg() {
 						# foo.x
 						# Unsupported since r362031 / July 2014
 						# Keep for backwards-compatibility
-						[ -n "${CHANGED_DEPS_LIBLIST}" ] \
+						[ -n "${CHANGED_DEPS_LIBLIST}" ] || \
 						    err 1 "CHANGED_DEPS_LIBLIST not set"
 						case " ${CHANGED_DEPS_LIBLIST} " in
 							*\ ${key}\ *)
