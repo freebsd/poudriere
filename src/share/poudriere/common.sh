@@ -819,6 +819,7 @@ buildlog_start() {
 	local originspec="$2"
 	local mnt var portdir
 	local make_vars
+	local git_modified git_hash
 	local wanted_vars="
 	    MAINTAINER
 	    CONFIGURE_ARGS
@@ -847,6 +848,20 @@ buildlog_start() {
 	echo "building for: $(injail uname -a)"
 	echo "maintained by: ${mk_MAINTAINER}"
 	echo "Makefile datestamp: $(ls -l ${mnt}/${portdir}/Makefile)"
+	if [ -x "${GIT_CMD}" ] && [ -r "${mnt}/${portdir}/../../.git" ]; then
+		git_hash=$(${GIT_CMD} -C "${mnt}/${portdir}" log -1 --format=%h .)
+		echo "Port last git commit: ${git_hash}"
+		pkg_note_add "${pkgname}" Port_Git_Hash "${git_hash}"
+		git_modified=no
+		if ! ${GIT_CMD} -C "${mnt}/${portdir}" \
+		    -c core.checkStat=minimal \
+		    -c core.fileMode=off \
+		    diff --quiet .; then
+			git_modified=yes
+		fi
+		pkg_note_add "${pkgname}" Port_Checkout_Unclean "${git_modified}"
+		echo "Port unclean checkout: ${git_modified}"
+	fi
 	echo "Poudriere version: ${POUDRIERE_VERSION}"
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
 	echo "Jail OSVERSION: ${JAIL_OSVERSION}"
@@ -1792,7 +1807,8 @@ enter_interactive() {
 		msg "Installing ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
 		# Only use PKGENV during install as testport will store
 		# the package in a different place than dependencies
-		injail env USE_PACKAGE_DEPENDS_ONLY=1 ${PKGENV} \
+		injail /usr/bin/env ${PKGENV:+-S "${PKGENV}"} \
+		    USE_PACKAGE_DEPENDS_ONLY=1 \
 		    /usr/bin/make -C "${portdir}" ${dep_args} \
 		    ${flavor:+FLAVOR=${flavor}} install-package ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
@@ -3459,9 +3475,9 @@ build_port() {
 	# proper files, otherwise they'll hit 'package already installed'
 	# errors.
 	if [ "${PORTTESTING}" -eq 0 ]; then
-		PORT_FLAGS="${PORT_FLAGS} NO_DEPENDS=yes"
+		PORT_FLAGS="${PORT_FLAGS:+${PORT_FLAGS} }NO_DEPENDS=yes"
 	else
-		PORT_FLAGS="${PORT_FLAGS} STRICT_DEPENDS=yes"
+		PORT_FLAGS="${PORT_FLAGS:+${PORT_FLAGS} }STRICT_DEPENDS=yes"
 	fi
 
 	for phase in ${targets}; do
@@ -3471,11 +3487,11 @@ build_port() {
 		bset_job_status "${phase}" "${originspec}" "${pkgname}"
 		job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
 		[ "${PORTTESTING}" -eq 1 ] && \
-		    phaseenv="${phaseenv} DEVELOPER_MODE=yes"
+		    phaseenv="${phaseenv:+${phaseenv} }DEVELOPER_MODE=yes"
 		case ${phase} in
 		check-sanity|patch)
 			[ "${PORTTESTING}" -eq 1 ] && \
-			    phaseenv="${phaseenv} DEVELOPER=1"
+			    phaseenv="${phaseenv:+${phaseenv} }DEVELOPER=1"
 			;;
 		fetch)
 			mkdir -p ${mnt}/portdistfiles
@@ -3570,7 +3586,8 @@ build_port() {
 
 		if [ "${phase#*-}" = "depends" ]; then
 			# No need for nohang or PORT_FLAGS for *-depends
-			injail /usr/bin/env USE_PACKAGE_DEPENDS_ONLY=1 ${phaseenv} \
+			injail /usr/bin/env ${phaseenv:+-S "${phaseenv}"} \
+			    USE_PACKAGE_DEPENDS_ONLY=1 \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    ${phase} || return 1
 		else
@@ -3579,15 +3596,17 @@ build_port() {
 			# Also enable during stage/install since it now
 			# uses a pkg for pkg_tools
 			if [ "${phase}" = "package" ]; then
-				pkgenv="${PKGENV}"
+				pkg_notes_get "${pkgname}" "${PKGENV}" pkgenv
 			else
 				pkgenv=
 			fi
+			phaseenv="${phaseenv:+${phaseenv}${pkgenv:+ }}${pkgenv}"
+			phaseenv="${phaseenv:+${phaseenv}${PORT_FLAGS:+ }}${PORT_FLAGS}"
 
 			nohang ${max_execution_time} ${NOHANG_TIME} \
 				"${log}/logs/${pkgname}.log" \
-				${MASTERMNT}/.p/var/run/${MY_JOBID:-00}_nohang.pid \
-				injail /usr/bin/env ${pkgenv} ${phaseenv} ${PORT_FLAGS} \
+				"${MASTERMNT}/.p/var/run/${MY_JOBID:-00}_nohang.pid" \
+				injail /usr/bin/env ${phaseenv:+-S "${phaseenv}"} \
 				/usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 				${phase}
 			hangstatus=$? # This is done as it may return 1 or 2 or 3
@@ -3627,7 +3646,8 @@ build_port() {
 			local die=0
 
 			bset_job_status "stage-qa" "${originspec}" "${pkgname}"
-			if ! injail /usr/bin/env DEVELOPER=1 ${PORT_FLAGS} \
+			if ! injail /usr/bin/env DEVELOPER=1 \
+			    ${PORT_FLAGS:=-S "${PORT_FLAGS}"} \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    stage-qa; then
 				msg "Error: stage-qa failures detected"
@@ -3638,7 +3658,9 @@ build_port() {
 
 			bset_job_status "check-plist" "${originspec}" \
 			    "${pkgname}"
-			if ! injail /usr/bin/env DEVELOPER=1 ${PORT_FLAGS} \
+			if ! injail /usr/bin/env \
+			    ${PORT_FLAGS:+-S "${PORT_FLAGS}"} \
+			    DEVELOPER=1 \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    check-plist; then
 				msg "Error: check-plist failures detected"
@@ -3673,10 +3695,12 @@ build_port() {
 				touch "${add}" "${del}" "${mod}" || :
 			else
 				check_leftovers ${mnt} | sed -e "s|${mnt}||" |
-				    injail /usr/bin/env PORTSDIR=${PORTSDIR} \
+				    injail /usr/bin/env \
+				    ${PORT_FLAGS:+-S "${PORT_FLAGS}"} \
+				    PORTSDIR=${PORTSDIR} \
 				    UID_FILES="${P_UID_FILES}" \
 				    portdir="${portdir}" \
-				    ${PORT_FLAGS} /bin/sh \
+				    /bin/sh \
 				    ${PORTSDIR}/Mk/Scripts/check_leftovers.sh \
 				    ${port} | while \
 				    mapfile_read_loop_redir modtype data; do
@@ -3738,6 +3762,35 @@ may show failures if the port does not respect PREFIX."
 
 	bset_job_status "build_port_done" "${originspec}" "${pkgname}"
 	return ${testfailure}
+}
+
+pkg_note_add() {
+	[ $# -eq 3 ] || eargs pkg_note_add pkgname key value
+	local pkgname="$1"
+	local key="$2"
+	local value="$3"
+	local notes
+
+	hash_set "pkgname-notes-${key}" "${pkgname}"  "${value}"
+	hash_get pkgname-notes "${pkgname}" notes || notes=
+	notes="${notes:+${notes} }${key}"
+	hash_set pkgname-notes "${pkgname}" "${notes}"
+}
+
+pkg_notes_get() {
+	[ $# -eq 3 ] || eargs pkg_notes_get pkgname PKGENV PKGENV_var
+	local pkgname="$1"
+	local _pkgenv="$2"
+	local _pkgenv_var="$3"
+	local notes key value
+
+	hash_remove pkgname-notes "${pkgname}" notes || return 0
+	_pkgenv="${_pkgenv:+${_pkgenv} }'PKG_NOTES=${notes}'"
+	for key in ${notes}; do
+		hash_remove "pkgname-notes-${key}" "${pkgname}" value || value=
+		_pkgenv="${_pkgenv} 'PKG_NOTE_${key}=${value}'"
+	done
+	setvar "${_pkgenv_var}" "${_pkgenv}"
 }
 
 # Save wrkdir and return path to file
@@ -4334,7 +4387,7 @@ build_pkg() {
 
 	MAKE_ARGS="${DEPENDS_ARGS}${FLAVOR:+ FLAVOR=${FLAVOR}}"
 	if [ -n "${DEPENDS_ARGS}" ]; then
-		PKGENV="${PKGENV:+${PKGENV} }PKG_NOTES=depends_args PKG_NOTE_depends_args=${DEPENDS_ARGS}"
+		pkg_note_add "${pkgname}" depends_args "${DEPENDS_ARGS}"
 	fi
 	_lookup_portdir portdir "${port}"
 
