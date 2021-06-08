@@ -37,7 +37,7 @@ usb_check()
 
 usb_prepare()
 {
-
+	:
 }
 
 usb_build()

@@ -43,6 +43,7 @@ firmware_check()
 
 firmware_prepare()
 {
+	:
 }
 
 firmware_build()
@@ -151,6 +152,7 @@ rawfirmware_check()
 
 rawfirmware_prepare()
 {
+	:
 }
 
 rawfirmware_build()
