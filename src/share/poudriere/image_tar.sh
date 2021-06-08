@@ -28,10 +28,12 @@
 
 tar_check()
 {
+	:
 }
 
 tar_prepare()
 {
+	:
 }
 
 tar_build()

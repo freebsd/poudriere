@@ -42,6 +42,7 @@ iso_check()
 
 iso_prepare()
 {
+	:
 }
 
 iso_build()

@@ -43,6 +43,7 @@ hybridiso_check()
 
 hybridiso_prepare()
 {
+	:
 }
 
 hybridiso_build()
