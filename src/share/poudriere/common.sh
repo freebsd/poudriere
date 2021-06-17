@@ -29,6 +29,7 @@
 BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
 . ${SCRIPTPREFIX}/include/common.sh.${BSDPLATFORM}
 EX_SOFTWARE=70
+SHFLAGS="$-"
 
 # Return true if ran from bulk/testport, ie not daemon/status/jail
 was_a_bulk_run() {
@@ -69,6 +70,10 @@ not_for_os() {
 }
 
 err() {
+	case "${SHFLAGS}" in
+	*x*) ;;
+	*) local -; set +x ;;
+	esac
 	trap '' INFO
 	export CRASHED=1
 	if [ $# -ne 2 ]; then
@@ -1158,6 +1163,10 @@ sig_handler() {
 }
 
 exit_handler() {
+	case "${SHFLAGS}" in
+	*x*) ;;
+	*) local -; set +x ;;
+	esac
 	# Ignore errors while cleaning up
 	set +e
 	ERRORS_ARE_FATAL=0
