@@ -298,6 +298,7 @@ update_jail() {
 		FREEBSD_UPDATE="${FREEBSD_UPDATE} --currently-running ${version}"
 		FREEBSD_UPDATE="${FREEBSD_UPDATE} -f ${JAILMNT}/etc/freebsd-update.conf"
 
+		export_cross_env "${ARCH}" "${version}"
 		if [ -z "${TORELEASE}" ]; then
 			# New updates are identified by a symlink containing
 			# the basedir hash and -install as suffix.  If we
@@ -317,6 +318,7 @@ update_jail() {
 			yes | ${FREEBSD_UPDATE} install || :
 			jset ${JAILNAME} version ${TORELEASE}
 		fi
+		unset_cross_env
 
 		rm -f "${fu_bin}"
 		update_version

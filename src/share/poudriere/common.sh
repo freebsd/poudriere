@@ -2492,6 +2492,24 @@ update_version_env() {
 	    err 1 "cap_mkdb for the jail failed."
 }
 
+export_cross_env() {
+	[ $# -eq 2 ] || eargs cross_env arch version
+	local arch="$1"
+	local version="$2"
+
+	export "UNAME_r=${version% *}"
+	export "UNAME_v=FreeBSD ${version}"
+	export "UNAME_m=${arch%.*}"
+	export "UNAME_p=${arch#*.}"
+}
+
+unset_cross_env() {
+	unset UNAME_r
+	unset UNAME_v
+	unset UNAME_m
+	unset UNAME_p
+}
+
 jail_start() {
 	[ $# -lt 2 ] && eargs jail_start name ptname setname
 	local name=$1
