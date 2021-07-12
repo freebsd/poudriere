@@ -211,7 +211,7 @@ convert_package_list() {
 	export REPOS_DIR PKG_DBDIR
 	# Always need this from host.
 	export ABI_FILE="${WRKDIR}/world/usr/lib/crt1.o"
-	pkg update >/dev/null || :
+	pkg -o ASSUME_ALWAYS_YES=yes update  >/dev/null || :
 	pkg rquery '%At %o@%Av %n-%v' | \
 	    awk -v pkglist="${PACKAGELIST}" \
 	    -f "${AWKPREFIX}/unique_pkgnames_from_flavored_origins.awk"
@@ -232,7 +232,7 @@ install_world_from_pkgbase()
 	pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world update ${PKG_QUIET}
 	msg "Installing base packages"
 	while read line; do
-		pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world install ${PKG_QUIET} -y ${line}
+		pkg -o ABI_FILE="${mnt}/usr/lib/crt1.o" -o REPOS_DIR=${WRKDIR}/world/etc/pkg/ -o ASSUME_ALWAYS_YES=yes -r ${WRKDIR}/world install -r local ${PKG_QUIET} -y ${line}
 	done < ${PKGBASELIST}
 	rm ${WRKDIR}/world/etc/pkg/FreeBSD-base.conf
 	msg "Base packages installed"
@@ -516,6 +516,7 @@ if [ -n "${HOSTNAME}" ]; then
 	echo "hostname=${HOSTNAME}" >> ${WRKDIR}/world/etc/rc.conf
 fi
 
+msg "Installing packages"
 # install packages if any is needed
 if [ -n "${PACKAGELIST}" ]; then
 	mkdir -p ${WRKDIR}/world/tmp/packages
