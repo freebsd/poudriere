@@ -3140,9 +3140,13 @@ download_from_repo() {
 				esac
 			fi
 		fi
+		if ! pkgqueue_contains "${pkgname}" ; then
+			continue
+		fi
+		echo "${pkgname}"
 		# XXX only work when PKG_EXT is the same as the upstream
-		if [ ! -f "${PACKAGES}/All/${pkgname}.${PKG_EXT}" ]; then
-			echo "${pkgname}"
+		if [ -f "${PACKAGES}/All/${pkgname}.${PKG_EXT}" ]; then
+			err ${EX_SOFTWARE} "download_from_repo: Found package ${COLOR_PORT}${pkgname}${COLOR_RESET} that clean_build_queue/pkgqueue_contains should have removed"
 		fi
 	done > "${missing_pkgs}"
 	if [ ! -s "${missing_pkgs}" ]; then
@@ -7468,6 +7472,7 @@ trim_ignored() {
 	    _rdep ignore; do
 		trim_ignored_pkg "${pkgname}" "${originspec}" "${ignore}"
 	done
+	clean_build_queue
 	# Update ignored/skipped stats
 	update_stats 2>/dev/null || :
 	update_stats_queued
