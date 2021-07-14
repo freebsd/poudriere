@@ -852,7 +852,7 @@ buildlog_start() {
 	echo "package name: ${pkgname}"
 	echo "building for: $(injail uname -a)"
 	echo "maintained by: ${mk_MAINTAINER}"
-	echo "Makefile datestamp: $(ls -l ${mnt}/${portdir}/Makefile)"
+	echo "Makefile datestamp: $(injail ls -l "${portdir}/Makefile")"
 
 	if shash_get ports_metadata top_git_hash git_hash; then
 		echo "Ports top last git commit: ${git_hash}"
