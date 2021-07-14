@@ -6686,6 +6686,8 @@ is_failed_metadata_lookup() {
 gather_port_vars_process_depqueue_enqueue() {
 	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
 	    err 1 "gather_port_vars_process_depqueue_enqueue requires SHASH_VAR_PATH=var/cache"
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "gather_port_vars_process_depqueue_enqueue requires PWD=${MASTERMNT}/.p"
 	[ $# -ne 4 ] && eargs gather_port_vars_process_depqueue_enqueue \
 	    originspec dep_originspec queue rdep
 	local originspec="$1"
@@ -6720,6 +6722,8 @@ gather_port_vars_process_depqueue_enqueue() {
 gather_port_vars_process_depqueue() {
 	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
 	    err 1 "gather_port_vars_process_depqueue requires SHASH_VAR_PATH=var/cache"
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "gather_port_vars_process_depqueue requires PWD=${MASTERMNT}/.p"
 	[ $# -ne 1 ] && eargs gather_port_vars_process_depqueue originspec
 	local originspec="$1"
 	local origin pkgname deps dep_origin
@@ -6821,7 +6825,7 @@ compute_deps_pkg() {
 	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
 	    err 1 "compute_deps_pkg requires SHASH_VAR_PATH=var/cache"
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "compute_deps_pkgname requires PWD=${MASTERMNT}/.p"
+	    err 1 "compute_deps_pkg requires PWD=${MASTERMNT}/.p"
 	[ $# -ne 3 ] && eargs compute_deps_pkg pkgname originspec pkg_deps
 	local pkgname="$1"
 	local originspec="$2"
@@ -7843,6 +7847,8 @@ prepare_ports() {
 }
 
 load_priorities_ptsort() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "load_priorities_ptsort requires PWD=${MASTERMNT}/.p"
 	local priority pkgname originspec pkg_boost origin flavor _ignored
 	local - # Keep set -f local
 
