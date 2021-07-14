@@ -2694,6 +2694,13 @@ jail_start() {
 	was_a_bulk_run && stash_packages
 	do_portbuild_mounts ${tomnt} ${name} ${ptname} ${setname}
 
+	if [ "${tomnt##*/}" = "ref" ]; then
+		mkdir -p "${MASTERMNT}/.p/var/cache"
+		SHASH_VAR_PATH="${MASTERMNT}/.p/var/cache"
+		# No prefix needed since we're unique in MASTERMNT.
+		SHASH_VAR_PREFIX=
+	fi
+
 	# Handle special QEMU needs.
 	if [ ${QEMU_EMULATING} -eq 1 ]; then
 		setup_xdev "${tomnt}" "${arch%.*}"
@@ -7557,13 +7564,10 @@ prepare_ports() {
 
 	_log_path log
 	pkgqueue_init
-	mkdir -p \
-		"${MASTERMNT}/.p/var/cache"
 
 	cd "${MASTERMNT}/.p"
-	SHASH_VAR_PATH=var/cache
-	# No prefix needed since we're unique in MASTERMNT.
-	SHASH_VAR_PREFIX=
+	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
+	    err ${EX_SOFTWARE} "SHASH_VAR_PATH failed to be relpath updated"
 	# Allow caching values now
 	USE_CACHE_CALL=1
 
