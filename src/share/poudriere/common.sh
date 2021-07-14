@@ -853,9 +853,21 @@ buildlog_start() {
 	echo "building for: $(injail uname -a)"
 	echo "maintained by: ${mk_MAINTAINER}"
 	echo "Makefile datestamp: $(ls -l ${mnt}/${portdir}/Makefile)"
-	if [ -x "${GIT_CMD}" ] && [ -r "${mnt}/${portdir}/../../.git" ]; then
+
+	if shash_get ports_metadata top_git_hash git_hash; then
+		echo "Ports top last git commit: ${git_hash}"
+		pkg_note_add "${pkgname}" Ports_Top_Git_Hash "${git_hash}"
+		shash_get ports_metadata top_unclean git_modified
+		pkg_note_add "${pkgname}" Ports_Top_Checkout_Unclean \
+		    "${git_modified}"
+		echo "Ports top unclean checkout: ${git_modified}"
+	fi
+
+	if [ -x "${GIT_CMD}" ] && \
+	    ${GIT_CMD} -C "${mnt}/${portdir}" rev-parse \
+	    --show-toplevel >/dev/null 2>&1; then
 		git_hash=$(${GIT_CMD} -C "${mnt}/${portdir}" log -1 --format=%h .)
-		echo "Port last git commit: ${git_hash}"
+		echo "Port dir last git commit: ${git_hash}"
 		pkg_note_add "${pkgname}" Port_Git_Hash "${git_hash}"
 		git_modified=no
 		if ! ${GIT_CMD} -C "${mnt}/${portdir}" \
@@ -865,7 +877,7 @@ buildlog_start() {
 			git_modified=yes
 		fi
 		pkg_note_add "${pkgname}" Port_Checkout_Unclean "${git_modified}"
-		echo "Port unclean checkout: ${git_modified}"
+		echo "Port dir unclean checkout: ${git_modified}"
 	fi
 	echo "Poudriere version: ${POUDRIERE_VERSION}"
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
@@ -7437,6 +7449,8 @@ load_moved() {
 }
 
 fetch_global_port_vars() {
+	local git_hash git_modified
+
 	was_a_testport_run && [ -n "${P_PORTS_FEATURES}" ] && return 0
 	# Before we start, determine the default PYTHON version to
 	# deal with any use of DEPENDS_ARGS involving it.  DEPENDS_ARGS
@@ -7468,6 +7482,22 @@ fetch_global_port_vars() {
 	    msg "Ports supports: ${P_PORTS_FEATURES}"
 	export P_PORTS_FEATURES P_PYTHON_MAJOR_VER P_PYTHON_DEFAULT_VERSION \
 	    P_PYTHON3_DEFAULT
+
+	if [ -x "${GIT_CMD}" ] &&
+	    ${GIT_CMD} -C "${MASTERMNT}/${PORTSDIR}" rev-parse \
+	    --show-toplevel >/dev/null 2>&1; then
+		git_hash=$(${GIT_CMD} -C "${MASTERMNT}/${PORTSDIR}" log -1 \
+		    --format=%h .)
+		shash_set ports_metadata top_git_hash "${git_hash}"
+		git_modified=no
+		if ! ${GIT_CMD} -C "${MASTERMNT}/${PORTSDIR}" \
+		    -c core.checkStat=minimal \
+		    -c core.fileMode=off \
+		    diff --quiet .; then
+			git_modified=yes
+		fi
+		shash_set ports_metadata top_unclean "${git_modified}"
+	fi
 }
 
 trim_ignored() {
