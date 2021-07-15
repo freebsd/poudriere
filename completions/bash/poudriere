@@ -238,7 +238,7 @@ _poudriere()
                         _poudriere_ports_list
                         ;;
                     -t)
-                        COMPREPLY=($(compgen -W 'iso iso+mfs iso+zmfs usb usb+mfs usb+zmfs rawdisk zrawdisk tar firmware rawfirmware embedded' -- "$cur"))
+                        COMPREPLY=($(compgen -W 'iso iso+mfs iso+zmfs usb usb+mfs usb+zmfs rawdisk zrawdisk tar firmware rawfirmware' -- "$cur"))
                         ;;
                     -z)
                         _poudriere_set_list

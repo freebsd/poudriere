@@ -59,7 +59,7 @@ _image=(
 	'-o[image destination directory]:directory:_files'
 	'-p[Ports tree]::tree:_poudriere_pt'
 	'-s[set the image size]:size:'
-	'-t[type of image]::type:((iso iso+mfs iso+zmfs usb usb+mfs usb+zmfs rawdisk zrawdisk tar firmware rawfirmware embedded))'
+	'-t[type of image]::type:((iso iso+mfs iso+zmfs usb usb+mfs usb+zmfs rawdisk zrawdisk tar firmware rawfirmware))'
 	'-X[file containing the list in cpdup format]:file:_files'
 	'-z[set]::'
 )
