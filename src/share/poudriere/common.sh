@@ -3643,8 +3643,6 @@ build_port() {
 		else
 			# Only set PKGENV during 'package' to prevent
 			# testport-built packages from going into the main repo
-			# Also enable during stage/install since it now
-			# uses a pkg for pkg_tools
 			if [ "${phase}" = "package" ]; then
 				pkg_notes_get "${pkgname}" "${PKGENV}" pkgenv
 			else
