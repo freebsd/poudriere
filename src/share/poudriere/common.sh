@@ -3612,8 +3612,6 @@ build_port() {
 			;;
 		esac
 
-		print_phase_header ${phase}
-
 		if [ "${phase}" = "package" ]; then
 			echo "PACKAGES=/.npkg" >> ${mnt}/etc/make.conf
 			# Create sandboxed staging dir for new package for this build
@@ -3624,7 +3622,21 @@ build_port() {
 				${mnt}/.npkg
 			chown -R ${JUSER} ${mnt}/.npkg
 			:> "${mnt}/.npkg_mounted"
+
+			# Only set PKGENV during 'package' to prevent
+			# testport-built packages from going into the main repo
+			pkg_notes_get "${pkgname}" "${PKGENV}" pkgenv
+			phaseenv="${phaseenv:+${phaseenv}${pkgenv:+ }}${pkgenv}"
 		fi
+		if [ "${phase#*-}" = "depends" ]; then
+			phaseenv="${phaseenv:+${phaseenv} }USE_PACKAGE_DEPENDS_ONLY=1"
+		else
+			# No need for nohang or PORT_FLAGS for *-depends
+			phaseenv="${phaseenv:+${phaseenv}${PORT_FLAGS:+ }}${PORT_FLAGS}"
+		fi
+
+		print_phase_header "${phase}" "${phaseenv}"
+
 
 		if [ "${JUSER}" = "root" ]; then
 			export UID=0
@@ -3635,21 +3647,10 @@ build_port() {
 		fi
 
 		if [ "${phase#*-}" = "depends" ]; then
-			# No need for nohang or PORT_FLAGS for *-depends
 			injail /usr/bin/env ${phaseenv:+-S "${phaseenv}"} \
-			    USE_PACKAGE_DEPENDS_ONLY=1 \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    ${phase} || return 1
 		else
-			# Only set PKGENV during 'package' to prevent
-			# testport-built packages from going into the main repo
-			if [ "${phase}" = "package" ]; then
-				pkg_notes_get "${pkgname}" "${PKGENV}" pkgenv
-			else
-				pkgenv=
-			fi
-			phaseenv="${phaseenv:+${phaseenv}${pkgenv:+ }}${pkgenv}"
-			phaseenv="${phaseenv:+${phaseenv}${PORT_FLAGS:+ }}${PORT_FLAGS}"
 
 			nohang ${max_execution_time} ${NOHANG_TIME} \
 				"${log}/logs/${pkgname}.log" \
@@ -4390,7 +4391,14 @@ clean_pool() {
 }
 
 print_phase_header() {
-	printf "=======================<phase: %-15s>============================\n" "$1"
+	[ $# -le 2 ] || eargs print_phase_header phase [env]
+	local phase="$1"
+	local env="$2"
+
+	printf "=======================<phase: %-15s>============================\n" "${phase}"
+	if [ -n "${env}" ]; then
+		printf "===== env: %s\n" "${env}"
+	fi
 }
 
 print_phase_footer() {
