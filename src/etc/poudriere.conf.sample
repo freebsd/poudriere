@@ -322,6 +322,12 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Default: no
 #HTML_TRACK_REMAINING=yes
 
+# Display less messages when building/installing/updating jail from
+# source tree, Affect only when you use either '-b' or '-m git|svn.'
+# option of `jail` command,
+# Default: no
+# BUILD_JAIL_SILENTLY=yes
+
 # Set to pass arguments to buildworld.
 # Default:
 #MAKEWORLDARGS="WITHOUT_LLVM_ASSERTIONS=yes WITH_MALLOC_PRODUCTION=yes -DMALLOC_PRODUCTION"
