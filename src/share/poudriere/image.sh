@@ -161,7 +161,7 @@ get_uefi_bootname() {
 }
 
 make_esp_file() {
-    local file sizekb loader device stagedir fatbits efibootname
+    local file size loader device stagedir fatbits efibootname
 
     msg "Creating ESP image"
     file=$1
