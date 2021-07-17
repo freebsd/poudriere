@@ -465,6 +465,9 @@ setup_build_env() {
 			err 1 "You need fmake installed on the host: devel/fmake"
 		MAKE_CMD=${FMAKE}
 	fi
+	if ! [ ${VERBOSE} -gt 0 ]; then
+		MAKE_CMD="${MAKE_CMD} -s"
+	fi
 
 	: ${CCACHE_BIN:="/usr/local/libexec/ccache"}
 	if [ -n "${CCACHE_DIR}" -a -d ${CCACHE_BIN}/world ]; then
