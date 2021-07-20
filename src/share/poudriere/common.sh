@@ -5842,6 +5842,15 @@ pkgqueue_remove_many_pipe() {
 
 	while mapfile_read_loop_redir pkgname; do
 		pkgqueue_find_all_pool_references "${pkgname}"
+	done | while mapfile_read_loop_redir deppath; do
+		echo "${deppath}"
+		case "${deppath}" in
+		deps/*/*/*|rdeps/*) ;;
+		deps/*/*)
+			msg_debug "Unqueueing ${deppath##*/}" >&2
+			;;
+		*) ;;
+		esac
 	done | xargs rm -rf
 }
 
