@@ -3162,11 +3162,11 @@ download_from_repo() {
 		if ! pkgqueue_contains "${pkgname}" ; then
 			continue
 		fi
-		echo "${pkgname}"
 		# XXX only work when PKG_EXT is the same as the upstream
 		if [ -f "${PACKAGES}/All/${pkgname}.${PKG_EXT}" ]; then
-			err ${EX_SOFTWARE} "download_from_repo: Found package ${COLOR_PORT}${pkgname}${COLOR_RESET} that clean_build_queue/pkgqueue_contains should have removed"
+			continue
 		fi
+		echo "${pkgname}"
 	done > "${missing_pkgs}"
 	if [ ! -s "${missing_pkgs}" ]; then
 		msg_verbose "Package fetch: No missing packages to fetch"
@@ -7519,7 +7519,7 @@ trim_ignored() {
 	    _rdep ignore; do
 		trim_ignored_pkg "${pkgname}" "${originspec}" "${ignore}"
 	done
-	clean_build_queue
+	pkgqueue_trim_orphaned_build_deps
 	# Update ignored/skipped stats
 	update_stats 2>/dev/null || :
 	update_stats_queued
@@ -7552,43 +7552,49 @@ trim_ignored_pkg() {
 	clean_pool "${pkgname}" "${originspec}" "ignored"
 }
 
-clean_build_queue() {
+pkgqueue_unqueue_existing_packages() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "clean_build_queue requires PWD=${MASTERMNT}/.p"
-	local tmp pn port originspec
+	    err 1 "pkgqueue_unqueue_existing_packages requires PWD=${MASTERMNT}/.p"
+	local pn
 
 	bset status "cleaning:"
-	msg "Cleaning the build queue"
+	msg "Unqueueing existing packages"
 
 	# Delete from the queue all that already have a current package.
 	pkgqueue_list | while mapfile_read_loop_redir pn; do
 		[ -f "../packages/All/${pn}.${PKG_EXT}" ] && echo "${pn}"
 	done | pkgqueue_remove_many_pipe
+}
 
-	# Delete from the queue orphaned build deps. This can happen if
-	# the specified-to-build ports have all their deps satisifed
-	# but one of their run deps has missing build deps packages which
-	# causes the build deps to be in the queue at this point.
+# Delete from the queue orphaned build deps. This can happen if
+# the specified-to-build ports have all their deps satisifed
+# but one of their run deps has missing build deps packages which
+# causes the build deps to be in the queue at this point.
+pkgqueue_trim_orphaned_build_deps() {
+	local tmp port originspec pkgname
 
-	if [ ${TRIM_ORPHANED_BUILD_DEPS} = "yes" -a ${ALL} -eq 0 ]; then
-		tmp=$(mktemp -t queue)
-		{
-			listed_pkgnames
-			# Pkg is a special case. It may not have been requested,
-			# but it should always be rebuilt if missing.  The
-			# originspec-pkgname lookup may fail if it wasn't
-			# in the build queue.
-			for port in ports-mgmt/pkg ports-mgmt/pkg-devel; do
-				originspec_encode originspec "${port}" '' ''
-				shash_get originspec-pkgname "${port}" \
-				    pkgname && \
-				    echo "${pkgname}"
-			done
-		} | pkgqueue_list_deps_pipe > "${tmp}"
-		pkgqueue_list | sort > "${tmp}.actual"
-		comm -13 ${tmp} ${tmp}.actual | pkgqueue_remove_many_pipe
-		rm -f ${tmp} ${tmp}.actual
+	if [ "${TRIM_ORPHANED_BUILD_DEPS}" != "yes" ] || \
+	    [ "${ALL}" -eq 1 ]; then
+		return 0
 	fi
+	msg "Unqueueing orphaned build dependencies"
+	tmp=$(mktemp -t queue)
+	{
+		listed_pkgnames
+		# Pkg is a special case. It may not have been requested,
+		# but it should always be rebuilt if missing.  The
+		# originspec-pkgname lookup may fail if it wasn't
+		# in the build queue.
+		for port in ports-mgmt/pkg ports-mgmt/pkg-devel; do
+			originspec_encode originspec "${port}" '' ''
+			shash_get originspec-pkgname "${port}" \
+			    pkgname && \
+			    echo "${pkgname}"
+		done
+	} | pkgqueue_list_deps_pipe > "${tmp}"
+	pkgqueue_list | sort > "${tmp}.actual"
+	comm -13 "${tmp}" "${tmp}.actual" | pkgqueue_remove_many_pipe
+	rm -f "${tmp}" "${tmp}.actual"
 }
 
 # PWD will be MASTERMNT/.p after this
@@ -7826,7 +7832,9 @@ prepare_ports() {
 
 	export LOCALBASE=${LOCALBASE:-/usr/local}
 
-	clean_build_queue
+	pkgqueue_unqueue_existing_packages
+	pkgqueue_trim_orphaned_build_deps
+
 	if was_a_bulk_run && [ "${resuming_build}" -eq 0 ]; then
 		# Update again after trimming the build queue
 		update_stats_queued
