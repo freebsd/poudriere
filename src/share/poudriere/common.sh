@@ -3136,11 +3136,6 @@ download_from_repo() {
 	local remote_all_pkgs remote_all_options wantedpkgs remote_all_deps
 	local missing_pkgs
 
-	if [ "${DRY_RUN:-0}" -eq 1 ]; then
-		msg "not fetching remote packages in dry run mode."
-		return
-	fi
-
 	# only list packages which do not exists to prevent pkg
 	# from overwriting prebuilt packages
 	missing_pkgs=$(mktemp -t missing_pkgs)
