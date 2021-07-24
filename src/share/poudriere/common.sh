@@ -823,7 +823,7 @@ buildlog_start() {
 	local pkgname="$1"
 	local originspec="$2"
 	local mnt var portdir
-	local make_vars
+	local make_vars date
 	local git_modified git_hash
 	local wanted_vars="
 	    MAINTAINER
@@ -847,7 +847,10 @@ buildlog_start() {
 	    ${PORT_FLAGS} \
 	    ${make_vars}
 
-	echo "build started at $(date)"
+	date=$(env TZ=UTC date "+%Y-%m-%dT%H:%M:%S%z")
+
+	echo "build started at ${date}"
+	pkg_note_add "${pkgname}" Build_Timestamp "${date}"
 	echo "port directory: ${portdir}"
 	echo "package name: ${pkgname}"
 	echo "building for: $(injail uname -a)"
