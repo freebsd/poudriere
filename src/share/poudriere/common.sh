@@ -850,7 +850,7 @@ buildlog_start() {
 	date=$(env TZ=UTC date "+%Y-%m-%dT%H:%M:%S%z")
 
 	echo "build started at ${date}"
-	pkg_note_add "${pkgname}" Build_Timestamp "${date}"
+	pkg_note_add "${pkgname}" build_timestamp "${date}"
 	echo "port directory: ${portdir}"
 	echo "package name: ${pkgname}"
 	echo "building for: $(injail uname -a)"
@@ -859,9 +859,9 @@ buildlog_start() {
 
 	if shash_get ports_metadata top_git_hash git_hash; then
 		echo "Ports top last git commit: ${git_hash}"
-		pkg_note_add "${pkgname}" Ports_Top_Git_Hash "${git_hash}"
+		pkg_note_add "${pkgname}" ports_top_git_hash "${git_hash}"
 		shash_get ports_metadata top_unclean git_modified
-		pkg_note_add "${pkgname}" Ports_Top_Checkout_Unclean \
+		pkg_note_add "${pkgname}" ports_top_checkout_unclean \
 		    "${git_modified}"
 		echo "Ports top unclean checkout: ${git_modified}"
 	fi
@@ -871,7 +871,7 @@ buildlog_start() {
 	    --show-toplevel >/dev/null 2>&1; then
 		git_hash=$(${GIT_CMD} -C "${mnt}/${portdir}" log -1 --format=%h .)
 		echo "Port dir last git commit: ${git_hash}"
-		pkg_note_add "${pkgname}" Port_Git_Hash "${git_hash}"
+		pkg_note_add "${pkgname}" port_git_hash "${git_hash}"
 		git_modified=no
 		if ! ${GIT_CMD} -C "${mnt}/${portdir}" \
 		    -c core.checkStat=minimal \
@@ -879,11 +879,11 @@ buildlog_start() {
 		    diff --quiet .; then
 			git_modified=yes
 		fi
-		pkg_note_add "${pkgname}" Port_Checkout_Unclean "${git_modified}"
+		pkg_note_add "${pkgname}" port_checkout_unclean "${git_modified}"
 		echo "Port dir unclean checkout: ${git_modified}"
 	fi
 	echo "Poudriere version: ${POUDRIERE_VERSION}"
-	pkg_note_add "${pkgname}" Built_By "${POUDRIERE_PKGNAME}"
+	pkg_note_add "${pkgname}" built_by "${POUDRIERE_PKGNAME}"
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
 	echo "Jail OSVERSION: ${JAIL_OSVERSION}"
 	echo "Job Id: ${MY_JOBID}"
