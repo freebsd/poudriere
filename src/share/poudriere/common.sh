@@ -883,6 +883,7 @@ buildlog_start() {
 		echo "Port dir unclean checkout: ${git_modified}"
 	fi
 	echo "Poudriere version: ${POUDRIERE_VERSION}"
+	pkg_note_add "${pkgname}" Built_By "${POUDRIERE_PKGNAME}"
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
 	echo "Jail OSVERSION: ${JAIL_OSVERSION}"
 	echo "Job Id: ${MY_JOBID}"

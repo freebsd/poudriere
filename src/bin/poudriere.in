@@ -27,6 +27,7 @@
 
 LC_ALL=C
 POUDRIERE_VERSION="3.4-pre"
+POUDRIERE_PKGNAME="poudriere-git"
 
 env_set() {
 	local envvar="$1"
@@ -114,7 +115,7 @@ jails)
 	CMD="jail"
 	;;
 version)
-	echo "${POUDRIERE_VERSION}"
+	echo "${POUDRIERE_PKGNAME}-${POUDRIERE_VERSION}"
 	exit 0
 	;;
 help)
@@ -150,6 +151,7 @@ env_set SCRIPTPATH
 env_set LIBEXECPREFIX
 env_set PATH $'${LIBEXECPREFIX}:${PATH}:/sbin:/usr/sbin'
 env_set POUDRIERE_VERSION
+env_set POUDRIERE_PKGNAME
 env_set POUDRIEREPATH
 [ -n "${VERBOSE}" ] && env_set VERBOSE
 
