@@ -283,7 +283,7 @@ _mastermnt() {
 	mastername="${MASTERNAME}"
 	_gsub_badchars "${mastername}" ":" mastername
 	mnt="${JAIL_BASEMNT}/${mastername}/ref"
-	if [ -z "${NOLINUX}" ]; then
+	if [ -z "${NOLINUX-}" ]; then
 		testpath="/compat/linux/proc"
 	else
 		testpath="/var/db/ports"

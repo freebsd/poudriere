@@ -336,6 +336,10 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # you have local patches for as otherwise the patches would be ignored if
 # a remote package is used instead.
 #PACKAGE_FETCH_BLACKLIST=""
+# Alternatively a whitelist can be created to only allow specific packages to
+# be fetched.
+# Default: everything
+#PACKAGE_FETCH_WHITELIST="gcc* rust llvm*"
 
 # Set the base mount point for jails
 # Default:
