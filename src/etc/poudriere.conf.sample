@@ -336,3 +336,7 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # you have local patches for as otherwise the patches would be ignored if
 # a remote package is used instead.
 #PACKAGE_FETCH_BLACKLIST=""
+
+# Set the base mount point for jails
+# Default:
+#JAIL_BASEMNT=${POUDRIERE_DATA}/.m

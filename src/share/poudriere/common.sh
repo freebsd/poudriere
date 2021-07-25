@@ -282,7 +282,7 @@ _mastermnt() {
 	# like portlint in testport.
 	mastername="${MASTERNAME}"
 	_gsub_badchars "${mastername}" ":" mastername
-	mnt="${POUDRIERE_DATA}/.m/${mastername}/ref"
+	mnt="${JAIL_BASEMNT}/${mastername}/ref"
 	if [ -z "${NOLINUX}" ]; then
 		testpath="/compat/linux/proc"
 	else
@@ -294,7 +294,7 @@ _mastermnt() {
 	    [ ${#mnttest} -ge $((mnamelen - 1)) ]; then
 		hashed_name=$(sha256 -qs "${MASTERNAME}" | \
 		    awk '{print substr($0, 0, 6)}')
-		mnt="${POUDRIERE_DATA}/.m/${hashed_name}/ref"
+		mnt="${JAIL_BASEMNT}/${hashed_name}/ref"
 		mnttest="${mnt}${testpath}"
 		[ ${#mnttest} -ge $((mnamelen - 1)) ] && \
 		    err 1 "Mountpath '${mnt}' exceeds system MNAMELEN limit of ${mnamelen}. Unable to mount. Try shortening BASEFS."
@@ -1468,6 +1468,15 @@ porttree_exists() {
 		END { exit ret }
 		' && return 0
 	return 1
+}
+
+get_jail_base_mnt() {
+	if [ -n "${JAIL_BASEMNT}" ]; then
+		echo "${JAIL_BASEMNT}"
+        else
+		echo "${POUDRIERE_DATA}/.m"
+        fi
+        return
 }
 
 get_data_dir() {
@@ -2661,7 +2670,7 @@ jail_start() {
 	# Block the build dir from being traversed by non-root to avoid
 	# system blowup due to all of the extra mounts
 	mkdir -p ${MASTERMNT%/ref}
-	chmod 0755 ${POUDRIERE_DATA}/.m
+	chmod 0755 ${JAIL_BASEMNT}
 	chmod 0711 ${MASTERMNT%/ref}
 
 	export HOME=/root
@@ -8408,6 +8417,10 @@ fi
 POUDRIERE_DATA="$(get_data_dir)"
 if [ -e "${POUDRIERE_DATA}" ]; then
 	POUDRIERE_DATA=$(realpath "${POUDRIERE_DATA}")
+fi
+JAIL_BASEMNT="$(get_jail_base_mnt)"
+if [ -e "${JAIL_BASEMNT}" ]; then
+	JAIL_BASEMNT=$(realpath "${JAIL_BASEMNT}")
 fi
 : ${WRKDIR_ARCHIVE_FORMAT="tbz"}
 case "${WRKDIR_ARCHIVE_FORMAT}" in

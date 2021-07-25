@@ -148,7 +148,7 @@ delete_jail() {
 	fi
 	cache_dir="${POUDRIERE_DATA}/cache/${JAILNAME}-*"
 	rm -rfx ${POUDRIERED}/jails/${JAILNAME} ${cache_dir} \
-		${POUDRIERE_DATA}/.m/${JAILNAME}-* || :
+		${JAIL_BASEMNT}/${JAILNAME}-* || :
 	echo " done"
 	if [ "${CLEANJAIL}" = "none" ]; then
 		return 0
