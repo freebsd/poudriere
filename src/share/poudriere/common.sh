@@ -5112,7 +5112,7 @@ pkg_get_options() {
 
 ensure_pkg_installed() {
 	local force="$1"
-	local mnt
+	local mnt pkg_ext
 
 	_my_path mnt
 	[ -z "${force}" ] && [ -x "${mnt}${PKG_BIN}" ] && return 0
@@ -5122,10 +5122,14 @@ ensure_pkg_installed() {
 		cp -f /usr/local/sbin/pkg-static "${mnt}/.p/pkg-static"
 		return 0
 	fi
-	[ -e ${MASTERMNT}/packages/Latest/pkg.${PKG_EXT} ] || return 1 #pkg missing
-	injail tar xf /packages/Latest/pkg.${PKG_EXT} -C / \
-		-s ",/.*/,.p/,g" "*/pkg-static"
-	return 0
+	for pkg_ext in ${PKG_EXT} txz; do
+		[ -r "${MASTERMNT}/packages/Latest/pkg.${pkg_ext}" ] || \
+		    continue
+		injail tar xf "/packages/Latest/pkg.${pkg_ext}" -C / \
+		    -s ",/.*/,.p/,g" "*/pkg-static"
+		return
+	done
+	return 1 #pkg missing
 }
 
 pkg_cache_data() {
