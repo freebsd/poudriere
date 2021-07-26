@@ -5264,7 +5264,7 @@ delete_stale_pkg_cache() {
 
 	[ ! -d ${cache_dir} ] && return 0
 	dirempty ${cache_dir} && return 0
-	for pkg in ${cache_dir}/*.${PKG_EXT}; do
+	for pkg in ${cache_dir}/*; do
 		pkg_file="${pkg##*/}"
 		# If this package no longer exists in the PKGDIR, delete the cache.
 		[ ! -e "${PACKAGES}/All/${pkg_file}" ] &&
