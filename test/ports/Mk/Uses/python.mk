@@ -276,7 +276,7 @@ WARNING+=	"PYTHON2_DEFAULT_VERSION is defined, consider using DEFAULT_VERSIONS=p
 WARNING+=	"PYTHON3_DEFAULT_VERSION is defined, consider using DEFAULT_VERSIONS=python3=${PYTHON3_DEFAULT_VERSION:S/^python//} instead"
 .endif
 
-.if exists(${LOCALBASE}/bin/python)
+.if exists(${LOCALBASE}/bin/pythonXX)
 .if !defined(_PYTHON_DEFAULT_VERSION)
 _PYTHON_DEFAULT_VERSION!=	(${LOCALBASE}/bin/python -c \
 		'import sys; print("%d.%d" % sys.version_info[:2])' 2> /dev/null \
