@@ -8177,13 +8177,10 @@ build_repo() {
 	    err 1 "Unable to extract pkg."
 	run_hook pkgrepo sign "${PACKAGES}" "${PKG_REPO_SIGNING_KEY}" \
 	    "${PKG_REPO_FROM_HOST:-no}" "${PKG_REPO_META_FILE}"
-	PKG_META="-m /tmp/pkgmeta"
-	PKG_META_MASTERMNT="-m ${MASTERMNT}/tmp/pkgmeta"
 	if [ -r "${PKG_REPO_META_FILE:-/nonexistent}" ]; then
+		PKG_META="-m /tmp/pkgmeta"
+		PKG_META_MASTERMNT="-m ${MASTERMNT}/tmp/pkgmeta"
 		install -m 0400 "${PKG_REPO_META_FILE}" \
-		    ${MASTERMNT}/tmp/pkgmeta
-	else
-		printf "packing_format = \"${PKG_COMPRESSION_FORMAT}\";\n" > \
 		    ${MASTERMNT}/tmp/pkgmeta
 	fi
 	mkdir -p ${MASTERMNT}/tmp/packages
