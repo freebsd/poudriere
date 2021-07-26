@@ -2178,7 +2178,7 @@ commit_packages() {
 		[ ! -L "${PACKAGES_ROOT}/${name}" ] || continue
 		if [ -e "${PACKAGES_ROOT}/${name}" ]; then
 			case "${name}" in
-			.buildname|.jailversion|meta.${PKG_EXT}|digests.${PKG_EXT}|packagesite.${PKG_EXT}|All|Latest)
+			.buildname|.jailversion|meta.${PKG_COMPRESSION_FORMAT}|digests.${PKG_COMPRESSION_FORMAT}|packagesite.${PKG_COMPRESSION_FORMAT}|All|Latest)
 				# Auto fix pkg-owned files
 				unlink "${PACKAGES_ROOT:?}/${name}"
 				;;
@@ -7875,7 +7875,7 @@ prepare_ports() {
 	if [ $SKIPSANITY -eq 0 ]; then
 		msg "Sanity checking the repository"
 
-		for n in repo.${PKG_EXT} digests.${PKG_EXT} packagesite.${PKG_EXT}; do
+		for n in repo.${PKG_COMPRESSION_FORMAT} digests.${PKG_COMPRESSION_FORMAT} packagesite.${PKG_COMPRESSION_FORMAT}; do
 			pkg="${PACKAGES}/All/${n}"
 			if [ -f "${pkg}" ]; then
 				msg "Removing invalid pkg repo file: ${pkg}"
@@ -8183,7 +8183,7 @@ build_repo() {
 		install -m 0400 "${PKG_REPO_META_FILE}" \
 		    ${MASTERMNT}/tmp/pkgmeta
 	else
-		printf "version = 2;\npacking_format = \"${PKG_EXT}\";\n" > \
+		printf "packing_format = \"${PKG_COMPRESSION_FORMAT}\";\n" > \
 		    ${MASTERMNT}/tmp/pkgmeta
 	fi
 	mkdir -p ${MASTERMNT}/tmp/packages
