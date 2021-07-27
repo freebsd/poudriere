@@ -1,6 +1,6 @@
 LISTPORTS="ports-mgmt/poudriere-devel"
 OVERLAYS="omnibus"
-MUTABLE_BASE=nullfs
+IMMUTABLE_BASE=schg
 . common.bulk.sh
 
 do_bulk -c ${LISTPORTS}

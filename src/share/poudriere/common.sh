@@ -44,7 +44,7 @@ was_a_jail_run() {
 	    [ "${SCRIPTPATH##*/}" = "foreachport.sh" ]
 }
 schg_immutable_base() {
-	[ "${MUTABLE_BASE}" = "schg" ] || return 1
+	[ "${IMMUTABLE_BASE}" = "schg" ] || return 1
 	[ ${TMPFS_ALL} -eq 0 ] && [ -z "${NO_ZFS}" ] && return 1
 	return 0
 }
@@ -2573,7 +2573,7 @@ jail_start() {
 		err 1 "DISTFILES_CACHE directory does not exist. (cf.  poudriere.conf)"
 	fi
 	schg_immutable_base && [ $(sysctl -n kern.securelevel) -ge 1 ] && \
-	    err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags for MUTABLE_BASE=schg."
+	    err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags for IMMUTABLE_BASE=schg."
 	[ ${TMPFS_ALL} -eq 0 ] && [ ${TMPFS_WRKDIR} -eq 0 ] \
 	    && [ $(sysctl -n kern.securelevel) -ge 1 ] && \
 	    err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags. USE_TMPFS with 'wrkdir' or 'all' values can avoid this."
@@ -8391,11 +8391,24 @@ for val in ${USE_TMPFS}; do
 done
 unset val
 
-for val in ${MUTABLE_BASE}; do
+# Backwards compat for renamed IMMUTABLE_BASE
+if [ -n "${MUTABLE_BASE-}" ] && [ -z "${IMMUTABLE_BASE-}" ]; then
+	for val in ${MUTABLE_BASE}; do
+		case ${val} in
+			schg|nullfs)	IMMUTABLE_BASE="${val}" ;;
+			yes)		IMMUTABLE_BASE="no" ;;
+			no)		IMMUTABLE_BASE="yes" ;;
+			*) err 1 "Unknown value for MUTABLE_BASE" ;;
+		esac
+		msg_warn "MUTABLE_BASE=${val} is deprecated. Change to IMMUTABLE_BASE=${IMMUTABLE_BASE}"
+	done
+fi
+
+for val in ${IMMUTABLE_BASE-}; do
 	case ${val} in
-		schg|yes|nullfs) ;;
-		no) MUTABLE_BASE="schg" ;;
-		*) err 1 "Unknown value for MUTABLE_BASE" ;;
+		schg|no|nullfs) ;;
+		yes) IMMUTABLE_BASE="schg" ;;
+		*) err 1 "Unknown value for IMMUTABLE_BASE" ;;
 	esac
 done
 
@@ -8569,7 +8582,7 @@ fi
 : ${USE_JEXECD:=no}
 : ${USE_PROCFS:=yes}
 : ${USE_FDESCFS:=yes}
-: ${MUTABLE_BASE:=yes}
+: ${IMMUTABLE_BASE:=no}
 : ${HTML_JSON_UPDATE_INTERVAL:=2}
 : ${HTML_TRACK_REMAINING:=no}
 : ${FORCE_MOUNT_HASH:=no}

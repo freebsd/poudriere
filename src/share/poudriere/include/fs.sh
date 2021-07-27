@@ -349,7 +349,7 @@ nullfs_paths() {
 	local nullpaths
 
 	nullpaths="${NULLFS_PATHS}"
-	if [ "${MUTABLE_BASE}" = "nullfs" ]; then
+	if [ "${IMMUTABLE_BASE}" = "nullfs" ]; then
 		# Need to keep /usr/src and /usr/ports on their own.
 		nullpaths="${nullpaths} /usr/bin /usr/include /usr/lib"
 		nullpaths="${nullpaths} /usr/lib32 /usr/libdata /usr/libexec"

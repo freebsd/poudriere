@@ -1293,7 +1293,7 @@ case "${COMMAND}" in
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		_mastermnt MASTERMNT
 		export MASTERMNT
-		MUTABLE_BASE=yes jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
+		IMMUTABLE_BASE=no jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
 		JNETNAME="n"
 		;;
 	delete)

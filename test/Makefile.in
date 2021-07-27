@@ -495,9 +495,9 @@ JAIL_TESTS = \
 	bulk-overlay-all.sh \
 	bulk-no-overlay-specific.sh \
 	bulk-overlay-specific.sh \
-	bulk-build-self-mutable-base-no.sh \
-	bulk-build-self-mutable-base-schg.sh \
-	bulk-build-self-mutable-base-nullfs.sh
+	bulk-build-self-immutable-base-yes.sh \
+	bulk-build-self-immutable-base-schg.sh \
+	bulk-build-self-immutable-base-nullfs.sh
 
 run_env = env \
 	 abs_top_builddir="$(abs_top_builddir)" \
@@ -1074,23 +1074,23 @@ bulk-overlay-specific.sh.log: bulk-overlay-specific.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-build-self-mutable-base-no.sh.log: bulk-build-self-mutable-base-no.sh
-	@p='bulk-build-self-mutable-base-no.sh'; \
-	b='bulk-build-self-mutable-base-no.sh'; \
+bulk-build-self-immutable-base-yes.sh.log: bulk-build-self-immutable-base-yes.sh
+	@p='bulk-build-self-immutable-base-yes.sh'; \
+	b='bulk-build-self-immutable-base-yes.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-build-self-mutable-base-schg.sh.log: bulk-build-self-mutable-base-schg.sh
-	@p='bulk-build-self-mutable-base-schg.sh'; \
-	b='bulk-build-self-mutable-base-schg.sh'; \
+bulk-build-self-immutable-base-schg.sh.log: bulk-build-self-immutable-base-schg.sh
+	@p='bulk-build-self-immutable-base-schg.sh'; \
+	b='bulk-build-self-immutable-base-schg.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-build-self-mutable-base-nullfs.sh.log: bulk-build-self-mutable-base-nullfs.sh
-	@p='bulk-build-self-mutable-base-nullfs.sh'; \
-	b='bulk-build-self-mutable-base-nullfs.sh'; \
+bulk-build-self-immutable-base-nullfs.sh.log: bulk-build-self-immutable-base-nullfs.sh
+	@p='bulk-build-self-immutable-base-nullfs.sh'; \
+	b='bulk-build-self-immutable-base-nullfs.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
