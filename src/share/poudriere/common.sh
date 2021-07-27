@@ -3235,11 +3235,12 @@ download_from_repo() {
 	if [ "${pkg_bin}" = "pkg" ]; then
 		pkgname=$(injail pkg query %n-%v pkg)
 		mkdir -p "${PACKAGES}/Latest"
-		ln -fhs "../All/${pkgname}.${PKG_EXT}" \
-		    "${PACKAGES}/Latest/pkg.${PKG_EXT}"
+		# Avoid symlinking if remote PKG_SUFX does not match.
+		if [ -f "${PACKAGES}/All/${pkgname}.${PKG_EXT}" ]; then
+			ln -fhs "../All/${pkgname}.${PKG_EXT}" \
+			    "${PACKAGES}/Latest/pkg.${PKG_EXT}"
+		fi
 	fi
-	ensure_pkg_installed || \
-	    err 1 "download_from_repo: failed to bootstrap pkg"
 }
 
 validate_package_branch() {
