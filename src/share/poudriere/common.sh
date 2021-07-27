@@ -7875,7 +7875,7 @@ prepare_ports() {
 	if [ $SKIPSANITY -eq 0 ]; then
 		msg "Sanity checking the repository"
 
-		for n in repo.{pkg,txz} digests.{pkg,txz} packagesite.{pkg,txz}; do
+		for n in repo.pkg repo.txz digests.pkg digests.txz packagesite.pkg packagesite.txz; do
 			pkg="${PACKAGES}/All/${n}"
 			if [ -f "${pkg}" ]; then
 				msg "Removing invalid pkg repo file: ${pkg}"
