@@ -2825,6 +2825,7 @@ jail_start() {
 		    \( -depth 1 -name .p -prune \) -o \
 		    \( -depth 1 -name distfiles -prune \) -o \
 		    \( -depth 1 -name packages -prune \) -o \
+		    \( -path "${tomnt}/${PORTSDIR}" -prune \) -o \
 		    \( -depth 1 -name tmp -prune \) -o \
 		    \( -depth 1 -name wrkdirs -prune \) -o \
 		    \( -type d -o -type f -o -type l \) \
