@@ -1853,6 +1853,9 @@ enter_interactive() {
 	}
 	EOF
 
+	msg "Remounting ${PORTSDIR} ${OVERLAYS:+and ${OVERLAYSDIR} }read-write"
+	remount_ports -o rw >/dev/null
+
 	if [ ${INTERACTIVE_MODE} -eq 1 ]; then
 		msg "Entering interactive test mode. Type 'exit' when done."
 		JNETNAME="n" injail_tty env -i TERM=${SAVED_TERM} \
@@ -1891,8 +1894,7 @@ use_options() {
 }
 
 remount_packages() {
-	umount ${UMOUNT_NONBUSY} "${MASTERMNT}/packages" || \
-	    umount -f "${MASTERMNT}/packages"
+	umountfs "${MASTERMNT}/packages"
 	mount_packages "$@"
 }
 
@@ -1905,14 +1907,40 @@ mount_packages() {
 		err 1 "Failed to mount the packages directory "
 }
 
+remount_ports() {
+	local mnt
+
+	_my_path mnt
+	umountfs "${mnt}/${PORTSDIR}"
+	umountfs "${mnt}/${OVERLAYSDIR}"
+	mount_ports "$@"
+}
+
+mount_ports() {
+	local mnt o portsdir ptname
+
+	_my_path mnt
+	ptname="${PTNAME:?}"
+	_pget portsdir "${ptname}" mnt || err 1 "Missing mnt metadata for portstree"
+	# Some ancient compat
+	[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
+	msg "Mounting ports from: ${portsdir}"
+	${NULLMOUNT} "$@" ${portsdir} ${mnt}${PORTSDIR} ||
+	    err 1 "Failed to mount the ports directory "
+	for o in ${OVERLAYS}; do
+		_pget odir "${o}" mnt || err 1 "Missing mnt metadata for overlay ${o}"
+		msg "Mounting ports overlay from: ${odir}"
+		${NULLMOUNT} "$@" "${odir}" "${mnt}${OVERLAYSDIR}/${o}"
+	done
+}
+
 do_portbuild_mounts() {
 	[ $# -lt 3 ] && eargs do_portbuild_mounts mnt jname ptname setname
 	local mnt=$1
 	local jname=$2
 	local ptname=$3
 	local setname=$4
-	local portsdir
-	local optionsdir opt o odir msgmount
+	local optionsdir opt o odir msgmount msgdev
 
 	# clone will inherit from the ref jail
 	if [ ${mnt##*/} = "ref" ]; then
@@ -1945,28 +1973,17 @@ do_portbuild_mounts() {
 	[ -n "${MFSSIZE}" ] && mdmfs -t -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
 	[ ${TMPFS_WRKDIR} -eq 1 ] && mnt_tmpfs wrkdir ${mnt}/wrkdirs
 	# Only show mounting messages once, not for every builder
-	msgmount=":"
 	if [ ${mnt##*/} = "ref" ]; then
 		msgmount="msg"
+		msgdev="/dev/stdout"
+	else
+		msgmount=":"
+		msgdev="/dev/null"
 	fi
 	[ -d "${CCACHE_DIR}" ] && \
 	    ${msgmount} "Mounting ccache from: ${CCACHE_DIR}"
 
-	_pget portsdir ${ptname} mnt || err 1 "Missing mnt metadata for portstree"
-	[ -d ${portsdir}/ports ] && portsdir=${portsdir}/ports
-	${msgmount} "Mounting ports from: ${portsdir}"
-	if [ "${INTERACTIVE_MODE}" -gt 0 ]; then
-		opt=rw
-	else
-		opt=ro
-	fi
-	${NULLMOUNT} -o ${opt} ${portsdir} ${mnt}${PORTSDIR} ||
-		err 1 "Failed to mount the ports directory "
-	for o in ${OVERLAYS}; do
-		_pget odir "${o}" mnt || err 1 "Missing mnt metadata for overlay ${o}"
-		${msgmount} "Mounting ports overlay from: ${odir}"
-		${NULLMOUNT} -o ro "${odir}" "${mnt}${OVERLAYSDIR}/${o}"
-	done
+	mount_ports -o ro > "${msgdev}"
 	${msgmount} "Mounting packages from: ${PACKAGES_ROOT}"
 	mount_packages -o ro
 	${msgmount} "Mounting distfiles from: ${DISTFILES_CACHE}"
