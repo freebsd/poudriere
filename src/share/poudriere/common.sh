@@ -1786,7 +1786,7 @@ do_jail_mounts() {
 # Interactive test mode
 enter_interactive() {
 	local stopmsg pkgname port originspec dep_args flavor packages
-	local portdir
+	local portdir one_package _log_path
 
 	if [ ${ALL} -ne 0 ]; then
 		msg "(-a) Not entering interactive mode."
@@ -1819,7 +1819,9 @@ enter_interactive() {
 	else
 		packages="${PKGNAME}"
 	fi
+	one_package=0
 	for pkgname in ${packages}; do
+		one_package=$((one_package + 1))
 		get_originspec_from_pkgname originspec "${pkgname}"
 		originspec_decode "${originspec}" port dep_args flavor
 		# Install run-depends since this is an interactive test
@@ -1838,6 +1840,9 @@ enter_interactive() {
 		    ${flavor:+FLAVOR=${flavor}} install-package ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
 	done
+	if [ "${one_package}" -gt 1 ]; then
+		unset one_package
+	fi
 
 	# Create a pkg repo configuration, and disable FreeBSD
 	msg "Installing local Pkg repository to ${LOCALBASE}/etc/pkg/repos"
@@ -1852,9 +1857,64 @@ enter_interactive() {
 		enabled: yes
 	}
 	EOF
+	injail pkg update
 
 	msg "Remounting ${PORTSDIR} ${OVERLAYS:+and ${OVERLAYSDIR} }read-write"
 	remount_ports -o rw >/dev/null
+
+	_log_path log_path
+	msg "Mounting logs from: ${log_path}"
+	mkdir -p "${MASTERMNT}/logs"
+	${NULLMOUNT} -o ro "${log_path}/logs" "${MASTERMNT}/logs"
+
+	if schg_immutable_base; then
+		chflags noschg "${MASTERMNT}/root/.cshrc"
+	fi
+	cat >> "${MASTERMNT}/root/.cshrc" <<-EOF
+	cd "${PORTSDIR}/${one_package:+${port:?}}"
+	setenv PORTSDIR "${PORTSDIR}"
+	EOF
+	cat > "${MASTERMNT}/etc/motd" <<-EOF
+	Welcome to Poudriere interactive mode!
+
+	PORTSDIR:		${PORTSDIR}
+	Work directories:	/wrkdirs
+	Distfiles:		/distfiles
+	Packages:		/packages
+	Build logs:		/logs
+	Lookup port var:	make -V WRKDIR
+
+	EOF
+	if [ -n "${one_package-}" ]; then
+		local NL=$'\n'
+		cat >> "${MASTERMNT}/etc/motd" <<-EOF
+		ORIGIN:			${port:?}
+		PORTDIR:		${PORTSDIR}/${port:?}
+		WRKDIR:			$(injail make -C "${PORTSDIR}/${port:?}" -V WRKDIR)
+		EOF
+		if [ -n "${flavor-}" ]; then
+			cat >> "${MASTERMNT}/etc/motd" <<-EOF
+			FLAVOR:			${flavor}
+			
+			A FLAVOR was used to build but is not in the environment.
+			Remember to pass FLAVOR to make:
+				make FLAVOR=${flavor}
+
+			EOF
+		fi
+	fi
+	cat >> "${MASTERMNT}/etc/motd" <<-EOF
+	Installed packages:	$(echo "${packages}" | sort -V | tr '\n' ' ')
+
+	It is recommended to set these in the environment:
+		setenv DEVELOPER 1
+		setenv DEVELOPER_MODE yes
+
+	Packages from /packages are loaded into 'pkg' and can be installed
+	as needed.
+
+	To see this again: cat /etc/motd
+	EOF
 
 	if [ ${INTERACTIVE_MODE} -eq 1 ]; then
 		msg "Entering interactive test mode. Type 'exit' when done."
