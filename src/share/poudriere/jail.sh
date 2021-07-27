@@ -435,6 +435,17 @@ setup_build_env() {
 	export TARGET_ARCH=${ARCH#*.}
 	export WITH_FAST_DEPEND=yes
 	MAKE_JOBS="-j${PARALLEL_JOBS}"
+
+	mkdir -p ${JAILMNT}/etc
+	setup_src_conf "src"
+	setup_src_conf "src-env"
+	if [ "${TARGET}" = "mips" ]; then
+		echo "WITH_ELFTOOLCHAIN_TOOLS=y" >> ${JAILMNT}/etc/src.conf
+	fi
+
+	export __MAKE_CONF=/dev/null
+	export SRCCONF=${JAILMNT}/etc/src.conf
+	export SRC_ENV_CONF=${JAILMNT}/etc/src-env.conf
 }
 
 setup_src_conf() {
@@ -455,17 +466,6 @@ setup_src_conf() {
 
 buildworld() {
 	export SRC_BASE=${JAILMNT}/usr/src
-	mkdir -p ${JAILMNT}/etc
-	setup_src_conf "src"
-	setup_src_conf "src-env"
-
-	if [ "${TARGET}" = "mips" ]; then
-		echo "WITH_ELFTOOLCHAIN_TOOLS=y" >> ${JAILMNT}/etc/src.conf
-	fi
-
-	export __MAKE_CONF=/dev/null
-	export SRCCONF=${JAILMNT}/etc/src.conf
-	export SRC_ENV_CONF=${JAILMNT}/etc/src-env.conf
 
 	setup_build_env
 
