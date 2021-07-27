@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd May 6, 2021
+.Dd July 27, 2021
 .Dt POUDRIERE-BULK 8
 .Os
 .Sh NAME
@@ -43,7 +43,7 @@
 .Op Fl b Ar name
 .Op Fl B Ar name
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
-.Op Fl O Ar overlays
+.Op Fl O Ar overlay Op Oo Fl O Ar overlay2 Oc Ar ...
 .Op Fl p Ar tree
 .Op Fl z Ar set
 .Nm poudriere
@@ -54,7 +54,7 @@
 .Op Fl b Ar name
 .Op Fl B Ar name
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
-.Op Fl O Ar overlays
+.Op Fl O Ar overlay Op Oo Fl O Ar overlay2 Oc Ar ...
 .Op Fl p Ar tree
 .Op Fl z Ar set
 .Nm poudriere
@@ -64,7 +64,7 @@
 .Op Fl b Ar name
 .Op Fl B Ar name
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
-.Op Fl O Ar overlays
+.Op Fl O Ar overlay Op Oo Fl O Ar overlay2 Oc Ar ...
 .Op Fl p Ar tree
 .Op Fl z Ar set
 .Ar origin Op Ar origin2 ...
@@ -222,8 +222,14 @@ Do not build a package repository when the build is completed.
 Dry run.
 Show what would be done, but do not actually build or delete any
 packages.
-.It Fl O Ar overlays
-Specify extra ports trees to overlay.
+.It Fl O Ar overlay
+Specify an extra ports tree to use as an overlay.
+Multiple
+.Fl O Ar overlay
+arguments may be specified to stack them.
+.Pp
+These overlays should be setup with
+.Xr poudriere-ports(8) .
 .It Fl p Ar tree
 Specify on which ports
 .Ar tree

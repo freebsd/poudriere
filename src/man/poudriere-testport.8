@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd May 6, 2021
+.Dd July 27, 2021
 .Dt POUDRIERE-TESTPORT 8
 .Os
 .Sh NAME
@@ -132,8 +132,14 @@ completed.
 Dry run.
 Show what would be done, but do not actually build or delete any
 packages.
-.It Fl O Ar overlays
-Specify extra ports trees to overlay.
+.It Fl O Ar overlay
+Specify an extra ports tree to use as an overlay.
+Multiple
+.Fl O Ar overlay
+arguments may be specified to stack them.
+.Pp
+These overlays should be setup with
+.Xr poudriere-ports(8) .
 .It Fl o Ar origin
 Specifies an origin in the ports tree.
 .It Fl P
