@@ -3956,7 +3956,7 @@ save_wrkdir() {
 	    WRKDIR wrkdir || \
 	    err 1 "Failed to lookup WRKDIR for ${originspec}"
 
-	tar -s ",${mnt}${wrkdir%/*},," -cf "${tarname}" ${COMPRESSKEY:-${COMPRESSKEY}} \
+	tar -s ",${mnt}${wrkdir%/*},," -cf "${tarname}" ${COMPRESSKEY:+-${COMPRESSKEY}} \
 	    "${mnt}${wrkdir}" > /dev/null 2>&1
 
 	job_msg "Saved ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_RESET} wrkdir to: ${tarname}"
