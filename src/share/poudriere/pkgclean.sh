@@ -41,6 +41,7 @@ Options:
     -n          -- Do not actually remove anything, just show what would be
                    removed
     -N          -- Do not build the package repository when clean completed
+    -O overlays -- Specify extra ports trees to overlay
     -p tree     -- Which ports tree to use for packages
     -R          -- Clean RESTRICTED packages after building
     -v          -- Be verbose; show more information. Use twice to enable
@@ -56,12 +57,13 @@ SETNAME=""
 DRY_RUN=0
 DO_ALL=0
 BUILD_REPO=1
+OVERLAYS=""
 
 . ${SCRIPTPREFIX}/common.sh
 
 [ $# -eq 0 ] && usage
 
-while getopts "Aaj:J:f:nNp:Rvyz:" FLAG; do
+while getopts "Aaj:J:f:nNO:p:Rvyz:" FLAG; do
 	case "${FLAG}" in
 		A)
 			DO_ALL=1
@@ -88,6 +90,11 @@ while getopts "Aaj:J:f:nNp:Rvyz:" FLAG; do
 			;;
 		N)
 			BUILD_REPO=0
+			;;
+		O)
+			porttree_exists ${OPTARG} ||
+			    err 2 "No such overlay ${OPTARG}"
+			OVERLAYS="${OVERLAYS} ${OPTARG}"
 			;;
 		p)
 			porttree_exists ${OPTARG} ||
