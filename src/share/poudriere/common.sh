@@ -1932,7 +1932,7 @@ commit_packages() {
 		[ ! -L "${PACKAGES_ROOT}/${name}" ] || continue
 		if [ -e "${PACKAGES_ROOT}/${name}" ]; then
 			case "${name}" in
-			.buildname|.jailversion|meta.txz|digests.txz|packagesite.txz|All|Latest)
+			.buildname|.jailversion|meta.pkg|meta.txz|digests.pkg|digests.txz|packagesite.pkg|packagesite.txz|All|Latest)
 				# Auto fix pkg-owned files
 				unlink "${PACKAGES_ROOT}/${name}"
 				;;
@@ -3431,9 +3431,11 @@ save_wrkdir() {
 	tgz) COMPRESSKEY="z" ;;
 	tbz) COMPRESSKEY="j" ;;
 	txz) COMPRESSKEY="J" ;;
+	tzst) COMPRESSKEY="-zstd" ;;
 	esac
 	unlink ${tarname}
-	tar -s ",${mnted_portdir},," -c${COMPRESSKEY}f ${tarname} ${mnted_portdir}/work > /dev/null 2>&1
+	tar -s ",${mnted_portdir},," -cf "${tarname}" ${COMPRESSKEY:+-${COMPRESSKEY}} \
+	    ${mnted_portdir}/work > /dev/null 2>&1
 
 	job_msg "Saved ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_RESET} wrkdir to: ${tarname}"
 }
@@ -7136,7 +7138,7 @@ prepare_ports() {
 	if [ $SKIPSANITY -eq 0 ]; then
 		msg "Sanity checking the repository"
 
-		for n in repo.txz digests.txz packagesite.txz; do
+		for n in repo.pkg repo.txz digests.pkg digests.txz packagesite.pkg packagesite.txz; do
 			pkg="${PACKAGES}/All/${n}"
 			if [ -f "${pkg}" ]; then
 				msg "Removing invalid pkg repo file: ${pkg}"
@@ -7658,7 +7660,7 @@ esac
 POUDRIERE_DATA=$(realpath $(get_data_dir))
 : ${WRKDIR_ARCHIVE_FORMAT="tbz"}
 case "${WRKDIR_ARCHIVE_FORMAT}" in
-	tar|tgz|tbz|txz);;
+	tar|tgz|tbz|txz|tzst);;
 	*) err 1 "invalid format for WRKDIR_ARCHIVE_FORMAT: ${WRKDIR_ARCHIVE_FORMAT}" ;;
 esac
 
