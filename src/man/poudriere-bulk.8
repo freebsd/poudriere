@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd July 27, 2021
+.Dd July 28, 2021
 .Dt POUDRIERE-BULK 8
 .Os
 .Sh NAME
@@ -142,12 +142,21 @@ or
 .Fl c ,
 then listed packages will not be fetched.
 .Pp
+If a local port has patches or special
+.Sy WITH_FOO
+knobs then it is required to add its name into
+.Sy PACKAGE_FETCH_BLACKLIST .
+Otherwise a package may be fetched and used that lacks the custom patch or knob.
+.Pp
 See
 .Sy PACKAGE_FETCH_BRANCH ,
-and
 .Sy PACKAGE_FETCH_URL ,
+.Sy PACKAGE_FETCH_BLACKLIST ,
+and
+.Sy PACKAGE_FETCH_WHITELIST
 in
 .Pa poudriere.conf.sample .
+The entries in the lists will be matched against package names without versions.
 .It Fl C
 Clean only the packages specified on the command line or in the file given by
 .Fl f Ar file .

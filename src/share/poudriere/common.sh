@@ -3151,7 +3151,7 @@ download_from_repo_check_pkg() {
 	pkgbase="${pkgname%-*}"
 
 	# Skip blacklisted packages
-	for bpkg in ${PACKAGE_FETCH_BLACKLIST}; do
+	for bpkg in ${PACKAGE_FETCH_BLACKLIST-}; do
 		case "${pkgbase}" in
 		${bpkg})
 			msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (blacklisted)"
@@ -3216,7 +3216,9 @@ download_from_repo() {
 	    err 1 "download_from_repo requires PWD=${MASTERMNT}/.p"
 	local pkgname originspec listed ignored pkg_bin packagesite
 	local remote_all_pkgs remote_all_options wantedpkgs remote_all_deps
-	local missing_pkgs
+	local missing_pkgs pkg pkgbase cnt
+
+	msg "Package fetch: Looking for missing packages to fetch"
 
 	# only list packages which do not exists to prevent pkg
 	# from overwriting prebuilt packages
@@ -3243,10 +3245,20 @@ download_from_repo() {
 		if [ -f "${PACKAGES}/All/${pkgname}.${PKG_EXT}" ]; then
 			continue
 		fi
+		pkgbase="${pkgname%-*}"
+		for pkg in ${PACKAGE_FETCH_WHITELIST-}; do
+			case "${pkgbase}" in
+			${pkg}) ;;
+			*)
+				msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (not in whitelist)" >&2
+				continue 2
+				;;
+			esac
+		done
 		echo "${pkgname}"
 	done > "${missing_pkgs}"
 	if [ ! -s "${missing_pkgs}" ]; then
-		msg_verbose "Package fetch: No missing packages to fetch"
+		msg "Package fetch: No eligible missing packages to fetch"
 		rm -f "${missing_pkgs}"
 		return
 	fi
@@ -3258,7 +3270,8 @@ download_from_repo() {
 		pkg_bin="pkg"
 	fi
 	packagesite="${PACKAGE_FETCH_URL:+${PACKAGE_FETCH_URL}/}${PACKAGE_FETCH_BRANCH}"
-	msg "Prefetching missing packages from ${packagesite}"
+	cnt=$(wc -l ${missing_pkgs} | awk '{print $1}')
+	msg "Package fetch: Will fetch ${cnt} packages from ${packagesite}"
 	cat >> "${MASTERMNT}/etc/pkg/poudriere.conf" <<-EOF
 	FreeBSD: {
 	        url: ${packagesite};
