@@ -3220,6 +3220,7 @@ download_from_repo() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "download_from_repo requires PWD=${MASTERMNT}/.p"
 	local pkgname originspec listed ignored pkg_bin packagesite
+	local packagesite_resolved
 	local remote_all_pkgs remote_all_options wantedpkgs remote_all_deps
 	local missing_pkgs pkg pkgbase cnt
 
@@ -3272,11 +3273,10 @@ download_from_repo() {
 		pkg_bin="${PKG_BIN}"
 	else
 		# Will bootstrap
+		msg "Packge fetch: bootstrapping pkg"
 		pkg_bin="pkg"
 	fi
 	packagesite="${PACKAGE_FETCH_URL:+${PACKAGE_FETCH_URL}/}${PACKAGE_FETCH_BRANCH}"
-	cnt=$(wc -l ${missing_pkgs} | awk '{print $1}')
-	msg "Package fetch: Will fetch ${cnt} packages from ${packagesite}"
 	cat >> "${MASTERMNT}/etc/pkg/poudriere.conf" <<-EOF
 	FreeBSD: {
 	        url: ${packagesite};
@@ -3295,6 +3295,13 @@ download_from_repo() {
 	JNETNAME="n" injail env ASSUME_ALWAYS_YES=yes \
 	    PACKAGESITE="${packagesite}" \
 	    ${pkg_bin} update -f
+	cnt=$(wc -l ${missing_pkgs} | awk '{print $1}')
+	packagesite_resolved=$(injail ${pkg_bin} -vv | \
+	    awk '/[[:space:]]*url[[:space:]]*:[[:space:]]*/ {
+		    gsub(/^"|",$|,$/, "", $3)
+		    print $3
+	    }')
+	msg "Package fetch: Will fetch ${cnt} packages from ${packagesite_resolved}"
 	injail ${pkg_bin} rquery -U '%n %Ok %Ov' > "${remote_all_options}"
 	injail ${pkg_bin} rquery -U '%n %n-%v %?O' > "${remote_all_pkgs}"
 	injail ${pkg_bin} rquery -U '%n %dn-%dv' > "${remote_all_deps}"
