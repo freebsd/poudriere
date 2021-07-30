@@ -1932,7 +1932,11 @@ commit_packages() {
 		[ ! -L "${PACKAGES_ROOT}/${name}" ] || continue
 		if [ -e "${PACKAGES_ROOT}/${name}" ]; then
 			case "${name}" in
-			.buildname|.jailversion|meta.pkg|meta.txz|digests.pkg|digests.txz|packagesite.pkg|packagesite.txz|All|Latest)
+			.buildname|.jailversion|\
+			meta.${PKG_EXT}|meta.txz|\
+			digests.${PKG_EXT}|digests.txz|\
+			packagesite.${PKG_EXT}|packagesite.txz|\
+			All|Latest)
 				# Auto fix pkg-owned files
 				unlink "${PACKAGES_ROOT}/${name}"
 				;;
@@ -7138,7 +7142,10 @@ prepare_ports() {
 	if [ $SKIPSANITY -eq 0 ]; then
 		msg "Sanity checking the repository"
 
-		for n in repo.pkg repo.txz digests.pkg digests.txz packagesite.pkg packagesite.txz; do
+		for n in \
+		    repo.${PKG_EXT} repo.txz \
+		    digests.${PKG_EXT} digests.txz \
+		    packagesite.${PKG_EXT} packagesite.txz; do
 			pkg="${PACKAGES}/All/${n}"
 			if [ -f "${pkg}" ]; then
 				msg "Removing invalid pkg repo file: ${pkg}"

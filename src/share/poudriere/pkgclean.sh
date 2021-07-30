@@ -283,11 +283,11 @@ if [ $ret -eq 1 ]; then
 		if [ ${DO_ALL} -eq 1 ]; then
 			msg "Removing pkg repository files"
 			rm -f "${PACKAGES}/meta.txz" \
-				"${PACKAGES}/meta.pkg" \
+				"${PACKAGES}/meta.${PKG_EXT}" \
 				"${PACKAGES}/digests.txz" \
-				"${PACKAGES}/digests.pkg" \
+				"${PACKAGES}/digests.${PKG_EXT}" \
 				"${PACKAGES}/packagesite.txz" \
-				"${PACKAGES}/packagesite.pkg"
+				"${PACKAGES}/packagesite.${PKG_EXT}"
 		else
 			build_repo
 		fi
