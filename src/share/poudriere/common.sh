@@ -3329,9 +3329,9 @@ download_from_repo() {
 	echo "ports-mgmt/pkg" >> "${wantedpkgs}"
 
 	remount_packages -o rw
-	cat "${wantedpkgs}" | JNETNAME="n" injail xargs \
-		    env ASSUME_ALWAYS_YES=yes \
-		    ${pkg_bin} fetch -U -o /packages
+	JNETNAME="n" injail xargs \
+	    env ASSUME_ALWAYS_YES=yes \
+	    ${pkg_bin} fetch -U -o /packages < "${wantedpkgs}"
 	remount_packages -o ro
 	rm -f "${wantedpkgs}"
 	# Bootstrapped.  Need to setup symlinks.
