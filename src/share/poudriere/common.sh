@@ -2181,6 +2181,7 @@ commit_packages() {
 			.buildname|.jailversion|\
 			meta.${PKG_EXT}|meta.txz|\
 			digests.${PKG_EXT}|digests.txz|\
+			filesite.${PKG_EXT}|filesite.txz|\
 			packagesite.${PKG_EXT}|packagesite.txz|\
 			All|Latest)
 				# Auto fix pkg-owned files
@@ -7898,6 +7899,7 @@ prepare_ports() {
 		for n in \
 		    repo.${PKG_EXT} repo.txz \
 		    digests.${PKG_EXT} digests.txz \
+		    filesite.${PKG_EXT} filesite.txz \
 		    packagesite.${PKG_EXT} packagesite.txz; do
 			pkg="${PACKAGES}/All/${n}"
 			if [ -f "${pkg}" ]; then
@@ -8191,13 +8193,16 @@ sign_pkg() {
 }
 
 build_repo() {
-	local origin
+	local origin pkg_repo_list_files
 
 	msg "Creating pkg repository"
 	[ ${DRY_RUN} -eq 1 ] && return 0
 	bset status "pkgrepo:"
 	ensure_pkg_installed force_extract || \
 	    err 1 "Unable to extract pkg."
+	if [ "${PKG_REPO_LIST_FILES}" = "yes" ]; then
+		pkg_repo_list_files="--list-files"
+	fi
 	run_hook pkgrepo sign "${PACKAGES}" "${PKG_REPO_SIGNING_KEY}" \
 	    "${PKG_REPO_FROM_HOST:-no}" "${PKG_REPO_META_FILE}"
 	if [ -r "${PKG_REPO_META_FILE:-/nonexistent}" ]; then
@@ -8210,7 +8215,9 @@ build_repo() {
 	if [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
 		install -m 0400 ${PKG_REPO_SIGNING_KEY} \
 			${MASTERMNT}/tmp/repo.key
-		injail ${PKG_BIN} repo -o /tmp/packages \
+		injail ${PKG_BIN} repo \
+			${pkg_repo_list_files} \
+			-o /tmp/packages \
 			${PKG_META} \
 			/packages /tmp/repo.key
 		unlink ${MASTERMNT}/tmp/repo.key
@@ -8219,11 +8226,13 @@ build_repo() {
 		# using SSH with DNSSEC as older hosts don't support
 		# it.
 		${MASTERMNT}${PKG_BIN} repo \
+		    ${pkg_repo_list_files} \
 		    -o ${MASTERMNT}/tmp/packages ${PKG_META_MASTERMNT} \
 		    ${MASTERMNT}/packages \
 		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 	else
 		JNETNAME="n" injail ${PKG_BIN} repo \
+		    ${pkg_repo_list_files} \
 		    -o /tmp/packages ${PKG_META} /packages \
 		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
 	fi
@@ -8685,6 +8694,7 @@ fi
 : ${USE_PROCFS:=yes}
 : ${USE_FDESCFS:=yes}
 : ${IMMUTABLE_BASE:=no}
+: ${PKG_REPO_LIST_FILES:=no}
 : ${HTML_JSON_UPDATE_INTERVAL:=2}
 : ${HTML_TRACK_REMAINING:=no}
 : ${FORCE_MOUNT_HASH:=no}

@@ -298,6 +298,8 @@ if [ $ret -eq 1 ]; then
 				"${PACKAGES}/meta.${PKG_EXT}" \
 				"${PACKAGES}/digests.txz" \
 				"${PACKAGES}/digests.${PKG_EXT}" \
+				"${PACKAGES}/filesite.txz" \
+				"${PACKAGES}/filesite.${PKG_EXT}" \
 				"${PACKAGES}/packagesite.txz" \
 				"${PACKAGES}/packagesite.${PKG_EXT}"
 		else
