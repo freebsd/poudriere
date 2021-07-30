@@ -5205,13 +5205,16 @@ pkg_get_options() {
 
 ensure_pkg_installed() {
 	local force="$1"
-	local mnt pkg_ext
+	local host_ver injail_ver mnt pkg_ext
 
 	_my_path mnt
 	[ -z "${force}" ] && [ -x "${mnt}${PKG_BIN}" ] && return 0
 	# Hack, speed up QEMU usage on pkg-repo.
 	if [ ${QEMU_EMULATING} -eq 1 ] && \
-	    [ -f /usr/local/sbin/pkg-static ]; then
+	    [ -f /usr/local/sbin/pkg-static ] && \
+	    for pkg_ext in ${PKG_EXT} txz; do [ -r "${MASTERMNT}/packages/Latest/pkg.${pkg_ext}" ] || continue && injail_ver=$( basename `realpath "${MASTERMNT}/packages/Latest/pkg.${pkg_ext}"` | sed -e 's/pkg-//' -e "s/\.${pkg_ext}//" -e 's/\.pkg//' ); done && \
+	    host_ver=$( /usr/local/sbin/pkg-static -v ) && \
+	    [ ${host_ver} = ${injail_ver} ]; then
 		cp -f /usr/local/sbin/pkg-static "${mnt}/.p/pkg-static"
 		return 0
 	fi
