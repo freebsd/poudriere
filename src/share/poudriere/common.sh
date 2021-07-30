@@ -3323,7 +3323,7 @@ download_from_repo() {
 
 	remount_packages -o rw
 	cat "${wantedpkgs}" | JNETNAME="n" injail xargs \
-		    env ASSUME_ALWAYS_YES=yes PACKAGESITE="${packagesite}" \
+		    env ASSUME_ALWAYS_YES=yes \
 		    ${pkg_bin} fetch -U -o /packages
 	remount_packages -o ro
 	rm -f "${wantedpkgs}"
