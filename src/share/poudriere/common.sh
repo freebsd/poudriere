@@ -7897,7 +7897,7 @@ prepare_ports() {
 		msg "Sanity checking the repository"
 
 		for n in \
-		    repo.${PKG_EXT} repo.txz \
+		    meta.${PKG_EXT} meta.txz \
 		    digests.${PKG_EXT} digests.txz \
 		    filesite.${PKG_EXT} filesite.txz \
 		    packagesite.${PKG_EXT} packagesite.txz; do
