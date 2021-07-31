@@ -5119,11 +5119,11 @@ ensure_pkg_installed() {
 	    [ -f /usr/local/sbin/pkg-static ]; then
 		for pkg_ext in ${PKG_EXT} txz; do
 			[ -r "${MASTERMNT}/packages/Latest/pkg.${pkg_ext}" ] || continue
-			injail_ver=$( realpath "${MASTERMNT}/packages/Latest/pkg.${pkg_ext}" )
+			injail_ver=$(realpath "${MASTERMNT}/packages/Latest/pkg.${pkg_ext}")
 			injail_ver=${injail_ver##*/}
 			injail_ver=${injail_ver##*-}
 			injail_ver=${injail_ver%.*}
-			host_ver=$( /usr/local/sbin/pkg-static -v )
+			host_ver=$(/usr/local/sbin/pkg-static -v)
 			if [ "${host_ver}" = "${injail_ver}" ]; then
 				cp -f /usr/local/sbin/pkg-static "${mnt}/.p/pkg-static"
 			return 0
