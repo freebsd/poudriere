@@ -7645,9 +7645,13 @@ prepare_ports() {
 		fi
 	fi
 
-	if ! ensure_pkg_installed && [ ${SKIPSANITY} -eq 0 ]; then
-		msg "pkg package missing, skipping sanity"
-		SKIPSANITY=2
+	if ! ensure_pkg_installed; then
+		if [ ${SKIPSANITY} -eq 0 ]; then
+			SKIPSANITY=2
+		fi
+		msg_n "pkg package missing, cleaning all packages..."
+		rm -rf ${PACKAGES:?}/* ${cache_dir}
+		echo " done"
 	fi
 
 	if [ $SKIPSANITY -eq 0 ]; then
