@@ -3257,6 +3257,52 @@ jail_cleanup() {
 	export CLEANED_UP=1
 }
 
+_pkg_version_expanded() {
+	local -; set -f
+	[ $# -eq 1 ] || eargs pkg_ver_expanded version
+	local ver="$1"
+	local epoch ver_sub IFS
+
+	case "${ver}" in
+	*,*)
+		epoch="${ver##*,}"
+		ver="${ver%,*}"
+		;;
+	*)
+		epoch="0"
+		;;
+	esac
+	_gsub "${ver}" "[_.]" " " ver_sub
+	set -- ${ver_sub}
+
+	printf "%02d" "${epoch}"
+	while [ $# -gt 0 ]; do
+		printf "%02d" "$1"
+		shift
+	done
+	printf "\n"
+}
+
+pkg_version() {
+	if [ $# -ne 3 ] || [ "$1" != "-t" ]; then
+		eargs pkg_version -t version1 version2
+	fi
+	shift
+	local ver1="$1"
+	local ver2="$2"
+	local ver1_expanded ver2_expanded
+
+	ver1_expanded="$(_pkg_version_expanded "${ver1}")"
+	ver2_expanded="$(_pkg_version_expanded "${ver2}")"
+	if [ "${ver1_expanded}" -gt "${ver2_expanded}" ]; then
+		echo ">"
+	elif [ "${ver1_expanded}" -eq "${ver2_expanded}" ]; then
+		echo "="
+	else
+		echo "<"
+	fi
+}
+
 download_from_repo_check_pkg() {
 	[ $# -eq 5 ] || eargs download_from_repo_check_pkg pkgname \
 	    remote_all_options remote_all_pkgs remote_all_deps output
@@ -3339,6 +3385,7 @@ download_from_repo() {
 	local packagesite_resolved
 	local remote_all_pkgs remote_all_options wantedpkgs remote_all_deps
 	local missing_pkgs pkg pkgbase cnt
+	local remote_pkg_ver local_pkg_name local_pkg_ver
 
 	msg "Package fetch: Looking for missing packages to fetch"
 
@@ -3391,6 +3438,8 @@ download_from_repo() {
 		# Will bootstrap
 		msg "Packge fetch: bootstrapping pkg"
 		pkg_bin="pkg"
+		# When bootstrapping always fetch a copy of the pkg used
+		echo "${P_PKG_PKGNAME:?}" >> "${missing_pkgs}"
 	fi
 	packagesite="${PACKAGE_FETCH_URL:+${PACKAGE_FETCH_URL}/}${PACKAGE_FETCH_BRANCH}"
 	cat >> "${MASTERMNT}/etc/pkg/poudriere.conf" <<-EOF
@@ -3399,18 +3448,26 @@ download_from_repo() {
 	}
 	EOF
 
-	# pkg insists on creating a local.sqlite even if we won't use it
-	# (like pkg rquery -U), and it uses various locking that isn't needed
-	# here. Grab all the options for comparison.
-	remote_all_pkgs=$(mktemp -t remote_all_pkgs)
-	remote_all_options=$(mktemp -t remote_all_options)
-	remote_all_deps=$(mktemp -t remote_all_deps)
 	# XXX: bootstrap+rquery could be done asynchronously during deps
 	# Bootstrapping might occur here.
 	# XXX: rquery is supposed to 'update' but it does not on first run.
 	JNETNAME="n" injail env ASSUME_ALWAYS_YES=yes \
 	    PACKAGESITE="${packagesite}" \
 	    ${pkg_bin} update -f
+
+	# Make sure the bootstrapped pkg is not newer.
+	if [ "${pkg_bin}" = "pkg" ]; then
+		local_pkg_name="${P_PKG_PKGNAME:?}"
+		local_pkg_ver="${local_pkg_name##*-}"
+		remote_pkg_ver=$(injail ${pkg_bin} rquery -U %v \
+		    ${P_PKG_PKGNAME:?})
+		if [ "$(pkg_version -t "${remote_pkg_ver}" \
+		    "${local_pkg_ver}")" = ">" ]; then
+			msg_verbose "Package fetch: Not fetching due to remote pkg being newer than local: ${remote_pkg_ver} vs ${local_pkg_ver}"
+			rm -f "${missing_pkgs}"
+			return 0
+		fi
+	fi
 	cnt=$(wc -l ${missing_pkgs} | awk '{print $1}')
 	packagesite_resolved=$(injail ${pkg_bin} -vv | \
 	    awk '/[[:space:]]*url[[:space:]]*:[[:space:]]*/ {
@@ -3418,8 +3475,14 @@ download_from_repo() {
 		    print $3
 	    }')
 	msg "Package fetch: Will fetch ${cnt} packages from ${packagesite_resolved}"
+	# pkg insists on creating a local.sqlite even if we won't use it
+	# (like pkg rquery -U), and it uses various locking that isn't needed
+	# here. Grab all the options for comparison.
+	remote_all_options=$(mktemp -t remote_all_options)
 	injail ${pkg_bin} rquery -U '%n %Ok %Ov' > "${remote_all_options}"
+	remote_all_pkgs=$(mktemp -t remote_all_pkgs)
 	injail ${pkg_bin} rquery -U '%n %n-%v %?O' > "${remote_all_pkgs}"
+	remote_all_deps=$(mktemp -t remote_all_deps)
 	injail ${pkg_bin} rquery -U '%n %dn-%dv' > "${remote_all_deps}"
 
 	parallel_start
@@ -3439,10 +3502,6 @@ download_from_repo() {
 		rm -f "${wantedpkgs}"
 		return
 	fi
-	# Ensure we always fetch pkg as the *wanted* version may not
-	# match the remote's returned one but we still want to use
-	# what it sends back.
-	echo "ports-mgmt/pkg" >> "${wantedpkgs}"
 
 	remount_packages -o rw
 	JNETNAME="n" injail xargs \
@@ -3452,12 +3511,19 @@ download_from_repo() {
 	rm -f "${wantedpkgs}"
 	# Bootstrapped.  Need to setup symlinks.
 	if [ "${pkg_bin}" = "pkg" ]; then
-		pkgname=$(injail pkg query %n-%v pkg)
+		pkgname=$(injail ${pkg_bin} query %n-%v ${P_PKG_PKGNAME:?})
+		if [ "${pkgname##*-}" != "${remote_pkg_ver}" ]; then
+			# XXX: This can happen if remote is updated between
+			# bootstrap and fetching.
+			err 1 "download_from_repo: Fetched pkg version ${remote_pkg_ver} does not match bootstrapped pkg version ${pkgname##*-}"
+		fi
 		mkdir -p "${PACKAGES}/Latest"
 		# Avoid symlinking if remote PKG_SUFX does not match.
 		if [ -f "${PACKAGES}/All/${pkgname}.${PKG_EXT}" ]; then
 			ln -fhs "../All/${pkgname}.${PKG_EXT}" \
 			    "${PACKAGES}/Latest/pkg.${PKG_EXT}"
+			ensure_pkg_installed || \
+			    err 1 "download_from_repo: failure to bootstrap pkg"
 		fi
 	fi
 }
@@ -7528,12 +7594,15 @@ fetch_global_port_vars() {
 	    'USES=python' \
 	    PORTS_FEATURES P_PORTS_FEATURES \
 	    PKG_NOCOMPRESS:Dyes P_PKG_NOCOMPRESS \
+	    PKG_ORIGIN P_PKG_ORIGIN \
 	    PKG_SUFX P_PKG_SUFX \
 	    UID_FILES P_UID_FILES \
 	    PYTHON_MAJOR_VER P_PYTHON_MAJOR_VER \
 	    PYTHON_DEFAULT_VERSION P_PYTHON_DEFAULT_VERSION \
 	    PYTHON3_DEFAULT P_PYTHON3_DEFAULT || \
 	    err 1 "Error looking up pre-build ports vars"
+	port_var_fetch "${P_PKG_ORIGIN}" \
+	    PKGNAME P_PKG_PKGNAME
 	# Ensure not blank so -z checks work properly
 	[ -z "${P_PORTS_FEATURES}" ] && P_PORTS_FEATURES="none"
 	# Add in pseduo 'DEPENDS_ARGS' feature if there's no FLAVORS support.
