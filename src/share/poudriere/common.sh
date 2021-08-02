@@ -5263,6 +5263,35 @@ delete_pkg_xargs() {
 	# XXX: May need clear_pkg_cache here if shash changes from file.
 }
 
+# Incremental rebuild checks.
+# We delete and force a rebuild in these cases:
+# - pkg bootstrap is not available
+# - FORBIDDEN is set for the port
+# - Corrupted package file
+# - bulk -a: A package which the tree no longer creates.
+#   For example, a package with a removed FLAVOR.
+# - Wrong origin cases:
+#   o MOVED: origin moved to a new location
+#   o MOVED: origin expired
+#   o Nonexistent origin
+#   o A package with the wrong origin for its PKGNAME
+# - Changed PKGNAME
+# - PORTVERSION, PORTREVISION, or PORTEPOCH bump.
+# - Default FLAVOR changed
+# - New list of dependencies (not including versions)
+#   (requires default-on CHECK_CHANGED_DEPS)
+# - Changed options
+#   (requires default-on CHECK_CHANGED_OPTIONS)
+# - Recursive: rebuild if a dependency was rebuilt due to this.
+#
+# These are handled by pkg (pkg_jobs_need_upgrade()) but not Poudriere yet:
+#
+# - changed ABI/ARCH/NOARCH
+# - changed conflicts		# not used by ports
+# - changed provides		# not used by ports
+# - changed requires		# not used by ports
+# - changed provided shlibs	# effectively by CHECK_CHANGED_DEPS
+# - changed required shlibs	# effectively by CHECK_CHANGED_DEPS
 delete_old_pkg() {
 	[ $# -eq 1 ] || eargs delete_old_pkg pkgname
 	local pkg="$1"
