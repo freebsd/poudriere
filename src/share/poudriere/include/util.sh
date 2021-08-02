@@ -116,6 +116,19 @@ issetvar() {
 }
 fi
 
+if ! type setvar >/dev/null 2>&1; then
+	setvar() {
+		[ $# -eq 2 ] || eargs setvar variable value
+		local var="$1"
+		shift
+		local value="$*"
+
+		read -r "${var}" <<-EOF
+		${value}
+		EOF
+	}
+fi
+
 if ! type getvar >/dev/null 2>&1; then
 getvar() {
 	[ $# -eq 1 -o $# -eq 2 ] || eargs getvar var [var_return]
