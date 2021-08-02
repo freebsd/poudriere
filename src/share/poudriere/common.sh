@@ -7646,50 +7646,42 @@ prepare_ports() {
 	fi
 
 	if ! ensure_pkg_installed; then
-		if [ ${SKIPSANITY} -eq 0 ]; then
-			SKIPSANITY=2
-		fi
 		msg_n "pkg package missing, cleaning all packages..."
 		rm -rf ${PACKAGES:?}/* ${cache_dir}
 		echo " done"
 	fi
 
-	if [ $SKIPSANITY -eq 0 ]; then
-		msg "Sanity checking the repository"
+	msg "Sanity checking the repository"
 
-		for n in \
-		    meta.${PKG_EXT} meta.txz \
-		    digests.${PKG_EXT} digests.txz \
-		    filesite.${PKG_EXT} filesite.txz \
-		    packagesite.${PKG_EXT} packagesite.txz; do
-			pkg="${PACKAGES}/All/${n}"
-			if [ -f "${pkg}" ]; then
-				msg "Removing invalid pkg repo file: ${pkg}"
-				unlink "${pkg}"
-			fi
-
-		done
-
-		delete_stale_pkg_cache
-
-		# Skip incremental build for pkgclean
-		if was_a_bulk_run; then
-			delete_old_pkgs
-
-			if [ ${SKIP_RECURSIVE_REBUILD} -eq 0 ]; then
-				msg_verbose "Checking packages for missing dependencies"
-				while :; do
-					sanity_check_pkgs && break
-				done
-			else
-				msg "(-S) Skipping recursive rebuild"
-			fi
-
-			delete_stale_symlinks_and_empty_dirs
+	for n in \
+	    meta.${PKG_EXT} meta.txz \
+	    digests.${PKG_EXT} digests.txz \
+	    filesite.${PKG_EXT} filesite.txz \
+	    packagesite.${PKG_EXT} packagesite.txz; do
+		pkg="${PACKAGES}/All/${n}"
+		if [ -f "${pkg}" ]; then
+			msg "Removing invalid pkg repo file: ${pkg}"
+			unlink "${pkg}"
 		fi
-	else
-		[ ${SKIPSANITY} -eq 1 ] && sflag="(-s) "
-		msg "${sflag}Skipping incremental rebuild and repository sanity checks"
+
+	done
+
+	delete_stale_pkg_cache
+
+	# Skip incremental build for pkgclean
+	if was_a_bulk_run; then
+		delete_old_pkgs
+
+		if [ ${SKIP_RECURSIVE_REBUILD} -eq 0 ]; then
+			msg_verbose "Checking packages for missing dependencies"
+			while :; do
+				sanity_check_pkgs && break
+			done
+		else
+			msg "(-S) Skipping recursive rebuild"
+		fi
+
+		delete_stale_symlinks_and_empty_dirs
 	fi
 
 	if was_a_bulk_run; then
@@ -8440,7 +8432,6 @@ fi
 : ${ALL:=0}
 : ${CLEAN:=0}
 : ${CLEAN_LISTED:=0}
-: ${SKIPSANITY:=0}
 : ${JAIL_NEEDS_CLEAN:=0}
 : ${VERBOSE:=0}
 : ${QEMU_EMULATING:=0}
