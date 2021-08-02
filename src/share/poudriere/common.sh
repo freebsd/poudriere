@@ -4972,7 +4972,7 @@ deps_fetch_vars() {
 	local _pkgname _pkg_deps _lib_depends= _run_depends= _selected_options=
 	local _changed_options= _changed_deps= _depends_args= _lookup_flavors=
 	local _existing_origin _existing_originspec categories _ignore
-	local _forbidden _default_originspec _default_pkgname
+	local _forbidden _default_originspec _default_pkgname _no_arch
 	local origin _origin_dep_args _dep_args _dep _new_pkg_deps
 	local _origin_flavor _flavor _flavors _dep_arg _new_dep_args
 	local _depend_specials=
@@ -5023,6 +5023,7 @@ deps_fetch_vars() {
 	    CATEGORIES categories \
 	    IGNORE _ignore \
 	    FORBIDDEN _forbidden \
+	    NO_ARCH:Dyes _no_arch \
 	    ${_changed_deps} \
 	    ${_changed_options} \
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
@@ -5174,6 +5175,8 @@ deps_fetch_vars() {
 	    shash_set pkgname-ignore "${_pkgname}" "${_ignore}"
 	[ -n "${_forbidden}" ] && \
 	    shash_set pkgname-forbidden "${_pkgname}" "${_forbidden}"
+	[ -n "${_no_arch}" ] && \
+	    shash_set pkgname-no_arch "${_pkgname}" "${_no_arch}"
 	if [ -n "${_depend_specials}" ]; then
 		fixup_dependencies_dep_args _depend_specials \
 		    "${_pkgname}" \
@@ -5277,6 +5280,7 @@ delete_pkg_xargs() {
 #   o A package with the wrong origin for its PKGNAME
 # - Changed PKGNAME
 # - PORTVERSION, PORTREVISION, or PORTEPOCH bump.
+# - Changed ABI/ARCH/NOARCH
 # - Default FLAVOR changed
 # - New list of dependencies (not including versions)
 #   (requires default-on CHECK_CHANGED_DEPS)
@@ -5286,7 +5290,6 @@ delete_pkg_xargs() {
 #
 # These are handled by pkg (pkg_jobs_need_upgrade()) but not Poudriere yet:
 #
-# - changed ABI/ARCH/NOARCH
 # - changed conflicts		# not used by ports
 # - changed provides		# not used by ports
 # - changed requires		# not used by ports
@@ -5303,6 +5306,7 @@ delete_old_pkg() {
 	local pkgbase new_pkgbase flavor pkg_flavor originspec
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor dep_dep_args
 	local ignore new_origin stale_pkg dep_args pkg_dep_args
+	local pkg_arch no_arch arch
 
 	pkgfile="${pkg##*/}"
 	pkgname="${pkgfile%.*}"
@@ -5327,6 +5331,7 @@ delete_old_pkg() {
 		delete_pkg "${pkg}"
 		return 0
 	fi
+
 	if ! pkgbase_is_needed_and_not_ignored "${pkgname}"; then
 		# We don't expect this PKGBASE but it may still be an
 		# origin that is expected and just renamed.  Need to
@@ -5420,6 +5425,19 @@ delete_old_pkg() {
 		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: new version: ${v2}"
 		delete_pkg "${pkg}"
 		return 0
+	fi
+
+	# Compare ABI
+	if pkg_get_arch pkg_arch "${pkg}"; then
+		arch="${P_PKG_ABI:?}"
+		if shash_remove pkgname-no_arch "${pkgname}" no_arch; then
+			arch="${arch%:*}:*"
+		fi
+		if [ "${pkg_arch}" != "${arch}" ]; then
+			msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: ABI changed: '${pkg_arch}' -> '${arch}'"
+			delete_pkg "${pkg}"
+			return 0
+		fi
 	fi
 
 	if have_ports_feature FLAVORS; then
@@ -7830,6 +7848,9 @@ prepare_ports() {
 		msg_n "pkg package missing, cleaning all packages..."
 		rm -rf ${PACKAGES:?}/* ${cache_dir}
 		echo " done"
+	else
+		P_PKG_ABI="$(injail ${PKG_BIN} config ABI)" || \
+		    err 1 "Failure looking up pkg ABI"
 	fi
 
 	msg "Sanity checking the repository"

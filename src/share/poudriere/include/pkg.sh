@@ -68,6 +68,30 @@ pkg_get_flavor() {
 	fi
 }
 
+pkg_get_arch() {
+	[ $# -lt 2 ] && eargs pkg_get_arch var_return pkg [arch]
+	local var_return="$1"
+	local pkg="$2"
+	local _arch=$3
+	local SHASH_VAR_PATH
+
+	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
+	if ! shash_get 'pkg' 'arch' _arch; then
+		if [ -z "${_arch}" ]; then
+			_arch=$(injail ${PKG_BIN} query -F \
+			    "/packages/All/${pkg##*/}" "%q")
+		fi
+		shash_set 'pkg' 'arch' "${_arch}"
+	fi
+	if [ -n "${var_return}" ]; then
+		setvar "${var_return}" "${_arch}"
+	fi
+	if [ -z "${_arch}" ]; then
+		return 1
+	fi
+}
+
+
 pkg_get_dep_args() {
 	[ $# -lt 2 ] && eargs pkg_get_dep_args var_return pkg [dep_args]
 	local var_return="$1"
@@ -167,6 +191,7 @@ pkg_cache_data() {
 	{
 		pkg_get_options '' "${pkg}"
 		pkg_get_origin '' "${pkg}" "${origin}" || :
+		pkg_get_arch '' "${pkg}" || :
 		if have_ports_feature FLAVORS; then
 			pkg_get_flavor '' "${pkg}" "${flavor}"
 		elif have_ports_feature DEPENDS_ARGS; then
