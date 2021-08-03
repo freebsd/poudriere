@@ -5126,7 +5126,7 @@ ensure_pkg_installed() {
 			host_ver=$(/usr/local/sbin/pkg-static -v)
 			if [ "${host_ver}" = "${injail_ver}" ]; then
 				cp -f /usr/local/sbin/pkg-static "${mnt}/.p/pkg-static"
-			return 0
+				return 0
 			fi
 		done
 	fi
