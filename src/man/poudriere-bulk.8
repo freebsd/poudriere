@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd July 28, 2021
+.Dd August 3, 2021
 .Dt POUDRIERE-BULK 8
 .Os
 .Sh NAME
@@ -297,7 +297,15 @@ section in
 .Xr poudriere 8
 for examples of how this is used.
 .El
+.Sh ENVIRONMENT
+The
+.Cm bulk
+command may use the following environment variables:
+.Bl -tag -width "POUDRIERE_INTERACTIVE_NO_INSTALL"
+.It Sy POUDRIERE_INTERACTIVE_NO_INSTALL
+If specified, the package is not installed in interactive mode.
 .Sh EXAMPLES
+.El
 .Bl -tag -width 0n
 .It Sy Example 1\&: No Starting a Bulk Build
 .Pp

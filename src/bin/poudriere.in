@@ -179,6 +179,12 @@ while read envvar; do
 		*) continue ;;
 		esac
 		;;
+	POUDRIERE_INTERACTIVE_NO_INSTALL) in
+		case "${CMD}" in
+		bulk|testport) ;;
+		*) continue ;;
+		esac
+		;;
 	*) continue ;;
 	esac
 	env_set "${envvar}"

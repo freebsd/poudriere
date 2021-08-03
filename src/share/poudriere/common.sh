@@ -1831,14 +1831,16 @@ enter_interactive() {
 		    /usr/bin/make -C "${portdir}" ${dep_args} \
 		    ${flavor:+FLAVOR=${flavor}} run-depends ||
 		    msg_warn "Failed to install ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET} run-depends"
-		msg "Installing ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
-		# Only use PKGENV during install as testport will store
-		# the package in a different place than dependencies
-		injail /usr/bin/env ${PKGENV:+-S "${PKGENV}"} \
-		    USE_PACKAGE_DEPENDS_ONLY=1 \
-		    /usr/bin/make -C "${portdir}" ${dep_args} \
-		    ${flavor:+FLAVOR=${flavor}} install-package ||
-		    msg_warn "Failed to install ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
+		if [ -z "${POUDRIERE_INTERACTIVE_NO_INSTALL-}" ]; then
+			msg "Installing ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
+			# Only use PKGENV during install as testport will store
+			# the package in a different place than dependencies
+			injail /usr/bin/env ${PKGENV:+-S "${PKGENV}"} \
+			    USE_PACKAGE_DEPENDS_ONLY=1 \
+			    /usr/bin/make -C "${portdir}" ${dep_args} \
+			    ${flavor:+FLAVOR=${flavor}} install-package ||
+			    msg_warn "Failed to install ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
+		fi
 	done
 	if [ "${one_package}" -gt 1 ]; then
 		unset one_package

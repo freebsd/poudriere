@@ -394,9 +394,11 @@ msg "Cleaning up"
 injail /usr/bin/make -C ${portdir} -DNOCLEANDEPENDS clean \
     ${MAKE_ARGS}
 
-msg "Deinstalling package"
-ensure_pkg_installed
-injail ${PKG_DELETE} ${PKGNAME}
+if [ -z "${POUDRIERE_INTERACTIVE_NO_INSTALL-}" ]; then
+	msg "Deinstalling package"
+	ensure_pkg_installed
+	injail ${PKG_DELETE} ${PKGNAME}
+fi
 
 stop_build "${PKGNAME}" "${ORIGINSPEC}" ${ret}
 log_stop
