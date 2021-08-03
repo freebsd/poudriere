@@ -406,42 +406,20 @@ The bind address used by
 See
 .Xr fetch 3
 for more details.
-.It Ev FTP_ Ns Aq Ar *
+.It Ev HTTP_PROXY HTTP_* http_* FTP_PROXY FTP_* http_* SSL_* NO_PROXY no_proxy
 The proxy configuration for
 .Xr fetch 1 .
 See
 .Xr fetch 3
 for other supported proxy environment variables.
-.It Ev ftp_ Ns Aq Ar *
-See
-.Ev FTP_ Ns Aq Ar * .
-.It Ev FTP_PROXY
-See
-.Ev FTP_ Ns Aq Ar * .
-.It Ev HTTP_ Ns Aq Ar *
-See
-.Ev FTP_ Ns Aq Ar * .
-.It Ev http_ Ns Aq Ar *
-See
-.Ev FTP_ Ns Aq Ar * .
-.It Ev HTTP_PROXY
-See
-.Ev FTP_ Ns Aq Ar * .
-.It Ev NO_PROXY
-See
-.Ev FTP_ Ns Aq Ar * .
-.It Ev no_proxy
-See
-.Ev FTP_ Ns Aq Ar * .
-.It Ev SSL_ Ns Aq Ar *
-See
-.Ev FTP_ Ns Aq Ar * .
 .It Ev MAKEOBJDIRPREFIX
 See
 .Xr build 7
 and the implementation of the
 .Nm jail
 subcommand for more details.
+.It Ev TERM
+Passed through for interactive modes.
 .El
 .Sh EXAMPLES
 .Bl -tag -width 0n

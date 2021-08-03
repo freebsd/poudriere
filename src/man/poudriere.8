@@ -114,9 +114,6 @@ Show version of
 .Nm .
 .El
 .Sh ENVIRONMENT
-The
-.Nm
-command may use the following environment variables:
 .Bl -tag -width "HTTP_PROXY FTP_PROXY"
 .It Ev POUDRIERE_ETC
 If specified, the path to poudriere's config directory.
@@ -129,32 +126,9 @@ Defaults to
 .Sy 022.
 .El
 .Pp
-The
-.Nm jail
-and
-.Nm ports
-subcommands may additionally use the following environment variables:
-.Bl -tag -width "HTTP_PROXY FTP_PROXY"
-.It Ev FETCH_BIND_ADDRESS
-The bind address used by
-.Xr fetch 1 .
-See
-.Xr fetch 3
-for more details.
-.It Ev HTTP_PROXY HTTP_* http_* FTP_PROXY FTP_* http_* SSL_* NO_PROXY no_proxy
-The proxy configuration for
-.Xr fetch 1 .
-See
-.Xr fetch 3
-for other supported proxy environment variables.
-.El
-.Pp
-The
-.Nm jail
-subcommand may additionally use the following environment variable:
-.Bl -tag -width "HTTP_PROXY FTP_PROXY"
-.It Ev MAKEOBJDIRPREFIX
-.El
+See subcommand manpage
+.Sx ENVIRONMENT
+sections for more information.
 .Sh FILES
 .Bl -tag -width ".Pa POUDRIERE_ETC/poudriere.d/poudriere.conf" -compact
 .It Pa POUDRIERE_ETC/poudriere.conf

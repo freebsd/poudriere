@@ -298,14 +298,13 @@ section in
 for examples of how this is used.
 .El
 .Sh ENVIRONMENT
-The
-.Cm bulk
-command may use the following environment variables:
 .Bl -tag -width "POUDRIERE_INTERACTIVE_NO_INSTALL"
 .It Ev POUDRIERE_INTERACTIVE_NO_INSTALL
 If specified, the package is not installed in interactive mode.
-.Sh EXAMPLES
+.It Ev TERM
+Passed through for interactive modes.
 .El
+.Sh EXAMPLES
 .Bl -tag -width 0n
 .It Sy Example 1\&: No Starting a Bulk Build
 .Pp
