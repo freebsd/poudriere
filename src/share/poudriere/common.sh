@@ -3468,13 +3468,6 @@ download_from_repo() {
 			return 0
 		fi
 	fi
-	cnt=$(wc -l ${missing_pkgs} | awk '{print $1}')
-	packagesite_resolved=$(injail ${pkg_bin} -vv | \
-	    awk '/[[:space:]]*url[[:space:]]*:[[:space:]]*/ {
-		    gsub(/^"|",$|,$/, "", $3)
-		    print $3
-	    }')
-	msg "Package fetch: Will fetch ${cnt} packages from ${packagesite_resolved}"
 	# pkg insists on creating a local.sqlite even if we won't use it
 	# (like pkg rquery -U), and it uses various locking that isn't needed
 	# here. Grab all the options for comparison.
@@ -3502,6 +3495,14 @@ download_from_repo() {
 		rm -f "${wantedpkgs}"
 		return
 	fi
+
+	packagesite_resolved=$(injail ${pkg_bin} -vv | \
+	    awk '/[[:space:]]*url[[:space:]]*:[[:space:]]*/ {
+		    gsub(/^"|",$|,$/, "", $3)
+		    print $3
+	    }')
+	cnt=$(wc -l ${wantedpkgs} | awk '{print $1}')
+	msg "Package fetch: Will fetch ${cnt} packages from ${packagesite_resolved}"
 
 	remount_packages -o rw
 	JNETNAME="n" injail xargs \
