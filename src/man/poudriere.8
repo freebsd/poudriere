@@ -118,11 +118,11 @@ The
 .Nm
 command may use the following environment variables:
 .Bl -tag -width "HTTP_PROXY FTP_PROXY"
-.It Sy POUDRIERE_ETC
+.It Ev POUDRIERE_ETC
 If specified, the path to poudriere's config directory.
 Defaults to
 .Pa /usr/local/etc .
-.It Sy UMASK
+.It Ev UMASK
 The umask for files created by
 .Nm .
 Defaults to
@@ -135,13 +135,13 @@ and
 .Nm ports
 subcommands may additionally use the following environment variables:
 .Bl -tag -width "HTTP_PROXY FTP_PROXY"
-.It Sy FETCH_BIND_ADDRESS
+.It Ev FETCH_BIND_ADDRESS
 The bind address used by
 .Xr fetch 1 .
 See
 .Xr fetch 3
 for more details.
-.It Sy HTTP_PROXY HTTP_* http_* FTP_PROXY FTP_* http_* SSL_* NO_PROXY no_proxy
+.It Ev HTTP_PROXY HTTP_* http_* FTP_PROXY FTP_* http_* SSL_* NO_PROXY no_proxy
 The proxy configuration for
 .Xr fetch 1 .
 See
@@ -153,7 +153,7 @@ The
 .Nm jail
 subcommand may additionally use the following environment variable:
 .Bl -tag -width "HTTP_PROXY FTP_PROXY"
-.It Sy MAKEOBJDIRPREFIX
+.It Ev MAKEOBJDIRPREFIX
 .El
 .Sh FILES
 .Bl -tag -width ".Pa POUDRIERE_ETC/poudriere.d/poudriere.conf" -compact
