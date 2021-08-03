@@ -32,11 +32,10 @@
 .Dt POUDRIERE-JAIL 8
 .Os
 .Sh NAME
-.Nm poudriere-jail
+.Nm "poudriere jail"
 .Nd manage jails used to build ports
 .Sh SYNOPSIS
-.Nm poudriere
-.Cm jail
+.Nm
 .Fl c
 .Fl j Ar name
 .Op Fl bDx
@@ -50,41 +49,34 @@
 .Op Fl p Ar portstree
 .Op Fl S Ar srcpath
 .Op Fl z Ar set
-.Nm poudriere
-.Cm jail
+.Nm
 .Fl d
 .Fl j Ar name
 .Op Fl y
 .Op Fl C Ar data
 .Op Fl p Ar portstree
 .Op Fl z Ar set
-.Nm poudriere
-.Cm jail
+.Nm
 .Fl i
 .Fl j Ar name
 .Op Fl z Ar set
-.Nm poudriere
-.Cm jail
+.Nm
 .Fl k
 .Fl j Ar name
 .Op Fl z Ar set
-.Nm poudriere
-.Cm jail
+.Nm
 .Fl l
 .Op Ar nq
 .Op Fl z Ar set
-.Nm poudriere
-.Cm jail
+.Nm
 .Fl r Ar name
 .Fl j Ar name
 .Op Fl z Ar set
-.Nm poudriere
-.Cm jail
+.Nm
 .Fl s
 .Fl j Ar name
 .Op Fl z Ar set
-.Nm poudriere
-.Cm jail
+.Nm
 .Fl u
 .Fl j Ar name
 .Op Fl X
@@ -92,9 +84,8 @@
 .Op Fl t Ar version
 .Op Fl z Ar set
 .Sh DESCRIPTION
-This command manages the
-.Nm
-jails which are used as different building environments.
+This command manages the poudriere jails which are used as different building
+environments.
 .Sh SUBCOMMANDS
 .Bl -tag -width "-r name"
 .It Fl c
@@ -395,10 +386,6 @@ Do not prompt for confirmation when deleting a jail.
 .It Fl z Ar set
 This specifies which set to start/stop the jail with.
 .El
-.Sh ENVIRONMENT
-The
-.Nm jail
-subcommand may use the following environment variables:
 .Bl -tag -width FETCH_BIND_ADDRESS
 .It Ev FETCH_BIND_ADDRESS
 The bind address used by
@@ -416,8 +403,8 @@ for other supported proxy environment variables.
 See
 .Xr build 7
 and the implementation of the
-.Nm jail
-subcommand for more details.
+.Nm
+command for more details.
 .It Ev TERM
 Passed through for interactive modes.
 .El

@@ -32,18 +32,14 @@
 .Dt POUDRIERE-STATUS 8
 .Os
 .Sh NAME
-.Nm poudriere-status
+.Nm "poudriere status"
 .Nd Show status of current and previous builds.
 .Sh SYNOPSIS
-.Nm poudriere
-.Op Ar poudriere-options
-.Cm status
+.Nm
 .Op Ar options
 .Sh DESCRIPTION
 This command shows status of current and previous builds.
-The
-.Nm status
-command sorts by SETNAME, PORTSTREE, JAILNAME and then BUILDNAME.
+The output is sorted by by SETNAME, PORTSTREE, JAILNAME and then BUILDNAME.
 .Sh OPTIONS
 .Bl -tag -width "-f conffile"
 .It Fl a
