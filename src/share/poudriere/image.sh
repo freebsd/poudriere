@@ -31,6 +31,13 @@ usage() {
 poudriere image [parameters] [options]
 
 Parameters:
+    -j jail         -- Jail
+    -t type         -- Type of image can be one of
+                    -- iso, iso+mfs, iso+zmfs, usb, usb+mfs, usb+zmfs,
+                       rawdisk, zrawdisk, tar, firmware, rawfirmware,
+                       dump, zsnapshot
+
+Options:
     -A post-script  -- Source this script after populating the \$WRKDIR/world
                        directory to apply customizations before exporting the
                        final image.
@@ -43,7 +50,6 @@ Parameters:
     -f packagelist  -- List of packages to install
     -h hostname     -- The image hostname
     -i originimage  -- Origin image name
-    -j jail         -- Jail
     -m overlaydir   -- Build a miniroot image as well (for tar type images), and
                        overlay this directory into the miniroot image
     -n imagename    -- The name of the generated image
@@ -52,10 +58,6 @@ Parameters:
     -P pkgbase      -- List of pkgbase packages to install
     -s size         -- Set the image size
     -S snapshotname -- Snapshot name
-    -t type         -- Type of image can be one of (default iso+zmfs):
-                    -- iso, iso+mfs, iso+zmfs, usb, usb+mfs, usb+zmfs,
-                       rawdisk, zrawdisk, tar, firmware, rawfirmware,
-                       dump, zsnapshot
     -w size         -- Set the size of the swap partition
     -X excludefile  -- File containing the list in cpdup format
     -z set          -- Set
