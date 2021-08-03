@@ -2626,8 +2626,9 @@ jail_start() {
 	local mnt
 	local needfs="${NULLFSREF}"
 	local needkld kldpair kld kldmodname
-	local tomnt fs
-	local portbuild_uid aarchld o
+	local tomnt fs o
+	local portbuild_uid portbuild_gid aarchld
+	local portbuild_gids portbuild_add_group _gid
 
 	lock_jail
 
@@ -2866,19 +2867,41 @@ jail_start() {
 		_jlock jlock
 		rm -rf "${jlock}" 2>/dev/null || :
 	fi
-	injail id >/dev/null || \
+	injail id >/dev/null 2>&1 || \
 	    err $? "Unable to execute id(1) in jail. Emulation or ABI wrong."
-	portbuild_uid=$(injail id -u ${PORTBUILD_USER} 2>/dev/null || :)
+
+	portbuild_gid=$(injail pw groupshow "${PORTBUILD_GROUP}" 2>/dev/null | cut -d : -f3 || :)
+	if [ -z "${portbuild_gid}" ]; then
+		msg_n "Creating group ${PORTBUILD_GROUP}"
+		injail pw groupadd "${PORTBUILD_GROUP}" -g "${PORTBUILD_GID}" || \
+		    err 1 "Unable to create group ${PORTBUILD_GROUP}"
+		echo " done"
+	else
+		PORTBUILD_GID=${portbuild_gid}
+	fi
+	portbuild_uid=$(injail id -u "${PORTBUILD_USER}" 2>/dev/null || :)
 	if [ -z "${portbuild_uid}" ]; then
-		msg_n "Creating user/group ${PORTBUILD_USER}"
-		injail pw groupadd ${PORTBUILD_USER} -g ${PORTBUILD_UID} || \
-		err 1 "Unable to create group ${PORTBUILD_USER}"
-		injail pw useradd ${PORTBUILD_USER} -u ${PORTBUILD_UID} -d /nonexistent -c "Package builder" || \
-		err 1 "Unable to create user ${PORTBUILD_USER}"
+		msg_n "Creating user ${PORTBUILD_USER}"
+		injail pw useradd "${PORTBUILD_USER}" -u "${PORTBUILD_UID}" \
+		    -g "${PORTBUILD_GROUP}" -d /nonexistent -c "Package builder" || \
+		    err 1 "Unable to create user ${PORTBUILD_USER}"
 		echo " done"
 	else
 		PORTBUILD_UID=${portbuild_uid}
-		PORTBUILD_GID=$(injail id -g ${PORTBUILD_USER})
+	fi
+	portbuild_gids=$(injail id -G "${PORTBUILD_USER}" 2>/dev/null || :)
+	portbuild_add_group=true
+	for _gid in ${portbuild_gids}; do
+		if [ "${_gid}" = "${PORTBUILD_GID}" ]; then
+			portbuild_add_group=false
+			break
+		fi
+	done
+	if [ "${portbuild_add_group}" = "true" ]; then
+		msg_n "Adding user ${PORTBUILD_USER} to ${PORTBUILD_GROUP}"
+		injail pw groupmod "${PORTBUILD_GROUP}" -m "${PORTBUILD_USER}" || \
+		    err 1 "Unable to add user ${PORTBUILD_USER} to group ${PORTBUILD_GROUP}"
+		echo " done"
 	fi
 	injail service ldconfig start >/dev/null || \
 	    err 1 "Failed to set ldconfig paths."
@@ -8412,6 +8435,7 @@ fi
 : ${PORTBUILD_UID:=65532}
 : ${PORTBUILD_GID:=${PORTBUILD_UID}}
 : ${PORTBUILD_USER:=nobody}
+: ${PORTBUILD_GROUP:=${PORTBUILD_USER}}
 : ${CCACHE_DIR_NON_ROOT_SAFE:=no}
 if [ -n "${CCACHE_DIR}" ] && [ "${CCACHE_DIR_NON_ROOT_SAFE}" = "no" ]; then
 	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
