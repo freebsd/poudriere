@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd August 1, 2021
+.Dd August 3, 2021
 .Dt POUDRIERE-JAIL 8
 .Os
 .Sh NAME
@@ -87,7 +87,7 @@
 .Cm jail
 .Fl u
 .Fl j Ar name
-.Op Fl x
+.Op Fl X
 .Op Fl J Ar maxjobs
 .Op Fl t Ar version
 .Op Fl z Ar set
@@ -386,17 +386,10 @@ for CURRENT.
 Other methods only use the
 .Ar version
 value for display.
-.It Fl x
-Build the native-xtools target using the host's
-.Pa /usr/src
-tree and copy this
-into the jail.
-The use of
-.Pa /usr/src
-is due to a bug in the native-xtools build which does not allow it to be
-built from the jail's own source.
-Used exclusively
-for cross building a ports set, typically via the qemu-user tools.
+.It Fl X
+Do not build and setup native-xtools cross compile tools in jail
+when building for a different TARGET ARCH than the host.
+Only applies if TARGET_ARCH and HOST_ARCH are different.
 .It Fl y
 Do not prompt for confirmation when deleting a jail.
 .It Fl z Ar set
@@ -444,9 +437,6 @@ See
 See
 .Ev FTP_ Ns Aq Ar * .
 .It Ev MAKEOBJDIRPREFIX
-Related to the
-.Fl x
-flag.
 See
 .Xr build 7
 and the implementation of the

@@ -69,8 +69,9 @@ Options:
     -D            -- Do a full git clone without --depth (default: --depth=1)
     -t version    -- Version of FreeBSD to upgrade the jail to.
     -U url        -- Specify a url to fetch the sources (with method git and/or svn).
-    -x            -- Build and setup native-xtools cross compile tools in jail when
-                     building for a different TARGET ARCH than the host.
+    -X            -- Do not build and setup native-xtools cross compile tools in jail
+                     when building for a different TARGET ARCH than the host.
+                     Only applies if TARGET_ARCH and HOST_ARCH are different.
 
 Options for -d:
     -C clean      -- Clean remaining data existing in poudriere data folder.
@@ -499,6 +500,11 @@ build_native_xtools() {
 		: ${XDEV_SRC:=${SRC_BASE}}
 	else
 		: ${XDEV_SRC:=/usr/src}
+	fi
+	# Basic sanity check
+	if [ ! -f "${XDEV_SRC}/Makefile" ] || \
+	    [ ! -f "${XDEV_SRC}/Makefile.inc1" ]; then
+		err 1 "${XDEV_SRC} must be a working src tree to build native-xtools. Perhaps you meant to specify -X?"
 	fi
 	msg "Starting make native-xtools with ${PARALLEL_JOBS} jobs in ${XDEV_SRC}"
 	# Can use -DNO_NXBTOOLCHAIN if we just ran buildworld to reuse the
@@ -1087,7 +1093,7 @@ QUIET=0
 NAMEONLY=0
 PTNAME=default
 SETNAME=""
-XDEV=0
+XDEV=1
 BUILD=0
 GIT_DEPTH=--depth=1
 BUILD_PKGBASE=0
@@ -1097,7 +1103,7 @@ set_command() {
 	COMMAND="$1"
 }
 
-while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:y" FLAG; do
+while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxXC:y" FLAG; do
 	case "${FLAG}" in
 		b)
 			BUILD=1
@@ -1191,8 +1197,11 @@ while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxC:y" FLAG; do
 		t)
 			TORELEASE=${OPTARG}
 			;;
+		X)
+			XDEV=0
+			;;
 		x)
-			XDEV=1
+			# Backwards compat
 			;;
 		y)
 			YES=1
