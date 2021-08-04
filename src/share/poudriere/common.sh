@@ -3463,7 +3463,7 @@ download_from_repo() {
 		    ${P_PKG_PKGNAME:?})
 		if [ "$(pkg_version -t "${remote_pkg_ver}" \
 		    "${local_pkg_ver}")" = ">" ]; then
-			msg_verbose "Package fetch: Not fetching due to remote pkg being newer than local: ${remote_pkg_ver} vs ${local_pkg_ver}"
+			msg "Package fetch: Not fetching due to remote pkg being newer than local: ${remote_pkg_ver} vs ${local_pkg_ver}"
 			rm -f "${missing_pkgs}"
 			return 0
 		fi
@@ -3491,7 +3491,7 @@ download_from_repo() {
 	    "${remote_all_pkgs}" "${remote_all_options}" "${remote_all_deps}"
 
 	if [ ! -s "${wantedpkgs}" ]; then
-		msg_verbose "Package fetch: No packages eligible to fetch"
+		msg "Package fetch: No packages eligible to fetch"
 		rm -f "${wantedpkgs}"
 		return
 	fi
