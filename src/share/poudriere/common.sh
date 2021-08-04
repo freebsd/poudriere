@@ -3534,7 +3534,7 @@ validate_package_branch() {
 	local PACKAGE_FETCH_BRANCH="$1"
 
 	case "${PACKAGE_FETCH_BRANCH}" in
-	latest|quarterly|release*) ;;
+	latest|quarterly|release*|"") ;;
 	*:*)
 		unset PACKAGE_FETCH_URL
 		;;
