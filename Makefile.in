@@ -766,6 +766,7 @@ dist_include_HEADERS = \
 			src/share/poudriere/include/fs.sh \
 			src/share/poudriere/include/parallel.sh \
 			src/share/poudriere/include/pkg.sh \
+			src/share/poudriere/include/pkgqueue.sh \
 			src/share/poudriere/include/shared_hash.sh \
 			src/share/poudriere/include/util.sh
 
