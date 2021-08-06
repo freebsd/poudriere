@@ -2172,6 +2172,7 @@ convert_repository() {
 stash_packages() {
 
 	PACKAGES_ROOT=${PACKAGES}
+	PACKAGES_PKG_CACHE="${PACKAGES_ROOT}/.pkg-cache"
 
 	[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] || return 0
 
@@ -2213,6 +2214,12 @@ commit_packages() {
 	# Link the latest-done path now that we're done
 	_log_path log
 	ln -sfh ${BUILDNAME} ${log%/*}/latest-done
+
+	# Cleanup pkg cache
+	if [ -e "${PACKAGES_PKG_CACHE:?}" ]; then
+		find -L "${PACKAGES_PKG_CACHE:?}" -links 1 -print0 | \
+		    xargs -0 rm -f
+	fi
 
 	[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] || return 0
 	if [ "${COMMIT_PACKAGES_ON_FAILURE}" = "no" ] &&
@@ -3507,11 +3514,26 @@ download_from_repo() {
 	cnt=$(wc -l ${wantedpkgs} | awk '{print $1}')
 	msg "Package fetch: Will fetch ${cnt} packages from ${packagesite_resolved}"
 
-	remount_packages -o rw
+	# Fetch into a cache and link back into the PACKAGES dir.
+	mkdir -p "${PACKAGES}/All" \
+	    "${PACKAGES_PKG_CACHE:?}" \
+	    "${MASTERMNT}/var/cache/pkg"
+	${NULLMOUNT} "${PACKAGES_PKG_CACHE}" "${MASTERMNT}/var/cache/pkg" || \
+	    err 1 "null mount failed for pkg cache"
 	JNETNAME="n" injail xargs \
 	    env ASSUME_ALWAYS_YES=yes \
-	    ${pkg_bin} fetch -U -o /packages < "${wantedpkgs}"
-	remount_packages -o ro
+	    ${pkg_bin} fetch -U < "${wantedpkgs}"
+	while mapfile_read_loop "${wantedpkgs}" pkgname; do
+		# XXX: Remote PKG_SUFX may differ
+		echo "${pkgname}.${PKG_EXT}"
+	done | (
+		local packages_rel
+
+		cd "${PACKAGES_PKG_CACHE}"
+		relpath "${PACKAGES}" "${PACKAGES_PKG_CACHE}" packages_rel
+		xargs -J % ln -fL % "${packages_rel}/All/"
+	)
+	umountfs "${MASTERMNT}/var/cache/pkg"
 	rm -f "${wantedpkgs}"
 	# Bootstrapped.  Need to setup symlinks.
 	if [ "${pkg_bin}" = "pkg" ]; then
