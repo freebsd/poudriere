@@ -2195,8 +2195,8 @@ stash_packages() {
 		mkdir -p ${PACKAGES}/.building
 		PACKAGES_MADE_BUILDING=1
 		# hardlink copy all top-level directories
-		find ${PACKAGES}/.latest/ -mindepth 1 -maxdepth 1 -type d \
-		    ! -name .building | xargs -J % cp -al % ${PACKAGES}/.building
+		find ${PACKAGES}/.latest/ -mindepth 1 -maxdepth 1 -type d | \
+		    xargs -J % cp -al % ${PACKAGES}/.building
 
 		# Copy all top-level files to avoid appending
 		# to real copy in pkg-repo, etc.
