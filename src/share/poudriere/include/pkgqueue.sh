@@ -274,7 +274,7 @@ pkgqueue_remove_many_pipe() {
 		case "${deppath}" in
 		deps/*/*/*|rdeps/*) ;;
 		deps/*/*)
-			msg_debug "Unqueueing ${deppath##*/}" >&2
+			msg_debug "Unqueueing ${COLOR_PORT}${deppath##*/}${COLOR_RESET}" >&2
 			;;
 		*) ;;
 		esac

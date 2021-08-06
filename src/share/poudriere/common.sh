@@ -3571,7 +3571,7 @@ sanity_check_pkg() {
 	pkg_get_dep_origin_pkgnames '' compiled_deps_pkgnames "${pkg}"
 	for dep_pkgname in ${compiled_deps_pkgnames}; do
 		if [ ! -e "${PACKAGES}/All/${dep_pkgname}.${PKG_EXT}" ]; then
-			msg_debug "${pkg} needs missing ${PACKAGES}/All/${dep_pkgname}.${PKG_EXT}"
+			msg_debug "${COLOR_PORT}${pkg}${COLOR_RESET} needs missing ${COLOR_PORT}${dep_pkgname}${COLOR_RESET}"
 			msg "Deleting ${COLOR_PORT}${pkg##*/}${COLOR_RESET}: missing dependency: ${COLOR_PORT}${dep_pkgname}${COLOR_RESET}"
 			delete_pkg "${pkg}"
 			return 65	# Package deleted, need another pass
@@ -3712,13 +3712,13 @@ gather_distfiles() {
 	port_var_fetch_originspec "${originspec}" \
 	    DIST_SUBDIR sub \
 	    ALLFILES dists || \
-	    err 1 "Failed to lookup distfiles for ${originspec}"
+	    err 1 "Failed to lookup distfiles for ${COLOR_PORT}${originspec}${COLOR_RESET}"
 
 	originspec_decode "${originspec}" origin '' flavor
 	if [ -z "${pkgname}" ]; then
 		# Recursive gather_distfiles()
 		shash_get originspec-pkgname "${originspec}" pkgname || \
-		    err 1 "gather_distfiles: Could not find PKGNAME for ${originspec}"
+		    err 1 "gather_distfiles: Could not find PKGNAME for ${COLOR_PORT}${originspec}${COLOR_RESET}"
 	fi
 	shash_get pkgname-depend_specials "${pkgname}" specials || specials=
 
@@ -4168,7 +4168,7 @@ save_wrkdir() {
 
 	port_var_fetch_originspec "${originspec}" \
 	    WRKDIR wrkdir || \
-	    err 1 "Failed to lookup WRKDIR for ${originspec}"
+	    err 1 "Failed to lookup WRKDIR for ${COLOR_PORT}${originspec}${COLOR_RESET}"
 
 	tar -s ",${mnt}${wrkdir%/*},," -cf "${tarname}" ${COMPRESSKEY:+-${COMPRESSKEY}} \
 	    "${mnt}${wrkdir}" > /dev/null 2>&1
@@ -4865,7 +4865,7 @@ originspec_encode() {
 	# if neither are then don't even add in the ORIGINSPEC_SEP.
 	if [ -n "${_dep_args}" -o -n "${_flavor}" ]; then
 		[ -n "${_dep_args}" -a -n "${_flavor}" ] && \
-		    err 1 "originspec_encode: Origin ${origin} incorrectly trying to use FLAVOR=${_flavor} and DEPENDS_ARGS=${_dep_args}"
+		    err 1 "originspec_encode: Origin ${COLOR_PORT}${origin}${COLOR_RESET} incorrectly trying to use FLAVOR=${_flavor} and DEPENDS_ARGS=${_dep_args}"
 		output="${output}${ORIGINSPEC_SEP}${_flavor}${_dep_args:+${ORIGINSPEC_SEP}${_dep_args}}"
 	fi
 	setvar "${_var_return}" "${output}"
@@ -4979,7 +4979,7 @@ deps_fetch_vars() {
 		originspec_encode _default_originspec "${origin}" '' ''
 		shash_get originspec-pkgname "${_default_originspec}" \
 		    _default_pkgname || \
-		    err 1 "deps_fetch_vars: Lookup of ${originspec} failed to already have ${_default_originspec}"
+		    err 1 "deps_fetch_vars: Lookup of ${COLOR_PORT}${originspec}${COLOR_RESET} failed to already have ${COLOR_PORT}${_default_originspec}${COLOR_RESET}"
 	fi
 
 	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ] && \
@@ -4992,11 +4992,11 @@ deps_fetch_vars() {
 	if have_ports_feature FLAVORS; then
 		_lookup_flavors="FLAVOR _flavor FLAVORS _flavors"
 		[ -n "${_origin_dep_args}" ] && \
-		    err 1 "deps_fetch_vars: Using FLAVORS but attempted lookup on ${originspec}"
+		    err 1 "deps_fetch_vars: Using FLAVORS but attempted lookup on ${COLOR_PORT}${originspec}${COLOR_RESET}"
 	elif have_ports_feature DEPENDS_ARGS; then
 		_depends_args="DEPENDS_ARGS _dep_args"
 		[ -n "${_origin_flavor}" ] && \
-		    err 1 "deps_fetch_vars: Using DEPENDS_ARGS but attempted lookup on ${originspec}"
+		    err 1 "deps_fetch_vars: Using DEPENDS_ARGS but attempted lookup on ${COLOR_PORT}${originspec}${COLOR_RESET}"
 	fi
 	if ! port_var_fetch_originspec "${originspec}" \
 	    PKGNAME _pkgname \
@@ -5017,7 +5017,7 @@ deps_fetch_vars() {
 	fi
 
 	[ -n "${_pkgname}" ] || \
-	    err 1 "deps_fetch_vars: failed to get PKGNAME for ${originspec}"
+	    err 1 "deps_fetch_vars: failed to get PKGNAME for ${COLOR_PORT}${originspec}${COLOR_RESET}"
 
 	# Validate CATEGORIES is proper to avoid:
 	# - Pkg not registering the dependency
@@ -5060,7 +5060,7 @@ deps_fetch_vars() {
 				# Blank value, great!
 				;;
 			*)
-				err 1 "deps_fetch_vars: Unknown or invalid DEPENDS_ARGS (${_dep_arg}) for ${originspec}"
+				err 1 "deps_fetch_vars: Unknown or invalid DEPENDS_ARGS (${_dep_arg}) for ${COLOR_PORT}${originspec}${COLOR_RESET}"
 				;;
 			esac
 			_new_dep_args="${_new_dep_args}${_new_dep_args:+ }${_dep_arg}"
@@ -5102,7 +5102,7 @@ deps_fetch_vars() {
 	    "${originspec}"; then
 		shash_get pkgname-originspec "${_pkgname}" _existing_originspec
 		[ "${_existing_originspec}" = "${originspec}" ] && \
-		    err 1 "deps_fetch_vars: ${originspec} already known as ${pkgname}"
+		    err 1 "deps_fetch_vars: ${COLOR_PORT}${originspec}${COLOR_RESET} already known as ${COLOR_PORT}${pkgname}${COLOR_RESET}"
 		originspec_decode "${_existing_originspec}" \
 		    _existing_origin '' ''
 		if [ "${_existing_origin}" = "${origin}" ]; then
@@ -5117,7 +5117,7 @@ deps_fetch_vars() {
 				shash_get originspec-pkgname \
 				    "${_default_originspec}" \
 				    _default_pkgname || \
-				    err 1 "deps_fetch_vars: Lookup of ${originspec} failed to already have ${_default_originspec}"
+				    err 1 "deps_fetch_vars: Lookup of ${COLOR_PORT}${originspec}${COLOR_RESET} failed to already have ${COLOR_PORT}${_default_originspec}${COLOR_RESET}"
 			fi
 			if [ "${_pkgname}" = "${_default_pkgname}" ]; then
 				if have_ports_feature DEPENDS_ARGS && \
@@ -5131,24 +5131,24 @@ deps_fetch_vars() {
 					if [ -n "${_ignore}" ] && \
 					    ! shash_exists pkgname-ignore \
 					    "${_pkgname}"; then
-						err 1 "${originspec} is IGNORE but ${_existing_originspec} was not for ${_pkgname}: ${_ignore}"
+						err 1 "${COLOR_PORT}${originspec}${COLOR_RESET} is IGNORE but ${COLOR_PORT}${_existing_originspec}${COLOR_RESET} was not for ${COLOR_PORT}${_pkgname}${COLOR_RESET}: ${_ignore}"
 					fi
 					# Set this for later compute_deps lookups
 					shash_set originspec-pkgname \
 					    "${originspec}" "${_pkgname}"
 				fi
 				# This originspec is superfluous, just ignore.
-				msg_debug "deps_fetch_vars: originspec ${originspec} is superfluous for PKGNAME ${_pkgname}"
+				msg_debug "deps_fetch_vars: originspec ${COLOR_PORT}${originspec}${COLOR_RESET} is superfluous for PKGNAME ${COLOR_PORT}${_pkgname}${COLOR_RESET}"
 				[ ${ALL} -eq 0 ] && return 2
 				have_ports_feature DEPENDS_ARGS && \
 				    [ -n "${_origin_dep_args}" ] && return 2
 			fi
 		fi
-		err 1 "Duplicated origin for ${_pkgname}: ${COLOR_PORT}${originspec}${COLOR_RESET} AND ${COLOR_PORT}${_existing_originspec}${COLOR_RESET}. Rerun with -v to see which ports are depending on these."
+		err 1 "Duplicated origin for ${COLOR_PORT}${_pkgname}${COLOR_RESET}: ${COLOR_PORT}${originspec}${COLOR_RESET} AND ${COLOR_PORT}${_existing_originspec}${COLOR_RESET}. Rerun with -v to see which ports are depending on these."
 	fi
 
 	# Discovered a new originspec->pkgname mapping.
-	msg_debug "deps_fetch_vars: discovered ${originspec} is ${_pkgname}"
+	msg_debug "deps_fetch_vars: discovered ${COLOR_PORT}${originspec}${COLOR_RESET} is ${COLOR_PORT}${_pkgname}${COLOR_RESET}"
 	shash_set originspec-pkgname "${originspec}" "${_pkgname}"
 	[ -n "${_flavor}" ] && \
 	    shash_set pkgname-flavor "${_pkgname}" "${_flavor}"
@@ -5503,7 +5503,7 @@ delete_old_pkg() {
 						;;
 					esac
 					[ -n "${dpath}" ] || \
-					    err 1 "Invalid dependency for ${pkgname}: ${d}"
+					    err 1 "Invalid dependency for ${COLOR_PORT}${pkgname}${COLOR_RESET}: ${d}"
 					current_deps="${current_deps} ${dpath}"
 				fi
 			done
@@ -5999,7 +5999,7 @@ gather_port_vars() {
 		# For -a we skip the initial gatherqueue
 		if [ ${ALL} -eq 1 ]; then
 			[ -n "${flavor}" ] && \
-			    err 1 "Flavor ${originspec} with ALL=1"
+			    err 1 "Flavor ${COLOR_PORT}${originspec}${COLOR_RESET} with ALL=1"
 			parallel_run \
 			    prefix_stderr_quick \
 			    "(${COLOR_PORT}${originspec}${COLOR_RESET})" \
@@ -6037,7 +6037,7 @@ gather_port_vars() {
 			    "fqueue/${originspec%/*}!${originspec#*/}"
 			echo "${rdep}" > \
 			    "fqueue/${originspec%/*}!${originspec#*/}/rdep"
-			msg_debug "queueing ${originspec} into flavorqueue (rdep=${rdep})"
+			msg_debug "queueing ${COLOR_PORT}${originspec}${COLOR_RESET} into flavorqueue (rdep=${COLOR_PORT}${rdep}${COLOR_RESET})"
 			# For DEPENDS_ARGS we can skip bothering with
 			# the gatherqueue just simply delay into the
 			# flavorqueue.
@@ -6067,7 +6067,7 @@ gather_port_vars() {
 
 		# Duplicate are possible from a user list, it's fine.
 		mkdir -p "${qorigin}"
-		msg_debug "queueing ${origin} into gatherqueue (rdep=${rdep})"
+		msg_debug "queueing ${COLOR_PORT}${origin}${COLOR_RESET} into gatherqueue (rdep=${COLOR_PORT}${rdep}${COLOR_RESET})"
 		if [ -n "${rdep}" ]; then
 			echo "${rdep}" > "${qorigin}/rdep"
 		fi
@@ -6124,7 +6124,7 @@ gather_port_vars() {
 				# the substitued '/'
 				originspec="${origin%!*}/${origin#*!}"
 				read_line rdep "${qorigin}/rdep" || \
-				    err 1 "gather_port_vars: Failed to read rdep for ${originspec}"
+				    err 1 "gather_port_vars: Failed to read rdep for ${COLOR_PORT}${originspec}${COLOR_RESET}"
 				parallel_run \
 				    prefix_stderr_quick \
 				    "(${COLOR_PORT}${originspec}${COLOR_RESET})" \
@@ -6236,12 +6236,12 @@ gather_port_vars_port() {
 	local origin origin_dep_args origin_flavor default_flavor
 	local ignore
 
-	msg_debug "gather_port_vars_port (${originspec}): LOOKUP"
+	msg_debug "gather_port_vars_port (${COLOR_PORT}${originspec}${COLOR_RESET}): LOOKUP"
 	originspec_decode "${originspec}" origin origin_dep_args origin_flavor
 	[ -n "${origin_dep_args}" ] && ! have_ports_feature DEPENDS_ARGS && \
-	    err 1 "gather_port_vars_port: Looking up ${originspec} without DEPENDS_ARGS support in ports"
+	    err 1 "gather_port_vars_port: Looking up ${COLOR_PORT}${originspec}${COLOR_RESET} without DEPENDS_ARGS support in ports"
 	[ -n "${origin_flavor}" ] && ! have_ports_feature FLAVORS && \
-	    err 1 "gather_port_vars_port: Looking up ${originspec} without FLAVORS support in ports"
+	    err 1 "gather_port_vars_port: Looking up ${COLOR_PORT}${originspec}${COLOR_RESET} without FLAVORS support in ports"
 
 	# Trim away FLAVOR_DEFAULT and restore it later
 	if [ "${origin_flavor}" = "${FLAVOR_DEFAULT}" ]; then
@@ -6262,7 +6262,7 @@ gather_port_vars_port() {
 		# if not -a since it can't happen in that case either.
 		# This is the opposite of the check later.
 		is_failed_metadata_lookup "${pkgname}" "${rdep}" || \
-		    err 1 "gather_port_vars_port: Already had ${originspec} (rdep=${rdep})"
+		    err 1 "gather_port_vars_port: Already had ${COLOR_PORT}${originspec}${COLOR_RESET} (rdep=${COLOR_PORT}${rdep}${COLOR_RESET})"
 
 		shash_get pkgname-deps "${pkgname}" deps || deps=
 		shash_get pkgname-flavor "${pkgname}" flavor || flavor=
@@ -6316,7 +6316,7 @@ gather_port_vars_port() {
 				# Nothing more do to.
 				return 0
 			fi
-			msg_debug "gather_port_vars_port: Fixing up from metadata hack on ${originspec}"
+			msg_debug "gather_port_vars_port: Fixing up from metadata hack on ${COLOR_PORT}${originspec}${COLOR_RESET}"
 			# Queue us as the main port
 			originspec_encode originspec "${origin}" \
 			    "${origin_dep_args}" ''
@@ -6338,7 +6338,7 @@ gather_port_vars_port() {
 	if [ ${ALL} -eq 0 ] && [ "${rdep%% *}" = "metadata" ]; then
 		# rdep is: metadata flavor original_rdep
 		if [ -z "${flavors}" ]; then
-			msg_debug "SKIPPING ${originspec} - no FLAVORS"
+			msg_debug "SKIPPING ${COLOR_PORT}${originspec}${COLOR_RESET} - no FLAVORS"
 			return 0
 		fi
 		local queued_flavor queuespec
@@ -6351,7 +6351,7 @@ gather_port_vars_port() {
 		# Check if we have the default FLAVOR sitting in the
 		# flavorqueue and don't skip if so.
 		if [ "${queued_flavor}" != "${default_flavor}" ]; then
-			msg_debug "SKIPPING ${originspec} - metadata lookup queued=${queued_flavor} default=${default_flavor}"
+			msg_debug "SKIPPING ${COLOR_PORT}${originspec}${COLOR_RESET} - metadata lookup queued=${queued_flavor} default=${default_flavor}"
 			return 0
 		fi
 		# We're keeping this metadata lookup as its original rdep
@@ -6361,7 +6361,7 @@ gather_port_vars_port() {
 		origin_flavor="${queued_flavor}"
 		originspec_encode queuespec "${origin}" "${origin_dep_args}" \
 		    "${origin_flavor}"
-		msg_debug "gather_port_vars_port: Fixing up ${originspec} to be ${queuespec}"
+		msg_debug "gather_port_vars_port: Fixing up ${COLOR_PORT}${originspec}${COLOR_RESET} to be ${COLOR_PORT}${queuespec}${COLOR_RESET}"
 		if [ -d "fqueue/${queuespec%/*}!${queuespec#*/}" ]; then
 			rm -rf "fqueue/${queuespec%/*}!${queuespec#*/}"
 		fi
@@ -6373,7 +6373,7 @@ gather_port_vars_port() {
 		fi
 	fi
 
-	msg_debug "WILL BUILD ${originspec}"
+	msg_debug "WILL BUILD ${COLOR_PORT}${originspec}${COLOR_RESET}"
 	echo "${pkgname} ${originspec} ${rdep} ${ignore}" >> "all_pkgs"
 	[ ${ALL} -eq 0 ] && echo "${pkgname%-*}" >> "all_pkgbases"
 
@@ -6389,7 +6389,7 @@ gather_port_vars_port() {
 			[ "${flavor}" = "${dep_flavor}" ] && continue
 			originspec_encode dep_originspec "${origin}" \
 			    "${origin_dep_args}" "${dep_flavor}"
-			msg_debug "gather_port_vars_port (${originspec}): Adding to flavorqueue FLAVOR=${dep_flavor}${dep_args:+ (DEPENDS_ARGS=${dep_args})}"
+			msg_debug "gather_port_vars_port (${COLOR_PORT}${originspec}${COLOR_RESET}): Adding to flavorqueue FLAVOR=${dep_flavor}${dep_args:+ (DEPENDS_ARGS=${dep_args})}"
 			mkdir -p "fqueue/${dep_originspec%/*}!${dep_originspec#*/}" || \
 				err 1 "gather_port_vars_port: Failed to add ${dep_originspec} to flavorqueue"
 			# Copy our own reverse dep over.  This should always
@@ -6417,9 +6417,9 @@ gather_port_vars_port() {
 	# for them since the default ones will be visited from the category
 	# Makefiles anyway.
 	if [ ${ALL} -eq 0 ] || [ -n "${dep_args}" ] ; then
-		msg_debug "gather_port_vars_port (${originspec}): Adding to depqueue${dep_args:+ (DEPENDS_ARGS=${dep_args})}"
+		msg_debug "gather_port_vars_port (${COLOR_PORT}${originspec}${COLOR_RESET}): Adding to depqueue${dep_args:+ (DEPENDS_ARGS=${dep_args})}"
 		mkdir "dqueue/${originspec%/*}!${originspec#*/}" || \
-			err 1 "gather_port_vars_port: Failed to add ${originspec} to depqueue"
+			err 1 "gather_port_vars_port: Failed to add ${COLOR_PORT}${originspec}${COLOR_RESET} to depqueue"
 	fi
 }
 
@@ -6457,7 +6457,7 @@ gather_port_vars_process_depqueue_enqueue() {
 	if shash_get originspec-pkgname "${dep_originspec}" dep_pkgname; then
 		if ! is_failed_metadata_lookup "${dep_pkgname}" "${rdep}" || \
 		    shash_exists pkgname-ignore "${dep_pkgname}"; then
-			msg_debug "gather_port_vars_process_depqueue_enqueue (${originspec}): Already had ${dep_originspec}, not enqueueing into ${queue} (rdep=${rdep})"
+			msg_debug "gather_port_vars_process_depqueue_enqueue (${COLOR_PORT}${originspec}${COLOR_RESET}): Already had ${COLOR_PORT}${dep_originspec}${COLOR_RESET}, not enqueueing into ${COLOR_PORT}${queue}${COLOR_RESET} (rdep=${COLOR_PORT}${rdep}${COLOR_RESET})"
 			return 0
 		fi
 		# The package isn't queued but is needed and already known.
@@ -6465,7 +6465,7 @@ gather_port_vars_process_depqueue_enqueue() {
 		# Ensure we process it.
 	fi
 
-	msg_debug "gather_port_vars_process_depqueue_enqueue (${originspec}): Adding ${dep_originspec} into the ${queue} (rdep=${rdep})"
+	msg_debug "gather_port_vars_process_depqueue_enqueue (${COLOR_PORT}${originspec}${COLOR_RESET}): Adding ${COLOR_PORT}${dep_originspec}${COLOR_RESET} into the ${queue} (rdep=${COLOR_PORT}${rdep}${COLOR_RESET})"
 	# Another worker may have created it
 	if mkdir "${queue}/${dep_originspec%/*}!${dep_originspec#*/}" \
 	    2>&${fd_devnull}; then
@@ -6487,13 +6487,13 @@ gather_port_vars_process_depqueue() {
 	local dep_args dep_originspec dep_flavor queue rdep
 	local fd_devnull
 
-	msg_debug "gather_port_vars_process_depqueue (${originspec})"
+	msg_debug "gather_port_vars_process_depqueue (${COLOR_PORT}${originspec}${COLOR_RESET})"
 
 	# Add all of this origin's deps into the gatherqueue to reprocess
 	shash_get originspec-pkgname "${originspec}" pkgname || \
-	    err 1 "gather_port_vars_process_depqueue failed to find pkgname for origin ${originspec}"
+	    err 1 "gather_port_vars_process_depqueue failed to find pkgname for origin ${COLOR_PORT}${originspec}${COLOR_RESET}"
 	shash_get pkgname-deps "${pkgname}" deps || \
-	    err 1 "gather_port_vars_process_depqueue failed to find deps for pkg ${pkgname}"
+	    err 1 "gather_port_vars_process_depqueue failed to find deps for pkg ${COLOR_PORT}${pkgname}${COLOR_RESET}"
 
 	# Open /dev/null in case gather_port_vars_process_depqueue_enqueue
 	# uses it, to avoid opening for every dependency.
@@ -6518,7 +6518,7 @@ gather_port_vars_process_depqueue() {
 				rdep="${originspec}"
 			fi
 
-			msg_debug "Want to enqueue default ${dep_origin} rdep=${rdep} into ${queue}"
+			msg_debug "Want to enqueue default ${COLOR_PORT}${dep_origin}${COLOR_RESET} rdep=${COLOR_PORT}${rdep}${COLOR_RESET} into ${queue}"
 			gather_port_vars_process_depqueue_enqueue \
 			    "${originspec}" "${dep_origin}" "${queue}" \
 			    "${rdep}"
@@ -6534,7 +6534,7 @@ gather_port_vars_process_depqueue() {
 			else
 				queue=fqueue
 			fi
-			msg_debug "Want to enqueue ${dep_originspec} rdep=${origin} into ${queue}"
+			msg_debug "Want to enqueue ${COLOR_PORT}${dep_originspec}${COLOR_RESET} rdep=${COLOR_PORT}${origin}${COLOR_RESET} into ${queue}"
 			gather_port_vars_process_depqueue_enqueue \
 			    "${originspec}" "${dep_originspec}" "${queue}" \
 			    "${originspec}"
@@ -6592,15 +6592,15 @@ compute_deps_pkg() {
 
 	# Safe to remove pkgname-deps now, it won't be needed later.
 	shash_remove pkgname-deps "${pkgname}" deps || \
-	    err 1 "compute_deps_pkg failed to find deps for ${pkgname}"
+	    err 1 "compute_deps_pkg failed to find deps for ${COLOR_PORT}${pkgname}${COLOR_RESET}"
 
 	if shash_exists pkgname-ignore "${pkgname}"; then
 		msg_debug "compute_deps_pkg: Will not build IGNORED ${COLOR_PORT}${pkgname}${COLOR_RESET} nor queue its deps"
 		return
 	fi
-	msg_debug "compute_deps_pkg: Will build ${pkgname}"
+	msg_debug "compute_deps_pkg: Will build ${COLOR_PORT}${pkgname}${COLOR_RESET}"
 	pkgqueue_add "${pkgname}" || \
-	    err 1 "compute_deps_pkg: Error creating queue entry for ${pkgname}: There may be a duplicate origin in a category Makefile"
+	    err 1 "compute_deps_pkg: Error creating queue entry for ${COLOR_PORT}${pkgname}${COLOR_RESET}: There may be a duplicate origin in a category Makefile"
 
 	for dep_originspec in ${deps}; do
 		if ! get_pkgname_from_originspec "${dep_originspec}" \
@@ -6608,14 +6608,14 @@ compute_deps_pkg() {
 			originspec_decode "${dep_originspec}" dep_origin '' \
 			    dep_flavor
 			if [ ${ALL} -eq 0 ]; then
-				msg_error "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname} from ${originspec} -- Does ${dep_origin} provide the '${dep_flavor}' FLAVOR?"
+				msg_error "compute_deps_pkg failed to lookup pkgname for ${COLOR_PORT}${dep_originspec}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET} from ${COLOR_PORT}${originspec}${COLOR_RESET} -- Does ${COLOR_PORT}${dep_origin}${COLOR_RESET} provide the '${dep_flavor}' FLAVOR?"
 			else
-				msg_error "compute_deps_pkg failed to lookup pkgname for ${dep_originspec} processing package ${pkgname} from ${originspec} -- Is SUBDIR+=${dep_originspec#*/} missing in ${dep_originspec%/*}/Makefile and does the port provide the '${dep_flavor}' FLAVOR?"
+				msg_error "compute_deps_pkg failed to lookup pkgname for ${COLOR_PORT}${dep_originspec}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET} from ${COLOR_PORT}${originspec}${COLOR_RESET} -- Is SUBDIR+=${COLOR_PORT}${dep_originspec#*/}${COLOR_RESET} missing in ${COLOR_PORT}${dep_originspec%/*}${COLOR_RESET}/Makefile and does the port provide the '${dep_flavor}' FLAVOR?"
 			fi
 			set_dep_fatal_error
 			continue
 		fi
-		msg_debug "compute_deps_pkg: Will build ${dep_originspec} for ${pkgname}"
+		msg_debug "compute_deps_pkg: Will build ${COLOR_PORT}${dep_originspec}${COLOR_RESET} for ${COLOR_PORT}${pkgname}${COLOR_RESET}"
 		pkgqueue_add_dep "${pkgname}" "${dep_pkgname}"
 		echo "${pkgname} ${dep_pkgname}"
 		if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
@@ -6653,14 +6653,14 @@ compute_deps_pkg() {
 					dpath=${dpath#${PORTSDIR}/} ;;
 				esac
 				if [ -z "${dpath}" ]; then
-					msg_error "Invalid dependency line for ${pkgname}: ${d}"
+					msg_error "Invalid dependency line for ${COLOR_PORT}${pkgname}${COLOR_RESET}: ${d}"
 					set_dep_fatal_error
 					continue
 				fi
 				if ! hash_get \
 				    compute_deps_originspec-pkgname \
 				    "${dpath}" dep_real_pkgname; then
-					msg_error "compute_deps_pkg failed to lookup existing pkgname for ${dpath} processing package ${pkgname}"
+					msg_error "compute_deps_pkg failed to lookup PKGNAME for ${COLOR_PORT}${dpath}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET}"
 					set_dep_fatal_error
 					continue
 				fi
