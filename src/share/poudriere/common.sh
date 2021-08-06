@@ -3321,7 +3321,7 @@ download_from_repo_check_pkg() {
 	for bpkg in ${PACKAGE_FETCH_BLACKLIST-}; do
 		case "${pkgbase}" in
 		${bpkg})
-			msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (blacklisted)"
+			msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: blacklisted"
 			return
 			;;
 		esac
@@ -3329,12 +3329,12 @@ download_from_repo_check_pkg() {
 	found=$(awk -v pkgname="${pkgname}" -vpkgbase="${pkgbase}" \
 	    '$1 == pkgbase {print $2}' "${remote_all_pkgs}")
 	if [ -z "${found}" ]; then
-		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (not found in remote)"
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: not found in remote"
 		return
 	fi
 	# Version mismatch
 	if [ "${found}" != "${pkgname}" ]; then
-		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (remote version mismatch: ${COLOR_PORT}${found}${COLOR_RESET})"
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: remote version mismatch: ${COLOR_PORT}${found}${COLOR_RESET}"
 		return
 	fi
 
@@ -3349,8 +3349,8 @@ download_from_repo_check_pkg() {
 	case "${selected_options}" in
 	${remote_options}) ;;
 	*)
-		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (want options:   '${selected_options}')"
-		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (remote options: '${remote_options}')"
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: options wanted:   '${selected_options}')"
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: options provided: '${remote_options}')"
 		return
 		;;
 	esac
@@ -3368,8 +3368,8 @@ download_from_repo_check_pkg() {
 	case "${local_deps}" in
 	${remote_deps}) ;;
 	*)
-		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (want deps:   '${local_deps}')"
-		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (remote deps: '${remote_deps}')"
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: deps wanted:   '${local_deps}')"
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: deps provided: '${remote_deps}')"
 		return
 		;;
 	esac
@@ -3396,6 +3396,7 @@ download_from_repo() {
 	    ignored; do
 		# Skip ignored ports
 		if [ -n "${ignored}" ]; then
+			msg_debug "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: ignored"
 			continue
 		fi
 		# Skip listed packages when testing
@@ -3403,15 +3404,19 @@ download_from_repo() {
 			if [ "${CLEAN:-0}" -eq 1 ] || \
 			    [ "${CLEAN_LISTED:-0}" -eq 1 ]; then
 				case "${listed}" in
-				listed) continue ;;
+				listed)
+					msg_debug "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: -C will delete"
+					continue ;;
 				esac
 			fi
 		fi
 		if ! pkgqueue_contains "${pkgname}" ; then
+			msg_debug "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: not queued"
 			continue
 		fi
 		# XXX only work when PKG_EXT is the same as the upstream
 		if [ -f "${PACKAGES}/All/${pkgname}.${PKG_EXT}" ]; then
+			msg_debug "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: have package"
 			continue
 		fi
 		pkgbase="${pkgname%-*}"
@@ -3419,7 +3424,7 @@ download_from_repo() {
 			case "${pkgbase}" in
 			${pkg}) ;;
 			*)
-				msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET} (not in whitelist)" >&2
+				msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: not in whitelist" >&2
 				continue 2
 				;;
 			esac
