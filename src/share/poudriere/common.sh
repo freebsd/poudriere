@@ -77,7 +77,8 @@ err() {
 	trap '' INFO
 	export CRASHED=1
 	if [ $# -ne 2 ]; then
-		err 1 "err expects 2 arguments: exit_number \"message\""
+		msg_error "err expects 2 arguments: exit_number \"message\": actual: '$'"
+		exit ${EX_SOFTWARE}
 	fi
 	# Try to set status so other processes know this crashed
 	# Don't set it from children failures though, only master
