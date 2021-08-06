@@ -1852,9 +1852,7 @@ enter_interactive() {
 		    err 1 "Unable to extract pkg."
 		# Install the selected pkg package
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
-		    /usr/bin/make -C \
-		    ${PORTSDIR}/$(injail /usr/bin/make \
-		    -f ${PORTSDIR}/Mk/bsd.port.mk -V PKGNG_ORIGIN) \
+		    /usr/bin/make -C "${PORTSDIR}/${P_PKG_ORIGIN:?}" \
 		    PKG_BIN="${PKG_BIN}" install-package
 	fi
 
