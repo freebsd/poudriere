@@ -207,5 +207,5 @@ umask ${UMASK}
 : ${SH:=sh}
 
 env_export
-exec env -i -P "${LIBEXECPREFIX}" ${CMD_ENV_S:+-S "${CMD_ENV_S}"} \
+exec env -i -P "${LIBEXECPREFIX}:/bin" ${CMD_ENV_S:+-S "${CMD_ENV_S}"} \
     ${SH} ${SET_ERREXIT} ${SETX} "${SCRIPTPATH}" "$@"
