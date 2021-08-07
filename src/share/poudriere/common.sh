@@ -8265,7 +8265,7 @@ if [ -z "${NO_ZFS}" ]; then
 	esac
 fi
 
-HOST_OSVERSION="$(sysctl -n kern.osreldate)"
+HOST_OSVERSION="$(sysctl -n kern.osreldate 2>/dev/null || echo 0)"
 if [ -z "${NO_ZFS}" -a -z "${ZFS_DEADLOCK_IGNORED}" ]; then
 	[ ${HOST_OSVERSION} -gt 900000 -a \
 	    ${HOST_OSVERSION} -le 901502 ] && err 1 \
