@@ -122,7 +122,7 @@ _msg_n() {
 		unset elapsed
 		arrow="=>>"
 	fi
-	if [ -n "${COLOR_ARROW}" ] || [ -z "${1##*\033[*}" ]; then
+	if [ -n "${COLOR_ARROW-}" ] || [ -z "${1##*\033[*}" ]; then
 		printf "${COLOR_ARROW}${elapsed}${DRY_MODE-}${arrow:+${COLOR_ARROW}${arrow} }${COLOR_RESET}%b${COLOR_RESET}${NL}" "$*"
 	else
 		printf "${elapsed}${DRY_MODE-}${arrow:+${arrow} }%b${NL}" "$*"
@@ -198,7 +198,7 @@ job_msg() {
 	local -; set +x
 	local now elapsed NO_ELAPSED_IN_MSG output
 
-	if [ -n "${MY_JOBID}" ]; then
+	if [ -n "${MY_JOBID-}" ]; then
 		NO_ELAPSED_IN_MSG=0
 		now=$(clock -monotonic)
 		calculate_duration elapsed "$((now - ${TIME_START_JOB:-${TIME_START:-0}}))"
@@ -310,7 +310,7 @@ _mastermnt() {
 }
 
 _my_path() {
-	if [ -z "${MY_JOBID}" ]; then
+	if [ -z "${MY_JOBID-}" ]; then
 		setvar "$1" "${MASTERMNT}"
 	elif [ -n "${MASTERMNTROOT}" ]; then
 		setvar "$1" "${MASTERMNTROOT}/${MY_JOBID}"
@@ -738,18 +738,18 @@ run_hook_file() {
 		BUILD_URL="${build_url}" \
 		    LOG_URL="${log_url}" \
 		    LOG="${log}" \
-		    POUDRIERE_BUILD_TYPE=${POUDRIERE_BUILD_TYPE} \
-		    POUDRIERED="${POUDRIERED}" \
-		    POUDRIERE_DATA="${POUDRIERE_DATA}" \
-		    MASTERNAME="${MASTERNAME}" \
-		    MASTERMNT="${MASTERMNT}" \
-		    MY_JOBID="${MY_JOBID}" \
-		    BUILDNAME="${BUILDNAME}" \
-		    JAILNAME="${JAILNAME}" \
-		    PTNAME="${PTNAME}" \
-		    SETNAME="${SETNAME}" \
-		    PACKAGES="${PACKAGES}" \
-		    PACKAGES_ROOT="${PACKAGES_ROOT}" \
+		    POUDRIERE_BUILD_TYPE=${POUDRIERE_BUILD_TYPE-} \
+		    POUDRIERED="${POUDRIERED-}" \
+		    POUDRIERE_DATA="${POUDRIERE_DATA-}" \
+		    MASTERNAME="${MASTERNAME-}" \
+		    MASTERMNT="${MASTERMNT-}" \
+		    MY_JOBID="${MY_JOBID-}" \
+		    BUILDNAME="${BUILDNAME-}" \
+		    JAILNAME="${JAILNAME-}" \
+		    PTNAME="${PTNAME-}" \
+		    SETNAME="${SETNAME-}" \
+		    PACKAGES="${PACKAGES-}" \
+		    PACKAGES_ROOT="${PACKAGES_ROOT-}" \
 		    /bin/sh "${hookfile}" "${event}" "$@"
 	) || err 1 "Hook ${hookfile} for '${hook}:${event}' returned non-zero"
 	return 0
@@ -965,7 +965,7 @@ log_stop() {
 		unset OUTPUT_REDIRECTED_STDOUT
 		unset OUTPUT_REDIRECTED_STDERR
 	fi
-	if [ -n "${tpid}" ]; then
+	if [ -n "${tpid-}" ]; then
 		# Give tee a moment to flush buffers
 		timed_wait_and_kill 5 $tpid 2>/dev/null || :
 		unset tpid
@@ -1248,7 +1248,9 @@ exit_handler() {
 		_jlock jlock
 		rm -rf "${jlock}" 2>/dev/null || :
 	fi
-	rm -rf "${POUDRIERE_TMPDIR}" >/dev/null 2>&1 || :
+	if [ -n "${POUDRIERE_TMPDIR-}" ]; then
+		rm -rf "${POUDRIERE_TMPDIR}" >/dev/null 2>&1 || :
+	fi
 }
 
 build_url() {
@@ -3137,7 +3139,7 @@ jail_stop() {
 jail_cleanup() {
 	local wait_pids pid pidfile
 
-	[ -n "${CLEANED_UP}" ] && return 0
+	[ -n "${CLEANED_UP-}" ] && return 0
 	msg "Cleaning up"
 
 	# Only bother with this if using jails as this may be being ran
@@ -3151,9 +3153,9 @@ jail_cleanup() {
 				    break
 				read pid < "${pidfile}"
 				kill_job 1 "${pid}" || :
-				wait_pids="${wait_pids} ${pid}"
+				wait_pids="${wait_pids:+${wait_pids} }${pid}"
 			done
-			_wait ${wait_pids} || :
+			_wait ${wait_pids-} || :
 		fi
 
 		jail_stop
@@ -8390,7 +8392,7 @@ fi
 : ${LOIP6:=::1}
 : ${LOIP4:=127.0.0.1}
 # If in a nested jail we may not even have a loopback to use.
-if [ ${JAILED} -eq 1 ]; then
+if [ "${JAILED:-0}" -eq 1 ]; then
 	# !! Note these exit statuses are inverted
 	ifconfig | \
 	    awk -vip="${LOIP6}" '$1 == "inet6" && $2 == ip {exit 1}' && \
