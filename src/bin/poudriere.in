@@ -179,7 +179,7 @@ while read envvar; do
 		*) continue ;;
 		esac
 		;;
-	POUDRIERE_INTERACTIVE_NO_INSTALL) in
+	POUDRIERE_INTERACTIVE_NO_INSTALL)
 		case "${CMD}" in
 		bulk|testport) ;;
 		*) continue ;;
