@@ -1217,7 +1217,9 @@ exit_handler() {
 		SHASH_VAR_PATH="${SHASH_VAR_PATH_DEFAULT}"
 	fi
 
-	parallel_shutdown
+	if type parallel_shutdown >/dev/null 2>&1; then
+		parallel_shutdown
+	fi
 
 	if was_a_bulk_run; then
 		# build_queue socket
