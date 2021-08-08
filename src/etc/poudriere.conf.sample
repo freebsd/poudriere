@@ -132,10 +132,22 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Default: no
 #BAD_PKGNAME_DEPS_ARE_FATAL=yes
 
-
 # Path to the RSA key to sign the PKG repo with. See pkg-repo(8)
+# This produces a repo that supports SIGNATURE_TYPE=PUBKEY
+# Default: not set
 #PKG_REPO_SIGNING_KEY=/etc/ssl/keys/repo.key
 
+# Command to sign the PKG repo with. See pkg-repo(8)
+# This produces a repo that supports SIGNATURE_TYPE=FINGERPRINTS
+# Default: not set
+#SIGNING_COMMAND=ssh signing-server sign.sh
+
+# Repo signing command execution context
+# If SIGNING_COMMAND is set, run pkg-repo(8) on the host?
+#   no  -   Run in the jail
+#   yes -   Run on the host
+# Default: no
+#PKG_REPO_FROM_HOST=yes
 
 # ccache support. Supply the path to your ccache cache directory.
 # It will be mounted into the jail and be shared among all jails.
