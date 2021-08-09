@@ -28,6 +28,7 @@
 
 BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
 . ${SCRIPTPREFIX}/include/common.sh.${BSDPLATFORM}
+EX_DATAERR=65
 EX_SOFTWARE=70
 SHFLAGS="$-"
 
@@ -1198,6 +1199,13 @@ exit_handler() {
 	trap '' HUP
 	unset IFS
 
+	if ! type parallel_shutdown >/dev/null 2>&1; then
+		parallel_shutdown() { :; }
+	fi
+	if ! type coprocess_stop >/dev/null 2>&1; then
+		coprocess_stop() { :; }
+	fi
+
 	# stdin may be redirected if a signal interrupted the read builtin (or
 	# any redirection to stdin).  Close it to avoid possibly referencing a
 	# file in the jail like builders.pipe on socket 6.
@@ -1218,9 +1226,7 @@ exit_handler() {
 		SHASH_VAR_PATH="${SHASH_VAR_PATH_DEFAULT}"
 	fi
 
-	if type parallel_shutdown >/dev/null 2>&1; then
-		parallel_shutdown
-	fi
+	parallel_shutdown
 
 	if was_a_bulk_run; then
 		# build_queue socket
