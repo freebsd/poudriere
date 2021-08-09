@@ -2296,7 +2296,10 @@ setup_ports_env() {
 			    /bin/sh ${PORTSDIR}/Mk/Scripts/ports_env.sh | \
 			    grep '^export [^;&]*' | \
 			    sed -e 's,^export ,,' -e 's,=",=,' -e 's,"$,,'
+		} >> "${__MAKE_CONF}.ports_env"
+		{
 			echo "#### Misc Poudriere ####"
+			echo ".include \"${__MAKE_CONF#${mnt}}.ports_env\""
 			# This is not set by ports_env as older Poudriere
 			# would not handle it right.
 			echo "GID=0"
