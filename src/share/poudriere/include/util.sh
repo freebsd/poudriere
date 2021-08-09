@@ -1053,3 +1053,42 @@ write_cmp() {
 		unlink "${tmp}"
 	fi
 }
+
+# Place environment requirements on entering a function
+# Using VALUE of __null requires a variable is NOT SET
+# Using VALUE of "" requires a variable is SET but BLANK
+# Using VAR! negates the value comparison (__null is SET, "" is SET+NOT EMPTY)
+required_env() {
+	local -; set +x
+	[ $# -ge 3 ] || eargs required_env function VAR VALUE VAR... VALUE...
+	local function="$1"
+	local var expected_value actual_value ret neg
+
+	shift
+	ret=0
+	neg=
+	if [ $(($# % 2)) -ne 0 ]; then
+		err ${EX_SOFTWARE} "wrong number of arguments to required_env() calling ${function}: expected function followed by pairs of VAR VALUE"
+	fi
+	while [ $# -ne 0 ]; do
+		var="$1"
+		expected_value="$2"
+		shift 2 || \
+		    err ${EX_SOFTWARE} "wrong number of arguments to required_env()"
+		case "${var}" in
+		*!)
+			neg="!"
+			var="${var%!}"
+			;;
+		esac
+		getvar "${var}" actual_value || actual_value=__null
+		if [ "${actual_value}" ${neg}= "${expected_value}" ]; then
+			continue
+		fi
+		ret=$((ret + 1))
+		msg_error "entered ${function}() with wrong environment: expected ${var} ${neg}= '${expected_value}' actual: '${actual_value}'"
+	done
+	if [ "${ret}" -ne 0 ]; then
+		exit ${EX_SOFTWARE}
+	fi
+}
