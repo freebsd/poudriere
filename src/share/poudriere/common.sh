@@ -150,13 +150,13 @@ msg_error() {
 	if [ -n "${MY_JOBID-}" ]; then
 		# Send colored msg to bulk log...
 		COLOR_ARROW="${COLOR_ERROR}" \
-		    job_msg "${COLOR_ERROR}Error:${COLOR_RESET} $1"
+		    job_msg "${COLOR_ERROR}Error:${COLOR_RESET} $@"
 		# And non-colored to buld log
-		msg "Error: $1" >&2
+		msg "Error: $@" >&2
 	else
 		# Send to true stderr
 		COLOR_ARROW="${COLOR_ERROR}" \
-		    msg "${COLOR_ERROR}Error:${COLOR_RESET} $1" \
+		    msg "${COLOR_ERROR}Error:${COLOR_RESET} $@" \
 		    >&${OUTPUT_REDIRECTED_STDERR:-2}
 	fi
 	return 0
@@ -203,7 +203,7 @@ job_msg() {
 		NO_ELAPSED_IN_MSG=0
 		now=$(clock -monotonic)
 		calculate_duration elapsed "$((now - ${TIME_START_JOB:-${TIME_START:-0}}))"
-		output="[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}] [${elapsed}] $1"
+		output="[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}] [${elapsed}] $@"
 	else
 		output="$@"
 	fi
