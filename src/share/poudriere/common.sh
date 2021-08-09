@@ -2555,6 +2555,9 @@ jail_start() {
 		PORTBUILD_UID=${portbuild_uid}
 		PORTBUILD_GID=$(injail id -g ${PORTBUILD_USER})
 	fi
+	if was_a_bulk_run; then
+		msg "Will build as ${PORTBUILD_USER}:${PORTBUILD_GROUP} (${PORTBUILD_UID}:${PORTBUILD_GID})"
+	fi
 	injail service ldconfig start >/dev/null || \
 	    err 1 "Failed to set ldconfig paths."
 
