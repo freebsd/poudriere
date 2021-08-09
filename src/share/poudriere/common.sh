@@ -3789,9 +3789,6 @@ build_port() {
 			phaseenv="${phaseenv:+${phaseenv}${PORT_FLAGS:+ }}${PORT_FLAGS}"
 		fi
 
-		print_phase_header "${phase}" "${phaseenv}"
-
-
 		if [ "${JUSER}" = "root" ]; then
 			export UID=0
 			export GID=0
@@ -3799,6 +3796,11 @@ build_port() {
 			export UID=${PORTBUILD_UID}
 			export GID=${PORTBUILD_GID}
 		fi
+		phaseenv="${phaseenv:+${phaseenv} }USER=${JUSER}"
+		phaseenv="${phaseenv:+${phaseenv} }UID=${UID}"
+		phaseenv="${phaseenv:+${phaseenv} }GID=${GID}"
+
+		print_phase_header "${phase}" "${phaseenv}"
 
 		if [ "${phase#*-}" = "depends" ]; then
 			injail /usr/bin/env ${phaseenv:+-S "${phaseenv}"} \
