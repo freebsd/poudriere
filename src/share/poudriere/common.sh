@@ -2432,6 +2432,20 @@ setup_ccache() {
 		WITH_CCACHE_BUILD=yes
 		CCACHE_DIR=${HOME}/.ccache
 		EOF
+		chmod 755 "${mnt}${HOME}"
+		if [ "${CCACHE_GID}" != "${PORTBUILD_GID}" ]; then
+			injail pw groupadd "${CCACHE_GROUP}" \
+			    -g "${CCACHE_GID}" \
+			    err 1 "Unable to add group ${CCACHE_GROUP}"
+			injail pw groupmod -n "${CCACHE_GROUP}" \
+			    -m "${PORTBUILD_USER}" || \
+			    err 1 "Unable to add user ${PORTBUILD_USER} to group ${CCACHE_GROUP}"
+			if [ "${PORTBUILD_USER}" != "root" ]; then
+				injail pw groupmod -n "${CCACHE_GROUP}" \
+				    -m "root" || \
+				    err 1 "Unable to add user root to group ${CCACHE_GROUP}"
+			fi
+		fi
 	fi
 	# A static host version may have been requested.
 	if [ -n "${CCACHE_STATIC_PREFIX}" ] && \
@@ -2889,6 +2903,7 @@ jail_start() {
 	else
 		PORTBUILD_GID=${portbuild_gid}
 	fi
+	: ${CCACHE_GID:=${PORTBUILD_GID}}
 	portbuild_uid=$(injail id -u "${PORTBUILD_USER}" 2>/dev/null || :)
 	if [ -z "${portbuild_uid}" ]; then
 		msg_n "Creating user ${PORTBUILD_USER}"
@@ -8456,11 +8471,36 @@ fi
 : ${PORTBUILD_GID:=${PORTBUILD_UID}}
 : ${PORTBUILD_USER:=nobody}
 : ${PORTBUILD_GROUP:=${PORTBUILD_USER}}
+# CCACHE_GID defaults to PORTBUILD_GID in jail_start()
+: ${CCACHE_GROUP:=${PORTBUILD_GROUP}}
 : ${CCACHE_DIR_NON_ROOT_SAFE:=no}
 if [ -n "${CCACHE_DIR}" ] && [ "${CCACHE_DIR_NON_ROOT_SAFE}" = "no" ]; then
 	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
 		msg_warn "BUILD_AS_NON_ROOT and CCACHE_DIR are potentially incompatible.  Disabling BUILD_AS_NON_ROOT"
-		msg_warn "Either disable one or set CCACHE_DIR_NON_ROOT_SAFE=yes and chown -R CCACHE_DIR to the user ${PORTBUILD_USER} (uid: ${PORTBUILD_UID})"
+		msg_warn "Either disable one or, set CCACHE_DIR_NON_ROOT_SAFE=yes and do the following procedure _on the host_."
+		cat >&2 <<-EOF
+
+		## Summary of https://ccache.dev/manual/3.7.11.html#_sharing_a_cache
+	        	# pw groupadd portbuild -g 65532
+	        	# pw useradd portbuild -u 65532 -g portbuild -d /nonexistent -s /usr/sbin/nologin
+	        	# pw groupmod -n portbuild -m root
+	        	# echo "umask = 0002" >> ${CCACHE_DIR}/ccache.conf
+	        	# find ${CCACHE_DIR}/ -type d -exec chmod 2775 {} +
+	        	# find ${CCACHE_DIR}/ -type f -exec chmod 0664 {} +
+	        	# chown -R :portbuild ${CCACHE_DIR}/
+	        	# chmod 1777 ${CCACHE_DIR}/tmp
+
+		## If a separate group is wanted:
+	        	# pw groupadd ccache -g 65531
+	        	# pw groupmod -n cacche -m root
+	        	# chown -R :ccache ${CCACHE_DIR}/
+
+		## poudriere.conf
+	        	CCACHE_DIR_NON_ROOT_SAFE=yes
+	        	CCACHE_GROUP=ccache
+	        	CCACHE_GID=65531
+		EOF
+		err ${EX_DATAERR} "BUILD_AS_NON_ROOT + CCACHE_DIR manual action required."
 	fi
 	# Default off with CCACHE_DIR.
 	: ${BUILD_AS_NON_ROOT:=no}
