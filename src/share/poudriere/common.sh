@@ -1920,11 +1920,23 @@ enter_interactive() {
 	Packages from /packages are loaded into 'pkg' and can be installed
 	as needed.
 
+	If building as non-root you will be logged into ${PORTBUILD_USER}.
+	su can be used without password to elevate.
+
 	To see this again: cat /etc/motd
 	EOF
 
 	if [ ${INTERACTIVE_MODE} -eq 1 ]; then
 		msg "Entering interactive test mode. Type 'exit' when done."
+		if injail pw groupmod -n wheel -m "${PORTBUILD_USER}"; then
+			cat >> "${MASTERMNT}/root/.login" <<-EOF
+			if ( -f /tmp/su-to-portbuild ) then
+				rm -f /tmp/su-to-portbuild
+				exec su -m "${PORTBUILD_USER}" -c csh
+			endif
+			EOF
+			touch "${MASTERMNT}/tmp/su-to-portbuild"
+		fi
 		JNETNAME="n" injail_tty env -i TERM=${SAVED_TERM} \
 		    /usr/bin/login -fp root || :
 	elif [ ${INTERACTIVE_MODE} -eq 2 ]; then
