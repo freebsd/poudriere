@@ -536,7 +536,7 @@ write_pipe() {
 	echo "$@" > "${fifo}" || ret=$?
 
 	if [ ${ret} -ne 0 ]; then
-		err 1 "write_pipe FAILED to send to ${fifo} (ret: ${ret}): $@"
+		err 1 "write_pipe FAILED to send to ${fifo} (ret: ${ret}): $*"
 	fi
 
 	return ${ret}
