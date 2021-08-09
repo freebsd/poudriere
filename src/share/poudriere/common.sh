@@ -3797,7 +3797,7 @@ build_port() {
 			export GID=0
 		else
 			export UID=${PORTBUILD_UID}
-			export GID=${PORTBUILD_UID}
+			export GID=${PORTBUILD_GID}
 		fi
 
 		if [ "${phase#*-}" = "depends" ]; then
