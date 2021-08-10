@@ -88,8 +88,7 @@ err() {
 	# Try to set status so other processes know this crashed
 	# Don't set it from children failures though, only master
 	if [ "${PARALLEL_CHILD:-0}" -eq 0 ] && was_a_bulk_run; then
-		bset ${MY_JOBID-} status "${EXIT_STATUS:-crashed:}" \
-		    2>/dev/null || :
+		bset ${MY_JOBID-} status "${EXIT_STATUS:-crashed:}" || :
 	fi
 	if [ ${1} -eq 0 ]; then
 		msg "$2" || :
@@ -1081,6 +1080,8 @@ bset() {
 	local id property mnt log file
 
 	_log_path log
+	# Early error
+	[ -d "${log}" ] || return
 	if [ $# -eq 3 ]; then
 		id=$1
 		shift
@@ -1105,6 +1106,8 @@ bset_job_status() {
 badd() {
 	local id property mnt log file
 	_log_path log
+	# Early error
+	[ -d "${log}" ] || return
 	if [ $# -eq 3 ]; then
 		id=$1
 		shift
