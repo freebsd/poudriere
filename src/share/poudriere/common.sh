@@ -1059,7 +1059,7 @@ bget() {
 
 bset() {
 	was_a_bulk_run || return 0
-	local id property mnt log file tmp ret
+	local id property mnt log file
 
 	_log_path log
 	if [ $# -eq 3 ]; then
@@ -1071,15 +1071,7 @@ bset() {
 	shift
 	[ "${property}" = "status" ] && \
 	    echo "$@" >> ${log}/${file}.journal% || :
-	tmp="$(TMPDIR="${log}" mktemp -t .bset)" || return
-	ret=0
-	echo "$@" > "${tmp}" || ret=$?
-	if [ "${ret}" -eq 0 ]; then
-		rename "${tmp}" "${log:?}/${file}" || return
-	else
-		rm -f "${tmp}"
-	fi
-	return "${ret}"
+	echo "$@" | write_atomic "${log:?}/${file}"
 }
 
 bset_job_status() {
@@ -1647,9 +1639,6 @@ markfs() {
 	fi
 	mtreefile="${MASTERMNT}/.p/mtree.${name}exclude${PORTTESTING}"
 	if [ ! -f "${mtreefile}" ]; then
-		local mtreefiletmp
-
-		mtreefiletmp="${mtreefile}.tmp${MY_JOBID:-ref}${PORTTESTING}"
 		{
 			common_mtree "${mnt}"
 			case "${name}" in
@@ -1680,8 +1669,7 @@ markfs() {
 					EOF
 				;;
 			esac
-		} > "${mtreefiletmp}" && \
-		    rename "${mtreefiletmp}" "${mtreefile}"
+		} | write_atomic "${mtreefile}"
 	fi
 	( cd "${mnt}" && mtree -X "${mtreefile}" \
 		-cn -k uid,gid,flags,mode,size \
@@ -4331,10 +4319,8 @@ build_queue() {
 		[ ${builders_active} -eq 1 ] || pkgqueue_sanity_check
 
 		if [ "${HTML_TRACK_REMAINING}" = "yes" ]; then
-			pkgqueue_remaining > \
-			    "${log}/.poudriere.ports.remaining.tmp%"
-			mv -f "${log}/.poudriere.ports.remaining.tmp%" \
-			    "${log}/.poudriere.ports.remaining"
+			pkgqueue_remaining | \
+			    write_atomic "${log}/.poudriere.ports.remaining"
 		fi
 
 		# Wait for an event from a child. All builders are busy.

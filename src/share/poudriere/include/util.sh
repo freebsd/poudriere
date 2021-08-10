@@ -1089,7 +1089,7 @@ write_cmp() {
 	ret=0
 	tmp="$(TMPDIR="${dest%/*}" mktemp -ut ${dest##*/})" ||
 		err $? "write_cmp unable to create tmpfile in ${dest%/*}"
-	cat > "${tmp}" || ret=$?
+	mapfile_cat > "${tmp}" || ret="$?"
 	if [ "${ret}" -ne 0 ]; then
 		rm -f "${tmp}"
 		return "${ret}"
@@ -1100,6 +1100,22 @@ write_cmp() {
 	else
 		unlink "${tmp}"
 	fi
+}
+
+write_atomic() {
+	[ $# -eq 1 ] || eargs write_atomic destfile "< content"
+	local dest="$1"
+	local tmp ret
+
+	ret=0
+	tmp="$(TMPDIR="${dest%/*}" mktemp -ut ${dest##*/})" ||
+		err $? "write_atomic unable to create tmpfile in ${dest%/*}"
+	mapfile_cat > "${tmp}" || ret="$?"
+	if [ "${ret}" -ne 0 ]; then
+		rm -f "${tmp}"
+		return "${ret}"
+	fi
+	rename "${tmp}" "${dest}"
 }
 
 # Place environment requirements on entering a function
