@@ -6619,6 +6619,7 @@ gather_port_vars_port() {
 	fi
 
 	# If there are no deps for this port then there's nothing left to do.
+	[ -n "${ignore}" ] && return 0
 	[ -z "${deps}" ] && return 0
 
 	# Assert some policy before proceeding to process these deps
@@ -6810,6 +6811,10 @@ compute_deps_pkg() {
 	shash_remove pkgname-deps "${pkgname}" deps || \
 	    err 1 "compute_deps_pkg failed to find deps for ${pkgname}"
 
+	if shash_exists pkgname-ignore "${pkgname}"; then
+		msg_debug "compute_deps_pkg: Will not build IGNORED ${COLOR_PORT}${pkgname}${COLOR_RESET} nor queue its deps"
+		return
+	fi
 	msg_debug "compute_deps_pkg: Will build ${pkgname}"
 	pkgqueue_add "${pkgname}" || \
 	    err 1 "compute_deps_pkg: Error creating queue entry for ${pkgname}: There may be a duplicate origin in a category Makefile"
@@ -7467,7 +7472,6 @@ trim_ignored() {
 	    _rdep ignore; do
 		trim_ignored_pkg "${pkgname}" "${originspec}" "${ignore}"
 	done
-	pkgqueue_trim_orphaned_build_deps
 	# Update ignored/skipped stats
 	update_stats 2>/dev/null || :
 	update_stats_queued

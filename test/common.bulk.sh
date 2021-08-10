@@ -65,6 +65,7 @@ cache_pkgnames() {
 	ALL_ORIGINS="${ALL_ORIGINS}${ALL_ORIGINS:+ }${originspec}"
 	if [ -n "${ignore}" ]; then
 		list_add IGNOREDPORTS "${originspec}"
+		return
 	fi
 	for dep_origin in ${pdeps}; do
 		if cache_pkgnames 1 "${dep_origin}"; then
