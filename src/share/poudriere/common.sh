@@ -1990,7 +1990,7 @@ remount_ports() {
 }
 
 mount_ports() {
-	local mnt o portsdir ptname
+	local mnt o portsdir ptname odir
 
 	_my_path mnt
 	ptname="${PTNAME:?}"
@@ -2013,7 +2013,7 @@ do_portbuild_mounts() {
 	local jname=$2
 	local ptname=$3
 	local setname=$4
-	local optionsdir opt o odir msgmount msgdev
+	local optionsdir opt o msgmount msgdev
 
 	# clone will inherit from the ref jail
 	if [ ${mnt##*/} = "ref" ]; then
