@@ -1133,6 +1133,20 @@ update_stats_queued() {
 	was_a_testport_run && \
 	    nbq=$((nbq + 1))
 	bset stats_queued ${nbq##* }
+	update_remaining
+}
+
+update_remaining() {
+	[ $# -eq 0 ] || eargs update_remaining
+	local log
+
+	_log_path log
+	[ "${HTML_TRACK_REMAINING}" != "yes" ] && return 0
+	(
+		cd "${MASTERMNT}/.p/pool"
+		pkgqueue_remaining | \
+		    write_atomic "${log}/.poudriere.ports.remaining"
+	)
 }
 
 sigpipe_handler() {
@@ -4318,10 +4332,7 @@ build_queue() {
 		# If builders are idle then there is a problem.
 		[ ${builders_active} -eq 1 ] || pkgqueue_sanity_check
 
-		if [ "${HTML_TRACK_REMAINING}" = "yes" ]; then
-			pkgqueue_remaining | \
-			    write_atomic "${log}/.poudriere.ports.remaining"
-		fi
+		update_remaining
 
 		# Wait for an event from a child. All builders are busy.
 		unset jobid; until trappedinfo=; read -t ${timeout} jobid <&6 ||
