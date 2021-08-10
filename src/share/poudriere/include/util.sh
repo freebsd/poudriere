@@ -718,7 +718,7 @@ mapfile_read_loop() {
 	local _handle
 
 	if ! hash_get mapfile_handle "${_file}" _handle; then
-		mapfile _handle "${_file}" "re"
+		mapfile _handle "${_file}" "re" || return "$?"
 		hash_set mapfile_handle "${_file}" "${_handle}"
 	fi
 
@@ -749,7 +749,7 @@ mapfile_read_loop_redir() {
 
 	if ! hash_get mapfile_handle "${_hkey}" _handle; then
 		# Read from stdin
-		mapfile _handle "/dev/fd/0" "re"
+		mapfile _handle "/dev/fd/0" "re" || return "$?"
 		hash_set mapfile_handle "${_hkey}" "${_handle}"
 	fi
 
