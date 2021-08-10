@@ -408,9 +408,13 @@ for_each_build() {
 		esac
 		[ -L "${mastername}/latest" ] || continue
 		MASTERNAME=${mastername}
-		[ "${MASTERNAME}" = "latest-per-pkg" ] && continue
-		[ ${SHOW_FINISHED} -eq 0 ] && ! jail_runs ${MASTERNAME} && \
-		    continue
+		if [ "${MASTERNAME}" = "latest-per-pkg" ]; then
+			continue
+		fi
+		if [ ${SHOW_FINISHED} -eq 0 ] && \
+		    ! jail_runs ${MASTERNAME}; then
+			continue
+		fi
 
 		# Look for all wanted buildnames (will be 1 or Many(-a)))
 		for buildname in ${mastername}/${BUILDNAME_GLOB}; do
@@ -486,30 +490,41 @@ for_each_build() {
 				fi
 			fi
 			# Dereference latest into actual buildname
-			[ "${buildname}" = "latest-done" ] && \
-			    _bget BUILDNAME buildname
-			[ "${buildname}" = "latest" ] && \
-			    _bget BUILDNAME buildname
+			if [ "${buildname}" = "latest-done" ]; then
+				_bget BUILDNAME buildname
+			fi
+			if [ "${buildname}" = "latest" ]; then
+				_bget BUILDNAME buildname
+			fi
 			# May be blank if build is still starting up
-			[ -z "${BUILDNAME}" ] && continue 2
+			if [ -z "${BUILDNAME}" ]; then
+				continue 2
+			fi
 
 			found_jobs=$((found_jobs + 1))
 
 			# Lookup jailname/setname/ptname if needed. Delayed
 			# from earlier for performance for -a
-			[ -z "${jailname+null}" ] && \
-			    _bget jailname jailname || :
-			[ -z "${setname+null}" ] && \
-			    _bget setname setname || :
-			[ -z "${ptname+null}" ] && \
-			    _bget ptname ptname || :
+			if [ -z "${jailname+null}" ]; then
+				_bget jailname jailname || :
+			fi
+			if [ -z "${setname+null}" ]; then
+				_bget setname setname || :
+			fi
+			if [ -z "${ptname+null}" ]; then
+				_bget ptname ptname || :
+			fi
 			log=${mastername}/${BUILDNAME}
 
 			${action} || ret=$?
 			# Skip the rest of this build if return = 100
-			[ ${ret} -eq 100 ] && continue 2
+			if [ "${ret}" -eq 100 ]; then
+				continue 2
+			fi
 			# Halt if the function requests it
-			[ ${ret} -eq 101 ] && break 2
+			if [ "${ret}" -eq 101 ]; then
+				break 2
+			fi
 		done
 
 	done
@@ -1287,8 +1302,9 @@ show_log_info() {
 
 	_log_path log
 	msg "Logs: ${log}"
-	build_url build_url && \
-	    msg "WWW: ${build_url}"
+	if build_url build_url; then
+		msg "WWW: ${build_url}"
+	fi
 	return 0
 }
 
@@ -1377,7 +1393,9 @@ Tobuild: %-${queue_width}d  Time: %s\n" \
 siginfo_handler() {
 	trappedinfo=1
 	in_siginfo_handler=1
-	[ "${POUDRIERE_BUILD_TYPE}" != "bulk" ] && return 0
+	if [ "${POUDRIERE_BUILD_TYPE}" != "bulk" ]; then
+		return 0
+	fi
 	local status
 	local now
 	local j elapsed elapsed_phase job_id_color
@@ -1413,9 +1431,13 @@ siginfo_handler() {
 			# Ignore error here as the zfs dataset may not be cloned yet.
 			_bget status ${j} status || :
 			# Skip builders not started yet
-			[ -z "${status}" ] && continue
+			if [ -z "${status}" ]; then
+				continue
+			fi
 			# Hide idle workers
-			[ "${status}" = "idle:" ] && continue
+			if [ "${status}" = "idle:" ]; then
+				continue
+			fi
 			phase="${status%%:*}"
 			status="${status#*:}"
 			origin="${status%%:*}"
@@ -1453,15 +1475,14 @@ siginfo_handler() {
 jail_exists() {
 	[ $# -ne 1 ] && eargs jail_exists jailname
 	local jname=$1
-	[ -d ${POUDRIERED}/jails/${jname} ] && return 0
-	return 1
+	[ -d "${POUDRIERED}/jails/${jname}" ]
 }
 
 jail_runs() {
 	[ $# -ne 1 ] && eargs jail_runs jname
-	local jname=$1
-	jls -j $jname >/dev/null 2>&1 && return 0
-	return 1
+	local jname="$1"
+
+	jls -j "$jname" >/dev/null 2>&1
 }
 
 porttree_list() {
@@ -3540,8 +3561,12 @@ check_leftovers() {
 				;;
 			esac
 			# Need to read again to find all changes
-			[ ${read_again} -eq 1 ] && read l && continue
-			[ -n "${changed}" ] && echo "${changed}"
+			if [ "${read_again}" -eq 1 ] && read l; then
+				continue
+			fi
+			if [ -n "${changed}" ]; then
+				echo "${changed}"
+			fi
 			break
 		done
 	done
@@ -4123,7 +4148,10 @@ stop_builders() {
 	local PARALLEL_JOBS real_parallel_jobs
 
 	# wait for the last running processes
-	cat ${MASTERMNT}/.p/var/run/*.pid 2>/dev/null | xargs pwait 2>/dev/null
+	case ${MASTERMNT}/.p/var/run/*.pid in
+	"${MASTERMNT}/.p/var/run/*.pid") ;;
+	*) cat ${MASTERMNT}/.p/var/run/*.pid | xargs pwait 2>/dev/null ;;
+	esac
 
 	if [ ${PARALLEL_JOBS} -ne 0 ]; then
 		msg "Stopping ${PARALLEL_JOBS} builders"
@@ -6087,13 +6115,17 @@ get_pkgname_from_originspec() {
 	shash_get originspec-pkgname "${_originspec}" "${var_return}" && \
 	    return 0
 	# If the FLAVOR is empty then it is fatal to not have a result yet.
-	[ -z "${_flavor}" ] && return 1
+	if [ -z "${_flavor}" ]; then
+		return 1
+	fi
 	# See if the FLAVOR is the default and lookup that PKGNAME if so.
 	originspec_encode _originspec "${_origin}" "${_dep_args}" ''
 	shash_get originspec-pkgname "${_originspec}" _pkgname || return 1
 	# Great, compare the flavors and validate we had the default.
 	shash_get pkgname-flavors "${_pkgname}" _flavors || return 1
-	[ -z "${_flavors}" ] && return 1
+	if [ -z "${_flavors}" ]; then
+		return 1
+	fi
 	_default_flavor="${_flavors%% *}"
 	[ "${_default_flavor}" = "${_flavor}" ] || return 1
 	# Yup, this was the default FLAVOR
@@ -6101,7 +6133,9 @@ get_pkgname_from_originspec() {
 }
 
 set_dep_fatal_error() {
-	[ -n "${DEP_FATAL_ERROR}" ] && return 0
+	if [ -n "${DEP_FATAL_ERROR}" ]; then
+		return 0
+	fi
 	DEP_FATAL_ERROR=1
 	# Mark the fatal error flag. Must do it like this as this may be
 	# running in a sub-shell.
@@ -6284,7 +6318,9 @@ gather_port_vars() {
 		# Duplicate are possible from a user list, it's fine.
 		mkdir -p "${qorigin}"
 		msg_debug "queueing ${origin} into gatherqueue (rdep=${rdep})"
-		[ -n "${rdep}" ] && echo "${rdep}" > "${qorigin}/rdep"
+		if [ -n "${rdep}" ]; then
+			echo "${rdep}" > "${qorigin}/rdep"
+		fi
 	done
 	if ! parallel_stop || check_dep_fatal_error; then
 		err 1 "Fatal errors encountered gathering initial ports metadata"
@@ -7093,7 +7129,9 @@ _listed_ports() {
 				while mapfile_read_loop "${file}" origin \
 				    _ignore_comments; do
 					# Skip blank lines and comments
-					[ -z "${origin%%#*}" ] && continue
+					if [ -z "${origin%%#*}" ]; then
+						continue
+					fi
 					# Remove excess slashes for mistakes
 					origin="${origin#/}"
 					echo "${origin%/}"
@@ -7164,7 +7202,9 @@ pkgname_is_listed() {
 	[ $# -eq 1 ] || eargs pkgname_is_listed pkgname
 	local pkgname="$1"
 
-	[ ${ALL} -eq 1 ] && return 0
+	if [ "${ALL}" -eq 1 ]; then
+		return 0
+	fi
 
 	awk -vpkgname="${pkgname}" '
 	    $3 == "listed" && $1 == pkgname {
@@ -7185,7 +7225,9 @@ pkgbase_is_needed() {
 	local pkgname="$1"
 	local pkgbase
 
-	[ ${ALL} -eq 1 ] && return 0
+	if [ "${ALL}" -eq 1 ]; then
+		return 0
+	fi
 
 	# We check on PKGBASE rather than PKGNAME from pkg_deps
 	# since the caller may be passing in a different version
@@ -7511,7 +7553,9 @@ pkgqueue_unqueue_existing_packages() {
 
 	# Delete from the queue all that already have a current package.
 	pkgqueue_list | while mapfile_read_loop_redir pn; do
-		[ -f "../packages/All/${pn}.${PKG_EXT}" ] && echo "${pn}"
+		if [ -f "../packages/All/${pn}.${PKG_EXT}" ]; then
+			echo "${pn}"
+		fi
 	done | pkgqueue_remove_many_pipe
 }
 
@@ -7536,9 +7580,10 @@ pkgqueue_trim_orphaned_build_deps() {
 		# in the build queue.
 		for port in ports-mgmt/pkg ports-mgmt/pkg-devel; do
 			originspec_encode originspec "${port}" '' ''
-			shash_get originspec-pkgname "${port}" \
-			    pkgname && \
+			if shash_get originspec-pkgname "${port}" \
+			    pkgname; then
 			    echo "${pkgname}"
+			fi
 		done
 	} | pkgqueue_list_deps_pipe > "${tmp}"
 	pkgqueue_list | sort > "${tmp}.actual"
@@ -7675,8 +7720,10 @@ prepare_ports() {
 			    pkgname; do
 				pkg="${PACKAGES}/All/${pkgname}.${PKG_EXT}"
 				if [ -f "${pkg}" ]; then
-					shash_exists pkgname-ignore \
-					    "${pkgname}" && continue
+					if shash_exists pkgname-ignore \
+					    "${pkgname}"; then
+						continue
+					fi
 					msg "(-C) Will delete existing package: ${pkg##*/}"
 					delete_pkg_xargs "${delete_pkg_list}" \
 					    "${pkg}"
@@ -7966,7 +8013,9 @@ append_make() {
 	[ -f "${src_makeconf}" ] || return 0
 	src_makeconf="$(realpath ${src_makeconf} 2>/dev/null)"
 	# Only append if not already done (-z -p or -j match)
-	grep -q "# ${src_makeconf} #" ${dst_makeconf} && return 0
+	if grep -q "# ${src_makeconf} #" ${dst_makeconf}; then
+		return 0
+	fi
 	msg "Appending to make.conf: ${src_makeconf}"
 	echo "#### ${src_makeconf} ####" >> ${dst_makeconf}
 	cat "${src_makeconf}" >> ${dst_makeconf}
