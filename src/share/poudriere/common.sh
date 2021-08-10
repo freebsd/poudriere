@@ -3118,13 +3118,14 @@ setup_makeconf() {
 }
 
 include_poudriere_confs() {
-	local -; set -f
-	local files file flag args_hack debug
+	local files file flag debug
 	local jail ptname setname
+	local OPTIND=1
 
 	# msg_debug is not properly setup this early for VERBOSE to be set
 	# so spy on -v and set debug and use it locally instead.
 	debug=${VERBOSE:-0}
+
 	# Directly included from tests
 	if [ -n "${THISDIR-}" ]; then
 		jail="${JAILNAME-}"
@@ -3132,18 +3133,23 @@ include_poudriere_confs() {
 		setname="${SETNAME-}"
 		debug="${VERBOSE:-0}"
 	else
-		# Spy on cmdline arguments so this function is not needed in
-		# every new sub-command file, which could lead to missing it.
-		args_hack=$(echo " $@"|grep -Eo -- ' -[^jpvz ]*([jpz] ?[^ ]*|v+)'|tr '\n' ' '|sed -Ee 's, -[^jpvz ]*([jpz]|v+) ?([^ ]*),-\1 \2,g')
-		set -- ${args_hack}
-		while getopts "j:p:vz:" flag; do
-			case ${flag} in
-				j) jail="${OPTARG}" ;;
-				p) ptname="${OPTARG}" ;;
-				v) debug=$((debug+1)) ;;
-				z) setname="${OPTARG}" ;;
-				*) ;;
-			esac
+		# We don't know what params take arguments so getopts stops on
+		# first non -. We parse it all looking for the flags we want.
+		# XXX: May read an intended OPTARG as a flag.
+		while [ $# -gt 0 ]; do
+			while getopts "j:p:vz:" flag 2>/dev/null; do
+				case ${flag} in
+					j) jail="${OPTARG}" ;;
+					p) ptname="${OPTARG}" ;;
+					v) debug=$((debug+1)) ;;
+					z) setname="${OPTARG}" ;;
+					*) ;;
+				esac
+			done
+			shift $((OPTIND-1))	# parsed arguments
+			if [ $# -ne 0 ]; then
+				shift			# the failing argument (no -)
+			fi
 		done
 	fi
 
