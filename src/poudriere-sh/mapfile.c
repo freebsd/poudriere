@@ -474,20 +474,36 @@ mapfile_writecmd(int argc, char **argv)
 {
 	struct mapped_data *md;
 	const char *handle, *data;
-	int serrno;
+	int ch, nflag, serrno;
 
-	if (argc != 3)
-		errx(EX_USAGE, "%s", "Usage: mapfile_write <handle> <data>");
-
-	INTOFF;
+	if (argc < 3)
+		errx(EX_USAGE, "%s", "Usage: mapfile_write <handle> [-n] "
+		    "<data>");
+	nflag = 0;
 	handle = argv[1];
+	argptr += 1;
+	argc -= argptr - argv;
+	argv = argptr;
+	while ((ch = nextopt("n")) != '\0') {
+		switch (ch) {
+		case 'n':
+			nflag = 1;
+			break;
+		}
+	}
+	argc -= argptr - argv;
+	argv = argptr;
+	if (argc != 1)
+		errx(EX_USAGE, "%s", "Usage: mapfile_write <handle> [-n] "
+		    "<data>");
+	INTOFF;
 	md = md_find(handle);
-	data = argv[2];
+	data = argv[0];
 
 	debug("%d: Writing to %s for handle '%s' fd: %d: %s\n",
 	    getpid(), md->file, handle, fileno(md->fp), data);
 	if (fputs(data, md->fp) == EOF ||
-	    fputc('\n', md->fp) == EOF ||
+	    (!nflag && fputc('\n', md->fp) == EOF) ||
 	    (md->linebuffered && fflush(md->fp) == EOF) ||
 	    ferror(md->fp)) {
 		serrno = errno;
