@@ -150,6 +150,12 @@ mapfilecmd(int argc, char **argv)
 	else
 		modes = "re";
 
+	if (strchr(modes, 'B') && !(strchr(modes, 'w') || strchr(modes, '+') ||
+	    strchr(modes, 'a'))) {
+	    INTON;
+	    errx(EX_USAGE, "%s", "using 'B' without writing makes no sense");
+	}
+
 	if ((fp = fopen(file, modes)) == NULL) {
 		serrno = errno;
 		INTON;
