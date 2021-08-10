@@ -169,7 +169,8 @@ mapfilecmd(int argc, char **argv)
 		errno = serrno;
 		err(EX_OSERR, "%s", "fstat");
 	}
-	if (!(S_ISFIFO(sb.st_mode) || S_ISREG(sb.st_mode))) {
+	if (!(S_ISFIFO(sb.st_mode) || S_ISREG(sb.st_mode) ||
+	    S_ISCHR(sb.st_mode))) {
 		serrno = errno;
 		fclose(fp);
 		INTON;
