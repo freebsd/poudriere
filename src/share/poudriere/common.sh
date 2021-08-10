@@ -3125,25 +3125,26 @@ include_poudriere_confs() {
 	# msg_debug is not properly setup this early for VERBOSE to be set
 	# so spy on -v and set debug and use it locally instead.
 	debug=${VERBOSE:-0}
-	# Spy on cmdline arguments so this function is not needed in
-	# every new sub-command file, which could lead to missing it.
-	args_hack=$(echo " $@"|grep -Eo -- ' -[^jpvz ]*([jpz] ?[^ ]*|v+)'|tr '\n' ' '|sed -Ee 's, -[^jpvz ]*([jpz]|v+) ?([^ ]*),-\1 \2,g')
-	set -- ${args_hack}
-	while getopts "j:p:vz:" flag; do
-		case ${flag} in
-			j) jail="${OPTARG}" ;;
-			p) ptname="${OPTARG}" ;;
-			v) debug=$((debug+1)) ;;
-			z) setname="${OPTARG}" ;;
-			*) ;;
-		esac
-	done
-	# Hack for tests
+	# Directly included from tests
 	if [ -n "${THISDIR-}" ]; then
 		jail="${JAILNAME-}"
 		ptname="${PTNAME-}"
 		setname="${SETNAME-}"
 		debug="${VERBOSE:-0}"
+	else
+		# Spy on cmdline arguments so this function is not needed in
+		# every new sub-command file, which could lead to missing it.
+		args_hack=$(echo " $@"|grep -Eo -- ' -[^jpvz ]*([jpz] ?[^ ]*|v+)'|tr '\n' ' '|sed -Ee 's, -[^jpvz ]*([jpz]|v+) ?([^ ]*),-\1 \2,g')
+		set -- ${args_hack}
+		while getopts "j:p:vz:" flag; do
+			case ${flag} in
+				j) jail="${OPTARG}" ;;
+				p) ptname="${OPTARG}" ;;
+				v) debug=$((debug+1)) ;;
+				z) setname="${OPTARG}" ;;
+				*) ;;
+			esac
+		done
 	fi
 
 	if [ -r "${POUDRIERE_ETC}/poudriere.conf" ]; then
