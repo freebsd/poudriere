@@ -71,6 +71,10 @@ not_for_os() {
 }
 
 err() {
+	if [ -n "${CRASHED:-}" ]; then
+		echo "err: Recursive error detected" >&2 || :
+		exit "$1"
+	fi
 	case "${SHFLAGS}" in
 	*x*) ;;
 	*) local -; set +x ;;
