@@ -638,7 +638,8 @@ mapfile_read() {
 		read_pipe "${handle}" "$@"
 	elif [ -f "${handle}" ]; then
 		read_blocking_line "$@" < "${handle}"
-	elif [ "${handle}" = "/dev/fd/0" ]; then
+	elif [ "${handle}" = "/dev/fd/0" ] || \
+	    [ "${handle}" = "/dev/stdin" ]; then
 		# mapfile_read_loop_redir pipe
 		read -r "$@"
 	else
@@ -763,6 +764,53 @@ mapfile_read_loop_redir() {
 	fi
 }
 fi
+
+# Basically an optimized loop of mapfile_read_loop_redir, or read_file
+mapfile_cat() {
+	[ $# -ge 0 ] || eargs mapfile_cat [-u] file...
+	local  _handle ret _line _file ret flag
+	local nflag lines
+	local IFS
+
+	if ! mapfile_builtin; then
+		ret=0
+		cat "$@" || ret="$?"
+		return "${ret}"
+	fi
+	while getopts "n" flag; do
+		case "${flag}" in
+		n)
+			nflag=1
+			;;
+		esac
+		shift $((OPTIND-1))
+	done
+	if [ $# -eq 0 ]; then
+		# Read from stdin
+		set -- "-"
+	fi
+	ret=0
+	lines=0
+	for _file in "$@"; do
+		case "${_file}" in
+		-) _file="/dev/fd/0" ;;
+		esac
+		if mapfile _handle "${_file}" "re"; then
+			while IFS= mapfile_read "${_handle}" _line; do
+				lines=$((lines + 1))
+				case "${nflag}" in
+				"") ;;
+				*) printf "%6d\t" "${lines}" ;;
+				esac
+				echo "${_line}"
+			done
+			mapfile_close "${_handle}"
+		else
+			ret="$?"
+		fi
+	done
+	return "${ret}"
+}
 
 # This uses open(O_CREAT), woot.
 noclobber() {
