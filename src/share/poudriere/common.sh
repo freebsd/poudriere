@@ -2724,6 +2724,12 @@ jail_start() {
 
 	[ ${JAIL_OSVERSION} -lt 900000 ] && needkld="${needkld} sem"
 
+	case "${setname}" in
+	*-*)
+		msg_warn "Using '-' in a SETNAME is not recommended as it causes ambiguities with parsing the build name of ${MASTERNAME}"
+		;;
+	esac
+
 	if [ "${DISTFILES_CACHE}" != "no" -a ! -d "${DISTFILES_CACHE}" ]; then
 		err 1 "DISTFILES_CACHE directory does not exist. (cf.  poudriere.conf)"
 	fi

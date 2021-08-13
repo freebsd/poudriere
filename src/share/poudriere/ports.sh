@@ -227,8 +227,14 @@ create)
 	: ${PTMNT="${BASEFS:=/usr/local${ZROOTFS}}/ports/${PTNAME}"}
 	: ${PTFS="${ZPOOL}${ZROOTFS}/ports/${PTNAME}"}
 
-	[ "${PTNAME#*.*}" = "${PTNAME}" ] ||
+	case "${PTNAME}" in
+	*:*)
 		err 1 "The ports name cannot contain a period (.). See jail(8)"
+		;;
+	*-*)
+		err 1 "The ports name should not contain a dash (-). Poudriere will parse it as a SETNAME (-z)."
+		;;
+	esac
 
 	if [ "${METHOD}" = "null" ]; then
 		[ -z "${PTMNT}" ] && \
