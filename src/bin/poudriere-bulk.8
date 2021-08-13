@@ -86,6 +86,27 @@ in
 .Xr poudriere 8
 to learn how to build binary packages with options that differ from
 defaults.
+.Pp
+.Nm poudriere
+will disable make jobs for packages not listed in
+.Sy ALLOW_MAKE_JOBS_PACKAGES ,
+unless
+.Sy ALLOW_MAKE_JOBS
+is set in
+.Pa poudriere.conf .
+The number of jobs can be controlled in
+.Pa make.conf
+with the
+.Xr ports 7
+flags
+.Sy MAKE_JOBS_NUMBER
+and
+.Sy MAKE_JOBS_NUMBER_LIMIT .
+Beware that there is no global job control so each builder created from
+.Fl J
+(or the default
+.Sy PARALLEL_JOBS )
+will spawn as many jobs as the ports framework allows.
 .Sh SUBCOMMANDS
 .Bl -tag -width "-f file"
 .It Fl a
@@ -219,9 +240,6 @@ Add some testing to the specified ports.
 Add
 .Fl r
 to recursively test all port dependencies as well.
-Currently, the behavior is to uninstall a port, and to disable parallel jobs
-for
-.Xr make 1 .
 When used with
 .Fl a
 then
