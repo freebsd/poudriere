@@ -7888,9 +7888,10 @@ prepare_ports() {
 			balance_pool
 		fi
 
-		[ -n "${ALLOW_MAKE_JOBS}" ] || \
-		    echo "DISABLE_MAKE_JOBS=poudriere" \
-		    >> ${MASTERMNT}/etc/make.conf
+		if [ "${ALLOW_MAKE_JOBS-}" != "yes" ]; then
+			echo "DISABLE_MAKE_JOBS=poudriere" \
+			    >> ${MASTERMNT}/etc/make.conf
+		fi
 		# Don't leak ports-env UID as it conflicts with BUILD_AS_NON_ROOT
 		if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
 			sed -i '' '/^UID=0$/d' "${MASTERMNT}/etc/make.conf"
