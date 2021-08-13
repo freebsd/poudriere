@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd August 3, 2021
+.Dd August 13, 2021
 .Dt POUDRIERE-BULK 8
 .Os
 .Sh NAME
@@ -131,19 +131,55 @@ or
 With this option poudriere will first try to fetch from the binary package
 repository specified the binary package prior to do the sanity check if the
 package does not already exist.
-When
-.Fl t
-is used along with
+.Pp
+.Nm poudriere
+will only use packages that:
+.Bl -bullet -compact
+.It
+come from a repository having the same or older version of
+.Sy pkg .
+.It
+do not have a locally fetched package already.
+.It
+are not IGNORED.
+.It
+match the expected local version.
+.It
+match the expected ABI.
+.It
+match the expected runtime and library dependencies.
+.It
+match the expected OPTIONS when
+.Cm CHECK_CHANGED_OPTIONS
+is enabled (default: on).
+.It
+The package is NOT listed in
+.Cm PACKAGE_FETCH_BLACKLIST
+.It
+The package is NOT listed with
 .Fl C ,
 or
 .Fl c ,
-then listed packages will not be fetched.
+when
+.Fl t
+is used.
+.El
+The
+.Fl v
+flag can be used to show these decisions during build.
+Specifing twice will show more details on why some are skipped.
 .Pp
-If a local port has patches or special
+!!
+.Pp
+.Nm poudriere
+has no way of determining differences outside of the above list.
+That is, if the local ports framework, or port, has custom patches or special
 .Sy WITH_FOO
-knobs then it is required to add its name into
+knobs (not OPTIONS) then it is required to add its name into
 .Sy PACKAGE_FETCH_BLACKLIST .
 Otherwise a package may be fetched and used that lacks the custom patch or knob.
+.Pp
+!!
 .Pp
 See
 .Sy PACKAGE_FETCH_BRANCH ,
