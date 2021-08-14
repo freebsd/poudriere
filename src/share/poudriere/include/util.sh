@@ -1083,7 +1083,7 @@ write_cmp() {
 	local tmp ret
 
 	ret=0
-	tmp="$(TMPDIR="${dest%/*}" mktemp -ut ${dest##*/})" ||
+	tmp="$(TMPDIR="${dest%/*}" mktemp -ut .tmp-${dest##*/})" ||
 		err $? "write_cmp unable to create tmpfile in ${dest%/*}"
 	mapfile_cat > "${tmp}" || ret="$?"
 	if [ "${ret}" -ne 0 ]; then
@@ -1104,7 +1104,7 @@ write_atomic() {
 	local tmp ret
 
 	ret=0
-	tmp="$(TMPDIR="${dest%/*}" mktemp -ut ${dest##*/})" ||
+	tmp="$(TMPDIR="${dest%/*}" mktemp -ut .tmp-${dest##*/})" ||
 		err $? "write_atomic unable to create tmpfile in ${dest%/*}"
 	mapfile_cat > "${tmp}" || ret="$?"
 	if [ "${ret}" -ne 0 ]; then
