@@ -7467,7 +7467,7 @@ load_moved() {
 }
 
 fetch_global_port_vars() {
-	local git_hash git_modified
+	local git_hash git_modified git_dirty
 
 	was_a_testport_run && [ -n "${P_PORTS_FEATURES}" ] && return 0
 	# Before we start, determine the default PYTHON version to
@@ -7513,8 +7513,10 @@ fetch_global_port_vars() {
 		    -c core.fileMode=off \
 		    diff --quiet .; then
 			git_modified=yes
+			git_dirty="(dirty)"
 		fi
 		shash_set ports_metadata top_unclean "${git_modified}"
+		msg "Ports top-level git hash: ${git_hash} ${git_dirty}"
 	fi
 }
 
