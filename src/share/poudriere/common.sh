@@ -870,7 +870,9 @@ buildlog_start() {
 	date=$(env TZ=UTC date "+%Y-%m-%dT%H:%M:%S%z")
 
 	echo "build started at ${date}"
-	pkg_note_add "${pkgname}" build_timestamp "${date}"
+	if [ "${PKG_REPRODUCIBLE}" != "yes" ]; then
+		pkg_note_add "${pkgname}" build_timestamp "${date}"
+	fi
 	echo "port directory: ${portdir}"
 	echo "package name: ${pkgname}"
 	echo "building for: $(injail uname -a)"
@@ -903,7 +905,9 @@ buildlog_start() {
 		echo "Port dir unclean checkout: ${git_modified}"
 	fi
 	echo "Poudriere version: ${POUDRIERE_PKGNAME}"
-	pkg_note_add "${pkgname}" built_by "${POUDRIERE_PKGNAME}"
+	if [ "${PKG_REPRODUCIBLE}" != "yes" ]; then
+		pkg_note_add "${pkgname}" built_by "${POUDRIERE_PKGNAME}"
+	fi
 	echo "Host OSVERSION: ${HOST_OSVERSION}"
 	echo "Jail OSVERSION: ${JAIL_OSVERSION}"
 	echo "Job Id: ${MY_JOBID}"
@@ -8624,6 +8628,7 @@ fi
 : ${USE_FDESCFS:=yes}
 : ${IMMUTABLE_BASE:=no}
 : ${PKG_REPO_LIST_FILES:=no}
+: ${PKG_REPRODUCIBLE:=no}
 : ${HTML_JSON_UPDATE_INTERVAL:=2}
 : ${HTML_TRACK_REMAINING:=no}
 : ${FORCE_MOUNT_HASH:=no}
