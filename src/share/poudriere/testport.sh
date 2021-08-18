@@ -262,7 +262,7 @@ if [ $(bget stats_failed) -gt 0 ] || [ $(bget stats_skipped) -gt 0 ]; then
 fi
 nbbuilt=$(bget stats_built)
 
-[ ${BUILD_REPO} -eq 1 ] && build_repo
+[ ${BUILD_REPO} -eq 1 -a ${nbbuilt} -gt 0 ] && build_repo
 
 commit_packages
 
