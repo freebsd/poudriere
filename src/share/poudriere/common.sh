@@ -34,15 +34,15 @@ SHFLAGS="$-"
 
 # Return true if ran from bulk/testport, ie not daemon/status/jail
 was_a_bulk_run() {
-	[ "${SCRIPTPATH##*/}" = "bulk.sh" ] || was_a_testport_run
+	[ "${SCRIPTNAME}" = "bulk.sh" ] || was_a_testport_run
 }
 was_a_testport_run() {
-	[ "${SCRIPTPATH##*/}" = "testport.sh" ]
+	[ "${SCRIPTNAME}" = "testport.sh" ]
 }
 # Return true if in a bulk or other jail run that needs to shutdown the jail
 was_a_jail_run() {
-	was_a_bulk_run ||  [ "${SCRIPTPATH##*/}" = "pkgclean.sh" ] || \
-	    [ "${SCRIPTPATH##*/}" = "foreachport.sh" ]
+	was_a_bulk_run ||  [ "${SCRIPTNAME}" = "pkgclean.sh" ] || \
+	    [ "${SCRIPTNAME}" = "foreachport.sh" ]
 }
 schg_immutable_base() {
 	[ "${IMMUTABLE_BASE}" = "schg" ] || return 1
@@ -53,7 +53,7 @@ schg_immutable_base() {
 should_show_elapsed() {
 	[ -z "${TIME_START}" ] && return 1
 	[ "${NO_ELAPSED_IN_MSG:-0}" -eq 1 ] && return 1
-	case "${SCRIPTPATH##*/}" in
+	case "${SCRIPTNAME}" in
 		daemon.sh) ;;
 		help.sh) ;;
 		queue.sh) ;;
@@ -2368,7 +2368,7 @@ maybe_run_queued() {
 	/usr/sbin/service poudriered onestatus >/dev/null 2>&1 || \
 	    err 1 "This command requires root or poudriered running"
 
-	this_command="${SCRIPTPATH##*/}"
+	this_command="${SCRIPTNAME}"
 	this_command="${this_command%.sh}"
 
 	write_usock ${QUEUE_SOCKET} command: "${this_command}", arguments: "$@"
@@ -7119,7 +7119,7 @@ delete_stale_symlinks_and_empty_dirs() {
 }
 
 load_moved() {
-	if [ "${SCRIPTPATH##*/}" != "distclean.sh" ]; then
+	if [ "${SCRIPTNAME}" != "distclean.sh" ]; then
 		[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
 		    err 1 "load_moved requires SHASH_VAR_PATH=var/cache"
 		[ "${PWD}" = "${MASTERMNT}/.p" ] || \
