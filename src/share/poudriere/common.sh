@@ -1563,8 +1563,25 @@ get_data_dir() {
 }
 
 fetch_file() {
-	[ $# -ne 2 ] && eargs fetch_file destination source
-	fetch -p -o $1 $2 || fetch -p -o $1 $2 || err 1 "Failed to fetch from $2"
+	[ $# -ne 2 ] && eargs fetch_file destination url
+	local destination="$1"
+	local url="$2"
+	local maxtries=2
+	local destfile destdir tries ret
+
+	destdir="${destination%/*}"
+	destfile="${destination##*/}"
+
+	tries=0
+	msg_verbose "Fetching ${url} to ${destination}"
+	while [ "${tries}" -lt "${maxtries}" ]; do
+		if (cd "${destdir}" && fetch -p -o "${destfile}" "${url}"); then
+			return
+		fi
+		tries=$((tries + 1))
+	done
+
+	err 1 "Failed to fetch from ${url}"
 }
 
 # Export handling is different in builtin vs external
