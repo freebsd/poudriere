@@ -145,6 +145,7 @@ if [ -d "${OLD_PORT_DBDIR}" ] && [ ! -d "${PORT_DBDIR}" ]; then
 fi
 
 mkdir -p ${PORT_DBDIR}
+msg "Working on options directory ${PORT_DBDIR}"
 
 __MAKE_CONF=$(mktemp -t poudriere-make.conf)
 export __MAKE_CONF
