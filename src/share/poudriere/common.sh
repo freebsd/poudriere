@@ -3546,8 +3546,12 @@ download_from_repo() {
 	JNETNAME="n" injail xargs \
 	    env ASSUME_ALWAYS_YES=yes \
 	    ${pkg_bin} fetch -U < "${wantedpkgs}"
+
 	while mapfile_read_loop "${wantedpkgs}" pkgname; do
-		# XXX: Remote PKG_SUFX may differ
+		if [ ! -e "${PACKAGES_PKG_CACHE}/${pkgname}.${PKG_EXT}" ]; then
+			msg_warn "${COLOR_PORT}${pkgname}.${PKG_EXT}${COLOR_RESET} not found. Remote PKG_SUFX likely differs temporarily"
+			continue
+		fi
 		echo "${pkgname}.${PKG_EXT}"
 	done | (
 		local packages_rel
