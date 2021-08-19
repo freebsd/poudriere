@@ -7200,6 +7200,7 @@ fetch_global_port_vars() {
 		    --format=%h .)
 		shash_set ports_metadata top_git_hash "${git_hash}"
 		git_modified=no
+		msg_n "Inspecting ports tree for modifications to git checkout..."
 		if ! ${GIT_CMD} -C "${MASTERMNT}/${PORTSDIR}" \
 		    -c core.checkStat=minimal \
 		    -c core.fileMode=off \
@@ -7207,6 +7208,7 @@ fetch_global_port_vars() {
 			git_modified=yes
 			git_dirty="(dirty)"
 		fi
+		echo " ${git_modified}"
 		shash_set ports_metadata top_unclean "${git_modified}"
 		msg "Ports top-level git hash: ${git_hash} ${git_dirty}"
 	fi
