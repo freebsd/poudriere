@@ -3415,6 +3415,11 @@ download_from_repo() {
 	local missing_pkgs pkg pkgbase cnt
 	local remote_pkg_ver local_pkg_name local_pkg_ver
 
+	if ! have_ports_feature SELECTED_OPTIONS; then
+		msg "Package fetch: Not fetching. Ports requires SELECTED_OPTIONS feature"
+		return 0
+	fi
+
 	packagesite="${PACKAGE_FETCH_URL:+${PACKAGE_FETCH_URL}/}${PACKAGE_FETCH_BRANCH}"
 	msg "Package fetch: Looking for missing packages to fetch from ${packagesite}"
 
