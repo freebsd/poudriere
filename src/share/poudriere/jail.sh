@@ -952,9 +952,8 @@ create_jail() {
 		[ -d "${JAILMNT}" ] && \
 		    err 1 "Directory ${JAILMNT} already exists"
 	fi
-	if [ "${METHOD}" != "null" ]; then
-		createfs ${JAILNAME} ${JAILMNT} ${JAILFS:-none}
-	elif [ ! -d "${JAILMNT}" ] || dirempty "${JAILMNT}"; then
+	if [ "${METHOD}" = "null" ] && \
+	    ([ ! -d "${JAILMNT}" ] || dirempty "${JAILMNT}"); then
 		err 1 "Directory ${JAILMNT} expected to be populated from installworld already."
 	fi
 	[ -n "${JAILFS}" -a "${JAILFS}" != "none" ] && jset ${JAILNAME} fs ${JAILFS}
@@ -971,6 +970,9 @@ create_jail() {
 	# if any error is encountered
 	CLEANUP_HOOK=cleanup_new_jail
 	jset ${JAILNAME} method ${METHOD}
+	if [ "${METHOD}" != "null" ]; then
+		createfs ${JAILNAME} ${JAILMNT} ${JAILFS:-none}
+	fi
 	[ -n "${FCT}" ] && ${FCT} version_extra
 
 	jset ${JAILNAME} pkgbase ${BUILD_PKGBASE}
