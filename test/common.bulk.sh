@@ -256,6 +256,8 @@ PTMNT="${PORTSDIR}"
 : ${SETNAME:=}
 export PORT_DBDIR=/dev/null
 export PERL5_DEFAULT=5.24
+export _PYTHON_DEFAULT_VERSION=36
+
 
 set -e
 
