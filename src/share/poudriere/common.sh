@@ -3367,8 +3367,9 @@ download_from_repo_check_pkg() {
 	fi
 
 	remote_options=$(awk -vpkgbase="${pkgbase}" ' \
-	    $1 == pkgbase && $3 == "on" {print $2}' \
-	    "${remote_all_options}" | sort | paste -s -d ' ' -)
+	    $1 == pkgbase && $3 == "on" {print "+"$2}
+	    $1 == pkgbase && $3 == "off" {print "-"$2}' \
+	    "${remote_all_options}" | sort -k1.2 | paste -s -d ' ' -)
 
 	shash_get pkgname-options "${pkgname}" selected_options || \
 	    selected_options=
@@ -5041,7 +5042,7 @@ deps_fetch_vars() {
 
 	if [ "${CHECK_CHANGED_OPTIONS}" != "no" ] && \
 	    have_ports_feature SELECTED_OPTIONS; then
-		_changed_options="SELECTED_OPTIONS:O _selected_options"
+		_changed_options=yes
 	fi
 	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
 		_changed_deps="LIB_DEPENDS _lib_depends RUN_DEPENDS _run_depends"
@@ -5065,7 +5066,8 @@ deps_fetch_vars() {
 	    FORBIDDEN _forbidden \
 	    NO_ARCH:Dyes _no_arch \
 	    ${_changed_deps} \
-	    ${_changed_options} \
+	    ${_changed_options:+_PRETTY_OPTS='${SELECTED_OPTIONS:@opt@${opt}+@} ${DESELECTED_OPTIONS:@opt@${opt}-@}'} \
+	    ${_changed_options:+'${_PRETTY_OPTS:O:C/(.*)([+-])$/\2\1/}' _selected_options} \
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
 	    '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
 	    _pkg_deps; then
@@ -5630,19 +5632,15 @@ delete_old_pkg() {
 		if have_ports_feature SELECTED_OPTIONS; then
 			shash_remove pkgname-options "${new_pkgname}" \
 			    current_options || current_options=
-			# pretty-print-config has a trailing space, so
-			# pkg_get_options does as well.  Add in for compat.
-			if [ -n "${current_options}" ]; then
-				current_options="${current_options} "
-			fi
 		else
 			# Backwards-compat: Fallback on pretty-print-config.
-			# XXX: If we know we can use bmake then this would work
-			# make _SELECTED_OPTIONS='${ALL_OPTIONS:@opt@${PORT_OPTIONS:M${opt}}@} ${MULTI GROUP SINGLE RADIO:L:@otype@${OPTIONS_${otype}:@m@${OPTIONS_${otype}_${m}:@opt@${PORT_OPTIONS:M${opt}}@}@}@}' -V _SELECTED_OPTIONS:O
 			current_options=$(injail /usr/bin/make -C \
 			    ${PORTSDIR}/${origin} \
-			    pretty-print-config | tr ' ' '\n' | \
-			    sed -n 's/^\+\(.*\)/\1/p' | sort -u | tr '\n' ' ')
+			    pretty-print-config | \
+			    sed -e 's,[^ ]*( ,,g' -e 's, ),,g' -e 's, $,,' | \
+			    tr ' ' '\n' | \
+			    sort -k1.2 | \
+			    paste -d ' ' -s -)
 		fi
 		pkg_get_options compiled_options "${pkg}"
 

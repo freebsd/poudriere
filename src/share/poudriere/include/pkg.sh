@@ -158,21 +158,18 @@ pkg_get_options() {
 	local _compiled_options
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
-	if ! shash_get 'pkg' 'options' _compiled_options; then
+	if ! shash_get 'pkg' 'options2' _compiled_options; then
 		_compiled_options=
 		while mapfile_read_loop_redir key value; do
 			case "${value}" in
-				off|false) continue ;;
+				off|false) key="-${key}" ;;
+				on|true) key="+${key}" ;;
 			esac
 			_compiled_options="${_compiled_options}${_compiled_options:+ }${key}"
 		done <<-EOF
 		$(injail ${PKG_BIN} query -F "/packages/All/${pkg##*/}" '%Ok %Ov' | sort)
 		EOF
-		# Compat with pretty-print-config
-		if [ -n "${_compiled_options}" ]; then
-			_compiled_options="${_compiled_options} "
-		fi
-		shash_set 'pkg' 'options' "${_compiled_options}"
+		shash_set 'pkg' 'options2' "${_compiled_options}"
 	fi
 	if [ -n "${var_return}" ]; then
 		setvar "${var_return}" "${_compiled_options}"
