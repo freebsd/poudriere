@@ -3173,7 +3173,16 @@ include_poudriere_confs() {
 				case ${flag} in
 					j) jail="${OPTARG}" ;;
 					p) ptname="${OPTARG}" ;;
-					v) debug=$((debug+1)) ;;
+					v)
+						case "${SCRIPTNAME}" in
+						# These commands have their own
+						# -v
+						jail.sh|image.sh) ;;
+						*)
+							debug=$((debug+1))
+							;;
+						esac
+						;;
 					z) setname="${OPTARG}" ;;
 					*) ;;
 				esac
