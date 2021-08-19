@@ -364,7 +364,7 @@ nullfs_paths() {
 }
 
 destroyfs() {
-	[ $# -ne 2 ] && eargs destroyfs name type
+	[ $# -ne 2 ] && eargs destroyfs mnt type
 	local mnt="$1"
 	local type="$2"
 	local fs
