@@ -3171,20 +3171,20 @@ include_poudriere_confs() {
 		while [ $# -gt 0 ]; do
 			while getopts "j:p:vz:" flag 2>/dev/null; do
 				case ${flag} in
-					j) jail="${OPTARG}" ;;
-					p) ptname="${OPTARG}" ;;
-					v)
-						case "${SCRIPTNAME}" in
-						# These commands have their own
-						# -v
-						jail.sh|image.sh) ;;
-						*)
-							debug=$((debug+1))
-							;;
-						esac
+				j) jail="${OPTARG}" ;;
+				p) ptname="${OPTARG}" ;;
+				v)
+					case "${SCRIPTNAME}" in
+					# These commands have their own
+					# -v
+					jail.sh|image.sh) ;;
+					*)
+						debug=$((debug+1))
 						;;
-					z) setname="${OPTARG}" ;;
-					*) ;;
+					esac
+					;;
+				z) setname="${OPTARG}" ;;
+				*) ;;
 				esac
 			done
 			shift $((OPTIND-1))	# parsed arguments
