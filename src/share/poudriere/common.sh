@@ -895,10 +895,7 @@ buildlog_start() {
 		echo "Port dir last git commit: ${git_hash}"
 		pkg_note_add "${pkgname}" port_git_hash "${git_hash}"
 		git_modified=no
-		if ! ${GIT_CMD} -C "${mnt}/${portdir}" \
-		    -c core.checkStat=minimal \
-		    -c core.fileMode=off \
-		    diff --quiet .; then
+		if git_tree_dirty "${mnt}/${portdir}" 1; then
 			git_modified=yes
 		fi
 		pkg_note_add "${pkgname}" port_checkout_unclean "${git_modified}"
@@ -7201,10 +7198,7 @@ fetch_global_port_vars() {
 		shash_set ports_metadata top_git_hash "${git_hash}"
 		git_modified=no
 		msg_n "Inspecting ports tree for modifications to git checkout..."
-		if ! ${GIT_CMD} -C "${MASTERMNT}/${PORTSDIR}" \
-		    -c core.checkStat=minimal \
-		    -c core.fileMode=off \
-		    diff --quiet .; then
+		if git_tree_dirty "${MASTERMNT}/${PORTSDIR}" 0; then
 			git_modified=yes
 			git_dirty="(dirty)"
 		fi
@@ -7212,6 +7206,56 @@ fetch_global_port_vars() {
 		shash_set ports_metadata top_unclean "${git_modified}"
 		msg "Ports top-level git hash: ${git_hash} ${git_dirty}"
 	fi
+}
+
+git_tree_dirty() {
+	[ $# -eq 2 ] || eargs git_tree_dirty git_dir inport
+	local git_dir="$1"
+	local inport="$2"
+	local file
+
+	if ! ${GIT_CMD} -C "${git_dir}" \
+	    -c core.checkStat=minimal \
+	    -c core.fileMode=off \
+	    diff --quiet .; then
+		return 0
+	fi
+
+	${GIT_CMD} -C "${git_dir}" ls-files --directory --others . | (
+	# Look for patches and .local files
+		while read file; do
+			if [ "${inport}" -eq 0 ]; then
+				case "${file}" in
+				Makefile.local|\
+				*/Makefile.local|\
+				*/*/Makefile.local)
+					return 0
+					;;
+				*/*/files/*)
+					case "${file}" in
+					# Mk/Scripts/do-patch.sh
+					*.orig|*.rej|*~|*,v) ;;
+					*) return 0 ;;
+					esac
+					;;
+				esac
+			else
+				case "${file}" in
+				Makefile.local)
+					return 0
+					;;
+				files/*)
+					case "${file}" in
+					# Mk/Scripts/do-patch.sh
+					*.orig|*.rej|*~|*,v) ;;
+					*) return 0 ;;
+					esac
+					;;
+				esac
+			fi
+		done
+		return 1
+	)
 }
 
 trim_ignored() {
