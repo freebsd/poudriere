@@ -3415,7 +3415,8 @@ download_from_repo() {
 	local missing_pkgs pkg pkgbase cnt
 	local remote_pkg_ver local_pkg_name local_pkg_ver
 
-	msg "Package fetch: Looking for missing packages to fetch"
+	packagesite="${PACKAGE_FETCH_URL:+${PACKAGE_FETCH_URL}/}${PACKAGE_FETCH_BRANCH}"
+	msg "Package fetch: Looking for missing packages to fetch from ${packagesite}"
 
 	# only list packages which do not exists to prevent pkg
 	# from overwriting prebuilt packages
@@ -3474,7 +3475,6 @@ download_from_repo() {
 		# When bootstrapping always fetch a copy of the pkg used
 		echo "${P_PKG_PKGNAME:?}" >> "${missing_pkgs}"
 	fi
-	packagesite="${PACKAGE_FETCH_URL:+${PACKAGE_FETCH_URL}/}${PACKAGE_FETCH_BRANCH}"
 	cat >> "${MASTERMNT}/etc/pkg/poudriere.conf" <<-EOF
 	FreeBSD: {
 	        url: ${packagesite};
