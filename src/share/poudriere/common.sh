@@ -3377,8 +3377,8 @@ download_from_repo_check_pkg() {
 	case "${selected_options}" in
 	${remote_options}) ;;
 	*)
-		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: options wanted: ${selected_options})"
-		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: options remote: ${remote_options})"
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: options wanted: ${selected_options}"
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: options remote: ${remote_options}"
 		return
 		;;
 	esac
@@ -3396,8 +3396,8 @@ download_from_repo_check_pkg() {
 	case "${local_deps}" in
 	${remote_deps}) ;;
 	*)
-		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: deps wanted: ${local_deps})"
-		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: deps remote: ${remote_deps})"
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: deps wanted: ${local_deps}"
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: deps remote: ${remote_deps}"
 		return
 		;;
 	esac
