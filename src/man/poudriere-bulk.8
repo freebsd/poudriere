@@ -321,13 +321,6 @@ packages after building.
 Recursively test all dependencies as well.
 This flag is automatically set when using
 .Fl at .
-.It Fl S
-Do not recursively rebuild packages affected by other packages requiring
-incremental rebuild.
-This may result in broken packages if the ones they depend on are updated,
-are not ABI-compatible, and were not properly
-.Va PORTREVISION
-bumped.
 .It Fl T
 Try building
 .Va BROKEN

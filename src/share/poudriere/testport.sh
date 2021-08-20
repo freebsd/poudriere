@@ -60,10 +60,6 @@ Options:
     -O overlays -- Specify extra ports trees to overlay
     -p tree     -- Specify the path to the ports tree
     -P          -- Use custom prefix
-    -S          -- Don't recursively rebuild packages affected by other
-                   packages requiring incremental rebuild. This can result
-                   in broken packages if the ones updated do not retain
-                   a stable ABI.
     -v          -- Be verbose; show more information. Use twice to enable
                    debug output
     -w          -- Save WRKDIR on failed builds
@@ -147,7 +143,8 @@ while getopts "b:B:o:cniIj:J:kNO:p:PSvwz:" FLAG; do
 			NOPREFIX=0
 			;;
 		S)
-			SKIP_RECURSIVE_REBUILD=1
+			# Kept for compat
+			:
 			;;
 		w)
 			SAVE_WRKDIR=1

@@ -157,13 +157,6 @@ Specifies which ports
 .Ar tree
 to use.
 .Pq Default: Dq Li default
-.It Fl S
-Do not recursively rebuild packages affected by other packages requiring
-incremental rebuild.
-This may result in broken packages if the ones they depend on are updated,
-are not ABI-compatible, and were not properly
-.Sy PORTREVISION
-bumped.
 .It Fl v
 This will show more information during the build.
 Specify twice to enable debug output.
