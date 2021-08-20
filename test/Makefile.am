@@ -103,6 +103,7 @@ JAIL_TESTS= \
 	bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
+	bulk-build-inc-pkg_no_version_for_deps_switch.sh \
 	bulk-build-inc-pkgclean-flavor-default.sh \
 	bulk-build-inc-pkgclean-flavor.sh \
 	bulk-build-inc-pkgclean-origin.sh \

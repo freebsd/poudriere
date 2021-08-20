@@ -508,6 +508,7 @@ JAIL_TESTS = \
 	bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
+	bulk-build-inc-pkg_no_version_for_deps_switch.sh \
 	bulk-build-inc-pkgclean-flavor-default.sh \
 	bulk-build-inc-pkgclean-flavor.sh \
 	bulk-build-inc-pkgclean-origin.sh \
@@ -1367,6 +1368,13 @@ bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh
 bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh.log: bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh
 	@p='bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh'; \
 	b='bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-inc-pkg_no_version_for_deps_switch.sh.log: bulk-build-inc-pkg_no_version_for_deps_switch.sh
+	@p='bulk-build-inc-pkg_no_version_for_deps_switch.sh'; \
+	b='bulk-build-inc-pkg_no_version_for_deps_switch.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

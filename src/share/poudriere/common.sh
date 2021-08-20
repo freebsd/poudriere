@@ -4043,7 +4043,8 @@ download_from_repo_check_pkg() {
 	local remote_all_cats="$9"
 	local output="${10}"
 	local pkgbase bpkg_glob selected_options remote_options found
-	local run_deps lib_deps raw_deps dep dep_pkgname local_deps remote_deps
+	local run_deps lib_deps raw_deps dep dep_pkgname
+	local local_deps local_deps_vers remote_deps
 	local remote_abi remote_osversion remote_prefix prefix no_arch
 	local -
 
@@ -4165,18 +4166,39 @@ download_from_repo_check_pkg() {
 	raw_deps="${run_deps:+${run_deps} }${lib_deps}"
 	local_deps=$(for dep in ${raw_deps}; do
 		get_pkgname_from_originspec "${dep#*:}" dep_pkgname || continue
+		case "${PKG_NO_VERSION_FOR_DEPS}" in
+		"no") echo "${dep_pkgname}" ;;
+		*) echo "${dep_pkgname%-*}" ;;
+		esac
+	done | sort -u | paste -s -d ' ' -)
+	local_deps_vers=$(for dep in ${raw_deps}; do
+		get_pkgname_from_originspec "${dep#*:}" dep_pkgname || continue
 		echo "${dep_pkgname}"
 	done | sort -u | paste -s -d ' ' -)
 	remote_deps=$(awk -vpkgbase="${pkgbase}" ' \
 	    BEGIN {printed=0}
-	    $1 == pkgbase {print $2;printed=1}
+	    $1 == pkgbase {
+		    # Trim out PKG_NO_VERSION_FOR_DEPS missing version
+		    sub(/-\(null\)$/, "", $2)
+		    print $2
+		    printed=1
+	    }
 	    $1 != pkgbase && printed == 1 {exit}
 	    ' \
 	    "${remote_all_deps}" | sort -u | paste -s -d ' ' -)
-	case "${local_deps}" in
-	"${remote_deps}") ;;
+	case "${remote_deps}" in
+	# All the deps are unversioned and match local
+	"${local_deps}") ;;
+	# The deps are versioned but match local.
+	# XXX: Can take this out once PKG_NO_VERSION_FOR_DEPS is default
+	# enabled in official packages; We may delete this fetched package
+	# if a deep dependency is deleted by delete_old_pkg().  See
+	# download_from_repo_post_delete() for other side of this.
+	"${local_deps_vers}") ;;
 	*)
 		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: deps wanted: ${local_deps}"
+		# XXX: Can take this out once PKG_NO_VERSION_FOR_DEPS is default enabled in official packages
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: deps wanted: ${local_deps_vers}"
 		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: deps remote: ${remote_deps}"
 		return
 		;;
@@ -4444,8 +4466,10 @@ download_from_repo_post_delete() {
 	parallel_start
 	while mapfile_read_loop "${MASTER_DATADIR:?}/pkg_fetch" fpkgname; do
 		if [ ! -e "${PACKAGES}/All/${fpkgname}.${PKG_EXT}" ]; then
-			msg_debug "download_from_repo_post_delete: We lost ${COLOR_PORT}${fpkgname}.${PKG_EXT}${COLOR_RESET}" >&2
-			continue
+			# We should not be fetching packages and then
+			# deleting them.  Let's get the user to report
+			# to us to not waste bandwidth.
+			err ${EX_SOFTWARE} "download_from_repo_post_delete: We lost fetched unversioned ${COLOR_PORT}${fpkgname}.${PKG_EXT}${COLOR_RESET}"
 		fi
 		echo "${fpkgname}"
 	done | while mapfile_read_loop_redir fpkgname; do
@@ -4535,7 +4559,7 @@ sanity_check_pkg() {
 	[ $# -eq 1 ] || eargs sanity_check_pkg pkg
 	local pkg="$1"
 	local compiled_deps_pkgnames pkgname dep_pkgname
-	local pkgfile
+	local pkgfile reason displayed_warning
 
 	pkgfile="${pkg##*/}"
 	pkgname="${pkgfile%.*}"
@@ -4548,13 +4572,54 @@ sanity_check_pkg() {
 		delete_pkg "${pkg}"
 		return 65	# Package deleted, need another pass
 	fi
+	displayed_warning=0
 	for dep_pkgname in ${compiled_deps_pkgnames}; do
-		if [ ! -e "${PACKAGES:?}/All/${dep_pkgname}.${PKG_EXT}" ]; then
-			msg_debug "${COLOR_PORT}${pkg}${COLOR_RESET} needs missing ${COLOR_PORT}${dep_pkgname}${COLOR_RESET}"
-			msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: missing dependency: ${COLOR_PORT}${dep_pkgname}${COLOR_RESET}"
-			delete_pkg "${pkg}"
-			return 65	# Package deleted, need another pass
+		case "${dep_pkgname}" in
+		*"-(null)")
+			# Dependency generated with PKG_NO_VERSION_FOR_DEPS
+			# which means this package doesn't care about any
+			# specific dependency's version.
+			case "${displayed_warning}" in
+			0)
+				msg_debug "${COLOR_PORT}${pkgname}${COLOR_RESET} has unversioned dependencies: ${COLOR_PORT}${compiled_deps_pkgnames}${COLOR_RESET}"
+				displayed_warning=1
+				;;
+			esac
+			case "${PKG_NO_VERSION_FOR_DEPS}" in
+			"no")
+				# This package format is no longer acceptable
+				msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: unwanted unversioned dependency: ${COLOR_PORT}${dep_pkgname}${COLOR_RESET}"
+				delete_pkg "${pkg}"
+				return 65	# Package deleted, need another pass
+				;;
+			esac
+			# Nothing more to do if it is already in
+			# PKG_NO_VERSION_FOR_DEPS format.
+			return 0
+			;;
+		esac
+		if [ -e "${PACKAGES:?}/All/${dep_pkgname}.${PKG_EXT}" ]; then
+			continue
 		fi
+		case "${PKG_NO_VERSION_FOR_DEPS}" in
+		"no")
+			reason="missing dependency"
+			;;
+		*)
+			if ! pkgqueue_contains build "${dep_pkgname}"; then
+				reason="missing versioned dependency"
+			else
+				# The dependency is queued with the
+				# same needed version so this is not a
+				# violation.
+				continue
+			fi
+			;;
+		esac
+		msg_debug "${COLOR_PORT}${pkg}${COLOR_RESET} needs ${reason} ${COLOR_PORT}${dep_pkgname}${COLOR_RESET}"
+		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: ${reason}: ${COLOR_PORT}${dep_pkgname}${COLOR_RESET}"
+		delete_pkg "${pkg}"
+		return 65	# Package deleted, need another pass
 	done
 
 	return 0
@@ -4982,6 +5047,12 @@ build_port() {
 			# Only set PKGENV during 'package' to prevent
 			# testport-built packages from going into the main repo
 			pkg_notes_get "${pkgname}" "${PKGENV}" pkgenv
+			case "${PKG_NO_VERSION_FOR_DEPS}" in
+			"no") ;;
+			*)
+				pkgenv="${pkgenv:+${pkgenv} }PKG_NO_VERSION_FOR_DEPS=1"
+				;;
+			esac
 			phaseenv="${phaseenv:+${phaseenv}${pkgenv:+ }}${pkgenv}"
 			;;
 		esac
@@ -6423,7 +6494,6 @@ ensure_pkg_installed() {
 #   (requires default-on CHECK_CHANGED_DEPS)
 # - Changed options
 #   (requires default-on CHECK_CHANGED_OPTIONS)
-# - Recursive: rebuild if a dependency was rebuilt due to this.
 #
 # These are handled by pkg (pkg_jobs_need_upgrade()) but not Poudriere yet:
 #
@@ -9258,6 +9328,8 @@ prepare_ports() {
 		fi
 		delete_old_pkgs
 
+		# PKG_NO_VERSION_FOR_DEPS still uses this to trim out old
+		# packages with versioned-dependencies which no longer exist.
 		if [ ${SKIP_RECURSIVE_REBUILD} -eq 0 ]; then
 			msg_verbose "Checking packages for missing dependencies"
 			while :; do
@@ -10042,6 +10114,7 @@ esac
 : ${CLEAN:=0}
 : ${CLEAN_LISTED:=0}
 : ${SKIP_RECURSIVE_REBUILD:=0}
+: ${PKG_NO_VERSION_FOR_DEPS:=no}
 : ${VERBOSE:=0}
 : ${QEMU_EMULATING:=0}
 : ${PORTTESTING:=0}
