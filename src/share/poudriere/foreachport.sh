@@ -124,7 +124,7 @@ PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
 exec 3>&1
 exec >&2
 msg "Gathering all expected packages"
-jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
+jail_start "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 #prepare_ports
 bset status "foreachport:"
 

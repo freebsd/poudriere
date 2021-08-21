@@ -226,7 +226,7 @@ CLEANUP_HOOK=bulk_cleanup
 
 run_hook bulk start
 
-jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
+jail_start "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 
 _log_path LOGD
 if [ -d ${LOGD} -a ${CLEAN} -eq 1 ]; then

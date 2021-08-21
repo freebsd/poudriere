@@ -158,7 +158,7 @@ PKG_EXT='*' package_dir_exists_and_has_packages ||
 maybe_run_queued "${saved_argv}"
 
 msg "Gathering all expected packages"
-jail_start ${JAILNAME} ${PTNAME} ${SETNAME}
+jail_start "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 prepare_ports
 msg "Looking for unneeded packages"
 bset status "pkgclean:"

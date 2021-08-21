@@ -1074,7 +1074,9 @@ _bget() {
 	file=".poudriere.${1}${id:+.${id}}"
 
 	# Use cat(1) to read long list files.
-	[ -z "${1##ports.*}" ] && READ_FILE_USE_CAT=1
+	if [ -z "${1##ports.*}" ]; then
+		READ_FILE_USE_CAT=1
+	fi
 
 	read_file "${var_return}" "${log}/${file}"
 }
@@ -1084,7 +1086,9 @@ bget() {
 	local bget_data
 
 	if _bget bget_data "$@"; then
-		[ -n "${bget_data}" ] && echo "${bget_data}"
+		if [ -n "${bget_data}" ]; then
+			echo "${bget_data}"
+		fi
 		return 0
 	fi
 	return 1
@@ -1168,8 +1172,9 @@ update_stats_queued() {
 	nbq=$((nbq + nbi + nbs))
 
 	# Add 1 for the main port to test
-	was_a_testport_run && \
-	    nbq=$((nbq + 1))
+	if was_a_testport_run; then
+		nbq=$((nbq + 1))
+	fi
 	bset stats_queued ${nbq##* }
 	update_remaining
 }
@@ -1179,7 +1184,9 @@ update_remaining() {
 	local log
 
 	_log_path log
-	[ "${HTML_TRACK_REMAINING}" != "yes" ] && return 0
+	if [ "${HTML_TRACK_REMAINING}" != "yes" ]; then
+		return 0
+	fi
 	(
 		cd "${MASTERMNT}/.p/pool"
 		pkgqueue_remaining | \
@@ -1496,13 +1503,13 @@ siginfo_handler() {
 }
 
 jail_exists() {
-	[ $# -ne 1 ] && eargs jail_exists jailname
+	[ $# -eq 1 ] || eargs jail_exists jailname
 	local jname=$1
 	[ -d "${POUDRIERED}/jails/${jname}" ]
 }
 
 jail_runs() {
-	[ $# -ne 1 ] && eargs jail_runs jname
+	[ $# -eq 1 ] || eargs jail_runs jname
 	local jname="$1"
 
 	jls -j "$jname" >/dev/null 2>&1
@@ -1521,7 +1528,7 @@ porttree_list() {
 }
 
 porttree_exists() {
-	[ $# -ne 1 ] && eargs porttree_exists portstree_name
+	[ $# -eq 1 ] || eargs porttree_exists portstree_name
 	porttree_list |
 		awk -v portstree_name=$1 '
 		BEGIN { ret = 1 }
@@ -1575,7 +1582,7 @@ get_data_dir() {
 }
 
 fetch_file() {
-	[ $# -ne 2 ] && eargs fetch_file destination url
+	[ $# -eq 2 ] || eargs fetch_file destination url
 	local destination="$1"
 	local url="$2"
 	local maxtries=2
@@ -1616,7 +1623,9 @@ mktemp() {
 		# No export needed here since TMPDIR is set above in scope.
 		builtin mktemp "$@"
 	else
-		[ -n "${TMPDIR-}" ] && export TMPDIR
+		if [ -n "${TMPDIR-}" ]; then
+			export TMPDIR
+		fi
 		command mktemp "$@"
 	fi
 }
@@ -1667,7 +1676,7 @@ common_mtree() {
 }
 
 markfs() {
-	[ $# -ne 2 ] && eargs markfs name mnt
+	[ $# -eq 2 ] || eargs markfs name mnt
 	local name=$1
 	local mnt="${2}"
 	local fs
@@ -1756,9 +1765,11 @@ rm() {
 	local arg
 
 	for arg in "$@"; do
-		[ "${arg}" = "/" ] && err 1 "Tried to rm /"
-		[ "${arg%/}" = "/COPYRIGHT" ] && err 1 "Tried to rm /*"
-		[ "${arg%/}" = "/bin" ] && err 1 "Tried to rm /*"
+		case "${arg}" in
+		/|/COPYRIGHT|/bin)
+			err 1 "Tried to rm /"
+			;;
+		esac
 	done
 
 	command rm "$@"
@@ -1800,7 +1811,7 @@ cd() {
 }
 
 do_jail_mounts() {
-	[ $# -ne 3 ] && eargs do_jail_mounts from mnt name
+	[ $# -eq 3 ] || eargs do_jail_mounts from mnt name
 	local from="$1"
 	local mnt="$2"
 	local name="$3"
@@ -1822,14 +1833,16 @@ do_jail_mounts() {
 	echo ${nullpaths} | tr ' ' '\n' | sed -e "s,^/,${mnt}/," | \
 	    xargs mkdir -p
 	for nullpath in ${nullpaths}; do
-		[ -d "${from}${nullpath}" -a "${from}" != "${mnt}" ] && \
-		    ${NULLMOUNT} -o ro "${from}${nullpath}" "${mnt}${nullpath}"
+		if [ -d "${from}${nullpath}" -a "${from}" != "${mnt}" ]; then
+			${NULLMOUNT} -o ro "${from}${nullpath}" "${mnt}${nullpath}"
+		fi
 	done
 
 	# Mount /usr/src into target if it exists and not overridden
 	_jget srcpath ${name} srcpath || srcpath="${from}/usr/src"
-	[ -d "${srcpath}" -a "${from}" != "${mnt}" ] && \
-	    ${NULLMOUNT} -o ro ${srcpath} ${mnt}/usr/src
+	if [ -d "${srcpath}" -a "${from}" != "${mnt}" ]; then
+		${NULLMOUNT} -o ro ${srcpath} ${mnt}/usr/src
+	fi
 
 	mount -t devfs devfs ${mnt}/dev
 	if [ ${JAILED} -eq 0 ]; then
@@ -1839,17 +1852,20 @@ do_jail_mounts() {
 		done
 	fi
 
-	[ "${USE_FDESCFS}" = "yes" ] && \
-	    [ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ] && \
-	    mount -t fdescfs fdesc "${mnt}/dev/fd"
-	[ "${USE_PROCFS}" = "yes" ] && \
-	    mount -t procfs proc "${mnt}/proc"
+	if [ "${USE_FDESCFS}" = "yes" ] && \
+	    [ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ]; then
+		    mount -t fdescfs fdesc "${mnt}/dev/fd"
+	fi
+	if [ "${USE_PROCFS}" = "yes" ]; then
+		mount -t procfs proc "${mnt}/proc"
+	fi
 
 	if [ -z "${NOLINUX-}" ] && [ -d "${mnt}/compat" ]; then
 		_jget arch "${name}" arch || \
 		    err 1 "Missing arch metadata for jail"
-		[ "${arch}" = "i386" -o "${arch}" = "amd64" ] && \
-		    mount -t linprocfs linprocfs "${mnt}/compat/linux/proc"
+		if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
+			mount -t linprocfs linprocfs "${mnt}/compat/linux/proc"
+		fi
 	fi
 
 	run_hook jail mount ${mnt}
@@ -2011,8 +2027,12 @@ enter_interactive() {
 		msg "Leaving jail ${MASTERNAME}-n running, mounted at ${MASTERMNT} for interactive run testing"
 		msg "To enter jail: jexec ${MASTERNAME}-n env -i TERM=\$TERM /usr/bin/login -fp root"
 		stopmsg="-j ${JAILNAME}"
-		[ -n "${SETNAME}" ] && stopmsg="${stopmsg} -z ${SETNAME}"
-		[ -n "${PTNAME#default}" ] && stopmsg="${stopmsg} -p ${PTNAME}"
+		if [ -n "${SETNAME}" ]; then
+			stopmsg="${stopmsg} -z ${SETNAME}"
+		fi
+		if [ -n "${PTNAME#default}" ]; then
+			stopmsg="${stopmsg} -p ${PTNAME}"
+		fi
 		msg "To stop jail: poudriere jail -k ${stopmsg}"
 		CLEANED_UP=1
 		return 0
@@ -2021,7 +2041,7 @@ enter_interactive() {
 }
 
 use_options() {
-	[ $# -ne 2 ] && eargs use_options mnt optionsdir
+	[ $# -eq 2 ] || eargs use_options mnt optionsdir
 	local mnt=$1
 	local optionsdir=$2
 
@@ -2069,7 +2089,9 @@ mount_ports() {
 	ptname="${PTNAME:?}"
 	_pget portsdir "${ptname}" mnt || err 1 "Missing mnt metadata for portstree"
 	# Some ancient compat
-	[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
+	if [ -d "${portsdir}/ports" ]; then
+		portsdir="${portsdir}/ports"
+	fi
 	msg "Mounting ports from: ${portsdir}"
 	${NULLMOUNT} "$@" ${portsdir} ${mnt}${PORTSDIR} ||
 	    err 1 "Failed to mount the ports directory "
@@ -2081,11 +2103,11 @@ mount_ports() {
 }
 
 do_portbuild_mounts() {
-	[ $# -lt 3 ] && eargs do_portbuild_mounts mnt jname ptname setname
-	local mnt=$1
-	local jname=$2
-	local ptname=$3
-	local setname=$4
+	[ $# -eq 4 ] || eargs do_portbuild_mounts mnt jname ptname setname
+	local mnt="$1"
+	local jname="$2"
+	local ptname="$3"
+	local setname="$4"
 	local optionsdir opt o msgmount msgdev
 
 	# clone will inherit from the ref jail
@@ -2107,17 +2129,23 @@ do_portbuild_mounts() {
 	fi
 	# Create our data dirs
 	mkdir -p "${mnt}/.p"
-	[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] &&
-	    mnt_tmpfs data "${mnt}/.p"
+	if [ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
+		mnt_tmpfs data "${mnt}/.p"
+	fi
 
 	mkdir -p \
 	    "${mnt}/.p/tmp" \
 	    "${mnt}/.p/var/run"
 
-	[ -d "${CCACHE_DIR:-/nonexistent}" ] &&
+	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 		${NULLMOUNT} ${CCACHE_DIR} ${mnt}${HOME}/.ccache
-	[ -n "${MFSSIZE}" ] && mdmfs -t -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
-	[ ${TMPFS_WRKDIR} -eq 1 ] && mnt_tmpfs wrkdir ${mnt}/wrkdirs
+	fi
+	if [ -n "${MFSSIZE}" ]; then
+		mdmfs -t -S -o async -s ${MFSSIZE} md ${mnt}/wrkdirs
+	fi
+	if [ ${TMPFS_WRKDIR} -eq 1 ]; then
+		mnt_tmpfs wrkdir ${mnt}/wrkdirs
+	fi
 	# Only show mounting messages once, not for every builder
 	if [ ${mnt##*/} = "ref" ]; then
 		msgmount="msg"
@@ -2126,8 +2154,9 @@ do_portbuild_mounts() {
 		msgmount=":"
 		msgdev="/dev/null"
 	fi
-	[ -d "${CCACHE_DIR}" ] && \
-	    ${msgmount} "Mounting ccache from: ${CCACHE_DIR}"
+	if [ -d "${CCACHE_DIR}" ]; then
+		${msgmount} "Mounting ccache from: ${CCACHE_DIR}"
+	fi
 
 	mount_ports -o ro > "${msgdev}"
 	${msgmount} "Mounting packages from: ${PACKAGES_ROOT}"
@@ -2139,12 +2168,17 @@ do_portbuild_mounts() {
 	# Copy in the options for the ref jail, but just ro nullmount it
 	# in builders.
 	if [ "${mnt##*/}" = "ref" ]; then
-		[ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ] && \
-		    mnt_tmpfs config "${mnt}/var/db/ports"
+		if [ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
+			mnt_tmpfs config "${mnt}/var/db/ports"
+		fi
 		optionsdir="${MASTERNAME}"
-		[ -n "${setname}" ] && optionsdir="${optionsdir} ${jname}-${setname}"
+		if [ -n "${setname}" ]; then
+			optionsdir="${optionsdir} ${jname}-${setname}"
+		fi
 		optionsdir="${optionsdir} ${jname}-${ptname}"
-		[ -n "${setname}" ] && optionsdir="${optionsdir} ${ptname}-${setname} ${setname}"
+		if [ -n "${setname}" ]; then
+			optionsdir="${optionsdir} ${ptname}-${setname} ${setname}"
+		fi
 		optionsdir="${optionsdir} ${ptname} ${jname} -"
 
 		for opt in ${optionsdir}; do
@@ -2346,14 +2380,22 @@ show_build_results() {
 	_bget nbignored stats_ignored
 	_bget nbskipped stats_skipped
 
-	[ $nbbuilt -gt 0 ] && COLOR_ARROW="${COLOR_SUCCESS}" \
-	    msg "${COLOR_SUCCESS}Built ports: ${COLOR_PORT}${built}"
-	[ $nbfailed -gt 0 ] && COLOR_ARROW="${COLOR_FAIL}" \
-	    msg "${COLOR_FAIL}Failed ports: ${COLOR_PORT}${failed}"
-	[ $nbskipped -gt 0 ] && COLOR_ARROW="${COLOR_SKIP}" \
-	    msg "${COLOR_SKIP}Skipped ports: ${COLOR_PORT}${skipped}"
-	[ $nbignored -gt 0 ] && COLOR_ARROW="${COLOR_IGNORE}" \
-	    msg "${COLOR_IGNORE}Ignored ports: ${COLOR_PORT}${ignored}"
+	if [ $nbbuilt -gt 0 ]; then
+		COLOR_ARROW="${COLOR_SUCCESS}" \
+		    msg "${COLOR_SUCCESS}Built ports: ${COLOR_PORT}${built}"
+	fi
+	if [ $nbfailed -gt 0 ]; then
+		COLOR_ARROW="${COLOR_FAIL}" \
+		    msg "${COLOR_FAIL}Failed ports: ${COLOR_PORT}${failed}"
+	fi
+	if [ $nbskipped -gt 0 ]; then
+		COLOR_ARROW="${COLOR_SKIP}" \
+		    msg "${COLOR_SKIP}Skipped ports: ${COLOR_PORT}${skipped}"
+	fi
+	if [ $nbignored -gt 0 ]; then
+		COLOR_ARROW="${COLOR_IGNORE}" \
+		    msg "${COLOR_IGNORE}Ignored ports: ${COLOR_PORT}${ignored}"
+	fi
 
 	show_build_summary
 	show_log_info
@@ -2372,9 +2414,11 @@ write_usock() {
 
 # If running as non-root, redirect this command to queue and exit
 maybe_run_queued() {
-	[ $(/usr/bin/id -u) -eq 0 ] && return 0
 	local this_command
 
+	if [ $(/usr/bin/id -u) -eq 0 ]; then
+		return 0
+	fi
 	# If poudriered not running then the command cannot be
 	# satisfied.
 	/usr/sbin/service poudriered onestatus >/dev/null 2>&1 || \
@@ -2394,7 +2438,9 @@ get_host_arch() {
 
 	_arch="$(uname -m).$(uname -p)"
 	# If TARGET=TARGET_ARCH trim it away and just use TARGET_ARCH
-	[ "${_arch%.*}" = "${_arch#*.}" ] && _arch="${_arch#*.}"
+	if [ "${_arch%.*}" = "${_arch#*.}" ]; then
+		_arch="${_arch#*.}"
+	fi
 	setvar "${var_return}" "${_arch}"
 }
 
@@ -2696,12 +2742,14 @@ update_version_env() {
 	login_env=",UNAME_r=${version% *},UNAME_v=FreeBSD ${version},OSVERSION=${osversion}"
 
 	# Tell pkg(8) to not use /bin/sh for the ELF ABI since it is native.
-	[ "${QEMU_EMULATING}" -eq 1 ] && \
-	    login_env="${login_env},ABI_FILE=\/usr\/lib\/crt1.o"
+	if [ "${QEMU_EMULATING}" -eq 1 ]; then
+		login_env="${login_env},ABI_FILE=\/usr\/lib\/crt1.o"
+	fi
 
 	# Check TARGET=i386 not TARGET_ARCH due to pc98/i386
-	need_cross_build "${host_arch}" "${arch}" && \
-	    login_env="${login_env},UNAME_m=${arch%.*},UNAME_p=${arch#*.}"
+	if need_cross_build "${host_arch}" "${arch}"; then
+		login_env="${login_env},UNAME_m=${arch%.*},UNAME_p=${arch#*.}"
+	fi
 
 	sed -i "" -e "s/,UNAME_r.*:/:/ ; s/:\(setenv.*\):/:\1${login_env}:/" \
 	    "${mnt}/etc/login.conf"
@@ -2907,7 +2955,7 @@ jail_start() {
 	: ${PACKAGES:=${POUDRIERE_DATA:?}/packages/${MASTERNAME}}
 	mkdir -p "${PACKAGES:?}/"
 	was_a_bulk_run && stash_packages
-	do_portbuild_mounts ${tomnt} ${name} ${ptname} ${setname}
+	do_portbuild_mounts "${tomnt}" "${name}" "${ptname}" "${setname}"
 
 	if [ "${tomnt##*/}" = "ref" ]; then
 		mkdir -p "${MASTERMNT}/.p/var/cache"
