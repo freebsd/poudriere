@@ -18,6 +18,7 @@ mapfile_closecmd -n	mapfile_close
 mkdircmd -n		mkdir
 mkfifocmd -n		mkfifo
 mktempcmd -n		mktemp
+_mktempcmd -n		_mktemp
 pwaitcmd		pwait
 realpathcmd -n		realpath
 renamecmd -n		rename

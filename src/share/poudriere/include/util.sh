@@ -1166,3 +1166,37 @@ getpid() {
 	sh -c 'echo $PPID'
 }
 fi
+
+# Export handling is different in builtin vs external
+if [ "$(type mktemp)" = "mktemp is a shell builtin" ]; then
+	MKTEMP_BUILTIN=1
+fi
+_mktemp() {
+	local -; set +x
+	local _mktemp_var_return="$1"
+	shift
+	local TMPDIR ret _mktemp_tmpfile
+
+	if [ -z "${TMPDIR-}" ]; then
+		if [ -n "${MASTERMNT}" -a ${STATUS} -eq 1 ]; then
+			local mnt
+			_my_path mnt
+			TMPDIR="${mnt}/.p/tmp"
+			[ -d "${TMPDIR}" ] || unset TMPDIR
+		else
+			TMPDIR="${POUDRIERE_TMPDIR}"
+		fi
+	fi
+
+	ret=0
+	if [ -n "${MKTEMP_BUILTIN-}" ]; then
+		# No export needed here since TMPDIR is set above in scope.
+		builtin _mktemp "${_mktemp_var_return}" "$@" || ret="$?"
+		return "${ret}"
+	fi
+
+	export TMPDIR
+	_mktemp_tmpfile="$(command mktemp "$@")" || ret="$?"
+	setvar "${_mktemp_var_return}" "${_mktemp_tmpfile}"
+	return "${ret}"
+}

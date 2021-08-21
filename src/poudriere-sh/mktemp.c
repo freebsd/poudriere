@@ -33,12 +33,14 @@
  * A cleanup, misc options and mkdtemp() calls were added to try and work
  * more like the OpenBSD version - which was first to publish the interface.
  */
+#include <sys/param.h>
 
 #include <err.h>
 #include <paths.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sysexits.h>
 #include <unistd.h>
 
 #ifndef lint
@@ -49,14 +51,18 @@ static const char rcsid[] =
 static void usage(void);
 
 #ifdef SHELL
-#define main mktempcmd
+#define main _mktemp_internal
 #include "bltin/bltin.h"
 #include "var.h"
 #include "helpers.h"
 #endif
 
 int
+#ifdef SHELL
+main(int argc, char **argv, char output_str[MAXPATHLEN])
+#else
 main(int argc, char **argv)
+#endif
 {
 	int c, fd, ret;
 	char *tmpdir;
@@ -137,7 +143,11 @@ main(int argc, char **argv)
 				if (!qflag)
 					warn("mkdtemp failed on %s", name);
 			} else {
+#ifdef SHELL
+				strlcpy(output_str, name, MAXPATHLEN);
+#else
 				printf("%s\n", name);
+#endif
 				if (uflag)
 					rmdir(name);
 			}
@@ -160,7 +170,11 @@ main(int argc, char **argv)
 #endif
 				if (uflag)
 					unlink(name);
+#ifdef SHELL
+				strlcpy(output_str, name, MAXPATHLEN);
+#else
 				printf("%s\n", name);
+#endif
 			}
 		}
 		if (name) {
@@ -173,6 +187,42 @@ main(int argc, char **argv)
 	}
 	return (ret);
 }
+
+#ifdef SHELL
+int
+mktempcmd(int argc, char **argv)
+{
+	char output_str[MAXPATHLEN];
+	int error;
+
+	error = _mktemp_internal(argc, argv, output_str);
+	if (error != 0)
+		return (error);
+	printf("%s\n", output_str);
+	return (0);
+}
+
+int
+_mktempcmd(int argc, char **argv)
+{
+	char output_str[MAXPATHLEN], *var_return;
+	int error;
+
+	if (argc < 3)
+		errx(EX_USAGE, "%s", "Usage: _mktemp <var_return> "
+		    "mktemp(1) params...");
+	var_return = argv[1];
+	argptr += 1;
+	argc -= argptr - argv;
+	argv = argptr;
+
+	error = _mktemp_internal(argc, argv, output_str);
+	if (error != 0)
+		return (error);
+	setvar(var_return, output_str, 0);
+	return (0);
+}
+#endif
 
 static void
 usage(void)

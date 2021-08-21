@@ -1621,31 +1621,14 @@ fetch_file() {
 	err 1 "Failed to fetch from ${url}"
 }
 
-# Export handling is different in builtin vs external
-if [ "$(type mktemp)" = "mktemp is a shell builtin" ]; then
-	MKTEMP_BUILTIN=1
-fi
 # Wrap mktemp to put most tmpfiles in mnt/.p/tmp rather than system /tmp.
 mktemp() {
-	if [ -z "${TMPDIR-}" ]; then
-		if [ -n "${MASTERMNT}" -a ${STATUS} -eq 1 ]; then
-			local mnt
-			_my_path mnt
-			TMPDIR="${mnt}/.p/tmp"
-			[ -d "${TMPDIR}" ] || unset TMPDIR
-		else
-			TMPDIR="${POUDRIERE_TMPDIR}"
-		fi
-	fi
-	if [ -n "${MKTEMP_BUILTIN-}" ]; then
-		# No export needed here since TMPDIR is set above in scope.
-		builtin mktemp "$@"
-	else
-		if [ -n "${TMPDIR-}" ]; then
-			export TMPDIR
-		fi
-		command mktemp "$@"
-	fi
+	local mktemp_tmpfile ret
+
+	ret=0
+	_mktemp mktemp_tmpfile "$@" || ret="$?"
+	echo "${mktemp_tmpfile}"
+	return "${ret}"
 }
 
 unlink() {
