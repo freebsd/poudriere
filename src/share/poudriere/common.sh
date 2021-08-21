@@ -3395,15 +3395,18 @@ pkg_version() {
 }
 
 download_from_repo_check_pkg() {
-	[ $# -eq 5 ] || eargs download_from_repo_check_pkg pkgname \
-	    remote_all_options remote_all_pkgs remote_all_deps output
+	[ $# -eq 6 ] || eargs download_from_repo_check_pkg pkgname \
+	    remote_all_options remote_all_pkgs remote_all_deps \
+	    remote_all_annotations output
 	local pkgname="$1"
 	local remote_all_options="$2"
 	local remote_all_pkgs="$3"
 	local remote_all_deps="$4"
-	local output="$5"
+	local remote_all_annotations="$5"
+	local output="$6"
 	local pkgbase bpkg selected_options remote_options found
 	local run_deps lib_deps raw_deps dep dep_pkgname local_deps remote_deps
+	local remote_osversion
 
 	# The options checks here are not optimized because we lack goto.
 	pkgbase="${pkgname%-*}"
@@ -3427,6 +3430,16 @@ download_from_repo_check_pkg() {
 	if [ "${found}" != "${pkgname}" ]; then
 		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: remote version mismatch: ${COLOR_PORT}${found}${COLOR_RESET}"
 		return
+	fi
+
+	if [ "${IGNORE_OSVERSION-}" != "yes" ]; then
+		remote_osversion=$(awk -vpkgbase="${pkgbase}" ' \
+		    $1 == pkgbase && $2 == "FreeBSD_version" {print $3; exit}' \
+		    "${remote_all_annotations}")
+		if [ "${remote_osversion}" -gt "${JAIL_OSVERSION}" ]; then
+			msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: remote osversion too new: ${remote_osversion} (want: ${JAIL_OSVERSION})"
+			return
+		fi
 	fi
 
 	remote_options=$(awk -vpkgbase="${pkgbase}" ' \
@@ -3476,6 +3489,7 @@ download_from_repo() {
 	local pkgname originspec listed ignored pkg_bin packagesite
 	local packagesite_resolved
 	local remote_all_pkgs remote_all_options wantedpkgs remote_all_deps
+	local remote_all_annotations
 	local missing_pkgs pkg pkgbase cnt
 	local remote_pkg_ver local_pkg_name local_pkg_ver
 
@@ -3579,6 +3593,10 @@ download_from_repo() {
 	injail ${pkg_bin} rquery -U '%n %n-%v %?O' > "${remote_all_pkgs}"
 	remote_all_deps=$(mktemp -t remote_all_deps)
 	injail ${pkg_bin} rquery -U '%n %dn-%dv' > "${remote_all_deps}"
+	remote_all_annotations=$(mktemp -t remote_all_annotations)
+	if [ "${IGNORE_OSVERSION-}" != "yes" ]; then
+		injail ${pkg_bin} rquery -U '%n %At %Av' > "${remote_all_annotations}"
+	fi
 
 	parallel_start
 	wantedpkgs=$(mktemp -t wantedpkgs)
@@ -3586,11 +3604,13 @@ download_from_repo() {
 		parallel_run download_from_repo_check_pkg \
 		    "${pkgname}" \
 		    "${remote_all_options}" "${remote_all_pkgs}" \
-		    "${remote_all_deps}" "${wantedpkgs}"
+		    "${remote_all_deps}" "${remote_all_annotations}" \
+		    "${wantedpkgs}"
 	done
 	parallel_stop
 	rm -f "${missing_pkgs}" \
-	    "${remote_all_pkgs}" "${remote_all_options}" "${remote_all_deps}"
+	    "${remote_all_pkgs}" "${remote_all_options}" "${remote_all_deps}" \
+	    "${remote_all_annotations}"
 
 	if [ ! -s "${wantedpkgs}" ]; then
 		msg "Package fetch: No packages eligible to fetch"
