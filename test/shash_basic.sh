@@ -75,5 +75,52 @@ assert_ret 1 shash_get pkgname-origin "pkg-1.7" value
 	assert "ports-mgmt/pkg" "${value}" "pkg should match afer shash_remove_var"
 }
 
+# Test write / read
+{
+	shash_write pkgmetadata "annotations" <<-EOF
+	1
+	2 3
+	3 4 5
+	4 5 6 7
+	EOF
+	assert "0" "$?" "shash_write pkgmetadata annotations"
+
+	lines=1
+	shash_read pkgmetadata "annotations" |
+	(
+		set -e
+		while mapfile_read_loop_redir value1 rest; do
+			assert "${lines}" "${value1}" "shash_read pkgmetadata annotations line $lines bad value1"
+			case "${value1}" in
+			1) assert "" "${rest}" "shash_read pkgmetadata annotations line $lines bad" ;;
+			2) assert "3" "${rest}" "shash_read pkgmetadata annotations line $lines bad" ;;
+			3) assert "4 5" "${rest}" "shash_read pkgmetadata annotations line $lines bad" ;;
+			4) assert "5 6 7" "${rest}" "shash_read pkgmetadata annotations line $lines bad" ;;
+			*) assert 0 1 "shash_read pkgmetadata annotations found unexpected value: '${value1}${rest:+ ${rest}}'" ;;
+			esac
+			lines=$((lines + 1))
+		done
+		exit "${lines}"
+	)
+	assert 5 "$?" "shash_read pkgmetadata annotations ret != lines+1"
+
+	lines=1
+	assert_ret 0 shash_read_mapfile pkgmetadata "annotations" handle
+	while mapfile_read "${handle}" value1 rest; do
+		assert "${lines}" "${value1}" "shash_read pkgmetadata annotations line $lines bad value1"
+		case "${value1}" in
+		1) assert "" "${rest}" "shash_read pkgmetadata annotations line $lines bad" ;;
+		2) assert "3" "${rest}" "shash_read pkgmetadata annotations line $lines bad" ;;
+		3) assert "4 5" "${rest}" "shash_read pkgmetadata annotations line $lines bad" ;;
+		4) assert "5 6 7" "${rest}" "shash_read pkgmetadata annotations line $lines bad" ;;
+		*) assert 0 1 "shash_read pkgmetadata annotations found unexpected value: '${value1}${rest:+ ${rest}}'" ;;
+		esac
+		lines=$((lines + 1))
+	done
+	assert 5 "$lines" "shash_read pkgmetadata annotations lines"
+	assert_ret 0 mapfile_close "${handle}"
+
+}
+
 rm -rf "${MASTERMNT}"
 exit 0
