@@ -1014,8 +1014,12 @@ attr_set() {
 
 	dstfile="${POUDRIERED}/${type}/${name}/${property}"
 	mkdir -p "${dstfile%/*}"
-	echo "$@" | write_cmp "${dstfile}" ||
-		err $? "attr_set failed to write to ${dstfile}"
+	{
+		write_cmp "${dstfile}" || \
+		    err $? "attr_set failed to write to ${dstfile}"
+	} <<-EOF
+	$@
+	EOF
 }
 
 jset() { attr_set jails "$@" ; }
@@ -1111,7 +1115,9 @@ bset() {
 	shift
 	[ "${property}" = "status" ] && \
 	    echo "$@" >> ${log}/${file}.journal% || :
-	echo "$@" | write_atomic "${log:?}/${file}"
+	write_atomic "${log:?}/${file}" <<-EOF
+	$@
+	EOF
 }
 
 bset_job_status() {
