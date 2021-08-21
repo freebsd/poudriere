@@ -3421,7 +3421,7 @@ download_from_repo_check_pkg() {
 		esac
 	done
 	found=$(awk -v pkgname="${pkgname}" -vpkgbase="${pkgbase}" \
-	    '$1 == pkgbase {print $2}' "${remote_all_pkgs}")
+	    '$1 == pkgbase {print $2; exit}' "${remote_all_pkgs}")
 	if [ -z "${found}" ]; then
 		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: not found in remote"
 		return
@@ -3443,8 +3443,11 @@ download_from_repo_check_pkg() {
 	fi
 
 	remote_options=$(awk -vpkgbase="${pkgbase}" ' \
-	    $1 == pkgbase && $3 == "on" {print "+"$2}
-	    $1 == pkgbase && $3 == "off" {print "-"$2}' \
+	    BEGIN {printed=0}
+	    $1 == pkgbase && $3 == "on" {print "+"$2;printed=1}
+	    $1 == pkgbase && $3 == "off" {print "-"$2;printed=1}
+	    $1 != pkgbase && printed == 1 {exit}
+	    ' \
 	    "${remote_all_options}" | sort -k1.2 | paste -s -d ' ' -)
 
 	shash_get pkgname-options "${pkgname}" selected_options || \
@@ -3468,7 +3471,11 @@ download_from_repo_check_pkg() {
 		get_pkgname_from_originspec "${dep#*:}" dep_pkgname || continue
 		echo "${dep_pkgname}"
 	done | sort -u | paste -s -d ' ' -)
-	remote_deps=$(awk -vpkgbase="${pkgbase}" '$1 == pkgbase {print $2}' \
+	remote_deps=$(awk -vpkgbase="${pkgbase}" ' \
+	    BEGIN {printed=0}
+	    $1 == pkgbase {print $2;printed=1}
+	    $1 != pkgbase && printed == 1 {exit}
+	    ' \
 	    "${remote_all_deps}" | sort | paste -s -d ' ' -)
 	case "${local_deps}" in
 	${remote_deps}) ;;
@@ -3534,7 +3541,7 @@ download_from_repo() {
 		pkgbase="${pkgname%-*}"
 		for pkg in ${PACKAGE_FETCH_WHITELIST-}; do
 			case "${pkgbase}" in
-			${pkg}) ;;
+			${pkg}) break ;;
 			*)
 				msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: not in whitelist" >&2
 				continue 2
