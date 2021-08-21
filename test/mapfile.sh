@@ -406,4 +406,23 @@ fi
 	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 7"
 	rm -rf "${TDIR}"
 }
+
+{
+	TMP=$(mktemp -t mapfile)
+	TMP2=$(mktemp -t mapfile)
+
+	ps uaxwd > "${TMP}"
+
+	{ cat "${TMP}"; rm -f "${TMP2}"; } | write_atomic "${TMP2}"
+	assert_ret 0 diff -u "${TMP}" "${TMP2}"
+
+	rm -f "${TMP2}"
+	write_atomic "${TMP2}" <<-EOF
+	$(cat "${TMP}"; rm -f "${TMP2}")
+	EOF
+	assert_ret 0 diff -u "${TMP}" "${TMP2}"
+
+	rm -f "${TMP}" "${TMP2}"
+}
+
 exit 0
