@@ -7294,16 +7294,14 @@ trim_ignored_pkg() {
 	originspec_decode "${originspec}" origin '' flavor
 	COLOR_ARROW="${COLOR_IGNORE}" \
 	    msg "${COLOR_IGNORE}Ignoring ${COLOR_PORT}${origin}${flavor:+@${flavor}} | ${pkgname}${COLOR_IGNORE}: ${ignore}"
-	if [ "${DRY_RUN}" -eq 0 ]; then
-		_logfile logfile "${pkgname}"
-		{
-			buildlog_start "${pkgname}" "${originspec}"
-			print_phase_header "check-sanity"
-			echo "Ignoring: ${ignore}"
-			print_phase_footer
-			buildlog_stop "${pkgname}" "${originspec}" 0
-		} > "${logfile}"
-	fi
+	_logfile logfile "${pkgname}"
+	{
+		buildlog_start "${pkgname}" "${originspec}"
+		print_phase_header "check-sanity"
+		echo "Ignoring: ${ignore}"
+		print_phase_footer
+		buildlog_stop "${pkgname}" "${originspec}" 0
+	} | write_atomic "${logfile}"
 	badd ports.ignored "${originspec} ${pkgname} ${ignore}"
 	run_hook pkgbuild ignored "${origin}" "${pkgname}" "${ignore}"
 	clean_pool "${pkgname}" "${originspec}" "ignored"
