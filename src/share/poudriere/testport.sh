@@ -333,7 +333,7 @@ if [ ${ret} -ne 0 ]; then
 	fi
 
 	save_wrkdir "${MASTERMNT}" "${ORIGINSPEC}" "${PKGNAME}" \
-	    "${portdir}" "${failed_phase}" || :
+	    "${failed_phase}" || :
 
 	ln -s ../${PKGNAME}.log ${log}/logs/errors/${PKGNAME}.log
 	errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
@@ -356,7 +356,7 @@ else
 	badd ports.built "${ORIGINSPEC} ${PKGNAME} ${elapsed}"
 	if [ -f ${MASTERMNT}${portdir}/.keep ]; then
 		save_wrkdir "${MASTERMNT}" "${ORIGINSPEC}" "${PKGNAME}" \
-		    "${portdir}" "noneed" || :
+		    "noneed" || :
 	fi
 	update_stats || :
 fi

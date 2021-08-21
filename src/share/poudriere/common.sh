@@ -4257,12 +4257,11 @@ pkg_notes_get() {
 
 # Save wrkdir and return path to file
 save_wrkdir() {
-	[ $# -ne 5 ] && eargs save_wrkdir mnt originspec pkgname portdir phase
-	local mnt=$1
+	[ $# -eq 4 ] || eargs save_wrkdir mnt originspec pkgname phase
+	local mnt="$1"
 	local originspec="$2"
 	local pkgname="$3"
-	local portdir="$4"
-	local phase="$5"
+	local phase="$4"
 	local tardir=${POUDRIERE_DATA}/wrkdirs/${MASTERNAME}/${PTNAME}
 	local tarname=${tardir}/${pkgname}.${WRKDIR_ARCHIVE_FORMAT}
 	local wrkdir
@@ -4833,10 +4832,10 @@ build_pkg() {
 		fi
 
 		save_wrkdir "${mnt}" "${originspec}" "${pkgname}" \
-		    "${portdir}" "${failed_phase}" || :
+		    "${failed_phase}" || :
 	elif [ -f ${mnt}/${portdir}/.keep ]; then
 		save_wrkdir "${mnt}" "${originspec}" "${pkgname}" \
-		    "${portdir}" "noneed" ||:
+		    "noneed" ||:
 	fi
 
 	now=$(clock -monotonic)
