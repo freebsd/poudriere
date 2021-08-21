@@ -708,56 +708,47 @@ mapfile_keeps_file_open_on_eof() {
 	return 0
 }
 
+# This is for reading from a file in a loop while avoiding a pipe.
+# It is analogous to read(builtin).For example these are mostly equivalent:
+# cat $file | while read -r col1 rest; do echo "$col1 $rest"; done
+# while mapfile_read_loop $file col1 rest; do echo "$col1 $rest"; done
 mapfile_read_loop() {
 	[ $# -ge 2 ] || eargs mapfile_read_loop file vars
 	local _file="$1"
 	shift
-	local _handle
-
-	if ! hash_get mapfile_handle "${_file}" _handle; then
-		mapfile _handle "${_file}" "re" || return "$?"
-		hash_set mapfile_handle "${_file}" "${_handle}"
-	fi
-
-	if mapfile_read "${_handle}" "$@"; then
-		return 0
-	else
-		local ret=$?
-		mapfile_close "${_handle}"
-		hash_unset mapfile_handle "${_file}"
-		return ${ret}
-	fi
-}
-
-# This syntax works with non-builtin mapfile but requires a redirection.
-# It also supports pipes more naturally than mapfile_read_loop().
-mapfile_read_loop_redir() {
-	[ $# -ge 1 ] || eargs mapfile_read_loop_redir vars
-	local _hkey _handle
+	local _hkey _handle ret
 
 	# Store the handle based on the params passed in since it is
 	# using an anonymous handle on stdin - which if nested in a
 	# pipe would reuse the already-opened handle from the parent
 	# pipe.
-	# Getting a nested call is simple when mapfile_read_loop_redir()
-	# is used in abstractions that pipe to each other.
-	# It would be great to have a PIPELEVEL or SHPID rather than this.
-	local _hkey="$*"
+	case "${_file}" in
+	-|\
+	/dev/stdin|\
+	/dev/fd/0)	_hkey="$*" ;;
+	*)		_hkey="${_file}" ;;
+	esac
 
 	if ! hash_get mapfile_handle "${_hkey}" _handle; then
-		# Read from stdin
-		mapfile _handle "/dev/fd/0" "re" || return "$?"
+		mapfile _handle "${_file}" "re" || return "$?"
 		hash_set mapfile_handle "${_hkey}" "${_handle}"
 	fi
 
 	if mapfile_read "${_handle}" "$@"; then
 		return 0
 	else
-		local ret=$?
+		ret=$?
 		mapfile_close "${_handle}"
 		hash_unset mapfile_handle "${_hkey}"
 		return ${ret}
 	fi
+}
+
+# Alias for mapfile_read_loop "/dev/stdin" vars...
+mapfile_read_loop_redir() {
+	[ $# -ge 1 ] || eargs mapfile_read_loop_redir vars
+
+	mapfile_read_loop "/dev/fd/0" "$@"
 }
 fi
 
