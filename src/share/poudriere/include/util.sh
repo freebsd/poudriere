@@ -1087,7 +1087,7 @@ write_cmp() {
 		err $? "write_cmp unable to create tmpfile in ${dest%/*}"
 	mapfile_cat > "${tmp}" || ret="$?"
 	if [ "${ret}" -ne 0 ]; then
-		rm -f "${tmp}"
+		unlink "${tmp}"
 		return "${ret}"
 	fi
 
@@ -1108,7 +1108,7 @@ write_atomic() {
 		err $? "write_atomic unable to create tmpfile in ${dest%/*}"
 	mapfile_cat > "${tmp}" || ret="$?"
 	if [ "${ret}" -ne 0 ]; then
-		rm -f "${tmp}"
+		unlink "${tmp}"
 		return "${ret}"
 	fi
 	rename "${tmp}" "${dest}"
