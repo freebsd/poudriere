@@ -357,11 +357,11 @@ critical_end() {
 	# Send the signal to our real PID, not the rootshell.
 	if [ ${_crit_caught_int} -eq 1 -a ${_CRITSNEST} -eq 0 ]; then
 		_crit_caught_int=0
-		kill -INT $(sh -c 'echo ${PPID}')
+		kill -INT $(getpid)
 	fi
 	if [ ${_crit_caught_term} -eq 1 -a ${_CRITSNEST} -eq 0 ]; then
 		_crit_caught_term=0
-		kill -TERM $(sh -c 'echo ${PPID}')
+		kill -TERM $(getpid)
 	fi
 }
 fi
@@ -1143,3 +1143,10 @@ required_env() {
 		exit ${EX_SOFTWARE}
 	fi
 }
+
+if ! type getpid >/dev/null 2>&1; then
+# $$ is not correct in subshells.
+getpid() {
+	sh -c 'echo $PPID'
+}
+fi

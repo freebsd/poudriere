@@ -488,3 +488,12 @@ pgetopt(int argc, char *argv[], const char *optstring)
 	optind = argptr - argv;
 	return (ch);
 }
+
+/* $$ is not correct in subshells. */
+int
+getpidcmd(int argc, char **argv)
+{
+
+	fprintf(stdout, "%ld\n", (long)getpid());
+	return (0);
+}

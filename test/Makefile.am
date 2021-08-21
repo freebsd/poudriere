@@ -10,6 +10,7 @@ TESTS=\
 	cache.sh \
 	do_clone.sh \
 	encode_args.sh \
+	getpid.sh \
 	getvar.sh \
 	gsub.sh \
 	hash_basic.sh \
