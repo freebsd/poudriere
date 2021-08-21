@@ -830,6 +830,33 @@ mapfile_cat() {
 	return "${ret}"
 }
 
+# Create a new temporary file and return a handle to it
+mapfile_mktemp() {
+	local -; set +x
+	[ $# -gt 2 ] || eargs mapfile_mktemp handle_var_return \
+	    tmpfile_var_return "mktemp(1)-params"
+	local handle_var_return="$1"
+	local tmpfile_var_return="$2"
+	shift 2
+	local mm_tmpfile ret
+
+	ret=0
+	_mktemp mm_tmpfile "$@" || ret="$?"
+	if [ "${ret}" -ne 0 ]; then
+		setvar "${handle_var_return}" ""
+		setvar "${tmpfile_var_return}" ""
+		return "${ret}"
+	fi
+	ret=0
+	mapfile "${handle_var_return}" "${mm_tmpfile}" "we+" || ret="$?"
+	if [ "${ret}" -ne 0 ]; then
+		setvar "${handle_var_return}" ""
+		setvar "${tmpfile_var_return}" ""
+		return "${ret}"
+	fi
+	setvar "${tmpfile_var_return}" "${mm_tmpfile}"
+}
+
 # This uses open(O_CREAT), woot.
 noclobber() {
 	local -
@@ -1103,21 +1130,27 @@ write_atomic_cmp() {
 	local -; set +x
 	[ $# -eq 1 ] || eargs write_atomic_cmp destfile "< content"
 	local dest="$1"
-	local tmp ret
+	local tmpfile_handle tmpfile ret
 
+	TMPDIR="${dest%/*}" mapfile_mktemp tmpfile_handle tmpfile \
+	    -ut ".tmp-${dest##*/}" ||
+	    err $? "write_atomic_cmp unable to create tmpfile in ${dest%/*}"
 	ret=0
-	tmp="$(TMPDIR="${dest%/*}" mktemp -ut .tmp-${dest##*/})" ||
-		err $? "write_atomic_cmp unable to create tmpfile in ${dest%/*}"
-	mapfile_cat > "${tmp}" || ret="$?"
+	mapfile_write "${tmpfile_handle}" || ret="$?"
 	if [ "${ret}" -ne 0 ]; then
-		unlink "${tmp}"
+		unlink "${tmpfile}" 2>/dev/null || :
 		return "${ret}"
 	fi
-
-	if ! cmp -s "${dest}" "${tmp}"; then
-		rename "${tmp}" "${dest}"
+	ret=0
+	mapfile_close "${tmpfile_handle}" || ret="$?"
+	if [ "${ret}" -ne 0 ]; then
+		unlink "${tmpfile}" 2>/dev/null || :
+		return "${ret}"
+	fi
+	if ! cmp -s "${dest}" "${tmpfile}"; then
+		rename "${tmpfile}" "${dest}"
 	else
-		unlink "${tmp}"
+		unlink "${tmpfile}"
 	fi
 }
 
@@ -1125,17 +1158,24 @@ write_atomic() {
 	local -; set +x
 	[ $# -eq 1 ] || eargs write_atomic destfile "< content"
 	local dest="$1"
-	local tmp ret
+	local tmpfile_handle tmpfile ret
 
+	TMPDIR="${dest%/*}" mapfile_mktemp tmpfile_handle tmpfile \
+	    -ut ".tmp-${dest##*/}" ||
+	    err $? "write_atomic unable to create tmpfile in ${dest%/*}"
 	ret=0
-	tmp="$(TMPDIR="${dest%/*}" mktemp -ut .tmp-${dest##*/})" ||
-		err $? "write_atomic unable to create tmpfile in ${dest%/*}"
-	mapfile_cat > "${tmp}" || ret="$?"
+	mapfile_write "${tmpfile_handle}" || ret="$?"
 	if [ "${ret}" -ne 0 ]; then
-		unlink "${tmp}"
+		unlink "${tmpfile}" 2>/dev/null || :
 		return "${ret}"
 	fi
-	rename "${tmp}" "${dest}"
+	ret=0
+	mapfile_close "${tmpfile_handle}" || ret="$?"
+	if [ "${ret}" -ne 0 ]; then
+		unlink "${tmpfile}" 2>/dev/null || :
+		return "${ret}"
+	fi
+	rename "${tmpfile}" "${dest}"
 }
 
 # Place environment requirements on entering a function
