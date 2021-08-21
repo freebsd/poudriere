@@ -228,7 +228,7 @@ if [ $CONFIGSTR -eq 1 ]; then
 	    __MAKE_CONF="${__MAKE_CONF}" \
 	    PORT_DBDIR=${MASTERMNT}/var/db/ports \
 	    TERM=${SAVED_TERM} \
-	    make -C ${portdir} \
+	    make -C "${MASTERMNT}${portdir}" \
 	    ${FLAVOR:+FLAVOR=${FLAVOR}} \
 	    config
 	rm -f "${__MAKE_CONF}"
