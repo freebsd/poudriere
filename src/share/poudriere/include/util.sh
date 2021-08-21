@@ -368,6 +368,7 @@ fi
 
 # Read a file into the given variable.
 read_file() {
+	local -; set +x
 	[ $# -eq 2 ] || eargs read_file var_return file
 	local var_return="$1"
 	local file="$2"
@@ -444,6 +445,7 @@ read_file() {
 
 # Read a file until 0 status is found. Partial reads not accepted.
 read_line() {
+	local -; set +x
 	[ $# -eq 2 ] || eargs read_line var_return file
 	local var_return="$1"
 	local file="$2"
@@ -484,6 +486,7 @@ read_line() {
 
 # SIGINFO traps won't abort the read.
 read_blocking() {
+	local -; set +x
 	[ $# -ge 1 ] || eargs read_blocking read_args
 	local _ret
 
@@ -508,6 +511,7 @@ read_blocking() {
 # Needed because 'IFS= read_blocking' doesn't reset IFS like the normal read
 # builtin does.
 read_blocking_line() {
+	local -; set +x
 	[ $# -ge 1 ] || eargs read_blocking_line read_args
 	local _ret IFS
 
@@ -531,6 +535,7 @@ read_blocking_line() {
 # SIGINFO traps won't abort the read, and if the pipe goes away or
 # turns into a file then an error is returned.
 read_pipe() {
+	local -; set +x
 	[ $# -ge 2 ] || eargs read_pipe fifo read_args
 	local fifo="$1"
 	local _ret resread resopen
@@ -576,6 +581,7 @@ read_pipe() {
 
 # Ignore EOF
 read_pipe_noeof() {
+	local -; set +x
 	[ $# -ge 2 ] || eargs read_pipe_noeof fifo read_args
 	local fifo="$1"
 	local _ret
@@ -591,6 +597,7 @@ read_pipe_noeof() {
 
 # This is avoiding EINTR errors when writing to a pipe due to SIGINFO traps
 write_pipe() {
+	local -; set +x
 	[ $# -ge 1 ] || eargs write_pipe fifo [write_args]
 	local fifo="$1"
 	local ret siginfo_trap
@@ -615,6 +622,7 @@ write_pipe() {
 
 if [ "$(type mapfile 2>/dev/null)" != "mapfile is a shell builtin" ]; then
 mapfile() {
+	local -; set +x
 	[ $# -eq 2 -o $# -eq 3 ] || eargs mapfile handle_name file modes
 	local handle_name="$1"
 	local _file="$2"
@@ -625,6 +633,7 @@ mapfile() {
 }
 
 mapfile_read() {
+	local -; set +x
 	[ $# -ge 2 ] || eargs mapfile_read handle output_var ...
 	local handle="$1"
 	shift
@@ -644,6 +653,7 @@ mapfile_read() {
 }
 
 mapfile_write() {
+	local -; set +x
 	[ $# -eq 2 ] || eargs mapfile_write handle data
 	local handle="$1"
 	shift
@@ -656,6 +666,7 @@ mapfile_write() {
 }
 
 mapfile_close() {
+	local -; set +x
 	[ $# -eq 1 ] || eargs mapfile_close handle
 	local handle="$1"
 
@@ -673,6 +684,7 @@ mapfile_keeps_file_open_on_eof() {
 }
 
 mapfile_read_loop() {
+	local -; set +x
 	[ $# -ge 2 ] || eargs mapfile_read_loop file vars
 	local _file="$1"
 	shift
@@ -713,6 +725,7 @@ mapfile_keeps_file_open_on_eof() {
 # cat $file | while read -r col1 rest; do echo "$col1 $rest"; done
 # while mapfile_read_loop $file col1 rest; do echo "$col1 $rest"; done
 mapfile_read_loop() {
+	local -; set +x
 	[ $# -ge 2 ] || eargs mapfile_read_loop file vars
 	local _file="$1"
 	shift
@@ -754,6 +767,7 @@ fi
 
 # Basically an optimized loop of mapfile_read_loop_redir, or read_file
 mapfile_cat() {
+	local -; set +x
 	[ $# -ge 0 ] || eargs mapfile_cat [-u] file...
 	local  _handle ret _line _file ret flag
 	local nflag lines
@@ -1069,6 +1083,7 @@ calculate_duration() {
 }
 
 write_cmp() {
+	local -; set +x
 	[ $# -eq 1 ] || eargs write_cmp destfile "< content"
 	local dest="$1"
 	local tmp ret
@@ -1090,6 +1105,7 @@ write_cmp() {
 }
 
 write_atomic() {
+	local -; set +x
 	[ $# -eq 1 ] || eargs write_atomic destfile "< content"
 	local dest="$1"
 	local tmp ret

@@ -602,6 +602,7 @@ do_confirm_delete() {
 }
 
 injail() {
+	local -; set +x
 	if [ "${DISALLOW_NETWORKING}" = "yes" ]; then
 	    local JNETNAME=
 	fi
@@ -721,6 +722,7 @@ eargs() {
 }
 
 run_hook() {
+	local -; set +x
 	[ $# -ge 2 ] || eargs run_hook hook event args
 	local hook="$1"
 	local event="$2"
@@ -1065,6 +1067,7 @@ _pget() {
 
 #build getter/setter
 _bget() {
+	local -; set +x
 	[ -n "${POUDRIERE_BUILD_TYPE-}" ] || return 0
 	local var_return id property mnt log file READ_FILE_USE_CAT file
 
@@ -1086,6 +1089,7 @@ _bget() {
 }
 
 bget() {
+	local -; set +x
 	[ -n "${POUDRIERE_BUILD_TYPE-}" ] || return 0
 	local bget_data
 
@@ -1099,6 +1103,7 @@ bget() {
 }
 
 bset() {
+	local -; set +x
 	was_a_bulk_run || return 0
 	[ -n "${POUDRIERE_BUILD_TYPE-}" ] || return 0
 	local id property mnt log file
