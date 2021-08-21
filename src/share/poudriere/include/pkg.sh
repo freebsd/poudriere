@@ -46,26 +46,59 @@ pkg_get_origin() {
 	fi
 }
 
-pkg_get_flavor() {
-	[ $# -lt 2 ] && eargs pkg_get_flavor var_return pkg [flavor]
-	local var_return="$1"
+pkg_get_annotations() {
+	[ $# -eq 2 ] || eargs pkg_get_annotations mapfile_handle_var pkg
+	local mapfile_handle_var="$1"
 	local pkg="$2"
-	local _flavor="$3"
 	local SHASH_VAR_PATH
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
-	if ! shash_get 'pkg' 'flavor' _flavor; then
-		if [ -z "${_flavor}" ]; then
-			_flavor=$(injail ${PKG_BIN} query -F \
-				"/packages/All/${pkg##*/}" \
-				'%At %Av' | \
-				awk '$1 == "flavor" {print $2}')
-		fi
-		shash_set 'pkg' 'flavor' "${_flavor}"
+	if ! shash_exists 'pkg' 'annotations'; then
+		injail ${PKG_BIN} query -F "/packages/All/${pkg##*/}" \
+		    '%At %Av' | sort |
+		    shash_write 'pkg' 'annotations'
 	fi
-	if [ -n "${var_return}" ]; then
-		setvar "${var_return}" "${_flavor}"
+	if [ -n "${mapfile_handle_var}" ]; then
+		shash_read_mapfile 'pkg' 'annotations' "${mapfile_handle_var}"
 	fi
+}
+
+pkg_get_annotation() {
+	[ $# -eq 3 ] || eargs pkg_get_annotation var_return pkg key
+	local pga_var_return="$1"
+	local pkg="$2"
+	local key="$3"
+	local mapfile_handle fkey fvalue value
+
+	pkg_get_annotations mapfile_handle "${pkg}"
+	while mapfile_read "${mapfile_handle}" fkey fvalue; do
+		case "${fkey}" in
+		${key})
+			value="${fvalue}"
+			break
+			;;
+		esac
+	done
+	mapfile_close "${mapfile_handle}" || :
+	if [ -n "${pga_var_return}" ]; then
+		setvar "${pga_var_return}" "${value}"
+	fi
+}
+
+pkg_get_flavor() {
+	[ $# -eq 2 ] || eargs pkg_get_flavor var_return pkg
+	local var_return="$1"
+	local pkg="$2"
+
+	pkg_get_annotation "${var_return}" "${pkg}" 'flavor'
+}
+
+pkg_get_dep_args() {
+	[ $# -eq 2 ] || eargs pkg_get_dep_args var_return pkg
+	local var_return="$1"
+	local pkg="$2"
+
+	pkg_get_annotation "${var_return}" "${pkg}" 'dep_args'
 }
 
 pkg_get_arch() {
@@ -88,29 +121,6 @@ pkg_get_arch() {
 	fi
 	if [ -z "${_arch}" ]; then
 		return 1
-	fi
-}
-
-
-pkg_get_dep_args() {
-	[ $# -lt 2 ] && eargs pkg_get_dep_args var_return pkg [dep_args]
-	local var_return="$1"
-	local pkg="$2"
-	local _dep_args="$3"
-	local SHASH_VAR_PATH
-
-	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
-	if ! shash_get 'pkg' 'dep_args' _dep_args; then
-		if [ -z "${_dep_args}" ]; then
-			_dep_args=$(injail ${PKG_BIN} query -F \
-				"/packages/All/${pkg##*/}" \
-				'%At %Av' | \
-				awk '$1 == "depends_args" {print $2}')
-		fi
-		shash_set 'pkg' 'dep_args' "${_dep_args}"
-	fi
-	if [ -n "${var_return}" ]; then
-		setvar "${var_return}" "${_dep_args}"
 	fi
 }
 
@@ -189,11 +199,7 @@ pkg_cache_data() {
 		pkg_get_options '' "${pkg}"
 		pkg_get_origin '' "${pkg}" "${origin}" || :
 		pkg_get_arch '' "${pkg}" || :
-		if have_ports_feature FLAVORS; then
-			pkg_get_flavor '' "${pkg}" "${flavor}"
-		elif have_ports_feature DEPENDS_ARGS; then
-			pkg_get_dep_args '' "${pkg}" "${dep_args}"
-		fi
+		pkg_get_annotations '' "${pkg}"
 		pkg_get_dep_origin_pkgnames '' '' "${pkg}"
 	} >/dev/null
 }
