@@ -867,10 +867,9 @@ buildlog_start() {
 	    ${PORT_FLAGS} \
 	    ${make_vars}
 
-	date=$(env TZ=UTC date "+%Y-%m-%dT%H:%M:%S%z")
-
-	echo "build started at ${date}"
+	echo "build started at $(date)"
 	if [ "${PKG_REPRODUCIBLE}" != "yes" ]; then
+		date=$(env TZ=UTC date "+%Y-%m-%dT%H:%M:%S%z")
 		pkg_note_add "${pkgname}" build_timestamp "${date}"
 	fi
 	echo "port directory: ${portdir}"
