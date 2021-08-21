@@ -277,6 +277,7 @@ post_getopts() {
 }
 
 _mastermnt() {
+	local -; set -u
 	local hashed_name mnt mnttest mnamelen testpath mastername
 
 	mnamelen=$(grep "#define[[:space:]]MNAMELEN" \
@@ -288,7 +289,7 @@ _mastermnt() {
 	mastername="${MASTERNAME}"
 	_gsub_badchars "${mastername}" ":" mastername
 	mnt="${POUDRIERE_DATA}/.m/${mastername}/ref"
-	if [ -z "${NOLINUX}" ]; then
+	if [ -z "${NOLINUX-}" ]; then
 		testpath="/compat/linux/proc"
 	else
 		testpath="/var/db/ports"
@@ -315,6 +316,8 @@ _mastermnt() {
 }
 
 _my_path() {
+	local -; set -u +x
+
 	if [ -z "${MY_JOBID-}" ]; then
 		setvar "$1" "${MASTERMNT}"
 	elif [ -n "${MASTERMNTROOT}" ]; then
@@ -326,10 +329,13 @@ _my_path() {
 }
 
 _my_name() {
+	local -; set -u +x
+
 	setvar "$1" "${MASTERNAME}${MY_JOBID:+-job-${MY_JOBID}}"
 }
 
 _logfile() {
+	local -; set -u +x
 	[ $# -eq 2 ] || eargs _logfile var_return pkgname
 	local var_return="$1"
 	local pkgname="$2"
@@ -361,18 +367,22 @@ _logfile() {
 }
 
 logfile() {
+	local -; set -u +x
 	[ $# -eq 1 ] || eargs logfile pkgname
-	local logfile
+	local pkgname="$1"
 
 	_logfile logfile "${pkgname}"
 	echo "${logfile}"
 }
  
 _log_path_top() {
+	local -; set -u +x
+
 	setvar "$1" "${POUDRIERE_DATA}/logs/${POUDRIERE_BUILD_TYPE}"
 }
 
 _log_path_jail() {
+	local -; set -u +x
 	local log_path_top
 
 	_log_path_top log_path_top
@@ -380,6 +390,7 @@ _log_path_jail() {
 }
 
 _log_path() {
+	local -; set -u +x
 	local log_path_jail
 
 	_log_path_jail log_path_jail
@@ -719,7 +730,9 @@ run_hook() {
 
 	build_url build_url || :
 	log_url log_url || :
-	_log_path log || :
+	if [ -n "${POUDRIERE_BUILD_TYPE-}" ]; then
+		_log_path log || :
+	fi
 
 	run_hook_file "${HOOKDIR}/${hook}.sh" "${hook}" "${event}" \
 	    "${build_url}" "${log_url}" "${log}" "$@"
@@ -1048,6 +1061,7 @@ _pget() {
 
 #build getter/setter
 _bget() {
+	[ -n "${POUDRIERE_BUILD_TYPE-}" ] || return 0
 	local var_return id property mnt log file READ_FILE_USE_CAT file
 
 	var_return="$1"
@@ -1066,6 +1080,7 @@ _bget() {
 }
 
 bget() {
+	[ -n "${POUDRIERE_BUILD_TYPE-}" ] || return 0
 	local bget_data
 
 	if _bget bget_data "$@"; then
@@ -1077,6 +1092,7 @@ bget() {
 
 bset() {
 	was_a_bulk_run || return 0
+	[ -n "${POUDRIERE_BUILD_TYPE-}" ] || return 0
 	local id property mnt log file
 
 	_log_path log
@@ -1829,7 +1845,7 @@ do_jail_mounts() {
 	[ "${USE_PROCFS}" = "yes" ] && \
 	    mount -t procfs proc "${mnt}/proc"
 
-	if [ -z "${NOLINUX}" ] && [ -d "${mnt}/compat" ]; then
+	if [ -z "${NOLINUX-}" ] && [ -d "${mnt}/compat" ]; then
 		_jget arch "${name}" arch || \
 		    err 1 "Missing arch metadata for jail"
 		[ "${arch}" = "i386" -o "${arch}" = "amd64" ] && \
@@ -2780,7 +2796,7 @@ jail_start() {
 				;;
 		esac
 	fi
-	if [ -z "${NOLINUX}" ]; then
+	if [ -z "${NOLINUX-}" ]; then
 		if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
 			needfs="${needfs} linprocfs"
 			needkld="${needkld} linuxelf:linux"
