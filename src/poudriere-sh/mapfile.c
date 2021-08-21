@@ -475,7 +475,7 @@ mapfile_writecmd(int argc, char **argv)
 {
 	struct mapped_data *md;
 	const char *handle, *data;
-	int ch, nflag, serrno;
+	int ch, nflag, serrno, ret;
 
 	if (argc < 3)
 		errx(EX_USAGE, "%s", "Usage: mapfile_write <handle> [-n] "
@@ -515,11 +515,14 @@ mapfile_writecmd(int argc, char **argv)
 		md_close(md);
 		INTON;
 		if (serrno == EPIPE)
-			return (EPIPE);
-		if (serrno == EINTR)
-			return (1);
+			ret = EPIPE;
+		else if (serrno == EINTR)
+			ret = 1;
+		else
+			ret = EX_IOERR;
 		errno = serrno;
-		err(EX_IOERR, "failed to write to handle '%s' mapped to %s",
+		INTON;
+		err(ret, "failed to write to handle '%s' mapped to %s",
 		    handle, md->file);
 	}
 	INTON;
