@@ -2573,7 +2573,7 @@ setup_ccache() {
 		chmod 755 "${mnt}${HOME}"
 		if [ "${CCACHE_GID}" != "${PORTBUILD_GID}" ]; then
 			injail pw groupadd "${CCACHE_GROUP}" \
-			    -g "${CCACHE_GID}" \
+			    -g "${CCACHE_GID}" || \
 			    err 1 "Unable to add group ${CCACHE_GROUP}"
 			injail pw groupmod -n "${CCACHE_GROUP}" \
 			    -m "${PORTBUILD_USER}" || \
