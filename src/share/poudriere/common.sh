@@ -3509,7 +3509,7 @@ download_from_repo() {
 	local remote_all_pkgs remote_all_options wantedpkgs remote_all_deps
 	local remote_all_annotations
 	local missing_pkgs pkg pkgbase cnt
-	local remote_pkg_ver local_pkg_name local_pkg_ver
+	local remote_pkg_ver local_pkg_name local_pkg_ver found
 
 	if ! have_ports_feature SELECTED_OPTIONS; then
 		msg "Package fetch: Not fetching. Ports requires SELECTED_OPTIONS feature"
@@ -3550,13 +3550,19 @@ download_from_repo() {
 			continue
 		fi
 		pkgbase="${pkgname%-*}"
-		case " ${PACKAGE_FETCH_WHITELIST-} " in
-		*\ ${pkgbase}\ *) ;;
-		*)
+		found=0
+		for pkg in ${PACKAGE_FETCH_WHITELIST-}; do
+			case "${pkgbase}" in
+			${pkg})
+				found=1
+				break
+				;;
+			esac
+		done
+		if [ "${found}" -eq 0 ]; then
 			msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: not in whitelist" >&2
 			continue
-			;;
-		esac
+		fi
 		echo "${pkgname}"
 	done > "${missing_pkgs}"
 	if [ ! -s "${missing_pkgs}" ]; then
