@@ -7663,16 +7663,16 @@ prepare_ports() {
 		if [ "${resuming_build}" -eq 0 ]; then
 			# Generate ports.queued list after the queue was
 			# trimmed.
-			local _originspec _pkgname _rdep _ignore tmp
-			tmp=$(TMPDIR="${log}" mktemp -ut .queued)
+			local _originspec _pkgname _rdep _ignore
+
 			while mapfile_read_loop "all_pkgs" \
 			    _pkgname _originspec _rdep _ignore; do
 				if [ "${_rdep}" = "listed" ] || \
 				    pkgqueue_contains "${_pkgname}"; then
 					echo "${_originspec} ${_pkgname} ${_rdep}"
 				fi
-			done | sort > "${tmp}"
-			mv -f "${tmp}" "${log}/.poudriere.ports.queued"
+			done | sort | \
+			    write_atomic "${log}/.poudriere.ports.queued"
 		fi
 
 		load_priorities
