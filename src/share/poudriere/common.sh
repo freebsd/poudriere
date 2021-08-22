@@ -3539,15 +3539,13 @@ download_from_repo() {
 			continue
 		fi
 		pkgbase="${pkgname%-*}"
-		for pkg in ${PACKAGE_FETCH_WHITELIST-}; do
-			case "${pkgbase}" in
-			${pkg}) break ;;
-			*)
-				msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: not in whitelist" >&2
-				continue 2
-				;;
-			esac
-		done
+		case " ${PACKAGE_FETCH_WHITELIST-} " in
+		*\ ${pkgbase}\ *) ;;
+		*)
+			msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: not in whitelist" >&2
+			continue
+			;;
+		esac
 		echo "${pkgname}"
 	done > "${missing_pkgs}"
 	if [ ! -s "${missing_pkgs}" ]; then
