@@ -96,14 +96,14 @@ build_json() {
 		-f ${AWKPREFIX}/json.awk ${log_path}/.poudriere.*[!%] | \
 		/usr/bin/awk 'ORS=""; {print} END {print "\n"}' | \
 		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' | \
-		write_cmp "${log_path}/.data.json"
+		write_atomic_cmp "${log_path}/.data.json"
 
 	# Build mini json for stats
 	/usr/bin/awk -v mini=yes \
 		-f ${AWKPREFIX}/json.awk ${log_path}/.poudriere.*[!%] | \
 		/usr/bin/awk 'ORS=""; {print} END {print "\n"}' | \
 		/usr/bin/sed  -e 's/,\([]}]\)/\1/g' | \
-		write_cmp "${log_path}/.data.mini.json"
+		write_atomic_cmp "${log_path}/.data.mini.json"
 }
 
 build_jail_json() {
@@ -124,7 +124,7 @@ build_jail_json() {
 		    /usr/bin/sed -e '/^$/d' | \
 		    paste -s -d , -
 		echo "}}"
-	} | write_cmp "${log_path_jail}/.data.json"
+	} | write_atomic_cmp "${log_path_jail}/.data.json"
 }
 
 build_top_json() {
@@ -146,7 +146,7 @@ build_top_json() {
 		    /usr/bin/sed -e '/^$/d' | \
 		    paste -s -d , -
 		echo "}}"
-	) | write_cmp "${log_path_top}/.data.json"
+	) | write_atomic_cmp "${log_path_top}/.data.json"
 }
 
 # This is called at the end

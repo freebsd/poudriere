@@ -1017,7 +1017,7 @@ attr_set() {
 	dstfile="${POUDRIERED}/${type}/${name}/${property}"
 	mkdir -p "${dstfile%/*}"
 	{
-		write_cmp "${dstfile}" || \
+		write_atomic_cmp "${dstfile}" || \
 		    err $? "attr_set failed to write to ${dstfile}"
 	} <<-EOF
 	$@

@@ -1082,15 +1082,15 @@ calculate_duration() {
 	setvar "${var_return}" "${_duration}"
 }
 
-write_cmp() {
+write_atomic_cmp() {
 	local -; set +x
-	[ $# -eq 1 ] || eargs write_cmp destfile "< content"
+	[ $# -eq 1 ] || eargs write_atomic_cmp destfile "< content"
 	local dest="$1"
 	local tmp ret
 
 	ret=0
 	tmp="$(TMPDIR="${dest%/*}" mktemp -ut .tmp-${dest##*/})" ||
-		err $? "write_cmp unable to create tmpfile in ${dest%/*}"
+		err $? "write_atomic_cmp unable to create tmpfile in ${dest%/*}"
 	mapfile_cat > "${tmp}" || ret="$?"
 	if [ "${ret}" -ne 0 ]; then
 		unlink "${tmp}"

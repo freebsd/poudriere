@@ -2,13 +2,13 @@ echo "getpid: $$" >&2
 
 # Duplicated from src/share/poudriere/util.sh because it is too early to
 # include that file.
-write_cmp() {
+write_atomic_cmp() {
 	local dest="$1"
 	local tmp ret
 
 	ret=0
 	tmp="$(TMPDIR="${dest%/*}" mktemp -t ${dest##*/})" ||
-		err $? "write_cmp unable to create tmpfile in ${dest%/*}"
+		err $? "write_atomic_cmp unable to create tmpfile in ${dest%/*}"
 	cat > "${tmp}" || ret=$?
 	if [ "${ret}" -ne 0 ]; then
 		rm -f "${tmp}"
@@ -33,7 +33,7 @@ POUDRIERE_ETC="${BASEFS}/etc"
 
 mkdir -p ${POUDRIERE_ETC}/poudriere.d ${POUDRIERE_ETC}/run
 rm -f "${POUDRIERE_ETC}/poudriere.conf"
-write_cmp "${POUDRIERE_ETC}/poudriere.d/poudriere.conf" << EOF
+write_atomic_cmp "${POUDRIERE_ETC}/poudriere.d/poudriere.conf" << EOF
 NO_ZFS=yes
 BASEFS=${BASEFS}
 DISTFILES_CACHE=${DISTFILES_CACHE}
@@ -48,7 +48,7 @@ SHARED_LOCK_DIR="${POUDRIERE_ETC}/run"
 IMMUTABLE_BASE=nullfs
 $(env | grep -q 'CCACHE_STATIC_PREFIX' && { env | awk '/^CCACHE/ {print "export " $0}'; } || :)
 EOF
-write_cmp "${POUDRIERE_ETC}/poudriere.d/make.conf" << EOF
+write_atomic_cmp "${POUDRIERE_ETC}/poudriere.d/make.conf" << EOF
 DEFAULT_VERSIONS+=	ssl=base
 PKG_NOCOMPRESS=		t
 EOF
