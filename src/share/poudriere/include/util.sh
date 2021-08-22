@@ -265,14 +265,13 @@ make_relative() {
 	local value
 
 	getvar "${varname}" value || return 0
-	[ -z "${value}" ] && return 0
-	if [ -n "${value##/*}" ]; then
-		# It was relative.
-		_relpath "${oldroot}/${value}" "${newroot}" "${varname}"
-	else
-		# It was absolute.
-		_relpath "${value}" "${newroot}" "${varname}"
+	if [ -z "${value}" ]; then
+		return 0
 	fi
+	case "${value}" in
+	/*)	_relpath "${value}" "${newroot}" "${varname}" ;;
+	*)	_relpath "${oldroot}/${value}" "${newroot}" "${varname}" ;;
+	esac
 }
 
 if [ "$(type trap_push 2>/dev/null)" != "trap_push is a shell builtin" ]; then
