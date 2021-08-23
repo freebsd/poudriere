@@ -3614,7 +3614,9 @@ download_from_repo() {
 		msg "Packge fetch: bootstrapping pkg"
 		pkg_bin="pkg"
 		# When bootstrapping always fetch a copy of the pkg used
-		echo "${P_PKG_PKGNAME:?}" >> "${missing_pkgs}"
+		if ! grep -q "^${P_PKG_PKGNAME:?}\$" "${missing_pkgs}"; then
+			echo "${P_PKG_PKGNAME:?}" >> "${missing_pkgs}"
+		fi
 	fi
 	cat >> "${MASTERMNT}/etc/pkg/poudriere.conf" <<-EOF
 	FreeBSD: {
