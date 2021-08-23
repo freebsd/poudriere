@@ -3502,6 +3502,7 @@ download_from_repo_check_pkg() {
 }
 
 download_from_repo() {
+	[ $# -eq 0 ] || eargs download_from_repo
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "download_from_repo requires PWD=${MASTERMNT}/.p"
 	local pkgname originspec listed ignored pkg_bin packagesite
@@ -3510,6 +3511,10 @@ download_from_repo() {
 	local remote_all_annotations
 	local missing_pkgs pkg pkgbase cnt
 	local remote_pkg_ver local_pkg_name local_pkg_ver found
+
+	if [ -z "${PACKAGE_FETCH_BRANCH-}" ]; then
+		return 0
+	fi
 
 	if ! have_ports_feature SELECTED_OPTIONS; then
 		msg "Package fetch: Not fetching. Ports requires SELECTED_OPTIONS feature"
@@ -3648,6 +3653,9 @@ download_from_repo() {
 	cnt=$(wc -l ${wantedpkgs} | awk '{print $1}')
 	msg "Package fetch: Will fetch ${cnt} packages from ${packagesite_resolved}"
 
+	cp -f "${wantedpkgs}" "pkg_fetch"
+	echo "${packagesite_resolved}" > "pkg_fetch_url"
+
 	# Fetch into a cache and link back into the PACKAGES dir.
 	mkdir -p "${PACKAGES}/All" \
 	    "${PACKAGES_PKG_CACHE:?}" \
@@ -3690,6 +3698,29 @@ download_from_repo() {
 			    err 1 "download_from_repo: failure to bootstrap pkg"
 		fi
 	fi
+}
+
+# Remove from the pkg_fetch list packages that need to rebuild anyway.
+download_from_repo_post_delete() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "download_from_repo_post_delete requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 0 ] || eargs download_from_repo_post_delete
+	local log fpkgname
+
+	if [ -z "${PACKAGE_FETCH_BRANCH-}" ]; then
+		return 0
+	fi
+	[ -f "pkg_fetch" ] || return 0
+	_log_path log
+	msg_verbose "Package fetch: Cleaning up pkg_fetch list"
+
+	while mapfile_read_loop "pkg_fetch" fpkgname; do
+		if [ ! -e "${PACKAGES}/All/${fpkgname}.${PKG_EXT}" ]; then
+			continue
+		fi
+		echo "${fpkgname}"
+	done | write_atomic "${log}/.poudriere.pkg_fetch%"
+	mv -f "pkg_fetch_url" "${log}/.poudriere.pkg_fetch_url%"
 }
 
 validate_package_branch() {
@@ -7587,9 +7618,7 @@ prepare_ports() {
 			:> ${log}/.poudriere.ports.skipped
 			trim_ignored
 		fi
-		if [ -n "${PACKAGE_FETCH_BRANCH-}" ]; then
-			download_from_repo
-		fi
+		download_from_repo
 	fi
 
 	if ! ensure_pkg_installed; then
@@ -7632,6 +7661,7 @@ prepare_ports() {
 		fi
 
 		delete_stale_symlinks_and_empty_dirs
+		download_from_repo_post_delete
 	fi
 
 	if was_a_bulk_run; then
