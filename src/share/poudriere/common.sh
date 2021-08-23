@@ -3419,18 +3419,20 @@ pkg_version() {
 }
 
 download_from_repo_check_pkg() {
-	[ $# -eq 6 ] || eargs download_from_repo_check_pkg pkgname \
-	    remote_all_options remote_all_pkgs remote_all_deps \
-	    remote_all_annotations output
+	[ $# -eq 8 ] || eargs download_from_repo_check_pkg pkgname \
+	    abi remote_all_options remote_all_pkgs remote_all_deps \
+	    remote_all_annotations remote_all_abi output
 	local pkgname="$1"
-	local remote_all_options="$2"
-	local remote_all_pkgs="$3"
-	local remote_all_deps="$4"
-	local remote_all_annotations="$5"
-	local output="$6"
+	local abi="$2"
+	local remote_all_options="$3"
+	local remote_all_pkgs="$4"
+	local remote_all_deps="$5"
+	local remote_all_annotations="$6"
+	local remote_all_abi="$7"
+	local output="$8"
 	local pkgbase bpkg selected_options remote_options found
 	local run_deps lib_deps raw_deps dep dep_pkgname local_deps remote_deps
-	local remote_osversion
+	local remote_abi remote_osversion
 
 	# The options checks here are not optimized because we lack goto.
 	pkgbase="${pkgname%-*}"
@@ -3456,12 +3458,26 @@ download_from_repo_check_pkg() {
 		return
 	fi
 
+	# ABI
+	remote_abi=$(awk -v pkgname="${pkgname}" -vpkgbase="${pkgbase}" \
+	    '$1 == pkgbase {print $2; exit}' "${remote_all_abi}")
+	case "${abi}" in
+	${remote_abi}) ;;
+	*)
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: remote ABI mismatch: ${remote_abi} (want: ${abi})"
+		return
+		;;
+	*)
+	esac
+
+	# If package is not NOARCH then we need to check its FreeBSD_version
 	if [ "${IGNORE_OSVERSION-}" != "yes" ]; then
 		remote_osversion=$(awk -vpkgbase="${pkgbase}" ' \
 		    $1 == pkgbase && $2 == "FreeBSD_version" {print $3; exit}' \
 		    "${remote_all_annotations}")
-		if [ "${remote_osversion}" -gt "${JAIL_OSVERSION}" ]; then
-			msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: remote osversion too new: ${remote_osversion} (want: ${JAIL_OSVERSION})"
+		# blank likely means NOARCH
+		if [ "${remote_osversion:-0}" -gt "${JAIL_OSVERSION}" ]; then
+			msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: remote osversion too new: ${remote_osversion} (want <=${JAIL_OSVERSION})"
 			return
 		fi
 	fi
@@ -3518,10 +3534,10 @@ download_from_repo() {
 	[ $# -eq 0 ] || eargs download_from_repo
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "download_from_repo requires PWD=${MASTERMNT}/.p"
-	local pkgname originspec listed ignored pkg_bin packagesite
+	local pkgname abi originspec listed ignored pkg_bin packagesite
 	local packagesite_resolved
 	local remote_all_pkgs remote_all_options wantedpkgs remote_all_deps
-	local remote_all_annotations
+	local remote_all_annotations remote_all_abi
 	local missing_pkgs pkg pkgbase cnt
 	local remote_pkg_ver local_pkg_name local_pkg_ver found
 
@@ -3639,20 +3655,23 @@ download_from_repo() {
 	if [ "${IGNORE_OSVERSION-}" != "yes" ]; then
 		injail ${pkg_bin} rquery -U '%n %At %Av' > "${remote_all_annotations}"
 	fi
+	abi="$(injail "${pkg_bin}" config ABI)"
+	remote_all_abi=$(mktemp -t remote_all_abi)
+	injail ${pkg_bin} rquery -U '%n %q' > "${remote_all_abi}"
 
 	parallel_start
 	wantedpkgs=$(mktemp -t wantedpkgs)
 	while mapfile_read_loop "${missing_pkgs}" pkgname; do
 		parallel_run download_from_repo_check_pkg \
-		    "${pkgname}" \
+		    "${pkgname}" "${abi}" \
 		    "${remote_all_options}" "${remote_all_pkgs}" \
 		    "${remote_all_deps}" "${remote_all_annotations}" \
-		    "${wantedpkgs}"
+		    "${remote_all_abi}" "${wantedpkgs}"
 	done
 	parallel_stop
 	rm -f "${missing_pkgs}" \
 	    "${remote_all_pkgs}" "${remote_all_options}" "${remote_all_deps}" \
-	    "${remote_all_annotations}"
+	    "${remote_all_annotations}" "${remote_all_abi}"
 
 	if [ ! -s "${wantedpkgs}" ]; then
 		msg "Package fetch: No packages eligible to fetch"
