@@ -29,6 +29,7 @@ LC_ALL=C
 POUDRIERE_VERSION="3.4-pre"
 POUDRIERE_NAME="poudriere-git"
 POUDRIERE_PKGNAME="${POUDRIERE_NAME}-${POUDRIERE_VERSION}"
+PATH="/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/sbin:/usr/local/bin:${PATH}"
 
 env_set() {
 	local envvar="$1"
@@ -152,7 +153,7 @@ env_set SCRIPTNAME
 
 [ -n "${POUDRIERE_ETC}" ] && env_set POUDRIERE_ETC
 env_set LIBEXECPREFIX
-env_set PATH $'${LIBEXECPREFIX}:${PATH}:/sbin:/usr/sbin'
+env_set PATH $'${LIBEXECPREFIX}:${PATH}'
 env_set POUDRIERE_VERSION
 env_set POUDRIERE_NAME
 env_set POUDRIERE_PKGNAME
