@@ -377,7 +377,8 @@ _logfile() {
 		# the issue by looking for files older than 1 minute.
 
 		# Make sure directory exists
-		mkdir -p "${_log}/logs" "${_latest_log}"
+		mkdir -p "${_log}/logs" "${_latest_log}" \
+		    "${_log}/../latest-per-pkg"
 
 		:> "${_logfile}"
 

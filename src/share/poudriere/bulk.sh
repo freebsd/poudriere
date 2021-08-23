@@ -237,15 +237,16 @@ read_packages_from_params "$@"
 
 CLEANUP_HOOK=bulk_cleanup
 
-run_hook bulk start
-
-jail_start "${JAILNAME}" "${PTNAME}" "${SETNAME}"
-
 _log_path LOGD
 if [ -d ${LOGD} -a ${CLEAN} -eq 1 ]; then
 	msg "Cleaning up old logs in ${LOGD}"
 	[ ${DRY_RUN} -eq 0 ] && rm -Rf ${LOGD} 2>/dev/null
 fi
+
+log_start bulk 1
+run_hook bulk start
+
+jail_start "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 
 prepare_ports
 show_build_summary
