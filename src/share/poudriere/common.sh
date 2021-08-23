@@ -832,11 +832,15 @@ run_hook_file() {
 	return 0
 }
 
+stripcolors() {
+	sed -u 's,\x1B\[[0-9;]*m,,g'
+}
+
 log_start() {
 	[ $# -eq 2 ] || eargs log_start pkgname need_tee
 	local pkgname="$1"
 	local need_tee="$2"
-	local logfile
+	local logfile tee_pipe_in strip_pipe_in TIME_START
 
 	_logfile logfile "${pkgname}"
 
@@ -845,37 +849,42 @@ log_start() {
 	export OUTPUT_REDIRECTED=1
 	export OUTPUT_REDIRECTED_STDOUT=3
 	export OUTPUT_REDIRECTED_STDERR=4
+	strip_pipe_in="$(mktemp -ut strip_pipe_in)"
+	mkfifo "${strip_pipe_in}"
+	stripcolors > "${logfile}" < "${strip_pipe_in}" &
+	SPID="$!"
 	# Pipe output to tee(1) or timestamp if needed.
 	if [ ${need_tee} -eq 1 ] || [ "${TIMESTAMP_LOGS}" = "yes" ]; then
-		if [ ! -e ${logfile}.pipe ]; then
-			mkfifo ${logfile}.pipe
-		fi
-		if [ ${need_tee} -eq 1 ]; then
-			if [ "${TIMESTAMP_LOGS}" = "yes" ]; then
-				# Unbuffered for 'echo -n' support.
-				# Otherwise need setbuf -o L here due to
-				# stdout not writing to terminal but to tee.
-				TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
-				    timestamp -u < ${logfile}.pipe | \
-				    tee ${logfile} &
-			else
-				tee ${logfile} < ${logfile}.pipe &
+		tee_pipe_in="$(mktemp -ut tee_pipe_in)"
+		mkfifo "${tee_pipe_in}"
+		(
+			trap '' INFO
+			TIME_START="${TIME_START_JOB:-${TIME_START:-0}}"
+			export TIME_START
+			unlink "${strip_pipe_in}"
+			if [ "${need_tee}" -eq 1 ]; then
+				if [ "${TIMESTAMP_LOGS}" = "yes" ]; then
+					# Unbuffered for 'echo -n' support.
+					# Otherwise need setbuf -o L here due
+					# to stdout not writing to terminal
+					# but to tee.
+					timestamp -u |
+					    tee "/dev/fd/${OUTPUT_REDIRECTED_STDOUT}"
+				else
+					tee "/dev/fd/${OUTPUT_REDIRECTED_STDOUT}"
+				fi
+			elif [ "${TIMESTAMP_LOGS}" = "yes" ]; then
+				timestamp
 			fi
-		elif [ "${TIMESTAMP_LOGS}" = "yes" ]; then
-			TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
-			    timestamp > ${logfile} < ${logfile}.pipe &
-		fi
-		tpid=$!
-		exec > ${logfile}.pipe 2>&1
-
-		# Remove fifo pipe file right away to avoid orphaning it.
-		# The pipe will continue to work as long as we keep
-		# the FD open to it.
-		unlink ${logfile}.pipe
+		) < "${tee_pipe_in}" > "${strip_pipe_in}" &
+		TPID="$!"
+		exec > "${tee_pipe_in}" 2>&1
+		unlink "${tee_pipe_in}"
 	else
-		# Send output directly to file.
-		tpid=
-		exec > ${logfile} 2>&1
+		# Send output directly to the log writer
+		TPID=
+		exec > "${strip_pipe_in}" 2>&1
+		unlink "${strip_pipe_in}"
 	fi
 }
 
@@ -1043,10 +1052,13 @@ log_stop() {
 		unset OUTPUT_REDIRECTED_STDOUT
 		unset OUTPUT_REDIRECTED_STDERR
 	fi
-	if [ -n "${tpid-}" ]; then
-		# Give tee a moment to flush buffers
-		timed_wait_and_kill 5 $tpid 2>/dev/null || :
-		unset tpid
+	if [ -n "${TPID-}" ]; then
+		timed_wait_and_kill 5 "${TPID}" 2>/dev/null || :
+		unset TPID
+	fi
+	if [ -n "${SPID-}" ]; then
+		timed_wait_and_kill 5 "${SPID}" 2>/dev/null || :
+		unset SPID
 	fi
 }
 
@@ -1492,12 +1504,8 @@ ${COLOR_RESET}Tobuild: %-${queue_width}d  Time: %s\n" \
 	    "${nbtobuild}" "${buildtime}"
 }
 
-siginfo_handler() {
+_siginfo_handler() {
 	local IFS; unset IFS;
-	in_siginfo_handler=1
-	if [ "${POUDRIERE_BUILD_TYPE}" != "bulk" ]; then
-		return 0
-	fi
 	local status
 	local now
 	local j elapsed elapsed_phase job_id_color
@@ -1512,13 +1520,11 @@ siginfo_handler() {
 
 	_bget status status || status=unknown
 	if [ "${status}" = "index:" -o "${status#stopped:}" = "crashed:" ]; then
-		enable_siginfo_handler
 		return 0
 	fi
 
 	_bget nbq stats_queued || nbq=0
 	if [ -z "${nbq}" ]; then
-		enable_siginfo_handler
 		return 0
 	fi
 
@@ -1647,6 +1653,19 @@ siginfo_handler() {
 	display_output >&2
 
 	show_log_info >&2
+}
+
+siginfo_handler() {
+	local -; set +x
+
+	in_siginfo_handler=1
+	if [ "${POUDRIERE_BUILD_TYPE}" != "bulk" ]; then
+		return 0
+	fi
+	trap '' INFO
+	_siginfo_handler \
+	    >&${OUTPUT_REDIRECTED_STDOUT:-1} \
+	    2>&${OUTPUT_REDIRECTED_STDERR:-2}
 	enable_siginfo_handler
 }
 
