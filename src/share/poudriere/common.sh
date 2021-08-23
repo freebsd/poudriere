@@ -1326,8 +1326,8 @@ exit_handler() {
 	# file in the jail like builders.pipe on socket 6.
 	exec </dev/null
 
+	log_stop
 	if was_a_bulk_run; then
-		log_stop
 		# build_queue may have done cd MASTER_DATADIR/pool,
 		# but some of the cleanup here assumes we are
 		# PWD=MASTER_DATADIR.  Switch back if possible.
