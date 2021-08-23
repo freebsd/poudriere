@@ -626,10 +626,47 @@ mapfile() {
 	[ $# -eq 2 -o $# -eq 3 ] || eargs mapfile handle_name file modes
 	local handle_name="$1"
 	local _file="$2"
+	local mypid _hkey
 
-	[ -e "${_file}" ] || return 1
-	[ -p "${file}" ] && return 32
-	setvar "${handle_name}" "${_file}"
+	mypid=$(getpid)
+	case "${_file}" in
+		-|/dev/stdin) _file="/dev/fd/0" ;;
+	esac
+	_hkey="${_file}.${mypid}"
+
+	case "${_mapfile_handle-}" in
+	""|${_hkey}) ;;
+	*)
+		# New file or new process
+		case "${_mapfile_handle##*.}" in
+		${mypid})
+			# Same process so far...
+			case "${_mapfile_handle%.*}" in
+			${_file})
+				err 1 "mapfile: earlier case _hkey should cover this"
+				;;
+			# Different file. Is this even possible?
+			*)
+				err 1 "mapfile only supports 1 file at a time without builtin. ${_mapfile_handle} already open"
+				;;
+			esac
+			;;
+		*)
+			# Different process. Nuke the tracker.
+			unset _mapfile_handle
+			;;
+		esac
+	esac
+	_mapfile_handle="${_hkey}"
+	setvar "${handle_name}" "${_mapfile_handle}"
+	case "${_file}" in
+	/dev/fd/[0-9])
+		hash_set mapfile_fd "${_mapfile_handle}" "${_file#/dev/fd/}"
+		;;
+	*)
+		exec 8<> "${_file}" ;;
+	esac
+	hash_set mapfile_file "${_mapfile_handle}" "${_file}"
 }
 
 mapfile_read() {
@@ -637,25 +674,23 @@ mapfile_read() {
 	[ $# -ge 2 ] || eargs mapfile_read handle output_var ...
 	local handle="$1"
 	shift
-	local -; set -f
 
-	if [ -p "${handle}" ]; then
-		read_pipe "${handle}" "$@"
-	elif [ -f "${handle}" ]; then
-		read_blocking_line "$@" < "${handle}"
-	elif [ "${handle}" = "/dev/fd/0" ] || \
-	    [ "${handle}" = "/dev/stdin" ]; then
-		# mapfile_read_loop_redir pipe
-		read -r "$@"
-	else
-		return 1
+	if [ "${handle}" != "${_mapfile_handle}" ]; then
+		err 1 "mapfile_read: Handle '${handle}' is not open, '${_mapfile_handle}' is"
 	fi
+
+	hash_get mapfile_fd "${handle}" fd || fd=8
+	read_blocking "$@" <&${fd}
 }
 
 mapfile_write() {
 	local -; set +x
+	[ $# -ge 1 ] || eargs mapfile_write handle [data]
+	local handle="$1"
+	local ret
+
 	if [ $# -eq 1 ]; then
-		local ret=0
+		ret=0
 		_mapfile_write_from_stdin "$@" || ret="$?"
 		return "${ret}"
 	fi
@@ -664,31 +699,40 @@ mapfile_write() {
 
 _mapfile_write_from_stdin() {
 	[ $# -eq 1 ] || eargs _mapfile_write_from_stdin handle
-	local handle="$1"
+	local data
 
-	#mapfile_write "${handle}" "$(cat)"
-	cat >> "${handle}"
+	data="$(cat)"
+	_mapfile_write "$@" "${data}"
 }
 
 _mapfile_write() {
 	[ $# -eq 2 ] || eargs mapfile_write handle data
 	local handle="$1"
 	shift
+	local fd
 
-	if [ -p "${handle}" ]; then
-		nopipe write_pipe "${handle}" "$@"
-	else
-		echo "$@" > "${handle}"
+	if [ "${handle}" != "${_mapfile_handle}" ]; then
+		err 1 "mapfile_write: Handle '${handle}' is not open, '${_mapfile_handle}' is"
 	fi
+	hash_get mapfile_fd "${handle}" fd || fd=8
+	echo "$@" >&${fd}
 }
 
 mapfile_close() {
 	local -; set +x
 	[ $# -eq 1 ] || eargs mapfile_close handle
 	local handle="$1"
+	local fd _
 
-	[ -e "${handle}" ] || return 1
-	# Nothing to do for non-builtin.
+	if [ "${handle}" != "${_mapfile_handle}" ]; then
+		err 1 "mapfile_close: Handle '${handle}' is not open, '${_mapfile_handle}' is"
+	fi
+	# Only close fd that we opened.
+	if ! hash_remove mapfile_fd "${handle}" _; then
+		exec 8>&-
+	fi
+	unset _mapfile_handle
+	hash_unset mapfile_file "${handle}"
 }
 
 mapfile_builtin() {
@@ -698,33 +742,6 @@ mapfile_builtin() {
 mapfile_keeps_file_open_on_eof() {
 	[ $# -eq 1 ] || eargs mapfile_keeps_file_open_on_eof handle
 	return 1
-}
-
-mapfile_read_loop() {
-	local -; set +x
-	[ $# -ge 2 ] || eargs mapfile_read_loop file vars
-	local _file="$1"
-	shift
-	local ret
-
-	# Low effort compatibility attempt
-	if [ -z "${_mapfile_read_loop}" ]; then
-		exec 8< "${_file}"
-		_mapfile_read_loop="${_file}"
-	elif [ "${_mapfile_read_loop}" != "${_file}" ]; then
-		err 1 "mapfile_read_loop only supports 1 file at a time without builtin"
-	fi
-	ret=0
-	read -r "$@" <&8 || ret=$?
-	if [ ${ret} -ne 0 ]; then
-		exec 8>&-
-		unset _mapfile_read_loop
-	fi
-	return ${ret}
-}
-
-mapfile_read_loop_redir() {
-	read -r "$@"
 }
 else
 
@@ -736,6 +753,7 @@ mapfile_keeps_file_open_on_eof() {
 	[ $# -eq 1 ] || eargs mapfile_keeps_file_open_on_eof handle
 	return 0
 }
+fi
 
 # This is for reading from a file in a loop while avoiding a pipe.
 # It is analogous to read(builtin).For example these are mostly equivalent:
@@ -780,7 +798,6 @@ mapfile_read_loop_redir() {
 
 	mapfile_read_loop "/dev/fd/0" "$@"
 }
-fi
 
 # Basically an optimized loop of mapfile_read_loop_redir, or read_file
 mapfile_cat() {
