@@ -3571,7 +3571,7 @@ download_from_repo() {
 		fi
 		pkgbase="${pkgname%-*}"
 		found=0
-		for pkg in ${PACKAGE_FETCH_WHITELIST-}; do
+		for pkg in ${PACKAGE_FETCH_WHITELIST-"*"}; do
 			case "${pkgbase}" in
 			${pkg})
 				found=1
