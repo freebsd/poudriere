@@ -130,6 +130,7 @@ output_builder_info() {
 
 add_summary_build() {
 	local status nbqueued nbfailed nbignored nbskipped nbbuilt nbtobuild
+	local nbfetched
 	local elapsed time url save_status
 
 	_bget status status || :
@@ -138,7 +139,9 @@ add_summary_build() {
 	_bget nbfailed stats_failed || :
 	_bget nbignored stats_ignored || :
 	_bget nbskipped stats_skipped || :
-	nbtobuild=$((nbqueued - (nbbuilt + nbfailed + nbskipped + nbignored)))
+	_bget nbfetched stats_fetched || stats_fetched=0
+	nbtobuild=$((nbqueued - (nbbuilt + nbfailed + nbskipped + nbignored + \
+	    nbfetched)))
 
 	calculate_elapsed_from_log ${now} ${log}
 	elapsed=${_elapsed_time}
@@ -161,7 +164,7 @@ add_summary_build() {
 	display_add "${setname:--}" "${ptname}" "${jailname}" \
 	    "${BUILDNAME}" "${status:-?}" "${nbqueued:-?}" \
 	    "${nbbuilt:-?}" "${nbfailed:-?}" "${nbskipped:-?}" \
-	    "${nbignored:-?}" "${nbtobuild:-?}" "${time:-?}" ${url}
+	    "${nbignored:-?}" "${nbfetched:-?}" "${nbtobuild:-?}" "${time:-?}" ${url}
 }
 
 status_for_each_build() {
@@ -179,12 +182,12 @@ show_summary() {
 		columns=12
 	fi
 	if [ ${SCRIPT_MODE} -eq 0 ]; then
-		format="%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds"
+		format="%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds"
 		[ ${COMPACT} -eq 0 ] && format="${format} %%s"
 	else
 		#format="%%s\t%%s\t%%s\t%%s\t%%s\t%%s\t%%s\t%%s\t%%s\t%%s\t%%s\t%%s"
 		#[ ${COMPACT} -eq 0 ] && format="${format}\t%%s"
-		format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"
+		format="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"
 		[ ${COMPACT} -eq 0 ] && format="${format}\t%s"
 	fi
 
@@ -197,11 +200,11 @@ show_summary() {
 			url_logs="LOGS"
 		fi
 		display_add "SET" "PORTS" "JAIL" "BUILD" "STATUS" \
-		    "QUEUE" "BUILT" "FAIL" "SKIP" "IGNORE" "REMAIN" \
+		    "QUEUE" "BUILT" "FAIL" "SKIP" "IGNORE" "FETCH" "REMAIN" \
 		    "TIME" "${url_logs}"
 	else
 		display_add "SET" "PORTS" "JAIL" "BUILD" "STATUS" \
-		    "Q" "B" "F" "S" "I" "R" "TIME"
+		    "Q" "B" "F" "S" "I" "P" "R" "TIME"
 	fi
 
 	status_for_each_build add_summary_build

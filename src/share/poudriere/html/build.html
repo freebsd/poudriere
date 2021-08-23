@@ -65,6 +65,7 @@
 										<li class="disabled" id="nav_failed"><a href="#failed">Failed</a></li>
 										<li class="disabled" id="nav_skipped"><a href="#skipped">Skipped</a></li>
 										<li class="disabled" id="nav_ignored"><a href="#ignored">Ignored</a></li>
+										<li class="disabled" id="nav_fetched"><a href="#fetched">Fetched</a></li>
 										<li class="disabled" id="nav_queued"><a href="#queued">Queued</a></li>
 										<li class="disabled" id="nav_remaining"><a href="#remaining">Remaining</a></li>
 									</ul>
@@ -93,6 +94,7 @@
 													<th>Failed</th>
 													<th>Skipped</th>
 													<th>Ignored</th>
+													<th>Fetched</th>
 													<th>Remaining</th>
 												</tr>
 											</thead>
@@ -102,6 +104,7 @@
 												<td id="stats_failed" class="failed"></td>
 												<td id="stats_skipped" class="skipped"></td>
 												<td id="stats_ignored" class="ignored"></td>
+												<td id="stats_fetched" class="fetched"></td>
 												<td id="stats_remaining" class="remaining"></td>
 											</tr>
 										</table>
@@ -258,6 +261,21 @@
 							<tbody id="ignored_body"></tbody>
 						</table>
 					</div><!-- #ignored -->
+					<div id="fetched_div" class="status" style="display: none;">
+						<h2 id="fetched">Fetched ports
+							<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
+						</h2>
+						<table class="display fetched ports table-bordered" id="fetched_table">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>Package</th>
+									<th>Origin</th>
+								</tr>
+							</thead>
+							<tbody id="fetched_body"></tbody>
+						</table>
+					</div><!-- #fetched -->
 					<div id="queued_div" class="status" style="display: none;">
 						<h2 id="queued">Queued ports
 							<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>

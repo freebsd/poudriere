@@ -56,6 +56,8 @@
 .skipped .row1 { background-color: #AA6734; }
 .ignored { background-color: #FF9900 !important; }
 .ignored .row1 { background-color: #FF6F00; }
+.fetched { background-color: #228B22 !important; }
+.fetched .row1 { background-color: #225B22; }
 .remaining { background-color: #E3E3E3 !important; }
 .remaining .row1 { background-color: #BCBCBC; }
 .queued { background-color: #aaa !important; }
@@ -277,12 +279,14 @@ table.dataTable.display td {
 #builds_body tr td:nth-child(5),
 #builds_body tr td:nth-child(6),
 #builds_body tr td:nth-child(7),
+#builds_body tr td:nth-child(8),
 #latest_builds_body tr td:nth-child(3),
 #latest_builds_body tr td:nth-child(4),
 #latest_builds_body tr td:nth-child(5),
 #latest_builds_body tr td:nth-child(6),
 #latest_builds_body tr td:nth-child(7),
-#latest_builds_body tr td:nth-child(8)
+#latest_builds_body tr td:nth-child(8),
+#latest_builds_body tr td:nth-child(9)
 {
 	word-break: normal !important;
 }

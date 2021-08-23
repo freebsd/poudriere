@@ -1174,13 +1174,14 @@ update_stats() {
 
 update_stats_queued() {
 	[ $# -eq 0 ] || eargs update_stats_queued
-	local nbq nbi nbs
+	local nbq nbi nbs nbp
 
 	nbq=$(pkgqueue_list | wc -l)
 	# Need to add in pre-build ignored/skipped
 	_bget nbi stats_ignored || nbi=0
 	_bget nbs stats_skipped || nbs=0
-	nbq=$((nbq + nbi + nbs))
+	_bget nbp stats_fetched || nbp=0
+	nbq=$((nbq + nbi + nbs + nbp))
 
 	# Add 1 for the main port to test
 	if was_a_testport_run; then
@@ -1390,7 +1391,7 @@ show_dry_run_summary() {
 }
 
 show_build_summary() {
-	local status nbb nbf nbs nbi nbq ndone nbtobuild buildname
+	local status nbb nbf nbs nbi nbq nbp ndone nbtobuild buildname
 	local log now elapsed buildtime queue_width
 
 	update_stats 2>/dev/null || return 0
@@ -1400,8 +1401,9 @@ show_build_summary() {
 	_bget nbf stats_failed || nbf=0
 	_bget nbi stats_ignored || nbi=0
 	_bget nbs stats_skipped || nbs=0
+	_bget nbp stats_fetched || nbp=0
 	_bget nbb stats_built || nbb=0
-	ndone=$((nbb + nbf + nbi + nbs))
+	ndone=$((nbb + nbf + nbi + nbs + nbp))
 	nbtobuild=$((nbq - ndone))
 
 	if [ ${nbq} -gt 9999 ]; then
@@ -1423,12 +1425,16 @@ show_build_summary() {
 	calculate_duration buildtime "${elapsed}"
 
 	printf "[%s] [%s] [%s] \
-Queued: %-${queue_width}d ${COLOR_SUCCESS}Built: %-${queue_width}d \
-${COLOR_FAIL}Failed: %-${queue_width}d ${COLOR_SKIP}Skipped: \
-%-${queue_width}d ${COLOR_IGNORE}Ignored: %-${queue_width}d${COLOR_RESET} \
-Tobuild: %-${queue_width}d  Time: %s\n" \
+Queued: %-${queue_width}d \
+${COLOR_SUCCESS}Built: %-${queue_width}d \
+${COLOR_FAIL}Failed: %-${queue_width}d \
+${COLOR_SKIP}Skipped: %-${queue_width}d \
+${COLOR_IGNORE}Ignored: %-${queue_width}d \
+${COLOR_FETCHED}Fetched: %-${queue_width}d \
+${COLOR_RESET}Tobuild: %-${queue_width}d  Time: %s\n" \
 	    "${MASTERNAME}" "${buildname}" "${status}" \
-	    "${nbq}" "${nbb}" "${nbf}" "${nbs}" "${nbi}" "${nbtobuild}" "${buildtime}"
+	    "${nbq}" "${nbb}" "${nbf}" "${nbs}" "${nbi}" "${nbp}" \
+	    "${nbtobuild}" "${buildtime}"
 }
 
 siginfo_handler() {
@@ -2377,6 +2383,7 @@ symlink to .latest/${name}"
 
 show_build_results() {
 	local failed built ignored skipped nbbuilt nbfailed nbignored nbskipped
+	local nbfetched fetched
 
 	failed=$(bget ports.failed | awk '{print $1 ":" $3 }' | xargs echo)
 	failed=$(bget ports.failed | \
@@ -2385,11 +2392,13 @@ show_build_results() {
 	    '{print $1 ":" color_phase $3 color_port }' | xargs echo)
 	built=$(bget ports.built | awk '{print $1}' | xargs echo)
 	ignored=$(bget ports.ignored | awk '{print $1}' | xargs echo)
+	fetched=$(bget ports.fetched | awk '{print $1}' | xargs echo)
 	skipped=$(bget ports.skipped | awk '{print $1}' | sort -u | xargs echo)
 	_bget nbbuilt stats_built
 	_bget nbfailed stats_failed
 	_bget nbignored stats_ignored
 	_bget nbskipped stats_skipped
+	_bget nbfetched stats_fetched || stats_fetched=0
 
 	if [ $nbbuilt -gt 0 ]; then
 		COLOR_ARROW="${COLOR_SUCCESS}" \
@@ -2406,6 +2415,10 @@ show_build_results() {
 	if [ $nbignored -gt 0 ]; then
 		COLOR_ARROW="${COLOR_IGNORE}" \
 		    msg "${COLOR_IGNORE}Ignored ports: ${COLOR_PORT}${ignored}"
+	fi
+	if [ $nbfetched -gt 0 ]; then
+		COLOR_ARROW="${COLOR_FETCHED}" \
+		    msg "${COLOR_FETCHED}Fetched ports: ${COLOR_PORT}${fetched}"
 	fi
 
 	show_build_summary
@@ -3521,6 +3534,8 @@ download_from_repo() {
 		return 0
 	fi
 
+	bset status "fetching_packages:"
+
 	packagesite="${PACKAGE_FETCH_URL:+${PACKAGE_FETCH_URL}/}${PACKAGE_FETCH_BRANCH}"
 	msg "Package fetch: Looking for missing packages to fetch from ${packagesite}"
 
@@ -3700,27 +3715,55 @@ download_from_repo() {
 	fi
 }
 
+download_from_repo_make_log() {
+	[ $# -eq 2 ] || eargs download_from_repo_make_log pkgname packagesite
+	local pkgname="$1"
+	local packagesite="$2"
+	local logfile originspec
+
+	get_originspec_from_pkgname originspec "${pkgname}"
+	_logfile logfile "${pkgname}"
+	{
+		buildlog_start "${pkgname}" "${originspec}"
+		print_phase_header "poudriere"
+		echo "Fetched from ${packagesite}"
+		print_phase_footer
+		buildlog_stop "${pkgname}" "${originspec}" 0
+	} | write_atomic "${logfile}"
+	badd ports.fetched "${originspec} ${pkgname}"
+}
+
 # Remove from the pkg_fetch list packages that need to rebuild anyway.
 download_from_repo_post_delete() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "download_from_repo_post_delete requires PWD=${MASTERMNT}/.p"
 	[ $# -eq 0 ] || eargs download_from_repo_post_delete
-	local log fpkgname
+	local log fpkgname packagesite
 
-	if [ -z "${PACKAGE_FETCH_BRANCH-}" ]; then
+	if [ -z "${PACKAGE_FETCH_BRANCH-}" ] || [ ! -f "pkg_fetch" ]; then
+		bset "stats_fetched" 0
 		return 0
 	fi
-	[ -f "pkg_fetch" ] || return 0
+	bset status "fetched_package_logs:"
 	_log_path log
-	msg_verbose "Package fetch: Cleaning up pkg_fetch list"
-
+	msg "Package fetch: Generating logs for fetched packages"
+	read_line packagesite "pkg_fetch_url"
+	parallel_start
 	while mapfile_read_loop "pkg_fetch" fpkgname; do
 		if [ ! -e "${PACKAGES}/All/${fpkgname}.${PKG_EXT}" ]; then
+			msg_verbose "download_from_repo_post_delete: We lost ${COLOR_PORT}${fpkgname}.${PKG_EXT}${COLOR_RESET}" >&2
 			continue
 		fi
 		echo "${fpkgname}"
+	done | while mapfile_read_loop_redir fpkgname; do
+		parallel_run \
+		    download_from_repo_make_log "${fpkgname}" "${packagesite}"
 	done | write_atomic "${log}/.poudriere.pkg_fetch%"
+	parallel_stop
 	mv -f "pkg_fetch_url" "${log}/.poudriere.pkg_fetch_url%"
+	# update_stats
+	_bget '' "ports.fetched"
+	bset "stats_fetched" ${_read_file_lines_read}
 }
 
 validate_package_branch() {
@@ -4589,15 +4632,16 @@ build_queue() {
 }
 
 calculate_tobuild() {
-	local nbq nbb nbf nbi nbs ndone nremaining
+	local nbq nbb nbf nbi nbs nbp ndone nremaining
 
 	_bget nbq stats_queued || nbq=0
 	_bget nbb stats_built || nbb=0
 	_bget nbf stats_failed || nbf=0
 	_bget nbi stats_ignored || nbi=0
 	_bget nbs stats_skipped || nbs=0
+	_bget nbp stats_fetched || nbp=0
 
-	ndone=$((nbb + nbf + nbi + nbs))
+	ndone=$((nbb + nbf + nbi + nbs + nbp))
 	nremaining=$((nbq - ndone))
 
 	echo ${nremaining}
@@ -7601,6 +7645,7 @@ prepare_ports() {
 			    ${log}/.poudriere.ports.built \
 			    ${log}/.poudriere.ports.failed \
 			    ${log}/.poudriere.ports.ignored \
+			    ${log}/.poudriere.ports.fetched \
 			    ${log}/.poudriere.ports.skipped | \
 			    pkgqueue_remove_many_pipe
 		else
@@ -7610,15 +7655,18 @@ prepare_ports() {
 			bset stats_failed 0
 			bset stats_ignored 0
 			bset stats_skipped 0
+			bset stats_fetched 0
 			:> ${log}/.data.json
 			:> ${log}/.data.mini.json
 			:> ${log}/.poudriere.ports.built
 			:> ${log}/.poudriere.ports.failed
 			:> ${log}/.poudriere.ports.ignored
 			:> ${log}/.poudriere.ports.skipped
+			:> ${log}/.poudriere.ports.fetched
 			trim_ignored
 		fi
 		download_from_repo
+		bset status "sanity:"
 	fi
 
 	if ! ensure_pkg_installed; then
@@ -7662,6 +7710,7 @@ prepare_ports() {
 
 		delete_stale_symlinks_and_empty_dirs
 		download_from_repo_post_delete
+		bset status "sanity:"
 	fi
 
 	if was_a_bulk_run; then

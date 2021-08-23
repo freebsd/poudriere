@@ -108,6 +108,17 @@ function format_origin(origin, flavor) {
 		"</a>";
 }
 
+function format_githash(githash) {
+	if (!githash) {
+		return '';
+	}
+	return "<a target=\"_new\" title=\"cgit for " + githash +
+		"\" href=\"https://cgit.freebsd.org/ports/commit/?id=" +
+		githash + "\"><span " +
+		"class=\"glyphicon glyphicon-envelope\"></span>"+ githash +
+		"</a>";
+}
+
 function format_pkgname(pkgname) {
 	return pkgname;
 }
@@ -153,7 +164,7 @@ function determine_canvas_width() {
 }
 
 function update_canvas(stats) {
-	var queued, built, failed, skipped, ignored, remaining, pctdone;
+	var queued, built, failed, skipped, ignored, fetched, remaining, pctdone;
 	var height, width, x, context, canvas, pctdonetxt;
 
 	if (stats.queued === undefined) {
@@ -177,7 +188,8 @@ function update_canvas(stats) {
 	failed = stats.failed;
 	skipped = stats.skipped;
 	ignored = stats.ignored;
-	remaining = queued - built - failed - skipped - ignored;
+	fetched = stats.fetched;
+	remaining = queued - built - failed - skipped - ignored - fetched;
 
 	context = canvas.getContext('2d');
 
@@ -196,6 +208,7 @@ function update_canvas(stats) {
 	x += minidraw(x, height, width, context, "#00CC00", queued, built);
 	x += minidraw(x, height, width, context, "#E00000", queued, failed);
 	x += minidraw(x, height, width, context, "#FF9900", queued, ignored);
+	x += minidraw(x, height, width, context, "#228B22", queued, fetched);
 	x += minidraw(x, height, width, context, "#CC6633", queued, skipped);
 
 	pctdone = ((queued - remaining) * 100) / queued;
@@ -477,6 +490,9 @@ function format_status_row(status, row, n) {
 		table_row.push(format_origin(row.origin, row.flavor));
 		table_row.push(row.skipped_cnt);
 		table_row.push(row.reason);
+	} else if (status == "fetched") {
+		table_row.push(format_pkgname(row.pkgname));
+		table_row.push(format_origin(row.origin, row.flavor));
 	} else if (status == "remaining") {
 		table_row.push(format_pkgname(row.pkgname));
 		table_row.push(row.status);
@@ -707,7 +723,7 @@ function process_data_jail(data) {
 	var row, build, buildname, stat, types, latest,	remaining, count, dtrow;
 
 	if (data.builds) {
-		types = ['queued', 'built', 'failed', 'skipped', 'ignored'];
+		types = ['queued', 'built', 'failed', 'skipped', 'ignored', 'fetched'];
 		dtrow = new DTRow('builds_table', 'builds_div');
 		for (buildname in data.builds) {
 			row = {};
@@ -729,7 +745,8 @@ function process_data_jail(data) {
 				(parseInt(build.stats['built']) +
 				 parseInt(build.stats['failed']) +
 				 parseInt(build.stats['skipped']) +
-				 parseInt(build.stats['ignored']))) : 0;
+				 parseInt(build.stats['ignored']) +
+				 parseInt(build.stats['fetched']))) : 0;
 			if (isNaN(remaining)) {
 				remaining = 0;
 			}
@@ -765,7 +782,7 @@ function process_data_index(data) {
 		remaining, row,	count, dtrow;
 
 	if (data.masternames) {
-		types = ['queued', 'built', 'failed', 'skipped', 'ignored'];
+		types = ['queued', 'built', 'failed', 'skipped', 'ignored', 'fetched'];
 		dtrow = new DTRow('latest_builds_table', 'latest_builds_div');
 		for (mastername in data.masternames) {
 			row = {};
@@ -787,7 +804,8 @@ function process_data_index(data) {
 				(parseInt(master.stats['built']) +
 				 parseInt(master.stats['failed']) +
 				 parseInt(master.stats['skipped']) +
-				 parseInt(master.stats['ignored']))) : 0;
+				 parseInt(master.stats['ignored']) +
+				 parseInt(master.stats['fetched']))) : 0;
 			row.stat_remaining = isNaN(remaining) ? 0 : remaining;
 			row.status = translate_status(master.status);
 			row.elapsed = master.elapsed ? master.elapsed : "";
@@ -1017,6 +1035,11 @@ function setup_build() {
 				"sWidth": "25em",
 			},
 		],
+		"fetched": [
+			build_order_column,
+			pkgname_column,
+			origin_column,
+		],
 		"remaining": [
 			build_order_column,
 			pkgname_column,
@@ -1032,7 +1055,7 @@ function setup_build() {
 		],
 	};
 
-	types = ['built', 'failed', 'skipped', 'ignored', 'remaining', 'queued'];
+	types = ['built', 'failed', 'skipped', 'ignored', 'fetched', 'remaining', 'queued'];
 	for (i in types) {
 		status = types[i];
 		$('#' + status + '_table').dataTable({
@@ -1072,6 +1095,7 @@ function setup_jail() {
 		$.extend({}, stat_column, {"data": "stat_failed"}),
 		$.extend({}, stat_column, {"data": "stat_skipped"}),
 		$.extend({}, stat_column, {"data": "stat_ignored"}),
+		$.extend({}, stat_column, {"data": "stat_fetched"}),
 		$.extend({}, stat_column, {"data": "stat_remaining"}),
 		{
 			"data": "status",
@@ -1169,6 +1193,7 @@ function setup_index() {
 		$.extend({}, stat_column, {"data": "stat_failed"}),
 		$.extend({}, stat_column, {"data": "stat_skipped"}),
 		$.extend({}, stat_column, {"data": "stat_ignored"}),
+		$.extend({}, stat_column, {"data": "stat_fetched"}),
 		$.extend({}, stat_column, {"data": "stat_remaining"}),
 		{
 			"data": "status",

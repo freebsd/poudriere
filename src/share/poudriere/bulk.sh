@@ -249,6 +249,7 @@ _bget nbbuilt stats_built
 _bget nbfailed stats_failed
 _bget nbskipped stats_skipped
 _bget nbignored stats_ignored
+_bget nbfetched stats_fetched
 
 [ "${NO_RESTRICTED}" != "no" ] && clean_restricted
 
@@ -258,7 +259,7 @@ commit_packages
 
 show_build_results
 
-run_hook bulk done ${nbbuilt} ${nbfailed} ${nbignored} ${nbskipped}
+run_hook bulk done ${nbbuilt} ${nbfailed} ${nbignored} ${nbskipped} ${nbfetched}
 
 [ ${INTERACTIVE_MODE} -gt 0 ] && enter_interactive
 
