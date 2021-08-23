@@ -654,6 +654,23 @@ mapfile_read() {
 
 mapfile_write() {
 	local -; set +x
+	if [ $# -eq 1 ]; then
+		local ret=0
+		_mapfile_write_from_stdin "$@" || ret="$?"
+		return "${ret}"
+	fi
+	_mapfile_write "$@"
+}
+
+_mapfile_write_from_stdin() {
+	[ $# -eq 1 ] || eargs _mapfile_write_from_stdin handle
+	local handle="$1"
+
+	#mapfile_write "${handle}" "$(cat)"
+	cat >> "${handle}"
+}
+
+_mapfile_write() {
 	[ $# -eq 2 ] || eargs mapfile_write handle data
 	local handle="$1"
 	shift

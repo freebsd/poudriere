@@ -59,6 +59,7 @@
 #undef fflush
 #undef fopen
 #undef fputs
+#include "eval.h"
 #include "trap.h"
 #include "var.h"
 
@@ -470,37 +471,13 @@ mapfile_closecmd(int argc, char **argv)
 	return (0);
 }
 
-int
-mapfile_writecmd(int argc, char **argv)
+static int
+_mapfile_write(/*XXX const*/ struct mapped_data *md, const char *handle,
+    const int nflag, const char *data)
 {
-	struct mapped_data *md;
-	const char *handle, *data;
-	int ch, nflag, serrno, ret;
+	int serrno, ret;
 
-	if (argc < 3)
-		errx(EX_USAGE, "%s", "Usage: mapfile_write <handle> [-n] "
-		    "<data>");
-	nflag = 0;
-	handle = argv[1];
-	argptr += 1;
-	argc -= argptr - argv;
-	argv = argptr;
-	while ((ch = nextopt("n")) != '\0') {
-		switch (ch) {
-		case 'n':
-			nflag = 1;
-			break;
-		}
-	}
-	argc -= argptr - argv;
-	argv = argptr;
-	if (argc != 1)
-		errx(EX_USAGE, "%s", "Usage: mapfile_write <handle> [-n] "
-		    "<data>");
-	INTOFF;
-	md = md_find(handle);
-	data = argv[0];
-
+	ret = 0;
 	debug("%d: Writing to %s for handle '%s' fd: %d: %s\n",
 	    getpid(), md->file, handle, fileno(md->fp), data);
 	if (fputs(data, md->fp) == EOF ||
@@ -525,7 +502,60 @@ mapfile_writecmd(int argc, char **argv)
 		err(ret, "failed to write to handle '%s' mapped to %s",
 		    handle, md->file);
 	}
+	return (ret);
+}
+
+int evalcmd(int argc, char **argv);
+
+int
+mapfile_writecmd(int argc, char **argv)
+{
+	struct mapped_data *md;
+	const char *handle, *data;
+	int ch, nflag, ret;
+
+	if (argc < 2)
+		errx(EX_USAGE, "%s", "Usage: mapfile_write <handle> [-n] "
+		    "<data>");
+	nflag = 0;
+	handle = argv[1];
+	argptr += 1;
+	argc -= argptr - argv;
+	argv = argptr;
+	while ((ch = nextopt("n")) != '\0') {
+		switch (ch) {
+		case 'n':
+			nflag = 1;
+			break;
+		}
+	}
+	argc -= argptr - argv;
+	argv = argptr;
+	INTOFF;
+	md = md_find(handle);
+	if (argc == 1) {
+		data = argv[0];
+		ret = _mapfile_write(md, handle, nflag, data);
+	} else {
+		/* Read from TTY */
+		char *value;
+		/*
+		 * XXX: Using shell mapfile_cat until some changes from
+		 * copool branch make it in to avoid massive conflicts
+		 */
+		const char *cmd = "__mapfile_write_cat=$(mapfile_cat)";
+
+		evalstring(cmd, 0);
+		if (exitstatus != 0) {
+			ret = exitstatus;
+			goto out;
+		}
+		value = lookupvar("__mapfile_write_cat");
+		assert(value != NULL);
+		ret = _mapfile_write(md, handle, nflag, value);
+	}
+out:
 	INTON;
 
-	return (0);
+	return (ret);
 }

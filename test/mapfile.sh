@@ -417,6 +417,30 @@ fi
 
 	ps uaxwd > "${TMP}"
 
+	:>"${TMP2}"
+	assert_ret 0 mapfile handle "${TMP2}" "we"
+	cat "${TMP}" | mapfile_write "${handle}"
+	assert_ret 0 mapfile_close "${handle}"
+	assert_ret 0 diff -u "${TMP}" "${TMP2}"
+
+	rm -f "${TMP2}"
+	:>"${TMP2}"
+	assert_ret 0 mapfile handle "${TMP2}" "we"
+	mapfile_write "${handle}" <<-EOF
+	$(cat "${TMP}")
+	EOF
+	assert_ret 0 mapfile_close "${handle}"
+	assert_ret 0 diff -u "${TMP}" "${TMP2}"
+
+	rm -f "${TMP}" "${TMP2}"
+}
+
+{
+	TMP=$(mktemp -t mapfile)
+	TMP2=$(mktemp -t mapfile)
+
+	ps uaxwd > "${TMP}"
+
 	{ cat "${TMP}"; rm -f "${TMP2}"; } | write_atomic "${TMP2}"
 	assert_ret 0 diff -u "${TMP}" "${TMP2}"
 
