@@ -1126,38 +1126,11 @@ calculate_duration() {
 	setvar "${var_return}" "${_duration}"
 }
 
-write_atomic_cmp() {
+_write_atomic() {
 	local -; set +x
-	[ $# -eq 1 ] || eargs write_atomic_cmp destfile "< content"
-	local dest="$1"
-	local tmpfile_handle tmpfile ret
-
-	TMPDIR="${dest%/*}" mapfile_mktemp tmpfile_handle tmpfile \
-	    -ut ".tmp-${dest##*/}" ||
-	    err $? "write_atomic_cmp unable to create tmpfile in ${dest%/*}"
-	ret=0
-	mapfile_write "${tmpfile_handle}" || ret="$?"
-	if [ "${ret}" -ne 0 ]; then
-		unlink "${tmpfile}" 2>/dev/null || :
-		return "${ret}"
-	fi
-	ret=0
-	mapfile_close "${tmpfile_handle}" || ret="$?"
-	if [ "${ret}" -ne 0 ]; then
-		unlink "${tmpfile}" 2>/dev/null || :
-		return "${ret}"
-	fi
-	if ! cmp -s "${dest}" "${tmpfile}"; then
-		rename "${tmpfile}" "${dest}"
-	else
-		unlink "${tmpfile}"
-	fi
-}
-
-write_atomic() {
-	local -; set +x
-	[ $# -eq 1 ] || eargs write_atomic destfile "< content"
-	local dest="$1"
+	[ $# -eq 2 ] || eargs _write_atomic cmp destfile "< content"
+	local cmp="$1"
+	local dest="$2"
 	local tmpfile_handle tmpfile ret
 
 	TMPDIR="${dest%/*}" mapfile_mktemp tmpfile_handle tmpfile \
@@ -1166,16 +1139,42 @@ write_atomic() {
 	ret=0
 	mapfile_write "${tmpfile_handle}" || ret="$?"
 	if [ "${ret}" -ne 0 ]; then
-		unlink "${tmpfile}" 2>/dev/null || :
+		unlink "${tmpfile}" || :
 		return "${ret}"
 	fi
 	ret=0
 	mapfile_close "${tmpfile_handle}" || ret="$?"
 	if [ "${ret}" -ne 0 ]; then
-		unlink "${tmpfile}" 2>/dev/null || :
+		unlink "${tmpfile}" || :
 		return "${ret}"
 	fi
-	rename "${tmpfile}" "${dest}"
+	if [ "${cmp}" -eq 1 ] && cmp -s "${dest}" "${tmpfile}"; then
+		unlink "${tmpfile}" || :
+		return 0
+	fi
+	ret=0
+	rename "${tmpfile}" "${dest}" || ret="$?"
+	if [ "${ret}" -ne 0 ]; then
+		unlink "${tmpfile}" || :
+		return "${ret}"
+	fi
+}
+
+
+write_atomic_cmp() {
+	local -; set +x
+	[ $# -eq 1 ] || eargs write_atomic_cmp destfile "< content"
+	local dest="$1"
+
+	_write_atomic 1 "${dest}" || return
+}
+
+write_atomic() {
+	local -; set +x
+	[ $# -eq 1 ] || eargs write_atomic destfile "< content"
+	local dest="$1"
+
+	_write_atomic 0 "${dest}" || return
 }
 
 # Place environment requirements on entering a function
