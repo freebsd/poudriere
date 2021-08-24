@@ -835,6 +835,7 @@ install_from_tar() {
 }
 
 create_jail() {
+	local IFS
 
 	[ "${JAILNAME#*.*}" = "${JAILNAME}" ] ||
 		err 1 "The jailname cannot contain a period (.). See jail(8)"
@@ -878,10 +879,9 @@ create_jail() {
 			sort -k 3 -t - -r | head -n 1 `
 		[ -z ${ALLBSDVER} ] && err 1 "Unknown version $VERSION"
 
-		OIFS=${IFS}
 		IFS=-
 		set -- ${ALLBSDVER}
-		IFS=${OIFS}
+		unset IFS
 		RELEASE="${ALLBSDVER}-JPSNAP/ftp"
 		;;
 	svn*)

@@ -215,6 +215,7 @@ pkg_cacher_queue() {
 
 pkg_cacher_main() {
 	local pkg work pkgname origin dep_args flavor
+	local IFS
 
 	mkfifo ${MASTERMNT}/.p/pkg_cacher.pipe
 	exec 6<> ${MASTERMNT}/.p/pkg_cacher.pipe
@@ -236,6 +237,8 @@ pkg_cacher_main() {
 }
 
 pkg_cacher_cleanup() {
+	local IFS; unset IFS;
+
 	unlink ${MASTERMNT}/.p/pkg_cacher.pipe
 }
 

@@ -1438,6 +1438,7 @@ ${COLOR_RESET}Tobuild: %-${queue_width}d  Time: %s\n" \
 }
 
 siginfo_handler() {
+	local IFS; unset IFS;
 	trappedinfo=1
 	in_siginfo_handler=1
 	if [ "${POUDRIERE_BUILD_TYPE}" != "bulk" ]; then

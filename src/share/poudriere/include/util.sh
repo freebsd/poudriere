@@ -68,6 +68,7 @@ decode_args() {
 
 	# oldIFS="${IFS}"; IFS="${ENCODE_SEP}"; set -- ${data}; IFS="${oldIFS}"; unset oldIFS
 	echo "\
+		local IFS 2>/dev/null || :; \
 		case \$- in *f*) set_f=1 ;; *) set_f=0 ;; esac; \
 		[ \"\${set_f}\" -eq 0 ] && set -f; \
 		IFS=\"\${ENCODE_SEP}\"; \
