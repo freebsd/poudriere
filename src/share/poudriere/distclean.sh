@@ -144,7 +144,7 @@ for PTNAME in ${PTNAMES}; do
 
 	__MAKE_CONF=$(mktemp -t poudriere-make.conf)
 	export __MAKE_CONF
-	setup_ports_env "/" "${__MAKE_CONF}"
+	setup_ports_env "" "${__MAKE_CONF}"
 	if [ -z "${NO_PACKAGE_BUILDING}" ]; then
 		echo "BATCH=yes"
 		echo "PACKAGE_BUILDING=yes"
