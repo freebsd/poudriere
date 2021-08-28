@@ -7499,7 +7499,6 @@ prepare_ports() {
 	local n resuming_build
 	local cache_dir sflag delete_pkg_list shash_bucket
 
-	_log_path log
 	pkgqueue_init
 
 	cd "${MASTERMNT}/.p"
@@ -7508,15 +7507,16 @@ prepare_ports() {
 	# Allow caching values now
 	USE_CACHE_CALL=1
 
-	if [ -e "${log}/.poudriere.ports.built" ]; then
-		resuming_build=1
-	else
-		resuming_build=0
-	fi
-
 	if was_a_bulk_run; then
+		_log_path log
 		_log_path_top log_top
 		get_cache_dir cache_dir
+
+		if [ -e "${log}/.poudriere.ports.built" ]; then
+			resuming_build=1
+		else
+			resuming_build=0
+		fi
 
 		# Fetch library list for later comparisons
 		if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
