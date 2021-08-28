@@ -7381,7 +7381,7 @@ fetch_global_port_vars() {
 	export P_PORTS_FEATURES P_PYTHON_MAJOR_VER P_PYTHON_DEFAULT_VERSION \
 	    P_PYTHON3_DEFAULT
 
-	if [ -x "${GIT_CMD}" ] &&
+	if was_a_bulk_run && [ -x "${GIT_CMD}" ] &&
 	    ${GIT_CMD} -C "${MASTERMNT}/${PORTSDIR}" rev-parse \
 	    --show-toplevel >/dev/null 2>&1; then
 		git_hash=$(${GIT_CMD} -C "${MASTERMNT}/${PORTSDIR}" log -1 \
