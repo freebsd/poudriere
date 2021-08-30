@@ -332,7 +332,7 @@ if [ ${logs_deleted} -eq 1 ]; then
 	log_path_top="${log_top}"
 	build_top_json || :
 	echo " done"
-else
+elif [ "${DRY_RUN}" -eq 1 ]; then
 	msg "[Dry Run] Would fix latest symlinks..."
 	msg "[Dry Run] Would fix latest-done symlinks..."
 	msg "[Dry Run] Would fix latest-per-pkg links..."
