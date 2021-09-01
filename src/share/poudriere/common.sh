@@ -5493,6 +5493,13 @@ delete_pkg_xargs() {
 }
 
 # Incremental rebuild checks.
+#
+# Most checks here operate on PKGNAME which is *unique* for any given
+# origin+FLAVOR pair.
+# We do not automatically do a "pkgclean" here as we only inspect packages that
+# are queued or listed to be built.  If we inspected everything then we would
+# cause users who test with a subset of their normal ports to lose packages.
+#
 # We delete and force a rebuild in these cases:
 # - pkg bootstrap is not available
 # - FORBIDDEN is set for the port
@@ -5507,7 +5514,7 @@ delete_pkg_xargs() {
 # - Changed PKGNAME
 # - PORTVERSION, PORTREVISION, or PORTEPOCH bump.
 # - Changed ABI/ARCH/NOARCH
-# - Default FLAVOR changed
+# - FLAVOR for a PKGNAME changed
 # - New list of dependencies (not including versions)
 #   (requires default-on CHECK_CHANGED_DEPS)
 # - Changed options
