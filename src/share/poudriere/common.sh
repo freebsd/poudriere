@@ -5528,10 +5528,14 @@ delete_pkg_xargs() {
 # - changed requires		# not used by ports
 # - changed provided shlibs	# effectively by CHECK_CHANGED_DEPS
 # - changed required shlibs	# effectively by CHECK_CHANGED_DEPS
+#
+# Some expensive lookups are delayed until the last possible moment as
+# earlier cheaper checks may delete the package.
+#
 delete_old_pkg() {
 	[ $# -eq 1 ] || eargs delete_old_pkg pkgname
 	local pkg="$1"
-	local mnt pkgfile pkgname new_pkgname
+	local delete_unqueued mnt pkgfile pkgname new_pkgname
 	local origin v v2 compiled_options current_options current_deps
 	local td d key dpath dir found raw_deps compiled_deps
 	local pkg_origin compiled_deps_pkgnames compiled_deps_pkgbases
@@ -5544,8 +5548,38 @@ delete_old_pkg() {
 	pkgfile="${pkg##*/}"
 	pkgname="${pkgfile%.*}"
 
-	# Some expensive lookups are delayed until the last possible
-	# moment as cheaper checks may weed out this package before.
+	if [ "${DELETE_UNKNOWN_FILES}" = "yes" ]; then
+		case "${pkgfile}" in
+		*.${PKG_EXT}) ;;
+		*)
+			msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: unknown or obsolete file"
+			delete_pkg "${pkg}"
+			return 0
+			;;
+		esac
+	fi
+
+	# Should unqueued packages be deleted?
+	# Care is done because there are multiple use cases for Poudriere.
+	# Some users only ever do `bulk -a`, or `bulk -f mostly-static-list`,
+	# but some do testing of subsets of their repository.  With subsets if
+	# they test a port that has no dependencies then we would otherwise
+	# delete everything but that package in the repository here.
+	# An override is also provided for cases not thought of ("no") or for
+	# users who don't mind subsets deleting everything else ("always").
+	case "${DELETE_UNQUEUED_PACKAGES},${PORTTESTING}${CLEAN_LISTED},${ALL}" in
+	always,*)	delete_unqueued=1 ;;
+	# -a owns the repo
+	yes,*,1)	delete_unqueued=1 ;;
+	# Avoid deleting everything if the user is testing as they likely
+	# have queued a small subset of the repo.  Testing is considered to
+	# be testport, bulk -t, or bulk -C.
+	yes,*1*,0)	delete_unqueued=0 ;;
+	# If we are not concerned about testing or subsets then we are free to
+	# delete everything.
+	yes,*)		delete_unqueued=1 ;;
+	*)		delete_unqueued=0 ;;
+	esac
 
 	# Delete FORBIDDEN packages
 	if shash_remove pkgname-forbidden "${pkgname}" ignore; then
@@ -5578,7 +5612,7 @@ delete_old_pkg() {
 		originspec_encode originspec "${origin}" "${pkg_dep_args}" \
 		    "${pkg_flavor}"
 		if ! originspec_is_needed_and_not_ignored "${originspec}"; then
-			if [ ${ALL} -eq 1 ]; then
+			if [ "${delete_unqueued}" -eq 1 ]; then
 				msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: no longer needed"
 				delete_pkg "${pkg}"
 			else
@@ -5852,13 +5886,14 @@ delete_old_pkgs() {
 	msg "Checking packages for incremental rebuild needs"
 	run_hook delete_old_pkgs start
 
-	if package_dir_exists_and_has_packages; then
-		parallel_start
-		for pkg in ${PACKAGES}/All/*.${PKG_EXT}; do
-			parallel_run delete_old_pkg "${pkg}"
-		done
-		parallel_stop
-	fi
+	parallel_start
+	for pkg in ${PACKAGES}/All/*; do
+		case "${pkg}" in
+		"${PACKAGES}/All/*")  break ;;
+		esac
+		parallel_run delete_old_pkg "${pkg}"
+	done
+	parallel_stop
 
 	run_hook delete_old_pkgs stop
 }
@@ -8521,6 +8556,8 @@ fi
 : ${HTML_JSON_UPDATE_INTERVAL:=2}
 : ${HTML_TRACK_REMAINING:=no}
 : ${FORCE_MOUNT_HASH:=no}
+: ${DELETE_UNQUEUED_PACKAGES:=yes}
+: ${DELETE_UNKNOWN_FILES:=yes}
 DRY_RUN=0
 INTERACTIVE_MODE=0
 
