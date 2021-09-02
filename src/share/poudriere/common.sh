@@ -4011,18 +4011,6 @@ build_port() {
 	    PREFIX PREFIX \
 	    ${_need_root}
 
-	# Use bootstrap PKG when not building pkg itself.
-	if false && [ ${QEMU_EMULATING} -eq 1 ]; then
-		case "${port}" in
-		ports-mgmt/pkg|ports-mgmt/pkg-devel) ;;
-		*)
-			if ensure_pkg_installed; then
-				export PKG_BIN="/.p/pkg-static"
-			fi
-			;;
-		esac
-	fi
-
 	allownetworking=0
 	for jpkg in ${ALLOW_NETWORKING_PACKAGES}; do
 		case "${pkgname%-*}" in
