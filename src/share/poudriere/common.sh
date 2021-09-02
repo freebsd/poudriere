@@ -5425,6 +5425,7 @@ ensure_pkg_installed() {
 	local host_ver injail_ver mnt
 
 	_my_path mnt
+	[ -n "${PKG_BIN}" ] || err 1 "ensure_pkg_installed: empty PKG_BIN"
 	if [ -z "${force}" ] && [ -x "${mnt}${PKG_BIN}" ]; then
 		return 0
 	fi
@@ -5438,15 +5439,17 @@ ensure_pkg_installed() {
 		injail_ver=${injail_ver%.*}
 		host_ver=$(/usr/local/sbin/pkg-static -v)
 		if [ "${host_ver}" = "${injail_ver}" ]; then
-			cp -f /usr/local/sbin/pkg-static "${mnt}/.p/pkg-static"
+			cp -f /usr/local/sbin/pkg-static "${mnt}/${PKG_BIN}"
 			return 0
 		fi
 	fi
 	if [ ! -r "${MASTERMNT}/packages/Latest/pkg.${PKG_EXT}" ]; then
 		return 1
 	fi
-	injail tar xf "/packages/Latest/pkg.${PKG_EXT}" -C / \
-		-s ",/.*/,.p/,g" "*/pkg-static"
+	mkdir -p "${MASTERMNT}/${PKG_BIN%/*}" ||
+	    err 1 "ensure_pkg_installed: mkdir ${MASTERMNT}/${PKG_BIN%/*}"
+	injail tar xf "/packages/Latest/pkg.${PKG_EXT}" \
+	    -C "${PKG_BIN%/*}" -s ",.*/,," "*/pkg-static"
 }
 
 delete_pkg() {
