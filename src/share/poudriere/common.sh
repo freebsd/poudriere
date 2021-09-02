@@ -7744,6 +7744,7 @@ prepare_ports() {
 
 	# Skip incremental build for pkgclean
 	if was_a_bulk_run; then
+		install -lsr "${log}" "${PACKAGES}/logs"
 		delete_old_pkgs
 
 		if [ ${SKIP_RECURSIVE_REBUILD} -eq 0 ]; then
