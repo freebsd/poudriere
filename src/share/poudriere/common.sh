@@ -3614,7 +3614,7 @@ download_from_repo() {
 		    print $3
 	    }')
 	cnt=$(wc -l ${wantedpkgs} | awk '{print $1}')
-	msg "Package fetch: Will fetch ${cnt} packages from ${packagesite_resolved}"
+	msg "Package fetch: Will fetch ${cnt} packages from remote or local pkg cache"
 
 	cp -f "${wantedpkgs}" "pkg_fetch"
 	echo "${packagesite_resolved}" > "pkg_fetch_url"
