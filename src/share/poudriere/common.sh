@@ -7526,7 +7526,7 @@ trim_ignored_pkg() {
 prepare_ports() {
 	local pkg
 	local log log_top
-	local n resuming_build
+	local n resuming_build delete_all
 	local cache_dir sflag delete_pkg_list shash_bucket
 
 	pkgqueue_init
@@ -7617,34 +7617,23 @@ prepare_ports() {
 	bset status "sanity:"
 
 	if was_a_bulk_run; then
-		if [ -f ${PACKAGES}/.jailversion ]; then
-			if [ "$(cat ${PACKAGES}/.jailversion)" != \
-			    "$(jget ${JAILNAME} version)" ]; then
-				JAIL_NEEDS_CLEAN=1
-			fi
-		fi
-
 		# Stash dependency graph
 		cp -f "${MASTERMNT}/.p/pkg_deps" "${log}/.poudriere.pkg_deps%"
 		cp -f "${MASTERMNT}/.p/all_pkgs" "${log}/.poudriere.all_pkgs%"
 
-		if [ ${JAIL_NEEDS_CLEAN} -eq 1 ]; then
-			msg_n "Cleaning all packages due to newer version of the jail..."
-			rm -rf ${PACKAGES:?}/* ${cache_dir}
-			echo " done"
+		if [ -f "${PACKAGES}/.jailversion" ] &&
+		    [ "$(cat ${PACKAGES}/.jailversion)" != \
+		    "$(jget ${JAILNAME} version)" ]; then
+			delete_all="newer version of jail"
 		elif [ ${CLEAN} -eq 1 ]; then
 			if [ "${ATOMIC_PACKAGE_REPOSITORY}" != "yes" ] && \
 			    package_dir_exists_and_has_packages; then
 				confirm_if_tty "Are you sure you want to clean all packages?" || \
 				    err 1 "Not cleaning all packages"
 			fi
-			msg_n "(-c) Cleaning all packages..."
-			rm -rf ${PACKAGES:?}/* ${cache_dir}
-			echo " done"
-		fi
-
-		if [ ${CLEAN_LISTED} -eq 1 ]; then
-			msg "(-C) Cleaning specified packages to build"
+			delete_all="-c specified"
+		elif [ ${CLEAN_LISTED} -eq 1 ]; then
+			msg "-C specified, cleaning listed packages"
 			delete_pkg_list=$(mktemp -t poudriere.cleanC)
 			clear_dep_fatal_error
 			listed_pkgnames | while mapfile_read_loop_redir \
@@ -7671,6 +7660,13 @@ prepare_ports() {
 			cat "${delete_pkg_list}" | tr '\n' '\000' | \
 			    xargs -0 rm -rf
 			unlink "${delete_pkg_list}" || :
+		elif ! ensure_pkg_installed; then
+			delete_all="pkg package missing"
+		fi
+		if [ -n "${delete_all}" ]; then
+			msg_n "${delete_all}, cleaning all packages..."
+			rm -rf ${PACKAGES:?}/* ${cache_dir}
+			echo " done"
 		fi
 
 		# If the build is being resumed then packages already
@@ -7702,15 +7698,6 @@ prepare_ports() {
 		fi
 		download_from_repo
 		bset status "sanity:"
-
-		if ! ensure_pkg_installed; then
-			msg_n "pkg package missing, cleaning all packages..."
-			rm -rf ${PACKAGES:?}/* ${cache_dir}
-			echo " done"
-		else
-			P_PKG_ABI="$(injail ${PKG_BIN} config ABI)" || \
-			    err 1 "Failure looking up pkg ABI"
-		fi
 	fi
 
 	msg "Sanity checking the repository"
@@ -7733,6 +7720,11 @@ prepare_ports() {
 	# Skip incremental build for pkgclean
 	if was_a_bulk_run; then
 		install -lsr "${log}" "${PACKAGES}/logs"
+
+		if ensure_pkg_installed; then
+			P_PKG_ABI="$(injail ${PKG_BIN} config ABI)" || \
+			    err 1 "Failure looking up pkg ABI"
+		fi
 		delete_old_pkgs
 
 		if [ ${SKIP_RECURSIVE_REBUILD} -eq 0 ]; then
@@ -8524,7 +8516,6 @@ fi
 : ${ALL:=0}
 : ${CLEAN:=0}
 : ${CLEAN_LISTED:=0}
-: ${JAIL_NEEDS_CLEAN:=0}
 : ${VERBOSE:=0}
 : ${QEMU_EMULATING:=0}
 : ${PORTTESTING:=0}
