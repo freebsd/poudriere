@@ -5434,34 +5434,31 @@ deps_fetch_vars() {
 
 ensure_pkg_installed() {
 	local force="$1"
-	local host_ver injail_ver mnt pkg_ext
+	local host_ver injail_ver mnt
 
 	_my_path mnt
-	[ -z "${force}" ] && [ -x "${mnt}${PKG_BIN}" ] && return 0
+	if [ -z "${force}" ] && [ -x "${mnt}${PKG_BIN}" ]; then
+		return 0
+	fi
 	# Hack, speed up QEMU usage on pkg-repo.
 	if [ ${QEMU_EMULATING} -eq 1 ] && \
-	    [ -f /usr/local/sbin/pkg-static ]; then
-		for pkg_ext in ${PKG_EXT} txz; do
-			[ -r "${MASTERMNT}/packages/Latest/pkg.${pkg_ext}" ] || continue
-			injail_ver=$(realpath "${MASTERMNT}/packages/Latest/pkg.${pkg_ext}")
-			injail_ver=${injail_ver##*/}
-			injail_ver=${injail_ver##*-}
-			injail_ver=${injail_ver%.*}
-			host_ver=$(/usr/local/sbin/pkg-static -v)
-			if [ "${host_ver}" = "${injail_ver}" ]; then
-				cp -f /usr/local/sbin/pkg-static "${mnt}/.p/pkg-static"
-				return 0
-			fi
-		done
+	    [ -x /usr/local/sbin/pkg-static ] &&
+	    [ -r "${MASTERMNT}/packages/Latest/pkg.${PKG_EXT}" ]; then
+		injail_ver=$(realpath "${MASTERMNT}/packages/Latest/pkg.${PKG_EXT}")
+		injail_ver=${injail_ver##*/}
+		injail_ver=${injail_ver##*-}
+		injail_ver=${injail_ver%.*}
+		host_ver=$(/usr/local/sbin/pkg-static -v)
+		if [ "${host_ver}" = "${injail_ver}" ]; then
+			cp -f /usr/local/sbin/pkg-static "${mnt}/.p/pkg-static"
+			return 0
+		fi
 	fi
-	for pkg_ext in ${PKG_EXT} txz; do
-		[ -r "${MASTERMNT}/packages/Latest/pkg.${pkg_ext}" ] || \
-		    continue
-		injail tar xf "/packages/Latest/pkg.${pkg_ext}" -C / \
-		    -s ",/.*/,.p/,g" "*/pkg-static"
-		return
-	done
-	return 1 #pkg missing
+	if [ ! -r "${MASTERMNT}/packages/Latest/pkg.${PKG_EXT}" ]; then
+		return 1
+	fi
+	injail tar xf "/packages/Latest/pkg.${PKG_EXT}" -C / \
+		-s ",/.*/,.p/,g" "*/pkg-static"
 }
 
 delete_pkg() {
