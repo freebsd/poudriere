@@ -7616,14 +7616,14 @@ prepare_ports() {
 
 	bset status "sanity:"
 
-	if [ -f ${PACKAGES}/.jailversion ]; then
-		if [ "$(cat ${PACKAGES}/.jailversion)" != \
-		    "$(jget ${JAILNAME} version)" ]; then
-			JAIL_NEEDS_CLEAN=1
-		fi
-	fi
-
 	if was_a_bulk_run; then
+		if [ -f ${PACKAGES}/.jailversion ]; then
+			if [ "$(cat ${PACKAGES}/.jailversion)" != \
+			    "$(jget ${JAILNAME} version)" ]; then
+				JAIL_NEEDS_CLEAN=1
+			fi
+		fi
+
 		# Stash dependency graph
 		cp -f "${MASTERMNT}/.p/pkg_deps" "${log}/.poudriere.pkg_deps%"
 		cp -f "${MASTERMNT}/.p/all_pkgs" "${log}/.poudriere.all_pkgs%"
@@ -7702,15 +7702,15 @@ prepare_ports() {
 		fi
 		download_from_repo
 		bset status "sanity:"
-	fi
 
-	if ! ensure_pkg_installed; then
-		msg_n "pkg package missing, cleaning all packages..."
-		rm -rf ${PACKAGES:?}/* ${cache_dir}
-		echo " done"
-	else
-		P_PKG_ABI="$(injail ${PKG_BIN} config ABI)" || \
-		    err 1 "Failure looking up pkg ABI"
+		if ! ensure_pkg_installed; then
+			msg_n "pkg package missing, cleaning all packages..."
+			rm -rf ${PACKAGES:?}/* ${cache_dir}
+			echo " done"
+		else
+			P_PKG_ABI="$(injail ${PKG_BIN} config ABI)" || \
+			    err 1 "Failure looking up pkg ABI"
+		fi
 	fi
 
 	msg "Sanity checking the repository"
@@ -7747,9 +7747,7 @@ prepare_ports() {
 		delete_stale_symlinks_and_empty_dirs
 		download_from_repo_post_delete
 		bset status "sanity:"
-	fi
 
-	if was_a_bulk_run; then
 		# Cleanup cached data that is no longer needed.
 		(
 			cd "${SHASH_VAR_PATH}"
