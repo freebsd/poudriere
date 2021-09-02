@@ -2010,6 +2010,9 @@ enter_interactive() {
 	To see this again: cat /etc/motd
 	EOF
 
+	if [ "${PORTBUILD_USER}" != "root" ]; then
+		chown -R "${PORTBUILD_USER}" "${MASTERMNT}/wrkdirs"
+	fi
 	if [ ${INTERACTIVE_MODE} -eq 1 ]; then
 		msg "Entering interactive test mode. Type 'exit' when done."
 		if injail pw groupmod -n wheel -m "${PORTBUILD_USER}"; then
