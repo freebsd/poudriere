@@ -3657,6 +3657,9 @@ download_from_repo() {
 		if [ -f "${PACKAGES}/All/${pkgname}.${PKG_EXT}" ]; then
 			ln -fhs "../All/${pkgname}.${PKG_EXT}" \
 			    "${PACKAGES}/Latest/pkg.${PKG_EXT}"
+			# Backwards compat for bootstrap
+			ln -fhs "../All/${pkgname}.${PKG_EXT}" \
+			    "${PACKAGES}/Latest/pkg.txz"
 			ensure_pkg_installed || \
 			    err 1 "download_from_repo: failure to bootstrap pkg"
 		fi
