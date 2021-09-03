@@ -5448,14 +5448,35 @@ delete_old_pkg() {
 	local pkgbase new_pkgbase flavor pkg_flavor originspec
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor dep_dep_args
 	local ignore new_origin stale_pkg dep_args pkg_dep_args
-	local pkg_arch no_arch arch
+	local pkg_arch no_arch arch is_sym
 
 	pkgfile="${pkg##*/}"
 	pkgname="${pkgfile%.*}"
 
 	if [ "${DELETE_UNKNOWN_FILES}" = "yes" ]; then
+		is_sym=0
+		if [ -L "${pkg}" ]; then
+			is_sym=1
+		fi
+		if [ "${is_sym}" -eq 1 ] && [ ! -e "${pkg}" ]; then
+			msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: dead symlink"
+			delete_pkg "${pkg}"
+			return 0
+		fi
 		case "${pkgfile}" in
 		*.${PKG_EXT}) ;;
+		*.txz)
+			# If this is a symlink to a .pkg file then just ignore
+			# as the ports framework or pkg sometimes creates them.
+			if [ "${is_sym}" -eq 1 ]; then
+				case "$(realpath "${pkg}")" in
+				*.${PKG_EXT})
+					msg_debug "Ignoring symlinked ${COLOR_PORT}${pkgfile}${COLOR_RESET}"
+					return 0
+					;;
+				esac
+			fi
+		;& # FALTHROUGH
 		*)
 			msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: unknown or obsolete file"
 			delete_pkg "${pkg}"
