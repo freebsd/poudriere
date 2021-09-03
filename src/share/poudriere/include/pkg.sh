@@ -312,3 +312,31 @@ delete_all_pkgs() {
 	rm -rf ${PACKAGES:?}/* ${cache_dir}
 	echo " done"
 }
+
+delete_pkg() {
+	[ $# -ne 1 ] && eargs delete_pkg pkg
+	local pkg="$1"
+
+	# Delete the package and the depsfile since this package is being deleted,
+	# which will force it to be recreated
+	unlink "${pkg}"
+	clear_pkg_cache "${pkg}"
+}
+
+# Keep in sync with delete_pkg
+delete_pkg_xargs() {
+	[ $# -ne 2 ] && eargs delete_pkg listfile pkg
+	local listfile="$1"
+	local pkg="$2"
+	local pkg_cache_dir
+
+	get_pkg_cache_dir pkg_cache_dir "${pkg}" 0
+
+	# Delete the package and the depsfile since this package is being deleted,
+	# which will force it to be recreated
+	{
+		echo "${pkg}"
+		echo "${pkg_cache_dir}"
+	} >> "${listfile}"
+	# XXX: May need clear_pkg_cache here if shash changes from file.
+}
