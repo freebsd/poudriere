@@ -7510,7 +7510,7 @@ trim_ignored_pkg() {
 prepare_ports() {
 	local pkg
 	local log log_top
-	local n resuming_build delete_all
+	local n resuming_build
 	local cache_dir sflag delete_pkg_list shash_bucket
 
 	pkgqueue_init
@@ -7606,15 +7606,17 @@ prepare_ports() {
 		if [ -f "${PACKAGES}/.jailversion" ] &&
 		    [ "$(cat ${PACKAGES}/.jailversion)" != \
 		    "$(jget ${JAILNAME} version)" ]; then
-			delete_all="newer version of jail"
-		elif [ ${CLEAN} -eq 1 ]; then
+			delete_all_pkgs "newer version of jail"
+		fi
+		if [ ${CLEAN} -eq 1 ]; then
 			if [ "${ATOMIC_PACKAGE_REPOSITORY}" != "yes" ] && \
 			    package_dir_exists_and_has_packages; then
 				confirm_if_tty "Are you sure you want to clean all packages?" || \
 				    err 1 "Not cleaning all packages"
 			fi
-			delete_all="-c specified"
-		elif [ ${CLEAN_LISTED} -eq 1 ]; then
+			delete_all_pkgs "-c specified"
+		fi
+		if [ ${CLEAN_LISTED} -eq 1 ]; then
 			msg "-C specified, cleaning listed packages"
 			delete_pkg_list=$(mktemp -t poudriere.cleanC)
 			clear_dep_fatal_error
@@ -7642,13 +7644,9 @@ prepare_ports() {
 			cat "${delete_pkg_list}" | tr '\n' '\000' | \
 			    xargs -0 rm -rf
 			unlink "${delete_pkg_list}" || :
-		elif ! ensure_pkg_installed; then
-			delete_all="pkg package missing"
 		fi
-		if [ -n "${delete_all}" ]; then
-			msg_n "${delete_all}, cleaning all packages..."
-			rm -rf ${PACKAGES:?}/* ${cache_dir}
-			echo " done"
+		if ! ensure_pkg_installed; then
+			delete_all_pkgs "pkg package missing"
 		fi
 
 		# If the build is being resumed then packages already

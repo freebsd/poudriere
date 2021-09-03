@@ -303,3 +303,12 @@ delete_stale_pkg_cache() {
 
 	return 0
 }
+
+delete_all_pkgs() {
+	[ $# -eq 1 ] || eargs delete_all_pkgs reason
+	local reason="$1"
+
+	msg_n "${reason}, cleaning all packages..."
+	rm -rf ${PACKAGES:?}/* ${cache_dir}
+	echo " done"
+}
