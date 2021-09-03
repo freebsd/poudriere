@@ -3911,9 +3911,25 @@ gather_distfiles() {
 	shash_get pkgname-depend_specials "${pkgname}" specials || specials=
 
 	job_msg_dev "${COLOR_PORT}${origin}${flavor:+@${flavor}} | ${pkgname_main}${COLOR_RESET}: distfiles ${from} -> ${to}"
+	mkdir -p "${to}/${sub}"
+	(
+		cd "${to}/${sub}"
+		for d in ${dists}; do
+			case "${d}" in
+			*/*) ;;
+			*) continue ;;
+			esac
+			echo "${d%/*}"
+		done | sort -u | xargs mkdir -p
+	)
 	for d in ${dists}; do
-		[ -f ${from}/${sub}/${d} ] || continue
-		do_clone "${from}/${sub}/${d}" "${to}/${sub}/${d}" || return 1
+		if [ ! -f "${from}/${sub}/${d}" ]; then
+			continue
+		fi
+		# XXX: A --relative would be nice
+		install -pS -m 0644 "${from}/${sub}/${d}" \
+		    "${to}/${sub}/${d}" ||
+		    return 1
 	done
 
 	for special in ${specials}; do
