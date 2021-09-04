@@ -101,6 +101,8 @@ _err() {
 	# Avoid recursive err()->exit_handler()->err()... Just let
 	# exit_handler() cleanup.
 	if [ ${ERRORS_ARE_FATAL:-1} -eq 1 ]; then
+		show_build_summary
+		show_log_info
 		exit $1
 	else
 		return 0
@@ -1346,6 +1348,9 @@ log_url() {
 show_log_info() {
 	local log build_url
 
+	if ! was_a_bulk_run; then
+		return 0
+	fi
 	_log_path log
 	msg "Logs: ${log}"
 	if build_url build_url; then
