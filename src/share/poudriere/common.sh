@@ -5552,9 +5552,10 @@ ensure_pkg_installed() {
 # earlier cheaper checks may delete the package.
 #
 delete_old_pkg() {
-	[ $# -eq 1 ] || eargs delete_old_pkg pkgname
+	[ $# -eq 2 ] || eargs delete_old_pkg pkgname delete_unqueued
 	local pkg="$1"
-	local delete_unqueued mnt pkgfile pkgname new_pkgname
+	local delete_unqueued="$2"
+	local mnt pkgfile pkgname new_pkgname
 	local origin v v2 compiled_options current_options current_deps
 	local td d key dpath dir found raw_deps compiled_deps
 	local pkg_origin compiled_deps_pkgnames compiled_deps_pkgbases
@@ -5562,7 +5563,7 @@ delete_old_pkg() {
 	local pkgbase new_pkgbase flavor pkg_flavor originspec
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor dep_dep_args
 	local ignore new_origin stale_pkg dep_args pkg_dep_args
-	local pkg_arch no_arch arch is_sym listpkgs
+	local pkg_arch no_arch arch is_sym
 
 	pkgfile="${pkg##*/}"
 	pkgname="${pkgfile%.*}"
@@ -5598,32 +5599,6 @@ delete_old_pkg() {
 			;;
 		esac
 	fi
-
-	# Should unqueued packages be deleted?
-	# Care is done because there are multiple use cases for Poudriere.
-	# Some users only ever do `bulk -a`, or `bulk -f mostly-static-list`,
-	# but some do testing of subsets of their repository.  With subsets if
-	# they test a port that has no dependencies then we would otherwise
-	# delete everything but that package in the repository here.
-	# An override is also provided for cases not thought of ("no") or for
-	# users who don't mind subsets deleting everything else ("always").
-	if [ -z "${LISTPKGS}" ]; then
-		listpkgs=0
-	else
-		listpkgs=1
-	fi
-	case "${DELETE_UNQUEUED_PACKAGES},${PORTTESTING}${CLEAN_LISTED},${ALL},${listpkgs}" in
-	always,*)	delete_unqueued=1 ;;
-	# -a owns the repo
-	yes,*,1,*)	delete_unqueued=1 ;;
-	# Avoid deleting everything if the user is testing as they likely
-	# have queued a small subset of the repo.  Testing is considered to
-	# be testport, bulk -t, or bulk -C.
-	yes,*1*,*,*)	delete_unqueued=0 ;;
-	# -f owns the repo if testing/-C isn't happening
-	yes,*,*,1)	delete_unqueued=1 ;;
-	*)		delete_unqueued=0 ;;
-	esac
 
 	# Delete FORBIDDEN packages
 	if shash_remove pkgname-forbidden "${pkgname}" ignore; then
@@ -5934,16 +5909,43 @@ delete_old_pkg() {
 }
 
 delete_old_pkgs() {
+	local delete_unqueued listpkgs
 
 	msg "Checking packages for incremental rebuild needs"
 	run_hook delete_old_pkgs start
+
+	# Should unqueued packages be deleted?
+	# Care is done because there are multiple use cases for Poudriere.
+	# Some users only ever do `bulk -a`, or `bulk -f mostly-static-list`,
+	# but some do testing of subsets of their repository.  With subsets if
+	# they test a port that has no dependencies then we would otherwise
+	# delete everything but that package in the repository here.
+	# An override is also provided for cases not thought of ("no") or for
+	# users who don't mind subsets deleting everything else ("always").
+	if [ -z "${LISTPKGS}" ]; then
+		listpkgs=0
+	else
+		listpkgs=1
+	fi
+	case "${DELETE_UNQUEUED_PACKAGES},${PORTTESTING}${CLEAN_LISTED},${ALL},${listpkgs}" in
+	always,*)	delete_unqueued=1 ;;
+	# -a owns the repo
+	yes,*,1,*)	delete_unqueued=1 ;;
+	# Avoid deleting everything if the user is testing as they likely
+	# have queued a small subset of the repo.  Testing is considered to
+	# be testport, bulk -t, or bulk -C.
+	yes,*1*,*,*)	delete_unqueued=0 ;;
+	# -f owns the repo if testing/-C isn't happening
+	yes,*,*,1)	delete_unqueued=1 ;;
+	*)		delete_unqueued=0 ;;
+	esac
 
 	parallel_start
 	for pkg in ${PACKAGES}/All/*; do
 		case "${pkg}" in
 		"${PACKAGES}/All/*")  break ;;
 		esac
-		parallel_run delete_old_pkg "${pkg}"
+		parallel_run delete_old_pkg "${pkg}" "${delete_unqueued}"
 	done
 	parallel_stop
 
