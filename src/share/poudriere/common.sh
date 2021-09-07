@@ -5562,7 +5562,7 @@ delete_old_pkg() {
 	local pkgbase new_pkgbase flavor pkg_flavor originspec
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor dep_dep_args
 	local ignore new_origin stale_pkg dep_args pkg_dep_args
-	local pkg_arch no_arch arch is_sym
+	local pkg_arch no_arch arch is_sym listpkgs
 
 	pkgfile="${pkg##*/}"
 	pkgname="${pkgfile%.*}"
@@ -5607,17 +5607,21 @@ delete_old_pkg() {
 	# delete everything but that package in the repository here.
 	# An override is also provided for cases not thought of ("no") or for
 	# users who don't mind subsets deleting everything else ("always").
-	case "${DELETE_UNQUEUED_PACKAGES},${PORTTESTING}${CLEAN_LISTED},${ALL}" in
+	if [ -z "${LISTPKGS}" ]; then
+		listpkgs=0
+	else
+		listpkgs=1
+	fi
+	case "${DELETE_UNQUEUED_PACKAGES},${PORTTESTING}${CLEAN_LISTED},${ALL},${listpkgs}" in
 	always,*)	delete_unqueued=1 ;;
 	# -a owns the repo
-	yes,*,1)	delete_unqueued=1 ;;
+	yes,*,1,*)	delete_unqueued=1 ;;
 	# Avoid deleting everything if the user is testing as they likely
 	# have queued a small subset of the repo.  Testing is considered to
 	# be testport, bulk -t, or bulk -C.
-	yes,*1*,0)	delete_unqueued=0 ;;
-	# If we are not concerned about testing or subsets then we are free to
-	# delete everything.
-	yes,*)		delete_unqueued=1 ;;
+	yes,*1*,*,*)	delete_unqueued=0 ;;
+	# -f owns the repo if testing/-C isn't happening
+	yes,*,*,1)	delete_unqueued=1 ;;
 	*)		delete_unqueued=0 ;;
 	esac
 
