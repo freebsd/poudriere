@@ -3776,7 +3776,7 @@ download_from_repo_post_delete() {
 	parallel_start
 	while mapfile_read_loop "pkg_fetch" fpkgname; do
 		if [ ! -e "${PACKAGES}/All/${fpkgname}.${PKG_EXT}" ]; then
-			msg_verbose "download_from_repo_post_delete: We lost ${COLOR_PORT}${fpkgname}.${PKG_EXT}${COLOR_RESET}" >&2
+			msg_debug "download_from_repo_post_delete: We lost ${COLOR_PORT}${fpkgname}.${PKG_EXT}${COLOR_RESET}" >&2
 			continue
 		fi
 		echo "${fpkgname}"
