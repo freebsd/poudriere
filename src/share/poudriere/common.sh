@@ -46,13 +46,19 @@ was_a_jail_run() {
 }
 schg_immutable_base() {
 	[ "${IMMUTABLE_BASE}" = "schg" ] || return 1
-	[ ${TMPFS_ALL} -eq 0 ] && [ -z "${NO_ZFS}" ] && return 1
+	if [ ${TMPFS_ALL} -eq 0 ] && [ -z "${NO_ZFS}" ]; then
+		return 1
+	fi
 	return 0
 }
 # Return true if output via msg() should show elapsed time
 should_show_elapsed() {
-	[ -z "${TIME_START}" ] && return 1
-	[ "${NO_ELAPSED_IN_MSG:-0}" -eq 1 ] && return 1
+	if [ -z "${TIME_START}" ]; then
+		return 1
+	fi
+	if [ "${NO_ELAPSED_IN_MSG:-0}" -eq 1 ]; then
+		return 1
+	fi
 	case "${SCRIPTNAME}" in
 		daemon.sh) ;;
 		help.sh) ;;
@@ -67,7 +73,9 @@ should_show_elapsed() {
 not_for_os() {
 	local os=$1
 	shift
-	[ "${os}" = "${BSDPLATFORM}" ] && err 1 "This is not supported on ${BSDPLATFORM}: $*"
+	if [ "${os}" = "${BSDPLATFORM}" ]; then
+		err 1 "This is not supported on ${BSDPLATFORM}: $*"
+	fi
 }
 
 _err() {
@@ -307,8 +315,9 @@ _mastermnt() {
 		    awk '{print substr($0, 0, 6)}')
 		mnt="${POUDRIERE_DATA}/.m/${hashed_name}/ref"
 		mnttest="${mnt}${testpath}"
-		[ ${#mnttest} -ge $((mnamelen - 1)) ] && \
-		    err 1 "Mountpath '${mnt}' exceeds system MNAMELEN limit of ${mnamelen}. Unable to mount. Try shortening BASEFS."
+		if [ ${#mnttest} -ge $((mnamelen - 1)) ]; then
+			err 1 "Mountpath '${mnt}' exceeds system MNAMELEN limit of ${mnamelen}. Unable to mount. Try shortening BASEFS."
+		fi
 		msg_warn "MASTERNAME '${MASTERNAME}' too long for mounting, using hashed version of '${hashed_name}'"
 	fi
 
@@ -663,19 +672,21 @@ jstart() {
 		path=${MASTERMNT}${MY_JOBID:+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${network} ${JAIL_PARAMS}
-	[ "${USE_JEXECD}" = "yes" ] && \
-	    jexecd -j ${name} -d ${MASTERMNT}/../ \
-	    ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}} \
-	    ${MAX_FILES+-n ${MAX_FILES}}
+	if [ "${USE_JEXECD}" = "yes" ]; then
+		jexecd -j ${name} -d ${MASTERMNT}/../ \
+		    ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}} \
+		    ${MAX_FILES+-n ${MAX_FILES}}
+	fi
 	# Allow networking in -n jail
 	jail -c persist name=${name}-n \
 		path=${MASTERMNT}${MY_JOBID:+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${ipargs} ${JAIL_PARAMS} ${JAIL_NET_PARAMS}
-	[ "${USE_JEXECD}" = "yes" ] && \
-	    jexecd -j ${name}-n -d ${MASTERMNT}/../ \
-	    ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}} \
-	    ${MAX_FILES+-n ${MAX_FILES}}
+	if [ "${USE_JEXECD}" = "yes" ]; then
+		jexecd -j ${name}-n -d ${MASTERMNT}/../ \
+		    ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}} \
+		    ${MAX_FILES+-n ${MAX_FILES}}
+	fi
 	return 0
 }
 
@@ -684,7 +695,9 @@ jail_has_processes() {
 
 	# 2 = HEADER+ps itself
 	pscnt=2
-	[ "${USE_JEXECD}" = "yes" ] && pscnt=4
+	if [ "${USE_JEXECD}" = "yes" ]; then
+		pscnt=4
+	fi
 	# Cannot use ps -J here as not all versions support it.
 	if [ $(injail ps aux | wc -l) -ne ${pscnt} ]; then
 		return 0
@@ -703,7 +716,9 @@ jkill_wait() {
 # Kill everything in the jail and ensure it is free of any processes
 # before returning.
 jkill() {
-	[ "${USE_JEXECD}" = "yes" ] && return 0
+	if [ "${USE_JEXECD}" = "yes" ]; then
+		return 0
+	fi
 	jkill_wait
 	JNETNAME="n" jkill_wait
 }
@@ -810,7 +825,9 @@ log_start() {
 	export OUTPUT_REDIRECTED_STDERR=4
 	# Pipe output to tee(1) or timestamp if needed.
 	if [ ${need_tee} -eq 1 ] || [ "${TIMESTAMP_LOGS}" = "yes" ]; then
-		[ ! -e ${logfile}.pipe ] && mkfifo ${logfile}.pipe
+		if [ ! -e ${logfile}.pipe ]; then
+			mkfifo ${logfile}.pipe
+		fi
 		if [ ${need_tee} -eq 1 ]; then
 			if [ "${TIMESTAMP_LOGS}" = "yes" ]; then
 				# Unbuffered for 'echo -n' support.
@@ -993,9 +1010,9 @@ buildlog_stop() {
 
 	echo "build of ${originspec} | ${pkgname} ended at $(date)"
 	echo "build time: ${buildtime}"
-	[ ${build_failed} -gt 0 ] && echo "!!! build failure encountered !!!"
-
-	return 0
+	if [ ${build_failed} -gt 0 ]; then
+		echo "!!! build failure encountered !!!"
+	fi
 }
 
 log_stop() {
@@ -1047,7 +1064,9 @@ attr_get() {
 	local attr_get_data
 
 	if _attr_get attr_get_data "$@"; then
-		[ -n "${attr_get_data}" ] && echo "${attr_get_data}"
+		if [ -n "${attr_get_data}" ]; then
+			echo "${attr_get_data}"
+		fi
 		return 0
 	fi
 	return 1
@@ -1123,8 +1142,9 @@ bset() {
 	property="$1"
 	file=".poudriere.${property}${id:+.${id}}"
 	shift
-	[ "${property}" = "status" ] && \
-	    echo "$@" >> ${log}/${file}.journal% || :
+	if [ "${property}" = "status" ]; then
+		echo "$@" >> ${log}/${file}.journal% || :
+	fi
 	write_atomic "${log:?}/${file}" <<-EOF
 	$@
 	EOF
@@ -1318,7 +1338,9 @@ exit_handler() {
 		jail_cleanup
 	fi
 
-	[ -n "${CLEANUP_HOOK-}" ] && ${CLEANUP_HOOK}
+	if [ -n "${CLEANUP_HOOK-}" ]; then
+		${CLEANUP_HOOK}
+	fi
 
 	if lock_have "jail_start_${MASTERNAME}"; then
 		slock_release "jail_start_${MASTERNAME}" || :
@@ -1369,8 +1391,9 @@ show_dry_run_summary() {
 	msg "Dry run mode, cleaning up and exiting"
 	tobuild=$(calculate_tobuild)
 	if [ ${tobuild} -gt 0 ]; then
-		[ ${PARALLEL_JOBS} -gt ${tobuild} ] &&
-		    PARALLEL_JOBS=${tobuild##* }
+		if [ ${PARALLEL_JOBS} -gt ${tobuild} ]; then
+			PARALLEL_JOBS=${tobuild##* }
+		fi
 		msg "Would build ${tobuild} packages using ${PARALLEL_JOBS} builders"
 
 		if [ "${ALL}" -eq 0 ] || [ "${VERBOSE}" -ge 1 ]; then
@@ -1699,9 +1722,15 @@ markfs() {
 	msg_n "Recording filesystem state for ${name}..."
 
 	case "${name}" in
-	clean) [ -n "${fs}" ] && dozfs=1 ;;
+	clean)
+		if [ -n "${fs}" ]; then
+			dozfs=1
+		fi
+		;;
 	prepkg)
-		[ -n "${fs}" ] && dozfs=1
+		if [ -n "${fs}" ]; then
+			dozfs=1
+		fi
 		# Only create prepkg mtree in ref
 		# Everything else may need to snapshot
 		if [ "${mnt##*/}" = "ref" ]; then
@@ -2372,7 +2401,9 @@ symlink to .latest/${name}"
 		    xargs rm -rf 2>/dev/null || :
 	else
 		# Remove old and shadow dir
-		[ -n "${pkgdir_old}" ] && rm -rf ${pkgdir_old} 2>/dev/null || :
+		if [ -n "${pkgdir_old}" ]; then
+			rm -rf ${pkgdir_old} 2>/dev/null || :
+		fi
 	fi
 }
 
@@ -2733,7 +2764,7 @@ unset_cross_env() {
 }
 
 jail_start() {
-	[ $# -lt 2 ] && eargs jail_start name ptname setname
+	[ $# -ge 2 ] || eargs jail_start name ptname setname
 	local name=$1
 	local ptname=$2
 	local setname=$3
@@ -2768,7 +2799,9 @@ jail_start() {
 
 	JAIL_OSVERSION=$(awk '/\#define __FreeBSD_version/ { print $3 }' "${mnt}/usr/include/sys/param.h")
 
-	[ ${JAIL_OSVERSION} -lt 900000 ] && needkld="${needkld} sem"
+	if [ ${JAIL_OSVERSION} -lt 900000 ]; then
+		needkld="${needkld} sem"
+	fi
 
 	case "${setname}" in
 	*-*)
@@ -2781,12 +2814,14 @@ jail_start() {
 	fi
 	schg_immutable_base && [ $(sysctl -n kern.securelevel) -ge 1 ] && \
 	    err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags for IMMUTABLE_BASE=schg."
-	[ ${TMPFS_ALL} -eq 0 ] && [ ${TMPFS_WRKDIR} -eq 0 ] \
-	    && [ $(sysctl -n kern.securelevel) -ge 1 ] && \
-	    err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags. USE_TMPFS with 'wrkdir' or 'all' values can avoid this."
-	[ ${TMPFS_ALL} -eq 0 ] && [ ${TMPFS_LOCALBASE} -eq 0 ] \
-	    && [ $(sysctl -n kern.securelevel) -ge 1 ] && \
-	    err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags. USE_TMPFS with 'localbase' or 'all' values can avoid this."
+	if [ ${TMPFS_ALL} -eq 0 ] && [ ${TMPFS_WRKDIR} -eq 0 ] \
+	    && [ $(sysctl -n kern.securelevel) -ge 1 ]; then
+		err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags. USE_TMPFS with 'wrkdir' or 'all' values can avoid this."
+	fi
+	if [ ${TMPFS_ALL} -eq 0 ] && [ ${TMPFS_LOCALBASE} -eq 0 ] \
+	    && [ $(sysctl -n kern.securelevel) -ge 1 ]; then
+		err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags. USE_TMPFS with 'localbase' or 'all' values can avoid this."
+	fi
 	[ "${name#*.*}" = "${name}" ] ||
 		err 1 "The jail name cannot contain a period (.). See jail(8)"
 	[ "${ptname#*.*}" = "${ptname}" ] ||
@@ -2828,17 +2863,24 @@ jail_start() {
 		    nested_perm="${nested_perm:+${nested_perm} }allow.mount.devfs"
 		[ $(sysctl -n security.jail.mount_nullfs_allowed) -eq 1 ] || \
 		    nested_perm="${nested_perm:+${nested_perm} }allow.mount.nullfs"
-		[ "${USE_TMPFS}" != "no" ] && \
-		    [ $(sysctl -n security.jail.mount_tmpfs_allowed) -eq 0 ] && \
-		    nested_perm="${nested_perm:+${nested_perm} }allow.mount.tmpfs (with USE_TMPFS=${USE_TMPFS})"
-		[ -n "${nested_perm}" ] && \
-		    err 1 "Nested jail requires these missing params: ${nested_perm}"
+		if [ "${USE_TMPFS}" != "no" ] && \
+		    [ $(sysctl -n security.jail.mount_tmpfs_allowed) -eq 0 ]; then
+			nested_perm="${nested_perm:+${nested_perm} }allow.mount.tmpfs (with USE_TMPFS=${USE_TMPFS})"
+		fi
+		if [ -n "${nested_perm}" ]; then
+			err 1 "Nested jail requires these missing params: ${nested_perm}"
+		fi
 	fi
-	[ "${USE_TMPFS}" != "no" ] && needfs="${needfs} tmpfs"
-	[ "${USE_PROCFS}" = "yes" ] && needfs="${needfs} procfs"
-	[ "${USE_FDESCFS}" = "yes" ] && \
-	    [ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ] && \
-	    needfs="${needfs} fdescfs"
+	if [ "${USE_TMPFS}" != "no" ]; then
+		needfs="${needfs} tmpfs"
+	fi
+	if [ "${USE_PROCFS}" = "yes" ]; then
+		needfs="${needfs} procfs"
+	fi
+	if [ "${USE_FDESCFS}" = "yes" ] && \
+	    [ ${JAILED} -eq 0 -o "${PATCHED_FS_KERNEL}" = "yes" ]; then
+		needfs="${needfs} fdescfs"
+	fi
 	for fs in ${needfs}; do
 		if ! lsvfs $fs >/dev/null 2>&1; then
 			if [ $JAILED -eq 0 ]; then
@@ -2878,7 +2920,9 @@ jail_start() {
 
 	# Only set STATUS=1 if not turned off
 	# jail -s should not do this or jail will stop on EXIT
-	[ ${SET_STATUS_ON_START-1} -eq 1 ] && export STATUS=1
+	if [ ${SET_STATUS_ON_START-1} -eq 1 ]; then
+		export STATUS=1
+	fi
 
 	# Mount tmpfs at the root to avoid crossing tmpfs-zfs-tmpfs boundary
 	# for cloning.
@@ -2972,8 +3016,9 @@ jail_start() {
 	for o in ${OVERLAYS}; do
 		echo "OVERLAYS+=${OVERLAYSDIR}/${o}"
 	done >> "${tomnt}/etc/make.conf"
-	[ -z "${NO_FORCE_PACKAGE}" ] && \
-	    echo "FORCE_PACKAGE=yes" >> "${tomnt}/etc/make.conf"
+	if [ -z "${NO_FORCE_PACKAGE}" ]; then
+		echo "FORCE_PACKAGE=yes" >> "${tomnt}/etc/make.conf"
+	fi
 	if [ -z "${NO_PACKAGE_BUILDING}" ]; then
 		echo "PACKAGE_BUILDING=yes" >> "${tomnt}/etc/make.conf"
 		export PACKAGE_BUILDING=yes
@@ -2982,7 +3027,9 @@ jail_start() {
 
 	setup_makeconf ${tomnt}/etc/make.conf ${name} ${ptname} ${setname}
 
-	[ -n "${RESOLV_CONF}" ] && cp -v "${RESOLV_CONF}" "${tomnt}/etc/"
+	if [ -n "${RESOLV_CONF}" ]; then
+		cp -v "${RESOLV_CONF}" "${tomnt}/etc/"
+	fi
 	msg "Starting jail ${MASTERNAME}"
 	jstart
 	# Safe to release the lock now as jail_runs() will block further bulks.
@@ -3080,19 +3127,24 @@ jail_start() {
 }
 
 load_blacklist() {
-	[ $# -lt 2 ] && eargs load_blacklist name ptname setname
+	[ $# -ge 2 ] || eargs load_blacklist name ptname setname
 	local name=$1
 	local ptname=$2
 	local setname=$3
 	local bl b bfile
 
 	bl="- ${setname} ${ptname} ${name}"
-	[ -n "${setname}" ] && bl="${bl} ${ptname}-${setname}"
+	if [ -n "${setname}" ]; then
+		bl="${bl} ${ptname}-${setname}"
+	fi
 	bl="${bl} ${name}-${ptname}"
-	[ -n "${setname}" ] && bl="${bl} ${name}-${setname} \
-		${name}-${ptname}-${setname}"
+	if [ -n "${setname}" ]; then
+		bl="${bl} ${name}-${setname} ${name}-${ptname}-${setname}"
+	fi
 	# If emulating always load a qemu-blacklist as it has special needs.
-	[ ${QEMU_EMULATING} -eq 1 ] && bl="${bl} qemu"
+	if [ ${QEMU_EMULATING} -eq 1 ]; then
+		bl="${bl} qemu"
+	fi
 	for b in ${bl} ; do
 		if [ "${b}" = "-" ]; then
 			unset b
@@ -3111,7 +3163,7 @@ load_blacklist() {
 }
 
 setup_makeconf() {
-	[ $# -lt 3 ] && eargs setup_makeconf dst_makeconf name ptname setname
+	[ $# -ge 3 ] || eargs setup_makeconf dst_makeconf name ptname setname
 	local dst_makeconf=$1
 	local name=$2
 	local ptname=$3
@@ -3139,10 +3191,14 @@ setup_makeconf() {
 	fi
 
 	makeconf="- ${setname} ${ptname} ${name}"
-	[ -n "${setname}" ] && makeconf="${makeconf} ${ptname}-${setname}"
+	if [ -n "${setname}" ]; then
+		makeconf="${makeconf} ${ptname}-${setname}"
+	fi
 	makeconf="${makeconf} ${name}-${ptname}"
-	[ -n "${setname}" ] && makeconf="${makeconf} ${name}-${setname} \
+	if [ -n "${setname}" ]; then
+		makeconf="${makeconf} ${name}-${setname} \
 		    ${name}-${ptname}-${setname}"
+	fi
 	for opt in ${makeconf}; do
 		append_make "${POUDRIERED}" "${opt}" "${dst_makeconf}"
 	done
@@ -3212,27 +3268,37 @@ include_poudriere_confs() {
 
 	if [ -r "${POUDRIERE_ETC}/poudriere.conf" ]; then
 		. "${POUDRIERE_ETC}/poudriere.conf"
-		[ ${debug} -gt 1 ] && msg_debug "Reading ${POUDRIERE_ETC}/poudriere.conf"
+		if [ ${debug} -gt 1 ]; then
+			msg_debug "Reading ${POUDRIERE_ETC}/poudriere.conf"
+		fi
 	elif [ -r "${POUDRIERED}/poudriere.conf" ]; then
 		. "${POUDRIERED}/poudriere.conf"
-		[ ${debug} -gt 1 ] && msg_debug "Reading ${POUDRIERED}/poudriere.conf"
+		if [ ${debug} -gt 1 ]; then
+			msg_debug "Reading ${POUDRIERED}/poudriere.conf"
+		fi
 	else
 		err 1 "Unable to find a readable poudriere.conf in ${POUDRIERE_ETC} or ${POUDRIERED}"
 	fi
 
 	files="${setname} ${ptname} ${jail}"
-	[ -n "${ptname}" -a -n "${setname}" ] && \
-	    files="${files} ${ptname}-${setname}"
-	[ -n "${jail}" -a -n "${ptname}" ] && \
-	    files="${files} ${jail}-${ptname}"
-	[ -n "${jail}" -a -n "${setname}" ] && \
-	    files="${files} ${jail}-${setname}"
-	[ -n "${jail}" -a -n "${setname}" -a -n "${ptname}" ] && \
-	    files="${files} ${jail}-${ptname}-${setname}"
+	if [ -n "${ptname}" -a -n "${setname}" ]; then
+		files="${files} ${ptname}-${setname}"
+	fi
+	if [ -n "${jail}" -a -n "${ptname}" ]; then
+		files="${files} ${jail}-${ptname}"
+	fi
+	if [ -n "${jail}" -a -n "${setname}" ]; then
+		files="${files} ${jail}-${setname}"
+	fi
+	if [ -n "${jail}" -a -n "${setname}" -a -n "${ptname}" ]; then
+		files="${files} ${jail}-${ptname}-${setname}"
+	fi
 	for file in ${files}; do
 		file="${POUDRIERED}/${file}-poudriere.conf"
 		if [ -r "${file}" ]; then
-			[ ${debug} -gt 1 ] && msg_debug "Reading ${file}"
+			if [ ${debug} -gt 1 ]; then
+				msg_debug "Reading ${file}"
+			fi
 			. "${file}"
 		fi
 	done
@@ -3241,7 +3307,7 @@ include_poudriere_confs() {
 }
 
 jail_stop() {
-	[ $# -ne 0 ] && eargs jail_stop
+	[ $# -eq 0 ] || eargs jail_stop
 	local last_status
 
 	# Make sure CWD is not inside the jail or MASTERMNT/.p, which may
@@ -3266,14 +3332,17 @@ jail_stop() {
 
 	# Don't override if there is a failure to grab the last status.
 	_bget last_status status || :
-	[ -n "${last_status}" ] && bset status "stopped:${last_status}" \
-	    2>/dev/null || :
+	if [ -n "${last_status}" ]; then
+		bset status "stopped:${last_status}" 2>/dev/null || :
+	fi
 }
 
 jail_cleanup() {
 	local wait_pids pid pidfile
 
-	[ -n "${CLEANED_UP-}" ] && return 0
+	if [ -n "${CLEANED_UP-}" ]; then
+		return 0
+	fi
 	msg "Cleaning up"
 
 	# Only bother with this if using jails as this may be being ran
@@ -3738,8 +3807,12 @@ validate_package_branch() {
 
 # return 0 if the package dir exists and has packages, 0 otherwise
 package_dir_exists_and_has_packages() {
-	[ ! -d ${PACKAGES}/All ] && return 1
-	dirempty ${PACKAGES}/All && return 1
+	if [ ! -d ${PACKAGES}/All ]; then
+		return 1
+	fi
+	if dirempty ${PACKAGES}/All; then
+		return 1
+	fi
 	# Check for non-empty directory with no packages in it
 	for pkg in ${PACKAGES}/All/*.${PKG_EXT}; do
 		[ "${pkg}" = \
@@ -3784,8 +3857,12 @@ sanity_check_pkgs() {
 		parallel_run sanity_check_pkg "${pkg}" || ret=$?
 	done
 	parallel_stop || ret=$?
-	[ ${ret} -eq 0 ] && return 0	# Nothing deleted
-	[ ${ret} -eq 65 ] && return 1	# Packages deleted
+	if [ ${ret} -eq 0 ]; then
+		return 0	# Nothing deleted
+	fi
+	if [ ${ret} -eq 65 ]; then
+		return 1	# Packages deleted
+	fi
 	err 1 "Failure during sanity check"
 }
 
@@ -3949,7 +4026,7 @@ gather_distfiles() {
 # Build+test port and return 1 on first failure
 # Return 2 on test failure if PORTTESTING_FATAL=no
 build_port() {
-	[ $# -ne 2 ] && eargs build_port originspec pkgname
+	[ $# -eq 2 ] || eargs build_port originspec pkgname
 	local originspec="$1"
 	local pkgname="$2"
 	local port flavor portdir
@@ -4023,12 +4100,14 @@ build_port() {
 		JUSER=${jailuser}
 		bset_job_status "${phase}" "${originspec}" "${pkgname}"
 		job_msg_verbose "Status   ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}: ${COLOR_PHASE}${phase}"
-		[ "${PORTTESTING}" -eq 1 ] && \
-		    phaseenv="${phaseenv:+${phaseenv} }DEVELOPER_MODE=yes"
+		if [ "${PORTTESTING}" -eq 1 ]; then
+			phaseenv="${phaseenv:+${phaseenv} }DEVELOPER_MODE=yes"
+		fi
 		case ${phase} in
 		check-sanity|patch)
-			[ "${PORTTESTING}" -eq 1 ] && \
-			    phaseenv="${phaseenv:+${phaseenv} }DEVELOPER=1"
+			if [ "${PORTTESTING}" -eq 1 ]; then
+				phaseenv="${phaseenv:+${phaseenv} }DEVELOPER=1"
+			fi
 			;;
 		fetch)
 			mkdir -p ${mnt}/portdistfiles
@@ -4049,7 +4128,11 @@ build_port() {
 				chown -R ${JUSER} ${mnt}/wrkdirs
 			fi
 			;;
-		configure) [ "${PORTTESTING}" -eq 1 ] && markfs prebuild ${mnt} ;;
+		configure)
+			if [ "${PORTTESTING}" -eq 1 ]; then
+				markfs prebuild ${mnt}
+			fi
+			;;
 		run-depends)
 			JUSER=root
 			if [ "${PORTTESTING}" -eq 1 ]; then
@@ -4066,11 +4149,18 @@ build_port() {
 			fi
 			;;
 		checksum|*-depends) JUSER=root ;;
-		stage) [ "${PORTTESTING}" -eq 1 ] && markfs prestage ${mnt} ;;
+		stage)
+			if [ "${PORTTESTING}" -eq 1 ]; then
+				markfs prestage ${mnt}
+			fi
+			;;
 		install)
 			max_execution_time=${MAX_EXECUTION_TIME_INSTALL}
 			JUSER=root
-			[ "${PORTTESTING}" -eq 1 ] && markfs preinst ${mnt} ;;
+			if [ "${PORTTESTING}" -eq 1 ]; then
+				markfs preinst ${mnt}
+			fi
+			;;
 		package)
 			max_execution_time=${MAX_EXECUTION_TIME_PACKAGE}
 			if [ "${PORTTESTING}" -eq 1 ]; then
@@ -4189,8 +4279,9 @@ build_port() {
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    stage-qa; then
 				msg "Error: stage-qa failures detected"
-				[ "${PORTTESTING_FATAL}" != "no" ] &&
+				if [ "${PORTTESTING_FATAL}" != "no" ]; then
 					return 1
+				fi
 				die=1
 			fi
 
@@ -4202,8 +4293,9 @@ build_port() {
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    check-plist; then
 				msg "Error: check-plist failures detected"
-				[ "${PORTTESTING_FATAL}" != "no" ] &&
+				if [ "${PORTTESTING_FATAL}" != "no" ]; then
 					return 1
+				fi
 				die=1
 			fi
 
@@ -4272,10 +4364,11 @@ build_port() {
 				die=1
 				cat ${mod1}
 			fi
-			[ ${die} -eq 1 -a "${PREFIX}" != "${LOCALBASE}" ] && \
-			    was_a_testport_run && msg \
-			    "This test was done with PREFIX!=LOCALBASE which \
+			if [ ${die} -eq 1 -a "${PREFIX}" != "${LOCALBASE}" ] &&
+			    was_a_testport_run; then
+				msg "This test was done with PREFIX!=LOCALBASE which \
 may show failures if the port does not respect PREFIX."
+			fi
 			rm -f ${add} ${add1} ${del} ${del1} ${mod} ${mod1}
 			[ $die -eq 0 ] || if [ "${PORTTESTING_FATAL}" != "no" ]; then
 				return 1
@@ -5720,9 +5813,17 @@ delete_old_pkg() {
 					;;
 				run)
 					case "${key}" in
-					/*) [ -e ${mnt}/${key} ] && found=yes ;;
-					*) [ -n "$(injail which ${key})" ] && \
-					    found=yes
+					/*)
+						if [ -e ${mnt}/${key} ]; then
+							found=yes
+						fi
+						;;
+					*)
+						if [ -n "$(injail \
+						    which ${key})" ]; then
+							found=yes
+						fi
+						;;
 					esac
 					;;
 				esac
@@ -5908,8 +6009,9 @@ _lock_release() {
 
 	hash_get have_lock "${lockname}" have_lock ||
 		err 1 "Releasing unheld lock ${lockname}"
-	[ "${have_lock}" -eq 0 ] &&
+	if [ "${have_lock}" -eq 0 ]; then
 		err 1 "Release unheld lock (have_lock=0) ${lockname}"
+	fi
 	hash_get lock_pid "${lockname}" lock_pid ||
 		err 1 "Lock had no pid ${lockname}"
 	mypid="$(getpid)"
@@ -5957,14 +6059,16 @@ slock_release_all() {
 	[ $# -eq 0 ] || eargs slock_release_all
 	local lockname
 
-	[ -z "${SLOCKS-}" ] && return 0
+	if [ -z "${SLOCKS-}" ]; then
+		return 0
+	fi
 	for lockname in ${SLOCKS}; do
 		slock_release "${lockname}"
 	done
 }
 
 lock_have() {
-	[ $# -ne 1 ] && eargs lock_have lockname
+	[ $# -eq 1 ] || eargs lock_have lockname
 	local lockname="$1"
 	local mypid lock_pid
 
@@ -6019,7 +6123,9 @@ port_var_fetch() {
 			_vars="${_vars}${_vars:+ }${assign_var}"
 			shift 1
 		else
-			[ $# -eq 1 ] && break
+			if [ $# -eq 1 ]; then
+				break
+			fi
 			_makeflags="${_makeflags}${_makeflags:+${sep}}-V${_portvar}"
 			_vars="${_vars}${_vars:+ }${_var}"
 			shift 2
@@ -6102,7 +6208,7 @@ port_var_fetch_originspec() {
 }
 
 get_originspec_from_pkgname() {
-	[ $# -ne 2 ] && eargs get_originspec_from_pkgname var_return pkgname
+	[ $# -eq 2 ] || eargs get_originspec_from_pkgname var_return pkgname
 	local var_return="$1"
 	local pkgname="$2"
 
@@ -6207,8 +6313,9 @@ gather_port_vars() {
 	if was_a_testport_run; then
 		local dep_originspec dep_origin dep_flavor dep_ret
 
-		[ -z "${ORIGINSPEC}" ] && \
-		    err 1 "testport+gather_port_vars requires ORIGINSPEC set"
+		if [ -z "${ORIGINSPEC}" ]; then
+			err 1 "testport+gather_port_vars requires ORIGINSPEC set"
+		fi
 		if have_ports_feature FLAVORS; then
 			# deps_fetch_vars really wants to have the main port
 			# cached before being given a FLAVOR.
@@ -6252,7 +6359,9 @@ gather_port_vars() {
 	fi
 
 	:> "all_pkgs"
-	[ ${ALL} -eq 0 ] && :> "all_pkgbases"
+	if [ ${ALL} -eq 0 ]; then
+		:> "all_pkgbases"
+	fi
 
 	rm -rf gqueue dqueue mqueue fqueue 2>/dev/null || :
 	mkdir gqueue dqueue mqueue fqueue
@@ -6265,8 +6374,9 @@ gather_port_vars() {
 		rdep="listed"
 		# For -a we skip the initial gatherqueue
 		if [ ${ALL} -eq 1 ]; then
-			[ -n "${flavor}" ] && \
-			    err 1 "Flavor ${COLOR_PORT}${originspec}${COLOR_RESET} with ALL=1"
+			if [ -n "${flavor}" ]; then
+				err 1 "Flavor ${COLOR_PORT}${originspec}${COLOR_RESET} with ALL=1"
+			fi
 			parallel_run \
 			    prefix_stderr_quick \
 			    "(${COLOR_PORT}${originspec}${COLOR_RESET})" \
@@ -6505,10 +6615,12 @@ gather_port_vars_port() {
 
 	msg_debug "gather_port_vars_port (${COLOR_PORT}${originspec}${COLOR_RESET}): LOOKUP"
 	originspec_decode "${originspec}" origin origin_dep_args origin_flavor
-	[ -n "${origin_dep_args}" ] && ! have_ports_feature DEPENDS_ARGS && \
-	    err 1 "gather_port_vars_port: Looking up ${COLOR_PORT}${originspec}${COLOR_RESET} without DEPENDS_ARGS support in ports"
-	[ -n "${origin_flavor}" ] && ! have_ports_feature FLAVORS && \
-	    err 1 "gather_port_vars_port: Looking up ${COLOR_PORT}${originspec}${COLOR_RESET} without FLAVORS support in ports"
+	if [ -n "${origin_dep_args}" ] && ! have_ports_feature DEPENDS_ARGS; then
+		err 1 "gather_port_vars_port: Looking up ${COLOR_PORT}${originspec}${COLOR_RESET} without DEPENDS_ARGS support in ports"
+	fi
+	if [ -n "${origin_flavor}" ] && ! have_ports_feature FLAVORS; then
+		err 1 "gather_port_vars_port: Looking up ${COLOR_PORT}${originspec}${COLOR_RESET} without FLAVORS support in ports"
+	fi
 
 	# Trim away FLAVOR_DEFAULT and restore it later
 	if [ "${origin_flavor}" = "${FLAVOR_DEFAULT}" ]; then
@@ -6548,7 +6660,9 @@ gather_port_vars_port() {
 		2)
 			# If this a superfluous DEPENDS_ARGS then there's
 			# nothing more to do - it's already queued.
-			[ -n "${origin_dep_args}" ] && return 0
+			if [ -n "${origin_dep_args}" ]; then
+				return 0
+			fi
 			# The previous depqueue run may have readded
 			# this originspec into the flavorqueue.
 			# Expunge it.
@@ -6560,8 +6674,9 @@ gather_port_vars_port() {
 			# queued then we're the victim of the 'metadata' hack.
 			# Fix it.
 			default_flavor="${flavors%% *}"
-			[ "${origin_flavor}" = "${FLAVOR_DEFAULT}" ] && \
-			    origin_flavor="${default_flavor}"
+			if [ "${origin_flavor}" = "${FLAVOR_DEFAULT}" ]; then
+				origin_flavor="${default_flavor}"
+			fi
 			if ! [ -n "${flavors}" -a \
 			    "${origin_flavor}" = "${default_flavor}" ]; then
 				# Not the default FLAVOR.
@@ -6613,8 +6728,9 @@ gather_port_vars_port() {
 		default_flavor="${flavors%% *}"
 		rdep="${rdep#* }"
 		queued_flavor="${rdep% *}"
-		[ "${queued_flavor}" = "${FLAVOR_DEFAULT}" ] && \
-		    queued_flavor="${default_flavor}"
+		if [ "${queued_flavor}" = "${FLAVOR_DEFAULT}" ]; then
+			queued_flavor="${default_flavor}"
+		fi
 		# Check if we have the default FLAVOR sitting in the
 		# flavorqueue and don't skip if so.
 		if [ "${queued_flavor}" != "${default_flavor}" ]; then
@@ -6642,7 +6758,9 @@ gather_port_vars_port() {
 
 	msg_debug "WILL BUILD ${COLOR_PORT}${originspec}${COLOR_RESET}"
 	echo "${pkgname} ${originspec} ${rdep} ${ignore}" >> "all_pkgs"
-	[ ${ALL} -eq 0 ] && echo "${pkgname%-*}" >> "all_pkgbases"
+	if [ ${ALL} -eq 0 ]; then
+		echo "${pkgname%-*}" >> "all_pkgbases"
+	fi
 
 	# Add all of the discovered FLAVORS into the flavorqueue if
 	# this was the default originspec and this originspec was
@@ -6653,7 +6771,9 @@ gather_port_vars_port() {
 		msg_verbose "Will build all flavors for ${COLOR_PORT}${originspec}${COLOR_RESET}: ${flavors}"
 		for dep_flavor in ${flavors}; do
 			# Skip default FLAVOR
-			[ "${flavor}" = "${dep_flavor}" ] && continue
+			if [ "${flavor}" = "${dep_flavor}" ]; then
+				continue
+			fi
 			originspec_encode dep_originspec "${origin}" \
 			    "${origin_dep_args}" "${dep_flavor}"
 			msg_debug "gather_port_vars_port (${COLOR_PORT}${originspec}${COLOR_RESET}): Adding to flavorqueue FLAVOR=${dep_flavor}${dep_args:+ (DEPENDS_ARGS=${dep_args})}"
@@ -6669,8 +6789,9 @@ gather_port_vars_port() {
 	fi
 
 	# If there are no deps for this port then there's nothing left to do.
-	[ -n "${ignore}" ] && return 0
-	[ -z "${deps}" ] && return 0
+	if [ -n "${ignore}" ] || [ -z "${deps}" ]; then
+		return 0
+	fi
 
 	# Assert some policy before proceeding to process these deps
 	# further.
@@ -6712,7 +6833,7 @@ gather_port_vars_process_depqueue_enqueue() {
 	    err 1 "gather_port_vars_process_depqueue_enqueue requires SHASH_VAR_PATH=var/cache"
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "gather_port_vars_process_depqueue_enqueue requires PWD=${MASTERMNT}/.p"
-	[ $# -ne 4 ] && eargs gather_port_vars_process_depqueue_enqueue \
+	[ $# -eq 4 ] || eargs gather_port_vars_process_depqueue_enqueue \
 	    originspec dep_originspec queue rdep
 	local originspec="$1"
 	local dep_originspec="$2"
@@ -6748,7 +6869,7 @@ gather_port_vars_process_depqueue() {
 	    err 1 "gather_port_vars_process_depqueue requires SHASH_VAR_PATH=var/cache"
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "gather_port_vars_process_depqueue requires PWD=${MASTERMNT}/.p"
-	[ $# -ne 1 ] && eargs gather_port_vars_process_depqueue originspec
+	[ $# -eq 1 ] || eargs gather_port_vars_process_depqueue originspec
 	local originspec="$1"
 	local origin pkgname deps dep_origin
 	local dep_args dep_originspec dep_flavor queue rdep
@@ -6850,7 +6971,7 @@ compute_deps_pkg() {
 	    err 1 "compute_deps_pkg requires SHASH_VAR_PATH=var/cache"
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "compute_deps_pkg requires PWD=${MASTERMNT}/.p"
-	[ $# -ne 3 ] && eargs compute_deps_pkg pkgname originspec pkg_deps
+	[ $# -eq 3 ] || eargs compute_deps_pkg pkgname originspec pkg_deps
 	local pkgname="$1"
 	local originspec="$2"
 	local pkg_deps="$3"
@@ -7118,7 +7239,9 @@ _listed_ports() {
 	if [ ${ALL} -eq 1 ]; then
 		_pget portsdir ${PTNAME} mnt || \
 		    err 1 "Missing mnt metadata for portstree"
-		[ -d "${portsdir}/ports" ] && portsdir="${portsdir}/ports"
+		if [ -d "${portsdir}/ports" ]; then
+			portsdir="${portsdir}/ports"
+		fi
 		{
 			_list_ports_dir "${portsdir}" "${PTNAME}"
 			for o in ${OVERLAYS}; do
@@ -7186,8 +7309,10 @@ _listed_ports() {
 			set_dep_fatal_error
 			continue
 		fi
-		[ -n "${tell_moved}" ] && [ -n "${new_origin}" ] && msg_warn \
+		if [ -n "${tell_moved}" ] && [ -n "${new_origin}" ]; then
+			msg_warn \
 			    "MOVED: ${COLOR_PORT}${origin_listed}${COLOR_RESET} renamed to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
+		fi
 		echo "${originspec}"
 	done
 }
@@ -7392,7 +7517,9 @@ fetch_global_port_vars() {
 	port_var_fetch "${P_PKG_ORIGIN}" \
 	    PKGNAME P_PKG_PKGNAME
 	# Ensure not blank so -z checks work properly
-	[ -z "${P_PORTS_FEATURES}" ] && P_PORTS_FEATURES="none"
+	if [ -z "${P_PORTS_FEATURES}" ]; then
+		P_PORTS_FEATURES="none"
+	fi
 	# Add in pseduo 'DEPENDS_ARGS' feature if there's no FLAVORS support.
 	have_ports_feature FLAVORS || \
 	    P_PORTS_FEATURES="${P_PORTS_FEATURES:+${P_PORTS_FEATURES} }DEPENDS_ARGS"
@@ -7404,8 +7531,9 @@ fetch_global_port_vars() {
 	    "${MASTERMNT}${PORTSDIR}/Mk/bsd.options.mk"; then
 		P_PORTS_FEATURES="${P_PORTS_FEATURES:+${P_PORTS_FEATURES} }SELECTED_OPTIONS"
 	fi
-	[ "${P_PORTS_FEATURES}" != "none" ] && \
-	    msg "Ports supports: ${P_PORTS_FEATURES}"
+	if [ "${P_PORTS_FEATURES}" != "none" ]; then
+		msg "Ports supports: ${P_PORTS_FEATURES}"
+	fi
 	export P_PORTS_FEATURES P_PYTHON_MAJOR_VER P_PYTHON_DEFAULT_VERSION \
 	    P_PYTHON3_DEFAULT
 
@@ -7567,12 +7695,14 @@ prepare_ports() {
 			ln -sfh ${BUILDNAME} ${log%/*}/latest
 
 			# Record the SVN URL@REV in the build
-			[ -d ${MASTERMNT}${PORTSDIR}/.svn ] && bset svn_url $(
+			if [ -d ${MASTERMNT}${PORTSDIR}/.svn ]; then
+				bset svn_url $(
 				${SVN_CMD} info ${MASTERMNT}${PORTSDIR} | awk '
 					/^URL: / {URL=substr($0, 6)}
 					/Revision: / {REVISION=substr($0, 11)}
 					END { print URL "@" REVISION }
 				')
+			fi
 
 			bset mastername "${MASTERNAME}"
 			bset jailname "${JAILNAME}"
@@ -7602,9 +7732,10 @@ prepare_ports() {
 	PKG_DELETE="${PKG_BIN} delete -y -f"
 	PKG_VERSION="${PKG_BIN} version"
 
-	[ -n "${PKG_REPO_SIGNING_KEY}" ] && \
-	    ! [ -f "${PKG_REPO_SIGNING_KEY}" ] && \
-	    err 1 "PKG_REPO_SIGNING_KEY defined but the file is missing."
+	if [ -n "${PKG_REPO_SIGNING_KEY}" ] &&
+	    ! [ -f "${PKG_REPO_SIGNING_KEY}" ]; then
+		err 1 "PKG_REPO_SIGNING_KEY defined but the file is missing."
+	fi
 
 	gather_port_vars
 
@@ -7876,7 +8007,9 @@ load_priorities() {
 	# into 0 as they depend on nothing and nothing depends on them.
 	# I.e., pkg-devel in -ac or testport on something with no deps
 	# needed.
-	[ -z "${POOL_BUCKET_DIRS}" ] && POOL_BUCKET_DIRS="0"
+	if [ -z "${POOL_BUCKET_DIRS}" ]; then
+		POOL_BUCKET_DIRS="0"
+	fi
 
 	# Create buckets after loading priorities in case of boosts.
 	( cd pool && mkdir ${POOL_BUCKET_DIRS} )
@@ -7928,7 +8061,7 @@ balance_pool() {
 }
 
 append_make() {
-	[ $# -ne 3 ] && eargs append_make srcdir src_makeconf dst_makeconf
+	[ $# -eq 3 ] || eargs append_make srcdir src_makeconf dst_makeconf
 	local srcdir="$1"
 	local src_makeconf=$2
 	local dst_makeconf=$3
@@ -8006,7 +8139,9 @@ build_repo() {
 	local origin pkg_repo_list_files
 
 	msg "Creating pkg repository"
-	[ ${DRY_RUN} -eq 1 ] && return 0
+	if [ ${DRY_RUN} -eq 1 ]; then
+		return 0
+	fi
 	bset status "pkgrepo:"
 	ensure_pkg_installed force_extract || \
 	    err 1 "Unable to extract pkg."
@@ -8229,11 +8364,13 @@ if [ ${IN_TEST:-0} -eq 0 ]; then
 fi
 
 . ${SCRIPTPREFIX}/include/colors.pre.sh
-[ -z "${POUDRIERE_ETC}" ] &&
-    POUDRIERE_ETC=$(realpath ${SCRIPTPREFIX}/../../etc)
+if [ -z "${POUDRIERE_ETC}" ]; then
+	POUDRIERE_ETC=$(realpath ${SCRIPTPREFIX}/../../etc)
+fi
 # If this is a relative path, add in ${PWD} as a cd / is done.
-[ "${POUDRIERE_ETC#/}" = "${POUDRIERE_ETC}" ] && \
-    POUDRIERE_ETC="${SAVED_PWD:?}/${POUDRIERE_ETC}"
+if [ "${POUDRIERE_ETC#/}" = "${POUDRIERE_ETC}" ]; then
+	POUDRIERE_ETC="${SAVED_PWD:?}/${POUDRIERE_ETC}"
+fi
 POUDRIERED=${POUDRIERE_ETC}/poudriere.d
 include_poudriere_confs "$@"
 
@@ -8294,7 +8431,9 @@ if [ -z "${NO_ZFS}" -a -z "${ZFS_DEADLOCK_IGNORED}" ]; then
 fi
 
 : ${USE_TMPFS:=no}
-[ -n "${MFSSIZE}" -a "${USE_TMPFS}" != "no" ] && err 1 "You can't use both tmpfs and mdmfs"
+if [ -n "${MFSSIZE}" -a "${USE_TMPFS}" != "no" ]; then
+	err 1 "You can't use both tmpfs and mdmfs"
+fi
 
 for val in ${USE_TMPFS}; do
 	case ${val} in
@@ -8357,7 +8496,8 @@ esac
 #Converting portstree if any
 if [ ! -d ${POUDRIERED}/ports ]; then
 	mkdir -p ${POUDRIERED}/ports
-	[ -z "${NO_ZFS}" ] && zfs list -t filesystem -H \
+	if [ -z "${NO_ZFS}" ]; then
+		zfs list -t filesystem -H \
 		-o ${NS}:type,${NS}:name,${NS}:method,mountpoint,name | \
 		grep "^ports" | \
 		while read t name method mnt fs; do
@@ -8370,9 +8510,12 @@ if [ ! -d ${POUDRIERED}/ports ]; then
 			zfs inherit -r ${NS}:name ${fs}
 			zfs inherit -r ${NS}:method ${fs}
 		done
+	fi
 	if [ -f ${POUDRIERED}/portstrees ]; then
 		while read name method mnt; do
-			[ -z "${name###*}" ] && continue # Skip comments
+			if [ -z "${name###*}" ]; then
+				continue # Skip comments
+			fi
 			msg "Converting the ${name} ports tree"
 			mkdir ${POUDRIERED}/ports/${name}
 			echo ${method} > ${POUDRIERED}/ports/${name}/method
@@ -8385,7 +8528,8 @@ fi
 #Converting jails if any
 if [ ! -d ${POUDRIERED}/jails ]; then
 	mkdir -p ${POUDRIERED}/jails
-	[ -z "${NO_ZFS}" ] && zfs list -t filesystem -H \
+	if [ -z "${NO_ZFS}" ]; then
+		zfs list -t filesystem -H \
 		-o ${NS}:type,${NS}:name,${NS}:version,${NS}:arch,${NS}:method,mountpoint,name | \
 		grep "^rootfs" | \
 		while read t name version arch method mnt fs; do
@@ -8408,6 +8552,7 @@ if [ ! -d ${POUDRIERED}/jails ]; then
 			zfs inherit -r ${NS}:stats_queued ${fs}
 			zfs inherit -r ${NS}:status ${fs}
 		done
+	fi
 fi
 
 : ${LOIP6:=::1}
