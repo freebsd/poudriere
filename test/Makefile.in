@@ -462,9 +462,9 @@ TESTS = builtins.sh cache.sh do_clone.sh encode_args.sh getpid.sh \
 	locks_critical_section.sh locks_critical_section_nested.sh \
 	locked_mkdir.sh locked_mkdir_waiters.sh \
 	locked_mkdir_waiters_kill.sh locked_mkdir_waiters_all_lose.sh \
-	mapfile.sh port_var_fetch.sh prefix_output.sh read_file.sh \
-	relpath.sh relpath_common.sh shash_basic.sh timespec.sh \
-	timestamp.sh trap_save.sh $(JAIL_TESTS) prep.sh
+	mapfile.sh port_var_fetch.sh prefix_output.sh read_blocking.sh \
+	read_file.sh relpath.sh relpath_common.sh shash_basic.sh \
+	timespec.sh timestamp.sh trap_save.sh $(JAIL_TESTS) prep.sh
 JAIL_TESTS = \
 	bulk-bad-DEPENDS_ARGS.sh \
 	bulk-ignore-listed.sh \
@@ -825,6 +825,13 @@ port_var_fetch.sh.log: port_var_fetch.sh
 prefix_output.sh.log: prefix_output.sh
 	@p='prefix_output.sh'; \
 	b='prefix_output.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+read_blocking.sh.log: read_blocking.sh
+	@p='read_blocking.sh'; \
+	b='read_blocking.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
