@@ -7645,6 +7645,11 @@ prepare_ports() {
 					msg "(-C) Will delete existing package: ${pkg##*/}"
 					delete_pkg_xargs "${delete_pkg_list}" \
 					    "${pkg}"
+					if [ -L "${pkg%.*}.txz" ]; then
+						delete_pkg_xargs \
+						    "${delete_pkg_list}" \
+						    "${pkg%.*}.txz"
+					fi
 				fi
 			done
 			check_dep_fatal_error && \
