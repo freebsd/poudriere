@@ -84,7 +84,7 @@ while getopts "a:cCj:f:p:nrsz:" FLAG; do
 			# a cd / was done.
 			[ "${OPTARG#/}" = "${OPTARG}" ] && \
 			    OPTARG="${SAVED_PWD}/${OPTARG}"
-			LISTPKGS="${OPTARG}"
+			LISTPKGS="${LISTPKGS:+${LISTPKGS} }${OPTARG}"
 			;;
 		p)
 			porttree_exists ${OPTARG} ||
