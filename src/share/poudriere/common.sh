@@ -5909,7 +5909,7 @@ delete_old_pkg() {
 }
 
 delete_old_pkgs() {
-	local delete_unqueued listpkgs
+	local delete_unqueued
 
 	msg "Checking packages for incremental rebuild needs"
 	run_hook delete_old_pkgs start
@@ -5922,23 +5922,30 @@ delete_old_pkgs() {
 	# delete everything but that package in the repository here.
 	# An override is also provided for cases not thought of ("no") or for
 	# users who don't mind subsets deleting everything else ("always").
-	if [ -z "${LISTPKGS}" ]; then
-		listpkgs=0
-	else
-		listpkgs=1
-	fi
-	case "${DELETE_UNQUEUED_PACKAGES},${PORTTESTING}${CLEAN_LISTED},${ALL},${listpkgs}" in
-	always,*)	delete_unqueued=1 ;;
-	# -a owns the repo
-	yes,*,1,*)	delete_unqueued=1 ;;
-	# Avoid deleting everything if the user is testing as they likely
-	# have queued a small subset of the repo.  Testing is considered to
-	# be testport, bulk -t, or bulk -C.
-	yes,*1*,*,*)	delete_unqueued=0 ;;
-	# -f owns the repo if testing/-C isn't happening
-	yes,*,*,1)	delete_unqueued=1 ;;
-	*)		delete_unqueued=0 ;;
+	case "${DELETE_UNQUEUED_PACKAGES}" in
+	always)	delete_unqueued=1 ;;
+	yes)
+		if [ "${ALL}" -eq 1 ]; then
+			# -a owns the repo
+			delete_unqueued=1
+		elif [ "${PORTTESTING}" -eq 1 ] ||
+		    [ "${CLEAN_LISTED}" -eq 1 ]; then
+			# Avoid deleting everything if the user is testing as
+			# they likely have queued a small subset of the repo.
+			# Testing is considered to be testport, bulk -t, or
+			# bulk -C.
+			delete_unqueued=0
+		elif [ -n "${LISTPKGS}" ]; then
+			# -f owns the repo if testing/-C isn't happening
+			delete_unqueued=1
+		else
+			# Some subset of packages was specified on the cmdline.
+			delete_unqueued=0
+		fi
+		;;
+	*)	delete_unqueued=0 ;;
 	esac
+	msg_debug "delete_old_pkgs: delete_unqueued=${delete_unqueued}"
 
 	parallel_start
 	for pkg in ${PACKAGES}/All/*; do
