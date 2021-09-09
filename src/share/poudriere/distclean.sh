@@ -124,7 +124,7 @@ gather_distfiles() {
 
 	# Append from inside awk to force line buffering
 	awk -v distdir="${DISTFILES_CACHE%/}" \
-	    -v out="${DISTFILES_LIST}"
+	    -v out="${DISTFILES_LIST}" \
 	    '/SIZE/ {print distdir "/" substr($2, 2, length($2) - 2) >> out}' \
 	    "${distinfo_file}"
 }
