@@ -1123,7 +1123,7 @@ _bget() {
 
 bget() {
 	local -; set +x
-	[ -n "${POUDRIERE_BUILD_TYPE-}" ] || return 0
+	[ -n "${POUDRIERE_BUILD_TYPE-}" ] || return 1
 	local bget_data
 
 	if _bget bget_data "$@"; then
@@ -1138,7 +1138,7 @@ bget() {
 bset() {
 	local -; set +x
 	was_a_bulk_run || return 0
-	[ -n "${POUDRIERE_BUILD_TYPE-}" ] || return 0
+	[ -n "${POUDRIERE_BUILD_TYPE-}" ] || return 1
 	local id property mnt log file
 
 	_log_path log
