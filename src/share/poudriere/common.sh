@@ -4820,30 +4820,32 @@ crashed_build() {
 	[ $# -eq 2 ] || eargs crashed_build pkgname failed_phase
 	local pkgname="$1"
 	local failed_phase="$2"
-	local origin originspec log
+	local origin originspec logd log log_error
 
-	_log_path log
+	_log_path logd
 	get_originspec_from_pkgname originspec "${pkgname}"
 	originspec_decode "${originspec}" origin '' ''
 
 	echo "Build crashed: ${failed_phase}" >> "${log}/logs/${pkgname}.log"
+	log="${logd}/logs/${pkgname}.log"
+	log_error="${logd}/logs/errors/${pkgname}.log"
 
 	# If the file already exists then all of this handling was done in
 	# build_pkg() already; The port failed already. What crashed
 	# came after.
-	if ! [ -e "${log}/logs/errors/${pkgname}.log" ]; then
+	if ! [ -e "${log_error}" ]; then
 		# Symlink the buildlog into errors/
-		ln -s "../${pkgname}.log" "${log}/logs/errors/${pkgname}.log"
+		install -lrs "${log}" "${log_error}"
 		badd ports.failed \
 		    "${originspec} ${pkgname} ${failed_phase} ${failed_phase}"
 		COLOR_ARROW="${COLOR_FAIL}" job_msg \
 		    "${COLOR_FAIL}Finished ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
 		run_hook pkgbuild failed "${origin}" "${pkgname}" \
 		    "${failed_phase}" \
-		    "${log}/logs/errors/${pkgname}.log"
+		    "${log_error}"
 	fi
 	clean_pool "${pkgname}" "${originspec}" "${failed_phase}"
-	stop_build "${pkgname}" "${originspec}" 1 >> "${log}/logs/${pkgname}.log"
+	stop_build "${pkgname}" "${originspec}" 1 >> "${log}"
 }
 
 clean_pool() {
