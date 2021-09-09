@@ -7232,7 +7232,9 @@ _list_ports_dir() {
 	local cat
 
 	# skip overlays with no categories listed
-	[ -f "${ptdir}/Makefile" ] || return
+	if [ ! -f "${ptdir}/Makefile" ]; then
+		return 0
+	fi
 	(
 		cd "${ptdir}"
 		ptdir="."
