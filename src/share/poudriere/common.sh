@@ -110,8 +110,10 @@ _err() {
 	# Avoid recursive err()->exit_handler()->err()... Just let
 	# exit_handler() cleanup.
 	if [ ${ERRORS_ARE_FATAL:-1} -eq 1 ]; then
-		show_build_summary
-		show_log_info
+		if was_a_bulk_run && [ -n "${POUDRIERE_BUILD_TYPE-}" ]; then
+			show_build_summary
+			show_log_info
+		fi
 		exit $1
 	else
 		return 0
