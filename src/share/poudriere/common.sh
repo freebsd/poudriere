@@ -7252,16 +7252,16 @@ _list_ports_dir() {
 
 _listed_ports() {
 	local tell_moved="${1}"
-	local portsdir origin file o
+	local portsdir origin file o mnt
 
 	if [ ${ALL} -eq 1 ]; then
-		_pget portsdir ${PTNAME} mnt || \
+		_pget portsdir ${PTNAME:?} mnt || \
 		    err 1 "Missing mnt metadata for portstree"
 		if [ -d "${portsdir}/ports" ]; then
 			portsdir="${portsdir}/ports"
 		fi
 		{
-			_list_ports_dir "${portsdir}" "${PTNAME}"
+			_list_ports_dir "${portsdir}" "${PTNAME:?}"
 			for o in ${OVERLAYS}; do
 				_pget portsdir "${o}" mnt
 				_list_ports_dir "${portsdir}" "${o}"
@@ -7280,7 +7280,7 @@ _listed_ports() {
 
 	{
 		# -f specified
-		if [ -z "${LISTPORTS}" ]; then
+		if [ -n "${LISTPKGS-}" ]; then
 			local _ignore_comments
 
 			for file in ${LISTPKGS}; do
@@ -7295,7 +7295,7 @@ _listed_ports() {
 					echo "${origin%/}"
 				done
 			done
-		else
+		elif [ -n "${LISTPORTS-}" ]; then
 			# Ports specified on cmdline
 			for origin in ${LISTPORTS}; do
 				# Remove excess slashes for mistakes
