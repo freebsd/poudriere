@@ -281,30 +281,36 @@ pkgqueue_remove_many_pipe() {
 	done | xargs rm -rf
 }
 
+_pkgqueue_compute_rdeps() {
+	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
+	    err 1 "_pkgqueue_compute_rdeps requires PWD=${MASTERMNT}/.p"
+	[ $# -eq 0 ] || eargs _pkgqueue_compute_rdeps
+	local rdep_dir_name job dep_job
+
+	find deps -mindepth 3 -maxdepth 3 -type f |
+	    sed -e 's,deps/,,' |
+	    cut -d / -f 2- |
+	    awk -F/ '{print $1, $2}' |
+	    while mapfile_read_loop_redir job dep_job; do
+		pkgqueue_dir rdep_dir_name "${dep_job}"
+		echo "${rdep_dir_name}/${job}"
+	done
+}
+
 # Compute back references for quickly finding things to skip if this job
 # fails.
 pkgqueue_compute_rdeps() {
 	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
 	    err 1 "pkgqueue_compute_rdeps requires PWD=${MASTERMNT}/.p"
-	[ $# -eq 1 ] || eargs pkgqueue_compute_rdeps pkg_deps
-	local pkg_deps="$1"
+	[ $# -eq 0 ] || eargs pkgqueue_compute_rdeps
 	local job rdep_dir_name dep
 
-	bset status "computingrdeps:"
 	# cd into rdeps to allow xargs mkdir to have more args.
-	(
-		cd "rdeps"
-		awk '{print $2}' "../${pkg_deps}" | sort -u | \
-		    while mapfile_read_loop_redir job; do
-			pkgqueue_dir rdep_dir_name "${job}"
-			echo "${rdep_dir_name}"
-		done | xargs mkdir -p
-		awk '{print $2 " " $1}' "../${pkg_deps}" | \
-		    while mapfile_read_loop_redir job dep; do
-			pkgqueue_dir rdep_dir_name "${job}"
-			echo "${rdep_dir_name}/${dep}"
-		done | xargs touch
-	)
+	_pkgqueue_compute_rdeps |
+	    sed -e 's,/[^/]*$,,' |
+	    ( cd rdeps && xargs mkdir -p )
+	_pkgqueue_compute_rdeps |
+	    ( cd rdeps && xargs touch )
 }
 
 pkgqueue_remaining() {

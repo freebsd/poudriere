@@ -6976,7 +6976,8 @@ compute_deps() {
 	sort -u "pkg_deps.unsorted" > "pkg_deps"
 	unlink "pkg_deps.unsorted"
 
-	pkgqueue_compute_rdeps "pkg_deps"
+	bset status "computingrdeps:"
+	pkgqueue_compute_rdeps
 	find deps rdeps > "pkg_pool"
 
 	run_hook compute_deps stop
