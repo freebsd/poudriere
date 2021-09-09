@@ -122,8 +122,11 @@ gather_distfiles() {
 
 	msg_verbose "Gathering distfiles for: ${originspec}"
 
-	awk -v distdir="${DISTFILES_CACHE%/}" '/SIZE/ {print distdir "/" substr($2, 2, length($2) - 2)}' \
-		"${distinfo_file}" >> ${DISTFILES_LIST}
+	# Append from inside awk to force line buffering
+	awk -v distdir="${DISTFILES_CACHE%/}" \
+	    -v out="${DISTFILES_LIST}"
+	    '/SIZE/ {print distdir "/" substr($2, 2, length($2) - 2) >> out}' \
+	    "${distinfo_file}"
 }
 
 [ -d ${DISTFILES_CACHE:-/nonexistent} ] ||
