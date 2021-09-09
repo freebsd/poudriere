@@ -46,7 +46,7 @@ Options:
                    debug output
     -y          -- Assume yes when deleting and do not prompt for confirmation
 EOF
-	exit 1
+	exit ${EX_USAGE}
 }
 
 DRY_RUN=0

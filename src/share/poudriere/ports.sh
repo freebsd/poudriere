@@ -63,7 +63,7 @@ Options:
     -q            -- When used with -l, remove the header in the list view.
     -v            -- Show more verbose output.
 EOF
-	exit 1
+	exit ${EX_USAGE}
 }
 
 FAKE=0

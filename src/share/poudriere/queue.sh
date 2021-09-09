@@ -27,7 +27,7 @@
 
 usage() {
 	echo "poudriere queue poudriere_command"
-	exit 1
+	exit ${EX_USAGE}
 }
 
 . ${SCRIPTPREFIX}/common.sh

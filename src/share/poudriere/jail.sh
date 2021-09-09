@@ -83,7 +83,7 @@ Options for -s and -k:
     -p tree       -- Specify which ports tree to start/stop the jail with.
     -z set        -- Specify which SET the jail to start/stop with.
 EOF
-	exit 1
+	exit ${EX_USAGE}
 }
 
 list_jail() {

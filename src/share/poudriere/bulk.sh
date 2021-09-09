@@ -74,7 +74,7 @@ Options:
     -w          -- Save WRKDIR on failed builds
     -z set      -- Specify which SET to use
 EOF
-	exit 1
+	exit ${EX_USAGE}
 }
 
 bulk_cleanup() {

@@ -45,7 +45,7 @@ Options:
     -z set      -- Specify which SET to match for the build. Use '0' to only
                    match on empty sets.
 EOF
-	exit 1
+	exit ${EX_USAGE}
 }
 
 PTNAME=

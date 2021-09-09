@@ -49,7 +49,7 @@ Options:
     -y          -- Assume yes when deleting and do not confirm
     -z set      -- Specify which SET to use for packages
 EOF
-	exit 1
+	exit ${EX_USAGE}
 }
 
 PTNAME=default

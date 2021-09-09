@@ -34,7 +34,7 @@ Options:
     -p        -- Override the pidfile location
     -k        -- Kill the running daemon
 EOF
-	exit 1
+	exit ${EX_USAGE}
 }
 
 queue_reader_main() {

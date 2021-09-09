@@ -28,6 +28,7 @@
 
 BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
 . ${SCRIPTPREFIX}/include/common.sh.${BSDPLATFORM}
+EX_USAGE=64
 EX_DATAERR=65
 EX_SOFTWARE=70
 SHFLAGS="$-"

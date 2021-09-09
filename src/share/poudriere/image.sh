@@ -62,7 +62,7 @@ Options:
     -X excludefile  -- File containing the list in cpdup format
     -z set          -- Set
 EOF
-	exit 1
+	exit ${EX_USAGE}
 }
 
 delete_image() {

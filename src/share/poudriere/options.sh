@@ -46,7 +46,7 @@ Options:
     -s          -- Show port options instead of configuring them
     -z set      -- Specify which SET to use
 EOF
-	exit 1
+	exit ${EX_USAGE}
 }
 
 ARCH=
