@@ -1093,7 +1093,9 @@ _pget() {
 #build getter/setter
 _bget() {
 	local -; set +x
-	[ -n "${POUDRIERE_BUILD_TYPE-}" ] || return 0
+	if [ -z "${POUDRIERE_BUILD_TYPE-}" ]; then
+		return 1
+	fi
 	local var_return id property mnt log file READ_FILE_USE_CAT file
 
 	var_return="$1"
