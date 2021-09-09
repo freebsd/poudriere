@@ -812,6 +812,7 @@ mapfile_cat() {
 		cat "$@" || ret="$?"
 		return "${ret}"
 	fi
+	nflag=
 	while getopts "n" flag; do
 		case "${flag}" in
 		n)
