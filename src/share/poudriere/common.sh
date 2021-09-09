@@ -6977,6 +6977,7 @@ compute_deps() {
 	unlink "pkg_deps.unsorted"
 
 	pkgqueue_compute_rdeps "pkg_deps"
+	find deps rdeps > "pkg_pool"
 
 	run_hook compute_deps stop
 	return 0
@@ -7762,6 +7763,8 @@ prepare_ports() {
 	if was_a_bulk_run; then
 		# Stash dependency graph
 		cp -f "${MASTERMNT}/.p/pkg_deps" "${log}/.poudriere.pkg_deps%"
+		cp -f "${MASTERMNT}/.p/pkg_pool" \
+		    "${log}/.poudriere.pkg_pool%"
 		cp -f "${MASTERMNT}/.p/all_pkgs" "${log}/.poudriere.all_pkgs%"
 
 		if [ -f "${PACKAGES}/.jailversion" ] &&
