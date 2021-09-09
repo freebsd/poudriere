@@ -91,11 +91,12 @@ ALL=0
 BUILD_REPO=1
 INTERACTIVE_MODE=0
 OVERLAYS=""
+COMMIT=1
 . ${SCRIPTPREFIX}/common.sh
 
 [ $# -eq 0 ] && usage
 
-while getopts "ab:B:CcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
+while getopts "ab:B:dCcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			ALL=1
@@ -112,6 +113,14 @@ while getopts "ab:B:CcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
 			;;
 		C)
 			CLEAN_LISTED=1
+			;;
+		d)	# Flag not stable and may change at any time.
+			# Don't commit the packages.  This is effectively
+			# the same as -n but does an actual build.
+			if [ "${ATOMIC_PACKAGE_REPOSITORY}" != "yes" ]; then
+				err ${EX_USAGE} "-d only makes sense with ATOMIC_PACKAGE_REPOSITORY=yes"
+			fi
+			COMMIT=0
 			;;
 		F)
 			export MASTER_SITE_BACKUP=''
@@ -255,7 +264,9 @@ _bget nbfetched stats_fetched
 
 [ ${BUILD_REPO} -eq 1 ] && build_repo
 
-commit_packages
+if [ "${COMMIT}" -eq 1 ]; then
+	commit_packages
+fi
 
 show_build_results
 
