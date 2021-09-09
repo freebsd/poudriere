@@ -190,5 +190,5 @@ if [ ${ret} -eq 2 ]; then
 	exit 0
 fi
 if [ "${DRY_RUN}" -eq 0 ]; then
-	find -x ${DISTFILES_CACHE}/ -type d -empty -delete
+	find -x ${DISTFILES_CACHE}/ -type d -mindepth 1 -empty -delete
 fi
