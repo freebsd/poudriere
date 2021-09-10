@@ -1825,6 +1825,7 @@ rm() {
 }
 
 _update_relpaths() {
+	local -; set +x
 	[ $# -eq 2 ] || eargs _update_relpaths oldroot newroot
 	local oldroot="$1"
 	local newroot="$2"
