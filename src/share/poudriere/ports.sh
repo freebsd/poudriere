@@ -139,7 +139,6 @@ done
 saved_argv="$@"
 shift $((OPTIND-1))
 post_getopts
-[ ${VERBOSE} -gt 0 ] || quiet="-q"
 
 [ ${FAKE} -eq 0 ] && METHOD=${METHOD:-${METHOD_DEF}}
 PTNAME=${PTNAME:-default}
@@ -219,6 +218,7 @@ check_portsnap_interactive() {
 }
 
 if [ ${CREATE} -eq 1 ]; then
+	[ ${VERBOSE} -gt 0 ] || quiet="-q"
 	# test if it already exists
 	porttree_exists ${PTNAME} && err 2 "The ports tree, ${PTNAME}, already exists"
 	maybe_run_queued "${saved_argv}"
@@ -342,6 +342,7 @@ if [ ${DELETE} -eq 1 ]; then
 fi
 
 if [ ${UPDATE} -eq 1 ]; then
+	[ ${VERBOSE} -gt 0 ] || quiet="-q"
 	porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 	METHOD=$(pget ${PTNAME} method)
 	PTMNT=$(pget ${PTNAME} mnt)
