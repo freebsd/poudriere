@@ -3571,7 +3571,6 @@ download_from_repo_check_pkg() {
 
 download_from_repo() {
 	[ $# -eq 0 ] || eargs download_from_repo
-	required_env download_from_repo PWD "${MASTER_DATADIR_ABS}"
 	local pkgname abi originspec listed ignored pkg_bin packagesite
 	local packagesite_resolved
 	local remote_all_pkgs remote_all_options wantedpkgs remote_all_deps
@@ -3596,8 +3595,8 @@ download_from_repo() {
 	# only list packages which do not exists to prevent pkg
 	# from overwriting prebuilt packages
 	missing_pkgs=$(mktemp -t missing_pkgs)
-	while mapfile_read_loop "all_pkgs" pkgname originspec listed \
-	    ignored; do
+	while mapfile_read_loop "${MASTER_DATADIR}/all_pkgs" \
+	    pkgname originspec listed ignored; do
 		# Skip ignored ports
 		if [ -n "${ignored}" ]; then
 			msg_debug "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: ignored"
@@ -3727,8 +3726,8 @@ download_from_repo() {
 	cnt=$(wc -l ${wantedpkgs} | awk '{print $1}')
 	msg "Package fetch: Will fetch ${cnt} packages from remote or local pkg cache"
 
-	cp -f "${wantedpkgs}" "pkg_fetch"
-	echo "${packagesite_resolved}" > "pkg_fetch_url"
+	cp -f "${wantedpkgs}" "${MASTER_DATADIR}/pkg_fetch"
+	echo "${packagesite_resolved}" > "${MASTER_DATADIR}/pkg_fetch_url"
 
 	# Fetch into a cache and link back into the PACKAGES dir.
 	mkdir -p "${PACKAGES}/All" \
@@ -3797,20 +3796,20 @@ download_from_repo_make_log() {
 
 # Remove from the pkg_fetch list packages that need to rebuild anyway.
 download_from_repo_post_delete() {
-	required_env download_from_repo_post_delete PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 0 ] || eargs download_from_repo_post_delete
 	local log fpkgname packagesite
 
-	if [ -z "${PACKAGE_FETCH_BRANCH-}" ] || [ ! -f "pkg_fetch" ]; then
+	if [ -z "${PACKAGE_FETCH_BRANCH-}" ] ||
+	    [ ! -f "${MASTER_DATADIR}/pkg_fetch" ]; then
 		bset "stats_fetched" 0
 		return 0
 	fi
 	bset status "fetched_package_logs:"
 	_log_path log
 	msg "Package fetch: Generating logs for fetched packages"
-	read_line packagesite "pkg_fetch_url"
+	read_line packagesite "${MASTER_DATADIR}/pkg_fetch_url"
 	parallel_start
-	while mapfile_read_loop "pkg_fetch" fpkgname; do
+	while mapfile_read_loop "${MASTER_DATADIR}/pkg_fetch" fpkgname; do
 		if [ ! -e "${PACKAGES}/All/${fpkgname}.${PKG_EXT}" ]; then
 			msg_debug "download_from_repo_post_delete: We lost ${COLOR_PORT}${fpkgname}.${PKG_EXT}${COLOR_RESET}" >&2
 			continue
@@ -3821,9 +3820,10 @@ download_from_repo_post_delete() {
 		    download_from_repo_make_log "${fpkgname}" "${packagesite}"
 	done | write_atomic "${log}/.poudriere.pkg_fetch%"
 	parallel_stop
-	mv -f "pkg_fetch_url" "${log}/.poudriere.pkg_fetch_url%"
+	mv -f "${MASTER_DATADIR}/pkg_fetch_url" \
+	    "${log}/.poudriere.pkg_fetch_url%"
 	# update_stats
-	_bget '' "ports.fetched"
+	_bget '' ports.fetched
 	bset "stats_fetched" ${_read_file_lines_read}
 }
 
@@ -4589,7 +4589,6 @@ stop_builders() {
 }
 
 job_done() {
-	required_env job_done PWD "${MASTER_DATADIR_ABS}/pool"
 	[ $# -eq 1 ] || eargs job_done j
 	local j="$1"
 	local pkgname status
@@ -4597,9 +4596,9 @@ job_done() {
 	# Failure to find this indicates the job is already done.
 	hash_remove builder_pkgnames "${j}" pkgname || return 1
 	hash_unset builder_pids "${j}"
-	unlink "../var/run/${j}.pid"
+	unlink "${MASTER_DATADIR}/var/run/${j}.pid"
 	_bget status ${j} status
-	rmdir "../building/${pkgname}"
+	rmdir "${MASTER_DATADIR}/building/${pkgname}"
 	if [ "${status%%:*}" = "done" ]; then
 		bset ${j} status "idle:"
 	else
@@ -6407,9 +6406,9 @@ gather_port_vars() {
 		    err 1 "Error processing dependencies"
 	fi
 
-	:> "all_pkgs"
+	:> "${MASTER_DATADIR}/all_pkgs"
 	if [ ${ALL} -eq 0 ]; then
-		:> "all_pkgbases"
+		:> "${MASTER_DATADIR}/all_pkgbases"
 	fi
 
 	rm -rf gqueue dqueue mqueue fqueue 2>/dev/null || :
@@ -6600,7 +6599,6 @@ gather_port_vars() {
 
 # Dependency policy/assertions.
 deps_sanity() {
-	required_env deps_sanity PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 2 ] || eargs deps_sanity originspec deps
 	local originspec="${1}"
 	local deps="${2}"
@@ -6804,9 +6802,9 @@ gather_port_vars_port() {
 	fi
 
 	msg_debug "WILL BUILD ${COLOR_PORT}${originspec}${COLOR_RESET}"
-	echo "${pkgname} ${originspec} ${rdep} ${ignore}" >> "all_pkgs"
+	echo "${pkgname} ${originspec} ${rdep} ${ignore}" >> "${MASTER_DATADIR}/all_pkgs"
 	if [ ${ALL} -eq 0 ]; then
-		echo "${pkgname%-*}" >> "all_pkgbases"
+		echo "${pkgname%-*}" >> "${MASTER_DATADIR}/all_pkgbases"
 	fi
 
 	# Add all of the discovered FLAVORS into the flavorqueue if
@@ -6982,27 +6980,28 @@ gather_port_vars_process_depqueue() {
 
 
 compute_deps() {
-	required_env compute_deps PWD "${MASTER_DATADIR_ABS}"
 	local pkgname originspec dep_pkgname _ignored
 
 	msg "Calculating ports order and dependencies"
 	bset status "computingdeps:"
 	run_hook compute_deps start
 
-	:> "pkg_deps.unsorted"
+	:> "${MASTER_DATADIR}/pkg_deps.unsorted"
 
 	clear_dep_fatal_error
 	parallel_start
-	while mapfile_read_loop "all_pkgs" pkgname originspec _ignored; do
+	while mapfile_read_loop "${MASTER_DATADIR}/all_pkgs" \
+	    pkgname originspec _ignored; do
 		parallel_run compute_deps_pkg "${pkgname}" "${originspec}" \
-		    "pkg_deps.unsorted" || set_dep_fatal_error
+		    "${MASTER_DATADIR}/pkg_deps.unsorted" || set_dep_fatal_error
 	done
 	if ! parallel_stop || check_dep_fatal_error; then
 		err 1 "Fatal errors encountered calculating dependencies"
 	fi
 
-	sort -u "pkg_deps.unsorted" > "pkg_deps"
-	unlink "pkg_deps.unsorted"
+	sort -u "${MASTER_DATADIR}/pkg_deps.unsorted" \
+	    > "${MASTER_DATADIR}/pkg_deps"
+	unlink "${MASTER_DATADIR}/pkg_deps.unsorted"
 
 	bset status "computingrdeps:"
 	pkgqueue_compute_rdeps
@@ -7015,7 +7014,6 @@ compute_deps() {
 compute_deps_pkg() {
 	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
 	    err 1 "compute_deps_pkg requires SHASH_VAR_PATH=var/cache"
-	required_env compute_deps_pkg PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 3 ] || eargs compute_deps_pkg pkgname originspec pkg_deps
 	local pkgname="$1"
 	local originspec="$2"
@@ -7370,7 +7368,6 @@ listed_pkgnames() {
 
 # Pkgname was in queue
 pkgname_is_queued() {
-	required_env pkgname_is_queued PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 1 ] || eargs pkgname_is_queued pkgname
 	local pkgname="$1"
 
@@ -7382,7 +7379,7 @@ pkgname_is_queued() {
 	    END {
 		if (found != 1)
 			exit 1
-	    }' "all_pkgs"
+	    }' "${MASTER_DATADIR}/all_pkgs"
 }
 
 # Pkgname was listed to be built
@@ -7407,7 +7404,6 @@ pkgname_is_listed() {
 
 # PKGBASE was requested to be built, or is needed by a port requested to be built
 pkgbase_is_needed() {
-	required_env pkgbase_is_needed PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 1 ] || eargs pkgbase_is_needed pkgname
 	local pkgname="$1"
 	local pkgbase
@@ -7429,11 +7425,10 @@ pkgbase_is_needed() {
 	    END {
 		if (found != 1)
 			exit 1
-	    }' "all_pkgbases"
+	    }' "${MASTER_DATADIR}/all_pkgbases"
 }
 
 pkgbase_is_needed_and_not_ignored() {
-	required_env pkgbase_is_needed_and_not_ignored PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 1 ] || eargs pkgbase_is_needed_and_not_ignored pkgname
 	local pkgname="$1"
 	local pkgbase
@@ -7453,20 +7448,18 @@ pkgbase_is_needed_and_not_ignored() {
 	    END {
 		if (found != 1)
 			exit 1
-	    }' "all_pkgs"
+	    }' "${MASTER_DATADIR}/all_pkgs"
 }
 
 
 ignored_packages() {
-	required_env ignored_packages PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 0 ] || eargs ignored_packages
 
-	awk 'NF >= 4' "all_pkgs"
+	awk 'NF >= 4' "${MASTER_DATADIR}/all_pkgs"
 }
 
 # Port was requested to be built, or is needed by a port requested to be built
 originspec_is_needed_and_not_ignored() {
-        required_env originspec_is_needed_and_not_ignored PWD "${MASTER_DATADIR_ABS}"
        [ $# -eq 1 ] || eargs originspec_is_needed_and_not_ignored originspec
        local originspec="$1"
 
@@ -7479,7 +7472,7 @@ originspec_is_needed_and_not_ignored() {
            END {
                if (found != 1)
                        exit 1
-           }' "all_pkgs"
+           }' "${MASTER_DATADIR}/all_pkgs"
 }
 
 get_porttesting() {
@@ -7514,7 +7507,6 @@ load_moved() {
 	if [ "${SCRIPTNAME}" != "distclean.sh" ]; then
 		[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
 		    err 1 "load_moved requires SHASH_VAR_PATH=var/cache"
-		required_env load_moved PWD "${MASTER_DATADIR_ABS}"
 	fi
 	[ -f ${MASTERMNT}${PORTSDIR}/MOVED ] || return 0
 	msg "Loading MOVED for ${MASTERMNT}${PORTSDIR}"
@@ -7647,7 +7639,6 @@ git_tree_dirty() {
 }
 
 trim_ignored() {
-	required_env trim_ignored PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 0 ] || eargs trim_ignored
 	local pkgname originspec _rdep ignore
 
@@ -7664,7 +7655,6 @@ trim_ignored() {
 }
 
 trim_ignored_pkg() {
-	required_env trim_ignored_pkg PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 3 ] || eargs trim_ignored_pkg pkgname originspec ignore
 	local pkgname="$1"
 	local originspec="$2"
@@ -7947,7 +7937,7 @@ prepare_ports() {
 			# trimmed.
 			local _originspec _pkgname _rdep _ignore
 
-			while mapfile_read_loop "all_pkgs" \
+			while mapfile_read_loop "${MASTER_DATADIR}/all_pkgs" \
 			    _pkgname _originspec _rdep _ignore; do
 				if [ "${_rdep}" = "listed" ] || \
 				    pkgqueue_contains "${_pkgname}"; then
@@ -7992,16 +7982,17 @@ prepare_ports() {
 }
 
 load_priorities_ptsort() {
-	required_env load_priorities_ptsort PWD "${MASTER_DATADIR_ABS}"
 	local priority pkgname originspec pkg_boost origin flavor _ignored
 	local - # Keep set -f local
 
 	set -f # for PRIORITY_BOOST
 
-	awk '{print $2 " " $1}' "pkg_deps" > "pkg_deps.ptsort"
+	awk '{print $2 " " $1}' "${MASTER_DATADIR}/pkg_deps" \
+	    > "${MASTER_DATADIR}/pkg_deps.ptsort"
 
 	# Add in boosts before running ptsort
-	while mapfile_read_loop "all_pkgs" pkgname originspec _ignored; do
+	while mapfile_read_loop "${MASTER_DATADIR}/all_pkgs" \
+	    pkgname originspec _ignored; do
 		# Does this pkg have an override?
 		for pkg_boost in ${PRIORITY_BOOST}; do
 			case ${pkgname%-*} in
@@ -8012,19 +8003,20 @@ load_priorities_ptsort() {
 				    origin '' ''
 				msg "Boosting priority: ${COLOR_PORT}${origin}${flavor:+@${flavor}} | ${pkgname}"
 				echo "${pkgname} ${PRIORITY_BOOST_VALUE}" >> \
-				    "pkg_deps.ptsort"
+				    "${MASTER_DATADIR}/pkg_deps.ptsort"
 				break
 				;;
 			esac
 		done
 	done
 
-	ptsort -p "pkg_deps.ptsort" > \
-	    "pkg_deps.priority"
-	unlink "pkg_deps.ptsort"
+	ptsort -p "${MASTER_DATADIR}/pkg_deps.ptsort" > \
+	    "${MASTER_DATADIR}/pkg_deps.priority"
+	unlink "${MASTER_DATADIR}/pkg_deps.ptsort"
 
 	# Read all priorities into the "priority" hash
-	while mapfile_read_loop "pkg_deps.priority" priority pkgname; do
+	while mapfile_read_loop "${MASTER_DATADIR}/pkg_deps.priority" \
+	    priority pkgname; do
 		hash_set "priority" "${pkgname}" ${priority}
 	done
 
@@ -8032,15 +8024,14 @@ load_priorities_ptsort() {
 }
 
 load_priorities() {
-	required_env load_priorities PWD "${MASTER_DATADIR_ABS}"
-
 	msg "Processing PRIORITY_BOOST"
 	bset status "load_priorities:"
 
 	load_priorities_ptsort
 
 	# Create buckets to satisfy the dependency chain priorities.
-	POOL_BUCKET_DIRS=$(awk '{print $1}' "pkg_deps.priority"|sort -run)
+	POOL_BUCKET_DIRS=$(awk '{print $1}' \
+	    "${MASTER_DATADIR}/pkg_deps.priority"|sort -run)
 
 	# If there are no buckets then everything to build will fall
 	# into 0 as they depend on nothing and nothing depends on them.
@@ -8051,7 +8042,7 @@ load_priorities() {
 	fi
 
 	# Create buckets after loading priorities in case of boosts.
-	( cd pool && mkdir ${POOL_BUCKET_DIRS} )
+	( cd "${MASTER_DATADIR}/pool" && mkdir ${POOL_BUCKET_DIRS} )
 
 	# unbalanced is where everything starts at.  Items are moved in
 	# balance_pool based on their priority in the "priority" hash.

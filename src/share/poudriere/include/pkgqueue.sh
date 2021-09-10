@@ -302,7 +302,6 @@ pkgqueue_compute_rdeps() {
 }
 
 pkgqueue_remaining() {
-	required_env pkgqueue_remaining PWD "${MASTER_DATADIR_ABS}/pool"
 	[ $# -eq 0 ] || eargs pkgqueue_remaining
 	{
 		# Find items in pool ready-to-build
