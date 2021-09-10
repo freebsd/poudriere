@@ -1232,7 +1232,7 @@ update_remaining() {
 		return 0
 	fi
 	(
-		cd "${MASTERMNT}/.p/pool"
+		cd "${MASTER_DATADIR}/pool"
 		pkgqueue_remaining | \
 		    write_atomic "${log}/.poudriere.ports.remaining"
 	)
@@ -1308,12 +1308,13 @@ exit_handler() {
 
 	if was_a_bulk_run; then
 		log_stop
-		# build_queue may have done cd MASTERMNT/.p/pool,
+		# build_queue may have done cd MASTER_DATADIR/pool,
 		# but some of the cleanup here assumes we are
-		# PWD=MASTERMNT/.p.  Switch back if possible.
+		# PWD=MASTER_DATADIR.  Switch back if possible.
 		# It will be changed to / in jail_cleanup
-		if [ -d "${MASTERMNT}/.p" ]; then
-			cd "${MASTERMNT}/.p"
+		if [ -n "${MASTER_DATADIR-}" ] &&
+		    [ -d "${MASTER_DATADIR}" ]; then
+			cd "${MASTER_DATADIR}"
 		fi
 	fi
 	if was_a_jail_run; then
@@ -1657,7 +1658,7 @@ fetch_file() {
 	err 1 "Failed to fetch from ${url}"
 }
 
-# Wrap mktemp to put most tmpfiles in mnt/.p/tmp rather than system /tmp.
+# Wrap mktemp to put most tmpfiles in $MNT_DATADIR/tmp rather than system /tmp.
 mktemp() {
 	local mktemp_tmpfile ret
 
@@ -1764,11 +1765,16 @@ markfs() {
 		echo " done"
 		return 0
 	fi
-	mtreefile="${MASTERMNT}/.p/mtree.${name}exclude${PORTTESTING}"
-	if [ ! -f "${mtreefile}" ]; then
-		{
-			common_mtree "${mnt}"
-			case "${name}" in
+	(
+		trap - INT
+		# cd for 'mtree -p .' but do it early as MASTER_DATADIR is
+		# a relative path.
+		cd "${mnt}"
+		mtreefile="${MASTER_DATADIR}/mtree.${name}exclude${PORTTESTING}"
+		if [ ! -f "${mtreefile}" ]; then
+			{
+				common_mtree "${mnt}"
+				case "${name}" in
 				prebuild|prestage)
 					cat <<-EOF
 					.${HOME}
@@ -1795,12 +1801,12 @@ markfs() {
 					./var/tmp
 					EOF
 				;;
-			esac
-		} | write_atomic "${mtreefile}"
-	fi
-	( cd "${mnt}" && mtree -X "${mtreefile}" \
-		-cn -k uid,gid,flags,mode,size \
-		-p . ) > "${mnt}/.p/mtree.${name}"
+				esac
+			} | write_atomic "${mtreefile}"
+		fi
+		mtree -X "${mtreefile}" -cn -k uid,gid,flags,mode,size -p . \
+		    > "${MNT_DATADIR}/mtree.${name}"
+	)
 	echo " done"
 }
 
@@ -2993,8 +2999,8 @@ jail_start() {
 	do_portbuild_mounts "${tomnt}" "${name}" "${ptname}" "${setname}"
 
 	if [ "${tomnt##*/}" = "ref" ]; then
-		mkdir -p "${MASTERMNT}/.p/var/cache"
-		SHASH_VAR_PATH="${MASTERMNT}/.p/var/cache"
+		mkdir -p "${MASTER_DATADIR}/var/cache"
+		SHASH_VAR_PATH="${MASTER_DATADIR}/var/cache"
 		# No prefix needed since we're unique in MASTERMNT.
 		SHASH_VAR_PREFIX=
 	fi
@@ -3341,7 +3347,7 @@ jail_stop() {
 	[ $# -eq 0 ] || eargs jail_stop
 	local last_status
 
-	# Make sure CWD is not inside the jail or MASTERMNT/.p, which may
+	# Make sure CWD is not inside the jail or MASTER_DATADIR, which may
 	# cause EBUSY from umount.
 	cd /tmp
 
@@ -3379,11 +3385,11 @@ jail_cleanup() {
 	# Only bother with this if using jails as this may be being ran
 	# from queue.sh or daemon.sh, etc.
 	if [ -n "${MASTERMNT}" -a -n "${MASTERNAME}" ] && was_a_jail_run; then
-		if [ -d ${MASTERMNT}/.p/var/run ]; then
-			for pidfile in ${MASTERMNT}/.p/var/run/*.pid; do
+		if [ -d ${MASTER_DATADIR}/var/run ]; then
+			for pidfile in ${MASTER_DATADIR}/var/run/*.pid; do
 				# Ensure there is a pidfile to read or break
 				[ "${pidfile}" = \
-				    "${MASTERMNT}/.p/var/run/*.pid" ] && \
+				    "${MASTER_DATADIR}/var/run/*.pid" ] && \
 				    break
 				read pid < "${pidfile}"
 				kill_job 1 "${pid}" || :
@@ -3564,8 +3570,7 @@ download_from_repo_check_pkg() {
 
 download_from_repo() {
 	[ $# -eq 0 ] || eargs download_from_repo
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "download_from_repo requires PWD=${MASTERMNT}/.p"
+	required_env download_from_repo PWD "${MASTER_DATADIR_ABS}"
 	local pkgname abi originspec listed ignored pkg_bin packagesite
 	local packagesite_resolved
 	local remote_all_pkgs remote_all_options wantedpkgs remote_all_deps
@@ -3791,8 +3796,7 @@ download_from_repo_make_log() {
 
 # Remove from the pkg_fetch list packages that need to rebuild anyway.
 download_from_repo_post_delete() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "download_from_repo_post_delete requires PWD=${MASTERMNT}/.p"
+	required_env download_from_repo_post_delete PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 0 ] || eargs download_from_repo_post_delete
 	local log fpkgname packagesite
 
@@ -3902,8 +3906,8 @@ check_leftovers() {
 	local mnt="${1}"
 
 	( cd "${mnt}" && \
-	    mtree -X "${MASTERMNT}/.p/mtree.preinstexclude${PORTTESTING}" \
-	    -f "${mnt}/.p/mtree.preinst" -p . ) | \
+	    mtree -X "${MASTER_DATADIR}/mtree.preinstexclude${PORTTESTING}" \
+	    -f "${MNT_DATADIR}/mtree.preinst" -p . ) | \
 	    while mapfile_read_loop_redir l; do
 		local changed read_again
 
@@ -3980,8 +3984,8 @@ check_fs_violation() {
 	tmpfile=$(mktemp -t check_fs_violation)
 	msg_n "${status_msg}..."
 	( cd "${mnt}" && \
-		mtree -X "${MASTERMNT}/.p/mtree.${mtree_target}exclude${PORTTESTING}" \
-		-f "${mnt}/.p/mtree.${mtree_target}" \
+		mtree -X "${MASTER_DATADIR}/mtree.${mtree_target}exclude${PORTTESTING}" \
+		-f "${MNT_DATADIR}/mtree.${mtree_target}" \
 		-p . ) >> ${tmpfile}
 	echo " done"
 
@@ -4264,7 +4268,7 @@ build_port() {
 
 			nohang ${max_execution_time} ${NOHANG_TIME} \
 				"${log}/logs/${pkgname}.log" \
-				"${MASTERMNT}/.p/var/run/${MY_JOBID:-00}_nohang.pid" \
+				"${MASTER_DATADIR}/var/run/${MY_JOBID:-00}_nohang.pid" \
 				injail /usr/bin/env ${phaseenv:+-S "${phaseenv}"} \
 				/usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 				${phase}
@@ -4559,9 +4563,9 @@ stop_builders() {
 	local PARALLEL_JOBS real_parallel_jobs
 
 	# wait for the last running processes
-	case ${MASTERMNT}/.p/var/run/*.pid in
-	"${MASTERMNT}/.p/var/run/*.pid") ;;
-	*) cat ${MASTERMNT}/.p/var/run/*.pid | xargs pwait 2>/dev/null ;;
+	case ${MASTER_DATADIR}/var/run/*.pid in
+	"${MASTER_DATADIR}/var/run/*.pid") ;;
+	*) cat ${MASTER_DATADIR}/var/run/*.pid | xargs pwait 2>/dev/null ;;
 	esac
 
 	if [ ${PARALLEL_JOBS} -ne 0 ]; then
@@ -4584,13 +4588,10 @@ stop_builders() {
 }
 
 job_done() {
-	[ "${PWD}" = "${MASTERMNT}/.p/pool" ] || \
-	    err 1 "job_done requires PWD=${MASTERMNT}/.p/pool"
+	required_env job_done PWD "${MASTER_DATADIR_ABS}/pool"
 	[ $# -eq 1 ] || eargs job_done j
 	local j="$1"
 	local pkgname status
-
-	# CWD is MASTERMNT/.p/pool
 
 	# Failure to find this indicates the job is already done.
 	hash_remove builder_pkgnames "${j}" pkgname || return 1
@@ -4609,8 +4610,7 @@ job_done() {
 }
 
 build_queue() {
-	[ "${PWD}" = "${MASTERMNT}/.p/pool" ] || \
-	    err 1 "build_queue requires PWD=${MASTERMNT}/.p/pool"
+	required_env build_queue PWD "${MASTER_DATADIR_ABS}/pool"
 	local j jobid pid pkgname builders_active queue_empty
 	local builders_idle idle_only timeout log porttesting
 
@@ -4618,9 +4618,9 @@ build_queue() {
 
 	run_hook build_queue start
 
-	mkfifo ${MASTERMNT}/.p/builders.pipe
-	exec 6<> ${MASTERMNT}/.p/builders.pipe
-	unlink ${MASTERMNT}/.p/builders.pipe
+	mkfifo ${MASTER_DATADIR}/builders.pipe
+	exec 6<> ${MASTER_DATADIR}/builders.pipe
+	unlink ${MASTER_DATADIR}/builders.pipe
 	queue_empty=0
 
 	msg "Hit CTRL+t at any time to see build progress and stats"
@@ -4824,8 +4824,8 @@ parallel_build() {
 
 	bset status "parallel_build:"
 
-	[ ! -d "${MASTERMNT}/.p/pool" ] && err 1 "Build pool is missing"
-	cd "${MASTERMNT}/.p/pool"
+	[ ! -d "${MASTER_DATADIR}/pool" ] && err 1 "Build pool is missing"
+	cd "${MASTER_DATADIR}/pool"
 
 	build_queue
 
@@ -4913,7 +4913,7 @@ clean_pool() {
 
 	if [ "${clean_rdepends}" != "ignored" ]; then
 		(
-			cd "${MASTERMNT}/.p"
+			cd "${MASTER_DATADIR}"
 			balance_pool || :
 		)
 	fi
@@ -6325,8 +6325,7 @@ check_dep_fatal_error() {
 }
 
 gather_port_vars() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "gather_port_vars requires PWD=${MASTERMNT}/.p"
+	required_env gather_port_vars PWD "${MASTER_DATADIR_ABS}"
 	local origin qorigin log originspec dep_args flavor rdep qlist
 
 	# A. Lookup all port vars/deps from the given list of ports.
@@ -6599,8 +6598,7 @@ gather_port_vars() {
 
 # Dependency policy/assertions.
 deps_sanity() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "deps_sanity requires PWD=${MASTERMNT}/.p"
+	required_env deps_sanity PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 2 ] || eargs deps_sanity originspec deps
 	local originspec="${1}"
 	local deps="${2}"
@@ -6651,8 +6649,7 @@ deps_sanity() {
 gather_port_vars_port() {
 	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
 	    err 1 "gather_port_vars_port requires SHASH_VAR_PATH=var/cache"
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "gather_port_vars_port requires PWD=${MASTERMNT}/.p"
+	required_env gather_port_vars_port PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 2 ] || eargs gather_port_vars_port originspec rdep
 	local originspec="$1"
 	local rdep="$2"
@@ -6879,8 +6876,7 @@ is_failed_metadata_lookup() {
 gather_port_vars_process_depqueue_enqueue() {
 	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
 	    err 1 "gather_port_vars_process_depqueue_enqueue requires SHASH_VAR_PATH=var/cache"
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "gather_port_vars_process_depqueue_enqueue requires PWD=${MASTERMNT}/.p"
+	required_env gather_port_vars_process_depqueue_enqueue PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 4 ] || eargs gather_port_vars_process_depqueue_enqueue \
 	    originspec dep_originspec queue rdep
 	local originspec="$1"
@@ -6915,8 +6911,7 @@ gather_port_vars_process_depqueue_enqueue() {
 gather_port_vars_process_depqueue() {
 	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
 	    err 1 "gather_port_vars_process_depqueue requires SHASH_VAR_PATH=var/cache"
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "gather_port_vars_process_depqueue requires PWD=${MASTERMNT}/.p"
+	required_env gather_port_vars_process_depqueue PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 1 ] || eargs gather_port_vars_process_depqueue originspec
 	local originspec="$1"
 	local origin pkgname deps dep_origin
@@ -6985,8 +6980,7 @@ gather_port_vars_process_depqueue() {
 
 
 compute_deps() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "compute_deps requires PWD=${MASTERMNT}/.p"
+	required_env compute_deps PWD "${MASTER_DATADIR_ABS}"
 	local pkgname originspec dep_pkgname _ignored
 
 	msg "Calculating ports order and dependencies"
@@ -7019,8 +7013,7 @@ compute_deps() {
 compute_deps_pkg() {
 	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
 	    err 1 "compute_deps_pkg requires SHASH_VAR_PATH=var/cache"
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "compute_deps_pkg requires PWD=${MASTERMNT}/.p"
+	required_env compute_deps_pkg PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 3 ] || eargs compute_deps_pkg pkgname originspec pkg_deps
 	local pkgname="$1"
 	local originspec="$2"
@@ -7370,13 +7363,12 @@ _listed_ports() {
 }
 
 listed_pkgnames() {
-	awk '$3 == "listed" { print $1 }' "${MASTERMNT}/.p/all_pkgs"
+	awk '$3 == "listed" { print $1 }' "${MASTER_DATADIR}/all_pkgs"
 }
 
 # Pkgname was in queue
 pkgname_is_queued() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkgname_is_queued requires PWD=${MASTERMNT}/.p"
+	required_env pkgname_is_queued PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 1 ] || eargs pkgname_is_queued pkgname
 	local pkgname="$1"
 
@@ -7408,13 +7400,12 @@ pkgname_is_listed() {
 	    END {
 		if (found != 1)
 			exit 1
-	    }' "${MASTERMNT}/.p/all_pkgs"
+	    }' "${MASTER_DATADIR}/all_pkgs"
 }
 
 # PKGBASE was requested to be built, or is needed by a port requested to be built
 pkgbase_is_needed() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkgbase_is_needed requires PWD=${MASTERMNT}/.p"
+	required_env pkgbase_is_needed PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 1 ] || eargs pkgbase_is_needed pkgname
 	local pkgname="$1"
 	local pkgbase
@@ -7440,8 +7431,7 @@ pkgbase_is_needed() {
 }
 
 pkgbase_is_needed_and_not_ignored() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkgbase_is_needed_and_not_ignored requires PWD=${MASTERMNT}/.p"
+	required_env pkgbase_is_needed_and_not_ignored PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 1 ] || eargs pkgbase_is_needed_and_not_ignored pkgname
 	local pkgname="$1"
 	local pkgbase
@@ -7466,8 +7456,7 @@ pkgbase_is_needed_and_not_ignored() {
 
 
 ignored_packages() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "ignored_packages requires PWD=${MASTERMNT}/.p"
+	required_env ignored_packages PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 0 ] || eargs ignored_packages
 
 	awk 'NF >= 4' "all_pkgs"
@@ -7475,8 +7464,7 @@ ignored_packages() {
 
 # Port was requested to be built, or is needed by a port requested to be built
 originspec_is_needed_and_not_ignored() {
-       [ "${PWD}" = "${MASTERMNT}/.p" ] || \
-           err 1 "originspec_is_needed_and_not_ignored requires PWD=${MASTERMNT}/.p"
+        required_env originspec_is_needed_and_not_ignored PWD "${MASTER_DATADIR_ABS}"
        [ $# -eq 1 ] || eargs originspec_is_needed_and_not_ignored originspec
        local originspec="$1"
 
@@ -7524,8 +7512,7 @@ load_moved() {
 	if [ "${SCRIPTNAME}" != "distclean.sh" ]; then
 		[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
 		    err 1 "load_moved requires SHASH_VAR_PATH=var/cache"
-		[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-		    err 1 "load_moved requires PWD=${MASTERMNT}/.p"
+		required_env load_moved PWD "${MASTER_DATADIR_ABS}"
 	fi
 	[ -f ${MASTERMNT}${PORTSDIR}/MOVED ] || return 0
 	msg "Loading MOVED for ${MASTERMNT}${PORTSDIR}"
@@ -7658,8 +7645,7 @@ git_tree_dirty() {
 }
 
 trim_ignored() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "trim_ignored requires PWD=${MASTERMNT}/.p"
+	required_env trim_ignored PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 0 ] || eargs trim_ignored
 	local pkgname originspec _rdep ignore
 
@@ -7676,8 +7662,7 @@ trim_ignored() {
 }
 
 trim_ignored_pkg() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "trim_ignored_pkg requires PWD=${MASTERMNT}/.p"
+	required_env trim_ignored_pkg PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 3 ] || eargs trim_ignored_pkg pkgname originspec ignore
 	local pkgname="$1"
 	local originspec="$2"
@@ -7700,7 +7685,7 @@ trim_ignored_pkg() {
 	clean_pool "${pkgname}" "${originspec}" "ignored"
 }
 
-# PWD will be MASTERMNT/.p after this
+# PWD will be MASTER_DATADIR after this
 prepare_ports() {
 	local pkg
 	local log log_top
@@ -7709,7 +7694,7 @@ prepare_ports() {
 
 	pkgqueue_init
 
-	cd "${MASTERMNT}/.p"
+	cd "${MASTER_DATADIR}"
 	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
 	    err ${EX_SOFTWARE} "SHASH_VAR_PATH failed to be relpath updated"
 	# Allow caching values now
@@ -7797,10 +7782,10 @@ prepare_ports() {
 
 	if was_a_bulk_run; then
 		# Stash dependency graph
-		cp -f "${MASTERMNT}/.p/pkg_deps" "${log}/.poudriere.pkg_deps%"
-		cp -f "${MASTERMNT}/.p/pkg_pool" \
+		cp -f "${MASTER_DATADIR}/pkg_deps" "${log}/.poudriere.pkg_deps%"
+		cp -f "${MASTER_DATADIR}/pkg_pool" \
 		    "${log}/.poudriere.pkg_pool%"
-		cp -f "${MASTERMNT}/.p/all_pkgs" "${log}/.poudriere.all_pkgs%"
+		cp -f "${MASTER_DATADIR}/all_pkgs" "${log}/.poudriere.all_pkgs%"
 
 		if [ -f "${PACKAGES}/.jailversion" ] &&
 		    [ "$(cat ${PACKAGES}/.jailversion)" != \
@@ -8005,8 +7990,7 @@ prepare_ports() {
 }
 
 load_priorities_ptsort() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "load_priorities_ptsort requires PWD=${MASTERMNT}/.p"
+	required_env load_priorities_ptsort PWD "${MASTER_DATADIR_ABS}"
 	local priority pkgname originspec pkg_boost origin flavor _ignored
 	local - # Keep set -f local
 
@@ -8046,8 +8030,7 @@ load_priorities_ptsort() {
 }
 
 load_priorities() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "load_priorities requires PWD=${MASTERMNT}/.p"
+	required_env load_priorities PWD "${MASTER_DATADIR_ABS}"
 
 	msg "Processing PRIORITY_BOOST"
 	bset status "load_priorities:"
@@ -8076,8 +8059,7 @@ load_priorities() {
 }
 
 balance_pool() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "balance_pool requires PWD=${MASTERMNT}/.p"
+	required_env balance_pool PWD "${MASTER_DATADIR_ABS}"
 
 	local pkgname pkg_dir dep_count lock
 

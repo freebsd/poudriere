@@ -210,15 +210,15 @@ pkg_cacher_queue() {
 
 	encode_args encoded_data "$@"
 
-	echo "${encoded_data}" > ${MASTERMNT}/.p/pkg_cacher.pipe
+	echo "${encoded_data}" > ${MASTER_DATADIR}/pkg_cacher.pipe
 }
 
 pkg_cacher_main() {
 	local pkg work pkgname origin dep_args flavor
 	local IFS
 
-	mkfifo ${MASTERMNT}/.p/pkg_cacher.pipe
-	exec 6<> ${MASTERMNT}/.p/pkg_cacher.pipe
+	mkfifo ${MASTER_DATADIR}/pkg_cacher.pipe
+	exec 6<> ${MASTER_DATADIR}/pkg_cacher.pipe
 
 	trap exit TERM
 	trap pkg_cacher_cleanup EXIT
@@ -239,7 +239,7 @@ pkg_cacher_main() {
 pkg_cacher_cleanup() {
 	local IFS; unset IFS;
 
-	unlink ${MASTERMNT}/.p/pkg_cacher.pipe
+	unlink ${MASTER_DATADIR}/pkg_cacher.pipe
 }
 
 get_cache_dir() {

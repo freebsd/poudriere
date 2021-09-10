@@ -49,7 +49,7 @@ html_json_main() {
 	local -; set +x
 	local _relpath
 
-	# Ensure we are not sitting in the MASTERMNT/.p directory and
+	# Ensure we are not sitting in the MASTER_DATADIR directory and
 	# move into the logdir for relative operations.
 	_log_path_top log_path_top
 	cd "${log_path_top}"

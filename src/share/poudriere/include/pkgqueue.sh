@@ -30,14 +30,13 @@
 ## Then move the package to the "building" dir in building/
 ## This is only ran from 1 process
 pkgqueue_get_next() {
-	[ "${PWD}" = "${MASTERMNT}/.p/pool" ] || \
-	    err 1 "pkgqueue_get_next requires PWD=${MASTERMNT}/.p/pool"
+	required_env pkgqueue_get_next PWD "${MASTER_DATADIR_ABS}/pool"
 	[ $# -eq 2 ] || eargs pkgqueue_get_next pkgname_var porttesting_var
 	local pkgname_var="$1"
 	local porttesting_var="$2"
 	local p _pkgname ret
 
-	# CWD is MASTERMNT/.p/pool
+	# CWD is MASTER_DATADIR/pool
 
 	p=$(find ${POOL_BUCKET_DIRS} -type d -depth 1 -empty -print -quit || :)
 	if [ -n "$p" ]; then
@@ -54,7 +53,7 @@ pkgqueue_get_next() {
 				return ${ret}
 			else
 				# Failure to move a balanced item??
-				err 1 "pkgqueue_get_next: Failed to mv ${p} to ${MASTERMNT}/.p/building/${_pkgname}"
+				err 1 "pkgqueue_get_next: Failed to mv ${p} to ${MASTER_DATADIR}/building/${_pkgname}"
 			fi
 		fi
 		# Update timestamp for buildtime accounting
@@ -68,18 +67,17 @@ pkgqueue_get_next() {
 }
 
 pkgqueue_init() {
-	mkdir -p "${MASTERMNT}/.p/building" \
-		"${MASTERMNT}/.p/pool" \
-		"${MASTERMNT}/.p/pool/unbalanced" \
-		"${MASTERMNT}/.p/deps" \
-		"${MASTERMNT}/.p/rdeps" \
-		"${MASTERMNT}/.p/cleaning/deps" \
-		"${MASTERMNT}/.p/cleaning/rdeps"
+	mkdir -p "${MASTER_DATADIR}/building" \
+		"${MASTER_DATADIR}/pool" \
+		"${MASTER_DATADIR}/pool/unbalanced" \
+		"${MASTER_DATADIR}/deps" \
+		"${MASTER_DATADIR}/rdeps" \
+		"${MASTER_DATADIR}/cleaning/deps" \
+		"${MASTER_DATADIR}/cleaning/rdeps"
 }
 
 pkgqueue_contains() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkgqueue_contains requires PWD=${MASTERMNT}/.p"
+	required_env pkgqueue_contains PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 1 ] || eargs pkgqueue_contains pkgname
 	local pkgname="$1"
 	local pkg_dir_name
@@ -89,8 +87,7 @@ pkgqueue_contains() {
 }
 
 pkgqueue_add() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkgqueue_add requires PWD=${MASTERMNT}/.p"
+	required_env pkgqueue_add PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 1 ] || eargs pkgqueue_add pkgname
 	local pkgname="$1"
 	local pkg_dir_name
@@ -100,8 +97,7 @@ pkgqueue_add() {
 }
 
 pkgqueue_add_dep() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkgqueue_add_dep requires PWD=${MASTERMNT}/.p"
+	required_env pkgqueue_add_dep PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 2 ] || eargs pkgqueue_add_dep pkgname dep_pkgname
 	local pkgname="$1"
 	local dep_pkgname="$2"
@@ -115,8 +111,7 @@ pkgqueue_add_dep() {
 # depending on this package. If clean_rdepends is set, instead cleanup
 # anything depending on me and skip them.
 pkgqueue_clean_rdeps() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkgqueue_clean_rdeps requires PWD=${MASTERMNT}/.p"
+	required_env pkgqueue_clean_rdeps PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 2 ] || eargs pkgqueue_clean_rdeps clean_rdepends
 	local pkgname="$1"
 	local clean_rdepends="$2"
@@ -177,8 +172,7 @@ pkgqueue_clean_rdeps() {
 
 # Remove my /deps/<pkgname> dir and any references to this dir in /rdeps/
 pkgqueue_clean_deps() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkgqueue_clean_deps requires PWD=${MASTERMNT}/.p"
+	required_env pkgqueue_clean_deps PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 2 ] || eargs pkgqueue_clean_deps clean_rdepends
 	local pkgname="$1"
 	local clean_rdepends="$2"
@@ -211,8 +205,7 @@ pkgqueue_clean_deps() {
 }
 
 pkgqueue_clean_pool() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkgqueue_clean_pool requires PWD=${MASTERMNT}/.p"
+	required_env pkgqueue_clean_pool PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 2 ] || eargs pkgqueue_clean_pool clean_rdepends
 	local pkgname="$1"
 	local clean_rdepends="$2"
@@ -235,7 +228,7 @@ pkgqueue_done() {
 	local clean_rdepends="$2"
 
 	(
-		cd "${MASTERMNT}/.p"
+		cd "${MASTER_DATADIR}"
 		pkgqueue_clean_pool "${pkgname}" "${clean_rdepends}"
 	) | sort -u
 
@@ -243,8 +236,7 @@ pkgqueue_done() {
 }
 
 pkgqueue_list() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkgqueue_list requires PWD=${MASTERMNT}/.p"
+	required_env pkgqueue_list PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 0 ] || eargs pkgqueue_list
 
 	find deps -type d -depth 2 | cut -d / -f 3
@@ -252,18 +244,16 @@ pkgqueue_list() {
 
 # Create a pool of ready-to-build from the deps pool
 pkgqueue_move_ready_to_pool() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkgqueue_move_ready_to_pool requires PWD=${MASTERMNT}/.p"
+	required_env pkgqueue_move_ready_to_pool PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 0 ] || eargs pkgqueue_move_ready_to_pool
 
 	find deps -type d -depth 2 -empty | \
-	    xargs -J % mv % pool/unbalanced
-}
+		xargs -J % mv % pool/unbalanced
+	}
 
 # Remove all packages from queue sent in STDIN
 pkgqueue_remove_many_pipe() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkgqueue_remove_many_pipe requires PWD=${MASTERMNT}/.p"
+	required_env pkgqueue_remove_many_pipe PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 0 ] || eargs pkgqueue_remove_many_pipe [pkgnames stdin]
 	local pkgname
 
@@ -282,8 +272,7 @@ pkgqueue_remove_many_pipe() {
 }
 
 _pkgqueue_compute_rdeps() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "_pkgqueue_compute_rdeps requires PWD=${MASTERMNT}/.p"
+	required_env _pkgqueue_compute_rdeps PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 0 ] || eargs _pkgqueue_compute_rdeps
 	local rdep_dir_name job dep_job
 
@@ -300,8 +289,7 @@ _pkgqueue_compute_rdeps() {
 # Compute back references for quickly finding things to skip if this job
 # fails.
 pkgqueue_compute_rdeps() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkgqueue_compute_rdeps requires PWD=${MASTERMNT}/.p"
+	required_env pkgqueue_compute_rdeps PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 0 ] || eargs pkgqueue_compute_rdeps
 	local job rdep_dir_name dep
 
@@ -314,8 +302,7 @@ pkgqueue_compute_rdeps() {
 }
 
 pkgqueue_remaining() {
-	[ "${PWD}" = "${MASTERMNT}/.p/pool" ] || \
-	    err 1 "pkgqueue_remaining requires PWD=${MASTERMNT}/.p/pool"
+	required_env pkgqueue_remaining PWD "${MASTER_DATADIR_ABS}/pool"
 	[ $# -eq 0 ] || eargs pkgqueue_remaining
 	{
 		# Find items in pool ready-to-build
@@ -342,7 +329,7 @@ pkgqueue_sanity_check() {
 	local failed_phase pwd dead_packages
 
 	pwd="${PWD}"
-	cd "${MASTERMNT}/.p"
+	cd "${MASTER_DATADIR}"
 
 	# If there are still packages marked as "building" they have crashed
 	# and it's likely some poudriere or system bug
@@ -389,12 +376,11 @@ ${dependency_cycles}"
 
 	# No cycle, there's some unknown poudriere bug
 	err 1 "Unknown stuck queue bug detected. Please submit the entire build output to poudriere developers.
-$(find ${MASTERMNT}/.p/building ${MASTERMNT}/.p/pool ${MASTERMNT}/.p/deps ${MASTERMNT}/.p/cleaning)"
+$(find ${MASTER_DATADIR}/building ${MASTER_DATADIR}/pool ${MASTER_DATADIR}/deps ${MASTER_DATADIR}/cleaning)"
 }
 
 pkgqueue_empty() {
-	[ "${PWD}" = "${MASTERMNT}/.p/pool" ] || \
-	    err 1 "pkgqueue_empty requires PWD=${MASTERMNT}/.p/pool"
+	required_env pkgqueue_empty PWD "${MASTER_DATADIR_ABS}/pool"
 	local pool_dir dirs
 	local n
 
@@ -422,8 +408,7 @@ pkgqueue_empty() {
 
 # List deps from pkgnames in STDIN
 pkgqueue_list_deps_pipe() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkgqueue_list_deps_pipe requires PWD=${MASTERMNT}/.p"
+	required_env pkgqueue_list_deps_pipe PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 0 ] || eargs pkgqueue_list_deps_pipe [pkgnames stdin]
 	local pkgname FIND_ALL_DEPS
 
@@ -434,8 +419,7 @@ pkgqueue_list_deps_pipe() {
 }
 
 pkgqueue_list_deps_recurse() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkgqueue_list_deps_recurse requires PWD=${MASTERMNT}/.p"
+	required_env pkgqueue_list_deps_recurse PWD "${MASTER_DATADIR_ABS}"
 	[ $# -ne 1 ] && eargs pkgqueue_list_deps_recurse pkgname
 	local pkgname="$1"
 	local dep_pkgname pkg_dir_name
@@ -461,8 +445,7 @@ pkgqueue_list_deps_recurse() {
 }
 
 pkgqueue_find_dead_packages() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkgqueue_find_dead_packages requires PWD=${MASTERMNT}/.p"
+	required_env pkgqueue_find_dead_packages PWD "${MASTER_DATADIR_ABS}"
 	[ $# -eq 0 ] || eargs pkgqueue_find_dead_packages
 	local dead_all dead_deps dead_top
 
@@ -480,8 +463,7 @@ pkgqueue_find_dead_packages() {
 }
 
 pkgqueue_find_all_pool_references() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkgqueue_find_all_pool_references requires PWD=${MASTERMNT}/.p"
+	required_env pkgqueue_find_all_pool_references PWD "${MASTER_DATADIR_ABS}"
 	[ $# -ne 1 ] && eargs pkgqueue_find_all_pool_references pkgname
 	local pkgname="$1"
 	local rpn dep_pkgname rdep_dir_name pkg_dir_name dep_dir_name
@@ -513,8 +495,7 @@ pkgqueue_find_all_pool_references() {
 }
 
 pkgqueue_unqueue_existing_packages() {
-	[ "${PWD}" = "${MASTERMNT}/.p" ] || \
-	    err 1 "pkgqueue_unqueue_existing_packages requires PWD=${MASTERMNT}/.p"
+	required_env pkgqueue_unqueue_existing_packages PWD "${MASTER_DATADIR_ABS}"
 	local pn
 
 	bset status "cleaning:"

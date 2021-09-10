@@ -1253,9 +1253,7 @@ _mktemp() {
 
 	if [ -z "${TMPDIR-}" ]; then
 		if [ -n "${MASTERMNT}" -a ${STATUS} -eq 1 ]; then
-			local mnt
-			_my_path mnt
-			TMPDIR="${mnt}/.p/tmp"
+			TMPDIR="${MNT_DATADIR}/tmp"
 			[ -d "${TMPDIR}" ] || unset TMPDIR
 		else
 			TMPDIR="${POUDRIERE_TMPDIR}"
