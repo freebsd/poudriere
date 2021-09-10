@@ -101,11 +101,13 @@ void ckfree(void *);
 #undef exit
 extern int exitstatus;
 void flushall(void);
-#define exit(status) do { \
-	exitstatus = status; \
-	flushall(); \
-	exraise(EXERROR); \
-} while (0)
+void verrorwithstatus(int, const char *, va_list) __printf0like(2, 0) __dead2;
+/* https://stackoverflow.com/a/25172698/285734 */
+#define exit(...)		exit_(_, ##__VA_ARGS__)
+#define exit_(...)		exit_X(__VA_ARGS__, _1, _0)(__VA_ARGS__)
+#define exit_X(_0, _1, X, ...)	exit ## X
+#define exit_0(_)		return (0)
+#define exit_1(_, status)	verrorwithstatus(status, NULL, NULL)
 
 /* Getopt compat */
 #include "options.h"

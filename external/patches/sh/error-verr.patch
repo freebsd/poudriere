@@ -2,6 +2,15 @@ diff --git external/sh/error.c external/sh/error.c
 index a2eeb70a3..28a036089 100644
 --- external/sh/error.c
 +++ external/sh/error.c
+@@ -67,7 +67,7 @@ volatile sig_atomic_t suppressint;
+ volatile sig_atomic_t intpending;
+ 
+ 
+-static void verrorwithstatus(int, const char *, va_list) __printf0like(2, 0) __dead2;
++void verrorwithstatus(int, const char *, va_list) __printf0like(2, 0) __dead2;
+ 
+ /*
+  * Called to raise an exception.  Since C doesn't include exceptions, we
 @@ -126,7 +126,7 @@ onint(void)
  }
  

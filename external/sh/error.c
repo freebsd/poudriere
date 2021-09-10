@@ -67,7 +67,7 @@ volatile sig_atomic_t suppressint;
 volatile sig_atomic_t intpending;
 
 
-static void verrorwithstatus(int, const char *, va_list) __printf0like(2, 0) __dead2;
+void verrorwithstatus(int, const char *, va_list) __printf0like(2, 0) __dead2;
 
 /*
  * Called to raise an exception.  Since C doesn't include exceptions, we
