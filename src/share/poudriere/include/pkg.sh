@@ -28,7 +28,7 @@ pkg_get_origin() {
 	local var_return="$1"
 	local pkg="$2"
 	local _origin=$3
-	local SHASH_VAR_PATH
+	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
 	if ! shash_get 'pkg' 'origin' _origin ||
@@ -51,7 +51,7 @@ pkg_get_annotations() {
 	[ $# -eq 2 ] || eargs pkg_get_annotations mapfile_handle_var pkg
 	local mapfile_handle_var="$1"
 	local pkg="$2"
-	local SHASH_VAR_PATH
+	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
 	if ! shash_exists 'pkg' 'annotations'; then
@@ -107,7 +107,7 @@ pkg_get_arch() {
 	local var_return="$1"
 	local pkg="$2"
 	local _arch=$3
-	local SHASH_VAR_PATH
+	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
 	if ! shash_get 'pkg' 'arch' _arch ||
@@ -133,7 +133,7 @@ pkg_get_dep_origin_pkgnames() {
 	local var_return_origins="$1"
 	local var_return_pkgnames="$2"
 	local pkg="$3"
-	local SHASH_VAR_PATH
+	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 	local fetched_data compiled_dep_origins compiled_dep_pkgnames
 	local origin pkgname
 
@@ -166,7 +166,7 @@ pkg_get_options() {
 	[ $# -ne 2 ] && eargs pkg_get_options var_return pkg
 	local var_return="$1"
 	local pkg="$2"
-	local SHASH_VAR_PATH
+	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 	local _compiled_options
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
