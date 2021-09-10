@@ -310,7 +310,7 @@ pkgqueue_remaining() {
 		# Find items in queue not ready-to-build.
 		( cd "${MASTER_DATADIR}"; pkgqueue_list ) | \
 		    sed -e 's,$, waiting-on-dependency,'
-	} 2>/dev/null | sed -e 's,.*/,,'
+	} | sed -e 's,.*/,,'
 }
 
 # Return directory name for given job
