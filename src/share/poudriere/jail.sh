@@ -1222,7 +1222,6 @@ done
 saved_argv="$@"
 shift $((OPTIND-1))
 post_getopts
-[ ${VERBOSE} -gt 0 ] || quiet="-q"
 
 METHOD=${METHOD:-${METHOD_DEF}}
 CLEANJAIL=${CLEAN:-none}
@@ -1265,6 +1264,7 @@ fi
 
 case "${COMMAND}" in
 	create)
+		[ ${VERBOSE} -gt 0 ] || quiet="-q"
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		case ${METHOD} in
 			src=*|null|git*) ;;
@@ -1319,6 +1319,7 @@ case "${COMMAND}" in
 		delete_jail
 		;;
 	update)
+		[ ${VERBOSE} -gt 0 ] || quiet="-q"
 		[ -z "${JAILNAME}" ] && usage JAILNAME
 		jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 		maybe_run_queued "${saved_argv}"
