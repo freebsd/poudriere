@@ -56,6 +56,7 @@ Options:
     -k          -- When doing testing with -t, don't consider failures as
                    fatal; don't skip dependent ports on findings.
     -N          -- Do not build package repository when build completed
+    -NN         -- Do not commit package repository when build completed
     -n          -- Dry-run. Show what will be done, but do not build
                    any packages.
     -O overlays -- Specify extra ports trees to overlay
@@ -96,7 +97,7 @@ COMMIT=1
 
 [ $# -eq 0 ] && usage
 
-while getopts "ab:B:dCcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
+while getopts "ab:B:CcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			ALL=1
@@ -113,14 +114,6 @@ while getopts "ab:B:dCcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
 			;;
 		C)
 			CLEAN_LISTED=1
-			;;
-		d)	# Flag not stable and may change at any time.
-			# Don't commit the packages.  This is effectively
-			# the same as -n but does an actual build.
-			if [ "${ATOMIC_PACKAGE_REPOSITORY}" != "yes" ]; then
-				err ${EX_USAGE} "-d only makes sense with ATOMIC_PACKAGE_REPOSITORY=yes"
-			fi
-			COMMIT=0
 			;;
 		F)
 			export MASTER_SITE_BACKUP=''
@@ -150,7 +143,17 @@ while getopts "ab:B:dCcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
 			PORTTESTING_FATAL=no
 			;;
 		N)
+			: ${NFLAG:=0}
+			NFLAG=$((NFLAG + 1))
 			BUILD_REPO=0
+			if [ "${NFLAG}" -eq 2 ]; then
+				# Don't commit the packages.  This is effectively
+				# the same as -n but does an actual build.
+				if [ "${ATOMIC_PACKAGE_REPOSITORY}" != "yes" ]; then
+					err ${EX_USAGE} "-NN only makes sense with ATOMIC_PACKAGE_REPOSITORY=yes"
+				fi
+				COMMIT=0
+			fi
 			;;
 		n)
 			[ "${ATOMIC_PACKAGE_REPOSITORY}" = "yes" ] ||
@@ -264,9 +267,7 @@ _bget nbfetched stats_fetched
 
 [ ${BUILD_REPO} -eq 1 ] && build_repo
 
-if [ "${COMMIT}" -eq 1 ]; then
-	commit_packages
-fi
+commit_packages
 
 show_build_results
 

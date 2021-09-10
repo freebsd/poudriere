@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd August 13, 2021
+.Dd September 9, 2021
 .Dt POUDRIERE-TESTPORT 8
 .Os
 .Sh NAME
@@ -125,6 +125,18 @@ Find all failures.
 .It Fl N
 Do not build package repository when build of dependencies is
 completed.
+.It Fl NN
+Do not commit the package repository when the build is completed.
+This can be used to do a full test build but have the opportunity to delete
+it all rather than publish it.
+The packages will be stored in a
+.Pa .building
+directory that can be removed manually, otherwise the next build will
+resume from that directory.
+Depends on
+.Cm ATOMIC_PACKAGE_REPOSITORY
+being set to
+.Sy yes .
 .It Fl n
 Dry run.
 Show what would be done, but do not actually build or delete any

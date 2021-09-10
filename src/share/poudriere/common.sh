@@ -2291,7 +2291,7 @@ stash_packages() {
 		# If the .building directory is still around, use it. The
 		# previous build may have failed, but all of the successful
 		# packages are still worth keeping for this build.
-		msg "Using packages from previously failed build: ${PACKAGES}/.building"
+		msg_warn "Using packages from previously failed, or uncommitted, build: ${PACKAGES}/.building"
 	else
 		msg "Stashing existing package repository"
 
@@ -2319,6 +2319,16 @@ stash_packages() {
 
 commit_packages() {
 	local pkgdir_old pkgdir_new stats_failed log
+
+	if [ "${COMMIT}" -eq 0 ]; then
+		case "${PACKAGES}" in
+		${PACKAGES_ROOT}/.building)
+			msg_warn "Temporary build directory will not be removed or committed: ${PACKAGES}"
+			msg_warn "It will be used to resume the build next time.  Delete it for a fresh build."
+			;;
+		esac
+		return 0
+	fi
 
 	# Link the latest-done path now that we're done
 	_log_path log

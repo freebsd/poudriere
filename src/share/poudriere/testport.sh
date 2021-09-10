@@ -53,8 +53,8 @@ Options:
     -k          -- Don't consider failures as fatal; find all failures.
     -n          -- Dry-run. Show what will be done, but do not build
                    any packages.
-    -N          -- Do not build package repository when build of dependencies
-                   completed
+    -N          -- Do not build package repository when build is completed
+    -NN         -- Do not commit package repository when build is completed
     -O overlays -- Specify extra ports trees to overlay
     -p tree     -- Specify the path to the ports tree
     -P          -- Use custom prefix
@@ -120,7 +120,17 @@ while getopts "b:B:o:cniIj:J:kNO:p:PSvwz:" FLAG; do
 			INTERACTIVE_MODE=2
 			;;
 		N)
+			: ${NFLAG:=0}
+			NFLAG=$((NFLAG + 1))
 			BUILD_REPO=0
+			if [ "${NFLAG}" -eq 2 ]; then
+				# Don't commit the packages.  This is effectively
+				# the same as -n but does an actual build.
+				if [ "${ATOMIC_PACKAGE_REPOSITORY}" != "yes" ]; then
+					err ${EX_USAGE} "-NN only makes sense with ATOMIC_PACKAGE_REPOSITORY=yes"
+				fi
+				COMMIT=0
+			fi
 			;;
 		O)
 			porttree_exists ${OPTARG} ||
