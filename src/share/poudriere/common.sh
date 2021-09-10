@@ -7691,7 +7691,6 @@ prepare_ports() {
 	if was_a_bulk_run; then
 		_log_path log
 		_log_path_top log_top
-		get_cache_dir cache_dir
 
 		if [ -e "${log}/.poudriere.ports.built" ]; then
 			resuming_build=1
@@ -7707,6 +7706,7 @@ prepare_ports() {
 		fi
 
 		if [ ${resuming_build} -eq 0 ] || ! [ -d "${log}" ]; then
+			get_cache_dir cache_dir
 			# Sync in HTML files through a base dir
 			install_html_files "${HTMLPREFIX}" "${log_top}/.html" \
 			    "${log}"
