@@ -1223,7 +1223,14 @@ required_env() {
 			;;
 		esac
 		getvar "${var}" actual_value || actual_value=__null
-		if [ "${actual_value}" ${neg}= "${expected_value}" ]; then
+		# Special case: SET and not blank is wanted
+		if [ "${neg}" = "!" ] && [ -z "${expected_value}" ]; then
+			case "${actual_value}" in
+			__null|"") ;;
+			*) continue ;;
+			esac
+			expected_value="empty or __null"
+		elif [ "${actual_value}" ${neg}= "${expected_value}" ]; then
 			continue
 		fi
 		ret=$((ret + 1))
