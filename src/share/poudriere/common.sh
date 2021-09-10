@@ -4983,6 +4983,7 @@ build_pkg() {
 	fi
 	MNT_DATADIR="${mnt}/${DATADIR_NAME}"
 	add_relpath_var MNT_DATADIR
+	cd "${MNT_DATADIR}"
 
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
 		if [ -f "${mnt}/${LOCALBASE:-/usr/local}/.mounted" ]; then
