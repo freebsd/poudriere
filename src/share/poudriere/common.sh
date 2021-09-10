@@ -1678,7 +1678,7 @@ common_mtree() {
 
 	cat <<-EOF
 	./.npkg
-	./.p
+	./${DATADIR_NAME}
 	./.poudriere-snap-*
 	.${HOME}/.ccache
 	./compat/linux/proc
@@ -2169,6 +2169,17 @@ do_portbuild_mounts() {
 	local setname="$4"
 	local optionsdir opt o msgmount msgdev
 
+	# Create our data dirs
+	MNT_DATADIR="${mnt}/${DATADIR_NAME}"
+	mkdir -p "${MNT_DATADIR}"
+	add_relpath_var MNT_DATADIR
+	if [ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
+		mnt_tmpfs data "${MNT_DATADIR}"
+	fi
+	mkdir -p \
+	    "${MNT_DATADIR}/tmp" \
+	    "${MNT_DATADIR}/var/run"
+
 	# clone will inherit from the ref jail
 	if [ ${mnt##*/} = "ref" ]; then
 		mkdir -p "${mnt}${PORTSDIR}" \
@@ -2185,17 +2196,9 @@ do_portbuild_mounts() {
 			mkdir -p "${mnt}${OVERLAYSDIR}/${o}"
 		done
 		ln -fs "usr/home" "${mnt}/home"
+		MASTER_DATADIR="${MNT_DATADIR}"
+		add_relpath_var MASTER_DATADIR
 	fi
-	# Create our data dirs
-	mkdir -p "${mnt}/.p"
-	if [ ${TMPFS_DATA} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
-		mnt_tmpfs data "${mnt}/.p"
-	fi
-
-	mkdir -p \
-	    "${mnt}/.p/tmp" \
-	    "${mnt}/.p/var/run"
-
 	if [ -d "${CCACHE_DIR:-/nonexistent}" ]; then
 		${NULLMOUNT} ${CCACHE_DIR} ${mnt}${HOME}/.ccache
 	fi
@@ -3126,7 +3129,7 @@ jail_start() {
 		    \( -depth 1 -name .ccache -prune \) -o \
 		    \( -depth 1 -name .cpignore -prune \) -o \
 		    \( -depth 1 -name .npkg -prune \) -o \
-		    \( -depth 1 -name .p -prune \) -o \
+		    \( -depth 1 -name "${DATADIR_NAME}" -prune \) -o \
 		    \( -depth 1 -name distfiles -prune \) -o \
 		    \( -depth 1 -name packages -prune \) -o \
 		    \( -path "${tomnt}/${PORTSDIR}" -prune \) -o \
@@ -4978,6 +4981,8 @@ build_pkg() {
 	if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
 		JEXEC_LIMITS=1
 	fi
+	MNT_DATADIR="${mnt}/${DATADIR_NAME}"
+	add_relpath_var MNT_DATADIR
 
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
 		if [ -f "${mnt}/${LOCALBASE:-/usr/local}/.mounted" ]; then
@@ -7774,7 +7779,7 @@ prepare_ports() {
 	    err 1 "Failed to lookup global ports metadata"
 
 	PKG_EXT="${P_PKG_SUFX#.}"
-	PKG_BIN="/.p/pkg-static"
+	PKG_BIN="/${DATADIR_NAME}/pkg-static"
 	PKG_ADD="${PKG_BIN} add"
 	PKG_DELETE="${PKG_BIN} delete -y -f"
 	PKG_VERSION="${PKG_BIN} version"
@@ -8763,6 +8768,7 @@ INTERACTIVE_MODE=0
 : ${SHASH_VAR_PATH_DEFAULT:=${POUDRIERE_TMPDIR}}
 : ${SHASH_VAR_PATH:=${SHASH_VAR_PATH_DEFAULT}}
 : ${SHASH_VAR_PREFIX:=sh-}
+: ${DATADIR_NAME:=".p"}
 
 : ${USE_CACHED:=no}
 

@@ -338,7 +338,7 @@ clonefs() {
 		do_clone -r ${cpignore:+-X "${cpignore}"} "${from}" "${mnt}"
 		if [ "${snap}" = "clean" ]; then
 			rm -f "${cpignore}"
-			echo ".p" >> "${mnt}/.cpignore"
+			echo "${DATADIR_NAME}" >> "${mnt}/.cpignore"
 		fi
 	fi
 }
