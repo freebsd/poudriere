@@ -41,7 +41,7 @@ pkgqueue_get_next() {
 	p=$(find ${POOL_BUCKET_DIRS} -type d -depth 1 -empty -print -quit || :)
 	if [ -n "$p" ]; then
 		_pkgname=${p##*/}
-		if ! rename "${p}" "../building/${_pkgname}" \
+		if ! rename "${p}" "${MASTER_DATADIR}/building/${_pkgname}" \
 		    2>/dev/null; then
 			# Was the failure from /unbalanced?
 			if [ -z "${p%%*unbalanced/*}" ]; then
@@ -57,7 +57,7 @@ pkgqueue_get_next() {
 			fi
 		fi
 		# Update timestamp for buildtime accounting
-		touch "../building/${_pkgname}"
+		touch "${MASTER_DATADIR}/building/${_pkgname}"
 	fi
 
 	setvar "${pkgname_var}" "${_pkgname}"
@@ -305,10 +305,10 @@ pkgqueue_remaining() {
 	[ $# -eq 0 ] || eargs pkgqueue_remaining
 	{
 		# Find items in pool ready-to-build
-		find . -type d -depth 2 | \
-		    sed -e 's,$, ready-to-build,'
+		( cd "${MASTER_DATADIR}/pool"; find . -type d -depth 2 | \
+		    sed -e 's,$, ready-to-build,' )
 		# Find items in queue not ready-to-build.
-		( cd ..; pkgqueue_list ) | \
+		( cd "${MASTER_DATADIR}"; pkgqueue_list ) | \
 		    sed -e 's,$, waiting-on-dependency,'
 	} 2>/dev/null | sed -e 's,.*/,,'
 }
@@ -384,7 +384,7 @@ pkgqueue_empty() {
 	local n
 
 	if [ -z "${ALL_DEPS_DIRS}" ]; then
-		ALL_DEPS_DIRS=$(find ../deps -mindepth 1 -maxdepth 1 -type d)
+		ALL_DEPS_DIRS=$(find ${MASTER_DATADIR}/deps -mindepth 1 -maxdepth 1 -type d)
 	fi
 
 	dirs="${ALL_DEPS_DIRS} ${POOL_BUCKET_DIRS}"

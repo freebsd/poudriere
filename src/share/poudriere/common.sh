@@ -1227,15 +1227,11 @@ update_remaining() {
 	[ $# -eq 0 ] || eargs update_remaining
 	local log
 
-	_log_path log
 	if [ "${HTML_TRACK_REMAINING}" != "yes" ]; then
 		return 0
 	fi
-	(
-		cd "${MASTER_DATADIR}/pool"
-		pkgqueue_remaining | \
-		    write_atomic "${log}/.poudriere.ports.remaining"
-	)
+	_log_path log
+	pkgqueue_remaining | write_atomic "${log}/.poudriere.ports.remaining"
 }
 
 sigpipe_handler() {
@@ -4667,7 +4663,7 @@ build_queue() {
 			MY_JOBID="${j}" spawn_job \
 			    build_pkg "${pkgname}" "${porttesting}"
 			pid=$!
-			echo "${pid}" > "../var/run/${j}.pid"
+			echo "${pid}" > "${MASTER_DATADIR}/var/run/${j}.pid"
 			hash_set builder_pids "${j}" "${pid}"
 			hash_set builder_pkgnames "${j}" "${pkgname}"
 		done
@@ -4829,7 +4825,7 @@ parallel_build() {
 
 	build_queue
 
-	cd ..
+	cd "${MASTER_DATADIR}"
 
 	bset status "stopping_jobs:"
 	stop_builders
