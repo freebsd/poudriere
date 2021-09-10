@@ -1832,11 +1832,24 @@ _update_relpaths() {
 add_relpath_var() {
 	[ $# -eq 1 ] || eargs add_relpath_var varname
 	local varname="$1"
+	local value
 
+	getvar "${varname}" value ||
+	    err ${EX_SOFTWARE} "add_relpath_var: \$${varname} path must be set"
 	case " ${RELATIVE_PATH_VARS} " in
 	*" ${varname} "*) ;;
 	*) RELATIVE_PATH_VARS="${RELATIVE_PATH_VARS:+${RELATIVE_PATH_VARS} }${varname}" ;;
 	esac
+	if ! issetvar "${varname}_ABS"; then
+		case "${value}" in
+		/*) ;;
+		*)
+			[ -e "${value}" ] ||
+			    err ${EX_SOFTWARE} "add_relpath_var: \$${varname} value '${value}' must exist or be absolute already"
+			setvar "${varname}_ABS" "$(realpath "${value}")"
+		    ;;
+		esac
+	fi
 	make_relative "${varname}"
 }
 
