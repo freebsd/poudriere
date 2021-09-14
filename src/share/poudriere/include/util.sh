@@ -118,38 +118,38 @@ issetvar() {
 fi
 
 if ! type setvar >/dev/null 2>&1; then
-	setvar() {
-		[ $# -eq 2 ] || eargs setvar variable value
-		local var="$1"
-		shift
-		local value="$*"
+setvar() {
+	[ $# -eq 2 ] || eargs setvar variable value
+	local _setvar_var="$1"
+	shift
+	local _setvar_value="$*"
 
-		read -r "${var}" <<-EOF
-		${value}
-		EOF
-	}
+	read -r "${_setvar_var}" <<-EOF
+	${_setvar_value}
+	EOF
+}
 fi
 
 if ! type getvar >/dev/null 2>&1; then
 getvar() {
 	[ $# -eq 1 -o $# -eq 2 ] || eargs getvar var [var_return]
-	local var="$1"
-	local var_return="$2"
-	local ret _evalue
+	local _getvar_var="$1"
+	local _getvar_var_return="$2"
+	local ret _getvar_value
 
-	eval "_evalue=\${${var}-__null}"
+	eval "_getvar_value=\${${_getvar_var}-__null}"
 
-	if [ "${_evalue}" = "__null" ]; then
-		_evalue=
+	if [ "${_getvar_value}" = "__null" ]; then
+		_getvar_value=
 		ret=1
 	else
 		ret=0
 	fi
 
-	if [ -n "${var_return}" ]; then
-		setvar "${var_return}" "${_evalue}"
+	if [ -n "${_getvar_var_return}" ]; then
+		setvar "${_getvar_var_return}" "${_getvar_value}"
 	else
-		echo "${_evalue}"
+		echo "${_getvar_value}"
 	fi
 
 	return ${ret}
