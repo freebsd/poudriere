@@ -4686,6 +4686,7 @@ build_queue() {
 		update_remaining
 
 		# Wait for an event from a child. All builders are busy.
+		jobid=
 		read_blocking -t "${timeout}" jobid <&6 || :
 		if [ -n "${jobid}" ]; then
 			# A job just finished.
