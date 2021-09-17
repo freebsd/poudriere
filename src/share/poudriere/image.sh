@@ -44,7 +44,7 @@ Parameters:
     -j jail         -- Jail
     -t type         -- Type of image can be one of
                     -- iso, iso+mfs, iso+zmfs, usb, usb+mfs, usb+zmfs,
-                       rawdisk, zrawdisk, tar, firmware, rawfirmware,
+                       rawdisk, zrawdisk, zdisk, tar, firmware, rawfirmware,
                        dump, zsnapshot
 
 Options:
@@ -347,7 +347,7 @@ while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:s:S:t:vw:X:z:" FLAG; do
 			MEDIATYPE=${OPTARG}
 			case ${MEDIATYPE} in
 			iso|iso+mfs|iso+zmfs|usb|usb+mfs|usb+zmfs) ;;
-			rawdisk|zrawdisk|tar|firmware|rawfirmware) ;;
+			rawdisk|zrawdisk|zdisk|tar|firmware|rawfirmware) ;;
 			dump|zsnapshot) ;;
 			*) err 1 "invalid mediatype: ${MEDIATYPE}"
 			esac
