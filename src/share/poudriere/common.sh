@@ -4884,8 +4884,9 @@ clean_pool() {
 
 	[ -n "${MY_JOBID}" ] && bset ${MY_JOBID} status "clean_pool:"
 
-	[ -z "${originspec}" -a -n "${clean_rdepends}" ] && \
-	    get_originspec_from_pkgname originspec "${pkgname}"
+	if [ -z "${originspec}" -a -n "${clean_rdepends}" ]; then
+		get_originspec_from_pkgname originspec "${pkgname}"
+	fi
 	originspec_decode "${originspec}" origin '' ''
 
 	# Cleaning queue (pool is cleaned here)
@@ -4962,9 +4963,6 @@ build_pkg() {
 	get_originspec_from_pkgname originspec "${pkgname}"
 	originspec_decode "${originspec}" port DEPENDS_ARGS FLAVOR
 	bset_job_status "starting" "${originspec}" "${pkgname}"
-	if [ -z "${FLAVOR}" ]; then
-		shash_remove pkgname-flavor "${pkgname}" FLAVOR || FLAVOR=
-	fi
 	job_msg "Building ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_RESET}"
 
 	MAKE_ARGS="${DEPENDS_ARGS}${FLAVOR:+ FLAVOR=${FLAVOR}}"
@@ -6255,10 +6253,24 @@ port_var_fetch_originspec() {
 
 get_originspec_from_pkgname() {
 	[ $# -eq 2 ] || eargs get_originspec_from_pkgname var_return pkgname
-	local var_return="$1"
-	local pkgname="$2"
+	local gofp_var_return="$1"
+	local gofp_pkgname="$2"
+	local gofp_originspec gofp_origin gofp_dep_args gofp_flavor
 
-	shash_get pkgname-originspec "${pkgname}" "${var_return}"
+	setvar "${gofp_var_return}" ""
+	shash_get pkgname-originspec "${gofp_pkgname}" gofp_originspec ||
+	    err ${EX_SOFTWARE} "get_originspec_from_pkgname: Failed to lookup pkgname-originspec for ${COLOR_PORT}${gofp_pkgname}${COLOR_RESET}"
+	# Default originspec won't typically have the flavor in it.
+	originspec_decode "${gofp_originspec}" gofp_origin gofp_dep_args \
+	    gofp_flavor
+	if [ -z "${gofp_flavor}" ] &&
+	    shash_get pkgname-flavor "${gofp_pkgname}" gofp_flavor &&
+	    [ -n "${gofp_flavor}" ]; then
+		originspec_encode gofp_originspec "${gofp_origin}" \
+		    "${gofp_dep_args}" \
+		    "${gofp_flavor}"
+	fi
+	setvar "${gofp_var_return}" "${gofp_originspec}"
 }
 
 # Look for PKGNAME and strip away @DEFAULT if it is the default FLAVOR.
