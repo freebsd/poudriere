@@ -24,6 +24,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+. ${SCRIPTPREFIX}/common.sh
+
 usage() {
 	cat <<EOF
 poudriere pkgclean [options] [-f file|cat/port ...]
@@ -58,8 +60,6 @@ DRY_RUN=0
 DO_ALL=0
 BUILD_REPO=1
 OVERLAYS=""
-
-. ${SCRIPTPREFIX}/common.sh
 
 [ $# -eq 0 ] && usage
 

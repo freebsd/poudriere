@@ -24,6 +24,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+. ${SCRIPTPREFIX}/common.sh
+
 usage() {
 	cat <<EOF
 poudriere logclean [options] <days | -a | -N count>
@@ -57,8 +59,6 @@ DRY_RUN=0
 DAYS=
 ALL=0
 MAX_COUNT=
-
-. ${SCRIPTPREFIX}/common.sh
 
 while getopts "aB:j:p:nN:vyz:" FLAG; do
 	case "${FLAG}" in

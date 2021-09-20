@@ -25,6 +25,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+. ${SCRIPTPREFIX}/common.sh
+
 usage() {
 	cat <<EOF
 poudriere distclean [options] [-a|-f file|cat/port ...]
@@ -51,8 +53,6 @@ EOF
 
 DRY_RUN=0
 ALL=0
-
-. ${SCRIPTPREFIX}/common.sh
 
 [ $# -eq 0 ] && usage
 

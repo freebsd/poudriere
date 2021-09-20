@@ -25,6 +25,16 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+. ${SCRIPTPREFIX}/common.sh
+. ${SCRIPTPREFIX}/image_dump.sh
+. ${SCRIPTPREFIX}/image_firmware.sh
+. ${SCRIPTPREFIX}/image_iso.sh
+. ${SCRIPTPREFIX}/image_mfs.sh
+. ${SCRIPTPREFIX}/image_rawdisk.sh
+. ${SCRIPTPREFIX}/image_tar.sh
+. ${SCRIPTPREFIX}/image_usb.sh
+. ${SCRIPTPREFIX}/image_zsnapshot.sh
+
 usage() {
 	[ $# -gt 0 ] && echo "Missing: $@" >&2
 	cat << EOF
@@ -253,16 +263,6 @@ install_world()
 	make -s -C ${mnt}/usr/src DESTDIR=${WRKDIR}/world BATCH_DELETE_OLD_FILES=yes SRCCONF=${WRKDIR}/src.conf delete-old delete-old-libs
 	msg "Installing world done"
 }
-
-. ${SCRIPTPREFIX}/common.sh
-. ${SCRIPTPREFIX}/image_dump.sh
-. ${SCRIPTPREFIX}/image_firmware.sh
-. ${SCRIPTPREFIX}/image_iso.sh
-. ${SCRIPTPREFIX}/image_mfs.sh
-. ${SCRIPTPREFIX}/image_rawdisk.sh
-. ${SCRIPTPREFIX}/image_tar.sh
-. ${SCRIPTPREFIX}/image_usb.sh
-. ${SCRIPTPREFIX}/image_zsnapshot.sh
 
 HOSTNAME=poudriere-image
 INSTALLWORLD=install_world

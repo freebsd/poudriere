@@ -25,6 +25,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+. ${SCRIPTPREFIX}/common.sh
+
 usage() {
 	cat << EOF
 poudriere bulk [options] [-a|-f file|cat/port ...]
@@ -93,7 +95,6 @@ BUILD_REPO=1
 INTERACTIVE_MODE=0
 OVERLAYS=""
 COMMIT=1
-. ${SCRIPTPREFIX}/common.sh
 
 [ $# -eq 0 ] && usage
 

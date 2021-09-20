@@ -24,6 +24,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+. ${SCRIPTPREFIX}/common.sh
+
 usage() {
 	cat << EOF
 poudriere status [options]
@@ -59,8 +61,6 @@ BUILDER_INFO=0
 BUILDNAME=
 RESULTS=0
 SUMMARY=0
-
-. ${SCRIPTPREFIX}/common.sh
 
 while getopts "abB:cfHj:lp:rz:" FLAG; do
 	case "${FLAG}" in

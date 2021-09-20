@@ -26,6 +26,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+. ${SCRIPTPREFIX}/common.sh
+
 usage() {
 	cat << EOF
 poudriere testport [parameters] [options]
@@ -71,7 +73,6 @@ EOF
 }
 
 CONFIGSTR=0
-. ${SCRIPTPREFIX}/common.sh
 NOPREFIX=1
 DRY_RUN=0
 SETNAME=""

@@ -25,6 +25,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+. ${SCRIPTPREFIX}/common.sh
+
 METHOD_DEF=http
 
 usage() {
@@ -1086,8 +1088,6 @@ info_jail() {
 
 	unset POUDRIERE_BUILD_TYPE
 }
-
-. ${SCRIPTPREFIX}/common.sh
 
 get_host_arch ARCH
 REALARCH=${ARCH}

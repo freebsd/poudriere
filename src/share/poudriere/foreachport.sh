@@ -24,6 +24,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+. ${SCRIPTPREFIX}/common.sh
+
 usage() {
 	cat <<EOF
 poudriere foreachport [options] [-f file] /patch/to/script [args]
@@ -50,8 +52,6 @@ PTNAME=default
 SETNAME=""
 DRY_RUN=0
 ALL=1
-
-. ${SCRIPTPREFIX}/common.sh
 
 [ $# -eq 0 ] && usage
 

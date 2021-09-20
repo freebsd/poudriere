@@ -25,12 +25,12 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+. ${SCRIPTPREFIX}/common.sh
+
 usage() {
 	echo "poudriere queue poudriere_command"
 	exit ${EX_USAGE}
 }
-
-. ${SCRIPTPREFIX}/common.sh
 
 [ $# -lt 2 ] && usage
 

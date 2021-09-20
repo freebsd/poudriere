@@ -25,6 +25,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+. ${SCRIPTPREFIX}/common.sh
+
 usage() {
 	cat << EOF
 poudriere daemon [options]
@@ -57,8 +59,6 @@ queue_reader_cleanup() {
 PTNAME="default"
 NODAEMONIZE=0
 KILL=0
-
-. ${SCRIPTPREFIX}/common.sh
 
 if [ ! -d ${WATCHDIR} ]; then
 	mkdir -p ${WATCHDIR} || err 1 "Unable to create needed directory ${WATCHDIR}"

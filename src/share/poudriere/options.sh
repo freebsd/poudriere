@@ -26,6 +26,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+. ${SCRIPTPREFIX}/common.sh
+
 usage() {
 	cat << EOF
 poudriere options [options] [-f file|cat/port ...]
@@ -56,8 +58,6 @@ PTNAME_TMP=""
 DO_RECURSE=y
 COMMAND=config-conditional
 RECURSE_COMMAND=config-recursive
-
-. ${SCRIPTPREFIX}/common.sh
 
 [ $# -eq 0 ] && usage
 
