@@ -11,6 +11,7 @@ _poudriere_pt() {
 _bulk=(
 	'-a[build the whole ports tree]'
 	'-f[get the list of ports to build from a file]:name of file:_files'
+	'-b[specify what binary package branch to use]::'
 	'-B[what buildname to use]:buildname'
 	'-c[clean all the previously built binary packages and logs]'
 	'-C[clean only the packages listed on the command line or -f file]'
@@ -65,13 +66,13 @@ _image=(
 )
 
 _jail=(
-	'(-d -i -l -s -k -u -r)-c[create a jail]' 
-	'(-c -i -l -s -k -u -r)-d[delete a jail]' 
+	'(-d -i -l -s -k -u -r)-c[create a jail]'
+	'(-c -i -l -s -k -u -r)-d[delete a jail]'
 	'(-c -d -l -s -k -u -r)-i[show information about a jail]'
-	'(-c -d -i -s -k -u -r)-l[list all available jails]' 
-	'(-c -d -i -l -k -u -r)-s[start a jail]' 
-	'(-c -d -i -l -s -u -r)-k[stop a jail]' 
-	'(-c -d -i -l -s -k -r)-u[update a jail]' 
+	'(-c -d -i -s -k -u -r)-l[list all available jails]'
+	'(-c -d -i -l -k -u -r)-s[start a jail]'
+	'(-c -d -i -l -s -u -r)-k[stop a jail]'
+	'(-c -d -i -l -s -k -r)-u[update a jail]'
 	'(-c -d -i -l -s -k -u)-r[rename a jail to name]::name'
 	'-b[build the OS (for use with -m src)]'
 	'-q[quiet (do not print the header)]'
