@@ -5959,7 +5959,8 @@ delete_old_pkgs() {
 		if [ "${ALL}" -eq 1 ]; then
 			# -a owns the repo
 			delete_unqueued=1
-		elif [ "${PORTTESTING}" -eq 1 ] ||
+		elif was_a_testport_run ||
+		    [ "${PORTTESTING}" -eq 1 ] ||
 		    [ "${CLEAN_LISTED}" -eq 1 ]; then
 			# Avoid deleting everything if the user is testing as
 			# they likely have queued a small subset of the repo.
