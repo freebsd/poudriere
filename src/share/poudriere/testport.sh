@@ -81,6 +81,7 @@ INTERACTIVE_MODE=0
 PTNAME="default"
 BUILD_REPO=1
 OVERLAYS=""
+COMMIT=1
 
 while getopts "b:B:o:cniIj:J:kNO:p:PSvwz:" FLAG; do
 	case "${FLAG}" in
