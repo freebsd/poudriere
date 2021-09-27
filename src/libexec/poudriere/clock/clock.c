@@ -26,6 +26,7 @@
 
 #include <err.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -71,8 +72,8 @@ main(int argc, char **argv)
 	} else
 		usage();
 	if (argc == 3 && strcmp(argv[2], "-nsec") == 0)
-		printf("%ld.%ld\n", ts.tv_sec, ts.tv_nsec);
+		printf("%jd.%09ld\n", (intmax_t)ts.tv_sec, ts.tv_nsec);
 	else
-		printf("%ld\n", ts.tv_sec);
+		printf("%jd\n", (intmax_t)ts.tv_sec);
 	return (EXIT_SUCCESS);
 }
