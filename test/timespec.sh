@@ -17,6 +17,5 @@ assert 1.$((4 * 100000000)) "$(timespecsub 6.$((9 * 100000000)) 5.$((5 * 1000000
 assert 1.$((8 * 100000000)) "$(timespecsub 6.$((9 * 100000000)) 5.$((1 * 100000000)))" "timespecsub result"
 assert 1.$((9 * 100000000)) "$(timespecsub 6.$((9 * 100000000)) 5.0)" "timespecsub result"
 assert 2.0 "$(timespecsub 6.$((9 * 100000000)) 4.$((9 * 100000000)))" "timespecsub result"
-#assert -1.$((4 * 100000000)) "$(timespecsub 3.$((5 * 100000000)) 4.$((9 * 100000000)))" "timespecsub result"
-# This is the primary problem being addressed as otherwise the answer is 1.
+assert -2.$((6 * 100000000)) "$(timespecsub 3.$((5 * 100000000)) 4.$((9 * 100000000)))" "timespecsub result"
 assert 0.$((2 * 100000000)) "$(timespecsub 3.$((1 * 100000000)) 2.$((9 * 100000000)))" "timespecsub result"
