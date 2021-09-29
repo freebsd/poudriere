@@ -19,3 +19,7 @@ assert 1.$((9 * 100000000)) "$(timespecsub 6.$((9 * 100000000)) 5.0)" "timespecs
 assert 2.0 "$(timespecsub 6.$((9 * 100000000)) 4.$((9 * 100000000)))" "timespecsub result"
 assert -2.$((6 * 100000000)) "$(timespecsub 3.$((5 * 100000000)) 4.$((9 * 100000000)))" "timespecsub result"
 assert 0.$((2 * 100000000)) "$(timespecsub 3.$((1 * 100000000)) 2.$((9 * 100000000)))" "timespecsub result"
+assert 867.145941414 "$(timespecsub 3521728.202509306 3520861.56567892)"
+assert 867.145941414 "$(timespecsub 3521728.202509306 3520861.056567892)"
+assert 716.991949239 "$(timespecsub 3523344.8396936 3522627.16447697)"
+assert 716.991949239 "$(timespecsub 3523344.008396936 3522627.016447697)"

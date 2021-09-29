@@ -1098,6 +1098,12 @@ timespecsub() {
 	*.*)
 		now_sec="${now_timespec%.*}"
 		now_nsec="${now_timespec#*.}"
+		while :; do
+			case "${now_nsec}" in
+			0*) now_nsec="${now_nsec#0}" ;;
+			*) break ;;
+			esac
+		done
 		;;
 	*)
 		now_sec="${now_timespec}"
@@ -1108,6 +1114,12 @@ timespecsub() {
 	*.*)
 		then_sec="${then_timespec%.*}"
 		then_nsec="${then_timespec#*.}"
+		while :; do
+			case "${then_nsec}" in
+			0*) then_nsec="${then_nsec#0}" ;;
+			*) break ;;
+			esac
+		done
 		;;
 	*)
 		then_sec="${then_timespec}"
