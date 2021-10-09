@@ -3722,7 +3722,6 @@ download_from_repo() {
 	cnt=$(wc -l ${wantedpkgs} | awk '{print $1}')
 	msg "Package fetch: Will fetch ${cnt} packages from remote or local pkg cache"
 
-	cp -f "${wantedpkgs}" "${MASTER_DATADIR}/pkg_fetch"
 	echo "${packagesite_resolved}" > "${MASTER_DATADIR}/pkg_fetch_url"
 
 	# Fetch into a cache and link back into the PACKAGES dir.
@@ -3746,7 +3745,8 @@ download_from_repo() {
 
 		cd "${PACKAGES_PKG_CACHE}"
 		relpath "${PACKAGES}" "${PACKAGES_PKG_CACHE}" packages_rel
-		xargs -J % ln -fL % "${packages_rel}/All/"
+		tee "${MASTER_DATADIR}/pkg_fetch" |
+		    xargs -J % ln -fL % "${packages_rel}/All/"
 	)
 	umountfs "${MASTERMNT}/var/cache/pkg"
 	rm -f "${wantedpkgs}"
