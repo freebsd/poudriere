@@ -3669,7 +3669,7 @@ download_from_repo() {
 		local_pkg_name="${P_PKG_PKGNAME:?}"
 		local_pkg_ver="${local_pkg_name##*-}"
 		remote_pkg_ver=$(injail ${pkg_bin} rquery -U %v \
-		    ${P_PKG_PKGNAME:?})
+		    ${P_PKG_PKGBASE:?})
 		if [ "$(pkg_version -t "${remote_pkg_ver}" \
 		    "${local_pkg_ver}")" = ">" ]; then
 			msg "Package fetch: Not fetching due to remote pkg being newer than local: ${remote_pkg_ver} vs ${local_pkg_ver}"
@@ -3752,7 +3752,7 @@ download_from_repo() {
 	rm -f "${wantedpkgs}"
 	# Bootstrapped.  Need to setup symlinks.
 	if [ "${pkg_bin}" = "pkg" ]; then
-		pkgname=$(injail ${pkg_bin} query %n-%v ${P_PKG_PKGNAME:?})
+		pkgname=$(injail ${pkg_bin} query %n-%v ${P_PKG_PKGBASE:?})
 		if [ "${pkgname##*-}" != "${remote_pkg_ver}" ]; then
 			# XXX: This can happen if remote is updated between
 			# bootstrap and fetching.
@@ -7558,7 +7558,8 @@ fetch_global_port_vars() {
 	    PYTHON3_DEFAULT P_PYTHON3_DEFAULT || \
 	    err 1 "Error looking up pre-build ports vars"
 	port_var_fetch "${P_PKG_ORIGIN}" \
-	    PKGNAME P_PKG_PKGNAME
+	    PKGNAME P_PKG_PKGNAME \
+	    PKGBASE P_PKG_PKGBASE \
 	# Ensure not blank so -z checks work properly
 	if [ -z "${P_PORTS_FEATURES}" ]; then
 		P_PORTS_FEATURES="none"
