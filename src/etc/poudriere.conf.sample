@@ -320,6 +320,17 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Defaut: yes
 #TRIM_ORPHANED_BUILD_DEPS=yes
 
+# Whether or not bulk/testport should delete unknown files in the repository
+# Default: yes
+#DELETE_UNKNOWN_FILES=yes
+
+# Whether or not bulk/testport should automatically "pkgclean".
+# Values: yes, always, no
+# yes: Does the behavior with bulk -a and bulk -f. Use of testport or
+#      bulk -t or bulk -C will not delete unqueued packages.
+# Default: no
+#DELETE_UNQUEUED_PACKAGES=no
+
 # A list of directories to exclude from leftover and filesystem violation
 # mtree checks.  Ccache is used here as an example but is already
 # excluded by default.  There is no need to add it here unless a
