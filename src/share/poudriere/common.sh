@@ -3835,6 +3835,44 @@ validate_package_branch() {
 	esac
 }
 
+maybe_migrate_packages() {
+	local pkg pkgnew pkgdst
+
+	if package_dir_exists_and_has_packages ||
+	    ! PKG_EXT=txz package_dir_exists_and_has_packages; then
+		return
+	fi
+
+	for pkg in ${PACKAGES}/All/*.txz ${PACKAGES}/Latest/*.txz; do
+		case "${pkg}" in
+		"${PACKAGES}/All/*.txz") return 0 ;;
+		"${PACKAGES}/Latest/*.txz") continue ;;
+		esac
+		pkgnew="${pkg%.txz}.${PKG_EXT}"
+		case "${pkg}" in
+		${PACKAGES}/Latest/*)
+			# Rename Latest/pkg.txz symlink and its dest
+			if [ -L "${pkg}" ]; then
+				pkgdest="$(readlink "${pkg}")"
+				ln -fhs "${pkgdest%.txz}.${PKG_EXT}" "${pkgnew}"
+				rm -f "${pkg}"
+				continue
+			fi
+			;;
+		esac
+		# Don't truncate existing file or mess with pkg compat symlinks.
+		if [ -L "${pkg}" ] || [ -e "${pkgnew}" ]; then
+			continue
+		fi
+		rename "${pkg}" "${pkgnew}" || :
+	done
+	if [ -e "${PACKAGES}/Latest/pkg.txz.pubkeysig" ] &&
+	    ! [ -e "${PACKAGES}/Latest/pkg.${PKG_EXT}.pubkeysig" ]; then
+		rename "${PACKAGES}/Latest/pkg.txz.pubkeysig" \
+		    "${PACKAGES}/Latest/pkg.${PKG_EXT}.pubkeysig"
+	fi
+}
+
 # return 0 if the package dir exists and has packages, 0 otherwise
 package_dir_exists_and_has_packages() {
 	if [ ! -d ${PACKAGES}/All ]; then
@@ -7782,6 +7820,8 @@ prepare_ports() {
 	bset status "sanity:"
 
 	if was_a_bulk_run; then
+		# Migrate packages to new sufx
+		maybe_migrate_packages
 		# Stash dependency graph
 		cp -f "${MASTER_DATADIR}/pkg_deps" "${log}/.poudriere.pkg_deps%"
 		cp -f "${MASTER_DATADIR}/pkg_pool" \
