@@ -3573,6 +3573,7 @@ download_from_repo() {
 	local remote_all_annotations remote_all_abi
 	local missing_pkgs pkg pkgbase cnt
 	local remote_pkg_ver local_pkg_name local_pkg_ver found
+	local packages_rel
 
 	if [ -z "${PACKAGE_FETCH_BRANCH-}" ]; then
 		return 0
@@ -3733,19 +3734,16 @@ download_from_repo() {
 	JNETNAME="n" injail xargs \
 	    env ASSUME_ALWAYS_YES=yes \
 	    ${pkg_bin} fetch -U < "${wantedpkgs}"
-
+	relpath "${PACKAGES}" "${PACKAGES_PKG_CACHE}" packages_rel
 	while mapfile_read_loop "${wantedpkgs}" pkgname; do
 		if [ ! -e "${PACKAGES_PKG_CACHE}/${pkgname}.${PKG_EXT}" ]; then
 			msg_warn "${COLOR_PORT}${pkgname}.${PKG_EXT}${COLOR_RESET} not found. Remote PKG_SUFX likely differs temporarily"
 			continue
 		fi
-		echo "${pkgname}.${PKG_EXT}"
-	done | (
-		local packages_rel
-
+		echo "${pkgname}"
+	done | tee "${MASTER_DATADIR}/pkg_fetch" | (
 		cd "${PACKAGES_PKG_CACHE}"
-		relpath "${PACKAGES}" "${PACKAGES_PKG_CACHE}" packages_rel
-		tee "${MASTER_DATADIR}/pkg_fetch" |
+		sed -e "s,\$,.${PKG_EXT}," |
 		    xargs -J % ln -fL % "${packages_rel}/All/"
 	)
 	umountfs "${MASTERMNT}/var/cache/pkg"
