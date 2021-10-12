@@ -6541,6 +6541,16 @@ delete_old_pkg() {
 		esac
 	fi
 
+	# Lookup deps for various later checks
+	compiled_deps=
+	compiled_deps_pkgnames=
+	if ! pkg_get_dep_origin_pkgnames \
+	    compiled_deps compiled_deps_pkgnames "${pkg}"; then
+		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: corrupted package (deps)"
+		delete_pkg "${pkg}"
+		return 0
+	fi
+
 	# Detect ports that have new dependencies that the existing packages
 	# do not have and delete them.
 	case "${CHECK_CHANGED_DEPS}" in
@@ -6636,14 +6646,6 @@ delete_old_pkg() {
 		done
 		case "${current_deps:+set}" in
 		set)
-			compiled_deps=
-			compiled_deps_pkgnames=
-			if ! pkg_get_dep_origin_pkgnames \
-			    compiled_deps compiled_deps_pkgnames "${pkg}"; then
-				msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: corrupted package (deps)"
-				delete_pkg "${pkg}"
-				return 0
-			fi
 			for compiled_deps_pkgname in \
 			    ${compiled_deps_pkgnames}; do
 				compiled_deps_pkgbases="${compiled_deps_pkgbases:+${compiled_deps_pkgbases} }${compiled_deps_pkgname%-*}"
@@ -6747,6 +6749,25 @@ delete_old_pkg() {
 		esac
 		;;
 	esac
+
+	# Detect missing dependency package names.
+	set -f
+	set -- ${compiled_deps}
+	set +f
+	for dep_pkgname in ${compiled_deps_pkgnames}; do
+		dep_origin="$1"
+		shift
+		dep_pkgbase="${dep_pkgname%-*}"
+		# The dependency is registered with both PKGNAME and origin.
+		# If the PKGNAME changed then we need to rebuild that package.
+		# Note that we do not know what the FLAVOR of the
+		# dependency is.
+		if ! origin_has_pkgbase "${dep_origin}" "${dep_pkgbase}"; then
+			msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: dependency's package name is unknown or changed. Needed: ${COLOR_PORT}${dep_pkgbase}${COLOR_RESET} | ${COLOR_PORT}${dep_origin}${COLOR_RESET}"
+			delete_pkg "${pkg}"
+			return 0
+		fi
+	done
 }
 
 delete_old_pkgs() {
@@ -7151,6 +7172,32 @@ port_var_fetch_originspec() {
 
 	originspec_decode "${originspec}" origin flavor ''
 	port_var_fetch "${origin}" "$@" ${flavor:+FLAVOR=${flavor}}
+}
+
+# Determine if a given origin has a given PKGBASE for any of its FLAVORS
+origin_has_pkgbase() {
+	[ $# -eq 2 ] || eargs origin_has_pkgbase origin pkgbase
+	local origin="$1"
+	local pkgbase="$2"
+	local flavor flavors originspec flav_pkgname flav_pkgbase
+	local all_pkgbases default_flavor
+
+	shash_get origin-flavors "${origin}" flavors || flavors=
+	default_flavor="${flavors%% *}"
+	for flavor in '' ${flavors}; do
+		originspec_encode originspec "${origin}" "${flavor}" ''
+		# Not all FLAVOR-PKGNAMES are known. We only know the ones we
+		# think we might build.
+		shash_get originspec-pkgname "${originspec}" flav_pkgname ||
+		    continue
+		flav_pkgbase="${flav_pkgname%-*}"
+		case "${flav_pkgbase}" in
+		"${pkgbase}") return 0 ;;
+		esac
+		all_pkgbases="${all_pkgbases:+${all_pkgbases} }${flav_pkgbase}"
+	done
+	msg_debug "origin_has_pkgbase: Unable to map PKGBASE ${COLOR_PORT}${pkgbase}${COLOR_RESET} to ${COLOR_PORT}${origin}${COLOR_RESET} from: ${all_pkgbases}"
+	return 1
 }
 
 get_originspec_from_pkgname() {

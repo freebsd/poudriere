@@ -96,6 +96,7 @@ JAIL_TESTS= \
 	bulk-build-MOVED-default.sh \
 	bulk-build-MOVED-flavor-all.sh \
 	bulk-build-MOVED-flavor.sh \
+	bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
@@ -103,6 +104,7 @@ JAIL_TESTS= \
 	bulk-build-inc-pkgclean-flavor.sh \
 	bulk-build-inc-pkgclean-origin.sh \
 	bulk-build-multiple-eligible-in-queue.sh \
+	bulk-build-origin_has_pkgbase.sh \
 	bulk-build-self-immutable-base-no.sh \
 	bulk-build-self-immutable-base-nullfs.sh \
 	bulk-build-self-immutable-base-schg.sh \

@@ -503,6 +503,7 @@ JAIL_TESTS = \
 	bulk-build-MOVED-default.sh \
 	bulk-build-MOVED-flavor-all.sh \
 	bulk-build-MOVED-flavor.sh \
+	bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
@@ -510,6 +511,7 @@ JAIL_TESTS = \
 	bulk-build-inc-pkgclean-flavor.sh \
 	bulk-build-inc-pkgclean-origin.sh \
 	bulk-build-multiple-eligible-in-queue.sh \
+	bulk-build-origin_has_pkgbase.sh \
 	bulk-build-self-immutable-base-no.sh \
 	bulk-build-self-immutable-base-nullfs.sh \
 	bulk-build-self-immutable-base-schg.sh \
@@ -1298,6 +1300,13 @@ bulk-build-MOVED-flavor.sh.log: bulk-build-MOVED-flavor.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh.log: bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh
+	@p='bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh'; \
+	b='bulk-build-inc-delete_old_pkg-changed-dep-pkgname.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh.log: bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh
 	@p='bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh'; \
 	b='bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh'; \
@@ -1343,6 +1352,13 @@ bulk-build-inc-pkgclean-origin.sh.log: bulk-build-inc-pkgclean-origin.sh
 bulk-build-multiple-eligible-in-queue.sh.log: bulk-build-multiple-eligible-in-queue.sh
 	@p='bulk-build-multiple-eligible-in-queue.sh'; \
 	b='bulk-build-multiple-eligible-in-queue.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-origin_has_pkgbase.sh.log: bulk-build-origin_has_pkgbase.sh
+	@p='bulk-build-origin_has_pkgbase.sh'; \
+	b='bulk-build-origin_has_pkgbase.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

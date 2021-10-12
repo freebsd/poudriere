@@ -15,12 +15,19 @@ CATEGORIES=	misc
 MASTER_SITES=	#
 DISTFILES=	#
 
-OPTIONS_DEFINE=	FOOBIN FAILURE SLEEP
+OPTIONS_DEFINE=	FOOBIN FAILURE SLEEP RENAME
 FOOBIN_DESC=	Provide bin/foo
 FAILURE_DESC=	Cause a failure during install
 SLEEP_DESC=	Sleep before build to increase queue race test
+RENAME_DESC=	Change PKGNAME
 OPTIONS_DEFAULT=FOOBIN
 OPTIONS_SUB=	yes
+
+.include <bsd.port.options.mk>
+
+.if ${PORT_OPTIONS:MRENAME}
+PKGNAMESUFFIX:=	${PKGNAMESUFFIX}-renamed
+.endif
 
 MAINTAINER=	bdrewery@FreeBSD.org
 COMMENT=	foo test port
