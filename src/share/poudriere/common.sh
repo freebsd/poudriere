@@ -5123,8 +5123,7 @@ clean_pool() {
 		# Mark it ignored instead.
 		if [ "${clean_rdepends}" == "ignored" ] &&
 		    build_all_flavors "${skipped_originspec}" &&
-		    ! pkgname_is_default_flavor "${skipped_pkgname}" \
-		        "${skipped_flavor}" &&
+		    ! originspec_is_default_flavor "${skipped_originspec}" &&
 		    pkgname_is_listed "${skipped_pkgname}"; then
 			trim_ignored_pkg "${skipped_pkgname}" "${skipped_originspec}" "Dependent port ${originspec} | ${pkgname} ${clean_rdepends}"
 		else
@@ -5552,8 +5551,12 @@ deps_fetch_vars() {
 	shash_set originspec-pkgname "${originspec}" "${_pkgname}"
 	[ -n "${_flavor}" ] && \
 	    shash_set pkgname-flavor "${_pkgname}" "${_flavor}"
-	[ -n "${_flavors}" ] && \
-	    shash_set pkgname-flavors "${_pkgname}" "${_flavors}"
+	# Set origin-flavors only for the default origin
+	if [ -n "${_flavors}" ]; then
+		if [ -z "${_origin_flavor}" ]; then
+			shash_set origin-flavors "${origin}" "${_flavors}"
+		fi
+	fi
 	[ -n "${_ignore}" ] && \
 	    shash_set pkgname-ignore "${_pkgname}" "${_ignore}"
 	[ -n "${_prefix}" ] && \
@@ -6362,7 +6365,7 @@ get_pkgname_from_originspec() {
 	originspec_encode _originspec "${_origin}" ''
 	shash_get originspec-pkgname "${_originspec}" _pkgname || return 1
 	# Great, compare the flavors and validate we had the default.
-	shash_get pkgname-flavors "${_pkgname}" _flavors || return 1
+	shash_get origin-flavors "${_origin}" _flavors || return 1
 	if [ -z "${_flavors}" ]; then
 		return 1
 	fi
@@ -6372,14 +6375,15 @@ get_pkgname_from_originspec() {
 	setvar "${var_return}" "${_pkgname}"
 }
 
-pkgname_is_default_flavor() {
-	[ $# -eq 2 ] || eargs pkgname_is_default_flavor pkgname flavor
-	local pkgname="$1"
-	local flavor="$2"
-	local flavors
+originspec_is_default_flavor() {
+	[ $# -eq 1 ] || eargs originspec_is_default_flavor originspec
+	local originspec="$1"
+	local flavors origin flavor
 	local -; set -f
 
-	shash_get pkgname-flavors "${pkgname}" flavors || flavors=
+	originspec_decode "${originspec}" origin flavor
+	shash_get origin-flavors "${origin}" flavors || flavors=
+
 	case "${flavors}" in
 	"${flavor}"|"${flavor} "*)
 		return 0
@@ -6763,7 +6767,7 @@ gather_port_vars_port() {
 
 		shash_get pkgname-deps "${pkgname}" deps || deps=
 		shash_get pkgname-flavor "${pkgname}" flavor || flavor=
-		shash_get pkgname-flavors "${pkgname}" flavors || flavors=
+		shash_get origin-flavors "${origin}" flavors || flavors=
 		shash_get pkgname-ignore "${pkgname}" ignore || ignore=
 	else
 		dep_ret=0
@@ -7879,7 +7883,7 @@ prepare_ports() {
 			    pkgname-run_deps \
 			    pkgname-lib_deps \
 			    pkgname-prefix \
-			    pkgname-flavors; do
+			    origin-flavors; do
 				shash_remove_var "${shash_bucket}" || :
 			done
 		)
