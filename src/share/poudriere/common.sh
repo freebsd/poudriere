@@ -2006,7 +2006,8 @@ enter_interactive() {
 		enabled: yes
 	}
 	EOF
-	injail pkg update
+	# XXX: build_repo ?
+	#injail pkg update || :
 
 	msg "Remounting ${PORTSDIR} ${OVERLAYS:+and ${OVERLAYSDIR} }read-write"
 	remount_ports -o rw >/dev/null
@@ -2059,8 +2060,7 @@ enter_interactive() {
 		setenv DEVELOPER 1
 		setenv DEVELOPER_MODE yes
 
-	Packages from /packages are loaded into 'pkg' and can be installed
-	as needed.
+	Packages from /packages can be installed with 'pkg add' as needed.
 
 	If building as non-root you will be logged into ${PORTBUILD_USER}.
 	su can be used without password to elevate.
