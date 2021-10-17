@@ -107,7 +107,10 @@ void verrorwithstatus(int, const char *, va_list) __printf0like(2, 0) __dead2;
 #define exit_(...)		exit_X(__VA_ARGS__, _1, _0)(__VA_ARGS__)
 #define exit_X(_0, _1, X, ...)	exit ## X
 #define exit_0(_)		return (0)
-#define exit_1(_, status)	verrorwithstatus(status, NULL, NULL)
+#define exit_1(_, status)	do {			\
+	va_list va_empty = {};				\
+	verrorwithstatus(status, NULL, va_empty);	\
+} while (0)
 
 /* Getopt compat */
 #include "options.h"
