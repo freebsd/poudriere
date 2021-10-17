@@ -2586,7 +2586,7 @@ setup_ccache() {
 		WITH_CCACHE_BUILD=yes
 		CCACHE_DIR=${HOME}/.ccache
 		EOF
-		chmod 755 "${mnt}${HOME}"
+		chmod 755 "${tomnt}${HOME}"
 		if [ "${CCACHE_GID}" != "${PORTBUILD_GID}" ]; then
 			injail pw groupadd "${CCACHE_GROUP}" \
 			    -g "${CCACHE_GID}" || \
