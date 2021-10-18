@@ -9,9 +9,7 @@ if [ "$status" = "mount" ] && [ -d ${POUDRIERED}/local-patches ]; then
 
   # The local-patches directory is created only if it does not already exist.
   # If it does not already exist, it means we are doing this on the master jail
-  if [ ! -d "${mntpath}/local-patches" ]; then
-    /bin/mkdir "${mntpath}/local-patches"
-  fi
+  /bin/mkdir -p "${mntpath}/local-patches"
 
   # mount our patches to that location
   /sbin/mount -t nullfs -o ro ${POUDRIERED}/local-patches "${mntpath}/local-patches"
