@@ -4593,13 +4593,11 @@ stop_builder() {
 }
 
 stop_builders() {
-	local PARALLEL_JOBS real_parallel_jobs
+	local PARALLEL_JOBS real_parallel_jobs pid
 
 	# wait for the last running processes
-	case ${MASTER_DATADIR}/var/run/*.pid in
-	"${MASTER_DATADIR}/var/run/*.pid") ;;
-	*) cat ${MASTER_DATADIR}/var/run/*.pid | xargs pwait 2>/dev/null ;;
-	esac
+	find "${MASTER_DATADIR}/var/run/" -name "*.pid" -print0 |
+	    xargs -0 pwait 2>/dev/null
 
 	if [ ${PARALLEL_JOBS} -ne 0 ]; then
 		msg "Stopping ${PARALLEL_JOBS} builders"

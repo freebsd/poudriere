@@ -1291,3 +1291,28 @@ _mktemp() {
 	setvar "${_mktemp_var_return}" "${_mktemp_tmpfile}"
 	return "${ret}"
 }
+
+dirempty() {
+	[ $# -eq 1 ] || eargs dirempty
+	local dir="$1"
+
+	! globmatch "${dir}/*"
+}
+
+globmatch() {
+	[ $# -eq 1 ] || eargs globmatch glob
+	local glob="$1"
+	local match
+
+	case "${glob}" in
+	*"*"*|*"?"*|*"["*) ;;
+	*) err ${EX_DATAERR} "globmatch: '${glob}' is not a glob" ;;
+	esac
+
+	for match in ${glob}; do
+		case "${match}" in
+		"${glob}") return 1 ;;
+		esac
+		return 0
+	done
+}

@@ -13,6 +13,7 @@ TESTS=\
 	getpid.sh \
 	getvar.sh \
 	gsub.sh \
+	globmatch.sh \
 	hash_basic.sh \
 	list.sh \
 	locks.sh \
