@@ -554,12 +554,12 @@ if [ -n "${PACKAGELIST}" ]; then
 	rm ${WRKDIR}/world/var/db/pkg/repo-* 2>/dev/null || :
 fi
 
-${MAINMEDIATYPE}_build ${SUBMEDIATYPE} || err 1 "${MAINMEDIATYPE}_build failed"
-
 if [ -f "${POST_BUILD_SCRIPT}" ]; then
 	# Source the post-build-script.
 	. "${POST_BUILD_SCRIPT}"
 fi
+
+${MAINMEDIATYPE}_build ${SUBMEDIATYPE} || err 1 "${MAINMEDIATYPE}_build failed"
 
 ${MAINMEDIATYPE}_generate ${SUBMEDIATYPE} || err 1 "${MAINMEDIATYPE}_generate failed"
 
