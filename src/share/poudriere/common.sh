@@ -3758,17 +3758,25 @@ download_from_repo() {
 			# bootstrap and fetching.
 			err 1 "download_from_repo: Fetched pkg version ${remote_pkg_ver} does not match bootstrapped pkg version ${pkgname##*-}"
 		fi
-		mkdir -p "${PACKAGES}/Latest"
 		# Avoid symlinking if remote PKG_SUFX does not match.
 		if [ -f "${PACKAGES}/All/${pkgname}.${PKG_EXT}" ]; then
+			mkdir -p "${PACKAGES}/Latest"
 			ln -fhs "../All/${pkgname}.${PKG_EXT}" \
 			    "${PACKAGES}/Latest/pkg.${PKG_EXT}"
 			# Backwards compat for bootstrap
 			ln -fhs "../All/${pkgname}.${PKG_EXT}" \
 			    "${PACKAGES}/Latest/pkg.txz"
-			ensure_pkg_installed || \
-			    err 1 "download_from_repo: failure to bootstrap pkg"
+		else
+			# We bootstrapped pkg but skipped fetching the pkg
+			# for some reason. Let's just use the bootstrapped one
+			# internally as we need to inspect all of the fetched
+			# packages later. We will still build the local version
+			# of pkg.
+			cp -f "${MASTERMNT}${LOCALBASE:-/usr/local}/sbin/pkg-static" \
+			    "${MASTERMNT}${PKG_BIN}"
 		fi
+		ensure_pkg_installed || \
+		    err 1 "download_from_repo: failure to bootstrap pkg"
 	fi
 }
 
