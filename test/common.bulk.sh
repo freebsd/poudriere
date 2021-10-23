@@ -31,6 +31,11 @@ cache_pkgnames() {
 	local originspec="$2"
 	local origin dep_origin flavor flavors pkgname default_flavor ignore
 	local flavor_originspec ret port_flavor
+	local LOCALBASE
+
+	# XXX: This avoids some exists() checks of the *host* here. Need to
+	# jail this function.
+	export LOCALBASE=/nonexistent
 
 	if hash_get originspec-pkgname "${originspec}" pkgname; then
 		hash_get originspec-ignore "${originspec}" ignore
