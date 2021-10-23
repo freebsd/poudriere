@@ -6213,19 +6213,19 @@ port_var_fetch() {
 
 	while [ $# -gt 0 ]; do
 		_portvar="$1"
-		_var="$2"
 		if [ -z "${_portvar%%*=*}" ]; then
 			# This is an assignment, no associated variable
 			# for storage.
-			_makeflags="${_makeflags}${_makeflags:+${sep}}${_portvar}"
-			_vars="${_vars}${_vars:+ }${assign_var}"
+			_makeflags="${_makeflags:+${_makeflags}${sep}}${_portvar}"
+			_vars="${_vars:+${_vars} }${assign_var}"
 			shift 1
 		else
 			if [ $# -eq 1 ]; then
 				break
 			fi
-			_makeflags="${_makeflags}${_makeflags:+${sep}}-V${_portvar}"
-			_vars="${_vars}${_vars:+ }${_var}"
+			_var="$2"
+			_makeflags="${_makeflags:+${_makeflags}${sep}}-V${_portvar}"
+			_vars="${_vars:+${_vars} }${_var}"
 			shift 2
 		fi
 	done
@@ -6263,7 +6263,8 @@ port_var_fetch() {
 			shiftcnt=$((shiftcnt + 1))
 		fi
 	done <<-EOF
-	$(IFS="${sep}"; injail /usr/bin/make ${_make_origin} ${_makeflags} || echo "${_errexit} $?")
+	$(IFS="${sep}"; injail /usr/bin/make ${_make_origin} ${_makeflags-} ||
+	    echo "${_errexit} $?")
 	EOF
 
 	# If the entire output was blank, then $() ate all of the excess
@@ -6277,7 +6278,7 @@ port_var_fetch() {
 		fi
 		while [ $# -gt 0 ]; do
 			# Skip assignment vars
-			while [ "${1}" = "${assign_var}" ]; do
+			while [ $# -gt 0 ] && [ "${1}" = "${assign_var}" ]; do
 				shift
 			done
 			if [ $# -gt 0 ]; then
