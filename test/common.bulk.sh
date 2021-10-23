@@ -57,6 +57,7 @@ cache_pkgnames() {
 	    pdeps || exit 99
 	hash_set origin-flavors "${origin}" "${flavors}"
 	fix_default_flavor "${originspec}" originspec
+	assert_not '' "${pkgname}" "cache_pkgnames: ${originspec} has no PKGNAME?"
 	hash_set originspec-pkgname "${originspec}" "${pkgname}"
 	if [ -n "${port_flavor}" ]; then
 		hash_set originspec-flavor "${originspec}" "${port_flavor}"
