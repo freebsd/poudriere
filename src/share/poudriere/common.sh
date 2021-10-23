@@ -3921,6 +3921,8 @@ sanity_check_pkgs() {
 	local ret=0
 
 	package_dir_exists_and_has_packages || return 0
+	ensure_pkg_installed ||
+	    err ${EX_SOFTWARE} "sanity_check_pkg: Missing bootstrap pkg"
 
 	parallel_start
 	for pkg in ${PACKAGES}/All/*.${PKG_EXT}; do
@@ -5978,6 +5980,10 @@ delete_old_pkg() {
 delete_old_pkgs() {
 	local delete_unqueued
 
+	if ! package_dir_exists_and_has_packages; then
+		return 0
+	fi
+
 	msg "Checking packages for incremental rebuild needs"
 	run_hook delete_old_pkgs start
 
@@ -6014,6 +6020,9 @@ delete_old_pkgs() {
 	*)	delete_unqueued=0 ;;
 	esac
 	msg_debug "delete_old_pkgs: delete_unqueued=${delete_unqueued}"
+
+	ensure_pkg_installed ||
+	    err ${EX_SOFTWARE} "delete_old_pkgs: Missing bootstrap pkg"
 
 	parallel_start
 	for pkg in ${PACKAGES}/All/*; do
