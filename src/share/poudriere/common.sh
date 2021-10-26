@@ -7867,9 +7867,6 @@ prepare_ports() {
 			    xargs -0 rm -rf
 			unlink "${delete_pkg_list}" || :
 		fi
-		if ! ensure_pkg_installed; then
-			delete_all_pkgs "pkg package missing"
-		fi
 
 		# If the build is being resumed then packages already
 		# built/failed/skipped/ignored should not be rebuilt.
@@ -7899,6 +7896,9 @@ prepare_ports() {
 			trim_ignored
 		fi
 		download_from_repo
+		if ! ensure_pkg_installed; then
+			delete_all_pkgs "pkg bootstrap missing: unable to inspect existing packages"
+		fi
 		bset status "sanity:"
 	fi
 
