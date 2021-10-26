@@ -3742,6 +3742,9 @@ download_from_repo() {
 		sed -e "s,\$,.${PKG_EXT}," |
 		    xargs -J % ln -fL % "${packages_rel}/All/"
 	)
+	while mapfile_read_loop "${MASTER_DATADIR}/pkg_fetch" pkgname; do
+		msg "Package fetch: Using cached copy of ${COLOR_PORT}${pkgname}${COLOR_RESET}"
+	done
 	umountfs "${MASTERMNT}/var/cache/pkg"
 	rm -f "${wantedpkgs}"
 	# Bootstrapped.  Need to setup symlinks.
@@ -7845,7 +7848,7 @@ prepare_ports() {
 					    "${pkgname}"; then
 						continue
 					fi
-					msg "(-C) Will delete existing package: ${pkg##*/}"
+					msg "(-C) Will delete existing package: ${COLOR_PORT}${pkg##*/}${COLOR_RESET}"
 					delete_pkg_xargs "${delete_pkg_list}" \
 					    "${pkg}"
 					if [ -L "${pkg%.*}.txz" ]; then
