@@ -3475,7 +3475,8 @@ download_from_repo_check_pkg() {
 	pkgbase="${pkgname%-*}"
 
 	# Skip blacklisted packages
-	for bpkg in ${PACKAGE_FETCH_BLACKLIST-}; do
+	# pkg is always blacklisted so it is built locally
+	for bpkg in ${PACKAGE_FETCH_BLACKLIST-} ${P_PKG_PKGBASE:?}; do
 		case "${pkgbase}" in
 		${bpkg})
 			msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: blacklisted"
@@ -3649,10 +3650,6 @@ download_from_repo() {
 		# Will bootstrap
 		msg "Packge fetch: bootstrapping pkg"
 		pkg_bin="pkg"
-		# When bootstrapping always fetch a copy of the pkg used
-		if ! grep -q "^${P_PKG_PKGNAME:?}\$" "${missing_pkgs}"; then
-			echo "${P_PKG_PKGNAME:?}" >> "${missing_pkgs}"
-		fi
 	fi
 	cat >> "${MASTERMNT}/etc/pkg/poudriere.conf" <<-EOF
 	FreeBSD: {
@@ -3749,32 +3746,12 @@ download_from_repo() {
 	rm -f "${wantedpkgs}"
 	# Bootstrapped.  Need to setup symlinks.
 	if [ "${pkg_bin}" = "pkg" ]; then
-		pkgname=$(injail ${pkg_bin} query %n-%v ${P_PKG_PKGBASE:?})
-		if [ "${pkgname##*-}" != "${remote_pkg_ver}" ]; then
-			# XXX: This can happen if remote is updated between
-			# bootstrap and fetching.
-			err 1 "download_from_repo: Fetched pkg version ${remote_pkg_ver} does not match bootstrapped pkg version ${pkgname##*-}"
-		fi
-		# Avoid symlinking if remote PKG_SUFX does not match.
-		if [ -f "${PACKAGES}/All/${pkgname}.${PKG_EXT}" ]; then
-			mkdir -p "${PACKAGES}/Latest"
-			ln -fhs "../All/${pkgname}.${PKG_EXT}" \
-			    "${PACKAGES}/Latest/pkg.${PKG_EXT}"
-			# Backwards compat for bootstrap
-			ln -fhs "../All/${pkgname}.${PKG_EXT}" \
-			    "${PACKAGES}/Latest/pkg.txz"
-		else
-			# We bootstrapped pkg but skipped fetching the pkg
-			# for some reason. Let's just use the bootstrapped one
-			# internally as we need to inspect all of the fetched
-			# packages later. We will still build the local version
-			# of pkg.
-			cp -f "${MASTERMNT}${LOCALBASE:-/usr/local}/sbin/pkg-static" \
-			    "${MASTERMNT}${PKG_BIN}"
-		fi
-		ensure_pkg_installed || \
-		    err 1 "download_from_repo: failure to bootstrap pkg"
+		# Save the bootstrapped pkg for package sanity/version checking
+		cp -f "${MASTERMNT}${LOCALBASE:-/usr/local}/sbin/pkg-static" \
+		    "${MASTERMNT}${PKG_BIN}"
 	fi
+	ensure_pkg_installed || \
+	    err 1 "download_from_repo: failure to bootstrap pkg"
 }
 
 download_from_repo_make_log() {
