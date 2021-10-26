@@ -3667,19 +3667,16 @@ download_from_repo() {
 	    PACKAGESITE="${packagesite}" \
 	    ${pkg_bin} update -f
 
-	# Make sure the bootstrapped pkg is not newer.
-	if [ "${pkg_bin}" = "pkg" ]; then
-		local_pkg_name="${P_PKG_PKGNAME:?}"
-		local_pkg_ver="${local_pkg_name##*-}"
-		remote_pkg_ver=$(injail ${pkg_bin} rquery -U %v \
-		    ${P_PKG_PKGBASE:?})
-		if [ "$(pkg_version -t "${remote_pkg_ver}" \
-		    "${local_pkg_ver}")" = ">" ]; then
-			msg "Package fetch: Not fetching due to remote pkg being newer than local: ${remote_pkg_ver} vs ${local_pkg_ver}"
-			rm -f "${missing_pkgs}"
-			return 0
-		fi
+	remote_pkg_ver=$(injail ${pkg_bin} rquery -U %v ${P_PKG_PKGBASE:?})
+	local_pkg_name="${P_PKG_PKGNAME:?}"
+	local_pkg_ver="${local_pkg_name##*-}"
+	if [ "$(pkg_version -t "${remote_pkg_ver}" \
+	    "${local_pkg_ver}")" = ">" ]; then
+		msg "Package fetch: Not fetching due to remote pkg being newer than local: ${remote_pkg_ver} vs ${local_pkg_ver}"
+		rm -f "${missing_pkgs}"
+		return 0
 	fi
+
 	# pkg insists on creating a local.sqlite even if we won't use it
 	# (like pkg rquery -U), and it uses various locking that isn't needed
 	# here. Grab all the options for comparison.
