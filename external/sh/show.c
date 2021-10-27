@@ -38,7 +38,7 @@ static char sccsid[] = "@(#)show.c	8.3 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/show.c 326025 2017-11-20 19:49:47Z pfg $");
+__FBSDID("$FreeBSD$");
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -73,7 +73,7 @@ static void
 shtree(union node *n, int ind, char *pfx, FILE *fp)
 {
 	struct nodelist *lp;
-	char *s;
+	const char *s;
 
 	if (n == NULL)
 		return;
@@ -125,7 +125,7 @@ shcmd(union node *cmd, FILE *fp)
 {
 	union node *np;
 	int first;
-	char *s;
+	const char *s;
 	int dftfd;
 
 	first = 1;
@@ -274,8 +274,7 @@ indent(int amount, char *pfx, FILE *fp)
  */
 
 
-FILE *tracefile;
-
+static FILE *tracefile;
 #if DEBUG >= 2
 int debug = 1;
 #else

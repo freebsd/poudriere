@@ -15,7 +15,7 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/test/test.c 298232 2016-04-19 00:38:07Z araujo $");
+__FBSDID("$FreeBSD$");
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -24,9 +24,7 @@ __FBSDID("$FreeBSD: head/bin/test/test.c 298232 2016-04-19 00:38:07Z araujo $");
 #include <err.h>
 #include <errno.h>
 #include <inttypes.h>
-#include <limits.h>
 #include <stdarg.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>

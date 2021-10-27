@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)parser.h	8.3 (Berkeley) 5/4/95
- * $FreeBSD: head/bin/sh/parser.h 326025 2017-11-20 19:49:47Z pfg $
+ * $FreeBSD$
  */
 
 /* control characters in argument strings */

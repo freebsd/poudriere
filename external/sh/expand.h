@@ -30,7 +30,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)expand.h	8.2 (Berkeley) 5/4/95
- * $FreeBSD: head/bin/sh/expand.h 314436 2017-02-28 23:42:47Z imp $
+ * $FreeBSD$
  */
 
 struct arglist {

@@ -32,11 +32,11 @@
  * SUCH DAMAGE.
  *
  *	@(#)main.h	8.2 (Berkeley) 5/4/95
- * $FreeBSD: head/bin/sh/main.h 326025 2017-11-20 19:49:47Z pfg $
+ * $FreeBSD$
  */
 
 extern int rootpid;	/* pid of main shell */
 extern int rootshell;	/* true if we aren't a child of the main shell */
 extern struct jmploc main_handler;	/* top level exception handler */
 
-void readcmdfile(const char *);
+void readcmdfile(const char *, int);

@@ -29,7 +29,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)myhistedit.h	8.2 (Berkeley) 5/4/95
- * $FreeBSD: head/bin/sh/myhistedit.h 326025 2017-11-20 19:49:47Z pfg $
+ * $FreeBSD$
  */
 
 #include <histedit.h>
@@ -38,7 +38,10 @@ extern History *hist;
 extern EditLine *el;
 extern int displayhist;
 
+#include <filecomplete.h>
+
 void histedit(void);
 void sethistsize(const char *);
 void setterm(const char *);
-
+void histload(void);
+void histsave(void);

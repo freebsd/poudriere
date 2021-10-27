@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)eval.c	8.9 (Berkeley) 6/8/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/eval.c 340284 2018-11-09 14:58:24Z jilles $");
+__FBSDID("$FreeBSD$");
 
 #include <assert.h>
 #include <paths.h>
@@ -904,7 +904,7 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 				 * the hash table isn't filled with items
 				 * from the temporary setting.
 				 *
-				 * It would be better to forbit using and
+				 * It would be better to forbid using and
 				 * updating the table while this command
 				 * runs, by the command finding mechanism
 				 * is heavily integrated with hash handling,

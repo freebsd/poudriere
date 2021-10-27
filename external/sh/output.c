@@ -38,7 +38,7 @@ static char sccsid[] = "@(#)output.c	8.2 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/output.c 344306 2019-02-19 21:27:30Z jilles $");
+__FBSDID("$FreeBSD$");
 
 /*
  * Shell output routines.  We use our own output routines because:

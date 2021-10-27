@@ -38,7 +38,7 @@ static char sccsid[] = "@(#)memalloc.c	8.3 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/memalloc.c 360452 2020-04-28 20:34:27Z jilles $");
+__FBSDID("$FreeBSD$");
 
 #include <sys/param.h>
 #include "shell.h"
@@ -227,7 +227,10 @@ popstackmark(struct stackmark *mark)
 	}
 	stacknxt = mark->stacknxt;
 	stacknleft = mark->stacknleft;
-	sstrend = stacknxt + stacknleft;
+	if (stacknleft != 0)
+		sstrend = stacknxt + stacknleft;
+	else
+		sstrend = stacknxt;
 	INTON;
 }
 

@@ -29,7 +29,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)show.h	1.1 (Berkeley) 5/4/95
- * $FreeBSD: head/bin/sh/show.h 326025 2017-11-20 19:49:47Z pfg $
+ * $FreeBSD$
  */
 
 void showtree(union node *);
@@ -39,4 +39,6 @@ void trargs(char **);
 void trputc(int);
 void trputs(const char *);
 void opentrace(void);
+
+extern int debug;
 #endif

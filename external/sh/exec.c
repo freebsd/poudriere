@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)exec.c	8.4 (Berkeley) 6/8/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/exec.c 365037 2020-09-01 13:19:15Z jilles $");
+__FBSDID("$FreeBSD$");
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -418,7 +418,7 @@ find_command(const char *name, struct cmdentry *entry, int act,
 		if (!S_ISREG(statb.st_mode))
 			continue;
 		if (opt) {		/* this is a %func directory */
-			readcmdfile(fullname);
+			readcmdfile(fullname, -1 /* verify */);
 			if ((cmdp = cmdlookup(name, 0)) == NULL || cmdp->cmdtype != CMDFUNCTION)
 				error("%s not defined in %s", name, fullname);
 			stunalloc(fullname);

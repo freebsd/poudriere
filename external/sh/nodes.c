@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)nodes.c.pat	8.2 (Berkeley) 5/4/95
- * $FreeBSD: head/bin/sh/nodes.c.pat 314436 2017-02-28 23:42:47Z imp $
+ * $FreeBSD$
  */
 
 #include <sys/param.h>

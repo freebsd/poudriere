@@ -4,7 +4,7 @@ index 362fd798d..49fa3ebf6 100644
 +++ external/sh/eval.c
 @@ -38,6 +38,7 @@ static char sccsid[] = "@(#)eval.c	8.9 (Berkeley) 6/8/95";
  #include <sys/cdefs.h>
- __FBSDID("$FreeBSD: head/bin/sh/eval.c 340284 2018-11-09 14:58:24Z jilles $");
+ __FBSDID("$FreeBSD$");
  
 +#include <assert.h>
  #include <paths.h>
@@ -20,7 +20,7 @@ index 362fd798d..49fa3ebf6 100644
  
  	/* First expand the arguments. */
  	TRACE(("evalcommand(%p, %d) called\n", (void *)cmd, flags));
-@@ -1104,8 +1108,19 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
+@@ -1104,8 +1108,18 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
  		argptr = argv + 1;
  		nextopt_optptr = NULL;		/* initialize nextopt */
  		builtin_flags = flags;
@@ -31,8 +31,7 @@ index 362fd798d..49fa3ebf6 100644
  		flushall();
 +#ifndef NDEBUG
 +		if (suppressint > savesuppressint &&
-+		    cmdentry.u.index != DOTCMD &&
-+		    cmdentry.u.index != CRITICAL_STARTCMD) {
++		    cmdentry.u.index != DOTCMD) {
 +			error("leaked INTOFF/INTON %d != %ld",
 +			    savesuppressint, suppressint);
 +		}

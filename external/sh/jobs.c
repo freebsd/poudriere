@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)jobs.c	8.5 (Berkeley) 5/4/95";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/bin/sh/jobs.c 361112 2020-05-16 16:29:23Z jilles $");
+__FBSDID("$FreeBSD$");
 
 #include <sys/ioctl.h>
 #include <sys/param.h>
@@ -928,7 +928,12 @@ forkshell(struct job *jp, union node *n, int mode)
 				pgrp = jp->ps[0].pid;
 			if (setpgid(0, pgrp) == 0 && mode == FORK_FG &&
 			    ttyfd >= 0) {
-				/*** this causes superfluous TIOCSPGRPS ***/
+				/*
+				 * Each process in a pipeline must have the tty
+				 * pgrp set before running its code.
+				 * Only for pipelines of three or more processes
+				 * could this be reduced to two calls.
+				 */
 				if (tcsetpgrp(ttyfd, pgrp) < 0)
 					error("tcsetpgrp failed, errno=%d", errno);
 			}

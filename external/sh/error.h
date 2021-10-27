@@ -30,7 +30,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)error.h	8.2 (Berkeley) 5/4/95
- * $FreeBSD: head/bin/sh/error.h 340284 2018-11-09 14:58:24Z jilles $
+ * $FreeBSD$
  */
 
 /*
