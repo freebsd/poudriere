@@ -62,8 +62,9 @@ partition to be grown to fill the remaining space on a disk.
 .It Fl B Ar pre-script
 Source the
 .Ar pre-script
-file instead of using the default methods to create the image file, add
-partitions, format filesystems, and then mount them to
+file before the image prepare function.
+Can optionally replace the prepare function, in which case it should create the
+image file, add partitions, format filesystems, and then mount them to
 .Ev $WRKDIR Ns
 /world before the contents are installed to that directory.
 .Pp
@@ -144,6 +145,12 @@ The size of the image file to be created, in bytes.
 The name of the image (from
 .Fl n Ar name Ns
 ).
+.It Ev SKIP_PREPARE
+If set, do not run the image types default prepare function.
+The pre-script must then create the image file, add partitions,
+format filesystems, and then mount them to
+.Ev $WRKDIR Ns
+/world .
 .It Ev WORLDDIR
 The path to the directory that is the root of the image.
 .It Ev zroot

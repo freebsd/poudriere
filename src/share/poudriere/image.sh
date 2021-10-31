@@ -426,8 +426,6 @@ boot/kernel.old
 nxb-bin
 EOF
 
-${MAINMEDIATYPE}_prepare ${SUBMEDIATYPE} || err 1 "${MAINMEDIATYPE}_prepare failed"
-
 # Need to convert IMAGESIZE from bytes to bibytes
 # This conversion is needed to be compliant with marketing 'unit'
 # without this, a 2GiB image will not fit into a 2GB flash disk (=1862MiB)
@@ -493,17 +491,14 @@ if [ -n "${SWAPSIZE}" ]; then
 	SWAPSIZE="${NEW_SWAPSIZE_SIZE}${NEW_SWAPSIZE_UNIT}"
 fi
 
+SKIP_PREPARE=
 if [ -n "${PRE_BUILD_SCRIPT}" ]; then
 	. "${PRE_BUILD_SCRIPT}"
-	REAL_MEDIATYPE="${MEDIATYPE}"
-	MEDIATYPE="skip"
 fi
 
-case "${MEDIATYPE}" in
-skip)
-	MEDIATYPE="${REAL_MEDIATYPE}"
-	;;
-esac
+if [ -z "$SKIP_PREPARE" ]; then
+	${MAINMEDIATYPE}_prepare ${SUBMEDIATYPE} || err 1 "${MAINMEDIATYPE}_prepare failed"
+fi
 
 # Run the install world function
 ${INSTALLWORLD}
