@@ -274,6 +274,8 @@ PKG_QUIET="-q"
 while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:s:S:t:vw:X:z:" FLAG; do
 	case "${FLAG}" in
 		A)
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			[ -f "${OPTARG}" ] || err 1 "No such post-build-script: ${OPTARG}"
 			POST_BUILD_SCRIPT="$(realpath ${OPTARG})"
 			;;
