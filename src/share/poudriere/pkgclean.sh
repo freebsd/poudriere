@@ -198,7 +198,7 @@ for file in ${PACKAGES}/All/*; do
 		*.txz)
 			if [ -L "${file}" ]; then
 				# Ignore txz symlinks as they otherwise
-				# cuase spam and confusion.  If we delete
+				# cause spam and confusion.  If we delete
 				# a package it points to then it will be
 				# removed later by
 				# delete_stale_symlinks_and_empty_dirs().
