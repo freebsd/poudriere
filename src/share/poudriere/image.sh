@@ -390,8 +390,10 @@ post_getopts
 : ${IMAGENAME:=poudriereimage}
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 
-MAINMEDIATYPE=$(echo ${MEDIATYPE} | cut -d '+' -f 1)
-SUBMEDIATYPE=$(echo ${MEDIATYPE} | cut -d '+' -f 2)
+MAINMEDIATYPE=${MEDIATYPE%%+*}
+MEDIAREMAINDER=${MEDIATYPE#*+}
+SUBMEDIATYPE=${MEDIAREMAINDER%%+*}
+MEDIAREMAINDER=${MEDIAREMAINDER#*+}
 
 if [ "${MEDIATYPE}" = "none" ]; then
 	err 1 "Missing -t option"
