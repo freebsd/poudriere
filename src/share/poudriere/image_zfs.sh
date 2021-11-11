@@ -169,7 +169,7 @@ zfs_generate()
 		fi
 		if [ "${arch}" == "amd64" ] || [ "${arch}" == "i386" ]; then
 			pmbr="-b ${mnt}/boot/pmbr"
-			gptboot="-p freebsd-boot:=${mnt}/boot/gptzfsboot:512k"
+			gptboot="-p freebsd-boot::512k=${mnt}/boot/gptzfsboot"
 		fi
 		mkimg -s gpt ${pmbr} \
 			  -p efi:=${espfilename} \
