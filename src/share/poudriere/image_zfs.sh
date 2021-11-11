@@ -41,7 +41,7 @@ zfs_check()
 
 	[ -n "${IMAGESIZE}" ] || err 1 "Please specify the imagesize"
 	[ -n "${ZFS_POOL_NAME}" ] || err 1 "Please specify a pool name"
-	zpool list -Ho name ${ZFS_POOL_NAME} >/dev/null 2>&1 || \
+	zpool list -Ho name ${ZFS_POOL_NAME} >/dev/null 2>&1 && \
 		err 1 "Target pool name already exists"
 	case "${IMAGENAME}" in
 	''|*[!A-Za-z0-9]*)
