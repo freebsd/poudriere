@@ -1,0 +1,11 @@
+--- libtrue/Makefile.orig	2023-11-17 10:55:46.788805000 -0800
++++ libtrue/Makefile	2023-11-17 10:55:43.780015000 -0800
+@@ -1,7 +1,7 @@ LIB=		true
+ # $FreeBSD$
+ 
+ LIB=		true
+-SHLIB_MAJOR=	0
++SHLIB_MAJOR=	${LIBTRUE_VER:U0}
+ 
+ SRCS=		true.c
+ 

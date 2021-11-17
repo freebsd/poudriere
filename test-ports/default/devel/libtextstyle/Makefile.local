@@ -1,0 +1,2 @@
+# Poudriere: Add wchar_t to force LIB_DEPENDS on libiconv for shlib tests
+USES:=		${USES:Niconv} iconv:wchar_t

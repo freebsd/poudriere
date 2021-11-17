@@ -337,7 +337,7 @@ job_msg_verbose() {
 	job_msg "$@"
 }
 
-: "${JOB_STATUS_TITLE_WIDTH:=9}"
+: "${JOB_STATUS_TITLE_WIDTH:=10}"
 job_msg_status() {
 	[ "$#" -eq 3 ] || [ "$#" -eq 4 ] ||
 	    eargs job_msg_status msgfunc title originspec pkgname '[msg]'
@@ -906,6 +906,18 @@ eargs() {
 	1) err ${EX_SOFTWARE} "${fname}: 1 argument expected: $1" ;;
 	*) err ${EX_SOFTWARE} "${fname}: $# arguments expected: $*" ;;
 	esac
+}
+
+pkgbuild_done() {
+	[ $# -eq 1 ] || eargs pkgbuild_done pkgname
+	local pkgname="$1"
+	local shash_bucket
+
+	for shash_bucket in \
+	    pkgname-check_shlibs \
+	    ; do
+		shash_unset "${shash_bucket}" "${pkgname}" || :
+	done
 }
 
 run_hook() {
@@ -5023,8 +5035,7 @@ build_port() {
 			*"linux"*) ;;
 			*)
 				msg "Checking shared library dependencies"
-				# Not using PKG_BIN to avoid bootstrap issues.
-				cleanenv injail "${LOCALBASE}/sbin/pkg" query '%Fp' "${pkgname}" | \
+				cleanenv injail "${PKG_BIN}" query '%Fp' "${pkgname}" | \
 				    cleanenv injail xargs readelf -d 2>/dev/null | \
 				    grep NEEDED | sort -u
 				;;
@@ -5770,6 +5781,7 @@ crashed_build() {
 		COLOR_ARROW="${COLOR_FAIL}" job_msg_status \
 		    "Finished" "${originspec}" "${pkgname}" \
 		    "Failed: ${COLOR_PHASE}${failed_phase}"
+		pkgbuild_done "${pkgname}"
 		run_hook pkgbuild failed "${origin}" "${pkgname}" \
 		    "${failed_phase}" \
 		    "${log_error}"
@@ -5833,6 +5845,7 @@ clean_pool() {
 			    job_msg_status "Skipping" \
 			    "${skipped_originspec}" "${skipped_pkgname}" \
 			    "Dependent port ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_SKIP} ${clean_rdepends}"
+			pkgbuild_done "${skipped_pkgname}"
 			if [ "${DRY_RUN:-0}" -eq 0 ]; then
 				redirect_to_bulk \
 				    run_hook pkgbuild skipped \
@@ -5894,8 +5907,56 @@ build_pkg() {
 
 	get_originspec_from_pkgname originspec "${pkgname}"
 	originspec_decode "${originspec}" port FLAVOR subpkg
-	bset_job_status "starting" "${originspec}" "${pkgname}"
-	job_msg_status "Building" "${port}${FLAVOR:+@${FLAVOR}}${subpkg:+~${subpkg}}" "${pkgname}"
+
+	ensure_pkg_installed || :
+
+	if [ -f "${PACKAGES:?}/All/${pkgname:?}.${PKG_EXT}" ]; then
+		job_msg_status "Inspecting" "${port}${FLAVOR:+@${FLAVOR}}" \
+		    "${pkgname}" "determining shlib requirements"
+		if ! shash_exists pkgname-check_shlibs "${pkgname}"; then
+			err ${EX_SOFTWARE} "build_pkg: Trying to build ${COLOR_PORT}${pkgname}${COLOR_RESET} when the package is already present"
+		fi
+		bset_job_status "inspecting" "${originspec}" "${pkgname}"
+		if package_libdeps_satisfied "${pkgname}"; then
+			local ignore
+
+			ignore="no rebuild needed for shlib chase"
+			# XXX: ports.inspected
+			badd ports.ignored "${originspec} ${pkgname} ${ignore}"
+			local logfile
+			_logfile logfile "${pkgname}"
+			{
+				local NO_GIT
+
+				NO_GIT=1 buildlog_start "${pkgname}" "${originspec}"
+				print_phase_header "check-sanity"
+				echo "Ignoring: ${ignore}"
+				print_phase_footer
+				buildlog_stop "${pkgname}" "${originspec}" 0
+			} | write_atomic "${logfile}"
+			ln -fs "../${pkgname:?}.log" \
+			    "${log:?}/logs/ignored/${pkgname:?}.log"
+			COLOR_ARROW="${COLOR_SUCCESS}" \
+			    job_msg_status_debug "Finished" \
+			    "${port}${FLAVOR:+@${FLAVOR}}" "${pkgname}" \
+			    "Nothing to do"
+			pkgbuild_done "${pkgname}"
+			clean_pool "run" "${pkgname}" "${originspec}" \
+			    "${clean_rdepends}"
+			clean_pool "build" "${pkgname}" "${originspec}" \
+			    "${clean_rdepends}"
+			bset ${MY_JOBID} status "done:"
+			echo ${MY_JOBID} >&6
+			return 0
+		fi
+		bset_job_status "starting" "${originspec}" "${pkgname}"
+		job_msg_status "Building" "${port}${FLAVOR:+@${FLAVOR}}${subpkg:+~${subpkg}}" \
+		    "${pkgname}" "missed shlib PORTREVISION chase"
+	else
+		bset_job_status "starting" "${originspec}" "${pkgname}"
+		job_msg_status "Building" "${port}${FLAVOR:+@${FLAVOR}}${subpkg:+~${subpkg}}" \
+		    "${pkgname}"
+	fi
 
 	MAKE_ARGS="${FLAVOR:+ FLAVOR=${FLAVOR}}"
 	_lookup_portdir portdir "${port}"
@@ -6011,6 +6072,7 @@ build_pkg() {
 		    job_msg_status "Finished" \
 		    "${port}${FLAVOR:+@${FLAVOR}}" "${pkgname}" \
 		    "Success"
+		pkgbuild_done "${pkgname}"
 		redirect_to_bulk \
 		    run_hook pkgbuild success "${port}" "${pkgname}"
 		# Cache information for next run
@@ -6037,8 +6099,10 @@ build_pkg() {
 		    job_msg_status "Finished" \
 		    "${port}${FLAVOR:+@${FLAVOR}}" "${pkgname}" \
 		    "Failed: ${COLOR_PHASE}${failed_phase}"
+		pkgbuild_done "${pkgname}"
 		redirect_to_bulk \
-		    run_hook pkgbuild failed "${port}" "${pkgname}" "${failed_phase}" \
+		    run_hook pkgbuild failed "${port}" "${pkgname}" \
+		    "${failed_phase}" \
 		    "${log:?}/logs/errors/${pkgname:?}.log"
 		# ret=2 is a test failure
 		if [ ${ret} -eq 2 ]; then
@@ -6435,11 +6499,11 @@ ensure_pkg_installed() {
 		fi
 		;;
 	esac
-	pkg_file="${MASTERMNT:?}/packages/Latest/pkg.${PKG_EXT:?}"
+	pkg_file="${mnt:?}/packages/Latest/pkg.${PKG_EXT:?}"
 	# If we are testing pkg itself then use the new package
 	if was_a_testport_run && [ -n "${PKGNAME-}" ] &&
-	    [ -r "${MASTERMNT:?}/tmp/pkgs/${PKGNAME:?}.${PKG_EXT:?}" ]; then
-		pkg_file="${MASTERMNT:?}/tmp/pkgs/${PKGNAME:?}.${PKG_EXT:?}"
+	    [ -r "${mnt:?}/tmp/pkgs/${PKGNAME:?}.${PKG_EXT:?}" ]; then
+		pkg_file="${mnt:?}/tmp/pkgs/${PKGNAME:?}.${PKG_EXT:?}"
 	fi
 	# Hack, speed up QEMU usage on pkg-repo.
 	if [ ${QEMU_EMULATING} -eq 1 ] && \
@@ -6461,9 +6525,9 @@ ensure_pkg_installed() {
 	if [ ! -r "${pkg_file}" ]; then
 		return 1
 	fi
-	mkdir -p "${MASTERMNT:?}/${PKG_BIN%/*}" ||
-	    err 1 "ensure_pkg_installed: mkdir ${MASTERMNT}/${PKG_BIN%/*}"
-	injail tar xf "${pkg_file#${MASTERMNT:?}}" \
+	mkdir -p "${mnt:?}/${PKG_BIN%/*}" ||
+	    err 1 "ensure_pkg_installed: mkdir ${mnt}/${PKG_BIN%/*}"
+	injail tar xf "${pkg_file#${mnt:?}}" \
 	    -C "${PKG_BIN%/*}" -s ",.*/,," "*/pkg-static"
 }
 
@@ -6506,8 +6570,8 @@ ensure_pkg_installed() {
 # Some expensive lookups are delayed until the last possible moment as
 # earlier cheaper checks may delete the package.
 #
-delete_old_pkg() {
-	[ $# -eq 2 ] || eargs delete_old_pkg pkgname delete_unqueued
+_delete_old_pkg() {
+	[ $# -eq 2 ] || eargs _delete_old_pkg pkgname delete_unqueued
 	local pkg="$1"
 	local delete_unqueued="$2"
 	local mnt pkgfile pkgname new_pkgname
@@ -6945,6 +7009,31 @@ delete_old_pkg() {
 	done
 }
 
+delete_old_pkg() {
+	[ $# -eq 2 ] || eargs delete_old_pkg pkgname delete_unqueued
+	local pkg="$1"
+	local delete_unqueued="$2"
+	local shlib_required_count pkgfile pkgname
+
+	pkgfile="${pkg##*/}"
+	pkgname="${pkgfile%.*}"
+
+	_delete_old_pkg "${pkg}" "${delete_unqueued}" || return
+	if [ ! -f "${PACKAGES:?}/All/${pkgname:?}.${PKG_EXT}" ]; then
+		return 0
+	fi
+	# The package is kept.
+
+	# If the package has shlib dependencies then we need to recheck it
+	# later to ensure those dependencies are still provided by another
+	# package.
+	pkg_get_shlib_required_count shlib_required_count "${pkg}" || return
+	case "${shlib_required_count-}" in
+	""|0) return 0 ;;
+	esac
+	shash_set pkgname-check_shlibs "${pkgname}" "1"
+}
+
 delete_old_pkgs() {
 	local delete_unqueued
 
@@ -7002,6 +7091,178 @@ delete_old_pkgs() {
 	parallel_stop
 
 	run_hook delete_old_pkgs stop
+}
+
+_package_recursive_deps() {
+	[ $# -eq 1 ] || eargs _package_recursive_deps pkgfile
+	local pkgfile="$1"
+	local dep_pkgname compiled_deps_pkgnames dep_pkgbase dep_pkgfile fn
+
+	pkg_get_dep_origin_pkgnames '' compiled_deps_pkgnames "${pkgfile:?}"
+	for dep_pkgname in ${compiled_deps_pkgnames?}; do
+		case "${dep_pkgname:?}" in
+		*"-(null)")
+			dep_pkgbase="${dep_pkgname%-*}"
+			for dep_pkgfile in \
+			    "${PACKAGES:?}/All/${dep_pkgbase:?}-"*.${PKG_EXT}; do
+				fn="${dep_pkgfile##*/}"
+				case "${fn}" in
+				# No matches
+				"${dep_pkgbase}-*.${PKG_EXT}") break ;;
+				esac
+				case "${fn%-*}" in
+				"${dep_pkgbase}") ;;
+				# It is probably a -devel close match
+				*) continue ;;
+				esac
+				echo "${fn}"
+				package_recursive_deps "${dep_pkgfile:?}"
+			done
+			;;
+		*)
+			fn="${dep_pkgname:?}.${PKG_EXT}"
+			dep_pkgfile="${PACKAGES:?}/All/${fn:?}"
+			if [ ! -f "${dep_pkgfile:?}" ]; then
+				continue
+			fi
+			echo "${fn}"
+			package_recursive_deps "${dep_pkgfile:?}"
+			;;
+		esac
+	done | sort -u
+}
+
+package_recursive_deps() {
+	[ $# -eq 1 ] || eargs package_recursive_deps pkgfile
+	local pkgfile="$1"
+
+	cache_call - _package_recursive_deps "${pkgfile:?}"
+}
+
+_package_deps_provided_libs() {
+	[ $# -eq 1 ] || eargs _package_deps_provided_libs pkgfile
+	local pkgfile="$1"
+
+	package_recursive_deps "${pkgfile:?}" |
+	    while mapfile_read_loop_redir dep_pkgfile; do
+		dep_pkgfile="${PACKAGES:?}/All/${dep_pkgfile:?}"
+		pkg_get_shlib_provides mapfile_handle "${dep_pkgfile:?}" ||
+		    continue
+		mapfile_cat "${mapfile_handle:?}"
+		mapfile_close "${mapfile_handle}" || :
+		package_deps_provided_libs "${dep_pkgfile:?}"
+	done | sort -u
+}
+
+package_deps_provided_libs() {
+	[ $# -eq 1 ] || eargs package_deps_provided_libs pkgfile
+	local pkgfile="$1"
+
+	cache_call - _package_deps_provided_libs "${pkgfile:?}"
+}
+
+# If the package has shlib dependencies we need to ensure that
+# their package dependencies provide them.  It is possible that
+# a PORTREVISION chase was missed by a committer or from a change
+# of quarterly branch.
+package_libdeps_satisfied() {
+	[ $# -eq 1 ] || eargs package_libdeps_satisfied pkgname
+	local pkgname="$1"
+	local pkgfile
+	local mapfile_handle ret
+	local shlib shlibs_required shlibs_provided shlib_name
+
+	if ! ensure_pkg_installed; then
+		# Probably building pkg right now
+		return 0
+	fi
+
+	pkgfile="${PACKAGES:?}/All/${pkgname:?}.${PKG_EXT:?}"
+	# Compare the dependencies in the file to what its dep *packages*
+	# provide. The metadata in ports is not relevant here.
+	shlibs_provided="$(package_deps_provided_libs "${pkgfile:?}" |
+	    paste -d ' ' -s -)"
+	msg_debug "${COLOR_PORT}${pkgname}${COLOR_RESET}: provides: ${shlibs_provided}"
+	case "${shlibs_provided:+set}" in
+	"")
+		msg_debug "${COLOR_PORT}${pkgname}${COLOR_RESET} misses all its shlibs"
+		return 1
+		;;
+	esac
+	pkg_get_shlib_requires mapfile_handle "${pkgfile:?}" ||
+	    err "${EX_SOFTWARE}" "package_libdeps_satisfied: Failed to lookup shlib_requires from ${pkgfile}"
+	# $(mapfile_cat) avoids a fork while $(pkg_get_shlib_requires -) does not.
+	shlibs_required="$(mapfile_cat "${mapfile_handle}")"
+	mapfile_close "${mapfile_handle}" || :
+	msg_debug "${COLOR_PORT}${pkgname}${COLOR_RESET}: required: ${shlibs_required}"
+	ret=0
+	for shlib in ${shlibs_required}; do
+		shlib_name="${shlib%.so*}"
+		case " ${shlibs_provided} " in
+		# Success
+		*" ${shlib} "*) ;;
+		# A different version! We need to rebuild to use it.
+		# This supports X.Y.Z for each 0-999.
+		# There is probably a better way to do this. We need to see
+		# if some package provides a library we need but a different
+		# version and thus we need to rebuild.
+		# This is avoiding a situation where no package provides the
+		# library and we do a needless rebuild. The last case here
+		# covers that.
+		*" ${shlib_name}.so."[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9][0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9][0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9][0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9].[0-9][0-9][0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9][0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9][0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9][0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9].[0-9][0-9][0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9][0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9][0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9][0-9][0-9].[0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9][0-9][0-9].[0-9][0-9]" "*|\
+		*" ${shlib_name}.so."[0-9][0-9][0-9].[0-9][0-9][0-9].[0-9][0-9][0-9]" "*|\
+		EOL)
+			ret=1
+			job_msg_warn "${COLOR_PORT}${pkgname}${COLOR_RESET} will be rebuilt as it misses ${shlib}"
+			;;
+		# Nothing similar. Bogus dependency. Avoid rebuilding
+		# because some library leaked in without a proper LIB_DEPENDS
+		# so a rebuild may just yield the same library version again.
+		# The port should be fixed to properly track the library.
+		# It likely is failing the QA check for leaked libraries.
+		*)
+			job_msg_warn "${COLOR_PORT}${pkgname}${COLOR_RESET} misses ${shlib} which no dependency provides. This will be ignored but should be fixed in the port."
+			;;
+		esac
+	done
+	return "${ret}"
 }
 
 _lock_acquire() {
@@ -9083,6 +9344,7 @@ trim_ignored_pkg() {
 		run_hook pkgbuild ignored "${origin}" "${pkgname}" "${ignore}"
 	fi
 	badd ports.ignored "${originspec} ${pkgname} ${ignore}"
+	pkgbuild_done "${pkgname}"
 	clean_pool "build" "${pkgname}" "${originspec}" "ignored"
 	clean_pool "run" "${pkgname}" "${originspec}" "ignored"
 }
