@@ -1502,7 +1502,7 @@ siginfo_handler() {
 		return 0
 	fi
 
-	show_build_summary
+	show_build_summary >&2
 
 	now=$(clock -monotonic)
 
@@ -1547,11 +1547,11 @@ siginfo_handler() {
 				    "${buildtime_phase}" "${buildtime}"
 			else
 				printf "${format_phase}" "${j}" '' "${phase}"
-			fi
+			fi >&2
 		done
 	fi
 
-	show_log_info
+	show_log_info >&2
 	enable_siginfo_handler
 }
 
