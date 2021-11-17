@@ -4544,7 +4544,24 @@ start_builder() {
 	do_portbuild_mounts "${mnt}" "${jname}" "${ptname}" "${setname}"
 	jstart
 	bset ${id} status "idle:"
+	shash_set builder_active "${id}" 1
 	run_hook builder start "${id}" "${mnt}"
+}
+
+maybe_start_builder() {
+	[ $# -ge 5 ] || eargs maybe_start_builder MY_JOBID jname ptname \
+	    setname cmd [args]
+	local jobid="$1"
+	local jname="$2"
+	local ptname="$3"
+	local setname="$4"
+	shift 4
+
+	if ! shash_exists builder_active "${jobid}"; then
+		start_builder "${jobid}" "${jname}" "${ptname}" \
+		    "${setname}" || return "$?"
+	fi
+	"$@"
 }
 
 start_builders() {
@@ -4579,6 +4596,7 @@ stop_builder() {
 	run_hook builder stop "${jobid}" "${mnt}"
 	jstop
 	destroyfs "${mnt}" jail
+	shash_unset builder_active "${jobid}"
 }
 
 stop_builders() {
@@ -4631,7 +4649,11 @@ job_done() {
 }
 
 build_queue() {
+	[ $# -eq 3 ] || eargs build_queue jname ptname setname
 	required_env build_queue PWD "${MASTER_DATADIR_ABS}/pool"
+	local jname="$1"
+	local ptname="$2"
+	local setname="$3"
 	local j jobid pid pkgname builders_active queue_empty
 	local builders_idle idle_only timeout log porttesting
 
@@ -4685,7 +4707,10 @@ build_queue() {
 				continue
 			fi
 			builders_active=1
+			# Opportunistically start the builder in a subproc
 			MY_JOBID="${j}" spawn_job \
+			    maybe_start_builder "${j}" "${jname}" \
+			        "${ptname}" "${setname}" \
 			    build_pkg "${pkgname}" "${porttesting}"
 			pid=$!
 			echo "${pid}" > "${MASTER_DATADIR}/var/run/${j}.pid"
@@ -4804,10 +4829,8 @@ parallel_build() {
 	# Minimize PARALLEL_JOBS to queue size
 	[ ${PARALLEL_JOBS} -gt ${nremaining} ] && PARALLEL_JOBS=${nremaining##* }
 
-	msg "Building ${nremaining} packages using ${PARALLEL_JOBS} builders"
+	msg "Building ${nremaining} packages using up to ${PARALLEL_JOBS} builders"
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
-
-	start_builders "${jname}" "${ptname}" "${setname}"
 
 	# Ensure rollback for builders doesn't copy schg files.
 	if schg_immutable_base; then
@@ -4849,7 +4872,7 @@ parallel_build() {
 	[ ! -d "${MASTER_DATADIR}/pool" ] && err 1 "Build pool is missing"
 	cd "${MASTER_DATADIR}/pool"
 
-	build_queue
+	build_queue "${jname}" "${ptname}" "${setname}"
 
 	cd "${MASTER_DATADIR}"
 
