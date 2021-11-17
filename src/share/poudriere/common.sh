@@ -1518,9 +1518,9 @@ siginfo_handler() {
 				continue
 			fi
 			# Hide idle workers
-			if [ "${status}" = "idle:" ]; then
-				continue
-			fi
+			case "${status}" in
+			idle:|done:) continue ;;
+			esac
 			phase="${status%%:*}"
 			status="${status#*:}"
 			origin="${status%%:*}"
