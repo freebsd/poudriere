@@ -415,6 +415,32 @@ fi
 	TMP=$(mktemp -t mapfile)
 	TMP2=$(mktemp -t mapfile)
 
+	:>"${TMP}"
+	assert_ret 0 mapfile handle "${TMP2}" "we"
+	cat "${TMP}" | mapfile_write "${handle}"
+	assert_ret 0 mapfile_close "${handle}"
+	[ ! -s "${TMP2}" ]
+	assert 0 "$?" "'cat <empty file> | mapfile_write' should not write anything"
+	rm -f "${TMP}" "${TMP2}"
+}
+
+{
+	TMP=$(mktemp -t mapfile)
+	TMP2=$(mktemp -t mapfile)
+
+	:>"${TMP}"
+	assert_ret 0 mapfile handle "${TMP2}" "we"
+	mapfile_cat "${TMP}" | mapfile_write "${handle}"
+	assert_ret 0 mapfile_close "${handle}"
+	[ ! -s "${TMP2}" ]
+	assert 0 "$?" "'mapfile_cat <empty file> | mapfile_write' should not write anything"
+	rm -f "${TMP}" "${TMP2}"
+}
+
+{
+	TMP=$(mktemp -t mapfile)
+	TMP2=$(mktemp -t mapfile)
+
 	ps uaxwd > "${TMP}"
 
 	:>"${TMP2}"

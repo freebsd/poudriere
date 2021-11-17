@@ -701,12 +701,14 @@ _mapfile_write_from_stdin() {
 	[ $# -eq 1 ] || eargs _mapfile_write_from_stdin handle
 	local data
 
-	data="$(cat)"
-	_mapfile_write "$@" "${data}"
+	# . is to preserve newline
+	data="$(cat; echo .)"
+	data="${data%.}"
+	_mapfile_write "$@" -n "${data}"
 }
 
 _mapfile_write() {
-	[ $# -eq 2 ] || eargs mapfile_write handle data
+	[ $# -ge 2 ] || eargs mapfile_write handle [-n] data
 	local handle="$1"
 	shift
 	local fd

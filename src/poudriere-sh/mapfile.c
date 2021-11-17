@@ -543,8 +543,12 @@ mapfile_writecmd(int argc, char **argv)
 		 * XXX: Using shell mapfile_cat until some changes from
 		 * copool branch make it in to avoid massive conflicts
 		 */
-		const char *cmd = "__mapfile_write_cat=$(mapfile_cat)";
+		/* Avoid adding our own newline by keeping any read. */
+		const char *cmd =
+		    "__mapfile_write_cat=\"$(mapfile_cat; echo .)\";"
+		    "__mapfile_write_cat=\"${__mapfile_write_cat%.}\"";
 
+		nflag = 1;
 		evalstring(cmd, 0);
 		if (exitstatus != 0) {
 			ret = exitstatus;
