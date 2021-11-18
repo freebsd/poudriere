@@ -4867,6 +4867,7 @@ parallel_build() {
 
 	coprocess_start pkg_cacher
 
+	bset builders "${JOBS}"
 	bset status "parallel_build:"
 
 	[ ! -d "${MASTER_DATADIR}/pool" ] && err 1 "Build pool is missing"
