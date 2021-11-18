@@ -4528,10 +4528,15 @@ start_builder() {
 	local jname="$2"
 	local ptname="$3"
 	local setname="$4"
-	local mnt MY_JOBID
+	local mnt MY_JOBID NO_ELAPSED_IN_MSG TIME_START_JOB COLOR_JOBID
 
 	MY_JOBID=${id}
 	_my_path mnt
+
+	NO_ELAPSED_IN_MSG=1
+	TIME_START_JOB=$(clock -monotonic)
+	colorize_job_id COLOR_JOBID "${MY_JOBID}"
+	job_msg "Builder starting"
 
 	# Jail might be lingering from previous build. Already recursively
 	# destroyed all the builder datasets, so just try stopping the jail
@@ -4546,6 +4551,8 @@ start_builder() {
 	bset ${id} status "idle:"
 	shash_set builder_active "${id}" 1
 	run_hook builder start "${id}" "${mnt}"
+
+	job_msg "Builder started"
 }
 
 maybe_start_builder() {
