@@ -29,7 +29,7 @@ display_setup() {
 	_DISPLAY_DATA=
 	_DISPLAY_FORMAT="$1"
 	_DISPLAY_COLUMNS="$2"
-	_DISPLAY_COLUMN_SORT="$3"
+	_DISPLAY_COLUMN_SORT="${3-}"
 }
 
 display_add() {
@@ -67,7 +67,12 @@ display_output() {
 	format="${_DISPLAY_FORMAT}"
 
 	# Determine optimal format
+	n=0
 	while mapfile_read_loop_redir line; do
+		n=$((n + 1))
+		if [ "${n}" -eq 1 -a "${quiet}" -eq 1 ]; then
+			continue
+		fi
 		eval "set -- ${line}"
 		cnt=0
 		for arg in "$@"; do
@@ -86,7 +91,8 @@ display_output() {
 	EOF
 
 	# Set format lengths if format is dynamic width
-	if [ "${format##*%%*}" != "${format}" ]; then
+	case "${format}" in
+	*%%*)
 		set -- ${format}
 		lengths=
 		n=0
@@ -100,7 +106,8 @@ display_output() {
 			n=$((n + 1))
 		done
 		format=$(printf "${format}" ${lengths})
-	fi
+		;;
+	esac
 
 	# Show header separately so it is not sorted
 	if [ "${quiet}" -eq 0 ]; then
