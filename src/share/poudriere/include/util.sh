@@ -821,48 +821,37 @@ mapfile_read_loop_redir() {
 	read -r "$@"
 }
 
-# Basically an optimized loop of mapfile_read_loop_redir, or read_file
+# Pipe to STDOUT from handle.
 mapfile_cat() {
-	local -; set +x
-	[ $# -ge 0 ] || eargs mapfile_cat [-u] file...
-	local  _handle ret _line _file ret flag
-	local nflag lines
-	local IFS
+	[ $# -ge 1 ] || eargs mapfile_cat handle...
+	local IFS handle line
 
-	if ! mapfile_builtin; then
-		ret=0
-		cat "$@" || ret="$?"
-		return "${ret}"
-	fi
-	nflag=
-	while getopts "n" flag; do
-		case "${flag}" in
-		n)
-			nflag=1
-			;;
-		esac
-		shift $((OPTIND-1))
+	for handle in "$@"; do
+		while IFS= mapfile_read "${handle}" line; do
+			echo "${line}"
+		done
 	done
+}
+
+# Pipe to STDOUT from a file.
+# Basically an optimized loop of mapfile_read_loop_redir, or read_file
+mapfile_cat_file() {
+	local -; set +x
+	[ $# -ge 0 ] || eargs mapfile_cat_file file...
+	local  _handle ret _file
+
 	if [ $# -eq 0 ]; then
 		# Read from stdin
 		set -- "-"
 	fi
 	ret=0
-	lines=0
 	for _file in "$@"; do
 		case "${_file}" in
 		-) _file="/dev/fd/0" ;;
 		esac
 		if mapfile _handle "${_file}" "re"; then
-			while IFS= mapfile_read "${_handle}" _line; do
-				lines=$((lines + 1))
-				case "${nflag}" in
-				"") ;;
-				*) printf "%6d\t" "${lines}" ;;
-				esac
-				echo "${_line}"
-			done
-			mapfile_close "${_handle}"
+			mapfile_cat "${_handle}" || ret="$?"
+			mapfile_close "${_handle}" || ret="$?"
 		else
 			ret="$?"
 		fi

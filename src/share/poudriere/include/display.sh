@@ -251,7 +251,7 @@ display_output() {
 			if [ "${quiet}" -eq 0 ]; then
 				echo "${_DISPLAY_HEADER}"
 			fi
-			mapfile_cat "${_DISPLAY_TMP}.filtered"
+			mapfile_cat_file "${_DISPLAY_TMP}.filtered"
 			if [ -n "${_DISPLAY_FOOTER}" ]; then
 				echo "${_DISPLAY_FOOTER}"
 			fi

@@ -128,7 +128,7 @@ shash_read() {
 	local _shash_varkey_file
 
 	_shash_varkey_file "${var}" "${key}"
-	mapfile_cat "${_shash_varkey_file}"
+	mapfile_cat_file "${_shash_varkey_file}"
 }
 
 shash_read_mapfile() {

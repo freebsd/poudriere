@@ -5,6 +5,8 @@ set -e
 . ${SCRIPTPREFIX}/include/util.sh
 set +e
 
+set_pipefail
+
 JAILED=$(sysctl -n security.jail.jailed 2>/dev/null || echo 0)
 
 LINES=20
@@ -505,6 +507,7 @@ fi
 	:>"${TMP}"
 	assert_ret 0 mapfile handle "${TMP2}" "we"
 	cat "${TMP}" | mapfile_write "${handle}"
+	assert 0 "$?" "pipe exit status"
 	assert_ret 0 mapfile_close "${handle}"
 	[ ! -s "${TMP2}" ]
 	assert 0 "$?" "'cat <empty file> | mapfile_write' should not write anything"
@@ -517,10 +520,67 @@ fi
 
 	:>"${TMP}"
 	assert_ret 0 mapfile handle "${TMP2}" "we"
-	mapfile_cat "${TMP}" | mapfile_write "${handle}"
+	assert_ret 0 mapfile_cat_file "${TMP}" |
+	    assert_ret 0 mapfile_write "${handle}"
+	assert 0 "$?" "pipe exit status"
 	assert_ret 0 mapfile_close "${handle}"
 	[ ! -s "${TMP2}" ]
-	assert 0 "$?" "'mapfile_cat <empty file> | mapfile_write' should not write anything"
+	assert 0 "$?" "'mapfile_cat_file <empty file> | mapfile_write' should not write anything"
+	rm -f "${TMP}" "${TMP2}"
+}
+
+{
+	TMP=$(mktemp -t mapfile)
+	TMP2=$(mktemp -t mapfile)
+
+	ps uaxwd > "${TMP}"
+
+	:>"${TMP2}"
+	assert_ret 0 mapfile handle "${TMP2}" "we"
+	assert_ret 0 mapfile_cat_file "${TMP}" |
+	    assert_ret 0 mapfile_write "${handle}"
+	assert 0 "$?" "pipe exit status"
+	assert_ret 0 mapfile_close "${handle}"
+	assert_ret 0 diff -u "${TMP}" "${TMP2}"
+
+	rm -f "${TMP2}"
+	:>"${TMP2}"
+	assert_ret 0 mapfile handle "${TMP2}" "we"
+	mapfile_write "${handle}" <<-EOF
+	$(cat "${TMP}")
+	EOF
+	assert_ret 0 mapfile_close "${handle}"
+	assert_ret 0 diff -u "${TMP}" "${TMP2}"
+
+	rm -f "${TMP}" "${TMP2}"
+}
+
+{
+	TMP=$(mktemp -t mapfile)
+	TMP2=$(mktemp -t mapfile)
+
+	ps uaxwd > "${TMP}"
+
+	:>"${TMP2}"
+	assert_ret 0 mapfile read_handle "${TMP}" "re"
+	assert_ret 0 mapfile_cat "${read_handle}" | (
+		assert_ret 0 mapfile handle "${TMP2}" "we"
+		assert_ret 0 mapfile_write "${handle}"
+		assert_ret 0 mapfile_close "${handle}"
+	)
+	assert 0 "$?" "pipe exit status"
+	assert_ret 0 mapfile_close "${read_handle}"
+	assert_ret 0 diff -u "${TMP}" "${TMP2}"
+
+	rm -f "${TMP2}"
+	:>"${TMP2}"
+	assert_ret 0 mapfile handle "${TMP2}" "we"
+	mapfile_write "${handle}" <<-EOF
+	$(cat "${TMP}")
+	EOF
+	assert_ret 0 mapfile_close "${handle}"
+	assert_ret 0 diff -u "${TMP}" "${TMP2}"
+
 	rm -f "${TMP}" "${TMP2}"
 }
 
@@ -533,6 +593,7 @@ fi
 	:>"${TMP2}"
 	assert_ret 0 mapfile handle "${TMP2}" "we"
 	cat "${TMP}" | mapfile_write "${handle}"
+	assert 0 "$?" "pipe exit status"
 	assert_ret 0 mapfile_close "${handle}"
 	assert_ret 0 diff -u "${TMP}" "${TMP2}"
 

@@ -540,12 +540,12 @@ mapfile_writecmd(int argc, char **argv)
 		/* Read from TTY */
 		char *value;
 		/*
-		 * XXX: Using shell mapfile_cat until some changes from
+		 * XXX: Using shell mapfile_cat_file until some changes from
 		 * copool branch make it in to avoid massive conflicts
 		 */
 		/* Avoid adding our own newline by keeping any read. */
 		const char *cmd =
-		    "__mapfile_write_cat=\"$(mapfile_cat; echo .)\";"
+		    "__mapfile_write_cat=\"$(mapfile_cat_file; echo .)\";"
 		    "__mapfile_write_cat=\"${__mapfile_write_cat%.}\"";
 
 		nflag = 1;
