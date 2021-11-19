@@ -81,6 +81,7 @@ _do_clone() {
 	local rflags="$1"
 	shift
 	local src dst common relative cpignore FLAG
+	local OPTIND=1
 
 	relative=0
 	cpignore=""

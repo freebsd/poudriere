@@ -48,6 +48,7 @@ display_add() {
 
 display_output() {
 	local cnt lengths length format arg flag quiet line n
+	local OPTIND=1
 
 	quiet=0
 
