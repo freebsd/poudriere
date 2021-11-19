@@ -24,7 +24,7 @@
 # SUCH DAMAGE.
 
 pkg_get_origin() {
-	[ $# -lt 2 ] && eargs pkg_get_origin var_return pkg [origin]
+	[ $# -ge 2 ] || eargs pkg_get_origin var_return pkg [origin]
 	local var_return="$1"
 	local pkg="$2"
 	local _origin="${3-}"
@@ -95,7 +95,7 @@ pkg_get_flavor() {
 }
 
 pkg_get_arch() {
-	[ $# -lt 2 ] && eargs pkg_get_arch var_return pkg [arch]
+	[ $# -ge 2 ] || eargs pkg_get_arch var_return pkg [arch]
 	local var_return="$1"
 	local pkg="$2"
 	local _arch=$3
@@ -120,7 +120,7 @@ pkg_get_arch() {
 
 pkg_get_dep_origin_pkgnames() {
 	local -; set -f
-	[ $# -ne 3 ] && eargs pkg_get_dep_origin_pkgnames var_return_origins \
+	[ $# -eq 3 ] || eargs pkg_get_dep_origin_pkgnames var_return_origins \
 	    var_return_pkgnames pkg
 	local var_return_origins="$1"
 	local var_return_pkgnames="$2"
@@ -155,7 +155,7 @@ pkg_get_dep_origin_pkgnames() {
 }
 
 pkg_get_options() {
-	[ $# -ne 2 ] && eargs pkg_get_options var_return pkg
+	[ $# -eq 2 ] || eargs pkg_get_options var_return pkg
 	local var_return="$1"
 	local pkg="$2"
 	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
@@ -242,7 +242,7 @@ get_cache_dir() {
 # @param var_return The variable to set the result in
 # @param string pkg $PKGDIR/All/PKGNAME.PKG_EXT
 get_pkg_cache_dir() {
-	[ $# -lt 2 ] && eargs get_pkg_cache_dir var_return pkg
+	[ $# -ge 2 ] || eargs get_pkg_cache_dir var_return pkg [use_mtime]
 	local var_return="$1"
 	local pkg="$2"
 	local use_mtime="${3:-1}"
@@ -253,11 +253,13 @@ get_pkg_cache_dir() {
 
 	get_cache_dir cache_dir
 
-	[ ${use_mtime} -eq 1 ] && pkg_mtime=$(stat -f %m "${pkg}")
+	if [ "${use_mtime}" -eq 1 ]; then
+		pkg_mtime=$(stat -f %m "${pkg}")
+	fi
 
 	pkg_dir="${cache_dir}/${pkg_file}/${pkg_mtime}"
 
-	if [ ${use_mtime} -eq 1 ]; then
+	if [ "${use_mtime}" -eq 1 ]; then
 		[ -d "${pkg_dir}" ] || mkdir -p "${pkg_dir}"
 	fi
 
@@ -265,7 +267,7 @@ get_pkg_cache_dir() {
 }
 
 clear_pkg_cache() {
-	[ $# -ne 1 ] && eargs clear_pkg_cache pkg
+	[ $# -eq 1 ] || eargs clear_pkg_cache pkg
 	local pkg="$1"
 	local pkg_cache_dir
 
@@ -284,13 +286,14 @@ delete_stale_pkg_cache() {
 
 	msg_verbose "Checking for stale cache files"
 
-	[ ! -d ${cache_dir} ] && return 0
-	dirempty ${cache_dir} && return 0
+	[ -d "${cache_dir}" ] || return 0
+	! dirempty "${cache_dir}" || return 0
 	for pkg in ${cache_dir}/*; do
 		pkg_file="${pkg##*/}"
 		# If this package no longer exists in the PKGDIR, delete the cache.
-		[ ! -e "${PACKAGES}/All/${pkg_file}" ] &&
+		if [ ! -e "${PACKAGES}/All/${pkg_file}" ]; then
 			clear_pkg_cache "${pkg}"
+		fi
 	done
 
 	return 0
@@ -308,7 +311,7 @@ delete_all_pkgs() {
 }
 
 delete_pkg() {
-	[ $# -ne 1 ] && eargs delete_pkg pkg
+	[ $# -eq 1 ] || eargs delete_pkg pkg
 	local pkg="$1"
 
 	# Delete the package and the depsfile since this package is being deleted,
@@ -319,7 +322,7 @@ delete_pkg() {
 
 # Keep in sync with delete_pkg
 delete_pkg_xargs() {
-	[ $# -ne 2 ] && eargs delete_pkg listfile pkg
+	[ $# -eq 2 ] || eargs delete_pkg listfile pkg
 	local listfile="$1"
 	local pkg="$2"
 	local pkg_cache_dir
