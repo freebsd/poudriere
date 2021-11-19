@@ -112,7 +112,8 @@ _err() {
 	if [ ${ERRORS_ARE_FATAL:-1} -eq 1 ]; then
 		if was_a_bulk_run &&
 		    [ -n "${POUDRIERE_BUILD_TYPE-}" ] &&
-		    [ "${PARALLEL_CHILD:-0}" -eq 0 ]; then
+		    [ "${PARALLEL_CHILD:-0}" -eq 0 ] &&
+		    [ "$(getpid)" = "$$" ]; then
 			show_build_summary >&2
 			show_log_info >&2
 		fi
