@@ -39,7 +39,7 @@ __RCSID("$NetBSD: stat.c,v 1.33 2011/01/15 22:54:10 njoly Exp $"
 
 __FBSDID("$FreeBSD$");
 
-#if HAVE_CONFIG_H
+#if defined(HAVE_CONFIG_H) && !defined(SHELL)
 #include "config.h" 
 #else  /* HAVE_CONFIG_H */
 #define HAVE_STRUCT_STAT_ST_FLAGS 1
@@ -67,6 +67,13 @@ __FBSDID("$FreeBSD$");
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+
+#ifdef SHELL
+#define main statcmd
+#include "bltin/bltin.h"
+#include "helpers.h"
+#define fputc(c, stream) putc((c), (stream))
+#endif
 
 #if HAVE_STRUCT_STAT_ST_FLAGS
 #define DEF_F "%#Xf "
@@ -182,7 +189,7 @@ __FBSDID("$FreeBSD$");
 #define SHOW_sizerdev	'Z'
 
 void	usage(const char *);
-void	output(const struct stat *, const char *,
+void	_output(const struct stat *, const char *,
 	    const char *, int, int);
 int	format1(const struct stat *,	/* stat info */
 	    const char *,		/* the file name */
@@ -215,6 +222,11 @@ main(int argc, char *argv[])
 	fhandle_t fhnd;
 	const char *file;
 
+#ifdef SHELL
+	timefmt = NULL;
+	linkfail = 0;
+#endif
+
 	am_readlink = 0;
 	lsF = 0;
 	fmtchar = '\0';
@@ -226,7 +238,11 @@ main(int argc, char *argv[])
 	statfmt = NULL;
 	timefmt = NULL;
 
+#ifdef SHELL
+	if (0) {
+#else
 	if (strcmp(getprogname(), "readlink") == 0) {
+#endif
 		am_readlink = 1;
 		options = "fn";
 		synopsis = "[-fn] [file ...]";
@@ -376,7 +392,7 @@ main(int argc, char *argv[])
 				warn("%s: stat", file);
 		}
 		else
-			output(&st, file, statfmt, fn, nonl);
+			_output(&st, file, statfmt, fn, nonl);
 
 		argv++;
 		argc--;
@@ -417,7 +433,7 @@ usage(const char *synopsis)
  * Parses a format string.
  */
 void
-output(const struct stat *st, const char *file,
+_output(const struct stat *st, const char *file,
     const char *statfmt, int fn, int nonl)
 {
 	int flags, size, prec, ofmt, hilo, what;
@@ -764,7 +780,9 @@ format1(const struct stat *st,
 			ts.tv_sec = 0;
 			tm = localtime(&ts.tv_sec);
 		}
+#ifndef SHELL
 		(void)setlocale(LC_TIME, "");
+#endif
 		(void)strftime(path, sizeof(path), timefmt, tm);
 		sdata = path;
 		formats = FMTF_DECIMAL | FMTF_OCTAL | FMTF_UNSIGNED | FMTF_HEX |

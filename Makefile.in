@@ -273,6 +273,7 @@ am_sh_OBJECTS = external/sh/sh-alias.$(OBJEXT) \
 	src/poudriere-sh/sh-rmdir.$(OBJEXT) \
 	src/poudriere-sh/sh-setproctitle.$(OBJEXT) \
 	src/poudriere-sh/sh-sleep.$(OBJEXT) \
+	src/poudriere-sh/sh-stat.$(OBJEXT) \
 	src/poudriere-sh/sh-touch.$(OBJEXT) \
 	src/poudriere-sh/sh-traps.$(OBJEXT) \
 	src/poudriere-sh/sh-unlink.$(OBJEXT) \
@@ -413,6 +414,7 @@ am__depfiles_remade = external/libnv/$(DEPDIR)/libnv_la-msgio.Plo \
 	src/poudriere-sh/$(DEPDIR)/sh-rmdir.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-sleep.Po \
+	src/poudriere-sh/$(DEPDIR)/sh-stat.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-touch.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-traps.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-unlink.Po \
@@ -892,8 +894,9 @@ sh_SOURCES = external/sh/alias.c external/sh/alias.h \
 	src/poudriere-sh/mkfifo.c src/poudriere-sh/mktemp.c \
 	src/poudriere-sh/realpath.c src/poudriere-sh/rmdir.c \
 	src/poudriere-sh/setproctitle.c src/poudriere-sh/sleep.c \
-	src/poudriere-sh/touch.c src/poudriere-sh/traps.c \
-	src/poudriere-sh/unlink.c src/poudriere-sh/builtins.c
+	src/poudriere-sh/stat.c src/poudriere-sh/touch.c \
+	src/poudriere-sh/traps.c src/poudriere-sh/unlink.c \
+	src/poudriere-sh/builtins.c
 libucl_la_SOURCES = \
 			external/libucl/include/lua_ucl.h \
 			external/libucl/include/ucl.h \
@@ -1500,6 +1503,8 @@ src/poudriere-sh/sh-setproctitle.$(OBJEXT):  \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
 src/poudriere-sh/sh-sleep.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
+src/poudriere-sh/sh-stat.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
+	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
 src/poudriere-sh/sh-touch.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
 	src/poudriere-sh/$(DEPDIR)/$(am__dirstamp)
 src/poudriere-sh/sh-traps.$(OBJEXT): src/poudriere-sh/$(am__dirstamp) \
@@ -1726,6 +1731,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-rmdir.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-sleep.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-stat.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-touch.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-traps.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-unlink.Po@am__quote@ # am--include-marker
@@ -2636,6 +2642,20 @@ src/poudriere-sh/sh-sleep.obj: src/poudriere-sh/sleep.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-sleep.obj `if test -f 'src/poudriere-sh/sleep.c'; then $(CYGPATH_W) 'src/poudriere-sh/sleep.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/sleep.c'; fi`
 
+src/poudriere-sh/sh-stat.o: src/poudriere-sh/stat.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-stat.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-stat.Tpo -c -o src/poudriere-sh/sh-stat.o `test -f 'src/poudriere-sh/stat.c' || echo '$(srcdir)/'`src/poudriere-sh/stat.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-stat.Tpo src/poudriere-sh/$(DEPDIR)/sh-stat.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/stat.c' object='src/poudriere-sh/sh-stat.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-stat.o `test -f 'src/poudriere-sh/stat.c' || echo '$(srcdir)/'`src/poudriere-sh/stat.c
+
+src/poudriere-sh/sh-stat.obj: src/poudriere-sh/stat.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-stat.obj -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-stat.Tpo -c -o src/poudriere-sh/sh-stat.obj `if test -f 'src/poudriere-sh/stat.c'; then $(CYGPATH_W) 'src/poudriere-sh/stat.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/stat.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-stat.Tpo src/poudriere-sh/$(DEPDIR)/sh-stat.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/poudriere-sh/stat.c' object='src/poudriere-sh/sh-stat.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -c -o src/poudriere-sh/sh-stat.obj `if test -f 'src/poudriere-sh/stat.c'; then $(CYGPATH_W) 'src/poudriere-sh/stat.c'; else $(CYGPATH_W) '$(srcdir)/src/poudriere-sh/stat.c'; fi`
+
 src/poudriere-sh/sh-touch.o: src/poudriere-sh/touch.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT src/poudriere-sh/sh-touch.o -MD -MP -MF src/poudriere-sh/$(DEPDIR)/sh-touch.Tpo -c -o src/poudriere-sh/sh-touch.o `test -f 'src/poudriere-sh/touch.c' || echo '$(srcdir)/'`src/poudriere-sh/touch.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriere-sh/$(DEPDIR)/sh-touch.Tpo src/poudriere-sh/$(DEPDIR)/sh-touch.Po
@@ -3521,6 +3541,7 @@ distclean: distclean-recursive
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-rmdir.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-sleep.Po
+	-rm -f src/poudriere-sh/$(DEPDIR)/sh-stat.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-touch.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-traps.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-unlink.Po
@@ -3659,6 +3680,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-rmdir.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-setproctitle.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-sleep.Po
+	-rm -f src/poudriere-sh/$(DEPDIR)/sh-stat.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-touch.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-traps.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-unlink.Po

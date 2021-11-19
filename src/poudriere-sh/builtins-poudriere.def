@@ -26,6 +26,7 @@ rmcmd -n		rm
 rmdircmd -n		rmdir
 setproctitlecmd		setproctitle
 sleepcmd -n		sleep
+statcmd -n		stat
 touchcmd -n		touch
 trap_pushcmd -n		trap_push
 trap_popcmd -n		trap_pop
