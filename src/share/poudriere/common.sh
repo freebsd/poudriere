@@ -1864,11 +1864,13 @@ cd() {
 	local ret
 
 	ret=0
+	critical_start
 	command cd "$@" || ret=$?
 	# Handle fixing relative paths
 	if [ "${OLDPWD}" != "${PWD}" ]; then
 		_update_relpaths "${OLDPWD}" "${PWD}" || :
 	fi
+	critical_end
 	return ${ret}
 }
 
