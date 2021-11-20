@@ -97,6 +97,11 @@ display_output() {
 		lengths=
 		n=0
 		for arg in "$@"; do
+			# Check if this is a format argument
+			case "${arg}" in
+			*%*) ;;
+			*) continue ;;
+			esac
 			case ${arg} in
 			*%d*)
 				hash_get lengths ${n} length
