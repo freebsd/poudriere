@@ -194,11 +194,11 @@ case $COMMAND in
 list)
 	if [ ${NAMEONLY} -eq 0 ]; then
 		format='%%-%ds %%-%ds %%-%ds %%s\n'
-		display_setup "${format}" 4 "-d"
+		display_setup "${format}" "-d"
 		display_add "PORTSTREE" "METHOD" "TIMESTAMP" "PATH"
 	else
 		format='%s'
-		display_setup "${format}" 1 "-d"
+		display_setup "${format}" "-d"
 		display_add "PORTSTREE"
 	fi
 	while read ptname ptmethod ptpath; do

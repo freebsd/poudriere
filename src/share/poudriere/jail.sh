@@ -94,12 +94,12 @@ list_jail() {
 
 	if [ ${NAMEONLY} -eq 0 ]; then
 		format='%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%s'
-		display_setup "${format}" 6 "-d -k2,2 -k3,3 -k1,1"
+		display_setup "${format}" "-d -k2,2 -k3,3 -k1,1"
 		display_add "JAILNAME" "VERSION" "ARCH" "METHOD" \
 		    "TIMESTAMP" "PATH"
 	else
 		format='%s'
-		display_setup "${format}" 1 "-d"
+		display_setup "${format}" "-d"
 		display_add JAILNAME
 	fi
 	[ -d ${POUDRIERED}/jails ] || return 0

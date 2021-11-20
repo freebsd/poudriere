@@ -25,10 +25,9 @@
 # SUCH DAMAGE.
 
 display_setup() {
-	[ $# -ge 2 ] || eargs display_setup format columns [column_sort]
+	[ $# -ge 1 ] || eargs display_setup format [column_sort]
 	_DISPLAY_DATA=
 	_DISPLAY_FORMAT="$1"
-	_DISPLAY_COLUMNS="$2"
 	_DISPLAY_COLUMN_SORT="${3-}"
 }
 
@@ -126,6 +125,6 @@ display_output() {
 		printf "${format}\n" "$@"
 	done
 
-	unset _DISPLAY_DATA _DISPLAY_FORMAT _DISPLAY_COLUMNS \
+	unset _DISPLAY_DATA _DISPLAY_FORMAT \
 	    _DISPLAY_COLUMN_SORT
 }

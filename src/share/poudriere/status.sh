@@ -191,7 +191,7 @@ show_summary() {
 		[ ${COMPACT} -eq 0 ] && format="${format}\t%s"
 	fi
 
-	display_setup "${format}" "${columns}" "-d -k1,1 -k2,2 -k3,3n -k4,4n"
+	display_setup "${format}" "-d -k1,1 -k2,2 -k3,3n -k4,4n"
 
 	if [ ${COMPACT} -eq 0 ]; then
 		if [ -n "${URL_BASE}" ] && [ ${URL} -eq 1 ]; then
