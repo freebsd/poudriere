@@ -1375,7 +1375,7 @@ log_url() {
 show_log_info() {
 	local log build_url
 
-	if ! was_a_bulk_run; then
+	if ! was_a_bulk_run && ! [ "${SCRIPTNAME}" = "status.sh" ]; then
 		return 0
 	fi
 	_log_path log
