@@ -62,6 +62,15 @@ USE_TMPFS=yes
 # (default: none)
 #TMPFS_LIMIT=8
 
+# List of package globs that are not allowed to use tmpfs for their WRKDIR
+# Note that you *must* set TMPFS_BLACKLIST_TMPDIR
+# EXAMPLE: TMPFS_BLACKLIST="rust"
+
+# The host path where tmpfs-blacklisted packages can be built in.
+# A temporary directory will be generated here and be null-mounted as the
+# WRKDIR for any packages listed in TMPFS_BLACKLIST.
+# EXAMPLE: TMPFS_BLACKLIST_TMPDIR=${BASEFS}/data/cache/tmp
+
 # How much memory to limit jail processes to for *each builder*
 # in GiB (default: none)
 #MAX_MEMORY=8

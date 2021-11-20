@@ -4633,6 +4633,16 @@ stop_builders() {
 			parallel_run stop_builder "${j}"
 		done
 		parallel_stop
+
+		if [ -n "${TMPFS_BLACKLIST_TMPDIR-}" ] &&
+		    [ -d "${TMPFS_BLACKLIST_TMPDIR}/wrkdirs" ]; then
+			if ! rm -rf "${TMPFS_BLACKLIST_TMPDIR}/wrkdirs/"*; then
+				chflags -R 0 \
+				    "${TMPFS_BLACKLIST_TMPDIR}/wkrdirs"/* || :
+				rm -rf "${TMPFS_BLACKLIST_TMPDIR}/wrkdirs"/* ||
+				    :
+			fi
+		fi
 	fi
 
 	# No builders running, unset JOBS
@@ -5006,6 +5016,7 @@ build_pkg() {
 	local log
 	local errortype
 	local ret=0
+	local tmpfs_blacklist_dir
 	local elapsed now pkgname_varname jpkg originspec
 
 	_my_path mnt
@@ -5052,10 +5063,29 @@ build_pkg() {
 		:> "${mnt}/${LOCALBASE:-/usr/local}/.mounted"
 	fi
 
+	if [ -f "${mnt}/.tmpfs_blacklist_dir" ]; then
+		umount "${mnt}/wrkdirs"
+		rm -rf $(cat "${mnt}/.tmpfs_blacklist_dir")
+	fi
 	[ -f ${mnt}/.need_rollback ] && rollbackfs prepkg ${mnt}
 	[ -f ${mnt}/.need_rollback ] && \
 	    err 1 "Failed to rollback ${mnt} to prepkg"
 	:> ${mnt}/.need_rollback
+
+	for jpkg in ${TMPFS_BLACKLIST-}; do
+		case "${pkgname%-*}" in
+		${jpkg})
+			mkdir -p "${TMPFS_BLACKLIST_TMPDIR:?}/wrkdirs"
+			tmpfs_blacklist_dir=$(\
+				TMPDIR="${TMPFS_BLACKLIST_TMPDIR:?}/wrkdirs" \
+				mktemp -dt "${pkgname}")
+			${NULLMOUNT} "${tmpfs_blacklist_dir}" "${mnt}/wrkdirs"
+			echo "${tmpfs_blacklist_dir}" \
+			    > "${mnt}/.tmpfs_blacklist_dir"
+			break
+			;;
+		esac
+	done
 
 	rm -rfx ${mnt}/wrkdirs/* || :
 
@@ -5134,6 +5164,12 @@ build_pkg() {
 	injail /usr/bin/make -C "${portdir}" -k \
 	    -DNOCLEANDEPENDS clean ${MAKE_ARGS} || :
 	rm -rfx ${mnt}/wrkdirs/* || :
+
+	if [ -n "${tmpfs_blacklist_dir}" ]; then
+		umount "${mnt}/wrkdirs"
+		rm -f "${mnt}/.tmpfs_blacklist_dir"
+		rm -rf "${tmpfs_blacklist_dir}"
+	fi
 
 	clean_pool "${pkgname}" "${originspec}" "${clean_rdepends}"
 
