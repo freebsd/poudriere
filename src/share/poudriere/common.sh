@@ -1487,7 +1487,8 @@ siginfo_handler() {
 	local now
 	local j elapsed elapsed_phase job_id_color
 	local pkgname origin phase buildtime buildtime_phase started
-	local started_phase format_origin_phase format_phase
+	local started_phase format_origin_phase format_phase sep
+	local tmpfs cpu mem
 	local -
 
 	set +e
@@ -1510,10 +1511,71 @@ siginfo_handler() {
 
 	now=$(clock -monotonic)
 
+	# Some of the \b and empty field hacks here are for adding [] in
+	# the output but not the header for historical and consistency
+	# reasons.
+	format_origin_phase="%%c \b%%s \b%%-%ds${COLOR_RESET} \b%%c %%-%ds ${COLOR_PORT}%%%ds %%c %%-%ds${COLOR_RESET} ${COLOR_PHASE}%%%ds${COLOR_RESET} %%-%ds %%-%ds %%%ds %%%ds"
+	display_setup "${format_origin_phase}"
+	display_add " " "" "ID" " " "TOTAL" "ORIGIN" " " "PKGNAME" "PHASE" \
+	            "PHASE" "TMPFS" "CPU%" "MEM%"
+
 	# Skip if stopping or starting jobs or stopped.
 	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" \
 	    -a "${status}" != "stopping_jobs:" -a -n "${MASTERMNT}" ] && \
 	    ! status_is_stopped "${status}"; then
+		while mapfile_read_loop_redir j cpu mem; do
+			j="${j#*-job-}"
+			hash_set siginfo_cpu "${j}" "${cpu}"
+			hash_set siginfo_mem "${j}" "${mem}"
+		done <<-EOF
+		$(ps -ax -o jail,%cpu,%mem |
+		    awk -v MASTERNAME="${MASTERNAME}" '\
+			$1 ~ "^" MASTERNAME "(-job-[0-9]+)?(-n)?$" \
+			{ \
+				gsub(/-n$/, "", $1); \
+				cpu[$1] += $2; \
+				mem[$1] += $3; \
+			} \
+			END { \
+				for (jail in cpu) { \
+					print jail, cpu[jail], mem[jail]; \
+				} \
+			} \
+		    ')
+		EOF
+		while mapfile_read_loop_redir j tmpfs; do
+			hash_set siginfo_tmpfs "${j}" "${tmpfs}"
+		done <<-EOF
+		$(env BLOCKSIZE=512 df -t tmpfs | \
+		  awk -v MASTERMNTROOT="${MASTERMNTROOT}" ' \
+		    function humanize(number) { \
+			hum[1024**4]="TiB"; \
+			hum[1024**3]="GiB"; \
+			hum[1024**2]="MiB"; \
+			hum[1024]="KiB"; \
+			hum[0]="B"; \
+			for (x=1024**4; x>=1024; x/=1024) { \
+				if (number >= x) { \
+					printf "%.2f %s", number/x, hum[x]; \
+					return; \
+				} \
+			} \
+		    } \
+		    $6 ~ "^" MASTERMNTROOT "/" { \
+			sub(MASTERMNTROOT "/", "", $6); \
+			slash = match($6, "/"); \
+			if (RLENGTH == -1) \
+				id = substr($6, 0); \
+			else \
+				id = substr($6, 0, slash-1); \
+			totals[id] += $3; \
+		    } \
+		    END { \
+			for (id in totals) { \
+				print id, humanize(totals[id]*512); \
+			} \
+		    }')
+		EOF
 		for j in ${JOBS}; do
 			# Ignore error here as the zfs dataset may not be cloned yet.
 			_bget status ${j} status || :
@@ -1537,23 +1599,35 @@ siginfo_handler() {
 
 			colorize_job_id job_id_color "${j}"
 
-			# Must put colors in format
-			format_origin_phase="\t[${job_id_color}%s${COLOR_RESET}]: ${COLOR_PORT}%-25s | %-25s ${COLOR_PHASE}%-15s${COLOR_RESET} (%s / %s)\n"
-			format_phase="\t[${job_id_color}%s${COLOR_RESET}]: %53s ${COLOR_PHASE}%-15s${COLOR_RESET}\n"
 			if [ -n "${pkgname}" ]; then
 				elapsed=$((now - started))
 				calculate_duration buildtime "${elapsed}"
 				elapsed_phase=$((now - started_phase))
 				calculate_duration buildtime_phase \
 				    "${elapsed_phase}"
-				printf "${format_origin_phase}" "${j}" \
-				    "${origin}" "${pkgname}" "${phase}" \
-				    "${buildtime_phase}" "${buildtime}"
+				sep="|"
+				hash_remove siginfo_cpu "${j}" cpu || cpu=
+				hash_remove siginfo_mem "${j}" mem || mem=
+				hash_remove siginfo_tmpfs "${j}" tmpfs || tmpfs=
 			else
-				printf "${format_phase}" "${j}" '' "${phase}"
-			fi >&2
+				buildtime=
+				buildtime_phase=
+				sep=
+				tmpfs=
+				cpu=
+				mem=
+			fi
+			display_add \
+			    "[" "${job_id_color}" "${j}" "]" \
+			    "${buildtime-}" \
+			    "${origin-}" "${sep:- }" "${pkgname-}" "${phase-}" \
+			    "${buildtime_phase-}" \
+			    "${tmpfs}" \
+			    "${cpu:+${cpu}%}" \
+			    "${mem:+${mem}%}"
 		done
 	fi
+	display_output >&2
 
 	show_log_info >&2
 	enable_siginfo_handler
