@@ -4612,9 +4612,11 @@ stop_builders() {
 
 	# wait for the last running processes
 	# the pidfiles may not contain an EOF newline so awk fixes that
-	find "${MASTER_DATADIR}/var/run/" -name "*.pid" -exec \
-	    awk '{print}' {} + |
-	    xargs pwait -t 20 2>/dev/null || :
+	if [ -n "${MASTER_DATADIR}" ]; then
+		find "${MASTER_DATADIR}/var/run/" -name "*.pid" -exec \
+		    awk '{print}' {} + |
+		    xargs pwait -t 20 2>/dev/null || :
+	fi
 
 	if [ ${PARALLEL_JOBS} -ne 0 ]; then
 		msg "Stopping ${PARALLEL_JOBS} builders"
