@@ -46,6 +46,7 @@ JAIL_TESTS= \
 	bulk-ignore-and-skipped.sh \
 	bulk-flavor-default-dep-and-specific-listed.sh \
 	bulk-flavor-default-dep.sh \
+	bulk-flavor-FLAVORS-misordered.sh \
 	bulk-flavor-main-dep-and-default-listed.sh \
 	bulk-flavor-main-dep-and-specific-listed.sh \
 	bulk-flavor-main-dep.sh \

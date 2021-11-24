@@ -475,6 +475,7 @@ JAIL_TESTS = \
 	bulk-ignore-and-skipped.sh \
 	bulk-flavor-default-dep-and-specific-listed.sh \
 	bulk-flavor-default-dep.sh \
+	bulk-flavor-FLAVORS-misordered.sh \
 	bulk-flavor-main-dep-and-default-listed.sh \
 	bulk-flavor-main-dep-and-specific-listed.sh \
 	bulk-flavor-main-dep.sh \
@@ -952,6 +953,13 @@ bulk-flavor-default-dep-and-specific-listed.sh.log: bulk-flavor-default-dep-and-
 bulk-flavor-default-dep.sh.log: bulk-flavor-default-dep.sh
 	@p='bulk-flavor-default-dep.sh'; \
 	b='bulk-flavor-default-dep.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-flavor-FLAVORS-misordered.sh.log: bulk-flavor-FLAVORS-misordered.sh
+	@p='bulk-flavor-FLAVORS-misordered.sh'; \
+	b='bulk-flavor-FLAVORS-misordered.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
