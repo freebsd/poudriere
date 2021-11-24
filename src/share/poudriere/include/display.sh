@@ -47,6 +47,7 @@ display_add() {
 
 display_output() {
 	local cnt lengths length format arg flag quiet line n
+	local header header_format
 	local OPTIND=1
 
 	quiet=0
@@ -70,13 +71,17 @@ display_output() {
 	n=0
 	while mapfile_read_loop_redir line; do
 		n=$((n + 1))
-		if [ "${n}" -eq 1 -a "${quiet}" -eq 1 ]; then
-			continue
+		if [ "${n}" -eq 1 ]; then
+			if [ "${quiet}" -eq 1 ]; then
+				continue
+			fi
+			header="${line}"
 		fi
 		eval "set -- ${line}"
 		cnt=0
 		for arg in "$@"; do
 			hash_get lengths ${cnt} max_length || max_length=0
+			stripansi "${arg}" arg
 			if [ ${#arg} -gt ${max_length} ]; then
 				# Keep the hash var local to this function
 				_hash_var_name "lengths" "${cnt}"
@@ -116,10 +121,10 @@ display_output() {
 
 	# Show header separately so it is not sorted
 	if [ "${quiet}" -eq 0 ]; then
-		echo "${_DISPLAY_DATA}"| head -n 1 | while read line; do
-			eval "set -- ${line}"
-			printf "${format}\n" "$@"
-		done
+		stripansi "${header}" header
+		stripansi "${format}" header_format
+		eval "set -- ${header}"
+		printf "${header_format}\n" "$@"
 	fi
 
 	# Sort as configured in display_setup()
