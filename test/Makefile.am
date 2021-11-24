@@ -68,6 +68,7 @@ JAIL_TESTS= \
 	bulk-overlay-all.sh \
 	bulk-no-overlay-specific.sh \
 	bulk-overlay-specific.sh \
+	bulk-skipped-and-needed-dep.sh \
 	bulk-build-self-immutable-base-yes.sh \
 	bulk-build-self-immutable-base-schg.sh \
 	bulk-build-self-immutable-base-nullfs.sh
