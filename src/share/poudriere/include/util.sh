@@ -1326,7 +1326,7 @@ stripansi() {
         local _gsub
 
 	case "${_input}" in
-	*\\033*) ;;
+	*$'\033'"["*) ;;
 	*)
 		setvar "${_output_var}" "${_input}"
 		return 0
@@ -1334,10 +1334,10 @@ stripansi() {
 	esac
 
         _gsub="${_input}"
-        _gsub "${_gsub}"        '\\033[?m' ""
-        _gsub "${_gsub}"        '\\033[??m' ""
-        _gsub "${_gsub}"        '\\033[?;?m' ""
-        _gsub "${_gsub}"        '\\033[?;??m' ""
+        _gsub "${_gsub}"        $'\033'"[?m" ""
+        _gsub "${_gsub}"        $'\033'"[??m" ""
+        _gsub "${_gsub}"        $'\033'"[?;?m" ""
+        _gsub "${_gsub}"        $'\033'"[?;??m" ""
 
         setvar "${_output_var}" "${_gsub}"
 }

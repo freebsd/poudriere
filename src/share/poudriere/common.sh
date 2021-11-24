@@ -146,11 +146,14 @@ _msg_n() {
 		unset elapsed
 		arrow="=>>"
 	fi
-	if [ -n "${COLOR_ARROW-}" ] || [ -z "${1##*\033[*}" ]; then
-		printf "${COLOR_ARROW}${elapsed}${DRY_MODE-}${arrow:+${COLOR_ARROW}${arrow} }${COLOR_RESET}%b${COLOR_RESET}${NL}" "$*"
-	else
-		printf "${elapsed}${DRY_MODE-}${arrow:+${arrow} }%b${NL}" "$*"
-	fi
+	case "${COLOR_ARROW-}${1}" in
+	*$'\033'"["*)
+		printf "${COLOR_ARROW}${elapsed}${DRY_MODE-}${arrow:+${COLOR_ARROW}${arrow} }${COLOR_RESET}%s${COLOR_RESET}${NL}" "$*"
+		;;
+	*)
+		printf "${elapsed}${DRY_MODE-}${arrow:+${arrow} }%s${NL}" "$*"
+		;;
+	esac
 }
 
 msg_n() {
