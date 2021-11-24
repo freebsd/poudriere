@@ -7838,10 +7838,17 @@ trim_ignored() {
 	bset status "trimming_ignore:"
 	msg "Trimming IGNORED and blacklisted ports"
 
-	ignored_packages | while mapfile_read_loop_redir pkgname originspec \
-	    _rdep ignore; do
-		trim_ignored_pkg "${pkgname}" "${originspec}" "${ignore}"
-	done
+	parallel_start
+	while mapfile_read_loop_redir pkgname originspec _rdep ignore; do
+		if [ -z "${pkgname}" ]; then
+			break
+		fi
+		parallel_run trim_ignored_pkg "${pkgname}" "${originspec}" \
+		    "${ignore}"
+	done <<-EOF
+	$(ignored_packages)
+	EOF
+	parallel_stop || err "$?" "trim_ignored"
 	# Update ignored/skipped stats
 	update_stats 2>/dev/null || :
 	update_stats_queued
