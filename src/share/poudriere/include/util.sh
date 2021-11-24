@@ -1318,3 +1318,26 @@ globmatch() {
 		return 0
 	done
 }
+
+stripansi() {
+        [ $# -eq 2 ] || eargs stripansi input output_var
+        local _input="$1"
+        local _output_var="$2"
+        local _gsub
+
+	case "${_input}" in
+	*\\033*) ;;
+	*)
+		setvar "${_output_var}" "${_input}"
+		return 0
+		;;
+	esac
+
+        _gsub="${_input}"
+        _gsub "${_gsub}"        '\\033[?m' ""
+        _gsub "${_gsub}"        '\\033[??m' ""
+        _gsub "${_gsub}"        '\\033[?;?m' ""
+        _gsub "${_gsub}"        '\\033[?;??m' ""
+
+        setvar "${_output_var}" "${_gsub}"
+}
