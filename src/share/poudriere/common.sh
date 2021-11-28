@@ -28,6 +28,8 @@
 
 BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
 . ${SCRIPTPREFIX}/include/common.sh.${BSDPLATFORM}
+. ${SCRIPTPREFIX}/include/hash.sh
+. ${SCRIPTPREFIX}/include/util.sh
 EX_USAGE=64
 EX_DATAERR=65
 EX_SOFTWARE=70
@@ -8972,12 +8974,10 @@ fi
 TIME_START=$(clock -monotonic)
 EPOCH_START=$(clock -epoch)
 
-. ${SCRIPTPREFIX}/include/util.sh
 . ${SCRIPTPREFIX}/include/colors.sh
 . ${SCRIPTPREFIX}/include/display.sh
 . ${SCRIPTPREFIX}/include/html.sh
 . ${SCRIPTPREFIX}/include/parallel.sh
-. ${SCRIPTPREFIX}/include/hash.sh
 . ${SCRIPTPREFIX}/include/shared_hash.sh
 . ${SCRIPTPREFIX}/include/cache.sh
 . ${SCRIPTPREFIX}/include/fs.sh
