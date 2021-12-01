@@ -109,6 +109,47 @@ mkminiroot() {
 	gzip -9 ${OUTPUTDIR}/${IMAGENAME}-miniroot
 }
 
+get_uefi_bootname() {
+
+    case ${arch} in
+        amd64) echo bootx64 ;;
+        arm64) echo bootaa64 ;;
+        i386) echo bootia32 ;;
+        arm) echo bootarm ;;
+        *) echo boot ;;
+    esac
+}
+
+make_esp_file() {
+    local file sizekb loader device stagedir fatbits efibootname
+
+    file=$1
+    sizekb=$2
+    loader=$3
+    fat32min=33292
+    fat16min=2100
+
+    if [ "$sizekb" -ge "$fat32min" ]; then
+        fatbits=32
+    elif [ "$sizekb" -ge "$fat16min" ]; then
+        fatbits=16
+    else
+        fatbits=12
+    fi
+
+    stagedir=$(mktemp -d /tmp/stand-test.XXXXXX)
+    mkdir -p "${stagedir}/EFI/BOOT"
+    efibootname=$(get_uefi_bootname)
+    cp "${loader}" "${stagedir}/EFI/BOOT/${efibootname}.efi"
+    makefs -t msdos \
+	-o fat_type=${fatbits} \
+	-o sectors_per_cluster=1 \
+	-o volume_label=EFISYS \
+	-s ${sizekb}k \
+	"${file}" "${stagedir}"
+    rm -rf "${stagedir}"
+}
+
 . ${SCRIPTPREFIX}/common.sh
 HOSTNAME=poudriere-image
 
@@ -552,17 +593,26 @@ esac
 case ${MEDIATYPE} in
 iso)
 	FINALIMAGE=${IMAGENAME}.iso
+	espfilename=$(mktemp /tmp/efiboot.XXXXXX)
+	make_esp_file ${espfilename} 800 ${WRKDIR}/world/boot/loader.efi
 	makefs -t cd9660 -o rockridge -o label=${IMAGENAME} \
 		-o publisher="poudriere" \
 		-o bootimage="i386;${WRKDIR}/out/boot/cdboot" \
+		-o bootimage="i386;${espfilename}" \
+		-o platformid=efi \
 		-o no-emul-boot ${OUTPUTDIR}/${FINALIMAGE} ${WRKDIR}/world
 	;;
 iso+*mfs)
 	FINALIMAGE=${IMAGENAME}.iso
+	espfilename=$(mktemp /tmp/efiboot.XXXXXX)
+	make_esp_file ${espfilename} 800 ${WRKDIR}/out/boot/loader.efi
 	makefs -t cd9660 -o rockridge -o label=${IMAGENAME} \
 		-o publisher="poudriere" \
 		-o bootimage="i386;${WRKDIR}/out/boot/cdboot" \
+		-o bootimage="i386;${espfilename}" \
+		-o platformid=efi \
 		-o no-emul-boot ${OUTPUTDIR}/${FINALIMAGE} ${WRKDIR}/out
+	rm -rf ${espfilename}
 	;;
 usb+*mfs)
 	FINALIMAGE=${IMAGENAME}.img
