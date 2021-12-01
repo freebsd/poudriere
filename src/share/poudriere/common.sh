@@ -5093,7 +5093,7 @@ build_pkg() {
 	local failed_status failed_phase
 	local clean_rdepends
 	local log
-	local errortype
+	local errortype="???"
 	local ret=0
 	local tmpfs_blacklist_dir
 	local elapsed now pkgname_varname jpkg originspec
@@ -5223,9 +5223,11 @@ build_pkg() {
 		# Symlink the buildlog into errors/
 		ln -s "../${pkgname}.log" \
 		    "${log}/logs/errors/${pkgname}.log"
-		errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
-			"${log}/logs/errors/${pkgname}.log" \
-			2> /dev/null)
+		if [ "${DETERMINE_BUILD_FAILURE_REASON}" = "yes" ]; then
+			errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
+				"${log}/logs/errors/${pkgname}.log" \
+				2> /dev/null)
+		fi
 		badd ports.failed "${originspec} ${pkgname} ${failed_phase} ${errortype} ${elapsed}"
 		COLOR_ARROW="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
 		run_hook pkgbuild failed "${port}" "${pkgname}" "${failed_phase}" \
@@ -8913,6 +8915,7 @@ fi
 : ${FORCE_MOUNT_HASH:=no}
 : ${DELETE_UNQUEUED_PACKAGES:=no}
 : ${DELETE_UNKNOWN_FILES:=yes}
+: ${DETERMINE_BUILD_FAILURE_REASON:=yes}
 DRY_RUN=0
 INTERACTIVE_MODE=0
 
