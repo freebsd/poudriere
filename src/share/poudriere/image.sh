@@ -616,21 +616,27 @@ iso+*mfs)
 	;;
 usb+*mfs)
 	FINALIMAGE=${IMAGENAME}.img
+	espfilename=$(mktemp /tmp/efiboot.XXXXXX)
+	make_esp_file ${espfilename} 800 ${WRKDIR}/world/boot/loader.efi
 	makefs -B little ${WRKDIR}/img.part ${WRKDIR}/out
 	mkimg -s gpt -b ${mnt}/boot/pmbr \
-		-p efi:=${mnt}/boot/boot1.efifat \
+		-p efi:=${espfilename} \
 		-p freebsd-boot:=${mnt}/boot/gptboot \
 		-p freebsd-ufs:=${WRKDIR}/img.part \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
+	rm -rf ${espfilename}
 	;;
 usb)
 	FINALIMAGE=${IMAGENAME}.img
+	espfilename=$(mktemp /tmp/efiboot.XXXXXX)
+	make_esp_file ${espfilename} 800 ${WRKDIR}/world/boot/loader.efi
 	mkimg -s gpt -b ${mnt}/boot/pmbr \
-		-p efi:=${mnt}/boot/boot1.efifat \
+		-p efi:=${espfilename} \
 		-p freebsd-boot:=${mnt}/boot/gptboot \
 		-p freebsd-ufs:=${WRKDIR}/raw.img \
 		-p freebsd-swap::1M \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
+	rm -rf ${espfilename}
 	;;
 tar)
 	FINALIMAGE=${IMAGENAME}.txz
@@ -638,14 +644,17 @@ tar)
 	;;
 firmware)
 	FINALIMAGE=${IMAGENAME}.img
+	espfilename=$(mktemp /tmp/efiboot.XXXXXX)
+	make_esp_file ${espfilename} 800 ${WRKDIR}/world/boot/loader.efi
 	mkimg -s gpt -C ${IMAGESIZE} -b ${mnt}/boot/pmbr \
-		-p efi:=${mnt}/boot/boot1.efifat \
+		-p efi:=${espfilename} \
 		-p freebsd-boot:=${mnt}/boot/gptboot \
 		-p freebsd-ufs/${IMAGENAME}1:=${WRKDIR}/raw.img \
 		-p freebsd-ufs/${IMAGENAME}2:=${WRKDIR}/raw.img \
 		-p freebsd-ufs/cfg:=${WRKDIR}/cfg.img \
 		-p freebsd-ufs/data:=${WRKDIR}/data.img \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
+	rm -rf ${espfilename}
 	;;
 rawfirmware)
 	FINALIMAGE=${IMAGENAME}.raw
