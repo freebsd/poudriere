@@ -619,20 +619,28 @@ usb+*mfs)
 	espfilename=$(mktemp /tmp/efiboot.XXXXXX)
 	make_esp_file ${espfilename} 10 ${WRKDIR}/world/boot/loader.efi
 	makefs -B little ${WRKDIR}/img.part ${WRKDIR}/out
-	mkimg -s gpt -b ${mnt}/boot/pmbr \
-		-p efi:=${espfilename} \
-		-p freebsd-boot:=${mnt}/boot/gptboot \
-		-p freebsd-ufs:=${WRKDIR}/img.part \
-		-o ${OUTPUTDIR}/${FINALIMAGE}
+	if [ "${arch}" == "amd64" ] || [ "${arch}" == "i386" ]; then
+		pmbr="-b ${mnt}/boot/pmbr"
+		gptboot="-p freebsd-boot:=${mnt}/boot/gptboot"
+	fi
+	mkimg -s gpt ${pmbr} \
+	      -p efi:=${espfilename} \
+	      ${gptboot}
+	      -p freebsd-ufs:=${WRKDIR}/img.part \
+	      -o "${OUTPUTDIR}/${FINALIMAGE}"
 	rm -rf ${espfilename}
 	;;
 usb)
 	FINALIMAGE=${IMAGENAME}.img
 	espfilename=$(mktemp /tmp/efiboot.XXXXXX)
 	make_esp_file ${espfilename} 10 ${WRKDIR}/world/boot/loader.efi
-	mkimg -s gpt -b ${mnt}/boot/pmbr \
+	if [ "${arch}" == "amd64" ] || [ "${arch}" == "i386" ]; then
+		pmbr="-b ${mnt}/boot/pmbr"
+		gptboot="-p freebsd-boot:=${mnt}/boot/gptboot"
+	fi
+	mkimg -s gpt ${pmbr} \
 		-p efi:=${espfilename} \
-		-p freebsd-boot:=${mnt}/boot/gptboot \
+		${gptboot} \
 		-p freebsd-ufs:=${WRKDIR}/raw.img \
 		-p freebsd-swap::1M \
 		-o ${OUTPUTDIR}/${FINALIMAGE}
