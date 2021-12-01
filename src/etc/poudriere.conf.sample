@@ -232,12 +232,6 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Default: no
 #TIMESTAMP_LOGS=no
 
-# URL where your POUDRIERE_DATA/logs are hosted
-# This will be used for giving URL hints to the HTML output when
-# scheduling and starting builds
-#URL_BASE=http://yourdomain.com/poudriere/
-
-
 # This defines the max time (in seconds) that a command may run for a build
 # before it is killed for taking too long. Default: 86400
 #MAX_EXECUTION_TIME=86400
@@ -245,7 +239,6 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # This defines the time (in seconds) before a command is considered to
 # be in a runaway state for having no output on stdout. Default: 7200
 #NOHANG_TIME=7200
-
 
 # The repository is updated atomically if set yes. This leaves the
 # repository untouched until the build completes. This involves using
@@ -347,6 +340,11 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # Default: none
 #LOCAL_MTREE_EXCLUDES="/usr/obj /var/tmp/ccache"
 
+# URL where your POUDRIERE_DATA/logs are hosted
+# This will be used for giving URL hints to the HTML output when
+# scheduling and starting builds
+#URL_BASE=http://yourdomain.com/poudriere/
+
 # Set to hosted to use the /data directory instead of inline style HTML
 # Default: inline
 #HTML_TYPE="hosted"
@@ -355,6 +353,11 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # processing of the queue slightly, especially for bulk -a builds.
 # Default: no
 #HTML_TRACK_REMAINING=yes
+
+# Grep build logs to determine a possible build failure reason.  This is
+# only shown on the web interface.
+# Default: yes
+#DETERMINE_BUILD_FAILURE_REASON=yes
 
 # Set to pass arguments to buildworld.
 # Default:
@@ -374,7 +377,3 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # be fetched.
 # Default: everything
 #PACKAGE_FETCH_WHITELIST="gcc* rust llvm*"
-
-# Grep build logs to determine a possible build failure reason.
-# Default: yes
-#DETERMINE_BUILD_FAILURE_REASON=yes
