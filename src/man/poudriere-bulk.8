@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd April 29, 2022
+.Dd June 29, 2022
 .Dt POUDRIERE-BULK 8
 .Os
 .Sh NAME
@@ -40,7 +40,7 @@
 .Fl j Ar name
 .Op Fl CcFIikNnRrSTtvw
 .Op Fl B Ar name
-.Op Fl b Ar name
+.Op Fl b Ar branch
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
 .Op Fl O Ar overlay Op Oo Fl O Ar overlay2 Oc Ar ...
 .Op Fl p Ar tree
@@ -50,7 +50,7 @@
 .Fl j Ar name
 .Op Fl CcFIikNnRrSTtvw
 .Op Fl B Ar name
-.Op Fl b Ar name
+.Op Fl b Ar branch
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
 .Op Fl O Ar overlay Op Oo Fl O Ar overlay2 Oc Ar ...
 .Op Fl p Ar tree
@@ -59,7 +59,7 @@
 .Fl j Ar name
 .Op Fl CcFIikNnRrSTtvw
 .Op Fl B Ar name
-.Op Fl b Ar name
+.Op Fl b Ar branch
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
 .Op Fl O Ar overlay Op Oo Fl O Ar overlay2 Oc Ar ...
 .Op Fl p Ar tree
@@ -139,19 +139,26 @@ By default
 will be used.
 This can be used to resume a previous build and use the same log and URL paths.
 Resuming a build will not retry built/failed/skipped/ignored packages.
-.It Fl b Ar name
-Specify the
-.Ar name
-of the binary package branch to use to prefetch packages.
-Should be
-.Qq latest ,
-.Qq quarterly ,
-.Qq release_* ,
+.It Fl b Ar branch
+Fetch binary packages from a binary package repository instead of building them.
+The
+.Ar branch
+argument can be one of the following:
+.Cm latest ,
+.Cm quarterly ,
+.Cm release_ Ns Ar X
+.Po where
+.Ar X
+is the minor version of a release, e.g.,
+.Dq 0
+.Pc ,
 or
 .Ar url .
-With this option poudriere will first try to fetch from the binary package
-repository specified the binary package prior to do the sanity check if the
-package does not already exist.
+.Pp
+With this option
+.Nm poudriere
+will first try to fetch a binary package
+from the specified binary package repository.
 .Pp
 .Nm poudriere
 will only use packages that:
@@ -171,13 +178,13 @@ match the expected ABI.
 match the expected runtime and library dependencies.
 .It
 match the expected OPTIONS when
-.Cm CHECK_CHANGED_OPTIONS
+.Sy CHECK_CHANGED_OPTIONS
 is enabled (default: on).
 .It
-The package is NOT listed in
-.Cm PACKAGE_FETCH_BLACKLIST
+is NOT listed in
+.Cm PACKAGE_FETCH_BLACKLIST .
 .It
-The package is NOT listed with
+is NOT listed with
 .Fl C ,
 or
 .Fl c ,
@@ -190,8 +197,7 @@ The
 flag can be used to show these decisions during build.
 Specifing twice will show more details on why some are skipped.
 .Pp
-!!
-.Pp
+.Sy WARNING :
 .Nm poudriere
 has no way of determining differences outside of the above list.
 That is, if the local ports framework, or port, has custom patches or special
@@ -199,8 +205,6 @@ That is, if the local ports framework, or port, has custom patches or special
 knobs (not OPTIONS) then it is required to add its name into
 .Sy PACKAGE_FETCH_BLACKLIST .
 Otherwise a package may be fetched and used that lacks the custom patch or knob.
-.Pp
-!!
 .Pp
 See
 .Sy PACKAGE_FETCH_BRANCH ,
