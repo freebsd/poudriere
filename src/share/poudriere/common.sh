@@ -1010,17 +1010,17 @@ buildlog_stop() {
 	local originspec=$2
 	local build_failed="$3"
 	local log
-	local buildtime
+	local now elapsed buildtime
 
 	_log_path log
-	buildtime=$( \
-		stat -f '%N %B' ${log}/logs/${pkgname}.log  | awk -v now=$(clock -epoch) \
-		-f ${AWKPREFIX}/siginfo_buildtime.awk |
-		awk -F'!' '{print $2}' \
-	)
 
 	echo "build of ${originspec} | ${pkgname} ended at $(date)"
-	echo "build time: ${buildtime}"
+	if [ -n "${TIME_START_JOB:-}" ]; then
+		now=$(clock -monotonic)
+		elapsed=$((now - TIME_START_JOB))
+		calculate_duration buildtime "${elapsed}"
+		echo "build time: ${buildtime}"
+	fi
 	if [ ${build_failed} -gt 0 ]; then
 		echo "!!! build failure encountered !!!"
 	fi
@@ -1580,26 +1580,27 @@ siginfo_handler() {
 		EOF
 		for j in ${JOBS}; do
 			# Ignore error here as the zfs dataset may not be cloned yet.
-			_bget status ${j} status || :
+			_bget status ${j} status || status=
 			# Skip builders not started yet
 			if [ -z "${status}" ]; then
 				continue
 			fi
-			# Hide idle workers
-			case "${status}" in
-			idle:|done:) continue ;;
-			esac
-			phase="${status%%:*}"
-			status="${status#*:}"
-			origin="${status%%:*}"
-			status="${status#*:}"
-			pkgname="${status%%:*}"
-			status="${status#*:}"
-			started="${status%%:*}"
-			status="${status#*:}"
-			started_phase="${status%%:*}"
+			set -f
+			IFS=:
+			set -- ${status}
+			unset IFS
+			set +f
+			phase="${1}"
 
-			colorize_job_id job_id_color "${j}"
+			# Hide idle workers
+			case "${phase}" in
+			idle|done) continue ;;
+			esac
+
+			origin="${2-}"
+			pkgname="${3-}"
+			started="${4-}"
+			started_phase="${5-}"
 
 			if [ -n "${pkgname}" ]; then
 				elapsed=$((now - started))
@@ -1619,6 +1620,7 @@ siginfo_handler() {
 				cpu=
 				mem=
 			fi
+			colorize_job_id job_id_color "${j}"
 			display_add \
 			    "[" "${job_id_color}" "${j}" "]" \
 			    "${buildtime-}" \
