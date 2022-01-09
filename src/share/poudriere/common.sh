@@ -4902,6 +4902,23 @@ build_port() {
 				markfs prebuild "${mnt:?}"
 			fi
 			;;
+		build)
+			build_semaphore_dir="/tmp/build_semaphore/${BUILDNAME}"
+			mkdir -p "${build_semaphore_dir}"
+			build_semaphore_wait=${max_execution_time}
+			build_semaphore_path="${build_semaphore_dir}/${pkgname}"
+			build_semaphore_size=${BUILD_SEMAPHORE=${PARALLEL_JOBS}}
+			if [ ! -f "${build_semaphore_path}" ]; then
+				lockf -k "${build_semaphore_dir}/.lock" \
+				timeout ${build_semaphore_wait} sh -c "
+				trap 'touch \"${build_semaphore_path}\"' 0
+				trap 'rm -f \"${build_semaphore_dir}\"/*; exit 1' TERM
+				while [ \`ls -I \"${build_semaphore_dir}\" | wc -l\` -ge ${build_semaphore_size} ]; do
+					sleep 1
+				done"
+				job_msg "Build semaphore ${build_semaphore_path} in"
+			fi
+			;;
 		run-depends)
 			JUSER=root
 			if [ "${PORTTESTING}" -eq 1 ]; then
@@ -5032,6 +5049,7 @@ build_port() {
 					job_build_status "${phase}/timeout" \
 					    "${originspec}" "${pkgname}"
 				fi
+				rm -f "${build_semaphore_path}"
 				return 1
 			fi
 			;;
@@ -5059,6 +5077,13 @@ build_port() {
 				    return 1
 				;;
 			esac
+			;;
+		esac
+
+		case "${phase}" in
+		"build")
+			job_msg "Build semaphore ${build_semaphore_path} out"
+			rm -f "${build_semaphore_path}"
 			;;
 		esac
 
