@@ -395,7 +395,7 @@ post_getopts
 : ${SWAPSIZE:=0}
 : ${PTNAME:=default}
 : ${ZFS_SEND_FLAGS:=-Rec}
-: ${ZFS_POOL_NAME:=${IMAGENAME}root}
+: ${ZFS_POOL_NAME:=zroot}
 : ${ZFS_BEROOT_NAME:=ROOT}
 : ${ZFS_BOOTFS_NAME:=default}
 
@@ -405,6 +405,8 @@ MAINMEDIATYPE=${MEDIATYPE%%+*}
 MEDIAREMAINDER=${MEDIATYPE#*+}
 SUBMEDIATYPE=${MEDIAREMAINDER%%+*}
 MEDIAREMAINDER=${MEDIAREMAINDER#*+}
+
+TMP_ZFS_POOL_NAME="${ZFS_POOL_NAME}.$(jot -r 1 1000000000)"
 
 if [ "${MEDIATYPE}" = "none" ]; then
 	err 1 "Missing -t option"
