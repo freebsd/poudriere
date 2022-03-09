@@ -1280,10 +1280,12 @@ sig_handler() {
 }
 
 exit_handler() {
+	exit_status="$?"
 	case "${SHFLAGS}" in
 	*x*) ;;
 	*) local -; set +x ;;
 	esac
+
 	# Ignore errors while cleaning up
 	set +e
 	ERRORS_ARE_FATAL=0
@@ -1320,6 +1322,9 @@ exit_handler() {
 		    [ -d "${MASTER_DATADIR}" ]; then
 			cd "${MASTER_DATADIR}"
 		fi
+	fi
+	if [ "${exit_status}" -ne 0 ] && [ "${CRASHED:-0}" -eq 0 ]; then
+		echo "[ERROR] Unhandled error! Exiting ${exit_status}" >&2
 	fi
 	if was_a_jail_run; then
 		# Don't use jail for any caching in cleanup
