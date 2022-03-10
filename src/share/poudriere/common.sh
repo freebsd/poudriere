@@ -1324,7 +1324,7 @@ exit_handler() {
 		fi
 	fi
 	if [ "${exit_status}" -ne 0 ] && [ "${CRASHED:-0}" -eq 0 ]; then
-		echo "[ERROR] Unhandled error! Exiting ${exit_status}" >&2
+		echo "[ERROR] Unhandled error!" >&2
 	fi
 	if was_a_jail_run; then
 		# Don't use jail for any caching in cleanup
@@ -1363,6 +1363,9 @@ exit_handler() {
 	slock_release_all || :
 	if [ -n "${POUDRIERE_TMPDIR-}" ]; then
 		rm -rf "${POUDRIERE_TMPDIR}" >/dev/null 2>&1 || :
+	fi
+	if [ "${exit_status}" -ne 0 ]; then
+		echo "Exiting with status ${exit_status}" >&2 || :
 	fi
 }
 
