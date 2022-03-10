@@ -7451,6 +7451,7 @@ sign_pkg() {
 	local sigtype="$1"
 	local pkgfile="$2"
 
+	msg "Signing pkg bootstrap with method: ${sigtype}"
 	if [ "${sigtype}" = "fingerprint" ]; then
 		unlink "${pkgfile}.sig"
 		sha256 -q "${pkgfile}" | ${SIGNING_COMMAND} > "${pkgfile}.sig"
@@ -7479,24 +7480,34 @@ build_repo() {
 	fi
 	mkdir -p ${MASTERMNT}/tmp/packages
 	if [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
+		msg "Signing repository with key: ${PKG_REPO_SIGNING_KEY}"
 		install -m 0400 ${PKG_REPO_SIGNING_KEY} \
 			${MASTERMNT}/tmp/repo.key
 		injail ${PKG_BIN} repo -o /tmp/packages \
 			${PKG_META} \
-			/packages /tmp/repo.key
+			/packages /tmp/repo.key ||
+		    err "$?" "Failed to sign pkg repository"
 		unlink ${MASTERMNT}/tmp/repo.key
 	elif [ "${PKG_REPO_FROM_HOST:-no}" = "yes" ]; then
+		if [ -n "${SIGNING_COMMAND-}" ]; then
+			msg "Signing repository with command: ${SIGNING_COMMAND}"
+		fi
 		# Sometimes building repo from host is needed if
 		# using SSH with DNSSEC as older hosts don't support
 		# it.
 		${MASTERMNT}${PKG_BIN} repo \
 		    -o ${MASTERMNT}/tmp/packages ${PKG_META_MASTERMNT} \
 		    ${MASTERMNT}/packages \
-		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
+		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}} ||
+		    err "$?" "Failed to sign pkg repository"
 	else
+		if [ -n "${SIGNING_COMMAND-}" ]; then
+			msg "Signing repository with command: ${SIGNING_COMMAND}"
+		fi
 		JNETNAME="n" injail ${PKG_BIN} repo \
 		    -o /tmp/packages ${PKG_META} /packages \
-		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
+		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}} ||
+		    err "$?" "Failed to sign pkg repository"
 	fi
 	cp ${MASTERMNT}/tmp/packages/* ${PACKAGES}/
 
