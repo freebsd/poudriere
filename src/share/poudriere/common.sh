@@ -1970,7 +1970,7 @@ do_jail_mounts() {
 	local mnt="$2"
 	local name="$3"
 	local devfspath="null zero random urandom stdin stdout stderr fd fd/* pts pts/*"
-        local linuxbase=$(_sys_linuxbase)
+	local linuxbase=$(_sys_linuxbase)
 	local srcpath nullpaths nullpath p arch
 
 	# from==mnt is via jail -u
