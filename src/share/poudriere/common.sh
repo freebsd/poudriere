@@ -300,6 +300,16 @@ post_getopts() {
 	fi
 }
 
+_sys_linuxbase() {
+	local default="/compat/linux"
+	local mib=compat.linux.emul_path
+	if [ -z "${NOLINUX-}" ]; then
+		sysctl -qn "${mib}" || echo "${default}"
+	else
+		echo "${default}"
+	fi
+}
+
 _mastermnt() {
 	local -; set -u
 	local hashed_name mnt mnttest mnamelen testpath mastername
@@ -314,7 +324,7 @@ _mastermnt() {
 	_gsub_badchars "${mastername}" ":" mastername
 	mnt="${POUDRIERE_DATA}/.m/${mastername}/ref"
 	if [ -z "${NOLINUX-}" ]; then
-		testpath="/compat/linux/proc"
+		testpath="$(_sys_linuxbase)/proc"
 	else
 		testpath="/var/db/ports"
 	fi
@@ -1753,6 +1763,7 @@ unlink() {
 common_mtree() {
 	[ $# -eq 1 ] || eargs common_mtree mnt
 	local mnt="${1}"
+        local linuxbase=$(_sys_linuxbase)
 	local exclude nullpaths schgpaths dir
 
 	cat <<-EOF
@@ -1760,7 +1771,7 @@ common_mtree() {
 	./${DATADIR_NAME}
 	./.poudriere-snap-*
 	.${HOME}/.ccache
-	./compat/linux/proc
+	./${linuxbase}/proc
 	./dev
 	./distfiles
 	.${OVERLAYSDIR}
@@ -1959,6 +1970,7 @@ do_jail_mounts() {
 	local mnt="$2"
 	local name="$3"
 	local devfspath="null zero random urandom stdin stdout stderr fd fd/* pts pts/*"
+        local linuxbase=$(_sys_linuxbase)
 	local srcpath nullpaths nullpath p arch
 
 	# from==mnt is via jail -u
@@ -1967,7 +1979,7 @@ do_jail_mounts() {
 	if [ ${mnt##*/} = "ref" ]; then
 		mkdir -p ${mnt}/proc \
 		    ${mnt}/dev \
-		    ${mnt}/compat/linux/proc \
+		    ${mnt}/${linuxbase}/proc \
 		    ${mnt}/usr/src
 	fi
 
@@ -2007,7 +2019,7 @@ do_jail_mounts() {
 		_jget arch "${name}" arch || \
 		    err 1 "Missing arch metadata for jail"
 		if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
-			mount -t linprocfs linprocfs "${mnt}/compat/linux/proc"
+			mount -t linprocfs linprocfs "${mnt}/${linuxbase}/proc"
 		fi
 	fi
 
