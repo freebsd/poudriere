@@ -2015,7 +2015,7 @@ do_jail_mounts() {
 		mount -t procfs proc "${mnt}/proc"
 	fi
 
-	if [ -z "${NOLINUX-}" ] && [ -d "${mnt}/compat" ]; then
+	if [ -z "${NOLINUX-}" ] && [ -d "${mnt}/${linuxbase}" ]; then
 		_jget arch "${name}" arch || \
 		    err 1 "Missing arch metadata for jail"
 		if [ "${arch}" = "i386" -o "${arch}" = "amd64" ]; then
