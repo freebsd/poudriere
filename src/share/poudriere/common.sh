@@ -4717,7 +4717,7 @@ stop_builders() {
 		    [ -d "${TMPFS_BLACKLIST_TMPDIR}/wrkdirs" ]; then
 			if ! rm -rf "${TMPFS_BLACKLIST_TMPDIR}/wrkdirs/"*; then
 				chflags -R 0 \
-				    "${TMPFS_BLACKLIST_TMPDIR}/wkrdirs"/* || :
+				    "${TMPFS_BLACKLIST_TMPDIR}/wrkdirs"/* || :
 				rm -rf "${TMPFS_BLACKLIST_TMPDIR}/wrkdirs"/* ||
 				    :
 			fi
