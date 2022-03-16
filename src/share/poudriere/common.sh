@@ -5151,6 +5151,11 @@ build_pkg() {
 	    err 1 "Failed to rollback ${mnt} to prepkg"
 	:> ${mnt}/.need_rollback
 
+	# Disabling globs for this loop or wildcards in
+	# TMPFS_BLACKLIST will expand to files in the
+	# current directory instead of being passed into
+	# the case statement as a pattern
+	set -o noglob
 	for jpkg in ${TMPFS_BLACKLIST-}; do
 		case "${pkgname%-*}" in
 		${jpkg})
@@ -5165,6 +5170,7 @@ build_pkg() {
 			;;
 		esac
 	done
+	set +o noglob
 
 	rm -rfx ${mnt}/wrkdirs/* || :
 
