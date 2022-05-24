@@ -226,8 +226,8 @@ fi
 : ${BUILDNAME:=${0%.sh}}
 POUDRIERE="${POUDRIEREPATH} -e /usr/local/etc"
 ARCH=$(uname -p)
-JAILNAME="poudriere-10${ARCH}"
-JAIL_VERSION="10.3-RELEASE"
+JAILNAME="poudriere-123${ARCH}"
+JAIL_VERSION="12.3-RELEASE"
 JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt" || echo)
 export UNAME_r=$(freebsd-version)
 export UNAME_v="FreeBSD $(freebsd-version)"
