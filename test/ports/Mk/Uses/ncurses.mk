@@ -33,6 +33,8 @@ ncurses_ARGS=	base
 ncurses_ARGS=	port
 .  endif
 .endif
+# Poudriere: Avoid needing the port
+ncurses_ARGS=	base
 
 .if ${ncurses_ARGS} == base
 NCURSESBASE=	/usr
