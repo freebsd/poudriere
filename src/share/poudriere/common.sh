@@ -1085,7 +1085,7 @@ exit_handler() {
 		fi
 	fi
 	if [ "${exit_status}" -ne 0 ] && [ "${CRASHED:-0}" -eq 0 ]; then
-		echo "[ERROR] Unhandled error!" >&2
+		echo "[ERROR] Unhandled error! Exiting ${exit_status}" >&2
 	fi
 	if was_a_jail_run; then
 		# Don't use jail for any caching in cleanup
@@ -1125,9 +1125,6 @@ exit_handler() {
 		rm -rf "${jlock}" 2>/dev/null || :
 	fi
 	rm -rf "${POUDRIERE_TMPDIR}" >/dev/null 2>&1 || :
-	if [ "${exit_status}" -ne 0 ]; then
-		echo "Exiting with status ${exit_status}" >&2 || :
-	fi
 }
 
 build_url() {
