@@ -1285,7 +1285,11 @@ exit_handler() {
 	*x*) ;;
 	*) local -; set +x ;;
 	esac
-
+	# Don't spam errors with 'set +e; exit >0'.
+	case "$-" in
+	*e*) ;;
+	*) ERROR_VERBOSE=0 ;;
+	esac
 	# Ignore errors while cleaning up
 	set +e
 	ERRORS_ARE_FATAL=0
@@ -1323,9 +1327,16 @@ exit_handler() {
 			cd "${MASTER_DATADIR}"
 		fi
 	fi
-	if [ "${exit_status}" -ne 0 ] && [ "${CRASHED:-0}" -eq 0 ]; then
+
+	case "${exit_status}" in
+	0|${EX_USAGE})
+		: ${ERROR_VERBOSE:=0} ;;
+	*)	: ${ERROR_VERBOSE:=1} ;;
+	esac
+	if [ "${ERROR_VERBOSE}" -eq 1 ] && [ "${CRASHED:-0}" -eq 0 ]; then
 		echo "[ERROR] Unhandled error!" >&2
 	fi
+
 	if was_a_jail_run; then
 		# Don't use jail for any caching in cleanup
 		SHASH_VAR_PATH="${SHASH_VAR_PATH_DEFAULT}"
@@ -1364,7 +1375,7 @@ exit_handler() {
 	if [ -n "${POUDRIERE_TMPDIR-}" ]; then
 		rm -rf "${POUDRIERE_TMPDIR}" >/dev/null 2>&1 || :
 	fi
-	if [ "${exit_status}" -ne 0 ]; then
+	if [ "${ERROR_VERBOSE}" -eq 1 ]; then
 		echo "Exiting with status ${exit_status}" >&2 || :
 	fi
 }
