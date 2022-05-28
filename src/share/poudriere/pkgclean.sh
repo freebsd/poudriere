@@ -220,7 +220,7 @@ pkg_compare() {
 
 	ensure_pkg_installed ||
 	    err 1 \
-	    "ports-mgmt/pkg is missing. First build it with bulk, then rerun pkgclean"
+	    "ports-mgmt/pkg is missing. First build it with bulk, then re-run pkgclean"
 
 	injail ${PKG_VERSION} -t "${oldversion}" "${newversion}"
 }
