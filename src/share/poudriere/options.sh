@@ -173,6 +173,11 @@ for originspec in $(listed_ports show_moved); do
 	make PORT_DBDIR=${PORT_DBDIR} \
 		-C ${PORTSDIR}/${origin} \
 		${COMMAND}
+	case "${COMMAND}" in
+	showconfig|config-conditional)
+		msg "Re-run 'poudriere options' with the -c flag to modify the options."
+		;;
+	esac
 
 	if [ -n "${DO_RECURSE}" ]; then
 		env ${flavor:+FLAVOR=${flavor}} \
