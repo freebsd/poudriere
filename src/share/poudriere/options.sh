@@ -42,6 +42,7 @@ Options:
     -c          -- Use 'make config' target
     -C          -- Use 'make config-conditional' target (default)
     -j name     -- Run on the given jail
+    -o name     -- Specify name of options directory to write to
     -p tree     -- Specify on which ports tree the configuration will be done
     -n          -- Do not configure/show/remove options of dependencies
     -r          -- Remove port options instead of configuring them
@@ -58,10 +59,11 @@ PTNAME_TMP=""
 DO_RECURSE=y
 COMMAND=config-conditional
 RECURSE_COMMAND=config-recursive
+OFLAG=0
 
 [ $# -eq 0 ] && usage
 
-while getopts "a:cCj:f:p:nrsz:" FLAG; do
+while getopts "a:cCj:f:o:p:nrsz:" FLAG; do
 	case "${FLAG}" in
 		a)
 			ARCH=${OPTARG}
@@ -85,6 +87,10 @@ while getopts "a:cCj:f:p:nrsz:" FLAG; do
 			[ "${OPTARG#/}" = "${OPTARG}" ] && \
 			    OPTARG="${SAVED_PWD}/${OPTARG}"
 			LISTPKGS="${LISTPKGS:+${LISTPKGS} }${OPTARG}"
+			;;
+		o)
+			PORT_DBDIRNAME="${OPTARG}"
+			OFLAG=1
 			;;
 		p)
 			porttree_exists ${OPTARG} ||
@@ -132,11 +138,14 @@ command -v dialog4ports >/dev/null 2>&1 || err 1 "You must have ports-mgmt/dialo
 read_packages_from_params "$@"
 
 OLD_PORT_DBDIR=${POUDRIERED}/${JAILNAME}${JAILNAME:+-}${SETNAME}${SETNAME:+-}options
-PORT_DBDIR=${POUDRIERED}/${JAILNAME}${JAILNAME:+-}${PTNAME_TMP}${PTNAME_TMP:+-}${SETNAME}${SETNAME:+-}options
+: ${PORT_DBDIRNAME:="${JAILNAME}${JAILNAME:+-}${PTNAME_TMP}${PTNAME_TMP:+-}${SETNAME}${SETNAME:+-}options"}
+PORT_DBDIR="${POUDRIERED}/${PORT_DBDIRNAME}"
 
-if [ -d "${OLD_PORT_DBDIR}" ] && [ ! -d "${PORT_DBDIR}" ]; then
+if [ "${OFLAG}" -eq 0 ] &&
+    [ -d "${OLD_PORT_DBDIR}" ] && [ ! -d "${PORT_DBDIR}" ]; then
 	msg_warn "You already have options configured without '-p ${PTNAME_TMP}' that will no longer be used."
 	msg_warn "Drop the '-p ${PTNAME_TMP}' option to avoid this problem."
+	msg_warn "Alternatively use '-o dirname' to write to a different directory than -jpz specify."
 	if [ -t 0 ]; then
 		confirm_if_tty "Are you sure you want to continue?" || exit 0
 	else
@@ -144,8 +153,9 @@ if [ -d "${OLD_PORT_DBDIR}" ] && [ ! -d "${PORT_DBDIR}" ]; then
 	fi
 fi
 
-mkdir -p ${PORT_DBDIR}
-msg "Working on options directory ${PORT_DBDIR}"
+mkdir -p "${PORT_DBDIR}"
+msg "Working on options directory: ${PORT_DBDIR}"
+msg "Using ports from: ${PORTSDIR}"
 
 __MAKE_CONF=$(mktemp -t poudriere-make.conf)
 export __MAKE_CONF
