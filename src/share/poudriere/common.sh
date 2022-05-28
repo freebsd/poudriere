@@ -8319,8 +8319,9 @@ balance_pool() {
 append_make() {
 	[ $# -eq 3 ] || eargs append_make srcdir src_makeconf dst_makeconf
 	local srcdir="$1"
-	local src_makeconf=$2
-	local dst_makeconf=$3
+	local src_makeconf="$2"
+	local dst_makeconf="$3"
+	local src_makeconf_real
 
 	if [ "${src_makeconf}" = "-" ]; then
 		src_makeconf="${srcdir}/make.conf"
@@ -8329,13 +8330,18 @@ append_make() {
 	fi
 
 	[ -f "${src_makeconf}" ] || return 0
-	src_makeconf="$(realpath ${src_makeconf} 2>/dev/null)"
+	src_makeconf_real="$(realpath ${src_makeconf} 2>/dev/null)"
 	# Only append if not already done (-z -p or -j match)
-	if grep -q "# ${src_makeconf} #" ${dst_makeconf}; then
+	if grep -q "# ${src_makeconf_real} #" ${dst_makeconf}; then
 		return 0
 	fi
 	msg "Appending to make.conf: ${src_makeconf}"
-	echo "#### ${src_makeconf} ####" >> ${dst_makeconf}
+	echo -n "#### ${src_makeconf_eal} ####" >> "${dst_makeconf}"
+	if [ "${src_makeconf_real}" != "${src_makeconf}" ]; then
+		echo " ${src_makeconf}"
+	else
+		echo
+	fi >> "${dst_makeconf}"
 	cat "${src_makeconf}" >> ${dst_makeconf}
 }
 
