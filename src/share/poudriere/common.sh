@@ -8349,18 +8349,18 @@ read_packages_from_params()
 {
 	if [ $# -eq 0 -o -z "$1" ]; then
 		[ -n "${LISTPKGS}" -o ${ALL} -eq 1 ] ||
-		    err 1 "No packages specified"
+		    err ${EX_USAGE} "No packages specified"
 		if [ ${ALL} -eq 0 ]; then
 			for listpkg_name in ${LISTPKGS}; do
 				[ -r "${listpkg_name}" ] ||
-				    err 1 "No such list of packages: ${listpkg_name}"
+				    err ${EX_USAGE} "No such list of packages: ${listpkg_name}"
 			done
 		fi
 	else
 		[ ${ALL} -eq 0 ] ||
-		    err 1 "command line arguments and -a cannot be used at the same time"
+		    err ${EX_USAGE} "command line arguments and -a cannot be used at the same time"
 		[ -z "${LISTPKGS}" ] ||
-		    err 1 "command line arguments and list of ports cannot be used at the same time"
+		    err ${EX_USAGE} "command line arguments and list of ports cannot be used at the same time"
 		LISTPORTS="$@"
 	fi
 }
