@@ -201,22 +201,26 @@ for file in ${PACKAGES}/All/*; do
 			if ! pkg_get_origin origin "${file}"; then
 				msg_verbose "Found corrupt package: ${file}"
 				echo "${file}" >> ${BADFILES_LIST}
-			elif shash_remove pkgname-forbidden "${pkgname}" \
-			    forbidden; then
-				msg_verbose "Found forbidden package (${forbidden}): ${file}"
-				echo "${file}" >> ${BADFILES_LIST}
-			elif [ "${CLEAN_LISTED}" -eq 0 ] &&
-			    ! pkgbase_is_needed "${pkgname}"; then
-				msg_verbose "Found unwanted package: ${file}"
-				echo "${file}" >> ${BADFILES_LIST}
-			elif [ "${CLEAN_LISTED}" -eq 1 ] &&
-			    pkgbase_is_needed "${pkgname}" &&
-			    pkgname_is_listed "${pkgname}"; then
-				msg_verbose "Found unwanted package: ${file}"
-				echo "${file}" >> ${BADFILES_LIST}
-			else
-				echo "${file} ${origin}" >> ${FOUND_ORIGINS}
+				continue
 			fi
+			if [ "${CLEAN_LISTED}" -eq 0 ]; then
+				if shash_remove pkgname-forbidden "${pkgname}" \
+				    forbidden; then
+					msg_verbose "Found forbidden package (${forbidden}): ${file}"
+					echo "${file}" >> ${BADFILES_LIST}
+					continue
+				elif ! pkgbase_is_needed "${pkgname}"; then
+					msg_verbose "Found unwanted package: ${file}"
+					echo "${file}" >> ${BADFILES_LIST}
+					continue
+				fi
+			elif [ "${CLEAN_LISTED}" -eq 1 ] &&
+			    originspec_is_listed "${origin}"; then
+				msg_verbose "Found unwanted package: ${file}"
+				echo "${file}" >> ${BADFILES_LIST}
+				continue
+			fi
+			echo "${file} ${origin}" >> ${FOUND_ORIGINS}
 			;;
 		*.txz)
 			if [ -L "${file}" ]; then

@@ -7692,6 +7692,26 @@ originspec_is_needed_and_not_ignored() {
            }' "${MASTER_DATADIR}/all_pkgs"
 }
 
+# Port was listed to be built
+originspec_is_listed() {
+	[ $# -eq 1 ] || eargs originspec_is_listed originspec
+	local originspec="$1"
+
+	if [ "${ALL}" -eq 1 ]; then
+		return 0
+	fi
+
+	awk -voriginspec="${originspec}" '
+	    $3 == "listed" && $2 == originspec {
+		found=1
+		exit 0
+	    }
+	    END {
+		if (found != 1)
+			exit 1
+	    }' "${MASTER_DATADIR}/all_pkgs"
+}
+
 get_porttesting() {
 	[ $# -eq 1 ] || eargs get_porttesting pkgname
 	local pkgname="$1"
