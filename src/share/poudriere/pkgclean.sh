@@ -37,6 +37,7 @@ Parameters:
     [ports...]  -- List of ports to keep on the command line
 
 Options:
+    -C          -- Delete packages listed on command line rather than keep
     -j jail     -- Which jail to use for packages
     -J n        -- Run n jobs in parallel (Defaults to the number of
                    CPUs times 1.25)
@@ -60,16 +61,20 @@ DRY_RUN=0
 DO_ALL=0
 BUILD_REPO=1
 OVERLAYS=""
+CLEAN_LISTED=0
 
 [ $# -eq 0 ] && usage
 
-while getopts "Aaj:J:f:nNO:p:Rvyz:" FLAG; do
+while getopts "AaCj:J:f:nNO:p:Rvyz:" FLAG; do
 	case "${FLAG}" in
 		A)
 			DO_ALL=1
 			;;
 		a)
 			ALL=1
+			;;
+		C)
+			CLEAN_LISTED=1
 			;;
 		j)
 			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
@@ -127,6 +132,10 @@ post_getopts
 [ -z "${JAILNAME}" ] && \
     err 1 "Don't know on which jail to run please specify -j"
 
+if [ "${CLEAN_LISTED}" -eq 1 -a -n "${LISTPKGS}" ]; then
+	err ${EX_USAGE} "-C and -f should not be used together"
+fi
+
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 _mastermnt MASTERMNT
 
@@ -158,6 +167,11 @@ PKG_EXT='*' package_dir_exists_and_has_packages ||
 maybe_run_queued "${saved_argv}"
 
 msg "Gathering all expected packages"
+if [ "${CLEAN_LISTED}" -eq 0 ]; then
+	msg_warn "Will delete anything not listed. To delete listed use -C."
+else
+	msg_warn "Will delete anything listed. To keep listed do not use -C."
+fi
 jail_start "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 prepare_ports
 msg "Looking for unneeded packages"
@@ -188,7 +202,13 @@ for file in ${PACKAGES}/All/*; do
 			    forbidden; then
 				msg_verbose "Found forbidden package (${forbidden}): ${file}"
 				echo "${file}" >> ${BADFILES_LIST}
-			elif ! pkgbase_is_needed "${pkgname}"; then
+			elif [ "${CLEAN_LISTED}" -eq 0 ] &&
+			    ! pkgbase_is_needed "${pkgname}"; then
+				msg_verbose "Found unwanted package: ${file}"
+				echo "${file}" >> ${BADFILES_LIST}
+			elif [ "${CLEAN_LISTED}" -eq 1 ] &&
+			    pkgbase_is_needed "${pkgname}" &&
+			    pkgname_is_listed "${pkgname}"; then
 				msg_verbose "Found unwanted package: ${file}"
 				echo "${file}" >> ${BADFILES_LIST}
 			else
