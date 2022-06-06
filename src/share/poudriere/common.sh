@@ -1281,6 +1281,7 @@ sig_handler() {
 
 exit_handler() {
 	exit_status="$?"
+	set +u
 	case "${SHFLAGS}" in
 	*x*) ;;
 	*) local -; set +x ;;
