@@ -150,7 +150,7 @@ _msg_n() {
 	fi
 	case "${COLOR_ARROW-}${1}" in
 	*$'\033'"["*)
-		printf "${COLOR_ARROW}${elapsed}${DRY_MODE-}${arrow:+${COLOR_ARROW}${arrow} }${COLOR_RESET}%s${COLOR_RESET}${NL}" "$*"
+		printf "${COLOR_ARROW-}${elapsed}${DRY_MODE-}${arrow:+${COLOR_ARROW-}${arrow} }${COLOR_RESET}%s${COLOR_RESET}${NL}" "$*"
 		;;
 	*)
 		printf "${elapsed}${DRY_MODE-}${arrow:+${arrow} }%s${NL}" "$*"
