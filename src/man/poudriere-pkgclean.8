@@ -79,6 +79,8 @@ arguments may be specified at once.
 Delete the listed packages rather than keep them.
 This can be used to delete specific packages that need to be rebuilt
 while keeping them in the port list file.
+.Fl r
+can be specified to delete reverse dependencies as well.
 .It Fl J Ar number
 This argument specifies how many
 .Ar number
@@ -102,6 +104,12 @@ Specifies which ports
 .Ar tree
 to use.
 .Pq Default: Dq Li default
+.It Fl r
+When
+.Fl C
+is specified then all reverse dependencies will be deleted as well.
+This can be used to later force rebuild anything depending on the listed
+packages.
 .It Fl R
 Also clean restricted packages.
 .It Fl v

@@ -46,6 +46,7 @@ Options:
     -N          -- Do not build the package repository when clean completed
     -O overlays -- Specify extra ports trees to overlay
     -p tree     -- Which ports tree to use for packages
+    -r          -- With -C delete reverse dependencies too
     -R          -- Clean RESTRICTED packages after building
     -v          -- Be verbose; show more information. Use twice to enable
                    debug output
@@ -62,10 +63,11 @@ DO_ALL=0
 BUILD_REPO=1
 OVERLAYS=""
 CLEAN_LISTED=0
+CLEAN_RDEPS=0
 
 [ $# -eq 0 ] && usage
 
-while getopts "AaCj:J:f:nNO:p:Rvyz:" FLAG; do
+while getopts "AaCj:J:f:nNO:p:rRvyz:" FLAG; do
 	case "${FLAG}" in
 		A)
 			DO_ALL=1
@@ -106,6 +108,9 @@ while getopts "AaCj:J:f:nNO:p:Rvyz:" FLAG; do
 			    err 2 "No such ports tree: ${OPTARG}"
 			PTNAME=${OPTARG}
 			;;
+		r)
+			CLEAN_RDEPS=1
+			;;
 		R)
 			NO_RESTRICTED=1
 			;;
@@ -134,6 +139,9 @@ post_getopts
 
 if [ "${CLEAN_LISTED}" -eq 1 -a -n "${LISTPKGS}" ]; then
 	err ${EX_USAGE} "-C and -f should not be used together"
+fi
+if [ "${CLEAN_LISTED}" -eq 0 -a "${CLEAN_RDEPS}" -eq 1 ]; then
+	err ${EX_USAGE} "-r only works with -C"
 fi
 
 MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
@@ -206,19 +214,36 @@ for file in ${PACKAGES}/All/*; do
 			if [ "${CLEAN_LISTED}" -eq 0 ]; then
 				if shash_remove pkgname-forbidden "${pkgname}" \
 				    forbidden; then
-					msg_verbose "Found forbidden package (${forbidden}): ${file}"
+					msg_verbose "Found forbidden package (${COLOR_PORT}${origin}${COLOR_RESET}) (${forbidden}): ${file}"
 					echo "${file}" >> ${BADFILES_LIST}
 					continue
 				elif ! pkgbase_is_needed "${pkgname}"; then
-					msg_verbose "Found unwanted package: ${file}"
+					msg_verbose "Found unwanted package (${COLOR_PORT}${origin}${COLOR_RESET}): ${file}"
 					echo "${file}" >> ${BADFILES_LIST}
 					continue
 				fi
-			elif [ "${CLEAN_LISTED}" -eq 1 ] &&
-			    originspec_is_listed "${origin}"; then
-				msg_verbose "Found unwanted package: ${file}"
-				echo "${file}" >> ${BADFILES_LIST}
-				continue
+			elif [ "${CLEAN_LISTED}" -eq 1 ]; then
+				if originspec_is_listed "${origin}"; then
+					msg_verbose "Found specified package (${COLOR_PORT}${origin}${COLOR_RESET}): ${file}"
+					echo "${file}" >> ${BADFILES_LIST}
+					continue
+				elif ! pkg_get_dep_origin_pkgnames \
+				    compiled_deps '' "${file}"; then
+					msg_verbose "Found corrupt package (${COLOR_PORT}${origin}${COLOR_RESET}) (deps): ${file}"
+					echo "${file}" >> ${BADFILES_LIST}
+					continue
+				fi
+				if [ "${CLEAN_RDEPS}" -eq 1 ]; then
+					for dep_origin in ${compiled_deps}; do
+						if originspec_is_listed \
+						    "${dep_origin}"; then
+							msg_verbose "Found specified package (${COLOR_PORT}${dep_origin}${COLOR_RESET}) rdep: ${file}"
+							echo "${file}" \
+							    >> ${BADFILES_LIST}
+							continue 2
+						fi
+					done
+				fi
 			fi
 			echo "${file} ${origin}" >> ${FOUND_ORIGINS}
 			;;
