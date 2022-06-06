@@ -201,67 +201,97 @@ pkgclean_cleanup() {
 BADFILES_LIST=$(mktemp -t poudriere_pkgclean)
 FOUND_ORIGINS=$(mktemp -t poudriere_pkgclean)
 
+should_delete() {
+	[ $# -eq 1 ] || eargs should_delete pkgfile
+	local pkgfile="$1"
+	local pkgname origin ret
+
+	pkgname="${pkgfile##*/}"
+	pkgname="${pkgname%.*}"
+	ret=0
+
+	if ! pkg_get_origin origin "${pkgfile}"; then
+		msg_verbose "Found corrupt package: ${pkgfile}"
+		return 0 # delete
+	fi
+	if [ "${CLEAN_LISTED}" -eq 0 ]; then
+		should_delete_unlisted "${pkgfile}" "${origin}" "${pkgname}" ||
+		    ret="$?"
+	elif [ "${CLEAN_LISTED}" -eq 1 ]; then
+		should_delete_listed "${pkgfile}" "${origin}" "${pkgname}" ||
+		    ret="$?"
+	else
+		echo "${pkgfile} ${origin}" >> "${FOUND_ORIGINS}"
+	fi
+	return "${ret}"
+}
+
+# Handle NO -C
+should_delete_unlisted() {
+	[ $# -eq 3 ] || eargs should_delete_unlisted pkgfile origin pkgname
+	local pkgfile="$1"
+	local origin="$2"
+	local pkgname="$3"
+	local forbidden
+
+	if shash_remove pkgname-forbidden "${pkgname}" forbidden; then
+		msg_verbose "Found forbidden package (${COLOR_PORT}${origin}${COLOR_RESET}) (${forbidden}): ${pkgfile}"
+		return 0 # delete
+	elif ! pkgbase_is_needed "${pkgname}"; then
+		msg_verbose "Found unwanted package (${COLOR_PORT}${origin}${COLOR_RESET}): ${pkgfile}"
+		return 0 # delete
+	fi
+	return 1 # keep
+}
+
+# Handle -C and -r
+should_delete_listed() {
+	[ $# -eq 3 ] || eargs should_delete_listed pkgfile origin pkgname
+	local pkgfile="$1"
+	local origin="$2"
+	local pkgname="$3"
+	local dep_origin compiled_deps
+
+	if originspec_is_listed "${origin}"; then
+		msg_verbose "Found specified package (${COLOR_PORT}${origin}${COLOR_RESET}): ${pkgfile}"
+		return 0 # delete
+	elif ! pkg_get_dep_origin_pkgnames compiled_deps '' "${pkgfile}"; then
+		msg_verbose "Found corrupt package (${COLOR_PORT}${origin}${COLOR_RESET}) (deps): ${pkgfile}"
+		return 0 # delete
+	fi
+	if [ "${CLEAN_RDEPS}" -eq 1 ]; then
+		for dep_origin in ${compiled_deps}; do
+			if originspec_is_listed "${dep_origin}"; then
+				msg_verbose "Found specified package (${COLOR_PORT}${dep_origin}${COLOR_RESET}) rdep: ${pkgfile}"
+				return 0 # delete
+			fi
+		done
+	fi
+	return 1 # keep
+}
+
 for file in ${PACKAGES}/All/*; do
 	case ${file} in
-		*.${PKG_EXT})
-			pkgname="${file##*/}"
-			pkgname="${pkgname%.*}"
-			if ! pkg_get_origin origin "${file}"; then
-				msg_verbose "Found corrupt package: ${file}"
-				echo "${file}" >> ${BADFILES_LIST}
-				continue
-			fi
-			if [ "${CLEAN_LISTED}" -eq 0 ]; then
-				if shash_remove pkgname-forbidden "${pkgname}" \
-				    forbidden; then
-					msg_verbose "Found forbidden package (${COLOR_PORT}${origin}${COLOR_RESET}) (${forbidden}): ${file}"
-					echo "${file}" >> ${BADFILES_LIST}
-					continue
-				elif ! pkgbase_is_needed "${pkgname}"; then
-					msg_verbose "Found unwanted package (${COLOR_PORT}${origin}${COLOR_RESET}): ${file}"
-					echo "${file}" >> ${BADFILES_LIST}
-					continue
-				fi
-			elif [ "${CLEAN_LISTED}" -eq 1 ]; then
-				if originspec_is_listed "${origin}"; then
-					msg_verbose "Found specified package (${COLOR_PORT}${origin}${COLOR_RESET}): ${file}"
-					echo "${file}" >> ${BADFILES_LIST}
-					continue
-				elif ! pkg_get_dep_origin_pkgnames \
-				    compiled_deps '' "${file}"; then
-					msg_verbose "Found corrupt package (${COLOR_PORT}${origin}${COLOR_RESET}) (deps): ${file}"
-					echo "${file}" >> ${BADFILES_LIST}
-					continue
-				fi
-				if [ "${CLEAN_RDEPS}" -eq 1 ]; then
-					for dep_origin in ${compiled_deps}; do
-						if originspec_is_listed \
-						    "${dep_origin}"; then
-							msg_verbose "Found specified package (${COLOR_PORT}${dep_origin}${COLOR_RESET}) rdep: ${file}"
-							echo "${file}" \
-							    >> ${BADFILES_LIST}
-							continue 2
-						fi
-					done
-				fi
-			fi
-			echo "${file} ${origin}" >> ${FOUND_ORIGINS}
-			;;
-		*.txz)
-			if [ -L "${file}" ]; then
-				# Ignore txz symlinks as they otherwise
-				# cause spam and confusion.  If we delete
-				# a package it points to then it will be
-				# removed later by
-				# delete_stale_symlinks_and_empty_dirs().
-				continue
-			fi
-			# FALLTHROUGH
-			;&
-		*)
-			msg_verbose "Found incorrect format file: ${file}"
-			echo "${file}" >> ${BADFILES_LIST}
-			;;
+	*.${PKG_EXT})
+		if should_delete "${file}"; then
+			echo "${file}" >> "${BADFILES_LIST}"
+		fi
+		;;
+	*.txz)
+		if [ -L "${file}" ]; then
+			# Ignore txz symlinks as they otherwise
+			# cause spam and confusion.  If we delete
+			# a package it points to then it will be
+			# removed later by
+			# delete_stale_symlinks_and_empty_dirs().
+			continue
+		fi
+		# FALLTHROUGH
+		;&
+	*)
+		msg_verbose "Found incorrect format file: ${file}"
+		echo "${file}" >> ${BADFILES_LIST}
+		;;
 	esac
 done
 
