@@ -7316,7 +7316,7 @@ compute_deps_pkg() {
 				case "${dep_real_pkgname%-*}" in
 				"${dep_pkgname}") ;;
 				*)
-					${err_type} "${COLOR_PORT}${originspec}${COLOR_WARN} dependency on ${COLOR_PORT}${dpath}${COLOR_WARN} has wrong PKGNAME of '${dep_pkgname}' but should be '${dep_real_pkgname%-*}'"
+					${err_type} "${COLOR_PORT}${originspec}${COLOR_WARN} dependency on ${COLOR_PORT}${dpath}${COLOR_WARN} has wrong PKGNAME of '${dep_pkgname}' but should be '${dep_real_pkgname%-*}'; Is the dependency missing a @FLAVOR?"
 					if [ \
 					    "${BAD_PKGNAME_DEPS_ARE_FATAL}" = \
 					    "yes" ]; then
