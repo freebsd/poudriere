@@ -3560,9 +3560,10 @@ pkg_version() {
 }
 
 download_from_repo_check_pkg() {
-	[ $# -eq 8 ] || eargs download_from_repo_check_pkg pkgname \
+	[ $# -eq 9 ] || eargs download_from_repo_check_pkg pkgname \
 	    abi remote_all_options remote_all_pkgs remote_all_deps \
-	    remote_all_annotations remote_all_abi output
+	    remote_all_annotations remote_all_abi remote_all_prefix \
+	    output
 	local pkgname="$1"
 	local abi="$2"
 	local remote_all_options="$3"
@@ -3570,10 +3571,11 @@ download_from_repo_check_pkg() {
 	local remote_all_deps="$5"
 	local remote_all_annotations="$6"
 	local remote_all_abi="$7"
-	local output="$8"
+	local remote_all_prefix="$8"
+	local output="$9"
 	local pkgbase bpkg selected_options remote_options found
 	local run_deps lib_deps raw_deps dep dep_pkgname local_deps remote_deps
-	local remote_abi remote_osversion
+	local remote_abi remote_osversion remote_prefix prefix
 
 	# The options checks here are not optimized because we lack goto.
 	pkgbase="${pkgname%-*}"
@@ -3624,6 +3626,21 @@ download_from_repo_check_pkg() {
 		fi
 	fi
 
+	# PREFIX
+	remote_prefix=$(awk -v pkgname="${pkgname}" -vpkgbase="${pkgbase}" \
+	    '$1 == pkgbase {print $2; exit}' "${remote_all_prefix}")
+	shash_get pkgname-prefix "${pkgname}" prefix ||
+	    prefix="${LOCALBASE:-/usr/local}"
+	case "${prefix}" in
+	${remote_prefix}) ;;
+	*)
+		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: remote PREFIX mismatch: ${remote_prefix} (want: ${prefix})"
+		return
+		;;
+	*)
+	esac
+
+	# Options mismatch
 	remote_options=$(awk -vpkgbase="${pkgbase}" ' \
 	    BEGIN {printed=0}
 	    $1 == pkgbase && $3 == "on" {print "+"$2;printed=1}
@@ -3634,8 +3651,6 @@ download_from_repo_check_pkg() {
 
 	shash_get pkgname-options "${pkgname}" selected_options || \
 	    selected_options=
-
-	# Options mismatch
 	case "${selected_options}" in
 	${remote_options}) ;;
 	*)
@@ -3677,7 +3692,7 @@ download_from_repo() {
 	local pkgname abi originspec listed ignored pkg_bin packagesite
 	local packagesite_resolved
 	local remote_all_pkgs remote_all_options wantedpkgs remote_all_deps
-	local remote_all_annotations remote_all_abi
+	local remote_all_annotations remote_all_abi remote_all_prefix
 	local missing_pkgs pkg pkgbase cnt
 	local remote_pkg_ver local_pkg_name local_pkg_ver found
 	local packages_rel
@@ -3794,6 +3809,8 @@ download_from_repo() {
 	abi="$(injail "${pkg_bin}" config ABI)"
 	remote_all_abi=$(mktemp -t remote_all_abi)
 	injail ${pkg_bin} rquery -U '%n %q' > "${remote_all_abi}"
+	remote_all_prefix=$(mktemp -t remote_all_prefix)
+	injail ${pkg_bin} rquery -U '%n %p' > "${remote_all_prefix}"
 
 	parallel_start
 	wantedpkgs=$(mktemp -t wantedpkgs)
@@ -3802,12 +3819,13 @@ download_from_repo() {
 		    "${pkgname}" "${abi}" \
 		    "${remote_all_options}" "${remote_all_pkgs}" \
 		    "${remote_all_deps}" "${remote_all_annotations}" \
-		    "${remote_all_abi}" "${wantedpkgs}"
+		    "${remote_all_abi}" "${remote_all_prefix}" "${wantedpkgs}"
 	done
 	parallel_stop
 	rm -f "${missing_pkgs}" \
 	    "${remote_all_pkgs}" "${remote_all_options}" "${remote_all_deps}" \
-	    "${remote_all_annotations}" "${remote_all_abi}"
+	    "${remote_all_annotations}" "${remote_all_abi}" \
+	    "${remote_all_prefix}"
 
 	if [ ! -s "${wantedpkgs}" ]; then
 		msg "Package fetch: No packages eligible to fetch"
@@ -5478,6 +5496,7 @@ deps_fetch_vars() {
 	local _forbidden _default_originspec _default_pkgname _no_arch
 	local origin _origin_dep_args _dep_args _dep _new_pkg_deps
 	local _origin_flavor _flavor _flavors _dep_arg _new_dep_args
+	local _prefix
 	local _depend_specials=
 
 	originspec_decode "${originspec}" origin _origin_dep_args \
@@ -5527,6 +5546,7 @@ deps_fetch_vars() {
 	    IGNORE _ignore \
 	    FORBIDDEN _forbidden \
 	    NO_ARCH:Dyes _no_arch \
+	    PREFIX _prefix \
 	    ${_changed_deps} \
 	    ${_changed_options:+_PRETTY_OPTS='${SELECTED_OPTIONS:@opt@${opt}+@} ${DESELECTED_OPTIONS:@opt@${opt}-@}'} \
 	    ${_changed_options:+'${_PRETTY_OPTS:O:C/(.*)([+-])$/\2\1/}' _selected_options} \
@@ -5677,6 +5697,8 @@ deps_fetch_vars() {
 	    shash_set pkgname-flavors "${_pkgname}" "${_flavors}"
 	[ -n "${_ignore}" ] && \
 	    shash_set pkgname-ignore "${_pkgname}" "${_ignore}"
+	[ -n "${_prefix}" ] && \
+	    shash_set pkgname-prefix "${_pkgname}" "${_prefix}"
 	[ -n "${_forbidden}" ] && \
 	    shash_set pkgname-forbidden "${_pkgname}" "${_forbidden}"
 	[ -n "${_no_arch}" ] && \
@@ -8158,6 +8180,7 @@ prepare_ports() {
 			    pkgname-options \
 			    pkgname-run_deps \
 			    pkgname-lib_deps \
+			    pkgname-prefix \
 			    pkgname-flavors; do
 				shash_remove_var "${shash_bucket}" || :
 			done
