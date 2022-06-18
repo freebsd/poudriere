@@ -153,7 +153,7 @@ for bulk build packages.
 First you have to create a jail, which will hold all the building
 infrastructure needs.
 .Pp
-.Dl "poudriere jail -c -v 8.2-RELEASE -a amd64 -j 82amd64"
+.Dl "poudriere jail -c -v 13.1-RELEASE -a amd64 -j 131amd64"
 .Pp
 A jail will take approximately 3GB of space.
 .Pp
@@ -163,7 +163,7 @@ regardless of what version you are running.
 amd64 users can choose i386 arch like in this
 example:
 .Pp
-.Dl "poudriere jail -c -v 8.1-RELEASE -a i386 -j 81i386"
+.Dl "poudriere jail -c -v 13.0-RELEASE -a i386 -j 130i386"
 .Pp
 This command will fetch and install a minimal jail, small (~400MB) so
 you can create a lot of them.
@@ -193,15 +193,15 @@ Any line starting with the hash sign will be treated as a comment.
 Now you can launch the bulk build.
 At minimum the jail and list of packages to build must be specified.
 .Pp
-.Dl "poudriere bulk -f ~/pkglist -j 81i386"
+.Dl "poudriere bulk -f ~/pkglist -j 130i386"
 .Pp
 .Bq Find your packages
 .Pp
 Once the bulk build is over, you can meet your shiny new packages here:
 .Pp
-.Dl Pa /usr/local/poudriere/data/packages/81i386
+.Dl Pa /usr/local/poudriere/data/packages/130i386
 .Pp
-with 81i386 as the name of the jail.
+with 130i386 as the name of the jail.
 .Ss Test a single port
 This second example show how to use
 .Nm
