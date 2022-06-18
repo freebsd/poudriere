@@ -256,7 +256,7 @@ _poudriere()
                         _poudriere_architecture
                         ;;
                     -C)
-                        COMPREPLY=($(compgen -W "all cache logs packages wkrdirs" -- "$cur"))
+                        COMPREPLY=($(compgen -W "all cache logs packages wrkdirs" -- "$cur"))
                         ;;
                     -f)
                         _poudriere_filesystem
