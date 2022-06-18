@@ -27,7 +27,7 @@ pkg_get_origin() {
 	[ $# -lt 2 ] && eargs pkg_get_origin var_return pkg [origin]
 	local var_return="$1"
 	local pkg="$2"
-	local _origin=$3
+	local _origin="${3-}"
 	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
@@ -150,15 +150,15 @@ pkg_get_dep_origin_pkgnames() {
 	while [ $# -ne 0 ]; do
 		origin="$1"
 		pkgname="$2"
-		compiled_dep_origins="${compiled_dep_origins}${compiled_dep_origins:+ }${origin}"
-		compiled_dep_pkgnames="${compiled_dep_pkgnames}${compiled_dep_pkgnames:+ }${pkgname}"
+		compiled_dep_origins="${compiled_dep_origins:+${compiled_dep_origins} }${origin}"
+		compiled_dep_pkgnames="${compiled_dep_pkgnames:+${compiled_dep_pkgnames} }${pkgname}"
 		shift 2
 	done
 	if [ -n "${var_return_origins}" ]; then
-		setvar "${var_return_origins}" "${compiled_dep_origins}"
+		setvar "${var_return_origins}" "${compiled_dep_origins-}"
 	fi
 	if [ -n "${var_return_pkgnames}" ]; then
-		setvar "${var_return_pkgnames}" "${compiled_dep_pkgnames}"
+		setvar "${var_return_pkgnames}" "${compiled_dep_pkgnames-}"
 	fi
 }
 
@@ -177,14 +177,14 @@ pkg_get_options() {
 				off|false) key="-${key}" ;;
 				on|true) key="+${key}" ;;
 			esac
-			_compiled_options="${_compiled_options}${_compiled_options:+ }${key}"
+			_compiled_options="${_compiled_options:+${_compiled_options} }${key}"
 		done <<-EOF
 		$(injail ${PKG_BIN} query -F "/packages/All/${pkg##*/}" '%Ok %Ov' | sort)
 		EOF
-		shash_set 'pkg' 'options2' "${_compiled_options}"
+		shash_set 'pkg' 'options2' "${_compiled_options-}"
 	fi
 	if [ -n "${var_return}" ]; then
-		setvar "${var_return}" "${_compiled_options}"
+		setvar "${var_return}" "${_compiled_options-}"
 	fi
 }
 

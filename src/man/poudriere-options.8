@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd April 26, 2021
+.Dd May 28, 2022
 .Dt POUDRIERE-OPTIONS 8
 .Os
 .Sh NAME
@@ -74,6 +74,16 @@ and shell-style comments are allowed.
 If given, configure the options only for the given jail.
 .It Fl n
 Do not be recursive
+.It Fl o Ar port_dbdirname
+Use the specified directory name to write the options to.
+This name will expand to
+.Pa $POUDRIERE_ETC/$port_dbdirname .
+This can be used to write options to a different directory than
+.Fl jpz
+specify.
+The
+.Fl jpz
+flags will be used for the make.conf, poudriere.conf, and ports dir.
 .It Fl p Ar portstree
 Run the configuration inside the given ports tree.
 .Pq Default: Dq Li default

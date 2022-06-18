@@ -150,7 +150,7 @@ _msg_n() {
 	fi
 	case "${COLOR_ARROW-}${1}" in
 	*$'\033'"["*)
-		printf "${COLOR_ARROW}${elapsed}${DRY_MODE-}${arrow:+${COLOR_ARROW}${arrow} }${COLOR_RESET}%s${COLOR_RESET}${NL}" "$*"
+		printf "${COLOR_ARROW-}${elapsed}${DRY_MODE-}${arrow:+${COLOR_ARROW-}${arrow} }${COLOR_RESET}%s${COLOR_RESET}${NL}" "$*"
 		;;
 	*)
 		printf "${elapsed}${DRY_MODE-}${arrow:+${arrow} }%s${NL}" "$*"
@@ -1010,17 +1010,17 @@ buildlog_stop() {
 	local originspec=$2
 	local build_failed="$3"
 	local log
-	local buildtime
+	local now elapsed buildtime
 
 	_log_path log
-	buildtime=$( \
-		stat -f '%N %B' ${log}/logs/${pkgname}.log  | awk -v now=$(clock -epoch) \
-		-f ${AWKPREFIX}/siginfo_buildtime.awk |
-		awk -F'!' '{print $2}' \
-	)
 
 	echo "build of ${originspec} | ${pkgname} ended at $(date)"
-	echo "build time: ${buildtime}"
+	if [ -n "${TIME_START_JOB:-}" ]; then
+		now=$(clock -monotonic)
+		elapsed=$((now - TIME_START_JOB))
+		calculate_duration buildtime "${elapsed}"
+		echo "build time: ${buildtime}"
+	fi
 	if [ ${build_failed} -gt 0 ]; then
 		echo "!!! build failure encountered !!!"
 	fi
@@ -1280,9 +1280,16 @@ sig_handler() {
 }
 
 exit_handler() {
+	exit_status="$?"
+	set +u
 	case "${SHFLAGS}" in
 	*x*) ;;
 	*) local -; set +x ;;
+	esac
+	# Don't spam errors with 'set +e; exit >0'.
+	case "$-" in
+	*e*) ;;
+	*) ERROR_VERBOSE=0 ;;
 	esac
 	# Ignore errors while cleaning up
 	set +e
@@ -1321,6 +1328,16 @@ exit_handler() {
 			cd "${MASTER_DATADIR}"
 		fi
 	fi
+
+	case "${exit_status}" in
+	0|${EX_USAGE})
+		: ${ERROR_VERBOSE:=0} ;;
+	*)	: ${ERROR_VERBOSE:=1} ;;
+	esac
+	if [ "${ERROR_VERBOSE}" -eq 1 ] && [ "${CRASHED:-0}" -eq 0 ]; then
+		echo "[ERROR] Unhandled error!" >&2
+	fi
+
 	if was_a_jail_run; then
 		# Don't use jail for any caching in cleanup
 		SHASH_VAR_PATH="${SHASH_VAR_PATH_DEFAULT}"
@@ -1358,6 +1375,9 @@ exit_handler() {
 	slock_release_all || :
 	if [ -n "${POUDRIERE_TMPDIR-}" ]; then
 		rm -rf "${POUDRIERE_TMPDIR}" >/dev/null 2>&1 || :
+	fi
+	if [ "${ERROR_VERBOSE}" -eq 1 ]; then
+		echo "Exiting with status ${exit_status}" >&2 || :
 	fi
 }
 
@@ -1580,26 +1600,27 @@ siginfo_handler() {
 		EOF
 		for j in ${JOBS}; do
 			# Ignore error here as the zfs dataset may not be cloned yet.
-			_bget status ${j} status || :
+			_bget status ${j} status || status=
 			# Skip builders not started yet
 			if [ -z "${status}" ]; then
 				continue
 			fi
-			# Hide idle workers
-			case "${status}" in
-			idle:|done:) continue ;;
-			esac
-			phase="${status%%:*}"
-			status="${status#*:}"
-			origin="${status%%:*}"
-			status="${status#*:}"
-			pkgname="${status%%:*}"
-			status="${status#*:}"
-			started="${status%%:*}"
-			status="${status#*:}"
-			started_phase="${status%%:*}"
+			set -f
+			IFS=:
+			set -- ${status}
+			unset IFS
+			set +f
+			phase="${1}"
 
-			colorize_job_id job_id_color "${j}"
+			# Hide idle workers
+			case "${phase}" in
+			idle|done) continue ;;
+			esac
+
+			origin="${2-}"
+			pkgname="${3-}"
+			started="${4-}"
+			started_phase="${5-}"
 
 			if [ -n "${pkgname}" ]; then
 				elapsed=$((now - started))
@@ -1619,6 +1640,7 @@ siginfo_handler() {
 				cpu=
 				mem=
 			fi
+			colorize_job_id job_id_color "${j}"
 			display_add \
 			    "[" "${job_id_color}" "${j}" "]" \
 			    "${buildtime-}" \
@@ -7671,6 +7693,26 @@ originspec_is_needed_and_not_ignored() {
            }' "${MASTER_DATADIR}/all_pkgs"
 }
 
+# Port was listed to be built
+originspec_is_listed() {
+	[ $# -eq 1 ] || eargs originspec_is_listed originspec
+	local originspec="$1"
+
+	if [ "${ALL}" -eq 1 ]; then
+		return 0
+	fi
+
+	awk -voriginspec="${originspec}" '
+	    $3 == "listed" && $2 == originspec {
+		found=1
+		exit 0
+	    }
+	    END {
+		if (found != 1)
+			exit 1
+	    }' "${MASTER_DATADIR}/all_pkgs"
+}
+
 get_porttesting() {
 	[ $# -eq 1 ] || eargs get_porttesting pkgname
 	local pkgname="$1"
@@ -8298,8 +8340,9 @@ balance_pool() {
 append_make() {
 	[ $# -eq 3 ] || eargs append_make srcdir src_makeconf dst_makeconf
 	local srcdir="$1"
-	local src_makeconf=$2
-	local dst_makeconf=$3
+	local src_makeconf="$2"
+	local dst_makeconf="$3"
+	local src_makeconf_real
 
 	if [ "${src_makeconf}" = "-" ]; then
 		src_makeconf="${srcdir}/make.conf"
@@ -8308,13 +8351,18 @@ append_make() {
 	fi
 
 	[ -f "${src_makeconf}" ] || return 0
-	src_makeconf="$(realpath ${src_makeconf} 2>/dev/null)"
+	src_makeconf_real="$(realpath ${src_makeconf} 2>/dev/null)"
 	# Only append if not already done (-z -p or -j match)
-	if grep -q "# ${src_makeconf} #" ${dst_makeconf}; then
+	if grep -q "# ${src_makeconf_real} #" ${dst_makeconf}; then
 		return 0
 	fi
 	msg "Appending to make.conf: ${src_makeconf}"
-	echo "#### ${src_makeconf} ####" >> ${dst_makeconf}
+	echo -n "#### ${src_makeconf_eal} ####" >> "${dst_makeconf}"
+	if [ "${src_makeconf_real}" != "${src_makeconf}" ]; then
+		echo " ${src_makeconf}"
+	else
+		echo
+	fi >> "${dst_makeconf}"
 	cat "${src_makeconf}" >> ${dst_makeconf}
 }
 
@@ -8322,18 +8370,18 @@ read_packages_from_params()
 {
 	if [ $# -eq 0 -o -z "$1" ]; then
 		[ -n "${LISTPKGS}" -o ${ALL} -eq 1 ] ||
-		    err 1 "No packages specified"
+		    err ${EX_USAGE} "No packages specified"
 		if [ ${ALL} -eq 0 ]; then
 			for listpkg_name in ${LISTPKGS}; do
 				[ -r "${listpkg_name}" ] ||
-				    err 1 "No such list of packages: ${listpkg_name}"
+				    err ${EX_USAGE} "No such list of packages: ${listpkg_name}"
 			done
 		fi
 	else
 		[ ${ALL} -eq 0 ] ||
-		    err 1 "command line arguments and -a cannot be used at the same time"
+		    err ${EX_USAGE} "command line arguments and -a cannot be used at the same time"
 		[ -z "${LISTPKGS}" ] ||
-		    err 1 "command line arguments and list of ports cannot be used at the same time"
+		    err ${EX_USAGE} "command line arguments and list of ports cannot be used at the same time"
 		LISTPORTS="$@"
 	fi
 }
@@ -8359,6 +8407,7 @@ sign_pkg() {
 	local sigtype="$1"
 	local pkgfile="$2"
 
+	msg "Signing pkg bootstrap with method: ${sigtype}"
 	if [ "${sigtype}" = "fingerprint" ]; then
 		unlink "${pkgfile}.sig"
 		sha256 -q "${pkgfile}" | ${SIGNING_COMMAND} > "${pkgfile}.sig"
@@ -8393,15 +8442,20 @@ build_repo() {
 	fi
 	mkdir -p ${MASTERMNT}/tmp/packages
 	if [ -n "${PKG_REPO_SIGNING_KEY}" ]; then
+		msg "Signing repository with key: ${PKG_REPO_SIGNING_KEY}"
 		install -m 0400 ${PKG_REPO_SIGNING_KEY} \
 			${MASTERMNT}/tmp/repo.key
 		injail ${PKG_BIN} repo \
 			${pkg_repo_list_files} \
 			-o /tmp/packages \
 			${PKG_META} \
-			/packages /tmp/repo.key
+			/packages /tmp/repo.key ||
+		    err "$?" "Failed to sign pkg repository"
 		unlink ${MASTERMNT}/tmp/repo.key
 	elif [ "${PKG_REPO_FROM_HOST:-no}" = "yes" ]; then
+		if [ -n "${SIGNING_COMMAND-}" ]; then
+			msg "Signing repository with command: ${SIGNING_COMMAND}"
+		fi
 		# Sometimes building repo from host is needed if
 		# using SSH with DNSSEC as older hosts don't support
 		# it.
@@ -8409,12 +8463,17 @@ build_repo() {
 		    ${pkg_repo_list_files} \
 		    -o ${MASTERMNT}/tmp/packages ${PKG_META_MASTERMNT} \
 		    ${MASTERMNT}/packages \
-		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
+		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}} ||
+		    err "$?" "Failed to sign pkg repository"
 	else
+		if [ -n "${SIGNING_COMMAND-}" ]; then
+			msg "Signing repository with command: ${SIGNING_COMMAND}"
+		fi
 		JNETNAME="n" injail ${PKG_BIN} repo \
 		    ${pkg_repo_list_files} \
 		    -o /tmp/packages ${PKG_META} /packages \
-		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}}
+		    ${SIGNING_COMMAND:+signing_command: ${SIGNING_COMMAND}} ||
+		    err "$?" "Failed to sign pkg repository"
 	fi
 	cp ${MASTERMNT}/tmp/packages/* ${PACKAGES}/
 

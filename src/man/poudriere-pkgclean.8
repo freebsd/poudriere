@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd April 29, 2022
+.Dd June 6, 2022
 .Dt POUDRIERE-PKGCLEAN 8
 .Os
 .Sh NAME
@@ -44,6 +44,18 @@
 .Op Ar origin2 Op Ar ...
 .Sh DESCRIPTION
 This command is used to delete all packages not specified to build.
+By default packages
+.Em not listed
+will be deleted;
+Listed packages, and their dependencies, will be kept.
+.Pp
+If
+.Fl C
+is specified then packages listed on the command line will be deleted
+rather than kept.
+Their orphaned dependencies will not be deleted.
+A second run with a full list of wanted packages is needed to
+cleanup orphaned dependencies.
 .Pp
 Either a subcommand or a list of port origins must be supplied.
 .Sh SUBCOMMANDS
@@ -63,6 +75,12 @@ arguments may be specified at once.
 .El
 .Sh OPTIONS
 .Bl -tag -width "-f conffile"
+.It Fl C
+Delete the listed packages rather than keep them.
+This can be used to delete specific packages that need to be rebuilt
+while keeping them in the port list file.
+.Fl r
+can be specified to delete reverse dependencies as well.
 .It Fl J Ar number
 This argument specifies how many
 .Ar number
@@ -86,6 +104,12 @@ Specifies which ports
 .Ar tree
 to use.
 .Pq Default: Dq Li default
+.It Fl r
+When
+.Fl C
+is specified then all reverse dependencies will be deleted as well.
+This can be used to later force rebuild anything depending on the listed
+packages.
 .It Fl R
 Also clean restricted packages.
 .It Fl v
