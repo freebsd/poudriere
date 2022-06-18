@@ -740,6 +740,7 @@ dist_pkgdata_DATA = \
 			src/share/poudriere/image.sh \
 			src/share/poudriere/image_dump.sh \
 			src/share/poudriere/image_firmware.sh \
+			src/share/poudriere/image_hybridiso.sh \
 			src/share/poudriere/image_iso.sh \
 			src/share/poudriere/image_mfs.sh \
 			src/share/poudriere/image_rawdisk.sh \
