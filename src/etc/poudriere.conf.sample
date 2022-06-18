@@ -90,13 +90,13 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # mirror (default: git.FreeBSD.org/port.git)
 #
 # Example to use github mirror:
-#GIT_BASEURL=https://github.com/freebsd/freebsd-src.git
+#GIT_BASEURL=github.com/freebsd/freebsd-src.git
 
 # If set the source tree marked to use git will use the defined
 # mirror (default: git.FreeBSD.org/src.git)
 #
 # Example to use github mirror:
-#GIT_PORTSURL=https://github.com/freebsd/freebsd-ports.git
+#GIT_PORTSURL=github.com/freebsd/freebsd-ports.git
 
 # If set the ports tree or source tree marked to use svn will use the defined
 # mirror (default: svn.FreeBSD.org)
