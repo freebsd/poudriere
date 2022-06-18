@@ -709,7 +709,7 @@ install_from_ftp() {
 			case $(echo "${FREEBSD_HOST}" | \
 			    tr '[:upper:]' '[:lower:]') in
 				*download.freebsd.org)
-					URL="${FREEBSD_HOST}/ftp/${type}/${ARCH}/${V}"
+					URL="${FREEBSD_HOST}/${type}/${ARCH}/${V}"
 					;;
 				*)
 					URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH}/${V}"
@@ -773,7 +773,7 @@ install_from_ftp() {
 				case $(echo "${FREEBSD_HOST}" | \
 				    tr '[:upper:]' '[:lower:]') in
 					*download.freebsd.org)
-						URL="${FREEBSD_HOST}/ftp/${type}/${ARCH%%.*}/${ARCH##*.}/${V}"
+						URL="${FREEBSD_HOST}/${type}/${ARCH%%.*}/${ARCH##*.}/${V}"
 						;;
 					*)
 						URL="${FREEBSD_HOST}/pub/FreeBSD/${type}/${ARCH%%.*}/${ARCH##*.}/${V}"
