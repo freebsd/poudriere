@@ -28,7 +28,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd June 29, 2022
+.Dd July 5, 2022
 .Dt POUDRIERE-BULK 8
 .Os
 .Sh NAME
@@ -42,17 +42,17 @@
 .Op Fl B Ar name
 .Op Fl b Ar branch
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
-.Op Fl O Ar overlay Op Oo Fl O Ar overlay2 Oc Ar ...
+.Op Fl O Ar overlay Op Fl O Ar overlay2 Ar ...
 .Op Fl p Ar tree
 .Op Fl z Ar set
 .Nm
-.Fl f Ar file Op Oo Fl f Ar file2 Oc Ar ...
+.Fl f Ar file Op Fl f Ar file2 Ar ...
 .Fl j Ar name
 .Op Fl CcFIikNnRrSTtvw
 .Op Fl B Ar name
 .Op Fl b Ar branch
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
-.Op Fl O Ar overlay Op Oo Fl O Ar overlay2 Oc Ar ...
+.Op Fl O Ar overlay Op Fl O Ar overlay2 Ar ...
 .Op Fl p Ar tree
 .Op Fl z Ar set
 .Nm
@@ -61,10 +61,10 @@
 .Op Fl B Ar name
 .Op Fl b Ar branch
 .Op Fl J Ar maxjobs Ns Op Cm \&: Ns Ar prebuildmaxjobs
-.Op Fl O Ar overlay Op Oo Fl O Ar overlay2 Oc Ar ...
+.Op Fl O Ar overlay Op Fl O Ar overlay2 Ar ...
 .Op Fl p Ar tree
 .Op Fl z Ar set
-.Ar origin Op Ar origin2 ...
+.Ar origin ...
 .Sh DESCRIPTION
 This command makes a ready-to-export package tree, and fills it with
 binary packages built from a given list of ports.
