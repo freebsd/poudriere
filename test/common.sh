@@ -137,6 +137,16 @@ _assert_ret() {
 }
 alias assert_ret='_assert_ret "$0:$LINENO"'
 
+_assert_out() {
+	local lineinfo="$1"
+	local expected="$2"
+	shift 2
+	local out
+
+        _assert "${lineinfo}" "${expected}" "$("$@")" "Bad output: $@"
+}
+alias assert_out='_assert_out "$0:$LINENO"'
+
 aecho() {
 	local -; set +x
 	[ $# -ge 2 ] || eargs aecho result lineinfo expected actual msg
