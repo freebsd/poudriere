@@ -3517,7 +3517,7 @@ _pkg_version_expanded() {
 	local -; set -f
 	[ $# -eq 1 ] || eargs pkg_ver_expanded version
 	local ver="$1"
-	local epoch ver_sub IFS
+	local epoch revision ver_sub IFS
 
 	case "${ver}" in
 	*,*)
@@ -3528,6 +3528,15 @@ _pkg_version_expanded() {
 		epoch="0"
 		;;
 	esac
+	case "${ver}" in
+	*_*)
+		revision="${ver##*_}"
+		ver="${ver%_*}"
+		;;
+	*)
+		revision="0"
+		;;
+	esac
 	_gsub "${ver}" "[_.]" " " ver_sub
 	set -- ${ver_sub}
 
@@ -3536,6 +3545,7 @@ _pkg_version_expanded() {
 		printf "%02d" "$1"
 		shift
 	done
+	printf "%04d" "${revision}"
 	printf "\n"
 }
 
