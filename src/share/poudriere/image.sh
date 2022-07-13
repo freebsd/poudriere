@@ -389,7 +389,7 @@ post_getopts
 
 [ -n "${JAILNAME}" ] || usage
 
-: ${OUTPUTDIR:=${POUDRIERE_DATA}/images/}
+: ${OUTPUTDIR:=${POUDRIERE_DATA}/images}
 : ${IMAGENAME:=poudriereimage}
 : ${MEDIATYPE:=none}
 : ${SWAPBEFORE:=0}
