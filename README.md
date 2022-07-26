@@ -23,7 +23,7 @@ Support
 -------
 
 IRC:          #poudriere on EFNet
-Mailing list: [freebsd-pkg@FreeBSD.org (lists.freebsd.org)](https://lists.freebsd.org/mailman/listinfo/freebsd-pkg)
+Mailing list: [freebsd-pkg@FreeBSD.org (lists.freebsd.org)](https://lists.freebsd.org/subscription/freebsd-pkg)
 
 Getting started with poudriere
 ------------------------------
