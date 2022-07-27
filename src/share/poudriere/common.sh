@@ -3570,10 +3570,10 @@ pkg_version() {
 }
 
 download_from_repo_check_pkg() {
-	[ $# -eq 9 ] || eargs download_from_repo_check_pkg pkgname \
+	[ $# -eq 10 ] || eargs download_from_repo_check_pkg pkgname \
 	    abi remote_all_options remote_all_pkgs remote_all_deps \
 	    remote_all_annotations remote_all_abi remote_all_prefix \
-	    output
+	    remote_all_cats output
 	local pkgname="$1"
 	local abi="$2"
 	local remote_all_options="$3"
@@ -3582,7 +3582,8 @@ download_from_repo_check_pkg() {
 	local remote_all_annotations="$6"
 	local remote_all_abi="$7"
 	local remote_all_prefix="$8"
-	local output="$9"
+	local remote_all_cats="$9"
+	local output="${10}"
 	local pkgbase bpkg selected_options remote_options found
 	local run_deps lib_deps raw_deps dep dep_pkgname local_deps remote_deps
 	local remote_abi remote_osversion remote_prefix prefix
@@ -3624,8 +3625,8 @@ download_from_repo_check_pkg() {
 	*)
 	esac
 
-	# If package is not NOARCH then we need to check its FreeBSD_version
 	if [ "${IGNORE_OSVERSION-}" != "yes" ]; then
+		# If package is not NOARCH then we need to check its FreeBSD_version
 		remote_osversion=$(awk -vpkgbase="${pkgbase}" ' \
 		    $1 == pkgbase && $2 == "FreeBSD_version" {print $3; exit}' \
 		    "${remote_all_annotations}")
@@ -3633,6 +3634,20 @@ download_from_repo_check_pkg() {
 		if [ "${remote_osversion:-0}" -gt "${JAIL_OSVERSION}" ]; then
 			msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: remote osversion too new: ${remote_osversion} (want <=${JAIL_OSVERSION})"
 			return
+		fi
+
+		# If package has a kld then we need to check its FreeBSD_version
+		if awk -vpkgbase="${pkgbase}" ' \
+			$1 == pkgbase && $2 == "kld" {
+				found = 1
+				exit
+			}
+			END {
+				exit !found
+			}' "${remote_all_cats}"; then
+			if [ "${remote_osversion:-0}" -ne "${JAIL_OSVERSION}" ]; then
+				msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: remote has kld and mismatched osversion: ${remote_osversion} (want ==${JAIL_OSVERSION})"
+			fi
 		fi
 	fi
 
@@ -3703,7 +3718,7 @@ download_from_repo() {
 	local packagesite_resolved
 	local remote_all_pkgs remote_all_options wantedpkgs remote_all_deps
 	local remote_all_annotations remote_all_abi remote_all_prefix
-	local missing_pkgs pkg pkgbase cnt
+	local remote_all_cats missing_pkgs pkg pkgbase cnt
 	local remote_pkg_ver local_pkg_name local_pkg_ver found
 	local packages_rel
 
@@ -3813,8 +3828,10 @@ download_from_repo() {
 	remote_all_deps=$(mktemp -t remote_all_deps)
 	injail ${pkg_bin} rquery -U '%n %dn-%dv' > "${remote_all_deps}"
 	remote_all_annotations=$(mktemp -t remote_all_annotations)
+	remote_all_cats=$(mktemp -t remote_all_cats)
 	if [ "${IGNORE_OSVERSION-}" != "yes" ]; then
 		injail ${pkg_bin} rquery -U '%n %At %Av' > "${remote_all_annotations}"
+		injail ${pkg_bin} rquery -U '%n %C' > "${remote_all_cats}"
 	fi
 	abi="$(injail "${pkg_bin}" config ABI)"
 	remote_all_abi=$(mktemp -t remote_all_abi)
@@ -3829,13 +3846,14 @@ download_from_repo() {
 		    "${pkgname}" "${abi}" \
 		    "${remote_all_options}" "${remote_all_pkgs}" \
 		    "${remote_all_deps}" "${remote_all_annotations}" \
-		    "${remote_all_abi}" "${remote_all_prefix}" "${wantedpkgs}"
+		    "${remote_all_abi}" "${remote_all_prefix}" \
+		    "${remote_all_cats}" "${wantedpkgs}"
 	done
 	parallel_stop
 	rm -f "${missing_pkgs}" \
 	    "${remote_all_pkgs}" "${remote_all_options}" "${remote_all_deps}" \
 	    "${remote_all_annotations}" "${remote_all_abi}" \
-	    "${remote_all_prefix}"
+	    "${remote_all_prefix}" "${remote_all_cats}"
 
 	if [ ! -s "${wantedpkgs}" ]; then
 		msg "Package fetch: No packages eligible to fetch"
