@@ -167,18 +167,14 @@ umountfs() {
 	[ $# -lt 1 ] && eargs umountfs mnt childonly
 	local mnt=$1
 	local childonly=$2
-	local pattern xargsmax
+	local pattern
 
 	[ -n "${childonly}" ] && pattern="/"
 
 	mnt=$(realpath "${mnt}" 2>/dev/null || echo "${mnt}")
-	xargsmax=
-	if [ ${UMOUNT_BATCHING} -eq 0 ]; then
-		xargsmax="-n 2"
-	fi
 	if ! findmounts "${mnt}" "${pattern}" | \
-	    xargs ${xargsmax} umount ${UMOUNT_NONBUSY}; then
-		findmounts "${mnt}" "${pattern}" | xargs ${xargsmax} umount -fv || :
+	    xargs umount ${UMOUNT_NONBUSY}; then
+		findmounts "${mnt}" "${pattern}" | xargs umount -fv || :
 	fi
 
 	return 0
