@@ -4771,10 +4771,6 @@ stop_builders() {
 		msg "Stopping ${PARALLEL_JOBS} builders"
 
 		real_parallel_jobs=${PARALLEL_JOBS}
-		if [ ${UMOUNT_BATCHING} -eq 0 ]; then
-			# Limit builders
-			PARALLEL_JOBS=2
-		fi
 		parallel_start
 		for j in ${JOBS-$(jot -w %02d ${real_parallel_jobs})}; do
 			parallel_run stop_builder "${j}"
@@ -8935,13 +8931,6 @@ esac
 
 NCPU=$(sysctl -n hw.ncpu)
 
-# Check if parallel umount will contend on the vnode free list lock
-if sysctl -n vfs.mnt_free_list_batch >/dev/null 2>&1; then
-	# Nah, parallel umount should be fine.
-	UMOUNT_BATCHING=1
-else
-	UMOUNT_BATCHING=0
-fi
 # Determine if umount -n can be used.
 if grep -q "#define[[:space:]]MNT_NONBUSY" /usr/include/sys/mount.h \
     2>/dev/null; then
