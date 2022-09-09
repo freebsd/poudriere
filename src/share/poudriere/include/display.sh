@@ -76,7 +76,7 @@ display_output() {
 
 	# Determine optimal format
 	n=0
-	while mapfile_read_loop_redir line; do
+	while IFS= mapfile_read_loop_redir line; do
 		n=$((n + 1))
 		if [ "${n}" -eq 1 ]; then
 			if [ "${quiet}" -eq 1 ]; then
@@ -141,7 +141,7 @@ display_output() {
 	# Sort as configured in display_setup()
 	echo "${_DISPLAY_DATA}" | tail -n +2 | \
 	    sort -t $'\t' ${_DISPLAY_COLUMN_SORT} | \
-	    while mapfile_read_loop_redir line; do
+	    while IFS= mapfile_read_loop_redir line; do
 		IFS=$'\t'
 		set -- ${line}
 		unset IFS

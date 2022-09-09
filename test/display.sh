@@ -53,6 +53,20 @@ alias assert_file='_assert_file "$0:$LINENO"'
 }
 
 {
+	display_setup "%%-%ds %%-%ds" "-k2,2V -k1,1d"
+	display_add "Name" "Release"
+	display_add "" "11.2-RELEASE-p1"
+	outfile=$(mktemp -t outfile)
+	display_output > "${outfile}"
+	expected=$(mktemp -t expected)
+	cat > "${expected}" <<-EOF
+	Name Release        
+	     11.2-RELEASE-p1
+	EOF
+	assert_file "${expected}" "${outfile}"
+}
+
+{
 	display_setup "%s %s" "-k2,2V -k1,1d"
 	display_add "Name" "Release"
 	display_add "blah" "11.2-RELEASE-p1"
