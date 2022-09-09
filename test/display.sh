@@ -53,6 +53,67 @@ alias assert_file='_assert_file "$0:$LINENO"'
 }
 
 {
+	display_setup "%s %s" "-k2,2V -k1,1d"
+	display_add "Name" "Release"
+	display_add "blah" "11.2-RELEASE-p1"
+	display_add "blah" "10.0-RELEASE"
+	display_add "blah" "10.2-RELEASE"
+	display_add "blah" "10.2-RELEASE-p10"
+	display_add "blah2" "10.2-RELEASE-p1"
+	display_add "blah" "10.2-RELEASE-p1"
+	display_add "blah" "9.3-RELEASE-p10"
+	display_add "blah" "9.3-RELEASE-p1"
+	display_add "blah" "8.2-RELEASE-p1"
+	outfile=$(mktemp -t outfile)
+	display_output > "${outfile}"
+	expected=$(mktemp -t expected)
+	cat > "${expected}" <<-EOF
+	Name Release
+	blah 8.2-RELEASE-p1
+	blah 9.3-RELEASE-p1
+	blah 9.3-RELEASE-p10
+	blah 10.0-RELEASE
+	blah 10.2-RELEASE
+	blah 10.2-RELEASE-p1
+	blah2 10.2-RELEASE-p1
+	blah 10.2-RELEASE-p10
+	blah 11.2-RELEASE-p1
+	EOF
+	assert_file "${expected}" "${outfile}"
+}
+
+{
+	# Test no trailing spaces
+	display_setup "%%-%ds %%s" "-k2,2V -k1,1d"
+	display_add "Name" "Release"
+	display_add "blah" "11.2-RELEASE-p1"
+	display_add "blah" "10.0-RELEASE"
+	display_add "blah" "10.2-RELEASE"
+	display_add "blah" "10.2-RELEASE-p10"
+	display_add "blah2" "10.2-RELEASE-p1"
+	display_add "blah" "10.2-RELEASE-p1"
+	display_add "blah" "9.3-RELEASE-p10"
+	display_add "blah" "9.3-RELEASE-p1"
+	display_add "blah" "8.2-RELEASE-p1"
+	outfile=$(mktemp -t outfile)
+	display_output > "${outfile}"
+	expected=$(mktemp -t expected)
+	cat > "${expected}" <<-EOF
+	Name  Release
+	blah  8.2-RELEASE-p1
+	blah  9.3-RELEASE-p1
+	blah  9.3-RELEASE-p10
+	blah  10.0-RELEASE
+	blah  10.2-RELEASE
+	blah  10.2-RELEASE-p1
+	blah2 10.2-RELEASE-p1
+	blah  10.2-RELEASE-p10
+	blah  11.2-RELEASE-p1
+	EOF
+	assert_file "${expected}" "${outfile}"
+}
+
+{
 	# Test a case that was totally wrong due to quoting the first field
 	display_setup "%%%ds %%-%ds %%-%ds" "-k1,1n"
 	display_add "JID" "IP Address" "vnet_num"
