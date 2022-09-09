@@ -28,7 +28,7 @@ display_setup() {
 	[ $# -ge 1 ] || eargs display_setup format [column_sort]
 	_DISPLAY_DATA=
 	_DISPLAY_FORMAT="$1"
-	_DISPLAY_COLUMN_SORT="${3-}"
+	_DISPLAY_COLUMN_SORT="${2-}"
 }
 
 display_add() {
