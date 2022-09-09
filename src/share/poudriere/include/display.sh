@@ -29,6 +29,7 @@ display_setup() {
 	_DISPLAY_DATA=
 	_DISPLAY_FORMAT="$1"
 	_DISPLAY_COLUMN_SORT="${2-}"
+	_DISPLAY_FOOTER=
 }
 
 display_add() {
@@ -49,6 +50,23 @@ display_add() {
 		_DISPLAY_DATA="${_DISPLAY_DATA}"$'\n'
 	fi
 	_DISPLAY_DATA="${_DISPLAY_DATA:+${_DISPLAY_DATA}}${line}"
+	return 0
+}
+
+display_footer() {
+	local arg line tab
+
+	unset line
+	tab=$'\t'
+	# Ensure blank arguments and spaced-arguments are respected.
+	for arg do
+		if [ -z "${arg}" ]; then
+			arg=" "
+		fi
+		line="${line:+${line}${tab}}${arg}"
+	done
+	# Add in newline
+	_DISPLAY_FOOTER="${line}"
 	return 0
 }
 
@@ -102,6 +120,7 @@ display_output() {
 		done
 	done <<-EOF
 	${_DISPLAY_DATA}
+	${_DISPLAY_FOOTER}
 	EOF
 
 	# Set format lengths if format is dynamic width
@@ -147,7 +166,13 @@ display_output() {
 		unset IFS
 		printf "${format}\n" "$@"
 	done
+	if [ -n "${_DISPLAY_FOOTER}" ]; then
+		IFS=$'\t'
+		set -- ${_DISPLAY_FOOTER}
+		unset IFS
+		printf "${format}\n" "$@"
+	fi
 
 	unset _DISPLAY_DATA _DISPLAY_FORMAT \
-	    _DISPLAY_COLUMN_SORT
+	    _DISPLAY_COLUMN_SORT _DISPLAY_FOOTER
 }

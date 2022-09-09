@@ -53,6 +53,60 @@ alias assert_file='_assert_file "$0:$LINENO"'
 }
 
 {
+	display_setup "%%-%ds %%%ds" "-k2,2V -k1,1d"
+	display_add "Name" "Memory"
+	display_add "foo" "10"
+	display_add "blah" "5"
+	display_footer "" "15 G"
+	outfile=$(mktemp -t outfile)
+	display_output > "${outfile}"
+	expected=$(mktemp -t expected)
+	cat > "${expected}" <<-EOF
+	Name Memory
+	blah      5
+	foo      10
+	       15 G
+	EOF
+	assert_file "${expected}" "${outfile}"
+}
+
+{
+	display_setup "%%-%ds %%-%ds" "-k2,2V -k1,1d"
+	display_add "Name" "Memory"
+	display_add "foo" "10"
+	display_add "blah" "5"
+	display_footer "" "15 G"
+	outfile=$(mktemp -t outfile)
+	display_output > "${outfile}"
+	expected=$(mktemp -t expected)
+	cat > "${expected}" <<-EOF
+	Name Memory
+	blah 5     
+	foo  10    
+	     15 G  
+	EOF
+	assert_file "${expected}" "${outfile}"
+}
+
+{
+	display_setup "%%-%ds %%-%ds %%-%ds" "-k2,2V -k1,1d"
+	display_add "Name" "Mem" "Blah"
+	display_add "foo" "10" "0"
+	display_add "blah" "5" "0"
+	display_footer "" "15 GiB" "0"
+	outfile=$(mktemp -t outfile)
+	display_output > "${outfile}"
+	expected=$(mktemp -t expected)
+	cat > "${expected}" <<-EOF
+	Name Mem    Blah
+	blah 5      0   
+	foo  10     0   
+	     15 GiB 0   
+	EOF
+	assert_file "${expected}" "${outfile}"
+}
+
+{
 	display_setup "%%-%ds %%-%ds" "-k2,2V -k1,1d"
 	display_add "Name" "Release"
 	display_add "" "11.2-RELEASE-p1"
