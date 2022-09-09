@@ -32,16 +32,23 @@ display_setup() {
 }
 
 display_add() {
-	local arg
+	local arg line tab
 
-	# Add in newline
-	[ -n "${_DISPLAY_DATA}" ] && \
-	    _DISPLAY_DATA="${_DISPLAY_DATA}
-"
-	# Quote all arguments
+	unset line
+	tab=$'\t'
+	# Ensure blank arguments and spaced-arguments are respected.
+	# This is mostly to deal with sorting later
 	for arg do
-		_DISPLAY_DATA="${_DISPLAY_DATA} '${arg}'"
+		if [ -z "${arg}" ]; then
+			arg=" "
+		fi
+		line="${line:+${line}${tab}}${arg}"
 	done
+	# Add in newline
+	if [ -n "${_DISPLAY_DATA}" ]; then
+		_DISPLAY_DATA="${_DISPLAY_DATA}"$'\n'
+	fi
+	_DISPLAY_DATA="${_DISPLAY_DATA:+${_DISPLAY_DATA}}${line}"
 	return 0
 }
 
@@ -77,7 +84,9 @@ display_output() {
 			fi
 			header="${line}"
 		fi
-		eval "set -- ${line}"
+		IFS=$'\t'
+		set -- ${line}
+		unset IFS
 		cnt=0
 		for arg in "$@"; do
 			hash_get lengths ${cnt} max_length || max_length=0
@@ -123,15 +132,19 @@ display_output() {
 	if [ "${quiet}" -eq 0 ]; then
 		stripansi "${header}" header
 		stripansi "${format}" header_format
-		eval "set -- ${header}"
+		IFS=$'\t'
+		set -- ${header}
+		unset IFS
 		printf "${header_format}\n" "$@"
 	fi
 
 	# Sort as configured in display_setup()
 	echo "${_DISPLAY_DATA}" | tail -n +2 | \
-	    sort ${_DISPLAY_COLUMN_SORT} | \
+	    sort -t $'\t' ${_DISPLAY_COLUMN_SORT} | \
 	    while mapfile_read_loop_redir line; do
-		eval "set -- ${line}"
+		IFS=$'\t'
+		set -- ${line}
+		unset IFS
 		printf "${format}\n" "$@"
 	done
 
