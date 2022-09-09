@@ -94,7 +94,7 @@ list_jail() {
 
 	if [ ${NAMEONLY} -eq 0 ]; then
 		format='%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%s'
-		display_setup "${format}" "-d -k2,2 -k3,3 -k1,1"
+		display_setup "${format}" "-d -k2,2V -k3,3 -k1,1"
 		display_add "JAILNAME" "VERSION" "ARCH" "METHOD" \
 		    "TIMESTAMP" "PATH"
 	else
