@@ -25,7 +25,7 @@
 # SUCH DAMAGE.
 
 display_setup() {
-	[ $# -ge 1 ] || eargs display_setup format [column_sort]
+	[ $# -eq 1 ] || [ $# -eq 2 ] || eargs display_setup format [column_sort]
 	_DISPLAY_DATA=
 	_DISPLAY_FORMAT="$1"
 	_DISPLAY_COLUMN_SORT="${2-}"
