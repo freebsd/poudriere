@@ -65,20 +65,32 @@ decode_args() {
 	local -; set +x
 	[ $# -eq 1 ] || eargs decode_args encoded_args_var
 	local encoded_args_var="$1"
+	local _decode_args
 
-	# oldIFS="${IFS}"; IFS="${ENCODE_SEP}"; set -- ${data}; IFS="${oldIFS}"; unset oldIFS
-	echo "\
-		local IFS 2>/dev/null || :; \
-		case \$- in *f*) set_f=1 ;; *) set_f=0 ;; esac; \
-		[ \"\${set_f}\" -eq 0 ] && set -f; \
-		IFS=\"\${ENCODE_SEP}\"; \
-		set -- \${${encoded_args_var}}; \
-		unset IFS; \
-		[ \"\${set_f}\" -eq 0 ] && set +f; \
-		unset set_f; \
-		"
+	_decode_args _decode_args "${encoded_args_var}"
+	echo "${_decode_args}"
 }
 
+# Decode data from encode_args without a fork
+# Usage: _decode_args evalstr data_var_name; eval "${evalstr}"; unset evalstr
+_decode_args() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs decode_args var_return_eval encoded_args_var
+	local var_return_eval="$1"
+	local encoded_args_var="$2"
+
+	# local -; set -f; IFS="${ENCODE_SEP}"; set -- ${data}; unset IFS
+	setvar "${var_return_eval}" "
+		local IFS 2>/dev/null || :;
+		case \$- in *f*) set_f=1 ;; *) set_f=0 ;; esac;
+		[ \"\${set_f}\" -eq 0 ] && set -f;
+		IFS=\"\${ENCODE_SEP}\";
+		set -- \${${encoded_args_var}};
+		unset IFS;
+		[ \"\${set_f}\" -eq 0 ] && set +f;
+		unset set_f;
+		"
+}
 
 # Decode data from encode_args
 decode_args_vars() {

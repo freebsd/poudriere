@@ -121,7 +121,8 @@ assert "" "$2" "decode 3 trailing arguments x argument 2"
 assert "" "$3" "decode 3 trailing arguments x argument 3"
 assert "x" "$4" "decode 3 trailing arguments x argument 4"
 set -- bad bad bad bad bad
-eval "$(decode_args data)"
+_decode_args _decode_args data
+eval "${_decode_args}"
 assert 4 $# "decode 3 trailing arguments x argcnt"
 assert "1" "$1" "decode 3 trailing arguments x argument 1"
 assert "" "$2" "decode 3 trailing arguments x argument 2"
