@@ -97,7 +97,7 @@ decode_args_vars() {
 	local -; set +x -f
 	[ $# -ge 2 ] || eargs decode_args_vars data var1 [var2... varN]
 	local encoded_args_data="$1"
-	local _value _var _vars IFS
+	local _value _var IFS
 	shift
 	local _vars="$*"
 
@@ -105,15 +105,21 @@ decode_args_vars() {
 	set -- ${encoded_args_data}
 	unset IFS
 	for _value; do
+		# Select the next var to populate.
 		_var="${_vars%% *}"
-		_vars="${_vars#${_var} }"
-		if [ "${_var}" = "${_vars}" ]; then
+		case "${_vars}" in
+		# Last one - set all remaining to here
+		${_var})
 			setvar "${_var}" "$*"
 			break
-		else
+			;;
+		*)
 			setvar "${_var}" "${_value}"
-		fi
-		shift
+			# Pop off the var
+			_vars="${_vars#${_var} }"
+			shift
+			;;
+		esac
 	done
 }
 

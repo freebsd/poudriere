@@ -109,6 +109,16 @@ assert "1" "$1" "decode 3 trailing arguments argument 1"
 assert "" "$2" "decode 3 trailing arguments argument 2"
 assert "" "$3" "decode 3 trailing arguments argument 3"
 assert "" "$4" "decode 3 trailing arguments argument 4"
+one=bad
+two=bad
+three=bad
+four=bad
+decode_args_vars "${data}" one two three four
+assert 0 "$?" "decode_args_vars"
+assert "1" "$one" "decode 2 argument argument 1"
+assert "" "$two" "decode 2 argument argument 2"
+assert "" "$three" "decode 2 argument argument 3"
+assert "" "$four" "decode 2 argument argument 4"
 
 # Test trailing empty arguments with data
 encode_args data "1" "" "" "x"
@@ -157,6 +167,11 @@ assert "1" "$one" "decode 3 trailing arguments x argument 1"
 assert "*" "$two" "decode 3 trailing arguments x argument 2"
 assert " * " "$three" "decode 3 trailing arguments x argument 3"
 assert " 4" "$four" "decode 3 trailing arguments x argument 4"
+
+decode_args_vars "${data}" one two
+assert 0 "$?" "decode_args_vars"
+assert "1" "$one" "decode 3 trailing arguments x argument 1"
+assert "*  *   4" "$two" "decode 3 trailing arguments x argument 2"
 
 # Test parsing safety
 
