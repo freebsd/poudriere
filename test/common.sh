@@ -160,7 +160,7 @@ aecho() {
 		local INDENT
 		shift 4
 		INDENT=">>   "
-		printf "> %-4s %s: %s\n${INDENT}expected '%s'\n${INDENT}actual '%s'\n" \
+		printf "> %-4s %s: %s\n${INDENT}expected '%s'\n${INDENT}actual   '%s'\n" \
 			"${result}" "${lineinfo}" \
 			"$(echo "$@" | cat -ev | sed '2,$s,^,	,')" \
 			"$(echo "${expected}" | cat -ev | sed '2,$s,^,	,')" \
