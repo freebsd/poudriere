@@ -43,20 +43,20 @@ encode_args() {
 	[ $# -ge 1 ] || eargs encode_args var_return [args]
 	local var_return="$1"
 	shift
-	local _args lastempty
+	local _args IFS
 
-	_args=
-	lastempty=0
-	while [ "$#" -gt 0 ]; do
-		_args="${_args}${_args:+${ENCODE_SEP}}${1}"
-		[ "$#" -eq 1 -a -z "$1" ] && lastempty=1
-		shift
-	done
-	# If the string ends in ENCODE_SEP then add another to
-	# fix 'set' later eating it.
-	[ "${lastempty}" -eq 1 ] && _args="${_args}${_args:+${ENCODE_SEP}}"
-
-	setvar "${var_return}" "${_args}"
+	IFS="${ENCODE_SEP}"
+	_args="$@"
+	unset IFS
+	# Trailing empty fields need special handling.
+	case "${_args}" in
+	*"${ENCODE_SEP}")
+		setvar "${var_return}" "${_args}${ENCODE_SEP}"
+		;;
+	*)
+		setvar "${var_return}" "${_args}"
+		;;
+	esac
 }
 
 # Decode data from encode_args
