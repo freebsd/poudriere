@@ -74,6 +74,9 @@ display_output() {
 	local cnt lengths length format arg flag quiet line n
 	local header header_format
 	local OPTIND=1
+	local -
+
+	set -f
 
 	quiet=0
 
