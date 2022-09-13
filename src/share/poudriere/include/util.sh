@@ -60,7 +60,7 @@ encode_args() {
 }
 
 # Decode data from encode_args
-# Usage: eval $(decode_args data_var_name)
+# Usage: eval "$(decode_args data_var_name)"
 decode_args() {
 	local -; set +x
 	[ $# -eq 1 ] || eargs decode_args encoded_args_var
