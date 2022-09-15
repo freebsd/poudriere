@@ -28,6 +28,7 @@ EX_DATAERR=65
 EX_SOFTWARE=70
 
 DISPLAY_SEP=$'\002'
+DISPLAY_USE_COLUMN=0
 DISPLAY_DYNAMIC_FORMAT_DEFAULT="%%-%ds"
 DISPLAY_TRIM_TRAILING_FIELD=1
 
@@ -49,6 +50,13 @@ display_setup() {
 	IFS="${DISPLAY_SEP}"
 	_DISPLAY_FORMAT="$@"
 	unset IFS
+}
+
+_display_cleanup() {
+	unset _DISPLAY_DATA _DISPLAY_FORMAT \
+	    _DISPLAY_COLUMN_SORT \
+	    _DISPLAY_LINES _DISPLAY_COLS \
+	    _DISPLAY_FOOTER _DISPLAY_HEADER
 }
 
 display_add() {
@@ -213,6 +221,20 @@ display_output() {
 			sort -t "${DISPLAY_SEP}" ${_DISPLAY_COLUMN_SORT})"
 	fi
 
+	if [ "${DISPLAY_USE_COLUMN}" -eq 1 ]; then
+		{
+			if [ "${quiet}" -eq 0 ]; then
+				echo "${_DISPLAY_HEADER}"
+			fi
+			echo "${_DISPLAY_DATA}"
+			if [ -n "${_DISPLAY_FOOTER}" ]; then
+				echo "${_DISPLAY_FOOTER}"
+			fi
+		} | column -t -s "${DISPLAY_SEP}"
+		_display_cleanup
+		return
+	fi
+
 	# Determine optimal format from filtered data
 	_display_check_lengths "${_DISPLAY_HEADER}"
 	_display_check_lengths "${_DISPLAY_FOOTER}"
@@ -292,9 +314,5 @@ display_output() {
 		unset IFS
 		printf "${format}\n" "$@"
 	fi
-
-	unset _DISPLAY_DATA _DISPLAY_FORMAT \
-	    _DISPLAY_COLUMN_SORT \
-	    _DISPLAY_LINES _DISPLAY_COLS \
-	    _DISPLAY_FOOTER _DISPLAY_HEADER
+	_display_cleanup
 }

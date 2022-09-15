@@ -84,6 +84,75 @@ alias assert_file='_assert_file "$0:$LINENO"'
 	assert_file "${expected}" "${outfile}"
 }
 
+{
+	# Basic test
+	old="${DISPLAY_USE_COLUMN}"
+	DISPLAY_USE_COLUMN=1
+	display_setup "%%-%ds %%-%ds" "-k2,2V -k1,1d"
+	display_add "Name" "Release"
+	display_add "blah" "11.2-RELEASE-p1"
+	display_add "blah" "10.0-RELEASE"
+	display_add "blah" "10.2-RELEASE"
+	display_add "blah" "10.2-RELEASE-p10"
+	display_add "blah2" "10.2-RELEASE-p1"
+	display_add "blah" "10.2-RELEASE-p1"
+	display_add "blah" "9.3-RELEASE-p10"
+	display_add "blah" "9.3-RELEASE-p1"
+	display_add "blah" "8.2-RELEASE-p1"
+	outfile=$(mktemp -t outfile)
+	display_output > "${outfile}"
+	expected=$(mktemp -t expected)
+	cat > "${expected}" <<-EOF
+	Name   Release
+	blah   8.2-RELEASE-p1
+	blah   9.3-RELEASE-p1
+	blah   9.3-RELEASE-p10
+	blah   10.0-RELEASE
+	blah   10.2-RELEASE
+	blah   10.2-RELEASE-p1
+	blah2  10.2-RELEASE-p1
+	blah   10.2-RELEASE-p10
+	blah   11.2-RELEASE-p1
+	EOF
+	assert_file "${expected}" "${outfile}"
+	DISPLAY_USE_COLUMN="${old}"
+}
+
+{
+	# Basic test
+	old="${DISPLAY_USE_COLUMN}"
+	DISPLAY_USE_COLUMN=1
+	display_setup "%%-%ds %%-%ds" "-k2,2V -k1,1d"
+	display_add "Name" "Release"
+	display_add "blah" "11.2-RELEASE-p1"
+	display_add "blah" "10.0-RELEASE"
+	display_add "blah" "10.2-RELEASE"
+	display_add "blah" "10.2-RELEASE-p10"
+	display_add "blah2" "10.2-RELEASE-p1"
+	display_add "blah" "10.2-RELEASE-p1"
+	display_add "blah" "9.3-RELEASE-p10"
+	display_add "blah" "9.3-RELEASE-p1"
+	display_add "blah" "8.2-RELEASE-p1"
+	outfile=$(mktemp -t outfile)
+	display_output "Name" "Release" > "${outfile}"
+	expected=$(mktemp -t expected)
+	cat > "${expected}" <<-EOF
+	Name   Release
+	blah   8.2-RELEASE-p1
+	blah   9.3-RELEASE-p1
+	blah   9.3-RELEASE-p10
+	blah   10.0-RELEASE
+	blah   10.2-RELEASE
+	blah   10.2-RELEASE-p1
+	blah2  10.2-RELEASE-p1
+	blah   10.2-RELEASE-p10
+	blah   11.2-RELEASE-p1
+	EOF
+	assert_file "${expected}" "${outfile}"
+	DISPLAY_USE_COLUMN="${old}"
+}
+
+{
 	# Basic test without trimming trailing field
 	old="${DISPLAY_TRIM_TRAILING_FIELD}"
 	DISPLAY_TRIM_TRAILING_FIELD=0
