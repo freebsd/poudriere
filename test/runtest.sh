@@ -5,6 +5,8 @@ TEST=$(realpath "$1")
 : ${am_check:=0}
 : ${am_installcheck:=0}
 
+PATH="/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/sbin:/usr/local/bin:${PATH}"
+
 if [ "${am_check}" -eq 1 ] &&
 	[ "${am_installcheck}" -eq 0 ]; then
 	LIBEXECPREFIX="${abs_top_builddir}"
