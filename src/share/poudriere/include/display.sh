@@ -37,13 +37,17 @@ display_setup() {
 	local IFS
 	local -; set -f
 
-	_DISPLAY_DATA=
 	_DISPLAY_FORMAT="${1:-dynamic}"
 	_DISPLAY_HEADER=
 	_DISPLAY_COLUMN_SORT="${2-}"
 	_DISPLAY_FOOTER=
 	_DISPLAY_LINES=0
 	_DISPLAY_COLS=0
+	_DISPLAY_MAPFILE=
+	_DISPLAY_TMP=$(mktemp -t data)
+
+	mapfile _DISPLAY_MAPFILE "${_DISPLAY_TMP}" "w" ||
+	    err ${EX_SOFTWARE} "mapfile"
 
 	# encode
 	set -- ${_DISPLAY_FORMAT}
@@ -53,10 +57,12 @@ display_setup() {
 }
 
 _display_cleanup() {
-	unset _DISPLAY_DATA _DISPLAY_FORMAT \
+	rm -f "${_DISPLAY_TMP}" "${_DISPLAY_TMP}.filtered"
+	unset _DISPLAY_FORMAT \
 	    _DISPLAY_COLUMN_SORT \
 	    _DISPLAY_LINES _DISPLAY_COLS \
-	    _DISPLAY_FOOTER _DISPLAY_HEADER
+	    _DISPLAY_FOOTER _DISPLAY_HEADER \
+	    _DISPLAY_MAPFILE _DISPLAY_TMP
 }
 
 display_add() {
@@ -97,14 +103,13 @@ display_add() {
 	fi
 
 	# Add in newline
-	if [ -n "${_DISPLAY_DATA-}" ]; then
-		_DISPLAY_DATA="${_DISPLAY_DATA}"$'\n'
-	fi
 	_DISPLAY_LINES=$((_DISPLAY_LINES + 1))
 	# encode
 	IFS="${DISPLAY_SEP}"
-	_DISPLAY_DATA="${_DISPLAY_DATA:+${_DISPLAY_DATA}}""$@"
+	line="$@"
 	unset IFS
+	mapfile_write "${_DISPLAY_MAPFILE}" "${line}" ||
+	    err ${EX_SOFTWARE} "mapfile_write"
 }
 
 display_footer() {
@@ -165,12 +170,17 @@ display_output() {
 
 	shift $((OPTIND-1))
 
+	mapfile_close "${_DISPLAY_MAPFILE}" ||
+	    err ${EX_SOFTWARE} "mapfile_close"
+
 	# cols to filter/reorder on
 	cols=
 	if [ "$#" -gt 0 ]; then
 		local col awktmp
 
-		_DISPLAY_COLS=0
+		if [ "$#" -gt 0 ]; then
+			_DISPLAY_COLS=0
+		fi
 		for arg in "$@"; do
 			if ! hash_remove _display_header "${arg}" col; then
 				err ${EX_DATAERR:?} "No column named '${arg}'"
@@ -185,8 +195,8 @@ display_output() {
 		{
 			echo "${_DISPLAY_FORMAT}"
 			echo "${_DISPLAY_HEADER}"
-			echo "${_DISPLAY_DATA}" |
-			    sort -t "${DISPLAY_SEP}" ${_DISPLAY_COLUMN_SORT}
+			sort -t "${DISPLAY_SEP}" ${_DISPLAY_COLUMN_SORT} \
+			    "${_DISPLAY_TMP}"
 			echo "${_DISPLAY_FOOTER}"
 		} > "${awktmp}.in"
 		awk -F"${DISPLAY_SEP}" -vOFS="${DISPLAY_SEP}" \
@@ -195,7 +205,6 @@ display_output() {
 		while IFS= mapfile_read_loop "${awktmp}" line; do
 			case "${n}" in
 			-1)
-				unset _DISPLAY_DATA
 				_DISPLAY_FORMAT="${line}"
 				;;
 			0)
@@ -207,18 +216,20 @@ display_output() {
 				fi
 				;;
 			*)
-				if [ -n "${_DISPLAY_DATA-}" ]; then
-					_DISPLAY_DATA="${_DISPLAY_DATA}"$'\n'
+				echo "${line}"
+				if [ "${DISPLAY_USE_COLUMN}" -eq 0 ]; then
+					_display_check_lengths "${line}"
 				fi
-				_DISPLAY_DATA="${_DISPLAY_DATA:+${_DISPLAY_DATA}}${line}"
 				;;
 			esac
 			n=$((n + 1))
-		done
+		done > "${_DISPLAY_TMP}.filtered"
 		rm -f "${awktmp}" "${awktmp}.in"
 	else
-		_DISPLAY_DATA="$(echo "${_DISPLAY_DATA}" |
-			sort -t "${DISPLAY_SEP}" ${_DISPLAY_COLUMN_SORT})"
+		# using > rather than -o skips vfork which can't handle
+		# redirects
+		sort -t "${DISPLAY_SEP}" ${_DISPLAY_COLUMN_SORT} \
+		    -o "${_DISPLAY_TMP}.filtered" "${_DISPLAY_TMP}"
 	fi
 
 	if [ "${DISPLAY_USE_COLUMN}" -eq 1 ]; then
@@ -226,7 +237,7 @@ display_output() {
 			if [ "${quiet}" -eq 0 ]; then
 				echo "${_DISPLAY_HEADER}"
 			fi
-			echo "${_DISPLAY_DATA}"
+			mapfile_cat "${_DISPLAY_TMP}.filtered"
 			if [ -n "${_DISPLAY_FOOTER}" ]; then
 				echo "${_DISPLAY_FOOTER}"
 			fi
@@ -238,11 +249,11 @@ display_output() {
 	# Determine optimal format from filtered data
 	_display_check_lengths "${_DISPLAY_HEADER}"
 	_display_check_lengths "${_DISPLAY_FOOTER}"
-	while IFS= mapfile_read_loop_redir line; do
-		_display_check_lengths "${line}"
-	done <<-EOF
-	${_DISPLAY_DATA}
-	EOF
+	if [ -z "${cols}" ]; then
+		while IFS= mapfile_read_loop "${_DISPLAY_TMP}.filtered" line; do
+			_display_check_lengths "${line}"
+		done
+	fi
 
 	# Set format lengths if format is dynamic width
 	# decode
@@ -296,15 +307,13 @@ display_output() {
 	fi
 
 	# Data
-	while IFS= mapfile_read_loop_redir line; do
+	while IFS= mapfile_read_loop "${_DISPLAY_TMP}.filtered" line; do
 		# decode
 		IFS="${DISPLAY_SEP}"
 		set -- ${line}
 		unset IFS
 		printf "${format}\n" "$@"
-	done <<-EOF
-	${_DISPLAY_DATA}
-	EOF
+	done
 
 	# Footer
 	if [ -n "${_DISPLAY_FOOTER}" ]; then
