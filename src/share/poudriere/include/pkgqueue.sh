@@ -453,7 +453,7 @@ pkgqueue_find_dead_packages() {
 	dead_top=$(mktemp -t dead_packages.top)
 	find deps -mindepth 2 > "${dead_all}"
 	# All packages in the queue
-	cut -d / -f 3 "${dead_all}" | sort -u > "${dead_top}"
+	cut -d / -f 3 "${dead_all}" | sort -u -o "${dead_top}"
 	# All packages with dependencies
 	cut -d / -f 4 "${dead_all}" | sort -u | sed -e '/^$/d' > "${dead_deps}"
 	# Find all packages only listed as dependencies (not in queue)
@@ -535,7 +535,7 @@ pkgqueue_trim_orphaned_build_deps() {
 			fi
 		done
 	} | pkgqueue_list_deps_pipe > "${tmp}"
-	pkgqueue_list | sort > "${tmp}.actual"
+	pkgqueue_list | sort -o "${tmp}.actual"
 	comm -13 "${tmp}" "${tmp}.actual" | pkgqueue_remove_many_pipe
 	rm -f "${tmp}" "${tmp}.actual"
 }

@@ -4549,9 +4549,9 @@ build_port() {
 				done
 			fi
 
-			sort ${add} > ${add1}
-			sort ${del} > ${del1}
-			sort ${mod} > ${mod1}
+			sort "${add}" -o "${add1}"
+			sort "${del}" -o "${del1}"
+			sort "${mod}" -o "${mod1}"
 			comm -12 ${add1} ${del1} >> ${mod1}
 			comm -23 ${add1} ${del1} > ${add}
 			comm -13 ${add1} ${del1} > ${del}
@@ -7270,7 +7270,7 @@ compute_deps() {
 	fi
 
 	sort -u "${MASTER_DATADIR}/pkg_deps.unsorted" \
-	    > "${MASTER_DATADIR}/pkg_deps"
+	    -o "${MASTER_DATADIR}/pkg_deps"
 	unlink "${MASTER_DATADIR}/pkg_deps.unsorted"
 
 	bset status "computingrdeps:"
