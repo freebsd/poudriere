@@ -145,6 +145,20 @@ _display_check_lengths() {
 	done
 }
 
+_display_output() {
+	[ $# -eq 2 ] || eargs _display_output format data
+	local -; set -f
+	local format="$1"
+	local data="$2"
+	local IFS
+
+	# decode
+	IFS="${DISPLAY_SEP}"
+	set -- ${data}
+	unset IFS
+	printf "${format}\n" "$@"
+}
+
 # display_output [col ...]
 display_output() {
 	local lengths format arg flag quiet line n
@@ -299,29 +313,17 @@ display_output() {
 	if [ "${quiet}" -eq 0 ]; then
 		stripansi "${_DISPLAY_HEADER}" _DISPLAY_HEADER
 		stripansi "${format}" header_format
-		# decode
-		IFS="${DISPLAY_SEP}"
-		set -- ${_DISPLAY_HEADER}
-		unset IFS
-		printf "${header_format}\n" "$@"
+		_display_output "${header_format}" "${_DISPLAY_HEADER}"
 	fi
 
 	# Data
 	while IFS= mapfile_read_loop "${_DISPLAY_TMP}.filtered" line; do
-		# decode
-		IFS="${DISPLAY_SEP}"
-		set -- ${line}
-		unset IFS
-		printf "${format}\n" "$@"
+		_display_output "${format}" "${line}"
 	done
 
 	# Footer
 	if [ -n "${_DISPLAY_FOOTER}" ]; then
-		# decode
-		IFS="${DISPLAY_SEP}"
-		set -- ${_DISPLAY_FOOTER}
-		unset IFS
-		printf "${format}\n" "$@"
+		_display_output "${format}" "${_DISPLAY_FOOTER}"
 	fi
 	_display_cleanup
 }
