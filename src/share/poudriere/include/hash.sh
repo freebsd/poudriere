@@ -119,11 +119,11 @@ _hash_var_name() {
 hash_isset() {
 	local -; set +x
 	[ $# -ne 2 ] && eargs hash_isset var key
-	local var="$1"
-	local key="$2"
+	local _var="$1"
+	local _key="$2"
 	local _hash_var_name
 
-	_hash_var_name "${var}" "${key}"
+	_hash_var_name "${_var}" "${_key}"
 	issetvar "${_hash_var_name}"
 }
 
@@ -133,14 +133,14 @@ hash_isset_var() {
 	local _var="$1"
 	local _line _hash_var_name ret IFS
 
-	_hash_var_name "${var}" ""
+	_hash_var_name "${_var}" ""
 	ret=1
-	while IFS= mapfile_read_loop_redir line; do
+	while IFS= mapfile_read_loop_redir _line; do
 		# XXX: mapfile_read_loop can't safely return/break
 		if [ "${ret}" -eq 0 ]; then
 			continue
 		fi
-		case "${line}" in
+		case "${_line}" in
 		${_hash_var_name}*=*)
 			ret=0
 			;;
@@ -155,35 +155,35 @@ hash_isset_var() {
 hash_get() {
 	local -; set +x
 	[ $# -ne 3 ] && eargs hash_get var key var_return
-	local var="$1"
-	local key="$2"
+	local _var="$1"
+	local _key="$2"
 	local _hash_var_name
 
-	_hash_var_name "${var}" "${key}"
+	_hash_var_name "${_var}" "${_key}"
 	getvar "${_hash_var_name}" "${3}"
 }
 
 hash_set() {
 	local -; set +x
 	[ $# -eq 3 ] || eargs hash_set var key value
-	local var="$1"
-	local key="$2"
-	local value="$3"
+	local _var="$1"
+	local _key="$2"
+	local _value="$3"
 	local _hash_var_name
 
-	_hash_var_name "${var}" "${key}"
-	setvar "${_hash_var_name}" "${value}"
+	_hash_var_name "${_var}" "${_key}"
+	setvar "${_hash_var_name}" "${_value}"
 }
 
 hash_remove() {
 	local -; set +x
 	[ $# -ne 3 ] && eargs hash_remove var key var_return
-	local var="$1"
-	local key="$2"
+	local _var="$1"
+	local _key="$2"
 	local var_return="$3"
 	local _hash_var_name ret
 
-	_hash_var_name "${var}" "${key}"
+	_hash_var_name "${_var}" "${_key}"
 	ret=0
 	getvar "${_hash_var_name}" "${var_return}" || ret=$?
 	if [ ${ret} -eq 0 ]; then
@@ -195,28 +195,28 @@ hash_remove() {
 hash_unset() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs hash_unset var key
-	local var="$1"
-	local key="$2"
+	local _var="$1"
+	local _key="$2"
 	local _hash_var_name
 
-	_hash_var_name "${var}" "${key}"
+	_hash_var_name "${_var}" "${_key}"
 	unset "${_hash_var_name}"
 }
 
 hash_unset_var() {
 	local -; set +x
 	[ $# -eq 1 ] || eargs hash_unset_var var
-	local var="$1"
-	local key line _hash_var_name
+	local _var="$1"
+	local _key _line _hash_var_name
 
-	_hash_var_name "${var}" ""
-	while IFS= mapfile_read_loop_redir line; do
-		case "${line}" in
+	_hash_var_name "${_var}" ""
+	while IFS= mapfile_read_loop_redir _line; do
+		case "${_line}" in
 		${_hash_var_name}*=*) ;;
 		*) continue ;;
 		esac
-		key="${line%%=*}"
-		unset "${key}"
+		_key="${_line%%=*}"
+		unset "${_key}"
 	done <<-EOF
 	$(set)
 	EOF
@@ -225,39 +225,39 @@ hash_unset_var() {
 list_contains() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs list_contains var item
-	local var="$1"
+	local _var="$1"
 	local item="$2"
-	local value
+	local _value
 
-	getvar "${var}" value || value=
-	case " ${value} " in *" ${item} "*) ;; *) return 1 ;; esac
+	getvar "${_var}" _value || _value=
+	case " ${_value} " in *" ${item} "*) ;; *) return 1 ;; esac
 	return 0
 }
 
 list_add() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs list_add var item
-	local var="$1"
+	local _var="$1"
 	local item="$2"
-	local value
+	local _value
 
-	getvar "${var}" value || value=
-	case " ${value} " in *" ${item} "*) return 0 ;; esac
-	setvar "${var}" "${value:+${value} }${item}"
+	getvar "${_var}" _value || _value=
+	case " ${_value} " in *" ${item} "*) return 0 ;; esac
+	setvar "${_var}" "${_value:+${_value} }${item}"
 }
 
 list_remove() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs list_remove var item
-	local var="$1"
+	local _var="$1"
 	local item="$2"
-	local value newvalue
+	local _value newvalue
 
-	getvar "${var}" value || value=
-	value=" ${value} "
-	case "${value}" in *" ${item} "*) ;; *) return 1 ;; esac
-	newvalue="${value% "${item}" *} ${value##* "${item}" }"
+	getvar "${_var}" _value || _value=
+	_value=" ${_value} "
+	case "${_value}" in *" ${item} "*) ;; *) return 1 ;; esac
+	newvalue="${_value% "${item}" *} ${_value##* "${item}" }"
 	newvalue="${newvalue# }"
 	newvalue="${newvalue% }"
-	setvar "${var}" "${newvalue}"
+	setvar "${_var}" "${newvalue}"
 }
