@@ -35,6 +35,12 @@ if ! type eargs 2>/dev/null >&2; then
 	}
 fi
 
+if ! type mapfile_read_loop_redir 2>/dev/null >&2; then
+	mapfile_read_loop_redir() {
+		read -r "$@"
+	}
+fi
+
 if ! type _gsub 2>/dev/null >&2; then
 # Based on Shell Scripting Recipes - Chris F.A. Johnson (c) 2005
 # Replace a pattern without needing a subshell/exec
@@ -120,6 +126,32 @@ hash_isset() {
 	_hash_var_name "${var}" "${key}"
 	issetvar "${_hash_var_name}"
 }
+
+hash_isset_var() {
+	local -; set +x
+	[ $# -ne 1 ] && eargs hash_isset_var var
+	local _var="$1"
+	local _line _hash_var_name ret IFS
+
+	_hash_var_name "${var}" ""
+	ret=1
+	while IFS= mapfile_read_loop_redir line; do
+		# XXX: mapfile_read_loop can't safely return/break
+		if [ "${ret}" -eq 0 ]; then
+			continue
+		fi
+		case "${line}" in
+		${_hash_var_name}*=*)
+			ret=0
+			;;
+		*) continue ;;
+		esac
+	done <<-EOF
+	$(set)
+	EOF
+	return "${ret}"
+}
+
 hash_get() {
 	local -; set +x
 	[ $# -ne 3 ] && eargs hash_get var key var_return
@@ -169,6 +201,25 @@ hash_unset() {
 
 	_hash_var_name "${var}" "${key}"
 	unset "${_hash_var_name}"
+}
+
+hash_unset_var() {
+	local -; set +x
+	[ $# -eq 1 ] || eargs hash_unset_var var
+	local var="$1"
+	local key line _hash_var_name
+
+	_hash_var_name "${var}" ""
+	while IFS= mapfile_read_loop_redir line; do
+		case "${line}" in
+		${_hash_var_name}*=*) ;;
+		*) continue ;;
+		esac
+		key="${line%%=*}"
+		unset "${key}"
+	done <<-EOF
+	$(set)
+	EOF
 }
 
 list_contains() {
