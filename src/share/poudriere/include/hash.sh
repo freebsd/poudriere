@@ -107,8 +107,7 @@ fi
 
 _hash_var_name() {
 	# Replace anything not HASH_VAR_NAME_SUB_GLOB with _
-	_gsub_var_name "${HASH_VAR_NAME_PREFIX}${1}_${2}" \
-	    _hash_var_name
+	_gsub_var_name "${HASH_VAR_NAME_PREFIX}B${1}_K${2}" _hash_var_name
 }
 
 hash_isset() {
@@ -119,16 +118,16 @@ hash_isset() {
 	local _hash_var_name
 
 	_hash_var_name "${var}" "${key}"
-
 	issetvar "${_hash_var_name}"
 }
-
 hash_get() {
 	local -; set +x
 	[ $# -ne 3 ] && eargs hash_get var key var_return
+	local var="$1"
+	local key="$2"
 	local _hash_var_name
 
-	_gsub_var_name "${HASH_VAR_NAME_PREFIX}${1}_${2}" _hash_var_name
+	_hash_var_name "${var}" "${key}"
 	getvar "${_hash_var_name}" "${3}"
 }
 
@@ -141,8 +140,6 @@ hash_set() {
 	local _hash_var_name
 
 	_hash_var_name "${var}" "${key}"
-
-	# Set value in cache
 	setvar "${_hash_var_name}" "${value}"
 }
 
