@@ -798,7 +798,8 @@ mapfile_read_loop() {
 mapfile_read_loop_redir() {
 	[ $# -ge 1 ] || eargs mapfile_read_loop_redir vars
 
-	mapfile_read_loop "/dev/fd/0" "$@"
+	#mapfile_read_loop "/dev/fd/0" "$@"
+	read -r "$@"
 }
 
 # Basically an optimized loop of mapfile_read_loop_redir, or read_file

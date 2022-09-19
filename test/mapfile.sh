@@ -252,6 +252,7 @@ fi
 		echo "${n}"
 		i=$((i + 1))
 	done
+	assert 10 "${i}"
 	fds=$(procstat -f $$|wc -l)
 	echo "-" >&2
 	procstat -f $$ >&2
@@ -272,6 +273,60 @@ fi
 		echo "${n}"
 		i=$((i + 1))
 	done < "${TMP}"
+	assert 10 "${i}"
+	fds=$(procstat -f $$|wc -l)
+	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 2"
+}
+
+# Test mapfile_read_loop_redir with nested call
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -t mapfile)
+
+	jot 10 0 > "${TMP}"
+	echo inner > "${TMP}.2"
+
+	expectedfds=$(procstat -f $$|wc -l)
+	i=0
+	while mapfile_read_loop_redir n; do
+		assert "$i" "$n" "value should match 1 $i"
+		echo "${n}"
+		i=$((i + 1))
+		mapfile_read_loop_redir n < "${TMP}.2"
+		assert "$n" "inner" "nested call on stdin"
+	done < "${TMP}"
+	assert 10 "$i"
+	rm -f "${TMP}" "${TMP}.2"
+	fds=$(procstat -f $$|wc -l)
+	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 2"
+}
+
+# Test mapfile_read_loop_redir with early return
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -t mapfile)
+
+	jot 10 0 > "${TMP}"
+
+	expectedfds=$(procstat -f $$|wc -l)
+	i=0
+	while mapfile_read_loop_redir n; do
+		assert "$i" "$n" "value should match 1 $i"
+		echo "${n}"
+		i=$((i + 1))
+		if [ "${n}" -eq 5 ]; then
+			break
+		fi
+	done < "${TMP}"
+	assert 6 "${i}"
+	# This may end up reading 6 next due to reused /dev/stdin
+	i=0
+	while mapfile_read_loop_redir n; do
+		assert "$i" "$n" "value should match 1 $i"
+		echo "${n}"
+		i=$((i + 1))
+	done < "${TMP}"
+	assert 10 "$i"
 	fds=$(procstat -f $$|wc -l)
 	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 2"
 }
@@ -296,6 +351,7 @@ fi
 		i=$((i + 1))
 	done < "${TMP}"
 	fds=$(procstat -f $$|wc -l)
+	assert 10 "${i}"
 	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 3"
 }
 
@@ -318,6 +374,7 @@ fi
 		assert "$((i + 5))" "$y" "value should match 3 $((i + 5))"
 		i=$((i + 1))
 	done < "${TMP}"
+	assert 10 "$i"
 	fds=$(procstat -f $$|wc -l)
 	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 4"
 }
