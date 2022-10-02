@@ -23,6 +23,16 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+remove_altroot() {
+	[ $# -ne 1 ] && eargs remove_altroot mountpoint
+	local mountpoint altroot
+	mountpoint="$1"
+	altroot=
+	[ -n "${NO_ZFS}" ] || altroot=$(zpool get -Ho value altroot "${ZPOOL}")
+
+	echo "${mountpoint}" | sed "s,^${altroot},,"
+}
+
 createfs() {
 	[ $# -ne 3 ] && eargs createfs name mnt fs
 	local name mnt fs
@@ -37,7 +47,7 @@ createfs() {
 		if ! zfs create -p \
 			-o compression=on \
 			-o atime=off \
-			-o mountpoint=${mnt} ${fs}; then
+			-o mountpoint="$(remove_altroot ${mnt})" ${fs}; then
 			echo " fail"
 			err 1 "Failed to create FS ${fs}"
 		fi
@@ -294,7 +304,7 @@ clonefs() {
 			zfs_to=${fs}/${name}
 		fi
 
-		zfs clone -o mountpoint=${mnt} \
+		zfs clone -o mountpoint="$(remove_altroot ${mnt})" \
 			-o sync=disabled \
 			-o atime=off \
 			-o compression=off \
