@@ -586,10 +586,6 @@ function process_data_build(data) {
 	$('#jail').html(format_jailname(data.jailname));
 	$('#setname').html(format_setname(data.setname));
 	$('#ptname').html(format_ptname(data.ptname));
-	if (data.svn_url)
-		$('#svn_url').html(data.svn_url);
-	else
-		$('#svn_url').hide();
 	$('#build_info_div').show();
 
 	/* Backwards compatibility */

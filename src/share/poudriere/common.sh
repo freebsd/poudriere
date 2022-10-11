@@ -8021,16 +8021,6 @@ prepare_ports() {
 			# Link this build as the /latest
 			ln -sfh ${BUILDNAME} ${log%/*}/latest
 
-			# Record the SVN URL@REV in the build
-			if [ -d ${MASTERMNT}${PORTSDIR}/.svn ]; then
-				bset svn_url $(
-				${SVN_CMD} info ${MASTERMNT}${PORTSDIR} | awk '
-					/^URL: / {URL=substr($0, 6)}
-					/Revision: / {REVISION=substr($0, 11)}
-					END { print URL "@" REVISION }
-				')
-			fi
-
 			bset mastername "${MASTERNAME}"
 			bset jailname "${JAILNAME}"
 			bset setname "${SETNAME}"

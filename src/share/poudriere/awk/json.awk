@@ -28,8 +28,6 @@
 # common.sh build_json() for how it is used
 
 function group_type(type) {
-  if (type == "svn_url")
-    return "string"
   if (type == "setname")
     return "string"
   if (type == "ptname")
