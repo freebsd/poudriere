@@ -5120,7 +5120,7 @@ clean_pool() {
 		# should be accounted as IGNORED.
 		if [ "${clean_rdepends}" = "ignored" ] && \
 		    shash_exists pkgname-ignore "${skipped_pkgname}" && \
-		    pkgname_is_queued "${skipped_pkgname}"; then
+		    pkgname_is_listed "${skipped_pkgname}"; then
 			continue
 		fi
 		get_originspec_from_pkgname skipped_originspec "${skipped_pkgname}"
