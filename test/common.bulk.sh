@@ -30,8 +30,9 @@ cache_pkgnames() {
 	local isdep="$1"
 	local originspec="$2"
 	local origin dep_origin flavor flavors pkgname default_flavor ignore
-	local flavor_originspec ret port_flavor real_flavors
-	local LOCALBASE
+	local flavor_originspec ret port_flavor other_flavor
+	local LOCALBASE was_listed_with_flavor
+	local -; set -f
 
 	# XXX: This avoids some exists() checks of the *host* here. Need to
 	# jail this function.
@@ -107,8 +108,29 @@ cache_pkgnames() {
 		list_add IGNOREDPORTS "${originspec}"
 		return
 	fi
+	was_listed_with_flavor=0
+	if [ -n "${flavors}" ]; then
+		default_flavor="${flavors%% *}"
+		if [ "${ALL:-0}" -eq 1 ]; then
+			was_listed_with_flavor=1
+		else
+			case " ${LISTPORTS} " in
+			*" ${originspec} "*)
+				;;
+			*" ${origin}@${flavor-null} "*|\
+			*" ${origin}@${FLAVOR_ALL-null} "*)
+				was_listed_with_flavor=1
+				;;
+			esac
+		fi
+	fi
 	for dep_origin in ${pdeps}; do
 		if cache_pkgnames 1 "${dep_origin}"; then
+			if [ "${was_listed_with_flavor}" -eq 1 ] &&
+			    [ "${flavor}" != "${default_flavor}" ]; then
+				list_add IGNOREDPORTS "${originspec}"
+				continue
+			fi
 			if ! list_contains SKIPPEDPORTS "${originspec}"; then
 				list_add SKIPPEDPORTS "${originspec}"
 			fi
@@ -715,6 +737,10 @@ if [ ${ALL} -eq 1 ]; then
 	LISTPORTS="$(listed_ports | paste -s -d ' ' -)"
 fi
 LISTPORTS="$(sorted "${LISTPORTS}")"
+if [ "${FLAVOR_DEFAULT_ALL-null}" == "yes" ]; then
+	LISTPORTS="$(echo "${LISTPORTS}" | tr ' ' '\n' |
+	    sed -e 's,$,@all,' | paste -s -d ' ' -)"
+fi
 echo -n "Gathering metadata for requested ports..."
 IGNOREDPORTS=""
 SKIPPEDPORTS=""

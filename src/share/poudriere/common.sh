@@ -5119,7 +5119,7 @@ clean_pool() {
 	local pkgname=$1
 	local originspec=$2
 	local clean_rdepends="$3"
-	local origin skipped_originspec skipped_origin
+	local origin skipped_originspec skipped_origin skipped_flavor
 
 	[ -n "${MY_JOBID}" ] && bset ${MY_JOBID} status "clean_pool:"
 
@@ -5139,13 +5139,28 @@ clean_pool() {
 			continue
 		fi
 		get_originspec_from_pkgname skipped_originspec "${skipped_pkgname}"
-		originspec_decode "${skipped_originspec}" skipped_origin '' ''
-		badd ports.skipped "${skipped_originspec} ${skipped_pkgname} ${pkgname}"
-		COLOR_ARROW="${COLOR_SKIP}" \
-		    job_msg "${COLOR_SKIP}Skipping ${COLOR_PORT}${skipped_originspec} | ${skipped_pkgname}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_SKIP} ${clean_rdepends}"
-		run_hook pkgbuild skipped "${skipped_origin}" \
-		    "${skipped_pkgname}" "${origin}" \
-		    >&${OUTPUT_REDIRECTED_STDOUT:-1}
+		originspec_decode "${skipped_originspec}" skipped_origin '' \
+		    skipped_flavor
+		# If this package was listed as @all then we do not
+		# mark it as 'skipped' unless it was the default FLAVOR.
+		# This prevents bulk's exit status being a failure when a
+		# secondary FLAVOR must be skipped.
+		# Mark it ignored instead.
+		if [ "${clean_rdepends}" == "ignored" ] &&
+		    build_all_flavors "${skipped_originspec}" &&
+		    ! pkgname_flavor_is_default "${skipped_pkgname}" \
+		        "${skipped_flavor}" &&
+		    pkgname_is_listed "${skipped_pkgname}"; then
+			trim_ignored_pkg "${skipped_pkgname}" "${skipped_originspec}" "Dependent port ${originspec} | ${pkgname} ${clean_rdepends}"
+		else
+			# Normal skip handling.
+			badd ports.skipped "${skipped_originspec} ${skipped_pkgname} ${pkgname}"
+			COLOR_ARROW="${COLOR_SKIP}" \
+			    job_msg "${COLOR_SKIP}Skipping ${COLOR_PORT}${skipped_originspec} | ${skipped_pkgname}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_SKIP} ${clean_rdepends}"
+			run_hook pkgbuild skipped "${skipped_origin}" \
+			    "${skipped_pkgname}" "${origin}" \
+			    >&${OUTPUT_REDIRECTED_STDOUT:-1}
+		fi
 	done
 
 	if [ "${clean_rdepends}" != "ignored" ]; then
@@ -5408,7 +5423,7 @@ build_all_flavors() {
 	[ "${ALL}" -eq 1 ] && return 0
 	[ "${FLAVOR_DEFAULT_ALL}" = "yes" ] && return 0
 	originspec_decode "${originspec}" origin '' ''
-	shash_remove origin-flavor-all "${origin}" build_all || build_all=0
+	shash_get origin-flavor-all "${origin}" build_all || build_all=0
 	[ "${build_all}" -eq 1 ] && return 0
 
 	# bulk and testport
@@ -6599,6 +6614,22 @@ get_pkgname_from_originspec() {
 	[ "${_default_flavor}" = "${_flavor}" ] || return 1
 	# Yup, this was the default FLAVOR
 	setvar "${var_return}" "${_pkgname}"
+}
+
+pkgname_flavor_is_default() {
+	[ $# -eq 2 ] || eargs pkgname_flavor_is_default pkgname flavor
+	local pkgname="$1"
+	local flavor="$2"
+	local flavors
+	local -; set -f
+
+	shash_get pkgname-flavors "${pkgname}" flavors || flavors=
+	case "${flavor}" in
+	"${flavors}"|"${flavors} "*)
+		return 0
+		;;
+	esac
+	return 1
 }
 
 set_dep_fatal_error() {
@@ -8232,6 +8263,7 @@ prepare_ports() {
 		(
 			cd "${SHASH_VAR_PATH}"
 			for shash_bucket in \
+			    origin-flavor-all \
 			    origin-moved \
 			    pkgname-ignore \
 			    pkgname-options \

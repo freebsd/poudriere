@@ -7,6 +7,7 @@ OVERLAYS="omnibus"
 do_bulk -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 
-EXPECTED_IGNORED="misc/foo-FLAVORS-unsorted@IGNORED"
+EXPECTED_IGNORED="misc/foo-FLAVORS-unsorted@IGNORED misc/foo-dep-FLAVORS-unsorted@DEPIGNORED misc/foo-FLAVORS-unsorted@DEPIGNORED"
+EXPECTED_SKIPPED=
 
 assert_bulk_queue_and_stats
