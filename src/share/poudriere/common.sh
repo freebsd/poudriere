@@ -3323,11 +3323,11 @@ setup_makeconf() {
 
 	get_host_arch host_arch
 	# The jail may be empty for poudriere-options.
-	if [ -n "${name}" ]; then
+	if [ -n "${ARCH}" ]; then
+		arch="${ARCH}"
+	elif [ -n "${name}" ]; then
 		_jget arch "${name}" arch || \
 		    err 1 "Missing arch metadata for jail"
-	elif [ -n "${ARCH}" ]; then
-		arch="${ARCH}"
 	fi
 
 	if [ -n "${arch}" ]; then
