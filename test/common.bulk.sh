@@ -407,12 +407,8 @@ assert_counts() {
 	expected_queued=$((expected_queued + expected_ignored + expected_skipped))
 	echo "=> Asserting queued=${expected_queued} ignored=${expected_ignored} skipped=${expected_skipped}"
 
-	if [ -n "${EXPECTED_QUEUED-}" ]; then
-		read queued < "${log}/.poudriere.stats_queued"
-		assert 0 $? "${log}/.poudriere.stats_queued read should pass"
-	else
-		queued=0
-	fi
+	read queued < "${log}/.poudriere.stats_queued"
+	assert 0 $? "${log}/.poudriere.stats_queued read should pass"
 	assert "${expected_queued}" "${queued}" "queued should match"
 
 	if [ -n "${EXPECTED_IGNORED-}" ]; then
