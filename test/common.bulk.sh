@@ -242,7 +242,7 @@ assert_queued() {
 	for originspec in ${origins_expanded}; do
 		fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec}"
+		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is${dep:+ dep=${dep}} in queue"
 		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" -vdep="${dep}" '
 		    $1 == originspec && $2 == pkgname && (dep == "" || $3 == dep) {
@@ -299,7 +299,7 @@ assert_ignored() {
 	for originspec in ${origins_expanded}; do
 		fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec}"
+		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is ignored"
 		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
 		    $1 == originspec && $2 == pkgname && ($3 != "") {
@@ -350,7 +350,7 @@ assert_skipped() {
 	for originspec in ${origins_expanded}; do
 		fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
-		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec}"
+		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is skipped"
 		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
 		    $1 == originspec && $2 == pkgname {
