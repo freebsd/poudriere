@@ -302,7 +302,7 @@ assert_ignored() {
 		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec}"
 		echo "=> Asserting that ${originspec} | ${pkgname} is ignored"
 		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
-		    $1 == originspec && $2 == pkgname && ($3 == "ignored") {
+		    $1 == originspec && $2 == pkgname && ($3 != "") {
 			print "==> " $0
 			if (found == 1) {
 				# A duplicate, no good.
@@ -319,7 +319,7 @@ assert_ignored() {
 		# is in the queue.
 		cat "${tmp}" | \
 		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
-		    $1 == originspec && $2 == pkgname && $3 == "ignored" { next }
+		    $1 == originspec && $2 == pkgname && $3 != "" { next }
 		    { print }
 		' > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
