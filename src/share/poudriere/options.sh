@@ -57,7 +57,7 @@ PTNAME=default
 SETNAME=""
 PTNAME_TMP=""
 DO_RECURSE=y
-COMMAND=config-conditional
+DEFAULT_COMMAND=config-conditional
 RECURSE_COMMAND=config-recursive
 OFLAG=0
 
@@ -72,10 +72,20 @@ while getopts "a:cCj:f:o:p:nrsz:" FLAG; do
 			[ "${ARCH%.*}" = "${ARCH#*.}" ] && ARCH="${ARCH#*.}"
 			;;
 		c)
+			if [ -n "${COMMAND}" ]; then
+				msg_error "-${FLAG} is mutually exclusive with flag: -${COMMAND_FLAG}"
+				usage
+			fi
 			COMMAND=config
+			COMMAND_FLAG="${FLAG}"
 			;;
 		C)
+			if [ -n "${COMMAND}" ]; then
+				msg_error "-${FLAG} is mutually exclusive with flag: -${COMMAND_FLAG}"
+				usage
+			fi
 			COMMAND=config-conditional
+			COMMAND_FLAG="${FLAG}"
 			;;
 		j)
 			jail_exists ${OPTARG} || err 1 "No such jail: ${OPTARG}"
@@ -102,11 +112,21 @@ while getopts "a:cCj:f:o:p:nrsz:" FLAG; do
 			DO_RECURSE=
 			;;
 		r)
+			if [ -n "${COMMAND}" ]; then
+				msg_error "-${FLAG} is mutually exclusive with flag: -${COMMAND_FLAG}"
+				usage
+			fi
 			COMMAND=rmconfig
+			COMMAND_FLAG="${FLAG}"
 			RECURSE_COMMAND=rmconfig-recursive
 			;;
 		s)
+			if [ -n "${COMMAND}" ]; then
+				msg_error "-${FLAG} is mutually exclusive with flag: -${COMMAND_FLAG}"
+				usage
+			fi
 			COMMAND=showconfig
+			COMMAND_FLAG="${FLAG}"
 			RECURSE_COMMAND=showconfig-recursive
 			;;
 		z)
@@ -121,6 +141,8 @@ done
 
 shift $((OPTIND-1))
 post_getopts
+
+: ${COMMAND:=${DEFAULT_COMMAND}}
 
 # checking jail and architecture consistency
 if [ -n "${JAILNAME}" -a -n "${ARCH}" ]; then
