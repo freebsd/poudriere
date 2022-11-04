@@ -40,17 +40,18 @@ TESTS=\
 
 JAIL_TESTS= \
 	bulk-bad-DEPENDS_ARGS.sh \
-	bulk-ignore-listed.sh \
-	bulk-ignore-dep-skipped.sh \
-	bulk-ignore-listed-skipped-dep.sh \
-	bulk-ignore-listed-dep.sh \
-	bulk-ignore-and-skipped.sh \
+	bulk-build-self-immutable-base-nullfs.sh \
+	bulk-build-self-immutable-base-schg.sh \
+	bulk-build-self-immutable-base-yes.sh \
+	bulk-flavor-FLAVORS-misordered.sh \
 	bulk-flavor-default-dep-and-specific-listed.sh \
 	bulk-flavor-default-dep.sh \
-	bulk-flavor-FLAVORS-misordered.sh \
+	bulk-flavor-ignore-all.sh \
 	bulk-flavor-main-dep-and-default-listed.sh \
 	bulk-flavor-main-dep-and-specific-listed.sh \
 	bulk-flavor-main-dep.sh \
+	bulk-flavor-metadata-queue-ordering-multi-pass.sh \
+	bulk-flavor-metadata-queue-ordering.sh \
 	bulk-flavor-nonexistent.sh \
 	bulk-flavor-specific-dep-and-default-listed.sh \
 	bulk-flavor-specific-dep-and-default-shorthand-listed.sh \
@@ -59,20 +60,19 @@ JAIL_TESTS= \
 	bulk-flavor-specific-dep-and-main-listed_default_all_on.sh \
 	bulk-flavor-specific-dep-and-multi-listed.sh \
 	bulk-flavor-specific-dep-and-multi-no-main-listed.sh \
-	bulk-flavor-specific-dep-and-specific-listed.sh \
 	bulk-flavor-specific-dep-and-specific-listed-nonexistent.sh \
+	bulk-flavor-specific-dep-and-specific-listed.sh \
 	bulk-flavor-specific-dep-nonexistent.sh \
 	bulk-flavor-specific-dep.sh \
-	bulk-flavor-metadata-queue-ordering.sh \
-	bulk-flavor-metadata-queue-ordering-multi-pass.sh \
-	bulk-flavor-ignore-all.sh \
-	bulk-overlay-all.sh \
+	bulk-ignore-and-skipped.sh \
+	bulk-ignore-dep-skipped.sh \
+	bulk-ignore-listed-dep.sh \
+	bulk-ignore-listed-skipped-dep.sh \
+	bulk-ignore-listed.sh \
 	bulk-no-overlay-specific.sh \
+	bulk-overlay-all.sh \
 	bulk-overlay-specific.sh \
-	bulk-skipped-and-needed-dep.sh \
-	bulk-build-self-immutable-base-yes.sh \
-	bulk-build-self-immutable-base-schg.sh \
-	bulk-build-self-immutable-base-nullfs.sh
+	bulk-skipped-and-needed-dep.sh
 
 # Depend bulk tests on jail setup
 TESTS+=	prep.sh

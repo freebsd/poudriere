@@ -472,17 +472,18 @@ TESTS = builtins.sh cache.sh do_clone.sh encode_args.sh getpid.sh \
 	trap_save.sh $(JAIL_TESTS) prep.sh
 JAIL_TESTS = \
 	bulk-bad-DEPENDS_ARGS.sh \
-	bulk-ignore-listed.sh \
-	bulk-ignore-dep-skipped.sh \
-	bulk-ignore-listed-skipped-dep.sh \
-	bulk-ignore-listed-dep.sh \
-	bulk-ignore-and-skipped.sh \
+	bulk-build-self-immutable-base-nullfs.sh \
+	bulk-build-self-immutable-base-schg.sh \
+	bulk-build-self-immutable-base-yes.sh \
+	bulk-flavor-FLAVORS-misordered.sh \
 	bulk-flavor-default-dep-and-specific-listed.sh \
 	bulk-flavor-default-dep.sh \
-	bulk-flavor-FLAVORS-misordered.sh \
+	bulk-flavor-ignore-all.sh \
 	bulk-flavor-main-dep-and-default-listed.sh \
 	bulk-flavor-main-dep-and-specific-listed.sh \
 	bulk-flavor-main-dep.sh \
+	bulk-flavor-metadata-queue-ordering-multi-pass.sh \
+	bulk-flavor-metadata-queue-ordering.sh \
 	bulk-flavor-nonexistent.sh \
 	bulk-flavor-specific-dep-and-default-listed.sh \
 	bulk-flavor-specific-dep-and-default-shorthand-listed.sh \
@@ -491,20 +492,19 @@ JAIL_TESTS = \
 	bulk-flavor-specific-dep-and-main-listed_default_all_on.sh \
 	bulk-flavor-specific-dep-and-multi-listed.sh \
 	bulk-flavor-specific-dep-and-multi-no-main-listed.sh \
-	bulk-flavor-specific-dep-and-specific-listed.sh \
 	bulk-flavor-specific-dep-and-specific-listed-nonexistent.sh \
+	bulk-flavor-specific-dep-and-specific-listed.sh \
 	bulk-flavor-specific-dep-nonexistent.sh \
 	bulk-flavor-specific-dep.sh \
-	bulk-flavor-metadata-queue-ordering.sh \
-	bulk-flavor-metadata-queue-ordering-multi-pass.sh \
-	bulk-flavor-ignore-all.sh \
-	bulk-overlay-all.sh \
+	bulk-ignore-and-skipped.sh \
+	bulk-ignore-dep-skipped.sh \
+	bulk-ignore-listed-dep.sh \
+	bulk-ignore-listed-skipped-dep.sh \
+	bulk-ignore-listed.sh \
 	bulk-no-overlay-specific.sh \
+	bulk-overlay-all.sh \
 	bulk-overlay-specific.sh \
-	bulk-skipped-and-needed-dep.sh \
-	bulk-build-self-immutable-base-yes.sh \
-	bulk-build-self-immutable-base-schg.sh \
-	bulk-build-self-immutable-base-nullfs.sh
+	bulk-skipped-and-needed-dep.sh
 
 run_env = env \
 	 abs_top_builddir="$(abs_top_builddir)" \
@@ -920,37 +920,30 @@ bulk-bad-DEPENDS_ARGS.sh.log: bulk-bad-DEPENDS_ARGS.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-ignore-listed.sh.log: bulk-ignore-listed.sh
-	@p='bulk-ignore-listed.sh'; \
-	b='bulk-ignore-listed.sh'; \
+bulk-build-self-immutable-base-nullfs.sh.log: bulk-build-self-immutable-base-nullfs.sh
+	@p='bulk-build-self-immutable-base-nullfs.sh'; \
+	b='bulk-build-self-immutable-base-nullfs.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-ignore-dep-skipped.sh.log: bulk-ignore-dep-skipped.sh
-	@p='bulk-ignore-dep-skipped.sh'; \
-	b='bulk-ignore-dep-skipped.sh'; \
+bulk-build-self-immutable-base-schg.sh.log: bulk-build-self-immutable-base-schg.sh
+	@p='bulk-build-self-immutable-base-schg.sh'; \
+	b='bulk-build-self-immutable-base-schg.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-ignore-listed-skipped-dep.sh.log: bulk-ignore-listed-skipped-dep.sh
-	@p='bulk-ignore-listed-skipped-dep.sh'; \
-	b='bulk-ignore-listed-skipped-dep.sh'; \
+bulk-build-self-immutable-base-yes.sh.log: bulk-build-self-immutable-base-yes.sh
+	@p='bulk-build-self-immutable-base-yes.sh'; \
+	b='bulk-build-self-immutable-base-yes.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-ignore-listed-dep.sh.log: bulk-ignore-listed-dep.sh
-	@p='bulk-ignore-listed-dep.sh'; \
-	b='bulk-ignore-listed-dep.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-ignore-and-skipped.sh.log: bulk-ignore-and-skipped.sh
-	@p='bulk-ignore-and-skipped.sh'; \
-	b='bulk-ignore-and-skipped.sh'; \
+bulk-flavor-FLAVORS-misordered.sh.log: bulk-flavor-FLAVORS-misordered.sh
+	@p='bulk-flavor-FLAVORS-misordered.sh'; \
+	b='bulk-flavor-FLAVORS-misordered.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -969,9 +962,9 @@ bulk-flavor-default-dep.sh.log: bulk-flavor-default-dep.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-flavor-FLAVORS-misordered.sh.log: bulk-flavor-FLAVORS-misordered.sh
-	@p='bulk-flavor-FLAVORS-misordered.sh'; \
-	b='bulk-flavor-FLAVORS-misordered.sh'; \
+bulk-flavor-ignore-all.sh.log: bulk-flavor-ignore-all.sh
+	@p='bulk-flavor-ignore-all.sh'; \
+	b='bulk-flavor-ignore-all.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -993,6 +986,20 @@ bulk-flavor-main-dep-and-specific-listed.sh.log: bulk-flavor-main-dep-and-specif
 bulk-flavor-main-dep.sh.log: bulk-flavor-main-dep.sh
 	@p='bulk-flavor-main-dep.sh'; \
 	b='bulk-flavor-main-dep.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-flavor-metadata-queue-ordering-multi-pass.sh.log: bulk-flavor-metadata-queue-ordering-multi-pass.sh
+	@p='bulk-flavor-metadata-queue-ordering-multi-pass.sh'; \
+	b='bulk-flavor-metadata-queue-ordering-multi-pass.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-flavor-metadata-queue-ordering.sh.log: bulk-flavor-metadata-queue-ordering.sh
+	@p='bulk-flavor-metadata-queue-ordering.sh'; \
+	b='bulk-flavor-metadata-queue-ordering.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1053,16 +1060,16 @@ bulk-flavor-specific-dep-and-multi-no-main-listed.sh.log: bulk-flavor-specific-d
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-flavor-specific-dep-and-specific-listed.sh.log: bulk-flavor-specific-dep-and-specific-listed.sh
-	@p='bulk-flavor-specific-dep-and-specific-listed.sh'; \
-	b='bulk-flavor-specific-dep-and-specific-listed.sh'; \
+bulk-flavor-specific-dep-and-specific-listed-nonexistent.sh.log: bulk-flavor-specific-dep-and-specific-listed-nonexistent.sh
+	@p='bulk-flavor-specific-dep-and-specific-listed-nonexistent.sh'; \
+	b='bulk-flavor-specific-dep-and-specific-listed-nonexistent.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-flavor-specific-dep-and-specific-listed-nonexistent.sh.log: bulk-flavor-specific-dep-and-specific-listed-nonexistent.sh
-	@p='bulk-flavor-specific-dep-and-specific-listed-nonexistent.sh'; \
-	b='bulk-flavor-specific-dep-and-specific-listed-nonexistent.sh'; \
+bulk-flavor-specific-dep-and-specific-listed.sh.log: bulk-flavor-specific-dep-and-specific-listed.sh
+	@p='bulk-flavor-specific-dep-and-specific-listed.sh'; \
+	b='bulk-flavor-specific-dep-and-specific-listed.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1081,30 +1088,37 @@ bulk-flavor-specific-dep.sh.log: bulk-flavor-specific-dep.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-flavor-metadata-queue-ordering.sh.log: bulk-flavor-metadata-queue-ordering.sh
-	@p='bulk-flavor-metadata-queue-ordering.sh'; \
-	b='bulk-flavor-metadata-queue-ordering.sh'; \
+bulk-ignore-and-skipped.sh.log: bulk-ignore-and-skipped.sh
+	@p='bulk-ignore-and-skipped.sh'; \
+	b='bulk-ignore-and-skipped.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-flavor-metadata-queue-ordering-multi-pass.sh.log: bulk-flavor-metadata-queue-ordering-multi-pass.sh
-	@p='bulk-flavor-metadata-queue-ordering-multi-pass.sh'; \
-	b='bulk-flavor-metadata-queue-ordering-multi-pass.sh'; \
+bulk-ignore-dep-skipped.sh.log: bulk-ignore-dep-skipped.sh
+	@p='bulk-ignore-dep-skipped.sh'; \
+	b='bulk-ignore-dep-skipped.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-flavor-ignore-all.sh.log: bulk-flavor-ignore-all.sh
-	@p='bulk-flavor-ignore-all.sh'; \
-	b='bulk-flavor-ignore-all.sh'; \
+bulk-ignore-listed-dep.sh.log: bulk-ignore-listed-dep.sh
+	@p='bulk-ignore-listed-dep.sh'; \
+	b='bulk-ignore-listed-dep.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-overlay-all.sh.log: bulk-overlay-all.sh
-	@p='bulk-overlay-all.sh'; \
-	b='bulk-overlay-all.sh'; \
+bulk-ignore-listed-skipped-dep.sh.log: bulk-ignore-listed-skipped-dep.sh
+	@p='bulk-ignore-listed-skipped-dep.sh'; \
+	b='bulk-ignore-listed-skipped-dep.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-ignore-listed.sh.log: bulk-ignore-listed.sh
+	@p='bulk-ignore-listed.sh'; \
+	b='bulk-ignore-listed.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1112,6 +1126,13 @@ bulk-overlay-all.sh.log: bulk-overlay-all.sh
 bulk-no-overlay-specific.sh.log: bulk-no-overlay-specific.sh
 	@p='bulk-no-overlay-specific.sh'; \
 	b='bulk-no-overlay-specific.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-overlay-all.sh.log: bulk-overlay-all.sh
+	@p='bulk-overlay-all.sh'; \
+	b='bulk-overlay-all.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1126,27 +1147,6 @@ bulk-overlay-specific.sh.log: bulk-overlay-specific.sh
 bulk-skipped-and-needed-dep.sh.log: bulk-skipped-and-needed-dep.sh
 	@p='bulk-skipped-and-needed-dep.sh'; \
 	b='bulk-skipped-and-needed-dep.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-build-self-immutable-base-yes.sh.log: bulk-build-self-immutable-base-yes.sh
-	@p='bulk-build-self-immutable-base-yes.sh'; \
-	b='bulk-build-self-immutable-base-yes.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-build-self-immutable-base-schg.sh.log: bulk-build-self-immutable-base-schg.sh
-	@p='bulk-build-self-immutable-base-schg.sh'; \
-	b='bulk-build-self-immutable-base-schg.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-bulk-build-self-immutable-base-nullfs.sh.log: bulk-build-self-immutable-base-nullfs.sh
-	@p='bulk-build-self-immutable-base-nullfs.sh'; \
-	b='bulk-build-self-immutable-base-nullfs.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
