@@ -2896,14 +2896,21 @@ update_version_env() {
 }
 
 export_cross_env() {
-	[ $# -eq 2 ] || eargs cross_env arch version
-	local arch="$1"
-	local version="$2"
+	[ $# -eq 3 ] || eargs jailname cross_env arch version
+	local jailname="$1"
+	local arch="$2"
+	local version="$3"
+	local mnt osversion
 
 	export "UNAME_r=${version% *}"
 	export "UNAME_v=FreeBSD ${version}"
 	export "UNAME_m=${arch%.*}"
 	export "UNAME_p=${arch#*.}"
+	if _jget mnt ${JAILNAME} mnt; then
+		osversion=$(awk '/\#define __FreeBSD_version/ { print $3 }' \
+		    "${mnt}/usr/include/sys/param.h")
+		export "OSVERSION=${osversion}"
+	fi
 }
 
 unset_cross_env() {
@@ -2911,6 +2918,7 @@ unset_cross_env() {
 	unset UNAME_v
 	unset UNAME_m
 	unset UNAME_p
+	unset OSVERSION
 }
 
 jail_start() {
@@ -3337,6 +3345,13 @@ setup_makeconf() {
 			MACHINE_ARCH=${arch#*.}
 			ARCH=\${MACHINE_ARCH}
 			EOF
+			if [ -n "${name}" ]; then
+				if _jget version ${name} version; then
+					export_cross_env "${JAILNAME}" \
+					    "${arch}" \
+					    "${version}"
+				fi
+			fi
 		fi
 	fi
 
