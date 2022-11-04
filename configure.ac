@@ -2,7 +2,7 @@ AC_INIT([poudriere],[3.1.99],[https://github.com/freebsd/poudriere],[poudriere])
 AC_CONFIG_SRCDIR([configure.ac])
 AM_INIT_AUTOMAKE([1.11 foreign -Wall -Wno-portability no-dist-gzip dist-xz])
 AM_SILENT_RULES([yes])
-AC_CONFIG_HEADER(src/config.h)
+AC_CONFIG_HEADERS([src/config.h])
 
 AM_MAINTAINER_MODE([disable])
 
@@ -63,4 +63,5 @@ AC_CONFIG_FILES(Makefile)
 # for HTML files.
 AC_SUBST([INSTALL], ["${ac_cv_path_install% -c} -Cp"])
 
-AC_OUTPUT([src/etc/rc.d/poudriered])
+AC_CONFIG_FILES([src/etc/rc.d/poudriered])
+AC_OUTPUT
