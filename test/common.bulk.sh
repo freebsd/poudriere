@@ -449,6 +449,14 @@ do_bulk() {
 	    "$@"
 }
 
+sorted() {
+	if [ "$#" -eq 0 ]; then
+		echo
+		return 0
+	fi
+	echo "$@" | tr ' ' '\n' | LC_ALL=C sort | paste -s -d ' ' -
+}
+
 assert_bulk_queue_and_stats() {
 	local expanded_LISTPORTS_NOIGNORED
 	local EXPECTED_LISTPORTS_IGNORED EXPECTED_LISTPORTS_NOIGNORED
@@ -480,24 +488,26 @@ assert_bulk_queue_and_stats() {
 
 	# Assert the listed which are ignored is right
 	# This is testing the test framework
-	assert "${EXPECTED_LISTPORTS_IGNORED}" \
-		"${LISTPORTS_IGNORED-null}" \
+	assert "$(sorted ${EXPECTED_LISTPORTS_IGNORED})" \
+		"$(sorted ${LISTPORTS_IGNORED-null})" \
 		"LISTPORTS_IGNORED should match"
 
 	# Assert the non-ignored ports list is right
 	# This is testing the test framework
-	assert "${EXPECTED_LISTPORTS_NOIGNORED}" \
-		"${LISTPORTS_NOIGNORED-null}" \
+	assert "$(sorted ${EXPECTED_LISTPORTS_NOIGNORED})" \
+		"$(sorted ${LISTPORTS_NOIGNORED-null})" \
 		"LISTPORTS_NOIGNORED should match"
 
 	# Assert that IGNOREDPORTS was populated by the framework right.
 	# This is testing the test framework
-	assert "${EXPECTED_IGNORED-}" "${IGNOREDPORTS-null}" \
+	assert "$(sorted ${EXPECTED_IGNORED-})" \
+		"$(sorted ${IGNOREDPORTS-null})" \
 		"IGNOREDPORTS should match"
 
 	# Assert that skipped ports are right
 	# This is testing the test framework
-	assert "${EXPECTED_SKIPPED-}" "${SKIPPEDPORTS-null}" \
+	assert "$(sorted ${EXPECTED_SKIPPED-})" \
+		"$(sorted ${SKIPPEDPORTS-null})" \
 		"SKIPPEDPORTS should match"
 
 	### Now do tests against the output of the bulk run. ###
@@ -708,8 +718,7 @@ ALL_ORIGINS=
 if [ ${ALL} -eq 1 ]; then
 	LISTPORTS="$(listed_ports | paste -s -d ' ' -)"
 fi
-LISTPORTS="$(echo "${LISTPORTS}" | tr ' ' '\n' |
-	LC_ALL=C sort | sed '/^$/d' | paste -s -d ' ' -)"
+LISTPORTS="$(sorted "${LISTPORTS}")"
 echo -n "Gathering metadata for requested ports..."
 IGNOREDPORTS=""
 SKIPPEDPORTS=""
@@ -718,10 +727,8 @@ for origin in ${LISTPORTS}; do
 	cache_pkgnames 0 "${origin}" || :
 done
 echo " done"
-IGNOREDPORTS="$(echo "${IGNOREDPORTS}" | tr ' ' '\n' |
-	LC_ALL=C sort | sed '/^$/d' | paste -s -d ' ' -)"
-SKIPPEDPORTS="$(echo "${SKIPPEDPORTS}" | tr ' ' '\n' |
-	LC_ALL=C sort | sed '/^$/d' | paste -s -d ' ' -)"
+IGNOREDPORTS="$(sorted "${IGNOREDPORTS}")"
+SKIPPEDPORTS="$(sorted "${SKIPPEDPORTS}")"
 expand_origin_flavors "${LISTPORTS}" LISTPORTS_EXPANDED
 # Separate out IGNORED ports
 LISTPORTS_NOIGNORED="${LISTPORTS_EXPANDED}"
