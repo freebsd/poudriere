@@ -73,6 +73,8 @@ USE_TMPFS=yes
 
 # How much memory to limit jail processes to for *each builder*
 # in GiB (default: none)
+# This can also be set per PKGBASE, such as MAX_MEMORY_rust=20.
+# Package names with hyphens (-) should be replaced with underscores (_).
 #MAX_MEMORY=8
 
 # How many file descriptors to limit each jail process to (default: 1024)

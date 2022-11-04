@@ -649,6 +649,7 @@ injail() {
 
 injail_tty() {
 	local name
+	local MAX_MEMORY_BYTES
 
 	if [ "${DISALLOW_NETWORKING}" = "yes" ]; then
 	    local JNETNAME=
@@ -657,6 +658,10 @@ injail_tty() {
 	_my_name name
 	[ -n "${name}" ] || err 1 "No jail setup"
 	if [ ${JEXEC_LIMITS:-0} -eq 1 ]; then
+		unset MAX_MEMORY_BYTES
+		if [ -n "${MAX_MEMORY}" ]; then
+			MAX_MEMORY_BYTES="$((MAX_MEMORY * 1024 * 1024 * 1024))"
+		fi
 		jexec -U ${JUSER:-root} ${name}${JNETNAME:+-${JNETNAME}} \
 			${JEXEC_LIMITS+/usr/bin/limits} \
 			${MAX_MEMORY_BYTES:+-v ${MAX_MEMORY_BYTES}} \
@@ -670,7 +675,12 @@ injail_tty() {
 
 jstart() {
 	local name network
+	local MAX_MEMORY_BYTES
 
+	unset MAX_MEMORY_BYTES
+	if [ -n "${MAX_MEMORY}" ]; then
+		MAX_MEMORY_BYTES="$((MAX_MEMORY * 1024 * 1024 * 1024))"
+	fi
 	network="${localipargs}"
 
 	if [ "${RESTRICT_NETWORKING}" != "yes" ]; then
@@ -5188,9 +5198,11 @@ build_pkg() {
 
 	_gsub_var_name "${pkgname%-*}" pkgname_varname
 	eval "MAX_FILES=\${MAX_FILES_${pkgname_varname}:-${DEFAULT_MAX_FILES}}"
-	if [ -n "${MAX_MEMORY_BYTES}" -o -n "${MAX_FILES}" ]; then
+	eval "MAX_MEMORY=\${MAX_MEMORY_${pkgname_varname}:-${MAX_MEMORY:-}}"
+	if [ -n "${MAX_MEMORY}" -o -n "${MAX_FILES}" ]; then
 		JEXEC_LIMITS=1
 	fi
+	unset pkgname_varname
 	MNT_DATADIR="${mnt}/${DATADIR_NAME}"
 	add_relpath_var MNT_DATADIR
 	cd "${MNT_DATADIR}"
@@ -9066,9 +9078,6 @@ INTERACTIVE_MODE=0
 : ${LC_COLLATE:=C}
 export LC_COLLATE
 
-if [ -n "${MAX_MEMORY}" ]; then
-	MAX_MEMORY_BYTES="$((MAX_MEMORY * 1024 * 1024 * 1024))"
-fi
 : ${MAX_FILES:=1024}
 : ${DEFAULT_MAX_FILES:=${MAX_FILES}}
 : ${DEP_FATAL_ERROR_FILE:=dep_fatal_error}
