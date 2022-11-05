@@ -7476,8 +7476,9 @@ get_porttesting() {
 
 delete_stale_symlinks_and_empty_dirs() {
 	msg_n "Deleting stale symlinks..."
-	find -L ${PACKAGES} -type l \
-		-exec rm -f {} +
+	find -L ${PACKAGES} \
+	    -name logs -prune -o \
+	    \( -type l -exec rm -f {} + \)
 	echo " done"
 
 	msg_n "Deleting empty directories..."
