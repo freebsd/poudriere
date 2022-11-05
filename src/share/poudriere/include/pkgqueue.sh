@@ -528,7 +528,7 @@ pkgqueue_trim_orphaned_build_deps() {
 		# originspec-pkgname lookup may fail if it wasn't
 		# in the build queue.
 		for port in ports-mgmt/pkg ports-mgmt/pkg-devel; do
-			originspec_encode originspec "${port}" '' ''
+			originspec_encode originspec "${port}" ''
 			if shash_get originspec-pkgname "${port}" \
 			    pkgname; then
 				echo "${pkgname}"

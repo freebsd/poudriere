@@ -75,7 +75,6 @@ function originspec_decode(originspec, originspec_items) {
   split(originspec, originspec_items, "@")
   # 1 = origin
   # 2 = FLAVOR
-  # 3 = DEP_ARGS
 }
 
 function end_type() {

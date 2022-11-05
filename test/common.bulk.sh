@@ -12,7 +12,7 @@ fix_default_flavor() {
 	local var_return="$2"
 	local _origin _flavor _flavors _default_flavor
 
-	originspec_decode "${_originspec}" _origin '' _flavor
+	originspec_decode "${_originspec}" _origin _flavor
 	[ -z "${_flavor}" ] && return 0
 	hash_get origin-flavors "${_origin}" _flavors
 	_default_flavor="${_flavors%% *}"
@@ -45,12 +45,12 @@ cache_pkgnames() {
 		return ${ret}
 	fi
 
-	originspec_decode "${originspec}" origin '' flavor
+	originspec_decode "${originspec}" origin flavor
 
 	if [ "${flavor}" = "${FLAVOR_DEFAULT}" ]; then
-		originspec_encode originspec "${origin}" '' ''
+		originspec_encode originspec "${origin}" ''
 	elif [ "${flavor}" = "${FLAVOR_ALL}" ]; then
-		originspec_encode originspec "${origin}" '' ''
+		originspec_encode originspec "${origin}" ''
 	fi
 
 	port_var_fetch_originspec "${originspec}" \
@@ -67,7 +67,7 @@ cache_pkgnames() {
 		local originspec_default pkgname_default flavors_default \
 		      flavor_default tmp x
 
-		originspec_encode originspec_default "${origin}" '' ''
+		originspec_encode originspec_default "${origin}" ''
 		port_var_fetch_originspec "${originspec_default}" \
 		   PKGNAME pkgname_default \
 		   FLAVORS flavors_default \
@@ -145,7 +145,7 @@ cache_pkgnames() {
 		for flavor in ${flavors}; do
 			# Don't recurse on the first flavor since we are it.
 			[ "${flavor}" = "${default_flavor}" ] && continue
-			originspec_encode flavor_originspec "${origin}" '' "${flavor}"
+			originspec_encode flavor_originspec "${origin}" "${flavor}"
 			cache_pkgnames 0 "${flavor_originspec}" || :
 		done
 	fi
@@ -160,7 +160,7 @@ expand_origin_flavors() {
 
 	_expanded=
 	for originspec in ${origins}; do
-		originspec_decode "${originspec}" origin '' flavor
+		originspec_decode "${originspec}" origin flavor
 		hash_get origin-flavors "${origin}" flavors || flavors=
 		if [ -n "${flavor}" -a "${flavor}" != "${FLAVOR_ALL}" ] || \
 		    [ -z "${flavors}" ] || \
@@ -172,7 +172,7 @@ expand_origin_flavors() {
 		fi
 		# Add all FLAVORS in for this one
 		for flavor in ${flavors}; do
-			originspec_encode originspec "${origin}" '' "${flavor}"
+			originspec_encode originspec "${origin}" "${flavor}"
 			_expanded="${_expanded:+${_expanded} }${originspec}"
 		done
 	done
@@ -196,7 +196,7 @@ list_all_deps() {
 			*\ ${originspec}\ *) continue ;;
 		esac
 		_out="${_out:+${_out} }${originspec}"
-		originspec_decode "${originspec}" origin '' flavor
+		originspec_decode "${originspec}" origin flavor
 		flavors=
 		[ -z "${flavor}" ] && \
 		    hash_get origin-flavors "${origin}" flavors
@@ -208,7 +208,7 @@ list_all_deps() {
 			# FLAVOR-specific, it needs to be changed to
 			# depend on the default FLAVOR instead.
 			originspec_decode "${dep_originspec}" dep_origin \
-			    '' dep_flavor
+			    dep_flavor
 			if [ -z "${dep_flavor}" ]; then
 				hash_get origin-flavors \
 				    "${dep_origin}" dep_flavors || \
@@ -218,7 +218,7 @@ list_all_deps() {
 					dep_default_flavor="${dep_flavors%% *}"
 					dep_flavor="${dep_default_flavor}"
 					originspec_encode dep_originspec \
-					    "${dep_origin}" '' "${dep_flavor}"
+					    "${dep_origin}" "${dep_flavor}"
 				fi
 			fi
 
@@ -230,7 +230,7 @@ list_all_deps() {
 		if [ -n "${flavor}" ]; then
 			orig_originspec="${originspec}"
 			for flavor in ${flavors}; do
-				originspec_encode originspec "${origin}" '' \
+				originspec_encode originspec "${origin}" \
 				    "${flavor}"
 				recursed=
 				list_all_deps "${originspec}" recursed
@@ -598,10 +598,10 @@ assert_bulk_build_results() {
 		hash_get pkgname-originspec "${pkgname}" originspec ||
 			err 99 "Unable to find originspec for pkgname: ${pkgname}"
 		# Restore default flavor
-		originspec_decode "${originspec}" origin '' flavor
+		originspec_decode "${originspec}" origin flavor
 		if [ -z "${flavor}" ] &&
 			hash_get originspec_flavor "${originspec}" flavor; then
-			originspec_encode originspec "${origin}" '' \
+			originspec_encode originspec "${origin}" \
 				"${flavor}"
 		fi
 		pkg_origin=$(${PKG_BIN} query -F "${file}" '%o')

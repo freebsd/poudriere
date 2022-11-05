@@ -40,7 +40,6 @@ TESTS=\
 	$(JAIL_TESTS)
 
 JAIL_TESTS= \
-	bulk-bad-DEPENDS_ARGS.sh \
 	bulk-build-self-immutable-base-nullfs.sh \
 	bulk-build-self-immutable-base-schg.sh \
 	bulk-build-self-immutable-base-yes.sh \

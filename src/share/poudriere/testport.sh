@@ -198,11 +198,11 @@ fetch_global_port_vars || \
     err 1 "Failed to lookup global ports metadata"
 # Allow testing on virtual py3 slaves until we have FLAVORS.
 map_py_slave_port "${ORIGINSPEC}" ORIGINSPEC || :
-originspec_decode "${ORIGINSPEC}" ORIGIN DEPENDS_ARGS FLAVOR
+originspec_decode "${ORIGINSPEC}" ORIGIN FLAVOR
 # Remove excess slashes for mistakes
 ORIGIN="${ORIGIN#/}"
 ORIGIN="${ORIGIN%/}"
-originspec_encode ORIGINSPEC "${ORIGIN}" "${DEPENDS_ARGS}" "${FLAVOR}"
+originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}"
 if have_ports_feature FLAVORS; then
 	[ "${FLAVOR}" = "${FLAVOR_DEFAULT}" ] && FLAVOR=
 	[ "${FLAVOR}" = "${FLAVOR_ALL}" ] && \
@@ -217,12 +217,12 @@ if [ -n "${new_origin}" ]; then
 	msg "MOVED: ${COLOR_PORT}${ORIGIN}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
 	# The ORIGIN may have a FLAVOR in it which overrides whatever the
 	# user specified.
-	originspec_decode "${new_origin}" ORIGIN '' NEW_FLAVOR
+	originspec_decode "${new_origin}" ORIGIN NEW_FLAVOR
 	if [ -n "${NEW_FLAVOR}" ]; then
 		FLAVOR="${NEW_FLAVOR}"
 	fi
 	# Update ORIGINSPEC for the new ORIGIN
-	originspec_encode ORIGINSPEC "${ORIGIN}" "${DEPENDS_ARGS}" "${FLAVOR}"
+	originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}"
 fi
 _lookup_portdir portdir "${ORIGIN}"
 if [ "${portdir}" = "${PORTSDIR}/${ORIGIN}" ] && [ ! -f "${portsdir}/${ORIGIN}/Makefile" ] || [ -d "${portsdir}/${ORIGIN}/../Mk" ]; then
@@ -247,7 +247,7 @@ if [ $CONFIGSTR -eq 1 ]; then
 fi
 
 # deps_fetch_vars lookup for dependencies moved to prepare_ports()
-# This will set LISTPORTS/PKGNAME/DEPENDS_ARGS/FLAVOR/FLAVORS as well.
+# This will set LISTPORTS/PKGNAME/FLAVOR/FLAVORS as well.
 prepare_ports
 show_dry_run_summary
 markfs prepkg ${MASTERMNT}
@@ -304,7 +304,7 @@ if [ -d ${MASTERMNT}${PREFIX} -a "${PREFIX}" != "/usr" ]; then
 fi
 
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs PKGLATESTREPOSITORY=/tmp/pkgs/Latest"
-MAKE_ARGS="${DEPENDS_ARGS}${FLAVOR:+ FLAVOR=${FLAVOR}}"
+MAKE_ARGS="${FLAVOR:+ FLAVOR=${FLAVOR}}"
 injail install -d -o ${PORTBUILD_USER} /tmp/pkgs
 PORTTESTING=1
 export TRYBROKEN=yes

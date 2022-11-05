@@ -94,14 +94,6 @@ pkg_get_flavor() {
 	pkg_get_annotation "${var_return}" "${pkg}" 'flavor'
 }
 
-pkg_get_dep_args() {
-	[ $# -eq 2 ] || eargs pkg_get_dep_args var_return pkg
-	local var_return="$1"
-	local pkg="$2"
-
-	pkg_get_annotation "${var_return}" "${pkg}" 'dep_args'
-}
-
 pkg_get_arch() {
 	[ $# -lt 2 ] && eargs pkg_get_arch var_return pkg [arch]
 	local var_return="$1"
@@ -189,11 +181,10 @@ pkg_get_options() {
 }
 
 pkg_cache_data() {
-	[ $# -eq 4 ] || eargs pkg_cache_data pkg origin dep_args flavor
+	[ $# -eq 3 ] || eargs pkg_cache_data pkg origin flavor
 	local pkg="$1"
 	local origin="$2"
-	local dep_args="$3"
-	local flavor="$4"
+	local flavor="$3"
 	local _ignored
 
 	ensure_pkg_installed || return 1
@@ -207,7 +198,7 @@ pkg_cache_data() {
 }
 
 pkg_cacher_queue() {
-	[ $# -eq 4 ] || eargs pkg_cacher_queue origin pkgname dep_args flavor
+	[ $# -eq 3 ] || eargs pkg_cacher_queue origin pkgname flavor
 	local encoded_data
 
 	encode_args encoded_data "$@"
@@ -216,7 +207,7 @@ pkg_cacher_queue() {
 }
 
 pkg_cacher_main() {
-	local pkg work pkgname origin dep_args flavor
+	local pkg work pkgname origin flavor
 	local IFS
 
 	mkfifo ${MASTER_DATADIR}/pkg_cacher.pipe
@@ -229,11 +220,10 @@ pkg_cacher_main() {
 	while :; do
 		IFS= read -r work <&6
 		decode_args_vars "${work}" \
-			origin pkgname dep_args flavor
+			origin pkgname flavor
 		pkg="${PACKAGES}/All/${pkgname}.${PKG_EXT}"
 		if [ -f "${pkg}" ]; then
-			pkg_cache_data "${pkg}" "${origin}" "${dep_args}" \
-			    "${flavor}"
+			pkg_cache_data "${pkg}" "${origin}" "${flavor}"
 		fi
 	done
 }

@@ -308,7 +308,7 @@ pkg_compare() {
 }
 
 # Check for duplicated origins (older packages) and keep only newer ones
-# This also groups by pkgbase to respect DEPENDS_ARGS / PKGNAME uniqueness
+# This also grouped by pkgbase to respect PKGNAME uniqueness
 sort ${FOUND_ORIGINS} | awk '
 {
 	pkg = $1
