@@ -54,7 +54,7 @@ assert 2 $# "decode 2 argument argcnt"
 assert "1" "$1" "decode 2 argument argument 1"
 assert "2 3" "$2" "decode 2 argument argument 2"
 set -- bad bad bad bad bad
-eval $(decode_args data)
+eval "$(decode_args data)"
 assert 2 $# "decode 2 argument argcnt"
 assert "1" "$1" "decode 2 argument argument 1"
 assert "2 3" "$2" "decode 2 argument argument 2"
@@ -74,9 +74,23 @@ oldIFS="${IFS}"; IFS="${ENCODE_SEP}"; set -- ${data}; IFS="${oldIFS}"; unset old
 [ -f "${TMP}" ]
 assert 1 $? "decoding cmdsubst should not fire: ${TMP}"
 set -- bad bad bad bad bad
-eval $(decode_args data)
+eval "$(decode_args data)"
 [ -f "${TMP}" ]
 assert 1 $? "decoding cmdsubst should not fire: ${TMP}"
+
+# Test 1 leading empty arguments
+encode_args data "" "1"
+assert "${ENCODE_SEP}1" "${data}" "encode 1 trailing args"
+set -- bad bad bad bad bad
+oldIFS="${IFS}"; IFS="${ENCODE_SEP}"; set -- ${data}; IFS="${oldIFS}"; unset oldIFS
+assert 2 $# "decode 1 trailing arguments argcnt"
+assert "" "$1" "decode 1 trailing arguments argument 1"
+assert "1" "$2" "decode 1 trailing arguments argument 2"
+set -- bad bad bad bad bad
+eval "$(decode_args data)"
+assert 2 $# "decode 1 trailing arguments argcnt"
+assert "" "$1" "decode 1 trailing arguments argument 1"
+assert "1" "$2" "decode 1 trailing arguments argument 2"
 
 # Test 1 trailing empty arguments
 encode_args data "1" ""
@@ -87,10 +101,38 @@ assert 2 $# "decode 1 trailing arguments argcnt"
 assert "1" "$1" "decode 1 trailing arguments argument 1"
 assert "" "$2" "decode 1 trailing arguments argument 2"
 set -- bad bad bad bad bad
-eval $(decode_args data)
+eval "$(decode_args data)"
 assert 2 $# "decode 1 trailing arguments argcnt"
 assert "1" "$1" "decode 1 trailing arguments argument 1"
 assert "" "$2" "decode 1 trailing arguments argument 2"
+
+# Test leading, middle, and end empty arguments
+encode_args data "" "" "1" ""
+assert "${ENCODE_SEP}${ENCODE_SEP}1${ENCODE_SEP}${ENCODE_SEP}" "${data}" "encode 3 trailing args"
+set -- bad bad bad bad bad
+oldIFS="${IFS}"; IFS="${ENCODE_SEP}"; set -- ${data}; IFS="${oldIFS}"; unset oldIFS
+assert 4 $# "decode 3 trailing arguments argcnt"
+assert "" "$1" "decode 3 trailing arguments argument 1"
+assert "" "$2" "decode 3 trailing arguments argument 2"
+assert "1" "$3" "decode 3 trailing arguments argument 3"
+assert "" "$4" "decode 3 trailing arguments argument 4"
+set -- bad bad bad bad bad
+eval "$(decode_args data)"
+assert 4 $# "decode 3 trailing arguments argcnt"
+assert "" "$1" "decode 3 trailing arguments argument 1"
+assert "" "$2" "decode 3 trailing arguments argument 2"
+assert "1" "$3" "decode 3 trailing arguments argument 3"
+assert "" "$4" "decode 3 trailing arguments argument 4"
+one=bad
+two=bad
+three=bad
+four=bad
+decode_args_vars "${data}" one two three four
+assert 0 "$?" "decode_args_vars"
+assert "" "$one" "decode 2 argument argument 1"
+assert "" "$two" "decode 2 argument argument 2"
+assert "1" "$three" "decode 2 argument argument 3"
+assert "" "$four" "decode 2 argument argument 4"
 
 # Test trailing empty arguments
 encode_args data "1" "" "" ""
@@ -103,12 +145,22 @@ assert "" "$2" "decode 3 trailing arguments argument 2"
 assert "" "$3" "decode 3 trailing arguments argument 3"
 assert "" "$4" "decode 3 trailing arguments argument 4"
 set -- bad bad bad bad bad
-eval $(decode_args data)
+eval "$(decode_args data)"
 assert 4 $# "decode 3 trailing arguments argcnt"
 assert "1" "$1" "decode 3 trailing arguments argument 1"
 assert "" "$2" "decode 3 trailing arguments argument 2"
 assert "" "$3" "decode 3 trailing arguments argument 3"
 assert "" "$4" "decode 3 trailing arguments argument 4"
+one=bad
+two=bad
+three=bad
+four=bad
+decode_args_vars "${data}" one two three four
+assert 0 "$?" "decode_args_vars"
+assert "1" "$one" "decode 2 argument argument 1"
+assert "" "$two" "decode 2 argument argument 2"
+assert "" "$three" "decode 2 argument argument 3"
+assert "" "$four" "decode 2 argument argument 4"
 
 # Test trailing empty arguments with data
 encode_args data "1" "" "" "x"
@@ -121,7 +173,8 @@ assert "" "$2" "decode 3 trailing arguments x argument 2"
 assert "" "$3" "decode 3 trailing arguments x argument 3"
 assert "x" "$4" "decode 3 trailing arguments x argument 4"
 set -- bad bad bad bad bad
-eval $(decode_args data)
+_decode_args _decode_args data
+eval "${_decode_args}"
 assert 4 $# "decode 3 trailing arguments x argcnt"
 assert "1" "$1" "decode 3 trailing arguments x argument 1"
 assert "" "$2" "decode 3 trailing arguments x argument 2"
@@ -140,7 +193,7 @@ assert "x" "$four" "decode 3 trailing arguments x argument 4"
 
 encode_args data "1" "*" " * " " 4"
 set -- bad bad bad bad bad
-eval $(decode_args data)
+eval "$(decode_args data)"
 assert 4 $# "decode 3 trailing arguments x argcnt"
 assert "1" "$1" "decode 3 trailing arguments x argument 1"
 assert "*" "$2" "decode 3 trailing arguments x argument 2"
@@ -157,6 +210,11 @@ assert "*" "$two" "decode 3 trailing arguments x argument 2"
 assert " * " "$three" "decode 3 trailing arguments x argument 3"
 assert " 4" "$four" "decode 3 trailing arguments x argument 4"
 
+decode_args_vars "${data}" one two
+assert 0 "$?" "decode_args_vars"
+assert "1" "$one" "decode 3 trailing arguments x argument 1"
+assert "*  *   4" "$two" "decode 3 trailing arguments x argument 2"
+
 # Test parsing safety
 
 # $()
@@ -169,7 +227,7 @@ oldIFS="${IFS}"; IFS="${ENCODE_SEP}"; set -- ${data}; IFS="${oldIFS}"; unset old
 [ -f "${tmpfile}" ]
 assert_not 0 $? "File should not exist when decoded"
 set -- bad bad bad bad bad
-eval $(decode_args data)
+eval "$(decode_args data)"
 [ -f "${tmpfile}" ]
 assert_not 0 $? "File should not exist when decoded"
 

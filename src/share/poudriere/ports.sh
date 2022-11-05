@@ -193,7 +193,7 @@ fi
 case $COMMAND in
 list)
 	if [ ${NAMEONLY} -eq 0 ]; then
-		format='%%-%ds %%-%ds %%-%ds %%s\n'
+		format='%%-%ds %%-%ds %%-%ds %%-%ds\n'
 		display_setup "${format}" "-d"
 		display_add "PORTSTREE" "METHOD" "TIMESTAMP" "PATH"
 	else

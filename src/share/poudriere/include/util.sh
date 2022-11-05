@@ -43,49 +43,61 @@ encode_args() {
 	[ $# -ge 1 ] || eargs encode_args var_return [args]
 	local var_return="$1"
 	shift
-	local _args lastempty
+	local _args IFS
 
-	_args=
-	lastempty=0
-	while [ "$#" -gt 0 ]; do
-		_args="${_args}${_args:+${ENCODE_SEP}}${1}"
-		[ "$#" -eq 1 -a -z "$1" ] && lastempty=1
-		shift
-	done
-	# If the string ends in ENCODE_SEP then add another to
-	# fix 'set' later eating it.
-	[ "${lastempty}" -eq 1 ] && _args="${_args}${_args:+${ENCODE_SEP}}"
-
-	setvar "${var_return}" "${_args}"
+	IFS="${ENCODE_SEP}"
+	_args="$@"
+	unset IFS
+	# Trailing empty fields need special handling.
+	case "${_args}" in
+	*"${ENCODE_SEP}")
+		setvar "${var_return}" "${_args}${ENCODE_SEP}"
+		;;
+	*)
+		setvar "${var_return}" "${_args}"
+		;;
+	esac
 }
 
 # Decode data from encode_args
-# Usage: eval $(decode_args data_var_name)
+# Usage: eval "$(decode_args data_var_name)"
 decode_args() {
 	local -; set +x
 	[ $# -eq 1 ] || eargs decode_args encoded_args_var
 	local encoded_args_var="$1"
+	local _decode_args
 
-	# oldIFS="${IFS}"; IFS="${ENCODE_SEP}"; set -- ${data}; IFS="${oldIFS}"; unset oldIFS
-	echo "\
-		local IFS 2>/dev/null || :; \
-		case \$- in *f*) set_f=1 ;; *) set_f=0 ;; esac; \
-		[ \"\${set_f}\" -eq 0 ] && set -f; \
-		IFS=\"\${ENCODE_SEP}\"; \
-		set -- \${${encoded_args_var}}; \
-		unset IFS; \
-		[ \"\${set_f}\" -eq 0 ] && set +f; \
-		unset set_f; \
-		"
+	_decode_args _decode_args "${encoded_args_var}"
+	echo "${_decode_args}"
 }
 
+# Decode data from encode_args without a fork
+# Usage: _decode_args evalstr data_var_name; eval "${evalstr}"; unset evalstr
+_decode_args() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs decode_args var_return_eval encoded_args_var
+	local var_return_eval="$1"
+	local encoded_args_var="$2"
+
+	# local -; set -f; IFS="${ENCODE_SEP}"; set -- ${data}; unset IFS
+	setvar "${var_return_eval}" "
+		local IFS 2>/dev/null || :;
+		case \$- in *f*) set_f=1 ;; *) set_f=0 ;; esac;
+		[ \"\${set_f}\" -eq 0 ] && set -f;
+		IFS=\"\${ENCODE_SEP}\";
+		set -- \${${encoded_args_var}};
+		unset IFS;
+		[ \"\${set_f}\" -eq 0 ] && set +f;
+		unset set_f;
+		"
+}
 
 # Decode data from encode_args
 decode_args_vars() {
 	local -; set +x -f
 	[ $# -ge 2 ] || eargs decode_args_vars data var1 [var2... varN]
 	local encoded_args_data="$1"
-	local _value _var _vars IFS
+	local _value _var IFS
 	shift
 	local _vars="$*"
 
@@ -93,15 +105,21 @@ decode_args_vars() {
 	set -- ${encoded_args_data}
 	unset IFS
 	for _value; do
+		# Select the next var to populate.
 		_var="${_vars%% *}"
-		_vars="${_vars#${_var} }"
-		if [ "${_var}" = "${_vars}" ]; then
+		case "${_vars}" in
+		# Last one - set all remaining to here
+		${_var})
 			setvar "${_var}" "$*"
 			break
-		else
+			;;
+		*)
 			setvar "${_var}" "${_value}"
-		fi
-		shift
+			# Pop off the var
+			_vars="${_vars#${_var} }"
+			shift
+			;;
+		esac
 	done
 }
 

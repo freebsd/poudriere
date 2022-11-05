@@ -93,7 +93,7 @@ list_jail() {
 	local j name version arch method mnt timestamp time
 
 	if [ ${NAMEONLY} -eq 0 ]; then
-		format='%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%s'
+		format='%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%-%ds'
 		display_setup "${format}" "-d -k2,2V -k3,3 -k1,1"
 		display_add "JAILNAME" "VERSION" "ARCH" "METHOD" \
 		    "TIMESTAMP" "PATH"
