@@ -507,26 +507,22 @@ assert_bulk_queue_and_stats() {
 
 	# Assert the listed which are ignored is right
 	# This is testing the test framework
-	assert "$(sorted ${EXPECTED_LISTPORTS_IGNORED})" \
-		"$(sorted ${LISTPORTS_IGNORED-null})" \
+	assert_list EXPECTED_LISTPORTS_IGNORED LISTPORTS_IGNORED \
 		"(test framework) LISTPORTS_IGNORED should match"
 
 	# Assert the non-ignored ports list is right
 	# This is testing the test framework
-	assert "$(sorted ${EXPECTED_LISTPORTS_NOIGNORED})" \
-		"$(sorted ${LISTPORTS_NOIGNORED-null})" \
+	assert_list EXPECTED_LISTPORTS_NOIGNORED LISTPORTS_NOIGNORED \
 		"(test framework) LISTPORTS_NOIGNORED should match"
 
 	# Assert that IGNOREDPORTS was populated by the framework right.
 	# This is testing the test framework
-	assert "$(sorted ${EXPECTED_IGNORED-})" \
-		"$(sorted ${IGNOREDPORTS-null})" \
+	assert_list EXPECTED_IGNORED IGNOREDPORTS \
 		"(test framework) IGNOREDPORTS should match"
 
 	# Assert that skipped ports are right
 	# This is testing the test framework
-	assert "$(sorted ${EXPECTED_SKIPPED-})" \
-		"$(sorted ${SKIPPEDPORTS-null})" \
+	assert_list EXPECTED_SKIPPED SKIPPEDPORTS \
 		"(test framework) SKIPPEDPORTS should match"
 
 	### Now do tests against the output of the bulk run. ###

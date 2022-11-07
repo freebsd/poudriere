@@ -22,7 +22,6 @@ write_atomic_cmp() {
 	fi
 }
 
-
 CMD="${0##*/}"
 IN_TEST=1
 SCRIPTPATH="${SCRIPTPREFIX}/${CMD}"
@@ -125,6 +124,40 @@ _assert_not() {
 }
 alias assert_not='_assert_not "$0:$LINENO"'
 
+_assert_list() {
+	local lineinfo="$1"
+	local expected_name="$2"
+	local actual_name="$3"
+	local reason="$4"
+	local have_tmp=$(mktemp -t actual.${actual_name})
+	local expected_tmp=$(mktemp -t expected.${expected_name})
+	local ret=0
+	local expected actual
+
+	getvar "${expected_name}" expected || expected="null"
+	getvar "${actual_name}" actual || actual="null"
+
+	echo "${expected}" |
+	    tr ' ' '\n' | env LC_ALL=C sort |
+            sed -e '/^$/d' > "${expected_tmp}"
+	echo "${actual}" |
+	    tr ' ' '\n' | env LC_ALL=C sort |
+	    sed -e '/^$/d' > "${have_tmp}"
+	cmp -s "${have_tmp}" "${expected_tmp}" || ret=$?
+	if [ "${ret}" -ne 0 ]; then
+		diff -u "${expected_tmp}" "${have_tmp}" >&2
+	fi
+
+	rm -f "${have_tmp}" "${expected_tmp}"
+	if [ "${ret}" -ne 0 ]; then
+		aecho FAIL "${lineinfo}" "${reason}"
+		exit ${EXITVAL}
+	fi
+	aecho OK "${lineinfo}" #"${msg}: expected: '${expected}', actual: '${actual}'"
+}
+alias assert_list='_assert_list "$0:$LINENO"'
+
+
 _assert_ret() {
 	local lineinfo="$1"
 	local expected="$2"
@@ -153,7 +186,7 @@ aecho() {
 	local result="$1"
 	local lineinfo="$2"
 
-	if [ $# -gt 2 ]; then
+	if [ "$#" -gt 3 ]; then
 		# Failure
 		local expected="$3"
 		local actual="$4"
@@ -165,8 +198,9 @@ aecho() {
 			"$(echo "$@" | cat -ev | sed '2,$s,^,	,')" \
 			"$(echo "${expected}" | cat -ev | sed '2,$s,^,	,')" \
 			"$(echo "${actual}" | cat -ev | sed '2,$s,^,	,')"
+	elif [ "$#" -eq 3 ]; then
+		printf "> %-4s %s: %s\n" "${result}" "${lineinfo}" "${3}"
 	else
-		# Success
 		printf "> %-4s %s\n" "${result}" "${lineinfo}"
 	fi >&2
 }
