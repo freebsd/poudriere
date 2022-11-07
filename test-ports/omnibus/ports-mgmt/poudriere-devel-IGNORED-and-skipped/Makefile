@@ -31,6 +31,7 @@ OPTIONS_DEFAULT=ZSH
 OPTIONS_SUB=	yes
 
 RUN_DEPENDS+=	freebsd-release-manifests>0:misc/freebsd-release-manifests
+RUN_DEPENDS+=	foop-IGNORED>0:misc/foop-IGNORED
 RUN_DEPENDS+=	poudriere-devel-IGNORED>0:ports-mgmt/poudriere-devel-IGNORED
 
 .include <bsd.port.options.mk>

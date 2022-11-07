@@ -5125,13 +5125,6 @@ clean_pool() {
 	# Cleaning queue (pool is cleaned here)
 	pkgqueue_done "${pkgname}" "${clean_rdepends}" | \
 	    while mapfile_read_loop_redir skipped_pkgname; do
-		# Don't skip listed ports that are also IGNORED. They
-		# should be accounted as IGNORED.
-		if [ "${clean_rdepends}" = "ignored" ] && \
-		    shash_exists pkgname-ignore "${skipped_pkgname}" && \
-		    pkgname_is_listed "${skipped_pkgname}"; then
-			continue
-		fi
 		get_originspec_from_pkgname skipped_originspec "${skipped_pkgname}"
 		originspec_decode "${skipped_originspec}" skipped_origin \
 		    skipped_flavor
@@ -6914,10 +6907,13 @@ gather_port_vars_port() {
 	fi
 
 	# If there are no deps for this port then there's nothing left to do.
-	if [ -n "${ignore}" ] || [ -z "${deps}" ]; then
+	if [ -z "${deps}" ]; then
 		return 0
 	fi
-
+	# Don't bother fetching dependencies if this port is IGNORED.
+	if [ -n "${ignore}" ]; then
+		return 0
+	fi
 	# Assert some policy before proceeding to process these deps
 	# further.
 	if ! deps_sanity "${originspec}" "${deps}"; then
@@ -7102,6 +7098,7 @@ compute_deps_pkg() {
 	shash_remove pkgname-deps "${pkgname}" deps || \
 	    err 1 "compute_deps_pkg failed to find deps for ${COLOR_PORT}${pkgname}${COLOR_RESET}"
 
+	# Don't bother relating dependencies of IGNORED ports.
 	if shash_exists pkgname-ignore "${pkgname}"; then
 		msg_debug "compute_deps_pkg: Will not build IGNORED ${COLOR_PORT}${pkgname}${COLOR_RESET} nor queue its deps"
 		return

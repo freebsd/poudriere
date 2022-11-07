@@ -462,6 +462,7 @@ do_bulk() {
 	done
 	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -CNt ${verbose} \
 	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
+	    ${JFLAG:+-J ${JFLAG}} \
 	    -B "${BUILDNAME}" \
 	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
 	    "$@"
