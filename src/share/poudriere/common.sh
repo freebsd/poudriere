@@ -7116,9 +7116,9 @@ compute_deps_pkg() {
 			originspec_decode "${dep_originspec}" dep_origin \
 			    dep_flavor
 			if [ ${ALL} -eq 0 ]; then
-				msg_error "compute_deps_pkg failed to lookup pkgname for ${COLOR_PORT}${dep_originspec}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET} from ${COLOR_PORT}${originspec}${COLOR_RESET} -- Does ${COLOR_PORT}${dep_origin}${COLOR_RESET} provide the '${dep_flavor}' FLAVOR?"
+				msg_error "compute_deps_pkg failed to lookup pkgname for ${COLOR_PORT}${dep_originspec}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET} from ${COLOR_PORT}${originspec}${COLOR_RESET}${dep_flavor:+ -- Does ${COLOR_PORT}${dep_origin}${COLOR_RESET} provide the '${dep_flavor}' FLAVOR?}"
 			else
-				msg_error "compute_deps_pkg failed to lookup pkgname for ${COLOR_PORT}${dep_originspec}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET} from ${COLOR_PORT}${originspec}${COLOR_RESET} -- Is SUBDIR+=${COLOR_PORT}${dep_origin#*/}${COLOR_RESET} missing in ${COLOR_PORT}${dep_origin%/*}${COLOR_RESET}/Makefile and does the port provide the '${dep_flavor}' FLAVOR?"
+				msg_error "compute_deps_pkg failed to lookup pkgname for ${COLOR_PORT}${dep_originspec}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET} from ${COLOR_PORT}${originspec}${COLOR_RESET} -- Is SUBDIR+=${COLOR_PORT}${dep_origin#*/}${COLOR_RESET} missing in ${COLOR_PORT}${dep_origin%/*}${COLOR_RESET}/Makefile?${dep_flavor:+ And does the port provide the '${dep_flavor}' FLAVOR?}"
 			fi
 			set_dep_fatal_error
 			continue
