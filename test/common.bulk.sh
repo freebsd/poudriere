@@ -92,9 +92,11 @@ cache_pkgnames() {
 	else
 		hash_get origin-flavors "${origin}" flavors || flavors=
 	fi
+	originspec_encode flavor_originspec "${origin}" "${port_flavor}"
 	fix_default_flavor "${originspec}" originspec
 	assert_not '' "${pkgname}" "cache_pkgnames: ${originspec} has no PKGNAME?"
 	hash_set originspec-pkgname "${originspec}" "${pkgname}"
+	hash_set originspec-pkgname "${flavor_originspec}" "${pkgname}"
 	if [ -n "${port_flavor}" ]; then
 		hash_set originspec-flavor "${originspec}" "${port_flavor}"
 	fi
@@ -105,8 +107,7 @@ cache_pkgnames() {
 	ALL_PKGNAMES="${ALL_PKGNAMES}${ALL_PKGNAMES:+ }${pkgname}"
 	ALL_ORIGINS="${ALL_ORIGINS}${ALL_ORIGINS:+ }${originspec}"
 	if [ -n "${ignore}" ]; then
-		list_add IGNOREDPORTS "${originspec}"
-		return
+		list_add IGNOREDPORTS "${flavor_originspec}"
 	fi
 	was_listed_with_flavor=0
 	if [ -n "${flavors}" ]; then
@@ -124,18 +125,19 @@ cache_pkgnames() {
 			esac
 		fi
 	fi
-	for dep_origin in ${pdeps}; do
-		if cache_pkgnames 1 "${dep_origin}"; then
-			if [ "${was_listed_with_flavor}" -eq 1 ] &&
-			    [ "${port_flavor}" != "${default_flavor}" ]; then
-				list_add IGNOREDPORTS "${originspec}"
-				continue
+	if [ -z "${ignore}" ]; then
+		for dep_origin in ${pdeps}; do
+			if cache_pkgnames 1 "${dep_origin}"; then
+				if [ "${was_listed_with_flavor}" -eq 1 ]; then
+					list_add IGNOREDPORTS "${flavor_originspec}"
+					continue
+				fi
+				if ! list_contains SKIPPEDPORTS "${flavor_originspec}"; then
+					list_add SKIPPEDPORTS "${flavor_originspec}"
+				fi
 			fi
-			if ! list_contains SKIPPEDPORTS "${originspec}"; then
-				list_add SKIPPEDPORTS "${originspec}"
-			fi
-		fi
-	done
+		done
+	fi
 	# Also cache all of the FLAVOR deps/PKGNAMES
 	if [ "${isdep}" -eq "0" -o "${ALL:-0}" -eq 1 ] &&
 		[ -n "${flavors}" ] &&
@@ -370,7 +372,7 @@ assert_skipped() {
 	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
 	echo "Asserting that only '${origins_expanded}' are in the skipped list"
 	for originspec in ${origins_expanded}; do
-		fix_default_flavor "${originspec}" originspec
+		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
 		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		echo "=> Asserting that ${originspec} | ${pkgname} is skipped"

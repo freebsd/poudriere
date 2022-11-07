@@ -5,7 +5,7 @@ OVERLAYS="omnibus"
 do_bulk -n -a
 assert 0 $? "Bulk should pass"
 
-EXPECTED_IGNORED="misc/foo-FLAVORS-unsorted@IGNORED misc/foo-FLAVORS-unsorted@DEPIGNORED misc/foo-dep-FLAVORS-unsorted@DEPIGNORED misc/foo-dep-FLAVORS-unsorted@IGNORED misc/foo@IGNORED ports-mgmt/poudriere-devel-IGNORED ports-mgmt/poudriere-devel-IGNORED-and-skipped misc/foop-IGNORED"
-EXPECTED_SKIPPED="ports-mgmt/poudriere-devel-dep-IGNORED ports-mgmt/poudriere-devel-dep2-IGNORED"
+EXPECTED_IGNORED="misc/foo-FLAVORS-unsorted@IGNORED misc/foo-FLAVORS-unsorted@DEPIGNORED misc/foo-dep-FLAVORS-unsorted@DEPIGNORED misc/foo-dep-FLAVORS-unsorted@IGNORED misc/foo@IGNORED ports-mgmt/poudriere-devel-IGNORED ports-mgmt/poudriere-devel-IGNORED-and-skipped misc/foop-IGNORED misc/foo-all-IGNORED@DEFAULT misc/foo-all-IGNORED@FLAV misc/foo-default-IGNORED@DEFAULT misc/foo-all-DEPIGNORED@FLAV"
+EXPECTED_SKIPPED="ports-mgmt/poudriere-devel-dep-IGNORED ports-mgmt/poudriere-devel-dep2-IGNORED misc/foo-all-DEPIGNORED@DEFAULT misc/foo-default-DEPIGNORED@DEFAULT"
 
 assert_bulk_queue_and_stats

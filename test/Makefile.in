@@ -479,8 +479,14 @@ JAIL_TESTS = \
 	bulk-flavor-default-dep-and-specific-listed.sh \
 	bulk-flavor-default-dep.sh \
 	bulk-flavor-ignore-all.sh \
+	bulk-flavor-ignore-vs-skip-listed-all-depignored-other.sh \
+	bulk-flavor-ignore-vs-skip-listed-all-depignored.sh \
 	bulk-flavor-ignore-vs-skip-listed-all.sh \
 	bulk-flavor-ignore-vs-skip-listed-default-all.sh \
+	bulk-flavor-ignore-vs-skip-listed-default-depignored-other.sh \
+	bulk-flavor-ignore-vs-skip-listed-default-depignored.sh \
+	bulk-flavor-ignore-vs-skip-listed-default-ignored-other.sh \
+	bulk-flavor-ignore-vs-skip-listed-default-ignored.sh \
 	bulk-flavor-ignore-vs-skip-listed-default.sh \
 	bulk-flavor-ignore-vs-skip-listed-flavor-ignored.sh \
 	bulk-flavor-ignore-vs-skip-listed-flavor.sh \
@@ -974,6 +980,20 @@ bulk-flavor-ignore-all.sh.log: bulk-flavor-ignore-all.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-flavor-ignore-vs-skip-listed-all-depignored-other.sh.log: bulk-flavor-ignore-vs-skip-listed-all-depignored-other.sh
+	@p='bulk-flavor-ignore-vs-skip-listed-all-depignored-other.sh'; \
+	b='bulk-flavor-ignore-vs-skip-listed-all-depignored-other.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-flavor-ignore-vs-skip-listed-all-depignored.sh.log: bulk-flavor-ignore-vs-skip-listed-all-depignored.sh
+	@p='bulk-flavor-ignore-vs-skip-listed-all-depignored.sh'; \
+	b='bulk-flavor-ignore-vs-skip-listed-all-depignored.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 bulk-flavor-ignore-vs-skip-listed-all.sh.log: bulk-flavor-ignore-vs-skip-listed-all.sh
 	@p='bulk-flavor-ignore-vs-skip-listed-all.sh'; \
 	b='bulk-flavor-ignore-vs-skip-listed-all.sh'; \
@@ -984,6 +1004,34 @@ bulk-flavor-ignore-vs-skip-listed-all.sh.log: bulk-flavor-ignore-vs-skip-listed-
 bulk-flavor-ignore-vs-skip-listed-default-all.sh.log: bulk-flavor-ignore-vs-skip-listed-default-all.sh
 	@p='bulk-flavor-ignore-vs-skip-listed-default-all.sh'; \
 	b='bulk-flavor-ignore-vs-skip-listed-default-all.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-flavor-ignore-vs-skip-listed-default-depignored-other.sh.log: bulk-flavor-ignore-vs-skip-listed-default-depignored-other.sh
+	@p='bulk-flavor-ignore-vs-skip-listed-default-depignored-other.sh'; \
+	b='bulk-flavor-ignore-vs-skip-listed-default-depignored-other.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-flavor-ignore-vs-skip-listed-default-depignored.sh.log: bulk-flavor-ignore-vs-skip-listed-default-depignored.sh
+	@p='bulk-flavor-ignore-vs-skip-listed-default-depignored.sh'; \
+	b='bulk-flavor-ignore-vs-skip-listed-default-depignored.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-flavor-ignore-vs-skip-listed-default-ignored-other.sh.log: bulk-flavor-ignore-vs-skip-listed-default-ignored-other.sh
+	@p='bulk-flavor-ignore-vs-skip-listed-default-ignored-other.sh'; \
+	b='bulk-flavor-ignore-vs-skip-listed-default-ignored-other.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-flavor-ignore-vs-skip-listed-default-ignored.sh.log: bulk-flavor-ignore-vs-skip-listed-default-ignored.sh
+	@p='bulk-flavor-ignore-vs-skip-listed-default-ignored.sh'; \
+	b='bulk-flavor-ignore-vs-skip-listed-default-ignored.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

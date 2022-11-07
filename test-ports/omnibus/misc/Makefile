@@ -1,4 +1,8 @@
 SUBDIR += foo
+SUBDIR += foo-all-DEPIGNORED
+SUBDIR += foo-all-IGNORED
+SUBDIR += foo-default-DEPIGNORED
+SUBDIR += foo-default-IGNORED
 SUBDIR += foo-dep-FLAVORS-unsorted
 SUBDIR += foop-IGNORED
 SUBDIR += foo-FLAVORS-unsorted

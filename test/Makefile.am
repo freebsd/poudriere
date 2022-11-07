@@ -47,8 +47,14 @@ JAIL_TESTS= \
 	bulk-flavor-default-dep-and-specific-listed.sh \
 	bulk-flavor-default-dep.sh \
 	bulk-flavor-ignore-all.sh \
+	bulk-flavor-ignore-vs-skip-listed-all-depignored-other.sh \
+	bulk-flavor-ignore-vs-skip-listed-all-depignored.sh \
 	bulk-flavor-ignore-vs-skip-listed-all.sh \
 	bulk-flavor-ignore-vs-skip-listed-default-all.sh \
+	bulk-flavor-ignore-vs-skip-listed-default-depignored-other.sh \
+	bulk-flavor-ignore-vs-skip-listed-default-depignored.sh \
+	bulk-flavor-ignore-vs-skip-listed-default-ignored-other.sh \
+	bulk-flavor-ignore-vs-skip-listed-default-ignored.sh \
 	bulk-flavor-ignore-vs-skip-listed-default.sh \
 	bulk-flavor-ignore-vs-skip-listed-flavor-ignored.sh \
 	bulk-flavor-ignore-vs-skip-listed-flavor.sh \
