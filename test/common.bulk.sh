@@ -29,7 +29,7 @@ fix_default_flavor() {
 cache_pkgnames() {
 	local isdep="$1"
 	local originspec="$2"
-	local origin dep_origin flavor flavors pkgname default_flavor ignore
+	local origin dep_origin spec_flavor flavors pkgname default_flavor ignore
 	local flavor_originspec ret port_flavor other_flavor
 	local LOCALBASE was_listed_with_flavor
 	local -; set -f
@@ -45,11 +45,11 @@ cache_pkgnames() {
 		return ${ret}
 	fi
 
-	originspec_decode "${originspec}" origin flavor
+	originspec_decode "${originspec}" origin spec_flavor
 
-	if [ "${flavor}" = "${FLAVOR_DEFAULT}" ]; then
+	if [ "${spec_flavor}" = "${FLAVOR_DEFAULT}" ]; then
 		originspec_encode originspec "${origin}" ''
-	elif [ "${flavor}" = "${FLAVOR_ALL}" ]; then
+	elif [ "${spec_flavor}" = "${FLAVOR_ALL}" ]; then
 		originspec_encode originspec "${origin}" ''
 	fi
 
@@ -61,7 +61,7 @@ cache_pkgnames() {
 	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
 	    '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
 	    pdeps || exit 99
-	if [ -n "${flavor}" ] && ! hash_isset origin-flavors "${origin}"; then
+	if [ -n "${spec_flavor}" ] && ! hash_isset origin-flavors "${origin}"; then
 		# Make sure we grab the proper default flavors and sort it
 		# appropriately
 		local originspec_default pkgname_default flavors_default \
@@ -87,7 +87,7 @@ cache_pkgnames() {
 		esac
 		hash_set origin-flavors "${origin}" "${flavors_default}"
 		flavors="${flavors_default}"
-	elif [ -z "${flavor}" ]; then
+	elif [ -z "${spec_flavor}" ]; then
 		hash_set origin-flavors "${origin}" "${flavors}"
 	else
 		hash_get origin-flavors "${origin}" flavors || flavors=
@@ -117,7 +117,7 @@ cache_pkgnames() {
 			case " ${LISTPORTS} " in
 			*" ${originspec} "*)
 				;;
-			*" ${origin}@${flavor-null} "*|\
+			*" ${origin}@${port_flavor-null} "*|\
 			*" ${origin}@${FLAVOR_ALL-null} "*)
 				was_listed_with_flavor=1
 				;;
@@ -127,7 +127,7 @@ cache_pkgnames() {
 	for dep_origin in ${pdeps}; do
 		if cache_pkgnames 1 "${dep_origin}"; then
 			if [ "${was_listed_with_flavor}" -eq 1 ] &&
-			    [ "${flavor}" != "${default_flavor}" ]; then
+			    [ "${port_flavor}" != "${default_flavor}" ]; then
 				list_add IGNOREDPORTS "${originspec}"
 				continue
 			fi
@@ -139,7 +139,7 @@ cache_pkgnames() {
 	# Also cache all of the FLAVOR deps/PKGNAMES
 	if [ "${isdep}" -eq "0" -o "${ALL:-0}" -eq 1 ] &&
 		[ -n "${flavors}" ] &&
-		[ "${flavor}" = "${FLAVOR_ALL:-null}" -o \
+		[ "${spec_flavor}" = "${FLAVOR_ALL:-null}" -o \
 		"${ALL:-0}" -eq 1 -o "${FLAVOR_DEFAULT_ALL:-}" = "yes" ]; then
 		default_flavor="${flavors%% *}"
 		for flavor in ${flavors}; do
