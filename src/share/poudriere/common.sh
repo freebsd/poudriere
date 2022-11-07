@@ -6392,8 +6392,8 @@ pkgname_flavor_is_default() {
 	local -; set -f
 
 	shash_get pkgname-flavors "${pkgname}" flavors || flavors=
-	case "${flavor}" in
-	"${flavors}"|"${flavors} "*)
+	case "${flavors}" in
+	"${flavor}"|"${flavor} "*)
 		return 0
 		;;
 	esac
