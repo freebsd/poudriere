@@ -5074,9 +5074,9 @@ crashed_build() {
 	get_originspec_from_pkgname originspec "${pkgname}"
 	originspec_decode "${originspec}" origin ''
 
-	echo "Build crashed: ${failed_phase}" >> "${log}/logs/${pkgname}.log"
 	log="${logd}/logs/${pkgname}.log"
 	log_error="${logd}/logs/errors/${pkgname}.log"
+	echo "Build crashed: ${failed_phase}" >> "${log}"
 
 	# If the file already exists then all of this handling was done in
 	# build_pkg() already; The port failed already. What crashed
