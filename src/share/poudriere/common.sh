@@ -5135,7 +5135,7 @@ clean_pool() {
 		# Mark it ignored instead.
 		if [ "${clean_rdepends}" == "ignored" ] &&
 		    build_all_flavors "${skipped_originspec}" &&
-		    ! pkgname_flavor_is_default "${skipped_pkgname}" \
+		    ! pkgname_is_default_flavor "${skipped_pkgname}" \
 		        "${skipped_flavor}" &&
 		    pkgname_is_listed "${skipped_pkgname}"; then
 			trim_ignored_pkg "${skipped_pkgname}" "${skipped_originspec}" "Dependent port ${originspec} | ${pkgname} ${clean_rdepends}"
@@ -6384,8 +6384,8 @@ get_pkgname_from_originspec() {
 	setvar "${var_return}" "${_pkgname}"
 }
 
-pkgname_flavor_is_default() {
-	[ $# -eq 2 ] || eargs pkgname_flavor_is_default pkgname flavor
+pkgname_is_default_flavor() {
+	[ $# -eq 2 ] || eargs pkgname_is_default_flavor pkgname flavor
 	local pkgname="$1"
 	local flavor="$2"
 	local flavors
