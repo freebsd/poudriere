@@ -7,7 +7,9 @@ OVERLAYS="omnibus"
 do_bulk -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 
-EXPECTED_LISTPORTS_IGNORED="ports-mgmt/poudriere-devel-IGNORED"
 EXPECTED_IGNORED="ports-mgmt/poudriere-devel-IGNORED"
 EXPECTED_SKIPPED=
+EXPECTED_QUEUED="misc/freebsd-release-manifests ports-mgmt/pkg ports-mgmt/poudriere-devel"
+EXPECTED_LISTED="ports-mgmt/poudriere-devel ports-mgmt/poudriere-devel-IGNORED"
+
 assert_bulk_queue_and_stats

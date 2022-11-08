@@ -106,9 +106,6 @@ cache_pkgnames() {
 	# Record all known packages for comparing to the queue later.
 	ALL_PKGNAMES="${ALL_PKGNAMES}${ALL_PKGNAMES:+ }${pkgname}"
 	ALL_ORIGINS="${ALL_ORIGINS}${ALL_ORIGINS:+ }${originspec}"
-	if [ -n "${ignore}" ]; then
-		list_add IGNOREDPORTS "${flavor_originspec}"
-	fi
 	was_listed_with_flavor=0
 	if [ -n "${flavors}" ]; then
 		default_flavor="${flavors%% *}"
@@ -129,11 +126,7 @@ cache_pkgnames() {
 		for dep_origin in ${pdeps}; do
 			if cache_pkgnames 1 "${dep_origin}"; then
 				if [ "${was_listed_with_flavor}" -eq 1 ]; then
-					list_add IGNOREDPORTS "${flavor_originspec}"
 					continue
-				fi
-				if ! list_contains SKIPPEDPORTS "${flavor_originspec}"; then
-					list_add SKIPPEDPORTS "${flavor_originspec}"
 				fi
 			fi
 		done
@@ -480,66 +473,23 @@ sorted() {
 
 assert_bulk_queue_and_stats() {
 	local expanded_LISTPORTS_NOIGNORED
-	local EXPECTED_LISTPORTS_IGNORED EXPECTED_LISTPORTS_NOIGNORED
 	local port
 	local -
 
 	set -u
-
-	# Some defaults based on passed in expectations. Assume nothing is
-	# ignored unless told otherwise.
-	if [ -n "${EXPECTED_LISTPORTS_IGNORED+set}" ] &&
-		[ -z "${EXPECTED_LISTPORTS_NOIGNORED+set}" ]; then
-		EXPECTED_LISTPORTS_NOIGNORED="${LISTPORTS}"
-		for port in ${EXPECTED_LISTPORTS_IGNORED}; do
-			list_remove EXPECTED_LISTPORTS_NOIGNORED "${port}" || :
-		done
-	elif [ -n "${EXPECTED_LISTPORTS_NOIGNORED+set}" ] &&
-		[ -z "${EXPECTED_LISTPORTS_IGNORED+set}" ]; then
-		EXPECTED_LISTPORTS_IGNORED="${LISTPORTS}"
-		for port in ${EXPECTED_LISTPORTS_NOIGNORED}; do
-			list_remove EXPECTED_LISTPORTS_IGNORED "${port}" || :
-		done
-	elif [ -z "${EXPECTED_LISTPORTS_NOIGNORED+set}" ] &&
-		[ -z "${EXPECTED_LISTPORTS_IGNORED+set}" ]; then
-		# This is highly dependent on the test framework
-		EXPECTED_LISTPORTS_NOIGNORED="${LISTPORTS_NOIGNORED}"
-		EXPECTED_LISTPORTS_IGNORED="${LISTPORTS_IGNORED}"
-	fi
-
-	# Assert the listed which are ignored is right
-	# This is testing the test framework
-	assert_list EXPECTED_LISTPORTS_IGNORED LISTPORTS_IGNORED \
-		"(test framework) LISTPORTS_IGNORED should match"
-
-	# Assert the non-ignored ports list is right
-	# This is testing the test framework
-	assert_list EXPECTED_LISTPORTS_NOIGNORED LISTPORTS_NOIGNORED \
-		"(test framework) LISTPORTS_NOIGNORED should match"
-
-	# Assert that IGNOREDPORTS was populated by the framework right.
-	# This is testing the test framework
-	assert_list EXPECTED_IGNORED IGNOREDPORTS \
-		"(test framework) IGNOREDPORTS should match"
-
-	# Assert that skipped ports are right
-	# This is testing the test framework
-	assert_list EXPECTED_SKIPPED SKIPPEDPORTS \
-		"(test framework) SKIPPEDPORTS should match"
-
 	### Now do tests against the output of the bulk run. ###
 
 	# Assert that only listed packages are in poudriere.ports.queued as
 	# 'listed'
-	if [ -z "${EXPECTED_QUEUED_LISTED-}" ]; then
+	if [ -z "${EXPECTED_LISTED-}" ]; then
 		# compat for tests
 		if [ -z "${EXPECTED_QUEUED-null}" ]; then
-			EXPECTED_QUEUED_LISTED=
+			EXPECTED_LISTED=
 		else
-			EXPECTED_QUEUED_LISTED="${LISTPORTS}"
+			EXPECTED_LISTED="${LISTPORTS}"
 		fi
 	fi
-	assert_queued "listed" "${EXPECTED_QUEUED_LISTED-}"
+	assert_queued "listed" "${EXPECTED_LISTED-}"
 
 	# Assert the IGNOREd ports are tracked in .poudriere.ports.ignored
 	assert_ignored "${EXPECTED_IGNORED-}"
@@ -549,11 +499,6 @@ assert_bulk_queue_and_stats() {
 
 	# Assert that all expected dependencies are in poudriere.ports.queued
 	# (since they do not exist yet)
-	if [ -z "${EXPECTED_QUEUED+set}" ]; then
-		expand_origin_flavors "${LISTPORTS_NOIGNORED}" \
-			expanded_LISTPORTS_NOIGNORED
-		list_all_deps "${expanded_LISTPORTS_NOIGNORED}" EXPECTED_QUEUED
-	fi
 	assert_queued "" "${EXPECTED_QUEUED-}"
 
 	# Assert stats counts are right
@@ -741,35 +686,11 @@ if [ "${FLAVOR_DEFAULT_ALL-null}" == "yes" ]; then
 	    sed -e 's,$,@all,' | paste -s -d ' ' -)"
 fi
 echo -n "Gathering metadata for requested ports..."
-IGNOREDPORTS=""
-SKIPPEDPORTS=""
-LISTPORTS_IGNORED=""
 for origin in ${LISTPORTS}; do
 	cache_pkgnames 0 "${origin}" || :
 done
 echo " done"
-IGNOREDPORTS="$(sorted "${IGNOREDPORTS}")"
-SKIPPEDPORTS="$(sorted "${SKIPPEDPORTS}")"
 expand_origin_flavors "${LISTPORTS}" LISTPORTS_EXPANDED
-# Separate out IGNORED ports
-LISTPORTS_NOIGNORED="${LISTPORTS_EXPANDED}"
-if [ -n "${IGNOREDPORTS}" ]; then
-	_IGNOREDPORTS="${IGNOREDPORTS}"
-	for port in ${_IGNOREDPORTS}; do
-		if list_contains LISTPORTS "${port}"; then
-			list_add LISTPORTS_IGNORED "${port}" || :
-		fi
-		list_remove LISTPORTS_NOIGNORED "${port}" || :
-		list_remove SKIPPEDPORTS "${port}" || :
-	done
-fi
-# Separate out SKIPPED ports
-if [ -n "${SKIPPEDPORTS}" ]; then
-	_SKIPPEDPORTS="${SKIPPEDPORTS}"
-	for port in ${_SKIPPEDPORTS}; do
-		list_remove LISTPORTS_NOIGNORED "${port}" || :
-	done
-fi
 fetch_global_port_vars || err 99 "Unable to fetch port vars"
 assert_not "null" "${P_PORTS_FEATURES-null}" "fetch_global_port_vars should work"
 echo "Building: $(echo ${LISTPORTS_EXPANDED})"

@@ -1422,9 +1422,6 @@ show_log_info() {
 
 show_dry_run_summary() {
 	[ ${DRY_RUN} -eq 1 ] || return 0
-	local log
-
-	_log_path log
 
 	bset status "done:"
 	msg "Dry run mode, cleaning up and exiting"
@@ -1437,16 +1434,7 @@ show_dry_run_summary() {
 
 		if [ "${ALL}" -eq 0 ] || [ "${VERBOSE}" -ge 1 ]; then
 			msg_n "Ports to build: "
-			{
-				if was_a_testport_run; then
-					echo "${ORIGINSPEC}"
-				fi
-				cat "${log}/.poudriere.ports.queued"
-			} | while mapfile_read_loop_redir originspec pkgname \
-			    _ignored; do
-				pkgqueue_contains "${pkgname}" || continue
-				echo "${originspec}"
-			done | sort | tr '\n' ' '
+			get_to_build | paste -s -d ' ' -
 			echo
 		fi
 	else
@@ -7929,6 +7917,7 @@ prepare_ports() {
 		fi
 
 		load_priorities
+		get_to_build > "${log}/.poudriere.ports.tobuild"
 
 		# Avoid messing with the queue for DRY_RUN or it confuses
 		# the dry run summary output as it doesn't know about
@@ -7955,10 +7944,24 @@ prepare_ports() {
 		jget ${JAILNAME} version > "${PACKAGES}/.jailversion" || \
 		    err 1 "Missing version metadata for jail"
 		echo "${BUILDNAME}" > "${PACKAGES}/.buildname"
-
 	fi
 
 	return 0
+}
+
+get_to_build() {
+	local log
+
+	_log_path log
+	{
+		if was_a_testport_run; then
+			echo "${ORIGINSPEC}"
+		fi
+		cat "${log}/.poudriere.ports.queued"
+	} | while mapfile_read_loop_redir originspec pkgname _ignored; do
+		pkgqueue_contains "${pkgname}" || continue
+		echo "${originspec}"
+	done | sort
 }
 
 load_priorities_ptsort() {

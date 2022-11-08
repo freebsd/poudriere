@@ -10,11 +10,11 @@ OVERLAYS="omnibus"
 do_bulk -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 
-EXPECTED_LISTPORTS_NOIGNORED="ports-mgmt/poudriere-devel"
 # This would default to ports-mgmt/poudriere-devel-dep-IGNORED but it is
 # expected to be skipped here.
-EXPECTED_LISTPORTS_IGNORED=
 EXPECTED_IGNORED="ports-mgmt/poudriere-devel-IGNORED"
 EXPECTED_SKIPPED="ports-mgmt/poudriere-devel-dep-IGNORED"
+EXPECTED_QUEUED="misc/freebsd-release-manifests ports-mgmt/pkg ports-mgmt/poudriere-devel"
+EXPECTED_LISTED="ports-mgmt/poudriere-devel ports-mgmt/poudriere-devel-dep-IGNORED"
 
 assert_bulk_queue_and_stats

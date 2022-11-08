@@ -5,4 +5,7 @@ OVERLAYS="omnibus"
 do_bulk -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 
+EXPECTED_QUEUED="misc/foo misc/freebsd-release-manifests@BAR misc/freebsd-release-manifests@FOO ports-mgmt/pkg ports-mgmt/poudriere-devel-dep-FOO"
+EXPECTED_LISTED="misc/freebsd-release-manifests@BAR misc/freebsd-release-manifests@FOO ports-mgmt/poudriere-devel-dep-FOO"
+
 assert_bulk_queue_and_stats
