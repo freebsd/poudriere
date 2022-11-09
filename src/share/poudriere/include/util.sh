@@ -678,8 +678,20 @@ mapfile() {
 	[ $# -eq 2 -o $# -eq 3 ] || eargs mapfile handle_name file modes
 	local handle_name="$1"
 	local _file="$2"
-	local mypid _hkey
+	local _modes="$3"
+	local mypid _hkey ret
 
+	case " ${_modes} " in
+	*r*w*|*w*r*) ;;
+	*w*|*a*) ;;
+	*r*)
+		if [ ! -r "${_file}" ]; then
+			return 1
+		fi
+		;;
+	esac
+
+	ret=0
 	mypid=$(getpid)
 	case "${_file}" in
 		-|/dev/stdin) _file="/dev/fd/0" ;;
@@ -716,9 +728,21 @@ mapfile() {
 		hash_set mapfile_fd "${_mapfile_handle}" "${_file#/dev/fd/}"
 		;;
 	*)
-		exec 8<> "${_file}" ;;
+		case " ${_modes} " in
+		*r*w*|*w*r*)
+			exec 8<> "${_file}" || ret="$?"
+			;;
+		*r*)
+			exec 8< "${_file}" || ret="$?"
+			;;
+		*w*|*a*)
+			exec 8> "${_file}" || ret="$?"
+			;;
+		esac
+		;;
 	esac
 	hash_set mapfile_file "${_mapfile_handle}" "${_file}"
+	return "${ret}"
 }
 
 mapfile_read() {
