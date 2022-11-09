@@ -3052,6 +3052,10 @@ _real_build_port() {
 	originspec_decode "${originspec}" port '' flavor
 	portdir="/usr/ports/${port}"
 
+	if ! was_a_testport_run; then
+		exec </dev/null
+	fi
+
 	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
 		_need_root="NEED_ROOT NEED_ROOT"
 	fi
@@ -3221,7 +3225,7 @@ _real_build_port() {
 			# No need for nohang or PORT_FLAGS for *-depends
 			injail /usr/bin/env USE_PACKAGE_DEPENDS_ONLY=1 ${phaseenv} \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
-			    ${phase} || return 1
+			    ${phase} 3>&- 4>&- || return 1
 		else
 			# Only set PKGENV during 'package' to prevent
 			# testport-built packages from going into the main repo
@@ -3238,7 +3242,7 @@ _real_build_port() {
 				${MASTERMNT}/.p/var/run/${MY_JOBID:-00}_nohang.pid \
 				injail /usr/bin/env ${pkgenv} ${phaseenv} ${PORT_FLAGS} \
 				/usr/bin/make -C ${portdir} ${MAKE_ARGS} \
-				${phase}
+				${phase} 3>&- 4>&-
 			hangstatus=$? # This is done as it may return 1 or 2 or 3
 			if [ $hangstatus -ne 0 ]; then
 				# 1 = cmd failed, not a timeout
