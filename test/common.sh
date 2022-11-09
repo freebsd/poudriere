@@ -170,6 +170,18 @@ _assert_ret() {
 }
 alias assert_ret='_assert_ret "$0:$LINENO"'
 
+_assert_ret_not() {
+	local lineinfo="$1"
+	local expected="$2"
+	shift 2
+	local ret
+
+	ret=0
+	"$@" || ret=$?
+	_assert_not "${lineinfo}" "${expected}" "${ret}" "Bad exit status: $@"
+}
+alias assert_ret_not='_assert_ret_not "$0:$LINENO"'
+
 _assert_out() {
 	local lineinfo="$1"
 	local expected="$2"
