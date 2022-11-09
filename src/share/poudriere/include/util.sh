@@ -751,8 +751,8 @@ mapfile_read() {
 	local handle="$1"
 	shift
 
-	if [ "${handle}" != "${_mapfile_handle}" ]; then
-		err 1 "mapfile_read: Handle '${handle}' is not open, '${_mapfile_handle}' is"
+	if [ "${handle}" != "${_mapfile_handle-}" ]; then
+		err 1 "mapfile_read: Handle '${handle}' is not open${_mapfile_handle:+, '${_mapfile_handle}' is}."
 	fi
 
 	hash_get mapfile_fd "${handle}" fd || fd=8
@@ -781,8 +781,8 @@ mapfile_write() {
 	handle="$1"
 	shift
 
-	if [ "${handle}" != "${_mapfile_handle}" ]; then
-		err 1 "mapfile_write: Handle '${handle}' is not open, '${_mapfile_handle}' is"
+	if [ "${handle}" != "${_mapfile_handle-}" ]; then
+		err 1 "mapfile_write: Handle '${handle}' is not open${_mapfile_handle:+, '${_mapfile_handle}' is}."
 	fi
 	hash_get mapfile_fd "${handle}" fd || fd=8
 	echo ${nflag:+-n} "$@" >&${fd}
@@ -795,7 +795,7 @@ mapfile_close() {
 	local fd _
 
 	if [ "${handle}" != "${_mapfile_handle}" ]; then
-		err 1 "mapfile_close: Handle '${handle}' is not open, '${_mapfile_handle}' is"
+		err 1 "mapfile_close: Handle '${handle}' is not open${_mapfile_handle:+, '${_mapfile_handle}' is}."
 	fi
 	# Only close fd that we opened.
 	if ! hash_remove mapfile_fd "${handle}" _; then
