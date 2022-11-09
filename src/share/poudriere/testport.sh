@@ -196,8 +196,6 @@ jail_start "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 _pget portsdir ${PTNAME} mnt
 fetch_global_port_vars || \
     err 1 "Failed to lookup global ports metadata"
-# Allow testing on virtual py3 slaves until we have FLAVORS.
-map_py_slave_port "${ORIGINSPEC}" ORIGINSPEC || :
 originspec_decode "${ORIGINSPEC}" ORIGIN FLAVOR
 # Remove excess slashes for mistakes
 ORIGIN="${ORIGIN#/}"
