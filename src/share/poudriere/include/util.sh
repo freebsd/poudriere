@@ -89,6 +89,7 @@ _decode_args() {
 		unset IFS;
 		[ \"\${set_f}\" -eq 0 ] && set +f;
 		unset set_f;
+		unset ${var_return_eval};
 		"
 }
 
