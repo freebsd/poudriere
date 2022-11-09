@@ -4261,6 +4261,10 @@ build_port() {
 	originspec_decode "${originspec}" port flavor
 	_lookup_portdir portdir "${port}"
 
+	if ! was_a_testport_run; then
+		exec </dev/null
+	fi
+
 	if [ "${BUILD_AS_NON_ROOT}" = "yes" ]; then
 		_need_root="NEED_ROOT NEED_ROOT"
 	fi
@@ -4442,7 +4446,7 @@ build_port() {
 		if [ "${phase#*-}" = "depends" ]; then
 			injail /usr/bin/env ${phaseenv:+-S "${phaseenv}"} \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
-			    ${phase} || return 1
+			    ${phase} 3>&- 4>&- || return 1
 		else
 
 			nohang ${max_execution_time} ${NOHANG_TIME} \
@@ -4450,7 +4454,7 @@ build_port() {
 				"${MASTER_DATADIR}/var/run/${MY_JOBID:-00}_nohang.pid" \
 				injail /usr/bin/env ${phaseenv:+-S "${phaseenv}"} \
 				/usr/bin/make -C ${portdir} ${MAKE_ARGS} \
-				${phase}
+				${phase} 3>&- 4>&-
 			hangstatus=$? # This is done as it may return 1 or 2 or 3
 			if [ $hangstatus -ne 0 ]; then
 				# 1 = cmd failed, not a timeout
