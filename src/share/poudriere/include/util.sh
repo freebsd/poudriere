@@ -699,7 +699,7 @@ mapfile_read() {
 	fi
 
 	hash_get mapfile_fd "${handle}" fd || fd=8
-	read_blocking "$@" <&${fd}
+	read_blocking -r "$@" <&${fd}
 }
 
 mapfile_write() {

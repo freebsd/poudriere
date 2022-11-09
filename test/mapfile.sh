@@ -208,6 +208,20 @@ if mapfile_builtin; then
 }
 fi
 
+# Test \ handling
+{
+	TMP=$(mktemp -t mapfile)
+
+	expected='\blah\\b\\\\lah'
+	echo "${expected}" >> "${TMP}"
+	assert_ret 0 mapfile handle "${TMP}" "re"
+	unset line
+	assert_ret 0 mapfile_read "${handle}" line
+	assert_ret 0 mapfile_close "${handle}"
+	assert "${expected}" "${line}" "line with backslashes should match"
+	rm -f "${TMP}"
+}
+
 # Should only return full lines as read(1) does
 {
 	rm -f "${TMP}"
