@@ -538,27 +538,18 @@ mapfile_writecmd(int argc, char **argv)
 		ret = _mapfile_write(md, handle, nflag, data);
 	} else {
 		/* Read from TTY */
-		char *value;
 		/*
-		 * XXX: Using shell mapfile_cat_file until some changes from
+		 * XXX: Using shell mapfile_tee until some changes from
 		 * copool branch make it in to avoid massive conflicts
 		 */
-		/* Avoid adding our own newline by keeping any read. */
-		const char *cmd =
-		    "__mapfile_write_cat=\"$(mapfile_cat_file; echo .)\";"
-		    "__mapfile_write_cat=\"${__mapfile_write_cat%.}\"";
+		char cmd[256];
 
-		nflag = 1;
+		snprintf(cmd, sizeof(cmd), "mapfile_tee %s \"%s\";",
+		    nflag == 1 ? "-n" : "",
+		    handle);
 		evalstring(cmd, 0);
-		if (exitstatus != 0) {
-			ret = exitstatus;
-			goto out;
-		}
-		value = lookupvar("__mapfile_write_cat");
-		assert(value != NULL);
-		ret = _mapfile_write(md, handle, nflag, value);
+		ret = exitstatus;
 	}
-out:
 	INTON;
 
 	return (ret);

@@ -386,6 +386,46 @@ critical_end() {
 fi
 
 # Read a file into the given variable.
+_mapfile_read_file() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs _mapfile_read_file var_return file
+	local var_return="$1"
+	local file="$2"
+	local handle mrf_data mrf_line newline
+	local ret IFS
+
+	# var_return may be empty if only $_read_file_lines_read is being
+	# used.
+
+	case "${file}" in
+	-|/dev/stdin) file="/dev/fd/0" ;;
+	esac
+	mrf_data=
+	_read_file_lines_read=0
+	ret=0
+	if mapfile handle "${file}" "re"; then
+		if [ -n "${var_return}" ]; then
+			newline=$'\n'
+			while IFS= mapfile_read "${handle}" mrf_line; do
+				mrf_data="${mrf_data:+${mrf_data}${newline}}${mrf_line}"
+				_read_file_lines_read=$((_read_file_lines_read + 1))
+			done
+		else
+			while IFS= mapfile_read "${handle}" mrf_line; do
+				_read_file_lines_read=$((_read_file_lines_read + 1))
+			done
+		fi
+		mapfile_close "${handle}" || ret="$?"
+	else
+		ret="$?"
+	fi
+	if [ -n "${var_return}" ]; then
+		setvar "${var_return}" "${mrf_data}"
+	fi
+	return "${ret}"
+}
+
+# Read a file into the given variable.
 read_file() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs read_file var_return file
@@ -396,36 +436,29 @@ read_file() {
 
 	# var_return may be empty if only $_read_file_lines_read is being
 	# used.
+	_ret=0
+
+	if mapfile_builtin; then
+		_mapfile_read_file "$@" || _ret="$?"
+		return "${_ret}"
+	fi
+
+	_read_file_lines_read=0
+	case "${file}" in
+	-|/dev/stdin) file="/dev/fd/0" ;;
+	*)
+		if [ ! -f "${file}" ]; then
+			if [ -n "${var_return}" ]; then
+				setvar "${var_return}" ""
+			fi
+			return 1
+		fi
+		;;
+	esac
 
 	set +e
 	_data=
-	_read_file_lines_read=0
-	_ret=0
 	newline=$'\n'
-
-	if [ ! -f "${file}" ]; then
-		if [ -n "${var_return}" ]; then
-			setvar "${var_return}" ""
-		fi
-		return 1
-	fi
-
-	if mapfile_builtin; then
-		if [ -n "${var_return}" ]; then
-			while IFS= mapfile_read_loop "${file}" _line; do
-				_data="${_data:+${_data}${newline}}${_line}"
-				_read_file_lines_read=$((_read_file_lines_read + 1))
-			done
-		else
-			while IFS= mapfile_read_loop "${file}" _line; do
-				_read_file_lines_read=$((_read_file_lines_read + 1))
-			done
-		fi
-		if [ -n "${var_return}" ]; then
-			setvar "${var_return}" "${_data}"
-		fi
-		return 0
-	fi
 
 	if [ ${READ_FILE_USE_CAT:-0} -eq 1 ]; then
 		if [ -n "${var_return}" ]; then
@@ -704,39 +737,31 @@ mapfile_read() {
 
 mapfile_write() {
 	local -; set +x
-	[ $# -ge 1 ] || eargs mapfile_write handle [data]
-	local handle="$1"
-	local ret
+	[ $# -ge 1 ] || eargs mapfile_write [-n] handle [data]
+	local ret handle fd nflag flag OPTIND=1
 
-	if [ $# -eq 1 ]; then
+	if [ "$#" -eq 1 ]; then
 		ret=0
-		_mapfile_write_from_stdin "$@" || ret="$?"
+		mapfile_tee "$@" || ret="$?"
 		return "${ret}"
 	fi
-	_mapfile_write "$@"
-}
 
-_mapfile_write_from_stdin() {
-	[ $# -eq 1 ] || eargs _mapfile_write_from_stdin handle
-	local data
-
-	# . is to preserve newline
-	data="$(cat; echo .)"
-	data="${data%.}"
-	_mapfile_write "$@" -n "${data}"
-}
-
-_mapfile_write() {
-	[ $# -ge 2 ] || eargs mapfile_write handle [-n] data
-	local handle="$1"
+	nflag=
+	while getopts "n" flag; do
+		case "${flag}" in
+		n) nflag=1 ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ $# -ge 2 ] || eargs mapfile_write [-n] handle data
+	handle="$1"
 	shift
-	local fd
 
 	if [ "${handle}" != "${_mapfile_handle}" ]; then
 		err 1 "mapfile_write: Handle '${handle}' is not open, '${_mapfile_handle}' is"
 	fi
 	hash_get mapfile_fd "${handle}" fd || fd=8
-	echo "$@" >&${fd}
+	echo ${nflag:+-n} "$@" >&${fd}
 }
 
 mapfile_close() {
@@ -855,6 +880,36 @@ mapfile_cat_file() {
 		else
 			ret="$?"
 		fi
+	done
+	return "${ret}"
+}
+
+# Pipe to handle from STDIN.
+mapfile_tee() {
+	local -; set +x
+	[ "$#" -ge 1 ] || eargs mapfile_tee [-n] handle...
+	local ret nflag flag handle data OPTIND=1
+
+	ret=0
+	data=
+	nflag=
+	while getopts "n" flag; do
+		case "${flag}" in
+		n) nflag=1 ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	[ "$#" -ge 1 ] || eargs mapfile_tee [-n] handle...
+
+	read_file data - || ret="$?"
+	## . is to preserve newline
+	#data="$(cat; echo .)"
+	#data="${data%.}"
+	case "${data}" in
+	"") return "${ret}" ;;
+	esac
+	for handle in "$@"; do
+		mapfile_write ${nflag:+-n} "${handle}" "${data}" || ret="$?"
 	done
 	return "${ret}"
 }

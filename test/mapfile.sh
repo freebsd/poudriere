@@ -510,7 +510,7 @@ fi
 	assert 0 "$?" "pipe exit status"
 	assert_ret 0 mapfile_close "${handle}"
 	[ ! -s "${TMP2}" ]
-	assert 0 "$?" "'cat <empty file> | mapfile_write' should not write anything"
+	assert 0 "$?" "'cat <empty file> | mapfile_write' should not write anything --"$'\n'"$(cat -vet "${TMP2}")"
 	rm -f "${TMP}" "${TMP2}"
 }
 
