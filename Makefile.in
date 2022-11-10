@@ -97,8 +97,8 @@ pkglibexec_PROGRAMS = cachec$(EXEEXT) cached$(EXEEXT) clock$(EXEEXT) \
 	cpdup$(EXEEXT) dirempty$(EXEEXT) dirwatch$(EXEEXT) \
 	jexecd$(EXEEXT) locked_mkdir$(EXEEXT) nc$(EXEEXT) \
 	poudriered$(EXEEXT) ptsort$(EXEEXT) pwait$(EXEEXT) \
-	rename$(EXEEXT) rexec$(EXEEXT) @USE_RM@ timeout$(EXEEXT) \
-	timestamp$(EXEEXT) @SH@
+	rename$(EXEEXT) rexec$(EXEEXT) @USE_RM@ setsid$(EXEEXT) \
+	timeout$(EXEEXT) timestamp$(EXEEXT) @SH@
 EXTRA_PROGRAMS = rm$(EXEEXT) sh$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -234,6 +234,13 @@ rexec_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 am_rm_OBJECTS = src/libexec/poudriere/rm/rm.$(OBJEXT)
 rm_OBJECTS = $(am_rm_OBJECTS)
 rm_LDADD = $(LDADD)
+am_setsid_OBJECTS =  \
+	src/libexec/poudriere/setsid/setsid-setsid.$(OBJEXT)
+setsid_OBJECTS = $(am_setsid_OBJECTS)
+setsid_LDADD = $(LDADD)
+setsid_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(setsid_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_sh_OBJECTS = external/sh/sh-alias.$(OBJEXT) \
 	external/sh/sh-arith_yacc.$(OBJEXT) \
 	external/sh/sh-arith_yylex.$(OBJEXT) \
@@ -402,6 +409,7 @@ am__depfiles_remade = external/libnv/$(DEPDIR)/libnv_la-msgio.Plo \
 	src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Po \
 	src/libexec/poudriere/rm/$(DEPDIR)/rm.Po \
 	src/libexec/poudriere/rm/$(DEPDIR)/sh-rm.Po \
+	src/libexec/poudriere/setsid/$(DEPDIR)/setsid-setsid.Po \
 	src/libexec/poudriere/timeout/$(DEPDIR)/timeout.Po \
 	src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp.Po \
 	src/poudriere-sh/$(DEPDIR)/sh-builtins.Po \
@@ -444,16 +452,16 @@ SOURCES = $(libnv_la_SOURCES) $(libptsort_la_SOURCES) \
 	$(dirwatch_SOURCES) $(jexecd_SOURCES) $(locked_mkdir_SOURCES) \
 	$(nc_SOURCES) $(poudriered_SOURCES) $(ptsort_SOURCES) \
 	$(pwait_SOURCES) $(rename_SOURCES) $(rexec_SOURCES) \
-	$(rm_SOURCES) $(sh_SOURCES) $(timeout_SOURCES) \
-	$(timestamp_SOURCES)
+	$(rm_SOURCES) $(setsid_SOURCES) $(sh_SOURCES) \
+	$(timeout_SOURCES) $(timestamp_SOURCES)
 DIST_SOURCES = $(libnv_la_SOURCES) $(libptsort_la_SOURCES) \
 	$(libucl_la_SOURCES) $(cachec_SOURCES) $(cached_SOURCES) \
 	$(clock_SOURCES) $(cpdup_SOURCES) $(dirempty_SOURCES) \
 	$(dirwatch_SOURCES) $(jexecd_SOURCES) $(locked_mkdir_SOURCES) \
 	$(nc_SOURCES) $(poudriered_SOURCES) $(ptsort_SOURCES) \
 	$(pwait_SOURCES) $(rename_SOURCES) $(rexec_SOURCES) \
-	$(rm_SOURCES) $(sh_SOURCES) $(timeout_SOURCES) \
-	$(timestamp_SOURCES)
+	$(rm_SOURCES) $(setsid_SOURCES) $(sh_SOURCES) \
+	$(timeout_SOURCES) $(timestamp_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -847,6 +855,10 @@ nc_SOURCES = src/libexec/poudriere/nc/nc.c
 pwait_SOURCES = src/libexec/poudriere/pwait/pwait.c
 rename_SOURCES = src/libexec/poudriere/rename/rename.c
 rm_SOURCES = src/libexec/poudriere/rm/rm.c
+setsid_SOURCES = src/libexec/poudriere/setsid/setsid.c \
+			set/libexec/poudriere/setsid/c.h
+
+setsid_CFLAGS = -DHAVE_ERR_H -DHAVE_NANOSLEEP
 timeout_SOURCES = src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES = src/libexec/poudriere/timestamp/timestamp.c
 timestamp_LDADD = -lpthread
@@ -1372,6 +1384,19 @@ src/libexec/poudriere/rm/rm.$(OBJEXT):  \
 rm$(EXEEXT): $(rm_OBJECTS) $(rm_DEPENDENCIES) $(EXTRA_rm_DEPENDENCIES) 
 	@rm -f rm$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(rm_OBJECTS) $(rm_LDADD) $(LIBS)
+src/libexec/poudriere/setsid/$(am__dirstamp):
+	@$(MKDIR_P) src/libexec/poudriere/setsid
+	@: > src/libexec/poudriere/setsid/$(am__dirstamp)
+src/libexec/poudriere/setsid/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/libexec/poudriere/setsid/$(DEPDIR)
+	@: > src/libexec/poudriere/setsid/$(DEPDIR)/$(am__dirstamp)
+src/libexec/poudriere/setsid/setsid-setsid.$(OBJEXT):  \
+	src/libexec/poudriere/setsid/$(am__dirstamp) \
+	src/libexec/poudriere/setsid/$(DEPDIR)/$(am__dirstamp)
+
+setsid$(EXEEXT): $(setsid_OBJECTS) $(setsid_DEPENDENCIES) $(EXTRA_setsid_DEPENDENCIES) 
+	@rm -f setsid$(EXEEXT)
+	$(AM_V_CCLD)$(setsid_LINK) $(setsid_OBJECTS) $(setsid_LDADD) $(LIBS)
 external/sh/$(am__dirstamp):
 	@$(MKDIR_P) external/sh
 	@: > external/sh/$(am__dirstamp)
@@ -1643,6 +1668,7 @@ mostlyclean-compile:
 	-rm -f src/libexec/poudriere/rename/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/rexec/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/rm/*.$(OBJEXT)
+	-rm -f src/libexec/poudriere/setsid/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/timeout/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/timestamp/*.$(OBJEXT)
 	-rm -f src/poudriere-sh/*.$(OBJEXT)
@@ -1719,6 +1745,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rm/$(DEPDIR)/rm.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rm/$(DEPDIR)/sh-rm.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/setsid/$(DEPDIR)/setsid-setsid.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/timeout/$(DEPDIR)/timeout.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/poudriere-sh/$(DEPDIR)/sh-builtins.Po@am__quote@ # am--include-marker
@@ -1997,6 +2024,20 @@ src/libexec/poudriere/rexec/rexec-rexec.obj: src/libexec/poudriere/rexec/rexec.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/rexec/rexec.c' object='src/libexec/poudriere/rexec/rexec-rexec.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rexec_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/rexec/rexec-rexec.obj `if test -f 'src/libexec/poudriere/rexec/rexec.c'; then $(CYGPATH_W) 'src/libexec/poudriere/rexec/rexec.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/rexec/rexec.c'; fi`
+
+src/libexec/poudriere/setsid/setsid-setsid.o: src/libexec/poudriere/setsid/setsid.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(setsid_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/setsid/setsid-setsid.o -MD -MP -MF src/libexec/poudriere/setsid/$(DEPDIR)/setsid-setsid.Tpo -c -o src/libexec/poudriere/setsid/setsid-setsid.o `test -f 'src/libexec/poudriere/setsid/setsid.c' || echo '$(srcdir)/'`src/libexec/poudriere/setsid/setsid.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/setsid/$(DEPDIR)/setsid-setsid.Tpo src/libexec/poudriere/setsid/$(DEPDIR)/setsid-setsid.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/setsid/setsid.c' object='src/libexec/poudriere/setsid/setsid-setsid.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(setsid_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/setsid/setsid-setsid.o `test -f 'src/libexec/poudriere/setsid/setsid.c' || echo '$(srcdir)/'`src/libexec/poudriere/setsid/setsid.c
+
+src/libexec/poudriere/setsid/setsid-setsid.obj: src/libexec/poudriere/setsid/setsid.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(setsid_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/setsid/setsid-setsid.obj -MD -MP -MF src/libexec/poudriere/setsid/$(DEPDIR)/setsid-setsid.Tpo -c -o src/libexec/poudriere/setsid/setsid-setsid.obj `if test -f 'src/libexec/poudriere/setsid/setsid.c'; then $(CYGPATH_W) 'src/libexec/poudriere/setsid/setsid.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/setsid/setsid.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/setsid/$(DEPDIR)/setsid-setsid.Tpo src/libexec/poudriere/setsid/$(DEPDIR)/setsid-setsid.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/setsid/setsid.c' object='src/libexec/poudriere/setsid/setsid-setsid.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(setsid_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/setsid/setsid-setsid.obj `if test -f 'src/libexec/poudriere/setsid/setsid.c'; then $(CYGPATH_W) 'src/libexec/poudriere/setsid/setsid.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/setsid/setsid.c'; fi`
 
 external/sh/sh-alias.o: external/sh/alias.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sh_CFLAGS) $(CFLAGS) -MT external/sh/sh-alias.o -MD -MP -MF external/sh/$(DEPDIR)/sh-alias.Tpo -c -o external/sh/sh-alias.o `test -f 'external/sh/alias.c' || echo '$(srcdir)/'`external/sh/alias.c
@@ -3442,6 +3483,8 @@ distclean-generic:
 	-rm -f src/libexec/poudriere/rexec/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/rm/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/rm/$(am__dirstamp)
+	-rm -f src/libexec/poudriere/setsid/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/libexec/poudriere/setsid/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/timeout/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/timeout/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/timestamp/$(DEPDIR)/$(am__dirstamp)
@@ -3529,6 +3572,7 @@ distclean: distclean-recursive
 	-rm -f src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Po
 	-rm -f src/libexec/poudriere/rm/$(DEPDIR)/rm.Po
 	-rm -f src/libexec/poudriere/rm/$(DEPDIR)/sh-rm.Po
+	-rm -f src/libexec/poudriere/setsid/$(DEPDIR)/setsid-setsid.Po
 	-rm -f src/libexec/poudriere/timeout/$(DEPDIR)/timeout.Po
 	-rm -f src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-builtins.Po
@@ -3668,6 +3712,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Po
 	-rm -f src/libexec/poudriere/rm/$(DEPDIR)/rm.Po
 	-rm -f src/libexec/poudriere/rm/$(DEPDIR)/sh-rm.Po
+	-rm -f src/libexec/poudriere/setsid/$(DEPDIR)/setsid-setsid.Po
 	-rm -f src/libexec/poudriere/timeout/$(DEPDIR)/timeout.Po
 	-rm -f src/libexec/poudriere/timestamp/$(DEPDIR)/timestamp.Po
 	-rm -f src/poudriere-sh/$(DEPDIR)/sh-builtins.Po
