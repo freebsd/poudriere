@@ -662,13 +662,13 @@ injail_tty() {
 		if [ -n "${MAX_MEMORY}" ]; then
 			MAX_MEMORY_BYTES="$((MAX_MEMORY * 1024 * 1024 * 1024))"
 		fi
-		jexec -U ${JUSER:-root} ${name}${JNETNAME:+-${JNETNAME}} \
+		${JEXEC_SETSID-} jexec -U ${JUSER:-root} ${name}${JNETNAME:+-${JNETNAME}} \
 			${JEXEC_LIMITS+/usr/bin/limits} \
 			${MAX_MEMORY_BYTES:+-v ${MAX_MEMORY_BYTES}} \
 			${MAX_FILES:+-n ${MAX_FILES}} \
 			"$@"
 	else
-		jexec -U ${JUSER:-root} ${name}${JNETNAME:+-${JNETNAME}} \
+		${JEXEC_SETSID-} jexec -U ${JUSER:-root} ${name}${JNETNAME:+-${JNETNAME}} \
 			"$@"
 	fi
 }
@@ -4254,6 +4254,7 @@ build_port() {
 	local testfailure=0
 	local max_execution_time allownetworking
 	local _need_root NEED_ROOT PREFIX MAX_FILES
+	local JEXEC_SETSID
 
 	_my_path mnt
 	_log_path log
@@ -4313,6 +4314,10 @@ build_port() {
 	fi
 
 	for phase in ${targets}; do
+		case "${phase}" in
+		configure|build|test) JEXEC_SETSID="setsid -w" ;;
+		*) JEXEC_SETSID= ;;
+		esac
 		max_execution_time=${MAX_EXECUTION_TIME}
 		phaseenv=
 		JUSER=${jailuser}
