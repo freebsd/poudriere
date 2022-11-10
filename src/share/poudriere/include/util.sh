@@ -437,12 +437,6 @@ read_file() {
 	# var_return may be empty if only $_read_file_lines_read is being
 	# used.
 	_ret=0
-
-	if mapfile_builtin; then
-		_mapfile_read_file "$@" || _ret="$?"
-		return "${_ret}"
-	fi
-
 	_read_file_lines_read=0
 	case "${file}" in
 	-|/dev/stdin) file="/dev/fd/0" ;;
@@ -455,6 +449,11 @@ read_file() {
 		fi
 		;;
 	esac
+
+	if mapfile_builtin; then
+		_mapfile_read_file "$@" || _ret="$?"
+		return "${_ret}"
+	fi
 
 	set +e
 	_data=
