@@ -138,6 +138,7 @@ pkglibexec_PROGRAMS= \
 		     rename \
 		     rexec \
 		     @RM@ \
+		     setsid \
 		     timeout \
 		     timestamp \
 		     @SH@
@@ -167,6 +168,9 @@ nc_SOURCES=		src/libexec/poudriere/nc/nc.c
 pwait_SOURCES=		src/libexec/poudriere/pwait/pwait.c
 rename_SOURCES=		src/libexec/poudriere/rename/rename.c
 rm_SOURCES=		src/libexec/poudriere/rm/rm.c
+setsid_SOURCES=		src/libexec/poudriere/setsid/setsid.c \
+			set/libexec/poudriere/setsid/c.h
+setsid_CFLAGS=		-DHAVE_ERR_H -DHAVE_NANOSLEEP
 timeout_SOURCES=	src/libexec/poudriere/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
 timestamp_LDADD=	-lpthread
