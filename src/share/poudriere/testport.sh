@@ -191,6 +191,9 @@ export MASTERNAME
 export MASTERMNT
 export POUDRIERE_BUILD_TYPE=bulk
 
+_log_path log
+log_start testport 1
+
 jail_start "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 
 _pget portsdir ${PTNAME} mnt
@@ -249,8 +252,6 @@ fi
 prepare_ports
 show_dry_run_summary
 markfs prepkg ${MASTERMNT}
-
-_log_path log
 
 PARALLEL_JOBS=${BUILD_PARALLEL_JOBS}
 
@@ -320,6 +321,7 @@ if [ -n "${MAX_MEMORY}" -o -n "${MAX_FILES}" ]; then
 	JEXEC_LIMITS=1
 fi
 unset PKGNAME_VARNAME
+log_stop
 log_start "${PKGNAME}" 1
 buildlog_start "${PKGNAME}" "${ORIGINSPEC}"
 ret=0
