@@ -535,6 +535,7 @@ mapfile_writecmd(int argc, char **argv)
 	if (argc == 1) {
 		data = argv[0];
 		ret = _mapfile_write(md, handle, nflag, data);
+		assert(is_int_on());
 	} else {
 		/* Read from TTY */
 		/*
@@ -542,12 +543,19 @@ mapfile_writecmd(int argc, char **argv)
 		 * copool branch make it in to avoid massive conflicts
 		 */
 		char cmd[256];
+		struct sigdata oinfo;
 
 		snprintf(cmd, sizeof(cmd), "mapfile_tee %s \"%s\";",
 		    nflag == 1 ? "-n" : "",
 		    handle);
+		trap_push(SIGINFO, &oinfo);
+		INTON;
+		assert(!is_int_on());
 		evalstring(cmd, 0);
 		ret = exitstatus;
+		assert(!is_int_on());
+		INTOFF;
+		trap_pop(SIGINFO, &oinfo);
 	}
 	INTON;
 
