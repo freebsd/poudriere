@@ -1475,12 +1475,8 @@ ${COLOR_RESET}Tobuild: %-${queue_width}d  Time: %s\n" \
 	    "${nbtobuild}" "${buildtime}"
 }
 
-siginfo_handler() {
-	local IFS; unset IFS;
-	in_siginfo_handler=1
-	if [ "${POUDRIERE_BUILD_TYPE}" != "bulk" ]; then
-		return 0
-	fi
+_siginfo_handler() {
+	local IFS
 	local status
 	local now
 	local j elapsed elapsed_phase job_id_color
@@ -1491,17 +1487,13 @@ siginfo_handler() {
 
 	set +e
 
-	trap '' INFO
-
 	_bget status status || status=unknown
 	if [ "${status}" = "index:" -o "${status#stopped:}" = "crashed:" ]; then
-		enable_siginfo_handler
 		return 0
 	fi
 
 	_bget nbq stats_queued || nbq=0
 	if [ -z "${nbq}" ]; then
-		enable_siginfo_handler
 		return 0
 	fi
 
@@ -1630,7 +1622,30 @@ siginfo_handler() {
 	display_output >&2
 
 	show_log_info >&2
+}
+
+siginfo_handler() {
+	local -; set +x
+	unset IFS
+
+	trap '' INFO
+	if ! was_a_bulk_run; then
+		case "${SCRIPTNAME:?}" in
+		"status.sh") ;;
+		*)
+			err "${EX_SOFTWARE}" "siginfo_handler for non-bulk run?"
+			;;
+		esac
+	fi
+	_siginfo_handler
 	enable_siginfo_handler
+}
+
+enable_siginfo_handler() {
+	if was_a_bulk_run; then
+		trap siginfo_handler INFO
+	fi
+	return 0
 }
 
 jail_exists() {
@@ -8562,11 +8577,6 @@ HOOKDIR=${POUDRIERED}/hooks
 [ -z "${NO_ZFS}" -a -z "${ZPOOL}" ] && err 1 "ZPOOL variable is not set"
 [ -z "${BASEFS}" ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
 
-enable_siginfo_handler() {
-	was_a_bulk_run && trap siginfo_handler INFO
-	in_siginfo_handler=0
-	return 0
-}
 if [ "${IN_TEST:-0}" -eq 0 ]; then
 	trap sigpipe_handler PIPE
 	trap sigint_handler INT
