@@ -1497,7 +1497,7 @@ _siginfo_handler() {
 		return 0
 	fi
 
-	show_build_summary >&2
+	show_build_summary
 
 	now=$(clock -monotonic)
 
@@ -1619,9 +1619,8 @@ _siginfo_handler() {
 			    "${mem:+${mem}%}"
 		done
 	fi
-	display_output >&2
-
-	show_log_info >&2
+	display_output
+	show_log_info
 }
 
 siginfo_handler() {
@@ -1637,7 +1636,7 @@ siginfo_handler() {
 			;;
 		esac
 	fi
-	_siginfo_handler
+	_siginfo_handler >&2
 	enable_siginfo_handler
 }
 
