@@ -670,6 +670,9 @@ function process_data_build(data) {
 			data.ports["remaining"] = [];
 		}
 		$.each(data.ports, function(status, ports) {
+			if (status == "tobuild") {
+				return;
+			}
 			if (data.ports[status] &&
 				(data.ports[status].length > 0 || status == "remaining")) {
 				table_rows = [];
