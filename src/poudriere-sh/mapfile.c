@@ -490,7 +490,6 @@ _mapfile_write(/*XXX const*/ struct mapped_data *md, const char *handle,
 		    getpid(), md->file, handle, fileno(md->fp), feof(md->fp),
 		    ferror(md->fp), serrno);
 		md_close(md);
-		INTON;
 		if (serrno == EPIPE)
 			ret = EPIPE;
 		else if (serrno == EINTR)
