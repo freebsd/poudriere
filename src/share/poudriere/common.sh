@@ -1501,18 +1501,18 @@ _siginfo_handler() {
 
 	now=$(clock -monotonic)
 
-	# Some of the \b and empty field hacks here are for adding [] in
-	# the output but not the header for historical and consistency
-	# reasons.
-	format_origin_phase="%%c \b%%s \b%%-%ds${COLOR_RESET} \b%%c %%-%ds ${COLOR_PORT}%%%ds %%c %%-%ds${COLOR_RESET} ${COLOR_PHASE}%%%ds${COLOR_RESET} %%-%ds %%-%ds %%%ds %%%ds"
-	display_setup "${format_origin_phase}"
-	display_add " " "" "ID" " " "TOTAL" "ORIGIN" " " "PKGNAME" "PHASE" \
-	            "PHASE" "TMPFS" "CPU%" "MEM%"
-
 	# Skip if stopping or starting jobs or stopped.
 	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" \
 	    -a "${status}" != "stopping_jobs:" -a -n "${MASTERMNT}" ] && \
 	    ! status_is_stopped "${status}"; then
+		# Some of the \b and empty field hacks here are for adding [] in
+		# the output but not the header for historical and consistency
+		# reasons.
+		format_origin_phase="%%c \b%%s \b%%-%ds${COLOR_RESET} \b%%c %%-%ds ${COLOR_PORT}%%%ds %%c %%-%ds${COLOR_RESET} ${COLOR_PHASE}%%%ds${COLOR_RESET} %%-%ds %%-%ds %%%ds %%%ds"
+		display_setup "${format_origin_phase}"
+		display_add " " "" "ID" " " "TOTAL" "ORIGIN" " " "PKGNAME" "PHASE" \
+			    "PHASE" "TMPFS" "CPU%" "MEM%"
+
 		while mapfile_read_loop_redir j cpu mem; do
 			j="${j#*-job-}"
 			hash_set siginfo_cpu "${j}" "${cpu}"
@@ -1618,8 +1618,8 @@ _siginfo_handler() {
 			    "${cpu:+${cpu}%}" \
 			    "${mem:+${mem}%}"
 		done
+		display_output
 	fi
-	display_output
 	show_log_info
 }
 
