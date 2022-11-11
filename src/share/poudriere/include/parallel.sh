@@ -288,6 +288,11 @@ nohang() {
 	# Run the actual command in a child subshell
 	(
 		local ret=0
+		if [ "${OUTPUT_REDIRECTED:-0}" -eq 1 ]; then
+			exec 3>&- 4>&-
+			unset OUTPUT_REDIRECTED OUTPUT_REDIRECTED_STDERR \
+			    OUTPUT_REDIRECTED_STDOUT
+		fi
 		_spawn_wrapper "$@" || ret=1
 		# Notify the pipe the command is done
 		echo done >&8 2>/dev/null || :

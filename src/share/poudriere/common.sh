@@ -4479,7 +4479,7 @@ build_port() {
 		if [ "${phase#*-}" = "depends" ]; then
 			injail /usr/bin/env ${phaseenv:+-S "${phaseenv}"} \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
-			    ${phase} 3>&- 4>&- || return 1
+			    ${phase} || return 1
 		else
 
 			nohang ${max_execution_time} ${NOHANG_TIME} \
@@ -4487,7 +4487,7 @@ build_port() {
 				"${MASTER_DATADIR}/var/run/${MY_JOBID:-00}_nohang.pid" \
 				injail /usr/bin/env ${phaseenv:+-S "${phaseenv}"} \
 				/usr/bin/make -C ${portdir} ${MAKE_ARGS} \
-				${phase} 3>&- 4>&-
+				${phase}
 			hangstatus=$? # This is done as it may return 1 or 2 or 3
 			if [ $hangstatus -ne 0 ]; then
 				# 1 = cmd failed, not a timeout
