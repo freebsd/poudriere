@@ -26,6 +26,10 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+if ! type err >/dev/null 2>&1; then
+	alias err=_err
+fi
+
 BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
 . ${SCRIPTPREFIX}/include/common.sh.${BSDPLATFORM}
 . ${SCRIPTPREFIX}/include/hash.sh
@@ -125,9 +129,6 @@ _err() {
 		return 0
 	fi
 }
-if ! type err >/dev/null 2>&1; then
-	alias err=_err
-fi
 
 # Message functions that depend on VERBOSE are stubbed out in post_getopts.
 
