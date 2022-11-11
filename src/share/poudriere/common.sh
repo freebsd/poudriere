@@ -1636,7 +1636,8 @@ siginfo_handler() {
 			;;
 		esac
 	fi
-	_siginfo_handler >&2
+	# Send all output to the real stderr.
+	_siginfo_handler 2>&${OUTPUT_REDIRECTED_STDERR:-2} >&2
 	enable_siginfo_handler
 }
 
