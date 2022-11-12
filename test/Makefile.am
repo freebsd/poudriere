@@ -24,6 +24,7 @@ TESTS=\
 	gsub.sh \
 	globmatch.sh \
 	hash_basic.sh \
+	hash_stack.sh \
 	list.sh \
 	locks.sh \
 	locks_critical_section.sh \
@@ -44,6 +45,7 @@ TESTS=\
 	relpath_common.sh \
 	required_env.sh \
 	shash_basic.sh \
+	stack.sh \
 	stripansi.sh \
 	timespec.sh \
 	timestamp.sh \

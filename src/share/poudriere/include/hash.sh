@@ -163,6 +163,94 @@ hash_get() {
 	getvar "${_hash_var_name}" "${3}"
 }
 
+hash_push() {
+	hash_push_front "$@"
+}
+
+hash_push_front() {
+	local -; set +x
+	[ $# -eq 3 ] || eargs hash_push_front var key value
+	local hpf_var="$1"
+	local hpf_key="$2"
+	local hpf_value="$3"
+	local _hash_var_name
+
+	_hash_var_name "${hpf_var}" "${hpf_key}"
+	stack_push "${_hash_var_name}" "${hpf_value}" || return "$?"
+}
+
+hash_push_back() {
+	local -; set +x
+	[ $# -eq 3 ] || eargs hash_push_back var key value
+	local hp_var="$1"
+	local hp_key="$2"
+	local hp_value="$3"
+	local _hash_var_name
+
+	_hash_var_name "${hp_var}" "${hp_key}"
+	stack_push_back "${_hash_var_name}" "${hp_value}" || return "$?"
+}
+
+hash_pop() {
+	hash_pop_front "$@"
+}
+
+hash_pop_front() {
+	local -; set +x
+	[ $# -eq 3 ] || eargs hash_pop_front var key var_return
+	local hpf_var="$1"
+	local hpf_key="$2"
+	local hpf_var_return="$3"
+	local _hash_var_name
+
+	_hash_var_name "${hpf_var}" "${hpf_key}"
+	stack_pop "${_hash_var_name}" "${hpf_var_return}" || return "$?"
+}
+
+hash_pop_back() {
+	local -; set +x
+	[ $# -eq 3 ] || eargs hash_pop_back var key var_return
+	local hp_var="$1"
+	local hp_key="$2"
+	local hp_var_return="$3"
+	local _hash_var_name
+
+	_hash_var_name "${hp_var}" "${hp_key}"
+	stack_pop_back "${_hash_var_name}" "${hp_var_return}" || return "$?"
+}
+
+hash_foreach() {
+	hash_foreach_front "$@"
+}
+
+hash_foreach_front() {
+	local -; set +x
+	[ $# -eq 4 ] || eargs hash_foreach_front var key var_return tmp_var
+	local hff_var="$1"
+	local hff_key="$2"
+	local hff_var_return="$3"
+	local hff_tmp_var="$4"
+	local _hash_var_name
+
+	_hash_var_name "${hff_var}" "${hff_key}"
+	stack_foreach "${_hash_var_name}" "${hff_var_return}" "${hff_tmp_var}" ||
+	    return "$?"
+}
+
+hash_foreach_back() {
+	local -; set +x
+	[ $# -eq 4 ] || eargs hash_foreach_back var key var_return tmp_var
+	local hfb_var="$1"
+	local hfb_key="$2"
+	local hfb_var_return="$3"
+	local hfb_tmp_var="$4"
+	local _hash_var_name
+
+	_hash_var_name "${hfb_var}" "${hfb_key}"
+	stack_foreach_back "${_hash_var_name}" "${hfb_var_return}" \
+	    "${hfb_tmp_var}" || return "$?"
+}
+
 hash_set() {
 	local -; set +x
 	[ $# -eq 3 ] || eargs hash_set var key value
@@ -260,4 +348,138 @@ list_remove() {
 	newvalue="${newvalue# }"
 	newvalue="${newvalue% }"
 	setvar "${_var}" "${newvalue}"
+}
+
+stack_push() {
+	stack_push_front "$@"
+}
+
+stack_push_front() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs stack_push_front var item
+	local spf_var="$1"
+	local spf_item="$2"
+	local spf_value
+
+	getvar "${spf_var}" spf_value || spf_value=
+	setvar "${spf_var}" "${spf_item}${spf_value:+ ${spf_value}}"
+}
+
+stack_push_back() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs stack_push_back var item
+	local spb_var="$1"
+	local spb_item="$2"
+	local spb_value
+
+	getvar "${spb_var}" spb_value || spb_value=
+	setvar "${spb_var}" "${spb_value:+${spb_value} }${spb_item}"
+}
+
+stack_pop() {
+	stack_pop_front "$@"
+}
+
+stack_pop_front() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs stack_pop_front var item_var_return
+	local spf_var="$1"
+	local spf_item_var_return="$2"
+	local spf_value spf_item
+
+	getvar "${spf_var}" spf_value || spf_value=
+	case "${spf_value}" in
+	"")
+		# In a for loop
+		setvar "${spf_item_var_return}" ""
+		unset "${spf_var}"
+		return 1
+		;;
+	esac
+	spf_item="${spf_value%% *}"
+	case "${spf_item}" in
+	"${spf_value}" )
+		# Last pop
+		spf_value=""
+		;;
+	*)
+		spf_value="${spf_value#* }"
+		;;
+	esac
+	setvar "${spf_var}" "${spf_value}"
+	setvar "${spf_item_var_return}" "${spf_item}"
+}
+
+stack_pop_back() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs stack_pop_back var item_var_return
+	local spb_var="$1"
+	local spb_item_var_return="$2"
+	local spb_value spb_item
+
+	getvar "${spb_var}" spb_value || spb_value=
+	case "${spb_value}" in
+	"")
+		# In a for loop
+		setvar "${spb_item_var_return}" ""
+		unset "${spb_var}"
+		return 1
+		;;
+	esac
+	spb_item="${spb_value##* }"
+	case "${spb_item}" in
+	"${spb_value}" )
+		# Last pop
+		spb_value=""
+		;;
+	*)
+		spb_value="${spb_value% *}"
+		;;
+	esac
+	setvar "${spb_var}" "${spb_value}"
+	setvar "${spb_item_var_return}" "${spb_item}"
+}
+
+stack_foreach() {
+	stack_foreach_front "$@"
+}
+
+stack_foreach_front() {
+	local -; set +x
+	[ "$#" -eq 3 ] || eargs stack_foreach_front var item_var_return tmp_var
+	local sff_var="$1"
+	local sff_item_var_return="$2"
+	local sff_tmp_var="$3"
+	local sff_tmp_stack
+
+	if ! getvar "${sff_tmp_var}" sff_tmp_stack; then
+		getvar "${sff_var}" sff_tmp_stack || return 1
+	fi
+	if stack_pop sff_tmp_stack "${sff_item_var_return}"; then
+		setvar "${sff_tmp_var}" "${sff_tmp_stack-}"
+		return 0
+	else
+		unset "${sff_tmp_var}"
+		return 1
+	fi
+}
+
+stack_foreach_back() {
+	local -; set +x
+	[ "$#" -eq 3 ] || eargs stack_foreach_back var item_var_return tmp_var
+	local sf_var="$1"
+	local sf_item_var_return="$2"
+	local sf_tmp_var="$3"
+	local sf_tmp_stack
+
+	if ! getvar "${sf_tmp_var}" sf_tmp_stack; then
+		getvar "${sf_var}" sf_tmp_stack || return 1
+	fi
+	if stack_pop_back sf_tmp_stack "${sf_item_var_return}"; then
+		setvar "${sf_tmp_var}" "${sf_tmp_stack-}"
+		return 0
+	else
+		unset "${sf_tmp_var}"
+		return 1
+	fi
 }
