@@ -2,6 +2,11 @@ set -e
 . common.sh
 set +e
 
+trap - INT
+trap - EXIT
+trap - PIPE
+trap - TERM
+
 builtin=0
 if [ "$(type trap_push 2>/dev/null)" = "trap_push is a shell builtin" ]; then
 	builtin=1
@@ -54,7 +59,6 @@ if [ ${sh_quotes_assignments} -eq 1 ]; then
 else
 	orig_intrap="gotint=1"
 fi
-trap - INT
 
 ORIGINAL=$(mktemp -ut trap_save)
 echo "trap -- ${orig_intrap} INT" > "${ORIGINAL}"

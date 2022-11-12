@@ -7,6 +7,10 @@ msg_warn() {
 	echo "$@" >&2
 }
 
+msg() {
+	echo "$@"
+}
+
 test_output() {
 	local ret="$1"
 

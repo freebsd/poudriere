@@ -8549,17 +8549,19 @@ HOOKDIR=${POUDRIERED}/hooks
 [ -z "${NO_ZFS}" -a -z "${ZPOOL}" ] && err 1 "ZPOOL variable is not set"
 [ -z "${BASEFS}" ] && err 1 "Please provide a BASEFS variable in your poudriere.conf"
 
-trap sigpipe_handler PIPE
-trap sigint_handler INT
-trap sighup_handler HUP
-trap sigterm_handler TERM
-trap exit_handler EXIT
 enable_siginfo_handler() {
 	was_a_bulk_run && trap siginfo_handler INFO
 	in_siginfo_handler=0
 	return 0
 }
-enable_siginfo_handler
+if [ "${IN_TEST:-0}" -eq 0 ]; then
+	trap sigpipe_handler PIPE
+	trap sigint_handler INT
+	trap sighup_handler HUP
+	trap sigterm_handler TERM
+	trap exit_handler EXIT
+	enable_siginfo_handler
+fi
 
 # Test if zpool exists
 if [ -z "${NO_ZFS}" ]; then

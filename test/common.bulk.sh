@@ -4,6 +4,8 @@ set -e
 # Avoid injail() for port_var_fetch
 INJAIL_HOST=1
 
+: ${SCRIPTNAME:=${0%.sh}}
+
 . common.sh
 
 # Strip away @DEFAULT if it is the default FLAVOR
@@ -575,7 +577,6 @@ if [ -z "${POUDRIEREPATH}" ]; then
 	exit 99
 fi
 
-: ${SCRIPTNAME:=${0%.sh}}
 SCRIPTNAME="${SCRIPTNAME##*/}"
 BUILDNAME="$(date +%s)"
 POUDRIERE="${POUDRIEREPATH} -e ${POUDRIERE_ETC}"
@@ -649,8 +650,6 @@ ${FLAVOR_DEFAULT_ALL:+FLAVOR_DEFAULT_ALL=${FLAVOR_DEFAULT_ALL}}
 ${FLAVOR_ALL:+FLAVOR_ALL=${FLAVOR_ALL}}
 ${IMMUTABLE_BASE:+IMMUTABLE_BASE=${IMMUTABLE_BASE}}
 EOF
-
-. ${SCRIPTPREFIX}/common.sh
 
 echo -n "Pruning stale jails..."
 ${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} jail -k \

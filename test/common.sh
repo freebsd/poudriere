@@ -25,6 +25,7 @@ write_atomic_cmp() {
 CMD="${0##*/}"
 IN_TEST=1
 SCRIPTPATH="${SCRIPTPREFIX}/${CMD}"
+: ${SCRIPTNAME:=runtest.sh}
 : ${BASEFS:=/var/tmp/poudriere/test}
 POUDRIERE_ETC="${BASEFS}/etc"
 
@@ -242,3 +243,26 @@ _err() {
 if ! type err >/dev/null 2>&1; then
 	alias err=_err
 fi
+
+cleanup() {
+	# Avoid recursively cleaning up here
+	trap - EXIT SIGTERM
+	# Ignore SIGPIPE for messages
+	trap '' SIGPIPE
+	# Ignore SIGINT while cleaning up
+	trap '' SIGINT
+	msg_dev "cleanup($1)" >&2
+	kill_jobs
+	msg_dev "exit()" >&2
+	exit
+}
+
+trap 'msg_dev int;exit' INT
+trap 'cleanup term' TERM
+trap 'cleanup pipe' PIPE
+trap 'cleanup exit' EXIT
+
+msg_debug "getpid: $$"
+
+. ${SCRIPTPREFIX}/common.sh
+post_getopts
