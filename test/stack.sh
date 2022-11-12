@@ -3,10 +3,9 @@ set -e
 set +e
 
 _assert_stack() {
-	local lineinfo="$1"
-	local stack_var="$2"
-	local expected="$3"
-	local reason="$4"
+	local stack_var="$1"
+	local expected="$2"
+	local reason="$3"
 	local have_tmp=$(mktemp -t assert_stack)
 	local expected_tmp=$(mktemp -t assert_stack)
 	local ret=0
@@ -20,10 +19,10 @@ _assert_stack() {
 	[ ${ret} -ne 0 ] && comm "${have_tmp}" "${expected_tmp}" >&2
 
 	rm -f "${have_tmp}" "${expected_tmp}"
-	_assert "${lineinfo}" 0 "${ret}" \
+	assert 0 "${ret}" \
 		"${reason} - Have: '${val}' Expected: '${expected}'"
 }
-alias assert_stack='_assert_stack "$0:$LINENO"'
+alias assert_stack='stack_lineinfo _assert_stack '
 
 STACK=
 assert_ret 0 stack_push STACK "01"

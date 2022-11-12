@@ -1,5 +1,6 @@
 MOSTLYCLEANFILES=
 MOSTLYCLEANFILES+=	$(TEST_LOGS:.log=.log.truss)
+MOSTLYCLEANFILES+=	$(TEST_LOGS:.log=*.log)
 
 EXTRA_DIST= $(TESTS) \
 	    $(JAIL_TESTS) \
@@ -8,9 +9,6 @@ EXTRA_DIST= $(TESTS) \
 	    common.sh \
 	    prep.sh \
 	    runtest.sh
-
-XFAIL_TESTS=\
-	calculate_duration.sh
 
 TESTS=\
 	builtins.sh \
@@ -33,6 +31,7 @@ TESTS=\
 	locked_mkdir_waiters.sh \
 	locked_mkdir_waiters_kill.sh \
 	locked_mkdir_waiters_all_lose.sh \
+	logging.sh \
 	mapfile.sh \
 	mktemp.sh \
 	originspec.sh \
@@ -47,6 +46,8 @@ TESTS=\
 	shash_basic.sh \
 	stack.sh \
 	stripansi.sh \
+	test_contexts.sh \
+	test_contexts_expand.sh \
 	timespec.sh \
 	timestamp.sh \
 	trap_ignore_block.sh \

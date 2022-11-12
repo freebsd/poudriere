@@ -452,7 +452,8 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-MOSTLYCLEANFILES = $(TEST_LOGS:.log=.log.truss)
+MOSTLYCLEANFILES = $(TEST_LOGS:.log=.log.truss) \
+	$(TEST_LOGS:.log=*.log)
 EXTRA_DIST = $(TESTS) \
 	    $(JAIL_TESTS) \
 	    common.bulk.sh \
@@ -460,9 +461,6 @@ EXTRA_DIST = $(TESTS) \
 	    common.sh \
 	    prep.sh \
 	    runtest.sh
-
-XFAIL_TESTS = \
-	calculate_duration.sh
 
 
 # Depend bulk tests on jail setup
@@ -472,10 +470,11 @@ TESTS = builtins.sh cache.sh calculate_duration.sh display.sh \
 	locks_critical_section.sh locks_critical_section_nested.sh \
 	locked_mkdir.sh locked_mkdir_waiters.sh \
 	locked_mkdir_waiters_kill.sh locked_mkdir_waiters_all_lose.sh \
-	mapfile.sh mktemp.sh originspec.sh pkg_version.sh \
+	logging.sh mapfile.sh mktemp.sh originspec.sh pkg_version.sh \
 	port_var_fetch.sh prefix_output.sh read_blocking.sh \
 	read_file.sh relpath.sh relpath_common.sh required_env.sh \
-	shash_basic.sh stack.sh stripansi.sh timespec.sh timestamp.sh \
+	shash_basic.sh stack.sh stripansi.sh test_contexts.sh \
+	test_contexts_expand.sh timespec.sh timestamp.sh \
 	trap_ignore_block.sh trap_save_block.sh trap_save.sh \
 	$(JAIL_TESTS) prep.sh
 JAIL_TESTS = \
@@ -862,6 +861,13 @@ locked_mkdir_waiters_all_lose.sh.log: locked_mkdir_waiters_all_lose.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+logging.sh.log: logging.sh
+	@p='logging.sh'; \
+	b='logging.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 mapfile.sh.log: mapfile.sh
 	@p='mapfile.sh'; \
 	b='mapfile.sh'; \
@@ -956,6 +962,20 @@ stack.sh.log: stack.sh
 stripansi.sh.log: stripansi.sh
 	@p='stripansi.sh'; \
 	b='stripansi.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_contexts.sh.log: test_contexts.sh
+	@p='test_contexts.sh'; \
+	b='test_contexts.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_contexts_expand.sh.log: test_contexts_expand.sh
+	@p='test_contexts_expand.sh'; \
+	b='test_contexts_expand.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

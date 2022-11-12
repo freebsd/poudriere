@@ -4,7 +4,7 @@ set -e
 # Avoid injail() for port_var_fetch
 INJAIL_HOST=1
 
-: ${SCRIPTNAME:=${0%.sh}}
+: ${SCRIPTNAME:=${0}}
 
 . common.sh
 
@@ -474,7 +474,7 @@ sorted() {
 	echo "$@" | tr ' ' '\n' | LC_ALL=C sort | paste -s -d ' ' -
 }
 
-assert_bulk_queue_and_stats() {
+_assert_bulk_queue_and_stats() {
 	local expanded_LISTPORTS_NOIGNORED
 	local port
 	local -
@@ -492,23 +492,24 @@ assert_bulk_queue_and_stats() {
 			EXPECTED_LISTED="${LISTPORTS}"
 		fi
 	fi
-	assert_queued "listed" "${EXPECTED_LISTED-}"
+	stack_lineinfo assert_queued "listed" "${EXPECTED_LISTED-}"
 
 	# Assert the IGNOREd ports are tracked in .poudriere.ports.ignored
-	assert_ignored "${EXPECTED_IGNORED-}"
+	stack_lineinfo assert_ignored "${EXPECTED_IGNORED-}"
 
 	# Assert that SKIPPED ports are right
-	assert_skipped "${EXPECTED_SKIPPED-}"
+	stack_lineinfo assert_skipped "${EXPECTED_SKIPPED-}"
 
 	# Assert that all expected dependencies are in poudriere.ports.queued
 	# (since they do not exist yet)
-	assert_queued "" "${EXPECTED_QUEUED-}"
+	stack_lineinfo assert_queued "" "${EXPECTED_QUEUED-}"
 
 	# Assert stats counts are right
-	assert_counts
+	stack_lineinfo assert_counts
 }
+alias assert_bulk_queue_and_stats='stack_lineinfo _assert_bulk_queue_and_stats '
 
-assert_bulk_build_results() {
+_assert_bulk_build_results() {
 	local pkgname file log originspec origin flavor flavor2 subpkg
 	local PKG_BIN pkg_originspec pkg_origin pkg_flavor
 
@@ -560,8 +561,8 @@ assert_bulk_build_results() {
 		assert 0 $? "Unable to get flavor from package: ${file}"
 		assert "${flavor}" "${pkg_flavor}" "Package flavor should match for: ${file}"
 	done
-
 }
+alias assert_bulk_build_results='stack_lineinfo _assert_bulk_build_results '
 
 SUDO=
 if [ $(id -u) -ne 0 ]; then
@@ -638,7 +639,7 @@ export PORTSDIR
 PTMNT="${PORTSDIR}"
 #: ${PTNAME:=${PTMNT##*/}}
 : ${PTNAME:=$(echo "${PORTSDIR}" | tr '[./]' '_')}
-: ${SETNAME:=${SCRIPTNAME}}
+: ${SETNAME:="${SCRIPTNAME%.sh}${TEST_NUMS:+$(echo "${TEST_NUMS}" | tr ' ' '_')}"}
 export PORT_DBDIR=/dev/null
 export __MAKE_CONF="${POUDRIERE_ETC}/poudriere.d/make.conf"
 export SRCCONF=/dev/null

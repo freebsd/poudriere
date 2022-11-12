@@ -5,6 +5,8 @@ trap '' SIGINFO
 STDOUT=$(mktemp -ut poudriere)
 STDERR=$(mktemp -ut poudriere)
 
+ret=0
+
 (
 	timestamp -T -1 stdout -2 stderr \
 	    sh -c "echo stuff; echo errors>&2; echo more; echo 'more errors' >&2" \
@@ -173,6 +175,8 @@ STDERR=$(mktemp -ut poudriere)
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
 ) || ret=1
+
+assert 0 "${ret}"
 
 rm -f ${STDOUT}* ${STDERR}*
 exit ${ret:-0}

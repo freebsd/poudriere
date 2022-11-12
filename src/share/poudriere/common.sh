@@ -48,6 +48,7 @@ BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
 EX_USAGE=64
 EX_DATAERR=65
 EX_SOFTWARE=70
+EX_IOERR=74
 SHFLAGS="$-"
 
 # Return true if ran from bulk/testport, ie not daemon/status/jail
@@ -71,6 +72,9 @@ schg_immutable_base() {
 }
 # Return true if output via msg() should show elapsed time
 should_show_elapsed() {
+	if [ "${IN_TEST:-0}" -eq 1 ]; then
+		return 1
+	fi
 	if [ -z "${TIME_START}" ]; then
 		return 1
 	fi
@@ -162,10 +166,10 @@ _msg_n() {
 	fi
 	case "${COLOR_ARROW-}${1}" in
 	*$'\033'"["*)
-		printf "${COLOR_ARROW-}${elapsed}${DRY_MODE-}${arrow:+${COLOR_ARROW-}${arrow} }${COLOR_RESET}%s${COLOR_RESET}${NL}" "$*"
+		printf "${elapsed:+${COLOR_ARROW-}${elapsed}${COLOR_RESET}}${DRY_MODE:+${COLOR_ARROW-}${DRY_MODE-}${COLOR_RESET}}${arrow:+${COLOR_ARROW-}${arrow} ${COLOR_RESET}}%s${COLOR_RESET}${NL}" "$*"
 		;;
 	*)
-		printf "${elapsed}${DRY_MODE-}${arrow:+${arrow} }%s${NL}" "$*"
+		printf "${elapsed-}${DRY_MODE-}${arrow:+${arrow} }%s${NL}" "$*"
 		;;
 	esac
 }
@@ -191,6 +195,10 @@ msg_error() {
 		# Send colored msg to bulk log...
 		COLOR_ARROW="${COLOR_ERROR}" \
 		    job_msg "${COLOR_ERROR}Error:${COLOR_RESET} $@"
+		# Needed hack for test output ordering
+		if [ "${IN_TEST:-0}" -eq 1 -a -n "${TEE_SLEEP_TIME-}" ]; then
+			sleep "${TEE_SLEEP_TIME}"
+		fi
 		# And non-colored to buld log
 		msg "Error: $@" >&2
 	else
@@ -241,10 +249,13 @@ job_msg() {
 	local now elapsed NO_ELAPSED_IN_MSG output
 
 	if [ -n "${MY_JOBID-}" ]; then
-		NO_ELAPSED_IN_MSG=0
-		now=$(clock -monotonic)
-		calculate_duration elapsed "$((now - ${TIME_START_JOB:-${TIME_START:-0}}))"
-		output="[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}] [${elapsed}] $@"
+		elapsed=
+		if [ "${IN_TEST:-0}" -eq 0 ]; then
+			NO_ELAPSED_IN_MSG=0
+			now=$(clock -monotonic)
+			calculate_duration elapsed "$((now - ${TIME_START_JOB:-${TIME_START:-0}}))"
+		fi
+		output="[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}]${elapsed:+ [${elapsed}] }$@"
 	else
 		output="$@"
 	fi
@@ -377,12 +388,13 @@ _logfile() {
 	[ $# -eq 2 ] || eargs _logfile var_return pkgname
 	local var_return="$1"
 	local pkgname="$2"
-	local _log _log_top _latest_log _logfile
+	local _log _log_top _log_jail _latest_log _logfile
 
 	_log_path _log
 	_logfile="${_log}/logs/${pkgname}.log"
 	if [ ! -r "${_logfile}" ]; then
 		_log_path_top _log_top
+		_log_path_jail _log_jail
 
 		_latest_log="${_log_top}/latest-per-pkg/${pkgname%-*}/${pkgname##*-}"
 
@@ -390,7 +402,9 @@ _logfile() {
 		# the issue by looking for files older than 1 minute.
 
 		# Make sure directory exists
-		mkdir -p "${_log}/logs" "${_latest_log}"
+		mkdir -p "${_log:?}/logs" \
+		    "${_latest_log:?}" \
+		    "${_log_jail:?}/latest-per-pkg"
 
 		:> "${_logfile}"
 
@@ -398,7 +412,7 @@ _logfile() {
 		ln -f "${_logfile}" "${_latest_log}/${MASTERNAME}.log"
 
 		# Link to JAIL/latest-per-pkg/PKGNAME.log
-		ln -f "${_logfile}" "${_log}/../latest-per-pkg/${pkgname}.log"
+		ln -f "${_logfile}" "${_log_jail:?}/latest-per-pkg/${pkgname}.log"
 	fi
 
 	setvar "${var_return}" "${_logfile}"

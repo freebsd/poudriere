@@ -1,24 +1,5 @@
 . common.sh
 
-_assert_file() {
-	local lineinfo="$1"
-	local expected="$2"
-	local have="$3"
-	local reason="$4"
-	local ret=0
-
-	cmp -s "${have}" "${expected}" || ret=$?
-
-	reason="${reason:+${reason} -}
-HAVE:
-$(cat -vet "${have}")
-EXPECTED:
-$(cat -vet "${expected}")"
-	rm -f "${have}" "${expected}"
-	_assert "${lineinfo}" 0 "${ret}" "${reason}"
-}
-alias assert_file='_assert_file "$0:$LINENO"'
-
 {
 	# Basic test
 	display_setup "%%-%ds %%-%ds" "-k2,2V -k1,1d"

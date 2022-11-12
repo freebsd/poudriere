@@ -260,6 +260,6 @@ done
 
 rm "${OUTPUT}" "${OUTPUT}.stderr" "${OUTPUT}.expected"
 if ! have_pipefail && [ ${ret} -ne 0 ]; then
-	ret=77	# SKIP
+	exit 77 # SKIP
 fi
-exit "${ret}"
+assert 0 "${ret}"

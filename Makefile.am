@@ -88,6 +88,7 @@ dist_pkgdata_DATA=	\
 			src/share/poudriere/testport.sh
 
 dist_include_HEADERS= \
+			src/share/poudriere/include/asserts.sh \
 			src/share/poudriere/include/cache.sh \
 			src/share/poudriere/include/colors.sh \
 			src/share/poudriere/include/colors.pre.sh \
