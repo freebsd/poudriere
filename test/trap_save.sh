@@ -12,9 +12,10 @@ if [ "$(type trap_push 2>/dev/null)" = "trap_push is a shell builtin" ]; then
 	builtin=1
 fi
 
-assert_traps() {
-	local expected_file="$1"
-	local extra="$2"
+_assert_traps() {
+	local lineinfo="$1"
+	local expected_file="$2"
+	local extra="$3"
 	local IFS n expectedn
 
 	# Load expected results into $1,$2,...,$n by line
@@ -31,15 +32,16 @@ assert_traps() {
 		# comment
 		[ -z "${line%#*}" ] && continue
 		n=$((${n} + 1))
-		assert "$1" "${line}" "${extra}: mismatch line ${n}"
+		_assert "${lineinfo}" "$1" "${line}" "${extra}: mismatch line ${n}"
 		# go to next line of expected
 		shift
 	done <<-EOF
 	$(trap)
 	EOF
-	assert ${expectedn} ${n} \
+	_assert "${lineinfo}" "${expectedn}" "${n}" \
 	    "${extra}: trap count does not match actual"
 }
+alias assert_traps='_assert_traps "$0:$LINENO"'
 
 # Older /bin/sh (before r275766 and r275346) did not qoute assignments
 # always, so our expected "trap -- 'gotint=1' INT" may come out as
