@@ -1390,12 +1390,14 @@ _mktemp() {
 	return "${ret}"
 }
 
+if [ "$(type dirempty 2>/dev/null)" != "dirempty is a shell builtin" ]; then
 dirempty() {
 	[ $# -eq 1 ] || eargs dirempty
 	local dir="$1"
 
 	! globmatch "${dir}/*"
 }
+fi
 
 globmatch() {
 	[ $# -eq 1 ] || eargs globmatch glob
