@@ -27,6 +27,7 @@
 #### This file is experimental and may change without notice.
 
 . ${SCRIPTPREFIX}/common.sh
+post_getopts
 
 if [ $# -gt 0 ]; then
 	eval "$@"

@@ -406,7 +406,7 @@ confirm_if_tty() {
 # Handle needs after processing arguments.
 post_getopts() {
 	# Short-circuit verbose functions to save CPU
-	if ! [ ${VERBOSE} -gt 2 ]; then
+	if ! [ ${VERBOSE:-0} -gt 2 ]; then
 		msg_dev() { :; }
 		job_msg_dev() { :; }
 		job_msg_status_dev() { :; }
@@ -414,12 +414,12 @@ post_getopts() {
 			msg_assert_dev() { :; }
 		fi
 	fi
-	if ! [ ${VERBOSE} -gt 1 ]; then
+	if ! [ ${VERBOSE:-0} -gt 1 ]; then
 		msg_debug() { :; }
 		job_msg_debug() { :; }
 		job_msg_status_debug() { :; }
 	fi
-	if ! [ ${VERBOSE} -gt 0 ]; then
+	if ! [ ${VERBOSE:-0} -gt 0 ]; then
 		msg_verbose() { :; }
 		job_msg_verbose() { :; }
 		job_msg_status_verbose() { :; }
@@ -1504,6 +1504,8 @@ exit_handler() {
 		redirect_to_real_tty exec
 	} 2>/dev/null
 
+	post_getopts
+
 	if ! type parallel_shutdown >/dev/null 2>&1; then
 		parallel_shutdown() { :; }
 	fi
@@ -1580,6 +1582,17 @@ exit_handler() {
 		set -f
 		${CLEANUP_HOOK}
 		set +f
+		;;
+	esac
+
+	# Kill jobs started with spawn_job()
+	ret=0
+	kill_all_jobs || ret="$?"
+	case "${ret}" in
+	0|143) ;;
+	*)
+		msg_error "Job failures detected ret=${ret}"
+		EXIT_STATUS=$((EXIT_STATUS + 1))
 		;;
 	esac
 
