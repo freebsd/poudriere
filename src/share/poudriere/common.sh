@@ -1746,9 +1746,11 @@ mktemp() {
 	return "${ret}"
 }
 
+if [ "$(type unlink 2>/dev/null)" != "unlink is a shell builtin" ]; then
 unlink() {
 	command unlink "$@" 2>/dev/null || :
 }
+fi
 
 common_mtree() {
 	[ $# -eq 1 ] || eargs common_mtree mnt
