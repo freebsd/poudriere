@@ -103,7 +103,7 @@ _err() {
 	# Try to set status so other processes know this crashed
 	# Don't set it from children failures though, only master
 	if [ "${PARALLEL_CHILD:-0}" -eq 0 ] && was_a_bulk_run; then
-		bset ${MY_JOBID-} status "${EXIT_STATUS:-crashed:}" || :
+		bset ${MY_JOBID-} status "${EXIT_BSTATUS:-crashed:}" || :
 	fi
 	if [ ${1} -eq 0 ]; then
 		msg "$2" || :
@@ -1237,27 +1237,27 @@ update_remaining() {
 }
 
 sigpipe_handler() {
-	EXIT_STATUS="sigpipe:"
+	EXIT_BSTATUS="sigpipe:"
 	SIGNAL="SIGPIPE"
-	sig_handler
+	sig_handler 13
 }
 
 sigint_handler() {
-	EXIT_STATUS="sigint:"
+	EXIT_BSTATUS="sigint:"
 	SIGNAL="SIGINT"
-	sig_handler
+	sig_handler 2
 }
 
 sighup_handler() {
-	EXIT_STATUS="sighup:"
+	EXIT_BSTATUS="sighup:"
 	SIGNAL="SIGHUP"
-	sig_handler
+	sig_handler 1
 }
 
 sigterm_handler() {
-	EXIT_STATUS="sigterm:"
+	EXIT_BSTATUS="sigterm:"
 	SIGNAL="SIGTERM"
-	sig_handler
+	sig_handler 15
 }
 
 sig_handler() {
@@ -1278,7 +1278,7 @@ sig_handler() {
 	# handler. It never returns to the EXIT trap. Resetting
 	# the handler here will ensure we return back to it.
 	trap exit_handler EXIT
-	err ${EXIT_STATUS:-1} \
+	err ${EXIT_STATUS:-$(($1 + 128))} \
 	    "Signal ${SIGNAL} caught, cleaning up and exiting"
 }
 
