@@ -5089,6 +5089,7 @@ parallel_build() {
 
 	bset status "stopping_jobs:"
 	stop_builders
+	coprocess_stop pkg_cacher
 
 	bset status "updating_stats:"
 	update_stats || msg_warn "Error updating build stats"
