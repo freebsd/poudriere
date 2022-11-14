@@ -28,6 +28,10 @@ _wait() {
 	# by using 'pwait' to wait(2) and then 'wait' to collect return code
 	local ret=0 pid
 
+	if [ "$#" -eq 0 ]; then
+		return 0
+	fi
+
 	{
 		pwait "$@" || :
 		for pid in "$@"; do
