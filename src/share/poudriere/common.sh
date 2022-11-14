@@ -1270,11 +1270,20 @@ sig_handler() {
 	trap '' INFO
 	trap '' HUP
 	unset IFS
-	err 1 "Signal ${SIGNAL} caught, cleaning up and exiting"
+	# An sh(1) bug exists where an EINTR during a redirect
+	# (for example, writing to a pipe with no reader) will
+	# jump straight to the EXIT trap. This also unsets the
+	# EXIT trap to avoid recursion. After it executes the
+	# first line it detects the interrupt and jumps to that
+	# handler. It never returns to the EXIT trap. Resetting
+	# the handler here will ensure we return back to it.
+	trap exit_handler EXIT
+	err ${EXIT_STATUS:-1} \
+	    "Signal ${SIGNAL} caught, cleaning up and exiting"
 }
 
 exit_handler() {
-	exit_status="$?"
+	: ${EXIT_STATUS:="$?"}
 	set +u
 	case "${SHFLAGS}" in
 	*x*) ;;
@@ -1322,7 +1331,7 @@ exit_handler() {
 		fi
 	fi
 
-	case "${exit_status}" in
+	case "${EXIT_STATUS}" in
 	0|${EX_USAGE})
 		: ${ERROR_VERBOSE:=0} ;;
 	*)	: ${ERROR_VERBOSE:=1} ;;
@@ -1374,7 +1383,7 @@ exit_handler() {
 		rm -rf "${POUDRIERE_TMPDIR}" 2>/dev/null || :
 	fi
 	if [ "${ERROR_VERBOSE}" -eq 1 ]; then
-		echo "Exiting with status ${exit_status}" >&2 || :
+		echo "Exiting with status ${EXIT_STATUS}" >&2 || :
 	fi
 }
 
