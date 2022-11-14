@@ -101,10 +101,14 @@ kill_and_wait() {
 	local pids="$2"
 	local ret=0
 
-	[ -z "${pids}" ] && return 0
+	if [ -z "${pids}" ]; then
+		return 0
+	fi
 
 	{
+		kill -STOP ${pids} || :
 		kill ${pids} || :
+		kill -CONT ${pids} || :
 
 		# Wait for the pids. Non-zero status means something is still running.
 		timed_pwait ${time} "${pids}" || ret="$?"
