@@ -1273,52 +1273,49 @@ sigterm_handler() {
 }
 
 sig_handler() {
-	# Reset SIGTERM handler, just exit if another is received.
-	trap - TERM
-	# Ignore SIGPIPE for messages
-	trap '' PIPE
-	# Ignore SIGINT while cleaning up
-	trap '' INT
-	trap '' INFO
-	trap '' HUP
-	unset IFS
-	# An sh(1) bug exists where an EINTR during a redirect
-	# (for example, writing to a pipe with no reader) will
-	# jump straight to the EXIT trap. This also unsets the
-	# EXIT trap to avoid recursion. After it executes the
-	# first line it detects the interrupt and jumps to that
-	# handler. It never returns to the EXIT trap. Resetting
-	# the handler here will ensure we return back to it.
-	trap exit_handler EXIT
+	# Avoid set -x output until we ensure proper stderr.
+	{
+		unset IFS
+		# Just exit if another TERM is received
+		trap - TERM
+		trap '' PIPE INT INFO HUP
+		# An sh(1) bug exists where an EINTR during a redirect
+		# (for example, writing to a pipe with no reader) will
+		# jump straight to the EXIT trap. This also unsets the
+		# EXIT trap to avoid recursion. After it executes the
+		# first line it detects the interrupt and jumps to that
+		# handler. It never returns to the EXIT trap. Resetting
+		# the handler here will ensure we return back to it.
+		trap exit_handler EXIT
+		redirect_to_real_tty exec
+	} 2>/dev/null
 	err ${EXIT_STATUS:-$(($1 + 128))} \
 	    "Signal ${SIGNAL} caught, cleaning up and exiting"
 }
 
 exit_handler() {
-	: ${EXIT_STATUS:="$?"}
-	set +u
-	case "${SHFLAGS}" in
-	*x*) ;;
-	*) local -; set +x ;;
-	esac
-	# Don't spam errors with 'set +e; exit >0'.
-	case "$-" in
-	*e*) ;;
-	*) ERROR_VERBOSE=0 ;;
-	esac
-	# Ignore errors while cleaning up
-	set +e
-	ERRORS_ARE_FATAL=0
-	trap '' INFO
-	# Avoid recursively cleaning up here
-	trap - EXIT TERM
-	# Ignore SIGPIPE for messages
-	trap '' PIPE
-	# Ignore SIGINT while cleaning up
-	trap '' INT
-	SUPPRESS_INT=1
-	trap '' HUP
-	unset IFS
+	# Avoid set -x output until we ensure proper stderr.
+	{
+		: ${EXIT_STATUS:="$?"}
+		unset IFS
+		set +u
+		# Just exit if another TERM is received
+		trap - EXIT TERM
+		trap '' PIPE INT INFO HUP
+		case "${SHFLAGS}" in
+		*x*) ;;
+		*) local -; set +x ;;
+		esac
+		# Don't spam errors with 'set +e; exit >0'.
+		case "$-" in
+		*e*) ;;
+		*) ERROR_VERBOSE=0 ;;
+		esac
+		set +e
+		ERRORS_ARE_FATAL=0
+		SUPPRESS_INT=1
+		redirect_to_real_tty exec
+	} 2>/dev/null
 
 	if ! type parallel_shutdown >/dev/null 2>&1; then
 		parallel_shutdown() { :; }
