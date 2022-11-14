@@ -23,10 +23,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include <sys/errno.h>
 
 #include <err.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <sysexits.h>
 #include <unistd.h>
 
@@ -43,11 +45,18 @@ int
 main(int argc, char **argv)
 {
 
-	if (argc != 2)
-		errx(EX_USAGE, "Usage: unlink file");
+	if (argc == 3 && strcmp(argv[1], "--") == 0) {
+		argv++;
+		argc--;
+	}
+	if (argc != 2) {
+		errx(EX_USAGE, "Usage: unlink [--] file");
+	}
 
-	if (unlink(argv[1]))
+	if (unlink(argv[1]) &&
+	    errno != ENOENT) {
 		err(EXIT_FAILURE, "%s", argv[1]);
+	}
 
 	return (0);
 }
