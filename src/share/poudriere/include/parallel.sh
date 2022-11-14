@@ -391,6 +391,11 @@ spawn_protected() {
 	madvise_protect $! || :
 }
 
+_coprocess_wrapper() {
+	setproctitle "$1"
+	"$@"
+}
+
 # Start a background process from function 'name'.
 coprocess_start() {
 	[ $# -eq 1 ] || eargs coprocess_start name
@@ -398,7 +403,7 @@ coprocess_start() {
 	local main pid
 
 	main="${name}_main"
-	spawn_protected ${main}
+	spawn_protected _coprocess_wrapper ${main}
 	pid=$!
 
 	hash_set coprocess_pid "${name}" "${pid}"
