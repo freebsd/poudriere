@@ -1473,7 +1473,7 @@ ${COLOR_SKIP}Skipped: %-${queue_width}d \
 ${COLOR_IGNORE}Ignored: %-${queue_width}d \
 ${COLOR_FETCHED}Fetched: %-${queue_width}d \
 ${COLOR_RESET}Tobuild: %-${queue_width}d  Time: %s\n" \
-	    "${MASTERNAME}" "${buildname}" "${status}" \
+	    "${MASTERNAME}" "${buildname}" "${status%%:*}" \
 	    "${nbq}" "${nbb}" "${nbf}" "${nbs}" "${nbi}" "${nbp}" \
 	    "${nbtobuild}" "${buildtime}"
 }
