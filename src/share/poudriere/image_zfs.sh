@@ -61,8 +61,7 @@ zfs_prepare()
 
 	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
 	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
-	zroot=${ZFS_POOL_NAME}
-	tmpzroot=${TMP_ZFS_POOL_NAME}
+	zroot="${TMP_ZFS_POOL_NAME}"
 
 	msg "Creating temporary ZFS pool"
 	zpool create \
@@ -71,28 +70,28 @@ zfs_prepare()
 		-O checksum=sha512 \
 		-O compression=on \
 		-O atime=off \
-		-t ${tmpzroot} \
-		-R ${WRKDIR}/world ${zroot} /dev/${md} || exit
+		-t ${zroot} \
+		-R ${WRKDIR}/world ${ZFS_POOL_NAME} /dev/${md} || exit
 
 	if [ -n "${ORIGIN_IMAGE}" ]; then
 		msg "Importing previous ZFS Datasets"
-		zfs recv -F ${tmpzroot} < "${ORIGIN_IMAGE}"
+		zfs recv -F ${zroot} < "${ORIGIN_IMAGE}"
 	else
 		msg "Creating ZFS Datasets"
-		zfs create -o mountpoint=none ${tmpzroot}/${ZFS_BEROOT_NAME}
-		zfs create -o mountpoint=/ ${tmpzroot}/${ZFS_BEROOT_NAME}/${ZFS_BOOTFS_NAME}
-		zfs create -o mountpoint=/tmp -o exec=on -o setuid=off ${tmpzroot}/tmp
-		zfs create -o mountpoint=/usr -o canmount=off ${tmpzroot}/usr
-		zfs create ${tmpzroot}/usr/home
-		zfs create -o setuid=off ${tmpzroot}/usr/ports
-		zfs create ${tmpzroot}/usr/src
-		zfs create ${tmpzroot}/usr/obj
-		zfs create -o mountpoint=/var -o canmount=off ${tmpzroot}/var
-		zfs create -o exec=off -o setuid=off ${tmpzroot}/var/audit
-		zfs create -o exec=off -o setuid=off ${tmpzroot}/var/crash
-		zfs create -o exec=off -o setuid=off ${tmpzroot}/var/log
-		zfs create -o atime=on ${tmpzroot}/var/mail
-		zfs create -o setuid=off ${tmpzroot}/var/tmp
+		zfs create -o mountpoint=none ${zroot}/${ZFS_BEROOT_NAME}
+		zfs create -o mountpoint=/ ${zroot}/${ZFS_BEROOT_NAME}/${ZFS_BOOTFS_NAME}
+		zfs create -o mountpoint=/tmp -o exec=on -o setuid=off ${zroot}/tmp
+		zfs create -o mountpoint=/usr -o canmount=off ${zroot}/usr
+		zfs create ${zroot}/usr/home
+		zfs create -o setuid=off ${zroot}/usr/ports
+		zfs create ${zroot}/usr/src
+		zfs create ${zroot}/usr/obj
+		zfs create -o mountpoint=/var -o canmount=off ${zroot}/var
+		zfs create -o exec=off -o setuid=off ${zroot}/var/audit
+		zfs create -o exec=off -o setuid=off ${zroot}/var/crash
+		zfs create -o exec=off -o setuid=off ${zroot}/var/log
+		zfs create -o atime=on ${zroot}/var/mail
+		zfs create -o setuid=off ${zroot}/var/tmp
 		chmod 1777 ${WRKDIR}/world/tmp ${WRKDIR}/world/var/tmp
 	fi
 }
@@ -116,13 +115,12 @@ zfs_generate()
 
 	: ${SNAPSHOT_NAME:=$IMAGENAME}
 	FINALIMAGE=${IMAGENAME}.img
-	zroot="${ZFS_POOL_NAME}"
-	tmpzroot="${TMP_ZFS_POOL_NAME}"
-	zpool set bootfs=${tmpzroot}/${ZFS_BEROOT_NAME}/${ZFS_BOOTFS_NAME} ${tmpzroot}
-	zpool set autoexpand=on ${tmpzroot}
-	zfs set canmount=noauto ${tmpzroot}/${ZFS_BEROOT_NAME}/${ZFS_BOOTFS_NAME}
+	zroot="${TMP_ZFS_POOL_NAME}"
+	zpool set bootfs=${zroot}/${ZFS_BEROOT_NAME}/${ZFS_BOOTFS_NAME} ${zroot}
+	zpool set autoexpand=on ${zroot}
+	zfs set canmount=noauto ${zroot}/${ZFS_BEROOT_NAME}/${ZFS_BOOTFS_NAME}
 
-	SNAPSPEC="${tmpzroot}@${SNAPSHOT_NAME}"
+	SNAPSPEC="${zroot}@${SNAPSHOT_NAME}"
 
 	msg "Creating snapshot(s) for image generation"
 	zfs snapshot -r "$SNAPSPEC"
@@ -140,7 +138,7 @@ zfs_generate()
 		esac
 		case "${MEDIAREMAINDER}" in
 		*be*)
-			BESNAPSPEC="${tmpzroot}/${ZFS_BEROOT_NAME}/${ZFS_BOOTFS_NAME}@${SNAPSHOT_NAME}"
+			BESNAPSPEC="${zroot}/${ZFS_BEROOT_NAME}/${ZFS_BOOTFS_NAME}@${SNAPSHOT_NAME}"
 			_zfs_writereplicationstream "${BESNAPSPEC}" "${IMAGENAME}.be.zfs"
 			;;
 		esac
@@ -148,7 +146,7 @@ zfs_generate()
 	esac
 
 	## When generating a disk image, we need to export the pool first.
-	zpool export ${tmpzroot}
+	zpool export ${zroot}
 	zroot=
 	/sbin/mdconfig -d -u ${md#md}
 	md=
