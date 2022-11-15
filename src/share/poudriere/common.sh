@@ -7602,6 +7602,7 @@ fetch_global_port_vars() {
 	if was_a_testport_run && [ -n "${P_PORTS_FEATURES}" ]; then
 		return 0
 	fi
+	export MAKE_OBJDIR_CHECK_WRITABLE=0
 	port_var_fetch '' \
 	    'USES=python' \
 	    PORTS_FEATURES P_PORTS_FEATURES \
