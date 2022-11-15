@@ -1312,7 +1312,6 @@ exit_handler() {
 	exec </dev/null
 
 	if was_a_bulk_run; then
-		log_stop
 		# build_queue may have done cd MASTER_DATADIR/pool,
 		# but some of the cleanup here assumes we are
 		# PWD=MASTER_DATADIR.  Switch back if possible.
@@ -1357,6 +1356,10 @@ exit_handler() {
 		fi
 
 		jail_cleanup
+	fi
+
+	if was_a_bulk_run; then
+		log_stop
 	fi
 
 	if [ -n "${CLEANUP_HOOK-}" ]; then
