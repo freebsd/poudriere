@@ -38,10 +38,11 @@ _zfs_writereplicationstream()
 
 zfs_check()
 {
+	zroot="${ZFS_POOL_NAME}.$(jot -r 1 1000000000)"
 
 	[ -n "${IMAGESIZE}" ] || err 1 "Please specify the imagesize"
 	[ -n "${ZFS_POOL_NAME}" ] || err 1 "Please specify a pool name"
-	zpool list -Ho name ${TMP_ZFS_POOL_NAME} >/dev/null 2>&1 && \
+	zpool list -Ho name ${zroot} >/dev/null 2>&1 && \
 		err 1 "Temporary pool name already exists"
 	case "${IMAGENAME}" in
 	''|*[!A-Za-z0-9]*)
@@ -61,7 +62,6 @@ zfs_prepare()
 
 	truncate -s ${IMAGESIZE} ${WRKDIR}/raw.img
 	md=$(/sbin/mdconfig ${WRKDIR}/raw.img)
-	zroot="${TMP_ZFS_POOL_NAME}"
 
 	msg "Creating temporary ZFS pool"
 	zpool create \
@@ -115,7 +115,6 @@ zfs_generate()
 
 	: ${SNAPSHOT_NAME:=$IMAGENAME}
 	FINALIMAGE=${IMAGENAME}.img
-	zroot="${TMP_ZFS_POOL_NAME}"
 	zpool set bootfs=${zroot}/${ZFS_BEROOT_NAME}/${ZFS_BOOTFS_NAME} ${zroot}
 	zpool set autoexpand=on ${zroot}
 	zfs set canmount=noauto ${zroot}/${ZFS_BEROOT_NAME}/${ZFS_BOOTFS_NAME}
