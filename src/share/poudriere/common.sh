@@ -7611,7 +7611,7 @@ fetch_global_port_vars() {
 	    || err 1 "Error looking up pre-build ports vars"
 	port_var_fetch "${P_PKG_ORIGIN}" \
 	    PKGNAME P_PKG_PKGNAME \
-	    PKGBASE P_PKG_PKGBASE \
+	    PKGBASE P_PKG_PKGBASE
 	# Ensure not blank so -z checks work properly
 	: ${P_PORTS_FEATURES:="none"}
 	# Determine if the ports tree supports SELECTED_OPTIONS from r403743
