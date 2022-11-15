@@ -648,11 +648,11 @@ injail() {
 		# For test/
 		"$@"
 	else
-		injail_tty "$@"
+		injail_direct "$@"
 	fi
 }
 
-injail_tty() {
+injail_direct() {
 	local name
 	local MAX_MEMORY_BYTES
 
@@ -676,6 +676,10 @@ injail_tty() {
 		${JEXEC_SETSID-} jexec -U ${JUSER:-root} ${name}${JNETNAME:+-${JNETNAME}} \
 			"$@"
 	fi
+}
+
+injail_tty() {
+	redirect_to_real_tty injail_direct "$@"
 }
 
 jstart() {
