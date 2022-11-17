@@ -1,6 +1,5 @@
 set -e
 . common.sh
-. ${SCRIPTPREFIX}/include/util.sh
 set +e
 
 # Use more precision for these tests to avoid some rounding errors if we start

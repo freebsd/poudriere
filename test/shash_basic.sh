@@ -1,9 +1,5 @@
 set -e
 . common.sh
-. ${SCRIPTPREFIX}/common.sh
-. ${SCRIPTPREFIX}/include/util.sh
-. ${SCRIPTPREFIX}/include/hash.sh
-. ${SCRIPTPREFIX}/include/shared_hash.sh
 set +e
 
 MASTERMNT=$(mktemp -d)

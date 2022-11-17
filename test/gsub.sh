@@ -1,6 +1,5 @@
 set -e
 . common.sh
-. ${SCRIPTPREFIX}/common.sh
 set +e
 
 assert "hEllo world" "$(gsub "hello world" "e" "E")" "gsub should match line ${LINENO}"

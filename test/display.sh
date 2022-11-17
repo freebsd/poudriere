@@ -1,7 +1,4 @@
 . common.sh
-. ${SCRIPTPREFIX}/include/util.sh
-. ${SCRIPTPREFIX}/include/hash.sh
-. ${SCRIPTPREFIX}/include/display.sh
 
 _assert_file() {
 	local lineinfo="$1"

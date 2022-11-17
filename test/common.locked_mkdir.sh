@@ -1,6 +1,5 @@
 set -e
 . common.sh
-. ${SCRIPTPREFIX}/include/parallel.sh # for _wait
 set +e
 
 LOCKBASE=$(mktemp -dt poudriere.locked_mkdir)

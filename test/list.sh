@@ -1,7 +1,5 @@
 set -e
 . common.sh
-. ${SCRIPTPREFIX}/include/util.sh
-. ${SCRIPTPREFIX}/include/hash.sh
 set +e
 
 _assert_list() {

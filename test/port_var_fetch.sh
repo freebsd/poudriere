@@ -1,7 +1,6 @@
 set -e
-. common.sh
 INJAIL_HOST=1
-. ${SCRIPTPREFIX}/common.sh
+. common.sh
 set +e
 PORTSDIR=${THISDIR%/*}/test-ports/port_var_fetch
 export PORTSDIR

@@ -1,5 +1,4 @@
 . common.sh
-. ${SCRIPTPREFIX}/include/util.sh
 
 mypid="$(getpid)"
 assert 0 "$?" getpid

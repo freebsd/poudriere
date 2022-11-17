@@ -1,6 +1,5 @@
 set -e
 . common.sh
-. ${SCRIPTPREFIX}/common.sh
 set +e
 
 originspec_encode originspec 'origin' '' ''

@@ -1,8 +1,5 @@
 set -e
 . common.sh
-. ${SCRIPTPREFIX}/include/hash.sh
-. ${SCRIPTPREFIX}/include/parallel.sh
-. ${SCRIPTPREFIX}/include/util.sh
 set +e
 
 set_pipefail

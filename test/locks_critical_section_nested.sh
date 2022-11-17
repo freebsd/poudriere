@@ -6,8 +6,6 @@ SLEEPTIME=5
 
 set -e
 . common.sh
-. ${SCRIPTPREFIX}/common.sh
-. ${SCRIPTPREFIX}/include/util.sh
 set +e
 
 trap 'main_sigint=1' INT

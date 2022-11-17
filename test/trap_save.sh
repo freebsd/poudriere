@@ -1,6 +1,5 @@
 set -e
 . common.sh
-. ${SCRIPTPREFIX}/include/util.sh
 set +e
 
 builtin=0

@@ -1,7 +1,6 @@
 set -e
+FORCE_COLORS=1
 . common.sh
-. ${SCRIPTPREFIX}/common.sh
-. ${SCRIPTPREFIX}/include/colors.pre.sh
 set +e
 
 assert_not "" "${COLOR_BLUE}" "colors are not loaded"

@@ -1,7 +1,5 @@
 set -e
 . common.sh
-. ${SCRIPTPREFIX}/include/util.sh
-. ${SCRIPTPREFIX}/include/fs.sh
 set +e
 
 # This test is not intended to be a comprehesive test of the tool that do_clone
