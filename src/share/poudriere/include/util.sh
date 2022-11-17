@@ -670,11 +670,11 @@ write_pipe() {
 	ret=0
 	echo "$@" > "${fifo}" || ret=$?
 
-	if [ ${ret} -ne 0 ]; then
-		err 1 "write_pipe FAILED to send to ${fifo} (ret: ${ret}): $*"
+	if [ "${ret}" -ne 0 ]; then
+		msg_warn "write_pipe FAILED to send to ${fifo} (ret: ${ret}): $*"
 	fi
 
-	return ${ret}
+	return "${ret}"
 }
 
 if [ "$(type mapfile 2>/dev/null)" != "mapfile is a shell builtin" ]; then
