@@ -1,3 +1,6 @@
+MOSTLYCLEANFILES=
+MOSTLYCLEANFILES+=	$(TEST_LOGS:.log=.log.truss)
+
 EXTRA_DIST= $(TESTS) \
 	    $(JAIL_TESTS) \
 	    common.bulk.sh \
