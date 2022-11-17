@@ -68,9 +68,13 @@ EOF
 
 echo "Using SH=${SH}" >&2
 
-exec /usr/bin/timeout ${TIMEOUT} \
+rm -f "${TEST}.log.truss"
+
+# With truss use --foreground to prevent process reaper and ptrace deadlocking.
+exec /usr/bin/timeout ${TRUSS:+--foreground} ${TIMEOUT} \
     "${LIBEXECPREFIX}/timestamp" -t \
     env \
     THISDIR="${THISDIR}" \
     SH="${SH}" \
+    ${TRUSS:+truss -ae -f -s512 -o${TEST}.log.truss} \
     "${SH}" "${TEST}"
