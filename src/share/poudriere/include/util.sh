@@ -297,6 +297,21 @@ make_relative() {
 	*)	_relpath "${oldroot}/${value}" "${newroot}" "${varname}" ;;
 	esac
 }
+if [ "$(type randint 2>/dev/null)" != "randint is a shell builtin" ]; then
+randint() {
+	[ "$#" -eq 1 -o "$#" -eq 2 ] || eargs randint max_val [var_return]
+	local max_val="$1"
+	local var_return="${2-}"
+	local val
+
+	if [ "$#" -eq 1 ]; then
+		jot -r 1 "${max_val}"
+		return
+	fi
+	val=$(jot -r 1 "${max_val}")
+	setvar "${var_return}" "${val}"
+}
+fi
 
 if [ "$(type trap_push 2>/dev/null)" != "trap_push is a shell builtin" ]; then
 trap_push() {

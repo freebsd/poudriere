@@ -30,6 +30,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <fnmatch.h>
+#include <limits.h>
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
@@ -163,6 +164,36 @@ trap_pop(int signo, struct sigdata *sd)
 		sigmode[sd->signo] = sd->sigmode;
 	}
 	errno = serrno;
+}
+
+int
+randintcmd(int argc, char **argv)
+{
+	char *endp;
+	char valstr[20];
+	int ret;
+	uint32_t value;
+	unsigned long max_val;
+
+	if (argc != 2 && argc != 3)
+		errx(EX_USAGE, "%s", "Usage: randint <max_val> [var_return]");
+
+	ret = 0;
+	errno = 0;
+	endp = NULL;
+	max_val = strtoul(argv[1], &endp, 10);
+	if (*endp != '\0' || errno != 0) {
+		err(EX_USAGE, "Invalid max_val");
+	}
+	INTOFF;
+	value = arc4random_uniform(max_val);
+	INTON;
+	if (argc == 3) {
+		snprintf(valstr, sizeof(valstr), "%u", value);
+		setvar(argv[2], valstr, 0);
+	} else
+		printf("%u\n", value);
+	return (ret);
 }
 
 int

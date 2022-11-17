@@ -21,6 +21,7 @@ mktempcmd -n		mktemp
 _mktempcmd -n		_mktemp
 pastecmd -n		paste
 pwaitcmd		pwait
+randintcmd -n		randint
 realpathcmd -n		realpath
 renamecmd -n		rename
 rmcmd -n		rm
