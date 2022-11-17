@@ -46,7 +46,6 @@ writer() {
 
 {
 	TMP=$(mktemp -u)
-	set -x
 	assert_ret_not 0 mapfile handle "${TMP}" "re"
 	rm -f "${TMP}"
 }
