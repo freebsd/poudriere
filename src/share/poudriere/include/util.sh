@@ -313,6 +313,48 @@ randint() {
 }
 fi
 
+_trap_ignore_block() {
+	local -; set +x
+	[ "$#" -ge 3 ] || eargs _trap_ignore_block ignore_bool tmp_var SIG [SIG...]
+	local tib_ignore_bool="$1"
+	local tib_tmp_var="$2"
+	local sig tmp_val oact bucket
+	shift 2
+
+	if getvar "${tib_tmp_var}" tmp_val; then
+		bucket="trap_ignore_${tmp_val}"
+		for sig; do
+			hash_remove "${bucket}" "${sig}" oact ||
+			    err "${EX_SOFTWARE}" "_trap_ignore_block: No saved action for signal ${sig}"
+			trap_pop "${sig}" "${oact}" ||
+			    err "${EX_USAGE}" "_trap_ignore_block: trap_pop ${sig} '${oact}' failed"
+		done
+		unset "${tib_tmp_var}"
+		return 1
+	fi
+	randint 1000000000 tmp_val
+	bucket="trap_ignore_${tmp_val}"
+	setvar "${tib_tmp_var}" "${tmp_val}"
+	for sig; do
+		trap_push "${sig}" "oact" ||
+		    err "${EX_USAGE}" "_trap_ignore_block: trap_push ${sig} failed"
+		hash_set "${bucket}" "${sig}" "${oact}"
+		if [ "${tib_ignore_bool}" -eq 1 ]; then
+			trap '' "${sig}"
+		fi
+	done
+}
+
+trap_save_block() {
+	[ "$#" -ge 2 ] || eargs trap_save_block tmp_var SIG [SIG...]
+	_trap_ignore_block 0 "$@"
+}
+
+trap_ignore_block() {
+	[ "$#" -ge 2 ] || eargs trap_save_block tmp_var SIG [SIG...]
+	_trap_ignore_block 1 "$@"
+}
+
 if [ "$(type trap_push 2>/dev/null)" != "trap_push is a shell builtin" ]; then
 trap_push() {
 	local -; set +x

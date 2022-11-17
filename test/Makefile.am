@@ -49,6 +49,8 @@ TESTS=\
 	stripansi.sh \
 	timespec.sh \
 	timestamp.sh \
+	trap_ignore_block.sh \
+	trap_save_block.sh \
 	trap_save.sh \
 	$(JAIL_TESTS)
 

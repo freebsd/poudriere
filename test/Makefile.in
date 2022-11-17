@@ -476,7 +476,8 @@ TESTS = builtins.sh cache.sh calculate_duration.sh display.sh \
 	port_var_fetch.sh prefix_output.sh read_blocking.sh \
 	read_file.sh relpath.sh relpath_common.sh required_env.sh \
 	shash_basic.sh stack.sh stripansi.sh timespec.sh timestamp.sh \
-	trap_save.sh $(JAIL_TESTS) prep.sh
+	trap_ignore_block.sh trap_save_block.sh trap_save.sh \
+	$(JAIL_TESTS) prep.sh
 JAIL_TESTS = \
 	bulk-build-self-immutable-base-nullfs.sh \
 	bulk-build-self-immutable-base-schg.sh \
@@ -969,6 +970,20 @@ timespec.sh.log: timespec.sh
 timestamp.sh.log: timestamp.sh
 	@p='timestamp.sh'; \
 	b='timestamp.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+trap_ignore_block.sh.log: trap_ignore_block.sh
+	@p='trap_ignore_block.sh'; \
+	b='trap_ignore_block.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+trap_save_block.sh.log: trap_save_block.sh
+	@p='trap_save_block.sh'; \
+	b='trap_save_block.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
