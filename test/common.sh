@@ -54,6 +54,22 @@ PKG_NOCOMPRESS=		t
 PKG_COMPRESSION_FORMAT=	tar
 EOF
 
+if [ ${_DID_TMPDIR:-0} -eq 0 ]; then
+	# Some tests will assert that TMPDIR is empty on exit
+	if [ "${TMPDIR%%/poudriere/test/*}" = "${TMPDIR}" ]; then
+		: ${TMPDIR:=/tmp}
+		TMPDIR=${TMPDIR:+${TMPDIR}}/poudriere/test
+	fi
+	mkdir -p ${TMPDIR}
+	export TMPDIR
+	TMPDIR=$(mktemp -d)
+	export TMPDIR
+	# This file may be included again
+	_DID_TMPDIR=1
+	POUDRIERE_TMPDIR="${TMPDIR}"
+	echo "TMPDIR: ${POUDRIERE_TMPDIR}" >&2
+fi
+
 : ${VERBOSE:=1}
 : ${PARALLEL_JOBS:=2}
 
@@ -90,9 +106,8 @@ _assert() {
 
 	: ${EXITVAL:=0}
 
-	EXITVAL=$((${EXITVAL:-0} + 1))
-
 	if [ "${actual}" != "${expected}" ]; then
+		EXITVAL=$((${EXITVAL:-0} + 1))
 		aecho FAIL "${lineinfo}" "${expected}" "${actual}" "$@"
 		exit ${EXITVAL}
 	fi
@@ -113,9 +128,8 @@ _assert_not() {
 
 	: ${EXITVAL:=0}
 
-	EXITVAL=$((${EXITVAL:-0} + 1))
-
 	if [ "${actual}" = "${notexpected}" ]; then
+		EXITVAL=$((${EXITVAL:-0} + 1))
 		aecho FAIL "${lineinfo}" "!${notexpected}" "${actual}" "$@"
 		exit ${EXITVAL}
 	fi
@@ -245,6 +259,10 @@ if ! type err >/dev/null 2>&1; then
 fi
 
 cleanup() {
+	ret="$?"
+	if [ -n "${OVERLAYSDIR}" ]; then
+		rm -f "${OVERLAYSDIR}"
+	fi
 	# Avoid recursively cleaning up here
 	trap - EXIT SIGTERM
 	# Ignore SIGPIPE for messages
@@ -253,8 +271,23 @@ cleanup() {
 	trap '' SIGINT
 	msg_dev "cleanup($1)" >&2
 	kill_jobs
-	msg_dev "exit()" >&2
-	exit
+	if [ ${_DID_TMPDIR:-0} -eq 1 ] && \
+	    [ "${TMPDIR%%/poudriere/test/*}" != "${TMPDIR}" ]; then
+		if [ -d "${TMPDIR}" ] && ! dirempty "${TMPDIR}"; then
+			echo "${TMPDIR} was not empty on exit!" >&2
+			find "${TMPDIR}" -ls >&2
+			case "${EXITVAL:-0}" in
+			0) ret=1 ;;
+			esac
+		else
+			rm -rf "${TMPDIR}"
+		fi
+	fi
+	case "${ret}" in
+	0) ret="${EXITVAL:-0}" ;;
+	esac
+	msg_dev "exit(${ret})" >&2
+	exit "${ret}"
 }
 
 trap 'msg_dev int;exit' INT

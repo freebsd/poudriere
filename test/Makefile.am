@@ -8,6 +8,10 @@ EXTRA_DIST= $(TESTS) \
 	    common.sh \
 	    prep.sh \
 	    runtest.sh
+
+XFAIL_TESTS=\
+	calculate_duration.sh
+
 TESTS=\
 	builtins.sh \
 	cache.sh \
