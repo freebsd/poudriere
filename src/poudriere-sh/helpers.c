@@ -494,6 +494,7 @@ int
 getpidcmd(int argc, char **argv)
 {
 
-	fprintf(stdout, "%ld\n", (long)getpid());
+	assert(getpid() == shpid);
+	fprintf(stdout, "%ld\n", shpid);
 	return (0);
 }

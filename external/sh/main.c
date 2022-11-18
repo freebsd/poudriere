@@ -131,6 +131,7 @@ main(int argc, char *argv[])
 	trputs("Shell args:  ");  trargs(argv);
 #endif
 	rootpid = getpid();
+	setmypid();
 	rootshell = 1;
 	INTOFF;
 	initvar();

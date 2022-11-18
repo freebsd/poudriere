@@ -30,6 +30,12 @@ if ! type err >/dev/null 2>&1; then
 	alias err=_err
 fi
 
+case "$%" in
+'$%') ;;
+# Customization. $%=getpid()
+*) PS4='$%+ ' ;;
+esac
+
 BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
 . "${SCRIPTPREFIX:?}/include/common.sh.${BSDPLATFORM}"
 . "${SCRIPTPREFIX:?}/include/hash.sh"
