@@ -1001,7 +1001,7 @@ set_pipefail() {
 }
 
 prefix_stderr_quick() {
-	local -; set +x
+	local flags="$-" -; set +x
 	local extra="$1"
 	local MSG_NESTED_STDERR prefix
 	shift 1
@@ -1011,6 +1011,9 @@ prefix_stderr_quick() {
 	{
 		{
 			MSG_NESTED_STDERR=1
+			case "${flags}" in
+			*x*) set -x ;;
+			esac
 			"$@"
 		} 2>&1 1>&3 | {
 			if [ "${USE_TIMESTAMP:-1}" -eq 1 ] && \
