@@ -68,3 +68,8 @@ extern int skipcount;
 #define SKIPBREAK	1
 #define SKIPCONT	2
 #define SKIPRETURN	3
+
+void xtracestr(const char * __restrict, ...) __printflike(1, 2);
+void xtracestr_start(const char * __restrict, ...) __printflike(1, 2);
+void xtracestr_n(const char * __restrict, ...) __printflike(1, 2);
+void xtracestr_flush(const char * __restrict, ...) __printflike(1, 2);
