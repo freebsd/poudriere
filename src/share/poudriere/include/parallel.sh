@@ -58,7 +58,7 @@ timed_wait_and_kill() {
 	ret=0
 
 	# Give children $time seconds to exit and then force kill
-	if ! timed_wait ${time} "${pids}"; then
+	if ! timed_pwait ${time} "${pids}"; then
 		# Something still running, be more dramatic.
 		kill_and_wait 1 "${pids}" || ret=$?
 	else
@@ -69,8 +69,8 @@ timed_wait_and_kill() {
 	return ${ret}
 }
 
-timed_wait() {
-	[ $# -eq 2 ] || eargs timed_wait time pids
+timed_pwait() {
+	[ $# -eq 2 ] || eargs timed_pwait time pids
 	local time="$1"
 	local pids="$2"
 	local status
@@ -104,7 +104,7 @@ kill_and_wait() {
 		kill ${pids} || :
 
 		# Wait for the pids. Non-zero status means something is still running.
-		if ! timed_wait ${time} "${pids}"; then
+		if ! timed_pwait ${time} "${pids}"; then
 			# Kill remaining children instead of waiting on them
 			kill -9 ${pids} || :
 			_wait ${pids} || ret=$?
@@ -134,7 +134,7 @@ kill_job() {
 			return ${ret}
 		fi
 
-		timed_wait ${timeout} ${pgid} || :
+		timed_pwait ${timeout} ${pgid} || :
 		# Kill remaining children instead of waiting on them
 		kill -9 -- -${pgid} || :
 		ret=0
