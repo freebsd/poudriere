@@ -44,6 +44,7 @@ __FBSDID("$FreeBSD$");
 
 #include "shell.h"
 #include "eval.h"
+#include "input.h"
 #include "main.h"
 #include "options.h"
 #include "output.h"
@@ -51,6 +52,7 @@ __FBSDID("$FreeBSD$");
 #include "nodes.h" /* show.h needs nodes.h */
 #include "show.h"
 #include "trap.h"
+#include "var.h"
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -129,10 +131,19 @@ onint(void)
 void
 vwarning(const char *msg, va_list ap)
 {
+	const char *funcname;
+
+	funcname = lookupvar("FUNCNAME");
 	if (commandname)
-		outfmt(out2, "Error: (%d) %s: ", getpid(), commandname);
-	else if (arg0)
-		outfmt(out2, "Error: (%d) %s: ", getpid(), arg0);
+		outfmt(out2, "Error: (%d) %s:%s%s ", getpid(), commandname,
+		    funcname != NULL ? funcname : "",
+		    funcname != NULL ? ":" : "");
+	else if (arg0) {
+		outfmt(out2, "Error: (%d) %s:%s%s%d: ", getpid(), arg0,
+		    funcname != NULL ? funcname : "",
+		    funcname != NULL ? ":" : "",
+		    plinno);
+	}
 	doformat(out2, msg, ap);
 	out2fmt_flush("\n");
 }
