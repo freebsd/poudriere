@@ -29,6 +29,8 @@
 if ! type err >/dev/null 2>&1; then
 	alias err=_err
 fi
+alias redirect_to_real_tty='>&${OUTPUT_REDIRECTED_STDOUT:-1} 2>&${OUTPUT_REDIRECTED_STDERR:-2} '
+alias redirect_to_bulk='redirect_to_real_tty '
 
 case "$%$+${FUNCNAME}" in
 '$%$+') ;;
@@ -194,8 +196,9 @@ msg_error() {
 	else
 		# Send to true stderr
 		COLOR_ARROW="${COLOR_ERROR}" \
+		    redirect_to_bulk \
 		    msg "${COLOR_ERROR}Error:${COLOR_RESET} $@" \
-		    >&${OUTPUT_REDIRECTED_STDERR:-2}
+		    >&2
 	fi
 	return 0
 }
@@ -245,7 +248,7 @@ job_msg() {
 	else
 		output="$@"
 	fi
-	_msg_n "\n" "${output}" >&${OUTPUT_REDIRECTED_STDOUT:-1}
+	redirect_to_bulk _msg_n "\n" "${output}"
 }
 
 # Stubbed until post_getopts
@@ -1658,7 +1661,7 @@ siginfo_handler() {
 		esac
 	fi
 	# Send all output to the real stderr.
-	_siginfo_handler 2>&${OUTPUT_REDIRECTED_STDERR:-2} >&2
+	redirect_to_real_tty _siginfo_handler >&2
 	enable_siginfo_handler
 }
 
@@ -5178,9 +5181,9 @@ clean_pool() {
 			badd ports.skipped "${skipped_originspec} ${skipped_pkgname} ${pkgname}"
 			COLOR_ARROW="${COLOR_SKIP}" \
 			    job_msg "${COLOR_SKIP}Skipping ${COLOR_PORT}${skipped_originspec} | ${skipped_pkgname}${COLOR_SKIP}: Dependent port ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_SKIP} ${clean_rdepends}"
-			run_hook pkgbuild skipped "${skipped_origin}" \
-			    "${skipped_pkgname}" "${origin}" \
-			    >&${OUTPUT_REDIRECTED_STDOUT:-1}
+			redirect_to_bulk \
+			    run_hook pkgbuild skipped "${skipped_origin}" \
+			    "${skipped_pkgname}" "${origin}"
 		fi
 	done
 
@@ -5344,8 +5347,8 @@ build_pkg() {
 	if [ ${build_failed} -eq 0 ]; then
 		badd ports.built "${originspec} ${pkgname} ${elapsed}"
 		COLOR_ARROW="${COLOR_SUCCESS}" job_msg "${COLOR_SUCCESS}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_SUCCESS}: Success"
-		run_hook pkgbuild success "${port}" "${pkgname}" \
-		    >&${OUTPUT_REDIRECTED_STDOUT:-1}
+		redirect_to_bulk \
+		    run_hook pkgbuild success "${port}" "${pkgname}"
 		# Cache information for next run
 		pkg_cacher_queue "${port}" "${pkgname}" "${FLAVOR}" || :
 	else
@@ -5359,9 +5362,9 @@ build_pkg() {
 		fi
 		badd ports.failed "${originspec} ${pkgname} ${failed_phase} ${errortype} ${elapsed}"
 		COLOR_ARROW="${COLOR_FAIL}" job_msg "${COLOR_FAIL}Finished ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_FAIL}: Failed: ${COLOR_PHASE}${failed_phase}"
-		run_hook pkgbuild failed "${port}" "${pkgname}" "${failed_phase}" \
-			"${log}/logs/errors/${pkgname}.log" \
-			>&${OUTPUT_REDIRECTED_STDOUT:-1}
+		redirect_to_bulk \
+		    run_hook pkgbuild failed "${port}" "${pkgname}" "${failed_phase}" \
+		    "${log}/logs/errors/${pkgname}.log"
 		# ret=2 is a test failure
 		if [ ${ret} -eq 2 ]; then
 			clean_rdepends=
