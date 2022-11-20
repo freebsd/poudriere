@@ -30,10 +30,13 @@ if ! type err >/dev/null 2>&1; then
 	alias err=_err
 fi
 
-case "$%" in
-'$%') ;;
-# Customization. $%=getpid()
-*) PS4='$%+ ' ;;
+case "$%$+${FUNCNAME}" in
+'$%$+') ;;
+# Customization.
+# $% = getpid()
+# $+ = funcnest+loopnest
+# $FUNCNAME is the current function
+*) PS4='$%<$+>${FUNCNAME:+<${FUNCNAME}>}+ ' ;;
 esac
 
 BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`

@@ -1049,6 +1049,8 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 		}
 		handler = &jmploc;
 		funcnest++;
+		mklocal("FUNCNAME");
+		setvar("FUNCNAME", argv[0], 0);
 		redirect(cmd->ncmd.redirect, REDIR_PUSH);
 		INTON;
 		for (i = 0; i < varlist.count; i++)

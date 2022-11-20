@@ -1,0 +1,45 @@
+commit c2fe38ca85272903c9c763f7f8ee1fec0818982e
+Author: Bryan Drewery <bryan@shatow.net>
+Date:   Sat Nov 19 16:39:09 2022 -0800
+
+    sh: Track function for PS4
+
+diff --git external/sh/eval.c external/sh/eval.c
+index 44364aed5..c60716111 100644
+--- external/sh/eval.c
++++ external/sh/eval.c
+@@ -1049,6 +1049,8 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
+ 		}
+ 		handler = &jmploc;
+ 		funcnest++;
++		mklocal("FUNCNAME");
++		setvar("FUNCNAME", argv[0], 0);
+ 		redirect(cmd->ncmd.redirect, REDIR_PUSH);
+ 		INTON;
+ 		for (i = 0; i < varlist.count; i++)
+diff --git external/sh/expand.c external/sh/expand.c
+index b08101a7d..c8ef3b187 100644
+--- external/sh/expand.c
++++ external/sh/expand.c
+@@ -953,6 +953,9 @@ varvalue(const char *name, int quoted, int subtype, int flag,
+ 	case '%':
+ 		num = shpid;
+ 		break;
++	case '+':
++		num = funcnest;
++		break;
+ 	case '?':
+ 		num = oexitstatus;
+ 		break;
+diff --git external/sh/syntax.c external/sh/syntax.c
+index 13fd5795a..418b8124f 100644
+--- external/sh/syntax.c
++++ external/sh/syntax.c
+@@ -184,6 +184,7 @@ const char is_type[SYNBASE + CHAR_MAX + 1] = {
+ 	[SYNBASE + '_'] = ISUNDER,
+ 	[SYNBASE + '#'] = ISSPECL,
+ 	[SYNBASE + '%'] = ISSPECL,
++	[SYNBASE + '+'] = ISSPECL,
+ 	[SYNBASE + '?'] = ISSPECL,
+ 	[SYNBASE + '$'] = ISSPECL,
+ 	[SYNBASE + '!'] = ISSPECL,

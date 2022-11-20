@@ -953,6 +953,9 @@ varvalue(const char *name, int quoted, int subtype, int flag,
 	case '%':
 		num = shpid;
 		break;
+	case '+':
+		num = funcnest;
+		break;
 	case '?':
 		num = oexitstatus;
 		break;

@@ -184,6 +184,7 @@ const char is_type[SYNBASE + CHAR_MAX + 1] = {
 	[SYNBASE + '_'] = ISUNDER,
 	[SYNBASE + '#'] = ISSPECL,
 	[SYNBASE + '%'] = ISSPECL,
+	[SYNBASE + '+'] = ISSPECL,
 	[SYNBASE + '?'] = ISSPECL,
 	[SYNBASE + '$'] = ISSPECL,
 	[SYNBASE + '!'] = ISSPECL,
