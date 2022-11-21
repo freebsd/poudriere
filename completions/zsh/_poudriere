@@ -116,7 +116,7 @@ _options=(
 	'-n[do not configure/show/remove options of dependencies]::'
 	'-p[specify on which ports tree the configuration will be done]::tree:_poudriere_pt'
 	'(-r)-s[show options instead of configuring them]::'
-	'(-s)-r[show port options instead of configuring them]::'
+	'(-s)-r[remove port options instead of configuring them]::'
 	'-z[Specify which SET to use]::'
 )
 
