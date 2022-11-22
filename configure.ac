@@ -7,9 +7,11 @@ AM_SILENT_RULES([yes])
 AC_CONFIG_HEADERS([src/config.h])
 
 AM_MAINTAINER_MODE([disable])
-AS_IF([test "$USE_MAINTAINER_MODE" != "no"],
-      [ax_is_release=no],[ax_is_release=yes])
+AX_IS_RELEASE([git-directory])
 AX_CHECK_ENABLE_DEBUG([yes])
+AS_IF([test "$enable_debug" != "no"],
+      [ax_is_release=no],
+      [ax_is_release=yes])
 
 AC_MSG_CHECKING([whether to enable address sanitizer])
   AC_ARG_ENABLE([address-sanitizer],

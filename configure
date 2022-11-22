@@ -3277,12 +3277,19 @@ fi
   MAINT=$MAINTAINER_MODE_TRUE
 
 
-if test "$USE_MAINTAINER_MODE" != "no"
+
+
+
+
+        # $is_release = (.git directory does not exist)
+        if test -d ${srcdir}/.git || (test -f ${srcdir}/.git && grep \.git/worktrees ${srcdir}/.git)
 then :
   ax_is_release=no
 else $as_nop
   ax_is_release=yes
 fi
+
+
 
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable debugging" >&5
@@ -3385,6 +3392,12 @@ printf "%s\n" "#define NDEBUG 1" >>confdefs.h
 fi
     ax_enable_debug=$enable_debug
 
+if test "$enable_debug" != "no"
+then :
+  ax_is_release=no
+else $as_nop
+  ax_is_release=yes
+fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable address sanitizer" >&5
 printf %s "checking whether to enable address sanitizer... " >&6; }
