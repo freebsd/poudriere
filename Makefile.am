@@ -6,6 +6,10 @@ AM_CFLAGS=	-Wall -pipe -O2 @AM_CFLAGS@
 if MAINTAINER_MODE
 AM_CFLAGS+=	-Wextra -Werror
 endif
+if ADDRESS_SANITIZER
+AM_CFLAGS+=	-fsanitize=address -DADDRESS_SANITIZER -fno-omit-frame-pointer
+CFLAGS+=	-O1
+endif
 
 awkdir=	$(pkgdatadir)/awk
 htmldir= $(pkgdatadir)/html

@@ -74,6 +74,7 @@ rm -f "${TEST}.log.truss"
 exec /usr/bin/timeout ${TRUSS:+--foreground} ${TIMEOUT} \
     "${LIBEXECPREFIX}/timestamp" -t \
     env \
+    ${SH_DISABLE_VFORK:+SH_DISABLE_VFORK=1} \
     THISDIR="${THISDIR}" \
     SH="${SH}" \
     ${TRUSS:+truss -ae -f -s512 -o${TEST}.log.truss} \

@@ -714,6 +714,8 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+ADDRESS_SANITIZER_FALSE
+ADDRESS_SANITIZER_TRUE
 MAINT
 MAINTAINER_MODE_FALSE
 MAINTAINER_MODE_TRUE
@@ -793,6 +795,7 @@ enable_option_checking
 enable_silent_rules
 enable_maintainer_mode
 enable_debug
+enable_address_sanitizer
 enable_dependency_tracking
 enable_shared
 enable_static
@@ -1446,6 +1449,8 @@ Optional Features:
                           sometimes confusing) to the casual installer
   --enable-debug=[yes/info/profile/no]
                           compile with debugging
+  --enable-address-sanitizer
+                          Use address sanitizer
   --enable-dependency-tracking
                           do not reject slow dependency extractors
   --disable-dependency-tracking
@@ -3379,6 +3384,28 @@ printf "%s\n" "#define NDEBUG 1" >>confdefs.h
 
 fi
     ax_enable_debug=$enable_debug
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable address sanitizer" >&5
+printf %s "checking whether to enable address sanitizer... " >&6; }
+  # Check whether --enable-address-sanitizer was given.
+if test ${enable_address_sanitizer+y}
+then :
+  enableval=$enable_address_sanitizer; USE_ADDRESS_SANITIZER=$enableval
+else $as_nop
+  USE_ADDRESS_SANITIZER=no
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $USE_ADDRESS_SANITIZER" >&5
+printf "%s\n" "$USE_ADDRESS_SANITIZER" >&6; }
+   if test $USE_ADDRESS_SANITIZER = yes; then
+  ADDRESS_SANITIZER_TRUE=
+  ADDRESS_SANITIZER_FALSE='#'
+else
+  ADDRESS_SANITIZER_TRUE='#'
+  ADDRESS_SANITIZER_FALSE=
+fi
+
 
 
 
@@ -12849,6 +12876,10 @@ fi
 
 if test -z "${MAINTAINER_MODE_TRUE}" && test -z "${MAINTAINER_MODE_FALSE}"; then
   as_fn_error $? "conditional \"MAINTAINER_MODE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${ADDRESS_SANITIZER_TRUE}" && test -z "${ADDRESS_SANITIZER_FALSE}"; then
+  as_fn_error $? "conditional \"ADDRESS_SANITIZER\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${AMDEP_TRUE}" && test -z "${AMDEP_FALSE}"; then

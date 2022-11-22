@@ -11,6 +11,16 @@ AS_IF([test "$USE_MAINTAINER_MODE" != "no"],
       [ax_is_release=no],[ax_is_release=yes])
 AX_CHECK_ENABLE_DEBUG([yes])
 
+AC_MSG_CHECKING([whether to enable address sanitizer])
+  AC_ARG_ENABLE([address-sanitizer],
+    [AS_HELP_STRING([--]enable[-address-sanitizer],
+      Use address sanitizer)],
+    [USE_ADDRESS_SANITIZER=$enableval],
+    [USE_ADDRESS_SANITIZER=]no)
+  AC_MSG_RESULT([$USE_ADDRESS_SANITIZER])
+  AM_CONDITIONAL([ADDRESS_SANITIZER], [test $USE_ADDRESS_SANITIZER = yes])
+
+
 AC_PROG_CC([cc clang gcc])
 AM_CFLAGS=
 AX_CHECK_COMPILE_FLAG([-Wno-format-truncation],

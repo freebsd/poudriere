@@ -111,7 +111,11 @@ extern int initial_localeisutf8;
 #endif
 
 #define mpathset()	((vmpath.flags & VUNSET) == 0)
+#ifndef ADDRESS_SANITIZER
 #define disvforkset()	((vdisvfork.flags & VUNSET) == 0)
+#else
+#define disvforkset()	(1)
+#endif
 
 void initvar(void);
 void setvar(const char *, const char *, int);

@@ -93,6 +93,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @MAINTAINER_MODE_TRUE@am__append_1 = -Wextra -Werror
+@ADDRESS_SANITIZER_TRUE@am__append_2 = -fsanitize=address -DADDRESS_SANITIZER -fno-omit-frame-pointer
+@ADDRESS_SANITIZER_TRUE@am__append_3 = -O1
 pkglibexec_PROGRAMS = clock$(EXEEXT) cpdup$(EXEEXT) dirempty$(EXEEXT) \
 	dirwatch$(EXEEXT) locked_mkdir$(EXEEXT) nc$(EXEEXT) \
 	poudriered$(EXEEXT) ptsort$(EXEEXT) pwait$(EXEEXT) \
@@ -526,7 +528,8 @@ am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
 distcleancheck_listfiles = find . -type f -print
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
-AM_CFLAGS = -Wall -pipe -O2 @AM_CFLAGS@ $(am__append_1)
+AM_CFLAGS = -Wall -pipe -O2 @AM_CFLAGS@ $(am__append_1) \
+	$(am__append_2)
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
 AUTOCONF = @AUTOCONF@
@@ -535,7 +538,7 @@ AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
-CFLAGS = @CFLAGS@
+CFLAGS = @CFLAGS@ $(am__append_3)
 CPPFLAGS = @CPPFLAGS@
 CSCOPE = @CSCOPE@
 CTAGS = @CTAGS@
