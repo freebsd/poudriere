@@ -766,25 +766,36 @@ mapfile_read() {
 
 mapfile_write() {
 	local -; set +x
-	[ $# -ge 1 ] || eargs mapfile_write [-n] handle [data]
+	[ $# -ge 1 ] || eargs mapfile_write handle [-n] [data]
+	local handle="$1"
+	shift
 	local ret handle fd nflag flag OPTIND=1
 
-	if [ "$#" -eq 1 ]; then
-		ret=0
-		mapfile_tee "$@" || ret="$?"
-		return "${ret}"
-	fi
-
+	ret=0
 	nflag=
 	while getopts "n" flag; do
 		case "${flag}" in
 		n) nflag=1 ;;
+		*) err "${EX_USAGE}" "mapfile_write: Invalid flag ${flag}" ;;
 		esac
 	done
 	shift $((OPTIND-1))
-	[ $# -ge 2 ] || eargs mapfile_write [-n] handle data
-	handle="$1"
-	shift
+	[ $# -ge 0 ] || eargs mapfile_write handle [-n] [data]
+
+	if [ "$#" -eq 0 ]; then
+		local data
+
+		read_file data - || ret="$?"
+		if [ "${ret}" -ne 0 ]; then
+			return "${ret}"
+		fi
+		case "${data}-${_read_file_lines_read}" in
+		# Nothing to write. An alternative here is nflag=1 ;;
+		"-0") return 0 ;;
+		esac
+		mapfile_write "${handle}" ${nflag:+-n} "${data}" || ret="$?"
+		return "${ret}"
+	fi
 
 	if [ "${handle}" != "${_mapfile_handle-}" ]; then
 		err 1 "mapfile_write: Handle '${handle}' is not open${_mapfile_handle:+, '${_mapfile_handle}' is}."
@@ -909,36 +920,6 @@ mapfile_cat_file() {
 		else
 			ret="$?"
 		fi
-	done
-	return "${ret}"
-}
-
-# Pipe to handle from STDIN.
-mapfile_tee() {
-	local -; set +x
-	[ "$#" -ge 1 ] || eargs mapfile_tee [-n] handle...
-	local ret nflag flag handle data OPTIND=1
-
-	ret=0
-	data=
-	nflag=
-	while getopts "n" flag; do
-		case "${flag}" in
-		n) nflag=1 ;;
-		esac
-	done
-	shift $((OPTIND-1))
-	[ "$#" -ge 1 ] || eargs mapfile_tee [-n] handle...
-
-	read_file data - || ret="$?"
-	## . is to preserve newline
-	#data="$(cat; echo .)"
-	#data="${data%.}"
-	case "${data}" in
-	"") return "${ret}" ;;
-	esac
-	for handle in "$@"; do
-		mapfile_write ${nflag:+-n} "${handle}" "${data}" || ret="$?"
 	done
 	return "${ret}"
 }

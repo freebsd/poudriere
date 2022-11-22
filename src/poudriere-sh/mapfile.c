@@ -577,25 +577,28 @@ mapfile_writecmd(int argc, char **argv)
 		ret = _mapfile_write(md, handle, nflag, data);
 		assert(is_int_on());
 	} else {
-		/* Read from TTY */
-		/*
-		 * XXX: Using shell mapfile_tee until some changes from
-		 * copool branch make it in to avoid massive conflicts
-		 */
-		char cmd[256];
-		struct sigdata oinfo;
+		char *line;
+		struct mapped_data *md_read = NULL;
+		int rret;
 
-		snprintf(cmd, sizeof(cmd), "mapfile_tee %s \"%s\";",
-		    nflag == 1 ? "-n" : "",
-		    handle);
-		trap_push(SIGINFO, &oinfo);
-		INTON;
-		assert(!is_int_on());
-		evalstring(cmd, 0);
-		ret = exitstatus;
-		assert(!is_int_on());
-		INTOFF;
-		trap_pop(SIGINFO, &oinfo);
+		/* Read from TTY */
+		ret = 0;
+		md_read = _mapfile_open("/dev/fd/0", "r");
+		assert(md_read != NULL);
+		while ((rret = _mapfile_read(md_read, &line, NULL, NULL)) == 0) {
+			ret = _mapfile_write(md, handle, nflag, line);
+			if (ret != 0) {
+				md_close(md_read);
+				INTON;
+				err(ret, "mapfile_write");
+			}
+		}
+
+		/* 1 == EOF */
+		if (rret != 1) {
+			ret = rret;
+		}
+		md_close(md_read);
 	}
 	INTON;
 

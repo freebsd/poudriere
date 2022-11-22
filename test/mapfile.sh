@@ -523,6 +523,35 @@ fi
 
 	:>"${TMP}"
 	assert_ret 0 mapfile handle "${TMP2}" "we"
+	mapfile_write "${handle}" -n "blah"
+	assert 0 "$?" "pipe exit status"
+	assert_ret 0 mapfile_close "${handle}"
+	assert "blah" "$(cat -vet "${TMP2}")"
+	assert_ret 0 [ -s "${TMP2}" ]
+	rm -f "${TMP}" "${TMP2}"
+}
+
+
+{
+	TMP=$(mktemp -t mapfile)
+	TMP2=$(mktemp -t mapfile)
+
+	:>"${TMP}"
+	assert_ret 0 mapfile handle "${TMP2}" "we"
+	echo blah | mapfile_write "${handle}" -n
+	assert 0 "$?" "pipe exit status"
+	assert_ret 0 mapfile_close "${handle}"
+	assert "blah" "$(cat -vet "${TMP2}")"
+	assert_ret 0 [ -s "${TMP2}" ]
+	rm -f "${TMP}" "${TMP2}"
+}
+
+{
+	TMP=$(mktemp -t mapfile)
+	TMP2=$(mktemp -t mapfile)
+
+	:>"${TMP}"
+	assert_ret 0 mapfile handle "${TMP2}" "we"
 	assert_ret 0 mapfile_cat_file "${TMP}" |
 	    assert_ret 0 mapfile_write "${handle}"
 	assert 0 "$?" "pipe exit status"
@@ -549,7 +578,7 @@ fi
 	rm -f "${TMP2}"
 	:>"${TMP2}"
 	assert_ret 0 mapfile handle "${TMP2}" "we"
-	mapfile_write "${handle}" <<-EOF
+	assert_ret 0 mapfile_write "${handle}" <<-EOF
 	$(cat "${TMP}")
 	EOF
 	assert_ret 0 mapfile_close "${handle}"
@@ -578,7 +607,7 @@ fi
 	rm -f "${TMP2}"
 	:>"${TMP2}"
 	assert_ret 0 mapfile handle "${TMP2}" "we"
-	mapfile_write "${handle}" <<-EOF
+	assert_ret 0 mapfile_write "${handle}" <<-EOF
 	$(cat "${TMP}")
 	EOF
 	assert_ret 0 mapfile_close "${handle}"
@@ -603,7 +632,7 @@ fi
 	rm -f "${TMP2}"
 	:>"${TMP2}"
 	assert_ret 0 mapfile handle "${TMP2}" "we"
-	mapfile_write "${handle}" <<-EOF
+	assert_ret 0 mapfile_write "${handle}" <<-EOF
 	$(cat "${TMP}")
 	EOF
 	assert_ret 0 mapfile_close "${handle}"
@@ -619,15 +648,170 @@ fi
 	ps uaxwd > "${TMP}"
 
 	{ cat "${TMP}"; rm -f "${TMP2}"; } | write_atomic "${TMP2}"
+	assert 0 "$?" "pipe exit status"
 	assert_ret 0 diff -u "${TMP}" "${TMP2}"
 
 	rm -f "${TMP2}"
-	write_atomic "${TMP2}" <<-EOF
+	assert_ret 0 write_atomic "${TMP2}" <<-EOF
 	$(cat "${TMP}"; rm -f "${TMP2}")
 	EOF
 	assert_ret 0 diff -u "${TMP}" "${TMP2}"
 
 	rm -f "${TMP}" "${TMP2}"
+}
+
+# Test newline write handling
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -t mapfile)
+	assert_ret 0 mapfile file_out "${TMP}" "we"
+	assert_ret 0 mapfile_write "${file_out}" ""
+	assert_ret 0 mapfile_close "${file_out}"
+	size=$(stat -f %z "${TMP}")
+	assert "0" "$?"
+	assert "1" "${size}"
+	assert '$' "$(cat -vet "${TMP}")"
+	value="$(mapfile_cat_file "${TMP}")"
+	assert "empty" "${value:-empty}"
+	assert_ret 0 mapfile_cat_file "${TMP}" | (
+		lines=0
+		while read -r line; do
+			assert "empty" "${line:-empty}"
+			lines=$((lines + 1))
+		done
+		assert 1 "${lines}"
+	)
+	assert 0 "$?"
+	assert_ret 0 mapfile file_in "${TMP}" "re"
+	lines=0
+	while mapfile_read "${file_in}" line; do
+		assert "empty" "${line:-empty}"
+		lines=$((lines + 1))
+	done
+	assert 1 "${lines}"
+	assert_ret 0 mapfile_close "${file_in}"
+	lines=0
+	while mapfile_read_loop "${TMP}" line; do
+		assert "empty" "${line:-empty}"
+		lines=$((lines + 1))
+	done
+	assert 1 "${lines}"
+}
+
+# Test newline write handling in pipe
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -t mapfile)
+	assert_ret 0 mapfile file_out "${TMP}" "we"
+	echo | assert_ret 0 mapfile_write "${file_out}"
+	assert 0 "$?"
+	assert_ret 0 mapfile_close "${file_out}"
+	size=$(stat -f %z "${TMP}")
+	assert "0" "$?"
+	assert "1" "${size}"
+	assert '$' "$(cat -vet "${TMP}")"
+	value="$(mapfile_cat_file "${TMP}")"
+	assert "empty" "${value:-empty}"
+	assert_ret 0 mapfile_cat_file "${TMP}" | (
+		lines=0
+		while read -r line; do
+			assert "empty" "${line:-empty}"
+			lines=$((lines + 1))
+		done
+		assert 1 "${lines}"
+	)
+	assert 0 "$?"
+	assert_ret 0 mapfile file_in "${TMP}" "re"
+	lines=0
+	while mapfile_read "${file_in}" line; do
+		assert "empty" "${line:-empty}"
+		lines=$((lines + 1))
+	done
+	assert 1 "${lines}"
+	assert_ret 0 mapfile_close "${file_in}"
+	lines=0
+	while mapfile_read_loop "${TMP}" line; do
+		assert "empty" "${line:-empty}"
+		lines=$((lines + 1))
+	done
+	assert 1 "${lines}"
+}
+
+# Test blank write handling
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -t mapfile)
+	assert_ret 0 mapfile file_out "${TMP}" "we"
+	assert_ret 0 mapfile_write "${file_out}" -n ""
+	assert_ret 0 mapfile_close "${file_out}"
+	size=$(stat -f %z "${TMP}")
+	assert "0" "$?"
+	assert "0" "${size}"
+	assert '' "$(cat -vet "${TMP}")"
+	value="$(mapfile_cat_file "${TMP}")"
+	assert "empty" "${value:-empty}"
+	assert_ret 0 mapfile_cat_file "${TMP}" | (
+		lines=0
+		while read -r line; do
+			assert "empty" "${line:-empty}"
+			lines=$((lines + 1))
+		done
+		assert 0 "${lines}"
+	)
+	assert 0 "$?"
+	assert_ret 0 mapfile file_in "${TMP}" "re"
+	lines=0
+	while mapfile_read "${file_in}" line; do
+		assert "empty" "${line:-empty}"
+		lines=$((lines + 1))
+	done
+	assert 0 "${lines}"
+	assert_ret 0 mapfile_close "${file_in}"
+	lines=0
+	while mapfile_read_loop "${TMP}" line; do
+		assert "empty" "${line:-empty}"
+		lines=$((lines + 1))
+	done
+	assert 0 "${lines}"
+}
+
+# Test blank write handling in pipe
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -t mapfile)
+	assert_ret 0 mapfile file_out "${TMP}" "we"
+	: | assert_ret 0 mapfile_write "${file_out}" -n ""
+	assert 0 "$?"
+	assert_ret 0 mapfile_close "${file_out}"
+	size=$(stat -f %z "${TMP}")
+	assert "0" "$?"
+	assert "0" "${size}"
+	assert '' "$(cat -vet "${TMP}")"
+	value="$(mapfile_cat_file "${TMP}")"
+	assert "empty" "${value:-empty}"
+	assert_ret 0 mapfile_cat_file "${TMP}" | (
+		lines=0
+		while read -r line; do
+			assert "empty" "${line:-empty}"
+			lines=$((lines + 1))
+		done
+		assert 0 "${lines}"
+	)
+	assert 0 "$?"
+	assert_ret 0 mapfile file_in "${TMP}" "re"
+	lines=0
+	while mapfile_read "${file_in}" line; do
+		assert "empty" "${line:-empty}"
+		lines=$((lines + 1))
+	done
+	assert 0 "${lines}"
+	assert_ret 0 mapfile_close "${file_in}"
+	lines=0
+	while mapfile_read_loop "${TMP}" line; do
+		assert "empty" "${line:-empty}"
+		lines=$((lines + 1))
+	done
+	assert 0 "${lines}"
 }
 
 exit 0
