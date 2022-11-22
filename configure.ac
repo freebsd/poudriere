@@ -4,7 +4,7 @@ AC_CONFIG_MACRO_DIRS([m4])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([1.11 foreign -Wall -Wno-portability no-dist-gzip dist-xz])
 AM_SILENT_RULES([yes])
-AC_CONFIG_HEADER(src/config.h)
+AC_CONFIG_HEADERS([src/config.h])
 
 AM_MAINTAINER_MODE([disable])
 AS_IF([test "$USE_MAINTAINER_MODE" != "no"],
