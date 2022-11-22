@@ -56,7 +56,6 @@
 #undef FILE
 #undef fclose
 #undef fdopen
-#undef fflush
 #undef fopen
 #undef fputs
 #include "eval.h"
@@ -68,7 +67,6 @@ struct mapped_data {
 	FILE *fp;
 	char *file;
 	int handle;
-	bool linebuffered;
 };
 static struct mapped_data *mapped_files[MAX_FILES] = {0};
 
@@ -214,7 +212,9 @@ mapfilecmd(int argc, char **argv)
 	md->fp = fp;
 	md->file = strdup(file);
 	md->handle = nextidx;
-	md->linebuffered = strchr(modes, 'B') == NULL;
+	if (strchr(modes, 'B') == NULL) {
+		setlinebuf(md->fp);
+	}
 
 	mapped_files[md->handle] = md;
 	snprintf(handle, sizeof(handle), "%d", md->handle);
@@ -482,7 +482,6 @@ _mapfile_write(/*XXX const*/ struct mapped_data *md, const char *handle,
 	    getpid(), md->file, handle, fileno(md->fp), data);
 	if (fputs(data, md->fp) == EOF ||
 	    (!nflag && fputc('\n', md->fp) == EOF) ||
-	    (md->linebuffered && fflush(md->fp) == EOF) ||
 	    ferror(md->fp)) {
 		serrno = errno;
 		debug("%d: Writing to %s for handle '%s' fd: %d feof: %d "
