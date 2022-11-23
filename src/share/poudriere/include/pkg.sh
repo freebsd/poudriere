@@ -31,11 +31,10 @@ pkg_get_origin() {
 	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
-	if ! shash_get 'pkg' 'origin' _origin ||
-	    [ -z "${_origin}" ]; then
+	if ! shash_get 'pkg' 'origin' _origin || [ -z "${_origin}" ]; then
 		if [ -z "${_origin}" ]; then
-			_origin=$(injail ${PKG_BIN} query -F \
-			    "/packages/All/${pkg##*/}" "%o")
+			_origin=$(injail "${PKG_BIN:?}" query -F \
+			    "/packages/All/${pkg##*/}" "%o") || return
 		fi
 		shash_set 'pkg' 'origin' "${_origin}"
 	fi
@@ -109,11 +108,10 @@ pkg_get_arch() {
 	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
-	if ! shash_get 'pkg' 'arch' _arch ||
-	    [ -z "${_arch}" ]; then
+	if ! shash_get 'pkg' 'arch' _arch || [ -z "${_arch}" ]; then
 		if [ -z "${_arch}" ]; then
-			_arch=$(injail ${PKG_BIN} query -F \
-			    "/packages/All/${pkg##*/}" "%q")
+			_arch=$(injail "${PKG_BIN:?}" query -F \
+			    "/packages/All/${pkg##*/}" "%q") || return
 		fi
 		shash_set 'pkg' 'arch' "${_arch}"
 	fi
@@ -138,8 +136,10 @@ pkg_get_dep_origin_pkgnames() {
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
 	if ! shash_get 'pkg' 'deps' fetched_data; then
-		fetched_data=$(injail ${PKG_BIN} query -F \
-			"/packages/All/${pkg##*/}" '%do %dn-%dv' | tr '\n' ' ')
+		fetched_data=$(set_pipefail; \
+		    injail "${PKG_BIN:?}" query -F \
+		    "/packages/All/${pkg##*/}" '%do %dn-%dv' |
+		    tr '\n' ' ') || return
 		shash_set 'pkg' 'deps' "${fetched_data}"
 	fi
 	[ -n "${var_return_origins}" -o -n "${var_return_pkgnames}" ] || \
@@ -172,13 +172,19 @@ pkg_get_options() {
 	if ! shash_get 'pkg' 'options2' _compiled_options; then
 		_compiled_options=
 		while mapfile_read_loop_redir key value; do
+			case "${key}" in
+			"!ERR! "*) return "${key#!ERR! }" ;;
+			esac
 			case "${value}" in
 				off|false) key="-${key}" ;;
 				on|true) key="+${key}" ;;
 			esac
 			_compiled_options="${_compiled_options:+${_compiled_options} }${key}"
 		done <<-EOF
-		$(injail ${PKG_BIN} query -F "/packages/All/${pkg##*/}" '%Ok %Ov' | sort)
+		$(set_pipefail; \
+		    injail "${PKG_BIN:?}" \
+		    query -F "/packages/All/${pkg##*/}" '%Ok %Ov' | sort ||
+		    echo "!ERR! $?")
 		EOF
 		shash_set 'pkg' 'options2' "${_compiled_options-}"
 	fi
@@ -242,7 +248,7 @@ pkg_cacher_cleanup() {
 }
 
 get_cache_dir() {
-	setvar "${1}" ${POUDRIERE_DATA}/cache/${MASTERNAME}
+	setvar "${1}" "${POUDRIERE_DATA}/cache/${MASTERNAME:?}"
 }
 
 # Return the cache dir for the given pkg
@@ -259,6 +265,10 @@ get_pkg_cache_dir() {
 	local pkg_mtime=
 
 	get_cache_dir cache_dir
+
+	if [ ! -e "${pkg}" ] && [ ! -L "${pkg}" ]; then
+		err "${EX_SOFTWARE}" "get_pkg_cache_dir: ${pkg} does not exist"
+	fi
 
 	if [ "${use_mtime}" -eq 1 ]; then
 		pkg_mtime=$(stat -f %m "${pkg}")
@@ -280,7 +290,7 @@ clear_pkg_cache() {
 
 	get_pkg_cache_dir pkg_cache_dir "${pkg}" 0
 
-	rm -fr "${pkg_cache_dir}"
+	rm -rf "${pkg_cache_dir}"
 	# XXX: Need shash_unset with glob
 }
 
@@ -321,10 +331,10 @@ delete_pkg() {
 	[ $# -eq 1 ] || eargs delete_pkg pkg
 	local pkg="$1"
 
+	clear_pkg_cache "${pkg}"
 	# Delete the package and the depsfile since this package is being deleted,
 	# which will force it to be recreated
 	unlink "${pkg}"
-	clear_pkg_cache "${pkg}"
 }
 
 # Keep in sync with delete_pkg
