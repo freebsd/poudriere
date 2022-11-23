@@ -8,6 +8,7 @@ EXTRA_DIST= $(TESTS) \
 TESTS=\
 	builtins.sh \
 	cache.sh \
+	calculate_duration.sh \
 	display.sh \
 	do_clone.sh \
 	encode_args.sh \

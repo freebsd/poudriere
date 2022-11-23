@@ -55,6 +55,8 @@
 		}							\
 	} while (0)
 #endif
+#define TIMESTAMP_BUFSIZ 25
+static const char *const typefmt[] = {"[]", "()"};
 
 static struct timespec start;
 
@@ -68,33 +70,42 @@ struct kdata {
 };
 
 static size_t
-calculate_duration(char *timestamp, size_t tlen, const struct timespec *elapsed,
-    int type)
+calculate_duration(char *timestamp, size_t tlen, const struct timespec *elapsed)
 {
-	int hours, minutes, seconds;
+	int days, hours, minutes, seconds;
 	time_t elapsed_seconds;
-	size_t len;
+	ssize_t len, slen;
 
+	len = 0;
 	elapsed_seconds = elapsed->tv_sec;
 
-	seconds = elapsed_seconds % 60;
-	minutes = (elapsed_seconds / 60) % 60;
+	days = elapsed_seconds / 86400;
+	elapsed_seconds %= 86400;
 	hours = elapsed_seconds / 3600;
+	elapsed_seconds %= 3600;
+	minutes = elapsed_seconds / 60;
+	elapsed_seconds %= 60;
+	seconds = elapsed_seconds;
 
-	if (type == 1)
-		len = snprintf(timestamp, tlen, "(%02d:%02d:%02d) ", hours,
-		    minutes, seconds);
-	else
-		len = snprintf(timestamp, tlen, "[%02d:%02d:%02d] ", hours,
-		    minutes, seconds);
-	assert(len < tlen);
+	if (days > 0) {
+		slen = snprintf(timestamp, tlen, "%dD:", days);
+		len += slen;
+		tlen -= len;
+		timestamp += slen;
+		assert(tlen > 0);
+	}
+	slen = snprintf(timestamp, tlen, "%02d:%02d:%02d",
+	    hours, minutes, seconds);
+	len += slen;
+	tlen -= len;
+	assert(tlen > 0);
 	return (len);
 }
 
 static int
 prefix_output(struct kdata *kd)
 {
-	char timestamp[25]; /* '[HH:MM:SS] ' + 1 */
+	char timestamp[TIMESTAMP_BUFSIZ]; /* '[HH:MM:SS] ' + 1 */
 	const char *prefix;
 	char prefix_override[128] = {0};
 	char *p;
@@ -140,18 +151,30 @@ prefix_output(struct kdata *kd)
 					err(EXIT_FAILURE, "%s", "clock_gettime");
 			if (kd->timestamp) {
 				timespecsub(&now, &start, &elapsed);
-				dlen = calculate_duration((char *)&timestamp,
-				    tlen, &elapsed, 0);
-				fwrite(timestamp, dlen, 1, kd->fp_out);
-				if (ferror(kd->fp_out))
+				dlen = calculate_duration(timestamp,
+				    tlen, &elapsed);
+				if (putc(typefmt[0][0], kd->fp_out) == EOF)
+					return (-1);
+				if (fwrite(timestamp, sizeof(*timestamp), dlen,
+				    kd->fp_out) < dlen)
+					return (-1);
+				if (putc(typefmt[0][1], kd->fp_out) == EOF)
+					return (-1);
+				if (putc(' ', kd->fp_out) == EOF)
 					return (-1);
 			}
 			if (kd->timestamp_line) {
 				timespecsub(&now, &lastline, &elapsed);
-				dlen = calculate_duration((char *)&timestamp,
-				    tlen, &elapsed, 1);
-				fwrite(timestamp, dlen, 1, kd->fp_out);
-				if (ferror(kd->fp_out))
+				if (putc(typefmt[1][0], kd->fp_out) == EOF)
+					return (-1);
+				dlen = calculate_duration(timestamp,
+				    tlen, &elapsed);
+				if (fwrite(timestamp, sizeof(*timestamp), dlen,
+				    kd->fp_out) < dlen)
+					return (-1);
+				if (putc(typefmt[1][1], kd->fp_out) == EOF)
+					return (-1);
+				if (putc(' ', kd->fp_out) == EOF)
 					return (-1);
 			}
 			if (prefix != NULL) {
@@ -194,7 +217,7 @@ usage(void)
 {
 
 	fprintf(stderr, "%s\n",
-	    "usage: timestamp [-1 <stdout prefix>] [-2 <stderr prefix>] [-eo in.fifo] [-P <proctitle>] [-utT] [command]");
+	    "usage: timestamp [-1 <stdout prefix>] [-2 <stderr prefix>] [-eo in.fifo] [-P <proctitle>] [-dutT] [command]");
 	exit(EX_USAGE);
 }
 
@@ -211,22 +234,25 @@ main(int argc, char **argv)
 	char *end;
 	pid_t child_pid;
 	int child_stdout[2], child_stderr[2];
-	int ch, status, ret, uflag, tflag, Tflag;
+	int ch, status, ret, dflag, uflag, tflag, Tflag;
 
 	child_pid = -1;
 	ret = 0;
-	tflag = Tflag = uflag = 0;
+	dflag = tflag = Tflag = uflag = 0;
 	thr_stdout = thr_stderr = NULL;
 	prefix_stdout = prefix_stderr = NULL;
 	fp_in_stdout = fp_in_stderr = NULL;
 
-	while ((ch = getopt(argc, argv, "1:2:e:o:P:tTu")) != -1) {
+	while ((ch = getopt(argc, argv, "1:2:de:o:P:tTu")) != -1) {
 		switch (ch) {
 		case '1':
 			prefix_stdout = strdup(optarg);
 			break;
 		case '2':
 			prefix_stderr = strdup(optarg);
+			break;
+		case 'd':
+			dflag = 1;
 			break;
 		case 'e':
 			if ((fp_in_stderr = fopen(optarg, "r")) == NULL)
@@ -255,8 +281,7 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if ((time_start = getenv("TIME_START")) != NULL &&
-	    strcmp(time_start, "0") != 0) {
+	if ((time_start = getenv("TIME_START")) != NULL) {
 		char *p;
 
 		p = strchr(time_start, '.');
@@ -276,6 +301,17 @@ main(int argc, char **argv)
 			start.tv_nsec = 0;
 	} else if (clock_gettime(CLOCK_MONOTONIC_FAST, &start))
 		err(EXIT_FAILURE, "%s", "clock_gettime");
+
+	if (dflag) {
+		char timestamp[TIMESTAMP_BUFSIZ];
+		size_t dlen;
+
+		dlen = calculate_duration(timestamp,
+		    TIMESTAMP_BUFSIZ, &start);
+		assert(dlen < TIMESTAMP_BUFSIZ);
+		printf("%s\n", timestamp);
+		exit(0);
+	}
 
 	if (uflag)
 		setbuf(stdout, NULL);
