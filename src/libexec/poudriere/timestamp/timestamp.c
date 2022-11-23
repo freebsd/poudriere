@@ -28,6 +28,7 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 
+#include <assert.h>
 #include <err.h>
 #include <errno.h>
 #include <paths.h>
@@ -66,12 +67,13 @@ struct kdata {
 	bool timestamp_line;
 };
 
-static void
+static size_t
 calculate_duration(char *timestamp, size_t tlen, const struct timespec *elapsed,
     int type)
 {
 	int hours, minutes, seconds;
 	time_t elapsed_seconds;
+	size_t len;
 
 	elapsed_seconds = elapsed->tv_sec;
 
@@ -80,24 +82,26 @@ calculate_duration(char *timestamp, size_t tlen, const struct timespec *elapsed,
 	hours = elapsed_seconds / 3600;
 
 	if (type == 1)
-		snprintf(timestamp, tlen, "(%02d:%02d:%02d) ", hours, minutes,
-		    seconds);
+		len = snprintf(timestamp, tlen, "(%02d:%02d:%02d) ", hours,
+		    minutes, seconds);
 	else
-		snprintf(timestamp, tlen, "[%02d:%02d:%02d] ", hours, minutes,
-		    seconds);
+		len = snprintf(timestamp, tlen, "[%02d:%02d:%02d] ", hours,
+		    minutes, seconds);
+	assert(len < tlen);
+	return (len);
 }
 
 static int
 prefix_output(struct kdata *kd)
 {
-	char timestamp[8 + 3 + 1]; /* '[HH:MM:SS] ' + 1 */
+	char timestamp[25]; /* '[HH:MM:SS] ' + 1 */
 	const char *prefix;
 	char prefix_override[128] = {0};
 	char *p;
 	int ch;
 	struct timespec now, lastline, elapsed;
 	const size_t tlen = sizeof(timestamp);
-	size_t prefix_len;
+	size_t prefix_len, dlen;
 	bool newline;
 
 	p = NULL;
@@ -136,17 +140,17 @@ prefix_output(struct kdata *kd)
 					err(EXIT_FAILURE, "%s", "clock_gettime");
 			if (kd->timestamp) {
 				timespecsub(&now, &start, &elapsed);
-				calculate_duration((char *)&timestamp, tlen,
-				    &elapsed, 0);
-				fwrite(timestamp, tlen - 1, 1, kd->fp_out);
+				dlen = calculate_duration((char *)&timestamp,
+				    tlen, &elapsed, 0);
+				fwrite(timestamp, dlen, 1, kd->fp_out);
 				if (ferror(kd->fp_out))
 					return (-1);
 			}
 			if (kd->timestamp_line) {
 				timespecsub(&now, &lastline, &elapsed);
-				calculate_duration((char *)&timestamp, tlen,
-				    &elapsed, 1);
-				fwrite(timestamp, tlen - 1, 1, kd->fp_out);
+				dlen = calculate_duration((char *)&timestamp,
+				    tlen, &elapsed, 1);
+				fwrite(timestamp, dlen, 1, kd->fp_out);
 				if (ferror(kd->fp_out))
 					return (-1);
 			}
