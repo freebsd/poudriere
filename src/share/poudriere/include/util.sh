@@ -1234,13 +1234,22 @@ calculate_duration() {
 	[ $# -eq 2 ] || eargs calculate_duration var_return elapsed
 	local var_return="$1"
 	local _elapsed="$2"
-	local seconds minutes hours _duration
+	local seconds minutes hours days _duration
 
-	seconds="$((_elapsed % 60))"
-	minutes="$(((_elapsed / 60) % 60))"
+	days="$((_elapsed / 86400))"
+	_elapsed="$((_elapsed % 86400))"
 	hours="$((_elapsed / 3600))"
+	_elapsed="$((_elapsed % 3600))"
+	minutes="$((_elapsed / 60))"
+	_elapsed="$((_elapsed % 60))"
+	seconds="${_elapsed}"
 
-	_duration=$(printf "%02d:%02d:%02d" ${hours} ${minutes} ${seconds})
+	_duration=
+	if [ "${days}" -gt 0 ]; then
+		_duration=$(printf "%s%dD:" "${_duration}" "${days}")
+	fi
+	_duration=$(printf "%s%02d:%02d:%02d" "${_duration}" \
+	    "${hours}" "${minutes}" "${seconds}")
 
 	setvar "${var_return}" "${_duration}"
 }
