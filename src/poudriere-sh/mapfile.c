@@ -70,6 +70,10 @@ struct mapped_data {
 };
 static struct mapped_data *mapped_files[MAX_FILES] = {0};
 
+static int
+_mapfile_read(struct mapped_data *md, char **linep, ssize_t *linelenp,
+    struct timeval *tvp);
+
 static void
 md_close(struct mapped_data *md)
 {
@@ -114,21 +118,18 @@ md_find(const char *handle)
 	return (md);
 }
 
-int
-mapfilecmd(int argc, char **argv)
+static struct mapped_data *
+_mapfile_open(const char *file, const char *modes)
 {
 	FILE *fp;
 	struct mapped_data *md;
 	struct stat sb;
-	const char *file, *var_return, *modes, *p;
+	const char *p;
 	char *dupp;
-	char handle[32], dupmodes[7];
+	char dupmodes[7];
 	int nextidx, idx, serrno, cmd, newfd;
 
 	fp = NULL;
-	if (argc != 3 && argc != 4)
-		errx(EX_USAGE, "%s", "Usage: mapfile <handle_name> <file> [modes]");
-	INTOFF;
 	nextidx = -1;
 	for (idx = 0; idx < MAX_FILES; idx++) {
 		if (mapped_files[idx] == NULL) {
@@ -140,14 +141,6 @@ mapfilecmd(int argc, char **argv)
 		INTON;
 		errx(EX_SOFTWARE, "%s", "mapped files stack exceeded");
 	}
-
-	file = argv[2];
-	var_return = argv[1];
-
-	if (argc == 4)
-		modes = argv[3];
-	else
-		modes = "re";
 
 	if (strchr(modes, 'B') && !(strchr(modes, 'w') || strchr(modes, '+') ||
 	    strchr(modes, 'a'))) {
@@ -217,6 +210,31 @@ mapfilecmd(int argc, char **argv)
 	}
 
 	mapped_files[md->handle] = md;
+	return (md);
+}
+
+int
+mapfilecmd(int argc, char **argv)
+{
+	struct mapped_data *md;
+	const char *file, *var_return, *modes;
+	char handle[32];
+
+	if (argc != 3 && argc != 4)
+		errx(EX_USAGE, "%s", "Usage: mapfile <handle_name> <file> [modes]");
+	INTOFF;
+
+	file = argv[2];
+	var_return = argv[1];
+
+	if (argc == 4)
+		modes = argv[3];
+	else
+		modes = "re";
+
+	md = _mapfile_open(file, modes);
+	assert(md != NULL);
+
 	snprintf(handle, sizeof(handle), "%d", md->handle);
 	setvar(var_return, handle, 0);
 	debug("%d: Mapped %s to handle '%s' modes '%s'\n", getpid(),
@@ -231,18 +249,12 @@ mapfile_readcmd(int argc, char **argv)
 {
 	struct mapped_data *md;
 	struct timeval tv = {};
-	fd_set ifds;
-	int flags;
 	char **var_return_ptr;
-	char *end, *linep, *ifsp;
+	char *end, *line, *linep, *ifsp;
 	const char *handle, *ifs;
 	ssize_t linelen;
 	double timeout;
-	int ch, ret, serrno, sig, tflag;
-	/* Avoid remallocing every call */
-	static char *line = NULL;
-	/* Start a bit larger to avoid needing reallocs in children. */
-	static size_t linecap = 4096;
+	int ch, ret, tflag;
 
 	ifs = NULL;
 	timeout = 0;
@@ -306,7 +318,72 @@ mapfile_readcmd(int argc, char **argv)
 	    getpid(), md->file, handle, tv.tv_sec + tv.tv_usec / 1e6,
 	    feof(md->fp), ferror(md->fp));
 
-	linelen = -1;
+	ret = _mapfile_read(md, &line, &linelen, tflag ? &tv : NULL);
+	linep = line;
+
+	if (ifs == NULL && (ifs = getenv("IFS")) == NULL)
+		ifs = " \t\n";
+	ifsp = NULL;
+	while (linelen != -1 && linep - line < linelen) {
+		if (ifs[0] != '\0') {
+			/* Trim leading IFS chars. */
+			while (*linep != '\0' && strchr(ifs, *linep) != NULL)
+				++linep;
+			if (*linep == '\0')
+				break;
+			/* Find the next IFS char to tokenize at. */
+			ifsp = linep + 1;
+			while (*ifsp != '\0' && strchr(ifs, *ifsp) == NULL)
+				++ifsp;
+		}
+		if (*(var_return_ptr + 1) != NULL && ifsp != NULL) {
+			*ifsp++ = '\0';
+			setvar(*var_return_ptr++, linep, 0);
+			linep = ifsp;
+		} else {
+			/* No more vars/words, set the rest in the last var. */
+			/* Trim trailing IFS chars. */
+			if (ifs[0] != '\0' && ifsp != NULL) {
+				/* Fixup linelen to the current length. */
+				linelen -= linep - line;
+				while (linelen > 0 &&
+				    strchr(ifs, linep[linelen - 1]) != NULL)
+					--linelen;
+				linep[linelen] = '\0';
+			}
+			setvar(*var_return_ptr++, linep, 0);
+			break;
+		}
+	}
+	INTON;
+
+	/* Set any remaining args to "" */
+	while (*var_return_ptr != NULL)
+		setvar(*var_return_ptr++, "", 0);
+
+	return (ret);
+}
+
+static int
+_mapfile_read(struct mapped_data *md, char **linep, ssize_t *linelenp,
+    struct timeval *tvp)
+{
+	struct timeval tv = {};
+	fd_set ifds;
+	ssize_t linelen;
+	int flags, ret, serrno, sig;
+	/* Avoid remallocing every call */
+	static char *line = NULL;
+	/* Start a bit larger to avoid needing reallocs in children. */
+	static size_t linecap = 4096;
+
+	/* Copying here just to avoid expected future merge conflicts. */
+	if (tvp != NULL) {
+		tv.tv_sec = tvp->tv_sec;
+		tv.tv_usec = tvp->tv_usec;
+	}
+	const char *handle = md->file;
+
 	/* Malloc once per sh process.  getline(3) may grow it. */
 	if (line == NULL) {
 	    line = malloc(linecap);
@@ -316,9 +393,10 @@ mapfile_readcmd(int argc, char **argv)
 	    }
 	}
 
+	linelen = -1;
 	flags = 0;
 	ret = 0;
-	if (tflag) {
+	if (tvp != NULL) {
 		flags = fcntl(fileno(md->fp), F_GETFL, 0);
 		flags |= O_NONBLOCK;
 		if (fcntl(fileno(md->fp), F_SETFL, flags) < 0) {
@@ -410,50 +488,13 @@ out:
 		line[linelen - 1] = '\0';
 		--linelen;
 	}
-	linep = line;
-	if (ifs == NULL && (ifs = getenv("IFS")) == NULL)
-		ifs = " \t\n";
-	ifsp = NULL;
-	while (linelen != -1 && linep - line < linelen) {
-		if (ifs[0] != '\0') {
-			/* Trim leading IFS chars. */
-			while (*linep != '\0' && strchr(ifs, *linep) != NULL)
-				++linep;
-			if (*linep == '\0')
-				break;
-			/* Find the next IFS char to tokenize at. */
-			ifsp = linep + 1;
-			while (*ifsp != '\0' && strchr(ifs, *ifsp) == NULL)
-				++ifsp;
-		}
-		if (*(var_return_ptr + 1) != NULL && ifsp != NULL) {
-			*ifsp++ = '\0';
-			setvar(*var_return_ptr++, linep, 0);
-			linep = ifsp;
-		} else {
-			/* No more vars/words, set the rest in the last var. */
-			/* Trim trailing IFS chars. */
-			if (ifs[0] != '\0' && ifsp != NULL) {
-				/* Fixup linelen to the current length. */
-				linelen -= linep - line;
-				while (linelen > 0 &&
-				    strchr(ifs, linep[linelen - 1]) != NULL)
-					--linelen;
-				linep[linelen] = '\0';
-			}
-			setvar(*var_return_ptr++, linep, 0);
-			break;
-		}
+
+	if (linelenp != NULL) {
+		*linelenp = linelen;
 	}
-	INTON;
-
-	/* Set any remaining args to "" */
-	while (*var_return_ptr != NULL)
-		setvar(*var_return_ptr++, "", 0);
-
+	*linep = line;
 	return (ret);
 }
-
 int
 mapfile_closecmd(int argc, char **argv)
 {
