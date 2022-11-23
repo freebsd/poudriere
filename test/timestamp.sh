@@ -27,11 +27,57 @@ STDERR=$(mktemp -ut poudriere)
 # Prefix changing
 (
 	timestamp -T -1 stdout -2 stderr \
-	    sh -c "echo stuff; echo errors>&2;echo $'\001'[blah];echo errors>&2;echo stuff" \
+	    sh -c "\
+	    echo stuff; \
+	    echo errors>&2; \
+	    echo $'\001'PX:[blah]; \
+	    echo errors>&2; \
+	    echo $'\001'PXfalse; \
+	    echo stuff; \
+	    echo $'\001'PX:NEWPREFIX; \
+	    echo end; \
+	    " \
 	    >${STDOUT} 2>${STDERR}
+	one=$'\001'
 	cat > "${STDOUT}".expected <<-EOF
 	stdout stuff
+	stdout ${one}PX:[blah]
+	stdout ${one}PXfalse
+	stdout stuff
+	stdout ${one}PX:NEWPREFIX
+	stdout end
+	EOF
+	diff -u "${STDOUT}.expected" "${STDOUT}"
+	assert 0 $? "$0:${LINENO}: stdout output mismatch"
+
+	cat > "${STDERR}".expected <<-EOF
+	stderr errors
+	stderr errors
+	EOF
+	diff -u "${STDERR}.expected" "${STDERR}"
+	assert 0 $? "$0:${LINENO}: stderr output mismatch"
+) || ret=1
+
+# Prefix changing
+(
+	timestamp -D -T -1 stdout -2 stderr \
+	    sh -c "\
+	    echo stuff; \
+	    echo errors>&2; \
+	    echo $'\001'PX:[blah]; \
+	    echo errors>&2; \
+	    echo $'\001'PXfalse; \
+	    echo stuff; \
+	    echo $'\001'PX:NEWPREFIX; \
+	    echo end; \
+	    " \
+	    >${STDOUT} 2>${STDERR}
+	one=$'\001'
+	cat > "${STDOUT}".expected <<-EOF
+	stdout stuff
+	[blah] ${one}PXfalse
 	[blah] stuff
+	NEWPREFIX end
 	EOF
 	diff -u "${STDOUT}.expected" "${STDOUT}"
 	assert 0 $? "$0:${LINENO}: stdout output mismatch"

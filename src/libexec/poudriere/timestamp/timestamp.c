@@ -57,7 +57,7 @@
 #endif
 #define TIMESTAMP_BUFSIZ 25
 static const char *const typefmt[] = {"[]", "()"};
-
+static int Dflag;
 static struct timespec start;
 
 struct kdata {
@@ -102,94 +102,131 @@ calculate_duration(char *timestamp, size_t tlen, const struct timespec *elapsed)
 	return (len);
 }
 
-static int
-prefix_output(struct kdata *kd)
+static inline int
+print_prefix(const struct kdata *kd, const char *prefix, const size_t prefix_len,
+    const struct timespec lastline, struct timespec *now)
 {
+	struct timespec elapsed;
 	char timestamp[TIMESTAMP_BUFSIZ]; /* '[HH:MM:SS] ' + 1 */
-	const char *prefix;
-	char prefix_override[128] = {0};
-	char *p;
-	int ch;
-	struct timespec now, lastline, elapsed;
 	const size_t tlen = sizeof(timestamp);
-	size_t prefix_len, dlen;
+	size_t dlen;
+
+	if (kd->timestamp || kd->timestamp_line)
+		if (clock_gettime(CLOCK_MONOTONIC_FAST, now))
+			err(EXIT_FAILURE, "%s", "clock_gettime");
+	if (kd->timestamp) {
+		timespecsub(now, &start, &elapsed);
+		dlen = calculate_duration(timestamp,
+		    tlen, &elapsed);
+		if (putc(typefmt[0][0], kd->fp_out) == EOF)
+			return (-1);
+		if (fwrite(timestamp, sizeof(*timestamp), dlen,
+		    kd->fp_out) < dlen)
+			return (-1);
+		if (putc(typefmt[0][1], kd->fp_out) == EOF)
+			return (-1);
+		if (putc(' ', kd->fp_out) == EOF)
+			return (-1);
+	}
+	if (kd->timestamp_line) {
+		timespecsub(now, &lastline, &elapsed);
+		if (putc(typefmt[1][0], kd->fp_out) == EOF)
+			return (-1);
+		dlen = calculate_duration(timestamp,
+		    tlen, &elapsed);
+		if (fwrite(timestamp, sizeof(*timestamp), dlen,
+		    kd->fp_out) < dlen)
+			return (-1);
+		if (putc(typefmt[1][1], kd->fp_out) == EOF)
+			return (-1);
+		if (putc(' ', kd->fp_out) == EOF)
+			return (-1);
+	}
+	if (prefix != NULL) {
+		if (fwrite(prefix, sizeof(prefix[0]),
+		    prefix_len, kd->fp_out) <
+		    prefix_len)
+			return (-1);
+		if (putc(' ', kd->fp_out) == EOF)
+			return (-1);
+	}
+	return (0);
+}
+
+static int
+prefix_output(struct kdata *kd, const int dynamic_prefix_support)
+{
+	static const char prefix_change[] = "\001PX:";
+	char prefix_override[128] = {0};
+	const char *prefix;
+	int ch, ret;
+	unsigned int changing_prefix;
+	struct timespec lastline, now;
+	size_t prefix_len;
 	bool newline;
 
-	p = NULL;
 	prefix = kd->prefix;
 	prefix_len = kd->prefix_len;
 	newline = true;
+	changing_prefix = 0;
 	if (kd->timestamp_line)
 		if (clock_gettime(CLOCK_MONOTONIC_FAST, &lastline))
 			err(EXIT_FAILURE, "%s", "clock_gettime");
 	while ((ch = getc(kd->fp_in)) != EOF) {
-		if (newline) {
-			if (ch == '\001') {
-				/* Read in a new prefix */
-				p = prefix_override;
-				while (p != prefix_override +
-				    sizeof(prefix_override) - 1) {
-					if ((ch = getc(kd->fp_in)) == EOF)
-						goto error;
-					if (ch == '\n')
-						break;
-					*p++ = ch;
-				}
-				*p = '\0';
-				if (prefix_override[0] != '\0') {
-					prefix = prefix_override;
-					prefix_len = p - prefix_override;
-				} else {
-					prefix = kd->prefix;
-					prefix_len = kd->prefix_len;
+		if (dynamic_prefix_support) {
+			if (ch == prefix_change[changing_prefix]) {
+				changing_prefix++;
+				if (changing_prefix == strlen(prefix_change)) {
+					char *p = prefix_override;
+
+					changing_prefix = 0;
+					/* Read in a new prefix */
+					while (p != prefix_override +
+					    sizeof(prefix_override) - 1) {
+						if ((ch = getc(kd->fp_in)) == EOF)
+							goto error;
+						if (ch == '\n')
+							break;
+						*p++ = ch;
+					}
+					*p = '\0';
+					if (prefix_override[0] != '\0') {
+						prefix = prefix_override;
+						prefix_len = p - prefix_override;
+					} else {
+						prefix = kd->prefix;
+						prefix_len = kd->prefix_len;
+					}
 				}
 				continue;
+			} else if (changing_prefix > 0) {
+				if (newline &&
+				    (ret = print_prefix(kd, prefix, prefix_len,
+				    lastline, &now)) != 0) {
+					return (ret);
+				}
+				for (size_t i = 0; i < changing_prefix; ++i) {
+					assert(i <= strlen(prefix_change));
+					if (putc(prefix_change[i],
+					    kd->fp_out) == EOF) {
+						return (-1);
+					}
+				}
+				newline = false;
+				changing_prefix = 0;
 			}
+		}
+		if (newline) {
 			newline = false;
-			if (kd->timestamp || kd->timestamp_line)
-				if (clock_gettime(CLOCK_MONOTONIC_FAST, &now))
-					err(EXIT_FAILURE, "%s", "clock_gettime");
-			if (kd->timestamp) {
-				timespecsub(&now, &start, &elapsed);
-				dlen = calculate_duration(timestamp,
-				    tlen, &elapsed);
-				if (putc(typefmt[0][0], kd->fp_out) == EOF)
-					return (-1);
-				if (fwrite(timestamp, sizeof(*timestamp), dlen,
-				    kd->fp_out) < dlen)
-					return (-1);
-				if (putc(typefmt[0][1], kd->fp_out) == EOF)
-					return (-1);
-				if (putc(' ', kd->fp_out) == EOF)
-					return (-1);
-			}
-			if (kd->timestamp_line) {
-				timespecsub(&now, &lastline, &elapsed);
-				if (putc(typefmt[1][0], kd->fp_out) == EOF)
-					return (-1);
-				dlen = calculate_duration(timestamp,
-				    tlen, &elapsed);
-				if (fwrite(timestamp, sizeof(*timestamp), dlen,
-				    kd->fp_out) < dlen)
-					return (-1);
-				if (putc(typefmt[1][1], kd->fp_out) == EOF)
-					return (-1);
-				if (putc(' ', kd->fp_out) == EOF)
-					return (-1);
-			}
-			if (prefix != NULL) {
-				if (fwrite(prefix, sizeof(prefix[0]),
-				    prefix_len, kd->fp_out) <
-				    prefix_len)
-					return (-1);
-				if (putc(' ', kd->fp_out) == EOF)
-					return (-1);
-			}
+			if ((ret = print_prefix(kd, prefix, prefix_len,
+			    lastline, &now)) != 0)
+				return (ret);
 		}
 		if (ch == '\n' || ch == '\r') {
 			newline = true;
 			if (kd->timestamp_line)
 				lastline = now;
+			changing_prefix = 0;
 		}
 		if (putc(ch, kd->fp_out) == EOF)
 			return (-1);
@@ -207,7 +244,7 @@ prefix_main(void *arg)
 
 	if (kd->prefix != NULL)
 		kd->prefix_len = strlen(kd->prefix);
-	prefix_output(kd);
+	prefix_output(kd, Dflag);
 
 	return (NULL);
 }
@@ -217,7 +254,7 @@ usage(void)
 {
 
 	fprintf(stderr, "%s\n",
-	    "usage: timestamp [-1 <stdout prefix>] [-2 <stderr prefix>] [-eo in.fifo] [-P <proctitle>] [-dutT] [command]");
+	    "usage: timestamp [-1 <stdout prefix>] [-2 <stderr prefix>] [-eo in.fifo] [-P <proctitle>] [-dDutT] [command]");
 	exit(EX_USAGE);
 }
 
@@ -243,7 +280,7 @@ main(int argc, char **argv)
 	prefix_stdout = prefix_stderr = NULL;
 	fp_in_stdout = fp_in_stderr = NULL;
 
-	while ((ch = getopt(argc, argv, "1:2:de:o:P:tTu")) != -1) {
+	while ((ch = getopt(argc, argv, "1:2:dDe:o:P:tTu")) != -1) {
 		switch (ch) {
 		case '1':
 			prefix_stdout = strdup(optarg);
@@ -253,6 +290,9 @@ main(int argc, char **argv)
 			break;
 		case 'd':
 			dflag = 1;
+			break;
+		case 'D': /* dynamic prefix support */
+			Dflag = 1;
 			break;
 		case 'e':
 			if ((fp_in_stderr = fopen(optarg, "r")) == NULL)
