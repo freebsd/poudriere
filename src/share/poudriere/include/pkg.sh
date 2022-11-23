@@ -31,7 +31,7 @@ pkg_get_origin() {
 	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
-	if ! shash_get 'pkg' 'origin' _origin || [ -z "${_origin}" ]; then
+	if [ -n "${_origin}" ] || ! shash_get 'pkg' 'origin' _origin; then
 		if [ -z "${_origin}" ]; then
 			_origin=$(injail "${PKG_BIN:?}" query -F \
 			    "/packages/All/${pkg##*/}" "%o") || return
@@ -108,7 +108,7 @@ pkg_get_arch() {
 	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
-	if ! shash_get 'pkg' 'arch' _arch || [ -z "${_arch}" ]; then
+	if [ -n "${_arch}" ] || ! shash_get 'pkg' 'arch' _arch; then
 		if [ -z "${_arch}" ]; then
 			_arch=$(injail "${PKG_BIN:?}" query -F \
 			    "/packages/All/${pkg##*/}" "%q") || return
