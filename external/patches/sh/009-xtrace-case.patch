@@ -1,0 +1,12 @@
+diff --git external/sh/expand.c external/sh/expand.c
+index c8ef3b187..a1a957157 100644
+--- external/sh/expand.c
++++ external/sh/expand.c
+@@ -1459,6 +1459,7 @@ casematch(union node *pattern, const char *val)
+ 	STPUTC('\0', expdest);
+ 	p = grabstackstr(expdest);
+ 	result = patmatch(p, val);
++	xtracestr("case %s in %s result=%d", val, p, result);
+ 	popstackmark(&smark);
+ 	return result;
+ }

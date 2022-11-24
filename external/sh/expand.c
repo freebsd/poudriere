@@ -1459,6 +1459,7 @@ casematch(union node *pattern, const char *val)
 	STPUTC('\0', expdest);
 	p = grabstackstr(expdest);
 	result = patmatch(p, val);
+	xtracestr("case %s in %s result=%d", val, p, result);
 	popstackmark(&smark);
 	return result;
 }
