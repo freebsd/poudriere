@@ -131,10 +131,10 @@ cache_call_sv() {
 	if [ ${USE_CACHE_CALL} -eq 0 ] || \
 	    ! shash_get "${var}" "${key}" "${var_return}"; then
 		msg_dev "cache_call_sv: Fetching ${function}($@)"
-		sv_value=__null
+		sv_value=sv__null
 		${function} "$@"
 		ret=$?
-		if [ "${sv_value}" = "__null" ] && [ ${ret} -eq 0 ]; then
+		if [ "${sv_value}" = "sv__null" ] && [ ${ret} -eq 0 ]; then
 			# Function did not properly set sv_value,
 			# so ensure ret is >0
 			ret=76

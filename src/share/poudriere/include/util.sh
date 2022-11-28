@@ -130,9 +130,9 @@ issetvar() {
 	local var="$1"
 	local _evalue
 
-	eval "_evalue=\${${var}-__null}"
+	eval "_evalue=\${${var}-isv__null}"
 
-	[ "${_evalue}" != "__null" ]
+	[ "${_evalue}" != "isv__null" ]
 }
 fi
 
@@ -156,9 +156,9 @@ getvar() {
 	local _getvar_var_return="$2"
 	local ret _getvar_value
 
-	eval "_getvar_value=\${${_getvar_var}-__null}"
+	eval "_getvar_value=\${${_getvar_var}-gv__null}"
 
-	if [ "${_getvar_value}" = "__null" ]; then
+	if [ "${_getvar_value}" = "gv__null" ]; then
 		_getvar_value=
 		ret=1
 	else
@@ -1297,9 +1297,9 @@ write_atomic() {
 }
 
 # Place environment requirements on entering a function
-# Using VALUE of __null requires a variable is NOT SET
+# Using VALUE of re__null requires a variable is NOT SET
 # Using VALUE of "" requires a variable is SET but BLANK
-# Using VAR! negates the value comparison (__null is SET, "" is SET+NOT EMPTY)
+# Using VAR! negates the value comparison (re__null is SET, "" is SET+NOT EMPTY)
 required_env() {
 	local -; set +x
 	[ $# -ge 3 ] || eargs required_env function VAR VALUE VAR... VALUE...
@@ -1323,14 +1323,14 @@ required_env() {
 			var="${var%!}"
 			;;
 		esac
-		getvar "${var}" actual_value || actual_value=__null
+		getvar "${var}" actual_value || actual_value=re__null
 		# Special case: SET and not blank is wanted
 		if [ "${neg}" = "!" ] && [ -z "${expected_value}" ]; then
 			case "${actual_value}" in
-			__null|"") ;;
+			re__null|"") ;;
 			*) continue ;;
 			esac
-			expected_value="empty or __null"
+			expected_value="empty or re__null"
 		elif [ "${actual_value}" ${neg}= "${expected_value}" ]; then
 			continue
 		fi
