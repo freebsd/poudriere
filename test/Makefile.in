@@ -464,19 +464,20 @@ EXTRA_DIST = $(TESTS) \
 
 
 # Depend bulk tests on jail setup
-TESTS = builtins.sh cache.sh calculate_duration.sh display.sh \
-	do_clone.sh encode_args.sh getpid.sh getvar.sh gsub.sh \
-	globmatch.sh hash_basic.sh hash_stack.sh list.sh locks.sh \
-	locks_critical_section.sh locks_critical_section_nested.sh \
-	locked_mkdir.sh locked_mkdir_waiters.sh \
-	locked_mkdir_waiters_kill.sh locked_mkdir_waiters_all_lose.sh \
-	logging.sh mapfile.sh mktemp.sh originspec.sh pkg_version.sh \
-	pipe_hold.sh port_var_fetch.sh prefix_output.sh \
-	read_blocking.sh read_file.sh relpath.sh relpath_common.sh \
-	required_env.sh shash_basic.sh stack.sh stripansi.sh \
-	test_contexts.sh test_contexts_expand.sh timespec.sh \
-	timestamp.sh trap_ignore_block.sh trap_save_block.sh \
-	trap_save.sh $(JAIL_TESTS) prep.sh
+TESTS = builtins.sh cache.sh cache_pipe.sh calculate_duration.sh \
+	display.sh do_clone.sh encode_args.sh getpid.sh getvar.sh \
+	gsub.sh globmatch.sh hash_basic.sh hash_stack.sh list.sh \
+	locks.sh locks_critical_section.sh \
+	locks_critical_section_nested.sh locked_mkdir.sh \
+	locked_mkdir_waiters.sh locked_mkdir_waiters_kill.sh \
+	locked_mkdir_waiters_all_lose.sh logging.sh mapfile.sh \
+	mktemp.sh originspec.sh pkg_version.sh pipe_hold.sh \
+	port_var_fetch.sh prefix_output.sh read_blocking.sh \
+	read_file.sh relpath.sh relpath_common.sh required_env.sh \
+	shash_basic.sh stack.sh stripansi.sh test_contexts.sh \
+	test_contexts_expand.sh timespec.sh timestamp.sh \
+	trap_ignore_block.sh trap_save_block.sh trap_save.sh \
+	$(JAIL_TESTS) prep.sh
 JAIL_TESTS = \
 	bulk-build-self-immutable-base-nullfs.sh \
 	bulk-build-self-immutable-base-schg.sh \
@@ -731,6 +732,13 @@ builtins.sh.log: builtins.sh
 cache.sh.log: cache.sh
 	@p='cache.sh'; \
 	b='cache.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+cache_pipe.sh.log: cache_pipe.sh
+	@p='cache_pipe.sh'; \
+	b='cache_pipe.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

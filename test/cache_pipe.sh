@@ -41,32 +41,22 @@ nop_func() {
 	:
 }
 
-real_func_sv() {
-	msg_warn "in real_func_sv $# $@"
-	local var_return="$1"
-	shift
+multiline_func() {
+	msg_warn "in multiline_func $# $@"
 	local lookup lookup_key
 
-	_lookup_key lookup_key "real_func_sv" "$@"
+	_lookup_key lookup_key "multiline_func" "$@"
 	shash_get lookupcnt "${lookup_key}" lookup || lookup=0
 	lookup=$((lookup + 1))
 	shash_set lookupcnt "${lookup_key}" ${lookup}
 
-	setvar "${var_return}" "$# $@"
-}
-
-real_func_sv_2() {
-	msg_warn "in real_func_sv_2 $# $@"
-	local data="$1"
-	local var_return="$2"
-	local lookup lookup_key
-
-	_lookup_key lookup_key "real_func_sv_2" "${data}"
-	shash_get lookupcnt "${lookup_key}" lookup || lookup=0
-	lookup=$((lookup + 1))
-	shash_set lookupcnt "${lookup_key}" ${lookup}
-
-	setvar "${var_return}" "1 ${data}"
+	echo 0
+	echo 1
+	echo 2
+	echo 3
+	echo 4
+	echo 5
+	echo 6
 }
 
 get_lookup_cnt() {
@@ -88,9 +78,9 @@ SHASH_VAR_PATH="${MASTERMNT}"
 {
 	# First lookup, will call into the real function
 	lookup=0
-	value=
-	cache_call value real_func "1"
+	value=$(cache_call - real_func "1")
 	assert 0 $? "real_func 1 return status"
+	assert_ret 0 [ -n "${value}" ]
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
 	assert 1 "${argcnt}" "real_func 1 argcnt"
@@ -100,9 +90,9 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	assert 1 ${lookup} "real_func 1 lookup count"
 
 	# Second lookup, should not call into the function
-	value=
-	cache_call value real_func "1"
+	value=$(cache_call - real_func "1")
 	assert 0 $? "real_func 1 return status 2"
+	assert_ret 0 [ -n "${value}" ]
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
 	assert 1 "${argcnt}" "real_func 1 argcnt 2"
@@ -112,24 +102,22 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	assert 1 ${lookup} "real_func 1 lookup count 2"
 }
 
-# test with nop function
+# test with nop function. Newline shouldn't be added for null data.
 {
 	# . at end to preserve newlines.
 	# First lookup, will call into the real function
 	lookup=0
-	value=
-	cache_call value nop_func "1"
+	value=$(cache_call - nop_func "1"; echo .)
 	assert 0 $? "nop_func 1 return status"
-	assert "empty" "${value:-empty}"
+	assert "." "${value}"
 	get_lookup_cnt lookup nop_func "1"
 	assert 0 $? "lookupcnt nop_func-1"
 	assert 1 ${lookup} "nop_func 1 lookup count"
 
 	# Second lookup, should not call into the function
-	value=
-	cache_call value nop_func "1"
+	value=$(cache_call - nop_func "1"; echo .)
 	assert 0 $? "nop_func 1 return status 2"
-	assert "empty" "${value:-empty}"
+	assert "." "${value}"
 	get_lookup_cnt lookup nop_func "1"
 	assert 0 $? "lookupcnt nop_func-1 2"
 	assert 1 ${lookup} "nop_func 1 lookup count 2"
@@ -140,8 +128,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	# First lookup, will call into the real function
 	lookup=0
 	get_lookup_cnt lookup real_func "1" "2.0" "3 4"
-	value=
-	cache_call value real_func "1" "2.0" "3 4"
+	value=$(cache_call - real_func "1" "2.0" "3 4")
 	assert 0 $? "real_func 1 2.0 '3 4' return status"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -152,8 +139,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	assert 1 ${lookup} "real_func 1 2.0 '3 4' lookup count"
 
 	# Second lookup, should not call into the function
-	value=
-	cache_call value real_func "1" "2.0" "3 4"
+	value=$(cache_call - real_func "1" "2.0" "3 4")
 	assert 0 $? "real_func 1 2.0 '3 4' return status 2"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -173,8 +159,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 
 	# Third lookup with trailing empty argument
 	lookup=0
-	value=
-	cache_call value real_func "1" "2.0" "3" "4" ""
+	value=$(cache_call - real_func "1" "2.0" "3" "4" "")
 	assert 0 $? "real_func 1 2.0 3 4 _ return status"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -188,8 +173,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	# should be unique.
 
 	lookup=0
-	value=
-	cache_call value real_func "1" "2.0" "3" "4"
+	value=$(cache_call - real_func "1" "2.0" "3" "4")
 	assert 0 $? "real_func 1 2.0 3 4 return status"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -202,8 +186,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	# Fifth lookup with similar data as the last
 
 	lookup=0
-	value=
-	cache_call value real_func "1" "2.0" "3 " "4"
+	value=$(cache_call - real_func "1" "2.0" "3 " "4")
 	assert 0 $? "real_func 1 2.0 3_ 4 return status"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -214,69 +197,11 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	assert 1 ${lookup} "real_func 1 2.0 3_ 4 lookup count"
 }
 
-# Test a lookup with a function with uses setvar rather than stdout for results.
-{
-	# First lookup, will call into the real function
-	lookup=0
-	value=
-	cache_call_sv value real_func_sv sv_value "1"
-	assert 0 $? "real_func_sv 1 return status"
-	argcnt=${value%% *}
-	value="${value#[0-9] }"
-	assert 1 "${argcnt}" "real_func_sv 1 argcnt"
-	assert "1" "${value}" "real_func_sv 1 value"
-	get_lookup_cnt lookup real_func_sv "1"
-	assert 0 $? "lookupcnt real_func_sv-1"
-	assert 1 ${lookup} "real_func_sv 1 lookup count"
-
-	# Second lookup, should not call into the function
-	value=
-	cache_call_sv value real_func_sv sv_value "1"
-	assert 0 $? "real_func_sv 1 return status 2"
-	argcnt=${value%% *}
-	value="${value#[0-9] }"
-	assert 1 "${argcnt}" "real_func_sv 1 argcnt 2"
-	assert "1" "${value}" "real_func_sv 1 value 2"
-	get_lookup_cnt lookup real_func_sv "1"
-	assert 0 $? "lookupcnt real_func_sv-1 2"
-	assert 1 ${lookup} "real_func_sv 1 lookup count 2"
-}
-
-# Test a lookup with a function with uses setvar rather than stdout for results,
-# but with return var not in first place.
-{
-	# First lookup, will call into the real function
-	lookup=0
-	value=
-	cache_call_sv value real_func_sv_2 "1" sv_value
-	assert 0 $? "real_func_sv_2 1 return status"
-	argcnt=${value%% *}
-	value="${value#[0-9] }"
-	assert 1 "${argcnt}" "real_func_sv_2 1 argcnt"
-	assert "1" "${value}" "real_func_sv_2 1 value"
-	get_lookup_cnt lookup real_func_sv_2 "1"
-	assert 0 $? "lookupcnt real_func_sv_2-1"
-	assert 1 ${lookup} "real_func_sv_2 1 lookup count"
-
-	# Second lookup, should not call into the function
-	value=
-	cache_call_sv value real_func_sv_2 "1" sv_value
-	assert 0 $? "real_func_sv_2 1 return status 2"
-	argcnt=${value%% *}
-	value="${value#[0-9] }"
-	assert 1 "${argcnt}" "real_func_sv_2 1 argcnt 2"
-	assert "1" "${value}" "real_func_sv_2 1 value 2"
-	get_lookup_cnt lookup real_func_sv_2 "1"
-	assert 0 $? "lookupcnt real_func_sv_2-1 2"
-	assert 1 ${lookup} "real_func_sv_2 1 lookup count 2"
-}
-
 # Invalidation test
 {
 	# First lookup, will call into the real function
 	lookup=0
-	value=
-	cache_call value real_func "1"
+	value=$(cache_call - real_func "1")
 	assert 0 $? "real_func 1 return status"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -289,7 +214,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	# now invalidate the cache and ensure it is looked up again.
 	cache_invalidate real_func "1"
 
-	cache_call value real_func "1"
+	value=$(cache_call - real_func "1")
 	assert 0 $? "real_func 1 return status - invalidated"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -304,8 +229,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 {
 	# First lookup, will call into the real function
 	lookup=0
-	value=
-	cache_call value real_func "5"
+	value=$(cache_call - real_func "5")
 	assert 0 $? "real_func 5 return status"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -319,7 +243,7 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	# adding in its $#)
 	cache_set "1 SET-5-SET" real_func "5"
 
-	cache_call value real_func "5"
+	value=$(cache_call - real_func "5")
 	assert 0 $? "real_func 5 return status - set"
 	argcnt=${value%% *}
 	value="${value#[0-9] }"
@@ -331,6 +255,55 @@ SHASH_VAR_PATH="${MASTERMNT}"
 	assert 1 ${lookup} "real_func 5 lookup count - set"
 }
 
+{
+	# First lookup, will call into the real function
+	lookup=0
+	assert_ret 0 cache_call - multiline_func "1" | (
+		lines=0
+		while read -r line; do
+			assert "${lines}" "${line}"
+			echo "${line}"
+			lines=$((lines + 1))
+		done
+		assert 7 "${lines}"
+	)
+	assert 0 "$?"
+	get_lookup_cnt lookup multiline_func "1"
+	assert 0 $? "lookupcnt multiline_func-1"
+	assert 1 ${lookup} "multiline_func 1 lookup count"
+
+	# Second lookup, should not call into the function
+	assert_ret 0 cache_call - multiline_func "1" | (
+		lines=0
+		while read -r line; do
+			assert "${lines}" "${line}"
+			echo "${line}"
+			lines=$((lines + 1))
+		done
+		assert 7 "${lines}"
+	)
+	assert 0 "$?"
+	get_lookup_cnt lookup multiline_func "1"
+	assert 0 $? "lookupcnt multiline_func-1 2"
+	assert 1 ${lookup} "multiline_func 1 lookup count 2"
+
+	# Try without caching
+	USE_CACHE_CALL=0
+	assert_ret 0 cache_call - multiline_func "1" | (
+		lines=0
+		while read -r line; do
+			assert "${lines}" "${line}"
+			echo "${line}"
+			lines=$((lines + 1))
+		done
+		assert 7 "${lines}"
+	)
+	assert 0 "$?"
+	get_lookup_cnt lookup multiline_func "1"
+	assert 0 $? "lookupcnt multiline_func-1 2"
+	assert 2 ${lookup} "multiline_func 1 lookup count 2"
+	USE_CACHE_CALL=1
+}
 
 rm -rf "${MASTERMNT}"
 exit 0
