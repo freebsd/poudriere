@@ -51,20 +51,28 @@ shash_get() {
 	local key="$2"
 	local var_return="$3"
 	local _shash_varkey_file _f _value _values
-	local ret
+	local ret handle IFS
 
-	ret=1
+	ret=0
 	_values=
 	_shash_varkey_file "${var}" "${key}"
 	# This assumes globbing works
 	for _f in ${_shash_varkey_file}; do
 		case "${_f}" in
-		*"*"*) break ;; # no file found
+		# no file found
+		*"*"*)
+			ret=1
+			break
+			;;
 		esac
-		if read_line _value "${_f}"; then
-			_values="${_values}${_values:+ }${_value}"
-			ret=0
+		if ! mapfile handle "${_f}" "re" 2>/dev/null; then
+			ret=1
+			continue
 		fi
+		if IFS= mapfile_read "${handle}" _value; then
+			_values="${_values:+${_values} }${_value}"
+		fi
+		mapfile_close "${handle}" || :
 	done
 
 	setvar "${var_return}" "${_values}"
@@ -100,7 +108,14 @@ shash_set() {
 	local _shash_varkey_file
 
 	_shash_varkey_file "${var}" "${key}"
-	echo "${value}" > "${_shash_varkey_file}"
+	case "${value}" in
+	"")
+		:
+		;;
+	*)
+		echo "${value}"
+		;;
+	esac > "${_shash_varkey_file}"
 }
 
 shash_read() {
@@ -108,22 +123,22 @@ shash_read() {
 	[ $# -eq 2 ] || eargs shash_read var key
 	local var="$1"
 	local key="$2"
-	local _shash_varkey_file
+	local _shash_varkey_file handle line
 
 	_shash_varkey_file "${var}" "${key}"
-	mapfile_cat_file "${_shash_varkey_file}"
+	mapfile_cat_file "${_shash_varkey_file}" 2>/dev/null
 }
 
 shash_read_mapfile() {
 	local -; set +x
-	[ $# -eq 3 ] || eargs shash_read var key mapfile_handle_var
+	[ $# -eq 3 ] || eargs shash_read_mapfile var key mapfile_handle_var
 	local var="$1"
 	local key="$2"
 	local mapfile_handle_var="$3"
 	local _shash_varkey_file
 
 	_shash_varkey_file "${var}" "${key}"
-	mapfile "${mapfile_handle_var}" "${_shash_varkey_file}" "re"
+	mapfile "${mapfile_handle_var}" "${_shash_varkey_file}" "re" 2>/dev/null
 }
 
 shash_write() {
