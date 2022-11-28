@@ -79,6 +79,16 @@ cache_set() {
 	_cache_set "${var}" "${key}" "${value}"
 }
 
+_cache_get() {
+	local -; set +x
+	[ "$#" -eq 3 ] || eargs _cache_get var key var_return
+	local cg_var="$1"
+	local cg_key="$2"
+	local cg_var_return="$3"
+
+	shash_get "${cg_var}" "${cg_key}" "${cg_var_return}"
+}
+
 # Execute a function and store its results in the cache.  Use the
 # cached value after that.
 # Usage: cache_call result_var function args
@@ -97,7 +107,7 @@ cache_call() {
 	encode_args cc_key "$@"
 
 	if [ ${USE_CACHE_CALL} -eq 0 ] || \
-	    ! shash_get "${cc_var}" "${cc_key}" "${var_return}"; then
+	    ! _cache_get "${cc_var}" "${cc_key}" "${var_return}"; then
 		msg_dev "cache_call: Fetching ${function}($@)"
 		_cc_value=$(${function} "$@")
 		ret=$?
@@ -106,7 +116,7 @@ cache_call() {
 	else
 		msg_dev "cache_call: Using cached ${function}($@)"
 		ret=0
-		# Value set by shash_get already
+		# Value set by _cache_get already
 	fi
 	return ${ret}
 }
@@ -131,7 +141,7 @@ cache_call_sv() {
 	encode_args cc_key "$@"
 
 	if [ ${USE_CACHE_CALL} -eq 0 ] || \
-	    ! shash_get "${cc_var}" "${cc_key}" "${var_return}"; then
+	    ! _cache_get "${cc_var}" "${cc_key}" "${var_return}"; then
 		msg_dev "cache_call_sv: Fetching ${function}($@)"
 		sv_value=sv__null
 		${function} "$@"
@@ -141,12 +151,12 @@ cache_call_sv() {
 			# so ensure ret is >0
 			ret=76
 		fi
-		shash_set "${cc_var}" "${cc_key}" "${sv_value}"
+		_cache_set "${cc_var}" "${cc_key}" "${sv_value}"
 		setvar "${var_return}" "${sv_value}"
 	else
 		msg_dev "cache_call_sv: Using cached ${function}($@)"
 		ret=0
-		# Value set by shash_get already
+		# Value set by _cache_get already
 	fi
 	return ${ret}
 }
