@@ -89,20 +89,20 @@ cache_call() {
 	local function="$2"
 	shift 2
 	local -; set +e # Need to capture error without ||
-	local var key _value ret
+	local cc_var cc_key _cc_value ret
 
 	# If the value is not already in the cache then
 	# look it up and store the result in the cache.
-	var="cached-${function}"
-	encode_args key "$@"
+	cc_var="cached-${function}"
+	encode_args cc_key "$@"
 
 	if [ ${USE_CACHE_CALL} -eq 0 ] || \
-	    ! shash_get "${var}" "${key}" "${var_return}"; then
+	    ! shash_get "${cc_var}" "${cc_key}" "${var_return}"; then
 		msg_dev "cache_call: Fetching ${function}($@)"
-		_value=$(${function} "$@")
+		_cc_value=$(${function} "$@")
 		ret=$?
-		_cache_set "${var}" "${key}" "${_value}"
-		setvar "${var_return}" "${_value}"
+		_cache_set "${cc_var}" "${cc_key}" "${_cc_value}"
+		setvar "${var_return}" "${_cc_value}"
 	else
 		msg_dev "cache_call: Using cached ${function}($@)"
 		ret=0
@@ -123,15 +123,15 @@ cache_call_sv() {
 	local function="$2"
 	shift 2
 	local -; set +e # Need to capture error without ||
-	local var key sv_value ret
+	local cc_var cc_key sv_value ret
 
 	# If the value is not already in the cache then
 	# look it up and store the result in the cache.
-	var="cached-${function}"
-	encode_args key "$@"
+	cc_var="cached-${function}"
+	encode_args cc_key "$@"
 
 	if [ ${USE_CACHE_CALL} -eq 0 ] || \
-	    ! shash_get "${var}" "${key}" "${var_return}"; then
+	    ! shash_get "${cc_var}" "${cc_key}" "${var_return}"; then
 		msg_dev "cache_call_sv: Fetching ${function}($@)"
 		sv_value=sv__null
 		${function} "$@"
@@ -141,7 +141,7 @@ cache_call_sv() {
 			# so ensure ret is >0
 			ret=76
 		fi
-		shash_set "${var}" "${key}" "${sv_value}"
+		shash_set "${cc_var}" "${cc_key}" "${sv_value}"
 		setvar "${var_return}" "${sv_value}"
 	else
 		msg_dev "cache_call_sv: Using cached ${function}($@)"

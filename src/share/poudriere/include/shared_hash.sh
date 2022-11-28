@@ -50,11 +50,11 @@ shash_get() {
 	local var="$1"
 	local key="$2"
 	local var_return="$3"
-	local _shash_varkey_file _f _value _values
+	local _shash_varkey_file _f _sh_value _sh_values
 	local ret handle IFS
 
 	ret=0
-	_values=
+	_sh_values=
 	_shash_varkey_file "${var}" "${key}"
 	# This assumes globbing works
 	for _f in ${_shash_varkey_file}; do
@@ -69,13 +69,13 @@ shash_get() {
 			ret=1
 			continue
 		fi
-		if IFS= mapfile_read "${handle}" _value; then
-			_values="${_values:+${_values} }${_value}"
+		if IFS= mapfile_read "${handle}" _sh_value; then
+			_sh_values="${_sh_values:+${_sh_values} }${_sh_value}"
 		fi
 		mapfile_close "${handle}" || :
 	done
 
-	setvar "${var_return}" "${_values}"
+	setvar "${var_return}" "${_sh_values}"
 
 	return ${ret}
 }
