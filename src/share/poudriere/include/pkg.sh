@@ -48,7 +48,7 @@ pkg_get_origin() {
 
 pkg_get_annotations() {
 	[ $# -eq 2 ] || eargs pkg_get_annotations mapfile_handle_var pkg
-	local mapfile_handle_var="$1"
+	local pga_mapfile_var="$1"
 	local pkg="$2"
 	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 
@@ -58,9 +58,15 @@ pkg_get_annotations() {
 		    '%At %Av' | sort |
 		    shash_write 'pkg' 'annotations'
 	fi
-	if [ -n "${mapfile_handle_var}" ]; then
-		shash_read_mapfile 'pkg' 'annotations' "${mapfile_handle_var}"
-	fi
+	case "${pga_mapfile_var}" in
+	"") ;;
+	-)
+		shash_read 'pkg' 'annotations'
+		;;
+	*)
+		shash_read_mapfile 'pkg' 'annotations' "${pga_mapfile_var}"
+		;;
+	esac
 }
 
 pkg_get_annotation() {
