@@ -183,7 +183,7 @@ rename_SOURCES=		src/libexec/poudriere/rename/rename.c
 rm_SOURCES=		external/rm/rm.c
 setsid_SOURCES=		external/setsid/setsid.c \
 			external/setsid/c.h
-setsid_CFLAGS=		-DHAVE_ERR_H -DHAVE_NANOSLEEP
+setsid_CFLAGS=		$(AM_CFLAGS) -DHAVE_ERR_H -DHAVE_NANOSLEEP
 timeout_SOURCES=	external/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
 timestamp_LDADD=	-lpthread
