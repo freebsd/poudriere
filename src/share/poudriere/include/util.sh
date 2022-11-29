@@ -799,7 +799,7 @@ mapfile_close() {
 	local handle="$1"
 	local fd _
 
-	if [ "${handle}" != "${_mapfile_handle}" ]; then
+	if [ "${handle}" != "${_mapfile_handle-}" ]; then
 		err 1 "mapfile_close: Handle '${handle}' is not open${_mapfile_handle:+, '${_mapfile_handle}' is}."
 	fi
 	# Only close fd that we opened.
