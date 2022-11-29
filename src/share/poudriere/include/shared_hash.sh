@@ -137,6 +137,17 @@ shash_write() {
 	write_atomic "${_shash_varkey_file}"
 }
 
+shash_tee() {
+	local -; set +x
+	[ $# -eq 2 ] || eargs shash_tee var key
+	local var="$1"
+	local key="$2"
+	local _shash_varkey_file
+
+	_shash_varkey_file "${var}" "${key}"
+	write_atomic_tee "${_shash_varkey_file}"
+}
+
 shash_remove_var() {
 	local -; set +x
 	[ $# -eq 1 ] || eargs shash_remove_var var

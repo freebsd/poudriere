@@ -514,7 +514,7 @@ mapfile_closecmd(int argc, char **argv)
 
 static int
 _mapfile_write(/*XXX const*/ struct mapped_data *md, const char *handle,
-    const int nflag, const char *data)
+    const int nflag, const int Tflag, const char *data)
 {
 	int serrno, ret;
 
@@ -541,6 +541,10 @@ _mapfile_write(/*XXX const*/ struct mapped_data *md, const char *handle,
 		err(ret, "failed to write to handle '%s' mapped to %s",
 		    handle, md->file);
 	}
+	if (Tflag) {
+		out1str(data);
+		out1c('\n');
+	}
 	return (ret);
 }
 
@@ -551,20 +555,23 @@ mapfile_writecmd(int argc, char **argv)
 {
 	struct mapped_data *md;
 	const char *handle, *data;
-	int ch, nflag, ret;
+	int ch, nflag, Tflag, ret;
 
 	if (argc < 2)
-		errx(EX_USAGE, "%s", "Usage: mapfile_write <handle> [-n] "
+		errx(EX_USAGE, "%s", "Usage: mapfile_write <handle> [-nT] "
 		    "<data>");
-	nflag = 0;
+	nflag = Tflag = 0;
 	handle = argv[1];
 	argptr += 1;
 	argc -= argptr - argv;
 	argv = argptr;
-	while ((ch = nextopt("n")) != '\0') {
+	while ((ch = nextopt("nT")) != '\0') {
 		switch (ch) {
 		case 'n':
 			nflag = 1;
+			break;
+		case 'T':
+			Tflag = 1;
 			break;
 		}
 	}
@@ -574,7 +581,7 @@ mapfile_writecmd(int argc, char **argv)
 	md = md_find(handle);
 	if (argc == 1) {
 		data = argv[0];
-		ret = _mapfile_write(md, handle, nflag, data);
+		ret = _mapfile_write(md, handle, nflag, Tflag, data);
 		assert(is_int_on());
 	} else {
 		char *line;
@@ -586,7 +593,7 @@ mapfile_writecmd(int argc, char **argv)
 		md_read = _mapfile_open("/dev/fd/0", "r");
 		assert(md_read != NULL);
 		while ((rret = _mapfile_read(md_read, &line, NULL, NULL)) == 0) {
-			ret = _mapfile_write(md, handle, nflag, line);
+			ret = _mapfile_write(md, handle, nflag, Tflag, line);
 			if (ret != 0) {
 				md_close(md_read);
 				INTON;

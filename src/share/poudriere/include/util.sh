@@ -766,21 +766,23 @@ mapfile_read() {
 
 mapfile_write() {
 	local -; set +x
-	[ $# -ge 1 ] || eargs mapfile_write handle [-n] [data]
+	[ $# -ge 1 ] || eargs mapfile_write handle [-nT] [data]
 	local handle="$1"
 	shift
-	local ret handle fd nflag flag OPTIND=1
+	local ret handle fd nflag Tflag flag OPTIND=1
 
 	ret=0
 	nflag=
-	while getopts "n" flag; do
+	Tflag=
+	while getopts "nT" flag; do
 		case "${flag}" in
 		n) nflag=1 ;;
+		T) Tflag=1 ;;
 		*) err "${EX_USAGE}" "mapfile_write: Invalid flag ${flag}" ;;
 		esac
 	done
 	shift $((OPTIND-1))
-	[ $# -ge 0 ] || eargs mapfile_write handle [-n] [data]
+	[ $# -ge 0 ] || eargs mapfile_write handle [-nT] [data]
 
 	if [ "$#" -eq 0 ]; then
 		local data
@@ -793,7 +795,8 @@ mapfile_write() {
 		# Nothing to write. An alternative here is nflag=1 ;;
 		"-0") return 0 ;;
 		esac
-		mapfile_write "${handle}" ${nflag:+-n} "${data}" || ret="$?"
+		mapfile_write "${handle}" ${nflag:+-n} ${Tflag:+-T} \
+		    "${data}" || ret="$?"
 		return "${ret}"
 	fi
 
@@ -801,6 +804,9 @@ mapfile_write() {
 		err 1 "mapfile_write: Handle '${handle}' is not open${_mapfile_handle:+, '${_mapfile_handle}' is}."
 	fi
 	hash_get mapfile_fd "${handle}" fd || fd=8
+	if [ "${Tflag:-0}" -eq 1 ]; then
+		echo ${nflag:+-n} "$@"
+	fi
 	echo ${nflag:+-n} "$@" >&${fd}
 }
 
@@ -1249,16 +1255,21 @@ calculate_duration() {
 
 _write_atomic() {
 	local -; set +x
-	[ $# -eq 2 ] || eargs _write_atomic cmp destfile "< content"
+	[ $# -eq 3 ] || eargs _write_atomic cmp tee destfile "< content"
 	local cmp="$1"
-	local dest="$2"
+	local tee="$2"
+	local dest="$3"
 	local tmpfile_handle tmpfile ret
 
 	TMPDIR="${dest%/*}" mapfile_mktemp tmpfile_handle tmpfile \
 	    -ut ".tmp-${dest##*/}" ||
 	    err $? "write_atomic unable to create tmpfile in ${dest%/*}"
 	ret=0
-	mapfile_write "${tmpfile_handle}" || ret="$?"
+	if [ "${tee}" -eq 1 ]; then
+		mapfile_write "${tmpfile_handle}" -T || ret="$?"
+	else
+		mapfile_write "${tmpfile_handle}" || ret="$?"
+	fi
 	if [ "${ret}" -ne 0 ]; then
 		unlink "${tmpfile}" || :
 		return "${ret}"
@@ -1287,7 +1298,7 @@ write_atomic_cmp() {
 	[ $# -eq 1 ] || eargs write_atomic_cmp destfile "< content"
 	local dest="$1"
 
-	_write_atomic 1 "${dest}" || return
+	_write_atomic 1 0 "${dest}" || return
 }
 
 write_atomic() {
@@ -1295,7 +1306,15 @@ write_atomic() {
 	[ $# -eq 1 ] || eargs write_atomic destfile "< content"
 	local dest="$1"
 
-	_write_atomic 0 "${dest}" || return
+	_write_atomic 0 0 "${dest}" || return
+}
+
+write_atomic_tee() {
+	local -; set +x
+	[ $# -eq 1 ] || eargs write_atomic_tee destfile "< content"
+	local dest="$1"
+
+	_write_atomic 0 1 "${dest}" || return
 }
 
 # Place environment requirements on entering a function
