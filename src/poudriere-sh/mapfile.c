@@ -247,6 +247,8 @@ mapfilecmd(int argc, char **argv)
 int
 mapfile_readcmd(int argc, char **argv)
 {
+	static const char usage[] = "Usage: mapfile_read <handle> "
+	    "[-t timeout] <output_var> ...";
 	struct mapped_data *md;
 	struct timeval tv = {};
 	char **var_return_ptr;
@@ -261,8 +263,7 @@ mapfile_readcmd(int argc, char **argv)
 	tflag = 0;
 
 	if (argc < 2)
-		errx(EX_USAGE, "%s", "Usage: mapfile_read <handle> "
-		    "[-t timeout] <output_var> ...");
+		errx(EX_USAGE, "%s", usage);
 
 	handle = argv[1];
 	argptr += 1;
@@ -300,14 +301,15 @@ mapfile_readcmd(int argc, char **argv)
 			tv.tv_usec =
 			    (suseconds_t)(timeout * 1000000UL);
 			break;
+		default:
+			errx(EX_USAGE, "%s", usage);
 		}
 	}
 	argc -= argptr - argv;
 	argv = argptr;
 
 	if (argc < 1)
-		errx(EX_USAGE, "%s", "Usage: mapfile_read <handle> "
-		    "[-t timeout] <output_var> ...");
+		errx(EX_USAGE, "%s", usage);
 
 	INTOFF;
 	md = md_find(handle);
@@ -557,9 +559,10 @@ mapfile_writecmd(int argc, char **argv)
 	const char *handle, *data;
 	int ch, nflag, Tflag, ret;
 
+	static const char usage[] = "Usage: mapfile_write <handle> [-nT] "
+		    "<data>";
 	if (argc < 2)
-		errx(EX_USAGE, "%s", "Usage: mapfile_write <handle> [-nT] "
-		    "<data>");
+		errx(EX_USAGE, "%s", usage);
 	nflag = Tflag = 0;
 	handle = argv[1];
 	argptr += 1;
@@ -573,6 +576,8 @@ mapfile_writecmd(int argc, char **argv)
 		case 'T':
 			Tflag = 1;
 			break;
+		default:
+			errx(EX_USAGE, "%s", usage);
 		}
 	}
 	argc -= argptr - argv;
