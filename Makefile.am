@@ -259,9 +259,11 @@ ${sh_OBJECTS}:		src/poudriere-sh/builtins.h
 
 libucl_la_SOURCES=	\
 			external/libucl/include/lua_ucl.h \
+			external/libucl/include/ucl++.h \
 			external/libucl/include/ucl.h \
 			external/libucl/klib/khash.h \
 			external/libucl/klib/kvec.h \
+			external/libucl/src/mum.h \
 			external/libucl/src/tree.h \
 			external/libucl/src/ucl_chartable.h \
 			external/libucl/src/ucl_emitter.c \
@@ -270,10 +272,11 @@ libucl_la_SOURCES=	\
 			external/libucl/src/ucl_hash.c \
 			external/libucl/src/ucl_hash.h \
 			external/libucl/src/ucl_internal.h \
+			external/libucl/src/ucl_msgpack.c \
 			external/libucl/src/ucl_parser.c \
+			external/libucl/src/ucl_schema.c \
+			external/libucl/src/ucl_sexp.c \
 			external/libucl/src/ucl_util.c \
-			external/libucl/src/xxhash.c \
-			external/libucl/src/xxhash.h \
 			external/libucl/uthash/uthash.h \
 			external/libucl/uthash/utlist.h \
 			external/libucl/uthash/utstring.h
@@ -284,7 +287,7 @@ libucl_la_CFLAGS=	$(AM_CFLAGS) -Wno-extra \
 			-I$(top_srcdir)/external/libucl/include  \
 			-I$(top_srcdir)/external/libucl/src \
 			-Wno-unused-parameter -Wno-pointer-sign \
-			-Wno-unused-variable
+			-Wno-unused-function
 
 libptsort_la_SOURCES=	external/ptsort/lib/aa_tree.c \
 			external/ptsort/lib/aa_tree.h \

@@ -68,12 +68,16 @@ func = "huh";
 
 #define PARSER_META "ucl.parser.meta"
 #define EMITTER_META "ucl.emitter.meta"
-#define NULL_META "null.emitter.meta"
+#define NULL_META "ucl.null.meta"
+#define OBJECT_META "ucl.object.meta"
+#define UCL_OBJECT_TYPE_META "ucl.type.object"
+#define UCL_ARRAY_TYPE_META "ucl.type.array"
+#define UCL_IMPL_ARRAY_TYPE_META "ucl.type.impl_array"
 
 static int ucl_object_lua_push_array (lua_State *L, const ucl_object_t *obj);
 static int ucl_object_lua_push_scalar (lua_State *L, const ucl_object_t *obj, bool allow_array);
-static ucl_object_t* ucl_object_lua_fromtable (lua_State *L, int idx);
-static ucl_object_t* ucl_object_lua_fromelt (lua_State *L, int idx);
+static ucl_object_t* ucl_object_lua_fromtable (lua_State *L, int idx, ucl_string_flags_t flags);
+static ucl_object_t* ucl_object_lua_fromelt (lua_State *L, int idx, ucl_string_flags_t flags);
 
 static void *ucl_null;
 
@@ -140,24 +144,21 @@ ucl_object_lua_push_object (lua_State *L, const ucl_object_t *obj,
 {
 	const ucl_object_t *cur;
 	ucl_object_iter_t it = NULL;
-	int nelt = 0;
 
 	if (allow_array && obj->next != NULL) {
 		/* Actually we need to push this as an array */
 		return ucl_object_lua_push_array (L, obj);
 	}
 
-	/* Optimize allocation by preallocation of table */
-	while (ucl_iterate_object (obj, &it, true) != NULL) {
-		nelt ++;
-	}
-
-	lua_createtable (L, 0, nelt);
+	lua_createtable (L, 0, obj->len);
 	it = NULL;
 
-	while ((cur = ucl_iterate_object (obj, &it, true)) != NULL) {
+	while ((cur = ucl_object_iterate (obj, &it, true)) != NULL) {
 		ucl_object_lua_push_element (L, ucl_object_key (cur), cur);
 	}
+
+	luaL_getmetatable (L, UCL_OBJECT_TYPE_META);
+	lua_setmetatable (L, -2);
 
 	return 1;
 }
@@ -172,19 +173,41 @@ static int
 ucl_object_lua_push_array (lua_State *L, const ucl_object_t *obj)
 {
 	const ucl_object_t *cur;
+	ucl_object_iter_t it;
 	int i = 1, nelt = 0;
 
-	/* Optimize allocation by preallocation of table */
-	LL_FOREACH (obj, cur) {
-		nelt ++;
+	if (obj->type == UCL_ARRAY) {
+		nelt = obj->len;
+		it = ucl_object_iterate_new (obj);
+		lua_createtable (L, nelt, 0);
+
+		while ((cur = ucl_object_iterate_safe (it, true))) {
+			ucl_object_push_lua (L, cur, false);
+			lua_rawseti (L, -2, i);
+			i ++;
+		}
+
+		luaL_getmetatable (L, UCL_ARRAY_TYPE_META);
+		lua_setmetatable (L, -2);
+
+		ucl_object_iterate_free (it);
 	}
+	else {
+		/* Optimize allocation by preallocation of table */
+		LL_FOREACH (obj, cur) {
+			nelt ++;
+		}
 
-	lua_createtable (L, nelt, 0);
+		lua_createtable (L, nelt, 0);
 
-	LL_FOREACH (obj, cur) {
-		ucl_object_push_lua (L, cur, false);
-		lua_rawseti (L, -2, i);
-		i ++;
+		LL_FOREACH (obj, cur) {
+			ucl_object_push_lua (L, cur, false);
+			lua_rawseti (L, -2, i);
+			i ++;
+		}
+
+		luaL_getmetatable (L, UCL_IMPL_ARRAY_TYPE_META);
+		lua_setmetatable (L, -2);
 	}
 
 	return 1;
@@ -259,7 +282,7 @@ ucl_object_push_lua (lua_State *L, const ucl_object_t *obj, bool allow_array)
 	case UCL_OBJECT:
 		return ucl_object_lua_push_object (L, obj, allow_array);
 	case UCL_ARRAY:
-		return ucl_object_lua_push_array (L, obj->value.av);
+		return ucl_object_lua_push_array (L, obj);
 	default:
 		return ucl_object_lua_push_scalar (L, obj, allow_array);
 	}
@@ -272,70 +295,120 @@ ucl_object_push_lua (lua_State *L, const ucl_object_t *obj, bool allow_array)
  * @param idx
  */
 static ucl_object_t *
-ucl_object_lua_fromtable (lua_State *L, int idx)
+ucl_object_lua_fromtable (lua_State *L, int idx, ucl_string_flags_t flags)
 {
 	ucl_object_t *obj, *top = NULL;
 	size_t keylen;
 	const char *k;
-	bool is_array = true;
-	int max = INT_MIN;
+	bool is_array = true, is_implicit = false, found_mt = false;
+	size_t max = 0, nelts = 0;
 
 	if (idx < 0) {
 		/* For negative indicies we want to invert them */
 		idx = lua_gettop (L) + idx + 1;
 	}
-	/* Check for array */
-	lua_pushnil (L);
-	while (lua_next (L, idx) != 0) {
-		if (lua_type (L, -2) == LUA_TNUMBER) {
-			double num = lua_tonumber (L, -2);
-			if (num == (int)num) {
-				if (num > max) {
-					max = num;
-				}
-			}
-			else {
-				/* Keys are not integer */
-				lua_pop (L, 2);
+
+	/* First, we check from metatable */
+	if (luaL_getmetafield (L, idx, "class") != 0) {
+
+		if (lua_type (L, -1) == LUA_TSTRING) {
+			const char *classname = lua_tostring (L, -1);
+
+			if (strcmp (classname, UCL_OBJECT_TYPE_META) == 0) {
 				is_array = false;
-				break;
+				found_mt = true;
+			} else if (strcmp (classname, UCL_ARRAY_TYPE_META) == 0) {
+				is_array = true;
+				found_mt = true;
+#if LUA_VERSION_NUM >= 502
+				max = lua_rawlen (L, idx);
+#else
+				max = lua_objlen (L, idx);
+#endif
+				nelts = max;
+			} else if (strcmp (classname, UCL_IMPL_ARRAY_TYPE_META) == 0) {
+				is_array = true;
+				is_implicit = true;
+				found_mt = true;
+#if LUA_VERSION_NUM >= 502
+				max = lua_rawlen (L, idx);
+#else
+				max = lua_objlen (L, idx);
+#endif
+				nelts = max;
 			}
 		}
-		else {
-			/* Keys are not numeric */
-			lua_pop (L, 2);
-			is_array = false;
-			break;
-		}
+
 		lua_pop (L, 1);
+	}
+
+	if (!found_mt) {
+		/* Check for array */
+		lua_pushnil (L);
+		while (lua_next (L, idx) != 0) {
+			if (lua_type (L, -2) == LUA_TNUMBER) {
+				double num = lua_tonumber (L, -2);
+				if (num == (int) num) {
+					if (num > max) {
+						max = num;
+					}
+				} else {
+					/* Keys are not integer */
+					is_array = false;
+				}
+			} else {
+				/* Keys are not numeric */
+				is_array = false;
+			}
+			lua_pop (L, 1);
+			nelts ++;
+		}
 	}
 
 	/* Table iterate */
 	if (is_array) {
-		int i;
+		unsigned int i;
 
-		top = ucl_object_typed_new (UCL_ARRAY);
+		if (!is_implicit) {
+			top = ucl_object_typed_new (UCL_ARRAY);
+			ucl_object_reserve (top, nelts);
+		}
+		else {
+			top = NULL;
+		}
+
 		for (i = 1; i <= max; i ++) {
 			lua_pushinteger (L, i);
 			lua_gettable (L, idx);
-			obj = ucl_object_lua_fromelt (L, lua_gettop (L));
+
+			obj = ucl_object_lua_fromelt (L, lua_gettop (L), flags);
+
 			if (obj != NULL) {
-				ucl_array_append (top, obj);
+				if (is_implicit) {
+					DL_APPEND (top, obj);
+				}
+				else {
+					ucl_array_append (top, obj);
+				}
 			}
+			lua_pop (L, 1);
 		}
 	}
 	else {
 		lua_pushnil (L);
 		top = ucl_object_typed_new (UCL_OBJECT);
+		ucl_object_reserve (top, nelts);
+
 		while (lua_next (L, idx) != 0) {
 			/* copy key to avoid modifications */
-			k = lua_tolstring (L, -2, &keylen);
-			obj = ucl_object_lua_fromelt (L, lua_gettop (L));
+			lua_pushvalue (L, -2);
+			k = lua_tolstring (L, -1, &keylen);
+			obj = ucl_object_lua_fromelt (L, lua_gettop (L) - 1, flags);
 
 			if (obj != NULL) {
 				ucl_object_insert_key (top, obj, k, keylen, true);
 			}
-			lua_pop (L, 1);
+			lua_pop (L, 2);
 		}
 	}
 
@@ -349,18 +422,27 @@ ucl_object_lua_fromtable (lua_State *L, int idx)
  * @param idx
  */
 static ucl_object_t *
-ucl_object_lua_fromelt (lua_State *L, int idx)
+ucl_object_lua_fromelt (lua_State *L, int idx, ucl_string_flags_t flags)
 {
 	int type;
 	double num;
 	ucl_object_t *obj = NULL;
 	struct ucl_lua_funcdata *fd;
+	const char *str;
+	size_t sz;
 
 	type = lua_type (L, idx);
 
 	switch (type) {
 	case LUA_TSTRING:
-		obj = ucl_object_fromstring_common (lua_tostring (L, idx), 0, 0);
+		str = lua_tolstring (L, idx, &sz);
+
+		if (str) {
+			obj = ucl_object_fromstring_common (str, sz, flags);
+		}
+		else {
+			obj = ucl_object_typed_new (UCL_NULL);
+		}
 		break;
 	case LUA_TNUMBER:
 		num = lua_tonumber (L, idx);
@@ -388,13 +470,13 @@ ucl_object_lua_fromelt (lua_State *L, int idx)
 				lua_insert (L, 1); /* func, gen, obj */
 				lua_insert (L, 2); /* func, obj, gen */
 				lua_call(L, 2, 1);
-				obj = ucl_object_lua_fromelt (L, 1);
+				obj = ucl_object_lua_fromelt (L, 1, flags);
 			}
 			lua_pop (L, 2);
 		}
 		else {
 			if (type == LUA_TTABLE) {
-				obj = ucl_object_lua_fromtable (L, idx);
+				obj = ucl_object_lua_fromtable (L, idx, flags);
 			}
 			else if (type == LUA_TFUNCTION) {
 				fd = malloc (sizeof (*fd));
@@ -405,9 +487,7 @@ ucl_object_lua_fromelt (lua_State *L, int idx)
 					fd->idx = luaL_ref (L, LUA_REGISTRYINDEX);
 
 					obj = ucl_object_new_userdata (lua_ucl_userdata_dtor,
-							lua_ucl_userdata_emitter);
-					obj->type = UCL_USERDATA;
-					obj->value.ud = (void *)fd;
+							lua_ucl_userdata_emitter, (void *)fd);
 				}
 			}
 		}
@@ -435,10 +515,38 @@ ucl_object_lua_import (lua_State *L, int idx)
 	t = lua_type (L, idx);
 	switch (t) {
 	case LUA_TTABLE:
-		obj = ucl_object_lua_fromtable (L, idx);
+		obj = ucl_object_lua_fromtable (L, idx, 0);
 		break;
 	default:
-		obj = ucl_object_lua_fromelt (L, idx);
+		obj = ucl_object_lua_fromelt (L, idx, 0);
+		break;
+	}
+
+	return obj;
+}
+
+/**
+ * @function ucl_object_lua_import_escape(L, idx)
+ * Extracts ucl object from lua variable at `idx` position escaping JSON strings
+ * @see ucl_object_push_lua for conversion definitions
+ * @param {lua_state} L lua state machine pointer
+ * @param {int} idx index where the source variable is placed
+ * @return {ucl_object_t} new ucl object extracted from lua variable. Reference count of this object is 1,
+ * this object thus needs to be unref'ed after usage.
+ */
+ucl_object_t *
+ucl_object_lua_import_escape (lua_State *L, int idx)
+{
+	ucl_object_t *obj;
+	int t;
+
+	t = lua_type (L, idx);
+	switch (t) {
+	case LUA_TTABLE:
+		obj = ucl_object_lua_fromtable (L, idx, UCL_STRING_ESCAPE);
+		break;
+	default:
+		obj = ucl_object_lua_fromelt (L, idx, UCL_STRING_ESCAPE);
 		break;
 	}
 
@@ -446,10 +554,28 @@ ucl_object_lua_import (lua_State *L, int idx)
 }
 
 static int
+lua_ucl_to_string (lua_State *L, const ucl_object_t *obj, enum ucl_emitter type)
+{
+	unsigned char *result;
+
+	result = ucl_object_emit (obj, type);
+
+	if (result != NULL) {
+		lua_pushstring (L, (const char *)result);
+		free (result);
+	}
+	else {
+		lua_pushnil (L);
+	}
+
+	return 1;
+}
+
+static int
 lua_ucl_parser_init (lua_State *L)
 {
 	struct ucl_parser *parser, **pparser;
-	int flags = 0;
+	int flags = UCL_PARSER_NO_FILEVARS;
 
 	if (lua_gettop (L) >= 1) {
 		flags = lua_tonumber (L, 1);
@@ -472,6 +598,44 @@ static struct ucl_parser *
 lua_ucl_parser_get (lua_State *L, int index)
 {
 	return *((struct ucl_parser **) luaL_checkudata(L, index, PARSER_META));
+}
+
+static ucl_object_t *
+lua_ucl_object_get (lua_State *L, int index)
+{
+	return *((ucl_object_t **) luaL_checkudata(L, index, OBJECT_META));
+}
+
+static void
+lua_ucl_push_opaque (lua_State *L, ucl_object_t *obj)
+{
+	ucl_object_t **pobj;
+
+	pobj = lua_newuserdata (L, sizeof (*pobj));
+	*pobj = obj;
+	luaL_getmetatable (L, OBJECT_META);
+	lua_setmetatable (L, -2);
+}
+
+static inline enum ucl_parse_type
+lua_ucl_str_to_parse_type (const char *str)
+{
+	enum ucl_parse_type type = UCL_PARSE_UCL;
+
+	if (str != NULL) {
+		if (strcasecmp (str, "msgpack") == 0) {
+			type = UCL_PARSE_MSGPACK;
+		}
+		else if (strcasecmp (str, "sexp") == 0 ||
+				strcasecmp (str, "csexp") == 0) {
+			type = UCL_PARSE_CSEXP;
+		}
+		else if (strcasecmp (str, "auto") == 0) {
+			type = UCL_PARSE_AUTO;
+		}
+	}
+
+	return type;
 }
 
 /***
@@ -518,6 +682,76 @@ lua_ucl_parser_parse_file (lua_State *L)
 }
 
 /***
+ * @method parser:register_variable(name, value)
+ * Register parser variable
+ * @param {string} name name of variable
+ * @param {string} value value of variable
+ * @return {bool} success
+@example
+local parser = ucl.parser()
+local res = parser:register_variable('CONFDIR', '/etc/foo')
+ */
+static int
+lua_ucl_parser_register_variable (lua_State *L)
+{
+	struct ucl_parser *parser;
+	const char *name, *value;
+	int ret = 2;
+
+	parser = lua_ucl_parser_get (L, 1);
+	name = luaL_checkstring (L, 2);
+	value = luaL_checkstring (L, 3);
+
+	if (parser != NULL && name != NULL && value != NULL) {
+		ucl_parser_register_variable (parser, name, value);
+		lua_pushboolean (L, true);
+		ret = 1;
+	}
+	else {
+		return luaL_error (L, "invalid arguments");
+	}
+
+	return ret;
+}
+
+/***
+ * @method parser:register_variables(vars)
+ * Register parser variables
+ * @param {table} vars names/values of variables
+ * @return {bool} success
+@example
+local parser = ucl.parser()
+local res = parser:register_variables({CONFDIR = '/etc/foo', VARDIR = '/var'})
+ */
+static int
+lua_ucl_parser_register_variables (lua_State *L)
+{
+	struct ucl_parser *parser;
+	const char *name, *value;
+	int ret = 2;
+
+	parser = lua_ucl_parser_get (L, 1);
+
+	if (parser != NULL && lua_type (L, 2) == LUA_TTABLE) {
+		for (lua_pushnil (L); lua_next (L, 2); lua_pop (L, 1)) {
+			lua_pushvalue (L, -2);
+			name = luaL_checkstring (L, -1);
+			value = luaL_checkstring (L, -2);
+			ucl_parser_register_variable (parser, name, value);
+			lua_pop (L, 1);
+		}
+
+		lua_pushboolean (L, true);
+		ret = 1;
+	}
+	else {
+		return luaL_error (L, "invalid arguments");
+	}
+
+	return ret;
+}
+
+/***
  * @method parser:parse_string(input)
  * Parse UCL object from file.
  * @param {string} input string to parse
@@ -529,13 +763,65 @@ lua_ucl_parser_parse_string (lua_State *L)
 	struct ucl_parser *parser;
 	const char *string;
 	size_t llen;
+	enum ucl_parse_type type = UCL_PARSE_UCL;
 	int ret = 2;
 
 	parser = lua_ucl_parser_get (L, 1);
 	string = luaL_checklstring (L, 2, &llen);
 
+	if (lua_type (L, 3) == LUA_TSTRING) {
+		type = lua_ucl_str_to_parse_type (lua_tostring (L, 3));
+	}
+
 	if (parser != NULL && string != NULL) {
-		if (ucl_parser_add_chunk (parser, (const unsigned char *)string, llen)) {
+		if (ucl_parser_add_chunk_full (parser, (const unsigned char *)string,
+				llen, 0, UCL_DUPLICATE_APPEND, type)) {
+			lua_pushboolean (L, true);
+			ret = 1;
+		}
+		else {
+			lua_pushboolean (L, false);
+			lua_pushstring (L, ucl_parser_get_error (parser));
+		}
+	}
+	else {
+		lua_pushboolean (L, false);
+		lua_pushstring (L, "invalid arguments");
+	}
+
+	return ret;
+}
+
+struct _rspamd_lua_text {
+	const char *start;
+	unsigned int len;
+	unsigned int flags;
+};
+
+/***
+ * @method parser:parse_text(input)
+ * Parse UCL object from file.
+ * @param {string} input string to parse
+ * @return {bool[, string]} if res is `true` then file has been parsed successfully, otherwise an error string is also returned
+ */
+static int
+lua_ucl_parser_parse_text (lua_State *L)
+{
+	struct ucl_parser *parser;
+	struct _rspamd_lua_text *t;
+	enum ucl_parse_type type = UCL_PARSE_UCL;
+	int ret = 2;
+
+	parser = lua_ucl_parser_get (L, 1);
+	t = luaL_checkudata (L, 2, "rspamd{text}");
+
+	if (lua_type (L, 3) == LUA_TSTRING) {
+		type = lua_ucl_str_to_parse_type (lua_tostring (L, 3));
+	}
+
+	if (parser != NULL && t != NULL) {
+		if (ucl_parser_add_chunk_full (parser, (const unsigned char *)t->start,
+				t->len, 0, UCL_DUPLICATE_APPEND, type)) {
 			lua_pushboolean (L, true);
 			ret = 1;
 		}
@@ -579,6 +865,105 @@ lua_ucl_parser_get_object (lua_State *L)
 	return ret;
 }
 
+/***
+ * @method parser:get_object_wrapped()
+ * Get top object from parser and export it to userdata object without
+ * unwrapping to lua.
+ * @return {ucl.object or nil} ucl object wrapped variable
+ */
+static int
+lua_ucl_parser_get_object_wrapped (lua_State *L)
+{
+	struct ucl_parser *parser;
+	ucl_object_t *obj;
+	int ret = 1;
+
+	parser = lua_ucl_parser_get (L, 1);
+	obj = ucl_parser_get_object (parser);
+
+	if (obj != NULL) {
+		lua_ucl_push_opaque (L, obj);
+	}
+	else {
+		lua_pushnil (L);
+	}
+
+	return ret;
+}
+
+/***
+ * @method parser:validate(schema)
+ * Validates the top object in the parser against schema. Schema might be
+ * another object or a string that represents file to load schema from.
+ *
+ * @param {string/table} schema input schema
+ * @return {result,err} two values: boolean result and the corresponding error
+ *
+ */
+static int
+lua_ucl_parser_validate (lua_State *L)
+{
+	struct ucl_parser *parser, *schema_parser;
+	ucl_object_t *schema;
+	const char *schema_file;
+	struct ucl_schema_error err;
+
+	parser = lua_ucl_parser_get (L, 1);
+
+	if (parser && parser->top_obj) {
+		if (lua_type (L, 2) == LUA_TTABLE) {
+			schema = ucl_object_lua_import (L, 2);
+
+			if (schema == NULL) {
+				lua_pushboolean (L, false);
+				lua_pushstring (L, "cannot load schema from lua table");
+
+				return 2;
+			}
+		}
+		else if (lua_type (L, 2) == LUA_TSTRING) {
+			schema_parser = ucl_parser_new (0);
+			schema_file = luaL_checkstring (L, 2);
+
+			if (!ucl_parser_add_file (schema_parser, schema_file)) {
+				lua_pushboolean (L, false);
+				lua_pushfstring (L, "cannot parse schema file \"%s\": "
+						"%s", schema_file, ucl_parser_get_error (parser));
+				ucl_parser_free (schema_parser);
+
+				return 2;
+			}
+
+			schema = ucl_parser_get_object (schema_parser);
+			ucl_parser_free (schema_parser);
+		}
+		else {
+			lua_pushboolean (L, false);
+			lua_pushstring (L, "invalid schema argument");
+
+			return 2;
+		}
+
+		if (!ucl_object_validate (schema, parser->top_obj, &err)) {
+			lua_pushboolean (L, false);
+			lua_pushfstring (L, "validation error: "
+					"%s", err.msg);
+		}
+		else {
+			lua_pushboolean (L, true);
+			lua_pushnil (L);
+		}
+
+		ucl_object_unref (schema);
+	}
+	else {
+		lua_pushboolean (L, false);
+		lua_pushstring (L, "invalid parser or empty top object");
+	}
+
+	return 2;
+}
+
 static int
 lua_ucl_parser_gc (lua_State *L)
 {
@@ -586,6 +971,199 @@ lua_ucl_parser_gc (lua_State *L)
 
 	parser = lua_ucl_parser_get (L, 1);
 	ucl_parser_free (parser);
+
+	return 0;
+}
+
+/***
+ * @method object:unwrap()
+ * Unwraps opaque ucl object to the native lua object (performing copying)
+ * @return {variant} any lua object
+ */
+static int
+lua_ucl_object_unwrap (lua_State *L)
+{
+	ucl_object_t *obj;
+
+	obj = lua_ucl_object_get (L, 1);
+
+	if (obj) {
+		ucl_object_push_lua (L, obj, true);
+	}
+	else {
+		lua_pushnil (L);
+	}
+
+	return 1;
+}
+
+static inline enum ucl_emitter
+lua_ucl_str_to_emit_type (const char *strtype)
+{
+	enum ucl_emitter format = UCL_EMIT_JSON_COMPACT;
+
+	if (strcasecmp (strtype, "json") == 0) {
+		format = UCL_EMIT_JSON;
+	}
+	else if (strcasecmp (strtype, "json-compact") == 0) {
+		format = UCL_EMIT_JSON_COMPACT;
+	}
+	else if (strcasecmp (strtype, "yaml") == 0) {
+		format = UCL_EMIT_YAML;
+	}
+	else if (strcasecmp (strtype, "config") == 0 ||
+			strcasecmp (strtype, "ucl") == 0) {
+		format = UCL_EMIT_CONFIG;
+	}
+
+	return format;
+}
+
+/***
+ * @method object:tostring(type)
+ * Unwraps opaque ucl object to string (json by default). Optionally you can
+ * specify output format:
+ *
+ * - `json` - fine printed json
+ * - `json-compact` - compacted json
+ * - `config` - fine printed configuration
+ * - `ucl` - same as `config`
+ * - `yaml` - embedded yaml
+ * @param {string} type optional
+ * @return {string} string representation of the opaque ucl object
+ */
+static int
+lua_ucl_object_tostring (lua_State *L)
+{
+	ucl_object_t *obj;
+	enum ucl_emitter format = UCL_EMIT_JSON_COMPACT;
+
+	obj = lua_ucl_object_get (L, 1);
+
+	if (obj) {
+		if (lua_gettop (L) > 1) {
+			if (lua_type (L, 2) == LUA_TSTRING) {
+				const char *strtype = lua_tostring (L, 2);
+
+				format = lua_ucl_str_to_emit_type (strtype);
+			}
+		}
+
+		return lua_ucl_to_string (L, obj, format);
+	}
+	else {
+		lua_pushnil (L);
+	}
+
+	return 1;
+}
+
+/***
+ * @method object:validate(schema[, path[, ext_refs]])
+ * Validates the given ucl object using schema object represented as another
+ * opaque ucl object. You can also specify path in the form `#/path/def` to
+ * specify the specific schema element to perform validation.
+ *
+ * @param {ucl.object} schema schema object
+ * @param {string} path optional path for validation procedure
+ * @return {result,err} two values: boolean result and the corresponding
+ * error, if `ext_refs` are also specified, then they are returned as opaque
+ * ucl object as {result,err,ext_refs}
+ */
+static int
+lua_ucl_object_validate (lua_State *L)
+{
+	ucl_object_t *obj, *schema, *ext_refs = NULL;
+	const ucl_object_t *schema_elt;
+	bool res = false;
+	struct ucl_schema_error err;
+	const char *path = NULL;
+
+	obj = lua_ucl_object_get (L, 1);
+	schema = lua_ucl_object_get (L, 2);
+
+	if (schema && obj && ucl_object_type (schema) == UCL_OBJECT) {
+		if (lua_gettop (L) > 2) {
+			if (lua_type (L, 3) == LUA_TSTRING) {
+				path = lua_tostring (L, 3);
+				if (path[0] == '#') {
+					path++;
+				}
+			}
+			else if (lua_type (L, 3) == LUA_TUSERDATA || lua_type (L, 3) ==
+						LUA_TTABLE) {
+				/* External refs */
+				ext_refs = lua_ucl_object_get (L, 3);
+			}
+
+			if (lua_gettop (L) > 3) {
+				if (lua_type (L, 4) == LUA_TUSERDATA || lua_type (L, 4) ==
+						LUA_TTABLE) {
+					/* External refs */
+					ext_refs = lua_ucl_object_get (L, 4);
+				}
+			}
+		}
+
+		if (path) {
+			schema_elt = ucl_object_lookup_path_char (schema, path, '/');
+		}
+		else {
+			/* Use the top object */
+			schema_elt = schema;
+		}
+
+		if (schema_elt) {
+			res = ucl_object_validate_root_ext (schema_elt, obj, schema,
+					ext_refs, &err);
+
+			if (res) {
+				lua_pushboolean (L, res);
+				lua_pushnil (L);
+
+				if (ext_refs) {
+					lua_ucl_push_opaque (L, ext_refs);
+				}
+			}
+			else {
+				lua_pushboolean (L, res);
+				lua_pushfstring (L, "validation error: %s", err.msg);
+
+				if (ext_refs) {
+					lua_ucl_push_opaque (L, ext_refs);
+				}
+			}
+		}
+		else {
+			lua_pushboolean (L, res);
+
+			lua_pushfstring (L, "cannot find the requested path: %s", path);
+
+			if (ext_refs) {
+				lua_ucl_push_opaque (L, ext_refs);
+			}
+		}
+	}
+	else {
+		lua_pushboolean (L, res);
+		lua_pushstring (L, "invalid object or schema");
+	}
+
+	if (ext_refs) {
+		return 3;
+	}
+
+	return 2;
+}
+
+static int
+lua_ucl_object_gc (lua_State *L)
+{
+	ucl_object_t *obj;
+
+	obj = lua_ucl_object_get (L, 1);
+
+	ucl_object_unref (obj);
 
 	return 0;
 }
@@ -607,28 +1185,100 @@ lua_ucl_parser_mt (lua_State *L)
 	lua_pushcfunction (L, lua_ucl_parser_parse_string);
 	lua_setfield (L, -2, "parse_string");
 
+	lua_pushcfunction (L, lua_ucl_parser_parse_text);
+	lua_setfield (L, -2, "parse_text");
+
+	lua_pushcfunction (L, lua_ucl_parser_register_variable);
+	lua_setfield (L, -2, "register_variable");
+
+	lua_pushcfunction (L, lua_ucl_parser_register_variables);
+	lua_setfield (L, -2, "register_variables");
+
 	lua_pushcfunction (L, lua_ucl_parser_get_object);
 	lua_setfield (L, -2, "get_object");
+
+	lua_pushcfunction (L, lua_ucl_parser_get_object_wrapped);
+	lua_setfield (L, -2, "get_object_wrapped");
+
+	lua_pushcfunction (L, lua_ucl_parser_validate);
+	lua_setfield (L, -2, "validate");
 
 	lua_pop (L, 1);
 }
 
-static int
-lua_ucl_to_string (lua_State *L, const ucl_object_t *obj, enum ucl_emitter type)
+static void
+lua_ucl_object_mt (lua_State *L)
 {
-	unsigned char *result;
+	luaL_newmetatable (L, OBJECT_META);
 
-	result = ucl_object_emit (obj, type);
+	lua_pushvalue(L, -1);
+	lua_setfield(L, -2, "__index");
 
-	if (result != NULL) {
-		lua_pushstring (L, (const char *)result);
-		free (result);
-	}
-	else {
-		lua_pushnil (L);
-	}
+	lua_pushcfunction (L, lua_ucl_object_gc);
+	lua_setfield (L, -2, "__gc");
 
-	return 1;
+	lua_pushcfunction (L, lua_ucl_object_tostring);
+	lua_setfield (L, -2, "__tostring");
+
+	lua_pushcfunction (L, lua_ucl_object_tostring);
+	lua_setfield (L, -2, "tostring");
+
+	lua_pushcfunction (L, lua_ucl_object_unwrap);
+	lua_setfield (L, -2, "unwrap");
+
+	lua_pushcfunction (L, lua_ucl_object_unwrap);
+	lua_setfield (L, -2, "tolua");
+
+	lua_pushcfunction (L, lua_ucl_object_validate);
+	lua_setfield (L, -2, "validate");
+
+	lua_pushstring (L, OBJECT_META);
+	lua_setfield (L, -2, "class");
+
+	lua_pop (L, 1);
+}
+
+static void
+lua_ucl_types_mt (lua_State *L)
+{
+	luaL_newmetatable (L, UCL_OBJECT_TYPE_META);
+
+	lua_pushcfunction (L, lua_ucl_object_tostring);
+	lua_setfield (L, -2, "__tostring");
+
+	lua_pushcfunction (L, lua_ucl_object_tostring);
+	lua_setfield (L, -2, "tostring");
+
+	lua_pushstring (L, UCL_OBJECT_TYPE_META);
+	lua_setfield (L, -2, "class");
+
+	lua_pop (L, 1);
+
+	luaL_newmetatable (L, UCL_ARRAY_TYPE_META);
+
+	lua_pushcfunction (L, lua_ucl_object_tostring);
+	lua_setfield (L, -2, "__tostring");
+
+	lua_pushcfunction (L, lua_ucl_object_tostring);
+	lua_setfield (L, -2, "tostring");
+
+	lua_pushstring (L, UCL_ARRAY_TYPE_META);
+	lua_setfield (L, -2, "class");
+
+	lua_pop (L, 1);
+
+	luaL_newmetatable (L, UCL_IMPL_ARRAY_TYPE_META);
+
+	lua_pushcfunction (L, lua_ucl_object_tostring);
+	lua_setfield (L, -2, "__tostring");
+
+	lua_pushcfunction (L, lua_ucl_object_tostring);
+	lua_setfield (L, -2, "tostring");
+
+	lua_pushstring (L, UCL_IMPL_ARRAY_TYPE_META);
+	lua_setfield (L, -2, "class");
+
+	lua_pop (L, 1);
 }
 
 static int
@@ -683,7 +1333,7 @@ lua_ucl_to_config (lua_State *L)
  * - `yaml` - embedded yaml
  *
  * If `var` contains function, they are called during output formatting and if
- * they return string value, then this value is used for ouptut.
+ * they return string value, then this value is used for output.
  * @param {variant} var any sort of lua variable (if userdata then metafield `__to_ucl` is searched for output)
  * @param {string} format any available format
  * @return {string} string representation of `var` in the specific `format`.
@@ -736,6 +1386,9 @@ lua_ucl_to_format (lua_State *L)
 				strcasecmp (strtype, "ucl") == 0) {
 				format = UCL_EMIT_CONFIG;
 			}
+			else if (strcasecmp (strtype, "msgpack") == 0) {
+				format = UCL_EMIT_MSGPACK;
+			}
 		}
 	}
 
@@ -774,6 +1427,8 @@ luaopen_ucl (lua_State *L)
 {
 	lua_ucl_parser_mt (L);
 	lua_ucl_null_mt (L);
+	lua_ucl_object_mt (L);
+	lua_ucl_types_mt (L);
 
 	/* Create the refs weak table: */
 	lua_createtable (L, 0, 2);
