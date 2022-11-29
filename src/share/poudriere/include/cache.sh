@@ -149,12 +149,14 @@ cache_call() {
 	cc_var="cached-${function}"
 	encode_args cc_key "$@"
 
-	if [ ${USE_CACHE_CALL} -eq 0 ] || \
+	if [ "${USE_CACHE_CALL}" -eq 0 ] ||
 	    ! _cache_get "${cc_var}" "${cc_key}" "${var_return}"; then
 		msg_dev "cache_call: Fetching ${function}($@)"
 		_cc_value=$(${function} "$@")
 		ret=$?
-		_cache_set "${cc_var}" "${cc_key}" "${_cc_value}"
+		if [ "${USE_CACHE_CALL}" -eq 1 ]; then
+			_cache_set "${cc_var}" "${cc_key}" "${_cc_value}"
+		fi
 		setvar "${var_return}" "${_cc_value}"
 	else
 		msg_dev "cache_call: Using cached ${function}($@)"
@@ -183,7 +185,7 @@ cache_call_sv() {
 	cc_var="cached-${function}"
 	encode_args cc_key "$@"
 
-	if [ ${USE_CACHE_CALL} -eq 0 ] || \
+	if [ "${USE_CACHE_CALL}" -eq 0 ] ||
 	    ! _cache_get "${cc_var}" "${cc_key}" "${var_return}"; then
 		msg_dev "cache_call_sv: Fetching ${function}($@)"
 		sv_value=sv__null
@@ -194,7 +196,9 @@ cache_call_sv() {
 			# so ensure ret is >0
 			ret=76
 		fi
-		_cache_set "${cc_var}" "${cc_key}" "${sv_value}"
+		if [ "${USE_CACHE_CALL}" -eq 1 ]; then
+			_cache_set "${cc_var}" "${cc_key}" "${sv_value}"
+		fi
 		setvar "${var_return}" "${sv_value}"
 	else
 		msg_dev "cache_call_sv: Using cached ${function}($@)"
