@@ -70,6 +70,7 @@ pkg_get_annotation() {
 	local key="$3"
 	local mapfile_handle fkey fvalue value
 
+	value=
 	pkg_get_annotations mapfile_handle "${pkg}"
 	while mapfile_read "${mapfile_handle}" fkey fvalue; do
 		case "${fkey}" in
@@ -134,6 +135,8 @@ pkg_get_dep_origin_pkgnames() {
 	local fetched_data compiled_dep_origins compiled_dep_pkgnames
 	local origin pkgname
 
+	compiled_dep_origins=
+	compiled_dep_pkgnames=
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
 	if ! shash_get 'pkg' 'deps' fetched_data; then
 		fetched_data=$(set_pipefail; \
@@ -168,6 +171,7 @@ pkg_get_options() {
 	local SHASH_VAR_PATH SHASH_VAR_PREFIX=
 	local _compiled_options
 
+	_compiled_options=
 	get_pkg_cache_dir SHASH_VAR_PATH "${pkg}"
 	if ! shash_get 'pkg' 'options2' _compiled_options; then
 		_compiled_options=
