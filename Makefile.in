@@ -146,9 +146,11 @@ am_libucl_la_OBJECTS = external/libucl/src/libucl_la-ucl_emitter.lo \
 	external/libucl/src/libucl_la-ucl_emitter_streamline.lo \
 	external/libucl/src/libucl_la-ucl_emitter_utils.lo \
 	external/libucl/src/libucl_la-ucl_hash.lo \
+	external/libucl/src/libucl_la-ucl_msgpack.lo \
 	external/libucl/src/libucl_la-ucl_parser.lo \
-	external/libucl/src/libucl_la-ucl_util.lo \
-	external/libucl/src/libucl_la-xxhash.lo
+	external/libucl/src/libucl_la-ucl_schema.lo \
+	external/libucl/src/libucl_la-ucl_sexp.lo \
+	external/libucl/src/libucl_la-ucl_util.lo
 libucl_la_OBJECTS = $(am_libucl_la_OBJECTS)
 libucl_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libucl_la_CFLAGS) \
@@ -325,9 +327,11 @@ am__depfiles_remade = external/cpdup/src/$(DEPDIR)/cpdup-cpdup.Po \
 	external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_streamline.Plo \
 	external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_utils.Plo \
 	external/libucl/src/$(DEPDIR)/libucl_la-ucl_hash.Plo \
+	external/libucl/src/$(DEPDIR)/libucl_la-ucl_msgpack.Plo \
 	external/libucl/src/$(DEPDIR)/libucl_la-ucl_parser.Plo \
+	external/libucl/src/$(DEPDIR)/libucl_la-ucl_schema.Plo \
+	external/libucl/src/$(DEPDIR)/libucl_la-ucl_sexp.Plo \
 	external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Plo \
-	external/libucl/src/$(DEPDIR)/libucl_la-xxhash.Plo \
 	external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po \
 	external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Plo \
 	external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Plo \
@@ -876,9 +880,11 @@ sh_SOURCES = external/sh/alias.c external/sh/alias.h \
 	src/poudriere-sh/builtins.c
 libucl_la_SOURCES = \
 			external/libucl/include/lua_ucl.h \
+			external/libucl/include/ucl++.h \
 			external/libucl/include/ucl.h \
 			external/libucl/klib/khash.h \
 			external/libucl/klib/kvec.h \
+			external/libucl/src/mum.h \
 			external/libucl/src/tree.h \
 			external/libucl/src/ucl_chartable.h \
 			external/libucl/src/ucl_emitter.c \
@@ -887,10 +893,11 @@ libucl_la_SOURCES = \
 			external/libucl/src/ucl_hash.c \
 			external/libucl/src/ucl_hash.h \
 			external/libucl/src/ucl_internal.h \
+			external/libucl/src/ucl_msgpack.c \
 			external/libucl/src/ucl_parser.c \
+			external/libucl/src/ucl_schema.c \
+			external/libucl/src/ucl_sexp.c \
 			external/libucl/src/ucl_util.c \
-			external/libucl/src/xxhash.c \
-			external/libucl/src/xxhash.h \
 			external/libucl/uthash/uthash.h \
 			external/libucl/uthash/utlist.h \
 			external/libucl/uthash/utstring.h
@@ -901,7 +908,7 @@ libucl_la_CFLAGS = $(AM_CFLAGS) -Wno-extra \
 			-I$(top_srcdir)/external/libucl/include  \
 			-I$(top_srcdir)/external/libucl/src \
 			-Wno-unused-parameter -Wno-pointer-sign \
-			-Wno-unused-variable
+			-Wno-unused-function
 
 libptsort_la_SOURCES = external/ptsort/lib/aa_tree.c \
 			external/ptsort/lib/aa_tree.h \
@@ -1078,13 +1085,19 @@ external/libucl/src/libucl_la-ucl_emitter_utils.lo:  \
 external/libucl/src/libucl_la-ucl_hash.lo:  \
 	external/libucl/src/$(am__dirstamp) \
 	external/libucl/src/$(DEPDIR)/$(am__dirstamp)
+external/libucl/src/libucl_la-ucl_msgpack.lo:  \
+	external/libucl/src/$(am__dirstamp) \
+	external/libucl/src/$(DEPDIR)/$(am__dirstamp)
 external/libucl/src/libucl_la-ucl_parser.lo:  \
 	external/libucl/src/$(am__dirstamp) \
 	external/libucl/src/$(DEPDIR)/$(am__dirstamp)
-external/libucl/src/libucl_la-ucl_util.lo:  \
+external/libucl/src/libucl_la-ucl_schema.lo:  \
 	external/libucl/src/$(am__dirstamp) \
 	external/libucl/src/$(DEPDIR)/$(am__dirstamp)
-external/libucl/src/libucl_la-xxhash.lo:  \
+external/libucl/src/libucl_la-ucl_sexp.lo:  \
+	external/libucl/src/$(am__dirstamp) \
+	external/libucl/src/$(DEPDIR)/$(am__dirstamp)
+external/libucl/src/libucl_la-ucl_util.lo:  \
 	external/libucl/src/$(am__dirstamp) \
 	external/libucl/src/$(DEPDIR)/$(am__dirstamp)
 
@@ -1562,9 +1575,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_streamline.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_utils.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_hash.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_msgpack.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_parser.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_schema.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_sexp.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@external/libucl/src/$(DEPDIR)/libucl_la-xxhash.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Plo@am__quote@ # am--include-marker
@@ -1706,6 +1721,13 @@ external/libucl/src/libucl_la-ucl_hash.lo: external/libucl/src/ucl_hash.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_la-ucl_hash.lo `test -f 'external/libucl/src/ucl_hash.c' || echo '$(srcdir)/'`external/libucl/src/ucl_hash.c
 
+external/libucl/src/libucl_la-ucl_msgpack.lo: external/libucl/src/ucl_msgpack.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_la-ucl_msgpack.lo -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_la-ucl_msgpack.Tpo -c -o external/libucl/src/libucl_la-ucl_msgpack.lo `test -f 'external/libucl/src/ucl_msgpack.c' || echo '$(srcdir)/'`external/libucl/src/ucl_msgpack.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_la-ucl_msgpack.Tpo external/libucl/src/$(DEPDIR)/libucl_la-ucl_msgpack.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_msgpack.c' object='external/libucl/src/libucl_la-ucl_msgpack.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_la-ucl_msgpack.lo `test -f 'external/libucl/src/ucl_msgpack.c' || echo '$(srcdir)/'`external/libucl/src/ucl_msgpack.c
+
 external/libucl/src/libucl_la-ucl_parser.lo: external/libucl/src/ucl_parser.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_la-ucl_parser.lo -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_la-ucl_parser.Tpo -c -o external/libucl/src/libucl_la-ucl_parser.lo `test -f 'external/libucl/src/ucl_parser.c' || echo '$(srcdir)/'`external/libucl/src/ucl_parser.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_la-ucl_parser.Tpo external/libucl/src/$(DEPDIR)/libucl_la-ucl_parser.Plo
@@ -1713,19 +1735,26 @@ external/libucl/src/libucl_la-ucl_parser.lo: external/libucl/src/ucl_parser.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_la-ucl_parser.lo `test -f 'external/libucl/src/ucl_parser.c' || echo '$(srcdir)/'`external/libucl/src/ucl_parser.c
 
+external/libucl/src/libucl_la-ucl_schema.lo: external/libucl/src/ucl_schema.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_la-ucl_schema.lo -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_la-ucl_schema.Tpo -c -o external/libucl/src/libucl_la-ucl_schema.lo `test -f 'external/libucl/src/ucl_schema.c' || echo '$(srcdir)/'`external/libucl/src/ucl_schema.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_la-ucl_schema.Tpo external/libucl/src/$(DEPDIR)/libucl_la-ucl_schema.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_schema.c' object='external/libucl/src/libucl_la-ucl_schema.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_la-ucl_schema.lo `test -f 'external/libucl/src/ucl_schema.c' || echo '$(srcdir)/'`external/libucl/src/ucl_schema.c
+
+external/libucl/src/libucl_la-ucl_sexp.lo: external/libucl/src/ucl_sexp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_la-ucl_sexp.lo -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_la-ucl_sexp.Tpo -c -o external/libucl/src/libucl_la-ucl_sexp.lo `test -f 'external/libucl/src/ucl_sexp.c' || echo '$(srcdir)/'`external/libucl/src/ucl_sexp.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_la-ucl_sexp.Tpo external/libucl/src/$(DEPDIR)/libucl_la-ucl_sexp.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_sexp.c' object='external/libucl/src/libucl_la-ucl_sexp.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_la-ucl_sexp.lo `test -f 'external/libucl/src/ucl_sexp.c' || echo '$(srcdir)/'`external/libucl/src/ucl_sexp.c
+
 external/libucl/src/libucl_la-ucl_util.lo: external/libucl/src/ucl_util.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_la-ucl_util.lo -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Tpo -c -o external/libucl/src/libucl_la-ucl_util.lo `test -f 'external/libucl/src/ucl_util.c' || echo '$(srcdir)/'`external/libucl/src/ucl_util.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Tpo external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/ucl_util.c' object='external/libucl/src/libucl_la-ucl_util.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_la-ucl_util.lo `test -f 'external/libucl/src/ucl_util.c' || echo '$(srcdir)/'`external/libucl/src/ucl_util.c
-
-external/libucl/src/libucl_la-xxhash.lo: external/libucl/src/xxhash.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -MT external/libucl/src/libucl_la-xxhash.lo -MD -MP -MF external/libucl/src/$(DEPDIR)/libucl_la-xxhash.Tpo -c -o external/libucl/src/libucl_la-xxhash.lo `test -f 'external/libucl/src/xxhash.c' || echo '$(srcdir)/'`external/libucl/src/xxhash.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) external/libucl/src/$(DEPDIR)/libucl_la-xxhash.Tpo external/libucl/src/$(DEPDIR)/libucl_la-xxhash.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/libucl/src/xxhash.c' object='external/libucl/src/libucl_la-xxhash.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libucl_la_CFLAGS) $(CFLAGS) -c -o external/libucl/src/libucl_la-xxhash.lo `test -f 'external/libucl/src/xxhash.c' || echo '$(srcdir)/'`external/libucl/src/xxhash.c
 
 src/libexec/poudriere/cached/cached-cached.o: src/libexec/poudriere/cached/cached.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cached_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/cached/cached-cached.o -MD -MP -MF src/libexec/poudriere/cached/$(DEPDIR)/cached-cached.Tpo -c -o src/libexec/poudriere/cached/cached-cached.o `test -f 'src/libexec/poudriere/cached/cached.c' || echo '$(srcdir)/'`src/libexec/poudriere/cached/cached.c
@@ -3317,9 +3346,11 @@ distclean: distclean-recursive
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_streamline.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_utils.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_hash.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_msgpack.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_parser.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_schema.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_sexp.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Plo
-	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-xxhash.Plo
 	-rm -f external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po
 	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Plo
 	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Plo
@@ -3451,9 +3482,11 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_streamline.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_emitter_utils.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_hash.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_msgpack.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_parser.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_schema.Plo
+	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_sexp.Plo
 	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-ucl_util.Plo
-	-rm -f external/libucl/src/$(DEPDIR)/libucl_la-xxhash.Plo
 	-rm -f external/ptsort/bin/$(DEPDIR)/ptsort-ptsort.Po
 	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_la-aa_tree.Plo
 	-rm -f external/ptsort/lib/$(DEPDIR)/libptsort_la-fline.Plo
