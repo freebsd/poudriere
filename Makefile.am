@@ -173,27 +173,27 @@ CLEANFILES+=		libucl.a libptsort.a
 AUTOMAKE_OPTIONS=	subdir-objects
 
 clock_SOURCES=	src/libexec/poudriere/clock/clock.c
-cpdup_SOURCES=	src/libexec/poudriere/cpdup/src/cpdup.c \
-		src/libexec/poudriere/cpdup/src/cpdup.h \
-		src/libexec/poudriere/cpdup/src/hclink.c \
-		src/libexec/poudriere/cpdup/src/hclink.h \
-		src/libexec/poudriere/cpdup/src/hcproto.c \
-		src/libexec/poudriere/cpdup/src/hcproto.h \
-		src/libexec/poudriere/cpdup/src/md5.c \
-		src/libexec/poudriere/cpdup/src/misc.c
+cpdup_SOURCES=	external/cpdup/src/cpdup.c \
+		external/cpdup/src/cpdup.h \
+		external/cpdup/src/hclink.c \
+		external/cpdup/src/hclink.h \
+		external/cpdup/src/hcproto.c \
+		external/cpdup/src/hcproto.h \
+		external/cpdup/src/md5.c \
+		external/cpdup/src/misc.c
 cpdup_LDADD=	-lcrypto
 cpdup_CFLAGS=	$(AM_CFLAGS) -D_ST_FLAGS_PRESENT_=1
 dirempty_SOURCES=	src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
 locked_mkdir_SOURCES=	src/libexec/poudriere/locked_mkdir/locked_mkdir.c
 nc_SOURCES=		src/libexec/poudriere/nc/nc.c
-pwait_SOURCES=		src/libexec/poudriere/pwait/pwait.c
+pwait_SOURCES=		external/pwait/pwait.c
 rename_SOURCES=		src/libexec/poudriere/rename/rename.c
-rm_SOURCES=		src/libexec/poudriere/rm/rm.c
-setsid_SOURCES=		src/libexec/poudriere/setsid/setsid.c \
-			src/libexec/poudriere/setsid/c.h
+rm_SOURCES=		external/rm/rm.c
+setsid_SOURCES=		external/setsid/setsid.c \
+			external/setsid/c.h
 setsid_CFLAGS=		-DHAVE_ERR_H -DHAVE_NANOSLEEP
-timeout_SOURCES=	src/libexec/poudriere/timeout/timeout.c
+timeout_SOURCES=	external/timeout/timeout.c
 timestamp_SOURCES=	src/libexec/poudriere/timestamp/timestamp.c
 timestamp_LDADD=	-lpthread
 
@@ -220,9 +220,9 @@ sh_SOURCES+=		\
 			src/libexec/poudriere/clock/clock.c \
 			src/libexec/poudriere/dirempty/dirempty.c \
 			src/libexec/poudriere/locked_mkdir/locked_mkdir.c \
-			src/libexec/poudriere/pwait/pwait.c \
+			external/pwait/pwait.c \
 			src/libexec/poudriere/rename/rename.c \
-			src/libexec/poudriere/rm/rm.c \
+			external/rm/rm.c \
 			src/poudriere-sh/builtins-poudriere.def \
 			src/poudriere-sh/helpers.c \
 			src/poudriere-sh/helpers.h \
