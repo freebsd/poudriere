@@ -339,3 +339,6 @@ SUBDIRS= . test
 
 installcheck-local:
 	$(MAKE) $(AM_MAKEFLAGS) check am_installcheck=1
+
+# Rebuild if configure options change
+$(SOURCES):		src/config.h
