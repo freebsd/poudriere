@@ -134,6 +134,9 @@ kill_job() {
 	local pgid="$2"
 	local ret
 
+	if ! jobid "${pgid}" >/dev/null; then
+		err "${EX_SOFTWARE}" "kill_job trying to kill unknown job ${pgid}"
+	fi
 	msg_dev "Killing job ${pgid} $(jobid ${pgid} 2>/dev/null)"
 	{
 		if ! kill -STOP -- -${pgid} || \
