@@ -3476,13 +3476,9 @@ jail_stop() {
 	run_hook jail stop
 	jstop || :
 	msg "Unmounting file systems"
-	destroyfs ${MASTERMNT} jail || :
-	if [ ${TMPFS_ALL} -eq 1 ]; then
-		if ! umount -n "${MASTERMNTROOT}" 2>/dev/null; then
-			umount -f "${MASTERMNTROOT}" 2>/dev/null || :
-		fi
-	fi
-	rm -rfx "${MASTERMNT:?}/../"
+	destroyfs ${MASTERMNT:?} jail || :
+	umountfs "${MASTERMNTROOT:?}"
+	rm -rfx "${MASTERMNTROOT:?}"
 	export STATUS=0
 
 	# Don't override if there is a failure to grab the last status.
