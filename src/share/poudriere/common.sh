@@ -3488,8 +3488,9 @@ jail_cleanup() {
 	# Only bother with this if using jails as this may be being ran
 	# from queue.sh or daemon.sh, etc.
 	if [ -n "${MASTERMNT}" -a -n "${MASTERNAME}" ] && was_a_jail_run; then
-		if [ -d ${MASTER_DATADIR}/var/run ]; then
-			for pidfile in ${MASTER_DATADIR}/var/run/*.pid; do
+		if [ -n "${MASTER_DATADIR}" ] &&
+		    [ -d ${MASTER_DATADIR}/var/run ]; then
+			for pidfile in ${MASTER_DATADIR:?}/var/run/*.pid; do
 				# Ensure there is a pidfile to read or break
 				[ "${pidfile}" = \
 				    "${MASTER_DATADIR}/var/run/*.pid" ] && \
@@ -3504,8 +3505,8 @@ jail_cleanup() {
 		jail_stop
 
 		rm -rf \
-		    ${PACKAGES}/.npkg \
-		    ${POUDRIERE_DATA}/packages/${MASTERNAME}/.latest/.npkg \
+		    ${PACKAGES:?}/.npkg \
+		    ${POUDRIERE_DATA:?}/packages/${MASTERNAME:?}/.latest/.npkg \
 		    2>/dev/null || :
 
 	fi
