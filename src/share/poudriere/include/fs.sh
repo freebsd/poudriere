@@ -210,6 +210,7 @@ umountfs() {
 	local childonly=$2
 	local pattern
 
+	pattern=
 	[ -n "${childonly}" ] && pattern="/"
 
 	mnt=$(realpath "${mnt}" 2>/dev/null || echo "${mnt}")
@@ -261,6 +262,7 @@ mnt_tmpfs() {
 			;;
 	esac
 
+	size=
 	[ -n "${limit}" ] && size="-o size=${limit}G"
 
 	mount -t tmpfs ${size} tmpfs "${dst}"
