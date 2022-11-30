@@ -3061,9 +3061,9 @@ jail_start() {
 
 	# Block the build dir from being traversed by non-root to avoid
 	# system blowup due to all of the extra mounts
-	mkdir -p ${MASTERMNT%/ref}
+	mkdir -p ${MASTERMNTROOT}
 	chmod 0755 ${POUDRIERE_DATA}/.m
-	chmod 0711 ${MASTERMNT%/ref}
+	chmod 0711 ${MASTERMNTROOT}
 
 	export HOME=/root
 	export USER=root
