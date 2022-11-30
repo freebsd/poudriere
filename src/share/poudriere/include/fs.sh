@@ -376,7 +376,11 @@ destroyfs() {
 			fi
 		fi
 	else
-		[ "${fs}" != "none" ] && fs=$(zfs_getfs ${mnt})
+		if [ -n "${NO_ZFS}" ]; then
+			fs=none
+		else
+			fs=$(zfs_getfs ${mnt})
+		fi
 		if [ -n "${fs}" -a "${fs}" != "none" ]; then
 			zfs destroy -rf ${fs}
 			rmdir ${mnt} || :
