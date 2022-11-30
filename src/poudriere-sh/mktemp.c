@@ -74,7 +74,7 @@ main(int argc, char **argv)
 	prefix = "mktemp";
 	name = NULL;
 
-	while ((c = getopt(argc, argv, "dqt:u")) != -1)
+	while ((c = getopt(argc, argv, "dqt:u")) != -1) {
 		switch (c) {
 		case 'd':
 			dflag++;
@@ -96,6 +96,7 @@ main(int argc, char **argv)
 		default:
 			usage();
 		}
+	}
 
 	argc -= optind;
 	argv += optind;
@@ -212,10 +213,7 @@ _mktempcmd(int argc, char **argv)
 		errx(EX_USAGE, "%s", "Usage: _mktemp <var_return> "
 		    "mktemp(1) params...");
 	var_return = argv[1];
-	argptr += 1;
-	argc -= argptr - argv;
-	argv = argptr;
-
+	optind = 2;
 	error = _mktemp_internal(argc, argv, output_str);
 	if (error != 0)
 		return (error);

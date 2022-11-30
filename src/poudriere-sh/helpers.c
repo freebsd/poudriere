@@ -506,20 +506,6 @@ gsubcmd(int argc, char **argv)
 	return (_gsub(argv, var_return));
 }
 
-int
-pgetopt(int argc, char *argv[], const char *optstring)
-{
-	int ch;
-
-	shoptarg = NULL;
-	ch = nextopt(optstring);
-	if (ch == '\0')
-		ch = -1;
-	optarg = shoptarg;
-	optind = argptr - argv;
-	return (ch);
-}
-
 /* $$ is not correct in subshells. */
 int
 getpidcmd(int argc, char **argv)

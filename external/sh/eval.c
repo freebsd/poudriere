@@ -1228,6 +1228,7 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
 		commandname = argv[0];
 		argptr = argv + 1;
 		nextopt_optptr = NULL;		/* initialize nextopt */
+		optind = 1;
 		builtin_flags = flags;
 #ifndef NDEBUG
 		savesuppressint = suppressint;

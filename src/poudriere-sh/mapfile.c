@@ -266,19 +266,16 @@ mapfile_readcmd(int argc, char **argv)
 		errx(EX_USAGE, "%s", usage);
 
 	handle = argv[1];
-	argptr += 1;
-	argc -= argptr - argv;
-	argv = argptr;
-
-	while ((ch = nextopt("I:t:")) != '\0') {
+	optind = 2;
+	while ((ch = getopt(argc, argv, "I:t:")) != -1) {
 		switch (ch) {
 		case 'I':
-			ifs = shoptarg;
+			ifs = optarg;
 			break;
 		case 't':
 			tflag = 1;
-			timeout = strtod(shoptarg, &end);
-			if (end == shoptarg || errno == ERANGE ||
+			timeout = strtod(optarg, &end);
+			if (end == optarg || errno == ERANGE ||
 			    timeout < 0)
 				errx(EX_DATAERR, "timeout value");
 			switch(*end) {
@@ -305,8 +302,8 @@ mapfile_readcmd(int argc, char **argv)
 			errx(EX_USAGE, "%s", usage);
 		}
 	}
-	argc -= argptr - argv;
-	argv = argptr;
+	argc -= optind;
+	argv += optind;
 
 	if (argc < 1)
 		errx(EX_USAGE, "%s", usage);
@@ -565,10 +562,8 @@ mapfile_writecmd(int argc, char **argv)
 		errx(EX_USAGE, "%s", usage);
 	nflag = Tflag = 0;
 	handle = argv[1];
-	argptr += 1;
-	argc -= argptr - argv;
-	argv = argptr;
-	while ((ch = nextopt("nT")) != '\0') {
+	optind = 2;
+	while ((ch = getopt(argc, argv, "nT")) != -1) {
 		switch (ch) {
 		case 'n':
 			nflag = 1;
@@ -580,8 +575,8 @@ mapfile_writecmd(int argc, char **argv)
 			errx(EX_USAGE, "%s", usage);
 		}
 	}
-	argc -= argptr - argv;
-	argv = argptr;
+	argc -= optind;
+	argv += optind;
 	INTOFF;
 	md = md_find(handle);
 	if (argc == 1) {

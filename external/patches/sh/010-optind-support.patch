@@ -1,0 +1,12 @@
+diff --git external/sh/eval.c external/sh/eval.c
+index e8748fcfd..cd1504213 100644
+--- external/sh/eval.c
++++ external/sh/eval.c
+@@ -1228,6 +1228,7 @@ evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
+ 		commandname = argv[0];
+ 		argptr = argv + 1;
+ 		nextopt_optptr = NULL;		/* initialize nextopt */
++		optind = 1;
+ 		builtin_flags = flags;
+ #ifndef NDEBUG
+ 		savesuppressint = suppressint;
