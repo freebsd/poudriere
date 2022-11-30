@@ -12,6 +12,10 @@ AX_CHECK_ENABLE_DEBUG([yes])
 AS_IF([test "$enable_debug" != "no"],
       [ax_is_release=no],
       [ax_is_release=yes])
+AS_IF([test "$enable_debug" != "no"],
+      [USE_DEBUG=yes],
+      [USE_DEBUG=no])
+AC_SUBST([USE_DEBUG])
 
 AC_MSG_CHECKING([whether to enable address sanitizer])
   AC_ARG_ENABLE([address-sanitizer],

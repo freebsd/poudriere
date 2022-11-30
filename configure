@@ -716,6 +716,7 @@ CFLAGS
 CC
 ADDRESS_SANITIZER_FALSE
 ADDRESS_SANITIZER_TRUE
+USE_DEBUG
 MAINT
 MAINTAINER_MODE_FALSE
 MAINTAINER_MODE_TRUE
@@ -3398,6 +3399,13 @@ then :
 else $as_nop
   ax_is_release=yes
 fi
+if test "$enable_debug" != "no"
+then :
+  USE_DEBUG=yes
+else $as_nop
+  USE_DEBUG=no
+fi
+
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable address sanitizer" >&5
 printf %s "checking whether to enable address sanitizer... " >&6; }

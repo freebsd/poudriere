@@ -328,7 +328,9 @@ poudriere: src/bin/poudriere.in
 	    which git >/dev/null 2>&1 && \
 	    [ -d "$$(git -C "$(top_srcdir)" rev-parse --git-dir)" ]; then \
 	    gitver=$$(git -C "$(top_srcdir)" describe --tags HEAD); \
-	    sed -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
+	    sed \
+	      -e "s,^\(POUDRIERE_VERSION\)=.*,\1='$${gitver}'," \
+	      -e "s,^\(USE_DEBUG\)=.*,\1='@USE_DEBUG@'," \
 	      $^${.ALLSRC} > $@; \
 	else \
 	    cp -f $^${.ALLSRC} $@; \

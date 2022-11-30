@@ -29,6 +29,7 @@ LC_ALL=C
 POUDRIERE_VERSION="3.4-pre"
 POUDRIERE_NAME="poudriere-git"
 POUDRIERE_PKGNAME="${POUDRIERE_NAME}-${POUDRIERE_VERSION}"
+USE_DEBUG=@USE_DEBUG@
 PATH="/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/sbin:/usr/local/bin:${PATH}"
 
 env_set() {
@@ -76,10 +77,13 @@ EOF
 }
 
 SETX=""
-while getopts "Ae:Nvx" FLAG; do
+while getopts "Ade:Nvx" FLAG; do
 	case "${FLAG}" in
 	A)
 		env_set FORCE_COLORS '1'
+		;;
+	d)
+		USE_DEBUG="yes"
 		;;
 	e)
 		if [ ! -d "$OPTARG" ]; then
@@ -145,6 +149,10 @@ if [ ! -d "${POUDRIEREPREFIX}" ] || [ ! -e "${SCRIPTPREFIX}/common.sh" ]; then
 	echo "$0: Unable to determine POUDRIEREPREFIX" >&2
 	exit 70 # EX_SOFTWARE
 fi
+case "${USE_DEBUG}" in
+no) ;;
+yes) env_set USE_DEBUG ;;
+esac
 env_set SCRIPTPREFIX
 SCRIPTPATH="${SCRIPTPREFIX}/${CMD}.sh"
 env_set SCRIPTPATH
