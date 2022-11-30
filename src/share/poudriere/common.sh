@@ -3540,62 +3540,6 @@ jail_cleanup() {
 	export CLEANED_UP=1
 }
 
-_pkg_version_expanded() {
-	local -; set -f
-	[ $# -eq 1 ] || eargs pkg_ver_expanded version
-	local ver="$1"
-	local epoch revision ver_sub IFS
-
-	case "${ver}" in
-	*,*)
-		epoch="${ver##*,}"
-		ver="${ver%,*}"
-		;;
-	*)
-		epoch="0"
-		;;
-	esac
-	case "${ver}" in
-	*_*)
-		revision="${ver##*_}"
-		ver="${ver%_*}"
-		;;
-	*)
-		revision="0"
-		;;
-	esac
-	_gsub "${ver}" "[_.]" " " ver_sub
-	set -- ${ver_sub}
-
-	printf "%02d" "${epoch}"
-	while [ $# -gt 0 ]; do
-		printf "%02d" "$1"
-		shift
-	done
-	printf "%04d" "${revision}"
-	printf "\n"
-}
-
-pkg_version() {
-	if [ $# -ne 3 ] || [ "$1" != "-t" ]; then
-		eargs pkg_version -t version1 version2
-	fi
-	shift
-	local ver1="$1"
-	local ver2="$2"
-	local ver1_expanded ver2_expanded
-
-	ver1_expanded="$(_pkg_version_expanded "${ver1}")"
-	ver2_expanded="$(_pkg_version_expanded "${ver2}")"
-	if [ "${ver1_expanded}" -gt "${ver2_expanded}" ]; then
-		echo ">"
-	elif [ "${ver1_expanded}" -eq "${ver2_expanded}" ]; then
-		echo "="
-	else
-		echo "<"
-	fi
-}
-
 download_from_repo_check_pkg() {
 	[ $# -eq 10 ] || eargs download_from_repo_check_pkg pkgname \
 	    abi remote_all_options remote_all_pkgs remote_all_deps \
@@ -4690,35 +4634,6 @@ may show failures if the port does not respect PREFIX."
 
 	bset_job_status "build_port_done" "${originspec}" "${pkgname}"
 	return ${testfailure}
-}
-
-pkg_note_add() {
-	[ $# -eq 3 ] || eargs pkg_note_add pkgname key value
-	local pkgname="$1"
-	local key="$2"
-	local value="$3"
-	local notes
-
-	hash_set "pkgname-notes-${key}" "${pkgname}"  "${value}"
-	hash_get pkgname-notes "${pkgname}" notes || notes=
-	notes="${notes:+${notes} }${key}"
-	hash_set pkgname-notes "${pkgname}" "${notes}"
-}
-
-pkg_notes_get() {
-	[ $# -eq 3 ] || eargs pkg_notes_get pkgname PKGENV PKGENV_var
-	local pkgname="$1"
-	local _pkgenv="$2"
-	local _pkgenv_var="$3"
-	local notes key value
-
-	hash_remove pkgname-notes "${pkgname}" notes || return 0
-	_pkgenv="${_pkgenv:+${_pkgenv} }'PKG_NOTES=${notes}'"
-	for key in ${notes}; do
-		hash_remove "pkgname-notes-${key}" "${pkgname}" value || value=
-		_pkgenv="${_pkgenv} 'PKG_NOTE_${key}=${value}'"
-	done
-	setvar "${_pkgenv_var}" "${_pkgenv}"
 }
 
 # Save wrkdir and return path to file
@@ -8307,23 +8222,6 @@ clean_restricted() {
 		    RM="/bin/rm -fv" ECHO_MSG="true" clean-restricted
 	done
 	remount_packages -o ro
-}
-
-sign_pkg() {
-	[ $# -eq 2 ] || eargs sign_pkg sigtype pkgfile
-	local sigtype="$1"
-	local pkgfile="$2"
-
-	msg "Signing pkg bootstrap with method: ${sigtype}"
-	if [ "${sigtype}" = "fingerprint" ]; then
-		unlink "${pkgfile}.sig"
-		sha256 -q "${pkgfile}" | ${SIGNING_COMMAND} > "${pkgfile}.sig"
-	elif [ "${sigtype}" = "pubkey" ]; then
-		unlink "${pkgfile}.pubkeysig"
-		echo -n $(sha256 -q "${pkgfile}") | \
-		    openssl dgst -sha256 -sign "${PKG_REPO_SIGNING_KEY}" \
-		    -binary -out "${pkgfile}.pubkeysig"
-	fi
 }
 
 build_repo() {
