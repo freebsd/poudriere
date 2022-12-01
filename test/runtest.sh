@@ -1,6 +1,35 @@
 set -e
 set -u
 
+# Need to trim environment of anything that may taint our top-level port var
+# fetching.
+while read var; do
+	case "${var}" in
+	abs_top_builddir|\
+	abs_top_srcdir|\
+	srcdir|\
+	bindir|\
+	pkglibexecdir|\
+	pkgdatadir|\
+	VPATH|\
+	am_check|am_installcheck|\
+	CCACHE*|\
+	PATH|\
+	PWD|\
+	TIMEOUT|\
+	PARALLEL_JOBS|\
+	VERBOSE|\
+	SH_DISABLE_VFORK|TRUSS|\
+	TMPDIR|\
+	SH) ;;
+	*)
+		unset "${var}"
+		;;
+	esac
+done <<-EOF
+$(env | cut -d= -f1)
+EOF
+
 TEST=$(realpath "$1")
 : ${am_check:=0}
 : ${am_installcheck:=0}
@@ -57,14 +86,6 @@ esac
 
 [ "${am_check}" -eq 0 ] && [ -t 0 ] && export FORCE_COLORS=1
 exec < /dev/null
-
-# Need to trim environment of anything that may taint our top-level port var
-# fetching.
-while read var; do
-	unset ${var}
-done <<-EOF
-$(env | egrep '^(WITH_|PORT|MAKE)'|grep -vF '.MAKE'|cut -d= -f1)
-EOF
 
 echo "Using SH=${SH}" >&2
 
