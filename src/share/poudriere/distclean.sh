@@ -156,6 +156,8 @@ for PTNAME in ${PTNAMES}; do
 		export PACKAGE_BUILDING=yes
 		echo "PACKAGE_BUILDING_FLAVORS=yes"
 	fi >> "${__MAKE_CONF}"
+	unset P_PORTS_FEATURES
+	fetch_global_port_vars
 
 	MASTERMNT= MASTERMNTREL= load_moved
 	msg "Gathering all expected distfiles for ports tree '${PTNAME}'"
