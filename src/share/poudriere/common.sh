@@ -1320,8 +1320,8 @@ exit_handler() {
 		# Just exit if another TERM is received
 		trap - EXIT TERM
 		trap '' PIPE INT INFO HUP
-		case "${SHFLAGS}" in
-		*x*) ;;
+		case "${SHFLAGS}${SETX_EXIT:-0}" in
+		*x*1) ;;
 		*) local -; set +x ;;
 		esac
 		# Don't spam errors with 'set +e; exit >0'.

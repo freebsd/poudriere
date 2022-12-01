@@ -78,7 +78,7 @@ EOF
 
 SETX=""
 SETE=
-while getopts "Ade:ENvx" FLAG; do
+while getopts "Ade:ENvxX" FLAG; do
 	case "${FLAG}" in
 	A)
 		env_set FORCE_COLORS '1'
@@ -104,6 +104,11 @@ while getopts "Ade:ENvx" FLAG; do
 		;;
 	x)
 		SETX="-x"
+		;;
+	X)
+		SETX="-x"
+		SETX_EXIT='1'
+		env_set SETX_EXIT
 		;;
 	*)
 		usage
