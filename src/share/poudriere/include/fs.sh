@@ -189,37 +189,54 @@ rollbackfs() {
 
 findmounts() {
 	local mnt="$1"
-	local pattern="$2"
+	local childonly="$2"
 
-	mount | awk -v mnt="${mnt}${pattern}" '$3 ~ mnt {print $1 " " $3}' | \
-	    sort -r -k 2 | \
+	# Parse the output into a consistent format that can handle spaces.
+	# libxo support would be nice but is not available in older FreBSD.
+	# mount -p is not a parseable format.
+	mount |
+	    sed -e 's, ([^(]*)$,,' -e 's, on ,'$'\t'',' |
+	    awk -F$'\t' -v childonly="${childonly}" -v mnt="${mnt:?}" '\
+	    { dev=$1; path=$2; } \
+	    (path ~ mnt "/") || (!childonly && path == mnt) { \
+		print dev " " path; \
+	    } \
+	    ' | sort -r -k 2 |
 	    while mapfile_read_loop_redir dev pt; do
-		if [ "${dev#/dev/md*}" != "${dev}" ]; then
+		case "${dev}" in
+		# This does not belong in 'findmounts' but is not worth
+		# moving out.
+		/dev/md*)
 			umount -n "${pt}" || \
 			    umount -f "${pt}" || :
 			mdconfig -d -u ${dev#/dev/md*}
-		else
+			;;
+		*)
 			echo "${pt}"
-		fi
+			;;
+		esac
 	done
 }
 
 umountfs() {
 	[ $# -lt 1 ] && eargs umountfs mnt childonly
-	local mnt=$1
-	local childonly=$2
-	local pattern
+	local mnt="$1"
+	local childonly="${2-}"
+	local flags
 
-	pattern=
-	[ -n "${childonly}" ] && pattern="/"
+	case "${childonly-}" in
+	0|"") childonly=0 ;;
+	*) childonly=1 ;;
+	esac
 
-	mnt=$(realpath -q "${mnt}" || echo "${mnt}")
-	if ! findmounts "${mnt}" "${pattern}" | \
-	    xargs umount -n; then
-		findmounts "${mnt}" "${pattern}" | xargs umount -fv || :
-	fi
-
-	return 0
+	mnt=$(realpath -q "${mnt:?}" || echo "${mnt:?}")
+	for flags in "-n" "-fv"; do
+		if findmounts "${mnt:?}" "${childonly}" |
+		    tr '\n' '\000' |
+		    xargs -0 umount ${flags}; then
+			break
+		fi
+	done
 }
 
 _zfs_getfs() {
