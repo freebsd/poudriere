@@ -10,12 +10,18 @@ EXTRA_DIST= $(TESTS) \
 	    prep.sh \
 	    runtest.sh
 
+XFAIL_TESTS= \
+	distclean-overlays.sh
+
 TESTS=\
 	builtins.sh \
 	cache.sh \
 	cache_pipe.sh \
 	calculate_duration.sh \
 	display.sh \
+	distclean-badorigin.sh \
+	distclean-overlays.sh \
+	distclean-smoke.sh \
 	do_clone.sh \
 	encode_args.sh \
 	getpid.sh \

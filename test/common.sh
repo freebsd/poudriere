@@ -41,14 +41,31 @@ SCRIPTPATH="${SCRIPTPREFIX}/${CMD}"
 POUDRIERE_ETC="${BASEFS}/etc"
 : ${HTML_JSON_UPDATE_INTERVAL:=15}
 
-: ${DISTFILES_CACHE:=$(mktemp -dt distfiles)}
+if [ ${_DID_TMPDIR:-0} -eq 0 ]; then
+	# Some tests will assert that TMPDIR is empty on exit
+	if [ "${TMPDIR%%/poudriere/test/*}" = "${TMPDIR}" ]; then
+		: ${TMPDIR:=/tmp}
+		TMPDIR=${TMPDIR:+${TMPDIR}}/poudriere/test
+	fi
+	mkdir -p ${TMPDIR}
+	: ${DISTFILES_CACHE:="${TMPDIR}/distfiles"}
+	mkdir -p "${DISTFILES_CACHE}"
+	export TMPDIR
+	TMPDIR=$(mktemp -d)
+	export TMPDIR
+	# This file may be included again
+	_DID_TMPDIR=1
+	POUDRIERE_TMPDIR="${TMPDIR}"
+	cd "${POUDRIERE_TMPDIR}"
+	echo "TMPDIR: ${POUDRIERE_TMPDIR}" >&2
+fi
 
 mkdir -p ${POUDRIERE_ETC}/poudriere.d ${POUDRIERE_ETC}/run
 rm -f "${POUDRIERE_ETC}/poudriere.conf"
 write_atomic_cmp "${POUDRIERE_ETC}/poudriere.d/poudriere.conf" << EOF
 NO_ZFS=yes
 BASEFS=${BASEFS}
-DISTFILES_CACHE=${DISTFILES_CACHE}
+DISTFILES_CACHE=${DISTFILES_CACHE:?}
 USE_TMPFS=all
 USE_PROCFS=no
 USE_FDESCFS=no
@@ -67,23 +84,6 @@ DEFAULT_VERSIONS+=	ssl=base
 PKG_NOCOMPRESS=		t
 PKG_COMPRESSION_FORMAT=	tar
 EOF
-
-if [ ${_DID_TMPDIR:-0} -eq 0 ]; then
-	# Some tests will assert that TMPDIR is empty on exit
-	if [ "${TMPDIR%%/poudriere/test/*}" = "${TMPDIR}" ]; then
-		: ${TMPDIR:=/tmp}
-		TMPDIR=${TMPDIR:+${TMPDIR}}/poudriere/test
-	fi
-	mkdir -p ${TMPDIR}
-	export TMPDIR
-	TMPDIR=$(mktemp -d)
-	export TMPDIR
-	# This file may be included again
-	_DID_TMPDIR=1
-	POUDRIERE_TMPDIR="${TMPDIR}"
-	cd "${POUDRIERE_TMPDIR}"
-	echo "TMPDIR: ${POUDRIERE_TMPDIR}" >&2
-fi
 
 : ${VERBOSE:=1}
 : ${PARALLEL_JOBS:=2}

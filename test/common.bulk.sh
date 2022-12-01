@@ -448,9 +448,9 @@ assert_counts() {
 	assert "${expected_skipped}" "${skipped}" "skipped should match"
 }
 
-do_bulk() {
+do_poudriere() {
 	local verbose n
-	local -;set -v
+	local -
 
 	n=0
 	until [ "${n}" -eq "${VERBOSE}" ]; do
@@ -458,11 +458,80 @@ do_bulk() {
 		verbose="${verbose}v"
 		n=$((n + 1))
 	done
-	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} -E bulk -CNt ${verbose} \
+	msg "Running: ${POUDRIEREPATH} -e ${POUDRIERE_ETC} -E ${verbose}" "$@"
+	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} -E ${verbose} "$@"
+}
+
+_setup_overlays() {
+	if [ "${OVERLAYS_SETUP:-0}" -eq 1 ]; then
+		return
+	fi
+	# Setup basic overlay to test-ports/overlay/ dir.
+	OVERLAYSDIR="$(mktemp -ut overlays)"
+	OVERLAYS_save="${OVERLAYS}"
+	OVERLAYS=
+	for o in ${OVERLAYS_save}; do
+		omnt="${PTMNT%/*}/${o}"
+		[ -d "${omnt}" ] || continue
+		#oname=$(echo "${omnt}" | tr '[./]' '_')
+		# <12 still has 88 mount path restrictions
+		oname="$(stat -f %i "${omnt}")_${o}"
+		pset "${oname}" mnt "${omnt}"
+		pset "${oname}" method "-"
+		# We run port_var_fetch_originspec without a jail so can't use plain
+		# /overlays. Need to link the host path into our fake MASTERMNT path
+		# as well as link to the overlay portdir without nullfs.
+		mkdir -p "${MASTERMNT:?}/${OVERLAYSDIR%/*}"
+		ln -fs "${MASTERMNT}/${OVERLAYSDIR}" "${OVERLAYSDIR}"
+		mkdir -p "${MASTERMNT}/${OVERLAYSDIR}"
+		ln -fs "${omnt}" "${MASTERMNT:?}/${OVERLAYSDIR}/${oname}"
+		OVERLAYS="${OVERLAYS:+${OVERLAYS} }${oname}"
+	done
+	unset OVERLAYS_save omnt oname
+	OVERLAYS_SETUP=1
+}
+
+do_bulk() {
+	if [ ${ALL:-0} -eq 0 ]; then
+		assert_not "" "${LISTPORTS}" "LISTPORTS empty"
+	fi
+
+	_setup_overlays
+
+	ALL_PKGNAMES=
+	ALL_ORIGINS=
+	if [ ${ALL} -eq 1 ]; then
+		LISTPORTS="$(listed_ports | paste -s -d ' ' -)"
+	fi
+	LISTPORTS="$(sorted "${LISTPORTS}")"
+	if [ "${FLAVOR_DEFAULT_ALL-null}" == "yes" ]; then
+		LISTPORTS="$(echo "${LISTPORTS}" | tr ' ' '\n' |
+		    sed -e 's,$,@all,' | paste -s -d ' ' -)"
+	fi
+	echo -n "Gathering metadata for requested ports..."
+	for origin in ${LISTPORTS}; do
+		cache_pkgnames 0 "${origin}" || :
+	done
+	echo " done"
+	expand_origin_flavors "${LISTPORTS}" LISTPORTS_EXPANDED
+	fetch_global_port_vars || err 99 "Unable to fetch port vars"
+	assert_not "null" "${P_PORTS_FEATURES-null}" "fetch_global_port_vars should work"
+	echo "Building: $(echo ${LISTPORTS_EXPANDED})"
+
+	do_poudriere bulk -CNt \
 	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
 	    ${JFLAG:+-J ${JFLAG}} \
 	    -B "${BUILDNAME}" \
 	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
+	    "$@"
+}
+
+do_distclean() {
+	_setup_overlays
+	do_poudriere distclean \
+	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
+	    ${JFLAG:+-J ${JFLAG}} \
+	    -p "${PTNAME}" \
 	    "$@"
 }
 
@@ -630,10 +699,6 @@ if [ ${BOOTSTRAP_ONLY:-0} -eq 1 ]; then
 	exit 0
 fi
 
-if [ ${ALL:-0} -eq 0 ]; then
-	assert_not "" "${LISTPORTS}" "LISTPORTS empty"
-fi
-
 : ${PORTSDIR:=${THISDIR%/*}/test-ports/default}
 export PORTSDIR
 PTMNT="${PORTSDIR}"
@@ -672,47 +737,4 @@ _mastermnt MASTERMNT
 export POUDRIERE_BUILD_TYPE=bulk
 _log_path log
 : ${PACKAGES:=${POUDRIERE_DATA}/packages/${MASTERNAME}}
-
-# Setup basic overlay to test-ports/overlay/ dir.
-OVERLAYSDIR="$(mktemp -ut overlays)"
-OVERLAYS_save="${OVERLAYS}"
-OVERLAYS=
-for o in ${OVERLAYS_save}; do
-	omnt="${PTMNT%/*}/${o}"
-	[ -d "${omnt}" ] || continue
-	#oname=$(echo "${omnt}" | tr '[./]' '_')
-	# <12 still has 88 mount path restrictions
-	oname="$(stat -f %i "${omnt}")_${o}"
-	pset "${oname}" mnt "${omnt}"
-	pset "${oname}" method "-"
-	# We run port_var_fetch_originspec without a jail so can't use plain
-	# /overlays. Need to link the host path into our fake MASTERMNT path
-	# as well as link to the overlay portdir without nullfs.
-	mkdir -p "${MASTERMNT:?}/${OVERLAYSDIR%/*}"
-	ln -fs "${MASTERMNT}/${OVERLAYSDIR}" "${OVERLAYSDIR}"
-	mkdir -p "${MASTERMNT}/${OVERLAYSDIR}"
-	ln -fs "${omnt}" "${MASTERMNT:?}/${OVERLAYSDIR}/${oname}"
-	OVERLAYS="${OVERLAYS:+${OVERLAYS} }${oname}"
-done
-unset OVERLAYS_save omnt oname
-
-ALL_PKGNAMES=
-ALL_ORIGINS=
-if [ ${ALL} -eq 1 ]; then
-	LISTPORTS="$(listed_ports | paste -s -d ' ' -)"
-fi
-LISTPORTS="$(sorted "${LISTPORTS}")"
-if [ "${FLAVOR_DEFAULT_ALL-null}" == "yes" ]; then
-	LISTPORTS="$(echo "${LISTPORTS}" | tr ' ' '\n' |
-	    sed -e 's,$,@all,' | paste -s -d ' ' -)"
-fi
-echo -n "Gathering metadata for requested ports..."
-for origin in ${LISTPORTS}; do
-	cache_pkgnames 0 "${origin}" || :
-done
-echo " done"
-expand_origin_flavors "${LISTPORTS}" LISTPORTS_EXPANDED
-fetch_global_port_vars || err 99 "Unable to fetch port vars"
-assert_not "null" "${P_PORTS_FEATURES-null}" "fetch_global_port_vars should work"
-echo "Building: $(echo ${LISTPORTS_EXPANDED})"
 set +e

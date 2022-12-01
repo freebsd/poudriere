@@ -462,12 +462,16 @@ EXTRA_DIST = $(TESTS) \
 	    prep.sh \
 	    runtest.sh
 
+XFAIL_TESTS = \
+	distclean-overlays.sh
+
 
 # Depend bulk tests on jail setup
 TESTS = builtins.sh cache.sh cache_pipe.sh calculate_duration.sh \
-	display.sh do_clone.sh encode_args.sh getpid.sh getvar.sh \
-	gsub.sh globmatch.sh hash_basic.sh hash_stack.sh list.sh \
-	locks.sh locks_critical_section.sh \
+	display.sh distclean-badorigin.sh distclean-overlays.sh \
+	distclean-smoke.sh do_clone.sh encode_args.sh getpid.sh \
+	getvar.sh gsub.sh globmatch.sh hash_basic.sh hash_stack.sh \
+	list.sh locks.sh locks_critical_section.sh \
 	locks_critical_section_nested.sh locked_mkdir.sh \
 	locked_mkdir_waiters.sh locked_mkdir_waiters_kill.sh \
 	locked_mkdir_waiters_all_lose.sh logging.sh mapfile.sh \
@@ -753,6 +757,27 @@ calculate_duration.sh.log: calculate_duration.sh
 display.sh.log: display.sh
 	@p='display.sh'; \
 	b='display.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+distclean-badorigin.sh.log: distclean-badorigin.sh
+	@p='distclean-badorigin.sh'; \
+	b='distclean-badorigin.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+distclean-overlays.sh.log: distclean-overlays.sh
+	@p='distclean-overlays.sh'; \
+	b='distclean-overlays.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+distclean-smoke.sh.log: distclean-smoke.sh
+	@p='distclean-smoke.sh'; \
+	b='distclean-smoke.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
