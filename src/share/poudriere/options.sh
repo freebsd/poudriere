@@ -51,6 +51,9 @@ Options:
 EOF
 	exit ${EX_USAGE}
 }
+injail() {
+	"$@"
+}
 
 ARCH=
 PTNAME=default
@@ -181,7 +184,6 @@ if [ "${OFLAG}" -eq 0 ] &&
 	fi
 fi
 
-fetch_global_port_vars
 mkdir -p "${PORT_DBDIR}"
 msg "Working on options directory: ${PORT_DBDIR}"
 msg "Using ports from: ${PORTSDIR}"
@@ -193,6 +195,7 @@ options_cleanup() {
 	rm -f ${__MAKE_CONF}
 }
 setup_makeconf ${__MAKE_CONF} "${JAILNAME}" "${PTNAME}" "${SETNAME}"
+fetch_global_port_vars
 
 export TERM=${SAVED_TERM}
 for originspec in $(listed_ports show_moved); do

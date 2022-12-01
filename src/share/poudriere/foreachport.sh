@@ -153,6 +153,7 @@ run_hook foreachport start
 exec >&3
 
 export PORTSDIR
+fetch_global_port_vars
 clear_dep_fatal_error
 parallel_start
 for originspec in $(listed_ports show_moved); do
