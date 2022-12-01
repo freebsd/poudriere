@@ -135,7 +135,7 @@ cd ${log_top}
 #  3 = build-specific log
 # Find logs that are missing their jail-specific or build-specific links.
 find_broken_latest_per_pkg_links() {
-	required_env find_broken_latest_per_pkg_links PWD "${log_top}"
+	required_env find_broken_latest_per_pkg_links PWD "${log_top:?}"
 
 	log_links=3
 	# -Btime is to avoid racing with bulk logfile()
@@ -148,7 +148,7 @@ find_broken_latest_per_pkg_links() {
 
 # Very old style symlinks.  Find broken links.
 delete_broken_latest_per_pkg_old_symlinks() {
-	required_env delete_broken_latest_per_pkg_old_symlinks PWD "${log_top}"
+	required_env delete_broken_latest_per_pkg_old_symlinks PWD "${log_top:?}"
 
 	find -x -L latest-per-pkg -type l -exec rm -f {} +
 	# Each MASTERNAME/latest-per-pkg
@@ -159,7 +159,7 @@ delete_broken_latest_per_pkg_old_symlinks() {
 # Find now-empty latest-per-pkg directories.  This will take 3 runs
 # to actually clear out a package.
 delete_empty_latest_per_pkg() {
-	required_env delete_empty_latest_per_pkg PWD "${log_top}"
+	required_env delete_empty_latest_per_pkg PWD "${log_top:?}"
 
 	# -Btime is to avoid racing with bulk logfile()
 	find -x latest-per-pkg -mindepth 1 -type d -Btime +1m -empty -delete

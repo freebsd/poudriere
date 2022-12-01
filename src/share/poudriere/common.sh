@@ -31,9 +31,9 @@ if ! type err >/dev/null 2>&1; then
 fi
 
 BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
-. ${SCRIPTPREFIX}/include/common.sh.${BSDPLATFORM}
-. ${SCRIPTPREFIX}/include/hash.sh
-. ${SCRIPTPREFIX}/include/util.sh
+. "${SCRIPTPREFIX:?}/include/common.sh.${BSDPLATFORM}"
+. "${SCRIPTPREFIX:?}/include/hash.sh"
+. "${SCRIPTPREFIX:?}/include/util.sh"
 EX_USAGE=64
 EX_DATAERR=65
 EX_SOFTWARE=70
@@ -41,15 +41,15 @@ SHFLAGS="$-"
 
 # Return true if ran from bulk/testport, ie not daemon/status/jail
 was_a_bulk_run() {
-	[ "${SCRIPTNAME}" = "bulk.sh" ] || was_a_testport_run
+	[ "${SCRIPTNAME:?}" = "bulk.sh" ] || was_a_testport_run
 }
 was_a_testport_run() {
-	[ "${SCRIPTNAME}" = "testport.sh" ]
+	[ "${SCRIPTNAME:?}" = "testport.sh" ]
 }
 # Return true if in a bulk or other jail run that needs to shutdown the jail
 was_a_jail_run() {
-	was_a_bulk_run ||  [ "${SCRIPTNAME}" = "pkgclean.sh" ] || \
-	    [ "${SCRIPTNAME}" = "foreachport.sh" ]
+	was_a_bulk_run ||  [ "${SCRIPTNAME:?}" = "pkgclean.sh" ] ||
+	    [ "${SCRIPTNAME:?}" = "foreachport.sh" ]
 }
 schg_immutable_base() {
 	[ "${IMMUTABLE_BASE}" = "schg" ] || return 1
@@ -4819,7 +4819,7 @@ job_done() {
 
 build_queue() {
 	[ $# -eq 3 ] || eargs build_queue jname ptname setname
-	required_env build_queue PWD "${MASTER_DATADIR_ABS}/pool"
+	required_env build_queue PWD "${MASTER_DATADIR_ABS:?}/pool"
 	local jname="$1"
 	local ptname="$2"
 	local setname="$3"
@@ -5314,7 +5314,7 @@ build_pkg() {
 		ln -s "../${pkgname}.log" \
 		    "${log}/logs/errors/${pkgname}.log"
 		if [ "${DETERMINE_BUILD_FAILURE_REASON}" = "yes" ]; then
-			errortype=$(/bin/sh ${SCRIPTPREFIX}/processonelog.sh \
+			errortype=$(/bin/sh ${SCRIPTPREFIX:?}/processonelog.sh \
 				"${log}/logs/errors/${pkgname}.log" \
 				2> /dev/null)
 		fi
@@ -6499,7 +6499,7 @@ check_dep_fatal_error() {
 }
 
 gather_port_vars() {
-	required_env gather_port_vars PWD "${MASTER_DATADIR_ABS}"
+	required_env gather_port_vars PWD "${MASTER_DATADIR_ABS:?}"
 	local origin qorigin log originspec flavor rdep qlist qdir
 
 	# A. Lookup all port vars/deps from the given list of ports.
@@ -6814,9 +6814,9 @@ deps_sanity() {
 }
 
 gather_port_vars_port() {
-	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
+	[ "${SHASH_VAR_PATH:?}" = "var/cache" ] ||
 	    err 1 "gather_port_vars_port requires SHASH_VAR_PATH=var/cache"
-	required_env gather_port_vars_port PWD "${MASTER_DATADIR_ABS}"
+	required_env gather_port_vars_port PWD "${MASTER_DATADIR_ABS:?}"
 	[ $# -eq 2 ] || eargs gather_port_vars_port originspec rdep
 	local originspec="$1"
 	local rdep="$2"
@@ -7034,9 +7034,9 @@ is_failed_metadata_lookup() {
 }
 
 gather_port_vars_process_depqueue_enqueue() {
-	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
+	[ "${SHASH_VAR_PATH:?}" = "var/cache" ] ||
 	    err 1 "gather_port_vars_process_depqueue_enqueue requires SHASH_VAR_PATH=var/cache"
-	required_env gather_port_vars_process_depqueue_enqueue PWD "${MASTER_DATADIR_ABS}"
+	required_env gather_port_vars_process_depqueue_enqueue PWD "${MASTER_DATADIR_ABS:?}"
 	[ $# -eq 4 ] || eargs gather_port_vars_process_depqueue_enqueue \
 	    originspec dep_originspec queue rdep
 	local originspec="$1"
@@ -7067,9 +7067,9 @@ gather_port_vars_process_depqueue_enqueue() {
 }
 
 gather_port_vars_process_depqueue() {
-	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
+	[ "${SHASH_VAR_PATH:?}" = "var/cache" ] ||
 	    err 1 "gather_port_vars_process_depqueue requires SHASH_VAR_PATH=var/cache"
-	required_env gather_port_vars_process_depqueue PWD "${MASTER_DATADIR_ABS}"
+	required_env gather_port_vars_process_depqueue PWD "${MASTER_DATADIR_ABS:?}"
 	[ $# -eq 1 ] || eargs gather_port_vars_process_depqueue originspec
 	local originspec="$1"
 	local origin pkgname deps dep_origin
@@ -7176,7 +7176,7 @@ compute_deps() {
 }
 
 compute_deps_pkg() {
-	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
+	[ "${SHASH_VAR_PATH:?}" = "var/cache" ] ||
 	    err 1 "compute_deps_pkg requires SHASH_VAR_PATH=var/cache"
 	[ $# -eq 3 ] || eargs compute_deps_pkg pkgname originspec pkg_deps
 	local pkgname="$1"
@@ -7576,8 +7576,8 @@ delete_stale_symlinks_and_empty_dirs() {
 }
 
 load_moved() {
-	if [ "${SCRIPTNAME}" != "distclean.sh" ]; then
-		[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
+	if [ "${SCRIPTNAME:?}" != "distclean.sh" ]; then
+		[ "${SHASH_VAR_PATH:?}" = "var/cache" ] ||
 		    err 1 "load_moved requires SHASH_VAR_PATH=var/cache"
 	fi
 	[ -f ${MASTERMNT}${PORTSDIR}/MOVED ] || return 0
@@ -7756,7 +7756,7 @@ prepare_ports() {
 	pkgqueue_init
 
 	cd "${MASTER_DATADIR}"
-	[ "${SHASH_VAR_PATH}" = "var/cache" ] || \
+	[ "${SHASH_VAR_PATH:?}" = "var/cache" ] ||
 	    err ${EX_SOFTWARE} "SHASH_VAR_PATH failed to be relpath updated"
 	# Allow caching values now
 	USE_CACHE_CALL=1
@@ -8148,7 +8148,7 @@ load_priorities() {
 }
 
 balance_pool() {
-	required_env balance_pool PWD "${MASTER_DATADIR_ABS}"
+	required_env balance_pool PWD "${MASTER_DATADIR_ABS:?}"
 
 	local pkgname pkg_dir dep_count lock
 
@@ -8501,9 +8501,9 @@ if [ ${IN_TEST:-0} -eq 0 ]; then
 	cd /tmp
 fi
 
-. ${SCRIPTPREFIX}/include/colors.pre.sh
+. ${SCRIPTPREFIX:?}/include/colors.pre.sh
 if [ -z "${POUDRIERE_ETC}" ]; then
-	POUDRIERE_ETC=$(realpath ${SCRIPTPREFIX}/../../etc)
+	POUDRIERE_ETC=$(realpath ${SCRIPTPREFIX:?}/../../etc)
 fi
 # If this is a relative path, add in ${PWD} as a cd / is done.
 if [ "${POUDRIERE_ETC#/}" = "${POUDRIERE_ETC}" ]; then
@@ -8512,8 +8512,8 @@ fi
 POUDRIERED=${POUDRIERE_ETC}/poudriere.d
 include_poudriere_confs "$@"
 
-AWKPREFIX=${SCRIPTPREFIX}/awk
-HTMLPREFIX=${SCRIPTPREFIX}/html
+AWKPREFIX=${SCRIPTPREFIX:?}/awk
+HTMLPREFIX=${SCRIPTPREFIX:?}/html
 HOOKDIR=${POUDRIERED}/hooks
 
 # If the zfs module is not loaded it means we can't have zfs
@@ -8866,15 +8866,15 @@ fi
 TIME_START=$(clock -monotonic)
 EPOCH_START=$(clock -epoch)
 
-. ${SCRIPTPREFIX}/include/colors.sh
-. ${SCRIPTPREFIX}/include/display.sh
-. ${SCRIPTPREFIX}/include/html.sh
-. ${SCRIPTPREFIX}/include/parallel.sh
-. ${SCRIPTPREFIX}/include/shared_hash.sh
-. ${SCRIPTPREFIX}/include/cache.sh
-. ${SCRIPTPREFIX}/include/fs.sh
-. ${SCRIPTPREFIX}/include/pkg.sh
-. ${SCRIPTPREFIX}/include/pkgqueue.sh
+. ${SCRIPTPREFIX:?}/include/colors.sh
+. ${SCRIPTPREFIX:?}/include/display.sh
+. ${SCRIPTPREFIX:?}/include/html.sh
+. ${SCRIPTPREFIX:?}/include/parallel.sh
+. ${SCRIPTPREFIX:?}/include/shared_hash.sh
+. ${SCRIPTPREFIX:?}/include/cache.sh
+. ${SCRIPTPREFIX:?}/include/fs.sh
+. ${SCRIPTPREFIX:?}/include/pkg.sh
+. ${SCRIPTPREFIX:?}/include/pkgqueue.sh
 
 if [ -z "${LOIP6}" -a -z "${LOIP4}" ]; then
 	msg_warn "No loopback address defined, consider setting LOIP6/LOIP4 or assigning a loopback address to the jail."
