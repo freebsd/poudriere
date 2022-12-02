@@ -390,6 +390,9 @@ cleanup() {
 		rm -f "${OVERLAYSDIR}"
 		;;
 	esac
+	if type test_cleanup >/dev/null 2>&1; then
+		test_cleanup
+	fi
 	# Avoid recursively cleaning up here
 	trap - EXIT SIGTERM
 	# Ignore SIGPIPE for messages

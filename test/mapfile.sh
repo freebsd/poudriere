@@ -8,8 +8,7 @@ JAILED=$(sysctl -n security.jail.jailed 2>/dev/null || echo 0)
 
 LINES=20
 
-cleanup() {
-	kill_jobs
+test_cleanup() {
 	if [ -n "${TMP}" ]; then
 		rm -rf "${TMP}"
 		unset TMP
@@ -19,7 +18,6 @@ cleanup() {
 		unset TMP2
 	fi
 }
-trap cleanup EXIT
 
 writer() {
 	local stdout="$1"
@@ -103,6 +101,7 @@ if mapfile_builtin; then
 	assert '' "$line" "mapfile_read on a closed handle should not modify line"
 
 	kill_jobs
+	rm -f "${TMP}" "${TMP2}"
 }
 
 # Test normal files
@@ -211,6 +210,7 @@ if mapfile_builtin; then
 
 	assert_ret 0 mapfile_close "${file_in}"
 	assert_ret 0 mapfile_close "${file_out}"
+	rm -f "${TMP}"
 }
 fi
 
@@ -502,6 +502,7 @@ fi
 	procstat -f $$ >&2
 	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 7"
 	rm -rf "${TDIR}"
+	rm -f "${TMP}"
 }
 
 {
@@ -813,6 +814,7 @@ fi
 		lines=$((lines + 1))
 	done
 	assert 0 "${lines}"
+	rm -f "${TMP}"
 }
 
 exit 0
