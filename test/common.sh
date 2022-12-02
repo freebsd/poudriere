@@ -400,6 +400,14 @@ cleanup() {
 	# Ignore SIGINT while cleaning up
 	trap '' SIGINT
 	msg_dev "cleanup($1)" >&2
+	case $(jobs) in
+	"") ;;
+	*)
+		jobs -l >&2
+		echo "Jobs are still running!" >&1
+		EXITVAL=$((EXITVAL + 1))
+		;;
+	esac
 	kill_jobs
 	if [ ${_DID_TMPDIR:-0} -eq 1 ] && \
 	    [ "${TMPDIR%%/poudriere/test/*}" != "${TMPDIR}" ]; then
