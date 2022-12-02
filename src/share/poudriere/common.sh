@@ -2332,7 +2332,7 @@ do_portbuild_mounts() {
 	fi
 
 	mount_ports -o ro > "${msgdev}"
-	${msgmount} "Mounting packages from: ${PACKAGES_ROOT}"
+	${msgmount} "Mounting packages from: ${PACKAGES_ROOT-${PACKAGES}}"
 	mount_packages -o ro
 	${msgmount} "Mounting distfiles from: ${DISTFILES_CACHE}"
 	${NULLMOUNT} ${DISTFILES_CACHE} ${mnt}/distfiles ||
