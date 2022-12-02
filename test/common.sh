@@ -28,6 +28,7 @@ SCRIPTPATH="${SCRIPTPREFIX}/${CMD}"
 : ${SCRIPTNAME:=runtest.sh}
 : ${BASEFS:=/var/tmp/poudriere/test}
 POUDRIERE_ETC="${BASEFS}/etc"
+: ${HTML_JSON_UPDATE_INTERVAL:=15}
 
 : ${DISTFILES_CACHE:=$(mktemp -dt distfiles)}
 
@@ -46,6 +47,7 @@ NO_LIB32=yes
 NO_SRC=yes
 SHARED_LOCK_DIR="${POUDRIERE_ETC}/run"
 IMMUTABLE_BASE=nullfs
+HTML_JSON_UPDATE_INTERVAL=${HTML_JSON_UPDATE_INTERVAL:?}
 $(env | grep -q 'CCACHE_STATIC_PREFIX' && { env | awk '/^CCACHE/ {print "export " $0}'; } || :)
 EOF
 write_atomic_cmp "${POUDRIERE_ETC}/poudriere.d/make.conf" << EOF
