@@ -535,6 +535,38 @@ do_distclean() {
 	    "$@"
 }
 
+do_pkgclean() {
+	_setup_overlays
+	# pkg is needed for pkgclean
+	do_bulk ports-mgmt/pkg
+	assert 0 "$?" "bulk for pkg should pass"
+	do_poudriere pkgclean \
+	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
+	    ${JFLAG:+-J ${JFLAG}} \
+	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
+	    "$@"
+}
+
+do_pkgclean_smoke() {
+	allpackages="$(/bin/ls ${PACKAGES:?}/All/)"
+	assert 0 "$?"
+	assert_not "" "${allpackages}" "Packages were not built"
+
+	do_pkgclean ${LISTPORTS:?}
+	assert 0 $? "Pkgclean should pass"
+
+	nowpackages="$(/bin/ls ${PACKAGES:?}/All/)"
+	assert 0 "$?"
+	assert "${allpackages}" "${nowpackages}" "No packages should have been removed"
+
+	do_pkgclean -y -A
+	assert 0 $? "Pkgclean should pass"
+
+	nowpackages="$(/bin/ls ${PACKAGES:?}/All/)"
+	assert 0 "$?"
+	assert "" "${nowpackages}" "All packages should have been removed"
+}
+
 sorted() {
 	if [ "$#" -eq 0 ]; then
 		echo

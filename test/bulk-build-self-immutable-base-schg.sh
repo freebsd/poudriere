@@ -11,3 +11,5 @@ EXPECTED_LISTED="ports-mgmt/poudriere-devel"
 
 assert_bulk_queue_and_stats
 assert_bulk_build_results
+
+do_pkgclean_smoke
