@@ -33,6 +33,7 @@ TESTS=\
 	locked_mkdir_waiters_kill.sh \
 	locked_mkdir_waiters_all_lose.sh \
 	mapfile.sh \
+	mktemp.sh \
 	originspec.sh \
 	pkg_version.sh \
 	port_var_fetch.sh \

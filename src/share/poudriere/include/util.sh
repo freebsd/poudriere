@@ -1366,14 +1366,15 @@ _mktemp() {
 	local -; set +x
 	local _mktemp_var_return="$1"
 	shift
-	local TMPDIR ret _mktemp_tmpfile
+	local TMPDIR ret _mktemp_tmpfile datatmpdir
 
 	if [ -z "${TMPDIR-}" ]; then
-		if [ -n "${MASTERMNT}" -a ${STATUS} -eq 1 ]; then
-			TMPDIR="${MNT_DATADIR}/tmp"
-			[ -d "${TMPDIR}" ] || unset TMPDIR
-		else
-			TMPDIR="${POUDRIERE_TMPDIR}"
+		TMPDIR="${POUDRIERE_TMPDIR-}"
+		if [ -n "${MNT_DATADIR-}" -a ${STATUS} -eq 1 ]; then
+			datatmpdir="${MNT_DATADIR:?}/tmp"
+			if [ -d "${datatmpdir}" ]; then
+				TMPDIR="${datatmpdir}"
+			fi
 		fi
 	fi
 
