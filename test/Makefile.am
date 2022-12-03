@@ -42,6 +42,7 @@ TESTS=\
 	read_file.sh \
 	relpath.sh \
 	relpath_common.sh \
+	required_env.sh \
 	shash_basic.sh \
 	stripansi.sh \
 	timespec.sh \

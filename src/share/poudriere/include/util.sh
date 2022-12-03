@@ -1331,6 +1331,9 @@ required_env() {
 			neg="!"
 			var="${var%!}"
 			;;
+		*)
+			neg=
+			;;
 		esac
 		getvar "${var}" actual_value || actual_value=re__null
 		# Special case: SET and not blank is wanted
@@ -1346,9 +1349,10 @@ required_env() {
 		ret=$((ret + 1))
 		msg_error "entered ${function}() with wrong environment: expected ${var} ${neg}= '${expected_value}' actual: '${actual_value}'"
 	done
-	if [ "${ret}" -ne 0 ]; then
+	if [ "${ret}" -ne 0 -a "${IN_TEST:-0}" -eq 0 ]; then
 		exit ${EX_SOFTWARE}
 	fi
+	return "${ret}"
 }
 
 if ! type getpid >/dev/null 2>&1; then
