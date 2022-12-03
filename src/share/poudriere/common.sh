@@ -426,10 +426,9 @@ _log_path() {
 # Call function with vars set:
 # log MASTERNAME BUILDNAME jailname ptname setname
 for_each_build() {
-	[ -n "${BUILDNAME_GLOB}" ] || \
-	    err 1 "for_each_build requires BUILDNAME_GLOB"
-	[ -n "${SHOW_FINISHED}" ] || \
-	    err 1 "for_each_build requires SHOW_FINISHED"
+	required_env for_each_build \
+	    BUILDNAME_GLOB! '' \
+	    SHOW_FINISHED! ''
 	[ $# -eq 1 ] || eargs for_each_build action
 	local action="$1"
 	local MASTERNAME BUILDNAME buildname jailname ptname setname
@@ -6532,11 +6531,9 @@ gather_port_vars() {
 	run_hook gather_port_vars start
 
 	if was_a_testport_run; then
+		required_env gather_port_vars ORIGINSPEC! ''
 		local dep_originspec dep_origin dep_flavor dep_ret
 
-		if [ -z "${ORIGINSPEC}" ]; then
-			err 1 "testport+gather_port_vars requires ORIGINSPEC set"
-		fi
 		if have_ports_feature FLAVORS; then
 			# deps_fetch_vars really wants to have the main port
 			# cached before being given a FLAVOR.
@@ -6814,9 +6811,9 @@ deps_sanity() {
 }
 
 gather_port_vars_port() {
-	[ "${SHASH_VAR_PATH:?}" = "var/cache" ] ||
-	    err 1 "gather_port_vars_port requires SHASH_VAR_PATH=var/cache"
-	required_env gather_port_vars_port PWD "${MASTER_DATADIR_ABS:?}"
+	required_env gather_port_vars_port \
+	    PWD "${MASTER_DATADIR_ABS:?}" \
+	    SHASH_VAR_PATH "var/cache"
 	[ $# -eq 2 ] || eargs gather_port_vars_port originspec rdep
 	local originspec="$1"
 	local rdep="$2"
@@ -7034,9 +7031,9 @@ is_failed_metadata_lookup() {
 }
 
 gather_port_vars_process_depqueue_enqueue() {
-	[ "${SHASH_VAR_PATH:?}" = "var/cache" ] ||
-	    err 1 "gather_port_vars_process_depqueue_enqueue requires SHASH_VAR_PATH=var/cache"
-	required_env gather_port_vars_process_depqueue_enqueue PWD "${MASTER_DATADIR_ABS:?}"
+	required_env gather_port_vars_process_depqueue_enqueue \
+	    PWD "${MASTER_DATADIR_ABS:?}" \
+	    SHASH_VAR_PATH "var/cache"
 	[ $# -eq 4 ] || eargs gather_port_vars_process_depqueue_enqueue \
 	    originspec dep_originspec queue rdep
 	local originspec="$1"
@@ -7067,9 +7064,9 @@ gather_port_vars_process_depqueue_enqueue() {
 }
 
 gather_port_vars_process_depqueue() {
-	[ "${SHASH_VAR_PATH:?}" = "var/cache" ] ||
-	    err 1 "gather_port_vars_process_depqueue requires SHASH_VAR_PATH=var/cache"
-	required_env gather_port_vars_process_depqueue PWD "${MASTER_DATADIR_ABS:?}"
+	required_env gather_port_vars_process_depqueue \
+	    PWD "${MASTER_DATADIR_ABS:?}" \
+	    SHASH_VAR_PATH "var/cache"
 	[ $# -eq 1 ] || eargs gather_port_vars_process_depqueue originspec
 	local originspec="$1"
 	local origin pkgname deps dep_origin
@@ -7176,8 +7173,7 @@ compute_deps() {
 }
 
 compute_deps_pkg() {
-	[ "${SHASH_VAR_PATH:?}" = "var/cache" ] ||
-	    err 1 "compute_deps_pkg requires SHASH_VAR_PATH=var/cache"
+	required_env compute_deps_pkg SHASH_VAR_PATH "var/cache"
 	[ $# -eq 3 ] || eargs compute_deps_pkg pkgname originspec pkg_deps
 	local pkgname="$1"
 	local originspec="$2"
@@ -7577,8 +7573,7 @@ delete_stale_symlinks_and_empty_dirs() {
 
 load_moved() {
 	if [ "${SCRIPTNAME:?}" != "distclean.sh" ]; then
-		[ "${SHASH_VAR_PATH:?}" = "var/cache" ] ||
-		    err 1 "load_moved requires SHASH_VAR_PATH=var/cache"
+		required_env load_moved SHASH_VAR_PATH "var/cache"
 	fi
 	[ -f ${MASTERMNT}${PORTSDIR}/MOVED ] || return 0
 	msg "Loading MOVED for ${MASTERMNT}${PORTSDIR}"

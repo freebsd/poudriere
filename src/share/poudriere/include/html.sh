@@ -92,8 +92,7 @@ build_all_json() {
 }
 
 build_json() {
-	[ -n "${log_path}" ] || \
-	    err 1 "build_jail_json requires log_path set"
+	required_env build_json log_path! ''
 	/usr/bin/awk \
 		-f ${AWKPREFIX}/json.awk ${log_path}/.poudriere.*[!%] | \
 		/usr/bin/awk 'ORS=""; {print} END {print "\n"}' | \
@@ -109,8 +108,7 @@ build_json() {
 }
 
 build_jail_json() {
-	[ -n "${log_path_jail}" ] || \
-	    err 1 "build_jail_json requires log_path_jail set"
+	required_env build_jail_json log_path_jail! ''
 	local empty
 
 	lock_have "json_jail_${MASTERNAME}" ||
@@ -133,8 +131,7 @@ build_jail_json() {
 }
 
 build_top_json() {
-	[ -n "${log_path_top}" ] || \
-	    err 1 "build_top_json requires log_path_top set"
+	required_env build_top_json log_path_top! ''
 	local empty
 
 	lock_have "json_top" ||
