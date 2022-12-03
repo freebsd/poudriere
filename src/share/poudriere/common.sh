@@ -1953,9 +1953,10 @@ add_relpath_var() {
 		*)
 			[ -e "${value}" ] ||
 			    err ${EX_SOFTWARE} "add_relpath_var: \$${varname} value '${value}' must exist or be absolute already"
-			setvar "${varname}_ABS" "$(realpath "${value}")"
+			value="$(realpath "${value}")"
 		    ;;
 		esac
+		setvar "${varname}_ABS" "${value}"
 	fi
 	make_relative "${varname}"
 }

@@ -52,24 +52,34 @@ assert "/dev/null" "${DEVNULL_ABS}"
 
 foo="/tmp"
 bar=".."
+foo_real=$(realpath ${foo})
+bar_real=$(realpath ${bar})
 for var in foo bar; do
 	add_relpath_var "${var}"
 done
+assert "${foo_real}" "${foo_ABS}"
+assert "${bar_real}" "${bar_ABS}"
 
 cd /
 assert "dev/null" "${DEVNULL}"
 assert "/dev/null" "${DEVNULL_ABS}"
 assert "tmp" "${foo}" 1
 assert "." "${bar}" 2
+assert "${foo_real}" "${foo_ABS}"
+assert "${bar_real}" "${bar_ABS}"
 
 cd etc
 assert "../dev/null" "${DEVNULL}"
 assert "/dev/null" "${DEVNULL_ABS}"
 assert "../tmp" "${foo}" 5
 assert ".." "${bar}" 6
+assert "${foo_real}" "${foo_ABS}"
+assert "${bar_real}" "${bar_ABS}"
 
 cd /var/run
 assert "../../dev/null" "${DEVNULL}"
 assert "/dev/null" "${DEVNULL_ABS}"
 assert "../../tmp" "${foo}" 5
 assert "../.." "${bar}" 6
+assert "${foo_real}" "${foo_ABS}"
+assert "${bar_real}" "${bar_ABS}"
