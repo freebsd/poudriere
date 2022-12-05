@@ -4955,7 +4955,7 @@ build_queue() {
 			fi
 			builders_active=1
 			# Opportunistically start the builder in a subproc
-			MY_JOBID="${j}" spawn_job \
+			MY_JOBID="${j}" spawn_job_protected \
 			    maybe_start_builder "${j}" "${jname}" \
 			        "${ptname}" "${setname}" \
 			    build_pkg "${pkgname}" "${porttesting}"

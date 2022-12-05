@@ -776,7 +776,7 @@ pipe_hold() {
 	sync_fifo=$(mktemp -ut pipe_hold)
 	mkfifo "${sync_fifo}"
 
-	spawn_job _pipe_hold_child "${sync_fifo}" "${watch_pid}" "$@"
+	spawn_job_protected _pipe_hold_child "${sync_fifo}" "${watch_pid}" "$@"
 	setvar "${var_return_pid}" "$!"
 	read_pipe "${sync_fifo}" sync || ret="$?"
 	case "${sync}" in

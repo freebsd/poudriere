@@ -398,6 +398,13 @@ spawn_job() {
        local -
 
        set -m
+       spawn "$@"
+}
+
+spawn_job_protected() {
+       local -
+
+       set -m
        spawn_protected "$@"
 }
 
