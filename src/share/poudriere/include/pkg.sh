@@ -80,7 +80,7 @@ pkg_get_annotation() {
 	pkg_get_annotations mapfile_handle "${pkg}"
 	while mapfile_read "${mapfile_handle}" fkey fvalue; do
 		case "${fkey}" in
-		${key})
+		"${key}")
 			value="${fvalue}"
 			break
 			;;

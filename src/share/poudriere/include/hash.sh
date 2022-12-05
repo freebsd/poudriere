@@ -300,7 +300,7 @@ hash_unset_var() {
 	_hash_var_name "${_var}" ""
 	while IFS= mapfile_read_loop_redir _line; do
 		case "${_line}" in
-		${_hash_var_name}*=*) ;;
+		"${_hash_var_name}"*=*) ;;
 		*) continue ;;
 		esac
 		_key="${_line%%=*}"

@@ -277,7 +277,7 @@ should_delete_listed() {
 
 for file in ${PACKAGES:?}/All/*; do
 	case ${file} in
-	*.${PKG_EXT})
+	*".${PKG_EXT}")
 		if should_delete "${file}"; then
 			echo "${file}" >> "${BADFILES_LIST:?}"
 		fi

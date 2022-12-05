@@ -76,12 +76,12 @@ cache_pkgnames() {
 		   FLAVORS flavors_default \
 		   FLAVOR flavor_default || exit 99
 		case "${flavors_default}" in
-		${flavor_default}\ *|${flavor_default}) ;;
+		"${flavor_default} "*|"${flavor_default}") ;;
 		*)
 			tmp="${flavor_default}"
 			for x in ${flavors_default}; do
 				case " ${tmp} " in
-				*\ ${x}\ *) ;;
+				*" ${x} "*) ;;
 				*) tmp="${tmp:+${tmp} }${x}" ;;
 				esac
 			done

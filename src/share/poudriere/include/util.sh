@@ -114,7 +114,7 @@ decode_args_vars() {
 		_var="${_vars%% *}"
 		case "${_vars}" in
 		# Last one - set all remaining to here
-		${_var})
+		"${_var}")
 			setvar "${_var}" "$*"
 			break
 			;;
@@ -814,14 +814,14 @@ mapfile() {
 	_hkey="${_file}.${mypid}"
 
 	case "${_mapfile_handle-}" in
-	""|${_hkey}) ;;
+	""|"${_hkey}") ;;
 	*)
 		# New file or new process
 		case "${_mapfile_handle##*.}" in
-		${mypid})
+		"${mypid}")
 			# Same process so far...
 			case "${_mapfile_handle%.*}" in
-			${_file})
+			"${_file}")
 				err 1 "mapfile: earlier case _hkey should cover this"
 				;;
 			# Different file. Is this even possible?

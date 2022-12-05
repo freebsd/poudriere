@@ -3,10 +3,16 @@ TESTS="$@"
 FAILED_TESTS=
 for test in ${TESTS}; do
 	if [ -n "${TEST_FILTER}" ]; then
+		set -f
+		# shellcheck disable=SC2254
 		case "${test}" in
 			${TEST_FILTER}|${TEST_FILTER}.sh) ;;
-			*) continue ;;
+			*)
+				set +f
+				continue
+				;;
 		esac
+		set +f
 	fi
 	status=0
 	echo -n "Running ${SH} ${test} ... "

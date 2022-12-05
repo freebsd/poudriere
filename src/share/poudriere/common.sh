@@ -536,7 +536,7 @@ for_each_build() {
 					    continue 2
 				else
 					case "${MASTERNAME}" in
-						*-${PTNAME}) ;;
+						*"-${PTNAME}") ;;
 						*) continue 2 ;;
 					esac
 					continue
@@ -548,7 +548,7 @@ for_each_build() {
 					    continue 2
 				else
 					case "${MASTERNAME}" in
-						*-${SETNAME%0}) ;;
+						*"-${SETNAME%0}") ;;
 						*) continue 2 ;;
 					esac
 					continue
@@ -1361,7 +1361,7 @@ exit_handler() {
 	fi
 
 	case "${EXIT_STATUS}" in
-	0|${EX_USAGE})
+	0|"${EX_USAGE}")
 		: ${ERROR_VERBOSE:=0} ;;
 	*)	: ${ERROR_VERBOSE:=1} ;;
 	esac
@@ -2552,10 +2552,10 @@ commit_packages() {
 		if [ -e "${PACKAGES_ROOT:?}/${name:?}" ]; then
 			case "${name}" in
 			.buildname|.jailversion|\
-			meta.${PKG_EXT}|meta.txz|\
-			digests.${PKG_EXT}|digests.txz|\
-			filesite.${PKG_EXT}|filesite.txz|\
-			packagesite.${PKG_EXT}|packagesite.txz|\
+			"meta.${PKG_EXT}"|meta.txz|\
+			"digests.${PKG_EXT}"|digests.txz|\
+			"filesite.${PKG_EXT}"|filesite.txz|\
+			"packagesite.${PKG_EXT}"|packagesite.txz|\
 			All|Latest)
 				# Auto fix pkg-owned files
 				unlink "${PACKAGES_ROOT:?}/${name:?}"
@@ -3381,7 +3381,7 @@ load_blacklist() {
 		    ports=
 		for port in ${ports}; do
 			case " ${BLACKLIST} " in
-			*\ ${port}\ *) continue;;
+			*" ${port} "*) continue;;
 			esac
 			msg_warn "Blacklisting (from ${POUDRIERED}/${bfile}): ${COLOR_PORT}${port}"
 			BLACKLIST="${BLACKLIST:+${BLACKLIST} }${port}"
@@ -3628,6 +3628,7 @@ download_from_repo_check_pkg() {
 	local pkgbase bpkg selected_options remote_options found
 	local run_deps lib_deps raw_deps dep dep_pkgname local_deps remote_deps
 	local remote_abi remote_osversion remote_prefix prefix
+	local -
 
 	# The options checks here are not optimized because we lack goto.
 	pkgbase="${pkgname%-*}"
@@ -3640,6 +3641,7 @@ download_from_repo_check_pkg() {
 	# being passed to the case statement as a pattern
 	set -o noglob
 	for bpkg in ${PACKAGE_FETCH_BLACKLIST-} ${P_PKG_PKGBASE:?}; do
+		# shellcheck disable=SC2254
 		case "${pkgbase}" in
 		${bpkg})
 			msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: blacklisted"
@@ -3664,6 +3666,8 @@ download_from_repo_check_pkg() {
 	# ABI
 	remote_abi=$(awk -v pkgname="${pkgname}" -vpkgbase="${pkgbase}" \
 	    '$1 == pkgbase {print $2; exit}' "${remote_all_abi}")
+	set -f
+	# shellcheck disable=SC2254
 	case "${abi}" in
 	${remote_abi}) ;;
 	*)
@@ -3672,6 +3676,7 @@ download_from_repo_check_pkg() {
 		;;
 	*)
 	esac
+	set +f
 
 	if [ "${IGNORE_OSVERSION-}" != "yes" ]; then
 		# If package is not NOARCH then we need to check its FreeBSD_version
@@ -3705,7 +3710,7 @@ download_from_repo_check_pkg() {
 	shash_get pkgname-prefix "${pkgname}" prefix ||
 	    prefix="${LOCALBASE:-/usr/local}"
 	case "${prefix}" in
-	${remote_prefix}) ;;
+	"${remote_prefix}") ;;
 	*)
 		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: remote PREFIX mismatch: ${remote_prefix} (want: ${prefix})"
 		return
@@ -3725,7 +3730,7 @@ download_from_repo_check_pkg() {
 	shash_get pkgname-options "${pkgname}" selected_options || \
 	    selected_options=
 	case "${selected_options}" in
-	${remote_options}) ;;
+	"${remote_options}") ;;
 	*)
 		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: options wanted: ${selected_options}"
 		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: options remote: ${remote_options}"
@@ -3748,7 +3753,7 @@ download_from_repo_check_pkg() {
 	    ' \
 	    "${remote_all_deps}" | sort -u | paste -s -d ' ' -)
 	case "${local_deps}" in
-	${remote_deps}) ;;
+	"${remote_deps}") ;;
 	*)
 		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: deps wanted: ${local_deps}"
 		msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: deps remote: ${remote_deps}"
@@ -3769,6 +3774,7 @@ download_from_repo() {
 	local remote_all_cats missing_pkgs pkg pkgbase cnt
 	local remote_pkg_ver local_pkg_name local_pkg_ver found
 	local packages_rel
+	local -
 
 	if [ -z "${PACKAGE_FETCH_BRANCH-}" ]; then
 		return 0
@@ -3822,6 +3828,7 @@ download_from_repo() {
 		# being passed to the case statement as a pattern
 		set -o noglob
 		for pkg in ${PACKAGE_FETCH_WHITELIST-"*"}; do
+			# shellcheck disable=SC2254
 			case "${pkgbase}" in
 			${pkg})
 				found=1
@@ -4337,6 +4344,7 @@ build_port() {
 	local max_execution_time allownetworking
 	local _need_root NEED_ROOT PREFIX MAX_FILES
 	local JEXEC_SETSID
+	local -
 
 	_my_path mnt
 	_log_path log
@@ -4363,6 +4371,7 @@ build_port() {
 	# being passed to the case statement as a pattern
 	set -o noglob
 	for jpkg in ${ALLOW_NETWORKING_PACKAGES}; do
+		# shellcheck disable=SC2254
 		case "${pkgname%-*}" in
 		${jpkg})
 			job_msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}"
@@ -5257,6 +5266,7 @@ build_pkg() {
 	local ret=0
 	local tmpfs_blacklist_dir
 	local elapsed now pkgname_varname jpkg originspec
+	local -
 
 	_my_path mnt
 	_my_name name
@@ -5313,12 +5323,9 @@ build_pkg() {
 	fi
 	:> "${mnt:?}/.need_rollback"
 
-	# Disabling globs for this loop or wildcards in
-	# TMPFS_BLACKLIST will expand to files in the
-	# current directory instead of being passed into
-	# the case statement as a pattern
-	set -o noglob
+	set -f
 	for jpkg in ${TMPFS_BLACKLIST-}; do
+		# shellcheck disable=SC2254
 		case "${pkgname%-*}" in
 		${jpkg})
 			mkdir -p "${TMPFS_BLACKLIST_TMPDIR:?}/wrkdirs"
@@ -5332,14 +5339,16 @@ build_pkg() {
 			;;
 		esac
 	done
-	set +o noglob
+	set +f
 
 	rm -rfx "${mnt:?}"/wrkdirs/* || :
 
 	log_start "${pkgname}" 0
 	msg "Building ${port}"
 
+	set -f
 	for jpkg in ${ALLOW_MAKE_JOBS_PACKAGES}; do
+		# shellcheck disable=SC2254
 		case "${pkgname%-*}" in
 		${jpkg})
 			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_RESET}"
@@ -5349,6 +5358,7 @@ build_pkg() {
 			;;
 		esac
 	done
+	set +f
 
 	buildlog_start "${pkgname}" "${originspec}"
 
@@ -5644,7 +5654,7 @@ deps_fetch_vars() {
 	setvar "${flavor_var}" "${_flavor}"
 	setvar "${flavors_var}" "${_flavors}"
 	case " ${BLACKLIST} " in
-	*\ ${origin}\ *) : ${_ignore:="Blacklisted"} ;;
+	*" ${origin} "*) : ${_ignore:="Blacklisted"} ;;
 	esac
 	setvar "${ignore_var}" "${_ignore}"
 	# Need all of the output vars set before potentially returning 2.
@@ -5813,13 +5823,13 @@ delete_old_pkg() {
 			return 0
 		fi
 		case "${pkgfile}" in
-		*.${PKG_EXT}) ;;
+		*".${PKG_EXT}") ;;
 		*.txz)
 			# If this is a symlink to a .pkg file then just ignore
 			# as the ports framework or pkg sometimes creates them.
 			if [ "${is_sym}" -eq 1 ]; then
 				case "$(realpath "${pkg}")" in
-				*.${PKG_EXT})
+				*".${PKG_EXT}")
 					msg_debug "Ignoring symlinked ${COLOR_PORT}${pkgfile}${COLOR_RESET}"
 					return 0
 					;;
@@ -6010,7 +6020,7 @@ delete_old_pkg() {
 						[ -n "${CHANGED_DEPS_LIBLIST}" ] || \
 						    err 1 "CHANGED_DEPS_LIBLIST not set"
 						case " ${CHANGED_DEPS_LIBLIST} " in
-							*\ ${key}\ *)
+							*" ${key} "*)
 								found=yes
 								;;
 							*) ;;
@@ -6085,7 +6095,7 @@ delete_old_pkg() {
 			dep_pkgname=
 			case " ${compiled_deps} " in
 			# Matches an existing origin (no FLAVOR)
-			*\ ${d}\ *) ;;
+			*" ${d} "*) ;;
 			*)
 				# Unknown, but if this origin has a FLAVOR
 				# then we need to fallback to a PKGBASE
@@ -6102,7 +6112,7 @@ delete_old_pkg() {
 					# dependencies to PKGBASES.
 					case " ${compiled_deps_pkgbases} " in
 					# Matches an existing pkgbase
-					*\ ${dep_pkgbase}\ *) continue ;;
+					*" ${dep_pkgbase} "*) continue ;;
 					# New dep
 					*) ;;
 					esac
@@ -6691,7 +6701,7 @@ gather_port_vars() {
 			if [ -n "${dep_flavor}" ]; then
 				# Is it even a valid FLAVOR though?
 				case " ${FLAVORS} " in
-				*\ ${dep_flavor}\ *) ;;
+				*" ${dep_flavor} "*) ;;
 				*)
 					err 1 "Invalid FLAVOR '${dep_flavor}' for ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
 					;;
@@ -8195,7 +8205,7 @@ get_to_build() {
 		if was_a_testport_run; then
 			echo "${ORIGINSPEC}"
 		fi
-		cat "${log}/.poudriere.ports.queued"
+		cat "${log:?}/.poudriere.ports.queued"
 	} | while mapfile_read_loop_redir originspec pkgname _ignored; do
 		pkgqueue_contains "${pkgname}" || continue
 		echo "${originspec}"
@@ -8204,9 +8214,7 @@ get_to_build() {
 
 load_priorities_ptsort() {
 	local priority pkgname originspec pkg_boost origin flavor _rdep _ignored
-	local - # Keep set -f local
-
-	set -f # for PRIORITY_BOOST
+	local -
 
 	awk '{print $2 " " $1}' "${MASTER_DATADIR:?}/pkg_deps" \
 	    > "${MASTER_DATADIR:?}/pkg_deps.ptsort"
@@ -8221,6 +8229,7 @@ load_priorities_ptsort() {
 		# being passed to the case statement as a pattern
 		set -o noglob
 		for pkg_boost in ${PRIORITY_BOOST}; do
+			# shellcheck disable=SC2254
 			case ${pkgname%-*} in
 			${pkg_boost})
 				pkgqueue_contains "${pkgname}" || \
@@ -8578,7 +8587,7 @@ svn_git_checkout_method() {
 	else
 		# Compat hacks for FreeBSD's special git server
 		case "${GIT_URL_DEFAULT}" in
-		${FREEBSD_GIT_BASEURL}|${FREEBSD_GIT_PORTSURL})
+		"${FREEBSD_GIT_BASEURL}"|"${FREEBSD_GIT_PORTSURL}")
 			case "${_METHOD}" in
 			git+ssh) url_prefix="${FREEBSD_GIT_SSH_USER}@" ;;
 			git) msg_warn "As of 2021-04-08 FreeBSD's git server does not support the git protocol.  Remove -m or try git+https or git+ssh." ;;
