@@ -1421,7 +1421,6 @@ show_dry_run_summary() {
 		if [ "${ALL}" -eq 0 ] || [ "${VERBOSE}" -ge 1 ]; then
 			msg_n "Ports to build: "
 			get_to_build | paste -s -d ' ' -
-			echo
 		fi
 	else
 		msg "No packages would be built"
