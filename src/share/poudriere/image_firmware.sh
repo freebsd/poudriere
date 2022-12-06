@@ -58,12 +58,14 @@ firmware_build()
 	# Because rootfs is readonly, it create ramdisks for /etc and /var
 	# Then we need to replace /tmp by a symlink to /var/tmp
 	# For more information, read /etc/rc.initdiskless
-	echo "/dev/gpt/${IMAGENAME}1 / ufs ro 1 1" >> ${WRKDIR}/world/etc/fstab
-	echo '/dev/gpt/cfg  /cfg  ufs rw,noatime,noauto        2 2' >> ${WRKDIR}/world/etc/fstab
-	echo '/dev/gpt/data /data ufs rw,noatime,noauto,failok 2 2' >> ${WRKDIR}/world/etc/fstab
-	if [ -n "${SWAPSIZE}" -a "${SWAPSIZE}" != "0" ]; then
-		echo '/dev/gpt/swapspace none swap sw 0 0' >> ${WRKDIR}/world/etc/fstab
-	fi
+	{
+		echo "/dev/gpt/${IMAGENAME}1 / ufs ro 1 1"
+		echo '/dev/gpt/cfg  /cfg  ufs rw,noatime,noauto        2 2'
+		echo '/dev/gpt/data /data ufs rw,noatime,noauto,failok 2 2'
+		if [ -n "${SWAPSIZE}" -a "${SWAPSIZE}" != "0" ]; then
+			echo '/dev/gpt/swapspace none swap sw 0 0'
+		fi
+	} >> "${WRKDIR}/world/etc/fstab"
 
 	# Enable diskless(8) mode
 	touch ${WRKDIR}/world/etc/diskless
@@ -167,12 +169,14 @@ rawfirmware_build()
 	# Because rootfs is readonly, it create ramdisks for /etc and /var
 	# Then we need to replace /tmp by a symlink to /var/tmp
 	# For more information, read /etc/rc.initdiskless
-	echo "/dev/gpt/${IMAGENAME}1 / ufs ro 1 1" >> ${WRKDIR}/world/etc/fstab
-	echo '/dev/gpt/cfg  /cfg  ufs rw,noatime,noauto        2 2' >> ${WRKDIR}/world/etc/fstab
-	echo '/dev/gpt/data /data ufs rw,noatime,noauto,failok 2 2' >> ${WRKDIR}/world/etc/fstab
-	if [ -n "${SWAPSIZE}" -a "${SWAPSIZE}" != "0" ]; then
-		echo '/dev/gpt/swapspace none swap sw 0 0' >> ${WRKDIR}/world/etc/fstab
-	fi
+	{
+		echo "/dev/gpt/${IMAGENAME}1 / ufs ro 1 1"
+		echo '/dev/gpt/cfg  /cfg  ufs rw,noatime,noauto        2 2'
+		echo '/dev/gpt/data /data ufs rw,noatime,noauto,failok 2 2'
+		if [ -n "${SWAPSIZE}" -a "${SWAPSIZE}" != "0" ]; then
+			echo '/dev/gpt/swapspace none swap sw 0 0'
+		fi
+	} >> "${WRKDIR}/world/etc/fstab"
 
 	# Enable diskless(8) mode
 	touch ${WRKDIR}/world/etc/diskless
