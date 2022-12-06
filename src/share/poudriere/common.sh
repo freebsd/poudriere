@@ -194,18 +194,18 @@ msg_error() {
 	if [ -n "${MY_JOBID-}" ]; then
 		# Send colored msg to bulk log...
 		COLOR_ARROW="${COLOR_ERROR}" \
-		    job_msg "${COLOR_ERROR}Error:${COLOR_RESET} $@"
+		    job_msg "${COLOR_ERROR}Error:${COLOR_RESET}" "$@"
 		# Needed hack for test output ordering
 		if [ "${IN_TEST:-0}" -eq 1 -a -n "${TEE_SLEEP_TIME-}" ]; then
 			sleep "${TEE_SLEEP_TIME}"
 		fi
 		# And non-colored to buld log
-		msg "Error: $@" >&2
+		msg "Error:" "$@" >&2
 	else
 		# Send to true stderr
 		COLOR_ARROW="${COLOR_ERROR}" \
 		    redirect_to_bulk \
-		    msg "${COLOR_ERROR}Error:${COLOR_RESET} $@" \
+		    msg "${COLOR_ERROR}Error:${COLOR_RESET}" "$@" \
 		    >&2
 	fi
 	return 0
@@ -217,7 +217,7 @@ msg_dev() {
 
 	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
 	COLOR_ARROW="${COLOR_DEV}" \
-	    _msg_n "\n" "${COLOR_DEV}Dev:${COLOR_RESET} $@" >&2
+	    _msg_n "\n" "${COLOR_DEV}Dev:${COLOR_RESET}" "$@" >&2
 }
 
 msg_debug() {
@@ -226,7 +226,7 @@ msg_debug() {
 
 	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
 	COLOR_ARROW="${COLOR_DEBUG}" \
-	    _msg_n "\n" "${COLOR_DEBUG}Debug:${COLOR_RESET} $@" >&2
+	    _msg_n "\n" "${COLOR_DEBUG}Debug:${COLOR_RESET}" "$@" >&2
 }
 
 msg_warn() {
@@ -236,12 +236,13 @@ msg_warn() {
 	: "${MSG_NESTED_STDERR:=0}"
 	MSG_NESTED="${MSG_NESTED_STDERR}"
 	if [ "${MSG_NESTED_STDERR}" -eq 0 ]; then
-		prefix="Warning: "
+		prefix="Warning:"
 	else
 		unset prefix
 	fi
 	COLOR_ARROW="${COLOR_WARN}" \
-	    _msg_n "\n" "${COLOR_WARN}${prefix}${COLOR_RESET}$@" >&2
+	    _msg_n "\n" ${prefix:+"${COLOR_WARN}${prefix}${COLOR_RESET}"} \
+	    "$@" >&2
 }
 
 job_msg() {
@@ -270,17 +271,17 @@ job_msg_verbose() {
 # These are aligned for 'Building msg'
 job_msg_dev() {
 	COLOR_ARROW="${COLOR_DEV}" \
-	    job_msg "${COLOR_DEV}Dev:     $@"
+	    job_msg "${COLOR_DEV}Dev:     " "$@"
 }
 
 job_msg_debug() {
 	COLOR_ARROW="${COLOR_DEBUG}" \
-	    job_msg "${COLOR_DEBUG}Debug:   $@"
+	    job_msg "${COLOR_DEBUG}Debug: " "$@"
 }
 
 job_msg_warn() {
 	COLOR_ARROW="${COLOR_WARN}" \
-	    job_msg "${COLOR_WARN}Warning: $@"
+	    job_msg "${COLOR_WARN}Warning:" "$@"
 }
 
 prompt() {
@@ -821,7 +822,8 @@ run_hook_file() {
 
 	shift 6
 
-	job_msg_dev "Running ${hookfile} for event '${hook}:${event}' args: ${@:-(null)}"
+	job_msg_dev "Running ${hookfile} for event '${hook}:${event}' args:" \
+	    "$@"
 
 	(
 		set +e

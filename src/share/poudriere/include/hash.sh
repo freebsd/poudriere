@@ -30,7 +30,7 @@ if ! type eargs 2>/dev/null >&2; then
 	eargs() {
 		local badcmd="$1"
 		shift
-		echo "Bad arguments, ${badcmd}: ""$@" >&2
+		echo "Bad arguments, ${badcmd}: $*" >&2
 		exit 1
 	}
 fi

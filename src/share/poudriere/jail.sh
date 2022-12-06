@@ -31,7 +31,7 @@ METHOD_DEF=http
 
 usage() {
 	if [ $# -gt 0 ]; then
-		echo "Missing: $@" >&2
+		echo "Missing: $*" >&2
 	fi
 	cat << EOF
 poudriere jail [parameters] [options]

@@ -38,7 +38,7 @@ case $1 in
 bulk|testport)
 	cmd=$1
 	shift
-	write_usock "${QUEUE_SOCKET}" "command = $cmd; arguments = $@;"
+	write_usock "${QUEUE_SOCKET}" "command = $cmd; arguments = $*;"
 	;;
 reload|status|quit|list)
 	cmd=$1

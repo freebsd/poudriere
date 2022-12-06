@@ -28,7 +28,7 @@ if ! type eargs 2>/dev/null >&2; then
 	eargs() {
 		local badcmd="$1"
 		shift
-		echo "Bad arguments, ${badcmd}: ""$@" >&2
+		echo "Bad arguments, ${badcmd}: $*" >&2
 		exit 1
 	}
 fi
@@ -719,19 +719,19 @@ write_pipe() {
 
 	# If this is not a pipe then return an error immediately
 	if ! [ -p "${fifo}" ]; then
-		msg_dev "write_pipe FAILED to send to ${fifo} (NOT A PIPE? ret=2): $@"
+		msg_dev "write_pipe FAILED to send to ${fifo} (NOT A PIPE? ret=2):" "$@"
 		return 2
 	fi
 
 	ret=0
-	msg_dev "write_pipe ${fifo}: $@"
+	msg_dev "write_pipe ${fifo}:" "$@"
 	unset tmp
 	while trap_ignore_block tmp INFO; do
 		echo "$@" > "${fifo}" || ret=$?
 	done
 
 	if [ "${ret}" -ne 0 ]; then
-		msg_warn "write_pipe FAILED to send to ${fifo} (ret: ${ret}): $*"
+		msg_warn "write_pipe FAILED to send to ${fifo} (ret: ${ret}):" "$@"
 	fi
 
 	return "${ret}"

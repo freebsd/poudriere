@@ -39,7 +39,7 @@ cache_invalidate() {
 
 	var="cached-${function}"
 	encode_args key "$@"
-	msg_dev "cache_invalidate: Invalidating ${function}($@)"
+	msg_dev "cache_invalidate: Invalidating ${function}($*)"
 	shash_unset "${var}" "${key}" || :
 }
 
@@ -75,7 +75,7 @@ cache_set() {
 
 	var="cached-${function}"
 	encode_args key "$@"
-	msg_dev "cache_set: Caching value for ${function}($@)"
+	msg_dev "cache_set: Caching value for ${function}($*)"
 	_cache_set "${var}" "${key}" "${value}"
 }
 
@@ -151,7 +151,7 @@ cache_call() {
 
 	if [ "${USE_CACHE_CALL}" -eq 0 ] ||
 	    ! _cache_get "${cc_var}" "${cc_key}" "${var_return}"; then
-		msg_dev "cache_call: Fetching ${function}($@)"
+		msg_dev "cache_call: Fetching ${function}($*)"
 		_cc_value=$(${function} "$@")
 		ret=$?
 		if [ "${USE_CACHE_CALL}" -eq 1 ]; then
@@ -159,7 +159,7 @@ cache_call() {
 		fi
 		setvar "${var_return}" "${_cc_value}"
 	else
-		msg_dev "cache_call: Using cached ${function}($@)"
+		msg_dev "cache_call: Using cached ${function}($*)"
 		ret=0
 		# Value set by _cache_get already
 	fi
@@ -187,7 +187,7 @@ cache_call_sv() {
 
 	if [ "${USE_CACHE_CALL}" -eq 0 ] ||
 	    ! _cache_get "${cc_var}" "${cc_key}" "${var_return}"; then
-		msg_dev "cache_call_sv: Fetching ${function}($@)"
+		msg_dev "cache_call_sv: Fetching ${function}($*)"
 		sv_value=sv__null
 		${function} "$@"
 		ret=$?
@@ -201,7 +201,7 @@ cache_call_sv() {
 		fi
 		setvar "${var_return}" "${sv_value}"
 	else
-		msg_dev "cache_call_sv: Using cached ${function}($@)"
+		msg_dev "cache_call_sv: Using cached ${function}($*)"
 		ret=0
 		# Value set by _cache_get already
 	fi
@@ -230,11 +230,11 @@ _cache_call_pipe() {
 		${function} "$@"
 		return
 	elif ! _cache_exists "${ccp_var}" "${ccp_key}"; then
-		msg_dev "_cache_call_pipe: Fetching ${function}($@)"
+		msg_dev "_cache_call_pipe: Fetching ${function}($*)"
 		${function} "$@" | _cache_tee "${ccp_var}" "${ccp_key}"
 		ret="$?"
 	else
-		msg_dev "_cache_call_pipe: Using cached ${function}($@)"
+		msg_dev "_cache_call_pipe: Using cached ${function}($*)"
 		ret=0
 		# Value set by _cache_get already
 		_cache_read "${ccp_var}" "${ccp_key}"

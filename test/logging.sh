@@ -25,7 +25,7 @@ logging_setup() {
 	colored_arrow_error="${COLOR_ERROR:?}=>> ${COLOR_RESET:?}"
 	colored_error="${COLOR_ERROR:?}Error:${COLOR_RESET:?} "
 	colored_arrow_warn="${COLOR_WARN:?}=>> ${COLOR_RESET:?}"
-	colored_warn="${COLOR_WARN:?}Warning: ${COLOR_RESET:?}"
+	colored_warn="${COLOR_WARN:?}Warning:${COLOR_RESET:?} "
 	my_job_id="01"
 	colorize_job_id COLOR_JOBID "${my_job_id}"
 	colored_jobid="[${COLOR_JOBID:?}${my_job_id}${COLOR_RESET}]"

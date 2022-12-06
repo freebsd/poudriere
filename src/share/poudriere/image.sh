@@ -38,7 +38,7 @@
 . ${SCRIPTPREFIX}/image_zsnapshot.sh
 
 usage() {
-	[ $# -gt 0 ] && echo "Missing: $@" >&2
+	[ $# -gt 0 ] && echo "Missing: $*" >&2
 	cat << EOF
 poudriere image [parameters] [options]
 
