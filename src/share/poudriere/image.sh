@@ -212,10 +212,10 @@ make_esp_file() {
 # spits out origin if no flavor.
 convert_package_list() {
 	local PACKAGELIST="$1"
-	local PKG_DBDIR=$(mktemp -dt poudriere_pkgdb)
-	local REPOS_DIR=$(mktemp -dt poudriere_repo)
-	local ABI_FILE
+	local PKG_DBDIR REPOS_DIR ABI_FILE
 
+	PKG_DBDIR=$(mktemp -dt poudriere_pkgdb)
+	REPOS_DIR=$(mktemp -dt poudriere_repo)
 	# This pkg rquery is always ran in host so we need a host-centric
 	# repo.conf always.
 	cat > "${REPOS_DIR}/repo.conf" <<-EOF
