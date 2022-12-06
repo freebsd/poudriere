@@ -142,7 +142,8 @@ for PTNAME in ${PTNAMES}; do
 	clear_dep_fatal_error
 	parallel_start
 
-	export PORTSDIR=$(pget ${PTNAME} mnt)
+	PORTSDIR=$(pget ${PTNAME} mnt)
+	export PORTSDIR
 	[ -d "${PORTSDIR}/ports" ] && PORTSDIR="${PORTSDIR}/ports"
 	[ -z "${PORTSDIR}" ] && err 1 "No such ports tree: ${PTNAME}"
 

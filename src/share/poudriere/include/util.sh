@@ -183,11 +183,11 @@ fi
 _relpath_common() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs _relpath_common dir1 dir2
-	local dir1=$(realpath -q "$1" || echo "$1" | sed -e 's,//*,/,g')
-	local dir2=$(realpath -q "$2" || echo "$2" | sed -e 's,//*,/,g')
-	local common other
+	local dir1 dir2 common other
 
+	dir1=$(realpath -q "$1" || echo "$1" | sed -e 's,//*,/,g') || return 1
 	dir1="${dir1%/}/"
+	dir2=$(realpath -q "$2" || echo "$2" | sed -e 's,//*,/,g') || return 1
 	dir2="${dir2%/}/"
 	if [ "${#dir1}" -ge "${#dir2}" ]; then
 		common="${dir1}"
