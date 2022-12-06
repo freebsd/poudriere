@@ -509,7 +509,7 @@ for_each_build() {
 				# No match
 				[ -e "${buildname}" ] || break
 			fi
-			buildname="${buildname#${mastername}/}"
+			buildname="${buildname#"${mastername}"/}"
 			BUILDNAME="${buildname}"
 			# Unset so later they can be checked for NULL (don't
 			# want to lookup again if value looked up is empty
@@ -2919,7 +2919,7 @@ setup_ports_env() {
 		} >> "${__MAKE_CONF}.ports_env"
 		{
 			echo "#### Misc Poudriere ####"
-			echo ".include \"${__MAKE_CONF#${mnt}}.ports_env\""
+			echo ".include \"${__MAKE_CONF#"${mnt}"}.ports_env\""
 			# This is not set by ports_env as older Poudriere
 			# would not handle it right.
 			echo "GID=0"
@@ -4707,7 +4707,7 @@ may show failures if the port does not respect PREFIX."
 		find "${PACKAGES:?}/.npkg/${pkgname}" \
 			-mindepth 1 \( -type f -or -type l \) | \
 			while mapfile_read_loop_redir pkg_path; do
-			pkg_file="${pkg_path#${PACKAGES}/.npkg/${pkgname}}"
+			pkg_file="${pkg_path#"${PACKAGES}/.npkg/${pkgname}"}"
 			pkg_base="${pkg_file%/*}"
 			mkdir -p "${PACKAGES:?}/${pkg_base}"
 			mv "${pkg_path}" "${PACKAGES:?}/${pkg_base}"
@@ -6056,7 +6056,7 @@ delete_old_pkg() {
 					dpath="${d#*:}"
 					case "${dpath}" in
 					"${PORTSDIR:?}"/*)
-						dpath="${dpath#${PORTSDIR:?}/}"
+						dpath="${dpath#"${PORTSDIR:?}"/}"
 						;;
 					esac
 					[ -n "${dpath}" ] || \
@@ -7382,7 +7382,7 @@ compute_deps_pkg() {
 				dpath="${d#*:}"
 				case "${dpath}" in
 				${PORTSDIR}/*)
-					dpath=${dpath#${PORTSDIR}/} ;;
+					dpath=${dpath#"${PORTSDIR}"/} ;;
 				esac
 				if [ -z "${dpath}" ]; then
 					msg_error "Invalid dependency line for ${COLOR_PORT}${pkgname}${COLOR_RESET}: ${d}"

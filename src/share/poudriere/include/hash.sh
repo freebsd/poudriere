@@ -55,6 +55,7 @@ _gsub() {
 
 	if [ -n "${pattern}" ]; then
 		while :; do
+			# shellcheck disable=SC2295
 			case ${result_r} in
 			*${pattern}*)
 				result_l=${result_l}${result_r%%${pattern}*}${replacement}

@@ -121,7 +121,7 @@ decode_args_vars() {
 		*)
 			setvar "${_var}" "${_value}"
 			# Pop off the var
-			_vars="${_vars#${_var} }"
+			_vars="${_vars#"${_var}" }"
 			shift
 			;;
 		esac
@@ -206,11 +206,11 @@ _relpath_common() {
 	done
 	common="${common%/}"
 	common="${common:-/}"
-	dir1="${dir1#${common}/}"
+	dir1="${dir1#"${common}"/}"
 	dir1="${dir1#/}"
 	dir1="${dir1%/}"
 	dir1="${dir1:-.}"
-	dir2="${dir2#${common}/}"
+	dir2="${dir2#"${common}"/}"
 	dir2="${dir2#/}"
 	dir2="${dir2%/}"
 	dir2="${dir2:-.}"
