@@ -169,7 +169,7 @@ echo_logdir() {
 	if [ -n "${MAX_COUNT}" ]; then
 		echo "${log:?}"
 	else
-		printf "${log:?}\000"
+		printf "%s\000" "${log:?}"
 	fi
 }
 

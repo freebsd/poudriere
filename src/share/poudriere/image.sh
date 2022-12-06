@@ -484,7 +484,7 @@ if [ -n "${IMAGESIZE}" ]; then
 fi
 
 if [ -n "${SWAPSIZE}" ]; then
-	SWAPSIZE_UNIT=$(printf ${SWAPSIZE} | tail -c 1)
+	SWAPSIZE_UNIT=$(printf "%s" "${SWAPSIZE}" | tail -c 1)
 	SWAPSIZE_VALUE=${SWAPSIZE%?}
 	NEW_SWAPSIZE_UNIT=""
 	NEW_SWAPSIZE_SIZE=""

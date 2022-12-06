@@ -161,6 +161,7 @@ _display_output() {
 	IFS="${DISPLAY_SEP}"
 	set -- ${data}
 	unset IFS
+	# shellcheck disable=SC2059
 	printf "${format}\n" "$@"
 }
 
@@ -311,6 +312,7 @@ display_output() {
 			esac
 			n=$((n + 1))
 		done
+		# shellcheck disable=SC2059
 		format=$(printf "${format}" ${lengths})
 		;;
 	esac
