@@ -518,7 +518,7 @@ do_bulk() {
 	assert_not "null" "${P_PORTS_FEATURES-null}" "fetch_global_port_vars should work"
 	echo "Building: $(echo ${LISTPORTS_EXPANDED})"
 
-	do_poudriere bulk -CNt \
+	do_poudriere bulk \
 	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
 	    ${JFLAG:+-J ${JFLAG}} \
 	    -B "${BUILDNAME}" \

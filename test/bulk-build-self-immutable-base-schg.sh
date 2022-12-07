@@ -3,7 +3,7 @@ OVERLAYS="omnibus"
 IMMUTABLE_BASE=schg
 . common.bulk.sh
 
-do_bulk -c ${LISTPORTS}
+do_bulk -t -c ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 
 EXPECTED_QUEUED="ports-mgmt/pkg misc/freebsd-release-manifests ports-mgmt/poudriere-devel"
