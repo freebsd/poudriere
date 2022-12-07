@@ -436,6 +436,62 @@ assert_skipped() {
 	rm -f "${tmp}"
 }
 
+assert_built() {
+	local origins="$1"
+	local tmp originspec origins_expanded
+
+	if [ ! -f "${log}/.poudriere.ports.built" ]; then
+		[ -z "${origins-}" ] && return 0
+		err 1 ".poudriere.ports.built file is missing while EXPECTED_BUILT is: ${origins}"
+	fi
+
+	tmp="$(mktemp -t queued)"
+	cp -f "${log}/.poudriere.ports.built" "${tmp}"
+	# First fix the list to expand main port FLAVORS
+	expand_origin_flavors "${origins}" origins_expanded
+	# The queue does remove duplicates - do the same here
+	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
+	echo "Asserting that only '${origins_expanded}' are in the built list" >&2
+	for originspec in ${origins_expanded}; do
+		# Trim away possible :reason leaked from EXPECTED_TOBUILD copy
+		originspec="${originspec%:*}"
+		#fix_default_flavor "${originspec}" originspec
+		hash_get originspec-pkgname "${originspec}" pkgname
+		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		echo "=> Asserting that ${originspec} | ${pkgname} is built" >&2
+		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
+		    $1 == originspec && $2 == pkgname {
+			print "==> " $0
+			if (found == 1) {
+				# A duplicate, no good.
+				found = 0
+				exit 1
+			}
+			found = 1
+			next
+		    }
+		    END { if (found != 1) exit 1 }
+		' ${log}/.poudriere.ports.built >&2
+		assert 0 $? "${originspec} | ${pkgname} should be built in ${log}/.poudriere.ports.built"
+		# Remove the entry so we can assert later that nothing extra
+		# is in the queue.
+		cat "${tmp}" | \
+		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
+		    $1 == originspec && $2 == pkgname { next }
+		    { print }
+		' > "${tmp}.new"
+		mv -f "${tmp}.new" "${tmp}"
+	done
+	echo "=> Asserting that nothing else is built" >&2
+	if [ -s "${tmp}" ]; then
+		echo "=> Items remaining:" >&2
+		cat "${tmp}" | sed -e 's,^,==> ,' >&2
+	fi
+	! [ -s "${tmp}" ]
+	assert 0 $? "Built list should be empty"
+	rm -f "${tmp}"
+}
+
 assert_counts() {
 	local queued expected_queued ignored expected_ignored
 	local skipped expected_skipped
@@ -695,6 +751,8 @@ _assert_bulk_build_results() {
 		assert 0 $? "Unable to get flavor from package: ${file}"
 		assert "${flavor}" "${pkg_flavor}" "Package flavor should match for: ${file}"
 	done
+
+	stack_lineinfo assert_built "${EXPECTED_BUILT:?}"
 }
 alias assert_bulk_build_results='stack_lineinfo _assert_bulk_build_results '
 
