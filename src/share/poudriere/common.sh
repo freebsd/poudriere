@@ -7097,7 +7097,7 @@ gather_port_vars_process_depqueue_enqueue() {
 	local dep_originspec="$2"
 	local queue="$3"
 	local rdep="$4"
-	local origin dep_pkgname
+	local dep_pkgname
 
 	# Add this origin into the gatherqueue if not already done.
 	if shash_get originspec-pkgname "${dep_originspec}" dep_pkgname; then
