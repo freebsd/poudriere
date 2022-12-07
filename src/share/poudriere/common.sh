@@ -6612,7 +6612,8 @@ gather_port_vars() {
 			# Don't worry about duplicates from user list.
 			qdir="fqueue/${originspec%/*}!${originspec#*/}"
 			msg_debug "queueing ${COLOR_PORT}${originspec}${COLOR_RESET} into flavorqueue (rdep=${COLOR_PORT}${rdep}${COLOR_RESET})"
-			mkdir -p "${qdir}"
+			mkdir "${qdir}" ||
+			    err 1 "gather_port_vars: Failed to add ${COLOR_PORT}${originspec}${COLOR_RESET} into flavorqueue (rdep=${COLOR_PORT}${rdep}${COLOR_RESET})"
 			echo "${rdep}" > "${qdir}/rdep"
 
 			# Testport already looked up the main FLAVOR
@@ -6959,8 +6960,8 @@ gather_port_vars_port() {
 			originspec_encode dep_originspec "${origin}" "${dep_flavor}" "${origin_subpkg}"
 			msg_debug "gather_port_vars_port (${COLOR_PORT}${originspec}${COLOR_RESET}): Adding to flavorqueue FLAVOR=${dep_flavor}"
 			qdir="fqueue/${dep_originspec%/*}!${dep_originspec#*/}"
-			mkdir -p "${qdir}" || \
-				err 1 "gather_port_vars_port: Failed to add ${dep_originspec} to flavorqueue"
+			mkdir "${qdir}" ||
+			    err 1 "gather_port_vars_port: Failed to add ${COLOR_PORT}${dep_originspec}${COLOR_RESET} to flavorqueue for ${COLOR_PORT}${originspec}${COLOR_RESET}"
 			# Copy our own reverse dep over.  This should always
 			# just be "listed" in this case ($rdep == listed) but
 			# use the actual value to reduce maintenance.
@@ -7038,6 +7039,7 @@ gather_port_vars_process_depqueue_enqueue() {
 
 	msg_debug "gather_port_vars_process_depqueue_enqueue (${COLOR_PORT}${originspec}${COLOR_RESET}): Adding ${COLOR_PORT}${dep_originspec}${COLOR_RESET} into the ${queue} (rdep=${COLOR_PORT}${rdep}${COLOR_RESET})"
 	# Another worker may have created it
+	# mkdir -p is not used here as it would waste time touching $queue/
 	qdir="${queue}/${dep_originspec%/*}!${dep_originspec#*/}"
 	if mkdir "${qdir}" 2>&${fd_devnull}; then
 		echo "${rdep}" > "${qdir}/rdep"
