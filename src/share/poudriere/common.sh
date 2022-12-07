@@ -6480,7 +6480,7 @@ check_dep_fatal_error() {
 
 gather_port_vars() {
 	required_env gather_port_vars PWD "${MASTER_DATADIR_ABS}"
-	local origin qorigin log originspec flavor rdep qlist
+	local origin qorigin log originspec flavor rdep qlist qdir
 
 	# A. Lookup all port vars/deps from the given list of ports.
 	# B. For every dependency found (depqueue):
@@ -6610,11 +6610,10 @@ gather_port_vars() {
 			# the flavorqueue and process the main port
 			# here as long as it hasn't already.
 			# Don't worry about duplicates from user list.
-			mkdir -p \
-			    "fqueue/${originspec%/*}!${originspec#*/}"
-			echo "${rdep}" > \
-			    "fqueue/${originspec%/*}!${originspec#*/}/rdep"
+			qdir="fqueue/${originspec%/*}!${originspec#*/}"
 			msg_debug "queueing ${COLOR_PORT}${originspec}${COLOR_RESET} into flavorqueue (rdep=${COLOR_PORT}${rdep}${COLOR_RESET})"
+			mkdir -p "${qdir}"
+			echo "${rdep}" > "${qdir}/rdep"
 
 			# Testport already looked up the main FLAVOR
 			if was_a_testport_run && \
@@ -6803,7 +6802,7 @@ gather_port_vars_port() {
 	local dep_origin deps pkgname dep_originspec
 	local dep_ret log flavor flavors dep_flavor
 	local origin origin_flavor default_flavor
-	local ignore origin_subpkg
+	local ignore origin_subpkg qdir
 
 	msg_debug "gather_port_vars_port (${COLOR_PORT}${originspec}${COLOR_RESET}): LOOKUP"
 	originspec_decode "${originspec}" origin origin_flavor origin_subpkg
@@ -6818,9 +6817,16 @@ gather_port_vars_port() {
 
 	# A metadata lookup may have been queued for this port that is no
 	# longer needed.
-	if [ ${ALL} -eq 0 ] && [ "${rdep%% *}" != "metadata" ] && \
-	    [ -d "mqueue/${originspec%/*}!${originspec#*/}" ]; then
-		rm -rf "mqueue/${originspec%/*}!${originspec#*/}"
+	if [ ${ALL} -eq 0 ]; then
+		case "${rdep}" in
+		"metadata "*) ;;
+		*)
+			qdir="mqueue/${originspec%/*}!${originspec#*/}"
+			if [ -d "${qdir}" ]; then
+				rm -rf "${qdir}"
+			fi
+			;;
+		esac
 	fi
 	if shash_get originspec-pkgname "${originspec}" pkgname; then
 		# We already fetched the vars for this port, but did
@@ -6846,9 +6852,9 @@ gather_port_vars_port() {
 			# The previous depqueue run may have readded
 			# this originspec into the flavorqueue.
 			# Expunge it.
-			if [ -d \
-			    "fqueue/${originspec%/*}!${originspec#*/}" ]; then
-				rm -rf "fqueue/${originspec%/*}!${originspec#*/}"
+			qdir="fqueue/${originspec%/*}!${originspec#*/}"
+			if [ -d "${qdir}" ]; then
+				rm -rf "${qdir}"
 			fi
 			# If this is the default FLAVOR and we're not already
 			# queued then we're the victim of the 'metadata' hack.
@@ -6902,7 +6908,7 @@ gather_port_vars_port() {
 			msg_debug "SKIPPING ${COLOR_PORT}${originspec}${COLOR_RESET} - no FLAVORS"
 			return 0
 		fi
-		local queued_flavor queuespec
+		local queued_flavor queuespec lflavor
 
 		default_flavor="${flavors%% *}"
 		rdep="${rdep#* }"
@@ -6921,16 +6927,15 @@ gather_port_vars_port() {
 		# later, so reset our flavor and originspec.
 		rdep="${rdep#* }"
 		origin_flavor="${queued_flavor}"
-		originspec_encode queuespec "${origin}" "${origin_flavor}" "${origin_subpkg}"
-		msg_debug "gather_port_vars_port: Fixing up ${COLOR_PORT}${originspec}${COLOR_RESET} to be ${COLOR_PORT}${queuespec}${COLOR_RESET}"
-		if [ -d "fqueue/${queuespec%/*}!${queuespec#*/}" ]; then
-			rm -rf "fqueue/${queuespec%/*}!${queuespec#*/}"
-		fi
-		# Remove the @FLAVOR_DEFAULT too
-		originspec_encode queuespec "${origin}" "${FLAVOR_DEFAULT}" "${origin_subpkg}"
-		if [ -d "fqueue/${queuespec%/*}!${queuespec#*/}" ]; then
-			rm -rf "fqueue/${queuespec%/*}!${queuespec#*/}"
-		fi
+		for lflavor in ${origin_flavor} ${FLAVOR_DEFAULT}; do
+			originspec_encode queuespec "${origin}" \
+			    "${lflavor}" "${origin_subpkg}"
+			msg_debug "gather_port_vars_port: Fixing up ${COLOR_PORT}${originspec}${COLOR_RESET} to be ${COLOR_PORT}${queuespec}${COLOR_RESET}"
+			qdir="fqueue/${queuespec%/*}!${queuespec#*/}"
+			if [ -d "${qdir}" ]; then
+				rm -rf "${qdir}"
+			fi
+		done
 	fi
 
 	msg_debug "WILL BUILD ${COLOR_PORT}${originspec}${COLOR_RESET}"
@@ -6953,13 +6958,13 @@ gather_port_vars_port() {
 			fi
 			originspec_encode dep_originspec "${origin}" "${dep_flavor}" "${origin_subpkg}"
 			msg_debug "gather_port_vars_port (${COLOR_PORT}${originspec}${COLOR_RESET}): Adding to flavorqueue FLAVOR=${dep_flavor}"
-			mkdir -p "fqueue/${dep_originspec%/*}!${dep_originspec#*/}" || \
+			qdir="fqueue/${dep_originspec%/*}!${dep_originspec#*/}"
+			mkdir -p "${qdir}" || \
 				err 1 "gather_port_vars_port: Failed to add ${dep_originspec} to flavorqueue"
 			# Copy our own reverse dep over.  This should always
 			# just be "listed" in this case ($rdep == listed) but
 			# use the actual value to reduce maintenance.
-			echo "${rdep}" > \
-			    "fqueue/${dep_originspec%/*}!${dep_originspec#*/}/rdep"
+			echo "${rdep}" > "${qdir}/rdep"
 		done
 
 	fi
@@ -6984,7 +6989,8 @@ gather_port_vars_port() {
 	# be visited from the category Makefiles anyway.
 	if [ ${ALL} -eq 0 ]; then
 		msg_debug "gather_port_vars_port (${COLOR_PORT}${originspec}${COLOR_RESET}): Adding to depqueue"
-		mkdir "dqueue/${originspec%/*}!${originspec#*/}" || \
+		qdir="dqueue/${originspec%/*}!${originspec#*/}"
+		mkdir "${qdir}" ||
 			err 1 "gather_port_vars_port: Failed to add ${COLOR_PORT}${originspec}${COLOR_RESET} to depqueue"
 	fi
 }
@@ -7016,7 +7022,7 @@ gather_port_vars_process_depqueue_enqueue() {
 	local dep_originspec="$2"
 	local queue="$3"
 	local rdep="$4"
-	local dep_pkgname
+	local dep_pkgname qdir
 
 	# Add this origin into the gatherqueue if not already done.
 	if shash_get originspec-pkgname "${dep_originspec}" dep_pkgname; then
@@ -7032,10 +7038,9 @@ gather_port_vars_process_depqueue_enqueue() {
 
 	msg_debug "gather_port_vars_process_depqueue_enqueue (${COLOR_PORT}${originspec}${COLOR_RESET}): Adding ${COLOR_PORT}${dep_originspec}${COLOR_RESET} into the ${queue} (rdep=${COLOR_PORT}${rdep}${COLOR_RESET})"
 	# Another worker may have created it
-	if mkdir "${queue}/${dep_originspec%/*}!${dep_originspec#*/}" \
-	    2>&${fd_devnull}; then
-		echo "${rdep}" > \
-		    "${queue}/${dep_originspec%/*}!${dep_originspec#*/}/rdep"
+	qdir="${queue}/${dep_originspec%/*}!${dep_originspec#*/}"
+	if mkdir "${qdir}" 2>&${fd_devnull}; then
+		echo "${rdep}" > "${qdir}/rdep"
 	fi
 }
 
