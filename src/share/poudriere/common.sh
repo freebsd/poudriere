@@ -8171,17 +8171,19 @@ append_make() {
 	[ -f "${src_makeconf}" ] || return 0
 	src_makeconf_real="$(realpath "${src_makeconf}")"
 	# Only append if not already done (-z -p or -j match)
-	if grep -q "# ${src_makeconf_real} #" ${dst_makeconf}; then
+	if grep -q "# ${src_makeconf_real} #" "${dst_makeconf}"; then
 		return 0
 	fi
 	msg "Appending to make.conf: ${src_makeconf}"
-	echo -n "#### ${src_makeconf_eal} ####" >> "${dst_makeconf}"
-	if [ "${src_makeconf_real}" != "${src_makeconf}" ]; then
-		echo " ${src_makeconf}"
-	else
-		echo
-	fi >> "${dst_makeconf}"
-	cat "${src_makeconf}" >> ${dst_makeconf}
+	{
+		echo -n "#### ${src_makeconf_real} ####"
+		if [ "${src_makeconf_real}" != "${src_makeconf}" ]; then
+			echo " ${src_makeconf}"
+		else
+			echo
+		fi
+		cat "${src_makeconf}"
+	} >> "${dst_makeconf}"
 }
 
 read_packages_from_params()
