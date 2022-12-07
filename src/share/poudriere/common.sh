@@ -1546,7 +1546,7 @@ show_dry_run_summary() {
 
 		if [ "${ALL}" -eq 0 ] || [ "${VERBOSE}" -ge 1 ]; then
 			msg_n "Ports to build: "
-			get_to_build | paste -s -d ' ' -
+			get_to_build | cut -d ' ' -f1 | paste -s -d ' ' -
 		fi
 	else
 		msg "No packages would be built"
@@ -8753,13 +8753,14 @@ get_to_build() {
 	_log_path log
 	{
 		if was_a_testport_run; then
-			echo "${ORIGINSPEC}"
+			echo "${ORIGINSPEC} ${PKGNAME} testport"
 		fi
-		cat "${log:?}/.poudriere.ports.queued"
-	} | while mapfile_read_loop_redir originspec pkgname _ignored; do
-		pkgqueue_contains "${pkgname}" || continue
-		echo "${originspec}"
-	done | sort
+		while mapfile_read_loop "${log:?}/.poudriere.ports.queued" \
+		    originspec pkgname _ignored; do
+			pkgqueue_contains "${pkgname}" || continue
+			echo "${originspec} ${pkgname} ${_ignored}"
+		done
+	} | sort
 }
 
 load_priorities_ptsort() {
