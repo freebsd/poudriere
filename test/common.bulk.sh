@@ -258,12 +258,12 @@ assert_queued() {
 	expand_origin_flavors "${origins}" origins_expanded
 	# The queue does remove duplicates - do the same here
 	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
-	echo "Asserting that only '${origins_expanded}' are in the${dep:+ ${dep}} queue"
+	echo "Asserting that only '${origins_expanded}' are in the${dep:+ ${dep}} queue" >&2
 	for originspec in ${origins_expanded}; do
 		fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
 		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
-		echo "=> Asserting that ${originspec} | ${pkgname} is${dep:+ dep=${dep}} in queue"
+		echo "=> Asserting that ${originspec} | ${pkgname} is${dep:+ dep=${dep}} in queue" >&2
 		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" -vdep="${dep}" '
 		    $1 == originspec && $2 == pkgname && (dep == "" || $3 == dep) {
 			print "==> " $0
@@ -282,7 +282,7 @@ assert_queued() {
 		    }
 		    END { if (found != 1) exit 1 }
 		' ${log}/.poudriere.ports.queued >&2
-		assert 0 $? "${originspec} | ${pkgname} should be queued${dep:+ with dep=${dep}}"
+		assert 0 $? "${originspec} | ${pkgname} should be queued${dep:+ with dep=${dep}} in ${log}/.poudriere.ports.queued"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
 		cat "${tmp}" | \
@@ -293,8 +293,11 @@ assert_queued() {
 		' > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
-	echo "=> Asserting that nothing else is in the${dep:+ ${dep}} queue"
-	cat "${tmp}" | sed -e 's,^,==> ,' >&2
+	echo "=> Asserting that nothing else is in the${dep:+ ${dep}} queue" >&2
+	if [ -s "${tmp}" ]; then
+		echo "=> Items remaining:" >&2
+		cat "${tmp}" | sed -e 's,^,==> ,' >&2
+	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Queue${dep:+(${dep})} should be empty"
 	rm -f "${tmp}"
@@ -315,12 +318,12 @@ assert_ignored() {
 	expand_origin_flavors "${origins}" origins_expanded
 	# The queue does remove duplicates - do the same here
 	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
-	echo "Asserting that only '${origins_expanded}' are in the ignored list"
+	echo "Asserting that only '${origins_expanded}' are in the ignored list" >&2
 	for originspec in ${origins_expanded}; do
 		fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
 		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
-		echo "=> Asserting that ${originspec} | ${pkgname} is ignored"
+		echo "=> Asserting that ${originspec} | ${pkgname} is ignored" >&2
 		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
 		    $1 == originspec && $2 == pkgname && ($3 != "") {
 			print "==> " $0
@@ -334,7 +337,7 @@ assert_ignored() {
 		    }
 		    END { if (found != 1) exit 1 }
 		' ${log}/.poudriere.ports.ignored >&2
-		assert 0 $? "${originspec} | ${pkgname} should be ignored"
+		assert 0 $? "${originspec} | ${pkgname} should be ignored in ${log}/.poudriere.ports.ignored"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
 		cat "${tmp}" | \
@@ -344,8 +347,11 @@ assert_ignored() {
 		' > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
-	echo "=> Asserting that nothing else is ignored"
-	cat "${tmp}" | sed -e 's,^,==> ,' >&2
+	echo "=> Asserting that nothing else is ignored" >&2
+	if [ -s "${tmp}" ]; then
+		echo "=> Items remaining:" >&2
+		cat "${tmp}" | sed -e 's,^,==> ,' >&2
+	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Ignore list should be empty"
 	rm -f "${tmp}"
@@ -366,12 +372,12 @@ assert_skipped() {
 	expand_origin_flavors "${origins}" origins_expanded
 	# The queue does remove duplicates - do the same here
 	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
-	echo "Asserting that only '${origins_expanded}' are in the skipped list"
+	echo "Asserting that only '${origins_expanded}' are in the skipped list" >&2
 	for originspec in ${origins_expanded}; do
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
 		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
-		echo "=> Asserting that ${originspec} | ${pkgname} is skipped"
+		echo "=> Asserting that ${originspec} | ${pkgname} is skipped" >&2
 		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
 		    $1 == originspec && $2 == pkgname {
 			print "==> " $0
@@ -385,7 +391,7 @@ assert_skipped() {
 		    }
 		    END { if (found != 1) exit 1 }
 		' ${log}/.poudriere.ports.skipped >&2
-		assert 0 $? "${originspec} | ${pkgname} should be skipped"
+		assert 0 $? "${originspec} | ${pkgname} should be skipped in ${log}/.poudriere.ports.skipped"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
 		cat "${tmp}" | \
@@ -395,8 +401,11 @@ assert_skipped() {
 		' > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
 	done
-	echo "=> Asserting that nothing else is skipped"
-	cat "${tmp}" | sed -e 's,^,==> ,' >&2
+	echo "=> Asserting that nothing else is skipped" >&2
+	if [ -s "${tmp}" ]; then
+		echo "=> Items remaining:" >&2
+		cat "${tmp}" | sed -e 's,^,==> ,' >&2
+	fi
 	! [ -s "${tmp}" ]
 	assert 0 $? "Skipped list should be empty"
 	rm -f "${tmp}"
@@ -620,24 +629,24 @@ _assert_bulk_build_results() {
 	which -s "${PKG_BIN}" || err 99 "Unable to find in host: ${PKG_BIN}"
 	_log_path log || err 99 "Unable to determine logdir"
 
-	[ -d "${PACKAGES}" ]
+	assert_ret 0 [ -d "${PACKAGES}" ]
 	assert 0 $? "PACKAGES directory should exist: ${PACKAGES}"
 
 	echo "Asserting that packages were built"
 	for pkgname in ${ALL_PKGNAMES}; do
 		file="${PACKAGES}/All/${pkgname}${P_PKG_SUFX}"
-		[ -f "${file}" ]
+		assert_ret 0 [ -f "${file}" ]
 		assert 0 $? "Package should exist: ${file}"
-		[ -s "${file}" ]
+		assert_ret 0 [ -s "${file}" ]
 		assert 0 $? "Package should not be empty: ${file}"
 	done
 
 	echo "Asserting that logfiles were produced"
 	for pkgname in ${ALL_PKGNAMES}; do
 		file="${log}/logs/${pkgname}.log"
-		[ -f "${file}" ]
+		assert_ret 0 [ -f "${file}" ]
 		assert 0 $? "Logfile should exist: ${file}"
-		[ -s "${file}" ]
+		assert_ret 0 [ -s "${file}" ]
 		assert 0 $? "Logfile should not be empty: ${file}"
 	done
 
