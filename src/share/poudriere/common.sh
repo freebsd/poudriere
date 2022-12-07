@@ -8021,10 +8021,11 @@ prepare_ports() {
 				fi
 			done | sort | \
 			    write_atomic "${log}/.poudriere.ports.queued"
+			get_to_build |
+			    write_atomic "${log}/.poudriere.ports.tobuild"
 		fi
 
 		load_priorities
-		get_to_build > "${log}/.poudriere.ports.tobuild"
 
 		# Avoid messing with the queue for DRY_RUN or it confuses
 		# the dry run summary output as it doesn't know about
