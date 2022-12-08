@@ -7124,7 +7124,7 @@ gather_port_vars_process_depqueue() {
 
 compute_deps() {
 	required_env compute_deps PWD "${MASTER_DATADIR_ABS:?}"
-	local pkgname originspec dep_pkgname _ignored
+	local pkgname originspec dep_pkgname _rdep _ignored
 
 	msg "Calculating ports order and dependencies"
 	bset status "computingdeps:"
@@ -7135,7 +7135,7 @@ compute_deps() {
 	clear_dep_fatal_error
 	parallel_start
 	while mapfile_read_loop "${MASTER_DATADIR}/all_pkgs" \
-	    pkgname originspec _ignored; do
+	    pkgname originspec _rdep _ignored; do
 		parallel_run compute_deps_pkg "${pkgname}" "${originspec}" \
 		    "${MASTER_DATADIR}/pkg_deps.unsorted" || set_dep_fatal_error
 	done
@@ -8050,7 +8050,7 @@ get_to_build() {
 }
 
 load_priorities_ptsort() {
-	local priority pkgname originspec pkg_boost origin flavor _ignored
+	local priority pkgname originspec pkg_boost origin flavor _rdep _ignored
 	local - # Keep set -f local
 
 	set -f # for PRIORITY_BOOST
@@ -8060,7 +8060,7 @@ load_priorities_ptsort() {
 
 	# Add in boosts before running ptsort
 	while mapfile_read_loop "${MASTER_DATADIR}/all_pkgs" \
-	    pkgname originspec _ignored; do
+	    pkgname originspec _rdep _ignored; do
 		# Does this pkg have an override?
 
 		# Disabling globs for this loop or wildcards will
