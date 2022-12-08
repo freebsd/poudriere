@@ -4031,12 +4031,10 @@ download_from_repo() {
 	while mapfile_read_loop "${MASTER_DATADIR:?}/all_pkgs" \
 	    pkgname originspec listed ignored; do
 		# Skip ignored ports
-		case "${ignored:+set}" in
-		set)
+		if shash_exists pkgname-ignore "${pkgname}"; then
 			msg_debug "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: ignored"
 			continue
-			;;
-		esac
+		fi
 		# Skip listed packages when testing
 		if [ "${PORTTESTING}" -eq 1 ]; then
 			if [ "${CLEAN:-0}" -eq 1 ] || \
