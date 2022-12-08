@@ -651,7 +651,7 @@ do_confirm_delete() {
 	local DRY_RUN="$4"
 	local file_cnt count hsize ret
 
-	file_cnt="$(wc -l "${filelist:?}" | awk '{print $1}')"
+	count_lines "${filelist:?}" file_cnt
 	if [ "${file_cnt}" -eq 0 ]; then
 		msg "No ${reason} to cleanup"
 		return 2
@@ -666,8 +666,7 @@ do_confirm_delete() {
 
 	msg "These ${reason} will be deleted:"
 	cat "${filelist:?}"
-	count="$(cat "${filelist:?}" | wc -l)"
-	count="${count##* }"
+	count_lines "${filelist:?}" count
 	msg "Removing these ${count} ${reason} will free: ${hsize}"
 
 	if [ ${DRY_RUN} -eq 1 ];  then
@@ -4173,7 +4172,7 @@ download_from_repo() {
 		    gsub(/^"|",$|,$/, "", $3)
 		    print $3
 	    }')
-	cnt=$(wc -l ${wantedpkgs} | awk '{print $1}')
+	count_lines "${wantedpkgs}" cnt
 	msg "Package fetch: Will fetch ${cnt} packages from remote or local pkg cache"
 
 	echo "${packagesite_resolved}" > "${MASTER_DATADIR:?}/pkg_fetch_url"

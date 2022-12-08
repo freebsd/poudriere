@@ -468,15 +468,15 @@ XFAIL_TESTS = \
 
 # Depend bulk tests on jail setup
 TESTS = builtins.sh cache.sh cache_pipe.sh calculate_duration.sh \
-	display.sh distclean-badorigin.sh distclean-overlays.sh \
-	distclean-smoke.sh do_clone.sh encode_args.sh getpid.sh \
-	getvar.sh gsub.sh globmatch.sh hash_basic.sh hash_stack.sh \
-	list.sh locks.sh locks_critical_section.sh \
-	locks_critical_section_nested.sh locked_mkdir.sh \
-	locked_mkdir_waiters.sh locked_mkdir_waiters_kill.sh \
-	locked_mkdir_waiters_all_lose.sh logging.sh mapfile.sh \
-	mktemp.sh originspec.sh pkg_version.sh pipe_func.sh \
-	pipe_hold.sh port_var_fetch.sh prefix_output.sh \
+	count_lines.sh display.sh distclean-badorigin.sh \
+	distclean-overlays.sh distclean-smoke.sh do_clone.sh \
+	encode_args.sh getpid.sh getvar.sh gsub.sh globmatch.sh \
+	hash_basic.sh hash_stack.sh list.sh locks.sh \
+	locks_critical_section.sh locks_critical_section_nested.sh \
+	locked_mkdir.sh locked_mkdir_waiters.sh \
+	locked_mkdir_waiters_kill.sh locked_mkdir_waiters_all_lose.sh \
+	logging.sh mapfile.sh mktemp.sh originspec.sh pkg_version.sh \
+	pipe_func.sh pipe_hold.sh port_var_fetch.sh prefix_output.sh \
 	read_blocking.sh read_file.sh relpath.sh relpath_common.sh \
 	required_env.sh shash_basic.sh stack.sh stripansi.sh \
 	test_contexts.sh test_contexts_expand.sh timespec.sh \
@@ -753,6 +753,13 @@ cache_pipe.sh.log: cache_pipe.sh
 calculate_duration.sh.log: calculate_duration.sh
 	@p='calculate_duration.sh'; \
 	b='calculate_duration.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+count_lines.sh.log: count_lines.sh
+	@p='count_lines.sh'; \
+	b='count_lines.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

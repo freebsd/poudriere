@@ -18,6 +18,7 @@ TESTS=\
 	cache.sh \
 	cache_pipe.sh \
 	calculate_duration.sh \
+	count_lines.sh \
 	display.sh \
 	distclean-badorigin.sh \
 	distclean-overlays.sh \

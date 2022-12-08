@@ -570,8 +570,7 @@ read_file() {
 		case "${var_return:+set}" in
 		set) _data="$(cat "${file}")" ;;
 		esac
-		_read_file_lines_read=$(wc -l < "${file}")
-		_read_file_lines_read=${_read_file_lines_read##* }
+		count_lines "${file}" _read_file_lines_read
 	else
 		while :; do
 			IFS= read -r _line
@@ -1797,4 +1796,35 @@ sorted() {
 	[ $# -gt 0 ] || eargs sorted string...
 	echo "$@" | tr ' ' '\n' | LC_ALL=C sort -u | sed -e '/^$/d' |
 	    paste -s -d ' ' -
+}
+
+# Wrapper to make wc -l only return a number.
+count_lines() {
+	[ "$#" -le 2 ] || eargs count_lines file [var_return]
+	local cl_file="$1"
+	local cl_var_return="${2-}"
+	local cl_count cl_ret
+
+	cl_ret=0
+	case "${cl_file}" in
+	-|/dev/stdin|/dev/fd/0) cl_file="/dev/stdin" ;;
+	*)
+		if [ ! -r "${cl_file}" ]; then
+			cl_count=0
+			cl_ret=1
+		fi
+		;;
+	esac
+	case "${cl_ret}" in
+	0)
+		cl_count="$(wc -l "${cl_file}")"
+		cl_count="${cl_count% *}"
+		cl_count="${cl_count##* }"
+		;;
+	esac
+	case "${cl_var_return}" in
+	""|-) echo "${cl_count}" ;;
+	*) setvar "${cl_var_return}" "${cl_count}" ;;
+	esac
+	return "${cl_ret}"
 }
