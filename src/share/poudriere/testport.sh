@@ -165,7 +165,7 @@ while getopts "b:B:o:cniIj:J:kNO:p:PSvwz:" FLAG; do
 	esac
 done
 
-saved_argv="$@"
+encode_args saved_argv "$@"
 shift $((OPTIND-1))
 post_getopts
 
@@ -180,7 +180,7 @@ if [ -z "${JAILNAME}" ]; then
 	err 1 "Don't know on which jail to run please specify -j"
 fi
 
-maybe_run_queued "$@"
+maybe_run_queued "${saved_argv}"
 
 : ${BUILD_PARALLEL_JOBS:=${PARALLEL_JOBS}}
 : ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}

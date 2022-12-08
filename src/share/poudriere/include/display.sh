@@ -53,7 +53,7 @@ display_setup() {
 	# encode
 	set -- ${_DISPLAY_FORMAT}
 	IFS="${DISPLAY_SEP}"
-	_DISPLAY_FORMAT="$@"
+	_DISPLAY_FORMAT="$*"
 	unset IFS
 }
 
@@ -109,7 +109,7 @@ display_add() {
 	_DISPLAY_LINES=$((_DISPLAY_LINES + 1))
 	# encode
 	IFS="${DISPLAY_SEP}"
-	line="$@"
+	line="$*"
 	unset IFS
 	mapfile_write "${_DISPLAY_MAPFILE}" -- "${line}" ||
 	    err ${EX_SOFTWARE} "mapfile_write"
@@ -120,7 +120,7 @@ display_footer() {
 
 	# encode
 	IFS="${DISPLAY_SEP}"
-	_DISPLAY_FOOTER="$@"
+	_DISPLAY_FOOTER="$*"
 	unset IFS
 }
 
@@ -280,7 +280,7 @@ display_output() {
 	IFS="${DISPLAY_SEP}"
 	set -- ${_DISPLAY_FORMAT}
 	unset IFS
-	format="$@"
+	format="$*"
 	case "${format}" in
 	*%%*)
 		local length

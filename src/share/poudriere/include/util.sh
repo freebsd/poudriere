@@ -46,7 +46,7 @@ encode_args() {
 	local _args IFS
 
 	IFS="${ENCODE_SEP}"
-	_args="$@"
+	_args="$*"
 	unset IFS
 	# Trailing empty fields need special handling.
 	case "${_args}" in

@@ -135,7 +135,7 @@ while getopts "AaCj:J:f:nNO:p:rRuvyz:" FLAG; do
 	esac
 done
 
-saved_argv="$@"
+encode_args saved_argv "$@"
 shift $((OPTIND-1))
 post_getopts
 

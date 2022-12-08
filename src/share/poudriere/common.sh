@@ -256,11 +256,11 @@ job_msg() {
 			now=$(clock -monotonic)
 			calculate_duration elapsed "$((now - ${TIME_START_JOB:-${TIME_START:-0}}))"
 		fi
-		output="[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}]${elapsed:+ [${elapsed}] }$@"
+		output="[${COLOR_JOBID}${MY_JOBID}${COLOR_RESET}]${elapsed:+ [${elapsed}]}"
 	else
-		output="$@"
+		unset output
 	fi
-	redirect_to_bulk _msg_n "\n" "${output}"
+	redirect_to_bulk _msg_n "\n" ${output:+"${output}"} "$@"
 }
 
 # Stubbed until post_getopts
@@ -2671,9 +2671,11 @@ write_usock() {
 
 # If running as non-root, redirect this command to queue and exit
 maybe_run_queued() {
+	[ "$#" -eq 1 ] || eargs maybe_run_queued encoded_args
+	local encoded_args="$1"
 	local this_command
 
-	if [ $(/usr/bin/id -u) -eq 0 ]; then
+	if [ "$(/usr/bin/id -u)" -eq 0 ]; then
 		return 0
 	fi
 	# If poudriered not running then the command cannot be
@@ -2684,6 +2686,7 @@ maybe_run_queued() {
 	this_command="${SCRIPTNAME}"
 	this_command="${this_command%.sh}"
 
+	eval "$(decode_args encoded_args)"
 	write_usock ${QUEUE_SOCKET} command: "${this_command}", arguments: "$@"
 	exit
 }
@@ -8377,7 +8380,7 @@ read_packages_from_params()
 		    err ${EX_USAGE} "command line arguments and -a cannot be used at the same time"
 		[ -z "${LISTPKGS}" ] ||
 		    err ${EX_USAGE} "command line arguments and list of ports cannot be used at the same time"
-		LISTPORTS="$@"
+		LISTPORTS="$*"
 	fi
 }
 
@@ -8631,7 +8634,7 @@ done
 unset _BUILTIN_ONLY
 if [ "$(type setproctitle 2>/dev/null)" = "setproctitle is a shell builtin" ]; then
 	setproctitle() {
-		PROC_TITLE="$@"
+		PROC_TITLE="$*"
 		command setproctitle "poudriere${MASTERNAME:+[${MASTERNAME}]}${MY_JOBID:+[${MY_JOBID}]}: $*"
 	}
 else

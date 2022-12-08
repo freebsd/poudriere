@@ -28,7 +28,7 @@ logging_setup() {
 	colored_warn="${COLOR_WARN:?}Warning:${COLOR_RESET:?} "
 	my_job_id="01"
 	colorize_job_id COLOR_JOBID "${my_job_id}"
-	colored_jobid="[${COLOR_JOBID:?}${my_job_id}${COLOR_RESET}]"
+	colored_jobid="[${COLOR_JOBID:?}${my_job_id}${COLOR_RESET}] "
 	colored_reset="${COLOR_RESET:?}"
 	case "${PORT_TEE:?}" in
 	1)
