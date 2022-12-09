@@ -1332,6 +1332,17 @@ update_stats_queued() {
 	bset stats_queued "${nbq}"
 }
 
+update_stats_tobuild() {
+	[ "$#" -eq 0 ] || eargs update_stats_tobuild
+	local nbtb log
+
+	_log_path log
+	get_to_build |
+	    write_atomic "${log:?}/.poudriere.ports.tobuild"
+	count_lines "${log:?}/.poudriere.ports.tobuild" nbtb
+	bset stats_tobuild "${nbtb}"
+}
+
 update_remaining() {
 	[ $# -eq 0 ] || eargs update_remaining
 	local log
@@ -1341,8 +1352,12 @@ update_remaining() {
 	*) return 0 ;;
 	esac
 	_log_path log
-	pkgqueue_remaining |
-	    write_atomic "${log:?}/.poudriere.ports.remaining"
+	{
+		if was_a_testport_run; then
+			echo "${ORIGINSPEC} ${PKGNAME} testport"
+		fi
+		pkgqueue_remaining
+	} | write_atomic "${log:?}/.poudriere.ports.remaining"
 }
 
 sigpipe_handler() {
@@ -1537,11 +1552,13 @@ show_log_info() {
 }
 
 show_dry_run_summary() {
+	local tobuild
 	[ ${DRY_RUN} -eq 1 ] || return 0
 
 	bset status "done:"
 	msg "Dry run mode, cleaning up and exiting"
-	tobuild=$(calculate_tobuild)
+	_bget tobuild stats_tobuild ||
+	    err "${EX_SOFTWARE}" "Failed to lookup stats_tobuild"
 	if [ ${tobuild} -gt 0 ]; then
 		if [ ${PARALLEL_JOBS} -gt ${tobuild} ]; then
 			PARALLEL_JOBS=${tobuild##* }
@@ -1580,6 +1597,7 @@ show_build_summary() {
 		return 0
 	fi
 	update_stats 2>/dev/null || return 0
+	update_remaining || :
 	_bget nbf stats_failed || nbf=0
 	_bget nbi stats_ignored || nbi=0
 	_bget nbs stats_skipped || nbs=0
@@ -5323,22 +5341,6 @@ build_queue() {
 	run_hook build_queue stop
 }
 
-calculate_tobuild() {
-	local nbq nbb nbf nbi nbs nbp ndone nremaining
-
-	_bget nbq stats_queued || nbq=0
-	_bget nbb stats_built || nbb=0
-	_bget nbf stats_failed || nbf=0
-	_bget nbi stats_ignored || nbi=0
-	_bget nbs stats_skipped || nbs=0
-	_bget nbp stats_fetched || nbp=0
-
-	ndone=$((nbb + nbf + nbi + nbs + nbp))
-	nremaining=$((nbq - ndone))
-
-	echo ${nremaining}
-}
-
 status_is_stopped() {
 	[ $# -eq 1 ] || eargs status_is_stopped status
 	local status="$1"
@@ -5379,7 +5381,8 @@ parallel_build() {
 	local real_parallel_jobs=${PARALLEL_JOBS}
 	local nremaining
 
-	nremaining=$(calculate_tobuild)
+	_bget nremaining stats_tobuild ||
+	    err "${EX_SOFTWARE}" "Failed to lookup stats_tobuild"
 
 	# Subtract the 1 for the main port to test
 	was_a_testport_run && \
@@ -8727,8 +8730,7 @@ prepare_ports() {
 			# Generate ports.queued list and stats_queued after
 			# the queue was trimmed.
 			update_stats_queued
-			get_to_build |
-			    write_atomic "${log:?}/.poudriere.ports.tobuild"
+			update_stats_tobuild
 			update_remaining
 		fi
 

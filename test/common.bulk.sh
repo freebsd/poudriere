@@ -436,6 +436,68 @@ assert_skipped() {
 	rm -f "${tmp}"
 }
 
+assert_tobuild() {
+	local origins="$1"
+	local tmp originspec origins_expanded
+	local buildspec
+
+	if [ ! -f "${log:?}/.poudriere.ports.tobuild" ]; then
+		[ -z "${origins-}" ] && return 0
+		err 1 ".poudriere.ports.tobuild file is missing while EXPECTED_TOBUILD is: ${origins}"
+	fi
+
+	tmp="$(mktemp -t queued)"
+	cp -f "${log}/.poudriere.ports.tobuild" "${tmp}"
+	# First fix the list to expand main port FLAVORS
+	expand_origin_flavors "${origins}" origins_expanded
+	# The queue does remove duplicates - do the same here
+	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
+	echo "Asserting that only '${origins_expanded}' are in the tobuild list" >&2
+	for buildspec in ${origins_expanded}; do
+		case "${buildspec}" in
+		*:*)
+			originspec="${buildspec%:*}"
+			;;
+		*)
+			originspec="${buildspec}"
+		esac
+		#fix_default_flavor "${originspec}" originspec
+		hash_get originspec-pkgname "${originspec}" pkgname
+		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		echo "=> Asserting that ${originspec} | ${pkgname} is tobuild" >&2
+		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
+		    $1 == originspec && $2 == pkgname {
+			print "==> " $0
+			if (found == 1) {
+				# A duplicate, no good.
+				found = 0
+				exit 1
+			}
+			found = 1
+			next
+		    }
+		    END { if (found != 1) exit 1 }
+		' ${log}/.poudriere.ports.tobuild >&2
+		assert 0 $? "${originspec} | ${pkgname} should be tobuild in ${log}/.poudriere.ports.tobuild"
+		# Remove the entry so we can assert later that nothing extra
+		# is in the queue.
+		cat "${tmp}" | \
+		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
+		    $1 == originspec && $2 == pkgname { next }
+		    { print }
+		' > "${tmp}.new"
+		mv -f "${tmp}.new" "${tmp}"
+	done
+	echo "=> Asserting that nothing else is tobuild" >&2
+	if [ -s "${tmp}" ]; then
+		echo "=> Items remaining:" >&2
+		cat "${tmp}" | sed -e 's,^,==> ,' >&2
+	fi
+	! [ -s "${tmp}" ]
+	assert 0 $? "Tobuild list should be empty"
+	rm -f "${tmp}"
+}
+
 assert_built() {
 	local origins="$1"
 	local tmp originspec origins_expanded
@@ -495,26 +557,54 @@ assert_built() {
 assert_counts() {
 	local queued expected_queued ignored expected_ignored
 	local skipped expected_skipped
+	local tobuild expected_tobuild computed_tobuild
+	local failed expected_failed
+	local fetched expected_fetched
+	local built expected_built
 
+	if [ -z "${EXPECTED_TOBUILD-}" ]; then
+		expected_tobuild=0
+	else
+		expected_tobuild=$(echo "${EXPECTED_TOBUILD}" | tr ' ' '\n' | sort -u | wc -l)
+		expected_tobuild="${expected_tobuild##* }"
+	fi
 	if [ -z "${EXPECTED_IGNORED-}" ]; then
 		expected_ignored=0
 	else
-		expected_ignored=$(echo "${EXPECTED_IGNORED}" | tr ' ' '\n' | wc -l)
+		expected_ignored=$(echo "${EXPECTED_IGNORED}" | tr ' ' '\n' | sort -u | wc -l)
 		expected_ignored="${expected_ignored##* }"
 	fi
 	if [ -z "${EXPECTED_SKIPPED-}" ]; then
 		expected_skipped=0
 	else
-		expected_skipped=$(echo "${EXPECTED_SKIPPED}" | tr ' ' '\n' | wc -l)
+		expected_skipped=$(echo "${EXPECTED_SKIPPED}" | tr ' ' '\n' | sort -u | wc -l)
 		expected_skipped="${expected_skipped##* }"
+	fi
+	if [ -z "${EXPECTED_FAILED-}" ]; then
+		expected_failed=0
+	else
+		expected_failed=$(echo "${EXPECTED_FAILED}" | tr ' ' '\n' | sort -u | wc -l)
+		expected_failed="${expected_failed##* }"
+	fi
+	if [ -z "${EXPECTED_FETCHED-}" ]; then
+		expected_fetched=0
+	else
+		expected_fetched=$(echo "${EXPECTED_FETCHED}" | tr ' ' '\n' | sort -u | wc -l)
+		expected_fetched="${expected_fetched##* }"
+	fi
+	if [ -z "${EXPECTED_BUILT-}" ]; then
+		expected_built=0
+	else
+		expected_built=$(echo "${EXPECTED_BUILT}" | tr ' ' '\n' | sort -u | wc -l)
+		expected_built="${expected_built##* }"
 	fi
 	if [ -z "${EXPECTED_QUEUED-}" ]; then
 		expected_queued=0
 	else
-		expected_queued=$(echo "${EXPECTED_QUEUED}" | tr ' ' '\n' | wc -l)
+		expected_queued=$(echo "${EXPECTED_QUEUED}" | tr ' ' '\n' | sort -u | wc -l)
 		expected_queued="${expected_queued##* }"
 	fi
-	echo "=> Asserting queued=${expected_queued} ignored=${expected_ignored} skipped=${expected_skipped}"
+	echo "=> Asserting queued=${expected_queued} built=${expected_built} failed=${expected_failed} ignored=${expected_ignored} skipped=${expected_skipped} fetched=${expected_fetched} tobuild=${expected_tobuild}"
 
 	read queued < "${log}/.poudriere.stats_queued"
 	assert 0 $? "${log}/.poudriere.stats_queued read should pass"
@@ -536,6 +626,54 @@ assert_counts() {
 		skipped=0
 	fi
 	assert "${expected_skipped}" "${skipped}" "skipped should match"
+
+	if [ -n "${EXPECTED_TOBUILD-}" ]; then
+		read tobuild < "${log}/.poudriere.stats_tobuild"
+		assert 0 $? "${log}/.poudriere.stats_tobuild read should pass"
+	else
+		tobuild=0
+	fi
+	assert "${expected_tobuild}" "${tobuild}" "tobuild should match"
+
+	if [ -n "${EXPECTED_BUILT-}" ]; then
+		read built < "${log}/.poudriere.stats_built"
+		assert 0 $? "${log}/.poudriere.stats_built read should pass"
+	else
+		built=0
+	fi
+	assert "${expected_built}" "${built}" "built should match"
+
+	if [ -n "${EXPECTED_FETCHED-}" ]; then
+		read fetched < "${log}/.poudriere.stats_fetched"
+		assert 0 $? "${log}/.poudriere.stats_fetched read should pass"
+	else
+		fetched=0
+	fi
+	assert "${expected_fetched}" "${fetched}" "fetched should match"
+
+	if [ -n "${EXPECTED_FAILED-}" ]; then
+		read failed < "${log}/.poudriere.stats_failed"
+		assert 0 $? "${log}/.poudriere.stats_failed read should pass"
+	else
+		failed=0
+	fi
+	assert "${expected_failed}" "${failed}" "failed should match"
+
+	# Ensure the computed stat is correct
+	# tobuild is static from the beginning. It is not modified
+	# by failed, fetched, built.
+	# If we did a real build, without crashing, then all of the stats
+	# should add to 0.
+	case "${EXPECTED_BUILT:+set}" in
+	set)
+		;;
+	*)
+		computed_tobuild=$((expected_queued - \
+		    (expected_ignored + expected_skipped)))
+		assert "${expected_tobuild}" "${computed_tobuild}" \
+		    "Computed tobuild should match tobuild for a dry-run"
+		;;
+	esac
 }
 
 do_poudriere() {
@@ -695,6 +833,15 @@ _assert_bulk_queue_and_stats() {
 	# Assert that all expected dependencies are in poudriere.ports.queued
 	# (since they do not exist yet)
 	stack_lineinfo assert_queued "" "${EXPECTED_QUEUED-}"
+
+	case "${EXPECTED_TOBUILD-null}" in
+	null) EXPECTED_TOBUILD="${EXPECTED_QUEUED-}" ;;
+	esac
+	case "${EXPECTED_TOBUILD+set}" in
+	set)
+		stack_lineinfo assert_tobuild "${EXPECTED_TOBUILD?}"
+		;;
+	esac
 
 	# Assert stats counts are right
 	stack_lineinfo assert_counts
