@@ -1565,6 +1565,7 @@ show_dry_run_summary() {
 	else
 		msg "No packages would be built"
 	fi
+	show_build_summary
 	show_log_info
 	exit 0
 }

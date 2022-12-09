@@ -304,6 +304,7 @@ if [ $(bget stats_failed) -gt 0 ] || [ $(bget stats_skipped) -gt 0 ]; then
 	fi
 
 	bset_job_status "failed/depends" "${ORIGINSPEC}" "${PKGNAME}"
+	show_build_summary
 	show_log_info
 	set +e
 	exit 1
@@ -405,6 +406,7 @@ if [ ${ret} -ne 0 ]; then
 		bset_job_status "failed/${failed_phase}" "${ORIGINSPEC}" \
 		    "${PKGNAME}"
 		msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
+		show_build_summary
 		show_log_info
 		set +e
 		exit 1
@@ -433,6 +435,7 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 			bset_job_status "failed/${failed_phase}" \
 			    "${ORIGINSPEC}" "${PKGNAME}"
 			msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
+			show_build_summary
 			show_log_info
 			set +e
 			exit 1
@@ -470,6 +473,7 @@ bset_job_status "stopped" "${ORIGINSPEC}" "${PKGNAME}"
 
 bset status "done:"
 
+show_build_summary
 show_log_info
 
 set +e
