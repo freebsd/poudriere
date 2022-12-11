@@ -760,8 +760,17 @@ assert_counts() {
 	esac
 }
 
+showfile() {
+	local file="$1"
+
+	{
+		msg "File '${file}':"
+		sed -e 's,^,'$'\t'',' "${file}"
+	} >&${REDIRECTED_STDERR_FD:-2}
+}
+
 do_poudriere() {
-	local verbose n
+	local verbose n file
 	local -
 
 	n=0
@@ -769,6 +778,16 @@ do_poudriere() {
 		[ -z "${verbose}" ] && verbose=-
 		verbose="${verbose}v"
 		n=$((n + 1))
+	done
+	for file in \
+	    "${POUDRIERE_ETC:?}/poudriere.d/"poudriere.conf \
+	    ${JAILNAME:+"${POUDRIERE_ETC:?}/poudriere.d/${JAILNAME}-poudriere.conf"} \
+	    ${SETNAME:+"${POUDRIERE_ETC:?}/poudriere.d/${SETNAME}-poudriere.conf"} \
+	    ${PTNAME:+"${POUDRIERE_ETC:?}/poudriere.d/${PTNAME}-poudriere.conf"} \
+	    ; do
+		if [ -r "${file}" ]; then
+			showfile "${file}"
+		fi
 	done
 	msg "Running: ${POUDRIEREPATH} -e ${POUDRIERE_ETC} -E ${verbose}" "$@"
 	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} -E ${verbose} "$@"
