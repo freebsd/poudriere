@@ -458,7 +458,7 @@ pkgqueue_find_dead_packages() {
 	# All packages in the queue
 	cut -d / -f 3 "${dead_all}" | sort -u -o "${dead_top}"
 	# All packages with dependencies
-	cut -d / -f 4 "${dead_all}" | sort -u | sed -e '/^$/d' > "${dead_deps}"
+	cut -d / -f 4 "${dead_all}" | sed -e '/^$/d' | sort -u -o "${dead_deps}"
 	# Find all packages only listed as dependencies (not in queue)
 	comm -13 "${dead_top}" "${dead_deps}" || return 1
 	rm -f "${dead_all}" "${dead_deps}" "${dead_top}" || :
