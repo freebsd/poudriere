@@ -458,7 +458,7 @@ do_bulk() {
 		verbose="${verbose}v"
 		n=$((n + 1))
 	done
-	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} bulk -CNt ${verbose} \
+	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} -E bulk -CNt ${verbose} \
 	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
 	    ${JFLAG:+-J ${JFLAG}} \
 	    -B "${BUILDNAME}" \

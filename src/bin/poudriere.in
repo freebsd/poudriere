@@ -77,7 +77,8 @@ EOF
 }
 
 SETX=""
-while getopts "Ade:Nvx" FLAG; do
+SETE=
+while getopts "Ade:ENvx" FLAG; do
 	case "${FLAG}" in
 	A)
 		env_set FORCE_COLORS '1'
@@ -91,6 +92,9 @@ while getopts "Ade:Nvx" FLAG; do
 			exit 1
 		fi
 		POUDRIERE_ETC="$OPTARG"
+		;;
+	E)
+		SETE=1
 		;;
 	N)
 		env_set USE_COLORS 'no'
@@ -204,7 +208,7 @@ $(export)
 EOF
 
 # set -e blacklist (default on otherwise)
-case "${CMD}" in
+case "${SETE}${CMD}" in
 jail|ports|daemon|status|options)
 	;;
 *)
