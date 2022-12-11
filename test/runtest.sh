@@ -19,7 +19,7 @@ while read var; do
 	TIMEOUT|\
 	PARALLEL_JOBS|\
 	VERBOSE|\
-	SH_DISABLE_VFORK|TRUSS|\
+	SH_DISABLE_VFORK|TIMESTAMP|TRUSS|\
 	TMPDIR|\
 	SH) ;;
 	*)
@@ -83,6 +83,7 @@ bulk*.sh) : ${TIMEOUT:=300} ;;
 locked_mkdir.sh) : ${TIMEOUT:=120} ;;
 esac
 : ${TIMEOUT:=90}
+: ${TIMESTAMP="${LIBEXECPREFIX}/timestamp" -t}
 
 [ "${am_check}" -eq 0 ] && [ -t 0 ] && export FORCE_COLORS=1
 exec < /dev/null
@@ -93,7 +94,7 @@ rm -f "${TEST}.log.truss"
 
 # With truss use --foreground to prevent process reaper and ptrace deadlocking.
 exec /usr/bin/timeout ${TRUSS:+--foreground} ${TIMEOUT} \
-    "${LIBEXECPREFIX}/timestamp" -t \
+    ${TIMESTAMP} \
     env \
     ${SH_DISABLE_VFORK:+SH_DISABLE_VFORK=1} \
     THISDIR="${THISDIR}" \
