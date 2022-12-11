@@ -1701,10 +1701,13 @@ jail_runs() {
 }
 
 porttree_list() {
-	local name method p
+	local name method p trees
 
 	[ -d ${POUDRIERED}/ports ] || return 0
-	for p in $(find ${POUDRIERED}/ports -type d -maxdepth 1 -mindepth 1 -print); do
+	trees="$(find "${POUDRIERED}/ports" -type d \
+	    -maxdepth 1 -mindepth 1 -print)" ||
+	    err "${EX_SOFTWARE}" "porttree_list: Failed to find port trees"
+	for p in ${trees}; do
 		name=${p##*/}
 		_pget mnt ${name} mnt || :
 		_pget method ${name} method || :
@@ -3343,7 +3346,7 @@ load_blacklist() {
 	local name=$1
 	local ptname=$2
 	local setname=$3
-	local bl b bfile
+	local bl b bfile ports
 
 	bl="- ${setname} ${ptname} ${name}"
 	if [ -n "${setname}" ]; then
@@ -3364,8 +3367,10 @@ load_blacklist() {
 		bfile=${b:+${b}-}blacklist
 		[ -f ${POUDRIERED}/${bfile} ] || continue
 		msg "Loading blacklist from ${POUDRIERED}/${bfile}"
-		for port in $(grep -h -v -E '(^[[:space:]]*#|^[[:space:]]*$)' \
-		    ${POUDRIERED}/${bfile} | sed -e 's|[[:space:]]*#.*||'); do
+		ports="$(grep -h -v -E '(^[[:space:]]*#|^[[:space:]]*$)' \
+		    "${POUDRIERED}/${bfile}" | sed -e 's|[[:space:]]*#.*||')" ||
+		    ports=
+		for port in ${ports}; do
 			case " ${BLACKLIST} " in
 			*\ ${port}\ *) continue;;
 			esac
@@ -6598,6 +6603,7 @@ check_dep_fatal_error() {
 gather_port_vars() {
 	required_env gather_port_vars PWD "${MASTER_DATADIR_ABS:?}"
 	local origin qorigin log originspec flavor rdep qlist qdir
+	local ports
 
 	# A. Lookup all port vars/deps from the given list of ports.
 	# B. For every dependency found (depqueue):
@@ -6684,7 +6690,9 @@ gather_port_vars() {
 
 	clear_dep_fatal_error
 	parallel_start
-	for originspec in $(listed_ports show_moved); do
+	ports="$(listed_ports show_moved)" ||
+	    err "${EX_SOFTWARE}" "gather_port_vars: listed_ports failure"
+	for originspec in ${ports}; do
 		originspec_decode "${originspec}" origin flavor ''
 		rdep="listed"
 		# For -a we skip the initial gatherqueue
@@ -7399,7 +7407,7 @@ _list_ports_dir() {
 	[ $# -eq 2 ] || eargs _list_ports_dir ptdir overlay
 	local ptdir="$1"
 	local overlay="$2"
-	local cat
+	local cat cats
 
 	# skip overlays with no categories listed
 	if [ ! -f "${ptdir}/Makefile" ]; then
@@ -7408,7 +7416,9 @@ _list_ports_dir() {
 	(
 		cd "${ptdir}"
 		ptdir="."
-		for cat in $(awk -F= '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print $2}' "${ptdir}/Makefile"); do
+		cats="$(awk -F= '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print $2}' "${ptdir}/Makefile")" ||
+		    err "${EX_SOFTWARE}" "_list_ports_dir: Failed to find categories"
+		for cat in ${cats}; do
 			# skip overlays with no ports hooked to the build
 			[ -f "${ptdir}/${cat}/Makefile" ] || continue
 			awk -F= -v cat=${cat} '$1 ~ /^[[:space:]]*SUBDIR[[:space:]]*\+/ {gsub(/[[:space:]]/, "", $2); print cat"/"$2}' "${ptdir}/${cat}/Makefile"

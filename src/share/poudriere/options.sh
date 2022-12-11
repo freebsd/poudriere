@@ -198,9 +198,11 @@ setup_makeconf ${__MAKE_CONF} "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 fetch_global_port_vars
 
 export TERM=${SAVED_TERM}
-for originspec in $(listed_ports show_moved); do
+ports="$(listed_ports show_moved)" ||
+    err "$?" "Failed to list ports"
+for originspec in ${ports}; do
 	originspec_decode "${originspec}" origin flavor ''
-	[ -d ${MASTERMNT}${PORTSDIR}/${origin} ] || err 1 "No such port: ${origin}"
+	[ -d "${MASTERMNT}${PORTSDIR:?}/${origin}" ] || err 1 "No such port: ${origin}"
 	env ${flavor:+FLAVOR=${flavor}} \
 	make PORT_DBDIR=${PORT_DBDIR} \
 		PORTSDIR=${MASTERMNT}${PORTSDIR} \

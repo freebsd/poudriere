@@ -161,7 +161,9 @@ for PTNAME in ${PTNAMES}; do
 	MASTERMNT= MASTERMNTREL= load_moved
 	msg "Gathering all expected distfiles for ports tree '${PTNAME}'"
 
-	for originspec in $(listed_ports show_moved); do
+	ports="$(listed_ports show_moved)" ||
+	    err "$?" "Failed to find ports for ${PTNAME}"
+	for originspec in ${ports}; do
 		parallel_run \
 		    prefix_stderr_quick \
 		    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \

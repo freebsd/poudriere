@@ -167,10 +167,11 @@ kill_job() {
 }
 
 kill_jobs() {
-	local pgid
+	local pgid jobs
 
 	msg_dev "Jobs: $(jobs -l)"
-	for pgid in $(jobs -p); do
+	jobs="$(jobs -p)"
+	for pgid in ${jobs}; do
 		kill_job 1 "${pgid}" || :
 	done
 }

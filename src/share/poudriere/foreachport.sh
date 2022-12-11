@@ -156,7 +156,9 @@ export PORTSDIR
 fetch_global_port_vars
 clear_dep_fatal_error
 parallel_start
-for originspec in $(listed_ports show_moved); do
+ports="$(listed_ports show_moved)" ||
+    err "$?" "Failed to list ports"
+for originspec in ${ports}; do
 	originspec_decode "${originspec}" origin flavor subpkg
 	parallel_run \
 	    prefix_stderr_quick \

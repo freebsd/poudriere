@@ -92,7 +92,7 @@ EOF
 
 list_jail() {
 	local format
-	local j name version arch method mnt timestamp time
+	local j name version arch method mnt timestamp time jails
 
 	if [ ${NAMEONLY} -eq 0 ]; then
 		format='%%-%ds %%-%ds %%-%ds %%-%ds %%-%ds %%-%ds'
@@ -105,7 +105,9 @@ list_jail() {
 		display_add JAILNAME
 	fi
 	[ -d ${POUDRIERED}/jails ] || return 0
-	for j in $(find ${POUDRIERED}/jails -type d -maxdepth 1 -mindepth 1 -print); do
+	jails="$(find "${POUDRIERED}/jails" -type d \
+	    -maxdepth 1 -mindepth 1 -print)"
+	for j in ${jails}; do
 		name=${j##*/}
 		if [ ${NAMEONLY} -eq 0 ]; then
 			_jget version ${name} version

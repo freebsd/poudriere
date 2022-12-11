@@ -93,6 +93,8 @@ cleanup_image() {
 }
 
 recursecopylib() {
+	local path libs i
+
 	path=$1
 	case $1 in
 	*/*) ;;
@@ -106,7 +108,8 @@ recursecopylib() {
 		fi
 		;;
 	esac
-	for i in $( (readelf -d ${mroot}/$path 2>/dev/null || :) | awk '$2 == "NEEDED" { gsub(/\[/,"", $NF ); gsub(/\]/,"",$NF) ; print $NF }'); do
+	libs="$( (readelf -d "${mroot}/${path}" 2>/dev/null || :) | awk '$2 == "NEEDED" { gsub(/\[/,"", $NF ); gsub(/\]/,"",$NF) ; print $NF }')"
+	for i in ${libs}; do
 		[ -f ${mroot}/lib/$i ] || recursecopylib $i
 	done
 }
