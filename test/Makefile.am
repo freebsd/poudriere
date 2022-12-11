@@ -78,6 +78,8 @@ JAIL_TESTS= \
 	bulk-build-self-immutable-base-nullfs.sh \
 	bulk-build-self-immutable-base-schg.sh \
 	bulk-build-self-immutable-base-yes.sh \
+	bulk-build-self-inc-build_as_non_root-no.sh \
+	bulk-build-self-inc-build_as_non_root-yes.sh \
 	bulk-build-skips.sh \
 	bulk-flavor-FLAVORS-misordered.sh \
 	bulk-flavor-all-and-specific.sh \

@@ -24,7 +24,7 @@ GH_TAGNAME=	3.0-2145-gdc462a9d
 GNU_CONFIGURE=	yes
 ETCDIR=		${PREFIX}/etc/poudriere.d
 
-OPTIONS_DEFINE=	ZSH EXAMPLES
+OPTIONS_DEFINE=	ZSH EXAMPLES CHECKROOT CHECKNONROOT
 OPTIONS_DEFAULT=ZSH
 OPTIONS_SUB=	yes
 
@@ -42,6 +42,14 @@ PLIST_SUB+=	RM=""
 .else
 PLIST_SUB+=	RM="@comment "
 .endif
+
+do-build-CHECKROOT-on:
+	if [ $$(id -u) -ne 0 ]; then false; fi
+	if [ ${UID} -ne 0 ]; then false; fi
+
+do-build-CHECKNONROOT-on:
+	if [ $$(id -u) -eq 0 ]; then false; fi
+	if [ ${UID} -eq 0 ]; then false; fi
 
 pre-install:
 	${REINPLACE_CMD} \
