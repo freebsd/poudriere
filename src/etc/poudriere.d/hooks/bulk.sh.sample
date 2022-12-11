@@ -1,14 +1,18 @@
 #!/bin/sh
 # /usr/local/etc/poudriere.d/hooks/bulk.sh
 
-EMAIL_FROM=an@example.com
-EMAIL_TO=another@example.com
+EMAIL_FROM=""
+EMAIL_TO=""
+USER_KEY=""
+API_KEY=""
+PUSHOVERURL="https://api.pushover.net/1/messages.json"
 
 status="$1"
 shift
 
 if [ "$status" = "start" ]; then
-        mail_subject="[${MASTERNAME}] bulk started on `hostname`"
+    if [ -n "$EMAIL_FROM" ] && [ -n "$EMAIL_TO" ]; then
+        mail_subject="[${MASTERNAME}] bulk started on $(hostname)"
 
         sendmail -f ${EMAIL_FROM} ${EMAIL_TO} << EOF
 To: ${EMAIL_TO}
@@ -16,9 +20,29 @@ Subject: ${mail_subject}
 
 Build URL:      ${BUILD_URL}
 EOF
+    fi
 
+    if [ -n "$USER_KEY" ] && [ -n "$API_KEY" ]; then
+        TITLE="[${MASTERNAME}] on $(hostname -s)"
+        MESSAGE="Bulk STARTED"
+        URL="${BUILD_URL}"
+        URL_TITLE="Build URL"
+
+        if command -v curl > /dev/null 2>&1; then
+            curl \
+                -F "token=${API_KEY}" \
+                -F "user=${USER_KEY}" \
+                -F "title=${TITLE}" \
+                -F "message=${MESSAGE}" \
+                -F "html=1" \
+                -F "url=${URL}" \
+                -F "url_title=${URL_TITLE}" \
+                "${PUSHOVERURL}" > /dev/null 2>&1
+        fi
+    fi
 elif [ "$status" = "crashed" ]; then
-        mail_subject="[${MASTERNAME}] bulk crashed on `hostname`"
+    if [ -n "$EMAIL_FROM" ] && [ -n "$EMAIL_TO" ]; then
+        mail_subject="[${MASTERNAME}] bulk crashed on $(hostname)"
 
         sendmail -f ${EMAIL_FROM} ${EMAIL_TO} << EOF
 To: ${EMAIL_TO}
@@ -26,15 +50,34 @@ Subject: ${mail_subject}
 
 Build URL:      ${BUILD_URL}
 EOF
+    fi
+    if [ -n "$USER_KEY" ] && [ -n "$API_KEY" ]; then
+        TITLE="[${MASTERNAME}] on $(hostname -s)"
+        MESSAGE="Bulk CRASHED"
+        URL="${BUILD_URL}"
+        URL_TITLE="Build URL"
+
+        if command -v curl > /dev/null 2>&1; then
+            curl \
+                -F "token=${API_KEY}" \
+                -F "user=${USER_KEY}" \
+                -F "title=${TITLE}" \
+                -F "message=${MESSAGE}" \
+                -F "html=1" \
+                -F "url=${URL}" \
+                -F "url_title=${URL_TITLE}" \
+                "${PUSHOVERURL}" > /dev/null 2>&1
+        fi
+    fi
 
 elif [ "$status" = "done" ]; then
-	n_built=$1
-	n_failed=$2
-	n_ignored=$3
-	n_skipped=$4
-	n_total=$((n_built + n_failed + n_ignored + n_skipped))
+    n_built=$1
+    n_failed=$2
+    n_ignored=$3
+    n_skipped=$4
 
-        mail_subject="[RELEASE - ${MASTERNAME}] bulk done on `hostname`"
+    if [ -n "$EMAIL_FROM" ] && [ -n "$EMAIL_TO" ]; then
+        mail_subject="[RELEASE - ${MASTERNAME}] bulk done on $(hostname)"
 
         sendmail -f ${EMAIL_FROM} ${EMAIL_TO} << EOF
 To: ${EMAIL_TO}
@@ -46,7 +89,31 @@ Failed:         ${n_failed}
 Ignored:        ${n_ignored}
 Skipped:        ${n_skipped}
 EOF
+    fi
+    if [ -n "$USER_KEY" ] && [ -n "$API_KEY" ]; then
+        TITLE="[${MASTERNAME}] on $(hostname -s)"
+        MESSAGE="Bulk DONE
+        Built: <font color=#00cc00>${n_built}</font>
+        Failed: <font color=#E00000>${n_failed}</font>
+        Ignored: <font color=#FF9900>${n_ignored}</font>
+        Skipped: <font color=#CC6633>${n_skipped}</font>"
+        URL="${BUILD_URL}"
+        URL_TITLE="Build URL"
 
+        if [ "$n_failed" -ne 0 ] || [ "$n_ignored" -ne 0 ] || [ "$n_skipped" -ne 0 ]; then
+            if command -v curl > /dev/null 2>&1; then
+                curl \
+                    -F "token=${API_KEY}" \
+                    -F "user=${USER_KEY}" \
+                    -F "title=${TITLE}" \
+                    -F "message=${MESSAGE}" \
+                    -F "html=1" \
+                    -F "url=${URL}" \
+                    -F "url_title=${URL_TITLE}" \
+                    "${PUSHOVERURL}" > /dev/null 2>&1
+            fi
+        fi
+    fi
 fi
 
 exit 0
