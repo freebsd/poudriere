@@ -7757,12 +7757,14 @@ gather_port_vars_process_depqueue() {
 }
 
 
-compute_deps() {
-	required_env compute_deps PWD "${MASTER_DATADIR_ABS:?}"
+generate_queue() {
+	required_env generate_queue PWD "${MASTER_DATADIR_ABS:?}"
 	local pkgname originspec dep_pkgname _rdep _ignored
 
+	pkgqueue_init
 	msg "Calculating ports order and dependencies"
 	bset status "computingdeps:"
+	run_hook generate_queue start
 	run_hook compute_deps start
 
 	:> "${MASTER_DATADIR:?}/pkg_deps.unsorted"
@@ -7771,7 +7773,7 @@ compute_deps() {
 	parallel_start
 	while mapfile_read_loop "${MASTER_DATADIR:?}/all_pkgs" \
 	    pkgname originspec _rdep _ignored; do
-		parallel_run compute_deps_pkg "${pkgname}" "${originspec}" \
+		parallel_run generate_queue_pkg "${pkgname}" "${originspec}" \
 		    "${MASTER_DATADIR}/pkg_deps.unsorted" || set_dep_fatal_error
 	done
 	if ! parallel_stop || check_dep_fatal_error; then
@@ -7787,12 +7789,13 @@ compute_deps() {
 	find deps rdeps > "pkg_pool"
 
 	run_hook compute_deps stop
+	run_hook generate_queue stop
 	return 0
 }
 
-compute_deps_pkg() {
-	required_env compute_deps_pkg SHASH_VAR_PATH "var/cache"
-	[ $# -eq 3 ] || eargs compute_deps_pkg pkgname originspec pkg_deps
+generate_queue_pkg() {
+	required_env generate_queue_pkg SHASH_VAR_PATH "var/cache"
+	[ $# -eq 3 ] || eargs generate_queue_pkg pkgname originspec pkg_deps
 	local pkgname="$1"
 	local originspec="$2"
 	local pkg_deps="$3"
@@ -7801,16 +7804,16 @@ compute_deps_pkg() {
 
 	# Safe to remove pkgname-deps now, it won't be needed later.
 	shash_remove pkgname-deps "${pkgname}" deps || \
-	    err 1 "compute_deps_pkg failed to find deps for ${COLOR_PORT}${pkgname}${COLOR_RESET}"
+	    err 1 "generate_queue_pkg failed to find deps for ${COLOR_PORT}${pkgname}${COLOR_RESET}"
 
 	# Don't bother relating dependencies of IGNORED ports.
 	if shash_exists pkgname-ignore "${pkgname}"; then
-		msg_debug "compute_deps_pkg: Will not build IGNORED ${COLOR_PORT}${pkgname}${COLOR_RESET} nor queue its deps"
+		msg_debug "generate_queue_pkg: Will not build IGNORED ${COLOR_PORT}${pkgname}${COLOR_RESET} nor queue its deps"
 		return
 	fi
-	msg_debug "compute_deps_pkg: Will build ${COLOR_PORT}${pkgname}${COLOR_RESET}"
+	msg_debug "generate_queue_pkg: Will build ${COLOR_PORT}${pkgname}${COLOR_RESET}"
 	pkgqueue_add "${pkgname}" || \
-	    err 1 "compute_deps_pkg: Error creating queue entry for ${COLOR_PORT}${pkgname}${COLOR_RESET}: There may be a duplicate origin in a category Makefile"
+	    err 1 "generate_queue_pkg: Error creating queue entry for ${COLOR_PORT}${pkgname}${COLOR_RESET}: There may be a duplicate origin in a category Makefile"
 
 	for dep_originspec in ${deps}; do
 		if ! get_pkgname_from_originspec "${dep_originspec}" \
@@ -7818,21 +7821,21 @@ compute_deps_pkg() {
 			originspec_decode "${dep_originspec}" dep_origin \
 			    dep_flavor dep_subpkg
 			if [ ${ALL} -eq 0 ]; then
-				msg_error "compute_deps_pkg failed to lookup pkgname for ${COLOR_PORT}${dep_originspec}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET} from ${COLOR_PORT}${originspec}${COLOR_RESET}${dep_flavor:+ -- Does ${COLOR_PORT}${dep_origin}${COLOR_RESET} provide the '${dep_flavor}' FLAVOR?}"
+				msg_error "generate_queue_pkg failed to lookup pkgname for ${COLOR_PORT}${dep_originspec}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET} from ${COLOR_PORT}${originspec}${COLOR_RESET}${dep_flavor:+ -- Does ${COLOR_PORT}${dep_origin}${COLOR_RESET} provide the '${dep_flavor}' FLAVOR?}"
 			else
-				msg_error "compute_deps_pkg failed to lookup pkgname for ${COLOR_PORT}${dep_originspec}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET} from ${COLOR_PORT}${originspec}${COLOR_RESET} -- Is SUBDIR+=${COLOR_PORT}${dep_origin#*/}${COLOR_RESET} missing in ${COLOR_PORT}${dep_origin%/*}${COLOR_RESET}/Makefile?${dep_flavor:+ And does the port provide the '${dep_flavor}' FLAVOR?}"
+				msg_error "generate_queue_pkg failed to lookup pkgname for ${COLOR_PORT}${dep_originspec}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET} from ${COLOR_PORT}${originspec}${COLOR_RESET} -- Is SUBDIR+=${COLOR_PORT}${dep_origin#*/}${COLOR_RESET} missing in ${COLOR_PORT}${dep_origin%/*}${COLOR_RESET}/Makefile?${dep_flavor:+ And does the port provide the '${dep_flavor}' FLAVOR?}"
 			fi
 			set_dep_fatal_error
 			continue
 		fi
-		msg_debug "compute_deps_pkg: Will build ${COLOR_PORT}${dep_originspec}${COLOR_RESET} for ${COLOR_PORT}${pkgname}${COLOR_RESET}"
+		msg_debug "generate_queue_pkg: Will build ${COLOR_PORT}${dep_originspec}${COLOR_RESET} for ${COLOR_PORT}${pkgname}${COLOR_RESET}"
 		pkgqueue_add_dep "${pkgname}" "${dep_pkgname}"
 		echo "${pkgname} ${dep_pkgname}"
 		case "${CHECK_CHANGED_DEPS}" in
 		"no") ;;
 		*)
 			# Cache for call later in this func
-			hash_set compute_deps_originspec-pkgname \
+			hash_set generate_queue_originspec-pkgname \
 			    "${dep_originspec}" "${dep_pkgname}"
 			;;
 		esac
@@ -7878,9 +7881,9 @@ compute_deps_pkg() {
 					;;
 				esac
 				if ! hash_get \
-				    compute_deps_originspec-pkgname \
+				    generate_queue_originspec-pkgname \
 				    "${dpath}" dep_real_pkgname; then
-					msg_error "compute_deps_pkg failed to lookup PKGNAME for ${COLOR_PORT}${dpath}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET}"
+					msg_error "generate_queue_pkg failed to lookup PKGNAME for ${COLOR_PORT}${dpath}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET}"
 					set_dep_fatal_error
 					continue
 				fi
@@ -8416,8 +8419,6 @@ prepare_ports() {
 	local n resuming_build
 	local cache_dir sflag delete_pkg_list shash_bucket
 
-	pkgqueue_init
-
 	cd "${MASTER_DATADIR:?}"
 	case "${SHASH_VAR_PATH:?}" in
 	"var/cache") ;;
@@ -8506,7 +8507,7 @@ prepare_ports() {
 
 	gather_port_vars
 
-	compute_deps
+	generate_queue
 
 	bset status "sanity:"
 
