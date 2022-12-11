@@ -387,8 +387,6 @@ fi
 
 if [ $ret -eq 1 ]; then
 	[ "${NO_RESTRICTED}" != "no" ] && clean_restricted
-	delete_stale_symlinks_and_empty_dirs
-	delete_stale_pkg_cache
 	if [ ${BUILD_REPO} -eq 1 ]; then
 		if [ ${DO_ALL} -eq 1 ]; then
 			msg "Removing pkg repository files"
@@ -404,6 +402,8 @@ if [ $ret -eq 1 ]; then
 			build_repo
 		fi
 	fi
+	delete_stale_symlinks_and_empty_dirs
+	delete_stale_pkg_cache
 	if [ ${DO_ALL} -eq 1 ]; then
 		msg "Cleaned all packages but ${PACKAGES} may need to be removed manually."
 	fi
