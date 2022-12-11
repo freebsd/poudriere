@@ -489,6 +489,7 @@ JAIL_TESTS = \
 	bulk-build-inc-pkgclean-flavor.sh \
 	bulk-build-inc-pkgclean-origin.sh \
 	bulk-build-multiple-eligible-in-queue.sh \
+	bulk-build-self-immutable-base-no.sh \
 	bulk-build-self-immutable-base-nullfs.sh \
 	bulk-build-self-immutable-base-schg.sh \
 	bulk-build-self-immutable-base-yes.sh \
@@ -1128,6 +1129,13 @@ bulk-build-inc-pkgclean-origin.sh.log: bulk-build-inc-pkgclean-origin.sh
 bulk-build-multiple-eligible-in-queue.sh.log: bulk-build-multiple-eligible-in-queue.sh
 	@p='bulk-build-multiple-eligible-in-queue.sh'; \
 	b='bulk-build-multiple-eligible-in-queue.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-self-immutable-base-no.sh.log: bulk-build-self-immutable-base-no.sh
+	@p='bulk-build-self-immutable-base-no.sh'; \
+	b='bulk-build-self-immutable-base-no.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
