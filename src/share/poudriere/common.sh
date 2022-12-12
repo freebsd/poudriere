@@ -4372,17 +4372,23 @@ sanity_check_pkg() {
 	[ $# -eq 1 ] || eargs sanity_check_pkg pkg
 	local pkg="$1"
 	local compiled_deps_pkgnames pkgname dep_pkgname
+	local pkgfile
 
-	pkgname="${pkg##*/}"
-	pkgname="${pkgname%.*}"
+	pkgfile="${pkg##*/}"
+	pkgname="${pkgfile%.*}"
 	# IGNORED and skipped packages are still deleted here so we don't
 	# provide an inconsistent repository.
 	pkgbase_is_needed "${pkgname}" || return 0
-	pkg_get_dep_origin_pkgnames '' compiled_deps_pkgnames "${pkg}"
+	compiled_deps_pkgnames=
+	if ! pkg_get_dep_origin_pkgnames '' compiled_deps_pkgnames "${pkg}"; then
+		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: corrupted package (deps)"
+		delete_pkg "${pkg}"
+		return 65	# Package deleted, need another pass
+	fi
 	for dep_pkgname in ${compiled_deps_pkgnames}; do
 		if [ ! -e "${PACKAGES:?}/All/${dep_pkgname}.${PKG_EXT}" ]; then
 			msg_debug "${COLOR_PORT}${pkg}${COLOR_RESET} needs missing ${COLOR_PORT}${dep_pkgname}${COLOR_RESET}"
-			msg "Deleting ${COLOR_PORT}${pkg##*/}${COLOR_RESET}: missing dependency: ${COLOR_PORT}${dep_pkgname}${COLOR_RESET}"
+			msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: missing dependency: ${COLOR_PORT}${dep_pkgname}${COLOR_RESET}"
 			delete_pkg "${pkg}"
 			return 65	# Package deleted, need another pass
 		fi
@@ -6241,7 +6247,7 @@ delete_old_pkg() {
 	pkg_flavor=
 	originspec=
 	if ! pkg_get_originspec originspec "${pkg}"; then
-		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: corrupted package"
+		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: corrupted package (origin)"
 		delete_pkg "${pkg}"
 		return 0
 	fi
@@ -6327,7 +6333,14 @@ delete_old_pkg() {
 	esac
 
 	# Compare ABI
-	if pkg_get_arch pkg_arch "${pkg}"; then
+	pkg_arch=
+	if ! pkg_get_arch pkg_arch "${pkg}"; then
+		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: corrupted package (pkg_arch)"
+		delete_pkg "${pkg}"
+		return 0
+	fi
+	case "${pkg_arch:+set}" in
+	set)
 		arch="${P_PKG_ABI:?}"
 		if shash_remove pkgname-no_arch "${pkgname}" no_arch; then
 			arch="${arch%:*}:*"
@@ -6340,7 +6353,8 @@ delete_old_pkg() {
 			return 0
 			;;
 		esac
-	fi
+		;;
+	esac
 
 	if have_ports_feature FLAVORS; then
 		shash_get pkgname-flavor "${pkgname}" flavor || flavor=
@@ -6459,8 +6473,14 @@ delete_old_pkg() {
 		done
 		case "${current_deps:+set}" in
 		set)
-			pkg_get_dep_origin_pkgnames \
-			    compiled_deps compiled_deps_pkgnames "${pkg}"
+			compiled_deps=
+			compiled_deps_pkgnames=
+			if ! pkg_get_dep_origin_pkgnames \
+			    compiled_deps compiled_deps_pkgnames "${pkg}"; then
+				msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: corrupted package (deps)"
+				delete_pkg "${pkg}"
+				return 0
+			fi
 			for compiled_deps_pkgname in \
 			    ${compiled_deps_pkgnames}; do
 				compiled_deps_pkgbases="${compiled_deps_pkgbases:+${compiled_deps_pkgbases} }${compiled_deps_pkgname%-*}"
@@ -6542,8 +6562,12 @@ delete_old_pkg() {
 			    sort -k1.2 | \
 			    paste -d ' ' -s -)
 		fi
-		pkg_get_options compiled_options "${pkg}"
-
+		compiled_options=
+		if ! pkg_get_options compiled_options "${pkg}"; then
+			msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: corrupted package (options)"
+			delete_pkg "${pkg}"
+			return 0
+		fi
 		case "${compiled_options}" in
 		"${current_options}") ;;
 		*)

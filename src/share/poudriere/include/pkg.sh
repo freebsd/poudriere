@@ -68,9 +68,6 @@ pkg_get_origin() {
 	-) echo "${_origin}" ;;
 	*) setvar "${var_return}" "${_origin}" ;;
 	esac
-	case "${_origin-}" in
-	"") return 1 ;;
-	esac
 }
 
 pkg_get_annotations() {
@@ -93,7 +90,8 @@ pkg_get_annotations() {
 	*)
 		shash_read_mapfile 'pkg' 'annotations' "${pga_mapfile_var}"
 		;;
-	esac
+	esac ||
+	    err "${EX_SOFTWARE}" "pkg_get_annotations: Failed to read cache just written"
 }
 
 pkg_get_annotation() {
@@ -159,9 +157,6 @@ pkg_get_arch() {
 	"") ;;
 	-) echo "${_arch}" ;;
 	*) setvar "${var_return}" "${_arch}" ;;
-	esac
-	case "${_arch}" in
-	"") return 1 ;;
 	esac
 }
 
@@ -255,8 +250,8 @@ pkg_cache_data() {
 	ensure_pkg_installed || return 0
 	{
 		pkg_get_options '' "${pkg}"
-		pkg_get_origin '' "${pkg}" "${origin}" || :
-		pkg_get_arch '' "${pkg}" || :
+		pkg_get_origin '' "${pkg}" "${origin}"
+		pkg_get_arch '' "${pkg}"
 		pkg_get_annotations '' "${pkg}"
 		pkg_get_dep_origin_pkgnames '' '' "${pkg}"
 	} >/dev/null

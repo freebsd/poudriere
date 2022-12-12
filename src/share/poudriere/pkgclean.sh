@@ -217,6 +217,7 @@ should_delete() {
 	pkgname="${pkgname%.*}"
 	ret=0
 
+	originspec=
 	if ! pkg_get_originspec originspec "${pkgfile}"; then
 		msg_verbose "Found corrupt package: ${pkgfile}"
 		return 0 # delete
@@ -262,6 +263,7 @@ should_delete_listed() {
 	local pkgname="$3"
 	local dep_origin compiled_deps
 
+	compiled_deps=
 	if originspec_is_listed "${originspec}"; then
 		msg_verbose "Found specified package (${COLOR_PORT}${originspec}${COLOR_RESET}): ${pkgfile}"
 		return 0 # delete
