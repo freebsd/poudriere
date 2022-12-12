@@ -534,6 +534,7 @@ JAIL_TESTS = \
 	bulk-ignore-listed-dep.sh \
 	bulk-ignore-listed-skipped-dep.sh \
 	bulk-ignore-listed.sh \
+	bulk-ignore-one-dep-but-not-other.sh \
 	bulk-no-overlay-specific.sh \
 	bulk-overlay-all.sh \
 	bulk-overlay-specific.sh \
@@ -1446,6 +1447,13 @@ bulk-ignore-listed-skipped-dep.sh.log: bulk-ignore-listed-skipped-dep.sh
 bulk-ignore-listed.sh.log: bulk-ignore-listed.sh
 	@p='bulk-ignore-listed.sh'; \
 	b='bulk-ignore-listed.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-ignore-one-dep-but-not-other.sh.log: bulk-ignore-one-dep-but-not-other.sh
+	@p='bulk-ignore-one-dep-but-not-other.sh'; \
+	b='bulk-ignore-one-dep-but-not-other.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

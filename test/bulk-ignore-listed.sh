@@ -1,4 +1,5 @@
 LISTPORTS="ports-mgmt/poudriere-devel ports-mgmt/poudriere-devel-IGNORED"
+# Similar to bulk-ignore-one-dep-but-not-other.sh and bulk-ignore-listed-dep.sh
 # ports-mgmt/poudriere-devel-IGNORED depends on misc/foo but it should
 # not show up at all.
 OVERLAYS="omnibus"
