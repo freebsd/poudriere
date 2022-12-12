@@ -781,6 +781,7 @@ do_poudriere() {
 	done
 	for file in \
 	    "${POUDRIERE_ETC:?}/poudriere.d/"poudriere.conf \
+	    ${JAILNAME:+"${POUDRIERE_ETC:?}/poudriere.d/${MASTERNAME:?}-poudriere.conf"} \
 	    ${JAILNAME:+"${POUDRIERE_ETC:?}/poudriere.d/${JAILNAME}-poudriere.conf"} \
 	    ${SETNAME:+"${POUDRIERE_ETC:?}/poudriere.d/${SETNAME}-poudriere.conf"} \
 	    ${PTNAME:+"${POUDRIERE_ETC:?}/poudriere.d/${PTNAME}-poudriere.conf"} \
@@ -824,6 +825,8 @@ _setup_overlays() {
 }
 
 _setup_build() {
+	local __MAKE_CONF __make_conf_orig
+
 	if [ ${ALL:-0} -eq 0 ]; then
 		assert_not "" "${LISTPORTS}" "LISTPORTS empty"
 	fi
@@ -840,6 +843,13 @@ _setup_build() {
 		LISTPORTS="$(echo "${LISTPORTS}" | tr ' ' '\n' |
 		    sed -e 's,$,@all,' | paste -s -d ' ' -)"
 	fi
+	__make_conf_orig="${__MAKE_CONF}"
+	__MAKE_CONF="$(mktemp -ut make.conf)"
+	cat "${__make_conf_orig}" \
+	    "${POUDRIERE_ETC:?}/poudriere.d/${MASTERNAME:?}-make.conf" \
+	    > "${__MAKE_CONF}"
+	export __MAKE_CONF
+	showfile "${__MAKE_CONF}"
 	echo -n "Gathering metadata for requested ports..."
 	for origin in ${LISTPORTS}; do
 		cache_pkgnames 0 "${origin}" || :
@@ -850,6 +860,7 @@ _setup_build() {
 	assert_not "null" "${P_PORTS_FEATURES-null}" "fetch_global_port_vars should work"
 	echo "Building: $(echo ${LISTPORTS_EXPANDED})"
 	newbuild
+	rm -f "${__MAKE_CONF}"
 }
 
 do_bulk() {
@@ -1245,20 +1256,43 @@ export __MAKE_CONF="${POUDRIERE_ETC}/poudriere.d/make.conf"
 export SRCCONF=/dev/null
 export SRC_ENV_CONF=/dev/null
 export PACKAGE_BUILDING=yes
+MASTERNAME="${JAILNAME:?}-${PTNAME:?}-${SETNAME:?}"
+_mastermnt MASTERMNT
 
-write_atomic_cmp "${POUDRIERE_ETC}/poudriere.d/${SETNAME}-poudriere.conf" << EOF
-${FLAVOR_DEFAULT_ALL:+FLAVOR_DEFAULT_ALL=${FLAVOR_DEFAULT_ALL}}
-${FLAVOR_ALL:+FLAVOR_ALL=${FLAVOR_ALL}}
-${IMMUTABLE_BASE:+IMMUTABLE_BASE=${IMMUTABLE_BASE}}
-${BUILD_AS_NON_ROOT:+BUILD_AS_NON_ROOT=${BUILD_AS_NON_ROOT}}
+set_poudriere_conf() {
+	local poudriere_conf
+
+	# Compat - Remove older setname-poudriere.conf which multiple checkouts
+	# could race on.
+	poudriere_conf="${POUDRIERE_ETC:?}/poudriere.d/${SETNAME:?}-poudriere.conf"
+	rm -f "${poudriere_conf}"
+
+	poudriere_conf="${POUDRIERE_ETC:?}/poudriere.d/${MASTERNAME:?}-poudriere.conf"
+	msg "Updating ${poudriere_conf}" >&2
+	write_atomic_cmp "${poudriere_conf}" <<-EOF
+	${FLAVOR_DEFAULT_ALL:+FLAVOR_DEFAULT_ALL=${FLAVOR_DEFAULT_ALL}}
+	${FLAVOR_ALL:+FLAVOR_ALL=${FLAVOR_ALL}}
+	${IMMUTABLE_BASE:+IMMUTABLE_BASE=${IMMUTABLE_BASE}}
+	${BUILD_AS_NON_ROOT:+BUILD_AS_NON_ROOT=${BUILD_AS_NON_ROOT}}
+	$(cat)
+	EOF
+	showfile "${poudriere_conf}"
+}
+set_poudriere_conf <<-EOF
 EOF
 
 set_make_conf() {
 	local make_conf
 
-	make_conf="${POUDRIERE_ETC:?}/poudriere.d/${SETNAME}-make.conf"
-	msg "Setting ${make_conf} to:" >&2
-	tee /dev/stderr | write_atomic_cmp "${make_conf}"
+	# Compat - Remove older setname-make.conf which multiple checkouts
+	# could race on.
+	make_conf="${POUDRIERE_ETC:?}/poudriere.d/${SETNAME:?}-make.conf"
+	rm -f "${make_conf}"
+
+	make_conf="${POUDRIERE_ETC:?}/poudriere.d/${MASTERNAME:?}-make.conf"
+	msg "Updating ${make_conf}" >&2
+	write_atomic_cmp "${make_conf}"
+	showfile "${make_conf}"
 }
 # Start empty
 set_make_conf <<-EOF
@@ -1279,8 +1313,6 @@ echo " done"
 pset "${PTNAME}" mnt "${PTMNT}"
 pset "${PTNAME}" method "-"
 
-MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
-_mastermnt MASTERMNT
 export POUDRIERE_BUILD_TYPE=bulk
 : ${PACKAGES:=${POUDRIERE_DATA:?}/packages/${MASTERNAME:?}}
 : ${LOCALBASE:=/usr/local}
