@@ -85,7 +85,6 @@ bulk_cleanup() {
 }
 
 PTNAME="default"
-SKIP_RECURSIVE_REBUILD=0
 SETNAME=""
 CLEAN=0
 CLEAN_LISTED=0
