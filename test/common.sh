@@ -50,6 +50,7 @@ EOF
 write_atomic_cmp "${POUDRIERE_ETC}/poudriere.d/make.conf" << EOF
 DEFAULT_VERSIONS+=	ssl=base
 PKG_NOCOMPRESS=		t
+PKG_COMPRESSION_FORMAT=	tar
 EOF
 
 : ${VERBOSE:=1}
