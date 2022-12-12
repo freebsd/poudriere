@@ -496,6 +496,7 @@ JAIL_TESTS = \
 	bulk-build-self-inc-build_as_non_root-no.sh \
 	bulk-build-self-inc-build_as_non_root-yes.sh \
 	bulk-build-skips.sh \
+	bulk-build-specific-bad-flavor.sh \
 	bulk-flavor-FLAVORS-misordered.sh \
 	bulk-flavor-all-and-specific.sh \
 	bulk-flavor-default-dep-and-specific-listed.sh \
@@ -1181,6 +1182,13 @@ bulk-build-self-inc-build_as_non_root-yes.sh.log: bulk-build-self-inc-build_as_n
 bulk-build-skips.sh.log: bulk-build-skips.sh
 	@p='bulk-build-skips.sh'; \
 	b='bulk-build-skips.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-specific-bad-flavor.sh.log: bulk-build-specific-bad-flavor.sh
+	@p='bulk-build-specific-bad-flavor.sh'; \
+	b='bulk-build-specific-bad-flavor.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

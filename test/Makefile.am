@@ -81,6 +81,7 @@ JAIL_TESTS= \
 	bulk-build-self-inc-build_as_non_root-no.sh \
 	bulk-build-self-inc-build_as_non_root-yes.sh \
 	bulk-build-skips.sh \
+	bulk-build-specific-bad-flavor.sh \
 	bulk-flavor-FLAVORS-misordered.sh \
 	bulk-flavor-all-and-specific.sh \
 	bulk-flavor-default-dep-and-specific-listed.sh \
