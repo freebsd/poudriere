@@ -466,10 +466,16 @@ coprocess_start() {
 coprocess_stop() {
 	[ $# -eq 1 ] || eargs coprocess_stop name
 	local name="$1"
+	local ret
 
 	hash_get coprocess_pid "${name}" pid || return 0
 	hash_unset coprocess_pid "${name}"
 
 	# kill -> timeout wait -> kill -9
-	kill_and_wait 60 "${pid}" || :
+	ret=0
+	kill_and_wait 60 "${pid}" || ret="$?"
+	case "${ret}" in
+	143) ret=0 ;;
+	esac
+	return "${ret}"
 }

@@ -1460,8 +1460,16 @@ exit_handler() {
 	if was_a_bulk_run; then
 		# build_queue socket
 		exec 6>&- || :
-		coprocess_stop pkg_cacher
-		coprocess_stop html_json
+		coprocess_stop pkg_cacher ||
+		{
+			msg_warn "pkg_cacher exited with status $?"
+			EXIT_STATUS=$((EXIT_STATUS + 1))
+		}
+		coprocess_stop html_json ||
+		{
+			msg_warn "html_json exited with $?"
+			EXIT_STATUS=$((EXIT_STATUS + 1))
+		}
 	fi
 
 	if [ "${STATUS}" -eq 1 ]; then
@@ -5456,7 +5464,11 @@ parallel_build() {
 
 	bset status "stopping_jobs:"
 	stop_builders
-	coprocess_stop pkg_cacher
+	coprocess_stop pkg_cacher ||
+	{
+		msg_warn "pkg_cacher exited with status $?"
+		EXIT_STATUS=$((${EXIT_STATUS:-0} + 1))
+	}
 
 	bset status "updating_stats:"
 	update_stats || msg_warn "Error updating build stats"
