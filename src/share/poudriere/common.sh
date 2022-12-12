@@ -161,6 +161,10 @@ _err() {
 		fi
 		exit $1
 	else
+		case "$1" in
+		0) ;;
+		*) EXIT_STATUS="$1" ;;
+		esac
 		return 0
 	fi
 }
@@ -1509,6 +1513,7 @@ exit_handler() {
 	if [ "${ERROR_VERBOSE}" -eq 1 ]; then
 		echo "Exiting with status ${EXIT_STATUS}" >&2 || :
 	fi
+	exit "${EXIT_STATUS}"
 }
 
 build_url() {
