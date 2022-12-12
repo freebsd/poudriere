@@ -5730,7 +5730,7 @@ delete_old_pkg() {
 	local td d key dpath dir found raw_deps compiled_deps
 	local pkg_origin compiled_deps_pkgnames compiled_deps_pkgbases
 	local compiled_deps_pkgname compiled_deps_origin compiled_deps_new
-	local pkgbase new_pkgbase flavor pkg_flavor pkg_subpkg originspec
+	local pkgbase new_pkgbase flavor flavors pkg_flavor pkg_subpkg originspec
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor
 	local ignore new_origin stale_pkg
 	local pkg_arch no_arch arch is_sym
@@ -5899,6 +5899,16 @@ delete_old_pkg() {
 			delete_pkg "${pkg}"
 			return 0
 		fi
+
+		shash_get origin-flavors "${origin}" flavors || flavors=
+		case " ${flavors} " in
+		*" ${pkg_flavor} "*) ;;
+		*)
+			msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: FLAVOR '${pkg_flavor}' no longer provided. Now: '${flavors}'"
+			delete_pkg "${pkg}"
+			return 0
+			;;
+		esac
 	fi
 
 	# Detect ports that have new dependencies that the existing packages
