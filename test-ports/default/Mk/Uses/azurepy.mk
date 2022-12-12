@@ -1,5 +1,3 @@
-# $FreeBSD: head/Mk/Uses/azurepy.mk 494445 2019-03-02 18:01:21Z sunpoet $
-#
 # Shared namespace for py-azure-* ports
 # Feature:	azurepy
 # Usage:	USES=	azurepy

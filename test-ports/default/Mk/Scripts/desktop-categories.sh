@@ -1,9 +1,9 @@
 #!/bin/sh
-# $FreeBSD: head/Mk/Scripts/desktop-categories.sh 516635 2019-11-04 11:57:46Z lwhsu $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 
 set -e
+set -o pipefail
 
 . "${dp_SCRIPTSDIR}/functions.sh"
 
@@ -32,6 +32,7 @@ for native_category in ${dp_CATEGORIES}; do
 		dns)		c="Network"				;;
 		elisp)		c="Development"				;;
 		editors)	c="Utility"				;;
+		education)	c="Education"				;;
 		emulators)	c="System Emulator"			;;
 		finance)	c="Office Finance"			;;
 		ftp)		c="Network FileTransfer"		;;

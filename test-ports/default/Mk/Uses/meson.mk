@@ -1,5 +1,3 @@
-# $FreeBSD: head/Mk/Uses/meson.mk 493957 2019-02-26 09:36:29Z 0mp $
-#
 # Provide support for Meson based projects
 #
 # Feature:		meson
@@ -22,11 +20,11 @@
 _INCLUDE_USES_MESON_MK=	yes
 
 # Sanity check
-.if !empty(meson_ARGS)
+.  if !empty(meson_ARGS)
 IGNORE=	Incorrect 'USES+= meson:${meson_ARGS}'. meson takes no arguments
-.endif
+.  endif
 
-BUILD_DEPENDS+=		meson:devel/meson
+BUILD_DEPENDS+=		meson>=0.57.1_1:devel/meson
 
 # meson uses ninja
 .include "${USESDIR}/ninja.mk"
@@ -38,16 +36,21 @@ CONFIGURE_ARGS+=	--prefix ${PREFIX} \
 			--mandir man \
 			--infodir ${INFO_PATH}
 
+# Disable color output.  Meson forces it on by default, Ninja
+# strips it before it goes to the log, but Samurai does not, so we
+# might end up with ANSI escape sequences in the logs.
+CONFIGURE_ARGS+=	-Db_colorout=never
+
 # meson has it own strip mechanic
 INSTALL_TARGET=		install
 
 # should we have strip separate from WITH_DEBUG?
-.if defined(WITH_DEBUG)
+.  if defined(WITH_DEBUG)
 CONFIGURE_ARGS+=	--buildtype debug
-.else
+.  else
 CONFIGURE_ARGS+=	--buildtype release \
 			--strip
-.endif
+.  endif
 
 HAS_CONFIGURE=		yes
 CONFIGURE_CMD=		meson

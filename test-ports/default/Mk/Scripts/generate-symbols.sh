@@ -1,5 +1,4 @@
 #! /bin/sh
-# $FreeBSD: head/Mk/Scripts/generate-symbols.sh 517011 2019-11-07 20:49:17Z bdrewery $
 # Maintainer: portmgr@FreeBSD.org
 #
 # This script will find all ELF files in STAGEDIR and then strip and move
@@ -8,6 +7,8 @@
 # /var/qmail/bin/qmaild -> /usr/local/lib/debug/var/qmail/bin/qmaild.debug
 # /usr/local/bin/ssh    -> /usr/local/lib/debug/usr/local/bin/ssh.debug
 LIB_DIR_PREFIX="${LOCALBASE}/lib/debug"
+
+set -o pipefail
 
 msg() {
         echo "====> $*"

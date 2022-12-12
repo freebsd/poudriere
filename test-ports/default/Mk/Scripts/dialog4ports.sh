@@ -1,7 +1,7 @@
 #! /bin/sh
-# $FreeBSD: head/Mk/Scripts/dialog4ports.sh 415573 2016-05-20 19:01:59Z mat $
 # Maintainer: portmgr@FreeBSD.org
 set -e
+set -o pipefail
 
 [ -n "${DEBUG_MK_SCRIPTS}" -o -n "${DEBUG_MK_SCRIPTS_DIALOG4PORTS}" ] && set -x
 

@@ -1,7 +1,8 @@
 #! /bin/sh
 
 # MAINTAINER: portmgr@FreeBSD.org
-# $FreeBSD: head/Mk/Scripts/ports_env.sh 399171 2015-10-13 00:03:10Z bdrewery $
+
+set -o pipefail
 
 if [ -z "${SCRIPTSDIR}" ]; then
 	echo "Must set SCRIPTSDIR" >&2

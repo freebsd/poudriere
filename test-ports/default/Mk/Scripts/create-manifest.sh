@@ -1,9 +1,9 @@
 #!/bin/sh
-# $FreeBSD: head/Mk/Scripts/create-manifest.sh 533337 2020-04-29 14:01:05Z bapt $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 
 set -e
+set -o pipefail
 
 . "${dp_SCRIPTSDIR}/functions.sh"
 
@@ -11,10 +11,9 @@ validate_env dp_ACTUAL_PACKAGE_DEPENDS dp_CATEGORIES dp_COMMENT \
 	dp_COMPLETE_OPTIONS_LIST dp_DEPRECATED dp_DESCR dp_EXPIRATION_DATE \
 	dp_GROUPS dp_LICENSE dp_LICENSE_COMB dp_MAINTAINER dp_METADIR \
 	dp_NO_ARCH dp_PKGBASE dp_PKGDEINSTALL dp_PKGINSTALL dp_PKGMESSAGES \
-	dp_PKGORIGIN dp_PKGPOSTDEINSTALL dp_PKGPOSTINSTALL dp_PKGPOSTUPGRADE \
-	dp_PKGPREDEINSTALL dp_PKGPREINSTALL dp_PKGPREUPGRADE dp_PKGUPGRADE \
-	dp_PKGVERSION dp_PKG_BIN dp_PKG_IGNORE_DEPENDS dp_PKG_NOTES \
-	dp_PORT_OPTIONS dp_PREFIX dp_USERS dp_WWW
+	dp_PKGORIGIN dp_PKGPOSTDEINSTALL dp_PKGPOSTINSTALL dp_PKGPREDEINSTALL \
+	dp_PKGPREINSTALL dp_PKGVERSION dp_PKG_BIN dp_PKG_IGNORE_DEPENDS \
+	dp_PKG_NOTES dp_PORT_OPTIONS dp_PREFIX dp_USERS dp_WWW
 
 [ -n "${DEBUG_MK_SCRIPTS}" -o -n "${DEBUG_MK_SCRIPTS_CREATE_MANIFEST}" ] && set -x
 
@@ -53,7 +52,7 @@ licenselogic: ${dp_LICENSE_COMB:-single}
 EOT
 
 # Then, the optional bits
-[ -z "${dp_WWW}" ] || echo "www: ${dp_WWW}"
+[ -z "${dp_WWW}" ] || echo "www: \"${dp_WWW%% *}\""
 [ -z "${dp_LICENSE}" ] || echo "licenses: [ ${dp_LICENSE} ]"
 [ -z "${dp_USERS}" ] || echo "users: [ ${dp_USERS} ]"
 [ -z "${dp_GROUPS}" ] || echo "groups: [ ${dp_GROUPS} ]"
@@ -62,7 +61,8 @@ EOT
 
 # Then the key/values sections
 echo "deps: { "
-eval ${dp_ACTUAL_PACKAGE_DEPENDS} | grep -v -E ${dp_PKG_IGNORE_DEPENDS} | sort -u
+# Ignore grep's return value.
+eval ${dp_ACTUAL_PACKAGE_DEPENDS} | { grep -v -E ${dp_PKG_IGNORE_DEPENDS} || :; } | sort -u
 echo "}"
 
 echo "options: {"
@@ -86,11 +86,19 @@ if [ -n "${dp_PKG_NOTES}" ]; then
 fi
 
 # Copy the pkg-descr file
-cp ${dp_DESCR} ${dp_METADIR}/+DESC
+{
+	cat ${dp_DESCR}
+	if [ -n "${dp_WWW}" ] && ! grep -q '^WWW: ' ${dp_DESCR}; then
+			echo
+			for www in ${dp_WWW}; do
+				echo "WWW: ${www}"
+			done
+	fi
+} > ${dp_METADIR}/+DESC
 
 # Concatenate all the scripts
 output_files=
-for stage in INSTALL DEINSTALL UPGRADE; do
+for stage in INSTALL DEINSTALL; do
 	for prepost in '' PRE POST; do
 		output=${dp_METADIR}/+${prepost:+${prepost}_}${stage}
 		[ -f "${output}" ] && output_files="${output_files:+${output_files} }${output}"
@@ -98,7 +106,7 @@ for stage in INSTALL DEINSTALL UPGRADE; do
 done
 [ -n "${output_files}" ] && rm -f ${output_files}
 
-for stage in INSTALL DEINSTALL UPGRADE; do
+for stage in INSTALL DEINSTALL; do
 	for prepost in '' PRE POST; do
 		eval files="\${dp_PKG${prepost}${stage}}"
 		output=${dp_METADIR}/+${prepost:+${prepost}_}${stage}
@@ -141,7 +149,7 @@ if [ ${dp_MAINTAINER} = "ports@FreeBSD.org" ]; then
 
 	More information about port maintainership is available at:
 
-	https://www.freebsd.org/doc/en/articles/contributing/ports-contributing.html#maintain-port
+	https://docs.freebsd.org/en/articles/contributing/#ports-contributing
 	EOD
 	},
 	EOT

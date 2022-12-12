@@ -1,9 +1,9 @@
 #!/bin/sh
-# $FreeBSD: head/Mk/Scripts/makesum.sh 415842 2016-05-25 15:58:31Z mat $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 
 set -e
+set -o pipefail
 
 . "${dp_SCRIPTSDIR}/functions.sh"
 

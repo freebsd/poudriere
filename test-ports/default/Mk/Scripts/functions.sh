@@ -1,5 +1,4 @@
 #!/bin/sh
-# $FreeBSD: head/Mk/Scripts/functions.sh 509995 2019-08-27 08:52:28Z bapt $
 # This file for common functions used for port scripts.
 #
 # MAINTAINER: portmgr@FreeBSD.org

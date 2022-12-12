@@ -1,7 +1,4 @@
-# $FreeBSD: head/Mk/Uses/xorg.mk 516225 2019-11-01 14:22:23Z zeising $
-#
 # Originally from bsd.xorg.mk
-# Created by: Florent Thoumie <flz@FreeBSD.org>
 #
 # Feature:		xorg
 # Usage:		USES=xorg

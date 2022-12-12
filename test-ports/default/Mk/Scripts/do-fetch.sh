@@ -1,9 +1,9 @@
 #!/bin/sh
-# $FreeBSD: head/Mk/Scripts/do-fetch.sh 507705 2019-07-31 10:10:35Z mat $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 
 set -e
+set -o pipefail
 
 . "${dp_SCRIPTSDIR}/functions.sh"
 

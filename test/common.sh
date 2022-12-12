@@ -80,9 +80,16 @@ ${URL_BASE:+URL_BASE="${URL_BASE}"}
 $(env | grep -q 'CCACHE_STATIC_PREFIX' && { env | awk '/^CCACHE/ {print "export " $0}'; } || :)
 EOF
 write_atomic_cmp "${POUDRIERE_ETC}/poudriere.d/make.conf" << EOF
-DEFAULT_VERSIONS+=	ssl=base
+# For tests
 PKG_NOCOMPRESS=		t
 PKG_COMPRESSION_FORMAT=	tar
+
+# For using embedded ports tree
+DEFAULT_VERSIONS+=	ssl=base
+ALLOW_UNSUPPORTED_SYSTEM=yes
+lang_python39_UNSET=	LIBMPDEC
+WARNING_WAIT=		0
+DEV_WARNING_WAIT=	0
 EOF
 
 : ${VERBOSE:=1}

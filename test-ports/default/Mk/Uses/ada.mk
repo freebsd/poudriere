@@ -1,38 +1,28 @@
-# $FreeBSD: head/Mk/Uses/ada.mk 439129 2017-04-21 20:25:00Z rene $
-#
 # Establish Ada-capable compiler as a build dependency
-# To change default compiler, define ADA_DEFAULT in make.conf to 5
+# To change default compiler, define ADA_DEFAULT in make.conf
 #
 # Feature:      ada
 # Usage:        USES=ada
-# Valid ARGS:   5, 6, run
+# Valid ARGS:   run
 #
 # MAINTAINER: ports@FreeBSD.org
 
 .if !defined(_INCLUDE_USES_ADA_MK)
 _INCLUDE_USES_ADA_MK=    yes
 
+DEPRECATED=	Depends on expired lang/gcc6-aux
+EXPIRATION_DATE=2022-12-31
+
 CC=	ada
-ADAXX=	gcc6	# framework default
 
-. if ${ada_ARGS:M5}
-ADAXX=	gcc5
-. elif ${ada_ARGS:M6}
-ADAXX=	gcc6
-. elif defined(ADA_DEFAULT)
-.  if ${ADA_DEFAULT} == 5
-ADAXX=	gcc5
+.  if ${ada_ARGS:Mrun}
+RUN_DEPENDS+=	${LOCALBASE}/gcc6-aux/bin/ada:lang/gcc6-aux
 .  endif
-. endif
 
-. if ${ada_ARGS:Mrun}
-RUN_DEPENDS+=	${LOCALBASE}/${ADAXX}-aux/bin/ada:lang/${ADAXX}-aux
-. endif
-
-BUILD_DEPENDS+=	${LOCALBASE}/${ADAXX}-aux/bin/ada:lang/${ADAXX}-aux
-MAKE_ENV+=	PATH=${LOCALBASE}/${ADAXX}-aux/bin:${PATH} \
+BUILD_DEPENDS+=	${LOCALBASE}/gcc6-aux/bin/ada:lang/gcc6-aux
+MAKE_ENV+=	PATH=${LOCALBASE}/gcc6-aux/bin:${PATH} \
 		ADA_PROJECT_PATH=${LOCALBASE}/lib/gnat
-CONFIGURE_ENV+=	PATH=${LOCALBASE}/${ADAXX}-aux/bin:${PATH} \
+CONFIGURE_ENV+=	PATH=${LOCALBASE}/gcc6-aux/bin:${PATH} \
 		ADA_PROJECT_PATH=${LOCALBASE}/lib/gnat
 
 .endif

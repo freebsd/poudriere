@@ -1,9 +1,9 @@
 #!/bin/sh
-# $FreeBSD: head/Mk/Scripts/do-depends.sh 531389 2020-04-10 23:28:56Z bdrewery $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 
 set -e
+set -o pipefail
 
 . ${dp_SCRIPTSDIR}/functions.sh
 

@@ -1,8 +1,5 @@
 # bsd.commands.mk - Common commands used within the ports infrastructure
 #
-# Created by: Gabor Kovesdan <gabor@FreeBSD.org>
-#
-# $FreeBSD: head/Mk/bsd.commands.mk 462459 2018-02-20 22:25:54Z bdrewery $
 #
 # DO NOT COMMIT CHANGES TO THIS FILE BY YOURSELF, EVEN IF YOU DID NOT GET
 # A RESPONSE FROM THE MAINTAINER(S) WITHIN A REASONABLE TIMEFRAME! ALL
@@ -36,6 +33,7 @@ DIALOG4PORTS?=		${LOCALBASE}/bin/dialog4ports
 DIFF?=			/usr/bin/diff
 DIRNAME?=		/usr/bin/dirname
 EGREP?=			/usr/bin/egrep
+ELFCTL?=		/usr/bin/elfctl
 EXPR?=			/bin/expr
 FALSE?=			false	# Shell builtin
 FILE?=			/usr/bin/file

@@ -1,9 +1,4 @@
-#
 # bsd.ruby.mk - Utility definitions for Ruby related ports.
-#
-# Created by: Akinori MUSHA <knu@FreeBSD.org>
-#
-# $FreeBSD: head/Mk/bsd.ruby.mk 531497 2020-04-12 09:32:29Z ume $
 #
 
 .if !defined(Ruby_Include)
@@ -15,7 +10,7 @@ Ruby_Include_MAINTAINER=	ruby@FreeBSD.org
 # [variables that a user may define]
 #
 # RUBY_VER		- (See below)
-# RUBY_DEFAULT_VER	- Set to (e.g.) "2.5" if you want to refer to "ruby25"
+# RUBY_DEFAULT_VER	- Set to (e.g.) "2.7" if you want to refer to "ruby27"
 #			  just as "ruby".
 # RUBY_ARCH		- (See below)
 #
@@ -24,7 +19,7 @@ Ruby_Include_MAINTAINER=	ruby@FreeBSD.org
 # RUBY			- Set to full path of ruby.  If you set this, the values
 #			  of the following variables are automatically obtained
 #			  from the ruby executable: RUBY_VER, RUBY_VERSION,
-#			  RUBY_NAME, RUBY_ARCH, RUBY_LIBDIR, RUBY_ARCHLIBDIR,
+#			  RUBY_ARCH, RUBY_LIBDIR, RUBY_ARCHLIBDIR,
 #			  RUBY_SITELIBDIR, and RUBY_SITEARCHLIBDIR.
 # RUBY_VER		- Set to the alternative short version of ruby in the
 #			  form of `x.y' (see below for current value).
@@ -41,13 +36,6 @@ Ruby_Include_MAINTAINER=	ruby@FreeBSD.org
 #			  build.
 # RUBY_SETUP		- Set to the alternative name of setup.rb
 #			  (default: setup.rb).
-# USE_RUBY_RDOC		- Says that the port uses rdoc to generate documents.
-# RUBY_REQUIRE		- Set to a Ruby expression to evaluate before building
-#			  the port.  The constant "Ruby" is set to the integer
-#			  version number of ruby, and the result of the
-#			  expression will be set to RUBY_PROVIDED, which is
-#			  left undefined if the result is nil, false or a
-#			  zero-length string.  Implies USE_RUBY.
 # USE_RUBYGEMS		- Do not use this -- instead USES=gem
 #
 # [variables that each port should not (re)define]
@@ -58,6 +46,8 @@ Ruby_Include_MAINTAINER=	ruby@FreeBSD.org
 #			  the form of `x.y.z' (see below for current value).
 # RUBY_VERSION_CODE	- Integer version of RUBY_VERSION in the form of 
 #			  `xyz'.
+# RUBY_DISTVERSION	- DISTVERSION for the standard ruby ports (ruby,
+#			  ruby-gdbm, etc.).
 # RUBY_PORTVERSION	- PORTVERSION for the standard ruby ports (ruby,
 #			  ruby-gdbm, etc.).
 # RUBY_PORTREVISION	- PORTREVISION for the standard ruby ports.
@@ -77,19 +67,14 @@ Ruby_Include_MAINTAINER=	ruby@FreeBSD.org
 #			  (${RUBY_VER:S/.//}).
 # RUBY_WITHOUT_SUFFIX	- Always ${LOCALBASE}/bin/ruby.
 # RUBY_WITH_SUFFIX	- Always ${RUBY_WITHOUT_SUFFIX}${RUBY_SUFFIX}.
-# RUBY_NAME		- Ruby's name with trailing suffix.
 #
 # RUBY_MODNAME		- Set to the module name (default: ${PORTNAME}).
-#
-# RUBY_RDOC		- Full path of rdoc executable.
 #
 # RUBY_BASE_PORT	- Port path of base ruby without PORTSDIR, without
 #			  suffix except version.
 # RUBY_PORT		- Port path of ruby without PORTSDIR.
-# RUBY_RDOC_PORT	- Port path of rdoc without PORTSDIR.
 #
 # DEPEND_RUBY		- BUILD_DEPENDS/RUN_DEPENDS entry for ruby.
-# DEPEND_RUBY_RDOC	- BUILD_DEPENDS entry for rdoc.
 #
 # RUBY_LIBDIR		- Installation path for architecture independent
 #			  libraries.
@@ -109,23 +94,23 @@ Ruby_Include_MAINTAINER=	ruby@FreeBSD.org
 # RUBY_MODEXAMPLESDIR	- Installation path for the module's examples.
 #
 
-.if defined(RUBY_DEFAULT_VER)
+.  if defined(RUBY_DEFAULT_VER)
 WARNING+=	"RUBY_DEFAULT_VER is defined, consider using DEFAULT_VERSIONS=ruby=${RUBY_DEFAULT_VER} instead"
-.endif
+.  endif
 
 RUBY_DEFAULT_VER?=	${RUBY_DEFAULT}
 
 RUBY_VER?=		${RUBY_DEFAULT_VER}
 
-.if defined(RUBY)
-.if !exists(${RUBY})
+.  if defined(RUBY)
+.    if !exists(${RUBY})
 IGNORE=	cannot install: you set the variable RUBY to "${RUBY}", but it does not seem to exist.  Please specify an already installed ruby executable
-.endif
+.    endif
 
 _RUBY_TEST!=		${RUBY} -e 'begin; require "rbconfig"; puts "ok" ; rescue LoadError; puts "error"; end'
-.if !empty(_RUBY_TEST) && ${_RUBY_TEST} != "ok"
+.    if !empty(_RUBY_TEST) && ${_RUBY_TEST} != "ok"
 IGNORE=	cannot install: you set the variable RUBY to "${RUBY}", but it failed to include rbconfig.  Please specify a properly installed ruby executable
-.endif
+.    endif
 
 _RUBY_CONFIG=		${RUBY} -r rbconfig -e 'C = RbConfig::CONFIG' -e
 
@@ -133,71 +118,75 @@ RUBY_VERSION!=		${_RUBY_CONFIG} 'puts C["ruby_version"]'
 RUBY_SUFFIX?=		# empty
 
 RUBY_ARCH!=		${_RUBY_CONFIG} 'puts C["target"]'
-RUBY_NAME!=		${_RUBY_CONFIG} 'puts C["ruby_install_name"]'
 
 _RUBY_SYSLIBDIR!=	${_RUBY_CONFIG} 'puts C["libdir"]'
 _RUBY_SITEDIR!=		${_RUBY_CONFIG} 'puts C["sitedir"]'
 _RUBY_VENDORDIR!=	${_RUBY_CONFIG} 'puts C["vendordir"]'
-.else
-RUBY?=			${LOCALBASE}/bin/${RUBY_NAME}
+.  else
+RUBY?=			${LOCALBASE}/bin/ruby${RUBY_SUFFIX}
 
-.if defined(RUBY_VER)
+.    if defined(RUBY_VER)
 # When adding a version, please keep the comment in
 # Mk/bsd.default-versions.mk in sync.
-. if ${RUBY_VER} == 2.5
-#
-# Ruby 2.5
-#
-RUBY_VERSION=		2.5.8
-RUBY_PORTREVISION=	0
-RUBY_PORTEPOCH=		1
-RUBY25=			""	# PLIST_SUB helpers
-
-. elif ${RUBY_VER} == 2.6
-#
-# Ruby 2.6
-#
-RUBY_VERSION=		2.6.6
-RUBY_PORTREVISION=	0
-RUBY_PORTEPOCH=		1
-RUBY26=			""	# PLIST_SUB helpers
-
-. elif ${RUBY_VER} == 2.7
+.      if ${RUBY_VER} == 2.7
 #
 # Ruby 2.7
 #
-RUBY_VERSION=		2.7.1
-RUBY_PORTREVISION=	0
+RUBY_DISTVERSION=	2.7.6
+RUBY_PORTREVISION=	3
 RUBY_PORTEPOCH=		1
-RUBY27=			""	# PLIST_SUB helpers
+
+.      elif ${RUBY_VER} == 3.0
+#
+# Ruby 3.0
+#
+RUBY_DISTVERSION=	3.0.4
+RUBY_PORTREVISION=	3
+RUBY_PORTEPOCH=		1
+.      elif ${RUBY_VER} == 3.1
+#
+# Ruby 3.1
+#
+RUBY_DISTVERSION=	3.1.2
+RUBY_PORTREVISION=	2
+RUBY_PORTEPOCH=		1
+
+.      elif ${RUBY_VER} == 3.2
+#
+# Ruby 3.2
+#
+RUBY_DISTVERSION=	3.2.0-preview2
+RUBY_PORTREVISION=	1
+RUBY_PORTEPOCH=		1
 
 # When adding a version, please keep the comment in
 # Mk/bsd.default-versions.mk in sync.
-. else
+.      else
 #
 # Other versions
 #
-IGNORE=	Only ruby 2.5, 2.6 and 2.7 are supported
+IGNORE=	Only ruby 2.7, 3.0, 3.1 and 3.2 are supported
 _INVALID_RUBY_VER=	1
-. endif
-.endif # defined(RUBY_VER)
+.      endif
+RUBY_VERSION=	${RUBY_DISTVERSION:C/^([0-9]+\.[0-9]+\.[0-9]+).*/\1/}
+.    endif # defined(RUBY_VER)
 
-.if !defined(_INVALID_RUBY_VER)
+.    if !defined(_INVALID_RUBY_VER)
 
-RUBY24?=		"@comment "
-RUBY25?=		"@comment "
-RUBY26?=		"@comment "
 RUBY27?=		"@comment "
+RUBY30?=		"@comment "
+RUBY31?=		"@comment "
+RUBY32?=		"@comment "
 
-.if defined(BROKEN_RUBY${RUBY_VER:R}${RUBY_VER:E})
-.if ${BROKEN_RUBY${RUBY_VER:R}${RUBY_VER:E}} == "yes"
+.      if defined(BROKEN_RUBY${RUBY_VER:R}${RUBY_VER:E})
+.        if ${BROKEN_RUBY${RUBY_VER:R}${RUBY_VER:E}} == "yes"
 BROKEN=			does not build with Ruby ${RUBY_VER}
-.else
+.        else
 BROKEN=			${BROKEN_RUBY${RUBY_VER:R}${RUBY_VER:E}}
-.endif
-.endif
+.        endif
+.      endif
 
-RUBY_WRKSRC=		${WRKDIR}/ruby-${RUBY_VERSION}
+RUBY_WRKSRC=		${WRKDIR}/ruby-${RUBY_DISTVERSION}
 
 RUBY_CONFIGURE_ARGS+=	--with-rubyhdrdir="${PREFIX}/include/ruby-${RUBY_VER}/" \
 			--with-rubylibprefix="${PREFIX}/lib/ruby" \
@@ -207,22 +196,21 @@ RUBY_CONFIGURE_ARGS+=	--with-rubyhdrdir="${PREFIX}/include/ruby-${RUBY_VER}/" \
 CONFIGURE_TARGET?=	${ARCH}-portbld-${OPSYS:tl}${OSREL:C/\..*//}
 
 RUBY_ARCH?=		${ARCH}-${OPSYS:tl}${OSREL:C/\..*//}
-RUBY_NAME?=		ruby${RUBY_SUFFIX}
 
 _RUBY_SYSLIBDIR?=	${PREFIX}/lib
 _RUBY_SITEDIR?=		${_RUBY_SYSLIBDIR}/ruby/site_ruby
 _RUBY_VENDORDIR?=	${_RUBY_SYSLIBDIR}/ruby/vendor_ruby
-.endif
-.endif
+.    endif
+.  endif
 #      defined(RUBY)
 
-.if !defined(_INVALID_RUBY_VER)
+.  if !defined(_INVALID_RUBY_VER)
 
 RUBY_DEFAULT_SUFFIX?=	${RUBY_DEFAULT_VER:S/.//}
 
-RUBY_PORTVERSION?=	${RUBY_VERSION}
+RUBY_PORTVERSION?=	${RUBY_DISTVERSION:tl:C/([a-z])[a-z]+/\1/g:C/([0-9])([a-z])/\1.\2/g:C/:(.)/\1/g:C/[^a-z0-9+]+/./g}
 MASTER_SITE_SUBDIR_RUBY?=	${RUBY_VER}
-RUBY_DISTNAME?=		ruby-${RUBY_VERSION}
+RUBY_DISTNAME?=		ruby-${RUBY_DISTVERSION}
 
 RUBY_WRKSRC?=		${WRKDIR}/${RUBY_DISTNAME}
 
@@ -239,20 +227,13 @@ RUBY_SHLIBVER?=		${RUBY_VER:S/.//}
 
 RUBY_CONFIGURE_ARGS+=	--program-prefix=""
 
-.if ${RUBY_VER} != ${RUBY_DEFAULT_VER}
+.    if ${RUBY_VER} != ${RUBY_DEFAULT_VER}
 DEPENDS_ARGS+=		RUBY_VER=${RUBY_VER}
-.endif
+.    endif
 
 RUBY_CONFIGURE_ARGS+=	--program-suffix="${RUBY_SUFFIX}"
 
 RUBY_MODNAME?=		${PORTNAME}
-
-# Commands
-.if ${RUBY_VER} < 2.7
-RUBY_RDOC?=		${LOCALBASE}/bin/rdoc${RUBY_VER:S/.//}
-.else
-RUBY_RDOC?=		${LOCALBASE}/bin/rdoc
-.endif
 
 # Ports
 RUBY_BASE_PORT?=	lang/ruby${RUBY_VER:S/.//}
@@ -268,8 +249,8 @@ RUBY_SITELIBDIR?=	${_RUBY_SITEDIR}/${RUBY_VER}
 RUBY_SITEARCHLIBDIR?=	${RUBY_SITELIBDIR}/${RUBY_ARCH}
 RUBY_VENDORLIBDIR?=	${_RUBY_VENDORDIR}/${RUBY_VER}
 RUBY_VENDORARCHLIBDIR?=	${RUBY_VENDORLIBDIR}/${RUBY_ARCH}
-RUBY_DOCDIR?=		${PREFIX}/share/doc/${RUBY_NAME}
-RUBY_EXAMPLESDIR?=	${PREFIX}/share/examples/${RUBY_NAME}
+RUBY_DOCDIR?=		${PREFIX}/share/doc/ruby${RUBY_SUFFIX}
+RUBY_EXAMPLESDIR?=	${PREFIX}/share/examples/ruby${RUBY_SUFFIX}
 RUBY_RIDIR?=		${PREFIX}/share/ri/${RUBY_VER}/system
 RUBY_SITERIDIR?=	${PREFIX}/share/ri/${RUBY_VER}/site
 RUBY_MODDOCDIR?=	${RUBY_DOCDIR}/${RUBY_MODNAME}
@@ -295,42 +276,16 @@ PLIST_SUB+=		${PLIST_RUBY_DIRS:C,DIR="(${LOCALBASE}|${PREFIX})/,DIR=",} \
 			RUBY_SHLIBVER="${RUBY_SHLIBVER}" \
 			RUBY_ARCH="${RUBY_ARCH}" \
 			RUBY_SUFFIX="${RUBY_SUFFIX}" \
-			RUBY_NAME="${RUBY_NAME}" \
-			RUBY_DEFAULT_SUFFIX="${RUBY_DEFAULT_SUFFIX}" \
-			RUBY24=${RUBY24} \
-			RUBY25=${RUBY25} \
-			RUBY26=${RUBY26} \
-			RUBY27=${RUBY27}
+			RUBY_DEFAULT_SUFFIX="${RUBY_DEFAULT_SUFFIX}"
 
-.if defined(USE_RUBY_RDOC)
-MAKE_ENV+=	RUBY_RDOC=${RUBY_RDOC}
-.endif
-
-# require check
-.if defined(RUBY_REQUIRE)
-USE_RUBY=		yes
-
-.if exists(${RUBY})
-RUBY_PROVIDED!=		${RUBY} -e '\
-	Ruby = ${RUBY_RELVERSION_CODE}; \
-	value = begin; ${RUBY_REQUIRE}; end and puts value'
-.else
-RUBY_PROVIDED=		"should be"	# the latest version is going to be installed
-.endif
-
-.if empty(RUBY_PROVIDED)
-.undef RUBY_PROVIDED
-.endif
-.endif
-
-.if ${PORT_OPTIONS:MDEBUG}
+.    if ${PORT_OPTIONS:MDEBUG}
 RUBY_FLAGS+=	-d
-.endif
+.    endif
 
 #
 # extconf.rb support
 #
-.if defined(USE_RUBY_EXTCONF)
+.    if defined(USE_RUBY_EXTCONF)
 USE_RUBY=		yes
 
 RUBY_EXTCONF?=		extconf.rb
@@ -340,23 +295,23 @@ CONFIGURE_ENV+=		RB_USER_INSTALL=yes
 do-configure:	ruby-extconf-configure
 
 ruby-extconf-configure:
-.if defined(RUBY_EXTCONF_SUBDIRS)
-.for d in ${RUBY_EXTCONF_SUBDIRS}
+.      if defined(RUBY_EXTCONF_SUBDIRS)
+.        for d in ${RUBY_EXTCONF_SUBDIRS}
 	@${ECHO_MSG} "===>  Running ${RUBY_EXTCONF} in ${d} to configure"
 	@cd ${CONFIGURE_WRKSRC}/${d}; \
 	${SETENV} ${CONFIGURE_ENV} ${RUBY} ${RUBY_FLAGS} ${RUBY_EXTCONF} ${CONFIGURE_ARGS}
-.endfor
-.else
+.        endfor
+.      else
 	@${ECHO_MSG} "===>  Running ${RUBY_EXTCONF} to configure"
 	@cd ${CONFIGURE_WRKSRC}; \
 	${SETENV} ${CONFIGURE_ENV} ${RUBY} ${RUBY_FLAGS} ${RUBY_EXTCONF} ${CONFIGURE_ARGS}
-.endif
-.endif
+.      endif
+.    endif
 
 #
 # setup.rb support
 #
-.if defined(USE_RUBY_SETUP)
+.    if defined(USE_RUBY_SETUP)
 RUBY_SETUP?=		setup.rb
 
 do-configure:	ruby-setup-configure
@@ -379,18 +334,18 @@ ruby-setup-install:
 	@${ECHO_MSG} "===>  Running ${RUBY_SETUP} to install"
 	@cd ${INSTALL_WRKSRC}; \
 	${SETENV} ${MAKE_ENV} ${RUBY} ${RUBY_FLAGS} ${RUBY_SETUP} install --prefix=${STAGEDIR}
-.endif
+.    endif
 
-.if defined(USE_RUBY)
-.if !defined(RUBY_NO_BUILD_DEPENDS)
+.    if defined(USE_RUBY)
+.      if !defined(RUBY_NO_BUILD_DEPENDS)
 EXTRACT_DEPENDS+=	${DEPEND_RUBY}
 PATCH_DEPENDS+=		${DEPEND_RUBY}
 BUILD_DEPENDS+=		${DEPEND_RUBY}
-.endif
-.if !defined(RUBY_NO_RUN_DEPENDS)
+.      endif
+.      if !defined(RUBY_NO_RUN_DEPENDS)
 RUN_DEPENDS+=		${DEPEND_RUBY}
-.endif
-.endif
+.      endif
+.    endif
 
-.endif # _INVALID_RUBY_VER
+.  endif # _INVALID_RUBY_VER
 .endif
