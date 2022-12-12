@@ -463,6 +463,7 @@ EXTRA_DIST = $(TESTS) \
 	    runtest.sh
 
 XFAIL_TESTS = \
+	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
 	distclean-overlays.sh \
 	options-overlays.sh
 
@@ -485,6 +486,8 @@ TESTS = builtins.sh cache.sh cache_pipe.sh calculate_duration.sh \
 	timespec.sh timestamp.sh trap_ignore_block.sh \
 	trap_save_block.sh trap_save.sh $(JAIL_TESTS) prep.sh
 JAIL_TESTS = \
+	bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh \
+	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
 	bulk-build-inc-pkgclean-flavor-default.sh \
 	bulk-build-inc-pkgclean-flavor.sh \
 	bulk-build-inc-pkgclean-origin.sh \
@@ -1105,6 +1108,20 @@ trap_save_block.sh.log: trap_save_block.sh
 trap_save.sh.log: trap_save.sh
 	@p='trap_save.sh'; \
 	b='trap_save.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh.log: bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh
+	@p='bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh'; \
+	b='bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh.log: bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh
+	@p='bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh'; \
+	b='bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

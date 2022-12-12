@@ -11,6 +11,7 @@ EXTRA_DIST= $(TESTS) \
 	    runtest.sh
 
 XFAIL_TESTS= \
+	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
 	distclean-overlays.sh \
 	options-overlays.sh
 
@@ -70,6 +71,8 @@ TESTS=\
 	$(JAIL_TESTS)
 
 JAIL_TESTS= \
+	bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh \
+	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
 	bulk-build-inc-pkgclean-flavor-default.sh \
 	bulk-build-inc-pkgclean-flavor.sh \
 	bulk-build-inc-pkgclean-origin.sh \
