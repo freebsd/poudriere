@@ -258,6 +258,68 @@ list_all_deps() {
 	setvar "${var_return}" "${_out}"
 }
 
+assert_metadata() {
+	local dep="$1"
+	local origins="$2"
+	local tmp originspec origins_expanded
+
+	if [ ! -f "${log:?}/.poudriere.all_pkgs%" ]; then
+		[ -z "${origins-}" ] && return 0
+		err 1 ".poudriere.all_pkgs% file is missing while checked list with dep='${dep}' is: ${origins}"
+	fi
+
+	tmp="$(mktemp -t metadata.${dep})"
+	awk -v dep="${dep}" '$3 == dep' "${log}/.poudriere.all_pkgs%" \
+	    > "${tmp}"
+	# First fix the list to expand main port FLAVORS
+	expand_origin_flavors "${origins}" origins_expanded
+	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
+	echo "Asserting that only '${origins_expanded}' are in the metadata with dep='${dep}'" >&2
+	for originspec in ${origins_expanded}; do
+		#fix_default_flavor "${originspec}" originspec
+		hash_get originspec-pkgname "${originspec}" pkgname
+		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		echo "=> Asserting that ${originspec} | ${pkgname} is dep='${dep}' in metadata" >&2
+		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" -vdep="${dep}" '
+		    $2 == originspec && $1 == pkgname && $3 == dep {
+			print "==> " $0
+			if (found == 1) {
+				# A duplicate, no good.
+				found = 0
+				exit 1
+			}
+			found = 1
+			next
+		    }
+		    $2 == originspec && $1 == pkgname && dep != "" && $3 != dep {
+			print "=!> " $0
+			found = 0
+			exit 1
+		    }
+		    END { if (found != 1) exit 1 }
+		' ${log}/.poudriere.all_pkgs% >&2
+		assert 0 $? "${originspec} | ${pkgname} should be known in metadata${dep:+ with dep=${dep}} in ${log}/.poudriere.all_pkgs%"
+		# Remove the entry so we can assert later that nothing extra
+		# is in the queue.
+		cat "${tmp}" | \
+		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
+		    -vdep="${dep}" '
+		    $2 == originspec && $1 == pkgname && $3 == dep { next }
+		    { print }
+		' > "${tmp}.new"
+		mv -f "${tmp}.new" "${tmp}"
+	done
+	echo "=> Asserting that nothing else is known in metadata with dep='${dep}'" >&2
+	if [ -s "${tmp}" ]; then
+		echo "=> Items remaining:" >&2
+		cat "${tmp}" | sed -e 's,^,==> ,' >&2
+	fi
+	! [ -s "${tmp}" ]
+	assert 0 $? "Metadata${dep:+(${dep})} should be empty"
+	rm -f "${tmp}"
+}
+
+
 assert_queued() {
 	local dep="$1"
 	local origins="$2"
@@ -643,48 +705,13 @@ assert_counts() {
 	local fetched expected_fetched
 	local built expected_built
 
-	if [ -z "${EXPECTED_TOBUILD-}" ]; then
-		expected_tobuild=0
-	else
-		expected_tobuild=$(echo "${EXPECTED_TOBUILD}" | tr ' ' '\n' | sort -u | wc -l)
-		expected_tobuild="${expected_tobuild##* }"
-	fi
-	if [ -z "${EXPECTED_IGNORED-}" ]; then
-		expected_ignored=0
-	else
-		expected_ignored=$(echo "${EXPECTED_IGNORED}" | tr ' ' '\n' | sort -u | wc -l)
-		expected_ignored="${expected_ignored##* }"
-	fi
-	if [ -z "${EXPECTED_SKIPPED-}" ]; then
-		expected_skipped=0
-	else
-		expected_skipped=$(echo "${EXPECTED_SKIPPED}" | tr ' ' '\n' | sort -u | wc -l)
-		expected_skipped="${expected_skipped##* }"
-	fi
-	if [ -z "${EXPECTED_FAILED-}" ]; then
-		expected_failed=0
-	else
-		expected_failed=$(echo "${EXPECTED_FAILED}" | tr ' ' '\n' | sort -u | wc -l)
-		expected_failed="${expected_failed##* }"
-	fi
-	if [ -z "${EXPECTED_FETCHED-}" ]; then
-		expected_fetched=0
-	else
-		expected_fetched=$(echo "${EXPECTED_FETCHED}" | tr ' ' '\n' | sort -u | wc -l)
-		expected_fetched="${expected_fetched##* }"
-	fi
-	if [ -z "${EXPECTED_BUILT-}" ]; then
-		expected_built=0
-	else
-		expected_built=$(echo "${EXPECTED_BUILT}" | tr ' ' '\n' | sort -u | wc -l)
-		expected_built="${expected_built##* }"
-	fi
-	if [ -z "${EXPECTED_QUEUED-}" ]; then
-		expected_queued=0
-	else
-		expected_queued=$(echo "${EXPECTED_QUEUED}" | tr ' ' '\n' | sort -u | wc -l)
-		expected_queued="${expected_queued##* }"
-	fi
+	expected_tobuild=$(count "${EXPECTED_TOBUILD-}")
+	expected_ignored=$(count "${EXPECTED_IGNORED-}")
+	expected_skipped=$(count "${EXPECTED_SKIPPED-}")
+	expected_failed=$(count "${EXPECTED_FAILED-}")
+	expected_fetched=$(count "${EXPECTED_FETCHED-}")
+	expected_built=$(count "${EXPECTED_BUILT-}")
+	expected_queued=$(count "${EXPECTED_QUEUED-}")
 	echo "=> Asserting queued=${expected_queued} built=${expected_built} failed=${expected_failed} ignored=${expected_ignored} skipped=${expected_skipped} fetched=${expected_fetched} tobuild=${expected_tobuild}"
 
 	if [ -e "${log:?}/.poudriere.stats_queued" ]; then
@@ -750,6 +777,11 @@ assert_counts() {
 	# should add to 0.
 	case "${EXPECTED_BUILT:+set}" in
 	set)
+		computed_tobuild=$((expected_queued - \
+		    (expected_ignored + expected_skipped + expected_built + \
+		     expected_fetched + expected_failed)))
+		assert "0" "${computed_tobuild}" \
+		    "Computed tobuild should be 0 on a non-crash build - this being wrong could indicate show_build_summary() is wrong too"
 		;;
 	*)
 		computed_tobuild=$((expected_queued - \
@@ -935,10 +967,22 @@ do_pkgclean_smoke() {
 
 sorted() {
 	if [ "$#" -eq 0 ]; then
-		echo
 		return 0
 	fi
-	echo "$@" | tr ' ' '\n' | LC_ALL=C sort | paste -s -d ' ' -
+	echo "$@" | tr ' ' '\n' | LC_ALL=C sort -u | sed -e '/^$/d' |
+	    paste -s -d ' ' -
+}
+
+count() {
+	local count
+	if [ "$#" -eq 0 ]; then
+		count=0
+	else
+		count=$(echo "$@" | tr ' ' '\n' | LC_ALL=C sort -u |
+		    sed -e '/^$/d' | wc -l)
+		count="${count##* }"
+	fi
+	echo "${count}"
 }
 
 _assert_bulk_queue_and_stats() {
@@ -949,18 +993,6 @@ _assert_bulk_queue_and_stats() {
 	set -u
 	### Now do tests against the output of the bulk run. ###
 
-	# Assert that only listed packages are in poudriere.ports.queued as
-	# 'listed'
-	if [ -z "${EXPECTED_LISTED-}" ]; then
-		# compat for tests
-		if [ -z "${EXPECTED_QUEUED-null}" ]; then
-			EXPECTED_LISTED=
-		else
-			EXPECTED_LISTED="${LISTPORTS}"
-		fi
-	fi
-	stack_lineinfo assert_queued "listed" "${EXPECTED_LISTED-}"
-
 	# Assert the IGNOREd ports are tracked in .poudriere.ports.ignored
 	stack_lineinfo assert_ignored "${EXPECTED_IGNORED-}"
 
@@ -970,6 +1002,15 @@ _assert_bulk_queue_and_stats() {
 	# Assert that all expected dependencies are in poudriere.ports.queued
 	# (since they do not exist yet)
 	stack_lineinfo assert_queued "" "${EXPECTED_QUEUED-}"
+
+	case "${EXPECTED_LISTED+set}" in
+	set)
+		stack_lineinfo assert_metadata "listed" "${EXPECTED_LISTED}"
+		;;
+	*)
+		stack_lineinfo assert_metadata "listed" "${LISTPORTS}"
+		;;
+	esac
 
 	case "${EXPECTED_TOBUILD-null}" in
 	null) EXPECTED_TOBUILD="${EXPECTED_QUEUED-}" ;;

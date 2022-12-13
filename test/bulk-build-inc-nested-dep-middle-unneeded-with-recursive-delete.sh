@@ -16,7 +16,7 @@ assert 0 "$?" "Pkgclean should pass"
 EXPECTED_IGNORED=""
 EXPECTED_SKIPPED=
 EXPECTED_TOBUILD="ports-mgmt/poudriere-devel-dep-FOO misc/freebsd-release-manifests@default ports-mgmt/pkg ports-mgmt/poudriere-devel misc/freebsd-release-manifests@foo misc/foo@default:misc/freebsd-release-manifests@foo"
-EXPECTED_QUEUED="${LISTPORTS} ${EXPECTED_TOBUILD}"
+EXPECTED_QUEUED="${EXPECTED_TOBUILD}"
 EXPECTED_LISTED="${LISTPORTS}"
 EXPECTED_BUILT=
 do_bulk -n ${LISTPORTS}
@@ -41,7 +41,7 @@ assert_not "${allpackages}" "${nowpackages}"
 EXPECTED_IGNORED=""
 EXPECTED_SKIPPED=
 EXPECTED_TOBUILD="ports-mgmt/poudriere-devel-dep-FOO"
-EXPECTED_QUEUED="${LISTPORTS} ${EXPECTED_TOBUILD}"
+EXPECTED_QUEUED="${EXPECTED_TOBUILD}"
 EXPECTED_LISTED="${LISTPORTS}"
 EXPECTED_BUILT="${EXPECTED_TOBUILD}"
 do_bulk ${LISTPORTS}
@@ -68,7 +68,7 @@ yes) ;;
 	EXPECTED_TOBUILD="${EXPECTED_TOBUILD} ports-mgmt/poudriere-devel-dep-FOO"
 	;;
 esac
-EXPECTED_QUEUED="${LISTPORTS} ${EXPECTED_TOBUILD}"
+EXPECTED_QUEUED="${EXPECTED_TOBUILD}"
 EXPECTED_LISTED="${LISTPORTS}"
 EXPECTED_BUILT="${EXPECTED_TOBUILD}"
 do_bulk ${LISTPORTS}
@@ -95,7 +95,7 @@ yes) ;;
 	EXPECTED_TOBUILD="${EXPECTED_TOBUILD} ports-mgmt/poudriere-devel-dep-FOO misc/freebsd-release-manifests@foo"
 	;;
 esac
-EXPECTED_QUEUED="${LISTPORTS} ${EXPECTED_TOBUILD}"
+EXPECTED_QUEUED="${EXPECTED_TOBUILD}"
 EXPECTED_LISTED="${LISTPORTS}"
 EXPECTED_BUILT="${EXPECTED_TOBUILD}"
 do_bulk ${LISTPORTS}

@@ -1332,19 +1332,26 @@ update_stats_queued() {
 	local log
 
 	_log_path log
-	while mapfile_read_loop "${MASTER_DATADIR:?}/all_pkgs" \
-	    _pkgname _originspec _rdep _ignore; do
-		if [ "${_rdep}" = "listed" ] ||
-		    # XXX: This should only be for direct deps of listed packages that cause a skip
-		    [ -n "${_ignore}" ] ||
-		    pkgqueue_contains "${_pkgname}"; then
-			echo "${_originspec} ${_pkgname} ${_rdep}"
-		fi
-	done |
-	    sort |
-	    write_atomic "${log:?}/.poudriere.ports.queued"
+	sort "${log:?}/.poudriere.ports.tobuild" \
+	    "${log:?}/.poudriere.ports.ignored" \
+	    "${log:?}/.poudriere.ports.skipped" \
+	    "${log:?}/.poudriere.ports.fetched" \
+	    | write_atomic "${log:?}/.poudriere.ports.queued"
 	count_lines "${log:?}/.poudriere.ports.queued" nbq
 	bset stats_queued "${nbq}"
+}
+
+get_to_build() {
+	[ "$#" -eq 0 ] || eargs get_to_build
+	local _originspec _pkgname _rdep _ignore
+	local log
+
+	_log_path log
+	while mapfile_read_loop "${MASTER_DATADIR:?}/all_pkgs" \
+	    _pkgname _originspec _rdep _ignore; do
+		pkgqueue_contains "${_pkgname}" || continue
+		echo "${_originspec} ${_pkgname} ${_rdep}"
+	done
 }
 
 update_stats_tobuild() {
@@ -8739,8 +8746,8 @@ prepare_ports() {
 		if [ "${resuming_build}" -eq 0 ]; then
 			# Generate ports.queued list and stats_queued after
 			# the queue was trimmed.
-			update_stats_queued
 			update_stats_tobuild
+			update_stats_queued
 			update_remaining
 		fi
 
@@ -8768,17 +8775,6 @@ prepare_ports() {
 	fi
 
 	return 0
-}
-
-get_to_build() {
-	local log
-
-	_log_path log
-	while mapfile_read_loop "${log:?}/.poudriere.ports.queued" \
-	    originspec pkgname _ignored; do
-		pkgqueue_contains "${pkgname}" || continue
-		echo "${originspec} ${pkgname} ${_ignored}"
-	done | sort
 }
 
 load_priorities_ptsort() {

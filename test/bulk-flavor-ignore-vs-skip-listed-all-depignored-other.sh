@@ -11,7 +11,7 @@ assert 0 $? "Bulk should pass"
 EXPECTED_IGNORED="misc/foo-dep-FLAVORS-unsorted@depignored"
 EXPECTED_SKIPPED="misc/foo-all-DEPIGNORED@flav"
 EXPECTED_TOBUILD="ports-mgmt/pkg"
-EXPECTED_QUEUED="${EXPECTED_TOBUILD} misc/foo-all-DEPIGNORED@flav misc/foo-dep-FLAVORS-unsorted@depignored"
+EXPECTED_QUEUED="${EXPECTED_TOBUILD} ${EXPECTED_IGNORED} ${EXPECTED_SKIPPED}"
 EXPECTED_LISTED="misc/foo-all-DEPIGNORED@flav"
 
 assert_bulk_queue_and_stats

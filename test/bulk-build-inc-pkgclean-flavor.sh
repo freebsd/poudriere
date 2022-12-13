@@ -37,7 +37,6 @@ assert_true [ -e "${PACKAGES:?}/All/freebsd-release-manifests-20161010.${PKG_EXT
 EXPECTED_IGNORED=""
 EXPECTED_SKIPPED=
 EXPECTED_TOBUILD="misc/freebsd-release-manifests@foo"
-EXPECTED_QUEUED="${LISTPORTS} ${EXPECTED_TOBUILD}"
 case "${PKG_NO_VERSION_FOR_DEPS-}" in
 yes) ;;
 *)
@@ -45,6 +44,7 @@ yes) ;;
 	EXPECTED_TOBUILD="${EXPECTED_TOBUILD} ports-mgmt/poudriere-devel-dep-FOO"
 	;;
 esac
+EXPECTED_QUEUED="${EXPECTED_TOBUILD}"
 EXPECTED_LISTED="${LISTPORTS}"
 EXPECTED_BUILT="${EXPECTED_TOBUILD}"
 do_bulk ${LISTPORTS}
