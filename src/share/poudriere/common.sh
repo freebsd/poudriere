@@ -1603,7 +1603,7 @@ show_dry_run_summary() {
 
 show_build_summary() {
 	local status nbb nbf nbs nbi nbq nbp ndone nbtobuild buildname
-	local log now elapsed buildtime queue_width
+	local log now elapsed buildtime queue_width nbtb
 
 	_bget status status || status=unknown
 	_log_path log
@@ -1628,6 +1628,7 @@ show_build_summary() {
 	_bget nbs stats_skipped || nbs=0
 	_bget nbp stats_fetched || nbp=0
 	_bget nbb stats_built || nbb=0
+	_bget nbtb stats_tobuild || nbtb=0
 	ndone=$((nbb + nbf + nbi + nbs + nbp))
 	nbtobuild=$((nbq - ndone))
 
@@ -1652,6 +1653,17 @@ ${COLOR_RESET}Tobuild: %-${queue_width}d  Time: %s\n" \
 	    "${MASTERNAME}" "${buildname}" "${status%%:*}" \
 	    "${nbq}" "${nbb}" "${nbf}" "${nbs}" "${nbi}" "${nbp}" \
 	    "${nbtobuild}" "${buildtime}"
+	case "${nbtobuild}" in
+	-*) dev_err "${EX_SOFTWARE}" "show_build_summary: negative tobuild count" ;;
+	esac
+	case "${status}" in
+	idle:)
+		case "${nbtobuild}" in
+		0) ;;
+		*)
+			dev_err "${EX_SOFTWARE}" "show_build_summary: tobuild count >0 after build"
+		esac
+	esac
 }
 
 _siginfo_handler() {
