@@ -790,8 +790,8 @@ do_poudriere() {
 			showfile "${file}"
 		fi
 	done
-	msg "Running: ${POUDRIEREPATH} -e ${POUDRIERE_ETC} -E ${verbose}" "$@"
-	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} -E ${verbose} "$@"
+	msg "Running: ${POUDRIEREPATH} -e ${POUDRIERE_ETC} -d -E ${verbose}" "$@"
+	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} -d -E ${verbose} "$@"
 }
 
 _setup_overlays() {

@@ -26,6 +26,11 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+EX_USAGE=64
+EX_DATAERR=65
+EX_SOFTWARE=70
+EX_IOERR=74
+
 if ! type err >/dev/null 2>&1; then
 	alias err=_err
 fi
@@ -41,14 +46,11 @@ case "$%$+${FUNCNAME}" in
 *) PS4='$%<$+>${FUNCNAME:+<${FUNCNAME}>}+ ' ;;
 esac
 
+. "${SCRIPTPREFIX:?}/include/asserts.sh"
 BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
 . "${SCRIPTPREFIX:?}/include/common.sh.${BSDPLATFORM}"
 . "${SCRIPTPREFIX:?}/include/hash.sh"
 . "${SCRIPTPREFIX:?}/include/util.sh"
-EX_USAGE=64
-EX_DATAERR=65
-EX_SOFTWARE=70
-EX_IOERR=74
 SHFLAGS="$-"
 
 # Return true if ran from bulk/testport, ie not daemon/status/jail
@@ -169,6 +171,17 @@ _err() {
 	fi
 }
 
+dev_err() {
+	DEV_ERROR=1 err "$@"
+}
+case "${USE_DEBUG:-no}" in
+yes) ;;
+*)
+	# This function may be called in "$@" contexts that do not use eval.
+	dev_err() { :; }
+	alias dev_err='# ' ;;
+esac
+
 # Message functions that depend on VERBOSE are stubbed out in post_getopts.
 
 _msg_n() {
@@ -214,25 +227,27 @@ msg_verbose() {
 msg_error() {
 	local -; set +x
 	local MSG_NESTED
+	local prefix
 
+	prefix="${DEV_ERROR:+Dev }Error:"
 	MSG_NESTED="${MSG_NESTED_STDERR:-0}"
 	case "${MY_JOBID:+set}" in
 	set)
 		# Send colored msg to bulk log...
 		COLOR_ARROW="${COLOR_ERROR}" \
-		    job_msg "${COLOR_ERROR}Error:${COLOR_RESET}" "$@"
+		    job_msg "${COLOR_ERROR}${prefix}${COLOR_RESET}" "$@"
 		# Needed hack for test output ordering
 		if [ "${IN_TEST:-0}" -eq 1 -a -n "${TEE_SLEEP_TIME-}" ]; then
 			sleep "${TEE_SLEEP_TIME}"
 		fi
 		# And non-colored to buld log
-		msg "Error:" "$@" >&2
+		msg "${prefix}" "$@" >&2
 		;;
 	*)
 		# Send to true stderr
 		COLOR_ARROW="${COLOR_ERROR}" \
 		    redirect_to_bulk \
-		    msg "${COLOR_ERROR}Error:${COLOR_RESET}" "$@" \
+		    msg "${COLOR_ERROR}${prefix}${COLOR_RESET}" "$@" \
 		    >&2
 		;;
 	esac
@@ -345,6 +360,9 @@ post_getopts() {
 	if ! [ ${VERBOSE} -gt 2 ]; then
 		msg_dev() { :; }
 		job_msg_dev() { :; }
+		if [ "${IN_TEST:-0}" -eq 0 ]; then
+			msg_assert_dev() { :; }
+		fi
 	fi
 	if ! [ ${VERBOSE} -gt 1 ]; then
 		msg_debug() { :; }

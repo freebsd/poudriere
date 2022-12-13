@@ -2,6 +2,35 @@ _LINEINFO_FUNC_DATA='${LINEINFOSTACK:+${LINEINFOSTACK}:}${FUNCNAME:+${FUNCNAME}:
 _LINEINFO_DATA="\${lineinfo-\$0}:${_LINEINFO_FUNC_DATA:?}"
 alias stack_lineinfo="LINEINFOSTACK=\"${_LINEINFO_FUNC_DATA:?}\" "
 
+if ! type msg_assert >/dev/null 2>&1; then
+msg_assert() {
+	local COLOR_ARROW
+
+	case "$(type msg >/dev/null 2>&1)" in
+	"msg is a shell function")
+		COLOR_ARROW="${COLOR_WARN}" \
+		    msg "${COLOR_WARN}${DEV_ASSERT:+Dev }Assert${COLOR_RESET-}: $@"
+		;;
+	*)
+		echo "${DEV_ASSERT:+Dev }Assert: $@"
+		;;
+	esac
+}
+fi
+
+# This function gets conditionally overwritten in post_getopts()
+msg_assert_dev() {
+	msg_assert "$@"
+}
+
+_err() {
+	set +e +u +x
+	local status="${1-1}"
+	shift
+	echo "Early Error: $@" >&2
+	exit "${status}"
+}
+
 aecho() {
 	local -; set +x +e +u
 	[ $# -ge 2 ] || eargs aecho result lineinfo expected actual
@@ -11,10 +40,12 @@ aecho() {
 	case "${result}" in
 	TEST)
 		shift 2
-		printf "%d> %-4s %s: %s\n" "$(getpid)" "${lineinfo}" "${result}" "$*"
+		msg_assert_dev "$(printf "%d> ${COLOR_LINEINFO-}%-4s${COLOR_RESET-} ${COLOR_ASSERT_TEST-}%s${COLOR_RESET-}: %s\n" \
+		    "$(getpid)" "${lineinfo}" "${result}" "$*")"
 		;;
 	OK)
-		printf "%d> %-4s %s\n" "$(getpid)" "${lineinfo}" "${result}"
+		msg_assert_dev "$(printf "%d> ${COLOR_LINEINFO-}%-4s${COLOR_RESET-} ${COLOR_ASSERT_OK-}%s${COLOR_RESET-}\n" \
+		    "$(getpid)" "${lineinfo}" "${result}")"
 		;;
 	FAIL)
 		case "${ASSERT_CONTINUE:-0}" in
@@ -22,8 +53,8 @@ aecho() {
 		esac
 		if [ "$#" -lt 4 ]; then
 			shift 2
-			printf "%d> %-4s %s: %s\n" "$(getpid)" "${lineinfo}" \
-			    "${result}" "$*"
+			msg_assert "$(printf "%d> ${COLOR_LINEINFO-}%-4s${COLOR_RESET-} ${COLOR_ASSERT_FAIL-}%s${COLOR_RESET-}: %s\n" \
+			    "$(getpid)" "${lineinfo}" "${result}" "$*")"
 			return
 		fi
 		local expected="$3"
@@ -31,11 +62,11 @@ aecho() {
 		local INDENT
 		shift 4
 		INDENT=">>   "
-		printf "%d> %-4s %s: %s\n${INDENT}expected '%s'\n${INDENT}actual   '%s'\n" \
+		msg_assert "$(printf "%d> ${COLOR_LINEINFO-}%-4s${COLOR_RESET-} ${COLOR_ASSERT_FAIL-}%s${COLOR_RESET-}: %s\n${INDENT}expected '%s'\n${INDENT}actual   '%s'\n" \
 			"$(getpid)" "${lineinfo}" "${result}" \
 			"$(echo "$@" | cat -ev | sed '2,$s,^,	,')" \
 			"$(echo "${expected}" | cat -ev | sed '2,$s,^,	,')" \
-			"$(echo "${actual}" | cat -ev | sed '2,$s,^,	,')"
+			"$(echo "${actual}" | cat -ev | sed '2,$s,^,	,')")"
 		;;
 	*)
 		;;
@@ -49,7 +80,9 @@ _assert_failure() {
 
 	EXITVAL=$((${EXITVAL:-0} + 1))
 	if [ "${ASSERT_CONTINUE:-0}" -eq 1 ]; then
-		return 1
+		return 0
+	elif [ "${IN_TEST:-0}" -eq 0 ]; then
+		err "${EX_SOFTWARE:?}" "Assertion failure"
 	else
 		exit "${EXITVAL}"
 	fi
@@ -74,6 +107,8 @@ _assert() {
 	esac
 	aecho OK "${lineinfo}" #"${msg}: expected: '${expected}', actual: '${actual}'"
 }
+# This function may be called in "$@" contexts that do not use eval.
+assert() { _assert "" "$@"; }
 alias assert="_assert \"${_LINEINFO_DATA:?}\" "
 
 _assert_not() {
@@ -93,6 +128,8 @@ _assert_not() {
 	esac
 	aecho OK "${lineinfo}" # "${msg}: notexpected: '${notexpected}', actual: '${actual}'"
 }
+# This function may be called in "$@" contexts that do not use eval.
+assert_not() { _assert_not "" "$@"; }
 alias assert_not="_assert_not \"${_LINEINFO_DATA:?}\" "
 
 _assert_list() {
@@ -128,6 +165,8 @@ _assert_list() {
 	fi
 	aecho OK "${lineinfo}" #"${msg}: expected: '${expected}', actual: '${actual}'"
 }
+# This function may be called in "$@" contexts that do not use eval.
+assert_list() { _assert_list "" "$@"; }
 alias assert_list="_assert_list \"${_LINEINFO_DATA:?}\" "
 
 _assert_file() {
@@ -190,6 +229,9 @@ $(cat -nvet "${expected}")"
 		rm -f "${have}" "${expected}"
 	fi
 }
+# This function may be called in "$@" contexts that do not use eval.
+assert_file() { _assert_file "" 0 "$@"; }
+assert_file_unordered() { _assert_file_unordered "" 1 "$@"; }
 alias assert_file="_assert_file \"${_LINEINFO_DATA:?}\" 0 "
 alias assert_file_unordered="_assert_file \"${_LINEINFO_DATA:?}\" 1 "
 
@@ -206,6 +248,9 @@ _assert_ret() {
 	"$@" || ret=$?
 	_assert "${lineinfo}" "${expected}" "${ret}" "Bad exit status: ${ret} cmd: $*"
 }
+# This function may be called in "$@" contexts that do not use eval.
+assert_ret() { _assert_ret "" "$@"; }
+assert_true() { assert_ret 0 "$@"; }
 alias assert_ret="_assert_ret \"${_LINEINFO_DATA:?}\" "
 alias assert_true='assert_ret 0'
 
@@ -230,6 +275,9 @@ _assert_ret_not() {
 	"$@" || ret=$?
 	_assert_not "${lineinfo}" "${expected}" "${ret}" "Bad exit status: ${ret} cmd: $*"
 }
+# This function may be called in "$@" contexts that do not use eval.
+assert_ret_not() { _assert_ret_not "" "$@"; }
+assert_false() { assert_ret_not 0 "$@"; }
 alias assert_ret_not="_assert_ret_not \"${_LINEINFO_DATA:?}\" "
 alias assert_false='assert_ret_not 0'
 
@@ -248,4 +296,36 @@ _assert_out() {
 	aecho TEST "${lineinfo}" "'0' == '\$?'"
 	assert 0 "${ret}" "Bad exit status: ${ret} cmd: $*"
 }
+# This function may be called in "$@" contexts that do not use eval.
+assert_out() { _assert_out "" "$@"; }
 alias assert_out="_assert_out \"${_LINEINFO_DATA:?}\" "
+
+setup_runtime_asserts() {
+	local -; set +x
+	local aliasname _ IFS
+
+	while IFS='=' read -r aliasname _; do
+		case "${aliasname}" in
+		assert*) ;;
+		*) continue ;;
+		esac
+
+		case "${USE_DEBUG:-no}" in
+		yes)
+			# This function may be called in "$@" contexts that do
+			# not use eval.
+			eval "dev_${aliasname}() { local DEV_ASSERT=1; ${aliasname} \"\$@\"; }"
+			alias "dev_${aliasname}=DEV_ASSERT=1 ${aliasname} "
+			;;
+		*)
+			# This function may be called in "$@" contexts that do
+			# not use eval.
+			eval "dev_${aliasname}() { :; }"
+			alias "dev_${aliasname}=# "
+			;;
+		esac
+	done <<-EOF
+	$(alias)
+	EOF
+}
+setup_runtime_asserts

@@ -35,6 +35,7 @@ write_atomic_cmp() {
 
 CMD="${0##*/}"
 IN_TEST=1
+USE_DEBUG=yes
 SCRIPTPATH="${SCRIPTPREFIX}/${CMD}"
 : ${SCRIPTNAME:=runtest.sh}
 : ${BASEFS:=/var/tmp/poudriere/test}
@@ -98,6 +99,7 @@ EOF
 msg() {
 	echo "$@"
 }
+
 msg_debug() {
 	if [ ${VERBOSE} -le 1 ]; then
 		msg_debug() { :; }
@@ -116,6 +118,10 @@ msg_dev() {
 		return 0
 	fi
 	msg "[DEV] $@" >&${REDIRECTED_STDERR_FD:-2}
+}
+
+msg_assert() {
+	msg "$@"
 }
 
 rm() {
@@ -469,6 +475,5 @@ trap 'cleanup exit' EXIT
 
 msg_debug "getpid: $$"
 
-. ${SCRIPTPREFIX}/include/asserts.sh
 . ${SCRIPTPREFIX}/common.sh
 post_getopts
