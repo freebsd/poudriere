@@ -1,6 +1,7 @@
 _LINEINFO_FUNC_DATA='${LINEINFOSTACK:+${LINEINFOSTACK}:}${FUNCNAME:+${FUNCNAME}:}${LINENO}'
 _LINEINFO_DATA="\${lineinfo-\$0}:${_LINEINFO_FUNC_DATA:?}"
 alias stack_lineinfo="LINEINFOSTACK=\"${_LINEINFO_FUNC_DATA:?}\" "
+alias err="_err \"${_LINEINFO_DATA:?}\" ";
 
 if ! type msg_assert >/dev/null 2>&1; then
 msg_assert() {
@@ -25,9 +26,10 @@ msg_assert_dev() {
 
 _err() {
 	set +e +u +x
-	local status="${1-1}"
-	shift
-	echo "Early Error: $@" >&2
+	local lineinfo="${1}"
+	local status="${2-1}"
+	shift 2
+	echo "Early Error: ${lineinfo:+${lineinfo}:}$*" >&2
 	exit "${status}"
 }
 
@@ -82,7 +84,7 @@ _assert_failure() {
 	if [ "${ASSERT_CONTINUE:-0}" -eq 1 ]; then
 		return 0
 	elif [ "${IN_TEST:-0}" -eq 0 ]; then
-		err "${EX_SOFTWARE:?}" "Assertion failure"
+		_err "" "${EX_SOFTWARE:?}" "Assertion failure"
 	else
 		exit "${EXITVAL}"
 	fi

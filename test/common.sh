@@ -1,12 +1,14 @@
 echo "getpid: $$" >&2
 
 _err() {
-	local status="$1"
-	shift
+	set +e +u +x
+	local lineinfo="${1}"
+	local status="${2-1}"
+	shift 2
 	case "${ERRORS_ARE_FATAL:-1}" in
 	1)
-		echo "Error: $*" >&${REDIRECTED_STDERR_FD:-2}
-		exit ${status}
+		echo "Error: ${lineinfo:+${lineinfo}:}$*" >&${REDIRECTED_STDERR_FD:-2}
+		exit "${status}"
 		;;
 	esac
 	CAUGHT_ERR_STATUS="${status}"
@@ -14,9 +16,8 @@ _err() {
 	return "${status}"
 }
 if ! type err >/dev/null 2>&1; then
-	alias err=_err
+	alias err='_err "${lineinfo-$0}:${LINEINFOSTACK:+${LINEINFOSTACK}:}${FUNCNAME:+${FUNCNAME}:}${LINENO}" '
 fi
-
 
 # Duplicated from src/share/poudriere/util.sh because it is too early to
 # include that file.

@@ -31,9 +31,6 @@ EX_DATAERR=65
 EX_SOFTWARE=70
 EX_IOERR=74
 
-if ! type err >/dev/null 2>&1; then
-	alias err=_err
-fi
 alias redirect_to_real_tty='>&${OUTPUT_REDIRECTED_STDOUT:-1} 2>&${OUTPUT_REDIRECTED_STDERR:-2} '
 alias redirect_to_bulk='redirect_to_real_tty '
 
@@ -47,6 +44,7 @@ case "$%$+${FUNCNAME}" in
 esac
 
 . "${SCRIPTPREFIX:?}/include/asserts.sh"
+alias err="_err \"${_LINEINFO_DATA:?}\" ";
 BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
 . "${SCRIPTPREFIX:?}/include/common.sh.${BSDPLATFORM}"
 . "${SCRIPTPREFIX:?}/include/hash.sh"
@@ -120,8 +118,9 @@ not_for_os() {
 }
 
 _err() {
-	local exit_status="${1-}"
-	local msg="${2-}"
+	local lineinfo="${1-}"
+	local exit_status="${2-}"
+	local msg="${3-}"
 
 	if [ -n "${CRASHED:-}" ]; then
 		echo "err: Recursive error detected: ${msg}" >&2 || :
@@ -134,9 +133,9 @@ _err() {
 	trap '' INFO
 	export CRASHED=1
 	case "$#" in
-	2) ;;
+	3) ;;
 	*)
-		msg_error "err expects 2 arguments: exit_number \"message\": actual: '$#': $*"
+		msg_error "err expects 3 arguments: exit_number \"message\": actual: '$#': $*"
 		exit ${EX_SOFTWARE}
 		;;
 	esac
@@ -149,7 +148,7 @@ _err() {
 	esac
 	case "${exit_status}" in
 	0) msg "${msg}" ;;
-	*) msg_error "${msg}" ;;
+	*) msg_error "${lineinfo:+${lineinfo}:}${msg}" ;;
 	esac || :
 	case "${ERRORS_ARE_DEP_FATAL:+set}" in
 	set) set_dep_fatal_error ;;
@@ -1429,7 +1428,7 @@ sig_handler() {
 		trap exit_handler EXIT
 		redirect_to_real_tty exec
 	} 2>/dev/null
-	err ${EXIT_STATUS:-$(($1 + 128))} \
+	_err "" ${EXIT_STATUS:-$(($1 + 128))} \
 	    "Signal ${SIGNAL} caught, cleaning up and exiting"
 }
 
