@@ -120,9 +120,12 @@ not_for_os() {
 }
 
 _err() {
+	local exit_status="${1-}"
+	local msg="${2-}"
+
 	if [ -n "${CRASHED:-}" ]; then
-		echo "err: Recursive error detected: $2" >&2 || :
-		exit "$1"
+		echo "err: Recursive error detected: ${msg}" >&2 || :
+		exit "${exit_status}"
 	fi
 	case "${SHFLAGS}" in
 	*x*) ;;
@@ -144,16 +147,25 @@ _err() {
 		bset ${MY_JOBID-} status "${EXIT_BSTATUS:-crashed:}" || :
 		;;
 	esac
-	case "$1" in
-	0) msg "$2" ;;
-	*) msg_error "$2" ;;
+	case "${exit_status}" in
+	0) msg "${msg}" ;;
+	*) msg_error "${msg}" ;;
 	esac || :
 	case "${ERRORS_ARE_DEP_FATAL:+set}" in
 	set) set_dep_fatal_error ;;
 	esac
 	# Avoid recursive err()->exit_handler()->err()... Just let
 	# exit_handler() cleanup.
-	if [ ${ERRORS_ARE_FATAL:-1} -eq 1 ]; then
+	case "${IN_EXIT_HANDLER:-0}" in
+	1)
+		case "${exit_status}" in
+		1) EXIT_STATUS="${exit_status}" ;;
+		esac
+		return 0
+		;;
+	esac
+	case "${ERRORS_ARE_FATAL:-1}" in
+	1)
 		if was_a_bulk_run &&
 		    [ -n "${POUDRIERE_BUILD_TYPE-}" ] &&
 		    [ "${PARALLEL_CHILD:-0}" -eq 0 ] &&
@@ -161,14 +173,12 @@ _err() {
 			show_build_summary >&2
 			show_log_info >&2
 		fi
-		exit $1
-	else
-		case "$1" in
-		0) ;;
-		*) EXIT_STATUS="$1" ;;
-		esac
-		return 0
-	fi
+		exit "${exit_status}"
+		;;
+	esac
+	CAUGHT_ERR_STATUS="${exit_status}"
+	CAUGHT_ERR_MSG="${msg}"
+	return "${exit_status}"
 }
 
 dev_err() {
@@ -1442,7 +1452,7 @@ exit_handler() {
 		*) ERROR_VERBOSE=0 ;;
 		esac
 		set +e
-		ERRORS_ARE_FATAL=0
+		IN_EXIT_HANDLER=1
 		SUPPRESS_INT=1
 		redirect_to_real_tty exec
 	} 2>/dev/null

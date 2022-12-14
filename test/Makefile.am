@@ -13,6 +13,7 @@ EXTRA_DIST= $(TESTS) \
 XFAIL_TESTS= \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
 	distclean-overlays.sh \
+	err.sh \
 	options-overlays.sh
 
 TESTS=\
@@ -27,6 +28,8 @@ TESTS=\
 	distclean-smoke.sh \
 	do_clone.sh \
 	encode_args.sh \
+	err.sh \
+	err_catch.sh \
 	getpid.sh \
 	getvar.sh \
 	gsub.sh \

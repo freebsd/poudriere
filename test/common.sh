@@ -3,8 +3,15 @@ echo "getpid: $$" >&2
 _err() {
 	local status="$1"
 	shift
-	echo "Error: $@" >&${REDIRECTED_STDERR_FD:-2}
-	exit ${status}
+	case "${ERRORS_ARE_FATAL:-1}" in
+	1)
+		echo "Error: $*" >&${REDIRECTED_STDERR_FD:-2}
+		exit ${status}
+		;;
+	esac
+	CAUGHT_ERR_STATUS="${status}"
+	CAUGHT_ERR_MSG="$*"
+	return "${status}"
 }
 if ! type err >/dev/null 2>&1; then
 	alias err=_err
@@ -135,6 +142,22 @@ rm() {
 	done
 
 	command rm "$@"
+}
+
+catch_err() {
+	#local ERRORS_ARE_FATAL CRASHED
+	local ret -
+
+	#ERRORS_ARE_FATAL=0
+	CAUGHT_ERR_STATUS=0
+	CAUGHT_ERR_MSG=
+	set +e
+	exec 3>&1
+	CAUGHT_ERR_MSG="$( set -e; "$@" 2>&1 1>&3 )"
+	ret="$?"
+	exec 1>&3
+	CAUGHT_ERR_STATUS="${ret}"
+	return "${ret}"
 }
 
 capture_output_simple() {

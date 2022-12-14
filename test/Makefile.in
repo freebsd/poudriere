@@ -465,6 +465,7 @@ EXTRA_DIST = $(TESTS) \
 XFAIL_TESTS = \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
 	distclean-overlays.sh \
+	err.sh \
 	options-overlays.sh
 
 
@@ -472,8 +473,8 @@ XFAIL_TESTS = \
 TESTS = builtins.sh cache.sh cache_pipe.sh calculate_duration.sh \
 	count_lines.sh display.sh distclean-badorigin.sh \
 	distclean-overlays.sh distclean-smoke.sh do_clone.sh \
-	encode_args.sh getpid.sh getvar.sh gsub.sh globmatch.sh \
-	hash_basic.sh hash_stack.sh list.sh locks.sh \
+	encode_args.sh err.sh err_catch.sh getpid.sh getvar.sh gsub.sh \
+	globmatch.sh hash_basic.sh hash_stack.sh list.sh locks.sh \
 	locks_critical_section.sh locks_critical_section_nested.sh \
 	locked_mkdir.sh locked_mkdir_waiters.sh \
 	locked_mkdir_waiters_kill.sh locked_mkdir_waiters_all_lose.sh \
@@ -821,6 +822,20 @@ do_clone.sh.log: do_clone.sh
 encode_args.sh.log: encode_args.sh
 	@p='encode_args.sh'; \
 	b='encode_args.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+err.sh.log: err.sh
+	@p='err.sh'; \
+	b='err.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+err_catch.sh.log: err_catch.sh
+	@p='err_catch.sh'; \
+	b='err_catch.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

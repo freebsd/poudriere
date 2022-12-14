@@ -1,5 +1,4 @@
 SLEEPTIME=5
-alias err=return
 
 set -e
 . common.sh
@@ -163,7 +162,7 @@ false &&
 	(lock_acquire TEST 1)
 	assert 1 "$?" "lock_acquire on child's lock should fail"
 	# Try to drop the lock - should not work
-	lock_release TEST
+	catch_err lock_release TEST
 	assert_not 0 "$?" "Can't release lock not owned"
 	(lock_release TEST)
 	assert_not 0 "$?" "Can't release lock not owned"
@@ -190,7 +189,7 @@ false &&
 		assert 1 "$?" "Should not get lock"
 		lock_have TEST
 		assert 1 $? "Should not have lock in child from parent"
-		lock_release TEST
+		catch_err lock_release TEST
 		assert_not 0 "$?" "Should not be able to release parent lock"
 		lock_have TEST
 		assert 1 $? "Should not have lock in child from parent"
