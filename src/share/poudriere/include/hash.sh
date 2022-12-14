@@ -490,3 +490,101 @@ stack_foreach_back() {
 		return 1
 	fi
 }
+
+stack_set() {
+	local -; set +x
+	[ "$#" -eq 3 ] ||
+	    eargs stack_set stack_var separator data
+	local si_stack_var="$1"
+	local si_separator="$2"
+	local si_data="${3-}"
+	local IFS -
+
+	set -f
+	IFS="${si_separator:?}"
+	set -- ${si_data}
+	set +f
+	unset IFS
+	stack_set_args "${si_stack_var}" "$@"
+}
+
+stack_set_args() {
+	local -; set +x
+	[ "$#" -ge 2 ] ||
+	    eargs stack_set_args stack_var data '[...]'
+	local si_stack_var="$1"
+	local si_output IFS
+
+	shift 1
+	IFS="${STACK_SEP}"
+	si_output="$*"
+	unset IFS
+	setvar "${si_stack_var}" "${si_output}"
+}
+
+stack_expand_front() {
+	local -; set +x
+	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] ||
+	    eargs stack_expand_front stack_var separator [var_return_output]
+	local sef_stack_var="$1"
+	local sef_separator="$2"
+	local sef_var_return="${3-}"
+	local sef_stack IFS -
+
+	getvar "${sef_stack_var}" sef_stack || return
+	IFS="${STACK_SEP}"
+	set -f
+	set -- ${sef_stack}
+	set +f
+	case "${sef_separator}" in
+	?)
+		IFS="${sef_separator}"
+		case "${sef_var_return}" in
+		""|-) echo "$*" ;;
+		*) setvar "${sef_var_return}" "$*" ;;
+		esac
+		unset IFS
+		;;
+	*)
+		local sef_output
+
+		unset IFS
+		_gsub "${sef_stack}" "${STACK_SEP}" "${sef_separator}" \
+		    sef_output || return
+		case "${sef_var_return}" in
+		""|-) echo "${sef_output}" ;;
+		*) setvar "${sef_var_return}" "${sef_output}" ;;
+		esac
+		;;
+	esac
+}
+
+stack_expand() {
+	stack_expand_front "$@"
+}
+
+stack_expand_back() {
+	local -; set +x
+	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] ||
+	    eargs stack_expand_back stack_var separator [var_return_output]
+	local seb_stack_var="$1"
+	local seb_separator="$2"
+	local seb_var_return="${3-}"
+	local seb_stack seb_output
+	local IFS seb_item
+
+	getvar "${seb_stack_var}" seb_stack || return
+	IFS="${STACK_SEP}"
+	set -f
+	set -- ${seb_stack}
+	set +f
+	unset IFS
+	seb_output=
+	for seb_item in "$@"; do
+		seb_output="${seb_item}${seb_output:+${seb_separator}${seb_output}}"
+	done
+	case "${seb_var_return}" in
+	""|-) echo "${seb_output}" ;;
+	*) setvar "${seb_var_return}" "${seb_output}" ;;
+	esac
+}
