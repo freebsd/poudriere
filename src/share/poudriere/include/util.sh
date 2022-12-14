@@ -1642,7 +1642,9 @@ required_env() {
 	[ $# -ge 3 ] || eargs required_env function VAR VALUE VAR... VALUE...
 	local function="$1"
 	local var expected_value actual_value ret neg
+	local errors
 
+	errors=
 	shift
 	ret=0
 	neg=
@@ -1683,10 +1685,10 @@ required_env() {
 			;;
 		esac
 		ret=$((ret + 1))
-		msg_error "entered ${function}() with wrong environment: expected ${var} ${neg}= '${expected_value}' actual: '${actual_value}'"
+		stack_push errors "expected ${var} ${neg}= '${expected_value}' actual: '${actual_value}'"
 	done
-	if [ "${ret}" -ne 0 -a "${IN_TEST:-0}" -eq 0 ]; then
-		exit ${EX_SOFTWARE}
+	if [ "${ret}" -ne 0 ]; then
+		err "${EX_SOFTWARE}" "entered ${function}() with wrong environment:"$'\n'$'\t'"$(stack_expand errors $'\n'$'\t')"
 	fi
 	return "${ret}"
 }
