@@ -15,9 +15,10 @@ CATEGORIES=	misc
 MASTER_SITES=	#
 DISTFILES=	#
 
-OPTIONS_DEFINE=	FOOBIN FAILURE
+OPTIONS_DEFINE=	FOOBIN FAILURE SLEEP
 FOOBIN_DESC=	Provide bin/foo
 FAILURE_DESC=	Cause a failure during install
+SLEEP_DESC=	Sleep before build to increase queue race test
 OPTIONS_DEFAULT=FOOBIN
 OPTIONS_SUB=	yes
 
@@ -26,10 +27,21 @@ COMMENT=	foo test port
 
 LICENSE=	BSD2CLAUSE
 
-NO_BUILD=	yes
 NO_ARCH=	yes
 
 DATADIR=	${PREFIX}/share/freebsd
+
+do-build:
+	@${MKDIR} ${WRKDIR}
+
+# Sleep 1 minute load average + some time. Trying to build after
+# ports-mgmt/poudriere-devel-dep-FOO is done; which will fail in
+# run-depends if we succeed in not building. If we build before
+# it gets to run-depends it will pass and the test will XPASS.
+do-build-SLEEP-on:
+	set -x; \
+	    load="$$(uptime | sed -E -e 's,.*load averages: ([0-9][0-9]?[0-9]?).*,\1,')"; \
+	    sleep $$((load + 40))
 
 do-install:
 	@${DO_NADA}

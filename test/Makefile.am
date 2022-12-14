@@ -11,6 +11,7 @@ EXTRA_DIST= $(TESTS) \
 	    runtest.sh
 
 XFAIL_TESTS= \
+	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
 	distclean-overlays.sh \
 	err.sh \
@@ -59,6 +60,7 @@ TESTS=\
 	pkgqueue_find_all_pool_references.sh \
 	pkgqueue_prioritize.sh \
 	pkgqueue_remove_many_pipe.sh \
+	pkgqueue_trimmed_misordered.sh \
 	pipe_func.sh \
 	pipe_hold.sh \
 	port_var_fetch.sh \
@@ -83,6 +85,7 @@ TESTS=\
 JAIL_TESTS= \
 	bulk-bad-dep-pkgname.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh \
+	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
 	bulk-build-inc-pkgclean-flavor-default.sh \
 	bulk-build-inc-pkgclean-flavor.sh \
