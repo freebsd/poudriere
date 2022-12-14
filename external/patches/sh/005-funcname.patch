@@ -31,15 +31,16 @@ index b08101a7d..c8ef3b187 100644
  	case '?':
  		num = oexitstatus;
  		break;
-diff --git external/sh/syntax.c external/sh/syntax.c
-index 13fd5795a..418b8124f 100644
---- external/sh/syntax.c
-+++ external/sh/syntax.c
-@@ -184,6 +184,7 @@ const char is_type[SYNBASE + CHAR_MAX + 1] = {
- 	[SYNBASE + '_'] = ISUNDER,
- 	[SYNBASE + '#'] = ISSPECL,
- 	[SYNBASE + '%'] = ISSPECL,
-+	[SYNBASE + '+'] = ISSPECL,
- 	[SYNBASE + '?'] = ISSPECL,
- 	[SYNBASE + '$'] = ISSPECL,
- 	[SYNBASE + '!'] = ISSPECL,
+diff --git external/sh/mksyntax.c external/sh/mksyntax.c
+index fc92ff1a0..55346d691 100644
+--- external/sh/mksyntax.c
++++ external/sh/mksyntax.c
+@@ -225,7 +225,7 @@ main(int argc __unused, char **argv __unused)
+ 	add("abcdefghijklmnopqrstuvwxyz", "ISLOWER");
+ 	add("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "ISUPPER");
+ 	add("_", "ISUNDER");
+-	add("#%?$!-*@", "ISSPECL");
++	add("#%+?$!-*@", "ISSPECL");
+ 	finish();
+ 
+ 	exit(0);

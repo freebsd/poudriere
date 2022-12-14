@@ -36,18 +36,19 @@ index bc8744080..f7312eeb0 100644
  	rootshell = 1;
  	INTOFF;
  	initvar();
-diff --git external/sh/syntax.c external/sh/syntax.c
-index bd5c76ea9..13fd5795a 100644
---- external/sh/syntax.c
-+++ external/sh/syntax.c
-@@ -183,6 +183,7 @@ const char is_type[SYNBASE + CHAR_MAX + 1] = {
- 	[SYNBASE + 'Z'] = ISUPPER,
- 	[SYNBASE + '_'] = ISUNDER,
- 	[SYNBASE + '#'] = ISSPECL,
-+	[SYNBASE + '%'] = ISSPECL,
- 	[SYNBASE + '?'] = ISSPECL,
- 	[SYNBASE + '$'] = ISSPECL,
- 	[SYNBASE + '!'] = ISSPECL,
+diff --git external/sh/mksyntax.c external/sh/mksyntax.c
+index 24b118f64..fc92ff1a0 100644
+--- external/sh/mksyntax.c
++++ external/sh/mksyntax.c
+@@ -225,7 +225,7 @@ main(int argc __unused, char **argv __unused)
+ 	add("abcdefghijklmnopqrstuvwxyz", "ISLOWER");
+ 	add("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "ISUPPER");
+ 	add("_", "ISUNDER");
+-	add("#?$!-*@", "ISSPECL");
++	add("#%?$!-*@", "ISSPECL");
+ 	finish();
+ 
+ 	exit(0);
 diff --git external/sh/var.c external/sh/var.c
 index 075828915..175f65195 100644
 --- external/sh/var.c
