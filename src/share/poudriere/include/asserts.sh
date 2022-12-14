@@ -111,6 +111,32 @@ _assert() {
 assert() { _assert "" "$@"; }
 alias assert="_assert \"${_LINEINFO_DATA:?}\" "
 
+_assert_case() {
+	local -; set +x +e +u
+	[ $# -ge 3 ] || eargs assert_case lineinfo expected actual
+	local lineinfo="$1"
+	local expected="$2"
+	local actual="$3"
+	shift 3
+	local -
+
+	aecho TEST "${lineinfo}" $'\n'"case \"${actual}\" in"$'\n'$'\t'"${expected})"
+	set -f
+	# shellcheck disable=SC2254
+	case "${actual}" in
+	${expected}) ;;
+	*)
+		aecho FAIL "${lineinfo}" "${expected}" "${actual}" "$@"
+		assert_failure
+		;;
+	esac
+	set +f
+	aecho OK "${lineinfo}" #"${msg}: expected: '${expected}', actual: '${actual}'"
+}
+# This function may be called in "$@" contexts that do not use eval.
+assert_case() { _assert_case "" "$@"; }
+alias assert_case="_assert_case \"${_LINEINFO_DATA:?}\" "
+
 _assert_not() {
 	local -; set +x +e +u
 	[ $# -ge 3 ] || eargs assert_not lineinfo notexpected actual
