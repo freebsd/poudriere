@@ -300,6 +300,32 @@ _assert_out() {
 assert_out() { _assert_out "" "$@"; }
 alias assert_out="_assert_out \"${_LINEINFO_DATA:?}\" "
 
+_assert_stack() {
+	local -; set +x +u
+	[ "$#" -ge 2 ] || eargs assert_stack stack_var expected_value '[reason]'
+	local stack_var="$1"
+	local expected="$2"
+	local reason="$3"
+	local have_tmp=$(mktemp -t assert_stack)
+	local expected_tmp=$(mktemp -t assert_stack)
+	local ret=0
+	local val
+
+	val="$(getvar "${stack_var}")"
+	echo "${val}" | tr ' ' '\n' | sort | sed -e '/^$/d' > "${have_tmp}"
+	echo "${expected}" | tr ' ' '\n' | sort | sed -e '/^$/d' > \
+	    "${expected_tmp}"
+	cmp -s "${have_tmp}" "${expected_tmp}" || ret=$?
+	[ ${ret} -ne 0 ] && comm "${have_tmp}" "${expected_tmp}" >&2
+
+	rm -f "${have_tmp}" "${expected_tmp}"
+	assert 0 "${ret}" \
+		"${reason} -"$'\n'"Have:     '${val}'"$'\n'"Expected: '${expected}'"
+}
+# This function may be called in "$@" contexts that do not use eval.
+assert_stack() { _assert_stack "" "$@"; }
+alias assert_stack='stack_lineinfo _assert_stack '
+
 setup_runtime_asserts() {
 	local -; set +x
 	local aliasname _ IFS

@@ -25,6 +25,7 @@
 # Taken from bin/sh/mksyntax.sh is_in_name()
 : ${HASH_VAR_NAME_SUB_GLOB:="[!a-zA-Z0-9_]"}
 : ${HASH_VAR_NAME_PREFIX:="_HASH_"}
+: ${STACK_SEP:=$'\002'}
 
 if ! type eargs 2>/dev/null >&2; then
 	eargs() {
@@ -368,7 +369,7 @@ stack_push_front() {
 	local spf_value
 
 	getvar "${spf_var}" spf_value || spf_value=
-	setvar "${spf_var}" "${spf_item}${spf_value:+ ${spf_value}}"
+	setvar "${spf_var}" "${spf_item}${spf_value:+${STACK_SEP}${spf_value}}"
 }
 
 stack_push_back() {
@@ -379,7 +380,7 @@ stack_push_back() {
 	local spb_value
 
 	getvar "${spb_var}" spb_value || spb_value=
-	setvar "${spb_var}" "${spb_value:+${spb_value} }${spb_item}"
+	setvar "${spb_var}" "${spb_value:+${spb_value}${STACK_SEP}}${spb_item}"
 }
 
 stack_pop() {
@@ -402,14 +403,14 @@ stack_pop_front() {
 		return 1
 		;;
 	esac
-	spf_item="${spf_value%% *}"
+	spf_item="${spf_value%%${STACK_SEP}*}"
 	case "${spf_item}" in
 	"${spf_value}" )
 		# Last pop
 		spf_value=""
 		;;
 	*)
-		spf_value="${spf_value#* }"
+		spf_value="${spf_value#*${STACK_SEP}}"
 		;;
 	esac
 	setvar "${spf_var}" "${spf_value}"
@@ -432,14 +433,14 @@ stack_pop_back() {
 		return 1
 		;;
 	esac
-	spb_item="${spb_value##* }"
+	spb_item="${spb_value##*${STACK_SEP}}"
 	case "${spb_item}" in
 	"${spb_value}" )
 		# Last pop
 		spb_value=""
 		;;
 	*)
-		spb_value="${spb_value% *}"
+		spb_value="${spb_value%${STACK_SEP}*}"
 		;;
 	esac
 	setvar "${spb_var}" "${spb_value}"

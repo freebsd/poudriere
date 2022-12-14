@@ -2,33 +2,11 @@ set -e
 . common.sh
 set +e
 
-_assert_stack() {
-	local stack_var="$1"
-	local expected="$2"
-	local reason="$3"
-	local have_tmp=$(mktemp -t assert_stack)
-	local expected_tmp=$(mktemp -t assert_stack)
-	local ret=0
-        local val
-
-        val="$(getvar "${stack_var}")"
-	echo "${val}" | tr ' ' '\n' | sort | sed -e '/^$/d' > "${have_tmp}"
-	echo "${expected}" | tr ' ' '\n' | sort | sed -e '/^$/d' > \
-	    "${expected_tmp}"
-	cmp -s "${have_tmp}" "${expected_tmp}" || ret=$?
-	[ ${ret} -ne 0 ] && comm "${have_tmp}" "${expected_tmp}" >&2
-
-	rm -f "${have_tmp}" "${expected_tmp}"
-	assert 0 "${ret}" \
-		"${reason} - Have: '${val}' Expected: '${expected}'"
-}
-alias assert_stack='stack_lineinfo _assert_stack '
-
 STACK=
 assert_ret 0 stack_push STACK "01"
 assert_stack STACK "01"
 assert_ret 0 stack_push STACK "02"
-assert_stack STACK "02 01"
+assert_stack STACK "02${STACK_SEP}01"
 assert_ret 0 stack_pop STACK pop
 assert_stack STACK "01"
 assert "${pop}" "02" "stack_pop"
@@ -46,7 +24,7 @@ assert "" "${pop}"
 		assert_ret 0 stack_push_back stack "${n}"
 		n=$((n + 1))
 	done
-	assert_stack stack "0 1 2 3 4 5 6 7 8 9"
+	assert_stack stack "0${STACK_SEP}1${STACK_SEP}2${STACK_SEP}3${STACK_SEP}4${STACK_SEP}5${STACK_SEP}6${STACK_SEP}7${STACK_SEP}8${STACK_SEP}9"
 }
 
 {
@@ -54,13 +32,13 @@ assert "" "${pop}"
 	n=0
 	max=10
 	until [ "$n" -eq "$max" ]; do
-		assert_ret 0 stack_push stack "${n}"
+		assert_ret 0 stack_push stack "${n} $((n + 2))"
 		n=$((n + 1))
 	done
-	assert_stack stack "9 8 7 6 5 4 3 2 1 0"
+	assert_stack stack "9 11${STACK_SEP}8 10${STACK_SEP}7 9${STACK_SEP}6 8${STACK_SEP}5 7${STACK_SEP}4 6${STACK_SEP}3 5${STACK_SEP}2 4${STACK_SEP}1 3${STACK_SEP}0 2"
 	n=$((max - 1))
 	while stack_pop stack val; do
-		assert "${n}" "${val}"
+		assert "${n} $((n + 2))" "${val}"
 		n=$((n - 1))
 	done
 	assert "-1" "${n}"
@@ -72,24 +50,24 @@ assert "" "${pop}"
 	n=0
 	max=10
 	until [ "$n" -eq "$max" ]; do
-		assert_ret 0 stack_push stack "${n}"
+		assert_ret 0 stack_push stack "${n} $((n + 2))"
 		n=$((n + 1))
 	done
-	assert_stack stack "9 8 7 6 5 4 3 2 1 0"
+	assert_stack stack "9 11${STACK_SEP}8 10${STACK_SEP}7 9${STACK_SEP}6 8${STACK_SEP}5 7${STACK_SEP}4 6${STACK_SEP}3 5${STACK_SEP}2 4${STACK_SEP}1 3${STACK_SEP}0 2"
 	n=$((max - 1))
 	while stack_foreach stack val tmp; do
-		assert "${n}" "${val}"
+		assert "${n} $((n + 2))" "${val}"
 		n=$((n - 1))
 	done
 	assert "-1" "${n}"
-	assert_stack stack "9 8 7 6 5 4 3 2 1 0"
+	assert_stack stack "9 11${STACK_SEP}8 10${STACK_SEP}7 9${STACK_SEP}6 8${STACK_SEP}5 7${STACK_SEP}4 6${STACK_SEP}3 5${STACK_SEP}2 4${STACK_SEP}1 3${STACK_SEP}0 2"
 	n=$((max - 1))
 	while stack_foreach stack val tmp; do
-		assert "${n}" "${val}"
+		assert "${n} $((n + 2))" "${val}"
 		n=$((n - 1))
 	done
 	assert "-1" "${n}"
-	assert_stack stack "9 8 7 6 5 4 3 2 1 0"
+	assert_stack stack "9 11${STACK_SEP}8 10${STACK_SEP}7 9${STACK_SEP}6 8${STACK_SEP}5 7${STACK_SEP}4 6${STACK_SEP}3 5${STACK_SEP}2 4${STACK_SEP}1 3${STACK_SEP}0 2"
 }
 
 {
@@ -97,13 +75,13 @@ assert "" "${pop}"
 	n=0
 	max=10
 	until [ "$n" -eq "$max" ]; do
-		assert_ret 0 stack_push stack "${n}"
+		assert_ret 0 stack_push stack "${n} $((n + 2))"
 		n=$((n + 1))
 	done
-	assert_stack stack "9 8 7 6 5 4 3 2 1 0"
+	assert_stack stack "9 11${STACK_SEP}8 10${STACK_SEP}7 9${STACK_SEP}6 8${STACK_SEP}5 7${STACK_SEP}4 6${STACK_SEP}3 5${STACK_SEP}2 4${STACK_SEP}1 3${STACK_SEP}0 2"
 	n=0
 	while stack_pop_back stack val; do
-		assert "${n}" "${val}"
+		assert "${n} $((n + 2))" "${val}"
 		n=$((n + 1))
 	done
 	assert "${max}" "${n}"
@@ -115,24 +93,24 @@ assert "" "${pop}"
 	n=0
 	max=10
 	until [ "$n" -eq "$max" ]; do
-		assert_ret 0 stack_push stack "${n}"
+		assert_ret 0 stack_push stack "${n} $((n + 2))"
 		n=$((n + 1))
 	done
-	assert_stack stack "9 8 7 6 5 4 3 2 1 0"
+	assert_stack stack "9 11${STACK_SEP}8 10${STACK_SEP}7 9${STACK_SEP}6 8${STACK_SEP}5 7${STACK_SEP}4 6${STACK_SEP}3 5${STACK_SEP}2 4${STACK_SEP}1 3${STACK_SEP}0 2"
 	n=0
 	while stack_foreach_back stack val tmp; do
-		assert "${n}" "${val}"
+		assert "${n} $((n + 2))" "${val}"
 		n=$((n + 1))
 	done
 	assert "${max}" "${n}"
-	assert_stack stack "9 8 7 6 5 4 3 2 1 0"
+	assert_stack stack "9 11${STACK_SEP}8 10${STACK_SEP}7 9${STACK_SEP}6 8${STACK_SEP}5 7${STACK_SEP}4 6${STACK_SEP}3 5${STACK_SEP}2 4${STACK_SEP}1 3${STACK_SEP}0 2"
 	n=0
 	while stack_foreach_back stack val tmp; do
-		assert "${n}" "${val}"
+		assert "${n} $((n + 2))" "${val}"
 		n=$((n + 1))
 	done
 	assert "${max}" "${n}"
-	assert_stack stack "9 8 7 6 5 4 3 2 1 0"
+	assert_stack stack "9 11${STACK_SEP}8 10${STACK_SEP}7 9${STACK_SEP}6 8${STACK_SEP}5 7${STACK_SEP}4 6${STACK_SEP}3 5${STACK_SEP}2 4${STACK_SEP}1 3${STACK_SEP}0 2"
 }
 
 {
