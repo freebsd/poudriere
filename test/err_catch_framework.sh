@@ -1,4 +1,3 @@
-TEST_OVERRIDE_ERR=0
 set -e
 . common.sh
 set +e
@@ -15,6 +14,7 @@ assert 8 "${CAUGHT_ERR_STATUS:?}"
 assert_case "*eRRor" "${CAUGHT_ERR_MSG}"
 unset CAUGHT_ERR_STATUS CAUGHT_ERR_MSG
 
-assert_ret 9 eval assert_out 'stdout$' foo
+# Framework always returns 99
+assert_ret 99 eval assert_out 'stdout$' foo
 assert "null" "${CRASHED-null}"
 assert "null" "${CAUGHT_ERR_STATUS-null}"

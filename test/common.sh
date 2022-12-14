@@ -1,14 +1,24 @@
 echo "getpid: $$" >&2
 
-_err() {
+_test_framework_err() {
 	set +e +u +x
+	case "${TEST_OVERRIDE_ERR:-1}" in
+	0)
+		_err "$@"
+		return
+		;;
+	esac
 	local lineinfo="${1}"
 	local status="${2-1}"
 	shift 2
 	case "${ERRORS_ARE_FATAL:-1}" in
 	1)
-		echo "Error: ${lineinfo:+${lineinfo}:}$*" >&${REDIRECTED_STDERR_FD:-2}
-		exit "${status}"
+		echo "Test Framework Error: ${lineinfo:+${lineinfo}:}$*" >&${REDIRECTED_STDERR_FD:-2}
+		case "${TEST_HARD_ERROR:-1}" in
+		1) exit "99" ;;
+		# Aliasing and subshells can end up here via catch_err()
+		*) exit "${status}" ;;
+		esac
 		;;
 	esac
 	CAUGHT_ERR_STATUS="${status}"
@@ -16,7 +26,10 @@ _err() {
 	return "${status}"
 }
 if ! type err >/dev/null 2>&1; then
-	alias err='_err "${lineinfo-$0}:${LINEINFOSTACK:+${LINEINFOSTACK}:}${FUNCNAME:+${FUNCNAME}:}${LINENO}" '
+	# This function may be called in "$@" contexts that do not use eval.
+	# eval is used here to avoid existing alias parsing issues.
+	eval 'err() { _test_framework_err "" "$@"; }'
+	alias err='_test_framework_err "${lineinfo-$0}:${LINEINFOSTACK:+${LINEINFOSTACK}:}${FUNCNAME:+${FUNCNAME}:}${LINENO}" '
 fi
 
 # Duplicated from src/share/poudriere/util.sh because it is too early to
@@ -147,11 +160,11 @@ rm() {
 
 catch_err() {
 	#local ERRORS_ARE_FATAL CRASHED
+	local TEST_HARD_ERROR
 	local ret -
 
 	#ERRORS_ARE_FATAL=0
-	CAUGHT_ERR_STATUS=0
-	CAUGHT_ERR_MSG=
+	TEST_HARD_ERROR=0
 	set +e
 	exec 3>&1
 	CAUGHT_ERR_MSG="$( set -e; "$@" 2>&1 1>&3 )"
@@ -168,7 +181,7 @@ capture_output_simple() {
 	local _my_stderr _my_stderr_log
 
 	if [ -n "${REDIRECTED_STDERR_FD-}" ]; then
-		err 99 "test framework failure: capture_output_simple called nested"
+		err 99 "capture_output_simple called nested"
 	fi
 
 	case "${my_stdout_return:+set}" in

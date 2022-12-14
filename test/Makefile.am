@@ -30,6 +30,7 @@ TESTS=\
 	encode_args.sh \
 	err.sh \
 	err_catch.sh \
+	err_catch_framework.sh \
 	getpid.sh \
 	getvar.sh \
 	gsub.sh \

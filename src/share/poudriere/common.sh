@@ -44,7 +44,12 @@ case "$%$+${FUNCNAME}" in
 esac
 
 . "${SCRIPTPREFIX:?}/include/asserts.sh"
-alias err="_err \"${_LINEINFO_DATA:?}\" ";
+if ! type err >/dev/null 2>&1; then
+	# This function may be called in "$@" contexts that do not use eval.
+	# eval is used here to avoid existing alias parsing issues.
+	eval 'err() { _err "" "$@"; }'
+	alias err="_err \"${_LINEINFO_DATA:?}\" ";
+fi
 BSDPLATFORM=`uname -s | tr '[:upper:]' '[:lower:]'`
 . "${SCRIPTPREFIX:?}/include/common.sh.${BSDPLATFORM}"
 . "${SCRIPTPREFIX:?}/include/hash.sh"

@@ -1,7 +1,12 @@
 _LINEINFO_FUNC_DATA='${LINEINFOSTACK:+${LINEINFOSTACK}:}${FUNCNAME:+${FUNCNAME}:}${LINENO}'
 _LINEINFO_DATA="\${lineinfo-\$0}:${_LINEINFO_FUNC_DATA:?}"
 alias stack_lineinfo="LINEINFOSTACK=\"${_LINEINFO_FUNC_DATA:?}\" "
-alias err="_err \"${_LINEINFO_DATA:?}\" ";
+if ! type err >/dev/null 2>&1; then
+	# This function may be called in "$@" contexts that do not use eval.
+	# eval is used here to avoid existing alias parsing issues.
+	eval 'err() { _err "" "$@"; }'
+	alias err="_err \"${_LINEINFO_DATA:?}\" ";
+fi
 
 if ! type msg_assert >/dev/null 2>&1; then
 msg_assert() {

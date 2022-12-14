@@ -1,3 +1,4 @@
+TEST_OVERRIDE_ERR=0
 set -e
 . common.sh
 set +e
