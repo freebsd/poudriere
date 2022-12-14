@@ -291,7 +291,7 @@ _assert_out() {
 
 	aecho TEST "${lineinfo}" "'${expected}' == '\$($*)'"
 	ret=0
-	out="$(set -e; "$@")" || ret="$?"
+	out="$(set_pipefail; set -e; "$@" | cat -vet)" || ret="$?"
 	assert "${expected}" "${out}" "Bad output: $*"
 	aecho TEST "${lineinfo}" "'0' == '\$?'"
 	assert 0 "${ret}" "Bad exit status: ${ret} cmd: $*"
