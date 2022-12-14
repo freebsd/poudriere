@@ -52,6 +52,13 @@ src/poudriere-sh/builtins-poudriere.def
 src/poudriere-sh/builtins.c
 src/poudriere-sh/builtins.h
 src/poudriere-sh/shell.h
+external/sh/nodes.c
+external/sh/nodes.h
+external/sh/mknodes
+external/sh/syntax.c
+external/sh/syntax.h
+external/sh/mksyntax
+external/sh/token.h
 external/ptsort/.git
 external/ptsort/.gitignore
 test/prep
