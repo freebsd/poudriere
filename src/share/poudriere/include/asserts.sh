@@ -308,7 +308,7 @@ alias assert_ret_not="_assert_ret_not \"${_LINEINFO_DATA:?}\" "
 alias assert_false='assert_ret_not 0'
 
 _assert_out() {
-	local -; set +x +u
+	local -; set +x +u +e
 	[ "$#" -ge 2 ] || eargs assert_out expected command '[args]'
 	local lineinfo="$1"
 	local expected="$2"
@@ -316,11 +316,12 @@ _assert_out() {
 	local out ret
 
 	aecho TEST "${lineinfo}" "'${expected}' == '\$($*)'"
-	ret=0
-	out="$(set_pipefail; set -e; "$@" | cat -vet)" || ret="$?"
+	out="$(set_pipefail; set -e; "$@" | cat -vet)"
+	ret="$?"
 	assert "${expected}" "${out}" "Bad output: $*"
-	aecho TEST "${lineinfo}" "'0' == '\$?'"
-	assert 0 "${ret}" "Bad exit status: ${ret} cmd: $*"
+	return "${ret}"
+	#aecho TEST "${lineinfo}" "'0' == '\$?'"
+	#assert 0 "${ret}" "Bad exit status: ${ret} cmd: $*"
 }
 # This function may be called in "$@" contexts that do not use eval.
 assert_out() { _assert_out "" "$@"; }
