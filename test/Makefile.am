@@ -75,6 +75,7 @@ TESTS=\
 	$(JAIL_TESTS)
 
 JAIL_TESTS= \
+	bulk-bad-dep-pkgname.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-with-recursive-delete.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
 	bulk-build-inc-pkgclean-flavor-default.sh \
