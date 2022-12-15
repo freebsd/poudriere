@@ -1733,10 +1733,30 @@ fetch_file() {
 	err 1 "Failed to fetch from ${url}"
 }
 
+# Make sure 'mktemp foo' wasn't passed in without a prefix.
+_validate_mktemp() {
+	local OPTIND flag
+
+	OPTIND=1
+	while getopts "dp:qt:u" flag; do
+		case "${flag}" in
+		d|p|q|u) ;;
+		t) return 0 ;;
+		esac
+	done
+	shift $((OPTIND-1))
+	case "${1-}" in
+	""|*X*) return 0 ;;
+	esac
+	echo "mktemp: argument missing prefix: $*" >&2
+	return 1
+}
+
 # Wrap mktemp to put most tmpfiles in $MNT_DATADIR/tmp rather than system /tmp.
 mktemp() {
 	local mktemp_tmpfile ret
 
+	_validate_mktemp "$@" || return
 	ret=0
 	_mktemp mktemp_tmpfile "$@" || ret="$?"
 	echo "${mktemp_tmpfile}"

@@ -14,6 +14,18 @@ assert_not '' "${POUDRIERE_TMPDIR-}"
 }
 
 {
+	assert_false mktemp -u badprefix
+	assert_false mktemp badprefix
+	tmp="$(mktemp prefixXX)"
+	assert 0 "$?"
+	assert_true [ -e "${tmp}" ]
+	rm -f "${tmp}"
+	tmp="$(mktemp -u prefixXX)"
+	assert 0 "$?"
+	assert_false [ -e "${tmp}" ]
+}
+
+{
 	mkdir_tmpdir=$(mktemp -d)
 	assert_ret 0 [ -d "${mkdir_tmpdir}" ]
 	tmp=$(TMPDIR=${mkdir_tmpdir} mktemp -u)
