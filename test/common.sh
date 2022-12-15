@@ -13,7 +13,8 @@ _test_framework_err() {
 	shift 2
 	case "${ERRORS_ARE_FATAL:-1}" in
 	1)
-		echo "Test Framework Error: ${lineinfo:+${lineinfo}:}$*" >&${REDIRECTED_STDERR_FD:-2}
+		echo "Test Framework Error: ${lineinfo:+${lineinfo}:}$*" |
+		    tee "${ERR_CHECK}" >&${REDIRECTED_STDERR_FD:-2}
 		case "${TEST_HARD_ERROR:-1}" in
 		1) exit "99" ;;
 		# Aliasing and subshells can end up here via catch_err()
@@ -81,6 +82,7 @@ if [ ${_DID_TMPDIR:-0} -eq 0 ]; then
 	cd "${POUDRIERE_TMPDIR}"
 	echo "TMPDIR: ${POUDRIERE_TMPDIR}" >&2
 fi
+ERR_CHECK="$(mktemp -ut err)"
 
 mkdir -p ${POUDRIERE_ETC}/poudriere.d ${POUDRIERE_ETC}/run
 rm -f "${POUDRIERE_ETC}/poudriere.conf"
@@ -166,11 +168,32 @@ catch_err() {
 	#ERRORS_ARE_FATAL=0
 	TEST_HARD_ERROR=0
 	set +e
-	exec 3>&1
-	CAUGHT_ERR_MSG="$( set -e; "$@" 2>&1 1>&3 )"
+	( set -e; "$@" )
 	ret="$?"
-	exec 1>&3
-	CAUGHT_ERR_STATUS="${ret}"
+	case "${ret}" in
+	0)
+		# Be sure an err wasn't called
+		;;
+	esac
+	case "${ret}" in
+	0)
+		unset CAUGHT_ERR_MSG CAUGHT_ERR_STATUS
+		;;
+	*)
+		CAUGHT_ERR_STATUS="${ret}"
+		case "${TEST_OVERRIDE_ERR:-1}" in
+		1)
+			read_file CAUGHT_ERR_MSG "${ERR_CHECK}" ||
+			    err "${EX_SOFTWARE}" "catch_err: Failed to read ${ERR_CHECK}"
+			unlink "${ERR_CHECK}"
+			ERR_CHECK="$(mktemp -ut err)"
+			;;
+		*)
+			CAUGHT_ERR_MSG="core error"
+			;;
+		esac
+		;;
+	esac
 	return "${ret}"
 }
 
@@ -468,6 +491,9 @@ cleanup() {
 			case "${EXITVAL:-0}" in
 			0) ret=1 ;;
 			esac
+			if [ -e "${ERR_CHECK-}" ]; then
+				cat "${ERR_CHECK}" >&2
+			fi
 		else
 			rm -rf "${TMPDIR}"
 		fi
