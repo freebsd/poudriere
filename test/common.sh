@@ -67,6 +67,7 @@ if [ ${_DID_TMPDIR:-0} -eq 0 ]; then
 	# This file may be included again
 	_DID_TMPDIR=1
 	POUDRIERE_TMPDIR="${TMPDIR}"
+	cd "${POUDRIERE_TMPDIR}"
 	echo "TMPDIR: ${POUDRIERE_TMPDIR}" >&2
 fi
 
