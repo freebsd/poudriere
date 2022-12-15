@@ -138,7 +138,6 @@ CLEANUP_HOOK=distfiles_cleanup
 read_packages_from_params "$@"
 
 for PTNAME in ${PTNAMES}; do
-	clear_dep_fatal_error
 	parallel_start
 
 	PORTSDIR=$(pget ${PTNAME} mnt)
@@ -168,7 +167,7 @@ for PTNAME in ${PTNAMES}; do
 		    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
 		    gather_distfiles "${originspec}"
 	done
-	if ! parallel_stop || check_dep_fatal_error; then
+	if ! parallel_stop; then
 		err 1 "Fatal errors encountered gathering distfiles metadata"
 	fi
 	rm -f "${__MAKE_CONF}"

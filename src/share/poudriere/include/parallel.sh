@@ -221,6 +221,7 @@ parallel_start() {
 	export PARALLEL_PIDS=""
 	: ${PARALLEL_JOBS:="$(sysctl -n hw.ncpu)"}
 	_SHOULD_REAP=0
+	delay_pipe_fatal_error
 }
 
 # For all running children, look for dead ones, collect their status, error out
@@ -258,6 +259,14 @@ parallel_stop() {
 	exec 9>&-
 	unset PARALLEL_PIDS
 	unset NBPARALLEL
+
+	case "${ret}" in
+	0)
+		if check_pipe_fatal_error; then
+			ret=1
+		fi
+		;;
+	esac
 
 	return "${ret}"
 }

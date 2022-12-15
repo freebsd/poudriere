@@ -31,6 +31,7 @@ TESTS=\
 	err.sh \
 	err_catch.sh \
 	err_catch_framework.sh \
+	err_pipe_delayed.sh \
 	getpid.sh \
 	getvar.sh \
 	gsub.sh \

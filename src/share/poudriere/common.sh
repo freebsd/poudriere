@@ -155,8 +155,8 @@ _err() {
 	0) msg "${msg}" ;;
 	*) msg_error "${lineinfo:+${lineinfo}:}${msg}" ;;
 	esac || :
-	case "${ERRORS_ARE_DEP_FATAL:+set}" in
-	set) set_dep_fatal_error ;;
+	case "${ERRORS_ARE_PIPE_FATAL:+set}${PARALLEL_CHILD:+set}" in
+	*set*) set_pipe_fatal_error ;;
 	esac
 	# Avoid recursive err()->exit_handler()->err()... Just let
 	# exit_handler() cleanup.
@@ -1537,6 +1537,18 @@ exit_handler() {
 		set -f
 		${CLEANUP_HOOK}
 		set +f
+		;;
+	esac
+
+	case "${EXIT_STATUS}" in
+	0)
+		if check_pipe_fatal_error; then
+			msg_error "Unhandled child process error"
+			EXIT_STATUS=$((EXIT_STATUS + 1))
+		fi
+		;;
+	*)
+		clear_pipe_fatal_error
 		;;
 	esac
 
@@ -7163,30 +7175,44 @@ originspec_is_default_flavor() {
 	return 1
 }
 
-set_dep_fatal_error() {
-	case "${DEP_FATAL_ERROR:+set}" in
+set_pipe_fatal_error() {
+	case "${PIPE_FATAL_ERROR:+set}" in
 	set) return 0 ;;
 	esac
-	case "${ERRORS_ARE_DEP_FATAL:+set}" in
+	case "${ERRORS_ARE_PIPE_FATAL:+set}" in
 	set) ;;
 	# Running in a context where we should error now rather than delay.
 	*) return 1 ;;
 	esac
-	DEP_FATAL_ERROR=1
+	PIPE_FATAL_ERROR=1
 	# Mark the fatal error flag. Must do it like this as this may be
 	# running in a sub-shell.
-	: > ${DEP_FATAL_ERROR_FILE}
+	: > "${PIPE_FATAL_ERROR_FILE:?}"
 }
 
-clear_dep_fatal_error() {
-	unset DEP_FATAL_ERROR
-	unlink ${DEP_FATAL_ERROR_FILE} || :
-	export ERRORS_ARE_DEP_FATAL=1
+delay_pipe_fatal_error() {
+	clear_pipe_fatal_error
+	export ERRORS_ARE_PIPE_FATAL=1
 }
 
-check_dep_fatal_error() {
-	unset ERRORS_ARE_DEP_FATAL
-	[ -n "${DEP_FATAL_ERROR}" ] || [ -f ${DEP_FATAL_ERROR_FILE} ]
+clear_pipe_fatal_error() {
+	unset PIPE_FATAL_ERROR ERRORS_ARE_PIPE_FATAL
+	unlink "${PIPE_FATAL_ERROR_FILE:?}" || :
+}
+
+check_pipe_fatal_error() {
+	case "${PIPE_FATAL_ERROR:+set}" in
+	set)
+		clear_pipe_fatal_error
+		return 0
+		;;
+	esac
+	if [ -f "${PIPE_FATAL_ERROR_FILE:?}" ]; then
+		clear_pipe_fatal_error
+		return 0
+	fi
+	unset ERRORS_ARE_PIPE_FATAL
+	return 1
 }
 
 gather_port_vars() {
@@ -7235,7 +7261,6 @@ gather_port_vars() {
 	mkdir gqueue dqueue mqueue fqueue
 	qlist=$(mktemp -t poudriere.qlist)
 
-	clear_dep_fatal_error
 	parallel_start
 	ports="$(listed_ports show_moved)" ||
 	    err "${EX_SOFTWARE}" "gather_port_vars: listed_ports failure"
@@ -7254,7 +7279,7 @@ gather_port_vars() {
 			    "(${COLOR_PORT}${originspec}${COLOR_RESET})" \
 			    gather_port_vars_port "${originspec}" \
 			    "${rdep}" || \
-			    set_dep_fatal_error
+			    set_pipe_fatal_error
 			continue
 		fi
 		# Otherwise let's utilize the gatherqueue to simplify
@@ -7316,7 +7341,7 @@ gather_port_vars() {
 			;;
 		esac
 	done
-	if ! parallel_stop || check_dep_fatal_error; then
+	if ! parallel_stop; then
 		err 1 "Fatal errors encountered gathering initial ports metadata"
 	fi
 
@@ -7326,7 +7351,6 @@ gather_port_vars() {
 		if ! dirempty dqueue; then
 			msg_debug "Processing depqueue"
 			:> "${qlist:?}"
-			clear_dep_fatal_error
 			parallel_start
 			for qorigin in dqueue/*; do
 				case "${qorigin}" in
@@ -7340,9 +7364,9 @@ gather_port_vars() {
 				parallel_run \
 				    gather_port_vars_process_depqueue \
 				    "${originspec}" || \
-				    set_dep_fatal_error
+				    set_pipe_fatal_error
 			done
-			if ! parallel_stop || check_dep_fatal_error; then
+			if ! parallel_stop; then
 				err 1 "Fatal errors encountered processing gathered ports metadata"
 			fi
 			cat "${qlist:?}" | tr '\n' '\000' | xargs -0 rmdir
@@ -7356,7 +7380,6 @@ gather_port_vars() {
 		if ! dirempty gqueue; then
 			msg_debug "Processing gatherqueue"
 			:> "${qlist:?}"
-			clear_dep_fatal_error
 			parallel_start
 			for qorigin in gqueue/*; do
 				case "${qorigin}" in
@@ -7374,9 +7397,9 @@ gather_port_vars() {
 				    "(${COLOR_PORT}${originspec}${COLOR_RESET})" \
 				    gather_port_vars_port \
 				    "${originspec}" "${rdep}" || \
-				    set_dep_fatal_error
+				    set_pipe_fatal_error
 			done
-			if ! parallel_stop || check_dep_fatal_error; then
+			if ! parallel_stop; then
 				err 1 "Fatal errors encountered gathering ports metadata"
 			fi
 			cat "${qlist:?}" | tr '\n' '\000' | xargs -0 rm -rf
@@ -7584,7 +7607,7 @@ gather_port_vars_port() {
 		# Fatal error
 		*)
 			# An error is printed from deps_fetch_vars
-			set_dep_fatal_error
+			set_pipe_fatal_error
 			return 1
 			;;
 		esac
@@ -7703,7 +7726,7 @@ gather_port_vars_port() {
 	# Assert some policy before proceeding to process these deps
 	# further.
 	if ! deps_sanity "${originspec}" "${deps}"; then
-		set_dep_fatal_error
+		set_pipe_fatal_error
 		return 1
 	fi
 
@@ -7876,14 +7899,13 @@ generate_queue() {
 
 	:> "${MASTER_DATADIR:?}/pkg_deps.unsorted"
 
-	clear_dep_fatal_error
 	parallel_start
 	while mapfile_read_loop "${MASTER_DATADIR:?}/all_pkgs" \
 	    pkgname originspec _rdep _ignored; do
 		parallel_run generate_queue_pkg "${pkgname}" "${originspec}" \
-		    "${MASTER_DATADIR}/pkg_deps.unsorted" || set_dep_fatal_error
+		    "${MASTER_DATADIR}/pkg_deps.unsorted" || set_pipe_fatal_error
 	done
-	if ! parallel_stop || check_dep_fatal_error; then
+	if ! parallel_stop; then
 		err 1 "Fatal errors encountered calculating dependencies"
 	fi
 
@@ -7932,7 +7954,7 @@ generate_queue_pkg() {
 			else
 				msg_error "generate_queue_pkg failed to lookup pkgname for ${COLOR_PORT}${dep_originspec}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET} from ${COLOR_PORT}${originspec}${COLOR_RESET} -- Is SUBDIR+=${COLOR_PORT}${dep_origin#*/}${COLOR_RESET} missing in ${COLOR_PORT}${dep_origin%/*}${COLOR_RESET}/Makefile?${dep_flavor:+ And does the port provide the '${dep_flavor}' FLAVOR?}"
 			fi
-			set_dep_fatal_error
+			set_pipe_fatal_error
 			continue
 		fi
 		msg_debug "generate_queue_pkg: Will build ${COLOR_PORT}${dep_originspec}${COLOR_RESET} for ${COLOR_PORT}${pkgname}${COLOR_RESET}"
@@ -7983,7 +8005,7 @@ generate_queue_pkg() {
 				case "${dpath}" in
 				"")
 					msg_error "Invalid dependency line for ${COLOR_PORT}${pkgname}${COLOR_RESET}: ${d}"
-					set_dep_fatal_error
+					set_pipe_fatal_error
 					continue
 					;;
 				esac
@@ -7991,7 +8013,7 @@ generate_queue_pkg() {
 				    generate_queue_originspec-pkgname \
 				    "${dpath}" dep_real_pkgname; then
 					msg_error "generate_queue_pkg failed to lookup PKGNAME for ${COLOR_PORT}${dpath}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET}"
-					set_dep_fatal_error
+					set_pipe_fatal_error
 					continue
 				fi
 				case "${dep_real_pkgname%-*}" in
@@ -8000,7 +8022,7 @@ generate_queue_pkg() {
 					${err_type} "${COLOR_PORT}${originspec}${COLOR_WARN} dependency on ${COLOR_PORT}${dpath}${COLOR_WARN} has wrong PKGNAME of '${dep_pkgname}' but should be '${dep_real_pkgname%-*}'; Is the dependency missing a @FLAVOR?"
 					case "${BAD_PKGNAME_DEPS_ARE_FATAL}" in
 					"yes")
-						set_dep_fatal_error
+						set_pipe_fatal_error
 						continue
 						;;
 					esac
@@ -8128,7 +8150,7 @@ _listed_ports() {
 		set)
 			if ! have_ports_feature FLAVORS; then
 				msg_error "Trying to build FLAVOR-specific ${originspec} but ports tree has no FLAVORS support."
-				set_dep_fatal_error || return
+				set_pipe_fatal_error || return
 				continue
 			fi
 			;;
@@ -8138,7 +8160,7 @@ _listed_ports() {
 			case "${new_origin}" in
 			"EXPIRED "*)
 				msg_error "MOVED: ${origin} ${new_origin}"
-				set_dep_fatal_error || return
+				set_pipe_fatal_error || return
 				continue
 				;;
 			esac
@@ -8149,7 +8171,7 @@ _listed_ports() {
 		fi
 		if ! test_port_origin_exist "${origin}"; then
 			msg_error "Nonexistent origin listed: ${COLOR_PORT}${origin_listed}${new_origin:+${COLOR_RESET} (moved to nonexistent ${COLOR_PORT}${new_origin}${COLOR_RESET})}"
-			set_dep_fatal_error || return
+			set_pipe_fatal_error || return
 			continue
 		fi
 		case "${tell_moved:+set}.${new_origin:+set}" in
@@ -8649,7 +8671,7 @@ prepare_ports() {
 		if [ ${CLEAN_LISTED} -eq 1 ]; then
 			msg "-C specified, cleaning listed packages"
 			delete_pkg_list=$(mktemp -t poudriere.cleanC)
-			clear_dep_fatal_error
+			delay_pipe_fatal_error
 			listed_pkgnames | while mapfile_read_loop_redir \
 			    pkgname; do
 				pkg="${PACKAGES:?}/All/${pkgname:?}.${PKG_EXT}"
@@ -8668,7 +8690,7 @@ prepare_ports() {
 					fi
 				fi
 			done
-			if check_dep_fatal_error; then
+			if check_pipe_fatal_error; then
 				err 1 "Error processing -C packages"
 			fi
 			case "${ATOMIC_PACKAGE_REPOSITORY}" in
@@ -9653,7 +9675,7 @@ export LC_COLLATE
 
 : ${MAX_FILES:=8192}
 : ${DEFAULT_MAX_FILES:=${MAX_FILES}}
-: ${DEP_FATAL_ERROR_FILE:=dep_fatal_error-$$}
+: ${PIPE_FATAL_ERROR_FILE:="${POUDRIERE_TMPDIR:?}/pipe_fatal_error-$$"}
 HAVE_FDESCFS=0
 case "$(mount -t fdescfs | awk '$3 == "/dev/fd" {print $3}')" in
 "/dev/fd")

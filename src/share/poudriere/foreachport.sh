@@ -154,7 +154,6 @@ exec >&3
 
 export PORTSDIR
 fetch_global_port_vars
-clear_dep_fatal_error
 parallel_start
 ports="$(listed_ports show_moved)" ||
     err "$?" "Failed to list ports"
@@ -164,9 +163,9 @@ for originspec in ${ports}; do
 	    prefix_stderr_quick \
 	    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
 	    injail "/tmp/cmd" "${origin}" "${flavor}" "${subpkg}" "$@" || \
-	    set_dep_fatal_error
+	    set_pipe_fatal_error
 done
-if ! parallel_stop || check_dep_fatal_error; then
+if ! parallel_stop; then
 	err 1 "Fatal errors encountered processing ports"
 fi
 
