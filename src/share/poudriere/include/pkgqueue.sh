@@ -49,7 +49,7 @@ pkgqueue_get_next() {
 			case "${p}" in
 			*"unbalanced/"*)
 				# We lost the race with a child running
-				# balance_pool(). The file is already
+				# pkgqueue_balance_pool(). The file is already
 				# gone and moved to a bucket. Try again.
 				ret=0
 				pkgqueue_get_next "$@" || ret=$?
@@ -274,14 +274,48 @@ pkgqueue_list() {
 	find deps -type d -depth 2 | cut -d / -f 3
 }
 
+pkgqueue_balance_pool() {
+	required_env pkgqueue_balance_pool PWD "${MASTER_DATADIR_ABS:?}"
+	local pkgname pkg_dir dep_count lock
+
+	# Avoid running this in parallel, no need. Note that this lock is
+	# not on the unbalanced/ dir, but only this function. pkgqueue_done()
+	# writes to unbalanced/, pkgqueue_empty() reads from it, and
+	# pkgqueue_get_next() moves from it.
+	lock=.lock-pkgqueue_balance_pool
+	mkdir "${lock}" 2>/dev/null || return 0
+
+	if dirempty pool/unbalanced; then
+		rmdir "${lock}"
+		return 0
+	fi
+
+	# For everything ready-to-build...
+	for pkg_dir in pool/unbalanced/*; do
+		# May be empty due to racing with pkgqueue_get_next()
+		case "${pkg_dir}" in
+		"pool/unbalanced/*") break ;;
+		esac
+		pkgname="${pkg_dir##*/}"
+		hash_remove "priority" "${pkgname}" dep_count || dep_count=0
+		# This races with pkgqueue_get_next(), just ignore failure
+		# to move it.
+		rename "${pkg_dir}" "pool/${dep_count}/${pkgname}" || :
+	done 2>/dev/null
+	# New files may have been added in unbalanced/ via pkgqueue_done() due
+	# to not being locked. These will be picked up in the next run.
+	rmdir "${lock}"
+}
+
 # Create a pool of ready-to-build from the deps pool
 pkgqueue_move_ready_to_pool() {
 	required_env pkgqueue_move_ready_to_pool PWD "${MASTER_DATADIR_ABS:?}"
 	[ $# -eq 0 ] || eargs pkgqueue_move_ready_to_pool
 
-	find deps -type d -depth 2 -empty | \
-		xargs -J % mv % pool/unbalanced
-	}
+	find deps -type d -depth 2 -empty |
+	    xargs -J % mv % pool/unbalanced
+	pkgqueue_balance_pool
+}
 
 # Remove all packages from queue sent in STDIN
 pkgqueue_remove_many_pipe() {
@@ -432,7 +466,8 @@ pkgqueue_empty() {
 
 	n=0
 	# Check twice that the queue is empty. This avoids racing with
-	# pkgqueue_done() and balance_pool() moving files between the dirs.
+	# pkgqueue_done() and pkgqueue_balance_pool() moving files between
+	# the dirs.
 	while [ ${n} -lt 2 ]; do
 		for pool_dir in ${dirs}; do
 			if ! dirempty ${pool_dir}; then

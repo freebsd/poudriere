@@ -5492,8 +5492,6 @@ parallel_build() {
 	load_priorities
 
 	pkgqueue_move_ready_to_pool
-	msg "Balancing pool"
-	balance_pool
 
 	msg "Building ${nremaining} packages using up to ${PARALLEL_JOBS} builders"
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
@@ -5655,7 +5653,8 @@ clean_pool() {
 	*)
 		(
 			cd "${MASTER_DATADIR:?}"
-			balance_pool || :
+			bset ${MY_JOBID} status "balancing_pool:"
+			pkgqueue_balance_pool || :
 		)
 		;;
 	esac
@@ -8909,48 +8908,10 @@ load_priorities() {
 	)
 
 	# unbalanced is where everything starts at.  Items are moved in
-	# balance_pool based on their priority in the "priority" hash.
+	# pkgqueue_balance_pool based on their priority in the "priority" hash.
 	POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS:?} unbalanced"
 
 	return 0
-}
-
-balance_pool() {
-	required_env balance_pool PWD "${MASTER_DATADIR_ABS:?}"
-
-	local pkgname pkg_dir dep_count lock
-
-	# Avoid running this in parallel, no need. Note that this lock is
-	# not on the unbalanced/ dir, but only this function. pkgqueue_done()
-	# writes to unbalanced/, pkgqueue_empty() reads from it, and
-	# pkgqueue_get_next() moves from it.
-	lock=.lock-balance_pool
-	mkdir ${lock} 2>/dev/null || return 0
-
-	if dirempty pool/unbalanced; then
-		rmdir ${lock}
-		return 0
-	fi
-
-	bset ${MY_JOBID} status "balancing_pool:"
-
-	# For everything ready-to-build...
-	for pkg_dir in pool/unbalanced/*; do
-		# May be empty due to racing with pkgqueue_get_next()
-		case "${pkg_dir}" in
-			"pool/unbalanced/*") break ;;
-		esac
-		pkgname=${pkg_dir##*/}
-		hash_remove "priority" "${pkgname}" dep_count || dep_count=0
-		# This races with pkgqueue_get_next(), just ignore failure
-		# to move it.
-		rename "${pkg_dir}" \
-		    "pool/${dep_count}/${pkgname}" || :
-	done 2>/dev/null
-	# New files may have been added in unbalanced/ via pkgqueue_done() due
-	# to not being locked. These will be picked up in the next run.
-
-	rmdir ${lock}
 }
 
 append_make() {
