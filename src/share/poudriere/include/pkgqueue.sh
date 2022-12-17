@@ -38,7 +38,8 @@ pkgqueue_get_next() {
 
 	# CWD is MASTER_DATADIR/pool
 
-	p=$(find ${POOL_BUCKET_DIRS} -type d -depth 1 -empty -print -quit || :)
+	p=$(find ${POOL_BUCKET_DIRS} -type d -depth 1 -empty -print -quit) ||
+	    err "${EX_SOFTWARE}" "pkgqueue_get_next: Failed to search queue"
 	if [ -n "$p" ]; then
 		_pkgname=${p##*/}
 		if ! rename "${p}" "${MASTER_DATADIR}/building/${_pkgname}" \
