@@ -5647,17 +5647,6 @@ clean_pool() {
 			fi
 		fi
 	done
-
-	case "${clean_rdepends}" in
-	"ignored") ;;
-	*)
-		(
-			cd "${MASTER_DATADIR:?}"
-			bset ${MY_JOBID} status "balancing_pool:"
-			pkgqueue_balance_pool || :
-		)
-		;;
-	esac
 }
 
 print_phase_header() {
@@ -8877,10 +8866,9 @@ load_priorities_ptsort() {
 	cp -f "${MASTER_DATADIR:?}/pkg_deps.priority" \
 	    "${log:?}/.poudriere.pkg_deps_priority%"
 
-	# Read all priorities into the "priority" hash
 	while mapfile_read_loop "${MASTER_DATADIR:?}/pkg_deps.priority" \
 	    priority pkgname; do
-		hash_set "priority" "${pkgname}" ${priority}
+		pkgqueue_prioritize "${pkgname}" "${priority}"
 	done
 
 	return 0
@@ -8891,31 +8879,6 @@ load_priorities() {
 	bset status "load_priorities:"
 
 	load_priorities_ptsort
-
-	# Create buckets to satisfy the dependency chain priorities.
-	POOL_BUCKET_DIRS=$(awk '{print $1}' \
-	    "${MASTER_DATADIR:?}/pkg_deps.priority"|sort -run)
-
-	# If there are no buckets then everything to build will fall
-	# into 0 as they depend on nothing and nothing depends on them.
-	# I.e., pkg-devel in -ac or testport on something with no deps
-	# needed.
-	case "${POOL_BUCKET_DIRS}" in
-	"") POOL_BUCKET_DIRS="0" ;;
-	esac
-
-	# Create buckets after loading priorities in case of boosts.
-	(
-		if cd "${MASTER_DATADIR:?}/pool"; then
-			mkdir ${POOL_BUCKET_DIRS:?} || :
-		fi
-	)
-
-	# unbalanced is where everything starts at.  Items are moved in
-	# pkgqueue_balance_pool based on their priority in the "priority" hash.
-	POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS:?} unbalanced"
-
-	return 0
 }
 
 append_make() {

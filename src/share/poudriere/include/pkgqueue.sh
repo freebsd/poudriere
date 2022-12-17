@@ -284,6 +284,13 @@ pkgqueue_clean_queue() {
 	_pkgqueue_clean_queue "${pkgname}" "${clean_rdepends}" | sort -u ||
 	    ret="$?"
 
+	case "${clean_rdepends}" in
+	"ignored") ;;
+	*)
+		pkgqueue_balance_pool || :
+		;;
+	esac
+
 	case "${oldpwd:+set}" in
 	set) cd "${oldpwd}" ;;
 	esac
@@ -296,6 +303,15 @@ pkgqueue_list() {
 	[ $# -eq 0 ] || eargs pkgqueue_list
 
 	find deps -type d -depth 2 | cut -d / -f 3
+}
+
+pkgqueue_prioritize() {
+	[ "$#" -eq 2 ] || eargs pkgqueue_prioritize pkgname priority
+	local pkgname="$1"
+	local priority="$2"
+
+	hash_set "pkgqueue_priority" "${pkgname}" "${priority}"
+	list_add PKGQUEUE_PRIORITIES "${priority}"
 }
 
 pkgqueue_balance_pool() {
@@ -321,7 +337,8 @@ pkgqueue_balance_pool() {
 		"pool/unbalanced/*") break ;;
 		esac
 		pkgname="${pkg_dir##*/}"
-		hash_remove "priority" "${pkgname}" dep_count || dep_count=0
+		hash_remove "pkgqueue_priority" "${pkgname}" dep_count ||
+		    dep_count=0
 		# This races with pkgqueue_get_next(), just ignore failure
 		# to move it.
 		rename "${pkg_dir}" "pool/${dep_count}/${pkgname}" || :
@@ -336,6 +353,33 @@ pkgqueue_balance_pool() {
 pkgqueue_move_ready_to_pool() {
 	required_env pkgqueue_move_ready_to_pool PWD "${MASTER_DATADIR_ABS:?}"
 	[ $# -eq 0 ] || eargs pkgqueue_move_ready_to_pool
+
+	# Create buckets to satisfy the dependency chain priorities.
+	case "${PKGQUEUE_PRIORITIES:+set}" in
+	set)
+		POOL_BUCKET_DIRS="$(echo "${PKGQUEUE_PRIORITIES}" |
+		    tr ' ' '\n' | LC_ALL=C sort -run |
+		    paste -d ' ' -s -)"
+		;;
+	*)
+		# If there are no buckets then everything to build will fall
+		# into 0 as they depend on nothing and nothing depends on them.
+		# I.e., pkg-devel in -ac or testport on something with no deps
+		# needed.
+		POOL_BUCKET_DIRS="0"
+		;;
+	esac
+
+	# Create buckets after loading priorities in case of boosts.
+	(
+		if cd "${MASTER_DATADIR:?}/pool"; then
+			mkdir ${POOL_BUCKET_DIRS:?}
+		fi
+	)
+
+	# unbalanced is where everything starts at.  Items are moved in
+	# pkgqueue_balance_pool based on their priority.
+	POOL_BUCKET_DIRS="${POOL_BUCKET_DIRS:?} unbalanced"
 
 	find deps -type d -depth 2 -empty |
 	    xargs -J % mv % pool/unbalanced
