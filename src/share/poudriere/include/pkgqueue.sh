@@ -268,34 +268,15 @@ pkgqueue_clean_queue() {
 	[ $# -eq 2 ] || eargs pkgqueue_clean_queue pkgname clean_rdepends
 	local pkgname="$1"
 	local clean_rdepends="$2"
-	local oldpwd
 
-	oldpwd=
-	case "${PWD}" in
-	"${MASTER_DATADIR_ABS:?}") ;;
-	*)
-		cd "${MASTER_DATADIR:?}"
-		oldpwd="${OLDPWD}"
-		;;
-	esac
-
-	ret="0"
 	# Outputs skipped_pkgnames
-	_pkgqueue_clean_queue "${pkgname}" "${clean_rdepends}" | sort -u ||
-	    ret="$?"
-
+	in_reldir MASTER_DATADIR _pkgqueue_clean_queue "$@" | sort -u
 	case "${clean_rdepends}" in
 	"ignored") ;;
 	*)
-		pkgqueue_balance_pool || :
+		in_reldir MASTER_DATADIR pkgqueue_balance_pool || :
 		;;
 	esac
-
-	case "${oldpwd:+set}" in
-	set) cd "${oldpwd}" ;;
-	esac
-
-	return "${ret}"
 }
 
 pkgqueue_list() {
@@ -386,14 +367,18 @@ pkgqueue_move_ready_to_pool() {
 	pkgqueue_balance_pool
 }
 
-# Remove all packages from queue sent in STDIN
 pkgqueue_remove_many_pipe() {
-	required_env pkgqueue_remove_many_pipe PWD "${MASTER_DATADIR_ABS:?}"
-	[ $# -eq 0 ] || eargs pkgqueue_remove_many_pipe [pkgnames stdin]
+	in_reldir MASTER_DATADIR _pkgqueue_remove_many_pipe "$@"
+}
+
+# Remove all packages from queue sent in STDIN
+_pkgqueue_remove_many_pipe() {
+	required_env _pkgqueue_remove_many_pipe PWD "${MASTER_DATADIR_ABS:?}"
+	[ $# -eq 0 ] || eargs _pkgqueue_remove_many_pipe [pkgnames stdin]
 	local pkgname
 
 	while mapfile_read_loop_redir pkgname; do
-		pkgqueue_find_all_pool_references "${pkgname}"
+		_pkgqueue_find_all_pool_references "${pkgname}"
 	done | while mapfile_read_loop_redir deppath; do
 		echo "${deppath}"
 		case "${deppath}" in
@@ -607,8 +592,12 @@ pkgqueue_find_dead_packages() {
 }
 
 pkgqueue_find_all_pool_references() {
-	required_env pkgqueue_find_all_pool_references PWD "${MASTER_DATADIR_ABS:?}"
-	[ $# -ne 1 ] && eargs pkgqueue_find_all_pool_references pkgname
+	in_reldir MASTER_DATADIR _pkgqueue_find_all_pool_references "$@"
+}
+
+_pkgqueue_find_all_pool_references() {
+	required_env _pkgqueue_find_all_pool_references PWD "${MASTER_DATADIR_ABS:?}"
+	[ $# -eq 1 ] || eargs _pkgqueue_find_all_pool_references pkgname
 	local pkgname="$1"
 	local rpn dep_pkgname rdep_dir_name pkg_dir_name dep_dir_name
 
@@ -650,7 +639,7 @@ pkgqueue_unqueue_existing_packages() {
 		if [ -f "../packages/All/${pn}.${PKG_EXT}" ]; then
 			echo "${pn}"
 		fi
-	done | pkgqueue_remove_many_pipe
+	done | _pkgqueue_remove_many_pipe
 }
 
 # Delete from the queue orphaned build deps. This can happen if
@@ -685,6 +674,6 @@ pkgqueue_trim_orphaned_build_deps() {
 		done
 	} | pkgqueue_list_deps_pipe > "${tmp}"
 	pkgqueue_list | sort -o "${tmp}.actual"
-	comm -13 "${tmp}" "${tmp}.actual" | pkgqueue_remove_many_pipe
+	comm -13 "${tmp}" "${tmp}.actual" | _pkgqueue_remove_many_pipe
 	rm -f "${tmp}" "${tmp}.actual"
 }
