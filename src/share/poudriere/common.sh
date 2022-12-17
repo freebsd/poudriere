@@ -8838,6 +8838,7 @@ prepare_ports() {
 
 load_priorities_ptsort() {
 	local priority pkgname originspec pkg_boost origin flavor _rdep _ignored
+	local log
 	local -
 
 	awk '{print $2 " " $1}' "${MASTER_DATADIR:?}/pkg_deps" \
@@ -8872,6 +8873,9 @@ load_priorities_ptsort() {
 	ptsort -p "${MASTER_DATADIR:?}/pkg_deps.ptsort" > \
 	    "${MASTER_DATADIR:?}/pkg_deps.priority"
 	unlink "${MASTER_DATADIR:?}/pkg_deps.ptsort"
+	_log_path log
+	cp -f "${MASTER_DATADIR:?}/pkg_deps.priority" \
+	    "${log:?}/.poudriere.pkg_deps_priority%"
 
 	# Read all priorities into the "priority" hash
 	while mapfile_read_loop "${MASTER_DATADIR:?}/pkg_deps.priority" \
