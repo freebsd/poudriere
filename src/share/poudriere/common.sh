@@ -5287,7 +5287,7 @@ job_done() {
 	hash_unset builder_pids "${j}"
 	unlink "${MASTER_DATADIR:?}/var/run/${j}.pid"
 	_bget status ${j} status
-	rmdir "${MASTER_DATADIR:?}/building/${pkgname}"
+	pkgqueue_job_done "${pkgname}"
 	case "${status}:" in
 	"done:"*)
 		bset ${j} status "idle:"
@@ -5615,7 +5615,7 @@ clean_pool() {
 	originspec_decode "${originspec}" origin '' ''
 
 	# Cleaning queue (pool is cleaned here)
-	pkgqueue_done "${pkgname}" "${clean_rdepends}" | \
+	pkgqueue_clean_queue "${pkgname}" "${clean_rdepends}" | \
 	    while mapfile_read_loop_redir skipped_pkgname; do
 		get_originspec_from_pkgname skipped_originspec "${skipped_pkgname}"
 		originspec_decode "${skipped_originspec}" skipped_origin \

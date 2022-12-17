@@ -72,6 +72,14 @@ pkgqueue_get_next() {
 	setvar "${porttesting_var}" $(get_porttesting "${_pkgname}")
 }
 
+# This is expected to run from the master process.
+pkgqueue_job_done() {
+	[ "$#" -eq 1 ] || eargs pkgqueue_job_done pkgname
+	local pkgname="$1"
+
+	rmdir "${MASTER_DATADIR:?}/building/${pkgname:?}"
+}
+
 pkgqueue_init() {
 	mkdir -p "${MASTER_DATADIR:?}/building" \
 		"${MASTER_DATADIR:?}/pool" \
@@ -127,8 +135,9 @@ pkgqueue_clean_rdeps() {
 
 	rdep_dir="cleaning/rdeps/${pkgname}"
 
-	# Exclusively claim the rdeps dir or return, another pkgqueue_done()
-	# owns it or there were no reverse deps for this package.
+	# Exclusively claim the rdeps dir or return, another
+	# pkgqueue_clean_queue() owns it or there were no reverse
+	# deps for this package.
 	pkgqueue_dir rdep_dir_name "${pkgname}"
 	rename "rdeps/${rdep_dir_name}" "${rdep_dir}" 2>/dev/null ||
 	    return 0
@@ -146,7 +155,7 @@ pkgqueue_clean_rdeps() {
 			# clean_pool() in common.sh will pick this up and add to SKIPPED
 			echo "${dep_pkgname}"
 
-			pkgqueue_clean_pool ${dep_pkgname} "${clean_rdepends}"
+			_pkgqueue_clean_queue ${dep_pkgname} "${clean_rdepends}"
 		done
 		;;
 	"")
@@ -203,8 +212,8 @@ pkgqueue_clean_deps() {
 
 	dep_dir="cleaning/deps/${pkgname}"
 
-	# Exclusively claim the deps dir or return, another pkgqueue_done()
-	# owns it
+	# Exclusively claim the deps dir or return, another
+	# pkgqueue_clean_queue() owns it.
 	pkgqueue_dir pkg_dir_name "${pkgname}"
 	rename "deps/${pkg_dir_name}" "${dep_dir}" 2>/dev/null ||
 	    return 0
@@ -235,16 +244,16 @@ pkgqueue_clean_deps() {
 	return 0
 }
 
-pkgqueue_clean_pool() {
-	required_env pkgqueue_clean_pool PWD "${MASTER_DATADIR_ABS:?}"
-	[ $# -eq 2 ] || eargs pkgqueue_clean_pool clean_rdepends
+_pkgqueue_clean_queue() {
+	required_env _pkgqueue_clean_queue PWD "${MASTER_DATADIR_ABS:?}"
+	[ $# -eq 2 ] || eargs _pkgqueue_clean_queue pkgname clean_rdepends
 	local pkgname="$1"
 	local clean_rdepends="$2"
 
 	pkgqueue_clean_rdeps "${pkgname}" "${clean_rdepends}"
 
 	# Remove this pkg from the needs-to-build list. It will not exist
-	# if this build was sucessful. It only exists if pkgqueue_clean_pool is
+	# if this build was sucessful. It only exists if pkgqueue_clean_queue is
 	# being called recursively to skip items and in that case it will
 	# not be empty.
 	case "${clean_rdepends:+set}" in
@@ -254,17 +263,32 @@ pkgqueue_clean_pool() {
 	return 0
 }
 
-pkgqueue_done() {
-	[ $# -eq 2 ] || eargs pkgqueue_done pkgname clean_rdepends
+# This is expected to run from the child build process.
+pkgqueue_clean_queue() {
+	[ $# -eq 2 ] || eargs pkgqueue_clean_queue pkgname clean_rdepends
 	local pkgname="$1"
 	local clean_rdepends="$2"
+	local oldpwd
 
-	(
+	oldpwd=
+	case "${PWD}" in
+	"${MASTER_DATADIR_ABS:?}") ;;
+	*)
 		cd "${MASTER_DATADIR:?}"
-		pkgqueue_clean_pool "${pkgname}" "${clean_rdepends}"
-	) | sort -u
+		oldpwd="${OLDPWD}"
+		;;
+	esac
 
+	ret="0"
 	# Outputs skipped_pkgnames
+	_pkgqueue_clean_queue "${pkgname}" "${clean_rdepends}" | sort -u ||
+	    ret="$?"
+
+	case "${oldpwd:+set}" in
+	set) cd "${oldpwd}" ;;
+	esac
+
+	return "${ret}"
 }
 
 pkgqueue_list() {
@@ -279,9 +303,9 @@ pkgqueue_balance_pool() {
 	local pkgname pkg_dir dep_count lock
 
 	# Avoid running this in parallel, no need. Note that this lock is
-	# not on the unbalanced/ dir, but only this function. pkgqueue_done()
-	# writes to unbalanced/, pkgqueue_empty() reads from it, and
-	# pkgqueue_get_next() moves from it.
+	# not on the unbalanced/ dir, but only this function.
+	# pkgqueue_clean_queue() writes to unbalanced/, pkgqueue_empty() reads
+	# from it, and pkgqueue_get_next() moves from it.
 	lock=.lock-pkgqueue_balance_pool
 	mkdir "${lock}" 2>/dev/null || return 0
 
@@ -302,8 +326,9 @@ pkgqueue_balance_pool() {
 		# to move it.
 		rename "${pkg_dir}" "pool/${dep_count}/${pkgname}" || :
 	done 2>/dev/null
-	# New files may have been added in unbalanced/ via pkgqueue_done() due
-	# to not being locked. These will be picked up in the next run.
+	# New files may have been added in unbalanced/ via
+	# pkgqueue_clean_queue() due to not being locked.
+	# These will be picked up in the next run.
 	rmdir "${lock}"
 }
 
@@ -466,8 +491,8 @@ pkgqueue_empty() {
 
 	n=0
 	# Check twice that the queue is empty. This avoids racing with
-	# pkgqueue_done() and pkgqueue_balance_pool() moving files between
-	# the dirs.
+	# pkgqueue_clean_queue() and pkgqueue_balance_pool() moving files
+	# between the dirs.
 	while [ ${n} -lt 2 ]; do
 		for pool_dir in ${dirs}; do
 			if ! dirempty ${pool_dir}; then
