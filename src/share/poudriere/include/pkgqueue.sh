@@ -138,10 +138,10 @@ pkgqueue_clean_rdeps() {
 	case "${clean_rdepends:+set}" in
 	set)
 		# Recursively cleanup anything that depends on my package.
-		for dep_dir in ${rdep_dir}/*; do
+		for dep_dir in "${rdep_dir}"/*; do
 			# May be empty if all my reverse deps are now skipped.
 			case "${dep_dir}" in "${rdep_dir}/*") break ;; esac
-			dep_pkgname=${dep_dir##*/}
+			dep_pkgname="${dep_dir##*/}"
 
 			# clean_pool() in common.sh will pick this up and add to SKIPPED
 			echo "${dep_pkgname}"
@@ -150,27 +150,39 @@ pkgqueue_clean_rdeps() {
 		done
 		;;
 	"")
-		for dep_dir in ${rdep_dir}/*; do
-			dep_pkgname=${dep_dir##*/}
+		for dep_dir in "${rdep_dir}/"*; do
+			case "${dep_dir}" in
+			"${rdep_dir}/*")
+				deps_to_clean=
+				deps_to_check=
+				break
+				;;
+			esac
+			dep_pkgname="${dep_dir##*/}"
 			pkgqueue_dir pkg_dir_name "${dep_pkgname}"
-			deps_to_check="${deps_to_check} deps/${pkg_dir_name}"
-			deps_to_clean="${deps_to_clean} deps/${pkg_dir_name}/${pkgname}"
+			deps_to_check="${deps_to_check:+${deps_to_check} }deps/${pkg_dir_name}"
+			deps_to_clean="${deps_to_clean:+${deps_to_clean} }deps/${pkg_dir_name}/${pkgname}"
 		done
+		case "${deps_to_clean:+set}${deps_to_check:+set}" in
+		"") ;;
+		*)
+			# Remove this package from every package depending on
+			# this. This is removing: deps/<dep_pkgname>/<this pkg>.
+			# Note that this is not needed when recursively cleaning
+			# as the entire /deps/<pkgname> for all my rdeps will
+			# be removed.
+			echo "${deps_to_clean}" | xargs rm -f || :
 
-		# Remove this package from every package depending on this.
-		# This is removing: deps/<dep_pkgname>/<this pkg>.
-		# Note that this is not needed when recursively cleaning as
-		# the entire /deps/<pkgname> for all my rdeps will be removed.
-		echo ${deps_to_clean} | xargs rm -f >/dev/null 2>&1 || :
-
-		# Look for packages that are now ready to build. They have no
-		# remaining dependencies. Move them to /unbalanced for later
-		# processing.
-		echo ${deps_to_check} | \
-		    xargs -J % \
-		    find % -type d -maxdepth 0 -empty 2>/dev/null | \
-		    xargs -J % mv % "pool/unbalanced" \
-		    2>/dev/null || :
+			# Look for packages that are now ready to build. They
+			# have no remaining dependencies. Move them to
+			# /unbalanced for later processing.
+			echo "${deps_to_check}" |
+			    xargs -J % \
+			    find % -type d -maxdepth 0 -empty |
+			    xargs -J % mv % "pool/unbalanced" || :
+			;;
+		# Errors are hidden as this has harmless races with other procs.
+		esac 2>/dev/null
 		;;
 	esac
 
@@ -200,13 +212,23 @@ pkgqueue_clean_deps() {
 	# Remove myself from all my dependency rdeps to prevent them from
 	# trying to skip me later
 
-	for dir in ${dep_dir}/*; do
+	for dir in "${dep_dir}"/*; do
+		case "${dir}" in
+		# empty dir
+		"${dep_dir}/*")
+			rdeps_to_clean=
+			;;
+		esac
 		rdep_pkgname=${dir##*/}
 		pkgqueue_dir rdep_dir_name "${rdep_pkgname}"
-		rdeps_to_clean="${rdeps_to_clean} rdeps/${rdep_dir_name}/${pkgname}"
+		rdeps_to_clean="${rdeps_to_clean:+${rdeps_to_clean} }rdeps/${rdep_dir_name}/${pkgname}"
 	done
 
-	echo ${rdeps_to_clean} | xargs rm -f >/dev/null 2>&1 || :
+	case "${rdeps_to_clean:+set}" in
+	set)
+		echo "${rdeps_to_clean}" | xargs rm -f 2>/dev/null || :
+		;;
+	esac
 
 	rm -rf "${dep_dir}" 2>/dev/null &
 
@@ -448,13 +470,13 @@ pkgqueue_list_deps_recurse() {
 
 	pkgqueue_dir pkg_dir_name "${pkgname}"
 	# Show deps/*/${pkgname}
-	for pn in deps/${pkg_dir_name}/*; do
+	for pn in deps/"${pkg_dir_name}"/*; do
 		dep_pkgname="${pn##*/}"
 		case " ${FIND_ALL_DEPS} " in
-			*\ ${dep_pkgname}\ *) continue ;;
+			*" ${dep_pkgname} "*) continue ;;
 		esac
 		case "${pn}" in
-			"deps/${pkg_dir_name}/*") break ;;
+		"deps/${pkg_dir_name}/*") break ;;
 		esac
 		echo "${dep_pkgname}"
 		pkgqueue_list_deps_recurse "${dep_pkgname}"
@@ -488,24 +510,24 @@ pkgqueue_find_all_pool_references() {
 
 	# Cleanup rdeps/*/${pkgname}
 	pkgqueue_dir pkg_dir_name "${pkgname}"
-	for rpn in deps/${pkg_dir_name}/*; do
+	for rpn in deps/"${pkg_dir_name}"/*; do
 		case "${rpn}" in
-			"deps/${pkg_dir_name}/*")
-				break ;;
+		# empty dir
+		"deps/${pkg_dir_name}/*") break ;;
 		esac
-		dep_pkgname=${rpn##*/}
+		dep_pkgname="${rpn##*/}"
 		pkgqueue_dir rdep_dir_name "${dep_pkgname}"
 		echo "rdeps/${rdep_dir_name}/${pkgname}"
 	done
 	echo "deps/${pkg_dir_name}"
 	# Cleanup deps/*/${pkgname}
 	pkgqueue_dir rdep_dir_name "${pkgname}"
-	for rpn in rdeps/${rdep_dir_name}/*; do
+	for rpn in rdeps/"${rdep_dir_name}"/*; do
 		case "${rpn}" in
-			"rdeps/${rdep_dir_name}/*")
-				break ;;
+		# empty dir
+		"rdeps/${rdep_dir_name}/*") break ;;
 		esac
-		dep_pkgname=${rpn##*/}
+		dep_pkgname="${rpn##*/}"
 		pkgqueue_dir dep_dir_name "${dep_pkgname}"
 		echo "deps/${dep_dir_name}/${pkgname}"
 	done
