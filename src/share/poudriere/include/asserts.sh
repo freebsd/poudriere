@@ -309,23 +309,48 @@ alias assert_false='assert_ret_not 0'
 
 _assert_out() {
 	local -; set +x +u +e
-	[ "$#" -ge 2 ] || eargs assert_out expected command '[args]'
+	[ "$#" -ge 3 ] || eargs assert_out expected command '[args]'
 	local lineinfo="$1"
-	local expected="$2"
-	shift 2
-	local out ret
+	local unordered="$2"
+	local expected="$3"
+	shift 3
+	local out ret tmpfile
 
 	aecho TEST "${lineinfo}" "'${expected}' == '\$($*)'"
-	out="$(set_pipefail; set -e; "$@" | cat -vet)"
-	ret="$?"
-	assert "${expected}" "${out}" "Bad output: $*"
+
+	case "${expected}" in
+	-)
+		tmpfile="$(mktemp -ut assert_out)"
+		(set_pipefail; set -e; "$@" ) > "${tmpfile}"
+		ret="$?"
+		_assert_file "${lineinfo}" "${unordered}" - "${tmpfile}"
+		return "${ret}"
+		;;
+	*)
+		out="$(set_pipefail; set -e; "$@" | cat -vet)"
+		ret="$?"
+		;;
+	esac
+	case "${unordered:-0}" in
+	1)
+		assert \
+		    "$(echo "${expected}" | LC_ALL=C sort)" \
+		    "$(echo "${out}" | LC_ALL=C sort)" \
+		    "Bad output: $*"
+		;;
+	0)
+		assert "${expected}" "${out}" "Bad output: $*"
+		;;
+	esac
 	return "${ret}"
 	#aecho TEST "${lineinfo}" "'0' == '\$?'"
 	#assert 0 "${ret}" "Bad exit status: ${ret} cmd: $*"
 }
 # This function may be called in "$@" contexts that do not use eval.
-assert_out() { _assert_out "" "$@"; }
-alias assert_out="_assert_out \"${_LINEINFO_DATA:?}\" "
+assert_out() { _assert_out "" 0 "$@"; }
+assert_out_unordered() { _assert_out "" 1 "$@"; }
+alias assert_out="_assert_out \"${_LINEINFO_DATA:?}\" 0 "
+alias assert_out_unordered="_assert_out \"${_LINEINFO_DATA:?}\" 1 "
 
 _assert_stack() {
 	local -; set +x +u
