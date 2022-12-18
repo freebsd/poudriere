@@ -65,7 +65,7 @@ while getopts "af:j:J:p:vz:" FLAG; do
 			JAILNAME=${OPTARG}
 			;;
 		J)
-			PREPARE_PARALLEL_JOBS=${OPTARG}
+			PREPARE_PARALLEL_JOBS=${OPTARG#*:}
 			;;
 		f)
 			# If this is a relative path, add in ${PWD} as
