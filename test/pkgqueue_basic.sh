@@ -7,21 +7,21 @@ assert_true cd "${MASTER_DATADIR}"
 assert_true add_relpath_var MASTER_DATADIR
 
 assert_true pkgqueue_init
-assert_true pkgqueue_add pkg
-assert_true pkgqueue_add bash
-assert_true pkgqueue_add_dep bash pkg
-assert_true pkgqueue_add patchutils
-assert_true pkgqueue_add_dep patchutils bash
-assert_true pkgqueue_add_dep patchutils pkg
+assert_true pkgqueue_add "build" pkg
+assert_true pkgqueue_add "build" bash
+assert_true pkgqueue_add_dep "build" bash "build" pkg
+assert_true pkgqueue_add "build" patchutils
+assert_true pkgqueue_add_dep "build" patchutils "build" bash
+assert_true pkgqueue_add_dep "build" patchutils "build" pkg
 assert_true pkgqueue_compute_rdeps
-pkgqueue_list="$(pkgqueue_list | LC_ALL=C sort | paste -d ' ' -s -)"
+pkgqueue_list="$(pkgqueue_list "build" | LC_ALL=C sort | paste -d ' ' -s -)"
 assert 0 "$?"
 assert "$(sorted "bash patchutils pkg")" "${pkgqueue_list}"
 assert_out "" pkgqueue_find_dead_packages
 assert_true pkgqueue_move_ready_to_pool
 
 assert_out - pkgqueue_remaining <<EOF
-pkg ready-to-build
+build:pkg ready-to-build
 bash waiting-on-dependency
 patchutils waiting-on-dependency
 EOF
@@ -29,36 +29,40 @@ EOF
 assert_true cd "${MASTER_DATADIR:?}/pool"
 
 assert_false pkgqueue_empty
-assert_true pkgqueue_get_next pkgname
+assert_true pkgqueue_get_next job_type pkgname
 assert "pkg" "${pkgname}"
-assert_true pkgqueue_clean_queue "${pkgname}" "${clean_rdepends-}"
-assert_true pkgqueue_job_done "${pkgname}"
+assert "build" "${job_type}"
+assert_true pkgqueue_clean_queue "${job_type}" "${pkgname}" "${clean_rdepends-}"
+assert_true pkgqueue_job_done "${job_type}" "${pkgname}"
 
 assert_out - pkgqueue_remaining <<EOF
-bash ready-to-build
+build:bash ready-to-build
 patchutils waiting-on-dependency
 EOF
 
 assert_false pkgqueue_empty
-assert_true pkgqueue_get_next pkgname
+assert_true pkgqueue_get_next job_type pkgname
 assert "bash" "${pkgname}"
-assert_true pkgqueue_clean_queue "${pkgname}" "${clean_rdepends-}"
-assert_true pkgqueue_job_done "${pkgname}"
+assert "build" "${job_type}"
+assert_true pkgqueue_clean_queue "${job_type}" "${pkgname}" "${clean_rdepends-}"
+assert_true pkgqueue_job_done "${job_type}" "${pkgname}"
 
 assert_out - pkgqueue_remaining <<EOF
-patchutils ready-to-build
+build:patchutils ready-to-build
 EOF
 
 assert_false pkgqueue_empty
-assert_true pkgqueue_get_next pkgname
+assert_true pkgqueue_get_next job_type pkgname
 assert "patchutils" "${pkgname}"
-assert_true pkgqueue_clean_queue "${pkgname}" "${clean_rdepends-}"
-assert_true pkgqueue_job_done "${pkgname}"
+assert "build" "${job_type}"
+assert_true pkgqueue_clean_queue "${job_type}" "${pkgname}" "${clean_rdepends-}"
+assert_true pkgqueue_job_done "${job_type}" "${pkgname}"
 
 assert_true pkgqueue_empty
 assert_true pkgqueue_sanity_check 0
-assert_true pkgqueue_get_next pkgname
+assert_true pkgqueue_get_next job_type pkgname
 assert "" "${pkgname}"
+assert "" "${job_type}"
 
 assert_true cd "${POUDRIERE_TMPDIR:?}"
 rm -rf "${MASTER_DATADIR:?}"

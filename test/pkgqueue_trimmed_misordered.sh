@@ -1,4 +1,4 @@
-# See also bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh
+# See also bulk-"build"-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh
 #	This test is only proving the setup for the bulk test as it was an
 #	odd case that came up with incremental rebuild changes.
 #	For the bulk test the ports map as so:
@@ -7,7 +7,7 @@
 #	  patchutils-meta = ports-mgmt/poudriere-devel-dep-FOO
 #	bash and patchutils-meta must be "listed"
 # Depends on pkgqueue_basic.sh passing
-# Depends on pkgqueue_prioritize.sh passing
+# Depends on pkgqueue_prioritize "build".sh passing
 # Depends on pkgqueue_remove_many_pipe.sh passing
 . common.sh
 
@@ -26,24 +26,18 @@ while get_test_context; do
 	assert_true add_relpath_var MASTER_DATADIR
 
 	assert_true pkgqueue_init
-	assert_true pkgqueue_add bash
-	assert_true pkgqueue_add patchutils
-	assert_true pkgqueue_add_dep patchutils bash
-	assert_true pkgqueue_add patchutils-meta
-	assert_true pkgqueue_add_dep patchutils-meta patchutils
+	assert_true pkgqueue_add "build" bash
+	assert_true pkgqueue_add "build" patchutils
+	assert_true pkgqueue_add_dep "build" patchutils "build" bash
+	assert_true pkgqueue_add "build" patchutils-meta
+	assert_true pkgqueue_add_dep "build" patchutils-meta "build" patchutils
 	assert_true pkgqueue_compute_rdeps
 
-	# Simulate patchutils having an existing package so being trimmed from
-	# the queue by pkgqueue_unqueue_existing_packages().
-	echo patchutils | assert_true pkgqueue_remove_many_pipe
+	# Simulate patchutils having an existing package so being trimmed from the queue.
+	echo patchutils | assert_true pkgqueue_remove_many_pipe "build"
 	assert 0 "$?"
 	case "${TRIM_ORPHANED_BUILD_DEPS-}" in
 	yes)
-		if ! type pkgqueue_trim_orphaned_build_deps >/dev/null 2>&1; then
-			assert_true cd "${POUDRIERE_TMPDIR:?}"
-			rm -rf "${MASTER_DATADIR:?}"
-			continue
-		fi
 		# pkgqueue_trim_orphaned_build_deps is removed later but if present we need
 		# to have bash and patchutils-meta as listed.
 		listed_pkgnames() {
@@ -53,16 +47,16 @@ while get_test_context; do
 		assert_true pkgqueue_trim_orphaned_build_deps
 		;;
 	esac
-	pkgqueue_list="$(pkgqueue_list | LC_ALL=C sort | paste -d ' ' -s -)"
+	pkgqueue_list="$(pkgqueue_list "build" | LC_ALL=C sort | paste -d ' ' -s -)"
 	assert 0 "$?"
 	assert "$(sorted "bash patchutils-meta")" "${pkgqueue_list}"
 
-	assert_true pkgqueue_prioritize patchutils-meta 50
-	assert_true pkgqueue_prioritize bash 49
+	assert_true pkgqueue_prioritize "build" patchutils-meta 50
+	assert_true pkgqueue_prioritize "build" bash 49
 
 	assert_true pkgqueue_move_ready_to_pool
 
-	# Now patchutils-meta and bash are eligible to build.
+	# Now patchutils-meta and bash are eligible to "build".
 	# patchutils-meta will install the "existing" package for patchtutils which will
 	# try to install bash. But bash is building concurrently and has no package
 	# to install.
@@ -70,28 +64,27 @@ while get_test_context; do
 	assert_true cd "${MASTER_DATADIR:?}/pool"
 
 	# patchutils-meta and bash should be eligible concurrently.
-	# Note that in a real build this is a fatal condition. It is only
-	# asserted here as proof of a possible queue issue that is tested
-	# fully in bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh
 	assert_false pkgqueue_empty
-	assert_true pkgqueue_get_next pkgname
+	assert_true pkgqueue_get_next job_type pkgname
 	assert "patchutils-meta" "${pkgname}"
+	assert "build" "${job_type}"
 
 	assert_false pkgqueue_empty
-	assert_true pkgqueue_get_next pkgname
+	assert_true pkgqueue_get_next job_type pkgname
 	assert "bash" "${pkgname}"
+	assert "build" "${job_type}"
 
 
-	assert_true pkgqueue_clean_queue "patchutils-meta" "${clean_rdepends-}"
-	assert_true pkgqueue_job_done "patchutils-meta"
-	assert_true pkgqueue_clean_queue "bash" "${clean_rdepends-}"
-	assert_true pkgqueue_job_done "bash"
+	assert_true pkgqueue_clean_queue "build" "patchutils-meta" "${clean_rdepends-}"
+	assert_true pkgqueue_job_done "build" "patchutils-meta"
+	assert_true pkgqueue_clean_queue "build" "bash" "${clean_rdepends-}"
+	assert_true pkgqueue_job_done "build" "bash"
 
 	assert_true pkgqueue_empty
 	assert_true pkgqueue_sanity_check 0
-	assert_true pkgqueue_get_next pkgname
+	assert_true pkgqueue_get_next job_type pkgname
 	assert "" "${pkgname}"
-
+	assert "" "${job_type}"
 
 	assert_true cd "${POUDRIERE_TMPDIR:?}"
 	rm -rf "${MASTER_DATADIR:?}"

@@ -1414,7 +1414,7 @@ update_tobuild() {
 
 	while mapfile_read_loop "${MASTER_DATADIR:?}/all_pkgs_not_ignored" \
 	    pkgname originspec rdep; do
-		if ! pkgqueue_contains "${pkgname}"; then
+		if ! pkgqueue_contains "build" "${pkgname}"; then
 			continue
 		fi
 		echo "${pkgname} ${originspec} ${rdep}"
@@ -4184,7 +4184,7 @@ download_from_repo() {
 				esac
 			fi
 		fi
-		if ! pkgqueue_contains "${pkgname}" ; then
+		if ! pkgqueue_contains "build" "${pkgname}" ; then
 			msg_debug "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: not queued"
 			continue
 		fi
@@ -5326,14 +5326,15 @@ stop_builders() {
 job_done() {
 	[ $# -eq 1 ] || eargs job_done j
 	local j="$1"
-	local pkgname status jobno ret
+	local job_name job_type status jobno ret
 
 	# Failure to find this indicates the job is already done.
-	hash_remove builder_pkgnames "${j}" pkgname || return 1
+	hash_remove builder_job_type "${j}" job_type || return 1
+	hash_remove builder_job_name "${j}" job_name || return 1
 	hash_remove builder_jobs "${j}" jobno || return 1
 	list_remove BUILDER_JOBNOS "${jobno}"
 	_bget status ${j} status
-	pkgqueue_job_done "${pkgname}"
+	pkgqueue_job_done "${job_type}" "${job_name}"
 	ret=0
 	_wait "${jobno}" || ret="$?"
 	case "${status}:" in
@@ -5343,9 +5344,10 @@ job_done() {
 		;;
 	*)
 		# Try to cleanup and mark build crashed
-		MY_JOBID="${j}" crashed_build "${pkgname}" "${status%%:*}"
+		MY_JOBID="${j}" crashed_build "${job_type}" "${job_name}" \
+		    "${status%%:*}"
 		MY_JOBID="${j}" jkill
-		bset ${j} status "crashed:job_done:${pkgname}:${status%%:*}"
+		bset ${j} status "crashed:job_done:${job_name}:${status%%:*}"
 		;;
 	esac
 }
@@ -5358,8 +5360,8 @@ build_queue() {
 	local setname="$3"
 	# jobid is analgous to MY_JOBID: builder number
 	# jobno is from $(jobs)
-	local j jobid jobno pkgname builders_active queue_empty
-	local builders_idle idle_only timeout
+	local j jobid jobno job_name builders_active queue_empty
+	local job_type builders_idle idle_only timeout
 
 	run_hook build_queue start
 
@@ -5400,10 +5402,10 @@ build_queue() {
 
 			[ ${queue_empty} -eq 0 ] || continue
 
-			pkgqueue_get_next pkgname || \
+			pkgqueue_get_next job_type job_name || \
 			    err 1 "Failed to find a package from the queue."
 
-			case "${pkgname}" in
+			case "${job_name}" in
 			"")
 				# Check if the ready-to-build pool and need-to-build pools
 				# are empty
@@ -5414,15 +5416,22 @@ build_queue() {
 				continue
 				;;
 			esac
+			case "${job_type}" in
+			"build") ;;
+			*)
+				err ${EX_SOFTWARE} "Found job '${job_name}' with unsupported type '${job_type}'."
+				;;
+			esac
 			builders_active=1
 			# Opportunistically start the builder in a subproc
 			MY_JOBID="${j}" spawn_job_protected \
 			    maybe_start_builder "${j}" "${jname}" \
 			        "${ptname}" "${setname}" \
-			    build_pkg "${pkgname}"
+			    build_pkg "${job_name}"
 			jobno="%${spawn_jobid:?}"
 			hash_set builder_jobs "${j}" "${jobno}"
-			hash_set builder_pkgnames "${j}" "${pkgname}"
+			hash_set builder_job_type "${j}" "${job_type}"
+			hash_set builder_job_name "${j}" "${job_name}"
 			list_add BUILDER_JOBNOS "${jobno}"
 		done
 
@@ -5614,9 +5623,10 @@ parallel_build() {
 }
 
 crashed_build() {
-	[ $# -eq 2 ] || eargs crashed_build pkgname failed_phase
-	local pkgname="$1"
-	local failed_phase="$2"
+	[ $# -eq 3 ] || eargs crashed_build job_type pkgname failed_phase
+	local job_type="$1"
+	local pkgname="$2"
+	local failed_phase="$3"
 	local origin originspec logd log log_error
 
 	_log_path logd
@@ -5625,7 +5635,7 @@ crashed_build() {
 
 	log="${logd:?}/logs/${pkgname:?}.log"
 	log_error="${logd:?}/logs/errors/${pkgname:?}.log"
-	echo "Build crashed: ${failed_phase}" >> "${log:?}"
+	echo "${job_type} crashed: ${failed_phase}" >> "${log:?}"
 
 	# If the file already exists then all of this handling was done in
 	# build_pkg() already; The port failed already. What crashed
@@ -5642,16 +5652,19 @@ crashed_build() {
 		    "${failed_phase}" \
 		    "${log_error}"
 	fi
-	clean_pool "${pkgname}" "${originspec}" "${failed_phase}"
+	clean_pool "${job_type}" "${pkgname}" "${originspec}" "${failed_phase}"
 	stop_build "${pkgname}" "${originspec}" 1 >> "${log:?}"
 }
 
 clean_pool() {
-	[ $# -eq 3 ] || eargs clean_pool pkgname originspec clean_rdepends
-	local pkgname=$1
-	local originspec=$2
-	local clean_rdepends="$3"
+	[ $# -eq 4 ] || eargs clean_pool job_type pkgname originspec clean_rdepends
+	local job_type="$1"
+	local pkgname="$2"
+	local originspec="$3"
+	local clean_rdepends="$4"
 	local origin skipped_originspec skipped_origin skipped_flavor
+	local skipped_pkgname skipped_originspec skipped_origin
+	local skipped_job_type skipped_pkgqueue_job
 
 	case "${MY_JOBID:+set}" in
 	set)
@@ -5667,8 +5680,10 @@ clean_pool() {
 	originspec_decode "${originspec}" origin '' ''
 
 	# Cleaning queue (pool is cleaned here)
-	pkgqueue_clean_queue "${pkgname}" "${clean_rdepends}" | \
-	    while mapfile_read_loop_redir skipped_pkgname; do
+	pkgqueue_clean_queue "${job_type}" "${pkgname}" "${clean_rdepends}" |
+	    while mapfile_read_loop_redir skipped_pkgqueue_job; do
+		pkgqueue_job_decode "${skipped_pkgqueue_job}" \
+		    skipped_job_type skipped_pkgname
 		get_originspec_from_pkgname skipped_originspec "${skipped_pkgname}"
 		originspec_decode "${skipped_originspec}" skipped_origin \
 		    skipped_flavor ''
@@ -5920,7 +5935,7 @@ build_pkg() {
 		;;
 	esac
 
-	clean_pool "${pkgname}" "${originspec}" "${clean_rdepends}"
+	clean_pool "build" "${pkgname}" "${originspec}" "${clean_rdepends}"
 
 	stop_build "${pkgname}" "${originspec}" ${build_failed}
 
@@ -8141,7 +8156,7 @@ generate_queue_pkg() {
 	shash_remove pkgname-deps "${pkgname}" deps || \
 	    err 1 "generate_queue_pkg failed to find deps for ${COLOR_PORT}${pkgname}${COLOR_RESET}"
 	msg_debug "generate_queue_pkg: Will build ${COLOR_PORT}${pkgname}${COLOR_RESET}"
-	pkgqueue_add "${pkgname}" || \
+	pkgqueue_add "build" "${pkgname}" || \
 	    err 1 "generate_queue_pkg: Error creating queue entry for ${COLOR_PORT}${pkgname}${COLOR_RESET}: There may be a duplicate origin in a category Makefile"
 
 	for dep_originspec in ${deps}; do
@@ -8158,7 +8173,7 @@ generate_queue_pkg() {
 			continue
 		fi
 		msg_debug "generate_queue_pkg: Will build ${COLOR_PORT}${dep_originspec}${COLOR_RESET} for ${COLOR_PORT}${pkgname}${COLOR_RESET}"
-		pkgqueue_add_dep "${pkgname}" "${dep_pkgname}"
+		pkgqueue_add_dep "build" "${pkgname}" "build" "${dep_pkgname}"
 		echo "${pkgname} ${dep_pkgname}"
 		case "${CHECK_CHANGED_DEPS}" in
 		"no") ;;
@@ -8889,7 +8904,7 @@ trim_ignored_pkg() {
 		run_hook pkgbuild ignored "${origin}" "${pkgname}" "${ignore}"
 	fi
 	badd ports.ignored "${originspec} ${pkgname} ${ignore}"
-	clean_pool "${pkgname}" "${originspec}" "ignored"
+	clean_pool "build" "${pkgname}" "${originspec}" "ignored"
 }
 
 # PWD will be MASTER_DATADIR after this
@@ -9110,7 +9125,7 @@ prepare_ports() {
 			    "${log:?}/.poudriere.ports.ignored" \
 			    "${log:?}/.poudriere.ports.fetched" \
 			    "${log:?}/.poudriere.ports.skipped" | \
-			    pkgqueue_remove_many_pipe
+			    pkgqueue_remove_many_pipe "build"
 		else
 			trim_ignored
 		fi
@@ -9251,7 +9266,7 @@ load_priorities_ptsort() {
 
 	while mapfile_read_loop "${MASTER_DATADIR:?}/pkg_deps.priority" \
 	    priority pkgname; do
-		pkgqueue_prioritize "${pkgname}" "${priority}"
+		pkgqueue_prioritize "build" "${pkgname}" "${priority}"
 	done
 
 	return 0

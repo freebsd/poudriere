@@ -26,56 +26,103 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+: ${PKGQUEUE_JOB_SEP:=":"}
+
+pkgqueue_job_decode() {
+	local -; set +x -f -u
+	[ $# -eq 3 ] || eargs pkgqueue_job_decode pkgqueue_job \
+	    var_return_job_type var_return_job_name
+	local pkgqueue_job="$1"
+	local var_return_job_type="$2"
+	local var_return_job_name="$3"
+	local IFS __job_type __job_name
+
+	IFS="${PKGQUEUE_JOB_SEP}"
+	set -- ${pkgqueue_job}
+	# type;name
+	if [ $# -ne 2 ]; then
+		err 1 "pkgqueue_job_decode '${pkgqueue_job}': wrong number of arguments (expected 2): $*"
+	fi
+
+	__job_type="$1"
+	__job_name="$2"
+	if [ -n "${var_return_job_type}" ]; then
+		setvar "${var_return_job_type}" "${__job_type}"
+	fi
+	if [ -n "${var_return_job_name}" ]; then
+		setvar "${var_return_job_name}" "${__job_name}"
+	fi
+}
+
+pkgqueue_job_encode() {
+	[ $# -eq 3 ] || eargs pkgqueue_job_encode var_return job_type job_name
+	local var_return="$1"
+	local job_type="$2"
+	local job_name="$3"
+	local __pkgqueue_job
+
+	__pkgqueue_job="${job_type}${PKGQUEUE_JOB_SEP}${job_name}"
+	setvar "${var_return}" "${__pkgqueue_job}"
+}
+
 ## Pick the next package from the "ready to build" queue in pool/
-## Then move the package to the "building" dir in building/
+## Then move the package to the "running" dir in running/
 ## This is only ran from 1 process
 pkgqueue_get_next() {
 	required_env pkgqueue_get_next PWD "${MASTER_DATADIR_ABS:?}/pool"
-	[ "$#" -eq 1 ] || eargs pkgqueue_get_next pkgname_var
-	local pkgname_var="$1"
-	local p _pkgname ret
+	[ "$#" -eq 2 ] || eargs pkgqueue_get_next job_type_var pkgname_var
+	local pgn_job_type_var="$1"
+	local pgn_pkgname_var="$2"
+	local pgn_job_type pkgq_dir pgn_pkgname __pkgqueue_job ret
+	local running_dir
 
 	# CWD is MASTER_DATADIR/pool
 
-	p=$(find ${POOL_BUCKET_DIRS:?} -type d -depth 1 -empty -print -quit) ||
+	pkgq_dir="$(find ${POOL_BUCKET_DIRS:?} \
+	    -type d -depth 1 -empty -print -quit)" ||
 	    err "${EX_SOFTWARE}" "pkgqueue_get_next: Failed to search queue"
-	case "${p:+set}" in
+	case "${pkgq_dir:+set}" in
 	set)
-		_pkgname=${p##*/}
-		if ! rename "${p}" "${MASTER_DATADIR:?}/building/${_pkgname}" \
-		    2>/dev/null; then
+		__pkgqueue_job="${pkgq_dir##*/}"
+		pkgqueue_job_decode "${__pkgqueue_job}" pgn_job_type pgn_pkgname
+		running_dir="${MASTER_DATADIR:?}/running/${__pkgqueue_job:?}"
+		if ! rename "${pkgq_dir}" "${running_dir}" 2>/dev/null; then
 			# Was the failure from /unbalanced?
-			case "${p}" in
-			*"unbalanced/"*)
+			case "${pkgq_dir}" in
+			"unbalanced/"*)
 				# We lost the race with a child running
 				# pkgqueue_balance_pool(). The file is already
 				# gone and moved to a bucket. Try again.
 				ret=0
 				pkgqueue_get_next "$@" || ret=$?
-				return ${ret}
+				return "${ret}"
 				;;
 			*)
 				# Failure to move a balanced item??
-				err 1 "pkgqueue_get_next: Failed to mv ${p} to ${MASTER_DATADIR}/building/${_pkgname}"
+				err 1 "pkgqueue_get_next: Failed to mv ${pkgq_dir} to ${MASTER_DATADIR}/${running_dir#../}"
 				;;
 			esac
 		fi
 		;;
 	esac
 
-	setvar "${pkgname_var}" "${_pkgname}"
+	setvar "${pgn_job_type_var}" "${pgn_job_type}"
+	setvar "${pgn_pkgname_var}" "${pgn_pkgname}"
 }
 
 # This is expected to run from the master process.
 pkgqueue_job_done() {
-	[ "$#" -eq 1 ] || eargs pkgqueue_job_done pkgname
-	local pkgname="$1"
+	[ "$#" -eq 2 ] || eargs pkgqueue_job_done job_type job_name
+	local job_type="$1"
+	local job_name="$2"
+	local pkgqueue_job
 
-	rmdir "${MASTER_DATADIR:?}/building/${pkgname:?}"
+	pkgqueue_job_encode pkgqueue_job "${job_type}" "${job_name}"
+	rmdir "${MASTER_DATADIR:?}/running/${pkgqueue_job:?}"
 }
 
 pkgqueue_init() {
-	mkdir -p "${MASTER_DATADIR:?}/building" \
+	mkdir -p "${MASTER_DATADIR:?}/running" \
 		"${MASTER_DATADIR:?}/pool" \
 		"${MASTER_DATADIR:?}/pool/unbalanced" \
 		"${MASTER_DATADIR:?}/deps" \
@@ -86,33 +133,44 @@ pkgqueue_init() {
 
 pkgqueue_contains() {
 	required_env pkgqueue_contains PWD "${MASTER_DATADIR_ABS:?}"
-	[ $# -eq 1 ] || eargs pkgqueue_contains pkgname
-	local pkgname="$1"
-	local pkg_dir_name
+	[ $# -eq 2 ] || eargs pkgqueue_contains job_type job_name
+	local job_type="$1"
+	local job_name="$2"
+	local pkg_dir_name pkgqueue_job
 
-	pkgqueue_dir pkg_dir_name "${pkgname}"
-	[ -d "deps/${pkg_dir_name}" ]
+	pkgqueue_job_encode pkgqueue_job "${job_type}" "${job_name}"
+	pkgqueue_dir pkg_dir_name "${pkgqueue_job}"
+	if [ ! -d "deps/${pkg_dir_name}" ]; then
+		return 1
+	fi
 }
 
 pkgqueue_add() {
 	required_env pkgqueue_add PWD "${MASTER_DATADIR_ABS:?}"
-	[ $# -eq 1 ] || eargs pkgqueue_add pkgname
-	local pkgname="$1"
-	local pkg_dir_name
+	[ $# -eq 2 ] || eargs pkgqueue_add job_type job_name
+	local job_type="$1"
+	local job_name="$2"
+	local pkg_dir_name pkgqueue_job
 
-	pkgqueue_dir pkg_dir_name "${pkgname}"
+	pkgqueue_job_encode pkgqueue_job "${job_type}" "${job_name}"
+	pkgqueue_dir pkg_dir_name "${pkgqueue_job}"
 	mkdir -p "deps/${pkg_dir_name}"
 }
 
 pkgqueue_add_dep() {
 	required_env pkgqueue_add_dep PWD "${MASTER_DATADIR_ABS:?}"
-	[ $# -eq 2 ] || eargs pkgqueue_add_dep pkgname dep_pkgname
-	local pkgname="$1"
-	local dep_pkgname="$2"
-	local pkg_dir_name
+	[ $# -eq 4 ] || eargs pkgqueue_add_dep job_type job_name \
+	    dep_job_type dep_job_name
+	local job_type="$1"
+	local job_name="$2"
+	local dep_job_type="$3"
+	local dep_job_name="$4"
+	local pkg_dir_name pkgqueue_job dep_pkgqueue_job
 
-	pkgqueue_dir pkg_dir_name "${pkgname}"
-	:> "deps/${pkg_dir_name}/${dep_pkgname}"
+	pkgqueue_job_encode pkgqueue_job "${job_type}" "${job_name}"
+	pkgqueue_dir pkg_dir_name "${pkgqueue_job}"
+	pkgqueue_job_encode dep_pkgqueue_job "${dep_job_type}" "${dep_job_name}"
+	:> "deps/${pkg_dir_name}/${dep_pkgqueue_job}"
 }
 
 # Remove myself from the remaining list of dependencies for anything
@@ -120,19 +178,19 @@ pkgqueue_add_dep() {
 # anything depending on me and skip them.
 pkgqueue_clean_rdeps() {
 	required_env pkgqueue_clean_rdeps PWD "${MASTER_DATADIR_ABS:?}"
-	[ $# -eq 2 ] || eargs pkgqueue_clean_rdeps clean_rdepends
-	local pkgname="$1"
+	[ $# -eq 2 ] || eargs pkgqueue_clean_rdeps pkgqueue_job clean_rdepends
+	local pkgqueue_job="$1"
 	local clean_rdepends="$2"
-	local dep_dir dep_pkgname pkg_dir_name
+	local dep_dir pkg_dir_name dep_pkgqueue_job
 	local deps_to_check deps_to_clean
 	local rdep_dir rdep_dir_name
 
-	rdep_dir="cleaning/rdeps/${pkgname}"
+	rdep_dir="cleaning/rdeps/${pkgqueue_job}"
 
 	# Exclusively claim the rdeps dir or return, another
 	# pkgqueue_clean_queue() owns it or there were no reverse
 	# deps for this package.
-	pkgqueue_dir rdep_dir_name "${pkgname}"
+	pkgqueue_dir rdep_dir_name "${pkgqueue_job}"
 	rename "rdeps/${rdep_dir_name}" "${rdep_dir}" 2>/dev/null ||
 	    return 0
 
@@ -144,27 +202,28 @@ pkgqueue_clean_rdeps() {
 		for dep_dir in "${rdep_dir}"/*; do
 			# May be empty if all my reverse deps are now skipped.
 			case "${dep_dir}" in "${rdep_dir}/*") break ;; esac
-			dep_pkgname="${dep_dir##*/}"
+			dep_pkgqueue_job="${dep_dir##*/}"
 
 			# clean_pool() in common.sh will pick this up and add to SKIPPED
-			echo "${dep_pkgname}"
+			echo "${dep_pkgqueue_job}"
 
-			_pkgqueue_clean_queue ${dep_pkgname} "${clean_rdepends}"
+			_pkgqueue_clean_queue "${dep_pkgqueue_job}" \
+			    "${clean_rdepends}"
 		done
 		;;
 	"")
 		for dep_dir in "${rdep_dir}/"*; do
 			case "${dep_dir}" in
 			"${rdep_dir}/*")
-				deps_to_clean=
 				deps_to_check=
+				deps_to_clean=
 				break
 				;;
 			esac
-			dep_pkgname="${dep_dir##*/}"
-			pkgqueue_dir pkg_dir_name "${dep_pkgname}"
-			deps_to_check="${deps_to_check:+${deps_to_check} }deps/${pkg_dir_name}"
-			deps_to_clean="${deps_to_clean:+${deps_to_clean} }deps/${pkg_dir_name}/${pkgname}"
+			dep_pkgqueue_job="${dep_dir##*/}"
+			pkgqueue_dir pkg_dir_name "${dep_pkgqueue_job}"
+			deps_to_check="${deps_to_check} deps/${pkg_dir_name}"
+			deps_to_clean="${deps_to_clean} deps/${pkg_dir_name}/${pkgqueue_job}"
 		done
 		case "${deps_to_clean:+set}${deps_to_check:+set}" in
 		"") ;;
@@ -194,21 +253,21 @@ pkgqueue_clean_rdeps() {
 	return 0
 }
 
-# Remove my /deps/<pkgname> dir and any references to this dir in /rdeps/
+# Remove my /deps/<pkgqueue_job> dir and any references to this dir in /rdeps/
 pkgqueue_clean_deps() {
 	required_env pkgqueue_clean_deps PWD "${MASTER_DATADIR_ABS:?}"
-	[ $# -eq 2 ] || eargs pkgqueue_clean_deps clean_rdepends
-	local pkgname="$1"
+	[ $# -eq 2 ] || eargs pkgqueue_clean_deps pkgqueue_job clean_rdepends
+	local pkgqueue_job="$1"
 	local clean_rdepends="$2"
-	local dep_dir rdep_pkgname pkg_dir_name
+	local dep_dir rdep_pkgqueue_job pkg_dir_name
 	local deps_to_check rdeps_to_clean
 	local dir rdep_dir_name
 
-	dep_dir="cleaning/deps/${pkgname}"
+	dep_dir="cleaning/deps/${pkgqueue_job}"
 
 	# Exclusively claim the deps dir or return, another
 	# pkgqueue_clean_queue() owns it.
-	pkgqueue_dir pkg_dir_name "${pkgname}"
+	pkgqueue_dir pkg_dir_name "${pkgqueue_job}"
 	rename "deps/${pkg_dir_name}" "${dep_dir}" 2>/dev/null ||
 	    return 0
 
@@ -222,9 +281,9 @@ pkgqueue_clean_deps() {
 			rdeps_to_clean=
 			;;
 		esac
-		rdep_pkgname=${dir##*/}
-		pkgqueue_dir rdep_dir_name "${rdep_pkgname}"
-		rdeps_to_clean="${rdeps_to_clean:+${rdeps_to_clean} }rdeps/${rdep_dir_name}/${pkgname}"
+		rdep_pkgqueue_job="${dir##*/}"
+		pkgqueue_dir rdep_dir_name "${rdep_pkgqueue_job}"
+		rdeps_to_clean="${rdeps_to_clean:+${rdeps_to_clean} }rdeps/${rdep_dir_name}/${pkgqueue_job}"
 	done
 
 	case "${rdeps_to_clean:+set}" in
@@ -240,55 +299,88 @@ pkgqueue_clean_deps() {
 
 _pkgqueue_clean_queue() {
 	required_env _pkgqueue_clean_queue PWD "${MASTER_DATADIR_ABS:?}"
-	[ $# -eq 2 ] || eargs _pkgqueue_clean_queue pkgname clean_rdepends
-	local pkgname="$1"
+	[ $# -eq 2 ] || eargs _pkgqueue_clean_queue pkgqueue_job clean_rdepends
+	local pkgqueue_job="$1"
 	local clean_rdepends="$2"
+	local ret
 
-	pkgqueue_clean_rdeps "${pkgname}" "${clean_rdepends}"
+	ret=0
+	pkgqueue_clean_rdeps "${pkgqueue_job}" "${clean_rdepends}" || ret="$?"
 
 	# Remove this pkg from the needs-to-build list. It will not exist
 	# if this build was sucessful. It only exists if pkgqueue_clean_queue is
 	# being called recursively to skip items and in that case it will
 	# not be empty.
 	case "${clean_rdepends:+set}" in
-	set) pkgqueue_clean_deps "${pkgname}" "${clean_rdepends}" ;;
+	set)
+		pkgqueue_clean_deps "${pkgqueue_job}" "${clean_rdepends}" ||
+		    ret="$?"
+		;;
 	esac
 
-	return 0
+	return "${ret}"
 }
 
 # This is expected to run from the child build process.
 pkgqueue_clean_queue() {
-	[ $# -eq 2 ] || eargs pkgqueue_clean_queue pkgname clean_rdepends
-	local pkgname="$1"
-	local clean_rdepends="$2"
+	[ "$#" -eq 3 ] || eargs pkgqueue_clean_queue job_type job_name clean_rdepends
+	local job_type="$1"
+	local job_name="$2"
+	local clean_rdepends="${3-}"
 	local -
 
+	pkgqueue_job_encode pkgqueue_job "${job_type}" "${job_name}"
 	set_pipefail
 	# Outputs skipped_pkgnames
-	in_reldir MASTER_DATADIR _pkgqueue_clean_queue "$@" | sort -u
+	in_reldir MASTER_DATADIR _pkgqueue_clean_queue "${pkgqueue_job}" \
+	    "${clean_rdepends}" | sort -u ||
+	    err "${EX_SOFTWARE}" "pkgqueue_clean_queue"
 	in_reldir MASTER_DATADIR pkgqueue_balance_pool || :
 }
 
 pkgqueue_list() {
 	required_env pkgqueue_list PWD "${MASTER_DATADIR_ABS:?}"
-	[ $# -eq 0 ] || eargs pkgqueue_list
+	[ $# -le 1 ] || eargs pkgqueue_list '[want_job_type]'
+	local want_job_type="${1-}"
+	local pkgqueue_job job_type job_name
 
-	find deps -type d -depth 2 | cut -d / -f 3
+	find deps -type d -depth 2 | cut -d / -f 3 |
+	    while mapfile_read_loop_redir pkgqueue_job; do
+		pkgqueue_job_decode "${pkgqueue_job}" job_type job_name
+		case "${want_job_type:+set}" in
+		set)
+			case "${job_type}" in
+			"${want_job_type}") ;;
+			*) continue ;;
+			esac
+			;;
+		esac
+		case "${want_job_type:+set}" in
+		set)
+			echo "${job_name}"
+			;;
+		*)
+			echo "${pkgqueue_job}"
+			;;
+		esac
+	done
 }
 
 pkgqueue_prioritize() {
-	[ "$#" -eq 2 ] || eargs pkgqueue_prioritize pkgname priority
-	local pkgname="$1"
-	local priority="$2"
+	[ "$#" -eq 3 ] || eargs pkgqueue_prioritize job_type job_name priority
+	local job_type="$1"
+	local job_name="$2"
+	local priority="$3"
+	local pkgqueue_job
 
-	hash_set "pkgqueue_priority" "${pkgname}" "${priority}"
+	pkgqueue_job_encode pkgqueue_job "${job_type}" "${job_name}"
+	hash_set "pkgqueue_priority" "${pkgqueue_job}" "${priority}"
 	list_add PKGQUEUE_PRIORITIES "${priority}"
 }
 
 pkgqueue_balance_pool() {
 	required_env pkgqueue_balance_pool PWD "${MASTER_DATADIR_ABS:?}"
-	local pkgname pkg_dir dep_count lock
+	local pkgq_dir pkgqueue_job dep_count lock
 
 	# Avoid running this in parallel, no need. Note that this lock is
 	# not on the unbalanced/ dir, but only this function.
@@ -303,17 +395,17 @@ pkgqueue_balance_pool() {
 	fi
 
 	# For everything ready-to-build...
-	for pkg_dir in pool/unbalanced/*; do
+	for pkgq_dir in pool/unbalanced/*; do
 		# May be empty due to racing with pkgqueue_get_next()
-		case "${pkg_dir}" in
+		case "${pkgq_dir}" in
 		"pool/unbalanced/*") break ;;
 		esac
-		pkgname="${pkg_dir##*/}"
-		hash_remove "pkgqueue_priority" "${pkgname}" dep_count ||
+		pkgqueue_job="${pkgq_dir##*/}"
+		hash_remove "pkgqueue_priority" "${pkgqueue_job}" dep_count ||
 		    dep_count=0
 		# This races with pkgqueue_get_next(), just ignore failure
 		# to move it.
-		rename "${pkg_dir}" "pool/${dep_count}/${pkgname}" || :
+		rename "${pkgq_dir}" "pool/${dep_count}/${pkgqueue_job}" || :
 	done 2>/dev/null
 	# New files may have been added in unbalanced/ via
 	# pkgqueue_clean_queue() due to not being locked.
@@ -365,11 +457,12 @@ pkgqueue_remove_many_pipe() {
 # Remove all packages from queue sent in STDIN
 _pkgqueue_remove_many_pipe() {
 	required_env _pkgqueue_remove_many_pipe PWD "${MASTER_DATADIR_ABS:?}"
-	[ $# -eq 0 ] || eargs _pkgqueue_remove_many_pipe [pkgnames stdin]
+	[ $# -eq 1 ] || eargs _pkgqueue_remove_many_pipe job_type [pkgnames stdin]
+	local job_type="$1"
 	local pkgname
 
 	while mapfile_read_loop_redir pkgname; do
-		_pkgqueue_find_all_pool_references "${pkgname}"
+		_pkgqueue_find_all_pool_references "${job_type}" "${pkgname}"
 	done | while mapfile_read_loop_redir deppath; do
 		echo "${deppath}"
 		case "${deppath}" in
@@ -421,7 +514,7 @@ pkgqueue_remaining() {
 		( cd "${MASTER_DATADIR:?}/pool"; find . -type d -depth 2 | \
 		    sed -e 's,$, ready-to-build,' )
 		# Find items in queue not ready-to-build.
-		( cd "${MASTER_DATADIR:?}"; pkgqueue_list ) | \
+		( cd "${MASTER_DATADIR:?}"; pkgqueue_list "build" ) |
 		    sed -e 's,$, waiting-on-dependency,'
 	} 2>/dev/null | sed -e 's,.*/,,'
 	return 0
@@ -429,27 +522,33 @@ pkgqueue_remaining() {
 
 # Return directory name for given job
 pkgqueue_dir() {
-	[ $# -eq 2 ] || eargs pkgqueue_dir var_return dir
+	[ $# -eq 2 ] || eargs pkgqueue_dir var_return pkgqueue_job
 	local var_return="$1"
-	local dir="$2"
+	local pkgqueue_job="$2"
+	local job_type job_name
 
-	setvar "${var_return}" "$(printf "%.1s/%s" "${dir}" "${dir}")"
+	pkgqueue_job_decode "${pkgqueue_job}" job_type job_name
+
+	setvar "${var_return}" "$(printf "%.1s/%s" "${job_name:?}" \
+	    "${pkgqueue_job}")"
+}
+
+pkgqueue_running() {
+	find "${MASTER_DATADIR:?}/running" -type d -mindepth 1 -maxdepth 1 |
+	    sed -e "s,^${MASTER_DATADIR:?}/running/,," | tr '\n' ' '
 }
 
 pkgqueue_sanity_check() {
 	local always_fail=${1:-1}
-	local crashed_packages dependency_cycles deps pkgname
-	local failed_phase pwd dead_packages
+	local crashed_packages dependency_cycles deps pkgqueue_job
+	local failed_phase pwd dead_packages job_type job_name
 
 	pwd="${PWD}"
 	cd "${MASTER_DATADIR:?}"
 
-	# If there are still packages marked as "building" they have crashed
+	# If there are still packages marked as "running" they have crashed
 	# and it's likely some poudriere or system bug
-	crashed_packages=$( \
-		find building -type d -mindepth 1 -maxdepth 1 | \
-		sed -e "s,^building/,," | tr '\n' ' ' \
-	)
+	crashed_packages="$(pkgqueue_running)"
 	case "${crashed_packages:+set}" in
 	set) err 1 "Crashed package builds detected: ${crashed_packages}" ;;
 	esac
@@ -483,8 +582,10 @@ pkgqueue_sanity_check() {
 	case "${dead_packages:+set}" in
 	set)
 		failed_phase="stuck_in_queue"
-		for pkgname in ${dead_packages}; do
-			crashed_build "${pkgname}" "${failed_phase}"
+		for pkgqueue_job in ${dead_packages}; do
+			pkgqueue_job_decode "${pkgqueue_job}" job_type job_name
+			crashed_build "${job_type}" "${job_name}" \
+			    "${failed_phase}"
 		done
 		cd "${pwd}"
 		return 0
@@ -493,7 +594,7 @@ pkgqueue_sanity_check() {
 
 	# No cycle, there's some unknown poudriere bug
 	err 1 "Unknown stuck queue bug detected. Please submit the entire build output to poudriere developers.
-$(find ${MASTER_DATADIR}/building ${MASTER_DATADIR}/pool ${MASTER_DATADIR}/deps ${MASTER_DATADIR}/cleaning)"
+$(find ${MASTER_DATADIR}/running ${MASTER_DATADIR}/pool ${MASTER_DATADIR}/deps ${MASTER_DATADIR}/cleaning)"
 }
 
 pkgqueue_empty() {
@@ -529,37 +630,40 @@ pkgqueue_empty() {
 # List deps from pkgnames in STDIN
 pkgqueue_list_deps_pipe() {
 	required_env pkgqueue_list_deps_pipe PWD "${MASTER_DATADIR_ABS:?}"
-	[ $# -eq 0 ] || eargs pkgqueue_list_deps_pipe [pkgnames stdin]
+	[ $# -eq 1 ] || eargs pkgqueue_list_deps_pipe job_type [pkgnames stdin]
+	local job_type="$1"
 	local pkgname FIND_ALL_DEPS
 
 	unset FIND_ALL_DEPS
 	while mapfile_read_loop_redir pkgname; do
-		pkgqueue_list_deps_recurse "${pkgname}" | sort -u
+		pkgqueue_list_deps_recurse "${job_type}" "${pkgname}" | sort -u
 	done | sort -u
 }
 
 pkgqueue_list_deps_recurse() {
 	required_env pkgqueue_list_deps_recurse PWD "${MASTER_DATADIR_ABS:?}"
-	[ $# -ne 1 ] && eargs pkgqueue_list_deps_recurse pkgname
-	local pkgname="$1"
-	local dep_pkgname pkg_dir_name
+	[ $# -eq 2 ] || eargs pkgqueue_list_deps_recurse job_type pkgname
+	local job_type="$1"
+	local pkgname="$2"
+	local pkgqueue_job dep_pkgqueue_job dep_job_type dep_pkgname pkg_dir_name
 
-	FIND_ALL_DEPS="${FIND_ALL_DEPS} ${pkgname}"
-
-	#msg_debug "pkgqueue_list_deps_recurse ${pkgname}"
-
-	pkgqueue_dir pkg_dir_name "${pkgname}"
+	pkgqueue_job_encode pkgqueue_job "${job_type}" "${pkgname}"
+	#msg_debug "pkgqueue_list_deps_recurse ${pkgqueue_job}"
+	FIND_ALL_DEPS="${FIND_ALL_DEPS:+${FIND_ALL_DEPS} }${pkgqueue_job}"
+	pkgqueue_dir pkg_dir_name "${pkgqueue_job}"
 	# Show deps/*/${pkgname}
 	for pn in deps/"${pkg_dir_name}"/*; do
-		dep_pkgname="${pn##*/}"
+		dep_pkgqueue_job="${pn##*/}"
 		case " ${FIND_ALL_DEPS} " in
-			*" ${dep_pkgname} "*) continue ;;
+			*" ${dep_pkgqueue_job} "*) continue ;;
 		esac
 		case "${pn}" in
 		"deps/${pkg_dir_name}/*") break ;;
 		esac
+		pkgqueue_job_decode "${dep_pkgqueue_job}" dep_job_type \
+		    dep_pkgname
 		echo "${dep_pkgname}"
-		pkgqueue_list_deps_recurse "${dep_pkgname}"
+		pkgqueue_list_deps_recurse "${dep_job_type}" "${dep_pkgname}"
 	done
 	echo "${pkgname}"
 }
@@ -588,34 +692,37 @@ pkgqueue_find_all_pool_references() {
 
 _pkgqueue_find_all_pool_references() {
 	required_env _pkgqueue_find_all_pool_references PWD "${MASTER_DATADIR_ABS:?}"
-	[ $# -eq 1 ] || eargs _pkgqueue_find_all_pool_references pkgname
-	local pkgname="$1"
-	local rpn dep_pkgname rdep_dir_name pkg_dir_name dep_dir_name
+	[ $# -eq 2 ] || eargs _pkgqueue_find_all_pool_references job_type job_name
+	local job_type="$1"
+	local job_name="$2"
+	local rpn dep_pkgqueue_job rdep_dir_name pkg_dir_name dep_dir_name
+	local pkgqueue_job
 
-	# Cleanup rdeps/*/${pkgname}
-	pkgqueue_dir pkg_dir_name "${pkgname}"
+	pkgqueue_job_encode pkgqueue_job "${job_type}" "${job_name}"
+	# Cleanup rdeps/*/${pkgqueue_job}
+	pkgqueue_dir pkg_dir_name "${pkgqueue_job}"
 	for rpn in deps/"${pkg_dir_name}"/*; do
 		case "${rpn}" in
 		# empty dir
 		"deps/${pkg_dir_name}/*") break ;;
 		esac
-		dep_pkgname="${rpn##*/}"
-		pkgqueue_dir rdep_dir_name "${dep_pkgname}"
-		echo "rdeps/${rdep_dir_name}/${pkgname}"
+		dep_pkgqueue_job="${rpn##*/}"
+		pkgqueue_dir rdep_dir_name "${dep_pkgqueue_job}"
+		echo "rdeps/${rdep_dir_name}/${pkgqueue_job}"
 	done
 	if [ -e "deps/${pkg_dir_name}" ]; then
 		echo "deps/${pkg_dir_name}"
 	fi
-	# Cleanup deps/*/${pkgname}
-	pkgqueue_dir rdep_dir_name "${pkgname}"
+	# Cleanup deps/*/${pkgqueue_job}
+	pkgqueue_dir rdep_dir_name "${pkgqueue_job}"
 	for rpn in rdeps/"${rdep_dir_name}"/*; do
 		case "${rpn}" in
 		# empty dir
 		"rdeps/${rdep_dir_name}/*") break ;;
 		esac
-		dep_pkgname="${rpn##*/}"
-		pkgqueue_dir dep_dir_name "${dep_pkgname}"
-		echo "deps/${dep_dir_name}/${pkgname}"
+		dep_pkgqueue_job="${rpn##*/}"
+		pkgqueue_dir dep_dir_name "${dep_pkgqueue_job}"
+		echo "deps/${dep_dir_name}/${pkgqueue_job}"
 	done
 	if [ -e "rdeps/${rdep_dir_name}" ]; then
 		echo "rdeps/${rdep_dir_name}"
@@ -630,11 +737,11 @@ pkgqueue_unqueue_existing_packages() {
 	msg "Unqueueing existing packages"
 
 	# Delete from the queue all that already have a current package.
-	pkgqueue_list | while mapfile_read_loop_redir pn; do
+	pkgqueue_list "build" | while mapfile_read_loop_redir pn; do
 		if [ -f "../packages/All/${pn}.${PKG_EXT}" ]; then
 			echo "${pn}"
 		fi
-	done | _pkgqueue_remove_many_pipe
+	done | _pkgqueue_remove_many_pipe "build"
 }
 
 # Delete from the queue orphaned build deps. This can happen if
@@ -667,8 +774,8 @@ pkgqueue_trim_orphaned_build_deps() {
 				echo "${pkgname}"
 			fi
 		done
-	} | pkgqueue_list_deps_pipe > "${tmp}"
-	pkgqueue_list | sort -o "${tmp}.actual"
-	comm -13 "${tmp}" "${tmp}.actual" | _pkgqueue_remove_many_pipe
+	} | pkgqueue_list_deps_pipe "build" > "${tmp}"
+	pkgqueue_list "build" | sort -o "${tmp}.actual"
+	comm -13 "${tmp}" "${tmp}.actual" | _pkgqueue_remove_many_pipe "build"
 	rm -f "${tmp}" "${tmp}.actual"
 }

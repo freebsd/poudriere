@@ -285,7 +285,7 @@ if have_ports_feature FLAVORS; then
 	esac
 fi
 # Unqueue our test port so parallel_build() does not build it.
-echo "${PKGNAME:?}" | pkgqueue_remove_many_pipe
+echo "${PKGNAME:?}" | pkgqueue_remove_many_pipe build
 
 show_dry_run_summary
 markfs prepkg ${MASTERMNT}
