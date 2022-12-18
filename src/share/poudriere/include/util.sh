@@ -310,6 +310,47 @@ relpath() {
 	_relpath "${dir1}" "${dir2}" "${outvar}"
 }
 
+in_reldir() {
+	[ "$#" -ge 2 ] || eargs in_reldir reldir_var cmd 'args...'
+	local reldir_var="$1"
+	shift
+	local reldir_val reldir_abs_val nested_dir wanted_dir
+	local ret oldpwd
+
+	case "${reldir_var}" in
+	*/*)
+		nested_dir="${reldir_var#*/}"
+		reldir_var="${reldir_var%%/*}"
+		;;
+	*)
+		nested_dir=
+	esac
+
+	getvar "${reldir_var}" reldir_val ||
+	    err "${EX_SOFTWARE}" "in_reldir: Failed to find value for '${reldir_var}'"
+	getvar "${reldir_var}_ABS" reldir_abs_val ||
+	    err "${EX_SOFTWARE}" "in_reldir: Failed to find value for '${reldir_var}_ABS'"
+	wanted_dir="${reldir_val:?}${nested_dir:+/${nested_dir}}"
+	case "${PWD}" in
+	"${wanted_dir:?}")
+		oldpwd=
+		;;
+	*)
+		cd "${wanted_dir:?}"
+		oldpwd="${OLDPWD}"
+		;;
+	esac
+
+	ret=0
+	"$@" || ret="$?"
+
+	case "${oldpwd:+set}" in
+	set) cd "${oldpwd}" ;;
+	esac
+
+	return "${ret}"
+}
+
 make_relative() {
 	[ $# -eq 1 -o $# -eq 3 ] || eargs make_relative varname \
 	    [oldroot newroot]
