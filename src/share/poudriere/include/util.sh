@@ -1262,7 +1262,7 @@ mapfile_mktemp() {
 		return "${ret}"
 	fi
 	ret=0
-	mapfile "${handle_var_return}" "${mm_tmpfile}" "we+" || ret="$?"
+	mapfile "${handle_var_return}" "${mm_tmpfile}" "we" || ret="$?"
 	if [ "${ret}" -ne 0 ]; then
 		setvar "${handle_var_return}" ""
 		setvar "${tmpfile_var_return}" ""
