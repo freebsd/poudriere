@@ -1061,9 +1061,11 @@ buildlog_start() {
 		echo "Port dir last git commit: ${git_hash}"
 		pkg_note_add "${pkgname}" port_git_hash "${git_hash}"
 		git_modified=no
+		msg_n "Inspecting port for modifications to git checkout..."
 		if git_tree_dirty "${mnt:?}/${portdir:?}" 1; then
 			git_modified=yes
 		fi
+		echo " ${git_modified}"
 		pkg_note_add "${pkgname}" port_checkout_unclean "${git_modified}"
 		echo "Port dir unclean checkout: ${git_modified}"
 	fi
