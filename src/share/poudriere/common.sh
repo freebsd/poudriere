@@ -5132,7 +5132,7 @@ save_wrkdir() {
 	esac
 
 	job_msg "Saving ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_RESET} wrkdir"
-	bset ${MY_JOBID} status "save_wrkdir:"
+	bset_job_status "save_wrkdir" "${originspec}" "${pkgname}"
 	mkdir -p ${tardir}
 
 	# Tar up the WRKDIR, and ignore errors
