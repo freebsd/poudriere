@@ -394,6 +394,7 @@ if [ ${ret} -ne 0 ]; then
 	    "${failed_phase}" || :
 
 	ln -s "../${PKGNAME:?}.log" "${log:?}/logs/errors/${PKGNAME:?}.log"
+	bset_job_status "processlog" "${ORIGINSPEC}" "${PKGNAME}"
 	errortype=$(/bin/sh ${SCRIPTPREFIX:?}/processonelog.sh \
 		"${log:?}/logs/errors/${PKGNAME:?}.log" \
 		2> /dev/null)

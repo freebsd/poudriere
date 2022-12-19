@@ -5820,9 +5820,13 @@ build_pkg() {
 		    "${log:?}/logs/errors/${pkgname:?}.log"
 		case "${DETERMINE_BUILD_FAILURE_REASON-}" in
 		"yes")
+			bset_job_status "processlog" "${originspec}" "${pkgname}"
 			errortype=$(/bin/sh ${SCRIPTPREFIX:?}/processonelog.sh \
 				"${log:?}/logs/errors/${pkgname:?}.log" \
 				2> /dev/null)
+			;;
+		*)
+			errortype=
 			;;
 		esac
 		badd ports.failed "${originspec} ${pkgname} ${failed_phase} ${errortype} ${elapsed}"
