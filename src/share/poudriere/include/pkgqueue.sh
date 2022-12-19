@@ -273,12 +273,7 @@ pkgqueue_clean_queue() {
 	set_pipefail
 	# Outputs skipped_pkgnames
 	in_reldir MASTER_DATADIR _pkgqueue_clean_queue "$@" | sort -u
-	case "${clean_rdepends}" in
-	"ignored") ;;
-	*)
-		in_reldir MASTER_DATADIR pkgqueue_balance_pool || :
-		;;
-	esac
+	in_reldir MASTER_DATADIR pkgqueue_balance_pool || :
 }
 
 pkgqueue_list() {
