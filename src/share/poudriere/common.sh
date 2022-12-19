@@ -5121,7 +5121,7 @@ save_wrkdir() {
 	local phase="$4"
 	local tardir=${POUDRIERE_DATA}/wrkdirs/${MASTERNAME}/${PTNAME}
 	local tarname=${tardir}/${pkgname}.${WRKDIR_ARCHIVE_FORMAT}
-	local wrkdir
+	local wrkdir status
 
 	case "${SAVE_WRKDIR}" in
 	"no") return 0 ;;
@@ -5132,6 +5132,7 @@ save_wrkdir() {
 	esac
 
 	job_msg "Saving ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_RESET} wrkdir"
+	_bget status ${MY_JOBID} status
 	bset_job_status "save_wrkdir" "${originspec}" "${pkgname}"
 	mkdir -p ${tardir}
 
@@ -5153,6 +5154,7 @@ save_wrkdir() {
 	    "${mnt:?}${wrkdir:?}" > /dev/null 2>&1
 
 	job_msg "Saved ${COLOR_PORT}${originspec} | ${pkgname}${COLOR_RESET} wrkdir to: ${tarname}"
+	bset_job_status "${status%%:*}" "${originspec}" "${pkgname}"
 }
 
 start_builder() {
@@ -5682,7 +5684,7 @@ build_pkg() {
 	local errortype="???"
 	local ret=0
 	local tmpfs_blacklist_dir
-	local elapsed now pkgname_varname jpkg originspec
+	local elapsed now pkgname_varname jpkg originspec status
 	local -
 
 	_my_path mnt
@@ -5820,10 +5822,12 @@ build_pkg() {
 		    "${log:?}/logs/errors/${pkgname:?}.log"
 		case "${DETERMINE_BUILD_FAILURE_REASON-}" in
 		"yes")
+			_bget status ${MY_JOBID} status
 			bset_job_status "processlog" "${originspec}" "${pkgname}"
 			errortype=$(/bin/sh ${SCRIPTPREFIX:?}/processonelog.sh \
 				"${log:?}/logs/errors/${pkgname:?}.log" \
 				2> /dev/null)
+			bset_job_status "${status%%:*}" "${originspec}" "${pkgname}"
 			;;
 		*)
 			errortype=

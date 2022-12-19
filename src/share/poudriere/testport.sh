@@ -398,6 +398,7 @@ if [ ${ret} -ne 0 ]; then
 	errortype=$(/bin/sh ${SCRIPTPREFIX:?}/processonelog.sh \
 		"${log:?}/logs/errors/${PKGNAME:?}.log" \
 		2> /dev/null)
+	bset_job_status "${status%%:*}" "${ORIGINSPEC}" "${PKGNAME}"
 	badd ports.failed "${ORIGINSPEC} ${PKGNAME} ${failed_phase} ${errortype} ${elapsed}"
 	update_stats || :
 
