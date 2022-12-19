@@ -860,7 +860,7 @@ mapfile() {
 	local mypid _hkey ret
 
 	case " ${_modes} " in
-	*r*w*|*w*r*) ;;
+	*r*w*|*w*r*|*+*) ;;
 	*w*|*a*) ;;
 	*r*)
 		if [ ! -r "${_file}" ]; then
@@ -887,12 +887,20 @@ mapfile() {
 			"${_file}")
 				err 1 "mapfile: earlier case _hkey should cover this"
 				;;
-			# Different file. Is this even possible?
 			*)
-				if mapfile_supports_multiple_handles; then
-					err "${EX_SOFTWARE}" "mapfile() needs updated for multiple handle support"
-				fi
-				err 1 "mapfile only supports 1 file at a time without builtin. ${_mapfile_handle} already open"
+				case "${_file}" in
+				/dev/fd/[0-9]) ;;
+				*)
+					case " ${_modes} " in
+					*r*w*|*w*r*|*+*|*r*)
+						if mapfile_supports_multiple_handles; then
+							err "${EX_SOFTWARE}" "mapfile() needs updated for multiple handle support"
+						fi
+						err "${EX_SOFTWARE}" "mapfile only supports 1 file at a time without builtin for r+w and r. ${_mapfile_handle} already open: tried to open ${_file}"
+						;;
+					esac
+					;;
+				esac
 				;;
 			esac
 			;;
@@ -902,27 +910,39 @@ mapfile() {
 			;;
 		esac
 	esac
-	_mapfile_handle="${_hkey}"
-	setvar "${handle_name}" "${_mapfile_handle}"
+	setvar "${handle_name}" "${_hkey}"
 	case "${_file}" in
 	/dev/fd/[0-9])
-		hash_set mapfile_fd "${_mapfile_handle}" "${_file#/dev/fd/}"
+		hash_set mapfile_fd "${_hkey}" "${_file#/dev/fd/}"
 		;;
 	*)
-		case " ${_modes} " in
-		*r*w*|*w*r*)
-			exec 8<> "${_file}" || ret="$?"
+		: "${_mapfile_handle:="${_hkey}"}"
+		case "${_mapfile_handle}" in
+		"${_hkey}")
+			case " ${_modes} " in
+			*r*w*|*w*r*|*+*)
+				exec 8<> "${_file}" || ret="$?"
+				;;
+			*r*)
+				exec 8< "${_file}" || ret="$?"
+				;;
+			*w*|*a*)
+				exec 8> "${_file}" || ret="$?"
+				;;
+			esac
+			hash_set mapfile_fd "${_hkey}" "8"
 			;;
-		*r*)
-			exec 8< "${_file}" || ret="$?"
-			;;
-		*w*|*a*)
-			exec 8> "${_file}" || ret="$?"
+		*)
+			case "${_modes}" in
+			*a*) ;;
+			*w*) :> "${_file}" ;;
+			esac
 			;;
 		esac
 		;;
 	esac
-	hash_set mapfile_file "${_mapfile_handle}" "${_file}"
+	hash_set mapfile_file "${_hkey}" "${_file}"
+	hash_set mapfile_modes "${_hkey}" "${_modes}"
 	return "${ret}"
 }
 
@@ -932,15 +952,12 @@ mapfile_read() {
 	local handle="$1"
 	shift
 
-	case "${handle}" in
-	"${_mapfile_handle}") ;;
-	*)
-		err 1 "mapfile_read: Handle '${handle}' is not open${_mapfile_handle:+, '${_mapfile_handle}' is}."
-		;;
-	esac
-
-	hash_get mapfile_fd "${handle}" fd || fd=8
-	read_blocking -r "$@" <&${fd}
+	if hash_get mapfile_fd "${handle}" fd; then
+		read_blocking -r "$@" <&"${fd}"
+	else
+		err "${EX_SOFTWARE}" "mapfile_read: ${handle} is not open for reading"
+		err "${EX_SOFTWARE}" "mapfile_read: Handle '${handle}' is not open${_mapfile_handle:+, '${_mapfile_handle}' is}."
+	fi
 }
 
 mapfile_write() {
@@ -948,7 +965,7 @@ mapfile_write() {
 	[ $# -ge 1 ] || eargs mapfile_write handle [-nT] [data]
 	local handle="$1"
 	shift
-	local ret handle fd nflag Tflag flag OPTIND=1
+	local ret handle fd nflag Tflag flag OPTIND=1 file
 
 	ret=0
 	nflag=
@@ -979,35 +996,40 @@ mapfile_write() {
 		return "${ret}"
 	fi
 
-	case "${handle}" in
-	"${_mapfile_handle}") ;;
-	*)
-		err 1 "mapfile_write: Handle '${handle}' is not open${_mapfile_handle:+, '${_mapfile_handle}' is}."
-	esac
-	hash_get mapfile_fd "${handle}" fd || fd=8
 	if [ "${Tflag:-0}" -eq 1 ]; then
 		echo ${nflag:+-n} "$@"
 	fi
-	echo ${nflag:+-n} "$@" >&${fd}
+	if hash_get mapfile_fd "${handle}" fd; then
+		echo ${nflag:+-n} "$@" >&"${fd}"
+		return
+	fi
+
+	hash_get mapfile_file "${handle}" file ||
+	    err "${EX_SOFTWARE}" "mapfile_write: Failed to find file for ${handle}"
+	echo ${nflag:+-n} "$@" >> "${file}"
 }
 
 mapfile_close() {
 	local -; set +x
 	[ $# -eq 1 ] || eargs mapfile_close handle
 	local handle="$1"
-	local fd _
+	local fd
 
-	case "${handle}" in
-	"${_mapfile_handle}") ;;
-	*)
-		err 1 "mapfile_close: Handle '${handle}' is not open${_mapfile_handle:+, '${_mapfile_handle}' is}."
-	esac
 	# Only close fd that we opened.
-	if ! hash_remove mapfile_fd "${handle}" _; then
-		exec 8>&-
+	if hash_remove mapfile_fd "${handle}" fd; then
+		case "${fd}" in
+		8)
+			exec 8>&-
+			case "${handle}" in
+			"${_mapfile_handle-}")
+				unset _mapfile_handle
+				;;
+			esac
+			;;
+		esac
 	fi
-	unset _mapfile_handle
 	hash_unset mapfile_file "${handle}"
+	hash_unset mapfile_modes "${handle}"
 }
 
 mapfile_builtin() {
@@ -1557,7 +1579,7 @@ _write_atomic() {
 	local tmpfile_handle tmpfile ret
 
 	TMPDIR="${dest%/*}" mapfile_mktemp tmpfile_handle tmpfile \
-	    -ut ".tmp-${dest##*/}" ||
+	    -ut ".write_atomic-${dest##*/}" ||
 	    err $? "write_atomic unable to create tmpfile in ${dest%/*}"
 	ret=0
 	if [ "${tee}" -eq 1 ]; then

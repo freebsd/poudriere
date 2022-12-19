@@ -49,6 +49,56 @@ writer() {
 	rm -f "${TMP}"
 }
 
+# non-builtin can still do writing to multiple files concurrently. Just
+# not reading.
+{
+	TMP=$(mktemp -u)
+	TMP2=$(mktemp -u)
+	TMP3=$(mktemp -u)
+	assert_true cat > "${TMP}" <<-EOF
+	file_read0
+	read0
+	EOF
+	assert_true cat > "${TMP2}" <<-EOF
+	TMP2 start
+	EOF
+	assert_true cat > "${TMP3}" <<-EOF
+	TMP3 start
+	EOF
+	assert_true mapfile file_read "${TMP}" "re"
+	assert_true mapfile file_write1 "${TMP2}" "ae"
+	assert_true mapfile file_write2 "${TMP3}" "we"
+	assert_true mapfile_write "${file_write1}" "file_write1"
+	assert_true mapfile_write "${file_write2}" "file_write2"
+	assert_true mapfile_read "${file_read}" line
+	assert "file_read0" "${line}"
+	assert_true mapfile_write "${file_write1}" "data1"
+	assert_true mapfile_write "${file_write2}" "data2"
+	assert_true mapfile_read "${file_read}" line
+	assert "read0" "${line}"
+	assert_false mapfile_read "${file_read}" line
+	assert_true mapfile_close "${file_read}"
+	assert_true mapfile_close "${file_write1}"
+	assert_true mapfile_close "${file_write2}"
+	assert_file - "${TMP}" <<-EOF
+	file_read0
+	read0
+	EOF
+
+	assert_file - "${TMP2}" <<-EOF
+	TMP2 start
+	file_write1
+	data1
+	EOF
+
+	assert_file - "${TMP3}" <<-EOF
+	file_write2
+	data2
+	EOF
+
+	rm -f "${TMP}" "${TMP2}" "${TMP3}"
+}
+
 if mapfile_builtin; then
 # Test pipes
 {
