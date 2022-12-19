@@ -6,8 +6,9 @@
 /Files or directories (left over|removed|modified)/	{ res[4]="leftovers" }
 
 END {
-	for(i=0; i<5; i++) {
-		if (res[i]) { print res[i]; exit; }
+	for (reason in res) {
+		print res[reason]
+		exit
 	}
 	print "???"
 }
