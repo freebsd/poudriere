@@ -5824,9 +5824,9 @@ build_pkg() {
 		"yes")
 			_bget status ${MY_JOBID} status
 			bset_job_status "processlog" "${originspec}" "${pkgname}"
-			errortype=$(/bin/sh ${SCRIPTPREFIX:?}/processonelog.sh \
+			errortype="$(awk -f ${AWKPREFIX:?}/processonelog.awk \
 				"${log:?}/logs/errors/${pkgname:?}.log" \
-				2> /dev/null)
+				2> /dev/null)" || :
 			bset_job_status "${status%%:*}" "${originspec}" "${pkgname}"
 			;;
 		*)
