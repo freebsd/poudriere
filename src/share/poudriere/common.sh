@@ -2659,9 +2659,14 @@ do_portbuild_mounts() {
 	mount_ports -o ro > "${msgdev:?}"
 	${msgmount} "Mounting packages from: ${PACKAGES_ROOT-${PACKAGES}}"
 	mount_packages -o ro
-	${msgmount} "Mounting distfiles from: ${DISTFILES_CACHE:?}"
-	${NULLMOUNT} "${DISTFILES_CACHE:?}" "${mnt:?}/distfiles" ||
-		err 1 "Failed to mount the distfiles cache directory"
+	case "${DISTFILES_CACHE}" in
+	no) ;;
+	*)
+		${msgmount} "Mounting distfiles from: ${DISTFILES_CACHE:?}"
+		${NULLMOUNT} "${DISTFILES_CACHE:?}" "${mnt:?}/distfiles" ||
+			err 1 "Failed to mount the distfiles cache directory"
+		;;
+	esac
 
 	# Copy in the options for the ref jail, but just ro nullmount it
 	# in builders.

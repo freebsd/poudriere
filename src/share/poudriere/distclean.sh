@@ -129,6 +129,12 @@ gather_distfiles() {
 	    "${distinfo_file}"
 }
 
+case "${DISTFILES_CACHE}" in
+no)
+	err "${EX_USAGE}" "DISTFILES_CACHE is 'no'. No cache is used."
+	;;
+esac
+
 [ -d ${DISTFILES_CACHE:-/nonexistent} ] ||
     err 1 "The DISTFILES_CACHE directory does not exist (cf. poudriere.conf)"
 
