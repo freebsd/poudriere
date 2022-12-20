@@ -1083,20 +1083,10 @@ buildlog_start() {
 		    "${git_modified}"
 		echo "Ports top unclean checkout: ${git_modified}"
 	fi
-
-	if [ -x "${GIT_CMD}" ] && \
-	    ${GIT_CMD} -C "${mnt:?}/${portdir:?}" rev-parse \
-	    --show-toplevel >/dev/null 2>&1; then
-		git_hash=$(${GIT_CMD} -C "${mnt:?}/${portdir:?}" log -1 \
-		    --format=%h .)
+	if git_get_hash_and_dirty "${mnt:?}/${portdir:?}" \
+	    git_hash git_modified; then
 		echo "Port dir last git commit: ${git_hash}"
 		pkg_note_add "${pkgname}" port_git_hash "${git_hash}"
-		git_modified=no
-		msg_n "Inspecting port for modifications to git checkout..."
-		if git_tree_dirty "${mnt:?}/${portdir:?}" 1; then
-			git_modified=yes
-		fi
-		echo " ${git_modified}"
 		pkg_note_add "${pkgname}" port_checkout_unclean "${git_modified}"
 		echo "Port dir unclean checkout: ${git_modified}"
 	fi
@@ -8431,8 +8421,6 @@ load_moved() {
 }
 
 fetch_global_port_vars() {
-	local git_hash git_modified git_dirty
-
 	case "${P_PORTS_FEATURES:+set}" in
 	set)
 		if was_a_testport_run; then
@@ -8468,21 +8456,19 @@ fetch_global_port_vars() {
 	esac
 	export P_PORTS_FEATURES
 
-	if was_a_bulk_run && [ -x "${GIT_CMD}" ] &&
-	    ${GIT_CMD} -C "${MASTERMNT?}/${PORTSDIR:?}" rev-parse \
-	    --show-toplevel >/dev/null 2>&1; then
-		git_hash=$(${GIT_CMD} -C "${MASTERMNT?}/${PORTSDIR:?}" log -1 \
-		    --format=%h .)
-		shash_set ports_metadata top_git_hash "${git_hash}"
-		git_modified=no
-		msg_n "Inspecting ports tree for modifications to git checkout..."
-		if git_tree_dirty "${MASTERMNT?}/${PORTSDIR:?}" 0; then
-			git_modified=yes
-			git_dirty="(dirty)"
+	if was_a_bulk_run; then
+		local git_hash git_modified git_dirty
+
+		if git_get_hash_and_dirty "${MASTERMNT?}/${PORTSDIR:?}" \
+		    git_hash git_modified; then
+			shash_set ports_metadata top_git_hash "${git_hash}"
+			case "${git_modified}" in
+			yes) git_dirty="(dirty)" ;;
+			*) git_dirty= ;;
+			esac
+			shash_set ports_metadata top_unclean "${git_modified}"
+			msg "Ports top-level git hash: ${git_hash} ${git_dirty}"
 		fi
-		echo " ${git_modified}"
-		shash_set ports_metadata top_unclean "${git_modified}"
-		msg "Ports top-level git hash: ${git_hash} ${git_dirty}"
 	fi
 	: "${LOCALBASE:=${P_LOCALBASE}}"
 	: "${PREFIX:=${P_PREFIX}}"
@@ -8493,6 +8479,31 @@ fetch_global_port_vars() {
 	PKG_ADD="${PKG_BIN:?} add"
 	PKG_DELETE="${PKG_BIN:?} delete -y -f"
 	PKG_VERSION="${PKG_BIN:?} version"
+}
+
+git_get_hash_and_dirty() {
+	[ "$#" -eq 3 ] || eargs git_get_hash_and_dirty dir git_hash_var \
+	    git_modified_var
+	local git_dir="$1"
+	local gghd_git_hash_var="$2"
+	local gghd_git_modified_var="$3"
+	local gghd_git_hash gghd_git_modified
+
+	if [ ! -x "${GIT_CMD}" ]; then
+		return 1
+	fi
+	${GIT_CMD} -C "${git_dir:?}" rev-parse --show-toplevel \
+	    >/dev/null 2>&1 || return
+	gghd_git_hash=$(${GIT_CMD} -C "${git_dir:?}" log -1 \
+	    --format=%h .)
+	gghd_git_modified=no
+	msg_n "Inspecting ${git_dir} for modifications to git checkout..."
+	if git_tree_dirty "${git_dir:?}" 1; then
+		gghd_git_modified=yes
+	fi
+	echo " ${gghd_git_modified}"
+	setvar "${gghd_git_hash_var}" "${gghd_git_hash}"
+	setvar "${gghd_git_modified_var}" "${gghd_git_modified}"
 }
 
 git_tree_dirty() {
