@@ -8909,6 +8909,9 @@ prepare_ports() {
 	# Allow caching values now
 	USE_CACHE_CALL=1
 
+	fetch_global_port_vars || \
+	    err 1 "Failed to lookup global ports metadata"
+
 	if was_a_bulk_run; then
 		msg_n "Acquiring build logs lock for ${MASTERNAME}..."
 		if slock_acquire "logs_${MASTERNAME:?}" 60; then
@@ -8990,6 +8993,18 @@ prepare_ports() {
 				bset overlays "${OVERLAYS}"
 				;;
 			esac
+			if shash_exists ports_metadata top_git_hash; then
+				local top_git_hash top_unclean
+
+				shash_get ports_metadata "top_git_hash" \
+				    top_git_hash ||
+				    err "${EX_USAGE}" "shash_get top_git_hash"
+				shash_get ports_metadata "top_unclean" \
+				    top_unclean ||
+				    err "${EX_USAGE}" "shash_get top_unclean"
+				bset git_hash "${top_git_hash}"
+				bset git_dirty "${top_unclean}"
+			fi
 		fi
 
 		show_log_info
@@ -8999,9 +9014,6 @@ prepare_ports() {
 			msg "HTML UI updates are disabled by HTML_JSON_UPDATE_INTERVAL being 0"
 		fi
 	fi
-
-	fetch_global_port_vars || \
-	    err 1 "Failed to lookup global ports metadata"
 
 	case "${PKG_REPO_SIGNING_KEY:+set}" in
 	set)

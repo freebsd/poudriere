@@ -651,6 +651,12 @@ function process_data_build(data) {
     $('#overlays').hide();
     $('#overlays_title').hide();
   }
+  if (data.git_hash) {
+    $('#git_hash').html(data.git_hash + (data.git_dirty == "yes" ? " (dirty)" : ""));
+  } else {
+    $('#git_hash').hide();
+    $('#git_hash_title').hide();
+  }
   $("#build_info_div").show();
 
   /* Backwards compatibility */

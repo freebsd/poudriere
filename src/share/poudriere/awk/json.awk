@@ -30,6 +30,10 @@
 function group_type(type) {
   if (type == "svn_url")
     return "string"
+  else if (type == "git_hash")
+    return "string"
+  else if (type == "git_dirty")
+    return "string"
   else if (type == "overlays")
     return "string"
   else if (type == "setname")
