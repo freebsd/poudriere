@@ -3998,7 +3998,7 @@ download_from_repo_check_pkg() {
 	local remote_all_prefix="$8"
 	local remote_all_cats="$9"
 	local output="${10}"
-	local pkgbase bpkg selected_options remote_options found
+	local pkgbase bpkg_glob selected_options remote_options found
 	local run_deps lib_deps raw_deps dep dep_pkgname local_deps remote_deps
 	local remote_abi remote_osversion remote_prefix prefix
 	local -
@@ -4013,10 +4013,10 @@ download_from_repo_check_pkg() {
 	# expand to files in the current directory instead of
 	# being passed to the case statement as a pattern
 	set -o noglob
-	for bpkg in ${PACKAGE_FETCH_BLACKLIST-} ${P_PKG_PKGBASE:?}; do
+	for bpkg_glob in ${PACKAGE_FETCH_BLACKLIST-} ${P_PKG_PKGBASE:?}; do
 		# shellcheck disable=SC2254
 		case "${pkgbase}" in
-		${bpkg})
+		${bpkg_glob})
 			msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: blacklisted"
 			return
 			;;
@@ -4148,7 +4148,7 @@ download_from_repo() {
 	local packagesite_resolved
 	local remote_all_pkgs remote_all_options wantedpkgs remote_all_deps
 	local remote_all_annotations remote_all_abi remote_all_prefix
-	local remote_all_cats missing_pkgs pkg pkgbase cnt
+	local remote_all_cats missing_pkgs pkg_glob pkgbase cnt
 	local remote_pkg_ver local_pkg_name local_pkg_ver found
 	local packages_rel
 	local -
@@ -4204,10 +4204,10 @@ download_from_repo() {
 		# expand to files in the current directory instead of
 		# being passed to the case statement as a pattern
 		set -o noglob
-		for pkg in ${PACKAGE_FETCH_WHITELIST-"*"}; do
+		for pkg_glob in ${PACKAGE_FETCH_WHITELIST-"*"}; do
 			# shellcheck disable=SC2254
 			case "${pkgbase}" in
-			${pkg})
+			${pkg_glob})
 				found=1
 				break
 				;;
@@ -4731,7 +4731,7 @@ build_port() {
 	local log
 	local network
 	local hangstatus
-	local pkgenv phaseenv jpkg
+	local pkgenv phaseenv jpkg_glob
 	local targets
 	local jailuser JUSER
 	local testfailure=0
@@ -4765,10 +4765,10 @@ build_port() {
 	# expand to files in the current directory instead of
 	# being passed to the case statement as a pattern
 	set -o noglob
-	for jpkg in ${ALLOW_NETWORKING_PACKAGES}; do
+	for jpkg_glob in ${ALLOW_NETWORKING_PACKAGES}; do
 		# shellcheck disable=SC2254
 		case "${pkgbase}" in
-		${jpkg})
+		${jpkg_glob})
 			job_msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}"
 			msg_warn "ALLOW_NETWORKING_PACKAGES: Allowing full network access for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET}"
 			allownetworking=1
@@ -5721,7 +5721,7 @@ build_pkg() {
 	local errortype="???"
 	local ret=0
 	local tmpfs_blacklist_dir
-	local elapsed now pkgname_varname jpkg originspec status
+	local elapsed now pkgname_varname jpkg_glob originspec status
 	local -
 
 	_my_path mnt
@@ -5781,10 +5781,10 @@ build_pkg() {
 	:> "${mnt:?}/.need_rollback"
 
 	set -f
-	for jpkg in ${TMPFS_BLACKLIST-}; do
+	for jpkg_glob in ${TMPFS_BLACKLIST-}; do
 		# shellcheck disable=SC2254
 		case "${pkgbase}" in
-		${jpkg})
+		${jpkg_glob})
 			mkdir -p "${TMPFS_BLACKLIST_TMPDIR:?}/wrkdirs"
 			tmpfs_blacklist_dir="$(\
 				TMPDIR="${TMPFS_BLACKLIST_TMPDIR:?}/wrkdirs" \
@@ -5804,10 +5804,10 @@ build_pkg() {
 	msg "Building ${port}"
 
 	set -f
-	for jpkg in ${ALLOW_MAKE_JOBS_PACKAGES}; do
+	for jpkg_glob in ${ALLOW_MAKE_JOBS_PACKAGES}; do
 		# shellcheck disable=SC2254
 		case "${pkgbase}" in
-		${jpkg})
+		${jpkg_glob})
 			job_msg_verbose "Allowing MAKE_JOBS for ${COLOR_PORT}${port}${FLAVOR:+@${FLAVOR}} | ${pkgname}${COLOR_RESET}"
 			sed -i '' '/DISABLE_MAKE_JOBS=poudriere/d' \
 			    "${mnt:?}/etc/make.conf"
@@ -8903,8 +8903,8 @@ prepare_ports() {
 }
 
 load_priorities_ptsort() {
-	local priority pkgname originspec pkg_boost origin flavor _rdep _ignored
-	local log pkgbase
+	local priority pkgname originspec origin flavor _rdep _ignored
+	local log pkgbase pkg_boost_glob
 	local -
 
 	awk '{print $2 " " $1}' "${MASTER_DATADIR:?}/pkg_deps" \
@@ -8920,10 +8920,10 @@ load_priorities_ptsort() {
 		# expand to files in the current directory instead of
 		# being passed to the case statement as a pattern
 		set -o noglob
-		for pkg_boost in ${PRIORITY_BOOST}; do
+		for pkg_boost_glob in ${PRIORITY_BOOST}; do
 			# shellcheck disable=SC2254
 			case ${pkgbase} in
-			${pkg_boost})
+			${pkg_boost_glob})
 				pkgqueue_contains "${pkgname}" || \
 				    continue
 				originspec_decode "${originspec}" origin flavor subpkg
