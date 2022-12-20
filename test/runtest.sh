@@ -113,8 +113,12 @@ runtest() {
 	export TEST_NUMS
 	# With truss use --foreground to prevent process reaper and ptrace deadlocking.
 	set -x
-	${EXEC:+exec} \
-	    /usr/bin/timeout ${TRUSS:+--foreground} ${TIMEOUT} \
+	{
+		TEST_START="$(clock -monotonic)"
+		echo "Test started: $(date)"
+		# hide set -x
+	} >&2 2>/dev/null
+	/usr/bin/timeout ${TRUSS:+--foreground} ${TIMEOUT} \
 	    ${TIMESTAMP} \
 	    env \
 	    ${SH_DISABLE_VFORK:+SH_DISABLE_VFORK=1} \
@@ -122,6 +126,11 @@ runtest() {
 	    SH="${SH}" \
 	    ${TRUSS:+truss -ae -f -s512 -o"$(get_log_name).truss"} \
 	    "${SH}" "${TEST}"
+	{
+		TEST_END="$(clock -monotonic)"
+		echo "Test ended: $(date) -- duration: $((TEST_END - TEST_START))s"
+		# hide set -x
+	} >&2 2>/dev/null
 }
 
 _spawn_wrapper() {
@@ -333,4 +342,4 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 	exit "${ret}"
 fi
 
-EXEC=1 runtest
+runtest

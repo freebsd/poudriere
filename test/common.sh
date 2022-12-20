@@ -548,3 +548,7 @@ msg_debug "getpid: $$"
 
 . ${SCRIPTPREFIX}/common.sh
 post_getopts
+
+if git_get_hash_and_dirty "${abs_top_srcdir}" git_hash git_dirty; then
+	msg "Source git hash: ${git_hash} modified: ${git_dirty}"
+fi >&2
