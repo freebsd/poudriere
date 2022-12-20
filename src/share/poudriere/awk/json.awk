@@ -30,25 +30,27 @@
 function group_type(type) {
   if (type == "svn_url")
     return "string"
-  if (type == "setname")
+  else if (type == "overlays")
     return "string"
-  if (type == "ptname")
+  else if (type == "setname")
     return "string"
-  if (type == "jailname")
+  else if (type == "ptname")
     return "string"
-  if (type == "buildname")
+  else if (type == "jailname")
     return "string"
-  if (type == "mastername")
+  else if (type == "buildname")
     return "string"
-  if (type == "started")
+  else if (type == "mastername")
     return "string"
-  if (type == "ended")
+  else if (type == "started")
     return "string"
-  if (type == "builders")
+  else if (type == "ended")
+    return "string"
+  else if (type == "builders")
     return "array"
-  if (type == "jobs")
+  else if (type == "jobs")
     return "array"
-  if (type == "status")
+  else if (type == "status")
     return "string"
   return "object"
 }

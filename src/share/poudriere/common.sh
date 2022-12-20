@@ -8985,6 +8985,11 @@ prepare_ports() {
 			bset ptname "${PTNAME}"
 			bset buildname "${BUILDNAME}"
 			bset started "${EPOCH_START}"
+			case "${OVERLAYS:+set}" in
+			set)
+				bset overlays "${OVERLAYS}"
+				;;
+			esac
 		fi
 
 		show_log_info
