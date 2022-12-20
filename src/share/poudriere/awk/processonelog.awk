@@ -5,8 +5,13 @@
 # http://www.marcuscom.com:8080/cgi-bin/cvsweb.cgi/portstools/tinderbox/sql/values.{lp|pfp|pfr}
 
 function found(reason) {
-	if (!REASON) {
+	if (!REASON && !REASON_LAST) {
 		REASON = reason
+	}
+}
+function found_last(reason) {
+	if (!REASON) {
+		REASON_LAST = reason
 	}
 }
 
@@ -168,8 +173,12 @@ $0 ~ "(process didn.t exit successfully:.*build-script-build|try .rustc --explai
 $0 ~ "ninja: build stopped: subcommand failed" {
 	found("ninja");
 }
+/=======================<phase: .*/     { found_last($2); }
 
 END {
+	if (REASON_LAST) {
+		REASON = REASON_LAST
+	}
 	if (!REASON) {
 		REASON = "???"
 	}
