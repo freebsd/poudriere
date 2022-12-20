@@ -2818,7 +2818,10 @@ commit_packages() {
 
 	case "${ATOMIC_PACKAGE_REPOSITORY-}" in
 	yes) ;;
-	*) return 0 ;;
+	*)
+		install -lsr "${PACKAGES:?}/" "${log:?}/packages"
+		return 0
+		;;
 	esac
 	case "${COMMIT_PACKAGES_ON_FAILURE-}" in
 	no)
@@ -2889,6 +2892,7 @@ symlink to .latest/${name}"
 		unlink "${path:?}"
 	done
 
+	install -lsr "${PACKAGES:?}/" "${log:?}/packages"
 
 	msg "Removing old packages"
 
@@ -8819,6 +8823,8 @@ prepare_ports() {
 		delete_bad_pkg_repo_files
 
 		install -lsr "${log:?}" "${PACKAGES:?}/logs"
+		# /packages is linked after the build in commit_packages()
+		install -lsr "${PACKAGES_ROOT:?}/" "${log:?}/packages_root"
 
 		if ensure_pkg_installed; then
 			P_PKG_ABI="$(injail ${PKG_BIN:?} config ABI)" || \
