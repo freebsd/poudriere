@@ -1349,6 +1349,8 @@ set_poudriere_conf() {
 	poudriere_conf="${POUDRIERE_ETC:?}/poudriere.d/${MASTERNAME:?}-poudriere.conf"
 	msg "Updating ${poudriere_conf}" >&2
 	write_atomic_cmp "${poudriere_conf}" <<-EOF
+	KEEP_OLD_PACKAGES=yes
+	KEEP_OLD_PACKAGES_COUNT=${KEEP_OLD_PACKAGES_COUNT:=10}
 	${FLAVOR_DEFAULT_ALL:+FLAVOR_DEFAULT_ALL=${FLAVOR_DEFAULT_ALL}}
 	${FLAVOR_ALL:+FLAVOR_ALL=${FLAVOR_ALL}}
 	${IMMUTABLE_BASE:+IMMUTABLE_BASE=${IMMUTABLE_BASE}}
@@ -1386,7 +1388,7 @@ EOF
 	echo -n "Pruning previous logs..."
 	${SUDO} ${POUDRIEREPATH} -e ${POUDRIERE_ETC} logclean \
 	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
-	    -ay >/dev/null || :
+	    -y -N ${KEEP_LOGS_COUNT-10} >/dev/null || :
 	echo " done"
 } >&${REDIRECTED_STDERR_FD:-2}
 
