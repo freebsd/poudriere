@@ -33,7 +33,7 @@ writer() {
 	until [ $n -eq ${LINES} ]; do
 		case ${type} in
 		pipe) echo "${n}\\" ;;
-		mapfile) mapfile_write "${out}" "${n}\\" ;;
+		mapfile) mapfile_write "${out}" -- "${n}\\" ;;
 		esac
 		n=$((n + 1))
 	done
@@ -865,5 +865,28 @@ fi
 	done
 	assert 0 "${lines}"
 	rm -f "${TMP}"
+}
+
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -ut mapfile)
+	assert_true mapfile file_out "${TMP}" "we"
+	assert_true mapfile_write "${file_out}" -- "-n blah"
+	assert_true mapfile_close "${file_out}"
+	assert_file - "${TMP}" <<-EOF
+	-n blah
+	EOF
+}
+
+{
+	rm -f "${TMP}"
+	TMP=$(mktemp -ut mapfile)
+	assert_true mapfile file_out "${TMP}" "we"
+	echo "-n blah" | assert_true mapfile_write "${file_out}"
+	assert 0 "$?"
+	assert_true mapfile_close "${file_out}"
+	assert_file - "${TMP}" <<-EOF
+	-n blah
+	EOF
 }
 exit 0

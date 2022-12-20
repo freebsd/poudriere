@@ -1031,7 +1031,7 @@ mapfile_write() {
 		# Nothing to write. An alternative here is nflag=1 ;;
 		"-0") return 0 ;;
 		esac
-		mapfile_write "${handle}" ${nflag:+-n} ${Tflag:+-T} \
+		mapfile_write "${handle}" ${nflag:+-n} ${Tflag:+-T} -- \
 		    "${data}" || ret="$?"
 		return "${ret}"
 	fi
