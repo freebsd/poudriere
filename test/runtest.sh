@@ -82,9 +82,9 @@ cd "${THISDIR}"
 
 case "${1##*/}" in
 prep.sh) : ${TIMEOUT:=1800} ;;
-bulk*build*.sh) : ${TIMEOUT:=1800} ;;
+bulk*build*.sh|testport*build*.sh) : ${TIMEOUT:=1800} ;;
 # Bump anything touching logclean
-bulk*.sh|distclean*.sh) : ${TIMEOUT:=500} ;;
+bulk*.sh|testport*.sh|distclean*.sh) : ${TIMEOUT:=500} ;;
 locked_mkdir.sh) : ${TIMEOUT:=120} ;;
 esac
 case "${1##*/}" in

@@ -530,7 +530,14 @@ JAIL_TESTS = \
 	bulk-no-overlay-specific.sh \
 	bulk-overlay-all.sh \
 	bulk-overlay-specific.sh \
-	bulk-skipped-and-needed-dep.sh
+	bulk-skipped-and-needed-dep.sh \
+	testport-all-flavors-failure.sh \
+	testport-build-default-flavor.sh \
+	testport-build-no-deps.sh \
+	testport-build-specific-flavor.sh \
+	testport-build-specific-port.sh \
+	testport-default-all-flavors-failure.sh \
+	testport-specific-bad-flavor-failure.sh
 
 run_env = env \
 	 abs_top_builddir="$(abs_top_builddir)" \
@@ -1404,6 +1411,55 @@ bulk-overlay-specific.sh.log: bulk-overlay-specific.sh
 bulk-skipped-and-needed-dep.sh.log: bulk-skipped-and-needed-dep.sh
 	@p='bulk-skipped-and-needed-dep.sh'; \
 	b='bulk-skipped-and-needed-dep.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-all-flavors-failure.sh.log: testport-all-flavors-failure.sh
+	@p='testport-all-flavors-failure.sh'; \
+	b='testport-all-flavors-failure.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-build-default-flavor.sh.log: testport-build-default-flavor.sh
+	@p='testport-build-default-flavor.sh'; \
+	b='testport-build-default-flavor.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-build-no-deps.sh.log: testport-build-no-deps.sh
+	@p='testport-build-no-deps.sh'; \
+	b='testport-build-no-deps.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-build-specific-flavor.sh.log: testport-build-specific-flavor.sh
+	@p='testport-build-specific-flavor.sh'; \
+	b='testport-build-specific-flavor.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-build-specific-port.sh.log: testport-build-specific-port.sh
+	@p='testport-build-specific-port.sh'; \
+	b='testport-build-specific-port.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-default-all-flavors-failure.sh.log: testport-default-all-flavors-failure.sh
+	@p='testport-default-all-flavors-failure.sh'; \
+	b='testport-default-all-flavors-failure.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testport-specific-bad-flavor-failure.sh.log: testport-specific-bad-flavor-failure.sh
+	@p='testport-specific-bad-flavor-failure.sh'; \
+	b='testport-specific-bad-flavor-failure.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

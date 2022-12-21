@@ -113,7 +113,14 @@ JAIL_TESTS= \
 	bulk-no-overlay-specific.sh \
 	bulk-overlay-all.sh \
 	bulk-overlay-specific.sh \
-	bulk-skipped-and-needed-dep.sh
+	bulk-skipped-and-needed-dep.sh \
+	testport-all-flavors-failure.sh \
+	testport-build-default-flavor.sh \
+	testport-build-no-deps.sh \
+	testport-build-specific-flavor.sh \
+	testport-build-specific-port.sh \
+	testport-default-all-flavors-failure.sh \
+	testport-specific-bad-flavor-failure.sh
 
 # Depend bulk tests on jail setup
 TESTS+=	prep.sh

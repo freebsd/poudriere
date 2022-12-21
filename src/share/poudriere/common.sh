@@ -1286,10 +1286,6 @@ update_stats() {
 	local type unused
 	local -
 
-	case "${update_stats_done:+set}" in
-	set) return 0 ;;
-	esac
-
 	set +e
 
 	lock_acquire update_stats || return 1
@@ -1322,13 +1318,10 @@ update_stats_queued() {
 		    pkgqueue_contains "${_pkgname}"; then
 			echo "${_originspec} ${_pkgname} ${_rdep}"
 		fi
-	done | sort | \
+	done |
+	    sort |
 	    write_atomic "${log:?}/.poudriere.ports.queued"
 	count_lines "${log:?}/.poudriere.ports.queued" nbq
-	# Add 1 for the main port to test
-	if was_a_testport_run; then
-		nbq=$((nbq + 1))
-	fi
 	bset stats_queued "${nbq}"
 }
 
@@ -1352,12 +1345,8 @@ update_remaining() {
 	*) return 0 ;;
 	esac
 	_log_path log
-	{
-		if was_a_testport_run; then
-			echo "${ORIGINSPEC} ${PKGNAME} testport"
-		fi
-		pkgqueue_remaining
-	} | write_atomic "${log:?}/.poudriere.ports.remaining"
+	pkgqueue_remaining |
+	    write_atomic "${log:?}/.poudriere.ports.remaining"
 }
 
 sigpipe_handler() {
@@ -1559,6 +1548,10 @@ show_dry_run_summary() {
 	msg "Dry run mode, cleaning up and exiting"
 	_bget tobuild stats_tobuild ||
 	    err "${EX_SOFTWARE}" "Failed to lookup stats_tobuild"
+	# Subtract the 1 for the main port to test
+	if was_a_testport_run; then
+		tobuild=$((tobuild - 1))
+	fi
 	if [ ${tobuild} -gt 0 ]; then
 		if [ ${PARALLEL_JOBS} -gt ${tobuild} ]; then
 			PARALLEL_JOBS=${tobuild##* }
@@ -2274,12 +2267,9 @@ enter_interactive() {
 	fi
 
 	# Enable all selected ports and their run-depends
-	if ! was_a_testport_run; then
-		packages="$(listed_pkgnames)"
-	else
-		packages="${PKGNAME}"
-	fi
 	one_package=0
+	packages="$(listed_pkgnames)" ||
+	    err "${EX_SOFTWARE}" "enter_interactive: Failed to list packages"
 	for pkgname in ${packages}; do
 		one_package=$((one_package + 1))
 		get_originspec_from_pkgname originspec "${pkgname}"
@@ -5381,12 +5371,21 @@ parallel_build() {
 	local real_parallel_jobs=${PARALLEL_JOBS}
 	local nremaining
 
+	if [ "${DRY_RUN}" -eq 1 ]; then
+		err "${EX_SOFTWARE}" "parallel_build: In DRY_RUN?"
+	fi
+
 	_bget nremaining stats_tobuild ||
 	    err "${EX_SOFTWARE}" "Failed to lookup stats_tobuild"
 
-	# Subtract the 1 for the main port to test
-	was_a_testport_run && \
-	    nremaining=$((nremaining - 1))
+	# Cleanup cached data that is no longer needed.
+	(
+		cd "${SHASH_VAR_PATH:?}"
+		for shash_bucket in \
+		    origin-flavors; do
+			shash_remove_var "${shash_bucket}" || :
+		done
+	)
 
 	# If pool is empty, just return
 	if [ "${nremaining:?}" -eq 0 ]; then
@@ -5397,6 +5396,12 @@ parallel_build() {
 	if [ "${PARALLEL_JOBS:?}" -gt "${nremaining:?}" ]; then
 		PARALLEL_JOBS=${nremaining##* }
 	fi
+
+	load_priorities
+
+	pkgqueue_move_ready_to_pool
+	msg "Balancing pool"
+	balance_pool
 
 	msg "Building ${nremaining} packages using up to ${PARALLEL_JOBS} builders"
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
@@ -5454,7 +5459,6 @@ parallel_build() {
 
 	bset status "updating_stats:"
 	update_stats || msg_warn "Error updating build stats"
-	update_stats_done=1
 
 	bset status "idle:"
 
@@ -6069,7 +6073,7 @@ deps_fetch_vars() {
 
 ensure_pkg_installed() {
 	local force="${1-}"
-	local host_ver injail_ver mnt
+	local host_ver injail_ver mnt pkg_file
 
 	_my_path mnt
 	case "${PKG_BIN:+set}" in
@@ -6084,11 +6088,17 @@ ensure_pkg_installed() {
 		fi
 		;;
 	esac
+	pkg_file="${MASTERMNT:?}/packages/Latest/pkg.${PKG_EXT:?}"
+	# If we are testing pkg itself then use the new package
+	if was_a_testport_run && [ -n "${PKGNAME-}" ] &&
+	    [ -r "${MASTERMNT:?}/tmp/pkgs/${PKGNAME:?}.${PKG_EXT:?}" ]; then
+		pkg_file="${MASTERMNT:?}/tmp/pkgs/${PKGNAME:?}.${PKG_EXT:?}"
+	fi
 	# Hack, speed up QEMU usage on pkg-repo.
 	if [ ${QEMU_EMULATING} -eq 1 ] && \
 	    [ -x /usr/local/sbin/pkg-static ] &&
-	    [ -r "${MASTERMNT:?}/packages/Latest/pkg.${PKG_EXT}" ]; then
-		injail_ver="$(realpath "${MASTERMNT:?}/packages/Latest/pkg.${PKG_EXT}")"
+	    [ -r "${pkg_file}" ]; then
+		injail_ver="$(realpath "${pkg_file}")"
 		injail_ver="${injail_ver##*/}"
 		injail_ver="${injail_ver##*-}"
 		injail_ver="${injail_ver%.*}"
@@ -6100,12 +6110,12 @@ ensure_pkg_installed() {
 			;;
 		esac
 	fi
-	if [ ! -r "${MASTERMNT:?}/packages/Latest/pkg.${PKG_EXT}" ]; then
+	if [ ! -r "${pkg_file}" ]; then
 		return 1
 	fi
 	mkdir -p "${MASTERMNT:?}/${PKG_BIN%/*}" ||
 	    err 1 "ensure_pkg_installed: mkdir ${MASTERMNT}/${PKG_BIN%/*}"
-	injail tar xf "/packages/Latest/pkg.${PKG_EXT}" \
+	injail tar xf "${pkg_file#${MASTERMNT:?}}" \
 	    -C "${PKG_BIN%/*}" -s ",.*/,," "*/pkg-static"
 }
 
@@ -7108,54 +7118,6 @@ gather_port_vars() {
 	bset status "gatheringportvars:"
 	run_hook gather_port_vars start
 
-	if was_a_testport_run; then
-		required_env gather_port_vars ORIGINSPEC! ''
-		local dep_originspec dep_origin dep_flavor dep_ret
-
-		if have_ports_feature FLAVORS; then
-			# deps_fetch_vars really wants to have the main port
-			# cached before being given a FLAVOR.
-			originspec_decode "${ORIGINSPEC}" dep_origin \
-			    dep_flavor ''
-			case "${dep_flavor:+set}" in
-			set)
-				deps_fetch_vars "${dep_origin}" LISTPORTS \
-				    PKGNAME FLAVOR FLAVORS \
-				    IGNORE
-				;;
-			esac
-		fi
-		dep_ret=0
-		deps_fetch_vars "${ORIGINSPEC}" LISTPORTS PKGNAME \
-		    FLAVOR FLAVORS IGNORE || dep_ret=$?
-		case ${dep_ret} in
-		0) ;;
-		# Non-fatal duplicate should be ignored
-		2) ;;
-		# Fatal error
-		*)
-			err ${dep_ret} "deps_fetch_vars failed for ${ORIGINSPEC}"
-			;;
-		esac
-		if have_ports_feature FLAVORS; then
-			if [ -n "${FLAVORS}" ] && \
-			    [ "${FLAVOR_DEFAULT_ALL}" = "yes" ]; then
-				msg_warn "Only testing first flavor '${FLAVOR}', use 'bulk -t' to test all flavors: ${FLAVORS}"
-			fi
-			if [ -n "${dep_flavor}" ]; then
-				# Is it even a valid FLAVOR though?
-				case " ${FLAVORS} " in
-				*" ${dep_flavor} "*) ;;
-				*)
-					err 1 "Invalid FLAVOR '${dep_flavor}' for ${COLOR_PORT}${ORIGIN}${COLOR_RESET}"
-					;;
-				esac
-			fi
-		fi
-		deps_sanity "${ORIGINSPEC}" "${LISTPORTS}" || \
-		    err 1 "Error processing dependencies"
-	fi
-
 	:> "${MASTER_DATADIR:?}/all_pkgs"
 	if [ ${ALL} -eq 0 ]; then
 		:> "${MASTER_DATADIR:?}/all_pkgbases"
@@ -7222,13 +7184,6 @@ gather_port_vars() {
 			mkdir "${qdir:?}" ||
 			    err 1 "gather_port_vars: Failed to add ${COLOR_PORT}${originspec}${COLOR_RESET} into flavorqueue (rdep=${COLOR_PORT}${rdep}${COLOR_RESET})"
 			echo "${rdep}" > "${qdir:?}/rdep"
-
-			# Testport already looked up the main FLAVOR
-			if was_a_testport_run; then
-				case "${ORIGIN}" in
-				"${origin}") continue ;;
-				esac
-			fi
 
 			# Now handle adding the main port without
 			# FLAVOR.  Only do this if the main port
@@ -8711,7 +8666,7 @@ prepare_ports() {
 			    pkgname-run_deps \
 			    pkgname-lib_deps \
 			    pkgname-prefix \
-			    origin-flavors; do
+			    ; do
 				shash_remove_var "${shash_bucket}" || :
 			done
 		)
@@ -8732,17 +8687,6 @@ prepare_ports() {
 			update_stats_queued
 			update_stats_tobuild
 			update_remaining
-		fi
-
-		load_priorities
-
-		# Avoid messing with the queue for DRY_RUN or it confuses
-		# the dry run summary output as it doesn't know about
-		# the ready-to-build pool dir.
-		if [ "${DRY_RUN}" -eq 0 ]; then
-			pkgqueue_move_ready_to_pool
-			msg "Balancing pool"
-			balance_pool
 		fi
 
 		case "${ALLOW_MAKE_JOBS-}" in
@@ -8775,16 +8719,11 @@ get_to_build() {
 	local log
 
 	_log_path log
-	{
-		if was_a_testport_run; then
-			echo "${ORIGINSPEC} ${PKGNAME} testport"
-		fi
-		while mapfile_read_loop "${log:?}/.poudriere.ports.queued" \
-		    originspec pkgname _ignored; do
-			pkgqueue_contains "${pkgname}" || continue
-			echo "${originspec} ${pkgname} ${_ignored}"
-		done
-	} | sort
+	while mapfile_read_loop "${log:?}/.poudriere.ports.queued" \
+	    originspec pkgname _ignored; do
+		pkgqueue_contains "${pkgname}" || continue
+		echo "${originspec} ${pkgname} ${_ignored}"
+	done | sort
 }
 
 load_priorities_ptsort() {

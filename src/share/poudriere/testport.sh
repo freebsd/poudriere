@@ -203,12 +203,22 @@ ORIGIN="${ORIGIN#/}"
 ORIGIN="${ORIGIN%/}"
 originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
 if have_ports_feature FLAVORS; then
-	[ "${FLAVOR}" = "${FLAVOR_DEFAULT}" ] && FLAVOR=
-	[ "${FLAVOR}" = "${FLAVOR_ALL}" ] && \
-	    err 1 "Cannot testport on multiple flavors, use 'bulk -t' instead."
+	case "${FLAVOR}" in
+	"${FLAVOR_ALL}")
+		err 1 "Cannot testport on multiple flavors, use 'bulk -t' instead."
+		;;
+	esac
+	case "${FLAVOR_DEFAULT_ALL}" in
+	"yes")
+		err 1 "FLAVOR_DEFAULT_ALL is set. Cannot testport on multiple flavors, use 'bulk -t' instead."
+		;;
+	esac
 else
-	[ -n "${FLAVOR}" ] && \
-	    err 1 "Trying to build FLAVOR-specific ${ORIGINSPEC} but ports tree has no FLAVORS support."
+	case "${FLAVOR}" in
+	"")
+		err 1 "Trying to build FLAVOR-specific ${ORIGINSPEC} but ports tree has no FLAVORS support."
+		;;
+	esac
 fi
 new_origin=$(grep -v '^#' "${portsdir:?}/MOVED" | awk -vorigin="${ORIGIN:?}" \
     -F\| '$1 == origin && $2 != "" {print $2}')
@@ -255,8 +265,24 @@ if [ $CONFIGSTR -eq 1 ]; then
 fi
 
 # deps_fetch_vars lookup for dependencies moved to prepare_ports()
-# This will set LISTPORTS/PKGNAME/FLAVOR/FLAVORS as well.
+LISTPORTS="${ORIGINSPEC:?}"
 prepare_ports
+get_pkgname_from_originspec "${ORIGINSPEC:?}" PKGNAME ||
+    err "${EX_SOFTWARE}" "Failed to find PKGNAME for ${ORIGINSPEC}"
+shash_get pkgname-ignore "${PKGNAME:?}" IGNORE || :
+if have_ports_feature FLAVORS; then
+	shash_get origin-flavors "${ORIGIN:?}" FLAVORS || FLAVORS=
+	case "${FLAVOR}" in
+	"${FLAVOR_DEFAULT}")
+		FLAVOR="${FLAVORS%% *}"
+		originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" \
+		    "${SUBPKG}"
+		;;
+	esac
+fi
+# Unqueue our test port so parallel_build() does not build it.
+echo "${PKGNAME:?}" | pkgqueue_remove_many_pipe
+
 show_dry_run_summary
 markfs prepkg ${MASTERMNT}
 

@@ -264,7 +264,7 @@ assert_queued() {
 	local tmp originspec origins_expanded
 	local queuespec
 
-	if [ ! -f "${log}/.poudriere.ports.queued" ]; then
+	if [ ! -f "${log:?}/.poudriere.ports.queued" ]; then
 		[ -z "${origins-}" ] && return 0
 		err 1 ".poudriere.ports.queued file is missing while EXPECTED_QUEUED${dep:+(${dep})} is: ${origins}"
 	fi
@@ -332,7 +332,7 @@ assert_ignored() {
 	local origins="$1"
 	local tmp originspec origins_expanded
 
-	if [ ! -f "${log}/.poudriere.ports.ignored" ]; then
+	if [ ! -f "${log:?}/.poudriere.ports.ignored" ]; then
 		[ -z "${origins-}" ] && return 0
 		err 1 ".poudriere.ports.ignored file is missing while EXPECTED_IGNORED is: ${origins}"
 	fi
@@ -386,7 +386,7 @@ assert_skipped() {
 	local origins="$1"
 	local tmp originspec origins_expanded
 
-	if [ ! -f "${log}/.poudriere.ports.skipped" ]; then
+	if [ ! -f "${log:?}/.poudriere.ports.skipped" ]; then
 		[ -z "${origins-}" ] && return 0
 		err 1 ".poudriere.ports.skipped file is missing while EXPECTED_SKIPPED is: ${origins}"
 	fi
@@ -502,7 +502,7 @@ assert_built() {
 	local origins="$1"
 	local tmp originspec origins_expanded
 
-	if [ ! -f "${log}/.poudriere.ports.built" ]; then
+	if [ ! -f "${log:?}/.poudriere.ports.built" ]; then
 		[ -z "${origins-}" ] && return 0
 		err 1 ".poudriere.ports.built file is missing while EXPECTED_BUILT is: ${origins}"
 	fi
@@ -606,22 +606,25 @@ assert_counts() {
 	fi
 	echo "=> Asserting queued=${expected_queued} built=${expected_built} failed=${expected_failed} ignored=${expected_ignored} skipped=${expected_skipped} fetched=${expected_fetched} tobuild=${expected_tobuild}"
 
-	read queued < "${log}/.poudriere.stats_queued"
-	assert 0 $? "${log}/.poudriere.stats_queued read should pass"
-	# XXX: rebase mess - this is broken for a few commits
-	#assert "${expected_queued}" "${queued}" "queued should match"
+	if [ -e "${log:?}/.poudriere.stats_queued" ]; then
+		read queued < "${log:?}/.poudriere.stats_queued"
+		assert 0 $? "${log:?}/.poudriere.stats_queued read should pass"
+	else
+		queued=0
+	fi
+	assert "${expected_queued}" "${queued}" "queued should match"
 
 	if [ -n "${EXPECTED_IGNORED-}" ]; then
-		read ignored < "${log}/.poudriere.stats_ignored"
-		assert 0 $? "${log}/.poudriere.stats_ignored read should pass"
+		read ignored < "${log:?}/.poudriere.stats_ignored"
+		assert 0 $? "${log:?}/.poudriere.stats_ignored read should pass"
 	else
 		ignored=0
 	fi
 	assert "${expected_ignored}" "${ignored}" "ignored should match"
 
 	if [ -n "${EXPECTED_SKIPPED-}" ]; then
-		read skipped < "${log}/.poudriere.stats_skipped"
-		assert 0 $? "${log}/.poudriere.stats_skipped read should pass"
+		read skipped < "${log:?}/.poudriere.stats_skipped"
+		assert 0 $? "${log:?}/.poudriere.stats_skipped read should pass"
 	else
 		skipped=0
 	fi
@@ -691,35 +694,36 @@ do_poudriere() {
 }
 
 _setup_overlays() {
-	if [ "${OVERLAYS_SETUP:-0}" -eq 1 ]; then
-		return
-	fi
 	# Setup basic overlay to test-ports/overlay/ dir.
-	OVERLAYSDIR="$(mktemp -ut overlays)"
-	OVERLAYS_save="${OVERLAYS}"
+	if [ "${OVERLAYS_SETUP:-0}" -eq 0 ]; then
+		SAVE_OVERLAYS="${OVERLAYS}"
+		OVERLAYSDIR="$(mktemp -ut overlays)"
+	fi
 	OVERLAYS=
-	for o in ${OVERLAYS_save}; do
+	for o in ${SAVE_OVERLAYS}; do
 		omnt="${PTMNT%/*}/${o}"
 		[ -d "${omnt}" ] || continue
 		#oname=$(echo "${omnt}" | tr '[./]' '_')
 		# <12 still has 88 mount path restrictions
 		oname="$(stat -f %i "${omnt}")_${o}"
-		pset "${oname}" mnt "${omnt}"
-		pset "${oname}" method "-"
+		if [ "${OVERLAYS_SETUP:-0}" -eq 0 ]; then
+			pset "${oname}" mnt "${omnt}"
+			pset "${oname}" method "-"
+		fi
 		# We run port_var_fetch_originspec without a jail so can't use plain
 		# /overlays. Need to link the host path into our fake MASTERMNT path
 		# as well as link to the overlay portdir without nullfs.
 		mkdir -p "${MASTERMNT:?}/${OVERLAYSDIR%/*}"
-		ln -fs "${MASTERMNT}/${OVERLAYSDIR}" "${OVERLAYSDIR}"
+		ln -hfs "${MASTERMNT}/${OVERLAYSDIR}" "${OVERLAYSDIR}"
 		mkdir -p "${MASTERMNT}/${OVERLAYSDIR}"
-		ln -fs "${omnt}" "${MASTERMNT:?}/${OVERLAYSDIR}/${oname}"
+		ln -hfs "${omnt}" "${MASTERMNT:?}/${OVERLAYSDIR}/${oname}"
 		OVERLAYS="${OVERLAYS:+${OVERLAYS} }${oname}"
 	done
-	unset OVERLAYS_save omnt oname
+	unset omnt oname
 	OVERLAYS_SETUP=1
 }
 
-do_bulk() {
+_setup_build() {
 	if [ ${ALL:-0} -eq 0 ]; then
 		assert_not "" "${LISTPORTS}" "LISTPORTS empty"
 	fi
@@ -746,11 +750,24 @@ do_bulk() {
 	assert_not "null" "${P_PORTS_FEATURES-null}" "fetch_global_port_vars should work"
 	echo "Building: $(echo ${LISTPORTS_EXPANDED})"
 	newbuild
+}
 
+do_bulk() {
+	_setup_build
 	do_poudriere bulk \
 	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
 	    ${JFLAG:+-J ${JFLAG}} \
-	    -B "${BUILDNAME}" \
+	    -B "${BUILDNAME:?}" \
+	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
+	    "$@"
+}
+
+do_testport() {
+	_setup_build
+	do_poudriere testport \
+	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
+	    ${JFLAG:+-J ${JFLAG}} \
+	    -B "${BUILDNAME:?}" \
 	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
 	    "$@"
 }
@@ -851,6 +868,7 @@ alias assert_bulk_queue_and_stats='stack_lineinfo _assert_bulk_queue_and_stats '
 _assert_bulk_build_results() {
 	local pkgname file log originspec origin flavor flavor2 subpkg
 	local PKG_BIN pkg_originspec pkg_origin pkg_flavor
+	local built_origins_expanded built_pkgnames TESTPKGNAME TESTPORT
 
 	which -s "${PKG_BIN:?}" || err 99 "Unable to find in host: ${PKG_BIN}"
 	_log_path log || err 99 "Unable to determine logdir"
@@ -858,26 +876,70 @@ _assert_bulk_build_results() {
 	assert_ret 0 [ -d "${PACKAGES}" ]
 	assert 0 $? "PACKAGES directory should exist: ${PACKAGES}"
 
+	expand_origin_flavors "${EXPECTED_BUILT?}" built_origins_expanded
+	built_pkgnames=
+	TESTPKGNAME=
+	for originspec in ${built_origins_expanded}; do
+		# Trim away possible :reason leaked from EXPECTED_TOBUILD copy
+		originspec="${originspec%:*}"
+		hash_get originspec-pkgname "${originspec}" pkgname
+		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		built_pkgnames="${built_pkgnames:+${built_pkgnames} }${pkgname}"
+		case "${TESTPORT:+set}" in
+		set)
+			fix_default_flavor "${originspec}" originspec
+			fix_default_flavor "${TESTPORT}" TESTPORT
+			case "${originspec}" in
+			"${TESTPORT}")
+				TESTPKGNAME="${pkgname}"
+				;;
+			esac
+			;;
+		esac
+	done
+
 	echo "Asserting that packages were built"
-	for pkgname in ${ALL_PKGNAMES}; do
+	for pkgname in ${built_pkgnames}; do
 		file="${PACKAGES}/All/${pkgname}${P_PKG_SUFX}"
+		case "${pkgname}" in
+		"${TESTPKGNAME}")
+			# testport does not produce a package for the target
+			# port
+			assert_ret_not 0 [ -f "${file}" ]
+			assert 0 $? "Package should NOT exist: ${file}"
+			continue
+			;;
+		esac
 		assert_ret 0 [ -f "${file}" ]
-		assert 0 $? "Package should exist: ${file}"
 		assert_ret 0 [ -s "${file}" ]
 		assert 0 $? "Package should not be empty: ${file}"
 	done
 
 	echo "Asserting that logfiles were produced"
-	for pkgname in ${ALL_PKGNAMES}; do
-		file="${log}/logs/${pkgname}.log"
+	for pkgname in ${built_pkgnames}; do
+		file="${log:?}/logs/${pkgname}.log"
 		assert_ret 0 [ -f "${file}" ]
 		assert 0 $? "Logfile should exist: ${file}"
 		assert_ret 0 [ -s "${file}" ]
 		assert 0 $? "Logfile should not be empty: ${file}"
+		assert_ret_not 0 grep "build failure encountered" \
+		    "${file}"
+		hash_get pkgname-originspec "${pkgname}" originspec ||
+			err 99 "Unable to find originspec for pkgname: ${pkgname}"
+		grep '^build of.*ended at' "${file}" || :
+		assert_ret 0 grep "build of ${originspec} | ${pkgname} ended at" \
+		    "${file}"
 	done
 
 	echo "Asserting package metadata sanity check"
-	for pkgname in ${ALL_PKGNAMES}; do
+	for pkgname in ${built_pkgnames}; do
+		case "${pkgname}" in
+		"${TESTPKGNAME}")
+			# testport does not produce a package for the target
+			# port
+			continue
+			;;
+		esac
 		file="${PACKAGES}/All/${pkgname}${P_PKG_SUFX}"
 		hash_get pkgname-originspec "${pkgname}" originspec ||
 			err 99 "Unable to find originspec for pkgname: ${pkgname}"
@@ -898,7 +960,7 @@ _assert_bulk_build_results() {
 		assert "${flavor}" "${pkg_flavor}" "Package flavor should match for: ${file}"
 	done
 
-	stack_lineinfo assert_built "${EXPECTED_BUILT:?}"
+	stack_lineinfo assert_built "${EXPECTED_BUILT?}"
 }
 alias assert_bulk_build_results='stack_lineinfo _assert_bulk_build_results '
 
