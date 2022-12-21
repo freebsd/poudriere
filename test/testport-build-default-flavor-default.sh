@@ -1,7 +1,7 @@
 OVERLAYS=omnibus
 FLAVOR_DEFAULT=-
-# Same as test/testport-build-default-flavor-default but uses @- here.
-TESTPORT="misc/freebsd-release-manifests@${FLAVOR_DEFAULT}"
+# Same as test/testport-build-default-flavor.sh but no @flavor here.
+TESTPORT="misc/freebsd-release-manifests"
 LISTPORTS="${TESTPORT}"
 . common.bulk.sh
 

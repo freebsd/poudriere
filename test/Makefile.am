@@ -145,6 +145,7 @@ JAIL_TESTS= \
 	bulk-overlay-specific.sh \
 	bulk-skipped-and-needed-dep.sh \
 	testport-all-flavors-failure.sh \
+	testport-build-default-flavor-default.sh \
 	testport-build-default-flavor.sh \
 	testport-build-no-deps.sh \
 	testport-build-specific-flavor.sh \

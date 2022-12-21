@@ -272,11 +272,15 @@ get_pkgname_from_originspec "${ORIGINSPEC:?}" PKGNAME ||
 shash_get pkgname-ignore "${PKGNAME:?}" IGNORE || :
 if have_ports_feature FLAVORS; then
 	shash_get origin-flavors "${ORIGIN:?}" FLAVORS || FLAVORS=
-	case "${FLAVOR}" in
-	"${FLAVOR_DEFAULT}")
-		FLAVOR="${FLAVORS%% *}"
-		originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" \
-		    "${SUBPKG}"
+	case "${FLAVORS:+set}" in
+	set)
+		case "${FLAVOR}" in
+		""|"${FLAVOR_DEFAULT}")
+			FLAVOR="${FLAVORS%% *}"
+			originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" \
+			    "${SUBPKG}"
+			;;
+		esac
 		;;
 	esac
 fi
