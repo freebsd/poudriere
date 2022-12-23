@@ -394,7 +394,7 @@ assert_queued() {
 
 assert_ignored() {
 	local origins="$1"
-	local tmp originspec origins_expanded
+	local tmp originspec origins_expanded ignorespec ignorereason
 
 	if [ ! -f "${log:?}/.poudriere.ports.ignored" ]; then
 		[ -z "${origins-}" ] && return 0
@@ -408,13 +408,25 @@ assert_ignored() {
 	# The queue does remove duplicates - do the same here
 	origins_expanded="$(echo "${origins_expanded}" | tr ' ' '\n' | sort -u | paste -s -d ' ' -)"
 	echo "Asserting that only '${origins_expanded}' are in the ignored list" >&2
-	for originspec in ${origins_expanded}; do
+	for ignorespec in ${origins_expanded}; do
+		case "${ignorespec}" in
+		*:*)
+			originspec="${ignorespec%:*}"
+			ignorereason="${ignorespec#*:}"
+			;;
+		*)
+			originspec="${ignorespec}"
+			ignorereason=
+		esac
 		#fix_default_flavor "${originspec}" originspec
 		hash_get originspec-pkgname "${originspec}" pkgname
 		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
-		echo "=> Asserting that ${originspec} | ${pkgname} is ignored" >&2
-		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
-		    $1 == originspec && $2 == pkgname && ($3 != "") {
+		echo "=> Asserting that ${originspec} | ${pkgname} is ignored${ignorereason:+ with reason='${ignorereason}'}" >&2
+		awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
+		    -vignorereason="${ignorereason}" '
+		    {reason=""; for (i=3;i<=NF;i++) { reason = (reason ? reason FS : "") $i } }
+		    $1 == originspec && $2 == pkgname &&
+		    (!ignorereason || reason == ignorereason) {
 			print "==> " $0
 			if (found == 1) {
 				# A duplicate, no good.
@@ -426,12 +438,15 @@ assert_ignored() {
 		    }
 		    END { if (found != 1) exit 1 }
 		' ${log}/.poudriere.ports.ignored >&2
-		assert 0 $? "${originspec} | ${pkgname} should be ignored in ${log}/.poudriere.ports.ignored"
+		assert 0 $? "${originspec} | ${pkgname}${ignorereason:+ with reason='${ignorereason}'} should be ignored in ${log}/.poudriere.ports.ignored"
 		# Remove the entry so we can assert later that nothing extra
 		# is in the queue.
 		cat "${tmp}" | \
-		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" '
-		    $1 == originspec && $2 == pkgname && $3 != "" { next }
+		    awk -vpkgname="${pkgname}" -voriginspec="${originspec}" \
+		        -vignorereason="${ignorereason}" '
+		    {reason=""; for (i=3;i<=NF;i++) { reason = (reason ? reason FS : "") $i } }
+		    $1 == originspec && $2 == pkgname &&
+		    (!ignorereason || reason == ignorereason) { next }
 		    { print }
 		' > "${tmp}.new"
 		mv -f "${tmp}.new" "${tmp}"
