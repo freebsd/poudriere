@@ -1310,7 +1310,7 @@ bset() {
 	shift
 	case "${property}" in
 	"status")
-		echo "$@" >> "${log:?}/${file:?}.journal%" || :
+		echo "$(clock -epoch):$*" >> "${log:?}/${file:?}.journal%" || :
 		;;
 	esac
 	write_atomic "${log:?}/${file:?}" <<-EOF
