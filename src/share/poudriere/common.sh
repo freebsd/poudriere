@@ -148,7 +148,7 @@ _err() {
 	# Don't set it from children failures though, only master
 	case "${PARALLEL_CHILD:-0}" in
 	0)
-		bset ${MY_JOBID-} status "${EXIT_BSTATUS:-crashed:}" || :
+		bset ${MY_JOBID-} status "${EXIT_BSTATUS:-crashed:err:${MY_JOBID-}}" || :
 		;;
 	esac
 	case "${exit_status}" in
@@ -1747,7 +1747,7 @@ _siginfo_handler() {
 
 	_bget status status || status=unknown
 	case "${status}" in
-	"index:"|"crashed:"|"stopped:crashed:")
+	"index:"|"crashed:"*|"stopped:crashed:"*)
 			return 0
 			;;
 	esac
@@ -5338,7 +5338,7 @@ job_done() {
 		# Try to cleanup and mark build crashed
 		MY_JOBID="${j}" crashed_build "${pkgname}" "${status%%:*}"
 		MY_JOBID="${j}" jkill
-		bset ${j} status "crashed:"
+		bset ${j} status "crashed:job_done:${pkgname}:${status%%:*}"
 		;;
 	esac
 }
