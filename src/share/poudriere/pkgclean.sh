@@ -306,18 +306,51 @@ for file in ${PACKAGES:?}/All/*; do
 	esac
 done
 
-pkg_compare() {
-	[ $# -eq 2 ] || eargs pkg_compare oldversion newversion
-	local oldversion="$1"
-	local newversion="$2"
+check_duplicated_packages() {
+	[ "$#" -eq 2 ] || eargs check_duplicated_packages origin packages
+	local origin="$1"
+	local packages="$2"
+	local lastpkg lastver pkgversion pkg
 
-	ensure_pkg_installed ||
-	    err 1 \
-	    "ports-mgmt/pkg is missing. First build it with bulk, then re-run pkgclean"
+	lastpkg=
+	lastver=0
+	for pkg in ${packages}; do
+		pkgversion="${pkg##*-}"
+		pkgversion="${pkgversion%.*}"
 
-	injail ${PKG_VERSION} -t "${oldversion}" "${newversion}"
+		case "${lastpkg}" in
+		"")
+			lastpkg="${pkg}"
+			lastver="${pkgversion}"
+			continue
+			;;
+		esac
+
+		case "$(pkg_version -t "${pkgversion}" "${lastver}")" in
+			'>')
+				msg_verbose "Found old package: ${lastpkg}"
+				echo "${lastpkg}" >> "${BADFILES_LIST:?}"
+				lastpkg="${pkg}"
+				lastver="${pkgversion}"
+				;;
+			'<')
+				msg_verbose "Found old package: ${pkg}"
+				echo "${pkg}" >> "${BADFILES_LIST:?}"
+				;;
+			'=')
+				# This should be impossible now due to the
+				# earlier pkgbase_is_needed() comparison
+				# (by PKGBASE) and that this check is grouped
+				# by PKGBASE.  Any renamed package is trimmed
+				# out by the failed pkgbase_is_needed() check.
+				err 1 "Found duplicated packages ${pkg} vs ${lastpkg} with origin ${origin}"
+				;;
+		esac
+	done
+	msg_verbose "Keeping latest package: ${lastpkg##*/}"
 }
 
+parallel_start
 # Check for duplicated origins (older packages) and keep only newer ones
 # This also grouped by pkgbase to respect PKGNAME uniqueness
 sort "${FOUND_ORIGINS:?}" | awk '
@@ -345,44 +378,11 @@ END {
 			print origins[pkgbase],packages[pkgbase]
 }
 ' | while mapfile_read_loop_redir origin packages; do
-	lastpkg=
-	lastver=0
-	for pkg in $packages; do
-		pkgversion="${pkg##*-}"
-		pkgversion="${pkgversion%.*}"
-
-		case "${lastpkg}" in
-		"")
-			lastpkg="${pkg}"
-			lastver="${pkgversion}"
-			continue
-			;;
-		esac
-
-		pkg_compare="$(pkg_compare "${pkgversion}" "${lastver}")"
-		case ${pkg_compare} in
-			'>')
-				msg_verbose "Found old package: ${lastpkg}"
-				echo "${lastpkg}" >> "${BADFILES_LIST:?}"
-				lastpkg="${pkg}"
-				lastver="${pkgversion}"
-				;;
-			'<')
-				msg_verbose "Found old package: ${pkg}"
-				echo "${pkg}" >> "${BADFILES_LIST:?}"
-				;;
-			'=')
-				# This should be impossible now due to the
-				# earlier pkgbase_is_needed() comparison
-				# (by PKGBASE) and that this check is grouped
-				# by PKGBASE.  Any renamed package is trimmed
-				# out by the failed pkgbase_is_needed() check.
-				err 1 "Found duplicated packages ${pkg} vs ${lastpkg} with origin ${origin}"
-				;;
-		esac
-	done
-	msg_verbose "Keeping latest package: ${lastpkg##*/}"
+	parallel_run check_duplicated_packages "${origin}" "${packages}"
 done
+if ! parallel_stop; then
+	err 1 "Fatal errors processing packages"
+fi
 
 ret=0
 do_confirm_delete "${BADFILES_LIST}" "stale packages" \
