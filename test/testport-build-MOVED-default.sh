@@ -11,7 +11,7 @@ do_pkgclean -y -A
 assert 0 $? "Pkgclean should pass"
 echo "-----" | tee /dev/stderr
 
-EXPECTED_QUEUED="ports-mgmt/pkg ${TESTPORT}"
+EXPECTED_QUEUED="ports-mgmt/pkg ${TESTPORT}:listed"
 EXPECTED_LISTED="${TESTPORT}"
 EXPECTED_TOBUILD="${EXPECTED_QUEUED}"
 EXPECTED_BUILT=
@@ -29,7 +29,7 @@ assert_bulk_build_results
 echo "-----" | tee /dev/stderr
 
 # Do it again and ensure no dependencies are built
-EXPECTED_QUEUED="${TESTPORT}"
+EXPECTED_QUEUED="${TESTPORT}:listed"
 EXPECTED_LISTED="${TESTPORT}"
 EXPECTED_TOBUILD="${TESTPORT}"
 EXPECTED_BUILT=

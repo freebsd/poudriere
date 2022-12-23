@@ -7,7 +7,7 @@ OVERLAYS="omnibus"
 do_bulk -t -c ${LISTPORTS_MOVED}
 assert 0 $? "Bulk should pass"
 
-EXPECTED_QUEUED="ports-mgmt/pkg misc/foo misc/freebsd-release-manifests@default misc/freebsd-release-manifests@foo misc/freebsd-release-manifests@bar"
+EXPECTED_QUEUED="ports-mgmt/pkg misc/foo misc/freebsd-release-manifests@default:listed misc/freebsd-release-manifests@foo:listed misc/freebsd-release-manifests@bar:listed"
 EXPECTED_LISTED="${LISTPORTS}"
 EXPECTED_TOBUILD="${EXPECTED_QUEUED}"
 EXPECTED_BUILT="${EXPECTED_TOBUILD}"
