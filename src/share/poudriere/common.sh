@@ -7344,9 +7344,6 @@ gather_port_vars() {
 	run_hook gather_port_vars start
 
 	:> "${MASTER_DATADIR:?}/all_pkgs"
-	if [ ${ALL} -eq 0 ]; then
-		:> "${MASTER_DATADIR:?}/all_pkgbases"
-	fi
 
 	rm -rf gqueue dqueue mqueue fqueue 2>/dev/null || :
 	mkdir gqueue dqueue mqueue fqueue
@@ -7775,9 +7772,6 @@ gather_port_vars_port() {
 	msg_debug "WILL BUILD ${COLOR_PORT}${originspec_flavored}${COLOR_RESET}"
 	echo "${pkgname} ${originspec_flavored} ${rdep} ${ignore}" >> \
 	    "${MASTER_DATADIR:?}/all_pkgs"
-	if [ ${ALL} -eq 0 ]; then
-		echo "${pkgname%-*}" >> "${MASTER_DATADIR:?}/all_pkgbases"
-	fi
 
 	# Add all of the discovered FLAVORS into the flavorqueue if
 	# this was the default originspec and this originspec was
@@ -7976,7 +7970,6 @@ gather_port_vars_process_depqueue() {
 		;;
 	esac
 }
-
 
 generate_queue() {
 	required_env generate_queue PWD "${MASTER_DATADIR_ABS:?}"
@@ -8331,6 +8324,7 @@ pkgbase_is_needed() {
 	pkgbase="${pkgname%-*}"
 
 	awk -vpkgbase="${pkgbase}" '
+	    {sub(/-[^-]*$/, "", $1)}
 	    $1 == pkgbase {
 		found=1
 		exit 0
@@ -8338,7 +8332,7 @@ pkgbase_is_needed() {
 	    END {
 		if (found != 1)
 			exit 1
-	    }' "${MASTER_DATADIR:?}/all_pkgbases"
+	    }' "${MASTER_DATADIR:?}/all_pkgs"
 }
 
 pkgbase_is_needed_and_not_ignored() {
