@@ -1045,10 +1045,20 @@ _assert_bulk_dry_run() {
 	# A directory is OK
 	assert_true [ -d "${log:?}/logs/" ]
 	assert_true [ -d "${log:?}/logs/errors" ]
-	assert "errors" "$(/bin/ls "${log:?}/logs/")" \
+	assert_true [ -d "${log:?}/logs/fetched" ]
+	assert_true [ -d "${log:?}/logs/built" ]
+	assert_true [ -d "${log:?}/logs/ignored" ]
+	assert "built errors fetched ignored" \
+	    "$(/bin/ls "${log:?}/logs/" | paste -d ' ' -s -)" \
 	    "Logdir '${log:?}/logs' should have no logs"
 	assert "" "$(/bin/ls "${log:?}/logs/errors")" \
 	    "Logdir '${log:?}/logs/errors' should be empty"
+	assert "" "$(/bin/ls "${log:?}/logs/fetched")" \
+	    "Logdir '${log:?}/logs/fetched' should be empty"
+	assert "" "$(/bin/ls "${log:?}/logs/built")" \
+	    "Logdir '${log:?}/logs/built' should be empty"
+	assert "" "$(/bin/ls "${log:?}/logs/ignored")" \
+	    "Logdir '${log:?}/logs/ignored' should be empty"
 
 	# Packages should be untouched.
 	tmp="$(mktemp -u)"
@@ -1067,6 +1077,7 @@ _assert_bulk_build_results() {
 	local built_origins_expanded built_pkgnames TESTPKGNAME TESTPORT
 	local failed_origins_expanded failed_pkgnames failedspec
 	local skipped_origins_expanded skipped_pkgnames skippedspec
+	local ignore_origins_expanded ignore_pkgnames ignorespec
 
 	which -s "${PKG_BIN:?}" || err 99 "Unable to find in host: ${PKG_BIN}"
 	_log_path log || err 99 "Unable to determine logdir"
@@ -1112,6 +1123,32 @@ _assert_bulk_build_results() {
 		hash_get originspec-pkgname "${originspec}" pkgname
 		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
 		failed_pkgnames="${failed_pkgnames:+${failed_pkgnames} }${pkgname}"
+		case "${TESTPORT:+set}" in
+		set)
+			fix_default_flavor "${originspec}" originspec
+			fix_default_flavor "${TESTPORT}" TESTPORT
+			case "${originspec}" in
+			"${TESTPORT}")
+				TESTPKGNAME="${pkgname}"
+				;;
+			esac
+			;;
+		esac
+	done
+
+	expand_origin_flavors "${EXPECTED_IGNORED-}" ignored_origins_expanded
+	ignored_pkgnames=
+	for ignoredspec in ${ignored_origins_expanded}; do
+		case "${ignoredspec}" in
+		*:*)
+			originspec="${ignoredspec%:*}"
+			;;
+		*)
+			originspec="${ignoredspec}"
+		esac
+		hash_get originspec-pkgname "${originspec}" pkgname
+		assert_not '' "${pkgname}" "PKGNAME needed for ${originspec} (is this pkg actually expected here?)"
+		ignored_pkgnames="${ignored_pkgnames:+${ignored_pkgnames} }${pkgname}"
 		case "${TESTPORT:+set}" in
 		set)
 			fix_default_flavor "${originspec}" originspec
@@ -1195,6 +1232,11 @@ _assert_bulk_build_results() {
 		grep '^build of.*ended at' "${file}" || :
 		assert_ret 0 grep "build of ${originspec} | ${pkgname} ended at" \
 		    "${file}"
+
+		file2="${log:?}/logs/built/${pkgname}.log"
+		assert_ret 0 [ -r "${file2}" ]
+		assert_ret 0 [ -L "${file2}" ]
+		assert "$(realpath "${file}")" "$(realpath "${file}")"
 	done
 	for pkgname in ${failed_pkgnames}; do
 		file="${log:?}/logs/${pkgname}.log"
@@ -1210,6 +1252,24 @@ _assert_bulk_build_results() {
 		    "${file}"
 
 		file2="${log:?}/logs/errors/${pkgname}.log"
+		assert_ret 0 [ -r "${file2}" ]
+		assert_ret 0 [ -L "${file2}" ]
+		assert "$(realpath "${file}")" "$(realpath "${file}")"
+	done
+	for pkgname in ${ignored_pkgnames}; do
+		file="${log:?}/logs/${pkgname}.log"
+		assert_ret 0 [ -f "${file}" ]
+		assert 0 $? "Logfile should exist: ${file}"
+		assert_ret 0 [ -s "${file}" ]
+		assert 0 $? "Logfile should not be empty: ${file}"
+		assert_ret 0 grep "Ignoring:" "${file}"
+		hash_get pkgname-originspec "${pkgname}" originspec ||
+			err 99 "Unable to find originspec for pkgname: ${pkgname}"
+		grep '^build of.*ended at' "${file}" || :
+		assert_ret 0 grep "build of ${originspec} | ${pkgname} ended at" \
+		    "${file}"
+
+		file2="${log:?}/logs/ignored/${pkgname}.log"
 		assert_ret 0 [ -r "${file2}" ]
 		assert_ret 0 [ -L "${file2}" ]
 		assert "$(realpath "${file}")" "$(realpath "${file}")"

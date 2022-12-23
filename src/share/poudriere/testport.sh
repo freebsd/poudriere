@@ -418,6 +418,7 @@ if [ ${ret} -ne 0 ]; then
 		exit 1
 	fi
 else
+	ln -s "../${PKGNAME:?}.log" "${log:?}/logs/built/${PKGNAME:?}.log"
 	badd ports.built "${ORIGINSPEC} ${PKGNAME} ${elapsed}"
 	if [ -f "${MASTERMNT:?}${portdir:?}/.keep" ]; then
 		save_wrkdir "${MASTERMNT:?}" "${ORIGINSPEC}" "${PKGNAME}" \

@@ -4367,6 +4367,9 @@ download_from_repo_make_log() {
 
 	get_originspec_from_pkgname originspec "${pkgname}"
 	if [ "${DRY_RUN:-0}" -eq 0 ]; then
+		local log
+
+		_log_path log
 		_logfile logfile "${pkgname}"
 		{
 			buildlog_start "${pkgname}" "${originspec}"
@@ -4375,6 +4378,8 @@ download_from_repo_make_log() {
 			print_phase_footer
 			buildlog_stop "${pkgname}" "${originspec}" 0
 		} | write_atomic "${logfile}"
+		ln -fs "../${pkgname:?}.log" \
+		    "${log:?}/logs/fetched/${pkgname:?}.log"
 	fi
 	badd ports.fetched "${originspec} ${pkgname}"
 }
@@ -5854,6 +5859,8 @@ build_pkg() {
 	elapsed=$((now - TIME_START_JOB))
 
 	if [ ${build_failed} -eq 0 ]; then
+		ln -s "../${pkgname:?}.log" \
+		    "${log:?}/logs/built/${pkgname:?}.log"
 		badd ports.built "${originspec} ${pkgname} ${elapsed}"
 		COLOR_ARROW="${COLOR_SUCCESS}" \
 		    job_msg_status "Finished" \
@@ -8707,6 +8714,9 @@ trim_ignored_pkg() {
 	    "${origin}${flavor:+@${flavor}}${subpkg:+~${subpkg}}" "${pkgname}" \
 	    "${ignore}"
 	if [ "${DRY_RUN:-0}" -eq 0 ]; then
+		local log
+
+		_log_path log
 		_logfile logfile "${pkgname}"
 		{
 			buildlog_start "${pkgname}" "${originspec}"
@@ -8715,6 +8725,8 @@ trim_ignored_pkg() {
 			print_phase_footer
 			buildlog_stop "${pkgname}" "${originspec}" 0
 		} | write_atomic "${logfile}"
+		ln -fs "../${pkgname:?}.log" \
+		    "${log:?}/logs/ignored/${pkgname:?}.log"
 		run_hook pkgbuild ignored "${origin}" "${pkgname}" "${ignore}"
 	fi
 	badd ports.ignored "${originspec} ${pkgname} ${ignore}"
@@ -8768,7 +8780,10 @@ prepare_ports() {
 			mkdir -p "${log:?}/../../latest-per-pkg" \
 			    "${log:?}/../latest-per-pkg" \
 			    "${log:?}/logs" \
+			    "${log:?}/logs/built" \
 			    "${log:?}/logs/errors" \
+			    "${log:?}/logs/fetched" \
+			    "${log:?}/logs/ignored" \
 			    "${cache_dir:?}"
 			# Link this build as the /latest
 			ln -sfh "${BUILDNAME}" "${log_jail:?}/latest"
