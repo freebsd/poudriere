@@ -231,9 +231,8 @@ should_delete() {
 		should_delete_listed "${pkgfile}" "${originspec}" \
 		    "${pkgname}" ||
 		    ret="$?"
-	else
-		echo "${pkgfile} ${originspec}" >> "${FOUND_ORIGINS:?}"
 	fi
+	echo "${pkgfile} ${originspec}" >> "${FOUND_ORIGINS:?}"
 	return "${ret}"
 }
 
