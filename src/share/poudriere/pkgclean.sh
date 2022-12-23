@@ -281,8 +281,11 @@ should_delete_listed() {
 	return 1 # keep
 }
 
-for file in ${PACKAGES:?}/All/*; do
-	case ${file} in
+check_should_delete_pkg() {
+	[ "$#" -eq 1 ] || eargs check_should_delete_pkg file
+	local file="$1"
+
+	case "${file}" in
 	*".${PKG_EXT}")
 		if should_delete "${file}"; then
 			echo "${file}" >> "${BADFILES_LIST:?}"
@@ -304,7 +307,15 @@ for file in ${PACKAGES:?}/All/*; do
 		echo "${file}" >> "${BADFILES_LIST:?}"
 		;;
 	esac
+}
+
+parallel_start
+for file in "${PACKAGES:?}"/All/*; do
+	parallel_run check_should_delete_pkg "${file}"
 done
+if ! parallel_stop; then
+	err 1 "Fatal errors processing packages"
+fi
 
 check_duplicated_packages() {
 	[ "$#" -eq 2 ] || eargs check_duplicated_packages origin packages
