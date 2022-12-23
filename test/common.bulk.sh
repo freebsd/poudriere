@@ -720,13 +720,13 @@ assert_counts() {
 	local fetched expected_fetched
 	local built expected_built
 
-	expected_tobuild=$(count "${EXPECTED_TOBUILD-}")
-	expected_ignored=$(count "${EXPECTED_IGNORED-}")
-	expected_skipped=$(count "${EXPECTED_SKIPPED-}")
-	expected_failed=$(count "${EXPECTED_FAILED-}")
-	expected_fetched=$(count "${EXPECTED_FETCHED-}")
-	expected_built=$(count "${EXPECTED_BUILT-}")
-	expected_queued=$(count "${EXPECTED_QUEUED-}")
+	expected_tobuild=$(expand_and_count "${EXPECTED_TOBUILD-}")
+	expected_ignored=$(expand_and_count "${EXPECTED_IGNORED-}")
+	expected_skipped=$(expand_and_count "${EXPECTED_SKIPPED-}")
+	expected_failed=$(expand_and_count "${EXPECTED_FAILED-}")
+	expected_fetched=$(expand_and_count "${EXPECTED_FETCHED-}")
+	expected_built=$(expand_and_count "${EXPECTED_BUILT-}")
+	expected_queued=$(expand_and_count "${EXPECTED_QUEUED-}")
 	echo "=> Asserting queued=${expected_queued} built=${expected_built} failed=${expected_failed} ignored=${expected_ignored} skipped=${expected_skipped} fetched=${expected_fetched} tobuild=${expected_tobuild}"
 
 	if [ -e "${log:?}/.poudriere.stats_queued" ]; then
@@ -1008,6 +1008,15 @@ count() {
 		count="${count##* }"
 	fi
 	echo "${count}"
+}
+
+expand_and_count() {
+	[ "$#" -eq 1 ] || eargs expand_and_count expected_list
+	local expected_list="$1"
+	local expanded_list
+
+	expand_origin_flavors "${expected_list?}" expanded_list
+	count "${expanded_list?}"
 }
 
 _assert_bulk_queue_and_stats() {
