@@ -15,23 +15,27 @@ set_poudriere_conf <<-EOF
 SKIP_RECURSIVE_REBUILD=1
 EOF
 
-do_pkgclean -y -A
+do_pkgclean -y ports-mgmt/pkg
 assert 0 "$?" "Pkgclean should pass"
+
+# Build pkg only once as this is a long test otherwise.
+do_bulk ports-mgmt/pkg
+assert 0 "$?" "bulk for pkg should pass"
 
 EXPECTED_IGNORED=""
 EXPECTED_SKIPPED=
-EXPECTED_TOBUILD="ports-mgmt/poudriere-devel-dep-FOO misc/freebsd-release-manifests@default ports-mgmt/pkg ports-mgmt/poudriere-devel misc/freebsd-release-manifests@foo misc/foo@default:misc/freebsd-release-manifests@foo"
+EXPECTED_TOBUILD="ports-mgmt/poudriere-devel-dep-FOO misc/freebsd-release-manifests@default ports-mgmt/poudriere-devel misc/freebsd-release-manifests@foo misc/foo@default:misc/freebsd-release-manifests@foo"
 EXPECTED_QUEUED="${EXPECTED_TOBUILD}"
 EXPECTED_LISTED="${LISTPORTS}"
 EXPECTED_BUILT=
-do_bulk -c -n ${LISTPORTS}
+do_bulk -n ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 assert_bulk_queue_and_stats
 assert_bulk_dry_run
 echo "------" | tee /dev/stderr
 
 EXPECTED_BUILT="${EXPECTED_TOBUILD}"
-do_bulk -c ${LISTPORTS}
+do_bulk ${LISTPORTS}
 assert 0 $? "Bulk should pass"
 assert_bulk_queue_and_stats
 assert_bulk_build_results
