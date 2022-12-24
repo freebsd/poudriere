@@ -187,6 +187,26 @@ getvar() {
 }
 fi
 
+incrvar() {
+	[ "$#" -eq 1 ] || [ "$#" -eq 2 ] || eargs incrvar var '[diff]'
+	local incv_var="$1"
+	local incv_diff="${2:-1}"
+	local incv_value
+
+	getvar "${incv_var}" incv_value || incv_value=0
+	setvar "${incv_var}" "$((incv_value + incv_diff))"
+}
+
+decrvar() {
+	[ "$#" -eq 1 ] || [ "$#" -eq 2 ] || eargs decrvar var '[diff]'
+	local decv_var="$1"
+	local decv_diff="${2:-1}"
+	local decv_value
+
+	getvar "${decv_var}" decv_value || return 1
+	setvar "${decv_var}" "$((decv_value - decv_diff))"
+}
+
 # Given 2 directories, make both of them relative to their
 # common directory.
 # $1 = _relpath_common = common directory
