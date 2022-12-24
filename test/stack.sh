@@ -3,10 +3,14 @@ set -e
 set +e
 
 STACK=
+assert "0" "$(stack_size STACK)"
 assert_ret 0 stack_push STACK "01 TT"
+assert "1" "$(stack_size STACK)"
 assert_stack STACK "01 TT"
 assert_ret 0 stack_push STACK "02 QQ"
+assert "2" "$(stack_size STACK)"
 assert_stack STACK "02 QQ${STACK_SEP}01 TT"
+assert "2" "$(stack_size STACK)"
 assert_true assert_out '02 QQ%01 TT$' stack_expand STACK %
 assert_true assert_out '02 QQ%01 TT$' stack_expand_front STACK %
 assert_true assert_out '01 TT%02 QQ$' stack_expand_back STACK %
@@ -36,10 +40,12 @@ assert_true assert_out '01 TTXRW02 QQ$' stack_expand_back STACK XRW
 
 	assert_stack STACK "02 QQ${STACK_SEP}01 TT"
 	assert_ret 0 stack_pop STACK pop
+	assert "1" "$(stack_size STACK)"
 	assert_stack STACK "01 TT"
 	assert "${pop}" "02 QQ" "stack_pop"
 	assert_ret 0 stack_pop STACK pop
 	assert_stack STACK ""
+	assert "0" "$(stack_size STACK)"
 	assert "${pop}" "01 TT" "stack_pop"
 	assert_ret_not 0 stack_pop STACK pop
 	assert "" "${pop}"
@@ -55,12 +61,14 @@ assert_true assert_out '01 TTXRW02 QQ$' stack_expand_back STACK XRW
 {
 	assert_true stack_set STACK $'\n' '02 QQ'$'\n''01 TT'
 	assert_stack STACK "02 QQ${STACK_SEP}01 TT"
+	assert "2" "$(stack_size STACK)"
 	assert_out '02 QQ$'$'\n''01 TT$' stack_expand STACK $'\n'
 }
 
 {
 	assert_true stack_set STACK $'\n' '02 QQ'$'\n''01 TT'
 	assert_stack STACK "02 QQ${STACK_SEP}01 TT"
+	assert "2" "$(stack_size STACK)"
 	assert_out '02 QQ$'$'\n''01 TT$' stack_expand STACK $'\n'
 }
 
@@ -78,6 +86,7 @@ assert_true assert_out '01 TTXRW02 QQ$' stack_expand_back STACK XRW
 	STACK=
 	assert_stack STACK ""
 	assert_true stack_set_args STACK '02 QQ' '01 TT'
+	assert "2" "$(stack_size STACK)"
 	assert_stack STACK "02 QQ${STACK_SEP}01 TT"
 	assert_out '02 QQ$'$'\n''01 TT$' stack_expand STACK $'\n'
 }
@@ -93,6 +102,7 @@ assert_true assert_out '01 TTXRW02 QQ$' stack_expand_back STACK XRW
 	STACK=
 	assert_stack STACK ""
 	assert_true stack_set STACK $'\n' "$(cat "${tmp}")"
+	assert "4" "$(stack_size STACK)"
 	n=1
 	item=
 	while stack_pop STACK item; do
@@ -107,18 +117,20 @@ assert_true assert_out '01 TTXRW02 QQ$' stack_expand_back STACK XRW
 	STACK=
 	assert_stack STACK ""
 	assert_true stack_set_args STACK "1 5" "2 6" "3 7" "4 8"
+	assert "4" "$(stack_size STACK)"
 	n=1
 	item=
 	while stack_pop STACK item; do
 		assert "${n} $((n + 4))" "${item}"
 		n=$((n + 1))
 	done
+	assert "0" "$(stack_size STACK)"
 	assert "5" "${n}"
 	rm -f "${tmp}"
 }
 
 {
-	stack=
+	assert_true stack_unset stack
 	n=0
 	max=10
 	until [ "$n" -eq "$max" ]; do
@@ -126,10 +138,12 @@ assert_true assert_out '01 TTXRW02 QQ$' stack_expand_back STACK XRW
 		n=$((n + 1))
 	done
 	assert_stack stack "0${STACK_SEP}1${STACK_SEP}2${STACK_SEP}3${STACK_SEP}4${STACK_SEP}5${STACK_SEP}6${STACK_SEP}7${STACK_SEP}8${STACK_SEP}9"
+	assert "10" "$(stack_size stack)"
 }
 
 {
-	stack=
+	assert_true stack_unset stack
+	assert "0" "$(stack_size stack)"
 	n=0
 	max=10
 	until [ "$n" -eq "$max" ]; do
@@ -137,6 +151,7 @@ assert_true assert_out '01 TTXRW02 QQ$' stack_expand_back STACK XRW
 		n=$((n + 1))
 	done
 	assert_stack stack "9 11${STACK_SEP}8 10${STACK_SEP}7 9${STACK_SEP}6 8${STACK_SEP}5 7${STACK_SEP}4 6${STACK_SEP}3 5${STACK_SEP}2 4${STACK_SEP}1 3${STACK_SEP}0 2"
+	assert "10" "$(stack_size stack)"
 	n=$((max - 1))
 	while stack_pop stack val; do
 		assert "${n} $((n + 2))" "${val}"
@@ -144,16 +159,19 @@ assert_true assert_out '01 TTXRW02 QQ$' stack_expand_back STACK XRW
 	done
 	assert "-1" "${n}"
 	assert "null" "${stack-null}"
+	assert "0" "$(stack_size stack)"
 }
 
 {
-	stack=
+	assert_true stack_unset stack
+	assert "0" "$(stack_size stack)"
 	n=0
 	max=10
 	until [ "$n" -eq "$max" ]; do
 		assert_ret 0 stack_push stack "${n} $((n + 2))"
 		n=$((n + 1))
 	done
+	assert "10" "$(stack_size stack)"
 	assert_stack stack "9 11${STACK_SEP}8 10${STACK_SEP}7 9${STACK_SEP}6 8${STACK_SEP}5 7${STACK_SEP}4 6${STACK_SEP}3 5${STACK_SEP}2 4${STACK_SEP}1 3${STACK_SEP}0 2"
 	n=$((max - 1))
 	unset tmp
@@ -164,6 +182,7 @@ assert_true assert_out '01 TTXRW02 QQ$' stack_expand_back STACK XRW
 	assert "-1" "${n}"
 	assert_stack stack "9 11${STACK_SEP}8 10${STACK_SEP}7 9${STACK_SEP}6 8${STACK_SEP}5 7${STACK_SEP}4 6${STACK_SEP}3 5${STACK_SEP}2 4${STACK_SEP}1 3${STACK_SEP}0 2"
 	n=$((max - 1))
+	assert "10" "$(stack_size stack)"
 	unset tmp
 	while stack_foreach stack val tmp; do
 		assert "${n} $((n + 2))" "${val}"
@@ -171,10 +190,11 @@ assert_true assert_out '01 TTXRW02 QQ$' stack_expand_back STACK XRW
 	done
 	assert "-1" "${n}"
 	assert_stack stack "9 11${STACK_SEP}8 10${STACK_SEP}7 9${STACK_SEP}6 8${STACK_SEP}5 7${STACK_SEP}4 6${STACK_SEP}3 5${STACK_SEP}2 4${STACK_SEP}1 3${STACK_SEP}0 2"
+	assert "10" "$(stack_size stack)"
 }
 
 {
-	stack=
+	assert_true stack_unset stack
 	n=0
 	max=10
 	until [ "$n" -eq "$max" ]; do
@@ -192,7 +212,7 @@ assert_true assert_out '01 TTXRW02 QQ$' stack_expand_back STACK XRW
 }
 
 {
-	stack=
+	assert_true stack_unset stack
 	n=0
 	max=10
 	until [ "$n" -eq "$max" ]; do

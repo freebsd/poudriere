@@ -370,6 +370,7 @@ stack_push_front() {
 
 	getvar "${spf_var}" spf_value || spf_value=
 	setvar "${spf_var}" "${spf_item}${spf_value:+${STACK_SEP}${spf_value}}"
+	incrvar "${spf_var}_count"
 }
 
 stack_push_back() {
@@ -381,6 +382,7 @@ stack_push_back() {
 
 	getvar "${spb_var}" spb_value || spb_value=
 	setvar "${spb_var}" "${spb_value:+${spb_value}${STACK_SEP}}${spb_item}"
+	incrvar "${spb_var}_count"
 }
 
 stack_pop() {
@@ -399,7 +401,7 @@ stack_pop_front() {
 	"")
 		# In a for loop
 		setvar "${spf_item_var_return}" ""
-		unset "${spf_var}"
+		unset "${spf_var}" "${spf_var}_count"
 		return 1
 		;;
 	esac
@@ -414,6 +416,7 @@ stack_pop_front() {
 		;;
 	esac
 	setvar "${spf_var}" "${spf_value}"
+	decrvar "${spf_var}_count"
 	setvar "${spf_item_var_return}" "${spf_item}"
 }
 
@@ -429,7 +432,7 @@ stack_pop_back() {
 	"")
 		# In a for loop
 		setvar "${spb_item_var_return}" ""
-		unset "${spb_var}"
+		unset "${spb_var}" "${spb_var}_count"
 		return 1
 		;;
 	esac
@@ -444,6 +447,7 @@ stack_pop_back() {
 		;;
 	esac
 	setvar "${spb_var}" "${spb_value}"
+	decrvar "${spb_var}_count"
 	setvar "${spb_item_var_return}" "${spb_item}"
 }
 
@@ -491,6 +495,28 @@ stack_foreach_back() {
 	fi
 }
 
+stack_size() {
+	local -; set +x
+	[ "$#" -eq 1 ] || eargs [ "$#" -eq 2 ] || eargs stack_size stack_var \
+	    count_var_return
+	local ss_var="$1"
+	local ss_var_return="${2-}"
+	local ss_count
+
+	getvar "${ss_var}_count" ss_count || ss_count=0
+	case "${ss_var_return}" in
+	""|-) echo "${ss_count}" ;;
+	*) setvar "${ss_var_return}" "${ss_count}" ;;
+	esac
+}
+
+stack_unset() {
+	[ "$#" -eq 1 ] || eargs stack_unset stack_var
+	local su_stack_var="$1"
+
+	unset "${su_stack_var}" "${su_stack_var}_count"
+}
+
 stack_set() {
 	local -; set +x
 	[ "$#" -eq 3 ] ||
@@ -519,6 +545,7 @@ stack_set_args() {
 	IFS="${STACK_SEP}"
 	si_output="$*"
 	unset IFS
+	setvar "${si_stack_var}_count" "$#"
 	setvar "${si_stack_var}" "${si_output}"
 }
 
