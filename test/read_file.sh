@@ -17,19 +17,25 @@ while get_test_context; do
 	echo "first" >> "${TMP}"
 	read_file data "${TMP}"
 	assert 'first' "${data}" "read_file on 1 line file should match"
-	assert 1 "${_read_file_lines_read}" "_read_file_lines_read should be 1"
+	assert 1 "${_read_file_lines_read}" "_read_file_lines_read"
 
 	data=blah
 	echo "second" >> "${TMP}"
 	read_file data "${TMP}"
 	assert $'first\nsecond' "${data}" "read_file on 2 line file should match"
-	assert 2 "${_read_file_lines_read}" "_read_file_lines_read should be 1"
+	assert 2 "${_read_file_lines_read}" "_read_file_lines_read"
 
 	data=blah
 	echo "third" >> "${TMP}"
 	read_file data "${TMP}"
 	assert $'first\nsecond\nthird' "${data}" "read_file on 3 line file should match"
-	assert 3 "${_read_file_lines_read}" "_read_file_lines_read should be 1"
+	assert 3 "${_read_file_lines_read}" "_read_file_lines_read"
+
+	data=blah
+	echo "fourth" >> "${TMP}"
+	read_file '' "${TMP}"
+	assert "blah" "${data}" "read_file shouldn't have touched var"
+	assert 4 "${_read_file_lines_read}" "_read_file_lines_read"
 
 	rm -f "${TMP}"
 done

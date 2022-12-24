@@ -486,11 +486,11 @@ TESTS = builtins.sh cache.sh cache_pipe.sh calculate_duration.sh \
 	pkgqueue_find_all_pool_references.sh pkgqueue_prioritize.sh \
 	pkgqueue_remove_many_pipe.sh pkgqueue_trimmed_misordered.sh \
 	pipe_func.sh pipe_hold.sh port_var_fetch.sh prefix_output.sh \
-	read_blocking.sh read_file.sh relpath.sh relpath_common.sh \
-	required_env.sh shash_basic.sh stack.sh stripansi.sh \
-	test_contexts.sh test_contexts_expand.sh timespec.sh \
-	timestamp.sh trap_ignore_block.sh trap_save_block.sh \
-	trap_save.sh $(JAIL_TESTS) prep.sh
+	read_blocking.sh read_file.sh readlines.sh relpath.sh \
+	relpath_common.sh required_env.sh shash_basic.sh stack.sh \
+	stripansi.sh test_contexts.sh test_contexts_expand.sh \
+	timespec.sh timestamp.sh trap_ignore_block.sh \
+	trap_save_block.sh trap_save.sh $(JAIL_TESTS) prep.sh
 JAIL_TESTS = \
 	bulk-MOVED-default.sh \
 	bulk-MOVED-flavor-all.sh \
@@ -1111,6 +1111,13 @@ read_blocking.sh.log: read_blocking.sh
 read_file.sh.log: read_file.sh
 	@p='read_file.sh'; \
 	b='read_file.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+readlines.sh.log: readlines.sh
+	@p='readlines.sh'; \
+	b='readlines.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

@@ -549,118 +549,57 @@ critical_end() {
 esac
 
 # Read a file into the given variable.
-_mapfile_read_file() {
-	local -; set +x
-	[ $# -eq 2 ] || eargs _mapfile_read_file var_return file
-	local var_return="$1"
-	local file="$2"
-	local handle mrf_data mrf_line newline
-	local ret IFS
-
-	# var_return may be empty if only $_read_file_lines_read is being
-	# used.
-
-	case "${file}" in
-	-) file="/dev/fd/0" ;;
-	esac
-	mrf_data=
-	_read_file_lines_read=0
-	ret=0
-	if mapfile handle "${file}" "re"; then
-		case "${var_return}" in
-		""|-)
-			while IFS= mapfile_read "${handle}" mrf_line; do
-				_read_file_lines_read=$((_read_file_lines_read + 1))
-			done
-			;;
-		*)
-			newline=$'\n'
-			while IFS= mapfile_read "${handle}" mrf_line; do
-				mrf_data="${mrf_data:+${mrf_data}${newline}}${mrf_line}"
-				_read_file_lines_read=$((_read_file_lines_read + 1))
-			done
-			;;
-		esac
-		mapfile_close "${handle}" || ret="$?"
-	else
-		ret="$?"
-	fi
-	case "${var_return}" in
-	"") ;;
-	-) echo "${mrf_data}" ;;
-	*) setvar "${var_return}" "${mrf_data}" ;;
-	esac
-	return "${ret}"
-}
-
-# Read a file into the given variable.
 read_file() {
 	local -; set +x
 	[ $# -eq 2 ] || eargs read_file var_return file
 	local var_return="$1"
 	local file="$2"
-	local _data _line newline
+	local _data
 	local _ret - IFS
 
 	# var_return may be empty if only $_read_file_lines_read is being
 	# used.
 	_ret=0
 	_read_file_lines_read=0
-	case "${file}" in
-	-|/dev/stdin|/dev/fd/0) file="/dev/fd/0" ;;
-	*)
-		if [ ! -f "${file}" ]; then
-			case "${var_return:+set}" in
-			set) setvar "${var_return}" "" ;;
-			esac
-			return 1
-		fi
-		;;
-	esac
-
-	if mapfile_builtin; then
-		_mapfile_read_file "$@" || _ret="$?"
-		return "${_ret}"
-	fi
 
 	set +e
-	_data=
-	newline=$'\n'
 
-	if [ ${READ_FILE_USE_CAT:-0} -eq 1 ]; then
-		case "${var_return:+set}" in
-		set) _data="$(cat "${file}")" ;;
+	if ! mapfile_builtin && [ "${READ_FILE_USE_CAT:-0}" -eq 1 ]; then
+		local _data
+
+		case "${file:?}" in
+		-|/dev/stdin|/dev/fd/0) ;;
+		*)
+			if [ ! -r "${file:?}" ]; then
+				case "${var_return}" in
+				""|-) ;;
+				*) setvar "${var_return}" "" ;;
+				esac
+				return 1
+			fi
+			;;
 		esac
-		count_lines "${file}" _read_file_lines_read
+		case "${var_return:+set}" in
+		set)
+			_data="$(cat "${file}")" || _ret="$?"
+			;;
+		esac
+		count_lines "${file}" _read_file_lines_read ||
+		    _read_file_lines_read=0
+
+		case "${var_return}" in
+		"") ;;
+		-) echo "${_data}" ;;
+		*) setvar "${var_return}" "${_data}" ;;
+		esac
+
+		return "${_ret}"
 	else
-		while :; do
-			IFS= read -r _line
-			_ret=$?
-			case ${_ret} in
-				# Success, process data and keep reading.
-				0) ;;
-				# EOF
-				1)
-					_ret=0
-					break
-					;;
-				# Some error or interruption/signal. Reread.
-				*) continue ;;
-			esac
-			case "${var_return:+set}" in
-			set) _data="${_data:+${_data}${newline}}${_line}" ;;
-			esac
-			_read_file_lines_read=$((_read_file_lines_read + 1))
-		done < "${file}" || _ret=$?
+		readlines_file "${file}" ${var_return:+"${var_return}"} ||
+		    _ret="$?"
+		_read_file_lines_read="${_readlines_lines_read:?}"
+		return "${_ret}"
 	fi
-
-	case "${var_return}" in
-	"") ;;
-	-) echo "${_data}" ;;
-	*) setvar "${var_return}" "${_data}" ;;
-	esac
-
-	return ${_ret}
 }
 
 # Read a file until 0 status is found. Partial reads not accepted.
@@ -704,6 +643,77 @@ read_line() {
 	setvar "${var_return}" "${_line}"
 
 	return ${_ret}
+}
+
+readlines() {
+	[ "$#" -ge 0 ] || eargs readlines '[vars...]'
+
+	readlines_file "/dev/stdin" "$@"
+}
+
+readlines_file() {
+	# Blank vars will still read and output $_readlines_lines_read
+	[ "$#" -ge 1 ] || eargs readlines_file file '[vars...]'
+	local rl_file="$1"
+	shift
+	local rl_var rl_line rl_var_count rl_line_count
+	local rl_rest rl_nl rl_handle ret
+	local IFS
+
+	_readlines_lines_read=0
+	case "${rl_file:?}" in
+	-|/dev/stdin|/dev/fd/0) rl_file="/dev/fd/0" ;;
+	*)
+		if [ ! -r "${rl_file:?}" ]; then
+			for rl_var in "$@"; do
+				setvar "${rl_var}" ""
+			done
+			return 1
+		fi
+		;;
+	esac
+
+	rl_nl=$'\n'
+	rl_var_count="$#"
+	rl_rest=
+	ret=0
+	if mapfile rl_handle "${rl_file:?}" "re"; then
+		while IFS= mapfile_read "${rl_handle}" rl_line; do
+			_readlines_lines_read="$((_readlines_lines_read + 1))"
+			case "${rl_var_count}" in
+			0)
+				;;
+			1)
+				rl_rest="${rl_rest:+${rl_rest}${rl_nl}}${rl_line}"
+				;;
+			*)
+				rl_var_count="$((rl_var_count - 1))"
+				rl_var="${1:?}"
+				shift
+				setvar "${rl_var}" "${rl_line}"
+				;;
+			esac
+		done
+		mapfile_close "${rl_handle}" || ret="$?"
+	else
+		ret=1
+	fi
+	case "${rl_var_count}" in
+	0) ;;
+	*)
+		case "${rl_rest:+set}" in
+		set)
+			rl_var="${1:?}"
+			shift
+			setvar "${rl_var}" "${rl_rest}"
+			;;
+		esac
+		for rl_var in "$@"; do
+			setvar "${rl_var}" ""
+		done
+		;;
+	esac
+	return "${ret}"
 }
 
 # SIGINFO traps won't abort the read.

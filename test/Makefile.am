@@ -67,6 +67,7 @@ TESTS=\
 	prefix_output.sh \
 	read_blocking.sh \
 	read_file.sh \
+	readlines.sh \
 	relpath.sh \
 	relpath_common.sh \
 	required_env.sh \
