@@ -919,6 +919,13 @@ mapfile() {
 	local _modes="$3"
 	local mypid _hkey ret
 
+	ret=0
+	mypid=$(getpid)
+	case "${_file}" in
+		-|/dev/stdin) _file="/dev/fd/0" ;;
+	esac
+	_hkey="${_file}.${mypid}"
+
 	case " ${_modes} " in
 	*r*w*|*w*r*|*+*) ;;
 	*w*|*a*) ;;
@@ -928,13 +935,6 @@ mapfile() {
 		fi
 		;;
 	esac
-
-	ret=0
-	mypid=$(getpid)
-	case "${_file}" in
-		-|/dev/stdin) _file="/dev/fd/0" ;;
-	esac
-	_hkey="${_file}.${mypid}"
 
 	case "${_mapfile_handle-}" in
 	""|"${_hkey}") ;;
