@@ -99,6 +99,18 @@ writer() {
 	rm -f "${TMP}" "${TMP2}" "${TMP3}"
 }
 
+{
+	echo blah | {
+		n=0
+		while mapfile_read_loop - line; do
+			assert "blah" "${line}"
+			n=$((n + 1))
+		done
+		assert 1 "${n}"
+	}
+	assert 0 "$?"
+}
+
 if mapfile_builtin; then
 # Test pipes
 {

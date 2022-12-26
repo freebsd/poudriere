@@ -88,8 +88,10 @@ md_close(struct mapped_data *md)
 	free(md->file);
 	md->file = NULL;
 	if (md->fp != NULL) {
-		assert(fileno(md->fp) >= 10);
-		fclose(md->fp);
+		if (md->fp != stdin) {
+			assert(fileno(md->fp) >= 10);
+			fclose(md->fp);
+		}
 		md->fp = NULL;
 	}
 	free(mapped_files[idx]);
@@ -148,57 +150,63 @@ _mapfile_open(const char *file, const char *modes)
 	    errx(EX_USAGE, "%s", "using 'B' without writing makes no sense");
 	}
 
-	if ((fp = fopen(file, modes)) == NULL) {
-		serrno = errno;
-		INTON;
-		errno = serrno;
-		err(EX_NOINPUT, "%s: %s", "fopen", file);
-	}
-	if (fstat(fileno(fp), &sb) != 0) {
-		serrno = errno;
-		fclose(fp);
-		INTON;
-		errno = serrno;
-		err(EX_OSERR, "%s", "fstat");
-	}
-	if (!(S_ISFIFO(sb.st_mode) || S_ISREG(sb.st_mode) ||
-	    S_ISCHR(sb.st_mode))) {
-		serrno = errno;
-		fclose(fp);
-		INTON;
-		errno = serrno;
-		errx(EX_DATAERR, "%s not a regular file or FIFO",
-		    file);
-	}
-	/* sh has <=10 reserved. */
-	if (fileno(fp) < 10) {
-		cmd = -1;
-		dupp = dupmodes;
-		for (p = modes; *p; p++) {
-			if (*p == 'e') {
-				cmd = F_DUPFD_CLOEXEC;
-				continue;
-			}
-			*dupp++ = *p;
+	if (strcmp(file, "-") == 0 ||
+	    strcmp(file, "/dev/stdin") == 0 ||
+	    strcmp(file, "/dev/fd/0") == 0) {
+		fp = stdin;
+	} else {
+		if ((fp = fopen(file, modes)) == NULL) {
+			serrno = errno;
+			INTON;
+			errno = serrno;
+			err(EX_NOINPUT, "%s: %s", "fopen", file);
 		}
-		*dupp = '\0';
-		if (cmd == -1)
-			cmd = F_DUPFD;
-
-		if ((newfd = fcntl(fileno(fp), cmd, 10)) == -1) {
+		if (fstat(fileno(fp), &sb) != 0) {
 			serrno = errno;
 			fclose(fp);
 			INTON;
 			errno = serrno;
-			err(EX_NOINPUT, "%s", "fcntl");
+			err(EX_OSERR, "%s", "fstat");
 		}
-		assert(newfd >= 10);
-		(void)fclose(fp);
-		if ((fp = fdopen(newfd, dupmodes)) == NULL) {
+		if (!(S_ISFIFO(sb.st_mode) || S_ISREG(sb.st_mode) ||
+		    S_ISCHR(sb.st_mode))) {
 			serrno = errno;
+			fclose(fp);
 			INTON;
 			errno = serrno;
-			err(EX_NOINPUT, "%s", "fdopen");
+			errx(EX_DATAERR, "%s not a regular file or FIFO",
+			    file);
+		}
+		/* sh has <=10 reserved. */
+		if (fileno(fp) < 10) {
+			cmd = -1;
+			dupp = dupmodes;
+			for (p = modes; *p; p++) {
+				if (*p == 'e') {
+					cmd = F_DUPFD_CLOEXEC;
+					continue;
+				}
+				*dupp++ = *p;
+			}
+			*dupp = '\0';
+			if (cmd == -1)
+				cmd = F_DUPFD;
+
+			if ((newfd = fcntl(fileno(fp), cmd, 10)) == -1) {
+				serrno = errno;
+				fclose(fp);
+				INTON;
+				errno = serrno;
+				err(EX_NOINPUT, "%s", "fcntl");
+			}
+			assert(newfd >= 10);
+			(void)fclose(fp);
+			if ((fp = fdopen(newfd, dupmodes)) == NULL) {
+				serrno = errno;
+				INTON;
+				errno = serrno;
+				err(EX_NOINPUT, "%s", "fdopen");
+			}
 		}
 	}
 	md = calloc(1, sizeof(*md));

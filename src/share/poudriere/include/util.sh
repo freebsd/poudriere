@@ -561,7 +561,7 @@ _mapfile_read_file() {
 	# used.
 
 	case "${file}" in
-	-|/dev/stdin) file="/dev/fd/0" ;;
+	-) file="/dev/fd/0" ;;
 	esac
 	mrf_data=
 	_read_file_lines_read=0
@@ -607,7 +607,7 @@ read_file() {
 	_ret=0
 	_read_file_lines_read=0
 	case "${file}" in
-	-|/dev/stdin) file="/dev/fd/0" ;;
+	-|/dev/stdin|/dev/fd/0) file="/dev/fd/0" ;;
 	*)
 		if [ ! -f "${file}" ]; then
 			case "${var_return:+set}" in
@@ -922,7 +922,7 @@ mapfile() {
 	ret=0
 	mypid=$(getpid)
 	case "${_file}" in
-		-|/dev/stdin) _file="/dev/fd/0" ;;
+	-) _file="/dev/fd/0" ;;
 	esac
 	_hkey="${_file}.${mypid}"
 
