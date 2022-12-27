@@ -615,3 +615,158 @@ stack_expand_back() {
 	*) setvar "${seb_var_return}" "${seb_output}" ;;
 	esac
 }
+
+array_isset() {
+	local -; set +x
+	[ "$#" -eq 1 ] || [ "$#" -eq 2 ] ||
+	    eargs array_isset array_var '[idx]'
+	local as_array_var="$1"
+	local as_idx="${2-}"
+
+	case "${as_idx:+set}" in
+	set)
+		hash_isset "_array_${as_array_var}" "${as_idx}" || return
+		;;
+	*)
+		issetvar "_array_length_${as_array_var}" || return
+		;;
+	esac
+}
+
+array_size() {
+	local -; set +x
+	[ "$#" -eq 1 ] || [ "$#" -eq 2 ] ||
+	    eargs array_size array_var '[var_return]'
+	local as_array_var="$1"
+	local as_var_return="${2-}"
+	local as_count
+
+	getvar "_array_length_${as_array_var}" as_count || as_count=0
+	case "${as_var_return}" in
+	""|-) echo "${as_count}" ;;
+	*) setvar "${as_var_return}" "${as_count}" ;;
+	esac
+}
+
+array_get() {
+	local -; set +x
+	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] ||
+	    eargs array_get array_var idx '[var_return]'
+	local ag_array_var="$1"
+	local ag_idx="$2"
+	local ag_var_return="${3-}"
+
+	hash_get "_array_${ag_array_var}" "${ag_idx}" "${ag_var_return}"
+}
+
+array_set() {
+	local -; set +x
+	[ "$#" -eq 3 ] || eargs array_set array_var idx value
+	local as_array_var="$1"
+	local as_idx="$2"
+	shift 2
+
+	if ! array_isset "${as_array_var}" "${as_idx}"; then
+		incrvar "_array_length_${as_array_var}"
+	fi
+	hash_set "_array_${as_array_var}" "${as_idx}" "$*"
+}
+
+array_unset() {
+	local -; set +x
+	[ "$#" -eq 1 ] || [ "$#" -eq 2 ] ||
+	    eargs array_unset array_var '[idx]'
+	local au_array_var="$1"
+	local au_idx="$2"
+	local au_count
+
+	case "${au_idx:+set}" in
+	set)
+		array_unset_idx "${au_array_var}" "${au_idx}" || return
+		return
+		;;
+	esac
+
+	hash_unset_var "_array_${au_array_var}"
+	unset "_array_length_${au_array_var}"
+}
+
+array_unset_idx() {
+	local -; set +x
+	[ "$#" -eq 2 ] || eargs array_unset_idx array_var idx
+	local aui_array_var="$1"
+	local aui_idx="$2"
+	local aui_count
+
+	if ! array_isset "${aui_array_var}" "${aui_idx}"; then
+		return 1
+	fi
+	decrvar "_array_length_${aui_array_var}"
+	hash_unset "_array_${aui_array_var}" "${aui_idx}"
+	if getvar "_array_length_${aui_array_var}" aui_count; then
+		case "${aui_count}" in
+		0)
+			unset "_array_length_${aui_array_var}"
+			;;
+		esac
+	fi
+}
+
+array_push() {
+	array_push_back "$@"
+}
+
+array_push_back() {
+	local -; set +x
+	[ "$#" -eq 2 ] || eargs array_push_back array_var value
+	local apb_array_var="$1"
+	local apb_value="$2"
+	local apb_size
+
+	array_size "${apb_array_var}" apb_size || return 1
+	array_set "${apb_array_var}" "${apb_size}" "${apb_value}"
+}
+
+array_pop() {
+	array_pop_back "$@"
+}
+
+array_pop_back() {
+	local -; set +x
+	[ "$#" -eq 2 ] || eargs array_pop_back array_var item_var_return
+	local apb_array_var="$1"
+	local apb_item_var_return="$2"
+	local apb_size
+
+	array_size "${apb_array_var}" apb_size || return 1
+	array_get "${apb_array_var}" "$((apb_size - 1))" "${apb_item_var_return}"
+	array_unset "${apb_array_var}" "$((apb_size - 1))"
+}
+
+array_foreach_front() {
+	local -; set +x
+	[ "$#" -eq 3 ] || eargs array_foreach_front var item_var_return tmp_var
+	local aff_var="$1"
+	local aff_item_var_return="$2"
+	local aff_tmp_var="$3"
+	local aff_tmp_idx aff_size
+
+	array_size "${aff_var}" aff_size || return 1
+	if ! getvar "${aff_tmp_var}" aff_tmp_idx; then
+		aff_tmp_idx=0
+	fi
+	while [ "${aff_tmp_idx}" -lt "${aff_size}" ]; do
+		if array_get "${aff_var}" "${aff_tmp_idx}" \
+		    "${aff_item_var_return}"; then
+			setvar "${aff_tmp_var}" "$((aff_tmp_idx + 1))"
+			return
+		fi
+		aff_tmp_idx="$((aff_tmp_idx + 1))"
+	done
+	unset "${aff_tmp_var}"
+	return 1
+}
+
+array_foreach() {
+	array_foreach_front "$@"
+}

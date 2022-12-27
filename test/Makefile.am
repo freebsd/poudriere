@@ -18,6 +18,7 @@ XFAIL_TESTS= \
 	options-overlays.sh
 
 TESTS=\
+	array.sh \
 	builtins.sh \
 	cache.sh \
 	cache_pipe.sh \
@@ -67,6 +68,7 @@ TESTS=\
 	prefix_output.sh \
 	read_blocking.sh \
 	read_file.sh \
+	readarray.sh \
 	readlines.sh \
 	relpath.sh \
 	relpath_common.sh \

@@ -716,6 +716,26 @@ readlines_file() {
 	return "${ret}"
 }
 
+readarray() {
+	local -; set +x
+	[ "$#" -eq 1 ] || eargs readarray array_var
+
+	readarray_file "/dev/fd/0" "$@"
+}
+
+readarray_file() {
+	local -; set +x
+	[ "$#" -eq 2 ] || eargs readarray_file file array_var
+	local raf_file="$1"
+	local raf_array_var="$2"
+	local raf_line
+	local IFS
+
+	while IFS= mapfile_read_loop "${raf_file}" raf_line; do
+		array_push_back "${raf_array_var}" "${raf_line}"
+	done
+}
+
 # SIGINFO traps won't abort the read.
 read_blocking() {
 	local -; set +x
