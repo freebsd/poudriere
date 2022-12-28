@@ -1949,12 +1949,11 @@ porttree_list() {
 
 porttree_exists() {
 	[ $# -eq 1 ] || eargs porttree_exists portstree_name
-	porttree_list |
-		awk -v portstree_name=$1 '
-		BEGIN { ret = 1 }
-		$1 == portstree_name {ret = 0; }
-		END { exit ret }
-		' && return 0
+	local ptname="$1"
+
+	if [ -d "${POUDRIERED:?}/ports/${ptname:?}" ]; then
+		return 0
+	fi
 	return 1
 }
 
