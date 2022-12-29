@@ -803,13 +803,15 @@ _coprocess_wrapper() {
 coprocess_start() {
 	[ $# -eq 1 ] || eargs coprocess_start name
 	local name="$1"
-	local main pid
+	local main pid jobid
 
 	main="${name}_main"
-	spawn_protected _coprocess_wrapper ${main}
+	spawn_job_protected _coprocess_wrapper ${main}
 	pid=$!
+	jobid="${spawn_jobid}"
 
 	hash_set coprocess_pid "${name}" "${pid}"
+	hash_set coprocess_jobid "${name}" "${jobid}"
 
 	return 0
 }
@@ -817,14 +819,13 @@ coprocess_start() {
 coprocess_stop() {
 	[ $# -eq 1 ] || eargs coprocess_stop name
 	local name="$1"
-	local ret
+	local ret pid jobid
 
-	hash_get coprocess_pid "${name}" pid || return 0
-	hash_unset coprocess_pid "${name}"
+	hash_remove coprocess_pid "${name}" pid || return 0
+	hash_remove coprocess_jobid "${name}" jobid || return 0
 
-	# kill -> timeout wait -> kill -9
 	ret=0
-	kill_and_wait 60 "${pid}" || ret="$?"
+	kill_job 60 "%${jobid}" || ret="$?"
 	case "${ret}" in
 	143) ret=0 ;;
 	esac
