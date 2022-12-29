@@ -7180,6 +7180,7 @@ gather_port_vars_process_depqueue() {
 
 
 compute_deps() {
+	required_env compute_deps PWD "${MASTER_DATADIR_ABS:?}"
 	local pkgname originspec dep_pkgname _ignored
 
 	msg "Calculating ports order and dependencies"
