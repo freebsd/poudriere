@@ -1930,3 +1930,15 @@ count_lines() {
 	esac
 	return "${cl_ret}"
 }
+
+case "$(type sleep)" in
+"sleep is a shell builtin") ;;
+*)
+sleep() {
+	local -
+
+	set -T
+	command sleep "$@"
+}
+;;
+esac
