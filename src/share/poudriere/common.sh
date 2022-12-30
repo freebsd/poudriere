@@ -3510,6 +3510,13 @@ jail_cleanup() {
 				[ "${pidfile}" = \
 				    "${MASTER_DATADIR}/var/run/*.pid" ] && \
 				    break
+				case "${pidfile}" in
+				*_nohang.pid)
+					# Killing the main job's pgid
+					# should have killed off the
+					# nohang pid already.
+					continue
+				esac
 				read pid < "${pidfile}"
 				kill_job 1 "${pid}" || :
 				wait_pids="${wait_pids:+${wait_pids} }${pid}"
