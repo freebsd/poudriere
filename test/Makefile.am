@@ -13,6 +13,8 @@ EXTRA_DIST= $(TESTS) \
 XFAIL_TESTS= \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete-misordered.sh \
 	bulk-build-inc-nested-dep-middle-unneeded-without-recursive-delete.sh \
+	bulk-build-inc-trim_orphaned_build_deps-RUN-and-BUILD.sh \
+	bulk-build-inc-trim_orphaned_build_deps-RUN.sh \
 	distclean-overlays.sh \
 	err.sh \
 	options-overlays.sh
@@ -103,6 +105,11 @@ JAIL_TESTS= \
 	bulk-build-inc-pkgclean-flavor-default.sh \
 	bulk-build-inc-pkgclean-flavor.sh \
 	bulk-build-inc-pkgclean-origin.sh \
+	bulk-build-inc-trim_orphaned_build_deps-RUN-and-BUILD.sh \
+	bulk-build-inc-trim_orphaned_build_deps-RUN.sh \
+	bulk-build-inc-trim_orphaned_build_deps-double-dep.sh \
+	bulk-build-inc-trim_orphaned_build_deps-listed-dep.sh \
+	bulk-build-inc-trim_orphaned_build_deps.sh \
 	bulk-build-multiple-eligible-in-queue.sh \
 	bulk-build-origin_has_pkgbase.sh \
 	bulk-build-self-immutable-base-no.sh \

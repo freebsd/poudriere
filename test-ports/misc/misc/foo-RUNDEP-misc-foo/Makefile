@@ -1,6 +1,6 @@
 # $FreeBSD: head/misc/freebsd-release-manifests/Makefile 429892 2016-12-29 12:41:04Z mat $
 
-PORTNAME=	foo-dep-FLAVORS-unsorted
+PORTNAME=	foo-RUNDEP-misc-foo
 DISTVERSION=	20161010
 PORTREVISION=	0
 FLAVORS=	flav default ignored depignored
@@ -13,20 +13,14 @@ COMMENT=	FreeBSD release manifests
 
 LICENSE=	BSD2CLAUSE
 
+USES=		metaport
+
 NO_BUILD=	yes
 NO_ARCH=	yes
 
-DATADIR=	${PREFIX}/share/freebsd
-FILESDIR=	${.CURDIR:H:H}/misc/freebsd-release-manifests/files
-
-OPTIONS_DEFINE=	NESTEDDEP
-NESTEDDEP_DESC= Depend on misc/foo for TRIM_ORPHANED_BUILD_DEPS test
+RUN_DEPENDS+=	foo:misc/foo@default
 
 .include <bsd.port.options.mk>
-
-.if ${PORT_OPTIONS:MNESTEDDEP}
-BUILD_DEPENDS+=	foo:misc/foo
-.endif
 
 .if empty(FLAVOR)
 FLAVOR=	default
@@ -37,12 +31,9 @@ PKGNAMESUFFIX=	-${FLAVOR:tu}
 .endif
 .if ${FLAVOR} == ignored
 IGNORE=		ignored
-.elif ${FLAVOR} == depignored
-IGNORE=		dep ignored
 .endif
 
 do-install:
-	@${ECHO} "#! /bin/sh" > ${STAGEDIR}${PREFIX}/bin/foo
-	@${CHMOD} +x ${STAGEDIR}${PREFIX}/bin/foo
+	@${DO_NADA}
 
 .include <bsd.port.mk>
