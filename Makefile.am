@@ -229,7 +229,8 @@ sh_SOURCES+=		\
 			src/poudriere-sh/stat.c \
 			src/poudriere-sh/touch.c \
 			src/poudriere-sh/traps.c \
-			src/poudriere-sh/unlink.c
+			src/poudriere-sh/unlink.c \
+			src/poudriere-sh/wc.c
 
 sh_CFLAGS+=		-I$(top_srcdir)/src/poudriere-sh \
 			-I$(top_builddir)/src/poudriere-sh

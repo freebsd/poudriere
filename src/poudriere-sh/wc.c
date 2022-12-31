@@ -61,22 +61,33 @@ __FBSDID("$FreeBSD$");
 #include <unistd.h>
 #include <wchar.h>
 #include <wctype.h>
-#include <libxo/xo.h>
 
+#ifndef SHELL
 #include <libcasper.h>
 #include <casper/cap_fileargs.h>
+#endif
 
+#ifdef SHELL
+#define main wccmd
+#include "bltin/bltin.h"
+#include "helpers.h"
+#endif
+
+#ifndef SHELL
 static fileargs_t *fa;
+#endif
 static uintmax_t tlinect, twordct, tcharct, tlongline;
 static int doline, doword, dochar, domulti, dolongline;
+#ifndef SHELL
 static volatile sig_atomic_t siginfo;
-static xo_handle_t *stderr_handle;
+#endif
 
 static void	show_cnt(const char *file, uintmax_t linect, uintmax_t wordct,
 		    uintmax_t charct, uintmax_t llct);
 static int	cnt(const char *);
 static void	usage(void);
 
+#ifndef SHELL
 static void
 siginfo_handler(int sig __unused)
 {
@@ -91,18 +102,22 @@ reset_siginfo(void)
 	signal(SIGINFO, SIG_DFL);
 	siginfo = 0;
 }
+#endif
 
 int
 main(int argc, char *argv[])
 {
 	int ch, errors, total;
+#ifndef SHELL
 	cap_rights_t rights;
+#endif
 
 	(void) setlocale(LC_CTYPE, "");
 
-	argc = xo_parse_args(argc, argv);
-	if (argc < 0)
-		return (argc);
+#ifdef SHELL
+	doline = doword = dochar = domulti = dolongline = 0;
+	tlinect = twordct = tcharct = tlongline = 0;
+#endif
 
 	while ((ch = getopt(argc, argv, "clmwL")) != -1)
 		switch((char)ch) {
@@ -130,64 +145,68 @@ main(int argc, char *argv[])
 	argv += optind;
 	argc -= optind;
 
-	(void)signal(SIGINFO, siginfo_handler);
-
+#ifdef SHELL
+	INTOFF;
+#endif
+#ifndef SHELL
+	/*
+	 * Disable in SHELL as it is needless overhead and forces a fork
+	 * from sh.
+	 */
 	fa = fileargs_init(argc, argv, O_RDONLY, 0,
 	    cap_rights_init(&rights, CAP_READ, CAP_FSTAT), FA_OPEN);
 	if (fa == NULL) {
-		xo_warn("Unable to init casper");
+		warn("Unable to init casper");
 		exit(1);
 	}
 
 	caph_cache_catpages();
 	if (caph_limit_stdio() < 0) {
-		xo_warn("Unable to limit stdio");
+		warn("Unable to limit stdio");
 		fileargs_free(fa);
 		exit(1);
 	}
 
 	if (caph_enter_casper() < 0) {
-		xo_warn("Unable to enter capability mode");
+		warn("Unable to enter capability mode");
 		fileargs_free(fa);
 		exit(1);
 	}
+#endif
 
 	/* Wc's flags are on by default. */
 	if (doline + doword + dochar + domulti + dolongline == 0)
 		doline = doword = dochar = 1;
-
-	stderr_handle = xo_create_to_file(stderr, XO_STYLE_TEXT, 0);
-	xo_open_container("wc");
-	xo_open_list("file");
+#ifndef SHELL
+	/*
+	 * Disable in SHELL as it continually causes races. Currently
+	 * there is one between installing the handler and fileargs_init()
+	 * getting an EAGAIN while receiving SIGINFO.
+	 * It is not needed.
+	 */
+	(void)signal(SIGINFO, siginfo_handler);
+#endif
 
 	errors = 0;
 	total = 0;
 	if (!*argv) {
-	 	xo_open_instance("file");
 		if (cnt((char *)NULL) != 0)
 			++errors;
-	 	xo_close_instance("file");
 	} else {
 		do {
-	 		xo_open_instance("file");
 			if (cnt(*argv) != 0)
 				++errors;
-	 		xo_close_instance("file");
 			++total;
 		} while(*++argv);
 	}
-
-	xo_close_list("file");
-
 	if (total > 1) {
-		xo_open_container("total");
 		show_cnt("total", tlinect, twordct, tcharct, tlongline);
-		xo_close_container("total");
 	}
-
+#ifdef SHELL
+	INTON;
+#else
 	fileargs_free(fa);
-	xo_close_container("wc");
-	xo_finish();
+#endif
 	exit(errors == 0 ? 0 : 1);
 }
 
@@ -195,27 +214,18 @@ static void
 show_cnt(const char *file, uintmax_t linect, uintmax_t wordct,
     uintmax_t charct, uintmax_t llct)
 {
-	xo_handle_t *xop;
-
-	if (!siginfo)
-		xop = NULL;
-	else {
-		xop = stderr_handle;
-		siginfo = 0;
-	}
-
 	if (doline)
-		xo_emit_h(xop, " {:lines/%7ju/%ju}", linect);
+		fprintf(stdout, "%7ju", linect);
 	if (doword)
-		xo_emit_h(xop, " {:words/%7ju/%ju}", wordct);
+		fprintf(stdout, "%7ju", wordct);
 	if (dochar || domulti)
-		xo_emit_h(xop, " {:characters/%7ju/%ju}", charct);
+		fprintf(stdout, "%7ju", charct);
 	if (dolongline)
-		xo_emit_h(xop, " {:long-lines/%7ju/%ju}", llct);
+		fprintf(stdout, "%7ju", llct);
 	if (file != NULL)
-		xo_emit_h(xop, " {:filename/%s}\n", file);
+		fprintf(stdout, " %s\n", file);
 	else
-		xo_emit_h(xop, "\n");
+		fprintf(stdout, "\n");
 }
 
 static int
@@ -234,8 +244,12 @@ cnt(const char *file)
 	linect = wordct = charct = llct = tmpll = 0;
 	if (file == NULL)
 		fd = STDIN_FILENO;
+#ifndef SHELL
 	else if ((fd = fileargs_open(fa, file)) < 0) {
-		xo_warn("%s: open", file);
+#else
+	else if ((fd = open(file, O_RDONLY, 0)) < 0) {
+#endif
+		warn("%s: open", file);
 		return (1);
 	}
 	if (doword || (domulti && MB_CUR_MAX != 1))
@@ -246,12 +260,14 @@ cnt(const char *file)
 	 */
 	if (doline == 0 && dolongline == 0) {
 		if (fstat(fd, &sb)) {
-			xo_warn("%s: fstat", file != NULL ? file : "stdin");
+			warn("%s: fstat", file != NULL ? file : "stdin");
 			(void)close(fd);
 			return (1);
 		}
 		if (S_ISREG(sb.st_mode)) {
+#ifndef SHELL
 			reset_siginfo();
+#endif
 			charct = sb.st_size;
 			show_cnt(file, linect, wordct, charct, llct);
 			tcharct += charct;
@@ -267,12 +283,14 @@ cnt(const char *file)
 	 */
 	while ((len = read(fd, buf, MAXBSIZE))) {
 		if (len == -1) {
-			xo_warn("%s: read", file != NULL ? file : "stdin");
+			warn("%s: read", file != NULL ? file : "stdin");
 			(void)close(fd);
 			return (1);
 		}
+#ifndef SHELL
 		if (siginfo)
 			show_cnt(file, linect, wordct, charct, llct);
+#endif
 		charct += len;
 		if (doline || dolongline) {
 			for (p = buf; len--; ++p)
@@ -285,7 +303,9 @@ cnt(const char *file)
 					tmpll++;
 		}
 	}
+#ifndef SHELL
 	reset_siginfo();
+#endif
 	if (doline)
 		tlinect += linect;
 	if (dochar)
@@ -302,22 +322,24 @@ word:	gotsp = 1;
 	memset(&mbs, 0, sizeof(mbs));
 	while ((len = read(fd, buf, MAXBSIZE)) != 0) {
 		if (len == -1) {
-			xo_warn("%s: read", file != NULL ? file : "stdin");
+			warn("%s: read", file != NULL ? file : "stdin");
 			(void)close(fd);
 			return (1);
 		}
 		p = buf;
 		while (len > 0) {
+#ifndef SHELL
 			if (siginfo)
 				show_cnt(file, linect, wordct, charct, llct);
+#endif
 			if (!domulti || MB_CUR_MAX == 1) {
 				clen = 1;
 				wch = (unsigned char)*p;
-			} else if ((clen = mbrtowc(&wch, p, len, &mbs)) ==
+			} else if ((clen = mbrtowc(&wch, (const char*)p, len, &mbs)) ==
 			    (size_t)-1) {
 				if (!warned) {
 					errno = EILSEQ;
-					xo_warn("%s",
+					warn("%s",
 					    file != NULL ? file : "stdin");
 					warned = 1;
 				}
@@ -347,10 +369,12 @@ word:	gotsp = 1;
 			}
 		}
 	}
+#ifndef SHELL
 	reset_siginfo();
+#endif
 	if (domulti && MB_CUR_MAX > 1)
 		if (mbrtowc(NULL, NULL, 0, &mbs) == (size_t)-1 && !warned)
-			xo_warn("%s", file != NULL ? file : "stdin");
+			warn("%s", file != NULL ? file : "stdin");
 	if (doline)
 		tlinect += linect;
 	if (doword)
@@ -367,6 +391,6 @@ word:	gotsp = 1;
 static void
 usage(void)
 {
-	xo_error("usage: wc [-Lclmw] [file ...]\n");
+	(void)fprintf(stderr, "usage: wc [-Lclmw] [file ...]\n");
 	exit(1);
 }
