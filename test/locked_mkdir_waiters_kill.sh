@@ -26,6 +26,7 @@ until [ "${n}" -eq "${max}" ]; do
 
 	# Background waiters
 	(
+		trap - INT
 		set -T
 		got_lock=66
 		trap 'exit ${got_lock}' TERM
@@ -49,6 +50,7 @@ until [ "${n}" -eq "${max}" ]; do
 	) &
 	pid_unlock1=$!
 	(
+		trap - INT
 		set -T
 		got_lock=66
 		trap 'exit ${got_lock}' TERM
@@ -72,6 +74,7 @@ until [ "${n}" -eq "${max}" ]; do
 	) &
 	pid_unlock2=$!
 	(
+		trap - INT
 		set -T
 		got_lock=66
 		trap 'exit ${got_lock}' TERM
@@ -95,6 +98,7 @@ until [ "${n}" -eq "${max}" ]; do
 	) &
 	pid_unlock3=$!
 	(
+		trap - INT
 		set -T
 		got_lock=66
 		trap 'exit ${got_lock}' TERM

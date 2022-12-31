@@ -5,7 +5,6 @@ assert 0 "$?" getpid
 assert "$$" "${mypid}" ''
 
 (
-	trap - INT
 	mypid="$(getpid)"
 	assert 0 "$?" ''
 	assert_not "$$" "${mypid}" ''

@@ -25,6 +25,7 @@ until [ "${n}" -eq "${max}" ]; do
 
 	# Background waiters
 	(
+		trap - INT
 		mypid=$(sh -c 'echo $PPID')
 		time=$(clock -monotonic)
 		locked_mkdir 5 "${LOCK1}" "${mypid}"
@@ -45,6 +46,7 @@ until [ "${n}" -eq "${max}" ]; do
 	) &
 	pid_unlock1=$!
 	(
+		trap - INT
 		mypid=$(sh -c 'echo $PPID')
 		time=$(clock -monotonic)
 		locked_mkdir 5 "${LOCK1}" "${mypid}"
@@ -65,6 +67,7 @@ until [ "${n}" -eq "${max}" ]; do
 	) &
 	pid_unlock2=$!
 	(
+		trap - INT
 		mypid=$(sh -c 'echo $PPID')
 		time=$(clock -monotonic)
 		locked_mkdir 5 "${LOCK1}" "${mypid}"
@@ -85,6 +88,7 @@ until [ "${n}" -eq "${max}" ]; do
 	) &
 	pid_unlock3=$!
 	(
+		trap - INT
 		mypid=$(sh -c 'echo $PPID')
 		time=$(clock -monotonic)
 		locked_mkdir 5 "${LOCK1}" "${mypid}"

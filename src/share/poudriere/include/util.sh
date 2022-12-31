@@ -1442,23 +1442,24 @@ prefix_stderr() {
 
 	prefixpipe=$(mktemp -ut prefix_stderr.pipe)
 	mkfifo "${prefixpipe}"
-	if [ "${USE_TIMESTAMP:-1}" -eq 1 ] && \
-	    command -v timestamp >/dev/null; then
-		# Let timestamp handle showing the proper time.
-		prefix="$(NO_ELAPSED_IN_MSG=1 msg_warn "${extra}:" 2>&1)"
-		TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
-		    timestamp -1 "${prefix}" \
-		    -P "poudriere: ${PROC_TITLE} (prefix_stderr)" \
-		    < "${prefixpipe}" >&2 &
-	else
-		(
+	(
+		trap - INT
+		if [ "${USE_TIMESTAMP:-1}" -eq 1 ] && \
+		    command -v timestamp >/dev/null; then
+			# Let timestamp handle showing the proper time.
+			prefix="$(NO_ELAPSED_IN_MSG=1 msg_warn "${extra}:" 2>&1)"
+			TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
+			    timestamp -1 "${prefix}" \
+			    -P "poudriere: ${PROC_TITLE} (prefix_stderr)" \
+			    >&2
+		else
 			set +x
 			setproctitle "${PROC_TITLE} (prefix_stderr)"
 			while mapfile_read_loop_redir line; do
 				msg_warn "${extra}: ${line}"
 			done
-		) < ${prefixpipe} &
-	fi
+		fi
+	) < "${prefixpipe}" &
 	prefixpid=$!
 	exec 4>&2
 	exec 2> "${prefixpipe}"
@@ -1488,23 +1489,23 @@ prefix_stdout() {
 
 	prefixpipe=$(mktemp -ut prefix_stdout.pipe)
 	mkfifo "${prefixpipe}"
-	if [ "${USE_TIMESTAMP:-1}" -eq 1 ] && \
-	    command -v timestamp >/dev/null; then
-		# Let timestamp handle showing the proper time.
-		prefix="$(NO_ELAPSED_IN_MSG=1 msg "${extra}:")"
-		TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
-		    timestamp -1 "${prefix}" \
-		    -P "poudriere: ${PROC_TITLE} (prefix_stdout)" \
-		    < "${prefixpipe}" &
-	else
-		(
+	(
+		trap - INT
+		if [ "${USE_TIMESTAMP:-1}" -eq 1 ] && \
+		    command -v timestamp >/dev/null; then
+			# Let timestamp handle showing the proper time.
+			prefix="$(NO_ELAPSED_IN_MSG=1 msg "${extra}:")"
+			TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
+			    timestamp -1 "${prefix}" \
+			    -P "poudriere: ${PROC_TITLE} (prefix_stdout)"
+		else
 			set +x
 			setproctitle "${PROC_TITLE} (prefix_stdout)"
 			while mapfile_read_loop_redir line; do
 				msg "${extra}: ${line}"
 			done
-		) < ${prefixpipe} &
-	fi
+		fi
+	) < "${prefixpipe}" &
 	prefixpid=$!
 	exec 3>&1
 	exec > "${prefixpipe}"
@@ -1549,11 +1550,11 @@ prefix_output() {
 	prefix_stderr="$(NO_ELAPSED_IN_MSG=1 msg_warn "${extra}:" 2>&1)"
 
 	TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
+	    spawn \
 	    timestamp \
 	    -1 "${prefix_stdout}" -o "${prefixpipe_stdout}" \
 	    -2 "${prefix_stderr}" -e "${prefixpipe_stderr}" \
-	    -P "poudriere: ${PROC_TITLE} (prefix_output)" \
-	    &
+	    -P "poudriere: ${PROC_TITLE} (prefix_output)"
 
 	prefixpid=$!
 	exec 3>&1
