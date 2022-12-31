@@ -21,12 +21,14 @@ test_output() {
 	return "${ret}"
 }
 
-OUTPUT=$(mktemp -ut poudriere)
-ret=0
-
 # Test twice. With and Without timestamp util.
-USE_TIMESTAMP=0
-until [ "${USE_TIMESTAMP}" -eq 2 ]; do
+set_test_contexts - '' '' <<-EOF
+USE_TIMESTAMP 0 1
+EOF
+
+while get_test_context; do
+	OUTPUT=$(mktemp -ut poudriere)
+	ret=0
 
 	if [ "${USE_TIMESTAMP}" -eq 1 ]; then
 		TS="[00:00:00] "
@@ -254,11 +256,9 @@ until [ "${USE_TIMESTAMP}" -eq 2 ]; do
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr+prefix_stdout/5 stderr output should match"
 	) || ret=10
-
-	USE_TIMESTAMP=$((USE_TIMESTAMP + 1))
+	rm -f "${OUTPUT}" "${OUTPUT}.stderr" "${OUTPUT}.expected"
 done
 
-rm "${OUTPUT}" "${OUTPUT}.stderr" "${OUTPUT}.expected"
 if ! have_pipefail && [ ${ret} -ne 0 ]; then
 	exit 77 # SKIP
 fi
