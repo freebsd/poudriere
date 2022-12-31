@@ -9548,15 +9548,6 @@ set) ;;
 	;;
 esac
 
-if [ "${IN_TEST:-0}" -eq 0 ]; then
-	trap sigpipe_handler PIPE
-	trap sigint_handler INT
-	trap sighup_handler HUP
-	trap sigterm_handler TERM
-	trap exit_handler EXIT
-	enable_siginfo_handler
-fi
-
 # Test if zpool exists
 case "${NO_ZFS:+set}" in
 set) ;;
@@ -9929,4 +9920,13 @@ EPOCH_START=$(clock -epoch)
 
 if [ -e /nonexistent ]; then
 	err 1 "You may not have a /nonexistent.  Please remove it."
+fi
+
+if [ "${IN_TEST:-0}" -eq 0 ]; then
+	trap sigpipe_handler PIPE
+	trap sigint_handler INT
+	trap sighup_handler HUP
+	trap sigterm_handler TERM
+	trap exit_handler EXIT
+	enable_siginfo_handler
 fi
