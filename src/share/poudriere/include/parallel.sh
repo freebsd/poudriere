@@ -450,7 +450,7 @@ spawn() {
 }
 
 spawn_protected() {
-	_spawn_wrapper "$@" &
+	spawn "$@"
 	madvise_protect $! || :
 }
 
