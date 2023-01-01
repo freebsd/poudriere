@@ -1028,15 +1028,19 @@ _assert_bulk_queue_and_stats() {
 	### Now do tests against the output of the bulk run. ###
 
 	# Assert the IGNOREd ports are tracked in .poudriere.ports.ignored
+	echo >&2
 	stack_lineinfo assert_ignored "${EXPECTED_IGNORED-}"
 
 	# Assert that SKIPPED ports are right
+	echo >&2
 	stack_lineinfo assert_skipped "${EXPECTED_SKIPPED-}"
 
 	# Assert that all expected dependencies are in poudriere.ports.queued
 	# (since they do not exist yet)
+	echo >&2
 	stack_lineinfo assert_queued "" "${EXPECTED_QUEUED-}"
 
+	echo >&2
 	case "${EXPECTED_LISTED+set}" in
 	set)
 		stack_lineinfo assert_metadata "listed" "${EXPECTED_LISTED}"
@@ -1051,11 +1055,13 @@ _assert_bulk_queue_and_stats() {
 	esac
 	case "${EXPECTED_TOBUILD+set}" in
 	set)
+		echo >&2
 		stack_lineinfo assert_tobuild "${EXPECTED_TOBUILD?}"
 		;;
 	esac
 
 	# Assert stats counts are right
+	echo >&2
 	stack_lineinfo assert_counts
 }
 alias assert_bulk_queue_and_stats='stack_lineinfo _assert_bulk_queue_and_stats '
