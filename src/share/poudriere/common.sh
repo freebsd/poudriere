@@ -6911,6 +6911,25 @@ lock_acquire() {
 	_lock_acquire "${quiet}" "${lockname}" "${lockpath}" "${waittime}"
 }
 
+# while locked tmp NAME timeout; do <locked code>; done
+locked() {
+	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] || eargs locked tmp_var lockname \
+	    '[waittime]'
+	local l_tmp_var="$1"
+	local lockname="$2"
+	local waittime="${3-}"
+
+	if issetvar "${l_tmp_var}"; then
+		lock_release "${lockname}"
+		unset "${l_tmp_var}"
+		return 1
+	fi
+	setvar "${l_tmp_var}" "1"
+	until lock_acquire "${lockname}" "${waittime}"; do
+		sleep 1
+	done
+}
+
 # Acquire system wide lock
 slock_acquire() {
 	[ $# -eq 1 -o $# -eq 2 -o $# -eq 3 ] ||
@@ -6935,6 +6954,25 @@ slock_acquire() {
 	    return
 	# This assumes SHARED_LOCK_DIR isn't overridden by caller
 	SLOCKS="${SLOCKS:+${SLOCKS} }${lockname}"
+}
+
+# while slocked tmp NAME timeout; do <locked code>; done
+slocked() {
+	[ "$#" -eq 2 ] || [ "$#" -eq 3 ] || eargs slocked tmp_var lockname \
+	    '[waittime]'
+	local s_tmp_var="$1"
+	local lockname="$2"
+	local waittime="${3-}"
+
+	if issetvar "${s_tmp_var}"; then
+		slock_release "${lockname}"
+		unset "${s_tmp_var}"
+		return 1
+	fi
+	setvar "${s_tmp_var}" "1"
+	until slock_acquire "${lockname}" "${waittime}"; do
+		sleep 1
+	done
 }
 
 _lock_release() {
