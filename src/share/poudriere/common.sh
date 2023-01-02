@@ -3494,7 +3494,7 @@ jail_stop() {
 }
 
 jail_cleanup() {
-	local wait_pids pid pidfile
+	local pid pidfile
 
 	if [ -n "${CLEANED_UP-}" ]; then
 		return 0
@@ -3520,9 +3520,7 @@ jail_cleanup() {
 				esac
 				read pid < "${pidfile}"
 				kill_job 1 "${pid}" || :
-				wait_pids="${wait_pids:+${wait_pids} }${pid}"
 			done
-			_wait ${wait_pids-} || :
 		fi
 
 		jail_stop
