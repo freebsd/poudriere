@@ -1076,7 +1076,6 @@ prefix_stderr() {
 
 	exec 2>&4 4>&-
 	timed_wait_and_kill 5 ${prefixpid} 2>/dev/null || :
-	_wait ${prefixpid} || :
 
 	return ${ret}
 }
@@ -1121,7 +1120,6 @@ prefix_stdout() {
 
 	exec 1>&3 3>&-
 	timed_wait_and_kill 5 ${prefixpid} 2>/dev/null || :
-	_wait ${prefixpid} || :
 
 	return ${ret}
 }
@@ -1129,7 +1127,7 @@ prefix_stdout() {
 prefix_output() {
 	local extra="$1"
 	local prefix_stdout prefix_stderr prefixpipe_stdout prefixpipe_stderr
-	local ret MSG_NESTED MSG_NESTED_STDERR
+	local ret MSG_NESTED MSG_NESTED_STDERR prefixpid
 	local - errexit
 	shift 1
 
@@ -1174,7 +1172,6 @@ prefix_output() {
 
 	exec 1>&3 3>&- 2>&4 4>&-
 	timed_wait_and_kill 5 ${prefixpid} 2>/dev/null || :
-	_wait ${prefixpid} || :
 
 	return ${ret}
 }
