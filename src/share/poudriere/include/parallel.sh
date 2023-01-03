@@ -24,22 +24,29 @@
 # SUCH DAMAGE.
 
 _wait() {
-	# Workaround 'wait' builtin possibly returning early due to signals
-	# by using 'pwait' to wait(2) and then 'wait' to collect return code
-	local ret=0 pid
+	local wret ret pid
 
 	if [ "$#" -eq 0 ]; then
 		return 0
 	fi
 
-	{
-		pwait "$@" || :
-		for pid in "$@"; do
-			wait ${pid} || ret=$?
+	ret=0
+	for pid in "$@"; do
+		while :; do
+			wret=0
+			wait "${pid}" || wret="$?"
+			case "${wret}" in
+			157) # SIGINFO [EINTR]
+				continue
+				;;
+			0) ;;
+			*) ret="${wret}" ;;
+			esac
+			break
 		done
-	} 2>/dev/null
+	done
 
-	return ${ret}
+	return "${ret}"
 }
 
 timed_wait_and_kill() {
@@ -56,7 +63,7 @@ timed_wait_and_kill() {
 		kill_and_wait 1 "${pids}" || ret=$?
 	else
 		# Nothing running, collect their status.
-		wait ${pids} 2>/dev/null || ret=$?
+		_wait ${pids} 2>/dev/null || ret=$?
 	fi
 
 	return ${ret}
@@ -103,7 +110,7 @@ kill_and_wait() {
 			_wait ${pids} || ret=$?
 		else
 			# Nothing running, collect status directly.
-			wait ${pids} || ret=$?
+			_wait ${pids} || ret=$?
 		fi
 	} 2>/dev/null
 
@@ -319,7 +326,7 @@ nohang() {
 		n=
 		read_blocking -t "${read_timeout}" n <&8 || :
 		if [ "${n}" = "done" ]; then
-			_wait $childpid || ret=1
+			_wait "${childpid}" || ret=1
 			break
 		fi
 
