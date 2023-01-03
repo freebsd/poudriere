@@ -498,6 +498,8 @@ trap_pop() {
 
 # Start a "critical section", disable INT/TERM while in here and delay until
 # critical_end is called.
+# Unfortunately this can not block signals to our commands. The builtin
+# uses sigprocmask(3) which does.
 critical_start() {
 	local -; set +x
 	local saved_int saved_term

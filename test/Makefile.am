@@ -41,6 +41,7 @@ TESTS=\
 	gsub.sh \
 	globmatch.sh \
 	hash_basic.sh \
+	jobs.sh \
 	hash_stack.sh \
 	list.sh \
 	locks.sh \

@@ -490,7 +490,7 @@ cleanup() {
 		EXITVAL=$((EXITVAL + 1))
 		;;
 	esac
-	kill_jobs
+	kill_all_jobs 20
 	if [ ${_DID_TMPDIR:-0} -eq 1 ] && \
 	    [ "${TMPDIR%%/poudriere/test/*}" != "${TMPDIR}" ]; then
 		if [ -d "${TMPDIR}" ] && ! dirempty "${TMPDIR}"; then

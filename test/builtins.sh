@@ -10,6 +10,8 @@ for cmd in $(cat ${THISDIR}/../src/poudriere-sh/builtins-poudriere.def |
 	case ${cmd} in
 	# Overridden to make cleanup simpler
 	mktemp|_mktemp) continue ;;
+	# Overridden to capture some errors
+	pwait) continue ;;
 	# Overridden for rm -rf / safety
 	rm) continue ;;
 	# Overridden to add Poudriere into the title

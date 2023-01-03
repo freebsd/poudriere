@@ -162,7 +162,7 @@ if mapfile_builtin; then
 	assert_not 0 $? "mapfile_read on a closed handle should not succeed"
 	assert '' "$line" "mapfile_read on a closed handle should not modify line"
 
-	kill_jobs
+	kill_all_jobs || :
 	rm -f "${TMP}" "${TMP2}"
 }
 

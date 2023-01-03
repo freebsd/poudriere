@@ -478,7 +478,7 @@ TESTS = array.sh builtins.sh cache.sh cache_pipe.sh \
 	distclean-badorigin.sh distclean-overlays.sh \
 	distclean-smoke.sh do_clone.sh encode_args.sh err.sh \
 	err_catch.sh err_catch_framework.sh err_pipe_delayed.sh \
-	getpid.sh getvar.sh gsub.sh globmatch.sh hash_basic.sh \
+	getpid.sh getvar.sh gsub.sh globmatch.sh hash_basic.sh jobs.sh \
 	hash_stack.sh list.sh locks.sh locks_critical_section.sh \
 	locks_critical_section_nested.sh locked_mkdir.sh \
 	locked_mkdir_waiters.sh locked_mkdir_waiters_kill.sh \
@@ -925,6 +925,13 @@ globmatch.sh.log: globmatch.sh
 hash_basic.sh.log: hash_basic.sh
 	@p='hash_basic.sh'; \
 	b='hash_basic.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+jobs.sh.log: jobs.sh
+	@p='jobs.sh'; \
+	b='jobs.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
