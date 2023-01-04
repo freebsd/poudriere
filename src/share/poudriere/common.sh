@@ -153,7 +153,14 @@ _err() {
 	esac
 	case "${exit_status}" in
 	0) msg "${msg}" ;;
-	*) msg_error "${lineinfo:+${lineinfo}:}${msg}" ;;
+	*)
+		case "${USE_DEBUG:-no}" in
+		yes)
+			lineinfo="${COLOR_ERROR}[$(getpid)${PROC_TITLE:+:${PROC_TITLE}}]${lineinfo:+ ${lineinfo}}${COLOR_RESET}"
+			;;
+		esac
+		msg_error "${lineinfo:+${lineinfo}:}${msg}"
+		;;
 	esac || :
 	case "${ERRORS_ARE_PIPE_FATAL:+set}${PARALLEL_CHILD:+set}" in
 	*set*) set_pipe_fatal_error ;;

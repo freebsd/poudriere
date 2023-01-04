@@ -11,6 +11,8 @@ TIMESTAMP_LOGS=no
 POUDRIERE_BUILD_TYPE=bulk
 MASTERNAME=$(echo "${SCRIPTPATH}" | tr '[./]' '_')_logging
 NO_ELAPSED_IN_MSG=1
+# Don't show $(getpid) in error msgs
+USE_DEBUG=no
 
 logging_setup() {
 	unset tpid
