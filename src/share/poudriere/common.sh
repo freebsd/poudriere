@@ -998,16 +998,19 @@ log_start() {
 				# Otherwise need setbuf -o L here due to
 				# stdout not writing to terminal but to tee.
 				TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
+				    _spawn_wrapper \
 				    timestamp -u < ${logfile}.pipe | \
 				    tee ${logfile} &
 			else
-				tee ${logfile} < ${logfile}.pipe &
+				_spawn_wrapper \
+				    tee ${logfile} < ${logfile}.pipe &
 			fi
 		elif [ "${TIMESTAMP_LOGS}" = "yes" ]; then
 			TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
+			    _spawn_wrapper \
 			    timestamp > ${logfile} < ${logfile}.pipe &
 		fi
-		tpid=$!
+		get_job_id "$!" log_start_job
 		exec > ${logfile}.pipe 2>&1
 
 		# Remove fifo pipe file right away to avoid orphaning it.
@@ -1016,7 +1019,7 @@ log_start() {
 		unlink ${logfile}.pipe
 	else
 		# Send output directly to file.
-		tpid=
+		unset log_start_job
 		exec > ${logfile} 2>&1
 	fi
 }
@@ -1186,11 +1189,10 @@ log_stop() {
 		unset OUTPUT_REDIRECTED_STDOUT
 		unset OUTPUT_REDIRECTED_STDERR
 	fi
-	case "${tpid:+set}" in
+	case "${log_start_job:+set}" in
 	set)
-		# Give tee a moment to flush buffers
-		timed_wait_and_kill 5 $tpid 2>/dev/null || :
-		unset tpid
+		timed_wait_and_kill_job 5 "%${log_start_job}"
+		unset log_start_job
 		;;
 	esac
 }
@@ -5329,16 +5331,16 @@ stop_builders() {
 job_done() {
 	[ $# -eq 1 ] || eargs job_done j
 	local j="$1"
-	local pkgname status pid ret
+	local pkgname status jobno ret
 
 	# Failure to find this indicates the job is already done.
 	hash_remove builder_pkgnames "${j}" pkgname || return 1
-	hash_remove builder_pids "${j}" pid
+	hash_remove builder_jobs "${j}" jobno || return 1
 	unlink "${MASTER_DATADIR:?}/var/run/${j}.pid"
 	_bget status ${j} status
 	pkgqueue_job_done "${pkgname}"
 	ret=0
-	_wait "${pid}" || ret="$?"
+	_wait "${jobno}" || ret="$?"
 	case "${status}:" in
 	"done:"*)
 		dev_assert 0 "${ret}"
@@ -5359,7 +5361,9 @@ build_queue() {
 	local jname="$1"
 	local ptname="$2"
 	local setname="$3"
-	local j jobid pid pkgname builders_active queue_empty
+	# jobid is analgous to MY_JOB_ID: builder number
+	# jobno is from $(jobs)
+	local j jobid jobno pid pkgname builders_active queue_empty
 	local builders_idle idle_only timeout log porttesting
 
 	_log_path log
@@ -5379,12 +5383,12 @@ build_queue() {
 		builders_idle=0
 		timeout=30
 		for j in ${JOBS}; do
-			# Check if pid is alive. A job will have no PID if it
+			# Check if job is alive. A job will have no PID if it
 			# is idle. idle_only=1 is a quick check for giving
 			# new work only to idle workers.
-			if hash_get builder_pids "${j}" pid; then
+			if hash_get builder_jobs "${j}" jobno; then
 				if [ ${idle_only} -eq 1 ] ||
-				    kill -0 ${pid} 2>/dev/null; then
+				    kill -0 "${jobno}" 2>/dev/null; then
 					# Job still active or skipping busy.
 					builders_active=1
 					continue
@@ -5423,9 +5427,10 @@ build_queue() {
 			    maybe_start_builder "${j}" "${jname}" \
 			        "${ptname}" "${setname}" \
 			    build_pkg "${pkgname}" "${porttesting}"
-			pid=$!
+			pid="$!"
+			jobno="%${spawn_jobid:?}"
 			echo "${pid}" > "${MASTER_DATADIR:?}/var/run/${j}.pid"
-			hash_set builder_pids "${j}" "${pid}"
+			hash_set builder_jobs "${j}" "${jobno}"
 			hash_set builder_pkgnames "${j}" "${pkgname}"
 		done
 

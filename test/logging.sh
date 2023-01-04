@@ -15,7 +15,7 @@ NO_ELAPSED_IN_MSG=1
 USE_DEBUG=no
 
 logging_setup() {
-	unset tpid
+	unset tpid log_start_job
 	unset expect_pids
 	TIMESTAMP_LOGS=no
 	expect_pids=0
@@ -88,10 +88,10 @@ while get_test_context; do
 	PORT_NAME="port-${TEST_CONTEXT_NUM}"
 	assert_ret 0 log_start ${prefix:+-P "port:"} "${PORT_NAME}" ${PORT_TEE}
 	if [ "${expect_pids_port}" -eq 1 ]; then
-		assert_not "null" "${tpid-null}"
-		assert_ret 0 check_pids "${tpid}"
+		assert_not "null" "${log_start_job-null}"
+		assert_ret 0 check_pids "${log_start_job}"
 	else
-		assert "" "${tpid-null}"
+		assert "null" "${log_start_job-null}"
 	fi
 	_logfile port "${PORT_NAME}"
 	assert_ret 0 [ -r "${port}" ]
@@ -109,6 +109,8 @@ while get_test_context; do
 	redirect_to_bulk echo console-port-test1
 	redirect_to_bulk echo console-port-test1-err >&2
 	if [ "${expect_pids_port}" -eq 1 ]; then
+		tpid="$(jobid "%${log_start_job:?}")"
+		assert 0 "$?"
 		assert_ret 0 check_pids "${tpid}"
 	fi
 	echo "port-test2${colored}"
@@ -121,6 +123,8 @@ while get_test_context; do
 	MY_JOBID=${my_job_id} msg_error "job error-post from port for port stderr and bulk stdout"
 	msg_error "error-post from port only for bulk stderr"
 	if [ "${expect_pids_port}" -eq 1 ]; then
+		tpid="$(jobid "%${log_start_job:?}")"
+		assert 0 "$?"
 		assert_ret 0 check_pids "${tpid}"
 	fi
 	assert_ret 0 log_stop "${PORT_NAME}"

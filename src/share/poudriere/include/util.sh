@@ -908,8 +908,8 @@ _pipe_hold_child() {
 
 # This keeps the given fifos open to avoid EOF in writers.
 pipe_hold() {
-	[ $# -ge 3 ] || eargs pipe_hold var_return_pid watch_pid fifos...
-	local var_return_pid="$1"
+	[ $# -ge 3 ] || eargs pipe_hold var_return_jobid watch_pid fifos...
+	local var_return_jobid="$1"
 	local watch_pid="$2"
 	shift 2
 	local sync_fifo sync ret
@@ -920,7 +920,7 @@ pipe_hold() {
 	mkfifo "${sync_fifo}"
 
 	spawn_job_protected _pipe_hold_child "${sync_fifo}" "${watch_pid}" "$@"
-	setvar "${var_return_pid}" "$!"
+	setvar "${var_return_jobid}" "${spawn_jobid}"
 	read_pipe "${sync_fifo}" sync || ret="$?"
 	case "${sync}" in
 	ready) ;;
@@ -1273,8 +1273,7 @@ pipe_func() {
 		mkfifo "${_mf_fifo}"
 		hash_set pipe_func_fifo "${_mf_key}" "${_mf_fifo}"
 		spawn_job _pipe_func_job "${_mf_fifo}" "$@"
-		_mf_job="$!"
-		hash_set pipe_func_job "${_mf_key}" "${_mf_job}"
+		hash_set pipe_func_job "${_mf_key}" "${spawn_jobid}"
 		mapfile _mf_handle "${_mf_fifo}" "re" ||
 		    err "${EX_SOFTWARE}" "pipe_func: Failed to open ${_mf_fifo}"
 		hash_set pipe_func_handle "${_mf_key}" "${_mf_handle}"
@@ -1295,7 +1294,7 @@ pipe_func() {
 		unlink "${_mf_fifo}"
 		hash_remove pipe_func_job  "${_mf_key}" _mf_job ||
 		    err "${EX_SOFTWARE}" "pipe_func: No stored job for ${_mf_key}"
-		kill_job 1 "${_mf_job}" || _mf_ret="$?"
+		kill_job 1 "%${_mf_job}" || _mf_ret="$?"
 		unset "${_mf_handle_var}"
 		return "${_mf_ret}"
 	fi
@@ -1441,14 +1440,16 @@ prefix_stderr_quick() {
 prefix_stderr() {
 	local extra="$1"
 	shift 1
-	local prefixpipe prefixpid ret
+	local prefixpipe prefix_job ret
 	local prefix MSG_NESTED_STDERR
 	local - errexit
 
 	prefixpipe=$(mktemp -ut prefix_stderr.pipe)
 	mkfifo "${prefixpipe}"
+	set -m
 	(
-		trap - INT
+		_spawn_wrapper :
+
 		if [ "${USE_TIMESTAMP:-1}" -eq 1 ] && \
 		    command -v timestamp >/dev/null; then
 			# Let timestamp handle showing the proper time.
@@ -1465,7 +1466,8 @@ prefix_stderr() {
 			done
 		fi
 	) < "${prefixpipe}" &
-	prefixpid=$!
+	set +m
+	get_job_id "$!" prefix_job
 	exec 4>&2
 	exec 2> "${prefixpipe}"
 	unlink "${prefixpipe}"
@@ -1480,7 +1482,7 @@ prefix_stderr() {
 	fi
 
 	exec 2>&4 4>&-
-	timed_wait_and_kill 5 ${prefixpid} 2>/dev/null || :
+	timed_wait_and_kill_job 5 "%${prefix_job}" || :
 
 	return ${ret}
 }
@@ -1488,14 +1490,15 @@ prefix_stderr() {
 prefix_stdout() {
 	local extra="$1"
 	shift 1
-	local prefixpipe prefixpid ret
+	local prefixpipe prefix_job ret
 	local prefix MSG_NESTED
 	local - errexit
 
 	prefixpipe=$(mktemp -ut prefix_stdout.pipe)
 	mkfifo "${prefixpipe}"
+	set -m
 	(
-		trap - INT
+		_spawn_wrapper :
 		if [ "${USE_TIMESTAMP:-1}" -eq 1 ] && \
 		    command -v timestamp >/dev/null; then
 			# Let timestamp handle showing the proper time.
@@ -1511,7 +1514,8 @@ prefix_stdout() {
 			done
 		fi
 	) < "${prefixpipe}" &
-	prefixpid=$!
+	set +m
+	get_job_id "$!" prefix_job
 	exec 3>&1
 	exec > "${prefixpipe}"
 	unlink "${prefixpipe}"
@@ -1526,7 +1530,7 @@ prefix_stdout() {
 	fi
 
 	exec 1>&3 3>&-
-	timed_wait_and_kill 5 ${prefixpid} 2>/dev/null || :
+	timed_wait_and_kill_job 5 "%${prefix_job}" || :
 
 	return ${ret}
 }
@@ -1534,7 +1538,7 @@ prefix_stdout() {
 prefix_output() {
 	local extra="$1"
 	local prefix_stdout prefix_stderr prefixpipe_stdout prefixpipe_stderr
-	local ret MSG_NESTED MSG_NESTED_STDERR prefixpid
+	local ret MSG_NESTED MSG_NESTED_STDERR prefix_job
 	local - errexit
 	shift 1
 
@@ -1555,13 +1559,12 @@ prefix_output() {
 	prefix_stderr="$(NO_ELAPSED_IN_MSG=1 msg_warn "${extra}:" 2>&1)"
 
 	TIME_START="${TIME_START_JOB:-${TIME_START:-0}}" \
-	    spawn \
+	    spawn_job \
 	    timestamp \
 	    -1 "${prefix_stdout}" -o "${prefixpipe_stdout}" \
 	    -2 "${prefix_stderr}" -e "${prefixpipe_stderr}" \
 	    -P "poudriere: ${PROC_TITLE} (prefix_output)"
-
-	prefixpid=$!
+	prefix_job="${spawn_jobid}"
 	exec 3>&1
 	exec > "${prefixpipe_stdout}"
 	unlink "${prefixpipe_stdout}"
@@ -1580,7 +1583,7 @@ prefix_output() {
 	fi
 
 	exec 1>&3 3>&- 2>&4 4>&-
-	timed_wait_and_kill 5 ${prefixpid} 2>/dev/null || :
+	timed_wait_and_kill_job 5 "%${prefix_job}" || :
 
 	return ${ret}
 }
