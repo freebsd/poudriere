@@ -713,6 +713,9 @@ jail_has_processes() {
 }
 
 jkill_wait() {
+	case "${INJAIL_HOST:-0}" in
+	1) err "${EX_SOFTWARE}" "jkill_wait: kill -9 -1 with INJAIL_HOST=${INJAIL_HOST}" ;;
+	esac
 	injail kill -9 -1 2>/dev/null || return 0
 	while jail_has_processes; do
 		sleep 1
