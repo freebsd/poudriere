@@ -56,15 +56,18 @@ timed_wait_and_kill() {
 	local status ret
 
 	ret=0
-
 	# Give children $time seconds to exit and then force kill
-	if ! timed_pwait ${time} "${pids}"; then
+	timed_pwait ${time} "${pids}" || ret="$?"
+	case "${ret}" in
+	124)
 		# Something still running, be more dramatic.
 		kill_and_wait 1 "${pids}" || ret=$?
-	else
+		;;
+	*)
 		# Nothing running, collect their status.
 		_wait ${pids} 2>/dev/null || ret=$?
-	fi
+		;;
+	esac
 
 	return ${ret}
 }
@@ -82,7 +85,7 @@ timed_pwait() {
 	pwait -t ${time} ${pids} || status=$?
 	if [ ${status} -eq 124 ]; then
 		# Timeout reached, something still running.
-		return 1
+		return 124
 	elif [ ${status} -gt 0 ]; then
 		# XXX: Some signal interrupted the timeout check or some
 		# other error was encountered. Consider it a failure.
@@ -104,14 +107,18 @@ kill_and_wait() {
 		kill ${pids} || :
 
 		# Wait for the pids. Non-zero status means something is still running.
-		if ! timed_pwait ${time} "${pids}"; then
+		timed_pwait ${time} "${pids}" || ret="$?"
+		case "${ret}" in
+		124)
 			# Kill remaining children instead of waiting on them
 			kill -9 ${pids} || :
 			_wait ${pids} || ret=$?
-		else
+			;;
+		*)
 			# Nothing running, collect status directly.
 			_wait ${pids} || ret=$?
-		fi
+			;;
+		esac
 	} 2>/dev/null
 
 	return ${ret}
@@ -134,11 +141,19 @@ kill_job() {
 			return ${ret}
 		fi
 
-		timed_pwait ${timeout} ${pgid} || :
-		# Kill remaining children instead of waiting on them
-		kill -9 -- -${pgid} || :
 		ret=0
-		_wait ${pgid} || ret=$?
+		timed_pwait ${timeout} ${pgid} || ret="$?"
+		case "${ret}" in
+		124)
+			# Kill remaining children instead of waiting on them
+			kill -9 -- -${pgid} || :
+			_pwait "${pgid}" || ret="$?"
+			;;
+		*)
+			# Nothing running, collect status directly.
+			_wait "${pgid}" || ret="$?"
+			;;
+		esac
 	} 2>/dev/null
 	[ ${ret} -ne 0 ] && msg_dev "Job ${pgid} exited ${ret}"
 	return ${ret}
