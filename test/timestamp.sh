@@ -5,8 +5,6 @@ trap '' SIGINFO
 STDOUT=$(mktemp -ut poudriere)
 STDERR=$(mktemp -ut poudriere)
 
-ret=0
-
 (
 	timestamp -T -1 stdout -2 stderr \
 	    sh -c "echo stuff; echo errors>&2; echo more; echo 'more errors' >&2" \
@@ -24,7 +22,8 @@ ret=0
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-) || ret=1
+)
+assert 0 "$?"
 
 # Prefix changing
 (
@@ -58,7 +57,8 @@ ret=0
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-) || ret=1
+)
+assert 0 "$?"
 
 # Prefix changing
 (
@@ -90,7 +90,8 @@ ret=0
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-) || ret=1
+)
+assert 0 "$?"
 
 (
 	TIME_START=$(clock -monotonic -nsec)
@@ -110,7 +111,8 @@ ret=0
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-) || ret=1
+)
+assert 0 "$?"
 
 (
 	TIME_START=$(clock -monotonic -nsec)
@@ -130,7 +132,8 @@ ret=0
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-) || ret=1
+)
+assert 0 "$?"
 
 (
 	TIME_START=$(clock -monotonic -nsec)
@@ -151,7 +154,8 @@ ret=0
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-) || ret=1
+)
+assert 0 "$?"
 
 # durations
 (
@@ -174,9 +178,7 @@ ret=0
 	EOF
 	diff -u "${STDERR}.expected" "${STDERR}"
 	assert 0 $? "$0:${LINENO}: stderr output mismatch"
-) || ret=1
-
-assert 0 "${ret}"
+)
+assert 0 "$?"
 
 rm -f ${STDOUT}* ${STDERR}*
-exit ${ret:-0}

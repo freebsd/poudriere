@@ -28,7 +28,6 @@ EOF
 
 while get_test_context; do
 	OUTPUT=$(mktemp -ut poudriere)
-	ret=0
 
 	if [ "${USE_TIMESTAMP}" -eq 1 ]; then
 		TS="[00:00:00] "
@@ -54,7 +53,8 @@ while get_test_context; do
 		EOF
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr_quick stderr output should match"
-	) || ret=1
+	)
+	assert 0 "$?"
 
 	# Basic output test with prefix_stdout
 	(
@@ -76,7 +76,8 @@ while get_test_context; do
 		EOF
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stdout stderr output should match"
-	) || ret=2
+	)
+	assert 0 "$?"
 
 	# Basic output test with prefix_stderr
 	(
@@ -98,7 +99,8 @@ while get_test_context; do
 		EOF
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr stderr output should match"
-	) || ret=3
+	)
+	assert 0 "$?"
 
 	# Basic output test with prefix_output
 	(
@@ -120,7 +122,8 @@ while get_test_context; do
 		EOF
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_output stderr output should match"
-	) || ret=4
+	)
+	assert 0 "$?"
 
 	# Basic output test with chaining prefix_stderr and prefix_stdout
 	(
@@ -142,7 +145,8 @@ while get_test_context; do
 		EOF
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr+prefix_stdout stderr output should match"
-	) || ret=5
+	)
+	assert 0 "$?"
 
 	# Now test exit statuses (pipefail and such)
 
@@ -167,7 +171,8 @@ while get_test_context; do
 		EOF
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr_quick/5 stderr output should match"
-	) || ret=6
+	)
+	assert 0 "$?"
 
 	# pipefail test with prefix_stdout
 	(
@@ -189,7 +194,8 @@ while get_test_context; do
 		EOF
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stdout/5 stderr output should match"
-	) || ret=7
+	)
+	assert 0 "$?"
 
 	# pipefail test with prefix_stderr
 	(
@@ -211,7 +217,8 @@ while get_test_context; do
 		EOF
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr/5 stderr output should match"
-	) || ret=8
+	)
+	assert 0 "$?"
 
 	# pipefail test with prefix_output
 	(
@@ -233,7 +240,8 @@ while get_test_context; do
 		EOF
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_output/5 stderr output should match"
-	) || ret=9
+	)
+	assert 0 "$?"
 
 	# pipefail test with chaining prefix_stderr and prefix_stdout
 	(
@@ -255,11 +263,7 @@ while get_test_context; do
 		EOF
 		diff -u "${OUTPUT}.expected" "${OUTPUT}.stderr"
 		assert 0 $? "ts=${USE_TIMESTAMP} prefix_stderr+prefix_stdout/5 stderr output should match"
-	) || ret=10
+	)
+	assert 0 "$?"
 	rm -f "${OUTPUT}" "${OUTPUT}.stderr" "${OUTPUT}.expected"
 done
-
-if ! have_pipefail && [ ${ret} -ne 0 ]; then
-	exit 77 # SKIP
-fi
-assert 0 "${ret}"
