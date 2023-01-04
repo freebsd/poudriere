@@ -3504,8 +3504,12 @@ jail_cleanup() {
 
 		jail_stop
 
+		case "${PACKAGES:+set}" in
+		set)
+			rm -rf "${PACKAGES:?}/.npkg"
+			;;
+		esac
 		rm -rf \
-		    ${PACKAGES:?}/.npkg \
 		    ${POUDRIERE_DATA:?}/packages/${MASTERNAME:?}/.latest/.npkg \
 		    2>/dev/null || :
 
