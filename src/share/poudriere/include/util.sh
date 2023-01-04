@@ -540,11 +540,11 @@ critical_end() {
 	# Send the signal to our real PID, not the rootshell.
 	if [ ${_crit_caught_int} -eq 1 -a ${_CRITSNEST} -eq 0 ]; then
 		_crit_caught_int=0
-		kill -INT $(getpid)
+		raise INT
 	fi
 	if [ ${_crit_caught_term} -eq 1 -a ${_CRITSNEST} -eq 0 ]; then
 		_crit_caught_term=0
-		kill -TERM $(getpid)
+		raise TERM
 	fi
 }
 ;;
@@ -877,6 +877,10 @@ write_pipe() {
 	return "${ret}"
 }
 
+_pipe_hold_exit() {
+	rm -f "${PIPE_HOLD_SYNC_FIFO:?}"
+}
+
 _pipe_hold_child() {
 	[ $# -ge 3 ] || eargs _pipe_hold_child watch_pid sync_fifo fifos...
 	local sync_fifo="$1"
@@ -885,9 +889,8 @@ _pipe_hold_child() {
 	local -; set +x
 	local ret
 
-	trap "rm -f '${sync_fifo}'" EXIT
-	trap exit TERM INT HUP PIPE
-
+	PIPE_HOLD_SYNC_FIFO="${sync_fifo}"
+	setup_traps _pipe_hold_exit
 	setproctitle "pipe_hold($*)"
 	exec 3> "${sync_fifo}"
 	case "$#" in

@@ -44,15 +44,14 @@ queue_reader_main() {
 	# to the watchdir. This is done so non-privileged users
 	# do not need write access to the real queue dir
 	umask 0111 # Create rw-rw-rw
-	trap exit TERM
-	trap queue_reader_cleanup EXIT
+	setup_traps queue_reader_cleanup
 	nc -klU ${QUEUE_SOCKET} | while read name command; do
 		echo "${command}" > ${WATCHDIR}/${name}
 	done
 }
 
 queue_reader_cleanup() {
-	rm -f ${QUEUE_SOCKET}
+	rm -f "${QUEUE_SOCKET}"
 }
 
 

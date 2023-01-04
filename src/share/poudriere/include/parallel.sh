@@ -830,3 +830,71 @@ coprocess_stop() {
 	esac
 	return "${ret}"
 }
+
+raise() {
+	local sig="$1"
+
+	kill -"${sig}" "$(getpid)"
+}
+
+sig_handler() {
+	# Avoid set -x output until we ensure proper stderr.
+	{
+		unset IFS
+		set +e +u
+		# Just exit if another TERM is received
+		trap - TERM
+		trap '' PIPE INT INFO HUP
+		case "${SHFLAGS-$-}${SETX_EXIT:-0}" in
+		*x*1) ;;
+		*) local -; set +x ;;
+		esac
+		redirect_to_real_tty exec
+	} 2>/dev/null
+
+	local sig="$1"
+	local exit_handler="$2"
+
+	trap - EXIT
+	case "${USE_DEBUG:-no}.$$" in
+	yes.*|"no.$(getpid)")
+		msg "[$(getpid)${PROC_TITLE:+:${PROC_TITLE}}] Signal ${sig} caught" >&2
+		;;
+	esac
+	# return ignored since we will exit on signal
+	"${exit_handler}" || :
+	trap - "${sig}"
+	raise "${sig}"
+}
+
+# Take "return" value from real exit handler and exit with it.
+exit_return() {
+	# Avoid set -x output until we ensure proper stderr.
+	{
+		local ret="$?"
+		unset IFS
+		set +e +u
+		trap '' PIPE INT INFO HUP TERM
+		case "${SHFLAGS-$-}${SETX_EXIT:-0}" in
+		*x*1) ;;
+		*) local -; set +x ;;
+		esac
+		redirect_to_real_tty exec
+	} 2>/dev/null
+
+	# Ensure the real handler sees the real status
+	(exit "${ret}")
+	"$@" || ret="$?"
+	exit "${ret}"
+}
+
+setup_traps() {
+	[ "$#" -eq 1 ] || eargs setup_traps exit_handler
+	local exit_handler="$1"
+	local sig
+
+	for sig in INT HUP PIPE TERM; do
+		trap "sig_handler ${sig} ${exit_handler}" "${sig}"
+	done
+	trap "exit_return ${exit_handler}" EXIT
+}

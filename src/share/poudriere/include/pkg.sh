@@ -270,11 +270,10 @@ pkg_cacher_main() {
 	local pkg work pkgname origin flavor
 	local IFS
 
+	setup_traps pkg_cacher_cleanup
+
 	mkfifo ${MASTER_DATADIR:?}/pkg_cacher.pipe
 	exec 6<> ${MASTER_DATADIR:?}/pkg_cacher.pipe
-
-	trap exit TERM
-	trap pkg_cacher_cleanup EXIT
 
 	# Wait for packages to process.
 	while :; do

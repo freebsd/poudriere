@@ -6,6 +6,7 @@ trap - INT
 trap - EXIT
 trap - PIPE
 trap - TERM
+trap - HUP
 
 builtin=0
 if [ "$(type trap_push 2>/dev/null)" = "trap_push is a shell builtin" ]; then

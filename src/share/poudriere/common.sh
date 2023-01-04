@@ -148,7 +148,7 @@ _err() {
 	# Don't set it from children failures though, only master
 	case "${PARALLEL_CHILD:-0}" in
 	0)
-		bset ${MY_JOBID-} status "${EXIT_BSTATUS:-crashed:err:${MY_JOBID-}}" || :
+		bset ${MY_JOBID-} status "crashed:err:${MY_JOBID-}" || :
 		;;
 	esac
 	case "${exit_status}" in
@@ -1437,47 +1437,22 @@ update_remaining() {
 
 sigpipe_handler() {
 	EXIT_BSTATUS="sigpipe:"
-	SIGNAL="SIGPIPE"
-	sig_handler 13
+	sig_handler PIPE exit_handler
 }
 
 sigint_handler() {
 	EXIT_BSTATUS="sigint:"
-	SIGNAL="SIGINT"
-	sig_handler 2
+	sig_handler INT exit_handler
 }
 
 sighup_handler() {
 	EXIT_BSTATUS="sighup:"
-	SIGNAL="SIGHUP"
-	sig_handler 1
+	sig_handler HUP exit_handler
 }
 
 sigterm_handler() {
 	EXIT_BSTATUS="sigterm:"
-	SIGNAL="SIGTERM"
-	sig_handler 15
-}
-
-sig_handler() {
-	# Avoid set -x output until we ensure proper stderr.
-	{
-		unset IFS
-		# Just exit if another TERM is received
-		trap - TERM
-		trap '' PIPE INT INFO HUP
-		# An sh(1) bug exists where an EINTR during a redirect
-		# (for example, writing to a pipe with no reader) will
-		# jump straight to the EXIT trap. This also unsets the
-		# EXIT trap to avoid recursion. After it executes the
-		# first line it detects the interrupt and jumps to that
-		# handler. It never returns to the EXIT trap. Resetting
-		# the handler here will ensure we return back to it.
-		trap exit_handler EXIT
-		redirect_to_real_tty exec
-	} 2>/dev/null
-	_err "" ${EXIT_STATUS:-$(($1 + 128))} \
-	    "Signal ${SIGNAL} caught, cleaning up and exiting"
+	sig_handler TERM exit_handler
 }
 
 exit_handler() {
@@ -1489,7 +1464,7 @@ exit_handler() {
 		# Just exit if another TERM is received
 		trap - EXIT TERM
 		trap '' PIPE INT INFO HUP
-		case "${SHFLAGS}${SETX_EXIT:-0}" in
+		case "${SHFLAGS-$-}${SETX_EXIT:-0}" in
 		*x*1) ;;
 		*) local -; set +x ;;
 		esac
@@ -1537,6 +1512,13 @@ exit_handler() {
 	if [ "${ERROR_VERBOSE}" -eq 1 ] && [ "${CRASHED:-0}" -eq 0 ]; then
 		echo "[ERROR] Unhandled error!" >&2
 	fi
+	# Try to set status so other processes know this crashed
+	# Don't set it from children failures though, only master
+	case "${EXIT_BSTATUS:+set}${PARALLEL_CHILD:-0}" in
+	set.0)
+		bset ${MY_JOBID-} status "${EXIT_BSTATUS}" || :
+		;;
+	esac
 
 	if was_a_jail_run; then
 		# Don't use jail for any caching in cleanup
@@ -1620,7 +1602,10 @@ exit_handler() {
 	if [ "${ERROR_VERBOSE}" -eq 1 ]; then
 		echo "Exiting with status ${EXIT_STATUS}" >&2 || :
 	fi
-	exit "${EXIT_STATUS}"
+	# return is not handled by exit traps but the *real* handler of
+	# exit_return() is used to support a return while also supporting
+	# signal raising in sig_handler().
+	return "${EXIT_STATUS}"
 }
 
 build_url() {
@@ -9985,6 +9970,6 @@ if [ "${IN_TEST:-0}" -eq 0 ]; then
 	trap sigint_handler INT
 	trap sighup_handler HUP
 	trap sigterm_handler TERM
-	trap exit_handler EXIT
+	trap "exit_return exit_handler" EXIT
 	enable_siginfo_handler
 fi

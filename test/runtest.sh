@@ -206,6 +206,42 @@ getvar() {
 	return ${ret}
 }
 
+getpid() {
+	sh -c 'echo $PPID'
+}
+
+raise() {
+	local sig="$1"
+
+	kill -"${sig}" "$(getpid)"
+}
+
+setup_traps() {
+	[ "$#" -eq 1 ] || eargs setup_traps exit_handler
+	local exit_handler="$1"
+	local sig
+
+	for sig in INT HUP PIPE TERM; do
+		trap "sig_handler ${sig} ${exit_handler}" "${sig}"
+	done
+	trap "${exit_handler}" EXIT
+}
+
+sig_handler() {
+	local sig="$1"
+	local exit_handler="$2"
+
+	set +e +u
+	unset IFS
+	# Just exit if another TERM is received
+	trap - TERM
+	trap '' PIPE INT HUP
+	trap - EXIT
+	"${exit_handler}"
+	trap - "${sig}"
+	raise "${sig}"
+}
+
 : ${TEST_CONTEXTS_PARALLEL:=4}
 
 if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
@@ -216,7 +252,6 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 		# hide set -x
 	} >&2 2>/dev/null
 	cleanup() {
-		trap '' TERM INT HUP PIPE
 		local jobs
 
 		exec >/dev/null 2>&1
@@ -230,10 +265,8 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 			done
 			;;
 		esac
-		exit
 	}
-	trap exit TERM INT HUP PIPE
-	trap cleanup EXIT
+	setup_traps cleanup
 	TEST_CONTEXTS_TOTAL="$(env \
 	    TEST_CONTEXTS_NUM_CHECK=yes \
 	    THISDIR="${THISDIR}" \

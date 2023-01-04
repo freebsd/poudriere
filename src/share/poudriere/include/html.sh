@@ -51,6 +51,7 @@ html_json_main() {
 	local -; set +x
 	local _relpath
 
+	setup_traps html_json_cleanup
 	# Ensure we are not sitting in the MASTER_DATADIR directory and
 	# move into the logdir for relative operations.
 	_log_path_top log_path_top
@@ -65,9 +66,6 @@ html_json_main() {
 	_log_path log_path
 	_relpath "${log_path:?}" "${log_path_top:?}"
 	log_path="${_relpath:?}"
-
-	trap exit TERM
-	trap html_json_cleanup EXIT
 
 	while :; do
 		stress_snapshot

@@ -456,6 +456,7 @@ get_test_context() {
 
 cleanup() {
 	ret="$?"
+	msg "Cleaning up" >&"${REDIRECTED_STDERR_FD:-2}"
 	capture_output_simple_stop
 	if [ "${ret}" -ne 0 ] && [ -n "${LOG_START_LASTFILE-}" ] &&
 	    [ -s "${LOG_START_LASTFILE}" ]; then
@@ -536,18 +537,15 @@ cleanup() {
 		esac
 		echo "${res} ${SCRIPTNAME} TEST_NUMS=${TEST_NUMS} (exit status: ${ret})" >&2
 	esac
-	exit "${ret}"
+	return "${ret}"
 }
-
-trap 'msg_dev int;exit' INT
-trap 'cleanup term' TERM
-trap 'cleanup pipe' PIPE
-trap 'cleanup exit' EXIT
-
-msg_debug "getpid: $$"
 
 . ${SCRIPTPREFIX}/common.sh
 post_getopts
+
+setup_traps cleanup
+
+msg_debug "getpid: $$"
 
 if git_get_hash_and_dirty "${abs_top_srcdir}" git_hash git_dirty; then
 	msg "Source git hash: ${git_hash} modified: ${git_dirty}"
