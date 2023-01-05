@@ -5329,16 +5329,19 @@ stop_builders() {
 job_done() {
 	[ $# -eq 1 ] || eargs job_done j
 	local j="$1"
-	local pkgname status
+	local pkgname status pid ret
 
 	# Failure to find this indicates the job is already done.
 	hash_remove builder_pkgnames "${j}" pkgname || return 1
-	hash_unset builder_pids "${j}"
+	hash_remove builder_pids "${j}" pid
 	unlink "${MASTER_DATADIR:?}/var/run/${j}.pid"
 	_bget status ${j} status
 	pkgqueue_job_done "${pkgname}"
+	ret=0
+	_wait "${pid}" || ret="$?"
 	case "${status}:" in
 	"done:"*)
+		dev_assert 0 "${ret}"
 		bset ${j} status "idle:"
 		;;
 	*)
