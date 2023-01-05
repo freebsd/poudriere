@@ -307,7 +307,7 @@ nohang() {
 
 	# Now wait on the cmd with a timeout on the log's mtime
 	while :; do
-		if ! kill -CHLD $childpid 2>/dev/null; then
+		if ! kill -0 $childpid 2>/dev/null; then
 			_wait $childpid || ret=1
 			break
 		fi
