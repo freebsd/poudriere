@@ -3945,8 +3945,6 @@ jail_stop() {
 }
 
 jail_cleanup() {
-	local pid pidfile
-
 	case "${CLEANED_UP:+set}" in
 	set) return 0 ;;
 	esac
@@ -3957,29 +3955,6 @@ jail_cleanup() {
 	case "${MASTERMNT:+set}.${MASTERNAME:+set}" in
 	set.set)
 		if was_a_jail_run; then
-			case "${MASTER_DATADIR:+set}" in
-			set)
-				if [ -d "${MASTER_DATADIR:?}/var/run" ]; then
-					for pidfile in "${MASTER_DATADIR:?}/var/run/"*.pid; do
-						case "${pidfile}" in
-						# empty dir
-						"${MASTER_DATADIR}/var/run/*.pid")
-							break ;;
-						esac
-						case "${pidfile}" in
-						*_nohang.pid)
-							# Killing the main job's pgid
-							# should have killed off the
-							# nohang pid already.
-							continue
-						esac
-						read pid < "${pidfile}"
-						kill_job 1 "${pid}" || :
-					done
-				fi
-			;;
-			esac
-
 			jail_stop
 
 			case "${PACKAGES:+set}" in
@@ -5290,14 +5265,21 @@ stop_builder() {
 
 stop_builders() {
 	local PARALLEL_JOBS real_parallel_jobs pid
+	local - ret
 
-	# wait for the last running processes
-	# the pidfiles may not contain an EOF newline so awk fixes that
-	case "${MASTER_DATADIR:+set}" in
+	case "${BUILDER_JOBNOS:+set}" in
 	set)
-		find "${MASTER_DATADIR:?}/var/run/" -name "*.pid" -exec \
-		    awk '{print}' {} + |
-		    xargs pwait -t 20 2>/dev/null || :
+		set -f
+		ret=0
+		kill_jobs 0 ${BUILDER_JOBNOS} || ret="$?"
+		case "${ret}" in
+		143|0) ;;
+		*)
+			msg_warn "Build jobs did not exit cleanly: ${ret}"
+			EXIT_STATUS=$((${EXIT_STATUS:-0} + 1))
+			;;
+		esac
+		set +f
 		;;
 	esac
 
@@ -5336,7 +5318,7 @@ job_done() {
 	# Failure to find this indicates the job is already done.
 	hash_remove builder_pkgnames "${j}" pkgname || return 1
 	hash_remove builder_jobs "${j}" jobno || return 1
-	unlink "${MASTER_DATADIR:?}/var/run/${j}.pid"
+	list_remove BUILDER_JOBNOS "${jobno}"
 	_bget status ${j} status
 	pkgqueue_job_done "${pkgname}"
 	ret=0
@@ -5363,7 +5345,7 @@ build_queue() {
 	local setname="$3"
 	# jobid is analgous to MY_JOB_ID: builder number
 	# jobno is from $(jobs)
-	local j jobid jobno pid pkgname builders_active queue_empty
+	local j jobid jobno pkgname builders_active queue_empty
 	local builders_idle idle_only timeout log porttesting
 
 	_log_path log
@@ -5427,11 +5409,10 @@ build_queue() {
 			    maybe_start_builder "${j}" "${jname}" \
 			        "${ptname}" "${setname}" \
 			    build_pkg "${pkgname}" "${porttesting}"
-			pid="$!"
 			jobno="%${spawn_jobid:?}"
-			echo "${pid}" > "${MASTER_DATADIR:?}/var/run/${j}.pid"
 			hash_set builder_jobs "${j}" "${jobno}"
 			hash_set builder_pkgnames "${j}" "${pkgname}"
+			list_add BUILDER_JOBNOS "${jobno}"
 		done
 
 		if [ ${queue_empty} -eq 1 ]; then
