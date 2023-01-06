@@ -95,41 +95,6 @@ pwait() {
 	err "${EX_SOFTWARE}" "pwait: timeout=${timeout} pids=${pids}"
 }
 
-kill_and_wait() {
-	[ $# -eq 2 ] || eargs kill_and_wait time pids
-	local time="$1"
-	local pids="$2"
-	local ret=0
-	local -
-
-	set -f
-	case "${pids}" in
-	"") return 0 ;;
-	esac
-
-	{
-		kill -STOP ${pids} || :
-		kill ${pids} || :
-		kill -CONT ${pids} || :
-
-		# Wait for the pids. Non-zero status means something is still running.
-		pwait -t "${time}" ${pids} || ret="$?"
-		case "${ret}" in
-		124)
-			# Kill remaining children instead of waiting on them
-			kill -9 ${pids} || :
-			_wait ${pids} || ret=$?
-			;;
-		*)
-			# Nothing running, collect status directly.
-			_wait ${pids} || ret=$?
-			;;
-		esac
-	}
-
-	return ${ret}
-}
-
 timed_wait_and_kill_job() {
 	[ $# -eq 2 ] || eargs timed_wait_and_kill_job time jobid
 	local timeout="$1"
