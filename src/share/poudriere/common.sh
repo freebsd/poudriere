@@ -9524,7 +9524,9 @@ case "$(type setproctitle 2>/dev/null)" in
 	}
 	;;
 *)
-	setproctitle() { :; }
+	setproctitle() {
+		PROC_TITLE="$*"
+	}
 	;;
 esac
 
