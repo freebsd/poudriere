@@ -201,13 +201,13 @@ parallel_start() {
 		echo "parallel_start: Already started" >&2
 		return 1
 	fi
-	fifo=$(mktemp -ut parallel.pipe)
-	mkfifo ${fifo}
-	exec 9<> ${fifo}
-	unlink ${fifo} || :
+	fifo="$(mktemp -ut parallel.pipe)"
+	mkfifo "${fifo}"
+	exec 9<> "${fifo}"
+	unlink "${fifo}" || :
 	export NBPARALLEL=0
 	export PARALLEL_PIDS=""
-	: ${PARALLEL_JOBS:=$(sysctl -n hw.ncpu)}
+	: ${PARALLEL_JOBS:="$(sysctl -n hw.ncpu)"}
 	_SHOULD_REAP=0
 }
 
@@ -220,15 +220,15 @@ _reap_children() {
 
 	for pid in ${PARALLEL_PIDS-}; do
 		# Check if this pid is still alive
-		if ! kill -0 ${pid}; then
+		if ! kill -0 "${pid}"; then
 			# This will error out if the return status is non-zero
-			_wait ${pid} || ret=$?
+			_wait "${pid}" || ret="$?"
 			list_remove PARALLEL_PIDS "${pid}" || \
 			    err 1 "_reap_children did not find ${pid} in PARALLEL_PIDS"
 		fi
 	done 2>/dev/null
 
-	return ${ret}
+	return "${ret}"
 }
 
 # Wait on all remaining running processes and clean them up. Error out if
@@ -236,16 +236,18 @@ _reap_children() {
 parallel_stop() {
 	local ret=0
 	local do_wait="${1:-1}"
+	local -
 
-	if [ ${do_wait} -eq 1 ]; then
-		_wait ${PARALLEL_PIDS} || ret=$?
+	set -f
+	if [ "${do_wait}" -eq 1 ]; then
+		_wait ${PARALLEL_PIDS} || ret="$?"
 	fi
 
 	exec 9>&-
 	unset PARALLEL_PIDS
 	unset NBPARALLEL
 
-	return ${ret}
+	return "${ret}"
 }
 
 parallel_shutdown() {
@@ -262,24 +264,28 @@ parallel_run() {
 	# Occasionally reap dead children. Don't do this too often or it
 	# becomes a bottleneck. Do it too infrequently and there is a risk
 	# of PID reuse/collision
-	_SHOULD_REAP=$((_SHOULD_REAP + 1))
-	if [ ${_SHOULD_REAP} -eq 16 ]; then
+	_SHOULD_REAP="$((_SHOULD_REAP + 1))"
+	if [ "${_SHOULD_REAP}" -eq 16 ]; then
 		_SHOULD_REAP=0
-		_reap_children || ret=$?
+		_reap_children || ret="$?"
 	fi
 
 	# Only read once all slots are taken up; burst jobs until maxed out.
 	# NBPARALLEL is never decreased and only inreased until maxed.
-	if [ ${NBPARALLEL} -eq ${PARALLEL_JOBS} ]; then
+	case "${NBPARALLEL}" in
+	"${PARALLEL_JOBS}")
 		a=
 		read_blocking a <&9 || :
-	fi
+		;;
+	esac
 
-	[ ${NBPARALLEL} -lt ${PARALLEL_JOBS} ] && NBPARALLEL=$((NBPARALLEL + 1))
+	if [ "${NBPARALLEL}" -lt "${PARALLEL_JOBS}" ]; then
+		NBPARALLEL="$((NBPARALLEL + 1))"
+	fi
 	PARALLEL_CHILD=1 spawn parallel_exec "$@"
 	list_add PARALLEL_PIDS "$!"
 
-	return ${ret}
+	return "${ret}"
 }
 
 nohang() {
