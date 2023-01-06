@@ -389,29 +389,36 @@ parallel_start() {
 	mkfifo "${fifo}"
 	exec 9<> "${fifo}"
 	unlink "${fifo}" || :
-	export NBPARALLEL=0
-	export PARALLEL_PIDS=""
+	NBPARALLEL=0
+	PARALLEL_JOBNOS=""
 	: ${PARALLEL_JOBS:="$(sysctl -n hw.ncpu)"}
 	_SHOULD_REAP=0
 	delay_pipe_fatal_error
 }
 
 # For all running children, look for dead ones, collect their status, error out
-# if any have non-zero return, and then remove them from the PARALLEL_PIDS
+# if any have non-zero return, and then remove them from the PARALLEL_JOBNOS
 # list.
 _reap_children() {
-	local pid
-	local ret=0
+	local jobno jobs_jobid jobs_status ret
 
-	for pid in ${PARALLEL_PIDS-}; do
-		# Check if this pid is still alive
-		if ! kill -0 "${pid}"; then
-			# This will error out if the return status is non-zero
-			_wait "${pid}" || ret="$?"
-			list_remove PARALLEL_PIDS "${pid}" || \
-			    err 1 "_reap_children did not find ${pid} in PARALLEL_PIDS"
-		fi
-	done
+	ret=0
+	while mapfile_read_loop_redir jobs_jobid jobs_status; do
+		for jobno in ${PARALLEL_JOBNOS-}; do
+			case "${jobno}" in
+			"${jobs_jobid}") ;;
+			*) continue ;;
+			esac
+			case "${jobs_status}" in
+			"Running") continue ;;
+			esac
+			_wait "${jobno}" || ret="$?"
+			list_remove PARALLEL_JOBNOS "${jobno}" ||
+			    err 1 "_reap_children did not find ${jobno} in PARALLEL_JOBNOS"
+		done
+	done <<-EOF
+	$(jobs_with_statuses "$(jobs)")
+	EOF
 
 	return "${ret}"
 }
@@ -419,17 +426,20 @@ _reap_children() {
 # Wait on all remaining running processes and clean them up. Error out if
 # any have non-zero return status.
 parallel_stop() {
-	local ret=0
+	[ "$#" -eq 0 ] || [ "$#" -eq 1 ] || eargs parallel_stop '[do_wait]'
 	local do_wait="${1:-1}"
-	local -
+	local ret
+	local jobno -
 
-	set -f
+	ret=0
 	if [ "${do_wait}" -eq 1 ]; then
-		_wait ${PARALLEL_PIDS} || ret="$?"
+		set -f
+		_wait ${PARALLEL_JOBNOS} || ret="$?"
+		set +f
 	fi
 
 	exec 9>&-
-	unset PARALLEL_PIDS
+	unset PARALLEL_JOBNOS
 	unset NBPARALLEL
 
 	case "${ret}" in
@@ -444,9 +454,25 @@ parallel_stop() {
 }
 
 parallel_shutdown() {
-	kill_and_wait 30 "${PARALLEL_PIDS-}" || :
-	# Reap the pids
-	parallel_stop 0 || :
+	local ret -
+	local parallel_jobnos jobno
+
+	set -f
+	ret=0
+	# PARALLEL_JOBNOS may be stale if we received SIGINT while
+	# inside of parallel_stop() or _reap_children(). Clean it up
+	# before kill_job() is called which asserts that all jobs are
+	# known.
+	unset parallel_jobnos
+	for jobno in ${PARALLEL_JOBNOS-}; do
+		if ! jobid "${jobno}" >/dev/null 2>&1; then
+			continue
+		fi
+		parallel_jobnos="${parallel_jobnos:+${parallel_jobnos} }${jobno}"
+	done
+	kill_jobs 30 ${parallel_jobnos-} || ret="$?"
+	parallel_stop 0 || ret="$?"
+	return "${ret}"
 }
 
 parallel_run() {
@@ -458,10 +484,12 @@ parallel_run() {
 	# becomes a bottleneck. Do it too infrequently and there is a risk
 	# of PID reuse/collision
 	_SHOULD_REAP="$((_SHOULD_REAP + 1))"
-	if [ "${_SHOULD_REAP}" -eq 16 ]; then
+	case "${_SHOULD_REAP}" in
+	16)
 		_SHOULD_REAP=0
 		_reap_children || ret="$?"
-	fi
+		;;
+	esac
 
 	# Only read once all slots are taken up; burst jobs until maxed out.
 	# NBPARALLEL is never decreased and only inreased until maxed.
@@ -475,8 +503,8 @@ parallel_run() {
 	if [ "${NBPARALLEL}" -lt "${PARALLEL_JOBS}" ]; then
 		NBPARALLEL="$((NBPARALLEL + 1))"
 	fi
-	PARALLEL_CHILD=1 spawn _parallel_exec "$@"
-	list_add PARALLEL_PIDS "$!"
+	PARALLEL_CHILD=1 spawn_job _parallel_exec "$@"
+	list_add PARALLEL_JOBNOS "%${spawn_jobid}"
 
 	return "${ret}"
 }

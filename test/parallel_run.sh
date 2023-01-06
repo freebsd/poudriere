@@ -12,6 +12,8 @@ retval() {
 }
 
 while get_test_context; do
+	capture_output_simple '' stderr
+
 	TDIR="$(mktemp -d -t parallel_run)"
 	{
 		n=0
@@ -87,4 +89,9 @@ while get_test_context; do
 		assert 95 "${ret}"
 	}
 	rm -rf "${TDIR}"
+
+	capture_output_simple_stop
+	# No errors should have been seen.
+	assert_file - "${stderr}" <<-EOF
+	EOF
 done
