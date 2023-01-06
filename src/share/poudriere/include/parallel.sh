@@ -125,7 +125,7 @@ kill_and_wait() {
 			_wait ${pids} || ret=$?
 			;;
 		esac
-	} 2>/dev/null
+	}
 
 	return ${ret}
 }
@@ -411,7 +411,7 @@ _reap_children() {
 			list_remove PARALLEL_PIDS "${pid}" || \
 			    err 1 "_reap_children did not find ${pid} in PARALLEL_PIDS"
 		fi
-	done 2>/dev/null
+	done
 
 	return "${ret}"
 }
@@ -446,7 +446,7 @@ parallel_stop() {
 parallel_shutdown() {
 	kill_and_wait 30 "${PARALLEL_PIDS-}" || :
 	# Reap the pids
-	parallel_stop 0 2>/dev/null || :
+	parallel_stop 0 || :
 }
 
 parallel_run() {
