@@ -201,7 +201,7 @@ list)
 		display_setup "${format}" "-d"
 		display_add "PORTSTREE"
 	fi
-	while read ptname ptmethod ptpath; do
+	while mapfile_read_loop_redir ptname ptmethod ptpath; do
 		[ -z "${ptname}" ] && break
 		if [ ${NAMEONLY} -eq 0 ]; then
 			_pget timestamp ${ptname} timestamp || :

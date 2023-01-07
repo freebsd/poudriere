@@ -45,7 +45,7 @@ queue_reader_main() {
 	# do not need write access to the real queue dir
 	umask 0111 # Create rw-rw-rw
 	setup_traps queue_reader_cleanup
-	nc -klU ${QUEUE_SOCKET} | while read name command; do
+	nc -klU ${QUEUE_SOCKET} | while mapfile_read_loop_redir name command; do
 		echo "${command}" > ${WATCHDIR}/${name}
 	done
 }

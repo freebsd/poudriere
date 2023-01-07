@@ -303,7 +303,7 @@ if [ ${logs_deleted} -eq 1 ]; then
 		    xargs -0 -J % find -x % -mindepth 1 -maxdepth 1 -type f | \
 		    sort -d | \
 		    awk -F/ '{if (!printed[$4]){print $0; printed[$4]=1;}}' | \
-		    while read log; do
+		    while mapfile_read_loop_redir log; do
 			filename="${log##*/}"
 			dst="${MASTERNAME:?}/latest-per-pkg/${filename:?}"
 			if [ -f "${dst:?}" ]; then

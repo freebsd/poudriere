@@ -2850,7 +2850,7 @@ commit_packages() {
 	# starts creating a new directory
 	find "${PACKAGES:?}/" -mindepth 1 -maxdepth 1 \
 	    \( ! -name '.*' -o -name '.jailversion' -o -name '.buildname' \) |
-	    while read path; do
+	    while mapfile_read_loop_redir path; do
 		name=${path##*/}
 		[ ! -L "${PACKAGES_ROOT:?}/${name:?}" ] || continue
 		if [ -e "${PACKAGES_ROOT:?}/${name:?}" ]; then
@@ -2892,7 +2892,7 @@ symlink to .latest/${name}"
 	find -L "${PACKAGES_ROOT:?}/" -mindepth 1 -maxdepth 1 \
 	    \( ! -name '.*' -o -name '.jailversion' -o -name '.buildname' \) \
 	    -type l |
-	    while read path; do
+	    while mapfile_read_loop_redir path; do
 		link="$(readlink "${path:?}")"
 		# Skip if link does not reference inside latest
 		case "${link}" in
@@ -7131,7 +7131,7 @@ port_var_fetch() {
 	set -- ${_vars}
 	varcnt=$#
 	shiftcnt=0
-	while IFS= read -r _line; do
+	while IFS= mapfile_read_loop_redir _line; do
 		case "${_line}" in
 		"${_errexit} "*)
 			ret="${_line#* }"
@@ -8761,7 +8761,7 @@ git_tree_dirty() {
 
 	${GIT_CMD} -C "${git_dir}" ls-files --directory --others . | (
 	# Look for patches and .local files
-		while read file; do
+		while mapfile_read_loop_redir file; do
 			if [ "${inport}" -eq 0 ]; then
 				case "${file}" in
 				Makefile.local|\
