@@ -114,6 +114,9 @@ runtest() {
 	export TEST_NUMS
 	# With truss use --foreground to prevent process reaper and ptrace deadlocking.
 	set -x
+	# Keep timeout/timestamp/truss running until the test exits.
+	# All of these will be fixed in the test.
+	trap '' INT PIPE TERM HUP
 	{
 		TEST_START="$(clock -monotonic)"
 		echo "Test started: $(date)"
@@ -125,7 +128,8 @@ runtest() {
 	    ${SH_DISABLE_VFORK:+SH_DISABLE_VFORK=1} \
 	    THISDIR="${THISDIR}" \
 	    SH="${SH}" \
-	    ${TRUSS:+truss -ae -f -s512 -o"$(get_log_name).truss"} \
+	    lockf -k "$(get_log_name).lock" \
+	    ${TRUSS:+truss -ae -f -s512 -o "$(get_log_name).truss"} \
 	    "${SH}" "${TEST}"
 	{
 		TEST_END="$(clock -monotonic)"

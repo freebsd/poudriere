@@ -60,3 +60,4 @@ external/ptsort/.git
 external/ptsort/.gitignore
 test/prep
 test/*.log.truss
+test/*.log.lock
