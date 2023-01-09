@@ -24,6 +24,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/param.h>
 #include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -56,23 +57,32 @@
 #undef FILE
 #undef fclose
 #undef fdopen
+#undef fdclose
 #undef fopen
 #undef fputs
 #include "eval.h"
+#include "redir.h"
 #include "trap.h"
 #include "var.h"
+
+extern int loopnest;
+extern int funcnest;
 
 #define MAX_FILES 256
 struct mapped_data {
 	FILE *fp;
 	char *file;
 	int handle;
+	int fd0_redirected;
+	int pid;
 };
 static struct mapped_data *mapped_files[MAX_FILES] = {0};
 
 static int
 _mapfile_read(struct mapped_data *md, char **linep, ssize_t *linelenp,
     struct timeval *tvp);
+static int
+_mapfile_readcmd(struct mapped_data *md, int argc, char **argv);
 
 static void
 md_close(struct mapped_data *md)
@@ -88,7 +98,9 @@ md_close(struct mapped_data *md)
 	free(md->file);
 	md->file = NULL;
 	if (md->fp != NULL) {
-		if (md->fp != stdin) {
+		if (fileno(md->fp) == STDIN_FILENO) {
+			fdclose(md->fp, NULL);
+		} else {
 			assert(fileno(md->fp) >= 10);
 			fclose(md->fp);
 		}
@@ -119,6 +131,8 @@ md_find(const char *handle)
 		errx(EBADF, "handle '%s' is not opened", handle);
 	return (md);
 }
+
+extern int fd0_redirected;
 
 static struct mapped_data *
 _mapfile_open(const char *file, const char *modes)
@@ -153,7 +167,12 @@ _mapfile_open(const char *file, const char *modes)
 	if (strcmp(file, "-") == 0 ||
 	    strcmp(file, "/dev/stdin") == 0 ||
 	    strcmp(file, "/dev/fd/0") == 0) {
-		fp = stdin;
+		if ((fp = fdopen(STDIN_FILENO, modes)) == NULL) {
+			serrno = errno;
+			INTON;
+			errno = serrno;
+			err(EX_NOINPUT, "%s: %s", "fopen", file);
+		}
 	} else {
 		if ((fp = fopen(file, modes)) == NULL) {
 			serrno = errno;
@@ -258,10 +277,29 @@ mapfile_readcmd(int argc, char **argv)
 	static const char usage[] = "Usage: mapfile_read <handle> "
 	    "[-t timeout] <output_var> ...";
 	struct mapped_data *md;
+	const char *handle;
+
+	if (argc < 2)
+		errx(EX_USAGE, "%s", usage);
+
+	handle = argv[1];
+	optind = 2;
+
+	INTOFF;
+	md = md_find(handle);
+	INTON;
+	return (_mapfile_readcmd(md, argc, argv));
+}
+
+static int
+_mapfile_readcmd(struct mapped_data *md, int argc, char **argv)
+{
+	static const char usage[] = "Usage: mapfile_read <handle> "
+	    "[-t timeout] <output_var> ...";
 	struct timeval tv = {};
 	char **var_return_ptr;
 	char *end, *line, *linep, *ifsp;
-	const char *handle, *ifs;
+	const char *ifs;
 	ssize_t linelen;
 	double timeout;
 	int ch, ret, tflag;
@@ -270,11 +308,7 @@ mapfile_readcmd(int argc, char **argv)
 	timeout = 0;
 	tflag = 0;
 
-	if (argc < 2)
-		errx(EX_USAGE, "%s", usage);
-
-	handle = argv[1];
-	optind = 2;
+	assert(optind == 2);
 	while ((ch = getopt(argc, argv, "I:t:")) != -1) {
 		switch (ch) {
 		case 'I':
@@ -317,12 +351,10 @@ mapfile_readcmd(int argc, char **argv)
 		errx(EX_USAGE, "%s", usage);
 
 	INTOFF;
-	md = md_find(handle);
-
 	var_return_ptr = &argv[0];
-	debug("%d: Reading %s handle '%s' timeout: %0.6f feof: %d "
+	debug("%d: Reading %s handle '%d' timeout: %0.6f feof: %d "
 	    "ferror: %d\n",
-	    getpid(), md->file, handle, tv.tv_sec + tv.tv_usec / 1e6,
+	    getpid(), md->file, md->handle, tv.tv_sec + tv.tv_usec / 1e6,
 	    feof(md->fp), ferror(md->fp));
 
 	ret = _mapfile_read(md, &line, &linelen, tflag ? &tv : NULL);
@@ -371,6 +403,169 @@ mapfile_readcmd(int argc, char **argv)
 	return (ret);
 }
 
+/*
+ * Cache recently used handles.
+ * Hack for not using a hash table.
+ */
+static int read_loop_handles[5] = {-1, -1, -1, -1, -1};
+
+static bool
+read_loop_check_file(struct mapped_data *md, const char *file)
+{
+	if (strcmp(md->file, file) == 0) {
+		return (true);
+	}
+	return (false);
+}
+
+static bool
+read_loop_check_stdin(struct mapped_data *md, const char *arg __unused)
+{
+	if (fileno(md->fp) != STDIN_FILENO) {
+		return (false);
+	}
+	if (md->fd0_redirected != fd0_redirected) {
+		return (false);
+	}
+	return (true);
+}
+
+static struct mapped_data *
+read_loop_find(bool (*function)(struct mapped_data *, const char *),
+    const char *arg)
+{
+	struct mapped_data* md;
+
+	for (int i = 0; i < nitems(read_loop_handles); i++) {
+		if (read_loop_handles[i] == -1) {
+			continue;
+		}
+		md = mapped_files[read_loop_handles[i]];
+		assert(md != NULL);
+		assert(md->handle != -1);
+		if (md->pid != shpid) {
+			continue;
+		}
+		if (function(md, arg)) {
+			return (md);
+		}
+	}
+	md = NULL;
+
+	for (int i = 0; i < MAX_FILES; i++) {
+		md = mapped_files[i];
+		if (md == NULL) {
+			continue;
+		}
+		if (md->handle == -1) {
+			continue;
+		}
+		if (md->pid != shpid) {
+			continue;
+		}
+		if (function(md, arg)) {
+			break;
+		}
+	}
+	if (md != NULL) {
+		for (int i = 0; i < nitems(read_loop_handles); i++) {
+			if (read_loop_handles[i] == -1) {
+				read_loop_handles[i] = md->handle;
+				break;
+			}
+		}
+	}
+	return (md);
+}
+
+
+void
+mapfile_read_loop_close_stdin(void)
+{
+	struct mapped_data* md;
+	int i;
+
+	md = NULL;
+	i = -1;
+	for (i = 0; i < nitems(read_loop_handles); i++) {
+		if (read_loop_handles[i] == -1) {
+			continue;
+		}
+		if (mapped_files[i]->pid != shpid) {
+			continue;
+		}
+		if (read_loop_check_stdin(mapped_files[i], NULL)) {
+			md = mapped_files[i];
+			break;
+		}
+	}
+	if (md == NULL) {
+		return;
+	}
+#ifndef NDEBUG
+	md = read_loop_find(read_loop_check_stdin, NULL);
+	assert(md != NULL);
+	assert(md->handle != -1);
+	assert(read_loop_handles[i] == md->handle);
+#endif
+	assert(md->fd0_redirected == fd0_redirected);
+	assert(md->pid == shpid);
+	read_loop_handles[i] = -1;
+	md_close(md);
+}
+
+int
+mapfile_read_loopcmd(int argc, char **argv)
+{
+	static const char usage[] = "Usage: mapfile_read_loop <file> "
+	    "[mapfile_read -flags] <vars>";
+	struct mapped_data *md;
+	const char *file;
+	int error;
+
+	if (argc < 2)
+		errx(EX_USAGE, "%s", usage);
+
+	file = argv[1];
+	optind = 2;
+
+	INTOFF;
+	if (strcmp(file, "-") == 0 ||
+	    strcmp(file, "/dev/stdin") == 0 ||
+	    strcmp(file, "/dev/fd/0") == 0) {
+		md = read_loop_find(read_loop_check_stdin, NULL);
+	} else {
+		md = read_loop_find(read_loop_check_file, file);
+	}
+	if (md == NULL) {
+		/* Create handle */
+		md = _mapfile_open(file, "r");
+		assert(md != NULL);
+		md->fd0_redirected = fd0_redirected;
+		md->pid = shpid;
+		for (int i = 0; i < nitems(read_loop_handles); i++) {
+			if (read_loop_handles[i] == -1) {
+				read_loop_handles[i] = md->handle;
+				break;
+			}
+		}
+	}
+	INTON;
+	error = _mapfile_readcmd(md, argc, argv);
+	if (error != 0) {
+		INTOFF;
+		for (int i = 0; i < nitems(read_loop_handles); i++) {
+			if (read_loop_handles[i] == md->handle) {
+				read_loop_handles[i] = -1;
+				break;
+			}
+		}
+		md_close(md);
+		INTON;
+	}
+	return (error);
+}
+
 static int
 _mapfile_read(struct mapped_data *md, char **linep, ssize_t *linelenp,
     struct timeval *tvp)
@@ -384,6 +579,7 @@ _mapfile_read(struct mapped_data *md, char **linep, ssize_t *linelenp,
 	/* Start a bit larger to avoid needing reallocs in children. */
 	static size_t linecap = 4096;
 
+	assert(is_int_on());
 	/* Copying here just to avoid expected future merge conflicts. */
 	if (tvp != NULL) {
 		tv.tv_sec = tvp->tv_sec;

@@ -374,12 +374,57 @@ fi
 		echo "${n}"
 		i=$((i + 1))
 		mapfile_read_loop_redir n < "${TMP}.2"
-		assert "$n" "inner" "nested call on stdin"
+		assert "inner" "$n" "nested call on stdin"
 	done < "${TMP}"
 	assert 10 "$i"
 	rm -f "${TMP}" "${TMP}.2"
 	fds=$(procstat -f $$|wc -l)
 	[ ${JAILED} -eq 0 ] && assert "${expectedfds}" "${fds}" "fd leak 2"
+}
+
+{
+	TDIR=$(mktemp -dt mapfile)
+	i=0
+	max=100
+	{
+		z=0
+		until [ $z -eq $max ]; do
+			echo "$z"
+			z=$((z + 1))
+		done
+	} | while mapfile_read_loop_redir n; do
+		assert "${i}" "${n}"
+		echo "$((n + 1))"
+		i=$((i + 1))
+	done | while mapfile_read_loop_redir n; do
+		assert "$((i + 1))" "${n}"
+		echo "$((n + 1))"
+		i=$((i + 1))
+	done | while mapfile_read_loop_redir n; do
+		assert "$((i + 2))" "${n}"
+		echo "$((n + 1))"
+		i=$((i + 1))
+	done | while mapfile_read_loop_redir n; do
+		assert "$((i + 3))" "${n}"
+		echo "$((n + 1))"
+		i=$((i + 1))
+	done | while mapfile_read_loop_redir n; do
+		assert "$((i + 4))" "${n}"
+		echo "$((n + 1))"
+		i=$((i + 1))
+	done | while mapfile_read_loop_redir n; do
+		assert "$((i + 5))" "${n}"
+		touch "${TDIR:?}/${n}"
+		i=$((i + 1))
+	done
+	assert_false rmdir "${TDIR:?}"
+	n=5
+	until [ $n -eq $((max + 5)) ]; do
+		assert_true [ -e "${TDIR:?}/${n}" ]
+		assert_true unlink "${TDIR:?}/${n}"
+		n=$((n + 1))
+	done
+	assert_true rmdir "${TDIR:?}"
 }
 
 # Test mapfile_read_loop_redir with early return

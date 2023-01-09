@@ -1127,21 +1127,6 @@ mapfile_close() {
 	hash_unset mapfile_modes "${handle}"
 }
 
-mapfile_builtin() {
-	return 1
-}
-
-mapfile_keeps_file_open_on_eof() {
-	[ $# -eq 1 ] || eargs mapfile_keeps_file_open_on_eof handle
-	return 1
-}
-
-mapfile_supports_multiple_handles() {
-	return 1
-}
-;;
-esac
-
 # This is for reading from a file in a loop while avoiding a pipe.
 # It is analogous to read(builtin).For example these are mostly equivalent:
 # cat $file | while read -r col1 rest; do echo "$col1 $rest"; done
@@ -1157,12 +1142,7 @@ mapfile_read_loop() {
 	# using an anonymous handle on stdin - which if nested in a
 	# pipe would reuse the already-opened handle from the parent
 	# pipe.
-	case "${_file}" in
-	-|\
-	/dev/stdin|\
-	/dev/fd/0)	_hkey="$*" ;;
-	*)		_hkey="${_file}" ;;
-	esac
+	_hkey="${_file}.$*"
 
 	if ! hash_get mapfile_handle "${_hkey}" _handle; then
 		mapfile _handle "${_file}" "re" || return "$?"
@@ -1179,12 +1159,30 @@ mapfile_read_loop() {
 	fi
 }
 
+mapfile_builtin() {
+	return 1
+}
+
+mapfile_keeps_file_open_on_eof() {
+	[ $# -eq 1 ] || eargs mapfile_keeps_file_open_on_eof handle
+	return 1
+}
+
+mapfile_supports_multiple_handles() {
+	return 1
+}
+;;
+esac
+
 # Alias for mapfile_read_loop "/dev/stdin" vars...
 mapfile_read_loop_redir() {
 	[ $# -ge 1 ] || eargs mapfile_read_loop_redir vars
 
-	#mapfile_read_loop "/dev/fd/0" "$@"
-	read -r "$@"
+	if mapfile_builtin; then
+		mapfile_read_loop "-" "$@"
+	else
+		read -r "$@"
+	fi
 }
 
 _pipe_func_job() {

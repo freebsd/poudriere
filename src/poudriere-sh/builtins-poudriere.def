@@ -13,6 +13,7 @@ issetvarcmd -n		issetvar
 locked_mkdircmd		locked_mkdir
 mapfilecmd -n		mapfile
 mapfile_readcmd -n	mapfile_read
+mapfile_read_loopcmd -n	mapfile_read_loop
 mapfile_writecmd -n	mapfile_write
 mapfile_closecmd -n	mapfile_close
 mkdircmd -n		mkdir
