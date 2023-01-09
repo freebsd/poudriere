@@ -1,3 +1,129 @@
+THIS_JOB=0
+make_returnjob() {
+	local mr_job="$1"
+
+	#echo "RETURN JOB ${mr_job}" >&2
+	case "${mr_job}" in
+	"this")
+		THIS_JOB=0
+		return 0
+		;;
+	esac
+
+	case "${JOB_PIPE_W:+set}" in
+	set)
+		echo -n "${mr_job:?}" >>"${JOB_PIPE_W:?}"
+		;;
+	esac
+}
+# make_getjob outvar
+make_getjob() {
+	local job_outvar="$1"
+	local job_pipe job_fd
+	local ret mg_job
+	local dd_stderr dd_err
+
+	case "${MAKEFLAGS:+set}" in
+	set) ;;
+	*)
+		setvar "${job_outvar}" ""
+		if [ "${JOBS}" -le "${TEST_CONTEXTS_PARALLEL}" ]; then
+			return 0
+		fi
+		return 1
+		;;
+	esac
+	case "${JOB_PIPE_R:+set}" in
+	set) ;;
+	*)
+		case "${MAKEFLAGS}" in
+		*"--jobserver-auth=fifo:/"*)
+			job_pipe="$(echo "${MAKEFLAGS}" |
+			    grep -o -- '--jobserver-auth=fifo:/[^ ]*' |
+			    sed -e 's,.*:,,')"
+			JOB_PIPE_R="${job_pipe}"
+			JOB_PIPE_W="${job_pipe}"
+			JOB_PIPE_BLOCKING=0
+			;;
+		*"-J "[0-9]*)
+			job_fd="$(echo "${MAKEFLAGS}" |
+			    grep -o -- '-J [0-9]*,[0-9]*' |
+			    sed -e 's,-J ,,' -e 's#,# #')"
+			JOB_PIPE_W="/dev/fd/${job_fd##* }"
+			JOB_PIPE_R="/dev/fd/${job_fd%% *}"
+			JOB_PIPE_BLOCKING=0
+			;;
+		*"--jobserver-auth="[0-9]*)
+			job_fd="$(echo "${MAKEFLAGS}" |
+			    grep -o -- '--jobserver-auth=[0-9]*,[0-9]*' |
+			    sed -e 's,--jobserver-auth=,,' -e 's#,# #')"
+			JOB_PIPE_W="/dev/fd/${job_fd##* }"
+			JOB_PIPE_R="/dev/fd/${job_fd%% *}"
+			JOB_PIPE_BLOCKING=1
+			;;
+		*)
+			unset MAKEFLAGS
+			return 1
+			;;
+		esac
+	esac
+	case "${JOB_PIPE_W}" in
+	"/dev/fd/"*)
+		if ! mount | grep -q fdescfs; then
+			echo "fdescfs required for make jobserver support." >&2
+			exit 99
+		fi
+		;;
+	esac
+
+	dd_stderr="$(mktemp -ut runtest)"
+	while :; do
+		if [ "${THIS_JOB}" -eq 0 ] ||
+		    ! kill -0 "${THIS_JOB}" 2>/dev/null ||
+		    pwait -o -t "0.1" "${THIS_JOB}" >/dev/null 2>&1; then
+			# This runtest.sh runner itself was given a job.
+			# Use it before asking the jobserver for more.
+			collectpids "0.1"
+			THIS_JOB=1
+			mg_job="this"
+			#echo "GOT JOB ${mg_job}" >&2
+			setvar "${job_outvar}" "${mg_job}"
+			return 0
+		fi
+		mg_job="$(dd if="${JOB_PIPE_R}" bs=1 count=1 2>"${dd_stderr}")"
+		ret="$?"
+		read dd_err < "${dd_stderr}" || dd_err=
+		rm -f "${dd_stderr}"
+		case "${ret}" in
+		0) ;;
+		*)
+			case "${JOB_PIPE_BLOCKING}" in
+			1)
+				# Detect EAGAIN; it is not really blocking.
+				case "${dd_err}" in
+				*"${JOB_PIPE_R}"*"Resource temporarily unavailable")
+					sleep 0.2
+					continue
+					;;
+				esac
+				echo "Job server read error ${ret}" >&2
+				exit 99
+				;;
+			0)
+				sleep 1
+				continue
+				;;
+			esac
+			;;
+		esac
+		#echo "GOT JOB ${mg_job}" >&2
+		setvar "${job_outvar}" "${mg_job}"
+		ret=0
+		break
+	done
+	rm -f "${dd_stderr}"
+	return "${ret}"
+}
 set -e
 set -u
 
@@ -13,6 +139,7 @@ while read var; do
 	pkgdatadir|\
 	VPATH|\
 	am_check|am_installcheck|\
+	MAKEFLAGS|\
 	CCACHE*|\
 	PATH|\
 	PWD|\
@@ -111,6 +238,13 @@ get_log_name() {
 }
 
 runtest() {
+	local make_job="${1-}"
+	local - ret
+
+	ret=0
+	set +eu
+
+	unset MAKEFLAGS
 	export TEST_NUMS
 	# With truss use --foreground to prevent process reaper and ptrace deadlocking.
 	set -x
@@ -130,12 +264,72 @@ runtest() {
 	    SH="${SH}" \
 	    lockf -k "$(get_log_name).lock" \
 	    ${TRUSS:+truss -ae -f -s512 -o "$(get_log_name).truss"} \
-	    "${SH}" "${TEST}"
+	    "${SH}" "${TEST}" || ret="$?"
 	{
 		TEST_END="$(clock -monotonic)"
 		echo "Test ended: $(date) -- duration: $((TEST_END - TEST_START))s"
 		# hide set -x
 	} >&2 2>/dev/null
+	case "${make_job:+set}" in
+	set)
+		make_returnjob "${make_job}"
+		;;
+	esac
+	return "${ret}"
+}
+
+collectpids() {
+	local timeout="$1"
+	local pids_copy
+
+	case "${pids:+set}" in
+	set) ;;
+	*) return 0 ;;
+	esac
+
+	echo "Waiting on pids: ${pids}" >&2
+	until [ -z "${pids:+set}" ]; do
+		pwait -o -t "${timeout}" ${pids} >/dev/null 2>&1 || :
+		pids_copy="${pids}"
+		pids=
+		for pid in ${pids_copy}; do
+			if kill -0 "${pid}" 2>/dev/null; then
+				pids="${pids:+${pids} }${pid}"
+				continue
+			fi
+			getvar "pid_num_${pid}" pid_test_context_num
+			pret=0
+			wait "${pid}" || pret="$?"
+			ret="$((ret + pret))"
+			case "${pret}" in
+			0)
+				result="OK"
+				;;
+			*)
+				result="FAIL"
+				;;
+			esac
+			exit_type=
+			case "${pret}" in
+			0) exit_type="PASS" ;;
+			*) exit_type="FAIL" ;;
+			esac
+			printf \
+			    "%s TEST_CONTEXT_NUM=%d pid=%-5d exited %-3d - %s: %s\n" \
+			    "${exit_type}" \
+			    "${pid_test_context_num}" \
+			    "${pid}" \
+			    "${pret}" \
+			    "$(TEST_CONTEXT_NUM="${pid_test_context_num}" get_log_name)" \
+			    "${result}"
+			JOBS="$((JOBS - 1))"
+			case "${VERBOSE:+set}.${exit_type}" in
+			set.FAIL)
+				cat "$(TEST_CONTEXT_NUM="${pid_test_context_num}" get_log_name)"
+				;;
+			esac
+		done
+	done
 }
 
 _spawn_wrapper() {
@@ -283,13 +477,6 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 		exit 99
 		;;
 	esac
-	TEST_CONTEXT_NUM=1
-	until [ "${TEST_CONTEXT_NUM}" -gt "${TEST_CONTEXTS_TOTAL}" ]; do
-		logname="$(get_log_name)"
-		rm -f "${logname}"
-		TEST_CONTEXT_NUM=$((TEST_CONTEXT_NUM + 1))
-	done
-	TEST_CONTEXT_NUM=1
 	JOBS=0
 	ret=0
 	case "${TEST_CONTEXTS_TOTAL}" in
@@ -299,15 +486,26 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 	[0-9][0-9][0-9][0-9]) num_width="04" ;;
 	*) num_width="05" ;;
 	esac
-	until [ "${TEST_CONTEXT_NUM}" -gt "${TEST_CONTEXTS_TOTAL}" ]; do
-		until [ "${TEST_CONTEXT_NUM}" -gt "${TEST_CONTEXTS_TOTAL}" ] ||
-		    [ "${JOBS}" -gt "${TEST_CONTEXTS_PARALLEL}" ]; do
-			case " ${TEST_NUMS-null} " in
-			" null ") ;;
-			*" ${TEST_CONTEXT_NUM} "*) ;;
+	case "${TEST_NUMS-null}" in
+	null)
+		TEST_CONTEXT_NUM=1
+		until [ "${TEST_CONTEXT_NUM}" -gt "${TEST_CONTEXTS_TOTAL}" ]; do
+			logname="$(get_log_name)"
+			rm -f "${logname}"
+			TEST_NUMS="${TEST_NUMS:+${TEST_NUMS} }${TEST_CONTEXT_NUM}"
+			TEST_CONTEXT_NUM=$((TEST_CONTEXT_NUM + 1))
+		done
+		;;
+	esac
+	until [ -z "${TEST_NUMS:+set}${pids:+set}" ]; do
+		if [ -n "${TEST_NUMS:+set}" ] && make_getjob make_job; then
+			TEST_CONTEXT_NUM="${TEST_NUMS%% *}"
+			case "${TEST_NUMS}" in
+			*" "*)
+				TEST_NUMS="${TEST_NUMS#* }"
+				;;
 			*)
-				TEST_CONTEXT_NUM="$((TEST_CONTEXT_NUM + 1))"
-				continue
+				TEST_NUMS=
 				;;
 			esac
 			logname="$(get_log_name)"
@@ -318,59 +516,19 @@ if [ "${TEST_CONTEXTS_PARALLEL}" -gt 1 ] &&
 			    "${logname}" >&2
 			job_test_nums="${TEST_CONTEXT_NUM}"
 			TEST_NUMS="${job_test_nums}" \
-			    spawn_job runtest > "${logname}" 2>&1
+			    spawn_job runtest "${make_job}" > "${logname}" 2>&1
+			case "${make_job}" in
+			"this")
+				THIS_JOB="$!"
+				#echo "THIS_JOB=$!"
+				;;
+			esac
 			pids="${pids:+${pids} }$!"
 			JOBS="$((JOBS + 1))"
 			setvar "pid_num_$!" "${TEST_CONTEXT_NUM}"
-			TEST_CONTEXT_NUM="$((TEST_CONTEXT_NUM + 1))"
-		done
-		case "${pids:+set}" in
-		set) ;;
-		*) continue ;;
-		esac
-		echo "Waiting on pids: ${pids}" >&2
-		until [ -z "${pids}" ]; do
-			pwait -o -t 5 ${pids} >/dev/null 2>&1 || :
-			pids_copy="${pids}"
-			pids=
-			for pid in ${pids_copy}; do
-				if kill -0 "${pid}" 2>/dev/null; then
-					pids="${pids:+${pids} }${pid}"
-					continue
-				fi
-				getvar "pid_num_${pid}" pid_test_context_num
-				pret=0
-				wait "${pid}" || pret="$?"
-				ret="$((ret + pret))"
-				case "${pret}" in
-				0)
-					result="OK"
-					;;
-				*)
-					result="FAIL"
-					;;
-				esac
-				exit_type=
-				case "${pret}" in
-				0) exit_type="PASS" ;;
-				*) exit_type="FAIL" ;;
-				esac
-				printf \
-				    "%s TEST_CONTEXT_NUM=%d pid=%-5d exited %-3d - %s: %s\n" \
-				    "${exit_type}" \
-				    "${pid_test_context_num}" \
-				    "${pid}" \
-				    "${pret}" \
-				    "$(TEST_CONTEXT_NUM="${pid_test_context_num}" get_log_name)" \
-				    "${result}"
-				JOBS="$((JOBS - 1))"
-				case "${VERBOSE:+set}.${exit_type}" in
-				set.FAIL)
-					cat "$(TEST_CONTEXT_NUM="${pid_test_context_num}" get_log_name)"
-					;;
-				esac
-			done
-		done
+			continue
+		fi
+		collectpids 5
 	done
 	{
 		TEST_SUITE_END="$(clock -monotonic)"
