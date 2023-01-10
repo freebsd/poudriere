@@ -347,6 +347,12 @@ update_jail() {
 		delete_jail
 		create_jail
 		;;
+	pkgbase)
+		pkg -r "${JAILMNT}" update || \
+			err 1 "pkg update failed"
+		pkg -r "${JAILMNT}" upgrade -y || \
+			err 1 "pkg upgrade failed"
+		;;
 	csup|null|tar)
 		err 1 "Upgrade is not supported with ${METHOD}; to upgrade, please delete and recreate the jail"
 		;;
@@ -836,6 +842,29 @@ install_from_tar() {
 	build_native_xtools
 }
 
+install_from_pkgbase() {
+	msg_n "Installing ${VERSION} ${ARCH} from ${PKGBASEREPO} ..."
+	mkdir -p "${JAILMNT}/etc/pkg"
+	cat <<EOF > "${JAILMNT}/etc/pkg/pkgbase.conf"
+pkgbase: {
+  url: "${PKGBASEREPO}/FreeBSD:${VERSION}:${ARCH}/latest"
+  enabled: yes
+}
+
+FreeBSD: {
+  enabled: no
+}
+EOF
+
+	pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ update
+	# Omit the man/debug/kernel and tests packages, uneeded for us.
+	pkg search -qx '^FreeBSD-.*' | grep -vE -- '-man|-dbg|-kernel-|-tests' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ install -y
+	if [ -n "${KERNEL}" ]; then
+		pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ install -y FreeBSD-kernel-"${KERNEL}" || \
+			err 1 "Failed to install FreeBSD-kernel-${KERNEL}"
+	fi
+}
+
 create_jail() {
 	local IFS
 
@@ -927,6 +956,13 @@ create_jail() {
 		[ -z "${TARBALL}" ] && \
 		    err 1 "Must use format -m tar=/path/to/tarball.tar"
 		[ -r "${TARBALL}" ] || err 1 "Cannot read file ${TARBALL}"
+		METHOD="${METHOD%%=*}"
+		;;
+	pkgbase=*)
+		FCT=install_from_pkgbase
+		PKGBASEREPO="${METHOD##*=}"
+		[ -z "${PKGBASEREPO}" ] && \
+		    err 1 "Must specify repository to use -m pkgbase=url://repo"
 		METHOD="${METHOD%%=*}"
 		;;
 	null)
@@ -1248,6 +1284,7 @@ if ! svn_git_checkout_method "${SOURCES_URL}" "${METHOD}" \
 	gjb) ;;
 	http) ;;
 	null) ;;
+	pkgbase=*) ;;
 	src=*) ;;
 	tar=*) ;;
 	url=*) ;;

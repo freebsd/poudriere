@@ -223,6 +223,12 @@ It is expected that this directory be installed to with the following:
 It will not be copied at the time of running
 .Dq Li poudriere jail .
 Deleting the jail will attempt to revert any files changed by poudriere.
+.It Cm pkgbase= Ns Ar path
+Install from the given pkgbase repository at
+.Ar path .
+.Pp
+Note that building kernel module will not be possible as there is no
+package with the source code.
 .It Cm src= Ns Ar path
 Install from the given directory at
 .Ar path .
