@@ -1600,9 +1600,11 @@ exit_handler() {
 		rm -rf "${POUDRIERE_TMPDIR:?}" 2>/dev/null || :
 		;;
 	esac
-	if [ "${ERROR_VERBOSE}" -eq 1 ]; then
+	case "${ERROR_VERBOSE}.${USE_DEBUG:-no}" in
+	1.*|0.yes)
 		echo "Exiting with status ${EXIT_STATUS}" >&2 || :
-	fi
+		;;
+	esac
 	# return is not handled by exit traps but the *real* handler of
 	# exit_return() is used to support a return while also supporting
 	# signal raising in sig_handler().
