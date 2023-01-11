@@ -176,7 +176,9 @@ if [ -z ${ORIGINSPEC} ]; then
 	ORIGINSPEC="${1}"
 fi
 
-[ -z "${JAILNAME}" ] && err 1 "Don't know on which jail to run please specify -j"
+if [ -z "${JAILNAME}" ]; then
+	err 1 "Don't know on which jail to run please specify -j"
+fi
 
 maybe_run_queued "$@"
 
@@ -266,8 +268,10 @@ if [ $(bget stats_failed) -gt 0 ] || [ $(bget stats_skipped) -gt 0 ]; then
 	msg_error "Depends failed to build"
 	COLOR_ARROW="${COLOR_FAIL}" \
 	    msg "${COLOR_FAIL}Failed ports: ${COLOR_PORT}${failed}"
-	[ -n "${skipped}" ] && COLOR_ARROW="${COLOR_SKIP}" \
-	    msg "${COLOR_SKIP}Skipped ports: ${COLOR_PORT}${skipped}"
+	if [ -n "${skipped}" ]; then
+		COLOR_ARROW="${COLOR_SKIP}" \
+		    msg "${COLOR_SKIP}Skipped ports: ${COLOR_PORT}${skipped}"
+	fi
 
 	bset_job_status "failed/depends" "${ORIGINSPEC}" "${PKGNAME}"
 	show_log_info
@@ -276,7 +280,9 @@ if [ $(bget stats_failed) -gt 0 ] || [ $(bget stats_skipped) -gt 0 ]; then
 fi
 nbbuilt=$(bget stats_built)
 
-[ ${BUILD_REPO} -eq 1 -a ${nbbuilt} -gt 0 ] && build_repo
+if [ ${BUILD_REPO} -eq 1 -a ${nbbuilt} -gt 0 ]; then
+	build_repo
+fi
 
 commit_packages
 
@@ -287,8 +293,9 @@ LOCALBASE=`injail /usr/bin/make -C ${portdir} -VLOCALBASE`
 : ${PREFIX:=$(injail /usr/bin/make -C ${portdir} -VPREFIX)}
 [ -n "${PREFIX}" ] || err 1 "Port has empty PREFIX?"
 if [ "${USE_PORTLINT}" = "yes" ]; then
-	[ ! -x `command -v portlint` ] &&
+	if [ ! -x `command -v portlint` ]; then
 		err 2 "First install portlint if you want USE_PORTLINT to work as expected"
+	fi
 	msg "Portlint check"
 	(
 		cd ${MASTERMNT}${portdir} &&
@@ -296,13 +303,19 @@ if [ "${USE_PORTLINT}" = "yes" ]; then
 			tee ${log}/logs/${PKGNAME}.portlint.log
 	) || :
 fi
-[ ${NOPREFIX} -ne 1 ] && PREFIX="${BUILDROOT:-/prefix}/`echo ${PKGNAME} | tr '[,+]' _`"
-[ "${PREFIX}" != "${LOCALBASE}" ] && PORT_FLAGS="PREFIX=${PREFIX}"
+if [ ${NOPREFIX} -ne 1 ]; then
+	PREFIX="${BUILDROOT:-/prefix}/`echo ${PKGNAME} | tr '[,+]' _`"
+fi
+if [ "${PREFIX}" != "${LOCALBASE}" ]; then
+	PORT_FLAGS="PREFIX=${PREFIX}"
+fi
 msg "Building with flags: ${PORT_FLAGS}"
 
 if [ -d ${MASTERMNT}${PREFIX} -a "${PREFIX}" != "/usr" ]; then
 	msg "Removing existing ${PREFIX}"
-	[ "${PREFIX}" != "${LOCALBASE}" ] && rm -rf ${MASTERMNT}${PREFIX}
+	if [ "${PREFIX}" != "${LOCALBASE}" ]; then
+		rm -rf "${MASTERMNT}${PREFIX}"
+	fi
 fi
 
 PKGENV="PACKAGES=/tmp/pkgs PKGREPOSITORY=/tmp/pkgs PKGLATESTREPOSITORY=/tmp/pkgs/Latest"

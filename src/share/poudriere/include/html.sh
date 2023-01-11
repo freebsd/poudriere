@@ -32,7 +32,9 @@ stress_snapshot() {
 	# Use minimum of JOBS and hw.ncpu to determine load%. Exceeding total
 	# of either is 100%.
 	ncpu=${PARALLEL_JOBS}
-	[ ${ncpu} -gt ${NCPU} ] && ncpu=${NCPU}
+	if [ "${ncpu:?}" -gt "${NCPU:?}" ]; then
+		ncpu="${NCPU}"
+	fi
 	loadpct="$(printf "%2.0f%%" $(echo "scale=20; 100 * (${min_load} / ${ncpu})" | bc))"
 	swapinfo=$(/usr/sbin/swapinfo -k|/usr/bin/awk '/\// {sum+=$2; X+=$3} END {if (sum) {printf "%1.2f%%\n", X*100/sum}}')
 	now=$(clock -monotonic)

@@ -81,7 +81,9 @@ EOF
 }
 
 bulk_cleanup() {
-	[ -n "${CRASHED}" ] && run_hook bulk crashed
+	if [ -n "${CRASHED}" ]; then
+		run_hook bulk crashed
+	fi
 }
 
 PTNAME="default"
@@ -95,7 +97,9 @@ INTERACTIVE_MODE=0
 OVERLAYS=""
 COMMIT=1
 
-[ $# -eq 0 ] && usage
+if [ $# -eq 0 ]; then
+	usage
+fi
 
 while getopts "ab:B:CcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
 	case "${FLAG}" in
@@ -121,8 +125,9 @@ while getopts "ab:B:CcFf:iIj:J:knNO:p:RrSTtvwz:" FLAG; do
 		f)
 			# If this is a relative path, add in ${PWD} as
 			# a cd / was done.
-			[ "${OPTARG#/}" = "${OPTARG}" ] && \
-			    OPTARG="${SAVED_PWD}/${OPTARG}"
+			if [ "${OPTARG#/}" = "${OPTARG}" ]; then
+				OPTARG="${SAVED_PWD}/${OPTARG}"
+			fi
 			LISTPKGS="${LISTPKGS:+${LISTPKGS} }${OPTARG}"
 			;;
 		I)
@@ -214,14 +219,17 @@ saved_argv="$@"
 shift $((OPTIND-1))
 post_getopts
 
-[ ${ALL} -eq 1 -a "${PORTTESTING}" -eq 1 ] && PORTTESTING_FATAL=no
+if [ ${ALL} -eq 1 -a "${PORTTESTING}" -eq 1 ]; then
+	PORTTESTING_FATAL=no
+fi
 
 : ${BUILD_PARALLEL_JOBS:=${PARALLEL_JOBS}}
 : ${PREPARE_PARALLEL_JOBS:=$(echo "scale=0; ${PARALLEL_JOBS} * 1.25 / 1" | bc)}
 PARALLEL_JOBS=${PREPARE_PARALLEL_JOBS}
 
-[ -z "${JAILNAME}" ] && \
-    err 1 "Don't know on which jail to run please specify -j"
+if [ -z "${JAILNAME}" ]; then
+	err 1 "Don't know on which jail to run please specify -j"
+fi
 
 maybe_run_queued "${saved_argv}"
 
@@ -243,7 +251,9 @@ jail_start "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 _log_path LOGD
 if [ -d ${LOGD} -a ${CLEAN} -eq 1 ]; then
 	msg "Cleaning up old logs in ${LOGD}"
-	[ ${DRY_RUN} -eq 0 ] && rm -Rf ${LOGD} 2>/dev/null
+	if [ ${DRY_RUN} -eq 0 ]; then
+		rm -Rf ${LOGD} 2>/dev/null
+	fi
 fi
 
 prepare_ports
@@ -263,9 +273,13 @@ _bget nbskipped stats_skipped
 _bget nbignored stats_ignored
 _bget nbfetched stats_fetched
 
-[ "${NO_RESTRICTED}" != "no" ] && clean_restricted
+if [ "${NO_RESTRICTED}" != "no" ]; then
+	clean_restricted
+fi
 
-[ ${BUILD_REPO} -eq 1 ] && build_repo
+if [ ${BUILD_REPO} -eq 1 ]; then
+	build_repo
+fi
 
 commit_packages
 
@@ -273,7 +287,9 @@ show_build_results
 
 run_hook bulk done ${nbbuilt} ${nbfailed} ${nbignored} ${nbskipped} ${nbfetched}
 
-[ ${INTERACTIVE_MODE} -gt 0 ] && enter_interactive
+if [ ${INTERACTIVE_MODE} -gt 0 ]; then
+	enter_interactive
+fi
 
 bset status "done:"
 

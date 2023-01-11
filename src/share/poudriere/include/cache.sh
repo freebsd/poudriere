@@ -69,7 +69,9 @@ cache_set() {
 	shift 2
 	local var key
 
-	[ ${USE_CACHE_CALL} -eq 0 ] && return 0
+	if [ "${USE_CACHE_CALL}" -eq 0 ]; then
+		return 0
+	fi
 
 	var="cached-${function}"
 	encode_args key "$@"

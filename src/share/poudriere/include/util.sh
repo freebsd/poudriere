@@ -83,11 +83,15 @@ _decode_args() {
 	setvar "${var_return_eval}" "
 		local IFS 2>/dev/null || :;
 		case \$- in *f*) set_f=1 ;; *) set_f=0 ;; esac;
-		[ \"\${set_f}\" -eq 0 ] && set -f;
+		if [ \"\${set_f}\" -eq 0 ]; then
+			set -f;
+		fi;
 		IFS=\"\${ENCODE_SEP}\";
 		set -- \${${encoded_args_var}};
 		unset IFS;
-		[ \"\${set_f}\" -eq 0 ] && set +f;
+		if [ \"\${set_f}\" -eq 0 ]; then
+			set +f;
+		fi;
 		unset set_f;
 		unset ${var_return_eval};
 		"
@@ -528,7 +532,9 @@ read_line() {
 		sleep 0.1
 		reads=$((reads + 1))
 	done
-	[ ${reads} -eq ${max_reads} ] && _ret=1
+	if [ "${reads}" -eq "${max_reads}" ]; then
+		_ret=1
+	fi
 
 	setvar "${var_return}" "${_line}"
 
@@ -1072,7 +1078,9 @@ prefix_stderr() {
 	case $- in *e*) errexit=1; set +e ;; *) errexit=0 ;; esac
 	"$@"
 	ret=$?
-	[ ${errexit} -eq 1 ] && set -e
+	if [ "${errexit}" -eq 1 ]; then
+		set -e
+	fi
 
 	exec 2>&4 4>&-
 	timed_wait_and_kill 5 ${prefixpid} 2>/dev/null || :
@@ -1116,7 +1124,9 @@ prefix_stdout() {
 	case $- in *e*) errexit=1; set +e ;; *) errexit=0 ;; esac
 	"$@"
 	ret=$?
-	[ ${errexit} -eq 1 ] && set -e
+	if [ "${errexit}" -eq 1 ]; then
+		set -e
+	fi
 
 	exec 1>&3 3>&-
 	timed_wait_and_kill 5 ${prefixpid} 2>/dev/null || :
@@ -1168,7 +1178,9 @@ prefix_output() {
 	case $- in *e*) errexit=1; set +e ;; *) errexit=0 ;; esac
 	"$@"
 	ret=$?
-	[ ${errexit} -eq 1 ] && set -e
+	if [ "${errexit}" -eq 1 ]; then
+		set -e
+	fi
 
 	exec 1>&3 3>&- 2>&4 4>&-
 	timed_wait_and_kill 5 ${prefixpid} 2>/dev/null || :

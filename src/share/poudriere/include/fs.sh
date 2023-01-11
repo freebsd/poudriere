@@ -24,7 +24,7 @@
 # SUCH DAMAGE.
 
 createfs() {
-	[ $# -ne 3 ] && eargs createfs name mnt fs
+	[ $# -eq 3 ] || eargs createfs name mnt fs
 	local name mnt fs
 	name=$1
 	mnt=$(echo $2 | sed -e "s,//,/,g")
@@ -77,7 +77,7 @@ _do_cpdup() {
 
 _do_clone() {
 	local -; set -f
-	[ $# -lt 3 ] && eargs _do_clone rflags args...
+	[ $# -ge 3 ] || eargs _do_clone rflags args...
 	local rflags="$1"
 	shift
 	local src dst common relative cpignore FLAG
@@ -118,13 +118,13 @@ _do_clone() {
 }
 
 do_clone() {
-	[ $# -lt 2 ] && eargs do_clone [-r] [-x | -X cpignore ] src dst
+	[ $# -ge 2 ] || eargs do_clone [-r] [-x | -X cpignore ] src dst
 
 	_do_clone "-o" "$@"
 }
 
 do_clone_del() {
-	[ $# -lt 2 ] && eargs do_clone_del [-r] [-x | -X cpignore ] src dst
+	[ $# -ge 2 ] || eargs do_clone_del [-r] [-x | -X cpignore ] src dst
 
 	_do_clone "-s0 -f" "$@"
 }
@@ -139,7 +139,7 @@ rollback_file() {
 }
 
 rollbackfs() {
-	[ $# -lt 2 ] && eargs rollbackfs name mnt [fs]
+	[ $# -ge 2 ] || eargs rollbackfs name mnt [fs]
 	local name=$1
 	local mnt=$2
 	local fs="${3-$(zfs_getfs ${mnt})}"
@@ -219,7 +219,7 @@ findmounts() {
 }
 
 umountfs() {
-	[ $# -lt 1 ] && eargs umountfs mnt childonly
+	[ $# -ge 1 ] || eargs umountfs mnt childonly
 	local mnt="$1"
 	local childonly="${2-}"
 	local flags
@@ -240,7 +240,7 @@ umountfs() {
 }
 
 _zfs_getfs() {
-	[ $# -ne 1 ] && eargs _zfs_getfs mnt
+	[ $# -eq 1 ] || eargs _zfs_getfs mnt
 	local mnt="${1}"
 
 	mntres=$(realpath -q "${mnt}" || echo "${mnt}")
@@ -249,7 +249,7 @@ _zfs_getfs() {
 }
 
 zfs_getfs() {
-	[ $# -ne 1 ] && eargs zfs_getfs mnt
+	[ $# -eq 1 ] || eargs zfs_getfs mnt
 	local mnt="${1}"
 	local value
 
@@ -263,7 +263,7 @@ zfs_getfs() {
 }
 
 mnt_tmpfs() {
-	[ $# -lt 2 ] && eargs mnt_tmpfs type dst
+	[ $# -ge 2 ] || eargs mnt_tmpfs type dst
 	local type="$1"
 	local dst="$2"
 	local limit size
@@ -286,7 +286,7 @@ mnt_tmpfs() {
 }
 
 clonefs() {
-	[ $# -ne 3 ] && eargs clonefs from to snap
+	[ $# -eq 3 ] || eargs clonefs from to snap
 	local from=$1
 	local to=$2
 	local snap=$3
@@ -328,7 +328,9 @@ clonefs() {
 		local cpignore
 
 		cpignore=
-		[ ${TMPFS_ALL} -eq 1 ] && mnt_tmpfs all "${mnt}"
+		if [ "${TMPFS_ALL}" -eq 1 ]; then
+			mnt_tmpfs all "${mnt}"
+		fi
 		if [ "${snap}" = "clean" ]; then
 			local skippath skippaths common src dst
 
@@ -380,7 +382,7 @@ nullfs_paths() {
 }
 
 destroyfs() {
-	[ $# -ne 2 ] && eargs destroyfs mnt type
+	[ $# -eq 2 ] || eargs destroyfs mnt type
 	local mnt="$1"
 	local type="$2"
 	local fs

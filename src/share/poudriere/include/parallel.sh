@@ -183,7 +183,9 @@ parallel_exec() {
 		# non-zero if it has any failures, if caller
 		# was set -e as well. Using 'if cmd' or 'cmd || '
 		# here would disable set -e in the cmd execution
-		[ $errexit -eq 1 ] && set -e
+		if [ "${errexit}" -eq 1 ]; then
+			set -e
+		fi
 		"$@"
 	)
 	ret=$?
@@ -367,8 +369,9 @@ nohang() {
 	return $ret
 }
 
-[ -f /usr/bin/protect ] && [ $(/usr/bin/id -u) -eq 0 ] &&
-    PROTECT=/usr/bin/protect
+if [ -f /usr/bin/protect ] && [ $(/usr/bin/id -u) -eq 0 ]; then
+	PROTECT=/usr/bin/protect
+fi
 madvise_protect() {
 	[ $# -eq 1 ] || eargs madvise_protect pid
 	if [ -n "${PROTECT}" ]; then

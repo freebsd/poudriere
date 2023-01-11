@@ -118,7 +118,7 @@ _hash_var_name() {
 
 hash_isset() {
 	local -; set +x
-	[ $# -ne 2 ] && eargs hash_isset var key
+	[ $# -eq 2 ] || eargs hash_isset var key
 	local _var="$1"
 	local _key="$2"
 	local _hash_var_name
@@ -129,7 +129,7 @@ hash_isset() {
 
 hash_isset_var() {
 	local -; set +x
-	[ $# -ne 1 ] && eargs hash_isset_var var
+	[ $# -eq 1 ] || eargs hash_isset_var var
 	local _var="$1"
 	local _line _hash_var_name ret IFS
 
@@ -154,7 +154,7 @@ hash_isset_var() {
 
 hash_get() {
 	local -; set +x
-	[ $# -ne 3 ] && eargs hash_get var key var_return
+	[ $# -eq 3 ] || eargs hash_get var key var_return
 	local _var="$1"
 	local _key="$2"
 	local _hash_var_name
@@ -177,7 +177,7 @@ hash_set() {
 
 hash_remove() {
 	local -; set +x
-	[ $# -ne 3 ] && eargs hash_remove var key var_return
+	[ $# -eq 3 ] || eargs hash_remove var key var_return
 	local _var="$1"
 	local _key="$2"
 	local var_return="$3"

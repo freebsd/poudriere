@@ -2964,8 +2964,9 @@ jail_start() {
 	if [ "${DISTFILES_CACHE}" != "no" -a ! -d "${DISTFILES_CACHE}" ]; then
 		err 1 "DISTFILES_CACHE directory does not exist. (cf.  poudriere.conf)"
 	fi
-	schg_immutable_base && [ $(sysctl -n kern.securelevel) -ge 1 ] && \
-	    err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags for IMMUTABLE_BASE=schg."
+	if schg_immutable_base && [ $(sysctl -n kern.securelevel) -ge 1 ]; then
+		err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags for IMMUTABLE_BASE=schg."
+	fi
 	if [ ${TMPFS_ALL} -eq 0 ] && [ ${TMPFS_WRKDIR} -eq 0 ] \
 	    && [ $(sysctl -n kern.securelevel) -ge 1 ]; then
 		err 1 "kern.securelevel >= 1. Poudriere requires no securelevel to be able to handle schg flags. USE_TMPFS with 'wrkdir' or 'all' values can avoid this."
@@ -3056,7 +3057,9 @@ jail_start() {
 		fi
 	done
 	jail_exists ${name} || err 1 "No such jail: ${name}"
-	jail_runs ${MASTERNAME} && err 1 "jail already running: ${MASTERNAME}"
+	if jail_runs ${MASTERNAME}; then
+		err 1 "jail already running: ${MASTERNAME}"
+	fi
 	check_emulation "${host_arch}" "${arch}"
 
 	# Block the build dir from being traversed by non-root to avoid
@@ -3105,7 +3108,9 @@ jail_start() {
 	# May already be set for pkgclean
 	: ${PACKAGES:=${POUDRIERE_DATA:?}/packages/${MASTERNAME}}
 	mkdir -p "${PACKAGES:?}/"
-	was_a_bulk_run && stash_packages
+	if was_a_bulk_run; then
+		stash_packages
+	fi
 	do_portbuild_mounts "${tomnt}" "${name}" "${ptname}" "${setname}"
 
 	if [ "${tomnt##*/}" = "ref" ]; then
@@ -4854,8 +4859,10 @@ build_queue() {
 				# Set a 0 timeout to quickly rescan for idle
 				# builders to toss a job at since the queue
 				# may now be unblocked.
-				[ ${queue_empty} -eq 0 -a \
-				    ${builders_idle} -eq 1 ] && timeout=0
+				if [ "${queue_empty:?}" -eq 0 -a \
+				    "${builders_idle:?}" -eq 1 ]; then
+					timeout=0
+				fi
 			fi
 
 			# This builder is idle and needs work.
@@ -4868,7 +4875,9 @@ build_queue() {
 			if [ -z "${pkgname}" ]; then
 				# Check if the ready-to-build pool and need-to-build pools
 				# are empty
-				pkgqueue_empty && queue_empty=1
+				if pkgqueue_empty; then
+					queue_empty=1
+				fi
 				builders_idle=1
 				continue
 			fi
@@ -4990,10 +4999,14 @@ parallel_build() {
 	    nremaining=$((nremaining - 1))
 
 	# If pool is empty, just return
-	[ ${nremaining} -eq 0 ] && return 0
+	if [ "${nremaining:?}" -eq 0 ]; then
+		return 0
+	fi
 
 	# Minimize PARALLEL_JOBS to queue size
-	[ ${PARALLEL_JOBS} -gt ${nremaining} ] && PARALLEL_JOBS=${nremaining##* }
+	if [ "${PARALLEL_JOBS:?}" -gt "${nremaining:?}" ]; then
+		PARALLEL_JOBS=${nremaining##* }
+	fi
 
 	msg "Building ${nremaining} packages using up to ${PARALLEL_JOBS} builders"
 	JOBS="$(jot -w %02d ${PARALLEL_JOBS})"
@@ -5036,7 +5049,9 @@ parallel_build() {
 	bset builders "${JOBS}"
 	bset status "parallel_build:"
 
-	[ ! -d "${MASTER_DATADIR}/pool" ] && err 1 "Build pool is missing"
+	if [ ! -d "${MASTER_DATADIR}/pool" ]; then
+		err 1 "Build pool is missing"
+	fi
 	cd "${MASTER_DATADIR}/pool"
 
 	build_queue "${jname}" "${ptname}" "${setname}"
@@ -5092,7 +5107,7 @@ crashed_build() {
 }
 
 clean_pool() {
-	[ $# -ne 3 ] && eargs clean_pool pkgname originspec clean_rdepends
+	[ $# -eq 3 ] || eargs clean_pool pkgname originspec clean_rdepends
 	local pkgname=$1
 	local originspec=$2
 	local clean_rdepends="$3"
@@ -5156,7 +5171,7 @@ print_phase_footer() {
 }
 
 build_pkg() {
-	[ $# -ne 2 ] && eargs build_pkg pkgname PORTTESTING
+	[ $# -eq 2 ] || eargs build_pkg pkgname PORTTESTING
 	local pkgname="$1"
 	PORTTESTING="$2"
 	local port portdir subpkg
@@ -5386,11 +5401,17 @@ build_all_flavors() {
 	local originspec="$1"
 	local origin build_all
 
-	[ "${ALL}" -eq 1 ] && return 0
-	[ "${FLAVOR_DEFAULT_ALL}" = "yes" ] && return 0
+	if [ "${ALL}" -eq 1 ]; then
+		return 0
+	fi
+	case "${FLAVOR_DEFAULT_ALL}" in
+	"yes") return 0 ;;
+	esac
 	originspec_decode "${originspec}" origin '' ''
 	shash_get origin-flavor-all "${origin}" build_all || build_all=0
-	[ "${build_all}" -eq 1 ] && return 0
+	if [ "${build_all}" -eq 1 ]; then
+		return 0
+	fi
 
 	# bulk and testport
 	return 1
@@ -6420,8 +6441,9 @@ get_pkgname_from_originspec() {
 		_flavor=
 		originspec_encode _originspec "${_origin}" "${_flavor}" "${_subpkg}"
 	fi
-	shash_get originspec-pkgname "${_originspec}" "${var_return}" && \
-	    return 0
+	if shash_get originspec-pkgname "${_originspec}" "${var_return}"; then
+		return 0
+	fi
 	# If the FLAVOR is empty then it is fatal to not have a result yet.
 	if [ -z "${_flavor}" ]; then
 		return 1
@@ -7865,8 +7887,9 @@ prepare_ports() {
 					fi
 				fi
 			done
-			check_dep_fatal_error && \
-			    err 1 "Error processing -C packages"
+			if check_dep_fatal_error; then
+				err 1 "Error processing -C packages"
+			fi
 			if [ "${ATOMIC_PACKAGE_REPOSITORY}" != "yes" ] && \
 			    [ -s "${delete_pkg_list}" ]; then
 				confirm_if_tty "Are you sure you want to delete the listed packages?" || \
@@ -7942,7 +7965,9 @@ prepare_ports() {
 		if [ ${SKIP_RECURSIVE_REBUILD} -eq 0 ]; then
 			msg_verbose "Checking packages for missing dependencies"
 			while :; do
-				sanity_check_pkgs && break
+				if sanity_check_pkgs; then
+					break
+				fi
 			done
 		else
 			msg "(-S) Skipping recursive rebuild"
@@ -8677,12 +8702,14 @@ fi
 # If in a nested jail we may not even have a loopback to use.
 if [ "${JAILED:-0}" -eq 1 ]; then
 	# !! Note these exit statuses are inverted
-	ifconfig | \
-	    awk -vip="${LOIP6}" '$1 == "inet6" && $2 == ip {exit 1}' && \
-	    LOIP6=
-	ifconfig | \
-	    awk -vip="${LOIP4}" '$1 == "inet" && $2 == ip {exit 1}' && \
-	    LOIP4=
+	if ifconfig |
+	    awk -vip="${LOIP6}" '$1 == "inet6" && $2 == ip {exit 1}'; then
+		LOIP6=
+	fi
+	if ifconfig |
+	    awk -vip="${LOIP4}" '$1 == "inet" && $2 == ip {exit 1}'; then
+		LOIP4=
+	fi
 fi
 case $IPS in
 01)

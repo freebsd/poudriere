@@ -30,7 +30,9 @@
 METHOD_DEF=http
 
 usage() {
-	[ $# -gt 0 ] && echo "Missing: $@" >&2
+	if [ $# -gt 0 ]; then
+		echo "Missing: $@" >&2
+	fi
 	cat << EOF
 poudriere jail [parameters] [options]
 
@@ -114,8 +116,9 @@ list_jail() {
 			_jget mnt ${name} mnt
 			_jget timestamp ${name} timestamp || :
 			time=
-			[ -n "${timestamp}" ] && \
-			    time="$(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
+			if [ -n "${timestamp}" ]; then
+				time="$(date -j -r ${timestamp} "+%Y-%m-%d %H:%M:%S")"
+			fi
 			if [ -n "${version_vcs}" ]; then
 				version="${version} ${version_vcs}"
 			fi
@@ -125,7 +128,9 @@ list_jail() {
 			display_add ${name}
 		fi
 	done
-	[ ${QUIET} -eq 1 ] && quiet="-q"
+	if [ ${QUIET} -eq 1 ]; then
+		quiet="-q"
+	fi
 	display_output ${quiet}
 }
 
@@ -133,10 +138,13 @@ delete_jail() {
 	local cache_dir method
 	local clean_dir depth
 
-	[ -z "${JAILNAME}" ] && usage JAILNAME
+	if [ -z "${JAILNAME}" ]; then
+		usage JAILNAME
+	fi
 	jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
-	jail_runs ${JAILNAME} &&
+	if jail_runs ${JAILNAME}; then
 		err 1 "Unable to delete jail ${JAILNAME}: it is running"
+	fi
 	msg_n "Removing ${JAILNAME} jail..."
 	method=$(jget ${JAILNAME} method)
 	if [ "${method}" = "null" ]; then
@@ -188,8 +196,9 @@ update_version() {
 		RELEASE=$(jget ${JAILNAME} version)
 	fi
 	[ -n "${RELEASE}" ] || err 1 "updated_version: Failed to determine RELEASE"
-	[ -n "${version_extra}" ] &&
-	    RELEASE="${RELEASE} ${version_extra}"
+	if [ -n "${version_extra}" ]; then
+		RELEASE="${RELEASE} ${version_extra}"
+	fi
 	jset ${JAILNAME} version "${RELEASE}"
 	echo "${RELEASE}"
 }
@@ -343,8 +352,12 @@ update_jail() {
 		markfs clean ${JAILMNT}
 		;;
 	gjb|url=*|freebsdci)
-		[ -z "${VERSION}" ] && VERSION=$(jget ${JAILNAME} version)
-		[ -z "${ARCH}" ] && ARCH=$(jget ${JAILNAME} arch)
+		if [ -z "${VERSION}" ]; then
+			VERSION=$(jget ${JAILNAME} version)
+		fi
+		if [ -z "${ARCH}" ]; then
+			ARCH=$(jget ${JAILNAME} arch)
+		fi
 		delete_jail
 		create_jail
 		;;
@@ -419,7 +432,9 @@ build_pkgbase() {
 setup_build_env() {
 	local hostver
 
-	[ -n "${MAKE_CMD}" ] && return 0
+	if [ -n "${MAKE_CMD}" ];then
+		return 0
+	fi
 
 	JAIL_OSVERSION=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' ${SRC_BASE}/sys/sys/param.h)
 	hostver=$(awk '/^\#define[[:blank:]]__FreeBSD_version/ {print $3}' /usr/include/sys/param.h)
@@ -463,17 +478,22 @@ setup_build_env() {
 setup_src_conf() {
 	local src="$1"
 
-	[ -f ${JAILMNT}/etc/${src}.conf ] && rm -f ${JAILMNT}/etc/${src}.conf
-	touch ${JAILMNT}/etc/${src}.conf
-	[ -f ${POUDRIERED}/${src}.conf ] && \
-	    cat ${POUDRIERED}/${src}.conf > ${JAILMNT}/etc/${src}.conf
-	[ -n "${SETNAME}" ] && \
-	    [ -f ${POUDRIERED}/${SETNAME}-${src}.conf ] && \
-	    cat ${POUDRIERED}/${SETNAME}-${src}.conf >> \
-	    ${JAILMNT}/etc/${src}.conf
-	[ -f ${POUDRIERED}/${JAILNAME}-${src}.conf ] && \
-	    cat ${POUDRIERED}/${JAILNAME}-${src}.conf >> \
-	    ${JAILMNT}/etc/${src}.conf
+	if [ -f "${JAILMNT}/etc/${src}.conf" ]; then
+		rm -f "${JAILMNT}/etc/${src}.conf"
+	fi
+	touch "${JAILMNT}/etc/${src}.conf"
+	if [ -f "${POUDRIERED}/${src}.conf" ]; then
+		cat "${POUDRIERED}/${src}.conf" > "${JAILMNT}/etc/${src}.conf"
+	fi
+	if [ -n "${SETNAME}" ] &&
+	    [ -f "${POUDRIERED}/${SETNAME}-${src}.conf" ]; then
+		cat "${POUDRIERED}/${SETNAME}-${src}.conf" >> \
+		    "${JAILMNT}/etc/${src}.conf"
+	fi
+	if [ -f "${POUDRIERED}/${JAILNAME}-${src}.conf" ]; then
+		cat "${POUDRIERED}/${JAILNAME}-${src}.conf" >> \
+		    "${JAILMNT}/etc/${src}.conf"
+	fi
 }
 
 buildworld() {
@@ -576,7 +596,9 @@ install_from_src() {
 		EOF
 	fi
 	do_clone -r ${cpignore_flag} ${SRC_BASE} ${JAILMNT}/usr/src
-	[ -n "${cpignore}" ] && rm -f ${cpignore}
+	if [ -n "${cpignore}" ]; then
+		rm -f "${cpignore}"
+	fi
 	echo " done"
 	check_kernconf
 
@@ -696,7 +718,9 @@ install_from_ftp() {
 	esac
 
 	DISTS="${DISTS} base games"
-	[ -z "${SRCPATH}" -a "${NO_SRC:-no}" = "no" ] && DISTS="${DISTS} src"
+	if [ -z "${SRCPATH}" -a "${NO_SRC:-no}" = "no" ]; then
+		DISTS="${DISTS} src"
+	fi
 	DISTS="${DISTS} ${EXTRA_DISTS}"
 
 	case "${V}" in
@@ -979,22 +1003,29 @@ create_jail() {
 	esac
 
 	if [ "${JAILFS}" != "none" ]; then
-		[ -d "${JAILMNT}" ] && \
-		    err 1 "Directory ${JAILMNT} already exists"
+		if [ -d "${JAILMNT}" ]; then
+			err 1 "Directory ${JAILMNT} already exists"
+		fi
 	fi
 	if [ "${METHOD}" = "null" ] && \
 	    ([ ! -d "${JAILMNT}" ] || dirempty "${JAILMNT}"); then
 		err 1 "Directory ${JAILMNT} expected to be populated from installworld already."
 	fi
-	[ -n "${JAILFS}" -a "${JAILFS}" != "none" ] && jset ${JAILNAME} fs ${JAILFS}
+	if [ -n "${JAILFS}" -a "${JAILFS}" != "none" ]; then
+		jset ${JAILNAME} fs ${JAILFS}
+	fi
 	if [ -n "${VERSION}" ]; then
 		jset ${JAILNAME} version ${VERSION}
 	fi
 	jset ${JAILNAME} timestamp $(clock -epoch)
 	jset ${JAILNAME} arch ${ARCH}
 	jset ${JAILNAME} mnt ${JAILMNT}
-	[ -n "$SRCPATH" ] && jset ${JAILNAME} srcpath ${SRCPATH}
-	[ -n "${KERNEL}" ] && jset ${JAILNAME} kernel "${KERNEL}"
+	if [ -n "$SRCPATH" ]; then
+		jset ${JAILNAME} srcpath ${SRCPATH}
+	fi
+	if [ -n "${KERNEL}" ]; then
+		jset ${JAILNAME} kernel "${KERNEL}"
+	fi
 
 	# Wrap the jail creation in a special cleanup hook that will remove the jail
 	# if any error is encountered
@@ -1003,7 +1034,9 @@ create_jail() {
 	if [ "${METHOD}" != "null" ]; then
 		createfs ${JAILNAME} ${JAILMNT} ${JAILFS:-none}
 	fi
-	[ -n "${FCT}" ] && ${FCT} version_extra
+	if [ -n "${FCT}" ]; then
+		${FCT} version_extra
+	fi
 
 	jset ${JAILNAME} pkgbase ${BUILD_PKGBASE}
 
@@ -1014,16 +1047,19 @@ create_jail() {
 	fi
 	[ -n "${RELEASE}" ] || err 1 "Failed to determine RELEASE"
 
-	[ "${METHOD}" = "null" ] && \
-	    [ ! -f "${JAILMNT}/etc/login.conf" ] && \
-	    err 1 "Directory ${JAILMNT} must be populated from installworld already."
+	if [ "${METHOD}" = "null" ] && \
+	    [ ! -f "${JAILMNT}/etc/login.conf" ]; then
+		    err 1 "Directory ${JAILMNT} must be populated from installworld already."
+	fi
 
 	markfs clean ${JAILMNT}
 
 	# Check VERSION before running 'update_jail' on jails created using FreeBSD dists.
 	case ${METHOD} in
 		ftp|http|ftp-archive)
-			[ ${VERSION#*-RELEAS*} != ${VERSION} ] && update_jail
+			if [ "${VERSION#*-RELEAS*}" != "${VERSION}" ]; then
+				update_jail
+			fi
 			;;
 	esac
 
@@ -1157,7 +1193,9 @@ while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxXC:y" FLAG; do
 			ARCH=${OPTARG}
 			# If TARGET=TARGET_ARCH trim it away and just use
 			# TARGET_ARCH
-			[ "${ARCH%.*}" = "${ARCH#*.}" ] && ARCH="${ARCH#*.}"
+			if [ "${ARCH%.*}" = "${ARCH#*.}" ]; then
+				ARCH="${ARCH#*.}"
+			fi
 			;;
 		m)
 			METHOD=${OPTARG}
@@ -1200,8 +1238,9 @@ while getopts "bBiJ:j:v:a:z:m:nf:M:sdkK:lqcip:r:uU:t:z:P:S:DxXC:y" FLAG; do
 			[ -r ${OPTARG} ] || err 1 "No such patch"
 			# If this is a relative path, add in ${PWD} as
 			# a cd / was done.
-			[ "${OPTARG#/}" = "${OPTARG}" ] && \
-			    OPTARG="${SAVED_PWD}/${OPTARG}"
+			if [ "${OPTARG#/}" = "${OPTARG}" ]; then
+				OPTARG="${SAVED_PWD}/${OPTARG}"
+			fi
 			SRCPATCHFILE="${OPTARG}"
 			;;
 		S)
@@ -1293,19 +1332,28 @@ fi
 case "${COMMAND}" in
 	create)
 		[ ${VERBOSE} -gt 0 ] || quiet="-q"
-		[ -z "${JAILNAME}" ] && usage JAILNAME
+		if [ -z "${JAILNAME}" ]; then
+			usage JAILNAME
+		fi
 		case ${METHOD} in
-			src=*|null|git*) ;;
-			*) [ -z "${VERSION}" ] && usage VERSION ;;
+		src=*|null|git*) ;;
+		*)
+			if [ -z "${VERSION}" ]; then
+				usage VERSION
+			fi
+			;;
 		esac
-		jail_exists ${JAILNAME} && \
-		    err 2 "The jail ${JAILNAME} already exists"
+		if jail_exists ${JAILNAME}; then
+			err 2 "The jail ${JAILNAME} already exists"
+		fi
 		maybe_run_queued "${saved_argv}"
 		check_emulation "${REALARCH}" "${ARCH}"
 		create_jail
 		;;
 	info)
-		[ -z "${JAILNAME}" ] && usage JAILNAME
+		if [ -z "${JAILNAME}" ]; then
+			usage JAILNAME
+		fi
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		_mastermnt MASTERMNT
 		export MASTERMNT
@@ -1315,7 +1363,9 @@ case "${COMMAND}" in
 		list_jail
 		;;
 	stop)
-		[ -z "${JAILNAME}" ] && usage JAILNAME
+		if [ -z "${JAILNAME}" ]; then
+			usage JAILNAME
+		fi
 		maybe_run_queued "${saved_argv}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
 		_mastermnt MASTERMNT
@@ -1326,7 +1376,9 @@ case "${COMMAND}" in
 		;;
 	start)
 		export SET_STATUS_ON_START=0
-		[ -z "${JAILNAME}" ] && usage JAILNAME
+		if [ -z "${JAILNAME}" ]; then
+			usage JAILNAME
+		fi
 		porttree_exists ${PTNAME} || err 2 "No such ports tree ${PTNAME}"
 		maybe_run_queued "${saved_argv}"
 		export MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
@@ -1337,7 +1389,9 @@ case "${COMMAND}" in
 		JNETNAME="n"
 		;;
 	delete)
-		[ -z "${JAILNAME}" ] && usage JAILNAME
+		if [ -z "${JAILNAME}" ]; then
+			usage JAILNAME
+		fi
 		jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 		if [ -z "${YES}" ]; then
 			confirm_if_tty "Are you sure you want to delete the jail?" || \
@@ -1348,16 +1402,21 @@ case "${COMMAND}" in
 		;;
 	update)
 		[ ${VERBOSE} -gt 0 ] || quiet="-q"
-		[ -z "${JAILNAME}" ] && usage JAILNAME
+		if [ -z "${JAILNAME}" ]; then
+			usage JAILNAME
+		fi
 		jail_exists ${JAILNAME} || err 1 "No such jail: ${JAILNAME}"
 		maybe_run_queued "${saved_argv}"
-		jail_runs ${JAILNAME} && \
-		    err 1 "Unable to update jail ${JAILNAME}: it is running"
+		if jail_runs ${JAILNAME}; then
+			err 1 "Unable to update jail ${JAILNAME}: it is running"
+		fi
 		check_emulation "${REALARCH}" "${ARCH}"
 		update_jail
 		;;
 	rename)
-		[ -z "${JAILNAME}" ] && usage JAILNAME
+		if [ -z "${JAILNAME}" ]; then
+			usage JAILNAME
+		fi
 		maybe_run_queued "${saved_argv}"
 		rename_jail
 		;;
