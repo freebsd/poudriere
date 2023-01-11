@@ -1463,9 +1463,8 @@ exit_handler() {
 		: ${EXIT_STATUS:="$?"}
 		unset IFS
 		set +u
-		# Just exit if another TERM is received
-		trap - EXIT TERM
-		trap '' PIPE INT INFO HUP
+		trap - EXIT
+		trap '' PIPE INT INFO HUP TERM
 		case "${SHFLAGS-$-}${SETX_EXIT:-0}" in
 		*x*1) ;;
 		*) local -; set +x ;;

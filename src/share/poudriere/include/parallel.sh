@@ -811,9 +811,7 @@ sig_handler() {
 	{
 		unset IFS
 		set +e +u
-		# Just exit if another TERM is received
-		trap - TERM
-		trap '' PIPE INT INFO HUP
+		trap '' PIPE INT INFO HUP TERM
 		case "${SHFLAGS-$-}${SETX_EXIT:-0}" in
 		*x*1) ;;
 		*) local -; set +x ;;

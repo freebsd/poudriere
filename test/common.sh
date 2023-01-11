@@ -483,11 +483,8 @@ cleanup() {
 		test_cleanup
 	fi
 	# Avoid recursively cleaning up here
-	trap - EXIT SIGTERM
-	# Ignore SIGPIPE for messages
-	trap '' SIGPIPE
-	# Ignore SIGINT while cleaning up
-	trap '' SIGINT
+	trap - EXIT
+	trap '' PIPE INT INFO HUP TERM
 	msg_dev "cleanup($1)" >&2
 	case $(jobs) in
 	"") ;;

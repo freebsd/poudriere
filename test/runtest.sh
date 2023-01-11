@@ -431,9 +431,7 @@ sig_handler() {
 
 	set +e +u
 	unset IFS
-	# Just exit if another TERM is received
-	trap - TERM
-	trap '' PIPE INT HUP
+	trap '' PIPE INT INFO HUP TERM
 	trap - EXIT
 	"${exit_handler}"
 	trap - "${sig}"
