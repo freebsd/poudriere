@@ -219,7 +219,7 @@ case "${SETE}${CMD}" in
 jail|ports|daemon|status|options)
 	;;
 *)
-	SET_ERREXIT=-e
+	SET_ERREXIT="-e -o pipefail"
 	;;
 esac
 
