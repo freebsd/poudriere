@@ -679,7 +679,7 @@ readlines_file() {
 	rl_var_count="$#"
 	rl_rest=
 	ret=0
-	if mapfile rl_handle "${rl_file:?}" "re"; then
+	if mapfile rl_handle "${rl_file:?}" "r"; then
 		while IFS= mapfile_read "${rl_handle}" rl_line; do
 			_readlines_lines_read="$((_readlines_lines_read + 1))"
 			case "${rl_var_count}" in
@@ -1326,7 +1326,7 @@ mapfile_cat_file() {
 		case "${_file}" in
 		-) _file="/dev/fd/0" ;;
 		esac
-		if mapfile _handle "${_file}" "re"; then
+		if mapfile _handle "${_file}" "r"; then
 			mapfile_cat "${_handle}" || ret="$?"
 			mapfile_close "${_handle}" || ret="$?"
 		else

@@ -65,7 +65,7 @@ shash_get() {
 			break
 			;;
 		esac
-		if ! mapfile handle "${_f}" "re" 2>/dev/null; then
+		if ! mapfile handle "${_f}" "r" 2>/dev/null; then
 			ret=1
 			continue
 		fi
