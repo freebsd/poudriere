@@ -139,7 +139,9 @@ _mapfile_open(const char *file, const char *modes)
 {
 	FILE *fp;
 	struct mapped_data *md;
+#if 0
 	struct stat sb;
+#endif
 	const char *p;
 	char *dupp;
 	char dupmodes[7];
@@ -180,6 +182,7 @@ _mapfile_open(const char *file, const char *modes)
 			errno = serrno;
 			err(EX_NOINPUT, "%s: %s", "fopen", file);
 		}
+#if 0
 		if (fstat(fileno(fp), &sb) != 0) {
 			serrno = errno;
 			fclose(fp);
@@ -196,6 +199,7 @@ _mapfile_open(const char *file, const char *modes)
 			errx(EX_DATAERR, "%s not a regular file or FIFO",
 			    file);
 		}
+#endif
 		/* sh has <=10 reserved. */
 		if (fileno(fp) < 10) {
 			cmd = -1;
