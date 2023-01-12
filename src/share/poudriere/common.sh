@@ -3301,6 +3301,7 @@ load_blacklist() {
 		fi
 		bfile=${b:+${b}-}blacklist
 		[ -f ${POUDRIERED}/${bfile} ] || continue
+		msg "Loading blacklist from ${POUDRIERED}/${bfile}"
 		for port in $(grep -h -v -E '(^[[:space:]]*#|^[[:space:]]*$)' \
 		    ${POUDRIERED}/${bfile} | sed -e 's|[[:space:]]*#.*||'); do
 			case " ${BLACKLIST} " in
