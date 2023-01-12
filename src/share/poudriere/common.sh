@@ -7647,7 +7647,7 @@ load_moved() {
 			echo "${MASTERMNT}${OVERLAYSDIR}/${o}/MOVED"
 		done
 	} | \
-	xargs cat | \
+	xargs cat |	# cat is so that awk is called at most once.
 	awk -f ${AWKPREFIX}/parse_MOVED.awk | \
 	while mapfile_read_loop_redir old_origin new_origin; do
 		# new_origin may be EXPIRED followed by the reason
