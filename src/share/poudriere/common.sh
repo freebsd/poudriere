@@ -8907,6 +8907,21 @@ prepare_ports() {
 			    "${log:?}/logs/fetched" \
 			    "${log:?}/logs/ignored" \
 			    "${cache_dir:?}"
+			bset stats_queued 0
+			bset stats_built 0
+			bset stats_failed 0
+			bset stats_ignored 0
+			bset stats_skipped 0
+			bset stats_fetched 0
+			:> "${log:?}/.data.json"
+			:> "${log:?}/.data.mini.json"
+			:> "${log:?}/.poudriere.ports.queued"
+			:> "${log:?}/.poudriere.ports.tobuild"
+			:> "${log:?}/.poudriere.ports.built"
+			:> "${log:?}/.poudriere.ports.failed"
+			:> "${log:?}/.poudriere.ports.ignored"
+			:> "${log:?}/.poudriere.ports.skipped"
+			:> "${log:?}/.poudriere.ports.fetched"
 			# Link this build as the /latest
 			ln -sfh "${BUILDNAME}" "${log_jail:?}/latest"
 
@@ -9037,22 +9052,6 @@ prepare_ports() {
 			    "${log:?}/.poudriere.ports.skipped" | \
 			    pkgqueue_remove_many_pipe
 		else
-			# New build
-			bset stats_queued 0
-			bset stats_built 0
-			bset stats_failed 0
-			bset stats_ignored 0
-			bset stats_skipped 0
-			bset stats_fetched 0
-			:> "${log:?}/.data.json"
-			:> "${log:?}/.data.mini.json"
-			:> "${log:?}/.poudriere.ports.queued"
-			:> "${log:?}/.poudriere.ports.tobuild"
-			:> "${log:?}/.poudriere.ports.built"
-			:> "${log:?}/.poudriere.ports.failed"
-			:> "${log:?}/.poudriere.ports.ignored"
-			:> "${log:?}/.poudriere.ports.skipped"
-			:> "${log:?}/.poudriere.ports.fetched"
 			trim_ignored
 		fi
 		download_from_repo
