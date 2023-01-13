@@ -704,6 +704,20 @@ fi
 
 	:>"${TMP2}"
 	assert_ret 0 mapfile read_handle "${TMP}" "re"
+	assert_ret 0 mapfile_cat "${read_handle}" > "${TMP2}"
+	assert_ret 0 mapfile_close "${read_handle}"
+	assert_ret 0 diff -u "${TMP}" "${TMP2}"
+	rm -f "${TMP}" "${TMP2}"
+}
+
+{
+	TMP=$(mktemp -t mapfile)
+	TMP2=$(mktemp -t mapfile)
+
+	ps uaxwd > "${TMP}"
+
+	:>"${TMP2}"
+	assert_ret 0 mapfile read_handle "${TMP}" "re"
 	assert_ret 0 mapfile_cat "${read_handle}" | (
 		assert_ret 0 mapfile handle "${TMP2}" "we"
 		assert_ret 0 mapfile_write "${handle}"

@@ -170,23 +170,23 @@ _mapfile_open(const char *file, const char *modes, int Fflag, int qflag)
 	    strcmp(file, "/dev/fd/0") == 0) {
 		if ((fp = fdopen(STDIN_FILENO, modes)) == NULL) {
 			serrno = errno;
-			INTON;
 			errno = serrno;
 			if (!qflag) {
+				INTON;
 				err(EX_NOINPUT, "%s: %s", "fopen", file);
 			} else {
-				exit (EX_NOINPUT);
+				return (NULL);
 			}
 		}
 	} else {
 		if ((fp = fopen(file, modes)) == NULL) {
 			serrno = errno;
-			INTON;
 			errno = serrno;
 			if (!qflag) {
+				INTON;
 				err(EX_NOINPUT, "%s: %s", "fopen", file);
 			} else {
-				exit (EX_NOINPUT);
+				return (NULL);
 			}
 		}
 #if 0
@@ -293,6 +293,10 @@ mapfilecmd(int argc, char **argv)
 		modes = "re";
 
 	md = _mapfile_open(file, modes, Fflag, qflag);
+	if ((md == NULL) && qflag) {
+		INTON;
+		return (EX_NOINPUT);
+	}
 	assert(md != NULL);
 
 	snprintf(handle, sizeof(handle), "%d", md->handle);
@@ -600,6 +604,101 @@ mapfile_read_loopcmd(int argc, char **argv)
 }
 
 static int
+_mapfile_cat(struct mapped_data *md)
+{
+	char *line;
+	int rret, ret;
+
+	assert(is_int_on());
+	ret = 0;
+	while ((rret = _mapfile_read(md, &line, NULL, NULL)) == 0) {
+		INTON;
+		out1str(line);
+		out1c('\n');
+		INTOFF;
+	}
+	/* 1 == EOF */
+	if (rret != 1) {
+		ret = rret;
+	}
+	return (ret);
+}
+
+int
+mapfile_catcmd(int argc, char **argv)
+{
+	static const char usage[] = "Usage: mapfile_cat <handle> ...";
+	struct mapped_data *md;
+	const char *handle;
+	int i, error, ret;
+
+	if (argc < 2)
+		errx(EX_USAGE, "%s", usage);
+
+	error = 0;
+	ret = 0;
+	for (i = 1; i < argc; i++) {
+		handle = argv[i];
+		INTOFF;
+		md = md_find(handle);
+		if ((error = _mapfile_cat(md)) != 0) {
+			ret = error;
+		}
+		assert(is_int_on());
+		INTON;
+	}
+
+	return (ret);
+}
+
+int
+mapfile_cat_filecmd(int argc, char **argv)
+{
+	static const char usage[] = "Usage: mapfile_cat_file [-q] <file> ...";
+	struct mapped_data *md;
+	const char *file;
+	int error, ret;
+	int i, ch, qflag;
+
+	qflag = 0;
+	while ((ch = getopt(argc, argv, "q")) != -1) {
+		switch (ch) {
+		case 'q':
+			qflag = 1;
+			break;
+		default:
+			errx(EX_USAGE, "%s", usage);
+		}
+	}
+	argc -= optind;
+	argv += optind;
+
+	if (argc < 1)
+		errx(EX_USAGE, "%s", usage);
+
+	ret = 0;
+	for (i = 0; i < argc; i++) {
+		file = argv[i];
+		INTOFF;
+		/* Create handle */
+		md = _mapfile_open(file, "r", 1, qflag);
+		if ((md == NULL) && qflag) {
+			INTON;
+			continue;
+		}
+		assert(md != NULL);
+		if ((error = _mapfile_cat(md)) != 0) {
+			ret = error;
+		}
+		assert(is_int_on());
+		md_close(md);
+		INTON;
+	}
+	return (ret);
+}
+
+
+static int
 _mapfile_read(struct mapped_data *md, char **linep, ssize_t *linelenp,
     struct timeval *tvp)
 {
@@ -827,7 +926,7 @@ mapfile_writecmd(int argc, char **argv)
 
 		/* Read from TTY */
 		ret = 0;
-		md_read = _mapfile_open("/dev/fd/0", "r", 1, 1);
+		md_read = _mapfile_open("/dev/fd/0", "r", 1, 0);
 		assert(md_read != NULL);
 		while ((rret = _mapfile_read(md_read, &line, NULL, NULL)) == 0) {
 			ret = _mapfile_write(md, handle, nflag, Tflag, line);

@@ -1176,6 +1176,53 @@ mapfile_read_loop() {
 	fi
 }
 
+# Pipe to STDOUT from handle.
+mapfile_cat() {
+	[ $# -ge 1 ] || eargs mapfile_cat handle...
+	local IFS handle line
+
+	for handle in "$@"; do
+		while IFS= mapfile_read "${handle}" line; do
+			echo "${line}"
+		done
+	done
+}
+
+# Pipe to STDOUT from a file.
+# Basically an optimized loop of mapfile_read_loop_redir, or read_file
+mapfile_cat_file() {
+	local -; set +x
+	[ $# -ge 0 ] || eargs mapfile_cat_file '[-q]' file...
+	local  _handle ret _file
+	local OPTIND=1 qflag flag
+
+	qflag=
+	while getopts "q" flag; do
+		case "${flag}" in
+		q) qflag=1 ;;
+		esac
+	done
+	shift $((OPTIND-1))
+
+	if [ $# -eq 0 ]; then
+		# Read from stdin
+		set -- "-"
+	fi
+	ret=0
+	for _file in "$@"; do
+		case "${_file}" in
+		-) _file="/dev/fd/0" ;;
+		esac
+		if mapfile ${qflag:+-q} -F _handle "${_file}" "r"; then
+			mapfile_cat "${_handle}" || ret="$?"
+			mapfile_close "${_handle}" || ret="$?"
+		else
+			ret="$?"
+		fi
+	done
+	return "${ret}"
+}
+
 mapfile_builtin() {
 	return 1
 }
@@ -1313,53 +1360,6 @@ pipe_func() {
 		unset "${_mf_handle_var}"
 		return "${_mf_ret}"
 	fi
-}
-
-# Pipe to STDOUT from handle.
-mapfile_cat() {
-	[ $# -ge 1 ] || eargs mapfile_cat handle...
-	local IFS handle line
-
-	for handle in "$@"; do
-		while IFS= mapfile_read "${handle}" line; do
-			echo "${line}"
-		done
-	done
-}
-
-# Pipe to STDOUT from a file.
-# Basically an optimized loop of mapfile_read_loop_redir, or read_file
-mapfile_cat_file() {
-	local -; set +x
-	[ $# -ge 0 ] || eargs mapfile_cat_file '[-q]' file...
-	local  _handle ret _file
-	local OPTIND=1 qflag flag
-
-	qflag=
-	while getopts "q" flag; do
-		case "${flag}" in
-		q) qflag=1 ;;
-		esac
-	done
-	shift $((OPTIND-1))
-
-	if [ $# -eq 0 ]; then
-		# Read from stdin
-		set -- "-"
-	fi
-	ret=0
-	for _file in "$@"; do
-		case "${_file}" in
-		-) _file="/dev/fd/0" ;;
-		esac
-		if mapfile ${qflag:+-q} -F _handle "${_file}" "r"; then
-			mapfile_cat "${_handle}" || ret="$?"
-			mapfile_close "${_handle}" || ret="$?"
-		else
-			ret="$?"
-		fi
-	done
-	return "${ret}"
 }
 
 # Create a new temporary file and return a handle to it

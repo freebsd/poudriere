@@ -12,6 +12,8 @@ gsubcmd -n		gsub
 issetvarcmd -n		issetvar
 locked_mkdircmd		locked_mkdir
 mapfilecmd -n		mapfile
+mapfile_catcmd -n	mapfile_cat
+mapfile_cat_filecmd -n	mapfile_cat_file
 mapfile_readcmd -n	mapfile_read
 mapfile_read_loopcmd -n	mapfile_read_loop
 mapfile_writecmd -n	mapfile_write
