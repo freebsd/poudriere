@@ -1369,7 +1369,7 @@ exit_handler() {
 	fi
 	slock_release_all || :
 	if [ -n "${POUDRIERE_TMPDIR-}" ]; then
-		rm -rf "${POUDRIERE_TMPDIR}" >/dev/null 2>&1 || :
+		rm -rf "${POUDRIERE_TMPDIR}" 2>/dev/null || :
 	fi
 	if [ "${ERROR_VERBOSE}" -eq 1 ]; then
 		echo "Exiting with status ${exit_status}" >&2 || :
@@ -2220,7 +2220,7 @@ use_options() {
 		optionsdir="${POUDRIERED}/${optionsdir}-options"
 	fi
 	[ -d "${optionsdir}" ] || return 1
-	optionsdir=$(realpath ${optionsdir} 2>/dev/null)
+	optionsdir=$(realpath "${optionsdir}")
 	msg "Copying /var/db/ports from: ${optionsdir}"
 	do_clone "${optionsdir}" "${mnt}/var/db/ports" || \
 	    err 1 "Failed to copy OPTIONS directory"
@@ -2507,7 +2507,7 @@ symlink to .latest/${name}"
 		ln -s .latest/${name} ${PACKAGES_ROOT}/${name}
 	done
 
-	pkgdir_old=$(realpath ${PACKAGES_ROOT}/.latest 2>/dev/null || :)
+	pkgdir_old="$(realpath -q "${PACKAGES_ROOT}/.latest" || :)"
 
 	# Rename shadow dir to a production name
 	mv ${PACKAGES_ROOT}/.building ${PACKAGES_ROOT}/${pkgdir_new}
@@ -6227,7 +6227,7 @@ slock_acquire() {
 	local waittime="$2"
 	local lockpath
 
-	mkdir -p "${SHARED_LOCK_DIR}" >/dev/null 2>&1 || :
+	mkdir -p "${SHARED_LOCK_DIR}" 2>/dev/null || :
 	lockpath="${SHARED_LOCK_DIR}/lock-poudriere-shared-${lockname}"
 	_lock_acquire "${lockname}" "${lockpath}" "${waittime}" || return
 	# This assumes SHARED_LOCK_DIR isn't overridden by caller
@@ -8232,7 +8232,7 @@ append_make() {
 	fi
 
 	[ -f "${src_makeconf}" ] || return 0
-	src_makeconf_real="$(realpath ${src_makeconf} 2>/dev/null)"
+	src_makeconf_real="$(realpath "${src_makeconf}")"
 	# Only append if not already done (-z -p or -j match)
 	if grep -q "# ${src_makeconf_real} #" ${dst_makeconf}; then
 		return 0

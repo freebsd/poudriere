@@ -165,7 +165,7 @@ pkgqueue_clean_rdeps() {
 		    2>/dev/null || :
 	fi
 
-	rm -rf "${rdep_dir}" >/dev/null 2>&1 &
+	rm -rf "${rdep_dir}" 2>/dev/null &
 
 	return 0
 }
@@ -199,7 +199,7 @@ pkgqueue_clean_deps() {
 
 	echo ${rdeps_to_clean} | xargs rm -f >/dev/null 2>&1 || :
 
-	rm -rf "${dep_dir}" >/dev/null 2>&1 &
+	rm -rf "${dep_dir}" 2>/dev/null &
 
 	return 0
 }

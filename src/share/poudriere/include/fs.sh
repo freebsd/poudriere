@@ -213,7 +213,7 @@ umountfs() {
 	pattern=
 	[ -n "${childonly}" ] && pattern="/"
 
-	mnt=$(realpath "${mnt}" 2>/dev/null || echo "${mnt}")
+	mnt=$(realpath -q "${mnt}" || echo "${mnt}")
 	if ! findmounts "${mnt}" "${pattern}" | \
 	    xargs umount -n; then
 		findmounts "${mnt}" "${pattern}" | xargs umount -fv || :
@@ -226,7 +226,7 @@ _zfs_getfs() {
 	[ $# -ne 1 ] && eargs _zfs_getfs mnt
 	local mnt="${1}"
 
-	mntres=$(realpath "${mnt}" 2>/dev/null || echo "${mnt}")
+	mntres=$(realpath -q "${mnt}" || echo "${mnt}")
 	zfs list -rt filesystem -H -o name,mountpoint ${ZPOOL}${ZROOTFS} | \
 	    awk -vmnt="${mntres}" '$2 == mnt {print $1}'
 }
