@@ -948,6 +948,17 @@ mapfile_supports_multiple_handles() {
 *)
 mapfile() {
 	local -; set +x
+	[ "$#" -ge 2 ] || eargs mapfile '[-q'] handle_name file modes
+	local OPTIND=1 qflag flag
+
+	qflag=0
+	while getopts "q" flag; do
+		case "${flag}" in
+		q) qflag=1 ;;
+		esac
+	done
+	shift $((OPTIND-1))
+
 	[ $# -eq 2 -o $# -eq 3 ] || eargs mapfile handle_name file modes
 	local handle_name="$1"
 	local _file="$2"
@@ -965,7 +976,12 @@ mapfile() {
 	*r*w*|*w*r*|*+*) ;;
 	*w*|*a*) ;;
 	*r*)
-		if [ ! -r "${_file}" ]; then
+		if [ ! -e "${_file}" ]; then
+			case "${qflag}" in
+			0)
+				msg_error "mapfile: ${_file}: No such file or directory"
+				;;
+			esac
 			return 1
 		fi
 		;;
@@ -1314,8 +1330,17 @@ mapfile_cat() {
 # Basically an optimized loop of mapfile_read_loop_redir, or read_file
 mapfile_cat_file() {
 	local -; set +x
-	[ $# -ge 0 ] || eargs mapfile_cat_file file...
+	[ $# -ge 0 ] || eargs mapfile_cat_file '[-q]' file...
 	local  _handle ret _file
+	local OPTIND=1 qflag flag
+
+	qflag=
+	while getopts "q" flag; do
+		case "${flag}" in
+		q) qflag=1 ;;
+		esac
+	done
+	shift $((OPTIND-1))
 
 	if [ $# -eq 0 ]; then
 		# Read from stdin
@@ -1326,7 +1351,7 @@ mapfile_cat_file() {
 		case "${_file}" in
 		-) _file="/dev/fd/0" ;;
 		esac
-		if mapfile _handle "${_file}" "r"; then
+		if mapfile ${qflag:+-q} _handle "${_file}" "r"; then
 			mapfile_cat "${_handle}" || ret="$?"
 			mapfile_close "${_handle}" || ret="$?"
 		else

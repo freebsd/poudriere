@@ -135,7 +135,7 @@ md_find(const char *handle)
 extern int fd0_redirected;
 
 static struct mapped_data *
-_mapfile_open(const char *file, const char *modes)
+_mapfile_open(const char *file, const char *modes, int qflag)
 {
 	FILE *fp;
 	struct mapped_data *md;
@@ -173,14 +173,22 @@ _mapfile_open(const char *file, const char *modes)
 			serrno = errno;
 			INTON;
 			errno = serrno;
-			err(EX_NOINPUT, "%s: %s", "fopen", file);
+			if (!qflag) {
+				err(EX_NOINPUT, "%s: %s", "fopen", file);
+			} else {
+				exit (EX_NOINPUT);
+			}
 		}
 	} else {
 		if ((fp = fopen(file, modes)) == NULL) {
 			serrno = errno;
 			INTON;
 			errno = serrno;
-			err(EX_NOINPUT, "%s: %s", "fopen", file);
+			if (!qflag) {
+				err(EX_NOINPUT, "%s: %s", "fopen", file);
+			} else {
+				exit (EX_NOINPUT);
+			}
 		}
 #if 0
 		if (fstat(fileno(fp), &sb) != 0) {
@@ -247,23 +255,39 @@ _mapfile_open(const char *file, const char *modes)
 int
 mapfilecmd(int argc, char **argv)
 {
+	static const char usage[] = "Usage: mapfile [-q] <handle_name> "
+	    "<file> [modes]";
 	struct mapped_data *md;
 	const char *file, *var_return, *modes;
 	char handle[32];
+	int ch, qflag;
 
-	if (argc != 3 && argc != 4)
-		errx(EX_USAGE, "%s", "Usage: mapfile <handle_name> <file> [modes]");
+	qflag = 0;
+	while ((ch = getopt(argc, argv, "q")) != -1) {
+		switch (ch) {
+		case 'q':
+			qflag = 1;
+			break;
+		default:
+			errx(EX_USAGE, "%s", usage);
+		}
+	}
+	argc -= optind;
+	argv += optind;
+
+	if (argc != 2 && argc != 3)
+		errx(EX_USAGE, "%s", usage);
 	INTOFF;
 
-	file = argv[2];
-	var_return = argv[1];
+	var_return = argv[0];
+	file = argv[1];
 
-	if (argc == 4)
-		modes = argv[3];
+	if (argc == 3)
+		modes = argv[2];
 	else
 		modes = "re";
 
-	md = _mapfile_open(file, modes);
+	md = _mapfile_open(file, modes, qflag);
 	assert(md != NULL);
 
 	snprintf(handle, sizeof(handle), "%d", md->handle);
@@ -543,7 +567,7 @@ mapfile_read_loopcmd(int argc, char **argv)
 	}
 	if (md == NULL) {
 		/* Create handle */
-		md = _mapfile_open(file, "r");
+		md = _mapfile_open(file, "r", 0);
 		assert(md != NULL);
 		md->fd0_redirected = fd0_redirected;
 		md->pid = shpid;
@@ -798,7 +822,7 @@ mapfile_writecmd(int argc, char **argv)
 
 		/* Read from TTY */
 		ret = 0;
-		md_read = _mapfile_open("/dev/fd/0", "r");
+		md_read = _mapfile_open("/dev/fd/0", "r", 0);
 		assert(md_read != NULL);
 		while ((rret = _mapfile_read(md_read, &line, NULL, NULL)) == 0) {
 			ret = _mapfile_write(md, handle, nflag, Tflag, line);

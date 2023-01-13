@@ -65,7 +65,7 @@ shash_get() {
 			break
 			;;
 		esac
-		if ! mapfile handle "${_f}" "r" 2>/dev/null; then
+		if ! mapfile -q handle "${_f}" "r"; then
 			ret=1
 			continue
 		fi
@@ -121,7 +121,7 @@ shash_read() {
 	local _shash_varkey_file handle line
 
 	_shash_varkey_file "${var}" "${key}"
-	mapfile_cat_file "${_shash_varkey_file}" 2>/dev/null
+	mapfile_cat_file -q "${_shash_varkey_file}"
 }
 
 shash_read_mapfile() {
@@ -133,7 +133,7 @@ shash_read_mapfile() {
 	local _shash_varkey_file
 
 	_shash_varkey_file "${var}" "${key}"
-	mapfile "${mapfile_handle_var}" "${_shash_varkey_file}" "re" 2>/dev/null
+	mapfile -q "${mapfile_handle_var}" "${_shash_varkey_file}" "re"
 }
 
 shash_write() {
