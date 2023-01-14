@@ -388,6 +388,7 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 		# Since failure was skipped earlier, fail now after leaving
 		# jail.
 		if [ -n "${failed_phase}" ]; then
+			stop_build "${PKGNAME}" "${ORIGINSPEC}" 1
 			bset_job_status "failed/${failed_phase}" \
 			    "${ORIGINSPEC}" "${PKGNAME}"
 			msg_error "Build failed in phase: ${COLOR_PHASE}${failed_phase}${COLOR_RESET}"
@@ -401,7 +402,12 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 else
 	if [ -f ${MASTERMNT}/tmp/pkgs/${PKGNAME}.${PKG_EXT} ]; then
 		msg "Installing from package"
-		ensure_pkg_installed || err 1 "Unable to extract pkg."
+		if ! ensure_pkg_installed; then
+			stop_build "${PKGNAME}" "${ORIGINSPEC}" 1
+			log_stop
+			bset_job_status "crashed" "${ORIGINSPEC}" "${PKGNAME}"
+			err 1 "Unable to extract pkg."
+		fi
 		injail ${PKG_ADD} /tmp/pkgs/${PKGNAME}.${PKG_EXT} || :
 	fi
 fi
