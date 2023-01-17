@@ -500,29 +500,29 @@ trap_pop() {
 # critical_end is called.
 # Unfortunately this can not block signals to our commands. The builtin
 # uses sigprocmask(3) which does.
+CRITICAL_START_BLOCK_SIGS="INT TERM INFO HUP PIPE"
 critical_start() {
 	local -; set +x
-	local saved_int saved_term
+	local sig saved_trap caught_sig
 
 	_CRITSNEST=$((${_CRITSNEST:-0} + 1))
 	if [ ${_CRITSNEST} -gt 1 ]; then
 		return 0
 	fi
 
-	trap_push INT saved_int
-	: ${_crit_caught_int:=0}
-	trap '_crit_caught_int=1' INT
-	hash_set crit_saved_trap "INT-${_CRITSNEST}" "${saved_int}"
-
-	trap_push TERM saved_term
-	: ${_crit_caught_term:=0}
-	trap '_crit_caught_term=1' TERM
-	hash_set crit_saved_trap "TERM-${_CRITSNEST}" "${saved_term}"
+	for sig in ${CRITICAL_START_BLOCK_SIGS}; do
+		trap_push "${sig}" saved_trap
+		if ! getvar "_crit_caught_${sig}" caught_sig; then
+			setvar "_crit_caught_${sig}" 0
+		fi
+		trap "_crit_caught_${sig}=1" "${sig}"
+		hash_set crit_saved_trap "${sig}-${_CRITSNEST}" "${saved_trap}"
+	done
 }
 
 critical_end() {
 	local -; set +x
-	local saved_int saved_term oldnest
+	local sig saved_trap caught_sig oldnest
 
 	[ ${_CRITSNEST:--1} -ne -1 ] || \
 	    err 1 "critical_end called without critical_start"
@@ -530,22 +530,20 @@ critical_end() {
 	oldnest=${_CRITSNEST}
 	_CRITSNEST=$((_CRITSNEST - 1))
 	[ ${_CRITSNEST} -eq 0 ] || return 0
-	if hash_remove crit_saved_trap "INT-${oldnest}" saved_int; then
-		trap_pop INT "${saved_int}"
-	fi
-	if hash_remove crit_saved_trap "TERM-${oldnest}" saved_term; then
-		trap_pop TERM "${saved_term}"
-	fi
+	for sig in ${CRITICAL_START_BLOCK_SIGS}; do
+		if hash_remove crit_saved_trap "${sig}-${oldnest}" saved_trap; then
+			trap_pop "${sig}" "${saved_trap}"
+		fi
+	done
 	# Deliver the signals if this was the last critical section block.
 	# Send the signal to our real PID, not the rootshell.
-	if [ ${_crit_caught_int} -eq 1 -a ${_CRITSNEST} -eq 0 ]; then
-		_crit_caught_int=0
-		raise INT
-	fi
-	if [ ${_crit_caught_term} -eq 1 -a ${_CRITSNEST} -eq 0 ]; then
-		_crit_caught_term=0
-		raise TERM
-	fi
+	for sig in ${CRITICAL_START_BLOCK_SIGS}; do
+		getvar "_crit_caught_${sig}" caught_sig
+		if [ "${caught_sig}" -eq 1 -a "${_CRITSNEST}" -eq 0 ]; then
+			setvar "_crit_caught_${sig}" 0
+			raise "${sig}"
+		fi
+	done
 }
 ;;
 esac

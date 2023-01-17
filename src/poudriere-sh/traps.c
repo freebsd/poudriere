@@ -107,6 +107,9 @@ critical_startcmd(int argc __unused, char **argv __unused)
 	sigemptyset(&sigmask);
 	sigaddset(&sigmask, SIGINT);
 	sigaddset(&sigmask, SIGTERM);
+	sigaddset(&sigmask, SIGINFO);
+	sigaddset(&sigmask, SIGHUP);
+	sigaddset(&sigmask, SIGPIPE);
 	sigprocmask(SIG_BLOCK, &sigmask, &osigmask);
 
 	return (0);
