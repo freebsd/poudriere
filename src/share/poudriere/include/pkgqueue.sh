@@ -303,6 +303,8 @@ pkgqueue_compute_rdeps() {
 
 pkgqueue_remaining() {
 	[ $# -eq 0 ] || eargs pkgqueue_remaining
+	local -; set +e
+
 	{
 		# Find items in pool ready-to-build
 		( cd "${MASTER_DATADIR}/pool"; find . -type d -depth 2 | \
@@ -311,6 +313,7 @@ pkgqueue_remaining() {
 		( cd "${MASTER_DATADIR}"; pkgqueue_list ) | \
 		    sed -e 's,$, waiting-on-dependency,'
 	} 2>/dev/null | sed -e 's,.*/,,'
+	return 0
 }
 
 # Return directory name for given job
