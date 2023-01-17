@@ -6145,7 +6145,7 @@ _lock_acquire() {
 	local lockname="$1"
 	local lockpath="$2"
 	local waittime="${3:-30}"
-	local have_lock mypid lock_pid
+	local have_lock mypid lock_pid real_lock_pid
 
 	mypid="$(getpid)"
 	hash_get have_lock "${lockname}" have_lock || have_lock=0
@@ -6163,6 +6163,24 @@ _lock_acquire() {
 		msg_warn "Failed to acquire ${lockname} lock"
 		return 1
 	fi
+	# XXX: Remove this block with locked_mkdir [EINTR] fixes.
+	{
+		# locked_mkdir is quite racy. We may have gotten a false-success
+		# and need to consider it a failure.
+		if [ ! -d "${lockpath}" ]; then
+			msg_warn "Lost race grabbing ${lockname} lock: no dir"
+			return 1
+		fi
+		# Must use cat due to no EOL
+		real_lock_pid="$(cat "${lockpath}.pid")" || :
+		case "${real_lock_pid}" in
+		"${mypid}") ;;
+		*)
+			msg_warn "Lost race grabbing ${lockname} lock: wrong pid: mypid=${mypid} lock_pid=${real_lock_pid}"
+			return 1
+			;;
+		esac
+	}
 	hash_set have_lock "${lockname}" $((have_lock + 1))
 	if [ -z "${lock_pid}" ]; then
 		hash_set lock_pid "${lockname}" "${mypid}"
