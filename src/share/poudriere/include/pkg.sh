@@ -194,7 +194,7 @@ pkg_cache_data() {
 	local flavor="$3"
 	local _ignored
 
-	ensure_pkg_installed || return 1
+	ensure_pkg_installed || return 0
 	{
 		pkg_get_options '' "${pkg}"
 		pkg_get_origin '' "${pkg}" "${origin}" || :
