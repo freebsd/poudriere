@@ -516,6 +516,7 @@ pkgqueue_unqueue_existing_packages() {
 # but one of their run deps has missing build deps packages which
 # causes the build deps to be in the queue at this point.
 pkgqueue_trim_orphaned_build_deps() {
+	required_env pkgqueue_trim_orphaned_build_deps PWD "${MASTER_DATADIR_ABS:?}"
 	local tmp port originspec pkgname
 
 	if [ "${TRIM_ORPHANED_BUILD_DEPS}" != "yes" ] || \
