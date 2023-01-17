@@ -51,6 +51,8 @@ html_json_main() {
 	local -; set +x
 	local _relpath
 
+	set +e +u
+
 	setup_traps html_json_cleanup
 	# Ensure we are not sitting in the MASTER_DATADIR directory and
 	# move into the logdir for relative operations.

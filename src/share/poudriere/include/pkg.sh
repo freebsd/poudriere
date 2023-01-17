@@ -268,7 +268,9 @@ pkg_cacher_queue() {
 
 pkg_cacher_main() {
 	local pkg work pkgname origin flavor
-	local IFS
+	local IFS -
+
+	set +e +u
 
 	setup_traps pkg_cacher_cleanup
 
