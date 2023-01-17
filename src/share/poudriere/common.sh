@@ -181,8 +181,10 @@ _err() {
 		    [ -n "${POUDRIERE_BUILD_TYPE-}" ] &&
 		    [ "${PARALLEL_CHILD:-0}" -eq 0 ] &&
 		    [ "$(getpid)" = "$$" ]; then
-			show_build_summary >&2
-			show_log_info >&2
+		{
+			show_build_summary
+			show_log_info
+		} >&2
 		fi
 		exit "${exit_status}"
 		;;
@@ -1641,6 +1643,7 @@ show_log_info() {
 		esac
 	fi
 	_log_path log
+	[ -d "${log:?}" ] || return 0
 	msg "Logs: ${log}"
 	if build_url build_url; then
 		msg "WWW: ${build_url}"
@@ -1685,10 +1688,11 @@ show_build_summary() {
 
 	_bget status status || status=unknown
 	_log_path log
+	[ -d "${log:?}" ] || return 0
 	_bget buildname buildname || buildname=
 	now=$(clock -epoch)
 
-	calculate_elapsed_from_log "${now}" "${log}" || return 1
+	calculate_elapsed_from_log "${now}" "${log}" || return 0
 	elapsed=${_elapsed_time}
 	calculate_duration buildtime "${elapsed}"
 
