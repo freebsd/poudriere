@@ -135,9 +135,10 @@ vwarning(const char *msg, va_list ap)
 
 	funcname = lookupvar("FUNCNAME");
 	if (commandname)
-		outfmt(out2, "Error: (%d) %s:%s%s ", getpid(), commandname,
+		outfmt(out2, "Error: (%d) %s:%s%s%d: ", getpid(), commandname,
 		    funcname != NULL ? funcname : "",
-		    funcname != NULL ? ":" : "");
+		    funcname != NULL ? ":" : "",
+		    plinno);
 	else if (arg0) {
 		outfmt(out2, "Error: (%d) %s:%s%s%d: ", getpid(), arg0,
 		    funcname != NULL ? funcname : "",

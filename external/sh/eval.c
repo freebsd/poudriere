@@ -187,7 +187,7 @@ evalstring(const char *s, int flags)
  * Evaluate a parse tree.  The value is left in the global variable
  * exitstatus.
  */
-
+extern int rootshell;
 void
 evaltree(union node *n, int flags)
 {
@@ -303,8 +303,12 @@ out:
 	popstackmark(&smark);
 	if (pendingsig)
 		dotrap();
-	if (eflag && exitstatus != 0 && do_etest)
+	if (eflag && exitstatus != 0 && do_etest) {
+		if (rootshell) {
+			warning("set -e error: status = %d", exitstatus);
+		}
 		exitshell(exitstatus);
+	}
 	if (flags & EV_EXIT)
 		exraise(EXEXIT);
 }
