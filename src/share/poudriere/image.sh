@@ -369,6 +369,10 @@ while getopts "A:bB:c:f:h:i:j:m:n:o:p:P:R:s:S:t:vw:X:z:" FLAG; do
 			SWAPSIZE="${OPTARG}"
 			;;
 		X)
+			# If this is a relative path, add in ${PWD} as
+			# a cd / was done.
+			[ "${OPTARG#/}" = "${OPTARG}" ] && \
+			OPTARG="${SAVED_PWD}/${OPTARG}"
 			[ -r "${OPTARG}" ] || err 1 "No such exclude list ${OPTARG}"
 			EXCLUDELIST=$(realpath ${OPTARG})
 			;;
