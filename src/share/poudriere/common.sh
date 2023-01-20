@@ -8269,7 +8269,8 @@ _listed_ports() {
 		{
 			_list_ports_dir "${portsdir:?}" "${PTNAME:?}"
 			for o in ${OVERLAYS}; do
-				_pget portsdir "${o}" mnt
+				_pget portsdir "${o}" mnt ||
+				    err 1 "Missing mnt metadata for overlay '${o}'"
 				_list_ports_dir "${portsdir:?}" "${o}"
 			done
 		} | {

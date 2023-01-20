@@ -62,9 +62,6 @@ while get_test_context; do
 	set_make_conf <<-EOF
 	misc_foo_SET=	RENAME
 	EOF
-	hash_set originspec-pkgname "misc/foo@default" "foo-renamed-20161010"
-	hash_set originspec-pkgname "misc/foo" "foo-renamed-20161010"
-	hash_set pkgname-originspec "foo-renamed-20161010" "misc/foo@default"
 	# misc/foo should now have a -renamed at the end of it.
 	# misc/freebsd-release-manifests@foo should be deleted to fix wrong
 	# dep_pkgname and misc/foo@default will be rebuilt.

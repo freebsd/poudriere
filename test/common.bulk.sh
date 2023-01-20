@@ -25,6 +25,20 @@ fix_default_flavor() {
 	setvar "${var_return}" "${_origin}"
 }
 
+recache_pkgnames() {
+	local var
+
+	for var in \
+	    origin-flavors \
+	    originspec-deps \
+	    originspec-ignore \
+	    originspec-pkgname \
+	    pkgname-originspec \
+	    ; do
+		hash_unset_var "${var}"
+	done
+}
+
 # Cache all pkgnames involved.  Being single-threaded this is trivial.
 # Return 0 to skip the port
 # Return 1 to not skip the port
@@ -35,7 +49,9 @@ cache_pkgnames() {
 	local flavor_originspec ret port_flavor other_flavor subpkg
 	local LOCALBASE was_listed_with_flavor
 	local -; set -f
+	local OVERLAYS
 
+	OVERLAYS="${REAL_OVERLAYS-}"
 	# XXX: This avoids some exists() checks of the *host* here. Need to
 	# jail this function.
 	export LOCALBASE=/nonexistent
@@ -842,48 +858,58 @@ do_poudriere() {
 }
 
 _setup_overlays() {
+	local omnt oname
+
 	# Setup basic overlay to test-ports/overlay/ dir.
-	if [ "${OVERLAYS_SETUP:-0}" -eq 0 ]; then
-		SAVE_OVERLAYS="${OVERLAYS}"
+	case "${OVERLAYSDIR-}" in
+	"/overlays")
 		OVERLAYSDIR="$(mktemp -ut overlays)"
-	fi
-	OVERLAYS=
-	for o in ${SAVE_OVERLAYS}; do
+		;;
+	esac
+	mkdir -p "${MASTERMNT:?}/${OVERLAYSDIR:?}"
+	REAL_OVERLAYS=
+	for o in ${OVERLAYS}; do
+		# This is the git checkout dir test-ports/${o}
 		omnt="${PTMNT%/*}/${o}"
 		[ -d "${omnt}" ] || continue
-		#oname=$(echo "${omnt}" | tr '[./]' '_')
-		# <12 still has 88 mount path restrictions
-		oname="$(stat -f %i "${omnt}")_${o}"
-		if [ "${OVERLAYS_SETUP:-0}" -eq 0 ]; then
-			pset "${oname}" mnt "${omnt}"
-			pset "${oname}" method "-"
-		fi
+		oname=$(echo "${omnt}" | tr '[./]' '_')
+		# A previous run may have already setup this overlay.
+		case "$(realpath -q "${MASTERMNT:?}/${OVERLAYSDIR:?}/${oname:?}" || :)" in
+		"$(realpath "${omnt}")")
+			REAL_OVERLAYS="${REAL_OVERLAYS:+${REAL_OVERLAYS} }${oname}"
+			continue
+			;;
+		esac
+		pset "${oname}" mnt "${omnt}"
+		pset "${oname}" method "-"
 		# We run port_var_fetch_originspec without a jail so can't use plain
 		# /overlays. Need to link the host path into our fake MASTERMNT path
 		# as well as link to the overlay portdir without nullfs.
-		mkdir -p "${MASTERMNT:?}/${OVERLAYSDIR%/*}"
-		ln -hfs "${MASTERMNT}/${OVERLAYSDIR}" "${OVERLAYSDIR}"
-		mkdir -p "${MASTERMNT}/${OVERLAYSDIR}"
-		ln -hfs "${omnt}" "${MASTERMNT:?}/${OVERLAYSDIR}/${oname}"
-		OVERLAYS="${OVERLAYS:+${OVERLAYS} }${oname}"
+		#mkdir -p "${MASTERMNT:?}/${OVERLAYSDIR%/*}"
+		ln -hfs "${MASTERMNT:?}/${OVERLAYSDIR:?}" "${OVERLAYSDIR:?}"
+		ln -hfs "${omnt:?}" "${MASTERMNT:?}/${OVERLAYSDIR:?}/${oname:?}"
+		REAL_OVERLAYS="${REAL_OVERLAYS:+${REAL_OVERLAYS} }${oname}"
 	done
-	unset omnt oname
-	OVERLAYS_SETUP=1
+	SAVE_OVERLAYS="${OVERLAYS}"
+	recache_pkgnames
 }
 
 _setup_build() {
-	local __MAKE_CONF __make_conf_orig
+	local __MAKE_CONF __make_conf_orig OVERLAYS
 
 	if [ ${ALL:-0} -eq 0 ]; then
 		assert_not "" "${LISTPORTS}" "LISTPORTS empty"
 	fi
 
 	_setup_overlays
+	OVERLAYS="${REAL_OVERLAYS-}"
+	export OVERLAYS
 
 	ALL_PKGNAMES=
 	ALL_ORIGINS=
 	if [ ${ALL} -eq 1 ]; then
-		LISTPORTS="$(listed_ports | paste -s -d ' ' -)"
+		LISTPORTS="$(set_pipefail; set -e; listed_ports | paste -s -d ' ' -)"
+		assert 0 "$?"
 	fi
 	LISTPORTS="$(sorted "${LISTPORTS}")"
 	if [ "${FLAVOR_DEFAULT_ALL-null}" == "yes" ]; then
@@ -931,7 +957,7 @@ do_bulk() {
 		;;
 	esac
 	do_poudriere bulk \
-	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
+	    ${REAL_OVERLAYS:+$(echo "${REAL_OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
 	    ${JFLAG:+-J ${JFLAG}} \
 	    -B "${BUILDNAME:?}" \
 	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
@@ -941,7 +967,7 @@ do_bulk() {
 do_testport() {
 	_setup_build
 	do_poudriere testport \
-	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
+	    ${REAL_OVERLAYS:+$(echo "${REAL_OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
 	    ${JFLAG:+-J ${JFLAG}} \
 	    -B "${BUILDNAME:?}" \
 	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
@@ -951,7 +977,7 @@ do_testport() {
 do_distclean() {
 	_setup_overlays
 	do_poudriere distclean \
-	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
+	    ${REAL_OVERLAYS:+$(echo "${REAL_OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
 	    ${JFLAG:+-J ${JFLAG}} \
 	    -p "${PTNAME}" \
 	    "$@"
@@ -960,7 +986,7 @@ do_distclean() {
 do_options() {
 	_setup_overlays
 	do_poudriere options \
-	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
+	    ${REAL_OVERLAYS:+$(echo "${REAL_OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
 	    ${PORT_DBDIRNAME:+-o "${PORT_DBDIRNAME}"} \
 	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
 	    "$@"
@@ -972,7 +998,7 @@ do_pkgclean() {
 	do_bulk ports-mgmt/pkg
 	assert 0 "$?" "bulk for pkg should pass"
 	do_poudriere pkgclean \
-	    ${OVERLAYS:+$(echo "${OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
+	    ${REAL_OVERLAYS:+$(echo "${REAL_OVERLAYS}" | tr ' ' '\n' | sed -e 's,^,-O ,' | paste -d ' ' -s -)} \
 	    ${JFLAG:+-J ${JFLAG}} \
 	    -j "${JAILNAME}" -p "${PTNAME}" ${SETNAME:+-z "${SETNAME}"} \
 	    "$@"
@@ -1477,6 +1503,7 @@ set_make_conf() {
 	msg "Updating ${make_conf}" >&2
 	write_atomic_cmp "${make_conf}"
 	showfile "${make_conf}"
+	recache_pkgnames
 }
 # Start empty
 set_make_conf <<-EOF
