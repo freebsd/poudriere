@@ -222,6 +222,7 @@ sh_SOURCES+=		\
 			src/poudriere-sh/mkdir.c \
 			src/poudriere-sh/mkfifo.c \
 			src/poudriere-sh/mktemp.c \
+			src/poudriere-sh/paste.c \
 			src/poudriere-sh/realpath.c \
 			src/poudriere-sh/rmdir.c \
 			src/poudriere-sh/setproctitle.c \

@@ -19,6 +19,7 @@ mkdircmd -n		mkdir
 mkfifocmd -n		mkfifo
 mktempcmd -n		mktemp
 _mktempcmd -n		_mktemp
+pastecmd -n		paste
 pwaitcmd		pwait
 realpathcmd -n		realpath
 renamecmd -n		rename
