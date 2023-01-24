@@ -5890,7 +5890,7 @@ delete_old_pkg() {
 	# version may show for a stale package that has been renamed.
 	# XXX: Check if the pkgname has changed and rename in the repo
 	if [ "${pkgbase}" != "${new_pkgbase}" ]; then
-		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: package name changed to '${COLOR_PORT}${new_pkgbase}${COLOR_RESET}'"
+		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: package name changed to ${COLOR_PORT}${new_pkgbase}${COLOR_RESET}"
 		delete_pkg "${pkg}"
 		return 0
 	fi
@@ -6827,7 +6827,7 @@ deps_sanity() {
 		fi
 		# Detect bad cat/origin/ dependency which pkg will not register properly
 		if ! [ "${dep_origin}" = "${dep_origin%/}" ]; then
-			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} depends on bad origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'; Please contact maintainer of the port to fix this."
+			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} depends on bad origin ${COLOR_PORT}${dep_origin}${COLOR_RESET}; Please contact maintainer of the port to fix this."
 			ret=1
 		fi
 		if ! test_port_origin_exist "${dep_origin}"; then
@@ -6844,7 +6844,7 @@ deps_sanity() {
 			else
 				unset moved_reason
 			fi
-			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} depends on nonexistent origin '${COLOR_PORT}${dep_origin}${COLOR_RESET}'${moved_reason:+ (${moved_reason})}; Please contact maintainer of the port to fix this."
+			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} depends on nonexistent origin ${COLOR_PORT}${dep_origin}${COLOR_RESET}${moved_reason:+ (${moved_reason})}; Please contact maintainer of the port to fix this."
 			ret=1
 		fi
 		if have_ports_feature FLAVORS && [ -z "${dep_flavor}" ] && \
