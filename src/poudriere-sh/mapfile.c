@@ -59,7 +59,7 @@
 #undef fdopen
 #undef fdclose
 #undef fopen
-#undef fputs
+#undef fwrite
 #include "eval.h"
 #include "redir.h"
 #include "trap.h"
@@ -607,13 +607,14 @@ static int
 _mapfile_cat(struct mapped_data *md)
 {
 	char *line;
+	ssize_t linelen;
 	int rret, ret;
 
 	assert(is_int_on());
 	ret = 0;
-	while ((rret = _mapfile_read(md, &line, NULL, NULL)) == 0) {
+	while ((rret = _mapfile_read(md, &line, &linelen, NULL)) == 0) {
 		INTON;
-		out1str(line);
+		outbin(line, linelen, out1);
 		out1c('\n');
 		INTOFF;
 	}
@@ -849,14 +850,17 @@ mapfile_closecmd(int argc, char **argv)
 
 static int
 _mapfile_write(/*XXX const*/ struct mapped_data *md, const char *handle,
-    const int nflag, const int Tflag, const char *data)
+    const int nflag, const int Tflag, const char *data, ssize_t datalen)
 {
 	int serrno, ret;
 
 	ret = 0;
+	if (datalen == -1) {
+		datalen = strlen(data);
+	}
 	debug("%d: Writing to %s for handle '%s' fd: %d: %s\n",
 	    getpid(), md->file, handle, fileno(md->fp), data);
-	if (fputs(data, md->fp) == EOF ||
+	if (fwrite(data, sizeof(*data), datalen, md->fp) == EOF ||
 	    (!nflag && fputc('\n', md->fp) == EOF) ||
 	    ferror(md->fp)) {
 		serrno = errno;
@@ -877,7 +881,7 @@ _mapfile_write(/*XXX const*/ struct mapped_data *md, const char *handle,
 		    handle, md->file);
 	}
 	if (Tflag) {
-		out1str(data);
+		outbin(data, datalen, out1);
 		out1c('\n');
 	}
 	return (ret);
@@ -917,19 +921,21 @@ mapfile_writecmd(int argc, char **argv)
 	md = md_find(handle);
 	if (argc == 1) {
 		data = argv[0];
-		ret = _mapfile_write(md, handle, nflag, Tflag, data);
+		ret = _mapfile_write(md, handle, nflag, Tflag, data, -1);
 		assert(is_int_on());
 	} else {
 		char *line;
 		struct mapped_data *md_read = NULL;
+		ssize_t linelen;
 		int rret;
 
 		/* Read from TTY */
 		ret = 0;
 		md_read = _mapfile_open("/dev/fd/0", "r", 1, 0);
 		assert(md_read != NULL);
-		while ((rret = _mapfile_read(md_read, &line, NULL, NULL)) == 0) {
-			ret = _mapfile_write(md, handle, nflag, Tflag, line);
+		while ((rret = _mapfile_read(md_read, &line, &linelen, NULL)) == 0) {
+			ret = _mapfile_write(md, handle, nflag, Tflag, line,
+			    linelen);
 			if (ret != 0) {
 				md_close(md_read);
 				INTON;
