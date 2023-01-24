@@ -461,7 +461,7 @@ expbackq(union node *cmd, int quoted, int flag, struct worddest *dst)
 {
 	struct backcmd in;
 	int i;
-	char buf[128];
+	char buf[BUFSIZ];
 	char *p;
 	char *dest = expdest;
 	char lastc;

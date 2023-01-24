@@ -1285,7 +1285,7 @@ cmddone:
 			memout.buf = NULL;
 			memout.nextc = NULL;
 			memout.bufend = NULL;
-			memout.bufsize = 64;
+			memout.bufsize = BUFSIZ;
 		}
 		if (cmdentry.u.index != EXECCMD)
 			popredir();

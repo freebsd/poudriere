@@ -1,0 +1,39 @@
+diff --git external/sh/eval.c external/sh/eval.c
+index 0791d6942..a539daa47 100644
+--- external/sh/eval.c
++++ external/sh/eval.c
+@@ -1278,7 +1278,7 @@ cmddone:
+ 			memout.buf = NULL;
+ 			memout.nextc = NULL;
+ 			memout.bufend = NULL;
+-			memout.bufsize = 64;
++			memout.bufsize = BUFSIZ;
+ 		}
+ 		if (cmdentry.u.index != EXECCMD)
+ 			popredir();
+diff --git external/sh/expand.c external/sh/expand.c
+index a1a957157..cb52c7570 100644
+--- external/sh/expand.c
++++ external/sh/expand.c
+@@ -461,7 +461,7 @@ expbackq(union node *cmd, int quoted, int flag, struct worddest *dst)
+ {
+ 	struct backcmd in;
+ 	int i;
+-	char buf[128];
++	char buf[BUFSIZ];
+ 	char *p;
+ 	char *dest = expdest;
+ 	char lastc;
+diff --git external/sh/output.c external/sh/output.c
+index c01ddd5ac..9be251ced 100644
+--- external/sh/output.c
++++ external/sh/output.c
+@@ -75,7 +75,7 @@ static int doformat_wr(void *, const char *, int);
+ 
+ struct output output = {NULL, NULL, NULL, OUTBUFSIZ, 1, 0};
+ struct output errout = {NULL, NULL, NULL, 256, 2, 0};
+-struct output memout = {NULL, NULL, NULL, 64, MEM_OUT, 0};
++struct output memout = {NULL, NULL, NULL, BUFSIZ, MEM_OUT, 0};
+ struct output *out1 = &output;
+ struct output *out2 = &errout;
+ 
