@@ -230,11 +230,6 @@ DISTFILES_CACHE=/usr/ports/distfiles
 # which holdup the rest of the queue to build more quickly.
 #ALLOW_MAKE_JOBS_PACKAGES="pkg ccache py*"
 
-# By default poudriere does not nice(3) itself.  Set NICE to "yes"
-# to increment scheduler priority by 10, or any other value to use that.
-# Only root can set negative values.
-#NICE=no
-
 # Timestamp every line of build logs
 # Default: no
 #TIMESTAMP_LOGS=no

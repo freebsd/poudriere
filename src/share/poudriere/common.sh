@@ -8625,17 +8625,6 @@ esac
 
 NCPU=$(sysctl -n hw.ncpu)
 
-if [ "${NICE:=no}" = "no" ]; then
-    :
-else
-    msg "renicing to NICE value '${NICE}'"
-    if [ "${NICE}" = "yes" ]; then
-        renice -n 10 -p $$
-    else
-        renice -n ${NICE} -p $$
-    fi
-fi
-
 # Determine if umount -n can be used.
 if grep -q "#define[[:space:]]MNT_NONBUSY" /usr/include/sys/mount.h \
     2>/dev/null; then
