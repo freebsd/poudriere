@@ -29,7 +29,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd March 17, 2023
+.Dd April 18, 2023
 .Dt POUDRIERE-IMAGE 8
 .Os
 .Sh NAME
@@ -196,17 +196,17 @@ The name of the dataset that contains all boot environments.
 Default: ROOT.
 .It Ev ZFS_BOOTFS_NAME
 The name of the default boot environment dataset.
-DEfault: default.
+Default: default.
 .It Ev ZFS_POOL_NAME
 The name of the ZFS pool.
 Defaults to
-.Ev ${IMAGENAME}root .
+.Ev zroot .
 .It Ev md
 The name of the
 .Xr mdconfig 8
 device corresponding to the image file.
 The pre-script should populated this variable with the name of the md
-device created, so that is is properly cleaned up after the image is created.
+device created, so that it is properly cleaned up after the image is created.
 .El
 .Sh CUSTOMIZATION
 .Ss Create optional src.conf
