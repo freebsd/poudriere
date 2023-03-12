@@ -21,7 +21,7 @@ http {
 
 	server {
 		listen       0.0.0.0:80 accept_filter=httpready;
-		server_name  poudriere.domain.com accept_filter=httpready;
+		server_name  poudriere.example.net accept_filter=httpready;
 		root         /usr/local/share/poudriere/html;
 
 		# Allow caching static resources
