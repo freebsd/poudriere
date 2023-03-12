@@ -1,0 +1,61 @@
+# This is a sample Caddyfile for using with poudriere
+# Add the content to the main configuration file which is located at:
+# /usr/local/etc/caddy/Caddyfile in standard installation
+# Or save this file and import this file with import directive
+#
+# If packages need to be served on plain http uncomment the following block
+#
+#http://poudriere.example.net {
+#	# This is an example path to allow ${ABI} expansion
+#	#handle_path /FreeBSD:14:amd64/latest/* {
+#	#    # This is an example path to allow ${ABI} expansion
+#	#    root * /usr/local/poudriere/data/packages/MAIN-default/
+#	#    file_server
+#	#}
+#	handle_path /packages/* {
+#		root * /usr/local/poudriere/data/packages/
+#		file_server
+# 	}
+#}
+poudriere.example.net {
+	root * /usr/local/share/poudriere/html
+	file_server
+	handle_path /data/* {
+		root * /usr/local/poudriere/data/logs/bulk/
+		file_server browse
+		@skiplog_files path_regexp \.json$
+		@public_files path_regexp \.(css|gif|html|ico|jp?g|js|png|svg|woff)$
+		@recheck_files path_regexp \.(json|log|txz|tbz|bz2|gz)$
+		header @recheck_files +Cache-Control "public, must-revalidate, proxy-revalidate"
+		skip_log @skiplog_files
+		header @public_files +Cache-Control "public, max-age=172800"
+		handle_path /logs/* {
+			root * /usr/local/poudriere/data/logs/bulk/
+			file_server browse
+		}
+		handle_path /latest-per-pkg/* {
+			root * /usr/local/poudriere/data/logs/bulk/latest-per-pkg/
+			file_server browse
+		}
+		encode {
+			gzip 6
+			minimum_length 1100
+
+			# Allow gzipping js, css, log, svg and json files
+			match {
+				header Content-Type application/atom+xml*
+				header Content-Type application/json*
+				header Content-Type application/javascript*
+				header Content-Type application/rss+xml*
+				header Content-Type application/x-javascript
+				header Content-Type application/xhtml+xml*
+				header Content-Type application/xml*
+				header Content-Type image/gif
+				header Content-Type image/jpeg
+				header Content-Type image/png
+				header Content-Type image/svg+xml*
+				header Content-Type text/*
+			}
+		}
+	}
+}
