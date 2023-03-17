@@ -29,7 +29,7 @@
 .\"
 .\" Note: The date here should be updated whenever a non-trivial
 .\" change is made to the manual page.
-.Dd October 31, 2021
+.Dd March 17, 2023
 .Dt POUDRIERE-IMAGE 8
 .Os
 .Sh NAME
@@ -116,6 +116,9 @@ This specifies the maximum size of the image that is built.
 .It Fl t Ar type
 This specifies the type of image to create:
 .Bl -tag -width "rawfirmware"
+.It hybridiso
+An ISO 9660 format image that that is also a valid GPT image and can be written
+to a USB device for BIOS/legacy and UEFI boot.
 .It iso
 An ISO 9660 format image.
 .It iso+mfs
