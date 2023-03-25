@@ -77,10 +77,10 @@ USE_TMPFS=yes
 # Package names with hyphens (-) should be replaced with underscores (_).
 #MAX_MEMORY=8
 
-# How many file descriptors to limit each jail process to (default: 1024)
+# How many file descriptors to limit each jail process to (default: 8192)
 # This can also be set per PKGBASE, such as MAX_FILES_RStudio=2048.
 # Package names with hyphens (-) should be replaced with underscores (_).
-#MAX_FILES=1024
+#MAX_FILES=8192
 
 # If set the given directory will be used for the distfiles
 # This allows to share the distfiles between jails and ports tree
