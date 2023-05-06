@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <!--
 /*
+ * Copyright (c) 2023-2023 Muhammad Moinur Rahman <bofh@FreeBSD.org>
  * Copyright (c) 2014-2015 Bryan Drewery <bdrewery@FreeBSD.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -12,7 +13,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,15 +31,12 @@
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<meta http-equiv="Cache-Control" content="no-cache">
-		<meta http-equiv="Pragma" content="no-cache">
-		<meta http-equiv="Expires" content="0">
 
 		<title>Poudriere Jail listing</title>
 
-		<link href="assets/DataTables-1.10.0/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css">
-		<link href="assets/bootstrap-3.1.1/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
-		<link href="assets/poudriere.css" type="text/css" rel="stylesheet" />
+		<link href="https://cdn.jsdelivr.net/npm/datatables@1.10.5/media/css/jquery.dataTables.min.css" rel="stylesheet">
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" rel="stylesheet">
+		<link href="assets/poudriere.css" type="text/css" rel="stylesheet">
 
 		<link rel="shortcut icon" href="assets/favicon.ico">
 	</head>
@@ -49,7 +47,7 @@
 				<div class="row">
 					<div class="col-md-6">
 						<div id="logo">
-							<img src="assets/logo.svg" alt="logo" class="pull-left" />
+							<img src="assets/logo.svg" alt="logo" class="pull-left">
 						</div>
 						<div>
 							<ul class="nav navbar-nav nav-pills pull-left">
@@ -123,26 +121,26 @@
 							<tbody id="builds_body"></tbody>
 						</table>
 					</div><!-- #builds -->
-					<br class="clear" />
+					<br class="clear">
 				</div><!-- /col -->
 			</div><!-- /row -->
 		</div><!-- #main -->
-		<br class="clear" />
+		<br class="clear">
 		<footer class="navbar-fixed-bottom">
 			<div class="container-fluid">
 				<div class="row">
 					<div class="col-md-12">
-						<a class="pull-right" target="_new" href="https://github.com/freebsd/poudriere"><span class="glyphicon glyphicon-share-alt"></span>Poudriere</a>
+						<a class="pull-right" target="_blank" href="https://github.com/freebsd/poudriere"><span class="glyphicon glyphicon-share-alt"></span>Poudriere</a>
 					</div><!-- /col -->
 				</div><!-- /row -->
 			</div><!-- /container-fluid -->
 		</footer><!-- #footer -->
-		<script src="assets/jquery-1.11.1.min.js" type="text/javascript"></script>
-		<script src="assets/DataTables-1.10.0/js/jquery.dataTables.min.js" type="text/javascript" charset="utf8"></script>
-		<script src="assets/bootstrap-3.1.1/js/bootstrap.min.js" type="text/javascript"></script>
-		<script src="assets/jquery.dataTables.rowGrouping-1.2.9.js" type="text/javascript"></script>
-		<script type="text/javascript">server_style = "hosted";</script>
-		<script src="assets/poudriere.js" type="text/javascript"></script>
+		<script src="https://cdn.jsdelivr.net/npm/jquery@1.11.2/dist/jquery.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/datatables@1.10.5/media/js/jquery.dataTables.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js"></script>
+		<script src="assets/jquery.dataTables.rowGrouping-1.2.9.js"></script>
+		<script>server_style = "hosted";</script>
+		<script src="assets/poudriere.js"></script>
 	</body>
 </html>
 <!-- vim: set sts=4 sw=4 ts=4 noet: -->
