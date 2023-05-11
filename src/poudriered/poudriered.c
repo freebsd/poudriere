@@ -897,6 +897,10 @@ main(int argc, char **argv)
 
 	const ucl_object_t *sock_path_o, *pidfile_path_o, *foreground_o;
 
+	if (argc == 2 && strcmp(argv[1], "-f") == 0) {
+		foreground = true;
+	}
+
 	if (argc == 3) {
 		struct ucl_parser *parser = NULL;
 
