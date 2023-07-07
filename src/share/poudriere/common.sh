@@ -5732,7 +5732,7 @@ delete_old_pkg() {
 	local td d key dpath dir found raw_deps compiled_deps
 	local pkg_origin compiled_deps_pkgnames compiled_deps_pkgbases
 	local compiled_deps_pkgname compiled_deps_origin compiled_deps_new
-	local pkgbase new_pkgbase flavor pkg_flavor originspec
+	local pkgbase new_pkgbase flavor pkg_flavor subpkg originspec
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor
 	local ignore new_origin stale_pkg
 	local pkg_arch no_arch arch is_sym
@@ -5781,6 +5781,7 @@ delete_old_pkg() {
 		return 0
 	fi
 
+	subpkg=
 	pkg_flavor=
 	originspec=
 	if ! pkg_get_origin origin "${pkg}"; then
@@ -5797,7 +5798,10 @@ delete_old_pkg() {
 		if have_ports_feature FLAVORS; then
 			pkg_get_flavor pkg_flavor "${pkg}"
 		fi
-		originspec_encode originspec "${origin}" "${pkg_flavor}"
+		if have_ports_feature SUBPACKAGES; then
+			pkg_get_subpkg subpkg "${pkg}"
+		fi
+		originspec_encode2 originspec "${origin}" "${pkg_flavor}" "${subpkg}"
 		if ! originspec_is_needed_and_not_ignored "${originspec}"; then
 			if [ "${delete_unqueued}" -eq 1 ]; then
 				msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: no longer needed"
@@ -5832,7 +5836,10 @@ delete_old_pkg() {
 		if have_ports_feature FLAVORS; then
 			pkg_get_flavor pkg_flavor "${pkg}"
 		fi
-		originspec_encode originspec "${origin}" "${pkg_flavor}"
+		if have_ports_feature SUBPACKAGES; then
+			pkg_get_subpkg subpkg "${pkg}"
+		fi
+		originspec_encode2 originspec "${origin}" "${pkg_flavor}" "${subpkg}"
 	fi
 
 	v="${pkgname##*-}"
@@ -6409,20 +6416,20 @@ get_pkgname_from_originspec() {
 	[ $# -eq 2 ] || eargs get_pkgname_from_originspec originspec var_return
 	local _originspec="$1"
 	local var_return="$2"
-	local _pkgname _origin _flavor _default_flavor _flavors
+	local _pkgname _origin _flavor _default_flavor _flavors _subpkg
 
-	# This function is primarily for FLAVORS handling.
-	if ! have_ports_feature FLAVORS; then
+	# This function is primarily for FLAVORS and SUBPACKAGES handling.
+	if ! have_ports_feature FLAVORS || ! have_ports_feature SUBPACKAGES; then
 		shash_get originspec-pkgname "${_originspec}" \
 		    "${var_return}" || return 1
 		return 0
 	fi
 
 	# Trim away FLAVOR_DEFAULT if present
-	originspec_decode "${_originspec}" _origin _flavor
+	originspec_decode2 "${_originspec}" _origin _flavor _subpkg
 	if [ "${_flavor}" = "${FLAVOR_DEFAULT}" ]; then
 		_flavor=
-		originspec_encode _originspec "${_origin}" "${_flavor}"
+		originspec_encode2 _originspec "${_origin}" "${_flavor}" "${_subpkg}"
 	fi
 	shash_get originspec-pkgname "${_originspec}" "${var_return}" && \
 	    return 0
@@ -6431,7 +6438,7 @@ get_pkgname_from_originspec() {
 		return 1
 	fi
 	# See if the FLAVOR is the default and lookup that PKGNAME if so.
-	originspec_encode _originspec "${_origin}" ''
+	originspec_encode2 _originspec "${_origin}" '' "${_subpkg}"
 	shash_get originspec-pkgname "${_originspec}" _pkgname || return 1
 	# Great, compare the flavors and validate we had the default.
 	shash_get origin-flavors "${_origin}" _flavors || return 1
