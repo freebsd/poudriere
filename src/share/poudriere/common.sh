@@ -6759,14 +6759,14 @@ deps_sanity() {
 	[ $# -eq 2 ] || eargs deps_sanity originspec deps
 	local originspec="${1}"
 	local deps="${2}"
-	local origin dep_originspec dep_origin dep_flavor ret
+	local origin dep_originspec dep_origin dep_flavor dep_subpkg ret
 	local new_origin moved_reason
 
 	originspec_decode "${originspec}" origin ''
 
 	ret=0
 	for dep_originspec in ${deps}; do
-		originspec_decode "${dep_originspec}" dep_origin dep_flavor
+		originspec_decode2 "${dep_originspec}" dep_origin dep_flavor dep_subpkg
 		msg_verbose "${COLOR_PORT}${originspec}${COLOR_RESET} depends on ${COLOR_PORT}${dep_originspec}"
 		if [ "${origin}" = "${dep_origin}" ]; then
 			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} incorrectly depends on itself. Please contact maintainer of the port to fix this."
@@ -6795,6 +6795,7 @@ deps_sanity() {
 			ret=1
 		fi
 		if have_ports_feature FLAVORS && [ -z "${dep_flavor}" ] && \
+			[ -z ${dep_subpkg} ] && \
 		    [ "${dep_originspec}" != "${dep_origin}" ]; then
 			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} has dependency on ${COLOR_PORT}${dep_origin}${COLOR_RESET} with invalid empty FLAVOR; Please contact maintainer of the port to fix this."
 			ret=1
