@@ -5390,7 +5390,8 @@ stop_build() {
 	buildlog_stop "${pkgname}" "${originspec}" ${build_failed}
 }
 
-: ${ORIGINSPEC_SEP:="@"}
+: ${ORIGINSPEC_FL_SEP:="@"}
+: ${ORIGINSPEC_SP_SEP:="~"}
 : ${FLAVOR_DEFAULT:="-"}
 : ${FLAVOR_ALL:="all"}
 
@@ -5409,6 +5410,37 @@ build_all_flavors() {
 	return 1
 }
 
+# ORIGINSPEC is: ORIGIN@FLAVOR~SUBPKG
+originspec_decode2() {
+	local -; set +x -f
+	[ $# -ne 4 ] && eargs originspec_decode originspec \
+	    var_return_origin var_return_flavor var_return_subpkg
+	local _originspec="$1"
+	local var_return_origin="$2"
+	local var_return_flavor="$3"
+	local var_return_subpkg="$3"
+	local __origin __flavor __subpkg IFS
+
+	IFS="$ORIGINSPEC_SP_SEP"
+	set -- ${_originspec}
+	__origin="$1"
+	__subpkg="$2"
+
+	IFS="${ORIGINSPEC_FL_SEP}"
+	set -- ${__origin}
+	__origin="$1"
+	__flavor="$2"
+
+	if [ -n "${var_return_origin-}" ]; then
+		setvar "${var_return_origin}" "${__origin}"
+	fi
+	if [ -n "${var_return_flavor-}" ]; then
+		setvar "${var_return_flavor}" "${__flavor}"
+	fi
+	if [ -n "${var_return_subpkg-}" ]; then
+		setvar "${var_return_subpkg}" "${__subpkg}"
+	fi
+}
 # ORIGINSPEC is: ORIGIN@FLAVOR
 originspec_decode() {
 	local -; set +x -f
@@ -5417,10 +5449,14 @@ originspec_decode() {
 	local _originspec="$1"
 	local var_return_origin="$2"
 	local var_return_flavor="$3"
-	local __origin __flavor IFS
+	local __origin __flavor _origin_tmp IFS
 
-	IFS="${ORIGINSPEC_SEP}"
+	IFS="${ORIGINSPEC_SP_SEP}"
 	set -- ${_originspec}
+	_origin_tmp="${1}"
+
+	IFS="${ORIGINSPEC_FL_SEP}"
+	set -- ${_origin_tmp}
 
 	__origin="${1}"
 	__flavor="${2-}"
@@ -5434,6 +5470,30 @@ originspec_decode() {
 }
 
 # !!! NOTE that the encoded originspec may not match the parameter ordering.
+originspec_encode2() {
+	local -; set +x
+	[ $# -ne 4 ] && eargs originspec_encode var_return origin flavor subpkg
+	local _var_return="$1"
+	local _origin_in="$2"
+	local _flavor="$3"
+	local _subpkg="$4"
+	local output
+
+	output="${_origin_in}"
+	# Only add in FLAVOR if needed.  If not needed then don't add
+	# ORIGINSPEC_FL_SEP either.
+	if [ -n "${_flavor}" ]; then
+		output="${output}${ORIGINSPEC_FL_SEP}${_flavor}"
+	fi
+	# Only add in SUBPACKAGE if needed.  If not needed then don't add
+	# ORIGINSPEC_SP_SEP either.
+	if [ -n "${_subpkg}" ]; then
+		output="${output}${ORIGINSPEC_SP_SEP}${_subpkg}"
+	fi
+	setvar "${_var_return}" "${output}"
+}
+
+# !!! NOTE that the encoded originspec may not match the parameter ordering.
 originspec_encode() {
 	local -; set +x
 	[ $# -ne 3 ] && eargs originspec_encode var_return origin flavor
@@ -5444,9 +5504,9 @@ originspec_encode() {
 
 	output="${_origin_in}"
 	# Only add in FLAVOR if needed.  If not needed then don't add
-	# ORIGINSPEC_SEP either.
+	# ORIGINSPEC_FL_SEP either.
 	if [ -n "${_flavor}" ]; then
-		output="${output}${ORIGINSPEC_SEP}${_flavor}"
+		output="${output}${ORIGINSPEC_FL_SEP}${_flavor}"
 	fi
 	setvar "${_var_return}" "${output}"
 }
