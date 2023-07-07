@@ -133,9 +133,13 @@ cat > "${MASTERMNT}/tmp/cmd" <<'EOF'
 #! /bin/sh
 ORIGIN="${1}"
 FLAVOR="${2}"
-shift 2
+SUBPKG="${3}"
+shift 3
 if [ -n "${FLAVOR}" ]; then
 	export FLAVOR
+fi
+if [ -n "${SUBPKG}" ]; then
+	export SUBPKG
 fi
 cd "${PORTSDIR}/${ORIGIN}"
 exec /tmp/script "$@"
@@ -152,11 +156,11 @@ export PORTSDIR
 clear_dep_fatal_error
 parallel_start
 for originspec in $(listed_ports show_moved); do
-	originspec_decode "${originspec}" origin flavor
+	originspec_decode "${originspec}" origin flavor subpkg
 	parallel_run \
 	    prefix_stderr_quick \
 	    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \
-	    injail "/tmp/cmd" "${origin}" "${flavor}" "$@" || \
+	    injail "/tmp/cmd" "${origin}" "${flavor}" "${subpkg}" "$@" || \
 	    set_dep_fatal_error
 done
 if ! parallel_stop || check_dep_fatal_error; then
