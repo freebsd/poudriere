@@ -94,6 +94,13 @@ pkg_get_flavor() {
 	pkg_get_annotation "${var_return}" "${pkg}" 'flavor'
 }
 
+pkg_get_subpkg() {
+	[ $# -eq 2 ] || eargs pkg_get_subpkg var_return pkg
+	local var_return="$1"
+	local pkg="$2"
+
+	pkg_get_annotation "${var_return}" "${pkg}" 'subpackage'
+}
 pkg_get_arch() {
 	[ $# -ge 2 ] || eargs pkg_get_arch var_return pkg [arch]
 	local var_return="$1"
