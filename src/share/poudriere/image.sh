@@ -528,6 +528,7 @@ if [ -f "${WRKDIR}/world/etc/login.conf.orig" ]; then
 	    "${WRKDIR}/world/etc/login.conf"
 fi
 cap_mkdb ${WRKDIR}/world/etc/login.conf
+pwd_mkdb -d ${WRKDIR}/world/etc -p ${WRKDIR}/world/etc/master.passwd
 
 # Set hostname
 if [ -n "${HOSTNAME}" ]; then
