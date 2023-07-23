@@ -2644,6 +2644,9 @@ need_emulation() {
 	# kern.supported_archs is a list of TARGET_ARCHs.
 	target_arch="${wanted_arch#*.}"
 
+        # armv6 binaries can natively execute on armv7, no emulation needed
+        [ "${target_arch}" = "armv6" ] && target_arch="armv[67]"
+
 	# Check the list of supported archs from the kernel.
 	# DragonFly does not have kern.supported_archs, fallback to
 	# uname -m (advised by dillon)
