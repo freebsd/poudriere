@@ -3676,7 +3676,7 @@ download_from_repo_check_pkg() {
 	    $1 == pkgbase && $3 == "off" {print "-"$2;printed=1}
 	    $1 != pkgbase && printed == 1 {exit}
 	    ' \
-	    "${remote_all_options}" | sort -k1.2 | paste -s -d ' ' -)
+	    "${remote_all_options}" | sort -k1.2 -u | paste -s -d ' ' -)
 
 	shash_get pkgname-options "${pkgname}" selected_options || \
 	    selected_options=
@@ -3702,7 +3702,7 @@ download_from_repo_check_pkg() {
 	    $1 == pkgbase {print $2;printed=1}
 	    $1 != pkgbase && printed == 1 {exit}
 	    ' \
-	    "${remote_all_deps}" | sort | paste -s -d ' ' -)
+	    "${remote_all_deps}" | sort -u | paste -s -d ' ' -)
 	case "${local_deps}" in
 	${remote_deps}) ;;
 	*)
