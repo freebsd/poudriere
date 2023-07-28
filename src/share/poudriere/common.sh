@@ -3600,6 +3600,11 @@ download_from_repo_check_pkg() {
 
 	# Skip blacklisted packages
 	# pkg is always blacklisted so it is built locally
+	#
+	# Disabling globs for this loop or wildcards will
+	# expand to files in the current directory instead of
+	# being passed to the case statement as a pattern
+	set -o noglob
 	for bpkg in ${PACKAGE_FETCH_BLACKLIST-} ${P_PKG_PKGBASE:?}; do
 		case "${pkgbase}" in
 		${bpkg})
@@ -3608,6 +3613,8 @@ download_from_repo_check_pkg() {
 			;;
 		esac
 	done
+	set +o noglob
+
 	found=$(awk -v pkgname="${pkgname}" -vpkgbase="${pkgbase}" \
 	    '$1 == pkgbase {print $2; exit}' "${remote_all_pkgs}")
 	if [ -z "${found}" ]; then
@@ -3775,6 +3782,11 @@ download_from_repo() {
 		fi
 		pkgbase="${pkgname%-*}"
 		found=0
+
+		# Disabling globs for this loop or wildcards will
+		# expand to files in the current directory instead of
+		# being passed to the case statement as a pattern
+		set -o noglob
 		for pkg in ${PACKAGE_FETCH_WHITELIST-"*"}; do
 			case "${pkgbase}" in
 			${pkg})
@@ -3783,6 +3795,8 @@ download_from_repo() {
 				;;
 			esac
 		done
+		set +o noglob
+
 		if [ "${found}" -eq 0 ]; then
 			msg_verbose "Package fetch: Skipping ${COLOR_PORT}${pkgname}${COLOR_RESET}: not in whitelist" >&2
 			continue
@@ -4275,6 +4289,11 @@ build_port() {
 	    ${_need_root}
 
 	allownetworking=0
+
+	# Disabling globs for this loop or wildcards will
+	# expand to files in the current directory instead of
+	# being passed to the case statement as a pattern
+	set -o noglob
 	for jpkg in ${ALLOW_NETWORKING_PACKAGES}; do
 		case "${pkgname%-*}" in
 		${jpkg})
@@ -4286,6 +4305,7 @@ build_port() {
 			;;
 		esac
 	done
+	set +o noglob
 
 	# Must install run-depends as 'actual-package-depends' and autodeps
 	# only consider installed packages as dependencies
@@ -7990,6 +8010,11 @@ load_priorities_ptsort() {
 	while mapfile_read_loop "${MASTER_DATADIR}/all_pkgs" \
 	    pkgname originspec _ignored; do
 		# Does this pkg have an override?
+
+		# Disabling globs for this loop or wildcards will
+		# expand to files in the current directory instead of
+		# being passed to the case statement as a pattern
+		set -o noglob
 		for pkg_boost in ${PRIORITY_BOOST}; do
 			case ${pkgname%-*} in
 			${pkg_boost})
@@ -8003,6 +8028,7 @@ load_priorities_ptsort() {
 				;;
 			esac
 		done
+		set +o noglob
 	done
 
 	ptsort -p "${MASTER_DATADIR}/pkg_deps.ptsort" > \
