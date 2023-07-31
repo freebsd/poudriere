@@ -5526,17 +5526,18 @@ deps_fetch_vars() {
 	local _forbidden _default_originspec _default_pkgname _no_arch
 	local origin _dep _new_pkg_deps
 	local _origin_flavor _flavor _flavors
+	local _origin_subpkg
 	local _prefix
 	local _depend_specials=
 
-	originspec_decode "${originspec}" origin _origin_flavor
+	originspec_decode2 "${originspec}" origin _origin_flavor _origin_subpkg
 	# If we were passed in a FLAVOR then we better have already looked up
 	# the default for this port.  This is to avoid making the default port
 	# become superfluous.  Bulk -a would have already visited from the
 	# category Makefiles.  The main port would have been looked up
 	# potentially by the 'metadata' hack.
 	if [ ${ALL} -eq 0 ] && [ -n "${_origin_flavor}" ]; then
-		originspec_encode _default_originspec "${origin}" ''
+		originspec_encode2 _default_originspec "${origin}" '' "${_origin_subpkg}"
 		shash_get originspec-pkgname "${_default_originspec}" \
 		    _default_pkgname || \
 		    err 1 "deps_fetch_vars: Lookup of ${COLOR_PORT}${originspec}${COLOR_RESET} failed to already have ${COLOR_PORT}${_default_originspec}${COLOR_RESET}"
@@ -5547,28 +5548,53 @@ deps_fetch_vars() {
 		_changed_options=yes
 	fi
 	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
-		_changed_deps="LIB_DEPENDS _lib_depends RUN_DEPENDS _run_depends"
+		if have_ports_feature SUBPACKAGES; then
+			_changed_deps="LIB_DEPENDS_ALL _lib_depends RUN_DEPENDS_ALL _run_depends"
+		else
+			_changed_deps="LIB_DEPENDS _lib_depends RUN_DEPENDS _run_depends"
+		fi
 	fi
 	if have_ports_feature FLAVORS; then
 		_lookup_flavors="FLAVOR _flavor FLAVORS _flavors"
 	fi
-	if ! port_var_fetch_originspec "${originspec}" \
-	    PKGNAME _pkgname \
-	    ${_lookup_flavors} \
-	    '${_DEPEND_SPECIALS:C,^${PORTSDIR}/,,}' _depend_specials \
-	    CATEGORIES categories \
-	    IGNORE _ignore \
-	    FORBIDDEN _forbidden \
-	    NO_ARCH:Dyes _no_arch \
-	    PREFIX _prefix \
-	    ${_changed_deps} \
-	    ${_changed_options:+_PRETTY_OPTS='${SELECTED_OPTIONS:@opt@${opt}+@} ${DESELECTED_OPTIONS:@opt@${opt}-@}'} \
-	    ${_changed_options:+'${_PRETTY_OPTS:O:C/(.*)([+-])$/\2\1/}' _selected_options} \
-	    _PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
-	    '${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
-	    _pkg_deps; then
-		msg_error "Error looking up dependencies for ${COLOR_PORT}${originspec}${COLOR_RESET}"
-		return 1
+	if have_ports_feature SUBPACKAGES; then
+		if ! port_var_fetch_originspec "${originspec}" \
+			PKGNAME${_origin_subpkg:+.${_origin_subpkg}} _pkgname \
+			${_lookup_flavors} \
+			'${_DEPEND_SPECIALS:C,^${PORTSDIR}/,,}' _depend_specials \
+			CATEGORIES categories \
+			IGNORE _ignore \
+			FORBIDDEN _forbidden \
+			NO_ARCH:Dyes _no_arch \
+			PREFIX _prefix \
+			${_changed_deps} \
+			${_changed_options:+_PRETTY_OPTS='${SELECTED_OPTIONS:@opt@${opt}+@} ${DESELECTED_OPTIONS:@opt@${opt}-@}'} \
+			${_changed_options:+'${_PRETTY_OPTS:O:C/(.*)([+-])$/\2\1/}' _selected_options} \
+			_PDEPS='${PKG_DEPENDS_ALL} ${EXTRACT_DEPENDS_ALL} ${PATCH_DEPENDS_ALL} ${FETCH_DEPENDS_ALL} ${BUILD_DEPENDS_ALL} ${LIB_DEPENDS_ALL} ${RUN_DEPENDS_ALL}' \
+			'${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
+			_pkg_deps; then
+			msg_error "Error looking up dependencies for ${COLOR_PORT}${originspec}${COLOR_RESET}"
+			return 1
+		fi
+	else
+		if ! port_var_fetch_originspec "${originspec}" \
+			PKGNAME _pkgname \
+			${_lookup_flavors} \
+			'${_DEPEND_SPECIALS:C,^${PORTSDIR}/,,}' _depend_specials \
+			CATEGORIES categories \
+			IGNORE _ignore \
+			FORBIDDEN _forbidden \
+			NO_ARCH:Dyes _no_arch \
+			PREFIX _prefix \
+			${_changed_deps} \
+			${_changed_options:+_PRETTY_OPTS='${SELECTED_OPTIONS:@opt@${opt}+@} ${DESELECTED_OPTIONS:@opt@${opt}-@}'} \
+			${_changed_options:+'${_PRETTY_OPTS:O:C/(.*)([+-])$/\2\1/}' _selected_options} \
+			_PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
+			'${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
+			_pkg_deps; then
+			msg_error "Error looking up dependencies for ${COLOR_PORT}${originspec}${COLOR_RESET}"
+			return 1
+		fi
 	fi
 
 	[ -n "${_pkgname}" ] || \
@@ -6387,7 +6413,7 @@ port_var_fetch_originspec() {
 	shift
 	local origin flavor
 
-	originspec_decode "${originspec}" origin flavor
+	originspec_decode2 "${originspec}" origin flavor ''
 	port_var_fetch "${origin}" "$@" ${flavor:+FLAVOR=${flavor}}
 }
 
@@ -6419,15 +6445,15 @@ get_pkgname_from_originspec() {
 	local _pkgname _origin _flavor _default_flavor _flavors _subpkg
 
 	# This function is primarily for FLAVORS and SUBPACKAGES handling.
-	if ! have_ports_feature FLAVORS || ! have_ports_feature SUBPACKAGES; then
+	if ! have_ports_feature FLAVORS && ! have_ports_feature SUBPACKAGES; then
 		shash_get originspec-pkgname "${_originspec}" \
 		    "${var_return}" || return 1
 		return 0
 	fi
 
-	# Trim away FLAVOR_DEFAULT if present
 	originspec_decode2 "${_originspec}" _origin _flavor _subpkg
-	if [ "${_flavor}" = "${FLAVOR_DEFAULT}" ]; then
+	# Trim away FLAVOR_DEFAULT if present
+	if [ -n "${FLAVOR_DEFAULT}" ] && [ "${_flavor}" = "${FLAVOR_DEFAULT}" ]; then
 		_flavor=
 		originspec_encode2 _originspec "${_origin}" "${_flavor}" "${_subpkg}"
 	fi
@@ -6581,7 +6607,7 @@ gather_port_vars() {
 	clear_dep_fatal_error
 	parallel_start
 	for originspec in $(listed_ports show_moved); do
-		originspec_decode "${originspec}" origin flavor
+		originspec_decode2 "${originspec}" origin flavor ''
 		rdep="listed"
 		# For -a we skip the initial gatherqueue
 		if [ ${ALL} -eq 1 ]; then
@@ -6762,7 +6788,7 @@ deps_sanity() {
 	local origin dep_originspec dep_origin dep_flavor dep_subpkg ret
 	local new_origin moved_reason
 
-	originspec_decode "${originspec}" origin ''
+	originspec_decode2 "${originspec}" origin '' ''
 
 	ret=0
 	for dep_originspec in ${deps}; do
@@ -6814,17 +6840,17 @@ gather_port_vars_port() {
 	local dep_origin deps pkgname dep_originspec
 	local dep_ret log flavor flavors dep_flavor
 	local origin origin_flavor default_flavor
-	local ignore
+	local ignore origin_subpkg
 
 	msg_debug "gather_port_vars_port (${COLOR_PORT}${originspec}${COLOR_RESET}): LOOKUP"
-	originspec_decode "${originspec}" origin origin_flavor
+	originspec_decode2 "${originspec}" origin origin_flavor origin_subpkg
 	if [ -n "${origin_flavor}" ] && ! have_ports_feature FLAVORS; then
 		err 1 "gather_port_vars_port: Looking up ${COLOR_PORT}${originspec}${COLOR_RESET} without FLAVORS support in ports"
 	fi
 
 	# Trim away FLAVOR_DEFAULT and restore it later
 	if [ "${origin_flavor}" = "${FLAVOR_DEFAULT}" ]; then
-		originspec_encode originspec "${origin}" ''
+		originspec_encode2 originspec "${origin}" '' "${origin_subpkg}"
 	fi
 
 	# A metadata lookup may have been queued for this port that is no
@@ -7059,7 +7085,7 @@ gather_port_vars_process_depqueue() {
 	[ $# -eq 1 ] || eargs gather_port_vars_process_depqueue originspec
 	local originspec="$1"
 	local origin pkgname deps dep_origin
-	local dep_originspec dep_flavor queue rdep
+	local dep_originspec dep_flavor dep_subpkg queue rdep
 	local fd_devnull
 
 	msg_debug "gather_port_vars_process_depqueue (${COLOR_PORT}${originspec}${COLOR_RESET})"
@@ -7077,13 +7103,14 @@ gather_port_vars_process_depqueue() {
 		fd_devnull=5
 	fi
 
-	originspec_decode "${originspec}" origin ''
+	#originspec_decode "${originspec}" origin ''
 	for dep_originspec in ${deps}; do
-		originspec_decode "${dep_originspec}" dep_origin dep_flavor
+		originspec_decode2 "${dep_originspec}" dep_origin dep_flavor dep_subpkg
 		# First queue the default origin into the gatherqueue if
 		# needed.  For the -a case we're guaranteed to already
 		# have done this via the category Makefiles.
-		if [ ${ALL} -eq 0 ]; then
+		# if it's a subpackage process it later
+		if [ ${ALL} -eq 0 ] && [ -z "${dep_subpkg}" ]; then
 			if [ -n "${dep_flavor}" ]; then
 				queue=mqueue
 				rdep="metadata ${dep_flavor} ${originspec}"
@@ -7098,6 +7125,12 @@ gather_port_vars_process_depqueue() {
 			    "${rdep}"
 		fi
 
+		if [ -z "${dep_flavor}" ] && [ -n "${dep_subpkg}" ]; then
+			msg_debug "Want to enqueue ${COLOR_PORT}${dep_originspec}${COLOR_RESET} rdep=${COLOR_PORT}${origin}${COLOR_RESET} into ${queue}"
+			gather_port_vars_process_depqueue_enqueue \
+			    "${originspec}" "${dep_originspec}" "${queue}" \
+			    "${originspec}"
+		fi
 		# Add FLAVOR dependencies into the flavorqueue.
 		if [ -n "${dep_flavor}" ]; then
 			# For the -a case we can skip the flavorqueue since
@@ -7160,7 +7193,7 @@ compute_deps_pkg() {
 	local pkgname="$1"
 	local originspec="$2"
 	local pkg_deps="$3"
-	local deps dep_pkgname dep_originspec dep_origin dep_flavor
+	local deps dep_pkgname dep_originspec dep_origin dep_flavor dep_subpkg
 	local raw_deps d key dpath dep_real_pkgname err_type
 
 	# Safe to remove pkgname-deps now, it won't be needed later.
@@ -7179,8 +7212,8 @@ compute_deps_pkg() {
 	for dep_originspec in ${deps}; do
 		if ! get_pkgname_from_originspec "${dep_originspec}" \
 		    dep_pkgname; then
-			originspec_decode "${dep_originspec}" dep_origin \
-			    dep_flavor
+			originspec_decode2 "${dep_originspec}" dep_origin \
+			    dep_flavor dep_subpkg
 			if [ ${ALL} -eq 0 ]; then
 				msg_error "compute_deps_pkg failed to lookup pkgname for ${COLOR_PORT}${dep_originspec}${COLOR_RESET} processing package ${COLOR_PORT}${pkgname}${COLOR_RESET} from ${COLOR_PORT}${originspec}${COLOR_RESET}${dep_flavor:+ -- Does ${COLOR_PORT}${dep_origin}${COLOR_RESET} provide the '${dep_flavor}' FLAVOR?}"
 			else
