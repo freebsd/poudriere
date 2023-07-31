@@ -5413,15 +5413,15 @@ build_all_flavors() {
 # ORIGINSPEC is: ORIGIN@FLAVOR~SUBPKG
 originspec_decode2() {
 	local -; set +x -f
-	[ $# -ne 4 ] && eargs originspec_decode originspec \
+	[ $# -ne 4 ] && eargs originspec_decode2 originspec \
 	    var_return_origin var_return_flavor var_return_subpkg
 	local _originspec="$1"
 	local var_return_origin="$2"
 	local var_return_flavor="$3"
-	local var_return_subpkg="$3"
+	local var_return_subpkg="$4"
 	local __origin __flavor __subpkg IFS
 
-	IFS="$ORIGINSPEC_SP_SEP"
+	IFS="${ORIGINSPEC_SP_SEP}"
 	set -- ${_originspec}
 	__origin="$1"
 	__subpkg="$2"
