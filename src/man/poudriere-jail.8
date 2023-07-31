@@ -38,7 +38,7 @@
 .Nm
 .Fl c
 .Fl j Ar name
-.Op Fl bDx
+.Op Fl bBDx
 .Op Fl a Ar architecture
 .Op Fl f Ar filesystem
 .Op Fl J Ar maxjobs
@@ -134,6 +134,11 @@ The default is the architecture of the host.
 Build the source provided with the
 .Fl m Cm src= Ns Ar path
 option.
+.It Fl B
+Build the pkgbase set (for use with
+.Fl b
+or
+.Fl m Cm git/svn/... )
 .It Fl C Ar data
 Clean poudriere
 .Ar data
