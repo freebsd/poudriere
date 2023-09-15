@@ -283,6 +283,8 @@ fi
 
 commit_packages
 
+set +e
+
 show_build_results
 
 run_hook bulk done ${nbbuilt} ${nbfailed} ${nbignored} ${nbskipped} ${nbfetched}
@@ -292,7 +294,5 @@ if [ ${INTERACTIVE_MODE} -gt 0 ]; then
 fi
 
 bset status "done:"
-
-set +e
 
 exit $((nbfailed + nbskipped))
