@@ -170,7 +170,7 @@ esac
 # Special-case environment passthroughs.
 while read envvar; do
 	case "${envvar}" in
-	FETCH_BIND_ADDRESS|FTP_*|ftp_*|HTTP_*|http_*|SSL_|NO_PROXY|no_proxy)
+	FETCH_BIND_ADDRESS|FTP_*|ftp_*|HTTP_*|http_*|SSH_*|SSL_|NO_PROXY|no_proxy)
 		case "${CMD}" in
 		ports|jail) ;;
 		*) continue ;;
