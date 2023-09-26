@@ -667,7 +667,7 @@ injail_tty() {
 }
 
 jstart() {
-	local name network
+	local mpath name network
 	local MAX_MEMORY_BYTES
 
 	unset MAX_MEMORY_BYTES
@@ -681,14 +681,19 @@ jstart() {
 	fi
 
 	_my_name name
+
+	mpath=${MASTERMNT}${MY_JOBID:+/../${MY_JOBID}}
+	echo "::1 ${name}" >> "${mpath}/etc/hosts"
+	echo "127.0.0.1 ${name}" >> "${mpath}/etc/hosts"
+
 	# Restrict to no networking (if RESTRICT_NETWORKING==yes)
 	jail -c persist name=${name} \
-		path=${MASTERMNT}${MY_JOBID:+/../${MY_JOBID}} \
+		path=${mpath} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${network} ${JAIL_PARAMS}
 	# Allow networking in -n jail
 	jail -c persist name=${name}-n \
-		path=${MASTERMNT}${MY_JOBID:+/../${MY_JOBID}} \
+		path=${mpath} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${ipargs} ${JAIL_PARAMS} ${JAIL_NET_PARAMS}
 	return 0
