@@ -189,7 +189,7 @@ setup_makeconf ${__MAKE_CONF} "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 
 export TERM=${SAVED_TERM}
 for originspec in $(listed_ports show_moved); do
-	originspec_decode "${originspec}" origin flavor
+	originspec_decode2 "${originspec}" origin flavor subpkg
 	[ -d ${PORTSDIR}/${origin} ] || err 1 "No such port: ${origin}"
 	env ${flavor:+FLAVOR=${flavor}} \
 	make PORT_DBDIR=${PORT_DBDIR} \
