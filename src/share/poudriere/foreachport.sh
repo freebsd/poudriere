@@ -156,7 +156,7 @@ export PORTSDIR
 clear_dep_fatal_error
 parallel_start
 for originspec in $(listed_ports show_moved); do
-	originspec_decode2 "${originspec}" origin flavor subpkg
+	originspec_decode "${originspec}" origin flavor subpkg
 	parallel_run \
 	    prefix_stderr_quick \
 	    "(${COLOR_PORT}${originspec}${COLOR_RESET})${COLOR_WARN}" \

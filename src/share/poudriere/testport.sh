@@ -196,11 +196,11 @@ jail_start "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 _pget portsdir ${PTNAME} mnt
 fetch_global_port_vars || \
     err 1 "Failed to lookup global ports metadata"
-originspec_decode2 "${ORIGINSPEC}" ORIGIN FLAVOR SUBPKG
+originspec_decode "${ORIGINSPEC}" ORIGIN FLAVOR SUBPKG
 # Remove excess slashes for mistakes
 ORIGIN="${ORIGIN#/}"
 ORIGIN="${ORIGIN%/}"
-originspec_encode2 ORIGINSPEC "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
+originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
 if have_ports_feature FLAVORS; then
 	[ "${FLAVOR}" = "${FLAVOR_DEFAULT}" ] && FLAVOR=
 	[ "${FLAVOR}" = "${FLAVOR_ALL}" ] && \
@@ -215,7 +215,7 @@ if [ -n "${new_origin}" ]; then
 	msg "MOVED: ${COLOR_PORT}${ORIGIN}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
 	# The ORIGIN may have a FLAVOR or SUBPKG in it which overrides
 	# whatever the user specified.
-	originspec_decode2 "${new_origin}" ORIGIN NEW_FLAVOR NEW_SUBPKG
+	originspec_decode "${new_origin}" ORIGIN NEW_FLAVOR NEW_SUBPKG
 	if [ -n "${NEW_FLAVOR}" ]; then
 		FLAVOR="${NEW_FLAVOR}"
 	fi
@@ -223,7 +223,7 @@ if [ -n "${new_origin}" ]; then
 		SUBPKG="${NEW_SUBPKG}"
 	fi
 	# Update ORIGINSPEC for the new ORIGIN
-	originspec_encode2 ORIGINSPEC "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
+	originspec_encode ORIGINSPEC "${ORIGIN}" "${FLAVOR}" "${SUBPKG}"
 fi
 _lookup_portdir portdir "${ORIGIN}"
 if [ "${portdir}" = "${PORTSDIR}/${ORIGIN}" ] && [ ! -f "${portsdir}/${ORIGIN}/Makefile" ] || [ -d "${portsdir}/${ORIGIN}/../Mk" ]; then
