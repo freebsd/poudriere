@@ -7031,9 +7031,6 @@ gather_port_vars_process_depqueue_enqueue() {
 	# Another worker may have created it
 	if mkdir "${queue}/${dep_originspec%/*}!${dep_originspec#*/}" \
 	    2>&${fd_devnull}; then
-		# TODO: Remove the following line, this call has no use
-		originspec_decode "${originspec}" origin '' ''
-
 		echo "${rdep}" > \
 		    "${queue}/${dep_originspec%/*}!${dep_originspec#*/}/rdep"
 	fi
