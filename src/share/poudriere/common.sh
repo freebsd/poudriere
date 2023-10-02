@@ -2032,8 +2032,8 @@ do_jail_mounts() {
 
 # Interactive test mode
 enter_interactive() {
-	local stopmsg pkgname port originspec flavor packages
-	local portdir one_package _log_path
+	local stopmsg pkgname port originspec flavor subpkg packages
+	local portdir one_package _log_path _install_target
 
 	if [ ${ALL} -ne 0 ]; then
 		msg "(-a) Not entering interactive mode."
@@ -2068,23 +2068,28 @@ enter_interactive() {
 	for pkgname in ${packages}; do
 		one_package=$((one_package + 1))
 		get_originspec_from_pkgname originspec "${pkgname}"
-		originspec_decode "${originspec}" port flavor
+		originspec_decode2 "${originspec}" port flavor subpkg
 		# Install run-depends since this is an interactive test
-		msg "Installing run-depends for ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
+		msg "Installing run-depends for ${COLOR_PORT}${port}${flavor:+@${flavor}}${subpkg:+~${subpkg}} | ${pkgname}"
 		_lookup_portdir portdir "${port}"
 		injail env USE_PACKAGE_DEPENDS_ONLY=1 \
 		    /usr/bin/make -C "${portdir}" \
 		    ${flavor:+FLAVOR=${flavor}} run-depends ||
-		    msg_warn "Failed to install ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}${COLOR_RESET} run-depends"
+		    msg_warn "Failed to install ${COLOR_PORT}${port}${flavor:+@${flavor}}${subpkg:+~${subpkg}} | ${pkgname}${COLOR_RESET} run-depends"
 		if [ -z "${POUDRIERE_INTERACTIVE_NO_INSTALL-}" ]; then
-			msg "Installing ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
+			msg "Installing ${COLOR_PORT}${port}${flavor:+@${flavor}}${subpkg:+~${subpkg}} | ${pkgname}"
+			if [ -z "$subpkg" ]; then
+				_install_target="install-package"
+			else
+				_install_target="install-package.${subpkg}"
+			fi
 			# Only use PKGENV during install as testport will store
 			# the package in a different place than dependencies
 			injail /usr/bin/env ${PKGENV:+-S "${PKGENV}"} \
 			    USE_PACKAGE_DEPENDS_ONLY=1 \
 			    /usr/bin/make -C "${portdir}" \
-			    ${flavor:+FLAVOR=${flavor}} install-package ||
-			    msg_warn "Failed to install ${COLOR_PORT}${port}${flavor:+@${flavor}} | ${pkgname}"
+			    ${flavor:+FLAVOR=${flavor}} "${_install_target}" ||
+			    msg_warn "Failed to install ${COLOR_PORT}${port}${flavor:+@${flavor}}${subpkg:+~${subpkg}} | ${pkgname}"
 		fi
 	done
 	if [ "${one_package}" -gt 1 ]; then
