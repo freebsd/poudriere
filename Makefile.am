@@ -166,8 +166,8 @@ EXTRA_PROGRAMS= \
 		rm \
 		sh
 
-noinst_LTLIBRARIES=	libucl.la libnv.la libptsort.la
-CLEANFILES+=		libucl.a libnv.a libptsort.a
+noinst_LTLIBRARIES=	libucl.la libptsort.la
+CLEANFILES+=		libucl.a libptsort.a
 
 AUTOMAKE_OPTIONS=	subdir-objects
 
@@ -294,21 +294,6 @@ libptsort_la_CPPFLAGS=	-I$(top_srcdir)/external/ptsort/lib
 ptsort_SOURCES=		external/ptsort/bin/ptsort.c
 ptsort_LDADD=		libptsort.la
 ptsort_CPPFLAGS=	-I$(top_srcdir)/external/ptsort/lib
-
-libnv_la_CFLAGS=	$(AM_CFLAGS) \
-			-isystem $(top_srcdir)/external/libnv/ -std=gnu99
-libnv_la_SOURCES=	\
-			external/libnv/common_impl.h \
-			external/libnv/msgio.c \
-			external/libnv/msgio.h \
-			external/libnv/sys/dnv.h \
-			external/libnv/sys/dnvlist.c \
-			external/libnv/sys/nv.h \
-			external/libnv/sys/nv_impl.h \
-			external/libnv/sys/nvlist.c \
-			external/libnv/sys/nvlist_impl.h \
-			external/libnv/sys/nvpair.c \
-			external/libnv/sys/nvpair_impl.h
 
 poudriered_SOURCES=	src/poudriered/poudriered.c
 poudriered_CFLAGS=	$(AM_CFLAGS) \
