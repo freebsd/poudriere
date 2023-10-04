@@ -792,7 +792,6 @@ ac_user_opts='
 enable_option_checking
 enable_silent_rules
 enable_maintainer_mode
-enable_debug
 enable_dependency_tracking
 enable_shared
 enable_static
@@ -1444,8 +1443,6 @@ Optional Features:
   --enable-maintainer-mode
                           enable make rules and dependencies not useful (and
                           sometimes confusing) to the casual installer
-  --enable-debug=[yes/info/profile/no]
-                          compile with debugging
   --enable-dependency-tracking
                           do not reject slow dependency extractors
   --disable-dependency-tracking
@@ -3280,108 +3277,6 @@ else $as_nop
 fi
 
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable debugging" >&5
-printf %s "checking whether to enable debugging... " >&6; }
-
-    ax_enable_debug_default=yes
-    ax_enable_debug_is_release=$ax_is_release
-
-    # If this is a release, override the default.
-    if test "$ax_enable_debug_is_release" = "yes"
-then :
-  ax_enable_debug_default="no"
-fi
-
-
-
-
-    # Check whether --enable-debug was given.
-if test ${enable_debug+y}
-then :
-  enableval=$enable_debug;
-else $as_nop
-  enable_debug=$ax_enable_debug_default
-fi
-
-
-    # empty mean debug yes
-    if test "x$enable_debug" = "x"
-then :
-  enable_debug="yes"
-fi
-
-    # case of debug
-    case $enable_debug in #(
-  yes) :
-
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-        CFLAGS="${CFLAGS} -g -O0"
-        CXXFLAGS="${CXXFLAGS} -g -O0"
-        FFLAGS="${FFLAGS} -g -O0"
-        FCFLAGS="${FCFLAGS} -g -O0"
-        OBJCFLAGS="${OBJCFLAGS} -g -O0"
-       ;; #(
-  info) :
-
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: info" >&5
-printf "%s\n" "info" >&6; }
-        CFLAGS="${CFLAGS} -g"
-        CXXFLAGS="${CXXFLAGS} -g"
-        FFLAGS="${FFLAGS} -g"
-        FCFLAGS="${FCFLAGS} -g"
-        OBJCFLAGS="${OBJCFLAGS} -g"
-       ;; #(
-  profile) :
-
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: profile" >&5
-printf "%s\n" "profile" >&6; }
-        CFLAGS="${CFLAGS} -g -pg"
-        CXXFLAGS="${CXXFLAGS} -g -pg"
-        FFLAGS="${FFLAGS} -g -pg"
-        FCFLAGS="${FCFLAGS} -g -pg"
-        OBJCFLAGS="${OBJCFLAGS} -g -pg"
-        LDFLAGS="${LDFLAGS} -pg"
-       ;; #(
-  *) :
-
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-                        if test "x${CFLAGS+set}" != "xset"
-then :
-  CFLAGS=""
-fi
-        if test "x${CXXFLAGS+set}" != "xset"
-then :
-  CXXFLAGS=""
-fi
-        if test "x${FFLAGS+set}" != "xset"
-then :
-  FFLAGS=""
-fi
-        if test "x${FCFLAGS+set}" != "xset"
-then :
-  FCFLAGS=""
-fi
-        if test "x${OBJCFLAGS+set}" != "xset"
-then :
-  OBJCFLAGS=""
-fi
-       ;;
-esac
-
-            if test "x$enable_debug" = "xyes"
-then :
-
-else $as_nop
-
-printf "%s\n" "#define NDEBUG 1" >>confdefs.h
-
-fi
-    ax_enable_debug=$enable_debug
-
-
-
 
 
 
@@ -4315,45 +4210,6 @@ fi
 
 
 AM_CFLAGS=
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wno-format-truncation" >&5
-printf %s "checking whether C compiler accepts -Wno-format-truncation... " >&6; }
-if test ${ax_cv_check_cflags__Werror__Wno_format_truncation+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-  ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS -Werror -Wno-format-truncation"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  ax_cv_check_cflags__Werror__Wno_format_truncation=yes
-else $as_nop
-  ax_cv_check_cflags__Werror__Wno_format_truncation=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  CFLAGS=$ax_check_save_flags
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Wno_format_truncation" >&5
-printf "%s\n" "$ax_cv_check_cflags__Werror__Wno_format_truncation" >&6; }
-if test "x$ax_cv_check_cflags__Werror__Wno_format_truncation" = xyes
-then :
-  AM_CFLAGS="$AM_CFLAGS -Wno-format-truncation"
-else $as_nop
-  :
-fi
-
 
 
 case `pwd` in
@@ -6097,6 +5953,7 @@ fi
 printf "%s\n" "$lt_cv_sharedlib_from_linklib_cmd" >&6; }
 sharedlib_from_linklib_cmd=$lt_cv_sharedlib_from_linklib_cmd
 test -z "$sharedlib_from_linklib_cmd" && sharedlib_from_linklib_cmd=$ECHO
+
 
 
 

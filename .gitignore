@@ -19,7 +19,6 @@ libtool
 /cpdup
 /dirempty
 /dirwatch
-/jexecd
 /locked_mkdir
 /make_index
 /nc
@@ -29,7 +28,6 @@ libtool
 /ptsort
 /pwait
 /rename
-/rexec
 /rm
 /setsid
 /sh

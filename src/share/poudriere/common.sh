@@ -635,15 +635,8 @@ injail() {
 	if [ ${INJAIL_HOST:-0} -eq 1 ]; then
 		# For test/
 		"$@"
-	elif [ "${USE_JEXECD}" = "no" ]; then
-		injail_tty "$@"
 	else
-		local name
-
-		_my_name name
-		[ -n "${name}" ] || err 1 "No jail setup"
-		rexec -s ${MASTERMNT}/../${name}${JNETNAME:+-${JNETNAME}}.sock \
-			-u ${JUSER:-root} "$@"
+		injail_tty "$@"
 	fi
 }
 
@@ -693,21 +686,11 @@ jstart() {
 		path=${MASTERMNT}${MY_JOBID:+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${network} ${JAIL_PARAMS}
-	if [ "${USE_JEXECD}" = "yes" ]; then
-		jexecd -j ${name} -d ${MASTERMNT}/../ \
-		    ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}} \
-		    ${MAX_FILES+-n ${MAX_FILES}}
-	fi
 	# Allow networking in -n jail
 	jail -c persist name=${name}-n \
 		path=${MASTERMNT}${MY_JOBID:+/../${MY_JOBID}} \
 		host.hostname=${BUILDER_HOSTNAME-${name}} \
 		${ipargs} ${JAIL_PARAMS} ${JAIL_NET_PARAMS}
-	if [ "${USE_JEXECD}" = "yes" ]; then
-		jexecd -j ${name}-n -d ${MASTERMNT}/../ \
-		    ${MAX_MEMORY_BYTES+-m ${MAX_MEMORY_BYTES}} \
-		    ${MAX_FILES+-n ${MAX_FILES}}
-	fi
 	return 0
 }
 
@@ -716,9 +699,6 @@ jail_has_processes() {
 
 	# 2 = HEADER+ps itself
 	pscnt=2
-	if [ "${USE_JEXECD}" = "yes" ]; then
-		pscnt=4
-	fi
 	# Cannot use ps -J here as not all versions support it.
 	if [ $(injail ps aux | wc -l) -ne ${pscnt} ]; then
 		return 0
@@ -737,9 +717,6 @@ jkill_wait() {
 # Kill everything in the jail and ensure it is free of any processes
 # before returning.
 jkill() {
-	if [ "${USE_JEXECD}" = "yes" ]; then
-		return 0
-	fi
 	jkill_wait
 	JNETNAME="n" jkill_wait
 }
@@ -8703,7 +8680,6 @@ fi
 : ${RESTRICT_NETWORKING:=yes}
 : ${DISALLOW_NETWORKING:=no}
 : ${TRIM_ORPHANED_BUILD_DEPS:=yes}
-: ${USE_JEXECD:=no}
 : ${USE_PROCFS:=yes}
 : ${USE_FDESCFS:=yes}
 : ${IMMUTABLE_BASE:=no}

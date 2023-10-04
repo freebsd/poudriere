@@ -151,14 +151,12 @@ pkglibexec_PROGRAMS= \
 		     cpdup \
 		     dirempty \
 		     dirwatch \
-		     jexecd \
 		     locked_mkdir \
 		     nc \
 		     poudriered \
 		     ptsort \
 		     pwait \
 		     rename \
-		     rexec \
 		     @USE_RM@ \
 		     setsid \
 		     timeout \
@@ -319,17 +317,6 @@ poudriered_CFLAGS=	$(AM_CFLAGS) \
 poudriered_LDADD=	libucl.la \
 			-lsbuf \
 			-lutil
-
-jexecd_SOURCES=	src/libexec/poudriere/jexecd/jexecd.c
-jexecd_CFLAGS=	$(AM_CFLAGS) -I$(top_srcdir)/external/libnv/sys
-jexecd_LDADD=	libnv.la \
-		-lsbuf \
-		-lutil \
-		-ljail
-
-rexec_SOURCES=	src/libexec/poudriere/rexec/rexec.c
-rexec_CFLAGS=	$(AM_CFLAGS) -I$(top_srcdir)/external/libnv/sys
-rexec_LDADD=	libnv.la
 
 cached_SOURCES=	src/libexec/poudriere/cached/cached.c \
 		external/klib/khash.h

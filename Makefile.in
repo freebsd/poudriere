@@ -95,10 +95,9 @@ host_triplet = @host@
 @MAINTAINER_MODE_TRUE@am__append_1 = -Wextra -Werror
 pkglibexec_PROGRAMS = cachec$(EXEEXT) cached$(EXEEXT) clock$(EXEEXT) \
 	cpdup$(EXEEXT) dirempty$(EXEEXT) dirwatch$(EXEEXT) \
-	jexecd$(EXEEXT) locked_mkdir$(EXEEXT) nc$(EXEEXT) \
-	poudriered$(EXEEXT) ptsort$(EXEEXT) pwait$(EXEEXT) \
-	rename$(EXEEXT) rexec$(EXEEXT) @USE_RM@ setsid$(EXEEXT) \
-	timeout$(EXEEXT) timestamp$(EXEEXT) @SH@
+	locked_mkdir$(EXEEXT) nc$(EXEEXT) poudriered$(EXEEXT) \
+	ptsort$(EXEEXT) pwait$(EXEEXT) rename$(EXEEXT) @USE_RM@ \
+	setsid$(EXEEXT) timeout$(EXEEXT) timestamp$(EXEEXT) @SH@
 EXTRA_PROGRAMS = rm$(EXEEXT) sh$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -195,13 +194,6 @@ am_dirwatch_OBJECTS =  \
 	src/libexec/poudriere/dirwatch/dirwatch.$(OBJEXT)
 dirwatch_OBJECTS = $(am_dirwatch_OBJECTS)
 dirwatch_LDADD = $(LDADD)
-am_jexecd_OBJECTS =  \
-	src/libexec/poudriere/jexecd/jexecd-jexecd.$(OBJEXT)
-jexecd_OBJECTS = $(am_jexecd_OBJECTS)
-jexecd_DEPENDENCIES = libnv.la
-jexecd_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(jexecd_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_locked_mkdir_OBJECTS =  \
 	src/libexec/poudriere/locked_mkdir/locked_mkdir.$(OBJEXT)
 locked_mkdir_OBJECTS = $(am_locked_mkdir_OBJECTS)
@@ -225,12 +217,6 @@ pwait_LDADD = $(LDADD)
 am_rename_OBJECTS = src/libexec/poudriere/rename/rename.$(OBJEXT)
 rename_OBJECTS = $(am_rename_OBJECTS)
 rename_LDADD = $(LDADD)
-am_rexec_OBJECTS = src/libexec/poudriere/rexec/rexec-rexec.$(OBJEXT)
-rexec_OBJECTS = $(am_rexec_OBJECTS)
-rexec_DEPENDENCIES = libnv.la
-rexec_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(rexec_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_rm_OBJECTS = src/libexec/poudriere/rm/rm.$(OBJEXT)
 rm_OBJECTS = $(am_rm_OBJECTS)
 rm_LDADD = $(LDADD)
@@ -398,7 +384,6 @@ am__depfiles_remade = external/libnv/$(DEPDIR)/libnv_la-msgio.Plo \
 	src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po \
 	src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po \
 	src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po \
-	src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd-jexecd.Po \
 	src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir.Po \
 	src/libexec/poudriere/locked_mkdir/$(DEPDIR)/sh-locked_mkdir.Po \
 	src/libexec/poudriere/nc/$(DEPDIR)/nc.Po \
@@ -406,7 +391,6 @@ am__depfiles_remade = external/libnv/$(DEPDIR)/libnv_la-msgio.Plo \
 	src/libexec/poudriere/pwait/$(DEPDIR)/sh-pwait.Po \
 	src/libexec/poudriere/rename/$(DEPDIR)/rename.Po \
 	src/libexec/poudriere/rename/$(DEPDIR)/sh-rename.Po \
-	src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Po \
 	src/libexec/poudriere/rm/$(DEPDIR)/rm.Po \
 	src/libexec/poudriere/rm/$(DEPDIR)/sh-rm.Po \
 	src/libexec/poudriere/setsid/$(DEPDIR)/setsid-setsid.Po \
@@ -449,19 +433,17 @@ am__v_CCLD_1 =
 SOURCES = $(libnv_la_SOURCES) $(libptsort_la_SOURCES) \
 	$(libucl_la_SOURCES) $(cachec_SOURCES) $(cached_SOURCES) \
 	$(clock_SOURCES) $(cpdup_SOURCES) $(dirempty_SOURCES) \
-	$(dirwatch_SOURCES) $(jexecd_SOURCES) $(locked_mkdir_SOURCES) \
-	$(nc_SOURCES) $(poudriered_SOURCES) $(ptsort_SOURCES) \
-	$(pwait_SOURCES) $(rename_SOURCES) $(rexec_SOURCES) \
-	$(rm_SOURCES) $(setsid_SOURCES) $(sh_SOURCES) \
-	$(timeout_SOURCES) $(timestamp_SOURCES)
+	$(dirwatch_SOURCES) $(locked_mkdir_SOURCES) $(nc_SOURCES) \
+	$(poudriered_SOURCES) $(ptsort_SOURCES) $(pwait_SOURCES) \
+	$(rename_SOURCES) $(rm_SOURCES) $(setsid_SOURCES) \
+	$(sh_SOURCES) $(timeout_SOURCES) $(timestamp_SOURCES)
 DIST_SOURCES = $(libnv_la_SOURCES) $(libptsort_la_SOURCES) \
 	$(libucl_la_SOURCES) $(cachec_SOURCES) $(cached_SOURCES) \
 	$(clock_SOURCES) $(cpdup_SOURCES) $(dirempty_SOURCES) \
-	$(dirwatch_SOURCES) $(jexecd_SOURCES) $(locked_mkdir_SOURCES) \
-	$(nc_SOURCES) $(poudriered_SOURCES) $(ptsort_SOURCES) \
-	$(pwait_SOURCES) $(rename_SOURCES) $(rexec_SOURCES) \
-	$(rm_SOURCES) $(setsid_SOURCES) $(sh_SOURCES) \
-	$(timeout_SOURCES) $(timestamp_SOURCES)
+	$(dirwatch_SOURCES) $(locked_mkdir_SOURCES) $(nc_SOURCES) \
+	$(poudriered_SOURCES) $(ptsort_SOURCES) $(pwait_SOURCES) \
+	$(rename_SOURCES) $(rm_SOURCES) $(setsid_SOURCES) \
+	$(sh_SOURCES) $(timeout_SOURCES) $(timestamp_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -972,16 +954,6 @@ poudriered_LDADD = libucl.la \
 			-lsbuf \
 			-lutil
 
-jexecd_SOURCES = src/libexec/poudriere/jexecd/jexecd.c
-jexecd_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/external/libnv/sys
-jexecd_LDADD = libnv.la \
-		-lsbuf \
-		-lutil \
-		-ljail
-
-rexec_SOURCES = src/libexec/poudriere/rexec/rexec.c
-rexec_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/external/libnv/sys
-rexec_LDADD = libnv.la
 cached_SOURCES = src/libexec/poudriere/cached/cached.c \
 		external/klib/khash.h
 
@@ -1267,19 +1239,6 @@ src/libexec/poudriere/dirwatch/dirwatch.$(OBJEXT):  \
 dirwatch$(EXEEXT): $(dirwatch_OBJECTS) $(dirwatch_DEPENDENCIES) $(EXTRA_dirwatch_DEPENDENCIES) 
 	@rm -f dirwatch$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(dirwatch_OBJECTS) $(dirwatch_LDADD) $(LIBS)
-src/libexec/poudriere/jexecd/$(am__dirstamp):
-	@$(MKDIR_P) src/libexec/poudriere/jexecd
-	@: > src/libexec/poudriere/jexecd/$(am__dirstamp)
-src/libexec/poudriere/jexecd/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) src/libexec/poudriere/jexecd/$(DEPDIR)
-	@: > src/libexec/poudriere/jexecd/$(DEPDIR)/$(am__dirstamp)
-src/libexec/poudriere/jexecd/jexecd-jexecd.$(OBJEXT):  \
-	src/libexec/poudriere/jexecd/$(am__dirstamp) \
-	src/libexec/poudriere/jexecd/$(DEPDIR)/$(am__dirstamp)
-
-jexecd$(EXEEXT): $(jexecd_OBJECTS) $(jexecd_DEPENDENCIES) $(EXTRA_jexecd_DEPENDENCIES) 
-	@rm -f jexecd$(EXEEXT)
-	$(AM_V_CCLD)$(jexecd_LINK) $(jexecd_OBJECTS) $(jexecd_LDADD) $(LIBS)
 src/libexec/poudriere/locked_mkdir/$(am__dirstamp):
 	@$(MKDIR_P) src/libexec/poudriere/locked_mkdir
 	@: > src/libexec/poudriere/locked_mkdir/$(am__dirstamp)
@@ -1358,19 +1317,6 @@ src/libexec/poudriere/rename/rename.$(OBJEXT):  \
 rename$(EXEEXT): $(rename_OBJECTS) $(rename_DEPENDENCIES) $(EXTRA_rename_DEPENDENCIES) 
 	@rm -f rename$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(rename_OBJECTS) $(rename_LDADD) $(LIBS)
-src/libexec/poudriere/rexec/$(am__dirstamp):
-	@$(MKDIR_P) src/libexec/poudriere/rexec
-	@: > src/libexec/poudriere/rexec/$(am__dirstamp)
-src/libexec/poudriere/rexec/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) src/libexec/poudriere/rexec/$(DEPDIR)
-	@: > src/libexec/poudriere/rexec/$(DEPDIR)/$(am__dirstamp)
-src/libexec/poudriere/rexec/rexec-rexec.$(OBJEXT):  \
-	src/libexec/poudriere/rexec/$(am__dirstamp) \
-	src/libexec/poudriere/rexec/$(DEPDIR)/$(am__dirstamp)
-
-rexec$(EXEEXT): $(rexec_OBJECTS) $(rexec_DEPENDENCIES) $(EXTRA_rexec_DEPENDENCIES) 
-	@rm -f rexec$(EXEEXT)
-	$(AM_V_CCLD)$(rexec_LINK) $(rexec_OBJECTS) $(rexec_LDADD) $(LIBS)
 src/libexec/poudriere/rm/$(am__dirstamp):
 	@$(MKDIR_P) src/libexec/poudriere/rm
 	@: > src/libexec/poudriere/rm/$(am__dirstamp)
@@ -1661,12 +1607,10 @@ mostlyclean-compile:
 	-rm -f src/libexec/poudriere/cpdup/src/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/dirempty/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/dirwatch/*.$(OBJEXT)
-	-rm -f src/libexec/poudriere/jexecd/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/locked_mkdir/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/nc/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/pwait/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/rename/*.$(OBJEXT)
-	-rm -f src/libexec/poudriere/rexec/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/rm/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/setsid/*.$(OBJEXT)
 	-rm -f src/libexec/poudriere/timeout/*.$(OBJEXT)
@@ -1734,7 +1678,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd-jexecd.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/locked_mkdir/$(DEPDIR)/sh-locked_mkdir.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/nc/$(DEPDIR)/nc.Po@am__quote@ # am--include-marker
@@ -1742,7 +1685,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/pwait/$(DEPDIR)/sh-pwait.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rename/$(DEPDIR)/rename.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rename/$(DEPDIR)/sh-rename.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rm/$(DEPDIR)/rm.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/rm/$(DEPDIR)/sh-rm.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/libexec/poudriere/setsid/$(DEPDIR)/setsid-setsid.Po@am__quote@ # am--include-marker
@@ -1969,20 +1911,6 @@ src/libexec/poudriere/cpdup/src/cpdup-misc.obj: src/libexec/poudriere/cpdup/src/
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cpdup_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/cpdup/src/cpdup-misc.obj `if test -f 'src/libexec/poudriere/cpdup/src/misc.c'; then $(CYGPATH_W) 'src/libexec/poudriere/cpdup/src/misc.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/cpdup/src/misc.c'; fi`
 
-src/libexec/poudriere/jexecd/jexecd-jexecd.o: src/libexec/poudriere/jexecd/jexecd.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(jexecd_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/jexecd/jexecd-jexecd.o -MD -MP -MF src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd-jexecd.Tpo -c -o src/libexec/poudriere/jexecd/jexecd-jexecd.o `test -f 'src/libexec/poudriere/jexecd/jexecd.c' || echo '$(srcdir)/'`src/libexec/poudriere/jexecd/jexecd.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd-jexecd.Tpo src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd-jexecd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/jexecd/jexecd.c' object='src/libexec/poudriere/jexecd/jexecd-jexecd.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(jexecd_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/jexecd/jexecd-jexecd.o `test -f 'src/libexec/poudriere/jexecd/jexecd.c' || echo '$(srcdir)/'`src/libexec/poudriere/jexecd/jexecd.c
-
-src/libexec/poudriere/jexecd/jexecd-jexecd.obj: src/libexec/poudriere/jexecd/jexecd.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(jexecd_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/jexecd/jexecd-jexecd.obj -MD -MP -MF src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd-jexecd.Tpo -c -o src/libexec/poudriere/jexecd/jexecd-jexecd.obj `if test -f 'src/libexec/poudriere/jexecd/jexecd.c'; then $(CYGPATH_W) 'src/libexec/poudriere/jexecd/jexecd.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/jexecd/jexecd.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd-jexecd.Tpo src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd-jexecd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/jexecd/jexecd.c' object='src/libexec/poudriere/jexecd/jexecd-jexecd.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(jexecd_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/jexecd/jexecd-jexecd.obj `if test -f 'src/libexec/poudriere/jexecd/jexecd.c'; then $(CYGPATH_W) 'src/libexec/poudriere/jexecd/jexecd.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/jexecd/jexecd.c'; fi`
-
 src/poudriered/poudriered-poudriered.o: src/poudriered/poudriered.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(poudriered_CFLAGS) $(CFLAGS) -MT src/poudriered/poudriered-poudriered.o -MD -MP -MF src/poudriered/$(DEPDIR)/poudriered-poudriered.Tpo -c -o src/poudriered/poudriered-poudriered.o `test -f 'src/poudriered/poudriered.c' || echo '$(srcdir)/'`src/poudriered/poudriered.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/poudriered/$(DEPDIR)/poudriered-poudriered.Tpo src/poudriered/$(DEPDIR)/poudriered-poudriered.Po
@@ -2010,20 +1938,6 @@ external/ptsort/bin/ptsort-ptsort.obj: external/ptsort/bin/ptsort.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='external/ptsort/bin/ptsort.c' object='external/ptsort/bin/ptsort-ptsort.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ptsort_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external/ptsort/bin/ptsort-ptsort.obj `if test -f 'external/ptsort/bin/ptsort.c'; then $(CYGPATH_W) 'external/ptsort/bin/ptsort.c'; else $(CYGPATH_W) '$(srcdir)/external/ptsort/bin/ptsort.c'; fi`
-
-src/libexec/poudriere/rexec/rexec-rexec.o: src/libexec/poudriere/rexec/rexec.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rexec_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/rexec/rexec-rexec.o -MD -MP -MF src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Tpo -c -o src/libexec/poudriere/rexec/rexec-rexec.o `test -f 'src/libexec/poudriere/rexec/rexec.c' || echo '$(srcdir)/'`src/libexec/poudriere/rexec/rexec.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Tpo src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/rexec/rexec.c' object='src/libexec/poudriere/rexec/rexec-rexec.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rexec_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/rexec/rexec-rexec.o `test -f 'src/libexec/poudriere/rexec/rexec.c' || echo '$(srcdir)/'`src/libexec/poudriere/rexec/rexec.c
-
-src/libexec/poudriere/rexec/rexec-rexec.obj: src/libexec/poudriere/rexec/rexec.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rexec_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/rexec/rexec-rexec.obj -MD -MP -MF src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Tpo -c -o src/libexec/poudriere/rexec/rexec-rexec.obj `if test -f 'src/libexec/poudriere/rexec/rexec.c'; then $(CYGPATH_W) 'src/libexec/poudriere/rexec/rexec.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/rexec/rexec.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Tpo src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/libexec/poudriere/rexec/rexec.c' object='src/libexec/poudriere/rexec/rexec-rexec.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rexec_CFLAGS) $(CFLAGS) -c -o src/libexec/poudriere/rexec/rexec-rexec.obj `if test -f 'src/libexec/poudriere/rexec/rexec.c'; then $(CYGPATH_W) 'src/libexec/poudriere/rexec/rexec.c'; else $(CYGPATH_W) '$(srcdir)/src/libexec/poudriere/rexec/rexec.c'; fi`
 
 src/libexec/poudriere/setsid/setsid-setsid.o: src/libexec/poudriere/setsid/setsid.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(setsid_CFLAGS) $(CFLAGS) -MT src/libexec/poudriere/setsid/setsid-setsid.o -MD -MP -MF src/libexec/poudriere/setsid/$(DEPDIR)/setsid-setsid.Tpo -c -o src/libexec/poudriere/setsid/setsid-setsid.o `test -f 'src/libexec/poudriere/setsid/setsid.c' || echo '$(srcdir)/'`src/libexec/poudriere/setsid/setsid.c
@@ -3469,8 +3383,6 @@ distclean-generic:
 	-rm -f src/libexec/poudriere/dirempty/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/dirwatch/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/dirwatch/$(am__dirstamp)
-	-rm -f src/libexec/poudriere/jexecd/$(DEPDIR)/$(am__dirstamp)
-	-rm -f src/libexec/poudriere/jexecd/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/locked_mkdir/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/nc/$(DEPDIR)/$(am__dirstamp)
@@ -3479,8 +3391,6 @@ distclean-generic:
 	-rm -f src/libexec/poudriere/pwait/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/rename/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/rename/$(am__dirstamp)
-	-rm -f src/libexec/poudriere/rexec/$(DEPDIR)/$(am__dirstamp)
-	-rm -f src/libexec/poudriere/rexec/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/rm/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/rm/$(am__dirstamp)
 	-rm -f src/libexec/poudriere/setsid/$(DEPDIR)/$(am__dirstamp)
@@ -3561,7 +3471,6 @@ distclean: distclean-recursive
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po
 	-rm -f src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po
-	-rm -f src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd-jexecd.Po
 	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir.Po
 	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/sh-locked_mkdir.Po
 	-rm -f src/libexec/poudriere/nc/$(DEPDIR)/nc.Po
@@ -3569,7 +3478,6 @@ distclean: distclean-recursive
 	-rm -f src/libexec/poudriere/pwait/$(DEPDIR)/sh-pwait.Po
 	-rm -f src/libexec/poudriere/rename/$(DEPDIR)/rename.Po
 	-rm -f src/libexec/poudriere/rename/$(DEPDIR)/sh-rename.Po
-	-rm -f src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Po
 	-rm -f src/libexec/poudriere/rm/$(DEPDIR)/rm.Po
 	-rm -f src/libexec/poudriere/rm/$(DEPDIR)/sh-rm.Po
 	-rm -f src/libexec/poudriere/setsid/$(DEPDIR)/setsid-setsid.Po
@@ -3701,7 +3609,6 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/dirempty.Po
 	-rm -f src/libexec/poudriere/dirempty/$(DEPDIR)/sh-dirempty.Po
 	-rm -f src/libexec/poudriere/dirwatch/$(DEPDIR)/dirwatch.Po
-	-rm -f src/libexec/poudriere/jexecd/$(DEPDIR)/jexecd-jexecd.Po
 	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/locked_mkdir.Po
 	-rm -f src/libexec/poudriere/locked_mkdir/$(DEPDIR)/sh-locked_mkdir.Po
 	-rm -f src/libexec/poudriere/nc/$(DEPDIR)/nc.Po
@@ -3709,7 +3616,6 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f src/libexec/poudriere/pwait/$(DEPDIR)/sh-pwait.Po
 	-rm -f src/libexec/poudriere/rename/$(DEPDIR)/rename.Po
 	-rm -f src/libexec/poudriere/rename/$(DEPDIR)/sh-rename.Po
-	-rm -f src/libexec/poudriere/rexec/$(DEPDIR)/rexec-rexec.Po
 	-rm -f src/libexec/poudriere/rm/$(DEPDIR)/rm.Po
 	-rm -f src/libexec/poudriere/rm/$(DEPDIR)/sh-rm.Po
 	-rm -f src/libexec/poudriere/setsid/$(DEPDIR)/setsid-setsid.Po
