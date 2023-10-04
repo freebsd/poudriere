@@ -3447,7 +3447,7 @@ jail_stop() {
 	msg "Unmounting file systems"
 	destroyfs ${MASTERMNT} jail || :
 	if [ ${TMPFS_ALL} -eq 1 ]; then
-		if ! umount ${UMOUNT_NONBUSY} "${MASTERMNTROOT}" 2>/dev/null; then
+		if ! umount -n "${MASTERMNTROOT}" 2>/dev/null; then
 			umount -f "${MASTERMNTROOT}" 2>/dev/null || :
 		fi
 	fi
@@ -5196,7 +5196,7 @@ build_pkg() {
 
 	if [ ${TMPFS_LOCALBASE} -eq 1 -o ${TMPFS_ALL} -eq 1 ]; then
 		if [ -f "${mnt}/${LOCALBASE:-/usr/local}/.mounted" ]; then
-			umount ${UMOUNT_NONBUSY} ${mnt}/${LOCALBASE:-/usr/local} || \
+			umount -n ${mnt}/${LOCALBASE:-/usr/local} || \
 			    umount -f ${mnt}/${LOCALBASE:-/usr/local}
 		fi
 		mnt_tmpfs localbase ${mnt}/${LOCALBASE:-/usr/local}
@@ -5342,7 +5342,7 @@ stop_build() {
 		_my_path mnt
 
 		if [ -f "${mnt}/.npkg_mounted" ]; then
-			umount ${UMOUNT_NONBUSY} "${mnt}/.npkg" || \
+			umount -n "${mnt}/.npkg" || \
 			    umount -f "${mnt}/.npkg"
 			unlink "${mnt}/.npkg_mounted"
 		fi
@@ -8601,12 +8601,6 @@ case $IPS in
 esac
 
 NCPU=$(sysctl -n hw.ncpu)
-
-# Determine if umount -n can be used.
-if grep -q "#define[[:space:]]MNT_NONBUSY" /usr/include/sys/mount.h \
-    2>/dev/null; then
-	UMOUNT_NONBUSY="-n"
-fi
 
 case ${PARALLEL_JOBS} in
 ''|*[!0-9]*)
