@@ -195,7 +195,7 @@ findmounts() {
 	    sort -r -k 2 | \
 	    while mapfile_read_loop_redir dev pt; do
 		if [ "${dev#/dev/md*}" != "${dev}" ]; then
-			umount ${UMOUNT_NONBUSY} "${pt}" || \
+			umount -n "${pt}" || \
 			    umount -f "${pt}" || :
 			mdconfig -d -u ${dev#/dev/md*}
 		else
@@ -214,7 +214,7 @@ umountfs() {
 
 	mnt=$(realpath "${mnt}" 2>/dev/null || echo "${mnt}")
 	if ! findmounts "${mnt}" "${pattern}" | \
-	    xargs umount ${UMOUNT_NONBUSY}; then
+	    xargs umount -n; then
 		findmounts "${mnt}" "${pattern}" | xargs umount -fv || :
 	fi
 
@@ -369,7 +369,7 @@ destroyfs() {
 	umountfs ${mnt} 1
 	if [ ${TMPFS_ALL} -eq 1 ]; then
 		if [ -d "${mnt}" ]; then
-			if ! umount ${UMOUNT_NONBUSY} "${mnt}" 2>/dev/null; then
+			if ! umount -n "${mnt}" 2>/dev/null; then
 				umount -f "${mnt}" 2>/dev/null || :
 			fi
 		fi
