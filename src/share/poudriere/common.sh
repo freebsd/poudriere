@@ -913,7 +913,7 @@ buildlog_start() {
 	    "
 
 	_my_path mnt
-	originspec_decode "${originspec}" port '' ''
+	originspec_decode "${originspec}" port
 	_lookup_portdir portdir "${port}"
 
 	for var in ${wanted_vars}; do
@@ -5086,7 +5086,7 @@ crashed_build() {
 
 	_log_path logd
 	get_originspec_from_pkgname originspec "${pkgname}"
-	originspec_decode "${originspec}" origin '' ''
+	originspec_decode "${originspec}" origin
 
 	log="${logd}/logs/${pkgname}.log"
 	log_error="${logd}/logs/errors/${pkgname}.log"
@@ -5129,7 +5129,7 @@ clean_pool() {
 	    while mapfile_read_loop_redir skipped_pkgname; do
 		get_originspec_from_pkgname skipped_originspec "${skipped_pkgname}"
 		originspec_decode "${skipped_originspec}" skipped_origin \
-		    skipped_flavor ''
+		    skipped_flavor
 		# If this package was listed as @all then we do not
 		# mark it as 'skipped' unless it was the default FLAVOR.
 		# This prevents bulk's exit status being a failure when a
@@ -5407,7 +5407,7 @@ build_all_flavors() {
 
 	[ "${ALL}" -eq 1 ] && return 0
 	[ "${FLAVOR_DEFAULT_ALL}" = "yes" ] && return 0
-	originspec_decode "${originspec}" origin '' ''
+	originspec_decode "${originspec}" origin
 	shash_get origin-flavor-all "${origin}" build_all || build_all=0
 	[ "${build_all}" -eq 1 ] && return 0
 
@@ -5418,8 +5418,8 @@ build_all_flavors() {
 # ORIGINSPEC is: ORIGIN@FLAVOR~SUBPKG
 originspec_decode() {
 	local -; set +x -f
-	[ $# -ne 4 ] && eargs originspec_decode originspec \
-	    var_return_origin var_return_flavor var_return_subpkg
+	[ $# -ne 4 -a $# -ne 3 -a $# -ne 2 ] && eargs originspec_decode originspec \
+	    var_return_origin var_return_flavor [var_return_subpkg]
 	local _originspec="$1"
 	local var_return_origin="$2"
 	local var_return_flavor="$3"
@@ -5588,7 +5588,7 @@ deps_fetch_vars() {
 		if [ "${_existing_originspec}" = "${originspec}" ]; then
 			err 1 "deps_fetch_vars: ${COLOR_PORT}${originspec}${COLOR_RESET} already known as ${COLOR_PORT}${pkgname}${COLOR_RESET}"
 		fi
-		originspec_decode "${_existing_originspec}" _existing_origin '' ''
+		originspec_decode "${_existing_originspec}" _existing_origin
 		if [ "${_existing_origin}" = "${origin}" ]; then
 			if [ "${_pkgname}" = "${_default_pkgname}" ]; then
 				# This originspec is superfluous, just ignore.
@@ -6001,7 +6001,7 @@ delete_old_pkg() {
 				# Unknown, but if this origin has a FLAVOR
 				# then we need to fallback to a PKGBASE
 				# comparison first.
-				originspec_decode "${d}" dep_origin dep_flavor ''
+				originspec_decode "${d}" dep_origin dep_flavor
 				if [ -n "${dep_flavor}" ]; then
 					get_pkgname_from_originspec \
 					    "${d}" dep_pkgname || \
@@ -6373,7 +6373,7 @@ port_var_fetch_originspec() {
 	shift
 	local origin flavor
 
-	originspec_decode "${originspec}" origin flavor ''
+	originspec_decode "${originspec}" origin flavor
 	port_var_fetch "${origin}" "$@" ${flavor:+FLAVOR=${flavor}}
 }
 
@@ -6443,7 +6443,7 @@ originspec_is_default_flavor() {
 	local flavors origin flavor
 	local -; set -f
 
-	originspec_decode "${originspec}" origin flavor ''
+	originspec_decode "${originspec}" origin flavor
 	shash_get origin-flavors "${origin}" flavors || flavors=
 
 	case "${flavors}" in
@@ -6517,7 +6517,7 @@ gather_port_vars() {
 		if have_ports_feature FLAVORS; then
 			# deps_fetch_vars really wants to have the main port
 			# cached before being given a FLAVOR.
-			originspec_decode "${ORIGINSPEC}" dep_origin dep_flavor ''
+			originspec_decode "${ORIGINSPEC}" dep_origin dep_flavor
 			if [ -n "${dep_flavor}" ]; then
 				deps_fetch_vars "${dep_origin}" LISTPORTS \
 				    PKGNAME FLAVOR FLAVORS \
@@ -6567,7 +6567,7 @@ gather_port_vars() {
 	clear_dep_fatal_error
 	parallel_start
 	for originspec in $(listed_ports show_moved); do
-		originspec_decode "${originspec}" origin flavor ''
+		originspec_decode "${originspec}" origin flavor
 		rdep="listed"
 		# For -a we skip the initial gatherqueue
 		if [ ${ALL} -eq 1 ]; then
@@ -6748,7 +6748,7 @@ deps_sanity() {
 	local origin dep_originspec dep_origin dep_flavor dep_subpkg ret
 	local new_origin moved_reason
 
-	originspec_decode "${originspec}" origin '' ''
+	originspec_decode "${originspec}" origin
 
 	ret=0
 	for dep_originspec in ${deps}; do
@@ -7350,7 +7350,7 @@ _listed_ports() {
 			done
 		fi
 	} | sort -u | while mapfile_read_loop_redir originspec; do
-		originspec_decode "${originspec}" origin flavor ''
+		originspec_decode "${originspec}" origin flavor
 		if [ -n "${flavor}" ] && ! have_ports_feature FLAVORS; then
 			msg_error "Trying to build FLAVOR-specific ${originspec} but ports tree has no FLAVORS support."
 			set_dep_fatal_error
@@ -7364,7 +7364,7 @@ _listed_ports() {
 				continue
 			fi
 			originspec="${new_origin}"
-			originspec_decode "${originspec}" origin flavor ''
+			originspec_decode "${originspec}" origin flavor
 		else
 			unset new_origin
 		fi
