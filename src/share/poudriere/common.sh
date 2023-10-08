@@ -5419,7 +5419,7 @@ build_all_flavors() {
 originspec_decode() {
 	local -; set +x -f
 	[ $# -ne 4 -a $# -ne 3 -a $# -ne 2 ] && eargs originspec_decode originspec \
-	    var_return_origin var_return_flavor [var_return_subpkg]
+	    var_return_origin [var_return_flavor] [var_return_subpkg]
 	local _originspec="$1"
 	local var_return_origin="$2"
 	local var_return_flavor="$3"
@@ -5450,7 +5450,7 @@ originspec_decode() {
 # !!! NOTE that the encoded originspec may not match the parameter ordering.
 originspec_encode() {
 	local -; set +x
-	[ $# -ne 4 ] && eargs originspec_encode var_return origin flavor subpkg
+	[ $# -ne 4 -a $# -ne 3 -a $# -ne 2 ] && eargs originspec_encode var_return origin [flavor] [subpkg]
 	local _var_return="$1"
 	local _origin_in="$2"
 	local _flavor="$3"
