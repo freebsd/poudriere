@@ -231,7 +231,9 @@ injail /usr/bin/make -C ${portdir} maintainer ECHO_CMD=true || \
     err 1 "Port is broken"
 
 if [ $CONFIGSTR -eq 1 ]; then
-	command -v dialog4ports >/dev/null 2>&1 || err 1 "You must have ports-mgmt/dialog4ports installed on the host to use -c."
+	command -v portconfig >/dev/null 2>&1 || \
+	    command -v dialog4ports >/dev/null 2>&1 || \
+	    err 1 "You must have ports-mgmt/dialog4ports or ports-mgmt/portconfig installed on the host to use -c."
 	__MAKE_CONF=$(mktemp -t poudriere-make.conf)
 	setup_makeconf "${__MAKE_CONF}" "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 	PORTSDIR=${portsdir} \
