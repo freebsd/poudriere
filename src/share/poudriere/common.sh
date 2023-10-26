@@ -5376,12 +5376,12 @@ stop_build() {
 		if [ "${PORTTESTING}" -eq 1 ]; then
 			if jail_has_processes; then
 				msg_warn "Leftover processes:"
-				injail ps auxwwd | egrep -v '(ps auxwwd|jexecd)'
+				injail ps auxwwd | egrep -v 'ps auxwwd'
 				jkill_wait
 			fi
 			if JNETNAME="n" jail_has_processes; then
 				msg_warn "Leftover processes (network jail):"
-				JNETNAME="n" injail ps auxwwd | egrep -v '(ps auxwwd|jexecd)'
+				JNETNAME="n" injail ps auxwwd | egrep -v 'ps auxwwd'
 				JNETNAME="n" jkill_wait
 			fi
 		else
