@@ -48,6 +48,7 @@ Options:
     -p tree     -- Which ports tree to use for packages
     -r          -- With -C delete reverse dependencies too
     -R          -- Clean RESTRICTED packages after building
+    -u          -- Force rebuilding and signing the repo
     -v          -- Be verbose; show more information. Use twice to enable
                    debug output
     -y          -- Assume yes when deleting and do not confirm
@@ -61,13 +62,14 @@ SETNAME=""
 DRY_RUN=0
 DO_ALL=0
 BUILD_REPO=1
+FORCE_BUILD_REPO=0
 OVERLAYS=""
 CLEAN_LISTED=0
 CLEAN_RDEPS=0
 
 [ $# -eq 0 ] && usage
 
-while getopts "AaCj:J:f:nNO:p:rRvyz:" FLAG; do
+while getopts "AaCj:J:f:nNO:p:rRuvyz:" FLAG; do
 	case "${FLAG}" in
 		A)
 			DO_ALL=1
@@ -113,6 +115,9 @@ while getopts "AaCj:J:f:nNO:p:rRvyz:" FLAG; do
 			;;
 		R)
 			NO_RESTRICTED=1
+			;;
+		u)
+			FORCE_BUILD_REPO=1
 			;;
 		v)
 			VERBOSE=$((VERBOSE + 1))
@@ -373,7 +378,7 @@ done
 
 ret=0
 do_confirm_delete "${BADFILES_LIST}" "stale packages" \
-    "${answer}" "${DRY_RUN}" || ret=$?
+    "${answer}" "${DRY_RUN}" "${FORCE_BUILD_REPO}" || ret=$?
 if [ ${ret} -eq 2 ]; then
 	exit 0
 fi

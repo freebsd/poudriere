@@ -217,7 +217,7 @@ echo " done"
 ret=0
 do_confirm_delete "${OLDLOGS}" \
     "${reason}" \
-    "${answer}" "${DRY_RUN}" || ret=$?
+    "${answer}" "${DRY_RUN}" "0" || ret=$?
 # ret = 2 means no files were deleted, but let's still
 # cleanup other broken/stale files and links.
 logs_deleted=0
@@ -239,7 +239,7 @@ echo " done"
 ret=0
 do_confirm_delete "${OLDLOGS}" \
     "${reason}" \
-    "${answer}" "${DRY_RUN}" || ret=$?
+    "${answer}" "${DRY_RUN}" "0" || ret=$?
 
 if [ ${DRY_RUN} -eq 0 ]; then
 	msg_n "Removing broken legacy latest-per-pkg symlinks (no filter)..."
