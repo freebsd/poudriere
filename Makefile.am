@@ -48,6 +48,7 @@ dist_sysconf_DATA=	\
 		src/etc/poudriere.conf.sample \
 		src/etc/poudriered.conf.sample
 dist_examples_DATA=	\
+		src/share/examples/poudriere/Caddyfile.sample \
 		src/share/examples/poudriere/nginx.conf.sample \
 		src/share/examples/poudriere/httpd.conf.sample
 
