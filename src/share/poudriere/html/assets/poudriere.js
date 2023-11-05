@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2013-2017 Bryan Drewery <bdrewery@FreeBSD.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -11,7 +11,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -586,10 +586,6 @@ function process_data_build(data) {
 	$('#jail').html(format_jailname(data.jailname));
 	$('#setname').html(format_setname(data.setname));
 	$('#ptname').html(format_ptname(data.ptname));
-	if (data.svn_url)
-		$('#svn_url').html(data.svn_url);
-	else
-		$('#svn_url').hide();
 	$('#build_info_div').show();
 
 	/* Backwards compatibility */

@@ -138,7 +138,7 @@ option.
 Build the pkgbase set (for use with
 .Fl b
 or
-.Fl m Cm git/svn/... )
+.Fl m Cm git/... )
 .It Fl C Ar data
 Clean poudriere
 .Ar data
@@ -301,30 +301,6 @@ and build it.
 This option is meant to be used with the
 .Fl b
 flag.
-.It Cm svn Ns Op Cm + Ns Ar protocol
-Use SVN to download the sources.
-.Pp
-Output will mostly be hidden unless
-.Cm poudriere -v jail
-is used.
-.Pp
-Use the
-.Fl v Ar branch
-parameter to set the branch name.
-.Pp
-Use the
-.Fl t Ar branch
-parameter to switch the branch when updating a jail.
-.Pp
-The SVN host address is derived from the
-.Va SVN_HOST
-variable in
-.Pa poudriere.conf .
-.Fl U Ar url
-may be used to override that value.
-.Pp
-The following protocols are supported:
-.Cm svn No (default), Cm +http Ns , Cm +https Ns , Cm +file Ns , Cm +ssh Ns .
 .El
 .It Fl n
 When combined with
@@ -357,8 +333,6 @@ instead of upgrading to the latest security fix.
 .It Fl U Ar url
 Specifies which url to checkout from when using the
 .Cm git
-or
-.Cm svn
 methods.
 .It Fl v Ar version
 Specify the
@@ -371,16 +345,14 @@ For most methods, and by default if no
 is specified,
 .Ar version
 should in the form of
-.Dq Cm 12.0-RELEASE .
+.Dq Cm 13.2-RELEASE .
 If you are using
 .Fl m Cm git ,
-or
-.Fl m Cm svn ,
 then the
 .Ar version
-should be in the form of Git or SVN branches, which is usually
+should be in the form of Git branches, which is usually
 in the form of
-.Dq Cm stable/9
+.Dq Cm stable/13
 or
 .Dq Cm main
 for CURRENT from git.
@@ -427,15 +399,15 @@ The following example creates a new amd64 jail called
 that is based on
 .Fx 12.0-RELEASE .
 .Bd -literal -offset 2n
-.Li # Ic poudriere jail -c -j 120amd64 -v 12.0-RELEASE -a amd64
+.Li # Ic poudriere jail -c -j 132amd64 -v 13.2-RELEASE -a amd64
 .Ed
 .It Sy Example 2\&: No Checking If a Jail Already Exists
 .Pp
 The following command returns success if a poudriere jail called
-.Dq 130i386
+.Dq 132i386
 already exists.
 .Bd -literal -offset 2n
-.Li # Ic poudriere jail -l -n -q | grep --quiet '^130i386$'
+.Li # Ic poudriere jail -l -n -q | grep --quiet '^132i386$'
 .Ed
 .El
 .Sh SEE ALSO
@@ -455,6 +427,7 @@ already exists.
 .Sh AUTHORS
 .An Baptiste Daroussin Aq bapt@FreeBSD.org
 .An Bryan Drewery Aq bdrewery@FreeBSD.org
+.An Muhammad Moinur Rahman Aq bofh@FreeBSD.org
 .Sh CAVEATS
 .Ss Jail Names
 The values set with the

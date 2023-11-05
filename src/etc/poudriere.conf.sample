@@ -1,7 +1,7 @@
 
 # Poudriere can optionally use ZFS for its ports/jail storage. For
 # ZFS define ZPOOL, otherwise set NO_ZFS=yes
-# 
+#
 #### ZFS
 # The pool where poudriere will create all the filesystems it needs
 # poudriere will use ${ZPOOL}/${ZROOTFS} as its root
@@ -99,12 +99,6 @@ DISTFILES_CACHE=/usr/ports/distfiles
 #
 # Example to use github mirror:
 #GIT_PORTSURL=github.com/freebsd/freebsd-ports.git
-
-# If set the ports tree or source tree marked to use svn will use the defined
-# mirror (default: svn.FreeBSD.org)
-# The SSL fingerprints are published here:
-# https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/svn.html#svn-mirrors
-#SVN_HOST=svn.FreeBSD.org
 
 # Automatic OPTION change detection
 # When bulk building packages, compare the options from kept packages to

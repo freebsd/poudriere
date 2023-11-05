@@ -89,12 +89,11 @@ _poudriere_filesystem() {
 # the FreeBSD version running on the host machine. If it's running CURRENT then
 # the list includes two latest RELEASE branches of two previous major versions
 # as well as their STABLE branches. Otherwise, only one previous major version
-# is included. SVN branches are included accordingly. This way the list
-# contains versions, which should run without any problems.
-# For example, when the host is running 12.0-CURRENT the list will contain the
-# following targets (as of 2018.03.09): 10-STABLE, 10.3-RELEASE, 10.4-RELEASE,
-# 11-STABLE, 11.0-RELEASE, 11.1-RELEASE, 12.0-CURRENT, head, release/10.3,
-# release/10.4, release/11.0, release/11.1, stable/10, stable/11.
+# is included. This way the list contains versions, which should run without
+# any problems. For example, when the host is running 12.0-CURRENT the list will
+# contain the following targets (as of 2023.11.05): 12-STABLE, 12.4-RELEASE,
+# 13-STABLE, 13.2-RELEASE, 14-STABLE, 14.0-RELEASE, head, release/12.4,
+# release/13.2, release/14.0.
 _poudriere_freebsd_version() {
     local machine_version="$(freebsd-version)" # E.g. 12.0-CURRENT
     local machine_major="${machine_version/[.-]*/}" # E.g. 12
@@ -275,7 +274,7 @@ _poudriere()
                         ;;
                     -m)
                         # TODO: Complete paths for src= and tar=.
-                        COMPREPLY=($(compgen -W "allbsd ftp-archive ftp git http null src= svn svn+file svn+http svn+https svn+ssh tar= url=" -- "$cur"))
+                        COMPREPLY=($(compgen -W "allbsd ftp-archive ftp git http null src= tar= url=" -- "$cur"))
                         if [[ ${#COMPREPLY[@]} == 1 && $COMPREPLY == *= ]]; then
                             compopt -o nospace
                         fi
@@ -334,7 +333,7 @@ _poudriere()
                         _poudriere_filesystem
                         ;;
                     -m)
-                        COMPREPLY=($(compgen -W 'portsnap git null svn svn+http svn+https svn+file svn+ssh' -- "$cur"))
+                        COMPREPLY=($(compgen -W 'portsnap git null' -- "$cur"))
                         ;;
                     -M)
                         compopt -o default

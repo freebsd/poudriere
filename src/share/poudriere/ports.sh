@@ -1,9 +1,9 @@
 #!/bin/sh
-# 
+#
 # Copyright (c) 2011-2013 Baptiste Daroussin <bapt@FreeBSD.org>
 # Copyright (c) 2012-2013 Bryan Drewery <bdrewery@FreeBSD.org>
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
@@ -12,7 +12,7 @@
 # 2. Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -42,7 +42,7 @@ Parameters:
 
 Options:
     -U url        -- URL where to fetch the ports tree from.
-    -B branch     -- Which branch to use for the git or svn methods.
+    -B branch     -- Which branch to use for the git methods.
     -D            -- Do a full git clone without --depth (default: --depth=1)
     -F            -- When used with -c, only create the needed filesystems
                      (for ZFS) and directories, but do not populate them.
@@ -55,7 +55,7 @@ Options:
     -m method     -- When used with -c, specify the method used to create the
                      ports tree. Can be one of:
 		       'null', 'portsnap',
-		       '{git,svn}{,+http,+https,+file,+ssh}' (e.g., 'git+https').
+		       '{git}{,+http,+https,+file,+ssh}' (e.g., 'git+https').
                      The default is '${METHOD_DEF}'.
     -n            -- When used with -l, only print the name of the ports tree
     -p name       -- Specifies the name of the ports tree to work on.  The
@@ -144,11 +144,9 @@ PTNAME=${PTNAME:-default}
 
 [ "${METHOD}" = "none" ] && METHOD=null
 
-# Handle common (jail+ports) git/svn methods and then fallback to
+# Handle common (jail+ports) git methods and then fallback to
 # methods only supported by jail.
-if ! svn_git_checkout_method "${SOURCES_URL}" "${METHOD}" \
-    "${SVN_HOST}/ports" "${GIT_PORTSURL}" \
-    METHOD SVN_FULLURL GIT_FULLURL; then
+if ! git_checkout_method "${SOURCES_URL}" "${METHOD}" "${GIT_PORTSURL}" METHOD GIT_FULLURL; then
 	if [ -n "${SOURCES_URL}" ]; then
 		usage
 	fi
@@ -165,11 +163,10 @@ if ! svn_git_checkout_method "${SOURCES_URL}" "${METHOD}" \
 fi
 
 case ${METHOD} in
-svn*) : ${BRANCH:=head} ;;
 git*) ;;
 *)
 	[ -n "${BRANCH}" ] && \
-	    err 1 "Branch (-B) only supported for SVN and git."
+	    err 1 "Branch (-B) only supported for git."
 esac
 
 cleanup_new_ports() {
@@ -276,18 +273,6 @@ create)
 			/usr/sbin/portsnap ${PTARGS} -d ${PTMNT}/.snap -p ${PTMNT} fetch extract ||
 			    err 1 " fail"
 			;;
-		svn*)
-			if [ ! -x "${SVN_CMD}" ]; then
-				err 1 "svn or svnlite not installed. Perhaps you need to 'pkg install subversion'"
-			fi
-
-			msg_n "Checking out the ports tree..."
-			${SVN_CMD} ${quiet} co \
-				${SVN_PRESERVE_TIMESTAMP} \
-				${SVN_FULLURL}/${BRANCH} \
-				${PTMNT} || err 1 " fail"
-			echo " done"
-			;;
 		git*)
 			# !! Any changes here should be considered for jail.sh too.
 			if [ ! -x "${GIT_CMD}" ]; then
@@ -367,15 +352,6 @@ update)
 			SNAPDIR=${PTMNT}/.snap
 		fi
 		/usr/sbin/portsnap ${PTARGS} -d ${SNAPDIR} -p ${PORTSMNT:-${PTMNT}} ${PSCOMMAND} alfred || \
-		    err 1 " fail"
-		echo " done"
-		;;
-	svn*)
-		msg_n "Updating portstree \"${PTNAME}\" with ${METHOD}..."
-		${SVN_CMD} upgrade ${PORTSMNT:-${PTMNT}} 2>/dev/null || :
-		${SVN_CMD} ${quiet} update \
-			${SVN_PRESERVE_TIMESTAMP} \
-			${PORTSMNT:-${PTMNT}} || \
 		    err 1 " fail"
 		echo " done"
 		;;

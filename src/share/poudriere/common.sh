@@ -1,10 +1,10 @@
 #!/bin/sh
-# 
+#
 # Copyright (c) 2010-2013 Baptiste Daroussin <bapt@FreeBSD.org>
 # Copyright (c) 2010-2011 Julien Laffaye <jlaffaye@FreeBSD.org>
 # Copyright (c) 2012-2017 Bryan Drewery <bdrewery@FreeBSD.org>
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
@@ -13,7 +13,7 @@
 # 2. Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -399,7 +399,7 @@ logfile() {
 	_logfile logfile "${pkgname}"
 	echo "${logfile}"
 }
- 
+
 _log_path_top() {
 	local -; set -u +x
 
@@ -2125,7 +2125,7 @@ enter_interactive() {
 		if [ -n "${flavor-}" ]; then
 			cat >> "${MASTERMNT}/etc/motd" <<-EOF
 			FLAVOR:			${flavor}
-			
+
 			A FLAVOR was used to build but is not in the environment.
 			Remember to pass FLAVOR to make:
 				make FLAVOR=${flavor}
@@ -5888,7 +5888,7 @@ delete_old_pkg() {
 	# do not have and delete them.
 	if [ "${CHECK_CHANGED_DEPS}" != "no" ]; then
 		current_deps=""
-		# FIXME: Move into Infrastructure/scripts and 
+		# FIXME: Move into Infrastructure/scripts and
 		# 'make actual-run-depends-list' after enough testing,
 		# which will avoida all of the injail hacks
 
@@ -7756,16 +7756,6 @@ prepare_ports() {
 			# Link this build as the /latest
 			ln -sfh ${BUILDNAME} ${log%/*}/latest
 
-			# Record the SVN URL@REV in the build
-			if [ -d ${MASTERMNT}${PORTSDIR}/.svn ]; then
-				bset svn_url $(
-				${SVN_CMD} info ${MASTERMNT}${PORTSDIR} | awk '
-					/^URL: / {URL=substr($0, 6)}
-					/Revision: / {REVISION=substr($0, 11)}
-					END { print URL "@" REVISION }
-				')
-			fi
-
 			bset mastername "${MASTERNAME}"
 			bset jailname "${JAILNAME}"
 			bset setname "${SETNAME}"
@@ -8348,40 +8338,24 @@ calculate_ospart_size() {
 	else
 		SWAP_SIZE=0
 	fi
-	
+
 	OS_SIZE=$(( ( FULL_SIZE - CFG_SIZE - DATA_SIZE - SWAP_SIZE ) / NUM_PART ))
 	msg "OS Partiton size: ${OS_SIZE}m"
 }
 
-svn_git_checkout_method() {
-	[ $# -eq 7 ] || eargs svn_git_checkout_method SOURCES_URL METHOD \
-	   SVN_URL_DEFAULT GIT_URL_DEFAULT \
-           METHOD_var SVN_FULLURL_var GIT_FULLURL_var
+git_checkout_method() {
+	[ $# -eq 5 ] || eargs git_checkout_method SOURCES_URL METHOD \
+	   GIT_URL_DEFAULT METHOD_var GIT_FULLURL_var
 	local SOURCES_URL="$1"
 	local _METHOD="$2"
-	local SVN_URL_DEFAULT="$3"
-	local GIT_URL_DEFAULT="$4"
-	local METHOD_var="$5"
-	local SVN_FULLURL_var="$6"
-	local GIT_FULLURL_var="$7"
-	local _SVN_FULLURL _GIT_FULLURL
+	local GIT_URL_DEFAULT="$3"
+	local METHOD_var="$4"
+	local GIT_FULLURL_var="$5"
+	local _GIT_FULLURL
 	local proto url_prefix=
 
 	if [ -n "${SOURCES_URL}" ]; then
 		case "${_METHOD}" in
-		svn*)
-			case "${SOURCES_URL}" in
-			http://*) _METHOD="svn+http" ;;
-			https://*) _METHOD="svn+https" ;;
-			file://*) _METHOD="svn+file" ;;
-			svn+ssh://*) _METHOD="svn+ssh" ;;
-			svn://*) _METHOD="svn" ;;
-			*)
-				msg_error "Invalid svn url"
-				return 1
-				;;
-			esac
-			;;
 		git*)
 			case "${SOURCES_URL}" in
 			ssh://*) _METHOD="git+ssh" ;;
@@ -8399,11 +8373,10 @@ svn_git_checkout_method() {
 			esac
 			;;
 		*)
-			msg_error "-U only valid with git and svn methods"
+			msg_error "-U only valid with git methods"
 			return 1
 			;;
 		esac
-		_SVN_FULLURL="${SOURCES_URL}"
 		_GIT_FULLURL="${SOURCES_URL}"
 	else
 		# Compat hacks for FreeBSD's special git server
@@ -8417,11 +8390,6 @@ svn_git_checkout_method() {
 		*) ;;
 		esac
 		case "${_METHOD}" in
-		svn+http) proto="http" ;;
-		svn+https) proto="https" ;;
-		svn+ssh) proto="svn+ssh" ;;
-		svn+file) proto="file" ;;
-		svn) proto="svn" ;;
 		git+ssh) proto="ssh" ;;
 		git+http) proto="http" ;;
 		git+https) proto="https" ;;
@@ -8431,11 +8399,9 @@ svn_git_checkout_method() {
 			return 1
 			;;
 		esac
-		_SVN_FULLURL="${proto}://${SVN_URL_DEFAULT}"
 		_GIT_FULLURL="${proto}://${url_prefix}${GIT_URL_DEFAULT}"
 	fi
 	setvar "${METHOD_var}" "${_METHOD}"
-	setvar "${SVN_FULLURL_var}" "${_SVN_FULLURL}"
 	setvar "${GIT_FULLURL_var}" "${_GIT_FULLURL}"
 }
 
@@ -8505,14 +8471,12 @@ if [ -z "${NO_ZFS}" ]; then
 	zpool list ${ZPOOL} >/dev/null 2>&1 || err 1 "No such zpool: ${ZPOOL}"
 fi
 
-: ${FREEBSD_SVN_HOST:="svn.FreeBSD.org"}
 : ${FREEBSD_GIT_HOST:="git.FreeBSD.org"}
 : ${FREEBSD_GIT_BASEURL:="${FREEBSD_GIT_HOST}/src.git"}
 : ${FREEBSD_GIT_PORTSURL:="${FREEBSD_GIT_HOST}/ports.git"}
 : ${FREEBSD_HOST:="https://download.FreeBSD.org"}
 : ${FREEBSD_GIT_SSH_USER="anongit"}
 
-: ${SVN_HOST:="${FREEBSD_SVN_HOST}"}
 : ${GIT_HOST:="${FREEBSD_GIT_HOST}"}
 : ${GIT_BASEURL:=${FREEBSD_GIT_BASEURL}}
 # GIT_URL is old compat
@@ -8692,10 +8656,6 @@ case ${PARALLEL_JOBS} in
 	;;
 esac
 
-if [ "${PRESERVE_TIMESTAMP:-no}" = "yes" ]; then
-	SVN_PRESERVE_TIMESTAMP="--config-option config:miscellany:use-commit-times=yes"
-fi
-
 : ${WATCHDIR:=${POUDRIERE_DATA}/queue}
 : ${PIDFILE:=${POUDRIERE_DATA}/daemon.pid}
 : ${QUEUE_SOCKET:=/var/run/poudriered.sock}
@@ -8742,7 +8702,6 @@ fi
 # Default on otherwise.
 : ${BUILD_AS_NON_ROOT:=yes}
 : ${DISTFILES_CACHE:=/nonexistent}
-: ${SVN_CMD:=$(which svn 2>/dev/null || which svnlite 2>/dev/null)}
 : ${GIT_CMD:=$(which git 2>/dev/null)}
 : ${BINMISC:=/usr/sbin/binmiscctl}
 : ${PATCHED_FS_KERNEL:=no}

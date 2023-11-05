@@ -1,9 +1,9 @@
 #!/bin/sh
-# 
+#
 # Copyright (c) 2010-2013 Baptiste Daroussin <bapt@FreeBSD.org>
 # Copyright (c) 2012-2014 Bryan Drewery <bdrewery@FreeBSD.org>
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
@@ -12,7 +12,7 @@
 # 2. Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -46,7 +46,7 @@ Parameters:
 
 Options:
     -b            -- Build the OS (for use with -m src)
-    -B            -- Build the pkgbase set (for use with -b or -m git/svn/...)
+    -B            -- Build the pkgbase set (for use with -b or -m git/...)
     -q            -- Quiet (Do not print the header)
     -n            -- Print only jail name (for use with -l)
     -J n          -- Run buildworld in parallel with n jobs.
@@ -64,13 +64,13 @@ Options:
                      details. Can be one of:
                        'allbsd', 'ftp-archive', 'ftp', 'freebsdci', 'http',
 		       'null', 'src=PATH', 'tar=PATH', 'url=URL', or
-		       '{git,svn}{,+http,+https,+file,+ssh}' (e.g., 'git+https').
+		       '{git}{,+http,+https,+file,+ssh}' (e.g., 'git+https').
                      The default is '${METHOD_DEF}'.
     -P patch      -- Specify a patch to apply to the source before building.
     -S srcpath    -- Specify a path to the source tree to be used.
     -D            -- Do a full git clone without --depth (default: --depth=1)
     -t version    -- Version of FreeBSD to upgrade the jail to.
-    -U url        -- Specify a url to fetch the sources (with method git and/or svn).
+    -U url        -- Specify a url to fetch the sources (with method git).
     -X            -- Do not build and setup native-xtools cross compile tools in jail
                      when building for a different TARGET ARCH than the host.
                      Only applies if TARGET_ARCH and HOST_ARCH are different.
@@ -328,7 +328,7 @@ update_jail() {
 		build_native_xtools
 		markfs clean ${JAILMNT}
 		;;
-	svn*|git*)
+	git*)
 		install_from_vcs version_extra
 		RELEASE=$(update_version "${version_extra}")
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
@@ -569,7 +569,6 @@ install_from_src() {
 		# Ignore some files
 		cat > ${cpignore} <<-EOF
 		.git
-		.svn
 		EOF
 	fi
 	do_clone -r ${cpignore_flag} ${SRC_BASE} ${JAILMNT}/usr/src
@@ -598,7 +597,7 @@ install_from_vcs() {
 	local var_version_extra="$1"
 	local UPDATE=0
 	local version_vcs
-	local git_sha svn_rev
+	local git_sha
 
 	if [ -d "${SRC_BASE}" ]; then
 		UPDATE=1
@@ -607,19 +606,6 @@ install_from_vcs() {
 	fi
 	if [ ${UPDATE} -eq 0 ]; then
 		case ${METHOD} in
-		svn*)
-			msg_n "Checking out the sources with ${METHOD}..."
-			${SVN_CMD} ${quiet} checkout \
-			    ${SVN_FULLURL}/${VERSION} ${SRC_BASE} || \
-			    err 1 " fail"
-			echo " done"
-			if [ -n "${SRCPATCHFILE}" ]; then
-				msg_n "Patching the sources with ${SRCPATCHFILE}"
-				${SVN_CMD} ${quiet} patch ${SRCPATCHFILE} \
-				    ${SRC_BASE} || err 1 " fail"
-				echo done
-			fi
-			;;
 		git*)
 			# !! Any changes here should be considered for ports.sh too.
 			if [ -n "${SRCPATCHFILE}" ]; then
@@ -636,12 +622,6 @@ install_from_vcs() {
 		esac
 	else
 		case ${METHOD} in
-		svn*)
-			msg_n "Updating the sources with ${METHOD}..."
-			${SVN_CMD} upgrade ${SRC_BASE} 2>/dev/null || :
-			${SVN_CMD} ${quiet} update -r ${TORELEASE:-head} ${SRC_BASE} || err 1 " fail"
-			echo " done"
-			;;
 		git*)
 			# !! Any changes here should be considered for ports.sh too.
 			msg_n "Updating the sources with ${METHOD}..."
@@ -664,11 +644,6 @@ install_from_vcs() {
 	build_native_xtools
 
 	case ${METHOD} in
-	svn*)
-		svn_rev=$(${SVN_CMD} info ${SRC_BASE} |
-		    awk '/Last Changed Rev:/ {print $4}')
-		version_vcs="r${svn_rev}"
-	;;
 	git*)
 		git_sha=$(${GIT_CMD} -C ${SRC_BASE} rev-parse --short HEAD)
 		version_vcs="${git_sha}"
@@ -914,29 +889,6 @@ create_jail() {
 		set -- ${ALLBSDVER}
 		unset IFS
 		RELEASE="${ALLBSDVER}-JPSNAP/ftp"
-		;;
-	svn*)
-		[ -x "${SVN_CMD}" ] || \
-		    err 1 "svn or svnlite not installed. Perhaps you need to 'pkg install subversion'"
-		case ${VERSION} in
-			stable/*![0-9]*)
-				err 1 "bad version number for stable version"
-				;;
-			head@*![0-9]*)
-				err 1 "bad revision number for head version"
-				;;
-			release/*![0-9]*.[0-9].[0-9])
-				err 1 "bad version number for release version"
-				;;
-			releng/*![0-9]*.[0-9])
-				err 1 "bad version number for releng version"
-				;;
-			stable/*|head*|release/*|releng/*.[0-9]*|projects/*) ;;
-			*)
-				err 1 "version with svn should be: head[@rev], stable/N, release/N, releng/N or projects/X"
-				;;
-		esac
-		FCT=install_from_vcs
 		;;
 	git*)
 		if [ ! -x "${GIT_CMD}" ]; then
@@ -1267,11 +1219,10 @@ if [ -n "${JAILNAME}" -a "${COMMAND}" != "create" ]; then
 	_jget JAILMNT ${JAILNAME} mnt || :
 fi
 
-# Handle common (jail+ports) git/svn methods and then fallback to
+# Handle common (jail+ports) git methods and then fallback to
 # methods only supported by jail.
-if ! svn_git_checkout_method "${SOURCES_URL}" "${METHOD}" \
-    "${SVN_HOST}/base" "${GIT_BASEURL}" \
-    METHOD SVN_FULLURL GIT_FULLURL; then
+if ! git_checkout_method "${SOURCES_URL}" "${METHOD}" \
+    "${GIT_BASEURL}" METHOD GIT_FULLURL; then
 	if [ -n "${SOURCES_URL}" ]; then
 		usage
 	fi

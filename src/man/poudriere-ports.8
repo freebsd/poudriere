@@ -67,8 +67,6 @@ Specifies which
 .Ar branch
 to checkout when using the
 .Cm git
-or
-.Cm svn
 methods.
 .It Fl F
 When used with
@@ -133,28 +131,6 @@ may be used to override that value.
 .Pp
 The following protocols are supported:
 .Cm git No (default), Cm +http Ns , Cm +https Ns , Cm +file Ns , Cm +ssh Ns .
-.It Cm svn Ns Op Cm + Ns Ar protocol
-Use SVN to download the sources.
-.Pp
-Output will mostly be hidden unless
-.Cm poudriere -v ports ,
-or
-.Fl v ,
-are used.
-.Pp
-Use the
-.Fl B Ar branch
-parameter to set the branch name.
-.Pp
-The SVN host address is derived from the
-.Va SVN_HOST
-variable in
-.Pa poudriere.conf .
-.Fl U Ar url
-may be used to override that value.
-.Pp
-The following protocols are supported:
-.Cm svn No (default), Cm +http Ns , Cm +https Ns , Cm +file Ns , Cm +ssh Ns .
 .El
 .Pp
 .It Fl n
@@ -173,8 +149,6 @@ remove the header in the list view.
 .It Fl U Ar url
 Specifies which url to checkout from when using the
 .Cm git
-or
-.Cm svn
 methods.
 .It Fl v
 Show more verbose output.
@@ -242,3 +216,4 @@ for other supported proxy environment variables.
 .Sh AUTHORS
 .An Baptiste Daroussin Aq bapt@FreeBSD.org
 .An Bryan Drewery Aq bdrewery@FreeBSD.org
+.An Muhammad Moinur Rahman Aq bofh@FreeBSD.org
