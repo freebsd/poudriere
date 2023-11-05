@@ -1,24 +1,27 @@
-# $FreeBSD: head/Mk/Uses/scons.mk 513680 2019-10-03 17:49:15Z sunpoet $
-#
 # Provide support to use the scons
 #
 # Feature:	scons
 # Usage:	USES=scons
+# Valid ARGS:	none
 #
 # MAINTAINER: python@FreeBSD.org
 
 .if !defined(_INCLUDE_USES_SCONS_MK)
 _INCLUDE_USES_SCONS_MK=	yes
 
-.if !empty(scons_ARGS)
-IGNORE=	Incorrect 'USES+= scons:${scons_ARGS}' scons takes no arguments
-.endif
+.  if !empty(scons_ARGS)
+IGNORE+=	USES=scons takes no arguments
+.  endif
 
-SCONS=		${LOCALBASE}/bin/scons
+_SCONS_PYTHON_VER=	${PYTHON_DEFAULT}
 
-BUILD_DEPENDS+=	${SCONS}:devel/scons
+_SCONS_PYTHON_FLAVOR=	py${_SCONS_PYTHON_VER:S|.||}
 
-ALL_TARGET=	#
+SCONS=		${LOCALBASE}/bin/scons-${_SCONS_PYTHON_VER}
+
+BUILD_DEPENDS+=	${SCONS}:devel/scons@${_SCONS_PYTHON_FLAVOR}
+
+ALL_TARGET?=	#
 CCFLAGS?=	${CFLAGS}
 CPPPATH?=	${LOCALBASE}/include
 LIBPATH?=	${LOCALBASE}/lib

@@ -1,5 +1,3 @@
-# $FreeBSD: head/Mk/Uses/groff.mk 441689 2017-05-25 14:04:48Z bapt $
-#
 # handle dependency on groff
 #
 # Feature:	groff

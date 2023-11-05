@@ -26,9 +26,6 @@
 # SUCH DAMAGE.
 #
 
-# $FreeBSD: head/Tools/scripts/neededlibs.sh 340851 2014-01-23 19:55:14Z mat $
-
-
 #
 # The purpose of this script is to find as much dependencies of a binary
 # as possible. A dependecy is for example a library which is directly

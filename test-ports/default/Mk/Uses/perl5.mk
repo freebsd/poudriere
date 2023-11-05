@@ -1,5 +1,3 @@
-# $FreeBSD: head/Mk/Uses/perl5.mk 501523 2019-05-13 07:36:38Z mat $
-#
 # Provide support to use perl5
 #
 # PERL5		- Set to full path of perl5, either in the system or
@@ -44,19 +42,19 @@ USE_PERL5?=	run build
 
 # When adding a version, please keep the comment in
 # Mk/bsd.default-versions.mk in sync.
-.    if ${PERL5_DEFAULT} == 5.26
-.include "${PORTSDIR}/lang/perl5.26/version.mk"
-.    elif ${PERL5_DEFAULT} == 5.28
-.include "${PORTSDIR}/lang/perl5.28/version.mk"
-.    elif ${PERL5_DEFAULT} == 5.30
-.include "${PORTSDIR}/lang/perl5.30/version.mk"
-.    elif ${PERL5_DEFAULT} == devel
+.  if ${PERL5_DEFAULT} == 5.34
+.include "${PORTSDIR}/lang/perl5.34/version.mk"
+.  elif ${PERL5_DEFAULT} == 5.36
+.include "${PORTSDIR}/lang/perl5.36/version.mk"
+.  elif ${PERL5_DEFAULT} == 5.38
+.include "${PORTSDIR}/lang/perl5.38/version.mk"
+.  elif ${PERL5_DEFAULT} == devel
 .include "${PORTSDIR}/lang/perl5-devel/version.mk"
 # Force PERL_PORT here in case two identical PERL_VERSION.
 PERL_PORT?=	perl5-devel
-.    else
+.  else
 IGNORE=	Invalid perl5 version ${PERL5_DEFAULT}
-.    endif
+.  endif
 
 PERL_VER?=	${PERL_VERSION:C/\.[0-9]+$//}
 
@@ -83,12 +81,12 @@ PERL_ARCH?=	mach
 # perl5_default file, or up there in the default versions selection.
 # When adding a version, please keep the comment in
 # Mk/bsd.default-versions.mk in sync.
-.  if   ${PERL_LEVEL} >= 503000
-PERL_PORT?=	perl5.30
-.  elif   ${PERL_LEVEL} >= 502800
-PERL_PORT?=	perl5.28
-.  else # ${PERL_LEVEL} < 502800
-PERL_PORT?=	perl5.26
+.  if   ${PERL_LEVEL} >= 503800
+PERL_PORT?=	perl5.38
+.  elif   ${PERL_LEVEL} >= 503600
+PERL_PORT?=	perl5.36
+.  else # ${PERL_LEVEL} < 503600
+PERL_PORT?=	perl5.34
 .  endif
 
 SITE_PERL_REL?=	lib/perl5/site_perl
@@ -167,6 +165,7 @@ IGNORE= has unknown USE_PERL5 components: ${_USE_PERL5_UNKNOWN}
 .  endif
 
 _USES_POST+=	perl5
+
 .endif
 
 .if defined(_POSTMKINCLUDED) && !defined(_INCLUDE_USES_PERL5_POST_MK)
@@ -209,7 +208,7 @@ CONFIGURE_ARGS+=--create_packlist 1
 .    endif
 .    if ${_USE_PERL5:Mmodbuildtiny}
 .      if ${PORTNAME} != Module-Build-Tiny
-BUILD_DEPENDS+=	p5-Module-Build-Tiny>=0.039:devel/p5-Module-Build-Tiny
+BUILD_DEPENDS+=	p5-Module-Build-Tiny>=0.043:devel/p5-Module-Build-Tiny
 .      endif
 CONFIGURE_ARGS+=--create_packlist 1
 .    endif
@@ -296,7 +295,7 @@ fix-perl-things:
 	@(if [ -d ${STAGEDIR}${PACKLIST_DIR} ] ; then \
 		${FIND} ${STAGEDIR}${PACKLIST_DIR} -name .packlist | while read f ; do \
 			${SED} -i '' 's|^${STAGEDIR}||' "$$f"; \
-			${ECHO} $$f | ${SED} -e 's|^${STAGEDIR}||' >> ${TMPPLIST}; \
+			${ECHO_CMD} $$f | ${SED} -e 's|^${STAGEDIR}||' >> ${TMPPLIST}; \
 		done \
 	fi) || :
 

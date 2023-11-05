@@ -3,15 +3,9 @@ set -e
 export __MAKE_CONF=/dev/null
 export PORT_DBDIR=/dev/null
 
-: ${SVN_URL:=https://svn.freebsd.org/ports/head}
 : ${DESTDIR:=$(realpath "${0%/*}/default")}
 cd "${DESTDIR}"
 export PORTSDIR="${DESTDIR}"
-
-if [ -f .svn_rev ]; then
-	read SVN_REV < .svn_rev
-fi
-: ${SVN_REV:=$(svn info "${SVN_URL}" | grep 'Last Changed Rev' | sed -e 's,.*: ,,')}
 
 py3=$(make -f Mk/bsd.port.mk -V PYTHON3_DEFAULT:S,.,,)
 perl5=$(make -f Mk/bsd.port.mk -V PERL5_DEFAULT)
@@ -44,7 +38,6 @@ update_dir() {
 	echo "Fetching ${dir}" >&2
 	git rm -rf "${dir}" || :
 	rm -rf "${dir}"
-	svn export "${SVN_URL}/${dir}" "${dir}" || return $?
 	git add -f "${dir}"
 	if [ -d "${dir}" ]; then
 		find "${dir}" -name Makefile -exec git add -f {} +
@@ -107,6 +100,3 @@ find -s . -type d -name '[a-z]*' -depth 1 | while read cat; do
 	echo "SUBDIR += ${cat#*/}"
 done > Makefile
 git add -f Makefile
-
-echo "${SVN_REV}" > .svn_rev
-git add .svn_rev

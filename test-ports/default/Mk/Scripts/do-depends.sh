@@ -1,9 +1,9 @@
 #!/bin/sh
-# $FreeBSD: head/Mk/Scripts/do-depends.sh 531389 2020-04-10 23:28:56Z bdrewery $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 
 set -e
+set -o pipefail
 
 . ${dp_SCRIPTSDIR}/functions.sh
 
@@ -124,6 +124,14 @@ for _line in ${dp_RAWDEPENDS} ; do
 	fi
 
 	case "${origin}" in
+	*@*/*) ;; # Ignore @ in the path which would not be a flavor
+	*@*)
+		export FLAVOR="${origin##*@}"
+		origin=${origin%@*}
+		;;
+	esac
+
+	case "${origin}" in
 	/*) ;;
 	*)
 		for overlay in ${dp_OVERLAYS} ${PORTSDIR}; do
@@ -133,13 +141,6 @@ for _line in ${dp_RAWDEPENDS} ; do
 			fi
 		done
 		origin="${orig}"
-		;;
-	esac
-	case "${origin}" in
-	*@*/*) ;; # Ignore @ in the path which would not be a flavor
-	*@*)
-		export FLAVOR="${origin##*@}"
-		origin=${origin%@*}
 		;;
 	esac
 

@@ -1,9 +1,9 @@
 #!/bin/sh
-# $FreeBSD: head/Mk/Scripts/makesum.sh 415842 2016-05-25 15:58:31Z mat $
 #
 # MAINTAINER: portmgr@FreeBSD.org
 
 set -e
+set -o pipefail
 
 . "${dp_SCRIPTSDIR}/functions.sh"
 
@@ -28,7 +28,7 @@ cd "${dp_DISTDIR}"
 # So, we extract the content of the distinfo file minus the TIMESTAMP, if it
 # contains a TIMESTAMP.
 if [ -f "${dp_DISTINFO_FILE}" ] && grep -q "^TIMESTAMP " ${dp_DISTINFO_FILE}; then
-	grep -v "^TIMESTAMP " ${dp_DISTINFO_FILE} > ${DISTINFO_OLD}
+	grep -v "^TIMESTAMP " ${dp_DISTINFO_FILE} > ${DISTINFO_OLD} || true
 fi
 
 for file in ${dp_CKSUMFILES}; do

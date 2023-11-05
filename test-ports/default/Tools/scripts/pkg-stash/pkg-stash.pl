@@ -1,5 +1,4 @@
 #!/usr/bin/perl -wT
-# $FreeBSD: head/Tools/scripts/pkg-stash/pkg-stash.pl 340719 2014-01-22 15:52:06Z mat $
 
 use strict;
 

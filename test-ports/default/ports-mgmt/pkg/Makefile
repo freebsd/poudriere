@@ -1,15 +1,11 @@
 PORTNAME=	pkg
-DISTVERSION=	1.17.5
-PORTREVISION=	1
+DISTVERSION=	1.20.8
 _PKG_VERSION=	${DISTVERSION}
 CATEGORIES=	ports-mgmt
-#MASTER_SITES=	\
-#		http://files.etoilebsd.net/${PORTNAME}/ \
-#		LOCAL/portmgr \
-#		http://mirror.shatow.net/freebsd/${PORTNAME}/ \
 
 MAINTAINER=	pkg@FreeBSD.org
 COMMENT=	Package manager
+WWW=		https://github.com/freebsd/pkg
 
 LICENSE=	BSD2CLAUSE
 

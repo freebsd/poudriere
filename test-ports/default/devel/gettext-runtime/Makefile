@@ -1,5 +1,3 @@
-# $FreeBSD: head/devel/gettext-runtime/Makefile 512232 2019-09-17 19:21:45Z tobik $
-
 # NOTE: before committing to this port, contact portmgr to arrange for an
 # experimental ports run.  Untested commits may be backed out at portmgr's
 # discretion.
@@ -8,6 +6,7 @@ PORTNAME=	gettext-runtime
 PORTREVISION=	0
 
 COMMENT=	GNU gettext runtime libraries and programs
+WWW=		https://www.gnu.org/software/gettext/
 
 LICENSE=	LGPL21+ GPLv3+
 LICENSE_COMB=	multi

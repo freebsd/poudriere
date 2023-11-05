@@ -1,7 +1,5 @@
 #!/bin/sh
 
-# $FreeBSD: head/Tools/scripts/notconnected 437233 2017-03-29 20:33:05Z rene $
-#
 # MAINTAINER=   ports@FreeBSD.org
 # all committers may commit to this file without approval
 

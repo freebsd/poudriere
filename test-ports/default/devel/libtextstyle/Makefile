@@ -1,5 +1,3 @@
-# $FreeBSD: head/devel/libtextstyle/Makefile 503716 2019-06-08 09:55:01Z tijl $
-
 # NOTE: before committing to this port, contact portmgr to arrange for an
 # experimental ports run.  Untested commits may be backed out at portmgr's
 # discretion.
@@ -8,6 +6,7 @@ PORTNAME=	libtextstyle
 PORTREVISION=	0
 
 COMMENT=	Text styling library
+WWW=		https://www.gnu.org/software/gettext/libtextstyle/manual/
 
 LICENSE=	GPLv3+
 LICENSE_FILE=	${WRKSRC}/COPYING

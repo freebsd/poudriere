@@ -1,37 +1,29 @@
-# Created by: Horance Chou <horance@freedom.ie.cycu.edu.tw>
-# $FreeBSD: head/devel/libffi/Makefile 484628 2018-11-10 18:12:57Z bapt $
-
 PORTNAME=	libffi
-PORTVERSION=	3.2.1
-PORTREVISION=	3
+DISTVERSION=	3.4.4
 CATEGORIES=	devel
-MASTER_SITES=	SOURCEWARE/${PORTNAME}
+MASTER_SITES=	https://github.com/${PORTNAME}/${PORTNAME}/releases/download/v${DISTVERSION}/
 
-MAINTAINER=	zeising@FreeBSD.org
+MAINTAINER=	kbowling@FreeBSD.org
 COMMENT=	Foreign Function Interface
+WWW=		https://sourceware.org/libffi/
 
 LICENSE=	MIT
 LICENSE_FILE=	${WRKSRC}/LICENSE
 
 TEST_DEPENDS=	runtest:misc/dejagnu
 
-USES=		libtool pathfix
+USES=		compiler:c11 cpe libtool pathfix
 USE_LDCONFIG=	yes
 GNU_CONFIGURE=	yes
+CPE_VENDOR=	libffi_project
 
+CONFIGURE_ARGS=	--disable-multi-os-directory
 INSTALL_TARGET=	install-strip
 INFO=		libffi
-PLIST_SUB=	PORTVERSION=${PORTVERSION}
 TEST_TARGET=	check
 
 post-patch:
 	@${REINPLACE_CMD} -e 's| -Wno-psabi||g' \
 		${WRKSRC}/testsuite/lib/libffi.exp
-
-post-install:
-	@${LN} -sf ../lib/libffi-${PORTVERSION}/include/ffi.h \
-	    ${STAGEDIR}${PREFIX}/include/
-	@${LN} -sf ../lib/libffi-${PORTVERSION}/include/ffitarget.h \
-	    ${STAGEDIR}${PREFIX}/include/
 
 .include <bsd.port.mk>
