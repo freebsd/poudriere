@@ -108,7 +108,7 @@ display_add() {
 	IFS="${DISPLAY_SEP}"
 	line="$@"
 	unset IFS
-	mapfile_write "${_DISPLAY_MAPFILE}" "${line}" ||
+	mapfile_write "${_DISPLAY_MAPFILE}" -- "${line}" ||
 	    err ${EX_SOFTWARE} "mapfile_write"
 }
 
