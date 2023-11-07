@@ -4194,6 +4194,7 @@ gather_distfiles() {
 	local from to
 	local sub dists d specials special origin
 	local dep_originspec pkgname flavor subpkg
+	local srcsize dstsize doinstall
 
 	from=$(realpath "$5")
 	to=$(realpath "$6")
@@ -4226,10 +4227,26 @@ gather_distfiles() {
 		if [ ! -f "${from}/${sub}/${d}" ]; then
 			continue
 		fi
+		if [ ! -f "${to}/${sub}/${d}" ]; then
+			msg_debug "gather_distfiles: missing '${to}/${sub}/${d}'"
+			doinstall=1
+		else
+			dstsize=$(stat -f %z "${to}/${sub}/${d}")
+			srcsize=$(stat -f %z "${from}/${sub}/${d}")
+			if [ $srcsize -ne $dstsize ]; then
+				msg_debug "gather_distfiles: size mismatch ($srcsize != $dstsize), overwriting '${to}/${sub}/${d}'"
+				doinstall=1
+			else
+				msg_debug "gather_distfiles: skipping copy '${to}/${sub}/${d}'"
+				doinstall=0
+			fi
+		fi
 		# XXX: A --relative would be nice
-		install -pS -m 0644 "${from}/${sub}/${d}" \
-		    "${to}/${sub}/${d}" ||
-		    return 1
+		if [ $doinstall -eq 1 ]; then
+			install -pS -m 0644 "${from}/${sub}/${d}" \
+			    "${to}/${sub}/${d}" ||
+			    return 1
+		fi
 	done
 
 	for special in ${specials}; do
