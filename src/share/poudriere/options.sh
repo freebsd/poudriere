@@ -193,6 +193,19 @@ options_cleanup() {
 }
 setup_makeconf ${__MAKE_CONF} "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 
+MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
+_mastermnt MASTERMNT
+
+export MASTERNAME
+export MASTERMNT
+
+PREPARE_PARALLEL_JOBS=1
+PARALLEL_JOBS=1
+
+jail_start "${JAILNAME}" "${PTNAME}" "${SETNAME}"
+
+fetch_global_port_vars
+
 export TERM=${SAVED_TERM}
 for originspec in $(listed_ports show_moved); do
 	originspec_decode "${originspec}" origin flavor
@@ -217,3 +230,6 @@ for originspec in $(listed_ports show_moved); do
 			${RECURSE_COMMAND}
 	fi
 done
+
+# Make sure to cleanup
+jail_stop
