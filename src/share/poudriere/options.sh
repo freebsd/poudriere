@@ -190,6 +190,7 @@ export __MAKE_CONF
 CLEANUP_HOOK=options_cleanup
 options_cleanup() {
 	rm -f ${__MAKE_CONF}
+	jail_stop
 }
 setup_makeconf ${__MAKE_CONF} "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 
@@ -230,6 +231,3 @@ for originspec in $(listed_ports show_moved); do
 			${RECURSE_COMMAND}
 	fi
 done
-
-# Make sure to cleanup
-jail_stop
