@@ -214,10 +214,11 @@ fetch_global_port_vars
 export TERM=${SAVED_TERM}
 for originspec in $(listed_ports show_moved); do
 	originspec_decode "${originspec}" origin flavor
-	[ -d ${PORTSDIR}/${origin} ] || err 1 "No such port: ${origin}"
+	[ -d ${MASTERMNT}${PORTSDIR}/${origin} ] || err 1 "No such port: ${origin}"
 	env ${flavor:+FLAVOR=${flavor}} \
 	make PORT_DBDIR=${PORT_DBDIR} \
-		-C ${PORTSDIR}/${origin} \
+		PORTSDIR=${MASTERMNT}${PORTSDIR} \
+		-C ${MASTERMNT}${PORTSDIR}/${origin} \
 		${COMMAND}
 	case "${COMMAND}" in
 	showconfig|config-conditional)
@@ -228,10 +229,11 @@ for originspec in $(listed_ports show_moved); do
 	if [ -n "${DO_RECURSE}" ]; then
 		env ${flavor:+FLAVOR=${flavor}} \
 		make PORT_DBDIR=${PORT_DBDIR} \
+			PORTSDIR=${MASTERMNT}${PORTSDIR} \
 			PKG_BIN=`which pkg-static` \
 			DIALOG4PORTS=`which $d4p` \
 			LOCALBASE=/nonexistent \
-			-C ${PORTSDIR}/${origin} \
+			-C ${MASTERMNT}${PORTSDIR}/${origin} \
 			${RECURSE_COMMAND}
 	fi
 done
