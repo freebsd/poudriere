@@ -288,6 +288,7 @@ update_jail() {
 		    -e 's/-t 0/1 -eq 1/' \
 		    -e 's,\(fetch_warn_eol ||\) return 1,\1 :,' \
 		    -e 's,sysctl -n kern.bootfile,echo /boot/kernel/kernel,' \
+		    -e 's,service sshd restart,#service sshd restart,' \
 		    /usr/sbin/freebsd-update > "${fu_bin}"
 		FREEBSD_UPDATE="env PAGER=/bin/cat"
 		FREEBSD_UPDATE="${FREEBSD_UPDATE} /bin/sh ${fu_bin}"
