@@ -585,6 +585,26 @@ JAIL_VERSION="12.4-RELEASE"
 JAILMNT=$(${POUDRIERE} api "jget ${JAILNAME} mnt" || echo)
 export UNAME_r=$(freebsd-version)
 export UNAME_v="FreeBSD ${UNAME_r}"
+if [ -n "${JAILMNT}" ]; then
+	# Ensure it is up-to-date otherwise delete it so it can be updated.
+	JAIL_VERSION_CUR=$(${POUDRIERE} api "jget ${JAILNAME} version" || echo)
+	case "${JAIL_VERSION_CUR}" in
+	"${JAIL_VERSION}") ;;
+	*)
+		# Needs to be updated.
+		echo "Test jail needs to be updated..." >&2
+		if [ ${BOOTSTRAP_ONLY:-0} -eq 0 ]; then
+			echo "ERROR: Must run prep.sh" >&2
+			exit 99
+		fi
+		if ! ${SUDO} ${POUDRIERE} jail -d -j "${JAILNAME}"; then
+			echo "SKIP: Cannot upgrade jail with Poudriere" >&2
+			exit 77
+		fi
+		JAILMNT=
+		;;
+	esac
+fi
 if [ -z "${JAILMNT}" ]; then
 	if [ ${BOOTSTRAP_ONLY:-0} -eq 0 ]; then
 		echo "ERROR: Must run prep.sh" >&2
