@@ -56,7 +56,7 @@ cache_pkgnames() {
 	fi
 
 	# XXX: subpkg
-	port_var_fetch_originspec "${originspec}" \
+	cleanenv port_var_fetch_originspec "${originspec}" \
 	   PKGNAME pkgname \
 	   FLAVORS flavors \
 	   FLAVOR port_flavor \
@@ -71,7 +71,7 @@ cache_pkgnames() {
 		      flavor_default tmp x
 
 		originspec_encode originspec_default "${origin}" '' "${subpkg}"
-		port_var_fetch_originspec "${originspec_default}" \
+		cleanenv port_var_fetch_originspec "${originspec_default}" \
 		   PKGNAME pkgname_default \
 		   FLAVORS flavors_default \
 		   FLAVOR flavor_default || exit 99

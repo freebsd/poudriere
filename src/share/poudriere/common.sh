@@ -965,7 +965,7 @@ buildlog_start() {
 		echo
 	fi
 	echo "---Begin Environment---"
-	injail /usr/bin/env
+	cleanenv injail /usr/bin/env
 	echo "---End Environment---"
 	echo ""
 	echo "---Begin Poudriere Port Flags/Env---"
@@ -976,7 +976,7 @@ buildlog_start() {
 	echo "---End Poudriere Port Flags/Env---"
 	echo ""
 	echo "---Begin OPTIONS List---"
-	injail /usr/bin/make -C ${portdir} ${MAKE_ARGS} showconfig || :
+	cleanenv injail /usr/bin/make -C ${portdir} ${MAKE_ARGS} showconfig || :
 	echo "---End OPTIONS List---"
 	echo ""
 	for var in ${wanted_vars}; do
@@ -995,7 +995,7 @@ buildlog_start() {
 	fi
 
 	echo "--Resource limits--"
-	injail /bin/sh -c "ulimit -a" || :
+	cleanenv injail /bin/sh -c "ulimit -a" || :
 	echo "--End resource limits--"
 }
 
@@ -4283,6 +4283,20 @@ gather_distfiles() {
 	return 0
 }
 
+# Avoid some of our global env leaking out.
+cleanenv() {
+	[ "$#" -gt 0 ] || eargs cleanenv cmd ...
+	local save
+
+	# unexport these but keep them set for internal use
+	local LIBEXECPREFIX; save="${LIBEXECPREFIX}"; unset LIBEXECPREFIX; LIBEXECPREFIX="${save}";
+	local SCRIPTNAME; save="${SCRIPTNAME}"; unset SCRIPTNAME; SCRIPTNAME="${save}";
+	local SCRIPTPATH; save="${SCRIPTPATH}"; unset SCRIPTPATH; SCRIPTPATH="${save}";
+	local SCRIPTPREFIX; save="${SCRIPTPREFIX}"; unset SCRIPTPREFIX; SCRIPTPREFIX="${save}";
+	local USE_DEBUG; save="${USE_DEBUG}"; unset USE_DEBUG; USE_DEBUG="${save}";
+	"$@"
+}
+
 # Build+test port and return 1 on first failure
 # Return 2 on test failure if PORTTESTING_FATAL=no
 build_port() {
@@ -4457,8 +4471,8 @@ build_port() {
 			if [ "${pkgname%%*linux*}" != "" ]; then
 				msg "Checking shared library dependencies"
 				# Not using PKG_BIN to avoid bootstrap issues.
-				injail "${LOCALBASE}/sbin/pkg" query '%Fp' "${pkgname}" | \
-				    injail xargs readelf -d 2>/dev/null | \
+				cleanenv injail "${LOCALBASE}/sbin/pkg" query '%Fp' "${pkgname}" | \
+				    cleanenv injail xargs readelf -d 2>/dev/null | \
 				    grep NEEDED | sort -u
 			fi
 			;;
@@ -4501,7 +4515,7 @@ build_port() {
 		print_phase_header "${phase}" "${phaseenv}"
 
 		if [ "${phase#*-}" = "depends" ]; then
-			injail /usr/bin/env ${phaseenv:+-S "${phaseenv}"} \
+			cleanenv injail /usr/bin/env ${phaseenv:+-S "${phaseenv}"} \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    ${phase} || return 1
 		else
@@ -4509,7 +4523,7 @@ build_port() {
 			nohang ${max_execution_time} ${NOHANG_TIME} \
 				"${log}/logs/${pkgname}.log" \
 				"${MASTER_DATADIR}/var/run/${MY_JOBID:-00}_nohang.pid" \
-				injail /usr/bin/env ${phaseenv:+-S "${phaseenv}"} \
+				cleanenv injail /usr/bin/env ${phaseenv:+-S "${phaseenv}"} \
 				/usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 				${phase}
 			hangstatus=$? # This is done as it may return 1 or 2 or 3
@@ -4549,7 +4563,7 @@ build_port() {
 			local die=0
 
 			bset_job_status "stage-qa" "${originspec}" "${pkgname}"
-			if ! injail /usr/bin/env DEVELOPER=1 \
+			if ! cleanenv injail /usr/bin/env DEVELOPER=1 \
 			    ${PORT_FLAGS:=-S "${PORT_FLAGS}"} \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
 			    stage-qa; then
@@ -4562,7 +4576,7 @@ build_port() {
 
 			bset_job_status "check-plist" "${originspec}" \
 			    "${pkgname}"
-			if ! injail /usr/bin/env \
+			if ! cleanenv injail /usr/bin/env \
 			    ${PORT_FLAGS:+-S "${PORT_FLAGS}"} \
 			    DEVELOPER=1 \
 			    /usr/bin/make -C ${portdir} ${MAKE_ARGS} \
@@ -4600,7 +4614,7 @@ build_port() {
 				touch "${add}" "${del}" "${mod}" || :
 			else
 				check_leftovers ${mnt} | sed -e "s|${mnt}||" |
-				    injail /usr/bin/env \
+				    cleanenv injail /usr/bin/env \
 				    ${PORT_FLAGS:+-S "${PORT_FLAGS}"} \
 				    PORTSDIR=${PORTSDIR} \
 				    UID_FILES="${P_UID_FILES}" \
@@ -5386,7 +5400,7 @@ build_pkg() {
 	fi
 
 	msg "Cleaning up wrkdir"
-	injail /usr/bin/make -C "${portdir}" -k \
+	cleanenv injail /usr/bin/make -C "${portdir}" -k \
 	    -DNOCLEANDEPENDS clean ${MAKE_ARGS} || :
 	rm -rfx ${mnt}/wrkdirs/* || :
 
