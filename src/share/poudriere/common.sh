@@ -6087,7 +6087,7 @@ deps_fetch_vars() {
 	local _pkgname _pkg_deps= _lib_depends= _run_depends= _selected_options=
 	local _build_deps= _run_deps=
 	local _changed_options= _changed_deps= _lookup_flavors=
-	local _existing_origin _existing_originspec categories _ignore
+	local _existing_origin _existing_originspec pkgcategory _ignore
 	local _forbidden _default_originspec _default_pkgname _no_arch
 	local origin _dep _new_pkg_deps
 	local _origin_flavor _flavor _flavors _default_flavor
@@ -6147,7 +6147,7 @@ deps_fetch_vars() {
 		${_pkgname_var} _pkgname \
 		${_lookup_flavors} \
 		'${_DEPEND_SPECIALS:C,^${PORTSDIR}/,,}' _depend_specials \
-		CATEGORIES categories \
+		PKGCATEGORY pkgcategory \
 		IGNORE _ignore \
 		FORBIDDEN _forbidden \
 		NO_ARCH:Dyes _no_arch \
@@ -6174,12 +6174,12 @@ deps_fetch_vars() {
 		;;
 	esac
 
-	# Validate CATEGORIES is proper to avoid:
+	# Validate PKGCATEGORY is proper to avoid:
 	# - Pkg not registering the dependency
 	# - Having delete_old_pkg later remove it due to the origin fetched
 	#   from pkg-query not existing.
-	case "${categories} " in
-	"${origin%%/*} "*) ;;
+	case "${pkgcategory}" in
+	"${origin%%/*}") ;;
 	*)
 		msg_error "${COLOR_PORT}${origin}${COLOR_RESET} has incorrect CATEGORIES, first should be '${origin%%/*}'.  Please contact maintainer of the port to fix this."
 		return 1
