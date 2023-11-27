@@ -7839,7 +7839,7 @@ prepare_ports() {
 	fi
 
 	load_moved
-	load_blacklist "${MASTERNAME}" "${PTNAME}" "${SETNAME}"
+	load_blacklist "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 
 	fetch_global_port_vars || \
 	    err 1 "Failed to lookup global ports metadata"
