@@ -49,8 +49,7 @@ was_a_testport_run() {
 # Return true if in a bulk or other jail run that needs to shutdown the jail
 was_a_jail_run() {
 	was_a_bulk_run ||  [ "${SCRIPTNAME}" = "pkgclean.sh" ] || \
-	    [ "${SCRIPTNAME}" = "foreachport.sh" ] || \
-	    [ "${SCRIPTNAME}" = "options.sh" ]
+	    [ "${SCRIPTNAME}" = "foreachport.sh" ]
 }
 schg_immutable_base() {
 	[ "${IMMUTABLE_BASE}" = "schg" ] || return 1

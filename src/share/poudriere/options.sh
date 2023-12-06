@@ -193,24 +193,6 @@ options_cleanup() {
 }
 setup_makeconf ${__MAKE_CONF} "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 
-# to cycle ports this command calls the listed_ports function which
-# needs to check for features.
-# This check needs the P_PORTS_FEATURES to be populated by
-# fetch_global_port_vars which requires a running jail to work properly.
-# So provide a running jail here.
-MASTERNAME=${JAILNAME}-${PTNAME}${SETNAME:+-${SETNAME}}
-_mastermnt MASTERMNT
-
-export MASTERNAME
-export MASTERMNT
-
-PREPARE_PARALLEL_JOBS=1
-PARALLEL_JOBS=1
-
-jail_start "${JAILNAME}" "${PTNAME}" "${SETNAME}"
-
-fetch_global_port_vars
-
 export TERM=${SAVED_TERM}
 for originspec in $(listed_ports show_moved); do
 	originspec_decode "${originspec}" origin flavor
