@@ -55,6 +55,7 @@ EOF
 ARCH=
 PTNAME=default
 SETNAME=""
+JAILNAME=""
 PTNAME_TMP=""
 DO_RECURSE=y
 DEFAULT_COMMAND=config-conditional
@@ -143,6 +144,11 @@ shift $((OPTIND-1))
 post_getopts
 
 : ${COMMAND:=${DEFAULT_COMMAND}}
+
+# Check jailname has been specified
+if [ -z "${JAILNAME}" ]; then
+	err 1 "Please specify a jail to use"
+fi
 
 # checking jail and architecture consistency
 if [ -n "${JAILNAME}" -a -n "${ARCH}" ]; then
