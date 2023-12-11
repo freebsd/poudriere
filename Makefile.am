@@ -304,9 +304,9 @@ poudriered_SOURCES=	src/poudriered/poudriered.c \
 			external/pkg/xmalloc.h
 poudriered_CFLAGS=	$(AM_CFLAGS) \
 			-DPREFIX=\"$(prefix)\" \
-			-I$(top_srcdir)/external/libucl/include
+			-I$(top_srcdir)/external/libucl/include \
+			-I$(top_srcdir)/external/pkg
 poudriered_LDADD=	libucl.la \
-			-lsbuf \
 			-lutil
 
 cached_SOURCES=	src/libexec/poudriere/cached/cached.c \
