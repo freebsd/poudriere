@@ -32,12 +32,18 @@ usage() {
 	exit ${EX_USAGE}
 }
 
-[ $# -lt 2 ] && usage
+[ $# -lt 1 ] && usage
 
 case $1 in
-bulk|testport) cmd=$1 ; shift ;;
+bulk|testport)
+	cmd=$1
+	shift
+	write_usock "${QUEUE_SOCKET}" "command = $cmd; arguments = $@;"
+	;;
+reload|status|quit|list)
+	cmd=$1
+	shift
+	write_usock "${QUEUE_SOCKET}" "operation = $cmd;"
+	;;
 *) err 1 "$1 command cannot be queued" ;;
 esac
-
-# Queue the command through the poudriered socket
-write_usock "${QUEUE_SOCKET}" "operation = queue; command = $cmd; arguments = $@;"
