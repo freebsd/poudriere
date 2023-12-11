@@ -99,7 +99,7 @@ else
   red= grn= lgn= blu= mgn= std=
 fi
 
-do_exit='rm -f $log_file $trs_file; trap - $((st - 128)); kill -$((st - 128)) $$'
+do_exit='rm -f $log_file $trs_file; (exit $st); exit $st'
 trap "st=129; $do_exit" 1
 trap "st=130; $do_exit" 2
 trap "st=141; $do_exit" 13
