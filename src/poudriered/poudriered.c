@@ -33,7 +33,6 @@
 #include <sys/event.h>
 #include <sys/param.h>
 #include <sys/time.h>
-#include <sys/sbuf.h>
 #include <sys/socket.h>
 #include <sys/sysctl.h>
 #include <sys/stat.h>
@@ -56,6 +55,9 @@
 #include <ucl.h>
 #include <unistd.h>
 
+#include <xmalloc.h>
+#include <xstring.h>
+
 static ucl_object_t *conf;
 static ucl_object_t *queue = NULL;
 static int server_fd = -1;
@@ -70,7 +72,7 @@ time_t mytime;
 struct client {
 	int fd;
 	struct sockaddr_storage ss;
-	struct sbuf *buf;
+	xstring *buf;
 	uid_t uid;
 	gid_t gid;
 };
@@ -205,7 +207,7 @@ close_socket(int dummy)
 void
 client_free(struct client *cl)
 {
-	sbuf_delete(cl->buf);
+	xstring_free(cl->buf);
 	if (cl->fd != -1)
 		close(cl->fd);
 	free(cl);
@@ -520,7 +522,7 @@ execute_cmd(void)
 	posix_spawn_file_actions_adddup2(&action, fds[0], STDERR_FILENO);
 
 	argvl = 1024;
-	argv = malloc(argvl * sizeof(char *));
+	argv = xmalloc(argvl * sizeof(char *));
 	argv[0] = "poudriere";
 	argv[1] = (char *)ucl_object_tostring(o);
 	argc = 2;
@@ -611,8 +613,8 @@ client_exec(struct client *cl)
 
 	/* unpack the command */
 	p = ucl_parser_new(UCL_PARSER_KEY_LOWERCASE);
-	if (!ucl_parser_add_chunk(p, (const unsigned char *)sbuf_data(cl->buf),
-	    sbuf_len(cl->buf))) {
+	fflush(cl->buf->fp);
+	if (!ucl_parser_add_chunk(p, (const unsigned char *)cl->buf->buf, 0)) {
 		send_error(cl, ucl_parser_get_error(p));
 		ucl_parser_free(p);
 		return;
@@ -621,8 +623,7 @@ client_exec(struct client *cl)
 	cmd = ucl_parser_get_object(p);
 	ucl_parser_free(p);
 
-	syslog(LOG_INFO, "uid(%d) sent request: %s", cl->uid,
-	    sbuf_data(cl->buf));
+	syslog(LOG_INFO, "uid(%d) sent request: %s", cl->uid, cl->buf->buf);
 
 	if ((c = ucl_object_find_key(cmd, "operation"))) {
 		/* The user specified an operation not a command */
@@ -709,12 +710,11 @@ client_read(struct client *cl, long len)
 	if ((r < 0) && ((errno == EINTR) || (errno == EAGAIN)))
 		return;
 
-	sbuf_bcat(cl->buf, buf, r);
+	fwrite(buf, r, 1, cl->buf->fp);
 
 	if ((long)r == len) {
-		sbuf_finish(cl->buf);
 		client_exec(cl);
-		sbuf_clear(cl->buf);
+		xstring_reset(cl->buf);
 	}
 }
 
@@ -724,11 +724,11 @@ client_new(int fd)
 	socklen_t sz;
 	struct client *cl;
 
-	if ((cl = malloc(sizeof(struct client))) == NULL)
+	if ((cl = xmalloc(sizeof(struct client))) == NULL)
 		errx(EXIT_FAILURE, "Unable to allocate memory");
 
 	sz = sizeof(cl->ss);
-	cl->buf = sbuf_new_auto();
+	cl->buf = xstring_new();
 
 #ifdef SOCK_CLOEXEC
 	cl->fd = accept4(fd, (struct sockaddr *)&(cl->ss), &sz, SOCK_CLOEXEC);
