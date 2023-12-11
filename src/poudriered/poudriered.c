@@ -614,7 +614,7 @@ client_exec(struct client *cl)
 	/* unpack the command */
 	p = ucl_parser_new(UCL_PARSER_KEY_LOWERCASE);
 	fflush(cl->buf->fp);
-	if (!ucl_parser_add_chunk(p, (const unsigned char *)cl->buf->buf, 0)) {
+	if (!ucl_parser_add_string(p, cl->buf->buf, 0)) {
 		send_error(cl, ucl_parser_get_error(p));
 		ucl_parser_free(p);
 		return;
