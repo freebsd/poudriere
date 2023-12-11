@@ -201,7 +201,7 @@ sh_CFLAGS=		$(AM_CFLAGS) -Wno-extra \
 			-DSHELL -std=gnu99 -DVTABSIZE=1000 ${sh_hist_CFLAGS} \
 			-Wno-unused-const-variable \
 			-include $(top_srcdir)/external/sh_compat/compat.h \
-			-I$(top_srcdir)/src \
+		-I$(top_srcdir)/src \
 			-I$(top_srcdir)/external/sh
 sh_LDADD=		${sh_hist_LDADD} -lsbuf
 if MAINTAINER_MODE
@@ -299,7 +299,9 @@ ptsort_SOURCES=		external/ptsort/bin/ptsort.c
 ptsort_LDADD=		libptsort.la
 ptsort_CPPFLAGS=	-I$(top_srcdir)/external/ptsort/lib
 
-poudriered_SOURCES=	src/poudriered/poudriered.c
+poudriered_SOURCES=	src/poudriered/poudriered.c \
+			external/pkg/xstring.h \
+			external/pkg/xmalloc.h
 poudriered_CFLAGS=	$(AM_CFLAGS) \
 			-DPREFIX=\"$(prefix)\" \
 			-I$(top_srcdir)/external/libucl/include

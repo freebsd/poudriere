@@ -919,7 +919,10 @@ libptsort_la_CPPFLAGS = -I$(top_srcdir)/external/ptsort/lib
 ptsort_SOURCES = external/ptsort/bin/ptsort.c
 ptsort_LDADD = libptsort.la
 ptsort_CPPFLAGS = -I$(top_srcdir)/external/ptsort/lib
-poudriered_SOURCES = src/poudriered/poudriered.c
+poudriered_SOURCES = src/poudriered/poudriered.c \
+			external/pkg/xstring.h \
+			external/pkg/xmalloc.h
+
 poudriered_CFLAGS = $(AM_CFLAGS) \
 			-DPREFIX=\"$(prefix)\" \
 			-I$(top_srcdir)/external/libucl/include
