@@ -6386,7 +6386,7 @@ port_var_fetch() {
 			shiftcnt=$((shiftcnt + 1))
 		fi
 	done <<-EOF
-	$(IFS="${sep}"; injail /usr/bin/make ${_make_origin} ${_makeflags-} ||
+	$(IFS="${sep}"; ${MASTERNAME+injail} /usr/bin/make ${_make_origin} ${_makeflags-} ||
 	    echo "${_errexit} $?")
 	EOF
 

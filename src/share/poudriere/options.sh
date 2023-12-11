@@ -181,6 +181,7 @@ if [ "${OFLAG}" -eq 0 ] &&
 	fi
 fi
 
+fetch_global_port_vars
 mkdir -p "${PORT_DBDIR}"
 msg "Working on options directory: ${PORT_DBDIR}"
 msg "Using ports from: ${PORTSDIR}"
