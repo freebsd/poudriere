@@ -571,6 +571,9 @@ process_queue(void)
 	if (running != NULL)
 		return;
 
+	if (ucl_array_size(queue) == 0)
+		return;
+
 	running = ucl_array_pop_first(queue);
 
 	execute_cmd();
@@ -584,6 +587,7 @@ append_to_queue(const ucl_object_t *cmd)
 
 	return (true);
 }
+
 static void
 keep(const ucl_object_t *c, struct client *cl)
 {
