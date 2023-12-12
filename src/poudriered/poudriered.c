@@ -69,6 +69,8 @@ static struct kevent ke;
 char mypath[MAXPATHLEN];
 time_t mytime;
 
+const char *poudriered_conf = PREFIX "/etc/poudriered.conf";
+
 struct client {
 	int fd;
 	struct sockaddr_storage ss;
@@ -150,7 +152,7 @@ load_conf(void)
 
 	parser = ucl_parser_new(UCL_PARSER_KEY_LOWERCASE);
 
-	if (!ucl_parser_add_file(parser, PREFIX "/etc/poudriered.conf")) {
+	if (!ucl_parser_add_file(parser, poudriered_conf)) {
 		warnx("Failed to parse configuration file: %s",
 		    ucl_parser_get_error(parser));
 		return (NULL);
