@@ -641,11 +641,12 @@ client_exec(struct client *cl)
 			} else if (!strcmp(ucl_object_tostring(c), "status")) {
 				msg = ucl_object_typed_new(UCL_OBJECT);
 				ucl_object_insert_key(msg,
-				    ucl_object_fromstring(running ? "running" :
+				    ucl_object_fromstring(running != NULL ? "running" :
 				    "idle"), "state", 5, true);
-				ucl_object_insert_key(msg, running ?
-				    running : ucl_object_new(), "data", 4,
-				    true);
+				if (running) {
+					ucl_object_insert_key(msg, ucl_object_ref(running),
+					    "data", 4, true);
+				}
 				send_object(cl, msg);
 			} else if (!strcmp(ucl_object_tostring(c), "exit")) {
 				close(cl->fd);
@@ -858,8 +859,8 @@ serve(void)
 
 			/* process died */
 			if (evlist[i].filter == EVFILT_PROC) {
+				printf("exit\n");
 				int status = evlist[i].data;
-				ucl_object_unref(running);
 				if (WIFEXITED(status))
 					syslog(LOG_INFO, "Command exited with "
 					    "status: %d", WEXITSTATUS(status));
@@ -869,6 +870,7 @@ serve(void)
 				else
 					syslog(LOG_INFO, "Command terminated");
 
+				ucl_object_unref(running);
 				running = NULL;
 				setproctitle("idle");
 				continue;
