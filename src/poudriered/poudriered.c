@@ -631,7 +631,6 @@ client_exec(struct client *cl)
 			if (!strcmp(ucl_object_tostring(c), "quit"))
 				close_socket(EXIT_SUCCESS);
 			else if (!strcmp(ucl_object_tostring(c), "reload")) {
-				printf("ici\n");
 				if (!reload())
 					send_error(cl, "failed to reload");
 				else
