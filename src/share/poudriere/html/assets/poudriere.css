@@ -370,12 +370,6 @@ table.dataTable tbody td {
     padding-bottom: 1px;
 }
 
-/* Fix webkit render bug - https://stackoverflow.com/questions/14493533/really-weird-redraw-behavior-with-anchor-links-twitter-bootstrap-fixed-navbar */
-.affix,
-.navbar-fixed-top {
-    -webkit-transform: scale3d(1, 1, 1);
-}
-
 :target {
     background-color: #ccc;
 }
