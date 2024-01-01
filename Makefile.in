@@ -112,9 +112,9 @@ DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
 	$(dist_assets_DATA) $(dist_awk_DATA) $(dist_btcss_DATA) \
 	$(dist_btfonts_DATA) $(dist_btjs_DATA) $(dist_dtcss_DATA) \
 	$(dist_dtimages_DATA) $(dist_dtjs_DATA) $(dist_examples_DATA) \
-	$(dist_hook_DATA) $(dist_html_DATA) $(dist_pkgdata_DATA) \
-	$(dist_sysconf_DATA) $(dist_include_HEADERS) \
-	$(am__DIST_COMMON)
+	$(dist_hook_DATA) $(dist_html_DATA) $(dist_jquery_DATA) \
+	$(dist_pkgdata_DATA) $(dist_sysconf_DATA) \
+	$(dist_include_HEADERS) $(am__DIST_COMMON)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
@@ -128,8 +128,9 @@ am__installdirs = "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(bindir)" \
 	"$(DESTDIR)$(btjsdir)" "$(DESTDIR)$(dtcssdir)" \
 	"$(DESTDIR)$(dtimagesdir)" "$(DESTDIR)$(dtjsdir)" \
 	"$(DESTDIR)$(examplesdir)" "$(DESTDIR)$(hookdir)" \
-	"$(DESTDIR)$(htmldir)" "$(DESTDIR)$(pkgdatadir)" \
-	"$(DESTDIR)$(sysconfdir)" "$(DESTDIR)$(includedir)"
+	"$(DESTDIR)$(htmldir)" "$(DESTDIR)$(jquerydir)" \
+	"$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(sysconfdir)" \
+	"$(DESTDIR)$(includedir)"
 PROGRAMS = $(pkglibexec_PROGRAMS)
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libptsort_la_LIBADD =
@@ -451,8 +452,8 @@ MANS = $(dist_man_MANS)
 DATA = $(dist_assets_DATA) $(dist_awk_DATA) $(dist_btcss_DATA) \
 	$(dist_btfonts_DATA) $(dist_btjs_DATA) $(dist_dtcss_DATA) \
 	$(dist_dtimages_DATA) $(dist_dtjs_DATA) $(dist_examples_DATA) \
-	$(dist_hook_DATA) $(dist_html_DATA) $(dist_pkgdata_DATA) \
-	$(dist_sysconf_DATA)
+	$(dist_hook_DATA) $(dist_html_DATA) $(dist_jquery_DATA) \
+	$(dist_pkgdata_DATA) $(dist_sysconf_DATA)
 HEADERS = $(dist_include_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
@@ -677,6 +678,7 @@ datatablesdir = $(assetsdir)/DataTables-1.10.0
 dtcssdir = $(datatablesdir)/css
 dtimagesdir = $(datatablesdir)/images
 dtjsdir = $(datatablesdir)/js
+jquerydir = $(assetsdir)/jquery-1.11.1
 rcdir = $(sysconfdir)/rc.d
 hookdir = $(sysconfdir)/poudriere.d/hooks
 examplesdir = $(datadir)/examples/$(PACKAGE_NAME)
@@ -774,9 +776,6 @@ dist_assets_DATA = src/share/poudriere/html/assets/poudriere.js \
 			src/share/poudriere/html/assets/logo.svg \
 			src/share/poudriere/html/assets/favicon.ico \
 			src/share/poudriere/html/assets/poudriere.css \
-			src/share/poudriere/html/assets/jquery-1.11.1.js \
-			src/share/poudriere/html/assets/jquery-1.11.1.min.js \
-			src/share/poudriere/html/assets/jquery-1.11.1.min.map \
 			src/share/poudriere/html/assets/jquery.dataTables.rowGrouping-1.2.9.js
 
 dist_btjs_DATA = src/share/poudriere/html/assets/bootstrap-3.1.1/js/bootstrap.min.js
@@ -803,6 +802,10 @@ dist_dtimages_DATA = src/share/poudriere/html/assets/DataTables-1.10.0/images/ba
 			src/share/poudriere/html/assets/DataTables-1.10.0/images/sort_both.png \
 			src/share/poudriere/html/assets/DataTables-1.10.0/images/sort_desc.png \
 			src/share/poudriere/html/assets/DataTables-1.10.0/images/sort_desc_disabled.png
+
+dist_jquery_DATA = src/share/poudriere/html/assets/jquery-1.11.1/jquery-1.11.1.js \
+			src/share/poudriere/html/assets/jquery-1.11.1/jquery-1.11.1.min.js \
+			src/share/poudriere/html/assets/jquery-1.11.1/jquery-1.11.1.min.map
 
 dist_rc_SCRIPTS = src/etc/rc.d/poudriered
 noinst_LTLIBRARIES = libucl.la libptsort.la
@@ -2883,6 +2886,27 @@ uninstall-dist_htmlDATA:
 	@list='$(dist_html_DATA)'; test -n "$(htmldir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(htmldir)'; $(am__uninstall_files_from_dir)
+install-dist_jqueryDATA: $(dist_jquery_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(dist_jquery_DATA)'; test -n "$(jquerydir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(jquerydir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(jquerydir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(jquerydir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(jquerydir)" || exit $$?; \
+	done
+
+uninstall-dist_jqueryDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_jquery_DATA)'; test -n "$(jquerydir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(jquerydir)'; $(am__uninstall_files_from_dir)
 install-dist_pkgdataDATA: $(dist_pkgdata_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(dist_pkgdata_DATA)'; test -n "$(pkgdatadir)" || list=; \
@@ -3254,7 +3278,7 @@ all-am: Makefile $(PROGRAMS) $(LTLIBRARIES) $(SCRIPTS) $(MANS) $(DATA) \
 		$(HEADERS)
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(rcdir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(assetsdir)" "$(DESTDIR)$(awkdir)" "$(DESTDIR)$(btcssdir)" "$(DESTDIR)$(btfontsdir)" "$(DESTDIR)$(btjsdir)" "$(DESTDIR)$(dtcssdir)" "$(DESTDIR)$(dtimagesdir)" "$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(examplesdir)" "$(DESTDIR)$(hookdir)" "$(DESTDIR)$(htmldir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(sysconfdir)" "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(pkglibexecdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(rcdir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(assetsdir)" "$(DESTDIR)$(awkdir)" "$(DESTDIR)$(btcssdir)" "$(DESTDIR)$(btfontsdir)" "$(DESTDIR)$(btjsdir)" "$(DESTDIR)$(dtcssdir)" "$(DESTDIR)$(dtimagesdir)" "$(DESTDIR)$(dtjsdir)" "$(DESTDIR)$(examplesdir)" "$(DESTDIR)$(hookdir)" "$(DESTDIR)$(htmldir)" "$(DESTDIR)$(jquerydir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(sysconfdir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -3444,7 +3468,8 @@ install-data-am: install-dist_assetsDATA install-dist_awkDATA \
 	install-dist_dtimagesDATA install-dist_dtjsDATA \
 	install-dist_examplesDATA install-dist_hookDATA \
 	install-dist_htmlDATA install-dist_includeHEADERS \
-	install-dist_pkgdataDATA install-dist_rcSCRIPTS install-man
+	install-dist_jqueryDATA install-dist_pkgdataDATA \
+	install-dist_rcSCRIPTS install-man
 
 install-dvi: install-dvi-recursive
 
@@ -3580,9 +3605,10 @@ uninstall-am: uninstall-dist_assetsDATA uninstall-dist_awkDATA \
 	uninstall-dist_dtcssDATA uninstall-dist_dtimagesDATA \
 	uninstall-dist_dtjsDATA uninstall-dist_examplesDATA \
 	uninstall-dist_hookDATA uninstall-dist_htmlDATA \
-	uninstall-dist_includeHEADERS uninstall-dist_pkgdataDATA \
-	uninstall-dist_rcSCRIPTS uninstall-dist_sysconfDATA \
-	uninstall-man uninstall-pkglibexecPROGRAMS
+	uninstall-dist_includeHEADERS uninstall-dist_jqueryDATA \
+	uninstall-dist_pkgdataDATA uninstall-dist_rcSCRIPTS \
+	uninstall-dist_sysconfDATA uninstall-man \
+	uninstall-pkglibexecPROGRAMS
 
 uninstall-man: uninstall-man8
 
@@ -3604,23 +3630,24 @@ uninstall-man: uninstall-man8
 	install-dist_dtcssDATA install-dist_dtimagesDATA \
 	install-dist_dtjsDATA install-dist_examplesDATA \
 	install-dist_hookDATA install-dist_htmlDATA \
-	install-dist_includeHEADERS install-dist_pkgdataDATA \
-	install-dist_rcSCRIPTS install-dist_sysconfDATA install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-man8 install-pdf install-pdf-am \
-	install-pkglibexecPROGRAMS install-ps install-ps-am \
-	install-strip installcheck installcheck-am installcheck-local \
-	installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am uninstall-dist_assetsDATA \
-	uninstall-dist_awkDATA uninstall-dist_binSCRIPTS \
-	uninstall-dist_btcssDATA uninstall-dist_btfontsDATA \
-	uninstall-dist_btjsDATA uninstall-dist_dtcssDATA \
-	uninstall-dist_dtimagesDATA uninstall-dist_dtjsDATA \
-	uninstall-dist_examplesDATA uninstall-dist_hookDATA \
-	uninstall-dist_htmlDATA uninstall-dist_includeHEADERS \
+	install-dist_includeHEADERS install-dist_jqueryDATA \
+	install-dist_pkgdataDATA install-dist_rcSCRIPTS \
+	install-dist_sysconfDATA install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-man8 \
+	install-pdf install-pdf-am install-pkglibexecPROGRAMS \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installcheck-local installdirs installdirs-am \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
+	pdf pdf-am ps ps-am tags tags-am uninstall uninstall-am \
+	uninstall-dist_assetsDATA uninstall-dist_awkDATA \
+	uninstall-dist_binSCRIPTS uninstall-dist_btcssDATA \
+	uninstall-dist_btfontsDATA uninstall-dist_btjsDATA \
+	uninstall-dist_dtcssDATA uninstall-dist_dtimagesDATA \
+	uninstall-dist_dtjsDATA uninstall-dist_examplesDATA \
+	uninstall-dist_hookDATA uninstall-dist_htmlDATA \
+	uninstall-dist_includeHEADERS uninstall-dist_jqueryDATA \
 	uninstall-dist_pkgdataDATA uninstall-dist_rcSCRIPTS \
 	uninstall-dist_sysconfDATA uninstall-man uninstall-man8 \
 	uninstall-pkglibexecPROGRAMS
