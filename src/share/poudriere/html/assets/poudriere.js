@@ -1436,7 +1436,7 @@ $(document).ready(function () {
 
     /* Fix nav links to not skip hashchange event when clicking multiple
      * times. */
-    $("#header .nav a[href^=#]").each(function () {
+    $('#header .nav a[href^="#"]').each(function () {
         var href = $(this).attr("href");
         if (href != "#") {
             $(this).click(function (e) {
