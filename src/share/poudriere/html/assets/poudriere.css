@@ -25,78 +25,109 @@
  * SUCH DAMAGE.
  */
 #loading_overlay {
-	background: #FFF;
-	width: 100%;
-	height: 100%;
-	z-index: 9003;
-	left: 0;
-	position: fixed;
+    background: #fff;
+    width: 100%;
+    height: 100%;
+    z-index: 9003;
+    left: 0;
+    position: fixed;
 }
 #loading {
-	z-index: 9004;
-	top: 50%;
-	left: 50%;
-	position: absolute;
+    z-index: 9004;
+    top: 50%;
+    left: 50%;
+    position: absolute;
 }
 
 .top-icon {
-	display: none;
+    display: none;
 }
 
 .layout,
 .layout th,
 .layout td {
-	border: 0;
+    border: 0;
 }
-.built { background-color: #00CC00 !important; }
-.built .row1 { background-color: #00FF00; }
-.failed { background-color: #E00000 !important; }
-.failed .row1 { background-color: #FF0000; }
-.skipped { background-color: #CC6633 !important; }
-.skipped .row1 { background-color: #AA6734; }
-.ignored { background-color: #FF9900 !important; }
-.ignored .row1 { background-color: #FF6F00; }
-.fetched { background-color: #228B22 !important; }
-.fetched .row1 { background-color: #225B22; }
-.remaining { background-color: #E3E3E3 !important; }
-.remaining .row1 { background-color: #BCBCBC; }
-.queued { background-color: #aaa !important; }
-.queued .row1 { background-color: #BBBBBB; }
-.latest { background-color: #f7Fe4a; }
+.built {
+    background-color: #00cc00 !important;
+}
+.built .row1 {
+    background-color: #00ff00;
+}
+.failed {
+    background-color: #e00000 !important;
+}
+.failed .row1 {
+    background-color: #ff0000;
+}
+.skipped {
+    background-color: #cc6633 !important;
+}
+.skipped .row1 {
+    background-color: #aa6734;
+}
+.ignored {
+    background-color: #ff9900 !important;
+}
+.ignored .row1 {
+    background-color: #ff6f00;
+}
+.fetched {
+    background-color: #228b22 !important;
+}
+.fetched .row1 {
+    background-color: #225b22;
+}
+.remaining {
+    background-color: #e3e3e3 !important;
+}
+.remaining .row1 {
+    background-color: #bcbcbc;
+}
+.queued {
+    background-color: #aaa !important;
+}
+.queued .row1 {
+    background-color: #bbbbbb;
+}
+.latest {
+    background-color: #f7fe4a;
+}
 td.highlight {
-	background-color: whitesmoke !important;
+    background-color: whitesmoke !important;
 }
 #header {
-	border-bottom: 1px solid black;
-	min-height: 65px;
+    border-bottom: 1px solid black;
+    min-height: 65px;
 }
 
 td.group {
-    background-color: #D1CFD0;
-    border-bottom: 2px solid #A19B9E;
-    border-top: 2px solid #A19B9E;
+    background-color: #d1cfd0;
+    border-bottom: 2px solid #a19b9e;
+    border-top: 2px solid #a19b9e;
 }
 
 td.subgroup {
-    background-color: #D4DFD8;
+    background-color: #d4dfd8;
     border-bottom: medium solid;
 }
 
 td.group .title,
 td.subgroup .title {
-	font-weight: bold;
+    font-weight: bold;
 }
 
 .error {
-	color: red;
+    color: red;
 }
 
 .navbar-toggle {
-	margin-right: 0;
+    margin-right: 0;
 }
 
-#header, footer {
-	background-color: #eee;
+#header,
+footer {
+    background-color: #eee;
 }
 
 /* Collapse nav at <= sm http://stackoverflow.com/a/22400347/285734 */
@@ -109,24 +140,24 @@ td.subgroup .title {
     }
     .navbar-collapse {
         border-top: 1px solid transparent;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
     }
     .navbar-collapse.collapse {
-        display: none!important;
+        display: none !important;
     }
-	.navbar-collapse.collapse.in {
-		display: block!important;
-	}
+    .navbar-collapse.collapse.in {
+        display: block !important;
+    }
     .navbar-nav {
-        float: none!important;
+        float: none !important;
         margin: 7.5px -15px;
     }
-	/* Keep pills horizontal
+    /* Keep pills horizontal
     .navbar-nav>li {
         float: none;
     }
 	 */
-    .navbar-nav>li>a {
+    .navbar-nav > li > a {
         padding-top: 10px;
         padding-bottom: 10px;
     }
@@ -138,124 +169,144 @@ td.subgroup .title {
  * get mobile devices (such as iPhone portrait) to zoom/scale the
  * page appropriately.
  */
-@media (max-width : 570px) {
-	body, #header  {
-		min-width: 570px;
-	}
+@media (max-width: 570px) {
+    body,
+    #header {
+        min-width: 570px;
+    }
 }
 
 /* Prevent excess padding when zoomed in */
 @media (max-width: 979px) {
-	.navbar-fixed-top, .navbar {
-		margin-bottom: 0px;
-	}
+    .navbar-fixed-top,
+    .navbar {
+        margin-bottom: 0px;
+    }
 }
 
 body {
-	font-size: 14px;
-	font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
-	line-height: normal;
+    font-size: 14px;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    line-height: normal;
 }
 
 /* Avoid loading_overlay shift when scrollbar loads: http://stackoverflow.com/a/3677433/285734 */
 html {
-	overflow-y: scroll;
-	overflow: -moz-scrollbars-vertical;
+    overflow-y: scroll;
+    overflow: -moz-scrollbars-vertical;
 }
 
-#progress, #progress td, #progress span, #progress canvas {
-	padding: 0;
-	margin: 0;
-	border: 0;
-	line-height: 0;
+#progress,
+#progress td,
+#progress span,
+#progress canvas {
+    padding: 0;
+    margin: 0;
+    border: 0;
+    line-height: 0;
 }
 
 #progress {
-	margin-left: 1px;
+    margin-left: 1px;
 }
 
 .layout table {
-	border: 0;
-	width: 480px;
-	margin: 0;
-	margin-bottom: 1px;
-	line-height: 1;
-	border-collapse: separate;
-	border-spacing: 2px;
+    border: 0;
+    width: 480px;
+    margin: 0;
+    margin-bottom: 1px;
+    line-height: 1;
+    border-collapse: separate;
+    border-spacing: 2px;
 }
 .layout th,
 .layout td {
-	font-family: "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", Monaco, "Lucida Console", monospace;
-	font-size: 9pt;
-	text-align: center;
+    font-family: "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", Monaco,
+        "Lucida Console", monospace;
+    font-size: 9pt;
+    text-align: center;
 }
 
 footer {
-	bottom: 0;
-	/*height: 18px;*/
-	max-height: 20px;
-	margin-top: 5px;
-	border-top: 1px solid black;
+    bottom: 0;
+    /*height: 18px;*/
+    max-height: 20px;
+    margin-top: 5px;
+    border-top: 1px solid black;
 }
 
 #logo {
-	margin-left: -14px;
+    margin-left: -14px;
 }
 
 #logo img {
-	height: 55px;
+    height: 55px;
 }
 
 .navbar {
-	font-size: 1.30em;
+    font-size: 1.3em;
 }
 
-#stats td, #stats th {
-	width: 16.67%;
+#stats td,
+#stats th {
+    width: 16.67%;
 }
 
-#snap_loadavg  { width: 45%; }
-#snap_swapinfo { width: 20%; }
-#snap_duration { width: 15%; }
-#snap_pkghour  { width: 10%; }
-#snap_impulse  { width: 10%; }
+#snap_loadavg {
+    width: 45%;
+}
+#snap_swapinfo {
+    width: 20%;
+}
+#snap_duration {
+    width: 15%;
+}
+#snap_pkghour {
+    width: 10%;
+}
+#snap_impulse {
+    width: 10%;
+}
 
 .layout {
-	margin-top: 1px;
+    margin-top: 1px;
 }
 .layout table td {
-	background-color: #E3E3E3;
+    background-color: #e3e3e3;
 }
 
 h1 {
-	font-size: 16pt;
-	text-align: center;
+    font-size: 16pt;
+    text-align: center;
 }
 h2 {
-	background-color: #eee;
+    background-color: #eee;
 }
 
 .status td {
-	font-family: "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", Monaco, "Lucida Console", monospace;
+    font-family: "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", Monaco,
+        "Lucida Console", monospace;
 }
 
 br.clear {
-	clear: both;
-	height: 0;
-	overflow: hidden;
+    clear: both;
+    height: 0;
+    overflow: hidden;
 }
 
-#build_info_div dt, #build_info_div dd {
-	line-height: normal;
-	font-size: 13px;
-	font-family: "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", Monaco, "Lucida Console", monospace;
+#build_info_div dt,
+#build_info_div dd {
+    line-height: normal;
+    font-size: 13px;
+    font-family: "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", Monaco,
+        "Lucida Console", monospace;
 }
 #build_info_div dl {
-	margin-bottom: 0;
+    margin-bottom: 0;
 }
 
 dd {
-	word-break: break-all;
+    word-break: break-all;
 }
 
 /*
@@ -286,46 +337,45 @@ table.dataTable.display td {
 #latest_builds_body tr td:nth-child(6),
 #latest_builds_body tr td:nth-child(7),
 #latest_builds_body tr td:nth-child(8),
-#latest_builds_body tr td:nth-child(9)
-{
-	word-break: normal !important;
+#latest_builds_body tr td:nth-child(9) {
+    word-break: normal !important;
 }
-
 
 /* XXX: Remove with bootstrap 3.2.0:
  * https://github.com/twbs/bootstrap/issues/4062
  * (3.2): https://github.com/twbs/bootstrap/issues/12736
  */
 .dl-horizontal > dd:after {
-	display: table;
-	content: "";
-	clear: both;
+    display: table;
+    content: "";
+    clear: both;
 }
 
 .glyphicon {
-	font-size: 0.75em;
-	text-align: top;
+    font-size: 0.75em;
+    text-align: top;
 }
 
 table.dataTable.display tbody tr.odd {
-	background-color: #E2E4FF;
+    background-color: #e2e4ff;
 }
 
 table.dataTable.display tbody tr.odd td.sorting_1 {
-	background-color: #C3C6FF;
+    background-color: #c3c6ff;
 }
 
 table.dataTable thead th,
 table.dataTable tbody td {
-	padding-top: 1px;
-	padding-bottom: 1px;
+    padding-top: 1px;
+    padding-bottom: 1px;
 }
 
 /* Fix webkit render bug - https://stackoverflow.com/questions/14493533/really-weird-redraw-behavior-with-anchor-links-twitter-bootstrap-fixed-navbar */
-.affix,.navbar-fixed-top{
-	-webkit-transform: scale3d(1,1,1);
+.affix,
+.navbar-fixed-top {
+    -webkit-transform: scale3d(1, 1, 1);
 }
 
 :target {
-	background-color: #ccc;
+    background-color: #ccc;
 }
