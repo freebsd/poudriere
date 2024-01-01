@@ -1439,7 +1439,7 @@ $(document).ready(function () {
     $('#header .nav a[href^="#"]').each(function () {
         var href = $(this).attr("href");
         if (href != "#") {
-            $(this).click(function (e) {
+            $(this).on("click", function (e) {
                 e.preventDefault();
                 if (location.hash != href) {
                     location.hash = href;
@@ -1449,7 +1449,7 @@ $(document).ready(function () {
         }
     });
     /* Force minimum width on mobile, will zoom to fit. */
-    $(window).bind("orientationchange", function (e) {
+    $(window).on("orientationchange", function (e) {
         fix_viewport();
     });
     fix_viewport();
@@ -1462,7 +1462,7 @@ $(document).ready(function () {
     update_data();
 });
 
-$(document).bind("keydown", function (e) {
+$(document).on("keydown", function (e) {
     /* Disable F5 refreshing since this is AJAX driven. */
     if (e.which == 116) {
         e.preventDefault();
