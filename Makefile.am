@@ -19,7 +19,7 @@ datatablesdir= $(assetsdir)/DataTables-1.10.0
 dtcssdir= $(datatablesdir)/css
 dtimagesdir= $(datatablesdir)/images
 dtjsdir= $(datatablesdir)/js
-jquerydir= $(assetsdir)/jquery-1.11.1
+jquerydir= $(assetsdir)/jquery-1.12.4
 rcdir= $(sysconfdir)/rc.d
 hookdir= $(sysconfdir)/poudriere.d/hooks
 mandir= $(prefix)/man
@@ -140,9 +140,9 @@ dist_dtimages_DATA=	src/share/poudriere/html/assets/DataTables-1.10.0/images/bac
 			src/share/poudriere/html/assets/DataTables-1.10.0/images/sort_both.png \
 			src/share/poudriere/html/assets/DataTables-1.10.0/images/sort_desc.png \
 			src/share/poudriere/html/assets/DataTables-1.10.0/images/sort_desc_disabled.png
-dist_jquery_DATA=	src/share/poudriere/html/assets/jquery-1.11.1/jquery-1.11.1.js \
-			src/share/poudriere/html/assets/jquery-1.11.1/jquery-1.11.1.min.js \
-			src/share/poudriere/html/assets/jquery-1.11.1/jquery-1.11.1.min.map
+dist_jquery_DATA=	src/share/poudriere/html/assets/jquery-1.12.4/jquery-1.12.4.js \
+			src/share/poudriere/html/assets/jquery-1.12.4/jquery-1.12.4.min.js \
+			src/share/poudriere/html/assets/jquery-1.12.4/jquery-1.12.4.min.map
 
 dist_rc_SCRIPTS=	src/etc/rc.d/poudriered
 
