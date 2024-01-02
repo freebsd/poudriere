@@ -169,7 +169,10 @@ zfs_generate()
 		fi
 		if [ "${arch}" == "amd64" ] || [ "${arch}" == "i386" ]; then
 			pmbr="-b ${mnt}/boot/pmbr"
-			gptboot="-p freebsd-boot::512k=${mnt}/boot/gptzfsboot"
+			gptbootfilename=$(mktemp /tmp/gptzfsboot.XXXXXX)
+			cp "$mnt"/boot/gptzfsboot "$gptbootfilename"
+			truncate -s 512k "$gptbootfilename"
+			gptboot="-p freebsd-boot:=${gptbootfilename}"
 		fi
 		mkimg -s gpt ${pmbr} \
 			  -p efi:=${espfilename} \
@@ -179,6 +182,7 @@ zfs_generate()
 			  ${SWAPLAST} \
 			  -o "${OUTPUTDIR}/${FINALIMAGE}"
 		rm -rf ${espfilename}
+		rm -f "$gptbootfilename"
 		;;
 	esac
 }
