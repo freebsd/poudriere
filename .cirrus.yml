@@ -24,6 +24,7 @@ check_task:
                 - ccache --max-size=${CCACHE_SIZE}
         # Build with asserts/debugging for checks. distcheck won't use asserts.
         compile_script:
+                - ./autogen.sh
                 - ./configure --enable-debug=yes || { cat config.log; exit 1; }
                 - make ${MAKEJOBS}
         test_jail_prep_script:
