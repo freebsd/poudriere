@@ -22,8 +22,11 @@ check_task:
         ccache_setup_script:
                 - env IGNORE_OSVERSION=yes pkg install -y ccache-static
                 - ccache --max-size=${CCACHE_SIZE}
+        autotool_setup_script:
+                - env IGNORE_OSVERSION=yes pkg install -y autoconf automake libtool
         # Build with asserts/debugging for checks. distcheck won't use asserts.
         compile_script:
+                - ./autogen.sh
                 - ./configure --enable-debug=yes || { cat config.log; exit 1; }
                 - make ${MAKEJOBS}
         test_jail_prep_script:
