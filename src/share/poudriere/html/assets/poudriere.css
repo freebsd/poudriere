@@ -130,39 +130,6 @@ footer {
     background-color: #eee;
 }
 
-/* Collapse nav at <= sm http://stackoverflow.com/a/22400347/285734 */
-@media (max-width: 991px) {
-    .navbar-header {
-        float: none;
-    }
-    .navbar-toggle {
-        display: block;
-    }
-    .navbar-collapse {
-        border-top: 1px solid transparent;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    }
-    .navbar-collapse.collapse {
-        display: none !important;
-    }
-    .navbar-collapse.collapse.in {
-        display: block !important;
-    }
-    .navbar-nav {
-        float: none !important;
-        margin: 7.5px -15px;
-    }
-    /* Keep pills horizontal
-    .navbar-nav>li {
-        float: none;
-    }
-	 */
-    .navbar-nav > li > a {
-        padding-top: 10px;
-        padding-bottom: 10px;
-    }
-}
-
 /* This is the minimum width the site should be displayed at
  * so the canvas displays. This value is used by poudriere.js
  * for forcing the viewport to use the minimum width as well to
@@ -188,12 +155,6 @@ body {
     font-size: 14px;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     line-height: normal;
-}
-
-/* Avoid loading_overlay shift when scrollbar loads: http://stackoverflow.com/a/3677433/285734 */
-html {
-    overflow-y: scroll;
-    overflow: -moz-scrollbars-vertical;
 }
 
 #progress,
