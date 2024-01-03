@@ -147,7 +147,7 @@ footer {
 @media (max-width: 979px) {
     .navbar-fixed-top,
     .navbar {
-        margin-bottom: 0px;
+        margin-bottom: 0;
     }
 }
 
@@ -174,8 +174,7 @@ body {
 .layout table {
     border: 0;
     width: 480px;
-    margin: 0;
-    margin-bottom: 1px;
+    margin: 0 0 1px;
     line-height: 1;
     border-collapse: separate;
     border-spacing: 2px;
@@ -304,7 +303,7 @@ table.dataTable.display td {
 
 .glyphicon {
     font-size: 0.75em;
-    text-align: top;
+    vertical-align: top;
 }
 
 table.dataTable.display tbody tr.odd {
