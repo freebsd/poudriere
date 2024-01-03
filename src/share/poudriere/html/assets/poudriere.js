@@ -150,7 +150,7 @@ function minidraw(x, height, width, context, color, queued, variable) {
     if (x + newx >= width) {
         newx = width - x;
     }
-    /* Cap total bar to 99% so it's clear something is remaining */
+    /* Cap total bar to 99%, so it's clear something is remaining */
     total_pct = ((x + newx) / width) * 100;
     if (total_pct >= 99.0 && total_pct < 100.0) {
         newx = Math.ceil(width * (99 / 100));
