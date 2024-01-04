@@ -37,79 +37,65 @@
         <link
             href="assets/DataTables-1.13.8/css/jquery.dataTables.min.css"
             rel="stylesheet"
-            type="text/css"
-        />
+            type="text/css" />
         <link
             href="assets/bootstrap-5.3.2/css/bootstrap.min.css"
             type="text/css"
-            rel="stylesheet"
-        />
+            rel="stylesheet" />
         <link href="assets/poudriere.css" type="text/css" rel="stylesheet" />
 
         <link rel="shortcut icon" href="assets/favicon.ico" />
     </head>
     <body>
         <div id="top"></div>
-        <div
+        <nav
             id="header"
-            class="navbar fixed-top"
-            role="navigation"
-        >
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div id="logo">
-                            <img
-                                src="assets/logo.svg"
-                                alt="logo"
-                                class="pull-left"
-                            />
-                        </div>
-                        <div>
-                            <ul class="nav navbar-nav nav-pills pull-left">
+            class="navbar navbar-expand-lg bg-light navbar-light py-3 fixed-top">
+            <div class="container">
+                <!-- <a href="index.html" class="navbar-brand"> <img src="assets/logo.svg" alt="logo" /> FreeBSD Poudriere </a> -->
+                <a href="#" class="navbar-brand">FreeBSD Poudriere</a>
+
+                <button
+                    class="navbar-toggler"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#navmenu">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navmenu">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a href="#latest_builds" class="nav-link"
+                                >Latest Builds</a
+                            >
+                        </li>
+                        <li class="nav-item dropdown">
+                            <button
+                                class="btn btn-light dropdown-toggle"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                Logs
+                            </button>
+                            <ul class="dropdown-menu">
                                 <li>
-                                    <a title="top" href="#top"
-                                        ><span
-                                            class="glyphicon glyphicon-chevron-up"
-                                        ></span
-                                    ></a>
-                                </li>
-                                <li>
-                                    <a href="#latest_builds">Latest Builds</a>
-                                </li>
-                                <li class="dropdown">
                                     <a
-                                        href="#"
-                                        class="dropdown-toggle"
-                                        data-toggle="dropdown"
-                                        >Logs <b class="caret"></b
-                                    ></a>
-                                    <ul class="dropdown-menu">
-                                        <li>
-                                            <a
-                                                href="latest-per-pkg/"
-                                                class="data_url"
-                                                target="logs"
-                                                ><span
-                                                    class="glyphicon glyphicon-share-alt"
-                                                ></span
-                                                >Latest Per Package</a
-                                            >
-                                        </li>
-                                    </ul>
+                                        href="latest-per-pkg/"
+                                        class="dropdown-item data_url"
+                                        target="logs"
+                                        >Latest Per Package</a
+                                    >
                                 </li>
                             </ul>
-                        </div>
-                        <!-- /.navbar-collapse -->
-                    </div>
-                    <!-- /col -->
+                        </li>
+                    </ul>
                 </div>
-                <!-- /row -->
+                <!-- /.navbar-collapse -->
             </div>
             <!-- /container -->
-        </div>
+        </nav>
         <!-- #header, navbar -->
-        <div id="main" class="container-fluid">
+        <div id="main" class="container">
             <div id="loading_overlay">
                 <div id="loading">
                     <p>Loading...</p>
@@ -120,20 +106,11 @@
                     <div
                         id="latest_builds_div"
                         class="status"
-                        style="display: none"
-                    >
-                        <h2 id="latest_builds">
-                            Latest Builds
-                            <a href="#"
-                                ><span
-                                    class="top-icon glyphicon glyphicon-chevron-up"
-                                ></span
-                            ></a>
-                        </h2>
+                        style="display: none">
+                        <h2 id="latest_builds">Latest Builds</h2>
                         <table
                             class="display latest_builds table-bordered"
-                            id="latest_builds_table"
-                        >
+                            id="latest_builds_table">
                             <thead>
                                 <tr>
                                     <th>Portset</th>
@@ -146,85 +123,64 @@
                                         class="queued"
                                         title="Queued"
                                         data-toggle="tooltip"
-                                        data-container="body"
-                                    >
-                                        <span class="visible-md visible-lg"
+                                        data-container="body">
+                                        <span class="d-none d-xl-block"
                                             >Queued</span
-                                        ><span class="hidden-md hidden-lg"
-                                            >Q</span
-                                        >
+                                        ><span class="d-xl-none">Q</span>
                                     </th>
                                     <th
                                         class="built"
                                         title="Built"
                                         data-toggle="tooltip"
-                                        data-container="body"
-                                    >
-                                        <span class="visible-md visible-lg"
+                                        data-container="body">
+                                        <span class="d-none d-xl-block"
                                             >Built</span
-                                        ><span class="hidden-md hidden-lg"
-                                            >B</span
-                                        >
+                                        ><span class="d-xl-none">B</span>
                                     </th>
                                     <th
                                         class="failed"
                                         title="Failed"
                                         data-toggle="tooltip"
-                                        data-container="body"
-                                    >
-                                        <span class="visible-md visible-lg"
+                                        data-container="body">
+                                        <span class="d-none d-xl-block"
                                             >Failed</span
-                                        ><span class="hidden-md hidden-lg"
-                                            >F</span
-                                        >
+                                        ><span class="d-xl-none">F</span>
                                     </th>
                                     <th
                                         class="skipped"
                                         title="Skipped"
                                         data-toggle="tooltip"
-                                        data-container="body"
-                                    >
-                                        <span class="visible-md visible-lg"
+                                        data-container="body">
+                                        <span class="d-none d-xl-block"
                                             >Skipped</span
-                                        ><span class="hidden-md hidden-lg"
-                                            >S</span
-                                        >
+                                        ><span class="d-xl-none">S</span>
                                     </th>
                                     <th
                                         class="ignored"
                                         title="Ignored"
                                         data-toggle="tooltip"
-                                        data-container="body"
-                                    >
-                                        <span class="visible-md visible-lg"
+                                        data-container="body">
+                                        <span class="d-none d-xl-block"
                                             >Ignored</span
-                                        ><span class="hidden-md hidden-lg"
-                                            >I</span
-                                        >
+                                        ><span class="d-xl-none">I</span>
                                     </th>
                                     <th
                                         class="fetched"
                                         title="Fetched"
                                         data-toggle="tooltip"
-                                        data-container="body"
-                                    >
-                                        <span class="visible-md visible-lg"
+                                        data-container="body">
+                                        <span class="d-none d-xl-block"
                                             >Fetched</span
-                                        ><span class="hidden-md hidden-lg"
-                                            >P</span
-                                        >
+                                        ><span class="d-xl-none">P</span>
                                     </th>
                                     <th
                                         class="remaining"
                                         title="Remaining"
                                         data-toggle="tooltip"
-                                        data-container="body"
-                                    >
-                                        <span class="visible-md visible-lg"
+                                        data-container="body">
+                                        <span class="d-none d-xl-block"
                                             >Remaining</span
-                                        ><span class="hidden-md hidden-lg"
-                                            >R</span
-                                        >
+                                        ><span class="d-xl-none">R</span>
                                     </th>
                                     <th>Status</th>
                                     <th>Elapsed</th>
@@ -242,42 +198,34 @@
         </div>
         <!-- #main -->
         <br class="clear" />
-        <footer class="navbar fixed-bottom">
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-md-12">
-                        <a
-                            class="pull-right"
-                            target="_new"
-                            href="https://github.com/freebsd/poudriere"
-                            ><span class="glyphicon glyphicon-share-alt"></span
-                            >Poudriere</a
-                        >
-                    </div>
-                    <!-- /col -->
+        <nav class="navbar fixed-bottom">
+            <div class="container">
+                <div class="col-md-12">
+                    <a
+                        class="nav-link float-right"
+                        target="_new"
+                        href="https://github.com/freebsd/poudriere"
+                        >Poudriere</a
+                    >
                 </div>
-                <!-- /row -->
+                <!-- /col -->
             </div>
-            <!-- /container-fluid -->
-        </footer>
+            <!-- /container -->
+        </nav>
         <!-- #footer -->
         <script
             src="assets/jquery-3.7.1/jquery-3.7.1.min.js"
-            type="text/javascript"
-        ></script>
+            type="text/javascript"></script>
         <script
             src="assets/DataTables-1.13.8/js/jquery.dataTables.min.js"
             type="text/javascript"
-            charset="utf8"
-        ></script>
+            charset="utf8"></script>
         <script
             src="assets/bootstrap-5.3.2/js/bootstrap.bundle.min.js"
-            type="text/javascript"
-        ></script>
+            type="text/javascript"></script>
         <script
             src="assets/jquery.dataTables.rowGrouping-1.2.9.js"
-            type="text/javascript"
-        ></script>
+            type="text/javascript"></script>
         <script type="text/javascript">
             server_style = "hosted";
         </script>
