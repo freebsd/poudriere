@@ -54,10 +54,7 @@
   </head>
   <body>
     <div id="top"></div>
-    <nav
-      id="header"
-      class="navbar navbar-expand-lg bg-light navbar-light fixed-top"
-    >
+    <nav class="navbar navbar-expand-lg bg-light navbar-light fixed-top">
       <div class="container">
         <a href="index.html" class="navbar-brand"> FreeBSD Poudriere </a>
 
@@ -119,123 +116,125 @@
       </div>
       <!-- /container -->
     </nav>
-    <!-- #header, navbar -->
-    <div id="main" class="container">
-      <div id="loading_overlay">
-        <div id="loading">
-          <p>Loading...</p>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-md-12">
-          <div id="masterinfo_div" class="status" style="display: none">
-            <h2 id="masterinfo">Master Info</h2>
-            <dl class="dl-horizontal">
-              <dt>Master</dt>
-              <dd id="mastername"></dd>
-              <dt>Latest build</dt>
-              <dd id="latest_build"></dd>
-              <dt>Status</dt>
-              <dd id="status"></dd>
-              <dt>Jail</dt>
-              <dd id="jail"></dd>
-              <dt>Set</dt>
-              <dd id="setname"></dd>
-              <dt>Ports Tree</dt>
-              <dd id="ptname"></dd>
-            </dl>
+    <!-- navbar -->
+    <section class="p-5">
+      <div id="main" class="container">
+        <div id="loading_overlay">
+          <div id="loading">
+            <p>Loading...</p>
           </div>
-          <!-- #masterinfo -->
         </div>
-        <!-- /col -->
-      </div>
-      <!-- /row -->
-      <div class="row">
-        <div class="col-md-12">
-          <div id="builds_div" class="status" style="display: none">
-            <h2 id="builds">Builds</h2>
-            <table class="display builds table-bordered" id="builds_table">
-              <thead>
-                <tr>
-                  <th>Build</th>
-                  <th
-                    class="queued"
-                    title="Queued"
-                    data-toggle="tooltip"
-                    data-container="body"
-                  >
-                    <span class="d-none d-xl-block">Queued</span
-                    ><span class="d-xl-none">Q</span>
-                  </th>
-                  <th
-                    class="built"
-                    title="Built"
-                    data-toggle="tooltip"
-                    data-container="body"
-                  >
-                    <span class="d-none d-xl-block">Built</span
-                    ><span class="d-xl-none">B</span>
-                  </th>
-                  <th
-                    class="failed"
-                    title="Failed"
-                    data-toggle="tooltip"
-                    data-container="body"
-                  >
-                    <span class="d-none d-xl-block">Failed</span
-                    ><span class="d-xl-none">F</span>
-                  </th>
-                  <th
-                    class="skipped"
-                    title="Skipped"
-                    data-toggle="tooltip"
-                    data-container="body"
-                  >
-                    <span class="d-none d-xl-block">Skipped</span
-                    ><span class="d-xl-none">S</span>
-                  </th>
-                  <th
-                    class="ignored"
-                    title="Ignored"
-                    data-toggle="tooltip"
-                    data-container="body"
-                  >
-                    <span class="d-none d-xl-block">Ignored</span
-                    ><span class="d-xl-none">I</span>
-                  </th>
-                  <th
-                    class="fetched"
-                    title="Fetched"
-                    data-toggle="tooltip"
-                    data-container="body"
-                  >
-                    <span class="d-none d-xl-block">Fetched</span
-                    ><span class="d-xl-none">I</span>
-                  </th>
-                  <th
-                    class="remaining"
-                    title="Remaining"
-                    data-toggle="tooltip"
-                    data-container="body"
-                  >
-                    <span class="d-none d-xl-block">Remaining</span
-                    ><span class="d-xl-none">R</span>
-                  </th>
-                  <th>Status</th>
-                  <th>Elapsed</th>
-                </tr>
-              </thead>
-              <tbody id="builds_body"></tbody>
-            </table>
+        <div class="row">
+          <div class="col-md-12">
+            <div id="masterinfo_div" class="status" style="display: none">
+              <h2 id="masterinfo">Master Info</h2>
+              <dl class="dl-horizontal">
+                <dt>Master</dt>
+                <dd id="mastername"></dd>
+                <dt>Latest build</dt>
+                <dd id="latest_build"></dd>
+                <dt>Status</dt>
+                <dd id="status"></dd>
+                <dt>Jail</dt>
+                <dd id="jail"></dd>
+                <dt>Set</dt>
+                <dd id="setname"></dd>
+                <dt>Ports Tree</dt>
+                <dd id="ptname"></dd>
+              </dl>
+            </div>
+            <!-- #masterinfo -->
           </div>
-          <!-- #builds -->
-          <br class="clear" />
+          <!-- /col -->
         </div>
-        <!-- /col -->
+        <!-- /row -->
+        <div class="row">
+          <div class="col-md-12">
+            <div id="builds_div" class="status" style="display: none">
+              <h2 id="builds">Builds</h2>
+              <table class="display builds table-bordered" id="builds_table">
+                <thead>
+                  <tr>
+                    <th>Build</th>
+                    <th
+                      class="queued"
+                      title="Queued"
+                      data-toggle="tooltip"
+                      data-container="body"
+                    >
+                      <span class="d-none d-xl-block">Queued</span
+                      ><span class="d-xl-none">Q</span>
+                    </th>
+                    <th
+                      class="built"
+                      title="Built"
+                      data-toggle="tooltip"
+                      data-container="body"
+                    >
+                      <span class="d-none d-xl-block">Built</span
+                      ><span class="d-xl-none">B</span>
+                    </th>
+                    <th
+                      class="failed"
+                      title="Failed"
+                      data-toggle="tooltip"
+                      data-container="body"
+                    >
+                      <span class="d-none d-xl-block">Failed</span
+                      ><span class="d-xl-none">F</span>
+                    </th>
+                    <th
+                      class="skipped"
+                      title="Skipped"
+                      data-toggle="tooltip"
+                      data-container="body"
+                    >
+                      <span class="d-none d-xl-block">Skipped</span
+                      ><span class="d-xl-none">S</span>
+                    </th>
+                    <th
+                      class="ignored"
+                      title="Ignored"
+                      data-toggle="tooltip"
+                      data-container="body"
+                    >
+                      <span class="d-none d-xl-block">Ignored</span
+                      ><span class="d-xl-none">I</span>
+                    </th>
+                    <th
+                      class="fetched"
+                      title="Fetched"
+                      data-toggle="tooltip"
+                      data-container="body"
+                    >
+                      <span class="d-none d-xl-block">Fetched</span
+                      ><span class="d-xl-none">I</span>
+                    </th>
+                    <th
+                      class="remaining"
+                      title="Remaining"
+                      data-toggle="tooltip"
+                      data-container="body"
+                    >
+                      <span class="d-none d-xl-block">Remaining</span
+                      ><span class="d-xl-none">R</span>
+                    </th>
+                    <th>Status</th>
+                    <th>Elapsed</th>
+                  </tr>
+                </thead>
+                <tbody id="builds_body"></tbody>
+              </table>
+            </div>
+            <!-- #builds -->
+            <br class="clear" />
+          </div>
+          <!-- /col -->
+        </div>
+        <!-- /row -->
       </div>
-      <!-- /row -->
-    </div>
-    <!-- #main -->
+      <!-- #main -->
+    </section>
     <script
       src="assets/jquery-3.7.1/jquery-3.7.1.min.js"
       type="text/javascript"
