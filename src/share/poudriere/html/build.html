@@ -53,7 +53,7 @@
   </head>
   <body>
     <div id="top"></div>
-    <div class="fixed-top">
+    <div class="fixed-top bg-light">
       <nav class="navbar navbar-expand-lg bg-light">
         <div class="container">
           <a href="index.html" class="navbar-brand">FreeBSD Poudriere</a>
@@ -162,84 +162,80 @@
           <!-- /.navbar-collapse -->
         </div>
       </nav>
-      <div id="header" class="bg-light">
-        <div class="container">
-          <!-- /col -->
-          <div class="col-md-6">
-            <table class="layout">
-              <tr>
-                <td>
-                  <div id="stats" style="display: none">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Queued</th>
-                          <th>Built</th>
-                          <th>Failed</th>
-                          <th>Skipped</th>
-                          <th>Ignored</th>
-                          <th>Fetched</th>
-                          <th>Remaining</th>
-                        </tr>
-                      </thead>
+      <div class="container">
+        <!-- /col -->
+        <div class="col-md-6">
+          <table class="layout">
+            <tr>
+              <td>
+                <div id="stats" style="display: none">
+                  <table>
+                    <thead>
                       <tr>
-                        <td id="stats_queued" class="queued"></td>
-                        <td id="stats_built" class="built"></td>
-                        <td id="stats_failed" class="failed"></td>
-                        <td id="stats_skipped" class="skipped"></td>
-                        <td id="stats_ignored" class="ignored"></td>
-                        <td id="stats_fetched" class="fetched"></td>
-                        <td id="stats_remaining" class="remaining"></td>
+                        <th>Queued</th>
+                        <th>Built</th>
+                        <th>Failed</th>
+                        <th>Skipped</th>
+                        <th>Ignored</th>
+                        <th>Fetched</th>
+                        <th>Remaining</th>
                       </tr>
-                    </table>
-                  </div>
-                </td>
-              </tr>
+                    </thead>
+                    <tr>
+                      <td id="stats_queued" class="queued"></td>
+                      <td id="stats_built" class="built"></td>
+                      <td id="stats_failed" class="failed"></td>
+                      <td id="stats_skipped" class="skipped"></td>
+                      <td id="stats_ignored" class="ignored"></td>
+                      <td id="stats_fetched" class="fetched"></td>
+                      <td id="stats_remaining" class="remaining"></td>
+                    </tr>
+                  </table>
+                </div>
+              </td>
+            </tr>
 
-              <tr>
-                <td>
-                  <div id="snap" style="display: none">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th
-                            title="(% of allocated CPU) 1 5 10 minute averages"
-                          >
-                            Load Averages
-                          </th>
-                          <th title="% of swap devices used">Swapinfo</th>
-                          <th>Elapsed</th>
-                          <th title="Average package build rate per hour">
-                            Pkg/Hour
-                          </th>
-                          <th class="impulse">Impulse</th>
-                        </tr>
-                      </thead>
+            <tr>
+              <td>
+                <div id="snap" style="display: none">
+                  <table>
+                    <thead>
                       <tr>
-                        <td
-                          id="snap_loadavg"
-                          title="(% of allocated CPU) 1 5 10 minute averages"
-                        ></td>
-                        <td
-                          id="snap_swapinfo"
-                          title="% of swap devices used"
-                        ></td>
-                        <td id="snap_elapsed"></td>
-                        <td
-                          id="snap_pkghour"
-                          title="Average package build rate per hour"
-                        ></td>
-                        <td class="impulse" id="snap_impulse"></td>
+                        <th title="(% of allocated CPU) 1 5 10 minute averages">
+                          Load Averages
+                        </th>
+                        <th title="% of swap devices used">Swapinfo</th>
+                        <th>Elapsed</th>
+                        <th title="Average package build rate per hour">
+                          Pkg/Hour
+                        </th>
+                        <th class="impulse">Impulse</th>
                       </tr>
-                    </table>
-                  </div>
-                </td>
-              </tr>
-            </table>
-          </div>
+                    </thead>
+                    <tr>
+                      <td
+                        id="snap_loadavg"
+                        title="(% of allocated CPU) 1 5 10 minute averages"
+                      ></td>
+                      <td
+                        id="snap_swapinfo"
+                        title="% of swap devices used"
+                      ></td>
+                      <td id="snap_elapsed"></td>
+                      <td
+                        id="snap_pkghour"
+                        title="Average package build rate per hour"
+                      ></td>
+                      <td class="impulse" id="snap_impulse"></td>
+                    </tr>
+                  </table>
+                </div>
+              </td>
+            </tr>
+          </table>
         </div>
-        <!-- /container -->
       </div>
+      <!-- /container -->
     </div>
     <!-- navbar -->
     <section class="p-5">
@@ -432,18 +428,15 @@
       </div>
       <!-- #main -->
     </section>
-    <nav class="navbar fixed-bottom">
+    <nav class="navbar fixed-bottom bg-light">
       <div class="container">
-        <div class="row">
-          <div class="col-md-10 col-sm-9 col-xs-9" id="progress_col">
-            <span id="progress">
-              <canvas id="progressbar"></canvas>
-              <span id="progresspct"></span>
-            </span>
-          </div>
-          <!-- /col -->
+        <div id="progress_col">
+          <span id="progress">
+            <canvas id="progressbar"></canvas>
+            <span id="progresspct"></span>
+          </span>
         </div>
-        <!-- /row -->
+        <!-- /col -->
       </div>
       <!-- /container -->
     </nav>

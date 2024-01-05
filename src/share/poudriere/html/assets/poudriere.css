@@ -161,6 +161,10 @@ body {
   margin-left: 1px;
 }
 
+#progress_col {
+  width: 100%;
+}
+
 .layout table {
   border: 0;
   width: 480px;
