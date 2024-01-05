@@ -27,245 +27,235 @@
  */
 -->
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-        <title>Poudriere Jail listing</title>
+    <title>Poudriere Jail listing</title>
 
-        <link
-            href="assets/DataTables-1.13.8/css/jquery.dataTables.min.css"
-            rel="stylesheet"
-            type="text/css" />
-        <link
-            href="assets/bootstrap-5.3.2/css/bootstrap.min.css"
-            type="text/css"
-            rel="stylesheet" />
-        <link href="assets/poudriere.css" type="text/css" rel="stylesheet" />
+    <link
+      href="assets/DataTables-1.13.8/css/jquery.dataTables.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      href="assets/bootstrap-5.3.2/css/bootstrap.min.css"
+      type="text/css"
+      rel="stylesheet"
+    />
+    <link href="assets/poudriere.css" type="text/css" rel="stylesheet" />
 
-        <link rel="shortcut icon" href="assets/favicon.ico" />
-    </head>
-    <body>
-        <div id="top"></div>
-        <nav id="header" class="navbar navbar-expand-lg bg-light navbar-light py-3 fixed-top"">
-            <div class="container">
-                <!-- <a href="index.html" class="navbar-brand"> <img src="assets/logo.svg" alt="logo" /> FreeBSD Poudriere </a> -->
-                <a href="index.html" class="navbar-brand">
-                    FreeBSD Poudriere
-                </a>
+    <link rel="shortcut icon" href="assets/favicon.ico" />
+  </head>
+  <body>
+    <div id="top"></div>
+    <nav
+      id="header"
+      class="navbar navbar-expand-lg bg-light navbar-light py-3 fixed-top"
+    >
+      <div class="container">
+        <!-- <a href="index.html" class="navbar-brand"> <img src="assets/logo.svg" alt="logo" /> FreeBSD Poudriere </a> -->
+        <a href="index.html" class="navbar-brand"> FreeBSD Poudriere </a>
 
-                <button
-                    class="navbar-toggler"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#navmenu">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navmenu"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
 
-                <div class="collapse navbar-collapse" id="navmenu">
-                    <ul class="navbar-nav ms-auto">
-                        <li class="nav-item"><a href="#masterinfo" class="nav-link">Master Info</a></li>
-                        <li class="nav-item"><a href="#builds" class="nav-link">Builds</a></li>
-                        <li class="nav-item">
-                            <a href="#" id="latest_url" class="nav-link">Latest Build</a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <button
-                                class="btn btn-light dropdown-toggle"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false">
-                                Logs
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <a
-                                        href="latest-per-pkg/"
-                                        class="dropdown-item data_url"
-                                        target="logs"
-                                        >Latest Per Package</a
-                                    >
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
-                </div>
-                <!-- /.navbar-collapse -->
-            </div>
-            <!-- /container -->
-        </nav>
-        <!-- #header, navbar -->
-        <div id="main" class="container">
-            <div id="loading_overlay">
-                <div id="loading">
-                    <p>Loading...</p>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <div
-                        id="masterinfo_div"
-                        class="status"
-                        style="display: none">
-                        <h2 id="masterinfo">
-                            Master Info
-                        </h2>
-                        <dl class="dl-horizontal">
-                            <dt>Master</dt>
-                            <dd id="mastername"></dd>
-                            <dt>Latest build</dt>
-                            <dd id="latest_build"></dd>
-                            <dt>Status</dt>
-                            <dd id="status"></dd>
-                            <dt>Jail</dt>
-                            <dd id="jail"></dd>
-                            <dt>Set</dt>
-                            <dd id="setname"></dd>
-                            <dt>Ports Tree</dt>
-                            <dd id="ptname"></dd>
-                        </dl>
-                    </div>
-                    <!-- #masterinfo -->
-                </div>
-                <!-- /col -->
-            </div>
-            <!-- /row -->
-            <div class="row">
-                <div class="col-md-12">
-                    <div id="builds_div" class="status" style="display: none">
-                        <h2 id="builds">
-                            Builds
-                        </h2>
-                        <table
-                            class="display builds table-bordered"
-                            id="builds_table">
-                            <thead>
-                                <tr>
-                                    <th>Build</th>
-                                    <th
-                                        class="queued"
-                                        title="Queued"
-                                        data-toggle="tooltip"
-                                        data-container="body">
-                                        <span class="d-none d-xl-block"
-                                            >Queued</span
-                                        ><span class="d-xl-none"
-                                            >Q</span
-                                        >
-                                    </th>
-                                    <th
-                                        class="built"
-                                        title="Built"
-                                        data-toggle="tooltip"
-                                        data-container="body">
-                                        <span class="d-none d-xl-block"
-                                            >Built</span
-                                        ><span class="d-xl-none"
-                                            >B</span
-                                        >
-                                    </th>
-                                    <th
-                                        class="failed"
-                                        title="Failed"
-                                        data-toggle="tooltip"
-                                        data-container="body">
-                                        <span class="d-none d-xl-block"
-                                            >Failed</span
-                                        ><span class="d-xl-none"
-                                            >F</span
-                                        >
-                                    </th>
-                                    <th
-                                        class="skipped"
-                                        title="Skipped"
-                                        data-toggle="tooltip"
-                                        data-container="body">
-                                        <span class="d-none d-xl-block"
-                                            >Skipped</span
-                                        ><span class="d-xl-none"
-                                            >S</span
-                                        >
-                                    </th>
-                                    <th
-                                        class="ignored"
-                                        title="Ignored"
-                                        data-toggle="tooltip"
-                                        data-container="body">
-                                        <span class="d-none d-xl-block"
-                                            >Ignored</span
-                                        ><span class="d-xl-none"
-                                            >I</span
-                                        >
-                                    </th>
-                                    <th
-                                        class="fetched"
-                                        title="Fetched"
-                                        data-toggle="tooltip"
-                                        data-container="body">
-                                        <span class="d-none d-xl-block"
-                                            >Fetched</span
-                                        ><span class="d-xl-none"
-                                            >I</span
-                                        >
-                                    </th>
-                                    <th
-                                        class="remaining"
-                                        title="Remaining"
-                                        data-toggle="tooltip"
-                                        data-container="body">
-                                        <span class="d-none d-xl-block"
-                                            >Remaining</span
-                                        ><span class="d-xl-none"
-                                            >R</span
-                                        >
-                                    </th>
-                                    <th>Status</th>
-                                    <th>Elapsed</th>
-                                </tr>
-                            </thead>
-                            <tbody id="builds_body"></tbody>
-                        </table>
-                    </div>
-                    <!-- #builds -->
-                    <br class="clear" />
-                </div>
-                <!-- /col -->
-            </div>
-            <!-- /row -->
+        <div class="collapse navbar-collapse" id="navmenu">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a href="#masterinfo" class="nav-link">Master Info</a>
+            </li>
+            <li class="nav-item">
+              <a href="#builds" class="nav-link">Builds</a>
+            </li>
+            <li class="nav-item">
+              <a href="#" id="latest_url" class="nav-link">Latest Build</a>
+            </li>
+            <li class="nav-item dropdown">
+              <button
+                class="btn btn-light dropdown-toggle"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Logs
+              </button>
+              <ul class="dropdown-menu">
+                <li>
+                  <a
+                    href="latest-per-pkg/"
+                    class="dropdown-item data_url"
+                    target="logs"
+                    >Latest Per Package</a
+                  >
+                </li>
+              </ul>
+            </li>
+          </ul>
         </div>
-        <!-- #main -->
-        <br class="clear" />
-        <nav class="navbar fixed-bottom">
-            <div class="container">
-                <div class="col-md-12">
-                    <a
-                        class="nav-link float-right"
-                        target="_new"
-                        href="https://github.com/freebsd/poudriere"
-                        >Poudriere</a
-                    >
-                </div>
-                <!-- /col -->
-            </div>
-            <!-- /container -->
-        </nav>
-        <!-- #footer -->
-        <script
-            src="assets/jquery-3.7.1/jquery-3.7.1.min.js"
-            type="text/javascript"></script>
-        <script
-            src="assets/DataTables-1.13.8/js/jquery.dataTables.min.js"
-            type="text/javascript"
-            charset="utf8"></script>
-        <script
-            src="assets/bootstrap-5.3.2/js/bootstrap.bundle.min.js"
-            type="text/javascript"></script>
-        <script
-            src="assets/jquery.dataTables.rowGrouping-1.2.9.js"
-            type="text/javascript"></script>
-        <script type="text/javascript">
-            server_style = "hosted";
-        </script>
-        <script src="assets/poudriere.js" type="text/javascript"></script>
-    </body>
+        <!-- /.navbar-collapse -->
+      </div>
+      <!-- /container -->
+    </nav>
+    <!-- #header, navbar -->
+    <div id="main" class="container">
+      <div id="loading_overlay">
+        <div id="loading">
+          <p>Loading...</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <div id="masterinfo_div" class="status" style="display: none">
+            <h2 id="masterinfo">Master Info</h2>
+            <dl class="dl-horizontal">
+              <dt>Master</dt>
+              <dd id="mastername"></dd>
+              <dt>Latest build</dt>
+              <dd id="latest_build"></dd>
+              <dt>Status</dt>
+              <dd id="status"></dd>
+              <dt>Jail</dt>
+              <dd id="jail"></dd>
+              <dt>Set</dt>
+              <dd id="setname"></dd>
+              <dt>Ports Tree</dt>
+              <dd id="ptname"></dd>
+            </dl>
+          </div>
+          <!-- #masterinfo -->
+        </div>
+        <!-- /col -->
+      </div>
+      <!-- /row -->
+      <div class="row">
+        <div class="col-md-12">
+          <div id="builds_div" class="status" style="display: none">
+            <h2 id="builds">Builds</h2>
+            <table class="display builds table-bordered" id="builds_table">
+              <thead>
+                <tr>
+                  <th>Build</th>
+                  <th
+                    class="queued"
+                    title="Queued"
+                    data-toggle="tooltip"
+                    data-container="body"
+                  >
+                    <span class="d-none d-xl-block">Queued</span
+                    ><span class="d-xl-none">Q</span>
+                  </th>
+                  <th
+                    class="built"
+                    title="Built"
+                    data-toggle="tooltip"
+                    data-container="body"
+                  >
+                    <span class="d-none d-xl-block">Built</span
+                    ><span class="d-xl-none">B</span>
+                  </th>
+                  <th
+                    class="failed"
+                    title="Failed"
+                    data-toggle="tooltip"
+                    data-container="body"
+                  >
+                    <span class="d-none d-xl-block">Failed</span
+                    ><span class="d-xl-none">F</span>
+                  </th>
+                  <th
+                    class="skipped"
+                    title="Skipped"
+                    data-toggle="tooltip"
+                    data-container="body"
+                  >
+                    <span class="d-none d-xl-block">Skipped</span
+                    ><span class="d-xl-none">S</span>
+                  </th>
+                  <th
+                    class="ignored"
+                    title="Ignored"
+                    data-toggle="tooltip"
+                    data-container="body"
+                  >
+                    <span class="d-none d-xl-block">Ignored</span
+                    ><span class="d-xl-none">I</span>
+                  </th>
+                  <th
+                    class="fetched"
+                    title="Fetched"
+                    data-toggle="tooltip"
+                    data-container="body"
+                  >
+                    <span class="d-none d-xl-block">Fetched</span
+                    ><span class="d-xl-none">I</span>
+                  </th>
+                  <th
+                    class="remaining"
+                    title="Remaining"
+                    data-toggle="tooltip"
+                    data-container="body"
+                  >
+                    <span class="d-none d-xl-block">Remaining</span
+                    ><span class="d-xl-none">R</span>
+                  </th>
+                  <th>Status</th>
+                  <th>Elapsed</th>
+                </tr>
+              </thead>
+              <tbody id="builds_body"></tbody>
+            </table>
+          </div>
+          <!-- #builds -->
+          <br class="clear" />
+        </div>
+        <!-- /col -->
+      </div>
+      <!-- /row -->
+    </div>
+    <!-- #main -->
+    <br class="clear" />
+    <nav class="navbar fixed-bottom">
+      <div class="container">
+        <div class="col-md-12">
+          <a
+            class="nav-link float-right"
+            target="_new"
+            href="https://github.com/freebsd/poudriere"
+            >Poudriere</a
+          >
+        </div>
+        <!-- /col -->
+      </div>
+      <!-- /container -->
+    </nav>
+    <!-- #footer -->
+    <script
+      src="assets/jquery-3.7.1/jquery-3.7.1.min.js"
+      type="text/javascript"
+    ></script>
+    <script
+      src="assets/DataTables-1.13.8/js/jquery.dataTables.min.js"
+      type="text/javascript"
+      charset="utf8"
+    ></script>
+    <script
+      src="assets/bootstrap-5.3.2/js/bootstrap.bundle.min.js"
+      type="text/javascript"
+    ></script>
+    <script
+      src="assets/jquery.dataTables.rowGrouping-1.2.9.js"
+      type="text/javascript"
+    ></script>
+    <script type="text/javascript">
+      server_style = "hosted";
+    </script>
+    <script src="assets/poudriere.js" type="text/javascript"></script>
+  </body>
 </html>
 <!-- vim: set sts=4 sw=4 ts=4 noet: -->

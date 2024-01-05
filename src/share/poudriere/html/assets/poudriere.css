@@ -1,4 +1,3 @@
-/* vim: set sts=4 sw=4 ts=4 noet: */
 /*
  * Copyright (c) 2013-2017 Bryan Drewery <bdrewery@FreeBSD.org>
  * All rights reserved.
@@ -25,109 +24,109 @@
  * SUCH DAMAGE.
  */
 #loading_overlay {
-    background: #fff;
-    width: 100%;
-    height: 100%;
-    z-index: 9003;
-    left: 0;
-    position: fixed;
+  background: #fff;
+  width: 100%;
+  height: 100%;
+  z-index: 9003;
+  left: 0;
+  position: fixed;
 }
 #loading {
-    z-index: 9004;
-    top: 50%;
-    left: 50%;
-    position: absolute;
+  z-index: 9004;
+  top: 50%;
+  left: 50%;
+  position: absolute;
 }
 
 .top-icon {
-    display: none;
+  display: none;
 }
 
 .layout,
 .layout th,
 .layout td {
-    border: 0;
+  border: 0;
 }
 .built {
-    background-color: #00cc00 !important;
+  background-color: #00cc00 !important;
 }
 .built .row1 {
-    background-color: #00ff00;
+  background-color: #00ff00;
 }
 .failed {
-    background-color: #e00000 !important;
+  background-color: #e00000 !important;
 }
 .failed .row1 {
-    background-color: #ff0000;
+  background-color: #ff0000;
 }
 .skipped {
-    background-color: #cc6633 !important;
+  background-color: #cc6633 !important;
 }
 .skipped .row1 {
-    background-color: #aa6734;
+  background-color: #aa6734;
 }
 .ignored {
-    background-color: #ff9900 !important;
+  background-color: #ff9900 !important;
 }
 .ignored .row1 {
-    background-color: #ff6f00;
+  background-color: #ff6f00;
 }
 .fetched {
-    background-color: #228b22 !important;
+  background-color: #228b22 !important;
 }
 .fetched .row1 {
-    background-color: #225b22;
+  background-color: #225b22;
 }
 .remaining {
-    background-color: #e3e3e3 !important;
+  background-color: #e3e3e3 !important;
 }
 .remaining .row1 {
-    background-color: #bcbcbc;
+  background-color: #bcbcbc;
 }
 .queued {
-    background-color: #aaa !important;
+  background-color: #aaa !important;
 }
 .queued .row1 {
-    background-color: #bbbbbb;
+  background-color: #bbbbbb;
 }
 .latest {
-    background-color: #f7fe4a;
+  background-color: #f7fe4a;
 }
 td.highlight {
-    background-color: whitesmoke !important;
+  background-color: whitesmoke !important;
 }
 #header {
-    border-bottom: 1px solid black;
-    min-height: 65px;
+  border-bottom: 1px solid black;
+  min-height: 65px;
 }
 
 td.group {
-    background-color: #d1cfd0;
-    border-bottom: 2px solid #a19b9e;
-    border-top: 2px solid #a19b9e;
+  background-color: #d1cfd0;
+  border-bottom: 2px solid #a19b9e;
+  border-top: 2px solid #a19b9e;
 }
 
 td.subgroup {
-    background-color: #d4dfd8;
-    border-bottom: medium solid;
+  background-color: #d4dfd8;
+  border-bottom: medium solid;
 }
 
 td.group .title,
 td.subgroup .title {
-    font-weight: bold;
+  font-weight: bold;
 }
 
 .error {
-    color: red;
+  color: red;
 }
 
 .navbar-toggle {
-    margin-right: 0;
+  margin-right: 0;
 }
 
 #header,
 footer {
-    background-color: #eee;
+  background-color: #eee;
 }
 
 /* This is the minimum width the site should be displayed at
@@ -137,136 +136,136 @@ footer {
  * page appropriately.
  */
 @media (max-width: 570px) {
-    body,
-    #header {
-        min-width: 570px;
-    }
+  body,
+  #header {
+    min-width: 570px;
+  }
 }
 
 /* Prevent excess padding when zoomed in */
 @media (max-width: 979px) {
-    .navbar-fixed-top,
-    .navbar {
-        margin-bottom: 0;
-    }
+  .navbar-fixed-top,
+  .navbar {
+    margin-bottom: 0;
+  }
 }
 
 body {
-    font-size: 14px;
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    line-height: normal;
+  font-size: 14px;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  line-height: normal;
 }
 
 #progress,
 #progress td,
 #progress span,
 #progress canvas {
-    padding: 0;
-    margin: 0;
-    border: 0;
-    line-height: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  line-height: 0;
 }
 
 #progress {
-    margin-left: 1px;
+  margin-left: 1px;
 }
 
 .layout table {
-    border: 0;
-    width: 480px;
-    margin: 0 0 1px;
-    line-height: 1;
-    border-collapse: separate;
-    border-spacing: 2px;
+  border: 0;
+  width: 480px;
+  margin: 0 0 1px;
+  line-height: 1;
+  border-collapse: separate;
+  border-spacing: 2px;
 }
 .layout th,
 .layout td {
-    font-family: "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", Monaco,
-        "Lucida Console", monospace;
-    font-size: 9pt;
-    text-align: center;
+  font-family: "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", Monaco,
+    "Lucida Console", monospace;
+  font-size: 9pt;
+  text-align: center;
 }
 
 footer {
-    bottom: 0;
-    /*height: 18px;*/
-    max-height: 20px;
-    margin-top: 5px;
-    border-top: 1px solid black;
+  bottom: 0;
+  /*height: 18px;*/
+  max-height: 20px;
+  margin-top: 5px;
+  border-top: 1px solid black;
 }
 
 #logo {
-    margin-left: -14px;
+  margin-left: -14px;
 }
 
 #logo img {
-    height: 55px;
+  height: 55px;
 }
 
 .navbar {
-    font-size: 1.3em;
+  font-size: 1.3em;
 }
 
 #stats td,
 #stats th {
-    width: 16.67%;
+  width: 16.67%;
 }
 
 #snap_loadavg {
-    width: 45%;
+  width: 45%;
 }
 #snap_swapinfo {
-    width: 20%;
+  width: 20%;
 }
 #snap_duration {
-    width: 15%;
+  width: 15%;
 }
 #snap_pkghour {
-    width: 10%;
+  width: 10%;
 }
 #snap_impulse {
-    width: 10%;
+  width: 10%;
 }
 
 .layout {
-    margin-top: 1px;
+  margin-top: 1px;
 }
 .layout table td {
-    background-color: #e3e3e3;
+  background-color: #e3e3e3;
 }
 
 h1 {
-    font-size: 16pt;
-    text-align: center;
+  font-size: 16pt;
+  text-align: center;
 }
 h2 {
-    background-color: #eee;
+  background-color: #eee;
 }
 
 .status td {
-    font-family: "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", Monaco,
-        "Lucida Console", monospace;
+  font-family: "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", Monaco,
+    "Lucida Console", monospace;
 }
 
 br.clear {
-    clear: both;
-    height: 0;
-    overflow: hidden;
+  clear: both;
+  height: 0;
+  overflow: hidden;
 }
 
 #build_info_div dt,
 #build_info_div dd {
-    line-height: normal;
-    font-size: 13px;
-    font-family: "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", Monaco,
-        "Lucida Console", monospace;
+  line-height: normal;
+  font-size: 13px;
+  font-family: "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", Monaco,
+    "Lucida Console", monospace;
 }
 #build_info_div dl {
-    margin-bottom: 0;
+  margin-bottom: 0;
 }
 
 dd {
-    word-break: break-all;
+  word-break: break-all;
 }
 
 /*
@@ -298,28 +297,28 @@ table.dataTable.display td {
 #latest_builds_body tr td:nth-child(7),
 #latest_builds_body tr td:nth-child(8),
 #latest_builds_body tr td:nth-child(9) {
-    word-break: normal !important;
+  word-break: normal !important;
 }
 
 .glyphicon {
-    font-size: 0.75em;
-    vertical-align: top;
+  font-size: 0.75em;
+  vertical-align: top;
 }
 
 table.dataTable.display tbody tr.odd {
-    background-color: #e2e4ff;
+  background-color: #e2e4ff;
 }
 
 table.dataTable.display tbody tr.odd td.sorting_1 {
-    background-color: #c3c6ff;
+  background-color: #c3c6ff;
 }
 
 table.dataTable thead th,
 table.dataTable tbody td {
-    padding-top: 1px;
-    padding-bottom: 1px;
+  padding-top: 1px;
+  padding-bottom: 1px;
 }
 
 :target {
-    background-color: #ccc;
+  background-color: #ccc;
 }
