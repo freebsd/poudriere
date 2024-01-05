@@ -95,10 +95,6 @@
 td.highlight {
   background-color: whitesmoke !important;
 }
-#header {
-  border-bottom: 1px solid black;
-  min-height: 65px;
-}
 
 td.group {
   background-color: #d1cfd0;
@@ -122,11 +118,6 @@ td.subgroup .title {
 
 .navbar-toggle {
   margin-right: 0;
-}
-
-#header,
-footer {
-  background-color: #eee;
 }
 
 /* This is the minimum width the site should be displayed at
@@ -194,18 +185,6 @@ footer {
   border-top: 1px solid black;
 }
 
-#logo {
-  margin-left: -14px;
-}
-
-#logo img {
-  height: 55px;
-}
-
-.navbar {
-  font-size: 1.3em;
-}
-
 #stats td,
 #stats th {
   width: 16.67%;
@@ -268,12 +247,6 @@ dd {
   word-break: break-all;
 }
 
-/*
-table.dataTable.display td {
-	word-break: break-all;
-}
-*/
-
 .nobreak,
 /* Build order */
 .ports table tbody tr td:nth-child(1),
@@ -298,11 +271,6 @@ table.dataTable.display td {
 #latest_builds_body tr td:nth-child(8),
 #latest_builds_body tr td:nth-child(9) {
   word-break: normal !important;
-}
-
-.glyphicon {
-  font-size: 0.75em;
-  vertical-align: top;
 }
 
 table.dataTable.display tbody tr.odd {
