@@ -147,6 +147,14 @@ body {
   line-height: normal;
 }
 
+#section {
+  margin-top: 40px;
+}
+
+#section-build {
+  margin-top: 100px;
+}
+
 #progress,
 #progress td,
 #progress span,
