@@ -44,6 +44,11 @@
       type="text/css"
       rel="stylesheet"
     />
+    <link
+      href="assets/bootstrap-icons-1.11.3/font/bootstrap-icons.min.css"
+      type="text/css"
+      rel="stylesheet"
+    />
     <link href="assets/poudriere.css" type="text/css" rel="stylesheet" />
 
     <link rel="shortcut icon" href="assets/favicon.ico" />
@@ -67,10 +72,15 @@
         </button>
 
         <div class="collapse navbar-collapse" id="navmenu">
-          <ul class="navbar-nav ms-auto">
+          <ul class="navbar-nav mr-auto">
             <li class="nav-item">
               <a href="#latest_builds" class="nav-link">Latest Builds</a>
             </li>
+          </ul>
+        </div>
+
+        <div class="collapse navbar-collapse" id="navmenu">
+          <ul class="navbar-nav ms-auto">
             <li class="nav-item dropdown">
               <button
                 class="btn btn-light dropdown-toggle"
@@ -89,6 +99,14 @@
                   >
                 </li>
               </ul>
+            </li>
+            <li>
+              <a
+                href="https://github.com/freebsd/poudriere"
+                class="nav-link"
+                target="_new"
+                ><i class="bi bi-github"></i
+              ></a>
             </li>
           </ul>
         </div>
@@ -197,22 +215,6 @@
       <!-- /row -->
     </div>
     <!-- #main -->
-    <br class="clear" />
-    <nav class="navbar fixed-bottom">
-      <div class="container">
-        <div class="col-md-12">
-          <a
-            class="nav-link float-right"
-            target="_new"
-            href="https://github.com/freebsd/poudriere"
-            >Poudriere</a
-          >
-        </div>
-        <!-- /col -->
-      </div>
-      <!-- /container -->
-    </nav>
-    <!-- #footer -->
     <script
       src="assets/jquery-3.7.1/jquery-3.7.1.min.js"
       type="text/javascript"

@@ -42,6 +42,11 @@
       type="text/css"
       rel="stylesheet"
     />
+    <link
+      href="assets/bootstrap-icons-1.11.3/font/bootstrap-icons.min.css"
+      type="text/css"
+      rel="stylesheet"
+    />
     <link href="assets/poudriere.css" type="text/css" rel="stylesheet" />
 
     <link rel="shortcut icon" href="assets/favicon.ico" />
@@ -63,7 +68,7 @@
           </button>
 
           <div class="collapse navbar-collapse" id="navmenu">
-            <ul class="navbar-nav ms-auto">
+            <ul class="navbar-nav mr-auto">
               <li class="nav-item">
                 <a title="Jail Builds" id="master_link" class="nav-link"
                   >Jail Builds</a
@@ -75,6 +80,11 @@
               <li class="nav-item">
                 <a href="#jobs" class="nav-link">Jobs</a>
               </li>
+            </ul>
+          </div>
+
+          <div class="collapse navbar-collapse" id="navmenu">
+            <ul class="navbar-nav ms-auto">
               <li class="nav-item dropdown">
                 <button
                   class="btn btn-light dropdown-toggle"
@@ -138,6 +148,14 @@
                     >
                   </li>
                 </ul>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/freebsd/poudriere"
+                  class="nav-link"
+                  target="_new"
+                  ><i class="bi bi-github"></i
+                ></a>
               </li>
             </ul>
           </div>
@@ -419,15 +437,6 @@
               <canvas id="progressbar"></canvas>
               <span id="progresspct"></span>
             </span>
-          </div>
-          <!-- /col -->
-          <div class="float-right col-md-2 col-sm-3 col-xs-3">
-            <a
-              class="nav-link"
-              target="_new"
-              href="https://github.com/freebsd/poudriere"
-              >Poudriere</a
-            >
           </div>
           <!-- /col -->
         </div>
