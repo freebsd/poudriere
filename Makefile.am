@@ -11,10 +11,10 @@ awkdir=	$(pkgdatadir)/awk
 htmldir= $(pkgdatadir)/html
 includedir= $(pkgdatadir)/include
 assetsdir= $(htmldir)/assets
-bootstrapdir= $(assetsdir)/bootstrap-3.4.1
+bootstrapdir= $(assetsdir)/bootstrap-5.3.2
 btcssdir= $(bootstrapdir)/css
 btjsdir= $(bootstrapdir)/js
-btfontsdir= $(bootstrapdir)/fonts
+bticonsdir= $(assetsdir)/bootstrap-icons-1.11.3
 datatablesdir= $(assetsdir)/DataTables-1.13.8
 dtcssdir= $(datatablesdir)/css
 dtimagesdir= $(datatablesdir)/images
@@ -119,21 +119,10 @@ dist_assets_DATA=	src/share/poudriere/html/assets/poudriere.js \
 			src/share/poudriere/html/assets/favicon.ico \
 			src/share/poudriere/html/assets/poudriere.css \
 			src/share/poudriere/html/assets/jquery.dataTables.rowGrouping-1.2.9.js
-dist_btjs_DATA=		src/share/poudriere/html/assets/bootstrap-3.4.1/js/bootstrap.js \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/js/bootstrap.min.js
-dist_btfonts_DATA=	src/share/poudriere/html/assets/bootstrap-3.4.1/fonts/glyphicons-halflings-regular.eot \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/fonts/glyphicons-halflings-regular.svg \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/fonts/glyphicons-halflings-regular.ttf \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/fonts/glyphicons-halflings-regular.woff \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/fonts/glyphicons-halflings-regular.woff2
-dist_btcss_DATA=	src/share/poudriere/html/assets/bootstrap-3.4.1/css/bootstrap-theme.css \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/css/bootstrap-theme.css.map \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/css/bootstrap-theme.min.css \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/css/bootstrap-theme.min.css.map \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/css/bootstrap.css \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/css/bootstrap.css.map \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/css/bootstrap.min.css \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/css/bootstrap.min.css.map
+dist_btjs_DATA=		src/share/poudriere/html/assets/bootstrap-5.3.2/js/bootstrap.bundle.min.js
+dist_btcss_DATA=	src/share/poudriere/html/assets/bootstrap-5.3.2/css/bootstrap-min.css
+dist_icons_DATA=	src/share/poudriere/html/assets/bootstrap-icons-1.11.3/font/bootstrap-icons.min.css \
+			src/share/poudriere/html/assets/bootstrap-icons-1.11.3/github.svg
 dist_dtcss_DATA=	src/share/poudriere/html/assets/DataTables-1.13.8/css/jquery.dataTables.min.css
 dist_dtjs_DATA=		src/share/poudriere/html/assets/DataTables-1.13.8/js/jquery.dataTables.min.js
 dist_dtimages_DATA=	src/share/poudriere/html/assets/DataTables-1.13.8/images/sort_asc.png \
