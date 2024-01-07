@@ -28,101 +28,263 @@
  */
 -->
 <html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<meta http-equiv="Cache-Control" content="no-cache">
-		<meta http-equiv="Pragma" content="no-cache">
-		<meta http-equiv="Expires" content="0">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="Cache-Control" content="no-cache" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
 
-		<title>Poudriere Index</title>
+        <title>Poudriere Index</title>
 
-		<link href="assets/DataTables-1.10.0/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css">
-		<link href="assets/bootstrap-3.1.1/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
-		<link href="assets/poudriere.css" type="text/css" rel="stylesheet" />
+        <link
+            href="assets/DataTables-1.13.8/css/jquery.dataTables.min.css"
+            rel="stylesheet"
+            type="text/css"
+        />
+        <link
+            href="assets/bootstrap-3.4.1/css/bootstrap.min.css"
+            type="text/css"
+            rel="stylesheet"
+        />
+        <link href="assets/poudriere.css" type="text/css" rel="stylesheet" />
 
-		<link rel="shortcut icon" href="assets/favicon.ico">
-	</head>
-	<body>
-		<div id="top"></div>
-		<div id="header" class="navbar navbar-default navbar-fixed-top" role="navigation">
-			<div class="container-fluid">
-				<div class="row">
-					<div class="col-md-6">
-						<div id="logo">
-							<img src="assets/logo.svg" alt="logo" class="pull-left" />
-						</div>
-						<div>
-							<ul class="nav navbar-nav nav-pills pull-left">
-								<li><a title="top" href="#top"><span class="glyphicon glyphicon-chevron-up"></span></a></li>
-								<li><a href="#latest_builds">Latest Builds</a></li>
-								<li class="dropdown">
-									<a href="#" class="dropdown-toggle" data-toggle="dropdown">Logs <b class="caret"></b></a>
-									<ul class="dropdown-menu">
-										<li><a href="latest-per-pkg/" class="data_url" target="logs"><span class="glyphicon glyphicon-share-alt"></span>Latest Per Package</a></li>
-									</ul>
-								</li>
-							</ul>
-						</div><!-- /.navbar-collapse -->
-					</div><!-- /col -->
-				</div><!-- /row -->
-			</div><!-- /container -->
-		</div><!-- #header, navbar -->
-		<div id="main" class="container-fluid">
-			<div id="loading_overlay">
-				<div id="loading">
-					<p>Loading...</p>
-				</div>
-			</div>
-			<div class="row">
-				<div class="col-md-12">
-					<div id="latest_builds_div" class="status" style="display: none;">
-						<h2 id="latest_builds">Latest Builds
-							<a href="#"><span class="top-icon glyphicon glyphicon-chevron-up"></span></a>
-						</h2>
-						<table class="display latest_builds table-bordered" id="latest_builds_table">
-							<thead>
-								<tr>
-									<th>Portset</th>
-									<th>Master</th>
-									<th>Build</th>
-									<th>Jail</th>
-									<th>Set</th>
-									<th>Ports</th>
-									<th class="queued" title="Queued" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Queued</span><span class="hidden-md hidden-lg">Q</span></th>
-									<th class="built" title="Built" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Built</span><span class="hidden-md hidden-lg">B</span></th>
-									<th class="failed" title="Failed" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Failed</span><span class="hidden-md hidden-lg">F</span></th>
-									<th class="skipped" title="Skipped" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Skipped</span><span class="hidden-md hidden-lg">S</span></th>
-									<th class="ignored" title="Ignored" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Ignored</span><span class="hidden-md hidden-lg">I</span></th>
-									<th class="fetched" title="Fetched" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Fetched</span><span class="hidden-md hidden-lg">P</span></th>
-									<th class="remaining" title="Remaining" data-toggle="tooltip" data-container="body"><span class="visible-md visible-lg">Remaining</span><span class="hidden-md hidden-lg">R</span></th>
-									<th>Status</th>
-									<th>Elapsed</th>
-								</tr>
-							</thead>
-							<tbody id="latest_builds_body"></tbody>
-						</table>
-					</div><!-- #latest_builds -->
-					<br class="clear" />
-				</div><!-- /col -->
-			</div><!-- /row -->
-		</div><!-- #main -->
-		<br class="clear" />
-		<footer class="navbar-fixed-bottom">
-			<div class="container-fluid">
-				<div class="row">
-					<div class="col-md-12">
-						<a class="pull-right" target="_new" href="https://github.com/freebsd/poudriere"><span class="glyphicon glyphicon-share-alt"></span>Poudriere</a>
-					</div><!-- /col -->
-				</div><!-- /row -->
-			</div><!-- /container-fluid -->
-		</footer><!-- #footer -->
-		<script src="assets/jquery-1.11.1.min.js" type="text/javascript"></script>
-		<script src="assets/DataTables-1.10.0/js/jquery.dataTables.min.js" type="text/javascript" charset="utf8"></script>
-		<script src="assets/bootstrap-3.1.1/js/bootstrap.min.js" type="text/javascript"></script>
-		<script src="assets/jquery.dataTables.rowGrouping-1.2.9.js" type="text/javascript"></script>
-		<script type="text/javascript">server_style = "hosted";</script>
-		<script src="assets/poudriere.js" type="text/javascript"></script>
-	</body>
+        <link rel="shortcut icon" href="assets/favicon.ico" />
+    </head>
+    <body>
+        <div id="top"></div>
+        <div
+            id="header"
+            class="navbar navbar-default navbar-fixed-top"
+            role="navigation"
+        >
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div id="logo">
+                            <img
+                                src="assets/logo.svg"
+                                alt="logo"
+                                class="pull-left"
+                            />
+                        </div>
+                        <div>
+                            <ul class="nav navbar-nav nav-pills pull-left">
+                                <li>
+                                    <a title="top" href="#top"
+                                        ><span
+                                            class="glyphicon glyphicon-chevron-up"
+                                        ></span
+                                    ></a>
+                                </li>
+                                <li>
+                                    <a href="#latest_builds">Latest Builds</a>
+                                </li>
+                                <li class="dropdown">
+                                    <a
+                                        href="#"
+                                        class="dropdown-toggle"
+                                        data-toggle="dropdown"
+                                        >Logs <b class="caret"></b
+                                    ></a>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a
+                                                href="latest-per-pkg/"
+                                                class="data_url"
+                                                target="logs"
+                                                ><span
+                                                    class="glyphicon glyphicon-share-alt"
+                                                ></span
+                                                >Latest Per Package</a
+                                            >
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                        <!-- /.navbar-collapse -->
+                    </div>
+                    <!-- /col -->
+                </div>
+                <!-- /row -->
+            </div>
+            <!-- /container -->
+        </div>
+        <!-- #header, navbar -->
+        <div id="main" class="container-fluid">
+            <div id="loading_overlay">
+                <div id="loading">
+                    <p>Loading...</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div
+                        id="latest_builds_div"
+                        class="status"
+                        style="display: none"
+                    >
+                        <h2 id="latest_builds">
+                            Latest Builds
+                            <a href="#"
+                                ><span
+                                    class="top-icon glyphicon glyphicon-chevron-up"
+                                ></span
+                            ></a>
+                        </h2>
+                        <table
+                            class="display latest_builds table-bordered"
+                            id="latest_builds_table"
+                        >
+                            <thead>
+                                <tr>
+                                    <th>Portset</th>
+                                    <th>Master</th>
+                                    <th>Build</th>
+                                    <th>Jail</th>
+                                    <th>Set</th>
+                                    <th>Ports</th>
+                                    <th
+                                        class="queued"
+                                        title="Queued"
+                                        data-toggle="tooltip"
+                                        data-container="body"
+                                    >
+                                        <span class="visible-md visible-lg"
+                                            >Queued</span
+                                        ><span class="hidden-md hidden-lg"
+                                            >Q</span
+                                        >
+                                    </th>
+                                    <th
+                                        class="built"
+                                        title="Built"
+                                        data-toggle="tooltip"
+                                        data-container="body"
+                                    >
+                                        <span class="visible-md visible-lg"
+                                            >Built</span
+                                        ><span class="hidden-md hidden-lg"
+                                            >B</span
+                                        >
+                                    </th>
+                                    <th
+                                        class="failed"
+                                        title="Failed"
+                                        data-toggle="tooltip"
+                                        data-container="body"
+                                    >
+                                        <span class="visible-md visible-lg"
+                                            >Failed</span
+                                        ><span class="hidden-md hidden-lg"
+                                            >F</span
+                                        >
+                                    </th>
+                                    <th
+                                        class="skipped"
+                                        title="Skipped"
+                                        data-toggle="tooltip"
+                                        data-container="body"
+                                    >
+                                        <span class="visible-md visible-lg"
+                                            >Skipped</span
+                                        ><span class="hidden-md hidden-lg"
+                                            >S</span
+                                        >
+                                    </th>
+                                    <th
+                                        class="ignored"
+                                        title="Ignored"
+                                        data-toggle="tooltip"
+                                        data-container="body"
+                                    >
+                                        <span class="visible-md visible-lg"
+                                            >Ignored</span
+                                        ><span class="hidden-md hidden-lg"
+                                            >I</span
+                                        >
+                                    </th>
+                                    <th
+                                        class="fetched"
+                                        title="Fetched"
+                                        data-toggle="tooltip"
+                                        data-container="body"
+                                    >
+                                        <span class="visible-md visible-lg"
+                                            >Fetched</span
+                                        ><span class="hidden-md hidden-lg"
+                                            >P</span
+                                        >
+                                    </th>
+                                    <th
+                                        class="remaining"
+                                        title="Remaining"
+                                        data-toggle="tooltip"
+                                        data-container="body"
+                                    >
+                                        <span class="visible-md visible-lg"
+                                            >Remaining</span
+                                        ><span class="hidden-md hidden-lg"
+                                            >R</span
+                                        >
+                                    </th>
+                                    <th>Status</th>
+                                    <th>Elapsed</th>
+                                </tr>
+                            </thead>
+                            <tbody id="latest_builds_body"></tbody>
+                        </table>
+                    </div>
+                    <!-- #latest_builds -->
+                    <br class="clear" />
+                </div>
+                <!-- /col -->
+            </div>
+            <!-- /row -->
+        </div>
+        <!-- #main -->
+        <br class="clear" />
+        <footer class="navbar-fixed-bottom">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-12">
+                        <a
+                            class="pull-right"
+                            target="_new"
+                            href="https://github.com/freebsd/poudriere"
+                            ><span class="glyphicon glyphicon-share-alt"></span
+                            >Poudriere</a
+                        >
+                    </div>
+                    <!-- /col -->
+                </div>
+                <!-- /row -->
+            </div>
+            <!-- /container-fluid -->
+        </footer>
+        <!-- #footer -->
+        <script
+            src="assets/jquery-3.7.1/jquery-3.7.1.min.js"
+            type="text/javascript"
+        ></script>
+        <script
+            src="assets/DataTables-1.13.8/js/jquery.dataTables.min.js"
+            type="text/javascript"
+            charset="utf8"
+        ></script>
+        <script
+            src="assets/bootstrap-3.4.1/js/bootstrap.min.js"
+            type="text/javascript"
+        ></script>
+        <script
+            src="assets/jquery.dataTables.rowGrouping-1.2.9.js"
+            type="text/javascript"
+        ></script>
+        <script type="text/javascript">
+            server_style = "hosted";
+        </script>
+        <script src="assets/poudriere.js" type="text/javascript"></script>
+    </body>
 </html>
 <!-- vim: set sts=4 sw=4 ts=4 noet: -->

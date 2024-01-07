@@ -43,7 +43,6 @@
 #include <time.h>
 #include <unistd.h>
 
-#define min(a, b) ((a) > (b) ? (b) : (a))
 #ifndef timespecsub
 #define	timespecsub(tsp, usp, vsp)					\
 	do {								\
@@ -161,7 +160,7 @@ prefix_output(struct kdata *kd, const int dynamic_prefix_support)
 	const char *prefix;
 	int ch, ret;
 	unsigned int changing_prefix;
-	struct timespec lastline, now;
+	struct timespec lastline = {0}, now = {0};
 	size_t prefix_len;
 	bool newline;
 
@@ -267,7 +266,7 @@ main(int argc, char **argv)
 	FILE *fp_in_stdout, *fp_in_stderr;
 	pthread_t *thr_stdout, *thr_stderr;
 	struct kdata kdata_stdout, kdata_stderr;
-	const char *prefix_stdout, *prefix_stderr, *time_start;
+	char *prefix_stdout, *prefix_stderr, *time_start;
 	char *end;
 	pid_t child_pid;
 	int child_stdout[2], child_stderr[2];
@@ -284,9 +283,13 @@ main(int argc, char **argv)
 		switch (ch) {
 		case '1':
 			prefix_stdout = strdup(optarg);
+			if (prefix_stdout == NULL)
+				err(EXIT_FAILURE, "strdup");
 			break;
 		case '2':
 			prefix_stderr = strdup(optarg);
+			if (prefix_stderr == NULL)
+				err(EXIT_FAILURE, "strdup");
 			break;
 		case 'd':
 			dflag = 1;
@@ -418,6 +421,9 @@ main(int argc, char **argv)
 	    fp_in_stdout != NULL)) {
 		if (fp_in_stdout != NULL) {
 			thr_stdout = calloc(1, sizeof(pthread_t));
+			if (thr_stdout == NULL)
+				err(EXIT_FAILURE, "calloc");
+
 			if (pthread_create(thr_stdout, NULL, prefix_main,
 			    &kdata_stdout))
 				err(EXIT_FAILURE, "pthread_create stdout");
@@ -426,6 +432,9 @@ main(int argc, char **argv)
 
 		if (fp_in_stderr != NULL) {
 			thr_stderr = calloc(1, sizeof(pthread_t));
+			if (thr_stderr == NULL)
+				err(EXIT_FAILURE, "calloc");
+
 			if (pthread_create(thr_stderr, NULL, prefix_main,
 			    &kdata_stderr))
 				err(EXIT_FAILURE, "pthread_create stderr");

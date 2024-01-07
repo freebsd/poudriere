@@ -2644,6 +2644,9 @@ need_emulation() {
 	# kern.supported_archs is a list of TARGET_ARCHs.
 	target_arch="${wanted_arch#*.}"
 
+        # armv6 binaries can natively execute on armv7, no emulation needed
+        [ "${target_arch}" = "armv6" ] && target_arch="armv[67]"
+
 	# Check the list of supported archs from the kernel.
 	# DragonFly does not have kern.supported_archs, fallback to
 	# uname -m (advised by dillon)
@@ -3823,9 +3826,12 @@ download_from_repo() {
 	# XXX: bootstrap+rquery could be done asynchronously during deps
 	# Bootstrapping might occur here.
 	# XXX: rquery is supposed to 'update' but it does not on first run.
-	JNETNAME="n" injail env ASSUME_ALWAYS_YES=yes \
+	if ! JNETNAME="n" injail env ASSUME_ALWAYS_YES=yes \
 	    PACKAGESITE="${packagesite}" \
-	    ${pkg_bin} update -f
+	    ${pkg_bin} update -f; then
+		msg "Package fetch: Not fetching as remote repository is unavailable."
+		return 0
+	fi
 
 	remote_pkg_ver=$(injail ${pkg_bin} rquery -U %v ${P_PKG_PKGBASE:?})
 	local_pkg_name="${P_PKG_PKGNAME:?}"
@@ -7852,7 +7858,7 @@ prepare_ports() {
 	fi
 
 	load_moved
-	load_blacklist "${MASTERNAME}" "${PTNAME}" "${SETNAME}"
+	load_blacklist "${JAILNAME}" "${PTNAME}" "${SETNAME}"
 
 	fetch_global_port_vars || \
 	    err 1 "Failed to lookup global ports metadata"
