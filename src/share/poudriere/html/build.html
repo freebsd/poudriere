@@ -167,88 +167,10 @@
           <!-- /.navbar-collapse -->
         </div>
       </nav>
-      <div class="container bg-light">
-        <!-- /col -->
-        <div class="col-md-6">
-          <table class="layout">
-            <tr>
-              <td>
-                <div id="stats" style="display: none">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Queued</th>
-                        <th>Built</th>
-                        <th>Failed</th>
-                        <th>Skipped</th>
-                        <th>Ignored</th>
-                        <th>Fetched</th>
-                        <th>Remaining</th>
-                      </tr>
-                    </thead>
-                    <tr>
-                      <td id="stats_queued" class="queued"></td>
-                      <td id="stats_built" class="built"></td>
-                      <td id="stats_failed" class="failed"></td>
-                      <td id="stats_skipped" class="skipped"></td>
-                      <td id="stats_ignored" class="ignored"></td>
-                      <td id="stats_fetched" class="fetched"></td>
-                      <td id="stats_remaining" class="remaining"></td>
-                    </tr>
-                  </table>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div id="snap" style="display: none">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th title="(% of allocated CPU) 1 5 10 minute averages">
-                          Load Averages
-                        </th>
-                        <th title="% of swap devices used">Swapinfo</th>
-                        <th>Elapsed</th>
-                        <th title="Average package build rate per hour">
-                          Pkg/Hour
-                        </th>
-                        <th class="impulse">Impulse</th>
-                      </tr>
-                    </thead>
-                    <tr>
-                      <td
-                        id="snap_loadavg"
-                        title="(% of allocated CPU) 1 5 10 minute averages"
-                      ></td>
-                      <td
-                        id="snap_swapinfo"
-                        title="% of swap devices used"
-                      ></td>
-                      <td id="snap_elapsed"></td>
-                      <td
-                        id="snap_pkghour"
-                        title="Average package build rate per hour"
-                      ></td>
-                      <td class="impulse" id="snap_impulse"></td>
-                    </tr>
-                  </table>
-                </div>
-              </td>
-            </tr>
-          </table>
-        </div>
-      </div>
-      <!-- /container -->
     </div>
     <!-- navbar -->
     <section id="section-build" class="p-5">
-      <div id="main" class="container">
-        <div id="loading_overlay">
-          <div id="loading">
-            <p>Loading...</p>
-          </div>
-        </div>
+      <div id="main" class="container p-5">
         <div class="row">
           <div class="col-md-5">
             <div id="build_info_div" style="display: none">
@@ -275,7 +197,9 @@
           <!-- /col -->
           <div class="col-md-7">
             <div id="jobs_div" class="status" style="display: none">
-              <h2 id="jobs">Jobs</h2>
+              <div class="card my-3 bg-dark text-white fs-5">
+                <div class="card-body fs-5">Jobs</div>
+              </div>
               <table
                 id="builders_table"
                 class="table table-striped table-bordered"
@@ -297,6 +221,84 @@
           <!-- /col -->
         </div>
         <!-- /row -->
+        <!-- /col -->
+        <div class="row py-4">
+          <div class="col-md-12">
+            <div id="stats" style="display: none">
+              <table class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th class="text-center table-secondary">Queued</th>
+                    <th class="text-center table-success">Built</th>
+                    <th class="text-center table-danger">Failed</th>
+                    <th class="text-center table-info">Skipped</th>
+                    <th class="text-center table-warning">Ignored</th>
+                    <th class="text-center table-primary">Fetched</th>
+                    <th class="text-center">Remaining</th>
+                  </tr>
+                </thead>
+                <tr>
+                  <td id="stats_queued" class="queued text-center"></td>
+                  <td id="stats_built" class="built text-center"></td>
+                  <td id="stats_failed" class="failed text-center"></td>
+                  <td id="stats_skipped" class="text-center"></td>
+                  <td id="stats_ignored" class="text-center"></td>
+                  <td id="stats_fetched" class="text-center"></td>
+                  <td id="stats_remaining" class="text-center"></td>
+                </tr>
+              </table>
+            </div>
+            <div id="snap" style="display: none">
+              <table class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th
+                      title="(% of allocated CPU) 1 5 10 minute averages"
+                      class="text-center"
+                    >
+                      Load Averages
+                    </th>
+                    <th title="% of swap devices used" class="text-center">
+                      Swapinfo
+                    </th>
+                    <th class="text-center">Elapsed</th>
+                    <th
+                      title="Average package build rate per hour"
+                      class="text-center"
+                    >
+                      Pkg/Hour
+                    </th>
+                    <th class="impulse" class="text-center">Impulse</th>
+                  </tr>
+                </thead>
+                <tr>
+                  <td
+                    id="snap_loadavg"
+                    title="(% of allocated CPU) 1 5 10 minute averages"
+                    class="text-center"
+                  ></td>
+                  <td
+                    id="snap_swapinfo"
+                    title="% of swap devices used"
+                    class="text-center"
+                  ></td>
+                  <td id="snap_elapsed" class="text-center"></td>
+                  <td
+                    id="snap_pkghour"
+                    title="Average package build rate per hour"
+                    class="text-center"
+                  ></td>
+                  <td
+                    class="impulse"
+                    id="snap_impulse"
+                    class="text-center"
+                  ></td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+        <!-- /container -->
         <div class="row">
           <div class="col-md-12">
             <div id="built_div" style="display: none">
