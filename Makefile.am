@@ -114,9 +114,9 @@ dist_html_DATA= 	src/share/poudriere/html/build.html \
 			src/share/poudriere/html/jail.html \
 			src/share/poudriere/html/robots.txt
 dist_assets_DATA=	src/share/poudriere/html/assets/poudriere.js \
-			src/share/poudriere/html/assets/logo.svg \
-			src/share/poudriere/html/assets/favicon.ico \
-			src/share/poudriere/html/assets/poudriere.css \
+			src/share/poudriere/html/assets/logo-light.png \
+			src/share/poudriere/html/assets/logo-dark.png \
+			src/share/poudriere/html/assets/favicon.png \
 			src/share/poudriere/html/assets/jquery.dataTables.rowGrouping-1.2.9.js
 dist_btjs_DATA=		src/share/poudriere/html/assets/bootstrap-5.3.2/js/bootstrap.bundle.min.js
 dist_btcss_DATA=	src/share/poudriere/html/assets/bootstrap-5.3.2/css/bootstrap-min.css
