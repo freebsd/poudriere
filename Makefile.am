@@ -14,7 +14,6 @@ assetsdir= $(htmldir)/assets
 bootstrapdir= $(assetsdir)/bootstrap-5.3.2
 btcssdir= $(bootstrapdir)/css
 btjsdir= $(bootstrapdir)/js
-bticonsdir= $(assetsdir)/bootstrap-icons-1.11.3
 datatablesdir= $(assetsdir)/DataTables-1.13.8
 dtcssdir= $(datatablesdir)/css
 dtimagesdir= $(datatablesdir)/images
@@ -121,8 +120,6 @@ dist_assets_DATA=	src/share/poudriere/html/assets/poudriere.js \
 			src/share/poudriere/html/assets/jquery.dataTables.rowGrouping-1.2.9.js
 dist_btjs_DATA=		src/share/poudriere/html/assets/bootstrap-5.3.2/js/bootstrap.bundle.min.js
 dist_btcss_DATA=	src/share/poudriere/html/assets/bootstrap-5.3.2/css/bootstrap-min.css
-dist_icons_DATA=	src/share/poudriere/html/assets/bootstrap-icons-1.11.3/font/bootstrap-icons.min.css \
-			src/share/poudriere/html/assets/bootstrap-icons-1.11.3/github.svg
 dist_dtcss_DATA=	src/share/poudriere/html/assets/DataTables-1.13.8/css/jquery.dataTables.min.css
 dist_dtjs_DATA=		src/share/poudriere/html/assets/DataTables-1.13.8/js/jquery.dataTables.min.js
 dist_dtimages_DATA=	src/share/poudriere/html/assets/DataTables-1.13.8/images/sort_asc.png \
