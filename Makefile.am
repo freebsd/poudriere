@@ -120,8 +120,9 @@ dist_assets_DATA=	src/share/poudriere/html/assets/poudriere.js \
 			src/share/poudriere/html/assets/jquery.dataTables.rowGrouping-1.2.9.js
 dist_btjs_DATA=		src/share/poudriere/html/assets/bootstrap-5.3.2/js/bootstrap.bundle.min.js
 dist_btcss_DATA=	src/share/poudriere/html/assets/bootstrap-5.3.2/css/bootstrap-min.css
-dist_dtcss_DATA=	src/share/poudriere/html/assets/DataTables-1.13.8/css/jquery.dataTables.min.css
-dist_dtjs_DATA=		src/share/poudriere/html/assets/DataTables-1.13.8/js/jquery.dataTables.min.js
+dist_dtcss_DATA=	src/share/poudriere/html/assets/DataTables-1.13.8/css/dataTables.bootstrap5.min.css
+dist_dtjs_DATA=		src/share/poudriere/html/assets/DataTables-1.13.8/js/jquery.dataTables.min.js \
+			src/share/poudriere/html/assets/DataTables-1.13.8/js/dataTables.bootstrap5.min.js
 dist_dtimages_DATA=	src/share/poudriere/html/assets/DataTables-1.13.8/images/sort_asc.png \
 			src/share/poudriere/html/assets/DataTables-1.13.8/images/sort_asc_disabled.png \
 			src/share/poudriere/html/assets/DataTables-1.13.8/images/sort_both.png \
