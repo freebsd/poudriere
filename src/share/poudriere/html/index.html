@@ -44,7 +44,6 @@
       type="text/css"
       rel="stylesheet"
     />
-    <link href="assets/poudriere.css" type="text/css" rel="stylesheet" />
 
     <link rel="shortcut icon" href="assets/favicon.ico" />
   </head>
@@ -113,7 +112,7 @@
     </nav>
     <!-- navbar -->
     <section id="section" class="p-5">
-      <div id="main" class="container">
+      <div id="main" class="container p-5">
         <div id="loading_overlay">
           <div id="loading">
             <p>Loading...</p>
@@ -126,7 +125,7 @@
                 <div class="card-body">Latest Builds</div>
               </div>
               <table
-                class="display latest_builds table-bordered"
+                class="table table-striped table-bordered"
                 id="latest_builds_table"
               >
                 <thead>
@@ -138,7 +137,7 @@
                     <th>Set</th>
                     <th>Ports</th>
                     <th
-                      class="queued"
+                      class="table-secondary"
                       title="Queued"
                       data-toggle="tooltip"
                       data-container="body"
@@ -147,7 +146,7 @@
                       ><span class="d-xl-none">Q</span>
                     </th>
                     <th
-                      class="built"
+                      class="table-success"
                       title="Built"
                       data-toggle="tooltip"
                       data-container="body"
@@ -156,7 +155,7 @@
                       ><span class="d-xl-none">B</span>
                     </th>
                     <th
-                      class="failed"
+                      class="table-danger"
                       title="Failed"
                       data-toggle="tooltip"
                       data-container="body"
@@ -165,7 +164,7 @@
                       ><span class="d-xl-none">F</span>
                     </th>
                     <th
-                      class="skipped"
+                      class="table-info"
                       title="Skipped"
                       data-toggle="tooltip"
                       data-container="body"
@@ -174,7 +173,7 @@
                       ><span class="d-xl-none">S</span>
                     </th>
                     <th
-                      class="ignored"
+                      class="table-warning"
                       title="Ignored"
                       data-toggle="tooltip"
                       data-container="body"
@@ -183,7 +182,7 @@
                       ><span class="d-xl-none">I</span>
                     </th>
                     <th
-                      class="fetched"
+                      class="table-primary"
                       title="Fetched"
                       data-toggle="tooltip"
                       data-container="body"
@@ -362,4 +361,3 @@
     <script src="assets/poudriere.js" type="text/javascript"></script>
   </body>
 </html>
-<!-- vim: set sts=4 sw=4 ts=4 noet: -->
