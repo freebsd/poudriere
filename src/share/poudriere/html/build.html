@@ -53,7 +53,7 @@
   </head>
   <body>
     <div id="top"></div>
-    <div class="fixed-top">
+    <div class="fixed-top bg-light">
       <nav class="navbar navbar-expand-lg bg-dark navbar-dark p-3">
         <div class="container">
           <div id="logo">
@@ -262,7 +262,11 @@
         <div class="row">
           <div class="col-md-5">
             <div id="build_info_div" style="display: none">
-              <h2 id="build_info">Build</h2>
+              <div class="card my-3 bg-light text-dark fs-5">
+                <div class="card-body">
+                  Build
+                </div>
+              </div>
               <dl class="dl-horizontal">
                 <dt>Master</dt>
                 <dd id="mastername"></dd>
@@ -306,8 +310,12 @@
         <!-- /row -->
         <div class="row">
           <div class="col-md-12">
-            <div id="built_div" class="status" style="display: none">
-              <h2 id="built">Built ports</h2>
+            <div id="built_div" style="display: none">
+              <div class="card my-3 bg-light text-dark fs-5">
+                <div class="card-body">
+                  Built Ports
+                </div>
+              </div>
               <table
                 class="display built ports table-bordered"
                 id="built_table"
@@ -346,8 +354,12 @@
               </table>
             </div>
             <!-- #failed -->
-            <div id="skipped_div" class="status" style="display: none">
-              <h2 id="skipped">Skipped ports</h2>
+            <div id="skipped_div" style="display: none">
+              <div class="card my-3 bg-light text-dark fs-5">
+                <div class="card-body">
+                  Skipped Ports
+                </div>
+              </div>
               <table
                 class="display skipped ports table-bordered"
                 id="skipped_table"
@@ -364,8 +376,12 @@
               </table>
             </div>
             <!-- #skipped -->
-            <div id="ignored_div" class="status" style="display: none">
-              <h2 id="ignored">Ignored ports</h2>
+            <div id="ignored_div" style="display: none">
+              <div class="card my-3 bg-light text-dark fs-5">
+                <div class="card-body">
+                  Ignored Ports
+                </div>
+              </div>
               <table
                 class="display ignored ports table-bordered"
                 id="ignored_table"
@@ -383,8 +399,12 @@
               </table>
             </div>
             <!-- #ignored -->
-            <div id="fetched_div" class="status" style="display: none">
-              <h2 id="fetched">Fetched ports</h2>
+            <div id="fetched_div" style="display: none">
+              <div class="card my-3 bg-light text-dark fs-5">
+                <div class="card-body">
+                  Fetched Ports
+                </div>
+              </div>
               <table
                 class="display fetched ports table-bordered"
                 id="fetched_table"
@@ -400,8 +420,12 @@
               </table>
             </div>
             <!-- #fetched -->
-            <div id="queued_div" class="status" style="display: none">
-              <h2 id="queued">Queued ports</h2>
+            <div id="queued_div" style="display: none">
+              <div class="card my-3 bg-light text-dark fs-5">
+                <div class="card-body">
+                  Queued Ports
+                </div>
+              </div>
               <table
                 class="display queued ports table-bordered"
                 id="queued_table"
@@ -418,8 +442,12 @@
               </table>
             </div>
             <!-- #queued -->
-            <div id="remaining_div" class="status" style="display: none">
-              <h2 id="remaining">Remaining ports</h2>
+            <div id="remaining_div" style="display: none">
+              <div class="card my-3 bg-light text-dark fs-5">
+                <div class="card-body">
+                  Remaining Ports
+                </div>
+              </div>
               <table
                 class="display remaining ports table-bordered"
                 id="remaining_table"
