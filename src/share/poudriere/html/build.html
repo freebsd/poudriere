@@ -53,10 +53,19 @@
   </head>
   <body>
     <div id="top"></div>
-    <div class="fixed-top bg-light">
-      <nav class="navbar navbar-expand-lg bg-light">
+    <div class="fixed-top">
+      <nav class="navbar navbar-expand-lg bg-dark navbar-dark p-3">
         <div class="container">
-          <a href="index.html" class="navbar-brand">FreeBSD Poudriere</a>
+          <div id="logo">
+            <a href="index.html" class="navbar-brand">
+              <img
+                src="assets/logo.png"
+                alt="logo"
+                height="44"
+                class="image-fluid"
+              />
+            </a>
+          </div>
 
           <button
             class="navbar-toggler"
@@ -70,19 +79,25 @@
           <div class="collapse navbar-collapse" id="navmenu">
             <ul class="navbar-nav mr-auto">
               <li class="nav-item">
-                <a title="Jail Builds" id="master_link" class="nav-link"
+                <a
+                  title="Jail Builds"
+                  id="master_link"
+                  class="nav-link px-2 text-white fs-6 me-2"
                   >Jail Builds</a
                 >
               </li>
               <li class="nav-item">
-                <a href="#build_info" class="nav-link">Build</a>
+                <a href="#build_info" class="nav-link px-2 text-white fs-6 mx-1"
+                  >Build</a
+                >
               </li>
               <li class="nav-item">
-                <a href="#jobs" class="nav-link">Jobs</a>
+                <a href="#jobs" class="nav-link px-2 text-white fs-6 mx-1"
+                  >Jobs</a
+                >
               </li>
             </ul>
           </div>
-
           <div class="collapse navbar-collapse" id="navmenu">
             <ul class="navbar-nav ms-auto">
               <li class="nav-item dropdown">
@@ -95,29 +110,29 @@
                 </button>
                 <ul class="dropdown-menu">
                   <li class="disabled" id="nav_built">
-                    <a href="#built" class="nav-link">Built</a>
+                    <a href="#built" class="dropdown-item data_url">Built</a>
                   </li>
                   <li class="disabled" id="nav_failed">
-                    <a href="#failed" class="nav-link">Failed</a>
+                    <a href="#failed" class="dropdown-item data_url">Failed</a>
                   </li>
                   <li class="disabled" id="nav_skipped">
-                    <a href="#skipped" class="nav-link">Skipped</a>
+                    <a href="#skipped" class="dropdown-item data_url">Skipped</a>
                   </li>
                   <li class="disabled" id="nav_ignored">
-                    <a href="#ignored" class="nav-link">Ignored</a>
+                    <a href="#ignored" class="dropdown-item data_url">Ignored</a>
                   </li>
                   <li class="disabled" id="nav_fetched">
-                    <a href="#fetched" class="nav-link">Fetched</a>
+                    <a href="#fetched" class="dropdown-item data_url">Fetched</a>
                   </li>
                   <li class="disabled" id="nav_queued">
-                    <a href="#queued" class="nav-link">Queued</a>
+                    <a href="#queued" class="dropdown-item data_url">Queued</a>
                   </li>
                   <li class="disabled" id="nav_remaining">
-                    <a href="#remaining" class="nav-link">Remaining</a>
+                    <a href="#remaining" class="dropdown-item data_url">Remaining</a>
                   </li>
                 </ul>
               </li>
-              <li class="nav-item dropdown">
+              <li class="nav-item dropdown ms-2">
                 <button
                   class="btn btn-light dropdown-toggle"
                   data-bs-toggle="dropdown"
@@ -127,14 +142,14 @@
                 </button>
                 <ul class="dropdown-menu">
                   <li>
-                    <a href="logs/" class="nav-link data_url" target="logs"
+                    <a href="logs/" class="dropdown-item data_url" target="logs"
                       >All Logs</a
                     >
                   </li>
                   <li>
                     <a
                       href="logs/errors/"
-                      class="nav-link data_url"
+                      class="dropdown-item data_url"
                       target="logs"
                       >Error Logs</a
                     >
@@ -142,7 +157,7 @@
                   <li>
                     <a
                       href=".poudriere.pkg_deps%25"
-                      class="nav-link data_url"
+                      class="dropdown-item data_url"
                       target="dependecny_graph"
                       >Dependency graph</a
                     >
@@ -154,7 +169,7 @@
                   href="https://github.com/freebsd/poudriere"
                   class="nav-link"
                   target="_new"
-                  ><i class="bi bi-github"></i
+                  ><i class="bi bi-github ms-2 fs-5"></i
                 ></a>
               </li>
             </ul>
@@ -162,7 +177,7 @@
           <!-- /.navbar-collapse -->
         </div>
       </nav>
-      <div class="container">
+      <div class="container bg-light">
         <!-- /col -->
         <div class="col-md-6">
           <table class="layout">

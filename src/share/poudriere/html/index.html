@@ -55,9 +55,18 @@
   </head>
   <body>
     <div id="top"></div>
-    <nav class="navbar navbar-expand-lg bg-light navbar-light fixed-top">
+    <nav class="navbar navbar-expand-lg bg-dark navbar-dark fixed-top p-3">
       <div class="container">
-        <a href="#" class="navbar-brand">FreeBSD Poudriere</a>
+        <div id="logo">
+          <a href="index.html" class="navbar-brand">
+            <img
+              src="assets/logo.png"
+              alt="logo"
+              height="44"
+              class="image-fluid"
+            />
+          </a>
+        </div>
 
         <button
           class="navbar-toggler"
@@ -71,7 +80,9 @@
         <div class="collapse navbar-collapse" id="navmenu">
           <ul class="navbar-nav mr-auto">
             <li class="nav-item">
-              <a href="#latest_builds" class="nav-link">Latest Builds</a>
+              <a href="#latest_builds" class="nav-link px-2 text-white fs-6 mx-1"
+                >Latest Builds</a
+              >
             </li>
           </ul>
         </div>
@@ -102,7 +113,7 @@
                 href="https://github.com/freebsd/poudriere"
                 class="nav-link"
                 target="_new"
-                ><i class="bi bi-github"></i
+                ><i class="bi bi-github ms-2 fs-5"></i
               ></a>
             </li>
           </ul>
