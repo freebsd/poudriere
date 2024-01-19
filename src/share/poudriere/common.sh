@@ -3067,11 +3067,6 @@ jail_start() {
 	fi
 
 	msg_n "Creating the reference jail..."
-	if [ ${USE_CACHED} = "yes" ]; then
-		export CACHESOCK=${MASTERMNT%/ref}/cache.sock
-		export CACHEPID=${MASTERMNT%/ref}/cache.pid
-		cached -s /${MASTERNAME} -p ${CACHEPID} -n ${MASTERNAME}
-	fi
 	clonefs ${mnt} ${tomnt} clean
 	echo " done"
 
@@ -3458,9 +3453,6 @@ jail_stop() {
 	cd /tmp
 
 	stop_builders >/dev/null || :
-	if [ ${USE_CACHED} = "yes" ]; then
-		pkill -15 -F ${CACHEPID} >/dev/null 2>&1 || :
-	fi
 	run_hook jail stop
 	jstop || :
 	msg "Unmounting file systems"
@@ -8865,8 +8857,6 @@ INTERACTIVE_MODE=0
 : ${SHASH_VAR_PREFIX:=sh-}
 : ${DATADIR_NAME:=".p"}
 
-: ${USE_CACHED:=no}
-
 : ${BUILDNAME_FORMAT:="%Y-%m-%d_%Hh%Mm%Ss"}
 : ${BUILDNAME:=$(date +${BUILDNAME_FORMAT})}
 
@@ -8903,8 +8893,4 @@ fi
 
 if [ -e /nonexistent ]; then
 	err 1 "You may not have a /nonexistent.  Please remove it."
-fi
-
-if [ "${USE_CACHED}" = "yes" ]; then
-	err 1 "USE_CACHED=yes is not supported."
 fi
