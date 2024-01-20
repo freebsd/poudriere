@@ -891,6 +891,8 @@ buildlog_start() {
 	local git_modified git_hash
 	local wanted_vars="
 	    MAINTAINER
+	    PORTVERSION
+	    PORTREVISION
 	    CONFIGURE_ARGS
 	    CONFIGURE_ENV
 	    MAKE_ENV
@@ -920,6 +922,8 @@ buildlog_start() {
 	echo "package name: ${pkgname}"
 	echo "building for: $(injail uname -a)"
 	echo "maintained by: ${mk_MAINTAINER}"
+	echo "port version: ${mk_PORTVERSION}"
+	echo "port revision: ${mk_PORTREVISION}"
 	echo "Makefile datestamp: $(injail ls -l "${portdir}/Makefile")"
 
 	if shash_get ports_metadata top_git_hash git_hash; then
