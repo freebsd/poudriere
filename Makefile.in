@@ -822,7 +822,7 @@ cpdup_SOURCES = external/cpdup/src/cpdup.c \
 		external/cpdup/src/misc.c
 
 cpdup_LDADD = -lcrypto
-cpdup_CFLAGS = $(AM_CFLAGS) -D_ST_FLAGS_PRESENT_=1
+cpdup_CFLAGS = $(AM_CFLAGS) -D_ST_FLAGS_PRESENT_=1 -Wno-deprecated-declarations
 dirempty_SOURCES = src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES = src/libexec/poudriere/dirwatch/dirwatch.c
 locked_mkdir_SOURCES = src/libexec/poudriere/locked_mkdir/locked_mkdir.c
