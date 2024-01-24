@@ -56,6 +56,9 @@
 #include "cpdup.h"
 #include "hclink.h"
 #include "hcproto.h"
+#if defined(__FreeBSD__)
+#include <sys/param.h>
+#endif
 
 #define HSIZE	8192
 #define HMASK	(HSIZE-1)
@@ -176,6 +179,14 @@ int64_t CountLinkedItems;
 
 static struct HostConf SrcHost;
 static struct HostConf DstHost;
+
+#if defined(USE_COPY_FILE_RANGE) || (defined(__FreeBSD__) && __FreeBSD_version > 1300037)
+static inline int
+chk_ENOTSUP(int err)
+{
+	return err == EOPNOTSUPP || (ENOTSUP != EOPNOTSUPP && err == ENOTSUP);
+}
+#endif
 
 int
 main(int ac, char **av)
@@ -1131,7 +1142,38 @@ relink:
 		const char *op;
 		char *iobuf1 = malloc(GETIOSIZE);
 		int n;
+#if defined(USE_COPY_FILE_RANGE) || (defined(__FreeBSD__) && __FreeBSD_version > 1300037)
+		int do_std_copy = 0;
 
+		/*
+		 * For local file transfers try copy_file_range(2)
+		 */
+		if (SrcHost.host == NULL && DstHost.host == NULL) {
+			ssize_t wcnt;
+			do {
+				wcnt = copy_file_range(fd1, NULL, fd2, NULL,
+				    SSIZE_MAX, 0);
+			} while (wcnt > 0);
+			if (wcnt < 0) {
+				/*
+				 * On selected errnos we retry with standard copy
+				 */
+				if (errno == EINVAL || errno == EBADF ||
+				    errno == ENOSYS || errno == EXDEV ||
+				    errno == ETXTBSY || chk_ENOTSUP(errno))
+					do_std_copy = 1;
+				else
+					n = -1;
+			} else
+				n = 0;
+		} else
+			do_std_copy = 1;
+
+		/*
+		 * Do standard copy if remote or copy_file_range(2) has failed
+		 */
+		if (do_std_copy) {
+#endif
 		/*
 		 * Matt: What about holes?
 		 */
@@ -1142,6 +1184,9 @@ relink:
 			break;
 		    op = "read";
 		}
+#if defined(USE_COPY_FILE_RANGE) || (defined(__FreeBSD__) && __FreeBSD_version > 1300037)
+		}
+#endif
 		hc_close(&DstHost, fd2);
 		if (n == 0) {
 		    struct timeval tv[2];
