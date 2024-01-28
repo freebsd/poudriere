@@ -11,10 +11,9 @@ awkdir=	$(pkgdatadir)/awk
 htmldir= $(pkgdatadir)/html
 includedir= $(pkgdatadir)/include
 assetsdir= $(htmldir)/assets
-bootstrapdir= $(assetsdir)/bootstrap-3.4.1
+bootstrapdir= $(assetsdir)/bootstrap-5.3.2
 btcssdir= $(bootstrapdir)/css
 btjsdir= $(bootstrapdir)/js
-btfontsdir= $(bootstrapdir)/fonts
 datatablesdir= $(assetsdir)/DataTables-1.13.8
 dtcssdir= $(datatablesdir)/css
 dtimagesdir= $(datatablesdir)/images
@@ -115,27 +114,15 @@ dist_html_DATA= 	src/share/poudriere/html/build.html \
 			src/share/poudriere/html/jail.html \
 			src/share/poudriere/html/robots.txt
 dist_assets_DATA=	src/share/poudriere/html/assets/poudriere.js \
-			src/share/poudriere/html/assets/logo.svg \
-			src/share/poudriere/html/assets/favicon.ico \
-			src/share/poudriere/html/assets/poudriere.css \
+			src/share/poudriere/html/assets/logo-light.png \
+			src/share/poudriere/html/assets/logo-dark.png \
+			src/share/poudriere/html/assets/favicon.png \
 			src/share/poudriere/html/assets/jquery.dataTables.rowGrouping-1.2.9.js
-dist_btjs_DATA=		src/share/poudriere/html/assets/bootstrap-3.4.1/js/bootstrap.js \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/js/bootstrap.min.js
-dist_btfonts_DATA=	src/share/poudriere/html/assets/bootstrap-3.4.1/fonts/glyphicons-halflings-regular.eot \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/fonts/glyphicons-halflings-regular.svg \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/fonts/glyphicons-halflings-regular.ttf \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/fonts/glyphicons-halflings-regular.woff \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/fonts/glyphicons-halflings-regular.woff2
-dist_btcss_DATA=	src/share/poudriere/html/assets/bootstrap-3.4.1/css/bootstrap-theme.css \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/css/bootstrap-theme.css.map \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/css/bootstrap-theme.min.css \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/css/bootstrap-theme.min.css.map \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/css/bootstrap.css \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/css/bootstrap.css.map \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/css/bootstrap.min.css \
-			src/share/poudriere/html/assets/bootstrap-3.4.1/css/bootstrap.min.css.map
-dist_dtcss_DATA=	src/share/poudriere/html/assets/DataTables-1.13.8/css/jquery.dataTables.min.css
-dist_dtjs_DATA=		src/share/poudriere/html/assets/DataTables-1.13.8/js/jquery.dataTables.min.js
+dist_btjs_DATA=		src/share/poudriere/html/assets/bootstrap-5.3.2/js/bootstrap.bundle.min.js
+dist_btcss_DATA=	src/share/poudriere/html/assets/bootstrap-5.3.2/css/bootstrap.min.css
+dist_dtcss_DATA=	src/share/poudriere/html/assets/DataTables-1.13.8/css/dataTables.bootstrap5.min.css
+dist_dtjs_DATA=		src/share/poudriere/html/assets/DataTables-1.13.8/js/jquery.dataTables.min.js \
+			src/share/poudriere/html/assets/DataTables-1.13.8/js/dataTables.bootstrap5.min.js
 dist_dtimages_DATA=	src/share/poudriere/html/assets/DataTables-1.13.8/images/sort_asc.png \
 			src/share/poudriere/html/assets/DataTables-1.13.8/images/sort_asc_disabled.png \
 			src/share/poudriere/html/assets/DataTables-1.13.8/images/sort_both.png \
@@ -184,7 +171,7 @@ cpdup_SOURCES=	external/cpdup/src/cpdup.c \
 		external/cpdup/src/md5.c \
 		external/cpdup/src/misc.c
 cpdup_LDADD=	-lcrypto
-cpdup_CFLAGS=	$(AM_CFLAGS) -D_ST_FLAGS_PRESENT_=1
+cpdup_CFLAGS=	$(AM_CFLAGS) -D_ST_FLAGS_PRESENT_=1 -Wno-deprecated-declarations
 dirempty_SOURCES=	src/libexec/poudriere/dirempty/dirempty.c
 dirwatch_SOURCES=	src/libexec/poudriere/dirwatch/dirwatch.c
 locked_mkdir_SOURCES=	src/libexec/poudriere/locked_mkdir/locked_mkdir.c

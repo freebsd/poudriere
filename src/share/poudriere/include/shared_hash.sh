@@ -55,27 +55,17 @@ shash_get() {
 
 	ret=1
 	_values=
-	if [ "${USE_CACHED}" = "yes" ] && \
-	    [ "${var}" = "pkgname-origin" -o "${var}" = "origin-pkgname" ]; then
-		# XXX: This is ignoring var
-		# XXX: This only supports origin-pkgname and pkgname-origin
-		_values="$(cachec -s "/${MASTERNAME}" "get ${key}")"
-		if [ -n "${_values}" ]; then
+	_shash_varkey_file "${var}" "${key}"
+	# This assumes globbing works
+	for _f in ${_shash_varkey_file}; do
+		case "${_f}" in
+		*"*"*) break ;; # no file found
+		esac
+		if read_line _value "${_f}"; then
+			_values="${_values}${_values:+ }${_value}"
 			ret=0
 		fi
-	else
-		_shash_varkey_file "${var}" "${key}"
-		# This assumes globbing works
-		for _f in ${_shash_varkey_file}; do
-			case "${_f}" in
-			*"*"*) break ;; # no file found
-			esac
-			if read_line _value "${_f}"; then
-				_values="${_values}${_values:+ }${_value}"
-				ret=0
-			fi
-		done
-	fi
+	done
 
 	setvar "${var_return}" "${_values}"
 
@@ -109,15 +99,8 @@ shash_set() {
 	local value="$3"
 	local _shash_varkey_file
 
-	if [ "${USE_CACHED}" = "yes" ] && \
-	    [ "${var}" = "pkgname-origin" -o "${var}" = "origin-pkgname" ]; then
-		# XXX: This is ignoring var
-		# XXX: This only supports origin-pkgname and pkgname-origin
-		cachec -s "/${MASTERNAME}" "set ${key} ${value}"
-	else
-		_shash_varkey_file "${var}" "${key}"
-		echo "${value}" > "${_shash_varkey_file}"
-	fi
+	_shash_varkey_file "${var}" "${key}"
+	echo "${value}" > "${_shash_varkey_file}"
 }
 
 shash_read() {
@@ -189,11 +172,6 @@ shash_unset() {
 	local key="$2"
 	local _shash_varkey_file
 
-	if [ "${USE_CACHED}" = "yes" ]; then
-		err 1 "shash_unset unimplemented for USE_CACHED"
-		cachec -s /${MASTERNAME} "unset ${var}-${key}"
-	else
-		_shash_varkey_file "${var}" "${key}"
-		rm -f ${_shash_varkey_file}
-	fi
+	_shash_varkey_file "${var}" "${key}"
+	rm -f ${_shash_varkey_file}
 }
