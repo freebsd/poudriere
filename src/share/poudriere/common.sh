@@ -5683,6 +5683,7 @@ ensure_pkg_installed() {
 		injail_ver=${injail_ver##*/}
 		injail_ver=${injail_ver##*-}
 		injail_ver=${injail_ver%.*}
+		injail_ver=${injail_ver%_*}
 		host_ver=$(/usr/local/sbin/pkg-static -v)
 		if [ "${host_ver}" = "${injail_ver}" ]; then
 			cp -f /usr/local/sbin/pkg-static "${mnt}/${PKG_BIN}"
