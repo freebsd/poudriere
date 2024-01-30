@@ -8438,6 +8438,17 @@ svn_git_checkout_method() {
 				;;
 			esac
 			;;
+		pkgbase*)
+			case "${SOURCES_URL}" in
+			http://*) ;;
+			https://*) ;;
+			file://*) ;;
+			*)
+				msg_error "Invalid pkgbase url"
+				return 1
+				;;
+			esac
+			;;
 		*)
 			msg_error "-U only valid with git and svn methods"
 			return 1
