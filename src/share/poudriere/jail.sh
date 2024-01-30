@@ -63,14 +63,14 @@ Options:
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
                        'ftp-archive', 'ftp', 'freebsdci', 'http',
-		       'null', 'src=PATH', 'tar=PATH', 'url=URL', or
+		       'null', 'src=PATH', 'tar=PATH', 'url=URL', 'pkgbase=repo' or
 		       '{git,svn}{,+http,+https,+file,+ssh}' (e.g., 'git+https').
                      The default is '${METHOD_DEF}'.
     -P patch      -- Specify a patch to apply to the source before building.
     -S srcpath    -- Specify a path to the source tree to be used.
     -D            -- Do a full git clone without --depth (default: --depth=1)
     -t version    -- Version of FreeBSD to upgrade the jail to.
-    -U url        -- Specify a url to fetch the sources (with method git and/or svn).
+    -U url        -- Specify a url to fetch the sources (with method git, svn and pkgbase).
     -X            -- Do not build and setup native-xtools cross compile tools in jail
                      when building for a different TARGET ARCH than the host.
                      Only applies if TARGET_ARCH and HOST_ARCH are different.
@@ -349,9 +349,11 @@ update_jail() {
 		create_jail
 		;;
 	pkgbase)
-		pkg -r "${JAILMNT}" update || \
+		VERSION=$(jget ${JAILNAME} version | cut -d '.' -f 1)
+		[ -z "${ARCH}" ] && ARCH=$(jget ${JAILNAME} arch)
+		pkg -o IGNORE_OSVERSION=yes -o ABI="FreeBSD:${VERSION}:${ARCH}" -o REPOS_DIR="${JAILMNT}/etc/pkg" -r "${JAILMNT}" update || \
 			err 1 "pkg update failed"
-		pkg -r "${JAILMNT}" upgrade -y || \
+		pkg -o IGNORE_OSVERSION=yes -o ABI="FreeBSD:${VERSION}:${ARCH}" -o REPOS_DIR="${JAILMNT}/etc/pkg"  -r "${JAILMNT}" upgrade -y || \
 			err 1 "pkg upgrade failed"
 		;;
 	csup|null|tar)
@@ -842,11 +844,11 @@ install_from_tar() {
 }
 
 install_from_pkgbase() {
-	msg_n "Installing ${VERSION} ${ARCH} from ${PKGBASEREPO} ..."
+	msg_n "Installing ${VERSION} ${ARCH} from ${SOURCES_URL} ..."
 	mkdir -p "${JAILMNT}/etc/pkg"
 	cat <<EOF > "${JAILMNT}/etc/pkg/pkgbase.conf"
 pkgbase: {
-  url: "${PKGBASEREPO}/FreeBSD:${VERSION}:${ARCH}/latest"
+  url: "${SOURCES_URL}/FreeBSD:${VERSION}:${ARCH}/${PKGBASEREPO}"
   enabled: yes
 }
 
@@ -855,11 +857,12 @@ FreeBSD: {
 }
 EOF
 
-	pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ update
-	# Omit the man/debug/kernel and tests packages, uneeded for us.
-	pkg search -qx '^FreeBSD-.*' | grep -vE -- '-man|-dbg|-kernel-|-tests' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ install -y
+	pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH}" -r ${JAILMNT}/ update
+	# Omit the man/debug/kernel/src and tests packages, uneeded for us.
+	pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH}" -r ${JAILMNT}/ search -qCx '^FreeBSD-.*' | grep -vE -- '-man|-dbg|-kernel-|-tests|-src-' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ install -y
+	pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH}" -r ${JAILMNT}/ search -q '^FreeBSD-src-sys' | xargs pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ install -y
 	if [ -n "${KERNEL}" ]; then
-		pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -r ${JAILMNT}/ install -y FreeBSD-kernel-"${KERNEL}" || \
+		pkg -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH}" -r ${JAILMNT}/ install -y FreeBSD-kernel-"${KERNEL}" || \
 			err 1 "Failed to install FreeBSD-kernel-${KERNEL}"
 	fi
 }
@@ -948,7 +951,7 @@ create_jail() {
 		FCT=install_from_pkgbase
 		PKGBASEREPO="${METHOD##*=}"
 		[ -z "${PKGBASEREPO}" ] && \
-		    err 1 "Must specify repository to use -m pkgbase=url://repo"
+		    err 1 "Must specify repository to use -m pkgbase=repodir"
 		METHOD="${METHOD%%=*}"
 		;;
 	null)
