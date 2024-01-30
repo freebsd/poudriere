@@ -1456,3 +1456,9 @@ stripansi() {
 
         setvar "${_output_var}" "${_gsub}"
 }
+
+sorted() {
+	[ $# -gt 0 ] || eargs sorted string...
+	echo "$@" | tr ' ' '\n' | LC_ALL=C sort -u | sed -e '/^$/d' |
+	    paste -s -d ' ' -
+}
