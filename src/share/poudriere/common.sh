@@ -6080,6 +6080,9 @@ delete_old_pkg() {
 					esac
 				fi
 				msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: new dependency: ${COLOR_PORT}${d}${COLOR_RESET}"
+				#msg_verbose "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: current deps: ${current_deps:+$(sorted ${current_deps})}"
+				msg_verbose "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: current deps: ${current_deps}"
+				msg_verbose "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: package deps: ${compiled_deps:+$(sorted ${compiled_deps})}"
 				delete_pkg "${pkg}"
 				return 0
 				;;
