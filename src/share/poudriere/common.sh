@@ -6357,9 +6357,23 @@ delete_old_pkg() {
 	local dep_pkgname dep_pkgbase dep_origin dep_flavor
 	local ignore new_originspec stale_pkg
 	local pkg_arch no_arch arch is_sym
+	local fpkg_glob -
 
 	pkgfile="${pkg##*/}"
 	pkgname="${pkgfile%.*}"
+	pkgbase="${pkgname%-*}"
+
+	set -f
+	for fpkg_glob in ${FORCE_REBUILD_PACKAGES-}; do
+		case "${pkgbase}" in
+		${fpkg_glob})
+			msg_warn "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: In FORCE_REBUILD_PACKAGES"
+			delete_pkg "${pkg}"
+			return 0
+			;;
+		esac
+	done
+	set +f
 
 	case "${DELETE_UNKNOWN_FILES}" in
 	"yes")
@@ -6469,7 +6483,6 @@ delete_old_pkg() {
 		delete_pkg "${pkg}"
 		return 0
 	fi
-	pkgbase="${pkgname%-*}"
 	new_pkgbase="${new_pkgname%-*}"
 
 	# Check for changed PKGNAME before version as otherwise a new
@@ -9915,6 +9928,7 @@ esac
 : ${NO_RESTRICTED:=no}
 : ${USE_COLORS:=yes}
 : ${ALLOW_MAKE_JOBS_PACKAGES=pkg ccache}
+: ${FORCE_REBUILD_PACKAGES=}
 : ${FLAVOR_DEFAULT_ALL:=no}
 : ${NULLFS_PATHS:="/rescue /usr/share /usr/tests /usr/lib32"}
 : ${PACKAGE_FETCH_URL:="pkg+http://pkg.FreeBSD.org/\${ABI}"}
