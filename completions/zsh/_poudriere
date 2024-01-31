@@ -83,7 +83,7 @@ _jail=(
 	'-f[fs name (tank/jails/myjail) if fs is "none" then do not create on ZFS]::fs:_files -/'
 	'-K[build the jail with the kernel]::kernelname'
 	'-M[mountpoint]::mountpoint:_files -/'
-	'-m[when used with -c, overrides the default method for obtaining and building the jail.]::method:(allbsd ftp-archive ftp git http null src svn svn+file svn+http svn+https svn+ssh tar url)'
+	'-m[when used with -c, overrides the default method for obtaining and building the jail.]::method:(ftp-archive ftp git http null src svn svn+file svn+http svn+https svn+ssh tar url)'
 	'-P[specify a patch to apply to the source before building]::patch:_files -/'
 	'-S[specify a path to the source tree to be used]::srcpath:_files -/'
 	'-D[do a full git clone without --depth]'

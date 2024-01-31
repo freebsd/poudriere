@@ -62,7 +62,7 @@ Options:
     -m method     -- When used with -c, overrides the default method for
                      obtaining and building the jail. See poudriere(8) for more
                      details. Can be one of:
-                       'allbsd', 'ftp-archive', 'ftp', 'freebsdci', 'http',
+                       'ftp-archive', 'ftp', 'freebsdci', 'http',
 		       'null', 'src=PATH', 'tar=PATH', 'url=URL', or
 		       '{git,svn}{,+http,+https,+file,+ssh}' (e.g., 'git+https').
                      The default is '${METHOD_DEF}'.
@@ -342,7 +342,7 @@ update_jail() {
 		make -C ${SRC_BASE} delete-old delete-old-libs DESTDIR=${JAILMNT} BATCH_DELETE_OLD_FILES=yes
 		markfs clean ${JAILMNT}
 		;;
-	allbsd|gjb|url=*|freebsdci)
+	gjb|url=*|freebsdci)
 		[ -z "${VERSION}" ] && VERSION=$(jget ${JAILNAME} version)
 		[ -z "${ARCH}" ] && ARCH=$(jget ${JAILNAME} arch)
 		delete_jail
@@ -724,7 +724,6 @@ install_from_ftp() {
 			esac
 			;;
 		url=*) URL=${METHOD##url=} ;;
-		allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
 		ftp-archive) URL="http://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH}/${V}" ;;
 		freebsdci) URL="https://artifact.ci.freebsd.org/snapshot/${V}/latest_tested/${ARCH%%.*}/${ARCH##*.}" ;;
 		esac
@@ -787,7 +786,6 @@ install_from_ftp() {
 						;;
 				esac
 				;;
-			allbsd) URL="https://pub.allbsd.org/FreeBSD-snapshots/${ARCH%%.*}-${ARCH##*.}/${V}-JPSNAP/ftp" ;;
 			ftp-archive) URL="http://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/${ARCH%%.*}/${ARCH##*.}/${V}" ;;
 			freebsdci) URL="https://artifact.ci.freebsd.org/snapshot/${V}/latest_tested/${ARCH%%.*}/${ARCH##*.}" ;;
 			url=*) URL=${METHOD##url=} ;;
@@ -902,19 +900,6 @@ create_jail() {
 	case ${METHOD} in
 	ftp|http|gjb|ftp-archive|freebsdci|url=*)
 		FCT=install_from_ftp
-		;;
-	allbsd)
-		FCT=install_from_ftp
-		ALLBSDVER=`fetch -qo - \
-			https://pub.allbsd.org/FreeBSD-snapshots/${ARCH}-${ARCH}/ | \
-			sed -n "s,.*href=\"\(.*${VERSION}.*\)-JPSNAP/\".*,\1,p" | \
-			sort -k 3 -t - -r | head -n 1 `
-		[ -z ${ALLBSDVER} ] && err 1 "Unknown version $VERSION"
-
-		IFS=-
-		set -- ${ALLBSDVER}
-		unset IFS
-		RELEASE="${ALLBSDVER}-JPSNAP/ftp"
 		;;
 	svn*)
 		[ -x "${SVN_CMD}" ] || \
@@ -1277,7 +1262,6 @@ if ! svn_git_checkout_method "${SOURCES_URL}" "${METHOD}" \
 		usage
 	fi
 	case "${METHOD}" in
-	allbsd) ;;
 	csup) ;;
 	freebsdci) ;;
 	ftp) ;;

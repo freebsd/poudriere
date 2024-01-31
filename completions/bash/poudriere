@@ -275,7 +275,7 @@ _poudriere()
                         ;;
                     -m)
                         # TODO: Complete paths for src= and tar=.
-                        COMPREPLY=($(compgen -W "allbsd ftp-archive ftp git http null src= svn svn+file svn+http svn+https svn+ssh tar= url=" -- "$cur"))
+                        COMPREPLY=($(compgen -W "ftp-archive ftp git http null src= svn svn+file svn+http svn+https svn+ssh tar= url=" -- "$cur"))
                         if [[ ${#COMPREPLY[@]} == 1 && $COMPREPLY == *= ]]; then
                             compopt -o nospace
                         fi
