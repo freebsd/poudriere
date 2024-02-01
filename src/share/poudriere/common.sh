@@ -1517,7 +1517,7 @@ siginfo_handler() {
 	format_origin_phase="%%c \b%%s \b%%-%ds${COLOR_RESET} \b%%c %%-%ds ${COLOR_PORT}%%%ds %%c %%-%ds${COLOR_RESET} ${COLOR_PHASE}%%%ds${COLOR_RESET} %%-%ds %%-%ds %%%ds %%%ds"
 	display_setup "${format_origin_phase}"
 	display_add " " "" "ID" " " "TOTAL" "ORIGIN" " " "PKGNAME" "PHASE" \
-	            "TIME" "TMPFS" "CPU%" "MEM%"
+	            "PHASE" "TMPFS" "CPU%" "MEM%"
 
 	# Skip if stopping or starting jobs or stopped.
 	if [ -n "${JOBS}" -a "${status#starting_jobs:}" = "${status}" \
