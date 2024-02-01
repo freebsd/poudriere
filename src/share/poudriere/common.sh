@@ -5516,7 +5516,7 @@ deps_fetch_vars() {
 	local origin _dep _new_pkg_deps
 	local _origin_flavor _flavor _flavors
 	local _origin_subpkg
-	local _prefix
+	local _prefix _pkgname_var _pdeps_var
 	local _depend_specials=
 
 	originspec_decode "${originspec}" origin _origin_flavor _origin_subpkg
@@ -5547,43 +5547,29 @@ deps_fetch_vars() {
 		_lookup_flavors="FLAVOR _flavor FLAVORS _flavors"
 	fi
 	if have_ports_feature SUBPACKAGES; then
-		if ! port_var_fetch_originspec "${originspec}" \
-			PKGNAME${_origin_subpkg:+.${_origin_subpkg}} _pkgname \
-			${_lookup_flavors} \
-			'${_DEPEND_SPECIALS:C,^${PORTSDIR}/,,}' _depend_specials \
-			CATEGORIES categories \
-			IGNORE _ignore \
-			FORBIDDEN _forbidden \
-			NO_ARCH:Dyes _no_arch \
-			PREFIX _prefix \
-			${_changed_deps} \
-			${_changed_options:+_PRETTY_OPTS='${SELECTED_OPTIONS:@opt@${opt}+@} ${DESELECTED_OPTIONS:@opt@${opt}-@}'} \
-			${_changed_options:+'${_PRETTY_OPTS:O:C/(.*)([+-])$/\2\1/}' _selected_options} \
-			_PDEPS='${PKG_DEPENDS_ALL} ${EXTRACT_DEPENDS_ALL} ${PATCH_DEPENDS_ALL} ${FETCH_DEPENDS_ALL} ${BUILD_DEPENDS_ALL} ${LIB_DEPENDS_ALL} ${RUN_DEPENDS_ALL}' \
-			'${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
-			_pkg_deps; then
-			msg_error "Error looking up dependencies for ${COLOR_PORT}${originspec}${COLOR_RESET}"
-			return 1
-		fi
+		_pkgname_var="PKGNAME${_origin_subpkg:+.${_origin_subpkg}}"
+		_pdeps_var='${PKG_DEPENDS_ALL} ${EXTRACT_DEPENDS_ALL} ${PATCH_DEPENDS_ALL} ${FETCH_DEPENDS_ALL} ${BUILD_DEPENDS_ALL} ${LIB_DEPENDS_ALL} ${RUN_DEPENDS_ALL}'
 	else
-		if ! port_var_fetch_originspec "${originspec}" \
-			PKGNAME _pkgname \
-			${_lookup_flavors} \
-			'${_DEPEND_SPECIALS:C,^${PORTSDIR}/,,}' _depend_specials \
-			CATEGORIES categories \
-			IGNORE _ignore \
-			FORBIDDEN _forbidden \
-			NO_ARCH:Dyes _no_arch \
-			PREFIX _prefix \
-			${_changed_deps} \
-			${_changed_options:+_PRETTY_OPTS='${SELECTED_OPTIONS:@opt@${opt}+@} ${DESELECTED_OPTIONS:@opt@${opt}-@}'} \
-			${_changed_options:+'${_PRETTY_OPTS:O:C/(.*)([+-])$/\2\1/}' _selected_options} \
-			_PDEPS='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}' \
-			'${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
-			_pkg_deps; then
-			msg_error "Error looking up dependencies for ${COLOR_PORT}${originspec}${COLOR_RESET}"
-			return 1
-		fi
+		_pkgname_var="PKGNAME"
+		_pdeps_var='${PKG_DEPENDS} ${EXTRACT_DEPENDS} ${PATCH_DEPENDS} ${FETCH_DEPENDS} ${BUILD_DEPENDS} ${LIB_DEPENDS} ${RUN_DEPENDS}'
+	fi
+	if ! port_var_fetch_originspec "${originspec}" \
+		${_pkgname_var} _pkgname \
+		${_lookup_flavors} \
+		'${_DEPEND_SPECIALS:C,^${PORTSDIR}/,,}' _depend_specials \
+		CATEGORIES categories \
+		IGNORE _ignore \
+		FORBIDDEN _forbidden \
+		NO_ARCH:Dyes _no_arch \
+		PREFIX _prefix \
+		${_changed_deps} \
+		${_changed_options:+_PRETTY_OPTS='${SELECTED_OPTIONS:@opt@${opt}+@} ${DESELECTED_OPTIONS:@opt@${opt}-@}'} \
+		${_changed_options:+'${_PRETTY_OPTS:O:C/(.*)([+-])$/\2\1/}' _selected_options} \
+		_PDEPS="${_pdeps_var}" \
+		'${_PDEPS:C,([^:]*):([^:]*):?.*,\2,:C,^${PORTSDIR}/,,:O:u}' \
+		_pkg_deps; then
+		msg_error "Error looking up dependencies for ${COLOR_PORT}${originspec}${COLOR_RESET}"
+		return 1
 	fi
 
 	[ -n "${_pkgname}" ] || \
