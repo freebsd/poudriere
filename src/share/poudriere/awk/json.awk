@@ -75,6 +75,7 @@ function originspec_decode(originspec, originspec_items) {
   split(originspec, originspec_items, "@")
   # 1 = origin
   # 2 = FLAVOR
+  # XXX: subpkg
 }
 
 function end_type() {
