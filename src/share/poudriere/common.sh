@@ -7156,6 +7156,7 @@ gather_port_vars_process_depqueue() {
 		fd_devnull=5
 	fi
 
+	originspec_decode "${originspec}" origin '' ''
 	for dep_originspec in ${deps}; do
 		originspec_decode "${dep_originspec}" dep_origin dep_flavor dep_subpkg
 		# First queue the default origin into the gatherqueue if
