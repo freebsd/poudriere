@@ -6440,8 +6440,8 @@ get_pkgname_from_originspec() {
 	local var_return="$2"
 	local _pkgname _origin _flavor _default_flavor _flavors _subpkg
 
-	# This function is primarily for FLAVORS and SUBPACKAGES handling.
-	if ! have_ports_feature FLAVORS && ! have_ports_feature SUBPACKAGES; then
+	# This function is primarily for FLAVORS handling.
+	if ! have_ports_feature FLAVORS; then
 		shash_get originspec-pkgname "${_originspec}" \
 		    "${var_return}" || return 1
 		return 0
@@ -6449,7 +6449,7 @@ get_pkgname_from_originspec() {
 
 	originspec_decode "${_originspec}" _origin _flavor _subpkg
 	# Trim away FLAVOR_DEFAULT if present
-	if [ -n "${FLAVOR_DEFAULT}" ] && [ "${_flavor}" = "${FLAVOR_DEFAULT}" ]; then
+	if [ "${_flavor}" = "${FLAVOR_DEFAULT}" ]; then
 		_flavor=
 		originspec_encode _originspec "${_origin}" "${_flavor}" "${_subpkg}"
 	fi
@@ -6817,7 +6817,6 @@ deps_sanity() {
 			ret=1
 		fi
 		if have_ports_feature FLAVORS && [ -z "${dep_flavor}" ] && \
-			[ -z ${dep_subpkg} ] && \
 		    [ "${dep_originspec}" != "${dep_origin}" ]; then
 			msg_error "${COLOR_PORT}${originspec}${COLOR_RESET} has dependency on ${COLOR_PORT}${dep_origin}${COLOR_RESET} with invalid empty FLAVOR; Please contact maintainer of the port to fix this."
 			ret=1
