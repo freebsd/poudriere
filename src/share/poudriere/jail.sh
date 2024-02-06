@@ -853,7 +853,8 @@ pkgbase: {
   url: "${SOURCES_URL}/FreeBSD:${VERSION}:${ARCH}/${PKGBASEREPO}"
   enabled: yes
 }
-
+EOF
+	cat <<EOF > "${JAILMNT}/etc/pkg/FreeBSD2.conf"
 FreeBSD: {
   enabled: no
 }
@@ -867,6 +868,8 @@ EOF
 		pkg -o IGNORE_OSVERSION=yes -o REPOS_DIR="${JAILMNT}/etc/pkg" -o ABI="FreeBSD:${VERSION}:${ARCH}" -r ${JAILMNT}/ install -y FreeBSD-kernel-"${KERNEL}" || \
 			err 1 "Failed to install FreeBSD-kernel-${KERNEL}"
 	fi
+
+	rm "${JAILMNT}/etc/pkg/FreeBSD2.conf"
 }
 
 create_jail() {
