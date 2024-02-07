@@ -13,8 +13,6 @@ libtool
 .dirstamp
 .dirstamp/
 /autom4te.cache
-/cachec
-/cached
 /clock
 /cpdup
 /dirempty

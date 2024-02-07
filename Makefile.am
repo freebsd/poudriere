@@ -135,8 +135,6 @@ dist_jquery_DATA=	src/share/poudriere/html/assets/jquery-3.7.1/jquery-3.7.1.js \
 dist_rc_SCRIPTS=	src/etc/rc.d/poudriered
 
 pkglibexec_PROGRAMS= \
-		     cachec \
-		     cached \
 		     clock \
 		     cpdup \
 		     dirempty \
@@ -230,9 +228,6 @@ sh_SOURCES+=		\
 
 sh_CFLAGS+=		-I$(top_srcdir)/src/poudriere-sh \
 			-I$(top_builddir)/src/poudriere-sh
-# cachec
-#sh_SOURCES+=		src/libexec/poudriere/cachec/cachec.c
-#sh_LDADD+=		-lrt
 src/poudriere-sh/builtins.def: external/sh/builtins.def \
     src/poudriere-sh/builtins-poudriere.def
 	cat $^${.ALLSRC} > $@
@@ -297,14 +292,6 @@ poudriered_CFLAGS=	$(AM_CFLAGS) \
 			-I$(top_srcdir)/external/pkg
 poudriered_LDADD=	libucl.la \
 			-lutil
-
-cached_SOURCES=	src/libexec/poudriere/cached/cached.c \
-		external/klib/khash.h
-cached_CFLAGS=	$(AM_CFLAGS) -I$(top_srcdir)/external/klib
-cached_LDADD=	-lutil -lrt
-
-cachec_SOURCES=	src/libexec/poudriere/cachec/cachec.c
-cachec_LDADD=	-lrt
 
 DEVEL_SFX=	-devel
 
