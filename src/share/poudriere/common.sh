@@ -2063,11 +2063,7 @@ enter_interactive() {
 		    msg_warn "Failed to install ${COLOR_PORT}${port}${flavor:+@${flavor}}${subpkg:+~${subpkg}} | ${pkgname}${COLOR_RESET} run-depends"
 		if [ -z "${POUDRIERE_INTERACTIVE_NO_INSTALL-}" ]; then
 			msg "Installing ${COLOR_PORT}${port}${flavor:+@${flavor}}${subpkg:+~${subpkg}} | ${pkgname}"
-			if [ -z "$subpkg" ]; then
-				_install_target="install-package"
-			else
-				_install_target="install-package.${subpkg}"
-			fi
+			_install_target="install-package${subpkg:+.${subpkg}}"
 			# Only use PKGENV during install as testport will store
 			# the package in a different place than dependencies
 			injail /usr/bin/env ${PKGENV:+-S "${PKGENV}"} \
