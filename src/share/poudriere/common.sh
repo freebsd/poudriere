@@ -4237,9 +4237,9 @@ gather_distfiles() {
 			msg_debug "gather_distfiles: missing '${to}/${sub}/${d}'"
 			doinstall=1
 		else
-			dstsize=$(stat -f %z "${to}/${sub}/${d}")
-			srcsize=$(stat -f %z "${from}/${sub}/${d}")
-			if [ $srcsize -ne $dstsize ]; then
+			dstsize="$(stat -f %z "${to}/${sub}/${d}")"
+			srcsize="$(stat -f %z "${from}/${sub}/${d}")"
+			if [ "${srcsize}" -ne "${dstsize}" ]; then
 				msg_debug "gather_distfiles: size mismatch ($srcsize != $dstsize), overwriting '${to}/${sub}/${d}'"
 				doinstall=1
 			else
@@ -4248,7 +4248,7 @@ gather_distfiles() {
 			fi
 		fi
 		# XXX: A --relative would be nice
-		if [ $doinstall -eq 1 ]; then
+		if [ "${doinstall}" -eq 1 ]; then
 			install -pS -m 0644 "${from}/${sub}/${d}" \
 			    "${to}/${sub}/${d}" ||
 			    return 1
