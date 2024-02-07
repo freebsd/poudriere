@@ -192,7 +192,7 @@ comm -1 -3 ${DISTFILES_LIST}.expected ${DISTFILES_LIST}.actual \
 
 ret=0
 do_confirm_delete "${DISTFILES_LIST}.unexpected" "stale distfiles" \
-    "${answer}" "${DRY_RUN}" "0" || ret=$?
+    "${answer}" "${DRY_RUN}" || ret=$?
 if [ ${ret} -eq 2 ]; then
 	exit 0
 fi

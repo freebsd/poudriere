@@ -580,21 +580,18 @@ stat_humanize() {
 }
 
 do_confirm_delete() {
-	[ $# -eq 5 ] || eargs do_confirm_delete badfiles_list \
-	    reason_plural_object answer DRY_RUN FORCE_BUILD_REPO
+	[ $# -eq 4 ] || eargs do_confirm_delete badfiles_list \
+	    reason_plural_object answer DRY_RUN
 	local filelist="$1"
 	local reason="$2"
 	local answer="$3"
 	local DRY_RUN="$4"
-	local FORCE_BUILD_REPO="$5"
 	local file_cnt count hsize ret
 
-	if [ ${FORCE_BUILD_REPO} -eq 0 ]; then
-		file_cnt=$(wc -l ${filelist} | awk '{print $1}')
-		if [ ${file_cnt} -eq 0 ]; then
-			msg "No ${reason} to cleanup"
-			return 2
-		fi
+	file_cnt=$(wc -l ${filelist} | awk '{print $1}')
+	if [ ${file_cnt} -eq 0 ]; then
+		msg "No ${reason} to cleanup"
+		return 2
 	fi
 
 	msg_n "Calculating size for found files..."
@@ -612,7 +609,7 @@ do_confirm_delete() {
 
 	if [ ${DRY_RUN} -eq 1 ];  then
 		msg "Dry run: not cleaning anything."
-		return 2
+		return 3
 	fi
 
 	if [ -z "${answer}" ]; then
