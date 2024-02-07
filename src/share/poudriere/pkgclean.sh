@@ -378,14 +378,17 @@ done
 
 ret=0
 do_confirm_delete "${BADFILES_LIST}" "stale packages" \
-    "${answer}" "${DRY_RUN}" "${FORCE_BUILD_REPO}" || ret=$?
-if [ ${ret} -eq 2 ]; then
+    "${answer}" "${DRY_RUN}" || ret=$?
+case "${ret}.${FORCE_BUILD_REPO}" in
+# No files found and not forced, or dry-run, then exit.
+2.0|3)
 	exit 0
-fi
+	;;
+esac
 
 # After deleting stale files, need to remake repo.
 
-if [ $ret -eq 1 ]; then
+if [ "${ret}" -eq 1 ] || [ "${FORCE_BUILD_REPO}" -eq 1 ]; then
 	[ "${NO_RESTRICTED}" != "no" ] && clean_restricted
 	if [ ${BUILD_REPO} -eq 1 ]; then
 		if [ ${DO_ALL} -eq 1 ]; then
