@@ -826,6 +826,9 @@ mapfile() {
 				;;
 			# Different file. Is this even possible?
 			*)
+				if mapfile_supports_multiple_handles; then
+					err "${EX_SOFTWARE}" "mapfile() needs updated for multiple handle support"
+				fi
 				err 1 "mapfile only supports 1 file at a time without builtin. ${_mapfile_handle} already open"
 				;;
 			esac
@@ -945,6 +948,10 @@ mapfile_keeps_file_open_on_eof() {
 	[ $# -eq 1 ] || eargs mapfile_keeps_file_open_on_eof handle
 	return 1
 }
+
+mapfile_supports_multiple_handles() {
+	return 1
+}
 else
 
 mapfile_builtin() {
@@ -953,6 +960,10 @@ mapfile_builtin() {
 
 mapfile_keeps_file_open_on_eof() {
 	[ $# -eq 1 ] || eargs mapfile_keeps_file_open_on_eof handle
+	return 0
+}
+
+mapfile_supports_multiple_handles() {
 	return 0
 }
 fi
@@ -1000,6 +1011,120 @@ mapfile_read_loop_redir() {
 
 	#mapfile_read_loop "/dev/fd/0" "$@"
 	read -r "$@"
+}
+
+_pipe_func_job() {
+	[ "$#" -gt 2 ] || eargs _pipe_func_job _mf_fifo function [args...]
+	local _mf_fifo="$1"
+	shift 1
+
+	setproctitle "pipe_func($1)"
+	exec < /dev/null
+	exec > "${_mf_fifo}"
+	unlink "${_mf_fifo}"
+	"$@"
+}
+
+# Read output from a given function asynchronously. Like a read-only coprocess.
+# This is to allow piping from the function, in the current process, without
+# needing to wait for its entire response like a heredoc for x in $(func) loop
+# would.
+# Note that due to the kernel pipe write buffer the child will not block
+# between every read from the child.
+pipe_func() {
+	[ $# -ge 4 ] || eargs pipe_func [-H handle_var] 'read' read-params [...] -- func [params]
+	local _mf_handle_var _mf_cookie_val
+	local _mf_key _mf_read_params _mf_handle _mf_ret _mf_shift _mf_var
+	local _mf_fifo _mf_job
+	local OPTIND=1 flag Hflag
+
+	Hflag=0
+	while getopts "H:" flag; do
+		case "${flag}" in
+		H)
+			Hflag=1
+			_mf_handle_var="${OPTARG}"
+			;;
+		*) err "${EX_USAGE}" "pipe_func: Invalid flag ${flag}" ;;
+		esac
+	done
+	shift $((OPTIND-1))
+
+	if [ "${Hflag}" -eq 0 ]; then
+		_mf_key="$*"
+	else
+		if ! getvar "${_mf_handle_var}" _mf_cookie_val; then
+			randint 1000000000 _mf_cookie_val
+			setvar "${_mf_handle_var}" "${_mf_cookie_val}"
+		else
+			if [ "${_mf_cookie_val}" -eq "${_mf_cookie_val}" ]; then
+				:
+			else
+				err "${EX_USAGE}" "pipe_func: Invalid cookie var: ${_mf_handle_var}='${_mf_cookie_val}'; should be unset"
+			fi
+		fi
+		_mf_key="${_mf_cookie_val}"
+	fi
+	# 'read' is used to make the usage more clear.
+	case "$1" in
+	read) shift ;;
+	*) err "${EX_USAGE}" "pipe_func: Missing 'read'" ;;
+	esac
+	_mf_ret=0
+	if hash_get pipe_func_handle "${_mf_key}" _mf_handle; then
+		hash_get pipe_func_read_params "${_mf_key}" _mf_read_params ||
+		    err "${EX_SOFTWARE}" "pipe_func: No stored read params for ${_mf_key}"
+		hash_get pipe_func_shift "${_mf_key}" _mf_shift ||
+		    err "${EX_SOFTWARE}" "pipe_func: No stored shift for ${_mf_key}"
+		shift "${_mf_shift}"
+	else
+		_mf_read_params=
+		_mf_shift=0
+		while :; do
+			_mf_var="$1"
+			shift
+			case "${_mf_var}" in
+			"--")
+				break
+				;;
+			*)
+				_mf_read_params="${_mf_read_params:+${_mf_read_params} }${_mf_var}"
+				;;
+			esac
+		done
+		# "$@" is now the function and params
+		hash_set pipe_func_shift "${_mf_key}" "${_mf_shift}"
+		hash_set pipe_func_read_params "${_mf_key}" "${_mf_read_params}"
+		_mf_fifo="$(mktemp -ut pipe_func.fifo)"
+		mkfifo "${_mf_fifo}"
+		hash_set pipe_func_fifo "${_mf_key}" "${_mf_fifo}"
+		spawn_job _pipe_func_job "${_mf_fifo}" "$@"
+		_mf_job="$!"
+		hash_set pipe_func_job "${_mf_key}" "${_mf_job}"
+		mapfile _mf_handle "${_mf_fifo}" "re" ||
+		    err "${EX_SOFTWARE}" "pipe_func: Failed to open ${_mf_fifo}"
+		hash_set pipe_func_handle "${_mf_key}" "${_mf_handle}"
+	fi
+
+	# Read from fifo back to caller
+	if mapfile_read "${_mf_handle}" ${_mf_read_params}; then
+		return 0
+	else
+		# EOF
+		_mf_ret="$?"
+		mapfile_close "${_mf_handle}"
+		hash_unset pipe_func_read_params "${_mf_key}"
+		hash_unset pipe_func_handle "${_mf_key}"
+		hash_unset pipe_func_shift "${_mf_key}"
+		hash_remove pipe_func_fifo  "${_mf_key}" _mf_fifo ||
+		    err "${EX_SOFTWARE}" "pipe_func: No stored fifo for ${_mf_key}"
+		unlink "${_mf_fifo}"
+		hash_remove pipe_func_job  "${_mf_key}" _mf_job ||
+		    err "${EX_SOFTWARE}" "pipe_func: No stored job for ${_mf_key}"
+		kill_job 1 "${_mf_job}" || _mf_ret="$?"
+		unset "${_mf_handle_var}"
+		return "${_mf_ret}"
+	fi
 }
 
 # Pipe to STDOUT from handle.

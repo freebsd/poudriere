@@ -816,5 +816,4 @@ fi
 	assert 0 "${lines}"
 	rm -f "${TMP}"
 }
-
 exit 0
