@@ -211,41 +211,44 @@ FOUND_ORIGINS="$(mktemp -t poudriere_pkgclean)"
 should_delete() {
 	[ $# -eq 1 ] || eargs should_delete pkgfile
 	local pkgfile="$1"
-	local pkgname origin ret
+	local pkgname originspec ret
 
 	pkgname="${pkgfile##*/}"
 	pkgname="${pkgname%.*}"
 	ret=0
 
-	if ! pkg_get_origin origin "${pkgfile}"; then
+	if ! pkg_get_originspec originspec "${pkgfile}"; then
 		msg_verbose "Found corrupt package: ${pkgfile}"
 		return 0 # delete
 	fi
+
 	if [ "${CLEAN_LISTED}" -eq 0 ]; then
-		should_delete_unlisted "${pkgfile}" "${origin}" "${pkgname}" ||
+		should_delete_unlisted "${pkgfile}" "${originspec}" \
+		    "${pkgname}" ||
 		    ret="$?"
 	elif [ "${CLEAN_LISTED}" -eq 1 ]; then
-		should_delete_listed "${pkgfile}" "${origin}" "${pkgname}" ||
+		should_delete_listed "${pkgfile}" "${originspec}" \
+		    "${pkgname}" ||
 		    ret="$?"
 	else
-		echo "${pkgfile} ${origin}" >> "${FOUND_ORIGINS:?}"
+		echo "${pkgfile} ${originspec}" >> "${FOUND_ORIGINS:?}"
 	fi
 	return "${ret}"
 }
 
 # Handle NO -C
 should_delete_unlisted() {
-	[ $# -eq 3 ] || eargs should_delete_unlisted pkgfile origin pkgname
+	[ $# -eq 3 ] || eargs should_delete_unlisted pkgfile originspec pkgname
 	local pkgfile="$1"
-	local origin="$2"
+	local originspec="$2"
 	local pkgname="$3"
 	local forbidden
 
 	if shash_remove pkgname-forbidden "${pkgname}" forbidden; then
-		msg_verbose "Found forbidden package (${COLOR_PORT}${origin}${COLOR_RESET}) (${forbidden}): ${pkgfile}"
+		msg_verbose "Found forbidden package (${COLOR_PORT}${originspec}${COLOR_RESET}) (${forbidden}): ${pkgfile}"
 		return 0 # delete
 	elif ! pkgbase_is_needed "${pkgname}"; then
-		msg_verbose "Found unwanted package (${COLOR_PORT}${origin}${COLOR_RESET}): ${pkgfile}"
+		msg_verbose "Found unwanted package (${COLOR_PORT}${originspec}${COLOR_RESET}): ${pkgfile}"
 		return 0 # delete
 	fi
 	return 1 # keep
@@ -253,17 +256,17 @@ should_delete_unlisted() {
 
 # Handle -C and -r
 should_delete_listed() {
-	[ $# -eq 3 ] || eargs should_delete_listed pkgfile origin pkgname
+	[ $# -eq 3 ] || eargs should_delete_listed pkgfile originspec pkgname
 	local pkgfile="$1"
-	local origin="$2"
+	local originspec="$2"
 	local pkgname="$3"
 	local dep_origin compiled_deps
 
-	if originspec_is_listed "${origin}"; then
-		msg_verbose "Found specified package (${COLOR_PORT}${origin}${COLOR_RESET}): ${pkgfile}"
+	if originspec_is_listed "${originspec}"; then
+		msg_verbose "Found specified package (${COLOR_PORT}${originspec}${COLOR_RESET}): ${pkgfile}"
 		return 0 # delete
 	elif ! pkg_get_dep_origin_pkgnames compiled_deps '' "${pkgfile}"; then
-		msg_verbose "Found corrupt package (${COLOR_PORT}${origin}${COLOR_RESET}) (deps): ${pkgfile}"
+		msg_verbose "Found corrupt package (${COLOR_PORT}${originspec}${COLOR_RESET}) (deps): ${pkgfile}"
 		return 0 # delete
 	fi
 	if [ "${CLEAN_RDEPS}" -eq 1 ]; then

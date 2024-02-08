@@ -292,9 +292,7 @@ commit_packages
 
 bset_job_status "testing" "${ORIGINSPEC}" "${PKGNAME}"
 
-LOCALBASE=`injail /usr/bin/make -C ${portdir} -VLOCALBASE`
 [ -n "${LOCALBASE}" ] || err 1 "Port has empty LOCALBASE?"
-: ${PREFIX:=$(injail /usr/bin/make -C ${portdir} -VPREFIX)}
 [ -n "${PREFIX}" ] || err 1 "Port has empty PREFIX?"
 if [ "${USE_PORTLINT}" = "yes" ]; then
 	if [ ! -x `command -v portlint` ]; then

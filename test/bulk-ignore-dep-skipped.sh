@@ -14,7 +14,7 @@ assert 0 $? "Bulk should pass"
 # expected to be skipped here.
 EXPECTED_IGNORED="ports-mgmt/poudriere-devel-IGNORED"
 EXPECTED_SKIPPED="ports-mgmt/poudriere-devel-dep-IGNORED"
-EXPECTED_QUEUED="misc/freebsd-release-manifests ports-mgmt/pkg ports-mgmt/poudriere-devel"
+EXPECTED_QUEUED="misc/freebsd-release-manifests@default ports-mgmt/pkg ports-mgmt/poudriere-devel"
 EXPECTED_LISTED="ports-mgmt/poudriere-devel ports-mgmt/poudriere-devel-dep-IGNORED"
 
 assert_bulk_queue_and_stats

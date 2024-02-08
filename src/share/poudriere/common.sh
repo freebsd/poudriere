@@ -6201,25 +6201,16 @@ delete_old_pkg() {
 	pkg_subpkg=
 	pkg_flavor=
 	originspec=
-	if ! pkg_get_origin origin "${pkg}"; then
+	if ! pkg_get_originspec originspec "${pkg}"; then
 		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: corrupted package"
 		delete_pkg "${pkg}"
 		return 0
 	fi
+	originspec_decode "${originspec}" origin pkg_flavor pkg_subpkg
 
 	if ! pkgbase_is_needed_and_not_ignored "${pkgname}"; then
 		# We don't expect this PKGBASE but it may still be an
-		# origin that is expected and just renamed.  Need to
-		# get the origin and flavor out of the package to
-		# determine that.
-		if have_ports_feature FLAVORS; then
-			pkg_get_flavor pkg_flavor "${pkg}"
-		fi
-		if have_ports_feature SUBPACKAGES; then
-			pkg_get_subpkg pkg_subpkg "${pkg}"
-		fi
-		originspec_encode originspec "${origin}" "${pkg_flavor}" \
-		    "${pkg_subpkg}"
+		# origin that is expected and just renamed.
 		if ! originspec_is_needed_and_not_ignored "${originspec}"; then
 			if [ "${delete_unqueued}" -eq 1 ]; then
 				msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: no longer needed"
@@ -6235,10 +6226,10 @@ delete_old_pkg() {
 	if shash_get origin-moved "${origin}" new_origin; then
 		case "${new_origin}" in
 		"EXPIRED "*)
-			msg "Deleting ${pkgfile}: ${COLOR_PORT}${origin}${COLOR_RESET} ${new_origin#EXPIRED }"
+			msg "Deleting ${pkgfile}: ${COLOR_PORT}${originspec}${COLOR_RESET} ${new_origin#EXPIRED }"
 			;;
 		*)
-			msg "Deleting ${pkgfile}: ${COLOR_PORT}${origin}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
+			msg "Deleting ${pkgfile}: ${COLOR_PORT}${originspec}${COLOR_RESET} moved to ${COLOR_PORT}${new_origin}${COLOR_RESET}"
 			;;
 		esac
 		delete_pkg "${pkg}"
@@ -6248,23 +6239,10 @@ delete_old_pkg() {
 	_my_path mnt
 
 	if ! test_port_origin_exist "${origin}"; then
-		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: stale package: nonexistent origin ${COLOR_PORT}${origin}${COLOR_RESET}"
+		msg "Deleting ${COLOR_PORT}${pkgfile}${COLOR_RESET}: stale package: nonexistent origin ${COLOR_PORT}${originspec}${COLOR_RESET}"
 		delete_pkg "${pkg}"
 		return 0
 	fi
-
-	case "${originspec}" in
-	"")
-		if have_ports_feature FLAVORS; then
-			pkg_get_flavor pkg_flavor "${pkg}"
-		fi
-		if have_ports_feature SUBPACKAGES; then
-			pkg_get_subpkg pkg_subpkg "${pkg}"
-		fi
-		originspec_encode originspec "${origin}" "${pkg_flavor}" \
-		    "${pkg_subpkg}"
-		;;
-	esac
 
 	v="${pkgname##*-}"
 	# Check if any packages were queried for this origin to map it to a
@@ -7023,11 +7001,30 @@ get_pkgname_from_originspec() {
 	setvar "${var_return}" "${_pkgname}"
 }
 
+originspec_misses_flavor() {
+	[ $# -eq 1 ] || eargs originspec_misses_flavor originspec
+	local originspec="$1"
+	local flavors origin flavor default_flavor
+
+	case "${FLAVOR_DEFAULT_ALL}" in
+	yes) return 1 ;;
+	esac
+	originspec_decode "${originspec}" origin flavor ''
+	case "${flavor}" in
+	""|"${FLAVOR_DEFAULT}"|"${FLAVOR_ALL}") ;;
+	*) return 1 ;;
+	esac
+	if ! shash_get origin-flavors "${origin}" flavors; then
+		return 1
+	fi
+	# This originspec is ambiguous. We need a FLAVOR specified.
+	return 0
+}
+
 originspec_is_default_flavor() {
 	[ $# -eq 1 ] || eargs originspec_is_default_flavor originspec
 	local originspec="$1"
 	local flavors origin flavor
-	local -; set -f
 
 	originspec_decode "${originspec}" origin flavor ''
 	shash_get origin-flavors "${origin}" flavors || flavors=
@@ -7410,7 +7407,7 @@ gather_port_vars_port() {
 	local rdep="$2"
 	local dep_origin deps pkgname dep_originspec
 	local dep_ret log flavor flavors dep_flavor
-	local origin origin_flavor default_flavor
+	local origin origin_flavor default_flavor originspec_flavored
 	local ignore origin_subpkg qdir
 
 	msg_debug "gather_port_vars_port (${COLOR_PORT}${originspec}${COLOR_RESET}): LOOKUP"
@@ -7567,8 +7564,28 @@ gather_port_vars_port() {
 		;;
 	esac
 
-	msg_debug "WILL BUILD ${COLOR_PORT}${originspec}${COLOR_RESET}"
-	echo "${pkgname} ${originspec} ${rdep} ${ignore}" >> \
+	# For all_pkgs ensure we store the default flavor if we are that pkg.
+	case "${origin_flavor:+set}.${flavors:+set}" in
+	set.set)
+		originspec_encode originspec_flavored "${origin}" \
+		    "${origin_flavor}" "${origin_subpkg}"
+		;;
+	set."")
+		err 1 "gather_port_vars_port: ${COLOR_PORT}${originspec}${COLOR_RESET} had FLAVOR=${origin_flavor} but port provided no flavors?"
+		;;
+	"".set)
+		# Was not queued as a flavor but we are the default flavor.
+		: "${default_flavor:="${flavors%% *}"}"
+		originspec_encode originspec_flavored "${origin}" \
+		    "${default_flavor}" "${origin_subpkg}"
+		;;
+	*)
+		originspec_flavored="${originspec}"
+		;;
+	esac
+
+	msg_debug "WILL BUILD ${COLOR_PORT}${originspec_flavored}${COLOR_RESET}"
+	echo "${pkgname} ${originspec_flavored} ${rdep} ${ignore}" >> \
 	    "${MASTER_DATADIR:?}/all_pkgs"
 	if [ ${ALL} -eq 0 ]; then
 		echo "${pkgname%-*}" >> "${MASTER_DATADIR:?}/all_pkgbases"
@@ -7580,7 +7597,7 @@ gather_port_vars_port() {
 	case "${rdep}.${origin_flavor:+set}.${flavors:+set}" in
 	"listed".""."set")
 		if  build_all_flavors "${originspec}"; then
-			msg_verbose "Will build all flavors for ${COLOR_PORT}${originspec}${COLOR_RESET}: ${flavors}"
+			msg_verbose "Will build all flavors for ${COLOR_PORT}${originspec_flavored}${COLOR_RESET}: ${flavors}"
 			for dep_flavor in ${flavors}; do
 				# Skip default FLAVOR
 				case "${flavor}" in
@@ -8169,6 +8186,13 @@ originspec_is_needed_and_not_ignored() {
        [ $# -eq 1 ] || eargs originspec_is_needed_and_not_ignored originspec
        local originspec="$1"
 
+	if originspec_misses_flavor "${originspec}"; then
+		local origin=
+
+		originspec_decode "${originspec}" origin '' ''
+		msg_warn "originspec_is_needed_and_not_ignored: origin ${COLOR_PORT}${origin}${COLOR_RESET} requires a FLAVOR set for originspec"
+		return 1
+	fi
        awk -voriginspec="${originspec}" '
            $2 == originspec {
                if (NF < 4)
@@ -8189,7 +8213,6 @@ originspec_is_listed() {
 	if [ "${ALL}" -eq 1 ]; then
 		return 0
 	fi
-
 	awk -voriginspec="${originspec}" '
 	    $3 == "listed" && $2 == originspec {
 		found=1
@@ -8277,6 +8300,8 @@ fetch_global_port_vars() {
 	    PKG_ORIGIN P_PKG_ORIGIN \
 	    PKG_SUFX P_PKG_SUFX \
 	    UID_FILES P_UID_FILES \
+	    LOCALBASE P_LOCALBASE \
+	    PREFIX P_PREFIX \
 	    || err 1 "Error looking up pre-build ports vars"
 	port_var_fetch "${P_PKG_ORIGIN}" \
 	    PKGNAME P_PKG_PKGNAME \
@@ -8311,6 +8336,15 @@ fetch_global_port_vars() {
 		shash_set ports_metadata top_unclean "${git_modified}"
 		msg "Ports top-level git hash: ${git_hash} ${git_dirty}"
 	fi
+	: "${LOCALBASE:=${P_LOCALBASE}}"
+	: "${PREFIX:=${P_PREFIX}}"
+	export LOCALBASE PREFIX
+
+	PKG_EXT="${P_PKG_SUFX#.}"
+	: "${PKG_BIN:="/${DATADIR_NAME:?}/pkg-static"}"
+	PKG_ADD="${PKG_BIN:?} add"
+	PKG_DELETE="${PKG_BIN:?} delete -y -f"
+	PKG_VERSION="${PKG_BIN:?} version"
 }
 
 git_tree_dirty() {
@@ -8496,12 +8530,6 @@ prepare_ports() {
 	fetch_global_port_vars || \
 	    err 1 "Failed to lookup global ports metadata"
 
-	PKG_EXT="${P_PKG_SUFX#.}"
-	PKG_BIN="/${DATADIR_NAME:?}/pkg-static"
-	PKG_ADD="${PKG_BIN:?} add"
-	PKG_DELETE="${PKG_BIN:?} delete -y -f"
-	PKG_VERSION="${PKG_BIN:?} version"
-
 	case "${PKG_REPO_SIGNING_KEY:+set}" in
 	set)
 		if [ ! -f "${PKG_REPO_SIGNING_KEY}" ]; then
@@ -8676,8 +8704,6 @@ prepare_ports() {
 			done
 		)
 	fi
-
-	export LOCALBASE=${LOCALBASE:-/usr/local}
 
 	pkgqueue_unqueue_existing_packages
 	pkgqueue_trim_orphaned_build_deps

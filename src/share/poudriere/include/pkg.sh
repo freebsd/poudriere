@@ -23,6 +23,27 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+pkg_get_originspec() {
+	[ $# -eq 2 ] || eargs pkg_get_originspec var_return pkg
+	local pgo_originspec_var="$1"
+	local pkg="$2"
+	local origin flavor subpkg
+
+	pkg_get_origin origin "${pkg}" || return
+	if have_ports_feature FLAVORS; then
+		pkg_get_flavor flavor "${pkg}" || return
+	else
+		flavor=
+	fi
+	if have_ports_feature SUBPACKAGES; then
+		pkg_get_subpkg subpkg "${pkg}" || return
+	else
+		subpkg=
+	fi
+	originspec_encode "${pgo_originspec_var}" "${origin}" "${flavor}" \
+	    "${subpkg}"
+}
+
 pkg_get_origin() {
 	[ $# -ge 2 ] || eargs pkg_get_origin var_return pkg [origin]
 	local var_return="$1"

@@ -17,18 +17,15 @@ MASTER_SITES=	#
 DISTFILES=	#
 
 MAINTAINER=	bdrewery@FreeBSD.org
-COMMENT=	FreeBSD release manifests
+COMMENT=	test port
 
 LICENSE=	BSD2CLAUSE
 
 NO_BUILD=	yes
 NO_ARCH=	yes
 
-DATADIR=	${PREFIX}/share/freebsd
-
 do-install:
-	@${MKDIR} ${STAGEDIR}${DATADIR}/MANIFESTS
-	${INSTALL_DATA} ${FILESDIR}/MANIFESTS/* \
-	    ${STAGEDIR}${DATADIR}/MANIFESTS/
+	@${MKDIR} ${STAGEDIR}${PREFIX}/foo/
+	@${TOUCH} ${STAGEDIR}${PREFIX}/foo/bar
 
 .include <bsd.port.mk>

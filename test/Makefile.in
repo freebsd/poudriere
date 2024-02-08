@@ -483,6 +483,9 @@ TESTS = builtins.sh cache.sh cache_pipe.sh calculate_duration.sh \
 	timestamp.sh trap_ignore_block.sh trap_save_block.sh \
 	trap_save.sh $(JAIL_TESTS) prep.sh
 JAIL_TESTS = \
+	bulk-build-inc-pkgclean-flavor-default.sh \
+	bulk-build-inc-pkgclean-flavor.sh \
+	bulk-build-inc-pkgclean-origin.sh \
 	bulk-build-self-immutable-base-nullfs.sh \
 	bulk-build-self-immutable-base-schg.sh \
 	bulk-build-self-immutable-base-yes.sh \
@@ -1058,6 +1061,27 @@ trap_save_block.sh.log: trap_save_block.sh
 trap_save.sh.log: trap_save.sh
 	@p='trap_save.sh'; \
 	b='trap_save.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-inc-pkgclean-flavor-default.sh.log: bulk-build-inc-pkgclean-flavor-default.sh
+	@p='bulk-build-inc-pkgclean-flavor-default.sh'; \
+	b='bulk-build-inc-pkgclean-flavor-default.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-inc-pkgclean-flavor.sh.log: bulk-build-inc-pkgclean-flavor.sh
+	@p='bulk-build-inc-pkgclean-flavor.sh'; \
+	b='bulk-build-inc-pkgclean-flavor.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+bulk-build-inc-pkgclean-origin.sh.log: bulk-build-inc-pkgclean-origin.sh
+	@p='bulk-build-inc-pkgclean-origin.sh'; \
+	b='bulk-build-inc-pkgclean-origin.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
